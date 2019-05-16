@@ -445,8 +445,7 @@ INT read_stream_event(char *pevent, INT off)
     bk_create(pevent, "HEAD", TID_DWORD, (void **)&pdata);
     
     for(int i =0; i < 8; i ++){
-        *pdata++ = dma_buf[readindex];
-        readindex++;
+        *pdata++ = dma_buf[(++readindex)%dma_buf_nwords];
         read++;
     }
     bk_close(pevent, pdata);
@@ -457,6 +456,6 @@ INT read_stream_event(char *pevent, INT off)
     else
         moreevents = false;
 
-    cout <<"size: "<<bk_size(pevent)<<endl;
+    //cout <<"size: "<<bk_size(pevent)<<endl;
     return bk_size(pevent);
 }
