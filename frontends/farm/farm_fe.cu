@@ -22,7 +22,8 @@ using namespace std;
 /*-- Globals -------------------------------------------------------*/
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
-const char *frontend_name = "rec_board_frontend";
+const char *frontend_name = "Stream Frontend";
+
 /* The frontend file name, don't change it */
 const char *frontend_file_name = __FILE__;
 
@@ -55,9 +56,6 @@ ofstream myfile;
 mudaq::DmaMudaqDevice * mup;
 mudaq::DmaMudaqDevice::DataBlock block;
 
-/* DB and related */
-HNDLE hdatagenerator;
-
 /*-- Function declarations -----------------------------------------*/
 
 INT frontend_init();
@@ -77,7 +75,7 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
 
 EQUIPMENT equipment[] = {
 
-   {"stream",                /* equipment name */
+   {"Stream",                /* equipment name */
     {1, 0,                   /* event ID, trigger mask */
      "SYSTEM",               /* event buffer */
      EQ_POLLED,              /* equipment type */
@@ -101,21 +99,20 @@ EQUIPMENT equipment[] = {
 
 INT frontend_init()
 {
-   HNDLE hDB;
+   HNDLE hDB, hStreamSettings;
    
-   set_equipment_status(equipment[0].name, "Initializing...", "yellow");
+   set_equipment_status(equipment[0].name, "Initializing...", "var(--myellow)");
    
-   /* Get database */
+   // Get database
    cm_get_experiment_database(&hDB, NULL);
    
-   /* Book Setting space */
-   STREAM_DATAGENERATOR_STR(stream_datagenerator_str);
-   
-   /* Map /equipment/Stream/Datagenerator (structure defined in experim.h) */
+   // Map /equipment/Stream/Settings (structure defined in experim.h)
    char set_str[255];
-   sprintf(set_str, "/Equipment/Stream/Datagenerator");
-   int status = db_create_record(hDB, 0, set_str, strcomb(stream_datagenerator_str));
-   status = db_find_key (hDB, 0, set_str, &hdatagenerator);
+   STREAM_SETTINGS_STR(stream_settings_str);
+
+   sprintf(set_str, "/Equipment/Stream/Settings");
+   int status = db_create_record(hDB, 0, set_str, strcomb(stream_settings_str));
+   status = db_find_key (hDB, 0, set_str, &hStreamSettings);
    if (status != DB_SUCCESS){
       cm_msg(MINFO,"frontend_init","Key %s not found", set_str);
       return status;
@@ -150,7 +147,7 @@ INT frontend_init()
    user_message.address = dma_buf;
    user_message.size = dma_buf_size;
    
-   /* map memory to bus addresses for FPGA */
+   // map memory to bus addresses for FPGA
    int ret_val = mup->map_pinned_dma_mem( user_message );
    
    if (ret_val < 0) {
@@ -172,7 +169,7 @@ INT frontend_init()
    mup->write_register(LED_REGISTER_W,0x0);
    usleep(5000);
    
-   set_equipment_status(equipment[0].name, "Ready for running", "green");
+   set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
    
    return SUCCESS;
 }
@@ -186,10 +183,9 @@ INT frontend_exit()
       mup->close();
       delete mup;
    }
-   
-   cout<<"frontend exit called"<<endl;
-   free( (void *)dma_buf );
-   cout<<"frontend exit done"<<endl;
+
+   // following code crashes the frontend, please fix!
+   // free( (void *)dma_buf );
    
    return SUCCESS;
 }
@@ -198,7 +194,7 @@ INT frontend_exit()
 
 INT begin_of_run(INT run_number, char *error)
 { 
-   set_equipment_status(equipment[0].name, "Starting run", "yellow");
+   set_equipment_status(equipment[0].name, "Starting run", "var(--myellow)");
    
    mudaq::DmaMudaqDevice & mu = *mup;
    
@@ -218,42 +214,49 @@ INT begin_of_run(INT run_number, char *error)
    // Enable register on FPGA for continous readout
    mu.enable_continous_readout(0);
    
-   // Get DB info for datagenerator
-   INT status,size;
-   STREAM_DATAGENERATOR sdg;  // defined in experim.h
+   // Get ODB settings for this equipment
+   HNDLE hDB, hStreamSettings;
+   INT status, size;
+   char set_str[256];
+   STREAM_SETTINGS settings;  // defined in experim.h
    
    /* Get current  settings */
-   size = sizeof(sdg);
-   
-   // HNDLE hdatagenerator obtained in frontend_init()
-   status = db_get_record(hDB, hdatagenerator, &sdg, &size, 0);
+   cm_get_experiment_database(&hDB, NULL);
+   sprintf(set_str, "/Equipment/Stream/Settings");
+   status = db_find_key (hDB, 0, set_str, &hStreamSettings);
    if (status != DB_SUCCESS) {
-      cm_msg(MERROR, "begin_of_run", "cannot retrieve datagenerotor settings record (size of ps=%d)", size);
+      cm_msg(MERROR, "begin_of_run", "cannot find stream settings record from ODB");
+      return status;
+   }
+   size = sizeof(settings);
+   status = db_get_record(hDB, hStreamSettings, &settings, &size, 0);
+   if (status != DB_SUCCESS) {
+      cm_msg(MERROR, "begin_of_run", "cannot retrieve stream settings from ODB");
       return status;
    }
    
    /* Set up data generator */
-   mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, sdg.divider);
+   mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, settings.datagenerator.divider);
    
-   uint32_t datagen_setup =0;
-   if(sdg.enable_pixel)
-      datagen_setup  = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
-   if(sdg.enable_fibre)
-      datagen_setup  = SET_DATAGENERATOR_BIT_ENABLE_FIBRE(datagen_setup);
-   if(sdg.enable_tile)
-      datagen_setup  = SET_DATAGENERATOR_BIT_ENABLE_TILE(datagen_setup);
-   datagen_setup  = SET_DATAGENERATOR_NPIXEL_RANGE(datagen_setup, sdg.npixel);
-   datagen_setup  = SET_DATAGENERATOR_NFIBRE_RANGE(datagen_setup, sdg.nfibre);
-   datagen_setup  = SET_DATAGENERATOR_NTILE_RANGE(datagen_setup, sdg.ntile);
-   if(sdg.enable)
-      datagen_setup  = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
+   uint32_t datagen_setup = 0;
+   if (settings.datagenerator.enable_pixel)
+      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+   if (settings.datagenerator.enable_fibre)
+      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_FIBRE(datagen_setup);
+   if (settings.datagenerator.enable_tile)
+      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_TILE(datagen_setup);
+   datagen_setup = SET_DATAGENERATOR_NPIXEL_RANGE(datagen_setup, settings.datagenerator.npixel);
+   datagen_setup = SET_DATAGENERATOR_NFIBRE_RANGE(datagen_setup, settings.datagenerator.nfibre);
+   datagen_setup = SET_DATAGENERATOR_NTILE_RANGE(datagen_setup, settings.datagenerator.ntile);
+   if (settings.datagenerator.enable)
+      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
    
-   cm_msg(MINFO, "begin_of_run" , "addr 0x%x" , mu.last_written_addr());
+   //cm_msg(MINFO, "begin_of_run" , "addr 0x%x" , mu.last_written_addr());
    // mu.write_register(DATAGENERATOR_REGISTER_W, datagen_setup);
    mu.write_register(DATAGENERATOR_REGISTER_W, 0xffffffff);// start data generator
    mu.write_register(LED_REGISTER_W,0xffffffff);
    
-   set_equipment_status(equipment[0].name, "Running", "#00FF00");
+   set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
    
    return SUCCESS;
 }
@@ -271,7 +274,7 @@ INT end_of_run(INT run_number, char *error)
    mu.write_register(DATAGENERATOR_REGISTER_W, 0x0);
    usleep(100000); // wait for remianing data to be pushed
    mu.disable(); // disable DMA
-   set_equipment_status(equipment[0].name, "Ready for running", "green");
+   set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
    
    return SUCCESS;
 }
@@ -286,7 +289,7 @@ INT pause_run(INT run_number, char *error)
    datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
    
-   set_equipment_status(equipment[0].name, "Paused", "yellow");
+   set_equipment_status(equipment[0].name, "Paused", "var(--myellow)");
    
    return SUCCESS;
 }
@@ -301,7 +304,7 @@ INT resume_run(INT run_number, char *error)
    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
    
-   set_equipment_status(equipment[0].name, "Running", "#00FF00");
+   set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
    
    return SUCCESS;
 }
