@@ -21,12 +21,6 @@
 
 using namespace std;
 
-
-/* make frontend functions callable from the C framework */
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*-- Globals -------------------------------------------------------*/
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
@@ -105,10 +99,6 @@ EQUIPMENT equipment[] = {
 
    {""}
 };
-
-#ifdef __cplusplus
-}
-#endif
 
 /********************************************************************\
               Callback routines for system transitions
