@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "midas.h"
+#include "msystem.h"
 #include "mcstd.h"
 #include "experim.h"
 
@@ -67,6 +68,7 @@ INT resume_run(INT run_number, char *error);
 INT frontend_loop();
 
 INT read_stream_event(char *pevent, INT off);
+INT read_stream_thread(void *param);
 
 INT poll_event(INT source, INT count, BOOL test);
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
@@ -78,18 +80,17 @@ EQUIPMENT equipment[] = {
    {"Stream",                /* equipment name */
     {1, 0,                   /* event ID, trigger mask */
      "SYSTEM",               /* event buffer */
-     EQ_POLLED,              /* equipment type */
+     EQ_USER,                /* equipment type */
      0,                      /* event source crate 0, all stations */
      "MIDAS",                /* format */
      TRUE,                   /* enabled */
-     RO_RUNNING |            /* read only when running */
-     RO_ODB,                 /* and update ODB */
+     RO_RUNNING,             /* read only when running */
      100,                    /* poll for 100ms */
      0,                      /* stop run after this event limit */
      0,                      /* number of sub events */
      0,                      /* don't log history */
      "", "", "",},
-    read_stream_event,      /* readout routine */
+    NULL,                    /* readout routine */
     },
 
    {""}
@@ -169,6 +170,12 @@ INT frontend_init()
    mup->write_register(LED_REGISTER_W,0x0);
    usleep(5000);
    
+   // create ring buffer for readout thread
+   create_event_rb(0);
+   
+   // create readout thread
+   ss_thread_create(read_stream_thread, NULL);
+      
    set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
    
    return SUCCESS;
@@ -325,7 +332,7 @@ INT poll_event(INT source, INT count, BOOL test)
  is available. If test equals TRUE, don't return. The test
  flag is used to time the polling */
 {
-   
+   /*
    if(moreevents && !test)
       return 1;
    
@@ -350,6 +357,7 @@ INT poll_event(INT source, INT count, BOOL test)
          return 1;
       }
    }
+   */
    return 0;
 }
 
@@ -364,6 +372,7 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 
 INT read_stream_event(char *pevent, INT off)
 {
+   /*
    bk_init(pevent);
    
    DWORD *pdata;
@@ -384,4 +393,73 @@ INT read_stream_event(char *pevent, INT off)
       moreevents = false;
    
    return bk_size(pevent);
+   */
+   return 0;
+}
+
+/*-- Event readout -------------------------------------------------*/
+
+INT read_stream_thread(void *param)
+{
+   EVENT_HEADER *pEventHeader;
+   void *pEventData;
+   DWORD *pdata;
+   int status;
+   
+   // tell framework that we are alive
+   signal_readout_thread_active(0, TRUE);
+   
+   // obtain ring buffer for inter-thread data exchange
+   int rbh = get_event_rbh(0);
+   
+   while (is_readout_thread_enabled()) {
+      
+      // obtain buffer space
+      status = rb_get_wp(rbh, (void **)&pEventHeader, 0);
+      if (!is_readout_thread_enabled())
+         break;
+      if (status == DB_TIMEOUT) {
+         // just sleep and try again if buffer has no space
+         ss_sleep(10); 
+         continue;
+      }
+      if (status != DB_SUCCESS)
+         break;
+      
+      // don't readout events if we are not running
+      if (run_state != STATE_RUNNING) {
+         ss_sleep(10);
+         continue;
+      }
+      
+      // check for new event
+      status = TRUE;
+      
+      if (status) {
+         // create new midas event
+         bm_compose_event(pEventHeader, equipment[0].info.event_id, 0, 0, equipment[0].serial_number++);
+         pEventData = (void *)(pEventHeader + 1);
+         
+         // init bank structure
+         bk_init32(pEventData);
+
+         // create "HEAD" bank
+         bk_create(pEventData, "HEAD", TID_DWORD, (void **)&pdata);
+         
+         for (int i=0 ; i<8 ; i++)
+            *pdata++ = rand();
+         
+         bk_close(pEventData, pdata);
+         
+         pEventHeader->data_size = bk_size(pEventData);
+         
+         // send event to ring buffer
+         rb_increment_wp(rbh, sizeof(EVENT_HEADER) + pEventHeader->data_size);
+      }
+   }
+   
+   // tell framework that we finished
+   signal_readout_thread_active(0, FALSE);
+   
+   return 0;
 }
