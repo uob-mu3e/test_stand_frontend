@@ -19,3 +19,5 @@ include/mudaq_registers.h
 .idea/*
 CMakeLists.txt.user.Z25018
 cmake-build-debug/
+*.mid
+*.mid.lz4
