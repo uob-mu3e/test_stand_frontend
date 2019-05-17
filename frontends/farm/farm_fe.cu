@@ -1,17 +1,3 @@
-/********************************************************************\
-
-  Name:         frontend.c
-  Created by:   Stefan Ritt
-  Adapted by:   Niklaus Berger
-
-  Contents:     Experiment specific readout code (user part) of
-                Midas frontend. This code is intended to run with
-                the Mainz DAQ test setup.
-
-  $Id$
-
-\********************************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -25,9 +11,12 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
+#include <sstream>
+#include <fstream>
+
 
 #include "mudaq_device.h"
-#include "mfe.h"
+
 
 using namespace std;
 
@@ -40,7 +29,7 @@ extern "C" {
 /*-- Globals -------------------------------------------------------*/
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
-const char *frontend_name = "Mu3e DAQ";
+const char *frontend_name = "rec_board_frontend";
 /* The frontend file name, don't change it */
 const char *frontend_file_name = __FILE__;
 
@@ -68,13 +57,14 @@ uint32_t newdata;
 uint32_t readindex;
 bool moreevents;
 bool firstevent;
+ofstream myfile;
 
 mudaq::DmaMudaqDevice * mup;
 mudaq::DmaMudaqDevice::DataBlock block;
 
 
 /* DB and related */
-HNDLE hdatagenerator;
+HNDLE hDB, hdatagenerator;
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -87,7 +77,6 @@ INT resume_run(INT run_number, char *error);
 INT frontend_loop();
 
 INT read_stream_event(char *pevent, INT off);
-INT read_scaler_event(char *pevent, INT off);
 
 INT poll_event(INT source, INT count, BOOL test);
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
@@ -96,7 +85,7 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
 
 EQUIPMENT equipment[] = {
 
-   {"Stream",               /* equipment name */
+   {"rec_board_frontend",               /* equipment name */
     {1, 0,                   /* event ID, trigger mask */
      "SYSTEM",               /* event buffer */
      EQ_POLLED,              /* equipment type */
@@ -111,23 +100,6 @@ EQUIPMENT equipment[] = {
      0,                      /* don't log history */
      "", "", "",},
     read_stream_event,      /* readout routine */
-    },
-
-   {"Scaler",                /* equipment name */
-    {2, 0,                   /* event ID, trigger mask */
-     "SYSTEM",               /* event buffer */
-     EQ_PERIODIC,            /* equipment type */
-     0,                      /* event source */
-     "MIDAS",                /* format */
-     TRUE,                   /* enabled */
-     RO_RUNNING | RO_TRANSITIONS |   /* read when running and on transitions */
-     RO_ODB,                 /* and update ODB */
-     10000,                  /* read every 10 sec */
-     0,                      /* stop run after this event limit */
-     0,                      /* number of sub events */
-     1,                      /* log history */
-     "", "", "",},
-    read_scaler_event,       /* readout routine */
     },
 
    {""}
@@ -167,7 +139,6 @@ EQUIPMENT equipment[] = {
 INT frontend_init()
 {
     set_equipment_status(equipment[0].name, "Initializing...", "yellow");
-    set_equipment_status(equipment[1].name, "Initializing...", "yellow");
 
     /* Get database */
     cm_get_experiment_database(&hDB, NULL);
@@ -234,10 +205,11 @@ INT frontend_init()
     mup->disable();
     // switch off the data generator (just in case..)
     mup->write_register(DATAGENERATOR_REGISTER_W, 0x0);
+    usleep(2000);
+    mup->write_register(LED_REGISTER_W,0x0);
     usleep(5000);
 
     set_equipment_status(equipment[0].name, "Ready for running", "green");
-    set_equipment_status(equipment[1].name, "Ready", "#00FF00");
 
 
    return SUCCESS;
@@ -253,7 +225,9 @@ INT frontend_exit()
         delete mup;
    }
 
+    cout<<"frontend exit called"<<endl;
     free( (void *)dma_buf );
+    cout<<"frontend exit done"<<endl;
 
    return SUCCESS;
 }
@@ -317,9 +291,21 @@ INT begin_of_run(INT run_number, char *error)
 
    // cout << "Starting!" << endl;
     cm_msg(MINFO, "begin_of_run" , "addr 0x%x" , mu.last_written_addr());
-    mu.write_register(DATAGENERATOR_REGISTER_W, datagen_setup);  // start data generator
+   // mu.write_register(DATAGENERATOR_REGISTER_W, datagen_setup);
+    mu.write_register(DATAGENERATOR_REGISTER_W, 0xffffffff);// start data generator
+    mu.write_register(LED_REGISTER_W,0xffffffff);
+
 
     set_equipment_status(equipment[0].name, "Running", "#00FF00");
+
+  //  myfile.open("/home/martin/Desktop/memory_content.txt");
+  //  if ( !myfile ) {
+  //    cout << "Could not open file " << endl;
+  //    return -1;
+  //  }
+
+  //  myfile << "begin of run " << run_number << endl;
+
 
    return SUCCESS;
 }
@@ -330,9 +316,14 @@ INT end_of_run(INT run_number, char *error)
 {
     mudaq::DmaMudaqDevice & mu = *mup;
 
+    //myfile << "stopping run " << run_number << endl;
+    //myfile.close();
+
    uint32_t datagen_setup = mu.read_register_rw(DATAGENERATOR_REGISTER_W);
    datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-   mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
+   //mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
+   mu.write_register(LED_REGISTER_W,0x0);
+   mu.write_register(DATAGENERATOR_REGISTER_W, 0x0);
    usleep(100000); // wait for remianing data to be pushed
    mu.disable(); // disable DMA
    set_equipment_status(equipment[0].name, "Ready for running", "green");
@@ -446,10 +437,10 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 INT read_stream_event(char *pevent, INT off)
 {
     // end of run reached
-    if(dma_buf[(readindex)%dma_buf_nwords] == 0xeeeeeeee){
-        moreevents = false;
-        return 0;
-    }
+   // if(dma_buf[(readindex)%dma_buf_nwords] == 0xeeeeeeee){
+   //     moreevents = false;
+   //     return 0;
+   // }
 
     //if(!moreevents)
     //cm_msg(MINFO, "read_stream_event" , "Newdata 0x%x, readindex: 0x%x, laddr: 0x%x" ,
@@ -461,98 +452,108 @@ INT read_stream_event(char *pevent, INT off)
     uint32_t read = 0;
     //    while(read < newdata){
     // Search for an event start    
-    while(dma_buf[(readindex)%dma_buf_nwords] != 0xaa3eaa3e && read < newdata){
-        if(!read)
-         cm_msg(MERROR, "read_stream_event" , "This should not happen... 0x%x, readindex: 0x%x" ,
-                dma_buf[(readindex)%dma_buf_nwords], readindex);
-        read++; readindex++;
-    }
+    //while(dma_buf[(readindex)%dma_buf_nwords] != 0xaa3eaa3e && read < newdata){
+     //   if(!read)
+         //cm_msg(MERROR, "read_stream_event" , "This should not happen... 0x%x, readindex: 0x%x" ,
+         //       dma_buf[(readindex)%dma_buf_nwords], readindex);
+        //read++; readindex++;
+    //}
     // We are at the start of an event, of which we know
     // that it is complete in the DMA buffer
     // Three word HEAD bank
     bk_create(pevent, "HEAD", TID_DWORD, (void **)&pdata);
-    for(int i =0; i < 3; i ++){
-        *pdata++ = dma_buf[(++readindex)%dma_buf_nwords];
-        read++;
-    }
-    bk_close(pevent, pdata);
+//    for(int i =0; i < 7; i ++){
 
-    readindex++; read++;
+//        readindex++;
+//    }
+
+        for(int i =0; i < 8; i ++){
+            //cout<< dma_buf[(readindex)%dma_buf_nwords]<<endl;;
+
+          //  myfile << dma_buf[readindex] << endl;
+            *pdata++ = dma_buf[readindex];
+
+            //myfile << dma_buf[(readindex)%dma_buf_nwords] << endl;
+            //*pdata++ = dma_buf[(readindex)%dma_buf_nwords];
+            readindex++;
+        }
+bk_close(pevent, pdata);
+    //readindex++; read++;
 
     //cm_msg(MDEBUG, "read_stream_event" , "Looking for pixels, found %x" ,dma_buf[(readindex)%dma_buf_size]);
 
-    // Next there could be pixel data
-    if(dma_buf[(readindex)%dma_buf_nwords] == 0xdecafbad){
-        bk_create(pevent, "PIXH", TID_DWORD, (void **)&pdata);
-        uint32_t data;
-        while(1){
-         readindex++; read++;
-         data = dma_buf[readindex%dma_buf_nwords];
-         if(data == 0xf005ba11 || data == 0xcafebabe || data == 0xdeadbee7)
-             break;
-         if((data & 0xff000000) != 0xaa000000){
-             cm_msg(MERROR, "read_stream_event" , "Wrong pixel data... 0x%x, readindex: 0x%x" ,
-                    data, readindex);
-             break;
-         }
-         *pdata++ = data;
-        }  
-        bk_close(pevent, pdata);
-    }
+//    // Next there could be pixel data
+//    if(dma_buf[(readindex)%dma_buf_nwords] == 0xdecafbad){
+//        bk_create(pevent, "PIXH", TID_DWORD, (void **)&pdata);
+//        uint32_t data;
+//        while(1){
+//         readindex++; read++;
+//         data = dma_buf[readindex%dma_buf_nwords];
+//         if(data == 0xf005ba11 || data == 0xcafebabe || data == 0xdeadbee7)
+//             break;
+//         if((data & 0xff000000) != 0xaa000000){
+//             cm_msg(MERROR, "read_stream_event" , "Wrong pixel data... 0x%x, readindex: 0x%x" ,
+//                    data, readindex);
+//             break;
+//         }
+//         *pdata++ = data;
+//        }
+//        bk_close(pevent, pdata);
+//    }
 
 
 
-   // Next there could be fibre data
-    if(dma_buf[(readindex)%dma_buf_nwords] == 0xf005ba11){
-        bk_create(pevent, "FIBH", TID_DWORD, (void **)&pdata);
-        uint32_t data;
-        while(1){
-         readindex++; read++;
-         data = dma_buf[readindex%dma_buf_nwords];
-         if(data == 0xcafebabe || data == 0xdeadbee7)
-             break;
-         if((data & 0xff000000) != 0xbb000000){
-             cm_msg(MERROR, "read_stream_event" , "Wrong fibre data... 0x%x, readindex: 0x%x" ,
-                    data, readindex);
-             break;
-         }
-         *pdata++ = data;
-        }
-        bk_close(pevent, pdata);
-    }
+//   // Next there could be fibre data
+//    if(dma_buf[(readindex)%dma_buf_nwords] == 0xf005ba11){
+//        bk_create(pevent, "FIBH", TID_DWORD, (void **)&pdata);
+//        uint32_t data;
+//        while(1){
+//         readindex++; read++;
+//         data = dma_buf[readindex%dma_buf_nwords];
+//         if(data == 0xcafebabe || data == 0xdeadbee7)
+//             break;
+//         if((data & 0xff000000) != 0xbb000000){
+//             cm_msg(MERROR, "read_stream_event" , "Wrong fibre data... 0x%x, readindex: 0x%x" ,
+//                    data, readindex);
+//             break;
+//         }
+//         *pdata++ = data;
+//        }
+//        bk_close(pevent, pdata);
+//    }
 
 
-    // Next there could be tile data
-    if(dma_buf[(readindex)%dma_buf_nwords] == 0xcafebabe){
-         bk_create(pevent, "TILH", TID_DWORD, (void **)&pdata);
-         uint32_t data;
-         while(1){
-          readindex++; read++;
-          data = dma_buf[readindex%dma_buf_nwords];
-          if(data == 0xdeadbee7)
-              break;
-          if((data & 0xff000000) != 0xcc000000){
-              cm_msg(MERROR, "read_stream_event" , "Wrong tile data... 0x%x, readindex: 0x%x" ,
-                     data, readindex);
-              break;
-          }
-          *pdata++ = data;
-         }
-         bk_close(pevent, pdata);
-     }
+//    // Next there could be tile data
+//    if(dma_buf[(readindex)%dma_buf_nwords] == 0xcafebabe){
+//         bk_create(pevent, "TILH", TID_DWORD, (void **)&pdata);
+//         uint32_t data;
+//         while(1){
+//          readindex++; read++;
+//          data = dma_buf[readindex%dma_buf_nwords];
+//          if(data == 0xdeadbee7)
+//              break;
+//          if((data & 0xff000000) != 0xcc000000){
+//              cm_msg(MERROR, "read_stream_event" , "Wrong tile data... 0x%x, readindex: 0x%x" ,
+//                     data, readindex);
+//              break;
+//          }
+//          *pdata++ = data;
+//         }
+//         bk_close(pevent, pdata);
+//     }
 
 
-     if(dma_buf[readindex%dma_buf_nwords] != 0xdeadbee7){
-         cm_msg(MERROR, "read_stream_event" , "Missed end of event 0x%x, read 0x%x" ,dma_buf[(readindex)%dma_buf_nwords], read);
-     }
-    //cm_msg(MDEBUG, "read_stream_event" , "End of event: data 0x%x, read 0x%x" , newdata, read);
-     readindex++; read++;
-     newdata -= read;
+//     if(dma_buf[readindex%dma_buf_nwords] != 0xdeadbee7){
+//         cm_msg(MERROR, "read_stream_event" , "Missed end of event 0x%x, read 0x%x" ,dma_buf[(readindex)%dma_buf_nwords], read);
+//     }
+//    //cm_msg(MDEBUG, "read_stream_event" , "End of event: data 0x%x, read 0x%x" , newdata, read);
+//     readindex++; read++;
+//     newdata -= read;
 
-     if(read < newdata && newdata < 0x10000)
-         moreevents = true;
-     else
-         moreevents = false;
+//     if(read < newdata && newdata < 0x10000)
+//         moreevents = true;
+//     else
+//         moreevents = false;
 
 
      //cm_msg(MINFO, "read_stream_event" , "At end: read 0x%x, newdata 0x%x, readindex 0x%x" , read, newdata, readindex);
@@ -560,28 +561,4 @@ INT read_stream_event(char *pevent, INT off)
      //cm_msg(MDEBUG, "read_stream_event" , "Data for next: 0x%x" ,dma_buf[(readindex)%dma_buf_nwords]);
 
      return bk_size(pevent);
-}
-
-/*-- Scaler event --------------------------------------------------*/
-
-INT read_scaler_event(char *pevent, INT off)
-{
-   DWORD *pdata;
-   mudaq::DmaMudaqDevice & mu = *mup;
-
-   /* init bank structure */
-   bk_init(pevent);
-
-   /* create CNTR bank */
-   bk_create(pevent, "CNTR", TID_DWORD, (void **)&pdata);
-
-   /* read FPGA registers with eventnum, time, addresses */
-   *pdata++ = mu.read_register_ro(EVENTCOUNTER_REGISTER_R);
-   *pdata++ = mu.read_register_ro(TIMECOUNTER_LOW_REGISTER_R);
-   *pdata++ = mu.read_register_ro(TIMECOUNTER_HIGH_REGISTER_R);
-   *pdata++ = mu.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R);
-   *pdata++ = mu.read_register_ro(MEM_WRITEADDR_HIGH_REGISTER_R);
-   bk_close(pevent, pdata);
-
-   return bk_size(pevent);
 }
