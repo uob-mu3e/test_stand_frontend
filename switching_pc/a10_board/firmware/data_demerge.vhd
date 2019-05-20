@@ -11,12 +11,12 @@ ENTITY data_demerge is
  		reset:                  in  std_logic;
 		aligned:						in  std_logic; -- word alignment achieved
 		data_in:						in  std_logic_vector(31 downto 0); -- optical from frontend board
-		datak_in:               in  std_logic_vector(31 downto 0);
+		datak_in:               in  std_logic_vector(3 downto 0);
 		data_out:					out std_logic_vector(31 downto 0); -- to sorting fifos
 		data_ready:             out std_logic;							  -- write req for sorting fifos	
 		sc_out:						out std_logic_vector(31 downto 0); -- slowcontrol from frontend board
 		sc_out_ready:				out std_logic;
-		fpga_id:						out std_logic_vector(31 downto 0)  -- FPGA ID of the connected frontend board
+		fpga_id:						out std_logic_vector(15 downto 0)  -- FPGA ID of the connected frontend board
 );
 END ENTITY data_demerge;
 
@@ -46,7 +46,7 @@ BEGIN
             demerge_state 		<= idle;
             data_ready 			<= '0';
             data_out 			<= (others => '0');
-				sc_ready				<= '0';
+				sc_out_ready				<= '0';
 				sc_out				<= (others => '0');
             
         elsif (rising_edge(clk)) then
@@ -56,7 +56,7 @@ BEGIN
 				  when idle =>
 						data_ready 			<= '0';
 						data_out 			<= (others => '0');
-						sc_ready				<= '0';
+						sc_out_ready				<= '0';
 						sc_out				<= (others => '0');
 						
 						if (datak_in(3 downto 0) = "0001" and data_in(31 downto 29)="111") then -- Mupix or MuTrig preamble
@@ -79,10 +79,10 @@ BEGIN
 						end if;
 						
 				  when receiving_slowcontrol =>
-						sc_ready						<= '1';
+						sc_out_ready						<= '1';
 						if(data_in (31 downto 0) = K284 and datak_in = K285_datak) then 
 							 demerge_state 		<= idle;
-							 sc_ready				<= '0';
+							 sc_out_ready				<= '0';
 							 sc_out					<= (others => '0');
 						else
 							 sc_out					<= data_in;

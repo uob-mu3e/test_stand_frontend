@@ -22,6 +22,14 @@ add wave -noupdate /feb_common_tb/data_read_req
 add wave -noupdate /feb_common_tb/terminated
 add wave -noupdate /feb_common_tb/reset_link
 add wave -noupdate /feb_common_tb/runnumber
+add wave -noupdate /feb_common_tb/udata_demerge/data_out
+add wave -noupdate /feb_common_tb/udata_demerge/data_ready
+add wave -noupdate /feb_common_tb/udata_demerge/sc_out
+add wave -noupdate /feb_common_tb/udata_demerge/sc_out_ready
+add wave -noupdate /feb_common_tb/udata_demerge/fpga_id
+add wave -noupdate /feb_common_tb/udata_demerge/demerge_state
+add wave -noupdate /feb_common_tb/ustate_controller/state
+add wave -noupdate /feb_common_tb/merger/merger_state
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {225425 ps} 0}
 quietly wave cursor active 1

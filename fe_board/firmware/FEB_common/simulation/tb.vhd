@@ -61,6 +61,20 @@ architecture rtl of feb_common_tb is
     );
 	end component;
 
+	component data_demerge is
+		PORT(
+			clk:                    in  std_logic; -- receive clock (156.25 MHz)
+			reset:                  in  std_logic;
+			aligned:						in  std_logic; -- word alignment achieved
+			data_in:						in  std_logic_vector(31 downto 0); -- optical from frontend board
+			datak_in:               in  std_logic_vector(3 downto 0);
+			data_out:					out std_logic_vector(31 downto 0); -- to sorting fifos
+			data_ready:             out std_logic;							  -- write req for sorting fifos	
+			sc_out:						out std_logic_vector(31 downto 0); -- slowcontrol from frontend board
+			sc_out_ready:				out std_logic;
+			fpga_id:						out std_logic_vector(15 downto 0)  -- FPGA ID of the connected frontend board
+		);
+	end component;
   
   
 
@@ -86,6 +100,13 @@ architecture rtl of feb_common_tb is
 	signal	terminated					:	std_logic;
 	signal	reset_link					: 	std_logic_vector(7 downto 0);
 	signal 	runnumber					: 	std_logic_vector(31 downto 0);
+	
+	-- on switch side:
+	signal 	data_out_switch			:	std_logic_vector(31 downto 0);
+	signal 	data_ready_switch			:	std_logic;
+	signal 	sc_out_switch				:	std_logic_vector(31 downto 0);
+	signal 	sc_ready_switch			:	std_logic;
+	signal 	fpga_id						:	std_logic_vector(15 downto 0);
 
 
 begin
@@ -96,7 +117,7 @@ begin
     port map (
       clk       => clk,
       reset     => reset,
-		fpga_ID_in 					=> (others => '0'), -- will be set by 15 jumpers in the end, set this to something random for now 
+		fpga_ID_in 					=> (5=>'1',others => '0'), -- will be set by 15 jumpers in the end, set this to something random for now 
 		FEB_type_in 		      => "001010", -- Type of the frontendboard (001010: mupix, 001000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
 		state_idle              => state_idle, -- "reset" states from state controller 
 		state_run_prepare       => state_run_prepare,
@@ -144,7 +165,20 @@ begin
         terminated => terminated
         
     );
-    
+ 
+	udata_demerge: component data_demerge 
+	port map(
+		clk                     => clk,
+		reset                   => reset,
+		aligned 						=> '1',
+		data_in 						=> data_out,
+		datak_in                => data_is_k,
+		data_out 					=> data_out_switch,
+		data_ready              => data_ready_switch,					  
+		sc_out 						=> sc_out_switch,
+		sc_out_ready 				=> sc_ready_switch,
+		fpga_id 						=> fpga_id
+	);
 	 
 
 end architecture;
