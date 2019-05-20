@@ -57,12 +57,14 @@ architecture rtl of data_merger is
 	type data_merger_state is (idle, sending_data, sending_slowcontrol);
 	--type feb_state is (idle, run_prep, sync, running, terminating, link_test, sync_test, reset_state, out_of_DAQ);
 
-	constant K285:		std_logic_vector(31 downto 0) :=x"000000c9";
-	constant K285_datak:	std_logic_vector(3 downto 0):= "0001";
-	constant run_prep_acknowledge:	std_logic_vector(31 downto 0):= x"000000fe";
+	constant K285:									std_logic_vector(31 downto 0) :=x"000000bc";
+	constant K285_datak:							std_logic_vector(3 downto 0):= "0001";
+	constant K284:									std_logic_vector(31 downto 0) :=x"0000009c";
+	constant K284_datak:							std_logic_vector(3 downto 0):= "0001";
+	constant run_prep_acknowledge:			std_logic_vector(31 downto 0):= x"000000fe";
 	constant run_prep_acknowledge_datak:	std_logic_vector(3 downto 0):= "0001";
-	constant RUN_END:	std_logic_vector(31 downto 0):= x"000000fe";
-	constant RUN_END_DATAK:	std_logic_vector(3 downto 0):= "0001";
+	constant RUN_END:								std_logic_vector(31 downto 0):= x"000000fe";
+	constant RUN_END_DATAK:						std_logic_vector(3 downto 0):= "0001";
 
 
 ----------------components------------------
@@ -153,9 +155,8 @@ process (clk, reset)
                     else 													-- slowcontrol fifo empty --> send end marker and goto idle state
 						      merger_state <= idle;
 								slowcontrol_read_req <= '0';
-                        data_out(7 downto 0) <= x"9C";
-								data_out(31 downto 8)  <= (others => '0');
-                        data_is_k <= "0001";  
+								data_out(31 downto 0)  <= K284;
+                        data_is_k <= K284_datak;  
 
                     end if;
                     
@@ -198,9 +199,8 @@ process (clk, reset)
 						else 													-- slowcontrol fifo empty --> send end marker and goto idle state
 							merger_state <= idle;
 							slowcontrol_read_req <= '0';
-							data_out(7  downto 0) <= x"9C";
-							data_out(31 downto 8)  <= (others => '0');
-							data_is_k <= "0001";  
+							data_out(31 downto 0)  <= K284;
+							data_is_k <= K284_datak;  
 
 						end if;
 					when others => 										-- it should not be possible to get here		      
@@ -241,15 +241,13 @@ process (clk, reset)
 						
 					when sending_data=>
 						if(data_fifo_empty='1') then 					-- send k285 idle, leave read req = 1 ?
-							data_out(31 downto 8) 	<= (others => '0');
-							data_out(7 downto 0)  	<=  x"9C";
-							data_is_k <= "1000";  
+							data_out(31 downto 0)  	<= K285;
+							data_is_k <= K285_datak;  
 						elsif(data_in(33 downto 32)="11") then 	-- end of event marker
 							merger_state 				<= idle;
 							data_read_req				<= '0'; 
-							data_out(31 downto 8) 	<= (others => '0');
-							data_out(7 downto 0)  	<= x"9C";
-							data_is_k 					<= "0001";
+							data_out(31 downto 0)  	<= K284;
+							data_is_k 					<= K284_datak;
 						else
 							data_read_req				<= '1';
 							data_out						<= data_in(31 downto 0);
@@ -258,15 +256,13 @@ process (clk, reset)
 						
 					when sending_slowcontrol=>
 						if(slowcontrol_fifo_empty='1') then			-- send k285 idle, leave read req = 1 ?
-							data_out(31 downto 8) 	<= (others => '0');
-							data_out(7 downto 0)  	<=  x"9C";
-							data_is_k <= "1000";
+							data_out(31 downto 0)  	<= K285;
+							data_is_k <= K285_datak;  
 						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of event marker
 							merger_state				<= idle;
 							slowcontrol_read_req		<= '0';
-							data_out(31 downto 8) 	<= (others => '0');
-							data_out(7 downto 0)  	<= x"9C";
-							data_is_k 					<= "0001";
+							data_out(31 downto 0)  	<= K284;
+							data_is_k 					<= K284_datak;
 						else
 							slowcontrol_read_req		<= '1';
 							data_out						<= data_in_slowcontrol(31 downto 0);
@@ -285,15 +281,13 @@ process (clk, reset)
 						
 					when sending_data =>
 						if(data_fifo_empty='1') then 					-- send k285 idle, leave read req = 1 ?
-							data_out(31 downto 8) 	<= (others => '0');
-							data_out(7  downto 0)  	<=  x"9C";
-							data_is_k <= "1000";  
+							data_out(31 downto 0)  	<= K285;
+							data_is_k <= K285_datak;  
 						elsif(data_in(33 downto 32)="11") then 	-- end of event marker
 							merger_state 				<= idle;
 							data_read_req				<= '0'; 
-							data_out(31 downto 8) 	<= (others => '0');
-							data_out(7  downto 0)  	<= x"9C";
-							data_is_k 					<= "0001";
+							data_out(31  downto 0)  <= K284;
+							data_is_k 					<= K284_datak;
 						else
 							data_read_req				<= '1';
 							data_out						<= data_in(31 downto 0);
@@ -302,15 +296,13 @@ process (clk, reset)
 						
 					when sending_slowcontrol =>
 						if(slowcontrol_fifo_empty='1') then			-- send k285 idle, leave read req = 1 ?
-							data_out(31 downto 8) 	<= (others => '0');
-							data_out(7 downto 0)  	<=  x"9C";
-							data_is_k <= "1000";
+							data_out(31 downto 0)  	<= K285;
+							data_is_k <= K285_datak;  
 						elsif(data_in_slowcontrol(33 downto 32)= "11") then-- end of event marker
 							merger_state				<= idle;
 							slowcontrol_read_req		<= '0';
-							data_out(31 downto 8) 	<= (others => '0');
-							data_out(7 downto 0)  	<= x"9C";
-							data_is_k 					<= "0001";
+							data_out(31 downto 0)  	<= K284;
+							data_is_k 					<= K284_datak;
 						else
 							slowcontrol_read_req		<= '1';
 							data_out						<= data_in_slowcontrol(31 downto 0);
@@ -333,9 +325,8 @@ process (clk, reset)
 						else 													-- slowcontrol fifo empty --> send end marker and goto idle state
 							merger_state <= idle;
 							slowcontrol_read_req <= '0';
-							data_out(7  downto 0) <= x"9C";
-							data_out(31 downto 8)  <= (others => '0');
-							data_is_k <= "0001";  
+							data_out(31  downto 0) <= K284;
+							data_is_k <= K284_datak;  
 
 						end if;
 					when others => 										-- it should not be possible to get here		      
