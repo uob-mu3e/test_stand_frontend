@@ -81,7 +81,6 @@ int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
 
     SendPacket();
 
-    cout << "Sent packet" << endl;
     vector<uint32_t> receivebuffer(ntransactions+1,0);
 
     usleep(1000);
@@ -120,8 +119,6 @@ int ipbus::read(uint32_t addr, uint8_t size, vector<uint32_t> &data, bool nonicr
     sendbuffer.push_back(header);
     sendbuffer.push_back(addr);
     SendPacket();
-
-    cout << "Sent packet" << endl;
 
     vector<uint32_t> receivebuffer(size+1,0);
     usleep(1000);
@@ -258,12 +255,13 @@ int ipbus::ReadFromSocket(vector<uint32_t> & rbuffer)
         std::cerr << e.what() << endl;
     }
 
+    /*
     cout << "Bytes received " << nbyte << endl;
     cout << hex;
     for(int i=0; i < nbyte/4; i++){
         cout << rbuffer[i] << " ";
     }
-    cout << endl;
+    cout << endl;*/
 
     return nbyte;
 }

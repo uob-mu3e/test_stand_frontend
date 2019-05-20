@@ -9,12 +9,40 @@ public:
     clockboard(const char * addr, int port);
     bool isConnected(){return bus.isConnected();}
 
+    // I2C interface
     int init_12c();
     int read_i2c(uint8_t dev_addr, uint8_t &data);
+    int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data);
+    int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
 
+    int write_i2c(uint8_t dev_addr, uint8_t data);
+    int write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data);
+    int write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
+
+    // SI3545 programming - note that this uses the register map
+    // generated with the clock builder tool
+    int load_SI3545_reg_map(uint8_t dev_addr);
+
+    // Firefly interface
+    uint16_t read_disabled_tx_channels();
+    int disable_tx_channels(uint16_t channels);
+
+    uint16_t read_inverted_tx_channels();
+    int invert_tx_channels(uint16_t channels);
+
+    int set_rx_amplitude(uint8_t amplitude);
+    int set_rx_emphasis(uint8_t emphasis);
+
+    vector<uint8_t> read_rx_amplitude();
+    vector<uint8_t> read_rx_emphasis();
 
 protected:
     ipbus bus;
+
+    //I2C helpers
+    uint32_t checkTIP();
+    uint32_t checkBUSY();
+    int setSlave(uint8_t dev_addr, bool write_bit=true);
 
     const uint32_t ADDR_FIFO_REG_OUT        = 0x0;
     const uint32_t ADDR_FIFO_REG_CHARISK    = 0x2;
@@ -32,6 +60,41 @@ protected:
     const uint32_t ADDR_I2C_CTRL            = 0xA;
     const uint32_t ADDR_I2C_DATA            = 0xB;
     const uint32_t ADDR_I2C_CMD_STAT        = 0xC;
+
+    const uint32_t I2C_BIT_WRITE            = 0x1;
+    const uint32_t I2C_BIT_TIP              = 0x2;
+    const uint32_t I2C_BIT_NOACK            = 0x80;
+    const uint32_t I2C_BIT_BUSY             = 0x40;
+
+    const uint32_t I2C_CMD_START            = 0x90;
+    const uint32_t I2C_CMD_READ             = 0x20;
+    const uint32_t I2C_CMD_READPLUSNACK     = 0x28;
+    const uint32_t I2C_CMD_STOP             = 0x40;
+    const uint32_t I2C_CMD_WRITE            = 0x10;
+
+    const uint8_t FIREFLY_TX_ADDR           = 0x50;
+    const uint8_t FIREFLY_RX_ADDR           = 0x54;
+
+    const uint8_t FIREFLY_DISABLE_HI_ADDR   = 0x34;
+    const uint8_t FIREFLY_DISABLE_LO_ADDR   = 0x35;
+
+    const uint8_t FIREFLY_INVERT_HI_ADDR   = 0x3A;
+    const uint8_t FIREFLY_INVERT_LO_ADDR   = 0x3B;
+
+    const uint8_t FIREFLY_RX_AMP_0_1_ADDR  = 0x43;
+    const uint8_t FIREFLY_RX_AMP_2_3_ADDR  = 0x42;
+    const uint8_t FIREFLY_RX_AMP_4_5_ADDR  = 0x41;
+    const uint8_t FIREFLY_RX_AMP_6_7_ADDR  = 0x40;
+    const uint8_t FIREFLY_RX_AMP_8_9_ADDR  = 0x3F;
+    const uint8_t FIREFLY_RX_AMP_A_B_ADDR  = 0x3E;
+
+    const uint8_t FIREFLY_RX_EMP_0_1_ADDR  = 0x49;
+    const uint8_t FIREFLY_RX_EMP_2_3_ADDR  = 0x48;
+    const uint8_t FIREFLY_RX_EMP_4_5_ADDR  = 0x47;
+    const uint8_t FIREFLY_RX_EMP_6_7_ADDR  = 0x46;
+    const uint8_t FIREFLY_RX_EMP_8_9_ADDR  = 0x45;
+    const uint8_t FIREFLY_RX_EMP_A_B_ADDR  = 0x44;
+
 
 };
 
