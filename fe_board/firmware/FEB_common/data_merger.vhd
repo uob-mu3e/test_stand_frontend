@@ -15,17 +15,19 @@
 -- trailer content ? (k28.4, and ??????)
 --	Fifo runs empty --> can i leave read req = 1 with protection circuit ? (alternative would need 2 clock) 
 
+
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.protocol_new.all;
+--use work.protocol_new.all;
 
 ENTITY data_merger_new is 
     PORT(
         clk:                    in  std_logic; -- 156.25 clk input
         reset:                  in  std_logic; 
-		  fpga_ID_in:				  in  std_logic_vector(15 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now 
-		  FEB_type_in:				  in  std_logic_vector(5  downto 0); -- Type of the frontendboard (001010: mupix, 001000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
+	fpga_ID_in:		in  std_logic_vector(15 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now 
+	FEB_type_in:		in  std_logic_vector(5  downto 0); -- Type of the frontendboard (001010: mupix, 001000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
         state_idle:             in  std_logic; -- "reset" states from state controller 
         state_run_prepare:      in  std_logic;
         state_sync:             in  std_logic;
@@ -37,29 +39,50 @@ ENTITY data_merger_new is
         state_out_of_DAQ:       in  std_logic;
         data_out:               out std_logic_vector(31 downto 0); -- to optical transm.
         data_is_k:              out std_logic_vector(3 downto 0); -- to optical trasm.
-        data_in:          		  in  std_logic_vector(35 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
+        data_in:		in  std_logic_vector(35 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
         data_in_slowcontrol:    in  std_logic_vector(35 downto 0); -- data input slowcontrol from SCFIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 SCData))
         slowcontrol_fifo_empty: in  std_logic;
-+/        data_fifo_empty:        in  std_logic;
+	data_fifo_empty:	in  std_logic;
         slowcontrol_read_req:   out std_logic;
         data_read_req:          out std_logic;
-		  terminated:             out std_logic; -- to state controller (when stop run acknowledge was transmitted the state controller can go from terminating into idle, this is the signal to tell him that)
-		  override_data_in:		  in  std_logic_vector(31 downto 0); -- data input for states link_test and sync_test;
-		  override_data_is_k_in:  in  std_logic_vector(3 downto 0);
-		  leds:						  out std_logic_vector(3 downto 0) -- debug
+	terminated:             out std_logic; -- to state controller (when stop run acknowledge was transmitted the state controller can go from terminating into idle, this is the signal to tell him that)
+	override_data_in:	in  std_logic_vector(31 downto 0); -- data input for states link_test and sync_test;
+	override_data_is_k_in:  in  std_logic_vector(3 downto 0);
+	leds:			out std_logic_vector(3 downto 0) -- debug
         
     );
 END ENTITY data_merger_new;
 
 architecture rtl of data_merger_new is
 
+	    type data_merger_state is (idle, sending_data, sending_slowcontrol);
+    --type feb_state is (idle, run_prep, sync, running, terminating, link_test, sync_test, reset_state, out_of_DAQ);
+
+    constant HEADER_K:    std_logic_vector(31 downto 0) := x"000000bc";
+	 constant HEADER_K_DATAK:    std_logic_vector(3 downto 0) := "0001";
+	 constant WORD_ALIGN:    std_logic_vector(31 downto 0) := x"beefcafe";
+    constant DATA_HEADER_ID:    std_logic_vector(5 downto 0) := "111010";
+    constant DATA_SUB_HEADER_ID:    std_logic_vector(5 downto 0) := "111111";
+    constant ACTIVE_SIGNAL_HEADER_ID:    std_logic_vector(5 downto 0) := "111101";
+    constant RUN_TAIL_HEADER_ID:    std_logic_vector(5 downto 0) := "111110";
+    constant TIMING_MEAS_HEADER_ID:    std_logic_vector(5 downto 0) := "111100";
+    constant SC_HEADER_ID:    std_logic_vector(5 downto 0) := "111011"; 
+	constant K285:		std_logic_vector(31 downto 0) :=x"000000c9";
+	constant K285_datak:	std_logic_vector(3 downto 0):= "0001";
+	constant run_prep_acknowledge:	std_logic_vector(31 downto 0):= x"000000fe";
+	constant run_prep_acknowledge_datak:	std_logic_vector(3 downto 0):= "0001";
+	constant RUN_END:	std_logic_vector(31 downto 0):= x"000000fe";
+	constant RUN_END_DATAK:	std_logic_vector(3 downto 0):= "0001";
+
+
 ----------------components------------------
 
 
 ----------------signals---------------------
-    signal merger_state 					: data_merger_state;
-	 signal run_prep_acknowledge_send  	: std_logic;
-	 
+	signal merger_state 					: data_merger_state;
+	signal run_prep_acknowledge_send  	: std_logic;
+
+
 ----------------begin data merger------------------------
 
 BEGIN
@@ -107,7 +130,7 @@ process (clk, reset)
                     data_is_k <=K285_datak;
 						  
 		  ------------------------------- feb state idle  ---------------------------------------------
-        elsif(idle = '1')then
+        elsif(state_idle = '1')then
             run_prep_acknowledge_send <= '0';
 				
             case merger_state is
@@ -119,7 +142,7 @@ process (clk, reset)
 								
 								-- send SC header:
 								data_is_k 					<= "0001"; 
-								data_out (31 downto 26) <= "000111"
+								data_out (31 downto 26) <= "000111";
 								data_out (25 downto 24)	<= data_in_slowcontrol(35 downto 34);
 								data_out (23 downto 8)  <= fpga_ID_in;
 								data_out (7  downto 0) 	<= x"bc";
@@ -134,7 +157,7 @@ process (clk, reset)
                     
                 when sending_slowcontrol => 							-- slowcontrol header is trasmitted, send slowcontrol data now
                     if slowcontrol_fifo_empty = '0' then 		-- send slowcontrol data
-						      data_out <= data_in_slowcontrol;
+						      data_out <= data_in_slowcontrol(31 downto 0);
                         data_is_k <= "0000";
 								slowcontrol_read_req <= '1';
                     else 													-- slowcontrol fifo empty --> send end marker and goto idle state
@@ -169,7 +192,7 @@ process (clk, reset)
 							slowcontrol_read_req <= '1'; 				-- need 2 cycles to get new data from fifo --> start reading now
 							-- send SC header:
 							data_is_k 					<= "0001"; 
-							data_out (31 downto 26) <= "000111"
+							data_out (31 downto 26) <= "000111";
 							data_out (25 downto 24)	<= data_in_slowcontrol(35 downto 34);
 							data_out (23 downto 8)  <= fpga_ID_in;
 							data_out (7  downto 0) 	<= x"bc";
@@ -179,7 +202,7 @@ process (clk, reset)
 					when sending_slowcontrol =>
 						-- slowcontrol header is trasmitted, send slowcontrol data now
 						if slowcontrol_fifo_empty = '0' then 		-- send slowcontrol data
-							data_out <= data_in_slowcontrol;
+							data_out <= data_in_slowcontrol(31 downto 0);
 							data_is_k <= "0000";
 							slowcontrol_read_req <= '1';
 						else 													-- slowcontrol fifo empty --> send end marker and goto idle state
@@ -198,7 +221,7 @@ process (clk, reset)
 		  ------------------------------- feb state running   ---------------------------------------------			
 			elsif(state_running = '1') then
 				run_prep_acknowledge_send <= '0';
-				case merger_state 
+				case merger_state is
 					when idle =>
 						if (slowcontrol_fifo_empty = '1' and data_fifo_empty = '1') then -- no data, state is idle --> do nothing
 							slowcontrol_read_req 	<= '0';
@@ -209,7 +232,7 @@ process (clk, reset)
 							slowcontrol_read_req <= '1'; 				-- need 2 cycles to get new data from fifo --> start reading now
 							-- send SC header:
 							data_is_k 					<= "0001"; 
-							data_out (31 downto 26) <= "000111"
+							data_out (31 downto 26) <= "000111";
 							data_out (25 downto 24)	<= data_in_slowcontrol(35 downto 34);
 							data_out (23 downto 8)  <= fpga_ID_in;
 							data_out (7  downto 0) 	<= x"bc";
@@ -248,7 +271,7 @@ process (clk, reset)
 							data_out(31 downto 8) 	<= (others => '0');
 							data_out(7 downto 0)  	<=  x"9C";
 							data_is_k <= "1000";
-						elsif(data_in_slowcontrol(33 downto 32)= "11")-- end of event marker
+						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of event marker
 							merger_state				<= idle;
 							slowcontrol_read_req		<= '0';
 							data_out(31 downto 8) 	<= (others => '0');
@@ -259,10 +282,12 @@ process (clk, reset)
 							data_out						<= data_in_slowcontrol(31 downto 0);
 							data_is_k					<= "0000";
 						end if;
+					when others =>
+
 				end case;
 		  ------------------------------- feb state terminating  ---------------------------------------------		
 		  elsif (state_terminating = '1') then
-				case merger_state
+				case merger_state is
 					when idle =>
 						terminated <= '1';
 						data_out 					<= RUN_END;
@@ -290,7 +315,7 @@ process (clk, reset)
 							data_out(31 downto 8) 	<= (others => '0');
 							data_out(7 downto 0)  	<=  x"9C";
 							data_is_k <= "1000";
-						elsif(data_in_slowcontrol(33 downto 32)= "11")-- end of event marker
+						elsif(data_in_slowcontrol(33 downto 32)= "11") then-- end of event marker
 							merger_state				<= idle;
 							slowcontrol_read_req		<= '0';
 							data_out(31 downto 8) 	<= (others => '0');
@@ -312,7 +337,7 @@ process (clk, reset)
 					when sending_slowcontrol =>
 						-- slowcontrol header is trasmitted, send slowcontrol data now
 						if slowcontrol_fifo_empty = '0' then 		-- send slowcontrol data
-							data_out <= data_in_slowcontrol;
+							data_out <= data_in_slowcontrol(31 downto 0);
 							data_is_k <= "0000";
 							slowcontrol_read_req <= '1';
 						else 													-- slowcontrol fifo empty --> send end marker and goto idle state
@@ -330,6 +355,5 @@ process (clk, reset)
 				end case;
 		  end if;
 	  end if;
-end process;
-    
+end process;    
 END rtl;
