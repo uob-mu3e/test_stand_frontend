@@ -75,6 +75,21 @@ architecture rtl of feb_common_tb is
 			fpga_id:						out std_logic_vector(15 downto 0)  -- FPGA ID of the connected frontend board
 		);
 	end component;
+	
+	component mergerfifo
+		PORT
+		(
+			data			: IN STD_LOGIC_VECTOR (35 DOWNTO 0);
+			rdclk			: IN STD_LOGIC ;
+			rdreq			: IN STD_LOGIC ;
+			wrclk			: IN STD_LOGIC ;
+			wrreq			: IN STD_LOGIC ;
+			q				: OUT STD_LOGIC_VECTOR (35 DOWNTO 0);
+			rdempty		: OUT STD_LOGIC ;
+			wrfull		: OUT STD_LOGIC 
+		);
+	end component;
+
   
   
 
@@ -107,6 +122,11 @@ architecture rtl of feb_common_tb is
 	signal 	sc_out_switch				:	std_logic_vector(31 downto 0);
 	signal 	sc_ready_switch			:	std_logic;
 	signal 	fpga_id						:	std_logic_vector(15 downto 0);
+	
+	signal 	data_test_input			:	std_logic_vector(35 downto 0);
+	signal 	sc_test_input				:	std_logic_vector(35 downto 0);
+	signal 	wrreq_sc						:	std_logic;
+	signal 	wrreq_data					: 	std_logic;
 
 
 begin
@@ -118,7 +138,7 @@ begin
       clk       => clk,
       reset     => reset,
 		fpga_ID_in 					=> (5=>'1',others => '0'), -- will be set by 15 jumpers in the end, set this to something random for now 
-		FEB_type_in 		      => "001010", -- Type of the frontendboard (001010: mupix, 001000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
+		FEB_type_in 		      => "111010", -- Type of the frontendboard (111010: mupix, 111000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
 		state_idle              => state_idle, -- "reset" states from state controller 
 		state_run_prepare       => state_run_prepare,
 		state_sync              => state_sync,
@@ -178,6 +198,30 @@ begin
 		sc_out 						=> sc_out_switch,
 		sc_out_ready 				=> sc_ready_switch,
 		fpga_id 						=> fpga_id
+	);
+	
+   fifo_sc : component mergerfifo 
+	PORT MAP (
+		data	 => sc_test_input,
+		rdclk	 => clk,
+		rdreq	 => slowcontrol_read_req,
+		wrclk	 => clk,
+		wrreq	 => wrreq_sc,
+		q	 => data_in_slowcontrol,
+		rdempty	 => slowcontrol_fifo_empty,
+		wrfull	 => open
+	);
+	
+	fifo_data : component mergerfifo 
+	PORT MAP (
+		data	 => data_test_input,
+		rdclk	 => clk,
+		rdreq	 => data_read_req,
+		wrclk	 => clk,
+		wrreq	 => wrreq_data,
+		q	 => data_in,
+		rdempty	 => data_fifo_empty,
+		wrfull	 => open
 	);
 	 
 
