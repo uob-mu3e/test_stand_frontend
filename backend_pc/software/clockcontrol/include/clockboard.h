@@ -36,6 +36,16 @@ public:
     vector<uint8_t> read_rx_amplitude();
     vector<uint8_t> read_rx_emphasis();
 
+    // Daughter cards
+    int enable_daughter_12c(uint8_t dev_addr, uint8_t i2c_bus_num);
+    int disable_daughter_12c(uint8_t dev_addr);
+
+    int read_daughter_board_current(uint8_t dev_addr);
+    int read_mother_board_current(uint8_t dev_addr);
+
+    int read_daughter_board_voltage(uint8_t dev_addr);
+    int read_mother_board_voltage(uint8_t dev_addr);
+
 protected:
     ipbus bus;
 
@@ -95,6 +105,11 @@ protected:
     const uint8_t FIREFLY_RX_EMP_8_9_ADDR  = 0x45;
     const uint8_t FIREFLY_RX_EMP_A_B_ADDR  = 0x44;
 
+    const uint8_t I2C_MUX_POWER_ADDR       = 0x4;
+    const uint8_t I2C_DAUGHTER_CURRENT_ADDR= 0x40;
+    const uint8_t I2C_MOTHER_CURRENT_ADDR  = 0x40;
+    const uint8_t I2C_SHUNT_VOLTAGE_REG_ADDR = 0x1;
+    const uint8_t I2C_BUS_VOLTAGE_REG_ADDR = 0x2;
 
 };
 

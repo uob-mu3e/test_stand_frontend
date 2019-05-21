@@ -299,7 +299,61 @@ vector<uint8_t> clockboard::read_rx_emphasis()
     return res;
 }
 
+int clockboard::enable_daughter_12c(uint8_t dev_addr, uint8_t i2c_bus_num)
+{
+    return write_i2c(dev_addr, i2c_bus_num);
+}
 
+int clockboard::disable_daughter_12c(uint8_t dev_addr)
+{
+    return write_i2c(dev_addr, 0x0);
+}
+
+int clockboard::read_daughter_board_current(uint8_t dev_addr)
+{
+    uint8_t data[2];
+    enable_daughter_12c(dev_addr,I2C_MUX_POWER_ADDR);
+    if(!read_i2c_reg(I2C_DAUGHTER_CURRENT_ADDR,I2C_SHUNT_VOLTAGE_REG_ADDR,2,data))
+        return -1;
+    //The factor of 2 comes from the 5mOhm shunt resistor
+    // Current is now in mA
+    int current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*2;
+    disable_daughter_12c(dev_addr);
+    return current;
+}
+
+int clockboard::read_mother_board_current(uint8_t dev_addr)
+{
+    uint8_t data[2];
+    if(!read_i2c_reg(I2C_MOTHER_CURRENT_ADDR,I2C_SHUNT_VOLTAGE_REG_ADDR,2,data))
+        return -1;
+    //The factor of 2 comes from the 5mOhm shunt resistor
+    // Current is now in mA
+    int current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*2;
+    return current;
+}
+
+int clockboard::read_daughter_board_voltage(uint8_t dev_addr)
+{
+    uint8_t data[2];
+    enable_daughter_12c(dev_addr,I2C_MUX_POWER_ADDR);
+    if(!read_i2c_reg(I2C_DAUGHTER_CURRENT_ADDR,I2C_BUS_VOLTAGE_REG_ADDR,2,data))
+        return -1;
+    // 1 = 4mV - *4 gives voltage in mV
+    int current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*4;
+    disable_daughter_12c(dev_addr);
+    return current;
+}
+
+int clockboard::read_mother_board_voltage(uint8_t dev_addr)
+{
+    uint8_t data[2];
+    if(!read_i2c_reg(I2C_MOTHER_CURRENT_ADDR,I2C_BUS_VOLTAGE_REG_ADDR,2,data))
+        return -1;
+    // 1 = 4mV - *4 gives voltage in mV
+    int current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*4;
+    return current;
+}
 
 uint32_t clockboard::checkTIP()
 {
