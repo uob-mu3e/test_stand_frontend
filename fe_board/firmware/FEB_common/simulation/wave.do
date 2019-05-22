@@ -232,14 +232,14 @@ run
 run
 force -freeze sim:/feb_common_tb/reset_link x\"21\" 0
 run
-force -freeze sim:/feb_common_tb/reset_link x\"bc\" 0\
+force -freeze sim:/feb_common_tb/reset_link x\"bc\" 0
 run 24 ns
 
 
 # fifos running empty
 
 force -freeze sim:/feb_common_tb/fifo_sc/wrreq 1 0
-force -freeze sim:/feb_common_tb/fifo_sc/data 001100000000000101010101010101010101 0
+force -freeze sim:/feb_common_tb/fifo_sc/data 001000000000000101010101010101010101 0
 run
 force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000000 0
 run
@@ -260,5 +260,67 @@ run
 force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000001000 0
 run 
 force -freeze sim:/feb_common_tb/fifo_sc/data 001100000000000000000000000000001001 0
+run
 force -freeze sim:/feb_common_tb/fifo_sc/wrreq 0 0
 run 80 ns
+
+# what was that ?? (demerger slowcontrol arrived earlier than i expected)
+
+force -freeze sim:/feb_common_tb/fifo_sc/wrreq 1 0
+force -freeze sim:/feb_common_tb/fifo_sc/data 001000000000000101010101010101010101 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000000 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000001 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000010 0
+force -freeze sim:/feb_common_tb/fifo_sc/wrreq 0 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000011 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000100 0
+force -freeze sim:/feb_common_tb/fifo_sc/wrreq 1 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000101 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000111 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000001000 0
+run 
+force -freeze sim:/feb_common_tb/fifo_sc/data 001100000000000000000000000000001001 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/wrreq 0 0
+run 80 ns
+
+# what was that ?? (demerger slowcontrol again earlier than expected)
+
+force -freeze sim:/feb_common_tb/fifo_sc/wrreq 1 0
+force -freeze sim:/feb_common_tb/fifo_sc/data 001000000000000101010101010101010101 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000000 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000001 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000010 0
+force -freeze sim:/feb_common_tb/fifo_sc/wrreq 0 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000011 0
+force -freeze sim:/feb_common_tb/fifo_sc/wrreq 1 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000100 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000101 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000000111 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/data 000000000000000000000000000000001000 0
+run 
+force -freeze sim:/feb_common_tb/fifo_sc/data 001100000000000000000000000000001001 0
+run
+force -freeze sim:/feb_common_tb/fifo_sc/wrreq 0 0
+run 80 ns
+
+# reason for this : read req for fifo stays 1 when fifo runs empty 
+# --> restart is 1 cycle faster compared to start from idle
+# --> 1 empty cycle per packet will not show up on switching pc side
+# this is fine, show-ahead fifo, underflow checking is enabled per default, rdreq acts as read acknowledge

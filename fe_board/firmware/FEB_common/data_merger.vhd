@@ -129,15 +129,18 @@ process (clk, reset)
 						end if;
 					when sending_slowcontrol =>
 						-- slowcontrol header is trasmitted, send slowcontrol data now
-						if slowcontrol_fifo_empty = '0' then 		-- send slowcontrol data
-							data_out 					<= data_in_slowcontrol(31 downto 0);
-							data_is_k 					<= "0000";
-							slowcontrol_read_req 	<= '1';
-						else 													-- slowcontrol fifo empty --> send end marker and goto idle state
+						if(slowcontrol_fifo_empty='1') then			-- send k285 idle, leave read req = 1 ?
+							data_out(31 downto 0)  	<= K285;
+							data_is_k <= K285_datak;  
+						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of packet marker
 							merger_state				<= idle;
-							slowcontrol_read_req 	<= '0';
-							data_out(31  downto 0) 	<= K284;
-							data_is_k 					<= K284_datak;  
+							slowcontrol_read_req		<= '0';
+							data_out(31 downto 0)  	<= K284;
+							data_is_k 					<= K284_datak;
+						else
+							slowcontrol_read_req		<= '1';
+							data_out						<= data_in_slowcontrol(31 downto 0);
+							data_is_k					<= "0000";
 						end if;
 					when others =>
 					-- state controller does not allow to go from running or terminating into *_test state 
@@ -191,17 +194,19 @@ process (clk, reset)
                     end if;
                     
                 when sending_slowcontrol => 							-- slowcontrol header is trasmitted, send slowcontrol data now
-                    if slowcontrol_fifo_empty = '0' then 		-- send slowcontrol data
-						      data_out <= data_in_slowcontrol(31 downto 0);
-                        data_is_k <= "0000";
-								slowcontrol_read_req <= '1';
-                    else 													-- slowcontrol fifo empty --> send end marker and goto idle state
-						      merger_state <= idle;
-								slowcontrol_read_req <= '0';
-								data_out(31 downto 0)  <= K284;
-                        data_is_k <= K284_datak;  
-
-                    end if;
+						if(slowcontrol_fifo_empty='1') then			-- send k285 idle, leave read req = 1 ?
+							data_out(31 downto 0)  	<= K285;
+							data_is_k <= K285_datak;  
+						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of packet marker
+							merger_state				<= idle;
+							slowcontrol_read_req		<= '0';
+							data_out(31 downto 0)  	<= K284;
+							data_is_k 					<= K284_datak;
+						else
+							slowcontrol_read_req		<= '1';
+							data_out						<= data_in_slowcontrol(31 downto 0);
+							data_is_k					<= "0000";
+						end if;
                     
                 when others =>											-- send data state in FEB state idle should not happen (except if this is the end of *_test state) --> goto merger state idle
                     merger_state <= idle;
@@ -236,16 +241,18 @@ process (clk, reset)
 			  
 					when sending_slowcontrol =>
 						-- slowcontrol header is trasmitted, send slowcontrol data now
-						if slowcontrol_fifo_empty = '0' then 		-- send slowcontrol data
-							data_out <= data_in_slowcontrol(31 downto 0);
-							data_is_k <= "0000";
-							slowcontrol_read_req <= '1';
-						else 													-- slowcontrol fifo empty --> send end marker and goto idle state
-							merger_state <= idle;
-							slowcontrol_read_req <= '0';
-							data_out(31 downto 0)  <= K284;
-							data_is_k <= K284_datak;  
-
+						if(slowcontrol_fifo_empty='1') then			-- send k285 idle, leave read req = 1 ?
+							data_out(31 downto 0)  	<= K285;
+							data_is_k <= K285_datak;  
+						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of packet marker
+							merger_state				<= idle;
+							slowcontrol_read_req		<= '0';
+							data_out(31 downto 0)  	<= K284;
+							data_is_k 					<= K284_datak;
+						else
+							slowcontrol_read_req		<= '1';
+							data_out						<= data_in_slowcontrol(31 downto 0);
+							data_is_k					<= "0000";
 						end if;
 					when others => 										-- it should not be possible to get here		      
 						merger_state <= idle;
@@ -287,7 +294,7 @@ process (clk, reset)
 						if(data_fifo_empty='1') then 					-- send k285 idle, leave read req = 1 ?
 							data_out(31 downto 0)  	<= K285;
 							data_is_k <= K285_datak;  
-						elsif(data_in(33 downto 32)="11") then 	-- end of event marker
+						elsif(data_in(33 downto 32)="11") then 	-- end of packet marker
 							merger_state 				<= idle;
 							data_read_req				<= '0'; 
 							data_out(31 downto 0)  	<= K284;
@@ -302,7 +309,7 @@ process (clk, reset)
 						if(slowcontrol_fifo_empty='1') then			-- send k285 idle, leave read req = 1 ?
 							data_out(31 downto 0)  	<= K285;
 							data_is_k <= K285_datak;  
-						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of event marker
+						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of packet marker
 							merger_state				<= idle;
 							slowcontrol_read_req		<= '0';
 							data_out(31 downto 0)  	<= K284;
@@ -327,7 +334,7 @@ process (clk, reset)
 						if(data_fifo_empty='1') then 					-- send k285 idle, leave read req = 1 ?
 							data_out(31 downto 0)  	<= K285;
 							data_is_k <= K285_datak;  
-						elsif(data_in(33 downto 32)="11") then 	-- end of event marker
+						elsif(data_in(33 downto 32)="11") then 	-- end of packet marker
 							merger_state 				<= idle;
 							data_read_req				<= '0'; 
 							data_out(31  downto 0)  <= K284;
@@ -342,7 +349,7 @@ process (clk, reset)
 						if(slowcontrol_fifo_empty='1') then			-- send k285 idle, leave read req = 1 ?
 							data_out(31 downto 0)  	<= K285;
 							data_is_k <= K285_datak;  
-						elsif(data_in_slowcontrol(33 downto 32)= "11") then-- end of event marker
+						elsif(data_in_slowcontrol(33 downto 32)= "11") then-- end of packet marker
 							merger_state				<= idle;
 							slowcontrol_read_req		<= '0';
 							data_out(31 downto 0)  	<= K284;
@@ -362,16 +369,18 @@ process (clk, reset)
                     data_is_k <=K285_datak;
 					when sending_slowcontrol =>
 						-- slowcontrol header is trasmitted, send slowcontrol data now
-						if slowcontrol_fifo_empty = '0' then 		-- send slowcontrol data
-							data_out <= data_in_slowcontrol(31 downto 0);
-							data_is_k <= "0000";
-							slowcontrol_read_req <= '1';
-						else 													-- slowcontrol fifo empty --> send end marker and goto idle state
-							merger_state <= idle;
-							slowcontrol_read_req <= '0';
-							data_out(31  downto 0) <= K284;
-							data_is_k <= K284_datak;  
-
+						if(slowcontrol_fifo_empty='1') then			-- send k285 idle, leave read req = 1 ?
+							data_out(31 downto 0)  	<= K285;
+							data_is_k <= K285_datak;  
+						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of packet marker
+							merger_state				<= idle;
+							slowcontrol_read_req		<= '0';
+							data_out(31 downto 0)  	<= K284;
+							data_is_k 					<= K284_datak;
+						else
+							slowcontrol_read_req		<= '1';
+							data_out						<= data_in_slowcontrol(31 downto 0);
+							data_is_k					<= "0000";
 						end if;
 					when others => 										-- it should not be possible to get here		      
 						merger_state <= idle;

@@ -74,6 +74,10 @@ BEGIN
 							 demerge_state 		<= idle;
 							 data_ready				<= '0';					-- TODO: do something with the trailer bits (31 downto 8) here (They are used for Mutrig, DAQ Week 2019)
 							 data_out				<= (others => '0');
+							 
+						elsif(data_in (31 downto 0)= K285 and datak_in = K285_datak) then
+							 data_ready				<= '0';
+							 data_out				<= (others => '0');
 						else
 							 data_out				<= data_in;
 						end if;
@@ -82,7 +86,10 @@ BEGIN
 						sc_out_ready						<= '1';
 						if(data_in (31 downto 0) = K284 and datak_in = K285_datak) then 
 							 demerge_state 		<= idle;
-							 sc_out_ready				<= '0';
+							 sc_out_ready			<= '0';
+							 sc_out					<= (others => '0');
+						elsif(data_in (31 downto 0)= K285 and datak_in = K285_datak) then
+							 sc_out_ready			<= '0';
 							 sc_out					<= (others => '0');
 						else
 							 sc_out					<= data_in;
