@@ -473,7 +473,28 @@ architecture rtl of top is
 		signal mem_data_out : std_logic_vector(127 downto 0);
 		signal mem_datak_out : std_logic_vector(15 downto 0);
 		
+		signal sc_wren : std_logic;
 		
+		signal fifo_data_in_ch0 : std_logic_vector(35 downto 0);
+		signal fifo_data_in_ch1 : std_logic_vector(35 downto 0);
+		signal fifo_data_in_ch2 : std_logic_vector(35 downto 0);
+		signal fifo_data_in_ch3 : std_logic_vector(35 downto 0);
+		
+		signal fifo_wrreq_ch0 : std_logic;
+		signal fifo_wrreq_ch1 : std_logic;
+		signal fifo_wrreq_ch2 : std_logic;
+		signal fifo_wrreq_ch3 : std_logic;
+		
+		signal pb_in : std_logic_vector(2 downto 0);
+		
+		signal flash_tcm_address_out : std_logic_vector(27 downto 0);
+		
+		signal clks_read : std_logic_vector(4 - 1 downto 0);
+		signal clks_write : std_logic_vector(4 - 1 downto 0);
+		signal data_in : std_logic_vector(4 * 32 - 1 downto 0);
+		signal fpga_id_in : std_logic_vector(4 * 16 - 1 downto 0);
+		signal enables_in : std_logic_vector(4 - 1 downto 0);
+		signal data_algin : std_logic_vector(63 downto 0);
 		
 		
 begin 
@@ -483,6 +504,7 @@ begin
 clk <= CLK_50_B2J; -- for debouncer
 reset_n <= not reset;
 reset <= not push_button0_db;
+LED_BRACKET(0) <= data_algin(0);
 --reset <= not push_button0_db; -- for receiver
 
 --LED_BRACKET(0) <= rx_is_lockedtoref(0);
@@ -504,33 +526,20 @@ receiver_clk : component ip_clk_ctrl
 
 --------- Debouncer/seg7 ---------
 
-deb1 : component debouncer
-	port map(
-		clk => clk, 
-		din => BUTTON(0), 
-		dout => push_button0_db
-);
-
-deb2 : component debouncer
-	port map(
-		clk => clk, 
-		din => BUTTON(1), 
-		dout => push_button1_db
-);
-
-deb3 : component debouncer
-	port map(
-		clk => clk, 
-		din => BUTTON(2), 
-		dout => push_button2_db
-);
-
-deb4 : component debouncer
-	port map(
-		clk => clk, 
-		din => BUTTON(3), 
-		dout => push_button3_db
-);
+i_debouncer : entity work.debouncer
+ generic map (
+	  W => 4,
+	  N => 125 * 10**3 -- 1ms
+ )
+ port map (
+	  d 		=> BUTTON,
+	  q(0) 	=> push_button0_db,
+	  q(1) 	=> push_button1_db,
+	  q(2) 	=> push_button2_db,
+	  q(3) 	=> push_button3_db,
+	  arst_n => CPU_RESET_n,
+	  clk 	=> cpu_clk--,
+ );
 
 clk_125_cnt_p : process(clk)
 begin
@@ -566,22 +575,24 @@ cpu_reset_n_q <= push_button1_db;
 
 nios2 : component nios
 port map (
-   clk_clk                          => clk,
-   reset_reset_n                    => cpu_reset_n_q,
-   spi_MISO                       => RS422_DIN,
-   spi_MOSI                       => RS422_DOUT,
-   spi_SCLK                       => RJ45_LED_R,
-   spi_SS_n                       => RS422_DE,
+   clk_clk                          	=> clk,
+   reset_reset_n                    	=> cpu_reset_n_q,
+   spi_MISO                       		=> RS422_DIN,
+   spi_MOSI                       		=> RS422_DOUT,
+   spi_SCLK                       		=> RJ45_LED_R,
+   spi_SS_n                       		=> RS422_DE,
 	i2c_scl_in  								=> i2c_scl_in,
 	i2c_scl_oe  								=> i2c_scl_oe,
 	i2c_sda_in  								=> i2c_sda_in,
 	i2c_sda_oe  								=> i2c_sda_oe,
-	flash_tcm_address_out(27 downto 2) 	=> FLASH_A,
+	flash_tcm_address_out				 	=> flash_tcm_address_out,
 	flash_tcm_data_out 						=> FLASH_D,
 	flash_tcm_read_n_out(0) 				=> FLASH_OE_n,
 	flash_tcm_write_n_out(0) 				=> FLASH_WE_n,
 	flash_tcm_chipselect_n_out(0) 		=> flash_ce_n_i
 );
+
+FLASH_A <= flash_tcm_address_out(27 downto 2);
 
 FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
 FLASH_ADV_n <= '0';
@@ -670,18 +681,18 @@ u0 : component receiver_switching
             tx_clkout_ch2_clk                               => tx_clk_ch2,                               --           tx_clkout_ch2.clk
             tx_clkout_ch1_clk                               => tx_clk_ch1,                               --           tx_clkout_ch1.clk
             tx_clkout_ch0_clk                               => tx_clk_ch0,                               --           tx_clkout_ch0.clk
-            tx_coreclkin_ch3_clk                            => tx_clk_ch0,                            --        tx_coreclkin_ch3.clk
-            tx_coreclkin_ch2_clk                            => tx_clk_ch0,                            --        tx_coreclkin_ch2.clk
-            tx_coreclkin_ch1_clk                            => tx_clk_ch0,                            --        tx_coreclkin_ch1.clk
+            tx_coreclkin_ch3_clk                            => tx_clk_ch3,                            --        tx_coreclkin_ch3.clk
+            tx_coreclkin_ch2_clk                            => tx_clk_ch2,                            --        tx_coreclkin_ch2.clk
+            tx_coreclkin_ch1_clk                            => tx_clk_ch1,                            --        tx_coreclkin_ch1.clk
             tx_coreclkin_ch0_clk                            => tx_clk_ch0,                            --        tx_coreclkin_ch0.clk
             tx_serial_data_ch3_tx_serial_data               => QSFPA_TX_p(3),               --      tx_serial_data_ch3.tx_serial_data
             tx_serial_data_ch2_tx_serial_data               => QSFPA_TX_p(2),               --      tx_serial_data_ch2.tx_serial_data
             tx_serial_data_ch1_tx_serial_data               => QSFPA_TX_p(1),               --      tx_serial_data_ch1.tx_serial_data
             tx_serial_data_ch0_tx_serial_data               => QSFPA_TX_p(0),               --      tx_serial_data_ch0.tx_serial_data
-				tx_datak_ch0_tx_datak               => tx_datak_ch0,
-				tx_datak_ch1_tx_datak               => tx_datak_ch1,
-				tx_datak_ch2_tx_datak               => tx_datak_ch2,
-				tx_datak_ch3_tx_datak               => tx_datak_ch3
+				tx_datak_ch0_tx_datak               				=> tx_datak_ch0,
+				tx_datak_ch1_tx_datak               				=> tx_datak_ch1,
+				tx_datak_ch2_tx_datak               				=> tx_datak_ch2,
+				tx_datak_ch3_tx_datak               				=> tx_datak_ch3
             
         );
 
@@ -702,7 +713,7 @@ word_align_ch0 : component rx_align
         enapatternalign 	=> enapatternalign_ch0,
         errdetect   			=> rx_errdetect_ch0_rx_errdetect,
         disperr     			=> rx_disperr_ch0_rx_disperr,
-        rst_n   				=> not reset,
+        rst_n   				=> reset_n,
         clk     				=> rx_clkout_ch0_clk
     );
 	 
@@ -722,7 +733,7 @@ word_align_ch1 : component rx_align
         enapatternalign 	=> enapatternalign_ch1,
         errdetect   			=> rx_errdetect_ch1_rx_errdetect,
         disperr     			=> rx_disperr_ch1_rx_disperr,
-        rst_n   				=> not reset,
+        rst_n   				=> reset_n,
         clk     				=> rx_clkout_ch1_clk
     );
 	 
@@ -742,7 +753,7 @@ word_align_ch2 : component rx_align
         enapatternalign 	=> enapatternalign_ch2,
         errdetect   			=> rx_errdetect_ch2_rx_errdetect,
         disperr     			=> rx_disperr_ch2_rx_disperr,
-        rst_n   				=> not reset,
+        rst_n   				=> reset_n,
         clk     				=> rx_clkout_ch2_clk
     );
 	 
@@ -762,7 +773,7 @@ word_align_ch3 : component rx_align
         enapatternalign 	=> enapatternalign_ch3,
         errdetect   			=> rx_errdetect_ch3_rx_errdetect,
         disperr     			=> rx_disperr_ch3_rx_disperr,
-        rst_n   				=> not reset,
+        rst_n   				=> reset_n,
         clk     				=> rx_clkout_ch3_clk
     );
 	 
@@ -776,47 +787,56 @@ word_align_ch3 : component rx_align
 --            outclk_0 => clk_fast  -- outclk0.clk
 --    );
 --
---algining_data : sw_algin_4_data
---	port map(
---		data_in_fifo_clk_0    => rx_clkout_ch0_clk,--: in  std_logic; -- 156,25 MHZ
---		data_in_fifo_clk_1    => rx_clkout_ch1_clk,--: in  std_logic; -- 156,25 MHZ
---		data_in_fifo_clk_2    => rx_clkout_ch2_clk,--: in  std_logic; -- 156,25 MHZ
---		data_in_fifo_clk_3    => rx_clkout_ch3_clk,--: in  std_logic; -- 156,25 MHZ
---		data_out_fifo_clk     => clk_fast,--: in  std_logic; -- 312,50 MHZ
---
---		data_in_node_clk      => rx_clkout_ch0_clk,--: in  std_logic; -- 156,25 MHZ
---		data_out_node_clk     => clk_fast,--: in  std_logic; -- To be defined
---
---		reset_n					 => reset_n,--: in  std_logic;
---
---		reset_n_fifo_0			 => reset_n,--: in  std_logic;
---		reset_n_fifo_1			 => reset_n,--: in  std_logic;
---		reset_n_fifo_2			 => reset_n,--: in  std_logic;
---		reset_n_fifo_3			 => reset_n,--: in  std_logic;
---
---		data_in_0				 => data_ch0,--: in std_logic_vector(31 downto 0); -- FPGA-ID = 0000000000000001
---		data_in_1				 => data_ch1,--: in std_logic_vector(31 downto 0); -- FPGA-ID = 0000000000000011
---		data_in_2				 => data_ch2,--: in std_logic_vector(31 downto 0); -- FPGA-ID = 0000000000000111
---		data_in_3				 => data_ch3,--: in std_logic_vector(31 downto 0); -- FPGA-ID = 0000000000001111
---
---		datak_in_0				 => '1',--: in std_logic;
---		datak_in_1				 => '1',--: in std_logic;
---		datak_in_2				 => '1',--: in std_logic;
---		datak_in_3				 => '1',--: in std_logic;
---
---		data_out	             => data_out,
---		error_out				 => error
---);
+algining_data : sw_algin_data
+generic map(
+	NLINKS => 4
+)
+port map(
+	clks_read         	 => clks_read, -- 156,25 MHZ
+	clks_write			    => clks_write, -- 312,50 MHZ
+
+	clk_node_write      	 => clk,--: in  std_logic; -- 156,25 MHZ
+	clk_node_read     	 => clk,--: in  std_logic; -- To be defined
+
+	reset_n					 => reset_n,--: in  std_logic;
+	
+	data_in					 => data_in,
+	fpga_id_in			    => fpga_id_in, -- FPGA-ID
+	
+	enables_in				 => enables_in,
+	
+	node_rdreq				 => '1',
+	
+	data_out					 => data_algin,
+	state_out				 => open,
+	node_full_out			 => open,
+	node_empty_out			 => open
+);
+	
+clks_read <= clk & clk & clk & clk;
+clks_write <= clk & clk & clk & clk;
+data_in <= data_ch0 & data_ch1 & data_ch2 & data_ch3;
+fpga_id_in <= "0000000000000001" & "0000000000000011" & "0000000000000111" & "0000000000001111";
+enables_in <= datak_ch0(0) & datak_ch1(0) & datak_ch2(0) & datak_ch3(0);
 
 ------------- transceiver_switching -------------
 
 fifo_read <= (not ch0_empty) and (not ch1_empty) and (not ch2_empty) and (not ch3_empty);
 
+fifo_data_in_ch0 <= data_ch0 & datak_ch0;
+fifo_data_in_ch1 <= data_ch1 & datak_ch1;
+fifo_data_in_ch2 <= data_ch2 & datak_ch2;
+fifo_data_in_ch3 <= data_ch3 & datak_ch3;
+
+fifo_wrreq_ch0 <= not datak_ch0(0);
+fifo_wrreq_ch1 <= not datak_ch1(0);
+fifo_wrreq_ch2 <= not datak_ch2(0);
+fifo_wrreq_ch3 <= not datak_ch3(0);
 
 ch0 : component transceiver_fifo -- pixel data / sc -- 
   port map (
-		data    => data_ch0 & datak_ch0,    --  fifo_input.datain
-		wrreq   => not datak_ch0(0),   --            .wrreq
+		data    => fifo_data_in_ch0,    --  fifo_input.datain
+		wrreq   => fifo_wrreq_ch0,   --            .wrreq
 		rdreq   => fifo_read,   --            .rdreq
 		wrclk   => rx_clkout_ch0_clk,   --            .wrclk
 		rdclk   => tx_clkout_ch0_clk,   --            .rdclk
@@ -828,8 +848,8 @@ ch0 : component transceiver_fifo -- pixel data / sc --
   
 ch1 : component transceiver_fifo -- pixel data / sc -- 
   port map (
-		data    => data_ch1 & datak_ch1,    --  fifo_input.datain
-		wrreq   => not datak_ch1(0),   --            .wrreq
+		data    => fifo_data_in_ch1,    --  fifo_input.datain
+		wrreq   => fifo_wrreq_ch1,   --            .wrreq
 		rdreq   => fifo_read,   --            .rdreq
 		wrclk   => rx_clkout_ch1_clk,   --            .wrclk
 		rdclk   => tx_clkout_ch1_clk,   --            .rdclk
@@ -841,8 +861,8 @@ ch1 : component transceiver_fifo -- pixel data / sc --
   
 ch2 : component transceiver_fifo
   port map (
-		data    => data_ch2 & datak_ch2,    --  fifo_input.datain
-		wrreq   => not datak_ch2(0),   --            .wrreq
+		data    => fifo_data_in_ch2,    --  fifo_input.datain
+		wrreq   => fifo_wrreq_ch2,   --            .wrreq
 		rdreq   => fifo_read,   --            .rdreq
 		wrclk   => rx_clkout_ch2_clk,   --            .wrclk
 		rdclk   => tx_clkout_ch2_clk,   --            .rdclk
@@ -854,8 +874,8 @@ ch2 : component transceiver_fifo
   
 ch3 : component transceiver_fifo
   port map (
-		data    => data_ch3 & datak_ch3,    --  fifo_input.datain
-		wrreq   => not datak_ch3(0),   --            .wrreq
+		data    => fifo_data_in_ch3,    --  fifo_input.datain
+		wrreq   => fifo_wrreq_ch3,   --            .wrreq
 		rdreq   => fifo_read,   --            .rdreq
 		wrclk   => rx_clkout_ch3_clk,   --            .wrclk
 		rdclk   => tx_clkout_ch3_clk,   --            .rdclk
@@ -867,6 +887,7 @@ ch3 : component transceiver_fifo
 
 LED(1) <= SW(1); --- SW for datak transceiver
 
+--- Data transceiver ---
 datak_process_0 : process(tx_clkout_ch0_clk)
 begin
 if rising_edge(tx_clkout_ch0_clk) then
@@ -919,30 +940,46 @@ if rising_edge(tx_clkout_ch3_clk) then
 end if;
 end process;
 
---datak_process_align : process(clk_fast)
---begin
---if rising_edge(clk_fast) then
---	if (SW(1) = '0') then
---		datak_transceiver_0_algin <= "0001";
---		datak_transceiver_1_algin <= "0001";
---		datak_transceiver_2_algin <= "0001";
---		datak_transceiver_3_algin <= "0001";
---		data_transceiver_0_algin <= x"DEADBEBC";
---		data_transceiver_1_algin <= x"DEADBEBC";
---		data_transceiver_2_algin <= x"DEADBEBC";
---		data_transceiver_3_algin <= x"DEADBEBC";
---	elsif (SW(1) = '1') then
---		datak_transceiver_0_algin <= "0000";
---		datak_transceiver_1_algin <= "0000";
---		datak_transceiver_2_algin <= "0000";
---		datak_transceiver_3_algin <= "0000";
---		data_transceiver_0_algin <= data_out(63 downto 32);
---		data_transceiver_1_algin <= data_out(31 downto 0);
---		data_transceiver_2_algin <= x"CAFECAFE";
---		data_transceiver_3_algin <= x"CAFECAFE";
---   end if;
---end if;
---end process;
+
+--- SC transceiver ---
+sck_process_1 : process(tx_clk_ch1)
+begin
+if rising_edge(tx_clk_ch1) then
+	if (SW(1) = '0') then
+		tx_datak_ch1 <= "0001";
+		tx_data_ch1 <= x"000000BC";
+	elsif (SW(1) = '1') then
+		tx_datak_ch1 <= "0000";
+		tx_data_ch1 <= x"AFFECAFE";
+   end if;
+end if;
+end process;
+
+sck_process_2 : process(tx_clk_ch2)
+begin
+if rising_edge(tx_clk_ch2) then
+	if (SW(1) = '0') then
+		tx_datak_ch2 <= "0001";
+		tx_data_ch2 <= x"000000BC";
+	elsif (SW(1) = '1') then
+		tx_datak_ch2 <= "0000";
+		tx_data_ch2 <= x"AFFECAFE";
+   end if;
+end if;
+end process;
+
+sck_process_3 : process(tx_clk_ch3)
+begin
+if rising_edge(tx_clk_ch3) then
+	if (SW(1) = '0') then
+		tx_datak_ch3 <= "0001";
+		tx_data_ch3 <= x"000000BC";
+	elsif (SW(1) = '1') then
+		tx_datak_ch3 <= "0000";
+		tx_data_ch3 <= x"AFFECAFE";
+   end if;
+end if;
+end process;
 
 tra_switching : component transceiver_switching
 	port map (
@@ -971,40 +1008,9 @@ tra_switching : component transceiver_switching
 		tx_clkout_ch3_clk                     => tx_clkout_ch3_clk                      --     
 );
 
-SMA_CLKOUT <= tx_clkout_ch0_clk;
-
------ take core clk out and read with this clk from a fifo write to the fifo with clk_fast
---
---tra_switching_align : component transceiver_switching
---	port map (
---		clk_qsfp_clk                          => input_clk,                 
---		pll_refclk0_clk                       => input_clk,                    
---		reset_1_reset                         => reset,                     
---		tx_serial_data_ch0_tx_serial_data     => QSFPC_TX_p(0),     
---		tx_serial_data_ch1_tx_serial_data     => QSFPC_TX_p(1),   
---		tx_serial_data_ch2_tx_serial_data     => QSFPC_TX_p(2),     
---		tx_serial_data_ch3_tx_serial_data     => QSFPC_TX_p(3),      		
---		tx_datak_ch0_tx_datak                 => datak_transceiver_0,                 --         tx_datak_ch0.tx_datak
---		tx_datak_ch1_tx_datak                 => datak_transceiver_1,                 --         tx_datak_ch1.tx_datak
---		tx_datak_ch2_tx_datak                 => datak_transceiver_2,                 --         tx_datak_ch2.tx_datak
---		tx_datak_ch3_tx_datak                 => datak_transceiver_3,                 --         tx_datak_ch3.tx_datak
---		tx_parallel_data_ch0_tx_parallel_data => data_transceiver_0_algin, -- tx_parallel_data_ch0.tx_parallel_data
---		tx_parallel_data_ch1_tx_parallel_data => data_transceiver_1_algin, -- tx_parallel_data_ch1.tx_parallel_data
---		tx_parallel_data_ch2_tx_parallel_data => data_transceiver_2_algin, -- tx_parallel_data_ch2.tx_parallel_data
---		tx_parallel_data_ch3_tx_parallel_data => data_transceiver_3_algin, -- tx_parallel_data_ch3.tx_parallel_data     
---		tx_coreclkin_ch0_clk                  => tx_clkout_ch0_clk,                  --     tx_coreclkin_ch0.clk
---		tx_coreclkin_ch1_clk                  => tx_clkout_ch1_clk,                  --     tx_coreclkin_ch1.clk
---		tx_coreclkin_ch2_clk                  => tx_clkout_ch2_clk,                  --     tx_coreclkin_ch2.clk
---		tx_coreclkin_ch3_clk                  => tx_clkout_ch3_clk,                  --     tx_coreclkin_ch3.clk
---		tx_clkout_ch0_clk                     => tx_clkout_ch0_clk,                     --        tx_clkout_ch0.clk
---		tx_clkout_ch1_clk                     => tx_clkout_ch1_clk,                     --        tx_clkout_ch1.clk
---		tx_clkout_ch2_clk                     => tx_clkout_ch2_clk,                     --        tx_clkout_ch2.clk
---		tx_clkout_ch3_clk                     => tx_clkout_ch3_clk                      --     
---);
-
 ------------- PCIe -------------
 
-sc_master_comp:sc_master
+sc_master_ch0:sc_master
 	generic map(
 		NLINKS => 4
 	)
@@ -1020,15 +1026,78 @@ sc_master_comp:sc_master
 		stateout				=> open
 );
 
+sc_slave_ch0:sc_slave
+	port map(
+		clk					=> tx_clk_ch0,--rx_clkout_ch0_clk,
+		reset_n				=> push_button0_db,
+		enable				=> '1',
+		link_data_in		=> tx_data_ch0,--data_ch0,
+		link_data_in_k		=> tx_datak_ch0,--datak_ch0,
+		mem_addr_out		=> readmem_writeaddr(15 downto 0),
+		mem_data_out		=> readmem_writedata,
+		mem_wren				=> readmem_wren,
+		done					=> open,
+		stateout				=> open
+);
+
+
+--sc_master_ch1:sc_master
+--	generic map(
+--		NLINKS => 4
+--	)
+--	port map(
+--		clk					=> tx_clk_ch0,
+--		reset_n				=> push_button0_db,
+--		enable				=> '1',
+--		mem_data_in			=> writememreaddata,
+--		mem_addr				=> writememreadaddr,
+--		mem_data_out		=> mem_data_out,
+--		mem_data_out_k		=> mem_datak_out,
+--		done					=> open,
+--		stateout				=> open
+--);
+--
+--sc_master_ch2:sc_master
+--	generic map(
+--		NLINKS => 4
+--	)
+--	port map(
+--		clk					=> tx_clk_ch0,
+--		reset_n				=> push_button0_db,
+--		enable				=> '1',
+--		mem_data_in			=> writememreaddata,
+--		mem_addr				=> writememreadaddr,
+--		mem_data_out		=> mem_data_out,
+--		mem_data_out_k		=> mem_datak_out,
+--		done					=> open,
+--		stateout				=> open
+--);
+--
+--sc_master_ch3:sc_master
+--	generic map(
+--		NLINKS => 4
+--	)
+--	port map(
+--		clk					=> tx_clk_ch0,
+--		reset_n				=> push_button0_db,
+--		enable				=> '1',
+--		mem_data_in			=> writememreaddata,
+--		mem_addr				=> writememreadaddr,
+--		mem_data_out		=> mem_data_out,
+--		mem_data_out_k		=> mem_datak_out,
+--		done					=> open,
+--		stateout				=> open
+--);
+
 tx_data_ch0 <= mem_data_out(31 downto 0);
-tx_data_ch1 <= mem_data_out(63 downto 32);
-tx_data_ch2 <= mem_data_out(95 downto 64);
-tx_data_ch3 <= mem_data_out(127 downto 96);
+--tx_data_ch1 <= mem_data_out(63 downto 32);
+--tx_data_ch2 <= mem_data_out(95 downto 64);
+--tx_data_ch3 <= mem_data_out(127 downto 96);
 
 tx_datak_ch0 <= mem_datak_out(3 downto 0);
-tx_datak_ch1 <= mem_datak_out(7 downto 4);
-tx_datak_ch2 <= mem_datak_out(11 downto 8);
-tx_datak_ch3 <= mem_datak_out(15 downto 12);
+--tx_datak_ch1 <= mem_datak_out(7 downto 4);
+--tx_datak_ch2 <= mem_datak_out(11 downto 8);
+--tx_datak_ch3 <= mem_datak_out(15 downto 12);
 
 resetlogic:reset_logic
 	port map(
@@ -1067,18 +1136,18 @@ begin
 end process;
 
 -- Increase address
-process(pcie_fastclk_out, resets_n(RESET_BIT_DATAGEN))
-begin
-	if(resets_n(RESET_BIT_DATAGEN) = '0') then
-		readmem_writeaddr  <= (others => '0');
-	elsif(pcie_fastclk_out'event and pcie_fastclk_out = '1') then
-		if(readmem_wren = '1') then
-			readmem_writeaddr    <= readmem_writeaddr + '1';
-			readregs(MEM_WRITEADDR_LOW_REGISTER_R) <= readmem_writeaddr(31 downto 0);
-			readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= readmem_writeaddr(63 downto 32);
-		end if;
-	end if;
-end process;
+--process(pcie_fastclk_out, resets_n(RESET_BIT_DATAGEN))
+--begin
+--	if(resets_n(RESET_BIT_DATAGEN) = '0') then
+--		readmem_writeaddr  <= (others => '0');
+--	elsif(pcie_fastclk_out'event and pcie_fastclk_out = '1') then
+--		if(readmem_wren = '1') then
+--			readmem_writeaddr    <= readmem_writeaddr + '1';
+--			readregs(MEM_WRITEADDR_LOW_REGISTER_R) <= readmem_writeaddr(31 downto 0);
+--			readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= readmem_writeaddr(63 downto 32);
+--		end if;
+--	end if;
+--end process;
 
 --Prolong regwritten signals for 50 MHz clock
 process(pcie_fastclk_out)
@@ -1097,7 +1166,11 @@ begin
 		end loop;
 	end if;
 end process;
+
+
 readmem_writeaddr_lowbits <= readmem_writeaddr(15 downto 0);
+dmamem_wren <= writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE) and rdreg_fifo_dma;
+pb_in <= push_button0_db & push_button1_db & push_button2_db;
 
 pcie_b: pcie_block 
 	generic map(
@@ -1142,14 +1215,14 @@ pcie_b: pcie_block
 		-- pcie readable memory
 		readmem_data 			=> readmem_writedata,
 		readmem_addr 			=> readmem_writeaddr_lowbits,
-		readmemclk				=> pcie_fastclk_out,
+		readmemclk				=> rx_clkout_ch0_clk,
 		readmem_wren			=> readmem_wren,
 		readmem_endofevent	=> readmem_endofevent,
 
 		-- dma memory 
 		dma_data 				=> X"DECAFBAD" & X"DECAFBAD" & X"DECAFBAD" & X"DECAFBAD" & X"DECAFBAD" & X"DECAFBAD" & X"DECAFBAD" & X"DECAFBAD",--counter_256,--rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data,
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
-		dmamem_wren				=> writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE) and rdreg_fifo_dma,--'1',
+		dmamem_wren				=> dmamem_wren,--'1',
 		dmamem_endofevent		=> dmamem_endofevent,
 		dmamemhalffull			=> open,--dmamemhalffull,
 
@@ -1163,7 +1236,7 @@ pcie_b: pcie_block
 		-- test ports  
 		testout					=> pcie_testout,
 		testout_ena				=> open,
-		pb_in						=> push_button0_db & push_button1_db & push_button2_db,
+		pb_in						=> pb_in,
 		inaddr32_r				=> readregs(inaddr32_r),
 		inaddr32_w				=> readregs(inaddr32_w)
 );

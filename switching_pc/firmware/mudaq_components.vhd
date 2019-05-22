@@ -153,10 +153,18 @@ component ip_transiver is
 end component ip_transiver;
 
 component debouncer is
-	port(
-		clk:			in std_logic;
-		din:			in std_logic;
-		dout:			out std_logic
+	generic (
+        -- bus width
+        W   : positive := 1;
+        -- number of clock cycles (stable signal)
+        N   : positive := 16#FFFF#--;
+    );
+    port (
+        d       :   in  std_logic_vector(W-1 downto 0);
+        q       :   out std_logic_vector(W-1 downto 0);
+        arst_n  :   in  std_logic;
+        clk     :   in  std_logic--;
+    );
 );		
 end component debouncer;
 
@@ -350,6 +358,21 @@ component sc_master is
 		);		
 end component sc_master;
 
+component sc_slave is
+	port(
+		clk:				in std_logic;
+		reset_n:			in std_logic;
+		enable:				in std_logic;
+		link_data_in:		in std_logic_vector(31 downto 0);
+		link_data_in_k:		in std_logic_vector(3 downto 0);
+		mem_data_out:		out std_logic_vector(31 downto 0);
+		mem_addr_out:		out std_logic_vector(15 downto 0);
+		mem_wren:			out std_logic;			
+		done:				out std_logic;
+		stateout:			out std_logic_vector(27 downto 0)
+		);		
+end component sc_slave;
+
 component transceiver_switching_align is
 	port (
 			clk_qsfp_clk                          : in  std_logic                     := 'X';             -- clk
@@ -484,41 +507,34 @@ component seg7_lut is
     );
 end component seg7_lut;
 
-component sw_algin_4_data is 
-	port (
-		data_in_fifo_clk_0    : in  std_logic; -- 156,25 MHZ
-		data_in_fifo_clk_1    : in  std_logic; -- 156,25 MHZ
-		data_in_fifo_clk_2    : in  std_logic; -- 156,25 MHZ
-		data_in_fifo_clk_3    : in  std_logic; -- 156,25 MHZ
-		data_out_fifo_clk     : in  std_logic; -- 312,50 MHZ
-
-		data_in_node_clk      : in  std_logic; -- 156,25 MHZ
-		data_out_node_clk     : in  std_logic; -- To be defined
-
-		reset_n					 : in  std_logic;
-
-		reset_n_fifo_0			 : in  std_logic;
-		reset_n_fifo_1			 : in  std_logic;
-		reset_n_fifo_2			 : in  std_logic;
-		reset_n_fifo_3			 : in  std_logic;
-
-		data_in_0				 : in std_logic_vector(31 downto 0); -- FPGA-ID = 0000000000000001
-		data_in_1				 : in std_logic_vector(31 downto 0); -- FPGA-ID = 0000000000000011
-		data_in_2				 : in std_logic_vector(31 downto 0); -- FPGA-ID = 0000000000000111
-		data_in_3				 : in std_logic_vector(31 downto 0); -- FPGA-ID = 0000000000001111
-
-		datak_in_0				 : in std_logic;
-		datak_in_1				 : in std_logic;
-		datak_in_2				 : in std_logic;
-		datak_in_3				 : in std_logic;
-
-		data_out	             : out std_logic_vector(63 downto 0);
-		error_out				 : out std_logic
-		
+component sw_algin_data is
+	generic(
+		NLINKS : integer := 4
 	);
-end component sw_algin_4_data;
+	port (
+			clks_read 		: in  std_logic_vector(NLINKS - 1 downto 0); -- 312,50 MHZ
+			clks_write     : in  std_logic_vector(NLINKS - 1 downto 0); -- 156,25 MHZ
+			
+			clk_node_write : in  std_logic; -- 312,50 MHZ
+			clk_node_read  : in  std_logic;
 
-component ip_sw_tree_fifo_32 is
+			reset_n			: in  std_logic;
+			
+			data_in 			: in std_logic_vector(NLINKS * 32 - 1 downto 0);
+			fpga_id_in		: in std_logic_vector(NLINKS * 16 - 1 downto 0);
+					
+			enables_in		: in std_logic_vector(NLINKS - 1 downto 0);
+			
+			node_rdreq		: in std_logic;
+			
+			data_out	      : out std_logic_vector((NLINKS / 4) * 64 - 1 downto 0);
+			state_out		: out std_logic_vector(3 downto 0);
+			node_full_out  : out std_logic_vector(NLINKS / 4 - 1 downto 0);
+			node_empty_out	: out std_logic_vector(NLINKS / 4 - 1 downto 0)
+);		
+end component sw_algin_data;
+
+component ip_sw_fifo_32 is
 	  port (
 			data  : in  std_logic_vector(31 downto 0) := (others => 'X'); -- datain
 			wrreq : in  std_logic                     := 'X';             -- wrreq
@@ -530,9 +546,9 @@ component ip_sw_tree_fifo_32 is
 			wrfull  : out std_logic;                                        -- full
 			rdempty : out std_logic                                         -- empty
 	  );
-end component ip_sw_tree_fifo_32;
+end component ip_sw_fifo_32;
 
-component ip_sw_tree_fifo_64 is
+component ip_sw_fifo_64 is
 	  port (
 			data  : in  std_logic_vector(63 downto 0) := (others => 'X'); -- datain
 			wrreq : in  std_logic                     := 'X';             -- wrreq
@@ -544,7 +560,7 @@ component ip_sw_tree_fifo_64 is
 			wrfull  : out std_logic;                                        -- full
 			rdempty : out std_logic                                         -- empty
 	  );
-end component ip_sw_tree_fifo_64;
+end component ip_sw_fifo_64;
 
 component ip_pll_312 is
   port (
