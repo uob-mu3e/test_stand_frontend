@@ -3,8 +3,6 @@
  - firmware for all subsystems
  - midas frontend for subsystems
  - software
-<<<<<<< HEAD
-=======
 
 [TODO] Link to wiki page
 
@@ -59,4 +57,3 @@ mhttpd:
     - config for web server
     - custom pages
 
->>>>>>> origin/master
