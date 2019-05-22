@@ -30,7 +30,7 @@ ip/%.qsys : %.tcl
 
 .PHONY: flow
 flow : $(IPs) $(VHDs)
-	quartus_sh -t ../util/flow.tcl top
+	quartus_sh -t util/flow.tcl top
 
 .PHONY: sof2flash
 sof2flash :

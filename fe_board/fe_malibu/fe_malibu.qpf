@@ -1,0 +1,8 @@
+#
+
+QUARTUS_VERSION = "17.1"
+DATE = ""
+
+# Revisions
+
+PROJECT_REVISION = "top"
