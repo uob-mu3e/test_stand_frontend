@@ -12,8 +12,8 @@ architecture rtl of feb_common_tb is
     port (
 		clk:                    in  std_logic; -- 156.25 clk input
 		reset:                  in  std_logic; 
-		fpga_ID_in:		in  std_logic_vector(15 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now 
-		FEB_type_in:		in  std_logic_vector(5  downto 0); -- Type of the frontendboard (001010: mupix, 001000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
+		fpga_ID_in:					in  std_logic_vector(15 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now 
+		FEB_type_in:				in  std_logic_vector(5  downto 0); -- Type of the frontendboard (111010: mupix, 111000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
 		state_idle:             in  std_logic; -- "reset" states from state controller 
 		state_run_prepare:      in  std_logic;
 		state_sync:             in  std_logic;
@@ -25,16 +25,19 @@ architecture rtl of feb_common_tb is
 		state_out_of_DAQ:       in  std_logic;
 		data_out:               out std_logic_vector(31 downto 0); -- to optical transm.
 		data_is_k:              out std_logic_vector(3 downto 0); -- to optical trasm.
-		data_in:		in  std_logic_vector(35 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
+		data_in:						in  std_logic_vector(35 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
 		data_in_slowcontrol:    in  std_logic_vector(35 downto 0); -- data input slowcontrol from SCFIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 SCData))
 		slowcontrol_fifo_empty: in  std_logic;
-		data_fifo_empty:	in  std_logic;
+		data_fifo_empty:			in  std_logic;
 		slowcontrol_read_req:   out std_logic;
 		data_read_req:          out std_logic;
 		terminated:             out std_logic; -- to state controller (when stop run acknowledge was transmitted the state controller can go from terminating into idle, this is the signal to tell him that)
-		override_data_in:	in  std_logic_vector(31 downto 0); -- data input for states link_test and sync_test;
+		override_data_in:			in  std_logic_vector(31 downto 0); -- data input for states link_test and sync_test;
 		override_data_is_k_in:  in  std_logic_vector(3 downto 0);
-		leds:			out std_logic_vector(3 downto 0) -- debug
+		override_req:				in	 std_logic;
+		override_granted:			out std_logic;
+		data_priority:				in  std_logic;
+		leds:							out std_logic_vector(3 downto 0) -- debug
     );
   end component;
   
@@ -115,6 +118,7 @@ architecture rtl of feb_common_tb is
 	signal	terminated					:	std_logic;
 	signal	reset_link					: 	std_logic_vector(7 downto 0);
 	signal 	runnumber					: 	std_logic_vector(31 downto 0);
+	signal 	override_granted			:	std_logic;
 	
 	-- on switch side:
 	signal 	data_out_switch			:	std_logic_vector(31 downto 0);
@@ -123,10 +127,14 @@ architecture rtl of feb_common_tb is
 	signal 	sc_ready_switch			:	std_logic;
 	signal 	fpga_id						:	std_logic_vector(15 downto 0);
 	
+	--	test inputs on FEB side
 	signal 	data_test_input			:	std_logic_vector(35 downto 0);
 	signal 	sc_test_input				:	std_logic_vector(35 downto 0);
 	signal 	wrreq_sc						:	std_logic;
 	signal 	wrreq_data					: 	std_logic;
+	signal 	override_req				:	std_logic;
+	signal	override_data_in			:	std_logic_vector(31 downto 0);
+	signal 	override_data_is_k_in	:	std_logic_vector(3  downto 0);
 
 
 begin
@@ -157,8 +165,11 @@ begin
 		slowcontrol_read_req    => slowcontrol_read_req,
 		data_read_req           => data_read_req,
 		terminated              => terminated, -- to state controller (when stop run acknowledge was transmitted the state controller can go from terminating into idle, this is the signal to tell him that)
-		override_data_in			=> (others => '0'), -- data input for states link_test and sync_test;
-		override_data_is_k_in   => "0000",
+		override_data_in			=> override_data_in, -- data input for states link_test and sync_test;
+		override_data_is_k_in   => override_data_is_k_in,
+		override_req				=> override_req,
+		override_granted			=> override_granted,
+		data_priority				=> '0',
 		leds							=> open -- debug
 		
       );
