@@ -1,0 +1,117 @@
+#
+
+set_global_assignment -name FAMILY "Stratix IV"
+set_global_assignment -name DEVICE EP4SGX70HF35C3
+set_global_assignment -name TOP_LEVEL_ENTITY top
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 16.1.0
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "12:00:00  JUNE 08, 2018"
+set_global_assignment -name LAST_QUARTUS_VERSION "18.0.0 Standard Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "15 MM HEAT SINK WITH STILL AIR"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 256
+set_global_assignment -name DEVICE_FILTER_PACKAGE FBGA
+set_global_assignment -name DEVICE_FILTER_PIN_COUNT 1152
+set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
+
+source assignments/FE_s4.tcl
+source assignments/FE_malibu.tcl
+
+set_location_assignment PIN_D23 -to led_n[0]
+set_location_assignment PIN_D24 -to led_n[1]
+set_location_assignment PIN_D25 -to led_n[2]
+set_location_assignment PIN_D26 -to led_n[3]
+set_location_assignment PIN_D27 -to led_n[4]
+set_location_assignment PIN_E23 -to led_n[5]
+set_location_assignment PIN_E24 -to led_n[6]
+set_location_assignment PIN_F21 -to led_n[7]
+set_location_assignment PIN_F22 -to led_n[8]
+set_location_assignment PIN_F23 -to led_n[9]
+set_location_assignment PIN_F25 -to led_n[10]
+set_location_assignment PIN_G20 -to led_n[11]
+set_location_assignment PIN_G22 -to led_n[12]
+set_location_assignment PIN_G23 -to led_n[13]
+set_location_assignment PIN_G24 -to led_n[14]
+set_location_assignment PIN_G25 -to led_n[15]
+
+set_location_assignment PIN_B18 -to clk_aux
+set_instance_assignment -name IO_STANDARD LVDS -to clk_aux
+
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to qsfp_tx[3]
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to qsfp_tx[2]
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to qsfp_tx[1]
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to qsfp_tx[0]
+set_location_assignment PIN_U31 -to qsfp_tx[3]
+set_location_assignment PIN_W31 -to qsfp_tx[2]
+set_location_assignment PIN_AE31 -to qsfp_tx[1]
+set_location_assignment PIN_AG31 -to qsfp_tx[0]
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to qsfp_rx[3]
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to qsfp_rx[2]
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to qsfp_rx[1]
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to qsfp_rx[0]
+set_location_assignment PIN_V33 -to qsfp_rx[3]
+set_location_assignment PIN_Y33 -to qsfp_rx[2]
+set_location_assignment PIN_AF33 -to qsfp_rx[1]
+set_location_assignment PIN_AH33 -to qsfp_rx[0]
+
+set_instance_assignment -name IO_STANDARD LVDS -to qsfp_pll_clk
+set_location_assignment PIN_AB33 -to qsfp_pll_clk
+
+
+
+set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:pre_flow.tcl"
+
+set_global_assignment -name VHDL_FILE top.vhd
+set_global_assignment -name SDC_FILE top.sdc
+
+set_global_assignment -name VHDL_FILE cmp_pkg.vhd
+set_global_assignment -name QSYS_FILE nios.qsys
+
+set_global_assignment -name VHDL_FILE util/mu3e_pkg.vhd
+set_global_assignment -name VHDL_FILE util/util_pkg.vhd
+set_global_assignment -name VHDL_FILE util/ff_sync.vhd
+set_global_assignment -name VHDL_FILE util/reset_sync.vhd
+set_global_assignment -name VHDL_FILE util/counter.vhd
+set_global_assignment -name VHDL_FILE util/clkmon.vhd
+set_global_assignment -name VHDL_FILE util/clkdiv.vhd
+set_global_assignment -name VHDL_FILE util/debouncer.vhd
+set_global_assignment -name VHDL_FILE util/watchdog.vhd
+
+set_global_assignment -name VHDL_FILE ip/ip_altpll.vhd
+set_global_assignment -name VHDL_FILE ip/ip_altlvds_rx.vhd
+
+# MALIBU
+
+set_global_assignment -name VHDL_FILE malibu_dec.vhd
+set_global_assignment -name VHDL_FILE util/8b10_dec.vhd
+
+# QSFP
+
+set_global_assignment -name VHDL_FILE util/tx_reset.vhd
+set_global_assignment -name VHDL_FILE util/rx_reset.vhd
+set_global_assignment -name VHDL_FILE util/rx_align.vhd
+set_global_assignment -name VHDL_FILE xcvr_s4.vhd
+
+set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from transceiver_pll_clock -to tx_data[*]
+set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from transceiver_pll_clock -to rx_data[*]
+
+set_global_assignment -name QIP_FILE ip/ip_altgx.qip
+set_global_assignment -name QIP_FILE ip/ip_altgx_reconfig.qip
+
+# SC
+
+
+
+set_global_assignment -name ENABLE_DRC_SETTINGS ON
+set_global_assignment -name FLOW_DISABLE_ASSEMBLER OFF
+set_global_assignment -name FLOW_ENABLE_IO_ASSIGNMENT_ANALYSIS ON
+set_global_assignment -name FLOW_ENABLE_RTL_VIEWER ON
+set_global_assignment -name PROJECT_IP_REGENERATION_POLICY SKIP_REGENERATING_IP_IF_HDL_MODIFIED
+set_global_assignment -name SMART_RECOMPILE ON
+
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
