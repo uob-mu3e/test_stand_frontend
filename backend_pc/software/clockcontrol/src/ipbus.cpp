@@ -157,6 +157,43 @@ uint32_t ipbus::read(uint32_t addr)
     return v[0];
 }
 
+uint32_t ipbus::readModifyWriteBits(uint32_t addr, uint32_t andterm, uint32_t orterm)
+{
+    StartPacket();
+    uint32_t header = 0;
+    header |= 0x4f; //info code and type ID
+    header |= 1<<8; // number of words is 1
+
+
+    header |= ((transactionnumber++) & 0xfff) << 16;
+    transactionnumber = transactionnumber & 0xfff;
+    header |= 2 << 28; // protocol version number
+
+    sendbuffer.push_back(header);
+    sendbuffer.push_back(addr);
+    sendbuffer.push_back(andterm);
+    sendbuffer.push_back(orterm);
+    SendPacket();
+
+    vector<uint32_t> receivebuffer(1+1,0);
+    usleep(1000);
+
+    if( ReadFromSocket(receivebuffer) != (1+1)*4){
+        int s = Status();
+        if(s < 0)
+            return -3;
+        if(s == packetnumber-1){
+            SendPacket();
+            usleep(1000);
+        } else if(s == packetnumber){
+            CreateAndSendResendRequest(packetnumber);
+            usleep(1000);
+        }
+    }
+    // This should contain the register content before the RMW
+    return receivebuffer[1];
+}
+
 
 void ipbus::StartPacket(){
     uint32_t word = 0;

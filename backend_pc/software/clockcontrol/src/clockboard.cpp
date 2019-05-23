@@ -14,6 +14,70 @@ clockboard::clockboard(const char *addr, int port):bus(addr, port)
 
 }
 
+int clockboard::init_clockboard()
+{
+    init_12c();
+    uint32_t ctrlreg = 0;
+    // Turn on Si chip output
+    ctrlreg |= BIT_CTRL_CLK_CTRL_SI_OE;
+    bus.write(ADDR_CTRL_REG,ctrlreg);
+
+    // set inverted channels on the reset firefly
+    ctrlreg |= BIT_FIREFLY_RESET_SEL;
+    bus.write(ADDR_CTRL_REG,ctrlreg);
+    invert_tx_channels(FIREFLY_RESET_INVERT_INIT);
+
+    // set inverted channels on the clock firefly
+    ctrlreg &= (!MASK_CTRL_FIREFLY_CTRL);
+    ctrlreg |= BIT_FIREFLY_CLOCK_SEL;
+    bus.write(ADDR_CTRL_REG,ctrlreg);
+    invert_tx_channels(FIREFLY_CLOCK_INVERT_INIT);
+
+    // put the communication back to default
+    ctrlreg &= (!MASK_CTRL_FIREFLY_CTRL);
+    bus.write(ADDR_CTRL_REG,ctrlreg);
+
+    return 1;
+}
+
+int clockboard::map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num)
+{
+
+  uint16_t inverted_channel = (fibre_num&0x0fff);
+  uint8_t fibre_type = (fibre_num&0x8000)>>15; //0 clk 1 rst
+  uint8_t fibre_polarity = (fibre_num&0x1000)>>12; //0 non 1 inv
+  uint8_t daughter_polarity = 0;
+
+
+
+  if ((daughter_num==DAUGHTER_0) || (daughter_num==DAUGHTER_1)  || (daughter_num==DAUGHTER_6) || (daughter_num==DAUGHTER_7)) daughter_polarity = NON_INVERTED;
+  else if ((daughter_num==DAUGHTER_2)  || (daughter_num==DAUGHTER_3) || (daughter_num==DAUGHTER_4) || (daughter_num==DAUGHTER_5)) {daughter_polarity = INVERTED;}
+
+
+  if (daughter_polarity != fibre_polarity) {
+    uint32_t ctrlreg = bus.read(ADDR_CTRL_REG);
+    if (fibre_type == CLK_FIBRE) {
+        ctrlreg &= (!MASK_CTRL_FIREFLY_CTRL);
+        ctrlreg |= BIT_FIREFLY_CLOCK_SEL;
+        bus.write(ADDR_CTRL_REG,ctrlreg);
+    } else if (fibre_type == RST_FIBRE) {
+        ctrlreg &= (!MASK_CTRL_FIREFLY_CTRL);
+        ctrlreg |= BIT_FIREFLY_RESET_SEL;
+        bus.write(ADDR_CTRL_REG,ctrlreg);
+    }
+    invert_tx_channels(inverted_channel);
+    std::cout << "inverted tx channel" << std::endl;
+
+    // put the communication back to default
+    ctrlreg &= (!MASK_CTRL_FIREFLY_CTRL);
+    bus.write(ADDR_CTRL_REG,ctrlreg);
+    return 1;
+  }
+
+  return 1;
+
+}
+
 int clockboard::init_12c()
 {
     if(!isConnected())
@@ -354,6 +418,29 @@ int clockboard::read_mother_board_voltage(uint8_t dev_addr)
     int current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*4;
     return current;
 }
+
+int clockboard::configure_daughter_current_monitor(uint8_t dev_addr, uint16_t config)
+{
+    uint8_t data[2];
+    data[0]=(config>>8);
+    data[1]=(config&0xff);
+    enable_daughter_12c(dev_addr,I2C_MUX_POWER_ADDR);
+    write_i2c_reg(I2C_DAUGHTER_CURRENT_ADDR,
+                  I2C_CURRENT_MONITOR_CONFIG_REG_ADDR, 2, data);
+    disable_daughter_12c(dev_addr);
+    return 1;
+}
+
+int clockboard::configure_mother_current_monitor(uint8_t dev_addr, uint16_t config)
+{
+    uint8_t data[2];
+    data[0]=(config>>8);
+    data[1]=(config&0xff);
+    write_i2c_reg(I2C_MOTHER_CURRENT_ADDR,
+                  I2C_CURRENT_MONITOR_CONFIG_REG_ADDR, 2, data);
+    return 1;
+}
+
 
 uint32_t clockboard::checkTIP()
 {

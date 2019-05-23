@@ -9,6 +9,10 @@ public:
     clockboard(const char * addr, int port);
     bool isConnected(){return bus.isConnected();}
 
+    int init_clockboard();
+    int map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num);
+
+
     // I2C interface
     int init_12c();
     int read_i2c(uint8_t dev_addr, uint8_t &data);
@@ -36,7 +40,7 @@ public:
     vector<uint8_t> read_rx_amplitude();
     vector<uint8_t> read_rx_emphasis();
 
-    // Daughter cards
+    // Mother and daughter card monitoring
     int enable_daughter_12c(uint8_t dev_addr, uint8_t i2c_bus_num);
     int disable_daughter_12c(uint8_t dev_addr);
 
@@ -45,6 +49,10 @@ public:
 
     int read_daughter_board_voltage(uint8_t dev_addr);
     int read_mother_board_voltage(uint8_t dev_addr);
+
+    int configure_daughter_current_monitor(uint8_t dev_addr, uint16_t config);
+    int configure_mother_current_monitor(uint8_t dev_addr, uint16_t config);
+
 
 protected:
     ipbus bus;
@@ -63,7 +71,13 @@ protected:
     const uint32_t MASK_CTRL_PARTITION      = 0x07F8;
     const uint32_t MASK_CTRL_PARTITION_ADDR = 0x3800;
     const uint32_t MASK_CTRL_CLK_CTRL       = 0xC000;
+    const uint32_t BIT_CTRL_CLK_CTRL_SI_OE  = 0x4000;
+    const uint32_t BIT_CTRL_CLK_CTRL_SI_RST = 0x8000;
     const uint32_t MASK_CTRL_FIREFLY_CTRL   = 0xF0000;
+    const uint32_t BIT_FIREFLY_RESET_RST    = 0x10000;
+    const uint32_t BIT_FIREFLY_RESET_SEL    = 0x20000;
+    const uint32_t BIT_FIREFLY_CLOCK_RST    = 0x40000;
+    const uint32_t BIT_FIREFLY_CLOCK_SEL    = 0x80000;
     const uint32_t ADDR_DATA_CALIBRATED     = 0x7;
     const uint32_t ADDR_I2C_PS_LO           = 0x8;
     const uint32_t ADDR_I2C_PS_HI           = 0x9;
@@ -108,8 +122,29 @@ protected:
     const uint8_t I2C_MUX_POWER_ADDR       = 0x4;
     const uint8_t I2C_DAUGHTER_CURRENT_ADDR= 0x40;
     const uint8_t I2C_MOTHER_CURRENT_ADDR  = 0x40;
+    const uint8_t I2C_CURRENT_MONITOR_CONFIG_REG_ADDR = 0x0;
     const uint8_t I2C_SHUNT_VOLTAGE_REG_ADDR = 0x1;
     const uint8_t I2C_BUS_VOLTAGE_REG_ADDR = 0x2;
+
+    // Default values for inverted channels - to/from ODB?
+    const uint16_t FIREFLY_RESET_INVERT_INIT = 0x0008;
+    const uint16_t FIREFLY_CLOCK_INVERT_INIT = 0x0A00;
+
+    const uint8_t INVERTED      = 0x1;
+    const uint8_t NON_INVERTED  = 0x0;
+
+    const uint8_t CLK_FIBRE     = 0x0;
+    const uint8_t RST_FIBRE     = 0x1;
+
+    // Daughter addresses
+    const uint8_t DAUGHTER_0 =  0x70;
+    const uint8_t DAUGHTER_1 =  0x74;
+    const uint8_t DAUGHTER_2 =  0x71;
+    const uint8_t DAUGHTER_3 =  0x75;
+    const uint8_t DAUGHTER_4 =  0x72;
+    const uint8_t DAUGHTER_5 =  0x76;
+    const uint8_t DAUGHTER_6 =  0x73;
+    const uint8_t DAUGHTER_7 =  0x77;
 
 };
 
