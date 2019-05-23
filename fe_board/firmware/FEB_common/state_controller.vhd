@@ -1,6 +1,10 @@
 -- run start and reset state machine for AriaV frontend board
 -- Protocol defined in Mu3e-Note-46 "Run Start and Reset Protocol" (Version 12.11.2018) (+ Stop reset signal)
 
+----------------------------------
+-- PLEASE READ THE README !!!!!!!
+----------------------------------
+
 --states:
 --idle
 --run prepare

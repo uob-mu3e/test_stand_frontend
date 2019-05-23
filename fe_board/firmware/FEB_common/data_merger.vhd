@@ -1,6 +1,10 @@
 -- data merger for mu3e FEB
 -- Martin Mueller, May 2019
 
+----------------------------------
+-- PLEASE READ THE README !!!!!!!
+----------------------------------
+
 -- 2 states: 
 --	merger state: state of this entity (idle, sending data, sending slowcontrol)
 --	FEB state: "reset" state from FEB_state_controller (idle, run_prep, sync, running, terminating, link_test, sync_test, reset, outOfDaq)
@@ -10,10 +14,8 @@
 -- @ future me: 
 -- ToDo:
 --	error outputs (data does not start with start marker, data fifo not empty in sync, etc. )
--- end of event marker from fifo --> what to do with 31 downto 0 in this case ? (output has to be k28.4 & x"000000")
--- trailer content ? (k28.4, and ??????)
---	Fifo runs empty --> can i leave read req = 1 with protection circuit ? (alternative would need 2 clock) 
--- SC FIFO runs empty --> do not go into idle
+-- end of event marker from fifo --> what to do with 31 downto 0 in this case ? trailer content ? (k28.4, and ??????)
+
 
 library ieee;
 use ieee.std_logic_1164.all;
