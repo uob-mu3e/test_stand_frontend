@@ -165,7 +165,6 @@ component debouncer is
         arst_n  :   in  std_logic;
         clk     :   in  std_logic--;
     );
-);		
 end component debouncer;
 
 component ip_clk_ctrl is
@@ -418,7 +417,8 @@ end component ip_fifodataoutpll;
 
 component rx_align is
     generic (
-        Nb : positive := 4
+        Nb : positive := 4;
+		  K : std_logic_vector(7 downto 0) := X"BC"--;
     );
     port (
         data    :   out std_logic_vector(8*Nb-1 downto 0);
@@ -429,8 +429,6 @@ component rx_align is
         datain  :   in  std_logic_vector(8*Nb-1 downto 0);
         datakin :   in  std_logic_vector(Nb-1 downto 0);
 		  
-		  K 		 : in std_logic_vector(7 downto 0) := X"BC";
-
         syncstatus      :   in  std_logic_vector(Nb-1 downto 0);
         patterndetect   :   in  std_logic_vector(Nb-1 downto 0);
         enapatternalign :   out std_logic;
@@ -439,9 +437,7 @@ component rx_align is
         disperr     :   in  std_logic_vector(Nb-1 downto 0);
 
         rst_n   :   in  std_logic;
-        clk     :   in  std_logic;
-		  
-		  align_status : out std_logic--;
+        clk     :   in  std_logic
     );
 end component;
   

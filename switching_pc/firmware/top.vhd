@@ -40,6 +40,10 @@ port (
     FAN_I2C_SCL :   out     std_logic;
     FAN_I2C_SDA :   inout   std_logic;
 	 
+	 
+	 --     ///////// CPU /////////
+    CPU_RESET_n :   in  std_logic;
+	 
 	 --      ///////// FLASH /////////
 	 FLASH_A         :   out     std_logic_vector(26 downto 1);
     FLASH_D         :   inout   std_logic_vector(31 downto 0);
@@ -505,6 +509,8 @@ clk <= CLK_50_B2J; -- for debouncer
 reset_n <= not reset;
 reset <= not push_button0_db;
 LED_BRACKET(0) <= data_algin(0);
+cpu_reset_n_q <= CPU_RESET_n;
+
 --reset <= not push_button0_db; -- for receiver
 
 --LED_BRACKET(0) <= rx_is_lockedtoref(0);
@@ -537,8 +543,8 @@ i_debouncer : entity work.debouncer
 	  q(1) 	=> push_button1_db,
 	  q(2) 	=> push_button2_db,
 	  q(3) 	=> push_button3_db,
-	  arst_n => CPU_RESET_n,
-	  clk 	=> cpu_clk--,
+	  arst_n => cpu_reset_n_q,
+	  clk 	=> clk--,
  );
 
 clk_125_cnt_p : process(clk)
@@ -570,8 +576,6 @@ segment1 : component seg7_lut
 );
 
 ------------- NIOS -------------
-
-cpu_reset_n_q <= push_button1_db;
 
 nios2 : component nios
 port map (
@@ -699,13 +703,13 @@ u0 : component receiver_switching
 
 word_align_ch0 : component rx_align
     generic map (
-        Nb 	=> 4
+        Nb 						=> 4,
+		  K 						=> X"BC"
     )
     port map (
         data    				=> data_ch0,
         datak   				=> datak_ch0,
         lock    				=> lock_ch0,
-		  K 						=> X"BC",
         datain  				=> rx_parallel_data_ch0_rx_parallel_data,
         datakin 				=> rx_datak_ch0_rx_datak,
         syncstatus 			=> rx_syncstatus_ch0_rx_syncstatus,
@@ -719,14 +723,14 @@ word_align_ch0 : component rx_align
 	 
 word_align_ch1 : component rx_align
     generic map (
-        Nb 	=> 4
+        Nb 						=> 4,
+		  K 						=> X"BC"
     )
     port map (
         data    				=> data_ch1,
         datak   				=> datak_ch1,
         lock    				=> lock_ch1,
-		  K 						=> X"BC",
-        datain  				=> rx_parallel_data_ch1_rx_parallel_data,
+		  datain  				=> rx_parallel_data_ch1_rx_parallel_data,
         datakin 				=> rx_datak_ch1_rx_datak,
         syncstatus 			=> rx_syncstatus_ch1_rx_syncstatus,
         patterndetect 		=> rx_patterndetect_ch1_rx_patterndetect,
@@ -739,13 +743,13 @@ word_align_ch1 : component rx_align
 	 
 word_align_ch2 : component rx_align
     generic map (
-        Nb 	=> 4       
+        Nb 						=> 4,
+		  K 						=> X"BC"      
     )
     port map (
         data    				=> data_ch2,
         datak   				=> datak_ch2,
         lock    				=> lock_ch2,
-		  K 						=> X"BC",
         datain  				=> rx_parallel_data_ch2_rx_parallel_data,
         datakin 				=> rx_datak_ch2_rx_datak,
         syncstatus 			=> rx_syncstatus_ch2_rx_syncstatus,
@@ -759,13 +763,13 @@ word_align_ch2 : component rx_align
 	 
 word_align_ch3 : component rx_align
     generic map (
-        Nb 	=> 4
+        Nb 						=> 4,
+		  K 						=> X"BC"
     )
     port map (
         data    				=> data_ch3,
         datak   				=> datak_ch3,
         lock    				=> lock_ch3,
-		  K 						=> X"BC",
         datain  				=> rx_parallel_data_ch3_rx_parallel_data,
         datakin 				=> rx_datak_ch3_rx_datak,
         syncstatus 			=> rx_syncstatus_ch3_rx_syncstatus,

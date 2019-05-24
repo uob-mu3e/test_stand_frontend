@@ -1,8 +1,6 @@
 #
 
 
-set_global_assignment -name FAMILY "Arria 10"
-set_global_assignment -name DEVICE 10AX115N2F45E1SG
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 18.0.0
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "10:48:43  OCTOBER 19, 2018"
 set_global_assignment -name LAST_QUARTUS_VERSION "18.0.0 Standard Edition"
@@ -33,15 +31,23 @@ set_global_assignment -name VHDL_FILE util/debouncer.vhd
 set_global_assignment -name VHDL_FILE util/seg7_lut.vhd
 set_global_assignment -name VHDL_FILE util/version_reg.vhd
 set_global_assignment -name VHDL_FILE util/rx_align.vhd
+set_global_assignment -name VHDL_FILE util/mu3e_pkg.vhd
+set_global_assignment -name VHDL_FILE util/util_pkg.vhd
+set_global_assignment -name VHDL_FILE util/ff_sync.vhd
+set_global_assignment -name VHDL_FILE util/reset_sync.vhd
+set_global_assignment -name VHDL_FILE util/counter.vhd
+set_global_assignment -name VHDL_FILE util/clkmon.vhd
+set_global_assignment -name VHDL_FILE util/clkdiv.vhd
+set_global_assignment -name VHDL_FILE util/watchdog.vhd
 
 set_global_assignment -name QSYS_FILE ip/ip_clk_ctrl.qsys
 set_global_assignment -name QSYS_FILE ip/receiver_switching.qsys
 set_global_assignment -name QSYS_FILE ip/ip_receiving_fifo.qsys
-set_global_assignment -name QSYS_FILE ip/ip_fifodataoutpll.qsys
 set_global_assignment -name QSYS_FILE ip/transceiver_switching.qsys
 set_global_assignment -name QSYS_FILE ip/ip_pll_312.qsys
-set_global_assignment -name QSYS_FILE ip/ip_sw_tree_fifo_32.qsys
-set_global_assignment -name QSYS_FILE ip/ip_sw_tree_fifo_64.qsys
+set_global_assignment -name QSYS_FILE ip/ip_sw_fifo_32.qsys
+set_global_assignment -name QSYS_FILE ip/ip_sw_fifo_64.qsys
+set_global_assignment -name QSYS_FILE ip/transceiver_fifo.qsys
 
 set_global_assignment -name VHDL_FILE pcieapp/reset_logic.vhd
 set_global_assignment -name VHDL_FILE pcieapp/dma_engine.vhd
@@ -86,5 +92,6 @@ set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 
 
 
-set_global_assignment -name QSYS_FILE switching_logic/transceiver_fifo.qsys
+
+
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
