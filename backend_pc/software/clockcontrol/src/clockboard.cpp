@@ -17,65 +17,46 @@ clockboard::clockboard(const char *addr, int port):bus(addr, port)
 int clockboard::init_clockboard()
 {
     init_12c();
-    uint32_t ctrlreg = 0;
     // Turn on Si chip output
-    ctrlreg |= BIT_CTRL_CLK_CTRL_SI_OE;
-    bus.write(ADDR_CTRL_REG,ctrlreg);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_CLK_CTRL,BIT_CTRL_CLK_CTRL_SI_OE);
 
     // set inverted channels on the reset firefly
-    ctrlreg |= BIT_FIREFLY_RESET_SEL;
-    bus.write(ADDR_CTRL_REG,ctrlreg);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_RESET_SEL);
     invert_tx_channels(FIREFLY_RESET_INVERT_INIT);
 
     // set inverted channels on the clock firefly
-    ctrlreg &= (!MASK_CTRL_FIREFLY_CTRL);
-    ctrlreg |= BIT_FIREFLY_CLOCK_SEL;
-    bus.write(ADDR_CTRL_REG,ctrlreg);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
     invert_tx_channels(FIREFLY_CLOCK_INVERT_INIT);
 
     // put the communication back to default
-    ctrlreg &= (!MASK_CTRL_FIREFLY_CTRL);
-    bus.write(ADDR_CTRL_REG,ctrlreg);
-
+    bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_FIREFLY_CTRL, 0x0);
     return 1;
 }
 
 int clockboard::map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num)
 {
-
   uint16_t inverted_channel = (fibre_num&0x0fff);
   uint8_t fibre_type = (fibre_num&0x8000)>>15; //0 clk 1 rst
   uint8_t fibre_polarity = (fibre_num&0x1000)>>12; //0 non 1 inv
   uint8_t daughter_polarity = 0;
 
-
-
   if ((daughter_num==DAUGHTER_0) || (daughter_num==DAUGHTER_1)  || (daughter_num==DAUGHTER_6) || (daughter_num==DAUGHTER_7)) daughter_polarity = NON_INVERTED;
   else if ((daughter_num==DAUGHTER_2)  || (daughter_num==DAUGHTER_3) || (daughter_num==DAUGHTER_4) || (daughter_num==DAUGHTER_5)) {daughter_polarity = INVERTED;}
 
-
   if (daughter_polarity != fibre_polarity) {
-    uint32_t ctrlreg = bus.read(ADDR_CTRL_REG);
     if (fibre_type == CLK_FIBRE) {
-        ctrlreg &= (!MASK_CTRL_FIREFLY_CTRL);
-        ctrlreg |= BIT_FIREFLY_CLOCK_SEL;
-        bus.write(ADDR_CTRL_REG,ctrlreg);
+        bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_FIREFLY_CTRL,BIT_FIREFLY_CLOCK_SEL);
     } else if (fibre_type == RST_FIBRE) {
-        ctrlreg &= (!MASK_CTRL_FIREFLY_CTRL);
-        ctrlreg |= BIT_FIREFLY_RESET_SEL;
-        bus.write(ADDR_CTRL_REG,ctrlreg);
+        bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_FIREFLY_CTRL,BIT_FIREFLY_RESET_SEL);
     }
     invert_tx_channels(inverted_channel);
     std::cout << "inverted tx channel" << std::endl;
 
-    // put the communication back to default
-    ctrlreg &= (!MASK_CTRL_FIREFLY_CTRL);
-    bus.write(ADDR_CTRL_REG,ctrlreg);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_FIREFLY_CTRL,0x0);
     return 1;
   }
 
   return 1;
-
 }
 
 int clockboard::init_12c()

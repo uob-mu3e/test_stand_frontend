@@ -19,6 +19,7 @@ public:
 
     int write(uint32_t addr, uint32_t data);
     uint32_t read(uint32_t addr);
+    // Register X <= (X & andterm)|orterm
     uint32_t readModifyWriteBits(uint32_t addr, uint32_t andterm, uint32_t orterm);
 
 protected:
