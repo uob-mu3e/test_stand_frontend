@@ -21,3 +21,6 @@ CMakeLists.txt.user.Z25018
 cmake-build-debug/
 *.mid
 *.mid.lz4
+*.bak
+*.sopcinfo
+*.rpt

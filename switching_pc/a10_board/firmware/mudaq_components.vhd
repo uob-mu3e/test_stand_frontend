@@ -31,6 +31,23 @@ component datagenerator is
 		);
 end component;
 
+component data_demerge is 
+    PORT(
+		clk:                    in  std_logic; -- receive clock (156.25 MHz)
+ 		reset:                  in  std_logic;
+		aligned:						in  std_logic; -- word alignment achieved
+		data_in:						in  std_logic_vector(31 downto 0); -- optical from frontend board
+		datak_in:               in  std_logic_vector(3 downto 0);
+		data_out:					out std_logic_vector(31 downto 0); -- to sorting fifos
+		datak_out:					out std_logic_vector(3 downto 0); -- to sorting fifos
+		data_ready:             out std_logic;							  -- write req for sorting fifos	
+		sc_out:						out std_logic_vector(31 downto 0); -- slowcontrol from frontend board
+		sc_out_ready:				out std_logic;
+		sck_out:						out std_logic_vector(3 downto 0); 
+		fpga_id:						out std_logic_vector(15 downto 0)  -- FPGA ID of the connected frontend board
+);
+END component;
+
 component datagenerator64 is
 	Generic (
 		ENABLE_BIT: integer := 0);
@@ -183,17 +200,6 @@ component counter is
 		time_counter 	: 	out std_logic_vector (255 downto 0)
   );
 end component counter;
-
-component data_demerge is 
-    port(
-        clk:                    in  std_logic;
-        reset:                  in  std_logic;
-        pixel_data:             out std_logic_vector(31 downto 0);
-        pixel_data_ready:             out std_logic;
-        feb_link_in:            in  std_logic_vector(31 downto 0);
-        datak_in:               in  std_logic
-    );
-end component data_demerge;
 
 component running is
 	generic (
@@ -437,7 +443,9 @@ component rx_align is
         disperr     :   in  std_logic_vector(Nb-1 downto 0);
 
         rst_n   :   in  std_logic;
-        clk     :   in  std_logic
+        clk     :   in  std_logic;
+		  
+		  aligned : out std_logic
     );
 end component;
   

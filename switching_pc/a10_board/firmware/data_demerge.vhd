@@ -13,8 +13,10 @@ ENTITY data_demerge is
 		data_in:						in  std_logic_vector(31 downto 0); -- optical from frontend board
 		datak_in:               in  std_logic_vector(3 downto 0);
 		data_out:					out std_logic_vector(31 downto 0); -- to sorting fifos
+		datak_out:					out std_logic_vector(3 downto 0); -- to sorting fifos
 		data_ready:             out std_logic;							  -- write req for sorting fifos	
 		sc_out:						out std_logic_vector(31 downto 0); -- slowcontrol from frontend board
+		sck_out:						out std_logic_vector(3 downto 0); -- slowcontrol from frontend board
 		sc_out_ready:				out std_logic;
 		fpga_id:						out std_logic_vector(15 downto 0)  -- FPGA ID of the connected frontend board
 );
@@ -46,7 +48,8 @@ BEGIN
             demerge_state 		<= idle;
             data_ready 			<= '0';
             data_out 			<= (others => '0');
-				sc_out_ready				<= '0';
+				datak_out			<= (others => '0');
+				sc_out_ready		<= '0';
 				sc_out				<= (others => '0');
             
         elsif (rising_edge(clk)) then
@@ -56,8 +59,10 @@ BEGIN
 				  when idle =>
 						data_ready 			<= '0';
 						data_out 			<= (others => '0');
-						sc_out_ready				<= '0';
+						datak_out			<= (others => '0');
+						sc_out_ready		<= '0';
 						sc_out				<= (others => '0');
+						sck_out				<= (others => '0');
 						
 						if (datak_in(3 downto 0) = "0001" and data_in(31 downto 29)="111") then -- Mupix or MuTrig preamble
 							fpga_id					<=	data_in(23 downto 8);
@@ -74,12 +79,15 @@ BEGIN
 							 demerge_state 		<= idle;
 							 data_ready				<= '0';					-- TODO: do something with the trailer bits (31 downto 8) here (They are used for Mutrig, DAQ Week 2019)
 							 data_out				<= (others => '0');
+							 datak_out				<= (others => '0');
 							 
 						elsif(data_in (31 downto 0)= K285 and datak_in = K285_datak) then
 							 data_ready				<= '0';
 							 data_out				<= (others => '0');
+							 datak_out				<= (others => '0');
 						else
 							 data_out				<= data_in;
+							 datak_out				<= datak_in;
 						end if;
 						
 				  when receiving_slowcontrol =>
@@ -88,11 +96,14 @@ BEGIN
 							 demerge_state 		<= idle;
 							 sc_out_ready			<= '0';
 							 sc_out					<= (others => '0');
+							 sck_out					<= (others => '0');
 						elsif(data_in (31 downto 0)= K285 and datak_in = K285_datak) then
 							 sc_out_ready			<= '0';
 							 sc_out					<= (others => '0');
+							 sck_out					<= (others => '0');
 						else
 							 sc_out					<= data_in;
+							 sck_out					<= datak_in;
 						end if;
 			 end case;
 			 

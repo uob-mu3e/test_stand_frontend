@@ -23,7 +23,9 @@ entity rx_align is
         disperr     :   in  std_logic_vector(Nb-1 downto 0);
 
         rst_n   :   in  std_logic;
-        clk     :   in  std_logic--;
+        clk     :   in  std_logic;
+		  
+		  aligned : out std_logic
     );
 end entity;
 
@@ -66,6 +68,7 @@ begin
         pattern_i <= "0000";
         enapatternalign <= '0';
         cnt <= 0;
+		  aligned <= '0';
         --
     elsif rising_edge(clk) then
         error_v := false;
@@ -135,15 +138,19 @@ begin
         when "0001" =>
             data <= data_i(8*Nb-1 + 0 downto 0);
             datak <= datak_i(Nb-1 + 0 downto 0);
+				aligned <= '1';
         when "0010" =>
             data <= data_i(8*Nb-1 + 8 downto 8);
             datak <= datak_i(Nb-1 + 1 downto 1);
+				aligned <= '1';
         when "0100" =>
             data <= data_i(8*Nb-1 + 16 downto 16);
             datak <= datak_i(Nb-1 + 2 downto 2);
+				aligned <= '1';
         when "1000" =>
             data <= data_i(8*Nb-1 + 24 downto 24);
             datak <= datak_i(Nb-1 + 3 downto 3);
+				aligned <= '1';
         when others =>
             null;
         end case;
