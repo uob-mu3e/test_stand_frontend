@@ -304,7 +304,7 @@ begin
         q_b => avm_sc.readdata,
         wren_b => avm_sc.write,
         data_b => avm_sc.writedata,
-        clock_b => nios_clk,
+        clock_b => qsfp_rx_clk(0),
 
         address_a => ram_addr_a(13 downto 0),
         q_a => open,

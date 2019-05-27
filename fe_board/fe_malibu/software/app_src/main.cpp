@@ -34,6 +34,7 @@ char wait_key(useconds_t us = 100000) {
 
 #include "xcvr.h"
 #include "malibu.h"
+#include "sc.h"
 
 int main() {
     alt_alarm alarm;
@@ -52,6 +53,7 @@ int main() {
         printf("'%s' FE_S4 (MALIBU)\n", ALT_DEVICE_FAMILY);
         printf("  [1] => xcvr\n");
         printf("  [2] => malibu\n");
+        printf("  [3] => sc\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -61,6 +63,9 @@ int main() {
             break;
         case '2':
             menu_malibu();
+            break;
+        case '3':
+            menu_sc();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);
