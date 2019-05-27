@@ -20,14 +20,14 @@
 #include <boost/dynamic_bitset.hpp>
 
 #include "mudaq_circular_buffer.hpp"
-#include "mudaq_device_constants.h"
-#include "mudaq_registers.h"
+#include "../include/mudaq_device_constants.h"
+#include "../include/mudaq_registers.h"
 #include "utils.hpp"
 #include "time.h"
 #include <stdlib.h>
 #include <stdio.h>
 /*??????*/
-#include "../../driver/mudaq.h"
+#include "../kerneldriver/mudaq.h"
 
 static size_t _pagesize(void) { return static_cast<size_t>(sysconf(_SC_PAGESIZE)); }
 int physical_address_check( uint32_t * virtual_address, size_t size );
