@@ -74,6 +74,8 @@ derive_clock_uncertainty
 #**************************************************************
 set_false_path -from [get_registers {reset_logic:resetlogic|resets_reg[*]}]
 set_false_path -from {debouncer:deb1|dout_last}
+set_false_path -from {debouncer:i_debouncer|q[0]}
+set_false_path -from {debouncer:i_debouncer|q[0]} -to {sc_slave:sc_slave_ch0|state}
 
 #**************************************************************
 # Set Multicycle Path
