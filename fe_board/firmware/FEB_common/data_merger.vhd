@@ -23,7 +23,7 @@ use ieee.numeric_std.all;
 --use work.protocol_new.all;
 
 ENTITY data_merger is 
-    PORT(
+	PORT(
 		clk:                    in  std_logic; -- 156.25 clk input
 		reset:                  in  std_logic; 
 		fpga_ID_in:					in  std_logic_vector(15 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now 
@@ -38,7 +38,7 @@ ENTITY data_merger is
 		state_reset:            in  std_logic;
 		state_out_of_DAQ:       in  std_logic;
 		data_out:               out std_logic_vector(31 downto 0); -- to optical transm.
-		data_is_k:              out std_logic_vector(3 downto 0); -- to optical trasm.
+		data_is_k:              out std_logic_vector(3 downto 0);  -- to optical trasm.
 		data_in:						in  std_logic_vector(35 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
 		data_in_slowcontrol:    in  std_logic_vector(35 downto 0); -- data input slowcontrol from SCFIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 SCData))
 		slowcontrol_fifo_empty: in  std_logic;
@@ -52,7 +52,7 @@ ENTITY data_merger is
 		override_granted:			out std_logic;
 		data_priority:				in  std_logic; -- 0: slowcontrol packets have priority, 1: data packets have priority
 		leds:							out std_logic_vector(3 downto 0) -- debug
-    );
+   );
 END ENTITY data_merger;
 
 architecture rtl of data_merger is
@@ -60,18 +60,19 @@ architecture rtl of data_merger is
 	type data_merger_state is (idle, sending_data, sending_slowcontrol);
 	--type feb_state is (idle, run_prep, sync, running, terminating, link_test, sync_test, reset_state, out_of_DAQ);
 
+	-- ToDo: Move this to some common location (for all boards !!)
 	constant K285:									std_logic_vector(31 downto 0) :=x"000000bc";
 	constant K285_datak:							std_logic_vector(3 downto 0)	:= "0001";
-	constant K284:									std_logic_vector(31 downto 0) :=x"0000009c";
+	constant K284:									std_logic_vector(7 downto 0) :=x"9c";
 	constant K284_datak:							std_logic_vector(3 downto 0)	:= "0001";
-	constant K307:									std_logic_vector(7 downto 0)	:= x"fe"
+	constant K307:									std_logic_vector(7 downto 0)	:= x"fe";
 	
 	constant run_prep_acknowledge:			std_logic_vector(31 downto 0)	:= x"000001fe";
 	constant run_prep_acknowledge_datak:	std_logic_vector(3 downto 0) 	:= "0001";
 	constant RUN_END:								std_logic_vector(31 downto 0)	:= x"000002fe";
 	constant RUN_END_DATAK:						std_logic_vector(3 downto 0)	:= "0001";
 	
-	constant MERGER_FIFO_RUN_END_MARKER:	std_logic_vector(3 downto 0)	:= "0111"
+	constant MERGER_FIFO_RUN_END_MARKER:	std_logic_vector(3 downto 0)	:= "0111";
 
 
 ----------------components------------------
@@ -89,7 +90,7 @@ BEGIN
 
 -- debug led merger state
 process (clk, reset)
-    begin
+	begin
 		if(merger_state=idle) then 
 			leds<=(0=>'1', others => '0');
 		elsif (merger_state=sending_data) then
@@ -142,7 +143,7 @@ process (clk, reset)
 						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of packet marker
 							merger_state				<= idle;
 							slowcontrol_read_req		<= '0';
-							data_out(31 downto 0)  	<= K284;
+							data_out(31 downto 0)  	<= x"000000" & K284;
 							data_is_k 					<= K284_datak;
 						else
 							slowcontrol_read_req		<= '1';
@@ -158,7 +159,7 @@ process (clk, reset)
 						else
 							merger_state 				<= idle;
 							override_granted			<= '0';
-							data_out(31  downto 0) 	<= K284;
+							data_out(31  downto 0) 	<= x"000000" & K284;
 							data_is_k 					<= K284_datak;
 						end if;
 				end case;
@@ -177,7 +178,7 @@ process (clk, reset)
 						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of packet marker
 							merger_state				<= idle;
 							slowcontrol_read_req		<= '0';
-							data_out(31 downto 0)  	<= K284;
+							data_out(31 downto 0)  	<= x"000000" & K284;
 							data_is_k 					<= K284_datak;
 						else
 							slowcontrol_read_req		<= '1';
@@ -226,7 +227,7 @@ process (clk, reset)
 						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of packet marker
 							merger_state				<= idle;
 							slowcontrol_read_req		<= '0';
-							data_out(31 downto 0)  	<= K284;
+							data_out(31 downto 0)  	<= x"000000" & K284;
 							data_is_k 					<= K284_datak;
 						else
 							slowcontrol_read_req		<= '1';
@@ -273,7 +274,7 @@ process (clk, reset)
 						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of packet marker
 							merger_state				<= idle;
 							slowcontrol_read_req		<= '0';
-							data_out(31 downto 0)  	<= K284;
+							data_out(31 downto 0)  	<= x"000000" & K284;
 							data_is_k 					<= K284_datak;
 						else
 							slowcontrol_read_req		<= '1';
@@ -331,7 +332,7 @@ process (clk, reset)
 						elsif(data_in(33 downto 32)="11") then 	-- run end(0111) in state sending_data is always packet end (XX11)
 							merger_state 				<= idle;
 							data_read_req				<= '0'; 
-							data_out(31 downto 0)  	<= K284;
+							data_out(31 downto 0)  	<= data_in(23 downto 0) & K284;
 							data_is_k 					<= K284_datak;
 							last_merger_fifo_control_bits <= data_in(35 downto 32); -- save them now --> if 35 downto 32 is actually 0111(run END) then terminate in merger_state idle
 						else
@@ -347,7 +348,7 @@ process (clk, reset)
 						elsif(data_in_slowcontrol(33 downto 32)= "11") then -- end of packet marker
 							merger_state				<= idle;
 							slowcontrol_read_req		<= '0';
-							data_out(31 downto 0)  	<= K284;
+							data_out(31 downto 0)  	<= x"000000" & K284;
 							data_is_k 					<= K284_datak;
 						else
 							slowcontrol_read_req		<= '1';
