@@ -629,32 +629,31 @@ port map (
 		pio_export									=> cpu_pio_i
 );
 
-
 -- generate reset sequence for flash and cpu
 reset_ctrl_i : entity work.reset_ctrl
 generic map (
-	W => 2,
-	N => 125 * 10**5 -- 100ms
+		W => 2,
+		N => 125 * 10**5 -- 100ms
 	)
 port map (
-	rstout_n(1) => flash_rst_n,
-	rstout_n(0) => cpu_reset_n_q,
-	rst_n => CPU_RESET_n,
-	clk => clk--,
+		rstout_n(1) => flash_rst_n,
+		rstout_n(0) => cpu_reset_n_q,
+		rst_n => CPU_RESET_n,
+		clk => clk--,
 );
 
 watchdog_i : entity work.watchdog
 generic map (
-	W => 4,
-	N => 125 * 10**6 -- 1s
+		W => 4,
+		N => 125 * 10**6 -- 1s
 )
 port map (
-	d => cpu_pio_i(3 downto 0),
+		d => cpu_pio_i(3 downto 0),
 
-	rstout_n => wd_rst_n,
+		rstout_n => wd_rst_n,
 
-	rst_n => CPU_RESET_n,
-	clk => clk--,
+		rst_n => CPU_RESET_n,
+		clk => clk--,
 );
 
 FLASH_A <= flash_tcm_address_out(27 downto 2);
