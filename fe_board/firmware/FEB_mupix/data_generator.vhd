@@ -33,15 +33,12 @@ end entity data_generator;
 architecture rtl of data_generator is
 
 ----------------signals---------------------
-   signal sc_data_counter:     std_logic_vector(3 downto 0);
+   --signal sc_data_counter:     std_logic_vector(3 downto 0);
 	signal global_time:			  std_logic_vector(47 downto 0);
 	signal reset_n:				  std_logic;
 	-- state_types
-	type data_header_states is (part1, part2, part3, part4, trailer);
+	type data_header_states is (part1, part2, part3, part4, trailer, overflow);
 	signal data_header_state:   data_header_states;
-
-	type data_event_states is (is_overflow, no_overflow);
-	signal data_event_state:   data_event_states;
 
 	-- random signals
 	signal lsfr_chip_id:     	  std_logic_vector (5 downto 0);
@@ -49,6 +46,7 @@ architecture rtl of data_generator is
 	signal lsfr_row:     	  	  std_logic_vector (7 downto 0);
 	signal lsfr_col:     	     std_logic_vector (7 downto 0);
 	signal lsfr_overflow:       std_logic_vector (15 downto 0);
+	signal wait_cnt: std_logic := '0';
 
 ----------------begin data_generator------------------------
 begin
@@ -131,68 +129,82 @@ variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
 variable overflow_idx	  : integer range 0 to 15 := 0;
 
 begin
-    if (reset = '1') then
-        data_pix_ready          <= '0';
-        data_sc_ready           <= '0';
-        data_pix_generated      <= (others => '0');
-        data_sc_generated       <= (others => '0');
-	global_time       	<= start_global_time;--(others => '0');
-        sc_data_counter         <= (others => '1');
-	data_header_state	<= part1;
-	data_event_state	<= no_overflow;
-	current_overflow 	:= "0000000000000000";
-	overflow_idx		:= 0;
-        
-    elsif rising_edge(clk) then
-        
+	if (reset = '1') then
+		data_pix_ready          <= '0';
+		--data_sc_ready           <= '0';
+		data_pix_generated      <= (others => '0');
+		--data_sc_generated       <= (others => '0');
+		global_time       		<= start_global_time;
+		--sc_data_counter         <= (others => '1');
+		data_header_state			<= part1;
+		wait_cnt						<= '0';
+		current_overflow 			:= "0000000000000000";
+		overflow_idx				:= 0;
+	elsif rising_edge(clk) then
         -- generate pix data
-        if(enable_pix='1') then
-		data_pix_ready <= '1';
-		case data_header_state is
-			when trailer =>
-				data_pix_generated(35 downto 32)	<= '0011';
-				data_pix_generated(31 downto 0)	<= (others => '0';
-				data_header_state 	<= part1;
-			when part1 =>
-				data_pix_generated		<= '0010' & global_time(47 downto 16);
-				data_header_state 		<= part2;
-			when part2 =>
-				data_pix_generated		<= '0000' & global_time(15 downto 0) & x"0000";
-				data_header_state 		<= part3;
-			when part3 =>
-				data_pix_generated 		<= '0000' & "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
-				global_time					<= global_time + '1';
-				overflow_idx 				:= 0;
-				current_overflow			:= lsfr_overflow;
-				data_header_state 		<= part4;
-			when part4 =>
-				if (lsfr_chip_id = DATA_SUB_HEADER_ID) then
-					data_pix_generated	<= '0000' & global_time(3 downto 0) & "101010" & lsfr_row & lsfr_col & lsfr_tot;
-				elsif (lsfr_chip_id = DATA_HEADER_ID) then
-					data_pix_generated	<= '0000' & global_time(3 downto 0) & "010101" & lsfr_row & lsfr_col & lsfr_tot;
-				else
-					data_pix_generated	<= '0000' & global_time(3 downto 0) & lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
-				end if;
-				
-				if (current_overflow(overflow_idx) = '1') then
-					overflow_idx 			:= overflow_idx + 1;
-				else
-					overflow_idx 			:= overflow_idx + 1;
-					global_time 			<= global_time + '1';
-				end if;
-				
-				if (global_time(9 downto 0) == "1111111111") then
-					data_header_state 	<= trailer;
-				elsif (global_time(3 downto 0) == "1111") then
-					data_header_state 	<= part5;
-				end if;
-			when others =>
-				data_header_state => part1;
-				---
-		end case;
-        else 
-            data_pix_ready <= '0';
-        end if;
+		if(enable_pix='1') then
+			if (wait_cnt = '1') then
+				data_pix_ready <= '1';
+				case data_header_state is
+					when trailer =>
+						data_pix_generated(35 downto 32)	<= "0011";
+						data_pix_generated(31 downto 0)	<= (others => '0');
+						data_header_state 					<= part1;
+					when part1 =>
+						data_pix_generated					<= "0010" & global_time(47 downto 16);
+						data_header_state 					<= part2;
+					when part2 =>
+						data_pix_generated					<= "0000" & global_time(15 downto 0) & x"0000";
+						data_header_state 					<= part3;
+					when part3 =>
+						data_pix_generated 					<= "0000" & "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
+						global_time								<= global_time + '1';
+						overflow_idx 							:= 0;
+						current_overflow						:= lsfr_overflow;
+						data_header_state 					<= part4;
+					when part4 =>
+						if (lsfr_chip_id = DATA_SUB_HEADER_ID) then
+							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0);-- "101010" & lsfr_row & lsfr_col & lsfr_tot;
+						elsif (lsfr_chip_id = DATA_HEADER_ID) then
+							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0); -- "010101" & lsfr_row & lsfr_col & lsfr_tot;
+						else
+							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0); --lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
+						end if;
+						
+						if (current_overflow(overflow_idx) = '1') then
+							overflow_idx 						:= overflow_idx + 1;
+							data_header_state					<= overflow;
+						else
+							overflow_idx 						:= overflow_idx + 1;
+							global_time 						<= global_time + '1';
+						end if;
+						
+						if (global_time(9 downto 0) = "1111111111") then
+							data_header_state 				<= trailer;
+						elsif (global_time(3 downto 0) = "1111") then
+							data_header_state 				<= part3;
+						end if;
+					when overflow =>
+						if (lsfr_chip_id = DATA_SUB_HEADER_ID) then
+							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0);-- "101010" & lsfr_row & lsfr_col & lsfr_tot;
+						elsif (lsfr_chip_id = DATA_HEADER_ID) then
+							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0); -- "010101" & lsfr_row & lsfr_col & lsfr_tot;
+						else
+							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0); --lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
+						end if;
+						global_time 						<= global_time + '1';
+						data_header_state					<= part4;
+					when others =>
+						data_header_state 					<= trailer;
+						---
+				end case;
+			else
+				data_pix_ready <= '0';
+				wait_cnt <= not wait_cnt;
+			end if;
+		else 
+			data_pix_ready <= '0';
+      end if;
         
         -- generate sc data
         --if(enable_sc='1') then 
@@ -210,7 +222,7 @@ begin
         --    sc_data_counter <= (others => '1');
         --end if;
         
-    end if;
+	end if;
 end process;
 
 
