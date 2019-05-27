@@ -83,6 +83,10 @@ architecture arch of top is
 
     signal avm_sc : work.mu3e.avalon_t;
 
+    signal ram_addr_a : std_logic_vector(15 downto 0);
+    signal ram_wdata_a : std_logic_vector(31 downto 0);
+    signal ram_we_a : std_logic;
+
 begin
 
     led_n <= not led;
@@ -127,19 +131,22 @@ begin
 
     i_nios : component work.cmp.nios
     port map (
-        avm_sc_address        => avm_sc.address(13 downto 0),
+        avm_qsfp_address        => avm_qsfp.address(15 downto 0),
+        avm_qsfp_read           => avm_qsfp.read,
+        avm_qsfp_readdata       => avm_qsfp.readdata,
+        avm_qsfp_write          => avm_qsfp.write,
+        avm_qsfp_writedata      => avm_qsfp.writedata,
+        avm_qsfp_waitrequest    => avm_qsfp.waitrequest,
+
+        avm_sc_address        => avm_sc.address(15 downto 0),
         avm_sc_read           => avm_sc.read,
         avm_sc_readdata       => avm_sc.readdata,
         avm_sc_write          => avm_sc.write,
         avm_sc_writedata      => avm_sc.writedata,
         avm_sc_waitrequest    => avm_sc.waitrequest,
 
-        avm_qsfp_address        => avm_qsfp.address(13 downto 0),
-        avm_qsfp_read           => avm_qsfp.read,
-        avm_qsfp_readdata       => avm_qsfp.readdata,
-        avm_qsfp_write          => avm_qsfp.write,
-        avm_qsfp_writedata      => avm_qsfp.writedata,
-        avm_qsfp_waitrequest    => avm_qsfp.waitrequest,
+        sc_clk_clk          => qsfp_rx_clk(0),
+        sc_reset_reset_n    => '1',
 
         --
         -- nios base
@@ -246,7 +253,7 @@ begin
     i_qsfp : entity work.xcvr_s4
     port map (
         -- avalon slave interface
-        avs_address     => avm_qsfp.address(13 downto 0),
+        avs_address     => avm_qsfp.address(15 downto 2),
         avs_read        => avm_qsfp.read,
         avs_readdata    => avm_qsfp.readdata,
         avs_write       => avm_qsfp.write,
@@ -286,6 +293,43 @@ begin
 
     ----------------------------------------------------------------------------
     -- SLOW CONTROL
+
+    i_sc_ram : entity work.ip_ram
+    generic map (
+        ADDR_WIDTH => 14,
+        DATA_WIDTH => 32--,
+    )
+    port map (
+        address_b => avm_sc.address(15 downto 2),
+        q_b => avm_sc.readdata,
+        wren_b => avm_sc.write,
+        data_b => avm_sc.writedata,
+        clock_b => nios_clk,
+
+        address_a => ram_addr_a(13 downto 0),
+        q_a => open,
+        wren_a => ram_we_a,
+        data_a => ram_wdata_a,
+        clock_a => qsfp_rx_clk(0)--,
+    );
+    avm_sc.waitrequest <= '0';
+
+    i_sc : entity work.sc_slave
+    port map (
+        link_data_in => qsfp_rx_data(31 downto 0),
+        link_data_in_k => qsfp_rx_datak(3 downto 0),
+
+        mem_addr_out => ram_addr_a,
+        mem_wren => ram_we_a,
+        mem_data_out => ram_wdata_a,
+
+        done => open,
+        stateout => open,
+
+        enable => '1',
+        reset_n => '1',
+        clk => qsfp_rx_clk(0)--,
+    );
 
     ----------------------------------------------------------------------------
 
