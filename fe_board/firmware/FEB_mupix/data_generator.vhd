@@ -46,7 +46,7 @@ architecture rtl of data_generator is
 	signal lsfr_row:     	  	  std_logic_vector (7 downto 0);
 	signal lsfr_col:     	     std_logic_vector (7 downto 0);
 	signal lsfr_overflow:       std_logic_vector (15 downto 0);
-	signal wait_cnt: std_logic := '0';
+	signal wait_cnt: std_logic_vector (1 downto 0);
 
 ----------------begin data_generator------------------------
 begin
@@ -137,13 +137,14 @@ begin
 		global_time       		<= start_global_time;
 		--sc_data_counter         <= (others => '1');
 		data_header_state			<= part1;
-		wait_cnt						<= '0';
+		wait_cnt						<= (others => '0');
 		current_overflow 			:= "0000000000000000";
 		overflow_idx				:= 0;
 	elsif rising_edge(clk) then
         -- generate pix data
 		if(enable_pix='1') then
-			if (wait_cnt = '1') then
+			wait_cnt <= wait_cnt + '1';
+			if (wait_cnt = "11") then
 				data_pix_ready <= '1';
 				case data_header_state is
 					when trailer =>
@@ -192,15 +193,14 @@ begin
 						else
 							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0); --lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
 						end if;
-						global_time 						<= global_time + '1';
-						data_header_state					<= part4;
+						global_time 							<= global_time + '1';
+						data_header_state						<= part4;
 					when others =>
 						data_header_state 					<= trailer;
 						---
 				end case;
 			else
 				data_pix_ready <= '0';
-				wait_cnt <= not wait_cnt;
 			end if;
 		else 
 			data_pix_ready <= '0';
