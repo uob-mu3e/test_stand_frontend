@@ -15,32 +15,29 @@ use work.downstream_communication_components.all;
 
 
 entity data_generator is
-	 generic (
-		fpga_id:						  std_logic_vector  := "0000110000110000"
-	 );
     port(
-        clk:                 	in  std_logic;
-        reset:               	in  std_logic;
-        enable_pix:          	in  std_logic;
-        --enable_sc:         	in  std_logic;
-	random_seed:		in  std_logic_vector (15 downto 0);
-        data_pix_generated:  	out std_logic_vector(31 downto 0);
-        --data_sc_generated:   	out std_logic_vector(31 downto 0);
-        data_pix_ready:      	out std_logic;
-        --data_sc_ready:      	out std_logic;
-	start_global_time:	in std_logic_vector(47 downto 0)
-        -- TODO: add some rate control
-    );
+		clk:                 	in  std_logic;
+		reset:               	in  std_logic;
+		enable_pix:          	in  std_logic;
+		--enable_sc:         	in  std_logic;
+		random_seed:		in  std_logic_vector (15 downto 0);
+		data_pix_generated:  	out std_logic_vector(35 downto 0);
+		--data_sc_generated:   	out std_logic_vector(31 downto 0);
+		data_pix_ready:      	out std_logic;
+		--data_sc_ready:      	out std_logic;
+		start_global_time:	in std_logic_vector(47 downto 0)
+			  -- TODO: add some rate control
+);
 end entity data_generator;
 
 architecture rtl of data_generator is
 
 ----------------signals---------------------
-    	signal sc_data_counter:     std_logic_vector(3 downto 0);
+   signal sc_data_counter:     std_logic_vector(3 downto 0);
 	signal global_time:			  std_logic_vector(47 downto 0);
 	signal reset_n:				  std_logic;
 	-- state_types
-	type data_header_states is (part1, part2, part3, part4);
+	type data_header_states is (part1, part2, part3, part4, trailer);
 	signal data_header_state:   data_header_states;
 
 	type data_event_states is (is_overflow, no_overflow);
@@ -152,28 +149,29 @@ begin
         if(enable_pix='1') then
 		data_pix_ready <= '1';
 		case data_header_state is
+			when trailer =>
+				data_pix_generated(35 downto 32)	<= '0011';
+				data_pix_generated(31 downto 0)	<= (others => '0';
+				data_header_state 	<= part1;
 			when part1 =>
-				data_pix_generated		<= DATA_HEADER_ID & "00" & fpga_id & x"BC";
+				data_pix_generated		<= '0010' & global_time(47 downto 16);
 				data_header_state 		<= part2;
 			when part2 =>
-				data_pix_generated		<= global_time(47 downto 16);
+				data_pix_generated		<= '0000' & global_time(15 downto 0) & x"0000";
 				data_header_state 		<= part3;
 			when part3 =>
-				data_pix_generated		<= global_time(15 downto 0) & x"0000";
+				data_pix_generated 		<= '0000' & "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
+				global_time					<= global_time + '1';
+				overflow_idx 				:= 0;
+				current_overflow			:= lsfr_overflow;
 				data_header_state 		<= part4;
 			when part4 =>
-				data_pix_generated 		<= "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
-				data_header_state 		<= part5;
-				global_time			<= global_time + '1';
-				overflow_idx 			:= 0;
-				current_overflow		:= lsfr_overflow;
-			when part5 =>
 				if (lsfr_chip_id = DATA_SUB_HEADER_ID) then
-					data_pix_generated	<= global_time(3 downto 0) & "101010" & lsfr_row & lsfr_col & lsfr_tot;
+					data_pix_generated	<= '0000' & global_time(3 downto 0) & "101010" & lsfr_row & lsfr_col & lsfr_tot;
 				elsif (lsfr_chip_id = DATA_HEADER_ID) then
-					data_pix_generated	<= global_time(3 downto 0) & "010101" & lsfr_row & lsfr_col & lsfr_tot;
+					data_pix_generated	<= '0000' & global_time(3 downto 0) & "010101" & lsfr_row & lsfr_col & lsfr_tot;
 				else
-					data_pix_generated	<= global_time(3 downto 0) & lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
+					data_pix_generated	<= '0000' & global_time(3 downto 0) & lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
 				end if;
 				
 				if (current_overflow(overflow_idx) = '1') then
@@ -182,13 +180,15 @@ begin
 					overflow_idx 			:= overflow_idx + 1;
 					global_time 			<= global_time + '1';
 				end if;
-
+				
 				if (global_time(9 downto 0) == "1111111111") then
-					data_header_state 	<= part1;
+					data_header_state 	<= trailer;
 				elsif (global_time(3 downto 0) == "1111") then
 					data_header_state 	<= part5;
 				end if;
-
+			when others =>
+				data_header_state => part1;
+				---
 		end case;
         else 
             data_pix_ready <= '0';
