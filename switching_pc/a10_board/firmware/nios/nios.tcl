@@ -71,7 +71,7 @@ add_interface flash conduit end
 set_interface_property flash EXPORT_OF flash.out
 
 
-# uart, timers, spi, i2c
+# uart, timers, i2c, spi
 if 1 {
     add_instance sysid altera_avalon_sysid_qsys
 
@@ -85,8 +85,13 @@ if 1 {
     add_instance timer_ts altera_avalon_timer
     apply_preset timer_ts "Full-featured"
 
-    add_instance spi altera_avalon_spi
     add_instance i2c altera_avalon_i2c
+    add_instance spi altera_avalon_spi
+
+    add_instance pio altera_avalon_pio
+    set_instance_parameter_value pio {direction} {Output}
+    set_instance_parameter_value pio {width} {32}
+    set_instance_parameter_value pio {bitModifyingOutReg} {32}
 
     foreach { name clk reset mm addr } {
         sysid     clk   reset      control_slave     0x0000
@@ -95,6 +100,7 @@ if 1 {
         timer_ts  clk   reset      s1                0x0140
         spi       clk   reset      spi_control_port  0x0200
         i2c       clock reset_sink csr               0x0240
+        pio       clk   reset      s1                0x0280
     } {
         add_connection clk_50.clk       $name.$clk
         add_connection clk_50.clk_reset $name.$reset
@@ -121,6 +127,9 @@ if 1 {
     
     add_interface i2c conduit end
     set_interface_property i2c EXPORTOF i2c.i2c_serial
+    
+    add_interface pio conduit end
+    set_interface_property pio EXPORT_OF pio.external_connection
 }
 
 

@@ -525,6 +525,12 @@ architecture rtl of top is
 		signal aligned_ch2 : std_logic;
 		signal aligned_ch3 : std_logic;
 		
+		signal wd_rst_n     : std_logic;
+		
+		signal cpu_pio_i : std_logic_vector(31 downto 0);
+		
+		signal flash_rst_n : std_logic;
+		
 		
 begin 
 
@@ -534,7 +540,7 @@ clk <= CLK_50_B2J;
 reset_n <= not reset;
 reset <= not push_button0_db;
 LED_BRACKET(0) <= data_algin(0);
-cpu_reset_n_q <= CPU_RESET_n;
+--cpu_reset_n_q <= CPU_RESET_n;
 LED(1) <= SW(1); --- SW for datak transceiver
 
 --reset <= not push_button0_db; -- for receiver
@@ -605,21 +611,49 @@ segment1 : component seg7_lut
 
 nios2 : component nios
 port map (
-   clk_clk                          	=> clk,
-   reset_reset_n                    	=> cpu_reset_n_q,
-   spi_MISO                       		=> RS422_DIN,
-   spi_MOSI                       		=> RS422_DOUT,
-   spi_SCLK                       		=> RJ45_LED_R,
-   spi_SS_n                       		=> RS422_DE,
-	i2c_scl_in  								=> i2c_scl_in,
-	i2c_scl_oe  								=> i2c_scl_oe,
-	i2c_sda_in  								=> i2c_sda_in,
-	i2c_sda_oe  								=> i2c_sda_oe,
-	flash_tcm_address_out				 	=> flash_tcm_address_out,
-	flash_tcm_data_out 						=> FLASH_D,
-	flash_tcm_read_n_out(0) 				=> FLASH_OE_n,
-	flash_tcm_write_n_out(0) 				=> FLASH_WE_n,
-	flash_tcm_chipselect_n_out(0) 		=> flash_ce_n_i
+		clk_clk                          	=> clk,
+		reset_reset_n                    	=> cpu_reset_n_q,
+		spi_MISO                       		=> RS422_DIN,
+		spi_MOSI                       		=> RS422_DOUT,
+		spi_SCLK                       		=> RJ45_LED_R,
+		spi_SS_n                       		=> RS422_DE,
+		i2c_scl_in  								=> i2c_scl_in,
+		i2c_scl_oe  								=> i2c_scl_oe,
+		i2c_sda_in  								=> i2c_sda_in,
+		i2c_sda_oe  								=> i2c_sda_oe,
+		flash_tcm_address_out				 	=> flash_tcm_address_out,
+		flash_tcm_data_out 						=> FLASH_D,
+		flash_tcm_read_n_out(0) 				=> FLASH_OE_n,
+		flash_tcm_write_n_out(0) 				=> FLASH_WE_n,
+		flash_tcm_chipselect_n_out(0) 		=> flash_ce_n_i,
+		pio_export									=> cpu_pio_i
+);
+
+-- generate reset sequence for flash and cpu
+reset_ctrl_i : entity work.reset_ctrl
+generic map (
+		W => 2,
+		N => 125 * 10**5 -- 100ms
+	)
+port map (
+		rstout_n(1) => flash_rst_n,
+		rstout_n(0) => cpu_reset_n_q,
+		rst_n => CPU_RESET_n,
+		clk => clk--,
+);
+
+watchdog_i : entity work.watchdog
+generic map (
+		W => 4,
+		N => 125 * 10**6 -- 1s
+)
+port map (
+		d => cpu_pio_i(3 downto 0),
+
+		rstout_n => wd_rst_n,
+
+		rst_n => CPU_RESET_n,
+		clk => clk--,
 );
 
 FLASH_A <= flash_tcm_address_out(27 downto 2);
@@ -627,7 +661,7 @@ FLASH_A <= flash_tcm_address_out(27 downto 2);
 FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
 FLASH_ADV_n <= '0';
 FLASH_CLK <= '0';
-FLASH_RESET_n <= cpu_reset_n_q;
+FLASH_RESET_n <= flash_rst_n;
 
 i2c_scl_in <= not i2c_scl_oe;
 FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';

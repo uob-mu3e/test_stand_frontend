@@ -84,7 +84,7 @@ flash :
 .PHONY: app_upload
 app_upload : app
 	nios2-elf-objcopy $(APP_DIR)/main.elf -O srec $(APP_DIR)/main.srec
-	nios2-gdb-server -c $(CABLE) -r -g $(APP_DIR)/main.srec
+	nios2-gdb-server -c $(CABLE) -r -w 1 -g $(APP_DIR)/main.srec
 #	rm -v $(APP_DIR)/main.srec
 
 .PHONY: terminal

@@ -24,3 +24,6 @@ simulation/
 db/
 ip/ip_pll_312.BAK.qsys
 pcieapp/pcie.BAK.qsys
+software/hal_bsp/
+software/app/
+pcieapp/.qsys_edit/
