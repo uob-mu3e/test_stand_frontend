@@ -54,6 +54,7 @@ proc elaborate {} {
     set_interface_property $name associatedClock clk
     set_interface_property $name associatedReset reset
     set_interface_property $name addressUnits SYMBOLS
+    set_interface_property $name readLatency $readLatency
 
     set prefix {avm}
     add_interface_port $name ${prefix}_address address Output $addr_width

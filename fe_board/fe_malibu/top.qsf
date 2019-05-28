@@ -104,6 +104,13 @@ set_global_assignment -name QIP_FILE ip/ip_altgx_reconfig.qip
 # SC
 
 set_global_assignment -name VHDL_FILE ../../switching_pc/a10_board/firmware/sc_slave.vhd
+set_global_assignment -name VHDL_FILE ../../switching_pc/a10_board/firmware/sc_master.vhd
+
+set_global_assignment -name VHDL_FILE ../firmware/FEB_common/data_merger.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_common/mergerfifo.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/linear_shift.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/data_generator.vhd
+
 
 
 

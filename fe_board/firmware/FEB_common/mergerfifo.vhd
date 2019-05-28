@@ -40,6 +40,9 @@ LIBRARY altera_mf;
 USE altera_mf.all;
 
 ENTITY mergerfifo IS
+    generic (
+        DEVICE : string := "Arria V"--,
+    );
 	PORT
 	(
 		data		: IN STD_LOGIC_VECTOR (35 DOWNTO 0);
@@ -95,7 +98,7 @@ BEGIN
 
 	dcfifo_component : dcfifo
 	GENERIC MAP (
-		intended_device_family => "Arria V",
+		intended_device_family => DEVICE,
 		lpm_numwords => 2048,
 		lpm_showahead => "ON",
 		lpm_type => "dcfifo",

@@ -77,6 +77,9 @@ architecture arch of top is
     signal avm_qsfp : work.mu3e.avalon_t;
 
     signal qsfp_tx_clk : std_logic_vector(3 downto 0);
+    signal qsfp_tx_data : std_logic_vector(127 downto 0);
+    signal qsfp_tx_datak : std_logic_vector(15 downto 0);
+
     signal qsfp_rx_clk : std_logic_vector(3 downto 0);
     signal qsfp_rx_data : std_logic_vector(127 downto 0);
     signal qsfp_rx_datak : std_logic_vector(15 downto 0);
@@ -86,6 +89,12 @@ architecture arch of top is
     signal ram_addr_a : std_logic_vector(15 downto 0);
     signal ram_wdata_a : std_logic_vector(31 downto 0);
     signal ram_we_a : std_logic;
+
+    signal data_to_fifo : std_logic_vector(35 downto 0);
+    signal data_to_fifo_we : std_logic;
+    signal data_from_fifo : std_logic_vector(35 downto 0);
+    signal data_from_fifo_re : std_logic;
+    signal data_from_fifo_empty : std_logic;
 
 begin
 
@@ -260,14 +269,8 @@ begin
         avs_writedata   => avm_qsfp.writedata,
         avs_waitrequest => avm_qsfp.waitrequest,
 
-        tx_data     => X"03CAFE" & work.util.D28_5
-                     & X"02BABE" & work.util.D28_5
-                     & X"01DEAD" & work.util.D28_5
-                     & X"00BEEF" & work.util.D28_5,
-        tx_datak    => "0001"
-                     & "0001"
-                     & "0001"
-                     & "0001",
+        tx_data     => qsfp_tx_data,
+        tx_datak    => qsfp_tx_datak,
 
         rx_data => qsfp_rx_data,
         rx_datak => qsfp_rx_datak,
@@ -286,6 +289,16 @@ begin
         reset   => not nios_rst_n,
         clk     => nios_clk--,
     );
+
+    qsfp_tx_data(127 downto 32) <=
+          X"02BABE" & work.util.D28_5
+        & X"01DEAD" & work.util.D28_5
+        & X"00BEEF" & work.util.D28_5;
+
+    qsfp_tx_datak(15 downto 4) <=
+        "0001"
+      & "0001"
+      & "0001";
 
     ----------------------------------------------------------------------------
 
@@ -329,6 +342,73 @@ begin
         enable => '1',
         reset_n => '1',
         clk => qsfp_rx_clk(0)--,
+    );
+
+    ----------------------------------------------------------------------------
+
+    ----------------------------------------------------------------------------
+    -- data gen
+    
+    i_data_gen : entity work.data_generator
+    port map (
+        clk => qsfp_tx_clk(0),
+        reset => not reset_n,
+        enable_pix => '1',
+        --enable_sc:         	in  std_logic;
+        random_seed => (others => '1'),
+        data_pix_generated => data_to_fifo,
+        --data_sc_generated:   	out std_logic_vector(31 downto 0);
+        data_pix_ready => data_to_fifo_we,
+        --data_sc_ready:      	out std_logic;
+        start_global_time => (others => '0')--,
+              -- TODO: add some rate control
+    );
+
+    i_merger : entity work.data_merger
+    port map (
+        clk                     => qsfp_tx_clk(0),
+        reset                   => not reset_n,
+        fpga_ID_in              => (5=>'1',others => '0'),
+        FEB_type_in             => "111010",
+        state_idle              => '0',
+        state_run_prepare       => '0',
+        state_sync              => '0',
+        state_running           => '1',
+        state_terminating       => '0',
+        state_link_test         => '0',
+        state_sync_test         => '0',
+        state_reset             => '0',
+        state_out_of_DAQ        => '0',
+        data_out                => qsfp_tx_data(31 downto 0),
+        data_is_k               => qsfp_tx_datak(3 downto 0),
+        data_in                 => data_from_fifo,
+        data_in_slowcontrol     => (others => '0'),
+        slowcontrol_fifo_empty  => '1',
+        data_fifo_empty         => data_from_fifo_empty,
+        slowcontrol_read_req    => open,
+        data_read_req           => data_from_fifo_re,
+        terminated              => open,
+        override_data_in        => (others => '0'),
+        override_data_is_k_in   => (others => '0'),
+        override_req            => '0',
+        override_granted        => open,
+        data_priority           => '0',
+        leds                    => open -- debug
+    );
+
+    i_data_fifo : entity work.mergerfifo
+    generic map (
+        DEVICE => "Stratix IV"--,
+    )
+    port map (
+        data    => data_to_fifo,
+        rdclk   => qsfp_tx_clk(0),
+        rdreq   => data_from_fifo_re,
+        wrclk   => qsfp_tx_clk(0),
+        wrreq   => data_to_fifo_we,
+        q       => data_from_fifo,
+        rdempty => data_from_fifo_empty,
+        wrfull  => open--,
     );
 
     ----------------------------------------------------------------------------

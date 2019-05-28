@@ -37,6 +37,7 @@ void menu_malibu() {
         printf("  [3] => powerup ASIC\n");
         printf("  [4] => stic3_config_PLL_TEST_ch0to6_noGenIDLE\n");
         printf("  [5] => data\n");
+        printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
