@@ -81,6 +81,7 @@ set_global_assignment -name VHDL_FILE util/watchdog.vhd
 
 set_global_assignment -name VHDL_FILE ip/ip_altpll.vhd
 set_global_assignment -name VHDL_FILE ip/ip_altlvds_rx.vhd
+set_global_assignment -name VHDL_FILE ip/ip_ram.vhd
 
 # MALIBU
 
@@ -102,7 +103,18 @@ set_global_assignment -name QIP_FILE ip/ip_altgx_reconfig.qip
 
 # SC
 
+set_global_assignment -name VHDL_FILE ../../switching_pc/a10_board/firmware/sc_slave.vhd
+set_global_assignment -name VHDL_FILE ../../switching_pc/a10_board/firmware/sc_master.vhd
 
+set_global_assignment -name VHDL_FILE ../firmware/FEB_common/data_merger.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_common/mergerfifo.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/linear_shift.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/data_generator.vhd
+
+
+
+
+# tail
 
 set_global_assignment -name ENABLE_DRC_SETTINGS ON
 set_global_assignment -name FLOW_DISABLE_ASSEMBLER OFF

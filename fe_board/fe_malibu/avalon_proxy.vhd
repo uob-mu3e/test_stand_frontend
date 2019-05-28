@@ -1,20 +1,16 @@
 library ieee;
 use ieee.std_logic_1164.all;
---use ieee.numeric_std.all;
 
 entity avalon_proxy is
-    generic (
-        Aw : positive := 14--;
-    );
     port (
-        avs_address     :   in  std_logic_vector(Aw-1 downto 0);
+        avs_address     :   in  std_logic_vector(31 downto 0);
         avs_read        :   in  std_logic;
         avs_readdata    :   out std_logic_vector(31 downto 0);
         avs_write       :   in  std_logic;
         avs_writedata   :   in  std_logic_vector(31 downto 0);
         avs_waitrequest :   out std_logic;
 
-        avm_address     :   out std_logic_vector(Aw-1 downto 0);
+        avm_address     :   out std_logic_vector(31 downto 0);
         avm_read        :   out std_logic;
         avm_readdata    :   in  std_logic_vector(31 downto 0);
         avm_write       :   out std_logic;

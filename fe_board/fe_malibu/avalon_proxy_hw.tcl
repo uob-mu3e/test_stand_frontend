@@ -16,10 +16,12 @@ add_fileset_file $name.vhd VHDL PATH $name.vhd TOP_LEVEL_FILE
 
 #
 add_parameter addr_width INTEGER 8
+add_parameter readLatency INTEGER 0
 
 set_module_property ELABORATION_CALLBACK elaborate
 proc elaborate {} {
     set addr_width [get_parameter_value addr_width]
+    set readLatency [get_parameter_value readLatency]
 
     # clock
     add_interface clk clock end
@@ -35,7 +37,8 @@ proc elaborate {} {
     add_interface $name avalon slave
     set_interface_property $name associatedClock clk
     set_interface_property $name associatedReset reset
-    set_interface_property $name addressUnits WORDS
+    set_interface_property $name addressUnits SYMBOLS
+    set_interface_property $name readLatency $readLatency
 
     set prefix {avs}
     add_interface_port $name ${prefix}_address address Input $addr_width
@@ -50,7 +53,8 @@ proc elaborate {} {
     add_interface $name avalon master
     set_interface_property $name associatedClock clk
     set_interface_property $name associatedReset reset
-    set_interface_property $name addressUnits WORDS
+    set_interface_property $name addressUnits SYMBOLS
+    set_interface_property $name readLatency $readLatency
 
     set prefix {avm}
     add_interface_port $name ${prefix}_address address Output $addr_width
