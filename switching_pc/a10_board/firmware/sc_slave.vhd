@@ -68,23 +68,25 @@ begin
 		case state is
 
 				when waiting =>
-
-					if(link_data_in(31 downto 20) = CODE_START and link_data_in_k(3) = '1') then
-				 		stateout(3 downto 0) <= x"1";
-				 		mem_data_o <= link_data_in;
-				 		mem_wren_o <= '1';
-				 		state <= starting;
+					stateout(3 downto 0) <= x"1";
+					if (link_data_in(7 downto 0) = x"BC" 
+						and link_data_in_k(0) = '1' 
+						and link_data_in(31 downto 26) = "000111") then
+							stateout(3 downto 0) <= x"1";
+							mem_data_o <= link_data_in;
+							mem_addr_o <= mem_addr_o + '1';
+							mem_wren_o <= '1';
+							state <= starting;
 				 	end if;
 
 				when starting =>
-					if (link_data_in = CODE_STOP) then
-						stateout(3 downto 0) <= x"2";
+					stateout(3 downto 0) <= x"2";
+					if (link_data_in(7 downto 0) = x"0000009C" and link_data_in_k(0) = '1') then
 						mem_data_o <= (others => '0');
 						mem_wren_o <= '0';
 						state <= waiting;
 					else
 						mem_addr_o <= mem_addr_o + '1';
-						stateout(3 downto 0) <= x"3";
 						mem_data_o <= link_data_in;
 						mem_wren_o <= '1';
 					end if;

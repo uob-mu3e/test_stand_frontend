@@ -32,11 +32,10 @@ entity sc_master is
 		);		
 end entity sc_master;
 
-architecture RTL of sc_master is
+architecture rtl of sc_master is
 	
 	signal addr_reg	: std_logic_vector(15 downto 0) := (others => '0');
 	signal wren_reg	: std_logic_vector(NLINKS-1 downto 0);
-	signal cycles		: std_logic_vector(15 downto 0);
 	
 	type state_type is (waiting, start_wait, starting);
 	signal state : state_type;
@@ -46,14 +45,11 @@ architecture RTL of sc_master is
 	
 	signal wait_cnt : std_logic;
 	
-	signal cycles_cnt : std_logic_vector(15 downto 0);
-	
 	signal mem_datak : std_logic_vector(3 downto 0); 
 	
 begin
 
 	mem_addr	 <= addr_reg;
-	--mem_addr(15 downto 3) <= (others => '0');
 	
 	gen_output:
 	for I in 0 to NLINKS-1 generate
@@ -78,8 +74,6 @@ begin
 		if(reset_n = '0')then
 			addr_reg		<= (others => '0');
 			wren_reg		<= (others => '0');
-			cycles			<= (others => '0');
-			cycles_cnt		<= (others => '0');
 			state			<= waiting;
 			done			<= '0';
 			stateout		<= (others => '0');
@@ -94,8 +88,6 @@ begin
 					stateout(3 downto 0) 	<= x"1";
 					done					<= '1';			
 					wren_reg				<= (others => '0');
-					cycles_cnt				<= (others => '0');
-				-- toggled register to start
 					if(wait_cnt = '0')then
 						if(enable = '1')then
 							if(mem_data_in(31 downto 20) = CODE_START)then
@@ -112,7 +104,7 @@ begin
 					if(wait_cnt = '0')then	
 						state		<= starting;
 						addr_reg	<= addr_reg + '1';
-						mem_datak <= "1000";
+						mem_datak <= "0001";
 						if(mem_data_in(4) = '1') then
 							wren_reg <= (others => '1');
 						else
@@ -123,13 +115,13 @@ begin
 				
 				when starting =>
 					stateout(3 downto 0) <= x"3";
-					if (mem_data_in = CODE_STOP) then
-						state		<= waiting;
-						--addr_reg <= (others => '0');
-						wren_reg	<= (others => '0');
-					else
-						addr_reg	<= addr_reg + '1';
-						cycles_cnt <= cycles_cnt + '1';
+					if(wait_cnt = '0')then
+						if (mem_data_in = CODE_STOP) then
+							state		<= waiting;
+							wren_reg	<= (others => '0');
+						else
+							addr_reg	<= addr_reg + '1';
+						end if;
 					end if;
 										
 				when others =>
@@ -142,4 +134,4 @@ begin
 		end if;
 	end process;
 
-end RTL;
+end rtl;
