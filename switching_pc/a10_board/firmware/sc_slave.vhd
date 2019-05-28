@@ -56,6 +56,7 @@ begin
 		mem_wren_o <= '0';
 
 	elsif(rising_edge(clk))then
+		stateout <= (others => '0');
 
 		mem_wren_o <= '0';
 
