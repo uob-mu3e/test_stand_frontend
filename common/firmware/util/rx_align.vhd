@@ -35,6 +35,8 @@ architecture arch of rx_align is
     signal lock_i : std_logic;
     signal pattern_i : std_logic_vector(3 downto 0);
 
+    signal enapatternalign_rst_n : std_logic;
+
     -- increment counter if good pattern
     -- decrement if error
     signal cnt : integer range 0 to 7;
@@ -48,31 +50,43 @@ begin
     if ( rst_n = '0' ) then
         data_i <= (others => '0');
         datak_i <= (others => '0');
+        --
     elsif rising_edge(clk) then
         data_i <= (others => '0');
         datak_i <= (others => '0');
+        -- assume link is LSB first
         data_i(31 downto 0) <= data_i(63 downto 32);
         datak_i(3 downto 0) <= datak_i(7 downto 4);
         data_i(8*Nb-1 + 32 downto 32) <= datain;
         datak_i(Nb-1 + 4 downto 4) <= datakin;
+        --
     end if;
     end process;
 
+    i_enapatternalign_rst_n : entity work.watchdog
+    port map (
+        d(0) => '0',
+        rstout_n => enapatternalign_rst_n,
+        rst_n => rst_n and not lock_i, -- reset if locked
+        clk => clk--,
+    );
+
     process(clk, rst_n)
         variable error_v : boolean;
+        --
     begin
     if ( rst_n = '0' ) then
         lock_i <= '0';
         pattern_i <= "0000";
-        enapatternalign <= '0';
         cnt <= 0;
+        enapatternalign <= '0';
         --
     elsif rising_edge(clk) then
         error_v := false;
 
-        -- request to align if no lock
-        -- FIXME : generate rising edge
-        enapatternalign <= not lock_i;
+        -- gen rising edge if not locked
+        -- set to '0' for one clock cycle if not locked for some time
+        enapatternalign <= not lock_i and enapatternalign_rst_n;
 
         if ( patterndetect = "0000" ) then
             -- idle
@@ -148,6 +162,7 @@ begin
             null;
         end case;
 
+        --
     end if; -- rising_edge
     end process;
 
