@@ -592,7 +592,20 @@ end component;
 
 component nios is
   port (
+		avm_qsfp_address           : out   std_logic_vector(13 downto 0);                    -- address
+		avm_qsfp_read              : out   std_logic;                                        -- read
+		avm_qsfp_readdata          : in    std_logic_vector(31 downto 0) := (others => 'X'); -- readdata
+		avm_qsfp_write             : out   std_logic;                                        -- write
+		avm_qsfp_writedata         : out   std_logic_vector(31 downto 0);                    -- writedata
+		avm_qsfp_waitrequest       : in    std_logic                     := 'X';             -- waitrequest
+		avm_sc_address             : out   std_logic_vector(13 downto 0);                    -- address
+		avm_sc_read                : out   std_logic;                                        -- read
+		avm_sc_readdata            : in    std_logic_vector(31 downto 0) := (others => 'X'); -- readdata
+		avm_sc_write               : out   std_logic;                                        -- write
+		avm_sc_writedata           : out   std_logic_vector(31 downto 0);                    -- writedata
+		avm_sc_waitrequest         : in    std_logic                     := 'X';             -- waitrequest
 		clk_clk                    : in    std_logic                     := 'X';             -- clk
+		clk_data_clk               : in    std_logic                     := 'X';             -- clk
 		flash_tcm_address_out      : out   std_logic_vector(27 downto 0);                    -- tcm_address_out
 		flash_tcm_read_n_out       : out   std_logic_vector(0 downto 0);                     -- tcm_read_n_out
 		flash_tcm_write_n_out      : out   std_logic_vector(0 downto 0);                     -- tcm_write_n_out
@@ -603,7 +616,10 @@ component nios is
 		i2c_sda_oe                 : out   std_logic;                                        -- sda_oe
 		i2c_scl_oe                 : out   std_logic;                                        -- scl_oe
 		pio_export                 : out   std_logic_vector(31 downto 0);                    -- export
-		reset_reset_n              : in    std_logic                     := 'X';             -- reset_n
+		pio_in_export              : in    std_logic_vector(31 downto 0) := (others => 'X'); -- export
+		pio_out_export             : out   std_logic_vector(31 downto 0);                    -- export
+		rst_reset_n                : in    std_logic                     := 'X';             -- reset_n
+		rst_data_reset_n           : in    std_logic                     := 'X';             -- reset_n
 		spi_MISO                   : in    std_logic                     := 'X';             -- MISO
 		spi_MOSI                   : out   std_logic;                                        -- MOSI
 		spi_SCLK                   : out   std_logic;                                        -- SCLK

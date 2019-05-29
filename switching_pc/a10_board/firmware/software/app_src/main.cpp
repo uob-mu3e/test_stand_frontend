@@ -1,6 +1,10 @@
 #include "system.h"
 
-#include <sys/alt_stdio.h>
+#ifndef ALT_CPU_DCACHE_BYPASS_MASK
+    #define ALT_CPU_DCACHE_BYPASS_MASK 0
+#endif
+
+#include <altera_avalon_pio_regs.h>
 
 #include <sys/alt_alarm.h>
 #include <sys/alt_timestamp.h>
@@ -8,6 +12,8 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
+
+#include "xcvr.h"
 
 #include "i2c.h"
 i2c_t i2c;
@@ -63,9 +69,6 @@ struct temp_t {
 #include "cfi1616.h"
 cfi1616_t flash;
 
-volatile alt_u32* ctrl = (alt_u32*)(CTRL_REGION_BASE);
-volatile alt_u8* data = (alt_u8*)(DATA_REGION_BASE);
-
 alt_u32 hist_ts[16];
 
 alt_u32 hibit(alt_u32 n) {
@@ -81,17 +84,9 @@ alt_u32 hibit(alt_u32 n) {
 }
 
 alt_u32 alarm_callback(void*) {
-//    IOWR_ALTERA_AVALON_PIO_DATA(PIO_BASE, (alt_nticks() >> 8) & 0xFF);
-
-    alt_timestamp_start();
-    int state = flash.callback((alt_u8*)IORD(ctrl, 0), data, (alt_u32)IORD(ctrl, 1));
-    alt_u32 ts_bin = hibit(alt_timestamp() / 125);
-    if(ts_bin < 16) hist_ts[ts_bin]++;
-    if(state == -EAGAIN) return 1;
-    if(state == 0) {
-        IOWR(ctrl, 0, 0);
-        IOWR(ctrl, 1, 0);
-    }
+    IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0xFF);
+    // watchdog
+    IOWR_ALTERA_AVALON_PIO_SET_BITS(PIO_BASE, alt_nticks() & 0xFF);
 
     return 10;
 }
@@ -160,6 +155,8 @@ void menu_i2c() {
     }
 }
 
+//volatile alt_u8* data = (alt_u8*)(DATA_REGION_BASE);
+
 void menu_flash() {
     volatile alt_u8* addr_test = flash.base + 0x05E80000;
 
@@ -167,7 +164,7 @@ void menu_flash() {
         
         printf("FLASH Menu\n", ALT_DEVICE_FAMILY);
         printf("  [e] => erase\n");
-        printf("  [p] => program\n");
+//        printf("  [p] => program\n");
         printf("  [?] => wait\n");
         printf("  [q] => return\n");
 
@@ -184,18 +181,18 @@ void menu_flash() {
             printf("%08X : erase => %d\n", addr_test, err);
             break;
         }
-        case 'p': {
-            int err;
-            for(int i = 0; i < 512; i++) data[i] = i;
-            for(alt_u32 i = 0; i < flash.regions[1].blockSize; i += flash.bufferSize) {
-                err = flash.program(addr_test + i, data, flash.bufferSize);
-                err = flash.sync(addr_test + i);
-                printf("%08X : program => %d\n", addr_test + i, err);
-            }
-            err = flash.lock(addr_test);
-            printf("%08X : lock => %d\n", addr_test, err);
-            break;
-        }
+//        case 'p': {
+//            int err;
+//            for(int i = 0; i < 512; i++) data[i] = i;
+//            for(alt_u32 i = 0; i < flash.regions[1].blockSize; i += flash.bufferSize) {
+//                err = flash.program(addr_test + i, data, flash.bufferSize);
+//                err = flash.sync(addr_test + i);
+//                printf("%08X : program => %d\n", addr_test + i, err);
+//            }
+//            err = flash.lock(addr_test);
+//            printf("%08X : lock => %d\n", addr_test, err);
+//            break;
+//        }
         case '?':
             wait_key();
             break;
@@ -269,6 +266,7 @@ int main() {
         printf("  [0] => spi si chip\n");
         printf("  [1] => i2c fan\n");
         printf("  [2] => flash\n");
+        printf("  [3] => xcvr\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -283,6 +281,10 @@ int main() {
         case '2':
             printf("flash:\n");
             menu_flash();
+            break;
+        case '3':
+            printf("xcvr:\n");
+            menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

@@ -531,6 +531,8 @@ architecture rtl of top is
 		
 		signal flash_rst_n : std_logic;
 		
+		signal avm_qsfp : work.mu3e.avalon_t;
+		
 		
 begin 
 
@@ -611,22 +613,38 @@ segment1 : component seg7_lut
 
 nios2 : component nios
 port map (
-		clk_clk                          	=> clk,
-		reset_reset_n                    	=> cpu_reset_n_q,
-		spi_MISO                       		=> RS422_DIN,
-		spi_MOSI                       		=> RS422_DOUT,
-		spi_SCLK                       		=> RJ45_LED_R,
-		spi_SS_n                       		=> RS422_DE,
-		i2c_scl_in  								=> i2c_scl_in,
-		i2c_scl_oe  								=> i2c_scl_oe,
-		i2c_sda_in  								=> i2c_sda_in,
-		i2c_sda_oe  								=> i2c_sda_oe,
-		flash_tcm_address_out				 	=> flash_tcm_address_out,
-		flash_tcm_data_out 						=> FLASH_D,
-		flash_tcm_read_n_out(0) 				=> FLASH_OE_n,
-		flash_tcm_write_n_out(0) 				=> FLASH_WE_n,
-		flash_tcm_chipselect_n_out(0) 		=> flash_ce_n_i,
-		pio_export									=> cpu_pio_i
+	avm_qsfp_address          				=> avm_qsfp.address(13 downto 0),
+	avm_qsfp_read             				=> avm_qsfp.read,
+	avm_qsfp_readdata         				=> avm_qsfp.readdata,
+	avm_qsfp_write            				=> avm_qsfp.write,
+	avm_qsfp_writedata        				=> avm_qsfp.writedata,
+	avm_qsfp_waitrequest      				=> avm_qsfp.waitrequest,
+	avm_sc_address            				=> open,
+	avm_sc_read               				=> open,
+	avm_sc_readdata           				=> x"00000000",
+	avm_sc_write              				=> open,
+	avm_sc_writedata          				=> open,
+	avm_sc_waitrequest        				=> '0',
+	clk_clk                    			=> clk,
+	clk_data_clk               			=> rx_clkout_ch0_clk,
+	flash_tcm_address_out				 	=> flash_tcm_address_out,
+	flash_tcm_data_out 						=> FLASH_D,
+	flash_tcm_read_n_out(0) 				=> FLASH_OE_n,
+	flash_tcm_write_n_out(0) 				=> FLASH_WE_n,
+	flash_tcm_chipselect_n_out(0) 		=> flash_ce_n_i,
+	i2c_sda_in                 			=> i2c_sda_in,
+	i2c_scl_in                 			=> i2c_scl_in,
+	i2c_sda_oe                 			=> i2c_sda_oe,
+	i2c_scl_oe                 			=> i2c_scl_oe,
+	pio_export									=> cpu_pio_i,
+	pio_in_export              			=> rx_parallel_data_ch0_rx_parallel_data,              --   pio_in.export
+	pio_out_export             			=> open,             --  pio_out.export
+	rst_reset_n                			=> cpu_reset_n_q,
+	rst_data_reset_n           			=> not reset,
+	spi_MISO                   			=> RS422_DIN,
+	spi_MOSI                   			=> RS422_DOUT,
+	spi_SCLK                   			=> RJ45_LED_R,
+	spi_SS_n                   			=> RS422_DE
 );
 
 -- generate reset sequence for flash and cpu
@@ -638,7 +656,7 @@ generic map (
 port map (
 		rstout_n(1) => flash_rst_n,
 		rstout_n(0) => cpu_reset_n_q,
-		rst_n => CPU_RESET_n,
+		rst_n => CPU_RESET_n and wd_rst_n,
 		clk => clk--,
 );
 
