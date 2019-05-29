@@ -36,7 +36,7 @@ begin
     wrcnt   <= (others => '0');
     rdcnt   <= (others => '0');
     Dout    <= (others => '0');
-    memory  <= (others => (others => '0'));
+    memory    <= (others => (others => '0'));
   elsif(rising_edge(CLK)) then
      if (Wr='1' and full_loc='0') then
         memory(to_integer(unsigned(wrcnt))) <= Din;

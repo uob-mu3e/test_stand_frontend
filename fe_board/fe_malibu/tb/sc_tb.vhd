@@ -68,7 +68,8 @@ architecture behav of sc_tb is
 			fifo_we:				  out std_logic;
 			
 			mem_data_out:       out std_logic_vector(31 downto 0);
-			mem_addr_out:       out std_logic_vector(15 downto 0);
+			mem_read_addr_out:       out std_logic_vector(15 downto 0);
+			mem_write_addr_out:       out std_logic_vector(15 downto 0);
 			mem_wren:           out std_logic;
 			
 			stateout:           out std_logic_vector(27 downto 0)
@@ -91,7 +92,8 @@ architecture behav of sc_tb is
   		signal mem_addr_out_slave : std_logic_vector(15 downto 0);
   		signal mem_wren_slave : std_logic;
   		signal dataout_ram : std_logic_vector(31 downto 0);
-  		signal mem_addr_out_sc_s4 : std_logic_vector(15 downto 0);
+  		signal mem_addr_read_sc_s4 : std_logic_vector(15 downto 0);
+  		signal mem_addr_write_sc_s4 : std_logic_vector(15 downto 0);
   		signal mem_wren_sc_s4 : std_logic;
   		signal mem_data_out_sc_s4 : std_logic_vector(31 downto 0);
 
@@ -147,7 +149,8 @@ begin
 		fifo_we			=> open,
 		
 		mem_data_out   	=> mem_data_out_sc_s4,
-		mem_addr_out   	=> mem_addr_out_sc_s4,
+		mem_read_addr_out   	=> mem_addr_read_sc_s4,
+		mem_write_addr_out   	=> mem_addr_write_sc_s4,
 		mem_wren       	=> mem_wren_sc_s4,
 		
 		stateout		=> open
@@ -158,8 +161,8 @@ begin
 		clock   		=> clk,
 		reset_n			=> reset_n,
 		we      	  	=> mem_wren_sc_s4,
-		read_address  	=> mem_addr_out_sc_s4,
-		write_address 	=> mem_addr_out_sc_s4,
+		read_address  	=> mem_addr_read_sc_s4,
+		write_address 	=> mem_addr_write_sc_s4,
 		datain 			=> mem_data_out_sc_s4,
 		dataout 		=> dataout_ram
   	);
@@ -225,15 +228,16 @@ begin
 				writememdata(31 downto 20) <= CODE_START;
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0) = x"0")then
-				writememdata(7 downto 0) <= x"BC";
-				writememdata(31 downto 26) <= "000111";
-				writememdata(25 downto 24) <= "11"; -- write
+				writememdata(7 downto 0) <= x"BC"; -- K28.5
+				writememdata(23 downto 8) <= (others => '0'); --FPGA ID
+				writememdata(25 downto 24) <= "11"; -- SC Type write
+				writememdata(31 downto 26) <= "000111"; -- 
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0)  = x"1")then
-				writememdata <= x"00000123";
+				writememdata <= x"00000001";
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0)  = x"2")then
-				writememdata <= x"00000003";
+				writememdata <= x"00000002";
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0)  = x"3")then
 				writememdata <= x"CAFEBABE";
@@ -242,6 +246,24 @@ begin
 				writememdata <= x"BABEBABE";
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0)  = x"5")then
+				writememdata <= CODE_STOP;
+				writememwren <= '1';
+			elsif(writememaddr(3 downto 0) = x"6")then
+				writememdata(31 downto 20) <= CODE_START;
+				writememwren <= '1';
+			elsif(writememaddr(3 downto 0) = x"7")then
+				writememdata(7 downto 0) <= x"BC"; -- K28.5
+				writememdata(23 downto 8) <= (others => '0'); --FPGA ID
+				writememdata(25 downto 24) <= "10"; -- SC Type read
+				writememdata(31 downto 26) <= "000111"; -- 
+				writememwren <= '1';
+			elsif(writememaddr(3 downto 0)  = x"8")then
+				writememdata <= x"00000001";
+				writememwren <= '1';
+			elsif(writememaddr(3 downto 0)  = x"9")then
+				writememdata <= x"00000002";
+				writememwren <= '1';
+			elsif(writememaddr(3 downto 0)  = x"A")then
 				writememdata <= CODE_STOP;
 				writememwren <= '1';
 			end if;

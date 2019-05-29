@@ -47,7 +47,7 @@ architecture rtl of sc_master is
 	
 	signal mem_datak : std_logic_vector(3 downto 0); 
 
-	signal fpga_id : std_logic_vector(2 downto 0); 
+	signal fpga_id : std_logic_vector(15 downto 0); 
 	
 begin
 
@@ -84,12 +84,12 @@ begin
 		elsif(rising_edge(clk))then
 			wait_cnt		<= not wait_cnt;
 			mem_datak 		<= (others => '0');
+			wren_reg		<= (others => '0');
 			case state is
 			
 				when waiting =>
 					stateout(3 downto 0) 	<= x"1";
 					done					<= '1';			
-					wren_reg				<= (others => '0');
 					if(wait_cnt = '0')then
 						if(enable = '1')then
 							if(mem_data_in(31 downto 20) = CODE_START)then
@@ -106,27 +106,28 @@ begin
 						state		<= starting;
 						addr_reg	<= addr_reg + '1';
 						mem_datak <= "0001";
-						fpga_id <= mem_data_in(4 downto 2);
-						if(mem_data_in(4) = '1') then
+						fpga_id <= mem_data_in(23 downto 8); -- get fpga id if zero write to all links, if 1 first link and so on
+						if(conv_integer(mem_data_in(23 downto 8)) = 0) then
 							wren_reg <= (others => '1');
 						else
 							wren_reg	<= (others => '0');
-							wren_reg(conv_integer(mem_data_in(3 downto 2)))	<= '1';
+							wren_reg(conv_integer(mem_data_in(23 downto 8)))	<= '1';
 						end if;
 					end if;
 				
 				when starting =>
 					stateout(3 downto 0) <= x"3";
 					if(wait_cnt = '0')then
+						if(conv_integer(fpga_id) = 0) then
+							wren_reg <= (others => '1');
+						else
+							wren_reg	<= (others => '0');
+							wren_reg(conv_integer(fpga_id))	<= '1';
+						end if;
 						if (mem_data_in = CODE_STOP) then
 							mem_datak <= "0001";
-							if(mem_data_in(4) = '1') then
-								wren_reg <= (others => '1');
-							else
-								wren_reg	<= (others => '0');
-								wren_reg(conv_integer(mem_data_in(3 downto 2)))	<= '1';
-							end if;
 							state		<= waiting;
+							addr_reg	<= addr_reg + '1';
 						else
 							addr_reg	<= addr_reg + '1';
 						end if;
@@ -136,7 +137,7 @@ begin
 					stateout(3 downto 0) <= x"F";
 					state	<= waiting;
 					addr_reg <= (others => '0');
-					
+					wren_reg		<= (others => '0');
 			end case;
 			
 		end if;
