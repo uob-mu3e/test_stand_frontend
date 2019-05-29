@@ -13,8 +13,6 @@ void I2C_write(alt_u8 dev, alt_u8 reg, alt_u8 data) {
     i2c.set(dev, reg, data);
 }
 
-#include <altera_avalon_spi.h>
-
 alt_u8 spi_write(alt_u8 w) {
     alt_u8 r = 0xCC;
 //    printf("spi_write: 0x%02X\n", w);
