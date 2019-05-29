@@ -111,6 +111,8 @@ set_global_assignment -name VHDL_FILE ../firmware/FEB_common/mergerfifo.vhd
 set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/linear_shift.vhd
 set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/data_generator.vhd
 
+set_global_assignment -name VHDL_FILE sc_s4.vhd
+set_global_assignment -name VHDL_FILE tb/fifo.vhd
 
 
 
