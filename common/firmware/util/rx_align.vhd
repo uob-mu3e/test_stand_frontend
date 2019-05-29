@@ -37,9 +37,10 @@ architecture arch of rx_align is
 
     signal enapatternalign_rst_n : std_logic;
 
-    -- increment counter if good pattern
-    -- decrement if error
-    signal cnt : integer range 0 to 7;
+    -- quality counter
+    -- - increment if good pattern
+    -- - decrement if error
+    signal quality : integer range 0 to 7;
 
 begin
 
@@ -78,14 +79,14 @@ begin
     if ( rst_n = '0' ) then
         lock_i <= '0';
         pattern_i <= "0000";
-        cnt <= 0;
+        quality <= 0;
         enapatternalign <= '0';
         --
     elsif rising_edge(clk) then
         error_v := false;
 
-        -- gen rising edge if not locked
-        -- set to '0' for one clock cycle if not locked for some time
+        -- generate rising edge if not locked
+        -- set to '0' for one clock cycle if not locked for long time
         enapatternalign <= not lock_i and enapatternalign_rst_n;
 
         if ( patterndetect = "0000" ) then
@@ -124,27 +125,28 @@ begin
             or errdetect /= (errdetect'range => '0')
             or disperr /= (disperr'range => '0')
         ) then
-            if ( cnt = 0 ) then
+            if ( quality = 0 ) then
                 -- not locked
                 lock_i <= '0';
                 pattern_i <= "0000";
             else
-                cnt <= cnt - 1;
+                quality <= quality - 1;
             end if;
         elsif ( patterndetect /= "0000" ) then
             -- good pattern
-            if ( cnt = 7 ) then
+            if ( quality = 7 ) then
                 -- locked
                 lock_i <= '1';
                 pattern_i <= patterndetect;
             else
-                cnt <= cnt + 1;
+                quality <= quality + 1;
             end if;
         end if;
 
         data <= (others => '-');
         datak <= (others => '-');
 
+        -- align such that LSB is K
         case pattern_i is
         when "0001" =>
             data <= data_i(8*Nb-1 + 0 downto 0);
