@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "xcvr.h"
+//#include "xcvr.h"
 
 #include "i2c.h"
 i2c_t i2c;
@@ -266,7 +266,7 @@ int main() {
         printf("  [0] => spi si chip\n");
         printf("  [1] => i2c fan\n");
         printf("  [2] => flash\n");
-        printf("  [3] => xcvr\n");
+        //printf("  [3] => xcvr\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -282,10 +282,10 @@ int main() {
             printf("flash:\n");
             menu_flash();
             break;
-        case '3':
-            printf("xcvr:\n");
-            menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
-            break;
+        //case '3':
+        //    printf("xcvr:\n");
+        //    menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+        //    break;
         default:
             printf("invalid command: '%c'\n", cmd);
         }

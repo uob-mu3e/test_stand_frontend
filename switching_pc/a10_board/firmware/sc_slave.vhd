@@ -35,9 +35,6 @@ architecture RTL of sc_slave is
 	signal mem_addr_o : std_logic_vector(15 downto 0);
 	signal mem_wren_o : std_logic;
 
-	constant CODE_START : std_logic_vector(11 downto 0) := x"BCC";
-	constant CODE_STOP : std_logic_vector(31 downto 0) := x"AFFEAFFE";
-
 	type state_type is (waiting, starting);
 	signal state : state_type;
 
@@ -57,7 +54,8 @@ begin
 
 	elsif(rising_edge(clk))then
 		stateout <= (others => '0');
-
+		mem_data_o <= (others => '0');
+		mem_wren_o <= '0';
 		mem_wren_o <= '0';
 
 		if(link_data_in = x"000000BC" and link_data_in_k(0) = '1') then
@@ -81,14 +79,11 @@ begin
 
 				when starting =>
 					stateout(3 downto 0) <= x"2";
+					mem_addr_o <= mem_addr_o + '1';
+					mem_data_o <= link_data_in;
+					mem_wren_o <= '1';
 					if (link_data_in(7 downto 0) = x"0000009C" and link_data_in_k(0) = '1') then
-						mem_data_o <= (others => '0');
-						mem_wren_o <= '0';
 						state <= waiting;
-					else
-						mem_addr_o <= mem_addr_o + '1';
-						mem_data_o <= link_data_in;
-						mem_wren_o <= '1';
 					end if;
 
 				when others =>

@@ -443,9 +443,7 @@ component rx_align is
         disperr     :   in  std_logic_vector(Nb-1 downto 0);
 
         rst_n   :   in  std_logic;
-        clk     :   in  std_logic;
-		  
-		  aligned : out std_logic
+        clk     :   in  std_logic
     );
 end component;
   
