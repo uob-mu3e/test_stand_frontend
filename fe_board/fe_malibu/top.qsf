@@ -61,7 +61,7 @@ set_location_assignment PIN_AB33 -to qsfp_pll_clk
 
 
 
-set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:pre_flow.tcl"
+set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc

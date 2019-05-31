@@ -1,7 +1,7 @@
 
-#include "base.h"
+#include "../include/base.h"
+#include "../include/xcvr.h"
 
-#include "xcvr.h"
 #include "malibu.h"
 #include "sc.h"
 
