@@ -232,7 +232,7 @@ component data_fifo is
         );
 end component data_fifo;
 
- component receiver_switching is
+ component ip_transceiver is
         port (
             clk_qsfp_clk                                    : in  std_logic                      := 'X';             -- clk
             reset_1_reset                                   : in  std_logic                      := 'X';             -- reset
@@ -272,27 +272,14 @@ end component data_fifo;
             rx_errdetect_ch0_rx_errdetect                   : out std_logic_vector(3 downto 0);                      -- rx_errdetect
             rx_datak_ch0_rx_datak                           : out std_logic_vector(3 downto 0);                      -- rx_datak
             rx_parallel_data_ch0_rx_parallel_data           : out std_logic_vector(31 downto 0);                     -- rx_parallel_data
-            tx_parallel_data_unused_tx_parallel_data        : in  std_logic_vector(367 downto 0) := (others => 'X'); -- unused_tx_parallel_data
-            tx_parallel_data_ch3_tx_parallel_data           : in  std_logic_vector(31 downto 0)  := (others => 'X'); -- tx_parallel_data
-            tx_parallel_data_ch2_tx_parallel_data           : in  std_logic_vector(31 downto 0)  := (others => 'X'); -- tx_parallel_data
-            tx_parallel_data_ch1_tx_parallel_data           : in  std_logic_vector(31 downto 0)  := (others => 'X'); -- tx_parallel_data
-            tx_parallel_data_ch0_tx_parallel_data           : in  std_logic_vector(31 downto 0)  := (others => 'X'); -- tx_parallel_data
             rx_clkout_ch3_clk                               : out std_logic;                                         -- clk
             rx_clkout_ch2_clk                               : out std_logic;                                         -- clk
             rx_clkout_ch1_clk                               : out std_logic;                                         -- clk
             rx_clkout_ch0_clk                               : out std_logic;                                         -- clk
-            tx_clkout_ch3_clk                               : out std_logic;                                         -- clk
-            tx_clkout_ch2_clk                               : out std_logic;                                         -- clk
-            tx_clkout_ch1_clk                               : out std_logic;                                         -- clk
-            tx_clkout_ch0_clk                               : out std_logic;                                         -- clk
             rx_coreclkin_ch3_clk                            : in  std_logic                      := 'X';             -- clk
             rx_coreclkin_ch2_clk                            : in  std_logic                      := 'X';             -- clk
             rx_coreclkin_ch1_clk                            : in  std_logic                      := 'X';             -- clk
             rx_coreclkin_ch0_clk                            : in  std_logic                      := 'X';             -- clk
-            tx_coreclkin_ch3_clk                            : in  std_logic                      := 'X';             -- clk
-            tx_coreclkin_ch2_clk                            : in  std_logic                      := 'X';             -- clk
-            tx_coreclkin_ch1_clk                            : in  std_logic                      := 'X';             -- clk
-            tx_coreclkin_ch0_clk                            : in  std_logic                      := 'X';             -- clk
             rx_is_lockedtoref_ch3_rx_is_lockedtoref         : out std_logic;                                         -- rx_is_lockedtoref
             rx_is_lockedtoref_ch2_rx_is_lockedtoref         : out std_logic;                                         -- rx_is_lockedtoref
             rx_is_lockedtoref_ch1_rx_is_lockedtoref         : out std_logic;                                         -- rx_is_lockedtoref
@@ -305,17 +292,31 @@ end component data_fifo;
             rx_serial_data_ch2_rx_serial_data               : in  std_logic                      := 'X';             -- rx_serial_data
             rx_serial_data_ch1_rx_serial_data               : in  std_logic                      := 'X';             -- rx_serial_data
             rx_serial_data_ch0_rx_serial_data               : in  std_logic                      := 'X';             -- rx_serial_data
+				rx_cdr_refclk0_clk                              : in  std_logic                      := 'X';              -- clk
+				
+				tx_clkout_ch3_clk                               : out std_logic;                                         -- clk
+            tx_clkout_ch2_clk                               : out std_logic;                                         -- clk
+            tx_clkout_ch1_clk                               : out std_logic;                                         -- clk
+            tx_clkout_ch0_clk                               : out std_logic;                                         -- clk
+            tx_parallel_data_unused_tx_parallel_data        : in  std_logic_vector(367 downto 0) := (others => 'X'); -- unused_tx_parallel_data
+            tx_parallel_data_ch3_tx_parallel_data           : in  std_logic_vector(31 downto 0)  := (others => 'X'); -- tx_parallel_data
+            tx_parallel_data_ch2_tx_parallel_data           : in  std_logic_vector(31 downto 0)  := (others => 'X'); -- tx_parallel_data
+            tx_parallel_data_ch1_tx_parallel_data           : in  std_logic_vector(31 downto 0)  := (others => 'X'); -- tx_parallel_data
+            tx_parallel_data_ch0_tx_parallel_data           : in  std_logic_vector(31 downto 0)  := (others => 'X'); -- tx_parallel_data
+				tx_coreclkin_ch3_clk                            : in  std_logic                      := 'X';             -- clk
+            tx_coreclkin_ch2_clk                            : in  std_logic                      := 'X';             -- clk
+            tx_coreclkin_ch1_clk                            : in  std_logic                      := 'X';             -- clk
+            tx_coreclkin_ch0_clk                            : in  std_logic                      := 'X';             -- clk            
             tx_serial_data_ch3_tx_serial_data               : out std_logic;                                         -- tx_serial_data
             tx_serial_data_ch2_tx_serial_data               : out std_logic;                                         -- tx_serial_data
             tx_serial_data_ch1_tx_serial_data               : out std_logic;                                         -- tx_serial_data
-            tx_serial_data_ch0_tx_serial_data               : out std_logic;                                         -- tx_serial_data
-            rx_cdr_refclk0_clk                              : in  std_logic                      := 'X';              -- clk
+            tx_serial_data_ch0_tx_serial_data               : out std_logic;                                         -- tx_serial_data      
 				tx_datak_ch1_tx_datak                           : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- tx_datak
             tx_datak_ch0_tx_datak                           : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- tx_datak
             tx_datak_ch2_tx_datak                           : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- tx_datak
             tx_datak_ch3_tx_datak                           : in  std_logic_vector(3 downto 0)   := (others => 'X')  -- tx_datak
         );
-    end component receiver_switching;
+    end component ip_transceiver;
 
 component transceiver_switching is
 	port (
