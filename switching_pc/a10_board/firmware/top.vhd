@@ -292,7 +292,7 @@ segment1 : seg7_lut
 
 nios2 : nios
 port map (
-	clk_clk                    			=> tx_clk(0),
+	clk_clk                    			=> input_clk,
 	
 	rst_reset_n                			=> cpu_reset_n_q,
 
@@ -336,7 +336,7 @@ port map (
 		rstout_n(1) => flash_rst_n,
 		rstout_n(0) => cpu_reset_n_q,
 		rst_n 		=> CPU_RESET_n and wd_rst_n,
-		clk 			=> tx_clk(0)--,
+		clk 			=> input_clk--,
 );
 
 watchdog_i : entity work.watchdog
@@ -350,7 +350,7 @@ port map (
 		rstout_n => wd_rst_n,
 
 		rst_n 	=> CPU_RESET_n,
-		clk 		=> tx_clk(0)--,
+		clk 		=> input_clk--,
 );
 
 FLASH_A <= flash_tcm_address_out(27 downto 2);
@@ -415,7 +415,7 @@ port map (
 	cdr_refclk  		=> input_clk,
 		
 	reset   				=> not cpu_reset_n_q,
-	clk     				=> tx_clk(0)--,
+	clk     				=> input_clk--,
 );
 
 ------------- data demerger and fifos -------------
