@@ -1,5 +1,5 @@
 
-#include "i2c.h"
+#include "../include/i2c.h"
 i2c_t i2c;
 
 alt_u8 I2C_read(alt_u8 dev, alt_u8 reg) {

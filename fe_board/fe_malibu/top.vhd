@@ -87,6 +87,7 @@ architecture arch of top is
     signal avm_sc : work.mu3e.avalon_t;
 
     signal ram_addr_a : std_logic_vector(15 downto 0);
+    signal ram_rdata_a : std_logic_vector(31 downto 0);
     signal ram_wdata_a : std_logic_vector(31 downto 0);
     signal ram_we_a : std_logic;
 
@@ -95,6 +96,12 @@ architecture arch of top is
     signal data_from_fifo : std_logic_vector(35 downto 0);
     signal data_from_fifo_re : std_logic;
     signal data_from_fifo_empty : std_logic;
+
+    signal sc_to_fifo : std_logic_vector(35 downto 0);
+    signal sc_to_fifo_we : std_logic;
+    signal sc_from_fifo : std_logic_vector(35 downto 0);
+    signal sc_from_fifo_re : std_logic;
+    signal sc_from_fifo_empty : std_logic;
 
 begin
 
@@ -320,28 +327,32 @@ begin
         clock_b => qsfp_rx_clk(0),
 
         address_a => ram_addr_a(13 downto 0),
-        q_a => open,
+        q_a => ram_rdata_a,
         wren_a => ram_we_a,
         data_a => ram_wdata_a,
         clock_a => qsfp_rx_clk(0)--,
     );
     avm_sc.waitrequest <= '0';
 
-    i_sc : entity work.sc_slave
+    i_sc : entity work.sc_s4
     port map (
+        clk => qsfp_rx_clk(0),
+        reset_n => '1',
+        enable => '1',
+
+        mem_data_in => ram_rdata_a,
+
         link_data_in => qsfp_rx_data(31 downto 0),
         link_data_in_k => qsfp_rx_datak(3 downto 0),
 
+        fifo_data_out => sc_to_fifo,
+        fifo_we => sc_to_fifo_we,
+
+        mem_data_out => ram_wdata_a,
         mem_addr_out => ram_addr_a,
         mem_wren => ram_we_a,
-        mem_data_out => ram_wdata_a,
 
-        done => open,
-        stateout => open,
-
-        enable => '1',
-        reset_n => '1',
-        clk => qsfp_rx_clk(0)--,
+        stateout => open--,
     );
 
     ----------------------------------------------------------------------------
@@ -382,10 +393,10 @@ begin
         data_out                => qsfp_tx_data(31 downto 0),
         data_is_k               => qsfp_tx_datak(3 downto 0),
         data_in                 => data_from_fifo,
-        data_in_slowcontrol     => (others => '0'),
-        slowcontrol_fifo_empty  => '1',
+        data_in_slowcontrol     => sc_from_fifo,
+        slowcontrol_fifo_empty  => sc_from_fifo_empty,
         data_fifo_empty         => data_from_fifo_empty,
-        slowcontrol_read_req    => open,
+        slowcontrol_read_req    => sc_from_fifo_re,
         data_read_req           => data_from_fifo_re,
         terminated              => open,
         override_data_in        => (others => '0'),
@@ -408,6 +419,23 @@ begin
         wrreq   => data_to_fifo_we,
         q       => data_from_fifo,
         rdempty => data_from_fifo_empty,
+        wrfull  => open--,
+    );
+
+    i_sc_fifo : entity work.mergerfifo -- ip_fifo
+    generic map (
+--        ADDR_WIDTH => 11,
+--        DATA_WIDTH => 36,
+        DEVICE => "Stratix IV"--,
+    )
+    port map (
+        data    => sc_to_fifo,
+        rdclk   => qsfp_tx_clk(0),
+        rdreq   => sc_from_fifo_re,
+        wrclk   => qsfp_rx_clk(0),
+        wrreq   => sc_to_fifo_we,
+        q       => sc_from_fifo,
+        rdempty => sc_from_fifo_empty,
         wrfull  => open--,
     );
 

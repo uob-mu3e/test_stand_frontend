@@ -22,11 +22,10 @@ entity sc_s4 is
 		link_data_in_k:     in std_logic_vector(3 downto 0);
 		
 		fifo_data_out:      out std_logic_vector(35 downto 0);
-		fifo_we:				  out std_logic;
+		fifo_we:            out std_logic;
 		
 		mem_data_out:       out std_logic_vector(31 downto 0);
-		mem_read_addr_out:       out std_logic_vector(15 downto 0);
-		mem_write_addr_out:       out std_logic_vector(15 downto 0);
+		mem_addr_out:       out std_logic_vector(15 downto 0);
 		mem_wren:           out std_logic;
 		
 		stateout:           out std_logic_vector(27 downto 0)
@@ -77,14 +76,13 @@ architecture rtl of sc_s4 is
 begin
 
 	mem_data_out <= mem_data_o;
-	mem_read_addr_out <= mem_addr_read_o;
-	mem_write_addr_out <= mem_addr_write_o;
+	mem_addr_out <= mem_addr_write_o when mem_wren_o = '1' else mem_addr_read_o;
 	mem_wren     <= mem_wren_o;
 	mem_data_i	 <= mem_data_in;
 
 	i_fifo : fifo
 	generic map (
-    	add 	=> 16,
+    	add 	=> 4,
       	width 	=> 36
     )
     port map ( 
@@ -130,6 +128,7 @@ begin
 		wait_cnt 			<= '0';
 		fifo_we 			<= '0';
 	elsif(rising_edge(clk))then
+        stateout <= (others => '0');
 		mem_wren_o 		<= '0';
 		fifo_we 		<= '0';
 		fifo_re 		<= '1';

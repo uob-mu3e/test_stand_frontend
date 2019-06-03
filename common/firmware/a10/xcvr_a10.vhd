@@ -58,7 +58,7 @@ architecture arch of xcvr_a10 is
 
     signal rst_n : std_logic;
 
-    signal ch : integer range Nch-1 downto 0;
+    signal ch : integer range 0 to Nch-1;
 
     signal av_ctrl : work.mu3e.avalon_t;
     signal av_phy, av_pll : work.mu3e.avalon_t;
@@ -263,10 +263,12 @@ begin
         av_ctrl.address(avs_address'range) <= avs_address;
         av_ctrl.writedata <= avs_writedata;
 
+        -- (alt_u32*)BASE + 0x1000
         av_phy_cs <= '1' when ( avs_address(avs_address'left downto 10) = "0100" ) else '0';
         av_phy.address(avs_address'range) <= avs_address;
         av_phy.writedata <= avs_writedata;
 
+        -- (alt_u32*)BASE + 0x2000
         av_pll_cs <= '1' when ( avs_address(avs_address'left downto 10) = "1000" ) else '0';
         av_pll.address(avs_address'range) <= avs_address;
         av_pll.writedata <= avs_writedata;

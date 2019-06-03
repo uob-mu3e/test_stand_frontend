@@ -1,4 +1,8 @@
-# Arria 10 components
+# Arria 10
+
+ - vhdl components
+ - ip tcl scripts
+ - xcvr
 
 ## Flash
 
