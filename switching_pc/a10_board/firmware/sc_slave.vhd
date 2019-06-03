@@ -24,7 +24,6 @@ entity sc_slave is
 		mem_data_out:       out std_logic_vector(31 downto 0);
 		mem_addr_out:       out std_logic_vector(15 downto 0);
 		mem_wren:           out std_logic;
-		done:               out std_logic;
 		stateout:           out std_logic_vector(27 downto 0)
 	);
 end entity sc_slave;

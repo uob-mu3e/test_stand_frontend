@@ -374,7 +374,6 @@ component sc_slave is
 		mem_data_out:		out std_logic_vector(31 downto 0);
 		mem_addr_out:		out std_logic_vector(15 downto 0);
 		mem_wren:			out std_logic;			
-		done:				out std_logic;
 		stateout:			out std_logic_vector(27 downto 0)
 		);		
 end component sc_slave;
@@ -591,20 +590,11 @@ end component;
 
 component nios is
   port (
-		avm_qsfp_address           : out   std_logic_vector(13 downto 0);                    -- address
-		avm_qsfp_read              : out   std_logic;                                        -- read
-		avm_qsfp_readdata          : in    std_logic_vector(31 downto 0) := (others => 'X'); -- readdata
-		avm_qsfp_write             : out   std_logic;                                        -- write
-		avm_qsfp_writedata         : out   std_logic_vector(31 downto 0);                    -- writedata
-		avm_qsfp_waitrequest       : in    std_logic                     := 'X';             -- waitrequest
-		avm_sc_address             : out   std_logic_vector(13 downto 0);                    -- address
-		avm_sc_read                : out   std_logic;                                        -- read
-		avm_sc_readdata            : in    std_logic_vector(31 downto 0) := (others => 'X'); -- readdata
-		avm_sc_write               : out   std_logic;                                        -- write
-		avm_sc_writedata           : out   std_logic_vector(31 downto 0);                    -- writedata
-		avm_sc_waitrequest         : in    std_logic                     := 'X';             -- waitrequest
 		clk_clk                    : in    std_logic                     := 'X';             -- clk
-		clk_data_clk               : in    std_logic                     := 'X';             -- clk
+		clk_debug_clk              : in    std_logic                     := 'X';             -- clk
+		clk_rx_clk                 : in    std_logic                     := 'X';             -- clk
+		clk_tx_clk                 : in    std_logic                     := 'X';             -- clk
+		debug_export               : in    std_logic_vector(31 downto 0) := (others => 'X'); -- export
 		flash_tcm_address_out      : out   std_logic_vector(27 downto 0);                    -- tcm_address_out
 		flash_tcm_read_n_out       : out   std_logic_vector(0 downto 0);                     -- tcm_read_n_out
 		flash_tcm_write_n_out      : out   std_logic_vector(0 downto 0);                     -- tcm_write_n_out
@@ -615,14 +605,16 @@ component nios is
 		i2c_sda_oe                 : out   std_logic;                                        -- sda_oe
 		i2c_scl_oe                 : out   std_logic;                                        -- scl_oe
 		pio_export                 : out   std_logic_vector(31 downto 0);                    -- export
-		pio_in_export              : in    std_logic_vector(31 downto 0) := (others => 'X'); -- export
-		pio_out_export             : out   std_logic_vector(31 downto 0);                    -- export
 		rst_reset_n                : in    std_logic                     := 'X';             -- reset_n
-		rst_data_reset_n           : in    std_logic                     := 'X';             -- reset_n
+		rst_debug_reset_n          : in    std_logic                     := 'X';             -- reset_n
+		rst_rx_reset_n             : in    std_logic                     := 'X';             -- reset_n
+		rst_tx_reset_n             : in    std_logic                     := 'X';             -- reset_n
+		rx_export                  : in    std_logic_vector(31 downto 0) := (others => 'X'); -- export
 		spi_MISO                   : in    std_logic                     := 'X';             -- MISO
 		spi_MOSI                   : out   std_logic;                                        -- MOSI
 		spi_SCLK                   : out   std_logic;                                        -- SCLK
-		spi_SS_n                   : out   std_logic                                         -- SS_n
+		spi_SS_n                   : out   std_logic;                                        -- SS_n
+		tx_export                  : in    std_logic_vector(31 downto 0) := (others => 'X')  -- export
   );
 end component nios;
 

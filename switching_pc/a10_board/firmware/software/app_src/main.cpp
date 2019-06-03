@@ -21,6 +21,9 @@ i2c_t i2c;
 #include "si.h"
 si_t si;
 
+#include "signal.h"
+signal_t signal;
+
 struct fan_t {
     const alt_u32 fclk = 254000;
 
@@ -245,6 +248,26 @@ void menu_spi_si5345() {
     }
 }
 
+void menu_signal() {
+    while (1) {
+        printf("Signals\n", ALT_DEVICE_FAMILY);
+        printf("  [r] => read signals\n");
+        printf("  [q] => quit\n");
+
+        printf("Select entry ...\n");
+        char cmd = wait_key();
+        switch(cmd) {
+        case 'r' :
+            signal.read();
+            break;
+        case 'q':
+            return;
+        default:
+            printf("invalid command: '%c'\n", cmd);
+        }
+    }
+}
+
 int main() {
     fan.init();
 
@@ -266,7 +289,7 @@ int main() {
         printf("  [0] => spi si chip\n");
         printf("  [1] => i2c fan\n");
         printf("  [2] => flash\n");
-        //printf("  [3] => xcvr\n");
+        printf("  [3] => signals\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -282,10 +305,10 @@ int main() {
             printf("flash:\n");
             menu_flash();
             break;
-        //case '3':
-        //    printf("xcvr:\n");
-        //    menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
-        //    break;
+        case '3':
+           printf("signals:\n");
+            menu_signal();
+            break;
         default:
             printf("invalid command: '%c'\n", cmd);
         }

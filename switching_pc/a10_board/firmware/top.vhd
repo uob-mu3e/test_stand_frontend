@@ -20,8 +20,8 @@ port (
     HEX1_D      :   out std_logic_vector(6 downto 0);
     --HEX1_DP     :   out std_logic;
 
-    LED         :   out std_logic_vector(3 downto 0);
-    LED_BRACKET :   out std_logic_vector(3 downto 0);
+    LED         :   out std_logic_vector(3 downto 0) := '0';
+    LED_BRACKET :   out std_logic_vector(3 downto 0) := '0';
 
     --SMA_CLKOUT : out std_logic;
     SMA_CLKIN : in std_logic;
@@ -33,8 +33,8 @@ port (
     --RJ45_LED_L : out std_logic;
     RJ45_LED_R : out std_logic;
 	 
-	 refclk2_qr1_p	: in std_logic;--					1.5-V PCML, default 125MHz
-	 refclk1_qr0_p : in std_logic;-- 1.5-V PCML, default 156.25MHz
+	 --refclk2_qr1_p	: in std_logic;--					1.5-V PCML, default 125MHz
+	 --refclk1_qr0_p : in std_logic;-- 1.5-V PCML, default 156.25MHz
 	 
 	  --      ///////// FAN /////////
     FAN_I2C_SCL :   out     std_logic;
@@ -93,22 +93,20 @@ end entity top;
 
 architecture rtl of top is
 
-
 		 signal clk : std_logic;
+		 signal input_clk : std_logic;
+
+		 signal reset : std_logic;
 		 signal reset_n : std_logic;
+		 signal resets : std_logic_vector(31 downto 0);
+		 signal resets_n: std_logic_vector(31 downto 0);
 		 
 		 signal clk_125_cnt : std_logic_vector(31 downto 0);
 		 signal clk_125_cnt2 : std_logic_vector(31 downto 0);
 
-
 		------------------ Signal declaration ------------------------
 
-		-- external connections
-		--signal clk : std_logic;
-		--signal xcvr_ref_clk : std_logic;	 
-		--signal refclk_125 : std_logic;	 
-
-		-- pcie registers
+		-- pcie
 		signal writeregs				: reg32array;
 		signal regwritten				: std_logic_vector(63 downto 0);
 		signal regwritten_fast		: std_logic_vector(63 downto 0);
@@ -116,7 +114,8 @@ architecture rtl of top is
 		signal regwritten_del2		: std_logic_vector(63 downto 0);
 		signal regwritten_del3		: std_logic_vector(63 downto 0);
 		signal regwritten_del4		: std_logic_vector(63 downto 0);
-
+		signal pb_in : std_logic_vector(2 downto 0);
+		
 		signal readregs				: reg32array;
 		signal readregs_slow			: reg32array;
 
@@ -142,129 +141,25 @@ architecture rtl of top is
 		signal dma2mem_endofevent 	: std_logic;
 		signal dma2memhalffull 		: std_logic;
 		
-		-- pcie fast clock
+		-- //pcie fast clock
 		signal pcie_fastclk_out		: std_logic;	
 
-		-- pcie debug signals
+		-- //pcie debug signals
 		signal pcie_testout				: std_logic_vector(127 downto 0);
 
 		-- Clocksync stuff
-		signal clk50_sync : std_logic;
-		signal clk50_last : std_logic;
 		signal clk_sync : std_logic;
 		signal clk_last : std_logic;
-		signal clk156ch0_sync : std_logic;
-		signal clk156ch0_last : std_logic;
-		signal clk156ch1_sync : std_logic;
-		signal clk156ch1_last : std_logic;
-		signal clk156ch2_sync : std_logic;
-		signal clk156ch2_last : std_logic;
-		signal clk156ch3_sync : std_logic;
-		signal clk156ch3_last : std_logic;
-		
-		signal reset : std_logic;
-		
-		signal resets: std_logic_vector(31 downto 0);
-		signal resets_n: std_logic_vector(31 downto 0);
-		
-		signal status_rr: std_logic_vector(31 downto 0);
-		
-		signal reset_156 : std_logic;
-		signal reset_n_156 : std_logic;
-		--signal sl_test_enable : std_logic;
-		--signal blinker_signal : std_logic;
 
-		--signal push_button0_db : std_logic;
-		--signal push_button1_db : std_logic;
-		--signal push_button2_db : std_logic;
-		
-		signal input_clk : std_logic;
-		signal clk_156 : std_logic;
-
-		-- tranciever/reset ip signals
+		-- tranciever ip signals
 		signal rx_clkout_ch0_clk : std_logic;
 		signal rx_clkout_ch1_clk : std_logic;
 		signal rx_clkout_ch2_clk : std_logic;
 		signal rx_clkout_ch3_clk : std_logic;
 		
-		signal pll_powerdown : std_logic;
-		signal tx_analogreset : std_logic_vector(3 downto 0);
-		signal tx_digitalreset : std_logic_vector(3 downto 0);
-		signal tx_ready : std_logic_vector(3 downto 0);
-		signal pll_locked : std_logic;
-		signal pll_locked_vector : std_logic_vector(1 downto 0);
-		signal tx_cal_busy : std_logic_vector(3 downto 0);
-		signal rx_analogreset : std_logic_vector(3 downto 0);
-		signal rx_digitalreset : std_logic_vector(3 downto 0);
 		signal rx_ready : std_logic_vector(3 downto 0);
-		signal rx_is_lockedtodata : std_logic_vector(3 downto 0);
 		signal rx_is_lockedtoref : std_logic_vector(4 downto 0);
-		signal rx_cal_busy : std_logic_vector(3 downto 0);
 
-		signal tx_parallel_data : std_logic_vector(31 downto 0);
-		signal rx_parallel_data : std_logic_vector(31 downto 0);
-
-		signal tx_clk : std_logic_vector(1 downto 0);
-		signal rx_clk : std_logic_vector(1 downto 0);
-		signal tx_std_coreclkin : std_logic_vector(1 downto 0);
-		signal rx_std_coreclkin : std_logic_vector(1 downto 0);
-		signal rx_bitslip : std_logic_vector(1 downto 0);
-		signal rx_serial_loopback_enable : std_logic_vector(1 downto 0);
-
-		signal tx_clkout	  : std_logic_vector(3 downto 0);
-		signal rx_clkout    : std_logic_vector(3 downto 0);
-
-		signal tx_datak : std_logic_vector(3 downto 0);
-		signal rx_datak : std_logic_vector(15 downto 0);
-
-		signal rx_errdetect : std_logic_vector(7 downto 0);
-		signal rx_disperr : std_logic_vector(7 downto 0);
-
-		signal reconfig_to_xcvr : std_logic_vector(279 downto 0);
-		signal reconfig_from_xcvr : std_logic_vector(183 downto 0);  
-		signal reconfig_busy : std_logic;
-
-		signal pll_cal_busy : std_logic;
-
-		signal tx_serial_clk : std_logic;
-
-		signal rx_pattern : std_logic_vector(15 downto 0);
-		signal rx_syncstatus : std_logic_vector(15 downto 0);
-
-		signal pll_conf_write       :   std_logic := '0';
-		signal pll_conf_read        :   std_logic := '0';
-		signal pll_conf_address     :   std_logic_vector(15 downto 0);
-		signal pll_conf_writedata   :   std_logic_vector(31 downto 0);
-		signal pll_conf_readdata    :   std_logic_vector(31 downto 0);
-		signal pll_conf_wait        :   std_logic;
-		
-		signal rx_is_lockedtodata_rx_is_lockedtodata : std_logic_vector(3 downto 0);
-		
-		--- data processing signals
-		signal s_clk : std_logic;
-		signal s_cnt : std_logic_vector(31 downto 0) := (others => '0');
-		signal led_changer : std_logic;
-		signal data : std_logic_vector(23 downto 0);
-		---signal counter : std_logic_vector(39 downto 0);
-
-		--- config stuff
-		signal clbr : std_logic;
-		signal conf_state           :   integer range 0 to 31 := 0;
-		signal phy_conf_write       :   std_logic := '0';
-		signal phy_conf_read        :   std_logic := '0';
-		signal phy_conf_channel     :   std_logic_vector(1 downto 0);
-		signal phy_conf_address     :   std_logic_vector(15 downto 0);
-		signal phy_conf_writedata   :   std_logic_vector(31 downto 0);
-		signal phy_conf_readdata    :   std_logic_vector(31 downto 0);
-		signal phy_conf_wait        :   std_logic;
-		signal clbr_q0              :   std_logic;
-
-		--- 7 segment stuff ---
-		constant c_CNT_1HZ   : natural := 25000000;
-		signal r_CNT_1HZ   : natural range 0 to 25000000;
-		
-		
-		--- transiver stuff ---
 		signal rx_parallel_data_ch0_rx_parallel_data :   std_logic_vector(31 downto 0);
 		signal rx_parallel_data_ch1_rx_parallel_data :   std_logic_vector(31 downto 0);
 		signal rx_parallel_data_ch2_rx_parallel_data :   std_logic_vector(31 downto 0);
@@ -284,7 +179,6 @@ architecture rtl of top is
 		signal rx_patterndetect_ch1_rx_patterndetect   : std_logic_vector(3 downto 0);
 		signal rx_patterndetect_ch2_rx_patterndetect   : std_logic_vector(3 downto 0);
 		signal rx_patterndetect_ch3_rx_patterndetect   : std_logic_vector(3 downto 0);
-		
 		
 		signal data_ch0 : std_logic_vector(31 downto 0);
 		signal data_ch1 : std_logic_vector(31 downto 0);
@@ -310,149 +204,6 @@ architecture rtl of top is
 		signal enapatternalign_ch1 : std_logic;
 		signal enapatternalign_ch2 : std_logic;
 		signal enapatternalign_ch3 : std_logic;
-				
-		signal push_old : std_logic := '0';
-		signal rand_num_data : std_logic_vector(31 downto 0);
-		signal rand_num_valid : std_logic;
-		signal compare_random_ch0 : std_logic;
-				
-		--- linear shift reg ---
-		signal old_shift : std_logic_vector(7 downto 0) := "00100100";
-		signal word_counter : std_logic_vector(127 downto 0);
-		signal error_counter : std_logic_vector(127 downto 0);
-		signal en_shift : std_logic;
-		signal n_0 : std_logic_vector(7 downto 0);
-		signal n_1 : std_logic_vector(7 downto 0);
-		signal n_2 : std_logic_vector(7 downto 0);
-		signal n_3 : std_logic_vector(7 downto 0);
-		signal n_local : std_logic_vector(7 downto 0);
-		
-		--- debouncer ---
-		signal push_button0_db : std_logic;
-		signal push_button1_db : std_logic;
-		signal push_button2_db : std_logic;
-		signal push_button3_db : std_logic;
-		
-		signal push_button0_db_156 : std_logic;
-		signal push_button1_db_156 : std_logic;
-		signal push_button2_db_156 : std_logic;
-		signal push_button3_db_156 : std_logic;
-		
-		-- data generartor stuff
-		signal event_counter : std_logic_vector(31 downto 0);
-		signal time_counter : std_logic_vector(63 downto 0);
-
-		-- data generartor64 stuff
-		signal event_counter64 : std_logic_vector(31 downto 0);
-		signal time_counter64 : std_logic_vector(63 downto 0);
-
-		-- second data generartor64 stuff
-		signal event2_counter64 : std_logic_vector(31 downto 0);
-		signal time2_counter64 : std_logic_vector(63 downto 0);
-
-		--- Test stuff ---
-		signal counter_test : std_logic_vector(63 downto 0);
-		signal counter_flag : std_logic;
-		
-		--- SPI stuff ---
-      signal spi_clk : std_logic;
-		signal spi_ss_n : std_logic;
-		
-		--- trigger ---
-		--signal trigger : std_logic;
-		
-		--- sorting ---
-		signal data_out   : std_logic_vector(63 downto 0);
-		signal clk_fast 	: std_logic; -- 312 MHZ
-		signal error      : std_logic;
-			
-		
-		--- running stuff ---
-		signal enable_sig : std_logic;
-		signal random_seed_sig : std_logic_vector(7 downto 0);
-		signal sync_reset_sig : std_logic;
-		signal data_en_sig : std_logic;
-		signal data_out_sig : std_logic_vector(31 downto 0);
-		signal fifo_data_out : std_logic_vector(31 downto 0);
-		signal fifo_data_full : std_logic;
-		signal fifo_data_empty : std_logic;
-		signal fifo_rdreq : std_logic;
-		signal pixel_data_ready_sig : std_logic;
-		signal pixel_data_out_sig : std_logic_vector(31 downto 0);
-		
-		signal counter_256 	: std_logic_vector(255 downto 0);
-		
-		signal rdreg_fifo_dma : std_logic;
-		signal rdempty_fifo_0 : std_logic;
-		signal rdempty_fifo_1 : std_logic;
-		signal rdempty_fifo_2 : std_logic;
-		signal rdempty_fifo_3 : std_logic;
-		
-		signal dma_data_ch0 : std_logic_vector(31 downto 0);
-		signal dma_data_ch1 : std_logic_vector(31 downto 0);
-		signal dma_data_ch2 : std_logic_vector(31 downto 0);
-		signal dma_data_ch3 : std_logic_vector(31 downto 0);
-		
-		signal fiforclk	  : std_logic;
-		signal ch0_align_status : std_logic;
-		signal ch1_align_status : std_logic;
-		signal ch2_align_status : std_logic;
-		signal ch3_align_status : std_logic;
-		
-		signal clk_125 : std_logic;
-		
-		signal flash_ce_n_i : std_logic;
-		signal cpu_reset_n_q : std_logic;
-		signal i2c_scl_in   : std_logic;
-		signal i2c_scl_oe   : std_logic;
-		signal i2c_sda_in   : std_logic;
-		signal i2c_sda_oe   : std_logic;
-		
-		-- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
-		signal ZERO : std_logic := '0';
-		attribute keep : boolean;
-		attribute keep of ZERO : signal is true;
-		
-		signal datak_transceiver_0  : std_logic_vector(3 downto 0);
-		signal datak_transceiver_1  : std_logic_vector(3 downto 0);
-		signal datak_transceiver_2  : std_logic_vector(3 downto 0);
-		signal datak_transceiver_3  : std_logic_vector(3 downto 0);
-		
-		signal data_transceiver_0  : std_logic_vector(31 downto 0);
-		signal data_transceiver_1  : std_logic_vector(31 downto 0);
-		signal data_transceiver_2  : std_logic_vector(31 downto 0);
-		signal data_transceiver_3  : std_logic_vector(31 downto 0);
-		
-		signal datak_transceiver_0_algin  : std_logic_vector(3 downto 0);
-		signal datak_transceiver_1_algin  : std_logic_vector(3 downto 0);
-		signal datak_transceiver_2_algin  : std_logic_vector(3 downto 0);
-		signal datak_transceiver_3_algin  : std_logic_vector(3 downto 0);
-		
-		signal data_transceiver_0_algin  : std_logic_vector(31 downto 0);
-		signal data_transceiver_1_algin  : std_logic_vector(31 downto 0);
-		signal data_transceiver_2_algin  : std_logic_vector(31 downto 0);
-		signal data_transceiver_3_algin  : std_logic_vector(31 downto 0);
-		
-		signal ch0_empty : std_logic;
-		signal ch1_empty : std_logic;
-		signal ch2_empty : std_logic;
-		signal ch3_empty : std_logic;
-		
-		signal ch0_fifo_out : std_logic_vector(35 downto 0);
-		signal ch1_fifo_out : std_logic_vector(35 downto 0);
-		signal ch2_fifo_out : std_logic_vector(35 downto 0);
-		signal ch3_fifo_out : std_logic_vector(35 downto 0);
-		
-		signal fifo_read : std_logic;
-		
-		signal tx_coreclkin_ch0_clk : std_logic;
-		signal tx_coreclkin_ch1_clk : std_logic;
-		signal tx_coreclkin_ch2_clk : std_logic;
-		signal tx_coreclkin_ch3_clk : std_logic;
-		signal tx_clkout_ch0_clk    : std_logic;
-		signal tx_clkout_ch1_clk    : std_logic;
-		signal tx_clkout_ch2_clk    : std_logic;
-		signal tx_clkout_ch3_clk    : std_logic;
 		
 		signal tx_data_ch0	: std_logic_vector(31 downto 0);
 		signal tx_data_ch1	: std_logic_vector(31 downto 0);
@@ -468,12 +219,60 @@ architecture rtl of top is
 		signal tx_clk_ch1 : std_logic;
 		signal tx_clk_ch2 : std_logic;
 		signal tx_clk_ch3 : std_logic;
+				
+		-- debouncer
+		signal push_button0_db : std_logic;
+		signal push_button1_db : std_logic;
+		signal push_button2_db : std_logic;
+		signal push_button3_db : std_logic;
 		
-		signal mem_data_out : std_logic_vector(127 downto 0);
-		signal mem_datak_out : std_logic_vector(15 downto 0);
+		-- data generartor stuff
+		signal event_counter : std_logic_vector(31 downto 0);
+		signal time_counter : std_logic_vector(63 downto 0);
+
+		-- data generartor64 stuff
+		signal event_counter64 : std_logic_vector(31 downto 0);
+		signal time_counter64 : std_logic_vector(63 downto 0);
 		
-		signal sc_wren : std_logic;
+		-- sorting
+--		signal clk_fast 	: std_logic; -- 312 MHZ
+--		signal clks_read : std_logic_vector(4 - 1 downto 0);
+--		signal clks_write : std_logic_vector(4 - 1 downto 0);
+--		signal fpga_id_in : std_logic_vector(4 * 16 - 1 downto 0);
+--		signal enables_in : std_logic_vector(4 - 1 downto 0);
+--		signal data_algin : std_logic_vector(63 downto 0);
+			
+		-- NIOS
+		signal flash_ce_n_i : std_logic;
+		signal cpu_reset_n_q : std_logic;
+		signal i2c_scl_in   : std_logic;
+		signal i2c_scl_oe   : std_logic;
+		signal i2c_sda_in   : std_logic;
+		signal i2c_sda_oe   : std_logic;
+		signal flash_tcm_address_out : std_logic_vector(27 downto 0);
+		signal wd_rst_n     : std_logic;
+		signal cpu_pio_i : std_logic_vector(31 downto 0);
+		signal flash_rst_n : std_logic;
+		signal debug_nios : std_logic_vector(31 downto 0);
 		
+		-- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
+		signal ZERO : std_logic := '0';
+		attribute keep : boolean;
+		attribute keep of ZERO : signal is true;
+		
+		-- data processing
+		signal ch0_empty : std_logic;
+		signal ch1_empty : std_logic;
+		signal ch2_empty : std_logic;
+		signal ch3_empty : std_logic;
+		
+		signal ch0_fifo_out : std_logic_vector(35 downto 0);
+		signal ch1_fifo_out : std_logic_vector(35 downto 0);
+		signal ch2_fifo_out : std_logic_vector(35 downto 0);
+		signal ch3_fifo_out : std_logic_vector(35 downto 0);
+		
+		signal fifo_read : std_logic;
+				
 		signal fifo_data_in_ch0 : std_logic_vector(31 downto 0);
 		signal fifo_data_in_ch1 : std_logic_vector(31 downto 0);
 		signal fifo_data_in_ch2 : std_logic_vector(31 downto 0);
@@ -483,17 +282,15 @@ architecture rtl of top is
 		signal fifo_wrreq_ch1 : std_logic;
 		signal fifo_wrreq_ch2 : std_logic;
 		signal fifo_wrreq_ch3 : std_logic;
+				
+		signal fifo_datak_in_ch0 : std_logic_vector(3 downto 0);
+		signal fifo_datak_in_ch1 : std_logic_vector(3 downto 0);
+		signal fifo_datak_in_ch2 : std_logic_vector(3 downto 0);
+		signal fifo_datak_in_ch3 : std_logic_vector(3 downto 0);
 		
-		signal pb_in : std_logic_vector(2 downto 0);
-		
-		signal flash_tcm_address_out : std_logic_vector(27 downto 0);
-		
-		signal clks_read : std_logic_vector(4 - 1 downto 0);
-		signal clks_write : std_logic_vector(4 - 1 downto 0);
-		signal data_in : std_logic_vector(4 * 32 - 1 downto 0);
-		signal fpga_id_in : std_logic_vector(4 * 16 - 1 downto 0);
-		signal enables_in : std_logic_vector(4 - 1 downto 0);
-		signal data_algin : std_logic_vector(63 downto 0);
+		-- Slow Control
+		signal mem_data_out : std_logic_vector(127 downto 0);
+		signal mem_datak_out : std_logic_vector(15 downto 0);
 		
 		signal sc_ch0 : std_logic_vector(31 downto 0);
 		signal sc_ch1 : std_logic_vector(31 downto 0);
@@ -510,51 +307,40 @@ architecture rtl of top is
 		signal sc_ready_ch2 : std_logic;
 		signal sc_ready_ch3 : std_logic;
 		
-		signal fifo_datak_in_ch0 : std_logic_vector(3 downto 0);
-		signal fifo_datak_in_ch1 : std_logic_vector(3 downto 0);
-		signal fifo_datak_in_ch2 : std_logic_vector(3 downto 0);
-		signal fifo_datak_in_ch3 : std_logic_vector(3 downto 0);
-		
 		signal aligned_ch0 : std_logic;
 		signal aligned_ch1 : std_logic;
 		signal aligned_ch2 : std_logic;
 		signal aligned_ch3 : std_logic;
-		
-		signal wd_rst_n     : std_logic;
-		
-		signal cpu_pio_i : std_logic_vector(31 downto 0);
-		
-		signal flash_rst_n : std_logic;
-		
-		signal avm_qsfp : work.mu3e.avalon_t;
-		
 		
 begin 
 
 --------- I/O ---------
 
 clk <= CLK_50_B2J;
-reset_n <= not reset;
 reset <= not push_button0_db;
-LED_BRACKET(0) <= aligned_ch0;
-LED_BRACKET(1) <= rx_is_lockedtoref(0);
-LED_BRACKET(2) <= rx_syncstatus_ch0_rx_syncstatus(0);
-LED_BRACKET(3) <= rx_ready(0);
---cpu_reset_n_q <= CPU_RESET_n;
-LED(1) <= SW(1); --- SW for datak transceiver
+reset_n <= not reset;
 
---reset <= not push_button0_db; -- for receiver
-
---LED_BRACKET(0) <= rx_is_lockedtoref(0);
---LED_BRACKET(1) <= rx_ready(0);
---LED_BRACKET(2) <= rx_syncstatus_ch0_rx_syncstatus(0);
---LED_BRACKET(3) <= writeregs(LED_REGISTER_W)(3);
-
---SMA_CLKOUT <= trigger;
-
---status_rr(CH_ALIGN) <= ch0_align_status and ch1_align_status and ch2_align_status and ch3_align_status;
-
---input_clk <= refclk2_qr1_p;
+debug_nios <= aligned_ch0 &								-- 31
+				  aligned_ch1 &								-- 30
+				  aligned_ch2 &								-- 29
+				  aligned_ch3 &								-- 28
+				  rx_is_lockedtoref &   					-- 24
+				  rx_syncstatus_ch0_rx_syncstatus &		-- 20
+				  rx_ready &									-- 16
+				  SW &											-- 14
+				  enapatternalign_ch0 &						-- 13
+				  enapatternalign_ch1 &						-- 12
+				  enapatternalign_ch2 &						-- 11
+				  enapatternalign_ch3 &						-- 10
+				  ch0_empty				 &						-- 9
+				  ch1_empty				 &						-- 8
+				  ch2_empty				 &						-- 7
+				  ch3_empty				 &						-- 6
+				  sc_ready_ch0			 &						-- 5
+				  sc_ready_ch1			 &						-- 4
+				  sc_ready_ch2			 &						-- 3
+				  sc_ready_ch3			 &						-- 2
+				  "0";
 
 receiver_clk : component ip_clk_ctrl
   port map (
@@ -575,7 +361,7 @@ i_debouncer : entity work.debouncer
 	  q(1) 	=> push_button1_db,
 	  q(2) 	=> push_button2_db,
 	  q(3) 	=> push_button3_db,
-	  arst_n => cpu_reset_n_q,
+	  arst_n => '0',
 	  clk 	=> clk--,
  );
 
@@ -611,34 +397,33 @@ segment1 : component seg7_lut
 
 nios2 : component nios
 port map (
-	avm_qsfp_address          				=> avm_qsfp.address(13 downto 0),
-	avm_qsfp_read             				=> avm_qsfp.read,
-	avm_qsfp_readdata         				=> avm_qsfp.readdata,
-	avm_qsfp_write            				=> avm_qsfp.write,
-	avm_qsfp_writedata        				=> avm_qsfp.writedata,
-	avm_qsfp_waitrequest      				=> avm_qsfp.waitrequest,
-	avm_sc_address            				=> open,
-	avm_sc_read               				=> open,
-	avm_sc_readdata           				=> x"00000000",
-	avm_sc_write              				=> open,
-	avm_sc_writedata          				=> open,
-	avm_sc_waitrequest        				=> '0',
 	clk_clk                    			=> clk,
-	clk_data_clk               			=> rx_clkout_ch0_clk,
+	clk_debug_clk               			=> rx_clkout_ch0_clk,
+	clk_rx_clk               				=> rx_clkout_ch0_clk,
+	clk_tx_clk               				=> tx_clk_ch0,
+	
+	rst_reset_n                			=> cpu_reset_n_q,
+	rst_debug_reset_n               		=> reset,
+	rst_rx_reset_n               			=> reset,
+	rst_tx_reset_n               			=> reset,
+	
+	debug_export               			=> debug_nios,
+	rx_export               				=> rx_parallel_data_ch0_rx_parallel_data,
+	tx_export               				=> tx_data_ch0,
+	
 	flash_tcm_address_out				 	=> flash_tcm_address_out,
 	flash_tcm_data_out 						=> FLASH_D,
 	flash_tcm_read_n_out(0) 				=> FLASH_OE_n,
 	flash_tcm_write_n_out(0) 				=> FLASH_WE_n,
 	flash_tcm_chipselect_n_out(0) 		=> flash_ce_n_i,
+	
 	i2c_sda_in                 			=> i2c_sda_in,
 	i2c_scl_in                 			=> i2c_scl_in,
 	i2c_sda_oe                 			=> i2c_sda_oe,
 	i2c_scl_oe                 			=> i2c_scl_oe,
+	
 	pio_export									=> cpu_pio_i,
-	pio_in_export              			=> rx_parallel_data_ch0_rx_parallel_data,              --   pio_in.export
-	pio_out_export             			=> open,             --  pio_out.export
-	rst_reset_n                			=> cpu_reset_n_q,
-	rst_data_reset_n           			=> not reset,
+	
 	spi_MISO                   			=> RS422_DIN,
 	spi_MOSI                   			=> RS422_DOUT,
 	spi_SCLK                   			=> RJ45_LED_R,
@@ -696,63 +481,61 @@ POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
 
 u0 : component ip_transceiver
         port map (
-            clk_qsfp_clk                            	=> input_clk,
-				reset_1_reset                           	=> reset,
-				
-				rx_bitslip_ch0_rx_bitslip               	=> open,
-				rx_bitslip_ch1_rx_bitslip         		 	=> open,
-				rx_bitslip_ch2_rx_bitslip         		 	=> open,
-				rx_bitslip_ch3_rx_bitslip         		 	=> open,
-				rx_cdr_refclk0_clk                      	=> input_clk,
-				rx_clkout_ch0_clk 								=> rx_clkout_ch0_clk,
-				rx_clkout_ch1_clk									=> rx_clkout_ch1_clk,  
-				rx_clkout_ch2_clk 								=> rx_clkout_ch2_clk,
-				rx_clkout_ch3_clk 								=> rx_clkout_ch3_clk,  
-				rx_coreclkin_ch0_clk 							=> rx_clkout_ch0_clk,
-				rx_coreclkin_ch1_clk								=> rx_clkout_ch1_clk, 
-				rx_coreclkin_ch2_clk								=> rx_clkout_ch2_clk,
-				rx_coreclkin_ch3_clk								=> rx_clkout_ch3_clk,
-				rx_datak_ch0_rx_datak          	 		 	=> rx_datak_ch0_rx_datak,
-				rx_datak_ch1_rx_datak            		 	=> rx_datak_ch1_rx_datak,
-				rx_datak_ch2_rx_datak                     => rx_datak_ch2_rx_datak,
-				rx_datak_ch3_rx_datak 							=> rx_datak_ch3_rx_datak,
-				rx_is_lockedtoref_ch0_rx_is_lockedtoref 	=> rx_is_lockedtoref(0),
-				rx_is_lockedtoref_ch1_rx_is_lockedtoref	=> rx_is_lockedtoref(1),
-				rx_is_lockedtoref_ch2_rx_is_lockedtoref 	=> rx_is_lockedtoref(2),
-				rx_is_lockedtoref_ch3_rx_is_lockedtoref	=> rx_is_lockedtoref(3),
-				rx_parallel_data_ch0_rx_parallel_data   	=> rx_parallel_data_ch0_rx_parallel_data,
-				rx_parallel_data_ch1_rx_parallel_data   	=> rx_parallel_data_ch1_rx_parallel_data,
-				rx_parallel_data_ch2_rx_parallel_data   	=> rx_parallel_data_ch2_rx_parallel_data,
-				rx_parallel_data_ch3_rx_parallel_data   	=> rx_parallel_data_ch3_rx_parallel_data,
-				rx_patterndetect_ch0_rx_patterndetect   	=> rx_patterndetect_ch0_rx_patterndetect,
-				rx_patterndetect_ch1_rx_patterndetect   	=> rx_patterndetect_ch1_rx_patterndetect,
-				rx_patterndetect_ch2_rx_patterndetect   	=> rx_patterndetect_ch2_rx_patterndetect,
-				rx_patterndetect_ch3_rx_patterndetect   	=> rx_patterndetect_ch3_rx_patterndetect,
-				rx_serial_data_ch0_rx_serial_data       	=> QSFPA_RX_p(0),
-				rx_serial_data_ch1_rx_serial_data       	=> QSFPA_RX_p(1),
-				rx_serial_data_ch2_rx_serial_data       	=> QSFPA_RX_p(2),
-				rx_serial_data_ch3_rx_serial_data       	=> QSFPA_RX_p(3),
-				rx_seriallpbken_ch0_rx_seriallpbken     	=> '0',
-				rx_seriallpbken_ch1_rx_seriallpbken     	=> '0',
-				rx_seriallpbken_ch2_rx_seriallpbken     	=> '0',
-				rx_seriallpbken_ch3_rx_seriallpbken     	=> '0',
-				rx_syncstatus_ch0_rx_syncstatus  		 	=> rx_syncstatus_ch0_rx_syncstatus,
-				rx_syncstatus_ch1_rx_syncstatus  		 	=> rx_syncstatus_ch1_rx_syncstatus,
-				rx_syncstatus_ch2_rx_syncstatus  		 	=> rx_syncstatus_ch2_rx_syncstatus,
-				rx_syncstatus_ch3_rx_syncstatus  		 	=> rx_syncstatus_ch3_rx_syncstatus,
-				rx_ready0_rx_ready								=> rx_ready(0),
-				rx_ready1_rx_ready								=> rx_ready(1),
-				rx_ready2_rx_ready								=> rx_ready(2),
-				rx_ready3_rx_ready								=> rx_ready(3),
-				rx_errdetect_ch0_rx_errdetect           	=> rx_errdetect_ch0_rx_errdetect,
-				rx_errdetect_ch1_rx_errdetect           	=> rx_errdetect_ch1_rx_errdetect,
-				rx_errdetect_ch2_rx_errdetect           	=> rx_errdetect_ch2_rx_errdetect,
-				rx_errdetect_ch3_rx_errdetect           	=> rx_errdetect_ch3_rx_errdetect,
-				rx_disperr_ch0_rx_disperr               	=> rx_disperr_ch0_rx_disperr,
-				rx_disperr_ch1_rx_disperr               	=> rx_disperr_ch1_rx_disperr,
-				rx_disperr_ch2_rx_disperr               	=> rx_disperr_ch2_rx_disperr,
-				rx_disperr_ch3_rx_disperr               	=> rx_disperr_ch3_rx_disperr,
-				
+            clk_qsfp_clk                            			=> input_clk,
+				reset_1_reset                           			=> reset,
+				rx_bitslip_ch0_rx_bitslip               			=> open,
+				rx_bitslip_ch1_rx_bitslip         		 			=> open,
+				rx_bitslip_ch2_rx_bitslip         		 			=> open,
+				rx_bitslip_ch3_rx_bitslip         		 			=> open,
+				rx_cdr_refclk0_clk                      			=> input_clk,
+				rx_clkout_ch0_clk 										=> rx_clkout_ch0_clk,
+				rx_clkout_ch1_clk											=> rx_clkout_ch1_clk,  
+				rx_clkout_ch2_clk 										=> rx_clkout_ch2_clk,
+				rx_clkout_ch3_clk 										=> rx_clkout_ch3_clk,  
+				rx_coreclkin_ch0_clk 									=> rx_clkout_ch0_clk,
+				rx_coreclkin_ch1_clk										=> rx_clkout_ch1_clk, 
+				rx_coreclkin_ch2_clk										=> rx_clkout_ch2_clk,
+				rx_coreclkin_ch3_clk										=> rx_clkout_ch3_clk,
+				rx_datak_ch0_rx_datak          	 		 			=> rx_datak_ch0_rx_datak,
+				rx_datak_ch1_rx_datak            		 			=> rx_datak_ch1_rx_datak,
+				rx_datak_ch2_rx_datak                     		=> rx_datak_ch2_rx_datak,
+				rx_datak_ch3_rx_datak 									=> rx_datak_ch3_rx_datak,
+				rx_is_lockedtoref_ch0_rx_is_lockedtoref 			=> rx_is_lockedtoref(0),
+				rx_is_lockedtoref_ch1_rx_is_lockedtoref			=> rx_is_lockedtoref(1),
+				rx_is_lockedtoref_ch2_rx_is_lockedtoref 			=> rx_is_lockedtoref(2),
+				rx_is_lockedtoref_ch3_rx_is_lockedtoref			=> rx_is_lockedtoref(3),
+				rx_parallel_data_ch0_rx_parallel_data   			=> rx_parallel_data_ch0_rx_parallel_data,
+				rx_parallel_data_ch1_rx_parallel_data   			=> rx_parallel_data_ch1_rx_parallel_data,
+				rx_parallel_data_ch2_rx_parallel_data   			=> rx_parallel_data_ch2_rx_parallel_data,
+				rx_parallel_data_ch3_rx_parallel_data   			=> rx_parallel_data_ch3_rx_parallel_data,
+				rx_patterndetect_ch0_rx_patterndetect   			=> rx_patterndetect_ch0_rx_patterndetect,
+				rx_patterndetect_ch1_rx_patterndetect   			=> rx_patterndetect_ch1_rx_patterndetect,
+				rx_patterndetect_ch2_rx_patterndetect   			=> rx_patterndetect_ch2_rx_patterndetect,
+				rx_patterndetect_ch3_rx_patterndetect   			=> rx_patterndetect_ch3_rx_patterndetect,
+				rx_serial_data_ch0_rx_serial_data       			=> QSFPA_RX_p(0),
+				rx_serial_data_ch1_rx_serial_data       			=> QSFPA_RX_p(1),
+				rx_serial_data_ch2_rx_serial_data       			=> QSFPA_RX_p(2),
+				rx_serial_data_ch3_rx_serial_data       			=> QSFPA_RX_p(3),
+				rx_seriallpbken_ch0_rx_seriallpbken     			=> '0',
+				rx_seriallpbken_ch1_rx_seriallpbken     			=> '0',
+				rx_seriallpbken_ch2_rx_seriallpbken     			=> '0',
+				rx_seriallpbken_ch3_rx_seriallpbken     			=> '0',
+				rx_syncstatus_ch0_rx_syncstatus  		 			=> rx_syncstatus_ch0_rx_syncstatus,
+				rx_syncstatus_ch1_rx_syncstatus  		 			=> rx_syncstatus_ch1_rx_syncstatus,
+				rx_syncstatus_ch2_rx_syncstatus  		 			=> rx_syncstatus_ch2_rx_syncstatus,
+				rx_syncstatus_ch3_rx_syncstatus  		 			=> rx_syncstatus_ch3_rx_syncstatus,
+				rx_ready0_rx_ready										=> rx_ready(0),
+				rx_ready1_rx_ready										=> rx_ready(1),
+				rx_ready2_rx_ready										=> rx_ready(2),
+				rx_ready3_rx_ready										=> rx_ready(3),
+				rx_errdetect_ch0_rx_errdetect           			=> rx_errdetect_ch0_rx_errdetect,
+				rx_errdetect_ch1_rx_errdetect           			=> rx_errdetect_ch1_rx_errdetect,
+				rx_errdetect_ch2_rx_errdetect           			=> rx_errdetect_ch2_rx_errdetect,
+				rx_errdetect_ch3_rx_errdetect           			=> rx_errdetect_ch3_rx_errdetect,
+				rx_disperr_ch0_rx_disperr               			=> rx_disperr_ch0_rx_disperr,
+				rx_disperr_ch1_rx_disperr               			=> rx_disperr_ch1_rx_disperr,
+				rx_disperr_ch2_rx_disperr               			=> rx_disperr_ch2_rx_disperr,
+				rx_disperr_ch3_rx_disperr               			=> rx_disperr_ch3_rx_disperr,
 				tx_parallel_data_unused_tx_parallel_data        => (others => '0'),
             tx_parallel_data_ch3_tx_parallel_data           => tx_data_ch3,
             tx_parallel_data_ch2_tx_parallel_data           => tx_data_ch2,
@@ -1076,7 +859,6 @@ sc_slave_ch0:sc_slave
 		mem_addr_out		=> readmem_writeaddr(15 downto 0),
 		mem_data_out		=> readmem_writedata,
 		mem_wren				=> readmem_wren,
-		done					=> open,
 		stateout				=> open
 );
 
@@ -1127,7 +909,7 @@ end process;
 
 resetlogic:reset_logic
 	port map(
-		clk                     => clk,--clk_125,
+		clk                     => clk,
 		rst_n                   => push_button0_db,
 
 		reset_register          => writeregs(RESET_REGISTER_W),
@@ -1157,7 +939,6 @@ begin
 		readregs(EVENTCOUNTER64_REGISTER_R)		<= event_counter64;
 		readregs(TIMECOUNTER_LOW_REGISTER_R)	<= time_counter(31 downto 0);
 		readregs(TIMECOUNTER_HIGH_REGISTER_R)	<= time_counter(63 downto 32);
-		readregs(EVENT2COUNTER64_REGISTER_R)	<= event2_counter64;
 	end if;
 end process;
 
@@ -1195,7 +976,7 @@ end process;
 
 
 readmem_writeaddr_lowbits <= readmem_writeaddr(15 downto 0);
-dmamem_wren <= writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE);-- and rdreg_fifo_dma;
+dmamem_wren <= writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE);
 pb_in <= push_button0_db & push_button1_db & push_button2_db;
 
 pcie_b: pcie_block 
@@ -1246,7 +1027,7 @@ pcie_b: pcie_block
 		readmem_endofevent	=> readmem_endofevent,
 
 		-- dma memory 
-		dma_data 				=> ch0_fifo_out(35 downto 4) & X"01CAFBAD" & ch1_fifo_out(35 downto 4) & X"02CAFBAD" & ch2_fifo_out(35 downto 4) & X"03CAFBAD" & ch3_fifo_out(35 downto 4) & X"04CAFBAD",--counter_256,--rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data,
+		dma_data 				=> ch0_fifo_out(35 downto 4) & X"01CAFBAD" & ch1_fifo_out(35 downto 4) & X"02CAFBAD" & ch2_fifo_out(35 downto 4) & X"03CAFBAD" & ch3_fifo_out(35 downto 4) & X"04CAFBAD",
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
 		dmamem_wren				=> dmamem_wren,--'1',
 		dmamem_endofevent		=> dmamem_endofevent,

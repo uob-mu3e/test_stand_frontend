@@ -83,8 +83,9 @@ begin
 			mem_datak 		<= (others => '0');
 		elsif(rising_edge(clk))then
 			wait_cnt		<= not wait_cnt;
-			mem_datak 		<= (others => '0');
+			mem_datak 	<= (others => '0');
 			wren_reg		<= (others => '0');
+			stateout		<= x"F";
 			case state is
 			
 				when waiting =>
@@ -134,7 +135,6 @@ begin
 					end if;
 										
 				when others =>
-					stateout(3 downto 0) <= x"F";
 					state	<= waiting;
 					addr_reg <= (others => '0');
 					wren_reg		<= (others => '0');

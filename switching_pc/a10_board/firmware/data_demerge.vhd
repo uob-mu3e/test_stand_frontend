@@ -42,7 +42,7 @@ architecture rtl of data_demerge is
 ----------------begin data_demerge------------------------
 BEGIN
 
-    process (clk, reset)
+    process (clk, reset, aligned)
     begin
         if (reset = '1' or aligned = '0') then 
             demerge_state 		<= idle;
