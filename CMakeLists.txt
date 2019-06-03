@@ -31,6 +31,7 @@ add_compile_options(
 )
 
 add_subdirectory(modules)
+add_subdirectory(backend_pc)
 
 configure_file(set_env.sh.in set_env.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/set_env.sh DESTINATION ./)
