@@ -1,0 +1,26 @@
+# update the environment variables to include this prefix directory
+
+PREFIX=@CMAKE_INSTALL_PREFIX@
+BINDIR=${PREFIX}/bin
+LIBDIR=${PREFIX}/lib
+PYTHONDIR=${PREFIX}/lib
+PYTHONARCHDIR=${PREFIX}/lib
+
+export CMAKE_PREFIX_PATH="${PREFIX}${CMAKE_PREFIX_PATH:+:}${CMAKE_PREFIX_PATH}"
+export LD_LIBRARY_PATH="${LIBDIR}${LD_LIBRARY_PATH:+:}${LD_LIBRARY_PATH}"
+export PATH="${BINDIR}${PATH:+:}${PATH}"
+export PYTHONPATH="${PYTHONDIR}:${PYTHONARCHDIR}${PYTHONPATH:+:}${PYTHONPATH}"
+
+
+export LANG=C
+export MIDASSYS=@CMAKE_CURRENT_LIST_DIR@/modules/midas
+export PATH=$PATH:$MIDASSYS/linux/bin
+export MIDAS_EXPTAB=@CMAKE_CURRENT_LIST_DIR@/mhttpd/exptab
+export MIDAS_ONLINE=@CMAKE_CURRENT_LIST_DIR@/mhttpd
+
+
+
+# bash or zsh require a rehash to pick up new commands
+if test -n "${BASH}" -o -n "${ZSH_VERSION}"; then
+    hash -r
+fi
