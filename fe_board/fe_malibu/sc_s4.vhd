@@ -134,7 +134,7 @@ begin
 		fifo_re 		<= '1';
 		mem_addr_read_o	<= (others => '0');
 		
-		if ((fifo_empty = '0') or (fifo_data_q(7 downto 0) = x"0000009C" and fifo_data_q(32) = '1') or (state = reading)) then
+		if ((fifo_empty = '0') or (fifo_data_q(7 downto 0) = x"0000009C" and fifo_data_q(35 downto 32) = "0001") or (state = reading)) then
 			case state is
 			
 				when waiting =>
@@ -185,6 +185,7 @@ begin
 						else
 							mem_data_o <= fifo_data_q(31 downto 0);
 							mem_wren_o <= '1';
+							start_add <= start_add + '1';
 							mem_addr_write_o <= start_add + '1';
 						end if;
 					end if;
