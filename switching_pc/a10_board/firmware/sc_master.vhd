@@ -85,7 +85,7 @@ begin
 			wait_cnt		<= not wait_cnt;
 			mem_datak 	<= (others => '0');
 			wren_reg		<= (others => '0');
-			stateout		<= x"F";
+			stateout(3 downto 0)		<= x"F";
 			case state is
 			
 				when waiting =>

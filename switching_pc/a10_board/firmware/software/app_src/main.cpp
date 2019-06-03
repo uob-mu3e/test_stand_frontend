@@ -21,9 +21,6 @@ i2c_t i2c;
 #include "si.h"
 si_t si;
 
-#include "signal.h"
-signal_t signal;
-
 struct fan_t {
     const alt_u32 fclk = 254000;
 
@@ -248,25 +245,8 @@ void menu_spi_si5345() {
     }
 }
 
-void menu_signal() {
-    while (1) {
-        printf("Signals\n", ALT_DEVICE_FAMILY);
-        printf("  [r] => read signals\n");
-        printf("  [q] => quit\n");
-
-        printf("Select entry ...\n");
-        char cmd = wait_key();
-        switch(cmd) {
-        case 'r' :
-            signal.read();
-            break;
-        case 'q':
-            return;
-        default:
-            printf("invalid command: '%c'\n", cmd);
-        }
-    }
-}
+#include "../include/xcvr.h"
+#include "../include/a10/reconfig.h"
 
 int main() {
     fan.init();
@@ -284,17 +264,21 @@ int main() {
         return 1;
     }
 
+    reconfig_t reconfig;
+
     while (1) {
         printf("'%s' NIOS Menu\n", ALT_DEVICE_FAMILY);
         printf("  [0] => spi si chip\n");
         printf("  [1] => i2c fan\n");
         printf("  [2] => flash\n");
-        printf("  [3] => signals\n");
+        printf("  [3] => xcvr qsfp\n");
+        printf("  [r] => reset pll\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
         case '0':
+            printf("spi:\n");
             menu_spi_si5345();
             break;
         case '1':
@@ -306,8 +290,12 @@ int main() {
             menu_flash();
             break;
         case '3':
+            printf("xcvr:\n");
+            menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+            break;
+        case 'r':
            printf("signals:\n");
-            menu_signal();
+            reconfig.pll();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

@@ -13,6 +13,7 @@ port (
     BUTTON : in std_logic_vector(3 downto 0);
 
     CLK_50_B2J  :   in  std_logic;
+	 CLK_100_B3D :   in  std_logic;
 
     HEX0_D      :   out std_logic_vector(6 downto 0);
     --HEX0_DP     :   out std_logic;
@@ -20,10 +21,10 @@ port (
     HEX1_D      :   out std_logic_vector(6 downto 0);
     --HEX1_DP     :   out std_logic;
 
-    LED         :   out std_logic_vector(3 downto 0) := '0';
-    LED_BRACKET :   out std_logic_vector(3 downto 0) := '0';
+    LED         :   out std_logic_vector(3 downto 0) := "0000";
+    LED_BRACKET :   out std_logic_vector(3 downto 0) := "0000";
 
-    --SMA_CLKOUT : out std_logic;
+    SMA_CLKOUT : out std_logic;
     SMA_CLKIN : in std_logic;
 
     RS422_DE : out std_logic;
@@ -75,6 +76,9 @@ port (
     
 	 QSFPA_REFCLK_p 		: 	 in std_logic;
 	 --QSFPB_REFCLK_p 		: 	 in std_logic;
+	 QSFPA_LP_MODE       : out   std_logic;
+	 QSFPA_MOD_SEL_n     : out   std_logic;
+	 QSFPA_RST_n         : out   std_logic;
     
     
 	
@@ -95,14 +99,14 @@ architecture rtl of top is
 
 		 signal clk : std_logic;
 		 signal input_clk : std_logic;
-
+		 
 		 signal reset : std_logic;
 		 signal reset_n : std_logic;
 		 signal resets : std_logic_vector(31 downto 0);
 		 signal resets_n: std_logic_vector(31 downto 0);
 		 
+		 signal clk_50_cnt : std_logic_vector(31 downto 0);
 		 signal clk_125_cnt : std_logic_vector(31 downto 0);
-		 signal clk_125_cnt2 : std_logic_vector(31 downto 0);
 
 		------------------ Signal declaration ------------------------
 
@@ -151,74 +155,9 @@ architecture rtl of top is
 		signal clk_sync : std_logic;
 		signal clk_last : std_logic;
 
-		-- tranciever ip signals
-		signal rx_clkout_ch0_clk : std_logic;
-		signal rx_clkout_ch1_clk : std_logic;
-		signal rx_clkout_ch2_clk : std_logic;
-		signal rx_clkout_ch3_clk : std_logic;
-		
-		signal rx_ready : std_logic_vector(3 downto 0);
-		signal rx_is_lockedtoref : std_logic_vector(4 downto 0);
-
-		signal rx_parallel_data_ch0_rx_parallel_data :   std_logic_vector(31 downto 0);
-		signal rx_parallel_data_ch1_rx_parallel_data :   std_logic_vector(31 downto 0);
-		signal rx_parallel_data_ch2_rx_parallel_data :   std_logic_vector(31 downto 0);
-		signal rx_parallel_data_ch3_rx_parallel_data :   std_logic_vector(31 downto 0);
-		
-		signal rx_datak_ch0_rx_datak      :   std_logic_vector(3 downto 0);
-		signal rx_datak_ch1_rx_datak      :   std_logic_vector(3 downto 0);
-		signal rx_datak_ch2_rx_datak      :   std_logic_vector(3 downto 0);
-		signal rx_datak_ch3_rx_datak      :   std_logic_vector(3 downto 0);
-	
-		signal rx_syncstatus_ch0_rx_syncstatus:   std_logic_vector(3 downto 0);
-		signal rx_syncstatus_ch1_rx_syncstatus:   std_logic_vector(3 downto 0);
-		signal rx_syncstatus_ch2_rx_syncstatus:   std_logic_vector(3 downto 0);
-		signal rx_syncstatus_ch3_rx_syncstatus:   std_logic_vector(3 downto 0);
-		
-		signal rx_patterndetect_ch0_rx_patterndetect   : std_logic_vector(3 downto 0);
-		signal rx_patterndetect_ch1_rx_patterndetect   : std_logic_vector(3 downto 0);
-		signal rx_patterndetect_ch2_rx_patterndetect   : std_logic_vector(3 downto 0);
-		signal rx_patterndetect_ch3_rx_patterndetect   : std_logic_vector(3 downto 0);
-		
-		signal data_ch0 : std_logic_vector(31 downto 0);
-		signal data_ch1 : std_logic_vector(31 downto 0);
-		signal data_ch2 : std_logic_vector(31 downto 0);
-		signal data_ch3 : std_logic_vector(31 downto 0);
-		
-		signal datak_ch0 : std_logic_vector(3 downto 0);
-		signal datak_ch1 : std_logic_vector(3 downto 0);
-		signal datak_ch2 : std_logic_vector(3 downto 0);
-		signal datak_ch3 : std_logic_vector(3 downto 0);
-		
-		signal rx_errdetect_ch0_rx_errdetect : std_logic_vector(3 downto 0);
-		signal rx_errdetect_ch1_rx_errdetect : std_logic_vector(3 downto 0);
-		signal rx_errdetect_ch2_rx_errdetect : std_logic_vector(3 downto 0);
-		signal rx_errdetect_ch3_rx_errdetect : std_logic_vector(3 downto 0);
-		
-      signal rx_disperr_ch0_rx_disperr : std_logic_vector(3 downto 0);
-		signal rx_disperr_ch1_rx_disperr : std_logic_vector(3 downto 0);
-		signal rx_disperr_ch2_rx_disperr : std_logic_vector(3 downto 0);
-		signal rx_disperr_ch3_rx_disperr : std_logic_vector(3 downto 0);
-		
-		signal enapatternalign_ch0 : std_logic;
-		signal enapatternalign_ch1 : std_logic;
-		signal enapatternalign_ch2 : std_logic;
-		signal enapatternalign_ch3 : std_logic;
-		
-		signal tx_data_ch0	: std_logic_vector(31 downto 0);
-		signal tx_data_ch1	: std_logic_vector(31 downto 0);
-		signal tx_data_ch2	: std_logic_vector(31 downto 0);
-		signal tx_data_ch3	: std_logic_vector(31 downto 0);
-		
-		signal tx_datak_ch0	: std_logic_vector(3 downto 0);
-		signal tx_datak_ch1	: std_logic_vector(3 downto 0);
-		signal tx_datak_ch2	: std_logic_vector(3 downto 0);
-		signal tx_datak_ch3	: std_logic_vector(3 downto 0);
-		
-		signal tx_clk_ch0 : std_logic;
-		signal tx_clk_ch1 : std_logic;
-		signal tx_clk_ch2 : std_logic;
-		signal tx_clk_ch3 : std_logic;
+		-- tranciever ip signals		
+		signal tx_clk : std_logic_vector(3 downto 0);
+		signal rx_clk : std_logic_vector(3 downto 0);
 				
 		-- debouncer
 		signal push_button0_db : std_logic;
@@ -254,6 +193,7 @@ architecture rtl of top is
 		signal cpu_pio_i : std_logic_vector(31 downto 0);
 		signal flash_rst_n : std_logic;
 		signal debug_nios : std_logic_vector(31 downto 0);
+		signal avm_qsfp : work.mu3e.avalon_t;
 		
 		-- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
 		signal ZERO : std_logic := '0';
@@ -261,91 +201,48 @@ architecture rtl of top is
 		attribute keep of ZERO : signal is true;
 		
 		-- data processing
-		signal ch0_empty : std_logic;
-		signal ch1_empty : std_logic;
-		signal ch2_empty : std_logic;
-		signal ch3_empty : std_logic;
+		type data_array_type is array (3 downto 0) of std_logic_vector(31 downto 0);
+		type fifo_out_array_type is array (3 downto 0) of std_logic_vector(35 downto 0);
+		type datak_array_type is array (3 downto 0) of std_logic_vector(3 downto 0);
 		
-		signal ch0_fifo_out : std_logic_vector(35 downto 0);
-		signal ch1_fifo_out : std_logic_vector(35 downto 0);
-		signal ch2_fifo_out : std_logic_vector(35 downto 0);
-		signal ch3_fifo_out : std_logic_vector(35 downto 0);
+		signal rx_data : data_array_type;
+		signal tx_data : data_array_type;
+		signal rx_datak : datak_array_type;
+		signal tx_datak : datak_array_type;
+		signal sc_data : data_array_type;
+		signal sc_datak : datak_array_type;
+		signal sc_ready : std_logic_vector(3 downto 0);
+		signal fifo_data : data_array_type;
+		signal fifo_datak : datak_array_type;
+		signal fifo_wren : std_logic_vector(3 downto 0);
+		signal fifo_out : fifo_out_array_type;
 		
 		signal fifo_read : std_logic;
-				
-		signal fifo_data_in_ch0 : std_logic_vector(31 downto 0);
-		signal fifo_data_in_ch1 : std_logic_vector(31 downto 0);
-		signal fifo_data_in_ch2 : std_logic_vector(31 downto 0);
-		signal fifo_data_in_ch3 : std_logic_vector(31 downto 0);
-		
-		signal fifo_wrreq_ch0 : std_logic;
-		signal fifo_wrreq_ch1 : std_logic;
-		signal fifo_wrreq_ch2 : std_logic;
-		signal fifo_wrreq_ch3 : std_logic;
-				
-		signal fifo_datak_in_ch0 : std_logic_vector(3 downto 0);
-		signal fifo_datak_in_ch1 : std_logic_vector(3 downto 0);
-		signal fifo_datak_in_ch2 : std_logic_vector(3 downto 0);
-		signal fifo_datak_in_ch3 : std_logic_vector(3 downto 0);
+		signal fifo_empty : std_logic_vector(3 downto 0);
 		
 		-- Slow Control
 		signal mem_data_out : std_logic_vector(127 downto 0);
 		signal mem_datak_out : std_logic_vector(15 downto 0);
 		
-		signal sc_ch0 : std_logic_vector(31 downto 0);
-		signal sc_ch1 : std_logic_vector(31 downto 0);
-		signal sc_ch2 : std_logic_vector(31 downto 0);
-		signal sc_ch3 : std_logic_vector(31 downto 0);
-		
-		signal sck_ch0 : std_logic_vector(3 downto 0);
-		signal sck_ch1 : std_logic_vector(3 downto 0);
-		signal sck_ch2 : std_logic_vector(3 downto 0);
-		signal sck_ch3 : std_logic_vector(3 downto 0);
-		
-		signal sc_ready_ch0 : std_logic;
-		signal sc_ready_ch1 : std_logic;
-		signal sc_ready_ch2 : std_logic;
-		signal sc_ready_ch3 : std_logic;
-		
-		signal aligned_ch0 : std_logic;
-		signal aligned_ch1 : std_logic;
-		signal aligned_ch2 : std_logic;
-		signal aligned_ch3 : std_logic;
-		
 begin 
 
---------- I/O ---------
+--------- I/O, CLK, RESET, PLL ---------
 
-clk <= CLK_50_B2J;
-reset <= not push_button0_db;
-reset_n <= not reset;
+clk 		<= CLK_50_B2J;
+reset 	<= not push_button0_db;
+reset_n 	<= not reset;
 
-debug_nios <= aligned_ch0 &								-- 31
-				  aligned_ch1 &								-- 30
-				  aligned_ch2 &								-- 29
-				  aligned_ch3 &								-- 28
-				  rx_is_lockedtoref &   					-- 24
-				  rx_syncstatus_ch0_rx_syncstatus &		-- 20
-				  rx_ready &									-- 16
-				  SW &											-- 14
-				  enapatternalign_ch0 &						-- 13
-				  enapatternalign_ch1 &						-- 12
-				  enapatternalign_ch2 &						-- 11
-				  enapatternalign_ch3 &						-- 10
-				  ch0_empty				 &						-- 9
-				  ch1_empty				 &						-- 8
-				  ch2_empty				 &						-- 7
-				  ch3_empty				 &						-- 6
-				  sc_ready_ch0			 &						-- 5
-				  sc_ready_ch1			 &						-- 4
-				  sc_ready_ch2			 &						-- 3
-				  sc_ready_ch3			 &						-- 2
-				  "0";
+pll_125 : component ip_pll_125
+  port map (
+		outclk_0 	=> SMA_CLKOUT,
+		refclk   	=> clk,
+		rst      	=> not CPU_RESET_n
+);
 
-receiver_clk : component ip_clk_ctrl
+clk_input : ip_clk_ctrl
   port map (
 		inclk  => SMA_CLKIN,
-		outclk => input_clk
+		outclk => input_clk--,
 );
 
 --------- Debouncer/seg7 ---------
@@ -361,56 +258,51 @@ i_debouncer : entity work.debouncer
 	  q(1) 	=> push_button1_db,
 	  q(2) 	=> push_button2_db,
 	  q(3) 	=> push_button3_db,
-	  arst_n => '0',
+	  arst_n => CPU_RESET_n,
 	  clk 	=> clk--,
  );
 
-clk_125_cnt_p : process(clk)
+clk_50_cnt_p : process(clk)
 begin
 	if rising_edge(clk) then
+		clk_50_cnt <= clk_50_cnt + 1;
+	end if;
+end process clk_50_cnt_p;
+
+clk_125_cnt_p : process(input_clk)
+begin
+	if rising_edge(input_clk) then
 		clk_125_cnt <= clk_125_cnt + 1;
 	end if;
 end process clk_125_cnt_p;
 
-clk_125_cnt_p_2 : process(input_clk)
-begin
-	if rising_edge(input_clk) then
-		clk_125_cnt2 <= clk_125_cnt2 + 1;
-	end if;
-end process clk_125_cnt_p_2;
-
-segment0 : component seg7_lut
+segment0 : seg7_lut
 	port map (
-		clk => clk, 
-		hex => clk_125_cnt(27 downto 24),
+		hex => std_logic_vector(clk_50_cnt)(27 downto 24),
 		seg => HEX0_D
 );
 
-segment1 : component seg7_lut
+segment1 : seg7_lut
 	port map (
-		clk => input_clk, 
-		hex => clk_125_cnt2(27 downto 24),
+		hex => std_logic_vector(clk_125_cnt)(27 downto 24),
 		seg => HEX1_D
 );
 
 ------------- NIOS -------------
 
-nios2 : component nios
+nios2 : nios
 port map (
-	clk_clk                    			=> clk,
-	clk_debug_clk               			=> rx_clkout_ch0_clk,
-	clk_rx_clk               				=> rx_clkout_ch0_clk,
-	clk_tx_clk               				=> tx_clk_ch0,
+	clk_clk                    			=> tx_clk(0),
 	
 	rst_reset_n                			=> cpu_reset_n_q,
-	rst_debug_reset_n               		=> reset,
-	rst_rx_reset_n               			=> reset,
-	rst_tx_reset_n               			=> reset,
-	
-	debug_export               			=> debug_nios,
-	rx_export               				=> rx_parallel_data_ch0_rx_parallel_data,
-	tx_export               				=> tx_data_ch0,
-	
+
+   avm_qsfp_address       					=> avm_qsfp.address(15 downto 0),
+	avm_qsfp_read          					=> avm_qsfp.read,
+	avm_qsfp_readdata      					=> avm_qsfp.readdata,
+	avm_qsfp_write         					=> avm_qsfp.write,
+	avm_qsfp_writedata     					=> avm_qsfp.writedata,
+	avm_qsfp_waitrequest   					=> avm_qsfp.waitrequest,
+
 	flash_tcm_address_out				 	=> flash_tcm_address_out,
 	flash_tcm_data_out 						=> FLASH_D,
 	flash_tcm_read_n_out(0) 				=> FLASH_OE_n,
@@ -427,8 +319,12 @@ port map (
 	spi_MISO                   			=> RS422_DIN,
 	spi_MOSI                   			=> RS422_DOUT,
 	spi_SCLK                   			=> RJ45_LED_R,
-	spi_SS_n                   			=> RS422_DE
+	spi_SS_n                   			=> RS422_DE--,
 );
+
+QSFPA_LP_MODE <= '0';
+QSFPA_MOD_SEL_n <= '1';
+QSFPA_RST_n <= '1';
 
 -- generate reset sequence for flash and cpu
 reset_ctrl_i : entity work.reset_ctrl
@@ -439,8 +335,8 @@ generic map (
 port map (
 		rstout_n(1) => flash_rst_n,
 		rstout_n(0) => cpu_reset_n_q,
-		rst_n => CPU_RESET_n and wd_rst_n,
-		clk => clk--,
+		rst_n 		=> CPU_RESET_n and wd_rst_n,
+		clk 			=> tx_clk(0)--,
 );
 
 watchdog_i : entity work.watchdog
@@ -449,12 +345,12 @@ generic map (
 		N => 125 * 10**6 -- 1s
 )
 port map (
-		d => cpu_pio_i(3 downto 0),
+		d 			=> cpu_pio_i(3 downto 0),
 
 		rstout_n => wd_rst_n,
 
-		rst_n => CPU_RESET_n,
-		clk => clk--,
+		rst_n 	=> CPU_RESET_n,
+		clk 		=> tx_clk(0)--,
 );
 
 FLASH_A <= flash_tcm_address_out(27 downto 2);
@@ -479,232 +375,84 @@ POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
 
 ------------- Receiving Data and word aligning -------------
 
-u0 : component ip_transceiver
-        port map (
-            clk_qsfp_clk                            			=> input_clk,
-				reset_1_reset                           			=> reset,
-				rx_bitslip_ch0_rx_bitslip               			=> open,
-				rx_bitslip_ch1_rx_bitslip         		 			=> open,
-				rx_bitslip_ch2_rx_bitslip         		 			=> open,
-				rx_bitslip_ch3_rx_bitslip         		 			=> open,
-				rx_cdr_refclk0_clk                      			=> input_clk,
-				rx_clkout_ch0_clk 										=> rx_clkout_ch0_clk,
-				rx_clkout_ch1_clk											=> rx_clkout_ch1_clk,  
-				rx_clkout_ch2_clk 										=> rx_clkout_ch2_clk,
-				rx_clkout_ch3_clk 										=> rx_clkout_ch3_clk,  
-				rx_coreclkin_ch0_clk 									=> rx_clkout_ch0_clk,
-				rx_coreclkin_ch1_clk										=> rx_clkout_ch1_clk, 
-				rx_coreclkin_ch2_clk										=> rx_clkout_ch2_clk,
-				rx_coreclkin_ch3_clk										=> rx_clkout_ch3_clk,
-				rx_datak_ch0_rx_datak          	 		 			=> rx_datak_ch0_rx_datak,
-				rx_datak_ch1_rx_datak            		 			=> rx_datak_ch1_rx_datak,
-				rx_datak_ch2_rx_datak                     		=> rx_datak_ch2_rx_datak,
-				rx_datak_ch3_rx_datak 									=> rx_datak_ch3_rx_datak,
-				rx_is_lockedtoref_ch0_rx_is_lockedtoref 			=> rx_is_lockedtoref(0),
-				rx_is_lockedtoref_ch1_rx_is_lockedtoref			=> rx_is_lockedtoref(1),
-				rx_is_lockedtoref_ch2_rx_is_lockedtoref 			=> rx_is_lockedtoref(2),
-				rx_is_lockedtoref_ch3_rx_is_lockedtoref			=> rx_is_lockedtoref(3),
-				rx_parallel_data_ch0_rx_parallel_data   			=> rx_parallel_data_ch0_rx_parallel_data,
-				rx_parallel_data_ch1_rx_parallel_data   			=> rx_parallel_data_ch1_rx_parallel_data,
-				rx_parallel_data_ch2_rx_parallel_data   			=> rx_parallel_data_ch2_rx_parallel_data,
-				rx_parallel_data_ch3_rx_parallel_data   			=> rx_parallel_data_ch3_rx_parallel_data,
-				rx_patterndetect_ch0_rx_patterndetect   			=> rx_patterndetect_ch0_rx_patterndetect,
-				rx_patterndetect_ch1_rx_patterndetect   			=> rx_patterndetect_ch1_rx_patterndetect,
-				rx_patterndetect_ch2_rx_patterndetect   			=> rx_patterndetect_ch2_rx_patterndetect,
-				rx_patterndetect_ch3_rx_patterndetect   			=> rx_patterndetect_ch3_rx_patterndetect,
-				rx_serial_data_ch0_rx_serial_data       			=> QSFPA_RX_p(0),
-				rx_serial_data_ch1_rx_serial_data       			=> QSFPA_RX_p(1),
-				rx_serial_data_ch2_rx_serial_data       			=> QSFPA_RX_p(2),
-				rx_serial_data_ch3_rx_serial_data       			=> QSFPA_RX_p(3),
-				rx_seriallpbken_ch0_rx_seriallpbken     			=> '0',
-				rx_seriallpbken_ch1_rx_seriallpbken     			=> '0',
-				rx_seriallpbken_ch2_rx_seriallpbken     			=> '0',
-				rx_seriallpbken_ch3_rx_seriallpbken     			=> '0',
-				rx_syncstatus_ch0_rx_syncstatus  		 			=> rx_syncstatus_ch0_rx_syncstatus,
-				rx_syncstatus_ch1_rx_syncstatus  		 			=> rx_syncstatus_ch1_rx_syncstatus,
-				rx_syncstatus_ch2_rx_syncstatus  		 			=> rx_syncstatus_ch2_rx_syncstatus,
-				rx_syncstatus_ch3_rx_syncstatus  		 			=> rx_syncstatus_ch3_rx_syncstatus,
-				rx_ready0_rx_ready										=> rx_ready(0),
-				rx_ready1_rx_ready										=> rx_ready(1),
-				rx_ready2_rx_ready										=> rx_ready(2),
-				rx_ready3_rx_ready										=> rx_ready(3),
-				rx_errdetect_ch0_rx_errdetect           			=> rx_errdetect_ch0_rx_errdetect,
-				rx_errdetect_ch1_rx_errdetect           			=> rx_errdetect_ch1_rx_errdetect,
-				rx_errdetect_ch2_rx_errdetect           			=> rx_errdetect_ch2_rx_errdetect,
-				rx_errdetect_ch3_rx_errdetect           			=> rx_errdetect_ch3_rx_errdetect,
-				rx_disperr_ch0_rx_disperr               			=> rx_disperr_ch0_rx_disperr,
-				rx_disperr_ch1_rx_disperr               			=> rx_disperr_ch1_rx_disperr,
-				rx_disperr_ch2_rx_disperr               			=> rx_disperr_ch2_rx_disperr,
-				rx_disperr_ch3_rx_disperr               			=> rx_disperr_ch3_rx_disperr,
-				tx_parallel_data_unused_tx_parallel_data        => (others => '0'),
-            tx_parallel_data_ch3_tx_parallel_data           => tx_data_ch3,
-            tx_parallel_data_ch2_tx_parallel_data           => tx_data_ch2,
-            tx_parallel_data_ch1_tx_parallel_data           => tx_data_ch1,
-            tx_parallel_data_ch0_tx_parallel_data           => tx_data_ch0,
-            tx_clkout_ch3_clk                               => tx_clk_ch3,
-            tx_clkout_ch2_clk                               => tx_clk_ch2,
-            tx_clkout_ch1_clk                               => tx_clk_ch1,
-            tx_clkout_ch0_clk                               => tx_clk_ch0,
-            tx_coreclkin_ch3_clk                            => tx_clk_ch3,
-            tx_coreclkin_ch2_clk                            => tx_clk_ch2,
-            tx_coreclkin_ch1_clk                            => tx_clk_ch1,
-            tx_coreclkin_ch0_clk                            => tx_clk_ch0,
-            tx_serial_data_ch3_tx_serial_data               => QSFPA_TX_p(3),
-            tx_serial_data_ch2_tx_serial_data               => QSFPA_TX_p(2),
-            tx_serial_data_ch1_tx_serial_data               => QSFPA_TX_p(1),
-            tx_serial_data_ch0_tx_serial_data               => QSFPA_TX_p(0),
-				tx_datak_ch0_tx_datak               				=> tx_datak_ch0,
-				tx_datak_ch1_tx_datak               				=> tx_datak_ch1,
-				tx_datak_ch2_tx_datak               				=> tx_datak_ch2,
-				tx_datak_ch3_tx_datak               				=> tx_datak_ch3  
+i_qsfp : entity work.xcvr_a10
+port map (
+	-- avalon slave interface
+	avs_address     	=> avm_qsfp.address(15 downto 2),
+	avs_read        	=> avm_qsfp.read,
+	avs_readdata    	=> avm_qsfp.readdata,
+	avs_write       	=> avm_qsfp.write,
+	avs_writedata   	=> avm_qsfp.writedata,
+	avs_waitrequest 	=> avm_qsfp.waitrequest,
+
+	tx3_data    		=> X"03CAFEBC",
+	tx2_data    		=> X"02BABEBC",
+	tx1_data    		=> X"01DEADBC",
+	tx0_data    		=> tx_data(0),
+	tx3_datak   		=> "0001",
+	tx2_datak   		=> "0001",
+	tx1_datak   		=> "0001",
+	tx0_datak   		=> tx_datak(0),
+		
+	rx3_data    		=> rx_data(3),
+	rx2_data    		=> rx_data(2),
+	rx1_data    		=> rx_data(1),
+	rx0_data    		=> rx_data(0),
+	rx3_datak   		=> rx_datak(3),
+	rx2_datak   		=> rx_datak(2),
+	rx1_datak   		=> rx_datak(1),
+	rx0_datak   		=> rx_datak(0),
+		
+	tx_clkout   		=> tx_clk,
+	tx_clkin    		=> (others => tx_clk(0)),
+	rx_clkout   		=> open,--rx_clk,
+	rx_clkin    		=> (others => tx_clk(0)),
+		
+	tx_p        		=> QSFPA_TX_p,
+	rx_p        		=> QSFPA_RX_p,
+		
+	pll_refclk  		=> input_clk,
+	cdr_refclk  		=> input_clk,
+		
+	reset   				=> not cpu_reset_n_q,
+	clk     				=> tx_clk(0)--,
 );
 
-word_align_ch0 : component rx_align
-    generic map (
-        Nb 						=> 4,
-		  K 						=> X"BC"
-    )
-    port map (
-        data    				=> data_ch0,
-        datak   				=> datak_ch0,
-        lock    				=> aligned_ch0,
-        datain  				=> rx_parallel_data_ch0_rx_parallel_data,
-        datakin 				=> rx_datak_ch0_rx_datak,
-        syncstatus 			=> rx_syncstatus_ch0_rx_syncstatus,
-        patterndetect 		=> rx_patterndetect_ch0_rx_patterndetect,
-        enapatternalign 	=> enapatternalign_ch0,
-        errdetect   			=> rx_errdetect_ch0_rx_errdetect,
-        disperr     			=> rx_disperr_ch0_rx_disperr,
-        rst_n   				=> reset_n,
-        clk     				=> rx_clkout_ch0_clk
-    );
-	 
-word_align_ch1 : component rx_align
-    generic map (
-        Nb 						=> 4,
-		  K 						=> X"BC"
-    )
-    port map (
-        data    				=> data_ch1,
-        datak   				=> datak_ch1,
-        lock    				=> aligned_ch1,
-		  datain  				=> rx_parallel_data_ch1_rx_parallel_data,
-        datakin 				=> rx_datak_ch1_rx_datak,
-        syncstatus 			=> rx_syncstatus_ch1_rx_syncstatus,
-        patterndetect 		=> rx_patterndetect_ch1_rx_patterndetect,
-        enapatternalign 	=> enapatternalign_ch1,
-        errdetect   			=> rx_errdetect_ch1_rx_errdetect,
-        disperr     			=> rx_disperr_ch1_rx_disperr,
-        rst_n   				=> reset_n,
-        clk     				=> rx_clkout_ch1_clk
-    );
-	 
-word_align_ch2 : component rx_align
-    generic map (
-        Nb 						=> 4,
-		  K 						=> X"BC"      
-    )
-    port map (
-        data    				=> data_ch2,
-        datak   				=> datak_ch2,
-        lock    				=> aligned_ch2,
-        datain  				=> rx_parallel_data_ch2_rx_parallel_data,
-        datakin 				=> rx_datak_ch2_rx_datak,
-        syncstatus 			=> rx_syncstatus_ch2_rx_syncstatus,
-        patterndetect 		=> rx_patterndetect_ch2_rx_patterndetect,
-        enapatternalign 	=> enapatternalign_ch2,
-        errdetect   			=> rx_errdetect_ch2_rx_errdetect,
-        disperr     			=> rx_disperr_ch2_rx_disperr,
-        rst_n   				=> reset_n,
-        clk     				=> rx_clkout_ch2_clk
-    );
-	 
-word_align_ch3 : component rx_align
-    generic map (
-        Nb 						=> 4,
-		  K 						=> X"BC"
-    )
-    port map (
-        data    				=> data_ch3,
-        datak   				=> datak_ch3,
-        lock    				=> aligned_ch3,
-        datain  				=> rx_parallel_data_ch3_rx_parallel_data,
-        datakin 				=> rx_datak_ch3_rx_datak,
-        syncstatus 			=> rx_syncstatus_ch3_rx_syncstatus,
-        patterndetect 		=> rx_patterndetect_ch3_rx_patterndetect,
-        enapatternalign 	=> enapatternalign_ch3,
-        errdetect   			=> rx_errdetect_ch3_rx_errdetect,
-        disperr     			=> rx_disperr_ch3_rx_disperr,
-        rst_n   				=> reset_n,
-        clk     				=> rx_clkout_ch3_clk
-    );
-	 
-------------- data demerger -------------
+------------- data demerger and fifos -------------
 
-data_demerger0 : component data_demerge
-    port map(
-		clk				=> rx_clkout_ch0_clk, 	-- receive clock (156.25 MHz)
- 		reset				=> not reset_n,
-		aligned			=> aligned_ch0,			-- word alignment achieved
-		data_in			=>	data_ch0,				-- optical from frontend board
-		datak_in			=> datak_ch0,
-		data_out			=> fifo_data_in_ch0,		-- to sorting fifos
-		data_ready		=>	fifo_wrreq_ch0,	  	-- write req for sorting fifos
-		datak_out      => fifo_datak_in_ch0,
-		sc_out			=> sc_ch0,					-- slowcontrol from frontend board
-		sc_out_ready	=> sc_ready_ch0,
-		fpga_id			=> open,						-- FPGA ID of the connected frontend board
-		sck_out      	=> sck_ch0
-);
+fifo_read <= (not fifo_empty(0)) and (not fifo_empty(1)) and (not fifo_empty(2)) and (not fifo_empty(3));
 
-data_demerger1 : component data_demerge
-    port map(
-		clk				=> rx_clkout_ch1_clk, 	-- receive clock (156.25 MHz)
- 		reset				=> not reset_n,
-		aligned			=> aligned_ch1,			-- word alignment achieved
-		data_in			=>	data_ch1,				-- optical from frontend board
-		datak_in			=> datak_ch1,
-		data_out			=> fifo_data_in_ch1,		-- to sorting fifos
-		datak_out      => fifo_datak_in_ch1,
-		data_ready		=>	fifo_wrreq_ch1,	  	-- write req for sorting fifos	
-		sc_out			=> sc_ch1,					-- slowcontrol from frontend board
-		sc_out_ready	=> sc_ready_ch1,
-		fpga_id			=> open,						-- FPGA ID of the connected frontend board
-		sck_out      	=> sck_ch1
-);
-
-data_demerger2 : component data_demerge
-    port map(
-		clk				=> rx_clkout_ch2_clk, 	-- receive clock (156.25 MHz)
- 		reset				=> not reset_n,
-		aligned			=> aligned_ch2,			-- word alignment achieved
-		data_in			=>	data_ch2,				-- optical from frontend board
-		datak_in			=> datak_ch2,
-		data_out			=> fifo_data_in_ch2,		-- to sorting fifos
-		datak_out      => fifo_datak_in_ch2,
-		data_ready		=>	fifo_wrreq_ch2,	  	-- write req for sorting fifos	
-		sc_out			=> sc_ch2,					-- slowcontrol from frontend board
-		sc_out_ready	=> sc_ready_ch2,
-		fpga_id			=> open,						-- FPGA ID of the connected frontend board
-		sck_out      	=> sck_ch2
-);
-
-data_demerger3 : component data_demerge
-    port map(
-		clk				=> rx_clkout_ch3_clk, 	-- receive clock (156.25 MHz)
- 		reset				=> not reset_n,
-		aligned			=> aligned_ch3,			-- word alignment achieved
-		data_in			=>	data_ch3,				-- optical from frontend board
-		datak_in			=> datak_ch3,
-		data_out			=> fifo_data_in_ch3,		-- to sorting fifos
-		datak_out      => fifo_datak_in_ch3,
-		data_ready		=>	fifo_wrreq_ch3,	  	-- write req for sorting fifos	
-		sc_out			=> sc_ch3,					-- slowcontrol from frontend board
-		sc_out_ready	=> sc_ready_ch3,
-		fpga_id			=> open,						-- FPGA ID of the connected frontend board
-		sck_out      	=> sck_ch3
-);
-	 
+fifo_demerge :
+ for i in 0 to 3 generate
+		data_demerger : data_demerge
+			port map(
+				clk				=> tx_clk(0),--rx_clk(i), 				-- receive clock (156.25 MHz)
+				reset				=> not reset_n,
+				aligned			=> '1',						-- word alignment achieved
+				data_in			=>	rx_data(i),				-- optical from frontend board
+				datak_in			=> rx_datak(i),
+				data_out			=> fifo_data(i),		-- to sorting fifos
+				data_ready		=>	fifo_wren(i),	  	-- write req for sorting fifos
+				datak_out      => fifo_datak(i),
+				sc_out			=> sc_data(i),					-- slowcontrol from frontend board
+				sc_out_ready	=> sc_ready(i),
+				fpga_id			=> open,						-- FPGA ID of the connected frontend board
+				sck_out      	=> sc_datak(i)--,
+		);
+		
+		fifo : transceiver_fifo
+			port map (
+				data    => fifo_data(i) & fifo_datak(i), --fifo_data_in_ch0 & fifo_datak_in_ch0,
+				wrreq   => fifo_wren(i),
+				rdreq   => fifo_read,
+				wrclk   => tx_clk(0),--rx_clk(i),
+				rdclk   => pcie_fastclk_out,
+				aclr    => reset_n,
+				q       => fifo_out(i),
+				rdempty => fifo_empty(i),
+				wrfull  => open--,
+		);
+end generate fifo_demerge;
 	 
 ------------- time algining data -------------
 
@@ -748,97 +496,14 @@ data_demerger3 : component data_demerge
 --fpga_id_in <= "0000000000000001" & "0000000000000011" & "0000000000000111" & "0000000000001111";
 --enables_in <= datak_ch0(0) & datak_ch1(0) & datak_ch2(0) & datak_ch3(0);
 
-------------- transceiver_switching -------------
-
-fifo_read <= (not ch0_empty) and (not ch1_empty) and (not ch2_empty) and (not ch3_empty);
-
-ch0 : component transceiver_fifo
-  port map (
-		data    => data_ch0 & datak_ch0, --fifo_data_in_ch0 & fifo_datak_in_ch0,
-		wrreq   => fifo_wrreq_ch0,
-		rdreq   => fifo_read,
-		wrclk   => rx_clkout_ch0_clk,
-		rdclk   => pcie_fastclk_out,
-		aclr    => reset_n,
-		q       => ch0_fifo_out,
-		rdempty => ch0_empty,
-		wrfull  => open
-  );
-  
-ch1 : component transceiver_fifo
-  port map (
-		data    => data_ch1 & datak_ch1, --fifo_data_in_ch1 & fifo_datak_in_ch1,
-		wrreq   => fifo_wrreq_ch1,
-		rdreq   => fifo_read,
-		wrclk   => rx_clkout_ch1_clk,
-		rdclk   => pcie_fastclk_out,
-		aclr    => reset_n,
-		q       => ch1_fifo_out,
-		rdempty => ch1_empty,
-		wrfull  => open
-  );
-  
-ch2 : component transceiver_fifo
-  port map (
-		data    => data_ch2 & datak_ch2, --fifo_data_in_ch2 & fifo_datak_in_ch2,
-		wrreq   => fifo_wrreq_ch2,
-		rdreq   => fifo_read,
-		wrclk   => rx_clkout_ch2_clk,
-		rdclk   => pcie_fastclk_out,
-		aclr    => reset_n,
-		q       => ch2_fifo_out,
-		rdempty => ch2_empty,
-		wrfull  => open
-  );
-  
-ch3 : component transceiver_fifo
-  port map (
-		data    => data_ch3 & datak_ch3, --fifo_data_in_ch3 & fifo_datak_in_ch3,
-		wrreq   => fifo_wrreq_ch3,
-		rdreq   => fifo_read,
-		wrclk   => rx_clkout_ch3_clk,
-		rdclk   => pcie_fastclk_out,
-		aclr    => reset_n,
-		q       => ch3_fifo_out,
-		rdempty => ch3_empty,
-		wrfull  => open
-  );
-
---tra_switching : component transceiver_switching
---	port map (
---		clk_qsfp_clk                          => input_clk,                 
---		pll_refclk0_clk                       => input_clk,                    
---		reset_1_reset                         => reset,                     
---		tx_serial_data_ch0_tx_serial_data     => QSFPB_TX_p(0),     
---		tx_serial_data_ch1_tx_serial_data     => QSFPB_TX_p(1),   
---		tx_serial_data_ch2_tx_serial_data     => QSFPB_TX_p(2),     
---		tx_serial_data_ch3_tx_serial_data     => QSFPB_TX_p(3),      		
---		tx_datak_ch0_tx_datak                 => tx_datak_ch0,
---		tx_datak_ch1_tx_datak                 => tx_datak_ch1,
---		tx_datak_ch2_tx_datak                 => tx_datak_ch2,
---		tx_datak_ch3_tx_datak                 => tx_datak_ch3,
---		tx_parallel_data_ch0_tx_parallel_data => tx_data_ch0,
---		tx_parallel_data_ch1_tx_parallel_data => tx_data_ch1,
---		tx_parallel_data_ch2_tx_parallel_data => tx_data_ch2,
---		tx_parallel_data_ch3_tx_parallel_data => tx_data_ch3,
---		tx_coreclkin_ch0_clk                  => tx_clkout_ch0_clk,
---		tx_coreclkin_ch1_clk                  => tx_clkout_ch1_clk,
---		tx_coreclkin_ch2_clk                  => tx_clkout_ch2_clk,
---		tx_coreclkin_ch3_clk                  => tx_clkout_ch3_clk,
---		tx_clkout_ch0_clk                     => tx_clkout_ch0_clk,
---		tx_clkout_ch1_clk                     => tx_clkout_ch1_clk,
---		tx_clkout_ch2_clk                     => tx_clkout_ch2_clk,
---		tx_clkout_ch3_clk                     => tx_clkout_ch3_clk
---);
-
 ------------- Slow Control -------------
 
-sc_master_ch0:sc_master
+master : sc_master
 	generic map(
 		NLINKS => 4
 	)
 	port map(
-		clk					=> tx_clk_ch0,
+		clk					=> tx_clk(0),
 		reset_n				=> push_button0_db,
 		enable				=> '1',
 		mem_data_in			=> writememreaddata,
@@ -846,12 +511,12 @@ sc_master_ch0:sc_master
 		mem_data_out		=> mem_data_out,
 		mem_data_out_k		=> mem_datak_out,
 		done					=> open,
-		stateout				=> open
+		stateout				=> open--,
 );
 
-sc_slave_ch0:sc_slave
+slave : sc_slave
 	port map(
-		clk					=> tx_clk_ch0,--rx_clkout_ch0_clk,
+		clk					=> tx_clk(0),--rx_clkout_ch0_clk,
 		reset_n				=> push_button0_db,
 		enable				=> '1',
 		link_data_in		=> mem_data_out(31 downto 0),--sc_ch0,--data_ch0,
@@ -859,67 +524,27 @@ sc_slave_ch0:sc_slave
 		mem_addr_out		=> readmem_writeaddr(15 downto 0),
 		mem_data_out		=> readmem_writedata,
 		mem_wren				=> readmem_wren,
-		stateout				=> open
+		stateout				=> open--,
 );
 
-tx_data_ch0 <= mem_data_out(31 downto 0);
-tx_datak_ch0 <= mem_datak_out(3 downto 0);
-
---- SC transceiver ---
-sck_process_1 : process(tx_clk_ch1)
-begin
-if rising_edge(tx_clk_ch1) then
-	if (SW(1) = '0') then
-		tx_datak_ch1 <= "0001";
-		tx_data_ch1 <= x"000000BC";
-	elsif (SW(1) = '1') then
-		tx_datak_ch1 <= "0000";
-		tx_data_ch1 <= x"AFFECAFE";
-   end if;
-end if;
-end process;
-
-sck_process_2 : process(tx_clk_ch2)
-begin
-if rising_edge(tx_clk_ch2) then
-	if (SW(1) = '0') then
-		tx_datak_ch2 <= "0001";
-		tx_data_ch2 <= x"000000BC";
-	elsif (SW(1) = '1') then
-		tx_datak_ch2 <= "0000";
-		tx_data_ch2 <= x"AFFECAFE";
-   end if;
-end if;
-end process;
-
-sck_process_3 : process(tx_clk_ch3)
-begin
-if rising_edge(tx_clk_ch3) then
-	if (SW(1) = '0') then
-		tx_datak_ch3 <= "0001";
-		tx_data_ch3 <= x"000000BC";
-	elsif (SW(1) = '1') then
-		tx_datak_ch3 <= "0000";
-		tx_data_ch3 <= x"AFFECAFE";
-   end if;
-end if;
-end process;
+tx_data(0) <= mem_data_out(31 downto 0);
+tx_datak(0) <= mem_datak_out(3 downto 0);
 
 ------------- PCIe -------------
 
-resetlogic:reset_logic
+resetlogic : entity work.reset_logic
 	port map(
-		clk                     => clk,
+		clk                     => tx_clk(0),--clk,
 		rst_n                   => push_button0_db,
 
 		reset_register          => writeregs(RESET_REGISTER_W),
 		reset_reg_written       => regwritten(RESET_REGISTER_W),
 
 		resets                  => resets,
-		resets_n                => resets_n                                                             
+		resets_n                => resets_n--,                                                           
 );
 
-vreg:version_reg
+vreg : entity work.version_reg
 	port map(
 		data_out  => readregs_slow(VERSION_REGISTER_R)(27 downto 0)
 );
@@ -928,12 +553,12 @@ vreg:version_reg
 process(pcie_fastclk_out)
 begin
 	if(pcie_fastclk_out'event and pcie_fastclk_out = '1') then
-		clk_sync <= clk;
+		clk_sync <= tx_clk(0);--clk;
 		clk_last <= clk_sync;
 		
 		if(clk_sync = '1' and clk_last = '0') then
-			readregs(PLL_REGISTER_R) 			<= readregs_slow(PLL_REGISTER_R);
-			readregs(VERSION_REGISTER_R) 		<= readregs_slow(VERSION_REGISTER_R);
+			readregs(PLL_REGISTER_R) 				<= readregs_slow(PLL_REGISTER_R);
+			readregs(VERSION_REGISTER_R) 			<= readregs_slow(VERSION_REGISTER_R);
 		end if;
 		readregs(EVENTCOUNTER_REGISTER_R)		<= event_counter;
 		readregs(EVENTCOUNTER64_REGISTER_R)		<= event_counter64;
@@ -966,24 +591,24 @@ begin
 		regwritten_del4 <= regwritten_del3;
 		for I in 63 downto 0 loop
 			if(regwritten_fast(I) = '1' or regwritten_del1(I) = '1'  or regwritten_del2(I) = '1'  or regwritten_del3(I) = '1'  or regwritten_del4(I) = '1') then
-				regwritten(I) <= '1';
+				regwritten(I) 	<= '1';
 			else
-			regwritten(I) <= '0';
+			regwritten(I) 		<= '0';
 			end if;
 		end loop;
 	end if;
 end process;
 
 
-readmem_writeaddr_lowbits <= readmem_writeaddr(15 downto 0);
-dmamem_wren <= writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE);
-pb_in <= push_button0_db & push_button1_db & push_button2_db;
+readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
+dmamem_wren 					<= writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE);
+pb_in 							<= push_button0_db & push_button1_db & push_button2_db;
 
-pcie_b: pcie_block 
+pcie_b : entity work.pcie_block 
 	generic map(
-		DMAMEMWRITEADDRSIZE => 11,
-		DMAMEMREADADDRSIZE  => 11,
-		DMAMEMWRITEWIDTH	  => 256
+		DMAMEMWRITEADDRSIZE 	=> 11,
+		DMAMEMREADADDRSIZE  	=> 11,
+		DMAMEMWRITEWIDTH	  	=> 256
 	)
 	port map(
 		local_rstn				=> '1',
@@ -1015,19 +640,19 @@ pcie_b: pcie_block
 		readregs			      => readregs,
 
 		-- pcie writeable memory
-		writememclk		      => tx_clk_ch0,--tx_clk_ch0,--input_clk,
+		writememclk		      => tx_clk(0),
 		writememreadaddr     => writememreadaddr,
 		writememreaddata     => writememreaddata,
 
 		-- pcie readable memory
 		readmem_data 			=> readmem_writedata,
 		readmem_addr 			=> readmem_writeaddr_lowbits,
-		readmemclk				=> tx_clk_ch0,--tx_clk_ch0,--rx_clkout_ch0_clk,
+		readmemclk				=> tx_clk(0),--tx_clk_ch0,--rx_clkout_ch0_clk,
 		readmem_wren			=> readmem_wren,
 		readmem_endofevent	=> readmem_endofevent,
 
 		-- dma memory 
-		dma_data 				=> ch0_fifo_out(35 downto 4) & X"01CAFBAD" & ch1_fifo_out(35 downto 4) & X"02CAFBAD" & ch2_fifo_out(35 downto 4) & X"03CAFBAD" & ch3_fifo_out(35 downto 4) & X"04CAFBAD",
+		dma_data 				=> fifo_out(0)(31 downto 0) & X"01CAFBAD" & fifo_out(1)(31 downto 0) & X"02CAFBAD" & fifo_out(2)(31 downto 0) & X"03CAFBAD" & fifo_out(3)(31 downto 0) & X"04CAFBAD",
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
 		dmamem_wren				=> dmamem_wren,--'1',
 		dmamem_endofevent		=> dmamem_endofevent,
@@ -1045,7 +670,7 @@ pcie_b: pcie_block
 		testout_ena				=> open,
 		pb_in						=> pb_in,
 		inaddr32_r				=> readregs(inaddr32_r),
-		inaddr32_w				=> readregs(inaddr32_w)
+		inaddr32_w				=> readregs(inaddr32_w)--,
 );
 
 end;
