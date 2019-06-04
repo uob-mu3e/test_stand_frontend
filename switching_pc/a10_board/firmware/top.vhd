@@ -386,8 +386,8 @@ port map (
 	avs_waitrequest 	=> avm_qsfp.waitrequest,
 
 	tx3_data    		=> X"03CAFEBC",
-	tx2_data    		=> X"02BABEBC",
-	tx1_data    		=> X"01DEADBC",
+	tx2_data    		=> tx_data(2),
+	tx1_data    		=> tx_data(1),
 	tx0_data    		=> tx_data(0),
 	tx3_datak   		=> "0001",
 	tx2_datak   		=> "0001",
@@ -426,17 +426,17 @@ fifo_demerge :
  for i in 0 to 3 generate
 		data_demerger : data_demerge
 			port map(
-				clk				=> tx_clk(0),--rx_clk(i), 				-- receive clock (156.25 MHz)
+				clk				=> tx_clk(0),			-- receive clock (156.25 MHz)
 				reset				=> not reset_n,
-				aligned			=> '1',						-- word alignment achieved
-				data_in			=>	rx_data(i),				-- optical from frontend board
+				aligned			=> '1',					-- word alignment achieved
+				data_in			=>	rx_data(i),			-- optical from frontend board
 				datak_in			=> rx_datak(i),
 				data_out			=> fifo_data(i),		-- to sorting fifos
 				data_ready		=>	fifo_wren(i),	  	-- write req for sorting fifos
 				datak_out      => fifo_datak(i),
-				sc_out			=> sc_data(i),					-- slowcontrol from frontend board
+				sc_out			=> sc_data(i),			-- slowcontrol from frontend board
 				sc_out_ready	=> sc_ready(i),
-				fpga_id			=> open,						-- FPGA ID of the connected frontend board
+				fpga_id			=> open,					-- FPGA ID of the connected frontend board
 				sck_out      	=> sc_datak(i)--,
 		);
 		
@@ -527,6 +527,27 @@ slave : sc_slave
 		stateout				=> open--,
 );
 
+sc : sc_s4
+	port map(
+		clk					=> tx_clk(0),--rx_clkout_ch0_clk,
+		reset_n				=> push_button0_db,
+		enable				=> '1',
+		
+		mem_data_in			=> (others => '0'),
+		
+		link_data_in		=> mem_data_out(31 downto 0),--sc_ch0,--data_ch0,
+		link_data_in_k		=> mem_datak_out(3 downto 0),--sck_ch0,--datak_ch0,
+		
+		fifo_data_out		=> open,
+		fifo_we				=> open,
+		
+		mem_addr_out		=> tx_data(1)(15 downto 0),
+		mem_data_out		=> tx_data(2),
+		mem_wren				=> readregs_slow(DEBUG_SC)(0),
+		
+		stateout				=> open--,
+	);
+
 tx_data(0) <= mem_data_out(31 downto 0);
 tx_datak(0) <= mem_datak_out(3 downto 0);
 
@@ -590,7 +611,12 @@ begin
 		regwritten_del3 <= regwritten_del2;
 		regwritten_del4 <= regwritten_del3;
 		for I in 63 downto 0 loop
-			if(regwritten_fast(I) = '1' or regwritten_del1(I) = '1'  or regwritten_del2(I) = '1'  or regwritten_del3(I) = '1'  or regwritten_del4(I) = '1') then
+			if(regwritten_fast(I) = '1' or 
+				regwritten_del1(I) = '1' or
+				regwritten_del2(I) = '1' or
+				regwritten_del3(I) = '1' or
+				regwritten_del4(I) = '1') 
+				then
 				regwritten(I) 	<= '1';
 			else
 			regwritten(I) 		<= '0';
@@ -634,7 +660,7 @@ pcie_b : entity work.pcie_block
 		comp_led			      => open,
 		L0_led			      => open,
 
-		-- pcie registers (write / read register ,  readonly, read write , in tools/dmatest/rw) -Sync read regs 
+		-- pcie registers (write / read register, readonly, read write, in tools/dmatest/rw) -Sync read regs 
 		writeregs		      => writeregs,
 		regwritten		      => regwritten_fast,
 		readregs			      => readregs,
@@ -652,7 +678,14 @@ pcie_b : entity work.pcie_block
 		readmem_endofevent	=> readmem_endofevent,
 
 		-- dma memory 
-		dma_data 				=> fifo_out(0)(31 downto 0) & X"01CAFBAD" & fifo_out(1)(31 downto 0) & X"02CAFBAD" & fifo_out(2)(31 downto 0) & X"03CAFBAD" & fifo_out(3)(31 downto 0) & X"04CAFBAD",
+		dma_data 				=> rx_data(0) 	& 
+										tx_data(0) 	&
+										rx_data(1) 	&
+										tx_data(1) 	&
+										rx_data(2) 	&
+										tx_data(2) 	&
+										rx_data(3) 	&
+										X"04CAFBAD",
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
 		dmamem_wren				=> dmamem_wren,--'1',
 		dmamem_endofevent		=> dmamem_endofevent,
