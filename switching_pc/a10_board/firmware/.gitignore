@@ -1,0 +1,7 @@
+*.sopcinfo
+*.qsys
+*.bak
+.qsys_edit/
+db/
+incremental_db/
+*.qws
