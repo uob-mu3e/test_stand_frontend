@@ -29,6 +29,11 @@ port (
     TEMP_I2C_SCL            : out   std_logic;
     TEMP_I2C_SDA            : inout std_logic;
 
+    SI5340A_I2C_SCL :   out     std_logic;
+    SI5340A_I2C_SDA :   inout   std_logic;
+    SI5340A_OE_n    :   out std_logic;
+    SI5340A_RST_n   :   out std_logic;
+
 --    QSFPA_INTERRUPT_n   : in    std_logic;
     QSFPA_LP_MODE       : out   std_logic;
 --    QSFPA_MOD_PRS_n     : in    std_logic;
@@ -99,6 +104,9 @@ begin
     );
 
 
+
+    SI5340A_OE_n <= '0';
+    SI5340A_RST_n <= '1';
 
     QSFPA_LP_MODE <= '0';
     QSFPA_MOD_SEL_n <= '1';
@@ -201,15 +209,18 @@ begin
     FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
     TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
     POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
+    SI5340A_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
 
     -- I2C data
     i2c_sda_in <= FAN_I2C_SDA and
                   TEMP_I2C_SDA and
                   POWER_MONITOR_I2C_SDA and
+                  SI5340A_I2C_SDA and
                   '1';
     FAN_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
     TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
     POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
+    SI5340A_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
 
 
 
