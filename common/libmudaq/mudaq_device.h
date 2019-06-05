@@ -76,6 +76,9 @@ namespace mudaq {
     uint32_t read_memory_rw(unsigned idx) const;
     void write_memory_rw(unsigned idx, uint32_t value); // added by DvB for rw mem
 
+    void FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, uint32_t mem_start);
+    int FEB_read(uint32_t FPGA_ID, uint32_t *data, uint16_t length, uint32_t startaddr);
+
     void enable_led(unsigned which);
     void enable_leds(uint8_t pattern);
     void disable_leds();
@@ -99,6 +102,8 @@ private:
     volatile uint32_t*      _regs_ro;
     volatile uint32_t*      _mem_ro;
     volatile uint32_t*      _mem_rw;  // added by DvB for rw mem
+
+    uint16_t                _last_read_address; // for reading command of slow control
 
     friend std::ostream& operator<<(std::ostream&, const MudaqDevice&);
 };

@@ -40,7 +40,7 @@ find_package(CUDA)
 
 if (CUDA_FOUND)
    message("-- CUDA ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} was found at ${CUDA_TOOLKIT_ROOT_DIR}")
-   list(APPEND CUDA_NVCC_FLAGS "-arch=compute_30;-DVERBOSE;-g")
+   list(APPEND CUDA_NVCC_FLAGS="-arch=compute_30;-DVERBOSE;-g;-ccbin gcc-7")
     include_directories(${CUDA_TOOLKIT_ROOT_DIR}/include)
 else(CUDA_FOUND)
    message("* CUDA is not found")
@@ -84,6 +84,7 @@ add_subdirectory(common/libmudaq)
 
 if (CUDA_FOUND)
 add_subdirectory(farm_pc/midas_fe)
+add_subdirectory(switching_pc/midas_fe)
 endif(CUDA_FOUND)
 
 # install activate script
