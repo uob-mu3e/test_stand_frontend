@@ -31,6 +31,12 @@ add_compile_options(
 )
 
 add_subdirectory(modules)
+
+
+set(MIDAS_DIR  ${PROJECT_SOURCE_DIR}/modules/midas)
+set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/mxml)
+set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/mscb)
+
 add_subdirectory(backend_pc)
 
 configure_file(set_env.sh.in set_env.sh @ONLY)

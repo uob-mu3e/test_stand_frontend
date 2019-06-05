@@ -1,0 +1,3 @@
+rm .*.SHM
+rm .SHM_TYPE.TXT
+rm .SHM_HOST.TXT
