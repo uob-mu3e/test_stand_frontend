@@ -2,7 +2,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
-use work.mudaq_components.all;
 
 entity xcvr_a10 is
     generic (
@@ -331,7 +330,7 @@ begin
         end process;
     end block;
 
-    i_phy : component ip_xcvr_phy
+    i_phy : component work.cmp.ip_xcvr_phy
     port map (
         tx_serial_data  => tx_p,
         rx_serial_data  => rx_p,
@@ -393,7 +392,7 @@ begin
         reconfig_clk(0)         => clk--,
     );
 
-    i_fpll : component ip_xcvr_fpll
+    i_fpll : component work.cmp.ip_xcvr_fpll
     port map (
         pll_refclk0     => pll_refclk,
         pll_powerdown   => pll_powerdown(0),
@@ -414,7 +413,7 @@ begin
     --
     --
     --
-    i_reset : component ip_xcvr_reset
+    i_reset : component work.cmp.ip_xcvr_reset
     port map (
         tx_analogreset => tx_analogreset,
         tx_digitalreset => tx_digitalreset,
