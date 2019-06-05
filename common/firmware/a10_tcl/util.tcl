@@ -170,9 +170,9 @@ proc ::util::filenav { frameName pathName { patterns {} } } {
     # reduce path
     # TODO: use file separator
 #    if { $path == [pwd] } { set path "" }
-    set path [ regsub "^[pwd]/" $path "" ]
+#    set path [ regsub "^[pwd]/" $path "" ]
 #    if { $path == $::env(HOME) } { set path "~" }
-    set path [ regsub "^$::env(HOME)/" $path "~/" ]
+#    set path [ regsub "^$::env(HOME)/" $path "~/" ]
 
     return
 }
