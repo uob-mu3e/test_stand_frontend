@@ -22,5 +22,7 @@ done
 insmod ./${REQUESTED_MODULE}.ko || exit $?
 echo "loaded '${REQUESTED_MODULE}'"
 
+sleep 1
+
 chmod a+rw /dev/mudaq0
 
