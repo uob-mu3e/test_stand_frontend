@@ -16,7 +16,8 @@ export MIDASSYS="${PREFIX}/install"
 export MIDAS_DIR="${SOURCE}/online"
 export MIDAS_EXP_NAME="Mu3e"
 
-ln -sf "${SOURCE}/modules/midas/resources" "$MIDAS_DIR/resources"
+cd "$MIDAS_DIR"
+ln -sf "${SOURCE}/modules/midas/resources"
 
 # bash or zsh require a rehash to pick up new commands
 if test -n "${BASH}" -o -n "${ZSH_VERSION}"; then

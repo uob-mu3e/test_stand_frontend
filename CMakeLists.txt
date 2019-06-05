@@ -41,3 +41,7 @@ add_subdirectory(backend_pc)
 
 configure_file(set_env.sh.in set_env.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/set_env.sh DESTINATION ./)
+
+configure_file(start_daq.sh.in start_daq.sh @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/start_daq.sh DESTINATION bin
+PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
