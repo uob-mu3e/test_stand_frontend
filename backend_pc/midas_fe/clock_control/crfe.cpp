@@ -85,7 +85,7 @@ const char *cr_settings_str[] = {
 "[32] Temp1",
 "[32] Temp2",
 "[32] Temp3",
-NULL
+nullptr
 };
 
 EQUIPMENT equipment[] = {
@@ -133,7 +133,12 @@ INT frontend_init()
    db_find_key(hDB, 0, "/Equipment/Clock Reset", &hKey);
    assert(hKey);
 
-   db_watch(hDB, hKey, cr_settings_changed, NULL);
+   db_watch(hDB, hKey, cr_settings_changed, nullptr);
+
+   // add custom page to ODB
+   db_create_key(hDB, 0, "Custom/Clock and Reset&", TID_STRING);
+   const char * name = "cr.html";
+   db_set_value(hDB,0,"Custom/Clock and Reset&",name, sizeof(name), 1,TID_STRING);
 
    return CM_SUCCESS;
 }
