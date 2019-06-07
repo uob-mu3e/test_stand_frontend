@@ -70,10 +70,11 @@ set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/mscb)
 
 add_subdirectory(backend_pc)
 add_subdirectory(common/libmudaq)
-
+add_subdirectory(switching_pc/midas_fe)
 if (CUDA_FOUND)
 add_subdirectory(farm_pc/midas_fe)
 endif(CUDA_FOUND)
+
 
 configure_file(set_env.sh.in set_env.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/set_env.sh DESTINATION ./)
