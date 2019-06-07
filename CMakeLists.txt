@@ -59,14 +59,17 @@ else(CUDA_FOUND)
 endif(CUDA_FOUND)
 
 add_subdirectory(modules)
-set(MIDASDIR ${CMAKE_CURRENT_LIST_DIR}/modules/midas)
-set(MIDASLIBDIR ${CMAKE_CURRENT_LIST_DIR}/modules/midas/linux/lib)
-set(MIDASLIB ${MIDASLIBDIR}/libmidas.a)
-set(MIDASINCLUDEDIR ${CMAKE_CURRENT_LIST_DIR}/modules/midas/include)
+
+set(MIDAS_DIR ${PROJECT_SOURCE_DIR}/modules/midas)
+set(MIDASLIB_DIR ${CMAKE_CURRENT_LIST_DIR}/modules/midas/linux/lib)
+set(MIDASLIB ${MIDASLIB_DIR}/libmidas.a)
+set(MIDASINCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/modules/midas/include)
+set(LIBMUDAQ_DIR ${CMAKE_CURRENT_LIST_DIR}/common/libmudaq)
+set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/mxml)
+set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/mscb)
 
 add_subdirectory(backend_pc)
 add_subdirectory(common/libmudaq)
-set(LIBMUDAQDIR ${CMAKE_CURRENT_LIST_DIR}/common/libmudaq)
 
 if (CUDA_FOUND)
 add_subdirectory(farm_pc/midas_fe)
@@ -74,3 +77,7 @@ endif(CUDA_FOUND)
 
 configure_file(set_env.sh.in set_env.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/set_env.sh DESTINATION ./)
+
+configure_file(start_daq.sh.in start_daq.sh @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/start_daq.sh DESTINATION bin
+PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)

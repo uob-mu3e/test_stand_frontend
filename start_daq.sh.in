@@ -1,0 +1,22 @@
+#!/bin/bash
+# start_daq.sh
+
+PREFIX=@CMAKE_INSTALL_PREFIX@
+SOURCE=@PROJECT_SOURCE_DIR@
+BINDIR=${PREFIX}/bin
+LIBDIR=${PREFIX}/lib
+
+source "${PREFIX}/set_env.sh"
+
+cd "${SOURCE}/online"
+
+odbedit -c clean
+
+odbedit -c 'mkdir Custom'
+odbedit -d Custom -c 'create STRING Path'
+odbedit -c "set Custom/Path $SOURCE/mhttpd/custom"
+
+xterm -hold -e "mhttpd" &
+xterm -hold -e "mserver" &
+xterm -hold -e "mlogger" &
+#xterm -hold -e "crfe" &
