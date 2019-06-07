@@ -27,6 +27,14 @@ struct si5340_t {
         i2c.set(dev, 0x0c, 1);
     }
 
+    void set_f0(alt_u32 f) {
+        alt_u32 f_in = 48000000;
+        while(f_in % 2 == 0 && f % 2 == 0) { f_in /= 2; f /= 2; }
+        alt_u64 n = 0x93b4800000;
+        while(n % 2 == 0 && f % 2 == 0) { n /= 2; f /= 2; }
+        set_N0(n * f_in / f / 2);
+    }
+
     void test() {
         i2c.set(dev, 0x01, 0); // set page 0
         printf("  DIE_REV       = 0x%02X\n", i2c.get(dev, 0x00));

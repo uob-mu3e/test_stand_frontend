@@ -16,13 +16,13 @@ void menu_si5340() {
         char cmd = wait_key();
         switch(cmd) {
         case '1':
-            si5340.set_N0(0x2373000000); // 100 MHz
+            si5340.set_f0(100000000); // 100 MHz
             break;
         case '2':
-            si5340.set_N0(0x1C5C000000); // 125 MHz
+            si5340.set_f0(125000000); // 125 MHz
             break;
         case '3':
-            si5340.set_N0(0x16B0000000); // 156.25 MHz
+            si5340.set_f0(156250000); // 156.25 MHz
             break;
         case 'r':
             si5340.test();
