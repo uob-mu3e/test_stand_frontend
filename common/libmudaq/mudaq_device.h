@@ -77,7 +77,7 @@ namespace mudaq {
     void write_memory_rw(unsigned idx, uint32_t value); // added by DvB for rw mem
 
     void FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, uint32_t mem_start);
-    int FEB_read(uint32_t FPGA_ID, uint32_t *data, uint16_t length, uint32_t startaddr);
+    int FEB_read(uint32_t FPGA_ID, uint16_t length, uint32_t startaddr, uint32_t mem_start);
 
     void enable_led(unsigned which);
     void enable_leds(uint8_t pattern);
