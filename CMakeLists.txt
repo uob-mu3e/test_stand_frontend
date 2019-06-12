@@ -34,8 +34,8 @@ add_subdirectory(modules)
 
 
 set(MIDAS_DIR  ${PROJECT_SOURCE_DIR}/modules/midas)
-set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/mxml)
-set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/mscb)
+set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mxml)
+set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mscb)
 
 add_subdirectory(backend_pc)
 
