@@ -261,7 +261,7 @@ INT begin_of_run(INT run_number, char *error)
    //cm_msg(MINFO, "begin_of_run" , "addr 0x%x" , mu.last_written_addr());
    // mu.write_register(DATAGENERATOR_REGISTER_W, datagen_setup);
    mu.write_register(DATAGENERATOR_REGISTER_W, 0xffffffff);// start data generator
-   mu.write_register(LED_REGISTER_W,0xffffffff);
+   mu.write_register(LED_REGISTER_W,0x0000ffff);
    
    set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
    
@@ -401,6 +401,9 @@ INT read_stream_event(char *pevent, INT off)
 
 INT read_stream_thread(void *param)
 {
+   mudaq::DmaMudaqDevice & mu = *mup;
+   //uint32_t addr = mu.last_written_addr();
+   readindex = 0;
    EVENT_HEADER *pEventHeader;
    void *pEventData;
    DWORD *pdata;
@@ -429,13 +432,17 @@ INT read_stream_thread(void *param)
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
          ss_sleep(10);
+
          continue;
       }
       
       // check for new event
       status = TRUE;
-      
       if (status) {
+
+         //readindex = mu.last_written_addr() - 65536;
+
+         //cout<<"last written addr: "<< mu.last_written_addr()<< "readindex" <<readindex<<endl;
          // create new midas event
          bm_compose_event(pEventHeader, equipment[0].info.event_id, 0, 0, equipment[0].serial_number++);
          pEventData = (void *)(pEventHeader + 1);
@@ -446,15 +453,15 @@ INT read_stream_thread(void *param)
          // create "HEAD" bank
          bk_create(pEventData, "HEAD", TID_DWORD, (void **)&pdata);
          
-         for (int i=0 ; i<8 ; i++)
-            *pdata++ = rand();
-         
+         for (int i=0 ; i< 300*8 ; i++){
+            //*pdata++ = rand();
+            *pdata++ = dma_buf[(++readindex)%dma_buf_nwords];
+         }
          bk_close(pEventData, pdata);
          
          pEventHeader->data_size = bk_size(pEventData);
-         
-         // send event to ring buffer
          rb_increment_wp(rbh, sizeof(EVENT_HEADER) + pEventHeader->data_size);
+         // send event to ring buffer
       }
    }
    
