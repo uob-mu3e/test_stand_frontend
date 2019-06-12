@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="midas.css">
     <script src="controls.js"></script>
     <script src="midas.js"></script>
     <script src="mhttpd.js"></script>
     <title>Switching Boards</title>
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">-->
+    <link rel="stylesheet" href="midas.css">
 </head>
 <body class="mcss" onload="mhttpd_init('myPage');">
 
@@ -15,99 +16,138 @@
 <div id="msidenav"></div>
 
 <div id="mmain">
-    <table class="mtable" cellpadding="6">
+    <table class="mtable" id="scStatusTable">
+
         <tr>
-            <td style="text-align: right; width: 200px">
-                System active:
-            </td>
-            <td width="100px">
-                <input type="checkbox"
-                       name="modbcheckbox"
-                       data-odb-path="/Equipment/Switching/Settings/Active" />
+            <td colspan="6">
+
+                <table class="mtable" id="settings" width="100%">
+                    <tr>
+                        <td colspan="6" class="mtableheader">General Frontend settings</td>
+                    </tr>
+
+                    <tr align="center">
+                        <td id="systemActive" align="center" rowspan="3" class="mgreencolor">
+                        <td style="text-align: left;">
+                            System active:
+                        </td>
+                        <td width="100px">
+                            <input type="checkbox"
+                                   name="modbcheckbox"
+                                   data-odb-path="/Equipment/Switching/Settings/Active" />
+                        </td>
+                        </td>
+                    </tr>
+
+                    <tr align="center">
+                        <td id="systemActive" align="center" rowspan="3" class="mgreencolor">
+                        <td style="text-align: left;">
+                            Delay:
+                        </td>
+                        <td>
+                            <div name="modbvalue"
+                                 data-odb-path="/Equipment/Switching/Settings/Delay"
+                                 data-odb-editable="1"></div>
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
+
         <tr>
-            <td style="text-align: right;">
-                Delay:
-            </td>
-            <td>
-                <div name="modbvalue"
-                     data-odb-path="/Equipment/Switching/Settings/Delay"
-                     data-odb-editable="1"></div>
+            <td colspan="6">
+
+                <table class="mtable" id="settings" width="100%">
+                    <tr>
+                        <td colspan="6" class="mtableheader">Single Write / Read</td>
+                    </tr>
+
+                    <div class="col-sm">
+                        <button name="modbbutton" class="mbutton"
+                                data-odb-path="/Equipment/Switching/Settings/Read"
+                                data-odb-value="1">
+                            Read SC
+                        </button>
+                    </div>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>FPGA_ID</td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/FPGA_ID"></td>
+                    </tr>
+                    <tr>
+                        <td>Start Add.</td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/SC_StartAdd"></td>
+                    </tr>
+                    <tr>
+                        <td>Length</td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/SC_LENGTH"></td>
+                    </tr>
+                    <tr>
+                        <td>PCIe MEM Start</td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/SC_WM_MEM_Start"></td>
+                    </tr>
+
+                    <div class="col-sm">
+                        <button name="modbbutton" class="mbutton"
+                                data-odb-path="/Equipment/Switching/Settings/Write"
+                                data-odb-value="1">
+                            Write SC
+                        </button>
+                    </div>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>FPGA_ID</td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/FPGA_ID"></td>
+                    </tr>
+                    <tr>
+                        <td>Start Add.</td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/SC_LENGTH"></td>
+                    </tr>
+                    <tr>
+                        <td>Data</td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/SC_StartAdd"></td>
+                    </tr>
+                    <tr>
+                        <td>PCIe MEM Start</td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/SC_WM_MEM_Start"></td>
+                    </tr>
+                </table>
             </td>
         </tr>
-        <tr>
-            <td colspan="2" style="text-align: center">
-                <button name="modbbutton" class="mbutton"
-                        data-odb-path="/Equipment/Switching/Settings/Write"
-                        data-odb-value="1">
-                    Write SC
-                </button>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" style="text-align: center">
-                <button name="modbbutton" class="mbutton"
-                        data-odb-path="/Equipment/Switching/Settings/Read"
-                        data-odb-value="1">
-                    Read SC
-                </button>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" style="text-align: center">
-                <button name="modbbutton" class="mbutton"
-                        data-odb-path="/Equipment/Switching/Settings/Read WM"
-                        data-odb-value="1">
-                    Read Write Memory
-                </button>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" style="text-align: center">
-                <button name="modbbutton" class="mbutton"
-                        data-odb-path="/Equipment/Switching/Settings/Read RM"
-                        data-odb-value="1">
-                    Read Read Memory
-                </button>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" style="text-align: center">
-                <button name="modbbutton" class="mbutton"
-                        data-odb-path="/Equipment/Switching/Settings/Read Test"
-                        data-odb-value="1">
-                    Test Read SC
-                </button>
-            </td>
-        </tr>
+
     </table>
 </div>
 
-<div id="WSCData">
-    <table class="mtable" cellpadding="6">
-        <tr>
-            <th>Variable</th>
-            <th>Value</th>
-        </tr>
-        <tr>
-            <td>FPGA_ID</td>
-            <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/FPGA_ID"></td>
-        </tr>
-        <tr>
-            <td>Length</td>
-            <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/SC_LENGTH"></td>
-        </tr>
-        <tr>
-            <td>SC_StartAdd</td>
-            <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/SC_StartAdd"></td>
-        </tr>
-        <tr>
-            <td>SC_WM_MEM_Start</td>
-            <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/SC_WM_MEM_Start"></td>
-        </tr>
-    </table>
+<div>
+    <button name="modbbutton" class="mbutton"
+            data-odb-path="/Equipment/Switching/Settings/Read WM"
+            data-odb-value="1">
+        Read Write Memory
+    </button>
 </div>
+
+<div>
+    <button name="modbbutton" class="mbutton"
+            data-odb-path="/Equipment/Switching/Settings/Read RM"
+            data-odb-value="1">
+        Read Read Memory
+    </button>
+</div>
+
+<div>
+    <button name="modbbutton" class="mbutton"
+            data-odb-path="/Equipment/Switching/Settings/Read Test"
+            data-odb-value="1">
+        Test Read SC
+    </button>
+</div>
+
 
 <div id="Test">
     <table class="mtable" cellpadding="6">
@@ -126,5 +166,9 @@
     </table>
 </div>
 
+
+
+
 </body>
 </html>
+
