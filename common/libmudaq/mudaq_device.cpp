@@ -388,7 +388,7 @@ void MudaqDevice::FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
 
     write_memory_rw(1 + FEB_MEM_START, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_WRITE << 24 | (uint16_t) FPGA_ID << 8 | 0xBC); // two most significant bits are 0
     write_memory_rw(2 + FEB_MEM_START, startaddr);
-    write_memory_rw(3 + FEB_MEM_START, length - 1);
+    write_memory_rw(3 + FEB_MEM_START, length);
 
     for (int i = 0; i < length; i++) {
         write_memory_rw(FEB_MEM_START + 4 + i, data[i]);

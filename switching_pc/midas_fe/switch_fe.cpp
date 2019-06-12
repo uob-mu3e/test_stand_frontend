@@ -76,8 +76,8 @@ mudaq::DmaMudaqDevice * mup;
 /*-- Function declarations -----------------------------------------*/
 
 INT read_sc_event(char *pevent, INT off);
+INT read_WMEM_event(char *pevent, INT off);
 void sc_settings_changed(HNDLE, HNDLE, int, void *);
-void sc_variables_changed(HNDLE hDB, HNDLE hKey, INT, void *);
 
 /*-- Equipment list ------------------------------------------------*/
 
@@ -86,10 +86,10 @@ const char *sc_settings_str[] = {
 "Active = BOOL : 1",
 "Delay = INT : 0",
 "Write = BOOL : 0",
+"Single Write = BOOL : 0",
 "Read = BOOL : 0",
 "Read WM = BOOL : 0",
 "Read RM = BOOL : 0",
-"Read Test = BOOL : 0",
 "[32] Temp0",
 "[32] Temp1",
 "[32] Temp2",
@@ -136,7 +136,6 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 INT frontend_init()
 {
    HNDLE hKeySC;
-   HNDLE hVarSC;
 
    // create Settings structure in ODB
    db_create_record(hDB, 0, "Equipment/Switching/Settings", strcomb(sc_settings_str));
@@ -146,15 +145,28 @@ INT frontend_init()
    db_watch(hDB, hKeySC, sc_settings_changed, nullptr);
 
    // set default values of variables
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/FPGA_ID", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/SC_LENGTH", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/SC_StartAdd", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/SC_WM_MEM_Start", TID_INT);
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/FPGA_ID_READ", TID_INT);
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/START_ADD_READ", TID_INT);
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/LENGTH_READ", TID_INT);
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/PCIE_MEM_START_READ", TID_INT);
 
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/length_test", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/start_test", TID_INT);
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/FPGA_ID_WRITE", TID_INT);
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/PCIE_MEM_START_WRITE", TID_INT);
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/DATA_WRITE", TID_INT); // TODO: why is it possible to address this as an array in js?
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/DATA_WRITE_SIZE", TID_INT);
 
-   // add custom page to ODB
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/START_ADD_WRITE", TID_INT);
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/SINGLE_DATA_WRITE", TID_INT);
+
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/RM_START_ADD", TID_INT);
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/RM_LENGTH", TID_INT);
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/RM_DATA", TID_INT);
+
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_START_ADD", TID_INT);
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_LENGTH", TID_INT);
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", TID_INT);
+
+    // add custom page to ODB
    db_create_key(hDB, 0, "Custom/Switching&", TID_STRING);
    const char * name = "sc.html";
    db_set_value(hDB,0,"Custom/Switching&", name, sizeof(name), 1, TID_STRING);
@@ -245,6 +257,35 @@ INT read_sc_event(char *pevent, INT off)
    return bk_size(pevent);
 }
 
+/*--- Read WMEM if button was pressed --------*/
+
+//INT read_WMEM_event(char *pevent, INT off)
+//{
+//    bk_init(pevent);
+//
+//    mudaq::DmaMudaqDevice & mu = *mup;
+//
+//    if (mu.read_memory_rw(0) == 0) {
+//        return CM_SUCCESS; // no new data
+//    }
+//
+//    unsigned int sc_length = mu.read_memory_rw(0);
+//    unsigned int sc_start_add = mu.read_memory_rw(1);
+//
+//    int *pdata;
+//    bk_create(pevent, "WM", TID_INT, (void **)&pdata);
+//
+//    for (unsigned int i = sc_start_add; i < sc_start_add + sc_length; i++) {
+//        *pdata++ = mu.read_memory_rw(i);
+//    }
+//
+//    mu.write_memory_rw(0, 0);
+//
+//    bk_close(pevent, pdata);
+//
+//    return bk_size(pevent);
+//}
+
 /*--- Called whenever settings have changed ------------------------*/
 
 void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
@@ -278,17 +319,46 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       if (value) {
          cm_msg(MINFO, "sc_settings_changed", "Execute write");
 
-          uint32_t FPGA_ID    = 0xFFF;
-          uint32_t arr[] = { 1, 2, 3, 4, 0xAFFEAFFE };
-          uint32_t *data = arr;
-          uint16_t length     = 5;
-          uint32_t startaddr  = 0x1;
-          uint32_t mem_start = 0x2;
+         INT DATA_WRITE_SIZE, SIZE_DATA_WRITE_SIZE;
+         SIZE_DATA_WRITE_SIZE = sizeof(DATA_WRITE_SIZE);
+         char STR_DATA_WRITE_SIZE[128];
+         sprintf(STR_DATA_WRITE_SIZE,"Equipment/Switching/Variables/DATA_WRITE_SIZE");
+         db_get_value(hDB, 0, STR_DATA_WRITE_SIZE, &DATA_WRITE_SIZE, &SIZE_DATA_WRITE_SIZE, TID_INT, 0);
 
-          for(int i = 0; i < 1; i++){
-              mu.FEB_write(FPGA_ID, data, length, startaddr, mem_start);
-              usleep(1000);
-          }
+         uint32_t DATA_ARRAY[DATA_WRITE_SIZE];
+
+         INT FPGA_ID, SIZE_FPGA_ID;
+         INT DATA, SIZE_DATA;
+         INT START_ADD, SIZE_START_ADD;
+         INT PCIE_MEM_START, SIZE_PCIE_MEM_START;
+
+         SIZE_FPGA_ID = sizeof(FPGA_ID);
+         SIZE_DATA = sizeof(DATA);
+         SIZE_START_ADD = sizeof(START_ADD);
+         SIZE_PCIE_MEM_START = sizeof(PCIE_MEM_START);
+
+         char STR_FPGA_ID[128];
+         char STR_START_ADD[128];
+         char STR_PCIE_MEM_START[128];
+
+         sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_WRITE");
+         sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_WRITE");
+         sprintf(STR_PCIE_MEM_START,"Equipment/Switching/Variables/PCIE_MEM_START_WRITE");
+
+         db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
+         db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
+         db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
+
+         for (int i = 0; i < DATA_WRITE_SIZE; i++) {
+             char STR_DATA[128];
+             sprintf(STR_DATA,"Equipment/Switching/Variables/DATA_WRITE[%d]", i);
+             db_get_value(hDB, 0, STR_DATA, &DATA, &SIZE_DATA, TID_INT, 0);
+             DATA_ARRAY[i] = (uint32_t) DATA;
+         }
+
+         uint32_t *data = DATA_ARRAY;
+
+         mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
 
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
@@ -317,10 +387,10 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
          char str_start[128];
          char str_mem[128];
 
-         sprintf(str_fpga,"Equipment/Switching/Variables/FPGA_ID");
-         sprintf(str_length,"Equipment/Switching/Variables/SC_LENGTH");
-         sprintf(str_start,"Equipment/Switching/Variables/SC_StartAdd");
-         sprintf(str_mem,"Equipment/Switching/Variables/SC_WM_MEM_Start");
+         sprintf(str_fpga,"Equipment/Switching/Variables/FPGA_ID_READ");
+         sprintf(str_length,"Equipment/Switching/Variables/LENGTH_READ");
+         sprintf(str_start,"Equipment/Switching/Variables/START_ADD_READ");
+         sprintf(str_mem,"Equipment/Switching/Variables/PCIE_MEM_START_READ");
 
          db_get_value(hDB, 0, str_fpga, &FPGA_ID, &size_fpga, TID_INT, 0);
          db_get_value(hDB, 0, str_length, &Length, &size_length, TID_INT, 0);
@@ -333,39 +403,95 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
          db_set_value(hDB, 0, str_mem, &new_SC_WM_MEM_START, new_size_mem, 1, TID_INT);
 
-         for(int i = 0; i < 1; i++){
-             mu.FEB_read((uint32_t) FPGA_ID, (uint16_t) Length, (uint32_t) SC_StartAdd, (uint32_t) SC_WM_MEM_START);
-             usleep(1000);
-         }
+         mu.FEB_read((uint32_t) FPGA_ID, (uint16_t) Length, (uint32_t) SC_StartAdd, (uint32_t) SC_WM_MEM_START);
+
 
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
    }
 
-    if (std::string(key.name) == "Read Test") {
+   if (std::string(key.name) == "Single Write") {
         BOOL value;
         int size = sizeof(value);
         db_get_data(hDB, hKey, &value, &size, TID_BOOL);
         if (value) {
-            cm_msg(MINFO, "sc_settings_changed", "Execute read");
+            cm_msg(MINFO, "sc_settings_changed", "Execute single write");
 
-            INT length_test, start_test, size_length, size_start;
+            INT FPGA_ID, SIZE_FPGA_ID;
+            INT DATA, SIZE_DATA;
+            INT START_ADD, SIZE_START_ADD;
+            INT PCIE_MEM_START, SIZE_PCIE_MEM_START;
 
-            size_length = sizeof(length_test);
-            size_start = sizeof(start_test);
+            SIZE_FPGA_ID = sizeof(FPGA_ID);
+            SIZE_DATA = sizeof(DATA);
+            SIZE_START_ADD = sizeof(START_ADD);
+            SIZE_PCIE_MEM_START = sizeof(PCIE_MEM_START);
 
-            char str_length[128];
-            char str_start[128];
+            char STR_FPGA_ID[128];
+            char STR_DATA[128];
+            char STR_START_ADD[128];
+            char STR_PCIE_MEM_START[128];
 
-            sprintf(str_length,"Equipment/Switching/Variables/length_test");
-            sprintf(str_start,"Equipment/Switching/Variables/start_test");
+            sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_WRITE");
+            sprintf(STR_DATA,"Equipment/Switching/Variables/SINGLE_DATA_WRITE");
+            sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_WRITE");
+            sprintf(STR_PCIE_MEM_START,"Equipment/Switching/Variables/PCIE_MEM_START_WRITE");
 
-            db_get_value(hDB, 0, str_length, &length_test, &size_length, TID_INT, 0);
-            db_get_value(hDB, 0, str_start, &start_test, &size_start, TID_INT, 0);
+            db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
+            db_get_value(hDB, 0, STR_DATA, &DATA, &SIZE_DATA, TID_INT, 0);
+            db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
+            db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
 
-            mu.write_memory_rw(0, length_test);
-            mu.write_memory_rw(1, start_test);
+            uint32_t data_arr[] = {0};
+            data_arr[0] = (uint32_t) DATA;
+            uint32_t *data = data_arr;
+
+            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+
+            value = FALSE; // reset flag in ODB
+            db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+        }
+    }
+
+    if (std::string(key.name) == "Read WM") {
+        BOOL value;
+        int size = sizeof(value);
+        db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+        if (value) {
+            cm_msg(MINFO, "sc_settings_changed", "Execute Read WM");
+
+            db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_START_ADD", TID_INT);
+            db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_LENGTH", TID_INT);
+            db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", TID_FLOAT);
+
+            INT WM_START_ADD, SIZE_WM_START_ADD;
+            INT WM_LENGTH, SIZE_WM_LENGTH;
+            INT WM_DATA, SIZE_WM_DATA;
+
+            SIZE_WM_START_ADD = sizeof(WM_START_ADD);
+            SIZE_WM_LENGTH = sizeof(WM_LENGTH);
+            SIZE_WM_DATA = sizeof(WM_DATA);
+
+            char STR_WM_START_ADD[128];
+            char STR_WM_LENGTH[128];
+            char STR_WM_DATA[128];
+
+            sprintf(STR_WM_START_ADD,"Equipment/Switching/Variables/WM_START_ADD");
+            sprintf(STR_WM_LENGTH,"Equipment/Switching/Variables/WM_LENGTH");
+            sprintf(STR_WM_DATA,"Equipment/Switching/Variables/WM_DATA");
+
+            db_get_value(hDB, 0, STR_WM_START_ADD, &WM_START_ADD, &SIZE_WM_START_ADD, TID_INT, 0);
+            db_get_value(hDB, 0, STR_WM_LENGTH, &WM_LENGTH, &SIZE_WM_LENGTH, TID_INT, 0);
+
+            uint32_t DATA_ARRAY[WM_LENGTH];
+
+            for (int i = 0; i < WM_LENGTH; i++) {
+                DATA_ARRAY[i] = mu.read_memory_rw((uint32_t) WM_START_ADD + i);
+                std::cout << std::hex << mu.read_memory_rw((uint32_t) WM_START_ADD + i) << std::endl;
+            }
+
+            db_set_value(hDB, 0, STR_WM_DATA, DATA_ARRAY, SIZE_WM_DATA, WM_LENGTH, TID_INT);
 
             value = FALSE; // reset flag in ODB
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
