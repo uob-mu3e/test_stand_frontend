@@ -10,7 +10,7 @@ using std::cout;
 using std::endl;
 using std::hex;
 
-ipbus::ipbus(const char * _addr, int _port):
+ipbus::ipbus(const char * _addr, unsigned short _port):
     addr(_addr),port(_port), connected(false), ios(), socket(ios), packetnumber(0)
 {
     socket.open(ip::udp::v4());
@@ -26,10 +26,23 @@ ipbus::ipbus(const char * _addr, int _port):
     if(status < 0){
         socket.close();
         connected = false;
-        return;
+        cout << "Second connection attempt " << endl;
+        socket.open(ip::udp::v4());
+        if(socket.is_open())
+            connected = true;
+        socket.non_blocking(true);
+
+        status = Status();
+        if(status < 0){
+            socket.close();
+            connected = false;
+            cout << "Connection failed" << endl;
+            return;
+        }
     }
 
-    packetnumber = status;
+
+    packetnumber = static_cast<uint16_t>(status);
 
     cout << "Starting at packet number " << packetnumber << endl;
 }
@@ -67,6 +80,10 @@ int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
         sendbuffer.push_back(header);
         sendbuffer.push_back(addr);
 
+        cout << "sb :" << std::hex << sendbuffer[0] << endl;
+        cout << "wh :" << std::hex << header << endl;
+        cout << "wa :" << std::hex << addr << endl;
+
         if(nwords < 256){
             for(int i=0; i < data.size(); i++)
                 sendbuffer.push_back(data[i]);
@@ -96,6 +113,9 @@ int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
         }
     }
 
+    cout << "w0 :" << std::hex << receivebuffer[0] << endl;
+    cout << "w1 :" << std::hex << receivebuffer[1] << endl;
+
     return 0;
 }
 
@@ -116,14 +136,16 @@ int ipbus::read(uint32_t addr, uint8_t size, vector<uint32_t> &data, bool nonicr
     transactionnumber = transactionnumber & 0xfff;
     header |= 2 << 28; // protocol version number
 
+    cout << "h :" << std::hex << header << endl;
+    cout << "a :" << std::hex << addr << endl;
     sendbuffer.push_back(header);
     sendbuffer.push_back(addr);
     SendPacket();
 
-    vector<uint32_t> receivebuffer(size+1,0);
+    vector<uint32_t> receivebuffer(size+2,0);
     usleep(1000);
 
-    if( ReadFromSocket(receivebuffer) != (size+1)*4){
+    if( ReadFromSocket(receivebuffer) != (size+2)*4){
         int s = Status();
         if(s < 0)
             return -3;
@@ -135,10 +157,14 @@ int ipbus::read(uint32_t addr, uint8_t size, vector<uint32_t> &data, bool nonicr
             usleep(1000);
         }
     }
+    cout << 0 << " :" << std::hex << receivebuffer[0] << endl;
+    cout << 1 << " :" << std::hex << receivebuffer[1] << endl;
 
     data.clear();
-    for(unsigned int i =1; i < receivebuffer.size(); i++)
+    for(unsigned int i =2; i < receivebuffer.size(); i++){
+        cout << i << " :" << std::hex << receivebuffer[i] << endl;
         data.push_back(receivebuffer[i]);
+    }
     return 0;
 
 }
@@ -154,6 +180,7 @@ uint32_t ipbus::read(uint32_t addr)
 {
     vector<uint32_t> v(1,0);
     read(addr,1,v,false);
+    cout << "Read " << v[0] << endl;
     return v[0];
 }
 
@@ -222,16 +249,16 @@ void ipbus::CreateStatusPacket()
 
 }
 
-int ipbus::Status()
+int ipbus::Status(unsigned int timeout)
 {
     CreateStatusPacket();
     SendStatusPacket();
 
-    int statuspacketsize = 16;
+    vector<uint32_t>::size_type statuspacketsize = 16;
 
     vector<uint32_t> receivebuffer(statuspacketsize,0);
 
-    usleep(20000);
+    usleep(timeout);
 
     if(ReadFromSocket(receivebuffer) != 16*4)
         return -1;
