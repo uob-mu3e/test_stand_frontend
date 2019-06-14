@@ -86,6 +86,11 @@ begin
 			mem_datak 	<= (others => '0');
 			wren_reg		<= (others => '0');
 			stateout(3 downto 0)		<= x"F";
+			
+			if (addr_reg = x"FFFF") then
+				addr_reg		<= (others => '0');
+			end if;
+			
 			case state is
 			
 				when waiting =>

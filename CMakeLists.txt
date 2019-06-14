@@ -1,35 +1,45 @@
-cmake_minimum_required(VERSION 2.8.11)
-# suppress policy warnings on newer cmake versions
-if(POLICY CMP0043)
-  cmake_policy(SET CMP0043 NEW)
-endif()
+cmake_minimum_required(VERSION 3.1)
 
-project(mu3edaq)
+project(mu3e_online VERSION 0.1)
 
-# set default built-type to "Release"
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "build type" FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
-# set default install directory to "install" inside the repository
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX "${PROJECT_SOURCE_DIR}/install" CACHE PATH "install prefix" FORCE)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "" FORCE)
+    set(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT FALSE)
 endif()
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX}) # for find_package
+message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+endif()
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
-# always add the current (binary) directory to the list of include directories
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-# show which Geant4 installation is used
-set(Geant4_CONFIG_DEBUG TRUE)
+
+# MU3E_ONLINE_GIT_REF
+#find_package(Git 1.8 REQUIRED)
+#execute_process(
+#    COMMAND ${GIT_EXECUTABLE} describe --abbrev=16 --dirty
+#    OUTPUT_STRIP_TRAILING_WHITESPACE
+#    OUTPUT_VARIABLE MU3E_ONLINE_GIT_REF
+#)
+#message(STATUS "MU3E_ONLINE_GIT_REF: ${MU3E_ONLINE_GIT_REF}")
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_compile_options(
+    "-Wpedantic" "-Wall" "-Wextra"
+    "-Wformat=2"
+)
 
 # required packages
 find_package(Boost 1.49 REQUIRED COMPONENTS thread system program_options)
 find_package(Git 1.8 REQUIRED)
-#find_package(ROOT 5.34 REQUIRED)
+list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
+find_package(ROOT 5.34 REQUIRED)
 # optional packages
 find_package(Doxygen 1.8)
+message("here we set GLVND to default (https://cmake.org/cmake/help/git-stage/policy/CMP0072.html)")
+set(OpenGL_GL_PREFERENCE GLVND)
 if(APPLE)
     find_package(OpenGl)
 else()
@@ -37,55 +47,39 @@ else()
 endif()
 
 find_package(CUDA)
+find_package(CUDA)
 
 if (CUDA_FOUND)
-   message("-- CUDA ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} was found at ${CUDA_TOOLKIT_ROOT_DIR}")
-   list(APPEND CUDA_NVCC_FLAGS "-arch=compute_30;-DVERBOSE;-g")
+    message("-- CUDA ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} was found at ${CUDA_TOOLKIT_ROOT_DIR}")
+    list(APPEND CUDA_NVCC_FLAGS "-arch=compute_30;-DVERBOSE;-g")
     include_directories(${CUDA_TOOLKIT_ROOT_DIR}/include)
 else(CUDA_FOUND)
-   message("* CUDA is not found")
-#   message(FATAL_ERROR "Not all CUDA libraries are found")
+    message("* CUDA is not found")
+    #   message(FATAL_ERROR "Not all CUDA libraries are found")
     message("Not all CUDA libraries are found")
 endif(CUDA_FOUND)
 
-# set common include directories
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
-include_directories(SYSTEM ${ROOT_INCLUDE_DIRS})
+add_subdirectory(modules)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/common/libmudaq)
+set(MIDAS_DIR ${PROJECT_SOURCE_DIR}/modules/midas)
+set(MIDASLIB_DIR ${CMAKE_CURRENT_LIST_DIR}/modules/midas/linux/lib)
+set(MIDASLIB ${MIDASLIB_DIR}/libmidas.a)
+set(MIDASINCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/modules/midas/include)
+set(LIBMUDAQ_DIR ${CMAKE_CURRENT_LIST_DIR}/common/libmudaq)
+set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/mxml)
+set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/mscb)
 
-#midas and related packages work with classical makefile
-add_custom_target(
-        midas
-        ALL
-        COMMAND make
-        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/modules/midas)
-
-    set(MIDASDIR ${CMAKE_CURRENT_LIST_DIR}/modules/midas)
-    set(MIDASLIBDIR ${CMAKE_CURRENT_LIST_DIR}/modules/midas/linux/lib)
-    set(MIDASLIB ${MIDASLIBDIR}/libmidas.a)
-    set(MIDASINCLUDEDIR ${CMAKE_CURRENT_LIST_DIR}/modules/midas/include)
-
-
-add_custom_target(
-        mscb
-        ALL
-        COMMAND make
-        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/modules/mscb)
-
-add_custom_target(
-        exptab
-        ALL
-        COMMAND echo "mu3e . $ENV{USER}" > ${CMAKE_CURRENT_LIST_DIR}/mhttpd/exptab
-)
-
+add_subdirectory(backend_pc)
 add_subdirectory(common/libmudaq)
-
+add_subdirectory(switching_pc/midas_fe)
 if (CUDA_FOUND)
 add_subdirectory(farm_pc/midas_fe)
 endif(CUDA_FOUND)
 
-# install activate script
-configure_file(activate.sh.in activate.sh @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/activate.sh DESTINATION ./)
+
+configure_file(set_env.sh.in set_env.sh @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/set_env.sh DESTINATION ./)
+
+configure_file(start_daq.sh.in start_daq.sh @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/start_daq.sh DESTINATION bin
+PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)

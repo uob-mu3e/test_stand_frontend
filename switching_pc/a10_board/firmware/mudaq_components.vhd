@@ -90,6 +90,28 @@ component debouncer is
     );
 end component debouncer;
 
+component sc_s4 is
+	port(
+		clk:                in std_logic;
+		reset_n:            in std_logic;
+		enable:             in std_logic;
+		
+		mem_data_in:        in std_logic_vector(31 downto 0);
+		
+		link_data_in:       in std_logic_vector(31 downto 0);
+		link_data_in_k:     in std_logic_vector(3 downto 0);
+		
+		fifo_data_out:      out std_logic_vector(35 downto 0);
+		fifo_we:            out std_logic;
+		
+		mem_data_out:       out std_logic_vector(31 downto 0);
+		mem_addr_out:       out std_logic_vector(15 downto 0);
+		mem_wren:           out std_logic;
+		
+		stateout:           out std_logic_vector(27 downto 0)
+	);
+end component sc_s4;
+
 component ip_clk_ctrl is
   port (
 		inclk  : in  std_logic := 'X'; -- inclk

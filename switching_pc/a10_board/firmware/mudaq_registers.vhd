@@ -76,6 +76,7 @@ package mudaq_registers is
 		constant CH2_ALIGN										: integer:= 2;
 		constant CH3_ALIGN										: integer:= 3;
 		constant PLL_LOCKED_BIT									: integer := 16#12#;
+		constant DEBUG_SC											: integer := 16#13#;
 
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;

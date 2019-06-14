@@ -1,3 +1,12 @@
+<<<<<<< HEAD
+*.sopcinfo
+*.qsys
+*.bak
+.qsys_edit/
+db/
+incremental_db/
+*.qws
+=======
 incremental_db/
 ip/.qsys_edit/
 ip/ip_clk_ctrl/
@@ -32,3 +41,4 @@ pcieapp/pcie.BAK.qsys
 software/hal_bsp/
 software/app/
 pcieapp/.qsys_edit/
+>>>>>>> origin/farm_switch_firmware

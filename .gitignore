@@ -49,6 +49,18 @@ dvt_build.log
 *.log
 
 *~
+*.bak
+build
+install
+online/exptab
+online/*.hst
+online/*.idx
+online/*.idf
+online/data
+online/*.txt
+online/*.TXT
+online/*.log
+online/*.xml
 
 # midas (?)
 *.mid
