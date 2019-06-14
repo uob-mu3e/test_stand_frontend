@@ -45,7 +45,39 @@ set_global_assignment -name VHDL_FILE ip/ip_ram.vhd
 # MALIBU
 
 set_global_assignment -name VHDL_FILE malibu_dec.vhd
-set_global_assignment -name VHDL_FILE util/8b10_dec.vhd
+#set_global_assignment -name VHDL_FILE util/8b10_dec.vhd
+
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/mutrig_constants.vhd
+
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/dummys/stic_dummy_data.vhd
+
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/frame_rcv/frame_rcv.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/frame_rcv/crc16_calc.vhd
+
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/lvds/8b10_dec.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/lvds/add_1_bit.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/lvds/add_2_bits.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/lvds/add_3_bits.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/lvds/datadecoder.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/lvds/decode8b10b.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/lvds/receiver_block.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/lvds/disparity_checker.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/lvds/lvds_receiver.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/lvds/rx_errcounter.vhd
+
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/mutrig_store/channeldata_fifo.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/mutrig_store/mutrig_store.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/mutrig_store/prbs48_checker.vhd
+
+set_global_assignment -name VHDL_FILE ../firmware/daq_constants.vhd
+
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/mutrig_datapath/source/mutrig_datapath.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/common_fifo/common_fifo.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/prbs_dec/prbs_decoder.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/prbs_dec/decoder_mem.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/framebuilder_mux/framebuilder_mux.vhd
+set_global_assignment -name VHDL_FILE ../firmware/mutrig_common/framebuilder_mux/arb_selection.vhd
+
 
 # QSFP
 

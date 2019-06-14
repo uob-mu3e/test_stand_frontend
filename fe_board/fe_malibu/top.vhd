@@ -255,6 +255,32 @@ begin
         reset   => not reset_n--,
     );
 
+    i_mutrig_datapath : entity work.mutrig_datapath
+    port map (
+        i_rst => not reset_n,
+        i_stic_txd => malibu_data(0 downto 0),
+        i_refclk_125 => clk_125,
+
+        --interface to asic fifos
+        i_clk_core => '0',
+        o_fifo_empty => open,
+        o_fifo_data => open,
+        i_fifo_rd => '1',
+        --slow control
+        i_SC_disable_dec => '0',
+        i_SC_mask => (others => '0'),
+        i_SC_datagen_enable => '0',
+        i_SC_datagen_shortmode => '0',
+        i_SC_datagen_count => (others => '0'),
+        --monitors
+        o_receivers_usrclk => open,
+        o_receivers_pll_lock => open,
+        o_receivers_dpa_lock=> open,
+        o_receivers_ready => open,
+        o_frame_desync => open,
+        o_buffer_full => open--,
+    );
+
     ----------------------------------------------------------------------------
 
 
@@ -302,9 +328,9 @@ begin
     );
 
     qsfp_tx_data(127 downto 32) <=
-          X"02BABE" & work.util.D28_5
-        & X"01DEAD" & work.util.D28_5
-        & X"00BEEF" & work.util.D28_5;
+          X"03CAFE" & work.util.D28_5
+        & X"02BABE" & work.util.D28_5
+        & X"01DEAD" & work.util.D28_5;
 
     qsfp_tx_datak(15 downto 4) <=
         "0001"
@@ -341,7 +367,7 @@ begin
     i_sc : entity work.sc_s4
     port map (
         clk => qsfp_rx_clk(0),
-        reset_n => '1',
+        reset_n => reset_n,
         enable => '1',
 
         mem_data_in => ram_rdata_a,

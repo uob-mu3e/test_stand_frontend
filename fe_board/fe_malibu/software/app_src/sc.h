@@ -2,6 +2,7 @@
 volatile alt_u32* sc_data = (alt_u32*)AVM_SC_BASE;
 
 void sc_callback() {
+    // command (upper 16 bits) and length (lower 16 bits)
     alt_u32 n = sc_data[0];
     if(n == 0) return;
     alt_u32 cmd = n >> 16; n &= 0xFFFF;
@@ -12,7 +13,7 @@ void sc_callback() {
     case 0x0101:
         Malibu_Powerup();
     case 0x0102:
-        Malibu_Powerdown
+        Malibu_Powerdown();
     case 0x0103:
         PowerUpASIC(0);
     default:
