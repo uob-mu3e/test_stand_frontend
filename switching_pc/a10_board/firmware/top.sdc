@@ -76,11 +76,8 @@ set_false_path -from [get_registers {reset_logic:resetlogic|resets_reg[*]}]
 set_false_path -from {debouncer:deb1|dout_last}
 set_false_path -from {debouncer:i_debouncer|q[0]}
 set_false_path -from {debouncer:i_debouncer|q[0]} -to {sc_slave:sc_slave_ch0|state}
-<<<<<<< HEAD
-=======
 set_false_path -to {xcvr_a10:i_qsfp|av_ctrl.readdata[*]}
 set_false_path -from {xcvr_a10:i_qsfp|ip_xcvr_reset:i_reset|altera_xcvr_reset_control:xcvr_reset_control_0|alt_xcvr_reset_counter:g_rx.g_rx[*].g_rx.counter_rx_ready|r_reset} 
->>>>>>> origin/farm_switch_firmware
 
 #**************************************************************
 # Set Multicycle Path
