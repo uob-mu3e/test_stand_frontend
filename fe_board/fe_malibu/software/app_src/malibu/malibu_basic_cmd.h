@@ -121,7 +121,7 @@ int SPI_write_pattern(const unsigned char* bitpattern){
 		};
 
 		if(rx_check!=stic3_config_ALL_OFF[nb]){
-			printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
+//			printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
 			status=-1;
 		}
 		rx_pre=rx<<8;

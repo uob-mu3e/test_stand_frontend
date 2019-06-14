@@ -89,8 +89,9 @@ architecture rtl of data_merger is
 BEGIN
 
 -- debug led merger state
-process (clk, reset)
+process (merger_state)
 	begin
+    leds <= (others => '0');
 		if(merger_state=idle) then 
 			leds<=(0=>'1', others => '0');
 		elsif (merger_state=sending_data) then

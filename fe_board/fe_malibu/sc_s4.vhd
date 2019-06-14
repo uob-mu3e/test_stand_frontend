@@ -59,6 +59,7 @@ begin
 	memory : process(reset_n, clk)
 	begin
 	if(reset_n = '0')then
+        state <= waiting;
 		mem_data_o 		 	<= (others => '0');
 		mem_addr_write_o 	<= (others => '0');
 		mem_addr_read_o 	<= (others => '0');
@@ -71,7 +72,7 @@ begin
 		first_read 			<= '0';
 		fifo_we 			<= '0';
 	elsif(rising_edge(clk))then
-        stateout(3 downto 0) 	<= x"F";
+        stateout <= (others => '1');
         mem_data_o 				<= (others => '0');
 		--mem_addr_read_o			<= (others => '0');
 		mem_addr_write_o 		<= (others => '0');
@@ -168,6 +169,7 @@ begin
 				state 						<= waiting;
 			
 			when others =>
+                state <= waiting;
 				--
 		end case;
 	end if;

@@ -136,12 +136,13 @@ begin
     port map (
         c0 => nios_clk,
         locked => open,
-        areset => not reset_n,
+        areset => '0',
         inclk0 => clk_125--,
     );
 
-    i_nios_rst_n : entity work.reset_sync
-    port map ( rstout_n => nios_rst_n, arst_n => reset_n, clk => clk_125 );
+--    i_nios_rst_n : entity work.reset_sync
+--    port map ( rstout_n => nios_rst_n, arst_n => reset_n, clk => clk_125 );
+    nios_rst_n <= '1';
 
     led(12) <= nios_pio(7);
 
@@ -289,7 +290,7 @@ begin
     -- QSFP
 
     QSFP_ModSel_n <= '1';
-    QSFP_Rst_n <= reset_n;
+    QSFP_Rst_n <= '1';
     QSFP_LPM <= '0';
 
     i_qsfp : entity work.xcvr_s4
@@ -411,10 +412,10 @@ begin
         reset                   => not reset_n,
         fpga_ID_in              => (5=>'1',others => '0'),
         FEB_type_in             => "111010",
-        state_idle              => '0',
+        state_idle              => '1',
         state_run_prepare       => '0',
         state_sync              => '0',
-        state_running           => '1',
+        state_running           => '0',
         state_terminating       => '0',
         state_link_test         => '0',
         state_sync_test         => '0',
@@ -425,7 +426,7 @@ begin
         data_in                 => data_from_fifo,
         data_in_slowcontrol     => sc_from_fifo,
         slowcontrol_fifo_empty  => sc_from_fifo_empty,
-        data_fifo_empty         => data_from_fifo_empty,
+        data_fifo_empty         => '1',--data_from_fifo_empty,
         slowcontrol_read_req    => sc_from_fifo_re,
         data_read_req           => data_from_fifo_re,
         terminated              => open,
