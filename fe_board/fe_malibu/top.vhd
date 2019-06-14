@@ -26,23 +26,23 @@ port (
 
     -- SI45
 
-    si45_oe_n       :   out std_logic; -- <= '0'
-    si45_rst_n      :   out std_logic; -- reset
-    si45_spi_out    :   in  std_logic; -- slave data out
-    si45_spi_in     :   out std_logic; -- slave data in
-    si45_spi_sclk   :   out std_logic; -- clock
-    si45_spi_cs_n   :   out std_logic; -- chip select
+    si45_oe_n       : out   std_logic; -- <= '0'
+    si45_rst_n      : out   std_logic; -- reset
+    si45_spi_out    : in    std_logic; -- slave data out
+    si45_spi_in     : out   std_logic; -- slave data in
+    si45_spi_sclk   : out   std_logic; -- clock
+    si45_spi_cs_n   : out   std_logic; -- chip select
 
     -- QSFP
 
     qsfp_pll_clk    : in    std_logic; -- 125 MHz for transceiver PLLs - QSFP
 
-    QSFP_ModSel_n   :   out     std_logic; -- module select (i2c)
-    QSFP_Rst_n      :   out     std_logic;
-    QSFP_LPM        :   out     std_logic; -- Low Power Mode
+    QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
+    QSFP_Rst_n      : out   std_logic;
+    QSFP_LPM        : out   std_logic; -- Low Power Mode
 
-    qsfp_tx : out   std_logic_vector(3 downto 0);
-    qsfp_rx : in    std_logic_vector(3 downto 0);
+    qsfp_tx         : out   std_logic_vector(3 downto 0);
+    qsfp_rx         : in    std_logic_vector(3 downto 0);
 
 
 
@@ -154,12 +154,12 @@ begin
         avm_qsfp_writedata      => avm_qsfp.writedata,
         avm_qsfp_waitrequest    => avm_qsfp.waitrequest,
 
-        avm_sc_address        => avm_sc.address(15 downto 0),
-        avm_sc_read           => avm_sc.read,
-        avm_sc_readdata       => avm_sc.readdata,
-        avm_sc_write          => avm_sc.write,
-        avm_sc_writedata      => avm_sc.writedata,
-        avm_sc_waitrequest    => avm_sc.waitrequest,
+        avm_sc_address          => avm_sc.address(15 downto 0),
+        avm_sc_read             => avm_sc.read,
+        avm_sc_readdata         => avm_sc.readdata,
+        avm_sc_write            => avm_sc.write,
+        avm_sc_writedata        => avm_sc.writedata,
+        avm_sc_waitrequest      => avm_sc.waitrequest,
 
         sc_clk_clk          => qsfp_rx_clk(0),
         sc_reset_reset_n    => '1',
