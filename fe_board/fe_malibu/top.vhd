@@ -267,6 +267,10 @@ begin
     QSFP_LPM <= '0';
 
     i_qsfp : entity work.xcvr_s4
+    generic map (
+        data_rate => 6250,
+        pll_freq => 125--,
+    )
     port map (
         -- avalon slave interface
         avs_address     => avm_qsfp.address(15 downto 2),
