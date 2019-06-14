@@ -45,13 +45,13 @@ public:
     int disable_daughter_12c(uint8_t dev_addr);
 
     int read_daughter_board_current(uint8_t dev_addr);
-    int read_mother_board_current(uint8_t dev_addr);
+    int read_mother_board_current();
 
     int read_daughter_board_voltage(uint8_t dev_addr);
-    int read_mother_board_voltage(uint8_t dev_addr);
+    int read_mother_board_voltage();
 
     int configure_daughter_current_monitor(uint8_t dev_addr, uint16_t config);
-    int configure_mother_current_monitor(uint8_t dev_addr, uint16_t config);
+    int configure_mother_current_monitor(uint16_t config);
 
 
 protected:

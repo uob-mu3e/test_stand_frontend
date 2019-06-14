@@ -13,10 +13,15 @@ int main()
         return -1;
     }
     cout << "Connected" << endl;
-    cb.init_12c();
-    uint8_t data;
-    cb.read_i2c(0x68, data);
-    cout << "Data " << (int)data << endl;
+    cb.init_clockboard();
+    uint16_t ic = cb.read_inverted_tx_channels();
+    cout << "Inverted Channels " << (int)ic << endl;
+
+    int current = cb.read_mother_board_current();
+    cout << "MB Current " << current << endl;
+
+    int voltage = cb.read_mother_board_current();
+    cout << "MB Voltage " << voltage << endl;
 
     return 1;
 

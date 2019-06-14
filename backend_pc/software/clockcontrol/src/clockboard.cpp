@@ -367,7 +367,7 @@ int clockboard::read_daughter_board_current(uint8_t dev_addr)
     return current;
 }
 
-int clockboard::read_mother_board_current(uint8_t dev_addr)
+int clockboard::read_mother_board_current()
 {
     uint8_t data[2];
     if(!read_i2c_reg(I2C_MOTHER_CURRENT_ADDR,I2C_SHUNT_VOLTAGE_REG_ADDR,2,data))
@@ -390,7 +390,7 @@ int clockboard::read_daughter_board_voltage(uint8_t dev_addr)
     return current;
 }
 
-int clockboard::read_mother_board_voltage(uint8_t dev_addr)
+int clockboard::read_mother_board_voltage()
 {
     uint8_t data[2];
     if(!read_i2c_reg(I2C_MOTHER_CURRENT_ADDR,I2C_BUS_VOLTAGE_REG_ADDR,2,data))
@@ -412,7 +412,7 @@ int clockboard::configure_daughter_current_monitor(uint8_t dev_addr, uint16_t co
     return 1;
 }
 
-int clockboard::configure_mother_current_monitor(uint8_t dev_addr, uint16_t config)
+int clockboard::configure_mother_current_monitor(uint16_t config)
 {
     uint8_t data[2];
     data[0]=(config>>8);
@@ -460,6 +460,8 @@ int clockboard::setSlave(uint8_t dev_addr, bool write_bit)
 
 
     uint32_t reg = checkTIP();
+
+    cout << "Reg " << reg << endl;
 
     if(reg & I2C_BIT_NOACK) return 0; // Wrong address, no ACK
 

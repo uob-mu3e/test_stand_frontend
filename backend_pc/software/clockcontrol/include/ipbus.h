@@ -10,7 +10,7 @@ using boost::system::error_code;
 
 class ipbus{
 public:
-    ipbus(const char * addr, int port);
+    ipbus(const char * addr, unsigned short port);
     ~ipbus();
     bool isConnected(){return connected;}
 
@@ -33,10 +33,10 @@ protected:
 
     int ReadFromSocket(vector<uint32_t> &rbuffer); // length of buffer determines read size
 
-    int Status();
+    int Status(unsigned int timeout=20000);
 
     const char * addr;
-    const int port;
+    const unsigned short port;
     bool connected;
     boost::asio::io_service ios;
     boost::asio::ip::udp::socket socket;
