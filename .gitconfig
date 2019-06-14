@@ -1,0 +1,5 @@
+[core]
+	hooksPath = .git-hooks
+[user]
+	labor.mail = labor@labor.com
+	labor.name = mu3e_labor

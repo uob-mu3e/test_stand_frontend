@@ -1,3 +1,53 @@
+
+# cmake
+build/
+install/
+CMakeLists.txt.*
+
+# quartus
+.qsys_edit/
+db/
+greybox_tmp/
+incremental_db/
+output_files/
+reconfig_mif/
+simulation/modelsim/
+*.qws
+*.bak
+*.rpt
+
+# megawizard
+*.bsf
+*.cmp
+*.ppf
+*.qip
+*.sip
+*.spd
+*.f
+
+# qsys
+*.qsys
+*.sopcinfo
+
+# nios
+**/software/app/
+**/software/hal_bsp/
+
+# eclipse
+.project
+.cproject
+.settings
+
+# DVT
+**/.dvt/*
+dvt_build.log
+
+# idea
+.idea/
+
+# log files
+*.log
+
 *~
 *.bak
 build
@@ -11,14 +61,15 @@ online/*.txt
 online/*.TXT
 online/*.log
 online/*.xml
+
+# midas (?)
+*.mid
+*.mid.lz4
+
+# other undocumented files
+online/*
 *.SHM
 .SHM_HOST.TXT
 .SHM_TYPE.TXT
-midas.log
-CMakeLists.txt.user
 include/mudaq_registers.h
-.idea/*
-CMakeLists.txt.user.Z25018
 cmake-build-debug/
-*.mid
-*.mid.lz4
