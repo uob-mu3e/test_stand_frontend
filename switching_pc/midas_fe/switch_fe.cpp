@@ -236,21 +236,22 @@ INT read_sc_event(char *pevent, INT off)
 
    mudaq::DmaMudaqDevice & mu = *mup;
 
-   if (mu.read_memory_rw(0) == 0) {
-      return CM_SUCCESS; // no new data
-   }
+//   if (mu.read_memory_rw(0) == 0) {
+//      return CM_SUCCESS; // no new data
+//   }
 
-   unsigned int sc_length = mu.read_memory_rw(0);
-   unsigned int sc_start_add = mu.read_memory_rw(1);
+//   unsigned int sc_length = mu.read_memory_rw(0);
+//   unsigned int sc_start_add = mu.read_memory_rw(1);
 
    int *pdata;
    bk_create(pevent, "WM", TID_INT, (void **)&pdata);
 
-   for (unsigned int i = sc_start_add; i < sc_start_add + sc_length; i++) {
-       *pdata++ = mu.read_memory_rw(i);
-   }
+ //  for (unsigned int i = sc_start_add; i < sc_start_add + sc_length; i++) {
+       *pdata++ = mu.read_memory_rw(0);
+  // }
 
-   mu.write_memory_rw(0, 0);
+
+   //mu.write_memory_rw(0, 0);
 
    bk_close(pevent, pdata);
 
@@ -359,7 +360,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
          uint32_t *data = DATA_ARRAY;
 
          mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
-
+         printf("feb_write called");
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
@@ -443,11 +444,15 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
             db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
 
-            uint32_t data_arr[] = {0};
+            uint32_t data_arr[2] = {0, 0x0000009c};
             data_arr[0] = (uint32_t) DATA;
+            std::cout << DATA << std::endl;
+            std::cout << START_ADD << std::endl;
+            std::cout << PCIE_MEM_START << std::endl;
+            std::cout << FPGA_ID << std::endl;
             uint32_t *data = data_arr;
 
-            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 2, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
 
             value = FALSE; // reset flag in ODB
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
@@ -460,10 +465,6 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         db_get_data(hDB, hKey, &value, &size, TID_BOOL);
         if (value) {
             cm_msg(MINFO, "sc_settings_changed", "Execute Read WM");
-
-            db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_START_ADD", TID_INT);
-            db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_LENGTH", TID_INT);
-            db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", TID_FLOAT);
 
             INT WM_START_ADD, SIZE_WM_START_ADD;
             INT WM_LENGTH, SIZE_WM_LENGTH;
@@ -484,14 +485,13 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_get_value(hDB, 0, STR_WM_START_ADD, &WM_START_ADD, &SIZE_WM_START_ADD, TID_INT, 0);
             db_get_value(hDB, 0, STR_WM_LENGTH, &WM_LENGTH, &SIZE_WM_LENGTH, TID_INT, 0);
 
-            uint32_t DATA_ARRAY[WM_LENGTH];
-
+            HNDLE key_WM_DATA;
+            db_find_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", &key_WM_DATA);
+            db_set_num_values(hDB, key_WM_DATA, WM_LENGTH);
             for (int i = 0; i < WM_LENGTH; i++) {
-                DATA_ARRAY[i] = mu.read_memory_rw((uint32_t) WM_START_ADD + i);
-                std::cout << std::hex << mu.read_memory_rw((uint32_t) WM_START_ADD + i) << std::endl;
+                WM_DATA = mu.read_memory_rw((uint32_t) WM_START_ADD + i);
+                db_set_value_index(hDB, 0, STR_WM_DATA, &WM_DATA, SIZE_WM_DATA, i, TID_INT, FALSE);
             }
-
-            db_set_value(hDB, 0, STR_WM_DATA, DATA_ARRAY, SIZE_WM_DATA, WM_LENGTH, TID_INT);
 
             value = FALSE; // reset flag in ODB
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
