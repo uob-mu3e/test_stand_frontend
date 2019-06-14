@@ -4,11 +4,21 @@ volatile alt_u32* sc_data = (alt_u32*)AVM_SC_BASE;
 void sc_callback() {
     alt_u32 n = sc_data[0];
     if(n == 0) return;
+    alt_u32 cmd = n >> 16; n &= 0xFFFF;
     volatile alt_u32* data = sc_data + sc_data[1];
     if(!(sc_data <= data && data + n < sc_data + AVM_SC_SPAN / 4)) return;
 
-    for(int i = 0; i < n; i++) {
-        printf("[0x%04X] = 0x%08X\n", i, data[i]);
+    switch(cmd) {
+    case 0x0101:
+        Malibu_Powerup();
+    case 0x0102:
+        Malibu_Powerdown
+    case 0x0103:
+        PowerUpASIC(0);
+    default:
+        for(int i = 0; i < n; i++) {
+            printf("[0x%04X] = 0x%08X\n", i, data[i]);
+        }
     }
 
     sc_data[0] = 0;
