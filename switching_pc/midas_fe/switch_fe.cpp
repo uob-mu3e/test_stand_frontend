@@ -461,10 +461,6 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         if (value) {
             cm_msg(MINFO, "sc_settings_changed", "Execute Read WM");
 
-            db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_START_ADD", TID_INT);
-            db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_LENGTH", TID_INT);
-            db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", TID_FLOAT);
-
             INT WM_START_ADD, SIZE_WM_START_ADD;
             INT WM_LENGTH, SIZE_WM_LENGTH;
             INT WM_DATA, SIZE_WM_DATA;
@@ -484,14 +480,13 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_get_value(hDB, 0, STR_WM_START_ADD, &WM_START_ADD, &SIZE_WM_START_ADD, TID_INT, 0);
             db_get_value(hDB, 0, STR_WM_LENGTH, &WM_LENGTH, &SIZE_WM_LENGTH, TID_INT, 0);
 
-            uint32_t DATA_ARRAY[WM_LENGTH];
-
+            HNDLE key_WM_DATA;
+            db_find_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", &key_WM_DATA);
+            db_set_num_values(hDB, key_WM_DATA, WM_LENGTH);
             for (int i = 0; i < WM_LENGTH; i++) {
-                DATA_ARRAY[i] = mu.read_memory_rw((uint32_t) WM_START_ADD + i);
-                std::cout << std::hex << mu.read_memory_rw((uint32_t) WM_START_ADD + i) << std::endl;
+                WM_DATA = mu.read_memory_rw((uint32_t) WM_START_ADD + i);
+                db_set_value_index(hDB, 0, STR_WM_DATA, &WM_DATA, SIZE_WM_DATA, i, TID_INT, FALSE);
             }
-
-            db_set_value(hDB, 0, STR_WM_DATA, DATA_ARRAY, SIZE_WM_DATA, WM_LENGTH, TID_INT);
 
             value = FALSE; // reset flag in ODB
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
