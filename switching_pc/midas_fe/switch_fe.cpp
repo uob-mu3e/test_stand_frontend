@@ -236,21 +236,21 @@ INT read_sc_event(char *pevent, INT off)
 
    mudaq::DmaMudaqDevice & mu = *mup;
 
-   if (mu.read_memory_rw(0) == 0) {
-      return CM_SUCCESS; // no new data
-   }
+//   if (mu.read_memory_rw(0) == 0) {
+//      return CM_SUCCESS; // no new data
+//   }
 
-   unsigned int sc_length = mu.read_memory_rw(0);
-   unsigned int sc_start_add = mu.read_memory_rw(1);
+//   unsigned int sc_length = mu.read_memory_rw(0);
+//   unsigned int sc_start_add = mu.read_memory_rw(1);
 
    int *pdata;
    bk_create(pevent, "WM", TID_INT, (void **)&pdata);
 
-   for (unsigned int i = sc_start_add; i < sc_start_add + sc_length; i++) {
-       *pdata++ = mu.read_memory_rw(i);
-   }
+   //for (unsigned int i = sc_start_add; i < sc_start_add + sc_length; i++) {
+       *pdata++ = mu.read_memory_rw(0);
+   //}
 
-   mu.write_memory_rw(0, 0);
+   //mu.write_memory_rw(0, 0);
 
    bk_close(pevent, pdata);
 
@@ -359,7 +359,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
          uint32_t *data = DATA_ARRAY;
 
          mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
-
+         printf("feb_write called");
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
@@ -443,11 +443,11 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
             db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
 
-            uint32_t data_arr[] = {0};
+            uint32_t data_arr[2] = {0,0x9C};
             data_arr[0] = (uint32_t) DATA;
             uint32_t *data = data_arr;
 
-            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 2, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
 
             value = FALSE; // reset flag in ODB
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
