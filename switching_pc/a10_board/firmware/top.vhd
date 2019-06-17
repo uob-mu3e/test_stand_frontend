@@ -510,7 +510,7 @@ master : sc_master
 	)
 	port map(
 		clk					=> tx_clk(0),
-		reset_n				=> push_button0_db,
+		reset_n				=> resets_n(RESET_BIT_SC_MASTER),
 		enable				=> '1',
 		mem_data_in			=> writememreaddata,
 		mem_addr				=> writememreadaddr,
@@ -523,10 +523,10 @@ master : sc_master
 slave : sc_slave
 	port map(
 		clk					=> tx_clk(0),--rx_clkout_ch0_clk,
-		reset_n				=> push_button0_db,
+		reset_n				=> resets_n(RESET_BIT_SC_SLAVE),
 		enable				=> '1',
-		link_data_in		=> sc_data(0),--sc_ch0,--data_ch0,
-		link_data_in_k		=> sc_datak(0),--sck_ch0,--datak_ch0,
+		link_data_in		=> mem_data_out(31 downto 0),--sc_ch0,--data_ch0,
+		link_data_in_k		=> mem_datak_out(3 downto 0),--sck_ch0,--datak_ch0,
 		mem_addr_out		=> readmem_writeaddr(15 downto 0),
 		mem_data_out		=> readmem_writedata,
 		mem_wren				=> readmem_wren,

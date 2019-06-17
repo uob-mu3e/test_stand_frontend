@@ -393,6 +393,7 @@ void MudaqDevice::FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
     for (int i = 0; i < length; i++) {
         write_memory_rw(FEB_MEM_START + 4 + i, data[i]);
     }
+    write_memory_rw(FEB_MEM_START + 4 + length, 0x0000009c);
     write_memory_rw(FEB_MEM_START, 0xBAD << 20);
 
 }
@@ -406,7 +407,7 @@ int MudaqDevice::FEB_read(uint32_t FPGA_ID, uint16_t length, uint32_t startaddr,
     write_memory_rw(1 + FEB_MEM_START, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_READ << 24 | (uint16_t) FPGA_ID << 8 | 0xBC);
     write_memory_rw(2 + FEB_MEM_START, startaddr);
     write_memory_rw(3 + FEB_MEM_START, length);
-    write_memory_rw(FEB_MEM_START + 4, 0x0);
+    write_memory_rw(FEB_MEM_START + 4, 0x0000009c);
     write_memory_rw(FEB_MEM_START, 0xBAD << 20);
 
 //    // TODO: the memory where the addr for the answer of the fpga is written to

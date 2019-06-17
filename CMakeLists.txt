@@ -66,6 +66,7 @@ set(MIDASLIB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/linux/lib)
 set(MIDASLIB ${MIDASLIB_DIR}/libmidas.a)
 set(MIDASINCLUDE_DIR ${PROJECT_SOURCE_DIR}/modules/midas/include)
 set(LIBMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/libmudaq)
+set(INCMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/include)
 set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mxml)
 set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mscb)
 

@@ -50,6 +50,7 @@ begin
 		mem_addr_o <= (others => '0');
 		stateout <= (others => '0');
 		mem_wren_o <= '0';
+		state <= waiting;
 
 	elsif(rising_edge(clk))then
 		stateout <= (others => '0');
@@ -71,7 +72,6 @@ begin
 						and link_data_in(31 downto 26) = "000111") then
 							stateout(3 downto 0) <= x"1";
 							mem_data_o <= link_data_in;
-							mem_addr_o <= mem_addr_o + '1';
 							mem_wren_o <= '1';
 							state <= starting;
 				 	end if;
@@ -89,6 +89,7 @@ begin
 					stateout(3 downto 0) <= x"E";
 					mem_data_o <= (others => '0');
 					mem_wren_o <= '0';
+					state <= waiting;
 		end case;
 
 		end if;
