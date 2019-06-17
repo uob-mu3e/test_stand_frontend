@@ -4,6 +4,7 @@
 
 #include "malibu.h"
 #include "sc.h"
+#include "mscb_user.h"
 
 alt_u32 alarm_callback(void*) {
     IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0xFF);
@@ -29,6 +30,7 @@ int main() {
         printf("  [1] => xcvr qsfp\n");
         printf("  [2] => malibu\n");
         printf("  [3] => sc\n");
+        printf("  [4] => mscb (exit by reset only)");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -41,6 +43,9 @@ int main() {
             break;
         case '3':
             menu_sc();
+            break;
+        case '4':
+            mscb_main();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);
