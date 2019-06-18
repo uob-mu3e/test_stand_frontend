@@ -145,8 +145,8 @@ void user_init(unsigned char init)
       sys_info.group_addr = 1600;
 
    sys_info.group_addr = 0xF000;
-   sys_info.node_addr  = 0xF000;
-   strcpy(sys_info.node_name, "FPGA00");
+   sys_info.node_addr  = 0xACA0;
+   strcpy(sys_info.node_name, "Frontend00");
 
    user_data.fpga_setting[0] = 0x00;
 
