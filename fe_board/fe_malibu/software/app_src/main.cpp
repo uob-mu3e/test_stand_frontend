@@ -29,6 +29,7 @@ int main() {
         printf("  [1] => xcvr qsfp\n");
         printf("  [2] => malibu\n");
         printf("  [3] => sc\n");
+        printf("  [4] => xcvr pod\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -41,6 +42,9 @@ int main() {
             break;
         case '3':
             menu_sc();
+            break;
+        case '4':
+            menu_xcvr((alt_u32*)(AVM_POD_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         default:
             printf("invalid command: '%c'\n", cmd);
