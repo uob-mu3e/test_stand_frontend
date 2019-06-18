@@ -73,6 +73,10 @@ architecture arch of top is
     signal spi_ss_n : std_logic_vector(1 downto 0);
 
     signal malibu_clk : std_logic;
+    signal malibu_rx_data_clk : std_logic;
+    signal malibu_rx_data : std_logic_vector(15 downto 0);
+    signal malibu_rx_datak : std_logic_vector(1 downto 0);
+    signal malibu_word : std_logic_vector(47 downto 0);
 
     signal avm_qsfp : work.mu3e.avalon_t;
 
@@ -246,14 +250,34 @@ begin
         N => 2--,
     )
     port map (
-        data_clk    => open,
-        data        => open,
-        datak       => open,
+        data_clk    => malibu_rx_data_clk,
+        data        => malibu_rx_data,
+        datak       => malibu_rx_datak,
 
         rx_data => malibu_data(1 downto 0),
         rx_clk  => malibu_clk,
 
         reset   => not reset_n--,
+    );
+
+    i_frame_rcv : entity work.frame_rcv
+    port map (
+        i_rst => not reset_n,
+        i_clk => malibu_rx_data_clk,
+        i_data => malibu_rx_data(7 downto 0),
+        i_byteisk => malibu_rx_datak(0),
+        i_dser_no_sync => '0',
+
+        o_frame_number => open,
+        o_frame_info => open,
+        o_frame_info_ready => open,
+        o_new_frame => open,
+        o_word => malibu_word,
+        o_new_word => open,
+
+        o_end_of_frame => open,
+        o_crc_error => open,
+        o_crc_err_count => open--,
     );
 
     i_mutrig_datapath : entity work.mutrig_datapath

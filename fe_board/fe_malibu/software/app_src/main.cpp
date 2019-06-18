@@ -5,6 +5,8 @@
 #include "malibu.h"
 #include "sc.h"
 
+#include "si5345.h"
+
 alt_u32 alarm_callback(void*) {
     IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0xFF);
     // watchdog
@@ -29,6 +31,7 @@ int main() {
         printf("  [1] => xcvr qsfp\n");
         printf("  [2] => malibu\n");
         printf("  [3] => sc\n");
+        printf("  [0] => si5345\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -41,6 +44,9 @@ int main() {
             break;
         case '3':
             menu_sc();
+            break;
+        case '0':
+            menu_si5345();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);
