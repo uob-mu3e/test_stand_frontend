@@ -125,8 +125,8 @@ begin
     port map ( clkout => led(15), rst_n => reset_n, clk => clk_aux );
 
     -- 125 MHz
-    i_si45_hz : entity work.clkdiv
-    generic map ( P => 125000000 )
+    i_qsfp_hz : entity work.clkdiv
+    generic map ( P => 156250000 )
     port map ( clkout => led(14), rst_n => reset_n, clk => qsfp_pll_clk );
 
     clk_125 <= clk_aux;

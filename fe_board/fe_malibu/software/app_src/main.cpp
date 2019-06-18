@@ -5,6 +5,9 @@
 #include "malibu.h"
 #include "sc.h"
 
+#include "menu_si5345.h"
+si5345_t si5345 { 0 };
+
 alt_u32 alarm_callback(void*) {
     IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0xFF);
     // watchdog
@@ -24,12 +27,15 @@ int main() {
         printf("ERROR: alt_alarm_start => %d\n%d\n", err);
     }
 
+    si5345.init(si5345_revb_registers, sizeof(si5345_revb_registers) / sizeof(si5345_revb_registers[0]));
+
     while (1) {
         printf("'%s' FE_S4 (MALIBU)\n", ALT_DEVICE_FAMILY);
         printf("  [1] => xcvr qsfp\n");
         printf("  [2] => malibu\n");
         printf("  [3] => sc\n");
         printf("  [4] => xcvr pod\n");
+        printf("  [5] => si5345\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -45,6 +51,9 @@ int main() {
             break;
         case '4':
             menu_xcvr((alt_u32*)(AVM_POD_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+            break;
+        case '5':
+            si5345.menu();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);
