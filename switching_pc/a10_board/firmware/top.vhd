@@ -300,7 +300,7 @@ nios2 : nios
 port map (
 	clk_clk                    			=> input_clk,
 	
-	rst_reset_n                			=> '1',--cpu_reset_n_q,
+	rst_reset_n                			=> cpu_reset_n_q,
 
    avm_qsfp_address       					=> avm_qsfp.address(15 downto 0),
 	avm_qsfp_read          					=> avm_qsfp.read,
@@ -358,6 +358,11 @@ port map (
 		rst_n 	=> CPU_RESET_n,
 		clk 		=> clk--input_clk--,
 );
+
+LED(0) <= cpu_pio_i(7);
+LED(1) <= cpu_reset_n_q;
+LED(2) <= flash_rst_n;
+LED(3) <= '1';
 
 FLASH_A <= flash_tcm_address_out(27 downto 2);
 
