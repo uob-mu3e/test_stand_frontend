@@ -44,6 +44,17 @@ port (
     qsfp_tx         : out   std_logic_vector(3 downto 0);
     qsfp_rx         : in    std_logic_vector(3 downto 0);
 
+    -- POD
+
+--    pod_pll_clk     : in    std_logic;
+--
+--    pod_tx_reset    : out   std_logic;
+--    pod_rx_reset    : out   std_logic;
+--
+--    pod_tx          : out   std_logic_vector(3 downto 0);
+--    pod_rx          : in    std_logic_vector(3 downto 0);
+
+    -- mscb
 	 mscb_data_in	  : in 	 std_logic;
 	 mscb_data_out   : out 	 std_logic;
 	 mscb_oe			  : out 	 std_logic;
@@ -76,7 +87,7 @@ architecture arch of top is
 
     signal malibu_clk : std_logic;
 
-    signal avm_qsfp : work.mu3e.avalon_t;
+    signal avm_pod, avm_qsfp : work.mu3e.avalon_t;
 
     signal qsfp_tx_clk : std_logic_vector(3 downto 0);
     signal qsfp_tx_data : std_logic_vector(127 downto 0);
@@ -160,6 +171,13 @@ begin
         avm_qsfp_write          => avm_qsfp.write,
         avm_qsfp_writedata      => avm_qsfp.writedata,
         avm_qsfp_waitrequest    => avm_qsfp.waitrequest,
+
+        avm_pod_address         => avm_pod.address(15 downto 0),
+        avm_pod_read            => avm_pod.read,
+        avm_pod_readdata        => avm_pod.readdata,
+        avm_pod_write           => avm_pod.write,
+        avm_pod_writedata       => avm_pod.writedata,
+        avm_pod_waitrequest     => avm_pod.waitrequest,
 
         avm_sc_address          => avm_sc.address(15 downto 0),
         avm_sc_read             => avm_sc.read,
@@ -491,6 +509,55 @@ begin
         rdempty => sc_from_fifo_empty,
         wrfull  => open--,
     );
+
+    ----------------------------------------------------------------------------
+
+    ----------------------------------------------------------------------------
+    -- POD
+
+--    pod_tx_reset <= '0';
+--    pod_tx_reset <= '0';
+--
+--    i_pod : entity work.xcvr_s4
+--    generic map (
+--        data_rate => 5000,
+--        pll_freq => 125--,
+--    )
+--    port map (
+--        -- avalon slave interface
+--        avs_address     => avm_pod.address(15 downto 2),
+--        avs_read        => avm_pod.read,
+--        avs_readdata    => avm_pod.readdata,
+--        avs_write       => avm_pod.write,
+--        avs_writedata   => avm_pod.writedata,
+--        avs_waitrequest => avm_pod.waitrequest,
+--
+--        tx_data     => X"02CAFE" & work.util.D28_5
+--                     & X"02BABE" & work.util.D28_5
+--                     & X"01DEAD" & work.util.D28_5
+--                     & X"00BEEF" & work.util.D28_5,
+--        tx_datak    => "0001"
+--                     & "0001"
+--                     & "0001"
+--                     & "0001",
+--
+--        rx_data => open,
+--        rx_datak => open,
+--
+--        tx_clkout   => open,
+--        tx_clkin    => (others => pod_pll_clk),
+--        rx_clkout   => open,
+--        rx_clkin    => (others => pod_pll_clk),
+--
+--        tx_p        => pod_tx,
+--        rx_p        => pod_rx,
+--
+--        pll_refclk  => pod_pll_clk,
+--        cdr_refclk  => pod_pll_clk,
+--
+--        reset   => not nios_rst_n,
+--        clk     => nios_clk--,
+--    );
 
     ----------------------------------------------------------------------------
 

@@ -23,6 +23,20 @@ if 1 {
 }
 
 if 1 {
+    set name avm_pod
+    add_instance ${name} avalon_proxy
+    set_instance_parameter_value ${name} {addr_width} {16}
+
+    add_connection clk.clk ${name}.clk
+    add_connection clk.clk_reset ${name}.reset
+    add_connection cpu.data_master ${name}.slave
+    set_connection_parameter_value cpu.data_master/${name}.slave baseAddress {0x70020000}
+
+    add_interface ${name} avalon master
+    set_interface_property ${name} EXPORT_OF ${name}.master
+}
+
+if 1 {
     set name avm_sc
     add_instance ${name} avalon_proxy
     set_instance_parameter_value ${name} {addr_width} {16}
