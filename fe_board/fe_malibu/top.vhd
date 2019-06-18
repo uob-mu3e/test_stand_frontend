@@ -49,10 +49,12 @@ port (
 --    pod_pll_clk     : in    std_logic;
 --
 --    pod_tx_reset    : out   std_logic;
---    pod_rx_reset    : out   std_logic;
+    pod_rx_reset    : out   std_logic;
 --
 --    pod_tx          : out   std_logic_vector(3 downto 0);
 --    pod_rx          : in    std_logic_vector(3 downto 0);
+
+	 pod_rx			  : in std_logic;
 
     -- mscb
 	 mscb_data_in	  : in 	 std_logic;
@@ -60,6 +62,7 @@ port (
 	 mscb_oe			  : out 	 std_logic;
 
     led_n       : out   std_logic_vector(15 downto 0);
+	 PushButton	 : in 	std_logic_vector(1 downto 0);
 
     reset_n     : in    std_logic;
     -- 125 MHz
@@ -119,10 +122,18 @@ architecture arch of top is
 	 signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
 	 signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
 	 signal mscb_counter_in : unsigned(15 downto 0);
+	 
+	 signal clk_reset_recovered :	std_logic;
+	 signal reset_link8b : std_logic_vector(7 downto 0);
+	 signal reconfig_fromgxb_pod : STD_LOGIC_VECTOR (16 DOWNTO 0);
+	 signal reconfig_togxb_pod : STD_LOGIC_VECTOR (3 DOWNTO 0);
 
 begin
 
     led_n <= not led;
+	 led(8) <= PushButton(0);
+	 led(9) <= PushButton(1);
+	 nios_rst_n <= (not PushButton(0)) and PushButton(1);
 
     -- 125 MHz
     i_aux_hz : entity work.clkdiv
@@ -159,7 +170,7 @@ begin
 
 --    i_nios_rst_n : entity work.reset_sync
 --    port map ( rstout_n => nios_rst_n, arst_n => reset_n, clk => clk_125 );
-    nios_rst_n <= '1';
+    --nios_rst_n <= '1';
 
     led(12) <= nios_pio(7);
 
@@ -515,7 +526,7 @@ begin
     ----------------------------------------------------------------------------
     -- POD
 
---    pod_tx_reset <= '0';
+    pod_rx_reset <= '0';
 --    pod_tx_reset <= '0';
 --
 --    i_pod : entity work.xcvr_s4
@@ -559,6 +570,34 @@ begin
 --        clk     => nios_clk--,
 --    );
 
-    ----------------------------------------------------------------------------
-
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+--pod 8b
+i_pod: entity work.ip_altgx8b
+	port map
+	(
+		cal_blk_clk				=> clk_aux,
+		reconfig_clk			=> clk_aux,
+		reconfig_togxb			=> reconfig_togxb_pod,
+		rx_analogreset(0)		=> not nios_rst_n,
+		rx_cruclk(0)			=> clk_aux,
+		rx_datain(0)			=> pod_rx,
+		rx_digitalreset(0)	=> not nios_rst_n,
+		reconfig_fromgxb		=> reconfig_fromgxb_pod,
+		rx_clkout(0)			=> clk_reset_recovered,
+		rx_ctrldetect			=> open,
+		rx_dataout				=> reset_link8b,
+		rx_syncstatus			=> open
+	);
+	
+i_altgx_reconfig8b: entity work.ip_altgx_reconfig8b
+	port map
+	(
+		reconfig_clk			=> clk_aux,
+		reconfig_fromgxb		=> reconfig_fromgxb_pod,
+		busy						=> open,
+		reconfig_togxb			=> reconfig_togxb_pod
+	);
+	
+led(7 downto 0) <= reset_link8b(7 downto 0);
 end architecture;

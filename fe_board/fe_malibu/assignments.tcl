@@ -43,28 +43,31 @@ set_location_assignment PIN_AH33 -to qsfp_rx[0]
 set_instance_assignment -name IO_STANDARD LVDS -to qsfp_pll_clk
 set_location_assignment PIN_AB33 -to qsfp_pll_clk
 
-set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to pod_tx[3]
-set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to pod_tx[2]
-set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to pod_tx[1]
-set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to pod_tx[0]
-set_location_assignment PIN_U4 -to pod_tx[3]
-set_location_assignment PIN_W4 -to pod_tx[2]
-set_location_assignment PIN_AE4 -to pod_tx[1]
-set_location_assignment PIN_AG4 -to pod_tx[0]
-set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to transceiver_pod_in[3]
-set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to transceiver_pod_in[2]
-set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to transceiver_pod_in[1]
-set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to transceiver_pod_in[0]
-set_location_assignment PIN_V2 -to transceiver_pod_in[3]
-set_location_assignment PIN_Y2 -to transceiver_pod_in[2]
-set_location_assignment PIN_AF2 -to transceiver_pod_in[1]
-set_location_assignment PIN_AH2 -to transceiver_pod_in[0]
+#set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to pod_tx[3]
+#set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to pod_tx[2]
+#set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to pod_tx[1]
+#set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to pod_tx[0]
+#set_location_assignment PIN_U4 -to pod_tx[3]
+#set_location_assignment PIN_W4 -to pod_tx[2]
+#set_location_assignment PIN_AE4 -to pod_tx[1]
+#set_location_assignment PIN_AG4 -to pod_tx[0]
+#set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to transceiver_pod_in[3]
+#set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to transceiver_pod_in[2]
+#set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to transceiver_pod_in[1]
+#set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to transceiver_pod_in[0]
+#set_location_assignment PIN_V2 -to transceiver_pod_in[3]
+#set_location_assignment PIN_Y2 -to transceiver_pod_in[2]
+#set_location_assignment PIN_AF2 -to transceiver_pod_in[1]
+#set_location_assignment PIN_AH2 -to transceiver_pod_in[0]
+
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to pod_rx
+set_location_assignment PIN_AH2 -to pod_rx
 
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to pod_tx_reset
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to pod_rx_reset
 set_location_assignment PIN_AE18 -to pod_tx_reset
 set_location_assignment PIN_AP18 -to pod_rx_reset
-set_instance_assignment -name IO_STANDARD LVDS -to pod_pll_clk
-set_location_assignment PIN_K2 -to pod_pll_clk
+#set_instance_assignment -name IO_STANDARD LVDS -to pod_pll_clk
+#set_location_assignment PIN_K2 -to pod_pll_clk
 #set_instance_assignment -name IO_STANDARD LVDS -to pod_pll_clk
 #set_location_assignment PIN_K33 -to pod_pll_clk
