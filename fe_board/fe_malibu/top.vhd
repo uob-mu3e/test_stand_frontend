@@ -46,15 +46,15 @@ port (
 
     -- POD
 
---    pod_pll_clk     : in    std_logic;
+    pod_pll_clk     : in    std_logic;
 --
 --    pod_tx_reset    : out   std_logic;
     pod_rx_reset    : out   std_logic;
 --
---    pod_tx          : out   std_logic_vector(3 downto 0);
---    pod_rx          : in    std_logic_vector(3 downto 0);
+    pod_tx          : out   std_logic_vector(3 downto 0);
+    pod_rx          : in    std_logic_vector(3 downto 0);
 
-	 pod_rx			  : in std_logic;
+--	 pod_rx			  : in std_logic;
 
     -- mscb
 	 mscb_data_in	  : in 	 std_logic;
@@ -128,12 +128,15 @@ architecture arch of top is
 	 signal reconfig_fromgxb_pod : STD_LOGIC_VECTOR (16 DOWNTO 0);
 	 signal reconfig_togxb_pod : STD_LOGIC_VECTOR (3 DOWNTO 0);
 
+	 signal pod_rx_data : std_logic_vector(127 downto 0);
+	 
+	 
 begin
 
     led_n <= not led;
 	 led(8) <= PushButton(0);
 	 led(9) <= PushButton(1);
-	 nios_rst_n <= (not PushButton(0)) and PushButton(1);
+	 nios_rst_n <= PushButton(0);
 
     -- 125 MHz
     i_aux_hz : entity work.clkdiv
@@ -527,77 +530,78 @@ begin
     -- POD
 
     pod_rx_reset <= '0';
---    pod_tx_reset <= '0';
---
---    i_pod : entity work.xcvr_s4
---    generic map (
---        data_rate => 5000,
---        pll_freq => 125--,
---    )
---    port map (
---        -- avalon slave interface
---        avs_address     => avm_pod.address(15 downto 2),
---        avs_read        => avm_pod.read,
---        avs_readdata    => avm_pod.readdata,
---        avs_write       => avm_pod.write,
---        avs_writedata   => avm_pod.writedata,
---        avs_waitrequest => avm_pod.waitrequest,
---
---        tx_data     => X"02CAFE" & work.util.D28_5
---                     & X"02BABE" & work.util.D28_5
---                     & X"01DEAD" & work.util.D28_5
---                     & X"00BEEF" & work.util.D28_5,
---        tx_datak    => "0001"
---                     & "0001"
---                     & "0001"
---                     & "0001",
---
---        rx_data => open,
---        rx_datak => open,
---
---        tx_clkout   => open,
---        tx_clkin    => (others => pod_pll_clk),
---        rx_clkout   => open,
---        rx_clkin    => (others => pod_pll_clk),
---
---        tx_p        => pod_tx,
---        rx_p        => pod_rx,
---
---        pll_refclk  => pod_pll_clk,
---        cdr_refclk  => pod_pll_clk,
---
---        reset   => not nios_rst_n,
---        clk     => nios_clk--,
---    );
+    --pod_tx_reset <= '0';
+
+    i_pod : entity work.xcvr_s4
+    generic map (
+        data_rate => 1250,
+        pll_freq  => 125,
+		  Nch			=> 4
+    )
+    port map (
+        -- avalon slave interface
+        avs_address     => avm_pod.address(15 downto 2),
+        avs_read        => avm_pod.read,
+        avs_readdata    => avm_pod.readdata,
+        avs_write       => avm_pod.write,
+        avs_writedata   => avm_pod.writedata,
+        avs_waitrequest => avm_pod.waitrequest,
+
+        tx_data     => X"02CAFE" & work.util.D28_5 
+							  & X"02CAFE" & work.util.D28_5
+							  & X"02CAFE" & work.util.D28_5
+							  & X"02CAFE" & work.util.D28_5,
+        tx_datak    => "0001"
+							 &"0001"
+							 &"0001"
+							 &"0001",
+        rx_data => pod_rx_data,
+        rx_datak => open,
+
+        tx_clkout   => open,
+        tx_clkin    => (others => pod_pll_clk),
+        rx_clkout   => open,
+        rx_clkin    => (others => pod_pll_clk),
+
+        tx_p     => pod_tx,
+        rx_p     => pod_rx,
+
+        pll_refclk  => pod_pll_clk,
+        cdr_refclk  => pod_pll_clk,
+
+        reset   => not nios_rst_n,
+        clk     => nios_clk--,
+    );
 
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 --pod 8b
-i_pod: entity work.ip_altgx8b
-	port map
-	(
-		cal_blk_clk				=> clk_aux,
-		reconfig_clk			=> clk_aux,
-		reconfig_togxb			=> reconfig_togxb_pod,
-		rx_analogreset(0)		=> not nios_rst_n,
-		rx_cruclk(0)			=> clk_aux,
-		rx_datain(0)			=> pod_rx,
-		rx_digitalreset(0)	=> not nios_rst_n,
-		reconfig_fromgxb		=> reconfig_fromgxb_pod,
-		rx_clkout(0)			=> clk_reset_recovered,
-		rx_ctrldetect			=> open,
-		rx_dataout				=> reset_link8b,
-		rx_syncstatus			=> open
-	);
-	
-i_altgx_reconfig8b: entity work.ip_altgx_reconfig8b
-	port map
-	(
-		reconfig_clk			=> clk_aux,
-		reconfig_fromgxb		=> reconfig_fromgxb_pod,
-		busy						=> open,
-		reconfig_togxb			=> reconfig_togxb_pod
-	);
-	
-led(7 downto 0) <= reset_link8b(7 downto 0);
+--i_pod: entity work.ip_altgx8b
+--	port map
+--	(
+--		cal_blk_clk				=> pod_pll_clk,--clk_aux,
+--		reconfig_clk			=> nios_clk,
+--		reconfig_togxb			=> reconfig_togxb_pod,
+--		rx_analogreset(0)		=> '0',--not nios_rst_n,
+--		rx_cruclk(0)			=> pod_pll_clk,--clk_aux,
+--		rx_datain(0)			=> pod_rx,
+--		rx_digitalreset(0)	=> '0',--not nios_rst_n,
+--		reconfig_fromgxb		=> reconfig_fromgxb_pod,
+--		rx_clkout(0)			=> clk_reset_recovered,
+--		rx_ctrldetect(0)		=> led(11),
+--		rx_dataout				=> reset_link8b,
+--		rx_syncstatus(0)		=> led(10)
+--	);
+--	
+--i_altgx_reconfig8b: entity work.ip_altgx_reconfig8b
+--	port map
+--	(
+--		reconfig_clk			=> nios_clk,
+--		reconfig_fromgxb		=> reconfig_fromgxb_pod,
+--		busy						=> led(13),
+--		reconfig_togxb			=> reconfig_togxb_pod
+--	);
+--	
+--led(7 downto 0) <= reset_link8b(7 downto 0);
+led(7 downto 0) <= pod_rx_data(7 downto 0);
 end architecture;

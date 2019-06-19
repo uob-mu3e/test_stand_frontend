@@ -62,6 +62,7 @@
 /* local variables */
 int addressed = 0;
 int addr_mode = 0;
+int quit = 0;
 
 unsigned char g_n_sub_addr;
 int g_cur_sub_addr = 0;
@@ -125,6 +126,7 @@ void user_vars(unsigned char *n_sub_addr, unsigned char *var_size)
 }
 
 
+
 /*---- User init function ------------------------------------------*/
 
 extern SYS_INFO sys_info;
@@ -146,7 +148,7 @@ void user_init(unsigned char init)
 
    sys_info.group_addr = 0xF000;
    sys_info.node_addr  = 0xACA0;
-   strcpy(sys_info.node_name, "Frontend00");
+   strcpy(sys_info.node_name, "StratixIVFrontend00");
 
    user_data.fpga_setting[0] = 0x00;
 
@@ -174,12 +176,12 @@ void set_fpga()
 	return;
 }
 
-void read_fpga_status()
-{
-	user_data.fpga_status[0] = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_STATUS_BASE);
-	user_data.fpga_status2[0] = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_STATUS2_BASE);
-	return;
-}
+//void read_fpga_status()
+//{
+//	user_data.fpga_status[0] = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_STATUS_BASE);
+//	user_data.fpga_status2[0] = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_STATUS2_BASE);
+//	return;
+//}
 
 /*---- User write function -----------------------------------------*/
 
@@ -192,11 +194,11 @@ void user_write(unsigned char index)
 
 /*---- User loop function ------------------------------------------*/
 
-void user_loop(void)
-{
-	read_fpga_status();
+//void user_loop(void)
+//{
+//	read_fpga_status();
 	//set_fpga();
-}
+//}
 
 
 
@@ -418,6 +420,7 @@ void mscb_init()
 int mscb_loop(void)
 {
    unsigned int reg;
+   quit=0;
 
    // read UART only if we are in the crate -> slot_id != 0xFF
    //reg_bank_read(SYSTEM->wd2_reg_bank_ptr, REG_BANK_CTRL_REG, 4, &reg, 1);
@@ -560,9 +563,16 @@ void mscb_uart_handler(void)
 
       //led_blink(2);
       n = mscb_interprete(0, in_buf, out_buf);
+	
+      for(int i_printf=0; i_printf < i_in;i_printf++){
+	printf("0x%0x\t",in_buf[i_printf]);	
+      }
+	printf("\n");
 
-      if (n > 0) send_data(out_buf, n);
-
+      if (n > 0){
+	 printf("sending reply\n");
+	 send_data(out_buf, n);
+      }
       i_in = 0;
    }
 
@@ -572,6 +582,8 @@ void mscb_uart_handler(void)
    //if (i_in > 0 && time_diff(last_received,now) > 0.1) {
    //   i_in = 0;printf("resseting buffer\n");
    //}
+
+   
 }
 
 /*------------------------------------------------------------------*/
@@ -627,9 +639,9 @@ int mscb_main()
       //if(ch=='y')
       //{
     	  ch = mscb_loop();
-    	  user_loop();
+    	  //user_loop();
       //}
-	  if(ch=='q')
+	  if(ch=='q' or quit == 1)
 	  {
 	    printf("\n exiting \n");
 		printf("%c",EOT);
@@ -716,6 +728,7 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
 
     case MCMD_INIT:
       //printf("\r\nRebooting...\r\n");
+      quit=1;
       mscb_main();
       break;
 
@@ -852,7 +865,7 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
        */
 
        /* read back flash and send CRC */
-       memset(buf, 0, size);
+       ////memset(buf, 0, size);
        //spi_flash_read(SYSTEM->spi_flash_ptr, (unsigned char*)buf, adr, size); /////////// Temp comment out, FW
 
        /*
@@ -864,6 +877,9 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
        }
        printf("CRC = %02X\r\n", crc8(buf, size));
        */
+	    for(int i = 0; i < 32; i++) {
+		sc_data[i] = i*2;
+	    }
 
        rb[0] = MCMD_ACK;
        rb[1] = crc8(buf, size);
