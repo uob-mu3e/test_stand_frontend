@@ -60,7 +60,7 @@ int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
 
     StartPacket();
 
-    int nwords = data.size();
+    auto nwords = data.size();
     int ntransactions = 0;
     while(nwords > 0){
         uint32_t header = 0;
