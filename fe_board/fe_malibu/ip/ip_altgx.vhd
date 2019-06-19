@@ -46,8 +46,10 @@
  ENTITY  ip_altgx_alt4gxb IS 
 	 GENERIC 
 	 (
-        effective_data_rate : positive := 6250;
-        input_clock_frequency : positive := 125;
+        effective_data_rate : positive := 6250; -- Mbps
+        input_clock_frequency : string := "125.0"; -- MHz
+        input_clock_period : positive := 1000000 / 125; -- us
+        m_divider : positive := 25;
 		starting_channel_number	:	NATURAL := 0
 	 );
 	 PORT 
@@ -2042,9 +2044,9 @@
 		effective_data_rate => integer'image(effective_data_rate) & ".0 Mbps",
 		enable_dynamic_divider => "false",
 		fast_lock_control => "false",
-		inclk0_input_period => 1000000 / input_clock_frequency,
-		input_clock_frequency => integer'image(input_clock_frequency) & ".0 MHz",
-		m => effective_data_rate / input_clock_frequency / 2,
+		inclk0_input_period => input_clock_period,
+		input_clock_frequency => input_clock_frequency & " MHz",
+		m => m_divider,
 		n => 1,
 		pfd_clk_select => 0,
 		pll_type => "RX CDR",
@@ -2075,9 +2077,9 @@
 		effective_data_rate => integer'image(effective_data_rate) & ".0 Mbps",
 		enable_dynamic_divider => "false",
 		fast_lock_control => "false",
-		inclk0_input_period => 1000000 / input_clock_frequency,
-		input_clock_frequency => integer'image(input_clock_frequency) & ".0 MHz",
-		m => effective_data_rate / input_clock_frequency / 2,
+		inclk0_input_period => input_clock_period,
+		input_clock_frequency => input_clock_frequency & " MHz",
+		m => m_divider,
 		n => 1,
 		pfd_clk_select => 0,
 		pll_type => "RX CDR",
@@ -2108,9 +2110,9 @@
 		effective_data_rate => integer'image(effective_data_rate) & ".0 Mbps",
 		enable_dynamic_divider => "false",
 		fast_lock_control => "false",
-		inclk0_input_period => 1000000 / input_clock_frequency,
-		input_clock_frequency => integer'image(input_clock_frequency) & ".0 MHz",
-		m => effective_data_rate / input_clock_frequency / 2,
+		inclk0_input_period => input_clock_period,
+		input_clock_frequency => input_clock_frequency & " MHz",
+		m => m_divider,
 		n => 1,
 		pfd_clk_select => 0,
 		pll_type => "RX CDR",
@@ -2141,9 +2143,9 @@
 		effective_data_rate => integer'image(effective_data_rate) & ".0 Mbps",
 		enable_dynamic_divider => "false",
 		fast_lock_control => "false",
-		inclk0_input_period => 1000000 / input_clock_frequency,
-		input_clock_frequency => integer'image(input_clock_frequency) & ".0 MHz",
-		m => effective_data_rate / input_clock_frequency / 2,
+		inclk0_input_period => input_clock_period,
+		input_clock_frequency => input_clock_frequency & " MHz",
+		m => m_divider,
 		n => 1,
 		pfd_clk_select => 0,
 		pll_type => "RX CDR",
@@ -2171,10 +2173,10 @@
 		bandwidth_type => "Auto",
 		channel_num => 4,
 		dprio_config_mode => "000000",
-		inclk0_input_period => 1000000 / input_clock_frequency,
-		input_clock_frequency => integer'image(input_clock_frequency) & ".0 MHz",
+		inclk0_input_period => input_clock_period,
+		input_clock_frequency => input_clock_frequency & " MHz",
 		logical_tx_pll_number => 0,
-		m => effective_data_rate / input_clock_frequency / 2,
+		m => m_divider,
 		n => 1,
 		pfd_clk_select => 0,
 		pfd_fb_select => "internal",
@@ -3600,7 +3602,9 @@ ENTITY ip_altgx IS
 	GENERIC
 	(
         effective_data_rate : positive := 6250;
-        input_clock_frequency : positive := 125;
+        input_clock_frequency : string := "125.0";
+        input_clock_period : positive := 1000000 / 125; -- us
+        m_divider : positive := 25;
 		starting_channel_number		: NATURAL := 0
 	);
 	PORT
@@ -3646,8 +3650,8 @@ ARCHITECTURE RTL OF ip_altgx IS
 	ATTRIBUTE clearbox_macroname: string;
 	ATTRIBUTE clearbox_macroname OF RTL: ARCHITECTURE IS "alt4gxb";
 	ATTRIBUTE clearbox_defparam: string;
-	ATTRIBUTE clearbox_defparam OF RTL: ARCHITECTURE IS "effective_data_rate=" & integer'image(effective_data_rate) & ".0 Mbps;enable_lc_tx_pll=false;enable_pll_inclk_alt_drive_rx_cru=true;enable_pll_inclk_drive_rx_cru=true;equalizer_ctrl_a_setting=0;equalizer_ctrl_b_setting=0;equalizer_ctrl_c_setting=0;equalizer_ctrl_d_setting=0;equalizer_ctrl_v_setting=0;equalizer_dcgain_setting=0;gen_reconfig_pll=false;gxb_analog_power=AUTO;gx_channel_type=AUTO;input_clock_frequency=" & integer'image(input_clock_frequency) & ".0 MHz;intended_device_family=Stratix IV;intended_device_speed_grade=4;intended_device_variant=GX;loopback_mode=slb;lpm_hint=CBX_MODULE_PREFIX=ip_altgx;lpm_type=alt4gxb;number_of_channels=4;operation_mode=duplex;pll_control_width=1;pll_pfd_fb_mode=internal;preemphasis_ctrl_1stposttap_setting=0;preemphasis_ctrl_2ndposttap_inv_setting=false;preemphasis_ctrl_2ndposttap_setting=0;preemphasis_ctrl_pretap_inv_setting=false;preemphasis_ctrl_pretap_setting=0;protocol=basic;receiver_termination=oct_100_ohms;reconfig_dprio_mode=1;rx_8b_10b_mode=cascaded;rx_align_pattern=0101111100;rx_align_pattern_length=10;rx_allow_align_polarity_inversion=false;rx_allow_pipe_polarity_inversion=false;rx_bitslip_enable=false;rx_byte_ordering_mode=NONE;rx_channel_width=32;rx_common_mode=0.82v;rx_cru_bandwidth_type=Auto;rx_cru_inclock0_period=" & integer'image(1000000 / input_clock_frequency) & ";rx_datapath_low_latency_mode=false;rx_datapath_protocol=basic;rx_data_rate=" & integer'image(effective_data_rate) & ";rx_data_rate_remainder=0;rx_digitalreset_port_width=4;rx_enable_bit_reversal=false;rx_enable_deep_align_byte_swap=false;rx_enable_lock_to_data_sig=false;rx_enable_lock_to_refclk_sig=false;" & 
-	                                                    "rx_enable_self_test_mode=false;rx_flip_rx_out=false;rx_force_signal_detect=true;rx_phfiforegmode=false;rx_ppmselect=32;rx_rate_match_fifo_mode=none;rx_run_length=40;rx_run_length_enable=true;rx_signal_detect_threshold=2;rx_use_align_state_machine=true;rx_use_clkout=true;rx_use_coreclk=true;rx_use_deserializer_double_data_mode=true;rx_use_deskew_fifo=false;rx_use_double_data_mode=true;rx_use_rising_edge_triggered_pattern_align=true;transmitter_termination=oct_100_ohms;tx_8b_10b_mode=cascaded;tx_allow_polarity_inversion=false;tx_analog_power=AUTO;tx_channel_width=32;tx_clkout_width=4;tx_common_mode=0.65v;tx_datapath_low_latency_mode=false;tx_data_rate=" & integer'image(effective_data_rate) & ";tx_data_rate_remainder=0;tx_digitalreset_port_width=4;tx_enable_bit_reversal=false;tx_enable_self_test_mode=false;tx_flip_tx_in=false;tx_force_disparity_mode=false;tx_pll_bandwidth_type=Auto;tx_pll_inclk0_period=" & integer'image(1000000 / input_clock_frequency) & ";tx_pll_type=CMU;tx_slew_rate=off;tx_transmit_protocol=basic;tx_use_coreclk=true;tx_use_double_data_mode=true;tx_use_serializer_double_data_mode=true;use_calibration_block=true;vod_ctrl_setting=3;gxb_powerdown_width=1;number_of_quads=1;reconfig_calibration=true;reconfig_fromgxb_port_width=17;reconfig_togxb_port_width=4;rx_cru_m_divider=" & integer'image(effective_data_rate / input_clock_frequency) & ";rx_cru_n_divider=1;rx_cru_vco_post_scale_divider=1;rx_dwidth_factor=4;rx_signal_detect_loss_threshold=9;rx_signal_detect_valid_threshold=14;rx_use_external_termination=false;rx_word_aligner_num_byte=2;tx_dwidth_factor=4;tx_pll_clock_post_divider=1;tx_pll_m_divider=" & integer'image(effective_data_rate / input_clock_frequency) & ";tx_pll_n_divider=1;" & 
+	ATTRIBUTE clearbox_defparam OF RTL: ARCHITECTURE IS "effective_data_rate=" & integer'image(effective_data_rate) & ".0 Mbps;enable_lc_tx_pll=false;enable_pll_inclk_alt_drive_rx_cru=true;enable_pll_inclk_drive_rx_cru=true;equalizer_ctrl_a_setting=0;equalizer_ctrl_b_setting=0;equalizer_ctrl_c_setting=0;equalizer_ctrl_d_setting=0;equalizer_ctrl_v_setting=0;equalizer_dcgain_setting=0;gen_reconfig_pll=false;gxb_analog_power=AUTO;gx_channel_type=AUTO;input_clock_frequency=" & input_clock_frequency & " MHz;intended_device_family=Stratix IV;intended_device_speed_grade=4;intended_device_variant=GX;loopback_mode=slb;lpm_hint=CBX_MODULE_PREFIX=ip_altgx;lpm_type=alt4gxb;number_of_channels=4;operation_mode=duplex;pll_control_width=1;pll_pfd_fb_mode=internal;preemphasis_ctrl_1stposttap_setting=0;preemphasis_ctrl_2ndposttap_inv_setting=false;preemphasis_ctrl_2ndposttap_setting=0;preemphasis_ctrl_pretap_inv_setting=false;preemphasis_ctrl_pretap_setting=0;protocol=basic;receiver_termination=oct_100_ohms;reconfig_dprio_mode=1;rx_8b_10b_mode=cascaded;rx_align_pattern=0101111100;rx_align_pattern_length=10;rx_allow_align_polarity_inversion=false;rx_allow_pipe_polarity_inversion=false;rx_bitslip_enable=false;rx_byte_ordering_mode=NONE;rx_channel_width=32;rx_common_mode=0.82v;rx_cru_bandwidth_type=Auto;rx_cru_inclock0_period=" & integer'image(input_clock_period) & ";rx_datapath_low_latency_mode=false;rx_datapath_protocol=basic;rx_data_rate=" & integer'image(effective_data_rate) & ";rx_data_rate_remainder=0;rx_digitalreset_port_width=4;rx_enable_bit_reversal=false;rx_enable_deep_align_byte_swap=false;rx_enable_lock_to_data_sig=false;rx_enable_lock_to_refclk_sig=false;" & 
+	                                                    "rx_enable_self_test_mode=false;rx_flip_rx_out=false;rx_force_signal_detect=true;rx_phfiforegmode=false;rx_ppmselect=32;rx_rate_match_fifo_mode=none;rx_run_length=40;rx_run_length_enable=true;rx_signal_detect_threshold=2;rx_use_align_state_machine=true;rx_use_clkout=true;rx_use_coreclk=true;rx_use_deserializer_double_data_mode=true;rx_use_deskew_fifo=false;rx_use_double_data_mode=true;rx_use_rising_edge_triggered_pattern_align=true;transmitter_termination=oct_100_ohms;tx_8b_10b_mode=cascaded;tx_allow_polarity_inversion=false;tx_analog_power=AUTO;tx_channel_width=32;tx_clkout_width=4;tx_common_mode=0.65v;tx_datapath_low_latency_mode=false;tx_data_rate=" & integer'image(effective_data_rate) & ";tx_data_rate_remainder=0;tx_digitalreset_port_width=4;tx_enable_bit_reversal=false;tx_enable_self_test_mode=false;tx_flip_tx_in=false;tx_force_disparity_mode=false;tx_pll_bandwidth_type=Auto;tx_pll_inclk0_period=" & integer'image(input_clock_period) & ";tx_pll_type=CMU;tx_slew_rate=off;tx_transmit_protocol=basic;tx_use_coreclk=true;tx_use_double_data_mode=true;tx_use_serializer_double_data_mode=true;use_calibration_block=true;vod_ctrl_setting=3;gxb_powerdown_width=1;number_of_quads=1;reconfig_calibration=true;reconfig_fromgxb_port_width=17;reconfig_togxb_port_width=4;rx_cru_m_divider=" & integer'image(m_divider) & ";rx_cru_n_divider=1;rx_cru_vco_post_scale_divider=1;rx_dwidth_factor=4;rx_signal_detect_loss_threshold=9;rx_signal_detect_valid_threshold=14;rx_use_external_termination=false;rx_word_aligner_num_byte=2;tx_dwidth_factor=4;tx_pll_clock_post_divider=1;tx_pll_m_divider=" & integer'image(m_divider) & ";tx_pll_n_divider=1;" & 
 	                                                    "tx_pll_vco_post_scale_divider=1;tx_use_external_termination=false;";
 	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (0 DOWNTO 0);
 	SIGNAL sub_wire1	: STD_LOGIC_VECTOR (16 DOWNTO 0);
@@ -3670,7 +3674,9 @@ ARCHITECTURE RTL OF ip_altgx IS
 	COMPONENT ip_altgx_alt4gxb
 	GENERIC (
         effective_data_rate : positive := 6250;
-        input_clock_frequency : positive := 125;
+        input_clock_frequency : string := "125.0";
+        input_clock_period : positive := 1000000 / 125; -- us
+        m_divider : positive := 25;
 		starting_channel_number		: NATURAL
 	);
 	PORT (
@@ -3728,6 +3734,8 @@ BEGIN
 	GENERIC MAP (
         effective_data_rate => effective_data_rate,
         input_clock_frequency => input_clock_frequency,
+        input_clock_period => input_clock_period,
+        m_divider => m_divider,
 		starting_channel_number => starting_channel_number
 	)
 	PORT MAP (

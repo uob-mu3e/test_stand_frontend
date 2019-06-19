@@ -8,7 +8,7 @@ entity xcvr_s4 is
         -- number of channels
         Nch : positive := 4;
         data_rate : positive := 5000; -- Gbps
-        pll_freq : positive := 125; -- MHz
+        pll_freq : real := 125.0; -- MHz
         K : std_logic_vector(7 downto 0) := work.util.D28_5;
         CLK_MHZ : positive := 50--;
     );
@@ -293,7 +293,9 @@ begin
     i_phy : component work.cmp.ip_altgx
     generic map (
         effective_data_rate => data_rate,
-        input_clock_frequency => pll_freq--,
+        input_clock_frequency => real'image(pll_freq),
+        input_clock_period => integer(1000000.0 / pll_freq),
+        m_divider => integer(real(data_rate) / pll_freq / 2.0)--,
     )
     port map (
         cal_blk_clk => clk,
