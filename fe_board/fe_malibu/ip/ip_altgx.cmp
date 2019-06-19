@@ -14,6 +14,10 @@
 
 
 component ip_altgx
+    generic (
+        effective_data_rate : positive := 6250;
+        input_clock_frequency : positive := 125--;
+    );
 	PORT
 	(
 		cal_blk_clk		: IN STD_LOGIC ;

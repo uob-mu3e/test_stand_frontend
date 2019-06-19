@@ -31,7 +31,7 @@ if 1 {
     add_connection clk.clk ${name}.clk
     add_connection clk.clk_reset ${name}.reset
     add_connection cpu.data_master ${name}.slave
-    set_connection_parameter_value cpu.data_master/${name}.slave baseAddress {0x70020000}
+    set_connection_parameter_value cpu.data_master/${name}.slave baseAddress {0x70080000}
 
     add_interface ${name} avalon master
     set_interface_property ${name} EXPORT_OF ${name}.master

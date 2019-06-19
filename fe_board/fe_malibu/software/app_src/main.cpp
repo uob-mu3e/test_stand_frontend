@@ -5,12 +5,14 @@
 #include "malibu.h"
 #include "sc.h"
 
+#include "si5345.h"
+
 alt_u32 alarm_callback(void*) {
     IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0xFF);
     // watchdog
     IOWR_ALTERA_AVALON_PIO_SET_BITS(PIO_BASE, alt_nticks() & 0xFF);
 
-//    sc_callback();
+    sc_callback();
 
     return 10;
 }
@@ -26,9 +28,10 @@ int main() {
 
     while (1) {
         printf("'%s' FE_S4 (MALIBU)\n", ALT_DEVICE_FAMILY);
-        printf("  [1] => xcvr\n");
+        printf("  [1] => xcvr qsfp\n");
         printf("  [2] => malibu\n");
         printf("  [3] => sc\n");
+        printf("  [0] => si5345\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -41,6 +44,9 @@ int main() {
             break;
         case '3':
             menu_sc();
+            break;
+        case '0':
+            menu_si5345();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

@@ -1,4 +1,6 @@
-# Arria 10 tcl script
+# Arria 10
+
+ - tcl scripts
 
 Scripts for programming Arria 10 flash.
 

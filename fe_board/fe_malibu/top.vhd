@@ -26,23 +26,23 @@ port (
 
     -- SI45
 
-    si45_oe_n       :   out std_logic; -- <= '0'
-    si45_rst_n      :   out std_logic; -- reset
-    si45_spi_out    :   in  std_logic; -- slave data out
-    si45_spi_in     :   out std_logic; -- slave data in
-    si45_spi_sclk   :   out std_logic; -- clock
-    si45_spi_cs_n   :   out std_logic; -- chip select
+    si45_oe_n       : out   std_logic; -- <= '0'
+    si45_rst_n      : out   std_logic; -- reset
+    si45_spi_out    : in    std_logic; -- slave data out
+    si45_spi_in     : out   std_logic; -- slave data in
+    si45_spi_sclk   : out   std_logic; -- clock
+    si45_spi_cs_n   : out   std_logic; -- chip select
 
     -- QSFP
 
     qsfp_pll_clk    : in    std_logic; -- 125 MHz for transceiver PLLs - QSFP
 
-    QSFP_ModSel_n   :   out     std_logic; -- module select (i2c)
-    QSFP_Rst_n      :   out     std_logic;
-    QSFP_LPM        :   out     std_logic; -- Low Power Mode
+    QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
+    QSFP_Rst_n      : out   std_logic;
+    QSFP_LPM        : out   std_logic; -- Low Power Mode
 
-    qsfp_tx : out   std_logic_vector(3 downto 0);
-    qsfp_rx : in    std_logic_vector(3 downto 0);
+    qsfp_tx         : out   std_logic_vector(3 downto 0);
+    qsfp_rx         : in    std_logic_vector(3 downto 0);
 
 
 
@@ -73,6 +73,10 @@ architecture arch of top is
     signal spi_ss_n : std_logic_vector(1 downto 0);
 
     signal malibu_clk : std_logic;
+    signal malibu_rx_data_clk : std_logic;
+    signal malibu_rx_data : std_logic_vector(15 downto 0);
+    signal malibu_rx_datak : std_logic_vector(1 downto 0);
+    signal malibu_word : std_logic_vector(47 downto 0);
 
     signal avm_qsfp : work.mu3e.avalon_t;
 
@@ -136,12 +140,13 @@ begin
     port map (
         c0 => nios_clk,
         locked => open,
-        areset => not reset_n,
+        areset => '0',
         inclk0 => clk_125--,
     );
 
-    i_nios_rst_n : entity work.reset_sync
-    port map ( rstout_n => nios_rst_n, arst_n => reset_n, clk => clk_125 );
+--    i_nios_rst_n : entity work.reset_sync
+--    port map ( rstout_n => nios_rst_n, arst_n => reset_n, clk => clk_125 );
+    nios_rst_n <= '1';
 
     led(12) <= nios_pio(7);
 
@@ -154,12 +159,12 @@ begin
         avm_qsfp_writedata      => avm_qsfp.writedata,
         avm_qsfp_waitrequest    => avm_qsfp.waitrequest,
 
-        avm_sc_address        => avm_sc.address(15 downto 0),
-        avm_sc_read           => avm_sc.read,
-        avm_sc_readdata       => avm_sc.readdata,
-        avm_sc_write          => avm_sc.write,
-        avm_sc_writedata      => avm_sc.writedata,
-        avm_sc_waitrequest    => avm_sc.waitrequest,
+        avm_sc_address          => avm_sc.address(15 downto 0),
+        avm_sc_read             => avm_sc.read,
+        avm_sc_readdata         => avm_sc.readdata,
+        avm_sc_write            => avm_sc.write,
+        avm_sc_writedata        => avm_sc.writedata,
+        avm_sc_waitrequest      => avm_sc.waitrequest,
 
         sc_clk_clk          => qsfp_rx_clk(0),
         sc_reset_reset_n    => '1',
@@ -245,14 +250,60 @@ begin
         N => 2--,
     )
     port map (
-        data_clk    => open,
-        data        => open,
-        datak       => open,
+        data_clk    => malibu_rx_data_clk,
+        data        => malibu_rx_data,
+        datak       => malibu_rx_datak,
 
         rx_data => malibu_data(1 downto 0),
         rx_clk  => malibu_clk,
 
         reset   => not reset_n--,
+    );
+
+    i_frame_rcv : entity work.frame_rcv
+    port map (
+        i_rst => not reset_n,
+        i_clk => malibu_rx_data_clk,
+        i_data => malibu_rx_data(7 downto 0),
+        i_byteisk => malibu_rx_datak(0),
+        i_dser_no_sync => '0',
+
+        o_frame_number => open,
+        o_frame_info => open,
+        o_frame_info_ready => open,
+        o_new_frame => open,
+        o_word => malibu_word,
+        o_new_word => open,
+
+        o_end_of_frame => open,
+        o_crc_error => open,
+        o_crc_err_count => open--,
+    );
+
+    i_mutrig_datapath : entity work.mutrig_datapath
+    port map (
+        i_rst => not reset_n,
+        i_stic_txd => malibu_data(0 downto 0),
+        i_refclk_125 => clk_125,
+
+        --interface to asic fifos
+        i_clk_core => '0',
+        o_fifo_empty => open,
+        o_fifo_data => open,
+        i_fifo_rd => '1',
+        --slow control
+        i_SC_disable_dec => '0',
+        i_SC_mask => (others => '0'),
+        i_SC_datagen_enable => '0',
+        i_SC_datagen_shortmode => '0',
+        i_SC_datagen_count => (others => '0'),
+        --monitors
+        o_receivers_usrclk => open,
+        o_receivers_pll_lock => open,
+        o_receivers_dpa_lock=> open,
+        o_receivers_ready => open,
+        o_frame_desync => open,
+        o_buffer_full => open--,
     );
 
     ----------------------------------------------------------------------------
@@ -263,10 +314,14 @@ begin
     -- QSFP
 
     QSFP_ModSel_n <= '1';
-    QSFP_Rst_n <= reset_n;
+    QSFP_Rst_n <= '1';
     QSFP_LPM <= '0';
 
     i_qsfp : entity work.xcvr_s4
+    generic map (
+        data_rate => 6250,
+        pll_freq => 125--,
+    )
     port map (
         -- avalon slave interface
         avs_address     => avm_qsfp.address(15 downto 2),
@@ -298,9 +353,9 @@ begin
     );
 
     qsfp_tx_data(127 downto 32) <=
-          X"02BABE" & work.util.D28_5
-        & X"01DEAD" & work.util.D28_5
-        & X"00BEEF" & work.util.D28_5;
+          X"03CAFE" & work.util.D28_5
+        & X"02BABE" & work.util.D28_5
+        & X"01DEAD" & work.util.D28_5;
 
     qsfp_tx_datak(15 downto 4) <=
         "0001"
@@ -337,7 +392,7 @@ begin
     i_sc : entity work.sc_s4
     port map (
         clk => qsfp_rx_clk(0),
-        reset_n => '1',
+        reset_n => reset_n,
         enable => '1',
 
         mem_data_in => ram_rdata_a,
@@ -381,10 +436,10 @@ begin
         reset                   => not reset_n,
         fpga_ID_in              => (5=>'1',others => '0'),
         FEB_type_in             => "111010",
-        state_idle              => '0',
+        state_idle              => '1',
         state_run_prepare       => '0',
         state_sync              => '0',
-        state_running           => '1',
+        state_running           => '0',
         state_terminating       => '0',
         state_link_test         => '0',
         state_sync_test         => '0',
@@ -395,7 +450,7 @@ begin
         data_in                 => data_from_fifo,
         data_in_slowcontrol     => sc_from_fifo,
         slowcontrol_fifo_empty  => sc_from_fifo_empty,
-        data_fifo_empty         => data_from_fifo_empty,
+        data_fifo_empty         => '1',--data_from_fifo_empty,
         slowcontrol_read_req    => sc_from_fifo_re,
         data_read_req           => data_from_fifo_re,
         terminated              => open,
