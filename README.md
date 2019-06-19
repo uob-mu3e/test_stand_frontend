@@ -77,4 +77,4 @@ $ ./load_mudaq.sh
 Now you can start the switch_fe and the Switching equipment should show up on your midas status page.
 
 
-![Switching Page](.lab_setup.pdf){width=65%}
+![Switching Page](./lab_setup.pdf){width=65%}
