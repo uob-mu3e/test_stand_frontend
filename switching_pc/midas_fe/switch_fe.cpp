@@ -43,6 +43,7 @@
 
 #include <stdio.h>
 #include <cassert>
+#include <switching_constants.h>
 #include "midas.h"
 #include "mfe.h"
 
@@ -73,6 +74,9 @@ INT event_buffer_size = 10 * 10000;
 /* DMA Buffer and related */
 mudaq::DmaMudaqDevice * mup;
 
+/* Values for reading SC Events */
+uint32_t current_ro_idx = 0;
+
 /*-- Function declarations -----------------------------------------*/
 
 INT read_sc_event(char *pevent, INT off);
@@ -90,6 +94,8 @@ const char *sc_settings_str[] = {
 "Read = BOOL : 0",
 "Read WM = BOOL : 0",
 "Read RM = BOOL : 0",
+"Reset SC Master = BOOL : 0",
+"Reset SC Slave = BOOL : 0",
 "[32] Temp0",
 "[32] Temp1",
 "[32] Temp2",
@@ -236,26 +242,36 @@ INT read_sc_event(char *pevent, INT off)
 
    mudaq::DmaMudaqDevice & mu = *mup;
 
-//   if (mu.read_memory_rw(0) == 0) {
-//      return CM_SUCCESS; // no new data
-//   }
+   // getting a read event
+   if (mu.read_memory_ro(current_ro_idx) == 0x1e0000bc) {
+       uint32_t *pdata;
+       bk_create(pevent, "RM_READ", TID_INT, (void **)&pdata);
+       *pdata++ =   mu.read_memory_ro(current_ro_idx);
+       *pdata++ = mu.read_memory_ro(current_ro_idx + 1); // startadd
+       *pdata++ = mu.read_memory_ro(current_ro_idx + 2); // length
+       uint32_t event_length = mu.read_memory_ro(current_ro_idx + 2);
+       for (uint32_t i = 0; i < event_length; i++) { // getting data
+           *pdata++ = mu.read_memory_ro(current_ro_idx + 3 + i);
+       }
+       bk_close(pevent, pdata);
+       current_ro_idx = 3 + event_length;
+       std::cout << current_ro_idx << std::endl;
+       return bk_size(pevent);
+   }
 
-//   unsigned int sc_length = mu.read_memory_rw(0);
-//   unsigned int sc_start_add = mu.read_memory_rw(1);
+   // getting a write event
+   if (mu.read_memory_ro(current_ro_idx) == 0x1f0000bc) {
+       uint32_t *pdata;
+       bk_create(pevent, "RM_WRITE", TID_INT, (void **)&pdata);
+       *pdata++ =   mu.read_memory_ro(current_ro_idx);
+       *pdata++ = mu.read_memory_ro(current_ro_idx + 1); // startadd
+       *pdata++ = mu.read_memory_ro(current_ro_idx + 2); // length + acknowledge
+       bk_close(pevent, pdata);
+       current_ro_idx = 3;
+       return bk_size(pevent);
+   }
 
-   int *pdata;
-   bk_create(pevent, "WM", TID_INT, (void **)&pdata);
-
- //  for (unsigned int i = sc_start_add; i < sc_start_add + sc_length; i++) {
-       *pdata++ = mu.read_memory_rw(0);
-  // }
-
-
-   //mu.write_memory_rw(0, 0);
-
-   bk_close(pevent, pdata);
-
-   return bk_size(pevent);
+    return 0; // ToDo: is this the right thing to do if you don"t have an event?
 }
 
 /*--- Read WMEM if button was pressed --------*/
@@ -313,6 +329,33 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       // TODO: propagate to hardware
    }
 
+   if (std::string(key.name) == "Reset SC Master") {
+       BOOL value;
+       int size = sizeof(value);
+       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+       cm_msg(MINFO, "sc_settings_changed", "Reset SC Master");
+       uint32_t reset_reg = 0;
+
+       reset_reg = SET_RESET_BIT_SC_MASTER(reset_reg);
+       mu.write_register(RESET_REGISTER_W, reset_reg);
+       mu.write_register(RESET_REGISTER_W, 0x0);
+
+//       for(int i = 0; i <= 64*1024; i++){
+//           mu.write_memory_rw(i, 0);
+//       }
+   }
+
+   if (std::string(key.name) == "Reset SC Slave") {
+       BOOL value;
+       int size = sizeof(value);
+       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+       cm_msg(MINFO, "sc_settings_changed", "Reset SC Slave");
+       uint32_t reset_reg = 0;
+       reset_reg = SET_RESET_BIT_SC_SLAVE(reset_reg);
+       mu.write_register(RESET_REGISTER_W, reset_reg);
+       mu.write_register(RESET_REGISTER_W, 0x0);
+   }
+
    if (std::string(key.name) == "Write") {
       BOOL value;
       int size = sizeof(value);
@@ -350,6 +393,12 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
          db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
          db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
 
+         INT NEW_PCIE_MEM_START = PCIE_MEM_START + 5 + DATA_WRITE_SIZE;
+         INT SIZE_NEW_PCIE_MEM_START;
+         SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
+
+         db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
+
          for (int i = 0; i < DATA_WRITE_SIZE; i++) {
              char STR_DATA[128];
              sprintf(STR_DATA,"Equipment/Switching/Variables/DATA_WRITE[%d]", i);
@@ -373,39 +422,38 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       if (value) {
          cm_msg(MINFO, "sc_settings_changed", "Execute read");
 
-         INT FPGA_ID, size_fpga;
-         INT Length, size_length;
-         INT SC_StartAdd, size_start;
-         INT SC_WM_MEM_START, size_mem;
+         INT FPGA_ID, SIZE_FPGA_ID;
+         INT LENGTH, SIZE_LENGTH;
+         INT START_ADD, SIZE_START_ADD;
+         INT PCIE_MEM_START, SIZE_PCIE_MEM_START;
 
-         size_fpga = sizeof(FPGA_ID);
-         size_length = sizeof(Length);
-         size_start = sizeof(SC_StartAdd);
-         size_mem = sizeof(SC_WM_MEM_START);
+         SIZE_FPGA_ID = sizeof(FPGA_ID);
+         SIZE_LENGTH = sizeof(LENGTH);
+         SIZE_START_ADD = sizeof(START_ADD);
+         SIZE_PCIE_MEM_START = sizeof(PCIE_MEM_START);
 
-         char str_fpga[128];
-         char str_length[128];
-         char str_start[128];
-         char str_mem[128];
+         char STR_FPGA_ID[128];
+         char STR_LENGTH[128];
+         char STR_START_ADD[128];
+         char STR_PCIE_MEM_START[128];
 
-         sprintf(str_fpga,"Equipment/Switching/Variables/FPGA_ID_READ");
-         sprintf(str_length,"Equipment/Switching/Variables/LENGTH_READ");
-         sprintf(str_start,"Equipment/Switching/Variables/START_ADD_READ");
-         sprintf(str_mem,"Equipment/Switching/Variables/PCIE_MEM_START_READ");
+         sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_READ");
+         sprintf(STR_LENGTH,"Equipment/Switching/Variables/LENGTH_READ");
+         sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_READ");
+         sprintf(STR_PCIE_MEM_START,"Equipment/Switching/Variables/PCIE_MEM_START_READ");
 
-         db_get_value(hDB, 0, str_fpga, &FPGA_ID, &size_fpga, TID_INT, 0);
-         db_get_value(hDB, 0, str_length, &Length, &size_length, TID_INT, 0);
-         db_get_value(hDB, 0, str_start, &SC_StartAdd, &size_start, TID_INT, 0);
-         db_get_value(hDB, 0, str_mem, &SC_WM_MEM_START, &size_mem, TID_INT, 0);
+         db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
+         db_get_value(hDB, 0, STR_LENGTH, &LENGTH, &SIZE_LENGTH, TID_INT, 0);
+         db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
+         db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
 
-         INT new_SC_WM_MEM_START = SC_WM_MEM_START + 4;
-         INT new_size_mem;
-         new_size_mem = sizeof(new_SC_WM_MEM_START);
+         INT NEW_PCIE_MEM_START = PCIE_MEM_START + 5;
+         INT SIZE_NEW_PCIE_MEM_START;
+         SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
 
-         db_set_value(hDB, 0, str_mem, &new_SC_WM_MEM_START, new_size_mem, 1, TID_INT);
+         db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
 
-         mu.FEB_read((uint32_t) FPGA_ID, (uint16_t) Length, (uint32_t) SC_StartAdd, (uint32_t) SC_WM_MEM_START);
-
+         mu.FEB_read((uint32_t) FPGA_ID, (uint16_t) LENGTH, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
 
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
@@ -444,15 +492,17 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
             db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
 
-            uint32_t data_arr[2] = {0, 0x0000009c};
+            INT NEW_PCIE_MEM_START = PCIE_MEM_START + 6;
+            INT SIZE_NEW_PCIE_MEM_START;
+            SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
+
+            db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
+
+            uint32_t data_arr[1] = {0};
             data_arr[0] = (uint32_t) DATA;
-            std::cout << DATA << std::endl;
-            std::cout << START_ADD << std::endl;
-            std::cout << PCIE_MEM_START << std::endl;
-            std::cout << FPGA_ID << std::endl;
             uint32_t *data = data_arr;
 
-            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 2, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
 
             value = FALSE; // reset flag in ODB
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
@@ -491,6 +541,45 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             for (int i = 0; i < WM_LENGTH; i++) {
                 WM_DATA = mu.read_memory_rw((uint32_t) WM_START_ADD + i);
                 db_set_value_index(hDB, 0, STR_WM_DATA, &WM_DATA, SIZE_WM_DATA, i, TID_INT, FALSE);
+            }
+
+            value = FALSE; // reset flag in ODB
+            db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+        }
+    }
+
+    if (std::string(key.name) == "Read RM") {
+        BOOL value;
+        int size = sizeof(value);
+        db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+        if (value) {
+            cm_msg(MINFO, "sc_settings_changed", "Execute Read RM");
+
+            INT RM_START_ADD, SIZE_RM_START_ADD;
+            INT RM_LENGTH, SIZE_RM_LENGTH;
+            INT RM_DATA, SIZE_RM_DATA;
+
+            SIZE_RM_START_ADD = sizeof(RM_START_ADD);
+            SIZE_RM_LENGTH = sizeof(RM_LENGTH);
+            SIZE_RM_DATA = sizeof(RM_DATA);
+
+            char STR_RM_START_ADD[128];
+            char STR_RM_LENGTH[128];
+            char STR_RM_DATA[128];
+
+            sprintf(STR_RM_START_ADD,"Equipment/Switching/Variables/RM_START_ADD");
+            sprintf(STR_RM_LENGTH,"Equipment/Switching/Variables/RM_LENGTH");
+            sprintf(STR_RM_DATA,"Equipment/Switching/Variables/RM_DATA");
+
+            db_get_value(hDB, 0, STR_RM_START_ADD, &RM_START_ADD, &SIZE_RM_START_ADD, TID_INT, 0);
+            db_get_value(hDB, 0, STR_RM_LENGTH, &RM_LENGTH, &SIZE_RM_LENGTH, TID_INT, 0);
+
+            HNDLE key_WM_DATA;
+            db_find_key(hDB, 0, "Equipment/Switching/Variables/RM_DATA", &key_WM_DATA);
+            db_set_num_values(hDB, key_WM_DATA, RM_LENGTH);
+            for (int i = 0; i < RM_LENGTH; i++) {
+                RM_DATA = mu.read_memory_ro((uint32_t) RM_START_ADD + i);
+                db_set_value_index(hDB, 0, STR_RM_DATA, &RM_DATA, SIZE_RM_DATA, i, TID_INT, FALSE);
             }
 
             value = FALSE; // reset flag in ODB

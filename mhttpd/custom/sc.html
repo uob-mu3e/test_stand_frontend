@@ -9,23 +9,82 @@
         function get_read_mem_table() {
             var table = document.getElementById("read_mem_table");
             table.innerHTML = "";
-            var row = table.insertRow(0);
-            var cell1 = row.insertCell(0);
-            var cell2 = row.insertCell(1);
-            cell1.innerHTML = "NEW CELL1";
-            cell2.innerHTML = "NEW CELL2";
-            var table = document.getElementById("mytable");
+
+            mjsonrpc_db_get_value("/Equipment/Switching/Variables/RM_LENGTH").then(function(rpc) {
+                var req    = rpc.request;               // reference to the rpc request
+                var id     = rpc.id;                    // rpc response id (should be same as req.id)
+                var result = rpc.result;                // rpc response result
+                var WM_LENGTH_DATA = result.data[0];    // javascript object representing the ODB WM_LENGTH structure
+                console.log(WM_LENGTH_DATA);
+                mjsonrpc_db_get_value("/Equipment/Switching/Variables/RM_DATA").then(function(rpc) {
+                    var req    = rpc.request;            // reference to the rpc request
+                    var id     = rpc.id;                 // rpc response id (should be same as req.id)
+                    var result = rpc.result;             // rpc response result
+                    var WM_DATA = result.data[0];        // javascript object representing the ODB WM_LENGTH structure
+                    console.log(WM_DATA);
+                    var row = table.insertRow(0);
+                    var cell1 = row.insertCell(0);
+                    var cell2 = row.insertCell(1);
+                    cell1.innerHTML = "Address";
+                    cell2.innerHTML = "Value";
+                    for (i = 0; i < WM_LENGTH_DATA; i++) {
+                        var row = table.insertRow(i + 1);
+                        var cell1 = row.insertCell(0);
+                        var cell2 = row.insertCell(1);
+                        cell1.innerHTML = i.toString(16);
+                        cell2.innerHTML = WM_DATA[i].toString(16);
+                    }
+                }).catch(function(error) {
+                    mjsonrpc_error_alert(error);
+                });
+            }).catch(function(error) {
+                mjsonrpc_error_alert(error);
+            });
+
         }
 
         function get_write_mem_table() {
             var table = document.getElementById("write_mem_table");
             table.innerHTML = "";
-            var row = table.insertRow(0);
-            var cell1 = row.insertCell(0);
-            var cell2 = row.insertCell(1);
-            cell1.innerHTML = "NEW CELL1";
-            cell2.innerHTML = "NEW CELL2";
-            var table = document.getElementById("mytable");
+
+            mjsonrpc_db_get_value("/Equipment/Switching/Variables/WM_LENGTH").then(function(rpc) {
+                var req    = rpc.request;               // reference to the rpc request
+                var id     = rpc.id;                    // rpc response id (should be same as req.id)
+                var result = rpc.result;                // rpc response result
+                var WM_LENGTH_DATA = result.data[0];    // javascript object representing the ODB WM_LENGTH structure
+                console.log(WM_LENGTH_DATA);
+                mjsonrpc_db_get_value("/Equipment/Switching/Variables/WM_DATA").then(function(rpc) {
+                    var req    = rpc.request;            // reference to the rpc request
+                    var id     = rpc.id;                 // rpc response id (should be same as req.id)
+                    var result = rpc.result;             // rpc response result
+                    var WM_DATA = result.data[0];        // javascript object representing the ODB WM_LENGTH structure
+                    console.log(WM_DATA);
+                    var row = table.insertRow(0);
+                    var cell1 = row.insertCell(0);
+                    var cell2 = row.insertCell(1);
+                    cell1.innerHTML = "Address";
+                    cell2.innerHTML = "Value";
+                    for (i = 0; i < WM_LENGTH_DATA; i++) {
+                        var row = table.insertRow(i + 1);
+                        var cell1 = row.insertCell(0);
+                        var cell2 = row.insertCell(1);
+                        cell1.innerHTML = i.toString(16);
+                        cell2.innerHTML = WM_DATA[i].toString(16);
+                    }
+                }).catch(function(error) {
+                    mjsonrpc_error_alert(error);
+                });
+            }).catch(function(error) {
+                mjsonrpc_error_alert(error);
+            });
+        }
+
+        function load() {
+            mhttpd_init('Switching Boards');
+            var write_mem_table = document.getElementById("write_mem_table");
+            var get_read_mem_table = document.getElementById("read_mem_table");
+            write_mem_table.innerHTML = "";
+            get_read_mem_table.innerHTML = "";
         }
     </script>
     <script type="text/javascript" src="js/read-csv.js"></script>
@@ -33,7 +92,7 @@
     <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">-->
     <link rel="stylesheet" href="midas.css">
 </head>
-<body class="mcss" onload="mhttpd_init('myPage');">
+<body class="mcss" onload="load();">
 
 <!-- header and side navigation will be filled in mhttpd_start -->
 <div id="mheader"></div>
@@ -64,6 +123,20 @@
                     <tr align="center">
                         <td id="systemdelay" align="center" class="mgreencolor">Delay:</td>
                         <td name="modbvalue" data-odb-path="/Equipment/Switching/Settings/Delay" data-odb-editable="1"></td>
+                    </tr>
+
+                    <tr align="center">
+                        <td> <button name="modbbutton" class="mbutton"
+                                data-odb-path="/Equipment/Switching/Settings/Reset SC Master"
+                                data-odb-value="1">
+                            Reset SC Master
+                        </button>
+                        <button name="modbbutton" class="mbutton"
+                                data-odb-path="/Equipment/Switching/Settings/Reset SC Slave"
+                                data-odb-value="1">
+                            Reset SC Slave
+                        </button>
+                        </td>
                     </tr>
                 </table>
             </td>
@@ -171,7 +244,7 @@
         <tr>
             <td colspan="6">
 
-                <table class="mtable" id="settings" width="100%">
+                <table class="mtable" id="readMEM" width="100%">
                     <tr>
                         <td colspan="6" class="mtableheader">Read Memory PCIe</td>
                     </tr>
@@ -184,8 +257,11 @@
 
                     <tr>
                         <td>
+                            <button id="showMEMRM" class="mbutton" onclick="get_read_mem_table()">
+                                Load RM Mem
+                            </button>
                             <button name="modbbutton" class="mbutton"
-                                    data-odb-path="/Equipment/Switching/Settings/Read RM"
+                                        data-odb-path="/Equipment/Switching/Settings/Read RM"
                                     data-odb-value="1">
                                 Read Memory
                             </button>
@@ -215,7 +291,7 @@
         <tr>
             <td colspan="6">
 
-                <table class="mtable" id="settings" width="100%">
+                <table class="mtable" id="writeMEM" width="100%">
                     <tr>
                         <td colspan="6" class="mtableheader">Write Memory PCIe</td>
                     </tr>
@@ -228,14 +304,17 @@
 
                     <tr>
                         <td>
-                            <button name="modbbutton" class="mbutton"
+                            <button id="showMEMWM" class="mbutton" onclick="get_write_mem_table()">
+                                Load WM Mem
+                            </button>
+                            <button name="modbbutton" id="readWMButton" class="mbutton"
                                     data-odb-path="/Equipment/Switching/Settings/Read WM"
                                     data-odb-value="1">
                                 Write Memory
                             </button>
                         </td>
                         <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/WM_START_ADD"></td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/WM_LENGTH"></td>
+                        <td name="modbvalue" id="WM_LENGTH" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/WM_LENGTH"></td>
                     </tr>
                 </table>
 

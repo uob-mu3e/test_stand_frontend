@@ -342,7 +342,7 @@ port map (
 		rstout_n(1) => flash_rst_n,
 		rstout_n(0) => cpu_reset_n_q,
 		rst_n 		=> CPU_RESET_n and wd_rst_n,
-		clk 			=> input_clk--,
+		clk 			=> clk--input_clk--,
 );
 
 watchdog_i : entity work.watchdog
@@ -356,8 +356,13 @@ port map (
 		rstout_n => wd_rst_n,
 
 		rst_n 	=> CPU_RESET_n,
-		clk 		=> input_clk--,
+		clk 		=> clk--input_clk--,
 );
+
+LED(0) <= cpu_pio_i(7);
+LED(1) <= cpu_reset_n_q;
+LED(2) <= flash_rst_n;
+LED(3) <= '1';
 
 FLASH_A <= flash_tcm_address_out(27 downto 2);
 
@@ -420,7 +425,7 @@ port map (
 	pll_refclk  		=> input_clk,
 	cdr_refclk  		=> input_clk,
 		
-	reset   				=> not cpu_reset_n_q,
+	reset   				=> not CPU_RESET_n,
 	clk     				=> input_clk--,
 );
 
@@ -510,7 +515,7 @@ master : sc_master
 	)
 	port map(
 		clk					=> tx_clk(0),
-		reset_n				=> push_button0_db,
+		reset_n				=> resets_n(RESET_BIT_SC_MASTER),
 		enable				=> '1',
 		mem_data_in			=> writememreaddata,
 		mem_addr				=> writememreadaddr,
@@ -523,10 +528,10 @@ master : sc_master
 slave : sc_slave
 	port map(
 		clk					=> tx_clk(0),--rx_clkout_ch0_clk,
-		reset_n				=> push_button0_db,
+		reset_n				=> resets_n(RESET_BIT_SC_SLAVE),
 		enable				=> '1',
-		link_data_in		=> sc_data(0),--sc_ch0,--data_ch0,
-		link_data_in_k		=> sc_datak(0),--sck_ch0,--datak_ch0,
+		link_data_in		=> sc_data(0),--mem_data_out(31 downto 0),--sc_ch0,--data_ch0,
+		link_data_in_k		=> sc_datak(0),--mem_datak_out(3 downto 0),--sck_ch0,--datak_ch0,
 		mem_addr_out		=> readmem_writeaddr(15 downto 0),
 		mem_data_out		=> readmem_writedata,
 		mem_wren				=> readmem_wren,
