@@ -44,13 +44,13 @@ public:
     int enable_daughter_12c(uint8_t dev_addr, uint8_t i2c_bus_num);
     int disable_daughter_12c(uint8_t dev_addr);
 
-    int read_daughter_board_current(uint8_t dev_addr);
+    int read_daughter_board_current(uint8_t daughter);
     int read_mother_board_current();
 
-    int read_daughter_board_voltage(uint8_t dev_addr);
+    int read_daughter_board_voltage(uint8_t daughter);
     int read_mother_board_voltage();
 
-    int configure_daughter_current_monitor(uint8_t dev_addr, uint16_t config);
+    int configure_daughter_current_monitor(uint8_t daughter, uint16_t config);
     int configure_mother_current_monitor(uint16_t config);
 
 
@@ -60,7 +60,7 @@ protected:
     //I2C helpers
     uint32_t checkTIP();
     uint32_t checkBUSY();
-    int setSlave(uint8_t dev_addr, bool write_bit=true);
+    int setSlave(uint8_t dev_addr, bool read_bit=true);
 
     const uint32_t ADDR_FIFO_REG_OUT        = 0x0;
     const uint32_t ADDR_FIFO_REG_CHARISK    = 0x2;
@@ -85,7 +85,7 @@ protected:
     const uint32_t ADDR_I2C_DATA            = 0xB;
     const uint32_t ADDR_I2C_CMD_STAT        = 0xC;
 
-    const uint32_t I2C_BIT_WRITE            = 0x1;
+    const uint32_t I2C_BIT_READ             = 0x1;
     const uint32_t I2C_BIT_TIP              = 0x2;
     const uint32_t I2C_BIT_NOACK            = 0x80;
     const uint32_t I2C_BIT_BUSY             = 0x40;
@@ -121,7 +121,7 @@ protected:
 
     const uint8_t I2C_MUX_POWER_ADDR       = 0x4;
     const uint8_t I2C_DAUGHTER_CURRENT_ADDR= 0x40;
-    const uint8_t I2C_MOTHER_CURRENT_ADDR  = 0x40;
+    const uint8_t I2C_MOTHER_CURRENT_ADDR  = 0x45;
     const uint8_t I2C_CURRENT_MONITOR_CONFIG_REG_ADDR = 0x0;
     const uint8_t I2C_SHUNT_VOLTAGE_REG_ADDR = 0x1;
     const uint8_t I2C_BUS_VOLTAGE_REG_ADDR = 0x2;
@@ -145,6 +145,15 @@ protected:
     const uint8_t DAUGHTER_5 =  0x76;
     const uint8_t DAUGHTER_6 =  0x73;
     const uint8_t DAUGHTER_7 =  0x77;
+
+    const vector<uint8_t> DAUGHTERS{ DAUGHTER_0,
+                                     DAUGHTER_1,
+                                     DAUGHTER_2,
+                                     DAUGHTER_3,
+                                     DAUGHTER_4,
+                                     DAUGHTER_5,
+                                     DAUGHTER_6,
+                                     DAUGHTER_7};
 
 };
 

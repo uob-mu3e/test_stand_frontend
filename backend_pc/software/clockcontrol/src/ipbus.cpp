@@ -60,7 +60,7 @@ int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
 
     StartPacket();
 
-    auto nwords = data.size();
+    int nwords = data.size();
     int ntransactions = 0;
     while(nwords > 0){
         uint32_t header = 0;
@@ -80,9 +80,9 @@ int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
         sendbuffer.push_back(header);
         sendbuffer.push_back(addr);
 
-        cout << "sb :" << std::hex << sendbuffer[0] << endl;
-        cout << "wh :" << std::hex << header << endl;
-        cout << "wa :" << std::hex << addr << endl;
+        //cout << "sb :" << std::hex << sendbuffer[0] << endl;
+        //cout << "wh :" << std::hex << header << endl;
+        //cout << "wa :" << std::hex << addr << endl;
 
         if(nwords < 256){
             for(int i=0; i < data.size(); i++)
@@ -96,7 +96,9 @@ int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
         ntransactions++;
     }
 
+
     SendPacket();
+
 
     vector<uint32_t> receivebuffer(ntransactions+1,0);
 
@@ -104,6 +106,7 @@ int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
 
     if( ReadFromSocket(receivebuffer) != (ntransactions+1)*4){
         int s = Status();
+     //   cout << "Status: " << s << endl;
         if(s < 0)
             return -3;
         if(s == packetnumber-1){
@@ -113,8 +116,8 @@ int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
         }
     }
 
-    cout << "w0 :" << std::hex << receivebuffer[0] << endl;
-    cout << "w1 :" << std::hex << receivebuffer[1] << endl;
+    //cout << "w0 :" << std::hex << receivebuffer[0] << endl;
+    //cout << "w1 :" << std::hex << receivebuffer[1] << endl << endl;
 
     return 0;
 }
@@ -136,8 +139,9 @@ int ipbus::read(uint32_t addr, uint8_t size, vector<uint32_t> &data, bool nonicr
     transactionnumber = transactionnumber & 0xfff;
     header |= 2 << 28; // protocol version number
 
-    cout << "h :" << std::hex << header << endl;
-    cout << "a :" << std::hex << addr << endl;
+    //cout << "h :" << std::hex << header << endl;
+    //cout << "a :" << std::hex << addr << endl;
+
     sendbuffer.push_back(header);
     sendbuffer.push_back(addr);
     SendPacket();
@@ -157,14 +161,17 @@ int ipbus::read(uint32_t addr, uint8_t size, vector<uint32_t> &data, bool nonicr
             usleep(1000);
         }
     }
-    cout << 0 << " :" << std::hex << receivebuffer[0] << endl;
-    cout << 1 << " :" << std::hex << receivebuffer[1] << endl;
+    //cout << 0 << " :" << std::hex << receivebuffer[0] << endl;
+    //cout << 1 << " :" << std::hex << receivebuffer[1] << endl;
 
     data.clear();
     for(unsigned int i =2; i < receivebuffer.size(); i++){
-        cout << i << " :" << std::hex << receivebuffer[i] << endl;
+      //  cout << i << " :" << std::hex << receivebuffer[i] << endl;
         data.push_back(receivebuffer[i]);
     }
+
+    //cout << endl;
+
     return 0;
 
 }
@@ -180,7 +187,6 @@ uint32_t ipbus::read(uint32_t addr)
 {
     vector<uint32_t> v(1,0);
     read(addr,1,v,false);
-    cout << "Read " << v[0] << endl;
     return v[0];
 }
 
@@ -202,10 +208,10 @@ uint32_t ipbus::readModifyWriteBits(uint32_t addr, uint32_t andterm, uint32_t or
     sendbuffer.push_back(orterm);
     SendPacket();
 
-    vector<uint32_t> receivebuffer(1+1,0);
+    vector<uint32_t> receivebuffer(3,0);
     usleep(1000);
 
-    if( ReadFromSocket(receivebuffer) != (1+1)*4){
+    if( ReadFromSocket(receivebuffer) != 3*4){
         int s = Status();
         if(s < 0)
             return -3;
@@ -218,7 +224,7 @@ uint32_t ipbus::readModifyWriteBits(uint32_t addr, uint32_t andterm, uint32_t or
         }
     }
     // This should contain the register content before the RMW
-    return receivebuffer[1];
+    return receivebuffer[2];
 }
 
 

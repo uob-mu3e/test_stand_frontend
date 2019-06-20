@@ -6,6 +6,7 @@
 
 using std::cout;
 using std::endl;
+using std::hex;
 
 clockboard::clockboard(const char *addr, int port):bus(addr, port)
 {
@@ -17,19 +18,23 @@ clockboard::clockboard(const char *addr, int port):bus(addr, port)
 int clockboard::init_clockboard()
 {
     init_12c();
-    // Turn on Si chip output
-    bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_CLK_CTRL,BIT_CTRL_CLK_CTRL_SI_OE);
+    // Turn on Si chip output  
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_CLK_CTRL,BIT_CTRL_CLK_CTRL_SI_OE) ;
+
 
     // set inverted channels on the reset firefly
-    bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_RESET_SEL);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_RESET_SEL);
+
     invert_tx_channels(FIREFLY_RESET_INVERT_INIT);
+    //cout <<hex << "Inverted TX channels set: " <<  FIREFLY_RESET_INVERT_INIT << " " << read_inverted_tx_channels() << endl;
 
     // set inverted channels on the clock firefly
-    bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
     invert_tx_channels(FIREFLY_CLOCK_INVERT_INIT);
+    //cout << "Inverted TX channels set: " <<  FIREFLY_CLOCK_INVERT_INIT << " " << read_inverted_tx_channels() << endl;
 
     // put the communication back to default
-    bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_FIREFLY_CTRL, 0x0);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
     return 1;
 }
 
@@ -45,14 +50,14 @@ int clockboard::map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num)
 
   if (daughter_polarity != fibre_polarity) {
     if (fibre_type == CLK_FIBRE) {
-        bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_FIREFLY_CTRL,BIT_FIREFLY_CLOCK_SEL);
+        bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL,BIT_FIREFLY_CLOCK_SEL);
     } else if (fibre_type == RST_FIBRE) {
-        bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_FIREFLY_CTRL,BIT_FIREFLY_RESET_SEL);
+        bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL,BIT_FIREFLY_RESET_SEL);
     }
     invert_tx_channels(inverted_channel);
     std::cout << "inverted tx channel" << std::endl;
 
-    bus.readModifyWriteBits(ADDR_CTRL_REG,!MASK_CTRL_FIREFLY_CTRL,0x0);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL,0x0);
     return 1;
   }
 
@@ -64,18 +69,19 @@ int clockboard::init_12c()
     if(!isConnected())
         return -1;
 
-    cout << "Going to write " << endl;
     bus.write(ADDR_I2C_PS_LO,0x35);  // Clock prescale low byte
+    //cout << hex << bus.read(ADDR_I2C_PS_LO) << endl;
     bus.write(ADDR_I2C_PS_HI,0x0);   // Clock prescale high byte
+    //cout << hex << bus.read(ADDR_I2C_PS_HI) << endl;
     bus.write(ADDR_I2C_CTRL,0x80);   // Enable I2C core
-
+    //cout << hex << bus.read(ADDR_I2C_CTRL) << endl;
     return 0;
 }
 
 int clockboard::read_i2c(uint8_t dev_addr, uint8_t & data)
 {
 
-    if(!setSlave(dev_addr))
+    if(!setSlave(dev_addr,true))
         return 0;
 
     bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_READPLUSNACK);  // Read command plus ACK
@@ -95,21 +101,22 @@ int clockboard::read_i2c(uint8_t dev_addr, uint8_t & data)
 int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data)
 {
 
-    if(!setSlave(dev_addr))
+    if(!setSlave(dev_addr, false)){
+        cout << "Set Slave failed" << endl;
         return 0;
+    }
 
     bus.write(ADDR_I2C_DATA, reg_addr);
     bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_WRITE);
 
     checkTIP();
 
-    bus.write(ADDR_I2C_DATA, (dev_addr << 1)|I2C_BIT_WRITE); // Set slave address and read bit
-    bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_START);            // Start I2C transmission
+    if(!setSlave(dev_addr,true)){
+        cout << "Set Slave failed" << endl;
+        return 0;
+    }
 
-    checkTIP();
-
-    bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_READPLUSNACK);  // Read command plus ACK
-
+    bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_READPLUSNACK);
     checkTIP();
 
     uint32_t reg = bus.read(ADDR_I2C_DATA);
@@ -124,16 +131,20 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data)
 
 int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[])
 {
-    if(!setSlave(dev_addr))
+    if(!setSlave(dev_addr, false)){
+        cout << "Set Slave failed" << endl;
         return 0;
+    }
 
     bus.write(ADDR_I2C_DATA, reg_addr);
     bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_WRITE);
 
     checkTIP();
 
-    bus.write(ADDR_I2C_DATA, (dev_addr << 1)|I2C_BIT_WRITE); // Set slave address and read bit
-    bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_START);            // Start I2C transmission
+    if(!setSlave(dev_addr, true)){
+        cout << "Set Slave failed" << endl;
+        return 0;
+    }
 
     checkTIP();
 
@@ -160,8 +171,10 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_nu
 
 int clockboard::write_i2c(uint8_t dev_addr, uint8_t data)
 {
-    if(!setSlave(dev_addr,false))
+    if(!setSlave(dev_addr,false)){
+         cout << "Set Slave failed" << endl;
         return 0;
+     }
 
     bus.write(ADDR_I2C_DATA, data);
     bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_WRITE);
@@ -177,8 +190,10 @@ int clockboard::write_i2c(uint8_t dev_addr, uint8_t data)
 
 int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data)
 {
-    if(!setSlave(dev_addr,false))
+    if(!setSlave(dev_addr,false)){
+        cout << "Set Slave failed" << endl;
         return 0;
+    }
 
     bus.write(ADDR_I2C_DATA, reg_addr);
     bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_WRITE);
@@ -200,8 +215,10 @@ int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data)
 
 int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[])
 {
-    if(!setSlave(dev_addr,false))
+    if(!setSlave(dev_addr,false)){
+        cout << "Set Slave failed" << endl;
         return 0;
+    }
 
     bus.write(ADDR_I2C_DATA, reg_addr);
     bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_WRITE);
@@ -278,7 +295,11 @@ uint16_t clockboard::read_inverted_tx_channels()
 int clockboard::invert_tx_channels(uint16_t channels)
 {
     write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_HI_ADDR, (uint8_t)((channels>>8)&0x0f));
+    uint8_t dat;
+    read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_HI_ADDR,dat);
+
     write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_LO_ADDR, (uint8_t)(channels&0xff));
+    read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_LO_ADDR,dat);
     return 1;
 }
 
@@ -354,16 +375,16 @@ int clockboard::disable_daughter_12c(uint8_t dev_addr)
     return write_i2c(dev_addr, 0x0);
 }
 
-int clockboard::read_daughter_board_current(uint8_t dev_addr)
+int clockboard::read_daughter_board_current(uint8_t daughter)
 {
     uint8_t data[2];
-    enable_daughter_12c(dev_addr,I2C_MUX_POWER_ADDR);
+    enable_daughter_12c(DAUGHTERS[daughter],I2C_MUX_POWER_ADDR);
     if(!read_i2c_reg(I2C_DAUGHTER_CURRENT_ADDR,I2C_SHUNT_VOLTAGE_REG_ADDR,2,data))
         return -1;
     //The factor of 2 comes from the 5mOhm shunt resistor
     // Current is now in mA
     int current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*2;
-    disable_daughter_12c(dev_addr);
+    disable_daughter_12c(DAUGHTERS[daughter]);
     return current;
 }
 
@@ -378,15 +399,15 @@ int clockboard::read_mother_board_current()
     return current;
 }
 
-int clockboard::read_daughter_board_voltage(uint8_t dev_addr)
+int clockboard::read_daughter_board_voltage(uint8_t daughter)
 {
     uint8_t data[2];
-    enable_daughter_12c(dev_addr,I2C_MUX_POWER_ADDR);
+    enable_daughter_12c(DAUGHTERS[daughter],I2C_MUX_POWER_ADDR);
     if(!read_i2c_reg(I2C_DAUGHTER_CURRENT_ADDR,I2C_BUS_VOLTAGE_REG_ADDR,2,data))
         return -1;
     // 1 = 4mV - *4 gives voltage in mV
-    int current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*4;
-    disable_daughter_12c(dev_addr);
+    int current = ((data[0] << 5)|(data[1]>>3))*4;
+    disable_daughter_12c(DAUGHTERS[daughter]);
     return current;
 }
 
@@ -396,19 +417,19 @@ int clockboard::read_mother_board_voltage()
     if(!read_i2c_reg(I2C_MOTHER_CURRENT_ADDR,I2C_BUS_VOLTAGE_REG_ADDR,2,data))
         return -1;
     // 1 = 4mV - *4 gives voltage in mV
-    int current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*4;
+    int current = ((data[0] << 5)|(data[1]>>3))*4;
     return current;
 }
 
-int clockboard::configure_daughter_current_monitor(uint8_t dev_addr, uint16_t config)
+int clockboard::configure_daughter_current_monitor(uint8_t daughter, uint16_t config)
 {
     uint8_t data[2];
     data[0]=(config>>8);
     data[1]=(config&0xff);
-    enable_daughter_12c(dev_addr,I2C_MUX_POWER_ADDR);
+    enable_daughter_12c(DAUGHTERS[daughter],I2C_MUX_POWER_ADDR);
     write_i2c_reg(I2C_DAUGHTER_CURRENT_ADDR,
                   I2C_CURRENT_MONITOR_CONFIG_REG_ADDR, 2, data);
-    disable_daughter_12c(dev_addr);
+    disable_daughter_12c(DAUGHTERS[daughter]);
     return 1;
 }
 
@@ -446,13 +467,13 @@ uint32_t clockboard::checkBUSY()
     return reg;
 }
 
-int clockboard::setSlave(uint8_t dev_addr, bool write_bit)
+int clockboard::setSlave(uint8_t dev_addr, bool read_bit)
 {
     if(!isConnected())
         return -1;
 
-    if(write_bit)
-        bus.write(ADDR_I2C_DATA, (dev_addr << 1)|I2C_BIT_WRITE); // Set slave address and read bit
+    if(read_bit)
+        bus.write(ADDR_I2C_DATA, (dev_addr << 1)|I2C_BIT_READ); // Set slave address and read bit
     else
         bus.write(ADDR_I2C_DATA, (dev_addr << 1));
 
@@ -460,8 +481,6 @@ int clockboard::setSlave(uint8_t dev_addr, bool write_bit)
 
 
     uint32_t reg = checkTIP();
-
-    cout << "Reg " << reg << endl;
 
     if(reg & I2C_BIT_NOACK) return 0; // Wrong address, no ACK
 
