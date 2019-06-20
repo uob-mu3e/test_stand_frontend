@@ -19,4 +19,4 @@ odbedit -c "set Custom/Path $SOURCE/mhttpd/custom"
 xterm -hold -e "mhttpd" &
 xterm -hold -e "mserver" &
 xterm -hold -e "mlogger" &
-#xterm -hold -e "crfe" &
+xterm -hold -e "crfe" &

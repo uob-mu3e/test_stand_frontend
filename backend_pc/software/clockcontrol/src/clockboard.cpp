@@ -241,7 +241,7 @@ int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_n
 
 }
 
-int clockboard::load_SI3545_reg_map(uint8_t dev_addr)
+int clockboard::load_SI3545_reg_map()
 {
     uint8_t current_page_num    = 0;
     uint8_t reg_page_num        = 0;
@@ -252,11 +252,11 @@ int clockboard::load_SI3545_reg_map(uint8_t dev_addr)
         reg_addr     =  (0x00ff&si5345_revd_registers[i].address);
 
         if (current_page_num!=reg_page_num){ //set reg 0x0001 to the new page number
-            if (write_i2c_reg(dev_addr, 0x01, reg_page_num)) {
-                read_i2c_reg(dev_addr, 0x01, current_page_num);
+            if (write_i2c_reg(SI_I2C_ADDR, 0x01, reg_page_num)) {
+                read_i2c_reg(SI_I2C_ADDR, 0x01, current_page_num);
             }
         }
-        write_i2c_reg(dev_addr, reg_addr, (uint8_t)si5345_revd_registers[i].value);
+        write_i2c_reg(SI_I2C_ADDR, reg_addr, (uint8_t)si5345_revd_registers[i].value);
     }
     return 1;
 }
@@ -365,6 +365,29 @@ vector<uint8_t> clockboard::read_rx_emphasis()
     return res;
 }
 
+float clockboard::read_rx_firefly_temp()
+{
+    uint8_t data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_TEMP_REG,data);
+    return data * FIREFLY_TEMP_CONVERSION;
+}
+
+float clockboard::read_tx_firefly_temp()
+{
+    uint8_t data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_TEMP_REG,data);
+    return data * FIREFLY_TEMP_CONVERSION;
+}
+
+
+bool clockboard::daughter_present(uint8_t daughter)
+{
+    if(!setSlave(DAUGHTERS[daughter],false)){
+       return false;
+     }
+    return true;
+}
+
 int clockboard::enable_daughter_12c(uint8_t dev_addr, uint8_t i2c_bus_num)
 {
     return write_i2c(dev_addr, i2c_bus_num);
@@ -375,7 +398,7 @@ int clockboard::disable_daughter_12c(uint8_t dev_addr)
     return write_i2c(dev_addr, 0x0);
 }
 
-int clockboard::read_daughter_board_current(uint8_t daughter)
+float clockboard::read_daughter_board_current(uint8_t daughter)
 {
     uint8_t data[2];
     enable_daughter_12c(DAUGHTERS[daughter],I2C_MUX_POWER_ADDR);
@@ -383,41 +406,41 @@ int clockboard::read_daughter_board_current(uint8_t daughter)
         return -1;
     //The factor of 2 comes from the 5mOhm shunt resistor
     // Current is now in mA
-    int current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*2;
+    float current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*2.0;
     disable_daughter_12c(DAUGHTERS[daughter]);
     return current;
 }
 
-int clockboard::read_mother_board_current()
+float clockboard::read_mother_board_current()
 {
     uint8_t data[2];
     if(!read_i2c_reg(I2C_MOTHER_CURRENT_ADDR,I2C_SHUNT_VOLTAGE_REG_ADDR,2,data))
         return -1;
     //The factor of 2 comes from the 5mOhm shunt resistor
     // Current is now in mA
-    int current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*2;
+    float current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*2.0;
     return current;
 }
 
-int clockboard::read_daughter_board_voltage(uint8_t daughter)
+float clockboard::read_daughter_board_voltage(uint8_t daughter)
 {
     uint8_t data[2];
     enable_daughter_12c(DAUGHTERS[daughter],I2C_MUX_POWER_ADDR);
     if(!read_i2c_reg(I2C_DAUGHTER_CURRENT_ADDR,I2C_BUS_VOLTAGE_REG_ADDR,2,data))
         return -1;
     // 1 = 4mV - *4 gives voltage in mV
-    int current = ((data[0] << 5)|(data[1]>>3))*4;
+    float current = ((data[0] << 5)|(data[1]>>3))*4.0;
     disable_daughter_12c(DAUGHTERS[daughter]);
     return current;
 }
 
-int clockboard::read_mother_board_voltage()
+float clockboard::read_mother_board_voltage()
 {
     uint8_t data[2];
     if(!read_i2c_reg(I2C_MOTHER_CURRENT_ADDR,I2C_BUS_VOLTAGE_REG_ADDR,2,data))
         return -1;
     // 1 = 4mV - *4 gives voltage in mV
-    int current = ((data[0] << 5)|(data[1]>>3))*4;
+    float current = ((data[0] << 5)|(data[1]>>3))*4.0;
     return current;
 }
 

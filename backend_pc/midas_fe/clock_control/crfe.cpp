@@ -45,6 +45,9 @@
 #include "midas.h"
 #include "mfe.h"
 
+
+#include "clockboard.h"
+
 /*-- Globals -------------------------------------------------------*/
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
@@ -67,6 +70,10 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
 
+
+// Clock board interface
+clockboard * cb;
+
 /*-- Function declarations -----------------------------------------*/
 
 INT read_cr_event(char *pevent, INT off);
@@ -78,13 +85,16 @@ void cr_settings_changed(HNDLE, HNDLE, int, void *);
 const char *cr_settings_str[] = {
 "Active = BOOL : 1",
 "Delay = INT : 0",
+"IP = STRING : ",
+"10.32.113.218",
+"PORT = INT : 50001",
 "Reset Trigger = BOOL : 0",
 "Sync Trigger = BOOL : 0",
 "Names CRT1 = STRING[4] :",
-"[32] Temp0",
-"[32] Temp1",
-"[32] Temp2",
-"[32] Temp3",
+"[32] Motherboard Current",
+"[32] Motherboard Voltage",
+"[32] RX Firefly Temp",
+"[32] TX Firefly Temp",
 nullptr
 };
 
@@ -140,6 +150,19 @@ INT frontend_init()
    const char * name = "cr.html";
    db_set_value(hDB,0,"Custom/Clock and Reset&",name, sizeof(name), 1,TID_STRING);
 
+   char ip[16] = "10.32.113.218";
+   //db_get_value(hDB, hKey, "IP", ip, 0, TID_STRING, false);
+   int port = 50001;
+   //db_get_value(hDB, hKey, "PORT", &port, 0, TID_INT, false);
+
+   cb = new clockboard(ip, port);
+
+   if(!cb->isConnected())
+        return CM_TIMEOUT;
+
+   cb->init_clockboard();
+
+
    return CM_SUCCESS;
 }
 
@@ -194,10 +217,10 @@ INT read_cr_event(char *pevent, INT off)
    float *pdata;
    bk_create(pevent, "CRT1", TID_FLOAT, (void **)&pdata);
 
-   *pdata++ = (float) rand() / RAND_MAX;
-   *pdata++ = (float) rand() / RAND_MAX;
-   *pdata++ = (float) rand() / RAND_MAX;
-   *pdata++ = (float) rand() / RAND_MAX;
+   *pdata++ = cb->read_mother_board_current();
+   *pdata++ = cb->read_mother_board_voltage();
+   *pdata++ = cb->read_rx_firefly_temp();
+   *pdata++ = cb->read_tx_firefly_temp();
 
    bk_close(pevent, pdata);
 
