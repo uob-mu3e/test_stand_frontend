@@ -834,7 +834,6 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
            break;
 
     case MCMD_WRITE_MEM:
-    	printf("WRITE MEM\n");
        //led_blink(1);
        size = buflen - 9; // minus cmd, len, subadr, adr and CRC
        // subadr = buf[3]; ignored
@@ -842,6 +841,19 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
        adr = (adr << 8) | buf[5];
        adr = (adr << 8) | buf[6];
        adr = (adr << 8) | buf[7];
+	printf("WRITE MEM:\t addr:%08X size %d\n", adr, size);
+       	sc_data[adr] = buf[8];
+	//for(j=0;j<size;j++) // TODO: block writing
+	//	sc_data[adr] = (sc_data[adr] << 8) | buf[8+j];
+	
+	// avoid blocks for the moment:
+	if(size>=2){
+       		sc_data[adr] = (sc_data[adr] << 8) | buf[9];
+		if(size==4){
+			sc_data[adr] = (sc_data[adr] << 8) | buf[10];
+			sc_data[adr] = (sc_data[adr] << 8) | buf[11];		
+		}
+	}
 
        /* only flash supported right now */
        //if ((adr & MSCB_BASE_FLASH) != MSCB_BASE_FLASH)  /////////// Temp comment out, FW
@@ -849,7 +861,7 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
        //adr = adr & ~MSCB_BASE_FLASH; /////////// Temp comment out, FW
 
        /* if address is on start of block, erase it */
-       if ((adr & 0xFFFF) == 0)
+       //if ((adr & 0xFFFF) == 0)
       //   spi_flash_block64_erase(SYSTEM->spi_flash_ptr, adr); /////////// Temp comment out, FW
 
        /* write flash */
@@ -865,7 +877,6 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
        */
 
        /* read back flash and send CRC */
-       ////memset(buf, 0, size);
        //spi_flash_read(SYSTEM->spi_flash_ptr, (unsigned char*)buf, adr, size); /////////// Temp comment out, FW
 
        /*
@@ -877,34 +888,45 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
        }
        printf("CRC = %02X\r\n", crc8(buf, size));
        */
-	    for(int i = 0; i < 32; i++) {
-		sc_data[i] = i*2;
-	    }
+	//    for(int i = 0; i < 32; i++) {
+	//	sc_data[i] = i*2;
+	//   }
+	
+	for(int j=0; j<size;j++){ // crc for mem write expects only crc of written data
+		buf[j]=buf[j+8];	
+	}
 
-       rb[0] = MCMD_ACK;
-       rb[1] = crc8(buf, size);
-       n = 2;
+      	rb[0] = MCMD_ACK;
+       	rb[1] = crc8(buf, size);
+	//memset(buf, 0, size);
+	n = 2;
 
        buf[0] = 0; // do not re-interprete command below
 
        break;
 
     case MCMD_READ_MEM:
-    	printf("READ MEM\n");
-           size = (buf[1] << 8) | buf[2];
+           size = (buf[2] << 8) | buf[3];
            // subadr = buf[3]; ignored
-           adr = buf[4];
-           adr = (adr << 8) | buf[5];
+           adr = buf[5];
            adr = (adr << 8) | buf[6];
            adr = (adr << 8) | buf[7];
+           adr = (adr << 8) | buf[8];
+	   //printf("READ MEM:\t addr:%08X size %d\n", adr, size);
 
-           /* only flash supported right now */
-           if ((adr & MSCB_BASE_FLASH) != MSCB_BASE_FLASH)
-              break;
-           adr = adr & ~MSCB_BASE_FLASH;
-
-           memset(buf, 0, size);
-           //spi_flash_read(SYSTEM->spi_flash_ptr, (unsigned char*)buf, adr, size);  /////////// Temp comment out, FW
+	// mscb only works with bytes 
+	// sc_data contains 32 bit per addr --> send 4 bytes per sc addr read:
+	   //buf[0]=(sc_data[adr]>>24);
+	   //buf[1]=(sc_data[adr]>>16);
+	   //buf[2]=(sc_data[adr]>>8);
+	   //buf[3]=sc_data[adr];
+	
+	// the same with a block of memory: 
+	   for(int j = 0; j < (size/4+(size%4!=0)) ; j++){
+		for(int i=0; i<4; i++){
+			buf[j*4+i]= (sc_data[adr+j]>>(24-8*i));
+		}
+	   }
 
            rb[0] = MCMD_ACK + 7;
            rb[1] = 0x80 | ((size >> 8) & 0x7F);
@@ -914,9 +936,21 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
            n = size+4;
 
            buf[0] = 0; // do not re-interprete command below
-
            break;
 
+	// old stuff:
+           ///* only flash supported right now */
+           //if ((adr & MSCB_BASE_FLASH) != MSCB_BASE_FLASH)
+           //   break;
+           //adr = adr & ~MSCB_BASE_FLASH;
+
+           //memset(buf, 0, size);
+	   //for(int j = 0; j< size; j++ ){
+	   //	buf[j]=sc_data[adr+j];
+		//printf("read addr %08X value: %08X\n",adr+j,sc_data[adr+j]);
+	   //}
+           //spi_flash_read(SYSTEM->spi_flash_ptr, (unsigned char*)buf, adr, size);  /////////// Temp comment out, FW
+	   
   }
 
   if ((buf[0] & 0xF8) == MCMD_READ) {

@@ -94,7 +94,7 @@
 #define MCMD_WRITE_RANGE 0xA8
 
 #define MCMD_WRITE_MEM   0xB7
-#define MCMD_READ_MEM    0xBE
+#define MCMD_READ_MEM    0xBF
 
 #define GET_INFO_GENERAL   0
 #define GET_INFO_VARIABLE  1
