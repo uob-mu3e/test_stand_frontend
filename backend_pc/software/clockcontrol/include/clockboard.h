@@ -2,6 +2,7 @@
 #define CLOCKBOARD_H
 
 #include "ipbus.h"
+#include "reset_protocol.h"
 
 class clockboard
 {
@@ -12,6 +13,9 @@ public:
     int init_clockboard();
     int map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num);
 
+    // Write "reset" commands
+    int write_command(uint8_t command, uint32_t payload =0, bool has_payload = false);
+    int write_command(char * name, uint32_t payload =0);
 
     // I2C interface
     int init_12c();
@@ -59,7 +63,7 @@ public:
     int configure_daughter_current_monitor(uint8_t daughter, uint16_t config);
     int configure_mother_current_monitor(uint16_t config);
 
-
+    reset reset_protocol;
 protected:
     ipbus bus;
 

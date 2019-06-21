@@ -1,5 +1,7 @@
 #include "clockboard.h"
 
+#include "reset_protocol.h"
+
 #include <iostream>
 
 #include "SI5345_REVD_REG_CONFIG.h"
@@ -62,6 +64,33 @@ int clockboard::map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num)
   }
 
   return 1;
+}
+
+int clockboard::write_command(uint8_t command, uint32_t payload, bool has_payload)
+{
+    vector<uint32_t> senddata;
+    senddata.push_back(0xbcbcbc00 + command);
+    if(has_payload)
+        senddata.push_back(payload);
+    bus.write(ADDR_FIFO_REG_OUT,senddata,true);
+
+    senddata.clear();
+    senddata.push_back(0xe);
+    if(has_payload)
+        senddata.push_back(0x0);
+    bus.write(ADDR_FIFO_REG_CHARISK, senddata, true);
+
+    return 0;
+}
+
+int clockboard::write_command(char *name, uint32_t payload)
+{
+    auto it = reset_protocol.commands.find(name);
+    if(it != reset_protocol.commands.end())
+        return write_command(it->second.command, payload, it->second.has_payload);
+
+    cout << "Unknown command " << name << endl;
+    return -1;
 }
 
 int clockboard::init_12c()

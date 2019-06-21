@@ -42,11 +42,18 @@
 
 #include <stdio.h>
 #include <cassert>
+#include <iostream>
 #include "midas.h"
 #include "mfe.h"
 
 
 #include "clockboard.h"
+#include "reset_protocol.h"
+
+using std::cout;
+using std::endl;
+using std::hex;
+
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -84,12 +91,24 @@ void cr_settings_changed(HNDLE, HNDLE, int, void *);
 /* Default values for /Equipment/Clock Reset/Settings */
 const char *cr_settings_str[] = {
 "Active = BOOL : 1",
-"Delay = INT : 0",
-"IP = STRING : ",
-"10.32.113.218",
+"IP = STRING : [16] 10.32.113.218",
 "PORT = INT : 50001",
-"Reset Trigger = BOOL : 0",
-"Sync Trigger = BOOL : 0",
+"Run Prepare = BOOL : 0",
+"Sync = BOOL : 0",
+"Start Run = BOOL : 0",
+"End Run = BOOL : 0",
+"Abort Run = BOOL : 0",
+"Start Link Test = BOOL : 0",
+"Stop Link Test = BOOL : 0",
+"Start Sync Test = BOOL : 0",
+"Stop Sync Test = BOOL : 0",
+"Test Sync = BOOL : 0",
+"Reset = BOOL : 0",
+"Stop Reset = BOOL : 0",
+"Enable = BOOL : 0",
+"Disable = BOOL : 0",
+"Address = BOOL : 0",
+"Payload = INT : 0",
 "Names CRT1 = STRING[4] :",
 "[32] Motherboard Current",
 "[32] Motherboard Voltage",
@@ -150,10 +169,16 @@ INT frontend_init()
    const char * name = "cr.html";
    db_set_value(hDB,0,"Custom/Clock and Reset&",name, sizeof(name), 1,TID_STRING);
 
-   char ip[16] = "10.32.113.218";
-   //db_get_value(hDB, hKey, "IP", ip, 0, TID_STRING, false);
-   int port = 50001;
-   //db_get_value(hDB, hKey, "PORT", &port, 0, TID_INT, false);
+   char ip[256];// = "10.32.113.218";
+   int size = 256;
+   if(!(db_get_value(hDB, hKey, "Settings/IP", ip, &size, TID_STRING, false)== DB_SUCCESS))
+       return CM_DB_ERROR;
+   int port;// = 50001;
+   size =sizeof(port);
+   if(!(db_get_value(hDB, hKey, "settings/PORT", &port, &size, TID_INT, false)==DB_SUCCESS))
+           return CM_DB_ERROR;
+
+   cout << "IP: " << ip << " port: " << port << endl;
 
    cb = new clockboard(ip, port);
 
@@ -235,7 +260,7 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
    db_get_key(hDB, hKey, &key);
 
-   if (std::string(key.name) == "Active") {
+    if (std::string(key.name) == "Active") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
@@ -243,35 +268,53 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       // TODO: propagate to hardware
    }
 
-   if (std::string(key.name) == "Delay") {
-      INT value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_INT);
-      cm_msg(MINFO, "cr_settings_changed", "Set delay to %d", value);
-      // TODO: propagate to hardware
+   auto it = cb->reset_protocol.commands.find(std::string(key.name));
+
+   if(it != cb->reset_protocol.commands.end()){
+       // Easy case are commands without payload
+       if(!(it->second.has_payload)){
+           BOOL value;
+           int size = sizeof(value);
+           db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+           if (value) {
+              cm_msg(MINFO, "cr_settings_changed", "Execute %s", key.name);
+              cb->write_command(key.name);
+              value = FALSE; // reset flag in ODB
+              db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+           }
+           // here the case with payload
+       } else {
+           // Run prepare needs the run number
+           if (std::string(key.name) == "Run Prepare") {
+              BOOL value;
+              int size = sizeof(value);
+              db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+              if (value) {
+                 cm_msg(MINFO, "cr_settings_changed", "Execute Run Prepare");
+                 int run;
+                 int size = sizeof(run);
+                 db_get_value(hDB, 0, "/Runinfo/Run number", &run, &size, TID_INT, false);
+                 cb->write_command(key.name,run);
+                 value = FALSE; // reset flag in ODB
+                 db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+              }
+           } else {
+               // Take the payload from the payload ODB field
+               BOOL value;
+               int size = sizeof(value);
+               db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+               if (value) {
+                    cm_msg(MINFO, "cr_settings_changed", "Execute %s", key.name);
+                    int payload;
+                    int size = sizeof(payload);
+                    db_get_value(hDB, 0, "/Equipment/Clock Reset/Settings/Payload", &payload, &size, TID_INT, false);
+                    cb->write_command(key.name,payload);
+                    value = FALSE; // reset flag in ODB
+                    db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+               }
+           }
+       }
    }
 
-   if (std::string(key.name) == "Reset Trigger") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if (value) {
-         cm_msg(MINFO, "cr_settings_changed", "Execute reset");
-         // TODO: propagate to hardware
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-      }
-   }
 
-   if (std::string(key.name) == "Sync Trigger") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if (value) {
-         cm_msg(MINFO, "cr_settings_changed", "Execute sync");
-         // TODO: propagate to hardware
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-      }
-   }
 }
