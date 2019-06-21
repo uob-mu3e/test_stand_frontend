@@ -1,15 +1,5 @@
-<<<<<<< HEAD
-*.sopcinfo
-*.qsys
-*.bak
-.qsys_edit/
-db/
-incremental_db/
-*.qws
-=======
-incremental_db/
-ip/.qsys_edit/
 ip/ip_clk_ctrl/
+ip/ip_clkctrl
 ip/ip_transceiver/
 ip/ip_pll_312/
 ip/ip_xcvr_reset/
@@ -22,10 +12,7 @@ ip/ip_pll_125/
 ip/receiver_switching/
 ip/transceiver_fifo/
 ip/transceiver_switching/
-.qsys_edit/
-nios.qsys
 nios/
-output_files/
 pcieapp/completer_fifo/
 pcieapp/completer_wide_fifo/
 pcieapp/data_addrs_ram/
@@ -34,11 +21,3 @@ pcieapp/dma_ram/
 pcieapp/pcie/
 pcieapp/pcie_ram_narrow/
 pcieapp/pcie_wram_narrow/
-simulation/
-db/
-ip/ip_pll_312.BAK.qsys
-pcieapp/pcie.BAK.qsys
-software/hal_bsp/
-software/app/
-pcieapp/.qsys_edit/
->>>>>>> origin/farm_switch_firmware

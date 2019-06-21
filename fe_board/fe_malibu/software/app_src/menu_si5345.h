@@ -26,7 +26,6 @@ struct si5345_t : si_t {
 
             printf("si5340:\n");
             printf("  [I] => init\n");
-            printf("  [R] => reset\n");
             printf("  [r] => read regs\n");
 
             printf("Select entry ...\n");
@@ -34,9 +33,6 @@ struct si5345_t : si_t {
             switch(cmd) {
             case 'I':
                 init(si5345_revb_registers, sizeof(si5345_revb_registers) / sizeof(si5345_revb_registers[0]));
-                break;
-            case 'R':
-                reset();
                 break;
             case 'r':
                 printf("si5345.read:\n");
