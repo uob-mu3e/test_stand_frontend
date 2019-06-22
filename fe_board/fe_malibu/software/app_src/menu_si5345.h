@@ -5,8 +5,8 @@
 
 struct si5345_t : si_t {
 
-    si5345_t(int spi_cs)
-        : si_t(spi_cs)
+    si5345_t(int spi_slave)
+        : si_t(spi_slave)
     {
     }
 

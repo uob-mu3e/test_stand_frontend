@@ -1,6 +1,8 @@
 
 struct si_t {
 
+    int log_level = 0;
+
     const alt_u32 spi_slave;
     ALT_AVALON_I2C_DEV_t* i2c_dev;
     const alt_u32 i2c_slave;
@@ -26,7 +28,7 @@ struct si_t {
                 printf("[si.read_byte] alt_avalon_i2c_master_rx => %d\n", read_err);
             }
         }
-        else if(spi_slave != -1) {
+        else if(spi_slave != alt_u32(-1)) {
             alt_u8 w[] = { 0x00, address, 0x80 };
             int n = alt_avalon_spi_command(SPI_BASE, spi_slave, 3, w, 1, r, 0);
         }
@@ -45,7 +47,7 @@ struct si_t {
                 printf("[si.read_byte] alt_avalon_i2c_master_tx => %d\n", write_err);
             }
         }
-        else if(spi_slave != -1) {
+        else if(spi_slave != alt_u32(-1)) {
             alt_u8 w[4] = { 0x00, address, 0x40, value };
             alt_avalon_spi_command(SPI_BASE, spi_slave, 4, w, 0, 0, 0);
         }
@@ -66,7 +68,7 @@ struct si_t {
     alt_u8 set_page(alt_u8 page) {
         wait_ready();
         if(page != read_byte(0x01)) {
-//            printf("[si] page <= 0x%02X\n", page);
+            if(log_level > 0) printf("[si.set_page] page <= 0x%02X\n", page);
             write_byte(0x01, page);
             wait_ready();
         }
@@ -76,10 +78,12 @@ struct si_t {
     alt_u8 read(alt_u16 address) {
         set_page(address >> 8);
         alt_u8 value = read_byte(address & 0xFF);
+        if(log_level > 0) printf("[si.read] si[0x%04X] = 0x%02X\n", address, value);
         return value;
     }
 
     void write(alt_u16 address, alt_u8 value) {
+        if(log_level > 0) printf("[si.write] si[0x%04X] <= 0x%02X\n", address, value);
         set_page(address >> 8);
         write_byte(address & 0xFF, value);
         wait_ready();
@@ -116,7 +120,7 @@ struct si_t {
 
     template < typename T >
     void init(const T* regs, int n) {
-        printf("[si] init SI%02X%02X\n", read(0x0003), read(0x0002));
+        printf("[si.init] DEV = SI%02X%02X\n", read(0x0003), read(0x0002));
 
         for(int i = 0; i < n; i++) {
             alt_u16 address = regs[i].address;
@@ -127,6 +131,8 @@ struct si_t {
             }
             write(address, value);
         }
+
+        printf("[si.init] done\n");
     }
 
 };

@@ -391,17 +391,17 @@ begin
         DATA_WIDTH => 32--,
     )
     port map (
-        address_b => avm_sc.address(15 downto 2),
-        q_b => avm_sc.readdata,
-        wren_b => avm_sc.write,
-        data_b => avm_sc.writedata,
-        clock_b => qsfp_pll_clk,
+        address_b   => avm_sc.address(15 downto 2),
+        q_b         => avm_sc.readdata,
+        wren_b      => avm_sc.write,
+        data_b      => avm_sc.writedata,
+        clock_b     => qsfp_pll_clk,
 
-        address_a => ram_addr_a(13 downto 0),
-        q_a => ram_rdata_a,
-        wren_a => ram_we_a,
-        data_a => ram_wdata_a,
-        clock_a => qsfp_pll_clk--,
+        address_a   => ram_addr_a(13 downto 0),
+        q_a         => ram_rdata_a,
+        wren_a      => ram_we_a,
+        data_a      => ram_wdata_a,
+        clock_a     => qsfp_pll_clk--,
     );
     avm_sc.waitrequest <= '0';
 

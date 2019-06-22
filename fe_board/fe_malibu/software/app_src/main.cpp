@@ -9,11 +9,11 @@
 si5345_t si5345 { 0 };
 
 alt_u32 alarm_callback(void*) {
-    IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0xFF);
     // watchdog
+    IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0xFF);
     IOWR_ALTERA_AVALON_PIO_SET_BITS(PIO_BASE, alt_nticks() & 0xFF);
 
-    sc_callback();
+    sc_callback((alt_u32*)AVM_SC_BASE);
 
     return 10;
 }
@@ -21,16 +21,19 @@ alt_u32 alarm_callback(void*) {
 int main() {
     uart_init();
 
+    printf("ALT_DEVICE_FAMILY = '%s'\n", ALT_DEVICE_FAMILY);
+
+    si5345.init(si5345_revb_registers, sizeof(si5345_revb_registers) / sizeof(si5345_revb_registers[0]));
+
     alt_alarm alarm;
-    int err = alt_alarm_start(&alarm, 10, alarm_callback, nullptr);
+    int err = alt_alarm_start(&alarm, 0, alarm_callback, nullptr);
     if(err) {
         printf("ERROR: alt_alarm_start => %d\n%d\n", err);
     }
 
-    si5345.init(si5345_revb_registers, sizeof(si5345_revb_registers) / sizeof(si5345_revb_registers[0]));
-
     while (1) {
-        printf("'%s' FE_S4 (MALIBU)\n", ALT_DEVICE_FAMILY);
+        printf("\n");
+        printf("FE_S4 (MALIBU):\n");
         printf("  [1] => xcvr qsfp\n");
         printf("  [2] => malibu\n");
         printf("  [3] => sc\n");
@@ -47,7 +50,7 @@ int main() {
             menu_malibu();
             break;
         case '3':
-            menu_sc();
+            menu_sc((alt_u32*)AVM_SC_BASE);
             break;
         case '4':
             menu_xcvr((alt_u32*)(AVM_POD_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
