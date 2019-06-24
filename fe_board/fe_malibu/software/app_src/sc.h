@@ -37,9 +37,12 @@ void sc_callback(volatile alt_u32* data) {
 }
 
 void menu_sc(volatile alt_u32* data) {
+    int add = 0;
     while(1) {
+        
         printf("  [r] => read sc ram\n");
         printf("  [w] => write sc ram\n");
+        printf("  [p] => pixel test\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -54,6 +57,15 @@ void menu_sc(volatile alt_u32* data) {
             for(int i = 0; i < 32; i++) {
                 data[i] = i;
             }
+            break;
+        case 'p':
+            for(int i = 1; i < 10; i++) {
+                data[i] = i;
+            }
+            data[add + 10] = 0xABAD1DEA;
+            data[add] = 0xBADC0DED;
+            add = add + 10;
+            printf("Add: '%i'\n", add);
             break;
         case 'q':
             return;

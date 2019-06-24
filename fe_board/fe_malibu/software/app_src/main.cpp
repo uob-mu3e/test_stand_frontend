@@ -13,7 +13,7 @@ alt_u32 alarm_callback(void*) {
     IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0xFF);
     IOWR_ALTERA_AVALON_PIO_SET_BITS(PIO_BASE, alt_nticks() & 0xFF);
 
-    sc_callback((alt_u32*)AVM_SC_BASE);
+    //sc_callback((alt_u32*)AVM_SC_BASE);
 
     return 10;
 }

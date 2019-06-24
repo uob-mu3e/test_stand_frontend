@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.reg_map_s4.all;
 
 entity top is
 port (
@@ -59,6 +60,90 @@ port (
 --    pod_rx          : in    std_logic_vector(3 downto 0);
 
 
+
+
+	 -- HSMC-Port-A--------------------------//107pins //--------------------------
+		-- Bank 1		
+--		A_clkext_fast_front:		out	std_logic;	-- has to be connected to be used!
+--		A_clkext_fast_back:		out	std_logic;	-- has to be connected to be used!	
+		A_spare_clk_out:			out	std_logic;	-- use as FPGA_RESET_OUT		
+		A_dataout_fast_front:	in		std_logic_vector(3 downto 0);			
+		A_dataout_fast_back:		in		std_logic_vector(3 downto 0);
+		A_spare_clk_in:			in		std_logic;	
+		
+		hsma_prsntn: 				in 	std_logic;         				--//2.5V    //HSMC Presence Detect Input		
+--		hsma_rx_led: 				out 	std_logic;         				--//2.5V    //User LED - Labeled RX
+--		hsma_scl: 					out 	std_logic;            			--//2.5V    //SMBus Clock
+		hsma_sda: 					inout std_logic;            			--//2.5V    //SMBus Data
+--		hsma_tx_led: 				out 	std_logic;         				--//2.5V    //User LED - Labeled TX		
+
+		-- Front port	
+		-- outputs	
+		A_spi_ld_front:			out	std_logic;			
+		A_spi_clk_front:			out	std_logic;
+		A_testpulse_1_front:		out	std_logic;
+		A_spi_din_front:			out	std_logic;	
+		A_spi_ld_tmp_dac_front:	out	std_logic;	
+		A_spi_ld_adc_front:		out	std_logic;	
+		A_ctrl_ld_front:			out	std_logic;	
+		A_ctrl_clk2_front:		out	std_logic;
+		A_ctrl_clk1_front:		out	std_logic;
+		A_ctrl_din_front:			out	std_logic;
+		A_ctrl_rb_front:			out	std_logic;
+		A_ldcol_front:				out	std_logic;		
+		A_rdcol_front:				out	std_logic;	
+		A_pd_data_front:			out	std_logic;	
+		A_ldpix_front:				out	std_logic;
+		A_trig_front:				out	std_logic;
+		A_syncres_front:			out	std_logic;
+		A_clkref_front:			out	std_logic;
+		-- inputs	
+		A_ctrl_dout_front:		in		std_logic;
+		A_hit_front:				in		std_logic;		
+		A_spi_dout_adc_front:	in		std_logic;
+		A_spi_dout_dac_front:	in		std_logic;
+		A_dac4_dout_front:		in		std_logic;	
+		A_hb_front:					in		std_logic;	
+		A_dataout_front:			in		std_logic_vector(3 downto 0);	
+		-- only front bank			
+		A_trig_ttl:					in		std_logic_vector(3 downto 0);	
+		A_fpga_rst_out:			in		std_logic;	-- can only be used as input!
+		A_fpga_rst_in:				in		std_logic;		
+		
+		-- Back port
+		-- outputs
+		A_spi_ld_back:				out	std_logic;			
+		A_spi_clk_back:			out	std_logic;
+		A_testpulse_1_back:		out	std_logic;
+		A_spi_din_back:			out	std_logic;	
+		A_spi_ld_tmp_dac_back:	out	std_logic;	
+		A_spi_ld_adc_back:		out	std_logic;	
+		A_ctrl_ld_back:			out	std_logic;	
+		A_ctrl_clk2_back:			out	std_logic;
+		A_ctrl_clk1_back:			out	std_logic;
+		A_ctrl_din_back:			out	std_logic;
+		A_ctrl_rb_back:			out	std_logic;
+		A_ldcol_back:				out	std_logic;		
+		A_rdcol_back:				out	std_logic;	
+		A_pd_data_back:			out	std_logic;	
+		A_ldpix_back:				out	std_logic;
+		A_trig_back:				out	std_logic;
+		A_syncres_back:			out	std_logic;
+		A_clkref_back:				out	std_logic;
+		-- inputs
+		A_ctrl_dout_back:			in		std_logic;
+		A_hit_back:					in		std_logic;		
+		A_spi_dout_adc_back:		in		std_logic;
+		A_spi_dout_dac_back:		in		std_logic;
+		A_dac4_dout_back:			in		std_logic;	
+		A_hb_back:					in		std_logic;	
+		A_dataout_back:			in		std_logic_vector(3 downto 0);			
+		-- only back bank		
+		A_tlu_clk_local:			out	std_logic;
+		A_tlu_busy_local:			out	std_logic;		
+		A_tlu_rst_local:			in		std_logic;	
+		A_tlu_trg_local:			in		std_logic;		
+		A_clkin:						in		std_logic;
 
     --
 
@@ -120,6 +205,46 @@ architecture arch of top is
     signal sc_from_fifo : std_logic_vector(35 downto 0);
     signal sc_from_fifo_re : std_logic;
     signal sc_from_fifo_empty : std_logic;
+	 
+	 signal writememreaddata_mp8 : std_logic_vector(31 downto 0);
+	 signal writememreadaddr_mp8 : std_logic_vector(15 downto 0);
+	 signal mp8_busy_n : std_logic_vector(0 downto 0); -- NCHIPS
+	 signal mp8_mem_data_out : std_logic_vector(31 downto 0);
+	 signal mp8_wren : std_logic_vector(0 downto 0); -- NCHIPS
+	 signal mp8_ld : std_logic_vector(0 downto 0); -- NCHIPS
+	 signal mp8_rb : std_logic_vector(0 downto 0); -- NCHIPS
+	 signal mp8_ctrl_dout : std_logic_vector(0 downto 0); -- NCHIPS
+	 signal mp8_ctrl_din : std_logic_vector(0 downto 0); -- NCHIPS
+	 signal mp8_ctrl_clk1 : std_logic_vector(0 downto 0); -- NCHIPS
+	 signal mp8_ctrl_clk2 : std_logic_vector(0 downto 0); -- NCHIPS
+	 signal mp8_ctrl_ld : std_logic_vector(0 downto 0); -- NCHIPS
+	 signal mp8_ctrl_rb : std_logic_vector(0 downto 0); -- NCHIPS
+	 signal mp8_dataout : std_logic_vector(31 downto 0); -- NCHIPS
+	 
+	 -- SPI
+	 signal A_spi_wren_front :	std_logic_vector(2 downto 0);
+	 signal A_spi_busy_n_front : std_logic;
+	 signal A_spi_ldn_front : std_logic_vector(2 downto 0);
+	 signal A_spi_sdo_front : std_logic_vector(2 downto 0);
+	 
+	 -- SPI output signals A front
+    signal	injection1_out_A_front:			std_logic_vector(15 downto 0);
+    signal	threshold_pix_out_A_front:		std_logic_vector(15 downto 0);	
+    signal	threshold_low_out_A_front:		std_logic_vector(15 downto 0);
+    signal	threshold_high_out_A_front:	std_logic_vector(15 downto 0);
+    signal	temp_dac_out_A_front:			std_logic_vector(15 downto 0);
+    signal	temp_adc_out_A_front:			std_logic_vector(31 downto 0);
+    -- SPI output signals A back
+    signal	injection1_out_A_back:			std_logic_vector(15 downto 0);
+    signal	threshold_pix_out_A_back:		std_logic_vector(15 downto 0);	
+    signal	threshold_low_out_A_back:		std_logic_vector(15 downto 0);
+    signal	threshold_high_out_A_back:		std_logic_vector(15 downto 0);
+    signal	temp_dac_out_A_back:				std_logic_vector(15 downto 0);
+    signal	temp_adc_out_A_back:				std_logic_vector(31 downto 0);
+     
+	 subtype reg32 is std_logic_vector(31 downto 0);
+	 type reg32array is array (36 downto 0) of reg32;
+	 signal test_reg32 : reg32array;
 
 begin
 
@@ -385,7 +510,7 @@ begin
     ----------------------------------------------------------------------------
     -- SLOW CONTROL
 
-    i_sc_ram : entity work.ip_ram
+    i_sc_ram1 : entity work.ip_ram -- nios
     generic map (
         ADDR_WIDTH => 14,
         DATA_WIDTH => 32--,
@@ -405,27 +530,137 @@ begin
     );
     avm_sc.waitrequest <= '0';
 
+	 i_sc_ram2 : entity work.ip_ram -- pixel
+    generic map (
+        ADDR_WIDTH => 14,
+        DATA_WIDTH => 32--,
+    )
+    port map (
+        address_b   => writememreadaddr_mp8(13 downto 0),
+        q_b         => writememreaddata_mp8,
+        wren_b      => avm_sc.write,
+        data_b      => avm_sc.writedata,
+        clock_b     => qsfp_pll_clk,
+
+        address_a   => (others => '0'),
+        q_a         => open,
+        wren_a      => ram_we_a,
+        data_a      => ram_wdata_a,
+        clock_a     => qsfp_pll_clk--,
+    );
+	 
     i_sc : entity work.sc_s4
     port map (
-        clk => qsfp_pll_clk,
-        reset_n => reset_n,
-        enable => '1',
+        clk 				=> qsfp_pll_clk,
+        reset_n 			=> reset_n,
+        enable 			=> '1',
 
-        mem_data_in => ram_rdata_a,
+        mem_data_in 		=> ram_rdata_a,
 
-        link_data_in => qsfp_rx_data(31 downto 0),
-        link_data_in_k => qsfp_rx_datak(3 downto 0),
+        link_data_in 	=> qsfp_rx_data(31 downto 0),
+        link_data_in_k 	=> qsfp_rx_datak(3 downto 0),
 
-        fifo_data_out => sc_to_fifo,
-        fifo_we => sc_to_fifo_we,
+        fifo_data_out 	=> sc_to_fifo,
+        fifo_we 			=> sc_to_fifo_we,
 
-        mem_data_out => ram_wdata_a,
-        mem_addr_out => ram_addr_a,
-        mem_wren => ram_we_a,
+        mem_data_out 	=> ram_wdata_a,
+        mem_addr_out 	=> ram_addr_a,
+        mem_wren 			=> ram_we_a,
 
-        stateout => open--,
+        stateout 			=> open--,
     );
+	 
+    ----------------------------------------------------------------------------
+    -- MUPIX 8 Slow Control and SPI for DACs and ADC's
+	 
+	 i_sc_mp8_master : work.mp8_sc_master
+	 generic map(NCHIPS => 1)
+	 port map (
+		  clk				=> qsfp_pll_clk,
+		  reset_n		=> reset_n,
+	 	  mem_data_in	=> writememreaddata_mp8,
+		  busy_n			=> mp8_busy_n,
+		
+		  mem_addr		=> writememreadaddr_mp8,
+		  mem_data_out	=> mp8_mem_data_out,
+		  wren			=> mp8_wren,
+		  ctrl_ld		=> mp8_ld,
+		  ctrl_rb		=> mp8_rb,
+		  done			=> open, 
+		  stateout		=> open--,
+	 );
+	 
+	 gen_slowc:
+	 for i in 0 to 1-1 generate -- nchips
+	 i_mp8_sc : work.mp8_slowcontrol
+	 port map(
+		  clk				=> qsfp_pll_clk,
+		  reset_n		=> reset_n,
+		  ckdiv			=> (others => '0'), -- this need to be set to a register
+		  mem_data		=> mp8_mem_data_out,
+		  wren			=> mp8_wren(i),
+		  ld_in			=> mp8_ld(i),
+		  rb_in			=> mp8_rb(i),
+		  ctrl_dout		=> mp8_ctrl_dout(i),
+		  ctrl_din		=> mp8_ctrl_din(i),
+		  ctrl_clk1		=> mp8_ctrl_clk1(i),
+		  ctrl_clk2		=> mp8_ctrl_clk2(i),
+		  ctrl_ld		=> mp8_ctrl_ld(i),
+		  ctrl_rb		=> mp8_ctrl_rb(i),
+		  busy_n			=> mp8_busy_n(i),
+		  dataout		=> mp8_dataout--, need also be generated via nchips
+	 );	
+	 end generate gen_slowc;
+	 
+	 process(qsfp_pll_clk)
+	 begin
+		if(rising_edge(qsfp_pll_clk))then	
+			mp8_ctrl_dout(0)	<= A_ctrl_dout_front;
+		end if;
+	 end process;
+	 
+	 process(qsfp_pll_clk)
+	 begin
+		if(rising_edge(qsfp_pll_clk))then	
+			A_ctrl_din_front		<= mp8_ctrl_din(0);
+			A_ctrl_clk1_front		<= mp8_ctrl_clk1(0);
+			A_ctrl_clk2_front		<= mp8_ctrl_clk2(0);
+			A_ctrl_ld_front		<= mp8_ctrl_ld(0);
+			A_ctrl_rb_front		<= mp8_ctrl_rb(0);
+		end if;
+	 end process;
+	 
+	 A_spi_sdo_front 			<= A_spi_dout_adc_front & A_spi_dout_dac_front & A_dac4_dout_front;
+	 A_spi_ld_adc_front 		<= A_spi_ldn_front(2);
+    A_spi_ld_tmp_dac_front <= A_spi_ldn_front(1);
+	 A_spi_ld_front 			<= A_spi_ldn_front(0);
+	 A_spi_wren_front 		<= test_reg32(DAC_WRITE_REGISTER_W)(DAC_WRITE_A_FRONT_RANGE);
 
+	 ip_spi_master_mupix: entity work.spi_master 
+	 port map(
+		clk					=> qsfp_pll_clk,
+		reset_n				=> reset_n,
+		injection1_reg		=> test_reg32(INJECTION_DAC_A_FRONT_REGISTER_W)(INJECTION1_RANGE),
+		threshold_pix_reg	=> test_reg32(INJECTION_DAC_A_FRONT_REGISTER_W)(THRESHOLD_PIX_RANGE),
+		threshold_low_reg	=> test_reg32(THRESHOLD_DAC_A_FRONT_REGISTER_W)(THRESHOLD_LOW_RANGE),
+		threshold_high_reg=> test_reg32(THRESHOLD_DAC_A_FRONT_REGISTER_W)(THRESHOLD_HIGH_RANGE),
+		temp_dac_reg		=> test_reg32(TEMP_A_FRONT_REGISTER_W)(TEMP_DAC_RANGE),
+		temp_adc_reg		=> test_reg32(TEMP_A_FRONT_REGISTER_W)(TEMP_ADC_W_RANGE),	
+		wren					=> A_spi_wren_front,
+		busy_n				=> A_spi_busy_n_front,
+		spi_sdi				=> A_spi_din_front,
+		spi_sclk				=> A_spi_clk_front,
+		spi_load_n			=> A_spi_ldn_front,
+		
+		spi_sdo				=> A_spi_sdo_front,
+		injection1_out		=> injection1_out_A_front,
+		threshold_pix_out	=> threshold_pix_out_A_front,
+		threshold_low_out	=> threshold_low_out_A_front,
+		threshold_high_out=> threshold_high_out_A_front,
+		temp_dac_out		=> temp_dac_out_A_front,
+		temp_adc_out		=> temp_adc_out_A_front
+	 );		
+	 
     ----------------------------------------------------------------------------
 
     ----------------------------------------------------------------------------
