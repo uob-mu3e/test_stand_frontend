@@ -5,7 +5,7 @@
 #include "malibu.h"
 #include "sc.h"
 
-#include "menu_si5345.h"
+#include "si5345.h"
 si5345_t si5345 { 0 };
 
 alt_u32 alarm_callback(void*) {
@@ -22,8 +22,9 @@ int main() {
     uart_init();
 
     printf("ALT_DEVICE_FAMILY = '%s'\n", ALT_DEVICE_FAMILY);
+    printf("\n");
 
-    si5345.init(si5345_revb_registers, sizeof(si5345_revb_registers) / sizeof(si5345_revb_registers[0]));
+    si5345.init();
 
     alt_alarm alarm;
     int err = alt_alarm_start(&alarm, 0, alarm_callback, nullptr);

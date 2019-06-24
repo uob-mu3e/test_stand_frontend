@@ -12,6 +12,7 @@ struct si_t {
         , i2c_dev(i2c_dev)
         , i2c_slave(i2c_slave)
     {
+        printf("[si] PN_BASE = %02X%02X, GRADE = %d, DEVICE_REV = %d\n", read(0x0003), read(0x0002), read(0x0004), read(0x0005));
     }
 
     alt_u8 read_byte(alt_u8 address) {
@@ -120,8 +121,6 @@ struct si_t {
 
     template < typename T >
     void init(const T* regs, int n) {
-        printf("[si.init] DEV = SI%02X%02X\n", read(0x0003), read(0x0002));
-
         for(int i = 0; i < n; i++) {
             alt_u16 address = regs[i].address;
             alt_u16 value = regs[i].value;
