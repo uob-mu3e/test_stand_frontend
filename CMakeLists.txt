@@ -26,12 +26,15 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# on some older boxes, wpedantic and MIDAS do not mix
+add_subdirectory(modules)
+
 add_compile_options(
     "-Wpedantic" "-Wall" "-Wextra"
     "-Wformat=2"
 )
 
-add_subdirectory(modules)
+
 
 set(MIDAS_DIR  ${PROJECT_SOURCE_DIR}/modules/midas)
 set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mxml)

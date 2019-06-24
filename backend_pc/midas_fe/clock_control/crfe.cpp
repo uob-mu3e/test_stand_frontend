@@ -93,6 +93,7 @@ const char *cr_settings_str[] = {
 "Active = BOOL : 1",
 "IP = STRING : [16] 10.32.113.218",
 "PORT = INT : 50001",
+"Daughters Present = BYTE : 0"
 "Run Prepare = BOOL : 0",
 "Sync = BOOL : 0",
 "Start Run = BOOL : 0",
@@ -112,6 +113,22 @@ const char *cr_settings_str[] = {
 "Names CRT1 = STRING[4] :",
 "[32] Motherboard Current",
 "[32] Motherboard Voltage",
+"[32] Daughterboard 0 Current",
+"[32] Daughterboard 0 Voltage",
+"[32] Daughterboard 1 Current",
+"[32] Daughterboard 1 Voltage",
+"[32] Daughterboard 2 Current",
+"[32] Daughterboard 2 Voltage",
+"[32] Daughterboard 3 Current",
+"[32] Daughterboard 3 Voltage",
+"[32] Daughterboard 4 Current",
+"[32] Daughterboard 4 Voltage",
+"[32] Daughterboard 5 Current",
+"[32] Daughterboard 5 Voltage",
+"[32] Daughterboard 6 Current",
+"[32] Daughterboard 6 Voltage",
+"[32] Daughterboard 7 Current",
+"[32] Daughterboard 7 Voltage",
 "[32] RX Firefly Temp",
 "[32] TX Firefly Temp",
 nullptr
@@ -188,6 +205,11 @@ INT frontend_init()
    cb->init_clockboard();
 
 
+   // check which daughter cards are equipped
+   uint8_t daughters = cb->daughters_present();
+   db_set_value(hDB,hKey,"settings/Daughters Present",&daughters, sizeof(daughters), 1,TID_BYTE);
+
+
    return CM_SUCCESS;
 }
 
@@ -237,6 +259,11 @@ INT resume_run(INT run_number, char *error)
 
 INT read_cr_event(char *pevent, INT off)
 {
+    uint8_t daughters;
+    int size = sizeof(daughters);
+    db_get_value(hDB, 0, "/Equipment/Clock Reset/Settings/Daughters Present",
+                 &daughters, &size, TID_BYTE, false);
+
    bk_init(pevent);
 
    float *pdata;
@@ -244,6 +271,15 @@ INT read_cr_event(char *pevent, INT off)
 
    *pdata++ = cb->read_mother_board_current();
    *pdata++ = cb->read_mother_board_voltage();
+   for(uint8_t i=0;i < 8; i++){
+       if(daughters && 1<<i){
+            *pdata++ = cb->read_daughter_board_current(i);
+            *pdata++ = cb->read_daughter_board_voltage(i);
+       } else {
+           *pdata++ = -1.0;
+           *pdata++ = -1.0;
+       }
+   }
    *pdata++ = cb->read_rx_firefly_temp();
    *pdata++ = cb->read_tx_firefly_temp();
 

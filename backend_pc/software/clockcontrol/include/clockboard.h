@@ -50,6 +50,7 @@ public:
 
     // Mother and daughter card monitoring
     bool daughter_present(uint8_t daughter);
+    uint8_t daughters_present();
 
     int enable_daughter_12c(uint8_t dev_addr, uint8_t i2c_bus_num);
     int disable_daughter_12c(uint8_t dev_addr);

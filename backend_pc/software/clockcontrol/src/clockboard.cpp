@@ -417,6 +417,15 @@ bool clockboard::daughter_present(uint8_t daughter)
     return true;
 }
 
+uint8_t clockboard::daughters_present()
+{
+    uint8_t result = 0;
+    for(uint8_t d =0; d < 8; d++){
+        result += ((uint8_t)daughter_present(d))<<d;
+    }
+    return result;
+}
+
 int clockboard::enable_daughter_12c(uint8_t dev_addr, uint8_t i2c_bus_num)
 {
     return write_i2c(dev_addr, i2c_bus_num);
