@@ -32,6 +32,8 @@ public:
     int load_SI3545_reg_map();
 
     // Firefly interface
+    bool firefly_present(uint8_t daughter, uint8_t index);
+
     uint16_t read_disabled_tx_channels();
     int disable_tx_channels(uint16_t channels);
 
@@ -45,7 +47,13 @@ public:
     vector<uint8_t> read_rx_emphasis();
 
     float read_rx_firefly_temp();
+    float read_rx_firefly_voltage();
+    vector<uint32_t> read_rx_firefly_alarms();
+    vector<float> read_rx_firefly_power();
+
+
     float read_tx_firefly_temp();
+    float read_tx_firefly_temp(uint8_t daughter, uint8_t index);
 
 
     // Mother and daughter card monitoring
@@ -111,8 +119,21 @@ protected:
     const uint8_t FIREFLY_TX_ADDR           = 0x50;
     const uint8_t FIREFLY_RX_ADDR           = 0x54;
 
+    // Firefly buses
+    const uint8_t FIREFLY_0                 = 0x07;
+    const uint8_t FIREFLY_2                 = 0x05;
+    const uint8_t FIREFLY_1                 = 0x06;
+
+    const uint8_t FIREFLY_SEL[3]             = {FIREFLY_0, FIREFLY_1, FIREFLY_2};
+
     // Firefly register map
+    const uint8_t FIREFLY_ALARM_REG         = 0x03;
     const uint8_t FIREFLY_TEMP_REG          = 0x16;
+    const uint8_t FIREFLY_VOLTAGE_LO_REG    = 0x1A;
+    const uint8_t FIREFLY_VOLTAGE_HI_REG    = 0x1B;
+
+    const uint8_t FIREFLY_OPTICAL_PWR_LO_REG   = 0x22;
+    const uint8_t FIREFLY_OPTICAL_PWR_HI_REG   = 0x23;
 
     const uint8_t FIREFLY_DISABLE_HI_ADDR   = 0x34;
     const uint8_t FIREFLY_DISABLE_LO_ADDR   = 0x35;

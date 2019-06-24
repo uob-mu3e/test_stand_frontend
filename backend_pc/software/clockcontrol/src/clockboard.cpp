@@ -131,7 +131,6 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data)
 {
 
     if(!setSlave(dev_addr, false)){
-        cout << "Set Slave failed" << endl;
         return 0;
     }
 
@@ -161,7 +160,6 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data)
 int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[])
 {
     if(!setSlave(dev_addr, false)){
-        cout << "Set Slave failed" << endl;
         return 0;
     }
 
@@ -171,7 +169,6 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_nu
     checkTIP();
 
     if(!setSlave(dev_addr, true)){
-        cout << "Set Slave failed" << endl;
         return 0;
     }
 
@@ -201,7 +198,6 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_nu
 int clockboard::write_i2c(uint8_t dev_addr, uint8_t data)
 {
     if(!setSlave(dev_addr,false)){
-         cout << "Set Slave failed" << endl;
         return 0;
      }
 
@@ -220,7 +216,6 @@ int clockboard::write_i2c(uint8_t dev_addr, uint8_t data)
 int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data)
 {
     if(!setSlave(dev_addr,false)){
-        cout << "Set Slave failed" << endl;
         return 0;
     }
 
@@ -245,7 +240,6 @@ int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data)
 int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[])
 {
     if(!setSlave(dev_addr,false)){
-        cout << "Set Slave failed" << endl;
         return 0;
     }
 
@@ -288,6 +282,17 @@ int clockboard::load_SI3545_reg_map()
         write_i2c_reg(SI_I2C_ADDR, reg_addr, (uint8_t)si5345_revd_registers[i].value);
     }
     return 1;
+}
+
+bool clockboard::firefly_present(uint8_t daughter, uint8_t index)
+{
+    enable_daughter_12c(DAUGHTERS[daughter],FIREFLY_SEL[index]);
+    if(!setSlave(FIREFLY_TX_ADDR,false)){
+        disable_daughter_12c(DAUGHTERS[daughter]);
+       return false;
+     }
+    disable_daughter_12c(DAUGHTERS[daughter]);
+    return true;
 }
 
 uint16_t clockboard::read_disabled_tx_channels()
@@ -401,10 +406,68 @@ float clockboard::read_rx_firefly_temp()
     return data * FIREFLY_TEMP_CONVERSION;
 }
 
+float clockboard::read_rx_firefly_voltage()
+{
+
+    uint8_t data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_VOLTAGE_LO_REG,data);
+    uint16_t voltage = data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_VOLTAGE_HI_REG,data);
+    voltage += ((uint16_t)data << 8);
+    return (float)voltage / 10.0;
+    // voltage in mV
+}
+
+vector<uint32_t> clockboard::read_rx_firefly_alarms()
+{
+    vector<uint8_t> alarms8;
+    vector<uint32_t> alarms;
+    uint8_t data;
+    for(uint8_t i =0; i< 16; i++){
+        data =0;
+        if(i==0 || i==3 || i== 4  || i==6 || i==7 || i==15)
+            read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_ALARM_REG+i,data);
+        alarms8.push_back(data);
+    }
+
+    for(uint8_t i =0; i< 4; i++){
+        uint32_t word = alarms8[i*4]+
+                       (alarms8[i*4+1] << 8) +
+                       (alarms8[i*4+2] << 16) +
+                       (alarms8[i*4+3] << 24);
+        alarms.push_back(word);
+    }
+    return alarms;
+}
+
+vector<float> clockboard::read_rx_firefly_power()
+{
+    vector<float> pow;
+
+    for(uint8_t i =0; i < 12; i++){
+        uint8_t data;
+        read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_OPTICAL_PWR_LO_REG+i*2,data);
+        uint16_t power = data;
+        read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_OPTICAL_PWR_HI_REG+i*2,data);
+        power += ((uint16_t)data << 8);
+        pow.push_back((float)power / 10.0);
+        // Optical power in microW
+    }
+    return pow;
+}
+
 float clockboard::read_tx_firefly_temp()
 {
     uint8_t data;
     read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_TEMP_REG,data);
+    return data * FIREFLY_TEMP_CONVERSION;
+}
+
+float clockboard::read_tx_firefly_temp(uint8_t daughter, uint8_t index)
+{
+    enable_daughter_12c(DAUGHTERS[daughter],FIREFLY_SEL[index]);
+    uint8_t data;
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TEMP_REG,data);
     return data * FIREFLY_TEMP_CONVERSION;
 }
 

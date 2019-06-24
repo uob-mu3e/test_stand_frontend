@@ -93,7 +93,6 @@ const char *cr_settings_str[] = {
 "Active = BOOL : 1",
 "IP = STRING : [16] 10.32.113.218",
 "PORT = INT : 50001",
-"Daughters Present = BYTE : 0"
 "Run Prepare = BOOL : 0",
 "Sync = BOOL : 0",
 "Start Run = BOOL : 0",
@@ -110,9 +109,28 @@ const char *cr_settings_str[] = {
 "Disable = BOOL : 0",
 "Address = BOOL : 0",
 "Payload = INT : 0",
-"Names CRT1 = STRING[4] :",
+"Names CRT1 = STRING[37] :",
 "[32] Motherboard Current",
 "[32] Motherboard Voltage",
+"[32] RX Firefly Alarms 0",
+"[32] RX Firefly Alarms 1",
+"[32] RX Firefly Alarms 2",
+"[32] RX Firefly Alarms 3",
+"[32] RX Firefly Temp",
+"[32] RX Firefly Voltage",
+"[32] RX Firefly Optical Power 0",
+"[32] RX Firefly Optical Power 1",
+"[32] RX Firefly Optical Power 2",
+"[32] RX Firefly Optical Power 3",
+"[32] RX Firefly Optical Power 4",
+"[32] RX Firefly Optical Power 5",
+"[32] RX Firefly Optical Power 6",
+"[32] RX Firefly Optical Power 7",
+"[32] RX Firefly Optical Power 8",
+"[32] RX Firefly Optical Power 9",
+"[32] RX Firefly Optical Power 10",
+"[32] RX Firefly Optical Power 11",
+"[32] TX Firefly Temp",
 "[32] Daughterboard 0 Current",
 "[32] Daughterboard 0 Voltage",
 "[32] Daughterboard 1 Current",
@@ -129,8 +147,6 @@ const char *cr_settings_str[] = {
 "[32] Daughterboard 6 Voltage",
 "[32] Daughterboard 7 Current",
 "[32] Daughterboard 7 Voltage",
-"[32] RX Firefly Temp",
-"[32] TX Firefly Temp",
 nullptr
 };
 
@@ -196,7 +212,6 @@ INT frontend_init()
            return CM_DB_ERROR;
 
    cout << "IP: " << ip << " port: " << port << endl;
-
    cb = new clockboard(ip, port);
 
    if(!cb->isConnected())
@@ -204,11 +219,22 @@ INT frontend_init()
 
    cb->init_clockboard();
 
-
    // check which daughter cards are equipped
    uint8_t daughters = cb->daughters_present();
-   db_set_value(hDB,hKey,"settings/Daughters Present",&daughters, sizeof(daughters), 1,TID_BYTE);
+   db_set_value(hDB,hKey,"Variables/Daughters Present",&daughters, sizeof(daughters), 1,TID_BYTE);
 
+    // check which fireflys are present
+   uint8_t ffs[8]={0};
+   for(uint8_t i=0; i < 8; i++){
+       if(daughters & (1<<i)){
+           for(uint8_t j =0; j < 3; j++){
+               ffs[i] |=  ((uint8_t)(cb->firefly_present(i,j))) << j;
+           }
+        }
+    }
+
+   size = sizeof(uint8_t);
+   db_set_value(hDB, hKey, "Variables/Fireflys Present", ffs, 8*size,8,TID_BYTE);
 
    return CM_SUCCESS;
 }
@@ -261,7 +287,7 @@ INT read_cr_event(char *pevent, INT off)
 {
     uint8_t daughters;
     int size = sizeof(daughters);
-    db_get_value(hDB, 0, "/Equipment/Clock Reset/Settings/Daughters Present",
+    db_get_value(hDB, 0, "/Equipment/Clock Reset/Variables/Daughters Present",
                  &daughters, &size, TID_BYTE, false);
 
    bk_init(pevent);
@@ -271,8 +297,23 @@ INT read_cr_event(char *pevent, INT off)
 
    *pdata++ = cb->read_mother_board_current();
    *pdata++ = cb->read_mother_board_voltage();
+
+   vector<uint32_t>al = cb->read_rx_firefly_alarms();
+   *pdata++ = al[0];
+   *pdata++ = al[1];
+   *pdata++ = al[2];
+   *pdata++ = al[3];
+   *pdata++ = cb->read_rx_firefly_temp();
+   *pdata++ = cb->read_rx_firefly_voltage();
+   vector<float>pow = cb->read_rx_firefly_power();
+    for(uint8_t i =0; i < 12; i++){
+        *pdata++ = pow[i];
+    }
+
+   *pdata++ = cb->read_tx_firefly_temp();
+
    for(uint8_t i=0;i < 8; i++){
-       if(daughters && 1<<i){
+       if(daughters && (1<<i)){
             *pdata++ = cb->read_daughter_board_current(i);
             *pdata++ = cb->read_daughter_board_voltage(i);
        } else {
@@ -280,8 +321,7 @@ INT read_cr_event(char *pevent, INT off)
            *pdata++ = -1.0;
        }
    }
-   *pdata++ = cb->read_rx_firefly_temp();
-   *pdata++ = cb->read_tx_firefly_temp();
+
 
    bk_close(pevent, pdata);
 
