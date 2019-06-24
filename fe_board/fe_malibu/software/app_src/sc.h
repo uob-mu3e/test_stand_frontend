@@ -2,7 +2,7 @@
 volatile alt_u32* sc_data = (alt_u32*)AVM_SC_BASE;
 
 void sc_callback() {
-    // command (upper 16 bits) and length (lower 16 bits)
+    // get the command (upper 16 bits) and length (lower 16 bits)
     alt_u32 n = sc_data[0];
     if(n == 0) return;
     printf("[sc_callback] sc[0] = 0x%08X\n", n);
@@ -30,6 +30,7 @@ void sc_callback() {
         }
     }
 
+//    asm volatile ("" : : : "memory");
     sc_data[0] = 0;
 }
 

@@ -32,6 +32,7 @@ int main() {
         printf("  [3] => sc\n");
         printf("  [4] => xcvr pod\n");
         printf("  [5] => mscb (exit by reset only)");
+        printf("  [0] => si5345\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();

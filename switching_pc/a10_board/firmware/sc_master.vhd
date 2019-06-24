@@ -94,8 +94,8 @@ begin
 			case state is
 			
 				when waiting =>
-					stateout(3 downto 0) 	<= x"1";
-					done					<= '1';			
+					stateout(3 downto 0) <= x"1";
+					done						<= '1';
 					if(wait_cnt = '0')then
 						if(enable = '1')then
 							if(mem_data_in(31 downto 20) = CODE_START)then
@@ -140,9 +140,9 @@ begin
 					end if;
 										
 				when others =>
-					state	<= waiting;
+					state		<= waiting;
 					addr_reg <= (others => '0');
-					wren_reg		<= (others => '0');
+					wren_reg	<= (others => '0');
 			end case;
 			
 		end if;
