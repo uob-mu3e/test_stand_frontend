@@ -71,6 +71,9 @@ BEGIN
 							fpga_id					<=	data_in(23 downto 8);
 							demerge_state 			<= receiving_slowcontrol;
 							slowcontrol_type		<= data_in(25 downto 24);
+							sc_out_ready			<= '1';
+							sc_out					<= data_in;
+							sck_out					<= datak_in;
 						end if;
 				  
 				  when receiving_data =>
