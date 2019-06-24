@@ -16,7 +16,9 @@
 component ip_altgx
     generic (
         effective_data_rate : positive := 6250;
-        input_clock_frequency : positive := 125--;
+        input_clock_frequency : string := "125.0";
+        input_clock_period : positive := 1000000 / 125; -- us
+        m_divider : positive := 25--;
     );
 	PORT
 	(

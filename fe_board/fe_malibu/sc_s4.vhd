@@ -5,35 +5,34 @@
 --
 -----------------------------------------------------------------------------
 
-    library ieee;
-    use ieee.numeric_std.all;
-    use ieee.std_logic_1164.all;
-    use ieee.std_logic_unsigned.all;
+library ieee;
+use ieee.numeric_std.all;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
 
-    entity sc_s4 is
-    port(
-        clk:                in std_logic;
-        reset_n:            in std_logic;
-        enable:             in std_logic;
-        
-        mem_data_in:        in std_logic_vector(31 downto 0);
-        
-        link_data_in:       in std_logic_vector(31 downto 0);
-        link_data_in_k:     in std_logic_vector(3 downto 0);
-        
-        fifo_data_out:      out std_logic_vector(35 downto 0);
-        fifo_we:            out std_logic;
-        
-        mem_data_out:       out std_logic_vector(31 downto 0);
-        mem_addr_out:       out std_logic_vector(15 downto 0);
-        mem_wren:           out std_logic;
-        
-        stateout:           out std_logic_vector(27 downto 0)
-    );
-    end entity sc_s4;
+entity sc_s4 is
+port(
+    clk:                in std_logic;
+    reset_n:            in std_logic;
+    enable:             in std_logic;
+    
+    mem_data_in:        in std_logic_vector(31 downto 0);
+    
+    link_data_in:       in std_logic_vector(31 downto 0);
+    link_data_in_k:     in std_logic_vector(3 downto 0);
+    
+    fifo_data_out:      out std_logic_vector(35 downto 0);
+    fifo_we:            out std_logic;
+    
+    mem_data_out:       out std_logic_vector(31 downto 0);
+    mem_addr_out:       out std_logic_vector(15 downto 0);
+    mem_wren:           out std_logic;
+    
+    stateout:           out std_logic_vector(27 downto 0)
+);
+end entity sc_s4;
 
-
-    architecture rtl of sc_s4 is
+architecture rtl of sc_s4 is
 
     signal mem_data_o : std_logic_vector(31 downto 0);
     signal mem_data_i : std_logic_vector(31 downto 0);
@@ -50,7 +49,7 @@
     type state_type is (waiting, starting, get_length, writing, reading, end_reading);
     signal state : state_type;
 
-    begin
+begin
 
     mem_data_out <= mem_data_o;
     mem_addr_out <= mem_addr_write_o when mem_wren_o = '1' else mem_addr_read_o;
@@ -80,7 +79,6 @@
         mem_addr_write_o 		<= (others => '0');
         mem_wren_o 				<= '0';
         fifo_we 				<= '0';
-        
 
         case state is
         
@@ -93,14 +91,14 @@
                         sc_type    				<= link_data_in(25 downto 24);
                         state 					<= starting;
                 end if;
-            
+
             when starting => -- get start_add
-					if (link_data_in(7 downto 0) = x"BC" 
+                if (link_data_in(7 downto 0) = x"BC" 
                     and link_data_in_k = "0001"
                     and link_data_in(31 downto 26) = "000111") then
                         sc_type    				<= link_data_in(25 downto 24);
                         state 					<= starting;
-               elsif (link_data_in = x"000000BC" and link_data_in_k = "0001") then
+                elsif (link_data_in = x"000000BC" and link_data_in_k = "0001") then
                     stateout(3 downto 0) 	<= x"A";
                     -- idle
                     idle_counter <= idle_counter + '1';
@@ -114,9 +112,9 @@
                     start_add 				<= link_data_in(15 downto 0);
                     state 					<= get_length;
                 end if;
-            
+
             when get_length => -- get end_add and send acknowledge
-					 if (link_data_in(7 downto 0) = x"BC" 
+                if (link_data_in(7 downto 0) = x"BC" 
                     and link_data_in_k = "0001"
                     and link_data_in(31 downto 26) = "000111") then
                         sc_type    				<= link_data_in(25 downto 24);
@@ -143,14 +141,14 @@
                         state 							<= writing;
                     end if;
                 end if;
-        
+
             when writing =>
                 if (link_data_in(7 downto 0) = x"BC" 
                     and link_data_in_k = "0001"
                     and link_data_in(31 downto 26) = "000111") then
                         sc_type    				<= link_data_in(25 downto 24);
                         state 					<= starting;
-					 elsif (link_data_in = x"000000BC" and link_data_in_k = "0001") then
+                elsif (link_data_in = x"000000BC" and link_data_in_k = "0001") then
                     stateout(3 downto 0) 	<= x"A";
                     -- idle
                     idle_counter <= idle_counter + '1';
@@ -172,7 +170,7 @@
                         start_add 			<= start_add + '1';
                     end if;
                 end if;
-                
+
             when reading =>
                 if (link_data_in(7 downto 0) = x"BC" 
                     and link_data_in_k = "0001"
@@ -181,7 +179,7 @@
                         state 					<= starting;
                 else
                     stateout(3 downto 0) 		<= x"5";
-						  fifo_data_out 			<= "0000" & mem_data_i;
+                    fifo_data_out 			<= "0000" & mem_data_i;
                     fifo_we					<= '1';
                     if (first_read = '0') then
                         first_read				<= '1';
@@ -195,7 +193,7 @@
                         state 					<= end_reading;
                     end if;
                 end if;
-                
+
             when end_reading =>
                 if (link_data_in(7 downto 0) = x"BC" 
                     and link_data_in_k = "0001"
