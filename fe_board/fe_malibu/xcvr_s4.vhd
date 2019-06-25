@@ -345,7 +345,24 @@ begin
         reconfig_clk        => reconfig_clk--,
     );
 
-    reconfig_clk <= clk; -- Frequency Range (MHz) : 37.5 to 50
+    g_reconfig_clk : if ( CLK_MHZ <= 50 ) generate
+        reconfig_clk <= clk; -- Frequency Range (MHz) : 37.5 to 50
+    end generate;
+
+    -- generate reconfig_clk = 50 MHz
+    g_reconfig_clk_altpll : if ( CLK_MHZ > 50 ) generate
+        e_reconfig_clk : entity work.ip_altpll
+        generic map (
+            DIV => CLK_MHZ,
+            MUL => 50--,
+        )
+        port map (
+            c0 => reconfig_clk,
+            locked => open,
+            areset => reset,
+            inclk0 => clk--,
+        );
+    end generate;
 
     i_reconfig_rst_n : entity work.reset_sync
     port map ( rstout_n => reconfig_rst_n, arst_n => rst_n, clk => reconfig_clk );

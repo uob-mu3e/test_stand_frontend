@@ -138,18 +138,7 @@ begin
     ----------------------------------------------------------------------------
     -- NIOS
 
-    -- 50 MHz
-    i_nios_clk : entity work.ip_altpll
-    generic map (
-        DIV => 5,
-        MUL => 2--,
-    )
-    port map (
-        c0 => nios_clk,
-        locked => open,
-        areset => '0',
-        inclk0 => clk_aux--,
-    );
+    nios_clk <= clk_aux;
 
     i_nios_reset_n : entity work.reset_sync
     port map ( rstout_n => nios_reset_n, arst_n => reset_n, clk => nios_clk );
@@ -335,8 +324,7 @@ begin
 
     i_qsfp : entity work.xcvr_s4
     generic map (
-        data_rate => 6250,
-        pll_freq => 156.25--,
+        CLK_MHZ => 125--,
     )
     port map (
         -- avalon slave interface
