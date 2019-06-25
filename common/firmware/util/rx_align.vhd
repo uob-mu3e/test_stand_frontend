@@ -1,5 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 entity rx_align is
 generic (
@@ -34,10 +35,10 @@ architecture arch of rx_align is
     signal data : std_logic_vector(63 downto 0);
     signal datak : std_logic_vector(7 downto 0);
 
+    signal enapatternalign_cnt : unsigned(7 downto 0);
+
     signal locked : std_logic;
     signal pattern : std_logic_vector(3 downto 0);
-
-    signal enapatternalign_reset_n : std_logic;
 
     -- quality counter
     -- - increment if good pattern
@@ -66,13 +67,25 @@ begin
     end if;
     end process;
 
-    e_enapatternalign_reset_n : entity work.watchdog
-    port map (
-        d(0) => '0',
-        rstout_n => enapatternalign_reset_n,
-        rst_n => i_reset_n and not locked, -- reset if locked
-        clk => i_clk--,
-    );
+    process(i_clk, i_reset_n)
+    begin
+    if ( i_reset_n = '0' ) then
+        o_enapatternalign <= '0';
+        enapatternalign_cnt <= (others => '0');
+        --
+    elsif rising_edge(i_clk) then
+        o_enapatternalign <= '0';
+        enapatternalign_cnt <= (others => '0');
+
+        -- generate rising edge if not locked
+        if ( locked = '0' ) then
+            -- alternate between '0' and '1' to prevent being stuck at '1'
+            o_enapatternalign <= enapatternalign_cnt(enapatternalign_cnt'left);
+            enapatternalign_cnt <= enapatternalign_cnt + 1;
+        end if;
+        --
+    end if;
+    end process;
 
     process(i_clk, i_reset_n)
         variable error_v : boolean;
@@ -83,16 +96,13 @@ begin
         locked <= '0';
         pattern <= "0000";
         quality <= 0;
-        o_enapatternalign <= '0';
+        o_data <= (others => '0');
+        o_datak <= (others => '0');
         --
     elsif rising_edge(i_clk) then
         error_v := false;
         pattern_v := (others => '0');
         pattern_v(i_patterndetect'range) := i_patterndetect;
-
-        -- generate rising edge if not locked
-        -- set to '0' for one clock cycle if not locked for long time
-        o_enapatternalign <= not locked and enapatternalign_reset_n;
 
         if ( pattern_v = "0000" ) then
             -- idle

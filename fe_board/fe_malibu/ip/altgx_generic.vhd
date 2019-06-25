@@ -173,7 +173,7 @@ g_ip_altgx_4ch_8bit_125MHz_1250Mbps : if (
     NUMBER_OF_CHANNELS_g = 4 and
     CHANNEL_WIDTH_g = 8 and
     INPUT_CLOCK_FREQUENCY_g = 125000000 and
-    DATA_RATE_g = 5000
+    DATA_RATE_g = 1250
 ) generate
 e_ip_altgx_4ch_8bit_125MHz_1250Mbps : entity work.ip_altgx_4ch_8bit_125MHz_1250Mbps
 port map (

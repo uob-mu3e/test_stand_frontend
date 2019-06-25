@@ -61,8 +61,7 @@ set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp
 set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_tx[*]
 set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_rx[*]
 
-set_global_assignment -name QIP_FILE ip/ip_altgx.qip
-set_global_assignment -name QIP_FILE ip/ip_altgx_reconfig.qip
+set_global_assignment -name QIP_FILE ip/altgx_generic.qip
 
 # SC
 

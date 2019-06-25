@@ -37,8 +37,8 @@ port (
     o_tx_serial     : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
     i_rx_serial     : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-    i_pll_refclk    : in    std_logic;
-    i_cdr_refclk    : in    std_logic;
+    i_pll_clk       : in    std_logic;
+    i_cdr_clk       : in    std_logic;
 
     i_reset         : in    std_logic;
     i_clk           : in    std_logic--;
@@ -213,6 +213,8 @@ begin
                 --
             when X"01" =>
                 av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(NUMBER_OF_CHANNELS_g, 8));
+            when X"02" =>
+                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(CHANNEL_WIDTH_g, 8));
             when X"10" =>
                 -- tx reset
                 av_ctrl.readdata(0) <= tx_analogreset(ch);
@@ -328,7 +330,7 @@ begin
         tx_dataout  => o_tx_serial,
         rx_datain   => i_rx_serial,
 
-        pll_inclk       => i_pll_refclk,
+        pll_inclk       => i_pll_clk,
         pll_powerdown   => pll_powerdown,
         pll_locked      => pll_locked,
 
@@ -392,7 +394,7 @@ begin
     e_reconfig_rst_n : entity work.reset_sync
     port map ( rstout_n => reconfig_rst_n, arst_n => reset_n, clk => reconfig_clk );
 
-    e_reconfig : component work.cmp.ip_altgx_reconfig
+    e_reconfig : entity work.ip_altgx_reconfig
     port map (
         busy    => reconfig_busy,
         error   => reconfig_error,
