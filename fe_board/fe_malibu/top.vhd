@@ -324,36 +324,36 @@ begin
 
     i_qsfp : entity work.xcvr_s4
     generic map (
-        CLK_MHZ => 125--,
+        CLK_MHZ_g => 125--,
     )
     port map (
         -- avalon slave interface
-        avs_address     => avm_qsfp.address(15 downto 2),
-        avs_read        => avm_qsfp.read,
-        avs_readdata    => avm_qsfp.readdata,
-        avs_write       => avm_qsfp.write,
-        avs_writedata   => avm_qsfp.writedata,
-        avs_waitrequest => avm_qsfp.waitrequest,
+        i_avs_address     => avm_qsfp.address(15 downto 2),
+        i_avs_read        => avm_qsfp.read,
+        o_avs_readdata    => avm_qsfp.readdata,
+        i_avs_write       => avm_qsfp.write,
+        i_avs_writedata   => avm_qsfp.writedata,
+        o_avs_waitrequest => avm_qsfp.waitrequest,
 
-        tx_data     => qsfp_tx_data,
-        tx_datak    => qsfp_tx_datak,
+        i_tx_data       => qsfp_tx_data,
+        i_tx_datak      => qsfp_tx_datak,
 
-        rx_data     => qsfp_rx_data,
-        rx_datak    => qsfp_rx_datak,
+        o_rx_data       => qsfp_rx_data,
+        o_rx_datak      => qsfp_rx_datak,
 
-        tx_clkout   => open,
-        tx_clkin    => (others => qsfp_pll_clk),
-        rx_clkout   => open,
-        rx_clkin    => (others => qsfp_pll_clk),
+        o_tx_clkout     => open,
+        i_tx_clkin      => (others => qsfp_pll_clk),
+        o_rx_clkout     => open,
+        i_rx_clkin      => (others => qsfp_pll_clk),
 
-        tx_p        => qsfp_tx,
-        rx_p        => qsfp_rx,
+        o_tx_serial     => qsfp_tx,
+        i_rx_serial     => qsfp_rx,
 
-        pll_refclk  => qsfp_pll_clk,
-        cdr_refclk  => qsfp_pll_clk,
+        i_pll_refclk    => qsfp_pll_clk,
+        i_cdr_refclk    => qsfp_pll_clk,
 
-        reset   => not nios_reset_n,
-        clk     => nios_clk--,
+        i_reset         => not nios_reset_n,
+        i_clk           => nios_clk--,
     );
 
     qsfp_tx_data(127 downto 32) <=

@@ -4,82 +4,84 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 entity xcvr_s4 is
-    generic (
-        -- number of channels
-        Nch : positive := 4;
-        data_rate : positive := 5000; -- Gbps
-        pll_freq : real := 125.0; -- MHz
-        K : std_logic_vector(7 downto 0) := work.util.D28_5;
-        CLK_MHZ : positive := 50--;
-    );
-    port (
-        -- avalon slave interface
-        avs_address     :   in  std_logic_vector(13 downto 0);
-        avs_read        :   in  std_logic;
-        avs_readdata    :   out std_logic_vector(31 downto 0);
-        avs_write       :   in  std_logic;
-        avs_writedata   :   in  std_logic_vector(31 downto 0);
-        avs_waitrequest :   out std_logic;
+generic (
+    NUMBER_OF_CHANNELS_g : positive := 4;
+    CHANNEL_WIDTH_g : positive := 32;
+    data_rate : positive := 6250; -- Gbps
+    pll_freq : real := 156.25; -- MHz
+    K_g : std_logic_vector(7 downto 0) := work.util.D28_5;
+    CLK_MHZ_g : positive := 50--;
+);
+port (
+    -- avalon slave interface
+    i_avs_address       : in    std_logic_vector(13 downto 0);
+    i_avs_read          : in    std_logic;
+    o_avs_readdata      : out   std_logic_vector(31 downto 0);
+    i_avs_write         : in    std_logic;
+    i_avs_writedata     : in    std_logic_vector(31 downto 0);
+    o_avs_waitrequest   : out   std_logic;
 
-        tx_data     :   in  std_logic_vector(32*Nch-1 downto 0);
-        tx_datak    :   in  std_logic_vector(4*Nch-1 downto 0);
-        rx_data     :   out std_logic_vector(32*Nch-1 downto 0);
-        rx_datak    :   out std_logic_vector(4*Nch-1 downto 0);
+    i_tx_data       : in    std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
+    i_tx_datak      : in    std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
+    o_rx_data       : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
+    o_rx_datak      : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
 
-        tx_clkout   :   out std_logic_vector(Nch-1 downto 0);
-        tx_clkin    :   in  std_logic_vector(Nch-1 downto 0);
-        rx_clkout   :   out std_logic_vector(Nch-1 downto 0);
-        rx_clkin    :   in  std_logic_vector(Nch-1 downto 0);
-        -- TODO: tx/rx_rstout_n
+    o_tx_clkout     : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    i_tx_clkin      : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    o_rx_clkout     : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    i_rx_clkin      : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-        tx_p        :   out std_logic_vector(Nch-1 downto 0);
-        rx_p        :   in  std_logic_vector(Nch-1 downto 0);
+--    o_tx_ready      : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+--    o_rx_ready      : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-        pll_refclk  :   in  std_logic;
-        cdr_refclk  :   in  std_logic;
+    o_tx_serial     : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    i_rx_serial     : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-        reset   :   in  std_logic;
-        clk     :   in  std_logic--;
-    );
+    i_pll_refclk    : in    std_logic;
+    i_cdr_refclk    : in    std_logic;
+
+    i_reset         : in    std_logic;
+    i_clk           : in    std_logic--;
+);
 end entity;
 
 architecture arch of xcvr_s4 is
 
-    signal rst_n : std_logic;
+    signal reset_n : std_logic;
 
-    signal ch : integer range Nch-1 downto 0;
+    signal ch : integer range NUMBER_OF_CHANNELS_g-1 downto 0;
 
     signal av_ctrl : work.mu3e.avalon_t;
 
-    signal rx_data_i            :   std_logic_vector(32*Nch-1 downto 0);
-    signal rx_datak_i           :   std_logic_vector(4*Nch-1 downto 0);
+    signal rx_data              :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
+    signal rx_datak             :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
 
-    signal tx_rst_n, rx_rst_n   :   std_logic_vector(Nch-1 downto 0);
+    signal tx_rst_n, rx_rst_n   :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
     signal pll_powerdown        :   std_logic_vector(0 downto 0);
     signal pll_cal_busy         :   std_logic_vector(0 downto 0);
     signal pll_locked           :   std_logic_vector(0 downto 0);
 
-    signal tx_analogreset       :   std_logic_vector(Nch-1 downto 0);
-    signal tx_digitalreset      :   std_logic_vector(Nch-1 downto 0);
-    signal rx_analogreset       :   std_logic_vector(Nch-1 downto 0);
-    signal rx_digitalreset      :   std_logic_vector(Nch-1 downto 0);
+    signal tx_analogreset       :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal tx_digitalreset      :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal rx_analogreset       :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal rx_digitalreset      :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-    signal tx_ready             :   std_logic_vector(Nch-1 downto 0);
-    signal rx_ready             :   std_logic_vector(Nch-1 downto 0);
-    signal rx_is_lockedtoref    :   std_logic_vector(Nch-1 downto 0);
-    signal rx_is_lockedtodata   :   std_logic_vector(Nch-1 downto 0);
+    signal tx_ready             :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal rx_ready             :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal rx_is_lockedtoref    :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal rx_is_lockedtodata   :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-    signal tx_fifo_error        :   std_logic_vector(Nch-1 downto 0);
-    signal rx_fifo_error        :   std_logic_vector(Nch-1 downto 0);
-    signal rx_errdetect         :   std_logic_vector(4*Nch-1 downto 0);
-    signal rx_disperr           :   std_logic_vector(4*Nch-1 downto 0);
+    signal tx_fifo_error        :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal rx_fifo_error        :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    signal rx_errdetect         :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
+    signal rx_disperr           :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
 
-    signal rx_syncstatus        :   std_logic_vector(4*Nch-1 downto 0);
-    signal rx_patterndetect     :   std_logic_vector(4*Nch-1 downto 0);
-    signal rx_enapatternalign   :   std_logic_vector(Nch-1 downto 0);
+    signal rx_syncstatus        :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
+    signal rx_patterndetect     :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
+    signal rx_enapatternalign   :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-    signal rx_seriallpbken      :   std_logic_vector(Nch-1 downto 0);
+    signal rx_seriallpbken      :   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
     signal reconfig_togxb       :   std_logic_vector(3 downto 0);
     signal reconfig_fromgxb     :   std_logic_vector(16 downto 0);
@@ -91,9 +93,9 @@ architecture arch of xcvr_s4 is
 
 
     type rx_t is record
-        data    :   std_logic_vector(31 downto 0);
-        datak   :   std_logic_vector(3 downto 0);
-        lock    :   std_logic;
+        data    :   std_logic_vector(CHANNEL_WIDTH_g-1 downto 0);
+        datak   :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
+        locked  :   std_logic;
         rst_n   :   std_logic;
 
         -- Gbit counter
@@ -102,75 +104,96 @@ architecture arch of xcvr_s4 is
         LoL_cnt :   std_logic_vector(7 downto 0);
         -- error counter
         err_cnt :   std_logic_vector(15 downto 0);
+
+        syncstatus      :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
+        patterndetect   :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
+        errdetect       :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
+        disperr         :   std_logic_vector(CHANNEL_WIDTH_g/8-1 downto 0);
     end record;
     type rx_vector_t is array (natural range <>) of rx_t;
-    signal rx : rx_vector_t(Nch-1 downto 0);
+    signal rx : rx_vector_t(NUMBER_OF_CHANNELS_g-1 downto 0);
 
 begin
 
-    rst_n <= not reset;
+    reset_n <= not i_reset;
 
-    gen_rx_data : for i in 0 to Nch-1 generate
+    gen_rx_data : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
     begin
-        rx_data(31 + 32*i downto 32*i) <= rx(i).data;
-        rx_datak(3 + 4*i downto 4*i) <= rx(i).datak;
+        o_rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i) <= rx(i).data;
+        o_rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i) <= rx(i).datak;
+        rx(i).syncstatus <= rx_syncstatus(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i);
+        rx(i).patterndetect <= rx_patterndetect(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i);
+        rx(i).errdetect <= rx_errdetect(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i);
+        rx(i).disperr <= rx_disperr(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i);
     end generate;
 
-    g_rx_align : for i in rx_clkin'range generate
+    g_rx_align : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
     begin
-        i_rx_rst_n : entity work.reset_sync
-        port map ( rstout_n => rx(i).rst_n, arst_n => rx_ready(i), clk => rx_clkin(i) );
+        e_rx_rst_n : entity work.reset_sync
+        port map ( rstout_n => rx(i).rst_n, arst_n => rx_ready(i), clk => i_rx_clkin(i) );
 
-        i_rx_align : entity work.rx_align
-        generic map ( K => K )
+        e_rx_align : entity work.rx_align
+        generic map (
+            CHANNEL_WIDTH_g => CHANNEL_WIDTH_g,
+            K_g => K_g--,
+        )
         port map (
-            data    => rx(i).data,
-            datak   => rx(i).datak,
+            o_data      => rx(i).data,
+            o_datak     => rx(i).datak,
 
-            lock    => rx(i).lock,
+            o_locked    => rx(i).locked,
 
-            datain  => rx_data_i(31 + 32*i downto 32*i),
-            datakin => rx_datak_i(3 + 4*i downto 4*i),
+            i_data      => rx_data(CHANNEL_WIDTH_g-1 + CHANNEL_WIDTH_g*i downto CHANNEL_WIDTH_g*i),
+            i_datak     => rx_datak(CHANNEL_WIDTH_g/8-1 + CHANNEL_WIDTH_g/8*i downto CHANNEL_WIDTH_g/8*i),
 
-            syncstatus      => rx_syncstatus(3 + 4*i downto 4*i),
-            patterndetect   => rx_patterndetect(3 + 4*i downto 4*i),
-            enapatternalign => rx_enapatternalign(i),
+            i_syncstatus        => rx(i).syncstatus,
+            i_patterndetect     => rx(i).patterndetect,
+            o_enapatternalign   => rx_enapatternalign(i),
 
-            errdetect => rx_errdetect(3 + 4*i downto 4*i),
-            disperr => rx_disperr(3 + 4*i downto 4*i),
+            i_errdetect => rx(i).errdetect,
+            i_disperr   => rx(i).disperr,
 
-            rst_n   => rx(i).rst_n,
-            clk     => rx_clkin(i)--,
+            i_reset_n   => rx(i).rst_n,
+            i_clk       => i_rx_clkin(i)--,
         );
 
-        i_rx_Gbit : entity work.counter
+        -- data counter
+        e_rx_Gbit : entity work.counter
         generic map ( W => rx(i).Gbit'length, DIV => 2**30/32 )
-        port map ( cnt => rx(i).Gbit, ena => '1', reset => not rx(i).rst_n, clk => rx_clkin(i) );
+        port map (
+            cnt => rx(i).Gbit, ena => '1',
+            reset => not rx(i).rst_n, clk => i_rx_clkin(i)
+        );
 
-        i_rx_LoL_cnt : entity work.counter
-        generic map ( W => rx(i).LoL_cnt'length, EDGE => -1 )
-        port map ( cnt => rx(i).LoL_cnt, ena => rx(i).lock, reset => not rx(i).rst_n, clk => rx_clkin(i) );
+        -- Loss-of-Lock (LoL) counter
+        e_rx_LoL_cnt : entity work.counter
+        generic map ( W => rx(i).LoL_cnt'length, EDGE => -1 ) -- falling edge
+        port map (
+            cnt => rx(i).LoL_cnt, ena => rx(i).locked,
+            reset => not rx(i).rst_n, clk => i_rx_clkin(i)
+        );
 
-        i_rx_err_cnt : entity work.counter
+        -- 8b10b error counter
+        e_rx_err_cnt : entity work.counter
         generic map ( W => rx(i).err_cnt'length )
         port map (
             cnt => rx(i).err_cnt,
-            ena => work.util.to_std_logic( rx_errdetect(3 + 4*i downto 4*i) /= "0000" or rx_disperr(3 + 4*i downto 4*i) /= "0000" ),
-            reset => not rx(i).rst_n, clk => rx_clkin(i)
+            ena => work.util.to_std_logic( rx(i).errdetect /= 0 or rx(i).disperr /= 0 ),
+            reset => not rx(i).rst_n, clk => i_rx_clkin(i)
         );
     end generate;
 
     -- av_ctrl process, avalon iface
-    p_av_ctrl : process(clk, rst_n)
+    p_av_ctrl : process(i_clk, reset_n)
     begin
-    if ( rst_n = '0' ) then
+    if ( reset_n = '0' ) then
         av_ctrl.waitrequest <= '1';
         ch <= 0;
         rx_seriallpbken <= (others => '0');
         tx_rst_n <= (others => '1');
         rx_rst_n <= (others => '1');
         --
-    elsif rising_edge(clk) then
+    elsif rising_edge(i_clk) then
         av_ctrl.waitrequest <= '1';
 
         tx_rst_n <= (others => '1');
@@ -184,12 +207,12 @@ begin
             when X"00" =>
                 -- channel select
                 av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(ch, 8));
-                if ( av_ctrl.write = '1' and av_ctrl.writedata(7 downto 0) < Nch ) then
+                if ( av_ctrl.write = '1' and av_ctrl.writedata(7 downto 0) < NUMBER_OF_CHANNELS_g ) then
                     ch <= to_integer(unsigned(av_ctrl.writedata(7 downto 0)));
                 end if;
                 --
             when X"01" =>
-                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(Nch, 8));
+                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(NUMBER_OF_CHANNELS_g, 8));
             when X"10" =>
                 -- tx reset
                 av_ctrl.readdata(0) <= tx_analogreset(ch);
@@ -215,13 +238,14 @@ begin
                 av_ctrl.readdata(0) <= rx_ready(ch);
                 av_ctrl.readdata(1) <= rx_is_lockedtoref(ch);
                 av_ctrl.readdata(2) <= rx_is_lockedtodata(ch);
-                av_ctrl.readdata(11 downto 8) <= rx_syncstatus(3 + 4*ch downto 4*ch);
-                av_ctrl.readdata(12) <= rx(ch).lock;
+                av_ctrl.readdata(11 downto 8) <= (others => '1');
+                av_ctrl.readdata(CHANNEL_WIDTH_g/8-1 + 8 downto 8) <= rx(ch).syncstatus;
+                av_ctrl.readdata(12) <= rx(ch).locked;
                 --
             when X"22" =>
                 -- rx errors
-                av_ctrl.readdata(3 downto 0) <= rx_errdetect(3 + 4*ch downto 4*ch);
-                av_ctrl.readdata(7 downto 4) <= rx_disperr(3 + 4*ch downto 4*ch);
+                av_ctrl.readdata(CHANNEL_WIDTH_g/8-1 + 0 downto 0) <= rx(ch).errdetect;
+                av_ctrl.readdata(CHANNEL_WIDTH_g/8-1 + 4 downto 4) <= rx(ch).disperr;
                 av_ctrl.readdata(8) <= rx_fifo_error(ch);
                 --
             when X"23" =>
@@ -230,9 +254,9 @@ begin
                 av_ctrl.readdata(rx(ch).err_cnt'range) <= rx(ch).err_cnt;
                 --
             when X"2A" =>
-                av_ctrl.readdata <= rx(ch).data;
+                av_ctrl.readdata(rx(ch).data'range) <= rx(ch).data;
             when X"2B" =>
-                av_ctrl.readdata(3 downto 0) <= rx(ch).datak;
+                av_ctrl.readdata(rx(ch).datak'range) <= rx(ch).datak;
             when X"2C" =>
                 av_ctrl.readdata(rx(ch).Gbit'range) <= rx(ch).Gbit;
                 --
@@ -249,39 +273,40 @@ begin
     end if; -- rising_edge
     end process;
 
+    -- avalon control block
     b_avs : block
         signal av_ctrl_cs : std_logic;
         signal avs_waitrequest_i : std_logic;
     begin
-        av_ctrl_cs <= '1' when ( avs_address(avs_address'left downto 8) = "000000" ) else '0';
-        av_ctrl.address(avs_address'range) <= avs_address;
-        av_ctrl.writedata <= avs_writedata;
+        av_ctrl_cs <= '1' when ( i_avs_address(i_avs_address'left downto 8) = "000000" ) else '0';
+        av_ctrl.address(i_avs_address'range) <= i_avs_address;
+        av_ctrl.writedata <= i_avs_writedata;
 
-        avs_waitrequest <= avs_waitrequest_i;
+        o_avs_waitrequest <= avs_waitrequest_i;
 
-        process(clk, rst_n)
+        process(i_clk, reset_n)
         begin
-        if ( rst_n = '0' ) then
+        if ( reset_n = '0' ) then
             avs_waitrequest_i <= '1';
             av_ctrl.read <= '0';
             av_ctrl.write <= '0';
             --
-        elsif rising_edge(clk) then
+        elsif rising_edge(i_clk) then
             avs_waitrequest_i <= '1';
 
-            if ( avs_read /= avs_write and avs_waitrequest_i = '1' ) then
+            if ( i_avs_read /= i_avs_write and avs_waitrequest_i = '1' ) then
                 if ( av_ctrl_cs = '1' ) then
                     if ( av_ctrl.read = av_ctrl.write ) then
-                        av_ctrl.read <= avs_read;
-                        av_ctrl.write <= avs_write;
+                        av_ctrl.read <= i_avs_read;
+                        av_ctrl.write <= i_avs_write;
                     elsif ( av_ctrl.waitrequest = '0' ) then
-                        avs_readdata <= av_ctrl.readdata;
+                        o_avs_readdata <= av_ctrl.readdata;
                         avs_waitrequest_i <= '0';
                         av_ctrl.read <= '0';
                         av_ctrl.write <= '0';
                     end if;
                 else
-                    avs_readdata <= X"CCCCCCCC";
+                    o_avs_readdata <= X"CCCCCCCC";
                     avs_waitrequest_i <= '0';
                 end if;
             end if;
@@ -290,7 +315,7 @@ begin
         end process;
     end block;
 
-    i_phy : component work.cmp.ip_altgx
+    e_phy : entity work.ip_altgx
     generic map (
         effective_data_rate => data_rate,
         input_clock_frequency => real'image(pll_freq),
@@ -298,12 +323,12 @@ begin
         m_divider => integer(real(data_rate) / pll_freq / 2.0)--,
     )
     port map (
-        cal_blk_clk => clk,
+        cal_blk_clk => i_clk,
 
-        tx_dataout  => tx_p,
-        rx_datain   => rx_p,
+        tx_dataout  => o_tx_serial,
+        rx_datain   => i_rx_serial,
 
-        pll_inclk       => pll_refclk,
+        pll_inclk       => i_pll_refclk,
         pll_powerdown   => pll_powerdown,
         pll_locked      => pll_locked,
 
@@ -328,15 +353,15 @@ begin
         rx_patterndetect => rx_patterndetect,
         rx_enapatternalign => rx_enapatternalign,
 
-        tx_datain       => tx_data,
-        tx_ctrlenable   => tx_datak,
-        rx_dataout      => rx_data_i,
-        rx_ctrldetect   => rx_datak_i,
+        tx_datain       => i_tx_data,
+        tx_ctrlenable   => i_tx_datak,
+        rx_dataout      => rx_data,
+        rx_ctrldetect   => rx_datak,
 
-        tx_clkout       => tx_clkout,
-        tx_coreclk      => tx_clkin,
-        rx_clkout       => rx_clkout,
-        rx_coreclk      => rx_clkin,
+        tx_clkout       => o_tx_clkout,
+        tx_coreclk      => i_tx_clkin,
+        rx_clkout       => o_rx_clkout,
+        rx_coreclk      => i_rx_clkin,
 
         rx_seriallpbken => rx_seriallpbken,
 
@@ -345,29 +370,29 @@ begin
         reconfig_clk        => reconfig_clk--,
     );
 
-    g_reconfig_clk : if ( CLK_MHZ <= 50 ) generate
-        reconfig_clk <= clk; -- Frequency Range (MHz) : 37.5 to 50
+    g_reconfig_clk : if ( CLK_MHZ_g <= 50 ) generate
+        reconfig_clk <= i_clk; -- Frequency Range (MHz) : 37.5 to 50
     end generate;
 
     -- generate reconfig_clk = 50 MHz
-    g_reconfig_clk_altpll : if ( CLK_MHZ > 50 ) generate
+    g_reconfig_clk_altpll : if ( CLK_MHZ_g > 50 ) generate
         e_reconfig_clk : entity work.ip_altpll
         generic map (
-            DIV => CLK_MHZ,
+            DIV => CLK_MHZ_g,
             MUL => 50--,
         )
         port map (
             c0 => reconfig_clk,
             locked => open,
-            areset => reset,
-            inclk0 => clk--,
+            areset => i_reset,
+            inclk0 => i_clk--,
         );
     end generate;
 
-    i_reconfig_rst_n : entity work.reset_sync
-    port map ( rstout_n => reconfig_rst_n, arst_n => rst_n, clk => reconfig_clk );
+    e_reconfig_rst_n : entity work.reset_sync
+    port map ( rstout_n => reconfig_rst_n, arst_n => reset_n, clk => reconfig_clk );
 
-    i_reconfig : component work.cmp.ip_altgx_reconfig
+    e_reconfig : component work.cmp.ip_altgx_reconfig
     port map (
         busy    => reconfig_busy,
         error   => reconfig_error,
@@ -381,42 +406,42 @@ begin
     --
     --
     --
-    i_tx_reset : entity work.tx_reset
+    e_tx_reset : entity work.tx_reset
     generic map (
-        Nch => 4,
-        Npll => 1,
-        CLK_MHZ => CLK_MHZ--,
+        NUMBER_OF_CHANNELS_g => NUMBER_OF_CHANNELS_g,
+        NUMBER_OF_PLLS_g => 1,
+        CLK_MHZ_g => CLK_MHZ_g--,
     )
     port map (
-        analogreset => tx_analogreset,
-        digitalreset => tx_digitalreset,
+        o_analogreset => tx_analogreset,
+        o_digitalreset => tx_digitalreset,
 
-        ready => tx_ready,
+        o_ready => tx_ready,
 
-        pll_powerdown => pll_powerdown,
-        pll_locked => pll_locked,
+        o_pll_powerdown => pll_powerdown,
+        i_pll_locked => pll_locked,
 
-        arst_n => rst_n and work.util.and_reduce(tx_rst_n),
-        clk => clk--,
+        i_areset_n => reset_n and work.util.and_reduce(tx_rst_n),
+        i_clk => i_clk--,
     );
 
-    i_rx_reset : entity work.rx_reset
+    e_rx_reset : entity work.rx_reset
     generic map (
-        Nch => 4,
-        CLK_MHZ => CLK_MHZ--,
+        NUMBER_OF_CHANNELS_g => NUMBER_OF_CHANNELS_g,
+        CLK_MHZ_g => CLK_MHZ_g--,
     )
     port map (
-        analogreset => rx_analogreset,
-        digitalreset => rx_digitalreset,
+        o_analogreset => rx_analogreset,
+        o_digitalreset => rx_digitalreset,
 
-        ready => rx_ready,
+        o_ready => rx_ready,
 
-        freqlocked => rx_is_lockedtodata,
+        i_freqlocked => rx_is_lockedtodata,
 
-        reconfig_busy => reconfig_busy,
+        i_reconfig_busy => reconfig_busy,
 
-        arst_n => rst_n and work.util.and_reduce(rx_rst_n),
-        clk => clk--,
+        i_areset_n => reset_n and work.util.and_reduce(rx_rst_n),
+        i_clk => i_clk--,
     );
 
 end architecture;
