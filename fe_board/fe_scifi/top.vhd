@@ -4,26 +4,17 @@ use ieee.numeric_std.all;
 
 entity top is
 port (
-    -- FE.A
-    malibu_ck_fpga_0    : out   std_logic; -- pin 36, 38 -- malibu.CK_FPGA_0_N/P
-    malibu_pll_reset    : out   std_logic; -- pin 42, 44 -- malibu.PLL_reset_P/N
-    malibu_spi_sck      : out   std_logic; -- pin 54 -- malibu.SPI_SCK_P
-    malibu_spi_sdi      : inout std_logic; -- pin 50 -- malibu.SPI_SDI_P
-    malibu_spi_sdo      : inout std_logic; -- pin 52 -- malibu.SPI_SDO_N
-    malibu_chip_reset   : out   std_logic; -- pin 48 -- malibu.chip_reset
+    -- FE.Ports
+    -- constant parameter is N_SCIFI_BOARDS : integer which defines the number of Boards connected (i.e. ports used).
+    i_fee_rxd		: in  std_logic_vector (4*N_SCIFI_BOARDS - 1 downto 0); --data inputs from ASICs
+    o_fee_spi_CSn	: out std_logic_vector (4*N_SCIFI_BOARDS - 1 downto 0); --CSn signals to ASICs (one per ASIC)
+    o_fee_spi_MOSI	: out std_logic_vector (N_SCIFI_BOARDS - 1 downto 0);   --MOSI signals to ASICs (one per board)
+    i_fee_spi_MISO	: in  std_logic_vector (N_SCIFI_BOARDS - 1 downto 0);   --MISO signals from ASICs (one per board)
+    o_fee_spi_SCK	: out std_logic_vector (N_SCIFI_BOARDS - 1 downto 0);   --SCK signals to ASICs (one per board)
 
-    -- FE.B
-    malibu_ck_fpga_1    : out   std_logic; -- pin 36, 38 -- malibu.CK_FPGA_1_P/N
-    malibu_pll_test     : out   std_logic; -- pin 42, 44 -- malibu.PLL_TEST_N/P
-    malibu_i2c_scl      : out   std_logic; -- pin 54 -- malibu.i2c_SCL
-    malibu_i2c_sda      : inout std_logic; -- pin 56 -- malibu.i2c_SDA
-    malibu_i2c_int_n    : inout std_logic; -- pin 52 -- malibu.I2C_INTn
-    malibu_spi_sdo_cec  : in    std_logic; -- pin 48 -- malibu.SPI_SDO_CEC
-
-    malibu_data         : in    std_logic_vector(13 downto 0);
-
-
-
+    o_fee_ext_trig	: out std_logic_vector (N_SCIFI_BOARDS - 1 downto 0);   --external trigger (data validation) signals to ASICs (one per board)
+    o_fee_chip_rst	: out std_logic_vector (N_SCIFI_BOARDS - 1 downto 0);   --chip reset signals to ASICs (one per board)
+    
     -- SI45
 
     si45_oe_n       : out   std_logic; -- <= '0'
@@ -82,15 +73,13 @@ architecture arch of top is
     signal nios_clk, nios_reset_n : std_logic;
     signal nios_pio : std_logic_vector(31 downto 0);
 
+--i2c interface (external, not used)
     signal i2c_scl_in, i2c_scl_oe, i2c_sda_in, i2c_sda_oe : std_logic;
+    --spi interface (external, spi_ss_n[4*N_SCIFI_BOARDS] is rewired to siXX45 chip, miso is also rewired if corresponding cs is low)
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
-    signal spi_ss_n : std_logic_vector(1 downto 0);
+    signal spi_ss_n : std_logic_vector(4*N_SCIFI_BOARDS downto 0);
 
-    signal malibu_clk : std_logic;
-    signal malibu_rx_data_clk : std_logic;
-    signal malibu_rx_data : std_logic_vector(15 downto 0);
-    signal malibu_rx_datak : std_logic_vector(1 downto 0);
-    signal malibu_word : std_logic_vector(47 downto 0);
+    signal s_fee_chip_rst_auxclk_sync : std_logic_vector(1 downto 0);
 
     signal avm_pod, avm_qsfp : work.mu3e.avalon_t;
 
@@ -125,7 +114,7 @@ begin
 
     led_n <= not led;
 
-    -- 125 MHz
+    -- 125 MHz --> 1Hz
     i_clk_aux_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( clkout => led(15), rst_n => reset_n, clk => clk_aux );
@@ -188,12 +177,13 @@ begin
         --
         -- nios base
         --
-
+	--I2C interface is not connected to outside world (currently unused)
         i2c_scl_in => i2c_scl_in,
         i2c_scl_oe => i2c_scl_oe,
         i2c_sda_in => i2c_sda_in,
         i2c_sda_oe => i2c_sda_oe,
 
+	--SPI interface connected to ASICs and SI clock chip
         spi_miso => spi_miso,
         spi_mosi => spi_mosi,
         spi_sclk => spi_sclk,
@@ -205,127 +195,221 @@ begin
         clk_clk => nios_clk--,
     );
 
+    --si chip assignments
     si45_oe_n <= '0';
     si45_rst_n <= '1';
-    si45_spi_in <= spi_mosi;
---    spi_miso <= si45_spi_out;
-    si45_spi_sclk <= spi_sclk;
-    si45_spi_cs_n <= spi_ss_n(0);
+    --fee assignments
+    o_fee_ext_trig <= '0';
 
-
-
-    -- I2C
-    i2c_scl_in <= not i2c_scl_oe;
-    i2c_sda_in <=
-        malibu_i2c_sda and
-        '1';
-    malibu_i2c_scl <= ZERO when i2c_scl_oe = '1' else 'Z';
-    malibu_i2c_sda <= ZERO when i2c_sda_oe = '1' else 'Z';
 
     -- SPI
-    malibu_spi_sdi <= spi_mosi;
---    spi_miso <= malibu_spi_sdo;
-    malibu_spi_sck <= spi_sclk;
+    ----------------------------------------------------------------------------
+    --si chip assignments
+    si45_spi_in <= spi_mosi;
+    si45_spi_sclk <= spi_sclk;
+    si45_spi_cs_n <= spi_ss_n(4*N_SCIFI_BOARDS);
+    --fee assignments
+    o_fee_spi_MOSI <= spi_mosi;
+    o_fee_spi_SCK  <= spi_sclk;
+    o_fee_spi_CSn <=  spi_ss_n(4*N_SCIFI_BOARDS-1 downto 0);
+    --MISO: multiplexing si chip / SciFi FEE
+    spi_miso <= si45_spi_out when spi_ss_n(4*N_SCIFI_BOARDS) = '0' else
+                i_fee_spi_MISO;
 
-    spi_miso <= si45_spi_out when spi_ss_n(0) = '0' else
-                malibu_spi_sdo when spi_ss_n(1) = '0' else '0';
+
+
+    -- I2C (currently unused, simulating empty bus)
+    ----------------------------------------------------------------------------
+    i2c_scl_in <= not i2c_scl_oe;
+    i2c_sda_in <= not i2c_sda_oe;
+    --i2c_scl_in <= not i2c_scl_oe;
+    --i2c_sda_in <= io_fee_i2c_sda
+    --io_fee_i2c_scl <= ZERO when i2c_scl_oe = '1' else 'Z';
+    --io_fee_i2c_sda <= ZERO when i2c_sda_oe = '1' else 'Z';
+
+
 
     ----------------------------------------------------------------------------
-
-
+    --generation of reset signal synchronized to aux clock (125MHz, nios as source is running at 156MHz).
+    --using simple two-ff synchronizer, assuming the reset pulse is longer than 2 cc in the nios domain
+    p_fee_reset_sync: process(clk_aux)
+    begin
+        if rising_edge(clk_aux) then
+            s_fee_chip_rst_auxclk_sync <= s_fee_chip_rst_auxclk_sync(0) & nios_pio(16);
+        end if;
+    end process;
+    o_fee_chip_rst <= s_fee_chip_rst_auxclk_sync(1);
 
     ----------------------------------------------------------------------------
-    -- MALIBU
+    --test pulse generation. Maybe we should wire this up again in hardware...
+    --e_test_pulse : entity work.clkdiv
+    --generic map ( P => 125 )
+    --port map ( clkout => malibu_pll_test, rst_n => reset_n, clk => clk_aux );
 
-    -- 160 MHz
-    i_malibu_clk : entity work.ip_altpll
+    --TODO: wire this up and add remaining interfaces
+--    i_mutrig_datapath : entity work.mutrig_datapath
+--    port map (
+--        i_rst => not reset_n,
+--        i_stic_txd => malibu_data(0 downto 0),
+--        i_refclk_125 => clk_aux,
+--
+--        --interface to asic fifos
+--        i_clk_core => '0',
+--        o_fifo_empty => open,
+--        o_fifo_data => open,
+--        i_fifo_rd => '1',
+--        --slow control
+--        i_SC_disable_dec => '0',
+--        i_SC_mask => (others => '0'),
+--        i_SC_datagen_enable => '0',
+--        i_SC_datagen_shortmode => '0',
+--        i_SC_datagen_count => (others => '0'),
+--        --monitors
+--        o_receivers_usrclk => open,
+--        o_receivers_pll_lock => open,
+--        o_receivers_dpa_lock=> open,
+--        o_receivers_ready => open,
+--        o_frame_desync => open,
+--        o_buffer_full => open--,
+--    );
+    ----------------------------------------------------------------------------
+    -- data generator and fifo. TODO: replace with mutrig_datapath
+    
+    i_data_gen : entity work.data_generator
+    port map (
+        clk => qsfp_pll_clk,
+        reset => not reset_n,
+        enable_pix => '1',
+        --enable_sc:         	in  std_logic;
+        random_seed => (others => '1'),
+        data_pix_generated => data_to_fifo,
+        --data_sc_generated:   	out std_logic_vector(31 downto 0);
+        data_pix_ready => data_to_fifo_we,
+        --data_sc_ready:      	out std_logic;
+        start_global_time => (others => '0')--,
+              -- TODO: add some rate control
+    );
+
+ 
+    i_data_fifo : entity work.mergerfifo
     generic map (
-        DIV => 25,
-        MUL => 32--,
+        DEVICE => "Stratix IV"--,
     )
     port map (
-        c0 => malibu_clk,
-        locked => open,
-        areset => '0',
-        inclk0 => clk_aux--,
+        data    => data_to_fifo,
+        rdclk   => qsfp_pll_clk,
+        rdreq   => data_from_fifo_re,
+        wrclk   => qsfp_pll_clk,
+        wrreq   => data_to_fifo_we,
+        q       => data_from_fifo,
+        rdempty => data_from_fifo_empty,
+        wrfull  => open--,
     );
 
-    malibu_ck_fpga_1 <= '0';
-    malibu_pll_reset <= '0';
-    malibu_ck_fpga_0 <= malibu_clk;
-
-    -- reset tdc and digital part
-    malibu_chip_reset <= nios_pio(16);
-
-    e_test_pulse : entity work.clkdiv
-    generic map ( P => 125 )
-    port map ( clkout => malibu_pll_test, rst_n => reset_n, clk => clk_aux );
-
-    i_malibu : entity work.malibu_dec
-    generic map (
-        N => 2--,
-    )
-    port map (
-        data_clk    => malibu_rx_data_clk,
-        data        => malibu_rx_data,
-        datak       => malibu_rx_datak,
-
-        rx_data => malibu_data(1 downto 0),
-        rx_clk  => malibu_clk,
-
-        reset   => not reset_n--,
-    );
-
-    i_frame_rcv : entity work.frame_rcv
-    port map (
-        i_rst => not reset_n,
-        i_clk => malibu_rx_data_clk,
-        i_data => malibu_rx_data(7 downto 0),
-        i_byteisk => malibu_rx_datak(0),
-        i_dser_no_sync => '0',
-
-        o_frame_number => open,
-        o_frame_info => open,
-        o_frame_info_ready => open,
-        o_new_frame => open,
-        o_word => malibu_word,
-        o_new_word => open,
-
-        o_end_of_frame => open,
-        o_crc_error => open,
-        o_crc_err_count => open--,
-    );
-
-    i_mutrig_datapath : entity work.mutrig_datapath
-    port map (
-        i_rst => not reset_n,
-        i_stic_txd => malibu_data(0 downto 0),
-        i_refclk_125 => clk_aux,
-
-        --interface to asic fifos
-        i_clk_core => '0',
-        o_fifo_empty => open,
-        o_fifo_data => open,
-        i_fifo_rd => '1',
-        --slow control
-        i_SC_disable_dec => '0',
-        i_SC_mask => (others => '0'),
-        i_SC_datagen_enable => '0',
-        i_SC_datagen_shortmode => '0',
-        i_SC_datagen_count => (others => '0'),
-        --monitors
-        o_receivers_usrclk => open,
-        o_receivers_pll_lock => open,
-        o_receivers_dpa_lock=> open,
-        o_receivers_ready => open,
-        o_frame_desync => open,
-        o_buffer_full => open--,
-    );
 
     ----------------------------------------------------------------------------
 
 
 
+
+
+    ----------------------------------------------------------------------------
+    -- SLOW CONTROL
+
+    i_sc_ram : entity work.ip_ram
+    generic map (
+        ADDR_WIDTH => 14,
+        DATA_WIDTH => 32--,
+    )
+    port map (
+        address_b   => avm_sc.address(15 downto 2),
+        q_b         => avm_sc.readdata,
+        wren_b      => avm_sc.write,
+        data_b      => avm_sc.writedata,
+        clock_b     => qsfp_pll_clk,
+
+        address_a   => ram_addr_a(13 downto 0),
+        q_a         => ram_rdata_a,
+        wren_a      => ram_we_a,
+        data_a      => ram_wdata_a,
+        clock_a     => qsfp_pll_clk--,
+    );
+    avm_sc.waitrequest <= '0';
+
+    i_sc : entity work.sc_s4
+    port map (
+        clk => qsfp_pll_clk,
+        reset_n => reset_n,
+        enable => '1',
+
+        mem_data_in => ram_rdata_a,
+
+        link_data_in => qsfp_rx_data(31 downto 0),
+        link_data_in_k => qsfp_rx_datak(3 downto 0),
+
+        fifo_data_out => sc_to_fifo,
+        fifo_we => sc_to_fifo_we,
+
+        mem_data_out => ram_wdata_a,
+        mem_addr_out => ram_addr_a,
+        mem_wren => ram_we_a,
+
+        stateout => open--,
+    );
+
+    i_sc_fifo : entity work.mergerfifo -- ip_fifo
+    generic map (
+--        ADDR_WIDTH => 11,
+--        DATA_WIDTH => 36,
+        DEVICE => "Stratix IV"--,
+    )
+    port map (
+        data    => sc_to_fifo,
+        rdclk   => qsfp_pll_clk,
+        rdreq   => sc_from_fifo_re,
+        wrclk   => qsfp_pll_clk,
+        wrreq   => sc_to_fifo_we,
+        q       => sc_from_fifo,
+        rdempty => sc_from_fifo_empty,
+        wrfull  => open--,
+    );
+
+
+
+    ----------------------------------------------------------------------------
+    i_merger : entity work.data_merger
+    port map (
+        clk                     => qsfp_pll_clk,
+        reset                   => not reset_n,
+        fpga_ID_in              => (5=>'1',others => '0'),
+        FEB_type_in             => "111010",
+        state_idle              => '1',
+        state_run_prepare       => '0',
+        state_sync              => '0',
+        state_running           => '0',
+        state_terminating       => '0',
+        state_link_test         => '0',
+        state_sync_test         => '0',
+        state_reset             => '0',
+        state_out_of_DAQ        => '0',
+        data_out                => qsfp_tx_data(31 downto 0),
+        data_is_k               => qsfp_tx_datak(3 downto 0),
+        data_in                 => data_from_fifo,
+        data_in_slowcontrol     => sc_from_fifo,
+        slowcontrol_fifo_empty  => sc_from_fifo_empty,
+        data_fifo_empty         => '1',--data_from_fifo_empty,
+        slowcontrol_read_req    => sc_from_fifo_re,
+        data_read_req           => data_from_fifo_re,
+        terminated              => open,
+        override_data_in        => (others => '0'),
+        override_data_is_k_in   => (others => '0'),
+        override_req            => '0',
+        override_granted        => open,
+        data_priority           => '0',
+        leds                    => open -- debug
+    );
+
+    ----------------------------------------------------------------------------
     ----------------------------------------------------------------------------
     -- QSFP
 
@@ -380,137 +464,6 @@ begin
 
     ----------------------------------------------------------------------------
 
-
-
-    ----------------------------------------------------------------------------
-    -- SLOW CONTROL
-
-    i_sc_ram : entity work.ip_ram
-    generic map (
-        ADDR_WIDTH => 14,
-        DATA_WIDTH => 32--,
-    )
-    port map (
-        address_b   => avm_sc.address(15 downto 2),
-        q_b         => avm_sc.readdata,
-        wren_b      => avm_sc.write,
-        data_b      => avm_sc.writedata,
-        clock_b     => qsfp_pll_clk,
-
-        address_a   => ram_addr_a(13 downto 0),
-        q_a         => ram_rdata_a,
-        wren_a      => ram_we_a,
-        data_a      => ram_wdata_a,
-        clock_a     => qsfp_pll_clk--,
-    );
-    avm_sc.waitrequest <= '0';
-
-    i_sc : entity work.sc_s4
-    port map (
-        clk => qsfp_pll_clk,
-        reset_n => reset_n,
-        enable => '1',
-
-        mem_data_in => ram_rdata_a,
-
-        link_data_in => qsfp_rx_data(31 downto 0),
-        link_data_in_k => qsfp_rx_datak(3 downto 0),
-
-        fifo_data_out => sc_to_fifo,
-        fifo_we => sc_to_fifo_we,
-
-        mem_data_out => ram_wdata_a,
-        mem_addr_out => ram_addr_a,
-        mem_wren => ram_we_a,
-
-        stateout => open--,
-    );
-
-    ----------------------------------------------------------------------------
-
-    ----------------------------------------------------------------------------
-    -- data gen
-    
-    i_data_gen : entity work.data_generator
-    port map (
-        clk => qsfp_pll_clk,
-        reset => not reset_n,
-        enable_pix => '1',
-        --enable_sc:         	in  std_logic;
-        random_seed => (others => '1'),
-        data_pix_generated => data_to_fifo,
-        --data_sc_generated:   	out std_logic_vector(31 downto 0);
-        data_pix_ready => data_to_fifo_we,
-        --data_sc_ready:      	out std_logic;
-        start_global_time => (others => '0')--,
-              -- TODO: add some rate control
-    );
-
-    i_merger : entity work.data_merger
-    port map (
-        clk                     => qsfp_pll_clk,
-        reset                   => not reset_n,
-        fpga_ID_in              => (5=>'1',others => '0'),
-        FEB_type_in             => "111010",
-        state_idle              => '1',
-        state_run_prepare       => '0',
-        state_sync              => '0',
-        state_running           => '0',
-        state_terminating       => '0',
-        state_link_test         => '0',
-        state_sync_test         => '0',
-        state_reset             => '0',
-        state_out_of_DAQ        => '0',
-        data_out                => qsfp_tx_data(31 downto 0),
-        data_is_k               => qsfp_tx_datak(3 downto 0),
-        data_in                 => data_from_fifo,
-        data_in_slowcontrol     => sc_from_fifo,
-        slowcontrol_fifo_empty  => sc_from_fifo_empty,
-        data_fifo_empty         => '1',--data_from_fifo_empty,
-        slowcontrol_read_req    => sc_from_fifo_re,
-        data_read_req           => data_from_fifo_re,
-        terminated              => open,
-        override_data_in        => (others => '0'),
-        override_data_is_k_in   => (others => '0'),
-        override_req            => '0',
-        override_granted        => open,
-        data_priority           => '0',
-        leds                    => open -- debug
-    );
-
-    i_data_fifo : entity work.mergerfifo
-    generic map (
-        DEVICE => "Stratix IV"--,
-    )
-    port map (
-        data    => data_to_fifo,
-        rdclk   => qsfp_pll_clk,
-        rdreq   => data_from_fifo_re,
-        wrclk   => qsfp_pll_clk,
-        wrreq   => data_to_fifo_we,
-        q       => data_from_fifo,
-        rdempty => data_from_fifo_empty,
-        wrfull  => open--,
-    );
-
-    i_sc_fifo : entity work.mergerfifo -- ip_fifo
-    generic map (
---        ADDR_WIDTH => 11,
---        DATA_WIDTH => 36,
-        DEVICE => "Stratix IV"--,
-    )
-    port map (
-        data    => sc_to_fifo,
-        rdclk   => qsfp_pll_clk,
-        rdreq   => sc_from_fifo_re,
-        wrclk   => qsfp_pll_clk,
-        wrreq   => sc_to_fifo_we,
-        q       => sc_from_fifo,
-        rdempty => sc_from_fifo_empty,
-        wrfull  => open--,
-    );
-
-    ----------------------------------------------------------------------------
 
     ----------------------------------------------------------------------------
     -- POD
