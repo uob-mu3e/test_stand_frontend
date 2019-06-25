@@ -324,6 +324,10 @@ begin
 
     i_qsfp : entity work.xcvr_s4
     generic map (
+        NUMBER_OF_CHANNELS_g => 4,
+        CHANNEL_WIDTH_g => 32,
+        INPUT_CLOCK_FREQUENCY_g => 156250000,
+        DATA_RATE_g => 6250,
         CLK_MHZ_g => 125--,
     )
     port map (

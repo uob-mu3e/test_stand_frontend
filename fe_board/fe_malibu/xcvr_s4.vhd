@@ -7,8 +7,8 @@ entity xcvr_s4 is
 generic (
     NUMBER_OF_CHANNELS_g : positive := 4;
     CHANNEL_WIDTH_g : positive := 32;
-    data_rate : positive := 6250; -- Gbps
-    pll_freq : real := 156.25; -- MHz
+    INPUT_CLOCK_FREQUENCY_g : positive := 125000000;
+    DATA_RATE_g : positive := 5000;
     K_g : std_logic_vector(7 downto 0) := work.util.D28_5;
     CLK_MHZ_g : positive := 50--;
 );
@@ -315,12 +315,12 @@ begin
         end process;
     end block;
 
-    e_phy : entity work.ip_altgx
+    e_phy : entity work.altgx_generic
     generic map (
-        effective_data_rate => data_rate,
-        input_clock_frequency => real'image(pll_freq),
-        input_clock_period => integer(1000000.0 / pll_freq),
-        m_divider => integer(real(data_rate) / pll_freq / 2.0)--,
+        NUMBER_OF_CHANNELS_g => NUMBER_OF_CHANNELS_g,
+        CHANNEL_WIDTH_g => CHANNEL_WIDTH_g,
+        INPUT_CLOCK_FREQUENCY_g => INPUT_CLOCK_FREQUENCY_g,
+        DATA_RATE_g => DATA_RATE_g--,
     )
     port map (
         cal_blk_clk => i_clk,
