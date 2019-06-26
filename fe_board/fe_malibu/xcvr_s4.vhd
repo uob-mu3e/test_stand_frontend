@@ -240,7 +240,7 @@ begin
                 av_ctrl.readdata(0) <= rx_ready(ch);
                 av_ctrl.readdata(1) <= rx_is_lockedtoref(ch);
                 av_ctrl.readdata(2) <= rx_is_lockedtodata(ch);
-                av_ctrl.readdata(11 downto 8) <= (others => '1');
+--                av_ctrl.readdata(11 downto 8) <= (others => '1');
                 av_ctrl.readdata(CHANNEL_WIDTH_g/8-1 + 8 downto 8) <= rx(ch).syncstatus;
                 av_ctrl.readdata(12) <= rx(ch).locked;
                 --

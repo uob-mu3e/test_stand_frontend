@@ -135,6 +135,11 @@ begin
     generic map ( P => 156250000 )
     port map ( clkout => led(14), rst_n => reset_n, clk => qsfp_pll_clk );
 
+        -- 125 MHz
+    e_clk_pod_hz : entity work.clkdiv
+    generic map ( P => 125000000 )
+    port map ( clkout => led(13), rst_n => reset_n, clk => pod_pll_clk );
+
     ----------------------------------------------------------------------------
     -- NIOS
 
@@ -508,7 +513,7 @@ begin
     -- POD
 
     pod_tx_reset <= '0';
-    pod_tx_reset <= '0';
+    pod_rx_reset <= '0';
 
     e_pod : entity work.xcvr_s4
     generic map (

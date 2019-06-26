@@ -79,8 +79,10 @@ begin
 
         -- generate rising edge if not locked
         if ( locked = '0' ) then
-            -- alternate between '0' and '1' to prevent being stuck at '1'
-            o_enapatternalign <= enapatternalign_cnt(enapatternalign_cnt'left);
+            -- generate one clock cycle pulse to prevent being stuck at '1'
+            if ( enapatternalign_cnt = (enapatternalign_cnt'range => '1') ) then
+                o_enapatternalign <= '1';
+            end if;
             enapatternalign_cnt <= enapatternalign_cnt + 1;
         end if;
         --
@@ -113,7 +115,7 @@ begin
             end if;
 
             -- require one control symbol
-            if ( pattern_v /= i_datak ) then
+            if ( pattern_v(i_datak'range) /= i_datak ) then
                 error_v := true;
             end if;
 
@@ -136,7 +138,7 @@ begin
         end if;
 
         if ( error_v
-            or i_syncstatus /= (i_syncstatus'range => '1')
+--            or i_syncstatus /= (i_syncstatus'range => '1')
             or i_errdetect /= (i_errdetect'range => '0')
             or i_disperr /= (i_disperr'range => '0')
         ) then
