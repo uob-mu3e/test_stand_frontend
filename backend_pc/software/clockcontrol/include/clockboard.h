@@ -137,8 +137,8 @@ protected:
     const uint8_t FIREFLY_RX_VCC_ALARM_REG  = 0x12;
 
     const uint8_t FIREFLY_TEMP_REG          = 0x16;
-    const uint8_t FIREFLY_VOLTAGE_LO_REG    = 0x1A;
-    const uint8_t FIREFLY_VOLTAGE_HI_REG    = 0x1B;
+    const uint8_t FIREFLY_VOLTAGE_LO_REG    = 0x1B;
+    const uint8_t FIREFLY_VOLTAGE_HI_REG    = 0x1A;
 
     const uint8_t FIREFLY_OPTICAL_PWR_LO_REG   = 0x22;
     const uint8_t FIREFLY_OPTICAL_PWR_HI_REG   = 0x23;

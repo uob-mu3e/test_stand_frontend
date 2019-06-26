@@ -12,7 +12,7 @@ function Motherboard(x,y,dx,dy){
     this.current = "123 mA";
     this.voltage = "4567 mV";
 
-    this.rxffvoltage ="2500 mA";
+    this.rxffvoltage ="2500 mV";
     this.rxfftemp ="99 C";
 
     this.rxlos = [12];
@@ -235,7 +235,7 @@ function update_boarddrawing(value) {
     motherboard.current = Number.parseFloat(value["crt1"][0]).toFixed(0) + "mA";
     motherboard.voltage = Number.parseFloat(value["crt1"][1]).toFixed(0) + "mV";
 
-    motherboard.rxffvoltage = Number.parseFloat(value["crt1"][4]).toFixed(0) + "mA";
+    motherboard.rxffvoltage = Number.parseFloat(value["crt1"][4]).toFixed(0) + "mV";
     motherboard.rxfftemp = Number.parseFloat(value["crt1"][3]).toFixed(0) + "C";
 
     for(var i=0; i < 12; i++){
@@ -255,7 +255,7 @@ function update_boarddrawing(value) {
                  }
             }
             daughterboards[i].current = Number.parseFloat(value["crt1"][doffset+i*dnum]).toFixed(0) + "mA";
-            daughterboards[i].voltage = Number.parseFloat(value["crt1"][doffset+i*dnum]).toFixed(0) + "mV";
+            daughterboards[i].voltage = Number.parseFloat(value["crt1"][doffset+i*dnum+1]).toFixed(0) + "mV";
          } else {
             daughterboards[i].active =  false;
              for(var j=0; j < 3; j++){
