@@ -1,8 +1,9 @@
 #
 
 source assignments/FE_s4.tcl
-source assignments/FE_malibu.tcl
+source assignments/FE_scifi.tcl
 
+#TODO: move following common assignments to FE_s4.tcl
 set_location_assignment PIN_D23 -to led_n[0]
 set_location_assignment PIN_D24 -to led_n[1]
 set_location_assignment PIN_D25 -to led_n[2]

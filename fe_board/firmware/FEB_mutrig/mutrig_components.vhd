@@ -1,7 +1,5 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use work.pcie_components.all;
---use work.gbt_components.all;
 
 package mutrig_components is
 component mutrig_slow is
@@ -123,24 +121,24 @@ port (
 );
 end component;
 
-component eventdata_pcie_bridge is
-generic(
-	C_ADDR_WIDTH     : integer := 64                                  -- PCIe address width
-);
-port (
-	--global
-	clk_pcie         : in  std_logic;                                     -- fast PCIe memory clk 
-	reset_n          : in  std_logic;                                     -- reset, active low
-	--fifo read side signals
-	i_fifo_data	 : std_logic_vector(63 downto 0);
-	i_fifo_empty	 : in  std_logic;
-	o_fifo_rd	 : out std_logic;
-	--pcie interface
-	o_writeaddr      : out std_logic_vector(C_ADDR_WIDTH-1 downto 0);     -- PCIe address 
-	o_write_data     : out std_logic_vector(31 downto 0);                 -- PCIe data word
-	o_wren           : out std_logic;                                     -- PCIe enable write
-	o_end_of_frame   : out std_logic
-);
-end component;
+--component eventdata_pcie_bridge is
+--generic(
+--	C_ADDR_WIDTH     : integer := 64                                  -- PCIe address width
+--);
+--port (
+--	--global
+--	clk_pcie         : in  std_logic;                                     -- fast PCIe memory clk 
+--	reset_n          : in  std_logic;                                     -- reset, active low
+--	--fifo read side signals
+--	i_fifo_data	 : std_logic_vector(63 downto 0);
+--	i_fifo_empty	 : in  std_logic;
+--	o_fifo_rd	 : out std_logic;
+--	--pcie interface
+--	o_writeaddr      : out std_logic_vector(C_ADDR_WIDTH-1 downto 0);     -- PCIe address 
+--	o_write_data     : out std_logic_vector(31 downto 0);                 -- PCIe data word
+--	o_wren           : out std_logic;                                     -- PCIe enable write
+--	o_end_of_frame   : out std_logic
+--);
+--end component;
 
 end package mutrig_components;

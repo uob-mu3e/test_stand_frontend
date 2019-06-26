@@ -301,6 +301,8 @@ begin
         i_rst => not reset_n,
         i_stic_txd => malibu_data(0 downto 0),
         i_refclk_125 => clk_aux,
+        i_ts_clk => clk_aux,
+        i_ts_rst => not reset_n,
 
         --interface to asic fifos
         i_clk_core => '0',

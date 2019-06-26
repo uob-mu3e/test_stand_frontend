@@ -217,9 +217,9 @@ begin
 	case s_state is
 		when fs_idle =>
 			--wait for request -- TODO: move next selection to common part to speed up process
-			if(l_all_header) then
+			if(l_all_header='1') then
 				n_state <= fs_headerH;
-			elsif(l_all_trailer) then
+			elsif(l_all_trailer='1') then
 				n_state <= fs_trailer;
 			elsif(unsigned(l_request) /= 0) then
 				n_sel_gnt <= Priority_Select(l_request);
@@ -285,12 +285,12 @@ end process;
 def_mux_out : process (s_sel_data, s_chnum, l_common_data,s_global_timestamp,l_frameid_nonsync,l_any_crc_err,l_any_asic_overflow, l_all_header,l_all_trailer, s_Tpart,s_Hpart)
 begin
 
-	if(l_all_trailer) then --select global trailer
+	if(l_all_trailer='1') then --select global trailer
 		o_sink_data(33 downto 32) <= "11"; --identifier
 		o_sink_data(31 downto 2) <= (others=>'0'); --filler
 		o_sink_data(1) <= l_any_asic_overflow;  --asic fifo overflow flag
 		o_sink_data(0) <= l_any_crc_err; --crc error flag
-	elsif(l_all_header) then --select global header
+	elsif(l_all_header='1') then --select global header
 		if (s_Hpart='0') then -- first header payload word
 			o_sink_data(33 downto 32) <= "10"; --identifier (type header)
 			o_sink_data(31 downto 0) <= s_global_timestamp(47 downto 16); --global timestamp 

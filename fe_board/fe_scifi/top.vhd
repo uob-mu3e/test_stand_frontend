@@ -1,3 +1,7 @@
+package FE_CONFIG is	
+	constant N_SCIFI_BOARDS : integer :=1;
+end package;
+use work.FE_CONFIG;
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -5,15 +9,15 @@ use ieee.numeric_std.all;
 entity top is
 port (
     -- FE.Ports
-    -- constant parameter is N_SCIFI_BOARDS : integer which defines the number of Boards connected (i.e. ports used).
-    i_fee_rxd		: in  std_logic_vector (4*N_SCIFI_BOARDS - 1 downto 0); --data inputs from ASICs
-    o_fee_spi_CSn	: out std_logic_vector (4*N_SCIFI_BOARDS - 1 downto 0); --CSn signals to ASICs (one per ASIC)
-    o_fee_spi_MOSI	: out std_logic_vector (N_SCIFI_BOARDS - 1 downto 0);   --MOSI signals to ASICs (one per board)
-    i_fee_spi_MISO	: in  std_logic_vector (N_SCIFI_BOARDS - 1 downto 0);   --MISO signals from ASICs (one per board)
-    o_fee_spi_SCK	: out std_logic_vector (N_SCIFI_BOARDS - 1 downto 0);   --SCK signals to ASICs (one per board)
+    -- constant parameter is FE_CONFIG.N_SCIFI_BOARDS : integer which defines the number of Boards connected (i.e. ports used).
+    i_fee_rxd		: in  std_logic_vector (4*FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0); --data inputs from ASICs
+    o_fee_spi_CSn	: out std_logic_vector (4*FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0); --CSn signals to ASICs (one per ASIC)
+    o_fee_spi_MOSI	: out std_logic_vector (FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0);   --MOSI signals to ASICs (one per board)
+    i_fee_spi_MISO	: in  std_logic_vector (FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0);   --MISO signals from ASICs (one per board)
+    o_fee_spi_SCK	: out std_logic_vector (FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0);   --SCK signals to ASICs (one per board)
 
-    o_fee_ext_trig	: out std_logic_vector (N_SCIFI_BOARDS - 1 downto 0);   --external trigger (data validation) signals to ASICs (one per board)
-    o_fee_chip_rst	: out std_logic_vector (N_SCIFI_BOARDS - 1 downto 0);   --chip reset signals to ASICs (one per board)
+    o_fee_ext_trig	: out std_logic_vector (FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0);   --external trigger (data validation) signals to ASICs (one per board)
+    o_fee_chip_rst	: out std_logic_vector (FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0);   --chip reset signals to ASICs (one per board)
     
     -- SI45
 
@@ -77,7 +81,7 @@ architecture arch of top is
     signal i2c_scl_in, i2c_scl_oe, i2c_sda_in, i2c_sda_oe : std_logic;
     --spi interface (external, spi_ss_n[4*N_SCIFI_BOARDS] is rewired to siXX45 chip, miso is also rewired if corresponding cs is low)
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
-    signal spi_ss_n : std_logic_vector(4*N_SCIFI_BOARDS downto 0);
+    signal spi_ss_n : std_logic_vector(4*FE_CONFIG.N_SCIFI_BOARDS downto 0);
 
     signal s_fee_chip_rst_auxclk_sync : std_logic_vector(1 downto 0);
 
@@ -98,8 +102,6 @@ architecture arch of top is
     signal ram_wdata_a : std_logic_vector(31 downto 0);
     signal ram_we_a : std_logic;
 
-    signal data_to_fifo : std_logic_vector(35 downto 0);
-    signal data_to_fifo_we : std_logic;
     signal data_from_fifo : std_logic_vector(35 downto 0);
     signal data_from_fifo_re : std_logic;
     signal data_from_fifo_empty : std_logic;
@@ -199,22 +201,21 @@ begin
     si45_oe_n <= '0';
     si45_rst_n <= '1';
     --fee assignments
-    o_fee_ext_trig <= '0';
-
+    o_fee_ext_trig <= (others =>'0');
 
     -- SPI
     ----------------------------------------------------------------------------
     --si chip assignments
     si45_spi_in <= spi_mosi;
     si45_spi_sclk <= spi_sclk;
-    si45_spi_cs_n <= spi_ss_n(4*N_SCIFI_BOARDS);
+    si45_spi_cs_n <= spi_ss_n(4*FE_CONFIG.N_SCIFI_BOARDS);
     --fee assignments
-    o_fee_spi_MOSI <= spi_mosi;
-    o_fee_spi_SCK  <= spi_sclk;
-    o_fee_spi_CSn <=  spi_ss_n(4*N_SCIFI_BOARDS-1 downto 0);
+    o_fee_spi_MOSI <= (others => spi_mosi);
+    o_fee_spi_SCK  <= (others => spi_sclk);
+    o_fee_spi_CSn <=  spi_ss_n(4*FE_CONFIG.N_SCIFI_BOARDS-1 downto 0);
     --MISO: multiplexing si chip / SciFi FEE
-    spi_miso <= si45_spi_out when spi_ss_n(4*N_SCIFI_BOARDS) = '0' else
-                i_fee_spi_MISO;
+    spi_miso <= si45_spi_out when spi_ss_n(4*FE_CONFIG.N_SCIFI_BOARDS) = '0' else
+		i_fee_spi_MISO(0); --TODO make working with multiple FEBs, if we need this
 
 
 
@@ -238,7 +239,7 @@ begin
             s_fee_chip_rst_auxclk_sync <= s_fee_chip_rst_auxclk_sync(0) & nios_pio(16);
         end if;
     end process;
-    o_fee_chip_rst <= s_fee_chip_rst_auxclk_sync(1);
+    o_fee_chip_rst <= ( others => s_fee_chip_rst_auxclk_sync(1) );
 
     ----------------------------------------------------------------------------
     --test pulse generation. Maybe we should wire this up again in hardware...
@@ -275,36 +276,35 @@ begin
     ----------------------------------------------------------------------------
     -- data generator and fifo. TODO: replace with mutrig_datapath
     
-    i_data_gen : entity work.data_generator
-    port map (
-        clk => qsfp_pll_clk,
-        reset => not reset_n,
-        enable_pix => '1',
-        --enable_sc:         	in  std_logic;
-        random_seed => (others => '1'),
-        data_pix_generated => data_to_fifo,
-        --data_sc_generated:   	out std_logic_vector(31 downto 0);
-        data_pix_ready => data_to_fifo_we,
-        --data_sc_ready:      	out std_logic;
-        start_global_time => (others => '0')--,
-              -- TODO: add some rate control
-    );
-
- 
-    i_data_fifo : entity work.mergerfifo
-    generic map (
-        DEVICE => "Stratix IV"--,
-    )
-    port map (
-        data    => data_to_fifo,
-        rdclk   => qsfp_pll_clk,
-        rdreq   => data_from_fifo_re,
-        wrclk   => qsfp_pll_clk,
-        wrreq   => data_to_fifo_we,
-        q       => data_from_fifo,
-        rdempty => data_from_fifo_empty,
-        wrfull  => open--,
-    );
+--    i_data_gen : entity work.data_generator
+--    port map (
+--        clk => qsfp_pll_clk,
+--        reset => not reset_n,
+--        enable_pix => '1',
+--        --enable_sc:         	in  std_logic;
+--        random_seed => (others => '1'),
+--        --data_sc_generated:   	out std_logic_vector(31 downto 0);
+--        data_pix_ready => data_to_fifo_we,
+--        --data_sc_ready:      	out std_logic;
+--        start_global_time => (others => '0')--,
+--              -- TODO: add some rate control
+--    );
+--
+-- 
+--    i_data_fifo : entity work.mergerfifo
+--    generic map (
+--        DEVICE => "Stratix IV"--,
+--    )
+--    port map (
+--        data    => data_to_fifo,
+--        rdclk   => qsfp_pll_clk,
+--        rdreq   => data_from_fifo_re,
+--        wrclk   => qsfp_pll_clk,
+--        wrreq   => data_to_fifo_we,
+--        q       => data_from_fifo,
+--        rdempty => data_from_fifo_empty,
+--        wrfull  => open--,
+--    );
 
 
     ----------------------------------------------------------------------------
