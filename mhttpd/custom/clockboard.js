@@ -15,7 +15,8 @@ function Motherboard(x,y,dx,dy){
     this.rxffvoltage ="2500 mA";
     this.rxfftemp ="99 C";
 
-    this.rxpower = [12];
+    this.rxlos = [12];
+    this.rxlosmask = [12];
 
 	this.draw = function(){
         c.fillStyle = "rgba(0,0,0,0.5)";
@@ -37,11 +38,28 @@ function Motherboard(x,y,dx,dy){
         c.font = "12px Arial";
         c.fillText(this.rxffvoltage, this.x+345, this.y+160);
         c.fillText(this.rxfftemp, this.x+410, this.y+160);
-        c.font = "10px Arial";
-        for(var i=0; i < 12; i++){
-            c.fillText(this.rxpower[i], this.x+305+60*Math.floor(i/6), this.y+40+(i % 6)*11);
-        }
 
+        c.font = "9px Arial";
+        c.fillText("LOS", this.x+305, this.y+40);
+        for(var i=0; i < 12; i++){
+            if(this.rxlos[i])
+                c.fillStyle = "Red";
+            else
+                c.fillStyle = "Green";
+
+            c.beginPath();
+            c.arc(this.x+310, this.y+50+7*i, 2, 0, Math.PI*2, false);
+            c.fill();
+
+            if(this.rxlosmask[i])
+                c.fillStyle = "Grey";
+            else
+                c.fillStyle = "White";
+            c.beginPath();
+            c.arc(this.x+315, this.y+50+7*i, 2, 0, Math.PI*2, false);
+            c.fill();
+
+        }
 	}
 }
 
@@ -211,17 +229,17 @@ window.addEventListener('click', function(event) {
 
 
 function update_boarddrawing(value) {
-    var doffset = 21;
+    var doffset = 6;
     var dnum = 2;
 
-    motherboard.current = value["crt1"][0] + "mA";
-    motherboard.voltage = value["crt1"][1] + "mV";
+    motherboard.current = Number.parseFloat(value["crt1"][0]).toFixed(0) + "mA";
+    motherboard.voltage = Number.parseFloat(value["crt1"][1]).toFixed(0) + "mV";
 
-    motherboard.rxffvoltage = value["crt1"][7] + "mA";
-    motherboard.rxfftemp = value["crt1"][6] + "C";
+    motherboard.rxffvoltage = Number.parseFloat(value["crt1"][4]).toFixed(0) + "mA";
+    motherboard.rxfftemp = Number.parseFloat(value["crt1"][3]).toFixed(0) + "C";
 
     for(var i=0; i < 12; i++){
-        motherboard.rxpower[i] = value["crt1"][8+i] + "muW";
+        motherboard.rxlos[i] = value["crt1"][2] & (1<<i);
     }
 
     var dp = value["daughters present"];
@@ -236,12 +254,24 @@ function update_boarddrawing(value) {
                      fireflys[i*3+j].active = false;
                  }
             }
-            daughterboards[i].current = value["crt1"][doffset+i*dnum] + "mA";
-            daughterboards[i].voltage = value["crt1"][doffset+i*dnum] + "mV";
+            daughterboards[i].current = Number.parseFloat(value["crt1"][doffset+i*dnum]).toFixed(0) + "mA";
+            daughterboards[i].voltage = Number.parseFloat(value["crt1"][doffset+i*dnum]).toFixed(0) + "mV";
          } else {
             daughterboards[i].active =  false;
+             for(var j=0; j < 3; j++){
+                  fireflys[i*3+j].active = false;
+             }
         }
     }
 
+    draw(selindex);
+}
+
+function update_rxmask(value) {
+
+    for(var i=0; i < 12; i++){
+        motherboard.rxlosmask[i] = ((value & (1<<i)) != 0);
+    }
+    console.log(value + " " + motherboard.rxlosmask)
     draw(selindex);
 }

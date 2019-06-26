@@ -40,6 +40,9 @@ public:
     uint16_t read_inverted_tx_channels();
     int invert_tx_channels(uint16_t channels);
 
+    int disable_rx_channels(uint16_t channelmask);
+    uint16_t read_disabled_rx_channels();
+
     int set_rx_amplitude(uint8_t amplitude);
     int set_rx_emphasis(uint8_t emphasis);
 
@@ -48,8 +51,8 @@ public:
 
     float read_rx_firefly_temp();
     float read_rx_firefly_voltage();
-    vector<uint32_t> read_rx_firefly_alarms();
-    vector<float> read_rx_firefly_power();
+    uint16_t read_rx_firefly_los();
+    uint16_t read_rx_firefly_alarms();
 
 
     float read_tx_firefly_temp();
@@ -127,7 +130,12 @@ protected:
     const uint8_t FIREFLY_SEL[3]             = {FIREFLY_0, FIREFLY_1, FIREFLY_2};
 
     // Firefly register map
-    const uint8_t FIREFLY_ALARM_REG         = 0x03;
+    // RX specific
+    const uint8_t FIREFLY_RX_LOS_LO_REG     = 0x08;
+    const uint8_t FIREFLY_RX_LOS_HI_REG     = 0x07;
+    const uint8_t FIREFLY_RX_TEMP_ALARM_REG = 0x10;
+    const uint8_t FIREFLY_RX_VCC_ALARM_REG  = 0x12;
+
     const uint8_t FIREFLY_TEMP_REG          = 0x16;
     const uint8_t FIREFLY_VOLTAGE_LO_REG    = 0x1A;
     const uint8_t FIREFLY_VOLTAGE_HI_REG    = 0x1B;

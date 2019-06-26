@@ -337,6 +337,25 @@ int clockboard::invert_tx_channels(uint16_t channels)
     return 1;
 }
 
+int clockboard::disable_rx_channels(uint16_t channelmask)
+{
+    write_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_DISABLE_HI_ADDR, (uint8_t)((channelmask>>8)&0x0f));
+    write_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_DISABLE_LO_ADDR, (uint8_t)(channelmask&0xff));
+    return 1;
+}
+
+uint16_t clockboard::read_disabled_rx_channels()
+{
+    uint8_t data;
+    uint16_t data_holder;
+    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_DISABLE_HI_ADDR, data);
+    data_holder = data;
+    data_holder = data_holder << 8;
+    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_DISABLE_LO_ADDR, data);
+    data_holder = (data_holder & 0x0f00)|data;
+    return data_holder;
+}
+
 int clockboard::set_rx_amplitude(uint8_t amplitude)
 {
     write_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_0_1_ADDR, amplitude);
@@ -359,25 +378,6 @@ int clockboard::set_rx_emphasis(uint8_t emphasis)
     return 1;
 }
 
-vector<uint8_t> clockboard::read_rx_amplitude()
-{
-    uint8_t data;
-    vector<uint8_t> res;
-    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_0_1_ADDR, data);
-    res.push_back(data);
-    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_2_3_ADDR, data);
-    res.push_back(data);
-    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_4_5_ADDR, data);
-    res.push_back(data);
-    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_6_7_ADDR, data);
-    res.push_back(data);
-    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_8_9_ADDR, data);
-    res.push_back(data);
-    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_A_B_ADDR, data);
-    res.push_back(data);
-
-    return res;
-}
 
 vector<uint8_t> clockboard::read_rx_emphasis()
 {
@@ -418,43 +418,32 @@ float clockboard::read_rx_firefly_voltage()
     // voltage in mV
 }
 
-vector<uint32_t> clockboard::read_rx_firefly_alarms()
+uint16_t clockboard::read_rx_firefly_los()
 {
-    vector<uint8_t> alarms8;
-    vector<uint32_t> alarms;
+    uint16_t los;
     uint8_t data;
-    for(uint8_t i =0; i< 16; i++){
-        data =0;
-        if(i==0 || i==3 || i== 4  || i==6 || i==7 || i==15)
-            read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_ALARM_REG+i,data);
-        alarms8.push_back(data);
-    }
 
-    for(uint8_t i =0; i< 4; i++){
-        uint32_t word = alarms8[i*4]+
-                       (alarms8[i*4+1] << 8) +
-                       (alarms8[i*4+2] << 16) +
-                       (alarms8[i*4+3] << 24);
-        alarms.push_back(word);
-    }
-    return alarms;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_RX_LOS_LO_REG,data);
+    los = data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_RX_LOS_HI_REG,data);
+    los += ((uint16_t)data << 8);
+
+    return los;
 }
 
-vector<float> clockboard::read_rx_firefly_power()
+uint16_t clockboard::read_rx_firefly_alarms()
 {
-    vector<float> pow;
+    uint16_t alarm;
+    uint8_t data;
 
-    for(uint8_t i =0; i < 12; i++){
-        uint8_t data;
-        read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_OPTICAL_PWR_LO_REG+i*2,data);
-        uint16_t power = data;
-        read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_OPTICAL_PWR_HI_REG+i*2,data);
-        power += ((uint16_t)data << 8);
-        pow.push_back((float)power / 10.0);
-        // Optical power in microW
-    }
-    return pow;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_RX_TEMP_ALARM_REG,data);
+    alarm = data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_RX_TEMP_ALARM_REG,data);
+    alarm += ((uint16_t)data << 8);
+
+    return alarm;
 }
+
 
 float clockboard::read_tx_firefly_temp()
 {

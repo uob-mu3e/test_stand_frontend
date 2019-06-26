@@ -91,8 +91,9 @@ void cr_settings_changed(HNDLE, HNDLE, int, void *);
 /* Default values for /Equipment/Clock Reset/Settings */
 const char *cr_settings_str[] = {
 "Active = BOOL : 1",
-"IP = STRING : [16] 10.32.113.218",
+"IP = STRING : [16] 192.168.0.200",
 "PORT = INT : 50001",
+"RX_MASK = INT : 0",
 "Run Prepare = BOOL : 0",
 "Sync = BOOL : 0",
 "Start Run = BOOL : 0",
@@ -109,27 +110,12 @@ const char *cr_settings_str[] = {
 "Disable = BOOL : 0",
 "Address = BOOL : 0",
 "Payload = INT : 0",
-"Names CRT1 = STRING[37] :",
+"Names CRT1 = STRING[22] :",
 "[32] Motherboard Current",
 "[32] Motherboard Voltage",
-"[32] RX Firefly Alarms 0",
-"[32] RX Firefly Alarms 1",
-"[32] RX Firefly Alarms 2",
-"[32] RX Firefly Alarms 3",
+"[32] RX Firefly Alarms",
 "[32] RX Firefly Temp",
 "[32] RX Firefly Voltage",
-"[32] RX Firefly Optical Power 0",
-"[32] RX Firefly Optical Power 1",
-"[32] RX Firefly Optical Power 2",
-"[32] RX Firefly Optical Power 3",
-"[32] RX Firefly Optical Power 4",
-"[32] RX Firefly Optical Power 5",
-"[32] RX Firefly Optical Power 6",
-"[32] RX Firefly Optical Power 7",
-"[32] RX Firefly Optical Power 8",
-"[32] RX Firefly Optical Power 9",
-"[32] RX Firefly Optical Power 10",
-"[32] RX Firefly Optical Power 11",
 "[32] TX Firefly Temp",
 "[32] Daughterboard 0 Current",
 "[32] Daughterboard 0 Voltage",
@@ -298,17 +284,9 @@ INT read_cr_event(char *pevent, INT off)
    *pdata++ = cb->read_mother_board_current();
    *pdata++ = cb->read_mother_board_voltage();
 
-   vector<uint32_t>al = cb->read_rx_firefly_alarms();
-   *pdata++ = al[0];
-   *pdata++ = al[1];
-   *pdata++ = al[2];
-   *pdata++ = al[3];
+   *pdata++= ((cb->read_rx_firefly_alarms()) << 16) + cb->read_rx_firefly_los();
    *pdata++ = cb->read_rx_firefly_temp();
    *pdata++ = cb->read_rx_firefly_voltage();
-   vector<float>pow = cb->read_rx_firefly_power();
-    for(uint8_t i =0; i < 12; i++){
-        *pdata++ = pow[i];
-    }
 
    *pdata++ = cb->read_tx_firefly_temp();
 
@@ -343,6 +321,16 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       cm_msg(MINFO, "cr_settings_changed", "Set active to %d", value);
       // TODO: propagate to hardware
    }
+
+    if (std::string(key.name) == "RX_MASK") {
+      int value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_INT);
+      cm_msg(MINFO, "cr_settings_changed", "Set RX_MASK to %x", value);
+      cb->disable_rx_channels(value);
+   }
+
+
 
    auto it = cb->reset_protocol.commands.find(std::string(key.name));
 
