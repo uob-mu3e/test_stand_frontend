@@ -10,7 +10,7 @@ public:
     clockboard(const char * addr, int port);
     bool isConnected(){return bus.isConnected();}
 
-    int init_clockboard();
+    int init_clockboard(uint16_t clkinvert = 0x0A00, uint16_t rstinvert= 0x0008);
     int map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num);
 
     // Write "reset" commands
@@ -34,11 +34,15 @@ public:
     // Firefly interface
     bool firefly_present(uint8_t daughter, uint8_t index);
 
-    uint16_t read_disabled_tx_channels();
-    int disable_tx_channels(uint16_t channels);
+    uint16_t read_disabled_tx_clk_channels();
+    int disable_tx_clk_channels(uint16_t channels);
+    uint16_t read_inverted_tx_clk_channels();
+    int invert_tx_clk_channels(uint16_t channels);
 
-    uint16_t read_inverted_tx_channels();
-    int invert_tx_channels(uint16_t channels);
+    uint16_t read_disabled_tx_rst_channels();
+    int disable_tx_rst_channels(uint16_t channels);
+    uint16_t read_inverted_tx_rst_channels();
+    int invert_tx_rst_channels(uint16_t channels);
 
     int disable_rx_channels(uint16_t channelmask);
     uint16_t read_disabled_rx_channels();
@@ -55,9 +59,20 @@ public:
     uint16_t read_rx_firefly_alarms();
 
 
-    float read_tx_firefly_temp();
-    float read_tx_firefly_temp(uint8_t daughter, uint8_t index);
+    float read_tx_clk_firefly_temp();
+    float read_tx_rst_firefly_temp();
+    float read_tx_clk_firefly_voltage();
+    float read_tx_rst_firefly_voltage();
+    uint16_t read_tx_clk_firefly_lf();
+    uint16_t read_tx_clk_firefly_alarms();
+    uint16_t read_tx_rst_firefly_lf();
+    uint16_t read_tx_rst_firefly_alarms();
 
+    float read_tx_firefly_temp(uint8_t daughter, uint8_t index);
+    float read_tx_firefly_voltage(uint8_t daughter, uint8_t index);
+
+    uint16_t read_tx_firefly_lf(uint8_t daughter, uint8_t index);
+    uint16_t read_tx_firefly_alarms(uint8_t daughter, uint8_t index);
 
     // Mother and daughter card monitoring
     bool daughter_present(uint8_t daughter);
@@ -136,12 +151,19 @@ protected:
     const uint8_t FIREFLY_RX_TEMP_ALARM_REG = 0x10;
     const uint8_t FIREFLY_RX_VCC_ALARM_REG  = 0x12;
 
+    //TX Specific
+    const uint8_t FIREFLY_TX_LF_LO_REG      = 0x0A;
+    const uint8_t FIREFLY_TX_LF_HI_REG      = 0x09;
+
+    const uint8_t FIREFLY_TX_TEMP_ALARM_REG = 0x11;
+    const uint8_t FIREFLY_TX_VCC_ALARM_REG  = 0x12;
+
+
+
+
     const uint8_t FIREFLY_TEMP_REG          = 0x16;
     const uint8_t FIREFLY_VOLTAGE_LO_REG    = 0x1B;
     const uint8_t FIREFLY_VOLTAGE_HI_REG    = 0x1A;
-
-    const uint8_t FIREFLY_OPTICAL_PWR_LO_REG   = 0x22;
-    const uint8_t FIREFLY_OPTICAL_PWR_HI_REG   = 0x23;
 
     const uint8_t FIREFLY_DISABLE_HI_ADDR   = 0x34;
     const uint8_t FIREFLY_DISABLE_LO_ADDR   = 0x35;

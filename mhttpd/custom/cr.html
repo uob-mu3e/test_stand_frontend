@@ -17,9 +17,17 @@
 <div id="mmain">
     <table class="mtable" cellpadding="6">
         <tr>
-            <td rowspan=18 style="text-align: right; width: 820px">
+            <td style="text-align: right;">
+                Payload:
+            </td>
+            <td>
+                <div name="modbvalue"
+                     data-odb-path="/Equipment/Clock Reset/Settings/Payload"
+                    data-odb-editable="1"></div>
+            </td>
+            <td rowspan=22 style="text-align: right; width: 820px">
                 <div name="modb" data-odb-path="/Equipment/Clock Reset/Variables" onchange="update_boarddrawing(this.value)">
-                <div name="modb" data-odb-path="/Equipment/Clock Reset/Settings/RX_MASK" onchange="update_rxmask(this.value)">
+                <div name="modb" data-odb-path="/Equipment/Clock Reset/Settings" onchange="update_masks(this.value)">
                 <canvas width="800px" height="800px"></canvas>
             </td>
             <td style="text-align: right; width: 200px">
@@ -32,6 +40,81 @@
             </td>
         </tr>
         <tr>
+            <td colspan="2" style="text-align: center">
+                <button name="modbbutton" class="mbutton" style="width: 150px"
+                    data-odb-path="/Equipment/Clock Reset/Settings/Run Prepare"
+                    data-odb-value="1">
+                Run Prepare
+                </button>
+            </td>
+            <td style="text-align: right;">
+                TX_CLK_MASK:
+            </td>
+            <td>
+                <div name="modbvalue"
+                     data-odb-path="/Equipment/Clock Reset/Settings/TX_CLK_MASK"
+                     data-odb-editable="1"></div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center">
+                <button name="modbbutton" class="mbutton" style="width: 150px"
+                    data-odb-path="/Equipment/Clock Reset/Settings/Sync"
+                    data-odb-value="1">
+                    Sync
+                </button>
+            </td>
+            <td style="text-align: right;">
+                TX_RST_MASK:
+            </td>
+            <td>
+                <div name="modbvalue"
+                     data-odb-path="/Equipment/Clock Reset/Settings/TX_RST_MASK"
+                     data-odb-editable="1"></div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center">
+                <button name="modbbutton" class="mbutton" style="width: 150px"
+                    data-odb-path="/Equipment/Clock Reset/Settings/Start Run"
+                    data-odb-value="1">
+                Start Run
+                </button>
+            </td>
+            <td style="text-align: right;">
+                TX_CLK_INVERT_MASK:
+            </td>
+            <td>
+                <div name="modbvalue"
+                     data-odb-path="/Equipment/Clock Reset/Settings/TX_CLK_INVERT_MASK"
+                     data-odb-editable="1"></div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center">
+                <button name="modbbutton" class="mbutton" style="width: 150px"
+                    data-odb-path="/Equipment/Clock Reset/Settings/End Run"
+                    data-odb-value="1">
+                End Run
+                </button>
+            </td>
+            <td style="text-align: right;">
+                TX_RST_INVERT_MASK:
+            </td>
+            <td>
+                <div name="modbvalue"
+                     data-odb-path="/Equipment/Clock Reset/Settings/TX_RST_INVERT_MASK"
+                     data-odb-editable="1"></div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center">
+                <button name="modbbutton" class="mbutton" style="width: 150px"
+                    data-odb-path="/Equipment/Clock Reset/Settings/Abort Run"
+                    data-odb-value="1">
+                Abort Run
+                </button>
+            </td>
             <td style="text-align: right;">
                 RX_MASK:
             </td>
@@ -42,67 +125,20 @@
             </td>
         </tr>
         <tr>
-            <td style="text-align: right;">
-                Payload:
-            </td>
-            <td>
-                <div name="modbvalue"
-                     data-odb-path="/Equipment/Clock Reset/Settings/Payload"
-                     data-odb-editable="1"></div>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" style="text-align: center">
-                <button name="modbbutton" class="mbutton" style="width: 150px"
-                        data-odb-path="/Equipment/Clock Reset/Settings/Run Prepare"
-                        data-odb-value="1">
-                    Run Prepare
-                </button>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" style="text-align: center">
-                <button name="modbbutton" class="mbutton" style="width: 150px"
-                        data-odb-path="/Equipment/Clock Reset/Settings/Sync"
-                        data-odb-value="1">
-                    Sync
-                </button>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" style="text-align: center">
-                <button name="modbbutton" class="mbutton" style="width: 150px"
-                        data-odb-path="/Equipment/Clock Reset/Settings/Start Run"
-                        data-odb-value="1">
-                    Start Run
-                </button>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" style="text-align: center">
-                <button name="modbbutton" class="mbutton" style="width: 150px"
-                        data-odb-path="/Equipment/Clock Reset/Settings/End Run"
-                        data-odb-value="1">
-                    End Run
-                </button>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" style="text-align: center">
-                <button name="modbbutton" class="mbutton" style="width: 150px"
-                        data-odb-path="/Equipment/Clock Reset/Settings/Abort Run"
-                        data-odb-value="1">
-                    Abort Run
-                </button>
-            </td>
-        </tr>
-        <tr>
             <td colspan="2" style="text-align: center">
                 <button name="modbbutton" class="mbutton" style="width: 150px"
                         data-odb-path="/Equipment/Clock Reset/Settings/Start Link Test"
                         data-odb-value="1">
                     Start Link Test
                 </button>
+            </td>
+            <td style="text-align: right;">
+                TX_MASK[0]:
+            </td>
+            <td>
+                <div name="modbvalue"
+                     data-odb-path="/Equipment/Clock Reset/Settings/TX_MASK[0]"
+                     data-odb-editable="1"></div>
             </td>
         </tr>
         <tr>
@@ -112,6 +148,14 @@
                         data-odb-value="1">
                     Stop Link Test
                 </button>
+            </td>
+            <td style="text-align: right;">
+                TX_INVERT_MASK[0]:
+            </td>
+            <td>
+                <div name="modbvalue"
+                     data-odb-path="/Equipment/Clock Reset/Settings/TX_INVERT_MASK[0]"
+                     data-odb-editable="1"></div>
             </td>
         </tr>
         <tr>

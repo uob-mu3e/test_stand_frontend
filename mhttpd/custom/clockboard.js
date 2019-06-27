@@ -85,12 +85,14 @@ function TXFirefly(x,y,dx,dy, name){
     this.y = y;
     this.dx= dx;
     this.dy= dy;
+    this.name = name;
 
     this.voltage ="2500mV";
     this.temp ="99C";
 
     this.los = [12];
     this.channelmask = [12];
+    this.invertmask = [12];
 
     this.draw = function(){
         c.fillStyle = "Black";
@@ -98,13 +100,13 @@ function TXFirefly(x,y,dx,dy, name){
 
         c.fillStyle = "White";
         c.font = "20px Arial";
-        c.fillText(name, this.x+5, this.y+130);
+        c.fillText(this.name, this.x+5, this.y+130);
         c.font = "12px Arial";
         c.fillText(this.voltage, this.x+90, this.y+110);
         c.fillText(this.temp, this.x+90, this.y+130);
 
-        c.font = "9px Arial";
-        c.fillText("LOS", this.x+5, this.y+10);
+        c.font = "8px Arial";
+        c.fillText("L A I", this.x+5, this.y+10);
         for(var i=0; i < 12; i++){
             if(this.los[i])
                 c.fillStyle = "Red";
@@ -119,8 +121,17 @@ function TXFirefly(x,y,dx,dy, name){
                 c.fillStyle = "Grey";
             else
                 c.fillStyle = "White";
+
             c.beginPath();
             c.arc(this.x+15, this.y+20+7*i, 2, 0, Math.PI*2, false);
+            c.fill();
+
+            if(this.invertmask[i])
+                c.fillStyle = "Blue";
+            else
+                c.fillStyle = "White";
+            c.beginPath();
+            c.arc(this.x+20, this.y+20+7*i, 2, 0, Math.PI*2, false);
             c.fill();
         }
     }
@@ -170,10 +181,16 @@ function Firefly(x,y,dx,dy, daughter, index){
 	this.active = true;
 	this.lx = x-10;
 	this.ly = y-10;
-	this.ldx= dx+100;
-	this.ldy= dy+100;
+    this.ldx= 140;
+    this.ldy= 140;
 
 	this.ok= true;
+    this.voltage ="2500mV";
+    this.temp ="99C";
+
+    this.los = [12];
+    this.channelmask = [12];
+    this.invertmask = [12];
 
 	this.draw = function(){
 		if(this.active){
@@ -193,17 +210,42 @@ function Firefly(x,y,dx,dy, daughter, index){
 		if(this.active){
 			c.fillStyle = "rgb(20,20,20)";
 			c.fillRect( this.lx, this.ly, this.ldx, this.ldy);
-			if(this.ok)
-				c.fillStyle = "Green";
-			else
-				c.fillStyle = "Red";
-			c.beginPath();
-			c.arc(this.lx+20, this.ly+20, 10, 0, Math.PI*2, false);
-			c.fill();
+            c.fillStyle = "White";
+            c.font = "20px Arial";
+            c.fillText(this.daughter+"-"+this.index, this.lx+5, this.ly+130);
+            c.font = "12px Arial";
+            c.fillText(this.voltage, this.lx+90, this.ly+110);
+            c.fillText(this.temp, this.lx+90, this.ly+130);
 
-			c.fillStyle = "White";
-			c.font = "12px Arial";
-			c.fillText("55 mA", this.lx+40, this.y+5);	
+            c.font = "8px Arial";
+            c.fillText("L A I", this.lx+5, this.ly+10);
+            for(var i=0; i < 12; i++){
+                if(this.los[i])
+                    c.fillStyle = "Red";
+                else
+                    c.fillStyle = "Green";
+
+                c.beginPath();
+                c.arc(this.lx+10, this.ly+20+7*i, 2, 0, Math.PI*2, false);
+                c.fill();
+
+                if(this.channelmask[i])
+                    c.fillStyle = "Grey";
+                else
+                    c.fillStyle = "White";
+
+                c.beginPath();
+                c.arc(this.lx+15, this.ly+20+7*i, 2, 0, Math.PI*2, false);
+                c.fill();
+
+                if(this.invertmask[i])
+                    c.fillStyle = "Blue";
+                else
+                    c.fillStyle = "White";
+                c.beginPath();
+                c.arc(this.lx+20, this.ly+20+7*i, 2, 0, Math.PI*2, false);
+                c.fill();
+            }
 		}
 	}	
 }
@@ -226,8 +268,8 @@ function init(){
 			fireflys.push(new Firefly(fxpos, fypos, fxwidth, fyheight, i, j));
 		}
 	}
-    mjsonrpc_db_get_values(["/Equipment/Clock Reset/Settings/RX_MASK"]).then(function(rpc) {
-       update_rxmask(rpc.result.data[0]);
+    mjsonrpc_db_get_values(["/Equipment/Clock Reset/Settings"]).then(function(rpc) {
+       update_masks(rpc.result.data[0]);
     }).catch(function(error) {
        mjsonrpc_error_alert(error);
     });
@@ -300,18 +342,32 @@ window.addEventListener('click', function(event) {
 
 
 function update_boarddrawing(value) {
-    var doffset = 6;
-    var dnum = 2;
+    var doffset = 11;
+    var dnum = 11;
 
     motherboard.current = Number.parseFloat(value["crt1"][0]).toFixed(0) + "mA";
     motherboard.voltage = Number.parseFloat(value["crt1"][1]).toFixed(0) + "mV";
 
-    motherboard.rx.voltage = Number.parseFloat(value["crt1"][4]).toFixed(0) + "mV";
-    motherboard.rx.temp = Number.parseFloat(value["crt1"][3]).toFixed(0) + "C";
-
     for(var i=0; i < 12; i++){
         motherboard.rx.los[i] = value["crt1"][2] & (1<<i);
     }
+    motherboard.rx.temp = Number.parseFloat(value["crt1"][3]).toFixed(0) + "C";
+    motherboard.rx.voltage = Number.parseFloat(value["crt1"][4]).toFixed(0) + "mV";
+
+    for(var i=0; i < 12; i++){
+        motherboard.txclk.los[i] = value["crt1"][5] & (1<<i);
+    }
+    motherboard.txclk.temp = Number.parseFloat(value["crt1"][6]).toFixed(0) + "C";
+    motherboard.txclk.voltage = Number.parseFloat(value["crt1"][7]).toFixed(0) + "mV";
+
+    for(var i=0; i < 12; i++){
+        motherboard.txrst.los[i] = value["crt1"][8] & (1<<i);
+    }
+    motherboard.txrst.temp = Number.parseFloat(value["crt1"][9]).toFixed(0) + "C";
+    motherboard.txrst.voltage = Number.parseFloat(value["crt1"][10]).toFixed(0) + "mV";
+
+
+
 
     var dp = value["daughters present"];
     var fp = value["fireflys present"];
@@ -321,6 +377,12 @@ function update_boarddrawing(value) {
             for(var j=0; j < 3; j++){
                  if((fp[i] & (1<<j)) > 0){
                      fireflys[i*3+j].active = true;
+                     fireflys[i*3+j].ok = (value["crt1"][doffset+i*dnum+j*3+2] == 0);
+                     for(var k=0; k < 12; k++){
+                         fireflys[i*3+j].los[k] = value["crt1"][doffset+i*dnum+j*3+2] & (1<<k);
+                     }
+                     fireflys[i*3+j].temp = Number.parseFloat(value["crt1"][doffset+i*dnum+j*3+3]).toFixed(0) + "C";
+                     fireflys[i*3+j].voltage = Number.parseFloat(value["crt1"][doffset+i*dnum+j*3+4]).toFixed(0) + "mV";
                  }  else {
                      fireflys[i*3+j].active = false;
                  }
@@ -338,11 +400,45 @@ function update_boarddrawing(value) {
     draw(selindex);
 }
 
-function update_rxmask(value) {
+function update_masks(value) {
+    //console.log(value);
 
+    var rxmask = value["rx_mask"];
     for(var i=0; i < 12; i++){
-        motherboard.rx.channelmask[i] = ((value & (1<<i)) != 0);
+        motherboard.rx.channelmask[i] = ((rxmask & (1<<i)) != 0);
     }
-    console.log(value + " " + motherboard.rx.channelmask)
+
+    var txclkmask = value["tx_clk_mask"];
+    for(var i=0; i < 12; i++){
+        motherboard.txclk.channelmask[i] = ((txclkmask & (1<<i)) != 0);
+    }
+
+    var txrstmask = value["tx_rst_mask"];
+    for(var i=0; i < 12; i++){
+        motherboard.txrst.channelmask[i] = ((txrstmask & (1<<i)) != 0);
+    }
+
+    var txclkinvmask = value["tx_clk_invert_mask"];
+    for(var i=0; i < 12; i++){
+        motherboard.txclk.invertmask[i] = ((txclkinvmask & (1<<i)) != 0);
+    }
+
+    var txrstinvmask = value["tx_rst_invert_mask"];
+    for(var i=0; i < 12; i++){
+        motherboard.txrst.invertmask[i] = ((txrstinvmask & (1<<i)) != 0);
+    }
+
+    var txmask = value["tx_mask"];
+    var txinvmask = value["tx_invert_mask"];
+    for(var i=0; i < 8; i++){
+        for(var j=0; j < 3; j++){
+            for(var k=0; k < 12; k++){
+               fireflys[i*3+j].channelmask[k] = ((txmask & (1<<k)) != 0);
+               fireflys[i*3+j].invertmask[k] = ((txinvmask & (1<<k)) != 0);
+            }
+         }
+    }
+
+//    console.log(value + " " + motherboard.rx.channelmask)
     draw(selindex);
 }

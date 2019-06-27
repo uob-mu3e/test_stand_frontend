@@ -95,7 +95,59 @@ const char *cr_settings_str[] = {
 "PORT = INT : 50001",
 "TX_CLK_MASK = INT : 0",
 "TX_RST_MASK = INT : 0",
+"TX_CLK_INVERT_MASK = INT : 0x0A00",
+"TX_RST_INVERT_MASK = INT : 0x0008",
 "RX_MASK = INT : 0",
+"TX_MASK = INT[24]:",
+    "[0] 0",\
+    "[1] 0",\
+    "[2] 0",\
+    "[3] 0",\
+    "[4] 0",\
+    "[5] 0",\
+    "[6] 0",\
+    "[7] 0",\
+    "[8] 0",\
+    "[9] 0",\
+    "[10] 0",\
+    "[11] 0",\
+    "[12] 0",\
+    "[13] 0",\
+    "[14] 0",\
+    "[15] 0",\
+    "[16] 0",\
+    "[17] 0",\
+    "[18] 0",\
+    "[19] 0",\
+    "[20] 0",\
+    "[21] 0",\
+    "[22] 0",\
+    "[23] 0",\
+"TX_INVERT_MASK = INT[24]:",
+    "[0] 0",\
+    "[1] 0",\
+    "[2] 0",\
+    "[3] 0",\
+    "[4] 0",\
+    "[5] 0",\
+    "[6] 0",\
+    "[7] 0",\
+    "[8] 0",\
+    "[9] 0",\
+    "[10] 0",\
+    "[11] 0",\
+    "[12] 0",\
+    "[13] 0",\
+    "[14] 0",\
+    "[15] 0",\
+    "[16] 0",\
+    "[17] 0",\
+    "[18] 0",\
+    "[19] 0",\
+    "[20] 0",\
+    "[21] 0",\
+    "[22] 0",\
+    "[23] 0",\
 "Run Prepare = BOOL : 0",
 "Sync = BOOL : 0",
 "Start Run = BOOL : 0",
@@ -112,29 +164,106 @@ const char *cr_settings_str[] = {
 "Disable = BOOL : 0",
 "Address = BOOL : 0",
 "Payload = INT : 0",
-"Names CRT1 = STRING[22] :",
+"Names CRT1 = STRING[99] :",
 "[32] Motherboard Current",
 "[32] Motherboard Voltage",
 "[32] RX Firefly Alarms",
 "[32] RX Firefly Temp",
 "[32] RX Firefly Voltage",
-"[32] TX Firefly Temp",
+"[32] TX Clk Firefly Alarms",
+"[32] TX Clk Firefly Temp",
+"[32] TX Clk Firefly Voltage",
+"[32] TX Rst Firefly Alarms",
+"[32] TX Rst Firefly Temp",
+"[32] TX Rst Firefly Voltage",
 "[32] Daughterboard 0 Current",
 "[32] Daughterboard 0 Voltage",
+"[32] D 0 0 Firefly Alarms",
+"[32] D 0 0 Firefly Temp",
+"[32] D 0 0 Firefly Voltage",
+"[32] D 0 1 Firefly Alarms",
+"[32] D 0 1 Firefly Temp",
+"[32] D 0 1 Firefly Voltage",
+"[32] D 0 2 Firefly Alarms",
+"[32] D 0 2 Firefly Temp",
+"[32] D 0 2 Firefly Voltage",
 "[32] Daughterboard 1 Current",
 "[32] Daughterboard 1 Voltage",
+"[32] D 1 0 Firefly Alarms",
+"[32] D 1 0 Firefly Temp",
+"[32] D 1 0 Firefly Voltage",
+"[32] D 1 1 Firefly Alarms",
+"[32] D 1 1 Firefly Temp",
+"[32] D 1 1 Firefly Voltage",
+"[32] D 1 2 Firefly Alarms",
+"[32] D 1 2 Firefly Temp",
+"[32] D 1 2 Firefly Voltage",
 "[32] Daughterboard 2 Current",
 "[32] Daughterboard 2 Voltage",
+"[32] D 2 0 Firefly Alarms",
+"[32] D 2 0 Firefly Temp",
+"[32] D 2 0 Firefly Voltage",
+"[32] D 2 1 Firefly Alarms",
+"[32] D 2 1 Firefly Temp",
+"[32] D 2 1 Firefly Voltage",
+"[32] D 2 2 Firefly Alarms",
+"[32] D 2 2 Firefly Temp",
+"[32] D 2 2 Firefly Voltage",
 "[32] Daughterboard 3 Current",
 "[32] Daughterboard 3 Voltage",
+"[32] D 3 0 Firefly Alarms",
+"[32] D 3 0 Firefly Temp",
+"[32] D 3 0 Firefly Voltage",
+"[32] D 3 1 Firefly Alarms",
+"[32] D 3 1 Firefly Temp",
+"[32] D 3 1 Firefly Voltage",
+"[32] D 3 2 Firefly Alarms",
+"[32] D 3 2 Firefly Temp",
+"[32] D 3 2 Firefly Voltage",
 "[32] Daughterboard 4 Current",
 "[32] Daughterboard 4 Voltage",
+"[32] D 4 0 Firefly Alarms",
+"[32] D 4 0 Firefly Temp",
+"[32] D 4 0 Firefly Voltage",
+"[32] D 4 1 Firefly Alarms",
+"[32] D 4 1 Firefly Temp",
+"[32] D 4 1 Firefly Voltage",
+"[32] D 4 2 Firefly Alarms",
+"[32] D 4 2 Firefly Temp",
+"[32] D 4 2 Firefly Voltage",
 "[32] Daughterboard 5 Current",
 "[32] Daughterboard 5 Voltage",
+"[32] D 5 0 Firefly Alarms",
+"[32] D 5 0 Firefly Temp",
+"[32] D 5 0 Firefly Voltage",
+"[32] D 5 1 Firefly Alarms",
+"[32] D 5 1 Firefly Temp",
+"[32] D 5 1 Firefly Voltage",
+"[32] D 5 2 Firefly Alarms",
+"[32] D 5 2 Firefly Temp",
+"[32] D 5 2 Firefly Voltage",
 "[32] Daughterboard 6 Current",
 "[32] Daughterboard 6 Voltage",
+"[32] D 6 0 Firefly Alarms",
+"[32] D 6 0 Firefly Temp",
+"[32] D 6 0 Firefly Voltage",
+"[32] D 6 1 Firefly Alarms",
+"[32] D 6 1 Firefly Temp",
+"[32] D 6 1 Firefly Voltage",
+"[32] D 6 2 Firefly Alarms",
+"[32] D 6 2 Firefly Temp",
+"[32] D 6 2 Firefly Voltage",
 "[32] Daughterboard 7 Current",
 "[32] Daughterboard 7 Voltage",
+"[32] D 7 0 Firefly Alarms",
+"[32] D 7 0 Firefly Temp",
+"[32] D 7 0 Firefly Voltage",
+"[32] D 7 1 Firefly Alarms",
+"[32] D 7 1 Firefly Temp",
+"[32] D 7 1 Firefly Voltage",
+"[32] D 7 2 Firefly Alarms",
+"[32] D 7 2 Firefly Temp",
+"[32] D 7 2 Firefly Voltage",
 nullptr
 };
 
@@ -205,7 +334,17 @@ INT frontend_init()
    if(!cb->isConnected())
         return CM_TIMEOUT;
 
-   cb->init_clockboard();
+   int clkinvert;
+   size =sizeof(port);
+   if(!(db_get_value(hDB, hKey, "settings/TX_CLK_INVERT_MASK", &clkinvert, &size, TID_INT, false)==DB_SUCCESS))
+           return CM_DB_ERROR;
+
+   int rstinvert;
+   size =sizeof(port);
+   if(!(db_get_value(hDB, hKey, "settings/TX_RST_INVERT_MASK", &rstinvert, &size, TID_INT, false)==DB_SUCCESS))
+           return CM_DB_ERROR;
+
+   cb->init_clockboard(clkinvert, rstinvert);
 
    // check which daughter cards are equipped
    uint8_t daughters = cb->daughters_present();
@@ -278,6 +417,11 @@ INT read_cr_event(char *pevent, INT off)
     db_get_value(hDB, 0, "/Equipment/Clock Reset/Variables/Daughters Present",
                  &daughters, &size, TID_BYTE, false);
 
+    uint8_t fireflys[8];
+    size = sizeof(uint8_t)*8;
+    db_get_value(hDB, 0, "/Equipment/Clock Reset/Variables/Fireflys Present",
+                 fireflys, &size, TID_BYTE, false);
+
    bk_init(pevent);
 
    float *pdata;
@@ -290,17 +434,41 @@ INT read_cr_event(char *pevent, INT off)
    *pdata++ = cb->read_rx_firefly_temp();
    *pdata++ = cb->read_rx_firefly_voltage();
 
-   *pdata++ = cb->read_tx_firefly_temp();
+   *pdata++= ((cb->read_tx_clk_firefly_alarms()) << 16) + cb->read_tx_clk_firefly_lf();
+   *pdata++ = cb->read_tx_clk_firefly_temp();
+   *pdata++ = cb->read_tx_clk_firefly_voltage();
+
+   *pdata++= ((cb->read_tx_rst_firefly_alarms()) << 16) + cb->read_tx_rst_firefly_lf();
+   *pdata++ = cb->read_tx_rst_firefly_temp();
+   *pdata++ = cb->read_tx_rst_firefly_voltage();
+
 
    for(uint8_t i=0;i < 8; i++){
        if(daughters && (1<<i)){
-            *pdata++ = cb->read_daughter_board_current(i);
-            *pdata++ = cb->read_daughter_board_voltage(i);
+           *pdata++ = cb->read_daughter_board_current(i);
+           *pdata++ = cb->read_daughter_board_voltage(i);
+           for(uint8_t j=0;j < 3; j++){
+               if(fireflys[i] && (1<<j)){
+                   *pdata++= ((cb->read_tx_firefly_alarms(i,j)) << 16) + cb->read_tx_firefly_lf(i,j);
+                   *pdata++ = cb->read_tx_firefly_temp(i,j);
+                   *pdata++ = cb->read_tx_firefly_voltage(i,j);
+               } else {
+                   *pdata++ = -1.0;
+                   *pdata++ = -1.0;
+                   *pdata++ = -1.0;
+               }
+           }
        } else {
            *pdata++ = -1.0;
            *pdata++ = -1.0;
+           for(uint8_t j=0;j < 3; j++){
+               *pdata++ = -1.0;
+               *pdata++ = -1.0;
+               *pdata++ = -1.0;
+           }
        }
    }
+
 
 
    bk_close(pevent, pdata);

@@ -33,7 +33,6 @@ int main()
     }
 
     cout << cb.read_rx_firefly_temp() << endl;
-    cout << cb.read_tx_firefly_temp() << endl;
 
     return 1;
 
