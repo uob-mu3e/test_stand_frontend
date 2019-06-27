@@ -6,17 +6,15 @@ var c = canvas.getContext('2d');
 function Motherboard(x,y,dx,dy){
 	this.x = x;
 	this.y = y;
-	this.dx= dx;
+    this.dx= dx;
 	this.dy= dy;
 
     this.current = "123 mA";
     this.voltage = "4567 mV";
 
-    this.rxffvoltage ="2500 mV";
-    this.rxfftemp ="99 C";
-
-    this.rxlos = [12];
-    this.rxlosmask = [12];
+    this.rx = new RXFirefly(this.x+500, this.y+130,140, 140);
+    this.txclk = new TXFirefly(this.x+300, this.y+30,140, 140, "TXClk");
+    this.txrst = new TXFirefly(this.x+300, this.y+200,140, 140, "TXRst");
 
 	this.draw = function(){
         c.fillStyle = "rgba(0,0,0,0.5)";
@@ -29,41 +27,108 @@ function Motherboard(x,y,dx,dy){
         c.fillText(this.current, this.x+40, this.y+100);
         c.fillText(this.voltage, this.x+100, this.y+100);
 
+        this.rx.draw();
+        this.txclk.draw();
+        this.txrst.draw();
+	}
+}
+
+function RXFirefly(x,y,dx,dy){
+    this.x = x;
+    this.y = y;
+    this.dx= dx;
+    this.dy= dy;
+
+    this.voltage ="2500 mV";
+    this.temp ="99 C";
+
+    this.los = [12];
+    this.channelmask = [12];
+
+    this.draw = function(){
         c.fillStyle = "Black";
-        c.fillRect(this.x+300, this.y+30,140, 140);
+        c.fillRect(this.x, this.y,this.dx, this.dy);
 
         c.fillStyle = "White";
         c.font = "20px Arial";
-        c.fillText("RX", this.x+305, this.y+160);
+        c.fillText("RX", this.x+5, this.y+130);
         c.font = "12px Arial";
-        c.fillText(this.rxffvoltage, this.x+345, this.y+160);
-        c.fillText(this.rxfftemp, this.x+410, this.y+160);
+        c.fillText(this.voltage, this.x+90, this.y+110);
+        c.fillText(this.temp, this.x+90, this.y+130);
 
         c.font = "9px Arial";
-        c.fillText("LOS", this.x+305, this.y+40);
+        c.fillText("LOS", this.x+5, this.y+10);
         for(var i=0; i < 12; i++){
-            if(this.rxlos[i])
+            if(this.los[i])
                 c.fillStyle = "Red";
             else
                 c.fillStyle = "Green";
 
             c.beginPath();
-            c.arc(this.x+310, this.y+50+7*i, 2, 0, Math.PI*2, false);
+            c.arc(this.x+10, this.y+20+7*i, 2, 0, Math.PI*2, false);
             c.fill();
 
-            if(this.rxlosmask[i])
+            if(this.channelmask[i])
                 c.fillStyle = "Grey";
             else
                 c.fillStyle = "White";
             c.beginPath();
-            c.arc(this.x+315, this.y+50+7*i, 2, 0, Math.PI*2, false);
+            c.arc(this.x+15, this.y+20+7*i, 2, 0, Math.PI*2, false);
             c.fill();
-
         }
-	}
+    }
 }
 
-var motherboard = new Motherboard(50,200,700,200)
+
+function TXFirefly(x,y,dx,dy, name){
+    this.x = x;
+    this.y = y;
+    this.dx= dx;
+    this.dy= dy;
+
+    this.voltage ="2500mV";
+    this.temp ="99C";
+
+    this.los = [12];
+    this.channelmask = [12];
+
+    this.draw = function(){
+        c.fillStyle = "Black";
+        c.fillRect(this.x, this.y,this.dx, this.dy);
+
+        c.fillStyle = "White";
+        c.font = "20px Arial";
+        c.fillText(name, this.x+5, this.y+130);
+        c.font = "12px Arial";
+        c.fillText(this.voltage, this.x+90, this.y+110);
+        c.fillText(this.temp, this.x+90, this.y+130);
+
+        c.font = "9px Arial";
+        c.fillText("LOS", this.x+5, this.y+10);
+        for(var i=0; i < 12; i++){
+            if(this.los[i])
+                c.fillStyle = "Red";
+            else
+                c.fillStyle = "Green";
+
+            c.beginPath();
+            c.arc(this.x+10, this.y+20+7*i, 2, 0, Math.PI*2, false);
+            c.fill();
+
+            if(this.channelmask[i])
+                c.fillStyle = "Grey";
+            else
+                c.fillStyle = "White";
+            c.beginPath();
+            c.arc(this.x+15, this.y+20+7*i, 2, 0, Math.PI*2, false);
+            c.fill();
+        }
+    }
+}
+
+
+
+var motherboard = new Motherboard(50,200,700,400)
 
 function Daughterboard(x,y,dx,dy, index){
 	this.x = x;
@@ -149,7 +214,7 @@ var fireflys = [];
 function init(){
 	for(var i=0; i < 8; i++){
 		var xpos = 25+i%4*180;
-		var ypos = 25+Math.floor(i/4)*350;
+        var ypos = 25+Math.floor(i/4)*550;
 		var xwidth = 160;
 		var yheight = 200;
 		daughterboards.push(new Daughterboard(xpos, ypos, xwidth, yheight, i));
@@ -161,6 +226,12 @@ function init(){
 			fireflys.push(new Firefly(fxpos, fypos, fxwidth, fyheight, i, j));
 		}
 	}
+    mjsonrpc_db_get_values(["/Equipment/Clock Reset/Settings/RX_MASK"]).then(function(rpc) {
+       update_rxmask(rpc.result.data[0]);
+    }).catch(function(error) {
+       mjsonrpc_error_alert(error);
+    });
+
 }
 
 var selindex = -1;
@@ -235,11 +306,11 @@ function update_boarddrawing(value) {
     motherboard.current = Number.parseFloat(value["crt1"][0]).toFixed(0) + "mA";
     motherboard.voltage = Number.parseFloat(value["crt1"][1]).toFixed(0) + "mV";
 
-    motherboard.rxffvoltage = Number.parseFloat(value["crt1"][4]).toFixed(0) + "mV";
-    motherboard.rxfftemp = Number.parseFloat(value["crt1"][3]).toFixed(0) + "C";
+    motherboard.rx.voltage = Number.parseFloat(value["crt1"][4]).toFixed(0) + "mV";
+    motherboard.rx.temp = Number.parseFloat(value["crt1"][3]).toFixed(0) + "C";
 
     for(var i=0; i < 12; i++){
-        motherboard.rxlos[i] = value["crt1"][2] & (1<<i);
+        motherboard.rx.los[i] = value["crt1"][2] & (1<<i);
     }
 
     var dp = value["daughters present"];
@@ -270,8 +341,8 @@ function update_boarddrawing(value) {
 function update_rxmask(value) {
 
     for(var i=0; i < 12; i++){
-        motherboard.rxlosmask[i] = ((value & (1<<i)) != 0);
+        motherboard.rx.channelmask[i] = ((value & (1<<i)) != 0);
     }
-    console.log(value + " " + motherboard.rxlosmask)
+    console.log(value + " " + motherboard.rx.channelmask)
     draw(selindex);
 }
