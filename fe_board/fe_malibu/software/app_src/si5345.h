@@ -1,5 +1,5 @@
 
-#include "si.h"
+#include "../include/si.h"
 
 #include "si5345_revb_registers.h"
 

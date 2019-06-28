@@ -1,4 +1,7 @@
 
+/**
+ * SI (Silicon Labs) clock chip controller.
+ */
 struct si_t {
 
     int log_level = 0;
@@ -91,30 +94,30 @@ struct si_t {
     }
 
     alt_u64 read_n(alt_u16 address, alt_u8 n) {
-        alt_u64 d = 0;
+        alt_u64 value = 0;
 
         if(n > 8) {
             // TODO
         }
 
         while(n-- > 0) {
-            d = (d << 8) | read(address++);
+            value = (value << 8) | read(address++);
         }
 
-        return d;
+        return value;
     }
 
-    void write_n(alt_u16 address, alt_u64 d, alt_u8 n) {
+    void write_n(alt_u16 address, alt_u64 value, alt_u8 n) {
         if(n > 8) {
             // TODO
         }
 
         while(n-- > 0) {
-            write(address++, d & 0xFF);
-            d >>= 8;
+            write(address++, value & 0xFF);
+            value >>= 8;
         }
 
-        if(d != 0) {
+        if(value != 0) {
             // TODO
         }
     }
