@@ -137,6 +137,9 @@ begin
             error_v := true;
         end if;
 
+        -- NOTE:
+        -- rx_syncstatus is driven high and _stay_ high for 20 bit interface
+        -- and driven high for _one_ clock cycle for 10 bit interface
         if ( error_v
 --            or i_syncstatus /= (i_syncstatus'range => '1')
             or i_errdetect /= (i_errdetect'range => '0')

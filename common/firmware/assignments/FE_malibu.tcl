@@ -1,3 +1,4 @@
+# base frontend-to-malibu assignments
 
 set_location_assignment PIN_AA26 -to malibu_ck_fpga_0
 set_instance_assignment -name IO_STANDARD LVDS -to malibu_ck_fpga_0
