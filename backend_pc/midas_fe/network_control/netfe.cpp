@@ -57,9 +57,29 @@ void netfe_settings_changed(HNDLE, HNDLE, int, void *);
 const char *cr_settings_str[] = {
 "DHCPD Active = BOOL : 1",
 "DNS Active = BOOL : 1",
+"nUnknown = STRING[1]:",
+    "[32] 0",
+"nReserved = STRING[1]:",
+    "[32] 0",
+"nLeased = STRING[1]:",
+    "[32] 0",
+"nDNS = STRING[1]:",
+    "[32] 0",
+"usereditReserveIP = STRING[1]:"
+"[32] 000.000.000.000",
+"usereditReserveMAC = STRING[1]:"
+"[32] 00:00:00:00:00",
+"usereditReserveHost = STRING[1]:"
+"[32] hostname",
+"usereditRemReserveIP = STRING[1]:"
+"[32] 000.000.000.000",
 "leasedIPs = STRING[255] :",
 "[32] 0",
 "leasedHostnames = STRING[255] :",
+"[32] 0",
+"DNSips = STRING[255] :",
+"[32] 0",
+"DNSHostnames = STRING[255] :",
 "[32] 0",
 nullptr
 };
@@ -120,6 +140,7 @@ void read_leases(string path, vector <string> *ips, vector <string> *requestedHo
 /*-- rewrite ip/hostname table for dns server ------------------------------------------------*/
 void write_dns_table(string path, vector <string> ips, vector <string> requestedHostnames){
   ofstream dnstable (path);
+  int nDNS=0;
   if (dnstable.is_open())
   {
     //TODO: this needs to be changed for a different gateway server  --> read on frontend init ??
@@ -128,7 +149,11 @@ void write_dns_table(string path, vector <string> ips, vector <string> requested
     for(int i = 0; i<ips.size(); i++){
         if(requestedHostnames[i]!="-")
             dnstable<<requestedHostnames[i]<<"              IN      A       "<<ips[i]<<"\n";
+            db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/DNSips", ips[i].c_str(), sizeof(reserved_ips[i]), nDNS, TID_STRING, FALSE);
+            db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/DNSHostnames", requestedHostnames[i].c_str(), sizeof(reserved_ips[i]), nDNS, TID_STRING, FALSE);
+            nDNS++;
     }
+    db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/nDNS",to_string(nDNS).c_str(), sizeof(to_string(nDNS).c_str()), 1,TID_STRING);
     dnstable.close();
   }
   else cout << "Unable to open file"<<endl;
@@ -230,7 +255,13 @@ INT frontend_init()
    db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/reservedHostnames", TID_STRING);
    db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/reservedMACs", TID_STRING);
    db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/unknownIPs", TID_STRING);
-   
+   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/DNSips", TID_STRING);
+   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/DNSHostnames", TID_STRING);
+   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/usereditReserveIP", TID_STRING);
+   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/usereditReserveMAC", TID_STRING);
+   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/usereditReserveHost", TID_STRING);
+   db_create_key(hDB, 0, "Equipment/DHCP DNS/Settings/usereditRemReserveIP", TID_STRING);
+
    db_find_key(hDB, 0, "/Equipment/DHCP DNS", &hKey);
    assert(hKey);
 
@@ -238,7 +269,7 @@ INT frontend_init()
 
    // add custom page to ODB
    db_create_key(hDB, 0, "Custom/DHCP DNS&", TID_STRING);
-   const char * name = "cr.html";
+   const char * name = "net.html";
    db_set_value(hDB,0,"Custom/DHCP DNS&",name, sizeof(name), 1,TID_STRING);
 
    return CM_SUCCESS;
@@ -314,12 +345,14 @@ INT frontend_loop()
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/leasedIPs", ips[i].c_str(), sizeof(ips[i]), i, TID_STRING, FALSE);
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/leasedHostnames", requestedHostnames[i].c_str(), sizeof(requestedHostnames[i]), i, TID_STRING, FALSE);
         }
+        db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/nLeased", to_string(ips.size()).c_str(), sizeof(to_string(ips.size()).c_str()), 1,TID_STRING);
         
         for (int i = 0; i < reserved_ips.size(); i++) {
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/reservedIPs", reserved_ips[i].c_str(), sizeof(reserved_ips[i]), i, TID_STRING, FALSE);
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/reservedHostnames", reserved_hostnames[i].c_str(), sizeof(reserved_hostnames[i]), i, TID_STRING, FALSE);
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/reservedMACs", reserved_mac_addr[i].c_str(), sizeof(reserved_mac_addr[i]), i, TID_STRING, FALSE);
         }
+        db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/nReserved",to_string(reserved_ips.size()).c_str(), sizeof(to_string(reserved_ips.size()).c_str()), 1,TID_STRING);
         
     }
 
@@ -330,16 +363,18 @@ INT frontend_loop()
     active_ips = find_active_ips("192.168.0.");
     
     unknown_ips = find_unknown(ips, active_ips);
+    int nUnknown= unknown_ips.size();
     
-    if(unknown_ips.size()>0){
+    if(nUnknown>0){
         cout<<"---------------------------------------"<<endl;
         cout<<"WARNING: found unknown fixed IPs ------"<<endl;
         cout<<"---------------------------------------"<<endl;
         cout<<"remove them or give them a name in dhcpd.conf:"<<endl;
-        for(int i=0; i<unknown_ips.size(); i++){
+        for(int i=0; i<nUnknown; i++){
             cout<<unknown_ips[i]<<endl;
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/unknownIPs", unknown_ips[i].c_str(), sizeof(unknown_ips[i]), i, TID_STRING, FALSE);
         }
+         db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/nUnknown",to_string(nUnknown).c_str(), sizeof(to_string(nUnknown).c_str()), 1,TID_STRING);
     }
     
    return CM_SUCCESS;
