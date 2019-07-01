@@ -1754,9 +1754,7 @@ set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 set_global_assignment -name VHDL_FILE helpers/counter.vhd
 set_global_assignment -name VHDL_FILE helpers/debouncer.vhd
-set_global_assignment -name VHDL_FILE helpers/seg7_lut.vhd
 set_global_assignment -name VHDL_FILE helpers/version_reg.vhd
-set_global_assignment -name VHDL_FILE helpers/rx_align.vhd
 set_global_assignment -name QSYS_FILE helpers/ip_clk_ctrl.qsys
 set_global_assignment -name QSYS_FILE helpers/receiver_switching.qsys
 set_global_assignment -name QSYS_FILE helpers/ip_receiving_fifo.qsys
@@ -1781,5 +1779,8 @@ set_global_assignment -name QSYS_FILE pcieapp/dma_ram.qsys
 set_global_assignment -name QSYS_FILE pcieapp/data_addrs_ram.qsys
 set_global_assignment -name QSYS_FILE pcieapp/data_pages_ram.qsys
 set_global_assignment -name QSYS_FILE nios/nios.qsys
+
+set_global_assignment -name VHDL_FILE util/rx_align.vhd
+set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

@@ -1562,31 +1562,21 @@ set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name VHDL_FILE ../../../fe_board/fe_malibu/sc_s4.vhd
 set_global_assignment -name QSYS_FILE ip/ip_pll_125.qsys
-set_global_assignment -name VHDL_FILE ../../../common/firmware/util/reset_ctrl.vhd
-set_global_assignment -name VHDL_FILE util/reset_ctrl.vhd
-set_global_assignment -name QSYS_FILE ip/ip_xcvr_reset.qsys
-set_global_assignment -name QSYS_FILE ip/ip_xcvr_phy.qsys
-set_global_assignment -name QSYS_FILE ip/ip_xcvr_fpll.qsys
 set_global_assignment -name QSYS_FILE nios.qsys
-set_global_assignment -name VHDL_FILE a10/xcvr_a10.vhd
 set_global_assignment -name QSYS_FILE ip/ip_transceiver.qsys
 set_global_assignment -name VHDL_FILE mudaq_components.vhd -library work
 set_global_assignment -name VHDL_FILE pcieapp/pcie_components.vhd -library work
 set_global_assignment -name VHDL_FILE mudaq_registers.vhd -library work
+
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
-set_global_assignment -name VHDL_FILE util/debouncer.vhd
-set_global_assignment -name VHDL_FILE util/seg7_lut.vhd
-set_global_assignment -name VHDL_FILE util/version_reg.vhd
-set_global_assignment -name VHDL_FILE util/rx_align.vhd
-set_global_assignment -name VHDL_FILE util/mu3e_pkg.vhd
-set_global_assignment -name VHDL_FILE util/util_pkg.vhd
-set_global_assignment -name VHDL_FILE util/ff_sync.vhd
-set_global_assignment -name VHDL_FILE util/reset_sync.vhd
-set_global_assignment -name VHDL_FILE util/counter.vhd
-set_global_assignment -name VHDL_FILE util/clkmon.vhd
-set_global_assignment -name VHDL_FILE util/clkdiv.vhd
-set_global_assignment -name VHDL_FILE util/watchdog.vhd
+
+set_global_assignment -name QIP_FILE util/util.qip
+
+set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
+
+set_global_assignment -name QIP_FILE xcvr.qip
+
 set_global_assignment -name QSYS_FILE ip/ip_clk_ctrl.qsys
 set_global_assignment -name QSYS_FILE ip/ip_receiving_fifo.qsys
 set_global_assignment -name QSYS_FILE ip/ip_pll_312.qsys

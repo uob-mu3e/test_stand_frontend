@@ -13,7 +13,7 @@ port (
     BUTTON : in std_logic_vector(3 downto 0);
 
     CLK_50_B2J  :   in  std_logic;
-	 CLK_100_B3D :   in  std_logic;
+    CLK_100_B3D :   in  std_logic;
 
     HEX0_D      :   out std_logic_vector(6 downto 0);
     --HEX0_DP     :   out std_logic;
@@ -282,16 +282,16 @@ begin
 	end if;
 end process clk_125_cnt_p;
 
-segment0 : seg7_lut
-	port map (
-		hex => std_logic_vector(clk_50_cnt)(27 downto 24),
-		seg => HEX0_D
+e_segment0 : entity work.hex2seg7
+port map (
+	i_hex => std_logic_vector(clk_50_cnt)(27 downto 24),
+	o_seg => HEX0_D
 );
 
-segment1 : seg7_lut
-	port map (
-		hex => std_logic_vector(clk_125_cnt)(27 downto 24),
-		seg => HEX1_D
+e_segment1 : entity work.hex2seg7
+port map (
+	i_hex => std_logic_vector(clk_125_cnt)(27 downto 24),
+	o_seg => HEX1_D
 );
 
 ------------- NIOS -------------
@@ -386,47 +386,40 @@ POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
 
 ------------- Receiving Data and word aligning -------------
 
-i_qsfp : entity work.xcvr_a10
+e_qsfp : entity work.xcvr_a10
 port map (
-	-- avalon slave interface
-	avs_address     	=> avm_qsfp.address(15 downto 2),
-	avs_read        	=> avm_qsfp.read,
-	avs_readdata    	=> avm_qsfp.readdata,
-	avs_write       	=> avm_qsfp.write,
-	avs_writedata   	=> avm_qsfp.writedata,
-	avs_waitrequest 	=> avm_qsfp.waitrequest,
+    i_tx_data   => X"03CAFEBC"
+                 & tx_data(2)
+                 & tx_data(1)
+                 & tx_data(0),
+    i_tx_datak  => "0001"
+                 & "0001"
+                 & "0001"
+                 & tx_datak(0),
 
-	tx3_data    		=> X"03CAFEBC",
-	tx2_data    		=> tx_data(2),
-	tx1_data    		=> tx_data(1),
-	tx0_data    		=> tx_data(0),
-	tx3_datak   		=> "0001",
-	tx2_datak   		=> "0001",
-	tx1_datak   		=> "0001",
-	tx0_datak   		=> tx_datak(0),
-		
-	rx3_data    		=> rx_data(3),
-	rx2_data    		=> rx_data(2),
-	rx1_data    		=> rx_data(1),
-	rx0_data    		=> rx_data(0),
-	rx3_datak   		=> rx_datak(3),
-	rx2_datak   		=> rx_datak(2),
-	rx1_datak   		=> rx_datak(1),
-	rx0_datak   		=> rx_datak(0),
-		
-	tx_clkout   		=> tx_clk,
-	tx_clkin    		=> (others => tx_clk(0)),
-	rx_clkout   		=> open,--rx_clk,
-	rx_clkin    		=> (others => tx_clk(0)),
-		
-	tx_p        		=> QSFPA_TX_p,
-	rx_p        		=> QSFPA_RX_p,
-		
-	pll_refclk  		=> input_clk,
-	cdr_refclk  		=> input_clk,
-		
-	reset   				=> not CPU_RESET_n,
-	clk     				=> input_clk--,
+    o_rx_data   => rx_data,
+    o_rx_datak  => rx_datak,
+
+    o_tx_clkout => tx_clk,
+    i_tx_clkin  => (others => tx_clk(0)),
+    o_rx_clkout => open,--rx_clk,
+    i_rx_clkin  => (others => tx_clk(0)),
+
+    o_tx_serial => QSFPA_TX_p,
+    i_rx_serial => QSFPA_RX_p,
+
+    i_pll_clk   => input_clk,
+    i_cdr_clk   => input_clk,
+
+    i_avs_address     => avm_qsfp.address(15 downto 2),
+    i_avs_read        => avm_qsfp.read,
+    o_avs_readdata    => avm_qsfp.readdata,
+    i_avs_write       => avm_qsfp.write,
+    i_avs_writedata   => avm_qsfp.writedata,
+    o_avs_waitrequest => avm_qsfp.waitrequest,
+
+    i_reset     => not CPU_RESET_n,
+    i_clk       => input_clk--,
 );
 
 ------------- data demerger and fifos -------------
