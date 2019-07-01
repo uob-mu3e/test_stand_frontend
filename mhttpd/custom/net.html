@@ -23,6 +23,10 @@
             var leasedmacs=(jsonData["leasedmacs"]+'').split(',');
             var dnsips=(jsonData["dnsips"]+'').split(',');
             var dnshostnames=(jsonData["dnshostnames"]+'').split(',');
+            var expiration=(jsonData["expiration"]+'').split(',');
+            
+            var usercmdReserve=jsonData["usercmdreserve"];
+            var usercmdRmReserve=jsonData["usercmdrmreserve"];
             
             var str="";
             
@@ -44,10 +48,13 @@
             
             str="";
             for(i=0; i<nleased; i++){
-                str+="<tr><td colspan=\"10\">"+leasedips[i]+"</td><td colspan=\"40\">"+leasedmacs[i]+"</td><td colspan=\"50\">"+leasedhostnames[i]+"</td></tr>";
+                if(expiration[i]=="inf")
+                    str+="<tr><td colspan=\"10\">"+leasedips[i]+"</td><td colspan=\"30\">"+leasedmacs[i]+"</td><td colspan=\"40\">"+leasedhostnames[i]+"</td><td colspan=\"20\">&#8734</td></tr>";
+                else
+                    str+="<tr><td colspan=\"10\">"+leasedips[i]+"</td><td colspan=\"30\">"+leasedmacs[i]+"</td><td colspan=\"40\">"+leasedhostnames[i]+"</td><td colspan=\"20\">"+expiration[i]+"</td></tr>";
             }
             document.getElementById("leased").innerHTML="";
-            document.getElementById("leased").innerHTML="<table class=\"mtable\" width=\"100%\"><tr><td colspan=\"100\" class=\"mtableheader\"> DHCP Leases: "+nleased+"</td></tr><tr><td colspan=\"10\">IP</td> <td colspan=\"40\">MAC</td> <td colspan=\"50\">Hostname</td>  </tr> "+str+"</table>";
+            document.getElementById("leased").innerHTML="<table class=\"mtable\" width=\"100%\"><tr><td colspan=\"100\" class=\"mtableheader\"> DHCP Leases: "+nleased+"</td></tr><tr><td colspan=\"10\">IP</td> <td colspan=\"30\">MAC</td> <td colspan=\"40\">Hostname</td> <td colspan=\"20\">Expiration date</td>  </tr> "+str+"</table>";
             
             str="";
             for(i=0; i<ndns; i++){
@@ -55,10 +62,21 @@
             }
             document.getElementById("dns").innerHTML="";
             document.getElementById("dns").innerHTML="<table class=\"mtable\" width=\"100%\"><tr><td colspan=\"100\" class=\"mtableheader\"> DNS Table: "+ndns+"</td></tr><tr><td>IP</td> <td>Hostname</td>  </tr> "+str+"</table>";
+            
+            if(usercmdReserve==true){
+                document.getElementById("reserveButton").innerHTML="reserve in progress ...";
+            }else{
+                document.getElementById("reserveButton").innerHTML="reserve";
+            }
+            
+            if(usercmdRmReserve==true){
+                document.getElementById("rmreserveButton").innerHTML="remove in progress ...";
+            }else{
+                document.getElementById("rmreserveButton").innerHTML="remove";
+            }
         }
+        
     </script>
-<script>function func(value) { console.log(value["state"]); }</script>
-    
     
     <title>network control</title>
 </head>
@@ -79,15 +97,14 @@
     <table class="mtable" width="100%" id="unknown">
     </table>
     </div>
-    
     <table class="mtable" width="100%">                 
             <tr>  <td colspan="100">Edit reserved IP addresses:</td>  </tr>
             <tr>  <td colspan="10"> 
             <button name="modbbutton" class="mbutton"
-                    data-odb-path="/Equipment/Clock Reset/Settings/Sync Trigger"
-                    data-odb-value="1">
+                    data-odb-path="/Equipment/DHCP DNS/Settings/usercmdReserve"
+                    data-odb-value="y" id=reserveButton>
                     reserve
-            </button></td> 
+            </button> </td> 
                 <td colspan="10">IP:</td>
                 <td colspan="20"><div name="modbvalue"
                             data-odb-path="/Equipment/DHCP DNS/Settings/usereditReserveIP"
@@ -103,8 +120,8 @@
             </tr>
             <tr>  <td colspan="10"> 
             <button name="modbbutton" class="mbutton"
-                    data-odb-path="/Equipment/Clock Reset/Settings/Sync Trigger"
-                    data-odb-value="1">
+                    data-odb-path="/Equipment/DHCP DNS/Settings/usercmdRmReserve"
+                    data-odb-value="1" id=rmreserveButton>
                     remove
             </button></td>
                 <td colspan="10">IP:</td>
