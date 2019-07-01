@@ -1,20 +1,20 @@
 
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_0[3]
-set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_0[2]
-set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_0[1]
-set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_0[0]
+#set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_0[2]
+#set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_0[1]
+#set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_0[0]
 set_location_assignment PIN_AH28 -to data_in_A_0[3]
-set_location_assignment PIN_AB27 -to data_in_A_0[2]
-set_location_assignment PIN_AD26 -to data_in_A_0[1]
-set_location_assignment PIN_AC26 -to data_in_A_0[0]
+#set_location_assignment PIN_AB27 -to data_in_A_0[2]
+#set_location_assignment PIN_AD26 -to data_in_A_0[1]
+#set_location_assignment PIN_AC26 -to data_in_A_0[0]
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_1[3]
-set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_1[2]
-set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_1[1]
-set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_1[0]
+#set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_1[2]
+#set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_1[1]
+#set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_1[0]
 set_location_assignment PIN_AJ26 -to data_in_A_1[3]
-set_location_assignment PIN_AE28 -to data_in_A_1[2]
-set_location_assignment PIN_AF28 -to data_in_A_1[1]
-set_location_assignment PIN_AG29 -to data_in_A_1[0]
+#set_location_assignment PIN_AE28 -to data_in_A_1[2]
+#set_location_assignment PIN_AF28 -to data_in_A_1[1]
+#set_location_assignment PIN_AG29 -to data_in_A_1[0]
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_2[2]
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_2[1]
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_2[0]
@@ -322,12 +322,12 @@ set_location_assignment PIN_AN17 -to clk_125_bottom
 set_instance_assignment -name IO_STANDARD LVDS -to systemclock_bottom
 set_location_assignment PIN_AN15 -to systemclock_bottom
 
-set_instance_assignment -name IO_STANDARD "1.8 V" -to chip_reset_A
+#set_instance_assignment -name IO_STANDARD "1.8 V" -to chip_reset_A
 set_instance_assignment -name IO_STANDARD "1.8 V" -to chip_reset_B
 set_instance_assignment -name IO_STANDARD "1.8 V" -to chip_reset_D
 set_instance_assignment -name IO_STANDARD "1.8 V" -to chip_reset_E
 set_instance_assignment -name IO_STANDARD "1.8 V" -to chip_reset_C
-set_location_assignment PIN_AP10 -to chip_reset_A
+#set_location_assignment PIN_AP10 -to chip_reset_A
 set_location_assignment PIN_AL22 -to chip_reset_B
 set_location_assignment PIN_AP8 -to chip_reset_C
 set_location_assignment PIN_AJ21 -to chip_reset_D
