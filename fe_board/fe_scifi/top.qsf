@@ -29,15 +29,7 @@ set_global_assignment -name SDC_FILE top.sdc
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
 
-set_global_assignment -name VHDL_FILE util/mu3e_pkg.vhd
-set_global_assignment -name VHDL_FILE util/util_pkg.vhd
-set_global_assignment -name VHDL_FILE util/ff_sync.vhd
-set_global_assignment -name VHDL_FILE util/reset_sync.vhd
-set_global_assignment -name VHDL_FILE util/counter.vhd
-set_global_assignment -name VHDL_FILE util/clkmon.vhd
-set_global_assignment -name VHDL_FILE util/clkdiv.vhd
-set_global_assignment -name VHDL_FILE util/debouncer.vhd
-set_global_assignment -name VHDL_FILE util/watchdog.vhd
+set_global_assignment -name QIP_FILE util/util.qip
 
 set_global_assignment -name VHDL_FILE s4/ip_altpll.vhd
 set_global_assignment -name VHDL_FILE s4/ip_altlvds_rx.vhd

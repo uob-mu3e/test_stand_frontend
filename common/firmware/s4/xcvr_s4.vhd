@@ -13,14 +13,6 @@ generic (
     CLK_MHZ_g : positive := 50--;
 );
 port (
-    -- avalon slave interface
-    i_avs_address       : in    std_logic_vector(13 downto 0);
-    i_avs_read          : in    std_logic;
-    o_avs_readdata      : out   std_logic_vector(31 downto 0);
-    i_avs_write         : in    std_logic;
-    i_avs_writedata     : in    std_logic_vector(31 downto 0);
-    o_avs_waitrequest   : out   std_logic;
-
     i_tx_data       : in    std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
     i_tx_datak      : in    std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
     o_rx_data       : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
@@ -40,6 +32,15 @@ port (
     i_pll_clk       : in    std_logic;
     i_cdr_clk       : in    std_logic;
 
+    -- avalon slave interface
+    -- * 16 bit address space
+    i_avs_address       : in    std_logic_vector(13 downto 0);
+    i_avs_read          : in    std_logic;
+    o_avs_readdata      : out   std_logic_vector(31 downto 0);
+    i_avs_write         : in    std_logic;
+    i_avs_writedata     : in    std_logic_vector(31 downto 0);
+    o_avs_waitrequest   : out   std_logic;
+
     i_reset         : in    std_logic;
     i_clk           : in    std_logic--;
 );
@@ -51,7 +52,7 @@ architecture arch of xcvr_s4 is
 
     signal ch : integer range NUMBER_OF_CHANNELS_g-1 downto 0;
 
-    signal av_ctrl : work.mu3e.avalon_t;
+    signal av_ctrl : work.util.avalon_t;
 
     signal rx_data              :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
     signal rx_datak             :   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);

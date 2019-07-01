@@ -85,7 +85,7 @@ architecture arch of top is
 
     signal s_fee_chip_rst_auxclk_sync : std_logic_vector(1 downto 0);
 
-    signal avm_pod, avm_qsfp : work.mu3e.avalon_t;
+    signal avm_pod, avm_qsfp : work.util.avalon_t;
 
     signal qsfp_tx_data : std_logic_vector(127 downto 0);
     signal qsfp_tx_datak : std_logic_vector(15 downto 0);
@@ -95,7 +95,7 @@ architecture arch of top is
 
     signal qsfp_reset_n : std_logic;
 
-    signal avm_sc : work.mu3e.avalon_t;
+    signal avm_sc : work.util.avalon_t;
 
     signal ram_addr_a : std_logic_vector(15 downto 0);
     signal ram_rdata_a : std_logic_vector(31 downto 0);
@@ -420,14 +420,6 @@ begin
         CLK_MHZ_g => 125--,
     )
     port map (
-        -- avalon slave interface
-        i_avs_address     => avm_qsfp.address(15 downto 2),
-        i_avs_read        => avm_qsfp.read,
-        o_avs_readdata    => avm_qsfp.readdata,
-        i_avs_write       => avm_qsfp.write,
-        i_avs_writedata   => avm_qsfp.writedata,
-        o_avs_waitrequest => avm_qsfp.waitrequest,
-
         i_tx_data   => qsfp_tx_data,
         i_tx_datak  => qsfp_tx_datak,
 
@@ -444,6 +436,13 @@ begin
 
         i_pll_clk   => qsfp_pll_clk,
         i_cdr_clk   => qsfp_pll_clk,
+
+        i_avs_address     => avm_qsfp.address(15 downto 2),
+        i_avs_read        => avm_qsfp.read,
+        o_avs_readdata    => avm_qsfp.readdata,
+        i_avs_write       => avm_qsfp.write,
+        i_avs_writedata   => avm_qsfp.writedata,
+        o_avs_waitrequest => avm_qsfp.waitrequest,
 
         i_reset     => not nios_reset_n,
         i_clk       => nios_clk--,
