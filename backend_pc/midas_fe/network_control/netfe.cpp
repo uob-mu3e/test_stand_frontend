@@ -139,10 +139,10 @@ void read_leases(string path, vector <string> *ips, vector <string> *requestedHo
                     }
                     if(line.substr(2,6)=="starts"){
                         expirationfound=true;
-                        expiration->push_back(line.substr(10,line.length()-10));
+                        expiration->push_back(line.substr(10,line.length()-11));
                     }
                     if(line.substr(2,17)=="hardware ethernet"){
-                        macs->push_back(line.substr(20,line.length()-22));
+                        macs->push_back(line.substr(20,line.length()-21));
                         macfound = true;
                         
                     }
@@ -170,11 +170,12 @@ void write_dns_table(string path, vector <string> ips, vector <string> requested
     dnstable << "$TTL 2D\n@\t\tIN SOA\t\tDHCP-214.mu3e.kph.\troot.DHCP-214.mu3e.kph. (\n\t\t\t\t2019062601\t; serial\n\t\t\t\t3H\t\t; refresh\n\t\t\t\t1H\t\t; retry\n\t\t\t\t1W\t\t; expiry\n\t\t\t\t1D )\t\t; minimum\n\nmu3e.\t\tIN NS\t\tDHCP-214.mu3e.kph.\n";
     
     for(int i = 0; i<ips.size(); i++){
-        if(requestedHostnames[i]!="-")
+        if(requestedHostnames[i]!="-"){
             dnstable<<requestedHostnames[i]<<"              IN      A       "<<ips[i]<<"\n";
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/DNSips", ips[i].c_str(), sizeof(reserved_ips[i]), nDNS, TID_STRING, FALSE);
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/DNSHostnames", requestedHostnames[i].c_str(), sizeof(reserved_ips[i]), nDNS, TID_STRING, FALSE);
             nDNS++;
+        }
     }
     db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/nDNS",to_string(nDNS).c_str(), sizeof(to_string(nDNS).c_str()), 1,TID_STRING);
     dnstable.close();
@@ -270,7 +271,7 @@ INT frontend_init()
 {
    HNDLE hKey;
    
-   system("touch /etc/dhcpd_reservations.conf");
+   system("touch /var/lib/dhcp/etc/dhcpd_reservations.conf");
 
    // create Settings structure in ODB
    db_create_record(hDB, 0, "Equipment/DHCP DNS/Settings", strcomb(cr_settings_str));
@@ -324,7 +325,7 @@ INT frontend_loop()
     // i dont want to edit /etc/dhcpd.conf directly
     // --> manually insert   include "/etc/dhcpd-reservations.conf";   into "/etc/dhcpd.conf";
     // and use this instead:
-    string dhcpd_conf_path = "/etc/dhcpd_reservations.conf";
+    string dhcpd_conf_path = "/var/lib/dhcp/etc/dhcpd_reservations.conf";
 
     prev_ips = ips;
     prev_requestedHostnames = requestedHostnames;
@@ -481,7 +482,7 @@ void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usereditReserveHost",hostname, &sizehostname, TID_STRING, TRUE);
 
             
-            ofstream dhcpdconf ("/etc/dhcpd_reservations.conf", std::ios_base::app);
+            ofstream dhcpdconf ("/var/lib/dhcp/etc/dhcpd_reservations.conf", std::ios_base::app);
             if (dhcpdconf.is_open())
             {
                 dhcpdconf << "host "<<hostname<<" {\n  hardware ethernet "<<mac<<";\n  fixed-address "<<ip<<";\n  ddns-hostname \""<<hostname<<"\";\n  option host-name \""<<hostname<<"\";\n}\n\n";
@@ -506,7 +507,7 @@ void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
             db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usereditRemReserveIP",removeip, &sizeip, TID_STRING, TRUE);
             
-            ofstream dhcpdconf ("/etc/dhcpd_reservations.conf");
+            ofstream dhcpdconf ("/var/lib/dhcp/etc/dhcpd_reservations.conf");
             int n = reserved_ips.size();
             if (dhcpdconf.is_open())
             {
