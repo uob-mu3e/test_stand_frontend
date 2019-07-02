@@ -17,9 +17,9 @@ set_global_assignment -name DEVICE_FILTER_PIN_COUNT 1152
 set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
 set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
 
-source assignments.tcl
 
 
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments.tcl
 
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 
