@@ -80,6 +80,8 @@ port (
     PCIE_TX_p				:	out std_logic_vector(7 downto 0);
     PCIE_WAKE_n			:	out std_logic;
 	 
+	 
+	 --//// DDR3 A /////////////
 	 DDR3A_A 				: out std_logic_vector(15 downto 0);
     DDR3A_BA 				: out std_logic_vector(2 downto 0);
     DDR3A_CAS_n			: out std_logic:
@@ -100,29 +102,26 @@ port (
     DDR3A_SDA 				: inout std_logic;
     DDR3A_WE_n				: out std_logic;
 
-
-
-`ifdef ENABLE_DDR3B
-      ///////// DDR3B /////////
-      output      [15:0] DDR3B_A,
-      output      [2:0]  DDR3B_BA,
-      output             DDR3B_CAS_n,
-      output      [(`DDR3B_RANK_NUM-1):0]   DDR3B_CK,
-      output      [(`DDR3B_RANK_NUM-1):0]   DDR3B_CKE,
-      output      [(`DDR3B_RANK_NUM-1):0]   DDR3B_CK_n,
-      output      [(`DDR3B_RANK_NUM-1):0]   DDR3B_CS_n,
-      output      [7:0]  DDR3B_DM,
-      inout       [63:0] DDR3B_DQ,
-      inout       [7:0]  DDR3B_DQS,
-      inout       [7:0]  DDR3B_DQS_n,
-      input              DDR3B_EVENT_n,
-      output      [(`DDR3B_RANK_NUM-1):0]   DDR3B_ODT,
-      output             DDR3B_RAS_n,
-      input              DDR3B_REFCLK_p,
-      output             DDR3B_RESET_n,
-      output             DDR3B_SCL,
-      inout              DDR3B_SDA,
-      output             DDR3B_WE_n,
+	 --//// DDR3 B/////////////
+	 DDR3B_A 				: out std_logic_vector(15 downto 0);
+    DDR3B_BA 				: out std_logic_vector(2 downto 0);
+    DDR3B_CAS_n			: out std_logic:
+    DDR3B_CK 				: out std_logic_vector(0 downto 0);
+    DDR3B_CKE				: out std_logic_vector(0 downto 0);
+    DDR3B_CK_n 			: out std_logic_vector(0 downto 0);
+    DDR3B_CS_n 			: out std_logic_vector(0 downto 0);
+    DDR3B_DM			   : out std_logic_vector(7 downto 0),
+    DDR3B_DQ 				: inout std_logic_vector(63 downto 0),
+    DDR3B_DQS 				: inout std_logic_vector(7 downto 0),
+    DDR3B_DQS_n 			: inout std_logic_vector(7 downto 0),
+    DDR3B_EVENT_n 		: in std_logic,
+    DDR3B_ODT				: out std_logic_vector(0 downto 0),
+    DDR3B_RAS_n 			: out std_logic;
+    DDR3B_REFCLK_p 		: in std_logic;
+    DDR3B_RESET_n 		: out std_logic;
+    DDR3B_SCL 				: out std_logic;
+    DDR3B_SDA 				: inout std_logic;
+    DDR3B_WE_n				: out std_logic
 	
 	 );
 
