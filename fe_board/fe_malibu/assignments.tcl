@@ -2,7 +2,6 @@
 
 source assignments/FE_s4.tcl
 source assignments/FE_malibu.tcl
-source assignments/FE_mupix.tcl
 
 set_location_assignment PIN_D23 -to led_n[0]
 set_location_assignment PIN_D24 -to led_n[1]

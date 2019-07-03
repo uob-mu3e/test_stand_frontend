@@ -2,7 +2,6 @@
 #include "../include/base.h"
 #include "../include/xcvr.h"
 
-#include "malibu.h"
 #include "sc.h"
 
 #include "si5345.h"
@@ -36,7 +35,6 @@ int main() {
         printf("\n");
         printf("FE_S4 (MALIBU):\n");
         printf("  [1] => xcvr qsfp\n");
-        printf("  [2] => malibu\n");
         printf("  [3] => sc\n");
         printf("  [4] => xcvr pod\n");
         printf("  [5] => si5345\n");
@@ -46,9 +44,6 @@ int main() {
         switch(cmd) {
         case '1':
             menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
-            break;
-        case '2':
-            menu_malibu();
             break;
         case '3':
             menu_sc((alt_u32*)AVM_SC_BASE);

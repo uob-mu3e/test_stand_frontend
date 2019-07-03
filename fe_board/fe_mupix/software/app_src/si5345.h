@@ -1,5 +1,5 @@
 
-#include "si.h"
+#include "../include/si.h"
 
 #include "si5345_revb_registers.h"
 
@@ -31,6 +31,18 @@ struct si5345_t : si_t {
 
     void reset() {
         write(0x001C, 0x01);
+    }
+
+    void preamble() {
+        write(0x0B24, 0xC0);
+        write(0x0B25, 0x00);
+        write(0x0540, 0x01);
+    }
+
+    void postamble() {
+        write(0x0540, 0x00);
+        write(0x0B24, 0xC3);
+        write(0x0B25, 0x02);
     }
 
     void status() {
