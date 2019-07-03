@@ -516,18 +516,16 @@ begin
 	end if; -- rising_edge
 end process clk_125_cnt_p_2;
 
-segment0 : component seg7_lut
-	port map (
-		clk => clk, 
-		hex => clk_125_cnt(27 downto 24),
-		seg => HEX0_D
+e_segment0 : entity work.hex2seg7
+port map (
+	i_hex => clk_125_cnt(27 downto 24),
+	o_seg => HEX0_D
 );
 
-segment1 : component seg7_lut
-	port map (
-		clk => input_clk, 
-		hex => clk_125_cnt2(27 downto 24),
-		seg => HEX1_D
+e_segment1 : entity work.hex2seg7
+port map (
+	i_hex => clk_125_cnt2(27 downto 24),
+	o_seg => HEX1_D
 );
 
 --------- data receiver ---------
@@ -598,87 +596,83 @@ rec_switching : component receiver_switching
 );
 
 word_align_ch0 : component rx_align
-	generic map (
-		Nb 	=> 4
-	)
-	port map (
-	  data    				=> data_ch0,
-	  datak   				=> datak_ch0,
-	  lock    				=> open, --lock_ch0,
-	  datain  				=> rx_parallel_data_ch0_rx_parallel_data,
-	  datakin 				=> rx_datak_ch0_rx_datak,
-	  K 						=> x"BC",--writeregs(KWORD_W)(7 downto 0),
-	  syncstatus 			=> rx_syncstatus_ch0_rx_syncstatus,
-	  patterndetect 		=> rx_patterndetect_ch0_rx_patterndetect,
-	  enapatternalign 	=> open, --enapatternalign_ch0,
-	  errdetect   			=> rx_errdetect_ch0_rx_errdetect,
-	  disperr     			=> rx_disperr_ch0_rx_disperr,
-	  rst_n   				=> resets_n(RESET_BIT_WORDALIGN),--not reset,
-	  clk     				=> rx_clkout_ch0_clk,
-	  align_status			=> ch0_align_status
+generic map (
+	CHANNEL_WIDTH_g => 32,
+	K_g => X"BC"--,
+)
+port map (
+	o_data              => data_ch0,
+	o_datak             => datak_ch0,
+	o_locked            => ch0_align_status,
+	i_data              => rx_parallel_data_ch0_rx_parallel_data,
+	i_datak             => rx_datak_ch0_rx_datak,
+	i_syncstatus        => rx_syncstatus_ch0_rx_syncstatus,
+	i_patterndetect     => rx_patterndetect_ch0_rx_patterndetect,
+	o_enapatternalign   => open, --enapatternalign_ch0,
+	i_errdetect         => rx_errdetect_ch0_rx_errdetect,
+	i_disperr           => rx_disperr_ch0_rx_disperr,
+	i_reset_n           => resets_n(RESET_BIT_WORDALIGN),--not reset,
+	i_clk               => rx_clkout_ch0_clk,
 );
- 
+
 word_align_ch1 : component rx_align
-	generic map (
-		Nb 	=> 4
-	)
-	port map (
-	  data    				=> data_ch1,
-	  datak   				=> datak_ch1,
-	  lock    				=> open, --lock_ch1,
-	  datain  				=> rx_parallel_data_ch1_rx_parallel_data,
-	  datakin 				=> rx_datak_ch1_rx_datak,
-	  K 						=> x"BC",--writeregs(KWORD_W)(7 downto 0),
-	  syncstatus 			=> rx_syncstatus_ch1_rx_syncstatus,
-	  patterndetect 		=> rx_patterndetect_ch1_rx_patterndetect,
-	  enapatternalign 	=> open, --enapatternalign_ch1,
-	  errdetect   			=> rx_errdetect_ch1_rx_errdetect,
-	  disperr     			=> rx_disperr_ch1_rx_disperr,
-	  rst_n   				=> resets_n(RESET_BIT_WORDALIGN),--not reset,
-	  clk     				=> rx_clkout_ch1_clk,
-	  align_status			=> ch1_align_status
+generic map (
+	CHANNEL_WIDTH_g => 32,
+	K_g => X"BC"--,
+)
+port map (
+	o_data              => data_ch1,
+	o_datak             => datak_ch1,
+	o_locked            => ch1_align_status,
+	i_data              => rx_parallel_data_ch1_rx_parallel_data,
+	i_datak             => rx_datak_ch1_rx_datak,
+	i_syncstatus        => rx_syncstatus_ch1_rx_syncstatus,
+	i_patterndetect     => rx_patterndetect_ch1_rx_patterndetect,
+	o_enapatternalign   => open, --enapatternalign_ch1,
+	i_errdetect         => rx_errdetect_ch1_rx_errdetect,
+	i_disperr           => rx_disperr_ch1_rx_disperr,
+	i_reset_n           => resets_n(RESET_BIT_WORDALIGN),--not reset,
+	i_clk               => rx_clkout_ch1_clk,
 );
- 
+
 word_align_ch2 : component rx_align
-	generic map (
-		Nb 	=> 4
-	)
-	port map (
-	  data    				=> data_ch2,
-	  datak   				=> datak_ch2,
-	  lock    				=> open, --lock_ch2,
-	  datain  				=> rx_parallel_data_ch2_rx_parallel_data,
-	  datakin 				=> rx_datak_ch2_rx_datak,
-	  K 						=> x"BC",--writeregs(KWORD_W)(7 downto 0),
-	  syncstatus 			=> rx_syncstatus_ch2_rx_syncstatus,
-	  patterndetect 		=> rx_patterndetect_ch2_rx_patterndetect,
-	  enapatternalign 	=> open, --enapatternalign_ch2,
-	  errdetect   			=> rx_errdetect_ch2_rx_errdetect,
-	  disperr     			=> rx_disperr_ch2_rx_disperr,
-	  rst_n   				=> resets_n(RESET_BIT_WORDALIGN),--not reset,
-	  clk     				=> rx_clkout_ch2_clk,
-	  align_status			=> ch2_align_status
+generic map (
+	CHANNEL_WIDTH_g => 32,
+	K_g => X"BC"--,
+)
+port map (
+	o_data              => data_ch2,
+	o_datak             => datak_ch2,
+	o_locked            => ch2_align_status,
+	i_data              => rx_parallel_data_ch2_rx_parallel_data,
+	i_datak             => rx_datak_ch2_rx_datak,
+	i_syncstatus        => rx_syncstatus_ch2_rx_syncstatus,
+	i_patterndetect     => rx_patterndetect_ch2_rx_patterndetect,
+	o_enapatternalign   => open, --enapatternalign_ch2,
+	i_errdetect         => rx_errdetect_ch2_rx_errdetect,
+	i_disperr           => rx_disperr_ch2_rx_disperr,
+	i_reset_n           => resets_n(RESET_BIT_WORDALIGN),--not reset,
+	i_clk               => rx_clkout_ch2_clk,
 );
 
 word_align_ch3 : component rx_align
-	generic map (
-		Nb 	=> 4
-	)
-	port map (
-	  data    				=> data_ch3,
-	  datak   				=> datak_ch3,
-	  lock    				=> open, --lock_ch3,
-	  datain  				=> rx_parallel_data_ch3_rx_parallel_data,
-	  datakin 				=> rx_datak_ch3_rx_datak,
-	  K 						=> x"BC",--writeregs(KWORD_W)(7 downto 0),
-	  syncstatus 			=> rx_syncstatus_ch3_rx_syncstatus,
-	  patterndetect 		=> rx_patterndetect_ch3_rx_patterndetect,
-	  enapatternalign 	=> open, --enapatternalign_ch3,
-	  errdetect   			=> rx_errdetect_ch3_rx_errdetect,
-	  disperr     			=> rx_disperr_ch3_rx_disperr,
-	  rst_n   				=> resets_n(RESET_BIT_WORDALIGN),--not reset,
-	  clk     				=> rx_clkout_ch3_clk,
-	  align_status			=> ch3_align_status
+generic map (
+	CHANNEL_WIDTH_g => 32,
+	K_g => X"BC"--,
+)
+port map (
+	o_data              => data_ch3,
+	o_datak             => datak_ch3,
+	o_locked            => ch3_align_status,
+	i_data              => rx_parallel_data_ch3_rx_parallel_data,
+	i_datak             => rx_datak_ch3_rx_datak,
+	i_syncstatus        => rx_syncstatus_ch3_rx_syncstatus,
+	i_patterndetect     => rx_patterndetect_ch3_rx_patterndetect,
+	o_enapatternalign   => open, --enapatternalign_ch3,
+	i_errdetect         => rx_errdetect_ch3_rx_errdetect,
+	i_disperr           => rx_disperr_ch3_rx_disperr,
+	i_reset_n           => resets_n(RESET_BIT_WORDALIGN),--not reset,
+	i_clk               => rx_clkout_ch3_clk,
 );
 
 rdreg_fifo_dma <= (not rdempty_fifo_0) and (not rdempty_fifo_1) and (not rdempty_fifo_2) and (not rdempty_fifo_3);

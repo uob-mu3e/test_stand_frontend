@@ -6,9 +6,9 @@ set_global_assignment -name PROJECT_CREATION_TIME_DATE "12:00:00  JANUARY 12, 20
 set_global_assignment -name LAST_QUARTUS_VERSION "18.0.0 Standard Edition"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 
-source assignments/DE5a_Net.tcl
 
 
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
 
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
@@ -18,27 +18,14 @@ set_global_assignment -name SDC_FILE top.sdc
 
 set_global_assignment -name QSYS_FILE nios.qsys
 
-set_global_assignment -name VHDL_FILE util/mu3e_pkg.vhd
-set_global_assignment -name VHDL_FILE util/util_pkg.vhd
-set_global_assignment -name VHDL_FILE util/seg7_lut.vhd
-set_global_assignment -name VHDL_FILE util/ff_sync.vhd
-set_global_assignment -name VHDL_FILE util/reset_sync.vhd
-set_global_assignment -name VHDL_FILE util/counter.vhd
-set_global_assignment -name VHDL_FILE util/clkmon.vhd
-set_global_assignment -name VHDL_FILE util/clkdiv.vhd
-set_global_assignment -name VHDL_FILE util/debouncer.vhd
-set_global_assignment -name VHDL_FILE util/reset_ctrl.vhd
-set_global_assignment -name VHDL_FILE util/watchdog.vhd
+set_global_assignment -name QIP_FILE util/util.qip
 
-set_global_assignment -name VHDL_FILE util/rx_align.vhd
+set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 
-set_global_assignment -name QSYS_FILE ip/ip_xcvr_phy.qsys
-set_global_assignment -name QSYS_FILE ip/ip_xcvr_reset.qsys
-set_global_assignment -name QSYS_FILE ip/ip_xcvr_fpll.qsys
 set_global_assignment -name QSYS_FILE ip/ip_clkctrl.qsys
 set_global_assignment -name QSYS_FILE ip/ip_iopll_125.qsys
 
-set_global_assignment -name VHDL_FILE a10/xcvr_a10.vhd
+set_global_assignment -name QIP_FILE xcvr.qip
 
 
 

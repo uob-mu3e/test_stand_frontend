@@ -1,3 +1,4 @@
+# base frontend Stratix-IV assignments
 
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_0[3]
 #set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_0[2]

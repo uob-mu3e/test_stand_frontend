@@ -31,8 +31,8 @@ port (
 
     SI5340A_I2C_SCL :   out     std_logic;
     SI5340A_I2C_SDA :   inout   std_logic;
-    SI5340A_OE_n    :   out std_logic;
-    SI5340A_RST_n   :   out std_logic;
+    SI5340A_OE_n    :   out     std_logic;
+    SI5340A_RST_n   :   out     std_logic;
 
 --    QSFPA_INTERRUPT_n   : in    std_logic;
     QSFPA_LP_MODE       : out   std_logic;
@@ -85,7 +85,7 @@ architecture rtl of top is
     signal clk_125_cnt : unsigned(31 downto 0);
     signal hex1, hex0 : std_logic_vector(3 downto 0);
 
-    signal avm_qsfp : work.mu3e.avalon_t;
+    signal avm_qsfp : work.util.avalon_t;
 
 begin
 
@@ -237,60 +237,53 @@ begin
     HEX1_DP <= '1';
     HEX0_DP <= '1';
 
-    i_seg7_hex1 : entity work.seg7_lut
+    i_hex2seg7_1 : entity work.hex2seg7
     port map (
-        hex => hex1,
-        seg => HEX1_D--,
+        i_hex => hex1,
+        o_seg => HEX1_D--,
     );
-    i_seg7_hex0 : entity work.seg7_lut
+    i_hex2seg7_0 : entity work.hex2seg7
     port map (
-        hex => hex0,
-        seg => HEX0_D--,
+        i_hex => hex0,
+        o_seg => HEX0_D--,
     );
 
 
 
-    i_qsfp : entity work.xcvr_a10
+    e_qsfp : entity work.xcvr_a10
     port map (
-        -- avalon slave interface
-        avs_address     => avm_qsfp.address(15 downto 2),
-        avs_read        => avm_qsfp.read,
-        avs_readdata    => avm_qsfp.readdata,
-        avs_write       => avm_qsfp.write,
-        avs_writedata   => avm_qsfp.writedata,
-        avs_waitrequest => avm_qsfp.waitrequest,
+        i_tx_data   => X"03CAFEBC"
+                     & X"02BABEBC"
+                     & X"01DEADBC"
+                     & X"00BEEFBC",
+        i_tx_datak  => "0001"
+                     & "0001"
+                     & "0001"
+                     & "0001",
 
-        tx3_data    => X"03CAFEBC",
-        tx2_data    => X"02BABEBC",
-        tx1_data    => X"01DEADBC",
-        tx0_data    => X"00BEEFBC",
-        tx3_datak   => "0001",
-        tx2_datak   => "0001",
-        tx1_datak   => "0001",
-        tx0_datak   => "0001",
+        o_rx_data   => open,
+        o_rx_datak  => open,
 
-        rx3_data    => open,
-        rx2_data    => open,
-        rx1_data    => open,
-        rx0_data    => open,
-        rx3_datak   => open,
-        rx2_datak   => open,
-        rx1_datak   => open,
-        rx0_datak   => open,
+        o_tx_clkout => open,
+        i_tx_clkin  => (others => refclk_125),
+        o_rx_clkout => open,
+        i_rx_clkin  => (others => refclk_125),
 
-        tx_clkout   => open,
-        tx_clkin    => (others => refclk_125),
-        rx_clkout   => open,
-        rx_clkin    => (others => refclk_125),
+        o_tx_serial => QSFPA_TX_p,
+        i_rx_serial => QSFPA_RX_p,
 
-        tx_p        => QSFPA_TX_p,
-        rx_p        => QSFPA_RX_p,
+        i_pll_clk   => refclk_125,
+        i_cdr_clk   => refclk_125,
 
-        pll_refclk  => refclk_125,
-        cdr_refclk  => refclk_125,
+        i_avs_address     => avm_qsfp.address(15 downto 2),
+        i_avs_read        => avm_qsfp.read,
+        o_avs_readdata    => avm_qsfp.readdata,
+        i_avs_write       => avm_qsfp.write,
+        i_avs_writedata   => avm_qsfp.writedata,
+        o_avs_waitrequest => avm_qsfp.waitrequest,
 
-        reset   => not nios_rst_n,
-        clk     => nios_clk--,
+        i_reset     => not nios_rst_n,
+        i_clk       => nios_clk--,
     );
 
 end architecture;
