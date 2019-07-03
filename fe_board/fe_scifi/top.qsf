@@ -19,7 +19,8 @@ set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
 
 
 
-set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments.tcl
+set_global_assignment -name QIP_FILE "../fe/assignments.qip"
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "../fe/assignments/FE_scifi.tcl"
 
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 
@@ -46,22 +47,14 @@ set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
 
 set_global_assignment -name QIP_FILE s4/xcvr.qip
 
-#TODO move to FEB_common qip file
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp_tx[*]
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp_rx[*]
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_tx[*]
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_rx[*]
-
 # SC
 
 #TODO move to common directory (util?)
 set_global_assignment -name VHDL_FILE ../../switching_pc/a10_board/firmware/sc_slave.vhd
 set_global_assignment -name VHDL_FILE ../../switching_pc/a10_board/firmware/sc_master.vhd
 
-
 #TODO move to common directory FEB_common
 set_global_assignment -name VHDL_FILE sc_s4.vhd
-set_global_assignment -name VHDL_FILE tb/fifo.vhd
 
 
 
