@@ -4,9 +4,10 @@
 
 #include "sc.h"
 
+/*
 #include "si5345.h"
 si5345_t si5345 { 0 };
-
+*/
 alt_u32 alarm_callback(void*) {
     // watchdog
     IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0xFF);
@@ -23,7 +24,7 @@ int main() {
     printf("ALT_DEVICE_FAMILY = '%s'\n", ALT_DEVICE_FAMILY);
     printf("\n");
 
-    si5345.init();
+//  si5345.init();
 
     alt_alarm alarm;
     int err = alt_alarm_start(&alarm, 0, alarm_callback, nullptr);
@@ -51,9 +52,9 @@ int main() {
         case '4':
             menu_xcvr((alt_u32*)(AVM_POD_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
-        case '5':
-            si5345.menu();
-            break;
+//      case '5':
+//          si5345.menu();
+//          break;
         default:
             printf("invalid command: '%c'\n", cmd);
         }
