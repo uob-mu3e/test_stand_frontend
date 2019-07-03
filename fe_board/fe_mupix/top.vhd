@@ -92,12 +92,6 @@ architecture arch of top is
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n : std_logic_vector(1 downto 0);
 
-    signal malibu_clk : std_logic;
-    signal malibu_rx_data_clk : std_logic;
-    signal malibu_rx_data : std_logic_vector(15 downto 0);
-    signal malibu_rx_datak : std_logic_vector(1 downto 0);
-    signal malibu_word : std_logic_vector(47 downto 0);
-
     signal avm_pod, avm_qsfp : work.mu3e.avalon_t;
 
     signal qsfp_tx_data : std_logic_vector(127 downto 0);
@@ -149,19 +143,19 @@ architecture arch of top is
 	 signal A_spi_sdo_front : std_logic_vector(2 downto 0);
 	 
 	 -- SPI output signals A front
-    signal	injection1_out_A_front:			std_logic_vector(15 downto 0);
-    signal	threshold_pix_out_A_front:		std_logic_vector(15 downto 0);	
-    signal	threshold_low_out_A_front:		std_logic_vector(15 downto 0);
-    signal	threshold_high_out_A_front:	std_logic_vector(15 downto 0);
-    signal	temp_dac_out_A_front:			std_logic_vector(15 downto 0);
-    signal	temp_adc_out_A_front:			std_logic_vector(31 downto 0);
+    signal injection1_out_A_front:			std_logic_vector(15 downto 0);
+    signal threshold_pix_out_A_front:		std_logic_vector(15 downto 0);	
+    signal threshold_low_out_A_front:		std_logic_vector(15 downto 0);
+    signal threshold_high_out_A_front:	std_logic_vector(15 downto 0);
+    signal temp_dac_out_A_front:			std_logic_vector(15 downto 0);
+    signal temp_adc_out_A_front:			std_logic_vector(31 downto 0);
     -- SPI output signals A back
-    signal	injection1_out_A_back:			std_logic_vector(15 downto 0);
-    signal	threshold_pix_out_A_back:		std_logic_vector(15 downto 0);	
-    signal	threshold_low_out_A_back:		std_logic_vector(15 downto 0);
-    signal	threshold_high_out_A_back:		std_logic_vector(15 downto 0);
-    signal	temp_dac_out_A_back:				std_logic_vector(15 downto 0);
-    signal	temp_adc_out_A_back:				std_logic_vector(31 downto 0);
+    signal injection1_out_A_back:			std_logic_vector(15 downto 0);
+    signal threshold_pix_out_A_back:		std_logic_vector(15 downto 0);	
+    signal threshold_low_out_A_back:		std_logic_vector(15 downto 0);
+    signal threshold_high_out_A_back:		std_logic_vector(15 downto 0);
+    signal temp_dac_out_A_back:				std_logic_vector(15 downto 0);
+    signal temp_adc_out_A_back:				std_logic_vector(31 downto 0);
      
 	 subtype reg32 is std_logic_vector(31 downto 0);
 	 type reg32array is array (36 downto 0) of reg32;
@@ -267,22 +261,6 @@ begin
     si45_spi_cs_n <= spi_ss_n(0);
 
 
-
-    -- I2C
-    i2c_scl_in <= not i2c_scl_oe;
-    i2c_sda_in <=
-        malibu_i2c_sda and
-        '1';
-    malibu_i2c_scl <= ZERO when i2c_scl_oe = '1' else 'Z';
-    malibu_i2c_sda <= ZERO when i2c_sda_oe = '1' else 'Z';
-
-    -- SPI
-    malibu_spi_sdi <= spi_mosi;
---    spi_miso <= malibu_spi_sdo;
-    malibu_spi_sck <= spi_sclk;
-
-    spi_miso <= si45_spi_out when spi_ss_n(0) = '0' else
-                malibu_spi_sdo when spi_ss_n(1) = '0' else '0';
 
     ----------------------------------------------------------------------------
     -- QSFP
