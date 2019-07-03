@@ -40,6 +40,19 @@
             </td>
         </tr>
         <tr>
+            <td style="text-align: center">
+                <input type="checkbox"
+                       name="modbcheckbox"
+                       data-odb-path="/Equipment/Clock Reset/Settings/Addressed" />
+                Address
+            </td>
+            <td>
+               <div name="modbvalue"
+                     data-odb-path="/Equipment/Clock Reset/Settings/FEBAddress"
+                     data-odb-editable="1"></div>
+            </td> 
+        </tr>
+        <tr>
             <td colspan="2" style="text-align: center">
                 <button name="modbbutton" class="mbutton" style="width: 150px"
                     data-odb-path="/Equipment/Clock Reset/Settings/Run Prepare"
@@ -218,15 +231,6 @@
                         data-odb-path="/Equipment/Clock Reset/Settings/Disable"
                         data-odb-value="1">
                     Disable
-                </button>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" style="text-align: center">
-                <button name="modbbutton" class="mbutton" style="width: 150px"
-                        data-odb-path="/Equipment/Clock Reset/Settings/Address"
-                        data-odb-value="1">
-                    Address
                 </button>
             </td>
         </tr>

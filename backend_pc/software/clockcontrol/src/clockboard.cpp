@@ -75,15 +75,33 @@ int clockboard::write_command(uint8_t command, uint32_t payload, bool has_payloa
     return 0;
 }
 
-int clockboard::write_command(char *name, uint32_t payload)
+int clockboard::write_command(char *name, uint32_t payload, uint16_t address)
 {
     auto it = reset_protocol.commands.find(name);
-    if(it != reset_protocol.commands.end())
-        return write_command(it->second.command, payload, it->second.has_payload);
+    if(it != reset_protocol.commands.end()){
+        if(address==0){
+            return write_command(it->second.command, payload, it->second.has_payload);
+        }else{
+            // addressed command
+            vector<uint32_t> senddata;
+            bool has_payload = it->second.has_payload;
 
+            senddata.push_back(reset_protocol.commands.find("Address")->second.command*0x1000000 + address*0x100 + it->second.command);
+            if(has_payload) senddata.push_back(payload);
+            bus.write(ADDR_FIFO_REG_OUT,senddata,true);
+
+            senddata.clear();
+            senddata.push_back(0x0);
+            if(has_payload) senddata.push_back(0x0);
+            bus.write(ADDR_FIFO_REG_CHARISK, senddata, true);
+
+            return 0;
+        }
+    }
     cout << "Unknown command " << name << endl;
     return -1;
 }
+
 
 int clockboard::init_12c()
 {
