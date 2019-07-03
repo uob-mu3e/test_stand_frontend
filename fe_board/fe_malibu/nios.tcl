@@ -39,7 +39,7 @@ if 1 {
 if 1 {
     set name avm_sc
     add_instance ${name} avalon_proxy
-    set_instance_parameter_value ${name} {addr_width} {16}
+    set_instance_parameter_value ${name} {addr_width} {18}
     set_instance_parameter_value ${name} {readLatency} {1}
 
     add_connection clk.clk ${name}.clk

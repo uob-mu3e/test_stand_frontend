@@ -49,10 +49,6 @@ set_global_assignment -name QIP_FILE s4/xcvr.qip
 
 # SC
 
-#TODO move to common directory (util?)
-set_global_assignment -name VHDL_FILE ../../switching_pc/a10_board/firmware/sc_slave.vhd
-set_global_assignment -name VHDL_FILE ../../switching_pc/a10_board/firmware/sc_master.vhd
-
 #TODO move to common directory FEB_common
 set_global_assignment -name VHDL_FILE sc_s4.vhd
 

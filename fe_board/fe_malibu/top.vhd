@@ -77,7 +77,7 @@ architecture arch of top is
     attribute keep : boolean;
     attribute keep of ZERO : signal is true;
 
-    signal led : std_logic_vector(led_n'range);
+    signal led : std_logic_vector(led_n'range) := (others => '0');
 
     signal nios_clk, nios_reset_n : std_logic;
     signal nios_pio : std_logic_vector(31 downto 0);
@@ -103,23 +103,6 @@ architecture arch of top is
     signal qsfp_reset_n : std_logic;
 
     signal avm_sc : work.util.avalon_t;
-
-    signal ram_addr_a : std_logic_vector(15 downto 0);
-    signal ram_rdata_a : std_logic_vector(31 downto 0);
-    signal ram_wdata_a : std_logic_vector(31 downto 0);
-    signal ram_we_a : std_logic;
-
-    signal data_to_fifo : std_logic_vector(35 downto 0);
-    signal data_to_fifo_we : std_logic;
-    signal data_from_fifo : std_logic_vector(35 downto 0);
-    signal data_from_fifo_re : std_logic;
-    signal data_from_fifo_empty : std_logic;
-
-    signal sc_to_fifo : std_logic_vector(35 downto 0);
-    signal sc_to_fifo_we : std_logic;
-    signal sc_from_fifo : std_logic_vector(35 downto 0);
-    signal sc_from_fifo_re : std_logic;
-    signal sc_from_fifo_empty : std_logic;
 
 begin
 
@@ -169,7 +152,7 @@ begin
         avm_pod_writedata       => avm_pod.writedata,
         avm_pod_waitrequest     => avm_pod.waitrequest,
 
-        avm_sc_address          => avm_sc.address(15 downto 0),
+        avm_sc_address          => avm_sc.address(17 downto 0),
         avm_sc_read             => avm_sc.read,
         avm_sc_readdata         => avm_sc.readdata,
         avm_sc_write            => avm_sc.write,
@@ -322,142 +305,30 @@ begin
 
 
 
-    ----------------------------------------------------------------------------
-    -- SLOW CONTROL
-
-    e_sc_ram : entity work.ip_ram
-    generic map (
-        ADDR_WIDTH => 14,
-        DATA_WIDTH => 32--,
-    )
+    e_data_geg : entity work.data_sc_path
     port map (
-        address_b   => avm_sc.address(15 downto 2),
-        q_b         => avm_sc.readdata,
-        wren_b      => avm_sc.write,
-        data_b      => avm_sc.writedata,
-        clock_b     => qsfp_pll_clk,
+        i_sc_address        => avm_sc.address(17 downto 2),
+        i_sc_read           => avm_sc.read,
+        o_sc_readdata       => avm_sc.readdata,
+        i_sc_write          => avm_sc.write,
+        i_sc_writedata      => avm_sc.writedata,
+        o_sc_waitrequest    => avm_sc.waitrequest,
 
-        address_a   => ram_addr_a(13 downto 0),
-        q_a         => ram_rdata_a,
-        wren_a      => ram_we_a,
-        data_a      => ram_wdata_a,
-        clock_a     => qsfp_pll_clk--,
+        i_data              => qsfp_rx_data(31 downto 0),
+        i_datak             => qsfp_rx_datak(3 downto 0),
+
+        o_data              => qsfp_tx_data(31 downto 0),
+        o_datak             => qsfp_tx_datak(3 downto 0),
+
+        i_reset             => reset_n,
+        i_clk               => qsfp_pll_clk--,
     );
-    avm_sc.waitrequest <= '0';
-
-    e_sc : entity work.sc_s4
-    port map (
-        clk => qsfp_pll_clk,
-        reset_n => reset_n,
-        enable => '1',
-
-        mem_data_in => ram_rdata_a,
-
-        link_data_in => qsfp_rx_data(31 downto 0),
-        link_data_in_k => qsfp_rx_datak(3 downto 0),
-
-        fifo_data_out => sc_to_fifo,
-        fifo_we => sc_to_fifo_we,
-
-        mem_data_out => ram_wdata_a,
-        mem_addr_out => ram_addr_a,
-        mem_wren => ram_we_a,
-
-        stateout => open--,
-    );
-
-    ----------------------------------------------------------------------------
-
-
-
-    ----------------------------------------------------------------------------
-    -- data gen
-    
-    e_data_gen : entity work.data_generator
-    port map (
-        clk => qsfp_pll_clk,
-        reset => not reset_n,
-        enable_pix => '1',
-        --enable_sc:         	in  std_logic;
-        random_seed => (others => '1'),
-        data_pix_generated => data_to_fifo,
-        --data_sc_generated:   	out std_logic_vector(31 downto 0);
-        data_pix_ready => data_to_fifo_we,
-        --data_sc_ready:      	out std_logic;
-        start_global_time => (others => '0')--,
-              -- TODO: add some rate control
-    );
-
-    e_merger : entity work.data_merger
-    port map (
-        clk                     => qsfp_pll_clk,
-        reset                   => not reset_n,
-        fpga_ID_in              => (5=>'1',others => '0'),
-        FEB_type_in             => "111010",
-        state_idle              => '1',
-        state_run_prepare       => '0',
-        state_sync              => '0',
-        state_running           => '0',
-        state_terminating       => '0',
-        state_link_test         => '0',
-        state_sync_test         => '0',
-        state_reset             => '0',
-        state_out_of_DAQ        => '0',
-        data_out                => qsfp_tx_data(31 downto 0),
-        data_is_k               => qsfp_tx_datak(3 downto 0),
-        data_in                 => data_from_fifo,
-        data_in_slowcontrol     => sc_from_fifo,
-        slowcontrol_fifo_empty  => sc_from_fifo_empty,
-        data_fifo_empty         => '1',--data_from_fifo_empty,
-        slowcontrol_read_req    => sc_from_fifo_re,
-        data_read_req           => data_from_fifo_re,
-        terminated              => open,
-        override_data_in        => (others => '0'),
-        override_data_is_k_in   => (others => '0'),
-        override_req            => '0',
-        override_granted        => open,
-        data_priority           => '0',
-        leds                    => open -- debug
-    );
-
-    e_data_fifo : entity work.mergerfifo
-    generic map (
-        DEVICE => "Stratix IV"--,
-    )
-    port map (
-        data    => data_to_fifo,
-        rdclk   => qsfp_pll_clk,
-        rdreq   => data_from_fifo_re,
-        wrclk   => qsfp_pll_clk,
-        wrreq   => data_to_fifo_we,
-        q       => data_from_fifo,
-        rdempty => data_from_fifo_empty,
-        wrfull  => open--,
-    );
-
-    e_sc_fifo : entity work.mergerfifo -- ip_fifo
-    generic map (
---        ADDR_WIDTH => 11,
---        DATA_WIDTH => 36,
-        DEVICE => "Stratix IV"--,
-    )
-    port map (
-        data    => sc_to_fifo,
-        rdclk   => qsfp_pll_clk,
-        rdreq   => sc_from_fifo_re,
-        wrclk   => qsfp_pll_clk,
-        wrreq   => sc_to_fifo_we,
-        q       => sc_from_fifo,
-        rdempty => sc_from_fifo_empty,
-        wrfull  => open--,
-    );
-
-    ----------------------------------------------------------------------------
 
 
 
     ----------------------------------------------------------------------------
     -- QSFP
+    -- (data and slow_control)
 
     QSFP_ModSel_n <= '1';
     QSFP_Rst_n <= '1';
@@ -516,6 +387,7 @@ begin
 
     ----------------------------------------------------------------------------
     -- POD
+    -- (reset system)
 
     pod_tx_reset <= '0';
     pod_rx_reset <= '0';
