@@ -2,6 +2,7 @@
 #define CLOCKBOARD_H
 
 #include "ipbus.h"
+#include "reset_protocol.h"
 
 class clockboard
 {
@@ -12,6 +13,9 @@ public:
     int init_clockboard();
     int map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num);
 
+    // Write "reset" commands
+    int write_command(uint8_t command, uint32_t payload =0, bool has_payload = false);
+    int write_command(char * name, uint32_t payload =0);
 
     // I2C interface
     int init_12c();
@@ -25,9 +29,11 @@ public:
 
     // SI3545 programming - note that this uses the register map
     // generated with the clock builder tool
-    int load_SI3545_reg_map(uint8_t dev_addr);
+    int load_SI3545_reg_map();
 
     // Firefly interface
+    bool firefly_present(uint8_t daughter, uint8_t index);
+
     uint16_t read_disabled_tx_channels();
     int disable_tx_channels(uint16_t channels);
 
@@ -40,27 +46,40 @@ public:
     vector<uint8_t> read_rx_amplitude();
     vector<uint8_t> read_rx_emphasis();
 
+    float read_rx_firefly_temp();
+    float read_rx_firefly_voltage();
+    vector<uint32_t> read_rx_firefly_alarms();
+    vector<float> read_rx_firefly_power();
+
+
+    float read_tx_firefly_temp();
+    float read_tx_firefly_temp(uint8_t daughter, uint8_t index);
+
+
     // Mother and daughter card monitoring
+    bool daughter_present(uint8_t daughter);
+    uint8_t daughters_present();
+
     int enable_daughter_12c(uint8_t dev_addr, uint8_t i2c_bus_num);
     int disable_daughter_12c(uint8_t dev_addr);
 
-    int read_daughter_board_current(uint8_t dev_addr);
-    int read_mother_board_current();
+    float read_daughter_board_current(uint8_t daughter);
+    float read_mother_board_current();
 
-    int read_daughter_board_voltage(uint8_t dev_addr);
-    int read_mother_board_voltage();
+    float read_daughter_board_voltage(uint8_t daughter);
+    float read_mother_board_voltage();
 
-    int configure_daughter_current_monitor(uint8_t dev_addr, uint16_t config);
+    int configure_daughter_current_monitor(uint8_t daughter, uint16_t config);
     int configure_mother_current_monitor(uint16_t config);
 
-
+    reset reset_protocol;
 protected:
     ipbus bus;
 
     //I2C helpers
     uint32_t checkTIP();
     uint32_t checkBUSY();
-    int setSlave(uint8_t dev_addr, bool write_bit=true);
+    int setSlave(uint8_t dev_addr, bool read_bit=true);
 
     const uint32_t ADDR_FIFO_REG_OUT        = 0x0;
     const uint32_t ADDR_FIFO_REG_CHARISK    = 0x2;
@@ -85,7 +104,7 @@ protected:
     const uint32_t ADDR_I2C_DATA            = 0xB;
     const uint32_t ADDR_I2C_CMD_STAT        = 0xC;
 
-    const uint32_t I2C_BIT_WRITE            = 0x1;
+    const uint32_t I2C_BIT_READ             = 0x1;
     const uint32_t I2C_BIT_TIP              = 0x2;
     const uint32_t I2C_BIT_NOACK            = 0x80;
     const uint32_t I2C_BIT_BUSY             = 0x40;
@@ -96,8 +115,25 @@ protected:
     const uint32_t I2C_CMD_STOP             = 0x40;
     const uint32_t I2C_CMD_WRITE            = 0x10;
 
+    // Firefly addresses on I2c
     const uint8_t FIREFLY_TX_ADDR           = 0x50;
     const uint8_t FIREFLY_RX_ADDR           = 0x54;
+
+    // Firefly buses
+    const uint8_t FIREFLY_0                 = 0x07;
+    const uint8_t FIREFLY_2                 = 0x05;
+    const uint8_t FIREFLY_1                 = 0x06;
+
+    const uint8_t FIREFLY_SEL[3]             = {FIREFLY_0, FIREFLY_1, FIREFLY_2};
+
+    // Firefly register map
+    const uint8_t FIREFLY_ALARM_REG         = 0x03;
+    const uint8_t FIREFLY_TEMP_REG          = 0x16;
+    const uint8_t FIREFLY_VOLTAGE_LO_REG    = 0x1A;
+    const uint8_t FIREFLY_VOLTAGE_HI_REG    = 0x1B;
+
+    const uint8_t FIREFLY_OPTICAL_PWR_LO_REG   = 0x22;
+    const uint8_t FIREFLY_OPTICAL_PWR_HI_REG   = 0x23;
 
     const uint8_t FIREFLY_DISABLE_HI_ADDR   = 0x34;
     const uint8_t FIREFLY_DISABLE_LO_ADDR   = 0x35;
@@ -119,12 +155,17 @@ protected:
     const uint8_t FIREFLY_RX_EMP_8_9_ADDR  = 0x45;
     const uint8_t FIREFLY_RX_EMP_A_B_ADDR  = 0x44;
 
+    // conversion from firefly register to temperature - to be checked.
+    const float FIREFLY_TEMP_CONVERSION = 1.0;
+
     const uint8_t I2C_MUX_POWER_ADDR       = 0x4;
     const uint8_t I2C_DAUGHTER_CURRENT_ADDR= 0x40;
-    const uint8_t I2C_MOTHER_CURRENT_ADDR  = 0x40;
+    const uint8_t I2C_MOTHER_CURRENT_ADDR  = 0x45;
     const uint8_t I2C_CURRENT_MONITOR_CONFIG_REG_ADDR = 0x0;
     const uint8_t I2C_SHUNT_VOLTAGE_REG_ADDR = 0x1;
     const uint8_t I2C_BUS_VOLTAGE_REG_ADDR = 0x2;
+
+    const uint8_t SI_I2C_ADDR              = 0x68;
 
     // Default values for inverted channels - to/from ODB?
     const uint16_t FIREFLY_RESET_INVERT_INIT = 0x0008;
@@ -145,6 +186,15 @@ protected:
     const uint8_t DAUGHTER_5 =  0x76;
     const uint8_t DAUGHTER_6 =  0x73;
     const uint8_t DAUGHTER_7 =  0x77;
+
+    const vector<uint8_t> DAUGHTERS{ DAUGHTER_0,
+                                     DAUGHTER_1,
+                                     DAUGHTER_2,
+                                     DAUGHTER_3,
+                                     DAUGHTER_4,
+                                     DAUGHTER_5,
+                                     DAUGHTER_6,
+                                     DAUGHTER_7};
 
 };
 

@@ -36,15 +36,6 @@ set_global_assignment -name VHDL_FILE s4/ip_altlvds_rx.vhd
 set_global_assignment -name VHDL_FILE s4/ip_ram.vhd
 set_global_assignment -name VHDL_FILE s4/ip_fifo.vhd
 
-# MALIBU
-set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
-set_global_assignment -name VHDL_FILE malibu_dec.vhd
-# FEB_common
-set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
-#mupix dummy generator (TODO: remove)
-set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/data_generator.vhd
-set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/linear_shift.vhd
-
 # QSFP
 
 set_global_assignment -name QIP_FILE s4/xcvr.qip
@@ -56,16 +47,26 @@ set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_r
 
 # SC
 
-set_global_assignment -name VHDL_FILE ../../switching_pc/a10_board/firmware/sc_slave.vhd
-set_global_assignment -name VHDL_FILE ../../switching_pc/a10_board/firmware/sc_master.vhd
 
 
-set_global_assignment -name VHDL_FILE sc_s4.vhd
-set_global_assignment -name VHDL_FILE tb/fifo.vhd
 
 
 
 # tail
+
+set_global_assignment -name VHDL_FILE spi_master.vhd
+set_global_assignment -name VHDL_FILE spi_if_write_bits.vhd
+set_global_assignment -name VHDL_FILE mp8_slowcontrol.vhd
+set_global_assignment -name VHDL_FILE mp8_sc_master.vhd
+
+
+
+set_global_assignment -name VHDL_FILE ../firmware/FEB_common/data_merger.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_common/mergerfifo.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/linear_shift.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/data_generator.vhd
+set_global_assignment -name VHDL_FILE sc_s4.vhd
+set_global_assignment -name VHDL_FILE reg_map_s4.vhd
 
 set_global_assignment -name ENABLE_DRC_SETTINGS ON
 set_global_assignment -name FLOW_DISABLE_ASSEMBLER OFF
@@ -73,7 +74,6 @@ set_global_assignment -name FLOW_ENABLE_IO_ASSIGNMENT_ANALYSIS ON
 set_global_assignment -name FLOW_ENABLE_RTL_VIEWER ON
 set_global_assignment -name PROJECT_IP_REGENERATION_POLICY SKIP_REGENERATING_IP_IF_HDL_MODIFIED
 set_global_assignment -name SMART_RECOMPILE ON
-
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
