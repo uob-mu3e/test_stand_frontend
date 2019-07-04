@@ -1,4 +1,6 @@
 
+#include <altera_avalon_i2c.h>
+
 /**
  * SI (Silicon Labs) clock chip controller.
  */
