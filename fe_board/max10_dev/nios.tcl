@@ -18,7 +18,7 @@ set_instance_parameter_value cpu {exceptionSlave} {ram.s1}
 
 # ram
 add_instance ram altera_avalon_onchip_memory2
-set_instance_parameter_value ram {memorySize} {0x00001000}
+set_instance_parameter_value ram {memorySize} {0x00006000}
 set_instance_parameter_value ram {initMemContent} {0}
 
 # jtag master
@@ -70,6 +70,11 @@ if 1 {
 
     add_instance jtag_uart altera_avalon_jtag_uart
     
+    add_instance timer altera_avalon_timer
+    apply_preset timer "Simple periodic interrupt"
+    set_instance_parameter_value timer {period} {1}
+    set_instance_parameter_value timer {periodUnits} {MSEC}
+    
     add_instance one_sec_timer altera_avalon_timer
     apply_preset one_sec_timer "Simple periodic interrupt"
     set_instance_parameter_value one_sec_timer {period} {1}
@@ -98,6 +103,7 @@ if 1 {
     foreach { name clk reset avalon addr } {
         sysid           clk   reset      control_slave     0x0000
         jtag_uart       clk   reset      avalon_jtag_slave 0x0010
+        timer           clk   reset      s1                0x0100
         timer_ts        clk   reset      s1                0x0140
         spi             clk   reset      spi_control_port  0x0240
         pio             clk   reset      s1                0x0280
@@ -118,6 +124,7 @@ if 1 {
         one_sec_timer.irq 0
         spi.irq 11
         adc.sample_store_irq 1
+        timer.irq 2
     } {
         add_connection cpu.irq $name
         set_connection_parameter_value cpu.irq/$name irqNumber $irq
