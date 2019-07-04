@@ -10,15 +10,34 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use work.ddr3_components.all;
-
+use work.pcie_components.all;
 
 
 
 
 entity ddr3_block is 
 	port (
-			clk					  : in 	 std_logic;   	-- clock for the FPGA fabric side
-			reset_n				  : in 	 std_logic;		-- global reset
+			reset_n	: in std_logic;
+			
+			-- Control and status registers
+			ddr3control			: in reg32;
+			A_ddr3status		: out reg32;
+			B_ddr3status		: out reg32;
+			ddr3addr				: in reg32;
+			ddr3datain			: in reg32;
+			A_ddr3dataout		: out reg32;
+			B_ddr3dataout		: out reg32;
+			ddr3addr_written		: in std_logic;
+			ddr3datain_written	: in std_logic;
+		
+			-- Error counters
+			A_poserr			: out reg32;
+			A_counterr		: out reg32;
+			A_timecount		: out reg32;
+			
+			B_poserr			: out reg32;
+			B_counterr		: out reg32;
+			B_timecount		: out reg32;
 
 			-- Interface to memory bank A
 			A_mem_ck              : out   std_logic_vector(0 downto 0);                      -- mem_ck
@@ -166,8 +185,71 @@ entity ddr3_block is
 			local_cal_fail      => B_cal_fail
 		);
 
-	
-	
+	memctlA:ddr3_memory_controller 
+	port map(
+		reset_n	=> reset_n,
+		
+		-- Control and status registers
+		ddr3control		=> ddr3control,
+		ddr3status		=> A_ddr3status,
+		ddr3addr			=> ddr3addr,
+		ddr3datain		=> ddr3datain,
+		ddr3dataout		=> A_ddr3dataout,
+		ddr3addr_written		=> ddr3addr_written,
+		ddr3datain_written	=> ddr3datain_written,
+		
+		-- Error counters
+		poserr			=> A_poserr,
+		counterr			=> A_counterr,
+		timecount		=> A_timecount,
+
+		-- IF to DDR3 
+		M_cal_success	=> A_cal_success,
+		M_cal_fail		=> A_cal_fail,
+		M_clk				=> A_clk,
+		M_reset			=> A_reset,
+		M_ready			=> A_ready,
+		M_read			=> A_read,
+		M_write			=> A_write,
+		M_address		=> A_address,
+		M_readdata		=> A_readdata,
+		M_writedata		=> A_writedata,
+		M_burstcount	=> A_burstcount,
+		M_readdatavalid	=> A_readdatavalid
+	);
+
+	memctlB:ddr3_memory_controller 
+	port map(
+		reset_n	=> reset_n,
+		
+		-- Control and status registers
+		ddr3control		=> ddr3control,
+		ddr3status		=> B_ddr3status,
+		ddr3addr			=> ddr3addr,
+		ddr3datain		=> ddr3datain,
+		ddr3dataout		=> B_ddr3dataout,
+		ddr3addr_written		=> ddr3addr_written,
+		ddr3datain_written	=> ddr3datain_written,
+		
+		-- Error counters
+		poserr			=> B_poserr,
+		counterr			=> B_counterr,
+		timecount		=> B_timecount,
+
+		-- IF to DDR3 
+		M_cal_success	=> B_cal_success,
+		M_cal_fail		=> B_cal_fail,
+		M_clk				=> B_clk,
+		M_reset			=> B_reset,
+		M_ready			=> B_ready,
+		M_read			=> B_read,
+		M_write			=> B_write,
+		M_address		=> B_address,
+		M_readdata		=> B_readdata,
+		M_writedata		=> B_writedata,
+		M_burstcount	=> B_burstcount,
+		M_readdatavalid	=> B_readdatavalid
+	);
 	
 	end architecture RTL;
 	

@@ -13,8 +13,8 @@ create_clock -period  "50.000000 MHz" [get_ports CLK_50_B2J]
 #create_clock -period  "50.000000 MHz" [get_ports CLK_50_B3H]
 #create_clock -period "100.000000 MHz" [get_ports CLK_100_B3D]
 #create_clock -period "100.000000 MHz" [get_ports CLKUSR_100]
-#create_clock -period "266.667000 MHz" [get_ports DDR3A_REFCLK_p]
-#create_clock -period "266.667000 MHz" [get_ports DDR3B_REFCLK_p]
+create_clock -period "266.667000 MHz" [get_ports DDR3A_REFCLK_p]
+create_clock -period "266.667000 MHz" [get_ports DDR3B_REFCLK_p]
 #create_clock -period "250.000000 MHz" [get_ports QDRIIA_REFCLK_p]
 #create_clock -period "250.000000 MHz" [get_ports QDRIIB_REFCLK_p]
 #create_clock -period "250.000000 MHz" [get_ports QDRIIC_REFCLK_p]
@@ -73,6 +73,14 @@ derive_clock_uncertainty
 # Set False Path
 #**************************************************************
 set_false_path -from [get_registers {reset_logic:resetlogic|resets_reg[*]}]
+set_false_path -from [get_clocks {pcie_b|pcie_if|pcie_a10_hip_0|coreclkout}] -to [get_clocks {ddr3_b|ddr3_A|emif_0_core_usr_clk}]
+set_false_path -from [get_clocks {pcie_b|pcie_if|pcie_a10_hip_0|coreclkout}] -to [get_clocks {ddr3_b|ddr3_B|emif_0_core_usr_clk}]
+set_false_path -from [get_clocks {ddr3_b|ddr3_A|emif_0_core_usr_clk}] -to [get_clocks {pcie_b|pcie_if|pcie_a10_hip_0|coreclkout}]
+set_false_path -from [get_clocks {ddr3_b|ddr3_B|emif_0_core_usr_clk}] -to [get_clocks {pcie_b|pcie_if|pcie_a10_hip_0|coreclkout}]
+set_false_path -from [get_clocks {ddr3_b|ddr3_A|emif_0_phy_clk_l_0}] -to [get_clocks {pcie_b|pcie_if|pcie_a10_hip_0|coreclkout}]
+set_false_path -from [get_clocks {ddr3_b|ddr3_B|emif_0_phy_clk_l_0}] -to [get_clocks {pcie_b|pcie_if|pcie_a10_hip_0|coreclkout}]
+set_false_path -from [get_clocks {ddr3_b|ddr3_A|emif_0_phy_clk_0}] -to [get_clocks {pcie_b|pcie_if|pcie_a10_hip_0|coreclkout}]
+set_false_path -from [get_clocks {ddr3_b|ddr3_B|emif_0_phy_clk_0}] -to [get_clocks {pcie_b|pcie_if|pcie_a10_hip_0|coreclkout}]
 
 #**************************************************************
 # Set Multicycle Path

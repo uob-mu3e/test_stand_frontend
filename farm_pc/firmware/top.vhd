@@ -6,6 +6,7 @@ use ieee.std_logic_unsigned.all;
 use work.pcie_components.all;
 use work.mudaq_registers.all;
 use work.mudaq_components.all;
+use work.ddr3_components.all;
 
 
 entity top is
@@ -84,45 +85,46 @@ port (
 	 --//// DDR3 A /////////////
 	 DDR3A_A 				: out std_logic_vector(15 downto 0);
     DDR3A_BA 				: out std_logic_vector(2 downto 0);
-    DDR3A_CAS_n			: out std_logic:
+    DDR3A_CAS_n			: out std_logic;
     DDR3A_CK 				: out std_logic_vector(0 downto 0);
     DDR3A_CKE				: out std_logic_vector(0 downto 0);
     DDR3A_CK_n 			: out std_logic_vector(0 downto 0);
     DDR3A_CS_n 			: out std_logic_vector(0 downto 0);
-    DDR3A_DM			   : out std_logic_vector(7 downto 0),
-    DDR3A_DQ 				: inout std_logic_vector(63 downto 0),
-    DDR3A_DQS 				: inout std_logic_vector(7 downto 0),
-    DDR3A_DQS_n 			: inout std_logic_vector(7 downto 0),
-    DDR3A_EVENT_n 		: in std_logic,
-    DDR3A_ODT				: out std_logic_vector(0 downto 0),
+    DDR3A_DM			   : out std_logic_vector(7 downto 0);
+    DDR3A_DQ 				: inout std_logic_vector(63 downto 0);
+    DDR3A_DQS 				: inout std_logic_vector(7 downto 0);
+    DDR3A_DQS_n 			: inout std_logic_vector(7 downto 0);
+    DDR3A_EVENT_n 		: in std_logic;
+    DDR3A_ODT				: out std_logic_vector(0 downto 0);
     DDR3A_RAS_n 			: out std_logic;
     DDR3A_REFCLK_p 		: in std_logic;
     DDR3A_RESET_n 		: out std_logic;
     DDR3A_SCL 				: out std_logic;
     DDR3A_SDA 				: inout std_logic;
     DDR3A_WE_n				: out std_logic;
+	 RZQ_DDR3_A				: in std_logic;
 
 	 --//// DDR3 B/////////////
 	 DDR3B_A 				: out std_logic_vector(15 downto 0);
     DDR3B_BA 				: out std_logic_vector(2 downto 0);
-    DDR3B_CAS_n			: out std_logic:
+    DDR3B_CAS_n			: out std_logic;
     DDR3B_CK 				: out std_logic_vector(0 downto 0);
     DDR3B_CKE				: out std_logic_vector(0 downto 0);
     DDR3B_CK_n 			: out std_logic_vector(0 downto 0);
     DDR3B_CS_n 			: out std_logic_vector(0 downto 0);
-    DDR3B_DM			   : out std_logic_vector(7 downto 0),
-    DDR3B_DQ 				: inout std_logic_vector(63 downto 0),
-    DDR3B_DQS 				: inout std_logic_vector(7 downto 0),
-    DDR3B_DQS_n 			: inout std_logic_vector(7 downto 0),
-    DDR3B_EVENT_n 		: in std_logic,
-    DDR3B_ODT				: out std_logic_vector(0 downto 0),
+    DDR3B_DM			   : out std_logic_vector(7 downto 0);
+    DDR3B_DQ 				: inout std_logic_vector(63 downto 0);
+    DDR3B_DQS 				: inout std_logic_vector(7 downto 0);
+    DDR3B_DQS_n 			: inout std_logic_vector(7 downto 0);
+    DDR3B_EVENT_n 		: in std_logic;
+    DDR3B_ODT				: out std_logic_vector(0 downto 0);
     DDR3B_RAS_n 			: out std_logic;
     DDR3B_REFCLK_p 		: in std_logic;
     DDR3B_RESET_n 		: out std_logic;
     DDR3B_SCL 				: out std_logic;
     DDR3B_SDA 				: inout std_logic;
-    DDR3B_WE_n				: out std_logic
-	
+    DDR3B_WE_n				: out std_logic;
+	 RZQ_DDR3_B				: in std_logic
 	 );
 
 end entity top;
@@ -465,7 +467,7 @@ clk <= CLK_50_B2J; -- for debouncer
 --reset <= not push_button0_db; -- for receiver
 
 LED(0) <= not error;
-LED(1) <= not resets_n(RESET_NIOS);
+LED(1) <= not resets_n(RESET_BIT_NIOS);
 
 LED_BRACKET(0) <= rx_is_lockedtoref(0);
 LED_BRACKET(1) <= rx_ready(0);
@@ -494,7 +496,7 @@ port map (
 	i2c_scl_oe  								=> i2c_scl_oe,
 	i2c_sda_in  								=> i2c_sda_in,
 	i2c_sda_oe  								=> i2c_sda_oe,
-	reset_reset_n              			=> push_button3_db--resets_n(RESET_NIOS)          
+	reset_reset_n              			=> push_button3_db--resets_n(RESET_BIT_NIOS)          
 );
 
 FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
@@ -958,5 +960,74 @@ pcie_b: pcie_block
 		inaddr32_w				=> readregs(inaddr32_w)
 );
   
+  
+  ddr3_b:ddr3_block 
+	port map(
+			reset_n				=> resets_n(RESET_BIT_DDR3),
+			
+			-- Control and status registers
+			ddr3control			=> writeregs(DDR3_CONTROL_W),
+			A_ddr3status		=> readregs(DDR3_STATUS_A_R),
+			B_ddr3status		=> readregs(DDR3_STATUS_B_R),
+			ddr3addr				=> writeregs(DDR3_ADDR_W),
+			ddr3datain			=> writeregs(DDR3_DATA_W),
+			A_ddr3dataout		=> readregs(DDR3_DATA_A_R),
+			B_ddr3dataout		=> readregs(DDR3_DATA_B_R),
+			ddr3addr_written		=> regwritten_fast(DDR3_ADDR_W),
+			ddr3datain_written	=> regwritten_fast(DDR3_DATA_W),
+		
+			-- Error counters
+			A_poserr				=> readregs(DDR3_POSERR_A_R),
+			A_counterr			=> readregs(DDR3_COUNTERR_A_R),
+			A_timecount			=> readregs(DDR3_TIMECOUNT_A_R),
+			
+			B_poserr				=> readregs(DDR3_POSERR_B_R),
+			B_counterr			=> readregs(DDR3_COUNTERR_B_R),
+			B_timecount			=> readregs(DDR3_TIMECOUNT_B_R),
+
+			-- Interface to memory bank A
+			A_mem_ck              => DDR3A_CK,
+			A_mem_ck_n            => DDR3A_CK_n,
+			A_mem_a               => DDR3A_A,
+			A_mem_ba              => DDR3A_BA,
+			A_mem_cke             => DDR3A_CKE,
+			A_mem_cs_n            => DDR3A_CS_n,
+			A_mem_odt             => DDR3A_ODT,
+			A_mem_reset_n(0)		 => DDR3A_RESET_n,      
+			A_mem_we_n(0)         => DDR3A_WE_n,
+			A_mem_ras_n(0)			 => DDR3A_RAS_n,
+			A_mem_cas_n(0)        => DDR3A_CAS_n,
+			A_mem_dqs             => DDR3A_DQS,
+			A_mem_dqs_n           => DDR3A_DQS_n,
+			A_mem_dq              => DDR3A_DQ,
+			A_mem_dm              => DDR3A_DM,
+			A_oct_rzqin           => RZQ_DDR3_A,
+			A_pll_ref_clk         => DDR3A_REFCLK_p,
+
+			
+			
+			-- Interface to memory bank B
+			B_mem_ck              => DDR3B_CK,
+			B_mem_ck_n            => DDR3B_CK_n,
+			B_mem_a               => DDR3B_A,
+			B_mem_ba              => DDR3B_BA,
+			B_mem_cke             => DDR3B_CKE,
+			B_mem_cs_n            => DDR3B_CS_n,
+			B_mem_odt             => DDR3B_ODT,
+			B_mem_reset_n(0)		 => DDR3B_RESET_n,      
+			B_mem_we_n(0)         => DDR3B_WE_n,
+			B_mem_ras_n(0)			 => DDR3B_RAS_n,
+			B_mem_cas_n(0)        => DDR3B_CAS_n,
+			B_mem_dqs             => DDR3B_DQS,
+			B_mem_dqs_n           => DDR3B_DQS_n,
+			B_mem_dq              => DDR3B_DQ,
+			B_mem_dm              => DDR3B_DM,
+			B_oct_rzqin           => RZQ_DDR3_B,
+			B_pll_ref_clk         => DDR3B_REFCLK_p
+	
+	);
+
+  DDR3A_SDA	<= 'Z';
+  DDR3B_SDA	<= 'Z';
 
 end;
