@@ -436,9 +436,9 @@ set_location_assignment PIN_AL17 -to test_pulse_D
 set_location_assignment PIN_AK17 -to test_pulse_E
 
 set_instance_assignment -name IO_STANDARD "2.5 V" -to lcd_csn
-set_instance_assignment -name IO_STANDARD "2.5 V" -to mscb_data_in
-set_instance_assignment -name IO_STANDARD "2.5 V" -to mscb_data_out
-set_instance_assignment -name IO_STANDARD "2.5 V" -to mscb_oe
+set_instance_assignment -name IO_STANDARD "2.5 V" -to lcd_data[0]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to lcd_data[1]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to lcd_data[2]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to lcd_data[3]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to lcd_data[4]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to lcd_data[5]
@@ -447,9 +447,9 @@ set_instance_assignment -name IO_STANDARD "2.5 V" -to lcd_data[7]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to lcd_d_cn
 set_instance_assignment -name IO_STANDARD "2.5 V" -to lcd_wen
 set_location_assignment PIN_B30 -to lcd_csn
-set_location_assignment PIN_A23 -to mscb_data_in
-set_location_assignment PIN_A24 -to mscb_data_out
-set_location_assignment PIN_A25 -to mscb_oe
+set_location_assignment PIN_A23 -to lcd_data[0]
+set_location_assignment PIN_A24 -to lcd_data[1]
+set_location_assignment PIN_A25 -to lcd_data[2]
 set_location_assignment PIN_A26 -to lcd_data[3]
 set_location_assignment PIN_A27 -to lcd_data[4]
 set_location_assignment PIN_A28 -to lcd_data[5]
