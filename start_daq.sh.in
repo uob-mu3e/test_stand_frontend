@@ -16,6 +16,12 @@ odbedit -c 'mkdir Custom'
 odbedit -d Custom -c 'create STRING Path'
 odbedit -c "set Custom/Path $SOURCE/mhttpd/custom"
 
+#create custom pages for DAQ slow control and Clock/Reset system
+odbedit -d Custom -c 'create STRING SC'
+odbedit -c 'set Custom/SC sc.html'
+odbedit -d Custom -c 'create STRING CR'
+odbedit -c 'set Custom/CR cr.html'
+
 xterm -hold -e "mhttpd" &
 xterm -hold -e "mserver" &
 xterm -hold -e "mlogger" &
