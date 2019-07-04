@@ -137,7 +137,6 @@ set_instance_assignment -name IO_STANDARD "2.5 V" -to Arduino_A4 -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to Arduino_A5 -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to Arduino_A6 -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to Arduino_A7 -tag platform
-set_instance_assignment -name IO_STANDARD "2.5 V" -to Clock -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to DIFFIO_L20N_CLK1N -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to DIFFIO_L20P_CLK1P -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to DIFFIO_L27N_PLL_CLKOUTN -tag platform
@@ -203,8 +202,9 @@ set_instance_assignment -name IO_STANDARD "2.5 V" -to LED2 -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to LED3 -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to LED4 -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to LED5 -tag platform
-set_global_assignment -name QSYS_FILE ip/ip_adc.qsys
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name VHDL_FILE ip/ip_altpll.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name VHDL_FILE max10_dev.vhd
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name SDC_FILE max10_dev.sdc
