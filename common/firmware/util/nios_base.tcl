@@ -92,7 +92,7 @@ if 1 {
     set_instance_parameter_value counter_in {width} {16}
     set_instance_parameter_value counter_in {bitModifyingOutReg} {0}
 
-    foreach { name clk reset av addr } {
+    foreach { name clk reset avalon addr } {
         sysid     clk   reset      control_slave     0x0000
         jtag_uart clk   reset      avalon_jtag_slave 0x0010
         timer     clk   reset      s1                0x0100
@@ -106,8 +106,8 @@ if 1 {
     } {
         add_connection clk.clk       $name.$clk
         add_connection clk.clk_reset $name.$reset
-        add_connection                 cpu.data_master $name.$av
-        set_connection_parameter_value cpu.data_master/$name.$av baseAddress [ expr 0x700F0000 + $addr ]
+        add_connection                 cpu.data_master $name.$avalon
+        set_connection_parameter_value cpu.data_master/$name.$avalon baseAddress [ expr 0x700F0000 + $addr ]
         add_connection cpu.debug_reset_request $name.$reset
     }
 

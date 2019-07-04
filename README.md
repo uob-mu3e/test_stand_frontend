@@ -1,5 +1,4 @@
-Labor setup for Arria10 and FEB Communication
-===============================================
+# Labor setup for Arria10 and FEB Communication
 
 this branch contains the firmware for the FEB and the Arria10 development board for sending slow control from the
 Arria10 board to the FEB in a simple labor setup. One can also send data from the FEB to the Arria10 board and read it
@@ -78,3 +77,53 @@ Now you can start the switch_fe and the Switching equipment should show up on yo
 
 
 ![Switching Page] https://bitbucket.org/mu3e/online/src/lab_setup_arria10/lab_setup.pdf
+
+## Quartus (firmware) project structure
+
+- `top.qsf` - project file
+- `top.vhd` - top entity
+- `top.sdc` - constraints
+- `assignments/` - link to assignments directory
+- `software/` - nios software
+    - `hal_bsp.tcl` - link to base "Board Support Package" file
+    - `app_src/` - sources
+    - `include/` - link to common software
+- `util/` - link to common firmware
+- `s4/` - link to Stratix IV common firmware
+- `a10/` - link to Arria 10 common firmware
+
+## Code style
+
+prefixes/sufixes:
+
+- `e_` / `_id` - entity/component instance
+- `g_` - generate statement
+- `_q`, `_r` - register
+- `_s`, `_w` - signal/wire
+- `_v` - variable
+- `_t` - type
+- `_g` or UPPERCASE - generic
+- `_c` or UPPERCASE - constant
+- `i/o_` - input/output ports
+- `_n` - active low
+
+...
+
+- ports : `std_logic` and `std_logic_vector`
+- use `downto`
+- avoid `std_logic_unsigned`, etc.
+
+file names:
+
+- `entityname.vhd`
+- `tb_entityname.vhd` or `testbench_entityname.vhd`
+- `packagename_pkg.vhd`
+
+spaces:
+
+- tab = 4 spaces
+- ascii
+
+## Links (docs, etc.)
+
+ - [Transceiver Architecture in Stratix IV Devices](https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/hb/stratix-iv/stx4_siv52001.pdf)

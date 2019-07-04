@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+# find '*.cmp' files
+# and make 'cmp' package
+
 (
 cat << EOF
 library ieee;

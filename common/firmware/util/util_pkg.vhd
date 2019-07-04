@@ -18,6 +18,18 @@ package util is
 
 
 
+    type avalon_t is record
+        address         :   std_logic_vector(31 downto 0);
+        read            :   std_logic;
+        readdata        :   std_logic_vector(31 downto 0);
+        write           :   std_logic;
+        writedata       :   std_logic_vector(31 downto 0);
+        waitrequest     :   std_logic;
+        readdatavalid   :   std_logic;
+    end record;
+
+
+
     function max (
         l, r: integer
     ) return integer;

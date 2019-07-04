@@ -96,6 +96,7 @@ int DBG_INFO = 1;
 #define PARALLEL_FPGA_STATUS2_BASE 0x81090
 #define PARALLEL_FPGA_SETTING_BASE 0x81000
 
+volatile alt_u32* sc_data = (alt_u32*)AVM_SC_BASE;
 
 char node_name[] = "FPGA_TEST";
 
@@ -634,21 +635,21 @@ int mscb_main()
     //ch = TopMenu();
     ch='y';
     led_blink(2);
-	while(1)
-	{
+        while(1)
+        {
       //if(ch=='y')
       //{
-    	  ch = mscb_loop();
-    	  //user_loop();
+          ch = mscb_loop();
+          //user_loop();
       //}
-	  if(ch=='q' or quit == 1)
-	  {
-	    printf("\n exiting \n");
-		printf("%c",EOT);
-		led_blink(4);
-		break;
-	  }
-	}
+          if(ch=='q' or quit == 1)
+          {
+            printf("\n exiting \n");
+                printf("%c",EOT);
+                led_blink(4);
+                break;
+          }
+        }
     return 0;
 }
 
@@ -842,16 +843,16 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
        adr = (adr << 8) | buf[6];
        adr = (adr << 8) | buf[7];
 	printf("WRITE MEM:\t addr:%08X size %d\n", adr, size);
-       	sc_data[adr] = buf[8];
+        sc_data[adr] = buf[8];
 	//for(j=0;j<size;j++) // TODO: block writing
-	//	sc_data[adr] = (sc_data[adr] << 8) | buf[8+j];
+        //	sc_data[adr] = (sc_data[adr] << 8) | buf[8+j];
 	
 	// avoid blocks for the moment:
 	if(size>=2){
-       		sc_data[adr] = (sc_data[adr] << 8) | buf[9];
+                sc_data[adr] = (sc_data[adr] << 8) | buf[9];
 		if(size==4){
-			sc_data[adr] = (sc_data[adr] << 8) | buf[10];
-			sc_data[adr] = (sc_data[adr] << 8) | buf[11];		
+                        sc_data[adr] = (sc_data[adr] << 8) | buf[10];
+                        sc_data[adr] = (sc_data[adr] << 8) | buf[11];
 		}
 	}
 
@@ -924,7 +925,7 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
 	// the same with a block of memory: 
 	   for(int j = 0; j < (size/4+(size%4!=0)) ; j++){
 		for(int i=0; i<4; i++){
-			buf[j*4+i]= (sc_data[adr+j]>>(24-8*i));
+                        buf[j*4+i]= (sc_data[adr+j]>>(24-8*i));
 		}
 	   }
 
