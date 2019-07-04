@@ -17,7 +17,7 @@ clockboard::clockboard(const char *addr, int port):bus(addr, port)
 
 }
 
-int clockboard::init_clockboard()
+int clockboard::init_clockboard(uint16_t clkinvert, uint16_t rstinvert)
 {
     init_12c();
     // Turn on Si chip output  
@@ -25,18 +25,12 @@ int clockboard::init_clockboard()
 
 
     // set inverted channels on the reset firefly
-    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_RESET_SEL);
-
-    invert_tx_channels(FIREFLY_RESET_INVERT_INIT);
+    invert_tx_rst_channels(rstinvert);
     //cout <<hex << "Inverted TX channels set: " <<  FIREFLY_RESET_INVERT_INIT << " " << read_inverted_tx_channels() << endl;
 
     // set inverted channels on the clock firefly
-    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
-    invert_tx_channels(FIREFLY_CLOCK_INVERT_INIT);
+    invert_tx_clk_channels(clkinvert);
     //cout << "Inverted TX channels set: " <<  FIREFLY_CLOCK_INVERT_INIT << " " << read_inverted_tx_channels() << endl;
-
-    // put the communication back to default
-    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
     return 1;
 }
 
@@ -52,14 +46,12 @@ int clockboard::map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num)
 
   if (daughter_polarity != fibre_polarity) {
     if (fibre_type == CLK_FIBRE) {
-        bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL,BIT_FIREFLY_CLOCK_SEL);
+        invert_tx_clk_channels(inverted_channel);
     } else if (fibre_type == RST_FIBRE) {
-        bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL,BIT_FIREFLY_RESET_SEL);
+        invert_tx_rst_channels(inverted_channel);
     }
-    invert_tx_channels(inverted_channel);
     std::cout << "inverted tx channel" << std::endl;
 
-    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL,0x0);
     return 1;
   }
 
@@ -83,15 +75,33 @@ int clockboard::write_command(uint8_t command, uint32_t payload, bool has_payloa
     return 0;
 }
 
-int clockboard::write_command(char *name, uint32_t payload)
+int clockboard::write_command(char *name, uint32_t payload, uint16_t address)
 {
     auto it = reset_protocol.commands.find(name);
-    if(it != reset_protocol.commands.end())
-        return write_command(it->second.command, payload, it->second.has_payload);
+    if(it != reset_protocol.commands.end()){
+        if(address==0){
+            return write_command(it->second.command, payload, it->second.has_payload);
+        }else{
+            // addressed command
+            vector<uint32_t> senddata;
+            bool has_payload = it->second.has_payload;
 
+            senddata.push_back(reset_protocol.commands.find("Address")->second.command*0x1000000 + address*0x100 + it->second.command);
+            if(has_payload) senddata.push_back(payload);
+            bus.write(ADDR_FIFO_REG_OUT,senddata,true);
+
+            senddata.clear();
+            senddata.push_back(0x0);
+            if(has_payload) senddata.push_back(0x0);
+            bus.write(ADDR_FIFO_REG_CHARISK, senddata, true);
+
+            return 0;
+        }
+    }
     cout << "Unknown command " << name << endl;
     return -1;
 }
+
 
 int clockboard::init_12c()
 {
@@ -295,8 +305,9 @@ bool clockboard::firefly_present(uint8_t daughter, uint8_t index)
     return true;
 }
 
-uint16_t clockboard::read_disabled_tx_channels()
+uint16_t clockboard::read_disabled_tx_clk_channels()
 {
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
     uint8_t data;
     uint16_t data_holder;
     read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_HI_ADDR, data);
@@ -304,18 +315,22 @@ uint16_t clockboard::read_disabled_tx_channels()
     data_holder = data_holder << 8;
     read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_LO_ADDR, data);
     data_holder = (data_holder & 0x0f00)|data;
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
     return data_holder;
 }
 
-int clockboard::disable_tx_channels(uint16_t channels)
+int clockboard::disable_tx_clk_channels(uint16_t channels)
 {
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
     write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_HI_ADDR, (uint8_t)((channels>>8)&0x0f));
     write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_LO_ADDR, (uint8_t)(channels&0xff));
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
     return 1;
 }
 
-uint16_t clockboard::read_inverted_tx_channels()
+uint16_t clockboard::read_inverted_tx_clk_channels()
 {
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
     uint8_t data;
     uint16_t data_holder;
     read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_HI_ADDR, data);
@@ -323,18 +338,92 @@ uint16_t clockboard::read_inverted_tx_channels()
     data_holder = data_holder << 8;
     read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_LO_ADDR, data);
     data_holder = (data_holder & 0x0f00)|data;
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
     return data_holder;
 }
 
-int clockboard::invert_tx_channels(uint16_t channels)
+int clockboard::invert_tx_clk_channels(uint16_t channels)
 {
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
     write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_HI_ADDR, (uint8_t)((channels>>8)&0x0f));
     uint8_t dat;
     read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_HI_ADDR,dat);
 
     write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_LO_ADDR, (uint8_t)(channels&0xff));
     read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_LO_ADDR,dat);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
     return 1;
+}
+
+
+uint16_t clockboard::read_disabled_tx_rst_channels()
+{
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_RESET_SEL);
+    uint8_t data;
+    uint16_t data_holder;
+    read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_HI_ADDR, data);
+    data_holder = data;
+    data_holder = data_holder << 8;
+    read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_LO_ADDR, data);
+    data_holder = (data_holder & 0x0f00)|data;
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
+    return data_holder;
+}
+
+int clockboard::disable_tx_rst_channels(uint16_t channels)
+{
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_RESET_SEL);
+    write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_HI_ADDR, (uint8_t)((channels>>8)&0x0f));
+    write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_LO_ADDR, (uint8_t)(channels&0xff));
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
+    return 1;
+}
+
+uint16_t clockboard::read_inverted_tx_rst_channels()
+{
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_RESET_SEL);
+    uint8_t data;
+    uint16_t data_holder;
+    read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_HI_ADDR, data);
+    data_holder = data;
+    data_holder = data_holder << 8;
+    read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_LO_ADDR, data);
+    data_holder = (data_holder & 0x0f00)|data;
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
+    return data_holder;
+}
+
+int clockboard::invert_tx_rst_channels(uint16_t channels)
+{
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_RESET_SEL);
+    write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_HI_ADDR, (uint8_t)((channels>>8)&0x0f));
+    uint8_t dat;
+    read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_HI_ADDR,dat);
+
+    write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_LO_ADDR, (uint8_t)(channels&0xff));
+    read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_LO_ADDR,dat);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
+    return 1;
+}
+
+
+int clockboard::disable_rx_channels(uint16_t channelmask)
+{
+    write_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_DISABLE_HI_ADDR, (uint8_t)((channelmask>>8)&0x0f));
+    write_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_DISABLE_LO_ADDR, (uint8_t)(channelmask&0xff));
+    return 1;
+}
+
+uint16_t clockboard::read_disabled_rx_channels()
+{
+    uint8_t data;
+    uint16_t data_holder;
+    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_DISABLE_HI_ADDR, data);
+    data_holder = data;
+    data_holder = data_holder << 8;
+    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_DISABLE_LO_ADDR, data);
+    data_holder = (data_holder & 0x0f00)|data;
+    return data_holder;
 }
 
 int clockboard::set_rx_amplitude(uint8_t amplitude)
@@ -359,25 +448,6 @@ int clockboard::set_rx_emphasis(uint8_t emphasis)
     return 1;
 }
 
-vector<uint8_t> clockboard::read_rx_amplitude()
-{
-    uint8_t data;
-    vector<uint8_t> res;
-    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_0_1_ADDR, data);
-    res.push_back(data);
-    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_2_3_ADDR, data);
-    res.push_back(data);
-    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_4_5_ADDR, data);
-    res.push_back(data);
-    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_6_7_ADDR, data);
-    res.push_back(data);
-    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_8_9_ADDR, data);
-    res.push_back(data);
-    read_i2c_reg(FIREFLY_RX_ADDR, FIREFLY_RX_AMP_A_B_ADDR, data);
-    res.push_back(data);
-
-    return res;
-}
 
 vector<uint8_t> clockboard::read_rx_emphasis()
 {
@@ -418,58 +488,186 @@ float clockboard::read_rx_firefly_voltage()
     // voltage in mV
 }
 
-vector<uint32_t> clockboard::read_rx_firefly_alarms()
+uint16_t clockboard::read_rx_firefly_los()
 {
-    vector<uint8_t> alarms8;
-    vector<uint32_t> alarms;
+    uint16_t los;
     uint8_t data;
-    for(uint8_t i =0; i< 16; i++){
-        data =0;
-        if(i==0 || i==3 || i== 4  || i==6 || i==7 || i==15)
-            read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_ALARM_REG+i,data);
-        alarms8.push_back(data);
-    }
 
-    for(uint8_t i =0; i< 4; i++){
-        uint32_t word = alarms8[i*4]+
-                       (alarms8[i*4+1] << 8) +
-                       (alarms8[i*4+2] << 16) +
-                       (alarms8[i*4+3] << 24);
-        alarms.push_back(word);
-    }
-    return alarms;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_RX_LOS_LO_REG,data);
+    los = data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_RX_LOS_HI_REG,data);
+    los += ((uint16_t)data << 8);
+
+    return los;
 }
 
-vector<float> clockboard::read_rx_firefly_power()
+uint16_t clockboard::read_rx_firefly_alarms()
 {
-    vector<float> pow;
+    uint16_t alarm;
+    uint8_t data;
 
-    for(uint8_t i =0; i < 12; i++){
-        uint8_t data;
-        read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_OPTICAL_PWR_LO_REG+i*2,data);
-        uint16_t power = data;
-        read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_OPTICAL_PWR_HI_REG+i*2,data);
-        power += ((uint16_t)data << 8);
-        pow.push_back((float)power / 10.0);
-        // Optical power in microW
-    }
-    return pow;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_RX_TEMP_ALARM_REG,data);
+    alarm = data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_RX_VCC_ALARM_REG,data);
+    alarm += ((uint16_t)data << 8);
+
+    return alarm;
 }
 
-float clockboard::read_tx_firefly_temp()
+uint16_t clockboard::read_tx_clk_firefly_lf()
 {
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
+    uint16_t lf;
     uint8_t data;
-    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_TEMP_REG,data);
+
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TX_LF_LO_REG,data);
+    lf = data;
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TX_LF_HI_REG,data);
+    lf += ((uint16_t)data << 8);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
+    return lf;
+}
+
+uint16_t clockboard::read_tx_clk_firefly_alarms()
+{
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
+    uint16_t alarm;
+    uint8_t data;
+
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TX_TEMP_ALARM_REG,data);
+    alarm = data;
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TX_VCC_ALARM_REG,data);
+    alarm += ((uint16_t)data << 8);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
+    return alarm;
+}
+
+uint16_t clockboard::read_tx_rst_firefly_lf()
+{
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_RESET_SEL);
+    uint16_t lf;
+    uint8_t data;
+
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TX_LF_LO_REG,data);
+    lf = data;
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TX_LF_HI_REG,data);
+    lf += ((uint16_t)data << 8);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
+    return lf;
+}
+
+uint16_t clockboard::read_tx_rst_firefly_alarms()
+{
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_RESET_SEL);
+    uint16_t alarm;
+    uint8_t data;
+
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TX_TEMP_ALARM_REG,data);
+    alarm = data;
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TX_VCC_ALARM_REG,data);
+    alarm += ((uint16_t)data << 8);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
+    return alarm;
+}
+
+
+
+float clockboard::read_tx_clk_firefly_temp()
+{
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
+    uint8_t data;
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TEMP_REG,data);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
     return data * FIREFLY_TEMP_CONVERSION;
 }
+
+float clockboard::read_tx_rst_firefly_temp()
+{
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_RESET_SEL);
+    uint8_t data;
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TEMP_REG,data);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
+    return data * FIREFLY_TEMP_CONVERSION;
+}
+
+float clockboard::read_tx_clk_firefly_voltage()
+{
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
+    uint8_t data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_VOLTAGE_LO_REG,data);
+    uint16_t voltage = data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_VOLTAGE_HI_REG,data);
+    voltage += ((uint16_t)data << 8);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
+    return (float)voltage / 10.0;
+    // voltage in mV
+}
+
+float clockboard::read_tx_rst_firefly_voltage()
+{
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_RESET_SEL);
+    uint8_t data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_VOLTAGE_LO_REG,data);
+    uint16_t voltage = data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_VOLTAGE_HI_REG,data);
+    voltage += ((uint16_t)data << 8);
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, 0x0);
+    return (float)voltage / 10.0;
+    // voltage in mV
+}
+
 
 float clockboard::read_tx_firefly_temp(uint8_t daughter, uint8_t index)
 {
     enable_daughter_12c(DAUGHTERS[daughter],FIREFLY_SEL[index]);
     uint8_t data;
     read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TEMP_REG,data);
+    disable_daughter_12c(DAUGHTERS[daughter]);
     return data * FIREFLY_TEMP_CONVERSION;
 }
+
+uint16_t clockboard::read_tx_firefly_lf(uint8_t daughter, uint8_t index)
+{
+    enable_daughter_12c(DAUGHTERS[daughter],FIREFLY_SEL[index]);
+    uint16_t lf;
+    uint8_t data;
+
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TX_LF_LO_REG,data);
+    lf = data;
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TX_LF_HI_REG,data);
+    lf += ((uint16_t)data << 8);
+    disable_daughter_12c(DAUGHTERS[daughter]);
+    return lf;
+}
+
+uint16_t clockboard::read_tx_firefly_alarms(uint8_t daughter, uint8_t index)
+{
+    enable_daughter_12c(DAUGHTERS[daughter],FIREFLY_SEL[index]);
+    uint16_t alarm;
+    uint8_t data;
+
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TX_TEMP_ALARM_REG,data);
+    alarm = data;
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_TX_VCC_ALARM_REG,data);
+    alarm += ((uint16_t)data << 8);
+    disable_daughter_12c(DAUGHTERS[daughter]);
+    return alarm;
+}
+
+
+float clockboard::read_tx_firefly_voltage(uint8_t daughter, uint8_t index)
+{
+    enable_daughter_12c(DAUGHTERS[daughter],FIREFLY_SEL[index]);
+    uint8_t data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_VOLTAGE_LO_REG,data);
+    uint16_t voltage = data;
+    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_VOLTAGE_HI_REG,data);
+    voltage += ((uint16_t)data << 8);
+    disable_daughter_12c(DAUGHTERS[daughter]);
+    return (float)voltage / 10.0;
+    // voltage in mV
+}
+
 
 
 bool clockboard::daughter_present(uint8_t daughter)
