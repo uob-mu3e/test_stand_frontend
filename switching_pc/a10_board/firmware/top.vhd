@@ -193,7 +193,7 @@ architecture rtl of top is
 		signal cpu_pio_i : std_logic_vector(31 downto 0);
 		signal flash_rst_n : std_logic;
 		signal debug_nios : std_logic_vector(31 downto 0);
-		signal avm_qsfp : work.mu3e.avalon_t;
+		signal avm_qsfp : work.util.avalon_t;
 		
 		-- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
 		signal ZERO : std_logic := '0';
@@ -201,14 +201,17 @@ architecture rtl of top is
 		attribute keep of ZERO : signal is true;
 		
 		-- data processing
-		type data_array_type is array (3 downto 0) of std_logic_vector(31 downto 0);
 		type fifo_out_array_type is array (3 downto 0) of std_logic_vector(35 downto 0);
+		type data_array_type is array (3 downto 0) of std_logic_vector(31 downto 0);
 		type datak_array_type is array (3 downto 0) of std_logic_vector(3 downto 0);
 		
 		signal rx_data : data_array_type;
 		signal tx_data : data_array_type;
 		signal rx_datak : datak_array_type;
 		signal tx_datak : datak_array_type;
+		signal rx_data_v : std_logic_vector(4*32-1 downto 0);
+		signal rx_datak_v : std_logic_vector(4*4-1 downto 0);
+
 		signal sc_data : data_array_type;
 		signal sc_datak : datak_array_type;
 		signal sc_ready : std_logic_vector(3 downto 0);
@@ -397,8 +400,8 @@ port map (
                  & "0001"
                  & tx_datak(0),
 
-    o_rx_data   => rx_data,
-    o_rx_datak  => rx_datak,
+    o_rx_data   => rx_data_v,
+    o_rx_datak  => rx_datak_v,
 
     o_tx_clkout => tx_clk,
     i_tx_clkin  => (others => tx_clk(0)),
@@ -421,6 +424,15 @@ port map (
     i_reset     => not CPU_RESET_n,
     i_clk       => input_clk--,
 );
+--assign vector types to array types for qsfp rx signals
+rx_data(3)<=rx_data_v(32*4-1 downto 32*3);
+rx_data(2)<=rx_data_v(32*3-1 downto 32*2);
+rx_data(1)<=rx_data_v(32*2-1 downto 32*1);
+rx_data(0)<=rx_data_v(32*1-1 downto 32*0);
+rx_datak(3)<=rx_datak_v(4*4-1 downto 4*3);
+rx_datak(2)<=rx_datak_v(4*3-1 downto 4*2);
+rx_datak(1)<=rx_datak_v(4*2-1 downto 4*1);
+rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 
 ------------- data demerger and fifos -------------
 
