@@ -226,8 +226,10 @@ architecture rtl of top is
 		
 		-- dma slow down
 		signal dma_control_wren 		: std_logic;
-		signal dma_control_counter		: std_logic_vector(31 downto 0);
-		signal dma_control_prev_rdreq : std_logic_vector(31 downto 0);
+		signal dma_control_counter		: std_logic_vector(15 downto 0);
+		signal dma_control_prev_rdreq : std_logic_vector(15 downto 0);
+		type event_counter_state_type is (waiting, ending);
+		signal event_counter_state : event_counter_state_type;
 		
 		
 begin 
@@ -619,36 +621,56 @@ end process;
 process(pcie_fastclk_out)
 begin
 	if(rising_edge(pcie_fastclk_out)) then
-		--dma_control_counter <= dma_control_counter - '1';
---		if(writeregs(LED_REGISTER_W)(3)='0')then
---			dma_control_prev_rdreq 		<= (others => '0');
---			dma_control_counter	  		<= (others => '0');
---			dma_control_wren 			  	<= '0';
---		elsif(writeregs(LED_REGISTER_W)(3)='1' and dma_control_prev_rdreq(0) = '0') then
---			dma_control_prev_rdreq(0) 	<= '1';
---			dma_control_wren 			  	<= '1';
---			dma_control_counter	     	<= x"0000ffff";
---		elsif(writeregs(LED_REGISTER_W)(3)='1' and dma_control_prev_rdreq(0) = '1' and dma_control_counter = x"00000000") then
---			dma_control_wren 			  	<= '0';
---		end if;
-
-		if(dma_control_prev_rdreq /= writeregs(LED_REGISTER_W)) then
-			dma_control_prev_rdreq <= writeregs(LED_REGISTER_W);
-			dma_control_counter	  <= writeregs(LED_REGISTER_W);
-			dma_control_wren	     <= '0';
-		elsif(dma_control_counter = x"00000000") then
-			dma_control_wren	     <= '0';
+		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE)) then
+			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
+			dma_control_counter	  	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
+			dma_control_wren	    <= '0';
+		elsif(dma_control_counter = x"0000") then
+			dma_control_wren	    <= '0';
 		else 
-			dma_control_wren	     <= '1';
-			dma_control_counter <= dma_control_counter - '1';
+			dma_control_wren	    <= '1';
+			dma_control_counter 	<= dma_control_counter - '1';
 		end if;
 	end if;
 end process;
 
+-- dma end of events and count events
+process(pcie_fastclk_out, reset_n)
+begin
+	if(reset_n = '0') then
+		event_counter 		<= (others <= '0');
+		dmamem_endofevent 	<= '0';
+		event_counter_state <= waiting;
+	elsif(rising_edge(pcie_fastclk_out)) then
+		dmamem_endofevent 		<= '0';
+
+		if(dma_control_wren = '0') then
+			event_counter <= (others <= '0');
+		end if;
+
+		case event_counter_state is
+
+			when waiting =>
+				if((rx_data(0)(31 downto 26) = "1110101") and (rx_data(0)(8 downto 0) = x"bc") and rx_datak(0) = "0001") then -- saw mupix preamble
+					event_counter <= event_counter + '1';
+					event_counter_state <= ending;
+				end if;
+			when ending =>
+				if(rx_data(0) = x"0000009c" and rx_datak(0) = "0001") then -- saw trailer
+					dmamem_endofevent 	<= '1';
+					event_counter_state <= waiting;
+				end if;
+			when others =>
+				event_counter_state <= waiting;
+
+		end case;
+
+	end if;
+end process;
+
 readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
-dmamem_wren 					<= dma_control_wren;--writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE);
-dmamem_endofevent				<= '1';
-pb_in 							<= push_button0_db & push_button1_db & push_button2_db;
+dmamem_wren 				<= dma_control_wren;--writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE);
+pb_in 						<= push_button0_db & push_button1_db & push_button2_db;
 
 pcie_b : entity work.pcie_block 
 	generic map(
@@ -676,37 +698,36 @@ pcie_b : entity work.pcie_block
 		pcie_waken				=> PCIE_WAKE_n,
 
 		-- LEDs
-		alive_led		      => open,
-		comp_led			      => open,
-		L0_led			      => open,
+		alive_led		      	=> open,
+		comp_led			    => open,
+		L0_led			      	=> open,
 
 		-- pcie registers (write / read register, readonly, read write, in tools/dmatest/rw) -Sync read regs 
-		writeregs		      => writeregs,
-		regwritten		      => regwritten_fast,
-		readregs			      => readregs,
+		writeregs		      	=> writeregs,
+		regwritten		      	=> regwritten_fast,
+		readregs			    => readregs,
 
 		-- pcie writeable memory
-		writememclk		      => tx_clk(0),
-		writememreadaddr     => writememreadaddr,
-		writememreaddata     => writememreaddata,
+		writememclk		      	=> tx_clk(0),
+		writememreadaddr     	=> writememreadaddr,
+		writememreaddata     	=> writememreaddata,
 
 		-- pcie readable memory
 		readmem_data 			=> readmem_writedata,
 		readmem_addr 			=> readmem_writeaddr_lowbits,
 		readmemclk				=> tx_clk(0),--tx_clk_ch0,--rx_clkout_ch0_clk,
 		readmem_wren			=> readmem_wren,
-		readmem_endofevent	=> readmem_endofevent,
+		readmem_endofevent		=> readmem_endofevent,
 
 		-- dma memory 
-		dma_data 				=> rx_data(0) 	& 
-										tx_data(0) 	&
-										rx_data(1) 	&
-										tx_data(1) 	&
-										rx_data(2) 	&
-										tx_data(2) 	&
-										dma_control_counter &
-										--rx_data(3) 	&
-										X"04CAFBAD",
+		dma_data 				=> 		rx_data(0) 	& 
+										x"0ABACAFE" &
+										x"1ABACAFE" &
+										x"2ABACAFE" &
+										x"3ABACAFE" &
+										x"4ABACAFE" &
+										x"5ABACAFE" &
+										X"6ABACAFE",
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
 		dmamem_wren				=> dmamem_wren,--'1',
 		dmamem_endofevent		=> dmamem_endofevent,
@@ -716,13 +737,13 @@ pcie_b : entity work.pcie_block
 		dma2_data 				=> dma2mem_writedata,
 		dma2memclk				=> pcie_fastclk_out,
 		dma2mem_wren			=> dma2mem_wren,
-		dma2mem_endofevent	=> dma2mem_endofevent,
-		dma2memhalffull		=> dma2memhalffull,
+		dma2mem_endofevent		=> dma2mem_endofevent,
+		dma2memhalffull			=> dma2memhalffull,
 
 		-- test ports  
 		testout					=> pcie_testout,
 		testout_ena				=> open,
-		pb_in						=> pb_in,
+		pb_in					=> pb_in,
 		inaddr32_r				=> readregs(inaddr32_r),
 		inaddr32_w				=> readregs(inaddr32_w)--,
 );
