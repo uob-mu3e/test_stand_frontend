@@ -63,6 +63,8 @@ set_interface_property sc_clk EXPORT_OF sc_clk.clk_in
 add_interface          sc_reset reset sink
 set_interface_property sc_reset EXPORT_OF sc_clk.clk_in_reset
 
+source nios_mscb_inc.tcl
+
 
 
 save_system {nios.qsys}
