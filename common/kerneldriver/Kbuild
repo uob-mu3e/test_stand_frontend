@@ -1,0 +1,3 @@
+ccflags-y := -I$(src)/../lib/include
+
+obj-m += mudaq.o

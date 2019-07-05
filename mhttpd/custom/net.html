@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="midas.css">
+    <script src="controls.js"></script>
+    <script src="midas.js"></script>
+    <script src="mhttpd.js"></script>
+    <script src="obsolete.js"> </script>
+    
+        <script>
+        function reloadAll(jsonData){
+            var nunknown=jsonData["nunknown"];
+            var ndns=jsonData["ndns"];
+            var nleased=jsonData["nleased"];
+            var nreserved=jsonData["nreserved"];
+            var unknownips=(jsonData["unknownips"]+'').split(',');
+            var reservedips=(jsonData["reservedips"]+'').split(',');
+            var reservedhostnames=(jsonData["reservedhostnames"]+'').split(',');
+            var reservedmacs=(jsonData["reservedmacs"]+'').split(',');
+            var leasedips=(jsonData["leasedips"]+'').split(',');
+            var leasedhostnames=(jsonData["leasedhostnames"]+'').split(',');
+            var leasedmacs=(jsonData["leasedmacs"]+'').split(',');
+            var dnsips=(jsonData["dnsips"]+'').split(',');
+            var dnshostnames=(jsonData["dnshostnames"]+'').split(',');
+            var expiration=(jsonData["expiration"]+'').split(',');
+            
+            var usercmdReserve=jsonData["usercmdreserve"];
+            var usercmdRmReserve=jsonData["usercmdrmreserve"];
+            
+            var str="";
+            
+            for(i=0; i<nunknown; i++){
+                str+="<tr><td>"+unknownips[i]+"</td></tr>";
+            }
+            if(nunknown==0){
+                document.getElementById("unknown").innerHTML="";
+            }else{
+                document.getElementById("unknown").innerHTML="<table class=\"mtable\" width=\"100%\" id=\"unknown\"><tr><td style=\"background-color: #ff9ca6\" colspan=\"6\" class=\"mtableheader\"> unregistered fixed IPs found: "+nunknown+"</td></tr><tr><td colspan=\"6\">Remove them or reserve the IP address:</td></tr> "+str+"</table>";
+            }
+            
+            str="";
+            for(i=0; i<nreserved; i++){
+                str+="<tr><td colspan=\"10\">"+reservedips[i]+"</td><td colspan=\"40\">"+reservedmacs[i]+"</td><td colspan=\"50\">"+reservedhostnames[i]+"</td></tr>";
+            }
+            document.getElementById("reserved").innerHTML="";
+            document.getElementById("reserved").innerHTML="<table class=\"mtable\" width=\"100%\"><tr><td colspan=\"100\" class=\"mtableheader\"> Reserved IPs: "+nreserved+"</td></tr><tr><td colspan=\"10\">IP</td> <td colspan=\"40\">MAC</td> <td colspan=\"50\">Hostname</td>  </tr> "+str+"</table>";
+            
+            str="";
+            for(i=0; i<nleased; i++){
+                if(expiration[i]=="inf")
+                    str+="<tr><td colspan=\"10\">"+leasedips[i]+"</td><td colspan=\"30\">"+leasedmacs[i]+"</td><td colspan=\"40\">"+leasedhostnames[i]+"</td><td colspan=\"20\">&#8734</td></tr>";
+                else
+                    str+="<tr><td colspan=\"10\">"+leasedips[i]+"</td><td colspan=\"30\">"+leasedmacs[i]+"</td><td colspan=\"40\">"+leasedhostnames[i]+"</td><td colspan=\"20\">"+expiration[i]+"</td></tr>";
+            }
+            document.getElementById("leased").innerHTML="";
+            document.getElementById("leased").innerHTML="<table class=\"mtable\" width=\"100%\"><tr><td colspan=\"100\" class=\"mtableheader\"> DHCP Leases: "+nleased+"</td></tr><tr><td colspan=\"10\">IP</td> <td colspan=\"30\">MAC</td> <td colspan=\"40\">Hostname</td> <td colspan=\"20\">Expiration date</td>  </tr> "+str+"</table>";
+            
+            str="";
+            for(i=0; i<ndns; i++){
+                str+="<tr><td>"+dnsips[i]+"</td><td colspan=>"+dnshostnames[i]+"</td></tr>";
+            }
+            document.getElementById("dns").innerHTML="";
+            document.getElementById("dns").innerHTML="<table class=\"mtable\" width=\"100%\"><tr><td colspan=\"100\" class=\"mtableheader\"> DNS Table: "+ndns+"</td></tr><tr><td>IP</td> <td>Hostname</td>  </tr> "+str+"</table>";
+            
+            if(usercmdReserve==true){
+                document.getElementById("reserveButton").innerHTML="reserve in progress ...";
+            }else{
+                document.getElementById("reserveButton").innerHTML="reserve";
+            }
+            
+            if(usercmdRmReserve==true){
+                document.getElementById("rmreserveButton").innerHTML="remove in progress ...";
+            }else{
+                document.getElementById("rmreserveButton").innerHTML="remove";
+            }
+        }
+        
+    </script>
+    
+    <title>network control</title>
+</head>
+<body class="mcss" onload="mhttpd_init('myPage');">
+
+<!-- header and side navigation will be filled in mhttpd_start -->
+<div id="mheader"></div>
+<div id="msidenav"></div>
+<div id="mmain">
+<div name="modb" data-odb-path="/Equipment/DHCP DNS/Settings" onchange="reloadAll(this.value)"> </div >
+
+    <div id="unknown">
+    <table class="mtable" width="100%" id="unknown">
+    </table>
+    </div>
+    
+    <div id="reserved">
+    <table class="mtable" width="100%" id="unknown">
+    </table>
+    </div>
+    <table class="mtable" width="100%">                 
+            <tr>  <td colspan="100">Edit reserved IP addresses:</td>  </tr>
+            <tr>  <td colspan="10"> 
+            <button name="modbbutton" class="mbutton"
+                    data-odb-path="/Equipment/DHCP DNS/Settings/usercmdReserve"
+                    data-odb-value="y" id=reserveButton>
+                    reserve
+            </button> </td> 
+                <td colspan="10">IP:</td>
+                <td colspan="20"><div name="modbvalue"
+                            data-odb-path="/Equipment/DHCP DNS/Settings/usereditReserveIP"
+                            data-odb-editable="1"></div></td>
+                <td colspan="10">MAC:</td>
+                <td colspan="20"><div name="modbvalue"
+                            data-odb-path="/Equipment/DHCP DNS/Settings/usereditReserveMAC"
+                            data-odb-editable="1"></div></td>
+                <td colspan="10">Hostname:</td>
+                <td colspan="20"><div name="modbvalue"
+                            data-odb-path="/Equipment/DHCP DNS/Settings/usereditReserveHost"
+                            data-odb-editable="1"></div></td>
+            </tr>
+            <tr>  <td colspan="10"> 
+            <button name="modbbutton" class="mbutton"
+                    data-odb-path="/Equipment/DHCP DNS/Settings/usercmdRmReserve"
+                    data-odb-value="1" id=rmreserveButton>
+                    remove
+            </button></td>
+                <td colspan="10">IP:</td>
+                <td colspan="90"><div name="modbvalue"
+                            data-odb-path="/Equipment/DHCP DNS/Settings/usereditRemReserveIP"
+                            data-odb-editable="1"></div></td>
+            </tr>
+    </table>
+    
+    <div id="leased">
+    <table class="mtable" width="100%" id="unknown">
+    </table>
+    </div>
+    
+    
+    <div id="dns">
+    <table class="mtable" width="100%" id="unknown">
+    </table>
+    </div>
+                
+</div>
+
+
+</body>
+</html>

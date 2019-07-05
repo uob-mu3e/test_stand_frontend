@@ -20,14 +20,14 @@
 #include <boost/dynamic_bitset.hpp>
 
 #include "mudaq_circular_buffer.hpp"
-#include "mudaq_device_constants.h"
-#include "mudaq_registers.h"
+#include "../include/mudaq_device_constants.h"
+#include "../include/mudaq_registers.h"
 #include "utils.hpp"
 #include "time.h"
 #include <stdlib.h>
 #include <stdio.h>
 /*??????*/
-#include "../../driver/mudaq.h"
+#include "../kerneldriver/mudaq.h"
 
 static size_t _pagesize(void) { return static_cast<size_t>(sysconf(_SC_PAGESIZE)); }
 int physical_address_check( uint32_t * virtual_address, size_t size );
@@ -76,6 +76,9 @@ namespace mudaq {
     uint32_t read_memory_rw(unsigned idx) const;
     void write_memory_rw(unsigned idx, uint32_t value); // added by DvB for rw mem
 
+    void FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, uint32_t mem_start);
+    int FEB_read(uint32_t FPGA_ID, uint16_t length, uint32_t startaddr, uint32_t mem_start);
+
     void enable_led(unsigned which);
     void enable_leds(uint8_t pattern);
     void disable_leds();
@@ -99,6 +102,8 @@ private:
     volatile uint32_t*      _regs_ro;
     volatile uint32_t*      _mem_ro;
     volatile uint32_t*      _mem_rw;  // added by DvB for rw mem
+
+    uint16_t                _last_read_address; // for reading command of slow control
 
     friend std::ostream& operator<<(std::ostream&, const MudaqDevice&);
 };

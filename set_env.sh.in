@@ -1,1 +1,28 @@
 
+PREFIX=@CMAKE_INSTALL_PREFIX@
+SOURCE=@PROJECT_SOURCE_DIR@
+BINDIR=${PREFIX}/bin
+BINDIRMIDAS=${SOURCE}/modules/midas/bin
+LIBDIR=${PREFIX}/lib
+
+export CMAKE_PREFIX_PATH="${PREFIX}${CMAKE_PREFIX_PATH:+:}${CMAKE_PREFIX_PATH}"
+export LD_LIBRARY_PATH="${LIBDIR}${LD_LIBRARY_PATH:+:}${LD_LIBRARY_PATH}"
+export PATH="${BINDIR}${PATH:+:}${PATH}"
+export PATH=$PATH:${BINDIRMIDAS}
+export PYTHONPATH="${PYTHONDIR}:${PYTHONARCHDIR}${PYTHONPATH:+:}${PYTHONPATH}"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+        export DYLD_LIBRARY_PATH="${LIBDIR}${DYLD_LIBRARY_PATH:+:}${DYLD_LIBRARY_PATH}";
+fi
+
+export MIDASSYS="${PREFIX}"
+export MIDAS_DIR="${SOURCE}/online"
+export MIDAS_EXPTAB="${SOURCE}/online/exptab"
+export MIDAS_EXP_NAME="Mu3e"
+
+cd "$MIDAS_DIR"
+ln -sf "${SOURCE}/modules/midas/resources"
+
+# bash or zsh require a rehash to pick up new commands
+if test -n "${BASH}" -o -n "${ZSH_VERSION}"; then
+    hash -r
+fi

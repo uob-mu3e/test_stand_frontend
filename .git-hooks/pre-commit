@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [[ "$GIT_AUTHOR_NAME" == "mu3e_labor" ]] ; then
+    echo "ERROR"
+    exit 1
+fi
+
+exit 0

@@ -1,0 +1,5 @@
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "ip_altgx_4ch_32bit_125MHz_5000Mbps.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "ip_altgx_4ch_32bit_125MHz_6250Mbps.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "ip_altgx_4ch_32bit_156250KHz_6250Mbps.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "ip_altgx_4ch_8bit_125MHz_1250Mbps.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "altgx_generic.vhd"]

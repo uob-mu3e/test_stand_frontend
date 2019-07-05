@@ -54,6 +54,8 @@ bool moreevents;
 bool firstevent;
 ofstream myfile;
 
+int blockNumber;
+
 mudaq::DmaMudaqDevice * mup;
 mudaq::DmaMudaqDevice::DataBlock block;
 
@@ -211,6 +213,7 @@ INT begin_of_run(INT run_number, char *error)
    readindex = 0;
    moreevents = false;
    firstevent = true;
+   blockNumber = 0;
    
    // Reset dma part and data generator
    uint32_t reset_reg =0;
@@ -261,7 +264,7 @@ INT begin_of_run(INT run_number, char *error)
    //cm_msg(MINFO, "begin_of_run" , "addr 0x%x" , mu.last_written_addr());
    // mu.write_register(DATAGENERATOR_REGISTER_W, datagen_setup);
    mu.write_register(DATAGENERATOR_REGISTER_W, 0xffffffff);// start data generator
-   mu.write_register(LED_REGISTER_W,0xffffffff);
+   //mu.write_register(LED_REGISTER_W,0x0000ffff);
    
    set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
    
@@ -401,10 +404,14 @@ INT read_stream_event(char *pevent, INT off)
 
 INT read_stream_thread(void *param)
 {
+   mudaq::DmaMudaqDevice & mu = *mup;
+   //uint32_t addr = mu.last_written_addr();
+   readindex = 0;
    EVENT_HEADER *pEventHeader;
    void *pEventData;
    DWORD *pdata;
    int status;
+   
    
    // tell framework that we are alive
    signal_readout_thread_active(0, TRUE);
@@ -414,29 +421,43 @@ INT read_stream_thread(void *param)
    
    while (is_readout_thread_enabled()) {
       
+       if(blockNumber == 8){
+           // we are at mu.last_written_addr() ...  ask for a new bunch of x 256-bit words
+            readindex = mu.last_written_addr();
+            //cout<<"readindex: "<< readindex <<endl;
+            mu.write_register(LED_REGISTER_W,0x00010000);
+            ss_sleep(10);
+            mu.write_register(LED_REGISTER_W,0x0);
+            ss_sleep(10);
+            blockNumber=0;
+      }
+      blockNumber++;
+      
       // obtain buffer space
       status = rb_get_wp(rbh, (void **)&pEventHeader, 0);
-      if (!is_readout_thread_enabled())
+      if (!is_readout_thread_enabled()){
          break;
+      }
       if (status == DB_TIMEOUT) {
          // just sleep and try again if buffer has no space
-         ss_sleep(10); 
+         ss_sleep(10);
+         cout<<"DB Timeout"<<endl;
          continue;
       }
-      if (status != DB_SUCCESS)
+      if (status != DB_SUCCESS){
          break;
-      
+      }
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
+          //cout<<"not running"<<endl;
          ss_sleep(10);
+
          continue;
       }
       
       // check for new event
       status = TRUE;
-      
       if (status) {
-         // create new midas event
          bm_compose_event(pEventHeader, equipment[0].info.event_id, 0, 0, equipment[0].serial_number++);
          pEventData = (void *)(pEventHeader + 1);
          
@@ -445,21 +466,20 @@ INT read_stream_thread(void *param)
 
          // create "HEAD" bank
          bk_create(pEventData, "HEAD", TID_DWORD, (void **)&pdata);
-         
-         for (int i=0 ; i<8 ; i++)
-            *pdata++ = rand();
-         
+         //cout<<"creating event"<<endl;
+         for (int i=0 ; i< 65536; i++){
+            //*pdata++ = rand();
+            *pdata++ = dma_buf[(++readindex)%dma_buf_nwords];
+         }
          bk_close(pEventData, pdata);
          
          pEventHeader->data_size = bk_size(pEventData);
-         
-         // send event to ring buffer
          rb_increment_wp(rbh, sizeof(EVENT_HEADER) + pEventHeader->data_size);
+         // send event to ring buffer
       }
    }
    
    // tell framework that we finished
    signal_readout_thread_active(0, FALSE);
-   
    return 0;
 }

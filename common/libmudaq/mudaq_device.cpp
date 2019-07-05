@@ -22,7 +22,7 @@
 
 #include "mudaq_device.h"
 #include "utils.hpp"
-#include "mudaq_registers.h"
+#include "../include/mudaq_registers.h"
 
 
 #define PAGEMAP_LENGTH 8 // each page table entry has 64 bits = 8 bytes
@@ -130,7 +130,7 @@ namespace mudaq {
     _mem_ro(nullptr),
     _mem_rw(nullptr)  // added by DvB for rw mem
   {
-    // nothing to do
+      _last_read_address = 0;
 }
 
   bool MudaqDevice::is_ok() const {
@@ -367,6 +367,94 @@ void MudaqDevice::munmap_wrapper(volatile uint32_t** addr, unsigned len,
     munmap_wrapper(tmp, len, error_msg);
 }
 
+/*
+ *  PCIe packet and software interface
+ *  12b: x"BAD"
+ *  20b: N: packet length for following payload(in 32b words)
+
+ *  N*32b: packet payload:
+ *      0xBC, 4b type=0xC, 2b SC type = 0b11, 16b FPGA ID
+ *      start addr(32b, user parameter)
+ *      (N-2)*data(32b, user parameter)
+ *
+ *      1 word as dummy: 0x00000000
+ *      First word (0xBAD...) to be written last (serves as start condition)
+ */
+void MudaqDevice::FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, uint32_t mem_start) {
+
+    uint32_t FEB_MEM_START = mem_start;
+    uint32_t FEB_PACKET_TYPE_SC = 0x7;
+    uint32_t FEB_PACKET_TYPE_SC_WRITE = 0x3; // this is 11 in binary
+
+    write_memory_rw(1 + FEB_MEM_START, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_WRITE << 24 | (uint16_t) FPGA_ID << 8 | 0xBC); // two most significant bits are 0
+    write_memory_rw(2 + FEB_MEM_START, startaddr);
+    write_memory_rw(3 + FEB_MEM_START, length);
+
+    for (int i = 0; i < length; i++) {
+        write_memory_rw(FEB_MEM_START + 4 + i, data[i]);
+    }
+    write_memory_rw(FEB_MEM_START + 4 + length, 0x0000009c);
+    write_memory_rw(FEB_MEM_START, 0xBAD << 20);
+
+}
+
+int MudaqDevice::FEB_read(uint32_t FPGA_ID, uint16_t length, uint32_t startaddr, uint32_t mem_start) {
+
+    uint32_t FEB_MEM_START = mem_start;
+    uint32_t FEB_PACKET_TYPE_SC = 0x7;
+    uint32_t FEB_PACKET_TYPE_SC_READ = 0x2; // this is 10 in binary
+
+    write_memory_rw(1 + FEB_MEM_START, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_READ << 24 | (uint16_t) FPGA_ID << 8 | 0xBC);
+    write_memory_rw(2 + FEB_MEM_START, startaddr);
+    write_memory_rw(3 + FEB_MEM_START, length);
+    write_memory_rw(FEB_MEM_START + 4, 0x0000009c);
+    write_memory_rw(FEB_MEM_START, 0xBAD << 20);
+
+//    // TODO: the memory where the addr for the answer of the fpga is written to
+//    // #define RO_MEM_ADDR 0 --> for testing now only write to write mem
+//    //volatile uint32_t end_event_ptr = read_register_ro(RO_MEM_ADDR);
+//
+//    uint32_t RW_REG_ADDR = 0x0;
+//    write_register_wait(RW_REG_ADDR, 0x1, 100000000);
+//    uint32_t end_event_ptr = read_register_rw(RW_REG_ADDR);
+//    int counter = 0;
+//    while(end_event_ptr == _last_read_address){
+//        cout << end_event_ptr << _last_read_address << endl;
+//        end_event_ptr = read_register_rw(RW_REG_ADDR);
+//        usleep(1);
+//        if (counter == 1000) break;
+//        counter++;
+//    }
+//
+//    while(read_memory_rw(_last_read_address) != sc_read_header) {
+//        _last_read_address++;
+//        cout << "Last Read Address: " << _last_read_address << endl;
+//    };
+//    cout << "SC_READ_HEADER: " << hex << read_memory_rw(_last_read_address) << endl;
+//
+//    if(read_memory_rw(++_last_read_address) != startaddr)
+//        return -1; // TODO: error code
+//    cout << "STARTADDR: " << hex << read_memory_rw(_last_read_address) << endl;
+//
+//    // return error if acknowledge bit is not 1
+//    if((read_memory_rw(++_last_read_address) & 0x80000000) == 0)
+//        return -1; // TODO: error code
+//    cout << "acknowledge: " << hex << read_memory_rw(_last_read_address) << endl;
+//
+//    // compare length
+//    if((read_memory_rw(_last_read_address++) & 0xFFFF) != length)
+//        return -1; //TODO: error code
+//    cout << read_memory_rw(_last_read_address) << endl;
+//
+//    for(int i = 0; i<length; i++) {
+//        data[i] = read_memory_ro(_last_read_address + i);
+//    }
+//
+//    _last_read_address = end_event_ptr;
+
+    return 0;
+
+}
 
 // ----------------------------------------------------------------------------
 // DmaMudaqDevice

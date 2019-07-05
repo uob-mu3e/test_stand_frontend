@@ -1,0 +1,78 @@
+Adresses: 
+GPIOs : GPIO_BP	0111000 (0x38)
+	0: ena_AUX1 (PL)
+	1: ena_AUX2 (PL)
+	2: SEL_sysCLK  (0:CK_SI0 	  ; 1:CK_FPGA0)
+		-> Mainboard: '1'
+	3: SEL_pllCLK  (0:MCRF connectors ; 1:CK_SI1)
+		-> Mainboard: '1'
+	4: SEL_pllTEST (0:PLL_TEST	  ; 1:MCRF connectors)
+		-> Mainboard: '0'
+	5: OE_pllTEST  (1: enabled)
+	6,7: n.c.
+GPIOs : GPIO_1	0111001	(0x39) ASIC0,1
+GPIOs : GPIO_2	0111010 (0x3A) ASIC2,3
+GPIOs : GPIO_3	0111011 (0x3B) ASIC4,5
+GPIOs : GPIO_4	0111100 (0x3C) ASIC6,7
+GPIOs : GPIO_5	0111101 (0x3D) ASIC8,9
+GPIOs : GPIO_6	0111110 (0x3E) ASIC10,11
+GPIOs : GPIO_7	0111111 (0x3F) ASIC12,13
+	0: ASIC0 ena18A	(PL)
+	1: ASIC0 ena18D	(PL)
+	2: ASIC0 SPI_CSn
+	3: ASIC0 SPI_CSn_CEC (n.c.)
+	4: ASIC1 ena18A (PL)
+	5: ASIC1 ena18D (PL)
+	6: ASIC1 SPI_CSn
+	7: ASIC1 SPI_CSn_CEC (n.c.)
+
+MUX1: 1000000
+	0: ASIC1
+	1: ASIC2
+	2: ASIC3
+	3: ASIC0
+MUX2: 1000001
+	0: ASIC5
+	1: ASIC6
+	2: ASIC7
+	3: ASIC4
+MUX3: 1000010
+	0: ASIC9
+	1: ASIC10
+	2: ASIC11
+	3: ASIC8
+MUX4: 1000011
+	0: ASIC13
+	1: ASIC14
+	2: ASIC15
+	3: ASIC12
+
+
+
+
+GPIO: Register
+0: input port register, read, byte; read inputs
+1: output port register, r/w, byte; write output; read back configured
+2: pol invert register, r/w, byte; invert pin, default noinvert
+3: config register, r/w, byte; 0: output, default 1
+
+GPIO[0]: Init
+	All 3.3V power off
+	SEL_sysCLK->CK_FPGA0 (Mainboard)
+	SEL_pllCLK->CK_SI1 (Mainboard)
+	SEL_pllTEST->PLL_TEST (Mainboard)
+	PLLtest disabled
+	Configure GPIO, all output
+Write Reg1 00001100 = 0x0C
+Write Reg3 0x00
+
+
+
+GPIO[1..7]: Init ASICs
+	All CS high, All 1.8V power off
+	All output
+Write Reg1 11001100 = 0xCC
+Write Reg3 0x00
+
+MUX: Registers
+0: Status, read, byte
