@@ -4,6 +4,7 @@
 
 #include "malibu.h"
 #include "sc.h"
+#include "mscb_user.h"
 
 #include "si5345.h"
 si5345_t si5345 { 0 };
@@ -40,6 +41,7 @@ int main() {
         printf("  [3] => sc\n");
         printf("  [4] => xcvr pod\n");
         printf("  [5] => si5345\n");
+        printf("  [6] => mscb (exit by reset only)");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -58,6 +60,9 @@ int main() {
             break;
         case '5':
             si5345.menu();
+            break;
+        case '6':
+            mscb_main();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

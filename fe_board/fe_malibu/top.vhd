@@ -59,10 +59,18 @@ port (
     pod_rx          : in    std_logic_vector(3 downto 0);
 
 
+    -- mscb
+    mscb_data_in    : in    std_logic;
+    mscb_data_out   : out   std_logic;
+    mscb_oe         : out   std_logic;
 
-    --
+
 
     led_n       : out   std_logic_vector(15 downto 0);
+
+    PushButton  : in    std_logic_vector(1 downto 0);
+
+
 
     reset_n     : in    std_logic;
     -- 125 MHz
@@ -102,11 +110,18 @@ architecture arch of top is
 
     signal qsfp_reset_n : std_logic;
 
+    signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
+    signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
+    signal mscb_counter_in : unsigned(15 downto 0);
+
     signal avm_sc : work.util.avalon_t;
 
 begin
 
     led_n <= not led;
+
+    led(8) <= PushButton(0);
+    led(9) <= PushButton(1);
 
     -- 125 MHz
     e_clk_aux_hz : entity work.clkdiv
@@ -177,6 +192,11 @@ begin
         spi_ss_n => spi_ss_n,
 
         pio_export => nios_pio,
+
+        -- mscb
+        parallel_mscb_in_export => mscb_to_nios_parallel_in,
+        parallel_mscb_out_export => mscb_from_nios_parallel_out,
+        counter_in_export => std_logic_vector(mscb_counter_in),
 
         rst_reset_n => nios_reset_n,
         clk_clk => nios_clk--,
@@ -382,6 +402,22 @@ begin
         & "0001";
 
     ----------------------------------------------------------------------------
+
+
+
+    ----------------------------------------------------------------------------
+    -- MSCB
+    i_mscb : entity work.mscb
+    port map (
+        nios_clk                    => nios_clk,
+        reset                       => not nios_reset_n,
+        mscb_to_nios_parallel_in    => mscb_to_nios_parallel_in,
+        mscb_from_nios_parallel_out => mscb_from_nios_parallel_out,
+        mscb_data_in                => mscb_data_in,
+        mscb_data_out               => mscb_data_out,
+        mscb_oe                     => mscb_oe,
+        mscb_counter_in             => mscb_counter_in--,
+    );
 
 
 
