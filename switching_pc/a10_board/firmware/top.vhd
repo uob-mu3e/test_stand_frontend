@@ -224,13 +224,29 @@ architecture rtl of top is
 		signal mem_data_out : std_logic_vector(127 downto 0);
 		signal mem_datak_out : std_logic_vector(15 downto 0);
 		
-		-- dma slow down
+		-- dma control
 		signal dma_control_wren 		: std_logic;
 		signal dma_control_counter		: std_logic_vector(15 downto 0);
 		signal dma_control_prev_rdreq : std_logic_vector(15 downto 0);
 		type event_counter_state_type is (waiting, ending);
 		signal event_counter_state : event_counter_state_type;
-		
+		signal event_tagging_state : event_counter_state_type;
+		signal w_ram_en	 : std_logic;
+		signal w_fifo_en	 : std_logic;
+		signal w_fifo_data : std_logic_vector(11 downto 0);
+		signal w_ram_data	 : std_logic_vector(31 downto 0);
+		signal w_ram_add	 : std_logic_vector(11 downto 0);
+		signal tag_fifo_empty : std_logic;
+		signal r_fifo_data : std_logic_vector(11 downto 0);
+		signal r_fifo_en : std_logic;
+		signal r_ram_data : std_logic_vector(31 downto 0);
+		signal r_ram_add  : std_logic_vector(11 downto 0);
+		signal event_last_ram_add : std_logic_vector(11 downto 0);
+		signal data_pix_generated : std_logic_vector(31 downto 0);
+		signal data_pix_ready : std_logic;
+		signal data_pix_generated2 : std_logic_vector(31 downto 0);
+		signal data_pix_ready2 : std_logic;
+		signal event_length : std_logic_vector(11 downto 0);
 		
 begin 
 
@@ -617,63 +633,172 @@ begin
 	end if;
 end process;
 
--- dma write control:
-process(pcie_fastclk_out)
+-- data generator
+e_data_gen : component data_generator_a10
+	port map (
+		clk 						=> pcie_fastclk_out,
+		reset						=> reset,
+		enable_pix	         => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL),
+		random_seed 			=> (others => '1'),
+		data_pix_generated   => data_pix_generated,
+		data_pix_ready			=>	data_pix_ready,
+		start_global_time		=> (others => '0')--,
+);
+e_data_gen2 : component data_generator_a10
+	port map (
+		clk 						=> pcie_fastclk_out,
+		reset						=> reset,
+		enable_pix	         => '1',
+		random_seed 			=> (others => '1'),
+		data_pix_generated   => data_pix_generated2,
+		data_pix_ready			=>	data_pix_ready2,
+		start_global_time		=> (others => '0')--,
+);
+-- link data to dma ram
+process(pcie_fastclk_out, reset_n)
 begin
-	if(rising_edge(pcie_fastclk_out)) then
-		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE)) then
-			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
-			dma_control_counter	  	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
-			dma_control_wren	    <= '0';
-		elsif(dma_control_counter = x"0000") then
-			dma_control_wren	    <= '0';
-		else 
-			dma_control_wren	    <= '1';
-			dma_control_counter 	<= dma_control_counter - '1';
+	if(reset_n = '0') then
+		event_tagging_state 	<= waiting;
+		w_ram_en					<= '0';
+		w_fifo_en				<= '0';
+		w_fifo_data				<= (others => '0');
+		w_ram_data				<= (others => '0');
+		w_ram_add				<= (others => '0');
+	elsif(rising_edge(pcie_fastclk_out)) then
+	
+		w_ram_en		<= '0';
+		w_fifo_en	<= '0';
+
+		if (data_pix_ready = '1') then
+			case event_tagging_state is
+
+				when waiting =>
+					--if((rx_data(0)(31 downto 26) = "111010") and (rx_data(0)(7 downto 0) = x"bc") and (rx_datak(0) = "0001")) then -- saw mupix preamble
+					if((data_pix_generated(31 downto 26) = "111010") and (data_pix_generated(7 downto 0) = x"bc")) then -- saw mupix preamble
+						w_ram_en				  <= '1';
+						--w_ram_data  		  <= rx_data(0);
+						w_ram_data  		  <= data_pix_generated;
+						event_tagging_state <= ending;
+					end if;
+					
+				when ending =>
+					w_ram_add 	<= w_ram_add + 1;
+					w_ram_en		<= '1';
+					--w_ram_data  		  <= rx_data(0);
+					w_ram_data  		  <= data_pix_generated;
+					--if(rx_data(0)(7 downto 0) = x"9c" and rx_datak(0) = "0001") then -- saw trailer
+					if(data_pix_generated(7 downto 0) = x"9c") then -- saw trailer
+						w_fifo_data <= w_ram_add + 1;
+						w_fifo_en   <= '1';
+						event_tagging_state <= waiting;
+					end if;
+					
+				when others =>
+					event_tagging_state <= waiting;
+
+			end case;
 		end if;
 	end if;
 end process;
 
--- dma end of events and count events
+e_ram : component ip_ram
+  port map (
+		data      => w_ram_data,
+		wraddress => w_ram_add,
+		rdaddress => r_ram_add,
+		wren      => w_ram_en,
+		clock     => pcie_fastclk_out,
+		q         => r_ram_data
+);
+  
+e_tagging_fifo : component ip_tagging_fifo
+  port map (
+		data  => w_fifo_data,
+		wrreq => w_fifo_en,
+		rdreq => r_fifo_en,
+		clock => pcie_fastclk_out,
+		q     => r_fifo_data,
+		full  => open,
+		empty => tag_fifo_empty
+);
+
+---- dma write control
+--process(pcie_fastclk_out)
+--begin
+--	if(rising_edge(pcie_fastclk_out)) then
+--		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE)) then
+--			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
+--			dma_control_counter	  	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
+--			dma_control_wren	    <= '0';
+--		elsif(dma_control_counter = x"0000") then
+--			dma_control_wren	    <= '0';
+--		else 
+--			dma_control_wren	    <= '1';
+--			dma_control_counter 	<= dma_control_counter - '1';
+--		end if;
+--	end if;
+--end process;
+
+
+-- dma end of events, count events and write control
 process(pcie_fastclk_out, reset_n)
 begin
 	if(reset_n = '0') then
-		event_counter 		<= (others => '0');
-		dmamem_endofevent 	<= '0';
-		event_counter_state <= waiting;	
-	elsif(rising_edge(pcie_fastclk_out)) then
 		dmamem_endofevent 		<= '0';
+		r_fifo_en					<= '0';
+		dma_control_wren	    	<= '0';
+		dma_control_prev_rdreq	<= (others => '0');
+		dma_control_counter 		<= (others => '0');
+		event_length				<= (others => '0');
+		r_ram_add					<= (others => '0');
+		event_last_ram_add		<= (others => '0');
+		event_counter_state 		<= waiting;	
+	elsif(rising_edge(pcie_fastclk_out)) then
+	
+		dmamem_endofevent <= '0';
+		r_fifo_en			<= '0';
+	
+		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE)) then
+			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
+			dma_control_counter	  	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
+			dma_control_wren	    	<= '0';
+		elsif(dma_control_counter = x"0000") then
+			dma_control_wren	    	<= '0';
+		else
+			
+			case event_counter_state is
 
-		if(dma_control_wren = '0') then
-			event_counter <= (others => '0');
-		end if;
+				when waiting =>
+					if (tag_fifo_empty = '0') then
+						event_last_ram_add  			<= r_fifo_data;
+						event_length					<= r_fifo_data - event_last_ram_add;
+						event_counter(11 downto 0) <= r_fifo_data;	
+						r_fifo_en    		  			<= '1';
+						r_ram_add			  			<= r_ram_add + '1';
+						dma_control_wren	  			<= '1';
+						event_counter_state 			<= ending;
+					end if;
+					
+				when ending =>
+					r_ram_add <= r_ram_add + '1';
+					if(r_ram_add = event_last_ram_add) then
+						dma_control_counter 	<= dma_control_counter - '1';
+						dmamem_endofevent   	<= '1';
+						event_counter_state 	<= waiting;
+					end if;
+					
+				when others =>
+					event_counter_state 		<= waiting;
 
-		case event_counter_state is
-
-			when waiting =>
-				if((rx_data(0)(31 downto 26) = "1110101") and (rx_data(0)(8 downto 0) = x"bc") and rx_datak(0) = "0001") then -- saw mupix preamble
-					event_counter <= event_counter + '1';
-					length_event <= (others => '0');
-					event_counter_state <= ending;
-				end if;
-			when ending =>
-				length_event <= length_event + '1';
-				if(rx_data(0)(7 downto 0) = x"9c" and rx_datak(0) = "0001") then -- saw trailer
-					dmamem_endofevent 	<= '1';
-					dma_length_last_event <= length_event;
-					event_counter_state <= waiting;
-				end if;
-			when others =>
-				event_counter_state <= waiting;
-
-		end case;
-
+			end case;
+						
+		end if;		
 	end if;
 end process;
 
 readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
-dmamem_wren 				<= dma_control_wren;--writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE);
-pb_in 						<= push_button0_db & push_button1_db & push_button2_db;
+dmamem_wren 					<= dma_control_wren;--writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE);
+pb_in 							<= push_button0_db & push_button1_db & push_button2_db;
 
 pcie_b : entity work.pcie_block 
 	generic map(
@@ -723,14 +848,14 @@ pcie_b : entity work.pcie_block
 		readmem_endofevent		=> readmem_endofevent,
 
 		-- dma memory 
-		dma_data 				=> rx_data(0) 	& 
-										x"0ABACAFE" &
-										x"1ABACAFE" &
+		dma_data 				=> X"00000" & event_length &
+										r_ram_data 	& --rx_data(0) 	& 
+										data_pix_generated &
+										data_pix_generated2 &
 										x"2ABACAFE" &
 										x"3ABACAFE" &
 										x"4ABACAFE" &
-										x"5ABACAFE" &
-										X"6ABACAFE",
+										x"5ABACAFE",										
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
 		dmamem_wren				=> dmamem_wren,--'1',
 		dmamem_endofevent		=> dmamem_endofevent,
