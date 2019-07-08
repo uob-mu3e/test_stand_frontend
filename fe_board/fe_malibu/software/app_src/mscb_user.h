@@ -506,7 +506,7 @@ void mscb_uart_handler(void)
    // drop partial buffer if no char received for 100 ms
    int now = get_times();
    //printf("i_in %d , time passed %f\n",i_in,time_diff(last_received,now));
-   if (i_in > 0 && time_diff(last_received,now) > 5000) {
+   if (i_in > 0 && time_diff(last_received,now) > 12500) {
       i_in = 0;//printf("resseting buffer\n");
    }
 
