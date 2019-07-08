@@ -37,11 +37,12 @@ begin
     generic map (
         N => N,
         W => 10,
-        PLL_FREQ => 160,
+        PLL_FREQ => 160.0,
         DATA_RATE => 160--,
     )
     port map (
         rx_channel_data_align => not rx_channel_data_align_n(1 downto 0),
+        rx_fifo_reset => (others => reset),
         rx_in => rx_data,
         rx_inclock => rx_clk,
         rx_reset => (others => reset),
