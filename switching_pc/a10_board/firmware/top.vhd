@@ -638,14 +638,14 @@ end process;
 process(pcie_fastclk_out, reset_n)
 begin
 	if(reset_n = '0') then
-		event_counter 		<= (others <= '0');
+		event_counter 		<= (others => '0');
 		dmamem_endofevent 	<= '0';
-		event_counter_state <= waiting;
+		event_counter_state <= waiting;	
 	elsif(rising_edge(pcie_fastclk_out)) then
 		dmamem_endofevent 		<= '0';
 
 		if(dma_control_wren = '0') then
-			event_counter <= (others <= '0');
+			event_counter <= (others => '0');
 		end if;
 
 		case event_counter_state is
@@ -653,11 +653,14 @@ begin
 			when waiting =>
 				if((rx_data(0)(31 downto 26) = "1110101") and (rx_data(0)(8 downto 0) = x"bc") and rx_datak(0) = "0001") then -- saw mupix preamble
 					event_counter <= event_counter + '1';
+					length_event <= (others => '0');
 					event_counter_state <= ending;
 				end if;
 			when ending =>
-				if(rx_data(0) = x"0000009c" and rx_datak(0) = "0001") then -- saw trailer
+				length_event <= length_event + '1';
+				if(rx_data(0)(7 downto 0) = x"9c" and rx_datak(0) = "0001") then -- saw trailer
 					dmamem_endofevent 	<= '1';
+					dma_length_last_event <= length_event;
 					event_counter_state <= waiting;
 				end if;
 			when others =>
@@ -720,7 +723,7 @@ pcie_b : entity work.pcie_block
 		readmem_endofevent		=> readmem_endofevent,
 
 		-- dma memory 
-		dma_data 				=> 		rx_data(0) 	& 
+		dma_data 				=> rx_data(0) 	& 
 										x"0ABACAFE" &
 										x"1ABACAFE" &
 										x"2ABACAFE" &
