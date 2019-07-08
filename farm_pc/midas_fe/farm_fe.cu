@@ -169,7 +169,7 @@ INT frontend_init()
    // switch off the data generator (just in case..)
    mup->write_register(DATAGENERATOR_REGISTER_W, 0x0);
    usleep(2000);
-   mup->write_register(LED_REGISTER_W,0x0);
+   mup->write_register(DMA_CONTROL_REGISTER_W,0x0);
    usleep(5000);
    
    // create ring buffer for readout thread
@@ -280,7 +280,7 @@ INT end_of_run(INT run_number, char *error)
    uint32_t datagen_setup = mu.read_register_rw(DATAGENERATOR_REGISTER_W);
    datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
    //mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
-   mu.write_register(LED_REGISTER_W,0x0);
+   mu.write_register(DMA_CONTROL_REGISTER_W,0x0);
    mu.write_register(DATAGENERATOR_REGISTER_W, 0x0);
    usleep(100000); // wait for remianing data to be pushed
    mu.disable(); // disable DMA
@@ -425,10 +425,10 @@ INT read_stream_thread(void *param)
            // we are at mu.last_written_addr() ...  ask for a new bunch of x 256-bit words
             readindex = mu.last_written_addr();
             //cout<<"readindex: "<< readindex <<endl;
-            mu.write_register(LED_REGISTER_W,0x00010000);
-            ss_sleep(10);
-            mu.write_register(LED_REGISTER_W,0x0);
-            ss_sleep(10);
+            mu.write_register(DMA_CONTROL_REGISTER_W,0x00010000);
+            ss_sleep(5);
+            mu.write_register(DMA_CONTROL_REGISTER_W,0x0);
+            ss_sleep(5);
             blockNumber=0;
       }
       blockNumber++;

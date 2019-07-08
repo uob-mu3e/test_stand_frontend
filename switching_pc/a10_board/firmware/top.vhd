@@ -621,9 +621,9 @@ end process;
 process(pcie_fastclk_out)
 begin
 	if(rising_edge(pcie_fastclk_out)) then
-		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE)) then
-			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
-			dma_control_counter	  	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
+		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_REGISTER_W)(DMA_CONTROL_COUNTER_RANGE)) then
+			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_REGISTER_W)(DMA_CONTROL_COUNTER_RANGE);
+			dma_control_counter	  	<= writeregs(DMA_CONTROL_REGISTER_W)(DMA_CONTROL_COUNTER_RANGE);
 			dma_control_wren	    <= '0';
 		elsif(dma_control_counter = x"0000") then
 			dma_control_wren	    <= '0';

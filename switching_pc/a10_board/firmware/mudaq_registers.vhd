@@ -34,8 +34,8 @@ package mudaq_registers is
 		
 		constant KWORD_W											: integer := 16#04#;
 
-		constant DMA_CONTROL_W								: integer := 16#03#;
-			subtype DMA_CONTROL_COUNTER_RANGE 				is integer range 15 downto 0;
+		constant DMA_CONTROL_REGISTER_W								: integer := 16#05#;
+        subtype DMA_CONTROL_COUNTER_RANGE 				is integer range 15 downto 0;
 
 		-- Registers above 0x36 are in use for the PCIe controller/DMA
 		constant DMA2_CTRL_ADDR_LOW_REGISTER_W				: integer := 16#36#;
