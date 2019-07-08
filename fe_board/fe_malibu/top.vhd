@@ -99,9 +99,6 @@ architecture arch of top is
 
     signal malibu_clk : std_logic;
     signal malibu_rx_data_clk : std_logic;
-    signal malibu_rx_data : std_logic_vector(15 downto 0);
-    signal malibu_rx_datak : std_logic_vector(1 downto 0);
-    signal malibu_word : std_logic_vector(47 downto 0);
 
     signal fifo_data : std_logic_vector(35 downto 0);
     signal fifo_data_empty, fifo_data_read : std_logic;
@@ -263,24 +260,16 @@ begin
     generic map ( P => 125 )
     port map ( clkout => malibu_pll_test, rst_n => reset_n, clk => clk_aux );
 
-    e_malibu : entity work.malibu_dec
-    generic map (
-        N => 2--,
-    )
-    port map (
-        data_clk    => malibu_rx_data_clk,
-        data        => malibu_rx_data,
-        datak       => malibu_rx_datak,
-
-        rx_data => malibu_data(1 downto 0),
-        rx_clk  => malibu_clk,
-
-        reset   => not reset_n--,
-    );
+    -- 16 MHz
+    e_malibu_rx_data_clk_hz : entity work.clkdiv
+    generic map ( P => 16000000 )
+    port map ( clkout => led(8), rst_n => reset_n, clk => malibu_rx_data_clk );
 
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (
-        N_ASICS => 1--,
+        N_ASICS => 1,
+        LVDS_PLL_FREQ => 160.0,
+        LVDS_DATA_RATE => 160--,
     )
     port map (
         i_rst => not reset_n,
@@ -302,12 +291,12 @@ begin
         i_SC_datagen_shortmode => '0',
         i_SC_datagen_count => (others => '0'),
         --monitors
-        o_receivers_usrclk => open,
+        o_receivers_usrclk => malibu_rx_data_clk,
         o_receivers_pll_lock => open,
         o_receivers_dpa_lock=> open,
-        o_receivers_ready => open,
-        o_frame_desync => open,
-        o_buffer_full => open--,
+        o_receivers_ready(0) => led(9),
+        o_frame_desync => led(10),
+        o_buffer_full => led(11)--,
     );
 
     ----------------------------------------------------------------------------

@@ -13,8 +13,10 @@ use work.mutrig_constants.all;
 
 entity mutrig_datapath is
 generic(
-	N_ASICS : integer :=1;
-	GEN_DUMMIES : boolean :=TRUE
+	N_ASICS : positive := 1;
+	LVDS_PLL_FREQ : real := 125.0;
+	LVDS_DATA_RATE : positive := 1250;
+	GEN_DUMMIES : boolean := TRUE
 );
 port (
 	i_rst			: in  std_logic;				-- logic reset
@@ -46,29 +48,6 @@ end entity mutrig_datapath;
 
 
 architecture RTL of mutrig_datapath is
--- component declarations
-component receiver_block is 
-	generic(
-		NINPUT: integer
-	);
-	port (
-		reset_n			: in std_logic;
-		reset_n_errcnt		: in std_logic;
-		rx_in			: in std_logic_vector(NINPUT-1 downto 0);
-		rx_inclock		: in std_logic;
-		rx_state		: out std_logic_vector(2*NINPUT-1 downto 0);
-		rx_ready		: out std_logic_vector(NINPUT-1 downto 0);
-		rx_data			: out std_logic_vector(NINPUT*8-1 downto 0);
-		rx_k			: out std_logic_vector(NINPUT-1 downto 0);
-		rx_clkout		: out std_logic;
-		pll_locked		: out std_logic;
-
-		rx_dpa_locked_out	:out std_logic_vector(NINPUT-1 downto 0);
-	
-		rx_runcounter		:out links_reg32;
-		rx_errorcounter		:out links_reg32
-	);
-end component;
 
 component frame_rcv is
 	generic (
@@ -244,9 +223,11 @@ signal s_timecounter    : t_array_64b;
 
 
 begin
-u_rxdeser: receiver_block
+u_rxdeser: entity work.receiver_block
 generic map(
-	NINPUT => N_ASICS
+	NINPUT => N_ASICS,
+	LVDS_PLL_FREQ => LVDS_PLL_FREQ,
+	LVDS_DATA_RATE => LVDS_DATA_RATE--,
 )
 port map(
 	reset_n			=> not i_rst,
