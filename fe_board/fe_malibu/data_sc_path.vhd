@@ -14,11 +14,15 @@ port (
     i_sc_writedata      : in    std_logic_vector(31 downto 0);
     o_sc_waitrequest    : out   std_logic;
 
-    i_data              : in    std_logic_vector(31 downto 0);
-    i_datak             : in    std_logic_vector(3 downto 0);
+    i_fifo_data         : in    std_logic_vector(35 downto 0);
+    i_fifo_data_empty   : in    std_logic;
+    o_fifo_data_read    : out   std_logic;
 
-    o_data              : out   std_logic_vector(31 downto 0);
-    o_datak             : out   std_logic_vector(3 downto 0);
+    i_link_data         : in    std_logic_vector(31 downto 0);
+    i_link_datak        : in    std_logic_vector(3 downto 0);
+
+    o_link_data         : out   std_logic_vector(31 downto 0);
+    o_link_datak        : out   std_logic_vector(3 downto 0);
 
     i_reset             : in    std_logic;
     i_clk               : in    std_logic--;
@@ -77,8 +81,8 @@ begin
 
         mem_data_in => ram_rdata_a,
 
-        link_data_in => i_data(31 downto 0),
-        link_data_in_k => i_datak(3 downto 0),
+        link_data_in => i_link_data(31 downto 0),
+        link_data_in_k => i_link_datak(3 downto 0),
 
         fifo_data_out => sc_to_fifo,
         fifo_we => sc_to_fifo_we,
@@ -125,14 +129,14 @@ begin
         state_sync_test         => '0',
         state_reset             => '0',
         state_out_of_DAQ        => '0',
-        data_out                => o_data(31 downto 0),
-        data_is_k               => o_datak(3 downto 0),
-        data_in                 => data_from_fifo,
+        data_out                => o_link_data(31 downto 0),
+        data_is_k               => o_link_datak(3 downto 0),
+        data_in                 => i_fifo_data,
         data_in_slowcontrol     => sc_from_fifo,
         slowcontrol_fifo_empty  => sc_from_fifo_empty,
-        data_fifo_empty         => '1',--data_from_fifo_empty,
+        data_fifo_empty         => i_fifo_data_empty,
         slowcontrol_read_req    => sc_from_fifo_re,
-        data_read_req           => data_from_fifo_re,
+        data_read_req           => o_fifo_data_read,
         terminated              => open,
         override_data_in        => (others => '0'),
         override_data_is_k_in   => (others => '0'),

@@ -100,6 +100,11 @@ architecture arch of top is
     signal malibu_rx_datak : std_logic_vector(1 downto 0);
     signal malibu_word : std_logic_vector(47 downto 0);
 
+    signal fifo_data : std_logic_vector(35 downto 0);
+    signal fifo_data_empty, fifo_data_read : std_logic;
+
+
+
     signal avm_pod, avm_qsfp : work.util.avalon_t;
 
     signal qsfp_tx_data : std_logic_vector(127 downto 0);
@@ -273,39 +278,23 @@ begin
         reset   => not reset_n--,
     );
 
-    e_frame_rcv : entity work.frame_rcv
-    port map (
-        i_rst => not reset_n,
-        i_clk => malibu_rx_data_clk,
-        i_data => malibu_rx_data(7 downto 0),
-        i_byteisk => malibu_rx_datak(0),
-        i_dser_no_sync => '0',
-
-        o_frame_number => open,
-        o_frame_info => open,
-        o_frame_info_ready => open,
-        o_new_frame => open,
-        o_word => malibu_word,
-        o_new_word => open,
-
-        o_end_of_frame => open,
-        o_crc_error => open,
-        o_crc_err_count => open--,
-    );
-
     e_mutrig_datapath : entity work.mutrig_datapath
+    generic map (
+        N_ASICS => 1--,
+    )
     port map (
         i_rst => not reset_n,
         i_stic_txd => malibu_data(0 downto 0),
-        i_refclk_125 => clk_aux,
-        i_ts_clk => clk_aux,
+        i_refclk_125 => malibu_clk,
+        i_ts_clk => malibu_clk,
         i_ts_rst => not reset_n,
 
         --interface to asic fifos
-        i_clk_core => '0',
-        o_fifo_empty => open,
-        o_fifo_data => open,
-        i_fifo_rd => '1',
+        i_clk_core => qsfp_pll_clk,
+        o_fifo_empty => fifo_data_empty,
+        o_fifo_data => fifo_data,
+        i_fifo_rd => fifo_data_read,
+
         --slow control
         i_SC_disable_dec => '0',
         i_SC_mask => (others => '0'),
@@ -325,7 +314,7 @@ begin
 
 
 
-    e_data_geg : entity work.data_sc_path
+    e_data_sc_path : entity work.data_sc_path
     port map (
         i_sc_address        => avm_sc.address(17 downto 2),
         i_sc_read           => avm_sc.read,
@@ -334,11 +323,15 @@ begin
         i_sc_writedata      => avm_sc.writedata,
         o_sc_waitrequest    => avm_sc.waitrequest,
 
-        i_data              => qsfp_rx_data(31 downto 0),
-        i_datak             => qsfp_rx_datak(3 downto 0),
+        i_fifo_data         => fifo_data,
+        i_fifo_data_empty   => fifo_data_empty,
+        o_fifo_data_read    => fifo_data_read,
 
-        o_data              => qsfp_tx_data(31 downto 0),
-        o_datak             => qsfp_tx_datak(3 downto 0),
+        i_link_data         => qsfp_rx_data(31 downto 0),
+        i_link_datak        => qsfp_rx_datak(3 downto 0),
+
+        o_link_data         => qsfp_tx_data(31 downto 0),
+        o_link_datak        => qsfp_tx_datak(3 downto 0),
 
         i_reset             => reset_n,
         i_clk               => qsfp_pll_clk--,
