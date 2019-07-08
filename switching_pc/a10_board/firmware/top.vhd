@@ -226,8 +226,8 @@ architecture rtl of top is
 		
 		-- dma slow down
 		signal dma_control_wren 		: std_logic;
-		signal dma_control_counter		: std_logic_vector(15 downto 0);
-		signal dma_control_prev_rdreq : std_logic_vector(15 downto 0);
+		signal dma_control_counter		: std_logic_vector(31 downto 0);
+		signal dma_control_prev_rdreq : std_logic_vector(31 downto 0);
 		type event_counter_state_type is (waiting, ending);
 		signal event_counter_state : event_counter_state_type;
 		
@@ -621,11 +621,11 @@ end process;
 process(pcie_fastclk_out)
 begin
 	if(rising_edge(pcie_fastclk_out)) then
-		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_REGISTER_W)(DMA_CONTROL_COUNTER_RANGE)) then
-			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_REGISTER_W)(DMA_CONTROL_COUNTER_RANGE);
-			dma_control_counter	  	<= writeregs(DMA_CONTROL_REGISTER_W)(DMA_CONTROL_COUNTER_RANGE);
+		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_REGISTER_W) then
+			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_REGISTER_W);
+			dma_control_counter	  	<= writeregs(DMA_CONTROL_REGISTER_W);
 			dma_control_wren	    <= '0';
-		elsif(dma_control_counter = x"0000") then
+		elsif(dma_control_counter = x"00000000") then
 			dma_control_wren	    <= '0';
 		else 
 			dma_control_wren	    <= '1';
@@ -672,7 +672,7 @@ begin
 end process;
 
 readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
-dmamem_wren 				<= dma_control_wren;--writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE);
+dmamem_wren 				<= (insert_data_available_signal_here and dma_control_wren);
 pb_in 						<= push_button0_db & push_button1_db & push_button2_db;
 
 pcie_b : entity work.pcie_block 
@@ -732,7 +732,7 @@ pcie_b : entity work.pcie_block
 										x"5ABACAFE" &
 										X"6ABACAFE",
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
-		dmamem_wren				=> dmamem_wren,--'1',
+		dmamem_wren				=> dmamem_wren,
 		dmamem_endofevent		=> dmamem_endofevent,
 		dmamemhalffull			=> open,--dmamemhalffull,
 

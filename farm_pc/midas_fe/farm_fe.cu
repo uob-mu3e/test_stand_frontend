@@ -54,8 +54,6 @@ bool moreevents;
 bool firstevent;
 ofstream myfile;
 
-int blockNumber;
-
 mudaq::DmaMudaqDevice * mup;
 mudaq::DmaMudaqDevice::DataBlock block;
 
@@ -213,7 +211,6 @@ INT begin_of_run(INT run_number, char *error)
    readindex = 0;
    moreevents = false;
    firstevent = true;
-   blockNumber = 0;
    
    // Reset dma part and data generator
    uint32_t reset_reg =0;
@@ -404,9 +401,17 @@ INT read_stream_event(char *pevent, INT off)
 
 INT read_stream_thread(void *param)
 {
+    // we are at mu.last_written_addr() ...  ask for a new bunch of x 256-bit words
+     //cout<<"readindex: "<< readindex <<endl;
+
+
    mudaq::DmaMudaqDevice & mu = *mup;
    //uint32_t addr = mu.last_written_addr();
    readindex = 0;
+   int aliveCounter = 0;
+   int destination_addr = 0;
+   int lastWritten = 0;
+   int event_length=0;
    EVENT_HEADER *pEventHeader;
    void *pEventData;
    DWORD *pdata;
@@ -420,18 +425,15 @@ INT read_stream_thread(void *param)
    int rbh = get_event_rbh(0);
    
    while (is_readout_thread_enabled()) {
-      
-       if(blockNumber == 8){
-           // we are at mu.last_written_addr() ...  ask for a new bunch of x 256-bit words
-            readindex = mu.last_written_addr();
-            //cout<<"readindex: "<< readindex <<endl;
-            mu.write_register(DMA_CONTROL_REGISTER_W,0x00010000);
-            ss_sleep(5);
+      lastWritten = mu.last_written_addr();
+
+      if(aliveCounter == 1000){// alive countdown in firmware : no change in this reg for x cycles --> stop dma
+            mu.write_register(DMA_CONTROL_REGISTER_W,0x017D7840); // 25 M cycles (100 ms)
+            //ss_sleep(5);
             mu.write_register(DMA_CONTROL_REGISTER_W,0x0);
-            ss_sleep(5);
-            blockNumber=0;
+            aliveCounter=0;
       }
-      blockNumber++;
+      aliveCounter++;
       
       // obtain buffer space
       status = rb_get_wp(rbh, (void **)&pEventHeader, 0);
@@ -454,8 +456,21 @@ INT read_stream_thread(void *param)
 
          continue;
       }
-      
-      // check for new event
+
+      // do not overtake dma engine
+      if(readindex == lastWritten)
+          continue;
+
+      // end of event reached, read length of next event
+      if(readindex==destination_addr){
+          event_length = 8*dma_buf[(readindex)%dma_buf_nwords];
+          destination_addr = (readindex + event_length + 1)%dma_buf_nwords;
+          readindex++;
+      }else{
+          cout<<"ERROR: readindex != destination addr"<<endl;
+          break;
+      }
+
       status = TRUE;
       if (status) {
          bm_compose_event(pEventHeader, equipment[0].info.event_id, 0, 0, equipment[0].serial_number++);
@@ -467,8 +482,7 @@ INT read_stream_thread(void *param)
          // create "HEAD" bank
          bk_create(pEventData, "HEAD", TID_DWORD, (void **)&pdata);
          //cout<<"creating event"<<endl;
-         for (int i=0 ; i< 65536; i++){
-            //*pdata++ = rand();
+         for (int i=0 ; i< event_length; i++){
             *pdata++ = dma_buf[(++readindex)%dma_buf_nwords];
          }
          bk_close(pEventData, pdata);
