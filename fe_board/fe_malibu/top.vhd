@@ -64,6 +64,7 @@ port (
     mscb_data_out   : out   std_logic;
     mscb_oe         : out   std_logic;
 
+    --
 
 
     led_n       : out   std_logic_vector(15 downto 0);
@@ -93,6 +94,8 @@ architecture arch of top is
     signal i2c_scl_in, i2c_scl_oe, i2c_sda_in, i2c_sda_oe : std_logic;
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n : std_logic_vector(1 downto 0);
+
+
 
     signal malibu_clk : std_logic;
     signal malibu_rx_data_clk : std_logic;
@@ -124,9 +127,6 @@ architecture arch of top is
 begin
 
     led_n <= not led;
-
-    led(8) <= PushButton(0);
-    led(9) <= PushButton(1);
 
     -- 125 MHz
     e_clk_aux_hz : entity work.clkdiv
