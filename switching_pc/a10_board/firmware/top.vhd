@@ -226,8 +226,8 @@ architecture rtl of top is
 		
 		-- dma control
 		signal dma_control_wren 		: std_logic;
-		signal dma_control_counter		: std_logic_vector(15 downto 0);
-		signal dma_control_prev_rdreq : std_logic_vector(15 downto 0);
+		signal dma_control_counter		: std_logic_vector(31 downto 0);
+		signal dma_control_prev_rdreq : std_logic_vector(31 downto 0);
 		type event_counter_state_type is (waiting, ending);
 		signal event_counter_state : event_counter_state_type;
 		signal event_tagging_state : event_counter_state_type;
@@ -797,8 +797,9 @@ begin
 end process;
 
 readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
-dmamem_wren 					<= dma_control_wren;--writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE);
+dmamem_wren 					<= dma_control_wren;--(insert_data_available_signal_here and dma_control_wren);
 pb_in 							<= push_button0_db & push_button1_db & push_button2_db;
+
 
 pcie_b : entity work.pcie_block 
 	generic map(
@@ -857,7 +858,7 @@ pcie_b : entity work.pcie_block
 										x"4ABACAFE" &
 										x"5ABACAFE",										
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
-		dmamem_wren				=> dmamem_wren,--'1',
+		dmamem_wren				=> dmamem_wren,
 		dmamem_endofevent		=> dmamem_endofevent,
 		dmamemhalffull			=> open,--dmamemhalffull,
 
