@@ -9,7 +9,7 @@ set_project_property HIDE_FROM_IP_CATALOG {true}
 
 # Instances and instance parameters
 # (disabled instances are intentionally culled)
-add_instance emif_0 altera_emif 17.1
+add_instance emif_0 altera_emif 18.1
 set_instance_parameter_value emif_0 {BOARD_DDR3_AC_TO_CK_SKEW_NS} {0.0}
 set_instance_parameter_value emif_0 {BOARD_DDR3_BRD_SKEW_WITHIN_AC_NS} {0.02}
 set_instance_parameter_value emif_0 {BOARD_DDR3_BRD_SKEW_WITHIN_DQS_NS} {0.02}
@@ -468,7 +468,7 @@ set_instance_parameter_value emif_0 {MEM_DDR3_R_ODTN_4X2} {Rank\ 0 Rank\ 1 Rank\
 set_instance_parameter_value emif_0 {MEM_DDR3_R_ODTN_4X4} {Rank\ 0 Rank\ 1 Rank\ 2 Rank\ 3}
 set_instance_parameter_value emif_0 {MEM_DDR3_SPEEDBIN_ENUM} {DDR3_SPEEDBIN_2133}
 set_instance_parameter_value emif_0 {MEM_DDR3_SRT_ENUM} {DDR3_SRT_NORMAL}
-set_instance_parameter_value emif_0 {MEM_DDR3_TCL} {11}
+set_instance_parameter_value emif_0 {MEM_DDR3_TCL} {13}
 set_instance_parameter_value emif_0 {MEM_DDR3_TDH_DC_MV} {90}
 set_instance_parameter_value emif_0 {MEM_DDR3_TDH_PS} {60}
 set_instance_parameter_value emif_0 {MEM_DDR3_TDQSCK_PS} {180}

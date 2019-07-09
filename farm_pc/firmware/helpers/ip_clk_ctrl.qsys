@@ -6,7 +6,7 @@
    version="1.0"
    description=""
    tags="INTERNAL_COMPONENT=true"
-   categories="" />
+   categories="System" />
  <parameter name="bonusData"><![CDATA[bonusData 
 {
    element altclkctrl_0
@@ -20,9 +20,9 @@
 }
 ]]></parameter>
  <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
- <parameter name="device" value="10AX115N3F45E2SG" />
+ <parameter name="device" value="10AX115N2F45E1SG" />
  <parameter name="deviceFamily" value="Arria 10" />
- <parameter name="deviceSpeedGrade" value="2" />
+ <parameter name="deviceSpeedGrade" value="1" />
  <parameter name="fabricMode" value="QSYS" />
  <parameter name="generateLegacySim" value="false" />
  <parameter name="generationId" value="0" />
@@ -55,7 +55,7 @@
  <module
    name="altclkctrl_0"
    kind="altclkctrl"
-   version="18.0"
+   version="18.1"
    enabled="1"
    autoexport="1">
   <parameter name="CLOCK_TYPE" value="0" />

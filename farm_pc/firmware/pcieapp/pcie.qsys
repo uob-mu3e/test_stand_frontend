@@ -437,7 +437,7 @@
  <module
    name="pcie_a10_hip_0"
    kind="altera_pcie_a10_hip"
-   version="18.0"
+   version="18.1"
    enabled="1"
    autoexport="1">
   <parameter name="AUTO_RXM_IRQ_INTERRUPTS_USED" value="-1" />
@@ -495,6 +495,7 @@
   <parameter name="dis_adapt" value="0" />
   <parameter name="dll_active_report_support_hwtcl" value="0" />
   <parameter name="dma_use_scfifo_ext_hwtcl" value="0" />
+  <parameter name="eco_fb332688_dis_hwtcl" value="0" />
   <parameter name="ecrc_check_capable_hwtcl" value="0" />
   <parameter name="ecrc_gen_capable_hwtcl" value="0" />
   <parameter name="enable_alternate_link_list_hwtcl" value="0" />
@@ -635,6 +636,24 @@
   <parameter name="pf0_virtio_pciconfig_access_bar_indicator_hwtcl" value="0" />
   <parameter name="pf0_virtio_pciconfig_access_bar_offset_hwtcl" value="0" />
   <parameter name="pf0_virtio_pciconfig_access_structure_length_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_capability_present_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_cmn_config_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_cmn_config_bar_offset_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_cmn_config_structure_length_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_device_specific_cap_present_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_devspecific_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_devspecific_bar_offset_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_devspecific_structure_length_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_isrstatus_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_isrstatus_bar_offset_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_isrstatus_structure_length_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_notification_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_notification_bar_offset_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_notification_structure_length_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_notify_off_multiplier_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_pciconfig_access_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_pciconfig_access_bar_offset_hwtcl" value="0" />
+  <parameter name="pf0vf_virtio_pciconfig_access_structure_length_hwtcl" value="0" />
   <parameter name="pf1_ats_invalidate_queue_depth_hwtcl" value="0" />
   <parameter name="pf1_bar0_prefetchable_hwtcl" value="1" />
   <parameter name="pf1_bar0_present_hwtcl" value="0" />
@@ -729,6 +748,24 @@
   <parameter name="pf1_virtio_pciconfig_access_bar_indicator_hwtcl" value="0" />
   <parameter name="pf1_virtio_pciconfig_access_bar_offset_hwtcl" value="0" />
   <parameter name="pf1_virtio_pciconfig_access_structure_length_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_capability_present_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_cmn_config_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_cmn_config_bar_offset_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_cmn_config_structure_length_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_device_specific_cap_present_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_devspecific_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_devspecific_bar_offset_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_devspecific_structure_length_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_isrstatus_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_isrstatus_bar_offset_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_isrstatus_structure_length_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_notification_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_notification_bar_offset_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_notification_structure_length_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_notify_off_multiplier_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_pciconfig_access_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_pciconfig_access_bar_offset_hwtcl" value="0" />
+  <parameter name="pf1vf_virtio_pciconfig_access_structure_length_hwtcl" value="0" />
   <parameter name="pf2_ats_invalidate_queue_depth_hwtcl" value="0" />
   <parameter name="pf2_bar0_prefetchable_hwtcl" value="1" />
   <parameter name="pf2_bar0_present_hwtcl" value="0" />
@@ -823,6 +860,24 @@
   <parameter name="pf2_virtio_pciconfig_access_bar_indicator_hwtcl" value="0" />
   <parameter name="pf2_virtio_pciconfig_access_bar_offset_hwtcl" value="0" />
   <parameter name="pf2_virtio_pciconfig_access_structure_length_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_capability_present_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_cmn_config_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_cmn_config_bar_offset_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_cmn_config_structure_length_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_device_specific_cap_present_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_devspecific_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_devspecific_bar_offset_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_devspecific_structure_length_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_isrstatus_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_isrstatus_bar_offset_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_isrstatus_structure_length_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_notification_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_notification_bar_offset_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_notification_structure_length_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_notify_off_multiplier_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_pciconfig_access_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_pciconfig_access_bar_offset_hwtcl" value="0" />
+  <parameter name="pf2vf_virtio_pciconfig_access_structure_length_hwtcl" value="0" />
   <parameter name="pf3_ats_invalidate_queue_depth_hwtcl" value="0" />
   <parameter name="pf3_bar0_prefetchable_hwtcl" value="1" />
   <parameter name="pf3_bar0_present_hwtcl" value="0" />
@@ -917,6 +972,24 @@
   <parameter name="pf3_virtio_pciconfig_access_bar_indicator_hwtcl" value="0" />
   <parameter name="pf3_virtio_pciconfig_access_bar_offset_hwtcl" value="0" />
   <parameter name="pf3_virtio_pciconfig_access_structure_length_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_capability_present_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_cmn_config_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_cmn_config_bar_offset_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_cmn_config_structure_length_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_device_specific_cap_present_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_devspecific_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_devspecific_bar_offset_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_devspecific_structure_length_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_isrstatus_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_isrstatus_bar_offset_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_isrstatus_structure_length_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_notification_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_notification_bar_offset_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_notification_structure_length_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_notify_off_multiplier_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_pciconfig_access_bar_indicator_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_pciconfig_access_bar_offset_hwtcl" value="0" />
+  <parameter name="pf3vf_virtio_pciconfig_access_structure_length_hwtcl" value="0" />
   <parameter name="pf4_bar0_prefetchable_hwtcl" value="1" />
   <parameter name="pf4_bar0_present_hwtcl" value="0" />
   <parameter name="pf4_bar0_size_hwtcl" value="12" />
@@ -1165,13 +1238,13 @@
   <parameter name="select_design_example_hwtcl" value="PIO" />
   <parameter name="select_design_example_rtl_lang_hwtcl" value="Verilog" />
   <parameter name="serial_sim_hwtcl" value="1" />
-  <parameter name="slave_address_map_0_hwtcl" value="4" />
-  <parameter name="slave_address_map_1_hwtcl" value="4" />
-  <parameter name="slave_address_map_2_hprxm_hwtcl" value="4" />
-  <parameter name="slave_address_map_2_hwtcl" value="4" />
-  <parameter name="slave_address_map_3_hwtcl" value="4" />
-  <parameter name="slave_address_map_4_hwtcl" value="4" />
-  <parameter name="slave_address_map_5_hwtcl" value="4" />
+  <parameter name="slave_address_map_0_hwtcl" value="0" />
+  <parameter name="slave_address_map_1_hwtcl" value="0" />
+  <parameter name="slave_address_map_2_hprxm_hwtcl" value="0" />
+  <parameter name="slave_address_map_2_hwtcl" value="0" />
+  <parameter name="slave_address_map_3_hwtcl" value="0" />
+  <parameter name="slave_address_map_4_hwtcl" value="0" />
+  <parameter name="slave_address_map_5_hwtcl" value="0" />
   <parameter name="slot_clock_cfg_hwtcl" value="1" />
   <parameter name="slot_number_hwtcl" value="0" />
   <parameter name="slot_power_limit_hwtcl" value="0" />

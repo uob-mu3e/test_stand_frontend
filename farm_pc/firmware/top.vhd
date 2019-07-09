@@ -981,9 +981,28 @@ pcie_b: pcie_block
 			A_counterr			=> readregs(DDR3_COUNTERR_A_R),
 			A_timecount			=> readregs(DDR3_TIMECOUNT_A_R),
 			
+			A_wrongdata			=> open,
+			A_wronglast			=> open,
+			
 			B_poserr				=> readregs(DDR3_POSERR_B_R),
 			B_counterr			=> readregs(DDR3_COUNTERR_B_R),
 			B_timecount			=> readregs(DDR3_TIMECOUNT_B_R),
+			
+			B_wrongdata(31 downto 0)			=> readregs(16#2B#),
+			B_wrongdata(63 downto 32)			=> readregs(16#2C#),
+			B_wrongdata(95 downto 64)			=> readregs(16#2D#),
+			B_wrongdata(127 downto 96)			=> readregs(16#2E#),
+			B_wrongdata(159 downto 128)		=> readregs(16#2F#),
+			B_wrongdata(191 downto 160)		=> readregs(16#30#),
+			B_wrongdata(223 downto 192)		=> readregs(16#31#),
+			B_wrongdata(255 downto 224)		=> readregs(16#32#),
+			B_wrongdata(287 downto 256)		=> readregs(16#33#),
+			B_wrongdata(319 downto 288)		=> readregs(16#34#),
+			B_wrongdata(351 downto 320)		=> readregs(16#35#),
+			B_wrongdata(383 downto 352)		=> readregs(16#36#),
+			B_wrongdata(415 downto 384)		=> readregs(16#37#),
+			
+			B_wronglast			=> readregs(16#2A#),
 
 			-- Interface to memory bank A
 			A_mem_ck              => DDR3A_CK,

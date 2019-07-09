@@ -30,12 +30,15 @@ entity ddr3_memory_controller is
 		poserr			: out reg32;
 		counterr			: out reg32;
 		timecount		: out reg32;
+		
+		wrongdata		: out std_logic_vector(511 downto 0);
+		wronglast		: out reg32;
 
 		-- IF to DDR3 
 		M_cal_success	:	in std_logic;
 		M_cal_fail		:	in	std_logic;
 		M_clk				:	in	std_logic;
-		M_reset			:	in	std_logic;
+		M_reset_n		:	in	std_logic;
 		M_ready			:	in	std_logic;
 		M_read			:	out std_logic;
 		M_write			:	out std_logic;
@@ -57,7 +60,9 @@ architecture RTL of ddr3_memory_controller is
 	signal counter_address			:  std_logic_vector(25 downto 0);
 	signal counter_writedata		:	std_logic_vector(511 downto 0);
 	signal counter_readdata			:	std_logic_vector(511 downto 0);
+	signal counter_readdata_reg	:	std_logic_vector(511 downto 0);
 	signal counter_readdatavalid	:  std_logic;
+	signal counter_readdatavalid_reg	:  std_logic;
 	signal counter_burstcount		:	std_logic_vector(6 downto 0);
 	
 	signal pcie_read					:	std_logic;
@@ -78,6 +83,7 @@ architecture RTL of ddr3_memory_controller is
 	signal Running		: std_logic;
 	
 	signal LastC		: std_logic_vector(27 downto 0);
+	signal LastLastC	: std_logic_vector(27 downto 0);
 	
 	signal check		: std_logic_vector(15 downto 0);
 	signal pcheck		: std_logic_vector(15 downto 0);
@@ -85,6 +91,8 @@ architecture RTL of ddr3_memory_controller is
 	signal poserr_reg		: reg32;
 	signal counterr_reg	: reg32;	
 	signal timecount_reg	: reg32;
+	
+	signal firsterror : std_logic;
 
 	
 begin
@@ -99,13 +107,20 @@ begin
 	-- Status register
 	ddr3status(0)	<= M_cal_success;
 	ddr3status(1)	<= M_cal_fail;
-	ddr3status(2)	<= M_reset;
+	ddr3status(2)	<= M_reset_n;
 	ddr3status(3)	<= M_ready;
+	
+	ddr3status(4)	<= '1' when counter_state = writing else
+							'0';
+	ddr3status(5)	<= '1' when counter_state = reading else
+							'0';	
+	ddr3status(6)	<= '1' when counter_state = done else
+							'0';							
 	
 	ddr3status(8)	<= RWDone;
 	ddr3status(9)	<= Running;
 
-	
+	ddr3status(23 downto 16)	<= mycounter(7 downto 0);
 	ddr3status(31 downto 24)	<= mycounter(25 downto 18);
 
 -- Mode MUX	
@@ -131,7 +146,7 @@ M_burstcount <= counter_burstcount when mode = countertest else
 
 
 					 
--- Mode state machine	
+-- Mode state machine	signal counter_readdatavalid	:  std_logic;
 process(M_clk, reset_n)
 begin
 if(reset_n = '0') then
@@ -143,7 +158,7 @@ elsif(M_clk'event and M_clk='1') then
 				mode <= waiting;
 			end if;
 		when waiting =>
-			if(M_reset = '0' and M_cal_success = '1') then
+			if(M_reset_n = '1' and M_cal_success = '1') then
 				mode <= ready;
 			end if;
 		when ready =>
@@ -187,6 +202,8 @@ elsif(M_clk'event and M_clk='1') then
 	counter_readdata 			<= M_readdata;
 	counter_readdatavalid 	<= M_readdatavalid;
 	
+	counter_readdata_reg				<= counter_readdata;
+	counter_readdatavalid_reg 		<= counter_readdatavalid;
 	case counter_state is
 		when disabled =>
 			if (mode = countertest) then
@@ -197,6 +214,7 @@ elsif(M_clk'event and M_clk='1') then
 			RWDone <= '0';
 			Running <= '0';
 
+			firsterror <= '0';
 			
 			poserr_reg		<= (others => '0');	
 			counterr_reg	<= (others => '0');
@@ -265,12 +283,15 @@ elsif(M_clk'event and M_clk='1') then
 				counter_state <= done;
 			end if;
 			
+			pcheck <= (others => '0');	
+			check <= (others => '0');
+			
+			LastLastC	<= LastC;
+			
 			if (counter_readdatavalid = '1') then
 				Running <= '1';
 				LastC		<= counter_readdata(27 downto 0) + '1';
-				if (Running = '1') then
-					pcheck <= (others => '0');	
-				
+				if (Running = '1') then		
 					if(counter_readdata(31 downto 28) /= X"0") then
 						pcheck(0) <= '1';
 					end if;
@@ -319,12 +340,7 @@ elsif(M_clk'event and M_clk='1') then
 					if(counter_readdata(511 downto 508) /= X"1")	then
 						pcheck(15) <= '1';
 					end if;
-					
-					if(pcheck /= "0000000000000000")then
-						poserr_reg <= poserr_reg + '1';
-					end if;
-					
-					check <= (others => '0');				
+					--------------------------------------------
 					if(counter_readdata(27 downto 0) /= LastC) then
 						check(0) <= '1';
 					end if;
@@ -373,9 +389,18 @@ elsif(M_clk'event and M_clk='1') then
 					if(counter_readdata(507 downto 480) /= LastC) then
 						check(15) <= '1';
 					end if;
-					
-					if(check /= "0000000000000000")then
-						counterr_reg <= counterr_reg + '1';
+				end if;
+			end if;
+			if(counter_readdatavalid_reg = '1') then
+				if(pcheck /= "0000000000000000")then
+					poserr_reg <= poserr_reg + '1';
+				end if;
+				if(check /= "0000000000000000")then
+					counterr_reg <= counterr_reg + '1';
+					if(firsterror = '0') then
+						firsterror <= '1';
+						wrongdata <= counter_readdata_reg;
+						wronglast(27 downto 0) <= LastLastC;
 					end if;
 				end if;
 			end if;

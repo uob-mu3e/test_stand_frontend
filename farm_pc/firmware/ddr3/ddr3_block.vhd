@@ -35,10 +35,16 @@ entity ddr3_block is
 			A_counterr		: out reg32;
 			A_timecount		: out reg32;
 			
+			A_wrongdata		: out std_logic_vector(511 downto 0);
+			A_wronglast		: out reg32;
+			
 			B_poserr			: out reg32;
 			B_counterr		: out reg32;
 			B_timecount		: out reg32;
-
+				
+			B_wrongdata		: out std_logic_vector(511 downto 0);
+			B_wronglast		: out reg32;		
+		
 			-- Interface to memory bank A
 			A_mem_ck              : out   std_logic_vector(0 downto 0);                      -- mem_ck
 			A_mem_ck_n            : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
@@ -86,7 +92,7 @@ entity ddr3_block is
 	signal A_cal_fail:		std_logic;
 	
 	signal A_clk:				std_logic;
-	signal A_reset:			std_logic;
+	signal A_reset_n:			std_logic;
 	
 	signal A_ready:			std_logic;
 	signal A_read:				std_logic;
@@ -102,7 +108,7 @@ entity ddr3_block is
 	signal B_cal_fail:		std_logic;
 	
 	signal B_clk:				std_logic;
-	signal B_reset:			std_logic;
+	signal B_reset_n:			std_logic;
 	
 	signal B_ready:			std_logic;
 	signal B_read:				std_logic;
@@ -127,7 +133,7 @@ entity ddr3_block is
 			amm_byteenable_0    =>  (others => '1'), 
 			amm_readdatavalid_0 => A_readdatavalid,  
 			emif_usr_clk        => A_clk,
-			emif_usr_reset_n    => A_reset,
+			emif_usr_reset_n    => A_reset_n,
 			global_reset_n      => reset_n,
 			mem_ck              => A_mem_ck,
 			mem_ck_n            => A_mem_ck_n,
@@ -162,7 +168,7 @@ entity ddr3_block is
 			amm_byteenable_0    =>  (others => '1'), 
 			amm_readdatavalid_0 => B_readdatavalid,  
 			emif_usr_clk        => B_clk,
-			emif_usr_reset_n    => B_reset,
+			emif_usr_reset_n    => B_reset_n,
 			global_reset_n      => reset_n,
 			mem_ck              => B_mem_ck,
 			mem_ck_n            => B_mem_ck_n,
@@ -202,12 +208,15 @@ entity ddr3_block is
 		poserr			=> A_poserr,
 		counterr			=> A_counterr,
 		timecount		=> A_timecount,
+		
+		wrongdata		=> A_wrongdata,
+		wronglast		=> A_wronglast,
 
 		-- IF to DDR3 
 		M_cal_success	=> A_cal_success,
 		M_cal_fail		=> A_cal_fail,
 		M_clk				=> A_clk,
-		M_reset			=> A_reset,
+		M_reset_n		=> A_reset_n,
 		M_ready			=> A_ready,
 		M_read			=> A_read,
 		M_write			=> A_write,
@@ -235,12 +244,15 @@ entity ddr3_block is
 		poserr			=> B_poserr,
 		counterr			=> B_counterr,
 		timecount		=> B_timecount,
+		
+		wrongdata		=> B_wrongdata,
+		wronglast		=> B_wronglast,
 
 		-- IF to DDR3 
 		M_cal_success	=> B_cal_success,
 		M_cal_fail		=> B_cal_fail,
 		M_clk				=> B_clk,
-		M_reset			=> B_reset,
+		M_reset_n		=> B_reset_n,
 		M_ready			=> B_ready,
 		M_read			=> B_read,
 		M_write			=> B_write,

@@ -60,7 +60,7 @@
  <module
    name="ram_2port_0"
    kind="ram_2port"
-   version="18.0"
+   version="18.1"
    enabled="1"
    autoexport="1">
   <parameter name="DEVICE_FAMILY" value="Arria 10" />

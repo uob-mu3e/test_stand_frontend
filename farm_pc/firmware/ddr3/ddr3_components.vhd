@@ -25,9 +25,15 @@ package ddr3_components is
 			A_counterr		: out reg32;
 			A_timecount		: out reg32;
 			
+			A_wrongdata		: out std_logic_vector(511 downto 0);
+			A_wronglast		: out reg32;
+			
 			B_poserr			: out reg32;
 			B_counterr		: out reg32;
 			B_timecount		: out reg32;
+				
+			B_wrongdata		: out std_logic_vector(511 downto 0);
+			B_wronglast		: out reg32;	
 
 			-- Interface to memory bank A
 			A_mem_ck              : out   std_logic_vector(0 downto 0);                      -- mem_ck
@@ -126,12 +132,15 @@ component ddr3_memory_controller is
 		poserr			: out reg32;
 		counterr			: out reg32;
 		timecount		: out reg32;
+		
+		wrongdata		: out std_logic_vector(511 downto 0);
+		wronglast		: out reg32;
 
 		-- IF to DDR3 
 		M_cal_success	:	in std_logic;
 		M_cal_fail		:	in	std_logic;
 		M_clk				:	in	std_logic;
-		M_reset			:	in	std_logic;
+		M_reset_n		:	in	std_logic;
 		M_ready			:	in	std_logic;
 		M_read			:	out std_logic;
 		M_write			:	out std_logic;
