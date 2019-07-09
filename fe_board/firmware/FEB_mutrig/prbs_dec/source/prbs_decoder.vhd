@@ -101,7 +101,7 @@ p_sync: process(i_coreclk)
 begin
 	if rising_edge(i_coreclk) then
 		--ram address and data input, data delay is only to compensate address pipelining.
-		s_addr_a <= s_addr_a;
+		s_addr_a <= n_addr_a;
 		s_init_dec_d <= s_init_dec;
 		--memory initialisation state machine, data bypass control
 		if(i_rst='1') then
@@ -114,7 +114,7 @@ begin
 		else
 			s_valid_2<= i_valid and (not s_init or i_SC_disable_dec);
 			s_valid_1<= s_valid_2;
-			o_valid<=s_valid_1;
+			o_valid<=s_valid_1 and not s_init;
 			s_data_bypass_2 <= i_data;
 			s_data_bypass_1 <= s_data_bypass_2;
 			s_data_bypass <= s_data_bypass_1;
