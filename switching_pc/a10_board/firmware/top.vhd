@@ -248,6 +248,8 @@ architecture rtl of top is
 		signal data_pix_ready2 : std_logic;
 		signal event_length : std_logic_vector(11 downto 0);
 		signal dma_data_wren : std_logic;
+		signal dmamemhalffull_counter : std_logic_vector(31 downto 0);
+		signal dmamemnothalffull_counter : std_logic_vector(31 downto 0);
 		
 begin 
 
@@ -590,11 +592,15 @@ begin
 			readregs(PLL_REGISTER_R) 					<= readregs_slow(PLL_REGISTER_R);
 			readregs(VERSION_REGISTER_R) 				<= readregs_slow(VERSION_REGISTER_R);
 		end if;
+		
 		readregs(EVENTCOUNTER_REGISTER_R)			<= event_counter;
 		readregs(EVENTCOUNTER64_REGISTER_R)			<= event_counter64;
 		
 		readregs(DMA_STATUS_R)(DMA_DATA_WEN)		<= dma_data_wren; 
 		readregs(DMA_STATUS_R)(DMA_CONTROL_WEN)	<= dma_control_wren;
+		
+		readregs(DMA_HALFFUL_R)							<= dmamemhalffull_counter;
+		readregs(DMA_NOTHALFFUL_R)						<= dmamemnothalffull_counter;
 		
 		readregs(TIMECOUNTER_LOW_REGISTER_R)		<= time_counter(31 downto 0);
 		readregs(TIMECOUNTER_HIGH_REGISTER_R)		<= time_counter(63 downto 32);
@@ -727,23 +733,21 @@ e_tagging_fifo : component ip_tagging_fifo
 		empty => tag_fifo_empty
 );
 
----- dma write control
---process(pcie_fastclk_out)
---begin
---	if(rising_edge(pcie_fastclk_out)) then
---		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE)) then
---			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
---			dma_control_counter	  	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
---			dma_control_wren	    <= '0';
---		elsif(dma_control_counter = x"0000") then
---			dma_control_wren	    <= '0';
---		else 
---			dma_control_wren	    <= '1';
---			dma_control_counter 	<= dma_control_counter - '1';
---		end if;
---	end if;
---end process;
-
+---- dma speed control
+process(pcie_fastclk_out, reset_n)
+begin
+	if(reset_n = '0') then
+		dmamemhalffull_counter 	  <= (others => '0');
+		dmamemnothalffull_counter <= (others => '0');
+		
+	elsif(rising_edge(pcie_fastclk_out)) then
+		if(dmamemhalffull = '1') then
+			dmamemhalffull_counter <= dmamemhalffull_counter + 1;
+		else
+			dmamemnothalffull_counter <= dmamemnothalffull_counter + 1;
+		end if;
+	end if;
+end process;
 
 -- dma end of events, count events and write control
 process(pcie_fastclk_out, reset_n)
@@ -835,26 +839,26 @@ pcie_b : entity work.pcie_block
 		pcie_waken				=> PCIE_WAKE_n,
 
 		-- LEDs
-		alive_led		      	=> open,
-		comp_led			    => open,
-		L0_led			      	=> open,
+		alive_led		      => open,
+		comp_led			    	=> open,
+		L0_led			      => open,
 
 		-- pcie registers (write / read register, readonly, read write, in tools/dmatest/rw) -Sync read regs 
-		writeregs		      	=> writeregs,
-		regwritten		      	=> regwritten_fast,
-		readregs			    => readregs,
+		writeregs		      => writeregs,
+		regwritten		      => regwritten_fast,
+		readregs			    	=> readregs,
 
 		-- pcie writeable memory
-		writememclk		      	=> tx_clk(0),
-		writememreadaddr     	=> writememreadaddr,
-		writememreaddata     	=> writememreaddata,
+		writememclk		      => tx_clk(0),
+		writememreadaddr     => writememreadaddr,
+		writememreaddata     => writememreaddata,
 
 		-- pcie readable memory
 		readmem_data 			=> readmem_writedata,
 		readmem_addr 			=> readmem_writeaddr_lowbits,
 		readmemclk				=> tx_clk(0),--tx_clk_ch0,--rx_clkout_ch0_clk,
 		readmem_wren			=> readmem_wren,
-		readmem_endofevent		=> readmem_endofevent,
+		readmem_endofevent	=> readmem_endofevent,
 
 		-- dma memory 
 		dma_data 				=> X"00000" & event_length &
@@ -868,19 +872,19 @@ pcie_b : entity work.pcie_block
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
 		dmamem_wren				=> dmamem_wren,
 		dmamem_endofevent		=> dmamem_endofevent,
-		dmamemhalffull			=> open,--dmamemhalffull,
+		dmamemhalffull			=> dmamemhalffull,
 
 		-- dma memory
 		dma2_data 				=> dma2mem_writedata,
 		dma2memclk				=> pcie_fastclk_out,
 		dma2mem_wren			=> dma2mem_wren,
-		dma2mem_endofevent		=> dma2mem_endofevent,
-		dma2memhalffull			=> dma2memhalffull,
+		dma2mem_endofevent	=> dma2mem_endofevent,
+		dma2memhalffull		=> dma2memhalffull,
 
 		-- test ports  
 		testout					=> pcie_testout,
 		testout_ena				=> open,
-		pb_in					=> pb_in,
+		pb_in						=> pb_in,
 		inaddr32_r				=> readregs(inaddr32_r),
 		inaddr32_w				=> readregs(inaddr32_w)--,
 );

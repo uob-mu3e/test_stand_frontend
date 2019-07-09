@@ -183,11 +183,11 @@ begin
 				
 				when part5 =>
 					if (lsfr_chip_id = DATA_SUB_HEADER_ID) then
-						data_pix_generated				<= global_time(3 downto 0) & "000000" & global_time(21 downto 0);-- "101010" & lsfr_row & lsfr_col & lsfr_tot;
+						data_pix_generated				<= global_time(3 downto 0) & "000000" & global_time(13 downto 0) & x"00";-- "101010" & lsfr_row & lsfr_col & lsfr_tot;
 					elsif (lsfr_chip_id = DATA_HEADER_ID) then
-						data_pix_generated				<= global_time(3 downto 0) & "000000" & global_time(21 downto 0); -- "010101" & lsfr_row & lsfr_col & lsfr_tot;
+						data_pix_generated				<= global_time(3 downto 0) & "000000" & global_time(13 downto 0) & x"00"; -- "010101" & lsfr_row & lsfr_col & lsfr_tot;
 					else
-						data_pix_generated				<= global_time(3 downto 0) & "000000" & global_time(21 downto 0); --lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
+						data_pix_generated				<= global_time(3 downto 0) & "000000" & global_time(13 downto 0) & x"00"; --lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
 					end if;
 					
 					if (current_overflow(overflow_idx) = '1') then
@@ -206,11 +206,11 @@ begin
 					
 				when overflow =>
 					if (lsfr_chip_id = DATA_SUB_HEADER_ID) then
-						data_pix_generated				<= global_time(3 downto 0) & "000000" & global_time(21 downto 0);-- "101010" & lsfr_row & lsfr_col & lsfr_tot;
+						data_pix_generated				<= global_time(3 downto 0) & "000000" & global_time(13 downto 0) & x"00";-- "101010" & lsfr_row & lsfr_col & lsfr_tot;
 					elsif (lsfr_chip_id = DATA_HEADER_ID) then
-						data_pix_generated				<= global_time(3 downto 0) & "000000" & global_time(21 downto 0); -- "010101" & lsfr_row & lsfr_col & lsfr_tot;
+						data_pix_generated				<= global_time(3 downto 0) & "000000" & global_time(13 downto 0) & x"00"; -- "010101" & lsfr_row & lsfr_col & lsfr_tot;
 					else
-						data_pix_generated				<= global_time(3 downto 0) & "000000" & global_time(21 downto 0); --lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
+						data_pix_generated				<= global_time(3 downto 0) & "000000" & global_time(13 downto 0) & x"00"; --lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
 					end if;
 					global_time 							<= global_time + '1';
 					data_header_state						<= part5;

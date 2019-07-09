@@ -80,6 +80,8 @@ package mudaq_registers is
 		constant DMA_CONTROL_WEN								: integer:= 1;
 		constant PLL_LOCKED_BIT									: integer := 16#12#;
 		constant DEBUG_SC											: integer := 16#13#;
+		constant DMA_HALFFUL_R									: integer := 16#14#;
+		constant DMA_NOTHALFFUL_R								: integer := 16#15#;
 
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;
