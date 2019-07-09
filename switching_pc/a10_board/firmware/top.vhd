@@ -247,6 +247,7 @@ architecture rtl of top is
 		signal data_pix_generated2 : std_logic_vector(31 downto 0);
 		signal data_pix_ready2 : std_logic;
 		signal event_length : std_logic_vector(11 downto 0);
+		signal dma_data_wren : std_logic;
 		
 begin 
 
@@ -586,13 +587,17 @@ begin
 		clk_last <= clk_sync;
 		
 		if(clk_sync = '1' and clk_last = '0') then
-			readregs(PLL_REGISTER_R) 				<= readregs_slow(PLL_REGISTER_R);
-			readregs(VERSION_REGISTER_R) 			<= readregs_slow(VERSION_REGISTER_R);
+			readregs(PLL_REGISTER_R) 					<= readregs_slow(PLL_REGISTER_R);
+			readregs(VERSION_REGISTER_R) 				<= readregs_slow(VERSION_REGISTER_R);
 		end if;
-		readregs(EVENTCOUNTER_REGISTER_R)		<= event_counter;
-		readregs(EVENTCOUNTER64_REGISTER_R)		<= event_counter64;
-		readregs(TIMECOUNTER_LOW_REGISTER_R)	<= time_counter(31 downto 0);
-		readregs(TIMECOUNTER_HIGH_REGISTER_R)	<= time_counter(63 downto 32);
+		readregs(EVENTCOUNTER_REGISTER_R)			<= event_counter;
+		readregs(EVENTCOUNTER64_REGISTER_R)			<= event_counter64;
+		
+		readregs(DMA_STATUS_R)(DMA_DATA_WEN)		<= dma_data_wren; 
+		readregs(DMA_STATUS_R)(DMA_CONTROL_WEN)	<= dma_control_wren;
+		
+		readregs(TIMECOUNTER_LOW_REGISTER_R)		<= time_counter(31 downto 0);
+		readregs(TIMECOUNTER_HIGH_REGISTER_R)		<= time_counter(63 downto 32);
 	end if;
 end process;
 
@@ -747,6 +752,7 @@ begin
 		dmamem_endofevent 		<= '0';
 		r_fifo_en					<= '0';
 		dma_control_wren	    	<= '0';
+		dma_data_wren	    		<= '0';
 		dma_control_prev_rdreq	<= (others => '0');
 		dma_control_counter 		<= (others => '0');
 		event_length				<= (others => '0');
@@ -757,47 +763,49 @@ begin
 	
 		dmamem_endofevent <= '0';
 		r_fifo_en			<= '0';
+		dma_data_wren		<= '0';
 	
-		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE)) then
-			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
-			dma_control_counter	  	<= writeregs(DMA_CONTROL_W)(DMA_CONTROL_COUNTER_RANGE);
-			dma_control_wren	    	<= '0';
-		elsif(dma_control_counter = x"0000") then
+		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W)) then
+			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_W);
+			dma_control_counter	  	<= writeregs(DMA_CONTROL_W);
+		elsif(dma_control_counter = x"00000000") then
 			dma_control_wren	    	<= '0';
 		else
+			dma_control_counter 		<= dma_control_counter - '1';
+			dma_control_wren	  		<= '1';
+		end if;
 			
-			case event_counter_state is
+		case event_counter_state is
 
-				when waiting =>
-					if (tag_fifo_empty = '0') then
-						event_last_ram_add  			<= r_fifo_data;
-						event_length					<= r_fifo_data - event_last_ram_add;
-						event_counter(11 downto 0) <= r_fifo_data;	
-						r_fifo_en    		  			<= '1';
-						r_ram_add			  			<= r_ram_add + '1';
-						dma_control_wren	  			<= '1';
-						event_counter_state 			<= ending;
-					end if;
-					
-				when ending =>
-					r_ram_add <= r_ram_add + '1';
-					if(r_ram_add = event_last_ram_add) then
-						dma_control_counter 	<= dma_control_counter - '1';
-						dmamem_endofevent   	<= '1';
-						event_counter_state 	<= waiting;
-					end if;
-					
-				when others =>
-					event_counter_state 		<= waiting;
-
-			end case;
-						
-		end if;		
+			when waiting =>
+				if (tag_fifo_empty = '0') then
+					event_last_ram_add  			<= r_fifo_data;
+					event_length					<= r_fifo_data - event_last_ram_add;
+					event_counter(11 downto 0) <= r_fifo_data;	
+					r_fifo_en    		  			<= '1';
+					r_ram_add			  			<= r_ram_add + '1';
+					dma_data_wren					<= '1';
+					event_counter_state 			<= ending;
+				end if;
+				
+			when ending =>
+				r_ram_add 		<= r_ram_add + '1';
+				dma_data_wren	<= '1';
+				if(r_ram_add = event_last_ram_add) then
+					dmamem_endofevent   	<= '1';
+					event_counter_state 	<= waiting;
+				end if;
+				
+			when others =>
+				event_counter_state 		<= waiting;
+				
+		end case;
+			
 	end if;
 end process;
 
 readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
-dmamem_wren 					<= dma_control_wren;--(insert_data_available_signal_here and dma_control_wren);
+dmamem_wren 					<= dma_data_wren and dma_control_wren;--(insert_data_available_signal_here and dma_control_wren);
 pb_in 							<= push_button0_db & push_button1_db & push_button2_db;
 
 

@@ -75,11 +75,9 @@ package mudaq_registers is
 		constant EVENT2COUNTER64_REGISTER_R					: integer := 16#08#;
 		constant inaddr32_r										: integer := 16#09#;
 		constant inaddr32_w										: integer := 16#10#;
-		constant STATUS_R											: integer := 16#11#;
-		constant CH0_ALIGN										: integer:= 0;
-		constant CH1_ALIGN										: integer:= 1;
-		constant CH2_ALIGN										: integer:= 2;
-		constant CH3_ALIGN										: integer:= 3;
+		constant DMA_STATUS_R									: integer := 16#11#;
+		constant DMA_DATA_WEN									: integer:= 0;
+		constant DMA_CONTROL_WEN								: integer:= 1;
 		constant PLL_LOCKED_BIT									: integer := 16#12#;
 		constant DEBUG_SC											: integer := 16#13#;
 
