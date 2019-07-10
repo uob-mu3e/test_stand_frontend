@@ -440,6 +440,7 @@ INT read_stream_thread(void *param)
    int rbh = get_event_rbh(0);
    
    while (is_readout_thread_enabled()) {
+
       lastWritten = mu.last_written_addr();
 
       // logging
@@ -482,7 +483,6 @@ INT read_stream_thread(void *param)
       if (status != DB_SUCCESS){
          break;
       }
-
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
          ss_sleep(10);
@@ -524,7 +524,7 @@ INT read_stream_thread(void *param)
    // logging
     log_file.close();
     // logging
-   
+
    // tell framework that we finished
    signal_readout_thread_active(0, FALSE);
    return 0;
