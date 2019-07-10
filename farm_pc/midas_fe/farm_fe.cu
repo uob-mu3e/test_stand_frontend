@@ -167,7 +167,8 @@ INT frontend_init()
    // switch off the data generator (just in case..)
    mup->write_register(DATAGENERATOR_REGISTER_W, 0x0);
    usleep(2000);
-   mup->write_register(DMA_CONTROL_REGISTER_W,0x0);
+   // DMA_CONTROL_W
+   mup->write_register(0x5,0x0);
    usleep(5000);
    
    // create ring buffer for readout thread
@@ -212,14 +213,13 @@ INT begin_of_run(INT run_number, char *error)
    moreevents = false;
    firstevent = true;
    
-   // Reset dma part and data generator
-   uint32_t reset_reg =0;
-   reset_reg = SET_RESET_BIT_DATAGEN(reset_reg);
-   mu.write_register_wait(RESET_REGISTER_W, reset_reg,100);
-   mu.write_register_wait(RESET_REGISTER_W, 0x0,100);
-   
+   // Reset all ToDo: no functionality in firmware at the moment
+   uint32_t reset_reg = 0;
+   reset_reg = SET_RESET_BIT_ALL(reset_reg);
+   mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
+
    // Enable register on FPGA for continous readout
-   mu.enable_continous_readout(0);
+   mu.enable_continous_readout(0); // enable dma
    
    // Get ODB settings for this equipment
    HNDLE hDB, hStreamSettings;
@@ -243,24 +243,25 @@ INT begin_of_run(INT run_number, char *error)
    }
    
    /* Set up data generator */
-   mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, settings.datagenerator.divider);
-   
-   uint32_t datagen_setup = 0;
-   if (settings.datagenerator.enable_pixel)
-      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
-   if (settings.datagenerator.enable_fibre)
-      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_FIBRE(datagen_setup);
-   if (settings.datagenerator.enable_tile)
-      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_TILE(datagen_setup);
-   datagen_setup = SET_DATAGENERATOR_NPIXEL_RANGE(datagen_setup, settings.datagenerator.npixel);
-   datagen_setup = SET_DATAGENERATOR_NFIBRE_RANGE(datagen_setup, settings.datagenerator.nfibre);
-   datagen_setup = SET_DATAGENERATOR_NTILE_RANGE(datagen_setup, settings.datagenerator.ntile);
-   if (settings.datagenerator.enable)
-      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-   
+    uint32_t datagen_setup = 0;
+    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+    mu.write_register(DATAGENERATOR_REGISTER_W, datagen_setup);
+
+//   mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, settings.datagenerator.divider);
+//   uint32_t datagen_setup = 0;
+//   if (settings.datagenerator.enable_pixel)
+//      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+//   if (settings.datagenerator.enable_fibre)
+//      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_FIBRE(datagen_setup);
+//   if (settings.datagenerator.enable_tile)
+//      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_TILE(datagen_setup);
+//   datagen_setup = SET_DATAGENERATOR_NPIXEL_RANGE(datagen_setup, settings.datagenerator.npixel);
+//   datagen_setup = SET_DATAGENERATOR_NFIBRE_RANGE(datagen_setup, settings.datagenerator.nfibre);
+//   datagen_setup = SET_DATAGENERATOR_NTILE_RANGE(datagen_setup, settings.datagenerator.ntile);
+//   if (settings.datagenerator.enable)
+//      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
    //cm_msg(MINFO, "begin_of_run" , "addr 0x%x" , mu.last_written_addr());
-   // mu.write_register(DATAGENERATOR_REGISTER_W, datagen_setup);
-   mu.write_register(DATAGENERATOR_REGISTER_W, 0xffffffff);// start data generator
+   //mu.write_register(DATAGENERATOR_REGISTER_W, 0xffffffff);// start data generator
    //mu.write_register(LED_REGISTER_W,0x0000ffff);
    
    set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
@@ -273,12 +274,20 @@ INT begin_of_run(INT run_number, char *error)
 INT end_of_run(INT run_number, char *error)
 {
    mudaq::DmaMudaqDevice & mu = *mup;
-   
+
+   /* Unset data generator */
    uint32_t datagen_setup = mu.read_register_rw(DATAGENERATOR_REGISTER_W);
-   datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
+   datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+   mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+
+   /* Unset DMA Control */
+   // DMA_CONTROL_W
+   mu.write_register_wait(0x5,0x0,100);
+
+//   datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
    //mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
-   mu.write_register(DMA_CONTROL_REGISTER_W,0x0);
-   mu.write_register(DATAGENERATOR_REGISTER_W, 0x0);
+
+//   mu.write_register(DATAGENERATOR_REGISTER_W, 0x0);
    usleep(100000); // wait for remianing data to be pushed
    mu.disable(); // disable DMA
    set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
@@ -401,23 +410,29 @@ INT read_stream_event(char *pevent, INT off)
 
 INT read_stream_thread(void *param)
 {
-    // we are at mu.last_written_addr() ...  ask for a new bunch of x 256-bit words
-     //cout<<"readindex: "<< readindex <<endl;
-
-
+   // we are at mu.last_written_addr() ...  ask for a new bunch of x 256-bit words
+   // get mudaq and set readindex to last written addr
    mudaq::DmaMudaqDevice & mu = *mup;
-   //uint32_t addr = mu.last_written_addr();
-   readindex = 0;
+   readindex = mu.last_written_addr();
+
+   // logging
+   ofstream log_file;
+   log_file.open("/home/labor/log.txt");
+   log_file << "readindex " << readindex << "\n";
+   // logging
+
+   // setup variables for dma alive counter
    int aliveCounter = 0;
-   int destination_addr = 0;
-   int lastWritten = 0;
+
+   // setup variables for event handling
    int event_length=0;
    EVENT_HEADER *pEventHeader;
    void *pEventData;
    DWORD *pdata;
+   int lastWritten = 0;
    int status;
-   
-   
+   int diff = 0;
+
    // tell framework that we are alive
    signal_readout_thread_active(0, TRUE);
    
@@ -427,13 +442,29 @@ INT read_stream_thread(void *param)
    while (is_readout_thread_enabled()) {
       lastWritten = mu.last_written_addr();
 
-      if(aliveCounter == 1000){// alive countdown in firmware : no change in this reg for x cycles --> stop dma
-            mu.write_register(DMA_CONTROL_REGISTER_W,0x017D7840); // 25 M cycles (100 ms)
-            //ss_sleep(5);
-            mu.write_register(DMA_CONTROL_REGISTER_W,0x0);
-            aliveCounter=0;
-      }
-      aliveCounter++;
+      // logging
+       log_file << hex << "lastWritten " << lastWritten << "\n";
+       // logging
+
+       // logging
+       log_file << hex <<  "readindex " << readindex << "\n";
+       // logging
+
+       // get event length
+       event_length = 8 * dma_buf[(readindex+7)%dma_buf_nwords];
+
+       // logging
+       log_file << hex << "event_length " << event_length << "\n";
+       // logging
+
+//      // alive countdown in firmware : no change in this reg for x cycles --> stop dma
+//      if(aliveCounter == 1000){
+//            // DMA_CONTROL_W
+//            mu.write_register(0x5,0x017D7840 + diff); // 25 M cycles (100 ms)
+//            aliveCounter=0;
+//            diff = 1 - diff;
+//      }
+//      aliveCounter++;
       
       // obtain buffer space
       status = rb_get_wp(rbh, (void **)&pEventHeader, 0);
@@ -443,33 +474,31 @@ INT read_stream_thread(void *param)
       if (status == DB_TIMEOUT) {
          // just sleep and try again if buffer has no space
          ss_sleep(10);
-         cout<<"DB Timeout"<<endl;
+         // logging
+         log_file << "DB TIMNOUT " << readindex << "\n";
+         // logging
          continue;
       }
       if (status != DB_SUCCESS){
          break;
       }
+
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
-          //cout<<"not running"<<endl;
          ss_sleep(10);
-
          continue;
       }
 
-      // do not overtake dma engine
+      // do not overtake dma engine -- this is not really possible
       if(readindex == lastWritten)
           continue;
 
-      // end of event reached, read length of next event
-      if(readindex==destination_addr){
-          event_length = 8*dma_buf[(readindex)%dma_buf_nwords];
-          destination_addr = (readindex + event_length + 1)%dma_buf_nwords;
-          readindex++;
-      }else{
-          cout<<"ERROR: readindex != destination addr"<<endl;
-          break;
-      }
+      // get event length
+      event_length = 8 * dma_buf[(readindex+7)%dma_buf_nwords];
+
+       // logging
+       log_file << hex << "event_length " << event_length << "\n";
+       // logging
 
       status = TRUE;
       if (status) {
@@ -481,7 +510,6 @@ INT read_stream_thread(void *param)
 
          // create "HEAD" bank
          bk_create(pEventData, "HEAD", TID_DWORD, (void **)&pdata);
-         //cout<<"creating event"<<endl;
          for (int i=0 ; i< event_length; i++){
             *pdata++ = dma_buf[(++readindex)%dma_buf_nwords];
          }
@@ -492,6 +520,10 @@ INT read_stream_thread(void *param)
          // send event to ring buffer
       }
    }
+
+   // logging
+    log_file.close();
+    // logging
    
    // tell framework that we finished
    signal_readout_thread_active(0, FALSE);
