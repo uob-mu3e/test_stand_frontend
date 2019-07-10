@@ -769,7 +769,7 @@ begin
 		r_fifo_en			<= '0';
 		dma_data_wren		<= '0';
 	
-		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W)) then
+		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W) and writeregs(DMA_CONTROL_W) /= x"00000000") then
 			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_W);
 			dma_control_counter	  	<= writeregs(DMA_CONTROL_W);
 		elsif(dma_control_counter = x"00000000") then
@@ -809,7 +809,7 @@ begin
 end process;
 
 readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
-dmamem_wren 					<= dma_data_wren and dma_control_wren;--(insert_data_available_signal_here and dma_control_wren);
+dmamem_wren 					<= dma_data_wren and '1';--dma_control_wren;
 pb_in 							<= push_button0_db & push_button1_db & push_button2_db;
 
 
