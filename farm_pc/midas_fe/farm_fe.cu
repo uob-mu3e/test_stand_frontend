@@ -217,7 +217,6 @@ INT begin_of_run(INT run_number, char *error)
    uint32_t reset_reg = 0;
    reset_reg = SET_RESET_BIT_ALL(reset_reg);
    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
-
    // Enable register on FPGA for continous readout
    mu.enable_continous_readout(0); // enable dma
    
@@ -245,8 +244,8 @@ INT begin_of_run(INT run_number, char *error)
    /* Set up data generator */
     uint32_t datagen_setup = 0;
     datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
-    mu.write_register(DATAGENERATOR_REGISTER_W, datagen_setup);
-
+    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,100);
+    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x00000000,100);//3E8); // slow down to 64 MBit/s
 //   mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, settings.datagenerator.divider);
 //   uint32_t datagen_setup = 0;
 //   if (settings.datagenerator.enable_pixel)
@@ -451,7 +450,7 @@ INT read_stream_thread(void *param)
        log_file << hex <<  "readindex " << readindex << "\n";
        // logging
 
-       // get event length
+       //get event length
        event_length = 8 * dma_buf[(readindex+7)%dma_buf_nwords];
 
        // logging
@@ -489,12 +488,20 @@ INT read_stream_thread(void *param)
          continue;
       }
 
-      // do not overtake dma engine -- this is not really possible
-      if(readindex == lastWritten)
-          continue;
-
-      // get event length
-      event_length = 8 * dma_buf[(readindex+7)%dma_buf_nwords];
+      // do not overtake dma engine
+        if(readindex > lastWritten){
+            if(dma_buf_nwords - (readindex % dma_buf_nwords) + lastWritten < event_length){
+                ss_sleep(10);
+                cout<<"FE SLOW DOWN 1"<<endl;
+                continue;
+            }
+        }else{
+            if(lastWritten - (readindex % dma_buf_nwords) < event_length){
+                ss_sleep(10);
+                cout<<"FE SLOW DOWN 2 evLength "<<event_length<<endl;
+                continue;
+            }
+        }
 
        // logging
        log_file << hex << "event_length " << event_length << "\n";
@@ -510,6 +517,8 @@ INT read_stream_thread(void *param)
 
          // create "HEAD" bank
          bk_create(pEventData, "HEAD", TID_DWORD, (void **)&pdata);
+         *pdata++ = event_length;
+         *pdata++ = 0xAFFEAFFE;
          for (int i=0 ; i< event_length; i++){
             *pdata++ = dma_buf[(++readindex)%dma_buf_nwords];
          }

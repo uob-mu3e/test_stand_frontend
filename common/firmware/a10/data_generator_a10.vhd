@@ -40,9 +40,10 @@ entity data_generator_a10 is
 		reset:               	in  std_logic;
 		enable_pix:          	in  std_logic;
 		random_seed:				in  std_logic_vector (15 downto 0);
-		start_global_time:		in std_logic_vector(47 downto 0);
+		start_global_time:		in  std_logic_vector(47 downto 0);
 		data_pix_generated:  	out std_logic_vector(31 downto 0);
-		data_pix_ready:      	out std_logic
+		data_pix_ready:      	out std_logic;
+		slow_down:			in  std_logic_vector(31 downto 0)
 );
 end entity data_generator_a10;
 
@@ -60,7 +61,11 @@ architecture rtl of data_generator_a10 is
 	signal lsfr_tot:     	  	  std_logic_vector (5 downto 0);
 	signal lsfr_row:     	  	  std_logic_vector (7 downto 0);
 	signal lsfr_col:     	     std_logic_vector (7 downto 0);
-	signal lsfr_overflow:       std_logic_vector (15 downto 0);
+	signal lsfr_overflow:        std_logic_vector (15 downto 0);
+	
+	-- slow down signals
+	signal waiting:				  std_logic;
+	signal wait_counter:			  std_logic_vector(31 downto 0);
 
 ----------------begin data_generator------------------------
 begin
@@ -137,6 +142,25 @@ begin
 		o_lsfr 			=> lsfr_overflow
 	);
 
+-- slow down process
+process(clk, reset)
+begin
+	if(reset = '1') then
+		waiting 			<= '0';
+		wait_counter	<= (others => '0');
+	elsif(rising_edge(clk)) then
+		if(wait_counter = slow_down) then
+			wait_counter 	<= (others => '0');
+			waiting 			<= '0';
+		else
+			wait_counter		<= wait_counter + '1';
+			waiting			<= '1';
+		end if;
+	end if;
+end process;
+	
+	
+	
 process (clk, reset)
 
 variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
@@ -150,6 +174,10 @@ begin
 		data_header_state			<= part1;
 		current_overflow 			:= "0000000000000000";
 		overflow_idx				:= 0;
+	
+	elsif(waiting = '1') then
+		data_pix_ready          <= '0';
+	
 	elsif rising_edge(clk) then
 		if(enable_pix = '1') then
 			data_pix_ready <= '1';
