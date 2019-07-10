@@ -167,7 +167,7 @@ begin
 					data_header_state 					<= part2;
 					
 				when part2 =>
-					data_pix_generated(31 downto 0) 	<= global_time(47 downto 16);
+					data_pix_generated(31 downto 0) 	<= global_time(47 downto 24) & x"00";
 					data_header_state 					<= part3;
 					
 				when part3 =>
@@ -175,7 +175,8 @@ begin
 					data_header_state 					<= part4;
 					
 				when part4 =>
-					data_pix_generated 					<= "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
+					--data_pix_generated 					<= "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
+					data_pix_generated 					<= "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow(15 downto 8) & x"00";
 					global_time								<= global_time + '1';
 					overflow_idx 							:= 0;
 					current_overflow						:= lsfr_overflow;

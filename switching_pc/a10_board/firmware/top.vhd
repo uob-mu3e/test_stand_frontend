@@ -820,8 +820,8 @@ pcie_b : entity work.pcie_block
 		DMAMEMWRITEWIDTH	  	=> 256
 	)
 	port map(
-		local_rstn				=> writeregs(RESET_REGISTER_W)(RESET_BIT_PCIE_LOCAL),
-		appl_rstn				=> writeregs(RESET_REGISTER_W)(RESET_BIT_PCIE),
+		local_rstn				=> resets_n(RESET_BIT_PCIE_LOCAL),
+		appl_rstn				=> resets_n(RESET_BIT_PCIE),
 		refclk					=> PCIE_REFCLK_p,
 		pcie_fastclk_out		=> pcie_fastclk_out,
 		
