@@ -17,6 +17,7 @@ package mudaq_registers is
 		constant RESET_BIT_FIFOPLL								:  integer := 6;
 		constant RESET_BIT_SC_SLAVE							:  integer := 7;
 		constant RESET_BIT_SC_MASTER							:  integer := 8;
+		constant RESET_BIT_PCIE_LOCAL							:  integer := 9;
 		constant RESET_BIT_PCIE									:  integer := 31;
 
 		constant DATAGENERATOR_REGISTER_W					: integer := 16#02#;

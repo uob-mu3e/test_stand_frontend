@@ -548,17 +548,17 @@ int DmaMudaqDevice::enable_continous_readout(int interTrue)
 
    _last_end_of_buffer = 0;
   if (interTrue == 1){
-    write_register(DMA_REGISTER_W, 0x9);
+    write_register_wait(DMA_REGISTER_W, 0x9, 100);
   }
   else {
-    write_register(DMA_REGISTER_W, SET_DMA_BIT_ENABLE(0x0));
+    write_register_wait(DMA_REGISTER_W, SET_DMA_BIT_ENABLE(0x0), 100);
   }
   return 0;
 }
 
 void DmaMudaqDevice::disable()
 {
-   write_register(DMA_REGISTER_W, UNSET_DMA_BIT_ENABLE(0x0));
+   write_register_wait(DMA_REGISTER_W, UNSET_DMA_BIT_ENABLE(0x0), 100);
 }
 
 

@@ -809,7 +809,7 @@ begin
 end process;
 
 readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
-dmamem_wren 					<= dma_data_wren and dma_control_wren;--(insert_data_available_signal_here and dma_control_wren);
+dmamem_wren 					<= dma_data_wren and writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);--dma_control_wren;--(insert_data_available_signal_here and dma_control_wren);
 pb_in 							<= push_button0_db & push_button1_db & push_button2_db;
 
 
@@ -820,8 +820,8 @@ pcie_b : entity work.pcie_block
 		DMAMEMWRITEWIDTH	  	=> 256
 	)
 	port map(
-		local_rstn				=> '1',
-		appl_rstn				=> '1', --resets_n(RESET_BIT_PCIE),
+		local_rstn				=> writeregs(RESET_REGISTER_W)(RESET_BIT_PCIE_LOCAL),
+		appl_rstn				=> writeregs(RESET_REGISTER_W)(RESET_BIT_PCIE),
 		refclk					=> PCIE_REFCLK_p,
 		pcie_fastclk_out		=> pcie_fastclk_out,
 		
