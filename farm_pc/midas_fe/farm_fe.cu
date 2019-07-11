@@ -243,9 +243,10 @@ INT begin_of_run(INT run_number, char *error)
    
    /* Set up data generator */
     uint32_t datagen_setup = 0;
+    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x000007D0,100);//3E8); // slow down to 64 MBit/s
+    sleep(3);
     datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,100);
-    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x00000000,100);//3E8); // slow down to 64 MBit/s
 //   mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, settings.datagenerator.divider);
 //   uint32_t datagen_setup = 0;
 //   if (settings.datagenerator.enable_pixel)
@@ -424,7 +425,7 @@ INT read_stream_thread(void *param)
    int aliveCounter = 0;
 
    // setup variables for event handling
-   int event_length=0;
+   uint32_t event_length=0;
    EVENT_HEADER *pEventHeader;
    void *pEventData;
    DWORD *pdata;
@@ -474,8 +475,9 @@ INT read_stream_thread(void *param)
       if (status == DB_TIMEOUT) {
          // just sleep and try again if buffer has no space
          ss_sleep(10);
+         //cout<<"DB_TIMEOUT"<<endl;
          // logging
-         log_file << "DB TIMNOUT " << readindex << "\n";
+         //log_file << "DB TIMNOUT " << readindex << "\n";
          // logging
          continue;
       }
@@ -489,16 +491,16 @@ INT read_stream_thread(void *param)
       }
 
       // do not overtake dma engine
-        if(readindex > lastWritten){
+        if((readindex%dma_buf_nwords) > lastWritten){
             if(dma_buf_nwords - (readindex % dma_buf_nwords) + lastWritten < event_length){
                 ss_sleep(10);
-                cout<<"FE SLOW DOWN 1"<<endl;
+                //cout<<"FE SLOW DOWN 1 index"<< (readindex%dma_buf_nwords) <<" lwr "<<lastWritten<<" eventL:"<<event_length<<" nWords "<<dma_buf_nwords<<endl;
                 continue;
             }
         }else{
             if(lastWritten - (readindex % dma_buf_nwords) < event_length){
                 ss_sleep(10);
-                cout<<"FE SLOW DOWN 2 evLength "<<event_length<<endl;
+                //cout<<"FE SLOW DOWN 2 index"<< (readindex%dma_buf_nwords) <<" lwr "<<lastWritten<<" eventL:"<<event_length<<" nWords "<<dma_buf_nwords<<endl;
                 continue;
             }
         }
@@ -507,8 +509,13 @@ INT read_stream_thread(void *param)
        log_file << hex << "event_length " << event_length << "\n";
        // logging
 
+       if(event_length == 0){
+           readindex=readindex+8;
+           continue;
+       }
+
       status = TRUE;
-      if (status) {
+      if (status && event_length != 0) {
          bm_compose_event(pEventHeader, equipment[0].info.event_id, 0, 0, equipment[0].serial_number++);
          pEventData = (void *)(pEventHeader + 1);
          
@@ -536,5 +543,6 @@ INT read_stream_thread(void *param)
 
    // tell framework that we finished
    signal_readout_thread_active(0, FALSE);
+   mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x00000000,100);//3E8); // slow down to 64 MBit/s
    return 0;
 }
