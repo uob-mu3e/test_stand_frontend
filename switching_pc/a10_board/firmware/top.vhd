@@ -648,9 +648,10 @@ end process;
 e_data_gen : component data_generator_a10
 	port map (
 		clk 						=> pcie_fastclk_out,
-		reset						=> reset,
+		reset						=> resets(RESET_BIT_DATAGEN),--reset,
 		enable_pix	         => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL),
 		random_seed 			=> (others => '1'),
+		slow_down				=> writeregs(DMA_SLOW_DOWN_W)(7 downto 0),
 		data_pix_generated   => data_pix_generated,
 		data_pix_ready			=>	data_pix_ready,
 		start_global_time		=> (others => '0')--,
@@ -661,26 +662,30 @@ e_data_gen2 : component data_generator_a10
 		reset						=> reset,
 		enable_pix	         => '1',
 		random_seed 			=> (others => '1'),
+		slow_down				=> writeregs(DMA_SLOW_DOWN_W)(7 downto 0),
 		data_pix_generated   => data_pix_generated2,
 		data_pix_ready			=>	data_pix_ready2,
 		start_global_time		=> (others => '0')--,
 );
 -- link data to dma ram
-process(pcie_fastclk_out, reset_n)
+process(pcie_fastclk_out, resets_n(RESET_BIT_TOP_PROC))
 begin
-	if(reset_n = '0') then
+	if(resets_n(RESET_BIT_TOP_PROC) = '0') then
 		event_tagging_state 	<= waiting;
 		w_ram_en					<= '0';
 		w_fifo_en				<= '0';
 		w_fifo_data				<= (others => '0');
 		w_ram_data				<= (others => '0');
-		w_ram_add				<= (others => '0');
+		w_ram_add				<= (others => '1');
 	elsif(rising_edge(pcie_fastclk_out)) then
 	
 		w_ram_en		<= '0';
 		w_fifo_en	<= '0';
 
 		if (data_pix_ready = '1') then
+			
+			w_ram_add 	<= w_ram_add + 1;
+			
 			case event_tagging_state is
 
 				when waiting =>
@@ -693,12 +698,11 @@ begin
 					end if;
 					
 				when ending =>
-					w_ram_add 	<= w_ram_add + 1;
 					w_ram_en		<= '1';
 					--w_ram_data  		  <= rx_data(0);
 					w_ram_data  		  <= data_pix_generated;
 					--if(rx_data(0)(7 downto 0) = x"9c" and rx_datak(0) = "0001") then -- saw trailer
-					if(data_pix_generated(7 downto 0) = x"9c") then -- saw trailer
+					if(data_pix_generated = x"0000009c") then -- saw trailer
 						w_fifo_data <= w_ram_add + 1;
 						w_fifo_en   <= '1';
 						event_tagging_state <= waiting;
@@ -729,6 +733,7 @@ e_tagging_fifo : component ip_tagging_fifo
 		rdreq => r_fifo_en,
 		clock => pcie_fastclk_out,
 		q     => r_fifo_data,
+		aclr	=> resets(RESET_BIT_TOP_PROC),
 		full  => open,
 		empty => tag_fifo_empty
 );
@@ -750,9 +755,9 @@ begin
 end process;
 
 -- dma end of events, count events and write control
-process(pcie_fastclk_out, reset_n)
+process(pcie_fastclk_out, resets_n(RESET_BIT_TOP_PROC))
 begin
-	if(reset_n = '0') then
+	if(resets_n(RESET_BIT_TOP_PROC) = '0') then
 		dmamem_endofevent 		<= '0';
 		r_fifo_en					<= '0';
 		dma_control_wren	    	<= '0';
@@ -760,7 +765,7 @@ begin
 		dma_control_prev_rdreq	<= (others => '0');
 		dma_control_counter 		<= (others => '0');
 		event_length				<= (others => '0');
-		r_ram_add					<= (others => '0');
+		r_ram_add					<= (others => '1');
 		event_last_ram_add		<= (others => '0');
 		event_counter_state 		<= waiting;	
 	elsif(rising_edge(pcie_fastclk_out)) then
@@ -795,7 +800,7 @@ begin
 			when ending =>
 				r_ram_add 		<= r_ram_add + '1';
 				dma_data_wren	<= '1';
-				if(r_ram_add = event_last_ram_add) then
+				if(r_ram_add = event_last_ram_add - '1') then
 					dmamem_endofevent   	<= '1';
 					event_counter_state 	<= waiting;
 				end if;
@@ -820,8 +825,8 @@ pcie_b : entity work.pcie_block
 		DMAMEMWRITEWIDTH	  	=> 256
 	)
 	port map(
-		local_rstn				=> resets_n(RESET_BIT_PCIE_LOCAL),
-		appl_rstn				=> resets_n(RESET_BIT_PCIE),
+		local_rstn				=> '1',--resets_n(RESET_BIT_PCIE_LOCAL),
+		appl_rstn				=> '1',--resets_n(RESET_BIT_PCIE_APPl),
 		refclk					=> PCIE_REFCLK_p,
 		pcie_fastclk_out		=> pcie_fastclk_out,
 		
@@ -863,12 +868,12 @@ pcie_b : entity work.pcie_block
 		-- dma memory 
 		dma_data 				=> X"00000" & event_length &
 										r_ram_data 	& --rx_data(0) 	& 
-										data_pix_generated &
-										data_pix_generated2 &
-										x"2ABACAFE" &
+										x"1ABACAFE" &--data_pix_generated &
+										x"2ABACAFE" &--data_pix_generated2 &
 										x"3ABACAFE" &
 										x"4ABACAFE" &
-										x"5ABACAFE",										
+										x"5ABACAFE" &
+										x"6ABACAFE",										
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
 		dmamem_wren				=> dmamem_wren,
 		dmamem_endofevent		=> dmamem_endofevent,

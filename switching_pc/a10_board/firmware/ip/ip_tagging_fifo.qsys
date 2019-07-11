@@ -47,6 +47,7 @@
   <port name="wrreq" internal="wrreq" />
   <port name="rdreq" internal="rdreq" />
   <port name="clock" internal="clock" />
+  <port name="aclr" internal="aclr" />
  </interface>
  <interface
    name="fifo_output"
@@ -90,7 +91,7 @@
   <parameter name="GUI_rsEmpty" value="true" />
   <parameter name="GUI_rsFull" value="false" />
   <parameter name="GUI_rsUsedW" value="false" />
-  <parameter name="GUI_sc_aclr" value="false" />
+  <parameter name="GUI_sc_aclr" value="true" />
   <parameter name="GUI_sc_sclr" value="false" />
   <parameter name="GUI_synStage" value="3" />
   <parameter name="GUI_write_aclr_synch" value="false" />
