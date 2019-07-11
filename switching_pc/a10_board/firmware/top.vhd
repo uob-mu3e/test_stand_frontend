@@ -654,8 +654,11 @@ e_data_gen : component data_generator_a10
 		slow_down				=> writeregs(DMA_SLOW_DOWN_W)(7 downto 0),
 		data_pix_generated   => data_pix_generated,
 		data_pix_ready			=>	data_pix_ready,
-		start_global_time		=> (others => '0')--,
+		start_global_time		=> (others => '0'),
+		slow_down				=> writeregs(DMA_SLOW_DOWN_REGISTER_W)--,
 );
+
+
 e_data_gen2 : component data_generator_a10
 	port map (
 		clk 						=> pcie_fastclk_out,
@@ -665,7 +668,8 @@ e_data_gen2 : component data_generator_a10
 		slow_down				=> writeregs(DMA_SLOW_DOWN_W)(7 downto 0),
 		data_pix_generated   => data_pix_generated2,
 		data_pix_ready			=>	data_pix_ready2,
-		start_global_time		=> (others => '0')--,
+		start_global_time		=> (others => '0'),
+		slow_down				=> (others => '0')--,
 );
 -- link data to dma ram
 process(pcie_fastclk_out, resets_n(RESET_BIT_TOP_PROC))
@@ -814,7 +818,7 @@ begin
 end process;
 
 readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
-dmamem_wren 					<= dma_data_wren and writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);--dma_control_wren;--(insert_data_available_signal_here and dma_control_wren);
+dmamem_wren 					<= dma_data_wren and '1';--writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);--dma_control_wren;
 pb_in 							<= push_button0_db & push_button1_db & push_button2_db;
 
 
@@ -826,7 +830,7 @@ pcie_b : entity work.pcie_block
 	)
 	port map(
 		local_rstn				=> '1',--resets_n(RESET_BIT_PCIE_LOCAL),
-		appl_rstn				=> '1',--resets_n(RESET_BIT_PCIE_APPl),
+		appl_rstn				=> '1',--resets_n(RESET_BIT_PCIE),
 		refclk					=> PCIE_REFCLK_p,
 		pcie_fastclk_out		=> pcie_fastclk_out,
 		
@@ -873,7 +877,7 @@ pcie_b : entity work.pcie_block
 										x"3ABACAFE" &
 										x"4ABACAFE" &
 										x"5ABACAFE" &
-										x"6ABACAFE",										
+										x"6ABACAFE",
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
 		dmamem_wren				=> dmamem_wren,
 		dmamem_endofevent		=> dmamem_endofevent,

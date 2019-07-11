@@ -79,10 +79,10 @@ component data_generator_a10 is
 		reset:               in  std_logic;
 		enable_pix:          in  std_logic;
 		random_seed:			in  std_logic_vector (15 downto 0);
-		slow_down:				in std_logic_vector (7 downto 0);
-		start_global_time:	in std_logic_vector(47 downto 0);
+		start_global_time:	in  std_logic_vector(47 downto 0);
 		data_pix_generated:  out std_logic_vector(31 downto 0);
-		data_pix_ready:      out std_logic
+		data_pix_ready:      out std_logic;
+		slow_down:				in  std_logic_vector(31 downto 0)
 );
 end component data_generator_a10;
 
