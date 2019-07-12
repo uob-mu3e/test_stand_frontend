@@ -973,8 +973,8 @@ pcie_b: pcie_block
 			ddr3datain			=> writeregs(DDR3_DATA_W),
 			A_ddr3dataout		=> readregs(DDR3_DATA_A_R),
 			B_ddr3dataout		=> readregs(DDR3_DATA_B_R),
-			ddr3addr_written		=> regwritten_fast(DDR3_ADDR_W),
-			ddr3datain_written	=> regwritten_fast(DDR3_DATA_W),
+			ddr3addr_written		=> regwritten(DDR3_ADDR_W),
+			ddr3datain_written	=> regwritten(DDR3_DATA_W),
 		
 			-- Error counters
 			A_poserr				=> readregs(DDR3_POSERR_A_R),

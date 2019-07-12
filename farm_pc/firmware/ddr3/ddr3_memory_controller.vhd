@@ -58,6 +58,7 @@ architecture RTL of ddr3_memory_controller is
 	signal counter_read				:	std_logic;
 	signal counter_write				:	std_logic;
 	signal counter_address			:  std_logic_vector(25 downto 0);
+	constant counter_address_1		:  std_logic_vector(25 downto 0) := (others => '1');
 	signal counter_writedata		:	std_logic_vector(511 downto 0);
 	signal counter_readdata			:	std_logic_vector(511 downto 0);
 	signal counter_readdata_reg	:	std_logic_vector(511 downto 0);
@@ -93,7 +94,7 @@ architecture RTL of ddr3_memory_controller is
 	signal timecount_reg	: reg32;
 	
 	signal firsterror : std_logic;
-
+	signal started 	: std_logic;
 	
 begin
 
@@ -183,6 +184,7 @@ end process;
 	
 -- counter test state machine
 process(M_clk, reset_n)
+	variable counter_var : reg32;
 begin
 if(reset_n = '0') then
 	counter_state	 <= disabled;
@@ -206,11 +208,11 @@ elsif(M_clk'event and M_clk='1') then
 	counter_readdatavalid_reg 		<= counter_readdatavalid;
 	case counter_state is
 		when disabled =>
-			if (mode = countertest) then
+			if (mode = countertest and M_ready = '1') then
 				counter_state <= writing;
 			end if;
-			mycounter 				<= (others => '0');
-			counter_address		<= (others => '0');
+			mycounter 				<= (others => '1');
+			counter_address		<= (others => '1');
 			RWDone <= '0';
 			Running <= '0';
 
@@ -220,6 +222,8 @@ elsif(M_clk'event and M_clk='1') then
 			counterr_reg	<= (others => '0');
 			timecount_reg 	<= (others => '0');
 			
+			started 			<= '0';
+			
 		when writing =>
 		
 			timecount_reg <= timecount_reg + '1';
@@ -227,31 +231,37 @@ elsif(M_clk'event and M_clk='1') then
 			counter_burstcount <= ddr3control(30 downto 24);
 			
 			counter_write <= '1';
-		
-			counter_writedata <= X"1" & mycounter(27 downto 0) &
-										X"2" & mycounter(27 downto 0) &
-										X"3" & mycounter(27 downto 0) &
-										X"4" & mycounter(27 downto 0) &
-										X"5" & mycounter(27 downto 0) &
-										X"6" & mycounter(27 downto 0) &
-										X"7" & mycounter(27 downto 0) &
-										X"8" & mycounter(27 downto 0) &
-										X"9" & mycounter(27 downto 0) &
-										X"A" & mycounter(27 downto 0) &
-										X"B" & mycounter(27 downto 0) &
-										X"C" & mycounter(27 downto 0) &
-										X"D" & mycounter(27 downto 0) &
-										X"E" & mycounter(27 downto 0) &
-										X"F" & mycounter(27 downto 0) &
-										X"0" & mycounter(27 downto 0);
-										  				  
-										  
+			
 			if (M_ready = '1') then
+				started		<= '1';
+				counter_var := mycounter + '1';
 				mycounter <= mycounter + '1';
 				counter_address <= counter_address + '1';
+			else
+				counter_var := mycounter;
 			end if;
+		
+			counter_writedata <= X"1" & counter_var(27 downto 0) &
+										X"2" & counter_var(27 downto 0) &
+										X"3" & counter_var(27 downto 0) &
+										X"4" & counter_var(27 downto 0) &
+										X"5" & counter_var(27 downto 0) &
+										X"6" & counter_var(27 downto 0) &
+										X"7" & counter_var(27 downto 0) &
+										X"8" & counter_var(27 downto 0) &
+										X"9" & counter_var(27 downto 0) &
+										X"A" & counter_var(27 downto 0) &
+										X"B" & counter_var(27 downto 0) &
+										X"C" & counter_var(27 downto 0) &
+										X"D" & counter_var(27 downto 0) &
+										X"E" & counter_var(27 downto 0) &
+										X"F" & counter_var(27 downto 0) &
+										X"0" & counter_var(27 downto 0);
+										  				  
+										  
+
 			
-			if(counter_address(counter_address'left) = '0' and addrMSB = '1') then
+			if(counter_address = counter_address_1 and started = '1') then
 				RWDone <= '1';
 				counter_write <= '0';
 			end if;
@@ -259,8 +269,9 @@ elsif(M_clk'event and M_clk='1') then
 			if(RWDone = '1')then
 				counter_write <= '0';
 				counter_state <= reading;
-				counter_address		<= (others => '0');
+				counter_address		<= (others => '1');
 				RWDone <= '0';
+				started <= '0';
 			end if;
 			
 		when reading =>
@@ -272,9 +283,10 @@ elsif(M_clk'event and M_clk='1') then
 			
 			if (M_ready = '1') then
 				counter_address <= counter_address + '1';
+				started         <= '1';
 			end if;
 			
-			if(counter_address(counter_address'left) = '0' and addrMSB = '1') then
+			if(counter_address = counter_address_1 and started = '1') then
 				RWDone <= '1';
 				counter_read <= '0';
 			end if;
