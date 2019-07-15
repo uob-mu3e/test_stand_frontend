@@ -50,7 +50,7 @@ architecture arch of xcvr_s4 is
 
     signal reset_n : std_logic;
 
-    signal ch : integer range NUMBER_OF_CHANNELS_g-1 downto 0;
+    signal ch : integer range 0 to NUMBER_OF_CHANNELS_g-1 := 0;
 
     signal av_ctrl : work.util.avalon_t;
 
