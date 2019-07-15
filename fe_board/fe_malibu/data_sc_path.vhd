@@ -31,10 +31,12 @@ end entity;
 
 architecture arch of data_sc_path is
 
-    signal ram_addr_a : std_logic_vector(15 downto 0);
+    signal ram_addr_a : std_logic_vector(31 downto 0);
     signal ram_rdata_a : std_logic_vector(31 downto 0);
     signal ram_wdata_a : std_logic_vector(31 downto 0);
     signal ram_we_a : std_logic;
+
+    signal ram_re, ram_rvalid : std_logic;
 
     signal data_to_fifo : std_logic_vector(35 downto 0);
     signal data_to_fifo_we : std_logic;
@@ -75,24 +77,29 @@ begin
 
     e_sc : entity work.sc_s4
     port map (
-        clk => i_clk,
-        reset_n => not i_reset,
-        enable => '1',
+        i_link_data => i_link_data,
+        i_link_datak => i_link_datak,
 
-        mem_data_in => ram_rdata_a,
+        o_fifo_we => sc_to_fifo_we,
+        o_fifo_wdata => sc_to_fifo,
 
-        link_data_in => i_link_data(31 downto 0),
-        link_data_in_k => i_link_datak(3 downto 0),
+        o_ram_addr => ram_addr_a,
+        o_ram_re => ram_re,
+        i_ram_rdata => ram_rdata_a,
+        i_ram_rvalid => ram_rvalid,
+        o_ram_we => ram_we_a,
+        o_ram_wdata => ram_wdata_a,
 
-        fifo_data_out => sc_to_fifo,
-        fifo_we => sc_to_fifo_we,
-
-        mem_data_out => ram_wdata_a,
-        mem_addr_out => ram_addr_a,
-        mem_wren => ram_we_a,
-
-        stateout => open--,
+        i_reset_n => not i_reset,
+        i_clk => i_clk--,
     );
+
+    process(i_clk)
+    begin
+    if rising_edge(i_clk) then
+        ram_rvalid <= ram_re;
+    end if;
+    end process;
 
     ----------------------------------------------------------------------------
 
