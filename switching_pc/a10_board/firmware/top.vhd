@@ -797,8 +797,8 @@ begin
 				
 			when get_fifo_data =>
 				dma_data_wren					<= '1';
-				event_last_ram_add  			<= r_fifo_data;
-				event_length					<= r_fifo_data - event_last_ram_add;
+				event_last_ram_add  			<= r_fifo_data + '1';-- Addr of the header
+				event_length					<= r_fifo_data - event_last_ram_add + '1'; -- Number of addr. in ram
 				event_counter(11 downto 0) <= r_fifo_data;
 				r_ram_add			  			<= r_ram_add + '1';
 				event_counter_state 			<= ending;
@@ -806,7 +806,7 @@ begin
 			when ending =>
 				r_ram_add 		<= r_ram_add + '1';
 				dma_data_wren	<= '1';
-				if(r_ram_add = event_last_ram_add - '1') then
+				if(r_ram_add = event_last_ram_add - "10") then
 					dmamem_endofevent   	<= '1';
 					event_counter_state 	<= waiting;
 				end if;
