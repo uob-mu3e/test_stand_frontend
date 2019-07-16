@@ -17,6 +17,9 @@ package mudaq_registers is
 		constant RESET_BIT_FIFOPLL								:  integer := 6;
 		constant RESET_BIT_SC_SLAVE							:  integer := 7;
 		constant RESET_BIT_SC_MASTER							:  integer := 8;
+		constant RESET_BIT_PCIE_LOCAL							:  integer := 9;
+		constant RESET_BIT_TOP_PROC							:  integer := 10;
+		constant RESET_BIT_PCIE_APPl							:  integer := 12;
 		constant RESET_BIT_PCIE									:  integer := 31;
 
 		constant DATAGENERATOR_REGISTER_W					: integer := 16#02#;
@@ -33,6 +36,11 @@ package mudaq_registers is
 		constant DATAGENERATOR_DIVIDER_REGISTER_W			: integer := 16#03#;
 		
 		constant KWORD_W											: integer := 16#04#;
+
+		constant DMA_CONTROL_W								: integer := 16#05#;
+			subtype DMA_CONTROL_COUNTER_RANGE 				is integer range 15 downto 0;
+
+		constant DMA_SLOW_DOWN_REGISTER_W					: integer := 16#06#;
 
 		-- Registers above 0x36 are in use for the PCIe controller/DMA
 		constant DMA2_CTRL_ADDR_LOW_REGISTER_W				: integer := 16#36#;
@@ -72,13 +80,13 @@ package mudaq_registers is
 		constant EVENT2COUNTER64_REGISTER_R					: integer := 16#08#;
 		constant inaddr32_r										: integer := 16#09#;
 		constant inaddr32_w										: integer := 16#10#;
-		constant STATUS_R											: integer := 16#11#;
-		constant CH0_ALIGN										: integer:= 0;
-		constant CH1_ALIGN										: integer:= 1;
-		constant CH2_ALIGN										: integer:= 2;
-		constant CH3_ALIGN										: integer:= 3;
+		constant DMA_STATUS_R									: integer := 16#11#;
+		constant DMA_DATA_WEN									: integer:= 0;
+		constant DMA_CONTROL_WEN								: integer:= 1;
 		constant PLL_LOCKED_BIT									: integer := 16#12#;
 		constant DEBUG_SC											: integer := 16#13#;
+		constant DMA_HALFFUL_R									: integer := 16#14#;
+		constant DMA_NOTHALFFUL_R								: integer := 16#15#;
 
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;
