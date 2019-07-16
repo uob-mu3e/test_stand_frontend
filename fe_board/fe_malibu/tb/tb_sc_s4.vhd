@@ -2,12 +2,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity tb_sc is
+entity tb_sc_s4 is
 end entity;
 
-architecture arch of tb_sc is
+architecture arch of tb_sc_s4 is
 
-    constant CLK_MHZ : positive := 100;
+    constant CLK_MHZ : real := 100.0;
     signal clk, reset_n : std_logic := '0';
 
     signal link_data : std_logic_vector(31 downto 0);
@@ -30,8 +30,8 @@ architecture arch of tb_sc is
 
 begin
 
-    clk <= not clk after (500 ns / CLK_MHZ);
-    reset_n <= '0', '1' after 100 ns;
+    clk <= not clk after (0.5 us / CLK_MHZ);
+    reset_n <= '0', '1' after (1.0 us / CLK_MHZ);
 
     e_sc : entity work.sc_s4
     port map (
@@ -69,7 +69,7 @@ begin
     end if;
     end process;
 
-    p_link :
+    -- link
     process
     begin
         -- idle
@@ -96,6 +96,13 @@ begin
         -- length
         link_data <= X"00000004";
         link_datak <= "0000";
+
+        for i in 0 to 15 loop
+            wait until rising_edge(clk);
+            -- idle
+            link_data <= X"000000BC";
+            link_datak <= "0001";
+        end loop;
 
         wait until rising_edge(clk);
         -- data[0]
@@ -162,9 +169,11 @@ begin
         wait;
     end process;
 
-    p_ram :
+    -- check ram input
     process
     begin
+
+        wait until rising_edge(reset_n);
 
     ----------------------------------------------------------------------------
     -- write
@@ -227,9 +236,11 @@ begin
         wait;
     end process;
 
-    p_fifo :
+    -- check fifo input
     process
     begin
+
+        wait until rising_edge(reset_n);
 
     ----------------------------------------------------------------------------
     -- write
