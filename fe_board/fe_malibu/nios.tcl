@@ -51,17 +51,38 @@ if 1 {
     set_interface_property ${name} EXPORT_OF ${name}.master
 }
 
-add_instance                 sc_clk clock_source
-set_instance_parameter_value sc_clk {clockFrequency} {156250000}
-set_instance_parameter_value sc_clk {resetSynchronousEdges} {DEASSERT}
+if 1 {
+    set name avm_test
+    add_instance ${name} avalon_proxy
+    set_instance_parameter_value ${name} {addr_width} {16}
+    set_instance_parameter_value ${name} {readLatency} {1}
 
-add_connection sc_clk.clk       avm_sc.clk
-add_connection sc_clk.clk_reset avm_sc.reset
+    add_connection clk.clk ${name}.clk
+    add_connection clk.clk_reset ${name}.reset
+    add_connection cpu.data_master ${name}.slave
+    set_connection_parameter_value cpu.data_master/${name}.slave baseAddress {0x70040000}
 
-add_interface          sc_clk clock sink
-set_interface_property sc_clk EXPORT_OF sc_clk.clk_in
-add_interface          sc_reset reset sink
-set_interface_property sc_reset EXPORT_OF sc_clk.clk_in_reset
+    add_interface ${name} avalon master
+    set_interface_property ${name} EXPORT_OF ${name}.master
+}
+
+add_instance                 avm_clk clock_source
+set_instance_parameter_value avm_clk {clockFrequency} {156250000}
+set_instance_parameter_value avm_clk {resetSynchronousEdges} {DEASSERT}
+
+add_interface          avm_clk clock sink
+set_interface_property avm_clk EXPORT_OF avm_clk.clk_in
+add_interface          avm_reset reset sink
+set_interface_property avm_reset EXPORT_OF avm_clk.clk_in_reset
+
+
+
+add_connection avm_clk.clk       avm_sc.clk
+add_connection avm_clk.clk_reset avm_sc.reset
+add_connection avm_clk.clk       avm_test.clk
+add_connection avm_clk.clk_reset avm_test.reset
+
+
 
 source nios_mscb_inc.tcl
 

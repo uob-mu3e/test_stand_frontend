@@ -59,13 +59,15 @@ port (
     pod_rx          : in    std_logic_vector(3 downto 0);
 
 
-    -- mscb
+    -- MSCB
+
     mscb_data_in    : in    std_logic;
     mscb_data_out   : out   std_logic;
     mscb_oe         : out   std_logic;
 
-    --
 
+
+    --
 
     led_n       : out   std_logic_vector(15 downto 0);
 
@@ -74,6 +76,7 @@ port (
 
 
     reset_n     : in    std_logic;
+
     -- 125 MHz
     clk_aux     : in    std_logic--;
 );
@@ -105,7 +108,7 @@ architecture arch of top is
 
 
 
-    signal avm_pod, avm_qsfp : work.util.avalon_t;
+    signal av_pod, av_qsfp : work.util.avalon_t;
 
     signal qsfp_tx_data : std_logic_vector(127 downto 0);
     signal qsfp_tx_datak : std_logic_vector(15 downto 0);
@@ -115,11 +118,17 @@ architecture arch of top is
 
     signal qsfp_reset_n : std_logic;
 
+
+
+    signal av_sc : work.util.avalon_t;
+
     signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
     signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
     signal mscb_counter_in : unsigned(15 downto 0);
 
-    signal avm_sc : work.util.avalon_t;
+
+
+    signal av_test : work.util.avalon_t;
 
 begin
 
@@ -155,29 +164,36 @@ begin
 
     e_nios : component work.cmp.nios
     port map (
-        avm_qsfp_address        => avm_qsfp.address(15 downto 0),
-        avm_qsfp_read           => avm_qsfp.read,
-        avm_qsfp_readdata       => avm_qsfp.readdata,
-        avm_qsfp_write          => avm_qsfp.write,
-        avm_qsfp_writedata      => avm_qsfp.writedata,
-        avm_qsfp_waitrequest    => avm_qsfp.waitrequest,
+        avm_qsfp_address        => av_qsfp.address(15 downto 0),
+        avm_qsfp_read           => av_qsfp.read,
+        avm_qsfp_readdata       => av_qsfp.readdata,
+        avm_qsfp_write          => av_qsfp.write,
+        avm_qsfp_writedata      => av_qsfp.writedata,
+        avm_qsfp_waitrequest    => av_qsfp.waitrequest,
 
-        avm_pod_address         => avm_pod.address(15 downto 0),
-        avm_pod_read            => avm_pod.read,
-        avm_pod_readdata        => avm_pod.readdata,
-        avm_pod_write           => avm_pod.write,
-        avm_pod_writedata       => avm_pod.writedata,
-        avm_pod_waitrequest     => avm_pod.waitrequest,
+        avm_pod_address         => av_pod.address(15 downto 0),
+        avm_pod_read            => av_pod.read,
+        avm_pod_readdata        => av_pod.readdata,
+        avm_pod_write           => av_pod.write,
+        avm_pod_writedata       => av_pod.writedata,
+        avm_pod_waitrequest     => av_pod.waitrequest,
 
-        avm_sc_address          => avm_sc.address(17 downto 0),
-        avm_sc_read             => avm_sc.read,
-        avm_sc_readdata         => avm_sc.readdata,
-        avm_sc_write            => avm_sc.write,
-        avm_sc_writedata        => avm_sc.writedata,
-        avm_sc_waitrequest      => avm_sc.waitrequest,
+        avm_sc_address          => av_sc.address(17 downto 0),
+        avm_sc_read             => av_sc.read,
+        avm_sc_readdata         => av_sc.readdata,
+        avm_sc_write            => av_sc.write,
+        avm_sc_writedata        => av_sc.writedata,
+        avm_sc_waitrequest      => av_sc.waitrequest,
 
-        sc_clk_clk          => qsfp_pll_clk,
-        sc_reset_reset_n    => qsfp_reset_n,
+        avm_test_address        => av_test.address(15 downto 0),
+        avm_test_read           => av_test.read,
+        avm_test_readdata       => av_test.readdata,
+        avm_test_write          => av_test.write,
+        avm_test_writedata      => av_test.writedata,
+        avm_test_waitrequest    => av_test.waitrequest,
+
+        avm_clk_clk          => qsfp_pll_clk,
+        avm_reset_reset_n    => qsfp_reset_n,
 
         --
         -- nios base
@@ -305,12 +321,12 @@ begin
 
     e_data_sc_path : entity work.data_sc_path
     port map (
-        i_sc_address        => avm_sc.address(17 downto 2),
-        i_sc_read           => avm_sc.read,
-        o_sc_readdata       => avm_sc.readdata,
-        i_sc_write          => avm_sc.write,
-        i_sc_writedata      => avm_sc.writedata,
-        o_sc_waitrequest    => avm_sc.waitrequest,
+        i_sc_address        => av_sc.address(17 downto 2),
+        i_sc_read           => av_sc.read,
+        o_sc_readdata       => av_sc.readdata,
+        i_sc_write          => av_sc.write,
+        i_sc_writedata      => av_sc.writedata,
+        o_sc_waitrequest    => av_sc.waitrequest,
 
         i_fifo_data         => fifo_data,
         i_fifo_data_empty   => fifo_data_empty,
@@ -325,6 +341,25 @@ begin
         i_reset             => reset_n,
         i_clk               => qsfp_pll_clk--,
     );
+
+
+
+    ----------------------------------------------------------------------------
+    -- MSCB
+
+    i_mscb : entity work.mscb
+    port map (
+        nios_clk                    => nios_clk,
+        reset                       => not nios_reset_n,
+        mscb_to_nios_parallel_in    => mscb_to_nios_parallel_in,
+        mscb_from_nios_parallel_out => mscb_from_nios_parallel_out,
+        mscb_data_in                => mscb_data_in,
+        mscb_data_out               => mscb_data_out,
+        mscb_oe                     => mscb_oe,
+        mscb_counter_in             => mscb_counter_in--,
+    );
+
+    ----------------------------------------------------------------------------
 
 
 
@@ -362,12 +397,12 @@ begin
         i_pll_clk   => qsfp_pll_clk,
         i_cdr_clk   => qsfp_pll_clk,
 
-        i_avs_address     => avm_qsfp.address(15 downto 2),
-        i_avs_read        => avm_qsfp.read,
-        o_avs_readdata    => avm_qsfp.readdata,
-        i_avs_write       => avm_qsfp.write,
-        i_avs_writedata   => avm_qsfp.writedata,
-        o_avs_waitrequest => avm_qsfp.waitrequest,
+        i_avs_address     => av_qsfp.address(15 downto 2),
+        i_avs_read        => av_qsfp.read,
+        o_avs_readdata    => av_qsfp.readdata,
+        i_avs_write       => av_qsfp.write,
+        i_avs_writedata   => av_qsfp.writedata,
+        o_avs_waitrequest => av_qsfp.waitrequest,
 
         i_reset     => not nios_reset_n,
         i_clk       => nios_clk--,
@@ -388,22 +423,6 @@ begin
 
 
     ----------------------------------------------------------------------------
-    -- MSCB
-    i_mscb : entity work.mscb
-    port map (
-        nios_clk                    => nios_clk,
-        reset                       => not nios_reset_n,
-        mscb_to_nios_parallel_in    => mscb_to_nios_parallel_in,
-        mscb_from_nios_parallel_out => mscb_from_nios_parallel_out,
-        mscb_data_in                => mscb_data_in,
-        mscb_data_out               => mscb_data_out,
-        mscb_oe                     => mscb_oe,
-        mscb_counter_in             => mscb_counter_in--,
-    );
-
-
-
-    ----------------------------------------------------------------------------
     -- POD
     -- (reset system)
 
@@ -420,12 +439,12 @@ begin
     )
     port map (
         -- avalon slave interface
-        i_avs_address     => avm_pod.address(15 downto 2),
-        i_avs_read        => avm_pod.read,
-        o_avs_readdata    => avm_pod.readdata,
-        i_avs_write       => avm_pod.write,
-        i_avs_writedata   => avm_pod.writedata,
-        o_avs_waitrequest => avm_pod.waitrequest,
+        i_avs_address     => av_pod.address(15 downto 2),
+        i_avs_read        => av_pod.read,
+        o_avs_readdata    => av_pod.readdata,
+        i_avs_write       => av_pod.write,
+        i_avs_writedata   => av_pod.writedata,
+        o_avs_waitrequest => av_pod.waitrequest,
 
         i_tx_data   => work.util.D28_5
                      & work.util.D28_5
