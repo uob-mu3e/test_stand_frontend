@@ -381,8 +381,8 @@ begin
     g_reconfig_clk_altpll : if ( CLK_MHZ_g > 50 ) generate
         e_reconfig_clk : entity work.ip_altpll
         generic map (
-            DIV => CLK_MHZ_g,
-            MUL => 50--,
+            DIV => CLK_MHZ_g / work.util.gcd(CLK_MHZ_g, 50),
+            MUL => 50 / work.util.gcd(CLK_MHZ_g, 50)--,
         )
         port map (
             c0 => reconfig_clk,

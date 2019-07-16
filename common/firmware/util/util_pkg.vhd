@@ -30,8 +30,13 @@ package util is
 
 
 
+    -- Greatest Common Divisor
+    function gcd (
+        p, q : positive--;
+    ) return positive;
+
     function max (
-        l, r: integer
+        l, r : integer--;
     ) return integer;
 
     function vector_width (
@@ -135,8 +140,24 @@ end util;
 
 package body util is
 
+    function gcd (
+        p, q : positive--;
+    ) return positive is
+        variable p_v : positive := p;
+        variable q_v : positive := q;
+    begin
+        while ( p_v /= q_v ) loop
+            if ( p_v > q_v ) then
+                p_v := p_v - q_v;
+            else
+                q_v := q_v - p_v;
+            end if;
+        end loop;
+        return p_v;
+    end function;
+
     function max (
-        l, r: integer
+        l, r : integer
     ) return integer is
     begin
         if l > r then
