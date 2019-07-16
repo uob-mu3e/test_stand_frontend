@@ -26,6 +26,6 @@ package mu3e is
 
 end package;
 
-package body util is
+package body mu3e is
 
 end package body;

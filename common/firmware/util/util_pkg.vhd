@@ -136,7 +136,7 @@ package util is
         crc  : std_logic_vector(31 downto 0)--;
     ) return std_logic_vector;
 
-end util;
+end package;
 
 package body util is
 
@@ -459,4 +459,4 @@ package body util is
         return newcrc;
     end function;
 
-end util;
+end package body;
