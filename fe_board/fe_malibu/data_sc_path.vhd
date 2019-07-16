@@ -121,6 +121,25 @@ begin
               -- TODO: add some rate control
     );
 
+    e_data_fifo : entity work.ip_scfifo
+    generic map (
+        ADDR_WIDTH => 10,
+        DATA_WIDTH => 36--,
+    )
+    port map (
+        clock           => i_clk,
+        data            => data_to_fifo,
+        rdreq           => data_from_fifo_re,
+        sclr            => i_reset,
+        wrreq           => data_to_fifo_we,
+        almost_empty    => open,
+        almost_full     => open,
+        empty           => data_from_fifo_empty,
+        full            => open,
+        q               => data_from_fifo,
+        usedw           => open--,
+    );
+
     e_merger : entity work.data_merger
     port map (
         clk                     => i_clk,
@@ -153,38 +172,23 @@ begin
         leds                    => open -- debug
     );
 
-    e_data_fifo : entity work.ip_fifo
+    e_sc_fifo : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH => 10,
-        DATA_WIDTH => 36,
-        DEVICE => "Stratix IV"--,
+        DATA_WIDTH => 36--,
     )
     port map (
-        data    => data_to_fifo,
-        rdclk   => i_clk,
-        rdreq   => data_from_fifo_re,
-        wrclk   => i_clk,
-        wrreq   => data_to_fifo_we,
-        q       => data_from_fifo,
-        rdempty => data_from_fifo_empty,
-        wrfull  => open--,
-    );
-
-    e_sc_fifo : entity work.ip_fifo
-    generic map (
-        ADDR_WIDTH => 10,
-        DATA_WIDTH => 36,
-        DEVICE => "Stratix IV"--,
-    )
-    port map (
-        data    => sc_to_fifo,
-        rdclk   => i_clk,
-        rdreq   => sc_from_fifo_re,
-        wrclk   => i_clk,
-        wrreq   => sc_to_fifo_we,
-        q       => sc_from_fifo,
-        rdempty => sc_from_fifo_empty,
-        wrfull  => open--,
+        clock           => i_clk,
+        data            => sc_to_fifo,
+        rdreq           => sc_from_fifo_re,
+        sclr            => i_reset,
+        wrreq           => sc_to_fifo_we,
+        almost_empty    => open,
+        almost_full     => open,
+        empty           => sc_from_fifo_empty,
+        full            => open,
+        q               => sc_from_fifo,
+        usedw           => open--,
     );
 
     ----------------------------------------------------------------------------

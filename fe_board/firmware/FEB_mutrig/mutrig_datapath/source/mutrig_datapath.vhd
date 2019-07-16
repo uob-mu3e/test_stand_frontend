@@ -379,21 +379,24 @@ u_decoder: prbs_decoder
 		i_SC_disable_dec=> i_SC_disable_dec
 	);
 
-
---common fifo buffer
-u_common_fifo: common_fifo
-	port map (
-		clock		=> i_clk_core,
-		sclr		=> i_rst,
-		data		=> "00" & s_buf_data,
-		wrreq		=> s_buf_wr,
-		full		=> s_buf_full,
-		almost_full	=> s_buf_almost_full,
-		empty		=> o_fifo_empty,
-		q		=> o_fifo_data,
-		rdreq		=> i_fifo_rd
-	);
-
+    e_fifo : entity work.ip_scfifo
+    generic map (
+        ADDR_WIDTH => 8,
+        DATA_WIDTH => 36--,
+    )
+    port map (
+        clock           => i_clk_core,
+        data            => "00" & s_buf_data,
+        rdreq           => i_fifo_rd,
+        sclr            => i_rst,
+        wrreq           => s_buf_wr,
+        almost_empty    => open,
+        almost_full     => s_buf_almost_full,
+        empty           => o_fifo_empty,
+        full            => s_buf_full,
+        q               => o_fifo_data,
+        usedw           => open--,
+    );
 
 o_buffer_full <= s_buf_full;
 end architecture RTL;
