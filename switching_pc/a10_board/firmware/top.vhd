@@ -228,9 +228,10 @@ architecture rtl of top is
 		signal dma_control_wren 		: std_logic;
 		signal dma_control_counter		: std_logic_vector(31 downto 0);
 		signal dma_control_prev_rdreq : std_logic_vector(31 downto 0);
-		type event_counter_state_type is (waiting, ending);
+		type event_tagging_state_type is (waiting, ending);
+		type event_counter_state_type is (waiting, ending, get_fifo_data);
 		signal event_counter_state : event_counter_state_type;
-		signal event_tagging_state : event_counter_state_type;
+		signal event_tagging_state : event_tagging_state_type;
 		signal w_ram_en	 : std_logic;
 		signal w_fifo_en	 : std_logic;
 		signal w_fifo_data : std_logic_vector(11 downto 0);
@@ -651,7 +652,6 @@ e_data_gen : component data_generator_a10
 		reset						=> resets(RESET_BIT_DATAGEN),--reset,
 		enable_pix	         => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL),
 		random_seed 			=> (others => '1'),
-		slow_down				=> writeregs(DMA_SLOW_DOWN_W)(7 downto 0),
 		data_pix_generated   => data_pix_generated,
 		data_pix_ready			=>	data_pix_ready,
 		start_global_time		=> (others => '0'),
@@ -665,11 +665,10 @@ e_data_gen2 : component data_generator_a10
 		reset						=> reset,
 		enable_pix	         => '1',
 		random_seed 			=> (others => '1'),
-		slow_down				=> writeregs(DMA_SLOW_DOWN_W)(7 downto 0),
 		data_pix_generated   => data_pix_generated2,
 		data_pix_ready			=>	data_pix_ready2,
 		start_global_time		=> (others => '0'),
-		slow_down				=> (others => '0')--,
+		slow_down				=> writeregs(DMA_SLOW_DOWN_REGISTER_W)--,
 );
 -- link data to dma ram
 process(pcie_fastclk_out, resets_n(RESET_BIT_TOP_PROC))
@@ -792,14 +791,17 @@ begin
 
 			when waiting =>
 				if (tag_fifo_empty = '0') then
-					event_last_ram_add  			<= r_fifo_data;
-					event_length					<= r_fifo_data - event_last_ram_add;
-					event_counter(11 downto 0) <= r_fifo_data;	
 					r_fifo_en    		  			<= '1';
-					r_ram_add			  			<= r_ram_add + '1';
-					dma_data_wren					<= '1';
-					event_counter_state 			<= ending;
+					event_counter_state 			<= get_fifo_data;
 				end if;
+				
+			when get_fifo_data =>
+				dma_data_wren					<= '1';
+				event_last_ram_add  			<= r_fifo_data;
+				event_length					<= r_fifo_data - event_last_ram_add;
+				event_counter(11 downto 0) <= r_fifo_data;
+				r_ram_add			  			<= r_ram_add + '1';
+				event_counter_state 			<= ending;
 				
 			when ending =>
 				r_ram_add 		<= r_ram_add + '1';
