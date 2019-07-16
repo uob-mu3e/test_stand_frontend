@@ -142,34 +142,42 @@ begin
 
     e_merger : entity work.data_merger
     port map (
-        clk                     => i_clk,
-        reset                   => i_reset,
         fpga_ID_in              => (5=>'1',others => '0'),
         FEB_type_in             => "111010",
-        state_idle              => '1',
+
+        state_idle              => '0',
         state_run_prepare       => '0',
         state_sync              => '0',
-        state_running           => '0',
+        state_running           => '1',
         state_terminating       => '0',
         state_link_test         => '0',
         state_sync_test         => '0',
         state_reset             => '0',
         state_out_of_DAQ        => '0',
+
         data_out                => o_link_data(31 downto 0),
         data_is_k               => o_link_datak(3 downto 0),
-        data_in                 => i_fifo_data,
+
         data_in_slowcontrol     => sc_from_fifo,
         slowcontrol_fifo_empty  => sc_from_fifo_empty,
-        data_fifo_empty         => i_fifo_data_empty,
         slowcontrol_read_req    => sc_from_fifo_re,
+
+        data_in                 => i_fifo_data,
+        data_fifo_empty         => i_fifo_data_empty,
         data_read_req           => o_fifo_data_read,
-        terminated              => open,
+
         override_data_in        => (others => '0'),
         override_data_is_k_in   => (others => '0'),
         override_req            => '0',
         override_granted        => open,
+
+        terminated              => open,
         data_priority           => '0',
-        leds                    => open -- debug
+
+        leds                    => open,
+
+        reset                   => i_reset,
+        clk                     => i_clk--,
     );
 
     e_sc_fifo : entity work.ip_scfifo

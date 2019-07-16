@@ -357,6 +357,7 @@ process (clk, reset)
 							data_is_k					<= "0000";
 						end if;
 					when others =>
+                        merger_state <= idle;
 
 				end case;
 	
