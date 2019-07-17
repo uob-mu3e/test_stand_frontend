@@ -71,15 +71,6 @@ begin
 --            fpga_id <= i_link_data(23 downto 8);
             state <= S_ADDR;
             --
-        elsif ( i_link_data = x"0000009C" and i_link_datak = "0001"
-            and ( state /= S_IDLE )
-        ) then
-            -- trailer
-            -- write end of packet
-            o_fifo_we <= '1';
-            o_fifo_wdata <= "0011" & X"00000000";
-            state <= S_IDLE;
-            --
         elsif ( state = S_ADDR and i_link_datak = "0000" ) then
             -- ack addr
             o_fifo_we <= '1';
@@ -144,6 +135,15 @@ begin
                 o_fifo_wdata <= "0011" & X"00000000";
                 state <= S_IDLE;
             end if;
+            --
+        elsif ( i_link_data = x"0000009C" and i_link_datak = "0001"
+            and ( state /= S_IDLE )
+        ) then
+            -- trailer
+            -- write end of packet
+            o_fifo_we <= '1';
+            o_fifo_wdata <= "0011" & X"00000000";
+            state <= S_IDLE;
             --
         elsif ( i_link_data = x"000000BC" and i_link_datak = "0001" ) then
             idle_counter <= idle_counter + 1;
