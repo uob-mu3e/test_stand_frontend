@@ -1,3 +1,5 @@
+#
+
 add_instance parallel_mscb_in altera_avalon_pio
 set_instance_parameter_value parallel_mscb_in {direction} {Input}
 set_instance_parameter_value parallel_mscb_in {width} {12}

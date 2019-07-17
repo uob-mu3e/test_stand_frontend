@@ -19,38 +19,24 @@ set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
 
 
 
-set_global_assignment -name QIP_FILE "../fe/assignments.qip"
-set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "../fe/assignments/FE_scifi.tcl"
-
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
+
+set_global_assignment -name QIP_FILE ../fe/top.qip
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../fe/assignments/FE_scifi.tcl
 
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 
+
+
+set_global_assignment -name VHDL_FILE ../fe_malibu/data_sc_path.vhd
+
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
 
-set_global_assignment -name QIP_FILE util/util.qip
-
-set_global_assignment -name VHDL_FILE s4/ip_altpll.vhd
-set_global_assignment -name VHDL_FILE s4/ip_altlvds_rx.vhd
-set_global_assignment -name VHDL_FILE s4/ip_ram.vhd
-set_global_assignment -name VHDL_FILE s4/ip_fifo.vhd
-
-# Detector specific
-set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
-
-# FEB_common
 set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
-
-# QSFP
-
-set_global_assignment -name QIP_FILE s4/xcvr.qip
-
-# SC
-
-#TODO move to common directory FEB_common
-set_global_assignment -name VHDL_FILE sc_s4.vhd
+set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/FEB_mupix.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
 
 
 
@@ -66,4 +52,5 @@ set_global_assignment -name SMART_RECOMPILE ON
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

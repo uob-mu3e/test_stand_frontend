@@ -1,8 +1,0 @@
-#
-
-QUARTUS_VERSION = "16.1"
-DATE = ""
-
-# Revisions
-
-PROJECT_REVISION = "top"
