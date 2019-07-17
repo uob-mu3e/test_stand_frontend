@@ -253,67 +253,32 @@ begin
     ----------------------------------------------------------------------------
     -- MALIBU
 
-    -- 160 MHz
-    e_malibu_clk : entity work.ip_altpll
-    generic map (
-        DIV => 25,
-        MUL => 32--,
-    )
-    port map (
-        c0 => malibu_clk,
-        locked => open,
-        areset => '0',
-        inclk0 => clk_aux--,
-    );
-
     malibu_ck_fpga_1 <= '0';
     malibu_pll_reset <= '0';
-    malibu_ck_fpga_0 <= malibu_clk;
 
-    -- reset tdc and digital part
-    malibu_chip_reset <= nios_pio(16);
-
-    e_test_pulse : entity work.clkdiv
-    generic map ( P => 125 )
-    port map ( clkout => malibu_pll_test, rst_n => reset_n, clk => clk_aux );
-
-    -- 16 MHz
-    e_malibu_rx_data_clk_hz : entity work.clkdiv
-    generic map ( P => 16000000 )
-    port map ( clkout => led(8), rst_n => reset_n, clk => malibu_rx_data_clk );
-
-    e_mutrig_datapath : entity work.mutrig_datapath
+    e_malibu_path : entity work.malibu_path
     generic map (
-        N_ASICS => 1,
-        LVDS_PLL_FREQ => 160.0,
-        LVDS_DATA_RATE => 160--,
+        N_g => 1--,
     )
     port map (
-        i_rst => not reset_n,
-        i_stic_txd => malibu_data(0 downto 0),
-        i_refclk_125 => malibu_clk,
-        i_ts_clk => malibu_clk,
-        i_ts_rst => not reset_n,
+        i_avs_address       => av_test.address(5 downto 2),
+        i_avs_read          => av_test.read,
+        o_avs_readdata      => av_test.readdata,
+        i_avs_write         => av_test.write,
+        i_avs_writedata     => av_test.writedata,
+        o_avs_waitrequest   => av_test.waitrequest,
 
-        --interface to asic fifos
-        i_clk_core => qsfp_pll_clk,
-        o_fifo_empty => fifo_data_empty,
-        o_fifo_data => fifo_data,
-        i_fifo_rd => fifo_data_read,
+        o_ck_fpga_0         => malibu_ck_fpga_0,
+        o_chip_reset        => malibu_chip_reset,
+        o_pll_test          => malibu_pll_test,
+        i_data              => malibu_data(0 downto 0),
 
-        --slow control
-        i_SC_disable_dec => '0',
-        i_SC_mask => (others => '0'),
-        i_SC_datagen_enable => '0',
-        i_SC_datagen_shortmode => '0',
-        i_SC_datagen_count => (others => '0'),
-        --monitors
-        o_receivers_usrclk => malibu_rx_data_clk,
-        o_receivers_pll_lock => open,
-        o_receivers_dpa_lock=> open,
-        o_receivers_ready(0) => led(9),
-        o_frame_desync => led(10),
-        o_buffer_full => led(11)--,
+        o_fifo_data         => fifo_data,
+        o_fifo_empty        => fifo_data_empty,
+        i_fifo_rack         => fifo_data_read,
+
+        i_reset             => not reset_n,
+        i_clk               => qsfp_pll_clk--,
     );
 
     ----------------------------------------------------------------------------
