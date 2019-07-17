@@ -12,6 +12,7 @@ package util is
     constant D21_4 : std_logic_vector(7 downto 0) := x"95";
     constant D02_5 : std_logic_vector(7 downto 0) := X"A2";
     constant D21_5 : std_logic_vector(7 downto 0) := x"B5";
+    constant D28_4 : std_logic_vector(7 downto 0) := x"9C";
     constant D28_5 : std_logic_vector(7 downto 0) := X"BC";
     constant D28_7 : std_logic_vector(7 downto 0) := X"FC";
     constant D05_6 : std_logic_vector(7 downto 0) := X"C5";

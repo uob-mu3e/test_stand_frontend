@@ -176,6 +176,7 @@ component common_fifo
 		usedw		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
 	);
 end component;
+
 subtype t_vector is std_logic_vector(N_ASICS-1 downto 0);
 type t_array_64b is array (N_ASICS-1 downto 0) of std_logic_vector(64-1 downto 0);
 type t_array_48b is array (N_ASICS-1 downto 0) of std_logic_vector(48-1 downto 0);

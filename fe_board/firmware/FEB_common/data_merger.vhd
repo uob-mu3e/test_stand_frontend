@@ -102,18 +102,19 @@ process (merger_state)
 end process;
 
 
-process (clk, reset)
+    process (clk, reset)
     begin
-    if (reset = '1') then 
-        merger_state 					<= idle;
-        slowcontrol_read_req 			<= '0';
-        data_read_req 					<= '0'; 
-        terminated 						<= '0';
-		  run_prep_acknowledge_send 	<= '0';
-        data_is_k 						<= K285_datak;
-        data_out 							<= K285;
-		  override_granted				<= '0';
-    elsif (rising_edge(clk)) then
+    if ( reset = '1' ) then
+        merger_state                <= idle;
+        slowcontrol_read_req        <= '0';
+        data_read_req               <= '0';
+        terminated                  <= '0';
+        run_prep_acknowledge_send   <= '0';
+        data_is_k                   <= K285_datak;
+        data_out                    <= K285;
+        override_granted            <= '0';
+        --
+    elsif rising_edge(clk) then
 		  
 		  ------------------------------- feb state link test or sync test ----------------------------
 		  -- use override data input
