@@ -1,0 +1,16 @@
+
+set_global_assignment -name QSYS_FILE [file join $::quartus(qip_path) "ip/ip_xcvr_fpll.qsys"]
+set_global_assignment -name QSYS_FILE [file join $::quartus(qip_path) "ip/ip_xcvr_phy.qsys"]
+set_global_assignment -name QSYS_FILE [file join $::quartus(qip_path) "ip/ip_xcvr_reset.qsys"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "ip/ip_xcvr_fpll/synth/ip_xcvr_fpll.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "ip/ip_xcvr_phy/synth/ip_xcvr_phy.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "ip/ip_xcvr_reset/synth/ip_xcvr_reset.vhd"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "util/counter.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "util/ff_sync.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "util/reset_sync.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "util/rx_align.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "util/util_pkg.vhd"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "a10/xcvr_a10.vhd"]

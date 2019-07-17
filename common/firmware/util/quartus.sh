@@ -4,7 +4,10 @@ if [ -z ${ALTERAD_LICENSE_FILE:+x} ] ; then
     export ALTERAD_LICENSE_FILE=
 fi
 
-if [ -z $QUARTUS_ROOTDIR ] ; then export QUARTUS_ROOTDIR="/opt/altera/18.0/quartus" ; fi
+if [ -z "${QUARTUS_ROOTDIR:+x}" ] ; then
+    export QUARTUS_ROOTDIR="/opt/altera/18.0/quartus"
+fi
+
 [ -d "$QUARTUS_ROOTDIR" ] || return
 
 if [ "$(uname -m)" = "x86_64" ] ; then
