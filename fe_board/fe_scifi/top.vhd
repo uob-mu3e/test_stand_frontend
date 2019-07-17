@@ -303,12 +303,12 @@ begin
 
     e_data_sc_path : entity work.data_sc_path
     port map (
-        i_sc_address        => av_sc.address(17 downto 2),
-        i_sc_read           => av_sc.read,
-        o_sc_readdata       => av_sc.readdata,
-        i_sc_write          => av_sc.write,
-        i_sc_writedata      => av_sc.writedata,
-        o_sc_waitrequest    => av_sc.waitrequest,
+        i_avs_address        => av_sc.address(17 downto 2),
+        i_avs_read           => av_sc.read,
+        o_avs_readdata       => av_sc.readdata,
+        i_avs_write          => av_sc.write,
+        i_avs_writedata      => av_sc.writedata,
+        o_avs_waitrequest    => av_sc.waitrequest,
 
         i_fifo_data         => fifo_data,
         i_fifo_data_empty   => fifo_data_empty,

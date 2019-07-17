@@ -7,12 +7,12 @@ generic (
     SC_RAM_WIDTH_g : positive := 14--;
 );
 port (
-    i_sc_address        : in    std_logic_vector(15 downto 0);
-    i_sc_read           : in    std_logic;
-    o_sc_readdata       : out   std_logic_vector(31 downto 0);
-    i_sc_write          : in    std_logic;
-    i_sc_writedata      : in    std_logic_vector(31 downto 0);
-    o_sc_waitrequest    : out   std_logic;
+    i_avs_address        : in    std_logic_vector(15 downto 0);
+    i_avs_read           : in    std_logic;
+    o_avs_readdata       : out   std_logic_vector(31 downto 0);
+    i_avs_write          : in    std_logic;
+    i_avs_writedata      : in    std_logic_vector(31 downto 0);
+    o_avs_waitrequest    : out   std_logic;
 
     i_fifo_data         : in    std_logic_vector(35 downto 0);
     i_fifo_data_empty   : in    std_logic;
@@ -61,10 +61,10 @@ begin
         DATA_WIDTH => 32--,
     )
     port map (
-        address_b   => i_sc_address(SC_RAM_WIDTH_g-1 downto 0),
-        q_b         => o_sc_readdata,
-        wren_b      => i_sc_write,
-        data_b      => i_sc_writedata,
+        address_b   => i_avs_address(SC_RAM_WIDTH_g-1 downto 0),
+        q_b         => o_avs_readdata,
+        wren_b      => i_avs_write,
+        data_b      => i_avs_writedata,
         clock_b     => i_clk,
 
         address_a   => ram_addr_a(SC_RAM_WIDTH_g-1 downto 0),
@@ -73,7 +73,14 @@ begin
         data_a      => ram_wdata_a,
         clock_a     => i_clk--,
     );
-    o_sc_waitrequest <= '0';
+    o_avs_waitrequest <= '0';
+
+    process(i_clk)
+    begin
+    if rising_edge(i_clk) then
+        ram_rvalid <= ram_re;
+    end if;
+    end process;
 
     e_sc : entity work.sc_rx
     port map (
@@ -93,13 +100,6 @@ begin
         i_reset_n => not i_reset,
         i_clk => i_clk--,
     );
-
-    process(i_clk)
-    begin
-    if rising_edge(i_clk) then
-        ram_rvalid <= ram_re;
-    end if;
-    end process;
 
     ----------------------------------------------------------------------------
 
