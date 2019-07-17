@@ -75,7 +75,7 @@ begin
     );
     o_sc_waitrequest <= '0';
 
-    e_sc : entity work.sc_s4
+    e_sc : entity work.sc_rx
     port map (
         i_link_data => i_link_data,
         i_link_datak => i_link_datak,

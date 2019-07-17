@@ -1,7 +1,6 @@
 library ieee;
 use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
 
 --  A testbench has no ports.
 entity sc_tb is
@@ -82,7 +81,7 @@ architecture behav of sc_tb is
   		signal reset_n : std_logic := '1';
   		signal writememdata : std_logic_vector(31 downto 0);
   		signal writememdata_out : std_logic_vector(31 downto 0);
-  		signal writememaddr : std_logic_vector(15 downto 0);
+  		signal writememaddr : unsigned(15 downto 0);
   		signal memaddr : std_logic_vector(15 downto 0);
   		signal mem_data_out : std_logic_vector(31 downto 0);
   		signal mem_datak_out : std_logic_vector(3 downto 0);
@@ -113,7 +112,7 @@ begin
 		reset_n			=> reset_n,
 		we      	  	=> writememwren,
 		read_address  	=> memaddr,
-		write_address 	=> writememaddr,
+		write_address 	=> std_logic_vector(writememaddr),
 		datain 			=> writememdata,
 		dataout 		=> writememdata_out
 	);

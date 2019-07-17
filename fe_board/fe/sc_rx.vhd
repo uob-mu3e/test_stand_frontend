@@ -10,7 +10,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity sc_s4 is
+entity sc_rx is
 port (
     i_link_data     : in    std_logic_vector(31 downto 0);
     i_link_datak    : in    std_logic_vector(3 downto 0);
@@ -30,7 +30,7 @@ port (
 );
 end entity;
 
-architecture arch of sc_s4 is
+architecture arch of sc_rx is
 
     type state_t is (
         S_IDLE, S_ADDR, S_LENGTH, S_READ, S_WRITE,
@@ -154,6 +154,9 @@ begin
 
             if ( idle_counter = (idle_counter'range => '1') ) then
                 -- timeout
+                -- write end of packet
+                o_fifo_we <= '1';
+                o_fifo_wdata <= "0011" & X"00000000";
                 state <= S_TIMEOUT;
             end if;
             --

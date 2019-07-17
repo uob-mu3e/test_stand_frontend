@@ -3,4 +3,4 @@
 unset CDPATH
 cd "$(dirname -- "$(readlink -e -- "$0")")" || exit 1
 
-./sim.sh tb_sc_s4 tb_sc_s4.vhd ../sc_s4.vhd
+util/sim.sh tb_sc_rx tb_sc_rx.vhd sc_rx.vhd

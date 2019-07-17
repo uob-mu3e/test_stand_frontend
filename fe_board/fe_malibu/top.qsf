@@ -51,7 +51,7 @@ set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/linear_shift.vhd
 
 # SC
 
-set_global_assignment -name VHDL_FILE sc_s4.vhd
+set_global_assignment -name VHDL_FILE ../fe/sc_rx.vhd
 set_global_assignment -name VHDL_FILE data_sc_path.vhd
 
 # QSFP & POD

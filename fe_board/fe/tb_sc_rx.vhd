@@ -2,10 +2,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity tb_sc_s4 is
+entity tb_sc_rx is
 end entity;
 
-architecture arch of tb_sc_s4 is
+architecture arch of tb_sc_rx is
 
     constant CLK_MHZ : real := 100.0;
     signal clk, reset_n : std_logic := '0';
@@ -33,7 +33,7 @@ begin
     clk <= not clk after (0.5 us / CLK_MHZ);
     reset_n <= '0', '1' after (1.0 us / CLK_MHZ);
 
-    e_sc : entity work.sc_s4
+    e_sc : entity work.sc_rx
     port map (
         i_link_data => link_data,
         i_link_datak => link_datak,
