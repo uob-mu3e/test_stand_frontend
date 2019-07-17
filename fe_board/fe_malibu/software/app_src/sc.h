@@ -21,7 +21,6 @@ void sc_callback(volatile alt_u32* data) {
     switch(command) {
     case 0x0101:
         Malibu_Powerup();
-	printf("HHHH");
         break;
     case 0x0102:
         Malibu_Powerdown();
