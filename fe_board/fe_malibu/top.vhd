@@ -340,7 +340,7 @@ begin
         o_data              => qsfp_tx_data(31 downto 0),
         o_datak             => qsfp_tx_datak(3 downto 0),
 
-        i_reset             => reset_n,
+        i_reset             => not reset_n,
         i_clk               => qsfp_pll_clk--,
     );
 
