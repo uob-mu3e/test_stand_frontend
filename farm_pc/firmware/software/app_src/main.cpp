@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "i2c.h"
+#include "../include/i2c.h"
 i2c_t i2c;
 
 struct fan_t {
@@ -58,7 +58,7 @@ struct temp_t {
     }
 };
 
-#include "cfi1616.h"
+#include "../include/a10/cfi1616.h"
 cfi1616_t flash;
 
 volatile alt_u32* ctrl = (alt_u32*)(CTRL_REGION_BASE);
@@ -147,8 +147,6 @@ void menu_i2c() {
     }
 }
 
-//#include "xcvr.h"
-
 void menu_flash() {
     volatile alt_u8* addr_test = flash.base + 0x05E80000;
 
@@ -199,7 +197,6 @@ void menu_flash() {
 }
 
 int main() {
-//        printf("ASDF\n");
     fan.init();
 
     flash.init((alt_u8*)(FLASH_BASE));
@@ -228,10 +225,6 @@ int main() {
             printf("i2c:\n");
             menu_i2c();
             break;
- //       case '1':
- //           printf("xcvr:\n");
- //           menu_xcvr();
- //           break;
         case '2':
             printf("flash:\n");
             menu_flash();
