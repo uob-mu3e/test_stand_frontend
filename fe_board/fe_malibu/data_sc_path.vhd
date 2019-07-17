@@ -103,43 +103,6 @@ begin
 
     ----------------------------------------------------------------------------
 
-    ----------------------------------------------------------------------------
-    -- data gen
-    
-    e_data_gen : entity work.data_generator
-    port map (
-        clk => i_clk,
-        reset => i_reset,
-        enable_pix => '1',
-        --enable_sc:         	in  std_logic;
-        random_seed => (others => '1'),
-        data_pix_generated => data_to_fifo,
-        --data_sc_generated:   	out std_logic_vector(31 downto 0);
-        data_pix_ready => data_to_fifo_we,
-        --data_sc_ready:      	out std_logic;
-        start_global_time => (others => '0')--,
-              -- TODO: add some rate control
-    );
-
-    e_data_fifo : entity work.ip_scfifo
-    generic map (
-        ADDR_WIDTH => 10,
-        DATA_WIDTH => 36--,
-    )
-    port map (
-        clock           => i_clk,
-        data            => data_to_fifo,
-        rdreq           => data_from_fifo_re,
-        sclr            => i_reset,
-        wrreq           => data_to_fifo_we,
-        almost_empty    => open,
-        almost_full     => open,
-        empty           => data_from_fifo_empty,
-        full            => open,
-        q               => data_from_fifo,
-        usedw           => open--,
-    );
-
     e_merger : entity work.data_merger
     port map (
         fpga_ID_in              => (5=>'1',others => '0'),
