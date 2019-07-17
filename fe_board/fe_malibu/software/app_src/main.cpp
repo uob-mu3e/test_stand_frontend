@@ -6,7 +6,7 @@
 #include "sc.h"
 #include "mscb_user.h"
 
-#include "si5345.h"
+#include "../../../fe/software/app_src/si5345.h"
 si5345_t si5345 { 0 };
 
 alt_u32 alarm_callback(void*) {

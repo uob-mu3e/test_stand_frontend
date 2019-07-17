@@ -21,48 +21,30 @@ set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
 
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 
-set_global_assignment -name QIP_FILE ../fe/assignments.qip
+set_global_assignment -name QIP_FILE ../fe/top.qip
 
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 
-set_global_assignment -name QIP_FILE util/util.qip
-
-set_global_assignment -name VHDL_FILE cmp_pkg.vhd
-
-set_global_assignment -name QSYS_FILE nios.qsys
-
-set_global_assignment -name VHDL_FILE s4/ip_altpll.vhd
-set_global_assignment -name VHDL_FILE s4/ip_altlvds_rx.vhd
-set_global_assignment -name VHDL_FILE s4/ip_ram.vhd
-set_global_assignment -name VHDL_FILE s4/ip_fifo.vhd
-
-# QSFP
-
-set_global_assignment -name QIP_FILE s4/xcvr.qip
-
-# SC
 
 
-
-
-
-
-# tail
-
+set_global_assignment -name VHDL_FILE ../fe_malibu/data_sc_path.vhd
 set_global_assignment -name VHDL_FILE spi_master.vhd
 set_global_assignment -name VHDL_FILE spi_if_write_bits.vhd
 set_global_assignment -name VHDL_FILE mp8_slowcontrol.vhd
 set_global_assignment -name VHDL_FILE mp8_sc_master.vhd
-
-
-
-set_global_assignment -name VHDL_FILE ../firmware/FEB_common/data_merger.vhd
-set_global_assignment -name VHDL_FILE ../firmware/FEB_common/mergerfifo.vhd
-set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/linear_shift.vhd
-set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/data_generator.vhd
-set_global_assignment -name VHDL_FILE sc_s4.vhd
 set_global_assignment -name VHDL_FILE reg_map_s4.vhd
+
+set_global_assignment -name VHDL_FILE cmp_pkg.vhd
+set_global_assignment -name QSYS_FILE nios.qsys
+
+set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/FEB_mupix.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
+
+
+
+# tail
 
 set_global_assignment -name ENABLE_DRC_SETTINGS ON
 set_global_assignment -name FLOW_DISABLE_ASSEMBLER OFF

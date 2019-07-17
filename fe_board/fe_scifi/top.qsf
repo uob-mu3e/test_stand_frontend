@@ -34,11 +34,9 @@ set_global_assignment -name VHDL_FILE ../fe_malibu/data_sc_path.vhd
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
 
-# Detector specific
-set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
-
-# FEB_common
 set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/FEB_mupix.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
 
 
 
@@ -54,4 +52,5 @@ set_global_assignment -name SMART_RECOMPILE ON
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
