@@ -38,7 +38,7 @@ int main() {
         char cmd = wait_key();
 
         int switch_datain;
-        volatile int adc_avg=0 ,i;
+        volatile int adc_avg = 0;
 
         switch(cmd) {
         case '0':
@@ -50,7 +50,8 @@ int main() {
             printf("*******PIO and On-Die Temp Sensor example********\n"
                    "Change Switches 1, 2 and 3 to change LEDs 1, 2 and 3\n"
                    "The value of ADC Channel connected to Temperature Sensing Diode is collected every second and is averaged over 64 Samples\n"
-                   "------------------------------------------------------------------------------------------------------");
+                   "------------------------------------------------------------------------------------------------------\n");
+
             //Starting the ADC sequencer
             IOWR(ADC_SEQUENCER_CSR_BASE, 0, 0);
             usleep(1000);
@@ -64,17 +65,18 @@ int main() {
                 switch_datain = IORD_ALTERA_AVALON_PIO_DATA(SW_IO_BASE);
                 IOWR_ALTERA_AVALON_PIO_DATA(LED_IO_BASE,switch_datain);
                 //Giving a 1 Second delay
-                usleep(1000);
+                usleep(1000000);
 
                 adc_avg=0;
                 //Getting an average of 64 samples
-                for (i=0;i<64;i++)
+                for (int i=0;i<64;i++)
                 {
-                    int adc_value=IORD(ADC_SAMPLE_STORE_CSR_BASE,i);
+                    int adc_value=IORD(ADC_SAMPLE_STORE_CSR_BASE, 0);
                     adc_avg=adc_avg+adc_value;
                 }
+                printf("\n");
 
-                printf("\nOn-die temperature = %d",(celsius_lookup(adc_avg/64-3417)-40));
+                printf("On-die temperature = %d\n",(celsius_lookup(adc_avg/64-3417)-40));
 
             }
             break;
