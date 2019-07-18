@@ -149,7 +149,7 @@ begin
 		waiting 			<= '0';
 		wait_counter	<= (others => '0');
 	elsif(rising_edge(clk)) then
-		if(wait_counter = slow_down) then
+		if(wait_counter >= slow_down) then
 			wait_counter 	<= (others => '0');
 			waiting 			<= '0';
 		else
