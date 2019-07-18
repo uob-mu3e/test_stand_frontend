@@ -91,6 +91,8 @@ begin
                 state <= S_READ;
             elsif (sc_type = "11") then
                 state <= S_WRITE;
+            else
+                state <= S_ERROR;
             end if;
             --
         elsif ( state = S_WRITE and i_link_datak = "0000" ) then
@@ -145,6 +147,12 @@ begin
             o_fifo_wdata <= "0011" & X"00000000";
             state <= S_IDLE;
             --
+        elsif ( state = S_TIMEOUT ) then
+            state <= S_IDLE;
+            --
+        elsif ( state = S_ERROR ) then
+            state <= S_IDLE;
+            --
         elsif ( i_link_data = x"000000BC" and i_link_datak = "0001" ) then
             idle_counter <= idle_counter + 1;
 
@@ -154,9 +162,6 @@ begin
 
             if ( idle_counter = (idle_counter'range => '1') ) then
                 -- timeout
-                -- write end of packet
-                o_fifo_we <= '1';
-                o_fifo_wdata <= "0011" & X"00000000";
                 state <= S_TIMEOUT;
             end if;
             --
