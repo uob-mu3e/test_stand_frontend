@@ -1,15 +1,12 @@
 
 #include "../include/base.h"
 
-#include "sys/alt_irq.h"
-#include "altera_avalon_timer_regs.h"
-#include "altera_avalon_pio_regs.h"
-#include "altera_modular_adc_sequencer_regs.h"
+#include <sys/alt_irq.h>
+#include <altera_avalon_timer_regs.h>
+#include <altera_avalon_pio_regs.h>
+#include <altera_modular_adc_sequencer_regs.h>
 
 alt_u8 celsius_lookup(int adc_avg_in);
-
-//#include "si.h"
-//si_t si;
 
 alt_u32 alarm_callback(void*) {
     // watchdog
@@ -18,37 +15,6 @@ alt_u32 alarm_callback(void*) {
 
     return 10;
 }
- /*
-void menu_spi_si5345() {
-    while (1) {
-        printf("SI5345\n", ALT_DEVICE_FAMILY);
-        printf("  [i] => init chip\n");
-        printf("  [q] => quit\n");
-        printf("  [r] => read(0xFE)\n");
-        printf("  [t] => test\n");
-
-        printf("Select entry ...\n");
-        char cmd = wait_key();
-        switch(cmd) {
-        case 'r' :
-            si.read(0xFE);
-            break;
-        case 'i':
-            si.init();
-            break;
-        case 't' :
-            si.test();
-            break;
-        case '?':
-            break;
-        case 'q':
-            return;
-        default:
-            printf("invalid command: '%c'\n", cmd);
-        }
-    }
-}
-*/
 
 int main() {
     uart_init();
@@ -59,7 +25,7 @@ int main() {
     alt_alarm alarm;
     int err = alt_alarm_start(&alarm, 0, alarm_callback, nullptr);
     if(err) {
-        printf("ERROR: alt_alarm_start => %d\n%d\n", err);
+        printf("ERROR: alt_alarm_start => %d\n", err);
     }
 
     while (1) {
@@ -70,24 +36,27 @@ int main() {
 
         printf("Select entry ...\n");
         char cmd = wait_key();
-        
+
         int switch_datain;
         volatile int adc_avg=0 ,i;
-        
+
         switch(cmd) {
         case '0':
             printf("spi:\n");
             //menu_spi_si5345();
             break;
         case '1':
-            
-            printf("*******PIO and On-Die Temp Sensor example********\nChange Switches 1,2, and 3 to change LEDs 1,2 and 3\nThe value of ADC Channel connected to Temperature Sensing Diode is collected every second and is averaged over 64 Samples\n------------------------------------------------------------------------------------------------------");
+
+            printf("*******PIO and On-Die Temp Sensor example********\n"
+                   "Change Switches 1, 2 and 3 to change LEDs 1, 2 and 3\n"
+                   "The value of ADC Channel connected to Temperature Sensing Diode is collected every second and is averaged over 64 Samples\n"
+                   "------------------------------------------------------------------------------------------------------");
             //Starting the ADC sequencer
             IOWR(ADC_SEQUENCER_CSR_BASE, 0, 0);
             usleep(1000);
             IOWR(ADC_SAMPLE_STORE_CSR_BASE, 64, 0);
             IOWR(ADC_SEQUENCER_CSR_BASE, 0, 1);
-        
+
             //Event loop never exits
             while(1)
             {
@@ -96,7 +65,7 @@ int main() {
                 IOWR_ALTERA_AVALON_PIO_DATA(LED_IO_BASE,switch_datain);
                 //Giving a 1 Second delay
                 usleep(1000);
-        
+
                 adc_avg=0;
                 //Getting an average of 64 samples
                 for (i=0;i<64;i++)
@@ -104,9 +73,9 @@ int main() {
                     int adc_value=IORD(ADC_SAMPLE_STORE_CSR_BASE,i);
                     adc_avg=adc_avg+adc_value;
                 }
-        
+
                 printf("\nOn-die temperature = %d",(celsius_lookup(adc_avg/64-3417)-40));
-        
+
             }
             break;
         default:
@@ -119,7 +88,7 @@ int main() {
 
 alt_u8 celsius_lookup(int adc_avg_in)
 {
-	 const alt_u8 celsius_lookup_table[383]={
+	const alt_u8 celsius_lookup_table[383]={
 			165,165,165,164,164,164,163,163,163,162,162,162,161,161,161,160,160,160,
 			159,159,159,158,158,158,157,157,157,156,156,156,155,155,155,154,154,154,
 			153,153,152,152,152,151,151,151,150,150,150,149,149,149,148,148,148,147,
@@ -144,4 +113,3 @@ alt_u8 celsius_lookup(int adc_avg_in)
 	return (celsius_lookup_table[adc_avg_in]);
 
 }
-

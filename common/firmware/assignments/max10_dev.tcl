@@ -1,53 +1,5 @@
-# -------------------------------------------------------------------------- #
 #
-# Copyright (C) 2018  Intel Corporation. All rights reserved.
-# Your use of Intel Corporation's design tools, logic functions 
-# and other software and tools, and its AMPP partner logic 
-# functions, and any output files from any of the foregoing 
-# (including device programming or simulation files), and any 
-# associated documentation or information are expressly subject 
-# to the terms and conditions of the Intel Program License 
-# Subscription Agreement, the Intel Quartus Prime License Agreement,
-# the Intel FPGA IP License Agreement, or other applicable license
-# agreement, including, without limitation, that your use is for
-# the sole purpose of programming logic devices manufactured by
-# Intel and sold by Intel or its authorized distributors.  Please
-# refer to the applicable agreement for further details.
-#
-# -------------------------------------------------------------------------- #
-#
-# Quartus Prime
-# Version 18.0.0 Build 614 04/24/2018 SJ Standard Edition
-# Date created = 13:09:46  July 03, 2019
-#
-# -------------------------------------------------------------------------- #
-#
-# Notes:
-#
-# 1) The default values for assignments are stored in the file:
-#		max10_dev_assignment_defaults.qdf
-#    If this file doesn't exist, see file:
-#		assignment_defaults.qdf
-#
-# 2) Altera recommends that you do not modify this file. This
-#    file is updated automatically by the Quartus Prime software
-#    and any changes you make may be lost or overwritten.
-#
-# -------------------------------------------------------------------------- #
 
-
-set_global_assignment -name FAMILY "MAX 10 FPGA" -tag platform
-set_global_assignment -name DEVICE 10M08SAE144C8GES -tag platform
-set_global_assignment -name TOP_LEVEL_ENTITY max10_dev
-set_global_assignment -name ORIGINAL_QUARTUS_VERSION 15.0.0
-set_global_assignment -name PROJECT_CREATION_TIME_DATE "10:55:55  MAY 06, 2015"
-set_global_assignment -name LAST_QUARTUS_VERSION "18.0.0 Standard Edition"
-set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files -tag platform
-set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
-set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
-set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 2 -tag platform
-set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (Verilog)" -tag platform
-set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VERILOG HDL" -section_id eda_simulation -tag platform
 set_location_assignment PIN_6 -to Arduino_A0 -tag platform
 set_location_assignment PIN_7 -to Arduino_A1 -tag platform
 set_location_assignment PIN_8 -to Arduino_A2 -tag platform
@@ -122,13 +74,7 @@ set_location_assignment PIN_134 -to LED2 -tag platform
 set_location_assignment PIN_135 -to LED3 -tag platform
 set_location_assignment PIN_140 -to LED4 -tag platform
 set_location_assignment PIN_141 -to LED5 -tag platform
-set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
-set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
-set_global_assignment -name FLOW_ENABLE_POWER_ANALYZER ON
-set_global_assignment -name POWER_DEFAULT_INPUT_IO_TOGGLE_RATE "12.5 %"
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top -tag platform
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top -tag platform
-set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top -tag platform
+
 set_instance_assignment -name IO_STANDARD "2.5 V" -to Arduino_A0 -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to Arduino_A1 -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to Arduino_A2 -tag platform
@@ -202,9 +148,3 @@ set_instance_assignment -name IO_STANDARD "2.5 V" -to LED2 -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to LED3 -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to LED4 -tag platform
 set_instance_assignment -name IO_STANDARD "2.5 V" -to LED5 -tag platform
-set_global_assignment -name VHDL_FILE ip/ip_altpll.vhd
-set_global_assignment -name QSYS_FILE nios.qsys
-set_global_assignment -name VHDL_FILE cmp_pkg.vhd
-set_global_assignment -name VHDL_FILE max10_dev.vhd
-set_global_assignment -name SDC_FILE max10_dev.sdc
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
