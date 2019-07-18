@@ -48,6 +48,8 @@ set_location_assignment PIN_AH33 -to qsfp_rx[0]
 set_instance_assignment -name IO_STANDARD LVDS -to qsfp_pll_clk
 set_location_assignment PIN_AB33 -to qsfp_pll_clk
 
+
+
 # POD pins
 set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to pod_tx[3]
 set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to pod_tx[2]

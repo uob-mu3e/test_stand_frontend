@@ -74,11 +74,11 @@ set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to malibu_data[11]
 set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to malibu_data[12]
 set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to malibu_data[13]
 
+
+
 set_instance_assignment -name IO_STANDARD "2.5 V" -to mscb_data_in
 set_instance_assignment -name IO_STANDARD "2.5 V" -to mscb_data_out
 set_instance_assignment -name IO_STANDARD "2.5 V" -to mscb_oe
 set_location_assignment PIN_A23 -to mscb_data_in
 set_location_assignment PIN_A24 -to mscb_data_out
 set_location_assignment PIN_A25 -to mscb_oe
-
-

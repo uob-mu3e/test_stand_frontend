@@ -22,49 +22,36 @@ use ieee.numeric_std.all;
 use work.daq_constants.all;
 
 
-entity receiver_block is 
-	generic(
-		NINPUT: integer := 1
-	);
-	port (
-		reset_n			: in std_logic;
-		reset_n_errcnt		: in std_logic;
-		rx_in			: in std_logic_vector(NINPUT-1 downto 0);
-		rx_inclock		: in std_logic;
-		rx_state		: out std_logic_vector(2*NINPUT-1 downto 0);
-		rx_ready		: out std_logic_vector(NINPUT-1 downto 0);
-		rx_data			: out std_logic_vector(NINPUT*8-1 downto 0);
-		rx_k			: out std_logic_vector(NINPUT-1 downto 0);
-		rx_clkout		: out std_logic;
-		pll_locked		: out std_logic;
 
-		rx_dpa_locked_out	:out std_logic_vector(NINPUT-1 downto 0);
-	
-		rx_runcounter		:out links_reg32;
-		rx_errorcounter		:out links_reg32
-		);
-end receiver_block;		
+entity receiver_block is
+generic (
+	NINPUT : positive := 1;
+	LVDS_PLL_FREQ : real := 125.0;
+	LVDS_DATA_RATE : positive := 1250--;
+);
+port (
+	reset_n             : in std_logic;
+	reset_n_errcnt      : in std_logic;
+	rx_in               : in std_logic_vector(NINPUT-1 downto 0);
+	rx_inclock          : in std_logic;
+	rx_state            : out std_logic_vector(2*NINPUT-1 downto 0);
+	rx_ready            : out std_logic_vector(NINPUT-1 downto 0);
+	rx_data             : out std_logic_vector(NINPUT*8-1 downto 0);
+	rx_k                : out std_logic_vector(NINPUT-1 downto 0);
+	rx_clkout           : out std_logic;
+	pll_locked          : out std_logic;
 
-		
+	rx_dpa_locked_out   : out std_logic_vector(NINPUT-1 downto 0);
+
+	rx_runcounter       : out links_reg32;
+	rx_errorcounter     : out links_reg32
+);
+end receiver_block;
+
+
+
 architecture rtl of receiver_block is
 
-COMPONENT lvds_receiver IS
-	GENERIC(
-		N_CHANNELS : INTEGER
-	);
-	PORT
-	(
-		rx_channel_data_align		: IN STD_LOGIC_VECTOR (N_CHANNELS-1 DOWNTO 0);
-		rx_fifo_reset		: IN STD_LOGIC_VECTOR (N_CHANNELS-1 DOWNTO 0);
-		rx_in		: IN STD_LOGIC_VECTOR (N_CHANNELS-1 DOWNTO 0);
-		rx_inclock		: IN STD_LOGIC ;
-		rx_reset		: IN STD_LOGIC_VECTOR (N_CHANNELS-1 DOWNTO 0);
-		rx_dpa_locked		: OUT STD_LOGIC_VECTOR (N_CHANNELS-1 DOWNTO 0);
-		rx_locked		: OUT STD_LOGIC ;
-		rx_out		: OUT STD_LOGIC_VECTOR (N_CHANNELS*10-1 DOWNTO 0);
-		rx_outclock		: OUT STD_LOGIC 
-	);
-END COMPONENT; --lvds_receiver;
 component data_decoder is 
 	generic (
 		EVAL_WINDOW_WORDCNT_BITS : natural := 8; -- number of bits of the counter used to check for the sync pattern
@@ -90,6 +77,7 @@ component data_decoder is
 		disp_err				: out std_logic
 		);
 end component; --data_decoder;
+
 component rx_errcounter is
 port (
 	reset_n:					in std_logic;
@@ -120,7 +108,6 @@ end component; --rx_errcounter;
 
 
 
-
 	signal rx_out : 		std_logic_vector(NINPUT*10-1 downto 0);
 	signal rx_out_order : 		std_logic_vector(NINPUT*10-1 downto 0);
 	signal rx_clk :			std_logic;
@@ -140,11 +127,13 @@ begin
 	pll_locked 			<= rx_locked;
 	rx_clkout 			<= rx_clk;
 
-	
-lvds_rx : lvds_receiver
-	GENERIC MAP ( N_CHANNELS => NINPUT)
-	PORT MAP
-	(
+	lvds_rx : entity work.ip_altlvds_rx
+	GENERIC MAP (
+		N => NINPUT,
+		PLL_FREQ => LVDS_PLL_FREQ,
+		DATA_RATE => LVDS_DATA_RATE--,
+	)
+	PORT MAP (
 		rx_channel_data_align	=> rx_bitslip,
 		rx_fifo_reset		=> rx_fifo_reset,
 		rx_in			=> rx_in,
@@ -155,7 +144,8 @@ lvds_rx : lvds_receiver
 		rx_out			=> rx_out,
 		rx_outclock		=> rx_clk
 	);
-rx_ready <= rx_ready_reg;	
+
+	rx_ready <= rx_ready_reg;
 
 
 -- flip bit order of received data (msb-lsb)
@@ -166,8 +156,8 @@ for i in NINPUT-1 downto 0 loop
 		rx_out_order(10*i+n) <= rx_out(10*i+9-n);
 	end loop;
 end loop;
-end process flip_bits;	
-	
+end process flip_bits;
+
 gen_channels: for i in NINPUT-1 downto 0 generate
 	datadec: data_decoder 
 		generic map(
@@ -193,34 +183,35 @@ gen_channels: for i in NINPUT-1 downto 0 generate
 			state_out		=> rx_state((i+1)*2-1 downto i*2),
 			disp_err		=> rx_disperr(i)
 		);
-		
-		
+
+
 	errcounter:rx_errcounter 
 		port map(
 			reset_n			=> reset_n_errcnt,
 			clk			=> rx_clk,
 			clk_out			=> rx_inclock,
-			
+
 			rx_freqlocked		=> '0',--rx_freqlocked,
 			rx_sync			=> rx_ready_reg(i),
 			rx_err			=> '0',--rx_errdetect,
 			rx_disperr		=> rx_disperr(i),
 			rx_pll_locked		=> '0',--rx_pll_locked,
 			rx_patterndetect	=> '0',--rx_patterndetect,
-			
+
 			runcounter		=> rx_runcounter,--readregs_slow(RECEIVER_RUNTIME_REGISTER_R+i),
 			errcounter		=> rx_errorcounter,--readregs_slow(RECEIVER_ERRCOUNT_REGISTER_R+i),
 		--	sync_lost		=> sync_lost,--readregs_slow(RECEIVER_SYNCLOST_SYNCFIFO_REGISTER_R+i)
 		--	freq_lost		=> freq_lost,
-			
+
 			rx_freqlocked_out	=> open,--rx_freqlocked_out,
 			rx_sync_out		=> open,
 			rx_err_out		=> open,--rx_errdetect_out,
 			rx_disperr_out		=> open,--rx_disperr_out,
 			rx_pll_locked_out	=> open,
-			rx_patterndetect_out	=> open--rx_patterndetect_out		
+			rx_patterndetect_out	=> open--rx_patterndetect_out
 		);
 end generate;
+
 
 
 end rtl;

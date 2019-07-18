@@ -45,13 +45,14 @@ ENTITY ip_altlvds_rx IS
         N : positive := 1;
         -- deserialization factor
         W : positive := 10;
-        PLL_FREQ : positive := 125; -- MHz
+        PLL_FREQ : real := 125.0; -- MHz
         DATA_RATE : positive := 1250; -- Mbps
         DEVICE : string := "Stratix IV"--;
     );
 	PORT
 	(
 		rx_channel_data_align		: IN STD_LOGIC_VECTOR (N-1 DOWNTO 0);
+		rx_fifo_reset		: IN STD_LOGIC_VECTOR (N-1 DOWNTO 0);
 		rx_in		: IN STD_LOGIC_VECTOR (N-1 DOWNTO 0);
 		rx_inclock		: IN STD_LOGIC ;
 		rx_reset		: IN STD_LOGIC_VECTOR (N-1 DOWNTO 0);
@@ -124,6 +125,7 @@ ARCHITECTURE SYN OF ip_altlvds_rx IS
 	);
 	PORT (
 			rx_channel_data_align	: IN STD_LOGIC_VECTOR (N-1 DOWNTO 0);
+			rx_fifo_reset	: IN STD_LOGIC_VECTOR (N-1 DOWNTO 0);
 			rx_in	: IN STD_LOGIC_VECTOR (N-1 DOWNTO 0);
 			rx_inclock	: IN STD_LOGIC ;
 			rx_reset	: IN STD_LOGIC_VECTOR (N-1 DOWNTO 0);
@@ -162,7 +164,7 @@ BEGIN
 		implement_in_les => "OFF",
 		inclock_boost => 0,
 		inclock_data_alignment => "EDGE_ALIGNED",
-		inclock_period => 1000000 / PLL_FREQ,
+		inclock_period => integer(1000000.0 / PLL_FREQ),
 		inclock_phase_shift => 0,
 		input_data_rate => DATA_RATE,
 		intended_device_family => DEVICE,
@@ -192,6 +194,7 @@ BEGIN
 	)
 	PORT MAP (
 		rx_channel_data_align => rx_channel_data_align,
+		rx_fifo_reset => rx_fifo_reset,
 		rx_in => rx_in,
 		rx_inclock => rx_inclock,
 		rx_reset => rx_reset,
@@ -289,6 +292,8 @@ END SYN;
 -- Retrieval info: CONNECT: @rx_channel_data_align 0 0 4 0 rx_channel_data_align 0 0 4 0
 -- Retrieval info: USED_PORT: rx_dpa_locked 0 0 4 0 OUTPUT NODEFVAL "rx_dpa_locked[3..0]"
 -- Retrieval info: CONNECT: rx_dpa_locked 0 0 4 0 @rx_dpa_locked 0 0 4 0
+-- Retrieval info: USED_PORT: rx_fifo_reset 0 0 4 0 INPUT NODEFVAL "rx_fifo_reset[3..0]"
+-- Retrieval info: CONNECT: @rx_fifo_reset 0 0 4 0 rx_fifo_reset 0 0 4 0
 -- Retrieval info: USED_PORT: rx_in 0 0 4 0 INPUT NODEFVAL "rx_in[3..0]"
 -- Retrieval info: CONNECT: @rx_in 0 0 4 0 rx_in 0 0 4 0
 -- Retrieval info: USED_PORT: rx_inclock 0 0 0 0 INPUT NODEFVAL "rx_inclock"

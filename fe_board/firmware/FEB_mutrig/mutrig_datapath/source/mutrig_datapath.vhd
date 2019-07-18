@@ -13,8 +13,10 @@ use work.mutrig_constants.all;
 
 entity mutrig_datapath is
 generic(
-	N_ASICS : integer :=1;
-	GEN_DUMMIES : boolean :=TRUE
+	N_ASICS : positive := 1;
+	LVDS_PLL_FREQ : real := 125.0;
+	LVDS_DATA_RATE : positive := 1250;
+	GEN_DUMMIES : boolean := TRUE
 );
 port (
 	i_rst			: in  std_logic;				-- logic reset
@@ -46,29 +48,6 @@ end entity mutrig_datapath;
 
 
 architecture RTL of mutrig_datapath is
--- component declarations
-component receiver_block is 
-	generic(
-		NINPUT: integer
-	);
-	port (
-		reset_n			: in std_logic;
-		reset_n_errcnt		: in std_logic;
-		rx_in			: in std_logic_vector(NINPUT-1 downto 0);
-		rx_inclock		: in std_logic;
-		rx_state		: out std_logic_vector(2*NINPUT-1 downto 0);
-		rx_ready		: out std_logic_vector(NINPUT-1 downto 0);
-		rx_data			: out std_logic_vector(NINPUT*8-1 downto 0);
-		rx_k			: out std_logic_vector(NINPUT-1 downto 0);
-		rx_clkout		: out std_logic;
-		pll_locked		: out std_logic;
-
-		rx_dpa_locked_out	:out std_logic_vector(NINPUT-1 downto 0);
-	
-		rx_runcounter		:out links_reg32;
-		rx_errorcounter		:out links_reg32
-	);
-end component;
 
 component frame_rcv is
 	generic (
@@ -197,6 +176,7 @@ component common_fifo
 		usedw		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
 	);
 end component;
+
 subtype t_vector is std_logic_vector(N_ASICS-1 downto 0);
 type t_array_64b is array (N_ASICS-1 downto 0) of std_logic_vector(64-1 downto 0);
 type t_array_48b is array (N_ASICS-1 downto 0) of std_logic_vector(48-1 downto 0);
@@ -244,9 +224,11 @@ signal s_timecounter    : t_array_64b;
 
 
 begin
-u_rxdeser: receiver_block
+u_rxdeser: entity work.receiver_block
 generic map(
-	NINPUT => N_ASICS
+	NINPUT => N_ASICS,
+	LVDS_PLL_FREQ => LVDS_PLL_FREQ,
+	LVDS_DATA_RATE => LVDS_DATA_RATE--,
 )
 port map(
 	reset_n			=> not i_rst,
@@ -398,21 +380,24 @@ u_decoder: prbs_decoder
 		i_SC_disable_dec=> i_SC_disable_dec
 	);
 
-
---common fifo buffer
-u_common_fifo: common_fifo
-	port map (
-		clock		=> i_clk_core,
-		sclr		=> i_rst,
-		data		=> "00" & s_buf_data,
-		wrreq		=> s_buf_wr,
-		full		=> s_buf_full,
-		almost_full	=> s_buf_almost_full,
-		empty		=> o_fifo_empty,
-		q		=> o_fifo_data,
-		rdreq		=> i_fifo_rd
-	);
-
+    e_fifo : entity work.ip_scfifo
+    generic map (
+        ADDR_WIDTH => 8,
+        DATA_WIDTH => 36--,
+    )
+    port map (
+        clock           => i_clk_core,
+        data            => "00" & s_buf_data,
+        rdreq           => i_fifo_rd,
+        sclr            => i_rst,
+        wrreq           => s_buf_wr,
+        almost_empty    => open,
+        almost_full     => s_buf_almost_full,
+        empty           => o_fifo_empty,
+        full            => s_buf_full,
+        q               => o_fifo_data,
+        usedw           => open--,
+    );
 
 o_buffer_full <= s_buf_full;
 end architecture RTL;
