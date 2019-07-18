@@ -8,6 +8,7 @@ package daq_constants is
 subtype links_reg32 is std_logic_vector(31 downto 0);
 subtype reg32 is std_logic_vector(31 downto 0);
 type reg64b_array_t is array (natural range <>) of std_logic_vector(63 downto 0);
+type feb_run_state is (idle, run_prep, sync, running, terminating, link_test, sync_test, reset_state, out_of_DAQ);
 
 constant TIME_125MHz_1s 	: STD_LOGIC_VECTOR(27 DOWNTO 0) := x"7735940";
 constant TIME_125MHz_1ms 	: STD_LOGIC_VECTOR(27 DOWNTO 0) := x"001E848";

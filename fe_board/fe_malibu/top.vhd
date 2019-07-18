@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.daq_constants.all;
 
 entity top is
 port (
@@ -127,7 +128,10 @@ architecture arch of top is
     signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
     signal mscb_counter_in : unsigned(15 downto 0);
 
-
+	 signal pod_rx_clk : std_logic;
+	 signal pod_rx_data : std_logic_vector(7 downto 0);
+	 
+	 signal run_state : feb_run_state;
 
     signal av_test : work.util.avalon_t;
 
@@ -326,8 +330,18 @@ begin
     );
 
     ----------------------------------------------------------------------------
-
-
+	 -- reset system
+	 
+	 e_reset_sys : entity work.resetsys
+	 port map (
+		 clk								   => pod_rx_clk,
+		 reset_in							=> not PushButton(0),
+		 resets_out							=> open,
+		 data_in								=> pod_rx_data,
+		 state_out							=> run_state,
+		 run_number_out					=> open,
+		 testout								=> led(11)
+	 );
 
     ----------------------------------------------------------------------------
     -- QSFP
@@ -421,12 +435,12 @@ begin
                      & "1"
                      & "1",
 
-        o_rx_data   => open,
+        o_rx_data(7 downto 0)   => pod_rx_data,
         o_rx_datak  => open,
 
         o_tx_clkout => open,
         i_tx_clkin  => (others => pod_pll_clk),
-        o_rx_clkout => open,
+        o_rx_clkout(0) => pod_rx_clk,
         i_rx_clkin  => (others => pod_pll_clk),
 
         o_tx_serial => pod_tx,
