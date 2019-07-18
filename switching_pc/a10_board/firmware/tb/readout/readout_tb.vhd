@@ -10,7 +10,7 @@ end readout_tb;
 
 architecture behav of readout_tb is
   --  Declaration of the component that will be instantiated.
-	component data_generator_a10 is
+	component data_generator_a10_tb is
 		port(
                 clk:                 	in std_logic;
                 reset:               	in std_logic;
@@ -21,7 +21,7 @@ architecture behav of readout_tb is
                 data_pix_generated:  	out std_logic_vector(31 downto 0);
                 data_pix_ready:      	out std_logic
 			);		
-	end component data_generator_a10;
+	end component data_generator_a10_tb;
 	
     component ip_ram
         port (
@@ -93,7 +93,7 @@ begin
   enable_pix <= '1';
   slow_down <= (others => '0');
  
- e_data_gen : component data_generator_a10
+ e_data_gen : component data_generator_a10_tb
 	port map (
 		clk 				=> clk,
 		reset				=> reset,
