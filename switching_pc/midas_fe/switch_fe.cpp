@@ -60,7 +60,8 @@ const char *frontend_file_name = __FILE__;
 BOOL frontend_call_loop = FALSE;
 
 /* a frontend status page is displayed with this frequency in ms    */
-INT display_period = 1000;
+//INT display_period = 1000;
+INT display_period = 0;
 
 /* maximum event size produced by this frontend */
 INT max_event_size = 10000;
@@ -74,8 +75,6 @@ INT event_buffer_size = 10 * 10000;
 /* DMA Buffer and related */
 mudaq::DmaMudaqDevice * mup;
 
-/* Values for reading SC Events */
-uint32_t current_ro_idx = 0;
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -120,7 +119,6 @@ EQUIPMENT equipment[] = {
      "", "", ""} ,
      read_sc_event,             /* readout routine */
    },
-
    {""}
 };
 
@@ -130,12 +128,12 @@ EQUIPMENT equipment[] = {
 INT poll_event(INT source, INT count, BOOL test)
 {
    return 1;
-};
+}
 
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 {
    return 1;
-};
+}
 
 /*-- Frontend Init -------------------------------------------------*/
 
@@ -154,10 +152,8 @@ INT frontend_init()
    db_create_key(hDB, 0, "Equipment/Switching/Variables/FPGA_ID_READ", TID_INT);
    db_create_key(hDB, 0, "Equipment/Switching/Variables/START_ADD_READ", TID_INT);
    db_create_key(hDB, 0, "Equipment/Switching/Variables/LENGTH_READ", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/PCIE_MEM_START_READ", TID_INT);
 
    db_create_key(hDB, 0, "Equipment/Switching/Variables/FPGA_ID_WRITE", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/PCIE_MEM_START_WRITE", TID_INT);
    db_create_key(hDB, 0, "Equipment/Switching/Variables/DATA_WRITE", TID_INT); // TODO: why is it possible to address this as an array in js?
    db_create_key(hDB, 0, "Equipment/Switching/Variables/DATA_WRITE_SIZE", TID_INT);
 
@@ -238,18 +234,78 @@ INT resume_run(INT run_number, char *error)
 
 INT read_sc_event(char *pevent, INT off)
 {
+  while(!mup->FEBsc_get_packet()){};
+  return mup->FEBsc_write_bank(pevent,off); 
+}
+/*
+  mudaq::DmaMudaqDevice & mu = *mup;
+   uint32_t header_val=mu.read_memory_ro(current_ro_idx);
+   printf("read_sc_event: index=%d, value=%16.16x\n",current_ro_idx,header_val);
+
+
+   //check if memory at current index is a SC packet
+   if ((header_val & 0x1c0000bc) != 0x1c0000bc) {
+	return 0; //TODO: correct when no event is to be written?
+   }
+
+   printf("read_sc_event: index=%d  , value=%16.16x\n",current_ro_idx,mu.read_memory_ro(current_ro_idx));
+   printf("read_sc_event: index=%d+1, value=%16.16x\n",current_ro_idx,mu.read_memory_ro(current_ro_idx+1));
+   printf("read_sc_event: index=%d+2, value=%16.16x\n",current_ro_idx,mu.read_memory_ro(current_ro_idx+2));
+
+
    bk_init(pevent);
+   //check type of SC packet
+   uint32_t type=(header_val&0x1f0000bc);
+   uint32_t startaddr=mu.read_memory_ro(current_ro_idx + 1);
+   uint16_t event_length=mu.read_memory_ro(current_ro_idx + 2);
+   printf("Type: %8.8x\n",type);
+   if (type == 0x1e0000bc) {
+	printf("read_sc_event: got a read packet!\n");
+	if(!(mu.read_memory_ro(current_ro_idx+2)&0x010000))
+		printf("Is a request, something is wrong...\n");
+   }
+   if (type == 0x1f0000bc) {
+	printf("read_sc_event: got a write packet!\n");
+	if(mu.read_memory_ro(current_ro_idx+2)&0x010000){
+		printf("Is an acknowledge, ignoring payload\n");
+		event_length=0;
+	}
+   }
+   if (type == 0x1c0000bc) {
+	printf("read_sc_event: got a OOB packet!\n");
+   }
+   uint16_t fpga_ID=(header_val>>8) & 0xffff;
+   printf("FPGA ID %x\n", fpga_ID);
+   printf("startaddr %x\n", startaddr);
+   printf("length %x\n", event_length);
 
-   mudaq::DmaMudaqDevice & mu = *mup;
+   for (uint32_t i = 0; i < event_length; i++) { // getting data
+       printf("data[%d] = %x\n", i,mu.read_memory_ro(current_ro_idx + 3 + i));
+   }
+   current_ro_idx += 3 + event_length;
+   if(mu.read_memory_ro(current_ro_idx)!=0x9c){
+	printf("did not see trailer at %d, something is wrong.\n",current_ro_idx+1);
+   }else{
+	printf("---trailer seen\n");
+	current_ro_idx++;
+   }
 
+//printf("dump:\n");
+//   for (uint32_t i = 0; i < 100; i++) { // getting data
+//       printf("data[%d] = %x\n", i,mu.read_memory_ro(i));
+//   }
+
+
+return 0;
    // getting a read event
    if (mu.read_memory_ro(current_ro_idx) == 0x1e0000bc) {
+	printf("read_sc_event: got a read packet!\n");
        uint32_t *pdata;
        bk_create(pevent, "RM_READ", TID_INT, (void **)&pdata);
        *pdata++ =   mu.read_memory_ro(current_ro_idx);
        *pdata++ = mu.read_memory_ro(current_ro_idx + 1); // startadd
        *pdata++ = mu.read_memory_ro(current_ro_idx + 2); // length
-       uint32_t event_length = mu.read_memory_ro(current_ro_idx + 2);
+       event_length = mu.read_memory_ro(current_ro_idx + 2);
        for (uint32_t i = 0; i < event_length; i++) { // getting data
            *pdata++ = mu.read_memory_ro(current_ro_idx + 3 + i);
        }
@@ -261,6 +317,7 @@ INT read_sc_event(char *pevent, INT off)
 
    // getting a write event
    if (mu.read_memory_ro(current_ro_idx) == 0x1f0000bc) {
+	printf("read_sc_event: got a write packet!\n");
        uint32_t *pdata;
        bk_create(pevent, "RM_WRITE", TID_INT, (void **)&pdata);
        *pdata++ =   mu.read_memory_ro(current_ro_idx);
@@ -273,6 +330,7 @@ INT read_sc_event(char *pevent, INT off)
 
     return 0; // ToDo: is this the right thing to do if you don"t have an event?
 }
+*/
 
 /*--- Read WMEM if button was pressed --------*/
 
@@ -334,15 +392,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        int size = sizeof(value);
        db_get_data(hDB, hKey, &value, &size, TID_BOOL);
        cm_msg(MINFO, "sc_settings_changed", "Reset SC Master");
-       uint32_t reset_reg = 0;
-
-       reset_reg = SET_RESET_BIT_SC_MASTER(reset_reg);
-       mu.write_register(RESET_REGISTER_W, reset_reg);
-       mu.write_register(RESET_REGISTER_W, 0x0);
-
-//       for(int i = 0; i <= 64*1024; i++){
-//           mu.write_memory_rw(i, 0);
-//       }
+       mu.FEBsc_resetSlave();
    }
 
    if (std::string(key.name) == "Reset SC Slave") {
@@ -350,10 +400,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        int size = sizeof(value);
        db_get_data(hDB, hKey, &value, &size, TID_BOOL);
        cm_msg(MINFO, "sc_settings_changed", "Reset SC Slave");
-       uint32_t reset_reg = 0;
-       reset_reg = SET_RESET_BIT_SC_SLAVE(reset_reg);
-       mu.write_register(RESET_REGISTER_W, reset_reg);
-       mu.write_register(RESET_REGISTER_W, 0x0);
+       mu.FEBsc_resetSlave();
    }
 
    if (std::string(key.name) == "Write") {
@@ -387,7 +434,6 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
          sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_WRITE");
          sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_WRITE");
-         sprintf(STR_PCIE_MEM_START,"Equipment/Switching/Variables/PCIE_MEM_START_WRITE");
 
          db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
          db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
@@ -408,7 +454,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
          uint32_t *data = DATA_ARRAY;
 
-         mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+         mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD);
          printf("feb_write called");
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
@@ -440,7 +486,6 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
          sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_READ");
          sprintf(STR_LENGTH,"Equipment/Switching/Variables/LENGTH_READ");
          sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_READ");
-         sprintf(STR_PCIE_MEM_START,"Equipment/Switching/Variables/PCIE_MEM_START_READ");
 
          db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
          db_get_value(hDB, 0, STR_LENGTH, &LENGTH, &SIZE_LENGTH, TID_INT, 0);
@@ -452,8 +497,8 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
          SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
 
          db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
-
-         mu.FEB_read((uint32_t) FPGA_ID, (uint16_t) LENGTH, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+         uint32_t data[LENGTH];
+         mu.FEBsc_read((uint32_t) FPGA_ID, data, (uint16_t) LENGTH, (uint32_t) START_ADD);
 
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
@@ -485,7 +530,6 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_WRITE");
             sprintf(STR_DATA,"Equipment/Switching/Variables/SINGLE_DATA_WRITE");
             sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_WRITE");
-            sprintf(STR_PCIE_MEM_START,"Equipment/Switching/Variables/PCIE_MEM_START_WRITE");
 
             db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
             db_get_value(hDB, 0, STR_DATA, &DATA, &SIZE_DATA, TID_INT, 0);
@@ -502,7 +546,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             data_arr[0] = (uint32_t) DATA;
             uint32_t *data = data_arr;
 
-            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+            mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD);
 
             value = FALSE; // reset flag in ODB
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);

@@ -30,25 +30,24 @@ int FEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_p
    while(cnt<1) {
       try {
          cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/ASICs/%i/", odb_prefix, asic);
-	 uint32_t FPGA_ID=asic/4; //TODO: check mapping makes sense
+	 uint32_t FPGA_ID=asic/nAsicsPerFrontend; //TODO: check mapping makes sense
 	 //Write configuration
-	 m_mu.FEB_write(FPGA_ID, reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR, m_pcie_mem_start);
+	 m_mu.FEBsc_write(FPGA_ID, reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR);
 	 //Write handleID and start bit to trigger SPI transaction
 	 uint32_t data=0;
 	 data=SET_FE_SPICTRL_BIT_START(data);
 	 data=SET_FE_SPICTRL_CHIPID_RANGE(data,(unsigned int)asic);
-	 m_mu.FEB_write(FPGA_ID, &data, 1, (uint32_t) FE_SPICTRL_REGISTER, m_pcie_mem_start);
+	 m_mu.FEBsc_write(FPGA_ID, &data, 1, (uint32_t) FE_SPICTRL_REGISTER);
          //Wait for transaction to finish
          uint cnt = 0;
 	 do{
             if(++cnt >= 10000) throw std::runtime_error("SPI transaction timeout while configuring asic"+std::to_string(asic));
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	    m_mu.FEB_read(FPGA_ID, 1, (uint32_t) FE_SPICTRL_REGISTER, m_pcie_mem_start);
-	    //TODO: get data back (to &data)
+	    m_mu.FEBsc_read(FPGA_ID, &data, 1, (uint32_t) FE_SPICTRL_REGISTER);
+
          }while(GET_FE_SPICTRL_BIT_START(data));
 	 //Read back configuration
-	 m_mu.FEB_read(FPGA_ID, config->length_32bits , (uint32_t) FE_SPIDATA_ADDR, m_pcie_mem_start);
-	    //TODO: get data back (to config->bitpattern_r)
+	 m_mu.FEBsc_read(FPGA_ID, reinterpret_cast<uint32_t*>(config->bitpattern_r), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR);
 
 	 status=config->VerifyReadbackPattern();
          status=SUCCESS; //TODO:Remove
@@ -78,11 +77,12 @@ int FEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_p
 */
 void FEB::setDummyConfig(int FPGA_ID, bool dummy){
 	uint32_t val;
-	m_mu.FEB_read(FPGA_ID, 1 , (uint32_t) FE_DUMMYCTRL_REG, m_pcie_mem_start);
-	    //TODO: get data back (to &val)
-	if(dummy) SET_FE_DUMMYCTRL_BIT_SPI(val);
-	else      UNSET_FE_DUMMYCTRL_BIT_SPI(val);
-	m_mu.FEB_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG, m_pcie_mem_start);
+	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
+	if(dummy) 
+		val=SET_FE_DUMMYCTRL_BIT_SPI(val);
+	else      
+		val=UNSET_FE_DUMMYCTRL_BIT_SPI(val);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
 }
 
 /**
@@ -92,12 +92,18 @@ void FEB::setDummyConfig(int FPGA_ID, bool dummy){
 */
 void FEB::setDummyData(int FPGA_ID, bool dummy, int n, bool fast){
 	uint32_t  val;
-	m_mu.FEB_read(FPGA_ID, 1 , (uint32_t) FE_DUMMYCTRL_REG, m_pcie_mem_start);
-	    //TODO: get data back (to &val)
-	if(dummy) val=SET_FE_DUMMYCTRL_BIT_DATAGEN(val); else UNSET_FE_DUMMYCTRL_BIT_DATAGEN(val);
-	if(fast)  val=SET_FE_DUMMYCTRL_BIT_SHORTHIT(val); else UNSET_FE_DUMMYCTRL_BIT_SHORTHIT(val);
+	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
+	if(dummy) 
+		val=SET_FE_DUMMYCTRL_BIT_DATAGEN(val); 
+	else 
+		val=UNSET_FE_DUMMYCTRL_BIT_DATAGEN(val);
+	if(fast)  
+		val=SET_FE_DUMMYCTRL_BIT_SHORTHIT(val); 
+	else 
+		val=UNSET_FE_DUMMYCTRL_BIT_SHORTHIT(val);
+
 	val=SET_FE_DUMMYCTRL_HITCNT_RANGE(val,(unsigned int) n);
-	m_mu.FEB_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG, m_pcie_mem_start);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
 }
 
 /**
@@ -105,12 +111,13 @@ void FEB::setDummyData(int FPGA_ID, bool dummy, int n, bool fast){
 */
 void FEB::setMask(int ASIC, bool value){
 	uint32_t val;
-	uint32_t FPGA_ID=ASIC/8; //TODO:check mapping
-	m_mu.FEB_read(FPGA_ID, 1 , (uint32_t) FE_DPCTRL_REG, m_pcie_mem_start);
-	    //TODO: get data back (to &val)
-	if(value) val |=  (1<<ASIC);
-	else      val &= ~(1<<ASIC);
-	m_mu.FEB_write(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG, m_pcie_mem_start);
+	uint32_t FPGA_ID=ASIC/nAsicsPerFrontend; //TODO:check mapping
+	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG);
+	if(value) 
+			val |=  (1<<ASIC);
+	else      
+			val &= ~(1<<ASIC);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG);
 }
 
 /**
@@ -118,39 +125,39 @@ void FEB::setMask(int ASIC, bool value){
 */
 void FEB::setPRBSDecoder(uint32_t FPGA_ID, bool enable){
 	uint32_t val;
-	m_mu.FEB_read(FPGA_ID, 1 , (uint32_t) FE_DPCTRL_REG, m_pcie_mem_start);
-	    //TODO: get data back (to &val)
-	if(enable) SET_FE_DPCTRL_BIT_PRBSDEC(val); else UNSET_FE_DPCTRL_BIT_PRBSDEC(val);
-	m_mu.FEB_write(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG, m_pcie_mem_start);
+	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG);
+	if(enable) 
+			val=SET_FE_DPCTRL_BIT_PRBSDEC(val); 
+	else 
+			val=UNSET_FE_DPCTRL_BIT_PRBSDEC(val);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG);
 }
 
 
 //reset all asics (digital part, CC, fsms, etc.)
 void FEB::chipReset(int FPGA_ID){
 	uint32_t val;
-	m_mu.FEB_read(FPGA_ID, 1 , (uint32_t) FE_SUBDET_RESET_REG, m_pcie_mem_start);
-	    //TODO: get data back (to &val)
+	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 	//constant reset should not happen...
 	assert(!GET_FE_SUBDET_REST_BIT_CHIP(val));
 	//set and clear reset
-	SET_FE_SUBDET_REST_BIT_CHIP(val);
-	m_mu.FEB_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG, m_pcie_mem_start);
-	UNSET_FE_SUBDET_REST_BIT_CHIP(val);
-	m_mu.FEB_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG, m_pcie_mem_start);
+	val=SET_FE_SUBDET_REST_BIT_CHIP(val);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
+	val=UNSET_FE_SUBDET_REST_BIT_CHIP(val);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 }
 
 //reset full datapath upstream from merger
 void FEB::DataPathReset(int FPGA_ID){
 	uint32_t val;
-	m_mu.FEB_read(FPGA_ID, 1 , (uint32_t) FE_SUBDET_RESET_REG, m_pcie_mem_start);
-	    //TODO: get data back (to &val)
+	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 	//constant reset should not happen...
 	assert(!GET_FE_SUBDET_REST_BIT_DPATH(val));
 	//set and clear reset
-	SET_FE_SUBDET_REST_BIT_DPATH(val);
-	m_mu.FEB_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG, m_pcie_mem_start);
-	UNSET_FE_SUBDET_REST_BIT_DPATH(val);
-	m_mu.FEB_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG, m_pcie_mem_start);
+	val=SET_FE_SUBDET_REST_BIT_DPATH(val);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
+	val=UNSET_FE_SUBDET_REST_BIT_DPATH(val);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 }
 
 

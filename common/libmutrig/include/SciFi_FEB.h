@@ -19,10 +19,9 @@ namespace mudaq { namespace mutrig {
 class FEB {
    private:
       mudaq::MudaqDevice& m_mu;
-      uint32_t m_pcie_mem_start;
    public:
       FEB(const FEB&)=delete;	   
-      FEB(mudaq::MudaqDevice& mu, uint32_t pcie_mem_start):m_mu(mu),m_pcie_mem_start(pcie_mem_start){};
+      FEB(mudaq::MudaqDevice& mu):m_mu(mu){};
 
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
@@ -57,6 +56,8 @@ class FEB {
       void chipReset(int FPGA_ID); //reset all asics (digital part, CC, fsms, etc.)
       void DataPathReset(int FPGA_ID); //in FE-FPGA: everything upstream of merger (in the stream path)
       //TODO: add more resets for FE-FPGA blocks
+
+      uint32_t nAsicsPerFrontend = 4;
 
 };//class FEB
 }//namespace mutrig 

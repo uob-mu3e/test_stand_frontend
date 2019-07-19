@@ -54,6 +54,7 @@
 
 //Slow control for mutrig/scifi
 #include "mutrig_midasodb.h"
+#include "SciFi_FEB.h"
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -179,10 +180,8 @@ INT frontend_init()
    db_create_key(hDB, 0, "Equipment/Switching/Variables/FPGA_ID_READ", TID_INT);
    db_create_key(hDB, 0, "Equipment/Switching/Variables/START_ADD_READ", TID_INT);
    db_create_key(hDB, 0, "Equipment/Switching/Variables/LENGTH_READ", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/PCIE_MEM_START_READ", TID_INT);
 
    db_create_key(hDB, 0, "Equipment/Switching/Variables/FPGA_ID_WRITE", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/PCIE_MEM_START_WRITE", TID_INT);
    db_create_key(hDB, 0, "Equipment/Switching/Variables/DATA_WRITE", TID_INT); // TODO: why is it possible to address this as an array in js?
    db_create_key(hDB, 0, "Equipment/Switching/Variables/DATA_WRITE_SIZE", TID_INT);
 
@@ -273,40 +272,8 @@ INT resume_run(INT run_number, char *error)
 
 INT read_sc_event(char *pevent, INT off)
 {
-   bk_init(pevent);
-
-   mudaq::DmaMudaqDevice & mu = *mup;
-
-   // getting a read event
-   if (mu.read_memory_ro(current_ro_idx) == 0x1e0000bc) {
-       uint32_t *pdata;
-       bk_create(pevent, "RM_READ", TID_INT, (void **)&pdata);
-       *pdata++ =   mu.read_memory_ro(current_ro_idx);
-       *pdata++ = mu.read_memory_ro(current_ro_idx + 1); // startadd
-       *pdata++ = mu.read_memory_ro(current_ro_idx + 2); // length
-       uint32_t event_length = mu.read_memory_ro(current_ro_idx + 2);
-       for (uint32_t i = 0; i < event_length; i++) { // getting data
-           *pdata++ = mu.read_memory_ro(current_ro_idx + 3 + i);
-       }
-       bk_close(pevent, pdata);
-       current_ro_idx = 3 + event_length;
-       std::cout << current_ro_idx << std::endl;
-       return bk_size(pevent);
-   }
-
-   // getting a write event
-   if (mu.read_memory_ro(current_ro_idx) == 0x1f0000bc) {
-       uint32_t *pdata;
-       bk_create(pevent, "RM_WRITE", TID_INT, (void **)&pdata);
-       *pdata++ =   mu.read_memory_ro(current_ro_idx);
-       *pdata++ = mu.read_memory_ro(current_ro_idx + 1); // startadd
-       *pdata++ = mu.read_memory_ro(current_ro_idx + 2); // length + acknowledge
-       bk_close(pevent, pdata);
-       current_ro_idx = 3;
-       return bk_size(pevent);
-   }
-
-    return 0; // ToDo: is this the right thing to do if you don"t have an event?
+    while(!mup->FEBsc_get_packet()) {}
+    return mup->FEBsc_write_bank(pevent, off);
 }
 
 /*--- Read WMEM if button was pressed --------*/
@@ -376,15 +343,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        int size = sizeof(value);
        db_get_data(hDB, hKey, &value, &size, TID_BOOL);
        cm_msg(MINFO, "sc_settings_changed", "Reset SC Master");
-       uint32_t reset_reg = 0;
-
-       reset_reg = SET_RESET_BIT_SC_MASTER(reset_reg);
-       mu.write_register(RESET_REGISTER_W, reset_reg);
-       mu.write_register(RESET_REGISTER_W, 0x0);
-
-//       for(int i = 0; i <= 64*1024; i++){
-//           mu.write_memory_rw(i, 0);
-//       }
+       mu.FEBsc_resetSlave();
    }
 
    if (std::string(key.name) == "Reset SC Slave") {
@@ -392,10 +351,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        int size = sizeof(value);
        db_get_data(hDB, hKey, &value, &size, TID_BOOL);
        cm_msg(MINFO, "sc_settings_changed", "Reset SC Slave");
-       uint32_t reset_reg = 0;
-       reset_reg = SET_RESET_BIT_SC_SLAVE(reset_reg);
-       mu.write_register(RESET_REGISTER_W, reset_reg);
-       mu.write_register(RESET_REGISTER_W, 0x0);
+       mu.FEBsc_resetSlave();
    }
 
    if (std::string(key.name) == "Write") {
@@ -429,7 +385,6 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
          sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_WRITE");
          sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_WRITE");
-         sprintf(STR_PCIE_MEM_START,"Equipment/Switching/Variables/PCIE_MEM_START_WRITE");
 
          db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
          db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
@@ -450,7 +405,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
          uint32_t *data = DATA_ARRAY;
 
-         mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+         mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD);
          printf("feb_write called");
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
@@ -482,7 +437,6 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
          sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_READ");
          sprintf(STR_LENGTH,"Equipment/Switching/Variables/LENGTH_READ");
          sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_READ");
-         sprintf(STR_PCIE_MEM_START,"Equipment/Switching/Variables/PCIE_MEM_START_READ");
 
          db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
          db_get_value(hDB, 0, STR_LENGTH, &LENGTH, &SIZE_LENGTH, TID_INT, 0);
@@ -494,8 +448,8 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
          SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
 
          db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
-
-         mu.FEB_read((uint32_t) FPGA_ID, (uint16_t) LENGTH, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+	 uint32_t data[LENGTH];
+         mu.FEBsc_read((uint32_t) FPGA_ID, data, (uint16_t) LENGTH, (uint32_t) START_ADD);
 
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
@@ -527,7 +481,6 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_WRITE");
             sprintf(STR_DATA,"Equipment/Switching/Variables/SINGLE_DATA_WRITE");
             sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_WRITE");
-            sprintf(STR_PCIE_MEM_START,"Equipment/Switching/Variables/PCIE_MEM_START_WRITE");
 
             db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
             db_get_value(hDB, 0, STR_DATA, &DATA, &SIZE_DATA, TID_INT, 0);
@@ -544,7 +497,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             data_arr[0] = (uint32_t) DATA;
             uint32_t *data = data_arr;
 
-            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+            mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD);
 
             value = FALSE; // reset flag in ODB
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
@@ -636,8 +589,10 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       if(value){
          cm_msg(MINFO, "sc_settings_changed", "SciFi configuration triggered");
          // TODO: propagate to hardware
-         int status=mudaq::mutrig::FEB::ConfigureASICs("/Equipment/SciFi",mu);
-	 if(status!=SUCCESS){ //TODO: what to do? }
+         int status=mudaq::mutrig::FEB(mu).ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
+	 if(status!=SUCCESS){ 
+		//TODO: what to do? 
+	}
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }

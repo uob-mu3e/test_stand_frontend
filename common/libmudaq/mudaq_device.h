@@ -26,6 +26,8 @@
 #include "time.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <list>
+#include <vector>
 /*??????*/
 #include "../kerneldriver/mudaq.h"
 
@@ -42,7 +44,7 @@ namespace mudaq {
     union TimingConfig
     {
       uint8_t values[8];
-      struct {
+      struct fields{
     uint8_t data_sampling_point;
     uint8_t priout_sampling_point;
     uint8_t rdcol_width;
@@ -76,8 +78,12 @@ namespace mudaq {
     uint32_t read_memory_rw(unsigned idx) const;
     void write_memory_rw(unsigned idx, uint32_t value); // added by DvB for rw mem
 
-    void FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, uint32_t mem_start);
-    int FEB_read(uint32_t FPGA_ID, uint16_t length, uint32_t startaddr, uint32_t mem_start);
+    void FEBsc_resetMaster();
+    void FEBsc_resetSlave();
+    void FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
+    int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
+    int FEBsc_write_bank(char *pevent, int off);
+    uint32_t FEBsc_get_packet();
 
     void enable_led(unsigned which);
     void enable_leds(uint8_t pattern);
@@ -95,6 +101,23 @@ protected:
 
     // needs to be accessible by the dma readout subtype
     int _fd;
+
+    //FEB slow control
+    uint32_t m_FEBsc_wmem_addr;
+    uint32_t m_FEBsc_rmem_addr;
+    struct SC_reply_packet : public std::vector<uint32_t>{
+	public:
+		bool Good(){return (size()>=4) && (size()==4+GetLength());}; //header+startaddr+length+trailer+[data]
+		bool IsOOB(){return (this->at(0)&0x1f0000bc) == 0x1c0000bc;};
+		bool IsRD() {return (this->at(0)&0x1f0000bc) == 0x1e0000bc;};
+		bool IsWR() {return (this->at(0)&0x1f0000bc) == 0x1f0000bc;};
+		uint16_t IsResponse(){return this->at(2)&0x10000;};
+		uint16_t GetStartAddr(){return this->at(1);};
+		size_t GetLength(){return this->at(2)&0xffff;};
+
+
+    };
+    std::list<SC_reply_packet> m_sc_packet_fifo; //storage of all received SC packets to be consumed by a MIDAS bank writer
 
 private:
     const std::string       _path;
