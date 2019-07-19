@@ -1,3 +1,7 @@
+/*
+ * author : Alexandr Kozlinskiy
+ * date : 2019
+ */
 
 struct reconfig_t {
     static const alt_u32 ONE = 1;

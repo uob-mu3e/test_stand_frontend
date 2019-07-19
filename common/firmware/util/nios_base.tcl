@@ -1,3 +1,6 @@
+#
+# author : Alexandr Kozlinskiy
+#
 
 # clock
 add_instance clk clock_source

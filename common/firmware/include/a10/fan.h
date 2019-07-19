@@ -1,3 +1,7 @@
+/*
+ * author : Alexandr Kozlinskiy
+ * date : 2019
+ */
 
 struct fan_t {
     const alt_u32 fclk = 254000;

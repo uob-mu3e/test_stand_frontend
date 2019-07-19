@@ -1,8 +1,8 @@
 /*
  * mm_i2c.h
  *
- *  Created on: Nov 13, 2017
- *      Author: akozlins
+ * author : Alexandr Kozlinskiy
+ * date : 2017-11-13
  */
 
 #ifndef SOFTWARE_APP_SRC_I2C_H_

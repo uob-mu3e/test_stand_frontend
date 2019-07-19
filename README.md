@@ -1,9 +1,19 @@
 # Mu3e online repository
 
+## Structure
+
+- `backend_pc` - _TODO_
+- `common` - common firmware and software
+- `farm_px` - _TODO_
+- `fe_board` - front-end board firmware (si, fb and tl readout)
+- `frontends` - _TODO_
+- `switching_pc` - _TODO_
+
 ## documentation
 
+- read docmentation (see "links" sections below)
 - put docs to appropriate folders
-- link to local and external docs from "links" section below
+- link to local and external docs from "links" section
 
 ## Links (docs, etc.)
 
