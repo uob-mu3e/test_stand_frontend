@@ -1,6 +1,6 @@
 # Code style
 
-prefixes/sufixes:
+variables/objects/entities prefixes/sufixes:
 
 - `e_` / `_id` - entity/component instance
 - `g_` - generate statement
@@ -15,7 +15,7 @@ prefixes/sufixes:
 
 - ports : `std_logic` and `std_logic_vector`
 - use `downto`
-- avoid `std_logic_unsigned`, etc.
+- avoid synopsys packages (`std_logic_unsigned`, etc.)
 
 file names:
 
@@ -23,7 +23,9 @@ file names:
 - `tb_entityname.vhd` or `testbench_entityname.vhd`
 - `packagename_pkg.vhd`
 
-spaces:
+code identation/alignment:
 
 - tab = 4 spaces
-- ascii
+    - *alignment* (inside code) have to be done with spaces
+    - *identation* can be done with tabs, but do not mix spaces and tabs for identation
+- use unix line ending (`\n`), prefer ascii char set

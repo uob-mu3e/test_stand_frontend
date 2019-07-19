@@ -1,3 +1,7 @@
+#
+# author : Alexandr Kozlinskiy
+# date : 2017-11-11
+#
 
 proc read_srec { f } {
     set words [ list ]
