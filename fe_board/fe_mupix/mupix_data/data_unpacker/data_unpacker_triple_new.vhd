@@ -75,7 +75,7 @@ begin
 
 genunpack:
 FOR i in 2 downto 0 GENERATE
-unpacker:data_unpacker_new
+unpacker : work.data_unpacker_new
 	generic map(
 		COARSECOUNTERSIZE	=> COARSECOUNTERSIZE,
 		UNPACKER_HITSIZE	=> UNPACKER_HITSIZE

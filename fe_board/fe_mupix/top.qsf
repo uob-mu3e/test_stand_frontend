@@ -21,26 +21,12 @@ set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
 
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 
-set_global_assignment -name QIP_FILE ../fe/top.qip
-
-set_global_assignment -name VHDL_FILE top.vhd
-set_global_assignment -name SDC_FILE top.sdc
 
 
 
-set_global_assignment -name VHDL_FILE ../fe_malibu/data_sc_path.vhd
-set_global_assignment -name VHDL_FILE spi_master.vhd
-set_global_assignment -name VHDL_FILE spi_if_write_bits.vhd
-set_global_assignment -name VHDL_FILE mp8_slowcontrol.vhd
-set_global_assignment -name VHDL_FILE mp8_sc_master.vhd
-set_global_assignment -name VHDL_FILE reg_map_s4.vhd
 
-set_global_assignment -name VHDL_FILE cmp_pkg.vhd
-set_global_assignment -name QSYS_FILE nios.qsys
 
-set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
-set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/FEB_mupix.qip
-set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
+
 
 
 
@@ -55,4 +41,52 @@ set_global_assignment -name SMART_RECOMPILE ON
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name VHDL_FILE mupix_data/receiver_block/syncfifo.vhd
+set_global_assignment -name VHDL_FILE mupix_data/hitsorter/hitsortermem.vhd
+set_global_assignment -name VHDL_FILE mupix_data/multichip_ro/singlechip_ro.vhd
+set_global_assignment -name VHDL_FILE mupix_data/comp_type_const/transceivers_components.vhd
+set_global_assignment -name VHDL_FILE mupix_data/comp_type_const/detectorfpga_types.vhd
+set_global_assignment -name VHDL_FILE mupix_data/comp_type_const/detectorfpga_constants.vhd
+set_global_assignment -name VHDL_FILE mupix_data/comp_type_const/lvds_components.vhd
+set_global_assignment -name VHDL_FILE mupix_data/receiver_block/rx_errcounter_mupix.vhd
+set_global_assignment -name VHDL_FILE mupix_data/receiver_block/lvds_receiver_mupix.vhd
+set_global_assignment -name VHDL_FILE mupix_data/receiver_block/datadecoder_mupix.vhd
+set_global_assignment -name VHDL_FILE mupix_data/receiver_block/receiver_block_mupix.vhd
+set_global_assignment -name VHDL_FILE mupix_data/data_unpacker/data_unpacker_new.vhd
+set_global_assignment -name VHDL_FILE mupix_data/data_unpacker/gray_to_binary.vhd
+set_global_assignment -name VHDL_FILE mupix_data/comp_type_const/hitsorter_components.vhd
+set_global_assignment -name VHDL_FILE mupix_data/comp_type_const/mupix_constants.vhd
+set_global_assignment -name VHDL_FILE mupix_data/comp_type_const/mupix_types.vhd
+set_global_assignment -name VHDL_FILE mupix_data/comp_type_const/mupix_registers.vhd
+set_global_assignment -name VHDL_FILE mupix_data/comp_type_const/datapath_components.vhd
+set_global_assignment -name VHDL_FILE mupix_data/receiver_block/rx_errcounter.vhd
+set_global_assignment -name VHDL_FILE mupix_data/receiver_block/receiver_block.vhd
+set_global_assignment -name VHDL_FILE mupix_data/receiver_block/lvds_receiver.vhd
+set_global_assignment -name VHDL_FILE mupix_data/receiver_block/datadecoder.vhd
+set_global_assignment -name VHDL_FILE mupix_data/multichip_ro/timemuxed_ro_zerosupressed.vhd
+set_global_assignment -name VHDL_FILE mupix_data/multichip_ro/singlechip_ro_zerosupressed.vhd
+set_global_assignment -name VHDL_FILE mupix_data/multichip_ro/single_zs_fifo.vhd
+set_global_assignment -name VHDL_FILE mupix_data/multichip_ro/multichip_ro_zerosupressed.vhd
+set_global_assignment -name VHDL_FILE mupix_data/ip/enablemux.vhd
+set_global_assignment -name VHDL_FILE mupix_data/ip/memorymux.vhd
+set_global_assignment -name VHDL_FILE mupix_data/hitsorter/hitsorter.vhd
+set_global_assignment -name VHDL_FILE mupix_data/hitsorter/hit_serializer.vhd
+set_global_assignment -name VHDL_FILE mupix_data/hitsorter/hit_counter_simple.vhd
+set_global_assignment -name VHDL_FILE mupix_data/data_unpacker/hit_ts_conversion.vhd
+set_global_assignment -name VHDL_FILE mupix_data/data_unpacker/data_unpacker_triple_new.vhd
+set_global_assignment -name VHDL_FILE mupix_data/datapath.vhd
+set_global_assignment -name QIP_FILE ../fe/top.qip
+set_global_assignment -name VHDL_FILE top.vhd
+set_global_assignment -name SDC_FILE top.sdc
+set_global_assignment -name VHDL_FILE ../fe_malibu/data_sc_path.vhd
+set_global_assignment -name VHDL_FILE spi_master.vhd
+set_global_assignment -name VHDL_FILE spi_if_write_bits.vhd
+set_global_assignment -name VHDL_FILE mp8_slowcontrol.vhd
+set_global_assignment -name VHDL_FILE mp8_sc_master.vhd
+set_global_assignment -name VHDL_FILE reg_map_s4.vhd
+set_global_assignment -name VHDL_FILE cmp_pkg.vhd
+set_global_assignment -name QSYS_FILE nios.qsys
+set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/FEB_mupix.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

@@ -74,7 +74,7 @@ signal prescale_r			: STD_LOGIC_VECTOR(31 downto 0);
 begin
 
 
-singlero: singlechip_ro 
+singlero : work.singlechip_ro 
 	generic map(
 		COARSECOUNTERSIZE	=> COARSECOUNTERSIZE,
 		HITSIZE				=> HITSIZE

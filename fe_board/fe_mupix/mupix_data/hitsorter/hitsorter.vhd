@@ -20,15 +20,16 @@ use work.mupix_types.all;
 ----------------------------------
 
 entity hitsorter is
---	generic(
-----		NINPUT:	integer := NINPUT;	-- 1 FPGA has 16 inputs, i.e. 4 inputs to the sorter with a 4to1Mux before the sorter
+	generic(
+		NINPUT:	integer := 1;	-- 1 FPGA has 16 inputs, i.e. 4 inputs to the sorter with a 4to1Mux before the sorter
+		NSORTERINPUTS:	integer := 1
 ----		NINPUT2:	integer := 1; -- half NINPUT or 1 (whichever is bigger)
 ----		NINPUT4:	integer := 1; -- one quarter NINPUT or 1 (whichever is bigger)
 ----		NINPUT8:  integer := 1; -- one eight NINPUT or 1 (whichever is bigger)
 ----		NINPUT16:  integer := 1;-- one sixteenth NINPUT or 1 (whichever is bigger)
 ----		HITSIZE: integer := 2+2+8+8+6+10	-- serializer + link + Row + Col + Charge + TS
 --		
---	);
+	);
 	port (
 		reset_n	:	in	std_logic;
 		writeclk: 	in	std_logic;
@@ -458,7 +459,7 @@ end process;
 genmem: for i in NINPUT-1 downto 0 generate
 
 
-smem:hitsortermem 
+smem : work.hitsortermem 
 	PORT MAP
 	(
 		data				=> whits(i),

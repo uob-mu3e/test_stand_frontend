@@ -1,7 +1,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use work.reg_map_s4.all;
+use work.mupix_types.all;
 
 entity top is
 port (
@@ -42,7 +44,7 @@ port (
 
 
 	 -- Block A here : Connections for two MuPix8 via SCSI adapter card 
-	 clock_A					: out std_logic;
+	 clock_A				: out std_logic;
 	 data_in_A_0			: in std_logic_vector(3 downto 0);
 	 data_in_A_1			: in std_logic_vector(3 downto 0);
 	 fast_reset_A			: out std_logic;
@@ -63,9 +65,14 @@ port (
 	 SPI_CLK_A				: out std_logic; -- A_spi_clk_front
 	 SPI_LD_DAC_A			: out std_logic; -- A_spi_ld_front
 	 SPI_LD_ADC_A			: out std_logic; -- A_spi_ld_tmp_dac_front
-	 SPI_LD_TEMP_DAC_A	: out std_logic; -- A_spi_ld_adc_front
+	 SPI_LD_TEMP_DAC_A		: out std_logic; -- A_spi_ld_adc_front
 	 SPI_DOUT_ADC_0_A		: in std_logic; -- A_spi_dout_adc_front
 	 SPI_DOUT_ADC_1_A		: in std_logic; -- A_spi_dout_adc_back
+	 
+	 
+	 -- Block B here : Connections for two MuPix8 via SCSI adapter card
+	 data_in_B_0			: in std_logic_vector(3 downto 0);
+	 data_in_B_1			: in std_logic_vector(3 downto 0); 
 
 
 
@@ -172,9 +179,8 @@ architecture arch of top is
     signal temp_dac_out_A_back:				std_logic_vector(15 downto 0);
     signal temp_adc_out_A_back:				std_logic_vector(31 downto 0);
      
-	 subtype reg32 is std_logic_vector(31 downto 0);
-	 type reg32array is array (36 downto 0) of reg32;
-	 signal fpga_reg32 : reg32array;
+	 type fpga_reg32_type is array (36 downto 0) of reg32;
+	 signal fpga_reg32 : fpga_reg32_type;
 	 
 	 signal add_reg_ram : std_logic_vector(13 downto 0);
 	 signal data_reg_ram : std_logic_vector(31 downto 0);
@@ -182,7 +188,22 @@ architecture arch of top is
 	 signal wdate_reg_ram : std_logic_vector(31 downto 0);
 	 type state_spi is (waiting, starting, read_out_pix, write_pix, read_out_th, ending);
     signal spi_state : state_spi;
-	  
+	 
+	 -- DATA MuPix
+	 signal counter125 : reg64;
+	 signal writeregs_pixel : reg32array;
+	 signal readregs_slow_pixel : reg32array;
+	 signal readmem_clk_pixel : std_logic;
+	 signal readmem_data_pixel : reg32;
+	 signal readmem_addr_pixel : std_logic_vector(15 downto 0);
+	 signal readmem_wren_pixel : std_logic;
+	 signal readmem_eoe_pixel : std_logic;
+	 signal readtrigfifo : std_logic;
+	 signal fromtrigfifo : reg64;
+	 signal trigfifoempty : std_logic;
+	 signal readhitbusfifo : std_logic;
+	 signal fromhitbusfifo : reg64;
+	 signal hitbusfifoempty : std_logic;	 
 
 begin
 
@@ -482,8 +503,63 @@ begin
 	 
     ----------------------------------------------------------------------------
 
+    ----------------------------------------------------------------------------
+    -- DATA PIXEL
+	 
+	 process(clk_aux, reset_n)
+	 begin
+		if(reset_n = '0')then
+			counter125 <= (others => '0');
+		elsif(rising_edge(clk_aux)) then
+			counter125 <= counter125 + '1';	
+		end if;
+	 end process;
+	 
+	 
+	 
+	 pix_data : work.data_path
+		generic map(
+			NCHIPS 			=> 4,
+--			NGX	 => ,
+			NLVDS				=>	16,
+			NSORTERINPUTS	=> 1--,
+		)
+		port map(
+			resets_n				=> reset_n,
+--			resets				=> 
+--			slowclk:			in std_logic;
+			clk125				=> clk_aux,
+			counter125			=> counter125,
+			
+--			serial_data_in:		in std_logic_vector(NGX-1 downto 0);
+			lvds_data_in		=> data_in_B_1 & data_in_B_0 & data_in_A_0 & data_in_A_0,
+			
+--			clkext_out:			out std_logic_vector(NCHIPS-1 downto 0);
+			
+			writeregs			=>	writeregs_pixel,
+--			regwritten:			in std_logic_vector(NREGISTERS-1 downto 0);
+
+			readregs_slow		=> readregs_slow_pixel,
+			
+			readmem_clk			=> readmem_clk_pixel,
+			readmem_data		=> readmem_data_pixel,
+			readmem_addr		=> readmem_addr_pixel,
+			readmem_wren		=> readmem_wren_pixel,
+			readmem_eoe			=> readmem_eoe_pixel,
+				
+			-- trigger interface
+			readtrigfifo		=> readtrigfifo,
+			fromtrigfifo		=> fromtrigfifo,
+			trigfifoempty		=> trigfifoempty,
+			
+			readhitbusfifo 	=> readhitbusfifo,
+			fromhitbusfifo 	=> fromhitbusfifo,
+			hitbusfifoempty	=> hitbusfifoempty--,
+		);
+	 
 
 
+	 ----------------------------------------------------------------------------
     ----------------------------------------------------------------------------
     -- QSFP
     -- (data and slow_control)
