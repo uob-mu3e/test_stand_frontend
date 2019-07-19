@@ -11,3 +11,5 @@ VHDs= \
     top.vhd
 
 include util/makefile.mk
+
+nios.qsys : device.tcl

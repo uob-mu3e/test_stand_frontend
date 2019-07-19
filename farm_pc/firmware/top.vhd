@@ -439,7 +439,7 @@ LED_BRACKET(3) <= writeregs(LED_REGISTER_W)(3);
 
 cpu_reset_n_q <= push_button1_db;
 
-nios_i : component nios
+nios_i : component work.cmp.nios
 port map (
 	clk_clk                    			=> clk,               
 	flash_tcm_address_out(27 downto 2) 	=> FLASH_A,
