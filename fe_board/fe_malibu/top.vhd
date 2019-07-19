@@ -132,6 +132,7 @@ architecture arch of top is
 	 signal pod_rx_data : std_logic_vector(7 downto 0);
 	 
 	 signal run_state : feb_run_state;
+	 signal terminated : std_logic;
 
     signal av_test : work.util.avalon_t;
 
@@ -307,6 +308,8 @@ begin
 
         o_link_data         => qsfp_tx_data(31 downto 0),
         o_link_datak        => qsfp_tx_datak(3 downto 0),
+		  
+		  o_terminated			 => terminated,
 
         i_reset             => not reset_n,
         i_clk               => qsfp_pll_clk--,
@@ -329,20 +332,27 @@ begin
         mscb_counter_in             => mscb_counter_in--,
     );
 
-    ----------------------------------------------------------------------------
+    
+	 ----------------------------------------------------------------------------
 	 -- reset system
 	 
 	 e_reset_sys : entity work.resetsys
 	 port map (
-		 clk								   => pod_rx_clk,
-		 reset_in							=> not PushButton(0),
-		 resets_out							=> open,
-		 data_in								=> pod_rx_data,
-		 state_out							=> run_state,
-		 run_number_out					=> open,
-		 testout								=> led(11)
+		 clk_reset_rx					   => pod_rx_clk,						-- recovered clk from reset receiver
+		 clk_global							=> clk_aux,                   -- state transitions will be synchronised to this clock
+		 clk_free							=> clk_aux,							-- replace with independent, free running clock (not required, used for phase measurement between clk_reset_rx and clk_global)
+		 reset_in							=> not PushButton(0),			-- hard reset for testing, do not connect this to any "normal" reset
+		 resets_out							=> open,								-- 16 bit reset mask, use this together with feb state .. example: nios_reset => (run_state=reset_state and resets(x)='1')  
+		 phase_out							=> open,								-- phase between clk_reset_rx and clk_global
+		 data_in								=> pod_rx_data,					-- 8 bit reset link input
+		 state_out							=> run_state,						-- run state of the frontend board
+		 run_number_out					=> open,								-- run number from midas, updated on state run_prep
+		 fpga_id								=> x"CAFE",							-- input of fpga id, needed for addressed reset commands in setups with >1 FEBs
+		 terminated							=> terminated,						-- changes run state from terminating to idle if set to 1  (data merger will set this if run was finished properly)
+		 testout								=> led(5 downto 0)
 	 );
-
+	
+	
     ----------------------------------------------------------------------------
     -- QSFP
     -- (data and slow_control)

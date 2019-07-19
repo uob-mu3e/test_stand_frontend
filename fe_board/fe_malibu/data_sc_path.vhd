@@ -23,6 +23,8 @@ port (
 
     o_link_data         : out   std_logic_vector(31 downto 0);
     o_link_datak        : out   std_logic_vector(3 downto 0);
+	 
+	 o_terminated			: out   std_logic;
 
     i_reset             : in    std_logic;
     i_clk               : in    std_logic--;
@@ -134,7 +136,7 @@ begin
         override_req            => '0',
         override_granted        => open,
 
-        terminated              => open,
+        terminated              => o_terminated,
         data_priority           => '0',
 
         leds                    => open,
