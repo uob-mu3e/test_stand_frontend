@@ -26,6 +26,9 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# on some older boxes, wpedantic and MIDAS do not mix
+add_subdirectory(modules)
+
 add_compile_options(
     "-Wpedantic" "-Wall" "-Wextra"
     "-Wformat=2"
@@ -58,8 +61,6 @@ else(CUDA_FOUND)
     #   message(FATAL_ERROR "Not all CUDA libraries are found")
     message("Not all CUDA libraries are found")
 endif(CUDA_FOUND)
-
-add_subdirectory(modules)
 
 set(MIDAS_DIR ${PROJECT_SOURCE_DIR}/modules/midas)
 set(MIDASLIB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/linux/lib)

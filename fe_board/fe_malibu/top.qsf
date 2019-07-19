@@ -19,49 +19,25 @@ set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
 
 
 
-set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments.tcl
-
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
+
+set_global_assignment -name QIP_FILE ../fe/top.qip
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../fe/assignments/FE_malibu.tcl
 
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 
+
+
+set_global_assignment -name VHDL_FILE data_sc_path.vhd
+set_global_assignment -name VHDL_FILE malibu_block.vhd
+
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
 
-set_global_assignment -name QIP_FILE util/util.qip
-
-set_global_assignment -name VHDL_FILE s4/ip_altpll.vhd
-set_global_assignment -name VHDL_FILE s4/ip_altlvds_rx.vhd
-set_global_assignment -name VHDL_FILE s4/ip_ram.vhd
-set_global_assignment -name VHDL_FILE s4/ip_fifo.vhd
-
-# MALIBU
-set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
-set_global_assignment -name VHDL_FILE malibu_dec.vhd
-# FEB_common
 set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
-#mupix dummy generator (TODO: remove)
-set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/data_generator.vhd
-set_global_assignment -name VHDL_FILE ../firmware/FEB_mupix/linear_shift.vhd
-
-# QSFP
-
-set_global_assignment -name QIP_FILE s4/xcvr.qip
-
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp_tx[*]
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp_rx[*]
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_tx[*]
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_rx[*]
-
-# SC
-
-set_global_assignment -name VHDL_FILE ../../switching_pc/a10_board/firmware/sc_slave.vhd
-set_global_assignment -name VHDL_FILE ../../switching_pc/a10_board/firmware/sc_master.vhd
-
-
-set_global_assignment -name VHDL_FILE sc_s4.vhd
-set_global_assignment -name VHDL_FILE tb/fifo.vhd
+set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/FEB_mupix.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
 
 
 
@@ -77,5 +53,4 @@ set_global_assignment -name SMART_RECOMPILE ON
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

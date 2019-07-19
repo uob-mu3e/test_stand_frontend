@@ -47,7 +47,7 @@ begin
 	begin
 	if(reset_n = '0')then
 		mem_data_o <= (others => '0');
-		mem_addr_o <= (others => '0');
+		mem_addr_o <= (others => '1');
 		stateout <= (others => '0');
 		mem_wren_o <= '0';
 		state <= waiting;
@@ -58,7 +58,7 @@ begin
 		mem_wren_o <= '0';
 		mem_wren_o <= '0';
 
-		if(link_data_in = x"000000BC" and link_data_in_k(0) = '1') then
+		if(link_data_in = x"000000BC" and link_data_in_k = "0001") then
 			stateout(3 downto 0) <= x"F";
 			mem_wren_o <= '0';
 		else
@@ -68,9 +68,10 @@ begin
 				when waiting =>
 					stateout(3 downto 0) <= x"1";
 					if (link_data_in(7 downto 0) = x"BC" 
-						and link_data_in_k(0) = '1' 
+						and link_data_in_k = "0001" 
 						and link_data_in(31 downto 26) = "000111") then
 							stateout(3 downto 0) <= x"1";
+							mem_addr_o <= mem_addr_o + '1';
 							mem_data_o <= link_data_in;
 							mem_wren_o <= '1';
 							state <= starting;
@@ -78,10 +79,14 @@ begin
 
 				when starting =>
 					stateout(3 downto 0) <= x"2";
-					mem_addr_o <= mem_addr_o + '1';
-					mem_data_o <= link_data_in;
-					mem_wren_o <= '1';
-					if (link_data_in(7 downto 0) = x"0000009C" and link_data_in_k(0) = '1') then
+					if (link_data_in_k = "0000") then
+						mem_addr_o <= mem_addr_o + '1';
+						mem_data_o <= link_data_in;
+						mem_wren_o <= '1';
+					elsif (link_data_in(7 downto 0) = x"0000009C" and link_data_in_k = "0001") then
+						mem_addr_o <= mem_addr_o + '1';
+						mem_data_o <= link_data_in;
+						mem_wren_o <= '1';
 						state <= waiting;
 					end if;
 
