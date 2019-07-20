@@ -407,7 +407,6 @@ void MudaqDevice::FEBsc_resetSlave(){
  *      First word (0xBAD...) to be written last (serves as start condition)
  */
 void MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr) {
-
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_WRITE = 0x3; // this is 11 in binary
 
@@ -422,11 +421,25 @@ void MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length,
     write_memory_rw(m_FEBsc_wmem_addr, 0xBAD << 20);
     m_FEBsc_wmem_addr += 4 + length;
 
-    //TODO: read acknowledge, store in fifo
+    //wait for reply (acknowledge)
+    printf("MudaqDevice::FEBsc_write(): Waiting for response\n");
+    int count=0;
+    while(count<1000){
+	if(FEBsc_get_packet() && m_sc_packet_fifo.back().IsWR()) break;
+	count++;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    if(count==1000){printf("Timeout occured waiting for reply.\n"); throw;}
+    if(!m_sc_packet_fifo.back().Good()){ printf("received bad packet...\n"); throw; }
+    if(!m_sc_packet_fifo.back().IsResponse()){ printf("received packet is no response...\n"); throw; }
+    if(m_sc_packet_fifo.back().GetLength()!=length){ printf("received packet fails size check... (%u vs %u)\n",m_sc_packet_fifo.back().GetLength(),length); throw; }
+    
+    printf("MudaqDevice::FEBsc_write(): Got response\n");
+
 }
 
 int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr) {
-
+printf("FEBsc_read() FPGA:%u length%u startaddr%u\n",FPGA_ID,length,startaddr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_READ = 0x2; // this is 10 in binary
 
@@ -444,9 +457,10 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
 	count++;
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    //TODO: read reply, store in fifo
+    if(count==1000){printf("Timeout occured waiting for reply.\n"); throw;}
     if(!m_sc_packet_fifo.back().Good()){ printf("received bad packet...\n"); throw; }
-    if(m_sc_packet_fifo.back().GetLength()!=length){ printf("received packet fails size check...\n"); throw; }
+    if(!m_sc_packet_fifo.back().IsResponse()){ printf("received packet is no response...\n"); throw; }
+    if(m_sc_packet_fifo.back().GetLength()!=length){ printf("received packet fails size check... (%u vs %u)\n",m_sc_packet_fifo.back().GetLength(),length); throw; }
     memcpy(data,m_sc_packet_fifo.back().data()+4,length);
 
 
@@ -552,7 +566,19 @@ uint32_t MudaqDevice::FEBsc_get_packet(){
 	throw;
    }
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr + 3+length+1)); //save trailer
-
+   //report and check
+   printf("packet: +0: %16.16x\n",packet.at(0));
+   printf("packet: +1: %16.16x\n",packet.at(1));
+   printf("packet: +2: %16.16x\n",packet.at(2));
+   printf("packet: +3: %16.16x\n",packet.at(3));
+   printf("packet: size=%u length=%u IsRD=%c IsWR=%c IsOOB=%c, IsResponse=%c, IsGood=%c\n",
+	packet.size(),packet.GetLength(),
+	packet.IsRD()?'y':'n',
+	packet.IsWR()?'y':'n',
+	packet.IsOOB()?'y':'n',
+	packet.IsResponse()?'y':'n',
+	packet.Good()?'y':'n'
+);
    //store packet in fifo
    m_sc_packet_fifo.push_back(packet);
    m_FEBsc_rmem_addr += 3 + length + 1;

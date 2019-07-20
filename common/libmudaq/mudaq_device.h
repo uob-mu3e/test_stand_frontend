@@ -107,11 +107,17 @@ protected:
     uint32_t m_FEBsc_rmem_addr;
     struct SC_reply_packet : public std::vector<uint32_t>{
 	public:
-		bool Good(){return (size()>=4) && (size()==4+GetLength());}; //header+startaddr+length+trailer+[data]
+		bool Good(){
+			//header+startaddr+length+trailer+[data]
+			if(size()<4) return false;
+			if(IsWR()&&IsResponse()) return size()==4; //No payload for write response
+			if(size()!=GetLength()+4) return false;
+			return true;
+			};
 		bool IsOOB(){return (this->at(0)&0x1f0000bc) == 0x1c0000bc;};
 		bool IsRD() {return (this->at(0)&0x1f0000bc) == 0x1e0000bc;};
 		bool IsWR() {return (this->at(0)&0x1f0000bc) == 0x1f0000bc;};
-		uint16_t IsResponse(){return this->at(2)&0x10000;};
+		uint16_t IsResponse(){return (this->at(2)&0x10000)!=0;};
 		uint16_t GetStartAddr(){return this->at(1);};
 		size_t GetLength(){return this->at(2)&0xffff;};
 
