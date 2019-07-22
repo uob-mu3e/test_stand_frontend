@@ -126,6 +126,7 @@ architecture rtl of top is
 		--//pcie readable memory signals
 		signal readmem_writedata 	: std_logic_vector(31 downto 0);
 		signal readmem_writeaddr 	: std_logic_vector(63 downto 0);
+		signal readmem_writeaddr_finished: std_logic_vector(15 downto 0);
 		signal readmem_writeaddr_lowbits : std_logic_vector(15 downto 0);
 		signal readmem_wren	 		: std_logic;
 		signal readmem_endofevent 	: std_logic;
@@ -560,9 +561,10 @@ slave : sc_slave
 		link_data_in		=> rx_data(0),--sc_data(0),--mem_data_out(31 downto 0),--sc_ch0,--data_ch0,
 		link_data_in_k		=> rx_datak(0),--sc_datak(0),--mem_datak_out(3 downto 0),--sck_ch0,--datak_ch0,
 		mem_addr_out		=> readmem_writeaddr(15 downto 0),
+		mem_addr_finished_out   => readmem_writeaddr_finished,
 		mem_data_out		=> readmem_writedata,
 		mem_wren				=> readmem_wren,
-		stateout				=> open--,
+		stateout				=> LED_BRACKET
 );
 
 tx_data(0) <= mem_data_out(31 downto 0);
@@ -610,6 +612,9 @@ begin
 		
 		readregs(TIMECOUNTER_LOW_REGISTER_R)		<= time_counter(31 downto 0);
 		readregs(TIMECOUNTER_HIGH_REGISTER_R)		<= time_counter(63 downto 32);
+
+		readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= (others => '0');
+		readregs(MEM_WRITEADDR_LOW_REGISTER_R) <= (X"0000" & readmem_writeaddr_finished);
 	end if;
 end process;
 
