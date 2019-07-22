@@ -132,8 +132,8 @@ begin
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (
         N_ASICS => N_g,
-        LVDS_PLL_FREQ => 125.0,
-        LVDS_DATA_RATE => 1250--,
+        LVDS_PLL_FREQ => 160.0,
+        LVDS_DATA_RATE => 160--,
     )
     port map (
         i_rst => i_reset or s_subdet_reset_reg(1),

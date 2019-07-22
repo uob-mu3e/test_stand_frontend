@@ -3,7 +3,6 @@
 #include "malibu/malibu_basic_cmd.h"
 
 void sc_callback(volatile alt_u32* data) {
-    return;
 //check spi command register, trigger spi configuration if needed
     alt_u32 d0 = data[0x13];
     if(d0 != 0){
@@ -15,7 +14,6 @@ void sc_callback(volatile alt_u32* data) {
         data[0x13] = 0;
         printf("SPI: finished...\n");
     }
-
 //check registers and forward to avalon test interface
     if(((volatile alt_u32*)AVM_TEST_BASE)[0xB]!=data[0x10])
             printf("Update value dummyctrl_reg:    0x%08X\n", data[0x10]);
