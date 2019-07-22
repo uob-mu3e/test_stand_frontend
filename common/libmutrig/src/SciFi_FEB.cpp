@@ -125,6 +125,28 @@ void FEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       cm_msg(MINFO, "FEB::on_settings_changed", "Set mask[%d] %d",asic, value);
       _this->setMask(asic,value);
    }
+   if (std::string(key.name) == "reset_datapath") {
+      BOOL value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+      if(value){
+         cm_msg(MINFO, "FEB::on_settings_changed", "reset_datapath");
+         _this->DataPathReset(FEB::FPGA_broadcast_ID);
+      }
+      value = FALSE; // reset flag in ODB
+      db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+   }
+   if (std::string(key.name) == "reset_asics") {
+      BOOL value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+      if(value){
+         cm_msg(MINFO, "FEB::on_settings_changed", "reset_asics");
+         _this->chipReset(FEB::FPGA_broadcast_ID);
+      }
+      value = FALSE; // reset flag in ODB
+      db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+   }
    
 }
 
@@ -234,6 +256,7 @@ void FEB::chipReset(int FPGA_ID){
 	//set and clear reset
 	val=SET_FE_SUBDET_REST_BIT_CHIP(val);
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
+        sleep(1);
 	val=UNSET_FE_SUBDET_REST_BIT_CHIP(val);
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 }
@@ -247,6 +270,7 @@ void FEB::DataPathReset(int FPGA_ID){
 	//set and clear reset
 	val=SET_FE_SUBDET_REST_BIT_DPATH(val);
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
+        sleep(1);
 	val=UNSET_FE_SUBDET_REST_BIT_DPATH(val);
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 }
