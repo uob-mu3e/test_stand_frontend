@@ -3,6 +3,9 @@
  * date : 2019
  */
 
+/**
+ * Arria 10 board (DE5a_NET) FAN controller.
+ */
 struct fan_t {
     const alt_u32 fclk = 254000;
 

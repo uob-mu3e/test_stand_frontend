@@ -37,6 +37,7 @@ port (
 
     -- QSFP
 
+    -- si5345 out2
     qsfp_pll_clk    : in    std_logic; -- 156.25 MHz
 
     QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
@@ -50,6 +51,7 @@ port (
 
     -- POD
 
+    -- si5345 out0
     pod_pll_clk     : in    std_logic;
 
     pod_tx_reset    : out   std_logic;
