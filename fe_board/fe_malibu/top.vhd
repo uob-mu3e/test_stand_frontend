@@ -353,7 +353,7 @@ begin
 		 reset_bypass						=> reset_bypass,					-- bypass of reset link using nios & jtag (for setups without the genesis board)
 		 state_out							=> run_state,						-- run state of the frontend board
 		 run_number_out					=> open,								-- run number from midas, updated on state run_prep
-		 fpga_id								=> x"CAFE",							-- input of fpga id, needed for addressed reset commands in setups with >1 FEBs
+		 fpga_id								=> x"FEB0",							-- input of fpga id, needed for addressed reset commands in setups with >1 FEBs
 		 terminated							=> terminated,						-- changes run state from terminating to idle if set to 1  (data merger will set this if run was finished properly)
 		 testout								=> led(5 downto 0)
 	 );
