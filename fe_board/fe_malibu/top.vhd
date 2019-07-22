@@ -315,6 +315,7 @@ begin
         o_link_datak        => qsfp_tx_datak(3 downto 0),
 		  
 		  o_terminated			 => terminated,
+		  i_run_state			 => run_state,
 
         i_reset             => not reset_n,
         i_clk               => qsfp_pll_clk--,

@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.daq_constants.all;
 
 entity data_sc_path is
 generic (
@@ -25,6 +26,7 @@ port (
     o_link_datak        : out   std_logic_vector(3 downto 0);
 	 
 	 o_terminated			: out   std_logic;
+	 i_run_state			: in    feb_run_state;
 
     i_reset             : in    std_logic;
     i_clk               : in    std_logic--;
@@ -109,16 +111,7 @@ begin
     port map (
         fpga_ID_in              => (5=>'1',others => '0'),
         FEB_type_in             => "111010",
-
-        state_idle              => '0',
-        state_run_prepare       => '0',
-        state_sync              => '0',
-        state_running           => '1',
-        state_terminating       => '0',
-        state_link_test         => '0',
-        state_sync_test         => '0',
-        state_reset             => '0',
-        state_out_of_DAQ        => '0',
+		  run_state					  => i_run_state,
 
         data_out                => o_link_data(31 downto 0),
         data_is_k               => o_link_datak(3 downto 0),

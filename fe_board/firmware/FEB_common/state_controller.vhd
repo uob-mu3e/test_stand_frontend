@@ -84,20 +84,10 @@ BEGIN
     state_reset <= states(7);
     state_out_of_DAQ <= states(8);
     
-        
---urun_termination_controller : component run_termination_controller
---     port map(
---        clk => clk,
---        reset => reset,
---        state_terminating => states(4),
---        terminated => terminated
---    );
-    
-    
     -- output process
     process (clk, recieving_payload)
     begin
-        if (rising_edge (clk)) and (recieving_payload = '0') then
+        if (falling_edge (clk)) and (recieving_payload = '0') then
             case state is
                 when idle =>
                     states <= (0=>'1', others => '0');
@@ -135,7 +125,7 @@ BEGIN
             sync_test_payload <= (others =>'0');
             runnumber <= (others =>'0');
             
-        elsif (rising_edge(clk) and addressed = '1') then
+        elsif (falling_edge(clk) and addressed = '1') then
             
             if recieving_payload = '1' then -- recieve payload 
                 payload_byte_counter <= payload_byte_counter - 1;
@@ -309,7 +299,7 @@ BEGIN
             ignoring_signals    <= '0';
             addressing_payload_byte_counter <= 0;
             
-        elsif rising_edge(clk) then
+        elsif falling_edge(clk) then
             
             
             -- address command, not part of a payload, --> compare the next 32 bits with own address
