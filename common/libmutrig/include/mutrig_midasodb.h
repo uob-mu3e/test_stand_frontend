@@ -8,6 +8,7 @@
 #include <midas.h>
 #include "mutrig_config.h"
 #include "mutrig_MIDAS_config.h"
+#include "SciFi_FEB.h"
 
 namespace mudaq { namespace mutrig {
 
@@ -25,7 +26,8 @@ namespace midasODB {
 // /Equipment/SciFi/ASICs/%d/TDC
 // /Equipment/SciFi/ASICs/%d/Channels/%d/Conf
 //Relies on {prefix}/ASICs/Global/Num asics to build the tree of the right size
-int setup_db(HNDLE& hDB, const char* prefix);
+//If init_FEB is set, the registers on the FEB-FPGA are initialized
+int setup_db(HNDLE& hDB, const char* prefix,FEB* FEB_inteface,bool init_FEB);
 
 //Map ODB structure under prefix (e.g. /Equipment/SciFi) to a Config instance (i.e. build the configuration pattern) for this asic.
 //Returns configuration class holding the pattern.

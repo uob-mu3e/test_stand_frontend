@@ -31,6 +31,7 @@ typedef struct {
   BOOL dummy_data;
   INT  dummy_data_n;
   BOOL dummy_data_fast;
+  BOOL prbs_decode_enable;
 } MUTRIG_DAQ;
 
 #define MUTRIG_DAQ_STR(_name) const char *_name[] = {\
@@ -39,6 +40,8 @@ typedef struct {
 "dummy_data = BOOL : n",\
 "dummy_data_n = INT : 255",\
 "dummy_data_fast = BOOL : n",\
+"prbs_decode_enable = BOOL : n",\
+"mask = BOOL : n",\
 "",\
 NULL }
 

@@ -371,6 +371,7 @@ void MudaqDevice::munmap_wrapper(volatile uint32_t** addr, unsigned len,
 
 
 void MudaqDevice::FEBsc_resetMaster(){
+    cm_msg(MINFO, "MudaqDevice" , "Resetting slow control master");
     //clear memory to avoid sending old packets again
     for(int i = 0; i <= 64*1024; i++){
         write_memory_rw(i, 0);
@@ -383,6 +384,8 @@ void MudaqDevice::FEBsc_resetMaster(){
     write_register(RESET_REGISTER_W, 0x0);
 }
 void MudaqDevice::FEBsc_resetSlave(){
+    cm_msg(MINFO, "MudaqDevice" , "Resetting slow control slave");
+    printf("MudaqDevice::FEBsc_resetSlave()\n");
 //TODO: need some way to clean data in slave, otherwise we will start reading the whole history again...
     //reset our pointer
     m_FEBsc_rmem_addr=0;
@@ -406,7 +409,8 @@ void MudaqDevice::FEBsc_resetSlave(){
  *      1 word as dummy: 0x00000000
  *      First word (0xBAD...) to be written last (serves as start condition)
  */
-void MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr) {
+int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr) {
+//printf("FEBsc_write() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr, m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_WRITE = 0x3; // this is 11 in binary
 
@@ -419,27 +423,32 @@ void MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length,
     }
     write_memory_rw(m_FEBsc_wmem_addr + 4 + length, 0x0000009c);
     write_memory_rw(m_FEBsc_wmem_addr, 0xBAD << 20);
-    m_FEBsc_wmem_addr += 4 + length;
-
+    m_FEBsc_wmem_addr += 4 + length + 1;
     //wait for reply (acknowledge)
-    printf("MudaqDevice::FEBsc_write(): Waiting for response\n");
+    //printf("MudaqDevice::FEBsc_write(): Waiting for response, current=%d\n",m_FEBsc_rmem_addr);
     int count=0;
     while(count<1000){
 	if(FEBsc_get_packet() && m_sc_packet_fifo.back().IsWR()) break;
 	count++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
-    if(count==1000){printf("Timeout occured waiting for reply.\n"); throw;}
-    if(!m_sc_packet_fifo.back().Good()){ printf("received bad packet...\n"); throw; }
-    if(!m_sc_packet_fifo.back().IsResponse()){ printf("received packet is no response...\n"); throw; }
-    if(m_sc_packet_fifo.back().GetLength()!=length){ printf("received packet fails size check... (%u vs %u)\n",m_sc_packet_fifo.back().GetLength(),length); throw; }
-    
-    printf("MudaqDevice::FEBsc_write(): Got response\n");
-
+    if(count==1000){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Timeout occured waiting for reply");
+        return -1;
+    }
+    if(!m_sc_packet_fifo.back().Good()){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received bad packet");
+        return -1;
+    }
+    if(!m_sc_packet_fifo.back().IsResponse()){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received request packet, this should not happen...");
+        return -1;
+    }
+    return 0;
 }
 
 int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr) {
-printf("FEBsc_read() FPGA:%u length%u startaddr%u\n",FPGA_ID,length,startaddr);
+//printf("FEBsc_read() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr,m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_READ = 0x2; // this is 10 in binary
 
@@ -448,76 +457,46 @@ printf("FEBsc_read() FPGA:%u length%u startaddr%u\n",FPGA_ID,length,startaddr);
     write_memory_rw(3 + m_FEBsc_wmem_addr, length);
     write_memory_rw(m_FEBsc_wmem_addr + 4, 0x0000009c);
     write_memory_rw(m_FEBsc_wmem_addr, 0xBAD << 20);
-    m_FEBsc_wmem_addr += 4;
+    m_FEBsc_wmem_addr += 4 + 1;
 
     //wait for reply
+    //printf("MudaqDevice::FEBsc_read(): Waiting for response, current=%d\n",m_FEBsc_rmem_addr);
     int count=0;
     while(count<1000){
 	if(FEBsc_get_packet() && m_sc_packet_fifo.back().IsRD()) break;
 	count++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
-    if(count==1000){printf("Timeout occured waiting for reply.\n"); throw;}
-    if(!m_sc_packet_fifo.back().Good()){ printf("received bad packet...\n"); throw; }
-    if(!m_sc_packet_fifo.back().IsResponse()){ printf("received packet is no response...\n"); throw; }
-    if(m_sc_packet_fifo.back().GetLength()!=length){ printf("received packet fails size check... (%u vs %u)\n",m_sc_packet_fifo.back().GetLength(),length); throw; }
-    memcpy(data,m_sc_packet_fifo.back().data()+4,length);
-
-
-//    // TODO: the memory where the addr for the answer of the fpga is written to
-//    // #define RO_MEM_ADDR 0 --> for testing now only write to write mem
-//    //volatile uint32_t end_event_ptr = read_register_ro(RO_MEM_ADDR);
-//
-//    uint32_t RW_REG_ADDR = 0x0;
-//    write_register_wait(RW_REG_ADDR, 0x1, 100000000);
-//    uint32_t end_event_ptr = read_register_rw(RW_REG_ADDR);
-//    int counter = 0;
-//    while(end_event_ptr == _last_read_address){
-//        cout << end_event_ptr << _last_read_address << endl;
-//        end_event_ptr = read_register_rw(RW_REG_ADDR);
-//        usleep(1);
-//        if (counter == 1000) break;
-//        counter++;
-//    }
-//
-//    while(read_memory_rw(_last_read_address) != sc_read_header) {
-//        _last_read_address++;
-//        cout << "Last Read Address: " << _last_read_address << endl;
-//    };
-//    cout << "SC_READ_HEADER: " << hex << read_memory_rw(_last_read_address) << endl;
-//
-//    if(read_memory_rw(++_last_read_address) != startaddr)
-//        return -1; // TODO: error code
-//    cout << "STARTADDR: " << hex << read_memory_rw(_last_read_address) << endl;
-//
-//    // return error if acknowledge bit is not 1
-//    if((read_memory_rw(++_last_read_address) & 0x80000000) == 0)
-//        return -1; // TODO: error code
-//    cout << "acknowledge: " << hex << read_memory_rw(_last_read_address) << endl;
-//
-//    // compare length
-//    if((read_memory_rw(_last_read_address++) & 0xFFFF) != length)
-//        return -1; //TODO: error code
-//    cout << read_memory_rw(_last_read_address) << endl;
-//
-//    for(int i = 0; i<length; i++) {
-//        data[i] = read_memory_ro(_last_read_address + i);
-//    }
-//
-//    _last_read_address = end_event_ptr;
-
-    return 0;
-
+    if(count==1000){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Timeout occured waiting for reply");
+        return -1;
+    }
+    if(!m_sc_packet_fifo.back().Good()){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet");
+        return -1;
+    }
+    if(!m_sc_packet_fifo.back().IsResponse()){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received request packet, this should not happen...");
+        return -1;
+    }
+    if(m_sc_packet_fifo.back().GetLength()!=length){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error");
+        return -1;
+    }
+    memcpy(data,m_sc_packet_fifo.back().data()+3,length*sizeof(uint32_t));
+    return length;
 }
 
 
 //Read up to one packet from the sc slave interface, store in the sc packet fifo.
 //Return: type field of the packet, 0x00 when no new packet was available
 uint32_t MudaqDevice::FEBsc_get_packet(){
-   uint32_t header_val=read_memory_ro(m_FEBsc_rmem_addr);
-//   printf("FEBsc_get_packet: index=%d, value=%16.16x\n",m_FEBsc_rmem_addr,header_val);
+   uint32_t fpga_rmem_addr=(read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
+//   printf("FEBsc_get_packet: index=%d, hwindex=%4.4x, value=%16.16x\n",m_FEBsc_rmem_addr,fpga_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr));
+   //hardware is in front of software? only then we can read, otherwise wait...
+   if(fpga_rmem_addr==m_FEBsc_rmem_addr) return 0;
    //check if memory at current index is a SC packet
-   if ((header_val & 0x1c0000bc) != 0x1c0000bc) {
+   if ((read_memory_ro(m_FEBsc_rmem_addr) & 0x1c0000bc) != 0x1c0000bc) {
 	return 0; //TODO: correct when no event is to be written?
    }
 
@@ -532,57 +511,55 @@ uint32_t MudaqDevice::FEBsc_get_packet(){
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+2)); //save length word
 
    //check type of SC packet
-   uint32_t type=(header_val&0x1f0000bc);
-   uint16_t length=read_memory_ro(m_FEBsc_rmem_addr + 2);
-   
-   if (type == 0x1e0000bc) {
-	printf("read_sc_event: got a read packet!\n");
-	if(!(read_memory_ro(m_FEBsc_rmem_addr+2)&0x010000)){
-		printf("Is a request, something is wrong...\n");
-		throw;
+   if(!packet.IsResponse()){
+	printf("Received packet is a request, something is wrong...\n");
+	throw;
+   }
+   if(packet.IsRD()){
+	//printf("read_sc_event: got a read packet!\n");
+   }
+   if(packet.IsWR()){
+	//printf("read_sc_event: got a write packet!\n");
+	if(packet.IsResponse()){
+		//printf("Received WR packet is an acknowledge, ignoring payload\n");
 	}
    }
-   if (type == 0x1f0000bc) {
-	printf("read_sc_event: got a write packet!\n");
-	if(read_memory_ro(m_FEBsc_rmem_addr+2)&0x010000){
-		//printf("Is an acknowledge, ignoring payload\n");
-		length=0;
-	}
+   if(packet.IsOOB()){
+	//printf("read_sc_event: got an OOB packet!\n");
    }
-   if (type == 0x1c0000bc) {
-	printf("read_sc_event: got a OOB packet!\n");
-   }
-   uint16_t fpga_ID=(header_val>>8) & 0xffff;
-   printf("FPGA ID %x\n", fpga_ID);
-   printf("startaddr %x\n", read_memory_ro(m_FEBsc_rmem_addr + 1));
-   printf("length %x\n", length);
+   //printf("Type %x\n", packet[0]&0x1f0000bc);
+   //printf("FPGA ID %x\n", packet.GetFPGA_ID());
+   //printf("startaddr %x\n", packet.GetStartAddr());
+   //printf("length %ld\n", packet.GetLength());
 
-   for (uint32_t i = 0; i < length; i++) { // getting data
+   for (uint32_t i = 0; i < packet.GetLength(); i++) { // getting data
        printf("data[%d] = %x\n", i,read_memory_ro(m_FEBsc_rmem_addr + 3 + i));
        packet.push_back(read_memory_ro(m_FEBsc_rmem_addr + 3 + i)); //save data
    }
-   if(read_memory_ro(m_FEBsc_rmem_addr+3+length)!=0x9c){
-	printf("did not see trailer at %d, something is wrong.\n",m_FEBsc_rmem_addr+3+length);
-	throw;
-   }
-   packet.push_back(read_memory_ro(m_FEBsc_rmem_addr + 3+length+1)); //save trailer
-   //report and check
-   printf("packet: +0: %16.16x\n",packet.at(0));
-   printf("packet: +1: %16.16x\n",packet.at(1));
-   printf("packet: +2: %16.16x\n",packet.at(2));
-   printf("packet: +3: %16.16x\n",packet.at(3));
-   printf("packet: size=%u length=%u IsRD=%c IsWR=%c IsOOB=%c, IsResponse=%c, IsGood=%c\n",
+   packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+3+packet.GetLength())); //save trailer
+   /*
+   printf("packet: size=%lu length=%lu IsRD=%c IsWR=%c IsOOB=%c, IsResponse=%c, IsGood=%c\n",
 	packet.size(),packet.GetLength(),
 	packet.IsRD()?'y':'n',
 	packet.IsWR()?'y':'n',
 	packet.IsOOB()?'y':'n',
 	packet.IsResponse()?'y':'n',
 	packet.Good()?'y':'n'
-);
+   );
+   */
+   if(packet[packet.GetLength()+3]!=0x9c){
+	printf("did not see trailer at %ld, something is wrong.\n",packet.GetLength()+3);
+	throw;
+   }
+   //report and check
+   //printf("packet: +0: %16.16x\n",packet.at(0));
+   //printf("packet: +1: %16.16x\n",packet.at(1));
+   //printf("packet: +2: %16.16x\n",packet.at(2));
+   //printf("packet: +3: %16.16x\n",packet.at(3));
    //store packet in fifo
    m_sc_packet_fifo.push_back(packet);
-   m_FEBsc_rmem_addr += 3 + length + 1;
-   return type;
+   m_FEBsc_rmem_addr += 3 + packet.GetLength() + 1;
+   return packet[0]&0x1f0000bc;
 }
 
 //if available, generate and commit a midas event from all slow control packet in the list, which is empty after the operation.

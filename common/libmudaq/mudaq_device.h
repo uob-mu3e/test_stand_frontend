@@ -80,9 +80,13 @@ namespace mudaq {
 
     void FEBsc_resetMaster();
     void FEBsc_resetSlave();
-    void FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
+    //write slow control packet with payload of length words in data. Returns 0 on success, -1 on error receiving acknowledge packet
+    int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
+    //request write slow control read packet, with payload of length words saved in data. Returns length of packet returned, -1 on error receiving reply packet
     int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
+    //write all packets received into a midas bank. clears internal packet fifo and should be called from time to time to avoid storing all replies
     int FEBsc_write_bank(char *pevent, int off);
+    //get
     uint32_t FEBsc_get_packet();
 
     void enable_led(unsigned which);
@@ -118,8 +122,9 @@ protected:
 		bool IsRD() {return (this->at(0)&0x1f0000bc) == 0x1e0000bc;};
 		bool IsWR() {return (this->at(0)&0x1f0000bc) == 0x1f0000bc;};
 		uint16_t IsResponse(){return (this->at(2)&0x10000)!=0;};
+		uint16_t GetFPGA_ID(){return (this->at(0)>>8)&0xffff;};
 		uint16_t GetStartAddr(){return this->at(1);};
-		size_t GetLength(){return this->at(2)&0xffff;};
+		size_t GetLength(){if(IsWR() && IsResponse()) return 0; else return this->at(2)&0xffff;};
 
 
     };

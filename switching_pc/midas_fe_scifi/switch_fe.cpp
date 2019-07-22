@@ -55,7 +55,6 @@
 //Slow control for mutrig/scifi
 #include "mutrig_midasodb.h"
 #include "SciFi_FEB.h"
-
 /*-- Globals -------------------------------------------------------*/
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
@@ -67,7 +66,8 @@ const char *frontend_file_name = __FILE__;
 BOOL frontend_call_loop = FALSE;
 
 /* a frontend status page is displayed with this frequency in ms    */
-INT display_period = 1000;
+//INT display_period = 1000;
+INT display_period = 0;
 
 /* maximum event size produced by this frontend */
 INT max_event_size = 10000;
@@ -81,8 +81,6 @@ INT event_buffer_size = 10 * 10000;
 /* DMA Buffer and related */
 mudaq::DmaMudaqDevice * mup;
 
-/* Values for reading SC Events */
-uint32_t current_ro_idx = 0;
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -145,8 +143,6 @@ EQUIPMENT equipment[] = {
      "", "", "",},
      read_scifi_sc_event,          /* readout routine */
     },
-
-
    {""}
 };
 
@@ -201,16 +197,6 @@ INT frontend_init()
    const char * name = "sc.html";
    db_set_value(hDB,0,"Custom/Switching&", name, sizeof(name), 1, TID_STRING);
 
-   //SciFi setup part
-   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "yellow");
-   int status=mudaq::mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi");
-   if(status != SUCCESS){
-      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "red");
-      return status;
-   }
-   //end of SciFi setup part
-
-
    // open mudaq
    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
    if ( !mup->open() ) {
@@ -222,6 +208,21 @@ INT frontend_init()
        cm_msg(MERROR, "frontend_init", "Mudaq is not ok");
        return FE_ERR_DRIVER;
    }
+   mup->FEBsc_resetMaster();
+   mup->FEBsc_resetSlave();
+
+
+   //SciFi setup part
+   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "yellow");
+   mudaq::mutrig::FEB::Create(*mup); //create FEB interface signleton
+   int status=mudaq::mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",mudaq::mutrig::FEB::Instance(),false);
+   if(status != SUCCESS){
+      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "red");
+      return status;
+   }
+   //end of SciFi setup part
+
+
 
    return CM_SUCCESS;
 }
@@ -272,8 +273,8 @@ INT resume_run(INT run_number, char *error)
 
 INT read_sc_event(char *pevent, INT off)
 {
-    while(!mup->FEBsc_get_packet()) {}
-    return mup->FEBsc_write_bank(pevent, off);
+    while(mup->FEBsc_get_packet()){};
+    return mup->FEBsc_write_bank(pevent,off); 
 }
 
 /*--- Read WMEM if button was pressed --------*/
@@ -317,8 +318,8 @@ INT read_scifi_sc_event(char *pevent, INT off){
 void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 {
    KEY key;
-
    db_get_key(hDB, hKey, &key);
+//   printf("sc_settings_changed(%s)\n",key.name);
 
    mudaq::DmaMudaqDevice & mu = *mup;
 
@@ -343,7 +344,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        int size = sizeof(value);
        db_get_data(hDB, hKey, &value, &size, TID_BOOL);
        cm_msg(MINFO, "sc_settings_changed", "Reset SC Master");
-       mu.FEBsc_resetSlave();
+       mu.FEBsc_resetMaster();
    }
 
    if (std::string(key.name) == "Reset SC Slave") {
@@ -372,29 +373,19 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
          INT FPGA_ID, SIZE_FPGA_ID;
          INT DATA, SIZE_DATA;
          INT START_ADD, SIZE_START_ADD;
-         INT PCIE_MEM_START, SIZE_PCIE_MEM_START;
 
          SIZE_FPGA_ID = sizeof(FPGA_ID);
          SIZE_DATA = sizeof(DATA);
          SIZE_START_ADD = sizeof(START_ADD);
-         SIZE_PCIE_MEM_START = sizeof(PCIE_MEM_START);
 
          char STR_FPGA_ID[128];
          char STR_START_ADD[128];
-         char STR_PCIE_MEM_START[128];
 
          sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_WRITE");
          sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_WRITE");
 
          db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
          db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
-         db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
-
-         INT NEW_PCIE_MEM_START = PCIE_MEM_START + 5 + DATA_WRITE_SIZE;
-         INT SIZE_NEW_PCIE_MEM_START;
-         SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
-
-         db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
 
          for (int i = 0; i < DATA_WRITE_SIZE; i++) {
              char STR_DATA[128];
@@ -405,8 +396,12 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
          uint32_t *data = DATA_ARRAY;
 
-         mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD);
-         printf("feb_write called");
+         int count=0;
+         while(count < 3){
+		if(mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD)!=-1) break;
+		count++;
+	}
+	if(count==3) cm_msg(MERROR,"switch_fe","Tried 4 times to send a slow control write packet but did not succeed");
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
@@ -422,17 +417,14 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
          INT FPGA_ID, SIZE_FPGA_ID;
          INT LENGTH, SIZE_LENGTH;
          INT START_ADD, SIZE_START_ADD;
-         INT PCIE_MEM_START, SIZE_PCIE_MEM_START;
 
          SIZE_FPGA_ID = sizeof(FPGA_ID);
          SIZE_LENGTH = sizeof(LENGTH);
          SIZE_START_ADD = sizeof(START_ADD);
-         SIZE_PCIE_MEM_START = sizeof(PCIE_MEM_START);
 
          char STR_FPGA_ID[128];
          char STR_LENGTH[128];
          char STR_START_ADD[128];
-         char STR_PCIE_MEM_START[128];
 
          sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_READ");
          sprintf(STR_LENGTH,"Equipment/Switching/Variables/LENGTH_READ");
@@ -441,15 +433,14 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
          db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
          db_get_value(hDB, 0, STR_LENGTH, &LENGTH, &SIZE_LENGTH, TID_INT, 0);
          db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
-         db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
 
-         INT NEW_PCIE_MEM_START = PCIE_MEM_START + 5;
-         INT SIZE_NEW_PCIE_MEM_START;
-         SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
-
-         db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
-	 uint32_t data[LENGTH];
-         mu.FEBsc_read((uint32_t) FPGA_ID, data, (uint16_t) LENGTH, (uint32_t) START_ADD);
+         uint32_t data[LENGTH];
+	 int count=0;
+         while(count < 3){
+         	if(mu.FEBsc_read((uint32_t) FPGA_ID, data, (uint16_t) LENGTH, (uint32_t) START_ADD)>=0) break;
+		count++;
+	}
+	if(count==3) cm_msg(MERROR,"switch_fe","Tried 4 times to get a slow control read response but did not succeed");
 
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
@@ -466,17 +457,14 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             INT FPGA_ID, SIZE_FPGA_ID;
             INT DATA, SIZE_DATA;
             INT START_ADD, SIZE_START_ADD;
-            INT PCIE_MEM_START, SIZE_PCIE_MEM_START;
 
             SIZE_FPGA_ID = sizeof(FPGA_ID);
             SIZE_DATA = sizeof(DATA);
             SIZE_START_ADD = sizeof(START_ADD);
-            SIZE_PCIE_MEM_START = sizeof(PCIE_MEM_START);
 
             char STR_FPGA_ID[128];
             char STR_DATA[128];
             char STR_START_ADD[128];
-            char STR_PCIE_MEM_START[128];
 
             sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_WRITE");
             sprintf(STR_DATA,"Equipment/Switching/Variables/SINGLE_DATA_WRITE");
@@ -485,13 +473,8 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
             db_get_value(hDB, 0, STR_DATA, &DATA, &SIZE_DATA, TID_INT, 0);
             db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
-            db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
 
-            INT NEW_PCIE_MEM_START = PCIE_MEM_START + 6;
-            INT SIZE_NEW_PCIE_MEM_START;
-            SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
 
-            db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
 
             uint32_t data_arr[1] = {0};
             data_arr[0] = (uint32_t) DATA;
@@ -589,7 +572,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       if(value){
          cm_msg(MINFO, "sc_settings_changed", "SciFi configuration triggered");
          // TODO: propagate to hardware
-         int status=mudaq::mutrig::FEB(mu).ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
+         int status=mudaq::mutrig::FEB::Instance()->ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
 	 if(status!=SUCCESS){ 
 		//TODO: what to do? 
 	}
