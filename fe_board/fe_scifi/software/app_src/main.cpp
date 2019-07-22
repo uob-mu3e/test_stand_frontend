@@ -4,9 +4,10 @@
 
 #include "malibu.h"
 #include "sc.h"
+#include "mscb_user.h"
 
 #include "../../../fe/software/app_src/si5345.h"
-si5345_t si5345 { 0 };
+si5345_t si5345 { 4 };
 
 alt_u32 alarm_callback(void*) {
     // watchdog
@@ -29,7 +30,7 @@ int main() {
     alt_alarm alarm;
     int err = alt_alarm_start(&alarm, 0, alarm_callback, nullptr);
     if(err) {
-        printf("ERROR: alt_alarm_start => %d\n%d\n", err);
+        printf("ERROR: alt_alarm_start => %d\n", err);
     }
 
     while (1) {
@@ -40,6 +41,7 @@ int main() {
         printf("  [3] => sc\n");
         printf("  [4] => xcvr pod\n");
         printf("  [5] => si5345\n");
+        printf("  [6] => mscb (exit by reset only)\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -58,6 +60,9 @@ int main() {
             break;
         case '5':
             si5345.menu();
+            break;
+        case '6':
+            mscb_main();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);
