@@ -127,6 +127,8 @@ architecture arch of top is
     signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
     signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
     signal mscb_counter_in : unsigned(15 downto 0);
+	 
+	 signal reset_bypass : std_logic_vector(11 downto 0);
 
 	 signal pod_rx_clk : std_logic;
 	 signal pod_rx_data : std_logic_vector(7 downto 0);
@@ -221,6 +223,9 @@ begin
         parallel_mscb_in_export => mscb_to_nios_parallel_in,
         parallel_mscb_out_export => mscb_from_nios_parallel_out,
         counter_in_export => std_logic_vector(mscb_counter_in),
+		  
+		  -- reset bypass
+		  reset_bypass_out_export => reset_bypass,
 
         rst_reset_n => nios_reset_n,
         clk_clk => nios_clk--,
@@ -345,6 +350,7 @@ begin
 		 resets_out							=> open,								-- 16 bit reset mask, use this together with feb state .. example: nios_reset => (run_state=reset_state and resets(x)='1')  
 		 phase_out							=> open,								-- phase between clk_reset_rx and clk_global
 		 data_in								=> pod_rx_data,					-- 8 bit reset link input
+		 reset_bypass						=> reset_bypass,					-- bypass of reset link using nios & jtag (for setups without the genesis board)
 		 state_out							=> run_state,						-- run state of the frontend board
 		 run_number_out					=> open,								-- run number from midas, updated on state run_prep
 		 fpga_id								=> x"CAFE",							-- input of fpga id, needed for addressed reset commands in setups with >1 FEBs

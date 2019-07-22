@@ -13,6 +13,7 @@ ENTITY resetsys is
 		  resets_out :				  				out std_logic_vector(15 downto 0);				-- 16 bit reset mask, use this together with feb state .. example: nios_reset => (run_state=reset and resets(x)='1')  
         phase_out :								out std_logic_vector(31 downto 0);				-- phase between clk_reset_rx and clk_global
 		  data_in :    		     				in  std_logic_vector(7 downto 0); 				-- 8b reset link input
+		  reset_bypass : 							in  std_logic_vector(11 downto 0);				-- bypass of reset link using nios & jtag (for setups without the genesis board) 
 		  state_out :				  				out feb_run_state;									-- run state of the frontend board
 		  run_number_out :   	  				out std_logic_vector(31 downto 0);				-- run number from midas, updated on state run_prep
 		  fpga_id :									in  std_logic_vector(15 downto 0);				-- input of fpga id, needed for addressed reset commands in setups with >1 FEBs
@@ -37,15 +38,28 @@ architecture rtl of resetsys is
     signal ustate_sync_test_rx:        std_logic;
     signal ustate_reset_rx:            std_logic;
     signal ustate_out_of_DAQ_rx:       std_logic;
+	 
+	 signal state_controller_in:			std_logic_vector(7 downto 0);
     
 ----------------begin resetsys------------------------
 BEGIN
+
+ process (clk_reset_rx)
+ begin
+	  if (rising_edge (clk_reset_rx))then
+			if(reset_bypass(8) = '1') then
+				state_controller_in <= reset_bypass(7 downto 0);
+			else
+				state_controller_in <= data_in;
+			end if;
+		end if;
+ end process;
 
 i_state_controller: entity work.state_controller
     PORT MAP(
         clk                    => clk_reset_rx,
         reset                  => reset_in,
-        reset_link_8bData      => data_in,
+        reset_link_8bData      => state_controller_in,
         state_idle             => ustate_idle_rx,
         state_run_prepare      => ustate_run_prepare_rx,
         state_sync             => ustate_sync_rx,

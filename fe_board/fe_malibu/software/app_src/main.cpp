@@ -5,6 +5,7 @@
 #include "malibu.h"
 #include "sc.h"
 #include "mscb_user.h"
+#include "reset.h"
 
 #include "../../../fe/software/app_src/si5345.h"
 si5345_t si5345 { 0 };
@@ -63,6 +64,9 @@ int main() {
             break;
         case '6':
             mscb_main();
+            break;
+        case '7':
+            menu_reset();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

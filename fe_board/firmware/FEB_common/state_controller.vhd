@@ -291,6 +291,8 @@ BEGIN
                             if reset_link_8bData = x"32" then   -- enable
                                 state <= idle;
                             end if;
+								when others =>
+									state <= idle;
                             
                     end case;
             end if;
