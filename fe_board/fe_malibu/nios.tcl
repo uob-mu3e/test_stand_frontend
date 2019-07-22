@@ -26,6 +26,6 @@ if 1 {
 add_connection avm_clk.clk       avm_test.clk
 add_connection avm_clk.clk_reset avm_test.reset
 
-source nios_mscb_inc.tcl
+source ../firmware/FEB_common/nios_mscb_inc.tcl
 
 save_system {nios.qsys}
