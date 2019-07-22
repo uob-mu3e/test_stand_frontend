@@ -7,7 +7,7 @@
 #include "mscb_user.h"
 
 #include "../../../fe/software/app_src/si5345.h"
-si5345_t si5345 { 0 };
+si5345_t si5345 { 4 };
 
 alt_u32 alarm_callback(void*) {
     // watchdog

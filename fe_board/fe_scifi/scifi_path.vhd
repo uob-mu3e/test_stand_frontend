@@ -47,6 +47,11 @@ architecture arch of scifi_path is
     signal frame_desync : std_logic;
     signal buffer_full : std_logic;
 
+    --registers controlled from midas
+    signal s_dummyctrl_reg : std_logic_vector(31 downto 0);
+    signal s_dpctrl_reg : std_logic_vector(31 downto 0);
+    signal s_subdet_reset_reg : std_logic_vector(31 downto 0);
+    
 begin
 
     e_test_pulse : entity work.clkdiv
@@ -62,11 +67,13 @@ begin
     process(i_clk, i_reset)
     begin
     if ( i_reset = '1' ) then
-        o_chip_reset <= '0';
+            s_dummyctrl_reg <= (others=>'0');
+            s_dpctrl_reg <= (others=>'0');
+            s_subdet_reset_reg <= (others=>'0');
         --
     elsif rising_edge(i_clk) then
         o_avs_readdata <= X"CCCCCCCC";
-
+--monitors
         if ( i_avs_read = '1' and i_avs_address = X"0" and fifo_empty = '0' ) then
             o_avs_readdata <= fifo_data(31 downto 0);
         end if;
@@ -88,13 +95,34 @@ begin
             o_avs_readdata <= (others => '0');
             o_avs_readdata(rx_ready'range) <= rx_ready;
         end if;
-
-        if ( i_avs_write = '1' and i_avs_address = X"" ) then
-            o_chip_reset <= i_avs_writedata(0);
+--output
+        if ( i_avs_write = '1' and i_avs_address = X"B" ) then
+            s_dummyctrl_reg <= i_avs_writedata;
         end if;
+        if ( i_avs_write = '1' and i_avs_address = X"C" ) then
+            s_dpctrl_reg <= i_avs_writedata;
+        end if;
+        if ( i_avs_write = '1' and i_avs_address = X"D" ) then
+            s_subdet_reset_reg <= i_avs_writedata;
+        end if;
+--output readback
+        if ( i_avs_read = '1' and i_avs_address = X"B" ) then
+            o_avs_readdata <= s_dummyctrl_reg;
+        end if;
+        if ( i_avs_read = '1' and i_avs_address = X"C" ) then
+            o_avs_readdata <= s_dpctrl_reg;
+        end if;
+        if ( i_avs_read = '1' and i_avs_address = X"D" ) then
+            o_avs_readdata <= s_subdet_reset_reg;
+        end if;
+
+
+      
         --
     end if;
     end process;
+
+    o_chip_reset <= s_subdet_reset_reg(0);
 
     -- use 156.25 MHz instead of 160 MHz
     refclk <= i_clk;
@@ -104,11 +132,11 @@ begin
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (
         N_ASICS => N_g,
-        LVDS_PLL_FREQ => 160.0,
-        LVDS_DATA_RATE => 160--,
+        LVDS_PLL_FREQ => 125.0,
+        LVDS_DATA_RATE => 1250--,
     )
     port map (
-        i_rst => i_reset,
+        i_rst => i_reset or s_subdet_reset_reg(1),
         i_stic_txd => i_data(N_g-1 downto 0),
         i_refclk_125 => refclk,
         i_ts_clk => refclk,
@@ -121,11 +149,11 @@ begin
         i_fifo_rd => i_fifo_rack or fifo_rack_ext,
 
         --slow control
-        i_SC_disable_dec => '0',
-        i_SC_mask => (others => '0'),
-        i_SC_datagen_enable => '0',
-        i_SC_datagen_shortmode => '0',
-        i_SC_datagen_count => (others => '0'),
+        i_SC_disable_dec => not s_dpctrl_reg(31),
+        i_SC_mask => s_dpctrl_reg(3 downto 0),
+        i_SC_datagen_enable => s_dummyctrl_reg(1),
+        i_SC_datagen_shortmode => s_dummyctrl_reg(2),
+        i_SC_datagen_count => s_dummyctrl_reg(12 downto 3),
 
         --monitors
         o_receivers_usrclk => open,
