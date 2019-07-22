@@ -116,3 +116,18 @@ if 1 {
     add_interface pio conduit end
     set_interface_property pio EXPORT_OF pio.external_connection
 }
+
+proc add_avalon_proxy { name baseAddress addr_width readLatency } {
+    add_instance ${name} avalon_proxy
+    set_instance_parameter_value ${name} {addr_width} ${addr_width}
+    set_instance_parameter_value ${name} {readLatency} ${readLatency}
+
+    add_connection clk.clk       ${name}.clk
+    add_connection clk.clk_reset ${name}.reset
+
+    add_connection                 cpu.data_master ${name}.slave
+    set_connection_parameter_value cpu.data_master/${name}.slave baseAddress ${baseAddress}
+
+    add_interface ${name} avalon master
+    set_interface_property ${name} EXPORT_OF ${name}.master
+}
