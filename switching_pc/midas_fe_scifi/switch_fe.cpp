@@ -568,7 +568,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
    if (std::string(key.name) == "SciFiConfig") {
       INT value;
       int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_INT);
+      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
       if(value){
          cm_msg(MINFO, "sc_settings_changed", "SciFi configuration triggered");
          // TODO: propagate to hardware
