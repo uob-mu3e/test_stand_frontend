@@ -78,6 +78,11 @@ port (
 
 
 
+    -- si5345 out8
+    clk_625     : in    std_logic;
+
+
+
     reset_n     : in    std_logic;
 
     -- 125 MHz
@@ -255,7 +260,7 @@ begin
     ----------------------------------------------------------------------------
     -- MALIBU
 
-    malibu_ck_fpga_1 <= '0';
+    malibu_ck_fpga_1 <= clk_625;
     malibu_pll_reset <= '0';
 
     e_malibu_path : entity work.malibu_path

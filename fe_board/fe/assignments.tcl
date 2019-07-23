@@ -86,3 +86,9 @@ set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp
 set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp_rx[*]
 set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_tx[*]
 set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_rx[*]
+
+
+
+# ...
+set_instance_assignment -name IO_STANDARD LVDS -to clk_625
+set_location_assignment PIN_B17 -to clk_625
