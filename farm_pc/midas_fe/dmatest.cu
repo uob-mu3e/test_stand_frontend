@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
     uint32_t reset_reg = 0;
     reset_reg = SET_RESET_BIT_ALL(reset_reg);
     mu.write_register_wait(RESET_REGISTER_W, reset_reg, 1000);
+    mu.write_register_wait(RESET_REGISTER_W, 0x0, 1000);
 
     // Enable register on FPGA for continous readout and enable dma
     mu.enable_continous_readout(0);
@@ -125,7 +126,7 @@ int main(int argc, char *argv[])
 
             auto current_time = std::chrono::high_resolution_clock::now();
             auto time = current_time - start_time;
-            if(std::chrono::duration_cast<std::chrono::microseconds>(time).count() >= 10000)// 3.6e+9)
+            if(std::chrono::duration_cast<std::chrono::microseconds>(time).count() >= 1000000)// 3.6e+9)
                 break;
         }
         else if(errno == mudaq::DmaMudaqDevice::READ_NODATA){

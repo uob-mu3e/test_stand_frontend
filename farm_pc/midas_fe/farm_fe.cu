@@ -247,6 +247,7 @@ INT begin_of_run(INT run_number, char *error)
    uint32_t reset_reg = 0;
    reset_reg = SET_RESET_BIT_ALL(reset_reg);
    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
+   mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
    // Enable register on FPGA for continous readout
    mu.enable_continous_readout(0); // enable dma
    
