@@ -68,10 +68,10 @@ set_location_assignment PIN_Y2 -to pod_rx[2]
 set_location_assignment PIN_AF2 -to pod_rx[1]
 set_location_assignment PIN_AH2 -to pod_rx[0]
 
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to pod_tx_reset
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to pod_rx_reset
-set_location_assignment PIN_AE18 -to pod_tx_reset
-set_location_assignment PIN_AP18 -to pod_rx_reset
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to pod_tx_reset_n
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to pod_rx_reset_n
+set_location_assignment PIN_AE18 -to pod_tx_reset_n
+set_location_assignment PIN_AP18 -to pod_rx_reset_n
 
 # POD clock from si5345 chip
 set_instance_assignment -name IO_STANDARD LVDS -to pod_pll_clk

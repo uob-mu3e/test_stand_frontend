@@ -54,8 +54,8 @@ port (
     -- si5345 out0
     pod_pll_clk     : in    std_logic;
 
-    pod_tx_reset    : out   std_logic;
-    pod_rx_reset    : out   std_logic;
+    pod_tx_reset_n  : out   std_logic;
+    pod_rx_reset_n  : out   std_logic;
 
     pod_tx          : out   std_logic_vector(3 downto 0);
     pod_rx          : in    std_logic_vector(3 downto 0);
@@ -394,8 +394,8 @@ begin
     -- POD
     -- (reset system)
 
-    pod_tx_reset <= '0';
-    pod_rx_reset <= '0';
+    pod_tx_reset_n <= '0';
+    pod_rx_reset_n <= '0';
 
     e_pod : entity work.xcvr_s4
     generic map (
