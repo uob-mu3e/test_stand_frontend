@@ -117,10 +117,39 @@ if 1 {
     set_interface_property pio EXPORT_OF pio.external_connection
 }
 
-proc add_avalon_proxy { name baseAddress addr_width readLatency } {
+#package require cmdline
+
+proc nios_base.export_avm { name baseAddress addressWidth args } {
+    set dataWidth 32
+    set addressUnits 8
+    set readLatency 0
+    for { set i 0 } { $i < [ llength $args ] } { incr i } {
+        switch -- [ lindex $args $i ] {
+            -dataWidth { incr i
+                set dataWidth [ lindex $args $i ]
+            }
+            -addressUnits { incr i
+                set addressUnits [ lindex $args $i ]
+            }
+            -readLatency { incr i
+                set readLatency [ lindex $args $i ]
+            }
+            default {
+                send_message "Error" "\[nios_base.export_avm\] invalid argument '[ lindex $args $i ]'"
+            }
+        }
+    }
+
     add_instance ${name} avalon_proxy
-    set_instance_parameter_value ${name} {addr_width} ${addr_width}
-    set_instance_parameter_value ${name} {readLatency} ${readLatency}
+    set_instance_parameter_value ${name} {DATA_WIDTH} ${dataWidth}
+    set_instance_parameter_value ${name} {ADDRESS_UNITS} ${addressUnits}
+    set_instance_parameter_value ${name} {ADDRESS_WIDTH} ${addressWidth}
+    if { ${readLatency} >= 0 } {
+        set_instance_parameter_value ${name} {READ_LATENCY} ${readLatency}
+    } else {
+        set_instance_parameter_value ${name} {READ_LATENCY} 0
+        set_instance_parameter_value ${name} {USE_READ_DATA_VALID} true
+    }
 
     add_connection clk.clk       ${name}.clk
     add_connection clk.clk_reset ${name}.reset
