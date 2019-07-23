@@ -112,6 +112,8 @@ int main(int argc, char *argv[])
     uint32_t newoffset;
     size_t read_words;
 
+    for (int i = 0; i < 10; i++){
+
     int errno;
     uint64_t noData = 0;
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -126,7 +128,7 @@ int main(int argc, char *argv[])
 
             auto current_time = std::chrono::high_resolution_clock::now();
             auto time = current_time - start_time;
-            if(std::chrono::duration_cast<std::chrono::microseconds>(time).count() >= 1000000)// 3.6e+9)
+            if(std::chrono::duration_cast<std::chrono::microseconds>(time).count() >= 100000)// 3.6e+9)
                 break;
         }
         else if(errno == mudaq::DmaMudaqDevice::READ_NODATA){
@@ -162,6 +164,7 @@ int main(int argc, char *argv[])
                 firstindex = i;
         lastindex = i;
         }
+    }
     }
 
     mu.disable();
