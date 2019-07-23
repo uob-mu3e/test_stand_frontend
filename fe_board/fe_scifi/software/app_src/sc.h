@@ -8,9 +8,16 @@ void sc_callback(volatile alt_u32* data) {
     if(d0 != 0){
         printf("[sc_callback] SPICTRL_REGISTER = 0x%08X\n", d0);
         printf("SPI: START= %d ASIC=%u\n",(d0>>5)&1, d0&0x0f);
+	if((d0>>5)&1==0) return; // no start request
         usleep(1000);
-        SPI_configure(d0&0x0f, stic3_config_ALL_OFF);
-        
+	uint32_t pattern[74];
+	for(int i=0;i<74;i++) pattern[i]=*((volatile alt_u32*)AVM_SC_BASE+0x14+i);
+	for(int i=0;i<74;i++) pattern[i]++;
+	//for(int i=0;i<74;i++) printf("pattern[%2.2d]=%8.8x\n",i,pattern[i]); -- WARNING: statement causes nios to crash for some reason, be careful
+        SPI_write_pattern2(0, pattern);
+	for(int i=0;i<74;i++) *((volatile alt_u32*)AVM_SC_BASE+0x14+i)=pattern[i];
+
+
         data[0x13] = 0;
         printf("SPI: finished...\n");
     }

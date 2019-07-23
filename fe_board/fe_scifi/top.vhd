@@ -271,7 +271,6 @@ begin
         i_avs_writedata     => av_test.writedata,
         o_avs_waitrequest   => av_test.waitrequest,
 
-        o_ck_fpga_0         => open,
         o_chip_reset        => s_fee_chip_rst_niosclk,
         o_pll_test          => open,
         i_data              => i_fee_rxd(3 downto 0),
@@ -281,7 +280,8 @@ begin
         i_fifo_rack         => fifo_data_read,
 
         i_reset             => not reset_n,
-        i_clk               => qsfp_pll_clk--,
+        i_clk_core          => qsfp_pll_clk,
+        i_clk_ref           => clk_aux
     );
     led(0)<=s_fee_chip_rst_niosclk;
 
