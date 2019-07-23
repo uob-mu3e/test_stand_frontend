@@ -6,7 +6,6 @@
 //#include "experim.h"
 #include "mutrig_MIDAS_config.h"
 #include "mutrig_midasodb.h"
-
 namespace mudaq { namespace mutrig { namespace midasODB {
 #define DEBUG
 #define DEBUG_VERBOSE
@@ -23,12 +22,15 @@ namespace mudaq { namespace mutrig { namespace midasODB {
 #define ddprintf(args...)
 #endif
 
-int setup_db(HNDLE& hDB, const char* prefix){
+int setup_db(HNDLE& hDB, const char* prefix, mudaq::mutrig::FEB* FEB_interface, bool init_FEB){
     /* Book Setting space */
 
     HNDLE hTmp;
     INT status = DB_SUCCESS;
     char set_str[255];
+
+ 
+
 
     /* Map Equipment/SciFi/Daq (structure defined in mutrig_MIDAS_config.h) */
     //TODO: if we have more than one FE-FPGA, there might be more than one DAQ class.
@@ -39,6 +41,50 @@ int setup_db(HNDLE& hDB, const char* prefix){
     if (status != DB_SUCCESS) {
         cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
         return status;   
+    }
+    HNDLE key_tmp;
+//    if(nasics >0){
+//        sprintf(set_str, "%s/Daq/mask", prefix);
+//        db_find_key(hDB, 0, set_str, &key_tmp);
+//        db_set_num_values(hDB, key_tmp, nasics);
+//    }
+
+    //open hot link
+    db_watch(hDB, hTmp, &mudaq::mutrig::FEB::on_settings_changed, FEB_interface);
+    //init all values on FEB
+    if(init_FEB){
+        INT ival;
+        BOOL bval;
+	INT bsize=sizeof(bval);
+	INT isize=sizeof(ival);
+
+        sprintf(set_str, "%s/Daq/dummy_config", prefix);
+        db_find_key(hDB, 0, set_str, &key_tmp);
+        db_get_data(hDB,key_tmp,&bval,&bsize,TID_BOOL);
+        FEB_interface->setDummyConfig(FEB::FPGA_broadcast_ID,bval);
+
+        sprintf(set_str, "%s/Daq/dummy_data", prefix);
+        db_find_key(hDB, 0, set_str, &key_tmp);
+        db_get_data(hDB,key_tmp,&bval,&bsize,TID_BOOL);
+        FEB_interface->setDummyData_Enable(FEB::FPGA_broadcast_ID,bval);
+
+        sprintf(set_str, "%s/daq/dummy_data_fast", prefix);
+        db_find_key(hDB, 0, set_str, &key_tmp);
+        db_get_data(hDB,key_tmp,&bval,&bsize,TID_BOOL);
+        FEB_interface->setDummyData_Fast(FEB::FPGA_broadcast_ID,bval);
+
+        sprintf(set_str, "%s/Daq/dummy_data_n", prefix);
+        db_find_key(hDB, 0, set_str, &key_tmp);
+        db_get_data(hDB,key_tmp,&ival,&isize,TID_INT);
+        FEB_interface->setDummyData_Fast(FEB::FPGA_broadcast_ID,ival);
+
+        sprintf(set_str, "%s/Daq/prbs_decode_enable", prefix);
+        db_find_key(hDB, 0, set_str, &key_tmp);
+        db_get_data(hDB,key_tmp,&bval,&bsize,TID_BOOL);
+        FEB_interface->setPRBSDecoder(FEB::FPGA_broadcast_ID,bval);
+
+        //TODO: add mask 
+        //      _this->setMask(asic,value);
     }
 
     /* Map Equipment/SciFi/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
@@ -53,18 +99,18 @@ int setup_db(HNDLE& hDB, const char* prefix){
         return status;
     }
 
-
-
-    /* Map Equipment/SciFi/ASICs/TDCs and /Equipment/Scifi/ASICs/Channels 
-     * (structure defined in mutrig_MIDAS_config.h) */
-    MUTRIG_TDC_STR(mutrig_tdc_str);  
-    MUTRIG_CH_STR(mutrig_ch_str);   
-
+   //Get predefined number of asics from ODB
     unsigned int nasics;
     int size = sizeof(nasics);
     sprintf(set_str, "%s/ASICs/Global/Num asics", prefix);
     db_get_value(hDB, 0, set_str, &nasics, &size, TID_INT, 0);
 
+    ddprintf("mutrig_midasodb: number of asics set to %d\n",nasics);
+
+    /* Map Equipment/SciFi/ASICs/TDCs and /Equipment/Scifi/ASICs/Channels 
+     * (structure defined in mutrig_MIDAS_config.h) */
+    MUTRIG_TDC_STR(mutrig_tdc_str);  
+    MUTRIG_CH_STR(mutrig_ch_str);   
     for(unsigned int asic = 0; asic < nasics; ++asic) {
         sprintf(set_str, "%s/ASICs/TDCs/%i", prefix, asic);
     	ddprintf("mutrig_midasodb: adding struct %s\n",set_str);

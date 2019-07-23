@@ -86,3 +86,9 @@ set_location_assignment PIN_AL22 -to o_fee_ext_trig
 set_instance_assignment -name IO_STANDARD "2.5 V" -to o_fee_chip_rst_p
 set_location_assignment PIN_N26 -to o_fee_chip_rst
 
+set_instance_assignment -name IO_STANDARD "2.5 V" -to mscb_data_in
+set_instance_assignment -name IO_STANDARD "2.5 V" -to mscb_data_out
+set_instance_assignment -name IO_STANDARD "2.5 V" -to mscb_oe
+set_location_assignment PIN_A23 -to mscb_data_in
+set_location_assignment PIN_A24 -to mscb_data_out
+set_location_assignment PIN_A25 -to mscb_oe

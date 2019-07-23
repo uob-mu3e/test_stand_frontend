@@ -5,8 +5,8 @@ use ieee.numeric_std.all;
 entity top is
 port (
     -- FE.Ports
-    i_fee_rxd		: in  std_logic_vector (4* - 1 downto 0); --data inputs from ASICs
-    o_fee_spi_CSn	: out std_logic_vector (4* - 1 downto 0); --CSn signals to ASICs (one per ASIC)
+    i_fee_rxd		: in  std_logic_vector (4*1 - 1 downto 0); --data inputs from ASICs
+    o_fee_spi_CSn	: out std_logic_vector (4*1 - 1 downto 0); --CSn signals to ASICs (one per ASIC)
     o_fee_spi_MOSI	: out std_logic_vector (1 - 1 downto 0);   --MOSI signals to ASICs (one per board)
     i_fee_spi_MISO	: in  std_logic_vector (1 - 1 downto 0);   --MISO signals from ASICs (one per board)
     o_fee_spi_SCK	: out std_logic_vector (1 - 1 downto 0);   --SCK signals to ASICs (one per board)
@@ -222,16 +222,16 @@ begin
     --si chip assignments
     si45_spi_in <= spi_mosi;
     si45_spi_sclk <= spi_sclk;
-    si45_spi_cs_n <= spi_ss_n(4*4);
+    si45_spi_cs_n <= spi_ss_n(4);
     --fee assignments
     o_fee_spi_MOSI <= (others => spi_mosi);
     o_fee_spi_SCK  <= (others => spi_sclk);
-    o_fee_spi_CSn <=  spi_ss_n(4*FE_CONFIG.N_SCIFI_BOARDS-1 downto 0);
+    o_fee_spi_CSn <=  spi_ss_n(4-1 downto 0);
     --MISO: multiplexing si chip / SciFi FEE
-    spi_miso <= si45_spi_out when spi_ss_n(4*FE_CONFIG.N_SCIFI_BOARDS) = '0' else
+    spi_miso <= si45_spi_out when spi_ss_n(4) = '0' else
 		i_fee_spi_MISO(0); --TODO make working with multiple FEBs, if we need this
 
-
+    led(4 downto 1)<=spi_ss_n(3 downto 0);
 
     -- I2C (currently unused, simulating empty bus)
     ----------------------------------------------------------------------------
@@ -261,7 +261,7 @@ begin
 
     e_scifi_path : entity work.scifi_path
     generic map (
-        N_g => 4,
+        N_g => 4
     )
     port map (
         i_avs_address       => av_test.address(5 downto 2),
@@ -283,6 +283,7 @@ begin
         i_reset             => not reset_n,
         i_clk               => qsfp_pll_clk--,
     );
+    led(0)<=s_fee_chip_rst_niosclk;
 
     ----------------------------------------------------------------------------
 

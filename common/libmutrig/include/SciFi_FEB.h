@@ -19,15 +19,26 @@ namespace mudaq { namespace mutrig {
 class FEB {
    private:
       mudaq::MudaqDevice& m_mu;
-   public:
-      FEB(const FEB&)=delete;	   
+      static FEB* m_instance; //signleton instance pointer
+      FEB(const FEB&)=delete;
       FEB(mudaq::MudaqDevice& mu):m_mu(mu){};
+   public:
+      static const uint8_t FPGA_broadcast_ID;
 
+      static FEB* Create(mudaq::MudaqDevice& mu){printf("FEB::Create()");if(!m_instance) m_instance=new FEB(mu); return m_instance;};
+      static FEB* Instance(){return m_instance;};
+
+      //Mapping from ASIC number to FPGA_ID and ASIC_ID
+      uint8_t FPGAid_from_ID(int asic);
+      uint8_t ASICid_from_ID(int asic);
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
       int ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix);
 
       //FEB registers and functions
+
+      //MIDAS callback for all setters below. made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
+      static void on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *);
 
       /**
        * Use emulated mutric on fpga for config
@@ -39,7 +50,9 @@ class FEB {
        * n:    number of events per frame
        * fast: enable fast mode for data generator (shorter events)
        */
-      void setDummyData(int FPGA_ID, bool dummy = true, int n = 255, bool fast = false);
+      void setDummyData_Enable(int FPGA_ID, bool dummy = true);
+      void setDummyData_Count(int FPGA_ID, int n = 255);
+      void setDummyData_Fast(int FPGA_ID, bool fast = false);
   
       /**
        * Disable data from specified ASIC
@@ -56,8 +69,6 @@ class FEB {
       void chipReset(int FPGA_ID); //reset all asics (digital part, CC, fsms, etc.)
       void DataPathReset(int FPGA_ID); //in FE-FPGA: everything upstream of merger (in the stream path)
       //TODO: add more resets for FE-FPGA blocks
-
-      uint32_t nAsicsPerFrontend = 4;
 
 };//class FEB
 }//namespace mutrig 
