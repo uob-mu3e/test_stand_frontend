@@ -4,11 +4,7 @@
 
 ```console
 $ cd modules
-$ git submodule init
-$ git submodule update
-$ cd midas
-$ git pull origin develop
-$ git submodule update --init
+$ git submodule update --init --recursive
 $ cd ../../
 $ mdkir build
 $ cd build

@@ -1,15 +1,19 @@
 
+#include <sys/alt_stdio.h>
+
 void sc_callback(volatile alt_u32* data) {
-    // command (upper 16 bits) and length (lower 16 bits)
     alt_u32 d0 = data[0];
     if(d0 == 0) return;
     printf("[sc_callback] data[0] = 0x%08X\n", d0);
 
+    // command (upper 16 bits) and buffer length (lower 16 bits)
     alt_u32 command = d0 >> 16;
     alt_u32 n = d0 & 0xFFFF;
 
+    // offset to buffer
     alt_u32 offset = data[1] & 0xFFFF;
-    if(!(offset >= 16 && offset + n < AVM_SC_SPAN / 4)) {
+    if(!(offset >= 0 && offset + n < AVM_SC_SPAN / 4)) {
+        // out of bounds
         data[0] = 0;
         return;
     }

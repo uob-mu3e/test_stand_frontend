@@ -1,7 +1,3 @@
-package FE_CONFIG is	
-	constant N_SCIFI_BOARDS : integer :=1;
-end package;
-use work.FE_CONFIG;
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -9,15 +5,14 @@ use ieee.numeric_std.all;
 entity top is
 port (
     -- FE.Ports
-    -- constant parameter is FE_CONFIG.N_SCIFI_BOARDS : integer which defines the number of Boards connected (i.e. ports used).
-    i_fee_rxd		: in  std_logic_vector (4*FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0); --data inputs from ASICs
-    o_fee_spi_CSn	: out std_logic_vector (4*FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0); --CSn signals to ASICs (one per ASIC)
-    o_fee_spi_MOSI	: out std_logic_vector (FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0);   --MOSI signals to ASICs (one per board)
-    i_fee_spi_MISO	: in  std_logic_vector (FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0);   --MISO signals from ASICs (one per board)
-    o_fee_spi_SCK	: out std_logic_vector (FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0);   --SCK signals to ASICs (one per board)
+    i_fee_rxd		: in  std_logic_vector (4* - 1 downto 0); --data inputs from ASICs
+    o_fee_spi_CSn	: out std_logic_vector (4* - 1 downto 0); --CSn signals to ASICs (one per ASIC)
+    o_fee_spi_MOSI	: out std_logic_vector (1 - 1 downto 0);   --MOSI signals to ASICs (one per board)
+    i_fee_spi_MISO	: in  std_logic_vector (1 - 1 downto 0);   --MISO signals from ASICs (one per board)
+    o_fee_spi_SCK	: out std_logic_vector (1 - 1 downto 0);   --SCK signals to ASICs (one per board)
 
-    o_fee_ext_trig	: out std_logic_vector (FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0);   --external trigger (data validation) signals to ASICs (one per board)
-    o_fee_chip_rst	: out std_logic_vector (FE_CONFIG.N_SCIFI_BOARDS - 1 downto 0);   --chip reset signals to ASICs (one per board)
+    o_fee_ext_trig	: out std_logic_vector (1 - 1 downto 0);   --external trigger (data validation) signals to ASICs (one per board)
+    o_fee_chip_rst	: out std_logic_vector (1 - 1 downto 0);   --chip reset signals to ASICs (one per board)
     
     -- SI45
 
@@ -55,13 +50,19 @@ port (
 
 
 
+    -- MSCB
+
+    mscb_data_in    : in    std_logic;
+    mscb_data_out   : out   std_logic;
+    mscb_oe         : out   std_logic;
+
+
+
     --
 
     led_n       : out   std_logic_vector(15 downto 0);
 
     reset_n     : in    std_logic;
-
-
 
     -- 125 MHz
     clk_aux     : in    std_logic--;
@@ -84,15 +85,15 @@ architecture arch of top is
     signal i2c_scl_in, i2c_scl_oe, i2c_sda_in, i2c_sda_oe : std_logic;
     --spi interface (external, spi_ss_n[4*N_SCIFI_BOARDS] is rewired to siXX45 chip, miso is also rewired if corresponding cs is low)
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
-    signal spi_ss_n : std_logic_vector(4*FE_CONFIG.N_SCIFI_BOARDS downto 0);
+    signal spi_ss_n : std_logic_vector(4*1 downto 0);
 
     signal s_fee_chip_rst_auxclk_sync : std_logic_vector(1 downto 0);
+    signal s_fee_chip_rst_niosclk : std_logic;
 
 
 
     signal fifo_data : std_logic_vector(35 downto 0);
     signal fifo_data_empty, fifo_data_read : std_logic;
-    signal fifo_data_read_test : std_logic;
 
 
 
@@ -109,6 +110,14 @@ architecture arch of top is
 
 
     signal av_sc : work.util.avalon_t;
+
+    signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
+    signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
+    signal mscb_counter_in : unsigned(15 downto 0);
+
+
+
+    signal av_test : work.util.avalon_t;
 
 begin
 
@@ -165,6 +174,13 @@ begin
         avm_sc_writedata        => av_sc.writedata,
         avm_sc_waitrequest      => av_sc.waitrequest,
 
+        avm_test_address        => av_test.address(15 downto 0),
+        avm_test_read           => av_test.read,
+        avm_test_readdata       => av_test.readdata,
+        avm_test_write          => av_test.write,
+        avm_test_writedata      => av_test.writedata,
+        avm_test_waitrequest    => av_test.waitrequest,
+
         avm_clk_clk          => qsfp_pll_clk,
         avm_reset_reset_n    => qsfp_reset_n,
 
@@ -186,6 +202,11 @@ begin
 
         pio_export => nios_pio,
 
+        -- mscb
+        parallel_mscb_in_export => mscb_to_nios_parallel_in,
+        parallel_mscb_out_export => mscb_from_nios_parallel_out,
+        counter_in_export => std_logic_vector(mscb_counter_in),
+
         rst_reset_n => nios_reset_n,
         clk_clk => nios_clk--,
     );
@@ -201,7 +222,7 @@ begin
     --si chip assignments
     si45_spi_in <= spi_mosi;
     si45_spi_sclk <= spi_sclk;
-    si45_spi_cs_n <= spi_ss_n(4*FE_CONFIG.N_SCIFI_BOARDS);
+    si45_spi_cs_n <= spi_ss_n(4*4);
     --fee assignments
     o_fee_spi_MOSI <= (others => spi_mosi);
     o_fee_spi_SCK  <= (others => spi_sclk);
@@ -229,86 +250,53 @@ begin
     p_fee_reset_sync: process(clk_aux)
     begin
         if rising_edge(clk_aux) then
-            s_fee_chip_rst_auxclk_sync <= s_fee_chip_rst_auxclk_sync(0) & nios_pio(16);
+            s_fee_chip_rst_auxclk_sync <= s_fee_chip_rst_auxclk_sync(0) & s_fee_chip_rst_niosclk;
         end if;
     end process;
     o_fee_chip_rst <= ( others => s_fee_chip_rst_auxclk_sync(1) );
 
     ----------------------------------------------------------------------------
-    --test pulse generation. Maybe we should wire this up again in hardware...
-    --e_test_pulse : entity work.clkdiv
-    --generic map ( P => 125 )
-    --port map ( clkout => malibu_pll_test, rst_n => reset_n, clk => clk_aux );
+    -- SciFi FE board
 
-    --TODO: wire this up and add remaining interfaces
---    i_mutrig_datapath : entity work.mutrig_datapath
---    port map (
---        i_rst => not reset_n,
---        i_stic_txd => malibu_data(0 downto 0),
---        i_refclk_125 => clk_aux,
---
---        --interface to asic fifos
---        i_clk_core => '0',
---        o_fifo_empty => open,
---        o_fifo_data => open,
---        i_fifo_rd => '1',
---        --slow control
---        i_SC_disable_dec => '0',
---        i_SC_mask => (others => '0'),
---        i_SC_datagen_enable => '0',
---        i_SC_datagen_shortmode => '0',
---        i_SC_datagen_count => (others => '0'),
---        --monitors
---        o_receivers_usrclk => open,
---        o_receivers_pll_lock => open,
---        o_receivers_dpa_lock=> open,
---        o_receivers_ready => open,
---        o_frame_desync => open,
---        o_buffer_full => open--,
---    );
+
+    e_scifi_path : entity work.scifi_path
+    generic map (
+        N_g => 4,
+    )
+    port map (
+        i_avs_address       => av_test.address(5 downto 2),
+        i_avs_read          => av_test.read,
+        o_avs_readdata      => av_test.readdata,
+        i_avs_write         => av_test.write,
+        i_avs_writedata     => av_test.writedata,
+        o_avs_waitrequest   => av_test.waitrequest,
+
+        o_ck_fpga_0         => open,
+        o_chip_reset        => s_fee_chip_rst_niosclk,
+        o_pll_test          => open,
+        i_data              => i_fee_rxd(3 downto 0),
+
+        o_fifo_data         => fifo_data,
+        o_fifo_empty        => fifo_data_empty,
+        i_fifo_rack         => fifo_data_read,
+
+        i_reset             => not reset_n,
+        i_clk               => qsfp_pll_clk--,
+    );
+
     ----------------------------------------------------------------------------
-    -- data generator and fifo. TODO: replace with mutrig_datapath
-    
---    i_data_gen : entity work.data_generator
---    port map (
---        clk => qsfp_pll_clk,
---        reset => not reset_n,
---        enable_pix => '1',
---        --enable_sc:         	in  std_logic;
---        random_seed => (others => '1'),
---        --data_sc_generated:   	out std_logic_vector(31 downto 0);
---        data_pix_ready => data_to_fifo_we,
---        --data_sc_ready:      	out std_logic;
---        start_global_time => (others => '0')--,
---              -- TODO: add some rate control
---    );
---
--- 
---    i_data_fifo : entity work.mergerfifo
---    generic map (
---        DEVICE => "Stratix IV"--,
---    )
---    port map (
---        data    => data_to_fifo,
---        rdclk   => qsfp_pll_clk,
---        rdreq   => data_from_fifo_re,
---        wrclk   => qsfp_pll_clk,
---        wrreq   => data_to_fifo_we,
---        q       => data_from_fifo,
---        rdempty => data_from_fifo_empty,
---        wrfull  => open--,
---    );
+
 
 
 
     e_data_sc_path : entity work.data_sc_path
     port map (
-        i_avs_address        => av_sc.address(17 downto 2),
-        i_avs_read           => av_sc.read,
-        o_avs_readdata       => av_sc.readdata,
-        i_avs_write          => av_sc.write,
-        i_avs_writedata      => av_sc.writedata,
-        o_avs_waitrequest    => av_sc.waitrequest,
+        i_avs_address       => av_sc.address(17 downto 2),
+        i_avs_read          => av_sc.read,
+        o_avs_readdata      => av_sc.readdata,
+        i_avs_write         => av_sc.write,
+        i_avs_writedata     => av_sc.writedata,
+        o_avs_waitrequest   => av_sc.waitrequest,
 
         i_fifo_data         => fifo_data,
         i_fifo_data_empty   => fifo_data_empty,
@@ -323,6 +311,26 @@ begin
         i_reset             => not reset_n,
         i_clk               => qsfp_pll_clk--,
     );
+
+
+
+    ----------------------------------------------------------------------------
+    -- MSCB
+
+    i_mscb : entity work.mscb
+    port map (
+        nios_clk                    => nios_clk,
+        reset                       => not nios_reset_n,
+        mscb_to_nios_parallel_in    => mscb_to_nios_parallel_in,
+        mscb_from_nios_parallel_out => mscb_from_nios_parallel_out,
+        mscb_data_in                => mscb_data_in,
+        mscb_data_out               => mscb_data_out,
+        mscb_oe                     => mscb_oe,
+        mscb_counter_in             => mscb_counter_in--,
+    );
+
+    ----------------------------------------------------------------------------
+
 
 
 
