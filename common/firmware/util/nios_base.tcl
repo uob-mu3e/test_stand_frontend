@@ -58,6 +58,32 @@ set_interface_property rst EXPORT_OF clk.clk_in_reset
 
 
 
+proc nios_base.connect { name clk reset avalon addr } {
+    if { [ string length ${clk} ] > 0 } {
+        add_connection clk.clk ${name}.${clk}
+    }
+    if { [ string length ${reset} ] > 0 } {
+        add_connection clk.clk_reset ${name}.${reset}
+        add_connection cpu.debug_reset_request ${name}.${reset}
+    }
+    if { [ string length ${avalon} ] > 0 } {
+        add_connection                 cpu.data_master ${name}.${avalon}
+        set_connection_parameter_value cpu.data_master/${name}.${avalon} baseAddress ${addr}
+    }
+}
+
+proc nios_base.add_pio { name width direction addr } {
+    add_instance ${name} altera_avalon_pio
+    set_instance_parameter_value ${name} {width} {32}
+    set_instance_parameter_value ${name} {direction} ${direction}
+    set_instance_parameter_value ${name} {bitModifyingOutReg} {1}
+
+    nios_base.connect ${name} clk reset s1 ${addr}
+
+    add_interface ${name} conduit end
+    set_interface_property ${name} EXPORT_OF ${name}.external_connection
+}
+
 # uart, timers, i2c, spi
 if 1 {
     add_instance sysid altera_avalon_sysid_qsys
@@ -75,26 +101,12 @@ if 1 {
     add_instance i2c altera_avalon_i2c
     add_instance spi altera_avalon_spi
 
-    add_instance pio altera_avalon_pio
-    set_instance_parameter_value pio {direction} {Output}
-    set_instance_parameter_value pio {width} {32}
-    set_instance_parameter_value pio {bitModifyingOutReg} {32}
-
-    foreach { name clk reset avalon addr } {
-        sysid     clk   reset      control_slave     0x0000
-        jtag_uart clk   reset      avalon_jtag_slave 0x0010
-        timer     clk   reset      s1                0x0100
-        timer_ts  clk   reset      s1                0x0140
-        i2c       clock reset_sink csr               0x0200
-        spi       clk   reset      spi_control_port  0x0240
-        pio       clk   reset      s1                0x0280
-    } {
-        add_connection clk.clk       $name.$clk
-        add_connection clk.clk_reset $name.$reset
-        add_connection                 cpu.data_master $name.$avalon
-        set_connection_parameter_value cpu.data_master/$name.$avalon baseAddress [ expr 0x700F0000 + $addr ]
-        add_connection cpu.debug_reset_request $name.$reset
-    }
+    nios_base.connect   sysid       clk     reset       control_slave       0x700F0000
+    nios_base.connect   jtag_uart   clk     reset       avalon_jtag_slave   0x700F0010
+    nios_base.connect   timer       clk     reset       s1                  0x700F0100
+    nios_base.connect   timer_ts    clk     reset       s1                  0x700F0140
+    nios_base.connect   i2c         clock   reset_sink  csr                 0x700F0200
+    nios_base.connect   spi         clk     reset       spi_control_port    0x700F0240
 
     # IRQ assignments
     foreach { name irq } {
@@ -113,8 +125,7 @@ if 1 {
     add_interface spi conduit end
     set_interface_property spi EXPORTOF spi.external
 
-    add_interface pio conduit end
-    set_interface_property pio EXPORT_OF pio.external_connection
+    nios_base.add_pio pio 32 Output 0x700F0280
 }
 
 #package require cmdline
