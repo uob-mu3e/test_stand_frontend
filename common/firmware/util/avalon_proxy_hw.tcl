@@ -104,7 +104,7 @@ proc elaborate {} {
     set_interface_property $name associatedClock clk
     set_interface_property $name associatedReset reset
     set_interface_property $name addressUnits $addressUnits
-    if { [ get_parameter_value USE_READ_DATA_VALID ] } {
+    if { [ get_parameter_value USE_READ_DATA_VALID ] eq "false" } {
         set_interface_property $name readLatency $readLatency
     }
 
@@ -122,7 +122,7 @@ proc elaborate {} {
     set_interface_property $name associatedClock clk
     set_interface_property $name associatedReset reset
     set_interface_property $name addressUnits $addressUnits
-    if { [ get_parameter_value USE_READ_DATA_VALID ] } {
+    if { [ get_parameter_value USE_READ_DATA_VALID ] eq "false" } {
         set_interface_property $name readLatency $readLatency
     }
 
