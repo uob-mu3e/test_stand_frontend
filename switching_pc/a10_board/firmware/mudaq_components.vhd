@@ -82,7 +82,8 @@ component data_generator_a10 is
 		start_global_time:	in  std_logic_vector(47 downto 0);
 		data_pix_generated:  out std_logic_vector(31 downto 0);
 		data_pix_ready:      out std_logic;
-		slow_down:				in  std_logic_vector(31 downto 0)
+		slow_down:				in  std_logic_vector(31 downto 0);
+		state_out:  out std_logic_vector(3 downto 0)
 );
 end component data_generator_a10;
 

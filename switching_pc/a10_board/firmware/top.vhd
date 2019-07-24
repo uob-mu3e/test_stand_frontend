@@ -251,6 +251,7 @@ architecture rtl of top is
 		signal dma_data_wren : std_logic;
 		signal dmamemhalffull_counter : std_logic_vector(31 downto 0);
 		signal dmamemnothalffull_counter : std_logic_vector(31 downto 0);
+		signal state_out : std_logic_vector(3 downto 0);
 		
 begin 
 
@@ -655,7 +656,8 @@ e_data_gen : component data_generator_a10
 		data_pix_generated   => data_pix_generated,
 		data_pix_ready			=>	data_pix_ready,
 		start_global_time		=> (others => '0'),
-		slow_down				=> writeregs(DMA_SLOW_DOWN_REGISTER_W)--,
+		slow_down				=> writeregs(DMA_SLOW_DOWN_REGISTER_W),
+		state_out				=> state_out--,
 );
 
 
@@ -668,7 +670,8 @@ e_data_gen2 : component data_generator_a10
 		data_pix_generated   => data_pix_generated2,
 		data_pix_ready			=>	data_pix_ready2,
 		start_global_time		=> (others => '0'),
-		slow_down				=> writeregs(DMA_SLOW_DOWN_REGISTER_W)--,
+		slow_down				=> writeregs(DMA_SLOW_DOWN_REGISTER_W),
+		state_out				=> open--,
 );
 -- link data to dma ram
 process(pcie_fastclk_out, resets_n(RESET_BIT_TOP_PROC))
@@ -820,7 +823,7 @@ begin
 end process;
 
 readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
-dmamem_wren 					<= dma_data_wren and '1';--writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);--dma_control_wren;
+dmamem_wren 					<= dma_data_wren and writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);--dma_control_wren;
 pb_in 							<= push_button0_db & push_button1_db & push_button2_db;
 
 
@@ -874,10 +877,10 @@ pcie_b : entity work.pcie_block
 		-- dma memory 
 		dma_data 				=> X"00000" & event_length &
 										r_ram_data 	& --rx_data(0) 	& 
-										x"1ABACAFE" &--data_pix_generated &
-										x"2ABACAFE" &--data_pix_generated2 &
-										x"3ABACAFE" &
-										x"4ABACAFE" &
+										data_pix_generated &
+										x"FF000" & w_fifo_data &--data_pix_generated2 &
+										x"AD000" & r_ram_add &
+										x"4444444" & state_out &
 										x"5ABACAFE" &
 										x"6ABACAFE",
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,

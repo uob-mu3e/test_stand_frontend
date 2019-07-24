@@ -41,13 +41,15 @@ int main(int argc, char *argv[])
 
     myfile << "idx" << "\t" << "data" << endl;
 
-    system("echo machmalkeins | sudo -S /home/martin/daq/driver/compactify.sh");
+    system("echo machmalkeins | sudo -S /home/labor/daq/driver/compactify.sh");
     usleep(1000000);
-    system("echo machmalkeins | sudo -S /home/martin/daq/driver/compactify.sh");
+    system("echo machmalkeins | sudo -S /home/labor/daq/driver/compactify.sh");
     usleep(1000000);
 
+    size_t dma_buf_size = MUDAQ_DMABUF_DATA_LEN;
     volatile uint32_t *dma_buf;
     size_t size = MUDAQ_DMABUF_DATA_LEN;
+    uint32_t dma_buf_nwords = dma_buf_size/sizeof(uint32_t);
 
     if(cudaMallocHost( (void**)&dma_buf, size ) != cudaSuccess){
         cout << "Allocation failed!" << endl;
@@ -112,33 +114,56 @@ int main(int argc, char *argv[])
     uint32_t newoffset;
     size_t read_words;
 
-    for (int i = 0; i < 10; i++){
+    for (int i = 0; i < 100; i++){
 
+    uint32_t event_length = 0;
+    uint32_t readindex = 0;
+    uint32_t lastWritten = mu.last_written_addr();
     int errno;
     uint64_t noData = 0;
     auto start_time = std::chrono::high_resolution_clock::now();
 
     while(true){
-        errno = mu.read_block(block, dma_buf);
-        if(errno == mudaq::DmaMudaqDevice::READ_SUCCESS){
-            /* Extract # of words read, set new position in ring buffer */
+        lastWritten = mu.last_written_addr();
 
-            newoffset = block.give_offset();
-            read_words += block.size();
-
-            auto current_time = std::chrono::high_resolution_clock::now();
-            auto time = current_time - start_time;
-            if(std::chrono::duration_cast<std::chrono::microseconds>(time).count() >= 100000)// 3.6e+9)
-                break;
-        }
-        else if(errno == mudaq::DmaMudaqDevice::READ_NODATA){
+        if (lastWritten == 0){
             noData += 1;
             continue;
         }
-        else {
-            cout << "DMA Read error " << errno << endl;
-            break;
+
+        event_length = 8 * dma_buf[(readindex+7)%dma_buf_nwords];
+
+        for (int i=0 ; i < event_length; i++){
+            char dma_buf_str[256];
+            sprintf(dma_buf_str, "%08X", dma_buf[(++readindex)%dma_buf_nwords]);
+            myfile << readindex - 1 << "\t" << dma_buf_str  << endl;
         }
+
+        auto current_time = std::chrono::high_resolution_clock::now();
+        auto time = current_time - start_time;
+        if(std::chrono::duration_cast<std::chrono::microseconds>(time).count() >= 100000)// 3.6e+9)
+            break;
+
+//        errno = mu.read_block(block, dma_buf);
+//        if(errno == mudaq::DmaMudaqDevice::READ_SUCCESS){
+//            /* Extract # of words read, set new position in ring buffer */
+
+//            newoffset = block.give_offset();
+//            read_words += block.size();
+
+//            auto current_time = std::chrono::high_resolution_clock::now();
+//            auto time = current_time - start_time;
+//            if(std::chrono::duration_cast<std::chrono::microseconds>(time).count() >= 100000)// 3.6e+9)
+//                break;
+//        }
+//        else if(errno == mudaq::DmaMudaqDevice::READ_NODATA){
+//            noData += 1;
+//            continue;
+//        }
+//        else {
+//            cout << "DMA Read error " << errno << endl;
+//            break;
+//        }
     }
 
     // stop generator
@@ -153,18 +178,18 @@ int main(int argc, char *argv[])
 
     cout << "Writing file!" << endl;
 
-    int firstindex = -1;
-    int lastindex = -1;
-    for(uint64_t i = 0; i < lastmemaddr; i++){
-        char dma_buf_str[256];
-        sprintf(dma_buf_str, "%08X", dma_buf[i]);
-        myfile << i << "\t" << dma_buf_str  << endl;
-        if(dma_buf[i] != 0){
-            if(firstindex < 0)
-                firstindex = i;
-        lastindex = i;
-        }
-    }
+//    int firstindex = -1;
+//    int lastindex = -1;
+//    for(uint64_t i = 0; i < lastmemaddr; i++){
+//        char dma_buf_str[256];
+//        sprintf(dma_buf_str, "%08X", dma_buf[i]);
+//        myfile << i << "\t" << dma_buf_str  << endl;
+//        if(dma_buf[i] != 0){
+//            if(firstindex < 0)
+//                firstindex = i;
+//        lastindex = i;
+//        }
+//    }
     }
 
     mu.disable();
