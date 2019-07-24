@@ -39,8 +39,8 @@ port (
 
     -- QSFP
 
-    -- si5345 out2
-    qsfp_pll_clk    : in    std_logic; -- 156.25 MHz
+    -- si5345 out2 (156.25 MHz)
+    qsfp_pll_clk    : in    std_logic;
 
     QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
     QSFP_Rst_n      : out   std_logic;
@@ -53,7 +53,7 @@ port (
 
     -- POD
 
-    -- si5345 out0
+    -- si5345 out0 (125 MHz)
     pod_pll_clk     : in    std_logic;
 
     pod_tx_reset_n  : out   std_logic;
@@ -80,7 +80,7 @@ port (
 
 
 
-    -- si5345 out8
+    -- si5345 out8 (625 MHz)
     clk_625     : in    std_logic;
 
 
@@ -120,8 +120,17 @@ architecture arch of top is
 
     signal av_pod, av_qsfp : work.util.avalon_t;
 
-    signal qsfp_tx_data : std_logic_vector(127 downto 0);
-    signal qsfp_tx_datak : std_logic_vector(15 downto 0);
+    signal qsfp_tx_data : std_logic_vector(127 downto 0) :=
+          X"03CAFE" & work.util.D28_5
+        & X"02BABE" & work.util.D28_5
+        & X"01DEAD" & work.util.D28_5
+        & X"00BEEF" & work.util.D28_5;
+
+    signal qsfp_tx_datak : std_logic_vector(15 downto 0) :=
+          "0001"
+        & "0001"
+        & "0001"
+        & "0001";
 
     signal qsfp_rx_data : std_logic_vector(127 downto 0);
     signal qsfp_rx_datak : std_logic_vector(15 downto 0);
@@ -260,8 +269,10 @@ begin
 --    spi_miso <= malibu_spi_sdo;
     malibu_spi_sck <= spi_sclk;
 
-    spi_miso <= si45_spi_out when spi_ss_n(0) = '0' else
-                malibu_spi_sdo when spi_ss_n(1) = '0' else '0';
+    spi_miso <=
+        si45_spi_out when spi_ss_n(0) = '0' else
+        malibu_spi_sdo when spi_ss_n(1) = '0' else
+        '0';
 
     ----------------------------------------------------------------------------
 
@@ -413,16 +424,6 @@ begin
         i_reset     => not nios_reset_n,
         i_clk       => nios_clk--,
     );
-
-    qsfp_tx_data(127 downto 32) <=
-          X"03CAFE" & work.util.D28_5
-        & X"02BABE" & work.util.D28_5
-        & X"01DEAD" & work.util.D28_5;
-
-    qsfp_tx_datak(15 downto 4) <=
-          "0001"
-        & "0001"
-        & "0001";
 
     ----------------------------------------------------------------------------
 

@@ -8,4 +8,9 @@ set_instance_parameter_value spi numberOfSlaves 5
 
 source {../fe/nios_avm.tcl}
 
+nios_base.export_avm avm_test 0x70040000 16 -readLatency 1
+
+add_connection avm_clk.clk       avm_test.clk
+add_connection avm_clk.clk_reset avm_test.reset
+
 save_system {nios.qsys}

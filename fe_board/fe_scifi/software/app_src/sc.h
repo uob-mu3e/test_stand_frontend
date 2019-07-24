@@ -16,13 +16,13 @@ void sc_callback(volatile alt_u32* data) {
 
     switch(command) {
     case 0x0101:
-        Malibu_Powerup();
+        malibu.powerup();
         break;
     case 0x0102:
-        Malibu_Powerdown();
+        malibu.powerdown();
         break;
     case 0x0103:
-        PowerUpASIC(0);
+        malibu.PowerUpASIC(0);
         break;
     case 0xFFFF:
         for(alt_u32 i = 0; i < n; i++) {
