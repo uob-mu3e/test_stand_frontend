@@ -5,9 +5,10 @@
 #include "../include/i2c.h"
 i2c_t i2c;
 
-#include "malibu.h"
+#include "../../../fe/software/app_src/malibu.h"
 #include "sc.h"
 #include "mscb_user.h"
+#include "reset.h"
 
 #include "../../../fe/software/app_src/si5345.h"
 si5345_t si5345 { 0 };
@@ -45,6 +46,7 @@ int main() {
         printf("  [4] => xcvr pod\n");
         printf("  [5] => si5345\n");
         printf("  [6] => mscb (exit by reset only)\n");
+        printf("  [7] => reset system\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -66,6 +68,9 @@ int main() {
             break;
         case '6':
             mscb_main();
+            break;
+        case '7':
+            menu_reset();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

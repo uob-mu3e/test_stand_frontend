@@ -2,6 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.daq_constants.all;
+
 entity top is
 port (
     -- FE.A
@@ -134,7 +136,12 @@ architecture arch of top is
     signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
     signal mscb_counter_in : unsigned(15 downto 0);
 
+    signal reset_bypass : std_logic_vector(11 downto 0);
 
+    signal pod_rx_data : std_logic_vector(7 downto 0);
+
+    signal run_state : feb_run_state;
+    signal terminated : std_logic;
 
     signal av_test : work.util.avalon_t;
 
@@ -224,6 +231,9 @@ begin
         parallel_mscb_out_export => mscb_from_nios_parallel_out,
         counter_in_export => std_logic_vector(mscb_counter_in),
 
+        -- reset bypass
+        reset_bypass_out_export => reset_bypass,
+
         rst_reset_n => nios_reset_n,
         clk_clk => nios_clk--,
     );
@@ -311,6 +321,9 @@ begin
         o_link_data         => qsfp_tx_data(31 downto 0),
         o_link_datak        => qsfp_tx_datak(3 downto 0),
 
+        o_terminated        => terminated,
+        i_run_state         => run_state,
+
         i_reset             => not reset_n,
         i_clk               => qsfp_pll_clk--,
     );
@@ -332,7 +345,27 @@ begin
         mscb_counter_in             => mscb_counter_in--,
     );
 
+
+
     ----------------------------------------------------------------------------
+    -- reset system
+
+    e_reset_sys : entity work.resetsys
+    port map (
+        clk_reset_rx    => pod_pll_clk,
+        clk_global      => clk_aux,
+        clk_free        => clk_aux,
+        reset_in        => not PushButton(0),
+        resets_out      => open,
+        phase_out       => open,
+        data_in         => pod_rx_data,
+        reset_bypass    => reset_bypass,
+        state_out       => run_state,
+        run_number_out  => open,
+        fpga_id         => x"FEB0",
+        terminated      => terminated,
+        testout         => led(5 downto 0)--,
+    );
 
 
 
@@ -399,8 +432,8 @@ begin
     -- POD
     -- (reset system)
 
-    pod_tx_reset_n <= '0';
-    pod_rx_reset_n <= '0';
+    pod_tx_reset_n <= '1';
+    pod_rx_reset_n <= '1';
 
     e_pod : entity work.xcvr_s4
     generic map (
@@ -428,7 +461,7 @@ begin
                      & "1"
                      & "1",
 
-        o_rx_data   => open,
+        o_rx_data(7 downto 0)   => pod_rx_data,
         o_rx_datak  => open,
 
         o_tx_clkout => open,

@@ -188,7 +188,7 @@ begin
   );
   
   -- wire up uart reciever for mscb
-  u1 : uart_reciever generic map (Clk_Ratio => 434 ) port map(
+  u1 : uart_reciever generic map (Clk_Ratio => 1085 ) port map(
      Clk	=> clk,
      Reset => reset,
      DataIn => uart_serial_in,
@@ -212,7 +212,7 @@ begin
   
   
   -- wire up uart transmitter for mscb
-  u2 : uart_transmitter generic map (Clk_Ratio => 434 ) port map(
+  u2 : uart_transmitter generic map (Clk_Ratio => 1085 ) port map(
      Clk	=> clk,
      Reset => reset,
      DataIn => out_fifo_data_out,
