@@ -16,15 +16,16 @@ architecture behav of readout_tb is
                 reset:               	in std_logic;
                 enable_pix:          	in std_logic;
                 random_seed:				in std_logic_vector (15 downto 0);
-                slow_down:					in std_logic_vector (31 downto 0);
                 start_global_time:		in std_logic_vector(47 downto 0);
                 data_pix_generated:  	out std_logic_vector(31 downto 0);
-                data_pix_ready:      	out std_logic
+                data_pix_ready:      	out std_logic;
+                slow_down:					in std_logic_vector (31 downto 0);
+                state_out:  	out std_logic_vector(3 downto 0)
 			);		
 	end component data_generator_a10_tb;
 	
-    component ip_ram
-        port (
+    component ip_ram is
+    port(
 		clock		: IN STD_LOGIC  := '1';
 		data		: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
 		rdaddress	: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
@@ -62,7 +63,7 @@ architecture behav of readout_tb is
 		signal dma_control_counter		: std_logic_vector(31 downto 0);
 		signal dma_control_prev_rdreq : std_logic_vector(31 downto 0);
 		type event_tagging_state_type is (waiting, ending);
-		type event_counter_state_type is (waiting, ending, get_fifo_data);
+		type event_counter_state_type is (waiting, ending, get_fifo_data, start_dma, get_data, runing);
 		signal event_counter_state : event_counter_state_type;
 		signal event_tagging_state : event_tagging_state_type;
 		signal w_ram_en	 : std_logic;
@@ -82,6 +83,8 @@ architecture behav of readout_tb is
 		signal dmamemnothalffull_counter : std_logic_vector(31 downto 0);
 		
 		signal dmamem_endofevent : std_logic;
+		signal state_out : std_logic_vector(3 downto 0);
+		signal test_state : std_logic_vector(3 downto 0);
 		
   		
   		constant ckTime: 		time	:= 10 ns;
@@ -99,14 +102,15 @@ begin
 		reset				=> reset,
 		enable_pix	        => enable_pix,
 		random_seed 		=> (others => '1'),
-		slow_down			=> slow_down,
+		start_global_time	=> (others => '0'),
 		data_pix_generated  => data_pix_generated,
 		data_pix_ready		=> data_pix_ready,
-		start_global_time	=> (others => '0')--,
+		slow_down			=> slow_down,
+		state_out			=> state_out--,
     );
 
     
-    e_ram : component ip_ram
+ e_ram : component ip_ram
   port map (
 		clock          => clk,
 		data           => w_ram_data,
@@ -115,12 +119,12 @@ begin
 		wren           => w_ram_en,
 		q              => r_ram_data
 );
-  
-e_tagging_fifo : component fifo
+
+ e_tagging_fifo : component fifo
   port map (
 		Din     => w_fifo_data,
 		Wr      => w_fifo_en,
-		Rd   => r_fifo_en,
+		Rd      => r_fifo_en,
 		CLK     => clk,
 		Dout    => r_fifo_data,
 		Full    => open,
@@ -203,6 +207,7 @@ process(clk, reset_n)
 begin
 	if(reset_n = '0') then
 		dmamem_endofevent 		<= '0';
+		test_state <= x"0";
 		r_fifo_en					<= '0';
 		dma_control_wren	    	<= '0';
 		dma_data_wren	    		<= '0';
@@ -221,27 +226,45 @@ begin
 		case event_counter_state is
 
 			when waiting =>
+				test_state <= x"1";
 				if (tag_fifo_empty = '0') then
 					r_fifo_en    		  			<= '1';
 					event_counter_state 			<= get_fifo_data;
 				end if;
 				
 			when get_fifo_data =>
-				dma_data_wren					<= '1';
+				test_state 				<= x"2";
+				event_counter_state 	<= get_data;
+
+			when get_data =>
+				test_state <= x"4";
 				event_last_ram_add  			<= r_fifo_data;
 				event_length					<= r_fifo_data - event_last_ram_add;
 				r_ram_add			  			<= r_ram_add + '1';
-				event_counter_state 			<= ending;
+				event_counter_state 	<= start_dma;
+
+			when start_dma =>
+				test_state <= x"5";
+				dma_data_wren					<= '1';
+				r_ram_add			  			<= r_ram_add + '1';
+				event_counter_state 			<= runing;
 				
-			when ending =>
+			when runing =>
+			test_state <= x"6";
 				r_ram_add 		<= r_ram_add + '1';
 				dma_data_wren	<= '1';
 				if(r_ram_add = event_last_ram_add - '1') then
+					event_counter_state 	<= ending;
+				end if;
+
+			when ending =>
+			test_state <= x"7";
+					dma_data_wren			<= '1';
 					dmamem_endofevent   	<= '1';
 					event_counter_state 	<= waiting;
-				end if;
 				
 			when others =>
+			test_state <= x"8";
 				event_counter_state 		<= waiting;
 				
 		end case;

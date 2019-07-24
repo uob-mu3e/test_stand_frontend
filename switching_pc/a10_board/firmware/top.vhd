@@ -229,7 +229,7 @@ architecture rtl of top is
 		signal dma_control_counter		: std_logic_vector(31 downto 0);
 		signal dma_control_prev_rdreq : std_logic_vector(31 downto 0);
 		type event_tagging_state_type is (waiting, ending);
-		type event_counter_state_type is (waiting, ending, get_fifo_data);
+		type event_counter_state_type is (waiting, ending, get_fifo_data, start_dma, get_data, runing);
 		signal event_counter_state : event_counter_state_type;
 		signal event_tagging_state : event_tagging_state_type;
 		signal w_ram_en	 : std_logic;
@@ -252,6 +252,7 @@ architecture rtl of top is
 		signal dmamemhalffull_counter : std_logic_vector(31 downto 0);
 		signal dmamemnothalffull_counter : std_logic_vector(31 downto 0);
 		signal state_out : std_logic_vector(3 downto 0);
+		signal test_state : std_logic_vector(3 downto 0);
 		
 begin 
 
@@ -768,6 +769,7 @@ begin
 		r_fifo_en					<= '0';
 		dma_control_wren	    	<= '0';
 		dma_data_wren	    		<= '0';
+		test_state 				<= x"0";
 		dma_control_prev_rdreq	<= (others => '0');
 		dma_control_counter 		<= (others => '0');
 		event_length				<= (others => '0');
@@ -793,28 +795,45 @@ begin
 		case event_counter_state is
 
 			when waiting =>
+				test_state <= x"1";
 				if (tag_fifo_empty = '0') then
 					r_fifo_en    		  			<= '1';
 					event_counter_state 			<= get_fifo_data;
 				end if;
 				
 			when get_fifo_data =>
-				dma_data_wren					<= '1';
-				event_last_ram_add  			<= r_fifo_data;-- + '1';-- Addr of the header
-				event_length					<= r_fifo_data - event_last_ram_add;-- + '1'; -- Number of addr. in ram
-				event_counter(11 downto 0) <= r_fifo_data;
+				test_state 				<= x"2";
+				event_counter_state 	<= get_data;
+
+			when get_data =>
+				test_state <= x"4";
+				event_last_ram_add  			<= r_fifo_data;
+				event_length					<= r_fifo_data - event_last_ram_add;
 				r_ram_add			  			<= r_ram_add + '1';
-				event_counter_state 			<= ending;
+				event_counter_state 	<= start_dma;
+
+			when start_dma =>
+				test_state <= x"5";
+				dma_data_wren					<= '1';
+				r_ram_add			  			<= r_ram_add + '1';
+				event_counter_state 			<= runing;
 				
-			when ending =>
+			when runing =>
+				test_state <= x"6";
 				r_ram_add 		<= r_ram_add + '1';
 				dma_data_wren	<= '1';
-				if(r_ram_add = event_last_ram_add - '1')then -- "10") then
-					dmamem_endofevent   	<= '1';
-					event_counter_state 	<= waiting;
+				if(r_ram_add = event_last_ram_add - '1') then
+					event_counter_state 	<= ending;
 				end if;
+
+			when ending =>
+				test_state <= x"7";
+				dma_data_wren			<= '1';
+				dmamem_endofevent   	<= '1';
+				event_counter_state 	<= waiting;
 				
 			when others =>
+				test_state <= x"8";
 				event_counter_state 		<= waiting;
 				
 		end case;
