@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
 entity fifo is
-    Port ( Din   : in  STD_LOGIC_VECTOR (11 downto 0);
+    Port ( Din   : in  STD_LOGIC_VECTOR (7 downto 0);
            Wr    : in  STD_LOGIC;
-           Dout  : out STD_LOGIC_VECTOR (11 downto 0);
+           Dout  : out STD_LOGIC_VECTOR (7 downto 0);
            Rd    : in  STD_LOGIC;
            Empty : out STD_LOGIC;
            Full  : out STD_LOGIC;
@@ -19,7 +19,7 @@ architecture rtl of fifo is
 
 signal wrcnt : std_logic_vector(31 downto 0);
 signal rdcnt : std_logic_vector(31 downto 0);
-type ram is array(0 to 63) of std_logic_vector(11 downto 0);
+type ram is array(0 to 63) of std_logic_vector(7 downto 0);
 signal memory : ram;   
 signal full_loc  : std_logic;
 signal empty_loc : std_logic;

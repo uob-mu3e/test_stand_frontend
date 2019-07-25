@@ -5,8 +5,8 @@ use IEEE.NUMERIC_STD.ALL;
 entity ip_ram is
     Port ( clock   : in  STD_LOGIC;
            wren : in  STD_LOGIC;
-           wraddress   : in  STD_LOGIC_VECTOR (11 downto 0);
-           rdaddress   : in  STD_LOGIC_VECTOR (11 downto 0);
+           wraddress   : in  STD_LOGIC_VECTOR (7 downto 0);
+           rdaddress   : in  STD_LOGIC_VECTOR (7 downto 0);
            data   : in  STD_LOGIC_VECTOR (31 downto 0);
            q  : out STD_LOGIC_VECTOR (31 downto 0)
          );

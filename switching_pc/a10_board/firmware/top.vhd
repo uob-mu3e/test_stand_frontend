@@ -366,7 +366,7 @@ port map (
 		rstout_n(1) => flash_rst_n,
 		rstout_n(0) => cpu_reset_n_q,
 		rst_n 		=> CPU_RESET_n and wd_rst_n,
-		clk 			=> clk--input_clk--,
+		clk 			=> input_clk--,
 );
 
 watchdog_i : entity work.watchdog
@@ -380,7 +380,7 @@ port map (
 		rstout_n => wd_rst_n,
 
 		rst_n 	=> CPU_RESET_n,
-		clk 		=> clk--input_clk--,
+		clk 		=> input_clk--,
 );
 
 LED(0) <= cpu_pio_i(7);

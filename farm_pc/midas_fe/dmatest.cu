@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
       return -1;
     }
 
-    myfile << "idx" << "\t" << "data" << endl;
+    myfile << "idx" << "\t" << "data" << "\t" << "event_length" << endl;
 
     system("echo machmalkeins | sudo -S /home/labor/daq/driver/compactify.sh");
     usleep(1000000);
@@ -110,6 +110,10 @@ int main(int argc, char *argv[])
     datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 1000);
 
+    reset_reg = SET_RESET_BIT_ALL(reset_reg);
+    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 1000);
+    mu.write_register_wait(RESET_REGISTER_W, 0x0, 1000);
+
     mudaq::DmaMudaqDevice::DataBlock block;
     uint32_t newoffset;
     size_t read_words;
@@ -136,7 +140,7 @@ int main(int argc, char *argv[])
         for (int i=0 ; i < event_length; i++){
             char dma_buf_str[256];
             sprintf(dma_buf_str, "%08X", dma_buf[(++readindex)%dma_buf_nwords]);
-            myfile << readindex - 1 << "\t" << dma_buf_str  << endl;
+            myfile << readindex - 1 << "\t" << dma_buf_str << "\t" << event_length  << endl;
         }
 
         auto current_time = std::chrono::high_resolution_clock::now();

@@ -28,17 +28,17 @@ architecture behav of readout_tb is
     port(
 		clock		: IN STD_LOGIC  := '1';
 		data		: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
-		rdaddress	: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
-		wraddress	: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
+		rdaddress	: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+		wraddress	: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
 		wren		: IN STD_LOGIC  := '0';
 		q		    : OUT STD_LOGIC_VECTOR (31 DOWNTO 0)
 		);
 	end component ip_ram;
 	
 	component fifo is
-        port ( Din   : in  STD_LOGIC_VECTOR (11 downto 0);
+        port ( Din   : in  STD_LOGIC_VECTOR (7 downto 0);
            Wr    : in  STD_LOGIC;
-           Dout  : out STD_LOGIC_VECTOR (11 downto 0);
+           Dout  : out STD_LOGIC_VECTOR (7 downto 0);
            Rd    : in  STD_LOGIC;
            Empty : out STD_LOGIC;
            Full  : out STD_LOGIC;
@@ -68,16 +68,16 @@ architecture behav of readout_tb is
 		signal event_tagging_state : event_tagging_state_type;
 		signal w_ram_en	 : std_logic;
 		signal w_fifo_en	 : std_logic;
-		signal w_fifo_data : std_logic_vector(11 downto 0);
+		signal w_fifo_data : std_logic_vector(7 downto 0);
 		signal w_ram_data	 : std_logic_vector(31 downto 0);
-		signal w_ram_add	 : std_logic_vector(11 downto 0);
+		signal w_ram_add	 : std_logic_vector(7 downto 0);
 		signal tag_fifo_empty : std_logic;
-		signal r_fifo_data : std_logic_vector(11 downto 0);
+		signal r_fifo_data : std_logic_vector(7 downto 0);
 		signal r_fifo_en : std_logic;
 		signal r_ram_data : std_logic_vector(31 downto 0);
-		signal r_ram_add  : std_logic_vector(11 downto 0);
-		signal event_last_ram_add : std_logic_vector(11 downto 0);
-		signal event_length : std_logic_vector(11 downto 0);
+		signal r_ram_add  : std_logic_vector(7 downto 0);
+		signal event_last_ram_add : std_logic_vector(7 downto 0);
+		signal event_length : std_logic_vector(7 downto 0);
 		signal dma_data_wren : std_logic;
 		signal dmamemhalffull_counter : std_logic_vector(31 downto 0);
 		signal dmamemnothalffull_counter : std_logic_vector(31 downto 0);
@@ -147,12 +147,6 @@ begin
 		reset_n	 <= '0';
 		wait for 8 ns;
 		reset_n	 <= '1';
-
-		wait for 10 us;
-		reset_n  <= '0';
-
-		wait for 8 ns;
-		reset_n  <= '1';
 		
 		wait;
 	end process inita;

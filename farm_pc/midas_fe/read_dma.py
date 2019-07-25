@@ -20,53 +20,69 @@ length = np.array(df.loc[(df.mod_8 == 6)]["data"].tolist())
 
 print(length)
 print(data)
-read_idx = 1
+
+read_idx = 0
+read_idx_old = 0
+for idx, value in enumerate(data):
+    if value == "E80000BC" and data[idx - 1] == "0000009C":
+        read_idx = idx
+        break
+print(data[read_idx], data[read_idx-1])
 events_right = 0
 events_wrong = 0
-counter = 0
+list_of_length = []
+list_of_counts = []
 
-while read_idx + 2 < len(length):
-    if data[read_idx + 1] == "0000009C" and data[read_idx] == "0000009C" and data[read_idx + 2] == "E80000BC":
+eventcounter = 0
+while read_idx < len(length):
+    if data[read_idx] == "E80000BC" and data[read_idx - 1] == "0000009C":
+        eventcounter += 1
+
+    while True:
+        if data[read_idx] == "E80000BC" and data[read_idx - 1] == "0000009C":
+            if int(length[read_idx], 16) < 30:
+                break
+        read_idx += 1
+    read_idx_old = read_idx
+    if data[read_idx] == "E80000BC" and data[read_idx - 1] == "0000009C":
         events_right += 1
-        if events_right == 2:
-            print("WRONG")
-            print(events_right)
-            print(length[read_idx])
-            print(length[read_idx-7:read_idx+25])
-            print(data[read_idx-7:read_idx+25])
-            print(read_idx)
     else:
         events_wrong += 1
-        if events_wrong == 2:
-            print("WRONG")
-            print(events_right)
-            print(length[read_idx])
-            print(length[read_idx-7:read_idx+21])
-            print(data[read_idx-7:read_idx+21])
-            print(read_idx)
+    list_of_length.append(int(length[read_idx], 16))
     read_idx += int(length[read_idx], 16)
 
 
+
+print(eventcounter/len(list_of_length))
 
 
 print(events_right)
 print(events_wrong)
 
-list_of_length = []
-list_of_counts = []
-old_length = 0
-counter = 0
-for idx, value in enumerate(data):
-    if idx == len(data) - 1:
-        continue
-    if value == "0000009C" and data[idx+1] == "0000009C":
-        list_of_length.append(old_length)
-        list_of_counts.append(counter)
-        counter = 0
-    counter += 1
-    old_length = int(length[idx], 16)
+plt.plot(ram_add)
+plt.show()
+plt.close()
 
-plt.plot(range(len(list_of_counts)), list_of_counts, label="COUNTS")
+#read_idx = 0
+#for idx, value in enumerate(data):
+#    if value == "0000009C":
+#        read_idx = idx
+#        break
+
+#list_of_length = []
+#list_of_counts = []
+#old_length = 0
+#counter = 0
+#while read_idx + 1 < len(length):
+#    if data[read_idx] == "0000009C" and data[read_idx + 1] == "E80000BC":
+#        list_of_length.append(old_length)
+#        list_of_counts.append(counter)
+#        counter = 0
+#    counter += 1
+#    read_idx += int(length[read_idx], 16)
+#    old_length = int(length[read_idx], 16)
+
+#plt.plot(range(len(list_of_counts)), list_of_counts, label="COUNTS")
 plt.plot(range(len(list_of_length)), list_of_length, label="LENGTH")
 plt.legend()
 plt.show()
