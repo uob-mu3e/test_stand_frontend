@@ -14,13 +14,17 @@ end ip_ram;
 
 architecture BlockRAM of ip_ram is
 type speicher is array(0 to (2**12)-1) of STD_LOGIC_VECTOR(31 downto 0);
-signal memory : speicher;   
+signal memory : speicher;
+signal last_read_add :  STD_LOGIC_VECTOR (7 downto 0);
 begin
-  process begin
-    wait until rising_edge(clock);
+  process(clock)
+  begin
+  if rising_edge(clock) then
     if (wren='1') then
       memory(to_integer(unsigned(wraddress))) <= data;
     end if;
-    q <= memory(to_integer(unsigned(rdaddress)));
+    last_read_add <= rdaddress;
+    q <= memory(to_integer(unsigned(last_read_add)));
+  end if;
   end process;
 end BlockRAM;

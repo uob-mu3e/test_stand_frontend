@@ -253,6 +253,8 @@ architecture rtl of top is
 		signal dmamemnothalffull_counter : std_logic_vector(31 downto 0);
 		signal state_out : std_logic_vector(3 downto 0);
 		signal test_state : std_logic_vector(3 downto 0);
+		signal running : std_logic;
+		signal wait_cnt : std_logic;
 		
 begin 
 
@@ -386,7 +388,7 @@ port map (
 LED(0) <= cpu_pio_i(7);
 LED(1) <= cpu_reset_n_q;
 LED(2) <= flash_rst_n;
-LED(3) <= '1';
+LED(3) <= running;
 
 FLASH_A <= flash_tcm_address_out(27 downto 2);
 
@@ -769,12 +771,14 @@ begin
 		r_fifo_en					<= '0';
 		dma_control_wren	    	<= '0';
 		dma_data_wren	    		<= '0';
-		test_state 				<= x"0";
+		running 						<= '0';
+		wait_cnt          		<= '0';
+		test_state 					<= x"0";
 		dma_control_prev_rdreq	<= (others => '0');
 		dma_control_counter 		<= (others => '0');
 		event_length				<= (others => '0');
 		r_ram_add					<= (others => '1');
-		event_last_ram_add		<= (others => '0');
+		event_last_ram_add		<= (others => '1');
 		event_counter_state 		<= waiting;	
 	elsif(rising_edge(pcie_fastclk_out)) then
 	
@@ -782,55 +786,54 @@ begin
 		r_fifo_en			<= '0';
 		dma_data_wren		<= '0';
 	
-		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W)) then
-			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_W);
-			dma_control_counter	  	<= writeregs(DMA_CONTROL_W);
-		elsif(dma_control_counter = x"00000000") then
-			dma_control_wren	    	<= '0';
-		else
-			dma_control_counter 		<= dma_control_counter - '1';
-			dma_control_wren	  		<= '1';
-		end if;
+--		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W)) then
+--			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_W);
+--			dma_control_counter	  	<= writeregs(DMA_CONTROL_W);
+--		elsif(dma_control_counter = x"00000000") then
+--			dma_control_wren	    	<= '0';
+--		else
+--			dma_control_counter 		<= dma_control_counter - '1';
+--			dma_control_wren	  		<= '1';
+--		end if;
+
+		wait_cnt          <= '0';
 			
-		case event_counter_state is
+      case event_counter_state is
 
 			when waiting =>
 				test_state <= x"1";
 				if (tag_fifo_empty = '0') then
 					r_fifo_en    		  			<= '1';
-					event_counter_state 			<= get_fifo_data;
+					event_last_ram_add  			<= r_fifo_data;
+					event_length					<= r_fifo_data - event_last_ram_add;
+					r_ram_add			  			<= r_ram_add + '1';
+					event_counter_state 			<= get_data;
 				end if;
 				
-			when get_fifo_data =>
-				test_state 				<= x"2";
-				event_counter_state 	<= get_data;
-
 			when get_data =>
 				test_state <= x"4";
-				event_last_ram_add  			<= r_fifo_data;
-				event_length					<= r_fifo_data - event_last_ram_add;
-				r_ram_add			  			<= r_ram_add + '1';
-				event_counter_state 	<= start_dma;
-
-			when start_dma =>
-				test_state <= x"5";
-				dma_data_wren					<= '1';
+				running 							<= '1';
+				r_fifo_en    		  			<= '0';
 				r_ram_add			  			<= r_ram_add + '1';
 				event_counter_state 			<= runing;
 				
 			when runing =>
 				test_state <= x"6";
 				r_ram_add 		<= r_ram_add + '1';
-				dma_data_wren	<= '1';
+				dma_data_wren	<= writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);
 				if(r_ram_add = event_last_ram_add - '1') then
 					event_counter_state 	<= ending;
 				end if;
 
 			when ending =>
 				test_state <= x"7";
-				dma_data_wren			<= '1';
-				dmamem_endofevent   	<= '1';
-				event_counter_state 	<= waiting;
+				if (wait_cnt = '0') then
+               wait_cnt <= '1';
+            else
+               event_counter_state 	<= waiting;
+               dmamem_endofevent   	<= '1';
+            end if;
+            dma_data_wren			<= writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);
 				
 			when others =>
 				test_state <= x"8";
@@ -838,11 +841,112 @@ begin
 				
 		end case;
 			
+--		case event_counter_state is
+--
+--			when waiting =>
+--				test_state <= x"1";
+--				if (tag_fifo_empty = '0') then
+--					r_fifo_en    		  			<= '1';
+--					event_last_ram_add  			<= r_fifo_data;
+--					event_length					<= r_fifo_data - event_last_ram_add;
+--					r_ram_add			  			<= r_ram_add + '1';
+--					event_counter_state 			<= get_data;
+--				end if;
+--				
+----			when get_fifo_data =>
+----				test_state 				<= x"2";
+----
+----				event_counter_state 	<= get_data;
+--
+--			when get_data =>
+--				test_state <= x"4";
+--				running 							<= '1';
+--				r_fifo_en    		  			<= '0';
+--				r_ram_add			  			<= r_ram_add + '1';
+--				event_counter_state 			<= runing;
+--
+----			when start_dma =>
+----				test_state <= x"5";
+----				dma_data_wren					<= '1' and writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);
+----				r_ram_add			  			<= r_ram_add + '1';
+----				event_counter_state 			<= runing;
+--				
+--			when runing =>
+--				test_state <= x"6";
+--				r_ram_add 		<= r_ram_add + '1';
+--				dma_data_wren	<= '1' and writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);
+--				if(r_ram_add = event_last_ram_add - '1') then
+--					event_counter_state 	<= ending;
+--				end if;
+--
+--			when ending =>
+--				test_state <= x"7";
+--				dma_data_wren			<= '1' and writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);
+--				dmamem_endofevent   	<= '1';
+--				event_counter_state 	<= waiting;
+--				
+--			when others =>
+--				test_state <= x"8";
+--				event_counter_state 		<= waiting;
+--				
+--		end case;
+
+--      case event_counter_state is
+--
+--			when waiting =>
+--				test_state <= x"1";
+--				if (tag_fifo_empty = '0') then
+--					r_fifo_en    		  			<= '1';
+--					event_last_ram_add  			<= r_fifo_data;
+--					event_length					<= r_fifo_data - event_last_ram_add;
+--					r_ram_add			  			<= r_ram_add + '1';
+--					event_counter_state 			<= get_data;
+--				end if;
+--				
+----			when get_fifo_data =>
+----				test_state 				<= x"2";
+----
+----				event_counter_state 	<= get_data;
+--
+--			when get_data =>
+--				test_state <= x"4";
+--				running 							<= '1';
+--				r_fifo_en    		  			<= '0';
+--				r_ram_add			  			<= r_ram_add + '1';
+--				event_counter_state 			<= runing;
+--
+----			when start_dma =>
+----				test_state <= x"5";
+----				dma_data_wren					<= '1' and writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);
+----				r_ram_add			  			<= r_ram_add + '1';
+----				event_counter_state 			<= runing;
+--				
+--			when runing =>
+--				test_state <= x"6";
+--				r_ram_add 		<= r_ram_add + '1';
+--				dma_data_wren	<= writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);
+--				if(r_ram_add = event_last_ram_add - '1') then
+--					event_counter_state 	<= ending;
+--				end if;
+--
+--			when ending =>
+--				test_state <= x"7";
+--            event_counter_state 	<= waiting;
+--            dma_data_wren			<= writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);
+--            dmamem_endofevent   	<= '1';
+--
+--				
+--			when others =>
+--				test_state <= x"8";
+--				event_counter_state 		<= waiting;
+--				
+--		end case;
+			
 	end if;
 end process;
 
 readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
-dmamem_wren 					<= dma_data_wren and writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);--dma_control_wren;
+--dmamem_wren 					<= dma_data_wren and writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);--dma_control_wren;
 pb_in 							<= push_button0_db & push_button1_db & push_button2_db;
 
 
@@ -903,7 +1007,7 @@ pcie_b : entity work.pcie_block
 										x"5ABACAFE" &
 										x"6ABACAFE",
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
-		dmamem_wren				=> dmamem_wren,
+		dmamem_wren				=> dma_data_wren,--dmamem_wren,
 		dmamem_endofevent		=> dmamem_endofevent,
 		dmamemhalffull			=> dmamemhalffull,
 

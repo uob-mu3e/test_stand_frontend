@@ -6,62 +6,72 @@ import collections
 
 df = pd.read_csv("../../build/farm_pc/midas_fe/memory_content.txt", sep="\t", encoding="ISO-8859-1")
 
-#df["newFraction"] = df["newFraction"].apply(lambda x: int(x, 16))
+df["event_length"][df["event_length"] < 30].plot.hist(bins=12, alpha=0.5)
+plt.show()
+plt.close()
 
-df["mod_8"] = df["idx"].mod(8)
+print(df[df["event_length"] < 30])
 
+df["event_length"][df["event_length"] < 30].plot()
+plt.show()
+plt.close()
 
-state = np.array(df.loc[(df.mod_8 == 2)]["data"].tolist())
-ram_add = df.loc[(df.mod_8 == 3)]["data"].tolist()
-fifo = df.loc[(df.mod_8 == 4)]["data"].tolist()
-gen_data = df.loc[(df.mod_8 == 5)]["data"].tolist()
-data = np.array(df.loc[(df.mod_8 == 5)]["data"].tolist())
-length = np.array(df.loc[(df.mod_8 == 6)]["data"].tolist())
-
-print(length)
+data = np.array(df["data"])[df["event_length"] < 30]
+length = np.array(df["event_length"])[df["event_length"] < 30]
 print(data)
 
-read_idx = 0
-read_idx_old = 0
+list_of_length = []
+list_of_counts = []
+counter = 1
 for idx, value in enumerate(data):
-    if value == "E80000BC" and data[idx - 1] == "0000009C":
-        read_idx = idx
-        break
-print(data[read_idx], data[read_idx-1])
+    if value == "0000009C":
+        list_of_counts.append(counter)
+        list_of_length.append(length[idx])
+
+        if counter != length[idx]:
+            print(data[idx-35:idx+20])
+            print(length[idx-20:idx+20])
+        counter = 1
+    else:
+        counter += 1
+
+plt.plot(range(len(list_of_counts)), list_of_counts, label="COUNTS")
+plt.plot(range(len(list_of_length)), list_of_length, label="LENGTH")
+plt.legend()
+plt.show()
+
+
+read_idx = 0
 events_right = 0
 events_wrong = 0
 list_of_length = []
 list_of_counts = []
-
-eventcounter = 0
 while read_idx < len(length):
-    if data[read_idx] == "E80000BC" and data[read_idx - 1] == "0000009C":
-        eventcounter += 1
-
-    while True:
-        if data[read_idx] == "E80000BC" and data[read_idx - 1] == "0000009C":
-            if int(length[read_idx], 16) < 30:
-                break
-        read_idx += 1
-    read_idx_old = read_idx
     if data[read_idx] == "E80000BC" and data[read_idx - 1] == "0000009C":
         events_right += 1
     else:
         events_wrong += 1
-    list_of_length.append(int(length[read_idx], 16))
-    read_idx += int(length[read_idx], 16)
+        print(read_idx)
+        while True:
+            if data[read_idx] == "E80000BC" and data[read_idx - 1] == "0000009C":
+                if length[read_idx] < 30:
+                    break
+            read_idx += 1
+            if (read_idx == len(data)):
+                break
+    list_of_length.append(length[read_idx])
+
+
+    read_idx += length[read_idx]
 
 
 
-print(eventcounter/len(list_of_length))
+print("Number Events / Right Counts: " + str(events_right/len(list_of_length)))
 
 
 print(events_right)
 print(events_wrong)
 
-plt.plot(ram_add)
-plt.show()
-plt.close()
 
 #read_idx = 0
 #for idx, value in enumerate(data):
@@ -82,10 +92,7 @@ plt.close()
 #    read_idx += int(length[read_idx], 16)
 #    old_length = int(length[read_idx], 16)
 
-#plt.plot(range(len(list_of_counts)), list_of_counts, label="COUNTS")
-plt.plot(range(len(list_of_length)), list_of_length, label="LENGTH")
-plt.legend()
-plt.show()
+
 
 """
 

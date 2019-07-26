@@ -3,6 +3,8 @@ use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 --use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+use std.textio.all;
+use IEEE.std_logic_textio.all; 
 
 --  A testbench has no ports.
 entity readout_tb is
@@ -36,14 +38,15 @@ architecture behav of readout_tb is
 	end component ip_ram;
 	
 	component fifo is
-        port ( Din   : in  STD_LOGIC_VECTOR (7 downto 0);
-           Wr    : in  STD_LOGIC;
-           Dout  : out STD_LOGIC_VECTOR (7 downto 0);
-           Rd    : in  STD_LOGIC;
-           Empty : out STD_LOGIC;
-           Full  : out STD_LOGIC;
-           CLK   : in  STD_LOGIC;
-           reset_n : in  STD_LOGIC
+        port (
+            CLK		: in  STD_LOGIC;
+            RST		: in  STD_LOGIC;
+            WriteEn	: in  STD_LOGIC;
+            DataIn	: in  STD_LOGIC_VECTOR (8 - 1 downto 0);
+            ReadEn	: in  STD_LOGIC;
+            DataOut	: out STD_LOGIC_VECTOR (8 - 1 downto 0);
+            Empty	: out STD_LOGIC;
+            Full	: out STD_LOGIC
            );
     end component fifo;
 
@@ -85,6 +88,8 @@ architecture behav of readout_tb is
 		signal dmamem_endofevent : std_logic;
 		signal state_out : std_logic_vector(3 downto 0);
 		signal test_state : std_logic_vector(3 downto 0);
+		signal running : std_logic;
+		signal wait_cnt : std_logic;
 		
   		
   		constant ckTime: 		time	:= 10 ns;
@@ -94,7 +99,7 @@ begin
   
   reset <= not reset_n;
   enable_pix <= '1';
-  slow_down <= (others => '0');
+  slow_down <= x"00000002";--(others => '0');
  
  e_data_gen : component data_generator_a10_tb
 	port map (
@@ -120,16 +125,17 @@ begin
 		q              => r_ram_data
 );
 
+
  e_tagging_fifo : component fifo
   port map (
-		Din     => w_fifo_data,
-		Wr      => w_fifo_en,
-		Rd      => r_fifo_en,
+		DataIn     => w_fifo_data,
+		WriteEn      => w_fifo_en,
+		ReadEn      => r_fifo_en,
 		CLK     => clk,
-		Dout    => r_fifo_data,
+		DataOut    => r_fifo_data,
 		Full    => open,
 		Empty   => tag_fifo_empty,
-		reset_n => reset_n--,
+		RST => reset--,
 );
 
 
@@ -198,6 +204,9 @@ end process;
 
 -- dma end of events, count events and write control
 process(clk, reset_n)
+variable data : line;
+variable length : line;
+file OutFile : TEXT open write_mode is "output_file.txt"; 
 begin
 	if(reset_n = '0') then
 		dmamem_endofevent 		<= '0';
@@ -205,46 +214,53 @@ begin
 		r_fifo_en					<= '0';
 		dma_control_wren	    	<= '0';
 		dma_data_wren	    		<= '0';
+		running 					   <= '0';
+		wait_cnt 					<= '0';
 		dma_control_prev_rdreq	<= (others => '0');
 		dma_control_counter 		<= (others => '0');
 		event_length				<= (others => '0');
 		r_ram_add					<= (others => '1'); -- '1'
-		event_last_ram_add		<= (others => '0');
+		event_last_ram_add		<= (others => '1');
 		event_counter_state 		<= waiting;	
 	elsif(rising_edge(clk)) then
 	
 		dmamem_endofevent <= '0';
 		r_fifo_en			<= '0';
 		dma_data_wren		<= '0';
+		wait_cnt          <= '0';
 			
-		case event_counter_state is
+      case event_counter_state is
 
 			when waiting =>
 				test_state <= x"1";
 				if (tag_fifo_empty = '0') then
 					r_fifo_en    		  			<= '1';
-					event_counter_state 			<= get_fifo_data;
+					event_last_ram_add  			<= r_fifo_data;
+					event_length					<= r_fifo_data - event_last_ram_add;
+					r_ram_add			  			<= r_ram_add + '1';
+					event_counter_state 			<= get_data;
 				end if;
 				
-			when get_fifo_data =>
-				test_state 				<= x"2";
-				event_counter_state 	<= get_data;
+--			when get_fifo_data =>
+--				test_state 				<= x"2";
+--
+--				event_counter_state 	<= get_data;
 
 			when get_data =>
 				test_state <= x"4";
-				event_last_ram_add  			<= r_fifo_data;
-				event_length					<= r_fifo_data - event_last_ram_add;
-				r_ram_add			  			<= r_ram_add + '1';
-				event_counter_state 	<= start_dma;
-
-			when start_dma =>
-				test_state <= x"5";
-				dma_data_wren					<= '1';
+				running 							<= '1';
+				r_fifo_en    		  			<= '0';
 				r_ram_add			  			<= r_ram_add + '1';
 				event_counter_state 			<= runing;
+
+--			when start_dma =>
+--				test_state <= x"5";
+--				dma_data_wren					<= '1' and writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);
+--				r_ram_add			  			<= r_ram_add + '1';
+--				event_counter_state 			<= runing;
 				
 			when runing =>
-			test_state <= x"6";
+				test_state <= x"6";
 				r_ram_add 		<= r_ram_add + '1';
 				dma_data_wren	<= '1';
 				if(r_ram_add = event_last_ram_add - '1') then
@@ -252,13 +268,19 @@ begin
 				end if;
 
 			when ending =>
-			test_state <= x"7";
-					dma_data_wren			<= '1';
-					dmamem_endofevent   	<= '1';
-					event_counter_state 	<= waiting;
+				test_state <= x"7";
+				if (wait_cnt = '0') then
+               wait_cnt <= '1';
+            else
+               event_counter_state 	<= waiting;
+               dmamem_endofevent   	<= '1';
+            end if;
+            dma_data_wren			<= '1';
+
+
 				
 			when others =>
-			test_state <= x"8";
+				test_state <= x"8";
 				event_counter_state 		<= waiting;
 				
 		end case;
