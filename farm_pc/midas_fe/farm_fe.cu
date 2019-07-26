@@ -274,7 +274,7 @@ INT begin_of_run(INT run_number, char *error)
    
    /* Set up data generator */
     uint32_t datagen_setup = 0;
-    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);// settings.datagenerator.divider,100);//3E8); // slow down to 64 MBit/s
+    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x8, 100);// settings.datagenerator.divider,100);//3E8); // slow down to 64 MBit/s
     //sleep(3);
     datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
@@ -469,6 +469,7 @@ INT read_stream_thread(void *param)
       lastWritten = mu.last_written_addr();
 
       if (lastWritten == 0 || lastWritten == lastlastWritten ){
+          //cout<<"lastwritten = 0"<<endl;
           continue;
       }
       lastlastWritten = 1;
@@ -476,8 +477,10 @@ INT read_stream_thread(void *param)
        //get event length
        event_length = dma_buf[(readindex+7)%dma_buf_nwords];
 
-       if (event_length == 0) continue;
-
+       if (event_length == 0){
+           //cout<<"eventlength 0"<<endl;
+           continue;
+       }
        //      // alive countdown in firmware : no change in this reg for x cycles --> stop dma
 //      if(aliveCounter == 1000){
 //            // DMA_CONTROL_W
@@ -495,11 +498,13 @@ INT read_stream_thread(void *param)
 
       if (status == DB_TIMEOUT) {
          // just sleep and try again if buffer has no space
+         //cout<<"not DB_TIMEOUT"<<endl;
          ss_sleep(10);
          continue;
       }
 
       if (status != DB_SUCCESS){
+         //cout<<"not DB_SUCCESS"<<endl;
          break;
       }
 
@@ -510,12 +515,24 @@ INT read_stream_thread(void *param)
       }
 
       // do not overtake dma engine
+      if(lastWritten < (readindex%dma_buf_nwords)){
+          event_length = dma_buf[lastWritten - 1];
+          for(int i = 0 ; i < 500; i++){
+              //cout<<hex<<dma_buf[i]<<" "<<"search"<<endl;
+              //cout<<lastWritten<<"  "<<i<<endl;
+          }
+          //cout<<endl;
+          readindex = lastWritten - event_length * 8;
+      }
+
       if((readindex%dma_buf_nwords) > lastWritten){
           if(dma_buf_nwords - (readindex % dma_buf_nwords) + lastWritten < event_length * 8 + 1){
+              //cout<<"slow down 1"<<endl;
               continue;
           }
       }else{
           if(lastWritten - (readindex % dma_buf_nwords) < event_length * 8 + 1){
+              //cout<<"slow down 2"<<endl;
               continue;
           }
       }
@@ -534,7 +551,7 @@ INT read_stream_thread(void *param)
          *pdata++ = event_length;
          *pdata++ = 0xAFFEAFFE;
          
-         
+         //cout<<"writing event of length "<<event_length<< "lastWr:" <<lastWritten<<"rdIdx"<<(readindex)%dma_buf_nwords<<" buflength"<<dma_buf_nwords<<endl;
          for (int i = 0; i < event_length; i++){
             *pdata++ = dma_buf[(readindex + 6)%dma_buf_nwords];
             *pdata++ = dma_buf[(readindex + 7)%dma_buf_nwords];
