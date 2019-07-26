@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html class="mcss">
+	<head>
+		<meta charset="utf-8">
+		<meta name="author" content="Tiancheng Zhong">
+		<title>MALIBU Monitor</title>
+		<link rel="stylesheet" href="../../mu3estyle.css" type="text/css">
+		<link rel="stylesheet" href="./MALIBU.css" type="text/css">
+		
+		<script src='controls.js'></script>
+		<script src="midas.js"></script>
+		<script src="mhttpd.js"></script>
+		<script src='../../mu3e.js'></script>
+	</head>
+	<script>
+		var opt_malibu_data=["img/exp1.png","img/exp2.png","img/exp3.png"];
+		
+		var malibu_ports_setting = ['port_IDs'];
+		var malibu_ports_setting_odb = ['port_IDs_odb'];
+		var power=false;
+		
+		var show_option = document.getElementById(show_option);
+		
+
+		function Update_img(){
+			var img = document.getElementById("data_win");
+			img.src = opt_malibu_data[2];
+		};
+		
+		function load(){
+			mhttpd_init('MALIBU');
+
+		}
+	</script>
+
+	<body class="mcss" onload="load()">
+		<header id="meader"></header>
+		<nav id="msidenav"></nav>
+		<div id="mmain" class="clearfix">
+			<section class="contentbox" id="pllsettings"  draggable="true">
+				<h2>MALIBU Monitor</h2>
+				<br/>
+				<div>
+					<label for="malibu_ID"> malibu_ID </label>
+					<input type="number" name="malibu_ID" id="malibu_ID" min="0" max="13" step="1" size="2" value="0"/>
+					<input type="checkbox" id="all_malibus"  />all 
+					<br>
+					<label for="port_IDs"> Port_IDs </label>	
+					<input type="text" name="port_IDs" id="port_IDs" size="3" value="1,2,3"/>
+					<input type="checkbox" id="all_ports"  />all
+					<hr/>	
+					<button class="button_round"> Power Status</button>
+					<br>
+					<button class="button_2 button_s" type="submit" onclick="malibu_power(true)">powerup</button>
+					<br>
+					<button class="button_2 button_s" type="submit" onclick="malibu_power(false)">powerdown</button>
+					<hr/>
+
+					<input type="number" name="show_option" id="show_option" min="0" max="2" step="1" size="2" value="0"/>
+					<br>
+					<button class="button_2 button_s" type="submit" onclick="Update_img()">Update image</button>
+					
+					<input name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/START_ADD_WRITE"></input>
+
+					<hr/>
+					PLL test setting:
+
+					<br>
+					
+					<input type="checkbox" id="enable_PLL_test"  /> enbale
+					<input type="checkbox" id="external_PLL_test"  /> external
+					<br>
+
+				</div>
+			</section>
+			<section class="contentbox" id="data_box"  draggable="true">
+				<h2>Data window</h2>
+				<div>
+					<img  id="data_win"  src="img/exp1.png" alt="HTML5 Icon" style="width:1180px;height:650px;">
+				</div>
+			</section>
+		</div>
+	</body>
+</html>

@@ -77,3 +77,6 @@ online/*
 include/mudaq_registers.h
 cmake-build-debug/
 cmp_pkg.vhd
+
+# vim file
+*.swp

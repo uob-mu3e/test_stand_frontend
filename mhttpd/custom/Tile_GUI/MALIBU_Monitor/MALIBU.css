@@ -1,0 +1,19 @@
+/*Here is the css file for MALIBU
+ * Auther: Tiancheng Zhong
+ * 2019.07.22
+ */
+h2{
+	font-size: 24px;
+	color: blue;
+	margin-bottom: 0px;
+
+}
+
+.contentbox:nth-child(1) {
+	width:220px;
+	height:700px
+}
+.contentbox:nth-child(2) {
+	width:1200px;
+	height:700px
+}
