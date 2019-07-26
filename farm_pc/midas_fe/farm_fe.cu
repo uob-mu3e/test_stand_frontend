@@ -224,7 +224,7 @@ void speed_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        int size = sizeof(value);
        db_get_data(hDB, hKey, &value, &size, TID_INT);
        cm_msg(MINFO, "speed_settings_changed", "Set divider to %d", value);
-       mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W,value,100);
+      // mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W,value,100);
     }
 }
 
@@ -274,10 +274,10 @@ INT begin_of_run(INT run_number, char *error)
    
    /* Set up data generator */
     uint32_t datagen_setup = 0;
-    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W,  settings.datagenerator.divider,100);//3E8); // slow down to 64 MBit/s
+    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);// settings.datagenerator.divider,100);//3E8); // slow down to 64 MBit/s
     //sleep(3);
     datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
-    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,100);
+    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
 //   mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, settings.datagenerator.divider);
 //   uint32_t datagen_setup = 0;
 //   if (settings.datagenerator.enable_pixel)
@@ -445,12 +445,6 @@ INT read_stream_thread(void *param)
    // get mudaq and set readindex to last written addr
    mudaq::DmaMudaqDevice & mu = *mup;
    readindex = mu.last_written_addr();
-   
-   // logging
-   //ofstream log_file;
-   //log_file.open("/home/martin/log.txt");
-   //log_file << "readindex " << readindex << "\n";
-   // logging
 
    // setup variables for dma alive counter
    int aliveCounter = 0;
@@ -460,7 +454,8 @@ INT read_stream_thread(void *param)
    EVENT_HEADER *pEventHeader;
    void *pEventData;
    DWORD *pdata;
-   int lastWritten = 0;
+   uint32_t lastWritten = 0;
+   uint32_t lastlastWritten = 0;
    int status;
    int diff = 0;
 
@@ -470,29 +465,20 @@ INT read_stream_thread(void *param)
    // obtain ring buffer for inter-thread data exchange
    int rbh = get_event_rbh(0);
    
-   
-   
    while (is_readout_thread_enabled()) {
       lastWritten = mu.last_written_addr();
 
-       // logging
-       //log_file << hex << "lastWritten " << lastWritten << "\n";
-       // logging
-
-       // logging
-       //log_file << hex <<  "readindex " << readindex << "\n";
-       // logging
-
-       pos:;
+      if (lastWritten == 0 || lastWritten == lastlastWritten ){
+          continue;
+      }
+      lastlastWritten = 1;
       
        //get event length
-       event_length = 8 * dma_buf[(readindex+7)%dma_buf_nwords];
+       event_length = dma_buf[(readindex+7)%dma_buf_nwords];
 
-       // logging
-       //log_file << hex << "event_length " << event_length << "\n";
-       // logging
+       if (event_length == 0) continue;
 
-//      // alive countdown in firmware : no change in this reg for x cycles --> stop dma
+       //      // alive countdown in firmware : no change in this reg for x cycles --> stop dma
 //      if(aliveCounter == 1000){
 //            // DMA_CONTROL_W
 //            mu.write_register(0x5,0x017D7840 + diff); // 25 M cycles (100 ms)
@@ -506,57 +492,36 @@ INT read_stream_thread(void *param)
       if (!is_readout_thread_enabled()){
          break;
       }
+
       if (status == DB_TIMEOUT) {
          // just sleep and try again if buffer has no space
          ss_sleep(10);
-         //cout<<"DB_TIMEOUT"<<endl;
-         // logging
-         //log_file << "DB TIMNOUT " << readindex << "\n";
-         // logging
          continue;
       }
+
       if (status != DB_SUCCESS){
          break;
       }
+
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
          ss_sleep(10);
          continue;
       }
 
-      if(lastWritten==readindex){
-          ss_sleep(3);
-          continue;
+      // do not overtake dma engine
+      if((readindex%dma_buf_nwords) > lastWritten){
+          if(dma_buf_nwords - (readindex % dma_buf_nwords) + lastWritten < event_length * 8 + 1){
+              continue;
+          }
+      }else{
+          if(lastWritten - (readindex % dma_buf_nwords) < event_length * 8 + 1){
+              continue;
+          }
       }
 
-      // do not overtake dma engine
-        if((readindex%dma_buf_nwords) > lastWritten){
-            if(dma_buf_nwords - (readindex % dma_buf_nwords) + lastWritten < event_length ){
-                ss_sleep(10);
-                //cout<<"FE SLOW DOWN 1 index"<< (readindex%dma_buf_nwords) <<" lwr "<<lastWritten<<" eventL:"<<event_length<<" nWords "<<dma_buf_nwords<<endl;
-                continue;
-            }
-        }else{
-            if(lastWritten - (readindex % dma_buf_nwords) < event_length){
-                ss_sleep(10);
-                //cout<<"FE SLOW DOWN 2 index"<< (readindex%dma_buf_nwords) <<" lwr "<<lastWritten<<" eventL:"<<event_length<<" nWords "<<dma_buf_nwords<<endl;
-                continue;
-            }
-        }
-
-       // logging
-       //log_file << hex << "event_length " << event_length << "\n";
-       // logging
-
-       //if(event_length == 0){
-       //    readindex=readindex+8;
-           // if we dont do this, then ro will stop <-- fix this !!!
-           // if we do it, we are 1 off
-       //    continue;
-       //}
-
       status = TRUE;
-      if (status && event_length != 0) {
+      if (status) {
 
          bm_compose_event(pEventHeader, equipment[0].info.event_id, 0, 0, equipment[0].serial_number++);
          pEventData = (void *)(pEventHeader + 1);
@@ -570,55 +535,20 @@ INT read_stream_thread(void *param)
          *pdata++ = 0xAFFEAFFE;
          
          
-         //for (int i=0 ; i< event_length; i++){
-         //   *pdata++ = dma_buf[(++readindex)%dma_buf_nwords];
-         //}
-         
-         uint32_t data = 0;
-         bool uend = false;
-         
-         for (int i=0 ; i< event_length; i++){
-             data = dma_buf[(++readindex)%dma_buf_nwords];
-             
-             if(i%8==6 && (data*8!=event_length)){
-                uend=true;
-             }
-            *pdata++ = data;
+         for (int i = 0; i < event_length; i++){
+            *pdata++ = dma_buf[(readindex + 6)%dma_buf_nwords];
+            *pdata++ = dma_buf[(readindex + 7)%dma_buf_nwords];
+            readindex = readindex + 8;
          }
          
          bk_close(pEventData, pdata);
-         
-         // this should not happen ..(it is happening)  TODO: fix this 
-         if(uend){
-            bk_create(pEventData, "UEND", TID_DWORD, (void **)&pdata);
-            *pdata++ = 0x12345678;
-            *pdata++ = event_length;
-            *pdata++ = data;
-            *pdata++ = readindex;
-            *pdata++ = lastWritten;
-            *pdata++ = 0x12345678;
-            bk_close(pEventData, pdata);
-            pEventHeader->data_size = bk_size(pEventData);
-            rb_increment_wp(rbh, sizeof(EVENT_HEADER) + pEventHeader->data_size);
-            
-            cout<<"unexpected event end at index: "<<readindex<<"\r";
-            lastWritten = mu.last_written_addr();
-            readindex = lastWritten;
-            goto pos;
-         }
-         
-         
-         
+
          pEventHeader->data_size = bk_size(pEventData);
          rb_increment_wp(rbh, sizeof(EVENT_HEADER) + pEventHeader->data_size);
                 
          // send event to ring buffer
       }
    }
-
-   // logging
-   // log_file.close();
-   // logging
 
    // tell framework that we finished
    signal_readout_thread_active(0, FALSE);
