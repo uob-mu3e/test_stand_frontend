@@ -20,6 +20,7 @@ architecture behav of readout_tb is
                 random_seed:				in std_logic_vector (15 downto 0);
                 start_global_time:		in std_logic_vector(47 downto 0);
                 data_pix_generated:  	out std_logic_vector(31 downto 0);
+                datak_pix_generated:  	out std_logic_vector(3 downto 0);
                 data_pix_ready:      	out std_logic;
                 slow_down:					in std_logic_vector (31 downto 0);
                 state_out:  	out std_logic_vector(3 downto 0)
@@ -90,7 +91,7 @@ architecture behav of readout_tb is
 		signal test_state : std_logic_vector(3 downto 0);
 		signal running : std_logic;
 		signal wait_cnt : std_logic;
-		
+		signal datak_pix_generated : std_logic_vector(3 downto 0);
   		
   		constant ckTime: 		time	:= 10 ns;
 		
@@ -109,6 +110,7 @@ begin
 		random_seed 		=> (others => '1'),
 		start_global_time	=> (others => '0'),
 		data_pix_generated  => data_pix_generated,
+		datak_pix_generated => datak_pix_generated,
 		data_pix_ready		=> data_pix_ready,
 		slow_down			=> slow_down,
 		state_out			=> state_out--,
