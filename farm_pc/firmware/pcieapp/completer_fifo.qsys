@@ -6,7 +6,7 @@
    version="1.0"
    description=""
    tags="INTERNAL_COMPONENT=true"
-   categories="" />
+   categories="System" />
  <parameter name="bonusData"><![CDATA[bonusData 
 {
    element fifo_0
@@ -20,9 +20,9 @@
 }
 ]]></parameter>
  <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
- <parameter name="device" value="10AX115N3F45I2SG" />
+ <parameter name="device" value="10AX115N2F45E1SG" />
  <parameter name="deviceFamily" value="Arria 10" />
- <parameter name="deviceSpeedGrade" value="2" />
+ <parameter name="deviceSpeedGrade" value="1" />
  <parameter name="fabricMode" value="QSYS" />
  <parameter name="generateLegacySim" value="false" />
  <parameter name="generationId" value="0" />
@@ -59,7 +59,7 @@
   <port name="full" internal="full" />
   <port name="empty" internal="empty" />
  </interface>
- <module name="fifo_0" kind="fifo" version="18.0" enabled="1" autoexport="1">
+ <module name="fifo_0" kind="fifo" version="18.1" enabled="1" autoexport="1">
   <parameter name="DEVICE_FAMILY" value="Arria 10" />
   <parameter name="GUI_AlmostEmpty" value="false" />
   <parameter name="GUI_AlmostEmptyThr" value="1" />

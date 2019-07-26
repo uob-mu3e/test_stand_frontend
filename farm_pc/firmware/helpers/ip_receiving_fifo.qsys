@@ -59,7 +59,7 @@
   <port name="rdempty" internal="rdempty" />
   <port name="wrfull" internal="wrfull" />
  </interface>
- <module name="fifo_0" kind="fifo" version="18.0" enabled="1" autoexport="1">
+ <module name="fifo_0" kind="fifo" version="18.1" enabled="1" autoexport="1">
   <parameter name="DEVICE_FAMILY" value="Arria 10" />
   <parameter name="GUI_AlmostEmpty" value="false" />
   <parameter name="GUI_AlmostEmptyThr" value="1" />

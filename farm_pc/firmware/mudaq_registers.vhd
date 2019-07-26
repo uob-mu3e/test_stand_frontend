@@ -15,7 +15,8 @@ package mudaq_registers is
 		constant RESET_BIT_RECEIVER							:  integer := 4;
 		constant RESET_BIT_DATAFIFO							:  integer := 5;
 		constant RESET_BIT_FIFOPLL								:  integer := 6;
-		constant RESET_NIOS										:  integer := 7;
+		constant RESET_BIT_NIOS									:  integer := 7;
+		constant RESET_BIT_DDR3									:  integer := 8;
 		constant RESET_BIT_PCIE									:  integer := 31;
 
 		constant DATAGENERATOR_REGISTER_W					: integer := 16#02#;
@@ -32,6 +33,12 @@ package mudaq_registers is
 		constant DATAGENERATOR_DIVIDER_REGISTER_W			: integer := 16#03#;
 		
 		constant KWORD_W											: integer := 16#04#;
+		
+		
+		constant DDR3_CONTROL_W									: integer := 16#20#;
+		constant DDR3_ADDR_W										: integer := 16#21#;
+		constant DDR3_DATA_W										: integer := 16#22#;
+		
 
 		-- Registers above 0x36 are in use for the PCIe controller/DMA
 		constant DMA2_CTRL_ADDR_LOW_REGISTER_W				: integer := 16#36#;
@@ -77,7 +84,19 @@ package mudaq_registers is
 		constant CH2_ALIGN										: integer:= 2;
 		constant CH3_ALIGN										: integer:= 3;
 		constant PLL_LOCKED_BIT									: integer := 16#12#;
-
+		
+		
+		constant DDR3_STATUS_A_R								: integer := 16#20#;
+		constant DDR3_STATUS_B_R								: integer := 16#21#;
+		constant DDR3_DATA_A_R									: integer := 16#22#;		
+		constant DDR3_DATA_B_R									: integer := 16#23#;	
+		constant DDR3_POSERR_A_R								: integer := 16#24#;
+		constant DDR3_COUNTERR_A_R								: integer := 16#25#;
+		constant DDR3_TIMECOUNT_A_R							: integer := 16#26#;	
+		constant DDR3_POSERR_B_R								: integer := 16#27#;
+		constant DDR3_COUNTERR_B_R								: integer := 16#28#;
+		constant DDR3_TIMECOUNT_B_R							: integer := 16#29#;	
+		
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;
 		constant DMA_DATA_ADDR_LOW_REGISTER_R				: integer := 16#39#;

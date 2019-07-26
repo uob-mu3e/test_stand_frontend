@@ -429,7 +429,7 @@
    internal="xcvr_native_a10_0.unused_rx_parallel_data"
    type="conduit"
    dir="end" />
- <module name="clk_qsfp" kind="altera_clock_bridge" version="18.0" enabled="1">
+ <module name="clk_qsfp" kind="altera_clock_bridge" version="18.1" enabled="1">
   <parameter name="DERIVED_CLOCK_RATE" value="0" />
   <parameter name="EXPLICIT_CLOCK_RATE" value="130000000" />
   <parameter name="NUM_CLOCK_OUTPUTS" value="1" />
@@ -437,7 +437,7 @@
  <module
    name="reset_bridge_0"
    kind="altera_reset_bridge"
-   version="18.0"
+   version="18.1"
    enabled="1">
   <parameter name="ACTIVE_LOW_RESET" value="0" />
   <parameter name="AUTO_CLK_CLOCK_RATE" value="130000000" />
@@ -448,7 +448,7 @@
  <module
    name="xcvr_native_a10_0"
    kind="altera_xcvr_native_a10"
-   version="18.0"
+   version="18.1"
    enabled="1">
   <parameter name="anlg_enable_rx_default_ovr" value="0" />
   <parameter name="anlg_enable_tx_default_ovr" value="0" />
@@ -706,7 +706,7 @@
  <module
    name="xcvr_reset_control_0"
    kind="altera_xcvr_reset_control"
-   version="18.0"
+   version="18.1"
    enabled="1">
   <parameter name="CHANNELS" value="4" />
   <parameter name="PLLS" value="1" />
@@ -733,37 +733,37 @@
  </module>
  <connection
    kind="clock"
-   version="18.0"
+   version="18.1"
    start="clk_qsfp.out_clk"
    end="reset_bridge_0.clk" />
  <connection
    kind="clock"
-   version="18.0"
+   version="18.1"
    start="clk_qsfp.out_clk"
    end="xcvr_reset_control_0.clock" />
  <connection
    kind="clock"
-   version="18.0"
+   version="18.1"
    start="clk_qsfp.out_clk"
    end="xcvr_native_a10_0.reconfig_clk_ch0" />
  <connection
    kind="clock"
-   version="18.0"
+   version="18.1"
    start="clk_qsfp.out_clk"
    end="xcvr_native_a10_0.reconfig_clk_ch1" />
  <connection
    kind="clock"
-   version="18.0"
+   version="18.1"
    start="clk_qsfp.out_clk"
    end="xcvr_native_a10_0.reconfig_clk_ch2" />
  <connection
    kind="clock"
-   version="18.0"
+   version="18.1"
    start="clk_qsfp.out_clk"
    end="xcvr_native_a10_0.reconfig_clk_ch3" />
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_reset_control_0.rx_analogreset1"
    end="xcvr_native_a10_0.rx_analogreset_ch1">
   <parameter name="endPort" value="" />
@@ -774,7 +774,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_reset_control_0.rx_analogreset3"
    end="xcvr_native_a10_0.rx_analogreset_ch3">
   <parameter name="endPort" value="" />
@@ -785,7 +785,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_native_a10_0.rx_analogreset_ch0"
    end="xcvr_reset_control_0.rx_analogreset0">
   <parameter name="endPort" value="" />
@@ -796,7 +796,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_native_a10_0.rx_analogreset_ch2"
    end="xcvr_reset_control_0.rx_analogreset2">
   <parameter name="endPort" value="" />
@@ -807,7 +807,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_reset_control_0.rx_cal_busy1"
    end="xcvr_native_a10_0.rx_cal_busy_ch1">
   <parameter name="endPort" value="" />
@@ -818,7 +818,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_reset_control_0.rx_cal_busy3"
    end="xcvr_native_a10_0.rx_cal_busy_ch3">
   <parameter name="endPort" value="" />
@@ -829,7 +829,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_native_a10_0.rx_cal_busy_ch0"
    end="xcvr_reset_control_0.rx_cal_busy0">
   <parameter name="endPort" value="" />
@@ -840,7 +840,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_native_a10_0.rx_cal_busy_ch2"
    end="xcvr_reset_control_0.rx_cal_busy2">
   <parameter name="endPort" value="" />
@@ -851,7 +851,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_reset_control_0.rx_digitalreset1"
    end="xcvr_native_a10_0.rx_digitalreset_ch1">
   <parameter name="endPort" value="" />
@@ -862,7 +862,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_reset_control_0.rx_digitalreset3"
    end="xcvr_native_a10_0.rx_digitalreset_ch3">
   <parameter name="endPort" value="" />
@@ -873,7 +873,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_native_a10_0.rx_digitalreset_ch0"
    end="xcvr_reset_control_0.rx_digitalreset0">
   <parameter name="endPort" value="" />
@@ -884,7 +884,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_native_a10_0.rx_digitalreset_ch2"
    end="xcvr_reset_control_0.rx_digitalreset2">
   <parameter name="endPort" value="" />
@@ -895,7 +895,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_reset_control_0.rx_is_lockedtodata1"
    end="xcvr_native_a10_0.rx_is_lockedtodata_ch1">
   <parameter name="endPort" value="" />
@@ -906,7 +906,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_reset_control_0.rx_is_lockedtodata3"
    end="xcvr_native_a10_0.rx_is_lockedtodata_ch3">
   <parameter name="endPort" value="" />
@@ -917,7 +917,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_native_a10_0.rx_is_lockedtodata_ch0"
    end="xcvr_reset_control_0.rx_is_lockedtodata0">
   <parameter name="endPort" value="" />
@@ -928,7 +928,7 @@
  </connection>
  <connection
    kind="conduit"
-   version="18.0"
+   version="18.1"
    start="xcvr_native_a10_0.rx_is_lockedtodata_ch2"
    end="xcvr_reset_control_0.rx_is_lockedtodata2">
   <parameter name="endPort" value="" />
@@ -939,27 +939,27 @@
  </connection>
  <connection
    kind="reset"
-   version="18.0"
+   version="18.1"
    start="reset_bridge_0.out_reset"
    end="xcvr_native_a10_0.reconfig_reset_ch0" />
  <connection
    kind="reset"
-   version="18.0"
+   version="18.1"
    start="reset_bridge_0.out_reset"
    end="xcvr_native_a10_0.reconfig_reset_ch1" />
  <connection
    kind="reset"
-   version="18.0"
+   version="18.1"
    start="reset_bridge_0.out_reset"
    end="xcvr_native_a10_0.reconfig_reset_ch2" />
  <connection
    kind="reset"
-   version="18.0"
+   version="18.1"
    start="reset_bridge_0.out_reset"
    end="xcvr_native_a10_0.reconfig_reset_ch3" />
  <connection
    kind="reset"
-   version="18.0"
+   version="18.1"
    start="reset_bridge_0.out_reset"
    end="xcvr_reset_control_0.reset" />
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
