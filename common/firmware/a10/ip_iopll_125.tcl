@@ -1,14 +1,17 @@
 package require qsys
 
-create_system {ip_iopll_125}
+proc add_iopll { name reference_clock_frequency output_clock_frequency } {
+    add_instance ${name} altera_iopll 18.0
+
+    set_instance_parameter_value ${name} {gui_reference_clock_frequency} ${reference_clock_frequency}
+    set_instance_parameter_value ${name} {gui_output_clock_frequency0} ${output_clock_frequency}
+    set_instance_parameter_value ${name} {gui_pll_auto_reset} {1}
+    set_instance_parameter_value ${name} {gui_use_locked} {0}
+
+    set_instance_property ${name} AUTO_EXPORT {true}
+}
+
 source {device.tcl}
-
-add_instance iopll_0 altera_iopll 18.0
-set_instance_parameter_value iopll_0 {gui_reference_clock_frequency} {50.0}
-set_instance_parameter_value iopll_0 {gui_output_clock_frequency0} {125.0}
-set_instance_parameter_value iopll_0 {gui_pll_auto_reset} {1}
-set_instance_parameter_value iopll_0 {gui_use_locked} {0}
-
-set_instance_property iopll_0 AUTO_EXPORT {true}
-
+create_system {ip_iopll_125}
+add_iopll iopll_0 50.0 125.0
 save_system {ip/ip_iopll_125.qsys}

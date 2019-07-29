@@ -1,12 +1,15 @@
 package require qsys
 
-create_system {ip_clkctrl}
+proc add_altclkctrl { name NUMBER_OF_CLOCKS } {
+    add_instance ${name} altclkctrl
+
+    set_instance_parameter_value ${name} {CLOCK_TYPE} {0}
+    set_instance_parameter_value ${name} {NUMBER_OF_CLOCKS} ${NUMBER_OF_CLOCKS}
+
+    set_instance_property ${name} AUTO_EXPORT {true}
+}
+
 source {device.tcl}
-
-add_instance altclkctrl_0 altclkctrl
-set_instance_parameter_value altclkctrl_0 {CLOCK_TYPE} {0}
-set_instance_parameter_value altclkctrl_0 {NUMBER_OF_CLOCKS} {1}
-
-set_instance_property altclkctrl_0 AUTO_EXPORT {true}
-
+create_system {ip_clkctrl}
+add_altclkctrl altclkctrl_0 1
 save_system {ip/ip_clkctrl.qsys}
