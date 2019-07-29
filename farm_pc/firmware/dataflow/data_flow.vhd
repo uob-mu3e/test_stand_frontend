@@ -29,13 +29,14 @@ entity data_flow is
 			pcieclk		:		in std_logic;
 			ts_req		:		in std_logic_vector(31 downto 0);
 			req_en		:		in std_logic;
+			tsblock_done:		in std_logic_vector(15 downto 0);
 			
 			-- Output to DMA
 			dma_data_out	:	out std_logic_vector(255 downto 0);
 			dma_data_en		:	out std_logic;
 			dma_eoe			:  out std_logic;
 			
-			-- Output to links
+			-- Output to links -- with dataclk
 			link_data_out	:	out std_logic_vector(255 downto 0);
 			link_ts_out		:	out std_logic_vector(31 downto 0);
 			link_data_en	:	out std_logic;
@@ -83,7 +84,69 @@ entity data_flow is
 	
 	architecture RTL of data_flow is
 	
+		type mem_mode_type is (disabled, ready, writing, reading);
+		signal mem_mode_A : 	mem_mode_type;
+		signal mem_mode_B :	mem_mode_type;
+		
+		subtype tsrange_type is std_logic_vector(15 downto 0);
+		subtype tsupper is range 31 downto 16;
+		signal A_tsrange	:	tsrange_type;
+		signal B_tsrange	:	tsrange_type;
+	
+		signal A_memready	: std_logic;
+		signal B_memready	: std_logic;
+	
 	begin
+	
+		process(reset_n, dataclk)
+		begin
+		if(reset_n = '0') then
+			mem_mode_A	<= disabled;
+			mem_mode_B	<= disabled;
+		elsif(dataclk'event and dataclk = '1') then
+			case mem_mode_A is
+				when disabled =>
+					if(A_memready = '1')then
+						mem_mode_A <= ready;
+					end if;
+				when ready 	=>
+					if(mem_mode_B /= writing or ts_in(tsupper) /= B_tsrange) then
+						mem_mode_A	<= writing;
+						A_tsrange	<= ts_in(tsupper);
+					end if;
+				when writing =>
+					if(ts_in(tsupper) /= A_tsrange) then
+						mem_mode_A	<= reading;
+					end if;
+				when reading =>
+					if(tsblock_done = A_tsrange) then
+						mem_mode_A <= ready;
+					end if;
+			end case;
+			
+			case mem_mode_B is
+				when disabled =>
+					if(B_memready = '1')then
+						mem_mode_B <= ready;
+					end if;
+				when ready 	=>
+					if(mem_mode_A /= writing or ts_in(tsupper) /= A_tsrange) then
+						mem_mode_B	<= writing;
+						B_tsrange	<= ts_in(tsupper);
+					end if;
+				when writing =>
+					if(ts_in(tsupper) /= B_tsrange) then
+						mem_mode_B	<= reading;
+					end if;
+				when reading =>
+					if(tsblock_done = B_tsrange) then
+						mem_mode_B <= ready;
+					end if;
+			end case;
+			
+		end if;
+		end process;
+		
 	
 	end architecture RTL;
 	
