@@ -8,8 +8,8 @@ i2c_t i2c;
 #include "../../../fe/software/app_src/malibu.h"
 
 #include "sc.h"
-#include "mscb_user.h"
-#include "reset.h"
+#include "../../../fe/software/app_src/mscb_user.h"
+#include "../../../fe/software/app_src/reset.h"
 
 #include "../../../fe/software/app_src/si5345.h"
 si5345_t si5345 { 0 }; // spi_slave = 0

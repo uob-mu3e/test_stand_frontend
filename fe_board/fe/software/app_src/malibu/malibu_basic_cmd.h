@@ -1,3 +1,6 @@
+#ifndef MALIBU_BASIC_CMD_H_
+#define MALIBU_BASIC_CMD_H_
+
 /*
 Malibu board init procedure:
 - Set clock and test inputs
@@ -26,6 +29,7 @@ Write Reg3 0x00
 
 typedef alt_u8 uint8_t;
 typedef alt_u16 uint16_t;
+typedef alt_u32 uint32_t;
 
 struct malibu_t {
 
@@ -51,10 +55,11 @@ struct malibu_t {
         alt_u8 data;
     };
 
-    alt_u8 spi_write(alt_u8 w) {
+    static
+    alt_u8 spi_write(alt_u32 slave, alt_u8 w) {
         alt_u8 r = 0xCC;
 //        printf("spi_write: 0x%02X\n", w);
-        alt_avalon_spi_command(SPI_BASE, 1, 1, &w, 0, &r, 0);
+        alt_avalon_spi_command(SPI_BASE, slave, 1, &w, 0, &r, 0);
         r = IORD_8DIRECT(SPI_BASE, 0);
 //        printf("spi_read: 0x%02X\n", r);
         return r;
@@ -139,18 +144,18 @@ struct malibu_t {
 #include "PLL_TEST_ch0to6_noGenIDLE.h"
 
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
-int malibu_t::SPI_write_pattern(const unsigned char* bitpattern) {
+int SPI_write_pattern(uint32_t slaveAddr, const unsigned char* bitpattern) {
 	int status=0;
 	uint16_t rx_pre=0xff00;
 	for(int nb=STIC3_CONFIG_LEN_BYTES-1; nb>=0; nb--){
-		unsigned char rx=spi_write(bitpattern[nb]);
+		uint8_t rx = malibu_t::spi_write(slaveAddr, bitpattern[nb]);
 		//pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
 		unsigned char rx_check= (rx_pre | rx ) >> (8-STIC3_CONFIG_LEN_BITS%8);
 		if(nb==STIC3_CONFIG_LEN_BYTES-1){
 			rx_check &= 0xff>>(8-STIC3_CONFIG_LEN_BITS%8);
 		};
 
-		if(rx_check!=stic3_config_ALL_OFF[nb]){
+		if(rx_check!=bitpattern[nb]){
 //			printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
 			status=-1;
 		}
@@ -159,25 +164,35 @@ int malibu_t::SPI_write_pattern(const unsigned char* bitpattern) {
 	return status;
 }
 
+int malibu_t::SPI_write_pattern(const unsigned char* bitpattern) {
+    return ::SPI_write_pattern(1, bitpattern);
+}
+
 //configure a specific ASIC returns 0 if configuration is correct, -1 otherwise.
+int SPI_configure(uint32_t slaveAddr, const unsigned char* bitpattern) {
+	//configure SPI. Note: pattern is not in full bytes, so validation gets a bit more complicated. Shifting out all bytes, and need to realign after.
+	//This is to be done still
+	int ret;
+	ret=SPI_write_pattern(slaveAddr,bitpattern);
+	ret=SPI_write_pattern(slaveAddr,bitpattern);
+
+	return ret;
+}
+
 int malibu_t::SPI_configure(unsigned char n, const unsigned char* bitpattern) {
 	//pull low CS line of the given ASIC
 	char gpio_value = I2C_read(0x39+n/2, 0x01);
 	gpio_value ^= 1<<(2+n%2*4);
 	I2C_write(0x39+n/2, 0x01, gpio_value);
 
-	//configure SPI. Note: pattern is not in full bytes, so validation gets a bit more complicated. Shifting out all bytes, and need to realign after.
-	//This is to be done still
-	int ret;
-	ret=SPI_write_pattern(bitpattern);
-	ret=SPI_write_pattern(bitpattern);
+    int ret = SPI_configure(1, bitpattern);
 
 	//pull high CS line of the given ASIC
 	gpio_value ^= 1<<(2+n%2*4);
 	I2C_write(0x39+n/2, 0x01, gpio_value);
-	return ret;
-}
 
+    return ret;
+}
 
 /*
 Power up cycle for single ASIC
@@ -187,8 +202,6 @@ Power up cycle for single ASIC
 - If correct: Power up 1.8V analog domain
 - else power down 1.8V digital domain
 */
-
-
 int malibu_t::PowerUpASIC(unsigned char n) {
 	printf("[malibu] powerup ASIC %u\n", n);
 	char gpio_value=I2C_read(0x39+n/2,0x01);
@@ -211,3 +224,5 @@ int malibu_t::PowerUpASIC(unsigned char n) {
 	printf("DONE\n");
 	return 0;
 }
+
+#endif

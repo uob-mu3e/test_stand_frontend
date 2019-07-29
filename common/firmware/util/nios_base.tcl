@@ -74,7 +74,7 @@ proc nios_base.connect { name clk reset avalon addr } {
 
 proc nios_base.add_pio { name width direction addr } {
     add_instance ${name} altera_avalon_pio
-    set_instance_parameter_value ${name} {width} {32}
+    set_instance_parameter_value ${name} {width} ${width}
     set_instance_parameter_value ${name} {direction} ${direction}
     set_instance_parameter_value ${name} {bitModifyingOutReg} {1}
 
@@ -130,7 +130,7 @@ if 1 {
 
 #package require cmdline
 
-proc nios_base.export_avm { name baseAddress addressWidth args } {
+proc nios_base.export_avm { name addressWidth baseAddress args } {
     set dataWidth 32
     set addressUnits 8
     set readLatency 0

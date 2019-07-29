@@ -1,5 +1,15 @@
 # base frontend Stratix-IV assignments
 
+set_global_assignment -name FAMILY "Stratix IV"
+set_global_assignment -name DEVICE EP4SGX70HF35C3
+set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "15 MM HEAT SINK WITH STILL AIR"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+
+
+
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_0[3]
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_0[2]
 set_instance_assignment -name IO_STANDARD LVDS -to data_in_A_0[1]

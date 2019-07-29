@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity malibu_path is
+entity malibu_block is
 generic (
     N_g : positive := 1--;
 );
@@ -28,12 +28,12 @@ port (
     i_fifo_rack         : out   std_logic;
 
     i_reset             : in    std_logic;
-    -- 156.25 MHz   
+    -- 156.25 MHz
     i_clk               : in    std_logic--;
 );
 end entity;
 
-architecture arch of malibu_path is
+architecture arch of malibu_block is
 
     signal refclk : std_logic;
 

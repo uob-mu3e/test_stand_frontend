@@ -547,8 +547,8 @@ begin
     -- POD
     -- (reset system)
 
-    pod_tx_reset_n <= '0';
-    pod_rx_reset_n <= '0';
+    pod_tx_reset_n <= '1';
+    pod_rx_reset_n <= '1';
 
     e_pod : entity work.xcvr_s4
     generic map (

@@ -228,8 +228,9 @@ component sc_slave is
 		link_data_in_k:		in std_logic_vector(3 downto 0);
 		mem_data_out:		out std_logic_vector(31 downto 0);
 		mem_addr_out:		out std_logic_vector(15 downto 0);
+		mem_addr_finished_out:       out std_logic_vector(15 downto 0);
 		mem_wren:			out std_logic;			
-		stateout:			out std_logic_vector(27 downto 0)
+		stateout:			out std_logic_vector(3 downto 0)
 		);		
 end component sc_slave;
 

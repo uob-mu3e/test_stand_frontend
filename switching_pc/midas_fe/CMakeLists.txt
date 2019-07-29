@@ -5,6 +5,12 @@ FILE(GLOB_RECURSE INC_ALL "*.h")
 add_executable(switch_fe switch_fe.cpp ${MXML_DIR}/mxml ${INC_ALL})
 add_executable(FEBrw_slow_fe FEBrw_slow_fe.cpp ${MXML_DIR}/mxml ${MSCB_DIR}/src/mscb ${INC_ALL})
 
+#KB: disable most annoying compiler warnings that will not go away
+target_compile_options(switch_fe PRIVATE 
+	-Wno-missing-field-initializers
+	-Wno-unused-parameter
+)
+
 target_include_directories(switch_fe PRIVATE ${MIDAS_DIR}/include ${MXML_DIR} ${MIDASINCLUDE_DIR} ${LIBMUDAQ_DIR} ${INCMUDAQ_DIR})
 target_link_libraries(switch_fe mfe midas rt pthread util libmudaq)
 

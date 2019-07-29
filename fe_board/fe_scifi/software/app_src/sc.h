@@ -1,39 +1,31 @@
 
+#include "../../../fe/software/app_src/malibu/malibu_basic_cmd.h"
+
 void sc_callback(volatile alt_u32* data) {
-    // command (upper 16 bits) and length (lower 16 bits)
-    alt_u32 d0 = data[0];
-    if(d0 == 0) return;
-    printf("[sc_callback] data[0] = 0x%08X\n", d0);
-
-    alt_u32 command = d0 >> 16;
-    alt_u32 n = d0 & 0xFFFF;
-
-    alt_u32 offset = data[1] & 0xFFFF;
-    if(!(offset >= 16 && offset + n < AVM_SC_SPAN / 4)) {
-        data[0] = 0;
-        return;
+//check spi command register, trigger spi configuration if needed
+    alt_u32 d0 = data[0x13];
+    if(d0 != 0){
+        printf("[sc_callback] SPICTRL_REGISTER = 0x%08X\n", d0);
+        printf("SPI: START= %d ASIC=%u\n",(d0>>5)&1, d0&0x0f);
+        usleep(1000);
+        SPI_configure(d0&0x0f, stic3_config_ALL_OFF);
+        
+        data[0x13] = 0;
+        printf("SPI: finished...\n");
     }
+//check registers and forward to avalon test interface
+    if(((volatile alt_u32*)AVM_TEST_BASE)[0xB]!=data[0x10])
+            printf("Update value dummyctrl_reg:    0x%08X\n", data[0x10]);
+    ((volatile alt_u32*)AVM_TEST_BASE)[0xB]=data[0x10];
 
-    switch(command) {
-    case 0x0101:
-        malibu.powerup();
-        break;
-    case 0x0102:
-        malibu.powerdown();
-        break;
-    case 0x0103:
-        malibu.PowerUpASIC(0);
-        break;
-    case 0xFFFF:
-        for(alt_u32 i = 0; i < n; i++) {
-            printf("[sc_callback] data[0x%04X] = 0x%08X\n", i, data[offset + i]);
-        }
-        break;
-    default:
-        printf("[sc_callback] unknown command\n");
-    }
+    if(((volatile alt_u32*)AVM_TEST_BASE)[0xC]!=data[0x11])
+            printf("Update value dpctrl_reg:    0x%08X\n", data[0x11]);
+    ((volatile alt_u32*)AVM_TEST_BASE)[0xC]=data[0x11];
 
-    data[0] = 0;
+    if(((volatile alt_u32*)AVM_TEST_BASE)[0xD]!=data[0x12])
+            printf("Update value dummyctrl_reg:    0x%08X\n", data[0x12]);
+    ((volatile alt_u32*)AVM_TEST_BASE)[0xD]=data[0x12];
+
 }
 
 void menu_sc(volatile alt_u32* data) {
