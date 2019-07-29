@@ -40,6 +40,9 @@ set_global_assignment -name EDA_NATIVELINK_GENERATE_SCRIPT_ONLY ON -section_id e
 # COMPONENTS
 #============================================================
 
+set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
+set_global_assignment -name VHDL_FILE cmp_pkg.vhd
+
 set_global_assignment -name TOP_LEVEL_ENTITY top
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc

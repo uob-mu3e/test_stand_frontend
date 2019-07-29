@@ -2,6 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.daq_constants.all;
+
 entity top is
 port (
     -- FE.A
@@ -37,7 +39,8 @@ port (
 
     -- QSFP
 
-    qsfp_pll_clk    : in    std_logic; -- 156.25 MHz
+    -- si5345 out2 (156.25 MHz)
+    qsfp_pll_clk    : in    std_logic;
 
     QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
     QSFP_Rst_n      : out   std_logic;
@@ -50,10 +53,11 @@ port (
 
     -- POD
 
+    -- si5345 out0 (125 MHz)
     pod_pll_clk     : in    std_logic;
 
-    pod_tx_reset    : out   std_logic;
-    pod_rx_reset    : out   std_logic;
+    pod_tx_reset_n  : out   std_logic;
+    pod_rx_reset_n  : out   std_logic;
 
     pod_tx          : out   std_logic_vector(3 downto 0);
     pod_rx          : in    std_logic_vector(3 downto 0);
@@ -73,6 +77,11 @@ port (
     led_n       : out   std_logic_vector(15 downto 0);
 
     PushButton  : in    std_logic_vector(1 downto 0);
+
+
+
+    -- si5345 out8 (625 MHz)
+    clk_625     : in    std_logic;
 
 
 
@@ -111,8 +120,17 @@ architecture arch of top is
 
     signal av_pod, av_qsfp : work.util.avalon_t;
 
-    signal qsfp_tx_data : std_logic_vector(127 downto 0);
-    signal qsfp_tx_datak : std_logic_vector(15 downto 0);
+    signal qsfp_tx_data : std_logic_vector(127 downto 0) :=
+          X"03CAFE" & work.util.D28_5
+        & X"02BABE" & work.util.D28_5
+        & X"01DEAD" & work.util.D28_5
+        & X"00BEEF" & work.util.D28_5;
+
+    signal qsfp_tx_datak : std_logic_vector(15 downto 0) :=
+          "0001"
+        & "0001"
+        & "0001"
+        & "0001";
 
     signal qsfp_rx_data : std_logic_vector(127 downto 0);
     signal qsfp_rx_datak : std_logic_vector(15 downto 0);
@@ -127,7 +145,12 @@ architecture arch of top is
     signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
     signal mscb_counter_in : unsigned(15 downto 0);
 
+    signal reset_bypass : std_logic_vector(11 downto 0);
 
+    signal pod_rx_data : std_logic_vector(7 downto 0);
+
+    signal run_state : feb_run_state;
+    signal terminated : std_logic;
 
     signal av_test : work.util.avalon_t;
 
@@ -217,6 +240,9 @@ begin
         parallel_mscb_out_export => mscb_from_nios_parallel_out,
         counter_in_export => std_logic_vector(mscb_counter_in),
 
+        -- reset bypass
+        reset_bypass_out_export => reset_bypass,
+
         rst_reset_n => nios_reset_n,
         clk_clk => nios_clk--,
     );
@@ -243,8 +269,10 @@ begin
 --    spi_miso <= malibu_spi_sdo;
     malibu_spi_sck <= spi_sclk;
 
-    spi_miso <= si45_spi_out when spi_ss_n(0) = '0' else
-                malibu_spi_sdo when spi_ss_n(1) = '0' else '0';
+    spi_miso <=
+        si45_spi_out when spi_ss_n(0) = '0' else
+        malibu_spi_sdo when spi_ss_n(1) = '0' else
+        '0';
 
     ----------------------------------------------------------------------------
 
@@ -253,7 +281,7 @@ begin
     ----------------------------------------------------------------------------
     -- MALIBU
 
-    malibu_ck_fpga_1 <= '0';
+    malibu_ck_fpga_1 <= clk_625;
     malibu_pll_reset <= '0';
 
     e_malibu_path : entity work.malibu_path
@@ -304,6 +332,9 @@ begin
         o_link_data         => qsfp_tx_data(31 downto 0),
         o_link_datak        => qsfp_tx_datak(3 downto 0),
 
+        o_terminated        => terminated,
+        i_run_state         => run_state,
+
         i_reset             => not reset_n,
         i_clk               => qsfp_pll_clk--,
     );
@@ -323,6 +354,30 @@ begin
         mscb_data_out               => mscb_data_out,
         mscb_oe                     => mscb_oe,
         mscb_counter_in             => mscb_counter_in--,
+    );
+
+    ----------------------------------------------------------------------------
+
+
+
+    ----------------------------------------------------------------------------
+    -- reset system
+
+    e_reset_sys : entity work.resetsys
+    port map (
+        clk_reset_rx    => pod_pll_clk,
+        clk_global      => clk_aux,
+        clk_free        => clk_aux,
+        reset_in        => not PushButton(0),
+        resets_out      => open,
+        phase_out       => open,
+        data_in         => pod_rx_data,
+        reset_bypass    => reset_bypass,
+        state_out       => run_state,
+        run_number_out  => open,
+        fpga_id         => x"FEB0",
+        terminated      => terminated,
+        testout         => led(5 downto 0)--,
     );
 
     ----------------------------------------------------------------------------
@@ -374,16 +429,6 @@ begin
         i_clk       => nios_clk--,
     );
 
-    qsfp_tx_data(127 downto 32) <=
-          X"03CAFE" & work.util.D28_5
-        & X"02BABE" & work.util.D28_5
-        & X"01DEAD" & work.util.D28_5;
-
-    qsfp_tx_datak(15 downto 4) <=
-          "0001"
-        & "0001"
-        & "0001";
-
     ----------------------------------------------------------------------------
 
 
@@ -392,8 +437,8 @@ begin
     -- POD
     -- (reset system)
 
-    pod_tx_reset <= '0';
-    pod_rx_reset <= '0';
+    pod_tx_reset_n <= '1';
+    pod_rx_reset_n <= '1';
 
     e_pod : entity work.xcvr_s4
     generic map (
@@ -421,7 +466,7 @@ begin
                      & "1"
                      & "1",
 
-        o_rx_data   => open,
+        o_rx_data(7 downto 0)   => pod_rx_data,
         o_rx_datak  => open,
 
         o_tx_clkout => open,

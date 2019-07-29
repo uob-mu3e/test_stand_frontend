@@ -1,6 +1,5 @@
 
-#include <sys/alt_stdio.h>
-#include "malibu/malibu_basic_cmd.h"
+#include "../../../fe/software/app_src/malibu/malibu_basic_cmd.h"
 
 void sc_callback(volatile alt_u32* data) {
 //check spi command register, trigger spi configuration if needed

@@ -1,8 +1,5 @@
 
-typedef alt_u8 uint8_t;
-typedef alt_u16 uint16_t;
-
-#include "malibu/malibu_basic_cmd.h"
+#include "../../../fe/software/app_src/malibu/malibu_basic_cmd.h"
 
 void menu_malibu() {
     while(1) {

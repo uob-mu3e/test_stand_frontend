@@ -506,7 +506,7 @@ void mscb_uart_handler(void)
    // drop partial buffer if no char received for 100 ms
    int now = get_times();
    //printf("i_in %d , time passed %f\n",i_in,time_diff(last_received,now));
-   if (i_in > 0 && time_diff(last_received,now) > 5000) {
+   if (i_in > 0 && time_diff(last_received,now) > 12500) {
       i_in = 0;//printf("resseting buffer\n");
    }
 
@@ -514,6 +514,7 @@ void mscb_uart_handler(void)
    {
 	  //printf("int read byte loop, input_data_ready = %d\n",input_data_ready());
       data = read_mscb_command();
+      usleep(1);                       // wait inter-char delay
       //printf("mscb byte = 0x%0x, i buffer = %d, tdiff = %d , last = %d , now = %d \n",data,i_in,time_diff(last_received,now),last_received,now);
 
       //print_byte(data);
@@ -560,8 +561,6 @@ void mscb_uart_handler(void)
          return;                        // return if command not yet complete
       }
 
-      usleep(2);                       // wait inter-char delay
-
       //led_blink(2);
       n = mscb_interprete(0, in_buf, out_buf);
 	
@@ -571,8 +570,8 @@ void mscb_uart_handler(void)
 	printf("\n");
 
       if (n > 0){
-	 printf("sending reply\n");
 	 send_data(out_buf, n);
+     printf("sending reply\n");
       }
       i_in = 0;
    }

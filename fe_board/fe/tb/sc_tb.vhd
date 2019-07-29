@@ -52,27 +52,6 @@ architecture behav of sc_tb is
   		);
 	end component sram;
 
-	component sc_s4 is
-		port(
-			clk:                in std_logic;
-			reset_n:            in std_logic;
-			enable:             in std_logic;
-			
-			mem_data_in:        in std_logic_vector(31 downto 0);
-			
-			link_data_in:       in std_logic_vector(31 downto 0);
-			link_data_in_k:     in std_logic_vector(3 downto 0);
-			
-			fifo_data_out:      out std_logic_vector(35 downto 0);
-			fifo_we:				  out std_logic;
-			
-			mem_data_out:       out std_logic_vector(31 downto 0);
-			mem_addr_out:       out std_logic_vector(15 downto 0);
-			mem_wren:           out std_logic;
-			
-			stateout:           out std_logic_vector(27 downto 0)
-		);
-	end component sc_s4;
 
   --  Specifies which entity is bound with the component.
   		for sc_master_0: sc_master use entity work.sc_master;
@@ -94,7 +73,7 @@ architecture behav of sc_tb is
   		signal mem_addr_write_sc_s4 : std_logic_vector(15 downto 0);
   		signal mem_wren_sc_s4 : std_logic;
   		signal mem_data_out_sc_s4 : std_logic_vector(31 downto 0);
-  		signal mem_addr_out : std_logic_vector(15 downto 0);
+  		signal mem_addr_out : std_logic_vector(31 downto 0);
 
   		constant ckTime: 		time	:= 10 ns;
 
@@ -102,7 +81,9 @@ architecture behav of sc_tb is
   		constant CODE_STOP : std_logic_vector(31 downto 0) 	:= x"0000009C";
 
   		signal writememwren : std_logic;
-		
+
+    signal ram_re, ram_rvalid : std_logic;
+
 begin
   --  Component instantiation.
 
@@ -133,29 +114,35 @@ begin
 		stateout			=> open
 	);
 
-	i_sc : sc_s4
-	port map(
-		clk 			=> clk,
-		reset_n			=> reset_n,
-		enable			=> '1',
-		
-		mem_data_in		=> dataout_ram,
-		
-		link_data_in	=> mem_data_out,
-		link_data_in_k	=> mem_datak_out,
-		
-		fifo_data_out	=> open,
-		fifo_we			=> open,
-		
-		mem_data_out   	=> mem_data_out_sc_s4,
-		mem_addr_out   	=> mem_addr_out,
-		mem_wren       	=> mem_wren_sc_s4,
-		
-		stateout		=> open
-	);
+    process(clk)
+    begin
+    if rising_edge(clk) then
+        ram_rvalid <= ram_re;
+    end if;
+    end process;
 
-	mem_addr_write_sc_s4 <= mem_addr_out;
-	mem_addr_read_sc_s4 <= mem_addr_out;
+    e_sc : entity work.sc_rx
+    port map (
+        i_link_data => mem_data_out,
+        i_link_datak => mem_datak_out,
+
+        o_fifo_we => open,
+        o_fifo_wdata => open,
+
+        o_ram_addr => mem_addr_out,
+        o_ram_re => ram_re,
+        i_ram_rdata => dataout_ram,
+        i_ram_rvalid => ram_rvalid,
+        o_ram_we => mem_wren_sc_s4,
+        o_ram_wdata => mem_data_out_sc_s4,
+
+        i_reset_n => reset_n,
+        i_clk => clk--,
+    );
+
+
+	mem_addr_write_sc_s4 <= mem_addr_out(15 downto 0);
+	mem_addr_read_sc_s4 <= mem_addr_out(15 downto 0);
 
 	rram : sram
   	port map (

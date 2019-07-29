@@ -8,6 +8,8 @@ APP_DIR=software/app
 IPs = \
     nios.sopcinfo
 VHDs = \
-    max10_dev.vhd
+    top.vhd
 
 include util/makefile.mk
+
+nios.qsys : device.tcl

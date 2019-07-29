@@ -167,8 +167,9 @@ begin
             end if;
         end if;
 
+        -- default value is invalid K byte
         o_data <= (others => '0');
-        o_datak <= (others => '0');
+        o_datak <= (others => '1');
 
         -- align such that LSByte is comma
         case pattern is

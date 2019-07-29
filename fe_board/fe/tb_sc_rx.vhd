@@ -156,6 +156,11 @@ begin
         link_datak <= "0000";
 
         wait until rising_edge(clk);
+        -- stop
+        link_data <= X"0000009C";
+        link_datak <= "0001";
+
+        wait until rising_edge(clk);
         -- idle
         link_data <= X"000000BC";
         link_datak <= "0001";

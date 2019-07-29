@@ -84,16 +84,6 @@ BEGIN
     state_reset <= states(7);
     state_out_of_DAQ <= states(8);
     
-        
---urun_termination_controller : component run_termination_controller
---     port map(
---        clk => clk,
---        reset => reset,
---        state_terminating => states(4),
---        terminated => terminated
---    );
-    
-    
     -- output process
     process (clk, recieving_payload)
     begin
@@ -291,6 +281,8 @@ BEGIN
                             if reset_link_8bData = x"32" then   -- enable
                                 state <= idle;
                             end if;
+								when others =>
+									state <= idle;
                             
                     end case;
             end if;

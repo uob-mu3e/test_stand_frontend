@@ -31,7 +31,7 @@ int main() {
 
     while (1) {
         printf("\n");
-        printf("FE_S4 (MALIBU):\n");
+        printf("fe_mupix:\n");
         printf("  [1] => xcvr qsfp\n");
         printf("  [3] => sc\n");
         printf("  [4] => xcvr pod\n");

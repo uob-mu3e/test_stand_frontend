@@ -2,6 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.daq_constants.all;
+
 entity top is
 port (
     -- FE.Ports
@@ -27,7 +29,8 @@ port (
 
     -- QSFP
 
-    qsfp_pll_clk    : in    std_logic; -- 156.25 MHz
+    -- si5345 out2 (156.25 MHz)
+    qsfp_pll_clk    : in    std_logic;
 
     QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
     QSFP_Rst_n      : out   std_logic;
@@ -40,10 +43,11 @@ port (
 
     -- POD
 
+    -- si5345 out0 (125 MHz)
     pod_pll_clk     : in    std_logic;
 
-    pod_tx_reset    : out   std_logic;
-    pod_rx_reset    : out   std_logic;
+    pod_tx_reset_n  : out   std_logic;
+    pod_rx_reset_n  : out   std_logic;
 
     pod_tx          : out   std_logic_vector(3 downto 0);
     pod_rx          : in    std_logic_vector(3 downto 0);
@@ -61,6 +65,15 @@ port (
     --
 
     led_n       : out   std_logic_vector(15 downto 0);
+
+    PushButton  : in    std_logic_vector(1 downto 0);
+
+
+
+    -- si5345 out8 (625 MHz)
+    clk_625     : in    std_logic;
+
+
 
     reset_n     : in    std_logic;
 
@@ -81,7 +94,7 @@ architecture arch of top is
     signal nios_clk, nios_reset_n : std_logic;
     signal nios_pio : std_logic_vector(31 downto 0);
 
---i2c interface (external, not used)
+    --i2c interface (external, not used)
     signal i2c_scl_in, i2c_scl_oe, i2c_sda_in, i2c_sda_oe : std_logic;
     --spi interface (external, spi_ss_n[4*N_SCIFI_BOARDS] is rewired to siXX45 chip, miso is also rewired if corresponding cs is low)
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
@@ -99,8 +112,17 @@ architecture arch of top is
 
     signal av_pod, av_qsfp : work.util.avalon_t;
 
-    signal qsfp_tx_data : std_logic_vector(127 downto 0);
-    signal qsfp_tx_datak : std_logic_vector(15 downto 0);
+    signal qsfp_tx_data : std_logic_vector(127 downto 0) :=
+          X"03CAFE" & work.util.D28_5
+        & X"02BABE" & work.util.D28_5
+        & X"01DEAD" & work.util.D28_5
+        & X"00BEEF" & work.util.D28_5;
+
+    signal qsfp_tx_datak : std_logic_vector(15 downto 0) :=
+          "0001"
+        & "0001"
+        & "0001"
+        & "0001";
 
     signal qsfp_rx_data : std_logic_vector(127 downto 0);
     signal qsfp_rx_datak : std_logic_vector(15 downto 0);
@@ -115,7 +137,12 @@ architecture arch of top is
     signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
     signal mscb_counter_in : unsigned(15 downto 0);
 
+    signal reset_bypass : std_logic_vector(11 downto 0);
 
+    signal pod_rx_data : std_logic_vector(7 downto 0);
+
+    signal run_state : feb_run_state;
+    signal terminated : std_logic;
 
     signal av_test : work.util.avalon_t;
 
@@ -188,13 +215,13 @@ begin
         -- nios base
         --
 
-	--I2C interface is not connected to outside world (currently unused)
+        --I2C interface is not connected to outside world (currently unused)
         i2c_scl_in => i2c_scl_in,
         i2c_scl_oe => i2c_scl_oe,
         i2c_sda_in => i2c_sda_in,
         i2c_sda_oe => i2c_sda_oe,
 
-	--SPI interface connected to ASICs and SI clock chip
+        --SPI interface connected to ASICs and SI clock chip
         spi_miso => spi_miso,
         spi_mosi => spi_mosi,
         spi_sclk => spi_sclk,
@@ -206,6 +233,9 @@ begin
         parallel_mscb_in_export => mscb_to_nios_parallel_in,
         parallel_mscb_out_export => mscb_from_nios_parallel_out,
         counter_in_export => std_logic_vector(mscb_counter_in),
+
+        -- reset bypass
+        reset_bypass_out_export => reset_bypass,
 
         rst_reset_n => nios_reset_n,
         clk_clk => nios_clk--,
@@ -229,7 +259,7 @@ begin
     o_fee_spi_CSn <=  spi_ss_n(4-1 downto 0);
     --MISO: multiplexing si chip / SciFi FEE
     spi_miso <= si45_spi_out when spi_ss_n(4) = '0' else
-		i_fee_spi_MISO(0); --TODO make working with multiple FEBs, if we need this
+        i_fee_spi_MISO(0); --TODO make working with multiple FEBs, if we need this
 
     led(4 downto 1)<=spi_ss_n(3 downto 0);
 
@@ -289,7 +319,6 @@ begin
 
 
 
-
     e_data_sc_path : entity work.data_sc_path
     port map (
         i_avs_address       => av_sc.address(17 downto 2),
@@ -308,6 +337,9 @@ begin
 
         o_link_data         => qsfp_tx_data(31 downto 0),
         o_link_datak        => qsfp_tx_datak(3 downto 0),
+
+        o_terminated        => terminated,
+        i_run_state         => run_state,
 
         i_reset             => not reset_n,
         i_clk               => qsfp_pll_clk--,
@@ -332,6 +364,29 @@ begin
 
     ----------------------------------------------------------------------------
 
+
+
+    ----------------------------------------------------------------------------
+    -- reset system
+
+    e_reset_sys : entity work.resetsys
+    port map (
+        clk_reset_rx    => pod_pll_clk,
+        clk_global      => clk_aux,
+        clk_free        => clk_aux,
+        reset_in        => not PushButton(0),
+        resets_out      => open,
+        phase_out       => open,
+        data_in         => pod_rx_data,
+        reset_bypass    => reset_bypass,
+        state_out       => run_state,
+        run_number_out  => open,
+        fpga_id         => x"FEB0",
+        terminated      => terminated,
+        testout         => open--,
+    );
+
+    ----------------------------------------------------------------------------
 
 
 
@@ -380,16 +435,6 @@ begin
         i_clk       => nios_clk--,
     );
 
-    qsfp_tx_data(127 downto 32) <=
-          X"03CAFE" & work.util.D28_5
-        & X"02BABE" & work.util.D28_5
-        & X"01DEAD" & work.util.D28_5;
-
-    qsfp_tx_datak(15 downto 4) <=
-          "0001"
-        & "0001"
-        & "0001";
-
     ----------------------------------------------------------------------------
 
 
@@ -398,8 +443,8 @@ begin
     -- POD
     -- (reset system)
 
-    pod_tx_reset <= '0';
-    pod_rx_reset <= '0';
+    pod_tx_reset_n <= '1';
+    pod_rx_reset_n <= '1';
 
     e_pod : entity work.xcvr_s4
     generic map (
