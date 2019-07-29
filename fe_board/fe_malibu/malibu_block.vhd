@@ -28,7 +28,7 @@ port (
     i_fifo_rack         : out   std_logic;
 
     i_reset             : in    std_logic;
-    -- 156.25 MHz   
+    -- 156.25 MHz
     i_clk               : in    std_logic--;
 );
 end entity;
