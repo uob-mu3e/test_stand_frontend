@@ -494,7 +494,7 @@ for i in 0 to 3 generate
 			rdreq   => not fifo_empty(i),
 			wrclk   => tx_clk(0),--rx_clk(i),
 			rdclk   => pcie_fastclk_out,
-			aclr    => reset_n,
+			aclr    => not reset_n,
 			q       => fifo_out(i),
 			rdempty => fifo_empty(i),
 			wrfull  => open--,
