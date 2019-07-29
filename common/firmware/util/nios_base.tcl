@@ -130,7 +130,7 @@ if 1 {
 
 #package require cmdline
 
-proc nios_base.export_avm { name baseAddress addressWidth args } {
+proc nios_base.export_avm { name addressWidth baseAddress args } {
     set dataWidth 32
     set addressUnits 8
     set readLatency 0
