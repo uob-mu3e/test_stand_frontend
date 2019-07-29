@@ -22,10 +22,10 @@ set_global_assignment -name QIP_FILE util/util.qip
 
 set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 
-set_global_assignment -name QSYS_FILE ip/ip_clkctrl.qsys
-set_global_assignment -name QSYS_FILE ip/ip_iopll_125.qsys
+set_global_assignment -name QSYS_FILE a10/ip_clkctrl.qsys
+set_global_assignment -name QSYS_FILE a10/ip_iopll_125.qsys
 
-set_global_assignment -name QIP_FILE xcvr.qip
+set_global_assignment -name QIP_FILE a10/xcvr.qip
 
 
 

@@ -59,4 +59,4 @@ proc add_altera_xcvr_native { name channels channel_width cdr_refclk_freq data_r
 source {device.tcl}
 create_system {ip_xcvr_phy}
 add_altera_xcvr_native xcvr_native_a10_0 4 32 [ expr $refclk_freq * 1e-6 ] $txrx_data_rate
-save_system {ip/ip_xcvr_phy.qsys}
+save_system {a10/ip_xcvr_phy.qsys}

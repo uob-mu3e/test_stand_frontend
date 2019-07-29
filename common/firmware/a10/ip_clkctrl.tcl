@@ -12,4 +12,4 @@ proc add_altclkctrl { name NUMBER_OF_CLOCKS } {
 source {device.tcl}
 create_system {ip_clkctrl}
 add_altclkctrl altclkctrl_0 1
-save_system {ip/ip_clkctrl.qsys}
+save_system {a10/ip_clkctrl.qsys}

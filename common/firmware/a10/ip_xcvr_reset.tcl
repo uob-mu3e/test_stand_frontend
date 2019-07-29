@@ -22,4 +22,4 @@ proc add_altera_xcvr_reset_control { name CHANNELS SYS_CLK_IN_MHZ } {
 source {device.tcl}
 create_system {ip_xcvr_reset}
 add_altera_xcvr_reset_control xcvr_reset_control_0 4 [ expr $refclk_freq * 1e-6 ]
-save_system {ip/ip_xcvr_reset.qsys}
+save_system {a10/ip_xcvr_reset.qsys}

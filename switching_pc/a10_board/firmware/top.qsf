@@ -42,7 +42,7 @@ set_global_assignment -name QIP_FILE util/util.qip
 
 set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 
-set_global_assignment -name QIP_FILE xcvr.qip
+set_global_assignment -name QIP_FILE a10/xcvr.qip
 
 set_global_assignment -name QSYS_FILE ip/ip_clk_ctrl.qsys
 set_global_assignment -name QSYS_FILE ip/ip_receiving_fifo.qsys
