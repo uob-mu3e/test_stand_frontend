@@ -50,7 +50,6 @@ alt_u32 alarm_callback(void*) {
 
 #include "../include/xcvr.h"
 #include "../include/a10/reconfig.h"
-#include "menu_si5340.h"
 
 int main() {
     uart_init();
@@ -70,16 +69,12 @@ int main() {
     while (1) {
         printf("'%s' A10\n", ALT_DEVICE_FAMILY);
         printf("  [1] => xcvr qsfp\n");
-        printf("  [2] => si5340\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
         case '1':
             menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
-            break;
-        case '2':
-            menu_si5340();
             break;
         case 'r':
             reconfig.pll();
