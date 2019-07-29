@@ -284,7 +284,7 @@ begin
     malibu_ck_fpga_1 <= clk_625;
     malibu_pll_reset <= '0';
 
-    e_malibu_path : entity work.malibu_path
+    e_malibu_block : entity work.malibu_block
     generic map (
         N_g => 1--,
     )

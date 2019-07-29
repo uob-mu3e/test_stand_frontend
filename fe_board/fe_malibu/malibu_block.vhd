@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity malibu_path is
+entity malibu_block is
 generic (
     N_g : positive := 1--;
 );
@@ -33,7 +33,7 @@ port (
 );
 end entity;
 
-architecture arch of malibu_path is
+architecture arch of malibu_block is
 
     signal refclk : std_logic;
 
