@@ -4,6 +4,10 @@
 
 Scripts for programming Arria 10 flash.
 
+## Description
+
+ - `cfi1616.tcl`
+
 ## Usage
 
 TODO

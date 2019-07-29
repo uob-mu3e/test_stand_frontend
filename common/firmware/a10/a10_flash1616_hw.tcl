@@ -1,3 +1,8 @@
+#
+# author : Alexandr Kozlinskiy
+# date : 2017-11-02
+#
+
 package require qsys
 
 # module properties

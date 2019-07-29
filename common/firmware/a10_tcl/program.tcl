@@ -1,3 +1,7 @@
+#
+# author : Alexandr Kozlinskiy
+# date : 2017-11-08
+#
 
 source [ file join [ file dirname [ info script ] ] "cfi1616.tcl"]
 source [ file join [ file dirname [ info script ] ] "quartus.tcl"]

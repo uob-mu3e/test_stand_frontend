@@ -1,3 +1,7 @@
+/*
+ * author : Alexandr Kozlinskiy
+ * date : 2019
+ */
 
 void menu_xcvr(volatile alt_u32* xcvr) {
     while (1) {
@@ -31,7 +35,7 @@ void menu_xcvr(volatile alt_u32* xcvr) {
             xcvr[0x10], xcvr[0x11], xcvr[0x12]
         );
         printf("  rx    :   %s  0x%02X 0x%04X 0x%04X\n",
-            xcvr[0x20] == 0x00 && xcvr[0x21] == 0x1F07 && xcvr[0x22] == 0x0000 ? "OK" : "  ",
+            xcvr[0x20] == 0x00 && (xcvr[0x21] & 0x1007) == 0x1007 && xcvr[0x22] == 0x0000 ? "OK" : "  ",
             xcvr[0x20], xcvr[0x21], xcvr[0x22]
         );
         printf("        :   LoL_cnt = %d, err_cnt = %d\n", xcvr[0x23], xcvr[0x24]);

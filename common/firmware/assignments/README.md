@@ -1,7 +1,23 @@
 # Assignments
 
-Assignments for different boards (a10, fe_s4, etc.).
+Base assignments for different boards (a10, fe_s4, etc.).
 
 ## Usage
 
-In `qsf` file add `source <path>/assignments/DE5a_Net.tcl`
+In `qsf` file add command
+
+```
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE <path>/assignments/DE5a_Net.tcl
+```
+
+##
+
+- `DE5a_Net.tcl` - DDR3 Arria 10 dev.board
+- `DE5a_Net_DDR4.tcl` - DDR4 Arria 10 dev.board
+- `fe_s4.tcl` - Stratix IV front-end board
+- `fe_malib.tcl`, `fe_scifi.tcl` - additional fe board subsystem assignments
+- `max10_dev.tcl` - Max 10 dev.board
+
+##
+
+NOTE: think 7 times before modifying these files

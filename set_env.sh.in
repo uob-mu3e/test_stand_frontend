@@ -14,8 +14,9 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         export DYLD_LIBRARY_PATH="${LIBDIR}${DYLD_LIBRARY_PATH:+:}${DYLD_LIBRARY_PATH}";
 fi
 
-export MIDASSYS="${PREFIX}/install"
+export MIDASSYS="${PREFIX}"
 export MIDAS_DIR="${SOURCE}/online"
+export MIDAS_EXPTAB="${SOURCE}/online/exptab"
 export MIDAS_EXP_NAME="Mu3e"
 
 cd "$MIDAS_DIR"

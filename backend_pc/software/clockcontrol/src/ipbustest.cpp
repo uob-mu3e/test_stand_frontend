@@ -14,14 +14,25 @@ int main()
     }
     cout << "Connected" << endl;
     cb.init_clockboard();
-    uint16_t ic = cb.read_inverted_tx_channels();
-    cout << "Inverted Channels " << (int)ic << endl;
 
-    int current = cb.read_mother_board_current();
-    cout << "MB Current " << current << endl;
+    float current = cb.read_mother_board_current();
+    cout << "MB Current " << current << " mA" << endl;
 
-    int voltage = cb.read_mother_board_current();
-    cout << "MB Voltage " << voltage << endl;
+    float voltage = cb.read_mother_board_voltage();
+    cout << "MB Voltage " << voltage << " mV" << endl;
+
+    for(int i=0; i < 8; i++){
+        if(!cb.daughter_present(i))
+            continue;
+
+        current = cb.read_daughter_board_current(i);
+        cout << "DB Current " << current << " mA" << endl;
+
+        voltage = cb.read_daughter_board_voltage(i);
+        cout << "DB Voltage " << voltage << " mV" << endl;
+    }
+
+    cout << cb.read_rx_firefly_temp() << endl;
 
     return 1;
 

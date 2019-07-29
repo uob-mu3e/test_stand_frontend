@@ -1,65 +1,71 @@
+--
+-- author : Alexandr Kozlinskiy
+--
+
 library ieee;
 use ieee.std_logic_1164.all;
 
 entity rx_reset is
     generic (
-        Nch : positive := 4;
-        CLK_MHZ : positive := 50--;
+        NUMBER_OF_CHANNELS_g : positive := 4;
+        CLK_MHZ_g : positive := 50--;
     );
     port (
         -- reset the receiver CDR present in the receiver channel
-        analogreset     :   out std_logic_vector(Nch-1 downto 0);
+        o_analogreset   : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
         -- reset all digital logic in the receiver PCS
-        digitalreset    :   out std_logic_vector(Nch-1 downto 0);
+        o_digitalreset  : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-        ready           :   out std_logic_vector(Nch-1 downto 0);
+        o_ready         : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
         -- status of the receiver CDR lock mode
-        freqlocked      :   in  std_logic_vector(Nch-1 downto 0);
+        i_freqlocked    : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
         -- status of the dynamic reconfiguration controller
-        reconfig_busy   :   in  std_logic;
+        i_reconfig_busy : in    std_logic;
 
-        arst_n  :   in  std_logic;
-        clk     :   in  std_logic--;
+        i_areset_n    : in    std_logic;
+        i_clk       : in    std_logic--;
     );
 end entity;
 
 architecture arch of rx_reset is
 
-    constant LTD_WIDTH : positive := 4000; -- ns
+    -- lock-to-data delay
+    -- "Chapter 1: DC and Switching Characteristics for Stratix IV Devices"
+    constant LTD_DELAY_c : positive := 4000; -- ns
 
-    signal rst_n : std_logic;
+    signal reset_n : std_logic;
 
     signal analogreset_n : std_logic;
-    signal digitalreset_n : std_logic_vector(Nch-1 downto 0);
+    signal digitalreset_n : std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
 begin
 
+    o_analogreset <= (others => not analogreset_n);
+    o_digitalreset <= not digitalreset_n;
+    o_ready <= digitalreset_n;
+
     i_rst_n : entity work.reset_sync
-    port map ( rstout_n => rst_n, arst_n => arst_n, clk => clk );
+    port map ( rstout_n => reset_n, arst_n => i_areset_n, clk => i_clk );
 
-    analogreset <= (others => not analogreset_n);
-    digitalreset <= not digitalreset_n;
-
-    i_analogreset_n : entity work.reset_sync
+    e_analogreset_n : entity work.reset_sync
     port map (
         rstout_n => analogreset_n,
-        arst_n => rst_n and not reconfig_busy,
-        clk => clk--,
+        arst_n => reset_n and not i_reconfig_busy,
+        clk => i_clk--,
     );
 
+    -- release digtal reset after delay
     g_digitalreset_n : for i in digitalreset_n'range generate
     begin
-    i_digitalreset_n : entity work.debouncer
-    generic map ( W => 1, N => LTD_WIDTH * CLK_MHZ / 1000 )
-    port map (
-        d(0) => '1', q(0) => digitalreset_n(i),
-        arst_n => rst_n and freqlocked(i),
-        clk => clk--,
-    );
+        e_digitalreset_n : entity work.debouncer
+        generic map ( W => 1, N => LTD_DELAY_c * CLK_MHZ_g / 1000 )
+        port map (
+            d(0) => '1', q(0) => digitalreset_n(i),
+            arst_n => reset_n and i_freqlocked(i),
+            clk => i_clk--,
+        );
     end generate;
-
-    ready <= digitalreset_n;
 
 end architecture;

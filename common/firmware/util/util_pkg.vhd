@@ -1,3 +1,7 @@
+--
+-- author : Alexandr Kozlinskiy
+--
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -12,14 +16,32 @@ package util is
     constant D21_4 : std_logic_vector(7 downto 0) := x"95";
     constant D02_5 : std_logic_vector(7 downto 0) := X"A2";
     constant D21_5 : std_logic_vector(7 downto 0) := x"B5";
+    constant D28_4 : std_logic_vector(7 downto 0) := x"9C";
     constant D28_5 : std_logic_vector(7 downto 0) := X"BC";
     constant D28_7 : std_logic_vector(7 downto 0) := X"FC";
     constant D05_6 : std_logic_vector(7 downto 0) := X"C5";
 
 
 
+    type avalon_t is record
+        address         :   std_logic_vector(31 downto 0);
+        read            :   std_logic;
+        readdata        :   std_logic_vector(31 downto 0);
+        write           :   std_logic;
+        writedata       :   std_logic_vector(31 downto 0);
+        waitrequest     :   std_logic;
+        readdatavalid   :   std_logic;
+    end record;
+
+
+
+    -- Greatest Common Divisor
+    function gcd (
+        p, q : positive--;
+    ) return positive;
+
     function max (
-        l, r: integer
+        l, r : integer--;
     ) return integer;
 
     function vector_width (
@@ -119,12 +141,28 @@ package util is
         crc  : std_logic_vector(31 downto 0)--;
     ) return std_logic_vector;
 
-end util;
+end package;
 
 package body util is
 
+    function gcd (
+        p, q : positive--;
+    ) return positive is
+        variable p_v : positive := p;
+        variable q_v : positive := q;
+    begin
+        while ( p_v /= q_v ) loop
+            if ( p_v > q_v ) then
+                p_v := p_v - q_v;
+            else
+                q_v := q_v - p_v;
+            end if;
+        end loop;
+        return p_v;
+    end function;
+
     function max (
-        l, r: integer
+        l, r : integer
     ) return integer is
     begin
         if l > r then
@@ -426,4 +464,4 @@ package body util is
         return newcrc;
     end function;
 
-end util;
+end package body;

@@ -1,0 +1,17 @@
+#
+
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "altgx_generic.qip"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "ip_altgx_reconfig.vhd"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/tx_reset.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/rx_reset.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/rx_align.vhd"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/counter.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/ff_sync.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/reset_sync.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/rx_align.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/util_pkg.vhd"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "xcvr_s4.vhd"]
