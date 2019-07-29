@@ -100,7 +100,6 @@ int main(int argc, char *argv[])
     reset_reg = SET_RESET_BIT_ALL(reset_reg);
     mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
 
-
     // Set up data generator
     uint32_t datagen_setup = 0;
     mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s

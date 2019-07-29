@@ -39,32 +39,17 @@ entity data_generator_a10_tb is
 		clk:                 	in  std_logic;
 		reset:               	in  std_logic;
 		enable_pix:          	in  std_logic;
-		random_seed:			in  std_logic_vector (15 downto 0);
+		random_seed:				in  std_logic_vector (15 downto 0);
 		start_global_time:		in  std_logic_vector(47 downto 0);
 		data_pix_generated:  	out std_logic_vector(31 downto 0);
 		datak_pix_generated:  	out std_logic_vector(3 downto 0);
 		data_pix_ready:      	out std_logic;
-        slow_down:			    in  std_logic_vector(31 downto 0);
-		state_out:  	        out std_logic_vector(3 downto 0)
+		slow_down:			in  std_logic_vector(31 downto 0);
+		state_out:  	out std_logic_vector(3 downto 0)
 );
 end entity data_generator_a10_tb;
 
 architecture rtl of data_generator_a10_tb is
-
-component linear_shift is 
-	generic (
-		g_m             : integer           := 7;
-		g_poly          : std_logic_vector  := "1100000" -- x^7+x^6+1 
-	);
-	port (
-		i_clk           : in  std_logic;
-		reset_n         : in  std_logic;
-		i_sync_reset    : in  std_logic;
-		i_seed          : in  std_logic_vector (g_m-1 downto 0);
-		i_en            : in  std_logic;
-		o_lsfr          : out std_logic_vector (g_m-1 downto 0)
-	);
-end component linear_shift;
 
 ----------------signals---------------------
 	signal global_time:			  std_logic_vector(47 downto 0);
@@ -89,7 +74,7 @@ begin
 
 	reset_n <= not reset;
 
-	chip_id_shift : linear_shift
+	chip_id_shift : entity work.linear_shift
 	generic map(
 		g_m 	   		=> 6,
 		g_poly 	   	=> "110000"
@@ -103,7 +88,7 @@ begin
 		o_lsfr 			=> lsfr_chip_id
 	);
 	
-	pix_tot_shift : linear_shift
+	pix_tot_shift : entity work.linear_shift
 	generic map(
 		g_m 	   		=> 6,
 		g_poly 	   	=> "110000"
@@ -117,7 +102,7 @@ begin
 		o_lsfr 			=> lsfr_tot
 	);
 	
-	pix_row_shift : linear_shift
+	pix_row_shift : entity work.linear_shift
 	generic map(
 		g_m 	   		=> 8,
 		g_poly 	   	=> "10111000"
@@ -131,7 +116,7 @@ begin
 		o_lsfr 			=> lsfr_row
 	);
 	
-	pix_col_shift : linear_shift
+	pix_col_shift : entity work.linear_shift
 	generic map(
 		g_m 	   		=> 8,
 		g_poly 	   	=> "10111000"
@@ -145,7 +130,7 @@ begin
 		o_lsfr 			=> lsfr_col
 	);
 	
-	overflow_shift : linear_shift
+	overflow_shift : entity work.linear_shift
 	generic map(
 		g_m 	   		=> 16,
 		g_poly 	   	=> "1101000000001000"
@@ -178,7 +163,7 @@ end process;
 	
 	
 	
-process (clk)
+process (clk, reset)
 
 variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
 variable overflow_idx	  : integer range 0 to 15 := 0;
@@ -186,98 +171,84 @@ variable overflow_idx	  : integer range 0 to 15 := 0;
 begin
 	if (reset = '1') then
 		data_pix_ready          <= '0';
-		--data_sc_ready           <= '0';
 		data_pix_generated      <= (others => '0');
-		--data_sc_generated       <= (others => '0');
 		global_time       		<= start_global_time;
-		--sc_data_counter         <= (others => '1');
 		data_header_state			<= part1;
-		--wait_cnt						<= (others => '0');
 		current_overflow 			:= "0000000000000000";
 		overflow_idx				:= 0;
+		state_out					<= (others => '0');
+		datak_pix_generated		<= (others => '0');
+	
+
+	
 	elsif rising_edge(clk) then
-        -- generate pix data
-        
-        if(enable_pix = '1' and waiting = '0') then
+		if(enable_pix = '1' and waiting = '0') then
 				data_pix_ready <= '1';
 				case data_header_state is
 					when part1 =>
-						state_out                         <= x"1";
-						global_time                       <= global_time + '1';
-						data_pix_generated(31 downto 26)  <= "111010";
-						data_pix_generated(25 downto 8)   <= (others => '0');
-						data_pix_generated(7 downto 0) 	  <= x"bc";
-						datak_pix_generated               <= "0001";
-						data_header_state 				  <= part2;
+						state_out <= x"A";
+						global_time <= global_time + '1';
+						data_pix_generated(31 downto 26) <= "111010";
+						data_pix_generated(25 downto 8) 	<= (others => '0');
+						data_pix_generated(7 downto 0) 	<= x"bc";
+						datak_pix_generated              <= "0001";
+						data_header_state 					<= part2;
 				
 					when part2 =>
-                        state_out <= x"2";
-						data_pix_generated				    <= global_time(47 downto 16);
-                        datak_pix_generated                 <= "0000";
+						state_out <= x"B";
+						global_time <= global_time + '1';
+						data_pix_generated(31 downto 0) 	<= global_time(23 downto 0) & x"00";
+						datak_pix_generated              <= "0000";
 						data_header_state 					<= part3;
 					
 					when part3 =>
-						state_out <= x"3";
-						data_pix_generated					<= global_time(15 downto 0) & x"0000";
+						state_out <= x"C";
+						global_time <= global_time + '1';
+						data_pix_generated					<= global_time(23 downto 0) & x"00";
+						datak_pix_generated              <= "0000";
 						data_header_state 					<= part4;
 						
 					when part4 =>
-						state_out <= x"4";
-						data_pix_generated 					<= "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
-						datak_pix_generated                 <= "0000";
-						global_time							<= global_time + '1';
-						overflow_idx 						:= 0;
-						current_overflow					:= lsfr_overflow;
+						state_out <= x"D";
+						global_time <= global_time + '1';
+						data_pix_generated 					<= "0000" & DATA_SUB_HEADER_ID & global_time(13 downto 0) & x"00";
+						datak_pix_generated              <= "0000";
+						overflow_idx 							:= 0;
+						current_overflow						:= lsfr_overflow;
 						data_header_state 					<= part5;
 					
 					when part5 =>
-                        state_out <= x"5";
-                        datak_pix_generated                 <= "0000";
-						if (lsfr_chip_id = DATA_SUB_HEADER_ID) then
-							data_pix_generated				<= "101010" & lsfr_row & lsfr_col & lsfr_tot;
-						elsif (lsfr_chip_id = DATA_HEADER_ID) then
-							data_pix_generated				<= "010101" & lsfr_row & lsfr_col & lsfr_tot;
-						else
-							data_pix_generated				<= lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
-						end if;
-						
-						if (current_overflow(overflow_idx) = '1') then
+						state_out <= x"E";
+						global_time <= global_time + '1';
+						data_pix_generated					<= global_time(23 downto 0) & x"00";
+						datak_pix_generated              <= "0000";
+						if (global_time(3 downto 0) = "1111") then
+							data_header_state					<= trailer;
+						elsif (global_time(2 downto 0) = "111") then
+							data_header_state					<= part4;
+						elsif (current_overflow(overflow_idx) = '1') then
 							overflow_idx 						:= overflow_idx + 1;
 							data_header_state					<= overflow;
 						else
 							overflow_idx 						:= overflow_idx + 1;
-							global_time 						<= global_time + '1';
-						end if;
-						
-						if (global_time(9 downto 0) = "1111111111") then
-							data_header_state 				<= trailer;
-						elsif (global_time(3 downto 0) = "1111") then
-							data_header_state 				<= part4;
 						end if;
 							
 					when overflow =>
-						state_out <= x"6";
-						datak_pix_generated                 <= "0000";
-                        if (lsfr_chip_id = DATA_SUB_HEADER_ID) then
-							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0);-- "101010" & lsfr_row & lsfr_col & lsfr_tot;
-						elsif (lsfr_chip_id = DATA_HEADER_ID) then
-							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0); -- "010101" & lsfr_row & lsfr_col & lsfr_tot;
-						else
-							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0); --lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
-						end if;
-						global_time 							<= global_time + '1';
+						state_out <= x"9";
+						data_pix_generated					<= global_time(23 downto 0) & x"00";
+						datak_pix_generated              <= "0000";
 						data_header_state						<= part5;
 					
 					when trailer =>
-						state_out <= x"7";
+						state_out <= x"8";
 						global_time <= global_time + '1';
-						datak_pix_generated                 <= "0001";
 						data_pix_generated(31 downto 8)	<= (others => '0');
 						data_pix_generated(7 downto 0)	<= x"9c";
+						datak_pix_generated              <= "0001";
 						data_header_state 					<= part1;
 						
 					when others =>
-						state_out <= x"8";
+						state_out <= x"7";
 						data_header_state 					<= trailer;
 						---
 				end case;
@@ -285,9 +256,8 @@ begin
 			state_out <= x"F";
 			data_pix_ready <= '0';
 		end if;
-    end if;
+	end if;
 end process;
-
 
 
 END rtl;

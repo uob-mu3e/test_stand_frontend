@@ -34,6 +34,35 @@ component data_demerge is
 	);
 end component;
 
+component event_counter is
+  port (
+	clk:               in std_logic;
+	reset_n:           in std_logic;
+	rx_data:           in std_logic_vector (31 downto 0);
+	rx_datak:          in std_logic_vector (3 downto 0);
+	data_ready:        in std_logic;
+	dma_wen_reg:       in std_logic;
+	event_length:      out std_logic_vector (11 downto 0);
+	dma_data_wren:     out std_logic;
+	dmamem_endofevent: out std_logic; 
+	dma_data:          out std_logic_vector (31 downto 0);
+	state_out:         out std_logic_vector(3 downto 0)
+	  );
+end component event_counter;
+
+component dma_evaluation is
+    port(
+		clk:               	in std_logic;
+		reset_n:           	in std_logic;
+		dmamemhalffull:    	in std_logic;
+		dmamem_endofevent: 	in std_logic;
+		halffull_counter: 	out std_logic_vector (31 downto 0);
+		nothalffull_counter: 	out std_logic_vector (31 downto 0);
+		endofevent_counter:  out std_logic_vector (31 downto 0);
+		notendofevent_counter:  out std_logic_vector (31 downto 0)
+);
+end component dma_evaluation;
+
 component ip_ram is
   port (
 		data      : in  std_logic_vector(31 downto 0) := (others => 'X'); -- datain
@@ -81,6 +110,7 @@ component data_generator_a10 is
 		random_seed:			in  std_logic_vector (15 downto 0);
 		start_global_time:	in  std_logic_vector(47 downto 0);
 		data_pix_generated:  out std_logic_vector(31 downto 0);
+		datak_pix_generated:  out std_logic_vector(3 downto 0);
 		data_pix_ready:      out std_logic;
 		slow_down:				in  std_logic_vector(31 downto 0);
 		state_out:  out std_logic_vector(3 downto 0)

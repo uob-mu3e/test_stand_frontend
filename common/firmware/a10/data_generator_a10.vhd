@@ -42,6 +42,7 @@ entity data_generator_a10 is
 		random_seed:				in  std_logic_vector (15 downto 0);
 		start_global_time:		in  std_logic_vector(47 downto 0);
 		data_pix_generated:  	out std_logic_vector(31 downto 0);
+		datak_pix_generated:  	out std_logic_vector(3 downto 0);
 		data_pix_ready:      	out std_logic;
 		slow_down:			in  std_logic_vector(31 downto 0);
 		state_out:  	out std_logic_vector(3 downto 0)
@@ -176,6 +177,7 @@ begin
 		current_overflow 			:= "0000000000000000";
 		overflow_idx				:= 0;
 		state_out					<= (others => '0');
+		datak_pix_generated		<= (others => '0');
 	
 
 	
@@ -189,24 +191,28 @@ begin
 						data_pix_generated(31 downto 26) <= "111010";
 						data_pix_generated(25 downto 8) 	<= (others => '0');
 						data_pix_generated(7 downto 0) 	<= x"bc";
+						datak_pix_generated              <= "0001";
 						data_header_state 					<= part2;
 				
 					when part2 =>
 						state_out <= x"B";
 						global_time <= global_time + '1';
 						data_pix_generated(31 downto 0) 	<= global_time(23 downto 0) & x"00";
+						datak_pix_generated              <= "0000";
 						data_header_state 					<= part3;
 					
 					when part3 =>
 						state_out <= x"C";
 						global_time <= global_time + '1';
 						data_pix_generated					<= global_time(23 downto 0) & x"00";
+						datak_pix_generated              <= "0000";
 						data_header_state 					<= part4;
 						
 					when part4 =>
 						state_out <= x"D";
 						global_time <= global_time + '1';
 						data_pix_generated 					<= "0000" & DATA_SUB_HEADER_ID & global_time(13 downto 0) & x"00";
+						datak_pix_generated              <= "0000";
 						overflow_idx 							:= 0;
 						current_overflow						:= lsfr_overflow;
 						data_header_state 					<= part5;
@@ -215,6 +221,7 @@ begin
 						state_out <= x"E";
 						global_time <= global_time + '1';
 						data_pix_generated					<= global_time(23 downto 0) & x"00";
+						datak_pix_generated              <= "0000";
 						if (global_time(3 downto 0) = "1111") then
 							data_header_state					<= trailer;
 						elsif (global_time(2 downto 0) = "111") then
@@ -229,6 +236,7 @@ begin
 					when overflow =>
 						state_out <= x"9";
 						data_pix_generated					<= global_time(23 downto 0) & x"00";
+						datak_pix_generated              <= "0000";
 						data_header_state						<= part5;
 					
 					when trailer =>
@@ -236,6 +244,7 @@ begin
 						global_time <= global_time + '1';
 						data_pix_generated(31 downto 8)	<= (others => '0');
 						data_pix_generated(7 downto 0)	<= x"9c";
+						datak_pix_generated              <= "0001";
 						data_header_state 					<= part1;
 						
 					when others =>
@@ -251,4 +260,4 @@ begin
 end process;
 
 
-END rtl;
+end rtl;
