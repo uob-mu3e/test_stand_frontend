@@ -27,7 +27,7 @@ port (
     o_link_datak        : out   std_logic_vector(3 downto 0);
 
     o_terminated        : out   std_logic;
-    i_run_state         : in    feb_run_state;
+    i_run_state         : in    run_state_t;
 
     i_reset             : in    std_logic;
     i_clk               : in    std_logic--;

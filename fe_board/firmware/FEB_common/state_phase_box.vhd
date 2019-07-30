@@ -25,7 +25,7 @@ PORT (
     state_reset_rx          : in    std_logic;
     state_out_of_DAQ_rx     : in    std_logic;
     -- states in sync to clk_global:
-    state_sync_global       : out   feb_run_state
+    state_sync_global       : out   run_state_t
 );
 END ENTITY;
 
@@ -59,17 +59,17 @@ begin
 	process (clk_global, reset)
 	begin
 		if reset = '1' then
-			state_sync_global		<= idle;
+			state_sync_global		<= RUN_STATE_IDLE;
 		elsif rising_edge(clk_global) then
-			if(state_running_rx = '1') 	then state_sync_global <= running; end if;
-			if(state_idle_rx = '1') 		then state_sync_global <= idle; end if;
-			if(state_run_prepare_rx = '1') then state_sync_global <= run_prep; end if;
-			if(state_sync_rx = '1') then state_sync_global <= sync; end if;
-			if(state_terminating_rx = '1') then state_sync_global <= terminating; end if;
-			if(state_reset_rx = '1') then state_sync_global <= reset_state; end if;
-			if(state_link_test_rx = '1') then state_sync_global <= link_test; end if;
-			if(state_sync_test_rx = '1') then state_sync_global <= sync_test; end if;
-			if(state_out_of_DAQ_rx = '1') then state_sync_global <= out_of_DAQ; end if;
+			if(state_running_rx = '1') 	then state_sync_global <= RUN_STATE_RUNNING; end if;
+			if(state_idle_rx = '1') 		then state_sync_global <= RUN_STATE_IDLE; end if;
+			if(state_run_prepare_rx = '1') then state_sync_global <= RUN_STATE_PREP; end if;
+			if(state_sync_rx = '1') then state_sync_global <= RUN_STATE_SYNC; end if;
+			if(state_terminating_rx = '1') then state_sync_global <= RUN_STATE_TERMINATING; end if;
+			if(state_reset_rx = '1') then state_sync_global <= RUN_STATE_RESET; end if;
+			if(state_link_test_rx = '1') then state_sync_global <= RUN_STATE_LINK_TEST; end if;
+			if(state_sync_test_rx = '1') then state_sync_global <= RUN_STATE_SYNC_TEST; end if;
+			if(state_out_of_DAQ_rx = '1') then state_sync_global <= RUN_STATE_OUT_OF_DAQ; end if;
 		end if;
 	end process;
 
