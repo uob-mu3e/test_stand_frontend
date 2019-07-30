@@ -19,7 +19,7 @@ derive_clock_uncertainty
 
 # xcvr|av_ctrl.readdata
 if 1 {
-    set regs [ get_registers {xcvr_s4:*|av_ctrl.readdata*} ]
+    set regs [ get_registers {fe_block:*|xcvr_s4:*|av_ctrl.readdata*} ]
     set_max_delay -from [ get_registers * ] -to $regs 100
     set_min_delay -from [ get_registers * ] -to $regs -100
     set_net_delay -from [ get_registers * ] -to $regs -max -get_value_from_clock_period dst_clock_period -value_multiplier 0.8
