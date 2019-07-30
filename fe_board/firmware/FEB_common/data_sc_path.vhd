@@ -9,12 +9,12 @@ generic (
     SC_RAM_WIDTH_g : positive := 14--;
 );
 port (
-    i_avs_address        : in    std_logic_vector(15 downto 0);
-    i_avs_read           : in    std_logic;
-    o_avs_readdata       : out   std_logic_vector(31 downto 0);
-    i_avs_write          : in    std_logic;
-    i_avs_writedata      : in    std_logic_vector(31 downto 0);
-    o_avs_waitrequest    : out   std_logic;
+    i_avs_address       : in    std_logic_vector(15 downto 0);
+    i_avs_read          : in    std_logic;
+    o_avs_readdata      : out   std_logic_vector(31 downto 0);
+    i_avs_write         : in    std_logic;
+    i_avs_writedata     : in    std_logic_vector(31 downto 0);
+    o_avs_waitrequest   : out   std_logic;
 
     i_fifo_data         : in    std_logic_vector(35 downto 0);
     i_fifo_data_empty   : in    std_logic;
