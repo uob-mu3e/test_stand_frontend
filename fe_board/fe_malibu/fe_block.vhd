@@ -196,8 +196,8 @@ begin
         o_avs_waitrequest   => av_sc.waitrequest,
 
         i_fifo_data         => i_fifo_data,
-        i_fifo_empty        => i_fifo_empty,
-        o_fifo_rack         => o_fifo_rack,
+        i_fifo_data_empty   => i_fifo_empty,
+        o_fifo_data_read    => o_fifo_rack,
 
         i_link_data         => qsfp_rx_data(31 downto 0),
         i_link_datak        => qsfp_rx_datak(3 downto 0),
