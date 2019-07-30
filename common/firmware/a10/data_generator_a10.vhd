@@ -254,6 +254,8 @@ begin
 				end case;
 		else
 			state_out <= x"F";
+			data_pix_generated					<= x"000000BC";
+			datak_pix_generated              <= "0001";
 			data_pix_ready <= '0';
 		end if;
 	end if;

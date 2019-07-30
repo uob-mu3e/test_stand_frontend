@@ -452,7 +452,7 @@ process(tx_clk(0), reset_n)
 begin
 	if(reset_n = '0') then
 		idle_ch <= (others => '0');
-	elsif(tx_clk(0)'event and tx_clk(0) = '1') then
+	elsif(rising_edge(tx_clk(0))) then
 		idle_ch <= (others => '0');
 		if(rx_data(0) = x"000000BC" and rx_datak(0) = "0001") then
 			idle_ch(0) <= '1';
