@@ -20,7 +20,7 @@
 }
 ]]></parameter>
  <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
- <parameter name="device" value="10AX115N2F45E1SG" />
+ <parameter name="device" value="10AX115N2F45I1SG" />
  <parameter name="deviceFamily" value="Arria 10" />
  <parameter name="deviceSpeedGrade" value="1" />
  <parameter name="fabricMode" value="QSYS" />

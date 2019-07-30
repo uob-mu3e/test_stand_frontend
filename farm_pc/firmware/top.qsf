@@ -12,8 +12,6 @@ set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulati
 
 
 
-set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
-set_global_assignment -name DEVICE 10AX115N2F45E1SG
 
 
 
@@ -41,12 +39,20 @@ set_global_assignment -name EDA_NATIVELINK_GENERATE_SCRIPT_ONLY ON -section_id e
 #============================================================
 
 set_global_assignment -name TOP_LEVEL_ENTITY top
+
+
+
+
+
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+
+set_global_assignment -name QSYS_FILE dataflow/dflowfifo.qsys
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
-
-
-
-
 set_global_assignment -name QSYS_FILE nios.qsys
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name QSYS_FILE ddr3/ddr3_if.qsys
@@ -85,8 +91,4 @@ set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 set_global_assignment -name VHDL_FILE ddr3/ddr3_components.vhd
 set_global_assignment -name VHDL_FILE ddr3/ddr3_block.vhd
 set_global_assignment -name VHDL_FILE ddr3/ddr3_memory_controller.vhd
-
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT -section_id Top
-set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name VHDL_FILE dataflow/data_flow.vhd
