@@ -67,7 +67,7 @@ begin
   
   reset <= not reset_n;
   enable_pix <= '1';
-  slow_down <= x"00000000";--(others => '0');
+  slow_down <= x"00000001";--(others => '0');
   
   -- generate the clock
 ckProc: process
