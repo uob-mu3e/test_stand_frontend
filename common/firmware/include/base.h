@@ -16,6 +16,9 @@ void uart_init() {
     if(uart < 0) {
         printf("ERROR: can't open %s\n", JTAG_UART_NAME);
     }
+
+    printf("ALT_DEVICE_FAMILY = '%s'\n", ALT_DEVICE_FAMILY);
+    printf("\n");
 }
 
 char wait_key(useconds_t us = 100000) {

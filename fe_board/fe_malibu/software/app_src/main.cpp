@@ -27,9 +27,6 @@ alt_u32 alarm_callback(void*) {
 int main() {
     uart_init();
 
-    printf("ALT_DEVICE_FAMILY = '%s'\n", ALT_DEVICE_FAMILY);
-    printf("\n");
-
     si5345.init();
 
     alt_alarm alarm;

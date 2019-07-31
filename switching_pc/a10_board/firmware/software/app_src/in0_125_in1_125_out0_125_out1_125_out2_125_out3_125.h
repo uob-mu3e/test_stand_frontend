@@ -24,12 +24,12 @@
 
 typedef struct
 {
-	unsigned int address; /* 16-bit register address */
-	unsigned char value; /* 8-bit register data */
+	alt_u16 address; /* 16-bit register address */
+	alt_u16 value; /* 8-bit register data */
 
 } si5344_revd_register_t;
 
-si5344_revd_register_t const si5344_revd_registers[SI5344_REVD_REG_CONFIG_NUM_REGS] =
+si5344_revd_register_t const si5344_revd_registers[] =
 {
 
 	/* Start configuration preamble */
@@ -42,6 +42,7 @@ si5344_revd_register_t const si5344_revd_registers[SI5344_REVD_REG_CONFIG_NUM_RE
 	/*    Delay is worst case time for device to complete any calibration */
 	/*    that is running due to device state change previous to this script */
 	/*    being processed. */
+	{ 0xFFFF, 300 },
 
 	/* Start configuration registers */
 	{ 0x0006, 0x00 },

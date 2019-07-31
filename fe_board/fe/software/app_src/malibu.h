@@ -15,11 +15,6 @@ void menu_malibu() {
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
-        case '0':
-//            IOWR_ALTERA_AVALON_PIO_SET_BITS(PIO_BASE, 0x00010000);
-//            usleep(100);
-//            IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0x00010000);
-            break;
         case '1':
             malibu.powerup();
             break;
