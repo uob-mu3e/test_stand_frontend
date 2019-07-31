@@ -329,8 +329,8 @@ begin
         i_link_data         => qsfp_rx_data(31 downto 0),
         i_link_datak        => qsfp_rx_datak(3 downto 0),
 
-        o_link_data         => qsfp_tx_data(31 downto 0),
-        o_link_datak        => qsfp_tx_datak(3 downto 0),
+        o_link_data         => qsfp_tx_data(63 downto 32),
+        o_link_datak        => qsfp_tx_datak(7 downto 4),
 
         o_terminated        => terminated,
         i_run_state         => run_state,
