@@ -17,8 +17,8 @@ port (
     o_avs_waitrequest   : out   std_logic;
 
     i_fifo_data         : in    std_logic_vector(35 downto 0);
-    i_fifo_data_empty   : in    std_logic;
-    o_fifo_data_read    : out   std_logic;
+    i_fifo_empty        : in    std_logic;
+    o_fifo_rack         : out   std_logic;
 
     i_link_data         : in    std_logic_vector(31 downto 0);
     i_link_datak        : in    std_logic_vector(3 downto 0);
@@ -41,7 +41,7 @@ architecture arch of data_sc_path is
     signal ram_wdata_a : std_logic_vector(31 downto 0);
     signal ram_we_a : std_logic;
 
-    signal ram_re, ram_rvalid : std_logic;
+    signal ram_re_a, ram_rvalid_a : std_logic;
 
     signal data_to_fifo : std_logic_vector(35 downto 0);
     signal data_to_fifo_we : std_logic;
@@ -83,7 +83,7 @@ begin
     process(i_clk)
     begin
     if rising_edge(i_clk) then
-        ram_rvalid <= ram_re;
+        ram_rvalid_a <= ram_re_a;
     end if;
     end process;
 
@@ -95,12 +95,12 @@ begin
         o_fifo_we => sc_to_fifo_we,
         o_fifo_wdata => sc_to_fifo,
 
-        o_ram_addr => ram_addr_a,
-        o_ram_re => ram_re,
-        i_ram_rdata => ram_rdata_a,
-        i_ram_rvalid => ram_rvalid,
-        o_ram_we => ram_we_a,
-        o_ram_wdata => ram_wdata_a,
+        o_ram_addr      => ram_addr_a,
+        o_ram_re        => ram_re_a,
+        i_ram_rdata     => ram_rdata_a,
+        i_ram_rvalid    => ram_rvalid_a,
+        o_ram_we        => ram_we_a,
+        o_ram_wdata     => ram_wdata_a,
 
         i_reset_n => not i_reset,
         i_clk => i_clk--,
@@ -122,8 +122,8 @@ begin
         slowcontrol_read_req    => sc_from_fifo_re,
 
         data_in                 => i_fifo_data,
-        data_fifo_empty         => i_fifo_data_empty,
-        data_read_req           => o_fifo_data_read,
+        data_fifo_empty         => i_fifo_empty,
+        data_read_req           => o_fifo_rack,
 
         override_data_in        => (others => '0'),
         override_data_is_k_in   => (others => '0'),
