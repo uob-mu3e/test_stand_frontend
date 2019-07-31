@@ -223,7 +223,7 @@ begin
         clk_free        => i_clk,
         state_out_156   => run_state_156,
         state_out_125   => run_state_125,
-        reset_in        => i_reset_n,
+        reset_in        => i_nios_reset_n,
         resets_out      => open,
         phase_out       => open,
         data_in         => pod_rx_data(7 downto 0),

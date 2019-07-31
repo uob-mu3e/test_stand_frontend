@@ -19,7 +19,7 @@ PORT (
     reset_bypass     : in    std_logic_vector(11 downto 0); -- bypass of reset link using nios & jtag (for setups without the genesis board) 
     run_number_out   : out   std_logic_vector(31 downto 0); -- run number from midas, updated on state run_prep
     fpga_id          : in    std_logic_vector(15 downto 0); -- input of fpga id, needed for addressed reset commands in setups with >1 FEBs
-    terminated       : in    std_logic; -- changes run state from terminating to idle if set to 1  (data merger will set this if run was finished properly)
+    terminated       : in    std_logic; -- changes run state from terminating to idle if set to 1  (data merger will set this if run was finished properly, signal will be synced to clk_reset_rx INSIDE this entity)
     testout          : out   std_logic_vector(5 downto 0)
 );
 END ENTITY;
@@ -40,6 +40,9 @@ architecture rtl of resetsys is
     signal ustate_reset_rx          : std_logic;
     signal ustate_out_of_DAQ_rx     : std_logic;
 
+    -- terminated signal in sync to 125 clk of state controller
+    signal terminated_125           : std_logic;
+
     signal state_controller_in      : std_logic_vector(7 downto 0);
 
 ----------------begin resetsys------------------------
@@ -55,6 +58,16 @@ BEGIN
         end if;
     end if;
     end process;
+
+    -- sync terminated to 125 clk of state controller
+    i_ff_sync : entity work.ff_sync
+    generic map ( W => 1, N => 5 )
+    PORT MAP (
+        d(0)    => terminated,
+        q(0)    => terminated_125,
+        rst_n   => not reset_in,
+        clk     => clk_reset_rx_125
+    );
 
     i_state_controller : entity work.state_controller
     PORT MAP (
@@ -75,7 +88,7 @@ BEGIN
         reset_mask              => resets_out,
         link_test_payload       => open,
         sync_test_payload       => open,
-        terminated              => terminated
+        terminated              => terminated_125
     );
 
     i_state_phase_box : entity work.state_phase_box
