@@ -13,7 +13,6 @@ entity event_counter is
 		reset_n:           in std_logic;
 		rx_data:           in std_logic_vector (31 downto 0);
 		rx_datak:          in std_logic_vector (3 downto 0);
-		data_ready:        in std_logic;
 		dma_wen_reg:       in std_logic;
 		event_length:      out std_logic_vector (7 downto 0);
 		dma_data_wren:     out std_logic;
@@ -49,6 +48,19 @@ component fifo is
       );
 end component fifo;
 
+component fifo_36 is
+   port (
+      CLK		: in  STD_LOGIC;
+      RST		: in  STD_LOGIC;
+      WriteEn	: in  STD_LOGIC;
+      DataIn	: in  STD_LOGIC_VECTOR (35 downto 0);
+      ReadEn	: in  STD_LOGIC;
+      DataOut	: out STD_LOGIC_VECTOR (35 downto 0);
+      Empty	   : out STD_LOGIC;
+      Full	   : out STD_LOGIC
+      );
+end component fifo_36;
+
 ----------------signals---------------------
 signal reset : std_logic;
 
@@ -71,11 +83,24 @@ signal event_tagging_state : event_tagging_state_type;
 signal wait_cnt : std_logic;
 signal event_last_ram_add : std_logic_vector(7 downto 0);
 
+signal rx_data_in : std_logic_vector(35 downto 0);
+signal fifo_data_out : std_logic_vector(35 downto 0);
+signal fifo_empty : std_logic;
+signal fifo_ren : std_logic;
+signal fifo_data_ready : std_logic;
+signal data : std_logic_vector(31 downto 0);
+signal datak : std_logic_vector(3 downto 0);
+
 ----------------begin event_counter------------------------
 begin
 
 reset <= not reset_n;
 dma_data <= r_ram_data;
+
+rx_data_in <= rx_data & rx_datak;
+
+data <= fifo_data_out(35 downto 4);
+datak <= fifo_data_out(3 downto 0);
 
 e_ram : component ip_ram
    port map (
@@ -99,6 +124,42 @@ e_tagging_fifo : component fifo
 		RST        => reset--,
 );
 
+e_tagging_fifo_36 : component fifo_36
+   port map (
+		DataIn     => rx_data_in,
+		WriteEn    => '1',
+		ReadEn     => fifo_ren,
+		CLK        => clk,
+		DataOut    => fifo_data_out,
+		Full       => open,
+		Empty      => fifo_empty,
+		RST        => reset--,
+);
+
+-- readout fifo
+process(clk, reset_n)
+begin
+	if(reset_n = '0') then
+		fifo_data_ready <= '0';
+		fifo_ren        <= '0';
+	elsif(rising_edge(clk)) then
+      fifo_data_ready <= '0';
+
+      if (fifo_empty = '0') then
+         fifo_ren <= '1';
+      else
+         fifo_ren <= '0';
+      end if;
+      
+		if (data = x"000000BC" and datak = "0001" and fifo_empty = '0') then
+         -- idle
+		else	
+			fifo_data_ready <= '1';
+      end if;
+	end if;
+end process;
+
+
 -- link data to dma ram
 process(clk, reset_n)
 begin
@@ -114,8 +175,8 @@ begin
 		w_ram_en  <= '0';
 		w_fifo_en <= '0';
 
-		if (data_ready = '1') then
-			
+		if (fifo_data_ready = '1') then
+ 
 			w_ram_add   <= w_ram_add + 1;
 			
 			case event_tagging_state is

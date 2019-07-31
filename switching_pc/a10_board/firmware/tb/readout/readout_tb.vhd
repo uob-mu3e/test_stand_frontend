@@ -33,7 +33,6 @@ architecture behav of readout_tb is
          reset_n:           in std_logic;
          rx_data:           in std_logic_vector (31 downto 0);
          rx_datak:          in std_logic_vector (3 downto 0);
-         data_ready:        in std_logic;
          dma_wen_reg:       in std_logic;
          event_length:      out std_logic_vector (7 downto 0);
          dma_data_wren:     out std_logic;
@@ -68,7 +67,7 @@ begin
   
   reset <= not reset_n;
   enable_pix <= '1';
-  slow_down <= x"00000002";--(others => '0');
+  slow_down <= x"00000000";--(others => '0');
   
   -- generate the clock
 ckProc: process
@@ -88,19 +87,19 @@ begin
    wait;
 end process inita;
  
- e_data_gen : component data_generator_a10_tb
+e_data_gen : component data_generator_a10_tb
 	port map (
-		clk 				=> clk,
-		reset				=> reset,
+		clk 				     => clk,
+		reset				     => reset,
 		enable_pix	        => enable_pix,
-		random_seed 		=> (others => '1'),
-		start_global_time	=> (others => '0'),
+		random_seed 		  => (others => '1'),
+		start_global_time	  => (others => '0'),
 		data_pix_generated  => data_pix_generated,
 		datak_pix_generated => datak_pix_generated,
-		data_pix_ready		=> data_pix_ready,
-		slow_down			=> slow_down,
-		state_out			=> state_out_datagen--,
-    );
+		data_pix_ready		  => data_pix_ready,
+		slow_down			  => slow_down,
+		state_out			  => state_out_datagen--,
+);
 
 e_event_counter : component event_counter
    port map(
@@ -108,7 +107,6 @@ e_event_counter : component event_counter
          reset_n            => reset_n,
          rx_data            => data_pix_generated,
          rx_datak           => datak_pix_generated,
-         data_ready         => data_pix_ready,
          dma_wen_reg        => '1',
          event_length       => event_length,
          dma_data_wren      => dma_data_wren,
