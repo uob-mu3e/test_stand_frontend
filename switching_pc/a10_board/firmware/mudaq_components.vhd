@@ -37,10 +37,10 @@ end component;
 component event_counter is
   port (
 	clk:               in std_logic;
+	dma_clk:           in std_logic;
 	reset_n:           in std_logic;
 	rx_data:           in std_logic_vector (31 downto 0);
 	rx_datak:          in std_logic_vector (3 downto 0);
-	data_ready:        in std_logic;
 	dma_wen_reg:       in std_logic;
 	event_length:      out std_logic_vector (11 downto 0);
 	dma_data_wren:     out std_logic;

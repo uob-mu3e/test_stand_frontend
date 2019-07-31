@@ -448,58 +448,58 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 
 --fifo_read <= (not fifo_empty(0)) and (not fifo_empty(1)) and (not fifo_empty(2)) and (not fifo_empty(3));
 
-process(tx_clk(0), reset_n)
-begin
-	if(reset_n = '0') then
-		idle_ch <= (others => '0');
-	elsif(rising_edge(tx_clk(0))) then
-		idle_ch <= (others => '0');
-		if(rx_data(0) = x"000000BC" and rx_datak(0) = "0001") then
-			idle_ch(0) <= '1';
-		end if;
-		if(rx_data(1) = x"000000BC" and rx_datak(1) = "0001") then
-			idle_ch(1) <= '1';
-		end if;
-		if(rx_data(2) = x"000000BC" and rx_datak(2) = "0001") then
-			idle_ch(2) <= '1';
-		end if;
-		if(rx_data(3) = x"000000BC" and rx_datak(3) = "0001") then
-			idle_ch(3) <= '1';
-		end if;
-	end if;
-end process;
+--process(tx_clk(0), reset_n)
+--begin
+--	if(reset_n = '0') then
+--		idle_ch <= (others => '0');
+--	elsif(rising_edge(tx_clk(0))) then
+--		idle_ch <= (others => '0');
+--		if(rx_data(0) = x"000000BC" and rx_datak(0) = "0001") then
+--			idle_ch(0) <= '1';
+--		end if;
+--		if(rx_data(1) = x"000000BC" and rx_datak(1) = "0001") then
+--			idle_ch(1) <= '1';
+--		end if;
+--		if(rx_data(2) = x"000000BC" and rx_datak(2) = "0001") then
+--			idle_ch(2) <= '1';
+--		end if;
+--		if(rx_data(3) = x"000000BC" and rx_datak(3) = "0001") then
+--			idle_ch(3) <= '1';
+--		end if;
+--	end if;
+--end process;
 
-fifo_demerge :
-for i in 0 to 3 generate
---		data_demerger : data_demerge
---			port map(
---				clk				=> tx_clk(0),			-- receive clock (156.25 MHz)
---				reset				=> not reset_n,
---				aligned			=> '1',					-- word alignment achieved
---				data_in			=>	rx_data(i),			-- optical from frontend board
---				datak_in			=> rx_datak(i),
---				data_out			=> fifo_data(i),		-- to sorting fifos
---				data_ready		=>	fifo_wren(i),	  	-- write req for sorting fifos
---				datak_out      => fifo_datak(i),
---				sc_out			=> sc_data(i),			-- slowcontrol from frontend board
---				sc_out_ready	=> sc_ready(i),
---				fpga_id			=> open,					-- FPGA ID of the connected frontend board
---				sck_out      	=> sc_datak(i)--,
---		);
-		
-	fifo : transceiver_fifo
-		port map (
-			data    => rx_data(i) & rx_datak(i), --fifo_data_in_ch0 & fifo_datak_in_ch0,
-			wrreq   => not idle_ch(i),
-			rdreq   => not fifo_empty(i),
-			wrclk   => tx_clk(0),--rx_clk(i),
-			rdclk   => pcie_fastclk_out,
-			aclr    => not reset_n,
-			q       => fifo_out(i),
-			rdempty => fifo_empty(i),
-			wrfull  => open--,
-	);
-end generate fifo_demerge;
+--fifo_demerge :
+--for i in 0 to 3 generate
+----		data_demerger : data_demerge
+----			port map(
+----				clk				=> tx_clk(0),			-- receive clock (156.25 MHz)
+----				reset				=> not reset_n,
+----				aligned			=> '1',					-- word alignment achieved
+----				data_in			=>	rx_data(i),			-- optical from frontend board
+----				datak_in			=> rx_datak(i),
+----				data_out			=> fifo_data(i),		-- to sorting fifos
+----				data_ready		=>	fifo_wren(i),	  	-- write req for sorting fifos
+----				datak_out      => fifo_datak(i),
+----				sc_out			=> sc_data(i),			-- slowcontrol from frontend board
+----				sc_out_ready	=> sc_ready(i),
+----				fpga_id			=> open,					-- FPGA ID of the connected frontend board
+----				sck_out      	=> sc_datak(i)--,
+----		);
+--		
+--	fifo : transceiver_fifo
+--		port map (
+--			data    => rx_data(i) & rx_datak(i), --fifo_data_in_ch0 & fifo_datak_in_ch0,
+--			wrreq   => not idle_ch(i),
+--			rdreq   => not fifo_empty(i),
+--			wrclk   => tx_clk(0),--rx_clk(i),
+--			rdclk   => pcie_fastclk_out,
+--			aclr    => not reset_n,
+--			q       => fifo_out(i),
+--			rdempty => fifo_empty(i),
+--			wrfull  => open--,
+--	);
+--end generate fifo_demerge;
 
 
 ------------- Event Counter ------------------
@@ -523,11 +523,11 @@ tx_datak(1) <= datak_pix_generated;
 
 e_event_counter : entity work.event_counter
 	port map(
-		clk						=> pcie_fastclk_out,
+		clk						=> tx_clk(0),
+		dma_clk					=> pcie_fastclk_out,
 		reset_n					=> resets_n(RESET_BIT_EVENT_COUNTER),
-		rx_data					=> fifo_out(1)(35 downto 4),
-		rx_datak					=> fifo_out(1)(3 downto 0),
-		data_ready				=> not fifo_empty(1),
+		rx_data					=> rx_data(1),
+		rx_datak					=> rx_datak(1),
 		dma_wen_reg				=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
 		event_length			=> event_length,
 		dma_data_wren			=> dma_data_wren,
