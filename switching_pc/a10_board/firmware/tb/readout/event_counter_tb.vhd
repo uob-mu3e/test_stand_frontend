@@ -87,10 +87,9 @@ signal rx_data_in : std_logic_vector(35 downto 0);
 signal fifo_data_out : std_logic_vector(35 downto 0);
 signal fifo_empty : std_logic;
 signal not_fifo_empty : std_logic;
-signal fifo_data_ready : std_logic;
 signal fifo_data_write : std_logic;
-signal data : std_logic_vector(31 downto 0);
-signal datak : std_logic_vector(3 downto 0);
+
+signal saw_preamble : std_logic;
 
 ----------------begin event_counter------------------------
 begin
@@ -99,9 +98,6 @@ reset <= not reset_n;
 dma_data <= r_ram_data;
 
 not_fifo_empty <= not fifo_empty;
-
-data <= fifo_data_out(35 downto 4);
-datak <= fifo_data_out(3 downto 0);
 
 e_ram : component ip_ram
    port map (
@@ -144,12 +140,11 @@ begin
 		fifo_data_write <= '0';
 		rx_data_in <= (others => '0');
 	elsif(rising_edge(clk)) then
+		rx_data_in <= rx_data & rx_datak;
 		if (rx_data = x"000000BC" and rx_datak = "0001") then
          fifo_data_write <= '0';
-         rx_data_in <= (others => '0');
-		else	
+        else
 			fifo_data_write <= '1';
-			rx_data_in <= rx_data & rx_datak;
       end if;
 	end if;
 end process;
@@ -163,6 +158,7 @@ begin
 		event_tagging_state   <= waiting;
 		w_ram_en              <= '0';
 		w_fifo_en             <= '0';
+		saw_preamble 				  <= '0';
 		w_fifo_data				 <= (others => '0');
 		w_ram_data				 <= (others => '0');
 		w_ram_add				 <= (others => '1');
@@ -172,22 +168,25 @@ begin
 		w_fifo_en <= '0';
 
 		if (not_fifo_empty = '1') then
- 
-			w_ram_add   <= w_ram_add + 1;
+ 			if(saw_preamble = '1') then
+				w_ram_add   <= w_ram_add + 1;
+			end if;
 			
 			case event_tagging_state is
 
 				when waiting =>
-					if(data(31 downto 26) = "111010" and data(7 downto 0) = x"bc" and datak = "0001") then 
+					if(fifo_data_out(35 downto 30) = "111010" and fifo_data_out(11 downto 4) = x"bc" and fifo_data_out(3 downto 0) = "0001") then 
+						saw_preamble <= '1';
+						w_ram_add   <= w_ram_add + 1;
 						w_ram_en				  <= '1';
-						w_ram_data  		  <= data;
+						w_ram_data  		  <= fifo_data_out(35 downto 4);
 						event_tagging_state <= ending;
 					end if;
 					
 				when ending =>
 					w_ram_en		<= '1';
-					w_ram_data  		  <= data;
-					if(data = x"0000009c") then
+					w_ram_data  		  <= fifo_data_out(35 downto 4);
+					if(fifo_data_out(35 downto 4) = x"0000009c" and fifo_data_out(3 downto 0) = "0001") then
 						w_fifo_data <= w_ram_add + 1;
 						w_fifo_en   <= '1';
 						event_tagging_state <= waiting;
