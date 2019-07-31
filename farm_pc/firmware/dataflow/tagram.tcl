@@ -39,7 +39,7 @@ set_instance_parameter_value ram_1port_0 {GUI_RegOutput} {1}
 set_instance_parameter_value ram_1port_0 {GUI_SclrOutput} {0}
 set_instance_parameter_value ram_1port_0 {GUI_SingleClock} {0}
 set_instance_parameter_value ram_1port_0 {GUI_TBENCH} {0}
-set_instance_parameter_value ram_1port_0 {GUI_WIDTH_A} {26}
+set_instance_parameter_value ram_1port_0 {GUI_WIDTH_A} {32}
 set_instance_parameter_value ram_1port_0 {GUI_WRCONTROL_ACLR_A} {0}
 set_instance_parameter_value ram_1port_0 {GUI_X_MASK} {0}
 set_instance_parameter_value ram_1port_0 {GUI_rden} {0}
