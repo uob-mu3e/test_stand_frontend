@@ -36,7 +36,8 @@ struct fan_t {
 
     void menu() {
         while (1) {
-            printf("[fan] menu:\n");
+            printf("\n");
+            printf("[fan] -------- menu --------\n");
 
             printf("\n");
             printf(

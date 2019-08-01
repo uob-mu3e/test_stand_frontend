@@ -2,9 +2,6 @@
 #include "../include/base.h"
 #include "../include/xcvr.h"
 
-#include "../include/i2c.h"
-i2c_t i2c;
-
 #include "../../../fe/software/app_src/malibu.h"
 
 #include "sc.h"
@@ -15,17 +12,13 @@ i2c_t i2c;
 si5345_t si5345 { 0 }; // spi_slave = 0
 
 alt_u32 alarm_callback(void*) {
-    // watchdog
-    IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0xFF);
-    IOWR_ALTERA_AVALON_PIO_SET_BITS(PIO_BASE, alt_nticks() & 0xFF);
-
     sc_callback((alt_u32*)AVM_SC_BASE);
 
     return 10;
 }
 
 int main() {
-    uart_init();
+    base_init();
 
     si5345.init();
 

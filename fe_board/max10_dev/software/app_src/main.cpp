@@ -3,30 +3,12 @@
 
 #include <sys/alt_irq.h>
 #include <altera_avalon_timer_regs.h>
-#include <altera_avalon_pio_regs.h>
 #include <altera_modular_adc_sequencer_regs.h>
 
 alt_u8 celsius_lookup(int adc_avg_in);
 
-alt_u32 alarm_callback(void*) {
-    // watchdog
-    IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0xFF);
-    IOWR_ALTERA_AVALON_PIO_SET_BITS(PIO_BASE, alt_nticks() & 0xFF);
-
-    return 10;
-}
-
 int main() {
-    uart_init();
-
-    printf("ALT_DEVICE_FAMILY = '%s'\n", ALT_DEVICE_FAMILY);
-    printf("\n");
-
-    alt_alarm alarm;
-    int err = alt_alarm_start(&alarm, 0, alarm_callback, nullptr);
-    if(err) {
-        printf("ERROR: alt_alarm_start => %d\n", err);
-    }
+    base_init();
 
     while (1) {
         printf("\n");
@@ -88,9 +70,8 @@ int main() {
     return 0;
 }
 
-alt_u8 celsius_lookup(int adc_avg_in)
-{
-	const alt_u8 celsius_lookup_table[383]={
+alt_u8 celsius_lookup(int adc_avg_in) {
+	const alt_u8 celsius_lookup_table[383] = {
 			165,165,165,164,164,164,163,163,163,162,162,162,161,161,161,160,160,160,
 			159,159,159,158,158,158,157,157,157,156,156,156,155,155,155,154,154,154,
 			153,153,152,152,152,151,151,151,150,150,150,149,149,149,148,148,148,147,
@@ -109,9 +90,9 @@ alt_u8 celsius_lookup(int adc_avg_in)
 			 45,45,44,43,43,42,42,41,41,40,40,39,39,38,38,37,37,36,36,35,35,34,34,33,
 			 33,32,31,31,30,30,29,29,28,28,27,27,26,26,25,24,24,23,23,22,22,21,21,20,
 			 20,19,18,18,17,17,16,16,15,15,14,13,13,12,12,11,11,10, 9, 9, 8, 8, 7, 7,
-			  6, 5, 5, 4, 4, 3, 2, 2, 1, 1, 0 };
+			  6, 5, 5, 4, 4, 3, 2, 2, 1, 1, 0
+	};
 
 	//printf("temp = %d",adc_avg_in);
 	return (celsius_lookup_table[adc_avg_in]);
-
 }

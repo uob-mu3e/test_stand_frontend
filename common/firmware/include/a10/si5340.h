@@ -66,7 +66,10 @@ struct si5340_t {
 
     void menu() {
         while (1) {
-            printf("si5340:\n");
+            printf("\n");
+            printf("[si5340] -------- menu --------\n");
+
+            printf("\n");
             printf("  [1] => 100 MHz\n");
             printf("  [2] => 125 MHz\n");
             printf("  [3] => 156.25 MHz\n");

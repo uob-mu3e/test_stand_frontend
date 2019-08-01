@@ -4,8 +4,17 @@
 struct flash_t {
     cfi1616_t cfi;
 
+    alt_alarm alarm;
+
     void init() {
-        if(cfi.init((alt_u8*)(FLASH_BASE)) != 0) printf("ERROR: flash init failed\n");
+        printf("[flash] init\n");
+
+        if(cfi.init((alt_u8*)(FLASH_BASE)) != 0) printf("[flash] ERROR: flash init failed\n");
+
+        int err = alt_alarm_start(&alarm, 0, callback, this);
+        if(err) {
+            printf("[flash] ERROR: alt_alarm_start => %d\n", err);
+        }
     }
 
     alt_u32 hibit(alt_u32 n) {
@@ -25,34 +34,41 @@ struct flash_t {
 
     alt_u32 hist_ts[16];
 
-    int callback() {
+    alt_u32 callback() {
         alt_timestamp_start();
         int state = cfi.callback((alt_u8*)IORD(ctrl, 0), data, (alt_u32)IORD(ctrl, 1));
         alt_u32 ts_bin = hibit(alt_timestamp() / 125);
+
         if(ts_bin < 16) hist_ts[ts_bin]++;
-        if(state == -EAGAIN) return -EAGAIN;
+        if(state == -EAGAIN) return 1;
         if(state == 0) {
+//        asm volatile ("" : : : "memory");
             IOWR(ctrl, 0, 0);
             IOWR(ctrl, 1, 0);
         }
-        return 0;
+
+        return 10;
+    }
+
+    static
+    alt_u32 callback(void* flash) {
+        return ((flash_t*)flash)->callback();
     }
 
     void menu() {
         volatile alt_u8* addr_test = cfi.base + 0x05E80000;
 
         while (1) {
-            printf("[fan] menu:\n");
+            printf("\n");
+            printf("[flash] -------- menu --------\n");
 
             printf("\n");
             for(int i = 0; i <= 10; i++) {
                 printf("%8u", 1 << i);
-            }
-            printf("\n");
+            } printf("\n");
             for(int i = 0; i <= 10; i++) {
                 printf("%8u", hist_ts[i]);
-            }
-            printf("\n");
+            } printf("\n");
 
             printf("\n");
             printf("  [i] => init\n");
@@ -64,7 +80,7 @@ struct flash_t {
             char cmd = wait_key();
             switch(cmd) {
             case 'i':
-                init();
+                cfi.init((alt_u8*)(FLASH_BASE));
                 break;
             case 'e': {
                 int err;
