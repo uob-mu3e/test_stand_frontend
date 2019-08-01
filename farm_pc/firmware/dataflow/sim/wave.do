@@ -26,17 +26,6 @@ add wave -noupdate -radix hexadecimal /data_flow_tb/A_mem_write
 add wave -noupdate -radix hexadecimal /data_flow_tb/A_mem_read
 add wave -noupdate -radix hexadecimal /data_flow_tb/A_mem_q
 add wave -noupdate -radix hexadecimal /data_flow_tb/A_mem_q_valid
-add wave -noupdate -radix hexadecimal /data_flow_tb/B_mem_clk
-add wave -noupdate -radix hexadecimal /data_flow_tb/B_mem_ready
-add wave -noupdate -radix hexadecimal /data_flow_tb/B_mem_calibrated
-add wave -noupdate -radix hexadecimal /data_flow_tb/B_mem_addr
-add wave -noupdate -radix hexadecimal /data_flow_tb/B_mem_data
-add wave -noupdate -radix hexadecimal /data_flow_tb/B_mem_write
-add wave -noupdate -radix hexadecimal /data_flow_tb/B_mem_read
-add wave -noupdate -radix hexadecimal /data_flow_tb/B_mem_q
-add wave -noupdate -radix hexadecimal /data_flow_tb/B_mem_q_valid
-add wave -noupdate -radix hexadecimal /data_flow_tb/toggle
-add wave -noupdate -radix hexadecimal /data_flow_tb/startinput
 add wave -noupdate -radix hexadecimal /data_flow_tb/dut/mem_mode_A
 add wave -noupdate -radix hexadecimal /data_flow_tb/dut/mem_mode_B
 add wave -noupdate -radix hexadecimal /data_flow_tb/dut/ddr3if_state_A
@@ -65,6 +54,7 @@ add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_tagram_address
 add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_tagram_addrnext
 add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_tagram_datanext
 add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_mem_addr_reg
+add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_mem_addr_tag
 add wave -noupdate -radix hexadecimal /data_flow_tb/dut/readfifo_A
 add wave -noupdate -radix hexadecimal /data_flow_tb/dut/qfifo_A
 add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_tagts_last
@@ -75,10 +65,19 @@ add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_reqfifoq
 add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_req_last
 add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_readsubstate
 add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_readwords
+add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_memreadfifo_data
+add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_memreadfifo_write
+add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_memreadfifo_read
+add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_memreadfifo_q
+add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_memreadfifo_empty
+add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_memdatafifo_empty
+add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_memdatafifo_read
+add wave -noupdate -radix hexadecimal /data_flow_tb/dut/A_memdatafifo_q
+add wave -noupdate -radix hexadecimal /data_flow_tb/dut/output_write_state
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {0 ps} 0}
-quietly wave cursor active 0
-configure wave -namecolwidth 150
+WaveRestoreCursors {{Cursor 1} {105102466 ps} 0}
+quietly wave cursor active 1
+configure wave -namecolwidth 263
 configure wave -valuecolwidth 100
 configure wave -justifyvalue left
 configure wave -signalnamewidth 0
@@ -92,4 +91,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {4999050 ps} {5000050 ps}
+WaveRestoreZoom {105966218 ps} {106090754 ps}

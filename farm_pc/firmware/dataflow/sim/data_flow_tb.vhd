@@ -161,22 +161,22 @@ dut:data_flow
 	process begin
 		A_mem_ready <= '0';
 		B_mem_ready <= '0';
-		wait for 100 ns;
+		wait for A_mem_clk_period * 25;
 		A_mem_ready <= '1';
 		B_mem_ready <= '1';
-		wait for 1200 ns;
+		wait for A_mem_clk_period * 300;
 		A_mem_ready <= '0';
 		B_mem_ready <= '0';
-		wait for 4 ns;
+		wait for A_mem_clk_period;
 		A_mem_ready <= '1';
 		B_mem_ready <= '1';
-		wait for 800 ns;
+		wait for A_mem_clk_period * 250;
 		A_mem_ready <= '0';
 		B_mem_ready <= '0';
-		wait for 4 ns;
+		wait for A_mem_clk_period;
 		A_mem_ready <= '1';
 		B_mem_ready <= '1';
-		wait for 2000 ns;
+		wait for A_mem_clk_period * 600;
 	end process;
 
 
@@ -213,6 +213,26 @@ dut:data_flow
 					  ts_in_next & ts_in_next & ts_in_next & ts_in_next & ts_in_next & ts_in_next & ts_in_next;
 		end if;
 	end if;
+	end process;
+
+
+	-- Request generation
+	process begin
+	req_en_A <= '0';	
+	wait for pcieclk_period * 26500;
+	req_en_A <= '1';
+	ts_req_A <= x"00010000"; 	
+	wait for pcieclk_period;
+	req_en_A <= '1';
+	ts_req_A <= x"00030002"; 	
+	wait for pcieclk_period;
+	req_en_A <= '1';
+	ts_req_A <= x"000A0009"; 	
+	wait for pcieclk_period;
+	req_en_A <= '0';
+	wait for pcieclk_period;
+	req_en_A <= '0';
+	tsblock_done	<= (others => '0');
 	end process;
 	
 end TB;

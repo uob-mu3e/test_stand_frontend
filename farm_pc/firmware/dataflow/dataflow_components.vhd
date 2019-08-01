@@ -106,5 +106,32 @@ package dataflow_components is
                         wrfull  : out std_logic                                         -- wrfull
                 );
         end component reqfifo;
- 
+		  
+        component memreadfifo is
+                port (
+                        data    : in  std_logic_vector(37 downto 0) := (others => 'X'); -- datain
+                        wrreq   : in  std_logic                     := 'X';             -- wrreq
+                        rdreq   : in  std_logic                     := 'X';             -- rdreq
+                        wrclk   : in  std_logic                     := 'X';             -- wrclk
+                        rdclk   : in  std_logic                     := 'X';             -- rdclk
+                        q       : out std_logic_vector(37 downto 0);                    -- dataout
+                        rdempty : out std_logic;                                        -- rdempty
+                        wrfull  : out std_logic                                         -- wrfull
+                );
+        end component memreadfifo;
+
+         component memdatafifo is
+                port (
+                        data    : in  std_logic_vector(255 downto 0) := (others => 'X'); -- datain
+                        wrreq   : in  std_logic                      := 'X';             -- wrreq
+                        rdreq   : in  std_logic                      := 'X';             -- rdreq
+                        wrclk   : in  std_logic                      := 'X';             -- wrclk
+                        rdclk   : in  std_logic                      := 'X';             -- rdclk
+                        q       : out std_logic_vector(255 downto 0);                    -- dataout
+                        rdempty : out std_logic;                                         -- rdempty
+                        wrfull  : out std_logic                                          -- wrfull
+                );
+        end component memdatafifo;
+		  
+		  
 end package dataflow_components;
