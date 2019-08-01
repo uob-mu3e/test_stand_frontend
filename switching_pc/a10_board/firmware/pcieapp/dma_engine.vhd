@@ -598,12 +598,13 @@ begin
             if ( to_integer( unsigned(count_pages) ) >= to_integer( unsigned(dma_data_pages_out_fpga) ) ) then
               dma_data_mem_addr_fpga 	<= dma_data_mem_addr_fpga + '1';
               count_pages 				<= (others => '0');
+              
+              if ( dma_data_mem_addr_fpga + '1' >= dma_data_n_addrs_reg) then	-- reached end of DMA buffer, start at beginning again
+                dma_data_mem_addr_fpga 	<= (others => '0');
+                remoteaddress_var 		<= (others => '0');
+              end if;
+              
             end if;
-            
-            if ( dma_data_mem_addr_fpga + '1' >= dma_data_n_addrs_reg) then	-- reached end of DMA buffer, start at beginning again
-              dma_data_mem_addr_fpga 	<= (others => '0');
-              remoteaddress_var 		<= (others => '0');
-            end if;	
             
             
             tx_valid_r		<= '1';
