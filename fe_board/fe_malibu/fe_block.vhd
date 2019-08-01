@@ -116,7 +116,8 @@ architecture arch of fe_block is
 
     signal reset_bypass : std_logic_vector(11 downto 0);
 
-    signal run_state : feb_run_state;
+    signal run_state_125 : run_state_t;
+    signal run_state_156 : run_state_t;
     signal terminated : std_logic;
 
 begin
@@ -206,7 +207,7 @@ begin
         o_link_datak        => qsfp_tx_datak(3 downto 0),
 
         o_terminated        => terminated,
-        i_run_state         => run_state,
+        i_run_state         => run_state_156,
 
         i_reset             => not i_reset_n,
         i_clk               => i_clk--,
@@ -216,15 +217,17 @@ begin
 
     e_reset_system : entity work.resetsys
     port map (
-        clk_reset_rx    => i_pod_refclk,
-        clk_global      => i_pod_refclk,
-        clk_free        => i_pod_refclk,
-        reset_in        => i_reset_n,
+        clk_reset_rx_125=> i_pod_refclk,
+        clk_global_125  => i_nios_clk,
+        clk_156         => i_clk,
+        clk_free        => i_clk,
+        state_out_156   => run_state_156,
+        state_out_125   => run_state_125,
+        reset_in        => i_nios_reset_n,
         resets_out      => open,
         phase_out       => open,
         data_in         => pod_rx_data(7 downto 0),
         reset_bypass    => reset_bypass,
-        state_out       => run_state,
         run_number_out  => open,
         fpga_id         => FPGA_ID_g,
         terminated      => terminated,

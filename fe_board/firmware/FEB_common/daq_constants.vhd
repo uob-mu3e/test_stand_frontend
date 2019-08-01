@@ -11,6 +11,17 @@ subtype reg32 is std_logic_vector(31 downto 0);
 
 type reg64b_array_t is array (natural range <>) of std_logic_vector(63 downto 0);
 
+subtype run_state_t is std_logic_vector(9 downto 0);
+constant RUN_STATE_IDLE        : run_state_t := "0000000001";
+constant RUN_STATE_PREP        : run_state_t := "0000000010";
+constant RUN_STATE_SYNC        : run_state_t := "0000000100";
+constant RUN_STATE_RUNNING     : run_state_t := "0000001000";
+constant RUN_STATE_TERMINATING : run_state_t := "0000010000";
+constant RUN_STATE_LINK_TEST   : run_state_t := "0000100000";
+constant RUN_STATE_SYNC_TEST   : run_state_t := "0001000000";
+constant RUN_STATE_RESET       : run_state_t := "0010000000";
+constant RUN_STATE_OUT_OF_DAQ  : run_state_t := "0100000000";
+
 type feb_run_state is (
     idle,
     run_prep,
