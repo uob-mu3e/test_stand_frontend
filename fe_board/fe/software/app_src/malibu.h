@@ -22,10 +22,10 @@ void menu_malibu() {
             malibu.powerdown();
             break;
         case '3':
-            malibu.PowerUpASIC(0);
+            malibu.stic_configure(0, stic3_config_ALL_OFF);
             break;
         case '4':
-            malibu.SPI_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
+            malibu.stic_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
             break;
         case 's':
             printf("buffer_full/frame_desync/rx_pll_lock: 0x%03X\n", ((volatile alt_u32*)AVM_TEST_BASE)[0x8]);
