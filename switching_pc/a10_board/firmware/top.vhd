@@ -194,7 +194,7 @@ architecture rtl of top is
 		signal cpu_pio_i : std_logic_vector(31 downto 0);
 		signal flash_rst_n : std_logic;
 		signal debug_nios : std_logic_vector(31 downto 0);
-		signal avm_qsfp : work.util.avalon_t;
+		signal av_qsfp : work.util.avalon_t;
 		
 		-- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
 		signal ZERO : std_logic := '0';
@@ -328,12 +328,12 @@ port map (
 	
 	rst_reset_n                			=> cpu_reset_n_q,
 
-   avm_qsfp_address       					=> avm_qsfp.address(15 downto 0),
-	avm_qsfp_read          					=> avm_qsfp.read,
-	avm_qsfp_readdata      					=> avm_qsfp.readdata,
-	avm_qsfp_write         					=> avm_qsfp.write,
-	avm_qsfp_writedata     					=> avm_qsfp.writedata,
-	avm_qsfp_waitrequest   					=> avm_qsfp.waitrequest,
+   avm_qsfp_address       					=> av_qsfp.address(13 downto 0),
+	avm_qsfp_read          					=> av_qsfp.read,
+	avm_qsfp_readdata      					=> av_qsfp.readdata,
+	avm_qsfp_write         					=> av_qsfp.write,
+	avm_qsfp_writedata     					=> av_qsfp.writedata,
+	avm_qsfp_waitrequest   					=> av_qsfp.waitrequest,
 
 	flash_tcm_address_out				 	=> flash_tcm_address_out,
 	flash_tcm_data_out 						=> FLASH_D,
@@ -437,12 +437,12 @@ port map (
     i_pll_clk   => input_clk,
     i_cdr_clk   => input_clk,
 
-    i_avs_address     => avm_qsfp.address(15 downto 2),
-    i_avs_read        => avm_qsfp.read,
-    o_avs_readdata    => avm_qsfp.readdata,
-    i_avs_write       => avm_qsfp.write,
-    i_avs_writedata   => avm_qsfp.writedata,
-    o_avs_waitrequest => avm_qsfp.waitrequest,
+    i_avs_address     => av_qsfp.address(13 downto 0),
+    i_avs_read        => av_qsfp.read,
+    o_avs_readdata    => av_qsfp.readdata,
+    i_avs_write       => av_qsfp.write,
+    i_avs_writedata   => av_qsfp.writedata,
+    o_avs_waitrequest => av_qsfp.waitrequest,
 
     i_reset     => not CPU_RESET_n,
     i_clk       => input_clk--,
