@@ -122,6 +122,9 @@ entity ddr3_block is
 	signal B_burstcount:		std_logic_vector(6 downto 0);
 	signal B_readdatavalid: std_logic;
 	
+	signal A_errout:			reg32;
+	signal B_errout:			reg32;
+	
 	begin
 
 	ddr3_A:ddr3_if

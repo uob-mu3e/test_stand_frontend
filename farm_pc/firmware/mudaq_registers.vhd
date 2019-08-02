@@ -39,10 +39,10 @@ package mudaq_registers is
 		constant DDR3_CONTROL_W									: integer := 16#20#;
 		constant DDR3_BIT_ENABLE_A								: integer := 0;
 		constant DDR3_BIT_COUNTERTEST_A						: integer := 1;
-		subtype  DDR_COUNTERSEL_RANGE_A						is integer range 15 downto 14;		
+		subtype  DDR3_COUNTERSEL_RANGE_A						is integer range 15 downto 14;		
 		constant DDR3_BIT_ENABLE_B								: integer := 16;
 		constant DDR3_BIT_COUNTERTEST_B						: integer := 17;
-		subtype  DDR_COUNTERSEL_RANGE_B						is integer range 31 downto 30;
+		subtype  DDR3_COUNTERSEL_RANGE_B						is integer range 31 downto 30;
 		
 		constant	DATA_REQ_A_W									: integer := 16#21#;
 		constant	DATA_REQ_B_W									: integer := 16#22#;

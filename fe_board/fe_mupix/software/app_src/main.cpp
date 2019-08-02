@@ -4,7 +4,7 @@
 
 #include "sc.h"
 
-#include "si5345.h"
+#include "../../../fe/software/app_src/si5345.h"
 si5345_t si5345 { 0 };
 
 alt_u32 alarm_callback(void*) {
@@ -26,12 +26,12 @@ int main() {
     alt_alarm alarm;
     int err = alt_alarm_start(&alarm, 0, alarm_callback, nullptr);
     if(err) {
-        printf("ERROR: alt_alarm_start => %d\n%d\n", err);
+        printf("ERROR: alt_alarm_start => %d\n", err);
     }
 
     while (1) {
         printf("\n");
-        printf("FE_S4 (MALIBU):\n");
+        printf("fe_mupix:\n");
         printf("  [1] => xcvr qsfp\n");
         printf("  [3] => sc\n");
         printf("  [4] => xcvr pod\n");

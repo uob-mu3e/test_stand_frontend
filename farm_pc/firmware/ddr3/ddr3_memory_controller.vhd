@@ -62,21 +62,18 @@ architecture RTL of ddr3_memory_controller is
 	constant counter_address_1		:  std_logic_vector(25 downto 0) := (others => '1');
 	signal counter_writedata		:	std_logic_vector(511 downto 0);
 	signal counter_readdata			:	std_logic_vector(511 downto 0);
-	signal counter_readdata_reg	:	std_logic_vector(511 downto 0);
 	signal counter_readdatavalid	:  std_logic;
 	signal counter_readdatavalid_reg	:  std_logic;
-	signal counter_burstcount		:	std_logic_vector(6 downto 0);
 		
 	type counter_state_type is (disabled, writing, reading, done);
 	signal counter_state : counter_state_type;
 	signal mycounter 	: reg32;
-	signal addrMSB		: std_logic;
+	
 	signal RWDone			: std_logic;
 	
 	signal Running		: std_logic;
 	
 	signal LastC		: std_logic_vector(27 downto 0);
-	signal LastLastC	: std_logic_vector(27 downto 0);
 	
 	signal check		: std_logic_vector(15 downto 0);
 	signal pcheck		: std_logic_vector(15 downto 0);
@@ -95,8 +92,8 @@ begin
 
 
 	-- Counter forwarding
-	errout		<= poserr_reg 		when ddr3control(DDR3_COUTERSEL_RANGE_A) = "01" else			
-						counterr_reg	when ddr3control(DDR3_COUTERSEL_RANGE_A) = "10" else
+	errout		<= poserr_reg 		when ddr3control(DDR3_COUNTERSEL_RANGE_A) = "01" else			
+						counterr_reg	when ddr3control(DDR3_COUNTERSEL_RANGE_A) = "10" else
 						timecount_reg;
 
 	-- Status register
@@ -130,7 +127,7 @@ M_writedata	<= counter_writedata when mode = countertest else
 					(others => '0');
 					
 					
-ddr3_read_valid	<= M_readdatavalid when mode = dataflow else 0;
+ddr3_read_valid	<= M_readdatavalid when mode = dataflow else '0';
 ddr3dataout			<= M_readdata;			
 
 -- This is the HW burst size...					
@@ -189,13 +186,10 @@ elsif(M_clk'event and M_clk='1') then
 	counter_read 	<= '0';
 	counter_write 	<= '0';
 	
-	addrMSB			<= counter_address(counter_address'left);
-	
 	-- Register once to ease timing
 	counter_readdata 			<= M_readdata;
 	counter_readdatavalid 	<= M_readdatavalid;
 	
-	counter_readdata_reg				<= counter_readdata;
 	counter_readdatavalid_reg 		<= counter_readdatavalid;
 	case counter_state is
 		when disabled =>
@@ -216,8 +210,6 @@ elsif(M_clk'event and M_clk='1') then
 		when writing =>
 		
 			timecount_reg <= timecount_reg + '1';
-		
-			counter_burstcount <= "0000001";
 			
 			counter_write <= '1';
 			
@@ -265,8 +257,7 @@ elsif(M_clk'event and M_clk='1') then
 			
 		when reading =>
 		
-			timecount_reg <= timecount_reg + '1';
-			counter_burstcount <= ddr3control(30 downto 24);			
+			timecount_reg <= timecount_reg + '1';	
 			counter_read <= '1';
 
 			
@@ -286,8 +277,6 @@ elsif(M_clk'event and M_clk='1') then
 			
 			pcheck <= (others => '0');	
 			check <= (others => '0');
-			
-			LastLastC	<= LastC;
 			
 			if (counter_readdatavalid = '1') then
 				Running <= '1';

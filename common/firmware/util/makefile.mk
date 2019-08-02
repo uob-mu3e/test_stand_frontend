@@ -1,3 +1,6 @@
+#
+# author : Alexandr Kozlinskiy
+#
 
 ifndef QUARTUS_ROOTDIR
     $(error QUARTUS_ROOTDIR is undefined)
@@ -61,7 +64,7 @@ $(APP_DIR)/main.elf : $(APP_DIR)_src/* $(BSP_DIR)
 	$(MAKE) -C $(APP_DIR) clean
 	$(MAKE) -C $(APP_DIR)
 
-.PHONY : app
+.PHONY : app $(APP_DIR)/main.elf
 app : $(APP_DIR)/main.elf
 	# generate srec
 	elf2flash --base=0x0 --end=0x0FFFFFFF \

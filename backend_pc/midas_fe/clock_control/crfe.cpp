@@ -308,6 +308,8 @@ INT frontend_init()
 {
    HNDLE hKey;
 
+   // ODB Setup //////////////////////////////
+
    // create Settings structure in ODB
    db_create_record(hDB, 0, "Equipment/Clock Reset/Settings", strcomb(cr_settings_str));
    db_find_key(hDB, 0, "/Equipment/Clock Reset", &hKey);
@@ -319,6 +321,17 @@ INT frontend_init()
    db_create_key(hDB, 0, "Custom/Clock and Reset&", TID_STRING);
    const char * name = "cr.html";
    db_set_value(hDB,0,"Custom/Clock and Reset&",name, sizeof(name), 1,TID_STRING);
+
+   HNDLE histKey;
+
+   db_find_key(hDB, 0, "/History/Display/Clock Reset", &histKey);
+   if(!histKey){
+#include "clock_and_reset_history_panels_odb.h"
+   db_create_record(hDB, 0, "/History/Display/Clock Reset", strcomb(clock_and_reset_history_panels));
+   }
+
+
+   /////////////////////////////////////////////
 
    char ip[256];// = "10.32.113.218";
    int size = 256;

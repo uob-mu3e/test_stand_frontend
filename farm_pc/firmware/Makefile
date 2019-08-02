@@ -22,4 +22,6 @@ clean:
 
 include util/makefile.mk
 
+nios.qsys : device.tcl
 
+flow : nios.sopcinfo

@@ -34,6 +34,58 @@ component data_demerge is
 	);
 end component;
 
+component ip_ram is
+  port (
+		data      : in  std_logic_vector(31 downto 0) := (others => 'X'); -- datain
+		wraddress : in  std_logic_vector(11 downto 0) := (others => 'X'); -- wraddress
+		rdaddress : in  std_logic_vector(11 downto 0) := (others => 'X'); -- rdaddress
+		wren      : in  std_logic                     := 'X';             -- wren
+		clock     : in  std_logic                     := 'X';             -- clock
+		q         : out std_logic_vector(31 downto 0)                     -- dataout
+  );
+end component ip_ram;
+
+component ip_tagging_fifo is
+  port (
+		data  : in  std_logic_vector(11 downto 0) := (others => 'X'); -- datain
+		wrreq : in  std_logic                     := 'X';             -- wrreq
+		rdreq : in  std_logic                     := 'X';             -- rdreq
+		clock : in  std_logic                     := 'X';             -- clk
+		q     : out std_logic_vector(11 downto 0);                    -- dataout
+		full  : out std_logic;                                        -- full
+		aclr  : in  std_logic;
+		empty : out std_logic                                         -- empty
+  );
+end component ip_tagging_fifo;
+
+component linear_shift is 
+	generic (
+		g_m             : integer           := 7;
+		g_poly          : std_logic_vector  := "1100000" -- x^7+x^6+1 
+	);
+	port (
+		i_clk           : in  std_logic;
+		reset_n         : in  std_logic;
+		i_sync_reset    : in  std_logic;
+		i_seed          : in  std_logic_vector (g_m-1 downto 0);
+		i_en            : in  std_logic;
+		o_lsfr          : out std_logic_vector (g_m-1 downto 0)
+	);
+end component linear_shift;
+
+component data_generator_a10 is
+    port(
+		clk:                 in  std_logic;
+		reset:               in  std_logic;
+		enable_pix:          in  std_logic;
+		random_seed:			in  std_logic_vector (15 downto 0);
+		start_global_time:	in  std_logic_vector(47 downto 0);
+		data_pix_generated:  out std_logic_vector(31 downto 0);
+		data_pix_ready:      out std_logic;
+		slow_down:				in  std_logic_vector(31 downto 0)
+);
+end component data_generator_a10;
+
 component ip_transiver is
 	port (
 		reconfig_write          : in  std_logic_vector(0 downto 0)   := (others => 'X'); -- write
@@ -145,8 +197,9 @@ component sc_slave is
 		link_data_in_k:		in std_logic_vector(3 downto 0);
 		mem_data_out:		out std_logic_vector(31 downto 0);
 		mem_addr_out:		out std_logic_vector(15 downto 0);
+		mem_addr_finished_out:       out std_logic_vector(15 downto 0);
 		mem_wren:			out std_logic;			
-		stateout:			out std_logic_vector(27 downto 0)
+		stateout:			out std_logic_vector(3 downto 0)
 		);		
 end component sc_slave;
 

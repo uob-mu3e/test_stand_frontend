@@ -2,11 +2,16 @@
 #include "../include/base.h"
 #include "../include/xcvr.h"
 
-#include "malibu.h"
-#include "sc.h"
+#include "../include/i2c.h"
+i2c_t i2c;
 
-#include "si5345.h"
-si5345_t si5345 { 0 };
+#include "../../../fe/software/app_src/malibu.h"
+
+#include "sc.h"
+#include "../../../fe/software/app_src/mscb_user.h"
+
+#include "../../../fe/software/app_src/si5345.h"
+si5345_t si5345 { 4 }; // spi_slave = 4
 
 alt_u32 alarm_callback(void*) {
     // watchdog
@@ -29,17 +34,18 @@ int main() {
     alt_alarm alarm;
     int err = alt_alarm_start(&alarm, 0, alarm_callback, nullptr);
     if(err) {
-        printf("ERROR: alt_alarm_start => %d\n%d\n", err);
+        printf("ERROR: alt_alarm_start => %d\n", err);
     }
 
     while (1) {
         printf("\n");
-        printf("FE_S4 (MALIBU):\n");
+        printf("fe_scifi:\n");
         printf("  [1] => xcvr qsfp\n");
         printf("  [2] => malibu\n");
         printf("  [3] => sc\n");
         printf("  [4] => xcvr pod\n");
         printf("  [5] => si5345\n");
+        printf("  [6] => mscb (exit by reset only)\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -58,6 +64,9 @@ int main() {
             break;
         case '5':
             si5345.menu();
+            break;
+        case '6':
+            mscb_main();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

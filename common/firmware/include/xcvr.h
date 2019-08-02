@@ -1,3 +1,7 @@
+/*
+ * author : Alexandr Kozlinskiy
+ * date : 2019
+ */
 
 void menu_xcvr(volatile alt_u32* xcvr) {
     while (1) {

@@ -1,5 +1,8 @@
 # coroutine.tcl --
 #
+# author : Alexandr Kozlinskiy
+# date : 2017-11-24
+#
 # source: https://github.com/tcltk/tcllib/tree/master/modules/coroutine
 #
 

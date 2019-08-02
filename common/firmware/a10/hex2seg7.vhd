@@ -1,3 +1,8 @@
+--
+-- author : Alexandr Kozlinskiy
+-- date : 2017-01-19
+--
+
 library ieee;
 use ieee.std_logic_1164.all;
 

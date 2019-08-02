@@ -1,3 +1,7 @@
+/*
+ * author : Alexandr Kozlinskiy
+ * date : 2019
+ */
 
 #include "base.h"
 
@@ -15,7 +19,7 @@ int main() {
     alt_alarm alarm;
     int err = alt_alarm_start(&alarm, 10, alarm_callback, nullptr);
     if(err) {
-        printf("ERROR: alt_alarm_start => %d\n%d\n", err);
+        printf("ERROR: alt_alarm_start => %d\n", err);
     }
 
     while (1) {

@@ -142,7 +142,7 @@ begin
 		o_lsfr 			=> lsfr_overflow
 	);
 
-process (clk)
+process (clk,reset)
 
 variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
 variable overflow_idx	  : integer range 0 to 15 := 0;

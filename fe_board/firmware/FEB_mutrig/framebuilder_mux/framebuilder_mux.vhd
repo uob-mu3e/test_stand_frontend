@@ -177,6 +177,7 @@ o_sync_error<=l_frameid_nonsync and s_Hpart; --show when valid, can be used for 
 def_mux_sel : process (i_source_data,s_sel_gnt)
 begin
 	s_sel_data<=(others =>'0');
+	s_chnum <= (others => '0');
 	for i in N_INPUTS-1 downto 0 loop
 		if(s_sel_gnt(i)='1') then
 			s_sel_data<=i_source_data(i);

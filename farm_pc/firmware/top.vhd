@@ -7,6 +7,7 @@ use work.pcie_components.all;
 use work.mudaq_registers.all;
 use work.mudaq_components.all;
 use work.ddr3_components.all;
+use work.dataflow_components.all;
 
 
 entity top is
@@ -507,7 +508,7 @@ LED_BRACKET(3) <= writeregs(LED_REGISTER_W)(3);
 
 cpu_reset_n_q <= push_button1_db;
 
-nios_i : component nios
+nios_i : component work.cmp.nios
 port map (
 	clk_clk                    			=> clk,               
 	flash_tcm_address_out(27 downto 2) 	=> FLASH_A,
@@ -519,7 +520,8 @@ port map (
 	i2c_scl_oe  								=> i2c_scl_oe,
 	i2c_sda_in  								=> i2c_sda_in,
 	i2c_sda_oe  								=> i2c_sda_oe,
-	reset_reset_n              			=> push_button3_db--resets_n(RESET_BIT_NIOS)          
+	reset_reset_n              			=> push_button3_db--resets_n(RESET_NIOS)          
+
 );
 
 FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
@@ -663,11 +665,7 @@ rec_switching : component receiver_switching
 		rx_disperr_ch3_rx_disperr               	=> rx_disperr_ch3_rx_disperr
 );
 
-word_align_ch0 : component rx_align
-generic map (
-	CHANNEL_WIDTH_g => 32,
-	K_g => X"BC"--,
-)
+word_align_ch0 : entity work.rx_align
 port map (
 	o_data              => data_ch0,
 	o_datak             => datak_ch0,
@@ -683,11 +681,7 @@ port map (
 	i_clk               => rx_clkout_ch0_clk
 );
 
-word_align_ch1 : component rx_align
-generic map (
-	CHANNEL_WIDTH_g => 32,
-	K_g => X"BC"--,
-)
+word_align_ch1 : entity work.rx_align
 port map (
 	o_data              => data_ch1,
 	o_datak             => datak_ch1,
@@ -703,11 +697,7 @@ port map (
 	i_clk               => rx_clkout_ch1_clk
 );
 
-word_align_ch2 : component rx_align
-generic map (
-	CHANNEL_WIDTH_g => 32,
-	K_g => X"BC"--,
-)
+word_align_ch2 : entity work.rx_align
 port map (
 	o_data              => data_ch2,
 	o_datak             => datak_ch2,
@@ -723,11 +713,7 @@ port map (
 	i_clk               => rx_clkout_ch2_clk
 );
 
-word_align_ch3 : component rx_align
-generic map (
-	CHANNEL_WIDTH_g => 32,
-	K_g => X"BC"--,
-)
+word_align_ch3 : entity work.rx_align
 port map (
 	o_data              => data_ch3,
 	o_datak             => datak_ch3,
@@ -956,7 +942,7 @@ pcie_b: pcie_block
 		readmem_endofevent	=> readmem_endofevent,
 
 		-- dma memory 
-		dma_data 				=> dmamem_data,
+		dma_data 				=> dmamem_writedata,
 		dmamemclk				=> pcie_fastclk_out,
 		dmamem_wren				=> dmamem_wren,
 		dmamem_endofevent		=> dmamem_endofevent,
@@ -1077,7 +1063,7 @@ pcie_b: pcie_block
 			tsblocks			=> readregs(DATA_TSBLOCKS_R),
 			
 			-- Output to DMA
-			dma_data_out	=> dmamem_data,
+			dma_data_out	=> dmamem_writedata,
 			dma_data_en		=> dmamem_wren,
 			dma_eoe			=> dmamem_endofevent,
 			
