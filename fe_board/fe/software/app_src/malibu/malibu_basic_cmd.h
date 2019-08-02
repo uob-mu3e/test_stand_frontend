@@ -27,10 +27,6 @@ Write Reg1 11001100 = 0xCC
 Write Reg3 0x00
 */
 
-typedef alt_u8 uint8_t;
-typedef alt_u16 uint16_t;
-typedef alt_u32 uint32_t;
-
 #include "../../include/i2c.h"
 
 struct malibu_t {
@@ -38,17 +34,14 @@ struct malibu_t {
     i2c_t i2c;
 
     alt_u8 I2C_read(alt_u8 slave, alt_u8 addr) {
-        i2c_t::write(i2c.dev, slave, &addr, 1);
-        alt_u8 data;
-        i2c_t::read(i2c.dev, slave, &data, 1);
+        alt_u8 data = i2c.get(slave, addr);
         printf("i2c_read: 0x%02X[0x%02X] is 0x%02X\n", slave, addr, data);
         return data;
     }
 
     void I2C_write(alt_u8 slave, alt_u8 addr, alt_u8 data) {
         printf("i2c_write: 0x%02X[0x%02X] <= 0x%02X\n", slave, addr, data);
-        alt_u8 w[] = { addr, data };
-        i2c_t::write(i2c.dev, slave, w, 2);
+        i2c.set(slave, addr, data);
     }
 
     struct i2c_reg_t {

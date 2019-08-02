@@ -5,13 +5,16 @@
     #define ALT_CPU_DCACHE_BYPASS_MASK 0
 #endif
 
+#include <sys/alt_alarm.h>
+
+#include <altera_avalon_i2c.h>
+#include <altera_avalon_spi.h>
+#include <altera_avalon_pio_regs.h>
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
-
-#include <sys/alt_alarm.h>
-
-#include <altera_avalon_pio_regs.h>
+#include <stdint.h>
 
 // watchdog
 struct wd_t {
@@ -37,7 +40,6 @@ struct wd_t {
         return ((wd_t*)wd)->callback();
     }
 } wd;
-
 
 int uart = -1;
 
