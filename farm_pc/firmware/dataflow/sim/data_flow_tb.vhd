@@ -69,6 +69,28 @@ architecture TB of data_flow_tb is
 			signal toggle : std_logic_vector(1 downto 0);
 			signal startinput : std_logic;
 			signal ts_in_next			:		 std_logic_vector(31 downto 0);
+
+	signal A_mem_read_del1: std_logic;
+	signal A_mem_read_del2: std_logic;
+	signal A_mem_read_del3: std_logic;
+	signal A_mem_read_del4: std_logic;
+
+	signal A_mem_addr_del1		: std_logic_vector(25 downto 0);
+	signal A_mem_addr_del2		: std_logic_vector(25 downto 0);
+	signal A_mem_addr_del3		: std_logic_vector(25 downto 0);
+	signal A_mem_addr_del4		: std_logic_vector(25 downto 0);
+
+	signal B_mem_read_del1: std_logic;
+	signal B_mem_read_del2: std_logic;
+	signal B_mem_read_del3: std_logic;
+	signal B_mem_read_del4: std_logic;
+
+	signal B_mem_addr_del1		: std_logic_vector(25 downto 0);
+	signal B_mem_addr_del2		: std_logic_vector(25 downto 0);
+	signal B_mem_addr_del3		: std_logic_vector(25 downto 0);
+	signal B_mem_addr_del4		: std_logic_vector(25 downto 0);	
+
+
 begin
 
 dut:data_flow 
@@ -234,7 +256,58 @@ dut:data_flow
 	req_en_A <= '0';
 	tsblock_done	<= (others => '0');
 	end process;
-	
+
+
+	-- Memory A simulation
+	process(A_mem_clk, reset_n)
+	begin
+	if(reset_n <= '0') then
+		A_mem_q_valid 	<= '0';
+		A_mem_read_del1 <= '0';
+		A_mem_read_del2 <= '0';
+		A_mem_read_del3 <= '0';
+		A_mem_read_del4 <= '0';
+	elsif(A_mem_clk'event and A_mem_clk = '1') then
+		A_mem_read_del1 <= A_mem_read;
+		A_mem_read_del2 <= A_mem_read_del1;
+		A_mem_read_del3	<= A_mem_read_del2;
+		A_mem_read_del4	<= A_mem_read_del3;
+		A_mem_q_valid   <= A_mem_read_del4;
+
+		A_mem_addr_del1 <= A_mem_addr;
+		A_mem_addr_del2 <= A_mem_addr_del1;
+		A_mem_addr_del3	<= A_mem_addr_del2;
+		A_mem_addr_del4	<= A_mem_addr_del3;
+		A_mem_q		<= (others => '0');
+		A_mem_q(25 downto 0)  <= A_mem_addr_del4;
+	end if;
+	end process;
+
+
+	-- Memory B simulation
+	process(B_mem_clk, reset_n)
+	begin
+	if(reset_n <= '0') then
+		B_mem_q_valid 	<= '0';
+		B_mem_read_del1 <= '0';
+		B_mem_read_del2 <= '0';
+		B_mem_read_del3 <= '0';
+		B_mem_read_del4 <= '0';
+	elsif(B_mem_clk'event and B_mem_clk = '1') then
+		B_mem_read_del1 <= B_mem_read;
+		B_mem_read_del2 <= B_mem_read_del1;
+		B_mem_read_del3	<= B_mem_read_del2;
+		B_mem_read_del4	<= B_mem_read_del3;
+		B_mem_q_valid   <= B_mem_read_del4;
+
+		B_mem_addr_del1 <= B_mem_addr;
+		B_mem_addr_del2 <= B_mem_addr_del1;
+		B_mem_addr_del3	<= B_mem_addr_del2;
+		B_mem_addr_del4	<= B_mem_addr_del3;
+		B_mem_q		<= (others => '0');
+		B_mem_q(25 downto 0)  <= B_mem_addr_del4;
+	end if;
+	end process;
 end TB;
 
 

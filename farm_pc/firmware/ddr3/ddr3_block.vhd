@@ -21,29 +21,32 @@ entity ddr3_block is
 			
 			-- Control and status registers
 			ddr3control			: in reg32;
-			A_ddr3status		: out reg32;
-			B_ddr3status		: out reg32;
-			ddr3addr				: in reg32;
-			ddr3datain			: in reg32;
-			A_ddr3dataout		: out reg32;
-			B_ddr3dataout		: out reg32;
-			ddr3addr_written		: in std_logic;
-			ddr3datain_written	: in std_logic;
+			ddr3status			: out reg32;
+			
+			-- A interface
+			A_ddr3clk				: out std_logic;
+			A_ddr3calibrated		: out std_logic;
+			A_ddr3ready				: out std_logic;
+			A_ddr3addr				: in std_logic_vector(25 downto 0);
+			A_ddr3datain			: in std_logic_vector(511 downto 0);
+			A_ddr3dataout			: out std_logic_vector(511 downto 0);
+			A_ddr3_write			: in std_logic;
+			A_ddr3_read				: in std_logic;
+			A_ddr3_read_valid		: out std_logic;
+			
+			-- B interface
+			B_ddr3clk				: out std_logic;
+			B_ddr3calibrated		: out std_logic;
+			B_ddr3ready				: out std_logic;
+			B_ddr3addr				: in std_logic_vector(25 downto 0);
+			B_ddr3datain			: in std_logic_vector(511 downto 0);
+			B_ddr3dataout			: out std_logic_vector(511 downto 0);
+			B_ddr3_write			: in std_logic;
+			B_ddr3_read				: in std_logic;
+			B_ddr3_read_valid		: out std_logic;
 		
 			-- Error counters
-			A_poserr			: out reg32;
-			A_counterr		: out reg32;
-			A_timecount		: out reg32;
-			
-			A_wrongdata		: out std_logic_vector(511 downto 0);
-			A_wronglast		: out reg32;
-			
-			B_poserr			: out reg32;
-			B_counterr		: out reg32;
-			B_timecount		: out reg32;
-				
-			B_wrongdata		: out std_logic_vector(511 downto 0);
-			B_wronglast		: out reg32;		
+			errout					: out reg32;	
 		
 			-- Interface to memory bank A
 			A_mem_ck              : out   std_logic_vector(0 downto 0);                      -- mem_ck
@@ -191,26 +194,31 @@ entity ddr3_block is
 			local_cal_fail      => B_cal_fail
 		);
 
+		
+	errout		<= B_errout when ddr3control(1+16) = '1'
+						else A_errout;
+		
 	memctlA:ddr3_memory_controller 
 	port map(
 		reset_n	=> reset_n,
 		
 		-- Control and status registers
-		ddr3control		=> ddr3control,
-		ddr3status		=> A_ddr3status,
-		ddr3addr			=> ddr3addr,
-		ddr3datain		=> ddr3datain,
+		ddr3control		=> ddr3control(15 downto 0),
+		ddr3status		=> ddr3status(15 downto 0),
+		
+		ddr3clk			=> A_ddr3clk,
+		ddr3_calibrated	=> A_ddr3calibrated,
+		ddr3_ready			=> A_ddr3ready,
+		
+		ddr3addr			=> A_ddr3addr,
+		ddr3datain		=> A_ddr3datain,
 		ddr3dataout		=> A_ddr3dataout,
-		ddr3addr_written		=> ddr3addr_written,
-		ddr3datain_written	=> ddr3datain_written,
+		ddr3_write		=> A_ddr3_write,
+		ddr3_read		=> A_ddr3_read,
+		ddr3_read_valid=> A_ddr3_read_valid,
 		
 		-- Error counters
-		poserr			=> A_poserr,
-		counterr			=> A_counterr,
-		timecount		=> A_timecount,
-		
-		wrongdata		=> A_wrongdata,
-		wronglast		=> A_wronglast,
+		errout			=> A_errout,
 
 		-- IF to DDR3 
 		M_cal_success	=> A_cal_success,
@@ -226,27 +234,28 @@ entity ddr3_block is
 		M_burstcount	=> A_burstcount,
 		M_readdatavalid	=> A_readdatavalid
 	);
-
+	
 	memctlB:ddr3_memory_controller 
 	port map(
 		reset_n	=> reset_n,
 		
 		-- Control and status registers
-		ddr3control		=> ddr3control,
-		ddr3status		=> B_ddr3status,
-		ddr3addr			=> ddr3addr,
-		ddr3datain		=> ddr3datain,
+		ddr3control		=> ddr3control(31 downto 16),
+		ddr3status		=> ddr3status(31 downto 16),
+		
+		ddr3clk			=> B_ddr3clk,
+		ddr3_calibrated	=> B_ddr3calibrated,
+		ddr3_ready			=> B_ddr3ready,
+		
+		ddr3addr			=> B_ddr3addr,
+		ddr3datain		=> B_ddr3datain,
 		ddr3dataout		=> B_ddr3dataout,
-		ddr3addr_written		=> ddr3addr_written,
-		ddr3datain_written	=> ddr3datain_written,
+		ddr3_write		=> B_ddr3_write,
+		ddr3_read		=> B_ddr3_read,
+		ddr3_read_valid=> B_ddr3_read_valid,
 		
 		-- Error counters
-		poserr			=> B_poserr,
-		counterr			=> B_counterr,
-		timecount		=> B_timecount,
-		
-		wrongdata		=> B_wrongdata,
-		wronglast		=> B_wronglast,
+		errout			=> B_errout,
 
 		-- IF to DDR3 
 		M_cal_success	=> B_cal_success,
@@ -262,6 +271,7 @@ entity ddr3_block is
 		M_burstcount	=> B_burstcount,
 		M_readdatavalid	=> B_readdatavalid
 	);
+	
 	
 	end architecture RTL;
 	

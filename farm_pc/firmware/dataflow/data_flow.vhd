@@ -32,6 +32,7 @@ entity data_flow is
 			ts_req_B		:		in std_logic_vector(31 downto 0);
 			req_en_B		:		in std_logic;
 			tsblock_done:		in std_logic_vector(15 downto 0);
+			tsblocks		:		out std_logic_vector(31 downto 0);
 			
 			-- Output to DMA
 			dma_data_out	:	out std_logic_vector(255 downto 0);
@@ -69,6 +70,8 @@ entity data_flow is
 	end entity data_flow;
 	
 	architecture RTL of data_flow is
+
+		signal reset: std_logic;
 	
 		type mem_mode_type is (disabled, ready, writing, reading);
 		signal mem_mode_A : 	mem_mode_type;
@@ -104,6 +107,7 @@ entity data_flow is
 		signal A_fifo_empty	: std_logic;
 		signal A_fifo_empty_last	: std_logic;
 		signal B_fifo_empty	: std_logic;
+		signal B_fifo_empty_last	: std_logic;
 		
 		signal A_reqfifo_empty	: std_logic;
 		signal B_reqfifo_empty	: std_logic; 
@@ -112,9 +116,11 @@ entity data_flow is
 		signal A_tagram_data		: std_logic_vector(31 downto 0);
 		signal A_tagram_q			: std_logic_vector(31 downto 0);
 		signal A_tagram_address	: tsrange_type;
-		
-		signal A_tagram_addrnext : tsrange_type;
-		signal A_tagram_datanext : std_logic_vector(31 downto 0);
+				
+        signal B_tagram_write	: std_logic;
+		signal B_tagram_data		: std_logic_vector(31 downto 0);
+		signal B_tagram_q			: std_logic_vector(31 downto 0);
+		signal B_tagram_address	: tsrange_type;
 		
 		signal A_mem_addr_reg		: std_logic_vector(25 downto 0);
 		signal A_mem_addr_tag		: std_logic_vector(25 downto 0);
@@ -125,13 +131,29 @@ entity data_flow is
  		signal A_wstarted_last				: std_logic;
 		signal A_numwords				: std_logic_vector(5 downto 0);
 		
+        signal B_mem_addr_reg		: std_logic_vector(25 downto 0);
+		signal B_mem_addr_tag		: std_logic_vector(25 downto 0);
+		signal readfifo_B				: std_logic;
+		signal qfifo_B					: dataplusts_type;
+		signal B_tagts_last			: tsrange_type;
+		signal B_wstarted				: std_logic;
+ 		signal B_wstarted_last				: std_logic;
+		signal B_numwords				: std_logic_vector(5 downto 0);
+				
 		signal A_readreqfifo			: std_logic;
 		signal A_reqfifoq				: tsrange_type;
 		signal A_req_last				: tsrange_type;
 		
+        signal B_readreqfifo			: std_logic;
+		signal B_reqfifoq				: tsrange_type;
+		signal B_req_last				: tsrange_type;
+		
 		type readsubstate_type is (fifowait, tagmemwait_1, tagmemwait_2, tagmemwait_3, reading);
 		signal A_readsubstate 	:	readsubstate_type;
 		signal A_readwords				: std_logic_vector(5 downto 0);
+		
+        signal B_readsubstate 	:	readsubstate_type;
+		signal B_readwords				: std_logic_vector(5 downto 0);
 
 		signal A_memreadfifo_data: std_logic_vector(37 downto 0);
 		signal A_memreadfifo_write: std_logic;
@@ -142,6 +164,16 @@ entity data_flow is
 		signal A_memdatafifo_empty: std_logic;
 		signal A_memdatafifo_read:  std_logic;
 		signal A_memdatafifo_q	 :  std_logic_vector(255 downto 0);
+		
+        signal B_memreadfifo_data: std_logic_vector(37 downto 0);
+		signal B_memreadfifo_write: std_logic;
+		signal B_memreadfifo_read: std_logic;
+		signal B_memreadfifo_q: std_logic_vector(37 downto 0);
+		signal B_memreadfifo_empty: std_logic;		 
+		
+		signal B_memdatafifo_empty: std_logic;
+		signal B_memdatafifo_read:  std_logic;
+        signal B_memdatafifo_q	 :  std_logic_vector(255 downto 0);
 	
 		
 		type output_write_type is (waiting, eventA, eventB);
@@ -151,6 +183,10 @@ entity data_flow is
 		
 	begin
 	
+		tsblocks <= B_tsrange & A_tsrange;
+	
+		reset <= not reset_n;
+
 		process(reset_n, dataclk)
 		variable tsupperchange : boolean;
 		begin
@@ -260,22 +296,40 @@ entity data_flow is
 		end if;
 		end process;
 		
-		tomemfifo_A:dflowfifo
-			port map(
-				data    => tofifo_A,
-				wrreq   => writefifo_A,
-            rdreq   => readfifo_A,
-            wrclk   => dataclk,
-            rdclk   => A_mem_clk,
-            q       => qfifo_A,
-            wrusedw => open,
-            rdempty => A_fifo_empty,
-            wrfull  => open
-        );
+        tomemfifo_A:dflowfifo
+            port map(
+                data    => tofifo_A,
+                wrreq   => writefifo_A,
+                rdreq   => readfifo_A,
+                wrclk   => dataclk,
+                rdclk   => A_mem_clk,
+                aclr    => reset,
+                q       => qfifo_A,
+                wrusedw => open,
+                rdempty => A_fifo_empty,
+                wrfull  => open
+            );
 		 
 		A_mem_data		<= qfifo_A(255 downto 0);
+		
+		
+        tomemfifo_B:dflowfifo
+			port map(
+				data    => tofifo_B,
+				wrreq   => writefifo_B,
+                rdreq   => readfifo_B,
+                wrclk   => dataclk,
+                rdclk   => B_mem_clk,
+                aclr    => reset,
+                q       => qfifo_B,
+                wrusedw => open,
+                rdempty => B_fifo_empty,
+                wrfull  => open
+            );
+		 
+		B_mem_data		<= qfifo_B(255 downto 0);
 
-
+-- Process for writing the A memory
 		process(reset_n, A_mem_clk)
 		begin
 		if(reset_n = '0') then
@@ -431,26 +485,191 @@ entity data_flow is
 		end if;
 	end process;
 
+	A_memreadfifo_read <= '1' when output_write_state = waiting and A_memreadfifo_empty = '0' 
+				else '0';
+
+	A_memdatafifo_read <= '1' when output_write_state = eventA and A_memdatafifo_empty = '0'
+				else '0';
+				
+				
+-- Process for writing the B memory
+		process(reset_n, B_mem_clk)
+		begin
+		if(reset_n = '0') then
+			ddr3if_state_B	<= disabled;
+			B_tagram_write	<= '0';
+			readfifo_B	<= '0';
+			B_readreqfifo   <= '0';
+			B_mem_write	<= '0';
+			B_mem_read	<= '0';
+			B_memreadfifo_write <= '0';
+			B_done 		   <= '0';
+		elsif(B_mem_clk'event and B_mem_clk = '1') then
+			B_tagram_write	<= '0';
+			readfifo_B		<= '0';
+			B_mem_write		<= '0';
+			B_mem_read		<= '0';
+			B_readreqfifo		<= '0';
+			B_memreadfifo_write 	<= '0';
+			B_wstarted_last		<= B_wstarted;
+			B_fifo_empty_last	<= B_fifo_empty;
+			case ddr3if_state_B is
+				when disabled =>
+					if(B_mem_calibrated = '1')then
+						B_tagram_address	<= (others => '1');
+						ddr3if_state_B	<= overwriting;
+-- Skip memory overwriting for simulation
+-- synthesis translate_off
+						ddr3if_state_B	<= ready;
+						B_done		<= '1';
+-- synthesis translate on
+					end if;
+				when ready =>
+					if(B_writestate = '1')then
+						ddr3if_state_B	<= writing;
+						B_mem_addr_reg		<= (others => '0');
+						B_tagram_address	<= (others => '0');
+						B_wstarted			<= '1';
+						B_numwords			<= "000001";
+						B_done 				<= '0';
+					end if;
+				when writing =>
+					
+					if(B_readstate = '1' and B_fifo_empty = '1') then
+						ddr3if_state_B	<= reading;
+						B_readsubstate <= fifowait;
+					end if;
+					
+					if(B_fifo_empty = '0' and B_fifo_empty_last = '0' and B_mem_ready = '1') then
+						B_wstarted <= '0';
+
+						readfifo_B		<= '1';
+						
+						B_mem_write		<= '1';
+						B_mem_addr  		<= B_mem_addr_reg;
+						B_mem_addr_tag		<= B_mem_addr_reg;	
+						B_mem_addr_reg		<= B_mem_addr_reg + '1';
+						B_tagts_last		<= qfifo_B(271 downto 256);
+												
+						if(B_tagts_last /= qfifo_B(271 downto 256)  or B_wstarted_last ='1') then
+							if(B_wstarted = '1') then
+								B_tagram_write		<= '0';
+							else	
+								B_tagram_write		<= '1';
+							end if;							
+							B_tagram_address	<= qfifo_B(271 downto 256);
+							B_tagram_data(25 downto 0)		<= B_mem_addr_tag;
+
+							B_tagram_data(31 downto 26)	<= "000001";
+							B_numwords			<= "000010";
+						else
+
+							B_tagram_write	<= '1';
+
+							B_tagram_data(31 downto 26)	<= B_numwords;
+							if(B_numwords /= "111111") then
+								B_numwords <= B_numwords + '1';
+							end if;
+						end if;
+					elsif(B_fifo_empty = '0' and B_mem_ready = '1' and B_wstarted = '0') then
+						readfifo_B		<= '1';
+					end if;	
+					
+				when reading =>
+					if(B_readstate = '0' and B_reqfifo_empty = '1' and B_readsubstate = fifowait)then
+						ddr3if_state_B		<= overwriting;
+						B_tagram_address	<= (others => '1');
+					end if;
+					
+					case B_readsubstate is
+						when fifowait =>
+							if(B_reqfifo_empty = '0') then
+								B_tagram_address <= B_reqfifoq;
+								B_req_last		  <= B_reqfifoq;
+								B_readreqfifo	  <= '1';
+								if(B_reqfifoq /= B_req_last) then
+									B_readsubstate <= tagmemwait_1;
+								end if;
+							end if;
+						when tagmemwait_1 =>
+							B_readsubstate <= tagmemwait_2;	
+						when tagmemwait_2 =>
+							B_readsubstate <= tagmemwait_3;	
+						when tagmemwait_3 =>
+							if( B_tagram_q(31 downto 26) = "000000") then
+								B_readsubstate <= fifowait;
+								B_memreadfifo_data <= "000000" & B_tsrange & B_tagram_address;
+								B_memreadfifo_write <= '1';
+-- synthesis translate_off
+							elsif(Is_X(B_tagram_q(31 downto 26))) then
+								B_readsubstate <= fifowait;	
+								B_memreadfifo_data <= "000000" & B_tsrange & B_tagram_address;
+								B_memreadfifo_write <= '1';
+-- synthesis translate on					
+							else
+								B_mem_addr	<= B_tagram_q(25 downto 0);
+								B_readwords	<= B_tagram_q(31 downto 26)-'1';
+								if(B_mem_ready = '1') then
+									B_mem_read		<= '1';
+									if(B_tagram_q(31 downto 26) > "00001") then
+										B_readsubstate	<= reading;
+										B_mem_addr_reg  <= B_tagram_q(25 downto 0) + '1';
+									else
+										B_readsubstate <= fifowait;
+									end if;
+									B_memreadfifo_data <= B_tagram_q(31 downto 26) & B_tsrange & B_tagram_address;
+									B_memreadfifo_write <= '1';
+								end if;
+							end if;	
+						when reading =>
+							if(B_mem_ready = '1')then
+								B_mem_addr	<= B_mem_addr_reg ;
+								B_mem_addr_reg  <= B_mem_addr_reg + '1';
+								B_readwords    <= B_readwords - '1';
+								B_mem_read		<= '1';
+							end if;
+							if(B_readwords > "00001") then
+									B_readsubstate	<= reading;
+							else
+									B_readsubstate <= fifowait;
+							end if;
+					end case;
+					
+									
+				when overwriting =>
+					B_tagram_address        <= B_tagram_address + '1';
+					B_tagram_write		<= '1';
+					B_tagram_data		<= (others => '0');
+					if(B_tagram_address = tsone and B_tagram_write = '1') then
+						ddr3if_state_B	<= ready;
+						B_done 		<= '1';
+					end if;				
+			end case;
+		end if;
+	end process;
+
+	B_memreadfifo_read <= '1' when output_write_state = waiting and B_memreadfifo_empty = '0' 
+				else '0';
+
+	B_memdatafifo_read <= '1' when output_write_state = eventA and B_memdatafifo_empty = '0'
+				else '0';
+
 
 
 	process(reset_n, pcieclk)
 		begin
 		if(reset_n = '0') then
-			A_memreadfifo_read <= '0';
-			A_memdatafifo_read <= '0';
 			output_write_state <= waiting;
 			dma_data_en	  <= '0';
 			dma_eoe		   <= '0';
 		elsif(pcieclk'event and pcieclk = '1') then
-			A_memreadfifo_read <= '0';
-			A_memdatafifo_read <= '0';
 			dma_data_en	   <= '0';
 			dma_eoe		   <= '0';
 			case output_write_state is
 				when waiting =>
+				
 					if(A_memreadfifo_empty = '0') then
 						nummemwords <= A_memreadfifo_q(37 downto 32);
-						A_memreadfifo_read <= '1';
 						if(A_memreadfifo_q(37 downto 32) = "000000")then
 							output_write_state <= waiting;
 							dma_eoe <= '1';	
@@ -467,18 +686,50 @@ entity data_flow is
 								x"4D485230" & --MHR0
 								x"00030" & "0" & A_memreadfifo_q(37 downto 32) & "00000"; --TID_WORD and -- Length in bytes
 						dma_data_en <= '1';
+					
+					elsif(B_memreadfifo_empty = '0') then
+					
+                        nummemwords <= B_memreadfifo_q(37 downto 32);
+						if(B_memreadfifo_q(37 downto 32) = "000000")then
+							output_write_state <= waiting;
+							dma_eoe <= '1';	
+						else
+							output_write_state <= eventB;
+						end if;
+
+						dma_data_out <= x"0001" & x"0000" & -- ev ID and trigger mask
+								B_memreadfifo_q(31 downto 0) & -- EventID (timestamp)
+								B_memreadfifo_q(31 downto 0) & -- should be unix TS...
+								x"00000" & "0" & B_memreadfifo_q(37 downto 32) & "01100" &-- Event data size
+								x"00000" & "0" & B_memreadfifo_q(37 downto 32) & "01000" & -- All bank size (incl 8 bit header)
+								x"00000000" & -- Flags
+								x"4D485230" & --MHR0
+								x"00030" & "0" & B_memreadfifo_q(37 downto 32) & "00000"; --TID_WORD and -- Length in bytes
+						dma_data_en <= '1';
 					end if;
+
 		 		when eventA =>
 					if(A_memdatafifo_empty = '0') then
+						dma_data_en <= '1';
 						dma_data_out		<= A_memdatafifo_q;
-						A_memdatafifo_read 	<= '1';
 						nummemwords		<= nummemwords - '1';
 						if(nummemwords = "000001")then
 							output_write_state <= waiting;	
 							dma_eoe <= '1';	
 						end if;
 					end if;
+					
 				when eventB =>
+                    if(B_memdatafifo_empty = '0') then
+						dma_data_en     <= '1';
+						dma_data_out	<= B_memdatafifo_q;
+						nummemwords		<= nummemwords - '1';
+						if(nummemwords = "000001")then
+							output_write_state <= waiting;	
+							dma_eoe <= '1';	
+						end if;
+					end if;
+				
 			end case;	
 		end if;
 	end process;
@@ -491,6 +742,16 @@ entity data_flow is
                         clock   => A_mem_clk,
                         q       => A_tagram_q
                 );
+                
+            tagram_B:tagram
+                port map(
+                        data    => B_tagram_data,
+                        address => B_tagram_address,
+                        wren    => B_tagram_write,
+                        clock   => B_mem_clk,
+                        q       => B_tagram_q
+                );
+                  
 
 			 A_reqfifo:reqfifo
                 port map(
@@ -499,10 +760,25 @@ entity data_flow is
                         rdreq   => A_readreqfifo,
                         wrclk   => pcieclk,
                         rdclk   => A_mem_clk,
+                        aclr    => reset,
                         q       => A_reqfifoq,
                         rdempty => A_reqfifo_empty,
                         wrfull  => open
                 );
+                
+            B_reqfifo:reqfifo
+                port map(
+                        data    => ts_req_B,
+                        wrreq   => req_en_B,
+                        rdreq   => B_readreqfifo,
+                        wrclk   => pcieclk,
+                        rdclk   => B_mem_clk,
+                        aclr    => reset,
+                        q       => B_reqfifoq,
+                        rdempty => B_reqfifo_empty,
+                        wrfull  => open
+                );
+                   
 
 			
         A_mreadfifo: memreadfifo
@@ -512,10 +788,25 @@ entity data_flow is
                         rdreq => A_memreadfifo_read,
                         wrclk => A_mem_clk,
 			rdclk => pcieclk,
+			aclr    => reset,
                         q     => A_memreadfifo_q,
                         wrfull  => open,
                         rdempty => A_memreadfifo_empty
                 );
+                
+            B_mreadfifo: memreadfifo
+                port map(
+                        data  => B_memreadfifo_data,
+                        wrreq => B_memreadfifo_write,
+                        rdreq => B_memreadfifo_read,
+                        wrclk => B_mem_clk,
+			rdclk => pcieclk,
+			aclr    => reset,
+                        q     => B_memreadfifo_q,
+                        wrfull  => open,
+                        rdempty => B_memreadfifo_empty
+                );
+                      
 
          A_mdatafdfifo: memdatafifo
                 port map(
@@ -524,10 +815,25 @@ entity data_flow is
                         rdreq   => A_memdatafifo_read,
                         wrclk   => A_mem_clk,
                         rdclk   => pcieclk,
+			aclr    => reset,
                         q       => A_memdatafifo_q,
                         rdempty => A_memdatafifo_empty,
                         wrfull  => open
                 );
+                
+            
+            B_mdatafdfifo: memdatafifo
+                port map(
+                        data    => B_mem_q,
+                        wrreq   => B_mem_q_valid,
+                        rdreq   => B_memdatafifo_read,
+                        wrclk   => B_mem_clk,
+                        rdclk   => pcieclk,
+			aclr    => reset,
+                        q       => B_memdatafifo_q,
+                        rdempty => B_memdatafifo_empty,
+                        wrfull  => open
+                );      
 
 		 
 		

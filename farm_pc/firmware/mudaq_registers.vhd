@@ -17,6 +17,7 @@ package mudaq_registers is
 		constant RESET_BIT_FIFOPLL								:  integer := 6;
 		constant RESET_BIT_NIOS									:  integer := 7;
 		constant RESET_BIT_DDR3									:  integer := 8;
+		constant RESET_BIT_DATAFLOW							:  integer := 9;
 		constant RESET_BIT_PCIE									:  integer := 31;
 
 		constant DATAGENERATOR_REGISTER_W					: integer := 16#02#;
@@ -36,8 +37,16 @@ package mudaq_registers is
 		
 		
 		constant DDR3_CONTROL_W									: integer := 16#20#;
-		constant DDR3_ADDR_W										: integer := 16#21#;
-		constant DDR3_DATA_W										: integer := 16#22#;
+		constant DDR3_BIT_ENABLE_A								: integer := 0;
+		constant DDR3_BIT_COUNTERTEST_A						: integer := 1;
+		subtype  DDR_COUNTERSEL_RANGE_A						is integer range 15 downto 14;		
+		constant DDR3_BIT_ENABLE_B								: integer := 16;
+		constant DDR3_BIT_COUNTERTEST_B						: integer := 17;
+		subtype  DDR_COUNTERSEL_RANGE_B						is integer range 31 downto 30;
+		
+		constant	DATA_REQ_A_W									: integer := 16#21#;
+		constant	DATA_REQ_B_W									: integer := 16#22#;
+		constant DATA_TSBLOCK_DONE_W							: integer := 16#23#;
 		
 
 		-- Registers above 0x36 are in use for the PCIe controller/DMA
@@ -86,16 +95,17 @@ package mudaq_registers is
 		constant PLL_LOCKED_BIT									: integer := 16#12#;
 		
 		
-		constant DDR3_STATUS_A_R								: integer := 16#20#;
-		constant DDR3_STATUS_B_R								: integer := 16#21#;
-		constant DDR3_DATA_A_R									: integer := 16#22#;		
-		constant DDR3_DATA_B_R									: integer := 16#23#;	
-		constant DDR3_POSERR_A_R								: integer := 16#24#;
-		constant DDR3_COUNTERR_A_R								: integer := 16#25#;
-		constant DDR3_TIMECOUNT_A_R							: integer := 16#26#;	
-		constant DDR3_POSERR_B_R								: integer := 16#27#;
-		constant DDR3_COUNTERR_B_R								: integer := 16#28#;
-		constant DDR3_TIMECOUNT_B_R							: integer := 16#29#;	
+		constant DDR3_STATUS_R									: integer := 16#20#;
+		constant DDR3_BIT_CAL_SUCCESS							: integer := 0;
+		constant DDR3_BIT_CAL_FAIL								: integer := 1;
+		constant DDR3_BIT_RESET_N								: integer := 2;
+		constant DDR3_BIT_READY									: integer := 3;
+		constant DDR3_BIT_TEST_WRITING						: integer := 4;
+		constant DDR3_BIT_TEST_READING						: integer := 5;
+		constant DDR3_BIT_TEST_DONE							: integer := 6;
+		constant DDR3_ERR_R										: integer := 16#21#;
+
+		constant DATA_TSBLOCKS_R								: integer := 16#22#;
 		
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;

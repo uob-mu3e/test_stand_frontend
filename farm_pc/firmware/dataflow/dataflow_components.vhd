@@ -32,6 +32,7 @@ package dataflow_components is
 			ts_req_B		:		in std_logic_vector(31 downto 0);
 			req_en_B		:		in std_logic;
 			tsblock_done:		in std_logic_vector(15 downto 0);
+			tsblocks		:		out std_logic_vector(31 downto 0);
 			
 			-- Output to DMA
 			dma_data_out	:	out std_logic_vector(255 downto 0);
@@ -76,6 +77,7 @@ package dataflow_components is
                         rdreq   : in  std_logic                      := 'X';             -- rdreq
                         wrclk   : in  std_logic                      := 'X';             -- wrclk
                         rdclk   : in  std_logic                      := 'X';             -- rdclk
+								aclr    : in  std_logic                     := 'X';             -- aclr
                         q       : out std_logic_vector(271 downto 0);                    -- dataout
                         wrusedw : out std_logic_vector(7 downto 0);                      -- wrusedw
                         rdempty : out std_logic;                                         -- rdempty
@@ -101,6 +103,7 @@ package dataflow_components is
                         rdreq   : in  std_logic                     := 'X';             -- rdreq
                         wrclk   : in  std_logic                     := 'X';             -- wrclk
                         rdclk   : in  std_logic                     := 'X';             -- rdclk
+								aclr    : in  std_logic                     := 'X';             -- aclr
                         q       : out std_logic_vector(15 downto 0);                    -- dataout
                         rdempty : out std_logic;                                        -- rdempty
                         wrfull  : out std_logic                                         -- wrfull
@@ -114,6 +117,7 @@ package dataflow_components is
                         rdreq   : in  std_logic                     := 'X';             -- rdreq
                         wrclk   : in  std_logic                     := 'X';             -- wrclk
                         rdclk   : in  std_logic                     := 'X';             -- rdclk
+								aclr    : in  std_logic                     := 'X';             -- aclr
                         q       : out std_logic_vector(37 downto 0);                    -- dataout
                         rdempty : out std_logic;                                        -- rdempty
                         wrfull  : out std_logic                                         -- wrfull
@@ -127,6 +131,7 @@ package dataflow_components is
                         rdreq   : in  std_logic                      := 'X';             -- rdreq
                         wrclk   : in  std_logic                      := 'X';             -- wrclk
                         rdclk   : in  std_logic                      := 'X';             -- rdclk
+								aclr    : in  std_logic                     := 'X';             -- aclr
                         q       : out std_logic_vector(255 downto 0);                    -- dataout
                         rdempty : out std_logic;                                         -- rdempty
                         wrfull  : out std_logic                                          -- wrfull

@@ -457,6 +457,29 @@ architecture rtl of top is
 		attribute keep of ZERO : signal is true;
 		
 		
+					-- A interface
+			signal A_ddr3clk				: std_logic;
+			signal A_ddr3calibrated		: std_logic;
+			signal A_ddr3ready			: std_logic;
+			signal A_ddr3addr				: std_logic_vector(25 downto 0);
+			signal A_ddr3datain			: std_logic_vector(511 downto 0);
+			signal A_ddr3dataout			: std_logic_vector(511 downto 0);
+			signal A_ddr3_write			: std_logic;
+			signal A_ddr3_read			: std_logic;
+			signal A_ddr3_read_valid	: std_logic;
+			
+			-- B interface
+			signal B_ddr3clk				: std_logic;
+			signal B_ddr3calibrated		: std_logic;
+			signal B_ddr3ready			: std_logic;
+			signal B_ddr3addr				: std_logic_vector(25 downto 0);
+			signal B_ddr3datain			: std_logic_vector(511 downto 0);
+			signal B_ddr3dataout			: std_logic_vector(511 downto 0);
+			signal B_ddr3_write			: std_logic;
+			signal B_ddr3_read			: std_logic;
+			signal B_ddr3_read_valid	: std_logic;
+		
+		
 		
 begin 
 
@@ -657,7 +680,7 @@ port map (
 	i_errdetect         => rx_errdetect_ch0_rx_errdetect,
 	i_disperr           => rx_disperr_ch0_rx_disperr,
 	i_reset_n           => resets_n(RESET_BIT_WORDALIGN),--not reset,
-	i_clk               => rx_clkout_ch0_clk,
+	i_clk               => rx_clkout_ch0_clk
 );
 
 word_align_ch1 : component rx_align
@@ -677,7 +700,7 @@ port map (
 	i_errdetect         => rx_errdetect_ch1_rx_errdetect,
 	i_disperr           => rx_disperr_ch1_rx_disperr,
 	i_reset_n           => resets_n(RESET_BIT_WORDALIGN),--not reset,
-	i_clk               => rx_clkout_ch1_clk,
+	i_clk               => rx_clkout_ch1_clk
 );
 
 word_align_ch2 : component rx_align
@@ -697,7 +720,7 @@ port map (
 	i_errdetect         => rx_errdetect_ch2_rx_errdetect,
 	i_disperr           => rx_disperr_ch2_rx_disperr,
 	i_reset_n           => resets_n(RESET_BIT_WORDALIGN),--not reset,
-	i_clk               => rx_clkout_ch2_clk,
+	i_clk               => rx_clkout_ch2_clk
 );
 
 word_align_ch3 : component rx_align
@@ -717,7 +740,7 @@ port map (
 	i_errdetect         => rx_errdetect_ch3_rx_errdetect,
 	i_disperr           => rx_disperr_ch3_rx_disperr,
 	i_reset_n           => resets_n(RESET_BIT_WORDALIGN),--not reset,
-	i_clk               => rx_clkout_ch3_clk,
+	i_clk               => rx_clkout_ch3_clk
 );
 
 rdreg_fifo_dma <= (not rdempty_fifo_0) and (not rdempty_fifo_1) and (not rdempty_fifo_2) and (not rdempty_fifo_3);
@@ -933,9 +956,9 @@ pcie_b: pcie_block
 		readmem_endofevent	=> readmem_endofevent,
 
 		-- dma memory 
-		dma_data 				=> dma_data_ch0 & X"DECAFBAD" & dma_data_ch1 & X"DECAFBAD" & dma_data_ch2 & X"DECAFBAD" & dma_data_ch3 & X"DECAFBAD",--counter_256,--rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data,
-		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
-		dmamem_wren				=> writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE) and rdreg_fifo_dma,--'1',
+		dma_data 				=> dmamem_data,
+		dmamemclk				=> pcie_fastclk_out,
+		dmamem_wren				=> dmamem_wren,
 		dmamem_endofevent		=> dmamem_endofevent,
 		dmamemhalffull			=> open,--dmamemhalffull,
 
@@ -961,43 +984,34 @@ pcie_b: pcie_block
 			
 			-- Control and status registers
 			ddr3control			=> writeregs(DDR3_CONTROL_W),
-			A_ddr3status		=> readregs(DDR3_STATUS_A_R),
-			B_ddr3status		=> readregs(DDR3_STATUS_B_R),
-			ddr3addr				=> writeregs(DDR3_ADDR_W),
-			ddr3datain			=> writeregs(DDR3_DATA_W),
-			A_ddr3dataout		=> readregs(DDR3_DATA_A_R),
-			B_ddr3dataout		=> readregs(DDR3_DATA_B_R),
-			ddr3addr_written		=> regwritten(DDR3_ADDR_W),
-			ddr3datain_written	=> regwritten(DDR3_DATA_W),
+			ddr3status			=> readregs(DDR3_STATUS_R),
+
+			-- A interface
+			A_ddr3clk				=> A_ddr3clk,
+			A_ddr3calibrated		=> A_ddr3calibrated,
+			A_ddr3ready				=> A_ddr3ready,
+			A_ddr3addr				=> A_ddr3addr,
+			A_ddr3datain			=> A_ddr3datain,
+			A_ddr3dataout			=> A_ddr3dataout,
+			A_ddr3_write			=> A_ddr3_write,
+			A_ddr3_read				=> A_ddr3_read,
+			A_ddr3_read_valid		=> A_ddr3_read_valid,
+			
+			-- B interface
+			B_ddr3clk				=> B_ddr3clk,
+			B_ddr3calibrated		=> B_ddr3calibrated,
+			B_ddr3ready				=> B_ddr3ready,
+			B_ddr3addr				=> B_ddr3addr,
+			B_ddr3datain			=> B_ddr3datain,
+			B_ddr3dataout			=> B_ddr3dataout,
+			B_ddr3_write			=> B_ddr3_write,
+			B_ddr3_read				=> B_ddr3_read,
+			B_ddr3_read_valid		=> B_ddr3_read_valid,
+			
 		
 			-- Error counters
-			A_poserr				=> readregs(DDR3_POSERR_A_R),
-			A_counterr			=> readregs(DDR3_COUNTERR_A_R),
-			A_timecount			=> readregs(DDR3_TIMECOUNT_A_R),
-			
-			A_wrongdata			=> open,
-			A_wronglast			=> open,
-			
-			B_poserr				=> readregs(DDR3_POSERR_B_R),
-			B_counterr			=> readregs(DDR3_COUNTERR_B_R),
-			B_timecount			=> readregs(DDR3_TIMECOUNT_B_R),
-			
-			B_wrongdata(31 downto 0)			=> readregs(16#2B#),
-			B_wrongdata(63 downto 32)			=> readregs(16#2C#),
-			B_wrongdata(95 downto 64)			=> readregs(16#2D#),
-			B_wrongdata(127 downto 96)			=> readregs(16#2E#),
-			B_wrongdata(159 downto 128)		=> readregs(16#2F#),
-			B_wrongdata(191 downto 160)		=> readregs(16#30#),
-			B_wrongdata(223 downto 192)		=> readregs(16#31#),
-			B_wrongdata(255 downto 224)		=> readregs(16#32#),
-			B_wrongdata(287 downto 256)		=> readregs(16#33#),
-			B_wrongdata(319 downto 288)		=> readregs(16#34#),
-			B_wrongdata(351 downto 320)		=> readregs(16#35#),
-			B_wrongdata(383 downto 352)		=> readregs(16#36#),
-			B_wrongdata(415 downto 384)		=> readregs(16#37#),
-			
-			B_wronglast			=> readregs(16#2A#),
-
+			errout				=> readregs(DDR3_ERR_R),
+	
 			-- Interface to memory bank A
 			A_mem_ck              => DDR3A_CK,
 			A_mem_ck_n            => DDR3A_CK_n,
@@ -1042,5 +1056,58 @@ pcie_b: pcie_block
 
   DDR3A_SDA	<= 'Z';
   DDR3B_SDA	<= 'Z';
+  
+  	dataflow: data_flow 
+	port map(
+			reset_n			=> resets_n(RESET_BIT_DDR3),
+			
+			-- Input from merging (first board) or links (subsequent boards)
+			dataclk			=>	pcie_fastclk_out,
+			data_en			=> rdreg_fifo_dma,
+			data_in			=>  data_ch3 &  data_ch2 &  data_ch1 &  data_ch0 & data_ch3 &  data_ch2 &  data_ch1 &  data_ch0,
+			ts_in				=> counter_256(31 downto 0),
+			
+			-- Input from PCIe demanding events
+			pcieclk			=> pcie_fastclk_out,
+			ts_req_A			=> writeregs(DATA_REQ_A_W),
+			req_en_A			=> regwritten_fast(DATA_REQ_A_W),
+			ts_req_B			=> writeregs(DATA_REQ_B_W),
+			req_en_B			=> regwritten_fast(DATA_REQ_A_W),
+			tsblock_done	=> writeregs(DATA_TSBLOCK_DONE_W)(15 downto 0),
+			tsblocks			=> readregs(DATA_TSBLOCKS_R),
+			
+			-- Output to DMA
+			dma_data_out	=> dmamem_data,
+			dma_data_en		=> dmamem_wren,
+			dma_eoe			=> dmamem_endofevent,
+			
+			-- Output to links -- with dataclk
+			link_data_out	=> open,
+			link_ts_out		=> open,
+			link_data_en	=> open,
+			
+			-- Interface to memory bank A
+			A_mem_clk		=> A_ddr3clk,
+			A_mem_ready		=> A_ddr3ready,
+			A_mem_calibrated	=> A_ddr3calibrated,
+			A_mem_addr			=> A_ddr3addr,
+			A_mem_data			=> A_ddr3datain(255 downto 0),
+			A_mem_write			=> A_ddr3_write,
+			A_mem_read			=> A_ddr3_read,
+			A_mem_q				=> A_ddr3dataout(255 downto 0),
+			A_mem_q_valid		=> A_ddr3_read_valid,
+
+			-- Interface to memory bank B
+			B_mem_clk		=> B_ddr3clk,
+			B_mem_ready		=> B_ddr3ready,
+			B_mem_calibrated	=> B_ddr3calibrated,
+			B_mem_addr			=> B_ddr3addr,
+			B_mem_data			=> B_ddr3datain(255 downto 0),
+			B_mem_write			=> B_ddr3_write,
+			B_mem_read			=> B_ddr3_read,
+			B_mem_q				=> B_ddr3dataout(255 downto 0),
+			B_mem_q_valid		=> B_ddr3_read_valid
+	
+	);
 
 end;

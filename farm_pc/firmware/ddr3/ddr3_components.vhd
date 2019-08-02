@@ -11,30 +11,33 @@ package ddr3_components is
 			
 			-- Control and status registers
 			ddr3control			: in reg32;
-			A_ddr3status		: out reg32;
-			B_ddr3status		: out reg32;
-			ddr3addr				: in reg32;
-			ddr3datain			: in reg32;
-			A_ddr3dataout		: out reg32;
-			B_ddr3dataout		: out reg32;
-			ddr3addr_written		: in std_logic;
-			ddr3datain_written	: in std_logic;
+			ddr3status			: out reg32;
+			
+			-- A interface
+			A_ddr3clk				: out std_logic;
+			A_ddr3calibrated		: out std_logic;
+			A_ddr3ready				: out std_logic;
+			A_ddr3addr				: in std_logic_vector(25 downto 0);
+			A_ddr3datain			: in std_logic_vector(511 downto 0);
+			A_ddr3dataout			: out std_logic_vector(511 downto 0);
+			A_ddr3_write			: in std_logic;
+			A_ddr3_read				: in std_logic;
+			A_ddr3_read_valid		: out std_logic;
+			
+			-- B interface
+			B_ddr3clk				: out std_logic;
+			B_ddr3calibrated		: out std_logic;
+			B_ddr3ready				: out std_logic;
+			B_ddr3addr				: in std_logic_vector(25 downto 0);
+			B_ddr3datain			: in std_logic_vector(511 downto 0);
+			B_ddr3dataout			: out std_logic_vector(511 downto 0);
+			B_ddr3_write			: in std_logic;
+			B_ddr3_read				: in std_logic;
+			B_ddr3_read_valid		: out std_logic;
 		
 			-- Error counters
-			A_poserr			: out reg32;
-			A_counterr		: out reg32;
-			A_timecount		: out reg32;
-			
-			A_wrongdata		: out std_logic_vector(511 downto 0);
-			A_wronglast		: out reg32;
-			
-			B_poserr			: out reg32;
-			B_counterr		: out reg32;
-			B_timecount		: out reg32;
-				
-			B_wrongdata		: out std_logic_vector(511 downto 0);
-			B_wronglast		: out reg32;	
-
+			errout					: out reg32;	
+		
 			-- Interface to memory bank A
 			A_mem_ck              : out   std_logic_vector(0 downto 0);                      -- mem_ck
 			A_mem_ck_n            : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
@@ -120,21 +123,22 @@ component ddr3_memory_controller is
 		reset_n	: in std_logic;
 		
 		-- Control and status registers
-		ddr3control		: in reg32;
-		ddr3status		: out reg32;
-		ddr3addr			: in reg32;
-		ddr3datain		: in reg32;
-		ddr3dataout		: out reg32;
-		ddr3addr_written		: in std_logic;
-		ddr3datain_written	: in std_logic;
+		ddr3control		: in std_logic_vector(15 downto 0);
+		ddr3status		: out std_logic_vector(15 downto 0);
+		
+		ddr3clk			: out std_logic;
+		ddr3_calibrated: out std_logic;
+		ddr3_ready		: out std_logic;
+		
+		ddr3addr			: in std_logic_vector(25 downto 0);
+		ddr3datain		: in std_logic_vector(511 downto 0);
+		ddr3dataout		: out std_logic_vector(511 downto 0);
+		ddr3_write		: in std_logic;
+		ddr3_read		: in std_logic;
+		ddr3_read_valid: out std_logic;
 		
 		-- Error counters
-		poserr			: out reg32;
-		counterr			: out reg32;
-		timecount		: out reg32;
-		
-		wrongdata		: out std_logic_vector(511 downto 0);
-		wronglast		: out reg32;
+		errout			: out reg32;
 
 		-- IF to DDR3 
 		M_cal_success	:	in std_logic;

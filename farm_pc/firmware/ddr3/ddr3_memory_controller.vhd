@@ -11,28 +11,29 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use work.ddr3_components.all;
 use work.pcie_components.all;
-
+use work.mudaq_registers.all;
 
 entity ddr3_memory_controller is 
 	port (
 		reset_n	: in std_logic;
 		
 		-- Control and status registers
-		ddr3control		: in reg32;
-		ddr3status		: out reg32;
-		ddr3addr			: in reg32;
-		ddr3datain		: in reg32;
-		ddr3dataout		: out reg32;
-		ddr3addr_written		: in std_logic;
-		ddr3datain_written	: in std_logic;
+		ddr3control		: in std_logic_vector(15 downto 0);
+		ddr3status		: out std_logic_vector(15 downto 0);
+		
+		ddr3clk			: out std_logic;
+		ddr3_calibrated: out std_logic;
+		ddr3_ready		: out std_logic;
+		
+		ddr3addr			: in std_logic_vector(25 downto 0);
+		ddr3datain		: in std_logic_vector(511 downto 0);
+		ddr3dataout		: out std_logic_vector(511 downto 0);
+		ddr3_write		: in std_logic;
+		ddr3_read		: in std_logic;
+		ddr3_read_valid: out std_logic;
 		
 		-- Error counters
-		poserr			: out reg32;
-		counterr			: out reg32;
-		timecount		: out reg32;
-		
-		wrongdata		: out std_logic_vector(511 downto 0);
-		wronglast		: out reg32;
+		errout			: out reg32;
 
 		-- IF to DDR3 
 		M_cal_success	:	in std_logic;
@@ -52,7 +53,7 @@ end entity ddr3_memory_controller;
 	
 architecture RTL of ddr3_memory_controller is
 
-	type controller_mode_type is (disabled, waiting, ready, countertest, pcietest);
+	type controller_mode_type is (disabled, waiting, ready, countertest, dataflow);
 	signal mode : controller_mode_type;
 	
 	signal counter_read				:	std_logic;
@@ -65,16 +66,7 @@ architecture RTL of ddr3_memory_controller is
 	signal counter_readdatavalid	:  std_logic;
 	signal counter_readdatavalid_reg	:  std_logic;
 	signal counter_burstcount		:	std_logic_vector(6 downto 0);
-	
-	signal pcie_read					:	std_logic;
-	signal pcie_write					:	std_logic;
-	signal pcie_address				:  std_logic_vector(25 downto 0);
-	signal pcie_writedata			:	std_logic_vector(511 downto 0);
-	signal pcie_readdata				:	std_logic_vector(511 downto 0);
-	signal pcie_readdatavalid		:  std_logic;
-	signal pcie_burstcount			:	std_logic_vector(6 downto 0);
-
-	
+		
 	type counter_state_type is (disabled, writing, reading, done);
 	signal counter_state : counter_state_type;
 	signal mycounter 	: reg32;
@@ -93,61 +85,60 @@ architecture RTL of ddr3_memory_controller is
 	signal counterr_reg	: reg32;	
 	signal timecount_reg	: reg32;
 	
-	signal firsterror : std_logic;
 	signal started 	: std_logic;
 	
 begin
+		
+		ddr3clk			<= M_clk;
+		ddr3_calibrated<= M_cal_success;
+		ddr3_ready		<= M_ready;
+
 
 	-- Counter forwarding
-	poserr		<= poserr_reg;
-	counterr		<= counterr_reg;
-	timecount	<= timecount_reg;
-
-
+	errout		<= poserr_reg 		when ddr3control(DDR3_COUTERSEL_RANGE_A) = "01" else			
+						counterr_reg	when ddr3control(DDR3_COUTERSEL_RANGE_A) = "10" else
+						timecount_reg;
 
 	-- Status register
-	ddr3status(0)	<= M_cal_success;
-	ddr3status(1)	<= M_cal_fail;
-	ddr3status(2)	<= M_reset_n;
-	ddr3status(3)	<= M_ready;
+	ddr3status(DDR3_BIT_CAL_SUCCESS)	<= M_cal_success;
+	ddr3status(DDR3_BIT_CAL_FAIL)	<= M_cal_fail;
+	ddr3status(DDR3_BIT_RESET_N)	<= M_reset_n;
+	ddr3status(DDR3_BIT_READY)	<= M_ready;
 	
-	ddr3status(4)	<= '1' when counter_state = writing else
+	ddr3status(DDR3_BIT_TEST_WRITING)	<= '1' when counter_state = writing else
 							'0';
-	ddr3status(5)	<= '1' when counter_state = reading else
+	ddr3status(DDR3_BIT_TEST_READING)	<= '1' when counter_state = reading else
 							'0';	
-	ddr3status(6)	<= '1' when counter_state = done else
+	ddr3status(DDR3_BIT_TEST_DONE)	<= '1' when counter_state = done else
 							'0';							
-	
-	ddr3status(8)	<= RWDone;
-	ddr3status(9)	<= Running;
-
-	ddr3status(23 downto 16)	<= mycounter(7 downto 0);
-	ddr3status(31 downto 24)	<= mycounter(25 downto 18);
 
 -- Mode MUX	
 M_read	<= counter_read when mode = countertest else
-				pcie_read    when mode = pcietest		else
+				ddr3_read    when mode = dataflow		else
 				'0';
 				
 M_write	<= counter_write when mode = countertest else
-				pcie_write    when mode = pcietest	 else
+				ddr3_write    when mode = dataflow	 else
 				'0';
 
 M_address <= counter_address when mode = countertest else
-				 pcie_address    when mode = pcietest	 else
+				 ddr3addr    when mode = dataflow	 else
 				 (others => '0');		
 				
 M_writedata	<= counter_writedata when mode = countertest else
-					pcie_writedata    when mode = pcietest	  else
+					ddr3datain    when mode = dataflow	  else
 					(others => '0');
+					
+					
+ddr3_read_valid	<= M_readdatavalid when mode = dataflow else 0;
+ddr3dataout			<= M_readdata;			
 
-M_burstcount <= counter_burstcount when mode = countertest else
-					 pcie_burstcount    when mode = pcietest	 else
-					 (others => '0');					
+-- This is the HW burst size...					
+M_burstcount <= "0000001";					
 
 
 					 
--- Mode state machine	signal counter_readdatavalid	:  std_logic;
+-- Mode state machine
 process(M_clk, reset_n)
 begin
 if(reset_n = '0') then
@@ -155,7 +146,7 @@ if(reset_n = '0') then
 elsif(M_clk'event and M_clk='1') then	
 	case mode is
 		when disabled =>
-			if(ddr3control(0) = '1') then
+			if(ddr3control(DDR3_BIT_ENABLE_A) = '1') then
 				mode <= waiting;
 			end if;
 		when waiting =>
@@ -163,17 +154,17 @@ elsif(M_clk'event and M_clk='1') then
 				mode <= ready;
 			end if;
 		when ready =>
-			if (ddr3control(0) = '1') then
+			if (ddr3control(DDR3_BIT_COUNTERTEST_A) = '1') then
 				mode <= countertest;
-			elsif (ddr3control(1)='1') then
-				mode <= pcietest;
+			else 
+				mode <= dataflow;
 			end if;
 		when countertest =>
-			if (ddr3control(0)='0') then
+			if (ddr3control(DDR3_BIT_COUNTERTEST_A)='0') then
 				mode <= ready;
 			end if;
-		when pcietest =>
-			if (ddr3control(1)='0') then
+		when dataflow =>
+			if (ddr3control(DDR3_BIT_COUNTERTEST_A)='1') then
 				mode <= ready;
 			end if;
 	end case;
@@ -215,8 +206,6 @@ elsif(M_clk'event and M_clk='1') then
 			counter_address		<= (others => '1');
 			RWDone <= '0';
 			Running <= '0';
-
-			firsterror <= '0';
 			
 			poserr_reg		<= (others => '0');	
 			counterr_reg	<= (others => '0');
@@ -228,7 +217,7 @@ elsif(M_clk'event and M_clk='1') then
 		
 			timecount_reg <= timecount_reg + '1';
 		
-			counter_burstcount <= ddr3control(30 downto 24);
+			counter_burstcount <= "0000001";
 			
 			counter_write <= '1';
 			
@@ -409,11 +398,6 @@ elsif(M_clk'event and M_clk='1') then
 				end if;
 				if(check /= "0000000000000000")then
 					counterr_reg <= counterr_reg + '1';
-					if(firsterror = '0') then
-						firsterror <= '1';
-						wrongdata <= counter_readdata_reg;
-						wronglast(27 downto 0) <= LastLastC;
-					end if;
 				end if;
 			end if;
 		when done =>
@@ -423,57 +407,5 @@ elsif(M_clk'event and M_clk='1') then
 	end case;
 end if;
 end process;	
-
-
--- writing and reading from pcie	
-process(M_clk, reset_n)
-begin
-if(reset_n = '0') then
-	pcie_read			<= '0';
-	pcie_write			<= '0';
-
-elsif(M_clk'event and M_clk='1') then	
-	pcie_read			<= '0';
-	pcie_write			<= '0';
-	
-	-- Register once to ease timing
-	pcie_readdata 			<= M_readdata;
-	pcie_readdatavalid 	<= M_readdatavalid;
-	
-	
-	if(ddr3addr_written = '1')then
-		pcie_address	<= ddr3addr(25 downto 0);
-		pcie_read		<= '1';
-		pcie_burstcount <= "0000001";	
-	end if;
-	
-	if (pcie_readdatavalid = '1') then
-		ddr3dataout <= pcie_readdata(31 downto 0);
-	end if;
-	
-	if(ddr3datain_written = '1')then
-		pcie_address	<= ddr3addr(25 downto 0);
-		pcie_write		<= '1';
-		pcie_burstcount <= "0000001";
-		pcie_writedata  <=   X"1234ABCD" &
-									X"2234ABCD" &
-									X"3234ABCD" &
-									X"4234ABCD" &
-									X"5234ABCD" &
-									X"6234ABCD" &
-									X"7234ABCD" &
-									X"8234ABCD" &
-									X"9234ABCD" &
-									X"A234ABCD" &
-									X"B234ABCD" &
-									X"C234ABCD" &
-									X"D234ABCD" &
-									X"E234ABCD" &
-									X"F234ABCD" &
-									ddr3datain;
-	end if;
-
-end if;
-end process;
 
 end architecture RTL;

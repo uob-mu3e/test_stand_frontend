@@ -32,7 +32,7 @@ set_instance_parameter_value fifo_0 {GUI_RAM_BLOCK_TYPE} {Auto}
 set_instance_parameter_value fifo_0 {GUI_UNDERFLOW_CHECKING} {0}
 set_instance_parameter_value fifo_0 {GUI_UsedW} {1}
 set_instance_parameter_value fifo_0 {GUI_Width} {38}
-set_instance_parameter_value fifo_0 {GUI_dc_aclr} {0}
+set_instance_parameter_value fifo_0 {GUI_dc_aclr} {1}
 set_instance_parameter_value fifo_0 {GUI_delaypipe} {4}
 set_instance_parameter_value fifo_0 {GUI_diff_widths} {0}
 set_instance_parameter_value fifo_0 {GUI_msb_usedw} {0}
