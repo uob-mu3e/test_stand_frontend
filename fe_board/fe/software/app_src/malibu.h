@@ -3,6 +3,8 @@
 malibu_t malibu;
 
 void menu_malibu() {
+    volatile alt_u32* avm = (alt_u32*)AVM_BASE;
+
     while(1) {
         printf("  [0] => reset\n");
         printf("  [1] => powerup MALIBU\n");
@@ -28,9 +30,9 @@ void menu_malibu() {
             malibu.stic_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
             break;
         case 's':
-            printf("buffer_full/frame_desync/rx_pll_lock: 0x%03X\n", ((volatile alt_u32*)AVM_TEST_BASE)[0x8]);
-            printf("rx_dpa_lock: 0x%08X\n", ((volatile alt_u32*)AVM_TEST_BASE)[0x9]);
-            printf("rx_ready: 0x%08X\n", ((volatile alt_u32*)AVM_TEST_BASE)[0xA]);
+            printf("buffer_full/frame_desync/rx_pll_lock: 0x%03X\n", avm[0x8]);
+            printf("rx_dpa_lock: 0x%08X\n", avm[0x9]);
+            printf("rx_ready: 0x%08X\n", avm[0xA]);
             break;
         case 'q':
             return;

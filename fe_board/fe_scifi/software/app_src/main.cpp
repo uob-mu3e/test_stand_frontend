@@ -5,7 +5,7 @@
 #include "../include/i2c.h"
 i2c_t i2c;
 
-#include "../../../fe/software/app_src/malibu.h"
+#include "malibu.h"
 
 #include "sc.h"
 #include "../../../fe/software/app_src/mscb_user.h"
