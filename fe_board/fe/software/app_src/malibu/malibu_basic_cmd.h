@@ -134,9 +134,7 @@ struct malibu_t {
         printf("[malibu] powerdown DONE\n");
     }
 
-    int PowerUpASIC(unsigned char n);
-    int SPI_write_pattern(const unsigned char* bitpattern);
-    int SPI_configure(unsigned char n, const unsigned char* bitpattern);
+    int asic_configure(unsigned char n, const unsigned char* bitpattern);
 };
 
 //Slow control pattern for stic3, pattern length and alloff configuration
@@ -164,10 +162,6 @@ int SPI_write_pattern(uint32_t slaveAddr, const unsigned char* bitpattern) {
 	return status;
 }
 
-int malibu_t::SPI_write_pattern(const unsigned char* bitpattern) {
-    return ::SPI_write_pattern(1, bitpattern);
-}
-
 //configure a specific ASIC returns 0 if configuration is correct, -1 otherwise.
 int SPI_configure(uint32_t slaveAddr, const unsigned char* bitpattern) {
 	//configure SPI. Note: pattern is not in full bytes, so validation gets a bit more complicated. Shifting out all bytes, and need to realign after.
@@ -179,21 +173,6 @@ int SPI_configure(uint32_t slaveAddr, const unsigned char* bitpattern) {
 	return ret;
 }
 
-int malibu_t::SPI_configure(unsigned char n, const unsigned char* bitpattern) {
-	//pull low CS line of the given ASIC
-	char gpio_value = I2C_read(0x39+n/2, 0x01);
-	gpio_value ^= 1<<(2+n%2*4);
-	I2C_write(0x39+n/2, 0x01, gpio_value);
-
-    int ret = SPI_configure(1, bitpattern);
-
-	//pull high CS line of the given ASIC
-	gpio_value ^= 1<<(2+n%2*4);
-	I2C_write(0x39+n/2, 0x01, gpio_value);
-
-    return ret;
-}
-
 /*
 Power up cycle for single ASIC
 - Power digital 1.8V domain
@@ -202,16 +181,28 @@ Power up cycle for single ASIC
 - If correct: Power up 1.8V analog domain
 - else power down 1.8V digital domain
 */
-int malibu_t::PowerUpASIC(unsigned char n) {
-	printf("[malibu] powerup ASIC %u\n", n);
+int malibu_t::asic_configure(unsigned char n, const unsigned char* bitpattern) {
+	printf("[malibu] asic_configure %u\n", n);
+
 	char gpio_value=I2C_read(0x39+n/2,0x01);
 
 	// enable 1.8V digital
 	gpio_value |= 1<<(1+n%2*4);
 	I2C_write(0x39+n/2, 0x01, gpio_value);
 	int ret;
-	ret=SPI_configure(n,stic3_config_ALL_OFF);
-	ret=SPI_configure(n,stic3_config_ALL_OFF);
+
+ 	//pull low CS line of the given ASIC
+ 	I2C_write(0x39+n/2, 0x01, I2C_read(0x39+n/2, 0x01) & ~(1<<(2+n%2*4)));
+	ret=::SPI_configure(1,bitpattern);
+ 	//pull high CS line of the given ASIC
+ 	I2C_write(0x39+n/2, 0x01, I2C_read(0x39+n/2, 0x01) | (1<<(2+n%2*4)));
+
+ 	//pull low CS line of the given ASIC
+ 	I2C_write(0x39+n/2, 0x01, I2C_read(0x39+n/2, 0x01) & ~(1<<(2+n%2*4)));
+	ret=::SPI_configure(1,bitpattern);
+ 	//pull high CS line of the given ASIC
+ 	I2C_write(0x39+n/2, 0x01, I2C_read(0x39+n/2, 0x01) | (1<<(2+n%2*4)));
+
 	if(ret != 0) { // configuration error, switch off again
 		printf("Configuration mismatch, powering off again\n");
 		gpio_value ^= 1<<(1+n%2*4);
@@ -221,7 +212,8 @@ int malibu_t::PowerUpASIC(unsigned char n) {
 	// enable 1.8V analog
 	gpio_value |= 1<<(0+n%2*4);
 	I2C_write(0x39+n/2, 0x01, gpio_value);
-	printf("DONE\n");
+
+	printf("[malibu] asic_configure - DONE\n");
 	return 0;
 }
 
