@@ -89,8 +89,6 @@ signal fifo_empty : std_logic;
 signal not_fifo_empty : std_logic;
 signal fifo_data_write : std_logic;
 
-signal saw_preamble : std_logic;
-
 ----------------begin event_counter------------------------
 begin
 
@@ -158,7 +156,6 @@ begin
 		event_tagging_state   <= waiting;
 		w_ram_en              <= '0';
 		w_fifo_en             <= '0';
-		saw_preamble 				  <= '0';
 		w_fifo_data				 <= (others => '0');
 		w_ram_data				 <= (others => '0');
 		w_ram_add				 <= (others => '1');
@@ -168,27 +165,26 @@ begin
 		w_fifo_en <= '0';
 
 		if (not_fifo_empty = '1') then
- 			if(saw_preamble = '1') then
-				w_ram_add   <= w_ram_add + 1;
-			end if;
 			
 			case event_tagging_state is
 
 				when waiting =>
-					if(fifo_data_out(35 downto 30) = "111010" and fifo_data_out(11 downto 4) = x"bc" and fifo_data_out(3 downto 0) = "0001") then 
-						saw_preamble <= '1';
-						w_ram_add   <= w_ram_add + 1;
+					if(fifo_data_out(35 downto 30) = "111010" and
+                  fifo_data_out(11 downto 4) = x"bc" and 
+                  fifo_data_out(3 downto 0) = "0001") then 
 						w_ram_en				  <= '1';
+                  w_ram_add           <= w_ram_add + 1;
 						w_ram_data  		  <= fifo_data_out(35 downto 4);
 						event_tagging_state <= ending;
 					end if;
 					
 				when ending =>
-					w_ram_en		<= '1';
-					w_ram_data  		  <= fifo_data_out(35 downto 4);
+					w_ram_en	  <= '1';
+					w_ram_data <= fifo_data_out(35 downto 4);
+					w_ram_add  <= w_ram_add + 1;
 					if(fifo_data_out(35 downto 4) = x"0000009c" and fifo_data_out(3 downto 0) = "0001") then
-						w_fifo_data <= w_ram_add + 1;
 						w_fifo_en   <= '1';
+                  w_fifo_data <= w_ram_add + 1;
 						event_tagging_state <= waiting;
 					end if;
 					
@@ -204,8 +200,8 @@ end process;
 process(clk, reset_n)
 begin
 	if(reset_n = '0') then
-		dmamem_endofevent 		<= '0';
 		state_out               <= x"0";
+      dmamem_endofevent 		<= '0';
 		r_fifo_en					<= '0';
 		dma_data_wren	    		<= '0';
 		wait_cnt 					<= '0';
@@ -233,10 +229,10 @@ begin
 				end if;
 				
 			when get_data =>
-				state_out <= x"B";
-				r_fifo_en    		  			<= '0';
-				r_ram_add			  			<= r_ram_add + '1';
-				event_counter_state 			<= runing;
+				state_out           <= x"B";
+				r_fifo_en    		  <= '0';
+				r_ram_add			  <= r_ram_add + '1';
+				event_counter_state <= runing;
 				
 			when runing =>
 				state_out <= x"C";

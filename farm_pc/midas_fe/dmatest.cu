@@ -95,16 +95,16 @@ int main(int argc, char *argv[])
         return ret_val;
     }
 
-    // reset all
-    uint32_t reset_reg = 0;
-    reset_reg = SET_RESET_BIT_ALL(reset_reg);
-    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
-
     // Set up data generator
     uint32_t datagen_setup = 0;
     mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
     datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+
+    // reset all
+    uint32_t reset_reg = 0;
+    reset_reg = SET_RESET_BIT_ALL(reset_reg);
+    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
 
     // Enable register on FPGA for continous readout and enable dma
     uint32_t lastlastWritten = mu.last_written_addr();
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
     // stop generator
     datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
-    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x0, 100);//3E8); // slow down to 64 MBit/s
+    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
 
     mu.disable();
     mu.close();
