@@ -118,16 +118,16 @@ BEGIN
         clk_rx            => clk_reset_rx_125,
         clk_156           => clk_156,
         reset_n           => not reset_in,
-        state_rx          => ustate_idle_rx &
-                             ustate_run_prepare_rx &
-                             ustate_sync_rx &
-                             ustate_running_rx &
-                             ustate_terminating_rx &
-                             ustate_link_test_rx &
-                             ustate_sync_test_rx &
+        state_rx          => '0'&
+                             ustate_out_of_DAQ_rx &
                              ustate_reset_rx &
-                             ustate_out_of_DAQ_rx & 
-                             '0',
+                             ustate_sync_test_rx &
+                             ustate_link_test_rx &
+                             ustate_terminating_rx &
+                             ustate_running_rx &
+                             ustate_sync_rx &
+                             ustate_run_prepare_rx &
+                             ustate_idle_rx,
         state_156         => state_out_156
     );
 
