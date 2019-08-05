@@ -6,25 +6,25 @@ import collections
 
 df = pd.read_csv("../../build/farm_pc/midas_fe/memory_content.txt", sep="\t", encoding="ISO-8859-1")
 
-df["event_length"][df["event_length"] < 30].plot.hist(bins=12, alpha=0.5)
+df["event_length"].plot.hist(bins=12, alpha=0.5)
 plt.show()
 plt.close()
 
-print(df[df["event_length"] < 30])
+print(df)
 
-df["event_length"][df["event_length"] < 30].plot()
+df["event_length"].plot()
 plt.show()
 plt.close()
 
-data = np.array(df["data"])[df["event_length"] < 30]
-length = np.array(df["event_length"])[df["event_length"] < 30]
+data = np.array(df["data"])
+length = np.array(df["event_length"])
 print(data)
 
 list_of_length = []
 list_of_counts = []
 counter = 1
 for idx, value in enumerate(data):
-    if value == "0000009C":
+    if value == "0000039C":
         list_of_counts.append(counter)
         list_of_length.append(length[idx])
 
@@ -36,7 +36,7 @@ for idx, value in enumerate(data):
         counter += 1
 
 plt.plot(range(len(list_of_counts)), list_of_counts, label="COUNTS")
-plt.plot(range(len(list_of_length)), list_of_length, label="LENGTH")
+plt.plot(range(len(list_of_length)), list_of_length, '--', label="LENGTH")
 plt.legend()
 plt.show()
 

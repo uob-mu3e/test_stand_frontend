@@ -148,7 +148,7 @@ begin
 					w_ram_en		<= '1';
 					w_ram_data  <= fifo_data_out(35 downto 4);
 					w_ram_add   <= w_ram_add + 1;
-					if(fifo_data_out(35 downto 4) = x"0000009c" and
+					if(fifo_data_out(11 downto 4) = x"9c" and--x"0000009c" and
 						fifo_data_out(3 downto 0) = "0001") then
 						w_fifo_en   			<= '1';
 						w_fifo_data 			<= w_ram_add + 1;
