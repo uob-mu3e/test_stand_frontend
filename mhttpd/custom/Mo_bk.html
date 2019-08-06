@@ -6,7 +6,7 @@
 		<title>MALIBU Monitor</title>
 		<link rel="stylesheet" href="mu3estyle.css" type="text/css">
 		<link rel="stylesheet" href="MALIBU.css" type="text/css">
-		<!-- <link rel="stylesheet" href="midas.css"> -->
+		<link rel="stylesheet" href="midas.css">
 		
 		<script src='controls.js'></script>
 		<script src="midas.js"></script>
@@ -53,11 +53,11 @@
 	//high level function for custom page	
 		function readback_power(){//act: true-> up; false -> down
 			var path_w=[path_power+"_w"];
-			var path_rb=[path_power"_rb"];
+			var path_rb=[path_power+"_rb"];
 
 			mjsonrpc_db_get_value(path_w).then(function(rpc) { //check the write value
 				result=rpc.result;	      
-				document.getElementById("powerstatus_w").innerHTML = result +'(' +result.status')';
+				document.getElementById("powerstatus_w").innerHTML = result +'(' +result.status + ')';
 				document.getElementById("powerstatus_w").style.backgroundColor= 'green';
 			}).catch(function(error) {
 				document.getElementById("powerstatus_w").innerHTML = 'Error';
@@ -66,7 +66,7 @@
 			});
 			mjsonrpc_db_get_value(path_rb).then(function(rpc) {//check the readback value
 				result=rpc.result;	      
-				document.getElementById("powerstatus_rb").innerHTML = result +'(' +result.status')';
+				document.getElementById("powerstatus_rb").innerHTML = result +'(' +result.status + ')';
 				document.getElementById("powerstatus_rb").style.backgroundColor= 'green';
 			}).catch(function(error) {
 				document.getElementById("powerstatus_rb").innerHTML = 'Error';
