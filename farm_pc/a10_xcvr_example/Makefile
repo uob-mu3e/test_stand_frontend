@@ -7,9 +7,6 @@ APP_DIR=software/app
 
 include util/makefile.mk
 
-flow : ip/ip_xcvr_phy.sopcinfo ip/ip_xcvr_fpll.sopcinfo ip/ip_xcvr_reset.sopcinfo
-flow : ip/ip_clkctrl.sopcinfo ip/ip_iopll_125.sopcinfo
 flow : nios.sopcinfo
-
-ip/%.qsys : a10/%.tcl
-	qsys-script --script=$<
+flow : a10/ip_clkctrl.sopcinfo a10/ip_iopll_125.sopcinfo
+flow : a10/ip_xcvr_phy.sopcinfo a10/ip_xcvr_fpll.sopcinfo a10/ip_xcvr_reset.sopcinfo

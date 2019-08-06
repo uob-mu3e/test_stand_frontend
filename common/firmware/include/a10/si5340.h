@@ -39,7 +39,7 @@ struct si5340_t {
         set_N0(n * f_in / f / 2);
     }
 
-    void test() {
+    void read_regs() {
         i2c.set(dev, 0x01, 0); // set page 0
         printf("  DIE_REV       = 0x%02X\n", i2c.get(dev, 0x00));
         printf("  PN_BASE       = 0x%02X%02X\n", i2c.get(dev, 0x03), i2c.get(dev, 0x02));
@@ -64,21 +64,38 @@ struct si5340_t {
         }
     }
 
-    void write() {
-        auto& regs = si5340_regs;
-        for(int i = 0; i < sizeof(regs) / sizeof(regs[0]); i++) {
-            printf("[%04X]\n", i);
+    void menu() {
+        while (1) {
+            printf("\n");
+            printf("[si5340] -------- menu --------\n");
+
+            printf("\n");
+            printf("  [1] => 100 MHz\n");
+            printf("  [2] => 125 MHz\n");
+            printf("  [3] => 156.25 MHz\n");
+            printf("  [r] => read regs\n");
+
+            printf("Select entry ...\n");
+            char cmd = wait_key();
+            switch(cmd) {
+            case '1':
+                si5340.set_f0(100000000); // 100 MHz
+                break;
+            case '2':
+                si5340.set_f0(125000000); // 125 MHz
+                break;
+            case '3':
+                si5340.set_f0(156250000); // 156.25 MHz
+                break;
+            case 'r':
+                si5340.read_regs();
+                break;
+            case 'q':
+                return;
+            default:
+                printf("invalid command: '%c'\n", cmd);
+            }
         }
-
-        // 0x2373000000 - 100 MHz
-        // 0x1C5C000000 - 125 MHz
-        // 0x16B0000000 - 156.25 MHz
-        set_N0(0x2373000000); // 100 MHz
-
-        // soft reset
-//        set_page(0x0);
-//        i2c.set(dev, 0x1C, 1);
-
     }
 
 };

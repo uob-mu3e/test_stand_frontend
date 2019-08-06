@@ -307,7 +307,8 @@ gen_dummy: if GEN_DUMMIES generate begin
 	s_event_data	 	<= s_gen_event_data		when i_SC_datagen_enable='1' else s_rec_event_data;
 	s_event_ready	 	<= s_gen_event_ready		when i_SC_datagen_enable='1' else s_rec_event_ready;
 	s_end_of_frame	 	<= s_gen_end_of_frame	when i_SC_datagen_enable='1' else s_rec_end_of_frame;
-else generate
+end generate;
+gen_dummy_not : if not GEN_DUMMIES generate begin
 	s_frame_number		<= s_rec_frame_number;
 	s_frame_info		<= s_rec_frame_info;
 	s_frame_info_rdy 	<= s_rec_frame_info_rdy;

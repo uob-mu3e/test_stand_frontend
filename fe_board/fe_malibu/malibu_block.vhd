@@ -2,13 +2,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity malibu_path is
+entity malibu_block is
 generic (
     N_g : positive := 1--;
 );
 port (
     -- avalon slave
-    -- address space - 64 bytes (16 words)
     -- address units - words
     -- read latency - 1
     i_avs_address       : in    std_logic_vector(3 downto 0);
@@ -28,12 +27,12 @@ port (
     i_fifo_rack         : in    std_logic;
 
     i_reset             : in    std_logic;
-    -- 156.25 MHz   
+    -- 156.25 MHz
     i_clk               : in    std_logic--;
 );
 end entity;
 
-architecture arch of malibu_path is
+architecture arch of malibu_block is
 
     signal refclk : std_logic;
 

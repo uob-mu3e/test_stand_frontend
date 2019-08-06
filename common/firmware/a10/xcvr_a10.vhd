@@ -189,7 +189,7 @@ begin
     end generate;
 
     -- av_ctrl process, avalon iface
-    p_av_ctrl : process(i_clk, reset_n)
+    process(i_clk, reset_n)
     begin
     if ( reset_n = '0' ) then
         av_ctrl.waitrequest <= '1';
@@ -403,7 +403,7 @@ begin
         unused_tx_parallel_data => (others => '0'),
         unused_rx_parallel_data => open,
 
-        reconfig_address        => std_logic_vector(to_unsigned(ch, 2)) & av_phy.address(9 downto 0),
+        reconfig_address        => std_logic_vector(to_unsigned(ch, work.util.vector_width(NUMBER_OF_CHANNELS_g))) & av_phy.address(9 downto 0),
         reconfig_read(0)        => av_phy.read,
         reconfig_readdata       => av_phy.readdata,
         reconfig_write(0)       => av_phy.write,

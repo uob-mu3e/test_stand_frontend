@@ -663,10 +663,10 @@ si5344_revd_register_t const si5344_revd_registers[SI5344_REVD_REG_CONFIG_NUM_RE
  * 
  * Revision: D
  * VDD:      1.8 V
- * Ta:       70 °C
+ * Ta:       70 Â°C
  * Airflow:  None
  * 
- * Total Power: 834 mW, On Chip Power: 810 mW, Tj: 88 °C
+ * Total Power: 834 mW, On Chip Power: 810 mW, Tj: 88 Â°C
  * 
  *                 Frequency  Format   Voltage   Current     Power
  *         -----------------  ------  --------  --------  --------
@@ -684,7 +684,7 @@ si5344_revd_register_t const si5344_revd_registers[SI5344_REVD_REG_CONFIG_NUM_RE
  * -Total power includes on- and off-chip power. This is a typical value and estimate only.
  * -Use an EVB for a more exact power measurement
  * -On-chip power excludes power dissipated in external terminations.
- * -Tj is junction temperature. Tj must be less than 125 °C (on Si5344 Revision D) for device to comply with datasheet specifications.
+ * -Tj is junction temperature. Tj must be less than 125 Â°C (on Si5344 Revision D) for device to comply with datasheet specifications.
  * 
  * Settings
  * ========

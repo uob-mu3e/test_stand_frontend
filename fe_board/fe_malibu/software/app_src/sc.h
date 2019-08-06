@@ -26,10 +26,10 @@ void sc_callback(volatile alt_u32* data) {
         malibu.powerdown();
         break;
     case 0x0103:
-        malibu.asic_configure(0, stic3_config_ALL_OFF);
+        malibu.stic_configure(0, stic3_config_ALL_OFF);
         break;
     case 0x0104:
-        malibu.asic_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
+        malibu.stic_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
         break;
     case 0xFFFF:
         for(alt_u32 i = 0; i < n; i++) {

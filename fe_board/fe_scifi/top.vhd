@@ -180,28 +180,28 @@ begin
 
     e_nios : component work.cmp.nios
     port map (
-        avm_qsfp_address        => av_qsfp.address(15 downto 0),
+        avm_qsfp_address        => av_qsfp.address(13 downto 0),
         avm_qsfp_read           => av_qsfp.read,
         avm_qsfp_readdata       => av_qsfp.readdata,
         avm_qsfp_write          => av_qsfp.write,
         avm_qsfp_writedata      => av_qsfp.writedata,
         avm_qsfp_waitrequest    => av_qsfp.waitrequest,
 
-        avm_pod_address         => av_pod.address(15 downto 0),
+        avm_pod_address         => av_pod.address(13 downto 0),
         avm_pod_read            => av_pod.read,
         avm_pod_readdata        => av_pod.readdata,
         avm_pod_write           => av_pod.write,
         avm_pod_writedata       => av_pod.writedata,
         avm_pod_waitrequest     => av_pod.waitrequest,
 
-        avm_sc_address          => av_sc.address(17 downto 0),
+        avm_sc_address          => av_sc.address(15 downto 0),
         avm_sc_read             => av_sc.read,
         avm_sc_readdata         => av_sc.readdata,
         avm_sc_write            => av_sc.write,
         avm_sc_writedata        => av_sc.writedata,
         avm_sc_waitrequest      => av_sc.waitrequest,
 
-        avm_test_address        => av_test.address(15 downto 0),
+        avm_test_address        => av_test.address(13 downto 0),
         avm_test_read           => av_test.read,
         avm_test_readdata       => av_test.readdata,
         avm_test_write          => av_test.write,
@@ -294,7 +294,7 @@ begin
         N_g => 4
     )
     port map (
-        i_avs_address       => av_test.address(5 downto 2),
+        i_avs_address       => av_test.address(3 downto 0),
         i_avs_read          => av_test.read,
         o_avs_readdata      => av_test.readdata,
         i_avs_write         => av_test.write,
@@ -321,7 +321,7 @@ begin
 
     e_data_sc_path : entity work.data_sc_path
     port map (
-        i_avs_address       => av_sc.address(17 downto 2),
+        i_avs_address       => av_sc.address(15 downto 0),
         i_avs_read          => av_sc.read,
         o_avs_readdata      => av_sc.readdata,
         i_avs_write         => av_sc.write,
@@ -424,7 +424,7 @@ begin
         i_pll_clk   => qsfp_pll_clk,
         i_cdr_clk   => qsfp_pll_clk,
 
-        i_avs_address     => av_qsfp.address(15 downto 2),
+        i_avs_address     => av_qsfp.address(13 downto 0),
         i_avs_read        => av_qsfp.read,
         o_avs_readdata    => av_qsfp.readdata,
         i_avs_write       => av_qsfp.write,
@@ -456,7 +456,7 @@ begin
     )
     port map (
         -- avalon slave interface
-        i_avs_address     => av_pod.address(15 downto 2),
+        i_avs_address     => av_pod.address(13 downto 0),
         i_avs_read        => av_pod.read,
         o_avs_readdata    => av_pod.readdata,
         i_avs_write       => av_pod.write,

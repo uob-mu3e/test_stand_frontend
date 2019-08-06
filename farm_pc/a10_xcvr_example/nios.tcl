@@ -11,7 +11,7 @@ source {a10/a10_flash1616.tcl}
 
 
 
-nios_base.export_avm avm_qsfp 0x70010000 16
+nios_base.export_avm avm_qsfp 14 0x70010000 -addressUnits 32
 
 
 
