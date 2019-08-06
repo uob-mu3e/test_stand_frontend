@@ -15,8 +15,6 @@ odbedit -c clean
 odbedit -c 'mkdir Custom'
 odbedit -d Custom -c 'create STRING Path'
 odbedit -c "set Custom/Path $SOURCE/mhttpd/custom"
-#odbedit -d Custom -c 'create STRING Path1'
-#odbedit -c "set Custom/Path1 $SOURCE/mhttpd/custom/Tile_GUI/MALIBU_Monitor"
 
 #create custom pages for DAQ slow control and Clock/Reset system
 odbedit -d Custom -c 'create STRING SC'
@@ -24,12 +22,12 @@ odbedit -c 'set Custom/SC sc.html'
 odbedit -d Custom -c 'create STRING CR'
 odbedit -c 'set Custom/CR cr.html'
 odbedit -d Custom -c 'create STRING MALIBU'
-odbedit -c 'set Custom/MALIBU MALIBUMonitor.html'
+odbedit -c 'set Custom/MALIBU TileGUI/MALIBUMonitor/Monitor.html'
 
 xterm -hold -e "mhttpd" &
 xterm -hold -e "mserver" &
 xterm -hold -e "mlogger" &
 #xterm -hold -e "switch_fe" &
-#xterm -hold -e "crfe" &
+xterm -hold -e "crfe" &
 xterm -hold -e "malibu_fe" &
 
