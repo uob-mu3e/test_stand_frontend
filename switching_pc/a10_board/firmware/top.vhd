@@ -322,7 +322,7 @@ port map (
 
 ------------- NIOS -------------
 
-nios2 : nios
+nios2 : work.cmp.nios
 port map (
 	clk_clk                    			=> input_clk,
 	
@@ -367,8 +367,8 @@ generic map (
 port map (
 		rstout_n(1) => flash_rst_n,
 		rstout_n(0) => cpu_reset_n_q,
-		rst_n 		=> CPU_RESET_n and wd_rst_n,
-		clk 			=> clk--input_clk--,
+		rst_n 		=> CPU_RESET_n,-- and wd_rst_n,
+		clk 			=> input_clk--,
 );
 
 watchdog_i : entity work.watchdog
@@ -382,13 +382,13 @@ port map (
 		rstout_n => wd_rst_n,
 
 		rst_n 	=> CPU_RESET_n,
-		clk 		=> clk--input_clk--,
+		clk 		=> input_clk--,
 );
 
 LED(0) <= cpu_pio_i(7);
-LED(1) <= cpu_reset_n_q;
-LED(2) <= flash_rst_n;
-LED(3) <= '1';
+LED(1) <= not cpu_reset_n_q;
+LED(2) <= not flash_rst_n;
+LED(3) <= '0';
 
 FLASH_A <= flash_tcm_address_out(27 downto 2);
 

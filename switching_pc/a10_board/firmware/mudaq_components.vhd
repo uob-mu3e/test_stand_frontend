@@ -127,43 +127,6 @@ component ip_transiver is
 	);
 end component ip_transiver;
 
-component debouncer is
-	generic (
-        -- bus width
-        W   : positive := 1;
-        -- number of clock cycles (stable signal)
-        N   : positive := 16#FFFF#--;
-    );
-    port (
-        d       :   in  std_logic_vector(W-1 downto 0);
-        q       :   out std_logic_vector(W-1 downto 0);
-        arst_n  :   in  std_logic;
-        clk     :   in  std_logic--;
-    );
-end component debouncer;
-
-component sc_s4 is
-	port(
-		clk:                in std_logic;
-		reset_n:            in std_logic;
-		enable:             in std_logic;
-		
-		mem_data_in:        in std_logic_vector(31 downto 0);
-		
-		link_data_in:       in std_logic_vector(31 downto 0);
-		link_data_in_k:     in std_logic_vector(3 downto 0);
-		
-		fifo_data_out:      out std_logic_vector(35 downto 0);
-		fifo_we:            out std_logic;
-		
-		mem_data_out:       out std_logic_vector(31 downto 0);
-		mem_addr_out:       out std_logic_vector(15 downto 0);
-		mem_wren:           out std_logic;
-		
-		stateout:           out std_logic_vector(27 downto 0)
-	);
-end component sc_s4;
-
 component ip_clk_ctrl is
   port (
 		inclk  : in  std_logic := 'X'; -- inclk
@@ -203,32 +166,6 @@ component sc_slave is
 		);		
 end component sc_slave;
 
-component rx_align is
-    generic (
-        Nb : positive := 4;
-		  K : std_logic_vector(7 downto 0) := X"BC"--;
-    );
-    port (
-        data    :   out std_logic_vector(8*Nb-1 downto 0);
-        datak   :   out std_logic_vector(Nb-1 downto 0);
-
-        lock    :   out std_logic;
-
-        datain  :   in  std_logic_vector(8*Nb-1 downto 0);
-        datakin :   in  std_logic_vector(Nb-1 downto 0);
-		  
-        syncstatus      :   in  std_logic_vector(Nb-1 downto 0);
-        patterndetect   :   in  std_logic_vector(Nb-1 downto 0);
-        enapatternalign :   out std_logic;
-
-        errdetect   :   in  std_logic_vector(Nb-1 downto 0);
-        disperr     :   in  std_logic_vector(Nb-1 downto 0);
-
-        rst_n   :   in  std_logic;
-        clk     :   in  std_logic
-    );
-end component;
-
 component transceiver_fifo is
   port (
 		data    : in  std_logic_vector(35 downto 0) := (others => 'X'); -- datain
@@ -242,13 +179,6 @@ component transceiver_fifo is
 		wrfull  : out std_logic                                         -- wrfull
   );
 end component transceiver_fifo;
-
-component seg7_lut is
-    port (
-        hex : in  std_logic_vector(3 downto 0);
-        seg : out std_logic_vector(6 downto 0)--;
-    );
-end component seg7_lut;
 
 component sw_algin_data is
 	generic(
@@ -407,33 +337,6 @@ component ip_xcvr_reset is
 		tx_ready           : out std_logic_vector(3 downto 0)                     -- tx_ready
   );
 end component ip_xcvr_reset;
-
-component nios is
-	port (
-		avm_qsfp_address           : out   std_logic_vector(15 downto 0);                    -- address
-		avm_qsfp_read              : out   std_logic;                                        -- read
-		avm_qsfp_readdata          : in    std_logic_vector(31 downto 0) := (others => 'X'); -- readdata
-		avm_qsfp_write             : out   std_logic;                                        -- write
-		avm_qsfp_writedata         : out   std_logic_vector(31 downto 0);                    -- writedata
-		avm_qsfp_waitrequest       : in    std_logic                     := 'X';             -- waitrequest
-		clk_clk                    : in    std_logic                     := 'X';             -- clk
-		flash_tcm_address_out      : out   std_logic_vector(27 downto 0);                    -- tcm_address_out
-		flash_tcm_read_n_out       : out   std_logic_vector(0 downto 0);                     -- tcm_read_n_out
-		flash_tcm_write_n_out      : out   std_logic_vector(0 downto 0);                     -- tcm_write_n_out
-		flash_tcm_data_out         : inout std_logic_vector(31 downto 0) := (others => 'X'); -- tcm_data_out
-		flash_tcm_chipselect_n_out : out   std_logic_vector(0 downto 0);                     -- tcm_chipselect_n_out
-		i2c_sda_in                 : in    std_logic                     := 'X';             -- sda_in
-		i2c_scl_in                 : in    std_logic                     := 'X';             -- scl_in
-		i2c_sda_oe                 : out   std_logic;                                        -- sda_oe
-		i2c_scl_oe                 : out   std_logic;                                        -- scl_oe
-		pio_export                 : out   std_logic_vector(31 downto 0);                    -- export
-		rst_reset_n                : in    std_logic                     := 'X';             -- reset_n
-		spi_MISO                   : in    std_logic                     := 'X';             -- MISO
-		spi_MOSI                   : out   std_logic;                                        -- MOSI
-		spi_SCLK                   : out   std_logic;                                        -- SCLK
-		spi_SS_n                   : out   std_logic    
-);
-end component nios;
 
 component ip_pll_125 is
   port (
