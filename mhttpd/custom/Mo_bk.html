@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="author" content="Tiancheng Zhong">
+		<title>MALIBU Monitor</title>
+		<link rel="stylesheet" href="mu3estyle.css" type="text/css">
+		<link rel="stylesheet" href="MALIBU.css" type="text/css">
+		<!-- <link rel="stylesheet" href="midas.css"> -->
+		
+		<script src='controls.js'></script>
+		<script src="midas.js"></script>
+		<script src="mhttpd.js"></script>
+		<script src='mu3e.js'></script>
+	</head>
+	<script>
+	/*	
+		ODB structure:
+		MALIBU/
+		=>IDs
+			=>MALIBU_ID
+			=>MALIBU_ports
+		=>PLLsettings
+			=>enable
+			=>external
+		=>power
+	*/	
+	
+		var path_IDs = ["/Equipment/MALIBU/IDs"];
+		var path_PLLsettings = ["/Equipment/MALIBU/PLLsettings"];
+		var path_power = ["/Equipment/MALIBU/power"];
+		var opt_malibu_data=["TileGUI/MALIBUMonitor/img/exp1.png","TileGUI/MALIBUMonitor/img/exp2.png","TileGUI/MALIBUMonitor/img/exp3.png"];
+		
+		var malibu_ports_setting = ['port_IDs'];
+		var malibu_ports_setting_odb = ['port_IDs_odb'];
+		var power=false;
+		
+		var show_option = document.getElementById(show_option);
+
+		function Update_img(){
+			var img = document.getElementById("data_win");
+/*			img.src = opt_malibu_data[2];*/
+			img.src = "TileGUI/MALIBUMonitor/img/exp2.png";
+		};
+		
+		function load(){
+			mhttpd_init('MALIBU');
+
+		};
+
+
+
+	//high level function for custom page	
+		function readback_power(){//act: true-> up; false -> down
+			var path_w=[path_power+"_w"];
+			var path_rb=[path_power"_rb"];
+
+			mjsonrpc_db_get_value(path_w).then(function(rpc) { //check the write value
+				result=rpc.result;	      
+				document.getElementById("powerstatus_w").innerHTML = result +'(' +result.status')';
+				document.getElementById("powerstatus_w").style.backgroundColor= 'green';
+			}).catch(function(error) {
+				document.getElementById("powerstatus_w").innerHTML = 'Error';
+				document.getElementById("powerstatus_w").style.backgroundColor= 'red';
+				mjsonrpc_error_alert(error);
+			});
+			mjsonrpc_db_get_value(path_rb).then(function(rpc) {//check the readback value
+				result=rpc.result;	      
+				document.getElementById("powerstatus_rb").innerHTML = result +'(' +result.status')';
+				document.getElementById("powerstatus_rb").style.backgroundColor= 'green';
+			}).catch(function(error) {
+				document.getElementById("powerstatus_rb").innerHTML = 'Error';
+				document.getElementById("powerstatus_rb").style.backgroundColor= 'red';
+				mjsonrpc_error_alert(error);
+			});
+		}
+		function check_config(rb){
+			check_id(rb);
+			check_pll(rb);
+		}
+		function check_id(rb){//rb: ture-> readback; false -> write
+			var postfix =  (rb) ? "_rb" : "_w";
+			var path =  [path_IDs + postfix];
+			var malibu_id = ["MALIBU_ID" + postfix];
+			var malibu_ports = ["MALIBU_ports" + postfix];
+			mjsonrpc_db_get_value(path).then(function(rpc) {//check the readback value
+				result=rpc.result;
+				document.getElementById(malibu_id).innerHTML = result.MALIBU_ID;
+				document.getElementById(malibu_id).style.backgroundColor= 'green';
+				document.getElementById(malibu_ports).innerHTML = result.MALIBU_ports;
+				document.getElementById(malibu_ports).style.backgroundColor= 'green';
+			}).catch(function(error) {
+				document.getElementById(malibu_id).innerHTML = 'Error';
+				document.getElementById(malibu_id).style.backgroundColor= 'red';
+				document.getElementById(malibu_ports).innerHTML = 'Error';
+				document.getElementById(malibu_ports).style.backgroundColor= 'red';
+				mjsonrpc_error_alert(error);
+			});
+		}
+		function check_pll(rb){//rb: ture-> readback; false -> write
+			var postfix =  (rb) ? "_rb" : "_w";
+			var path =  [path_PLLsettings + postfix];
+			var pll = ["pll"+postfix];
+			mjsonrpc_db_get_value(path).then(function(rpc) {//check the readback value
+				result=rpc.result;
+				document.getElementById(pll).innerHTML = result;
+				document.getElementById(pll).style.backgroundColor= 'green';
+			}).catch(function(error) {
+				document.getElementById(pll).innerHTML = 'Error';
+				document.getElementById(pll).style.backgroundColor= 'red';
+				mjsonrpc_error_alert(error);
+			});
+		};
+		function select_all_ports(){//TODO: not finised
+			var rangestr = document.getElementById('copyrange').value;
+			var channels = [];
+			for(var i in rangestr.split(",")) {
+				var rangestrl = rangestr.split(",")[i];
+				if(rangestrl.search("-") > 0) {
+					// range a - b
+					var rangel = rangestrl.split("-");
+					for(var ch = parseInt(rangel[0]); ch <= parseInt(rangel[1]); ch++) {
+						if(ch < settings.glob['num asics']*32) {
+							channels.push(ch);
+						}
+					}		
+				} else {
+					// single channel
+					var ch = parseInt(rangestrl);
+					if(ch < settings.glob['num asics']*32) {
+						channels.push(ch);
+					}
+				}
+			}
+		}
+	</script>
+    <script type="text/javascript" src="js/read-csv.js"></script>
+
+	<body class="mcss" onload="load();">
+		<header id="mheader"></header>
+		<nav id="msidenav"></nav>
+		<div id="mmain" >
+			<section class="contentbox" id="pllsettings"  draggable="true">
+				<h2>MALIBU Monitor</h2>
+				<br/>
+				<div>
+					<!--IDs and PLL test signal-->
+					<label for="MALIBU_ID"> MALIBU ID: </label>
+					<br/>
+					<input name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/MALIBU/IDs_w/MALIBU_ID"/>
+					<!--<input type="number" name="MALIBU_ID" id="MALIBU_ID" min="0" max="13" step="1" size="2" value="0"/> -->
+					<br/>
+					<label for="port_IDs"> malibu Ports: </label>
+					<br/>
+					<input name="modbvalue" data-odb-editable="1" data-format="x" size="5" data-odb-path="/Equipment/MALIBU/IDs_w/MALIBU_ports"/>
+					<!--
+					TODO: here should be a function
+					-->
+					<input type="checkbox" id="all_ports" name="all_ports" />all 
+					<br>
+					PLL test setting:
+					<br>
+					<input type="checkbox" name="modbcheckbox" data-odb-path="/Equipment/MALIBU/PLLsettings_w/enable" />EN
+					<span style="display:inline-block; width: 20px;"></span>
+					<input type="checkbox" name="modbcheckbox" data-odb-path="/Equipment/MALIBU/PLLsettings_w/external" />EXT
+					<p>malibu ID (W): <span id="MALIBU_ID_w" style="color: #ff0000">Unknown</span></p>
+					<p>malibu ID (R): <span id="MALIBU_ID_rb" style="color: #ff0000">Unknown</span></p>
+					<p>malibu ports(W): <span id="MALIBU_ports_w" style="color: #ff0000">Unknown</span></p>
+					<p>malibu ports(R): <span id="MALIBU_ports_rb" style="color: #ff0000">Unknown</span></p>
+					<p>PLL (W): <span id="pll_w" style="color: #ff0000">Unknown</span>    </p>
+					<p>PLL (R): <span id="pll_rb" style="color: #ff0000">Unknown</span></p>
+					<button class="button_2 button_s" type="submit" onclick="check_config(false)">Check Write</button>
+					<button class="button_2 button_s" type="submit" onclick="check_config(true)">Check RB</button>
+					<hr/>	
+					<!--
+	     				power action====
+					<button class="button_round"> Power Status</button> 
+					<br>
+					-->
+					<input type="checkbox" name="modbcheckbox" data-odb-path="/Equipment/MALIBU/power_w" /> Power up
+					<br>
+					<button name="modbbutton" class="mbutton" 
+						data-odb-path="/Equipment/Switching/Settings/MALIBUconfig" data-odb-value="1"> Configure MALIBU
+					</button>
+					<br/>
+					<button name="modbbutton" class="mbutton" data-odb-path="/Runinfo/Run number" data-odb-value="100">Run number=100</button>
+					<br>
+					<button class="button_2 button_s" type="submit" onclick="readback_power()">check power</button>
+					<p>Power Status (W): <span id="powerstatus_w" style="color: #ff0000">Unknown</span></p>
+					<p>Power Status (R): <span id="powerstatus_rb" style="color: #ff0000">Unknown</span></p>
+					<hr/>
+					
+					<!--
+	     				===TODO:Here should be the part to control the power of the malibu====
+					show the power consumption for each malibu; P vs. t
+					if it is too high, it should be power down; 
+					-->
+					<input type="number" name="show_option" id="show_option" min="0" max="2" step="1" size="2" value="0"/>
+					<br>
+					<button class="button_2 button_s" type="submit" onclick="Update_img()">Update image</button>
+					
+					<input type="checkbox" name="modbcheckbox" data-odb-path="/Equipment/Switching/Settings/Active" />
+
+					<hr/>
+
+				</div>
+			</section>
+			<section class="contentbox" id="data_box"  draggable="true">
+				<h2>Data window</h2>
+				<div>
+					<img  id="data_win"  src="TileGUI/MALIBUMonitor/img/exp1.png" alt="HTML5 Icon" style="width:1180px;height:650px;"></img>
+				</div>
+			</section>
+		</div>
+	</body>
+</html>
