@@ -178,7 +178,7 @@ int SPI_configure(uint32_t slaveAddr, const unsigned char* bitpattern) {
  * - powerup analog 1.8V
  */
 int malibu_t::stic_configure(int asic, const alt_u8* bitpattern) {
-    printf("[malibu] asic_powerup(%u)\n", asic);
+    printf("[malibu] stic_configure(%u)\n", asic);
 
     alt_u8 i2c_slave = 0x39 + asic/2;
     alt_u8 A_bit = 1 << (0 + asic%2*4);
@@ -207,7 +207,7 @@ int malibu_t::stic_configure(int asic, const alt_u8* bitpattern) {
 
     I2C_write(i2c_slave, 0x01, I2C_read(i2c_slave, 0x01) | A_bit);
 
-    printf("[malibu] asic_powerup DONE\n");
+    printf("[malibu] stic_configure DONE\n");
     return 0;
 }
 

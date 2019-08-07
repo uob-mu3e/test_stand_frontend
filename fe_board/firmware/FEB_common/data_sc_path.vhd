@@ -36,71 +36,65 @@ end entity;
 
 architecture arch of data_sc_path is
 
-    signal ram_addr_a : std_logic_vector(31 downto 0);
-    signal ram_rdata_a : std_logic_vector(31 downto 0);
-    signal ram_wdata_a : std_logic_vector(31 downto 0);
-    signal ram_we_a : std_logic;
+    signal ram_addr : std_logic_vector(31 downto 0);
+    signal ram_re : std_logic;
+    signal ram_rdata : std_logic_vector(31 downto 0);
+    signal ram_rvalid : std_logic;
+    signal ram_we : std_logic;
+    signal ram_wdata : std_logic_vector(31 downto 0);
 
-    signal ram_re_a, ram_rvalid_a : std_logic;
-
-    signal data_to_fifo : std_logic_vector(35 downto 0);
-    signal data_to_fifo_we : std_logic;
-    signal data_from_fifo : std_logic_vector(35 downto 0);
-    signal data_from_fifo_re : std_logic;
-    signal data_from_fifo_empty : std_logic;
-
-    signal sc_to_fifo : std_logic_vector(35 downto 0);
-    signal sc_to_fifo_we : std_logic;
-    signal sc_from_fifo : std_logic_vector(35 downto 0);
-    signal sc_from_fifo_re : std_logic;
-    signal sc_from_fifo_empty : std_logic;
+    signal sc_fifo_rempty : std_logic;
+    signal sc_fifo_rdata : std_logic_vector(35 downto 0);
+    signal sc_fifo_rack : std_logic;
 
 begin
 
     ----------------------------------------------------------------------------
     -- SLOW CONTROL
 
-    e_sc_ram : entity work.ip_ram
-    generic map (
-        ADDR_WIDTH => SC_RAM_WIDTH_g,
-        DATA_WIDTH => 32--,
-    )
+    e_sc_ram : entity work.sc_ram
     port map (
-        address_b   => i_avs_address(SC_RAM_WIDTH_g-1 downto 0),
-        q_b         => o_avs_readdata,
-        wren_b      => i_avs_write,
-        data_b      => i_avs_writedata,
-        clock_b     => i_clk,
+        i_ram_addr          => ram_addr(15 downto 0),
+        i_ram_re            => ram_re,
+        o_ram_rdata         => ram_rdata,
+        o_ram_rvalid        => ram_rvalid,
+        i_ram_we            => ram_we,
+        i_ram_wdata         => ram_wdata,
 
-        address_a   => ram_addr_a(SC_RAM_WIDTH_g-1 downto 0),
-        q_a         => ram_rdata_a,
-        wren_a      => ram_we_a,
-        data_a      => ram_wdata_a,
-        clock_a     => i_clk--,
+        i_avs_address       => i_avs_address,
+        i_avs_read          => i_avs_read,
+        o_avs_readdata      => o_avs_readdata,
+        i_avs_write         => i_avs_write,
+        i_avs_writedata     => i_avs_writedata,
+        o_avs_waitrequest   => o_avs_waitrequest,
+
+--        o_reg_addr          => o_sc_reg_addr,
+--        o_reg_re            => open,
+--        i_reg_rdata         => i_sc_reg_rdata,
+--        o_reg_we            => o_sc_reg_we,
+--        o_reg_wdata         => o_sc_reg_wdata,
+
+        i_reset_n           => not i_reset,
+        i_clk               => i_clk--;
     );
-    o_avs_waitrequest <= '0';
 
-    process(i_clk)
-    begin
-    if rising_edge(i_clk) then
-        ram_rvalid_a <= ram_re_a;
-    end if;
-    end process;
+
 
     e_sc : entity work.sc_rx
     port map (
         i_link_data => i_link_data,
         i_link_datak => i_link_datak,
 
-        o_fifo_we => sc_to_fifo_we,
-        o_fifo_wdata => sc_to_fifo,
+        o_fifo_rempty   => sc_fifo_rempty,
+        o_fifo_rdata    => sc_fifo_rdata,
+        i_fifo_rack     => sc_fifo_rack,
 
-        o_ram_addr      => ram_addr_a,
-        o_ram_re        => ram_re_a,
-        i_ram_rdata     => ram_rdata_a,
-        i_ram_rvalid    => ram_rvalid_a,
-        o_ram_we        => ram_we_a,
-        o_ram_wdata     => ram_wdata_a,
+        o_ram_addr      => ram_addr,
+        o_ram_re        => ram_re,
+        i_ram_rdata     => ram_rdata,
+        i_ram_rvalid    => ram_rvalid,
+        o_ram_we        => ram_we,
+        o_ram_wdata     => ram_wdata,
 
         i_reset_n => not i_reset,
         i_clk => i_clk--,
@@ -117,9 +111,9 @@ begin
         data_out                => o_link_data(31 downto 0),
         data_is_k               => o_link_datak(3 downto 0),
 
-        data_in_slowcontrol     => sc_from_fifo,
-        slowcontrol_fifo_empty  => sc_from_fifo_empty,
-        slowcontrol_read_req    => sc_from_fifo_re,
+        slowcontrol_fifo_empty  => sc_fifo_rempty,
+        data_in_slowcontrol     => sc_fifo_rdata,
+        slowcontrol_read_req    => sc_fifo_rack,
 
         data_in                 => i_fifo_data,
         data_fifo_empty         => i_fifo_empty,
@@ -137,25 +131,6 @@ begin
 
         reset                   => i_reset,
         clk                     => i_clk--,
-    );
-
-    e_sc_fifo : entity work.ip_scfifo
-    generic map (
-        ADDR_WIDTH => 10,
-        DATA_WIDTH => 36--,
-    )
-    port map (
-        clock           => i_clk,
-        data            => sc_to_fifo,
-        rdreq           => sc_from_fifo_re,
-        sclr            => i_reset,
-        wrreq           => sc_to_fifo_we,
-        almost_empty    => open,
-        almost_full     => open,
-        empty           => sc_from_fifo_empty,
-        full            => open,
-        q               => sc_from_fifo,
-        usedw           => open--,
     );
 
     ----------------------------------------------------------------------------

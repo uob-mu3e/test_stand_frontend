@@ -16,6 +16,7 @@ set_global_assignment -name SDC_FILE top.sdc
 
 
 
+set_global_assignment -name VHDL_FILE ../fe/sc_ram.vhd
 set_global_assignment -name VHDL_FILE fe_block.vhd
 set_global_assignment -name VHDL_FILE malibu_block.vhd
 set_global_assignment -name VHDL_FILE run_state_sync.vhd

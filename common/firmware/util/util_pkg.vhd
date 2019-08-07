@@ -141,6 +141,18 @@ package util is
         crc  : std_logic_vector(31 downto 0)--;
     ) return std_logic_vector;
 
+    function to_string (
+        v : in std_logic--;
+    ) return string;
+
+    function to_string (
+        v : in std_logic_vector--;
+    ) return string;
+
+    function to_string (
+        v : in unsigned--;
+    ) return string;
+
 end package;
 
 package body util is
@@ -462,6 +474,35 @@ package body util is
         newcrc(31) := d(30) xor d(29) xor d(27) xor d(26) xor d(25) xor d(24) xor d(22) xor d(20) xor d(17) xor d(16) xor d(15) xor d(11) xor d(8) xor d(7) xor d(6) xor d(5) xor d(4) xor d(3) xor c(3) xor c(4) xor c(5) xor c(6) xor c(7) xor c(8) xor c(11) xor c(15) xor c(16) xor c(17) xor c(20) xor c(22) xor c(24) xor c(25) xor c(26) xor c(27) xor c(29) xor c(30);
 
         return newcrc;
+    end function;
+
+    function to_string (
+        v : in std_logic--;
+    ) return string is
+        variable s : string(1 to 1);
+    begin
+        s(1) := std_logic'image(v)(2);
+        return s;
+    end function;
+
+    function to_string (
+        v : in std_logic_vector--;
+    ) return string is
+        variable s : string(1 to v'length);
+        variable j : integer := 1;
+    begin
+        for i in v'range loop
+            s(j) := to_string(v(i))(1);
+            j := j + 1;
+        end loop;
+        return s;
+    end function;
+
+    function to_string (
+        v : in unsigned--;
+    ) return string is
+    begin
+        return to_string(std_logic_vector(v));
     end function;
 
 end package body;

@@ -28,6 +28,9 @@ void sc_callback(volatile alt_u32* data) {
     case 0x0103:
         malibu.stic_configure(0, stic3_config_ALL_OFF);
         break;
+    case 0x0104:
+        malibu.stic_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
+        break;
     case 0xFFFF:
         for(alt_u32 i = 0; i < n; i++) {
             printf("[sc_callback] data[0x%04X] = 0x%08X\n", i, data[offset + i]);
