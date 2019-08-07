@@ -94,8 +94,12 @@ architecture arch of top is
 
     signal malibu_clk : std_logic;
 
-    signal fifo_data : std_logic_vector(35 downto 0);
-    signal fifo_empty, fifo_rack : std_logic;
+    signal fifo_rempty : std_logic;
+    signal fifo_rack : std_logic;
+    signal fifo_rdata : std_logic_vector(35 downto 0);
+
+    signal sc_reg_addr : std_logic_vector(7 downto 0);
+    signal sc_reg_rdata : std_logic_vector(31 downto 0);
 
     signal avm : work.util.avalon_t;
 
@@ -138,9 +142,9 @@ begin
         o_pll_test          => malibu_pll_test,
         i_data              => malibu_data(0 downto 0),
 
-        o_fifo_data         => fifo_data,
-        o_fifo_empty        => fifo_empty,
+        o_fifo_empty        => fifo_rempty,
         i_fifo_rack         => fifo_rack,
+        o_fifo_data         => fifo_rdata,
 
         i_reset             => not reset_n,
         i_clk               => qsfp_pll_clk--,
@@ -248,9 +252,9 @@ begin
         o_qsfp_tx       => qsfp_tx,
         i_qsfp_refclk   => qsfp_pll_clk,
 
-        i_fifo_data     => fifo_data,
-        i_fifo_empty    => fifo_empty,
+        i_fifo_rempty   => fifo_rempty,
         o_fifo_rack     => fifo_rack,
+        i_fifo_rdata    => fifo_rdata,
 
         i_pod_rx        => pod_rx,
         o_pod_tx        => pod_tx,
@@ -263,13 +267,20 @@ begin
         o_avm_writedata     => avm.writedata,
         i_avm_waitrequest   => avm.waitrequest,
 
-        i_sc_ram_address    => (others => '0'),
-        o_sc_ram_rdata      => open,
-        i_sc_ram_wdata      => (others => '0'),
-        i_sc_ram_we         => '0',
+        o_sc_reg_addr       => sc_reg_addr,
+        i_sc_reg_rdata      => sc_reg_rdata,
+        o_sc_reg_we         => open,
+        o_sc_reg_wdata      => open,
 
         i_reset_n       => qsfp_reset_n,
         i_clk           => qsfp_pll_clk--,
     );
+
+    process(qsfp_pll_clk)
+    begin
+    if rising_edge(qsfp_pll_clk) then
+        sc_reg_rdata <= X"AAAA00" & sc_reg_addr;
+    end if;
+    end process;
 
 end architecture;

@@ -19,8 +19,8 @@ port (
     i_link_datak    : in    std_logic_vector(3 downto 0);
 
     o_fifo_rempty   : out   std_logic;
-    o_fifo_rdata    : out   std_logic_vector(35 downto 0);
     i_fifo_rack     : in    std_logic;
+    o_fifo_rdata    : out   std_logic_vector(35 downto 0);
 
     o_ram_addr      : out   std_logic_vector(31 downto 0);
     o_ram_re        : out   std_logic;
@@ -197,8 +197,8 @@ begin
 
         empty           => o_fifo_rempty,
         almost_empty    => open,
-        q               => o_fifo_rdata,
         rdreq           => i_fifo_rack,
+        q               => o_fifo_rdata,
 
         usedw           => open,
 
