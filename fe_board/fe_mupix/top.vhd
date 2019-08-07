@@ -182,11 +182,11 @@ architecture arch of top is
 	 type fpga_reg32_type is array (36 downto 0) of reg32;
 	 signal fpga_reg32 : fpga_reg32_type;
 	 
-	 signal add_reg_ram : std_logic_vector(13 downto 0);
+	 signal add_reg_ram : std_logic_vector(15 downto 0);
 	 signal data_reg_ram : std_logic_vector(31 downto 0);
 	 signal wen_reg_ram : std_logic;
 	 signal wdate_reg_ram : std_logic_vector(31 downto 0);
-	 type state_spi is (waiting, starting, read_out_pix, write_pix, read_out_th, ending);
+	 type state_spi is (pixdac, waiting, starting, read_out_pix, write_pix, read_out_th, ending);
     signal spi_state : state_spi;
 	 
 	 -- DATA MuPix
@@ -317,11 +317,11 @@ begin
 
     i_sc_ram2 : entity work.ip_ram -- pixel
     generic map (
-        ADDR_WIDTH => 14,
+        ADDR_WIDTH => 16,
         DATA_WIDTH => 32--,
     )
     port map (
-        address_b   => av_sc.address(15 downto 2),
+        address_b   => av_sc.address(15 downto 0),
         q_b         => av_sc.readdata,
         wren_b      => av_sc.write,
         data_b      => av_sc.writedata,
@@ -357,7 +357,8 @@ begin
 	 process(qsfp_pll_clk, reset_n) -- set_reg 
 	 begin
 		if(reset_n = '0') then
-			add_reg_ram <= (others => '0');
+			add_reg_ram(15 downto 2) <= (others => '0');
+            add_reg_ram(1 downto 0)   <= "10";
 			wdate_reg_ram <= (others => '0');
 			A_spi_wren_front <= (others => '0');
 			wen_reg_ram <= '0';
@@ -370,13 +371,26 @@ begin
 			case spi_state is
 				when waiting =>
 					if(data_reg_ram = x"00000001") then
-						add_reg_ram(3 downto 0) <= x"1";
+						add_reg_ram(2 downto 0) <= "011";
 						spi_state <= starting;
 					end if;
-					
+                    
+                    if(data_reg_ram = x"BADC0DED") then
+						spi_state <= pixdac;
+					end if;
+                    
+                when pixdac =>
+                    writememreaddata_mp8 <= data_reg_ram;
+                    add_reg_ram <= writememreadaddr_mp8;
+                    if(data_reg_ram = x"ABAD1DEA") then
+                        add_reg_ram(15 downto 2) <= (others => '0');
+                        add_reg_ram(1 downto 0)   <= "10";
+					    spi_state <= waiting;
+                    end if;
+                            
 				when starting =>
-					add_reg_ram(3 downto 0) <= x"2";
-					fpga_reg32(THRESHOLD_DAC_A_FRONT_REGISTER_W)(THRESHOLD_LOW_RANGE) <= data_reg_ram(15 downto 0);
+					add_reg_ram(2 downto 0) <= "100";
+                    fpga_reg32(THRESHOLD_DAC_A_FRONT_REGISTER_W)(THRESHOLD_LOW_RANGE) <= data_reg_ram(15 downto 0);
 					fpga_reg32(THRESHOLD_DAC_A_FRONT_REGISTER_W)(THRESHOLD_HIGH_RANGE) <= data_reg_ram(31 downto 16);
 					spi_state <= write_pix;		
 			
@@ -387,21 +401,22 @@ begin
 					spi_state <= read_out_th;		
 		
 				when read_out_th =>
-					add_reg_ram(3 downto 0) <= x"3";
+					add_reg_ram(2 downto 0) <= "101";
 					wen_reg_ram <= '1';
 					wdate_reg_ram(15 downto 0) <= threshold_low_out_A_front;
 					wdate_reg_ram(31 downto 16) <= threshold_high_out_A_front;
 					spi_state <= read_out_pix;
 					
 				when read_out_pix =>
-					add_reg_ram(3 downto 0) <= x"4";
+					add_reg_ram(2 downto 0) <= "110";
 					wen_reg_ram <= '1';
 					wdate_reg_ram(15 downto 0) <= injection1_out_A_front;
 					wdate_reg_ram(31 downto 16) <= threshold_pix_out_A_front;
 					spi_state <= ending;
 					
 				when ending =>
-					add_reg_ram <= (others => '0');
+					add_reg_ram(15 downto 2) <= (others => '0');
+                    add_reg_ram(1 downto 0)   <= "10";
 					wdate_reg_ram <= (others => '0');
 					wen_reg_ram <= '1';
 					spi_state <= waiting;
@@ -414,14 +429,15 @@ begin
 			
 		end if;
 	end process;
+
 	 
 	 i_sc_mp8_master : work.mp8_sc_master
 	 generic map(NCHIPS => 1)
 	 port map (
-		  clk				=> qsfp_pll_clk,
+		  clk			=> qsfp_pll_clk,
 		  reset_n		=> reset_n,
 	 	  mem_data_in	=> writememreaddata_mp8,
-		  busy_n			=> mp8_busy_n,
+		  busy_n		=> mp8_busy_n,
 		
 		  mem_addr		=> writememreadaddr_mp8,
 		  mem_data_out	=> mp8_mem_data_out,
@@ -436,7 +452,7 @@ begin
 	 for i in 0 to 1-1 generate -- nchips
 	 i_mp8_sc : work.mp8_slowcontrol
 	 port map(
-		  clk				=> qsfp_pll_clk,
+		  clk			=> qsfp_pll_clk,
 		  reset_n		=> reset_n,
 		  ckdiv			=> (others => '0'), -- this need to be set to a register
 		  mem_data		=> mp8_mem_data_out,
@@ -449,7 +465,7 @@ begin
 		  ctrl_clk2		=> mp8_ctrl_clk2(i),
 		  ctrl_ld		=> mp8_ctrl_ld(i),
 		  ctrl_rb		=> mp8_ctrl_rb(i),
-		  busy_n			=> mp8_busy_n(i),
+		  busy_n		=> mp8_busy_n(i),
 		  dataout		=> mp8_dataout--, need also be generated via nchips
 	 );	
 	 end generate gen_slowc;
@@ -472,11 +488,11 @@ begin
 		end if;
 	 end process;
 	 
-	 A_spi_sdo_front 			<= SPI_DOUT_ADC_0_A & "00";-- A_spi_dout_dac_front & A_dac4_dout_front;
-	 SPI_LD_ADC_A 				<= A_spi_ldn_front(2);
-    SPI_LD_TEMP_DAC_A 		<= A_spi_ldn_front(1);
-	 SPI_LD_DAC_A 				<= A_spi_ldn_front(0);
-	 --A_spi_wren_front 		<= fpga_reg32(DAC_WRITE_REGISTER_W)(DAC_WRITE_A_FRONT_RANGE);
+	 A_spi_sdo_front 		<= SPI_DOUT_ADC_0_A & "00";-- A_spi_dout_dac_front & A_dac4_dout_front;
+	 SPI_LD_ADC_A 			<= A_spi_ldn_front(2);
+     SPI_LD_TEMP_DAC_A 		<= A_spi_ldn_front(1);
+	 SPI_LD_DAC_A 			<= A_spi_ldn_front(0);
+	 --A_spi_wren_front 	<= fpga_reg32(DAC_WRITE_REGISTER_W)(DAC_WRITE_A_FRONT_RANGE);
 
 	 ip_spi_master_mupix : entity work.spi_master 
 	 port map(
@@ -485,20 +501,20 @@ begin
 		injection1_reg		=> fpga_reg32(INJECTION_DAC_A_FRONT_REGISTER_W)(INJECTION1_RANGE),
 		threshold_pix_reg	=> fpga_reg32(INJECTION_DAC_A_FRONT_REGISTER_W)(THRESHOLD_PIX_RANGE),
 		threshold_low_reg	=> fpga_reg32(THRESHOLD_DAC_A_FRONT_REGISTER_W)(THRESHOLD_LOW_RANGE),
-		threshold_high_reg=> fpga_reg32(THRESHOLD_DAC_A_FRONT_REGISTER_W)(THRESHOLD_HIGH_RANGE),
+		threshold_high_reg  => fpga_reg32(THRESHOLD_DAC_A_FRONT_REGISTER_W)(THRESHOLD_HIGH_RANGE),
 		temp_dac_reg		=> fpga_reg32(TEMP_A_FRONT_REGISTER_W)(TEMP_DAC_RANGE),
 		temp_adc_reg		=> fpga_reg32(TEMP_A_FRONT_REGISTER_W)(TEMP_ADC_W_RANGE),	
-		wren					=> A_spi_wren_front,
+		wren				=> A_spi_wren_front,
 		busy_n				=> A_spi_busy_n_front,
 		spi_sdi				=> SPI_DIN0_A,
-		spi_sclk				=> SPI_CLK_A,
+		spi_sclk			=> SPI_CLK_A,
 		spi_load_n			=> A_spi_ldn_front,
 		
 		spi_sdo				=> A_spi_sdo_front,
 		injection1_out		=> injection1_out_A_front,
 		threshold_pix_out	=> threshold_pix_out_A_front,
 		threshold_low_out	=> threshold_low_out_A_front,
-		threshold_high_out=> threshold_high_out_A_front,
+		threshold_high_out  => threshold_high_out_A_front,
 		temp_dac_out		=> temp_dac_out_A_front,
 		temp_adc_out		=> temp_adc_out_A_front
 	 );		
@@ -534,7 +550,7 @@ begin
 			counter125			=> counter125,
 			
 --			serial_data_in:		in std_logic_vector(NGX-1 downto 0);
-			lvds_data_in		=> data_in_B_1 & data_in_B_0 & data_in_A_0 & data_in_A_0,
+			lvds_data_in		=> data_in_B_1 & data_in_B_0 & data_in_A_1 & data_in_A_0,
 			
 --			clkext_out:			out std_logic_vector(NCHIPS-1 downto 0);
 			

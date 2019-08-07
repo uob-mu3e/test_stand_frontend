@@ -9,6 +9,7 @@ void menu_sc(volatile alt_u32* data) {
         printf("  [w] => write sc ram\n");
         printf("  [p] => pixel test\n");
         printf("  [t] => set th\n");
+        printf("  [m] => set th\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -34,9 +35,18 @@ void menu_sc(volatile alt_u32* data) {
             printf("Add: '%i'\n", add);
             break;
         case 't':
-            data[2] = 0x1cf00000;
-            data[1] = 0x15001380;
-            data[0] = 0x00000001;
+            data[4] = 0x1cf00000;
+            data[3] = 0x15001380;
+            //data[1] = 0x12341380;
+            //data[0] = 0x00000001;
+            break;
+        case 'm':
+            data[6] = 0xAAAAAAAA;
+            data[5] = 0xBBBBBBBB;
+            data[4] = 0x1cf00000;
+            //data[1] = 0x15001380;
+            data[3] = 0x15001666;
+            data[2] = 0x00000001;
             break;
         case 'q':
             return;
