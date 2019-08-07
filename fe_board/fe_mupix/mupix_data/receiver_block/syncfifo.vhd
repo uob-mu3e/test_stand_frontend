@@ -202,3 +202,4 @@ END SYN;
 -- Retrieval info: GEN_FILE: TYPE_NORMAL syncfifo.cmp TRUE
 -- Retrieval info: GEN_FILE: TYPE_NORMAL syncfifo.bsf FALSE
 -- Retrieval info: GEN_FILE: TYPE_NORMAL syncfifo_inst.vhd FALSE
+

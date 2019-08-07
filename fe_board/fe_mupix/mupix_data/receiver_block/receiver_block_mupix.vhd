@@ -30,20 +30,20 @@ entity receiver_block_mupix is
 	port (
 		reset_n				: in std_logic;
 		reset_n_errcnt		: in std_logic;
-		rx_in					: in std_logic_vector (NINPUT-1 DOWNTO 0);
+		rx_in			    : in std_logic_vector (NINPUT-1 DOWNTO 0);
 		rx_inclock			: in std_logic;
 		rx_data_bitorder	: in std_logic;	-- set to '0' for data as received, set to '1' to invert order LSB to MSB
-		rx_state				: out std_logic_vector(NINPUT*2-1 downto 0);
-		rx_ready				: out std_logic_vector(NINPUT-1 downto 0);
+		rx_state			: out std_logic_vector(NINPUT*2-1 downto 0);
+		rx_ready			: out std_logic_vector(NINPUT-1 downto 0);
 		rx_data				: out std_logic_vector(NINPUT*8-1 downto 0);
-		rx_k					: out std_logic_vector(NINPUT-1 downto 0);
+		rx_k				: out std_logic_vector(NINPUT-1 downto 0);
 		rx_clkout			: out std_logic_vector(1 downto 0);
 		pll_locked			: out std_logic_vector(1 downto 0);
-
-		rx_dpa_locked_out:	out std_logic_vector(NINPUT-1 downto 0);
-	
-		rx_runcounter:			out links_reg32;
-		rx_errorcounter:		out links_reg32		
+        
+		rx_dpa_locked_out   : out std_logic_vector(NINPUT-1 downto 0);
+        
+		rx_runcounter       : out links_reg32;
+		rx_errorcounter     : out links_reg32		
 		);
 end receiver_block_mupix;		
 

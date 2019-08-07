@@ -203,7 +203,9 @@ architecture arch of top is
 	 signal trigfifoempty : std_logic;
 	 signal readhitbusfifo : std_logic;
 	 signal fromhitbusfifo : reg64;
-	 signal hitbusfifoempty : std_logic;	 
+	 signal hitbusfifoempty : std_logic;
+     signal rx_data_out     : std_logic_vector(16*8-1 downto 0);
+     signal rx_datak_out    : std_logic_vector(16-1 downto 0);  
 
 begin
 
@@ -554,7 +556,10 @@ begin
 			
 			readhitbusfifo 	=> readhitbusfifo,
 			fromhitbusfifo 	=> fromhitbusfifo,
-			hitbusfifoempty	=> hitbusfifoempty--,
+			hitbusfifoempty	=> hitbusfifoempty,
+            
+            rx_data_out     => rx_data_out,
+            rx_datak_out    => rx_datak_out--,
 		);
 	 
 
