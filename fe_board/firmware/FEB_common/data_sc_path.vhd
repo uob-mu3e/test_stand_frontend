@@ -49,11 +49,9 @@ architecture arch of data_sc_path is
     signal data_from_fifo_re : std_logic;
     signal data_from_fifo_empty : std_logic;
 
-    signal sc_to_fifo : std_logic_vector(35 downto 0);
-    signal sc_to_fifo_we : std_logic;
-    signal sc_from_fifo : std_logic_vector(35 downto 0);
-    signal sc_from_fifo_re : std_logic;
-    signal sc_from_fifo_empty : std_logic;
+    signal sc_fifo_rempty : std_logic;
+    signal sc_fifo_rdata : std_logic_vector(35 downto 0);
+    signal sc_fifo_rack : std_logic;
 
 begin
 
@@ -92,8 +90,9 @@ begin
         i_link_data => i_link_data,
         i_link_datak => i_link_datak,
 
-        o_fifo_we => sc_to_fifo_we,
-        o_fifo_wdata => sc_to_fifo,
+        o_fifo_rempty   => sc_fifo_rempty,
+        o_fifo_rdata    => sc_fifo_rdata,
+        i_fifo_rack     => sc_fifo_rack,
 
         o_ram_addr      => ram_addr_a,
         o_ram_re        => ram_re_a,
@@ -117,9 +116,9 @@ begin
         data_out                => o_link_data(31 downto 0),
         data_is_k               => o_link_datak(3 downto 0),
 
-        data_in_slowcontrol     => sc_from_fifo,
-        slowcontrol_fifo_empty  => sc_from_fifo_empty,
-        slowcontrol_read_req    => sc_from_fifo_re,
+        slowcontrol_fifo_empty  => sc_fifo_rempty,
+        data_in_slowcontrol     => sc_fifo_rdata,
+        slowcontrol_read_req    => sc_fifo_rack,
 
         data_in                 => i_fifo_data,
         data_fifo_empty         => i_fifo_empty,
@@ -137,25 +136,6 @@ begin
 
         reset                   => i_reset,
         clk                     => i_clk--,
-    );
-
-    e_sc_fifo : entity work.ip_scfifo
-    generic map (
-        ADDR_WIDTH => 10,
-        DATA_WIDTH => 36--,
-    )
-    port map (
-        clock           => i_clk,
-        data            => sc_to_fifo,
-        rdreq           => sc_from_fifo_re,
-        sclr            => i_reset,
-        wrreq           => sc_to_fifo_we,
-        almost_empty    => open,
-        almost_full     => open,
-        empty           => sc_from_fifo_empty,
-        full            => open,
-        q               => sc_from_fifo,
-        usedw           => open--,
     );
 
     ----------------------------------------------------------------------------
