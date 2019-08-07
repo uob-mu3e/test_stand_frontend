@@ -2,7 +2,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
+
 use work.reg_map_s4.all;
+use work.daq_constants.all;
 use work.mupix_types.all;
 
 entity top is
@@ -109,6 +111,8 @@ architecture arch of top is
     signal fifo_data : std_logic_vector(35 downto 0);
     signal fifo_data_empty, fifo_data_read : std_logic;
     signal fifo_data_read_test : std_logic;
+    
+    signal run_state_t : run_state_t;
 
 
 
@@ -187,7 +191,7 @@ architecture arch of top is
 	 signal wen_reg_ram : std_logic;
 	 signal wdate_reg_ram : std_logic_vector(31 downto 0);
 	 type state_spi is (pixdac, waiting, starting, read_out_pix, write_pix, read_out_th, ending);
-    signal spi_state : state_spi;
+     signal spi_state : state_spi;
 	 
 	 -- DATA MuPix
 	 signal counter125 : reg64;
@@ -302,17 +306,20 @@ begin
         o_avs_waitrequest    => open,--av_sc.waitrequest,
 
         i_fifo_data         => fifo_data,
-        i_fifo_data_empty   => fifo_data_empty,
-        o_fifo_data_read    => fifo_data_read,
+        i_fifo_empty   => fifo_data_empty,
+        o_fifo_rack    => fifo_data_read,
 
         i_link_data         => qsfp_rx_data(31 downto 0),
         i_link_datak        => qsfp_rx_datak(3 downto 0),
 
         o_link_data         => qsfp_tx_data(31 downto 0),
         o_link_datak        => qsfp_tx_datak(3 downto 0),
+        
+        o_terminated        => open,
+        i_run_state         => run_state_t,
 
         i_reset             => not reset_n,
-        i_clk               => qsfp_pll_clk--,
+        i_clk               => qsfp_pll_clk--,       
     );
 
     i_sc_ram2 : entity work.ip_ram -- pixel
