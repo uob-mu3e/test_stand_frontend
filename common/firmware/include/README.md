@@ -2,8 +2,31 @@
 
  - `i2c.h` - I2C controller
  - `si.h` - SI chip controller
+ - `xcvr.h`
 
-## `xcvr` menu
+## `si`
+
+
+
+## `xcvr`
+
+Registers:
+
+- `0x00` - channel
+- `0x01` - number of channels
+
+- `0x10` - tx resets (4 - digital reset, 0 - analog reset)
+- `0x11` - tx status (0 - tx ready)
+- `0x12` - tx errors (8 - fifo error)
+
+- `0x20` - rx resets (4 - digital reset, 0 - analog reset)
+- `0x21` - rx status (12 - locked, 11-8 - syncstatus, 2 - locked to ref, 1 - locked to data, 0 - rx ready)
+- `0x22` - rx errors (8 - fifo error, 7-4 - disparity error, 3-0 - error detect)
+
+- `0x2A` - rx data
+- `0x2B` - rx datak
+
+Menu:
 
 ```
 #    +--------------------- device
@@ -36,8 +59,9 @@ xcvr[A].ch[0x00], lpbk = 1
   data  :   0x000000BC / 0x1
 ```
 
-commands:
+Commands:
 
- - `r` - reset
- - `l` - loopback
- - `q` - exit
+- `0-3` - channel
+- `r` - reset
+- `l` - loopback
+- `q` - exit

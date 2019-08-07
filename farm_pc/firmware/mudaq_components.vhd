@@ -17,22 +17,6 @@ component reset_logic is
                 );              
 end component;
 
-component nios is
-  port (
-		clk_clk                    : in    std_logic                     := 'X';             -- clk
-		flash_tcm_address_out      : out   std_logic_vector(27 downto 0);                    -- tcm_address_out
-		flash_tcm_read_n_out       : out   std_logic_vector(0 downto 0);                     -- tcm_read_n_out
-		flash_tcm_write_n_out      : out   std_logic_vector(0 downto 0);                     -- tcm_write_n_out
-		flash_tcm_data_out         : inout std_logic_vector(31 downto 0) := (others => 'X'); -- tcm_data_out
-		flash_tcm_chipselect_n_out : out   std_logic_vector(0 downto 0);                     -- tcm_chipselect_n_out
-		i2c_sda_in                 : in    std_logic                     := 'X';             -- sda_in
-		i2c_scl_in                 : in    std_logic                     := 'X';             -- scl_in
-		i2c_sda_oe                 : out   std_logic;                                        -- sda_oe
-		i2c_scl_oe                 : out   std_logic;                                        -- scl_oe
-		reset_reset_n              : in    std_logic                     := 'X'              -- reset_n
-  );
-end component nios;
-
 component datagenerator is
 	Port (
 		clk : 			in std_logic;

@@ -10,7 +10,7 @@ set_module_property GROUP {mu3e}
 
 set_module_property VERSION 1.0
 set_module_property DESCRIPTION ""
-set_module_property AUTHOR akozlins
+set_module_property AUTHOR "Alexandr Kozlinskiy"
 
 
 # 

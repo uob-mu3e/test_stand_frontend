@@ -2,28 +2,23 @@
 #include "../include/base.h"
 #include "../include/xcvr.h"
 
-#include "malibu.h"
+#include "../../../fe/software/app_src/malibu.h"
+
 #include "sc.h"
-#include "mscb_user.h"
+#include "../../../fe/software/app_src/mscb_user.h"
+#include "../../../fe/software/app_src/reset.h"
 
 #include "../../../fe/software/app_src/si5345.h"
-si5345_t si5345 { 0 };
+si5345_t si5345 { 0 }; // spi_slave = 0
 
 alt_u32 alarm_callback(void*) {
-    // watchdog
-    IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PIO_BASE, 0xFF);
-    IOWR_ALTERA_AVALON_PIO_SET_BITS(PIO_BASE, alt_nticks() & 0xFF);
-
     sc_callback((alt_u32*)AVM_SC_BASE);
 
     return 10;
 }
 
 int main() {
-    uart_init();
-
-    printf("ALT_DEVICE_FAMILY = '%s'\n", ALT_DEVICE_FAMILY);
-    printf("\n");
+    base_init();
 
     si5345.init();
 
@@ -35,13 +30,14 @@ int main() {
 
     while (1) {
         printf("\n");
-        printf("FE_S4 (MALIBU):\n");
+        printf("fe_malibu:\n");
         printf("  [1] => xcvr qsfp\n");
         printf("  [2] => malibu\n");
         printf("  [3] => sc\n");
         printf("  [4] => xcvr pod\n");
         printf("  [5] => si5345\n");
         printf("  [6] => mscb (exit by reset only)\n");
+        printf("  [7] => reset system\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -63,6 +59,9 @@ int main() {
             break;
         case '6':
             mscb_main();
+            break;
+        case '7':
+            menu_reset();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

@@ -57,6 +57,7 @@ namespace mudaq {
 	   << "offset=" << sub._offset << ", "
 	   << "size=" << sub.size() << ")";
       }
+    return os;
     }
   };
   
@@ -97,6 +98,7 @@ namespace mudaq {
 	     << "order=" << buf.BUFFER_ORDER << ", "
                << "size=" << buf.size() << ")";
         }
+        return os;
     }
   };
 

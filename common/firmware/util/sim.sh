@@ -15,10 +15,12 @@ done
 mkdir -p .cache
 cd .cache || exit 1
 
-ghdl -i "${SRC[@]}"
-ghdl -s "${SRC[@]}"
-ghdl -m "$TB"
-ghdl -e "$TB"
-ghdl -r "$TB" --stop-time="$STOPTIME" --vcd="$TB.vcd" --wave="$TB.ghw"
+OPTS=()
+
+ghdl -i "${OPTS[@]}" "${SRC[@]}"
+ghdl -s "${OPTS[@]}" "${SRC[@]}"
+ghdl -m "${OPTS[@]}" "$TB"
+ghdl -e "${OPTS[@]}" "$TB"
+ghdl -r "${OPTS[@]}" "$TB" --stop-time="$STOPTIME" --vcd="$TB.vcd" --wave="$TB.ghw"
 
 gtkwave "$TB.ghw"

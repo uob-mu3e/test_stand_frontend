@@ -12,7 +12,7 @@ void sc_callback(volatile alt_u32* data) {
 
     // offset to buffer
     alt_u32 offset = data[1] & 0xFFFF;
-    if(!(offset >= 16 && offset + n < AVM_SC_SPAN / 4)) {
+    if(!(offset >= 0 && offset + n < AVM_SC_SPAN / 4)) {
         // out of bounds
         data[0] = 0;
         return;
@@ -20,13 +20,13 @@ void sc_callback(volatile alt_u32* data) {
 
     switch(command) {
     case 0x0101:
-        Malibu_Powerup();
+        malibu.powerup();
         break;
     case 0x0102:
-        Malibu_Powerdown();
+        malibu.powerdown();
         break;
     case 0x0103:
-        PowerUpASIC(0);
+        malibu.stic_configure(0, stic3_config_ALL_OFF);
         break;
     case 0xFFFF:
         for(alt_u32 i = 0; i < n; i++) {

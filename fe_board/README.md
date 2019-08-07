@@ -4,6 +4,13 @@
 
 Firmware to configure and read malibu board.
 
+## `fe_mupix`
+
+_TODO_
+
+## `fe_scifi`
+
+_TODO_
 
 ## make
 
