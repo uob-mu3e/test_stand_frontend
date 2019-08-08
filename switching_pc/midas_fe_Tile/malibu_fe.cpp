@@ -101,7 +101,8 @@ const char *sc_settings_str[] = {
 "Read = BOOL : 0",
 "Read WM = BOOL : 0",
 "Read RM = BOOL : 0",
-"MALIBUconfig = BOOL : 0",
+"MALIBUpower = BOOL : 0",
+"MALIBUsettings = BOOL : 0",
 "Reset SC Master = BOOL : 0",
 "Reset SC Slave = BOOL : 0",
 "[32] Temp0",
@@ -634,20 +635,39 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
         }
     }
-	if (std::string(key.name) == "MALIBUconfig") {                                  
+	if (std::string(key.name) == "MALIBUpower") {                                  
 		INT value;                                                                
 		int size = sizeof(value);                                                 
 		db_get_data(hDB, hKey, &value, &size, TID_BOOL);                          
-		cm_msg(MINFO, "sc_settings_changed", "MALIBU configuration triggered"); 
+		if(value){                                                                
+			cm_msg(MINFO, "sc_settings_changed", "MALIBU Power Up");
+            
+			uint32_t data_arr[1] = {0};
+            data_arr[0] = (uint32_t) 0x01010000;
+            uint32_t *data = data_arr;
+
+            //mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+            mu.FEB_write((uint32_t) 0, data, (uint16_t) 1, (uint32_t) 0, (uint32_t) 0);
+			
+			//TODO: send cmd to FEB && read back and compare	if NO try again
+		}else{
+			cm_msg(MINFO, "sc_settings_changed", "MALIBU Power Down"); 
+			uint32_t data_arr[1] = {0};
+            data_arr[0] = (uint32_t) 0x01020000;
+            uint32_t *data = data_arr;
+
+            //mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+            mu.FEB_write((uint32_t) 0, data, (uint16_t) 1, (uint32_t) 0, (uint32_t) 0);
+			//TODO: send cmd to FEB && read back and compare if NO try again
+		}			
+	}
+	if (std::string(key.name) == "MALIBUsettings") {                                  
+		INT value;                                                                
+		int size = sizeof(value);                                                 
+		db_get_data(hDB, hKey, &value, &size, TID_BOOL);                          
 		if(value){                                                                
 			cm_msg(MINFO, "sc_settings_changed", "MALIBU configuration triggered"); 
-            //mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
-			//m_mu.FEBsc_write(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR);
 			// TODO: propagate to hardware  => lib of malibu need [] 
-			int status=true;//mudaq::mutrig::FEB::Instance()->ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi"); 
-			if(status!=SUCCESS){                                                           
-				//TODO: what to do?                       retry?                                  
-			}                                                                               
 			value = FALSE; // reset flag in ODB                                        
 			db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);                
 		}                                                                             
