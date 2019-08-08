@@ -37,9 +37,9 @@ port (
     o_qsfp_tx       : out   std_logic_vector(3 downto 0);
     i_qsfp_refclk   : in    std_logic;
 
-    i_fifo_rempty    : in    std_logic;
+    i_fifo_rempty   : in    std_logic;
     o_fifo_rack     : out   std_logic;
-    i_fifo_rdata     : in    std_logic_vector(35 downto 0);
+    i_fifo_rdata    : in    std_logic_vector(35 downto 0);
 
 
 
@@ -50,18 +50,9 @@ port (
 
 
 
-    -- avalon master
-    -- address units - words
-    -- read latency - 1
-    o_avm_address       : out   std_logic_vector(13 downto 0);
-    o_avm_read          : out   std_logic;
-    i_avm_readdata      : in    std_logic_vector(31 downto 0);
-    o_avm_write         : out   std_logic;
-    o_avm_writedata     : out   std_logic_vector(31 downto 0);
-    i_avm_waitrequest   : in    std_logic;
-
     -- slow control registers
     o_sc_reg_addr   : out   std_logic_vector(7 downto 0);
+    o_sc_reg_re     : out   std_logic;
     i_sc_reg_rdata  : in    std_logic_vector(31 downto 0);
     o_sc_reg_we     : out   std_logic;
     o_sc_reg_wdata  : out   std_logic_vector(31 downto 0);
@@ -90,6 +81,12 @@ architecture arch of fe_block is
     signal sc_ram_rdata : std_logic_vector(31 downto 0);
     signal sc_ram_we : std_logic;
     signal sc_ram_wdata : std_logic_vector(31 downto 0);
+
+    signal sc_reg_addr : std_logic_vector(7 downto 0);
+    signal sc_reg_re : std_logic;
+    signal sc_reg_rdata : std_logic_vector(31 downto 0);
+    signal sc_reg_we : std_logic;
+    signal sc_reg_wdata : std_logic_vector(31 downto 0);
 
 
 
@@ -135,15 +132,16 @@ architecture arch of fe_block is
 
 begin
 
+    o_sc_reg_addr <= sc_reg_addr;
+    o_sc_reg_re <= sc_reg_re;
+    sc_reg_rdata <= i_sc_reg_rdata;
+    o_sc_reg_we <= sc_reg_we;
+    o_sc_reg_wdata <= sc_reg_wdata;
+
+
+
     e_nios : component work.cmp.nios
     port map (
-        avm_address         => o_avm_address,
-        avm_read            => o_avm_read,
-        avm_readdata        => i_avm_readdata,
-        avm_write           => o_avm_write,
-        avm_writedata       => o_avm_writedata,
-        avm_waitrequest     => i_avm_waitrequest,
-
         avm_sc_address      => av_sc.address(15 downto 0),
         avm_sc_read         => av_sc.read,
         avm_sc_readdata     => av_sc.readdata,
@@ -216,11 +214,11 @@ begin
         i_avs_writedata     => av_sc.writedata,
         o_avs_waitrequest   => av_sc.waitrequest,
 
-        o_reg_addr          => o_sc_reg_addr,
-        o_reg_re            => open,
-        i_reg_rdata         => i_sc_reg_rdata,
-        o_reg_we            => o_sc_reg_we,
-        o_reg_wdata         => o_sc_reg_wdata,
+        o_reg_addr          => sc_reg_addr,
+        o_reg_re            => sc_reg_re,
+        i_reg_rdata         => sc_reg_rdata,
+        o_reg_we            => sc_reg_we,
+        o_reg_wdata         => sc_reg_wdata,
 
         i_reset_n           => i_reset_n,
         i_clk               => i_clk--;

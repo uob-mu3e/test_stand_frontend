@@ -1,8 +1,6 @@
 
-#include <sys/alt_stdio.h>
-
-void sc_callback(volatile alt_u32* data) {
-    alt_u32 d0 = data[0];
+void sc_callback() {
+    alt_u32 d0 = sc->data[0];
     if(d0 == 0) return;
     printf("[sc_callback] data[0] = 0x%08X\n", d0);
 
@@ -11,10 +9,10 @@ void sc_callback(volatile alt_u32* data) {
     alt_u32 n = d0 & 0xFFFF;
 
     // offset to buffer
-    alt_u32 offset = data[1] & 0xFFFF;
+    alt_u32 offset = sc->data[1] & 0xFFFF;
     if(!(offset >= 0 && offset + n < AVM_SC_SPAN / 4)) {
         // out of bounds
-        data[0] = 0;
+        sc->data[0] = 0;
         return;
     }
 
@@ -33,17 +31,17 @@ void sc_callback(volatile alt_u32* data) {
         break;
     case 0xFFFF:
         for(alt_u32 i = 0; i < n; i++) {
-            printf("[sc_callback] data[0x%04X] = 0x%08X\n", i, data[offset + i]);
+            printf("[sc_callback] data[0x%04X] = 0x%08X\n", i, sc->data[offset + i]);
         }
         break;
     default:
         printf("[sc_callback] unknown command\n");
     }
 
-    data[0] = 0;
+    sc->data[0] = 0;
 }
 
-void menu_sc(volatile alt_u32* data) {
+void menu_sc() {
     while(1) {
         printf("  [r] => read sc ram\n");
         printf("  [w] => write sc ram\n");
@@ -54,12 +52,12 @@ void menu_sc(volatile alt_u32* data) {
         switch(cmd) {
         case 'r':
             for(int i = 0; i < 32; i++) {
-                printf("[0x%04X] = 0x%08X\n", i, data[i]);
+                printf("[0x%04X] = 0x%08X\n", i, sc->data[i]);
             }
             break;
         case 'w':
             for(int i = 0; i < 32; i++) {
-                data[i] = i;
+                sc->data[i] = i;
             }
             break;
         case 'q':
