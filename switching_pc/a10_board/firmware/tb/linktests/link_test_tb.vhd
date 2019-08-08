@@ -13,17 +13,27 @@ end link_test_tb;
 architecture behav of link_test_tb is
   --  Declaration of the component that will be instantiated.
 
-  	component link_tester is
-    port (
-        cnt     :   out std_logic_vector(31 downto 0);
-        datak   :   out std_logic_vector(3 downto 0);
-        reset_n :   in  std_logic;
-        enable  :   in  std_logic;
-        clk     :   in  std_logic--;
+  	component linear_shift is
+  	generic (
+        g_m     : integer;
+        g_poly  : std_logic_vector--;
     );
-	end component link_tester;
+    port (
+        i_clk           : in  std_logic;
+        reset_n         : in  std_logic;
+        i_sync_reset    : in  std_logic;
+        i_seed          : in  std_logic_vector (g_m-1 downto 0);
+        i_en            : in  std_logic;
+        o_lsfr          : out std_logic_vector (g_m-1 downto 0);
+        o_datak         : out std_logic_vector (3 downto 0)--;
+    );
+	end component linear_shift;
 
 	component link_observer is
+	generic (
+        g_m             : integer           := 7;
+        g_poly          : std_logic_vector  := "1100000" -- x^7+x^6+1 
+    );
     port(
 		clk:               in std_logic;
 		reset_n:           in std_logic;
@@ -68,16 +78,26 @@ begin
 	end process inita;
 
 
-	e_counter : component link_tester
+	e_linear_shift : component linear_shift
+	generic map(
+		g_m 	=> 32,
+		g_poly 	=> "10000000001000000000000000000110"
+	)
     port map (
-        cnt     => rx_data,
-        datak   => rx_datak,
-        reset_n => reset_n,
-        enable  => enable,
-        clk     => clk--,
+		i_clk 			=> clk,
+		reset_n 		=> reset_n,
+		i_sync_reset 	=> '0',
+		i_seed			=> (others => '1'),
+		i_en 			=> enable,
+		o_lsfr			=> rx_data,
+		o_datak 		=> rx_datak--,
     );
 
 	e_link_observer : component link_observer
+	generic map(
+		g_m 	=> 32,
+		g_poly 	=> "10000000001000000000000000000110"
+	)
     port map (
 		clk     		=> clk,
 		reset_n     	=> reset_n,
