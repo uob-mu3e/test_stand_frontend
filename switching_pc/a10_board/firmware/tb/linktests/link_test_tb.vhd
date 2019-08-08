@@ -73,6 +73,10 @@ begin
 	   reset_n	 <= '1';
 	   wait for 20 ns;
 	   enable    <= '1';
+	   wait for 100 ns;
+	   enable    <= '0';
+	   wait for 50 ns;
+	   enable    <= '1';
 	   
 	   wait;
 	end process inita;
