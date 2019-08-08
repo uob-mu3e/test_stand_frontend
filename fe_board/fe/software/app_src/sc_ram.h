@@ -66,7 +66,10 @@ struct sc_ram_t {
 
         alt_u32 reserved14[16 - 0];
 
-        alt_u32 reserved15[16 - 0];
+        struct {
+            alt_u32 reset_bypass;
+            alt_u32 reserved15[16 - 1];
+        } fe;
     } regs;
 };
 

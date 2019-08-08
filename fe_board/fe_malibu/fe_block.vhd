@@ -88,6 +88,11 @@ architecture arch of fe_block is
     signal sc_reg_we : std_logic;
     signal sc_reg_wdata : std_logic_vector(31 downto 0);
 
+    signal fe_reg_rdata : std_logic_vector(31 downto 0);
+    signal fe_reg_rvalid : std_logic;
+
+    signal reset_bypass : std_logic_vector(31 downto 0);
+
 
 
     signal av_qsfp, av_pod : work.util.avalon_t;
@@ -124,8 +129,6 @@ architecture arch of fe_block is
     signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
     signal mscb_counter_in : unsigned(15 downto 0);
 
-    signal reset_bypass : std_logic_vector(11 downto 0);
-
     signal run_state_125 : run_state_t;
     signal run_state_156 : run_state_t;
     signal terminated : std_logic;
@@ -133,10 +136,28 @@ architecture arch of fe_block is
 begin
 
     o_sc_reg_addr <= sc_reg_addr;
-    o_sc_reg_re <= sc_reg_re;
-    sc_reg_rdata <= i_sc_reg_rdata;
-    o_sc_reg_we <= sc_reg_we;
+    o_sc_reg_re <= sc_reg_re and work.util.to_std_logic(sc_reg_addr(7 downto 4) /= X"F");
+    sc_reg_rdata <= fe_reg_rdata when ( fe_reg_rvalid = '1' ) else i_sc_reg_rdata;
+    o_sc_reg_we <= sc_reg_we and work.util.to_std_logic(sc_reg_addr(7 downto 4) /= X"F");
     o_sc_reg_wdata <= sc_reg_wdata;
+
+    process(i_clk)
+    begin
+    if rising_edge(i_clk) then
+        fe_reg_rvalid <= '0';
+
+        -- reset bypass
+        if ( sc_reg_addr = X"F0" ) then
+            if ( sc_reg_we = '1' ) then
+                reset_bypass <= sc_reg_wdata;
+            end if;
+            fe_reg_rvalid <= sc_reg_re;
+            fe_reg_rdata <= reset_bypass;
+        end if;
+
+        --
+    end if;
+    end process;
 
 
 
@@ -188,9 +209,6 @@ begin
         parallel_mscb_in_export => mscb_to_nios_parallel_in,
         parallel_mscb_out_export => mscb_from_nios_parallel_out,
         counter_in_export => std_logic_vector(mscb_counter_in),
-
-        -- reset bypass
-        reset_bypass_out_export => reset_bypass,
 
         rst_reset_n => i_nios_reset_n,
         clk_clk => i_nios_clk--,
@@ -291,7 +309,7 @@ begin
         resets_out      => open,
         phase_out       => open,
         data_in         => pod_rx_data(7 downto 0),
-        reset_bypass    => reset_bypass,
+        reset_bypass    => reset_bypass(11 downto 0),
         run_number_out  => open,
         fpga_id         => FPGA_ID_g,
         terminated      => terminated,

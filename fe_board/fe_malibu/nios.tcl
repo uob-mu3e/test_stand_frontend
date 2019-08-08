@@ -11,6 +11,5 @@ set_instance_parameter_value spi numberOfSlaves 16
 source {../fe/nios_avm.tcl}
 
 source ../firmware/FEB_common/nios_mscb_inc.tcl
-source nios_reset_bypass_inc.tcl
 
 save_system {nios.qsys}
