@@ -42,6 +42,27 @@ end entity spi_master;
 
 architecture rtl of spi_master is	
 
+component spi_if_write_bits is
+	generic( 
+		bits:	integer := 24;				-- set to shift register length, should work up to 128
+		interfaces: integer := 2;		-- set to number of chips connected
+		device_is_DAC : boolean := true -- data is latched on rising edge = true, falling edge = false
+	);	
+	port(
+		clk:					in std_logic;
+		reset_n:				in std_logic;
+		datain:				in std_logic_vector(bits-1 downto 0);
+		wren:					in std_logic_vector(interfaces-1 downto 0);
+		busy_n:				out std_logic := '0';	-- default value
+		spi_sdi:				out std_logic;
+		spi_sclk:			out std_logic;
+		spi_load_n:			out std_logic_vector(interfaces-1 downto 0);
+		
+		spi_sdo:				in std_logic;
+		dataout:				out std_logic_vector(bits-1 downto 0)
+		);		
+end component spi_if_write_bits;
+
 signal datain_dac4X : 	std_logic_vector(63 downto 0);
 signal dataout_dac4X : 	std_logic_vector(63 downto 0);
 signal wren_master : 	std_logic_vector(2 downto 0);
@@ -131,7 +152,7 @@ threshold_pix_out		<= dataout_dac4X(31 downto 16);
 threshold_low_out		<= dataout_dac4X(47 downto 32);
 threshold_high_out	<= dataout_dac4X(63 downto 48);
 
-dac4X : work.spi_if_write_bits
+dac4X : component spi_if_write_bits
 	generic map( 	
 		bits => 64,				
 		interfaces =>  1,		
@@ -150,7 +171,7 @@ dac4X : work.spi_if_write_bits
 		dataout		=> dataout_dac4X
 		);		
 		
-dacTemp : work.spi_if_write_bits
+dacTemp : component spi_if_write_bits
 	generic map( 	
 		bits => 16,				
 		interfaces =>  1,		
@@ -171,7 +192,7 @@ dacTemp : work.spi_if_write_bits
 
 temp_adc_r <= temp_adc_reg & temp_adc_reg;		
 		
-adcTemp : work.spi_if_write_bits
+adcTemp : component spi_if_write_bits
 	generic map( 	
 		bits => 32,				
 		interfaces =>  1,		

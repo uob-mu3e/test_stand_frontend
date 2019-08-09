@@ -1,13 +1,29 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-
-use work.reg_map_s4.all;
-use work.daq_constants.all;
 
 entity top is
 port (
+    -- FE.A
+    malibu_ck_fpga_0    : out   std_logic; -- pin 36, 38 -- malibu.CK_FPGA_0_N/P
+    malibu_pll_reset    : out   std_logic; -- pin 42, 44 -- malibu.PLL_reset_P/N
+    malibu_spi_sck      : out   std_logic; -- pin 54 -- malibu.SPI_SCK_P
+    malibu_spi_sdi      : inout std_logic; -- pin 50 -- malibu.SPI_SDI_P
+    malibu_spi_sdo      : inout std_logic; -- pin 52 -- malibu.SPI_SDO_N
+    malibu_chip_reset   : out   std_logic; -- pin 48 -- malibu.chip_reset
+
+    -- FE.B
+    malibu_ck_fpga_1    : out   std_logic; -- pin 36, 38 -- malibu.CK_FPGA_1_P/N
+    malibu_pll_test     : out   std_logic; -- pin 42, 44 -- malibu.PLL_TEST_N/P
+    malibu_i2c_scl      : out   std_logic; -- pin 54 -- malibu.i2c_SCL
+    malibu_i2c_sda      : inout std_logic; -- pin 56 -- malibu.i2c_SDA
+    malibu_i2c_int_n    : inout std_logic; -- pin 52 -- malibu.I2C_INTn
+    malibu_spi_sdo_cec  : in    std_logic; -- pin 48 -- malibu.SPI_SDO_CEC
+
+    malibu_data         : in    std_logic_vector(13 downto 0);
+
+
+
     -- SI45
 
     si45_oe_n       : out   std_logic; -- <= '0'
@@ -21,7 +37,8 @@ port (
 
     -- QSFP
 
-    qsfp_pll_clk    : in    std_logic; -- 156.25 MHz
+    -- si5345 out2 (156.25 MHz)
+    qsfp_pll_clk    : in    std_logic;
 
     QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
     QSFP_Rst_n      : out   std_logic;
@@ -34,6 +51,7 @@ port (
 
     -- POD
 
+    -- si5345 out0 (125 MHz)
     pod_pll_clk     : in    std_logic;
 
     pod_tx_reset_n  : out   std_logic;
@@ -44,42 +62,24 @@ port (
 
 
 
-	 -- Block A here : Connections for two MuPix8 via SCSI adapter card 
-	 clock_A				: out std_logic;
-	 data_in_A_0			: in std_logic_vector(3 downto 0);
-	 data_in_A_1			: in std_logic_vector(3 downto 0);
-	 fast_reset_A			: out std_logic;
-	 test_pulse_A			: out std_logic;
- 
-	 CTRL_SDO_A				: in std_logic; -- A_ctrl_dout_front
-	 CTRL_SDI_A				: out std_logic; -- A_ctrl_din_front
-	 CTRL_SCK1_A			: out std_logic; -- A_ctrl_clk1_front
-	 CTRL_SCK2_A			: out std_logic; -- A_ctrl_clk2_front
-	 CTRL_RB_A				: out std_logic; -- A_ctrl_rb_front
-	 CTRL_Load_A			: out std_logic; -- A_ctrl_ld_front
-	 
-	 -- A_trig_front
-	 chip_reset_A			: out std_logic; -- is called trigger on adapter card!
- 
-	 SPI_DIN0_A				: out std_logic; -- A_spi_din_front
-	 SPI_DIN1_A				: out std_logic; -- A_spi_din_back
-	 SPI_CLK_A				: out std_logic; -- A_spi_clk_front
-	 SPI_LD_DAC_A			: out std_logic; -- A_spi_ld_front
-	 SPI_LD_ADC_A			: out std_logic; -- A_spi_ld_tmp_dac_front
-	 SPI_LD_TEMP_DAC_A		: out std_logic; -- A_spi_ld_adc_front
-	 SPI_DOUT_ADC_0_A		: in std_logic; -- A_spi_dout_adc_front
-	 SPI_DOUT_ADC_1_A		: in std_logic; -- A_spi_dout_adc_back
-	 
-	 
-	 -- Block B here : Connections for two MuPix8 via SCSI adapter card
-	 data_in_B_0			: in std_logic_vector(3 downto 0);
-	 data_in_B_1			: in std_logic_vector(3 downto 0); 
+    -- MSCB
+
+    mscb_data_in    : in    std_logic;
+    mscb_data_out   : out   std_logic;
+    mscb_oe         : out   std_logic;
 
 
 
     --
 
     led_n       : out   std_logic_vector(15 downto 0);
+
+    PushButton  : in    std_logic_vector(1 downto 0);
+
+
+
+    -- si5345 out8 (625 MHz)
+    clk_625     : in    std_logic;
 
 
 
@@ -92,125 +92,67 @@ end entity;
 
 architecture arch of top is
 
+    signal malibu_clk : std_logic;
+
+    signal fifo_rempty : std_logic;
+    signal fifo_rack : std_logic;
+    signal fifo_rdata : std_logic_vector(35 downto 0);
+
+    signal sc_reg_addr : std_logic_vector(7 downto 0);
+    signal sc_reg_re : std_logic;
+    signal sc_reg_rdata : std_logic_vector(31 downto 0);
+    signal sc_reg_we : std_logic;
+    signal sc_reg_wdata : std_logic_vector(31 downto 0);
+
+    signal led : std_logic_vector(led_n'range) := (others => '0');
+
+    signal nios_clk, nios_reset_n : std_logic;
+    signal qsfp_reset_n : std_logic;
+
     -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
     signal ZERO : std_logic := '0';
     attribute keep : boolean;
     attribute keep of ZERO : signal is true;
 
-    signal led : std_logic_vector(led_n'range) := (others => '0');
-
-    signal nios_clk, nios_reset_n : std_logic;
-    signal nios_pio : std_logic_vector(31 downto 0);
-
-    signal i2c_scl_in, i2c_scl_oe, i2c_sda_in, i2c_sda_oe : std_logic;
+    signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
-    signal spi_ss_n : std_logic_vector(1 downto 0);
-
-
-    signal fifo_data : std_logic_vector(35 downto 0);
-    signal fifo_data_empty, fifo_data_read : std_logic;
-    signal fifo_data_read_test : std_logic;
-    
-    signal run_state_t : run_state_t;
-
-
-
-    signal av_pod, av_qsfp : work.util.avalon_t;
-
-    signal qsfp_tx_data : std_logic_vector(127 downto 0);
-    signal qsfp_tx_datak : std_logic_vector(15 downto 0);
-
-    signal qsfp_rx_data : std_logic_vector(127 downto 0);
-    signal qsfp_rx_datak : std_logic_vector(15 downto 0);
-
-    signal qsfp_reset_n : std_logic;
-
-
-
-    signal av_sc : work.util.avalon_t;
-
-    signal ram_addr_a : std_logic_vector(15 downto 0);
-    signal ram_rdata_a : std_logic_vector(31 downto 0);
-    signal ram_wdata_a : std_logic_vector(31 downto 0);
-    signal ram_we_a : std_logic;
-
-    signal data_to_fifo : std_logic_vector(35 downto 0);
-    signal data_to_fifo_we : std_logic;
-    signal data_from_fifo : std_logic_vector(35 downto 0);
-    signal data_from_fifo_re : std_logic;
-    signal data_from_fifo_empty : std_logic;
-
-    signal sc_to_fifo : std_logic_vector(35 downto 0);
-    signal sc_to_fifo_we : std_logic;
-    signal sc_from_fifo : std_logic_vector(35 downto 0);
-    signal sc_from_fifo_re : std_logic;
-    signal sc_from_fifo_empty : std_logic;
-	 
-	 signal writememreaddata_mp8 : std_logic_vector(31 downto 0);
-	 signal writememreadaddr_mp8 : std_logic_vector(15 downto 0);
-	 signal mp8_busy_n : std_logic_vector(0 downto 0); -- NCHIPS
-	 signal mp8_mem_data_out : std_logic_vector(31 downto 0);
-	 signal mp8_wren : std_logic_vector(0 downto 0); -- NCHIPS
-	 signal mp8_ld : std_logic_vector(0 downto 0); -- NCHIPS
-	 signal mp8_rb : std_logic_vector(0 downto 0); -- NCHIPS
-	 signal mp8_ctrl_dout : std_logic_vector(0 downto 0); -- NCHIPS
-	 signal mp8_ctrl_din : std_logic_vector(0 downto 0); -- NCHIPS
-	 signal mp8_ctrl_clk1 : std_logic_vector(0 downto 0); -- NCHIPS
-	 signal mp8_ctrl_clk2 : std_logic_vector(0 downto 0); -- NCHIPS
-	 signal mp8_ctrl_ld : std_logic_vector(0 downto 0); -- NCHIPS
-	 signal mp8_ctrl_rb : std_logic_vector(0 downto 0); -- NCHIPS
-	 signal mp8_dataout : std_logic_vector(31 downto 0); -- NCHIPS
-	 
-	 -- SPI
-	 signal A_spi_wren_front :	std_logic_vector(2 downto 0);
-	 signal A_spi_busy_n_front : std_logic;
-	 signal A_spi_ldn_front : std_logic_vector(2 downto 0);
-	 signal A_spi_sdo_front : std_logic_vector(2 downto 0);
-	 
-	 -- SPI output signals A front
-    signal injection1_out_A_front:			std_logic_vector(15 downto 0);
-    signal threshold_pix_out_A_front:		std_logic_vector(15 downto 0);	
-    signal threshold_low_out_A_front:		std_logic_vector(15 downto 0);
-    signal threshold_high_out_A_front:	std_logic_vector(15 downto 0);
-    signal temp_dac_out_A_front:			std_logic_vector(15 downto 0);
-    signal temp_adc_out_A_front:			std_logic_vector(31 downto 0);
-    -- SPI output signals A back
-    signal injection1_out_A_back:			std_logic_vector(15 downto 0);
-    signal threshold_pix_out_A_back:		std_logic_vector(15 downto 0);	
-    signal threshold_low_out_A_back:		std_logic_vector(15 downto 0);
-    signal threshold_high_out_A_back:		std_logic_vector(15 downto 0);
-    signal temp_dac_out_A_back:				std_logic_vector(15 downto 0);
-    signal temp_adc_out_A_back:				std_logic_vector(31 downto 0);
-     
-	 type fpga_reg32_type is array (36 downto 0) of reg32;
-	 signal fpga_reg32 : fpga_reg32_type;
-	 
-	 signal add_reg_ram : std_logic_vector(15 downto 0);
-	 signal data_reg_ram : std_logic_vector(31 downto 0);
-	 signal wen_reg_ram : std_logic;
-	 signal wdate_reg_ram : std_logic_vector(31 downto 0);
-	 type state_spi is (pixdac, waiting, starting, read_out_pix, write_pix, read_out_th, ending);
-     signal spi_state : state_spi;
-	 
-	 -- DATA MuPix
-	 signal counter125 : reg64;
-	 signal writeregs_pixel : reg32array;
-	 signal readregs_slow_pixel : reg32array;
-	 signal readmem_clk_pixel : std_logic;
-	 signal readmem_data_pixel : reg32;
-	 signal readmem_addr_pixel : std_logic_vector(15 downto 0);
-	 signal readmem_wren_pixel : std_logic;
-	 signal readmem_eoe_pixel : std_logic;
-	 signal readtrigfifo : std_logic;
-	 signal fromtrigfifo : reg64;
-	 signal trigfifoempty : std_logic;
-	 signal readhitbusfifo : std_logic;
-	 signal fromhitbusfifo : reg64;
-	 signal hitbusfifoempty : std_logic;
-     signal rx_data_out     : std_logic_vector(16*8-1 downto 0);
-     signal rx_datak_out    : std_logic_vector(16-1 downto 0);  
+    signal spi_ss_n : std_logic_vector(15 downto 0);
 
 begin
+
+    ----------------------------------------------------------------------------
+    -- MALIBU
+
+    malibu_ck_fpga_1 <= clk_625;
+    malibu_pll_reset <= '0';
+
+    e_malibu_block : entity work.malibu_block
+    generic map (
+        N_g => 1--,
+    )
+    port map (
+        i_sc_reg_addr   => sc_reg_addr,
+        i_sc_reg_re     => sc_reg_re,
+        o_sc_reg_rdata  => sc_reg_rdata,
+        i_sc_reg_we     => sc_reg_we,
+        i_sc_reg_wdata  => sc_reg_wdata,
+
+        o_ck_fpga_0     => malibu_ck_fpga_0,
+        o_chip_reset    => malibu_chip_reset,
+        o_pll_test      => malibu_pll_test,
+        i_data          => malibu_data(0 downto 0),
+
+        o_fifo_rempty   => fifo_rempty,
+        i_fifo_rack     => fifo_rack,
+        o_fifo_rdata    => fifo_rdata,
+
+        i_reset         => not reset_n,
+        i_clk           => qsfp_pll_clk--,
+    );
+
+    ----------------------------------------------------------------------------
+
+
 
     led_n <= not led;
 
@@ -327,250 +269,5 @@ begin
         i_reset_n       => qsfp_reset_n,
         i_clk           => qsfp_pll_clk--,
     );
-
-
---	 with add_reg_ram(13 downto 6) select ram_we <= 
---		ram_we_a <= when x"00";
---		
---	 with add_reg_ram(5 downto 0) select reg_we <=
---		ram_we_a < when "000000";
---	
---	 process(qsfp_pll_clk, reset_n)
---	 begin
---		if(reset_n = '0') then
---			fpga_reg32 <=  (others => (others => '0'));
---		elsif(rising_edge(qsfp_pll_clk)) then
---			if(reg_we = '1') then
---				fpga_reg32(to_integer(add_reg_ram(13 downto 0))) <= ram_wdata_a;
---			end if;
-		
-    ----------------------------------------------------------------------------
-    -- MUPIX 8 Slow Control and SPI for DACs and ADC's
-	 
-	 
-	 process(qsfp_pll_clk, reset_n) -- set_reg 
-	 begin
-		if(reset_n = '0') then
-			add_reg_ram(15 downto 2) <= (others => '0');
-            add_reg_ram(1 downto 0)   <= "10";
-			wdate_reg_ram <= (others => '0');
-			A_spi_wren_front <= (others => '0');
-			wen_reg_ram <= '0';
-			spi_state <= waiting;
-		elsif(rising_edge(qsfp_pll_clk)) then
-			wdate_reg_ram <= (others => '0');
-			A_spi_wren_front <= (others => '0');
-			wen_reg_ram <= '0';
-			
-			case spi_state is
-				when waiting =>
-					if(data_reg_ram = x"00000001") then
-						add_reg_ram(2 downto 0) <= "011";
-						spi_state <= starting;
-					end if;
-                    
-                    if(data_reg_ram = x"BADC0DED") then
-						spi_state <= pixdac;
-					end if;
-                    
-                when pixdac =>
-                    writememreaddata_mp8 <= data_reg_ram;
-                    add_reg_ram <= writememreadaddr_mp8;
-                    if(data_reg_ram = x"ABAD1DEA") then
-                        add_reg_ram(15 downto 2) <= (others => '0');
-                        add_reg_ram(1 downto 0)   <= "10";
-					    spi_state <= waiting;
-                    end if;
-                            
-				when starting =>
-					add_reg_ram(2 downto 0) <= "100";
-                    fpga_reg32(THRESHOLD_DAC_A_FRONT_REGISTER_W)(THRESHOLD_LOW_RANGE) <= data_reg_ram(15 downto 0);
-					fpga_reg32(THRESHOLD_DAC_A_FRONT_REGISTER_W)(THRESHOLD_HIGH_RANGE) <= data_reg_ram(31 downto 16);
-					spi_state <= write_pix;		
-			
-				when write_pix =>
-					A_spi_wren_front <= "001";
-					fpga_reg32(INJECTION_DAC_A_FRONT_REGISTER_W)(INJECTION1_RANGE) <= data_reg_ram(15 downto 0);
-					fpga_reg32(INJECTION_DAC_A_FRONT_REGISTER_W)(THRESHOLD_PIX_RANGE) <= data_reg_ram(31 downto 16); 
-					spi_state <= read_out_th;		
-		
-				when read_out_th =>
-					add_reg_ram(2 downto 0) <= "101";
-					wen_reg_ram <= '1';
-					wdate_reg_ram(15 downto 0) <= threshold_low_out_A_front;
-					wdate_reg_ram(31 downto 16) <= threshold_high_out_A_front;
-					spi_state <= read_out_pix;
-					
-				when read_out_pix =>
-					add_reg_ram(2 downto 0) <= "110";
-					wen_reg_ram <= '1';
-					wdate_reg_ram(15 downto 0) <= injection1_out_A_front;
-					wdate_reg_ram(31 downto 16) <= threshold_pix_out_A_front;
-					spi_state <= ending;
-					
-				when ending =>
-					add_reg_ram(15 downto 2) <= (others => '0');
-                    add_reg_ram(1 downto 0)   <= "10";
-					wdate_reg_ram <= (others => '0');
-					wen_reg_ram <= '1';
-					spi_state <= waiting;
-					
-				when others =>
-					spi_state <= waiting;
-					add_reg_ram <= (others => '0');
-			
-			end case;
-			
-		end if;
-	end process;
-
-	 
-	 i_sc_mp8_master : work.mp8_sc_master
-	 generic map(NCHIPS => 1)
-	 port map (
-		  clk			=> qsfp_pll_clk,
-		  reset_n		=> reset_n,
-	 	  mem_data_in	=> writememreaddata_mp8,
-		  busy_n		=> mp8_busy_n,
-		
-		  mem_addr		=> writememreadaddr_mp8,
-		  mem_data_out	=> mp8_mem_data_out,
-		  wren			=> mp8_wren,
-		  ctrl_ld		=> mp8_ld,
-		  ctrl_rb		=> mp8_rb,
-		  done			=> open, 
-		  stateout		=> open--,
-	 );
-	 
-	 gen_slowc:
-	 for i in 0 to 1-1 generate -- nchips
-	 i_mp8_sc : work.mp8_slowcontrol
-	 port map(
-		  clk			=> qsfp_pll_clk,
-		  reset_n		=> reset_n,
-		  ckdiv			=> (others => '0'), -- this need to be set to a register
-		  mem_data		=> mp8_mem_data_out,
-		  wren			=> mp8_wren(i),
-		  ld_in			=> mp8_ld(i),
-		  rb_in			=> mp8_rb(i),
-		  ctrl_dout		=> mp8_ctrl_dout(i),
-		  ctrl_din		=> mp8_ctrl_din(i),
-		  ctrl_clk1		=> mp8_ctrl_clk1(i),
-		  ctrl_clk2		=> mp8_ctrl_clk2(i),
-		  ctrl_ld		=> mp8_ctrl_ld(i),
-		  ctrl_rb		=> mp8_ctrl_rb(i),
-		  busy_n		=> mp8_busy_n(i),
-		  dataout		=> mp8_dataout--, need also be generated via nchips
-	 );	
-	 end generate gen_slowc;
-		 
-	 process(qsfp_pll_clk)
-	 begin
-		if(rising_edge(qsfp_pll_clk))then	
-			mp8_ctrl_dout(0)	<= CTRL_SDO_A;
-		end if;
-	 end process;
-	 
-	 process(qsfp_pll_clk)
-	 begin
-		if(rising_edge(qsfp_pll_clk))then	
-			CTRL_SDI_A		<= mp8_ctrl_din(0);
-			CTRL_SCK1_A		<= mp8_ctrl_clk1(0);
-			CTRL_SCK2_A		<= mp8_ctrl_clk2(0);
-			CTRL_Load_A		<= mp8_ctrl_ld(0);
-			CTRL_RB_A		<= mp8_ctrl_rb(0);
-		end if;
-	 end process;
-	 
-	 A_spi_sdo_front 		<= SPI_DOUT_ADC_0_A & "00";-- A_spi_dout_dac_front & A_dac4_dout_front;
-	 SPI_LD_ADC_A 			<= A_spi_ldn_front(2);
-     SPI_LD_TEMP_DAC_A 		<= A_spi_ldn_front(1);
-	 SPI_LD_DAC_A 			<= A_spi_ldn_front(0);
-	 --A_spi_wren_front 	<= fpga_reg32(DAC_WRITE_REGISTER_W)(DAC_WRITE_A_FRONT_RANGE);
-
-	 ip_spi_master_mupix : entity work.spi_master 
-	 port map(
-		clk					=> qsfp_pll_clk,
-		reset_n				=> reset_n,
-		injection1_reg		=> fpga_reg32(INJECTION_DAC_A_FRONT_REGISTER_W)(INJECTION1_RANGE),
-		threshold_pix_reg	=> fpga_reg32(INJECTION_DAC_A_FRONT_REGISTER_W)(THRESHOLD_PIX_RANGE),
-		threshold_low_reg	=> fpga_reg32(THRESHOLD_DAC_A_FRONT_REGISTER_W)(THRESHOLD_LOW_RANGE),
-		threshold_high_reg  => fpga_reg32(THRESHOLD_DAC_A_FRONT_REGISTER_W)(THRESHOLD_HIGH_RANGE),
-		temp_dac_reg		=> fpga_reg32(TEMP_A_FRONT_REGISTER_W)(TEMP_DAC_RANGE),
-		temp_adc_reg		=> fpga_reg32(TEMP_A_FRONT_REGISTER_W)(TEMP_ADC_W_RANGE),	
-		wren				=> A_spi_wren_front,
-		busy_n				=> A_spi_busy_n_front,
-		spi_sdi				=> SPI_DIN0_A,
-		spi_sclk			=> SPI_CLK_A,
-		spi_load_n			=> A_spi_ldn_front,
-		
-		spi_sdo				=> A_spi_sdo_front,
-		injection1_out		=> injection1_out_A_front,
-		threshold_pix_out	=> threshold_pix_out_A_front,
-		threshold_low_out	=> threshold_low_out_A_front,
-		threshold_high_out  => threshold_high_out_A_front,
-		temp_dac_out		=> temp_dac_out_A_front,
-		temp_adc_out		=> temp_adc_out_A_front
-	 );		
-	 
-    ----------------------------------------------------------------------------
-
-    ----------------------------------------------------------------------------
-    -- DATA PIXEL
-	 
-	 process(clk_aux, reset_n)
-	 begin
-		if(reset_n = '0')then
-			counter125 <= (others => '0');
-		elsif(rising_edge(clk_aux)) then
-			counter125 <= counter125 + '1';	
-		end if;
-	 end process;
-	 
-	 
-	 
-	 pix_data : work.data_path
-		generic map(
-			NCHIPS 			=> 4,
---			NGX	 => ,
-			NLVDS				=>	16,
-			NSORTERINPUTS	=> 1--,
-		)
-		port map(
-			resets_n				=> reset_n,
---			resets				=> 
---			slowclk:			in std_logic;
-			clk125				=> clk_aux,
-			counter125			=> counter125,
-			
---			serial_data_in:		in std_logic_vector(NGX-1 downto 0);
-			lvds_data_in		=> data_in_B_1 & data_in_B_0 & data_in_A_1 & data_in_A_0,
-			
---			clkext_out:			out std_logic_vector(NCHIPS-1 downto 0);
-			
-			writeregs			=>	writeregs_pixel,
---			regwritten:			in std_logic_vector(NREGISTERS-1 downto 0);
-
-			readregs_slow		=> readregs_slow_pixel,
-			
-			readmem_clk			=> readmem_clk_pixel,
-			readmem_data		=> readmem_data_pixel,
-			readmem_addr		=> readmem_addr_pixel,
-			readmem_wren		=> readmem_wren_pixel,
-			readmem_eoe			=> readmem_eoe_pixel,
-				
-			-- trigger interface
-			readtrigfifo		=> readtrigfifo,
-			fromtrigfifo		=> fromtrigfifo,
-			trigfifoempty		=> trigfifoempty,
-			
-			readhitbusfifo 	=> readhitbusfifo,
-			fromhitbusfifo 	=> fromhitbusfifo,
-			hitbusfifoempty	=> hitbusfifoempty,
-            
-            rx_data_out     => rx_data_out,
-            rx_datak_out    => rx_datak_out--,
-		);
-	 
 
 end architecture;
