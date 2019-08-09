@@ -37,9 +37,9 @@ port (
     o_qsfp_tx       : out   std_logic_vector(3 downto 0);
     i_qsfp_refclk   : in    std_logic;
 
-    i_fifo_data     : in    std_logic_vector(35 downto 0);
-    i_fifo_empty    : in    std_logic;
+    i_fifo_rempty   : in    std_logic;
     o_fifo_rack     : out   std_logic;
+    i_fifo_rdata    : in    std_logic_vector(35 downto 0);
 
 
 
@@ -50,21 +50,12 @@ port (
 
 
 
-    -- avalon master
-    -- address units - words
-    -- read latency - 1
-    o_avm_address       : out   std_logic_vector(13 downto 0);
-    o_avm_read          : out   std_logic;
-    i_avm_readdata      : in    std_logic_vector(31 downto 0);
-    o_avm_write         : out   std_logic;
-    o_avm_writedata     : out   std_logic_vector(31 downto 0);
-    i_avm_waitrequest   : in    std_logic;
-
-    -- SC RAM
-    i_sc_ram_address    : in    std_logic_vector(15 downto 0);
-    o_sc_ram_rdata      : out   std_logic_vector(31 downto 0);
-    i_sc_ram_wdata      : in    std_logic_vector(31 downto 0);
-    i_sc_ram_we         : in    std_logic;
+    -- slow control registers
+    o_sc_reg_addr   : out   std_logic_vector(7 downto 0);
+    o_sc_reg_re     : out   std_logic;
+    i_sc_reg_rdata  : in    std_logic_vector(31 downto 0);
+    o_sc_reg_we     : out   std_logic;
+    o_sc_reg_wdata  : out   std_logic_vector(31 downto 0);
 
     i_reset_n       : in    std_logic;
     -- 156.25 MHz
@@ -76,7 +67,31 @@ architecture arch of fe_block is
 
     signal nios_pio : std_logic_vector(31 downto 0);
 
+
+
     signal av_sc : work.util.avalon_t;
+
+    signal sc_fifo_rempty : std_logic;
+    signal sc_fifo_rack : std_logic;
+    signal sc_fifo_rdata : std_logic_vector(35 downto 0);
+
+    signal sc_ram_addr : std_logic_vector(31 downto 0);
+    signal sc_ram_re : std_logic;
+    signal sc_ram_rvalid : std_logic;
+    signal sc_ram_rdata : std_logic_vector(31 downto 0);
+    signal sc_ram_we : std_logic;
+    signal sc_ram_wdata : std_logic_vector(31 downto 0);
+
+    signal sc_reg_addr : std_logic_vector(7 downto 0);
+    signal sc_reg_re : std_logic;
+    signal sc_reg_rdata : std_logic_vector(31 downto 0);
+    signal sc_reg_we : std_logic;
+    signal sc_reg_wdata : std_logic_vector(31 downto 0);
+
+    signal fe_reg_rdata : std_logic_vector(31 downto 0);
+    signal fe_reg_rvalid : std_logic;
+
+    signal reset_bypass : std_logic_vector(31 downto 0);
 
 
 
@@ -114,23 +129,40 @@ architecture arch of fe_block is
     signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
     signal mscb_counter_in : unsigned(15 downto 0);
 
-    signal reset_bypass : std_logic_vector(11 downto 0);
-
     signal run_state_125 : run_state_t;
     signal run_state_156 : run_state_t;
     signal terminated : std_logic;
 
 begin
 
+    o_sc_reg_addr <= sc_reg_addr;
+    o_sc_reg_re <= sc_reg_re and work.util.to_std_logic(sc_reg_addr(7 downto 4) /= X"F");
+    sc_reg_rdata <= fe_reg_rdata when ( fe_reg_rvalid = '1' ) else i_sc_reg_rdata;
+    o_sc_reg_we <= sc_reg_we and work.util.to_std_logic(sc_reg_addr(7 downto 4) /= X"F");
+    o_sc_reg_wdata <= sc_reg_wdata;
+
+    process(i_clk)
+    begin
+    if rising_edge(i_clk) then
+        fe_reg_rvalid <= '0';
+
+        -- reset bypass
+        if ( sc_reg_addr = X"F0" ) then
+            if ( sc_reg_we = '1' ) then
+                reset_bypass <= sc_reg_wdata;
+            end if;
+            fe_reg_rvalid <= sc_reg_re;
+            fe_reg_rdata <= reset_bypass;
+        end if;
+
+        --
+    end if;
+    end process;
+
+
+
     e_nios : component work.cmp.nios
     port map (
-        avm_address         => o_avm_address,
-        avm_read            => o_avm_read,
-        avm_readdata        => i_avm_readdata,
-        avm_write           => o_avm_write,
-        avm_writedata       => o_avm_writedata,
-        avm_waitrequest     => i_avm_waitrequest,
-
         avm_sc_address      => av_sc.address(15 downto 0),
         avm_sc_read         => av_sc.read,
         avm_sc_readdata     => av_sc.readdata,
@@ -178,17 +210,21 @@ begin
         parallel_mscb_out_export => mscb_from_nios_parallel_out,
         counter_in_export => std_logic_vector(mscb_counter_in),
 
-        -- reset bypass
-        reset_bypass_out_export => reset_bypass,
-
         rst_reset_n => i_nios_reset_n,
         clk_clk => i_nios_clk--,
     );
 
 
 
-    e_data_sc_path : entity work.data_sc_path
+    e_sc_ram : entity work.sc_ram
     port map (
+        i_ram_addr          => sc_ram_addr(15 downto 0),
+        i_ram_re            => sc_ram_re,
+        o_ram_rvalid        => sc_ram_rvalid,
+        o_ram_rdata         => sc_ram_rdata,
+        i_ram_we            => sc_ram_we,
+        i_ram_wdata         => sc_ram_wdata,
+
         i_avs_address       => av_sc.address(15 downto 0),
         i_avs_read          => av_sc.read,
         o_avs_readdata      => av_sc.readdata,
@@ -196,21 +232,67 @@ begin
         i_avs_writedata     => av_sc.writedata,
         o_avs_waitrequest   => av_sc.waitrequest,
 
-        i_fifo_data         => i_fifo_data,
-        i_fifo_empty        => i_fifo_empty,
-        o_fifo_rack         => o_fifo_rack,
+        o_reg_addr          => sc_reg_addr,
+        o_reg_re            => sc_reg_re,
+        i_reg_rdata         => sc_reg_rdata,
+        o_reg_we            => sc_reg_we,
+        o_reg_wdata         => sc_reg_wdata,
 
-        i_link_data         => qsfp_rx_data(31 downto 0),
-        i_link_datak        => qsfp_rx_datak(3 downto 0),
+        i_reset_n           => i_reset_n,
+        i_clk               => i_clk--;
+    );
 
-        o_link_data         => qsfp_tx_data(63 downto 32),
-        o_link_datak        => qsfp_tx_datak(7 downto 4),
+    e_sc_rx : entity work.sc_rx
+    port map (
+        i_link_data     => qsfp_rx_data(31 downto 0),
+        i_link_datak    => qsfp_rx_datak(3 downto 0),
 
-        o_terminated        => terminated,
-        i_run_state         => run_state_156,
+        o_fifo_rempty   => sc_fifo_rempty,
+        i_fifo_rack     => sc_fifo_rack,
+        o_fifo_rdata    => sc_fifo_rdata,
 
-        i_reset             => not i_reset_n,
-        i_clk               => i_clk--,
+        o_ram_addr      => sc_ram_addr,
+        o_ram_re        => sc_ram_re,
+        i_ram_rvalid    => sc_ram_rvalid,
+        i_ram_rdata     => sc_ram_rdata,
+        o_ram_we        => sc_ram_we,
+        o_ram_wdata     => sc_ram_wdata,
+
+        i_reset_n       => i_reset_n,
+        i_clk           => i_clk--,
+    );
+
+
+
+    e_merger : entity work.data_merger
+    port map (
+        fpga_ID_in              => (5=>'1',others => '0'),
+        FEB_type_in             => "111010",
+        run_state               => run_state_156,
+
+        data_out                => qsfp_tx_data(63 downto 32),
+        data_is_k               => qsfp_tx_datak(7 downto 4),
+
+        slowcontrol_fifo_empty  => sc_fifo_rempty,
+        slowcontrol_read_req    => sc_fifo_rack,
+        data_in_slowcontrol     => sc_fifo_rdata,
+
+        data_fifo_empty         => i_fifo_rempty,
+        data_read_req           => o_fifo_rack,
+        data_in                 => i_fifo_rdata,
+
+        override_data_in        => (others => '0'),
+        override_data_is_k_in   => (others => '0'),
+        override_req            => '0',
+        override_granted        => open,
+
+        terminated              => terminated,
+        data_priority           => '0',
+
+        leds                    => open,
+
+        reset                   => not i_reset_n,
+        clk                     => i_clk--,
     );
 
 
@@ -227,7 +309,7 @@ begin
         resets_out      => open,
         phase_out       => open,
         data_in         => pod_rx_data(7 downto 0),
-        reset_bypass    => reset_bypass,
+        reset_bypass    => reset_bypass(11 downto 0),
         run_number_out  => open,
         fpga_id         => FPGA_ID_g,
         terminated      => terminated,

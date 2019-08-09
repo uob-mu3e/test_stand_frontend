@@ -1,6 +1,10 @@
 
 void menu_reset() {
+    auto& reset_bypass = sc->regs.fe.reset_bypass;
+
     while(1) {
+        printf("fe.reset_bypass = 0x04X\n", reset_bypass);
+
         printf("  [0] => use genesis\n");
         printf("  [1] => run_prep\n");
         printf("  [2] => sync\n");
@@ -14,28 +18,28 @@ void menu_reset() {
         
         switch(cmd) {
         case '0':
-            IOWR_ALTERA_AVALON_PIO_DATA(RESET_BYPASS_OUT_BASE,0x000);
-            break;    
+            reset_bypass = 0x0000;
+            break;
         case '1':
-            IOWR_ALTERA_AVALON_PIO_DATA(RESET_BYPASS_OUT_BASE,0x110);
+            reset_bypass = 0x0110;
             break;
         case '2':
-            IOWR_ALTERA_AVALON_PIO_DATA(RESET_BYPASS_OUT_BASE,0x111);
+            reset_bypass = 0x0111;
             break;
         case '3':
-            IOWR_ALTERA_AVALON_PIO_DATA(RESET_BYPASS_OUT_BASE,0x112);
+            reset_bypass = 0x0112;
             break;
         case '4':
-            IOWR_ALTERA_AVALON_PIO_DATA(RESET_BYPASS_OUT_BASE,0x113);
+            reset_bypass = 0x0113;
             break;
         case '5':
-            IOWR_ALTERA_AVALON_PIO_DATA(RESET_BYPASS_OUT_BASE,0x114);
+            reset_bypass = 0x0114;
             break;
         case '6':
-            IOWR_ALTERA_AVALON_PIO_DATA(RESET_BYPASS_OUT_BASE,0x130);
+            reset_bypass = 0x0130;
             break;
         case '7':
-            IOWR_ALTERA_AVALON_PIO_DATA(RESET_BYPASS_OUT_BASE,0x131);
+            reset_bypass = 0x0131;
             break;
         case 'q':
             return;
