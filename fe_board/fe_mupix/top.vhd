@@ -9,7 +9,37 @@ port (
     CTRL_SDO_A
 
 
-
+	 -- Block A here : Connections for two MuPix8 via SCSI adapter card 
+	 clock_A				: out std_logic;
+	 data_in_A_0			: in std_logic_vector(3 downto 0);
+	 data_in_A_1			: in std_logic_vector(3 downto 0);
+	 fast_reset_A			: out std_logic;
+	 test_pulse_A			: out std_logic;
+ 
+	 CTRL_SDO_A				: in std_logic; -- A_ctrl_dout_front
+	 CTRL_SDI_A				: out std_logic; -- A_ctrl_din_front
+	 CTRL_SCK1_A			: out std_logic; -- A_ctrl_clk1_front
+	 CTRL_SCK2_A			: out std_logic; -- A_ctrl_clk2_front
+	 CTRL_RB_A				: out std_logic; -- A_ctrl_rb_front
+	 CTRL_Load_A			: out std_logic; -- A_ctrl_ld_front
+	 
+	 -- A_trig_front
+	 chip_reset_A			: out std_logic; -- is called trigger on adapter card!
+ 
+	 SPI_DIN0_A				: out std_logic; -- A_spi_din_front
+	 SPI_DIN1_A				: out std_logic; -- A_spi_din_back
+	 SPI_CLK_A				: out std_logic; -- A_spi_clk_front
+	 SPI_LD_DAC_A			: out std_logic; -- A_spi_ld_front
+	 SPI_LD_ADC_A			: out std_logic; -- A_spi_ld_tmp_dac_front
+	 SPI_LD_TEMP_DAC_A		: out std_logic; -- A_spi_ld_adc_front
+	 SPI_DOUT_ADC_0_A		: in std_logic; -- A_spi_dout_adc_front
+	 SPI_DOUT_ADC_1_A		: in std_logic; -- A_spi_dout_adc_back
+	 
+	 
+	 -- Block B here : Connections for two MuPix8 via SCSI adapter card
+	 data_in_B_0			: in std_logic_vector(3 downto 0);
+	 data_in_B_1			: in std_logic_vector(3 downto 0); 
+	 
     -- SI45
 
     si45_oe_n       : out   std_logic; -- <= '0'
