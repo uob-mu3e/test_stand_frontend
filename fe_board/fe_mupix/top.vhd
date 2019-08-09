@@ -5,22 +5,8 @@ use ieee.numeric_std.all;
 entity top is
 port (
     -- FE.A
-    malibu_ck_fpga_0    : out   std_logic; -- pin 36, 38 -- malibu.CK_FPGA_0_N/P
-    malibu_pll_reset    : out   std_logic; -- pin 42, 44 -- malibu.PLL_reset_P/N
-    malibu_spi_sck      : out   std_logic; -- pin 54 -- malibu.SPI_SCK_P
-    malibu_spi_sdi      : inout std_logic; -- pin 50 -- malibu.SPI_SDI_P
-    malibu_spi_sdo      : inout std_logic; -- pin 52 -- malibu.SPI_SDO_N
-    malibu_chip_reset   : out   std_logic; -- pin 48 -- malibu.chip_reset
-
-    -- FE.B
-    malibu_ck_fpga_1    : out   std_logic; -- pin 36, 38 -- malibu.CK_FPGA_1_P/N
-    malibu_pll_test     : out   std_logic; -- pin 42, 44 -- malibu.PLL_TEST_N/P
-    malibu_i2c_scl      : out   std_logic; -- pin 54 -- malibu.i2c_SCL
-    malibu_i2c_sda      : inout std_logic; -- pin 56 -- malibu.i2c_SDA
-    malibu_i2c_int_n    : inout std_logic; -- pin 52 -- malibu.I2C_INTn
-    malibu_spi_sdo_cec  : in    std_logic; -- pin 48 -- malibu.SPI_SDO_CEC
-
-    malibu_data         : in    std_logic_vector(13 downto 0);
+    -- chip dacs
+    CTRL_SDO_A
 
 
 
@@ -92,8 +78,6 @@ end entity;
 
 architecture arch of top is
 
-    signal malibu_clk : std_logic;
-
     signal fifo_rempty : std_logic;
     signal fifo_rack : std_logic;
     signal fifo_rdata : std_logic_vector(35 downto 0);
@@ -121,33 +105,40 @@ architecture arch of top is
 begin
 
     ----------------------------------------------------------------------------
-    -- MALIBU
+    -- MUPIX
 
-    malibu_ck_fpga_1 <= clk_625;
-    malibu_pll_reset <= '0';
+    e_mupix_block : entity work.mupix_block
+    generic map( NCHIPS => 1);
+    port map(
+   
+        -- chip dacs
+        i_CTRL_SDO_A            => ,
+        o_CTRL_SDI_A            => ,
+        o_CTRL_SCK1_A           => ,
+        o_CTRL_SCK2_A           => ,
+        o_CTRL_Load_A           => ,
+        o_CTRL_RB_A             => ,
+        i_data_chip_dacs        => ,
+        o_add_chip_dacs         => ,
+        
+        -- board dacs
+        i_SPI_DOUT_ADC_0_A      => ,
+        o_SPI_DIN0_A            => ,
+        o_SPI_CLK_A             => ,
+        o_SPI_LD_ADC_A          => ,
+        o_SPI_LD_TEMP_DAC_A     => ,
+        o_SPI_LD_DAC_A          => ,
+        o_add_board_dacs        => ,
+        i_data_board_dacs       => ,
+        o_data_board_dacs       => ,
+        o_wen_data_board_dacs   => ,
+        
+        i_ckdiv                 => (others => '0'),
 
-    e_malibu_block : entity work.malibu_block
-    generic map (
-        N_g => 1--,
-    )
-    port map (
-        i_sc_reg_addr   => sc_reg_addr,
-        i_sc_reg_re     => sc_reg_re,
-        o_sc_reg_rdata  => sc_reg_rdata,
-        i_sc_reg_we     => sc_reg_we,
-        i_sc_reg_wdata  => sc_reg_wdata,
-
-        o_ck_fpga_0     => malibu_ck_fpga_0,
-        o_chip_reset    => malibu_chip_reset,
-        o_pll_test      => malibu_pll_test,
-        i_data          => malibu_data(0 downto 0),
-
-        o_fifo_rempty   => fifo_rempty,
-        i_fifo_rack     => fifo_rack,
-        o_fifo_rdata    => fifo_rdata,
-
-        i_reset         => not reset_n,
-        i_clk           => qsfp_pll_clk--,
+        i_reset                 => not reset_n,
+        -- 156.25 MHz
+        i_clk                   => qsfp_pll_clk,
+        i_clk125                => clk_aux,
     );
 
     ----------------------------------------------------------------------------
