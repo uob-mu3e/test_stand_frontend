@@ -16,8 +16,8 @@ port (
     -- ram slave
     i_ram_addr          : in    std_logic_vector(15 downto 0) := (others => 'X');
     i_ram_re            : in    std_logic := '0';
-    o_ram_rdata         : out   std_logic_vector(31 downto 0);
     o_ram_rvalid        : out   std_logic;
+    o_ram_rdata         : out   std_logic_vector(31 downto 0);
     i_ram_we            : in    std_logic := '0';
     i_ram_wdata         : in    std_logic_vector(31 downto 0) := (others => 'X');
 

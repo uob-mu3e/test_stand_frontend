@@ -22,8 +22,8 @@ architecture arch of tb_sc_rx is
 
     signal ram_addr : std_logic_vector(31 downto 0);
     signal ram_re : std_logic;
-    signal ram_rdata : std_logic_vector(31 downto 0);
     signal ram_rvalid : std_logic;
+    signal ram_rdata : std_logic_vector(31 downto 0);
     signal ram_we : std_logic;
     signal ram_wdata : std_logic_vector(31 downto 0);
 
@@ -45,8 +45,8 @@ begin
 
         o_ram_addr => ram_addr,
         o_ram_re => ram_re,
-        i_ram_rdata => ram_rdata,
         i_ram_rvalid => ram_rvalid,
+        i_ram_rdata => ram_rdata,
         o_ram_we => ram_we,
         o_ram_wdata => ram_wdata,
 
@@ -67,8 +67,8 @@ begin
         if ( ram_we = '1' ) then
             ram(i) <= ram_wdata;
         end if;
-        ram_rdata <= ram(i);
         ram_rvalid <= ram_re;
+        ram_rdata <= ram(i);
     end if;
     end process;
 

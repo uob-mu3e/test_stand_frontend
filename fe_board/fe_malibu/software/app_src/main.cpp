@@ -32,7 +32,9 @@ int main() {
 
     while (1) {
         printf("\n");
-        printf("fe_malibu:\n");
+        printf("[fe_malibu] -------- menu --------\n");
+
+        printf("\n");
         printf("  [1] => xcvr qsfp\n");
         printf("  [2] => malibu\n");
         printf("  [3] => sc\n");

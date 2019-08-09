@@ -3,8 +3,13 @@ void menu_reset() {
     auto& reset_bypass = sc->regs.fe.reset_bypass;
 
     while(1) {
-        printf("fe.reset_bypass = 0x04X\n", reset_bypass);
+        printf("\n");
+        printf("[reset] -------- menu --------\n");
 
+        printf("\n");
+        printf("fe.reset_bypass = 0x%04X\n", reset_bypass);
+
+        printf("\n");
         printf("  [0] => use genesis\n");
         printf("  [1] => run_prep\n");
         printf("  [2] => sync\n");
@@ -13,9 +18,9 @@ void menu_reset() {
         printf("  [5] => abort run\n");
         printf("  [6] => start reset\n");
         printf("  [7] => stop reset\n");
+
         printf("Select entry ...\n");
         char cmd = wait_key();
-        
         switch(cmd) {
         case '0':
             reset_bypass = 0x0000;

@@ -13,8 +13,8 @@ architecture arch of tb_sc_ram is
 
     signal ram_addr : std_logic_vector(15 downto 0);
     signal ram_re : std_logic;
-    signal ram_rdata : std_logic_vector(31 downto 0);
     signal ram_rvalid : std_logic;
+    signal ram_rdata : std_logic_vector(31 downto 0);
     signal ram_we : std_logic;
     signal ram_wdata : std_logic_vector(31 downto 0);
 
@@ -45,8 +45,8 @@ begin
     port map (
         i_ram_addr          => ram_addr,
         i_ram_re            => ram_re,
-        o_ram_rdata         => ram_rdata,
         o_ram_rvalid        => ram_rvalid,
+        o_ram_rdata         => ram_rdata,
         i_ram_we            => ram_we,
         i_ram_wdata         => ram_wdata,
 
