@@ -19,7 +19,6 @@ set_global_assignment -name SDC_FILE top.sdc
 set_global_assignment -name VHDL_FILE ../fe/sc_ram.vhd
 set_global_assignment -name VHDL_FILE ../fe/fe_block.vhd
 set_global_assignment -name VHDL_FILE malibu_block.vhd
-set_global_assignment -name VHDL_FILE run_state_sync.vhd
 
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
