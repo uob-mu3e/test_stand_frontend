@@ -8,11 +8,11 @@ generic (
 );
 port (
     -- read latency - 1
-    i_sc_reg_addr   : in    std_logic_vector(7 downto 0);
-    i_sc_reg_re     : in    std_logic;
-    o_sc_reg_rdata  : out   std_logic_vector(31 downto 0);
-    i_sc_reg_we     : in    std_logic;
-    i_sc_reg_wdata  : in    std_logic_vector(31 downto 0);
+    i_reg_addr      : in    std_logic_vector(3 downto 0);
+    i_reg_re        : in    std_logic;
+    o_reg_rdata     : out   std_logic_vector(31 downto 0);
+    i_reg_we        : in    std_logic;
+    i_reg_wdata     : in    std_logic_vector(31 downto 0);
 
     o_ck_fpga_0     : out   std_logic;
     o_chip_reset    : out   std_logic;
@@ -57,35 +57,35 @@ begin
         o_chip_reset <= '0';
         --
     elsif rising_edge(i_clk) then
-        o_sc_reg_rdata <= X"CCCCCCCC";
+        o_reg_rdata <= X"CCCCCCCC";
 
-        if ( i_sc_reg_re = '1' and i_sc_reg_addr = X"40" ) then
-            o_sc_reg_rdata <= fifo_rdata(31 downto 0);
-        end if;
-
-        if ( i_sc_reg_re = '1' and i_sc_reg_addr = X"41" ) then
-            o_sc_reg_rdata <= (others => '0');
-            o_sc_reg_rdata(3 downto 0) <= fifo_rdata(35 downto 32);
-            o_sc_reg_rdata(16) <= fifo_rempty;
-            o_sc_reg_rdata(17) <= fifo_wfull;
+        if ( i_reg_re = '1' and i_reg_addr = X"0" ) then
+            o_reg_rdata <= fifo_rdata(31 downto 0);
         end if;
 
-        if ( i_sc_reg_re = '1' and i_sc_reg_addr = X"44" ) then
-            o_sc_reg_rdata <= (others => '0');
-            o_sc_reg_rdata(0) <= rx_pll_lock;
-        end if;
-        if ( i_sc_reg_re = '1' and i_sc_reg_addr = X"45" ) then
-            o_sc_reg_rdata <= (others => '0');
-            o_sc_reg_rdata(rx_ready'range) <= rx_ready;
-        end if;
-        if ( i_sc_reg_re = '1' and i_sc_reg_addr = X"46" ) then
-            o_sc_reg_rdata <= (others => '0');
-            o_sc_reg_rdata(rx_dpa_lock'range) <= rx_dpa_lock;
+        if ( i_reg_re = '1' and i_reg_addr = X"1" ) then
+            o_reg_rdata <= (others => '0');
+            o_reg_rdata(3 downto 0) <= fifo_rdata(35 downto 32);
+            o_reg_rdata(16) <= fifo_rempty;
+            o_reg_rdata(17) <= fifo_wfull;
         end if;
 
-        if ( i_sc_reg_re = '1' and i_sc_reg_addr = X"48" ) then
-            o_sc_reg_rdata <= (others => '0');
-            o_sc_reg_rdata(0) <= frame_desync;
+        if ( i_reg_re = '1' and i_reg_addr = X"4" ) then
+            o_reg_rdata <= (others => '0');
+            o_reg_rdata(0) <= rx_pll_lock;
+        end if;
+        if ( i_reg_re = '1' and i_reg_addr = X"5" ) then
+            o_reg_rdata <= (others => '0');
+            o_reg_rdata(rx_ready'range) <= rx_ready;
+        end if;
+        if ( i_reg_re = '1' and i_reg_addr = X"6" ) then
+            o_reg_rdata <= (others => '0');
+            o_reg_rdata(rx_dpa_lock'range) <= rx_dpa_lock;
+        end if;
+
+        if ( i_reg_re = '1' and i_reg_addr = X"8" ) then
+            o_reg_rdata <= (others => '0');
+            o_reg_rdata(0) <= frame_desync;
         end if;
         --
     end if;

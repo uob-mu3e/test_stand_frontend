@@ -98,11 +98,9 @@ architecture arch of top is
     signal fifo_rack : std_logic;
     signal fifo_rdata : std_logic_vector(35 downto 0);
 
-    signal sc_reg_addr : std_logic_vector(7 downto 0);
-    signal sc_reg_re : std_logic;
-    signal sc_reg_rdata : std_logic_vector(31 downto 0);
-    signal sc_reg_we : std_logic;
-    signal sc_reg_wdata : std_logic_vector(31 downto 0);
+    signal sc_reg : work.util.rw_t;
+    signal malibu_reg : work.util.rw_t;
+    signal scifi_reg : work.util.rw_t;
 
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
@@ -120,6 +118,34 @@ architecture arch of top is
 
 begin
 
+    -- malibu regs : 0x40-0x4F
+    malibu_reg.addr <= sc_reg.addr;
+    malibu_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
+    malibu_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
+    malibu_reg.wdata <= sc_reg.wdata;
+
+    -- scifi regs : 0x60-0x6F
+    scifi_reg.addr <= sc_reg.addr;
+    scifi_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
+    scifi_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
+    scifi_reg.wdata <= sc_reg.wdata;
+
+    -- select valid rdata
+    sc_reg.rdata <=
+        malibu_reg.rdata when ( malibu_reg.rvalid = '1' ) else
+        scifi_reg.rdata when ( scifi_reg.rvalid = '1' ) else
+        X"CCCCCCCC";
+
+    process(qsfp_pll_clk)
+    begin
+    if rising_edge(qsfp_pll_clk) then
+        malibu_reg.rvalid <= malibu_reg.re;
+        scifi_reg.rvalid <= scifi_reg.re;
+    end if;
+    end process;
+
+
+
     ----------------------------------------------------------------------------
     -- MALIBU
 
@@ -131,11 +157,11 @@ begin
         N_g => 1--,
     )
     port map (
-        i_sc_reg_addr   => sc_reg_addr,
-        i_sc_reg_re     => sc_reg_re,
-        o_sc_reg_rdata  => sc_reg_rdata,
-        i_sc_reg_we     => sc_reg_we,
-        i_sc_reg_wdata  => sc_reg_wdata,
+        i_reg_addr      => malibu_reg.addr(3 downto 0),
+        i_reg_re        => malibu_reg.re,
+        o_reg_rdata     => malibu_reg.rdata,
+        i_reg_we        => malibu_reg.we,
+        i_reg_wdata     => malibu_reg.wdata,
 
         o_ck_fpga_0     => malibu_ck_fpga_0,
         o_chip_reset    => malibu_chip_reset,
@@ -263,11 +289,11 @@ begin
         o_pod_tx        => pod_tx,
         i_pod_refclk    => pod_pll_clk,
 
-        o_sc_reg_addr   => sc_reg_addr,
-        o_sc_reg_re     => sc_reg_re,
-        i_sc_reg_rdata  => sc_reg_rdata,
-        o_sc_reg_we     => sc_reg_we,
-        o_sc_reg_wdata  => sc_reg_wdata,
+        o_sc_reg_addr   => sc_reg.addr(7 downto 0),
+        o_sc_reg_re     => sc_reg.re,
+        i_sc_reg_rdata  => sc_reg.rdata,
+        o_sc_reg_we     => sc_reg.we,
+        o_sc_reg_wdata  => sc_reg.wdata,
 
         i_reset_n       => qsfp_reset_n,
         i_clk           => qsfp_pll_clk--,

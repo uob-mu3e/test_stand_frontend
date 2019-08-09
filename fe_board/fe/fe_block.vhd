@@ -75,21 +75,9 @@ architecture arch of fe_block is
     signal sc_fifo_rack : std_logic;
     signal sc_fifo_rdata : std_logic_vector(35 downto 0);
 
-    signal sc_ram_addr : std_logic_vector(31 downto 0);
-    signal sc_ram_re : std_logic;
-    signal sc_ram_rvalid : std_logic;
-    signal sc_ram_rdata : std_logic_vector(31 downto 0);
-    signal sc_ram_we : std_logic;
-    signal sc_ram_wdata : std_logic_vector(31 downto 0);
+    signal sc_ram, sc_reg : work.util.rw_t;
+    signal fe_reg : work.util.rw_t;
 
-    signal sc_reg_addr : std_logic_vector(7 downto 0);
-    signal sc_reg_re : std_logic;
-    signal sc_reg_rdata : std_logic_vector(31 downto 0);
-    signal sc_reg_we : std_logic;
-    signal sc_reg_wdata : std_logic_vector(31 downto 0);
-
-    signal fe_reg_rdata : std_logic_vector(31 downto 0);
-    signal fe_reg_rvalid : std_logic;
 
 
     signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
@@ -134,24 +122,34 @@ architecture arch of fe_block is
 
 begin
 
-    o_sc_reg_addr <= sc_reg_addr;
-    o_sc_reg_re <= sc_reg_re and work.util.to_std_logic(sc_reg_addr(7 downto 4) /= X"F");
-    sc_reg_rdata <= fe_reg_rdata when ( fe_reg_rvalid = '1' ) else i_sc_reg_rdata;
-    o_sc_reg_we <= sc_reg_we and work.util.to_std_logic(sc_reg_addr(7 downto 4) /= X"F");
-    o_sc_reg_wdata <= sc_reg_wdata;
+    -- local (fe) regs : 0xF0-0xFF
+    fe_reg.addr <= sc_reg.addr;
+    fe_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
+    fe_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
+    fe_reg.wdata <= sc_reg.wdata;
+
+    -- external (sc) regs : 0x00-0xEF
+    o_sc_reg_addr <= sc_reg.addr(7 downto 0);
+    o_sc_reg_re <= sc_reg.re when ( sc_reg.addr(7 downto 4) /= X"F" ) else '0';
+    o_sc_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 4) /= X"F" ) else '0';
+    o_sc_reg_wdata <= sc_reg.wdata;
+
+    -- use fe_reg.rdata if prev cycle was fe_reg read
+    sc_reg.rdata <=
+        fe_reg.rdata when ( fe_reg.rvalid = '1' ) else
+        i_sc_reg_rdata;
 
     process(i_clk)
     begin
     if rising_edge(i_clk) then
-        fe_reg_rvalid <= '0';
+        fe_reg.rvalid <= fe_reg.re;
 
         -- reset bypass
-        if ( sc_reg_addr = X"F0" ) then
-            if ( sc_reg_we = '1' ) then
-                reset_bypass <= sc_reg_wdata;
-            end if;
-            fe_reg_rvalid <= sc_reg_re;
-            fe_reg_rdata <= reset_bypass;
+        if ( fe_reg.addr(3 downto 0) = X"0" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= reset_bypass;
+        end if;
+        if ( fe_reg.addr(3 downto 0) = X"0" and fe_reg.we = '1' ) then
+            reset_bypass <= fe_reg.wdata;
         end if;
 
         --
@@ -219,12 +217,12 @@ begin
 
     e_sc_ram : entity work.sc_ram
     port map (
-        i_ram_addr          => sc_ram_addr(15 downto 0),
-        i_ram_re            => sc_ram_re,
-        o_ram_rvalid        => sc_ram_rvalid,
-        o_ram_rdata         => sc_ram_rdata,
-        i_ram_we            => sc_ram_we,
-        i_ram_wdata         => sc_ram_wdata,
+        i_ram_addr          => sc_ram.addr(15 downto 0),
+        i_ram_re            => sc_ram.re,
+        o_ram_rvalid        => sc_ram.rvalid,
+        o_ram_rdata         => sc_ram.rdata,
+        i_ram_we            => sc_ram.we,
+        i_ram_wdata         => sc_ram.wdata,
 
         i_avs_address       => av_sc.address(15 downto 0),
         i_avs_read          => av_sc.read,
@@ -233,11 +231,11 @@ begin
         i_avs_writedata     => av_sc.writedata,
         o_avs_waitrequest   => av_sc.waitrequest,
 
-        o_reg_addr          => sc_reg_addr,
-        o_reg_re            => sc_reg_re,
-        i_reg_rdata         => sc_reg_rdata,
-        o_reg_we            => sc_reg_we,
-        o_reg_wdata         => sc_reg_wdata,
+        o_reg_addr          => sc_reg.addr(7 downto 0),
+        o_reg_re            => sc_reg.re,
+        i_reg_rdata         => sc_reg.rdata,
+        o_reg_we            => sc_reg.we,
+        o_reg_wdata         => sc_reg.wdata,
 
         i_reset_n           => i_reset_n,
         i_clk               => i_clk--;
@@ -252,12 +250,12 @@ begin
         i_fifo_rack     => sc_fifo_rack,
         o_fifo_rdata    => sc_fifo_rdata,
 
-        o_ram_addr      => sc_ram_addr,
-        o_ram_re        => sc_ram_re,
-        i_ram_rvalid    => sc_ram_rvalid,
-        i_ram_rdata     => sc_ram_rdata,
-        o_ram_we        => sc_ram_we,
-        o_ram_wdata     => sc_ram_wdata,
+        o_ram_addr      => sc_ram.addr,
+        o_ram_re        => sc_ram.re,
+        i_ram_rvalid    => sc_ram.rvalid,
+        i_ram_rdata     => sc_ram.rdata,
+        o_ram_we        => sc_ram.we,
+        o_ram_wdata     => sc_ram.wdata,
 
         i_reset_n       => i_reset_n,
         i_clk           => i_clk--,
