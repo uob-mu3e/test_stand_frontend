@@ -5,13 +5,15 @@
 #include "../include/i2c.h"
 i2c_t i2c;
 
-#include "malibu.h"
-
-#include "sc.h"
-#include "../../../fe/software/app_src/mscb_user.h"
-
 #include "../../../fe/software/app_src/si5345.h"
 si5345_t si5345 { 4 }; // spi_slave = 4
+
+#include "../../../fe/software/app_src/sc_ram.h"
+volatile sc_ram_t* sc = (sc_ram_t*)AVM_SC_BASE;
+
+#include "malibu.h"
+#include "sc.h"
+#include "../../../fe/software/app_src/mscb_user.h"
 
 alt_u32 alarm_callback(void*) {
     sc_callback((alt_u32*)AVM_SC_BASE);

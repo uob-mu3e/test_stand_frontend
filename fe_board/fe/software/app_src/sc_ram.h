@@ -28,16 +28,18 @@ struct sc_ram_t {
             } fifo;
 
             struct {
-                alt_u32 pll_lock;
-                alt_u32 ready;
-                alt_u32 dpa_lock;
+                alt_u32 status;
+                alt_u32 rx_dpa_lock;
+                alt_u32 rx_ready;
                 alt_u32 reserved[1];
-            } rx;
+            } mon;
 
             struct {
-                alt_u32 desync;
-                alt_u32 reserved[3];
-            } frame;
+                alt_u32 dummy;
+                alt_u32 dp;
+                alt_u32 reset;
+                alt_u32 reserved[1];
+            } ctrl;
 
             alt_u32 reserved4[16 - 12];
         } malibu;
@@ -47,7 +49,28 @@ struct sc_ram_t {
         } mupix;
 
         struct {
-            alt_u32 reserved6[16 - 0];
+            struct {
+                alt_u32 data;
+                alt_u16 tag;
+                alt_u16 status;
+                alt_u32 reserved[2];
+            } fifo;
+
+            struct {
+                alt_u32 status;
+                alt_u32 rx_dpa_lock;
+                alt_u32 rx_ready;
+                alt_u32 reserved[1];
+            } mon;
+
+            struct {
+                alt_u32 dummy;
+                alt_u32 dp;
+                alt_u32 reset;
+                alt_u32 reserved[1];
+            } ctrl;
+
+            alt_u32 reserved6[16 - 12];
         } scifi;
 
         alt_u32 reserved7[16 - 0];

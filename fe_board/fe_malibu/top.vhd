@@ -92,8 +92,6 @@ end entity;
 
 architecture arch of top is
 
-    signal malibu_clk : std_logic;
-
     signal fifo_rempty : std_logic;
     signal fifo_rack : std_logic;
     signal fifo_rdata : std_logic_vector(35 downto 0);
@@ -197,17 +195,17 @@ begin
 
 
 
-    -- 125 MHz -> Hz
+    -- 125 MHz -> 1 Hz
     e_clk_aux_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( clkout => led(15), rst_n => reset_n, clk => clk_aux );
 
-    -- 156.25 MHz -> Hz
+    -- 156.25 MHz -> 1 Hz
     e_clk_qsfp_hz : entity work.clkdiv
     generic map ( P => 156250000 )
     port map ( clkout => led(14), rst_n => reset_n, clk => qsfp_pll_clk );
 
-    -- 125 MHz -> Hz
+    -- 125 MHz -> 1 Hz
     e_clk_pod_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( clkout => led(13), rst_n => reset_n, clk => pod_pll_clk );
