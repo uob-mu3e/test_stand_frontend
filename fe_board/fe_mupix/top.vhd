@@ -5,7 +5,6 @@ use ieee.numeric_std.all;
 
 use work.reg_map_s4.all;
 use work.daq_constants.all;
-use work.mupix_types.all;
 
 entity top is
 port (
@@ -215,6 +214,18 @@ begin
 
     led_n <= not led;
 
+    si45_oe_n <= '0';
+    si45_rst_n <= '1';
+
+    QSFP_ModSel_n <= '1';
+    QSFP_Rst_n <= '1';
+    QSFP_LPM <= '0';
+
+    pod_tx_reset_n <= '1';
+    pod_rx_reset_n <= '1';
+
+
+
     -- 125 MHz
     e_clk_aux_hz : entity work.clkdiv
     generic map ( P => 125000000 )
@@ -225,8 +236,10 @@ begin
     generic map ( P => 156250000 )
     port map ( clkout => led(14), rst_n => reset_n, clk => qsfp_pll_clk );
 
-    ----------------------------------------------------------------------------
-    -- NIOS
+    -- 125 MHz
+    e_clk_pod_hz : entity work.clkdiv
+    generic map ( P => 125000000 )
+    port map ( clkout => led(13), rst_n => reset_n, clk => pod_pll_clk );
 
     nios_clk <= clk_aux;
 
@@ -236,109 +249,83 @@ begin
     e_qsfp_reset_n : entity work.reset_sync
     port map ( rstout_n => qsfp_reset_n, arst_n => reset_n, clk => qsfp_pll_clk );
 
-    led(12) <= nios_pio(7);
 
-    e_nios : component work.cmp.nios
-    port map (
-        avm_qsfp_address        => av_qsfp.address(13 downto 0),
-        avm_qsfp_read           => av_qsfp.read,
-        avm_qsfp_readdata       => av_qsfp.readdata,
-        avm_qsfp_write          => av_qsfp.write,
-        avm_qsfp_writedata      => av_qsfp.writedata,
-        avm_qsfp_waitrequest    => av_qsfp.waitrequest,
 
-        avm_pod_address         => av_pod.address(13 downto 0),
-        avm_pod_read            => av_pod.read,
-        avm_pod_readdata        => av_pod.readdata,
-        avm_pod_write           => av_pod.write,
-        avm_pod_writedata       => av_pod.writedata,
-        avm_pod_waitrequest     => av_pod.waitrequest,
+    ----------------------------------------------------------------------------
+    -- I2C
 
-        avm_sc_address          => av_sc.address(15 downto 0),
-        avm_sc_read             => av_sc.read,
-        avm_sc_readdata         => av_sc.readdata,
-        avm_sc_write            => av_sc.write,
-        avm_sc_writedata        => av_sc.writedata,
-        avm_sc_waitrequest      => av_sc.waitrequest,
+    i2c_scl <= not i2c_scl_oe;
+    i2c_sda <=
+        malibu_i2c_sda and
+        '1';
+    malibu_i2c_scl <= ZERO when i2c_scl_oe = '1' else 'Z';
+    malibu_i2c_sda <= ZERO when i2c_sda_oe = '1' else 'Z';
 
-        avm_clk_clk             => qsfp_pll_clk,
-        avm_reset_reset_n       => qsfp_reset_n,
-
-        --
-        -- nios base
-        --
-
-        i2c_scl_in => i2c_scl_in,
-        i2c_scl_oe => i2c_scl_oe,
-        i2c_sda_in => i2c_sda_in,
-        i2c_sda_oe => i2c_sda_oe,
-
-        spi_miso => spi_miso,
-        spi_mosi => spi_mosi,
-        spi_sclk => spi_sclk,
-        spi_ss_n => spi_ss_n,
-
-        pio_export => nios_pio,
-
-        rst_reset_n => nios_reset_n,
-        clk_clk => nios_clk--,
-    );
-
-    si45_oe_n <= '0';
-    si45_rst_n <= '1';
-    si45_spi_in <= spi_mosi;
---    spi_miso <= si45_spi_out;
-    si45_spi_sclk <= spi_sclk;
-    si45_spi_cs_n <= spi_ss_n(0);
+    ----------------------------------------------------------------------------
 
 
 
     ----------------------------------------------------------------------------
-    -- SLOW CONTROL
+    -- SPI
 
-    e_data_sc_path : entity work.data_sc_path
-    port map (
-        i_avs_address        => av_sc.address(15 downto 0),
-        i_avs_read           => av_sc.read,
-        o_avs_readdata       => open,--av_sc.readdata,
-        i_avs_write          => av_sc.write,
-        i_avs_writedata      => av_sc.writedata,
-        o_avs_waitrequest    => open,--av_sc.waitrequest,
+    si45_spi_in <= spi_mosi;
+    si45_spi_sclk <= spi_sclk when spi_ss_n(0) = '0' else '0';
+    si45_spi_cs_n <= spi_ss_n(0);
 
-        i_fifo_data         => fifo_data,
-        i_fifo_empty   => fifo_data_empty,
-        o_fifo_rack    => fifo_data_read,
+    malibu_spi_sdi <= spi_mosi;
+    malibu_spi_sck <= spi_sclk when spi_ss_n(1) = '0' else '0';
 
-        i_link_data         => qsfp_rx_data(31 downto 0),
-        i_link_datak        => qsfp_rx_datak(3 downto 0),
+    spi_miso <=
+        si45_spi_out when spi_ss_n(0) = '0' else
+        malibu_spi_sdo when spi_ss_n(1) = '0' else
+        '0';
 
-        o_link_data         => qsfp_tx_data(31 downto 0),
-        o_link_datak        => qsfp_tx_datak(3 downto 0),
-        
-        o_terminated        => open,
-        i_run_state         => run_state_t,
+    ----------------------------------------------------------------------------
 
-        i_reset             => not reset_n,
-        i_clk               => qsfp_pll_clk--,       
-    );
 
-    i_sc_ram2 : entity work.ip_ram -- pixel
+
+    e_fe_block : entity work.fe_block
     generic map (
-        ADDR_WIDTH => 16,
-        DATA_WIDTH => 32--,
+        FPGA_ID_g => X"FEB0"--,
     )
     port map (
-        address_b   => av_sc.address(15 downto 0),
-        q_b         => av_sc.readdata,
-        wren_b      => av_sc.write,
-        data_b      => av_sc.writedata,
-        clock_b     => qsfp_pll_clk,
+        i_nios_clk      => nios_clk,
+        i_nios_reset_n  => nios_reset_n,
 
-        address_a   => add_reg_ram,
-        q_a         => data_reg_ram,
-        wren_a      => wen_reg_ram,
-        data_a      => wdate_reg_ram,
-        clock_a     => qsfp_pll_clk--,
+        i_i2c_scl       => i2c_scl,
+        o_i2c_scl_oe    => i2c_scl_oe,
+        i_i2c_sda       => i2c_sda,
+        o_i2c_sda_oe    => i2c_sda_oe,
+
+        i_spi_miso      => spi_miso,
+        o_spi_mosi      => spi_mosi,
+        o_spi_sclk      => spi_sclk,
+        o_spi_ss_n      => spi_ss_n,
+
+        i_mscb_data     => mscb_data_in,
+        o_mscb_data     => mscb_data_out,
+        o_mscb_oe       => mscb_oe,
+
+        i_qsfp_rx       => qsfp_rx,
+        o_qsfp_tx       => qsfp_tx,
+        i_qsfp_refclk   => qsfp_pll_clk,
+
+        i_fifo_rempty   => fifo_rempty,
+        o_fifo_rack     => fifo_rack,
+        i_fifo_rdata    => fifo_rdata,
+
+        i_pod_rx        => pod_rx,
+        o_pod_tx        => pod_tx,
+        i_pod_refclk    => pod_pll_clk,
+
+        o_sc_reg_addr   => sc_reg_addr,
+        o_sc_reg_re     => sc_reg_re,
+        i_sc_reg_rdata  => sc_reg_rdata,
+        o_sc_reg_we     => sc_reg_we,
+        o_sc_reg_wdata  => sc_reg_wdata,
+
+        i_reset_n       => qsfp_reset_n,
+        i_clk           => qsfp_pll_clk--,
     );
 
 
@@ -585,119 +572,5 @@ begin
             rx_datak_out    => rx_datak_out--,
 		);
 	 
-
-
-	 ----------------------------------------------------------------------------
-    ----------------------------------------------------------------------------
-    -- QSFP
-    -- (data and slow_control)
-
-    QSFP_ModSel_n <= '1';
-    QSFP_Rst_n <= '1';
-    QSFP_LPM <= '0';
-
-    e_qsfp : entity work.xcvr_s4
-    generic map (
-        NUMBER_OF_CHANNELS_g => 4,
-        CHANNEL_WIDTH_g => 32,
-        INPUT_CLOCK_FREQUENCY_g => 156250000,
-        DATA_RATE_g => 6250,
-        CLK_MHZ_g => 125--,
-    )
-    port map (
-        i_tx_data   => qsfp_tx_data,
-        i_tx_datak  => qsfp_tx_datak,
-
-        o_rx_data   => qsfp_rx_data,
-        o_rx_datak  => qsfp_rx_datak,
-
-        o_tx_clkout => open,
-        i_tx_clkin  => (others => qsfp_pll_clk),
-        o_rx_clkout => open,
-        i_rx_clkin  => (others => qsfp_pll_clk),
-
-        o_tx_serial => qsfp_tx,
-        i_rx_serial => qsfp_rx,
-
-        i_pll_clk   => qsfp_pll_clk,
-        i_cdr_clk   => qsfp_pll_clk,
-
-        i_avs_address     => av_qsfp.address(13 downto 0),
-        i_avs_read        => av_qsfp.read,
-        o_avs_readdata    => av_qsfp.readdata,
-        i_avs_write       => av_qsfp.write,
-        i_avs_writedata   => av_qsfp.writedata,
-        o_avs_waitrequest => av_qsfp.waitrequest,
-
-        i_reset     => not nios_reset_n,
-        i_clk       => nios_clk--,
-    );
-
-    qsfp_tx_data(127 downto 32) <=
-          X"03CAFE" & work.util.D28_5
-        & X"02BABE" & work.util.D28_5
-        & X"01DEAD" & work.util.D28_5;
-
-    qsfp_tx_datak(15 downto 4) <=
-          "0001"
-        & "0001"
-        & "0001";
-
-    ----------------------------------------------------------------------------
-
-
-
-    ----------------------------------------------------------------------------
-    -- POD
-    -- (reset system)
-
-    pod_tx_reset_n <= '1';
-    pod_rx_reset_n <= '1';
-
-    e_pod : entity work.xcvr_s4
-    generic map (
-        NUMBER_OF_CHANNELS_g => 4,
-        CHANNEL_WIDTH_g => 8,
-        INPUT_CLOCK_FREQUENCY_g => 125000000,
-        DATA_RATE_g => 1250,
-        CLK_MHZ_g => 125--,
-    )
-    port map (
-        -- avalon slave interface
-        i_avs_address     => av_pod.address(13 downto 0),
-        i_avs_read        => av_pod.read,
-        o_avs_readdata    => av_pod.readdata,
-        i_avs_write       => av_pod.write,
-        i_avs_writedata   => av_pod.writedata,
-        o_avs_waitrequest => av_pod.waitrequest,
-
-        i_tx_data   => work.util.D28_5
-                     & work.util.D28_5
-                     & work.util.D28_5
-                     & work.util.D28_5,
-        i_tx_datak  => "1"
-                     & "1"
-                     & "1"
-                     & "1",
-
-        o_rx_data   => open,
-        o_rx_datak  => open,
-
-        o_tx_clkout => open,
-        i_tx_clkin  => (others => pod_pll_clk),
-        o_rx_clkout => open,
-        i_rx_clkin  => (others => pod_pll_clk),
-
-        o_tx_serial => pod_tx,
-        i_rx_serial => pod_rx,
-
-        i_pll_clk   => pod_pll_clk,
-        i_cdr_clk   => pod_pll_clk,
-
-        i_reset     => not nios_reset_n,
-        i_clk       => nios_clk--,
-    );
-
-    ----------------------------------------------------------------------------
 
 end architecture;
