@@ -8,6 +8,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+--
+-- single clock fallthrough fifo
+--
 entity scfifo is
 generic (
     DATA_WIDTH_g : positive := 8;
@@ -19,8 +22,8 @@ port (
     i_wdata     : in    std_logic_vector(DATA_WIDTH_g-1 downto 0);
 
     o_rempty    : out   std_logic;
-    o_rdata     : out   std_logic_vector(DATA_WIDTH_g-1 downto 0);
     i_re        : in    std_logic;
+    o_rdata     : out   std_logic_vector(DATA_WIDTH_g-1 downto 0);
 
     i_reset_n   : in    std_logic;
     i_clk       : in    std_logic--;

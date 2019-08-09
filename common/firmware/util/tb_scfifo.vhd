@@ -28,8 +28,8 @@ begin
         i_wdata     => wd,
 
         o_rempty    => rempty,
-        o_rdata     => rd,
         i_re        => re,
+        o_rdata     => rd,
 
         i_reset_n   => reset_n,
         i_clk       => clk--,

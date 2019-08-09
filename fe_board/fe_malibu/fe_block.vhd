@@ -91,11 +91,25 @@ architecture arch of fe_block is
     signal fe_reg_rdata : std_logic_vector(31 downto 0);
     signal fe_reg_rvalid : std_logic;
 
+
+    signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
+    signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
+    signal mscb_counter_in : unsigned(15 downto 0);
+
     signal reset_bypass : std_logic_vector(31 downto 0);
+
+    signal run_state_125 : run_state_t;
+    signal run_state_156 : run_state_t;
+    signal terminated : std_logic;
 
 
 
     signal av_qsfp, av_pod : work.util.avalon_t;
+
+    signal qsfp_rx_data : std_logic_vector(127 downto 0);
+    signal qsfp_rx_datak : std_logic_vector(15 downto 0);
+    signal pod_rx_data : std_logic_vector(31 downto 0);
+    signal pod_rx_datak : std_logic_vector(3 downto 0);
 
     signal qsfp_tx_data : std_logic_vector(127 downto 0) :=
           X"03CAFE" & work.util.D28_5
@@ -117,21 +131,6 @@ architecture arch of fe_block is
         & "1"
         & "1"
         & "1";
-
-    signal qsfp_rx_data : std_logic_vector(127 downto 0);
-    signal qsfp_rx_datak : std_logic_vector(15 downto 0);
-    signal pod_rx_data : std_logic_vector(31 downto 0);
-    signal pod_rx_datak : std_logic_vector(3 downto 0);
-
-
-
-    signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
-    signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
-    signal mscb_counter_in : unsigned(15 downto 0);
-
-    signal run_state_125 : run_state_t;
-    signal run_state_156 : run_state_t;
-    signal terminated : std_logic;
 
 begin
 
@@ -175,6 +174,13 @@ begin
 
 
 
+        -- mscb
+        parallel_mscb_in_export => mscb_to_nios_parallel_in,
+        parallel_mscb_out_export => mscb_from_nios_parallel_out,
+        counter_in_export => std_logic_vector(mscb_counter_in),
+
+
+
         avm_qsfp_address        => av_qsfp.address(13 downto 0),
         avm_qsfp_read           => av_qsfp.read,
         avm_qsfp_readdata       => av_qsfp.readdata,
@@ -204,11 +210,6 @@ begin
         spi_ss_n => o_spi_ss_n,
 
         pio_export => nios_pio,
-
-        -- mscb
-        parallel_mscb_in_export => mscb_to_nios_parallel_in,
-        parallel_mscb_out_export => mscb_from_nios_parallel_out,
-        counter_in_export => std_logic_vector(mscb_counter_in),
 
         rst_reset_n => i_nios_reset_n,
         clk_clk => i_nios_clk--,

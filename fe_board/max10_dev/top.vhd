@@ -66,9 +66,9 @@ begin
 		P => 50000000--,
 	)
 	port map (
-        clkout  => LED1,
-        rst_n   => '1',
-        clk     => CLOCK--,
+		clkout  => LED1,
+		rst_n   => '1',
+		clk     => CLOCK--,
 	);
 
 	e_adc_clk_hz : entity work.clkdiv
@@ -76,9 +76,9 @@ begin
 		P => 10000000--,
 	)
 	port map (
-        clkout  => LED2,
-        rst_n   => '1',
-        clk     => adc_clk--,
+		clkout  => LED2,
+		rst_n   => '1',
+		clk     => adc_clk--,
 	);
 
 	--- LEDs ---

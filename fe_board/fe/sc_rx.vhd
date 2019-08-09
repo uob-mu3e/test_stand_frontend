@@ -21,6 +21,7 @@ port (
     o_fifo_rempty   : out   std_logic;
     i_fifo_rack     : in    std_logic;
     o_fifo_rdata    : out   std_logic_vector(35 downto 0);
+    o_fifo_wfull    : out   std_logic;
 
     o_ram_addr      : out   std_logic_vector(31 downto 0);
     o_ram_re        : out   std_logic;
@@ -190,7 +191,7 @@ begin
         DATA_WIDTH => 36--,
     )
     port map (
-        full            => open,
+        full            => o_fifo_wfull,
         almost_full     => open,
         wrreq           => fifo_we,
         data            => fifo_wdata,

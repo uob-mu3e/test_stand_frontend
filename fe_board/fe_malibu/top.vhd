@@ -24,7 +24,7 @@ port (
 
 
 
-    -- SI45
+    -- SI5345
 
     si45_oe_n       : out   std_logic; -- <= '0'
     si45_rst_n      : out   std_logic; -- reset
@@ -156,29 +156,32 @@ begin
 
     led_n <= not led;
 
+    -- enable SI5345
     si45_oe_n <= '0';
     si45_rst_n <= '1';
 
+    -- enable QSFP
     QSFP_ModSel_n <= '1';
     QSFP_Rst_n <= '1';
     QSFP_LPM <= '0';
 
+    -- enable PID
     pod_tx_reset_n <= '1';
     pod_rx_reset_n <= '1';
 
 
 
-    -- 125 MHz
+    -- 125 MHz -> Hz
     e_clk_aux_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( clkout => led(15), rst_n => reset_n, clk => clk_aux );
 
-    -- 156.25 MHz
+    -- 156.25 MHz -> Hz
     e_clk_qsfp_hz : entity work.clkdiv
     generic map ( P => 156250000 )
     port map ( clkout => led(14), rst_n => reset_n, clk => qsfp_pll_clk );
 
-    -- 125 MHz
+    -- 125 MHz -> Hz
     e_clk_pod_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( clkout => led(13), rst_n => reset_n, clk => pod_pll_clk );
