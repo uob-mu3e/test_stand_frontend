@@ -29,7 +29,7 @@ package mudaq_registers is
 		constant DATAGENERATOR_BIT_ENABLE_PIXEL			: integer := 1;
 		constant DATAGENERATOR_BIT_ENABLE_FIBRE			: integer := 2;
 		constant DATAGENERATOR_BIT_ENABLE_TILE				: integer := 3;
-		constant DATAGENERATOR_BIT_ENABLE_2					: integer := 4;
+		constant DATAGENERATOR_BIT_ENABLE_TEST				: integer := 4;
 		subtype DATAGENERATOR_FRACCOUNT_RANGE 				is integer range 15 downto 8;
 		subtype DATAGENERATOR_NPIXEL_RANGE 					is integer range 15 downto 8;
 		subtype DATAGENERATOR_NFIBRE_RANGE 					is integer range 23 downto 16;

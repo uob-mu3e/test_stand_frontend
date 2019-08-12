@@ -241,7 +241,10 @@ architecture rtl of top is
 		signal event_length : std_logic_vector(11 downto 0);
 		signal dma_data_wren : std_logic;
 		signal dma_data : std_logic_vector(255 downto 0);
+		signal dma_data_test : std_logic_vector(255 downto 0);
 		signal dma_event_data : std_logic_vector(31 downto 0);
+		signal dma_wren_cnt : std_logic; 
+		signal dma_wren_test : std_logic;
 		
 begin 
 
@@ -530,13 +533,37 @@ e_event_counter : entity work.event_counter
 		rx_datak					=> rx_datak(1),
 		dma_wen_reg				=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
 		event_length			=> event_length,
-		dma_data_wren			=> dma_data_wren,
+		dma_data_wren			=> dma_wren_cnt,
 		dmamem_endofevent		=> dmamem_endofevent,
 		dma_data					=> dma_event_data,
 		state_out				=> state_out_eventcounter--,
 );
-	
-dma_data <=	X"00000" & event_length &
+
+e_counter : entity work.dma_counter
+generic map(
+	bits 	=> 256--,
+)
+ port map (
+	i_clk			=> pcie_fastclk_out,
+	i_reset_n   => resets_n(RESET_BIT_EVENT_COUNTER),
+	i_enable    => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_TEST),
+	i_fraccount => writeregs(DMA_SLOW_DOWN_REGISTER_W)(7 downto 0),
+	o_dma_wen   => dma_wren_test,
+	o_cnt     	=> dma_data_test--,
+);
+
+process (pcie_fastclk_out, reset_n)
+begin
+	if (reset_n = '0') then
+		dma_data_wren <= '0';
+		dma_data 	  <= (others => '0');
+	else
+		if(dma_wren_test = '1') then
+			dma_data_wren <= '1';
+			dma_data		  <= dma_data_test;
+		elsif(dma_wren_cnt = '1') then
+			dma_data_wren <= '1';
+			dma_data <=	X"00000" & event_length &
 				dma_event_data 			&
 				x"1ABACAF" & state_out_eventcounter &
 				x"2ABACAF" & state_out_datagen &
@@ -544,6 +571,9 @@ dma_data <=	X"00000" & event_length &
 				x"4ABACAFE" &
 				x"5ABACAFE" &
 				x"6ABACAFE";
+		end if;
+	end if;
+end process;
 
 ------------- time algining data -------------
 
