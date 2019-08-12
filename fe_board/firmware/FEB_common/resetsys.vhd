@@ -112,25 +112,26 @@ BEGIN
         state_sync_global       => state_out_125
     );
 
-
---    i_sync_reset : entity work.sync_reset
---    PORT MAP (
---        clk_rx            => clk_reset_rx_125,
---        clk_156           => clk_156,
---        reset_n           => not reset_in,
---        state_rx          => '0'&
---                             ustate_out_of_DAQ_rx &
---                             ustate_reset_rx &
---                             ustate_sync_test_rx &
---                             ustate_link_test_rx &
---                             ustate_terminating_rx &
---                             ustate_running_rx &
---                             ustate_sync_rx &
---                             ustate_run_prepare_rx &
---                             ustate_idle_rx,
---        state_156         => state_out_156
---    );
-
+     e_fifo_sync : entity work.fifo_sync
+     generic map (
+         DATA_WIDTH_g => run_state_t'length--,
+     )
+     port map (
+         o_rdata     => state_out_156,
+         i_rclk      => clk_156,
+         i_wdata     => '0' &
+                        ustate_out_of_DAQ_rx &
+                        ustate_reset_rx &
+                        ustate_sync_test_rx &
+                        ustate_link_test_rx &
+                        ustate_terminating_rx &
+                        ustate_running_rx &
+                        ustate_sync_rx &
+                        ustate_run_prepare_rx &
+                        ustate_idle_rx,
+         i_wclk      => clk_reset_rx_125,
+         i_fifo_aclr => reset_in--,
+     );
     
     testout(0) <= ustate_idle_rx;
     testout(1) <= ustate_run_prepare_rx;
