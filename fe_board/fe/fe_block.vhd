@@ -269,8 +269,8 @@ begin
         FEB_type_in             => "111010",
         run_state               => run_state_156,
 
-        data_out                => qsfp_tx_data(63 downto 32),
-        data_is_k               => qsfp_tx_datak(7 downto 4),
+        data_out                => qsfp_tx_data(31 downto 0),
+        data_is_k               => qsfp_tx_datak(3 downto 0),
 
         slowcontrol_fifo_empty  => sc_fifo_rempty,
         slowcontrol_read_req    => sc_fifo_rack,

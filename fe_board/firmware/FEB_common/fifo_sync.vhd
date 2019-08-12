@@ -9,10 +9,9 @@ generic (
 port (
     o_rdata     : out   std_logic_vector(DATA_WIDTH_g-1 downto 0);
     i_rclk      : in    std_logic;
-
+    i_reset_val : in    std_logic_vector(DATA_WIDTH_g-1 downto 0) := (others => '0');
     i_wdata     : in    std_logic_vector(DATA_WIDTH_g-1 downto 0);
     i_wclk      : in    std_logic;
-
     i_fifo_aclr : in    std_logic--;
 );
 end entity;
@@ -45,10 +44,10 @@ begin
         aclr        => i_fifo_aclr--,
     );
 
-    process(i_rclk, i_fifo_aclr, i_wdata)
+    process(i_rclk, i_fifo_aclr, i_reset_val)
     begin
     if ( i_fifo_aclr = '1' ) then
-        o_rdata <= i_wdata;
+        o_rdata <= i_reset_val;
         --
     elsif rising_edge(i_rclk) then
         if ( rempty = '0' ) then

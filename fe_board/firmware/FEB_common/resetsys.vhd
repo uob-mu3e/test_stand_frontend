@@ -44,6 +44,7 @@ architecture rtl of resetsys is
     signal terminated_125           : std_logic;
 
     signal state_controller_in      : std_logic_vector(7 downto 0);
+    signal reset_bypass_125_rx      : std_logic_vector(11 downto 0);
 
 ----------------begin resetsys------------------------
 BEGIN
@@ -51,8 +52,8 @@ BEGIN
     process(clk_reset_rx_125)
     begin
     if rising_edge(clk_reset_rx_125) then
-        if ( reset_bypass(8) = '1' ) then
-            state_controller_in <= reset_bypass(7 downto 0);
+        if ( reset_bypass_125_rx(8) = '1' ) then
+            state_controller_in <= reset_bypass_125_rx(7 downto 0);
         else
             state_controller_in <= data_in;
         end if;
@@ -120,7 +121,7 @@ BEGIN
     port map (
         o_rdata     => state_out_156,
         i_rclk      => clk_156,
-
+        i_reset_val => "0000000001",
         i_wdata     => '0' &
                        ustate_out_of_DAQ_rx &
                        ustate_reset_rx &
@@ -136,6 +137,17 @@ BEGIN
         i_fifo_aclr => reset_in--,
     );
 
+    e_fifo_sync2 : entity work.fifo_sync
+    generic map (
+        DATA_WIDTH_g => reset_bypass'length--,
+    )
+    port map (
+        o_rdata     => reset_bypass_125_rx,
+        i_rclk      => clk_reset_rx_125,
+        i_wdata     => reset_bypass,
+        i_wclk      => clk_156,
+        i_fifo_aclr => reset_in--,
+    );
 
 
     testout(0) <= ustate_idle_rx;
