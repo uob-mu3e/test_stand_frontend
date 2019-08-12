@@ -242,6 +242,8 @@ architecture rtl of top is
 		signal dma_data_wren : std_logic;
 		signal dma_data : std_logic_vector(255 downto 0);
 		signal dma_event_data : std_logic_vector(31 downto 0);
+		signal data_counter : std_logic_vector(31 downto 0);
+		signal datak_counter : std_logic_vector(3 downto 0);
 		
 begin 
 
@@ -518,16 +520,29 @@ e_data_gen : entity work.data_generator_a10
 		state_out				=> state_out_datagen--,
 );
 
-tx_data(1) <= data_pix_generated;
-tx_datak(1) <= datak_pix_generated;
+process(tx_clk(0), reset_n)
+begin
+	if(reset_n = '0') then
+		data_counter 	<= (others => '0');
+		datak_counter 	<= (others => '0');
+	else
+		if (writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
+			data_counter 	<= data_pix_generated;
+			datak_counter 	<= datak_pix_generated;
+		else
+			data_counter 	<= rx_data(0);
+			datak_counter 	<= rx_datak(0);
+		end if;
+	end if;
+end process;
 
 e_event_counter : entity work.event_counter
 	port map(
 		clk						=> tx_clk(0),
 		dma_clk					=> pcie_fastclk_out,
 		reset_n					=> resets_n(RESET_BIT_EVENT_COUNTER),
-		rx_data					=> rx_data(1),
-		rx_datak					=> rx_datak(1),
+		rx_data					=> data_counter,
+		rx_datak					=> datak_counter,
 		dma_wen_reg				=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
 		event_length			=> event_length,
 		dma_data_wren			=> dma_data_wren,
@@ -607,16 +622,16 @@ master : sc_master
 
 slave : sc_slave
 	port map(
-		clk					=> tx_clk(0),
-		reset_n				=> resets_n(RESET_BIT_SC_SLAVE),
-		enable				=> '1',
-		link_data_in		=> rx_data(0),
-		link_data_in_k		=> rx_datak(0),
-		mem_addr_out		=> readmem_writeaddr(15 downto 0),
+		clk							=> tx_clk(0),
+		reset_n						=> resets_n(RESET_BIT_SC_SLAVE),
+		enable						=> '1',
+		link_data_in				=> rx_data(0),
+		link_data_in_k				=> rx_datak(0),
+		mem_addr_out				=> readmem_writeaddr(15 downto 0),
 		mem_addr_finished_out   => readmem_writeaddr_finished,
-		mem_data_out		=> readmem_writedata,
-		mem_wren				=> readmem_wren,
-		stateout				=> LED_BRACKET
+		mem_data_out				=> readmem_writedata,
+		mem_wren						=> readmem_wren,
+		stateout						=> LED_BRACKET--,
 );
 
 tx_data(0) <= mem_data_out(31 downto 0);
