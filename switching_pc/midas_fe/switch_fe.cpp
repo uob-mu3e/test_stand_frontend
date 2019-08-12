@@ -46,6 +46,7 @@
 #include <switching_constants.h>
 #include "midas.h"
 #include "mfe.h"
+#include "/home/labor/online/fe_board/fe/software/app_src/malibu/ALL_OFF.h"
 
 #include "mudaq_device.h"
 
@@ -98,6 +99,7 @@ const char *sc_settings_str[] = {
 "Reset SC Slave = BOOL : 0",
 "Clear WM = BOOL : 0",
 "Last RM ADD = BOOL : 0",
+"Read MALIBU File = BOOL : 0",
 "[32] Temp0",
 "[32] Temp1",
 "[32] Temp2",
@@ -636,4 +638,72 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
         }
     }
+
+    if (std::string(key.name) == "Read MALIBU File") {
+        BOOL value;
+        int size = sizeof(value);
+        db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+        if (value) {
+            cm_msg(MINFO, "sc_settings_changed", "Read MALIBU File");
+
+            INT FPGA_ID, SIZE_FPGA_ID;
+            INT START_ADD, SIZE_START_ADD;
+            INT PCIE_MEM_START, SIZE_PCIE_MEM_START;
+
+            SIZE_FPGA_ID = sizeof(FPGA_ID);
+            SIZE_START_ADD = sizeof(START_ADD);
+            SIZE_PCIE_MEM_START = sizeof(PCIE_MEM_START);
+
+            char STR_FPGA_ID[128];
+            char STR_START_ADD[128];
+            char STR_PCIE_MEM_START[128];
+
+            sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_WRITE");
+            sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_WRITE");
+            sprintf(STR_PCIE_MEM_START,"Equipment/Switching/Variables/PCIE_MEM_START");
+
+            db_get_value(hDB, 0, "Equipment/Switching/Variables/FPGA_ID_WRITE", &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
+            db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
+            db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
+
+            uint32_t DATA_ARRAY[256];
+            int n = 0;
+            uint32_t w = 0;
+            for(int i = 0; i < sizeof(stic3_config_ALL_OFF); i++) {
+                if(i%4 == 0) { w = 0; n++; }
+                w |= stic3_config_ALL_OFF[i] << (i % 4 * 8);
+                if(i%4 == 3) {
+                    DATA_ARRAY[i/4] = w;
+                }
+            }
+
+            INT NEW_PCIE_MEM_START = PCIE_MEM_START + 5 + n;
+
+            uint32_t *data = DATA_ARRAY;
+
+            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) n, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+
+            uint32_t data_arr[1] = {START_ADD};
+
+            mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 1, (uint32_t) NEW_PCIE_MEM_START);
+
+            data_arr[0] = {0x01100000};
+
+            NEW_PCIE_MEM_START = NEW_PCIE_MEM_START + 6;
+
+            mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0, (uint32_t) NEW_PCIE_MEM_START);
+
+            NEW_PCIE_MEM_START = NEW_PCIE_MEM_START + 6;
+            INT SIZE_NEW_PCIE_MEM_START;
+            SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
+            db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
+
+
+
+            value = FALSE; // reset flag in ODB
+            db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+        }
+
+    }
+
 }
