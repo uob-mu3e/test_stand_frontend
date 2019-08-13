@@ -5,30 +5,21 @@
 #include "../../../fe/software/app_src/si5345.h"
 si5345_t si5345 { 0 }; // spi_slave = 0
 
-#include "../../../fe/software/app_src/sc_ram.h"
-volatile sc_ram_t* sc = (sc_ram_t*)AVM_SC_BASE;
+#include "../../../fe/software/app_src/sc.h"
+sc_t sc;
 
 #include "../../../fe/software/app_src/malibu.h"
-#include "sc.h"
 #include "../../../fe/software/app_src/mscb_user.h"
 #include "../../../fe/software/app_src/reset.h"
 
-alt_u32 alarm_callback(void*) {
-    sc_callback();
-
-    return 10;
-}
+#include "sc.h"
 
 int main() {
     base_init();
 
     si5345.init();
 
-    alt_alarm alarm;
-    int err = alt_alarm_start(&alarm, 0, alarm_callback, nullptr);
-    if(err) {
-        printf("ERROR: alt_alarm_start => %d\n", err);
-    }
+    sc.init();
 
     while (1) {
         printf("\n");
@@ -53,7 +44,7 @@ int main() {
             menu_malibu();
             break;
         case '3':
-            menu_sc();
+            sc.menu();
             break;
         case '4':
             menu_xcvr((alt_u32*)(AVM_POD_BASE | ALT_CPU_DCACHE_BYPASS_MASK));

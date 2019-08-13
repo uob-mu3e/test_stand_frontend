@@ -3,7 +3,7 @@
 malibu_t malibu;
 
 void menu_malibu() {
-    auto& regs = sc->regs.malibu;
+    auto& regs = sc.ram->regs.malibu;
 
     while(1) {
         printf("  [0] => reset\n");

@@ -2,15 +2,7 @@
 #define __FE_SC_RAM_H__
 
 struct sc_ram_t {
-    union {
-        alt_u32 data[AVM_SC_SPAN/4 - 256];
-        struct {
-            alt_u16 len;
-            alt_u16 cmd;
-            alt_u32 offset;
-            alt_u32 reserved[16 - 2];
-        } ctrl;
-    };
+    alt_u32 data[AVM_SC_SPAN/4 - 256];
 
     struct regs_t {
         alt_u32 reserved0[16 - 0];
@@ -46,9 +38,7 @@ struct sc_ram_t {
             alt_u32 reserved4[16 - 12];
         } malibu;
 
-        struct {
-            alt_u32 reserved5[16 - 0];
-        } mupix;
+        alt_u32 reserved5[16 - 0];
 
         struct {
             struct {
@@ -77,7 +67,9 @@ struct sc_ram_t {
 
         alt_u32 reserved7[16 - 0];
 
-        alt_u32 reserved8[16 - 0];
+        struct {
+            alt_u32 reserved8[16 - 0];
+        } mupix;
 
         alt_u32 reserved9[16 - 0];
 
@@ -92,22 +84,23 @@ struct sc_ram_t {
         alt_u32 reserved14[16 - 0];
 
         struct {
+            alt_u32 cmdlen;
+            alt_u32 offset;
+            alt_u32 reserved[2];
             alt_u32 reset_bypass;
-            alt_u32 reserved15[16 - 1];
+            alt_u32 reserved15[16 - 5];
         } fe;
     } regs;
 };
 
 static_assert(sizeof(sc_ram_t) == 65536 * 4, "");
 
-static_assert(sizeof(sc_ram_t::ctrl) == 16 * 4, "");
 static_assert(sizeof(sc_ram_t::regs) == 256 * 4, "");
 static_assert(sizeof(sc_ram_t::regs_t::malibu) == 16 * 4, "");
 static_assert(sizeof(sc_ram_t::regs_t::mupix) == 16 * 4, "");
 static_assert(sizeof(sc_ram_t::regs_t::scifi) == 16 * 4, "");
 static_assert(sizeof(sc_ram_t::regs_t::fe) == 16 * 4, "");
 
-static_assert(offsetof(sc_ram_t, ctrl) % 64 == 0, "");
 static_assert(offsetof(sc_ram_t, regs) % 64 == 0, "");
 static_assert(offsetof(sc_ram_t::regs_t, malibu) % 64 == 0, "");
 static_assert(offsetof(sc_ram_t::regs_t, mupix) % 64 == 0, "");

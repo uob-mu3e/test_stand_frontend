@@ -32,16 +32,17 @@ port (
 
 
 
-    -- QSFP links
-    i_qsfp_rx       : in    std_logic_vector(3 downto 0);
-    o_qsfp_tx       : out   std_logic_vector(3 downto 0);
-    i_qsfp_refclk   : in    std_logic;
-
+    --
     i_fifo_rempty   : in    std_logic;
     o_fifo_rack     : out   std_logic;
     i_fifo_rdata    : in    std_logic_vector(35 downto 0);
 
 
+
+    -- QSFP links
+    i_qsfp_rx       : in    std_logic_vector(3 downto 0);
+    o_qsfp_tx       : out   std_logic_vector(3 downto 0);
+    i_qsfp_refclk   : in    std_logic;
 
     -- POD links (reset system)
     i_pod_rx        : in    std_logic_vector(3 downto 0);
@@ -56,6 +57,8 @@ port (
     i_sc_reg_rdata  : in    std_logic_vector(31 downto 0);
     o_sc_reg_we     : out   std_logic;
     o_sc_reg_wdata  : out   std_logic_vector(31 downto 0);
+
+
 
     i_reset_n       : in    std_logic;
     -- 156.25 MHz
@@ -78,13 +81,16 @@ architecture arch of fe_block is
     signal sc_ram, sc_reg : work.util.rw_t;
     signal fe_reg : work.util.rw_t;
 
+    signal reg_cmdlen : std_logic_vector(31 downto 0);
+    signal reg_offset : std_logic_vector(31 downto 0);
+
 
 
     signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
     signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
     signal mscb_counter_in : unsigned(15 downto 0);
 
-    signal reset_bypass : std_logic_vector(31 downto 0);
+    signal reg_reset_bypass : std_logic_vector(31 downto 0);
 
     signal run_state_125 : run_state_t;
     signal run_state_156 : run_state_t;
@@ -122,13 +128,13 @@ architecture arch of fe_block is
 
 begin
 
-    -- local (fe) regs : 0xF0-0xFF
+    -- local regs : 0xF0-0xFF
     fe_reg.addr <= sc_reg.addr;
     fe_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
     fe_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
     fe_reg.wdata <= sc_reg.wdata;
 
-    -- external (sc) regs : 0x00-0xEF
+    -- external regs : 0x00-0xEF
     o_sc_reg_addr <= sc_reg.addr(7 downto 0);
     o_sc_reg_re <= sc_reg.re when ( sc_reg.addr(7 downto 4) /= X"F" ) else '0';
     o_sc_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 4) /= X"F" ) else '0';
@@ -144,12 +150,28 @@ begin
     if rising_edge(i_clk) then
         fe_reg.rvalid <= fe_reg.re;
 
-        -- reset bypass
+        -- cmdlen
         if ( fe_reg.addr(3 downto 0) = X"0" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reset_bypass;
+            fe_reg.rdata <= reg_cmdlen;
         end if;
         if ( fe_reg.addr(3 downto 0) = X"0" and fe_reg.we = '1' ) then
-            reset_bypass <= fe_reg.wdata;
+            reg_cmdlen <= fe_reg.wdata;
+        end if;
+
+        -- offset
+        if ( fe_reg.addr(3 downto 0) = X"1" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= reg_offset;
+        end if;
+        if ( fe_reg.addr(3 downto 0) = X"1" and fe_reg.we = '1' ) then
+            reg_offset <= fe_reg.wdata;
+        end if;
+
+        -- reset bypass
+        if ( fe_reg.addr(3 downto 0) = X"4" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= reg_reset_bypass;
+        end if;
+        if ( fe_reg.addr(3 downto 0) = X"4" and fe_reg.we = '1' ) then
+            reg_reset_bypass <= fe_reg.wdata;
         end if;
 
         --
@@ -308,7 +330,7 @@ begin
         resets_out      => open,
         phase_out       => open,
         data_in         => pod_rx_data(7 downto 0),
-        reset_bypass    => reset_bypass(11 downto 0),
+        reset_bypass    => reg_reset_bypass(11 downto 0),
         run_number_out  => open,
         fpga_id         => FPGA_ID_g,
         terminated      => terminated,

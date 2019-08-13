@@ -1,6 +1,6 @@
 
 void menu_reset() {
-    auto& reset_bypass = sc->regs.fe.reset_bypass;
+    auto& reset_bypass = sc.ram->regs.fe.reset_bypass;
 
     while(1) {
         printf("\n");
