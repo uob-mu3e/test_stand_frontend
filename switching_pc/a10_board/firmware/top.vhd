@@ -559,6 +559,8 @@ begin
 		dma_data_wren <= '0';
 		dma_data 	  <= (others => '0');
 	else
+		dma_data_wren <= '0';
+		dma_data 	  <= (others => '0');
 		if(dma_wren_test = '1') then
 			dma_data_wren <= '1';
 			dma_data		  <= dma_data_test;
