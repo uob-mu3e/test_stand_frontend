@@ -14,6 +14,7 @@ entity dma_counter is
 		i_clk 			: 	in STD_LOGIC;
 		i_reset_n		:	in std_logic;
 		i_enable		:	in std_logic;
+		i_dma_wen_reg	:	in std_logic;
 		i_fraccount     :	in std_logic_vector(7 downto 0);
 		o_dma_wen		:	out std_logic;
 		o_cnt 			: 	out STD_LOGIC_VECTOR (bits - 1 downto 0)--;
@@ -43,10 +44,8 @@ elsif(rising_edge(i_clk)) then
 	else
 		counter 	<= counter + '1';
 		if(counter <= i_fraccount) then
-			o_dma_wen 	<= '1';
+			o_dma_wen 	<= i_dma_wen_reg;
 			timer 		<= timer + '1';
-		else
-			o_dma_wen 	<= '0';
 		end if;
 		o_cnt 	<= timer;
 	end if;

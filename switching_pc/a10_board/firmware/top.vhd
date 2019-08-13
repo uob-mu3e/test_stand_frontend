@@ -545,11 +545,12 @@ generic map(
 )
  port map (
 	i_clk			=> pcie_fastclk_out,
-	i_reset_n   => resets_n(RESET_BIT_EVENT_COUNTER),
-	i_enable    => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_TEST),
-	i_fraccount => writeregs(DMA_SLOW_DOWN_REGISTER_W)(7 downto 0),
-	o_dma_wen   => dma_wren_test,
-	o_cnt     	=> dma_data_test--,
+	i_reset_n   	=> resets_n(RESET_BIT_EVENT_COUNTER),
+	i_enable    	=> writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_TEST),
+	i_dma_wen_reg 	=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+	i_fraccount 	=> writeregs(DMA_SLOW_DOWN_REGISTER_W)(7 downto 0),
+	o_dma_wen   	=> dma_wren_test,
+	o_cnt     		=> dma_data_test--,
 );
 
 process (pcie_fastclk_out, reset_n)

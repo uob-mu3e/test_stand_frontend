@@ -21,6 +21,7 @@ architecture behav of dma_test_tb is
 			i_clk 			: 	in STD_LOGIC;
 			i_reset_n		:	in std_logic;
 			i_enable		:	in std_logic;
+			i_dma_wen_reg	:	in std_logic;
 			i_fraccount     :	in std_logic_vector(7 downto 0);
 			o_dma_wen		:	out std_logic;
 			o_cnt 			: 	out STD_LOGIC_VECTOR (bits - 1 downto 0)--;
@@ -32,6 +33,7 @@ architecture behav of dma_test_tb is
   	signal enable 		: std_logic := '0';
   	signal fraccount 	: std_logic_vector(7 downto 0);
   	signal dma_wen 		: std_logic;
+  	signal dma_wen_reg  : std_logic;
   	signal cnt 			: std_logic_vector(255 downto 0);
 
   	constant ckTime		: time := 10 ns;
@@ -63,6 +65,7 @@ begin
 	end process inita;
 
 	fraccount <= x"FF";
+	dma_wen_reg <= '1';
 
 	e_counter : component dma_counter
 	generic map(
@@ -72,6 +75,7 @@ begin
 		i_clk		=> clk,
 		i_reset_n   => reset_n,
 		i_enable    => enable,
+		i_dma_wen_reg => dma_wen_reg,
 		i_fraccount => fraccount,
 		o_dma_wen   => dma_wen,
 		o_cnt     	=> cnt--,
