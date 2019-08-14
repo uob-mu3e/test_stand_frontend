@@ -95,10 +95,12 @@ int main(int argc, char *argv[])
         return ret_val;
     }
 
+
+    while(true){
     // Set up data generator
     uint32_t datagen_setup = 0;
     mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
-    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+    datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
 
     // reset all
@@ -153,7 +155,7 @@ int main(int argc, char *argv[])
         event_length = dma_buf[(readindex+7)%dma_buf_nwords];
         if (event_length == 0) continue;
 
-        cout <<"length " << event_length << endl;
+        //cout <<"length " << event_length << endl;
         // do not overtake dma engine
           if((readindex%dma_buf_nwords) > lastWritten){
               if(dma_buf_nwords - (readindex % dma_buf_nwords) + lastWritten < event_length * 8 + 1){

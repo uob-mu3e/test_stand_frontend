@@ -407,11 +407,11 @@ e_qsfp : entity work.xcvr_a10
 port map (
     i_tx_data   => X"03CAFEBC"
                  & X"02CAFEBC"
-                 & tx_data(1)
+                 & X"01CAFEBC"
                  & tx_data(0),
     i_tx_datak  => "0001"
                  & "0001"
-                 & tx_datak(1)
+                 & "0001"
                  & tx_datak(0),
 
     o_rx_data   => rx_data_v,
@@ -527,7 +527,7 @@ begin
 	if(reset_n = '0') then
 		data_counter 	<= (others => '0');
 		datak_counter 	<= (others => '0');
-	else
+	elsif(rising_edge(tx_clk(0))) then
 		if (writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
 			data_counter 	<= data_pix_generated;
 			datak_counter 	<= datak_pix_generated;

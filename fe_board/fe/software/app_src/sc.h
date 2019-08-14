@@ -32,13 +32,15 @@ struct sc_t {
 
             // data offset
             alt_u32 offset = ram->regs.fe.offset & 0xFFFF;
+            printf("[sc::callback] offset = 0x%04X\n", offset);
 
-            if(!(offset >= 0 && offset + n <= sizeof(sc_ram_t::data) / sizeof(sc_ram_t::data[0]))) {
+            if(!(offset >= 0 && offset + n <= AVM_SC_SPAN / sizeof(alt_u32))) {
                 printf("[sc::callback] ERROR: ...\n");
             }
-
-            auto data = n > 0 ? (ram->data + offset) : nullptr;
-            ((sc_t*)sc)->callback(cmd, data, n);
+            else {
+                auto data = n > 0 ? (ram->data + offset) : nullptr;
+                ((sc_t*)sc)->callback(cmd, data, n);
+            }
 
             ram->regs.fe.cmdlen = 0;
         }
@@ -68,7 +70,7 @@ struct sc_t {
                 break;
             case 'R':
                 for(int i = 0; i < 256; i++) {
-                    printf("0x%08X\n", ram->data[0xFF00 + i]);
+                    printf("[0x%02X] = 0x%08X\n", i, ram->data[0xFF00 + i]);
                 }
                 break;
             case 'q':

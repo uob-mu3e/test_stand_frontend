@@ -183,7 +183,7 @@ INT frontend_init()
    mup->write_register(DATAGENERATOR_REGISTER_W, 0x0);
    usleep(2000);
    // DMA_CONTROL_W
-   mup->write_register(0x5,0x0);
+//   mup->write_register(0x5,0x0);
    usleep(5000);
    
    // create ring buffer for readout thread
@@ -245,7 +245,8 @@ INT begin_of_run(INT run_number, char *error)
    
    // Reset all ToDo: no functionality in firmware at the moment
    uint32_t reset_reg = 0;
-   reset_reg = SET_RESET_BIT_ALL(reset_reg);
+   reset_reg = SET_RESET_BIT_DATAGEN(reset_reg);
+   reset_reg = ((1<<13)| reset_reg);
    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
    // Enable register on FPGA for continous readout
@@ -276,7 +277,8 @@ INT begin_of_run(INT run_number, char *error)
     uint32_t datagen_setup = 0;
     mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x8, 100);// settings.datagenerator.divider,100);//3E8); // slow down to 64 MBit/s
     //sleep(3);
-    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+    //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+    datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
 //   mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, settings.datagenerator.divider);
 //   uint32_t datagen_setup = 0;

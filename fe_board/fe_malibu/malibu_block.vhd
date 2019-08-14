@@ -50,8 +50,9 @@ architecture arch of malibu_block is
 
 begin
 
+    -- 125 kHz
     e_test_pulse : entity work.clkdiv
-    generic map ( P => 125 )
+    generic map ( P => 1250 )
     port map ( clkout => o_pll_test, rst_n => not i_reset, clk => i_clk );
 
     o_fifo_rdata <= fifo_rdata;
@@ -62,7 +63,7 @@ begin
     begin
     if ( i_reset = '1' ) then
             s_dummyctrl_reg <= (others=>'0');
-            s_dpctrl_reg <= (others=>'0');
+            s_dpctrl_reg <= (31 => '1', others=>'0');
             s_subdet_reset_reg <= (others=>'0');
         --
     elsif rising_edge(i_clk) then
