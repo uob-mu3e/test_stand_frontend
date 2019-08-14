@@ -1,5 +1,8 @@
 # util.tcl --
 #
+# author : Alexandr Kozlinskiy
+# date : 2017-11-24
+#
 
 source [ file join [ file dirname [ info script ] ] "coroutine.tcl"]
 

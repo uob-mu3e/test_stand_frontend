@@ -4,14 +4,7 @@ use ieee.numeric_std.all;
 
 entity top is
 port (
-    BUTTON      : in    std_logic_vector(3 downto 0);
-    SW          : in    std_logic_vector(1 downto 0);
-    LED         : out   std_logic_vector(3 downto 0);
-    LED_BRACKET : out   std_logic_vector(3 downto 0);
-    HEX0_D      : out   std_logic_vector(6 downto 0);
-    HEX0_DP     : out   std_logic;
-    HEX1_D      : out   std_logic_vector(6 downto 0);
-    HEX1_DP     : out   std_logic;
+    LED             : out   std_logic_vector(3 downto 0);
 
     FLASH_A         : out   std_logic_vector(26 downto 1);
     FLASH_D         : inout std_logic_vector(31 downto 0);
@@ -28,11 +21,6 @@ port (
     POWER_MONITOR_I2C_SDA   : inout std_logic;
     TEMP_I2C_SCL            : out   std_logic;
     TEMP_I2C_SDA            : inout std_logic;
-
-    SI5340A_I2C_SCL :   out     std_logic;
-    SI5340A_I2C_SDA :   inout   std_logic;
-    SI5340A_OE_n    :   out     std_logic;
-    SI5340A_RST_n   :   out     std_logic;
 
 --    QSFPA_INTERRUPT_n   : in    std_logic;
     QSFPA_LP_MODE       : out   std_logic;
@@ -60,9 +48,6 @@ architecture rtl of top is
     attribute keep : boolean;
     attribute keep of ZERO : signal is true;
 
-    signal sw_q : std_logic_vector(1 downto 0);
-    signal button_q : std_logic_vector(3 downto 0);
-
     signal i2c_scl_in   : std_logic;
     signal i2c_scl_oe   : std_logic;
     signal i2c_sda_in   : std_logic;
@@ -74,63 +59,41 @@ architecture rtl of top is
 
     signal refclk_125   : std_logic;
 
-    signal clk_250      : std_logic;
-
     signal wd_rst_n     : std_logic;
 
     signal nios_pio_i : std_logic_vector(31 downto 0);
 
     signal flash_ce_n_i : std_logic;
 
-    signal clk_125_cnt : unsigned(31 downto 0);
-    signal hex1, hex0 : std_logic_vector(3 downto 0);
-
-    signal avm_qsfp : work.util.avalon_t;
+    signal av_qsfp : work.util.avalon_t;
 
 begin
 
-    -- SMA input -> refclk_125
-    i_clkctrl : component work.cmp.ip_clkctrl
-    port map (
-        inclk => SMA_CLKIN,
-        outclk => refclk_125--,
-    );
-
-    i_iopll_125 : component work.cmp.ip_iopll_125
+    e_iopll_125 : component work.cmp.ip_iopll_125
     port map (
         refclk => CLK_50_B2J,
         outclk_0 => SMA_CLKOUT,
         rst => not CPU_RESET_n--,
     );
 
+    -- SMA input -> refclk_125
+    e_clkctrl : component work.cmp.ip_clkctrl
+    port map (
+        inclk => SMA_CLKIN,
+        outclk => refclk_125--,
+    );
 
-
-    SI5340A_OE_n <= '0';
-    SI5340A_RST_n <= '1';
-
-    QSFPA_LP_MODE <= '0';
-    QSFPA_MOD_SEL_n <= '1';
-    QSFPA_RST_n <= '1';
+    e_nios_clk_hz : entity work.clkdiv
+    generic map ( P => 125000000 )
+    port map (
+        clkout => LED(0),
+        rst_n => CPU_RESET_n,
+        clk => refclk_125--,
+    );
 
 
 
     nios_clk <= refclk_125;
-
-    i_debouncer : entity work.debouncer
-    generic map (
-        W => 6,
-        N => 125 * 10**3 -- 1ms
-    )
-    port map (
-        d(1 downto 0) => SW(1 downto 0),
-        q(1 downto 0) => sw_q(1 downto 0),
-        d(5 downto 2) => BUTTON(3 downto 0),
-        q(5 downto 2) => button_q(3 downto 0),
-        arst_n => CPU_RESET_n,
-        clk => nios_clk--,
-    );
-
-
 
     -- generate reset sequence for flash and nios
     i_reset_ctrl : entity work.reset_ctrl
@@ -142,12 +105,11 @@ begin
         rstout_n(1) => flash_rst_n,
         rstout_n(0) => nios_rst_n,
 
---        rst_n => CPU_RESET_n and wd_rst_n and SW(1),
-        rst_n => CPU_RESET_n,
+        rst_n => CPU_RESET_n and wd_rst_n,
         clk => nios_clk--,
     );
-    LED(0) <= not flash_rst_n;
-    LED(1) <= not nios_rst_n;
+    LED(1) <= not flash_rst_n;
+    LED(2) <= not nios_rst_n;
 
     watchdog_i : entity work.watchdog
     generic map (
@@ -162,18 +124,19 @@ begin
         rst_n => CPU_RESET_n,
         clk => nios_clk--,
     );
-    LED(2) <= not wd_rst_n;
+
+    LED(3) <= nios_pio_i(7);
 
 
 
     i_nios : component work.cmp.nios
     port map (
-        avm_qsfp_address        => avm_qsfp.address(15 downto 0),
-        avm_qsfp_read           => avm_qsfp.read,
-        avm_qsfp_readdata       => avm_qsfp.readdata,
-        avm_qsfp_write          => avm_qsfp.write,
-        avm_qsfp_writedata      => avm_qsfp.writedata,
-        avm_qsfp_waitrequest    => avm_qsfp.waitrequest,
+        avm_qsfp_address        => av_qsfp.address(13 downto 0),
+        avm_qsfp_read           => av_qsfp.read,
+        avm_qsfp_readdata       => av_qsfp.readdata,
+        avm_qsfp_write          => av_qsfp.write,
+        avm_qsfp_writedata      => av_qsfp.writedata,
+        avm_qsfp_waitrequest    => av_qsfp.waitrequest,
 
         flash_tcm_address_out(27 downto 2) => FLASH_A,
         flash_tcm_data_out => FLASH_D,
@@ -209,48 +172,28 @@ begin
     FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
     TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
     POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-    SI5340A_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
 
     -- I2C data
     i2c_sda_in <= FAN_I2C_SDA and
                   TEMP_I2C_SDA and
                   POWER_MONITOR_I2C_SDA and
-                  SI5340A_I2C_SDA and
                   '1';
     FAN_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
     TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
     POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-    SI5340A_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
 
 
 
-    process(refclk_125)
-    begin
-    if rising_edge(refclk_125) then
-        clk_125_cnt <= clk_125_cnt + 1;
-    end if; -- rising_edge
-    end process;
-
---    hex1 <= clk_125_cnt(31 downto 28);
-    hex1 <= nios_pio_i(7 downto 4);
-    hex0 <= std_logic_vector(clk_125_cnt)(27 downto 24);
-    HEX1_DP <= '1';
-    HEX0_DP <= '1';
-
-    i_hex2seg7_1 : entity work.hex2seg7
-    port map (
-        i_hex => hex1,
-        o_seg => HEX1_D--,
-    );
-    i_hex2seg7_0 : entity work.hex2seg7
-    port map (
-        i_hex => hex0,
-        o_seg => HEX0_D--,
-    );
-
-
+    QSFPA_LP_MODE <= '0';
+    QSFPA_MOD_SEL_n <= '1';
+    QSFPA_RST_n <= '1';
 
     e_qsfp : entity work.xcvr_a10
+    generic map (
+        INPUT_CLOCK_FREQUENCY_g => 125000000,
+        DATA_RATE_g => 5000,
+        CLK_MHZ_g => 125--,
+    )
     port map (
         i_tx_data   => X"03CAFEBC"
                      & X"02BABEBC"
@@ -275,12 +218,12 @@ begin
         i_pll_clk   => refclk_125,
         i_cdr_clk   => refclk_125,
 
-        i_avs_address     => avm_qsfp.address(15 downto 2),
-        i_avs_read        => avm_qsfp.read,
-        o_avs_readdata    => avm_qsfp.readdata,
-        i_avs_write       => avm_qsfp.write,
-        i_avs_writedata   => avm_qsfp.writedata,
-        o_avs_waitrequest => avm_qsfp.waitrequest,
+        i_avs_address     => av_qsfp.address(13 downto 0),
+        i_avs_read        => av_qsfp.read,
+        o_avs_readdata    => av_qsfp.readdata,
+        i_avs_write       => av_qsfp.write,
+        i_avs_writedata   => av_qsfp.writedata,
+        o_avs_waitrequest => av_qsfp.waitrequest,
 
         i_reset     => not nios_rst_n,
         i_clk       => nios_clk--,

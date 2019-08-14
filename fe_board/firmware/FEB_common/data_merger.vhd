@@ -14,13 +14,11 @@
 -- @ future me: 
 -- ToDo:
 --	error outputs (data does not start with start marker, data fifo not empty in sync, etc. )
--- end of event marker from fifo --> what to do with 31 downto 0 in this case ? trailer content ? (k28.4, and ??????)
-
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
---use work.protocol_new.all;
+use work.daq_constants.all;
 
 ENTITY data_merger is 
 	PORT(
@@ -28,15 +26,7 @@ ENTITY data_merger is
 		reset:                  in  std_logic; 
 		fpga_ID_in:					in  std_logic_vector(15 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now 
 		FEB_type_in:				in  std_logic_vector(5  downto 0); -- Type of the frontendboard (111010: mupix, 111000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
-		state_idle:             in  std_logic; -- "reset" states from state controller 
-		state_run_prepare:      in  std_logic;
-		state_sync:             in  std_logic;
-		state_running:          in  std_logic;
-		state_terminating:      in  std_logic;
-		state_link_test:        in  std_logic;
-		state_sync_test:        in  std_logic;
-		state_reset:            in  std_logic;
-		state_out_of_DAQ:       in  std_logic;
+		run_state:					in  run_state_t;
 		data_out:               out std_logic_vector(31 downto 0); -- to optical transm.
 		data_is_k:              out std_logic_vector(3 downto 0);  -- to optical trasm.
 		data_in:						in  std_logic_vector(35 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
@@ -102,24 +92,25 @@ process (merger_state)
 end process;
 
 
-process (clk, reset)
+    process (clk, reset)
     begin
-    if (reset = '1') then 
-        merger_state 					<= idle;
-        slowcontrol_read_req 			<= '0';
-        data_read_req 					<= '0'; 
-        terminated 						<= '0';
-		  run_prep_acknowledge_send 	<= '0';
-        data_is_k 						<= K285_datak;
-        data_out 							<= K285;
-		  override_granted				<= '0';
-    elsif (rising_edge(clk)) then
+    if ( reset = '1' ) then
+        merger_state                <= idle;
+        slowcontrol_read_req        <= '0';
+        data_read_req               <= '0';
+        terminated                  <= '0';
+        run_prep_acknowledge_send   <= '0';
+        data_is_k                   <= K285_datak;
+        data_out                    <= K285;
+        override_granted            <= '0';
+        --
+    elsif rising_edge(clk) then
 		  
 		  ------------------------------- feb state link test or sync test ----------------------------
 		  -- use override data input
 		  -- wait for slowcontrol to finish before
 		  
-			if (state_link_test = '1' or state_sync_test = '1') then
+			if (run_state = RUN_STATE_LINK_TEST or run_state = RUN_STATE_SYNC_TEST) then
 				case merger_state is
 					when idle =>
 						-- send override start (Problem: how to end this on switch side ??)
@@ -169,7 +160,7 @@ process (clk, reset)
 		  ------------------------------- feb state sync or reset ------------------------------
 		  -- send only komma words
 		  -- wait for slowcontrol to finish before
-		  elsif(state_sync = '1' or state_reset = '1') then
+		  elsif(run_state = RUN_STATE_SYNC or run_state = RUN_STATE_RESET) then
 				case merger_state is
 					when sending_slowcontrol =>
 						-- slowcontrol header is trasmitted, send slowcontrol data now
@@ -193,7 +184,7 @@ process (clk, reset)
 				end case;
 						  
 		  ------------------------------- feb state idle or outOfDaq --------------------------
-        elsif(state_idle = '1' or state_out_of_DAQ = '1')then
+        elsif(run_state = RUN_STATE_IDLE or run_state = RUN_STATE_OUT_OF_DAQ)then
 				terminated 							<= '0';
             run_prep_acknowledge_send 		<= '0';
 				override_granted					<= '0';
@@ -244,7 +235,7 @@ process (clk, reset)
 				
 		  ------------------------------- feb state run prep  ---------------------------------------------
 		  
-		  elsif(state_run_prepare = '1')then
+		  elsif(run_state = RUN_STATE_PREP)then
 				terminated <= '0';
 				case merger_state is
 					when idle =>
@@ -290,16 +281,16 @@ process (clk, reset)
 				
 		  ------------------------------- feb state running or terminating  ---------------------------------------------			
 		
-			elsif(state_running = '1' or state_terminating = '1') then
+			elsif(run_state = RUN_STATE_RUNNING or run_state = RUN_STATE_TERMINATING) then
 				run_prep_acknowledge_send <= '0';
 				case merger_state is
 					when idle =>
-						--	if (slowcontrol_fifo_empty = '1' and data_fifo_empty = '1') then -- no data, state is idle --> do nothing
-						slowcontrol_read_req 	<= '0';
-						data_out 					<= K285;
-						data_is_k					<= K285_datak;
+						if (slowcontrol_fifo_empty = '1' and data_fifo_empty = '1') then -- no data, state is idle --> do nothing
+							slowcontrol_read_req 	<= '0';
+							data_out 					<= K285;
+							data_is_k					<= K285_datak;
 						
-						if (last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or data_in(35 downto 32)= MERGER_FIFO_RUN_END_MARKER) then 
+						elsif (last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or data_in(35 downto 32)= MERGER_FIFO_RUN_END_MARKER) then 
 							-- allows run end for idle and sending data, run end in state sending_data is always packet end 
 							terminated 					<= '1';
 							data_out 					<= RUN_END;
@@ -357,6 +348,7 @@ process (clk, reset)
 							data_is_k					<= "0000";
 						end if;
 					when others =>
+                        merger_state <= idle;
 
 				end case;
 	

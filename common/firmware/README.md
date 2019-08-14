@@ -1,4 +1,12 @@
-#
+# Common firmware
+
+ - `a10/` - Arria 10 xcvr and ip's
+ - `a10_tcl/` - tcl scripts to flash Arria 10 board
+ - `assignments/` - assignment files for different boards
+ - `DE5a_NET/` - Arria 10 dev.board scripts
+ - `include/` - nios software
+ - `s4/` - Stratix IV xcvr and ip's
+ - `util/` - generic entities
 
 ## NOTE
 

@@ -50,7 +50,7 @@ architecture arch of xcvr_s4 is
 
     signal reset_n : std_logic;
 
-    signal ch : integer range NUMBER_OF_CHANNELS_g-1 downto 0;
+    signal ch : integer range 0 to NUMBER_OF_CHANNELS_g-1 := 0;
 
     signal av_ctrl : work.util.avalon_t;
 
@@ -341,6 +341,7 @@ begin
         rx_analogreset  => rx_analogreset,
         rx_digitalreset => rx_digitalreset,
 
+        -- The rx_pll_locked signal has no significance in LTD mode.
         rx_pll_locked   => rx_is_lockedtoref,
         -- When asserted, indicates that the RX CDR is locked to incoming data. This signal is optional.
         rx_freqlocked   => rx_is_lockedtodata,
@@ -381,8 +382,8 @@ begin
     g_reconfig_clk_altpll : if ( CLK_MHZ_g > 50 ) generate
         e_reconfig_clk : entity work.ip_altpll
         generic map (
-            DIV => CLK_MHZ_g,
-            MUL => 50--,
+            DIV => CLK_MHZ_g / work.util.gcd(CLK_MHZ_g, 50),
+            MUL => 50 / work.util.gcd(CLK_MHZ_g, 50)--,
         )
         port map (
             c0 => reconfig_clk,

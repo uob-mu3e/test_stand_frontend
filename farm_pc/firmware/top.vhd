@@ -439,7 +439,7 @@ LED_BRACKET(3) <= writeregs(LED_REGISTER_W)(3);
 
 cpu_reset_n_q <= push_button1_db;
 
-nios_i : component nios
+nios_i : component work.cmp.nios
 port map (
 	clk_clk                    			=> clk,               
 	flash_tcm_address_out(27 downto 2) 	=> FLASH_A,
@@ -451,7 +451,7 @@ port map (
 	i2c_scl_oe  								=> i2c_scl_oe,
 	i2c_sda_in  								=> i2c_sda_in,
 	i2c_sda_oe  								=> i2c_sda_oe,
-	reset_reset_n              			=> push_button3_db--resets_n(RESET_NIOS)          
+	rst_reset_n              			=> push_button3_db--resets_n(RESET_NIOS)          
 );
 
 FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
@@ -595,11 +595,7 @@ rec_switching : component receiver_switching
 		rx_disperr_ch3_rx_disperr               	=> rx_disperr_ch3_rx_disperr
 );
 
-word_align_ch0 : component rx_align
-generic map (
-	CHANNEL_WIDTH_g => 32,
-	K_g => X"BC"--,
-)
+word_align_ch0 : entity work.rx_align
 port map (
 	o_data              => data_ch0,
 	o_datak             => datak_ch0,
@@ -612,14 +608,10 @@ port map (
 	i_errdetect         => rx_errdetect_ch0_rx_errdetect,
 	i_disperr           => rx_disperr_ch0_rx_disperr,
 	i_reset_n           => resets_n(RESET_BIT_WORDALIGN),--not reset,
-	i_clk               => rx_clkout_ch0_clk,
+	i_clk               => rx_clkout_ch0_clk
 );
 
-word_align_ch1 : component rx_align
-generic map (
-	CHANNEL_WIDTH_g => 32,
-	K_g => X"BC"--,
-)
+word_align_ch1 : entity work.rx_align
 port map (
 	o_data              => data_ch1,
 	o_datak             => datak_ch1,
@@ -632,14 +624,10 @@ port map (
 	i_errdetect         => rx_errdetect_ch1_rx_errdetect,
 	i_disperr           => rx_disperr_ch1_rx_disperr,
 	i_reset_n           => resets_n(RESET_BIT_WORDALIGN),--not reset,
-	i_clk               => rx_clkout_ch1_clk,
+	i_clk               => rx_clkout_ch1_clk
 );
 
-word_align_ch2 : component rx_align
-generic map (
-	CHANNEL_WIDTH_g => 32,
-	K_g => X"BC"--,
-)
+word_align_ch2 : entity work.rx_align
 port map (
 	o_data              => data_ch2,
 	o_datak             => datak_ch2,
@@ -652,14 +640,10 @@ port map (
 	i_errdetect         => rx_errdetect_ch2_rx_errdetect,
 	i_disperr           => rx_disperr_ch2_rx_disperr,
 	i_reset_n           => resets_n(RESET_BIT_WORDALIGN),--not reset,
-	i_clk               => rx_clkout_ch2_clk,
+	i_clk               => rx_clkout_ch2_clk
 );
 
-word_align_ch3 : component rx_align
-generic map (
-	CHANNEL_WIDTH_g => 32,
-	K_g => X"BC"--,
-)
+word_align_ch3 : entity work.rx_align
 port map (
 	o_data              => data_ch3,
 	o_datak             => datak_ch3,
@@ -672,7 +656,7 @@ port map (
 	i_errdetect         => rx_errdetect_ch3_rx_errdetect,
 	i_disperr           => rx_disperr_ch3_rx_disperr,
 	i_reset_n           => resets_n(RESET_BIT_WORDALIGN),--not reset,
-	i_clk               => rx_clkout_ch3_clk,
+	i_clk               => rx_clkout_ch3_clk
 );
 
 rdreg_fifo_dma <= (not rdempty_fifo_0) and (not rdempty_fifo_1) and (not rdempty_fifo_2) and (not rdempty_fifo_3);
