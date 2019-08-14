@@ -3,7 +3,7 @@
 malibu_t malibu;
 
 void menu_malibu() {
-    volatile alt_u32* avm = (alt_u32*)AVM_BASE;
+    auto& regs = sc.ram->regs.malibu;
 
     while(1) {
         printf("  [0] => reset\n");
@@ -30,9 +30,8 @@ void menu_malibu() {
             malibu.stic_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
             break;
         case 's':
-            printf("buffer_full/frame_desync/rx_pll_lock: 0x%03X\n", avm[0x8]);
-            printf("rx_dpa_lock: 0x%08X\n", avm[0x9]);
-            printf("rx_ready: 0x%08X\n", avm[0xA]);
+            printf("rx_pll_lock / frame_desync / buffer_full : 0x%03X\n", regs.mon.status);
+            printf("rx_dpa_lock / rx_ready : 0x%04X / 0x%04X\n", regs.mon.rx_dpa_lock, regs.mon.rx_ready);
             break;
         case 'q':
             return;

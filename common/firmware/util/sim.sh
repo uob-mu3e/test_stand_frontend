@@ -4,7 +4,7 @@ set -eux
 TB=$1
 shift
 
-STOPTIME=1100ns
+STOPTIME=${STOPTIME:-1us}
 
 SRC=()
 for arg in "$@" ; do
