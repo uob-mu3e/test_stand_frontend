@@ -36,9 +36,10 @@ struct sc_t {
             if(!(offset >= 0 && offset + n <= sizeof(sc_ram_t::data) / sizeof(sc_ram_t::data[0]))) {
                 printf("[sc::callback] ERROR: ...\n");
             }
-
-            auto data = n > 0 ? (ram->data + offset) : nullptr;
-            ((sc_t*)sc)->callback(cmd, data, n);
+            else {
+                auto data = n > 0 ? (ram->data + offset) : nullptr;
+                ((sc_t*)sc)->callback(cmd, data, n);
+            }
 
             ram->regs.fe.cmdlen = 0;
         }
@@ -50,7 +51,7 @@ struct sc_t {
         while(1) {
             printf("  [r] => test read\n");
             printf("  [w] => test write\n");
-            printf("  [R] => read regs\n");
+            printf("  [R] => print regs\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -68,7 +69,7 @@ struct sc_t {
                 break;
             case 'R':
                 for(int i = 0; i < 256; i++) {
-                    printf("0x%08X\n", ram->data[0xFF00 + i]);
+                    printf("[0x%02X] = 0x%08X\n", i, ram->data[0xFF00 + i]);
                 }
                 break;
             case 'q':
