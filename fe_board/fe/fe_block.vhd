@@ -69,6 +69,7 @@ end entity;
 architecture arch of fe_block is
 
     signal nios_pio : std_logic_vector(31 downto 0);
+    signal nios_irq : std_logic_vector(3 downto 0);
 
 
 
@@ -181,6 +182,10 @@ begin
 
 
 
+    nios_irq(0) <= '1' when ( reg_cmdlen /= (reg_cmdlen'range => '0') ) else '0';
+
+
+
     e_nios : component work.cmp.nios
     port map (
         avm_sc_address      => av_sc.address(15 downto 0),
@@ -189,6 +194,8 @@ begin
         avm_sc_write        => av_sc.write,
         avm_sc_writedata    => av_sc.writedata,
         avm_sc_waitrequest  => av_sc.waitrequest,
+
+        irq_irq             => nios_irq,
 
         avm_clk_clk         => i_clk,
         avm_reset_reset_n   => i_reset_n,
