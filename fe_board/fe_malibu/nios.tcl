@@ -12,7 +12,6 @@ source {../fe/nios_avm.tcl}
 
 source {../firmware/FEB_common/nios_mscb_inc.tcl}
 
-source {nios_irq_bridge.tcl}
-add_irq_bridge irq_bridge_0 4 cpu avm_clk
+nios_base.add_irq_bridge irq_bridge_0 4 -clk avm_clk
 
 save_system {nios.qsys}
