@@ -176,6 +176,8 @@ begin
             reg_reset_bypass <= fe_reg.wdata;
         end if;
 
+        -- mscb
+
         --
     end if;
     end process;

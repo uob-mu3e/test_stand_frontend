@@ -15,7 +15,7 @@ done
 mkdir -p .cache
 cd .cache || exit 1
 
-OPTS=()
+OPTS=(--ieee=synopsys -fexplicit)
 
 ghdl -i "${OPTS[@]}" "${SRC[@]}"
 ghdl -s "${OPTS[@]}" "${SRC[@]}"

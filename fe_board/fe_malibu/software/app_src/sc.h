@@ -14,6 +14,9 @@ void sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
         malibu.stic_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
         break;
 
+    case 0xFFFF:
+        break;
+
     default:
         if((cmd & 0xFFF0) == 0x0110) {
             printf("try stic_configure\n");
