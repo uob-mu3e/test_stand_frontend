@@ -134,7 +134,9 @@ begin
     process(qsfp_pll_clk)
     begin
     if rising_edge(qsfp_pll_clk) then
+        malibu_reg.rdata <= X"CCCCCCCC";
         malibu_reg.rvalid <= malibu_reg.re;
+--        scifi_reg.rdata <= X"CCCCCCCC";
         scifi_reg.rvalid <= scifi_reg.re;
     end if;
     end process;
@@ -185,7 +187,7 @@ begin
         i_reset         => not reset_n,
         i_clk           => qsfp_pll_clk--,
     );
-    led(0)<=s_fee_chip_rst_niosclk;
+    led(0) <= s_fee_chip_rst_niosclk;
 
     ----------------------------------------------------------------------------
 
