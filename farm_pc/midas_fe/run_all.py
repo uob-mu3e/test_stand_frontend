@@ -4,13 +4,17 @@ import matplotlib.colors as mcolors
 import numpy as np
 import collections
 import sys
+import os
 
 
 miss_counts = []
 miss_counts_half = []
 rate = []
 rate_half = []
-for idx in range(150, 200):
+for idx in range(1, 256):
+
+    if not os.path.isfile("../../build/farm_pc/midas_fe/half_memory_content_"+ str(idx) + ".txt"): continue
+    if not os.path.isfile("../../build/farm_pc/midas_fe/memory_content_"+ str(idx) + ".txt"): continue
 
     df_half = pd.read_csv("../../build/farm_pc/midas_fe/half_memory_content_"+ str(idx) + ".txt", sep="\t", encoding="ISO-8859-1")
     df = pd.read_csv("../../build/farm_pc/midas_fe/memory_content_"+ str(idx) + ".txt", sep="\t", encoding="ISO-8859-1")
@@ -65,8 +69,8 @@ for idx in range(150, 200):
 np.save("miss_counts", miss_counts)
 np.save("miss_counts_half", miss_counts_half)
 
-np.save("rate", rate)
-np.save("rate_half", rate_half)
+np.save("rate_total", rate)
+np.save("rate_half_total", rate_half)
 
 plt.plot(rate, miss_counts, 'o', color='black');
 plt.show()

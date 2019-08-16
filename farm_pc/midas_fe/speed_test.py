@@ -33,9 +33,10 @@ for idx, value in enumerate(counter):
         cnt = value
     if(int(cnt) != int(value)):
 #            print(value - int(counter[min_idx]))
-#            print(counter[idx-1] - int(counter[min_idx]))
-#            print(counter[idx])
-        wrong_count += 1
+#            print(counter[idx-1])
+            print(counter[idx-1] - counter[idx])
+
+            wrong_count += 1
 
 
 
