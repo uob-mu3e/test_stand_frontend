@@ -29,8 +29,18 @@
 
 using namespace std;
 
+void print_usage(){
+    cout << "Usage: " << endl;
+    cout << "       dma_speed_test <speed_frac> <use_halffull>" << endl;
+
+}
+
 int main(int argc, char *argv[])
 {
+    if(argc < 3){
+        print_usage();
+        return -1;
+    }
 
     system("echo machmalkeins | sudo -S /home/labor/daq/driver/compactify.sh");
     usleep(1000000);
@@ -93,66 +103,67 @@ int main(int argc, char *argv[])
 
     mudaq::DmaMudaqDevice::DataBlock block;
 
-    for (uint32_t idx = 150; idx < 151; idx++ ) {
 
-        // initialize to zero
-        for (int i = 0; i <  size/sizeof(uint32_t) ; i++) {
-          dma_buf[i] = 0x0;
+    // initialize to zero
+    for (int i = 0; i <  size/sizeof(uint32_t) ; i++) {
+      dma_buf[i] = 0x0;
 
-        }
+    }
 
-        ofstream myfile;
-        filename = "memory_content_" + to_string( idx ) + ".txt";
-        myfile.open(filename.c_str());
-        if ( !myfile ) {
-          cout << "Could not open file " << endl;
-          return -1;
-        }
+    ofstream myfile;
+    string file_num(argv[1]);
+    filename = "half_memory_content_" + file_num + ".txt";
+    myfile.open(filename.c_str());
+    if ( !myfile ) {
+      cout << "Could not open file " << endl;
+      return -1;
+    }
 
-        myfile << "idx" << "\t" << "counter" << "\t" << "halfful" << "\t" << "nothalfful" << endl;
+    myfile << "idx" << "\t" << "counter" << "\t" << "halfful" << "\t" << "nothalfful" << endl;
 
-        // Set up data generator
-        datagen_setup = 0;
-        mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, idx, 100);//3E8); // slow down to 64 MBit/s
-        datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
-//        datagen_setup = ((1<<5)| datagen_setup); // enable dma_half_mode
-        mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+    // Set up data generator
+    datagen_setup = 0;
+    uint32_t frac = atoi(argv[1]);
+    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, frac, 100);//3E8); // slow down to 64 MBit/s
+    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
+    if (atoi(argv[2]) == 1) datagen_setup = ((1<<5)| datagen_setup); // enable dma_half_mode
+    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
 
-        // reset all
-        reset_reg = 0;
-        reset_reg = SET_RESET_BIT_ALL(reset_reg);
-        mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
+    // reset all
+    reset_reg = 0;
+    reset_reg = SET_RESET_BIT_ALL(reset_reg);
+    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
 
-        // Enable register on FPGA for continous readout and enable dma
-        noData = 0;
-        mu.enable_continous_readout(0);
-        usleep(10);
+    // Enable register on FPGA for continous readout and enable dma
+    noData = 0;
+    mu.enable_continous_readout(0);
+    usleep(10);
 
-        // disable reset
-        mu.write_register(RESET_REGISTER_W, 0x0);
+    // disable reset
+    mu.write_register(RESET_REGISTER_W, 0x0);
+
+    sleep(1);
+
+    lastWritten = mu.last_written_addr();
+    lastlastWritten = mu.last_written_addr();
+
+    cout << "lastWritten: " << hex << lastWritten << endl;
+    cout << "dma_buf[lastWritten]: " << hex <<  dma_buf[lastWritten] << endl;
+    cout << "counter: " << dma_buf[0] << endl;
+    cout << "halfful: " << dma_buf[1] << endl;
+    cout << "nothalfful: " << dma_buf[2] << endl;
+
+    while(dma_buf[size/sizeof(uint32_t)-8] <= 0){
 
         sleep(1);
-
         lastWritten = mu.last_written_addr();
-        lastlastWritten = mu.last_written_addr();
-
         cout << "lastWritten: " << hex << lastWritten << endl;
-        cout << "dma_buf[lastWritten]: " << hex <<  dma_buf[lastWritten] << endl;
-        cout << "counter: " << dma_buf[0] << endl;
-        cout << "halfful: " << dma_buf[1] << endl;
-        cout << "nothalfful: " << dma_buf[2] << endl;
+        cout << "dma_buf[lastWritten]: " << hex << dma_buf[lastWritten] << endl;
+        cout << "dma_buf[size/sizeof(uint32_t)-8]: " << dma_buf[size/sizeof(uint32_t)-8] << endl;
 
-        while(dma_buf[size/sizeof(uint32_t)-8] <= 0){
-
-            sleep(1);
-            lastWritten = mu.last_written_addr();
-            cout << "lastWritten: " << hex << lastWritten << endl;
-            cout << "dma_buf[lastWritten]: " << hex << dma_buf[lastWritten] << endl;
-            cout << "dma_buf[size/sizeof(uint32_t)-8]: " << dma_buf[size/sizeof(uint32_t)-8] << endl;
-
-            cout << "counter: " << dma_buf[8] << endl;
-            cout << "halfful: " << dma_buf[9] << endl;
-            cout << "nothalfful: " << dma_buf[10] << endl;
+        cout << "counter: " << dma_buf[8] << endl;
+        cout << "halfful: " << dma_buf[9] << endl;
+        cout << "nothalfful: " << dma_buf[10] << endl;
 
 //            errno = mu.read_block(block, dma_buf);
 //            if(errno == mudaq::DmaMudaqDevice::READ_SUCCESS){
@@ -166,35 +177,34 @@ int main(int argc, char *argv[])
 //                cout << "DMA Read error " << errno << endl;
 //                break;
 //            }
-        }
-
-        cout << "noData: " << noData << endl;
-
-        // stop generator
-        datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-        mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
-        mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x0, 100);
-
-        // reset all
-        reset_reg = 0;
-        reset_reg = SET_RESET_BIT_ALL(reset_reg);
-        mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
-
-        mu.disable();
-
-        cout << "write file number: " << idx << endl;
-
-        for (int j = 0 ; j < size/sizeof(uint32_t)/8; j++){ //
-            if (j*8 + 8 == size/sizeof(uint32_t)) continue;
-            sprintf(dma_buf_str_counter, "%08X", dma_buf[j*8 + 0]);
-            sprintf(dma_buf_str_halfful, "%08X", dma_buf[j*8 + 1]);
-            sprintf(dma_buf_str_not_halfful, "%08X", dma_buf[j*8 + 2]);
-            myfile << j << "\t" << dma_buf_str_counter << "\t" << dma_buf_str_halfful << "\t" << dma_buf_str_not_halfful << endl;
-        }
-
-        myfile.close();
-
     }
+
+    cout << "noData: " << noData << endl;
+
+    // stop generator
+    datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
+    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x0, 100);
+
+    // reset all
+    reset_reg = 0;
+    reset_reg = SET_RESET_BIT_ALL(reset_reg);
+    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
+
+    mu.disable();
+
+    cout << "write file number: " << file_num << endl;
+
+    for (int j = 0 ; j < size/sizeof(uint32_t)/8; j++){ //
+        if (j*8 + 8 == size/sizeof(uint32_t)) continue;
+        sprintf(dma_buf_str_counter, "%08X", dma_buf[j*8 + 0]);
+        sprintf(dma_buf_str_halfful, "%08X", dma_buf[j*8 + 1]);
+        sprintf(dma_buf_str_not_halfful, "%08X", dma_buf[j*8 + 2]);
+        myfile << j << "\t" << dma_buf_str_counter << "\t" << dma_buf_str_halfful << "\t" << dma_buf_str_not_halfful << endl;
+    }
+
+    myfile.close();
+
 
     mu.close();
 
