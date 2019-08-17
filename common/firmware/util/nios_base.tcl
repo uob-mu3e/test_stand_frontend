@@ -2,10 +2,35 @@
 # author : Alexandr Kozlinskiy
 #
 
-# clock
-add_instance clk clock_source
-set_instance_parameter_value clk {clockFrequency} $nios_freq
-set_instance_parameter_value clk {resetSynchronousEdges} {DEASSERT}
+proc nios_base.add_clock_source { name clockFrequency args } {
+    set clock_export ${name}
+    set reset_export ${name}_reset
+    for { set i 0 } { $i < [ llength $args ] } { incr i } {
+        switch -- [ lindex $args $i ] {
+            -clock_export { incr i
+                set clock_export [ lindex $args $i ]
+            }
+            -reset_export { incr i
+                set reset_export [ lindex $args $i ]
+            }
+            default {
+                send_message "Error" "\[nios_base.add_clock_source\] invalid argument '[ lindex $args $i ]'"
+            }
+        }
+    }
+
+    add_instance ${name} clock_source
+
+    set_instance_parameter_value ${name} {clockFrequency} ${clockFrequency}
+    set_instance_parameter_value ${name} {resetSynchronousEdges} {DEASSERT}
+
+    add_interface ${clock_export} clock sink
+    set_interface_property ${clock_export} EXPORT_OF ${name}.clk_in
+    add_interface ${reset_export} reset sink
+    set_interface_property ${reset_export} EXPORT_OF ${name}.clk_in_reset
+}
+
+nios_base.add_clock_source clk $nios_freq -reset_export rst
 
 # cpu
 add_instance cpu altera_nios2_gen2
@@ -47,14 +72,6 @@ add_connection jtag_master.master ram.s1
 add_connection jtag_master.master cpu.debug_mem_slave
 add_connection cpu.debug_reset_request cpu.reset
 add_connection cpu.debug_reset_request ram.reset1
-
-
-
-# exported interfaces
-add_interface clk clock sink
-set_interface_property clk EXPORT_OF clk.clk_in
-add_interface rst reset sink
-set_interface_property rst EXPORT_OF clk.clk_in_reset
 
 
 
