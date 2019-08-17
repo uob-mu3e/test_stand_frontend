@@ -197,7 +197,7 @@ begin
         avm_sc_writedata    => av_sc.writedata,
         avm_sc_waitrequest  => av_sc.waitrequest,
 
-        irq_irq             => nios_irq,
+        irq_bridge_irq      => nios_irq,
 
         avm_clk_clk         => i_clk,
         avm_reset_reset_n   => i_reset_n,

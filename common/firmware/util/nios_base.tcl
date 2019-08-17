@@ -148,11 +148,19 @@ if 1 {
 #package require cmdline
 
 proc nios_base.export_avm { name addressWidth baseAddress args } {
+    set cpu cpu
+    set clk clk
     set dataWidth 32
     set addressUnits 32
     set readLatency 0
     for { set i 0 } { $i < [ llength $args ] } { incr i } {
         switch -- [ lindex $args $i ] {
+            -cpu { incr i
+                set cpu [ lindex $args $i ]
+            }
+            -clk { incr i
+                set clk [ lindex $args $i ]
+            }
             -dataWidth { incr i
                 set dataWidth [ lindex $args $i ]
             }
@@ -179,11 +187,11 @@ proc nios_base.export_avm { name addressWidth baseAddress args } {
         set_instance_parameter_value ${name} {USE_READ_DATA_VALID} true
     }
 
-    add_connection clk.clk       ${name}.clk
-    add_connection clk.clk_reset ${name}.reset
+    add_connection ${clk}.clk       ${name}.clk
+    add_connection ${clk}.clk_reset ${name}.reset
 
-    add_connection                 cpu.data_master ${name}.slave
-    set_connection_parameter_value cpu.data_master/${name}.slave baseAddress ${baseAddress}
+    add_connection                 ${cpu}.data_master ${name}.slave
+    set_connection_parameter_value ${cpu}.data_master/${name}.slave baseAddress ${baseAddress}
 
     add_interface ${name} avalon master
     set_interface_property ${name} EXPORT_OF ${name}.master
@@ -221,6 +229,6 @@ proc nios_base.add_irq_bridge { name width args } {
     add_connection ${clk}.clk ${name}.clk
     add_connection ${clk}.clk_reset ${name}.clk_reset
 
-    add_interface irq interrupt receiver
-    set_interface_property irq EXPORT_OF ${name}.receiver_irq
+    add_interface ${name} interrupt receiver
+    set_interface_property ${name} EXPORT_OF ${name}.receiver_irq
 }
