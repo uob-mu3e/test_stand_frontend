@@ -132,7 +132,7 @@ if 1 {
 
 proc nios_base.export_avm { name addressWidth baseAddress args } {
     set dataWidth 32
-    set addressUnits 8
+    set addressUnits 32
     set readLatency 0
     for { set i 0 } { $i < [ llength $args ] } { incr i } {
         switch -- [ lindex $args $i ] {
