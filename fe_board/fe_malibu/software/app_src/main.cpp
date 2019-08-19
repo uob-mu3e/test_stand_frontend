@@ -8,11 +8,11 @@ si5345_t si5345 { 0 }; // spi_slave = 0
 #include "../../../fe/software/app_src/sc.h"
 sc_t sc;
 
-#include "../../../fe/software/app_src/malibu.h"
 #include "../../../fe/software/app_src/mscb_user.h"
 #include "../../../fe/software/app_src/reset.h"
 
-#include "sc.h"
+#include "../../../fe/software/app_src/malibu.h"
+#include "sc_malibu.h"
 
 int main() {
     base_init();

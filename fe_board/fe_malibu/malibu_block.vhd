@@ -51,7 +51,7 @@ architecture arch of malibu_block is
 begin
 
     e_test_pulse : entity work.clkdiv
-    generic map ( P => 125 )
+    generic map ( P => 1250 )
     port map ( clkout => o_pll_test, rst_n => not i_reset, clk => i_clk );
 
     o_fifo_rdata <= fifo_rdata;

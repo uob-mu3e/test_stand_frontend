@@ -9,13 +9,16 @@
 
 
 #define EOT 0x4
+
+#include "mscb.h"
+
+//#include "system.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "sys/alt_stdio.h"
-#include "mscb.h"
 #include <time.h>
-#include<unistd.h>
+#include <unistd.h>
 #include <sys/alt_timestamp.h>
 
 
@@ -58,16 +61,6 @@ unsigned char g_n_variables, g_var_size;
 int DBG_INFO = 1;
 
 /*------------------------------------------------------------------*/
-
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-#include<unistd.h>
-
-#include "mscb.h"
-#include "sys/alt_stdio.h"
 
 /* number of status bytes */
 #define N_STATUS_BYTES 2

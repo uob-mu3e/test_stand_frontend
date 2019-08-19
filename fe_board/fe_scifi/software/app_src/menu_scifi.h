@@ -1,8 +1,8 @@
 
 #include "../../../fe/software/app_src/malibu/malibu_basic_cmd.h"
 
-void menu_malibu() {
-    auto& regs = sc->regs.scifi;
+void menu_scifi() {
+    auto& regs = sc.ram->regs.scifi;
 
     while(1) {
         printf("  [0] => reset asic\n");

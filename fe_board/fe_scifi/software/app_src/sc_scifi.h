@@ -1,8 +1,9 @@
 
 #include "../../../fe/software/app_src/malibu/malibu_basic_cmd.h"
 
-void sc_callback(volatile alt_u32* data) {
-    auto& regs = sc->regs.scifi;
+// TODO : remove - regs can be accessed directly
+void sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
+    auto& regs = ram->regs.scifi;
 
 //check spi command register, trigger spi configuration if needed
     alt_u32 d0 = data[0x13];
@@ -28,31 +29,4 @@ void sc_callback(volatile alt_u32* data) {
         printf("Update value dummyctrl_reg:    0x%08X\n", data[0x12]);
     regs.ctrl.reset = data[0x12];
 
-}
-
-void menu_sc(volatile alt_u32* data) {
-    while(1) {
-        printf("  [r] => read sc ram\n");
-        printf("  [w] => write sc ram\n");
-        printf("  [q] => exit\n");
-
-        printf("Select entry ...\n");
-        char cmd = wait_key();
-        switch(cmd) {
-        case 'r':
-            for(int i = 0; i < 32; i++) {
-                printf("[0x%04X] = 0x%08X\n", i, data[i]);
-            }
-            break;
-        case 'w':
-            for(int i = 0; i < 32; i++) {
-                data[i] = i;
-            }
-            break;
-        case 'q':
-            return;
-        default:
-            printf("invalid command: '%c'\n", cmd);
-        }
-    }
 }
