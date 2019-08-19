@@ -11,8 +11,8 @@
 #define EOT 0x4
 
 #include "mscb.h"
+#include "system.h"
 
-//#include "system.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -20,13 +20,6 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/alt_timestamp.h>
-
-
-// move this later !!!
-#define PARALLEL_MSCB_IN_BASE 0x700f0300
-#define PARALLEL_MSCB_OUT_BASE 0x700f0320
-#define COUNTER_BASE 0x700f0340
-
 
 /*------------------------------------------------------------------*/
 
@@ -179,7 +172,7 @@ void print_byte(unsigned char byte)
 
 int get_times(void)
 {
-    int counter = IORD_ALTERA_AVALON_PIO_DATA(COUNTER_BASE);
+    int counter = IORD_ALTERA_AVALON_PIO_DATA(COUNTER_IN_BASE);
     return counter;
 }
 
