@@ -31,29 +31,51 @@ END ENTITY;
 
 architecture rtl of state_phase_box is
 
-	signal counter : unsigned(31 downto 0);
-	signal delay: std_logic;
-	signal phase_counter : unsigned(31 downto 0);
+    signal counter :                unsigned(31 downto 0);
+    signal delay :                  std_logic;
+    signal phase_counter :          unsigned(31 downto 0);
+    signal single_result :          std_logic;
+    signal single_result_stable :   std_logic;
 
 begin
 
-	-- measure phase between clk_reset and clk_global
-	process (clk_free,reset)
-	begin
-		if reset = '1'  then 
-			counter		<= (others => '0');
-			phase			<= (others => '0');
-		elsif rising_edge(clk_free) then
-			counter <= counter + 1;
-			if(counter(26)='1') then
-				counter				<= (others => '0');
-				phase					<= std_logic_vector(phase_counter);
-				phase_counter		<= (others => '0');
-			elsif(clk_global /= clk_rx_reset) then
-				phase_counter <= phase_counter + 1;
-			end if;
-		end if;
-	end process;
+    -- measure phase between clk_reset and clk_global
+    process (clk_free,reset)
+    begin
+        if reset = '1'  then 
+            counter                 <= (others => '0');
+            phase                   <= (others => '0');
+            single_result           <= '0';
+        elsif rising_edge(clk_free) then
+            counter <= counter + 1;
+            if(counter(26)='1') then
+                counter             <= (others => '0');
+                phase               <= std_logic_vector(phase_counter);
+                phase_counter       <= (others => '0');
+                
+            -- metastable result :
+            elsif(clk_global /= clk_rx_reset) then
+                single_result       <= '1';
+            else
+                single_result       <= '0';
+            end if;
+            
+            -- count phase with stable result :
+            if (single_result_stable = '1') then
+                phase_counter <= phase_counter + 1;
+            end if;
+        end if;
+    end process;
+    
+    -- sync metastable result
+    i_ff_sync : entity work.ff_sync
+    generic map ( W => 1, N => 5 )
+    PORT MAP (
+        d(0)    => single_result,
+        q(0)    => single_result_stable,
+        rst_n   => not reset,
+        clk     => clk_free
+    );
 
 
 	process (clk_global, reset)

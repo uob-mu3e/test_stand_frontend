@@ -62,9 +62,9 @@ int DBG_INFO = 1;
 
 
 // remove this later !!!
-#define PARALLEL_FPGA_STATUS_BASE 0x81020
-#define PARALLEL_FPGA_STATUS2_BASE 0x81090
-#define PARALLEL_FPGA_SETTING_BASE 0x81000
+//#define PARALLEL_FPGA_STATUS_BASE 0x81020
+//#define PARALLEL_FPGA_STATUS2_BASE 0x81090
+//#define PARALLEL_FPGA_SETTING_BASE 0x81000
 
 volatile alt_u32* sc_data = (alt_u32*)AVM_SC_BASE;
 
@@ -135,13 +135,15 @@ unsigned char user_read(unsigned char index)
 
 /*---- User get and set functions -----------------------------------------*/
 
-void set_fpga()
-{
-    int value = user_data.fpga_setting[0];
-    IOWR_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_SETTING_BASE,value);
-    usleep(1000);
-    return;
-}
+// do we want to map some nios mem addr. to mscb variables ???
+
+//void set_fpga()
+//{
+//    int value = user_data.fpga_setting[0];
+//    IOWR_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_SETTING_BASE,value);
+//    usleep(1000);
+//    return;
+//}
 
 //void read_fpga_status()
 //{
