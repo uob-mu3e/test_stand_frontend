@@ -89,7 +89,7 @@ architecture arch of fe_block is
 
     signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
     signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
-    signal mscb_counter_in : unsigned(15 downto 0);
+    signal mscb_counter_in : std_logic_vector(15 downto 0);
 
     signal reg_reset_bypass : std_logic_vector(31 downto 0);
 
@@ -205,9 +205,9 @@ begin
 
 
         -- mscb
-        parallel_mscb_in_export => mscb_to_nios_parallel_in,
-        parallel_mscb_out_export => mscb_from_nios_parallel_out,
-        counter_in_export => std_logic_vector(mscb_counter_in),
+        parallel_mscb_in_export     => mscb_to_nios_parallel_in,
+        parallel_mscb_out_export    => mscb_from_nios_parallel_out,
+        counter_in_export           => mscb_counter_in,
 
 
 
@@ -359,7 +359,8 @@ begin
         mscb_counter_in             => mscb_counter_in,
 
         reset                       => not i_nios_reset_n,
-        nios_clk                    => i_nios_clk--,
+        nios_clk                    => i_nios_clk,
+        o_mscb_irq                  => nios_irq (1)--,
     );
 
 

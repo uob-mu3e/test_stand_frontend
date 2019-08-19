@@ -26,17 +26,6 @@ end entity;
 
 architecture rtl of uart_transmitter is
 
-    component counter_mscb is
-    port (
-        Clk         : in    std_logic;
-        Reset       : in    std_logic; -- here asynchronous reset
-        Enable      : in    std_logic; -- enable
-        CountDown   : in    std_logic; -- down when 1, else up
-        CounterOut  : out   unsigned(31 downto 0);
-        Init        : in    unsigned(31 downto 0)
-    );
-    end component;
-
     signal Reset_Counter : std_logic;
     signal CounterOut : unsigned(31 downto 0);
 
@@ -51,17 +40,17 @@ architecture rtl of uart_transmitter is
 
 begin
 
-    -- wire up components
-    counter_i : counter_mscb
-    port map (
-        Clk         => Clk,
-        Reset       => Reset_Counter,
-        Enable      => '1',
-        CountDown   => '0',
-        CounterOut  => CounterOut,
-        Init        => to_unsigned(0,32)
+    e_counter : entity work.counter
+    generic map (
+        W           => 32--,
+    )
+    port map(
+        unsigned(cnt)           => CounterOut,--_vec,
+        ena                     => '1',
+        reset                   => Reset_Counter,
+        clk                     => Clk--,
     );
-
+    
     -- the state machine does properly work with a waiting period of 2 or smaller between transitions
     wait_period <=  Clk_Ratio when Clk_Ratio > 3 else 3;
 

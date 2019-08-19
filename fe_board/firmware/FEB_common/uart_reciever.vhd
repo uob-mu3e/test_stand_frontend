@@ -24,17 +24,6 @@ end entity;
 
 architecture rtl of uart_reciever is
 
-    component counter_mscb is
-    port (
-        Clk         : in    std_logic;
-        Reset       : in    std_logic; -- here asynchronous reset
-        Enable      : in    std_logic; -- enable
-        CountDown   : in    std_logic; -- down when 1, else up
-        CounterOut  : out   unsigned(31 downto 0);
-        Init        : in    unsigned(31 downto 0)
-    );
-    end component;
-
     signal Reset_Counter : std_logic;
     signal CounterOut : unsigned(31 downto 0);
 
@@ -52,17 +41,17 @@ architecture rtl of uart_reciever is
 
 begin
 
-    -- wire up components
-    counter_i : counter_mscb
-    port map (
-        Clk         => Clk,
-        Reset       => Reset_Counter,
-        Enable      => '1',
-        CountDown   => '0',
-        CounterOut  => CounterOut,
-        Init        => to_unsigned(0,32)
+    e_counter : entity work.counter
+    generic map(
+        W           => 32--,
+    )
+    port map(
+        unsigned(cnt)   => CounterOut,
+        ena             => '1',
+        reset           => Reset_Counter,
+        clk             => Clk--,
     );
-
+    
     wait_period <= Clk_Ratio;
     wait_period_init <= Clk_Ratio/2;
 
