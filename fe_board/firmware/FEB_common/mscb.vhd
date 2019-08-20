@@ -131,7 +131,8 @@ begin
     e_fifo_data_in : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH => 8,
-        DATA_WIDTH => 9--,
+        DATA_WIDTH => 9,
+        SHOWAHEAD   => "OFF"--,
     )
     port map (
         sclr            => reset,
@@ -166,7 +167,8 @@ begin
     e_fifo_data_out : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH => 8,
-        DATA_WIDTH => 9--,
+        DATA_WIDTH => 9,
+        SHOWAHEAD   => "OFF"--,
     )
     port map (
         sclr            => reset,

@@ -87,7 +87,7 @@ MSCB_INFO_VAR vars[] = {
 MSCB_INFO_VAR *variables = vars;
 
 void read_fpga_status();
-void set_fpga();
+//void set_fpga();
 
 void user_vars(unsigned char *n_sub_addr, unsigned char *var_size)
 {
@@ -156,7 +156,7 @@ unsigned char user_read(unsigned char index)
 
 void user_write(unsigned char index)
 {
-    set_fpga();
+    //set_fpga();
     return;
 }
 
