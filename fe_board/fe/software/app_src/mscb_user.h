@@ -870,3 +870,22 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
 
   return n;
 }
+
+struct mscb_t {
+    alt_alarm alarm;
+    void init() {
+        printf("[mscb] init\n");
+        if(int err = alt_ic_isr_register(0, 17, callback, this, nullptr)) {
+            printf("TEST12345\n", err);
+        }
+    }
+    //void callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
+    void callback() {
+            printf("TEST123");
+    }
+    static
+    void callback(void* context) {
+        printf("hello world");
+        ((mscb_t*)context)->callback();
+    }
+};

@@ -9,6 +9,7 @@ si5345_t si5345 { 0 }; // spi_slave = 0
 sc_t sc;
 
 #include "../../../fe/software/app_src/mscb_user.h"
+mscb_t mscb;
 #include "../../../fe/software/app_src/reset.h"
 
 #include "../../../fe/software/app_src/malibu.h"
@@ -18,8 +19,9 @@ int main() {
     base_init();
 
     si5345.init();
-
+    mscb.init();
     sc.init();
+    
 
     while (1) {
         printf("\n");

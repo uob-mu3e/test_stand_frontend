@@ -16,7 +16,7 @@ port (
     mscb_data_in                : in    std_logic;
     mscb_data_out               : out   std_logic;
     mscb_oe                     : out   std_logic;
-    mscb_counter_in             : out   std_logic_vector(15 downto 0);
+    mscb_counter_in             : out   unsigned(15 downto 0);
     o_mscb_irq                  : out   std_logic--;
 );
 END ENTITY;
@@ -96,22 +96,23 @@ begin
     mscb_to_nios_parallel_in(9)             <= in_fifo_empty;
     mscb_to_nios_parallel_in(10)            <= in_fifo_full;
     mscb_to_nios_parallel_in(11)            <= '1';
+    
+    ---- interrupt to nios ----
+    o_mscb_irq                              <= not in_fifo_empty;
 
     mscb_nios_out                           <= mscb_from_nios_parallel_out(8 downto 0);
     DataReady                               <= not out_fifo_empty;
 
 ------------- Wire up components --------------------
 
-    e_slow_counter : entity work.counter
-    generic map (
-        W           => 16,
-        DIV         => 100--,
-    )
+    e_slow_counter : entity work.counter_async
     port map(
-        cnt         => mscb_counter_in,
-        ena         => '1',
-        reset       => reset,
-        clk         => clk--,
+        CounterOut(15 downto 0)  => mscb_counter_in,
+        Enable                   => '1',
+        Reset                    => reset,
+        Clk                      => clk,
+        CountDown                => '0',
+        Init                     => to_unsigned(0,32)
     );
 
   -- wire up uart reciever for mscb

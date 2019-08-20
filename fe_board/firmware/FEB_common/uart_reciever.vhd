@@ -41,17 +41,17 @@ architecture rtl of uart_reciever is
 
 begin
 
-    e_counter : entity work.counter
-    generic map(
-        W           => 32--,
-    )
-    port map(
-        unsigned(cnt)   => CounterOut,
-        ena             => '1',
-        reset           => Reset_Counter,
-        clk             => Clk--,
+    -- wire up components
+    counter_i : entity work.counter_async
+    port map (
+        Clk         => Clk,
+        Reset       => Reset_Counter,
+        Enable      => '1',
+        CountDown   => '0',
+        CounterOut  => CounterOut,
+        Init        => to_unsigned(0,32)
     );
-    
+
     wait_period <= Clk_Ratio;
     wait_period_init <= Clk_Ratio/2;
 
