@@ -163,12 +163,12 @@ void user_write(unsigned char index)
 void print_byte(unsigned char byte)
 {
     int i;
-    //printf("byte to print %0x\n",byte);
+    printf("%0x\t",byte);
     for(i = 7; i >=0; i--)
     {
-        //printf("%d",(byte >> i) & 0x1);
+        printf("%d",(byte >> i) & 0x1);
     }
-    //printf("\n");
+    printf("\n");
 }
 
 
@@ -254,7 +254,7 @@ unsigned char crc8(unsigned char *buffer, int len)
 
 void mscb_init()
 {
-    printf("Starting MSCB test program\n");
+    //printf("Starting MSCB test program\n");
     //start timer
     //if( alt_timestamp_start() < 0) printf("no timer available\n");
     //set default out values
@@ -360,7 +360,7 @@ void send_data(unsigned char *buf, unsigned int n)
     unsigned int i;
     for(i=0; i<n;i++)
     {
-        print_byte(buf[i]);
+        //print_byte(buf[i]);
 
         int data = buf[i];
         IOWR_ALTERA_AVALON_PIO_DATA(PARALLEL_MSCB_OUT_BASE,data);
@@ -388,7 +388,7 @@ void mscb_uart_handler(void)
     // drop partial buffer if no char received for 100 ms
     int now = get_times();
     if (i_in > 0 && time_diff(last_received,now) > 12500) {
-        i_in = 0;//printf("resseting buffer\n");
+        i_in = 0;//printf("reset buffer\n");
     }
 
     while (input_data_ready())
@@ -445,13 +445,13 @@ void mscb_uart_handler(void)
         n = mscb_interprete(0, in_buf, out_buf);
 
         for(int i_printf=0; i_printf < i_in;i_printf++){
-            printf("0x%0x\t",in_buf[i_printf]);	
+            //printf("0x%0x\t",in_buf[i_printf]);	
         }
-        printf("\n");
-
+        //printf("\n");
+        //printf("n is %d\n",n);
         if (n > 0){
             send_data(out_buf, n);
-            printf("sending reply\n");
+            printf("sending mscb reply\n");
         }
         i_in = 0;
     }
@@ -482,7 +482,7 @@ void addr_node16(unsigned char mode, unsigned int adr, unsigned int node_addr)
     } else {
         if (mode == ADDR_NODE) {
             if (adr >= node_addr && adr <  node_addr + g_n_sub_addr) {
-                addressed = 1; //printf("addressed \n");
+                addressed = 1;// printf("addressed \n");
                 g_cur_sub_addr = adr - node_addr;
                 addr_mode = ADDR_NODE;
             } else {
@@ -505,14 +505,17 @@ void addr_node16(unsigned char mode, unsigned int adr, unsigned int node_addr)
 
 int mscb_main()
 {
-    printf("starting mscb node ");
-    int ch = 'y';
-    mscb_init();
+    //printf("starting mscb node ");
+    //int ch = 'y';
+    //mscb_init();
 
-    while(1)
-    {
-        ch = mscb_loop();
-    }
+    //while(1)
+    //{
+    //    ch = mscb_loop();
+    //}
+    
+    printf("mscb node already running, using interrupts in this version\n");
+    printf("Nothing to see here at the moment .., bye!\n");
     return 0;
 }
 
@@ -546,7 +549,7 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
 
     // check CRC
     if (crc8(buf, buflen-1) != buf[buflen-1]) {
-    //printf("MSCB interprete: Invalid CRC %02X vs %02X\r\n", crc8(buf, buflen-1), buf[buflen-1]);
+        //printf("MSCB interprete: Invalid CRC %02X vs %02X\r\n", crc8(buf, buflen-1), buf[buflen-1]);
         return 0;
     }
     //else printf("CRC ok\n");
@@ -555,9 +558,10 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
             buf[0] != MCMD_ADDR_NODE16 &&
             buf[0] != MCMD_ADDR_GRP16 &&
             buf[0] != MCMD_ADDR_BC &&
-            buf[0] != MCMD_PING16)
+            buf[0] != MCMD_PING16){
+        //printf("not addressed\n");
         return 0;
-
+    }
 
     switch (buf[0]) {
 
@@ -867,25 +871,43 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
             }
         }
     }
-
   return n;
 }
 
 struct mscb_t {
     alt_alarm alarm;
+    unsigned char data;
+    
     void init() {
         printf("[mscb] init\n");
+        mscb_init();
+        while (input_data_ready()){
+            read_mscb_command();
+        }
+        printf("mscb fifo clear");
+        
         if(int err = alt_ic_isr_register(0, 17, callback, this, nullptr)) {
             printf("TEST12345\n", err);
         }
     }
     //void callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
     void callback() {
-            printf("TEST123");
+        mscb_uart_handler();
+        //printf("callback");
+        
+        // ------------  TEST - OUTPUT --------------------
+        //data = read_mscb_command();
+        //if(data != 0xff){ // why is this happening ?? TODO: fix this when doing addressing in hardware !
+        //    printf("reading mscb command\n");
+        //    print_byte(data);
+        //}
+        //while (input_data_ready()){
+        //    data = read_mscb_command();
+        //    print_byte(data);
+        //}
     }
-    static
-    void callback(void* context) {
-        printf("hello world");
+    
+    static void callback(void* context) {
         ((mscb_t*)context)->callback();
     }
 };

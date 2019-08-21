@@ -33,7 +33,7 @@ int main() {
         printf("  [3] => sc\n");
         printf("  [4] => xcvr pod\n");
         printf("  [5] => si5345\n");
-        printf("  [6] => mscb (exit by reset only)\n");
+        printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
 
         printf("Select entry ...\n");
