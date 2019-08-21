@@ -11,11 +11,13 @@ set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 set_global_assignment -name QIP_FILE ../fe/top.qip
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../fe/assignments/FE_scifi.tcl
 
+set_global_assignment -name TOP_LEVEL_ENTITY top
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 
 
 
+set_global_assignment -name VHDL_FILE ../fe/fe_block.vhd
 set_global_assignment -name VHDL_FILE scifi_path.vhd
 
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd

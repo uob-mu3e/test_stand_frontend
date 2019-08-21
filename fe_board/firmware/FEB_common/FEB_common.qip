@@ -15,4 +15,4 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slow_coun
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "edge_detector.vhdl"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "counter_mscb.vhd"]
 
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "data_sc_path.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "fifo_sync.vhd"]

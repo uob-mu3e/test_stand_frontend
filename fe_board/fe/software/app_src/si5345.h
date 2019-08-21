@@ -1,3 +1,5 @@
+#ifndef __FE_SI5345_H__
+#define __FE_SI5345_H__
 
 #include "../include/si.h"
 
@@ -92,3 +94,5 @@ struct si5345_t : si_t {
     }
 
 };
+
+#endif // __FE_SI5345_H__
