@@ -10,5 +10,7 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "debouncer
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "ff_sync.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "reset_ctrl.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "reset_sync.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "watchdog.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "version_reg.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "watchdog.vhd"]
+
+set_global_assignment -name SDC_FILE [file join $::quartus(qip_path) "util.sdc"]
