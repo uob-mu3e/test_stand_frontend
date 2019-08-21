@@ -884,10 +884,9 @@ struct mscb_t {
         while (input_data_ready()){
             read_mscb_command();
         }
-        printf("mscb fifo clear");
         
         if(int err = alt_ic_isr_register(0, 17, callback, this, nullptr)) {
-            printf("TEST12345\n", err);
+            printf("ERROR mscb init\n", err);
         }
     }
     //void callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
