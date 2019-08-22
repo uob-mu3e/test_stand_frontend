@@ -17,7 +17,8 @@ port (
     mscb_data_out               : out   std_logic;
     mscb_oe                     : out   std_logic;
     mscb_counter_in             : out   unsigned(15 downto 0);
-    o_mscb_irq                  : out   std_logic--;
+    o_mscb_irq                  : out   std_logic;
+    i_mscb_address              : in    std_logic_vector(15 downto 0)--;
 );
 END ENTITY;
 
@@ -58,6 +59,12 @@ architecture rtl of mscb is
 
     signal Transmitting  :              std_logic; -- uart data is being send
     signal dummy :                      std_logic;
+    
+    signal addressing_data_in :         std_logic_vector(8 downto 0);
+    signal addressing_data_out :        std_logic_vector(8 downto 0);
+    signal addressing_wrreq :           std_logic;
+    signal addressing_rdreq :           std_logic;
+    signal rec_fifo_empty :             std_logic;
 
 ----------------------------------------
 ------------ Begin top level------------
@@ -128,8 +135,8 @@ begin
         DataOut     => uart_parallel_out
     );
 
-
-    e_fifo_data_in : entity work.ip_scfifo
+    -- fifo addressing to nios (addressing is done, only commands intended for this mscb node)
+    e_nios_fifo : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH => 8,
         DATA_WIDTH => 9,
@@ -138,9 +145,9 @@ begin
     port map (
         sclr            => reset,
         clock           => clk,
-        data            => uart_parallel_out,
+        data            => addressing_data_out,
         rdreq           => in_fifo_read_request,
-        wrreq           => in_fifo_write_request,
+        wrreq           => addressing_wrreq,
         empty           => in_fifo_empty,
         full            => in_fifo_full,
         q               => in_fifo_data_out,
@@ -149,6 +156,26 @@ begin
         almost_empty    => open--,
     );
 
+    -- fifo receiver to addressing
+    e_fifo_data_in : entity work.ip_scfifo
+    generic map (
+        ADDR_WIDTH => 3,
+        DATA_WIDTH => 9,
+        SHOWAHEAD   => "ON"--,
+    )
+    port map (
+        sclr            => reset,
+        clock           => clk,
+        data            => uart_parallel_out,
+        rdreq           => addressing_rdreq,
+        wrreq           => in_fifo_write_request,
+        empty           => rec_fifo_empty,
+        full            => open,
+        q               => addressing_data_in,
+        usedw           => open,
+        almost_full     => open,
+        almost_empty    => open--,
+    );
 
     -- wire up uart transmitter for mscb
     e_uart_tx : entity work.uart_transmitter
@@ -165,6 +192,7 @@ begin
         Transmitting    => Transmitting
     );
 
+    -- fifo nios to transmitter
     e_fifo_data_out : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH => 8,
@@ -200,6 +228,19 @@ begin
         clk             => clk,
         signal_in       => mscb_from_nios_parallel_out(9),
         output          => out_fifo_write_request
+    );
+    
+
+    e_mscb_addressing : entity work.mscb_addressing
+    port map (
+        i_clk           => clk,
+        i_reset         => reset,
+        i_data          => addressing_data_in,
+        i_empty         => rec_fifo_empty,
+        i_address       => i_mscb_address,
+        o_data          => addressing_data_out,
+        o_wrreq         => addressing_wrreq,
+        o_rdreq         => addressing_rdreq
     );
 
 

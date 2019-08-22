@@ -360,7 +360,8 @@ begin
 
         reset                       => not i_nios_reset_n,
         nios_clk                    => i_nios_clk,
-        o_mscb_irq                  => nios_irq (1)--,
+        o_mscb_irq                  => nios_irq (1),
+        i_mscb_address              => x"ACA0"--,
     );
 
 

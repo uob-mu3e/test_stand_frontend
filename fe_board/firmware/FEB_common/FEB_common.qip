@@ -7,6 +7,7 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "resetsys.
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "state_phase_box.vhd"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mscb.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mscb_addressing.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "uart_transmitter.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "uart_reciever.vhd"]
 
