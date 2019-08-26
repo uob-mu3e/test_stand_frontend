@@ -205,9 +205,9 @@ begin
 
 
         -- mscb
-        parallel_mscb_in_export => mscb_to_nios_parallel_in,
-        parallel_mscb_out_export => mscb_from_nios_parallel_out,
-        counter_in_export => std_logic_vector(mscb_counter_in),
+        parallel_mscb_in_export     => mscb_to_nios_parallel_in,
+        parallel_mscb_out_export    => mscb_from_nios_parallel_out,
+        counter_in_export           => std_logic_vector(mscb_counter_in),
 
 
 
@@ -357,6 +357,9 @@ begin
         mscb_data_out               => o_mscb_data,
         mscb_oe                     => o_mscb_oe,
         mscb_counter_in             => mscb_counter_in,
+
+        o_mscb_irq                  => nios_irq (1),
+        i_mscb_address              => x"ACA0",
 
         reset                       => not i_nios_reset_n,
         nios_clk                    => i_nios_clk--,
