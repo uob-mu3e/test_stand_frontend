@@ -1,9 +1,29 @@
 #ifndef __FLASH_H__
 #define __FLASH_H__
 
-struct flash_t {
-    volatile alt_u32* csr = (volatile alt_u32*)FLASH_CSR_BASE;
-    volatile alt_u32* sector2 = (volatile alt_u32*)FLASH_DATA_SECTOR2_START_ADDR;
+struct ufm_t {
+    static constexpr
+    auto csr = (volatile alt_u32*)FLASH_CSR_BASE;
+    static constexpr
+    auto sector2 = (volatile alt_u32*)FLASH_DATA_SECTOR2_START_ADDR;
+
+    void wait_idle() {
+        while(csr[0] & 0x3) {
+            usleep(1000);
+        }
+    }
+
+    void disable_wp(int sector) {
+        if(!(1 <= sector && sector <= 5)) return;
+        sector += 22;
+        csr[1] &= ~(1 << sector);
+    }
+
+    void enable_wp(int sector) {
+        if(!(1 <= sector && sector <= 5)) return;
+        sector += 22;
+        csr[1] |= (1 << sector);
+    }
 
     void menu() {
         while(1) {
@@ -31,6 +51,8 @@ struct flash_t {
             printf("\n");
             printf("  [r] => read\n");
             printf("  [w] => write\n");
+            printf("  [e] => erase\n");
+            printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
             char cmd = wait_key();
@@ -43,26 +65,30 @@ struct flash_t {
                 printf("\n");
                 break;
             case 'w':
-                while(csr[0] & 0x3) {
-                    printf("busy\n");
-                }
-                // 1. disable write protection
-                csr[1] &= ~(1 << 24);
+                disable_wp(2);
                 // 2. program data
                 sector2[0] = 0;
-                // 3. check write busy field
-                while(csr[0] & 0x3) {
-                    printf("busy\n");
-                }
+                wait_idle();
                 // 4. check write successful field
-                if(!(csr[0] & 0x8)) {
+                if(!(csr[0] & 0x08)) {
                     printf("fail\n");
                 }
-                // 6. enable write protection
-                csr[1] |= (1 << 24);
+                enable_wp(2);
                 break;
             case 'e':
+                disable_wp(2);
+                wait_idle();
+                csr[1] = csr[1] & ~(0x7 << 20) | (0x2 << 20);
+                wait_idle();
+                if(!(csr[0] & 0x10)) {
+                    printf("fail\n");
+                }
+                enable_wp(2);
                 break;
+            case 'q':
+                return;
+            default:
+                printf("invalid command: '%c'\n", cmd);
             }
         }
     }

@@ -4,8 +4,8 @@
 #include "adc.h"
 adc_t adc;
 
-#include "flash.h"
-flash_t flash;
+#include "ufm.h"
+ufm_t ufm;
 
 int main() {
     base_init();
@@ -13,7 +13,7 @@ int main() {
     while (1) {
         printf("\n");
         printf("  [a] => adc\n");
-        printf("  [f] => flash (UFM)\n");
+        printf("  [f] => ufm (flash)\n");
         printf("  [s] => spi\n");
 
         printf("Select entry ...\n");
@@ -24,7 +24,7 @@ int main() {
             adc.menu();
             break;
         case 'f':
-            flash.menu();
+            ufm.menu();
             break;
         case 's':
 //            menu_spi_si5345();
