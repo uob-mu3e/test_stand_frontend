@@ -84,6 +84,12 @@ begin
                                 proc_state                  <= addressing1;
                                 cmd_buffer(8 downto 0)      <= data(8 downto 0);
                                 timeout                     <= (others => '0'); -- start timeout counting
+                            elsif ((data(7 downto 0) = MSCB_CMD_ADDR_BC)) then -- Broadcast command
+                                proc_state                  <= addressed;
+                                send_buffer                 <= "100";
+                                o_wrreq                     <= '1';
+                                o_data                      <= data;
+                                timeout                     <= (others => '0');
                             end if;
                             state                           <= idle;
                             

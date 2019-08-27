@@ -98,3 +98,33 @@ run 8 ns
 force -freeze sim:/mscb_addressing_tb/addressing_data_in 111111111 0
 force -freeze sim:/mscb_addressing_tb/rec_fifo_empty 1 0
 run 80 ns
+
+# command to other node:
+force -freeze sim:/mscb_addressing_tb/reset 1 0
+run 8 ns
+force -freeze sim:/mscb_addressing_tb/reset 0 0
+run 80 ns
+
+# A0 address command 
+force -freeze sim:/mscb_addressing_tb/addressing_data_in 110100000 0
+force -freeze sim:/mscb_addressing_tb/rec_fifo_empty 0 0
+run 8 ns
+force -freeze sim:/mscb_addressing_tb/addressing_data_in 111111111 0
+force -freeze sim:/mscb_addressing_tb/rec_fifo_empty 1 0
+run 80 ns
+
+# part 1 of address
+force -freeze sim:/mscb_addressing_tb/addressing_data_in 110101111 0
+force -freeze sim:/mscb_addressing_tb/rec_fifo_empty 0 0
+run 8 ns
+force -freeze sim:/mscb_addressing_tb/addressing_data_in 111111111 0
+force -freeze sim:/mscb_addressing_tb/rec_fifo_empty 1 0
+run 80 ns
+
+# part 2 of address
+force -freeze sim:/mscb_addressing_tb/addressing_data_in 110101111 0
+force -freeze sim:/mscb_addressing_tb/rec_fifo_empty 0 0
+run 8 ns
+force -freeze sim:/mscb_addressing_tb/addressing_data_in 111111111 0
+force -freeze sim:/mscb_addressing_tb/rec_fifo_empty 1 0
+run 80 ns
