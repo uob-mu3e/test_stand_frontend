@@ -157,7 +157,7 @@ BEGIN
 		clk1_multiply_by => 1,
 		clk1_phase_shift => "0",
 		compensate_clock => "CLK0",
-		inclk0_input_frequency => 20000,
+		inclk0_input_frequency => 50000,
 		intended_device_family => "MAX 10",
 		lpm_hint => "CBX_MODULE_PREFIX=ip_altpll",
 		lpm_type => "altpll",
@@ -329,7 +329,7 @@ END SYN;
 -- Retrieval info: CONSTANT: CLK1_MULTIPLY_BY NUMERIC "1"
 -- Retrieval info: CONSTANT: CLK1_PHASE_SHIFT STRING "0"
 -- Retrieval info: CONSTANT: COMPENSATE_CLOCK STRING "CLK0"
--- Retrieval info: CONSTANT: INCLK0_INPUT_FREQUENCY NUMERIC "20000"
+-- Retrieval info: CONSTANT: INCLK0_INPUT_FREQUENCY NUMERIC "50000"
 -- Retrieval info: CONSTANT: INTENDED_DEVICE_FAMILY STRING "MAX 10"
 -- Retrieval info: CONSTANT: LPM_TYPE STRING "altpll"
 -- Retrieval info: CONSTANT: OPERATION_MODE STRING "NORMAL"

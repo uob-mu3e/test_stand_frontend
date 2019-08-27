@@ -13,6 +13,7 @@ port (
     SWITCH2 : in    std_logic;
     SWITCH3 : in    std_logic;
     SWITCH4 : in    std_logic;
+    SWITCH5 : in    std_logic;
 
     LED1    : out   std_logic;
     LED2    : out   std_logic;
@@ -27,7 +28,7 @@ end entity;
 
 architecture arch of top is
 
-    signal sw : std_logic_vector(3 downto 0);
+    signal sw : std_logic_vector(4 downto 0);
     signal led : std_logic_vector(4 downto 0);
 
     signal nios_clk : std_logic; -- 50 MHz
@@ -38,7 +39,7 @@ architecture arch of top is
 
 begin
 
-    sw <= SWITCH4 & SWITCH3 & SWITCH2 & SWITCH1;
+    sw <= SWITCH5 & SWITCH4 & SWITCH3 & SWITCH2 & SWITCH1;
 
     LED1 <= not (led(0) and CLOCK);
     LED2 <= not (led(1) and CLOCK);

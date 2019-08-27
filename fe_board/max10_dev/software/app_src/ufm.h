@@ -28,7 +28,7 @@ struct ufm_t {
     void menu() {
         while(1) {
             printf("\n");
-            printf("[flash] -------- menu --------\n");
+            printf("[ufm] -------- menu --------\n");
 
             printf("\n");
             printf("  status =");
