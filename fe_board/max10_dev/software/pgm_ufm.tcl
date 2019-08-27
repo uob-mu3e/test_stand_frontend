@@ -27,38 +27,92 @@ proc mm_claim { { index -1 } } {
     set ::mm_index $index
 }
 
-mm_claim 1
+
+
+processor_stop [ lindex $::proc_paths 0 ]
+processor_reset [ lindex $::proc_paths 0 ]
+mm_claim 0
 
 
 
-proc read_srec { f } {
-    set words [ list ]
+proc write_srec { mm fname } {
+    set f [ open $fname r ]
 
-    for { set l 0 } { $l < 64 } { incr l } {
-        set type [ read $f 2 ]
-        if { $type != "S3" } {
-            error "error: unknown record type $type"
-        }
-        set n [ read $f 2 ]
-        set n [ expr 0x$n - 5 ]
-        if { $n != 32 } {
-            error "error: n != 32"
-        }
-        set addr [ read $f 8 ]
-
-        for { set i 0 } { $i < 32 } { incr i } {
-            set b [ read $f 2 ]
-            if { [ eof $f ] } break
-            lappend words "0x$b"
+    while { true } {
+        set line [ gets $f ]
+        if { [ eof $f ] } {
+            break
         }
 
-        set c [ read $f 2 ]
-        if { [ read $f 1 ] != "\n" } {
-            error "error: expect line feed"
+        set type [ string range $line 0 1 ]
+
+        # header record
+        if { $type == "S0" } {
+            continue
         }
+
+        # count record
+        if { $type == "S5" } {
+            continue
+        }
+
+        # termination records
+        if { $type == "S7" || $type == "S8" || $type == "S9" } {
+            continue
+        }
+
+        set n [ string range $line 2 3 ]
+        set n [ expr 0x$n ]
+
+        # data records
+        if { $type == "S1" } {
+            set addr [ string range $line 4 7 ]
+            set n [ expr $n - 2 ]
+        }
+        if { $type == "S2" } {
+            set addr [ string range $line 4 9 ]
+            set n [ expr $n - 3 ]
+        }
+        if { $type == "S3" } {
+            set addr [ string range $line 4 11 ]
+            set n [ expr $n - 4 ]
+        }
+        set addr [ expr 0x$addr ]
+
+        if { $n < 1 } {
+            error "error: "
+        }
+
+        set bytes [ list ]
+        while { $n > 1 } {
+            set p [ expr [ string length $line ] - 2 * $n ]
+            set b [ string range $line $p [ expr $p + 1 ] ]
+            set n [ expr $n - 1 ]
+            lappend bytes $b
+        }
+
+#        ::ufm::erase 1
+#        ::ufm::erase 2
+        ::ufm::disable_wp $mm 1
+        ::ufm::disable_wp $mm 2
+        foreach { a b c d } $bytes {
+            set u32 0x$d$c$b$a
+            puts [ format "debug: \[0x%08X\] <= 0x%08X" [ expr $addr ] [ expr $u32 ] ]
+            master_write_32 $mm $addr $u32
+            ::ufm::wait_idle $mm
+            if { [ master_read_32 $mm $addr 1 ] != $u32 } {
+                puts [ format "warn: \[0x%08X\] = 0x%08X != 0x%08X" [ expr $addr ] [ expr [ master_read_32 $mm $addr 1 ] ] [ expr $u32 ] ]
+            }
+            set addr [ expr $addr + 4 ]
+        }
+        ::ufm::enable_wp $mm 1
+        ::ufm::enable_wp $mm 2
+
+        # checksum
+#        set cs [ string range $line ... ]
     }
 
-    return $words
+    close $f
 }
 
 proc test_read { mm } {
@@ -70,12 +124,8 @@ proc test_read { mm } {
 }
 
 proc test_write { mm } {
-    ::ufm::disable_wp $mm 1
-    for { set i 0 } { $i < 16 } { incr i } {
+    for { set i 0 } { $i < 32 } { incr i } {
         set addr [ expr 0x00000000 + 4 * $i ]
-        master_write_32 $mm $addr $i
-        ::ufm::wait_idle $mm
-        puts [ ::ufm::ws $mm ]
+        ::ufm::write $mm $addr $i
     }
-    ::ufm::enable_wp $mm 1
 }
