@@ -36,6 +36,7 @@ proc ::ufm::write { mm addr u32 } {
     set sector 0
     if { 0x00000000 <= $addr && $addr < 0x00004000 } { set sector 1 }
     if { 0x00004000 <= $addr && $addr < 0x00008000 } { set sector 2 }
+
     if { !(1 <= $sector && $sector <= 5) } {
         error "error: sector $sector is not valid"
     }
