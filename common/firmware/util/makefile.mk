@@ -60,7 +60,7 @@ bsp : $(BSP_DIR)
 .PHONY : $(APP_DIR)/main.elf
 $(APP_DIR)/main.elf : $(APP_DIR)_src/* $(BSP_DIR)
 	nios2-app-generate-makefile \
-        --set ALT_CFLAGS "-pedantic -Wall -Wextra -Wformat=0 -std=c++11 -O0 -g" \
+        --set ALT_CFLAGS "-pedantic -Wall -Wextra -Wformat=0 -std=c++11 -Os -g" \
         --bsp-dir $(BSP_DIR) --app-dir $(APP_DIR) --src-dir $(APP_DIR)_src
 	$(MAKE) -C $(APP_DIR) clean
 	$(MAKE) -C $(APP_DIR)
@@ -71,13 +71,9 @@ app : $(APP_DIR)/main.elf
 
 .PHONY : app_flash
 app_flash :
-	# generate srec
-	elf2flash --base=0x0 --end=0x0FFFFFFF \
-        --boot=$(SOPC_KIT_NIOS2)/components/altera_nios2/boot_loader_cfi.srec \
-        --input=$(APP_DIR)/main.elf \
-        --output=$(APP_DIR)/main.flash --reset=0x05E40000
-	# convert to binary
-	objcopy -Isrec -Obinary $(APP_DIR)/main.flash $(APP_DIR)/main.bin
+	# generate flash image (srec)
+	make -C $(APP_DIR) mem_init_generate
+	mv flash.flash main.flash
 	# flash
 	nios2-flash-programmer -c $(CABLE) --base=0x0 $(APP_DIR)/main.flash
 
@@ -88,7 +84,6 @@ flash : app_flash
 .PHONY : app_upload
 app_upload : app
 	nios2-gdb-server -c $(CABLE) -r -w 1 -g $(APP_DIR)/main.srec
-#	rm -v $(APP_DIR)/main.srec
 
 .PHONY : terminal
 terminal :

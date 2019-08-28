@@ -2,7 +2,8 @@
 
 # flags
 set_setting hal.make.bsp_cflags_debug -g
-set_setting hal.make.bsp_cflags_optimization -O2
+set_setting hal.make.bsp_cflags_optimization -Os
+set_setting hal.make.bsp_cflags_warnings "-Wall -Wextra"
 
 # logging
 #set_setting hal.log_port jtag_uart
