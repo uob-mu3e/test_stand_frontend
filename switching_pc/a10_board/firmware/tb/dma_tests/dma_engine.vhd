@@ -17,8 +17,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.pcie_components.all;
-use work.mudaq_registers.all;
+--use work.pcie_components.all;
+--use work.mudaq_registers.all;
 
 entity dma_engine is
   generic (
@@ -26,9 +26,9 @@ entity dma_engine is
     MEMREADADDRSIZE  : integer := 11;
     MEMWRITEWIDTH	  : integer := 64;
 	 IRQNUM			 : std_logic_vector(4 downto 0) := "00000";
-	 ENABLE_BIT		 : integer := 0;
-	 NOW_BIT			 : integer := 0;
-	 ENABLE_INTERRUPT_BIT : integer := 0
+	 ENABLE_BIT		 : std_logic;
+	 NOW_BIT			 : std_logic;
+	 ENABLE_INTERRUPT_BIT : std_logic
     );
   port (
     local_rstn:				in		std_logic;
@@ -81,6 +81,18 @@ end dma_engine;
 
 
 architecture RTL of dma_engine is
+
+    component ip_ram is
+        port(
+            clock           : IN STD_LOGIC  := '1';
+            read_clock      : IN STD_LOGIC  := '1';
+            data            : IN STD_LOGIC_VECTOR (255 DOWNTO 0);
+            rdaddress       : IN STD_LOGIC_VECTOR (10 DOWNTO 0);
+            wraddress       : IN STD_LOGIC_VECTOR (10 DOWNTO 0);
+            wren            : IN STD_LOGIC  := '0';
+            q               : OUT STD_LOGIC_VECTOR (255 DOWNTO 0)
+        );
+    end component ip_ram;
 
   type dma_state_type is (disabled, waiting, requested, pause_dma1, pause_dma2, header, running, controlinfoheader, interrupt);
   signal state : dma_state_type;
@@ -183,9 +195,9 @@ begin
 		interrupt_enabled <= '0';
       dma_addrmem_data_written_reg <= '0';
     elsif(refclk'event and refclk = '1') then
-      dma_enabled <= dma_register(ENABLE_BIT);
-		interrupt_enabled <= dma_register(ENABLE_INTERRUPT_BIT);
-      if(dma_register(NOW_BIT) = '1' and dma_register_written = '1') then
+      dma_enabled <= ENABLE_BIT;--dma_register(ENABLE_BIT);
+		interrupt_enabled <= ENABLE_INTERRUPT_BIT;--dma_register(ENABLE_INTERRUPT_BIT);
+      if(NOW_BIT = '1' and dma_register_written = '1') then --dma_register(NOW_BIT)
         dma_now		<= '1';
       else
         dma_now 		<= '0';
@@ -700,33 +712,38 @@ begin
 --        else
 --          diff := (memaddr_last_packet- memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 2));
 --        end if;
---        if(memwriteaddr_last >= memaddr_last_packet) then
---          diff := (memwriteaddr_last - memaddr_last_packet);
---        else
---          diff := (memaddr_last_packet - memwriteaddr_last);
---        end if;
-		  
-		  if(memwriteaddr >= memaddr_last_packet) then
-          diff := (memwriteaddr - memaddr_last_packet);
+        if(memwriteaddr_last >= memaddr_last_packet) then
+          diff := (memwriteaddr_last - memaddr_last_packet);
         else
-          diff := (memaddr_last_packet - memwriteaddr);
+          diff := (memaddr_last_packet - memwriteaddr_last);
         end if;
         memhalffull <= diff(MEMREADADDRSIZE-1);
       end if;
     end if;
   end process;
 
-  dmaram:dma_ram
-    PORT MAP
-    (
-      data        	=> datain,
-      rdaddress      => memaddr,
-      rdclock        => refclk,
-      wraddress      => memwriteaddr,
-      wrclock        => dataclk, 
-      wren           => datawren,
-      q              => memout
+  dmaram : component ip_ram
+  port map (
+          clock       => dataclk,
+          read_clock  => refclk,
+          data        => datain, 
+          rdaddress   => memaddr,
+          wraddress   => memwriteaddr,
+          wren        => datawren,
+          q           => memout--,
       );
+
+  --dmaram:dma_ram
+  --  PORT MAP
+  --  (
+  --    data        	=> datain,
+  --    rdaddress      => memaddr,
+  --    rdclock        => refclk,
+  --    wraddress      => memwriteaddr,
+  --    wrclock        => dataclk, 
+  --    wren           => datawren,
+  --    q              => memout
+  --    );
 
 
 --fifo_dma: dma_fifo
@@ -743,33 +760,33 @@ begin
 --		wrfull	=> full_fifo 
 --	);
 
-  dma_data_mem_addrs:data_addrs_ram
-    PORT MAP
-    (
-      address_a	=> dma_data_mem_addr_reg,				-- address when reading / writing remotely
-      address_b	=> dma_data_mem_addr_fpga,         	-- address when reading / writing from FPGA
-      clock	 		=> refclk,			
-      data_a		=> dma_data_address_reg,	   		-- data to be written remotely
-      data_b		=> init_zero,                   
-      wren_a		=> dma_addrmem_data_written_reg,		-- write only when register with data address changes
-      wren_b		=> '0',
-      q_a			=> dma_data_address_out_reg, 			-- read back remotely
-      q_b			=> dma_data_address_out_fpga			-- read address from FPGA
-      );	
+  --dma_data_mem_addrs:data_addrs_ram
+  --  PORT MAP
+  --  (
+  --    address_a	=> dma_data_mem_addr_reg,				-- address when reading / writing remotely
+  --    address_b	=> dma_data_mem_addr_fpga,         	-- address when reading / writing from FPGA
+  --    clock	 		=> refclk,			
+  --    data_a		=> dma_data_address_reg,	   		-- data to be written remotely
+  --    data_b		=> init_zero,                   
+  --    wren_a		=> dma_addrmem_data_written_reg,		-- write only when register with data address changes
+  --    wren_b		=> '0',
+  --    q_a			=> dma_data_address_out_reg, 			-- read back remotely
+  --    q_b			=> dma_data_address_out_fpga			-- read address from FPGA
+  --    );	
   
-  dma_data_mem_pages:data_pages_ram
-    PORT MAP
-    (
-      address_a  	=> dma_data_mem_addr_reg,		     -- number of pages pointed to by address stored in data_addrs_ram
-      address_b	=> dma_data_mem_addr_fpga,
-      clock			=> refclk,
-      data_a		=>	dma_data_pages_reg,
-      data_b		=> (others => '0'),
-      wren_a		=> dma_addrmem_data_written_reg,
-      wren_b		=> '0',
-      q_a			=> dma_data_pages_out_reg,
-      q_b			=> dma_data_pages_out_fpga
-      );
+  --dma_data_mem_pages:data_pages_ram
+  --  PORT MAP
+  --  (
+  --    address_a  	=> dma_data_mem_addr_reg,		     -- number of pages pointed to by address stored in data_addrs_ram
+  --    address_b	=> dma_data_mem_addr_fpga,
+  --    clock			=> refclk,
+  --    data_a		=>	dma_data_pages_reg,
+  --    data_b		=> (others => '0'),
+  --    wren_a		=> dma_addrmem_data_written_reg,
+  --    wren_b		=> '0',
+  --    q_a			=> dma_data_pages_out_reg,
+  --    q_b			=> dma_data_pages_out_fpga
+  --    );
   
   
 end RTL;

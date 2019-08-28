@@ -241,7 +241,7 @@ architecture rtl of top is
 		signal event_length : std_logic_vector(11 downto 0);
 		signal dma_data_wren : std_logic;
 		signal dma_data : std_logic_vector(255 downto 0);
-		signal dma_data_test : std_logic_vector(95 downto 0);
+		signal dma_data_test : std_logic_vector(159 downto 0);
 		signal dma_event_data : std_logic_vector(31 downto 0);
 		signal dma_wren_cnt : std_logic; 
 		signal dma_wren_test : std_logic;
@@ -568,8 +568,8 @@ begin
 		if(dma_wren_test = '1') then
 			dma_data_wren <= '1';
 			dmamem_endofevent <= dma_end_event_test;
-			dma_data(95 downto 0) <= dma_data_test;
-			dma_data(255 downto 96) <= (others => '0');
+			dma_data(159 downto 0) <= dma_data_test;
+			dma_data(255 downto 160) <= (others => '0');
 		elsif(dma_wren_cnt = '1') then
 			dma_data_wren <= '1';
 			dmamem_endofevent <= dma_end_event_cnt;

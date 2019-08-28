@@ -17,7 +17,7 @@ entity dma_counter is
 		i_dma_halffull			:	in std_logic;
 		o_dma_end_event		:	out std_logic;
 		o_dma_wen				:	out std_logic;
-		o_cnt 					: 	out std_logic_vector (159 downto 0)--;
+		o_cnt 					: 	out std_logic_vector (95 downto 0)--;
 		);
 end dma_counter;
 
@@ -25,8 +25,8 @@ architecture arch of dma_counter is
 
 	signal timer 		: 	std_logic_vector (31 downto 0);
 	signal counter 		: 	std_logic_vector(7 downto 0);
-	signal dma_halffull_cnt : std_logic_vector(63 downto 0);
-	signal dma_not_halffull_cnt : std_logic_vector(63 downto 0);
+	signal dma_halffull_cnt : std_logic_vector(31 downto 0);
+	signal dma_not_halffull_cnt : std_logic_vector(31 downto 0);
 	
 begin
 
@@ -54,7 +54,7 @@ elsif(rising_edge(i_clk)) then
 		o_dma_end_event <= '0';
 		if(i_halffull_mode = '0') then
 			o_cnt(31 downto 0)  <= timer;
-			o_cnt(159 downto 31) <= (others => '0');
+			o_cnt(95 downto 31) <= (others => '0');
 			if(counter <= i_fraccount) then						
 				if(timer(7 downto 0) = x"FF") then -- if 2^4*256=4kb is written 
 					o_dma_end_event <= '1';
@@ -67,8 +67,8 @@ elsif(rising_edge(i_clk)) then
 		else
 			if(counter <= i_fraccount) then
 				o_cnt(31 downto 0)  <= timer;
-				o_cnt(95 downto 32) <= dma_halffull_cnt;
-				o_cnt(159 downto 96) <= dma_not_halffull_cnt;
+				o_cnt(63 downto 32) <= dma_halffull_cnt;
+				o_cnt(95 downto 64) <= dma_not_halffull_cnt;
 				if (i_dma_halffull = '1') then
 					o_dma_wen <= '0';
 					dma_halffull_cnt <= dma_halffull_cnt + '1';

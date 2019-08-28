@@ -112,7 +112,12 @@ int main(int argc, char *argv[])
 
     ofstream myfile;
     string file_num(argv[1]);
-    filename = "half_memory_content_" + file_num + ".txt";
+    if (atoi(argv[2]) == 1) {
+        filename = "half_memory_content_" + file_num + ".txt";
+    }
+    else {
+        filename = "memory_content_" + file_num + ".txt";
+    }
     myfile.open(filename.c_str());
     if ( !myfile ) {
       cout << "Could not open file " << endl;
@@ -142,28 +147,28 @@ int main(int argc, char *argv[])
     // disable reset
     mu.write_register(RESET_REGISTER_W, 0x0);
 
-    sleep(1);
+    //sleep(1);
 
-    lastWritten = mu.last_written_addr();
-    lastlastWritten = mu.last_written_addr();
+    //lastWritten = mu.last_written_addr();
+    //lastlastWritten = mu.last_written_addr();
 
-    cout << "lastWritten: " << hex << lastWritten << endl;
-    cout << "dma_buf[lastWritten]: " << hex <<  dma_buf[lastWritten] << endl;
-    cout << "counter: " << dma_buf[0] << endl;
-    cout << "halfful: " << dma_buf[1] << endl;
-    cout << "nothalfful: " << dma_buf[2] << endl;
+    //cout << "lastWritten: " << hex << lastWritten << endl;
+    //cout << "dma_buf[lastWritten]: " << hex <<  dma_buf[lastWritten] << endl;
+    //cout << "counter: " << dma_buf[0] << endl;
+    //cout << "halfful: " << dma_buf[1] << endl;
+    //cout << "nothalfful: " << dma_buf[3] << endl;
 
     while(dma_buf[size/sizeof(uint32_t)-8] <= 0){
 
-        sleep(1);
-        lastWritten = mu.last_written_addr();
-        cout << "lastWritten: " << hex << lastWritten << endl;
-        cout << "dma_buf[lastWritten]: " << hex << dma_buf[lastWritten] << endl;
-        cout << "dma_buf[size/sizeof(uint32_t)-8]: " << dma_buf[size/sizeof(uint32_t)-8] << endl;
+       // sleep(1);
+       // lastWritten = mu.last_written_addr();
+       // cout << "lastWritten: " << hex << lastWritten << endl;
+       // cout << "dma_buf[lastWritten]: " << hex << dma_buf[lastWritten] << endl;
+       // cout << "dma_buf[size/sizeof(uint32_t)-8]: " << dma_buf[size/sizeof(uint32_t)-8] << endl;
 
-        cout << "counter: " << dma_buf[8] << endl;
-        cout << "halfful: " << dma_buf[9] << endl;
-        cout << "nothalfful: " << dma_buf[10] << endl;
+       // cout << "counter: " << dma_buf[8] << endl;
+       // cout << "halfful: " << dma_buf[9] << endl;
+       // cout << "nothalfful: " << dma_buf[10] << endl;
 
 //            errno = mu.read_block(block, dma_buf);
 //            if(errno == mudaq::DmaMudaqDevice::READ_SUCCESS){
@@ -179,8 +184,8 @@ int main(int argc, char *argv[])
 //            }
     }
 
-    cout << "noData: " << noData << endl;
-
+    //cout << "noData: " << noData << endl;
+    mu.disable();
     // stop generator
     datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
@@ -191,15 +196,15 @@ int main(int argc, char *argv[])
     reset_reg = SET_RESET_BIT_ALL(reset_reg);
     mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
 
-    mu.disable();
+//    mu.disable();
 
     cout << "write file number: " << file_num << endl;
 
     for (int j = 0 ; j < size/sizeof(uint32_t)/8; j++){ //
         if (j*8 + 8 == size/sizeof(uint32_t)) continue;
         sprintf(dma_buf_str_counter, "%08X", dma_buf[j*8 + 0]);
-        sprintf(dma_buf_str_halfful, "%08X", dma_buf[j*8 + 1]);
-        sprintf(dma_buf_str_not_halfful, "%08X", dma_buf[j*8 + 2]);
+        sprintf(dma_buf_str_halfful, "%08X", dma_buf[j*8 + 1] + dma_buf[j*8 + 2]);
+        sprintf(dma_buf_str_not_halfful, "%08X", dma_buf[j*8 + 3] + dma_buf[j*8 + 4]);
         myfile << j << "\t" << dma_buf_str_counter << "\t" << dma_buf_str_halfful << "\t" << dma_buf_str_not_halfful << endl;
     }
 
