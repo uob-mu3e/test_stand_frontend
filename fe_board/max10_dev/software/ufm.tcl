@@ -23,13 +23,15 @@ proc ::ufm::wait_idle { mm { ms 1 } } {
 proc ::ufm::disable_wp { mm sector } {
     set sector [ expr $sector + 22 ]
     set control [ master_read_32 $mm $::ufm::CONTROL 1 ]
-    master_write_32 $mm $::ufm::CONTROL [ expr $control & ~(1 << $sector) ]
+    set control [ expr $control & ~(1 << $sector) ]
+    master_write_32 $mm $::ufm::CONTROL $control
 }
 
 proc ::ufm::enable_wp { mm sector } {
     set sector [ expr $sector + 22 ]
     set control [ master_read_32 $mm $::ufm::CONTROL 1 ]
-    master_write_32 $mm $::ufm::CONTROL [ expr $control | (1 << $sector) ]
+    set control [ expr $control | (1 << $sector) ]
+    master_write_32 $mm $::ufm::CONTROL $control
 }
 
 proc ::ufm::write { mm addr u32 } {

@@ -13,8 +13,25 @@ mm_claim 0
 
 
 
+proc check { l1 l2 } {
+    if { [ llength $l1 ] != [ llength $l2 ] } {
+        return 0
+    }
+
+    set n [ llength $l1 ]
+    for { set i 0 } { $i < $n } { incr i } {
+        if { [ lindex $l1 $i ] != [ lindex $l2 $i ] } {
+            return 0
+        }
+    }
+
+    return 1
+}
+
 proc write_srec { mm fname } {
     set f [ open $fname r ]
+
+    set bytes [ lrepeat 0x8000 FF ]
 
     while { true } {
         set record [ gets $f ]
@@ -23,21 +40,45 @@ proc write_srec { mm fname } {
         }
 
         set addr 0
-        set bytes [ srec::parse_record $record addr ]
-
-        foreach { a b c d } $bytes {
-            set u32 0x$d$c$b$a
-            if { [ master_read_32 $mm $addr 1 ] != $u32 } {
-                puts [ format "debug: \[0x%08X\] <= 0x%08X" [ expr $addr ] [ expr $u32 ] ]
-                if { $addr < 0x8000 } {
-                    ::ufm::write $mm $addr $u32
-                } \
-                else {
-                    master_write_32 $mm $addr $u32
-                }
-            }
-            set addr [ expr $addr + 4 ]
+        foreach a [ srec::parse_record $record addr ] {
+            lset bytes $addr $a
+            set addr [ expr $addr + 1 ]
         }
+
+    }
+
+    set words [ list ]
+    foreach { a b c d } $bytes {
+        lappend words 0x$d$c$b$a
+    }
+
+    # sector 1
+    puts -nonewline "write sector 1 ... "
+    ::ufm::disable_wp $mm 1
+    master_write_32 $mm 0x0000 [ lrange $words 0x0000 0x0FFF ]
+    ::ufm::enable_wp $mm 1
+    puts DONE
+
+    # sector 2
+    puts -nonewline "write sector 2 ... "
+    ::ufm::disable_wp $mm 2
+    master_write_32 $mm 0x4000 [ lrange $words 0x1000 0x1FFF ]
+    ::ufm::enable_wp $mm 2
+    puts DONE
+
+    puts -nonewline "check sector 1 ... "
+    if { [ check [ lrange $words 0x0000 0x0FFF ] [ master_read_32 $mm 0x0000 0x1000 ] ] } {
+        puts OK
+    } \
+    else {
+        puts FAIL
+    }
+    puts -nonewline "check sector 2 ... "
+    if { [ check [ lrange $words 0x1000 0x1FFF ] [ master_read_32 $mm 0x4000 0x1000 ] ] } {
+        puts OK
+    } \
+    else {
+        puts FAIL
     }
 
     close $f
@@ -47,25 +88,60 @@ proc pgm { mm } {
     set proc_paths [ get_service_paths processor ]
     processor_stop [ lindex $proc_paths 0 ]
 
-#    ::ufm::erase $mm 1
-#    ::ufm::erase $mm 2
-    write_srec $mm "software/app/main.srec"
+    puts -nonewline "erase sector 1 ... "
+    ::ufm::erase $mm 1
+    puts DONE
 
-    processor_reset [ lindex $proc_paths 0 ]
-    processor_run [ lindex $proc_paths 0 ]
+    puts -nonewline "erase sector 2 ... "
+    ::ufm::erase $mm 2
+    puts DONE
+
+    write_srec $mm [ file join $::dir "app/main.srec" ]
+
+#    processor_reset [ lindex $proc_paths 0 ]
+#    processor_run [ lindex $proc_paths 0 ]
 }
 
 proc test_read { mm } {
-    for { set i 0 } { $i < 16 } { incr i } {
-        set addr [ expr 0x00000000 + 4 * $i ]
-        set data [ master_read_32 $mm $addr 1 ]
-        puts [ format "0x%08X" $data ]
+    foreach u32 [ master_read_32 $mm 0x00004000 1024 ] {
+        puts [ format "0x%08X" $u32 ]
     }
 }
 
 proc test_write { mm } {
-    for { set i 0 } { $i < 32 } { incr i } {
-        set addr [ expr 0x00000000 + 4 * $i ]
-        ::ufm::write $mm $addr $i
+    set data [ list ]
+    for { set i 0 } { $i < 1024 } { incr i } {
+        lappend data $i
     }
+    ::ufm::disable_wp $mm 2
+    master_write_32 $mm 0x00004000 $data
+    ::ufm::enable_wp $mm 2
+}
+
+proc test { } {
+    set proc_paths [ get_service_paths processor ]
+    processor_stop [ lindex $proc_paths 0 ]
+
+    set data1 [ list ]
+    for { set i 0x0000 } { $i < 0x1000 } { incr i } {
+        lappend data1 $i
+    }
+    set data2 [ list ]
+    for { set i 0x1000 } { $i < 0x2000 } { incr i } {
+        lappend data2 $i
+    }
+
+    ::ufm::erase $::mm 1
+    ::ufm::erase $::mm 2
+
+    ::ufm::disable_wp $::mm 1
+    master_write_32 $::mm 0x0000 $data1
+    ::ufm::enable_wp $::mm 1
+
+    ::ufm::disable_wp $::mm 2
+    master_write_32 $::mm 0x4000 $data2
+    ::ufm::enable_wp $::mm 2
+
+    puts [ master_read_32 $::mm 0x0000 1024 ]
+    puts [ master_read_32 $::mm 0x4000 1024 ]
 }
