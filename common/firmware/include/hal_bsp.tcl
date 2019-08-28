@@ -1,4 +1,4 @@
-#create_bsp <bspType> <bsp version> <processor name> <sopcinfo>
+#
 
 # flags
 set_setting hal.make.bsp_cflags_debug -g
