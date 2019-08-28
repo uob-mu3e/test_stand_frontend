@@ -61,7 +61,7 @@ for idx in range(200, 256):
     print("rate_half: " + str(float(idx*256 - np.max(halfful_half)/(np.max(halfful_half) + np.max(nothalfful_half)) * idx * 256)))
 
     #rate.append(float(idx*256))
-    rate_half.append(float(idx*256 - np.min(halfful_half)/(np.max(halfful_half) + np.min(nothalfful_half)) * idx * 256))
+    rate_half.append(float(idx*256 - np.max(halfful_half)/(np.max(halfful_half) + np.max(nothalfful_half)) * idx * 256))
 
 #np.save("miss_counts", miss_counts)
 np.save("miss_counts_half", miss_counts_half)

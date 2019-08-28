@@ -11,10 +11,11 @@ black_bar = (128/255, 133/255, 133/255)
 
 miss_counts = np.load("miss_counts.npy")
 miss_counts_half = np.load("miss_counts_half.npy")
-
+miss_counts = miss_counts[-len(miss_counts_half):]
 rate = np.load("rate_total.npy")
+rate = rate[-len(miss_counts_half):]
 rate_half = np.load("rate_half_total.npy")
-
+print(rate)
 x = 0
 for i, j in enumerate(miss_counts_half):
     if j != 0:
