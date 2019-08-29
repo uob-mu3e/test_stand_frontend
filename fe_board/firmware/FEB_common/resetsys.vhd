@@ -12,7 +12,8 @@ PORT (
     clk_free         : in    std_logic; -- independent, free running clock (not required for operation, used for phase measurement between clk_reset_rx and clk_global)
     state_out_156    : out   run_state_t; -- run state in sync to 156 clk
     state_out_125    : out   run_state_t; -- run state in sync to 125 clk
-    reset_in         : in    std_logic; -- hard reset for testing, do not connect this to any "normal" reset
+    reset_in_125     : in    std_logic; -- hard reset for testing, do not connect this to any "normal" reset
+    reset_in_156     : in    std_logic; 
     resets_out       : out   std_logic_vector(15 downto 0); -- 16 bit reset mask, use this together with feb state .. example: nios_reset => (run_state=reset and resets(x)='1')  
     phase_out        : out   std_logic_vector(31 downto 0); -- phase between clk_reset_rx and clk_global
     data_in          : in    std_logic_vector(7 downto 0); -- 8b reset link input
@@ -66,14 +67,14 @@ BEGIN
     PORT MAP (
         d(0)    => terminated,
         q(0)    => terminated_125,
-        rst_n   => not reset_in,
+        rst_n   => not reset_in_125,
         clk     => clk_reset_rx_125
     );
 
     i_state_controller : entity work.state_controller
     PORT MAP (
         clk                     => clk_reset_rx_125,
-        reset                   => reset_in,
+        reset                   => reset_in_125,
         reset_link_8bData       => state_controller_in,
         state_idle              => ustate_idle_rx,
         state_run_prepare       => ustate_run_prepare_rx,
@@ -97,7 +98,7 @@ BEGIN
         clk_global              => clk_global_125,
         clk_rx_reset            => clk_reset_rx_125,
         clk_free                => clk_free,
-        reset                   => reset_in,
+        reset                   => reset_in_125,
         phase                   => phase_out,
         -- states in sync to clk_rx_reset:
         state_idle_rx           => ustate_idle_rx,
@@ -134,7 +135,7 @@ BEGIN
                        ustate_idle_rx,
         i_wclk      => clk_reset_rx_125,
 
-        i_fifo_aclr => reset_in--,
+        i_fifo_aclr => reset_in_156--,
     );
 
     e_fifo_sync2 : entity work.fifo_sync
@@ -146,7 +147,7 @@ BEGIN
         i_rclk      => clk_reset_rx_125,
         i_wdata     => reset_bypass,
         i_wclk      => clk_156,
-        i_fifo_aclr => reset_in--,
+        i_fifo_aclr => reset_in_125--,
     );
 
 

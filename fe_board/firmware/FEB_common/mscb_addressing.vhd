@@ -44,17 +44,19 @@ begin
             proc_state      <= idle;
             send_buffer     <= (others => '1');
             timeout         <= (others => '0');
+            data            <= (others => '1');
+            cmd_buffer      <= (others => '1');
         elsif rising_edge(i_clk) then
             timeout         <= std_logic_vector( unsigned(timeout) + 1 );
             
             case state is
                 when idle =>
                     o_wrreq             <= '0';
-                    cmd_buffer          <= (others => '1');
                     if(timeout = "11111111111111111") then
                         proc_state      <= idle;
                         timeout         <= (others => '0');
                         send_buffer     <= (others => '0');
+                        cmd_buffer      <= (others => '1');
                     end if;
                     
                     if(i_empty = '0') then
@@ -82,6 +84,12 @@ begin
                                 proc_state                  <= addressing1;
                                 cmd_buffer(8 downto 0)      <= data(8 downto 0);
                                 timeout                     <= (others => '0'); -- start timeout counting
+                            elsif ((data(7 downto 0) = MSCB_CMD_ADDR_BC)) then -- Broadcast command
+                                proc_state                  <= addressed;
+                                send_buffer                 <= "100";
+                                o_wrreq                     <= '1';
+                                o_data                      <= data;
+                                timeout                     <= (others => '0');
                             end if;
                             state                           <= idle;
                             
@@ -110,10 +118,9 @@ begin
                                 o_data                      <= cmd_buffer(8 downto 0);-- send MSCB_CMD_ADDR_NODE16
                                 cmd_buffer(8 downto 0)      <= data(8 downto 0);-- this is the CRC
                                 o_wrreq                     <= '1';
-                                state                       <= idle;
+                                -- we do not wait for new commands here for the first time, so we dont do a state <= idle
                                 send_buffer                 <= "001";
                             elsif(send_buffer = "001") then
-                                -- we do not wait for new commands here for the first time, so we dont do a state <= idle
                                 o_data                      <= cmd_buffer(17 downto 9);-- send the first part of address
                                 o_wrreq                     <= '1';
                                 send_buffer                 <= "010";
@@ -132,6 +139,7 @@ begin
                                 -- forward to nios
                                 o_wrreq                     <= '1';
                                 o_data                      <= data;
+                                state                       <= idle;
                                 
                                 -- stay here for some time and forward everthing to nios for now
                                 -- TODO: read length from command and adjust timeout

@@ -60,12 +60,12 @@ constant k30_7 : std_logic_vector(7 downto 0) := X"FE";
 
 
 -- mscb addressing (for networks with 8bit and 16bit addresses, we will use 16 ?)
-constant MSCB_CMD_ADDR_NODE16   : std_logic_vector(7 downto 0) := X"A0";
-constant MSCB_CMD_ADDR_NODE8    : std_logic_vector(7 downto 0) := X"90";
+constant MSCB_CMD_ADDR_NODE16   : std_logic_vector(7 downto 0) := X"0A";
+constant MSCB_CMD_ADDR_NODE8    : std_logic_vector(7 downto 0) := X"09";
 constant MSCB_CMD_ADDR_GRP8     : std_logic_vector(7 downto 0) := X"11"; -- group addressing
-constant MSCB_CMD_ADDR_GRP16    : std_logic_vector(7 downto 0) := X"21";
-constant MSCB_CMD_ADDR_BC       : std_logic_vector(7 downto 0) := X"01"; --broadcast
-constant MSCB_CMD_PING8         : std_logic_vector(7 downto 0) := X"91";
-constant MSCB_CMD_PING16        : std_logic_vector(7 downto 0) := X"A1";
+constant MSCB_CMD_ADDR_GRP16    : std_logic_vector(7 downto 0) := X"12";
+constant MSCB_CMD_ADDR_BC       : std_logic_vector(7 downto 0) := X"10"; --broadcast
+constant MSCB_CMD_PING8         : std_logic_vector(7 downto 0) := X"19";
+constant MSCB_CMD_PING16        : std_logic_vector(7 downto 0) := X"1A";
 
 end package;
