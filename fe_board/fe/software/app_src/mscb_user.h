@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "sys/alt_stdio.h"
 #include <time.h>
 #include <unistd.h>
 #include <sys/alt_timestamp.h>

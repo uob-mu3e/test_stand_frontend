@@ -65,16 +65,14 @@ $(APP_DIR)/main.elf : $(APP_DIR)_src/* $(BSP_DIR)
 	$(MAKE) -C $(APP_DIR) clean
 	$(MAKE) -C $(APP_DIR)
 	nios2-elf-objcopy $(APP_DIR)/main.elf -O srec $(APP_DIR)/main.srec
+	# generate flash image (srec)
+	( cd $(APP_DIR) ; make mem_init_generate ; mv flash.flash main.flash )
 
 .PHONY : app
 app : $(APP_DIR)/main.elf
 
 .PHONY : app_flash
 app_flash :
-	# generate flash image (srec)
-	make -C $(APP_DIR) mem_init_generate
-	mv flash.flash main.flash
-	# flash
 	nios2-flash-programmer -c $(CABLE) --base=0x0 $(APP_DIR)/main.flash
 
 .PHONY : flash

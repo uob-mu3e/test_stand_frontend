@@ -15,7 +15,6 @@ proc ::ufm::wait_idle { mm { ms 1 } } {
         if { ($status & 0x3) == 0 } {
             break
         }
-        puts "debug: \[wait_idle\] status = $status"
         after $ms
     }
 }

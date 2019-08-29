@@ -359,8 +359,8 @@ begin
         mscb_oe                     => o_mscb_oe,
         mscb_counter_in             => mscb_counter_in,
 
-        o_mscb_irq                  => nios_irq (1),
-        i_mscb_address              => x"ACA0",
+        o_mscb_irq                  => nios_irq(1),
+        i_mscb_address              => X"ACA0",
 
         reset                       => not i_nios_reset_n,
         nios_clk                    => i_nios_clk--,
