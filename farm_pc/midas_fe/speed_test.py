@@ -30,16 +30,20 @@ print("Max nothalffull: " + str(np.max(nothalfful)))
 
 cnt = counter[0]
 wrong_count = 0
+list_of_data_loss = []
 tmp_idx_wrong_count = 0
 for idx, value in enumerate(counter):
     if (int(counter[idx-1]) < int(value)):
         cnt = value
     if(int(cnt) != int(value)):
-        print(counter[idx-1] - counter[idx])
-        print(idx - tmp_idx_wrong_count)
+        print(counter[idx-1])
+        print(counter[idx])
+        list_of_data_loss.append(counter[idx-1] - counter[idx] + 1) # counting from 0
         tmp_idx_wrong_count = idx
         wrong_count += 1
     cnt += 1
+print("Total amount of data loss: " + str(np.sum(list_of_data_loss[1:]) * 256))
+
 print("Number wrong counts: " + str(wrong_count))
 if (str(sys.argv[2]) == str(1)):
     print("rate_half: " + str(float(int(sys.argv[1]) * 256 - np.max(halfful)/(np.max(halfful) + np.max(nothalfful)) * int(sys.argv[1]) * 256)))
