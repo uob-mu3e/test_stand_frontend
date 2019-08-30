@@ -3,13 +3,23 @@
 # date : 2019-08-26
 #
 
-source [ file join [ file dirname [ info script ] ] "mm.tcl" ]
-source [ file join [ file dirname [ info script ] ] "ufm.tcl" ]
-source [ file join [ file dirname [ info script ] ] "srec.tcl" ]
+set dir0 [ file dirname [ info script ] ]
+source [ file join $dir0 "mm.tcl" ]
+source [ file join $dir0 "ufm.tcl" ]
+source [ file join $dir0 "srec.tcl" ]
 
 
+
+set proc_paths [ get_service_paths processor ]
+processor_stop [ lindex $proc_paths 0 ]
+processor_reset [ lindex $proc_paths 0 ]
 
 mm_claim 0
+
+proc pgm {} {
+    pgm_srec $::mm [ file join $::dir0 "app/main.srec" ]
+    processor_run [ lindex $::proc_paths 0 ]
+}
 
 
 
@@ -28,7 +38,7 @@ proc check { l1 l2 } {
     return 1
 }
 
-proc write_srec { mm fname } {
+proc pgm_srec { mm fname } {
     set f [ open $fname r ]
 
     set bytes [ lrepeat 0x8000 FF ]
@@ -44,13 +54,22 @@ proc write_srec { mm fname } {
             lset bytes $addr $a
             set addr [ expr $addr + 1 ]
         }
-
     }
+
+    close $f
 
     set words [ list ]
     foreach { a b c d } $bytes {
         lappend words 0x$d$c$b$a
     }
+
+    puts -nonewline "erase sector 1 ... "
+    ::ufm::erase $mm 1
+    puts DONE
+
+    puts -nonewline "erase sector 2 ... "
+    ::ufm::erase $mm 2
+    puts DONE
 
     # sector 1
     puts -nonewline "write sector 1 ... "
@@ -80,48 +99,9 @@ proc write_srec { mm fname } {
     else {
         puts FAIL
     }
-
-    close $f
 }
 
-proc pgm { mm } {
-    set proc_paths [ get_service_paths processor ]
-    processor_stop [ lindex $proc_paths 0 ]
-
-    puts -nonewline "erase sector 1 ... "
-    ::ufm::erase $mm 1
-    puts DONE
-
-    puts -nonewline "erase sector 2 ... "
-    ::ufm::erase $mm 2
-    puts DONE
-
-    write_srec $mm [ file join $::dir "app/main.srec" ]
-
-#    processor_reset [ lindex $proc_paths 0 ]
-#    processor_run [ lindex $proc_paths 0 ]
-}
-
-proc test_read { mm } {
-    foreach u32 [ master_read_32 $mm 0x00004000 1024 ] {
-        puts [ format "0x%08X" $u32 ]
-    }
-}
-
-proc test_write { mm } {
-    set data [ list ]
-    for { set i 0 } { $i < 1024 } { incr i } {
-        lappend data $i
-    }
-    ::ufm::disable_wp $mm 2
-    master_write_32 $mm 0x00004000 $data
-    ::ufm::enable_wp $mm 2
-}
-
-proc test { } {
-    set proc_paths [ get_service_paths processor ]
-    processor_stop [ lindex $proc_paths 0 ]
-
+proc test { mm } {
     set data1 [ list ]
     for { set i 0x0000 } { $i < 0x1000 } { incr i } {
         lappend data1 $i
@@ -131,17 +111,17 @@ proc test { } {
         lappend data2 $i
     }
 
-    ::ufm::erase $::mm 1
-    ::ufm::erase $::mm 2
+    ::ufm::erase $mm 1
+    ::ufm::erase $mm 2
 
-    ::ufm::disable_wp $::mm 1
-    master_write_32 $::mm 0x0000 $data1
-    ::ufm::enable_wp $::mm 1
+    ::ufm::disable_wp $mm 1
+    master_write_32 $mm 0x0000 $data1
+    ::ufm::enable_wp $mm 1
 
-    ::ufm::disable_wp $::mm 2
-    master_write_32 $::mm 0x4000 $data2
-    ::ufm::enable_wp $::mm 2
+    ::ufm::disable_wp $mm 2
+    master_write_32 $mm 0x4000 $data2
+    ::ufm::enable_wp $mm 2
 
-    puts [ master_read_32 $::mm 0x0000 1024 ]
-    puts [ master_read_32 $::mm 0x4000 1024 ]
+    puts [ master_read_32 $mm 0x0000 1024 ]
+    puts [ master_read_32 $mm 0x4000 1024 ]
 }

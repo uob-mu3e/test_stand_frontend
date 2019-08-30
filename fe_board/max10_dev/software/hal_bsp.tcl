@@ -1,10 +1,14 @@
 #
 
-source "software/include/hal_bsp.tcl"
+set dir0 [ file dirname $argv0 ]
+source [ file join $dir0 "include/hal_bsp.tcl" ]
 
-# sections
-foreach { name slave offset span } [ get_memory_region flash_data ] {
-    set span [ expr 0x8000 - $offset ]
-    delete_memory_region flash_data
-    add_memory_region flash $slave $offset $span
+if { 0 } {
+    update_section_mapping .text flash_data
+
+    set_setting hal.linker.allow_code_at_reset true
+    set_setting hal.linker.enable_alt_load true
+    set_setting hal.linker.enable_alt_load_copy_rodata true
+    set_setting hal.linker.enable_alt_load_copy_rwdata true
+    set_setting hal.linker.enable_alt_load_copy_exceptions true
 }
