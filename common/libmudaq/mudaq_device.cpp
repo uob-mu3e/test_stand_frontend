@@ -679,7 +679,8 @@ int DmaMudaqDevice::enable_continous_readout(int interTrue)
 
 void DmaMudaqDevice::disable()
 {
-   write_register_wait(DMA_REGISTER_W, UNSET_DMA_BIT_ENABLE(0x0), 100);
+   //write_register_wait(DMA_REGISTER_W, UNSET_DMA_BIT_ENABLE(0x0), 100);
+   write_register(DMA_REGISTER_W, UNSET_DMA_BIT_ENABLE(0x0));
 }
 
 

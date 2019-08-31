@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
     uint32_t datagen_setup = 0;
     mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
     datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+    //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
 
     // reset all

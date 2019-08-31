@@ -7,13 +7,13 @@ entity ip_ram is
            wren : in  STD_LOGIC;
            wraddress   : in  STD_LOGIC_VECTOR (7 downto 0);
            rdaddress   : in  STD_LOGIC_VECTOR (7 downto 0);
-           data   : in  STD_LOGIC_VECTOR (31 downto 0);
-           q  : out STD_LOGIC_VECTOR (31 downto 0)
+           data   : in  STD_LOGIC_VECTOR (95 downto 0);
+           q  : out STD_LOGIC_VECTOR (95 downto 0)
          );
 end ip_ram;
 
 architecture BlockRAM of ip_ram is
-type speicher is array(0 to (2**12)-1) of STD_LOGIC_VECTOR(31 downto 0);
+type speicher is array(0 to (2**12)-1) of STD_LOGIC_VECTOR(95 downto 0);
 signal memory : speicher;
 signal last_read_add :  STD_LOGIC_VECTOR (7 downto 0);
 begin
