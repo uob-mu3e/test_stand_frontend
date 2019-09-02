@@ -13,7 +13,7 @@ Contents:       Definition of fumctions in namespace mudaq::mutrig
 #include "midas.h"
 #include "mfe.h" //for set_equipment_status
 
-#include "mudaq_device.h"
+#include "mudaq_device_scifi.h"
 #include "mutrig_config.h"
 #include "mutrig_midasodb.h"
 #include <thread>

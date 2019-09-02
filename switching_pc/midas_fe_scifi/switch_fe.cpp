@@ -50,7 +50,7 @@
 #include "midas.h"
 #include "mfe.h"
 
-#include "mudaq_device.h"
+#include "mudaq_device_scifi.h"
 
 //Slow control for mutrig/scifi
 #include "mutrig_midasodb.h"
