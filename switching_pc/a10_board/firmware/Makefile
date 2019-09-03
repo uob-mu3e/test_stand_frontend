@@ -1,5 +1,5 @@
 
-CABLE=1
+CABLE=DE5
 SOF=output_files/top.sof
 
 BSP_DIR=software/hal_bsp

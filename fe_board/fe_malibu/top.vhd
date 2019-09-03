@@ -24,7 +24,7 @@ port (
 
 
 
-    -- SI45
+    -- SI5345
 
     si45_oe_n       : out   std_logic; -- <= '0'
     si45_rst_n      : out   std_logic; -- reset
@@ -92,12 +92,13 @@ end entity;
 
 architecture arch of top is
 
-    signal malibu_clk : std_logic;
+    signal fifo_rempty : std_logic;
+    signal fifo_rack : std_logic;
+    signal fifo_rdata : std_logic_vector(35 downto 0);
 
-    signal fifo_data : std_logic_vector(35 downto 0);
-    signal fifo_empty, fifo_rack : std_logic;
-
-    signal avm : work.util.avalon_t;
+    signal sc_reg : work.util.rw_t;
+    signal malibu_reg : work.util.rw_t;
+    signal scifi_reg : work.util.rw_t;
 
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
@@ -115,6 +116,36 @@ architecture arch of top is
 
 begin
 
+    -- malibu regs : 0x40-0x4F
+    malibu_reg.addr <= sc_reg.addr;
+    malibu_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
+    malibu_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
+    malibu_reg.wdata <= sc_reg.wdata;
+
+    -- scifi regs : 0x60-0x6F
+    scifi_reg.addr <= sc_reg.addr;
+    scifi_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
+    scifi_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
+    scifi_reg.wdata <= sc_reg.wdata;
+
+    -- select valid rdata
+    sc_reg.rdata <=
+        malibu_reg.rdata when ( malibu_reg.rvalid = '1' ) else
+        scifi_reg.rdata when ( scifi_reg.rvalid = '1' ) else
+        X"CCCCCCCC";
+
+    process(qsfp_pll_clk)
+    begin
+    if rising_edge(qsfp_pll_clk) then
+--        malibu_reg.rdata <= X"CCCCCCCC";
+        malibu_reg.rvalid <= malibu_reg.re;
+        scifi_reg.rdata <= X"CCCCCCCC";
+        scifi_reg.rvalid <= scifi_reg.re;
+    end if;
+    end process;
+
+
+
     ----------------------------------------------------------------------------
     -- MALIBU
 
@@ -126,24 +157,23 @@ begin
         N_g => 1--,
     )
     port map (
-        i_avs_address       => avm.address(3 downto 0),
-        i_avs_read          => avm.read,
-        o_avs_readdata      => avm.readdata,
-        i_avs_write         => avm.write,
-        i_avs_writedata     => avm.writedata,
-        o_avs_waitrequest   => avm.waitrequest,
+        i_reg_addr      => malibu_reg.addr(3 downto 0),
+        i_reg_re        => malibu_reg.re,
+        o_reg_rdata     => malibu_reg.rdata,
+        i_reg_we        => malibu_reg.we,
+        i_reg_wdata     => malibu_reg.wdata,
 
-        o_ck_fpga_0         => malibu_ck_fpga_0,
-        o_chip_reset        => malibu_chip_reset,
-        o_pll_test          => malibu_pll_test,
-        i_data              => malibu_data(0 downto 0),
+        o_ck_fpga_0     => malibu_ck_fpga_0,
+        o_chip_reset    => malibu_chip_reset,
+        o_pll_test      => malibu_pll_test,
+        i_data          => malibu_data(0 downto 0),
 
-        o_fifo_data         => fifo_data,
-        o_fifo_empty        => fifo_empty,
-        i_fifo_rack         => fifo_rack,
+        o_fifo_rempty   => fifo_rempty,
+        i_fifo_rack     => fifo_rack,
+        o_fifo_rdata    => fifo_rdata,
 
-        i_reset             => not reset_n,
-        i_clk               => qsfp_pll_clk--,
+        i_reset         => not reset_n,
+        i_clk           => qsfp_pll_clk--,
     );
 
     ----------------------------------------------------------------------------
@@ -152,29 +182,32 @@ begin
 
     led_n <= not led;
 
+    -- enable SI5345
     si45_oe_n <= '0';
     si45_rst_n <= '1';
 
+    -- enable QSFP
     QSFP_ModSel_n <= '1';
     QSFP_Rst_n <= '1';
     QSFP_LPM <= '0';
 
+    -- enable PID
     pod_tx_reset_n <= '1';
     pod_rx_reset_n <= '1';
 
 
 
-    -- 125 MHz
+    -- 125 MHz -> 1 Hz
     e_clk_aux_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( clkout => led(15), rst_n => reset_n, clk => clk_aux );
 
-    -- 156.25 MHz
+    -- 156.25 MHz -> 1 Hz
     e_clk_qsfp_hz : entity work.clkdiv
     generic map ( P => 156250000 )
     port map ( clkout => led(14), rst_n => reset_n, clk => qsfp_pll_clk );
 
-    -- 125 MHz
+    -- 125 MHz -> 1 Hz
     e_clk_pod_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( clkout => led(13), rst_n => reset_n, clk => pod_pll_clk );
@@ -248,25 +281,19 @@ begin
         o_qsfp_tx       => qsfp_tx,
         i_qsfp_refclk   => qsfp_pll_clk,
 
-        i_fifo_data     => fifo_data,
-        i_fifo_empty    => fifo_empty,
+        i_fifo_rempty   => fifo_rempty,
         o_fifo_rack     => fifo_rack,
+        i_fifo_rdata    => fifo_rdata,
 
         i_pod_rx        => pod_rx,
         o_pod_tx        => pod_tx,
         i_pod_refclk    => pod_pll_clk,
 
-        o_avm_address       => avm.address(13 downto 0),
-        o_avm_read          => avm.read,
-        i_avm_readdata      => avm.readdata,
-        o_avm_write         => avm.write,
-        o_avm_writedata     => avm.writedata,
-        i_avm_waitrequest   => avm.waitrequest,
-
-        i_sc_ram_address    => (others => '0'),
-        o_sc_ram_rdata      => open,
-        i_sc_ram_wdata      => (others => '0'),
-        i_sc_ram_we         => '0',
+        o_sc_reg_addr   => sc_reg.addr(7 downto 0),
+        o_sc_reg_re     => sc_reg.re,
+        i_sc_reg_rdata  => sc_reg.rdata,
+        o_sc_reg_we     => sc_reg.we,
+        o_sc_reg_wdata  => sc_reg.wdata,
 
         i_reset_n       => qsfp_reset_n,
         i_clk           => qsfp_pll_clk--,

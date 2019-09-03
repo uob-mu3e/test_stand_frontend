@@ -2,10 +2,35 @@
 # author : Alexandr Kozlinskiy
 #
 
-# clock
-add_instance clk clock_source
-set_instance_parameter_value clk {clockFrequency} $nios_freq
-set_instance_parameter_value clk {resetSynchronousEdges} {DEASSERT}
+proc nios_base.add_clock_source { name clockFrequency args } {
+    set clock_export ${name}
+    set reset_export ${name}_reset
+    for { set i 0 } { $i < [ llength $args ] } { incr i } {
+        switch -- [ lindex $args $i ] {
+            -clock_export { incr i
+                set clock_export [ lindex $args $i ]
+            }
+            -reset_export { incr i
+                set reset_export [ lindex $args $i ]
+            }
+            default {
+                send_message "Error" "\[nios_base.add_clock_source\] invalid argument '[ lindex $args $i ]'"
+            }
+        }
+    }
+
+    add_instance ${name} clock_source
+
+    set_instance_parameter_value ${name} {clockFrequency} ${clockFrequency}
+    set_instance_parameter_value ${name} {resetSynchronousEdges} {DEASSERT}
+
+    add_interface ${clock_export} clock sink
+    set_interface_property ${clock_export} EXPORT_OF ${name}.clk_in
+    add_interface ${reset_export} reset sink
+    set_interface_property ${reset_export} EXPORT_OF ${name}.clk_in_reset
+}
+
+nios_base.add_clock_source clk $nios_freq -reset_export rst
 
 # cpu
 add_instance cpu altera_nios2_gen2
@@ -19,18 +44,13 @@ add_instance ram altera_avalon_onchip_memory2
 set_instance_parameter_value ram {memorySize} {0x00010000}
 set_instance_parameter_value ram {initMemContent} {0}
 
-# jtag master
-add_instance jtag_master altera_jtag_avalon_master
-
 
 
 add_connection clk.clk cpu.clk
 add_connection clk.clk ram.clk1
-add_connection clk.clk jtag_master.clk
 
 add_connection clk.clk_reset cpu.reset
 add_connection clk.clk_reset ram.reset1
-add_connection clk.clk_reset jtag_master.clk_reset
 
 add_connection                 cpu.data_master ram.s1
 set_connection_parameter_value cpu.data_master/ram.s1                      baseAddress {0x10000000}
@@ -43,18 +63,8 @@ set_connection_parameter_value cpu.instruction_master/cpu.debug_mem_slave  baseA
 
 
 
-add_connection jtag_master.master ram.s1
-add_connection jtag_master.master cpu.debug_mem_slave
 add_connection cpu.debug_reset_request cpu.reset
 add_connection cpu.debug_reset_request ram.reset1
-
-
-
-# exported interfaces
-add_interface clk clock sink
-set_interface_property clk EXPORT_OF clk.clk_in
-add_interface rst reset sink
-set_interface_property rst EXPORT_OF clk.clk_in_reset
 
 
 
@@ -131,11 +141,19 @@ if 1 {
 #package require cmdline
 
 proc nios_base.export_avm { name addressWidth baseAddress args } {
+    set cpu cpu
+    set clk clk
     set dataWidth 32
-    set addressUnits 8
+    set addressUnits 32
     set readLatency 0
     for { set i 0 } { $i < [ llength $args ] } { incr i } {
         switch -- [ lindex $args $i ] {
+            -cpu { incr i
+                set cpu [ lindex $args $i ]
+            }
+            -clk { incr i
+                set clk [ lindex $args $i ]
+            }
             -dataWidth { incr i
                 set dataWidth [ lindex $args $i ]
             }
@@ -162,12 +180,48 @@ proc nios_base.export_avm { name addressWidth baseAddress args } {
         set_instance_parameter_value ${name} {USE_READ_DATA_VALID} true
     }
 
-    add_connection clk.clk       ${name}.clk
-    add_connection clk.clk_reset ${name}.reset
+    add_connection ${clk}.clk       ${name}.clk
+    add_connection ${clk}.clk_reset ${name}.reset
 
-    add_connection                 cpu.data_master ${name}.slave
-    set_connection_parameter_value cpu.data_master/${name}.slave baseAddress ${baseAddress}
+    add_connection                 ${cpu}.data_master ${name}.slave
+    set_connection_parameter_value ${cpu}.data_master/${name}.slave baseAddress ${baseAddress}
 
     add_interface ${name} avalon master
     set_interface_property ${name} EXPORT_OF ${name}.master
+}
+
+proc nios_base.add_irq_bridge { name width args } {
+    set cpu cpu
+    set clk clk
+    for { set i 0 } { $i < [ llength $args ] } { incr i } {
+        switch -- [ lindex $args $i ] {
+            -cpu { incr i
+                set cpu [ lindex $args $i ]
+            }
+            -clk { incr i
+                set clk [ lindex $args $i ]
+            }
+            default {
+                send_message "Error" "\[nios_base.add_irq_bridge\] invalid argument '[ lindex $args $i ]'"
+            }
+        }
+    }
+
+    add_instance ${name} altera_irq_bridge
+
+    # signal width
+    set_instance_parameter_value ${name} {IRQ_WIDTH} ${width}
+    # signal polarity
+    set_instance_parameter_value ${name} {IRQ_N} {0}
+
+    for { set i 0 } { $i < $width } { incr i } {
+        add_connection                 ${cpu}.irq ${name}.sender${i}_irq
+        set_connection_parameter_value ${cpu}.irq/${name}.sender${i}_irq irqNumber [ expr 16 + $i ]
+    }
+
+    add_connection ${clk}.clk ${name}.clk
+    add_connection ${clk}.clk_reset ${name}.clk_reset
+
+    add_interface ${name} interrupt receiver
+    set_interface_property ${name} EXPORT_OF ${name}.receiver_irq
 }
