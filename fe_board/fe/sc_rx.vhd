@@ -191,15 +191,15 @@ begin
         DATA_WIDTH => 36--,
     )
     port map (
-        full            => o_fifo_wfull,
-        almost_full     => open,
-        wrreq           => fifo_we,
-        data            => fifo_wdata,
-
         empty           => o_fifo_rempty,
         almost_empty    => open,
         rdreq           => i_fifo_rack,
         q               => o_fifo_rdata,
+
+        full            => o_fifo_wfull,
+        almost_full     => open,
+        wrreq           => fifo_we,
+        data            => fifo_wdata,
 
         usedw           => open,
 

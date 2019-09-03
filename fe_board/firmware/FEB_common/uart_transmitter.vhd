@@ -24,18 +24,8 @@ port(
 );
 end entity;
 
-architecture rtl of uart_transmitter is
 
-    component counter_mscb is
-    port (
-        Clk         : in    std_logic;
-        Reset       : in    std_logic; -- here asynchronous reset
-        Enable      : in    std_logic; -- enable
-        CountDown   : in    std_logic; -- down when 1, else up
-        CounterOut  : out   unsigned(31 downto 0);
-        Init        : in    unsigned(31 downto 0)
-    );
-    end component;
+architecture rtl of uart_transmitter is
 
     signal Reset_Counter : std_logic;
     signal CounterOut : unsigned(31 downto 0);
@@ -52,7 +42,7 @@ architecture rtl of uart_transmitter is
 begin
 
     -- wire up components
-    counter_i : counter_mscb
+    counter_i : entity work.counter_async
     port map (
         Clk         => Clk,
         Reset       => Reset_Counter,

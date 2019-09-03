@@ -44,18 +44,13 @@ add_instance ram altera_avalon_onchip_memory2
 set_instance_parameter_value ram {memorySize} {0x00010000}
 set_instance_parameter_value ram {initMemContent} {0}
 
-# jtag master
-add_instance jtag_master altera_jtag_avalon_master
-
 
 
 add_connection clk.clk cpu.clk
 add_connection clk.clk ram.clk1
-add_connection clk.clk jtag_master.clk
 
 add_connection clk.clk_reset cpu.reset
 add_connection clk.clk_reset ram.reset1
-add_connection clk.clk_reset jtag_master.clk_reset
 
 add_connection                 cpu.data_master ram.s1
 set_connection_parameter_value cpu.data_master/ram.s1                      baseAddress {0x10000000}
@@ -68,8 +63,6 @@ set_connection_parameter_value cpu.instruction_master/cpu.debug_mem_slave  baseA
 
 
 
-add_connection jtag_master.master ram.s1
-add_connection jtag_master.master cpu.debug_mem_slave
 add_connection cpu.debug_reset_request cpu.reset
 add_connection cpu.debug_reset_request ram.reset1
 
