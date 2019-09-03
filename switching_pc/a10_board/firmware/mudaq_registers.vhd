@@ -22,6 +22,7 @@ package mudaq_registers is
 		constant RESET_BIT_PCIE_APPl							:  integer := 12;
 		constant RESET_BIT_EVENT_COUNTER						:  integer := 13;
 		constant RESET_BIT_DMA_EVAL							:  integer := 14;
+		constant RESET_BIT_LINK_TEST							:  integer := 15;
 		constant RESET_BIT_PCIE									:  integer := 31;
 
 		constant DATAGENERATOR_REGISTER_W					: integer := 16#02#;
