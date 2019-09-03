@@ -62,6 +62,7 @@ port (
 	 --      ///////// TEMP /////////
     TEMP_I2C_SCL    :   out     std_logic;
     TEMP_I2C_SDA    :   inout   std_logic;
+
     SW : in std_logic_vector(1 downto 0);
 	 
 	 --clkin_50_top	: in std_logic;--					2.5V, default 50MHz
@@ -80,6 +81,7 @@ port (
 	 QSFPA_RST_n         : out   std_logic;
     
     
+	
 	 --///////// PCIE /////////
     PCIE_PERST_n			:	in	std_logic;
     PCIE_REFCLK_p			:	in	std_logic;
@@ -196,7 +198,7 @@ architecture rtl of top is
 		signal cpu_pio_i : std_logic_vector(31 downto 0);
 		signal flash_rst_n : std_logic;
 		signal debug_nios : std_logic_vector(31 downto 0);
-		signal avm_qsfp : work.util.avalon_t;
+		signal av_qsfp : work.util.avalon_t;
 		
 		-- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
 		signal ZERO : std_logic := '0';
@@ -317,18 +319,18 @@ port map (
 
 ------------- NIOS -------------
 
-nios2 : nios
+nios2 : work.cmp.nios
 port map (
 	clk_clk                    			=> input_clk,
 	
 	rst_reset_n                			=> cpu_reset_n_q,
 
-   avm_qsfp_address       					=> avm_qsfp.address(15 downto 0),
-	avm_qsfp_read          					=> avm_qsfp.read,
-	avm_qsfp_readdata      					=> avm_qsfp.readdata,
-	avm_qsfp_write         					=> avm_qsfp.write,
-	avm_qsfp_writedata     					=> avm_qsfp.writedata,
-	avm_qsfp_waitrequest   					=> avm_qsfp.waitrequest,
+   avm_qsfp_address       					=> av_qsfp.address(13 downto 0),
+	avm_qsfp_read          					=> av_qsfp.read,
+	avm_qsfp_readdata      					=> av_qsfp.readdata,
+	avm_qsfp_write         					=> av_qsfp.write,
+	avm_qsfp_writedata     					=> av_qsfp.writedata,
+	avm_qsfp_waitrequest   					=> av_qsfp.waitrequest,
 
 	flash_tcm_address_out				 	=> flash_tcm_address_out,
 	flash_tcm_data_out 						=> FLASH_D,
@@ -362,7 +364,7 @@ generic map (
 port map (
 		rstout_n(1) => flash_rst_n,
 		rstout_n(0) => cpu_reset_n_q,
-		rst_n 		=> CPU_RESET_n and wd_rst_n,
+		rst_n 		=> CPU_RESET_n,-- and wd_rst_n,
 		clk 			=> input_clk--,
 );
 
@@ -381,9 +383,9 @@ port map (
 );
 
 LED(0) <= cpu_pio_i(7);
-LED(1) <= cpu_reset_n_q;
-LED(2) <= flash_rst_n;
-LED(3) <= '1';
+LED(1) <= not cpu_reset_n_q;
+LED(2) <= not flash_rst_n;
+LED(3) <= '0';
 
 FLASH_A <= flash_tcm_address_out(27 downto 2);
 
@@ -432,12 +434,12 @@ port map (
     i_pll_clk   => input_clk,
     i_cdr_clk   => input_clk,
 
-    i_avs_address     => avm_qsfp.address(15 downto 2),
-    i_avs_read        => avm_qsfp.read,
-    o_avs_readdata    => avm_qsfp.readdata,
-    i_avs_write       => avm_qsfp.write,
-    i_avs_writedata   => avm_qsfp.writedata,
-    o_avs_waitrequest => avm_qsfp.waitrequest,
+    i_avs_address     => av_qsfp.address(13 downto 0),
+    i_avs_read        => av_qsfp.read,
+    o_avs_readdata    => av_qsfp.readdata,
+    i_avs_write       => av_qsfp.write,
+    i_avs_writedata   => av_qsfp.writedata,
+    o_avs_waitrequest => av_qsfp.waitrequest,
 
     i_reset     => not CPU_RESET_n,
     i_clk       => input_clk--,

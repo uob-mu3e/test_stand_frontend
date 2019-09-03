@@ -5,12 +5,16 @@ set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 set_global_assignment -name PROJECT_IP_REGENERATION_POLICY SKIP_REGENERATING_IP_IF_HDL_MODIFIED
 
 
+
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 
 
 set_global_assignment -name TOP_LEVEL_ENTITY top
 
 
+
+set_global_assignment -name VHDL_FILE ../fe/fe_block.vhd
+set_global_assignment -name VHDL_FILE malibu_block.vhd
 
 
 
@@ -27,8 +31,6 @@ set_global_assignment -name QIP_FILE ../fe/top.qip
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../fe/assignments/FE_malibu.tcl
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
-set_global_assignment -name VHDL_FILE fe_block.vhd
-set_global_assignment -name VHDL_FILE malibu_block.vhd
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
 set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
