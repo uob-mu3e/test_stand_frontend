@@ -39,8 +39,10 @@ architecture behav of link_test_tb is
 		reset_n:           in std_logic;
 		rx_data:           in std_logic_vector (31 downto 0);
 		rx_datak:          in std_logic_vector (3 downto 0);
-		error_counts:      out std_logic_vector (31 downto 0);
-		bit_counts:        out std_logic_vector (31 downto 0);
+		error_counts_low:      out std_logic_vector (31 downto 0);
+		error_counts_high:      out std_logic_vector (31 downto 0);
+		bit_counts_low:        out std_logic_vector (31 downto 0);
+		bit_counts_high:        out std_logic_vector (31 downto 0);
 		state_out:         out std_logic_vector(3 downto 0)--;
 	);
 	end component link_observer;
@@ -50,8 +52,10 @@ architecture behav of link_test_tb is
   	signal enable 		: std_logic := '0';
   	signal rx_data 		: std_logic_vector(31 downto 0);
   	signal rx_datak 	: std_logic_vector(3 downto 0);
-  	signal error_counts : std_logic_vector(31 downto 0);
-  	signal bit_counts 	: std_logic_vector(31 downto 0);
+  	signal error_counts_low : std_logic_vector(31 downto 0);
+  	signal error_counts_high : std_logic_vector(31 downto 0);
+  	signal bit_counts_low 	: std_logic_vector(31 downto 0);
+  	signal bit_counts_high 	: std_logic_vector(31 downto 0);
 
   	constant ckTime: 		time	:= 10 ns;
 
@@ -107,8 +111,10 @@ begin
 		reset_n     	=> reset_n,
 		rx_data     	=> rx_data,
 		rx_datak     	=> rx_datak,
-		error_counts    => error_counts,
-		bit_counts     	=> bit_counts,
+		error_counts_low    => error_counts_low,
+		error_counts_high    => error_counts_high,
+		bit_counts_low     	=> bit_counts_low,
+		bit_counts_high     	=> bit_counts_high,
 		state_out     	=> open--,
 	);
 

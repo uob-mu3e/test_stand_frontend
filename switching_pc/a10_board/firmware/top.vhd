@@ -497,7 +497,7 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 --		
 --	fifo : transceiver_fifo
 --		port map (
---			data    => rx_data(i) & rx_datak(i), --fifo_data_in_ch0 & fifo_datak_in_ch0,
+--			data    => (i) & rx_datak(i), --fifo_data_in_ch0 & fifo_datak_in_ch0,
 --			wrreq   => not idle_ch(i),
 --			rdreq   => not fifo_empty(i),
 --			wrclk   => tx_clk(0),--rx_clk(i),
@@ -678,6 +678,24 @@ slave : sc_slave
 tx_data(0) <= mem_data_out(31 downto 0);
 tx_datak(0) <= mem_datak_out(3 downto 0);
 
+------------- Link Test -------------
+e_link_observer : entity work.link_observer
+generic map(
+	g_m 	=> 32,
+	g_poly 	=> "10000000001000000000000000000110"
+)
+ port map (
+	clk     				=> tx_clk(0),
+	reset_n     		=> reset_n,
+	rx_data     		=> rx_data(1),
+	rx_datak    		=> rx_datak(1),
+	error_counts_low  => readregs_slow(ERROR_LINK_TEST_LOW_REGISTER_R),
+	error_counts_high => readregs_slow(ERROR_LINK_TEST_HIGH_REGISTER_R),
+	bit_counts_low    => readregs_slow(BIT_LINK_TEST_LOW_REGISTER_R),
+	bit_counts_high   => readregs_slow(),
+	state_out     		=> open--,
+);
+
 ------------- PCIe -------------
 
 resetlogic : entity work.reset_logic
@@ -705,8 +723,12 @@ begin
 		clk_last <= clk_sync;
 		
 		if(clk_sync = '1' and clk_last = '0') then
-			readregs(PLL_REGISTER_R) 					<= readregs_slow(PLL_REGISTER_R);
-			readregs(VERSION_REGISTER_R) 				<= readregs_slow(VERSION_REGISTER_R);
+			readregs(PLL_REGISTER_R) 						<= readregs_slow(PLL_REGISTER_R);
+			readregs(VERSION_REGISTER_R) 					<= readregs_slow(VERSION_REGISTER_R);
+			readregs(ERROR_LINK_TEST_LOW_REGISTER_R)	<= readregs_slow(ERROR_LINK_TEST_LOW_REGISTER_R);
+			readregs(ERROR_LINK_TEST_HIGH_REGISTER_R)	<= readregs_slow(ERROR_LINK_TEST_HIGH_REGISTER_R);
+			readregs(BIT_LINK_TEST_LOW_REGISTER_R)		<= readregs_slow(BIT_LINK_TEST_LOW_REGISTER_R);
+			readregs(BIT_LINK_TEST_HIGH_REGISTER_R)	<= readregs_slow(BIT_LINK_TEST_HIGH_REGISTER_R);
 		end if;
 		
 		readregs(EVENTCOUNTER_REGISTER_R)			<= event_counter;

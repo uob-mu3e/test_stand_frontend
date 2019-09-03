@@ -17,8 +17,10 @@ entity link_observer is
 		reset_n:           in std_logic;
 		rx_data:           in std_logic_vector (g_m - 1 downto 0);
 		rx_datak:          in std_logic_vector (3 downto 0);
-		error_counts:      out std_logic_vector (31 downto 0);
-		bit_counts:        out std_logic_vector (31 downto 0);
+		error_counts_low:      out std_logic_vector (31 downto 0);
+		error_counts_high:      out std_logic_vector (31 downto 0);
+		bit_counts_low:        out std_logic_vector (31 downto 0);
+		bit_counts_high:        out std_logic_vector (31 downto 0);
 		state_out:         out std_logic_vector(3 downto 0)--;
 );
 end entity link_observer;
@@ -41,8 +43,8 @@ architecture rtl of link_observer is
     );
 	end component linear_shift;
 	
-	signal error_counter : std_logic_vector(31 downto 0);
-	signal bit_counter   : std_logic_vector(31 downto 0);
+	signal error_counter : std_logic_vector(63 downto 0);
+	signal bit_counter   : std_logic_vector(63 downto 0);
 
 	signal tmp_rx_data   : std_logic_vector(g_m - 1 downto 0);
 	signal next_rx_data  : std_logic_vector(g_m - 1 downto 0);
@@ -51,8 +53,10 @@ architecture rtl of link_observer is
 
 begin
 
-	error_counts 	<=	error_counter;
-	bit_counts 		<=	bit_counter;
+	error_counts_low 	<=	error_counter(31 downto 0);
+	error_counts_high 	<=	error_counter(63 downto 32);
+	bit_counts_low 		<=	bit_counter(31 downto 0);
+	bit_counts_high 		<=	bit_counter(63 downto 32);
 
 	e_linear_shift : component linear_shift
 	generic map(
