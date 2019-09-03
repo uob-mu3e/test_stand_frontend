@@ -1,20 +1,25 @@
+#
+
 package require qsys
 
-create_system {ip_xcvr_reset}
+proc add_altera_xcvr_reset_control { name CHANNELS SYS_CLK_IN_MHZ } {
+    add_instance $name altera_xcvr_reset_control
+    apply_preset $name "Arria 10 Default Settings"
+
+    foreach { parameter value } [ list      \
+        CHANNELS            $CHANNELS       \
+        PLLS                1               \
+        SYS_CLK_IN_MHZ      $SYS_CLK_IN_MHZ \
+        gui_pll_cal_busy    1               \
+        RX_PER_CHANNEL      1               \
+    ] {
+        set_instance_parameter_value $name $parameter $value
+    }
+
+    set_instance_property $name AUTO_EXPORT {true}
+}
+
 source {device.tcl}
-
-# Instances and instance parameters
-add_instance xcvr_reset_control_0 altera_xcvr_reset_control
-apply_preset xcvr_reset_control_0 "Arria 10 Default Settings"
-
-set_instance_parameter_value xcvr_reset_control_0 {CHANNELS} {4}
-set_instance_parameter_value xcvr_reset_control_0 {PLLS} {1}
-
-set_instance_parameter_value xcvr_reset_control_0 {SYS_CLK_IN_MHZ} [ expr $refclk_freq * 1e-6 ]
-set_instance_parameter_value xcvr_reset_control_0 {gui_pll_cal_busy} {1}
-set_instance_parameter_value xcvr_reset_control_0 {RX_PER_CHANNEL} {1}
-
-# exported interfaces
-set_instance_property xcvr_reset_control_0 AUTO_EXPORT {true}
-
-save_system {ip/ip_xcvr_reset.qsys}
+create_system {ip_xcvr_reset}
+add_altera_xcvr_reset_control xcvr_reset_control_0 4 [ expr $refclk_freq * 1e-6 ]
+save_system {a10/ip_xcvr_reset.qsys}

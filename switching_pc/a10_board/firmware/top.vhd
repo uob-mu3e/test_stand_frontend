@@ -139,6 +139,10 @@ architecture rtl of top is
 		signal dmamem_wren	 		: std_logic;
 		signal dmamem_endofevent 	: std_logic;
 		signal dmamemhalffull 		: std_logic;
+		signal dmamemhalffull_counter : std_logic_vector(31 downto 0);
+		signal dmamemnothalffull_counter : std_logic_vector(31 downto 0);
+		signal endofevent_counter : std_logic_vector(31 downto 0);
+		signal notendofevent_counter : std_logic_vector(31 downto 0);
 
 		--//pcie dma memory signals
 		signal dma2mem_writedata 	: std_logic_vector(255 downto 0);
@@ -194,7 +198,7 @@ architecture rtl of top is
 		signal cpu_pio_i : std_logic_vector(31 downto 0);
 		signal flash_rst_n : std_logic;
 		signal debug_nios : std_logic_vector(31 downto 0);
-		signal avm_qsfp : work.util.avalon_t;
+		signal av_qsfp : work.util.avalon_t;
 		
 		-- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
 		signal ZERO : std_logic := '0';
@@ -212,6 +216,8 @@ architecture rtl of top is
 		signal tx_datak : datak_array_type;
 		signal rx_data_v : std_logic_vector(4*32-1 downto 0);
 		signal rx_datak_v : std_logic_vector(4*4-1 downto 0);
+		
+		signal idle_ch : std_logic_vector(3 downto 0);
 
 		signal sc_data : data_array_type;
 		signal sc_datak : datak_array_type;
@@ -228,33 +234,18 @@ architecture rtl of top is
 		signal mem_data_out : std_logic_vector(127 downto 0);
 		signal mem_datak_out : std_logic_vector(15 downto 0);
 		
-		-- dma control
-		signal dma_control_wren 		: std_logic;
-		signal dma_control_counter		: std_logic_vector(31 downto 0);
-		signal dma_control_prev_rdreq : std_logic_vector(31 downto 0);
-		type event_tagging_state_type is (waiting, ending);
-		type event_counter_state_type is (waiting, ending, get_fifo_data);
-		signal event_counter_state : event_counter_state_type;
-		signal event_tagging_state : event_tagging_state_type;
-		signal w_ram_en	 : std_logic;
-		signal w_fifo_en	 : std_logic;
-		signal w_fifo_data : std_logic_vector(11 downto 0);
-		signal w_ram_data	 : std_logic_vector(31 downto 0);
-		signal w_ram_add	 : std_logic_vector(11 downto 0);
-		signal tag_fifo_empty : std_logic;
-		signal r_fifo_data : std_logic_vector(11 downto 0);
-		signal r_fifo_en : std_logic;
-		signal r_ram_data : std_logic_vector(31 downto 0);
-		signal r_ram_add  : std_logic_vector(11 downto 0);
-		signal event_last_ram_add : std_logic_vector(11 downto 0);
+		-- event counter
+		signal state_out_eventcounter : std_logic_vector(3 downto 0);
+		signal state_out_datagen : std_logic_vector(3 downto 0);
 		signal data_pix_generated : std_logic_vector(31 downto 0);
+		signal datak_pix_generated : std_logic_vector(3 downto 0);
 		signal data_pix_ready : std_logic;
-		signal data_pix_generated2 : std_logic_vector(31 downto 0);
-		signal data_pix_ready2 : std_logic;
 		signal event_length : std_logic_vector(11 downto 0);
 		signal dma_data_wren : std_logic;
-		signal dmamemhalffull_counter : std_logic_vector(31 downto 0);
-		signal dmamemnothalffull_counter : std_logic_vector(31 downto 0);
+		signal dma_data : std_logic_vector(255 downto 0);
+		signal dma_event_data : std_logic_vector(31 downto 0);
+		signal data_counter : std_logic_vector(31 downto 0);
+		signal datak_counter : std_logic_vector(3 downto 0);
 		
 begin 
 
@@ -322,18 +313,18 @@ port map (
 
 ------------- NIOS -------------
 
-nios2 : nios
+nios2 : work.cmp.nios
 port map (
 	clk_clk                    			=> input_clk,
 	
 	rst_reset_n                			=> cpu_reset_n_q,
 
-   avm_qsfp_address       					=> avm_qsfp.address(15 downto 0),
-	avm_qsfp_read          					=> avm_qsfp.read,
-	avm_qsfp_readdata      					=> avm_qsfp.readdata,
-	avm_qsfp_write         					=> avm_qsfp.write,
-	avm_qsfp_writedata     					=> avm_qsfp.writedata,
-	avm_qsfp_waitrequest   					=> avm_qsfp.waitrequest,
+   avm_qsfp_address       					=> av_qsfp.address(13 downto 0),
+	avm_qsfp_read          					=> av_qsfp.read,
+	avm_qsfp_readdata      					=> av_qsfp.readdata,
+	avm_qsfp_write         					=> av_qsfp.write,
+	avm_qsfp_writedata     					=> av_qsfp.writedata,
+	avm_qsfp_waitrequest   					=> av_qsfp.waitrequest,
 
 	flash_tcm_address_out				 	=> flash_tcm_address_out,
 	flash_tcm_data_out 						=> FLASH_D,
@@ -367,8 +358,8 @@ generic map (
 port map (
 		rstout_n(1) => flash_rst_n,
 		rstout_n(0) => cpu_reset_n_q,
-		rst_n 		=> CPU_RESET_n and wd_rst_n,
-		clk 			=> clk--input_clk--,
+		rst_n 		=> CPU_RESET_n,-- and wd_rst_n,
+		clk 			=> input_clk--,
 );
 
 watchdog_i : entity work.watchdog
@@ -382,13 +373,13 @@ port map (
 		rstout_n => wd_rst_n,
 
 		rst_n 	=> CPU_RESET_n,
-		clk 		=> clk--input_clk--,
+		clk 		=> input_clk--,
 );
 
 LED(0) <= cpu_pio_i(7);
-LED(1) <= cpu_reset_n_q;
-LED(2) <= flash_rst_n;
-LED(3) <= '1';
+LED(1) <= not cpu_reset_n_q;
+LED(2) <= not flash_rst_n;
+LED(3) <= '0';
 
 FLASH_A <= flash_tcm_address_out(27 downto 2);
 
@@ -415,12 +406,12 @@ POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
 e_qsfp : entity work.xcvr_a10
 port map (
     i_tx_data   => X"03CAFEBC"
-                 & tx_data(2)
+                 & X"02CAFEBC"
                  & tx_data(1)
                  & tx_data(0),
     i_tx_datak  => "0001"
                  & "0001"
-                 & "0001"
+                 & tx_datak(1)
                  & tx_datak(0),
 
     o_rx_data   => rx_data_v,
@@ -437,12 +428,12 @@ port map (
     i_pll_clk   => input_clk,
     i_cdr_clk   => input_clk,
 
-    i_avs_address     => avm_qsfp.address(15 downto 2),
-    i_avs_read        => avm_qsfp.read,
-    o_avs_readdata    => avm_qsfp.readdata,
-    i_avs_write       => avm_qsfp.write,
-    i_avs_writedata   => avm_qsfp.writedata,
-    o_avs_waitrequest => avm_qsfp.waitrequest,
+    i_avs_address     => av_qsfp.address(13 downto 0),
+    i_avs_read        => av_qsfp.read,
+    o_avs_readdata    => av_qsfp.readdata,
+    i_avs_write       => av_qsfp.write,
+    i_avs_writedata   => av_qsfp.writedata,
+    o_avs_waitrequest => av_qsfp.waitrequest,
 
     i_reset     => not CPU_RESET_n,
     i_clk       => input_clk--,
@@ -459,40 +450,118 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 
 ------------- data demerger and fifos -------------
 
-fifo_read <= (not fifo_empty(0)) and (not fifo_empty(1)) and (not fifo_empty(2)) and (not fifo_empty(3));
+--fifo_read <= (not fifo_empty(0)) and (not fifo_empty(1)) and (not fifo_empty(2)) and (not fifo_empty(3));
 
-fifo_demerge :
- for i in 0 to 3 generate
-		data_demerger : data_demerge
-			port map(
-				clk				=> tx_clk(0),			-- receive clock (156.25 MHz)
-				reset				=> not reset_n,
-				aligned			=> '1',					-- word alignment achieved
-				data_in			=>	rx_data(i),			-- optical from frontend board
-				datak_in			=> rx_datak(i),
-				data_out			=> fifo_data(i),		-- to sorting fifos
-				data_ready		=>	fifo_wren(i),	  	-- write req for sorting fifos
-				datak_out      => fifo_datak(i),
-				sc_out			=> sc_data(i),			-- slowcontrol from frontend board
-				sc_out_ready	=> sc_ready(i),
-				fpga_id			=> open,					-- FPGA ID of the connected frontend board
-				sck_out      	=> sc_datak(i)--,
-		);
-		
-		fifo : transceiver_fifo
-			port map (
-				data    => fifo_data(i) & fifo_datak(i), --fifo_data_in_ch0 & fifo_datak_in_ch0,
-				wrreq   => fifo_wren(i),
-				rdreq   => fifo_read,
-				wrclk   => tx_clk(0),--rx_clk(i),
-				rdclk   => pcie_fastclk_out,
-				aclr    => reset_n,
-				q       => fifo_out(i),
-				rdempty => fifo_empty(i),
-				wrfull  => open--,
-		);
-end generate fifo_demerge;
-	 
+--process(tx_clk(0), reset_n)
+--begin
+--	if(reset_n = '0') then
+--		idle_ch <= (others => '0');
+--	elsif(rising_edge(tx_clk(0))) then
+--		idle_ch <= (others => '0');
+--		if(rx_data(0) = x"000000BC" and rx_datak(0) = "0001") then
+--			idle_ch(0) <= '1';
+--		end if;
+--		if(rx_data(1) = x"000000BC" and rx_datak(1) = "0001") then
+--			idle_ch(1) <= '1';
+--		end if;
+--		if(rx_data(2) = x"000000BC" and rx_datak(2) = "0001") then
+--			idle_ch(2) <= '1';
+--		end if;
+--		if(rx_data(3) = x"000000BC" and rx_datak(3) = "0001") then
+--			idle_ch(3) <= '1';
+--		end if;
+--	end if;
+--end process;
+
+--fifo_demerge :
+--for i in 0 to 3 generate
+----		data_demerger : data_demerge
+----			port map(
+----				clk				=> tx_clk(0),			-- receive clock (156.25 MHz)
+----				reset				=> not reset_n,
+----				aligned			=> '1',					-- word alignment achieved
+----				data_in			=>	rx_data(i),			-- optical from frontend board
+----				datak_in			=> rx_datak(i),
+----				data_out			=> fifo_data(i),		-- to sorting fifos
+----				data_ready		=>	fifo_wren(i),	  	-- write req for sorting fifos
+----				datak_out      => fifo_datak(i),
+----				sc_out			=> sc_data(i),			-- slowcontrol from frontend board
+----				sc_out_ready	=> sc_ready(i),
+----				fpga_id			=> open,					-- FPGA ID of the connected frontend board
+----				sck_out      	=> sc_datak(i)--,
+----		);
+--		
+--	fifo : transceiver_fifo
+--		port map (
+--			data    => rx_data(i) & rx_datak(i), --fifo_data_in_ch0 & fifo_datak_in_ch0,
+--			wrreq   => not idle_ch(i),
+--			rdreq   => not fifo_empty(i),
+--			wrclk   => tx_clk(0),--rx_clk(i),
+--			rdclk   => pcie_fastclk_out,
+--			aclr    => not reset_n,
+--			q       => fifo_out(i),
+--			rdempty => fifo_empty(i),
+--			wrfull  => open--,
+--	);
+--end generate fifo_demerge;
+
+
+------------- Event Counter ------------------
+
+e_data_gen : entity work.data_generator_a10
+	port map (
+		clk 						=> tx_clk(0),
+		reset						=> resets(RESET_BIT_DATAGEN),
+		enable_pix	         => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL),
+		random_seed 			=> (others => '1'),
+		data_pix_generated   => data_pix_generated,
+		datak_pix_generated  => datak_pix_generated,
+		data_pix_ready			=>	data_pix_ready,
+		start_global_time		=> (others => '0'),
+		slow_down				=> writeregs(DMA_SLOW_DOWN_REGISTER_W),
+		state_out				=> state_out_datagen--,
+);
+
+process(tx_clk(0), reset_n)
+begin
+	if(reset_n = '0') then
+		data_counter 	<= (others => '0');
+		datak_counter 	<= (others => '0');
+	elsif rising_edge(tx_clk(0)) then
+		if (writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
+			data_counter 	<= data_pix_generated;
+			datak_counter 	<= datak_pix_generated;
+		else
+			data_counter 	<= rx_data(0);
+			datak_counter 	<= rx_datak(0);
+		end if;
+	end if;
+end process;
+
+e_event_counter : entity work.event_counter
+	port map(
+		clk						=> tx_clk(0),
+		dma_clk					=> pcie_fastclk_out,
+		reset_n					=> resets_n(RESET_BIT_EVENT_COUNTER),
+		rx_data					=> data_counter,
+		rx_datak					=> datak_counter,
+		dma_wen_reg				=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+		event_length			=> event_length,
+		dma_data_wren			=> dma_data_wren,
+		dmamem_endofevent		=> dmamem_endofevent,
+		dma_data					=> dma_event_data,
+		state_out				=> state_out_eventcounter--,
+);
+	
+dma_data <=	X"00000" & event_length &
+				dma_event_data 			&
+				x"1ABACAF" & state_out_eventcounter &
+				x"2ABACAF" & state_out_datagen &
+				x"3ABACAFE" &
+				x"4ABACAFE" &
+				x"5ABACAFE" &
+				x"6ABACAFE";
+
 ------------- time algining data -------------
 
 --pll_algining : component ip_pll_312
@@ -555,16 +624,16 @@ master : sc_master
 
 slave : sc_slave
 	port map(
-		clk					=> tx_clk(0),--rx_clkout_ch0_clk,
-		reset_n				=> resets_n(RESET_BIT_SC_SLAVE),
-		enable				=> '1',
-		link_data_in		=> rx_data(0),--sc_data(0),--mem_data_out(31 downto 0),--sc_ch0,--data_ch0,
-		link_data_in_k		=> rx_datak(0),--sc_datak(0),--mem_datak_out(3 downto 0),--sck_ch0,--datak_ch0,
-		mem_addr_out		=> readmem_writeaddr(15 downto 0),
+		clk							=> tx_clk(0),
+		reset_n						=> resets_n(RESET_BIT_SC_SLAVE),
+		enable						=> '1',
+		link_data_in				=> rx_data(0),
+		link_data_in_k				=> rx_datak(0),
+		mem_addr_out				=> readmem_writeaddr(15 downto 0),
 		mem_addr_finished_out   => readmem_writeaddr_finished,
-		mem_data_out		=> readmem_writedata,
-		mem_wren				=> readmem_wren,
-		stateout				=> LED_BRACKET
+		mem_data_out				=> readmem_writedata,
+		mem_wren						=> readmem_wren,
+		stateout						=> LED_BRACKET--,
 );
 
 tx_data(0) <= mem_data_out(31 downto 0);
@@ -604,11 +673,13 @@ begin
 		readregs(EVENTCOUNTER_REGISTER_R)			<= event_counter;
 		readregs(EVENTCOUNTER64_REGISTER_R)			<= event_counter64;
 		
-		readregs(DMA_STATUS_R)(DMA_DATA_WEN)		<= dma_data_wren; 
-		readregs(DMA_STATUS_R)(DMA_CONTROL_WEN)	<= dma_control_wren;
+		readregs(DMA_STATUS_R)(DMA_DATA_WEN)		<= dma_data_wren;
 		
-		readregs(DMA_HALFFUL_R)							<= dmamemhalffull_counter;
-		readregs(DMA_NOTHALFFUL_R)						<= dmamemnothalffull_counter;
+		readregs(DMA_HALFFUL_REGISTER_R)				<= dmamemhalffull_counter;
+		readregs(DMA_NOTHALFFUL_REGISTER_R)			<= dmamemnothalffull_counter;
+		
+		readregs(DMA_ENDEVENT_REGISTER_R)			<= endofevent_counter;
+		readregs(DMA_NOTENDEVENT_REGISTER_R)		<= notendofevent_counter;
 		
 		readregs(TIMECOUNTER_LOW_REGISTER_R)		<= time_counter(31 downto 0);
 		readregs(TIMECOUNTER_HIGH_REGISTER_R)		<= time_counter(63 downto 32);
@@ -617,6 +688,18 @@ begin
 		readregs(MEM_WRITEADDR_LOW_REGISTER_R) <= (X"0000" & readmem_writeaddr_finished);
 	end if;
 end process;
+
+e_dma_evaluation : entity work.dma_evaluation
+   port map(
+		clk							=> pcie_fastclk_out,
+		reset_n						=> resets_n(RESET_BIT_DMA_EVAL),
+		dmamemhalffull				=> dmamemhalffull,
+		dmamem_endofevent			=> dmamem_endofevent,
+		halffull_counter			=> dmamemhalffull_counter,
+		nothalffull_counter		=> dmamemnothalffull_counter,
+		endofevent_counter		=> endofevent_counter,
+		notendofevent_counter	=> notendofevent_counter--,
+	);
 
 -- Increase address
 --process(pcie_fastclk_out, resets_n(RESET_BIT_DATAGEN))
@@ -655,184 +738,8 @@ begin
 	end if;
 end process;
 
--- data generator
-e_data_gen : component data_generator_a10
-	port map (
-		clk 						=> pcie_fastclk_out,
-		reset						=> resets(RESET_BIT_DATAGEN),--reset,
-		enable_pix	         => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL),
-		random_seed 			=> (others => '1'),
-		data_pix_generated   => data_pix_generated,
-		data_pix_ready			=>	data_pix_ready,
-		start_global_time		=> (others => '0'),
-		slow_down				=> writeregs(DMA_SLOW_DOWN_REGISTER_W)--,
-);
-
-
-e_data_gen2 : component data_generator_a10
-	port map (
-		clk 						=> pcie_fastclk_out,
-		reset						=> reset,
-		enable_pix	         => '1',
-		random_seed 			=> (others => '1'),
-		data_pix_generated   => data_pix_generated2,
-		data_pix_ready			=>	data_pix_ready2,
-		start_global_time		=> (others => '0'),
-		slow_down				=> writeregs(DMA_SLOW_DOWN_REGISTER_W)--,
-);
--- link data to dma ram
-process(pcie_fastclk_out, resets_n(RESET_BIT_TOP_PROC))
-begin
-	if(resets_n(RESET_BIT_TOP_PROC) = '0') then
-		event_tagging_state 	<= waiting;
-		w_ram_en					<= '0';
-		w_fifo_en				<= '0';
-		w_fifo_data				<= (others => '0');
-		w_ram_data				<= (others => '0');
-		w_ram_add				<= (others => '1');
-	elsif(rising_edge(pcie_fastclk_out)) then
-	
-		w_ram_en		<= '0';
-		w_fifo_en	<= '0';
-
-		if (data_pix_ready = '1') then
-			
-			w_ram_add 	<= w_ram_add + 1;
-			
-			case event_tagging_state is
-
-				when waiting =>
-					--if((rx_data(0)(31 downto 26) = "111010") and (rx_data(0)(7 downto 0) = x"bc") and (rx_datak(0) = "0001")) then -- saw mupix preamble
-					if((data_pix_generated(31 downto 26) = "111010") and (data_pix_generated(7 downto 0) = x"bc")) then -- saw mupix preamble
-						w_ram_en				  <= '1';
-						--w_ram_data  		  <= rx_data(0);
-						w_ram_data  		  <= data_pix_generated;
-						event_tagging_state <= ending;
-					end if;
-					
-				when ending =>
-					w_ram_en		<= '1';
-					--w_ram_data  		  <= rx_data(0);
-					w_ram_data  		  <= data_pix_generated;
-					--if(rx_data(0)(7 downto 0) = x"9c" and rx_datak(0) = "0001") then -- saw trailer
-					if(data_pix_generated = x"0000009c") then -- saw trailer
-						w_fifo_data <= w_ram_add + 1;
-						w_fifo_en   <= '1';
-						event_tagging_state <= waiting;
-					end if;
-					
-				when others =>
-					event_tagging_state <= waiting;
-
-			end case;
-		end if;
-	end if;
-end process;
-
-e_ram : component ip_ram
-  port map (
-		data      => w_ram_data,
-		wraddress => w_ram_add,
-		rdaddress => r_ram_add,
-		wren      => w_ram_en,
-		clock     => pcie_fastclk_out,
-		q         => r_ram_data
-);
-  
-e_tagging_fifo : component ip_tagging_fifo
-  port map (
-		data  => w_fifo_data,
-		wrreq => w_fifo_en,
-		rdreq => r_fifo_en,
-		clock => pcie_fastclk_out,
-		q     => r_fifo_data,
-		aclr	=> resets(RESET_BIT_TOP_PROC),
-		full  => open,
-		empty => tag_fifo_empty
-);
-
----- dma speed control
-process(pcie_fastclk_out, reset_n)
-begin
-	if(reset_n = '0') then
-		dmamemhalffull_counter 	  <= (others => '0');
-		dmamemnothalffull_counter <= (others => '0');
-		
-	elsif(rising_edge(pcie_fastclk_out)) then
-		if(dmamemhalffull = '1') then
-			dmamemhalffull_counter <= dmamemhalffull_counter + 1;
-		else
-			dmamemnothalffull_counter <= dmamemnothalffull_counter + 1;
-		end if;
-	end if;
-end process;
-
--- dma end of events, count events and write control
-process(pcie_fastclk_out, resets_n(RESET_BIT_TOP_PROC))
-begin
-	if(resets_n(RESET_BIT_TOP_PROC) = '0') then
-		dmamem_endofevent 		<= '0';
-		r_fifo_en					<= '0';
-		dma_control_wren	    	<= '0';
-		dma_data_wren	    		<= '0';
-		dma_control_prev_rdreq	<= (others => '0');
-		dma_control_counter 		<= (others => '0');
-		event_length				<= (others => '0');
-		r_ram_add					<= (others => '1');
-		event_last_ram_add		<= (others => '0');
-		event_counter_state 		<= waiting;	
-	elsif(rising_edge(pcie_fastclk_out)) then
-	
-		dmamem_endofevent <= '0';
-		r_fifo_en			<= '0';
-		dma_data_wren		<= '0';
-	
-		if(dma_control_prev_rdreq /= writeregs(DMA_CONTROL_W)) then
-			dma_control_prev_rdreq 	<= writeregs(DMA_CONTROL_W);
-			dma_control_counter	  	<= writeregs(DMA_CONTROL_W);
-		elsif(dma_control_counter = x"00000000") then
-			dma_control_wren	    	<= '0';
-		else
-			dma_control_counter 		<= dma_control_counter - '1';
-			dma_control_wren	  		<= '1';
-		end if;
-			
-		case event_counter_state is
-
-			when waiting =>
-				if (tag_fifo_empty = '0') then
-					r_fifo_en    		  			<= '1';
-					event_counter_state 			<= get_fifo_data;
-				end if;
-				
-			when get_fifo_data =>
-				dma_data_wren					<= '1';
-				event_last_ram_add  			<= r_fifo_data + '1';-- Addr of the header
-				event_length					<= r_fifo_data - event_last_ram_add + '1'; -- Number of addr. in ram
-				event_counter(11 downto 0) <= r_fifo_data;
-				r_ram_add			  			<= r_ram_add + '1';
-				event_counter_state 			<= ending;
-				
-			when ending =>
-				r_ram_add 		<= r_ram_add + '1';
-				dma_data_wren	<= '1';
-				if(r_ram_add = event_last_ram_add - "10") then
-					dmamem_endofevent   	<= '1';
-					event_counter_state 	<= waiting;
-				end if;
-				
-			when others =>
-				event_counter_state 		<= waiting;
-				
-		end case;
-			
-	end if;
-end process;
-
 readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
-dmamem_wren 					<= dma_data_wren and '1';--writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE);--dma_control_wren;
 pb_in 							<= push_button0_db & push_button1_db & push_button2_db;
-
 
 pcie_b : entity work.pcie_block 
 	generic map(
@@ -877,21 +784,14 @@ pcie_b : entity work.pcie_block
 		-- pcie readable memory
 		readmem_data 			=> readmem_writedata,
 		readmem_addr 			=> readmem_writeaddr_lowbits,
-		readmemclk				=> tx_clk(0),--tx_clk_ch0,--rx_clkout_ch0_clk,
+		readmemclk				=> tx_clk(0),
 		readmem_wren			=> readmem_wren,
 		readmem_endofevent	=> readmem_endofevent,
 
 		-- dma memory 
-		dma_data 				=> X"00000" & event_length &
-										r_ram_data 	& --rx_data(0) 	& 
-										x"1ABACAFE" &--data_pix_generated &
-										x"2ABACAFE" &--data_pix_generated2 &
-										x"3ABACAFE" &
-										x"4ABACAFE" &
-										x"5ABACAFE" &
-										x"6ABACAFE",
-		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
-		dmamem_wren				=> dmamem_wren,
+		dma_data 				=> dma_data,
+		dmamemclk				=> pcie_fastclk_out,
+		dmamem_wren				=> dma_data_wren,
 		dmamem_endofevent		=> dmamem_endofevent,
 		dmamemhalffull			=> dmamemhalffull,
 
