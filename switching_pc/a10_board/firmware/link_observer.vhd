@@ -37,10 +37,21 @@ architecture rtl of link_observer is
 
 begin
 
-	error_counts_low 	<=	error_counter(31 downto 0);
-	error_counts_high 	<=	error_counter(63 downto 32);
-	bit_counts_low 		<=	bit_counter(31 downto 0);
-	bit_counts_high 		<=	bit_counter(63 downto 32);
+
+	process(clk, reset_n)
+	begin
+		if(reset_n = '0') then
+			error_counts_low 		<=	(others => '0');
+			error_counts_high 	<=	(others => '0');
+			bit_counts_low 		<=	(others => '0');
+			bit_counts_high 		<=	(others => '0');
+		elsif(rising_edge(clk)) then
+			error_counts_low 		<=	error_counter(31 downto 0);
+			error_counts_high 	<=	error_counter(63 downto 32);
+			bit_counts_low 		<=	bit_counter(31 downto 0);
+			bit_counts_high 		<=	bit_counter(63 downto 32);
+		end if;
+	end process;
 
 	e_linear_shift : entity work.linear_shift_link
 	generic map(
