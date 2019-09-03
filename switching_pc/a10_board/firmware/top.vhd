@@ -411,11 +411,11 @@ e_qsfp : entity work.xcvr_a10
 port map (
     i_tx_data   => X"03CAFEBC"
                  & X"02CAFEBC"
-                 & tx_data(1)
+                 & X"01CAFEBC"
                  & tx_data(0),
     i_tx_datak  => "0001"
                  & "0001"
-                 & tx_datak(1)
+                 & "0001"
                  & tx_datak(0),
 
     o_rx_data   => rx_data_v,
@@ -686,7 +686,7 @@ generic map(
 )
  port map (
 	clk     				=> tx_clk(0),
-	reset_n     		=> reset_n,
+	reset_n     		=> resets_n(RESET_BIT_LINK_TEST),
 	rx_data     		=> rx_data(1),
 	rx_datak    		=> rx_datak(1),
 	error_counts_low  => readregs_slow(ERROR_LINK_TEST_LOW_REGISTER_R),
