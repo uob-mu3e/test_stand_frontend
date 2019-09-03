@@ -692,7 +692,7 @@ generic map(
 	error_counts_low  => readregs_slow(ERROR_LINK_TEST_LOW_REGISTER_R),
 	error_counts_high => readregs_slow(ERROR_LINK_TEST_HIGH_REGISTER_R),
 	bit_counts_low    => readregs_slow(BIT_LINK_TEST_LOW_REGISTER_R),
-	bit_counts_high   => readregs_slow(),
+	bit_counts_high   => readregs_slow(BIT_LINK_TEST_HIGH_REGISTER_R),
 	state_out     		=> open--,
 );
 
