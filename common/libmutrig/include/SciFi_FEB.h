@@ -12,7 +12,7 @@ Contents:       Definition of fumctions in namespace mudaq::mutrig
 #define FEB_ACCESS_H
 
 #include "midas.h"
-#include "mudaq_device.h"
+#include "mudaq_device_scifi.h"
 #include "mutrig_config.h"
 
 namespace mudaq { namespace mutrig {
