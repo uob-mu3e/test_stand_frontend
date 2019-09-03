@@ -212,8 +212,25 @@ begin
         i_clk               => i_clk--,
     );
 
+    
+    
+    e_link_test : entity work.linear_shift_link
+    generic map(
+		g_m 	=> 32,
+		g_poly 	=> "10000000001000000000000000000110"
+	)
+    port map (
+		i_clk 			=> i_clk,
+		reset_n 		=> reset_n,
+		i_sync_reset 	=> '0',
+		i_seed			=> (others => '1'),
+		i_en 			=> '1',
+		o_lsfr			=> qsfp_tx_data(63 downto 32),
+		o_datak 		=> qsfp_tx_datak(7 downto 4)--,
+    );
 
-
+    
+    
     e_reset_system : entity work.resetsys
     port map (
         clk_reset_rx    => i_pod_refclk,
