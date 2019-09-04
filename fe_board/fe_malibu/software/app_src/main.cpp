@@ -60,6 +60,10 @@ int main() {
         case '7':
             menu_reset();
             break;
+        case 't':
+            printf("sc.ram = 0x%08X\n", int(sc.ram));
+            sc.ram->regs.fe.cmdlen = 0xffff0000;
+            break;
         default:
             printf("invalid command: '%c'\n", cmd);
         }

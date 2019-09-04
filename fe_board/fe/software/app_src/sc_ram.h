@@ -137,7 +137,7 @@ struct sc_ram_t {
 static_assert(sizeof(sc_ram_t) == 65536 * 4, "");
 static_assert(sizeof(sc_ram_t::regs) == 256 * 4, "");
 
-static_assert(offsetof(sc_ram_t, regs) % 64 == 0, "");
+static_assert(offsetof(sc_ram_t, regs) % 1024 == 0, "");
 static_assert(offsetof(sc_ram_t::regs_t, malibu) % 64 == 0, "");
 static_assert(offsetof(sc_ram_t::regs_t, mupix) % 64 == 0, "");
 static_assert(offsetof(sc_ram_t::regs_t, scifi) % 64 == 0, "");

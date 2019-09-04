@@ -51,6 +51,8 @@ struct sc_t {
 
     void menu() {
         while(1) {
+            printf("ram = 0x%08X\n", int(ram));
+
             printf("  [r] => test read\n");
             printf("  [w] => test write\n");
             printf("  [R] => print regs\n");
@@ -73,6 +75,15 @@ struct sc_t {
                 for(int i = 0; i < 256; i++) {
                     printf("[0x%02X] = 0x%08X\n", i, ram->data[0xFF00 + i]);
                 }
+                break;
+            case 'D':
+                for(int i = 0; i < 256*256; i++) {
+                    if(ram->data[i] == 0) continue;
+                    printf("[0x%04X] = 0x%08X\n", i, ram->data[i]);
+                }
+                break;
+            case 'i':
+                ram->regs.fe.cmdlen = 0xffff0000;
                 break;
             case 'q':
                 return;

@@ -335,10 +335,10 @@ begin
 	)
     port map (
 		i_clk 			=> i_clk,
-		reset_n 		=> reset_n,
+		reset_n 		=> i_reset_n,
 		i_sync_reset 	=> '0',
 		i_seed			=> (others => '1'),
-		i_en 			=> '1',
+		i_en 			=> run_state_156,
 		o_lsfr			=> qsfp_tx_data(63 downto 32),
 		o_datak 		=> qsfp_tx_datak(7 downto 4)--,
     );
