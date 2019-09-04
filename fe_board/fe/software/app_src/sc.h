@@ -51,17 +51,24 @@ struct sc_t {
 
     void menu() {
         while(1) {
-            printf("  [r] => test read\n");
-            printf("  [w] => test write\n");
-            printf("  [R] => print regs\n");
+            printf("  [r] => read data and regs\n");
+            printf("  [w] => write [i] = i for i < 16\n");
+            printf("  [i] => test cmdlen irq\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
             char cmd = wait_key();
             switch(cmd) {
             case 'r':
-                for(int i = 0; i < 16; i++) {
+                for(int i = 0, n = AVM_SC_SPAN / 4; i < n; i++) {
                     printf("[0x%04X] = 0x%08X\n", i, ram->data[i]);
+
+                    int k = 1;
+                    while(i+k < n && ram->data[i+k] == ram->data[i]) k++;
+                    if(k > 2) {
+                        printf("[0x....]\n");
+                        i += k - 2;
+                    }
                 }
                 break;
             case 'w':
@@ -69,18 +76,7 @@ struct sc_t {
                     ram->data[i] = i;
                 }
                 break;
-            case 'R':
-                for(int i = 0; i < 256; i++) {
-                    printf("[0x%02X] = 0x%08X\n", i, ram->data[0xFF00 + i]);
-                }
-                break;
-            case 'D':
-                for(int i = 0; i < 256*256; i++) {
-                    if(ram->data[i] == 0) continue;
-                    printf("[0x%04X] = 0x%08X\n", i, ram->data[i]);
-                }
-                break;
-            case 'i':
+            case 't':
                 ram->regs.fe.cmdlen = 0xffff0000;
                 break;
             case 'q':

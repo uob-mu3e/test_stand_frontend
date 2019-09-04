@@ -248,6 +248,9 @@ begin
 
 
     e_sc_ram : entity work.sc_ram
+    generic map (
+        RAM_ADDR_WIDTH_g => 14--;
+    )
     port map (
         i_ram_addr          => sc_ram.addr(15 downto 0),
         i_ram_re            => sc_ram.re,
