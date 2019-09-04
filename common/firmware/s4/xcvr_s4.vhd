@@ -382,6 +382,7 @@ begin
     g_reconfig_clk_altpll : if ( CLK_MHZ_g > 50 ) generate
         e_reconfig_clk : entity work.ip_altpll
         generic map (
+            INCLK0_MHZ => real(CLK_MHZ_g),
             DIV => CLK_MHZ_g / work.util.gcd(CLK_MHZ_g, 50),
             MUL => 50 / work.util.gcd(CLK_MHZ_g, 50)--,
         )
