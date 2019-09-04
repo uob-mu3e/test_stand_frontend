@@ -46,7 +46,8 @@
 #include <switching_constants.h>
 #include "midas.h"
 #include "mfe.h"
-#include "/home/labor/online/fe_board/fe/software/app_src/malibu/ALL_OFF.h"
+
+#include "../../fe_board/fe/software/app_src/malibu/ALL_OFF.h"
 
 #include "mudaq_device.h"
 
@@ -654,7 +655,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
 
             uint32_t DATA_ARRAY[256];
-            int n = 0;
+            uint32_t n = 0;
             uint32_t w = 0;
             for(int i = 0; i < sizeof(stic3_config_ALL_OFF); i++) {
                 if(i%4 == 0) { w = 0; n++; }
@@ -672,13 +673,13 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
             uint32_t data_arr[1] = {START_ADD};
 
-            mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 1, (uint32_t) NEW_PCIE_MEM_START);
+            mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF1, (uint32_t) NEW_PCIE_MEM_START);
 
-            data_arr[0] = {0x01100000};
+            data_arr[0] = { 0x01100000 + (0xFFFF & n)};
 
             NEW_PCIE_MEM_START = NEW_PCIE_MEM_START + 6;
 
-            mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0, (uint32_t) NEW_PCIE_MEM_START);
+            mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF0, (uint32_t) NEW_PCIE_MEM_START);
 
             NEW_PCIE_MEM_START = NEW_PCIE_MEM_START + 6;
             INT SIZE_NEW_PCIE_MEM_START;
