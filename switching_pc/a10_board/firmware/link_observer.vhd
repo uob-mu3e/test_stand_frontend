@@ -18,7 +18,8 @@ entity link_observer is
 		rx_data:           in std_logic_vector (g_m - 1 downto 0);
 		rx_datak:          in std_logic_vector (3 downto 0);
 		mem_add:           out std_logic_vector (2 downto 0);
-		mem_data:          out std_logic_vector (31 downto 0)--;
+		mem_data:          out std_logic_vector (31 downto 0);
+		mem_wen:				 out std_logic--;
 );
 end entity link_observer;
 
@@ -43,6 +44,7 @@ begin
 		if(reset_n = '0') then
          mem_add    <= (others => '0');
          mem_data   <= (others => '0');
+			mem_wen	<= '0';
          state      <= err_low;
 		elsif(rising_edge(clk)) then
         case state is
@@ -50,22 +52,27 @@ begin
             when err_low =>
                 mem_add     <= "001";
                 mem_data    <= error_counter(31 downto 0);
+					 mem_wen		<= '1';
                 state      <= err_high;
             when err_high =>
                 mem_add     <= "010";
                 mem_data    <= error_counter(63 downto 32);
+					 mem_wen		<= '1';
                 state      <= bit_low;
             when bit_low =>
                 mem_add     <= "011";
                 mem_data    <= bit_counter(31 downto 0);
+					 mem_wen		<= '1';
                 state      <= bit_high;
             when bit_high =>
                 mem_add     <= "100";
                 mem_data    <= bit_counter(63 downto 32);
+					 mem_wen		<= '1';
                 state      <= err_low;
             when others =>
                 mem_add    <= (others => '0');
                 mem_data   <= (others => '0');
+					 mem_wen	<= '0';
                 state       <= err_low;
         end case;
 		end if;

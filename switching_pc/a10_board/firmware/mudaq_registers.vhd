@@ -22,6 +22,7 @@ package mudaq_registers is
 		constant RESET_BIT_PCIE_APPl							:  integer := 12;
 		constant RESET_BIT_EVENT_COUNTER						:  integer := 13;
 		constant RESET_BIT_DMA_EVAL							:  integer := 14;
+		constant RESET_BIT_LINK_TEST							:  integer := 15;
 		constant RESET_BIT_PCIE									:  integer := 31;
 
 		constant DATAGENERATOR_REGISTER_W					: integer := 16#02#;
@@ -44,6 +45,9 @@ package mudaq_registers is
 			subtype DMA_CONTROL_COUNTER_RANGE 				is integer range 15 downto 0;
 
 		constant DMA_SLOW_DOWN_REGISTER_W					: integer := 16#06#;
+		
+		constant LINK_TEST_REGISTER_W							: integer := 16#07#;
+		constant LINK_TEST_BIT_ENABLE							: integer := 0;
 
 		-- Registers above 0x36 are in use for the PCIe controller/DMA
 		constant DMA2_CTRL_ADDR_LOW_REGISTER_W				: integer := 16#36#;
@@ -92,11 +96,6 @@ package mudaq_registers is
 		constant DMA_NOTHALFFUL_REGISTER_R					: integer := 16#15#;
 		constant DMA_ENDEVENT_REGISTER_R						: integer := 16#16#;
 		constant DMA_NOTENDEVENT_REGISTER_R					: integer := 16#17#;
-		
-		constant ERROR_LINK_TEST_LOW_REGISTER_R			: integer := 16#18#;
-		constant ERROR_LINK_TEST_HIGH_REGISTER_R			: integer := 16#19#;
-		constant BIT_LINK_TEST_LOW_REGISTER_R				: integer := 16#20#;
-		constant BIT_LINK_TEST_HIGH_REGISTER_R				: integer := 16#21#;
 
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;

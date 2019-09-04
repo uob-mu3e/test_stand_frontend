@@ -13,7 +13,7 @@ end link_test_tb;
 architecture behav of link_test_tb is
   --  Declaration of the component that will be instantiated.
 
-  	component linear_shift is
+  	component linear_shift_link is
   	generic (
         g_m     : integer;
         g_poly  : std_logic_vector--;
@@ -27,7 +27,7 @@ architecture behav of link_test_tb is
         o_lsfr          : out std_logic_vector (g_m-1 downto 0);
         o_datak         : out std_logic_vector (3 downto 0)--;
     );
-	end component linear_shift;
+	end component linear_shift_link;
 
 	component link_observer is
 	generic (
@@ -39,11 +39,8 @@ architecture behav of link_test_tb is
 		reset_n:           in std_logic;
 		rx_data:           in std_logic_vector (31 downto 0);
 		rx_datak:          in std_logic_vector (3 downto 0);
-		error_counts_low:      out std_logic_vector (31 downto 0);
-		error_counts_high:      out std_logic_vector (31 downto 0);
-		bit_counts_low:        out std_logic_vector (31 downto 0);
-		bit_counts_high:        out std_logic_vector (31 downto 0);
-		state_out:         out std_logic_vector(3 downto 0)--;
+		mem_add:           out std_logic_vector (2 downto 0);
+		mem_data:          out std_logic_vector (31 downto 0)--;
 	);
 	end component link_observer;
 
@@ -52,10 +49,9 @@ architecture behav of link_test_tb is
   	signal enable 		: std_logic := '0';
   	signal rx_data 		: std_logic_vector(31 downto 0);
   	signal rx_datak 	: std_logic_vector(3 downto 0);
-  	signal error_counts_low : std_logic_vector(31 downto 0);
-  	signal error_counts_high : std_logic_vector(31 downto 0);
-  	signal bit_counts_low 	: std_logic_vector(31 downto 0);
-  	signal bit_counts_high 	: std_logic_vector(31 downto 0);
+  	signal mem_add : std_logic_vector(2 downto 0);
+  	signal mem_data : std_logic_vector(31 downto 0);
+   
 
   	constant ckTime: 		time	:= 10 ns;
 
@@ -86,7 +82,7 @@ begin
 	end process inita;
 
 
-	e_linear_shift : component linear_shift
+	e_linear_shift : component linear_shift_link
 	generic map(
 		g_m 	=> 32,
 		g_poly 	=> "10000000001000000000000000000110"
@@ -107,15 +103,12 @@ begin
 		g_poly 	=> "10000000001000000000000000000110"
 	)
     port map (
-		clk     		=> clk,
-		reset_n     	=> reset_n,
-		rx_data     	=> rx_data,
-		rx_datak     	=> rx_datak,
-		error_counts_low    => error_counts_low,
-		error_counts_high    => error_counts_high,
-		bit_counts_low     	=> bit_counts_low,
-		bit_counts_high     	=> bit_counts_high,
-		state_out     	=> open--,
+		clk     		 => clk,
+		reset_n      => reset_n,
+		rx_data      => rx_data,
+		rx_datak     => rx_datak,
+		mem_add      => mem_add,
+		mem_data     => mem_data--,
 	);
 
 end behav;

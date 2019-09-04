@@ -4,7 +4,7 @@
 library ieee; 
 use ieee.std_logic_1164.all;
 
-entity linear_shift is 
+entity linear_shift_link is 
 	generic (
 		g_m             : integer           := 7;
 		g_poly          : std_logic_vector  := "1100000" -- x^7+x^6+1 
@@ -18,9 +18,9 @@ entity linear_shift is
 		o_lsfr          : out std_logic_vector (g_m-1 downto 0);
 		o_datak			: out std_logic_vector (3 downto 0)--;
 	);
-end linear_shift;
+end linear_shift_link;
 
-architecture rtl of linear_shift is
+architecture rtl of linear_shift_link is
 
 	signal r_lfsr : std_logic_vector (g_m downto 1);
 	signal w_mask : std_logic_vector (g_m downto 1);

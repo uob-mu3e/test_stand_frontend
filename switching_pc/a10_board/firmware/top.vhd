@@ -233,6 +233,14 @@ architecture rtl of top is
 		-- Slow Control
 		signal mem_data_out : std_logic_vector(127 downto 0);
 		signal mem_datak_out : std_logic_vector(15 downto 0);
+		signal mem_add_sc : std_logic_vector(15 downto 0);
+		signal mem_data_sc : std_logic_vector(31 downto 0);
+		signal mem_wen_sc : std_logic;
+		
+		-- Link test
+		signal mem_add_link_test : std_logic_vector(2 downto 0);
+		signal mem_data_link_test : std_logic_vector(31 downto 0);
+		signal mem_wen_link_test : std_logic;
 		
 		-- event counter
 		signal state_out_eventcounter : std_logic_vector(3 downto 0);
@@ -413,11 +421,11 @@ e_qsfp : entity work.xcvr_a10
 port map (
     i_tx_data   => X"03CAFEBC"
                  & X"02CAFEBC"
-                 & tx_data(1)
+                 & X"01CAFEBC"
                  & tx_data(0),
     i_tx_datak  => "0001"
                  & "0001"
-                 & tx_datak(1)
+                 & "0001"
                  & tx_datak(0),
 
     o_rx_data   => rx_data_v,
@@ -533,7 +541,7 @@ begin
 	if(reset_n = '0') then
 		data_counter 	<= (others => '0');
 		datak_counter 	<= (others => '0');
-	else
+	elsif (rising_edge(tx_clk(0))) then
 		if (writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
 			data_counter 	<= data_pix_generated;
 			datak_counter 	<= datak_pix_generated;
@@ -579,7 +587,7 @@ begin
 		dma_data_wren <= '0';
 		dmamem_endofevent <= '0';
 		dma_data 	  <= (others => '0');
-	else
+	elsif (rising_edge(pcie_fastclk_out)) then
 		dma_data_wren <= '0';
 		dmamem_endofevent <= '0';
 		dma_data 	  <= (others => '0');
@@ -670,10 +678,10 @@ slave : sc_slave
 		enable						=> '1',
 		link_data_in				=> rx_data(0),
 		link_data_in_k				=> rx_datak(0),
-		mem_addr_out				=> readmem_writeaddr(15 downto 0),
+		mem_addr_out				=> mem_add_sc,
 		mem_addr_finished_out   => readmem_writeaddr_finished,
-		mem_data_out				=> readmem_writedata,
-		mem_wren						=> readmem_wren,
+		mem_data_out				=> mem_data_sc,
+		mem_wren						=> mem_wen_sc,
 		stateout						=> LED_BRACKET--,
 );
 
@@ -688,15 +696,34 @@ generic map(
 )
  port map (
 	clk     				=> tx_clk(0),
-	reset_n     		=> reset_n,
+	reset_n     		=> resets_n(RESET_BIT_LINK_TEST),
 	rx_data     		=> rx_data(1),
 	rx_datak    		=> rx_datak(1),
-	error_counts_low  => readregs_slow(ERROR_LINK_TEST_LOW_REGISTER_R),
-	error_counts_high => readregs_slow(ERROR_LINK_TEST_HIGH_REGISTER_R),
-	bit_counts_low    => readregs_slow(BIT_LINK_TEST_LOW_REGISTER_R),
-	bit_counts_high   => readregs_slow(BIT_LINK_TEST_HIGH_REGISTER_R),
-	state_out     		=> open--,
+	mem_add      		=> mem_add_link_test,
+	mem_data     		=> mem_data_link_test,
+	mem_wen				=> mem_wen_link_test--,
 );
+
+process (tx_clk(0), reset_n)
+begin
+	if (reset_n = '0') then
+		readmem_writeaddr <= (others => '0');
+		readmem_writedata <= (others => '0');
+		readmem_wren		<= '0';
+	elsif (rising_edge(tx_clk(0))) then
+		readmem_writeaddr <= (others => '0');
+		if (writeregs(LINK_TEST_REGISTER_W)(LINK_TEST_BIT_ENABLE) = '1') then
+			readmem_writeaddr(2 downto 0)  <= mem_add_link_test;
+			readmem_writedata						<= mem_data_link_test;
+			readmem_wren							<= mem_wen_link_test;
+		else
+			readmem_writeaddr(15 downto 0)   <= mem_add_sc;
+			readmem_writedata						<= mem_data_sc;
+			readmem_wren							<= mem_wen_sc;
+		end if;
+	end if;
+end process;
+
 
 ------------- PCIe -------------
 
@@ -727,10 +754,6 @@ begin
 		if(clk_sync = '1' and clk_last = '0') then
 			readregs(PLL_REGISTER_R) 						<= readregs_slow(PLL_REGISTER_R);
 			readregs(VERSION_REGISTER_R) 					<= readregs_slow(VERSION_REGISTER_R);
-			readregs(ERROR_LINK_TEST_LOW_REGISTER_R)	<= readregs_slow(ERROR_LINK_TEST_LOW_REGISTER_R);
-			readregs(ERROR_LINK_TEST_HIGH_REGISTER_R)	<= readregs_slow(ERROR_LINK_TEST_HIGH_REGISTER_R);
-			readregs(BIT_LINK_TEST_LOW_REGISTER_R)		<= readregs_slow(BIT_LINK_TEST_LOW_REGISTER_R);
-			readregs(BIT_LINK_TEST_HIGH_REGISTER_R)	<= readregs_slow(BIT_LINK_TEST_HIGH_REGISTER_R);
 		end if;
 		
 		readregs(EVENTCOUNTER_REGISTER_R)			<= event_counter;
