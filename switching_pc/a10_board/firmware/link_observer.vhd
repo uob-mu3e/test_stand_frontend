@@ -17,11 +17,9 @@ entity link_observer is
 		reset_n:           in std_logic;
 		rx_data:           in std_logic_vector (g_m - 1 downto 0);
 		rx_datak:          in std_logic_vector (3 downto 0);
-		error_counts_low:      out std_logic_vector (31 downto 0);
-		error_counts_high:      out std_logic_vector (31 downto 0);
-		bit_counts_low:        out std_logic_vector (31 downto 0);
-		bit_counts_high:        out std_logic_vector (31 downto 0);
-		state_out:         out std_logic_vector(3 downto 0)--;
+		mem_add:           out std_logic_vector (2 downto 0);
+		mem_data:          out std_logic_vector (31 downto 0);
+		mem_wen:				 out std_logic--;
 );
 end entity link_observer;
 
@@ -34,6 +32,9 @@ architecture rtl of link_observer is
 	signal next_rx_data  : std_logic_vector(g_m - 1 downto 0);
 	signal enable		 : std_logic;
 	signal sync_reset	 : std_logic;
+	
+	type state_type is (err_low, err_high, bit_low, bit_high);
+	signal state : state_type;
 
 begin
 
@@ -41,19 +42,43 @@ begin
 	process(clk, reset_n)
 	begin
 		if(reset_n = '0') then
-			error_counts_low 		<=	(others => '0');
-			error_counts_high 	<=	(others => '0');
-			bit_counts_low 		<=	(others => '0');
-			bit_counts_high 		<=	(others => '0');
+         mem_add    <= (others => '0');
+         mem_data   <= (others => '0');
+			mem_wen	<= '0';
+         state      <= err_low;
 		elsif(rising_edge(clk)) then
-			error_counts_low 		<=	error_counter(31 downto 0);
-			error_counts_high 	<=	error_counter(63 downto 32);
-			bit_counts_low 		<=	bit_counter(31 downto 0);
-			bit_counts_high 		<=	bit_counter(63 downto 32);
+        case state is
+            
+            when err_low =>
+                mem_add     <= "001";
+                mem_data    <= error_counter(31 downto 0);
+					 mem_wen		<= '1';
+                state      <= err_high;
+            when err_high =>
+                mem_add     <= "010";
+                mem_data    <= error_counter(63 downto 32);
+					 mem_wen		<= '1';
+                state      <= bit_low;
+            when bit_low =>
+                mem_add     <= "011";
+                mem_data    <= bit_counter(31 downto 0);
+					 mem_wen		<= '1';
+                state      <= bit_high;
+            when bit_high =>
+                mem_add     <= "100";
+                mem_data    <= bit_counter(63 downto 32);
+					 mem_wen		<= '1';
+                state      <= err_low;
+            when others =>
+                mem_add    <= (others => '0');
+                mem_data   <= (others => '0');
+					 mem_wen	<= '0';
+                state       <= err_low;
+        end case;
 		end if;
 	end process;
 
-	e_linear_shift : entity work.linear_shift_link
+	e_linear_shift_link : entity work.linear_shift_link
 	generic map(
 		g_m 	=> g_m,
 		g_poly 	=> g_poly
