@@ -4,7 +4,7 @@ set -eux
 TB=$1
 shift
 
-STOPTIME=1100ns
+STOPTIME=${STOPTIME:-1us}
 
 SRC=()
 for arg in "$@" ; do
@@ -15,7 +15,7 @@ done
 mkdir -p .cache
 cd .cache || exit 1
 
-OPTS=()
+OPTS=(--ieee=synopsys -fexplicit)
 
 ghdl -i "${OPTS[@]}" "${SRC[@]}"
 ghdl -s "${OPTS[@]}" "${SRC[@]}"

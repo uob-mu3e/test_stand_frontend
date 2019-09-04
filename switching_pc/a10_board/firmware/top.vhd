@@ -62,6 +62,7 @@ port (
 	 --      ///////// TEMP /////////
     TEMP_I2C_SCL    :   out     std_logic;
     TEMP_I2C_SDA    :   inout   std_logic;
+
     SW : in std_logic_vector(1 downto 0);
 	 
 	 --clkin_50_top	: in std_logic;--					2.5V, default 50MHz
@@ -80,6 +81,7 @@ port (
 	 QSFPA_RST_n         : out   std_logic;
     
     
+	
 	 --///////// PCIE /////////
     PCIE_PERST_n			:	in	std_logic;
     PCIE_REFCLK_p			:	in	std_logic;
@@ -196,7 +198,7 @@ architecture rtl of top is
 		signal cpu_pio_i : std_logic_vector(31 downto 0);
 		signal flash_rst_n : std_logic;
 		signal debug_nios : std_logic_vector(31 downto 0);
-		signal avm_qsfp : work.util.avalon_t;
+		signal av_qsfp : work.util.avalon_t;
 		
 		-- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
 		signal ZERO : std_logic := '0';
@@ -231,6 +233,14 @@ architecture rtl of top is
 		-- Slow Control
 		signal mem_data_out : std_logic_vector(127 downto 0);
 		signal mem_datak_out : std_logic_vector(15 downto 0);
+		signal mem_add_sc : std_logic_vector(15 downto 0);
+		signal mem_data_sc : std_logic_vector(31 downto 0);
+		signal mem_wen_sc : std_logic;
+		
+		-- Link test
+		signal mem_add_link_test : std_logic_vector(2 downto 0);
+		signal mem_data_link_test : std_logic_vector(31 downto 0);
+		signal mem_wen_link_test : std_logic;
 		
 		-- event counter
 		signal state_out_eventcounter : std_logic_vector(3 downto 0);
@@ -247,6 +257,9 @@ architecture rtl of top is
 		signal dma_wren_test : std_logic;
 		signal dma_end_event_cnt : std_logic;
 		signal dma_end_event_test : std_logic;
+		signal data_counter : std_logic_vector(31 downto 0);
+		signal datak_counter : std_logic_vector(3 downto 0);
+
 		
 begin 
 
@@ -314,18 +327,18 @@ port map (
 
 ------------- NIOS -------------
 
-nios2 : nios
+nios2 : work.cmp.nios
 port map (
 	clk_clk                    			=> input_clk,
 	
 	rst_reset_n                			=> cpu_reset_n_q,
 
-   avm_qsfp_address       					=> avm_qsfp.address(15 downto 0),
-	avm_qsfp_read          					=> avm_qsfp.read,
-	avm_qsfp_readdata      					=> avm_qsfp.readdata,
-	avm_qsfp_write         					=> avm_qsfp.write,
-	avm_qsfp_writedata     					=> avm_qsfp.writedata,
-	avm_qsfp_waitrequest   					=> avm_qsfp.waitrequest,
+   avm_qsfp_address       					=> av_qsfp.address(13 downto 0),
+	avm_qsfp_read          					=> av_qsfp.read,
+	avm_qsfp_readdata      					=> av_qsfp.readdata,
+	avm_qsfp_write         					=> av_qsfp.write,
+	avm_qsfp_writedata     					=> av_qsfp.writedata,
+	avm_qsfp_waitrequest   					=> av_qsfp.waitrequest,
 
 	flash_tcm_address_out				 	=> flash_tcm_address_out,
 	flash_tcm_data_out 						=> FLASH_D,
@@ -359,7 +372,7 @@ generic map (
 port map (
 		rstout_n(1) => flash_rst_n,
 		rstout_n(0) => cpu_reset_n_q,
-		rst_n 		=> CPU_RESET_n and wd_rst_n,
+		rst_n 		=> CPU_RESET_n,-- and wd_rst_n,
 		clk 			=> input_clk--,
 );
 
@@ -378,9 +391,9 @@ port map (
 );
 
 LED(0) <= cpu_pio_i(7);
-LED(1) <= cpu_reset_n_q;
-LED(2) <= flash_rst_n;
-LED(3) <= '1';
+LED(1) <= not cpu_reset_n_q;
+LED(2) <= not flash_rst_n;
+LED(3) <= '0';
 
 FLASH_A <= flash_tcm_address_out(27 downto 2);
 
@@ -408,11 +421,11 @@ e_qsfp : entity work.xcvr_a10
 port map (
     i_tx_data   => X"03CAFEBC"
                  & X"02CAFEBC"
-                 & tx_data(1)
+                 & X"01CAFEBC"
                  & tx_data(0),
     i_tx_datak  => "0001"
                  & "0001"
-                 & tx_datak(1)
+                 & "0001"
                  & tx_datak(0),
 
     o_rx_data   => rx_data_v,
@@ -429,12 +442,12 @@ port map (
     i_pll_clk   => input_clk,
     i_cdr_clk   => input_clk,
 
-    i_avs_address     => avm_qsfp.address(15 downto 2),
-    i_avs_read        => avm_qsfp.read,
-    o_avs_readdata    => avm_qsfp.readdata,
-    i_avs_write       => avm_qsfp.write,
-    i_avs_writedata   => avm_qsfp.writedata,
-    o_avs_waitrequest => avm_qsfp.waitrequest,
+    i_avs_address     => av_qsfp.address(13 downto 0),
+    i_avs_read        => av_qsfp.read,
+    o_avs_readdata    => av_qsfp.readdata,
+    i_avs_write       => av_qsfp.write,
+    i_avs_writedata   => av_qsfp.writedata,
+    o_avs_waitrequest => av_qsfp.waitrequest,
 
     i_reset     => not CPU_RESET_n,
     i_clk       => input_clk--,
@@ -494,7 +507,7 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 --		
 --	fifo : transceiver_fifo
 --		port map (
---			data    => rx_data(i) & rx_datak(i), --fifo_data_in_ch0 & fifo_datak_in_ch0,
+--			data    => (i) & rx_datak(i), --fifo_data_in_ch0 & fifo_datak_in_ch0,
 --			wrreq   => not idle_ch(i),
 --			rdreq   => not fifo_empty(i),
 --			wrclk   => tx_clk(0),--rx_clk(i),
@@ -523,16 +536,29 @@ e_data_gen : entity work.data_generator_a10
 		state_out				=> state_out_datagen--,
 );
 
-tx_data(1) <= data_pix_generated;
-tx_datak(1) <= datak_pix_generated;
+process(tx_clk(0), reset_n)
+begin
+	if(reset_n = '0') then
+		data_counter 	<= (others => '0');
+		datak_counter 	<= (others => '0');
+	elsif (rising_edge(tx_clk(0))) then
+		if (writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
+			data_counter 	<= data_pix_generated;
+			datak_counter 	<= datak_pix_generated;
+		else
+			data_counter 	<= rx_data(0);
+			datak_counter 	<= rx_datak(0);
+		end if;
+	end if;
+end process;
 
 e_event_counter : entity work.event_counter
 	port map(
 		clk						=> tx_clk(0),
 		dma_clk					=> pcie_fastclk_out,
 		reset_n					=> resets_n(RESET_BIT_EVENT_COUNTER),
-		rx_data					=> rx_data(1),
-		rx_datak					=> rx_datak(1),
+		rx_data					=> data_counter,
+		rx_datak					=> datak_counter,
 		dma_wen_reg				=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
 		event_length			=> event_length,
 		dma_data_wren			=> dma_wren_cnt,
@@ -561,7 +587,7 @@ begin
 		dma_data_wren <= '0';
 		dmamem_endofevent <= '0';
 		dma_data 	  <= (others => '0');
-	else
+	elsif (rising_edge(pcie_fastclk_out)) then
 		dma_data_wren <= '0';
 		dmamem_endofevent <= '0';
 		dma_data 	  <= (others => '0');
@@ -647,20 +673,57 @@ master : sc_master
 
 slave : sc_slave
 	port map(
-		clk					=> tx_clk(0),
-		reset_n				=> resets_n(RESET_BIT_SC_SLAVE),
-		enable				=> '1',
-		link_data_in		=> rx_data(0),
-		link_data_in_k		=> rx_datak(0),
-		mem_addr_out		=> readmem_writeaddr(15 downto 0),
+		clk							=> tx_clk(0),
+		reset_n						=> resets_n(RESET_BIT_SC_SLAVE),
+		enable						=> '1',
+		link_data_in				=> rx_data(0),
+		link_data_in_k				=> rx_datak(0),
+		mem_addr_out				=> mem_add_sc,
 		mem_addr_finished_out   => readmem_writeaddr_finished,
-		mem_data_out		=> readmem_writedata,
-		mem_wren				=> readmem_wren,
-		stateout				=> LED_BRACKET
+		mem_data_out				=> mem_data_sc,
+		mem_wren						=> mem_wen_sc,
+		stateout						=> LED_BRACKET--,
 );
 
 tx_data(0) <= mem_data_out(31 downto 0);
 tx_datak(0) <= mem_datak_out(3 downto 0);
+
+------------- Link Test -------------
+e_link_observer : entity work.link_observer
+generic map(
+	g_m 	=> 32,
+	g_poly 	=> "10000000001000000000000000000110"
+)
+ port map (
+	clk     				=> tx_clk(0),
+	reset_n     		=> resets_n(RESET_BIT_LINK_TEST),
+	rx_data     		=> rx_data(1),
+	rx_datak    		=> rx_datak(1),
+	mem_add      		=> mem_add_link_test,
+	mem_data     		=> mem_data_link_test,
+	mem_wen				=> mem_wen_link_test--,
+);
+
+process (tx_clk(0), reset_n)
+begin
+	if (reset_n = '0') then
+		readmem_writeaddr <= (others => '0');
+		readmem_writedata <= (others => '0');
+		readmem_wren		<= '0';
+	elsif (rising_edge(tx_clk(0))) then
+		readmem_writeaddr <= (others => '0');
+		if (writeregs(LINK_TEST_REGISTER_W)(LINK_TEST_BIT_ENABLE) = '1') then
+			readmem_writeaddr(2 downto 0)  <= mem_add_link_test;
+			readmem_writedata						<= mem_data_link_test;
+			readmem_wren							<= mem_wen_link_test;
+		else
+			readmem_writeaddr(15 downto 0)   <= mem_add_sc;
+			readmem_writedata						<= mem_data_sc;
+			readmem_wren							<= mem_wen_sc;
+		end if;
+	end if;
+end process;
+
 
 ------------- PCIe -------------
 
@@ -689,8 +752,8 @@ begin
 		clk_last <= clk_sync;
 		
 		if(clk_sync = '1' and clk_last = '0') then
-			readregs(PLL_REGISTER_R) 					<= readregs_slow(PLL_REGISTER_R);
-			readregs(VERSION_REGISTER_R) 				<= readregs_slow(VERSION_REGISTER_R);
+			readregs(PLL_REGISTER_R) 						<= readregs_slow(PLL_REGISTER_R);
+			readregs(VERSION_REGISTER_R) 					<= readregs_slow(VERSION_REGISTER_R);
 		end if;
 		
 		readregs(EVENTCOUNTER_REGISTER_R)			<= event_counter;

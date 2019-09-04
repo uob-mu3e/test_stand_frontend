@@ -65,7 +65,7 @@ architecture rtl of top is
 
     signal flash_ce_n_i : std_logic;
 
-    signal avm_qsfp : work.util.avalon_t;
+    signal av_qsfp : work.util.avalon_t;
 
 begin
 
@@ -131,12 +131,12 @@ begin
 
     i_nios : component work.cmp.nios
     port map (
-        avm_qsfp_address        => avm_qsfp.address(15 downto 0),
-        avm_qsfp_read           => avm_qsfp.read,
-        avm_qsfp_readdata       => avm_qsfp.readdata,
-        avm_qsfp_write          => avm_qsfp.write,
-        avm_qsfp_writedata      => avm_qsfp.writedata,
-        avm_qsfp_waitrequest    => avm_qsfp.waitrequest,
+        avm_qsfp_address        => av_qsfp.address(13 downto 0),
+        avm_qsfp_read           => av_qsfp.read,
+        avm_qsfp_readdata       => av_qsfp.readdata,
+        avm_qsfp_write          => av_qsfp.write,
+        avm_qsfp_writedata      => av_qsfp.writedata,
+        avm_qsfp_waitrequest    => av_qsfp.waitrequest,
 
         flash_tcm_address_out(27 downto 2) => FLASH_A,
         flash_tcm_data_out => FLASH_D,
@@ -218,12 +218,12 @@ begin
         i_pll_clk   => refclk_125,
         i_cdr_clk   => refclk_125,
 
-        i_avs_address     => avm_qsfp.address(15 downto 2),
-        i_avs_read        => avm_qsfp.read,
-        o_avs_readdata    => avm_qsfp.readdata,
-        i_avs_write       => avm_qsfp.write,
-        i_avs_writedata   => avm_qsfp.writedata,
-        o_avs_waitrequest => avm_qsfp.waitrequest,
+        i_avs_address     => av_qsfp.address(13 downto 0),
+        i_avs_read        => av_qsfp.read,
+        o_avs_readdata    => av_qsfp.readdata,
+        i_avs_write       => av_qsfp.write,
+        i_avs_writedata   => av_qsfp.writedata,
+        o_avs_waitrequest => av_qsfp.waitrequest,
 
         i_reset     => not nios_rst_n,
         i_clk       => nios_clk--,

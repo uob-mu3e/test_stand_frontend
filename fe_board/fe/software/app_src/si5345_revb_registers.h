@@ -29,7 +29,7 @@ typedef struct
 
 } si5345_revb_register_t;
 
-si5345_revb_register_t const si5345_revb_registers[SI5345_REVB_REG_CONFIG_NUM_REGS + 1] =
+si5345_revb_register_t const si5345_revb_registers[] =
 {
 
 	/* Start configuration preamble */

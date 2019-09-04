@@ -11,6 +11,17 @@ subtype reg32 is std_logic_vector(31 downto 0);
 
 type reg64b_array_t is array (natural range <>) of std_logic_vector(63 downto 0);
 
+subtype run_state_t is std_logic_vector(9 downto 0);
+constant RUN_STATE_IDLE        : run_state_t := "0000000001";
+constant RUN_STATE_PREP        : run_state_t := "0000000010";
+constant RUN_STATE_SYNC        : run_state_t := "0000000100";
+constant RUN_STATE_RUNNING     : run_state_t := "0000001000";
+constant RUN_STATE_TERMINATING : run_state_t := "0000010000";
+constant RUN_STATE_LINK_TEST   : run_state_t := "0000100000";
+constant RUN_STATE_SYNC_TEST   : run_state_t := "0001000000";
+constant RUN_STATE_RESET       : run_state_t := "0010000000";
+constant RUN_STATE_OUT_OF_DAQ  : run_state_t := "0100000000";
+
 type feb_run_state is (
     idle,
     run_prep,
@@ -46,5 +57,15 @@ constant k23_7 : std_logic_vector(7 downto 0) := X"F7"; -- used as "empty" data 
 constant k27_7 : std_logic_vector(7 downto 0) := X"FB";
 constant k29_7 : std_logic_vector(7 downto 0) := X"FD";
 constant k30_7 : std_logic_vector(7 downto 0) := X"FE";
+
+
+-- mscb addressing (for networks with 8bit and 16bit addresses, we will use 16 ?)
+constant MSCB_CMD_ADDR_NODE16   : std_logic_vector(7 downto 0) := X"0A";
+constant MSCB_CMD_ADDR_NODE8    : std_logic_vector(7 downto 0) := X"09";
+constant MSCB_CMD_ADDR_GRP8     : std_logic_vector(7 downto 0) := X"11"; -- group addressing
+constant MSCB_CMD_ADDR_GRP16    : std_logic_vector(7 downto 0) := X"12";
+constant MSCB_CMD_ADDR_BC       : std_logic_vector(7 downto 0) := X"10"; --broadcast
+constant MSCB_CMD_PING8         : std_logic_vector(7 downto 0) := X"19";
+constant MSCB_CMD_PING16        : std_logic_vector(7 downto 0) := X"1A";
 
 end package;
