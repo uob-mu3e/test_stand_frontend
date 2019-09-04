@@ -15,13 +15,15 @@ miss_counts = miss_counts[-len(miss_counts_half):]
 rate = np.load("rate_total.npy")
 rate = rate[-len(miss_counts_half):]
 rate_half = np.load("rate_half_total.npy")
-print(rate)
 x = 0
 for i, j in enumerate(miss_counts_half):
     if j != 0:
+        print(j)
         x = rate_half[i-1]/1000
         break
 
+if x == 0:
+    x = rate_half[np.argmax(rate_half)]/1000
 
 plt.plot(rate/1000, miss_counts, 'o', color=blue, label='frac scan');
 plt.plot(rate_half/1000, miss_counts_half, 'o', color=green, label='use halfful');
