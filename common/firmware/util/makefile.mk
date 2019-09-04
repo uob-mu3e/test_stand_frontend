@@ -60,7 +60,7 @@ bsp : $(BSP_DIR)
 .PHONY : $(APP_DIR)/main.elf
 $(APP_DIR)/main.elf : $(APP_DIR)_src/* $(BSP_DIR)
 	nios2-app-generate-makefile \
-        --set ALT_CFLAGS "-pedantic -Wall -Wextra -Wformat=0 -std=c++11 -Os -g" \
+        --set ALT_CFLAGS "-pedantic -Wall -Wextra -Wformat=0 -std=c++11" \
         --bsp-dir $(BSP_DIR) --app-dir $(APP_DIR) --src-dir $(APP_DIR)_src
 	$(MAKE) -C $(APP_DIR) clean
 	$(MAKE) -C $(APP_DIR)
