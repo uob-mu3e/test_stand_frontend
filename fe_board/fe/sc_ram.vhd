@@ -136,7 +136,7 @@ begin
 
 
 
-    process(i_clk)
+    process(i_clk, i_reset_n)
     begin
     if ( i_reset_n = '0' ) then
         o_ram_rvalid <= '0';

@@ -27,6 +27,8 @@ set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
 set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/FEB_mupix.qip
 set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
 
+set_global_assignment -name VHDL_FILE util/linear_shift_link.vhd
+
 
 
 # tail

@@ -74,6 +74,15 @@ struct sc_t {
                     printf("[0x%02X] = 0x%08X\n", i, ram->data[0xFF00 + i]);
                 }
                 break;
+            case 'D':
+                for(int i = 0; i < 256*256; i++) {
+                    if(ram->data[i] == 0) continue;
+                    printf("[0x%04X] = 0x%08X\n", i, ram->data[i]);
+                }
+                break;
+            case 'i':
+                ram->regs.fe.cmdlen = 0xffff0000;
+                break;
             case 'q':
                 return;
             default:
