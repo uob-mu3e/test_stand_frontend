@@ -795,7 +795,7 @@ long mudaq_fops_ioctl( struct file * filp,
     #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
     err = !access_ok((void __user *)ioctl_param, _IOC_SIZE(cmd));
     #else
-    err = !access_ok(VERIFY_WRITE, (void __user *)ioctl_param, _IOC_SIZE(cmd));
+    err = !access_ok(VERIFY_READ, (void __user *)ioctl_param, _IOC_SIZE(cmd));
     #endif
   if (err) {
     retval = -EFAULT;
