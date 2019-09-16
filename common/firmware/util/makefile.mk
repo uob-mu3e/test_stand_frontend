@@ -90,4 +90,7 @@ app_upload : app
 terminal :
 	nios2-terminal -c $(CABLE)
 
-
+.PHONY : upload_terminal
+upload_terminal : app_upload
+	nios2-terminal -c $(CABLE)
+	
