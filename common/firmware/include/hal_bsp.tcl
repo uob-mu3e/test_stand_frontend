@@ -1,12 +1,13 @@
-#create_bsp <bspType> <bsp version> <processor name> <sopcinfo>
+#
 
 # flags
 set_setting hal.make.bsp_cflags_debug -g
-set_setting hal.make.bsp_cflags_optimization -O2
+set_setting hal.make.bsp_cflags_optimization -Os
+set_setting hal.make.bsp_cflags_warnings "-Wall -Wextra"
 
 # logging
 #set_setting hal.log_port jtag_uart
-#set_setting hal.make.bsp_cflags_user_flags -DALT_LOG_FLAGS=-1
+#set_setting hal.log_flags 1
 
 # exit
 set_setting hal.enable_exit true

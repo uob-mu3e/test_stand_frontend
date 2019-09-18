@@ -341,6 +341,7 @@ begin
         rx_analogreset  => rx_analogreset,
         rx_digitalreset => rx_digitalreset,
 
+        -- The rx_pll_locked signal has no significance in LTD mode.
         rx_pll_locked   => rx_is_lockedtoref,
         -- When asserted, indicates that the RX CDR is locked to incoming data. This signal is optional.
         rx_freqlocked   => rx_is_lockedtodata,

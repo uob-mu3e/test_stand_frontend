@@ -1,5 +1,9 @@
+#
+# author : Alexanrd Kozlinskiy
+# date : 2017-11-27
+#
 
-source [ file join [ file dirname [ info script ] ] "util.tcl"]
+source [ file join [ file dirname [ info script ] ] "util.tcl" ]
 
 namespace eval ::quartus {}
 

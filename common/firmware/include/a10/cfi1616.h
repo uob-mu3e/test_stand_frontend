@@ -1,8 +1,8 @@
 /*
  * cfi1616.h
  *
- *  Created on: Oct 30, 2017
- *      Author: akozlins
+ * author : Alexandr Kozlinskiy
+ * date : 2017-10-30
  */
 
 #ifndef SOFTWARE_APP_SRC_CFI1616_H_

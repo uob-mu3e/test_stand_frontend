@@ -8,22 +8,28 @@ port (
 
 	CLOCK : in std_logic; -- 50 MHz
 	RESET_N : in std_logic;
-
-	Arduino_IO13 : in std_logic;
-	Arduino_IO12 : out std_logic;
-	Arduino_IO11 : out std_logic;
-	Arduino_IO10 : out std_logic--;
+--
+--	Arduino_IO13 : in std_logic;
+--	Arduino_IO12 : out std_logic;
+--	Arduino_IO11 : out std_logic;
+--	Arduino_IO10 : out std_logic;
+    
+    MSCB_IN : in std_logic;
+    MSCB_OUT :out std_logic;
+    MSCB_OE : out std_logic;
+   -- DIFFIO_B16N : out std_logic;
+    --DIFFIO_B14P : out std_logic--;
     
     --Arduino_A0  : in std_logic;
 ----
---	SWITCH1 : in std_logic;
+	SWITCH1 : in std_logic;
 ----	SWITCH2 : in std_logic;
 ----	SWITCH3 : in std_logic;
 ----	SWITCH4 : in std_logic;
 ----    SWITCH5 : in std_logic;
 --
 --
---	LED1 : out std_logic;
+	LED1 : out std_logic--;
 --	LED2 : out std_logic;
 --	LED3 : out std_logic;
 --	LED4 : out std_logic;
@@ -44,7 +50,24 @@ architecture arch of top is
 --	);
 --    END component my_altmult_add;
 
+    component mscb IS
+
+    port (
+        nios_clk                    : in    std_logic;
+        reset                       : in    std_logic;
+        mscb_to_nios_parallel_in    : out   std_logic_vector(11 downto 0);
+        mscb_from_nios_parallel_out : in    std_logic_vector(11 downto 0);
+        mscb_data_in                : in    std_logic;
+        mscb_data_out               : out   std_logic;
+        mscb_oe                     : out   std_logic;
+        mscb_counter_in             : out   unsigned(15 downto 0);
+        o_mscb_irq                  : out   std_logic;
+        i_mscb_address              : in    std_logic_vector(15 downto 0)--;
+    );
+    END component mscb;
+
     constant count_max : unsigned(24 downto 0) := (others => '1');
+    constant address :   std_logic_vector(15 downto 0) := x"ABCD" ; --Address of board
     
 	signal adc_clk : std_logic; -- 10 MHz
 	signal nios_clk : std_logic; -- 50 MHz
@@ -67,7 +90,182 @@ architecture arch of top is
     signal counter : unsigned(24 downto 0);
     signal mult_delay_cnt : unsigned(10 downto 0);
     
+    signal mscb_out_parallel, mscb_in_parallel : std_logic_vector(11 downto 0);
+    signal crc_check_en: std_logic;
+    signal address_enable : std_logic_vector(1 downto 0); --one hot encoding
+   
+   
+    TYPE state_type IS (idle, addr_cmd_msb, addr_cmd_lsb, crc_check, command_processing, full_operation, CMD_READ_MEM, CMD_READ_MEM_ANSWER);  -- Define the states
+    SIGNAL state : state_type;    -- Create a signal that
+    signal msg_save: std_logic_vector(31 downto 0);
+    signal crc_cnt : unsigned(6 downto 0) := (others => '0');
+    signal read_receive_cnt : unsigned(3 downto 0) := (others => '0');
+    signal crc_reg: std_logic_vector(8 downto 0);
+    
+    type array8 is array (integer range <>) of std_logic_vector(7 downto 0);
+    signal full_operation_save: array8(8 downto 0);
+    signal full_cmd_save, testfifo: std_logic_vector(7 downto 0);
+    
+    constant spoof_mem : array8(8 downto 0) := (x"07",x"00",x"01",x"00",x"12",x"34",x"56",x"78",x"00");
+    
 begin
+
+
+    my_mscb: mscb
+    port map(
+        nios_clk                    =>  CLOCK,
+        reset                       => not RESET_N,
+        mscb_to_nios_parallel_in    => mscb_in_parallel,
+        mscb_from_nios_parallel_out => mscb_out_parallel,
+        mscb_data_in                => MSCB_IN,--: in    std_logic;
+        mscb_data_out               => MSCB_OUT,--: out   std_logic;
+        mscb_oe                     => MSCB_OE,--: out   std_logic;
+        mscb_counter_in             => open,
+        o_mscb_irq                  => open,
+        i_mscb_address              => address
+    );
+
+    
+    
+    process(CLOCK,reset_n)
+    begin
+        if reset_n = '0' then
+            mscb_out_parallel <= (others => '0');
+            msg_save <= (others => '0');
+            crc_check_en <= '0';
+            crc_cnt <= (others => '0');
+            
+        elsif rising_edge(CLOCK) then
+            case state is
+                when idle =>
+                    mscb_out_parallel <= (others => '0');
+                    msg_save <= (others => '0');
+                    full_cmd_save <= (others => '0');
+                    full_operation_save <= (others => x"00");
+                    read_receive_cnt <= (others => '0') ;
+                    
+                    if mscb_in_parallel(9) = '0' then  --fifo not empty
+                        if mscb_in_parallel(8) = '1' then -- address bit set
+                            state <= addr_cmd_msb; 
+                            msg_save(31 downto 24) <= mscb_in_parallel(7 downto 0);
+                            mscb_out_parallel(10) <= '1';  -- read fifo
+                        else
+                            mscb_out_parallel(10) <= not mscb_out_parallel(10);
+                        end if;
+                    end if;
+                    
+                when addr_cmd_msb =>
+                    if mscb_in_parallel(7 downto 0) /= msg_save(31 downto 24) then  --wait until fifo changed (failes for msb address = CMD_PING16 or CMD_ADDR_NODE16, ...)
+                        if mscb_in_parallel(7 downto 0) = address(15 downto 8) then  --check msb address
+                            state <= addr_cmd_lsb;
+                            msg_save(23 downto 16) <= mscb_in_parallel(7 downto 0);
+                            mscb_out_parallel(10) <= not mscb_out_parallel(10); 
+                        else
+                            state <= idle;
+                        end if;
+
+                    elsif mscb_in_parallel(9) = '0' then
+                        mscb_out_parallel(10) <= not mscb_out_parallel(10);
+                    end if;
+                    
+                    
+                when addr_cmd_lsb =>
+                    if mscb_in_parallel(7 downto 0) /= msg_save(23 downto 16) then --fails if msb = lsb of address
+                        if mscb_in_parallel(7 downto 0) = address(7 downto 0) then --check lsb address
+                            state <= crc_check;
+                            msg_save(15 downto 8) <= mscb_in_parallel(7 downto 0);
+                            mscb_out_parallel(10) <= not mscb_out_parallel(10);
+                        else
+                            state <= idle;
+                        end if;
+
+                    elsif mscb_in_parallel(9) = '0' then
+                        mscb_out_parallel(10) <= not mscb_out_parallel(10);
+                    end if;
+                    
+                when crc_check =>
+--                    if crc_check_en = '1' then
+--                        --state <= command_processing;
+--                        if crc_cnt <= 32 then
+--                            --x8+x5+x4+1
+--                            msg_save(31 downto 30) <= msg_save(30 downto 29);
+--                            msg_save(29) <= msg_save(31) xor msg_save(28);
+--                            msg_save(28) <= msg_save(31) xor msg_save(27);
+--                            msg_save(27 downto 25) <= msg_save(26 downto 24);
+--                            msg_save(24) <= msg_save(31) xor msg_save(23);
+--                            msg_save(23 downto 1) <= msg_save(22 downto 0);
+--                            msg_save(0) <= '0';
+--                            crc_cnt <= crc_cnt +1;
+--                            
+--                        else
+--                            if msg_save(31 downto 24) = "00000000" then
+--                                state <= command_processing;
+--                            else
+--                                state <= idle;
+--                            end if;
+--                        end if; 
+--                    els
+                      if mscb_in_parallel(7 downto 0) /= msg_save(15 downto 8) then  -- fails if lsb address = crc
+                        --crc_check_en <= '1';
+                        msg_save(7 downto 0) <= mscb_in_parallel(7 downto 0);
+                        mscb_out_parallel(10) <= not mscb_out_parallel(10);
+                        state <= command_processing;
+                    elsif mscb_in_parallel(9) = '0' then
+                        mscb_out_parallel(10) <= not mscb_out_parallel(10);
+                    end if;
+                    
+                when command_processing =>
+                    if msg_save(31 downto 24) = x"1A" then --ping
+                        mscb_out_parallel(10 downto 0) <= "01001111000";
+                        state <= idle;
+                    elsif msg_save(31 downto 24) = x"0A" then --address
+                        state <= full_operation;
+                        mscb_out_parallel(10) <= '0';
+                    elsif mscb_in_parallel(9) = '0' then
+                        mscb_out_parallel(10) <= not mscb_out_parallel(10);
+                    end if;
+                
+                when full_operation =>
+                    if full_cmd_save = x"BF"  then --CMD_READ_MEM
+                        state <= CMD_READ_MEM;
+                        read_receive_cnt <= (others => '0');
+                        mscb_out_parallel(10) <= '0';
+                    end if;
+                    
+                    if mscb_in_parallel(9) = '0' then  --fifo not empty
+                        full_cmd_save <= mscb_in_parallel(7 downto 0);
+                        mscb_out_parallel(10) <= not mscb_out_parallel(10);
+                    end if;
+                    
+                when CMD_READ_MEM =>  
+                    if mscb_in_parallel(9) = '0' then
+                        mscb_out_parallel(10) <= '1';
+                    end if;
+                    
+        
+                    if read_receive_cnt = 9 then
+                        state <= CMD_READ_MEM_ANSWER;
+                        read_receive_cnt <= (others => '0');
+                    end if;        
+                    if mscb_out_parallel(10) = '1' then
+                        if mscb_in_parallel(7 downto 0) /= spoof_mem(8-to_integer(read_receive_cnt)) then 
+                            state <= idle;
+                        else 
+                            read_receive_cnt <= read_receive_cnt + 1;
+                            full_operation_save(to_integer(read_receive_cnt)) <= mscb_in_parallel;
+                            LED1 <= full_operation_save(to_integer(read_receive_cnt))(0) and full_operation_save(to_integer(read_receive_cnt))(1) and full_operation_save(to_integer(read_receive_cnt))(2) and full_operation_save(to_integer(read_receive_cnt))(3) and full_operation_save(to_integer(read_receive_cnt))(4) and full_operation_save(to_integer(read_receive_cnt))(5) and full_operation_save(to_integer(read_receive_cnt))(6) and full_operation_save(to_integer(read_receive_cnt))(7);                       
+                        end if;
+                        mscb_out_parallel(10) <= '0';                        
+                    end if;
+                 
+                when CMD_READ_MEM_ANSWER =>
+                    state <= idle;
+                    
+                when others =>
+                    state <= idle;
+            end case;
+        end if;
+    end process;
 
 --    sw(0)   <= SWITCH1;
 ----	sw(1)   <= SWITCH2;
@@ -75,7 +273,7 @@ begin
 ----    sw(3)   <= SWITCH4;
 ----    sw(4)   <= SWITCH5;
 --    
---	LED1    <= led(0);
+--      LED1    <= full_operation_save(0)(0);
 --    LED2    <= e_x(0);
 --    LED3    <= e_x2(0);
 --    LED4    <= counter(0);
@@ -143,15 +341,15 @@ begin
 --
 --    
 --
---	--- PLL ---
---	e_ip_altpll : entity work.ip_altpll
---	port map (
---		areset => not reset_n,
---		inclk0 => CLOCK,
---		c0     => adc_clk,
---		c1     => nios_clk,
---		locked => pll_locked--,
---	);
+	--- PLL ---
+	e_ip_altpll : entity work.ip_altpll
+	port map (
+		areset => not reset_n,
+		inclk0 => CLOCK,
+		c0     => adc_clk,
+		c1     => nios_clk,
+		locked => pll_locked--,
+	);
     
        
         --    process(adc_clk, reset_n)
@@ -177,18 +375,18 @@ begin
 --
 -- 	   
 
-    	--- NIOS ---
-	e_nios : component work.cmp.nios
-	port map (
-			clk_clk           => CLOCK,
-			led_io_export     => led,
-			pio_export        => nios_pio,
-			rst_reset_n       => reset_n,
-			spi_MISO          => Arduino_IO13,
-			spi_MOSI          => Arduino_IO12,
-			spi_SCLK          => Arduino_IO11,
-			spi_SS_n          => Arduino_IO10,
-			sw_io_export      => sw--,
-	);
+--    	--- NIOS ---
+--	e_nios : component work.cmp.nios
+--	port map (
+--			clk_clk           => CLOCK,
+--			led_io_export     => led,
+--			pio_export        => nios_pio,
+--			rst_reset_n       => reset_n,
+--			spi_MISO          => Arduino_IO13,
+--			spi_MOSI          => Arduino_IO12,
+--			spi_SCLK          => Arduino_IO11,
+--			spi_SS_n          => Arduino_IO10,
+--			sw_io_export      => sw--,
+--	);
 
 end architecture;

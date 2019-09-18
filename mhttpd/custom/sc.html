@@ -138,6 +138,33 @@
                         </button>
                         </td>
                     </tr>
+                    
+                    <tr align="center">
+                        <td> <button name="modbbutton" class="mbutton"
+                                data-odb-path="/Equipment/Switching/Settings/Clear WM"
+                                data-odb-value="1">
+                            Clear WM
+                        </button>
+                        <button name="modbbutton" class="mbutton"
+                                data-odb-path="/Equipment/Switching/Settings/Read MALIBU File"
+                                data-odb-value="1">
+                            Read MALIBU File
+                        </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>PCIe MEM Start</td>
+                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/PCIE_MEM_START"></td>
+                    </tr>
+                    <tr>
+                        <td><button name="modbbutton" class="mbutton"
+                                data-odb-path="/Equipment/Switching/Settings/Last RM ADD"
+                                data-odb-value="1">
+                            Last RM ADD
+                        </button>
+                        </td>
+                        <td name="modbvalue" data-odb-path="/Equipment/Switching/Variables/LAST_RM_ADD" data-odb-editable="1"></td>
+                    </tr>
                 </table>
             </td>
         </tr>
@@ -170,10 +197,6 @@
                         <td>Length</td>
                         <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/LENGTH_READ"></td>
                     </tr>
-                    <tr>
-                        <td>PCIe MEM Start</td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/PCIE_MEM_START_READ"></td>
-                    </tr>
                 </table>
             </td>
         </tr>
@@ -205,10 +228,6 @@
                         <td>Start Add.</td>
                         <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/START_ADD_WRITE"></td>
                     </tr>
-                    <tr>
-                        <td>PCIe MEM Start</td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/PCIE_MEM_START_WRITE"></td>
-                    </tr>
 
                     <tr>
                         <th>
@@ -230,10 +249,6 @@
                     <tr>
                         <td>Data</td>
                         <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/SINGLE_DATA_WRITE"></td>
-                    </tr>
-                    <tr>
-                        <td>PCIe MEM Start</td>
-                        <td name="modbvalue" data-odb-editable="1" data-format="x" data-odb-path="/Equipment/Switching/Variables/PCIE_MEM_START_WRITE"></td>
                     </tr>
                 </table>
             </td>

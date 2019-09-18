@@ -1,10 +1,9 @@
 
 #include "../include/base.h"
 
-#include <sys/alt_irq.h>
-#include <altera_avalon_timer_regs.h>
-#include <altera_avalon_pio_regs.h>
-#include <altera_modular_adc_sequencer_regs.h>
+#include "adc.h"
+adc_t adc;
+
 
 
 #include <time.h> 
@@ -24,17 +23,9 @@ alt_u32 alarm_callback(void*) {
     return 10;
 }
 
+
 int main() {
-    uart_init();
-
-    printf("ALT_DEVICE_FAMILY = '%s'\n", ALT_DEVICE_FAMILY);
-    printf("\n");
-
-    alt_alarm alarm;
-    int err = alt_alarm_start(&alarm, 0, alarm_callback, nullptr);
-    if(err) {
-        printf("ERROR: alt_alarm_start => %d\n", err);
-    }
+    base_init();
 
     while (1) {
         printf("\n");
@@ -48,14 +39,11 @@ int main() {
         printf("Select entry ...\n");
         char cmd = wait_key();
 
-        int switch_datain;
-        volatile int adc_avg = 0;
-
         switch(cmd) {
-        case '0':
-            printf("spi:\n");
-            //menu_spi_si5345();
+        case 'a':
+            adc.menu();
             break;
+
         case '1':
 
             printf("*******PIO and On-Die Temp Sensor example********\n"
@@ -91,6 +79,7 @@ int main() {
                 printf("On-die temperature = %d\n",(celsius_lookup(adc_avg/64-3417)-40));
 
             }
+
             break;
         case '2':
             adc_data_writeout();
@@ -234,3 +223,4 @@ alt_u8 celsius_lookup(int adc_avg_in)
 	return (celsius_lookup_table[adc_avg_in]);
 
 }
+

@@ -49,8 +49,8 @@ begin
   end if;
   end process;
 
-  full_loc  <= '1' when rdcnt = wrcnt + '1' else '0';
-  empty_loc <= '1' when rdcnt = wrcnt   else '0';
+  full_loc  <= '1' when unsigned(rdcnt) = unsigned(wrcnt) + 1 else '0';
+  empty_loc <= '1' when unsigned(rdcnt) = unsigned(wrcnt)   else '0';
   Full  <= full_loc;
   Empty <= empty_loc;
 

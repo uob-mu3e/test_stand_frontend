@@ -13,16 +13,17 @@ architecture arch of tb_sc_rx is
     signal link_data : std_logic_vector(31 downto 0);
     signal link_datak : std_logic_vector(3 downto 0);
 
-    signal fifo_we : std_logic;
-    signal fifo_wdata : std_logic_vector(35 downto 0);
+    signal fifo_rempty : std_logic;
+    signal fifo_rdata : std_logic_vector(35 downto 0);
+    signal fifo_rack : std_logic;
 
     type ram_t is array (natural range <>) of std_logic_vector(31 downto 0);
     signal ram : ram_t(0 to 15);
 
     signal ram_addr : std_logic_vector(31 downto 0);
     signal ram_re : std_logic;
-    signal ram_rdata : std_logic_vector(31 downto 0);
     signal ram_rvalid : std_logic;
+    signal ram_rdata : std_logic_vector(31 downto 0);
     signal ram_we : std_logic;
     signal ram_wdata : std_logic_vector(31 downto 0);
 
@@ -38,19 +39,21 @@ begin
         i_link_data => link_data,
         i_link_datak => link_datak,
 
-        o_fifo_we => fifo_we,
-        o_fifo_wdata => fifo_wdata,
+        o_fifo_rempty => fifo_rempty,
+        o_fifo_rdata => fifo_rdata,
+        i_fifo_rack => fifo_rack,
 
         o_ram_addr => ram_addr,
         o_ram_re => ram_re,
-        i_ram_rdata => ram_rdata,
         i_ram_rvalid => ram_rvalid,
+        i_ram_rdata => ram_rdata,
         o_ram_we => ram_we,
         o_ram_wdata => ram_wdata,
 
         i_reset_n => reset_n,
         i_clk => clk--,
     );
+    fifo_rack <= not fifo_rempty;
 
     process(clk)
         variable i : integer;
@@ -64,8 +67,8 @@ begin
         if ( ram_we = '1' ) then
             ram(i) <= ram_wdata;
         end if;
-        ram_rdata <= ram(i);
         ram_rvalid <= ram_re;
+        ram_rdata <= ram(i);
     end if;
     end process;
 
@@ -154,6 +157,11 @@ begin
         -- length
         link_data <= X"00000004";
         link_datak <= "0000";
+
+        wait until rising_edge(clk);
+        -- stop
+        link_data <= X"0000009C";
+        link_datak <= "0001";
 
         wait until rising_edge(clk);
         -- idle
@@ -247,54 +255,54 @@ begin
     ----------------------------------------------------------------------------
 
         -- ack
-        wait until rising_edge(clk) and fifo_we = '1';
-        assert ( fifo_wdata = "1110" & X"00000008" ) severity error;
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "1110" & X"00000008" ) severity error;
 
         -- length
-        wait until rising_edge(clk) and fifo_we = '1';
-        assert ( fifo_wdata = "0000" & X"00010004" ) severity error;
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0000" & X"00010004" ) severity error;
 
         -- stop
-        wait until rising_edge(clk) and fifo_we = '1';
-        assert ( fifo_wdata = "0011" & X"00000000" ) severity error;
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0011" & X"00000000" ) severity error;
 
         wait until rising_edge(clk);
-        assert ( fifo_we = '0' ) severity error;
+        assert ( fifo_rempty = '1' ) severity error;
 
     ----------------------------------------------------------------------------
     -- read
     ----------------------------------------------------------------------------
 
         -- ack
-        wait until rising_edge(clk) and fifo_we = '1';
-        assert ( fifo_wdata = "1010" & X"00000008" ) severity error;
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "1010" & X"00000008" ) severity error;
 
         -- length
-        wait until rising_edge(clk) and fifo_we = '1';
-        assert ( fifo_wdata = "0000" & X"00010004" ) severity error;
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0000" & X"00010004" ) severity error;
 
         -- data[0]
-        wait until rising_edge(clk) and fifo_we = '1';
-        assert ( fifo_wdata = "0000" & X"00112233" ) severity error;
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0000" & X"00112233" ) severity error;
 
         -- data[1]
-        wait until rising_edge(clk) and fifo_we = '1';
-        assert ( fifo_wdata = "0000" & X"11223344" ) severity error;
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0000" & X"11223344" ) severity error;
 
         -- data[2]
-        wait until rising_edge(clk) and fifo_we = '1';
-        assert ( fifo_wdata = "0000" & X"22334455" ) severity error;
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0000" & X"22334455" ) severity error;
 
         -- data[3]
-        wait until rising_edge(clk) and fifo_we = '1';
-        assert ( fifo_wdata = "0000" & X"33445566" ) severity error;
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0000" & X"33445566" ) severity error;
 
         -- stop
-        wait until rising_edge(clk) and fifo_we = '1';
-        assert ( fifo_wdata = "0011" & X"00000000" ) severity error;
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0011" & X"00000000" ) severity error;
 
         wait until rising_edge(clk);
-        assert ( fifo_we = '0' ) severity error;
+        assert ( fifo_rempty = '1' ) severity error;
 
     ----------------------------------------------------------------------------
 

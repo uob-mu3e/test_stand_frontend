@@ -1,3 +1,7 @@
+#
+# author : Alexandr Kozlinskiy
+# date : 2017-11-08
+#
 
 namespace eval ::cfi1616 {
     set SR_DWS         0x00800080

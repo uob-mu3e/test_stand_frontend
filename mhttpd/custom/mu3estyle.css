@@ -1,0 +1,437 @@
+/* Global */
+
+html{
+	height: 100%;
+	box-sizing: border-box;
+}
+
+*{
+	box-sizing: border-box;
+}
+
+body{
+        height: 100%;
+        display: flex;
+        flex-direction:column;
+}
+
+/*body{
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 15px;
+	padding: 0;
+	margin: 0;
+	background-color: #000022;
+	color:#FFFFFF;
+	height: 100%;
+	display: flex;
+	flex-direction:column;
+}*/
+
+.container{
+	width: 100%;
+	margin:auto;
+	overflow:hidden;
+}
+
+.button_1{
+	background:#FFFFFF;
+	color: #C00000;
+	border: none;
+	font-size: 20px;
+	padding-top:5px;
+	padding-bottom:	5px;
+	padding-left:	20px;
+	padding-right:	20px;
+	margin:5px;
+}
+
+.button_1:hover{
+	background:#C0C0C0;
+}
+
+.button_2{
+	background:#000022;
+	color: #FFFFFF;
+	border: none;
+	font-size: 20px;
+	padding-top:5px;
+	padding-bottom:	5px;
+	padding-left:	20px;
+	padding-right:	20px;
+	margin:5px;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+.button_2:hover{
+	background:#C0C0C0;
+}
+
+input[type="text"] {
+  padding: 3px;
+  border: solid 1px #fff;
+  box-shadow: inset 1px 1px 2px 0 #707070;
+  transition: box-shadow 0.3s;
+}
+
+input[type="text"].button_2 {
+	padding-top:5px;
+	padding-bottom:	5px;
+	padding-left:	20px;
+	padding-right:	20px;
+}
+
+
+input[type="text"]:focus,
+input[type="text"].focus {
+  box-shadow: inset 1px 1px 2px 0 #c9c9c9;
+}
+
+
+th {
+	padding: 5px;
+}
+
+td {
+	padding: 0px 5px;
+}
+
+.tdr{
+    text-align: right;
+}
+
+.tdc{
+    text-align: center;
+}
+
+/* Header */
+#mheader {
+	background: #FFFFFF;
+	color:#000022;
+	min-height:32px;
+	border-bottom: #C00000 3px solid;
+	flex: none;
+}
+
+#mheader div {
+	text-align: center;
+}
+
+#mheader .mmenuitem {
+        padding-top: 0px;
+	margin-top:  0px;
+        margin-left: 5px;
+        display:block;
+        float:left;
+}
+
+header #mheader_expt_name {
+	background-image: url("img/logo_drawing_34.png");
+	height:24px;
+        background-size: 28px;
+        background-repeat: no-repeat;
+        margin:0;
+	padding:0;
+	display:inline;
+        float:right;
+	color:transparent;
+}
+
+header a{
+	color:#000022;
+	text-decoration: none;
+}
+
+header ul{
+	margin: 5px 0 5px 0;
+	padding:0;
+}
+
+header li{
+	float:left;
+	display:inline;
+	padding: 5px 10px 5px 10px;
+}
+
+header #logo{
+	float:left;
+}
+
+header #logo img{
+	margin:0;
+	padding: 0;
+}
+
+header nav{
+	margin-left:30px;
+	margin-right:30px;
+}
+
+header .current a{
+	color: #C00000;
+	font-weight: bold;	
+}
+
+header a:hover{
+	color: #FF0000;
+}
+
+/*Main part with boxes*/
+#mmain {
+	padding:5px;
+	background-color: #000022;
+	flex: 0 1 auto;
+        display: flex;
+	flex-direction: row;
+        flex-wrap: wrap;
+}
+
+#filler{
+        flex: 1 1 auto;
+        background-color: #000022;
+}
+
+.mainbody::after {
+  content: '\00a0'; /* &nbsp; */
+  display: block;
+  margin-top: var(--space);
+  height: 0px;
+  visibility: hidden;
+}
+
+
+@media (--break-lg) {
+  .mainbody{
+    padding-top: var(--space-lg);
+  }
+  .mainbody::after {
+    margin-top: var(--space-lg);
+  }
+}
+
+.mainbody--full {
+  padding: 0;
+}
+.mainbody--full::after {
+  content: none;
+}
+
+/* Run status */
+.contentbox{
+	background: #FFFFFF;
+	color:#000022;
+	margin-top:10px;
+	margin-bottom:5px;
+	margin-left:auto;
+	margin-right:auto;
+        /*margin: auto;*/
+	padding:5px;
+	min-height:120px;
+	width:414px;
+	display: block;
+	overflow: auto;
+	flex: none;
+	border-radius:5px;
+	border:1px solid #aaaaaa;
+	resize: both;
+}
+
+.contentbox.over {
+	border: 4px dashed #aaaaaa;
+}
+
+.double {
+	width:838px;
+	overflow:auto;
+	height:140px;
+}
+
+.contentbox h2 {
+         text-align:center;
+} 
+
+#clients{
+        display: block;
+	overflow:auto;
+        min-height:10px;
+        flex-grow:0;
+}
+
+.client{
+        background: #C0C0C0;
+        margin-top:5px;
+	margin-bottom:5px;
+	margin-left:5px;
+	margin-right:5px;
+	padding:5px;
+        float:left;
+}
+
+.message{
+        /*font-size: 15px;*/
+        margin: 3px 3px 0px 3px;
+        padding:3px;
+	border-radius:5px;
+        white-space: nowrap;
+
+}
+
+.message.error{
+        background: #FF1010;
+}
+
+.message.info{
+        background: #40FF40;
+}
+
+.red {
+	background: #C00000;
+        color:#000022;
+}
+
+#run {
+	height:110px;
+}
+
+.stopped{
+	background: #C00000;
+	border-radius: 5px;
+	color:#000022;
+	width: 150px;
+	float: left;
+	text-align:center;
+}
+
+.transition{
+	background: #C0C0C0;
+	color:#000022;
+	width: 150px;
+	float: left;
+	text-align:center;
+	border-radius: 5px;
+}
+
+.running{
+	background: #00C000;
+	color:#000022;
+	width: 150px;
+	float: left;
+	text-align:center;
+	border-radius: 5px;
+}
+
+.paused{
+	background: #C0C000;
+	color:#000022;
+	width: 150px;
+	float: left;
+	text-align:center;
+	border-radius: 5px;
+}
+
+#runNumber{
+	font-size: 20px;
+	padding-top: 15px;
+	padding-left: 15px;
+	padding-right:15px;
+	padding-bottom: 5px;
+}
+
+.runStatusLogger {
+        /*font-size: 20px;
+        padding-top: 15px;
+        padding-left: 15px;
+        padding-right:15px;*/
+        padding: 1px 5px;
+ 	width: 230px;
+        margin: 0px 5px 0px 5px;
+	text-align: left;
+	border-radius: 5px;
+	float: left;
+        overflow:hidden;
+        white-space: nowrap;
+
+}
+.runStatusEvents {
+        padding: 5px;
+ 	width: 110px;
+        margin: 5px 5px 0px 5px;
+	text-align: center;
+	border-radius: 5px;
+	float: left;
+}
+
+#runLoggers .disabled {
+	color: #aaaaaa;
+}
+
+#startstoptime{
+	padding-top: 5px;
+	padding-left: 10px;
+	padding-right:5px;
+	padding-bottom: 5px;
+	float: left;
+        width:245px;
+	overflow:hidden;
+	white-space: nowrap;
+}
+
+#alarms{
+	margin-top: 10px;
+	padding-top: 5px;
+	padding-left: 5px;
+	padding-right:5px;
+	padding-bottom: 5px;
+	background: #00C000;
+}
+
+/* Footer */
+footer{
+	position:absolute;
+	background: #FFFFFF;
+	color:#000022;
+	padding-top:0px;
+	margin-bottom: 0px;
+	height:30px;
+	border-top: #C00000 3px solid;
+	bottom: 0;
+    	/*left: 0;*/
+    	width: 100%;
+	flex: none;
+}
+
+.footerelement{
+	float: left;
+	padding-left: 30px;
+	padding-right:30px;
+	padding-top:5px;
+}
+
+.footerelement a{
+	text-decoration:none;
+		color:#000022;
+}
+
+.footerelement a:hover{
+	color: #FF0000;
+}
+
+footer #refreshdate{
+	float:right;
+}
+
+
+#equipmentList th {
+	padding: 0px;
+}
+
+#equipmentList td {
+	padding: 5px;
+	border-spacing: 3px;
+ 	border-radius: 5px;
+}
+/*Media query */
+@media(max-width:768px){
+	header #logo{
+		display:none;
+	}
+}
