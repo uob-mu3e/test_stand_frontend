@@ -29,11 +29,11 @@ port (
 ----    SWITCH5 : in std_logic;
 --
 --
-	LED1 : out std_logic--;
---	LED2 : out std_logic;
---	LED3 : out std_logic;
---	LED4 : out std_logic;
---	LED5 : out std_logic--;
+	LED1 : out std_logic;
+	LED2 : out std_logic;
+	LED3 : out std_logic;
+	LED4 : out std_logic;
+	LED5 : out std_logic--;
 
 );
 end entity;
@@ -72,8 +72,8 @@ architecture arch of top is
 	signal adc_clk : std_logic; -- 10 MHz
 	signal nios_clk : std_logic; -- 50 MHz
 
-	signal pll_locked : std_logic;
-    signal adc_response_valid : std_logic;
+	signal pll_locked, slow_clk : std_logic;
+    signal adc_response_valid ,adc_response_valid_save: std_logic;
 
 	signal sw : std_logic_vector(4 downto 0);
 	signal led : std_logic_vector(4 downto 0);
@@ -81,7 +81,7 @@ architecture arch of top is
 	signal nios_pio : std_logic_vector(31 downto 0);
     
     signal adc_data : std_logic_vector(11 downto 0);
-    signal adc_data_store : std_logic_vector(11 downto 0);
+    --signal adc_data_store : std_logic_vector(11 downto 0);
 
     signal x2 : STD_LOGIC_VECTOR(63 DOWNTO 0);
     
@@ -99,14 +99,29 @@ architecture arch of top is
     SIGNAL state : state_type;    -- Create a signal that
     signal msg_save: std_logic_vector(31 downto 0);
     signal crc_cnt : unsigned(6 downto 0) := (others => '0');
-    signal read_receive_cnt : unsigned(3 downto 0) := (others => '0');
+    signal read_receive_cnt,read_mem_answer_cnt : unsigned(3 downto 0) := (others => '0');
+    signal  adc_cnt : unsigned(3 downto 0) := (others => '0');
     signal crc_reg: std_logic_vector(8 downto 0);
     
+    
+    signal receive_crc, numb_data_bytes, receive_ch_address: std_logic_vector(7 downto 0);
+    
+    type array5 is array (integer range <>) of std_logic_vector(4 downto 0);
     type array8 is array (integer range <>) of std_logic_vector(7 downto 0);
+    type array12 is array (integer range <>) of std_logic_vector(11 downto 0);
     signal full_operation_save: array8(8 downto 0);
     signal full_cmd_save, testfifo: std_logic_vector(7 downto 0);
     
-    constant spoof_mem : array8(8 downto 0) := (x"07",x"00",x"01",x"00",x"12",x"34",x"56",x"78",x"00");
+    constant cmd_read_mem_adc : array8(6 downto 0) := (x"07"       ,x"00",x"02",x"00",x"12",x"34",x"00");
+    signal cmd_read_mem_answ : array8(5 downto 0) := ("01111111", x"80", x"02",x"12", x"34", x"36");
+    signal cmd_read_mem_answ_total: array8(21 downto 0) := ("01111111", x"80", x"02",x"00", x"00",x"00", x"00",x"00", x"00",x"00", x"00",x"00", x"00",x"00", x"00",x"00", x"00",x"00", x"00",x"00", x"00", x"36");
+    
+    
+    signal adc_data_store : array12(8 downto 0) := (others => (others => '0'));
+    
+    constant adc_channels : array5(8 downto 0) := ( "00010","00001","00000","00111","00110","00101","00100", "00011","10001");
+    
+    signal response_channel : std_logic_vector(4 downto 0);
     
 begin
 
@@ -134,8 +149,21 @@ begin
             msg_save <= (others => '0');
             crc_check_en <= '0';
             crc_cnt <= (others => '0');
+            adc_cnt <= (others => '0');
+            adc_response_valid_save <= '0'; 
+            adc_data_store <= (others => (others => '0'));
             
         elsif rising_edge(CLOCK) then
+            adc_response_valid_save <= adc_response_valid;
+            if adc_response_valid ='1' and adc_response_valid /= adc_response_valid_save and response_channel = adc_channels(to_integer(adc_cnt))then
+                adc_data_store(to_integer(adc_cnt)) <= adc_data;
+                adc_cnt <= adc_cnt +1;
+                if adc_cnt = 8 then
+                    adc_cnt <=  (others => '0');
+                end if;
+            end if;
+
+            
             case state is
                 when idle =>
                     mscb_out_parallel <= (others => '0');
@@ -143,6 +171,7 @@ begin
                     full_cmd_save <= (others => '0');
                     full_operation_save <= (others => x"00");
                     read_receive_cnt <= (others => '0') ;
+                    read_mem_answer_cnt <= (others => '0');
                     
                     if mscb_in_parallel(9) = '0' then  --fifo not empty
                         if mscb_in_parallel(8) = '1' then -- address bit set
@@ -231,7 +260,7 @@ begin
                         read_receive_cnt <= (others => '0');
                         mscb_out_parallel(10) <= '0';
                     end if;
-                    
+                    -- return to idle if not
                     if mscb_in_parallel(9) = '0' then  --fifo not empty
                         full_cmd_save <= mscb_in_parallel(7 downto 0);
                         mscb_out_parallel(10) <= not mscb_out_parallel(10);
@@ -242,24 +271,85 @@ begin
                         mscb_out_parallel(10) <= '1';
                     end if;
                     
-        
                     if read_receive_cnt = 9 then
+                        -- write adc in memanswer array
+                        if receive_ch_address /= x"FF" then
+                            cmd_read_mem_answ(1) <= adc_data_store(to_integer(unsigned(receive_ch_address)))(7 downto 0); --write adc data in message buffer
+                            cmd_read_mem_answ(2) <= "0000" & adc_data_store(to_integer(unsigned(receive_ch_address)))(11 downto 8);-- 
+                        else
+                            cmd_read_mem_answ_total(1) <= adc_data_store(0)(7 downto 0); --write adc data in message buffer
+                            cmd_read_mem_answ_total(2) <= "0000" & adc_data_store(0)(11 downto 8);-- 
+                            
+                            cmd_read_mem_answ_total(3) <= adc_data_store(1)(7 downto 0); --write adc data in message buffer
+                            cmd_read_mem_answ_total(4) <= "0000" & adc_data_store(1)(11 downto 8);--
+                            
+                            cmd_read_mem_answ_total(5) <= adc_data_store(2)(7 downto 0); --write adc data in message buffer
+                            cmd_read_mem_answ_total(6) <= "0000" & adc_data_store(2)(11 downto 8);--
+                            
+                            cmd_read_mem_answ_total(7) <= adc_data_store(3)(7 downto 0); --write adc data in message buffer
+                            cmd_read_mem_answ_total(8) <= "0000" & adc_data_store(3)(11 downto 8);--
+                            
+                            cmd_read_mem_answ_total(9) <= adc_data_store(4)(7 downto 0); --write adc data in message buffer
+                            cmd_read_mem_answ_total(10) <= "0000" & adc_data_store(4)(11 downto 8);--
+                            
+                            cmd_read_mem_answ_total(11) <= adc_data_store(5)(7 downto 0); --write adc data in message buffer
+                            cmd_read_mem_answ_total(12) <= "0000" & adc_data_store(5)(11 downto 8);--
+                            
+                            cmd_read_mem_answ_total(13) <= adc_data_store(6)(7 downto 0); --write adc data in message buffer
+                            cmd_read_mem_answ_total(14) <= "0000" & adc_data_store(6)(11 downto 8);--
+                            
+                            cmd_read_mem_answ_total(15) <= adc_data_store(7)(7 downto 0); --write adc data in message buffer
+                            cmd_read_mem_answ_total(16) <= "0000" & adc_data_store(7)(11 downto 8);--
+                            
+                            cmd_read_mem_answ_total(17) <= adc_data_store(8)(7 downto 0); --write adc data in message buffer
+                            cmd_read_mem_answ_total(18) <= "0000" & adc_data_store(8)(11 downto 8);--
+                            
+                        end if;
                         state <= CMD_READ_MEM_ANSWER;
                         read_receive_cnt <= (others => '0');
-                    end if;        
+                    end if;
+                    
                     if mscb_out_parallel(10) = '1' then
-                        if mscb_in_parallel(7 downto 0) /= spoof_mem(8-to_integer(read_receive_cnt)) then 
+                        if read_receive_cnt = 7 then --channel address
+                            receive_ch_address <= mscb_in_parallel(7 downto 0);
+                        elsif read_receive_cnt = 8 then --crc
+                            receive_crc <= mscb_in_parallel(7 downto 0);
+                        elsif read_receive_cnt = 2 then
+                            if mscb_in_parallel(7 downto 0) = x"02" or mscb_in_parallel(7 downto 0) = x"12" then
+                                numb_data_bytes <= mscb_in_parallel(7 downto 0);
+                            else
+                                state <= idle;
+                            end if;
+                            
+                        elsif mscb_in_parallel(7 downto 0) /= cmd_read_mem_adc(6-to_integer(read_receive_cnt)) then 
                             state <= idle;
                         else 
-                            read_receive_cnt <= read_receive_cnt + 1;
-                            full_operation_save(to_integer(read_receive_cnt)) <= mscb_in_parallel;
-                            LED1 <= full_operation_save(to_integer(read_receive_cnt))(0) and full_operation_save(to_integer(read_receive_cnt))(1) and full_operation_save(to_integer(read_receive_cnt))(2) and full_operation_save(to_integer(read_receive_cnt))(3) and full_operation_save(to_integer(read_receive_cnt))(4) and full_operation_save(to_integer(read_receive_cnt))(5) and full_operation_save(to_integer(read_receive_cnt))(6) and full_operation_save(to_integer(read_receive_cnt))(7);                       
+                            full_operation_save(to_integer(read_receive_cnt)) <= mscb_in_parallel; -- is not needed anymore only for debugging
+                            --LED1 <= full_operation_save(to_integer(read_receive_cnt))(0) and full_operation_save(to_integer(read_receive_cnt))(1) and full_operation_save(to_integer(read_receive_cnt))(2) and full_operation_save(to_integer(read_receive_cnt))(3) and full_operation_save(to_integer(read_receive_cnt))(4) and full_operation_save(to_integer(read_receive_cnt))(5) and full_operation_save(to_integer(read_receive_cnt))(6) and full_operation_save(to_integer(read_receive_cnt))(7);                       
                         end if;
+                        read_receive_cnt <= read_receive_cnt + 1;
                         mscb_out_parallel(10) <= '0';                        
                     end if;
                  
                 when CMD_READ_MEM_ANSWER =>
-                    state <= idle;
+                   
+                        
+                    if (read_mem_answer_cnt = 6 and numb_data_bytes=x"02") or (read_mem_answer_cnt = 22 and numb_data_bytes=x"12") then 
+                        read_mem_answer_cnt <= (others => '0');
+                        state <= idle;
+                        mscb_out_parallel(10 downto 0) <= "00000000000";
+
+                    elsif numb_data_bytes=x"02" then
+                        mscb_out_parallel(10 downto 0) <= "010" & cmd_read_mem_answ(5-to_integer(read_mem_answer_cnt));
+                    elsif numb_data_bytes=x"12" then
+                        mscb_out_parallel(10 downto 0) <= "010" & cmd_read_mem_answ_total(21-to_integer(read_mem_answer_cnt));
+                    end if;
+                    
+                    if mscb_out_parallel(9) = '1' then
+                        mscb_out_parallel(10 downto 0) <= (others => '0');
+                        read_mem_answer_cnt <= read_mem_answer_cnt +1;
+                    end if;
+                        
                     
                 when others =>
                     state <= idle;
@@ -320,27 +410,26 @@ begin
 --	);
 --
 -- 
---    ---ADC---
---    testadc : component work.cmp.myadc
---    port map(
---			adc_pll_clock_clk      => adc_clk,
---			adc_pll_locked_export  => pll_locked,           -- export
---			clock_clk              => adc_clk,             -- clk
---			command_valid          => '1',                -- valid
---			command_channel        => "00001",              -- channel
---			command_startofpacket  => '1',                -- startofpacket
---			command_endofpacket    => '1',                -- endofpacket
---			command_ready          => open,                 -- ready
---			reset_sink_reset_n     => reset_n,              -- reset_n
---			response_valid         => adc_response_valid,   -- valid
---			response_channel       => open,                 -- channel
---			response_data          => adc_data,             -- data
---			response_startofpacket => open,                 -- startofpacket
---			response_endofpacket   => open--,                 -- endofpacket
---		);
---
---    
---
+    ---ADC---
+    testadc : component work.cmp.myadc
+    port map(
+			adc_pll_clock_clk      => adc_clk,
+			adc_pll_locked_export  => pll_locked,           -- export
+			clock_clk              => adc_clk,             -- clk
+			command_valid          => '1',                -- valid
+			command_channel        => adc_channels(to_integer(adc_cnt)),              -- channel
+			command_startofpacket  => '1',                -- startofpacket
+			command_endofpacket    => '1',                -- endofpacket
+			command_ready          => open,                 -- ready
+			reset_sink_reset_n     => reset_n,              -- reset_n
+			response_valid         => adc_response_valid,   -- valid
+			response_channel       => response_channel,                 -- channel
+			response_data          => adc_data,             -- data
+			response_startofpacket => open,                 -- startofpacket
+			response_endofpacket   => open--,                 -- endofpacket
+		);
+
+
 	--- PLL ---
 	e_ip_altpll : entity work.ip_altpll
 	port map (
@@ -348,6 +437,7 @@ begin
 		inclk0 => CLOCK,
 		c0     => adc_clk,
 		c1     => nios_clk,
+        c2     => slow_clk,
 		locked => pll_locked--,
 	);
     
