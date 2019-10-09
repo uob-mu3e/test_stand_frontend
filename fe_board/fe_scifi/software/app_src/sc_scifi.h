@@ -1,32 +1,25 @@
 
-#include "../../../fe/software/app_src/malibu/malibu_basic_cmd.h"
-
-// TODO : remove - regs can be accessed directly
 void sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     auto& regs = ram->regs.scifi;
 
-//check spi command register, trigger spi configuration if needed
-    alt_u32 d0 = data[0x13];
-    if(d0 != 0){
-        printf("[sc_callback] SPICTRL_REGISTER = 0x%08X\n", d0);
-        printf("SPI: START= %d ASIC=%u\n",(d0>>5)&1, d0&0x0f);
-        usleep(1000);
-        SPI_configure(d0&0x0f, stic3_config_ALL_OFF);
-
-        data[0x13] = 0;
-        printf("SPI: finished...\n");
+    switch(cmd){
+    case 0x0101: //power up (not implemented in current FEB)
+        break;
+    case 0x0102: //power down (not implemented in current FEB)
+        break;
+    case 0x0103: //configure all off
+        for(int i=0;i<n_ASICS;i++)
+            scifi_module.configure_asic(mutrig_config_ALL_OFF);
+        break;
+    case 0xfffe:
+	printf("-ping-\n");
+        break;
+    case 0xffff:
+        break;
+    default:
+        if((cmd&0xfff0) ==0x0110){ //configure ASIC
+		uint8_t chip=cmd&0x000f;
+		scifi_module.configure_asic(chip,(alt_u8*) data);
+        }
     }
-//check registers and forward to avalon test interface
-    if(regs.ctrl.dummy != data[0x10])
-        printf("Update value dummyctrl_reg:    0x%08X\n", data[0x10]);
-    regs.ctrl.dummy = data[0x10];
-
-    if(regs.ctrl.dp != data[0x11])
-        printf("Update value dpctrl_reg:    0x%08X\n", data[0x11]);
-    regs.ctrl.dp = data[0x11];
-
-    if(regs.ctrl.reset != data[0x12])
-        printf("Update value dummyctrl_reg:    0x%08X\n", data[0x12]);
-    regs.ctrl.reset = data[0x12];
-
 }
