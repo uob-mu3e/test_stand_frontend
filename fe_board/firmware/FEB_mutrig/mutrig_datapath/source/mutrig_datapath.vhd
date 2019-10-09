@@ -4,6 +4,7 @@
 -- Konrad Briggl updated using lvds deserializer instead of gbt, preparation for multiple channels
 -- April 2019
 -- May 2019: Added frame-collecting multiplexer, prbs decoder and common buffer (standard fifo)
+-- Oct 2019: Added generic to flip sign of input depending on PCB design
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
@@ -16,7 +17,8 @@ generic(
 	N_ASICS : positive := 1;
 	LVDS_PLL_FREQ : real := 125.0;
 	LVDS_DATA_RATE : real := 1250.0;
-	GEN_DUMMIES : boolean := TRUE
+	GEN_DUMMIES : boolean := TRUE;
+	INPUT_SIGNFLIP : std_logic_vector:=x"0000"--;
 );
 port (
 	i_rst			: in  std_logic;				-- logic reset
@@ -141,7 +143,8 @@ port (
 		o_sink_wr   	 : out std_logic;
 	--monitoring, write-when-fill is prevented internally
 		o_sync_error     : out std_logic;
-		i_SC_mask	 : in std_logic_vector(N_INPUTS-1 downto 0)
+		i_SC_mask	 : in std_logic_vector(N_INPUTS-1 downto 0);
+		i_SC_nomerge : in std_logic
 );
 end component; --framebuilder_mux;
 
@@ -228,7 +231,8 @@ u_rxdeser: entity work.receiver_block
 generic map(
 	NINPUT => N_ASICS,
 	LVDS_PLL_FREQ => LVDS_PLL_FREQ,
-	LVDS_DATA_RATE => LVDS_DATA_RATE--,
+	LVDS_DATA_RATE => LVDS_DATA_RATE,
+	INPUT_SIGNFLIP => INPUT_SIGNFLIP--,
 )
 port map(
 	reset_n			=> not i_rst,
@@ -366,7 +370,8 @@ u_mux: framebuilder_mux
 		o_sink_wr		=> s_buf_predec_wr,
 	--monitoring, errors, slow control
 		o_sync_error		=> o_frame_desync,
-		i_SC_mask		=> i_SC_mask
+		i_SC_mask		=> i_SC_mask,
+		i_SC_nomerge	=> '0'
 	);
 --prbs decoder
 s_buf_predec_full <= s_buf_almost_full;
@@ -381,23 +386,18 @@ u_decoder: prbs_decoder
 		i_SC_disable_dec=> i_SC_disable_dec
 	);
 
-    e_fifo : entity work.ip_scfifo
-    generic map (
-        ADDR_WIDTH => 8,
-        DATA_WIDTH => 36--,
-    )
+--common fifo buffer
+u_common_fifo: common_fifo
     port map (
         clock           => i_clk_core,
-        data            => "00" & s_buf_data,
-        rdreq           => i_fifo_rd,
         sclr            => i_rst,
+        data            => "00" & s_buf_data,
         wrreq           => s_buf_wr,
-        almost_empty    => open,
+        full            => s_buf_full,
         almost_full     => s_buf_almost_full,
         empty           => o_fifo_empty,
-        full            => s_buf_full,
         q               => o_fifo_data,
-        usedw           => open--,
+        rdreq           => i_fifo_rd--,
     );
 
 o_buffer_full <= s_buf_full;
