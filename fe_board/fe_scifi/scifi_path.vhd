@@ -51,7 +51,7 @@ architecture arch of scifi_path is
 begin
 
     e_test_pulse : entity work.clkdiv
-    generic map ( P => 125 )
+    generic map ( P => 1250 )
     port map ( clkout => o_pll_test, rst_n => not i_reset, clk => i_clk );
 
     o_fifo_rdata <= fifo_rdata;
@@ -130,7 +130,8 @@ begin
     generic map (
         N_ASICS => N_g,
         LVDS_PLL_FREQ => 160.0,
-        LVDS_DATA_RATE => 160--,
+        LVDS_DATA_RATE => 160.0,
+	INPUT_SIGNFLIP => (N_g-1 downto 0 => '1')
     )
     port map (
         i_rst => i_reset or s_subdet_reset_reg(1),
@@ -147,7 +148,7 @@ begin
 
         -- slow control
         i_SC_disable_dec => not s_dpctrl_reg(31),
-        i_SC_mask => s_dpctrl_reg(3 downto 0),
+        i_SC_mask => s_dpctrl_reg(N_g-1 downto 0),
         i_SC_datagen_enable => s_dummyctrl_reg(1),
         i_SC_datagen_shortmode => s_dummyctrl_reg(2),
         i_SC_datagen_count => s_dummyctrl_reg(12 downto 3),

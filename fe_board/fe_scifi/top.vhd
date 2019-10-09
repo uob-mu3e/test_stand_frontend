@@ -178,7 +178,7 @@ begin
         o_ck_fpga_0     => open,
         o_chip_reset    => s_fee_chip_rst_niosclk,
         o_pll_test      => open,
-        i_data          => i_fee_rxd(3 downto 0),
+        i_data          => i_fee_rxd,
 
         o_fifo_rempty   => fifo_rempty,
         i_fifo_rack     => fifo_rack,
@@ -187,10 +187,17 @@ begin
         i_reset         => not reset_n,
         i_clk           => qsfp_pll_clk--,
     );
-    led(0) <= s_fee_chip_rst_niosclk;
 
     ----------------------------------------------------------------------------
 
+--LED maps:
+-- 15: clk_aux  (125M -> 1Hz)
+-- 14: clk_qsfp (156M -> 1Hz)
+-- 13: clk_pod  (125M -> 1Hz)
+-- 12: fee_chip_reset (niosclk)
+-- x..0 : CSn to SciFi boards
+
+    led(12) <= s_fee_chip_rst_niosclk;
 
 
     led_n <= not led;
@@ -260,14 +267,16 @@ begin
     -- fee assignments
     o_fee_spi_MOSI <= (others => spi_mosi);
     o_fee_spi_SCK  <= (others => spi_sclk);
-    o_fee_spi_CSn <=  spi_ss_n(4-1 downto 0);
+    o_fee_spi_CSn <=  spi_ss_n(o_fee_spi_CSn'range);
 
     -- MISO: multiplexing si chip / SciFi FEE
     spi_miso <=
         si45_spi_out when spi_ss_n(4) = '0' else
-        i_fee_spi_MISO(0); -- TODO make working with multiple FEBs, if we need this
+	i_fee_spi_MISO(0) when spi_ss_n(3 downto 0)/="1111" else
+	--i_fee_spi_MISO(1) when spi_ss_n(7 downto 4)/="1111" else
+	'0';
 
-    led(4 downto 1)<=spi_ss_n(3 downto 0);
+    led(o_fee_spi_CSn'range)<=spi_ss_n(o_fee_spi_CSn'range);
 
     ----------------------------------------------------------------------------
 
