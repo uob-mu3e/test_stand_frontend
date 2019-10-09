@@ -14,5 +14,6 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "version_r
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "watchdog.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "counter_async.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "edge_detector.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "linear_shift_link.vhd"]
 
 set_global_assignment -name SDC_FILE [file join $::quartus(qip_path) "util.sdc"]
