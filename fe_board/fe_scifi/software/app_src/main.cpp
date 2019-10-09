@@ -12,6 +12,8 @@ sc_t sc;
 mscb_t mscb;
 #include "../../../fe/software/app_src/reset.h"
 
+#include "scifi_module.h"
+scifi_module_t scifi_module;
 #include "sc_scifi.h"
 #include "menu_scifi.h"
 

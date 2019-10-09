@@ -1,6 +1,4 @@
 
-#include "../../../fe/software/app_src/malibu/malibu_basic_cmd.h"
-
 void menu_scifi() {
     auto& regs = sc.ram->regs.scifi;
 
@@ -27,7 +25,7 @@ void menu_scifi() {
             regs.ctrl.reset = 0;
             break;
         case '2':
-            SPI_configure(0, stic3_config_ALL_OFF);
+            //SPI_configure(0, stic3_config_ALL_OFF);
             break;
         case '3':
             printf("TODO...\n");
