@@ -5,19 +5,17 @@ char wait_key(useconds_t us = 100000);
 
 #include "../../../fe/software/app_src/sc.h"
 
-
-//Slow control pattern for stic3, pattern length and alloff configuration
-//#include "ALL_OFF.h"
-//#include "PLL_TEST_ch0to6_noGenIDLE.h"
+//Standard slow control patterns for mutrig1
+#include "No_TDC_Power.h"
 
 
     //write single byte over spi
 alt_u8 scifi_module_t::spi_write(alt_u32 slave, alt_u8 w) {
         alt_u8 r = 0xCC;
-//        printf("spi_write: 0x%02X\n", w);
+        printf("spi_write[%u]: 0x%02X\n",slave, w);
         alt_avalon_spi_command(SPI_BASE, slave, 1, &w, 0, &r, 0);
         r = IORD_8DIRECT(SPI_BASE, 0);
-//        printf("spi_read: 0x%02X\n", r);
+        printf("spi_read[%u]: 0x%02X\n",slave, r);
         return r;
 }
 
@@ -87,7 +85,10 @@ void scifi_module_t::menu(sc_t* sc){
             regs.ctrl.reset = 0;
             break;
         case '2':
-            //SPI_configure(0, stic3_config_ALL_OFF);
+            printf("[scifi] configuring all off\n");
+            for(int i=0;i<n_ASICS;i++)
+                configure_asic(i,mutrig_config_no_tdc_power);
+            break;
             break;
         case '3':
             printf("TODO...\n");
@@ -130,7 +131,7 @@ void scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     case 0x0103: //configure all off
 	printf("[scifi] configuring all off\n");
         for(int i=0;i<n_ASICS;i++)
-            configure_asic(i,NULL);//mutrig_config_ALL_OFF);
+            configure_asic(i,mutrig_config_no_tdc_power);
 	    //TODO: write some reply to RAM
         break;
     case 0xfffe:

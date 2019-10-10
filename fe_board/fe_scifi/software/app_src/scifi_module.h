@@ -17,12 +17,13 @@
 #include <unistd.h>
 #include <stdint.h>
 
-
+//forward declarations
 struct sc_t;
 
+//declaration of interface to scifi module: hardware access, menu, slow control handler
 struct scifi_module_t {
-    const uint32_t MUTRIG1_CONFIG_LEN_BYTES=10;
-    const uint32_t MUTRIG1_CONFIG_LEN_BITS =80;
+    const uint32_t MUTRIG1_CONFIG_LEN_BYTES=295;
+    const uint32_t MUTRIG1_CONFIG_LEN_BITS =2358;
     const uint8_t  n_ASICS=4;
     //write single byte over spi
     static alt_u8 spi_write(alt_u32 slave, alt_u8 w);
