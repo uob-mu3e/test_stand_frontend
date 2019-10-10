@@ -6,7 +6,8 @@ char wait_key(useconds_t us = 100000);
 #include "../../../fe/software/app_src/sc.h"
 
 //Standard slow control patterns for mutrig1
-#include "No_TDC_Power.h"
+#include "builtin_config/No_TDC_Power.h"
+#include "builtin_config/ALL_OFF.h"
 
 
     //write single byte over spi
@@ -25,7 +26,18 @@ int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 	int status=0;
 	uint16_t rx_pre=0xff00;
 	for(int nb=MUTRIG1_CONFIG_LEN_BYTES-1; nb>=0; nb--){
-		uint8_t rx = scifi_module_t::spi_write(asic+1, bitpattern[nb]);
+		//do spi transaction, one byte at a time
+                alt_u8 rx = 0xCC;
+                alt_u8 tx = bitpattern[nb];
+                //printf("spi_write[%u]: 0x%02X\n",asic+1, bitpattern[nb]);
+		
+                alt_avalon_spi_command(SPI_BASE, asic+1, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
+                rx = IORD_8DIRECT(SPI_BASE, 0);
+                //printf("spi_read[%u]: 0x%02X\n",asic+1, rx);
+
+
+
+
 		//pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
 		unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG1_CONFIG_LEN_BITS%8);
 		if(nb==MUTRIG1_CONFIG_LEN_BYTES-1){
@@ -87,7 +99,7 @@ void scifi_module_t::menu(sc_t* sc){
         case '2':
             printf("[scifi] configuring all off\n");
             for(int i=0;i<n_ASICS;i++)
-                configure_asic(i,mutrig_config_no_tdc_power);
+                configure_asic(i,mutrig_config_ALL_OFF);
             break;
             break;
         case '3':
@@ -131,7 +143,7 @@ void scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     case 0x0103: //configure all off
 	printf("[scifi] configuring all off\n");
         for(int i=0;i<n_ASICS;i++)
-            configure_asic(i,mutrig_config_no_tdc_power);
+            configure_asic(i,mutrig_config_ALL_OFF);
 	    //TODO: write some reply to RAM
         break;
     case 0xfffe:

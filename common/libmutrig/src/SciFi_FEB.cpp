@@ -34,9 +34,10 @@ int FEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_p
    int status=SUCCESS;
    //try each asic twice, i.e. give up when cnt>1
    int cnt = 0;
-   while(cnt<1) {
+   while(cnt<2) {
+      cnt++;
       try {
-         cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/ASICs/%i/", odb_prefix, asic);
+         cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/", odb_prefix, asic);
 	 //Write configuration
 	 m_mu.FEBsc_write(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR);
 	 //Write handleID and start bit to trigger SPI transaction
@@ -69,6 +70,8 @@ int FEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_p
       set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
       cm_msg(MERROR, "setup_mutrig", "MuTRiG configuration error for ASIC %i at try %d", asic, cnt);
       cm_msg(MERROR, "setup_mutrig", "%s",config->GetVerificationError().c_str());
+      printf("Config class patterns after error condition seen:\n");
+      std::cout<<*config;
    }
    return status;//note: return of lambda function
    });//MapForEach
@@ -110,20 +113,22 @@ void FEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       cm_msg(MINFO, "FEB::on_settings_changed", "Set dummy_data_n to %d", value);
       _this->setDummyData_Count(FEB::FPGA_broadcast_ID,value);
    }
-   if (std::string(key.name) == "prbs_decode_enable") {
+   if (std::string(key.name) == "prbs_decode_bypass") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "FEB::on_settings_changed", "Set prbs_decode_enable to %d", value);
+      cm_msg(MINFO, "FEB::on_settings_changed", "Set prbs_decode_bypass to %d", value);
       _this->setPRBSDecoder(FEB::FPGA_broadcast_ID,value);
    }
    int asic;
-   if (sscanf(key.name,"mask[%d]",&asic)==1) {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "FEB::on_settings_changed", "Set mask[%d] %d",asic, value);
-      _this->setMask(asic,value);
+   if (std::string(key.name) == "mask") {
+      BOOL barray[16];
+      INT  barraysize=sizeof(barray);
+      db_get_data(hDB, hKey, &barray, &barraysize, TID_BOOL);
+      for(int i=0;i<16;i++){
+           cm_msg(MINFO, "FEB::on_settings_changed", "Set mask[%d] %d",asic, barray[i]);
+           _this->setMask(i,barray[i]);
+      }
    }
    if (std::string(key.name) == "reset_datapath") {
       BOOL value;
@@ -132,9 +137,9 @@ void FEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       if(value){
          cm_msg(MINFO, "FEB::on_settings_changed", "reset_datapath");
          _this->DataPathReset(FEB::FPGA_broadcast_ID);
+         value = FALSE; // reset flag in ODB
+         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
-      value = FALSE; // reset flag in ODB
-      db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
    }
    if (std::string(key.name) == "reset_asics") {
       BOOL value;
@@ -143,9 +148,9 @@ void FEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       if(value){
          cm_msg(MINFO, "FEB::on_settings_changed", "reset_asics");
          _this->chipReset(FEB::FPGA_broadcast_ID);
+         value = FALSE; // reset flag in ODB
+         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
-      value = FALSE; // reset flag in ODB
-      db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
    }
    
 }
@@ -206,6 +211,7 @@ void FEB::setDummyData_Fast(int FPGA_ID, bool fast)
 
 void FEB::setDummyData_Count(int FPGA_ID, int n)
 {
+        if(n > 255) n = 255;
 	printf("FEB::setDummyData_Count(%d)=%d\n",FPGA_ID,n);
 	uint32_t  val;
 	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
@@ -219,7 +225,7 @@ void FEB::setDummyData_Count(int FPGA_ID, int n)
 * Disable data from specified ASIC
 */
 void FEB::setMask(int asic, bool value){
-	printf("FEB::setMask(%d)=%d\n",asic,value);
+	printf("FEB::setMask(%d)=%d (Mapped to %d:%d)\n",asic,value,FPGAid_from_ID(asic),ASICid_from_ID(asic));
 	uint32_t val;
 	m_mu.FEBsc_read(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
         printf("FEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGAid_from_ID(asic),val);
