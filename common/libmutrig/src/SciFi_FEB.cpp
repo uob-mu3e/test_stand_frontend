@@ -35,10 +35,10 @@ int FEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_p
    //try each asic twice, i.e. give up when cnt>1
    int cnt = 0;
    while(cnt<2) {
-      cnt++;
       try {
          cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/", odb_prefix, asic);
 	 //Write configuration
+//	 for(int i=0;i<10;i++) printf("pattern[%d]=%8.8x\n",i,config->bitpattern_w[i]);
 	 m_mu.FEBsc_write(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR);
 	 //Write handleID and start bit to trigger SPI transaction
 	 uint32_t data=0;
@@ -46,9 +46,9 @@ int FEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_p
 	 data=SET_FE_SPICTRL_CHIPID_RANGE(data,ASICid_from_ID(asic));
 	 m_mu.FEBsc_write(FPGAid_from_ID(asic), &data, 1, (uint32_t) FE_SPICTRL_REGISTER);
          //Wait for transaction to finish
-         uint cnt = 0;
+         uint timeout_cnt = 0;
 	 do{
-            if(++cnt >= 10000) throw std::runtime_error("SPI transaction timeout while configuring asic"+std::to_string(asic));
+            if(++timeout_cnt >= 10000) throw std::runtime_error("SPI transaction timeout while configuring asic"+std::to_string(asic));
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	    m_mu.FEBsc_read(FPGAid_from_ID(asic), &data, 1, (uint32_t) FE_SPICTRL_REGISTER);
 
@@ -57,14 +57,16 @@ int FEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_p
 	 m_mu.FEBsc_read(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_r), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR);
 
 	 status=config->VerifyReadbackPattern();
-         status=SUCCESS; //TODO:Remove
          if(status==SUCCESS) break; //configuration good, stopping here. Otherwise try another time without complaining here.
       } catch(std::exception& e) {
          cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d, try %d: %s", asic,cnt, e.what());
          set_equipment_status(equipment_name, "Communication error while configuring MuTRiG", "red");
          return FE_ERR_HW; //note: return of lambda function
       }
+      cnt++;
    }
+printf("Config class:\n");
+   std::cout<<*config;
    if(status!=SUCCESS){
       //configuration mismatch, report and break foreach-loop
       set_equipment_status(equipment_name,  "MuTRiG config failed", "red");

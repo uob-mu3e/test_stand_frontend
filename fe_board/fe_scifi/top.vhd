@@ -175,7 +175,6 @@ begin
         i_reg_we        => scifi_reg.we,
         i_reg_wdata     => scifi_reg.wdata,
 
-        o_ck_fpga_0     => open,
         o_chip_reset    => s_fee_chip_rst_niosclk,
         o_pll_test      => open,
         i_data          => i_fee_rxd(7 downto 0),
@@ -185,7 +184,8 @@ begin
         o_fifo_rdata    => fifo_rdata,
 
         i_reset         => not reset_n,
-        i_clk           => qsfp_pll_clk--,
+        i_clk_core      => qsfp_pll_clk,
+        i_clk_ref       => clk_aux
     );
 
     ----------------------------------------------------------------------------

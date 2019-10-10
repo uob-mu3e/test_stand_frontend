@@ -14,7 +14,6 @@ port (
     i_reg_we        : in    std_logic;
     i_reg_wdata     : in    std_logic_vector(31 downto 0);
 
-    o_ck_fpga_0     : out   std_logic;
     o_chip_reset    : out   std_logic;
     o_pll_test      : out   std_logic;
     i_data          : in    std_logic_vector(N_g-1 downto 0);
@@ -25,13 +24,14 @@ port (
 
     i_reset         : in    std_logic;
     -- 156.25 MHz
-    i_clk           : in    std_logic--;
+    i_clk_core      : in    std_logic;
+    -- 125 MHz
+    i_clk_ref       : in    std_logic--;
 );
 end entity;
 
 architecture arch of scifi_path is
 
-    signal refclk : std_logic;
 
     signal fifo_rempty : std_logic;
     signal fifo_rdata : std_logic_vector(35 downto 0);
@@ -52,20 +52,20 @@ begin
 
     e_test_pulse : entity work.clkdiv
     generic map ( P => 1250 )
-    port map ( clkout => o_pll_test, rst_n => not i_reset, clk => i_clk );
+    port map ( clkout => o_pll_test, rst_n => not i_reset, clk => i_clk_core );
 
     o_fifo_rdata <= fifo_rdata;
     o_fifo_rempty <= fifo_rempty;
     fifo_rack_ext <= '1' when ( i_reg_we = '1' and i_reg_addr = X"1" and fifo_rempty = '0' ) else '0';
 
-    process(i_clk, i_reset)
+    process(i_clk_core, i_reset)
     begin
     if ( i_reset = '1' ) then
             s_dummyctrl_reg <= (others=>'0');
             s_dpctrl_reg <= (others=>'0');
             s_subdet_reset_reg <= (others=>'0');
         --
-    elsif rising_edge(i_clk) then
+    elsif rising_edge(i_clk_core) then
         o_reg_rdata <= X"CCCCCCCC";
 
         -- data
@@ -121,27 +121,23 @@ begin
 
     o_chip_reset <= s_subdet_reset_reg(0);
 
-    -- use 156.25 MHz instead of 160 MHz
-    refclk <= i_clk;
-
-    o_ck_fpga_0 <= refclk;
 
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (
         N_ASICS => N_g,
-        LVDS_PLL_FREQ => 160.0,
-        LVDS_DATA_RATE => 160.0,
+        LVDS_PLL_FREQ => 125.0,
+        LVDS_DATA_RATE => 1250--,
 	INPUT_SIGNFLIP => (N_g-1 downto 0 => '1')
     )
     port map (
         i_rst => i_reset or s_subdet_reset_reg(1),
         i_stic_txd => i_data(N_g-1 downto 0),
-        i_refclk_125 => refclk,
-        i_ts_clk => refclk,
+        i_refclk_125 => i_clk_ref,
+        i_ts_clk => i_clk_ref,
         i_ts_rst => i_reset,
 
         -- interface to asic fifos
-        i_clk_core => i_clk,
+        i_clk_core => i_clk_core,
         o_fifo_empty => fifo_rempty,
         o_fifo_data => fifo_rdata,
         i_fifo_rd => i_fifo_rack or fifo_rack_ext,

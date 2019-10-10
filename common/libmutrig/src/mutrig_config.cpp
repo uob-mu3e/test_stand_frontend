@@ -219,10 +219,11 @@ int Config::VerifyReadbackPattern(){
 }
 
 std::ostream& operator<<(std::ostream& os, const Config& config) {
-    os << "bitpattern write: (" << config.length << "/" << config.length_bits << ") 0x" << std::hex;
+    os << " bitpattern: (" << config.length << "/" << config.length_bits << ") 0x" << std::hex;
+    os << std::endl<<" write: 0x" << std::hex;
     for( unsigned int i = 0; i < config.length; i++) os << std::setw(2) << std::setfill('0') << ((uint16_t)config.bitpattern_w[config.length - i - 1]); // << " ";// << config.bitpattern_r[i] << " ";
     //os << std::endl;
-    os << " read:         0x" << std::hex;
+    os << std::endl<<" read:  0x" << std::hex;
     for( unsigned int i = 0; i < config.length; i++) os << std::setw(2) << std::setfill('0') << ((uint16_t)config.bitpattern_r[config.length - i - 1]);
     os << std::endl;
     os << std::dec;
