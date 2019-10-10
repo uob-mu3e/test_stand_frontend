@@ -261,22 +261,22 @@ begin
 
     -- si chip assignments
     si45_spi_in <= spi_mosi;
-    si45_spi_sclk <= spi_sclk when spi_ss_n(4) = '0' else '0';
-    si45_spi_cs_n <= spi_ss_n(4);
+    si45_spi_sclk <= spi_sclk when spi_ss_n(0) = '0' else '0';
+    si45_spi_cs_n <= spi_ss_n(0);
 
     -- fee assignments
     o_fee_spi_MOSI <= (others => spi_mosi);
     o_fee_spi_SCK  <= (others => spi_sclk);
-    o_fee_spi_CSn <=  spi_ss_n(o_fee_spi_CSn'range);
+    o_fee_spi_CSn <=  spi_ss_n(o_fee_spi_CSn'length downto 1);
 
     -- MISO: multiplexing si chip / SciFi FEE
     spi_miso <=
-        si45_spi_out when spi_ss_n(4) = '0' else
-	i_fee_spi_MISO(0) when spi_ss_n(3 downto 0)/="1111" else
-	--i_fee_spi_MISO(1) when spi_ss_n(7 downto 4)/="1111" else
+        si45_spi_out when spi_ss_n(0) = '0' else
+	i_fee_spi_MISO(0) when spi_ss_n(4 downto 1)/="1111" else
+	--i_fee_spi_MISO(1) when spi_ss_n(8 downto 5)/="1111" else
 	'0';
-
-    led(o_fee_spi_CSn'range)<=spi_ss_n(o_fee_spi_CSn'range);
+    --connect CSn lines to FEs to LEDs
+    led(o_fee_spi_CSn'range)<=spi_ss_n(o_fee_spi_CSn'high+1 downto 1);
 
     ----------------------------------------------------------------------------
 

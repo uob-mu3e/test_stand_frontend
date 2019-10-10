@@ -3,7 +3,7 @@
 #include "../include/xcvr.h"
 
 #include "../../../fe/software/app_src/si5345.h"
-si5345_t si5345 { 0 }; // spi_slave = 0
+si5345_t si5345 { 0 }; // spi_slave
 
 #include "../../../fe/software/app_src/sc.h"
 sc_t sc;
@@ -14,8 +14,12 @@ mscb_t mscb;
 
 #include "scifi_module.h"
 scifi_module_t scifi_module;
-#include "sc_scifi.h"
-#include "menu_scifi.h"
+
+//definition of callback function for slow control packets
+void sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
+    scifi_module.callback(cmd,data,n);
+}
+
 
 int main() {
     base_init();
@@ -45,7 +49,7 @@ int main() {
             menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '2':
-            menu_scifi();
+            scifi_module.menu(&sc);
             break;
         case '3':
             sc.menu();
