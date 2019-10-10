@@ -8,7 +8,7 @@
 #include <sstream>
 #include "mutrig_MIDAS_config.h"
 #include "midas.h"  //for return types
-namespace mudaq { namespace mutrig {
+namespace mutrig {
 
 /**
  * STiC configrations for the mudaq environment.
@@ -91,6 +91,6 @@ private:
     void addPara(const para_t&, const std::string);
 };
 
-} } // namespace mudaq::mutrig
+}// namespace mutrig
 
 #endif // MUTRIG_CONFIG_H

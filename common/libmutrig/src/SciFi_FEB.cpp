@@ -3,7 +3,7 @@
   Name:         FEB_access.h
   Created by:   Konrad Briggl
 
-Contents:       Definition of fumctions in namespace mudaq::mutrig
+Contents:       Definition of fumctions in namespace mutrig
 		to provide an abstraction layer to the (slow control) functions on the FE-FPGA
 
 \********************************************************************/
@@ -18,19 +18,19 @@ Contents:       Definition of fumctions in namespace mudaq::mutrig
 #include "mutrig_midasodb.h"
 #include <thread>
 #include <chrono>
-namespace mudaq { namespace mutrig {
-FEB* FEB::m_instance=NULL;
-const uint8_t FEB::FPGA_broadcast_ID=0;
+
+SciFiFEB* SciFiFEB::m_instance=NULL;
+const uint8_t SciFiFEB::FPGA_broadcast_ID=0;
 
 //Mapping to physical ports. TODO: should be more configurable later, even from ODB?
-uint8_t FEB::FPGAid_from_ID(int asic){return asic/4;}
-uint8_t FEB::ASICid_from_ID(int asic){return asic%4;}
+uint8_t SciFiFEB::FPGAid_from_ID(int asic){return asic/4;}
+uint8_t SciFiFEB::ASICid_from_ID(int asic){return asic%4;}
 
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
-int FEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix){
-   printf("FEB::ConfigureASICs()\n");
-   int status = mudaq::mutrig::midasODB::MapForEach(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mudaq::mutrig::Config* config, int asic){
+int SciFiFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix){
+   printf("SciFiFEB::ConfigureASICs()\n");
+   int status = mutrig::midasODB::MapForEach(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mutrig::Config* config, int asic){
    int status=SUCCESS;
    //try each asic twice, i.e. give up when cnt>1
    int cnt = 0;
@@ -81,54 +81,53 @@ printf("Config class:\n");
 }
 
 //MIDAS callback function for FEB register Setter functions
-void FEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
+void SciFiFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 {
-   FEB* _this=static_cast<FEB*>(userdata);
+   SciFiFEB* _this=static_cast<SciFiFEB*>(userdata);
    KEY key;
    db_get_key(hDB, hKey, &key);
-   printf("FEB::on_settings_changed(%s)\n",key.name);
+   printf("SciFiFEB::on_settings_changed(%s)\n",key.name);
    if (std::string(key.name) == "dummy_config") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "FEB::on_settings_changed", "Set dummy_config to %d", value);
-      _this->setDummyConfig(FEB::FPGA_broadcast_ID,value);
+      cm_msg(MINFO, "SciFiFEB::on_settings_changed", "Set dummy_config to %d", value);
+      _this->setDummyConfig(SciFiFEB::FPGA_broadcast_ID,value);
    }
    if (std::string(key.name) == "dummy_data") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "FEB::on_settings_changed", "Set dummy_data to %d", value);
-      _this->setDummyData_Enable(FEB::FPGA_broadcast_ID,value);
+      cm_msg(MINFO, "SciFiFEB::on_settings_changed", "Set dummy_data to %d", value);
+      _this->setDummyData_Enable(SciFiFEB::FPGA_broadcast_ID,value);
    }
    if (std::string(key.name) == "dummy_data_fast") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "FEB::on_settings_changed", "Set dummy_data_fast to %d", value);
-      _this->setDummyData_Fast(FEB::FPGA_broadcast_ID,value);
+      cm_msg(MINFO, "SciFiFEB::on_settings_changed", "Set dummy_data_fast to %d", value);
+      _this->setDummyData_Fast(SciFiFEB::FPGA_broadcast_ID,value);
    }
    if (std::string(key.name) == "dummy_data_n") {
       INT value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_INT);
-      cm_msg(MINFO, "FEB::on_settings_changed", "Set dummy_data_n to %d", value);
-      _this->setDummyData_Count(FEB::FPGA_broadcast_ID,value);
+      cm_msg(MINFO, "SciFiFEB::on_settings_changed", "Set dummy_data_n to %d", value);
+      _this->setDummyData_Count(SciFiFEB::FPGA_broadcast_ID,value);
    }
    if (std::string(key.name) == "prbs_decode_bypass") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "FEB::on_settings_changed", "Set prbs_decode_bypass to %d", value);
-      _this->setPRBSDecoder(FEB::FPGA_broadcast_ID,value);
+      cm_msg(MINFO, "SciFiFEB::on_settings_changed", "Set prbs_decode_bypass to %d", value);
+      _this->setPRBSDecoder(SciFiFEB::FPGA_broadcast_ID,value);
    }
-   int asic;
    if (std::string(key.name) == "mask") {
       BOOL barray[16];
       INT  barraysize=sizeof(barray);
       db_get_data(hDB, hKey, &barray, &barraysize, TID_BOOL);
       for(int i=0;i<16;i++){
-           cm_msg(MINFO, "FEB::on_settings_changed", "Set mask[%d] %d",asic, barray[i]);
+           cm_msg(MINFO, "SciFiFEB::on_settings_changed", "Set mask[%d] %d",i, barray[i]);
            _this->setMask(i,barray[i]);
       }
    }
@@ -137,8 +136,8 @@ void FEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
       if(value){
-         cm_msg(MINFO, "FEB::on_settings_changed", "reset_datapath");
-         _this->DataPathReset(FEB::FPGA_broadcast_ID);
+         cm_msg(MINFO, "SciFiFEB::on_settings_changed", "reset_datapath");
+         _this->DataPathReset(SciFiFEB::FPGA_broadcast_ID);
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
@@ -148,8 +147,8 @@ void FEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
       if(value){
-         cm_msg(MINFO, "FEB::on_settings_changed", "reset_asics");
-         _this->chipReset(FEB::FPGA_broadcast_ID);
+         cm_msg(MINFO, "SciFiFEB::on_settings_changed", "reset_asics");
+         _this->chipReset(SciFiFEB::FPGA_broadcast_ID);
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
@@ -158,21 +157,21 @@ void FEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 }
 
 
-//FEB registers and functions
+//SciFiFEB registers and functions
 
 /**
 * Use emulated mutric on fpga for config
 */
-void FEB::setDummyConfig(int FPGA_ID, bool dummy){
-	printf("FEB::setDummyConfig(%d)=%d\n",FPGA_ID,dummy);
+void SciFiFEB::setDummyConfig(int FPGA_ID, bool dummy){
+	printf("SciFiFEB::setDummyConfig(%d)=%d\n",FPGA_ID,dummy);
 	uint32_t val;
 	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
-        printf("FEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+        printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
 	if(dummy) 
 		val=SET_FE_DUMMYCTRL_BIT_SPI(val);
 	else      
 		val=UNSET_FE_DUMMYCTRL_BIT_SPI(val);
-        printf("FEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
+        printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
 }
 
@@ -182,81 +181,81 @@ void FEB::setDummyConfig(int FPGA_ID, bool dummy){
 * fast: enable fast mode for data generator (shorter events)
 */
 
-void FEB::setDummyData_Enable(int FPGA_ID, bool dummy)
+void SciFiFEB::setDummyData_Enable(int FPGA_ID, bool dummy)
 {
-	printf("FEB::setDummyData_Enable(%d)=%d\n",FPGA_ID,dummy);
+	printf("SciFiFEB::setDummyData_Enable(%d)=%d\n",FPGA_ID,dummy);
 	uint32_t  val;
 	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
-        printf("FEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+        printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
 	if(dummy) 
 		val=SET_FE_DUMMYCTRL_BIT_DATAGEN(val); 
 	else 
 		val=UNSET_FE_DUMMYCTRL_BIT_DATAGEN(val);
 
-        printf("FEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
+        printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
 }
 
-void FEB::setDummyData_Fast(int FPGA_ID, bool fast)
+void SciFiFEB::setDummyData_Fast(int FPGA_ID, bool fast)
 {
-	printf("FEB::setDummyData_Fast(%d)=%d\n",FPGA_ID,fast);
+	printf("SciFiFEB::setDummyData_Fast(%d)=%d\n",FPGA_ID,fast);
 	uint32_t  val;
 	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
-        printf("FEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+        printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
 	if(fast)  
 		val=SET_FE_DUMMYCTRL_BIT_SHORTHIT(val); 
 	else 
 		val=UNSET_FE_DUMMYCTRL_BIT_SHORTHIT(val);
-        printf("FEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
+        printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
 }
 
-void FEB::setDummyData_Count(int FPGA_ID, int n)
+void SciFiFEB::setDummyData_Count(int FPGA_ID, int n)
 {
         if(n > 255) n = 255;
-	printf("FEB::setDummyData_Count(%d)=%d\n",FPGA_ID,n);
+	printf("SciFiFEB::setDummyData_Count(%d)=%d\n",FPGA_ID,n);
 	uint32_t  val;
 	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
-        printf("FEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+        printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
 	val=SET_FE_DUMMYCTRL_HITCNT_RANGE(val,(unsigned int) n);
-        printf("FEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
+        printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
 }
 
 /**
 * Disable data from specified ASIC
 */
-void FEB::setMask(int asic, bool value){
-	printf("FEB::setMask(%d)=%d (Mapped to %d:%d)\n",asic,value,FPGAid_from_ID(asic),ASICid_from_ID(asic));
+void SciFiFEB::setMask(int asic, bool value){
+	printf("SciFiFEB::setMask(%d)=%d (Mapped to %d:%d)\n",asic,value,FPGAid_from_ID(asic),ASICid_from_ID(asic));
 	uint32_t val;
 	m_mu.FEBsc_read(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
-        printf("FEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGAid_from_ID(asic),val);
+        printf("SciFiFEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGAid_from_ID(asic),val);
 	if(value) 
 			val |=  (1<<ASICid_from_ID(asic));
 	else      
 			val &= ~(1<<ASICid_from_ID(asic));
-        printf("FEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGAid_from_ID(asic),val);
+        printf("SciFiFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGAid_from_ID(asic),val);
 	m_mu.FEBsc_write(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
 }
 
 /**
 * Disable data from specified ASIC
 */
-void FEB::setPRBSDecoder(uint32_t FPGA_ID, bool enable){
+void SciFiFEB::setPRBSDecoder(uint32_t FPGA_ID, bool enable){
 	uint32_t val;
 	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG);
-        printf("FEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+        printf("SciFiFEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGA_ID,val);
 	if(enable) 
 			val=SET_FE_DPCTRL_BIT_PRBSDEC(val); 
 	else 
 			val=UNSET_FE_DPCTRL_BIT_PRBSDEC(val);
-        printf("FEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGA_ID,val);
+        printf("SciFiFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGA_ID,val);
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG);
 }
 
 
 //reset all asics (digital part, CC, fsms, etc.)
-void FEB::chipReset(int FPGA_ID){
+void SciFiFEB::chipReset(int FPGA_ID){
 	uint32_t val;
 	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 	//constant reset should not happen...
@@ -270,7 +269,7 @@ void FEB::chipReset(int FPGA_ID){
 }
 
 //reset full datapath upstream from merger
-void FEB::DataPathReset(int FPGA_ID){
+void SciFiFEB::DataPathReset(int FPGA_ID){
 	uint32_t val;
 	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 	//constant reset should not happen...
@@ -283,7 +282,4 @@ void FEB::DataPathReset(int FPGA_ID){
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 }
 
-
-}//namespace mutrig 
-}//namespace mudaq 
 

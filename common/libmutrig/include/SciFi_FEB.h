@@ -15,18 +15,17 @@ Contents:       Definition of fumctions in namespace mudaq::mutrig
 #include "mudaq_device_scifi.h"
 #include "mutrig_config.h"
 
-namespace mudaq { namespace mutrig {
-class FEB {
+class SciFiFEB {
    private:
       mudaq::MudaqDevice& m_mu;
-      static FEB* m_instance; //signleton instance pointer
-      FEB(const FEB&)=delete;
-      FEB(mudaq::MudaqDevice& mu):m_mu(mu){};
+      static SciFiFEB* m_instance; //signleton instance pointer
+      SciFiFEB(const SciFiFEB&)=delete;
+      SciFiFEB(mudaq::MudaqDevice& mu):m_mu(mu){};
    public:
       static const uint8_t FPGA_broadcast_ID;
 
-      static FEB* Create(mudaq::MudaqDevice& mu){printf("FEB::Create()");if(!m_instance) m_instance=new FEB(mu); return m_instance;};
-      static FEB* Instance(){return m_instance;};
+      static SciFiFEB* Create(mudaq::MudaqDevice& mu){printf("FEB::Create()");if(!m_instance) m_instance=new SciFiFEB(mu); return m_instance;};
+      static SciFiFEB* Instance(){return m_instance;};
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
       uint8_t FPGAid_from_ID(int asic);
@@ -71,7 +70,5 @@ class FEB {
       //TODO: add more resets for FE-FPGA blocks
 
 };//class FEB
-}//namespace mutrig 
-}//namespace mudaq 
 
 #endif // FEB_ACCESS_H

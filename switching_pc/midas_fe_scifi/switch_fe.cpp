@@ -214,8 +214,8 @@ INT frontend_init()
 
    //SciFi setup part
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "yellow");
-   mudaq::mutrig::FEB::Create(*mup); //create FEB interface signleton
-   int status=mudaq::mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",mudaq::mutrig::FEB::Instance(),false);
+   SciFiFEB::Create(*mup); //create FEB interface signleton
+   int status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance(),false);
    if(status != SUCCESS){
       set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "red");
       return status;
@@ -572,7 +572,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       if(value){
          cm_msg(MINFO, "sc_settings_changed", "SciFi configuration triggered");
          // TODO: propagate to hardware
-         int status=mudaq::mutrig::FEB::Instance()->ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
+         int status=SciFiFEB::Instance()->ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
 	 if(status!=SUCCESS){ 
 		//TODO: what to do? 
 	}

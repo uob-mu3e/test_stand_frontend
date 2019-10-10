@@ -31,7 +31,7 @@ typedef struct {
   BOOL dummy_data;
   INT  dummy_data_n;
   BOOL dummy_data_fast;
-  BOOL prbs_decode_enable;
+  BOOL prbs_decode_bypass;
   BOOL reset_datapath;
   BOOL reset_asics;
 } MUTRIG_DAQ;
@@ -42,10 +42,10 @@ typedef struct {
 "dummy_data = BOOL : n",\
 "dummy_data_n = INT : 255",\
 "dummy_data_fast = BOOL : n",\
-"prbs_decode_enable = BOOL : n",\
-"mask = BOOL : n",\
+"prbs_decode_bypass = BOOL : n",\
 "reset_datapath = BOOL : n",\
 "reset_asics = BOOL : n",\
+"mask = BOOL[16] n",\
 "",\
 NULL }
 
@@ -81,6 +81,8 @@ typedef struct {
     INT       vnvcodelay_offset;
     BOOL      vnvcodelay_scale;
     INT       latchbias;
+    INT       ms_limits;
+    BOOL      ms_switch_sel;
     BOOL      amon_en;
     INT       amon_dac;
     BOOL      dmon_1_en;
@@ -116,6 +118,8 @@ typedef struct {
 "vnvcodelay_offset = INT : 3",\
 "vnvcodelay_scale = BOOL : n",\
 "latchbias = INT : 0",\
+"ms_limits = INT : 0",\
+"ms_switch_sel = BOOL : n",\
 "amon_en = BOOL : n",\
 "amon_dac = INT : 0",\
 "dmon_1_en = BOOL : n",\
@@ -138,7 +142,6 @@ typedef struct {
     INT       ext_trig_offset;
     INT       ext_trig_endtime;
     BOOL      gen_idle;
-    BOOL      ms_switch_sel;
     BOOL      ms_debug;
     BOOL      prbs_debug;
     BOOL      prbs_single;
@@ -146,7 +149,6 @@ typedef struct {
     BOOL      disable_coarse;
     BOOL      pll_setcoarse;
     BOOL      short_event_mode;
-    INT       ms_limits;
     BOOL      pll_envomonitor;
     INT       lvds_tx_vcm;
     INT       lvds_tx_bias;
@@ -160,7 +162,6 @@ typedef struct {
 "ext_trig_offset = INT : 32",\
 "ext_trig_endtime = INT : 32",\
 "gen_idle = BOOL : n",\
-"ms_switch_sel = BOOL : n",\
 "ms_debug = BOOL : n",\
 "prbs_debug = BOOL : n",\
 "prbs_single = BOOL : n",\
@@ -168,7 +169,6 @@ typedef struct {
 "disable_coarse = BOOL : n",\
 "pll_setcoarse = BOOL : n",\
 "short_event_mode = BOOL : n",\
-"ms_limits = INT : 0",\
 "pll_envomonitor = BOOL : n",\
 "lvds_tx_vcm = INT : 0",\
 "lvds_tx_bias = INT : 0",\
