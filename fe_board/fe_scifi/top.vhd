@@ -5,14 +5,16 @@ use ieee.numeric_std.all;
 entity top is
 port (
     -- FE.Ports
-    i_fee_rxd		: in  std_logic_vector (3*4 - 1 downto 0); --data inputs from ASICs
-    o_fee_spi_CSn	: out std_logic_vector (3*4 - 1 downto 0); --CSn signals to ASICs (one per ASIC)
-    o_fee_spi_MOSI	: out std_logic_vector (3 - 1 downto 0);   --MOSI signals to ASICs (one per board)
-    i_fee_spi_MISO	: in  std_logic_vector (3 - 1 downto 0);   --MISO signals from ASICs (one per board)
-    o_fee_spi_SCK	: out std_logic_vector (3 - 1 downto 0);   --SCK signals to ASICs (one per board)
+    i_fee_rxd		: in  std_logic_vector (4*4 - 1 downto 0); --data inputs from ASICs
+    o_fee_spi_CSn	: out std_logic_vector (4*4 - 1 downto 0); --CSn signals to ASICs (one per ASIC)
+    o_fee_spi_MOSI	: out std_logic_vector (4 - 1 downto 0);   --MOSI signals to ASICs (one per board)
+    i_fee_spi_MISO	: in  std_logic_vector (4 - 1 downto 0);   --MISO signals from ASICs (one per board)
+    o_fee_spi_SCK	: out std_logic_vector (4 - 1 downto 0);   --SCK signals to ASICs (one per board)
 
-    o_fee_ext_trig	: out std_logic_vector (3 - 1 downto 0);   --external trigger (data validation) signals to ASICs (one per board)
-    o_fee_chip_rst	: out std_logic_vector (3 - 1 downto 0);   --chip reset signals to ASICs (one per board)
+    o_fee_ext_trig	: out std_logic_vector (4 - 1 downto 0);   --external trigger (data validation) signals to ASICs (one per board)
+    o_fee_chip_rst	: out std_logic_vector (4 - 1 downto 0);   --chip reset signals to ASICs (one per board)
+    lvds_clk_A          : in std_logic; -- 125 MHz base clock for LVDS PLLs - right //	SI5345 OUT3
+    lvds_clk_B          : in std_logic; -- 125 MHz base clock for LVDS PLLs - left  //	SI5345 OUT6
 
 
 
@@ -267,18 +269,23 @@ begin
     -- fee assignments
     o_fee_spi_MOSI <= (others => spi_mosi);
     o_fee_spi_SCK  <= (others => spi_sclk);
-    --note: wire up ASIC SPI: currently we can only do 15 chips, since the spi ip can only have 16 lines, one needed for si chip. should be separated.
-    --o_fee_spi_CSn <=  '1'& spi_ss_n(o_fee_spi_CSn'length-1 downto 1);
-    o_fee_spi_CSn <=  spi_ss_n(o_fee_spi_CSn'length downto 1);
+    --note: wire up ASIC SPI: currently we can only do 15 chips, since the spi ip can only have 16 lines, one needed for si chip.
+    --TODO: add separat spi master in nios
+
+    --TODO: connect last chip
+    o_fee_spi_CSn <=  '1'& spi_ss_n(o_fee_spi_CSn'length-1 downto 1);
+    --o_fee_spi_CSn <=  spi_ss_n(o_fee_spi_CSn'length downto 1);
 
     -- MISO: multiplexing si chip / SciFi FEE
+    --TODO: connect last chip
     spi_miso <=
         si45_spi_out when spi_ss_n(0) = '0' else
 	i_fee_spi_MISO(0) when spi_ss_n(4 downto 1)/="1111" else
 	i_fee_spi_MISO(1) when spi_ss_n(8 downto 5)/="1111" else
 	i_fee_spi_MISO(2) when spi_ss_n(12 downto 9)/="1111" else
---	i_fee_spi_MISO(3) when spi_ss_n(15 downto 13)/="111" else
+	i_fee_spi_MISO(3) when spi_ss_n(15 downto 13)/="111" else
 	'0';
+
     --connect CSn lines to FEs to LEDs
     --led(o_fee_spi_CSn'range)<=spi_ss_n(o_fee_spi_CSn'high+1 downto 1);
 
