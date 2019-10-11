@@ -22,7 +22,7 @@ port (
     i_spi_si_miso      : in    std_logic;
     o_spi_si_mosi      : out   std_logic;
     o_spi_si_sclk      : out   std_logic;
-    o_spi_si_ss_n      : out   std_logic_vector(0 downto 0);
+    o_spi_si_ss_n      : out   std_logic;
 
     --spi interface to asics
     i_spi_miso      : in    std_logic;
