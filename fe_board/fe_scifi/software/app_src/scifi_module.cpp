@@ -8,14 +8,14 @@ char wait_key(useconds_t us = 100000);
 //Standard slow control patterns for mutrig1
 #include "builtin_config/No_TDC_Power.h"
 #include "builtin_config/ALL_OFF.h"
-
+#include <ctype.h>
 
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
 int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 	int status=0;
 	uint16_t rx_pre=0xff00;
         //printf("tx | rx\n");
-	for(int nb=MUTRIG1_CONFIG_LEN_BYTES-1; nb>=0; nb--){
+	for(uint16_t nb=MUTRIG1_CONFIG_LEN_BYTES-1; nb>=0; nb--){
 		//do spi transaction, one byte at a time
                 alt_u8 rx = 0xCC;
                 alt_u8 tx = bitpattern[nb];
@@ -68,6 +68,7 @@ void scifi_module_t::menu(sc_t* sc){
         printf("  [3] => data\n");
         printf("  [4] => get datapath status\n");
         printf("  [5] => get slow control registers\n");
+	printf("  [6] => dummy generator settings");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -98,9 +99,9 @@ void scifi_module_t::menu(sc_t* sc){
             break;
         case '5':
             printf("dummyctrl_reg:    0x%08X\n", regs.ctrl.dummy);
-            printf("    :datagen_en   0x%X\n", (regs.ctrl.dummy>>0)&1);
-            printf("    :datagen_fast 0x%X\n", (regs.ctrl.dummy>>1)&1);
-            printf("    :datagen_cnt  0x%X\n", (regs.ctrl.dummy>>2)&0x3ff);
+            printf("    :datagen_en   0x%X\n", (regs.ctrl.dummy>>1)&1);
+            printf("    :datagen_fast 0x%X\n", (regs.ctrl.dummy>>2)&1);
+            printf("    :datagen_cnt  0x%X\n", (regs.ctrl.dummy>>3)&0x3ff);
 
             printf("dpctrl_reg:       0x%08X\n", regs.ctrl.dp);
             printf("    :mask         0b");
@@ -110,6 +111,49 @@ void scifi_module_t::menu(sc_t* sc){
             printf("    :prbs_dec     0x%X\n", (regs.ctrl.dp>>31)&1);
             printf("subdet_reset_reg: 0x%08X\n", regs.ctrl.reset);
             break;
+        case '6':
+	    menu_reg_dummyctrl(sc);
+            break;
+        case '7':
+	    menu_reg_datapathctrl(sc);
+            break;
+
+        case 'q':
+            return;
+        default:
+            printf("invalid command: '%c'\n", cmd);
+        }
+    }
+}
+void scifi_module_t::menu_reg_dummyctrl(sc_t* sc){
+    auto& regs = sc->ram->regs.scifi;
+    auto reg = regs.ctrl.dummy;
+
+    while(1) {
+        printf("  [0] => %s dummy\n",(reg&2) == 0?"enable":"disable");
+        printf("  [1] => %s fast hit mode\n",(reg&4) == 0?"enable":"disable");
+        printf("  [+] => increase count (currently %u)\n",(reg>>3&0x3fff));
+        printf("  [-] => decrease count\n");
+        printf("  [q] => exit\n");
+
+        printf("Select entry ...\n");
+	uint32_t val;
+        char cmd = wait_key();
+        switch(cmd) {
+        case '0':
+            regs.ctrl.dummy = regs.ctrl.dummy ^ (1<<1);
+            break;
+        case '1':
+            regs.ctrl.dummy = regs.ctrl.dummy ^ (1<<2);
+            break;
+        case '+':
+	    val=(reg>>3&0x3fff)+1;
+	    regs.ctrl.dummy = (regs.ctrl.dummy & 0x07) | (0x3fff&(val <<3));
+            break;
+        case '-':
+	    val=(reg>>3&0x3fff)-1;
+	    regs.ctrl.dummy = (regs.ctrl.dummy & 0x07) | (0x3fff&(val <<3));
+            break;
         case 'q':
             return;
         default:
@@ -118,6 +162,38 @@ void scifi_module_t::menu(sc_t* sc){
     }
 }
 
+
+void scifi_module_t::menu_reg_datapathctrl(sc_t* sc){
+    auto& regs = sc->ram->regs.scifi;
+    auto reg = regs.ctrl.dp;
+
+    while(1) {
+        printf("  [0] => %s prbs decoder\n",(reg&(1<<31)) == 0?"enable":"disable");
+	for(alt_u8 i=0;i<16;i++){
+            printf("  [%1x] => %s ASIC %u\n",i,(reg&(1<<i)) == 0?"  mask":"unmask",i);
+	}
+        printf("  [q] => exit\n");
+
+        printf("Select entry ...\n");
+        char cmd = wait_key();
+        switch(cmd) {
+        case '0':
+            regs.ctrl.dp = regs.ctrl.dp ^ (1<<31);
+            break;
+        case 'q':
+            return;
+	default:
+	    if(isdigit(cmd))
+	        regs.ctrl.dp = regs.ctrl.dp ^ (1<<(cmd-'0'));
+	    else
+	        if(isxdigit(cmd))
+	            regs.ctrl.dp = regs.ctrl.dp ^ (1<<(tolower(cmd)-'a'));
+	    else
+		printf("invalid command: '%c'\n", cmd);
+            break;
+        }
+    }
+}
 
 
 void scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
