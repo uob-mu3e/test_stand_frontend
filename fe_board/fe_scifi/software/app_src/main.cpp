@@ -6,7 +6,7 @@
 i2c_t i2c;
 
 #include "../../../fe/software/app_src/si5345.h"
-si5345_t si5345 { 4 }; // spi_slave = 4
+si5345_t si5345 { 0 , SPI_SI_BASE}; //slave 0 of separate spi interface
 
 #include "../../../fe/software/app_src/sc.h"
 sc_t sc;
