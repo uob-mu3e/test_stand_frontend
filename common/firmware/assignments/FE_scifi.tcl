@@ -26,8 +26,8 @@ set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_MOSI[0]
 set_location_assignment PIN_AL27 -to o_fee_spi_MOSI[0]
 
 #i_fee_spi_MISO=SPI_load_A_2
-set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_MISO[0]
-set_location_assignment PIN_AH25 -to o_fee_spi_MISO[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to i_fee_spi_MISO[0]
+set_location_assignment PIN_AH25 -to i_fee_spi_MISO[0]
 
 #o_fee_spi_SCK=SPI_SDO_A
 set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_SCK[0]
@@ -71,8 +71,8 @@ set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_MOSI[1]
 set_location_assignment PIN_AN30 -to o_fee_spi_MOSI[1]
 
 #i_fee_spi_MISO=SPI_load_B_2
-set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_MISO[1]
-set_location_assignment PIN_AN29 -to o_fee_spi_MISO[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to i_fee_spi_MISO[1]
+set_location_assignment PIN_AN29 -to i_fee_spi_MISO[1]
 
 #o_fee_spi_SCK=SPI_SDO_B
 set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_SCK[1]
@@ -117,8 +117,8 @@ set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_MOSI[2]
 set_location_assignment PIN_AP5 -to o_fee_spi_MOSI[2]
 
 #i_fee_spi_MISO=SPI_load_C_2
-set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_MISO[2]
-set_location_assignment PIN_AP6 -to o_fee_spi_MISO[2]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to i_fee_spi_MISO[2]
+set_location_assignment PIN_AP6 -to i_fee_spi_MISO[2]
 
 #o_fee_spi_SCK=SPI_SDO_C
 set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_SCK[2]
@@ -164,8 +164,8 @@ set_location_assignment PIN_N12 -to o_fee_chip_rst[2]
 #----set_location_assignment PIN_AF20 -to o_fee_spi_MOSI[3]
 #----
 #----#i_fee_spi_MISO=SPI_load_D_2
-#----set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_MISO[3]
-#----set_location_assignment PIN_AP22 -to o_fee_spi_MISO[3]
+#----set_instance_assignment -name IO_STANDARD "1.8 V" -to i_fee_spi_MISO[3]
+#----set_location_assignment PIN_AP22 -to i_fee_spi_MISO[3]
 #----
 #----#o_fee_spi_SCK=SPI_SDO_D
 #----set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_SCK[3]
@@ -209,8 +209,8 @@ set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_MOSI[3]
 set_location_assignment PIN_AJ12 -to o_fee_spi_MOSI[3]
 
 #i_fee_spi_MISO=SPI_load_E_2
-set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_MISO[3]
-set_location_assignment PIN_AH11 -to o_fee_spi_MISO[3]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to i_fee_spi_MISO[3]
+set_location_assignment PIN_AH11 -to i_fee_spi_MISO[3]
 
 #o_fee_spi_SCK=SPI_SDO_E
 set_instance_assignment -name IO_STANDARD "1.8 V" -to o_fee_spi_SCK[3]

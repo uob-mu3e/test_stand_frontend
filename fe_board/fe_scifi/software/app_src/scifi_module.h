@@ -22,11 +22,9 @@ struct sc_t;
 
 //declaration of interface to scifi module: hardware access, menu, slow control handler
 struct scifi_module_t {
-    const uint32_t MUTRIG1_CONFIG_LEN_BYTES=10;//295;
+    const uint32_t MUTRIG1_CONFIG_LEN_BYTES=295;
     const uint32_t MUTRIG1_CONFIG_LEN_BITS =2358;
-    const uint8_t  n_ASICS=12;
-    //write single byte over spi
-    static alt_u8 spi_write(alt_u32 slave, alt_u8 w);
+    const uint8_t  n_ASICS=15;
     //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
     int spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern);
     int configure_asic(alt_u32 asic, const alt_u8* bitpattern);

@@ -10,33 +10,19 @@ char wait_key(useconds_t us = 100000);
 #include "builtin_config/ALL_OFF.h"
 
 
-    //write single byte over spi
-alt_u8 scifi_module_t::spi_write(alt_u32 slave, alt_u8 w) {
-        alt_u8 r = 0xCC;
-        printf("spi_write[%u]: 0x%02X\n",slave, w);
-        alt_avalon_spi_command(SPI_BASE, slave, 1, &w, 0, &r, 0);
-        r = IORD_8DIRECT(SPI_BASE, 0);
-        printf("spi_read[%u]: 0x%02X\n",slave, r);
-        return r;
-}
-
-
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
 int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 	int status=0;
 	uint16_t rx_pre=0xff00;
+        //printf("tx | rx\n");
 	for(int nb=MUTRIG1_CONFIG_LEN_BYTES-1; nb>=0; nb--){
 		//do spi transaction, one byte at a time
                 alt_u8 rx = 0xCC;
                 alt_u8 tx = bitpattern[nb];
-                //printf("spi_write[%u]: 0x%02X\n",asic+1, bitpattern[nb]);
 		
                 alt_avalon_spi_command(SPI_BASE, asic+1, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
                 rx = IORD_8DIRECT(SPI_BASE, 0);
-                //printf("spi_read[%u]: 0x%02X\n",asic+1, rx);
-
-
-
+                //printf("%02X %02x\n",tx,rx);
 
 		//pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
 		unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG1_CONFIG_LEN_BITS%8);
@@ -50,6 +36,7 @@ int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 		}
 		rx_pre=rx<<8;
 	}
+		
 	return status;
 }
 
