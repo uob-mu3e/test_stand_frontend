@@ -102,6 +102,8 @@ const char *sc_settings_str[] = {
 "Read RM = BOOL : 0",
 "Reset SC Master = BOOL : 0",
 "Reset SC Slave = BOOL : 0",
+"Clear WM = BOOL : 0",
+"Last RM ADD = BOOL : 0",
 "SciFiConfig = BOOL : 0",
 "[32] Temp0",
 "[32] Temp1",
@@ -277,35 +279,6 @@ INT read_sc_event(char *pevent, INT off)
     return mup->FEBsc_write_bank(pevent,off); 
 }
 
-/*--- Read WMEM if button was pressed --------*/
-
-//INT read_WMEM_event(char *pevent, INT off)
-//{
-//    bk_init(pevent);
-//
-//    mudaq::DmaMudaqDevice & mu = *mup;
-//
-//    if (mu.read_memory_rw(0) == 0) {
-//        return CM_SUCCESS; // no new data
-//    }
-//
-//    unsigned int sc_length = mu.read_memory_rw(0);
-//    unsigned int sc_start_add = mu.read_memory_rw(1);
-//
-//    int *pdata;
-//    bk_create(pevent, "WM", TID_INT, (void **)&pdata);
-//
-//    for (unsigned int i = sc_start_add; i < sc_start_add + sc_length; i++) {
-//        *pdata++ = mu.read_memory_rw(i);
-//    }
-//
-//    mu.write_memory_rw(0, 0);
-//
-//    bk_close(pevent, pdata);
-//
-//    return bk_size(pevent);
-//}
-
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
 
 INT read_scifi_sc_event(char *pevent, INT off){
@@ -313,13 +286,37 @@ INT read_scifi_sc_event(char *pevent, INT off){
     return 0;
 }
 
+/*--- helper functions ------------------------*/
+
+BOOL sc_settings_changed_hepler(const char *key_name, HNDLE hDB, HNDLE hKey, DWORD type){
+    BOOL value;
+    int size = sizeof(value);
+    db_get_data(hDB, hKey, &value, &size, type);
+    if(value)
+        cm_msg(MINFO, "sc_settings_changed", "trigger for key=\"%s\"", key_name);
+    return value;
+}
+
+void set_odb_flag_false(const char *key_name, HNDLE hDB, HNDLE hKey, DWORD type){
+    cm_msg(MINFO, "sc_settings_changed", "reseting odb flag of key \"\"", key_name);
+    BOOL value = FALSE; // reset flag in ODB
+    db_set_data(hDB, hKey, &value, sizeof(value), 1, type);
+}
+
+INT get_odb_value_by_string(const char *key_name){
+    INT ODB_DATA, SIZE_ODB_DATA;
+    SIZE_ODB_DATA = sizeof(ODB_DATA);
+    db_get_value(hDB, 0, key_name, &ODB_DATA, &SIZE_ODB_DATA, TID_INT, 0);
+    return ODB_DATA;
+}
+
 /*--- Called whenever settings have changed ------------------------*/
 
 void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 {
    KEY key;
+
    db_get_key(hDB, hKey, &key);
-//   printf("sc_settings_changed(%s)\n",key.name);
 
    mudaq::DmaMudaqDevice & mu = *mup;
 
@@ -339,247 +336,181 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       // TODO: propagate to hardware
    }
 
-   if (std::string(key.name) == "Reset SC Master") {
-       BOOL value;
-       int size = sizeof(value);
-       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-       cm_msg(MINFO, "sc_settings_changed", "Reset SC Master");
+   if (std::string(key.name) == "Reset SC Master" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
        mu.FEBsc_resetMaster();
+       set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
-   if (std::string(key.name) == "Reset SC Slave") {
-       BOOL value;
-       int size = sizeof(value);
-       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-       cm_msg(MINFO, "sc_settings_changed", "Reset SC Slave");
+   if (std::string(key.name) == "Reset SC Slave" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
        mu.FEBsc_resetSlave();
+       set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
-   if (std::string(key.name) == "Write") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if (value) {
-         cm_msg(MINFO, "sc_settings_changed", "Execute write");
+   if (std::string(key.name) == "Write" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+       INT FPGA_ID=get_odb_value_by_string("Equipment/Switching/Variables/FPGA_ID_WRITE");
+       INT START_ADD=get_odb_value_by_string("Equipment/Switching/Variables/START_ADD_WRITE");
+       INT DATA_WRITE_SIZE=get_odb_value_by_string("Equipment/Switching/Variables/DATA_WRITE_SIZE");
 
-         INT DATA_WRITE_SIZE, SIZE_DATA_WRITE_SIZE;
-         SIZE_DATA_WRITE_SIZE = sizeof(DATA_WRITE_SIZE);
-         char STR_DATA_WRITE_SIZE[128];
-         sprintf(STR_DATA_WRITE_SIZE,"Equipment/Switching/Variables/DATA_WRITE_SIZE");
-         db_get_value(hDB, 0, STR_DATA_WRITE_SIZE, &DATA_WRITE_SIZE, &SIZE_DATA_WRITE_SIZE, TID_INT, 0);
+       uint32_t DATA_ARRAY[DATA_WRITE_SIZE];
+       for (int i = 0; i < DATA_WRITE_SIZE; i++) {
+           char STR_DATA[128];
+           sprintf(STR_DATA,"Equipment/Switching/Variables/DATA_WRITE[%d]", i);
+           DATA_ARRAY[i] = get_odb_value_by_string(STR_DATA);
+       }
 
-         uint32_t DATA_ARRAY[DATA_WRITE_SIZE];
+       uint32_t *data = DATA_ARRAY;
 
-         INT FPGA_ID, SIZE_FPGA_ID;
-         INT DATA, SIZE_DATA;
-         INT START_ADD, SIZE_START_ADD;
-
-         SIZE_FPGA_ID = sizeof(FPGA_ID);
-         SIZE_DATA = sizeof(DATA);
-         SIZE_START_ADD = sizeof(START_ADD);
-
-         char STR_FPGA_ID[128];
-         char STR_START_ADD[128];
-
-         sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_WRITE");
-         sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_WRITE");
-
-         db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
-         db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
-
-         for (int i = 0; i < DATA_WRITE_SIZE; i++) {
-             char STR_DATA[128];
-             sprintf(STR_DATA,"Equipment/Switching/Variables/DATA_WRITE[%d]", i);
-             db_get_value(hDB, 0, STR_DATA, &DATA, &SIZE_DATA, TID_INT, 0);
-             DATA_ARRAY[i] = (uint32_t) DATA;
-         }
-
-         uint32_t *data = DATA_ARRAY;
-
-         int count=0;
-         while(count < 3){
-		if(mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD)!=-1) break;
-		count++;
-	}
-	if(count==3) cm_msg(MERROR,"switch_fe","Tried 4 times to send a slow control write packet but did not succeed");
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+       int count=0;
+       while(count < 3){
+           if(mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD)!=-1) break;
+           count++;
       }
+      if(count==3) 
+	      cm_msg(MERROR,"switch_fe","Tried 4 times to send a slow control write packet but did not succeed");
+      set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
-   if (std::string(key.name) == "Read") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if (value) {
-         cm_msg(MINFO, "sc_settings_changed", "Execute read");
+   if (std::string(key.name) == "Read" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+       INT FPGA_ID=get_odb_value_by_string("Equipment/Switching/Variables/FPGA_ID_READ");
+       INT LENGTH=get_odb_value_by_string("Equipment/Switching/Variables/LENGTH_READ");
+       INT START_ADD=get_odb_value_by_string("Equipment/Switching/Variables/START_ADD_READ");
 
-         INT FPGA_ID, SIZE_FPGA_ID;
-         INT LENGTH, SIZE_LENGTH;
-         INT START_ADD, SIZE_START_ADD;
+       uint32_t data[LENGTH];
+       int count=0;
+       while(count < 3){
+           if(mu.FEBsc_read((uint32_t) FPGA_ID, data, (uint16_t) LENGTH, (uint32_t) START_ADD)>=0)
+                break;
+           count++;
+       }
+       if(count==3) cm_msg(MERROR,"switch_fe","Tried 4 times to get a slow control read response but did not succeed");
 
-         SIZE_FPGA_ID = sizeof(FPGA_ID);
-         SIZE_LENGTH = sizeof(LENGTH);
-         SIZE_START_ADD = sizeof(START_ADD);
-
-         char STR_FPGA_ID[128];
-         char STR_LENGTH[128];
-         char STR_START_ADD[128];
-
-         sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_READ");
-         sprintf(STR_LENGTH,"Equipment/Switching/Variables/LENGTH_READ");
-         sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_READ");
-
-         db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
-         db_get_value(hDB, 0, STR_LENGTH, &LENGTH, &SIZE_LENGTH, TID_INT, 0);
-         db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
-
-         uint32_t data[LENGTH];
-	 int count=0;
-         while(count < 3){
-         	if(mu.FEBsc_read((uint32_t) FPGA_ID, data, (uint16_t) LENGTH, (uint32_t) START_ADD)>=0) break;
-		count++;
-	}
-	if(count==3) cm_msg(MERROR,"switch_fe","Tried 4 times to get a slow control read response but did not succeed");
-
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-      }
+       set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
-   if (std::string(key.name) == "Single Write") {
-        BOOL value;
-        int size = sizeof(value);
-        db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-        if (value) {
-            cm_msg(MINFO, "sc_settings_changed", "Execute single write");
+   if (std::string(key.name) == "Single Write" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+        INT FPGA_ID=get_odb_value_by_string("Equipment/Switching/Variables/FPGA_ID_WRITE");
+        INT DATA=get_odb_value_by_string("Equipment/Switching/Variables/SINGLE_DATA_WRITE");
+        INT START_ADD=get_odb_value_by_string("Equipment/Switching/Variables/START_ADD_WRITE");
 
-            INT FPGA_ID, SIZE_FPGA_ID;
-            INT DATA, SIZE_DATA;
-            INT START_ADD, SIZE_START_ADD;
+	uint32_t data_arr[1] = {0};
+        data_arr[0] = (uint32_t) DATA;
+        uint32_t *data = data_arr;
+        mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD);
 
-            SIZE_FPGA_ID = sizeof(FPGA_ID);
-            SIZE_DATA = sizeof(DATA);
-            SIZE_START_ADD = sizeof(START_ADD);
-
-            char STR_FPGA_ID[128];
-            char STR_DATA[128];
-            char STR_START_ADD[128];
-
-            sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_WRITE");
-            sprintf(STR_DATA,"Equipment/Switching/Variables/SINGLE_DATA_WRITE");
-            sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_WRITE");
-
-            db_get_value(hDB, 0, STR_FPGA_ID, &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
-            db_get_value(hDB, 0, STR_DATA, &DATA, &SIZE_DATA, TID_INT, 0);
-            db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
-
-
-
-            uint32_t data_arr[1] = {0};
-            data_arr[0] = (uint32_t) DATA;
-            uint32_t *data = data_arr;
-
-            mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD);
-
-            value = FALSE; // reset flag in ODB
-            db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-        }
+        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
 
-    if (std::string(key.name) == "Read WM") {
-        BOOL value;
-        int size = sizeof(value);
-        db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-        if (value) {
-            cm_msg(MINFO, "sc_settings_changed", "Execute Read WM");
+    if (std::string(key.name) == "Read WM" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+        INT WM_START_ADD=get_odb_value_by_string("Equipment/Switching/Variables/WM_START_ADD");
+        INT WM_LENGTH=get_odb_value_by_string("Equipment/Switching/Variables/WM_LENGTH");
+        INT WM_DATA;
+        INT SIZE_WM_DATA = sizeof(WM_DATA);
 
-            INT WM_START_ADD, SIZE_WM_START_ADD;
-            INT WM_LENGTH, SIZE_WM_LENGTH;
-            INT WM_DATA, SIZE_WM_DATA;
+        HNDLE key_WM_DATA;
+        db_find_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", &key_WM_DATA);
+        db_set_num_values(hDB, key_WM_DATA, WM_LENGTH);
+        for (int i = 0; i < WM_LENGTH; i++) {
+            WM_DATA = mu.read_memory_rw((uint32_t) WM_START_ADD + i);
+            db_set_value_index(hDB, 0, "Equipment/Switching/Variables/WM_DATA", &WM_DATA, SIZE_WM_DATA, i, TID_INT, FALSE);
+        }
 
-            SIZE_WM_START_ADD = sizeof(WM_START_ADD);
-            SIZE_WM_LENGTH = sizeof(WM_LENGTH);
-            SIZE_WM_DATA = sizeof(WM_DATA);
+        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
+    }
 
-            char STR_WM_START_ADD[128];
-            char STR_WM_LENGTH[128];
-            char STR_WM_DATA[128];
+    if (std::string(key.name) == "Read RM" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+        cm_msg(MINFO, "sc_settings_changed", "Execute Read RM");
 
-            sprintf(STR_WM_START_ADD,"Equipment/Switching/Variables/WM_START_ADD");
-            sprintf(STR_WM_LENGTH,"Equipment/Switching/Variables/WM_LENGTH");
-            sprintf(STR_WM_DATA,"Equipment/Switching/Variables/WM_DATA");
+        INT RM_START_ADD=get_odb_value_by_string("Equipment/Switching/Variables/RM_START_ADD");
+        INT RM_LENGTH=get_odb_value_by_string("Equipment/Switching/Variables/RM_LENGTH");
+        INT RM_DATA;
+        INT SIZE_RM_DATA = sizeof(RM_DATA);
 
-            db_get_value(hDB, 0, STR_WM_START_ADD, &WM_START_ADD, &SIZE_WM_START_ADD, TID_INT, 0);
-            db_get_value(hDB, 0, STR_WM_LENGTH, &WM_LENGTH, &SIZE_WM_LENGTH, TID_INT, 0);
+        HNDLE key_WM_DATA;
+        db_find_key(hDB, 0, "Equipment/Switching/Variables/RM_DATA", &key_WM_DATA);
+        db_set_num_values(hDB, key_WM_DATA, RM_LENGTH);
+        for (int i = 0; i < RM_LENGTH; i++) {
+            RM_DATA = mu.read_memory_ro((uint32_t) RM_START_ADD + i);
+            db_set_value_index(hDB, 0, "Equipment/Switching/Variables/RM_DATA", &RM_DATA, SIZE_RM_DATA, i, TID_INT, FALSE);
+        }
 
-            HNDLE key_WM_DATA;
-            db_find_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", &key_WM_DATA);
-            db_set_num_values(hDB, key_WM_DATA, WM_LENGTH);
-            for (int i = 0; i < WM_LENGTH; i++) {
-                WM_DATA = mu.read_memory_rw((uint32_t) WM_START_ADD + i);
-                db_set_value_index(hDB, 0, STR_WM_DATA, &WM_DATA, SIZE_WM_DATA, i, TID_INT, FALSE);
+        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
+    }
+
+    if (std::string(key.name) == "Last RM ADD" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+        INT LAST_RM_ADD, SIZE_LAST_RM_ADD;
+        SIZE_LAST_RM_ADD = sizeof(LAST_RM_ADD);
+        char STR_LAST_RM_ADD[128];
+        sprintf(STR_LAST_RM_ADD,"Equipment/Switching/Variables/LAST_RM_ADD");
+        INT NEW_LAST_RM_ADD = mu.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R);
+        INT SIZE_NEW_LAST_RM_ADD;
+        SIZE_NEW_LAST_RM_ADD = sizeof(NEW_LAST_RM_ADD);
+        db_set_value(hDB, 0, STR_LAST_RM_ADD, &NEW_LAST_RM_ADD, SIZE_NEW_LAST_RM_ADD, 1, TID_INT);
+
+	set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
+    }
+/*
+    if (std::string(key.name) == "Read MALIBU File" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+        INT FPGA_ID, SIZE_FPGA_ID;
+        INT START_ADD, SIZE_START_ADD;
+        INT PCIE_MEM_START, SIZE_PCIE_MEM_START;
+
+        SIZE_FPGA_ID = sizeof(FPGA_ID);
+        SIZE_START_ADD = sizeof(START_ADD);
+        SIZE_PCIE_MEM_START = sizeof(PCIE_MEM_START);
+
+        char STR_FPGA_ID[128];
+        char STR_START_ADD[128];
+        char STR_PCIE_MEM_START[128];
+
+        sprintf(STR_FPGA_ID,"Equipment/Switching/Variables/FPGA_ID_WRITE");
+        sprintf(STR_START_ADD,"Equipment/Switching/Variables/START_ADD_WRITE");
+        sprintf(STR_PCIE_MEM_START,"Equipment/Switching/Variables/PCIE_MEM_START");
+
+        db_get_value(hDB, 0, "Equipment/Switching/Variables/FPGA_ID_WRITE", &FPGA_ID, &SIZE_FPGA_ID, TID_INT, 0);
+        db_get_value(hDB, 0, STR_START_ADD, &START_ADD, &SIZE_START_ADD, TID_INT, 0);
+        db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
+
+        uint32_t DATA_ARRAY[256];
+        uint32_t n = 0;
+        uint32_t w = 0;
+        for(int i = 0; i < sizeof(stic3_config_ALL_OFF); i++) {
+            if(i%4 == 0) { w = 0; n++; }
+            w |= stic3_config_ALL_OFF[i] << (i % 4 * 8);
+            if(i%4 == 3) {
+                DATA_ARRAY[i/4] = w;
             }
-
-            value = FALSE; // reset flag in ODB
-            db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
         }
+
+        INT NEW_PCIE_MEM_START = PCIE_MEM_START + 5 + n;
+
+        uint32_t *data = DATA_ARRAY;
+
+        mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) n, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+
+        uint32_t data_arr[1] = {START_ADD};
+
+        mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF1, (uint32_t) NEW_PCIE_MEM_START);
+
+        data_arr[0] = { 0x01100000 + (0xFFFF & n)};
+
+        NEW_PCIE_MEM_START = NEW_PCIE_MEM_START + 6;
+
+        mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF0, (uint32_t) NEW_PCIE_MEM_START);
+
+        NEW_PCIE_MEM_START = NEW_PCIE_MEM_START + 6;
+        INT SIZE_NEW_PCIE_MEM_START;
+        SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
+        db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
+
+        
+	set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
-
-    if (std::string(key.name) == "Read RM") {
-        BOOL value;
-        int size = sizeof(value);
-        db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-        if (value) {
-            cm_msg(MINFO, "sc_settings_changed", "Execute Read RM");
-
-            INT RM_START_ADD, SIZE_RM_START_ADD;
-            INT RM_LENGTH, SIZE_RM_LENGTH;
-            INT RM_DATA, SIZE_RM_DATA;
-
-            SIZE_RM_START_ADD = sizeof(RM_START_ADD);
-            SIZE_RM_LENGTH = sizeof(RM_LENGTH);
-            SIZE_RM_DATA = sizeof(RM_DATA);
-
-            char STR_RM_START_ADD[128];
-            char STR_RM_LENGTH[128];
-            char STR_RM_DATA[128];
-
-            sprintf(STR_RM_START_ADD,"Equipment/Switching/Variables/RM_START_ADD");
-            sprintf(STR_RM_LENGTH,"Equipment/Switching/Variables/RM_LENGTH");
-            sprintf(STR_RM_DATA,"Equipment/Switching/Variables/RM_DATA");
-
-            db_get_value(hDB, 0, STR_RM_START_ADD, &RM_START_ADD, &SIZE_RM_START_ADD, TID_INT, 0);
-            db_get_value(hDB, 0, STR_RM_LENGTH, &RM_LENGTH, &SIZE_RM_LENGTH, TID_INT, 0);
-
-            HNDLE key_WM_DATA;
-            db_find_key(hDB, 0, "Equipment/Switching/Variables/RM_DATA", &key_WM_DATA);
-            db_set_num_values(hDB, key_WM_DATA, RM_LENGTH);
-            for (int i = 0; i < RM_LENGTH; i++) {
-                RM_DATA = mu.read_memory_ro((uint32_t) RM_START_ADD + i);
-                db_set_value_index(hDB, 0, STR_RM_DATA, &RM_DATA, SIZE_RM_DATA, i, TID_INT, FALSE);
-            }
-
-            value = FALSE; // reset flag in ODB
-            db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-        }
+*/
+    if (std::string(key.name) == "SciFiConfig" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+          int status=SciFiFEB::Instance()->ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
+          if(status!=SUCCESS){ 
+         	//TODO: what to do? 
+          }
+	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
-
-   if (std::string(key.name) == "SciFiConfig") {
-      INT value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if(value){
-         cm_msg(MINFO, "sc_settings_changed", "SciFi configuration triggered");
-         // TODO: propagate to hardware
-         int status=SciFiFEB::Instance()->ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
-	 if(status!=SUCCESS){ 
-		//TODO: what to do? 
-	}
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-      }
-   }
-
-
 }
