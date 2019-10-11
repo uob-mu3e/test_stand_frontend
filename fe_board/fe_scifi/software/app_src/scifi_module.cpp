@@ -20,7 +20,7 @@ int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
                 alt_u8 rx = 0xCC;
                 alt_u8 tx = bitpattern[nb];
 		
-                alt_avalon_spi_command(SPI_BASE, asic+1, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
+                alt_avalon_spi_command(SPI_BASE, asic, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
                 rx = IORD_8DIRECT(SPI_BASE, 0);
                 //printf("%02X %02x\n",tx,rx);
 
