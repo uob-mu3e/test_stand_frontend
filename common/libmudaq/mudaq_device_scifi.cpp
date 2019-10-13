@@ -406,7 +406,7 @@ void MudaqDevice::FEBsc_resetSlave(){
  *      1 word as dummy: 0x00000000
  *      First word (0xBAD...) to be written last (serves as start condition)
  */
-int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr) {
+int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
 //printf("FEBsc_write() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr, m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_WRITE = 0x3; // this is 11 in binary
@@ -421,6 +421,10 @@ int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, 
     write_memory_rw(m_FEBsc_wmem_addr + 4 + length, 0x0000009c);
     write_memory_rw(m_FEBsc_wmem_addr, 0xBAD << 20);
     m_FEBsc_wmem_addr += 4 + length + 1;
+
+    if(!request_reply)
+	return 0; //do not wait for reply
+
     //wait for reply (acknowledge)
     //printf("MudaqDevice::FEBsc_write(): Waiting for response, current=%d\n",m_FEBsc_rmem_addr);
     int count=0;
@@ -444,7 +448,7 @@ int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, 
     return 0;
 }
 
-int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr) {
+int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
 //printf("FEBsc_read() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr,m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_READ = 0x2; // this is 10 in binary
@@ -455,7 +459,8 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
     write_memory_rw(m_FEBsc_wmem_addr + 4, 0x0000009c);
     write_memory_rw(m_FEBsc_wmem_addr, 0xBAD << 20);
     m_FEBsc_wmem_addr += 4 + 1;
-
+    if(!request_reply)
+	return 0; //do not pretend we received what we wanted, but also do not signal a failure.
     //wait for reply
     //printf("MudaqDevice::FEBsc_read(): Waiting for response, current=%d\n",m_FEBsc_rmem_addr);
     int count=0;
@@ -489,7 +494,7 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
 //Return: type field of the packet, 0x00 when no new packet was available
 uint32_t MudaqDevice::FEBsc_get_packet(){
    uint32_t fpga_rmem_addr=(read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
-//   printf("FEBsc_get_packet: index=%d, hwindex=%4.4x, value=%16.16x\n",m_FEBsc_rmem_addr,fpga_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr));
+   //printf("FEBsc_get_packet: index=%d, hwindex=%4.4x, value=%16.16x\n",m_FEBsc_rmem_addr,fpga_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr));
    //hardware is in front of software? only then we can read, otherwise wait...
    if(fpga_rmem_addr==m_FEBsc_rmem_addr) return 0;
    //check if memory at current index is a SC packet

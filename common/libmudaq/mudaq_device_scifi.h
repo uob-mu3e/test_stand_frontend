@@ -80,10 +80,12 @@ namespace mudaq {
 
     void FEBsc_resetMaster();
     void FEBsc_resetSlave();
-    //write slow control packet with payload of length words in data. Returns 0 on success, -1 on error receiving acknowledge packet
-    int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
+    //write slow control packet with payload of length words in data. Returns 0 on success, -1 on error receiving acknowledge packet.
+    //Disable any check of reply by setting the request_reply to false, then only the write request will be sent.
+    int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply=true);
     //request write slow control read packet, with payload of length words saved in data. Returns length of packet returned, -1 on error receiving reply packet
-    int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
+    //Disable any check of reply by setting the request_reply to false, then only the read request will be sent.
+    int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply=true);
     //write all packets received into a midas bank. clears internal packet fifo and should be called from time to time to avoid storing all replies
     int FEBsc_write_bank(char *pevent, int off);
     //get
