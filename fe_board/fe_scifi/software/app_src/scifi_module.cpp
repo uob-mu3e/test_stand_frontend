@@ -68,7 +68,8 @@ void scifi_module_t::menu(sc_t* sc){
         printf("  [3] => data\n");
         printf("  [4] => get datapath status\n");
         printf("  [5] => get slow control registers\n");
-	printf("  [6] => dummy generator settings");
+	printf("  [6] => dummy generator settings\n");
+	printf("  [7] => datapath settings\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -105,7 +106,7 @@ void scifi_module_t::menu(sc_t* sc){
 
             printf("dpctrl_reg:       0x%08X\n", regs.ctrl.dp);
             printf("    :mask         0b");
-            for(int i=16;i>0;i--) printf("%d", (regs.ctrl.dp>>i)&1);
+            for(int i=15;i>=0;i--) printf("%d", (regs.ctrl.dp>>i)&1);
             printf("\n");
 
             printf("    :prbs_dec     0x%X\n", (regs.ctrl.dp>>31)&1);
@@ -127,9 +128,10 @@ void scifi_module_t::menu(sc_t* sc){
 }
 void scifi_module_t::menu_reg_dummyctrl(sc_t* sc){
     auto& regs = sc->ram->regs.scifi;
-    auto reg = regs.ctrl.dummy;
 
     while(1) {
+        auto reg = regs.ctrl.dummy;
+	//printf("Dummy reg now: %16.16x / %16.16x\n",regs.ctrl.dummy, reg);
         printf("  [0] => %s dummy\n",(reg&2) == 0?"enable":"disable");
         printf("  [1] => %s fast hit mode\n",(reg&4) == 0?"enable":"disable");
         printf("  [+] => increase count (currently %u)\n",(reg>>3&0x3fff));
@@ -165,10 +167,10 @@ void scifi_module_t::menu_reg_dummyctrl(sc_t* sc){
 
 void scifi_module_t::menu_reg_datapathctrl(sc_t* sc){
     auto& regs = sc->ram->regs.scifi;
-    auto reg = regs.ctrl.dp;
 
     while(1) {
-        printf("  [0] => %s prbs decoder\n",(reg&(1<<31)) == 0?"enable":"disable");
+        auto reg = regs.ctrl.dp;
+        printf("  [p] => %s prbs decoder\n",(reg&(1<<31)) == 0?"enable":"disable");
 	for(alt_u8 i=0;i<16;i++){
             printf("  [%1x] => %s ASIC %u\n",i,(reg&(1<<i)) == 0?"  mask":"unmask",i);
 	}
@@ -177,18 +179,21 @@ void scifi_module_t::menu_reg_datapathctrl(sc_t* sc){
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
-        case '0':
+        case 'p':
             regs.ctrl.dp = regs.ctrl.dp ^ (1<<31);
             break;
         case 'q':
             return;
 	default:
-	    if(isdigit(cmd))
-	        regs.ctrl.dp = regs.ctrl.dp ^ (1<<(cmd-'0'));
-	    else
-	        if(isxdigit(cmd))
-	            regs.ctrl.dp = regs.ctrl.dp ^ (1<<(tolower(cmd)-'a'));
-	    else
+	    if(isdigit(cmd)){
+		uint8_t key=(cmd-'0');
+		printf("key=%u\n",key);
+	        regs.ctrl.dp = regs.ctrl.dp ^ (1<<key);
+	    }else if(isxdigit(cmd)){
+		    uint8_t key=(tolower(cmd)-'a')+0x0a;
+		    printf("key=%u\n",key);
+	            regs.ctrl.dp = regs.ctrl.dp ^ (1<<key);
+	    }else
 		printf("invalid command: '%c'\n", cmd);
             break;
         }
