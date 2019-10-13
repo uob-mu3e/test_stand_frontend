@@ -21,6 +21,7 @@ class SciFiFEB {
       static SciFiFEB* m_instance; //signleton instance pointer
       SciFiFEB(const SciFiFEB&)=delete;
       SciFiFEB(mudaq::MudaqDevice& mu):m_mu(mu){};
+      std::map<uint8_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
    public:
       static const uint8_t FPGA_broadcast_ID;
 

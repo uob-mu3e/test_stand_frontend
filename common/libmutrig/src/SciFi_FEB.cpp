@@ -23,36 +23,69 @@ Contents:       Definition of fumctions in namespace mutrig
 #define FE_DUMMYCTRL_REG       (SC_REG_OFFSET+0x8)
 #define FE_DPCTRL_REG          (SC_REG_OFFSET+0x9)
 #define FE_SUBDET_RESET_REG    (SC_REG_OFFSET+0xa)
-
+#define FE_SPIDATA_ADDR		0
 
 SciFiFEB* SciFiFEB::m_instance=NULL;
 const uint8_t SciFiFEB::FPGA_broadcast_ID=0;
 
-//Mapping to physical ports. TODO: should be more configurable later, even from ODB?
-uint8_t SciFiFEB::FPGAid_from_ID(int asic){return asic/4;}
-uint8_t SciFiFEB::ASICid_from_ID(int asic){return asic%4;}
+//Mapping to physical ports of switching board. TODO: should be more configurable later, even from ODB?
+uint8_t SciFiFEB::FPGAid_from_ID(int asic){return 0;}//return asic/4;}
+uint8_t SciFiFEB::ASICid_from_ID(int asic){return asic;}//return asic%4;}
 
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
 int SciFiFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix){
    printf("SciFiFEB::ConfigureASICs()\n");
-/*
    int status = mutrig::midasODB::MapForEach(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mutrig::Config* config, int asic){
    int status=SUCCESS;
-   //try each asic twice, i.e. give up when cnt>1
+   uint32_t reg;
 
+/*
+
+//write data
+        mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) n, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+
+        uint32_t data_arr[1] = {START_ADD};
+//write offset reg
+    //void FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, uint32_t mem_start);
+        mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF1, (uint32_t) NEW_PCIE_MEM_START);
+//write command reg
+        data_arr[0] = { 0x01100000 + (0xFFFF & n)};
+
+        NEW_PCIE_MEM_START = NEW_PCIE_MEM_START + 6;
+
+        mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF0, (uint32_t) NEW_PCIE_MEM_START);
+
+
+
+ * */
+
+   //Write configuration to address FE_SPIDATA_ADDR
+   m_mu.FEBsc_write(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR,false);
+
+   //Write offset address
+   reg= FE_SPIDATA_ADDR;
+   m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg,1,0xfff1,false);
+
+   //Write command word to register FFF0: cmd | n
+   reg= 0x01100000 + (0xFFFF & config->length_32bits);
+   m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg,1,0xfff0,false);
+
+
+   //try each asic twice, i.e. give up when cnt>1
+/*
    int cnt = 0;
    while(cnt<2) {
       try {
          cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/", odb_prefix, asic);
 	 //Write configuration
 //	 for(int i=0;i<10;i++) printf("pattern[%d]=%8.8x\n",i,config->bitpattern_w[i]);
-	 m_mu.FEBsc_write(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR);
+	 m_mu.FEBsc_write(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR,false);
 	 //Write handleID and start bit to trigger SPI transaction
 	 uint32_t data=0;
 	 data=SET_FE_SPICTRL_BIT_START(data);
 	 data=SET_FE_SPICTRL_CHIPID_RANGE(data,ASICid_from_ID(asic));
-	 m_mu.FEBsc_write(FPGAid_from_ID(asic), &data, 1, (uint32_t) FE_SPICTRL_REGISTER);
+	 m_mu.FEBsc_write(FPGAid_from_ID(asic), &data, 1, (uint32_t) FE_SPICTRL_REGISTER,false);
          //Wait for transaction to finish
          uint timeout_cnt = 0;
 	 do{
@@ -83,10 +116,10 @@ printf("Config class:\n");
       printf("Config class patterns after error condition seen:\n");
       std::cout<<*config;
    }
+*/
    return status;//note: return of lambda function
    });//MapForEach
    return status; //status of foreach function, SUCCESS when no error.
-   */
    return 0;
 }
 
@@ -183,7 +216,7 @@ uint32_t reg_getRange(uint32_t reg_in, uint8_t length, uint8_t offset){
 	return (reg_in>>offset) & ((1<<length)-1);
 }
 uint32_t reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t value){
-	return (reg_in & (((1<<length)-1)<<offset)) | ((value & ((1<<length)-1))<<offset);
+	return (reg_in & ~(((1<<length)-1)<<offset)) | ((value & ((1<<length)-1))<<offset);
 }
 
 
@@ -195,11 +228,17 @@ uint32_t reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t 
 void SciFiFEB::setDummyConfig(int FPGA_ID, bool dummy){
 	printf("SciFiFEB::setDummyConfig(%d)=%d\n",FPGA_ID,dummy);
 	uint32_t val;
-	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
-        printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+
+        //TODO: shadowing should know about broadcast FPGA ID
+	//TODO: implement pull from FPGA when shadow value is not stored
+	//m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
+        //printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+        val=m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG];
+
         val=reg_setBit(val,0,dummy);
 	printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG,false);
+	m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
 /**
@@ -212,22 +251,29 @@ void SciFiFEB::setDummyData_Enable(int FPGA_ID, bool dummy)
 {
 	printf("SciFiFEB::setDummyData_Enable(%d)=%d\n",FPGA_ID,dummy);
 	uint32_t val;
-	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
-        printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+
+        val=m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG];
+	//m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
+        //printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+
         val=reg_setBit(val,1,dummy);
 	printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG,false);
+	m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
 void SciFiFEB::setDummyData_Fast(int FPGA_ID, bool fast)
 {
 	printf("SciFiFEB::setDummyData_Fast(%d)=%d\n",FPGA_ID,fast);
 	uint32_t  val;
-	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
-        printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+        val=m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG];
+	//m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
+        //printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+
         val=reg_setBit(val,2,fast);
         printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG,false);
+	m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
 void SciFiFEB::setDummyData_Count(int FPGA_ID, int n)
@@ -235,11 +281,14 @@ void SciFiFEB::setDummyData_Count(int FPGA_ID, int n)
         if(n > 255) n = 255;
 	printf("SciFiFEB::setDummyData_Count(%d)=%d\n",FPGA_ID,n);
 	uint32_t  val;
-	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
-        printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+        val=m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG];
+	//m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
+        //printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
 	val=reg_setRange(val, 9, 3, n);
+
         printf("SciFiFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG,false);
+	m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
 /**
@@ -248,11 +297,14 @@ void SciFiFEB::setDummyData_Count(int FPGA_ID, int n)
 void SciFiFEB::setMask(int asic, bool value){
 	printf("SciFiFEB::setMask(%d)=%d (Mapped to %d:%d)\n",asic,value,FPGAid_from_ID(asic),ASICid_from_ID(asic));
 	uint32_t val;
-	m_mu.FEBsc_read(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
-        printf("SciFiFEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGAid_from_ID(asic),val);
+        val=m_reg_shadow[FPGAid_from_ID(asic)][FE_DPCTRL_REG];
+	//m_mu.FEBsc_read(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
+        //printf("SciFiFEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGAid_from_ID(asic),val);
+
         val=reg_setBit(val,ASICid_from_ID(asic),value);
         printf("SciFiFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGAid_from_ID(asic),val);
-	m_mu.FEBsc_write(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
+	m_mu.FEBsc_write(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG,false);
+        m_reg_shadow[FPGAid_from_ID(asic)][FE_DPCTRL_REG]=val;
 }
 
 /**
@@ -260,40 +312,45 @@ void SciFiFEB::setMask(int asic, bool value){
 */
 void SciFiFEB::setPRBSDecoder(uint32_t FPGA_ID, bool enable){
 	uint32_t val;
-	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG);
-        printf("SciFiFEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGA_ID,val);
+        val=m_reg_shadow[FPGA_ID][FE_DPCTRL_REG];
+	//m_mu.FEBsc_read(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
+        //printf("SciFiFEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGAid_from_ID(asic),val);
+
         val=reg_setBit(val,31,enable);
         printf("SciFiFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGA_ID,val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG,false);
+        m_reg_shadow[FPGA_ID][FE_DPCTRL_REG]=val;
 }
 
 
 //reset all asics (digital part, CC, fsms, etc.)
 void SciFiFEB::chipReset(int FPGA_ID){
-	uint32_t val;
-	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
+	uint32_t val=0;
+	//m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 	//constant reset should not happen...
-	assert(!GET_FE_SUBDET_REST_BIT_CHIP(val));
+	//assert(!GET_FE_SUBDET_REST_BIT_CHIP(val));
 	//set and clear reset
+        val=reg_setBit(val,0,true);
+        printf("writing %x\n",val);
+	m_mu.FEBsc_write(FPGA_ID, &val, 0 , (uint32_t) FE_SUBDET_RESET_REG,false);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
         val=reg_setBit(val,0,false);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
-        sleep(1);
-        val=reg_setBit(val,0,false);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
+        printf("writing %x\n",val);
+	m_mu.FEBsc_write(FPGA_ID, &val, 0 , (uint32_t) FE_SUBDET_RESET_REG,false);
 }
 
 //reset full datapath upstream from merger
 void SciFiFEB::DataPathReset(int FPGA_ID){
-	uint32_t val;
-	m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
+	uint32_t val=0;
+	//m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 	//constant reset should not happen...
-	assert(!GET_FE_SUBDET_REST_BIT_DPATH(val));
+	//assert(!GET_FE_SUBDET_REST_BIT_DPATH(val));
 	//set and clear reset
         val=reg_setBit(val,1,true);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
-        sleep(1);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,false);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
         val=reg_setBit(val,1,false);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,false);
 }
 
 
