@@ -18,16 +18,11 @@ Contents:       Definition of fumctions in namespace mutrig
 #include <thread>
 #include <chrono>
 
-//offset from nios hal system (fe_scifi/software/hal_bsp/system.h)
-#define AVM_SC_SPAN 262144
-#define SC_BLOCKID 4
-#define SC_REG_OFFSET (AVM_SC_SPAN/4 - 256 + SC_BLOCKID*5)
-
-
-#define FE_DUMMYCTRL_REG       (SC_REG_OFFSET+0x9)
-#define FE_DPCTRL_REG          (SC_REG_OFFSET+0xA)
-#define FE_SUBDET_RESET_REG    (SC_REG_OFFSET+0xB)
-
+//offset for registers on nios SC memory
+#define SC_REG_OFFSET 0xff60
+#define FE_DUMMYCTRL_REG       (SC_REG_OFFSET+0x8)
+#define FE_DPCTRL_REG          (SC_REG_OFFSET+0x9)
+#define FE_SUBDET_RESET_REG    (SC_REG_OFFSET+0xa)
 
 
 SciFiFEB* SciFiFEB::m_instance=NULL;
