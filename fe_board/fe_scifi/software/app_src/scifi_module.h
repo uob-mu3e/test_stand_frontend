@@ -24,7 +24,7 @@ struct sc_t;
 struct scifi_module_t {
     const uint32_t MUTRIG1_CONFIG_LEN_BYTES=295;
     const uint32_t MUTRIG1_CONFIG_LEN_BITS =2358;
-    const uint8_t  n_ASICS=15;
+    const uint8_t  n_ASICS=16;
     //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
     int spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern);
     int configure_asic(alt_u32 asic, const alt_u8* bitpattern);
