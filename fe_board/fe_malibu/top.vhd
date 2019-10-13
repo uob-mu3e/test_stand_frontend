@@ -272,6 +272,13 @@ begin
         o_spi_mosi      => spi_mosi,
         o_spi_sclk      => spi_sclk,
         o_spi_ss_n      => spi_ss_n,
+	--separate spi interface intended for clock chip.
+	--currently unused in malibu fe-fpga firmware
+	i_spi_si_miso      => '1',
+        o_spi_si_mosi      => open,
+        o_spi_si_sclk      => open,
+        o_spi_si_ss_n      => open,
+
 
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,

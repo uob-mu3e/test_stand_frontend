@@ -13,10 +13,10 @@ struct si_t {
 
     int log_level = 0;
 
-    const alt_u32 spi_dev;
+    const alt_u32 spi_slave;
     ALT_AVALON_I2C_DEV_t* i2c_dev;
     const alt_u32 i2c_slave;
-    const alt_u32 spi_slave;
+    const alt_u32 spi_dev;
 
     si_t(alt_u32 spi_slave = -1, ALT_AVALON_I2C_DEV_t* i2c_dev = nullptr, alt_u32 i2c_slave = -1, alt_u32 spi_dev=SPI_BASE)
         : spi_slave(spi_slave)
