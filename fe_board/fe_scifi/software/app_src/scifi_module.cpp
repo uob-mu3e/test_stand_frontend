@@ -15,7 +15,9 @@ int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 	int status=0;
 	uint16_t rx_pre=0xff00;
         //printf("tx | rx\n");
-	for(uint16_t nb=MUTRIG1_CONFIG_LEN_BYTES-1; nb>=0; nb--){
+	uint16_t nb=MUTRIG1_CONFIG_LEN_BYTES;
+       	do{
+		nb--;
 		//do spi transaction, one byte at a time
                 alt_u8 rx = 0xCC;
                 alt_u8 tx = bitpattern[nb];
@@ -35,8 +37,7 @@ int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 			status=-1;
 		}
 		rx_pre=rx<<8;
-	}
-		
+	}while(nb>0);
 	return status;
 }
 
@@ -60,7 +61,6 @@ int scifi_module_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
 void scifi_module_t::menu(sc_t* sc){
 
     auto& regs = sc->ram->regs.scifi;
-
     while(1) {
         printf("  [0] => reset asic\n");
         printf("  [1] => reset datapath\n");
@@ -70,6 +70,7 @@ void scifi_module_t::menu(sc_t* sc){
         printf("  [5] => get slow control registers\n");
 	printf("  [6] => dummy generator settings\n");
 	printf("  [7] => datapath settings\n");
+	printf("  [d] => show offsets\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -118,7 +119,15 @@ void scifi_module_t::menu(sc_t* sc){
         case '7':
 	    menu_reg_datapathctrl(sc);
             break;
-
+        case 'd':
+            printf("span w=                   =%x\n",AVM_SC_SPAN/4);
+            printf("ram                       =%x (%x)\n",&(sc->ram)			,((uint32_t)sc->ram           - (uint32_t)(sc->ram))/4);
+            printf("ram->regs                 =%x (%x)\n",&(sc->ram->regs)		,((uint32_t)&(sc->ram->regs)  - (uint32_t)(sc->ram))/4);
+            printf("ram->regs.scifi           =%x (%x)\n",&(regs)			,((uint32_t)&(regs)	      - (uint32_t)(sc->ram))/4);
+            printf("ram->regs.scifi.ctrl.dummy=%x (%x)\n",&(regs.ctrl.dummy)		,((uint32_t)&(regs.ctrl.dummy)- (uint32_t)(sc->ram))/4);
+            printf("ram->regs.scifi.ctrl.dp   =%x (%x)\n",&(regs.ctrl.dp)		,((uint32_t)&(regs.ctrl.dp)   - (uint32_t)(sc->ram))/4);
+            printf("ram->regs.scifi.ctrl.reset=%x (%x)\n",&(regs.ctrl.reset)		,((uint32_t)&(regs.ctrl.reset)- (uint32_t)(sc->ram))/4);
+	    break;
         case 'q':
             return;
         default:
