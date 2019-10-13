@@ -65,7 +65,7 @@ int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface, bool init_
         sprintf(set_str, "%s/Settings/Daq/dummy_data_n", prefix);
         db_find_key(hDB, 0, set_str, &hTmp);
         db_get_data(hDB,hTmp,&ival,&isize,TID_INT);
-        FEB_interface->setDummyData_Fast(SciFiFEB::FPGA_broadcast_ID,ival);
+        FEB_interface->setDummyData_Count(SciFiFEB::FPGA_broadcast_ID,ival);
 
         sprintf(set_str, "%s/Settings/Daq/prbs_decode_bypass", prefix);
         db_find_key(hDB, 0, set_str, &hTmp);
