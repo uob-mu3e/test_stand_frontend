@@ -4,6 +4,7 @@
  */
 
 #include <altera_avalon_i2c.h>
+#include <altera_avalon_spi.h>
 
 /**
  * SI (Silicon Labs) clock chip controller.
@@ -15,11 +16,13 @@ struct si_t {
     const alt_u32 spi_slave;
     ALT_AVALON_I2C_DEV_t* i2c_dev;
     const alt_u32 i2c_slave;
+    const alt_u32 spi_dev;
 
-    si_t(alt_u32 spi_slave = -1, ALT_AVALON_I2C_DEV_t* i2c_dev = nullptr, alt_u32 i2c_slave = -1)
+    si_t(alt_u32 spi_slave = -1, ALT_AVALON_I2C_DEV_t* i2c_dev = nullptr, alt_u32 i2c_slave = -1, alt_u32 spi_dev=SPI_BASE)
         : spi_slave(spi_slave)
         , i2c_dev(i2c_dev)
         , i2c_slave(i2c_slave)
+        , spi_dev(spi_dev)
     {
         printf("[si] PN_BASE = %02X%02X, GRADE = %d, DEVICE_REV = %d\n", read(0x0003), read(0x0002), read(0x0004), read(0x0005));
     }
@@ -40,7 +43,7 @@ struct si_t {
         }
         else if(spi_slave != alt_u32(-1)) {
             alt_u8 w[] = { 0x00, address, 0x80 };
-            int n = alt_avalon_spi_command(SPI_BASE, spi_slave, 3, w, 1, r, 0);
+            int n = alt_avalon_spi_command(spi_dev, spi_slave, 3, w, 1, r, 0);
         }
         else {
             printf("[si.read_byte] no spi/i2c interface\n");
@@ -59,7 +62,7 @@ struct si_t {
         }
         else if(spi_slave != alt_u32(-1)) {
             alt_u8 w[4] = { 0x00, address, 0x40, value };
-            alt_avalon_spi_command(SPI_BASE, spi_slave, 4, w, 0, 0, 0);
+            alt_avalon_spi_command(spi_dev, spi_slave, 4, w, 0, 0, 0);
         }
         else {
             printf("[si.write_byte] no spi/i2c interface\n");
