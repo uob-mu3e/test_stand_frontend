@@ -60,8 +60,11 @@ int SciFiFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* 
 
  * */
 
-   //Write configuration to address FE_SPIDATA_ADDR
-   m_mu.FEBsc_write(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR,false);
+   //Write ASIC number
+   reg=asic;
+   m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg, 1, (uint32_t) FE_SPIDATA_ADDR,false);
+   //Write configuration
+   m_mu.FEBsc_write(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR+1,false);
 
    //Write offset address
    reg= FE_SPIDATA_ADDR;
@@ -71,7 +74,7 @@ int SciFiFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* 
    reg= 0x01100000 + (0xFFFF & config->length_32bits);
    m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg,1,0xfff0,false);
 
-
+   usleep(100000);
    //try each asic twice, i.e. give up when cnt>1
 /*
    int cnt = 0;
