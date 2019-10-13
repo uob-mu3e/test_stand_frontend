@@ -217,7 +217,7 @@ INT frontend_init()
    //SciFi setup part
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "yellow");
    SciFiFEB::Create(*mup); //create FEB interface signleton
-   int status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance(),false);
+   int status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance(),true);
    if(status != SUCCESS){
       set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "red");
       return status;
@@ -484,13 +484,10 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         INT NEW_PCIE_MEM_START = PCIE_MEM_START + 5 + n;
 
         uint32_t *data = DATA_ARRAY;
-
         mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) n, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
 
         uint32_t data_arr[1] = {START_ADD};
-
         mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF1, (uint32_t) NEW_PCIE_MEM_START);
-
         data_arr[0] = { 0x01100000 + (0xFFFF & n)};
 
         NEW_PCIE_MEM_START = NEW_PCIE_MEM_START + 6;
