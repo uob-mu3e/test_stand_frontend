@@ -14,7 +14,7 @@ char wait_key(useconds_t us = 100000);
 int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 	int status=0;
 	uint16_t rx_pre=0xff00;
-        //printf("tx | rx\n");
+//        printf("tx | rx\n");
 	uint16_t nb=MUTRIG1_CONFIG_LEN_BYTES;
        	do{
 		nb--;
@@ -24,7 +24,8 @@ int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 		
                 alt_avalon_spi_command(SPI_BASE, asic, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
                 rx = IORD_8DIRECT(SPI_BASE, 0);
-                //printf("%02X %02x\n",tx,rx);
+//                printf("%02X %02x\n",tx,rx);
+//                printf("%02X ",tx);
 
 		//pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
 		unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG1_CONFIG_LEN_BITS%8);
@@ -38,6 +39,7 @@ int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 		}
 		rx_pre=rx<<8;
 	}while(nb>0);
+//        printf("\n");
 	return status;
 }
 
@@ -230,8 +232,8 @@ void scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
         break;
     default:
         if((cmd&0xfff0) ==0x0110){ //configure ASIC
-		uint8_t chip=cmd&0x000f;
-		configure_asic(chip,(alt_u8*) data);
+		uint8_t chip=data[0];
+		configure_asic(chip,(alt_u8*) &(data[1]));
 	        //TODO: write some reply to RAM
         }
     }
