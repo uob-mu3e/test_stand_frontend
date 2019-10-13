@@ -3,7 +3,7 @@
 #include "../include/xcvr.h"
 
 #include "../../../fe/software/app_src/si5345.h"
-si5345_t si5345 { 0 }; // spi_slave
+si5345_t si5345 { 0 , SPI_SI_BASE}; //slave 0 of separate spi interface
 
 #include "../../../fe/software/app_src/sc.h"
 sc_t sc;

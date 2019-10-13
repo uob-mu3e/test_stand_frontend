@@ -113,6 +113,7 @@ if 1 {
 
     add_instance i2c altera_avalon_i2c
     add_instance spi altera_avalon_spi
+    add_instance spi_si altera_avalon_spi
 
     nios_base.connect   sysid       clk     reset       control_slave       0x700F0000
     nios_base.connect   jtag_uart   clk     reset       avalon_jtag_slave   0x700F0010
@@ -120,6 +121,7 @@ if 1 {
     nios_base.connect   timer_ts    clk     reset       s1                  0x700F0140
     nios_base.connect   i2c         clock   reset_sink  csr                 0x700F0200
     nios_base.connect   spi         clk     reset       spi_control_port    0x700F0240
+    nios_base.connect   spi_si         clk     reset       spi_control_port    0x700F0260
 
     # IRQ assignments
     foreach { name irq } {
@@ -127,6 +129,7 @@ if 1 {
         timer.irq 0
         i2c.interrupt_sender 10
         spi.irq 11
+        spi_si.irq 12
     } {
         add_connection cpu.irq $name
         set_connection_parameter_value cpu.irq/$name irqNumber $irq
@@ -137,6 +140,9 @@ if 1 {
 
     add_interface spi conduit end
     set_interface_property spi EXPORTOF spi.external
+
+    add_interface spi_si conduit end
+    set_interface_property spi_si EXPORTOF spi_si.external
 
     nios_base.add_pio pio 32 Output 0x700F0280
 }
