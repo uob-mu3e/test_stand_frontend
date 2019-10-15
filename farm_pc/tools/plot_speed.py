@@ -93,13 +93,13 @@ kwargs.update(transform=ax2.transAxes)  # switch to the bottom axes
 ax2.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
 ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
 
-ax.axvline(x=-999, color=red, label="max. data rate " + str(round(x)) + " GB/s")
-ax2.axvline(x=x, color=red, label="max. data rate " + str(round(x)) + " GB/s")
+ax.axvline(x=-999, color=red, label="max. data rate " + str(round(x)) + " GBit/s")
+ax2.axvline(x=x, color=red, label="max. data rate " + str(round(x)) + " GBit/s")
 
 #ax.legend()
 ax2.legend(loc='lower right')
 ax.set_title("DMA speed test with 32 MBit of data")
-plt.xlabel("GB/s")
+plt.xlabel("GBit/s")
 ax.set_ylabel("BER")
 ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 ax2.set_ylabel("upper limit BER 95 % CL")

@@ -501,16 +501,34 @@ uint32_t MudaqDevice::FEBsc_get_packet(){
    if ((read_memory_ro(m_FEBsc_rmem_addr) & 0x1c0000bc) != 0x1c0000bc) {
     return 0; //TODO: correct when no event is to be written?
    }
-
-   printf("FEBsc_get_packet: index=%d  , value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr));
-   printf("FEBsc_get_packet: index=%d+1, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+1));
-   printf("FEBsc_get_packet: index=%d+2, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+2));
-   printf("FEBsc_get_packet: index=%d+3, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+3));
-   printf("FEBsc_get_packet: index=%d+4, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+4));
-   MudaqDevice::SC_reply_packet packet;
+printf("---->>\n");
+printf("FEBsc_get_packet: index=%d  , value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr));
+printf("FEBsc_get_packet: index=%d+1, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+1));
+printf("FEBsc_get_packet: index=%d+2, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+2));
+printf("FEBsc_get_packet: index=%d+3, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+3));
+printf("FEBsc_get_packet: index=%d+4, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+4));
+MudaqDevice::SC_reply_packet packet;
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+0)); //save preamble
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+1)); //save startaddr
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+2)); //save length word
+
+   printf("Type %x\n", packet[0]&0x1f0000bc);
+   printf("FPGA ID %x\n", packet.GetFPGA_ID());
+   printf("startaddr %x\n", packet.GetStartAddr());
+   printf("length %ld\n", packet.GetLength());
+   printf("packet: size=%lu length=%lu IsRD=%c IsWR=%c IsOOB=%c, IsResponse=%c, IsGood=%c\n",
+    packet.size(),packet.GetLength(),
+    packet.IsRD()?'y':'n',
+    packet.IsWR()?'y':'n',
+    packet.IsOOB()?'y':'n',
+    packet.IsResponse()?'y':'n',
+    packet.Good()?'y':'n'
+   );
+
+   for (uint32_t i = 0; i < packet.GetLength(); i++) { // getting data
+       printf("data[%d] = %x\n", i,read_memory_ro(m_FEBsc_rmem_addr + 3 + i));
+       packet.push_back(read_memory_ro(m_FEBsc_rmem_addr + 3 + i)); //save data
+   }
 
    //check type of SC packet
    if(!packet.IsResponse()){
