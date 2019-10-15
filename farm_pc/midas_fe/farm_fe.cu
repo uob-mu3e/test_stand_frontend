@@ -530,7 +530,7 @@ INT read_stream_thread(void *param)
          
          for (int i = 0; i < event_length; i++){
             *pdata++ = dma_buf[(readindex + 6)%dma_buf_nwords];
-            *pdata++ = dma_buf[(readindex + 7)%dma_buf_nwords];
+            //*pdata++ = dma_buf[(readindex + 7)%dma_buf_nwords];
 
             if (lastreadindex % 1000 == 0){
                 char dma_buf_str[256];
