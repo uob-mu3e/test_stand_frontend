@@ -196,6 +196,8 @@ signal s_receivers_data		: std_logic_vector(8*N_ASICS-1 downto 0);
 signal s_receivers_data_isk	: t_vector;
 
 signal s_receivers_usrclk	: std_logic;
+signal s_receivers_all_ready    : std_logic;
+
   -- frame_rcv/datagen - fifo: fifo side, frame-receiver side, dummy datagenerator side
 signal s_crc_error,      s_rec_crc_error: t_vector;
 signal s_frame_number,   s_rec_frame_number,   s_gen_frame_number   : t_array_16b;
@@ -253,6 +255,21 @@ port map(
 o_receivers_ready <= s_receivers_ready;
 o_receivers_usrclk <= s_receivers_usrclk;
 
+--generate a pll-synchronous all-ready signal for the data receivers.
+--this assures all start dumping data into the fifos at the same time, and we do not enter a deadlock scenario from the start
+gen_ready_all: process (s_receivers_usrclk,i_rst)
+variable v_ready : std_logic_vector(N_ASICS-1 downto 0);
+begin
+	v_ready:=s_receivers_ready or i_SC_mask;
+	if(i_rst='1') then
+		s_receivers_all_ready<='0';
+	elsif( rising_edge(s_receivers_usrclk)) then
+		if(v_ready = ((v_ready'range)=>'1')) then
+			s_receivers_all_ready<='1';
+		end if;
+	end if;
+end process;
+
 
 gen_frame: for i in 0 to N_ASICS-1 generate begin
 u_frame_rcv : frame_rcv
@@ -266,7 +283,7 @@ u_frame_rcv : frame_rcv
 		i_clk			=> s_receivers_usrclk,
 		i_data			=> s_receivers_data((i+1)*8-1 downto i*8),
 		i_byteisk		=> s_receivers_data_isk(i),
-		i_dser_no_sync		=> not s_receivers_ready(i),
+		i_dser_no_sync		=> not s_receivers_all_ready, --not s_receivers_ready(i),
 
 		-- to mutrig-store instance
 		o_frame_number		=> s_rec_frame_number(i),
