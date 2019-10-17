@@ -319,7 +319,7 @@ begin
 			o_sink_data(33 downto 32) <= "00"; --identifier (is a payload : type data)
 			o_sink_data(31 downto 16) <= s_global_timestamp(15 downto 0); --global timestamp 
 			o_sink_data(15) <= l_frameid_nonsync;		--frameID nonsync
-			o_sink_data(14 downto 0) <=l_common_data(14 downto 0);  --frameID
+			o_sink_data(14 downto 0) <=i_source_data(0)(14 downto 0); --l_common_data(14 downto 0);  --frameID
 		end if;
 	else --select data
 		--data common part
