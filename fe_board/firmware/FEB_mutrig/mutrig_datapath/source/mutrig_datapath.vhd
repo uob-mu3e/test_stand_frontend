@@ -38,6 +38,7 @@ port (
 	i_SC_datagen_enable	: in std_logic;
 	i_SC_datagen_shortmode	: in std_logic;
 	i_SC_datagen_count	: in std_logic_vector(9 downto 0);
+	i_SC_rx_wait_for_all	: in std_logic;
 	--monitors
 	o_receivers_usrclk	: out std_logic;              		-- pll output clock
 	o_receivers_pll_lock	: out std_logic;			-- pll lock flag
@@ -283,7 +284,7 @@ u_frame_rcv : frame_rcv
 		i_clk			=> s_receivers_usrclk,
 		i_data			=> s_receivers_data((i+1)*8-1 downto i*8),
 		i_byteisk		=> s_receivers_data_isk(i),
-		i_dser_no_sync		=> not s_receivers_all_ready, --not s_receivers_ready(i),
+		i_dser_no_sync		=> not (s_receivers_all_ready or (i_SC_rx_wait_for_all and s_receivers_ready(i)),
 
 		-- to mutrig-store instance
 		o_frame_number		=> s_rec_frame_number(i),
