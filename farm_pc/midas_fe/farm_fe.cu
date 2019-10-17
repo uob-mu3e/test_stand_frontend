@@ -552,7 +552,7 @@ INT read_stream_thread(void *param)
          bk_create(pEventData, "HEAD", TID_DWORD, (void **)&pdata);
          *pdata++ = event_length;
          *pdata++ = 0xAFFEAFFE;
-         
+
          //cout<<"writing event of length "<<event_length<< "lastWr:" <<lastWritten<<"rdIdx"<<(readindex)%dma_buf_nwords<<" buflength"<<dma_buf_nwords<<endl;
          for (int i = 0; i < event_length; i++){
             *pdata++ = dma_buf[(readindex + 6)%dma_buf_nwords];
