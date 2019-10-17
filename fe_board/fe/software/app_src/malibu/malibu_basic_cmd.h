@@ -27,7 +27,7 @@ Write Reg1 11001100 = 0xCC
 Write Reg3 0x00
 */
 
-#include "../../include/i2c.h"
+#include "../../../../../common/firmware/include/i2c.h"
 
 struct malibu_t {
 
@@ -188,7 +188,6 @@ int malibu_t::stic_configure(int asic, const alt_u8* bitpattern) {
 
     // enable 1.8V digital
     I2C_write(i2c_slave, 0x01, I2C_read(i2c_slave, 0x01) | D_bit);
-
     int ret;
 
     I2C_write(i2c_slave, 0x01, I2C_read(i2c_slave, 0x01) & ~CS_bit);
