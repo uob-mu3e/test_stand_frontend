@@ -113,6 +113,7 @@ void scifi_module_t::menu(sc_t* sc){
             printf("\n");
 
             printf("    :prbs_dec     0x%X\n", (regs.ctrl.dp>>31)&1);
+            printf("    :rx_wait_all  0x%X\n", (regs.ctrl.dp>>30)&1);
             printf("subdet_reset_reg: 0x%08X\n", regs.ctrl.reset);
             break;
         case '6':
@@ -182,6 +183,7 @@ void scifi_module_t::menu_reg_datapathctrl(sc_t* sc){
     while(1) {
         auto reg = regs.ctrl.dp;
         printf("  [p] => %s prbs decoder\n",(reg&(1<<31)) == 0?"enable":"disable");
+        printf("  [w] => %s wait for all RX ready\n",(reg&(1<<30)) == 0?"enable":"disable");
 	for(alt_u8 i=0;i<16;i++){
             printf("  [%1x] => %s ASIC %u\n",i,(reg&(1<<i)) == 0?"  mask":"unmask",i);
 	}
@@ -193,16 +195,17 @@ void scifi_module_t::menu_reg_datapathctrl(sc_t* sc){
         case 'p':
             regs.ctrl.dp = regs.ctrl.dp ^ (1<<31);
             break;
+        case 'w':
+            regs.ctrl.dp = regs.ctrl.dp ^ (1<<30);
+            break;
         case 'q':
             return;
 	default:
 	    if(isdigit(cmd)){
 		uint8_t key=(cmd-'0');
-		printf("key=%u\n",key);
 	        regs.ctrl.dp = regs.ctrl.dp ^ (1<<key);
 	    }else if(isxdigit(cmd)){
 		    uint8_t key=(tolower(cmd)-'a')+0x0a;
-		    printf("key=%u\n",key);
 	            regs.ctrl.dp = regs.ctrl.dp ^ (1<<key);
 	    }else
 		printf("invalid command: '%c'\n", cmd);

@@ -148,6 +148,7 @@ begin
         i_SC_datagen_enable => s_dummyctrl_reg(1),
         i_SC_datagen_shortmode => s_dummyctrl_reg(2),
         i_SC_datagen_count => s_dummyctrl_reg(12 downto 3),
+        i_SC_rx_wait_for_all => s_dpctrl_reg(30),
 
         -- monitors
         o_receivers_usrclk => open,
