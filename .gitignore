@@ -80,3 +80,13 @@ cmp_pkg.vhd
 
 # vim file
 *.swp
+
+# a10 ips
+common/firmware/a10/ip_clkctrl/
+common/firmware/a10/ip_xcvr_fpll/
+common/firmware/a10/ip_xcvr_phy/
+common/firmware/a10/ip_xcvr_reset/
+switching_pc/a10_board/firmware/ip/ip_ram/
+switching_pc/a10_board/firmware/ip/ip_tagging_fifo/
+# qdf files
+*.qdf
