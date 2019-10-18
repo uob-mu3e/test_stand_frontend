@@ -9,8 +9,8 @@ struct si5345_t : si_t {
 
     const char* DESIGN_ID = "feb.v01";
 
-    si5345_t(int spi_slave)
-        : si_t(spi_slave)
+    si5345_t(alt_u32 spi_base, alt_u32 spi_slave)
+        : si_t(spi_base, spi_slave)
     {
     }
 

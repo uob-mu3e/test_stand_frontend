@@ -251,20 +251,11 @@ begin
 
     ----------------------------------------------------------------------------
     -- SPI
-
-    -- si chip assignments
-    si45_spi_in <= spi_mosi;
-    si45_spi_sclk <= spi_sclk when spi_ss_n(4) = '0' else '0';
-    si45_spi_cs_n <= spi_ss_n(4);
-
-    -- fee assignments
     o_fee_spi_MOSI <= (others => spi_mosi);
     o_fee_spi_SCK  <= (others => spi_sclk);
     o_fee_spi_CSn <=  spi_ss_n(4-1 downto 0);
 
-    -- MISO: multiplexing si chip / SciFi FEE
     spi_miso <=
-        si45_spi_out when spi_ss_n(4) = '0' else
         i_fee_spi_MISO(0); -- TODO make working with multiple FEBs, if we need this
 
     led(4 downto 1)<=spi_ss_n(3 downto 0);
@@ -290,6 +281,11 @@ begin
         o_spi_mosi      => spi_mosi,
         o_spi_sclk      => spi_sclk,
         o_spi_ss_n      => spi_ss_n,
+
+        i_spi_si_miso   => si45_spi_out,
+        o_spi_si_mosi   => si45_spi_in,
+        o_spi_si_sclk   => si45_spi_sclk,
+        o_spi_si_ss_n   => si45_spi_cs_n,
 
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,
