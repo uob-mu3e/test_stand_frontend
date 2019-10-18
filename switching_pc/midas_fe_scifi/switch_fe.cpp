@@ -215,13 +215,14 @@ INT frontend_init()
 
 
    //SciFi setup part
-   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "yellow");
+   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
    SciFiFEB::Create(*mup); //create FEB interface signleton
    int status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance(),true);
    if(status != SUCCESS){
-      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "red");
+      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
       return status;
    }
+   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
    //end of SciFi setup part
 
 
@@ -247,6 +248,7 @@ INT frontend_loop()
 
 INT begin_of_run(INT run_number, char *error)
 {
+   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "lightBlue");
    return CM_SUCCESS;
 }
 
@@ -254,6 +256,7 @@ INT begin_of_run(INT run_number, char *error)
 
 INT end_of_run(INT run_number, char *error)
 {
+   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
    return CM_SUCCESS;
 }
 
