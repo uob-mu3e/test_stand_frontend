@@ -6,7 +6,8 @@ use work.daq_constants.all;
 
 entity fe_block is
 generic (
-    FPGA_ID_g : std_logic_vector(15 downto 0) := X"0000"--;
+    FPGA_ID_g : std_logic_vector(15 downto 0) := X"0000";
+    FEB_type_in:std_logic_vector(5  downto 0)--; -- Type of the frontendboard (111010: mupix, 111000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
 );
 port (
     -- 125 MHz
@@ -310,7 +311,7 @@ begin
     e_merger : entity work.data_merger
     port map (
         fpga_ID_in              => (5=>'1',others => '0'),
-        FEB_type_in             => "111010",
+        FEB_type_in             => FEB_type_in,
         run_state               => run_state_156,
 
         data_out                => qsfp_tx_data(31 downto 0),
