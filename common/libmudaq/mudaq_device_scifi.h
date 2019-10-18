@@ -62,7 +62,7 @@ namespace mudaq {
     MudaqDevice& operator=(const MudaqDevice&) = delete;
 
     MudaqDevice(const std::string& path);
-    virtual ~MudaqDevice() { close(); }
+    virtual ~MudaqDevice();
 
     bool is_ok() const;
     virtual bool open();
@@ -109,6 +109,8 @@ protected:
     int _fd;
 
     //FEB slow control
+    FILE* pFile_SC;
+    uint32_t last_fpga_rmem_addr;
     uint32_t m_FEBsc_wmem_addr;
     uint32_t m_FEBsc_rmem_addr;
     struct SC_reply_packet : public std::vector<uint32_t>{

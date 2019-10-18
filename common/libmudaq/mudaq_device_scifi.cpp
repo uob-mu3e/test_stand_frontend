@@ -132,8 +132,16 @@ namespace mudaq {
     _mem_ro(nullptr),
     _mem_rw(nullptr)  // added by DvB for rw mem
   {
-      _last_read_address = 0;
-}
+   _last_read_address = 0;
+
+   pFile_SC = fopen ("SCdump.txt","w");
+
+  }
+
+  mudaq::MudaqDevice::~MudaqDevice(){
+   fclose(pFile_SC);
+   close();
+  }
 
   bool MudaqDevice::is_ok() const {
 
@@ -494,7 +502,18 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
 //Return: type field of the packet, 0x00 when no new packet was available
 uint32_t MudaqDevice::FEBsc_get_packet(){
    uint32_t fpga_rmem_addr=(read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
-   //printf("FEBsc_get_packet: index=%d, hwindex=%4.4x, value=%16.16x\n",m_FEBsc_rmem_addr,fpga_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr));
+//   printf("FEBsc_get_packet: index=%d, hwindex=%4.4x, value=%16.16x\n",m_FEBsc_rmem_addr,fpga_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr));
+   if(last_fpga_rmem_addr> 0xff00 && fpga_rmem_addr< 0x00ff) {
+     for(;last_fpga_rmem_addr<=0xffff;last_fpga_rmem_addr++){
+         fprintf(pFile_SC,"%u:%u  %16.16x\n",m_FEBsc_rmem_addr,last_fpga_rmem_addr,read_memory_ro(last_fpga_rmem_addr));
+     }
+     last_fpga_rmem_addr=0;
+   }
+   for(;last_fpga_rmem_addr<fpga_rmem_addr;last_fpga_rmem_addr++){
+         fprintf(pFile_SC,"%u:%u  %16.16x\n",m_FEBsc_rmem_addr,last_fpga_rmem_addr,read_memory_ro(last_fpga_rmem_addr));
+   }
+
+
    //hardware is in front of software? only then we can read, otherwise wait...
    if(fpga_rmem_addr==m_FEBsc_rmem_addr) return 0;
    //check if memory at current index is a SC packet
