@@ -55,7 +55,7 @@ architecture arch of xcvr_a10 is
 
     signal reset_n : std_logic;
 
-    signal ch : integer range NUMBER_OF_CHANNELS_g-1 downto 0;
+    signal ch : integer range NUMBER_OF_CHANNELS_g-1 downto 0 := 0;
 
     signal av_ctrl : work.util.avalon_t;
     signal av_phy, av_pll : work.util.avalon_t;
