@@ -39,6 +39,9 @@ set_instance_parameter_value cpu {resetSlave} {ram.s1}
 set_instance_parameter_value cpu {resetOffset} {0x00000000}
 set_instance_parameter_value cpu {exceptionSlave} {ram.s1}
 
+set_instance_parameter_value cpu {io_regionbase} {0x70000000}
+set_instance_parameter_value cpu {io_regionsize} {0x10000000}
+
 # ram
 add_instance ram altera_avalon_onchip_memory2
 set_instance_parameter_value ram {memorySize} {0x00010000}

@@ -10,7 +10,7 @@ generic (
     INPUT_CLOCK_FREQUENCY_g : positive := 125000000;
     DATA_RATE_g : positive := 5000;
     K_g : std_logic_vector(7 downto 0) := work.util.D28_5;
-    CLK_MHZ_g : positive := 50--;
+    CLK_HZ_g : positive := 50000000--;
 );
 port (
     i_tx_data       : in    std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
@@ -374,16 +374,17 @@ begin
         reconfig_clk        => reconfig_clk--,
     );
 
-    g_reconfig_clk : if ( CLK_MHZ_g <= 50 ) generate
-        reconfig_clk <= i_clk; -- Frequency Range (MHz) : 37.5 to 50
+    g_reconfig_clk : if ( CLK_HZ_g <= 50000000 ) generate
+        reconfig_clk <= i_clk; -- Frequency Range : 37.5 to 50 MHz
     end generate;
 
     -- generate reconfig_clk = 50 MHz
-    g_reconfig_clk_altpll : if ( CLK_MHZ_g > 50 ) generate
+    g_reconfig_clk_altpll : if ( CLK_HZ_g > 50000000 ) generate
         e_reconfig_clk : entity work.ip_altpll
         generic map (
-            DIV => CLK_MHZ_g / work.util.gcd(CLK_MHZ_g, 50),
-            MUL => 50 / work.util.gcd(CLK_MHZ_g, 50)--,
+            INCLK0_MHZ => real(CLK_HZ_g) / 1000000.0,
+            DIV => CLK_HZ_g / work.util.gcd(CLK_HZ_g, 50000000),
+            MUL => 50000000 / work.util.gcd(CLK_HZ_g, 50000000)--,
         )
         port map (
             c0 => reconfig_clk,
@@ -414,7 +415,7 @@ begin
     generic map (
         NUMBER_OF_CHANNELS_g => NUMBER_OF_CHANNELS_g,
         NUMBER_OF_PLLS_g => 1,
-        CLK_MHZ_g => CLK_MHZ_g--,
+        CLK_MHZ_g => CLK_HZ_g / 1000000--,
     )
     port map (
         o_analogreset => tx_analogreset,
@@ -432,7 +433,7 @@ begin
     e_rx_reset : entity work.rx_reset
     generic map (
         NUMBER_OF_CHANNELS_g => NUMBER_OF_CHANNELS_g,
-        CLK_MHZ_g => CLK_MHZ_g--,
+        CLK_MHZ_g => CLK_HZ_g / 1000000--,
     )
     port map (
         o_analogreset => rx_analogreset,

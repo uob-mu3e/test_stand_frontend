@@ -248,6 +248,9 @@ begin
 
 
     e_sc_ram : entity work.sc_ram
+    generic map (
+        RAM_ADDR_WIDTH_g => 14--;
+    )
     port map (
         i_ram_addr          => sc_ram.addr(15 downto 0),
         i_ram_re            => sc_ram.re,
@@ -391,7 +394,7 @@ begin
         CHANNEL_WIDTH_g => 32,
         INPUT_CLOCK_FREQUENCY_g => 156250000,
         DATA_RATE_g => 6250,
-        CLK_MHZ_g => 125--,
+        CLK_HZ_g => 125000000--,
     )
     port map (
         i_tx_data   => qsfp_tx_data,
@@ -430,7 +433,7 @@ begin
         CHANNEL_WIDTH_g => 8,
         INPUT_CLOCK_FREQUENCY_g => 125000000,
         DATA_RATE_g => 1250,
-        CLK_MHZ_g => 125--,
+        CLK_HZ_g => 125000000--,
     )
     port map (
         i_tx_data   => pod_tx_data,
