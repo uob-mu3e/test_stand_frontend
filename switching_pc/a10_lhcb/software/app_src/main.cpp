@@ -5,6 +5,10 @@ int main() {
     base_init();
 
     while (1) {
+        printf("\n");
+        printf("[PCIe40] -------- menu --------\n");
+
+        printf("\n");
         printf("  [1] => ...\n");
 
         printf("Select entry ...\n");
