@@ -48,7 +48,7 @@ struct si_t {
         }
         else if(spi_slave != alt_u32(-1)) {
             alt_u8 w[] = { 0x00, address, 0x80 };
-            int n = alt_avalon_spi_command(spi_base, spi_slave, 3, w, 1, r, 0);
+            alt_avalon_spi_command(spi_base, spi_slave, 3, w, 1, r, 0);
         }
         else {
             printf("[si.read_byte] no spi/i2c interface\n");
