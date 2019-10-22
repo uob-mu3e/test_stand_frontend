@@ -3,7 +3,7 @@
 #include "../include/xcvr.h"
 
 #include "../../../fe/software/app_src/si5345.h"
-si5345_t si5345 { 0 }; // spi_slave = 0
+si5345_t si5345 { SPI_SI_BASE, 0 };
 
 #include "../../../fe/software/app_src/sc.h"
 sc_t sc;
@@ -21,7 +21,6 @@ int main() {
     si5345.init();
     mscb.init();
     sc.init();
-    
 
     while (1) {
         printf("\n");

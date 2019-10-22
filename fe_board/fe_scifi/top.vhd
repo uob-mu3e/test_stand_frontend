@@ -294,11 +294,11 @@ begin
         o_spi_mosi      => spi_mosi,
         o_spi_sclk      => spi_sclk,
         o_spi_ss_n      => spi_ss_n,
+
         i_spi_si_miso   => si45_spi_out,
         o_spi_si_mosi   => si45_spi_in,
         o_spi_si_sclk   => si45_spi_sclk,
         o_spi_si_ss_n   => si45_spi_cs_n,
-
 
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,

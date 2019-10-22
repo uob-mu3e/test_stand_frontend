@@ -19,13 +19,13 @@ port (
     i_i2c_sda       : in    std_logic;
     o_i2c_sda_oe    : out   std_logic;
 
-    --spi interface to si chip
+    -- spi interface to si chip
     i_spi_si_miso      : in    std_logic;
     o_spi_si_mosi      : out   std_logic;
     o_spi_si_sclk      : out   std_logic;
     o_spi_si_ss_n      : out   std_logic;
 
-    --spi interface to asics
+    -- spi interface to asics
     i_spi_miso      : in    std_logic;
     o_spi_mosi      : out   std_logic;
     o_spi_sclk      : out   std_logic;
@@ -241,14 +241,17 @@ begin
         i2c_scl_oe => o_i2c_scl_oe,
         i2c_sda_in => i_i2c_sda,
         i2c_sda_oe => o_i2c_sda_oe,
+
         spi_miso => i_spi_miso,
         spi_mosi => o_spi_mosi,
         spi_sclk => o_spi_sclk,
         spi_ss_n => o_spi_ss_n,
+
         spi_si_miso => i_spi_si_miso,
         spi_si_mosi => o_spi_si_mosi,
         spi_si_sclk => o_spi_si_sclk,
         spi_si_ss_n => o_spi_si_ss_n,
+
         pio_export => nios_pio,
 
         rst_reset_n => i_nios_reset_n,
