@@ -29,7 +29,7 @@ odbedit -c 'set Custom/MALIBU TileGUI/MALIBUMonitor/Monitor.html'
 xterm -hold -e "mhttpd" &
 xterm -hold -e "mserver" &
 xterm -hold -e "mlogger" &
-#xterm -hold -e "switch_fe" &
+xterm -hold -e "switch_fe" &
 xterm -hold -e "crfe" &
-xterm -hold -e "malibu_fe" &
+#xterm -hold -e "malibu_fe" &
 
