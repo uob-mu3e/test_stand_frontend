@@ -7,11 +7,15 @@ generic (
     FIFO_ADDR_WIDTH_g : positive := 3--;
 );
 port (
+    -- read domain
     o_rdata     : out   std_logic_vector(DATA_WIDTH_g-1 downto 0);
     i_rclk      : in    std_logic;
     i_reset_val : in    std_logic_vector(DATA_WIDTH_g-1 downto 0) := (others => '0');
+
+    -- write domain
     i_wdata     : in    std_logic_vector(DATA_WIDTH_g-1 downto 0);
     i_wclk      : in    std_logic;
+
     i_fifo_aclr : in    std_logic--;
 );
 end entity;

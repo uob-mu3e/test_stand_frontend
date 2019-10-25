@@ -46,6 +46,7 @@
 #include <switching_constants.h>
 #include "midas.h"
 #include "mfe.h"
+
 #include "../../fe_board/fe/software/app_src/malibu/ALL_OFF.h"
 
 #include "mudaq_device.h"
@@ -668,7 +669,6 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             INT NEW_PCIE_MEM_START = PCIE_MEM_START + 5 + n;
 
             uint32_t *data = DATA_ARRAY;
-            //uint32_t *data = DATA_ARRAY;
 
             mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) n, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
 

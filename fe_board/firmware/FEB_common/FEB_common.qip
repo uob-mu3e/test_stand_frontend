@@ -2,17 +2,13 @@
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "daq_constants.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "data_merger.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mergerfifo.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "state_controller.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "resetsys.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "state_phase_box.vhd"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mscb.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mscb_addressing.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "uart_transmitter.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "uart_reciever.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "MSCBDataFIFO.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slow_counter.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "edge_detector.vhdl"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "counter_mscb.vhd"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "fifo_sync.vhd"]

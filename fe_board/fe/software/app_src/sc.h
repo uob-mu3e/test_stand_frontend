@@ -3,6 +3,8 @@
 
 #include "sc_ram.h"
 
+#include <sys/alt_irq.h>
+
 struct sc_t {
     volatile sc_ram_t* ram = (sc_ram_t*)AVM_SC_BASE;
 
@@ -11,48 +13,47 @@ struct sc_t {
     void init() {
         printf("[sc] init\n");
 
-        int err = alt_alarm_start(&alarm, 0, callback, this);
-        if(err) {
-            printf("[sc] ERROR: alt_alarm_start => %d\n", err);
+        if(int err = alt_ic_isr_register(0, 16, callback, this, nullptr)) {
+            printf("[sc] ERROR: alt_ic_isr_register => %d\n", err);
         }
     }
 
     void callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
 
-    static
-    alt_u32 callback(void* sc) {
-        auto& ram = ((sc_t*)sc)->ram;
+    void callback() {
+        alt_u32 cmdlen = ram->regs.fe.cmdlen;
+        if(cmdlen == 0) return;
 
-        if(alt_u32 cmdlen = ram->regs.fe.cmdlen) {
-            // command (upper 16 bits) and data length (lower 16 bits)
-            alt_u32 cmd = cmdlen >> 16;
-            alt_u32 n = cmdlen & 0xFFFF;
+        // command (upper 16 bits) and data length (lower 16 bits)
+        alt_u32 cmd = cmdlen >> 16;
+        alt_u32 n = cmdlen & 0xFFFF;
 
-            printf("[sc::callback] cmd = 0x%04X, n = 0x%04X\n", cmd, n);
+        printf("[sc::callback] cmd = 0x%04X, n = 0x%04X\n", cmd, n);
 
-            // data offset
-            alt_u32 offset = ram->regs.fe.offset & 0xFFFF;
-            printf("[sc::callback] offset = 0x%04X\n", offset);
+        // data offset
+        alt_u32 offset = ram->regs.fe.offset & 0xFFFF;
 
-            if(!(offset >= 0 && offset + n <= AVM_SC_SPAN / sizeof(alt_u32))) {
-                printf("[sc::callback] ERROR: ...\n");
-            }
-            else {
-                auto data = n > 0 ? (ram->data + offset) : nullptr;
-                ((sc_t*)sc)->callback(cmd, data, n);
-            }
-
-            ram->regs.fe.cmdlen = 0;
+        if(!(offset >= 0 && offset + n <= sizeof(sc_ram_t::data) / sizeof(sc_ram_t::data[0]))) {
+            printf("[sc::callback] ERROR: ...\n");
+        }
+        else {
+            auto data = n > 0 ? (ram->data + offset) : nullptr;
+            callback(cmd, data, n);
         }
 
-        return 10;
+        ram->regs.fe.cmdlen = 0;
+    }
+
+    static
+    void callback(void* context) {
+        ((sc_t*)context)->callback();
     }
 
     void menu() {
         while(1) {
             printf("  [r] => test read\n");
             printf("  [w] => test write\n");
-            printf("  [R] => read regs\n");
+            printf("  [R] => print regs\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");

@@ -69,6 +69,7 @@ end entity;
 architecture arch of fe_block is
 
     signal nios_pio : std_logic_vector(31 downto 0);
+    signal nios_irq : std_logic_vector(3 downto 0);
 
 
 
@@ -175,9 +176,15 @@ begin
             reg_reset_bypass <= fe_reg.wdata;
         end if;
 
+        -- mscb
+
         --
     end if;
     end process;
+
+
+
+    nios_irq(0) <= '1' when ( reg_cmdlen /= (reg_cmdlen'range => '0') ) else '0';
 
 
 
@@ -190,15 +197,17 @@ begin
         avm_sc_writedata    => av_sc.writedata,
         avm_sc_waitrequest  => av_sc.waitrequest,
 
+        irq_bridge_irq      => nios_irq,
+
         avm_clk_clk         => i_clk,
         avm_reset_reset_n   => i_reset_n,
 
 
 
         -- mscb
-        parallel_mscb_in_export => mscb_to_nios_parallel_in,
-        parallel_mscb_out_export => mscb_from_nios_parallel_out,
-        counter_in_export => std_logic_vector(mscb_counter_in),
+        parallel_mscb_in_export     => mscb_to_nios_parallel_in,
+        parallel_mscb_out_export    => mscb_from_nios_parallel_out,
+        counter_in_export           => std_logic_vector(mscb_counter_in),
 
 
 
@@ -327,7 +336,8 @@ begin
         clk_free        => i_clk,
         state_out_156   => run_state_156,
         state_out_125   => run_state_125,
-        reset_in        => not i_nios_reset_n,
+        reset_in_125    => not i_nios_reset_n,
+        reset_in_156    => not i_reset_n,
         resets_out      => open,
         phase_out       => open,
         data_in         => pod_rx_data(7 downto 0),
@@ -348,6 +358,9 @@ begin
         mscb_data_out               => o_mscb_data,
         mscb_oe                     => o_mscb_oe,
         mscb_counter_in             => mscb_counter_in,
+
+        o_mscb_irq                  => nios_irq(1),
+        i_mscb_address              => X"ACA0",
 
         reset                       => not i_nios_reset_n,
         nios_clk                    => i_nios_clk--,

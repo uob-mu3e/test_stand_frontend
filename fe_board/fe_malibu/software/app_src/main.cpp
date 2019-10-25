@@ -8,18 +8,20 @@ si5345_t si5345 { 0 }; // spi_slave = 0
 #include "../../../fe/software/app_src/sc.h"
 sc_t sc;
 
-#include "../../../fe/software/app_src/malibu.h"
 #include "../../../fe/software/app_src/mscb_user.h"
+mscb_t mscb;
 #include "../../../fe/software/app_src/reset.h"
 
-#include "sc.h"
+#include "../../../fe/software/app_src/malibu.h"
+#include "sc_malibu.h"
 
 int main() {
     base_init();
 
     si5345.init();
-
+    mscb.init();
     sc.init();
+    
 
     while (1) {
         printf("\n");
@@ -31,7 +33,7 @@ int main() {
         printf("  [3] => sc\n");
         printf("  [4] => xcvr pod\n");
         printf("  [5] => si5345\n");
-        printf("  [6] => mscb (exit by reset only)\n");
+        printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
 
         printf("Select entry ...\n");
