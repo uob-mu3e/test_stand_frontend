@@ -527,7 +527,7 @@ begin
 	if(reset_n = '0') then
 		data_counter 	<= (others => '0');
 		datak_counter 	<= (others => '0');
-	elsif(rising_edge(tx_clk(0))) then
+	elsif rising_edge(tx_clk(0)) then
 		if (writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
 			data_counter 	<= data_pix_generated;
 			datak_counter 	<= datak_pix_generated;

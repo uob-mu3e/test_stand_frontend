@@ -148,7 +148,7 @@ begin
     process(i_clk)
     begin
     if rising_edge(i_clk) then
-	     fe_reg.rdata <= X"CCCCCCCC";
+        fe_reg.rdata <= X"CCCCCCCC";
         fe_reg.rvalid <= fe_reg.re;
 
         -- cmdlen
