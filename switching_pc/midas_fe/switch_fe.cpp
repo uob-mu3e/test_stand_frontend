@@ -707,16 +707,14 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 			db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
 			INT NEW_PCIE_MEM_START = PCIE_MEM_START + 6  ;
 			uint32_t data[1] = {0x01010000};
-			mu.FEB_write((uint32_t) 0, data, (uint16_t) 1, (uint32_t) 0xFFF0, (uint32_t) NEW_PCIE_MEM_START);
+            mu.FEB_write((uint32_t) 0, data, (uint16_t) 1, (uint32_t) 0xFFF0, (uint32_t) PCIE_MEM_START);
 			cm_msg(MINFO, "powerup MALIBU", "change power of malibu");
             INT SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
             db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
 			
 			value = FALSE; // reset flag in ODB
 			db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-		}else{
-			db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-		}
+        }
 	}
 
 }
