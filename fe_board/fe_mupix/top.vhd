@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity top is
 port (
     -- FE.A
-     clock_A				: out std_logic;
+    clock_A					: out std_logic;
 	 data_in_A_0			: in std_logic_vector(3 downto 0);
 	 data_in_A_1			: in std_logic_vector(3 downto 0);
 	 fast_reset_A			: out std_logic;
@@ -30,7 +30,7 @@ port (
 	 SPI_DOUT_ADC_0_A		: in std_logic; -- A_spi_dout_adc_front
 	 SPI_DOUT_ADC_1_A		: in std_logic; -- A_spi_dout_adc_back
 	 
-    -- SI45
+    -- SI5345
 
     si45_oe_n       : out   std_logic; -- <= '0'
     si45_rst_n      : out   std_logic; -- reset
@@ -102,11 +102,10 @@ architecture arch of top is
     signal fifo_rack : std_logic;
     signal fifo_rdata : std_logic_vector(35 downto 0);
 
-    signal sc_reg_addr : std_logic_vector(7 downto 0);
-    signal sc_reg_re : std_logic;
-    signal sc_reg_rdata : std_logic_vector(31 downto 0);
-    signal sc_reg_we : std_logic;
-    signal sc_reg_wdata : std_logic_vector(31 downto 0);
+    signal sc_reg : work.util.rw_t;
+    signal malibu_reg : work.util.rw_t;
+    signal scifi_reg : work.util.rw_t;
+	 signal mupix_reg : work.util.rw_t;
 
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
@@ -121,15 +120,46 @@ architecture arch of top is
     signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n : std_logic_vector(15 downto 0);
-    
-    signal i_ram_addr      :  std_logic_vector(15 downto 0);
-    signal i_ram_re        :  std_logic;
-    signal o_ram_rvalid    :  std_logic;
-    signal o_ram_rdata     :  std_logic_vector(31 downto 0);
-    signal i_ram_we        :  std_logic;
-    signal i_ram_wdata     :  std_logic_vector(31 downto 0);
 
 begin
+
+	 -- malibu regs : 0x40-0x4F
+    malibu_reg.addr <= sc_reg.addr;
+    malibu_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
+    malibu_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
+    malibu_reg.wdata <= sc_reg.wdata;
+
+    -- scifi regs : 0x60-0x6F
+    scifi_reg.addr <= sc_reg.addr;
+    scifi_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
+    scifi_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
+    scifi_reg.wdata <= sc_reg.wdata;
+	 
+	 -- mupix regs : 0x80-0x8F
+	 mupix_reg.addr <= sc_reg.addr;
+	 mupix_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"8" ) else '0';
+	 mupix_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"8" ) else '0';
+	 mupix_reg.wdata <= sc_reg.wdata;
+	 
+	 -- select valid rdata
+    sc_reg.rdata <=
+        malibu_reg.rdata when ( malibu_reg.rvalid = '1' ) else
+        scifi_reg.rdata when ( scifi_reg.rvalid = '1' ) else
+		  mupix_reg.rdata when ( scifi_reg.rvalid = '1' ) else
+        X"CCCCCCCC";
+
+    process(qsfp_pll_clk)
+    begin
+    if rising_edge(qsfp_pll_clk) then
+--        malibu_reg.rdata <= X"CCCCCCCC";
+        malibu_reg.rvalid <= malibu_reg.re;
+        scifi_reg.rdata <= X"CCCCCCCC";
+        scifi_reg.rvalid <= scifi_reg.re;
+		  mupix_reg.rvalid <= mupix_reg.re;
+    end if;
+    end process;
+	 
+	 
 
     ----------------------------------------------------------------------------
     -- MUPIX
@@ -148,6 +178,8 @@ begin
         i_data_chip_dacs        => (others => '0'),
         o_add_chip_dacs         => open,
         
+		  
+		  
         -- board dacs
         i_SPI_DOUT_ADC_0_A      => SPI_DOUT_ADC_0_A,
         o_SPI_DIN0_A            => SPI_DIN0_A,
@@ -155,11 +187,18 @@ begin
         o_SPI_LD_ADC_A          => SPI_LD_ADC_A,
         o_SPI_LD_TEMP_DAC_A     => SPI_LD_TEMP_DAC_A,
         o_SPI_LD_DAC_A          => SPI_LD_DAC_A,
-        o_add_board_dacs        => i_ram_addr(3 downto 0),
-        i_data_board_dacs       => o_ram_rdata,
-        o_data_board_dacs       => i_ram_wdata,
-        o_wen_data_board_dacs   => i_ram_we,
-        
+		  
+		  
+		  
+		  -- mupix dac regs
+        i_reg_add               => mupix_reg.addr(7 downto 0),
+        i_reg_re                => mupix_reg.re,
+        o_reg_rdata       		  => mupix_reg.rdata,
+        i_reg_we   				  => mupix_reg.we,
+        i_reg_wdata 				  => mupix_reg.wdata,
+		  
+		  
+		  
         i_ckdiv                 => (others => '0'),
 
         i_reset                 => not reset_n,
@@ -171,32 +210,34 @@ begin
 
     ----------------------------------------------------------------------------
 
-
     led_n <= not led;
 
+    -- enable SI5345
     si45_oe_n <= '0';
     si45_rst_n <= '1';
 
+    -- enable QSFP
     QSFP_ModSel_n <= '1';
     QSFP_Rst_n <= '1';
     QSFP_LPM <= '0';
 
+    -- enable PID
     pod_tx_reset_n <= '1';
     pod_rx_reset_n <= '1';
 
 
 
-    -- 125 MHz
+    -- 125 MHz -> 1 Hz
     e_clk_aux_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( clkout => led(15), rst_n => reset_n, clk => clk_aux );
 
-    -- 156.25 MHz
+    -- 156.25 MHz -> 1 Hz
     e_clk_qsfp_hz : entity work.clkdiv
     generic map ( P => 156250000 )
     port map ( clkout => led(14), rst_n => reset_n, clk => qsfp_pll_clk );
 
-    -- 125 MHz
+    -- 125 MHz -> 1 Hz
     e_clk_pod_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( clkout => led(13), rst_n => reset_n, clk => pod_pll_clk );
@@ -215,7 +256,11 @@ begin
     -- I2C
 
     i2c_scl <= not i2c_scl_oe;
-    i2c_sda <= '1';
+    i2c_sda <=
+        malibu_i2c_sda and
+        '1';
+    malibu_i2c_scl <= ZERO when i2c_scl_oe = '1' else 'Z';
+    malibu_i2c_sda <= ZERO when i2c_sda_oe = '1' else 'Z';
 
     ----------------------------------------------------------------------------
 
@@ -224,11 +269,12 @@ begin
     ----------------------------------------------------------------------------
     -- SPI
 
-    si45_spi_in <= spi_mosi;
-    si45_spi_sclk <= spi_sclk when spi_ss_n(0) = '0' else '0';
-    si45_spi_cs_n <= spi_ss_n(0);
+    malibu_spi_sdi <= spi_mosi;
+    malibu_spi_sck <= spi_sclk when spi_ss_n(1) = '0' else '0';
 
-    spi_miso <= si45_spi_out when spi_ss_n(0) = '0' else '0';
+    spi_miso <=
+        malibu_spi_sdo when spi_ss_n(1) = '0' else
+        '0';
 
     ----------------------------------------------------------------------------
 
@@ -252,6 +298,11 @@ begin
         o_spi_sclk      => spi_sclk,
         o_spi_ss_n      => spi_ss_n,
 
+        i_spi_si_miso   => si45_spi_out,
+        o_spi_si_mosi   => si45_spi_in,
+        o_spi_si_sclk   => si45_spi_sclk,
+        o_spi_si_ss_n   => si45_spi_cs_n,
+
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,
         o_mscb_oe       => mscb_oe,
@@ -268,21 +319,14 @@ begin
         o_pod_tx        => pod_tx,
         i_pod_refclk    => pod_pll_clk,
 
-        o_sc_reg_addr   => sc_reg_addr,
-        o_sc_reg_re     => sc_reg_re,
-        i_sc_reg_rdata  => sc_reg_rdata,
-        o_sc_reg_we     => sc_reg_we,
-        o_sc_reg_wdata  => sc_reg_wdata,
-        
-        i_ram_addr      => i_ram_addr,
-        i_ram_re        => '1',
-        o_ram_rvalid    => open,
-        o_ram_rdata     => o_ram_rdata,
-        i_ram_we        => i_ram_we,
-        i_ram_wdata     => i_ram_wdata,
-        
+        o_sc_reg_addr   => sc_reg.addr(7 downto 0),
+        o_sc_reg_re     => sc_reg.re,
+        i_sc_reg_rdata  => sc_reg.rdata,
+        o_sc_reg_we     => sc_reg.we,
+        o_sc_reg_wdata  => sc_reg.wdata,
+
         i_reset_n       => qsfp_reset_n,
         i_clk           => qsfp_pll_clk--,
     );
-
+	 
 end architecture;

@@ -27,11 +27,18 @@ port (
     o_SPI_LD_ADC_A          : out std_logic;
     o_SPI_LD_TEMP_DAC_A     : out std_logic;
     o_SPI_LD_DAC_A          : out std_logic;
-    o_add_board_dacs        : out std_logic_vector(3 downto 0);
-    i_data_board_dacs       : in std_logic_vector(31 downto 0);
-    o_data_board_dacs       : out std_logic_vector(31 downto 0);
-    o_wen_data_board_dacs   : out std_logic;
     
+	 
+	 
+	 -- mupix dac regs
+	 i_reg_add               : in std_logic_vector(7 downto 0);
+	 i_reg_re                : in std_logic;
+	 o_reg_rdata       		 : in std_logic_vector(31 downto 0);
+	 i_reg_we   				 : in std_logic;
+	 i_reg_wdata 				 : in std_logic_vector(31 downto 0);
+    
+	 
+	 
     i_ckdiv         : in std_logic_vector(15 downto 0);
 
     i_reset         : in std_logic;
