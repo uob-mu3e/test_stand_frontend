@@ -18,6 +18,13 @@ port (
     i_i2c_sda       : in    std_logic;
     o_i2c_sda_oe    : out   std_logic;
 
+    -- spi interface to si chip
+    i_spi_si_miso      : in    std_logic;
+    o_spi_si_mosi      : out   std_logic;
+    o_spi_si_sclk      : out   std_logic;
+    o_spi_si_ss_n      : out   std_logic;
+
+    -- spi interface to asics
     i_spi_miso      : in    std_logic;
     o_spi_mosi      : out   std_logic;
     o_spi_sclk      : out   std_logic;
@@ -32,16 +39,17 @@ port (
 
 
 
-    -- QSFP links
-    i_qsfp_rx       : in    std_logic_vector(3 downto 0);
-    o_qsfp_tx       : out   std_logic_vector(3 downto 0);
-    i_qsfp_refclk   : in    std_logic;
-
+    --
     i_fifo_rempty   : in    std_logic;
     o_fifo_rack     : out   std_logic;
     i_fifo_rdata    : in    std_logic_vector(35 downto 0);
 
 
+
+    -- QSFP links
+    i_qsfp_rx       : in    std_logic_vector(3 downto 0);
+    o_qsfp_tx       : out   std_logic_vector(3 downto 0);
+    i_qsfp_refclk   : in    std_logic;
 
     -- POD links (reset system)
     i_pod_rx        : in    std_logic_vector(3 downto 0);
@@ -57,6 +65,8 @@ port (
     o_sc_reg_we     : out   std_logic;
     o_sc_reg_wdata  : out   std_logic_vector(31 downto 0);
 
+
+
     i_reset_n       : in    std_logic;
     -- 156.25 MHz
     i_clk           : in    std_logic--;
@@ -66,6 +76,7 @@ end entity;
 architecture arch of fe_block is
 
     signal nios_pio : std_logic_vector(31 downto 0);
+    signal nios_irq : std_logic_vector(3 downto 0);
 
 
 
@@ -75,27 +86,32 @@ architecture arch of fe_block is
     signal sc_fifo_rack : std_logic;
     signal sc_fifo_rdata : std_logic_vector(35 downto 0);
 
-    signal sc_ram_addr : std_logic_vector(31 downto 0);
-    signal sc_ram_re : std_logic;
-    signal sc_ram_rvalid : std_logic;
-    signal sc_ram_rdata : std_logic_vector(31 downto 0);
-    signal sc_ram_we : std_logic;
-    signal sc_ram_wdata : std_logic_vector(31 downto 0);
+    signal sc_ram, sc_reg : work.util.rw_t;
+    signal fe_reg : work.util.rw_t;
 
-    signal sc_reg_addr : std_logic_vector(7 downto 0);
-    signal sc_reg_re : std_logic;
-    signal sc_reg_rdata : std_logic_vector(31 downto 0);
-    signal sc_reg_we : std_logic;
-    signal sc_reg_wdata : std_logic_vector(31 downto 0);
+    signal reg_cmdlen : std_logic_vector(31 downto 0);
+    signal reg_offset : std_logic_vector(31 downto 0);
 
-    signal fe_reg_rdata : std_logic_vector(31 downto 0);
-    signal fe_reg_rvalid : std_logic;
 
-    signal reset_bypass : std_logic_vector(31 downto 0);
+
+    signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
+    signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
+    signal mscb_counter_in : unsigned(15 downto 0);
+
+    signal reg_reset_bypass : std_logic_vector(31 downto 0);
+
+    signal run_state_125 : run_state_t;
+    signal run_state_156 : run_state_t;
+    signal terminated : std_logic;
 
 
 
     signal av_qsfp, av_pod : work.util.avalon_t;
+
+    signal qsfp_rx_data : std_logic_vector(127 downto 0);
+    signal qsfp_rx_datak : std_logic_vector(15 downto 0);
+    signal pod_rx_data : std_logic_vector(31 downto 0);
+    signal pod_rx_datak : std_logic_vector(3 downto 0);
 
     signal qsfp_tx_data : std_logic_vector(127 downto 0) :=
           X"03CAFE" & work.util.D28_5
@@ -118,46 +134,64 @@ architecture arch of fe_block is
         & "1"
         & "1";
 
-    signal qsfp_rx_data : std_logic_vector(127 downto 0);
-    signal qsfp_rx_datak : std_logic_vector(15 downto 0);
-    signal pod_rx_data : std_logic_vector(31 downto 0);
-    signal pod_rx_datak : std_logic_vector(3 downto 0);
-
-
-
-    signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
-    signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
-    signal mscb_counter_in : unsigned(15 downto 0);
-
-    signal run_state_125 : run_state_t;
-    signal run_state_156 : run_state_t;
-    signal terminated : std_logic;
-
 begin
 
-    o_sc_reg_addr <= sc_reg_addr;
-    o_sc_reg_re <= sc_reg_re and work.util.to_std_logic(sc_reg_addr(7 downto 4) /= X"F");
-    sc_reg_rdata <= fe_reg_rdata when ( fe_reg_rvalid = '1' ) else i_sc_reg_rdata;
-    o_sc_reg_we <= sc_reg_we and work.util.to_std_logic(sc_reg_addr(7 downto 4) /= X"F");
-    o_sc_reg_wdata <= sc_reg_wdata;
+    -- local regs : 0xF0-0xFF
+    fe_reg.addr <= sc_reg.addr;
+    fe_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
+    fe_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
+    fe_reg.wdata <= sc_reg.wdata;
+
+    -- external regs : 0x00-0xEF
+    o_sc_reg_addr <= sc_reg.addr(7 downto 0);
+    o_sc_reg_re <= sc_reg.re when ( sc_reg.addr(7 downto 4) /= X"F" ) else '0';
+    o_sc_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 4) /= X"F" ) else '0';
+    o_sc_reg_wdata <= sc_reg.wdata;
+
+    -- use fe_reg.rdata if prev cycle was fe_reg read
+    sc_reg.rdata <=
+        fe_reg.rdata when ( fe_reg.rvalid = '1' ) else
+        i_sc_reg_rdata;
 
     process(i_clk)
     begin
     if rising_edge(i_clk) then
-        fe_reg_rvalid <= '0';
+        fe_reg.rdata <= X"CCCCCCCC";
+        fe_reg.rvalid <= fe_reg.re;
+
+        -- cmdlen
+        if ( fe_reg.addr(3 downto 0) = X"0" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= reg_cmdlen;
+        end if;
+        if ( fe_reg.addr(3 downto 0) = X"0" and fe_reg.we = '1' ) then
+            reg_cmdlen <= fe_reg.wdata;
+        end if;
+
+        -- offset
+        if ( fe_reg.addr(3 downto 0) = X"1" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= reg_offset;
+        end if;
+        if ( fe_reg.addr(3 downto 0) = X"1" and fe_reg.we = '1' ) then
+            reg_offset <= fe_reg.wdata;
+        end if;
 
         -- reset bypass
-        if ( sc_reg_addr = X"F0" ) then
-            if ( sc_reg_we = '1' ) then
-                reset_bypass <= sc_reg_wdata;
-            end if;
-            fe_reg_rvalid <= sc_reg_re;
-            fe_reg_rdata <= reset_bypass;
+        if ( fe_reg.addr(3 downto 0) = X"4" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= reg_reset_bypass;
         end if;
+        if ( fe_reg.addr(3 downto 0) = X"4" and fe_reg.we = '1' ) then
+            reg_reset_bypass <= fe_reg.wdata;
+        end if;
+
+        -- mscb
 
         --
     end if;
     end process;
+
+
+
+    nios_irq(0) <= '1' when ( reg_cmdlen /= (reg_cmdlen'range => '0') ) else '0';
 
 
 
@@ -170,8 +204,17 @@ begin
         avm_sc_writedata    => av_sc.writedata,
         avm_sc_waitrequest  => av_sc.waitrequest,
 
+        irq_bridge_irq      => nios_irq,
+
         avm_clk_clk         => i_clk,
         avm_reset_reset_n   => i_reset_n,
+
+
+
+        -- mscb
+        parallel_mscb_in_export     => mscb_to_nios_parallel_in,
+        parallel_mscb_out_export    => mscb_from_nios_parallel_out,
+        counter_in_export           => std_logic_vector(mscb_counter_in),
 
 
 
@@ -203,12 +246,12 @@ begin
         spi_sclk => o_spi_sclk,
         spi_ss_n => o_spi_ss_n,
 
-        pio_export => nios_pio,
+        spi_si_miso => i_spi_si_miso,
+        spi_si_mosi => o_spi_si_mosi,
+        spi_si_sclk => o_spi_si_sclk,
+        spi_si_ss_n => o_spi_si_ss_n,
 
-        -- mscb
-        parallel_mscb_in_export => mscb_to_nios_parallel_in,
-        parallel_mscb_out_export => mscb_from_nios_parallel_out,
-        counter_in_export => std_logic_vector(mscb_counter_in),
+        pio_export => nios_pio,
 
         rst_reset_n => i_nios_reset_n,
         clk_clk => i_nios_clk--,
@@ -217,13 +260,16 @@ begin
 
 
     e_sc_ram : entity work.sc_ram
+    generic map (
+        RAM_ADDR_WIDTH_g => 14--;
+    )
     port map (
-        i_ram_addr          => sc_ram_addr(15 downto 0),
-        i_ram_re            => sc_ram_re,
-        o_ram_rvalid        => sc_ram_rvalid,
-        o_ram_rdata         => sc_ram_rdata,
-        i_ram_we            => sc_ram_we,
-        i_ram_wdata         => sc_ram_wdata,
+        i_ram_addr          => sc_ram.addr(15 downto 0),
+        i_ram_re            => sc_ram.re,
+        o_ram_rvalid        => sc_ram.rvalid,
+        o_ram_rdata         => sc_ram.rdata,
+        i_ram_we            => sc_ram.we,
+        i_ram_wdata         => sc_ram.wdata,
 
         i_avs_address       => av_sc.address(15 downto 0),
         i_avs_read          => av_sc.read,
@@ -232,11 +278,11 @@ begin
         i_avs_writedata     => av_sc.writedata,
         o_avs_waitrequest   => av_sc.waitrequest,
 
-        o_reg_addr          => sc_reg_addr,
-        o_reg_re            => sc_reg_re,
-        i_reg_rdata         => sc_reg_rdata,
-        o_reg_we            => sc_reg_we,
-        o_reg_wdata         => sc_reg_wdata,
+        o_reg_addr          => sc_reg.addr(7 downto 0),
+        o_reg_re            => sc_reg.re,
+        i_reg_rdata         => sc_reg.rdata,
+        o_reg_we            => sc_reg.we,
+        o_reg_wdata         => sc_reg.wdata,
 
         i_reset_n           => i_reset_n,
         i_clk               => i_clk--;
@@ -251,12 +297,12 @@ begin
         i_fifo_rack     => sc_fifo_rack,
         o_fifo_rdata    => sc_fifo_rdata,
 
-        o_ram_addr      => sc_ram_addr,
-        o_ram_re        => sc_ram_re,
-        i_ram_rvalid    => sc_ram_rvalid,
-        i_ram_rdata     => sc_ram_rdata,
-        o_ram_we        => sc_ram_we,
-        o_ram_wdata     => sc_ram_wdata,
+        o_ram_addr      => sc_ram.addr,
+        o_ram_re        => sc_ram.re,
+        i_ram_rvalid    => sc_ram.rvalid,
+        i_ram_rdata     => sc_ram.rdata,
+        o_ram_we        => sc_ram.we,
+        o_ram_wdata     => sc_ram.wdata,
 
         i_reset_n       => i_reset_n,
         i_clk           => i_clk--,
@@ -270,8 +316,8 @@ begin
         FEB_type_in             => "111010",
         run_state               => run_state_156,
 
-        data_out                => qsfp_tx_data(63 downto 32),
-        data_is_k               => qsfp_tx_datak(7 downto 4),
+        data_out                => qsfp_tx_data(31 downto 0),
+        data_is_k               => qsfp_tx_datak(3 downto 0),
 
         slowcontrol_fifo_empty  => sc_fifo_rempty,
         slowcontrol_read_req    => sc_fifo_rack,
@@ -297,6 +343,23 @@ begin
 
 
 
+    e_link_test : entity work.linear_shift_link
+    generic map (
+        g_m => 32,
+        g_poly => "10000000001000000000000000000110"--,
+    )
+    port map (
+        i_sync_reset    => '0',
+        i_seed          => (others => '1'),
+        i_en            => run_state_156,
+        o_lsfr          => qsfp_tx_data(63 downto 32),
+        o_datak         => qsfp_tx_datak(7 downto 4),
+        reset_n         => i_reset_n,
+        i_clk           => i_clk--,
+    );
+
+
+
     e_reset_system : entity work.resetsys
     port map (
         clk_reset_rx_125=> i_pod_refclk,
@@ -305,11 +368,12 @@ begin
         clk_free        => i_clk,
         state_out_156   => run_state_156,
         state_out_125   => run_state_125,
-        reset_in        => not i_nios_reset_n,
+        reset_in_125    => not i_nios_reset_n,
+        reset_in_156    => not i_reset_n,
         resets_out      => open,
         phase_out       => open,
         data_in         => pod_rx_data(7 downto 0),
-        reset_bypass    => reset_bypass(11 downto 0),
+        reset_bypass    => reg_reset_bypass(11 downto 0),
         run_number_out  => open,
         fpga_id         => FPGA_ID_g,
         terminated      => terminated,
@@ -327,6 +391,9 @@ begin
         mscb_oe                     => o_mscb_oe,
         mscb_counter_in             => mscb_counter_in,
 
+        o_mscb_irq                  => nios_irq(1),
+        i_mscb_address              => X"ACA0",
+
         reset                       => not i_nios_reset_n,
         nios_clk                    => i_nios_clk--,
     );
@@ -339,7 +406,7 @@ begin
         CHANNEL_WIDTH_g => 32,
         INPUT_CLOCK_FREQUENCY_g => 156250000,
         DATA_RATE_g => 6250,
-        CLK_MHZ_g => 125--,
+        CLK_HZ_g => 125000000--,
     )
     port map (
         i_tx_data   => qsfp_tx_data,
@@ -378,7 +445,7 @@ begin
         CHANNEL_WIDTH_g => 8,
         INPUT_CLOCK_FREQUENCY_g => 125000000,
         DATA_RATE_g => 1250,
-        CLK_MHZ_g => 125--,
+        CLK_HZ_g => 125000000--,
     )
     port map (
         i_tx_data   => pod_tx_data,

@@ -27,7 +27,7 @@ entity receiver_block is
 generic (
 	NINPUT : positive := 1;
 	LVDS_PLL_FREQ : real := 125.0;
-	LVDS_DATA_RATE : positive := 1250--;
+	LVDS_DATA_RATE : real := 1250.0--;
 );
 port (
 	reset_n             : in std_logic;

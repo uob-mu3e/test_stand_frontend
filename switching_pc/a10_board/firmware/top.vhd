@@ -233,6 +233,14 @@ architecture rtl of top is
 		-- Slow Control
 		signal mem_data_out : std_logic_vector(127 downto 0);
 		signal mem_datak_out : std_logic_vector(15 downto 0);
+		signal mem_add_sc : std_logic_vector(15 downto 0);
+		signal mem_data_sc : std_logic_vector(31 downto 0);
+		signal mem_wen_sc : std_logic;
+		
+		-- Link test
+		signal mem_add_link_test : std_logic_vector(2 downto 0);
+		signal mem_data_link_test : std_logic_vector(31 downto 0);
+		signal mem_wen_link_test : std_logic;
 		
 		-- event counter
 		signal state_out_eventcounter : std_logic_vector(3 downto 0);
@@ -243,7 +251,15 @@ architecture rtl of top is
 		signal event_length : std_logic_vector(11 downto 0);
 		signal dma_data_wren : std_logic;
 		signal dma_data : std_logic_vector(255 downto 0);
+		signal dma_data_test : std_logic_vector(159 downto 0);
 		signal dma_event_data : std_logic_vector(31 downto 0);
+		signal dma_wren_cnt : std_logic; 
+		signal dma_wren_test : std_logic;
+		signal dma_end_event_cnt : std_logic;
+		signal dma_end_event_test : std_logic;
+		signal data_counter : std_logic_vector(31 downto 0);
+		signal datak_counter : std_logic_vector(3 downto 0);
+
 		
 begin 
 
@@ -405,11 +421,11 @@ e_qsfp : entity work.xcvr_a10
 port map (
     i_tx_data   => X"03CAFEBC"
                  & X"02CAFEBC"
-                 & tx_data(1)
+                 & X"01CAFEBC"
                  & tx_data(0),
     i_tx_datak  => "0001"
                  & "0001"
-                 & tx_datak(1)
+                 & "0001"
                  & tx_datak(0),
 
     o_rx_data   => rx_data_v,
@@ -491,7 +507,7 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 --		
 --	fifo : transceiver_fifo
 --		port map (
---			data    => rx_data(i) & rx_datak(i), --fifo_data_in_ch0 & fifo_datak_in_ch0,
+--			data    => (i) & rx_datak(i), --fifo_data_in_ch0 & fifo_datak_in_ch0,
 --			wrreq   => not idle_ch(i),
 --			rdreq   => not fifo_empty(i),
 --			wrclk   => tx_clk(0),--rx_clk(i),
@@ -520,25 +536,71 @@ e_data_gen : entity work.data_generator_a10
 		state_out				=> state_out_datagen--,
 );
 
-tx_data(1) <= data_pix_generated;
-tx_datak(1) <= datak_pix_generated;
+process(tx_clk(0), reset_n)
+begin
+	if(reset_n = '0') then
+		data_counter 	<= (others => '0');
+		datak_counter 	<= (others => '0');
+
+	elsif (rising_edge(tx_clk(0))) then
+		if (writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
+			data_counter 	<= data_pix_generated;
+			datak_counter 	<= datak_pix_generated;
+		else
+			data_counter 	<= rx_data(0);
+			datak_counter 	<= rx_datak(0);
+		end if;
+	end if;
+end process;
 
 e_event_counter : entity work.event_counter
 	port map(
 		clk						=> tx_clk(0),
 		dma_clk					=> pcie_fastclk_out,
 		reset_n					=> resets_n(RESET_BIT_EVENT_COUNTER),
-		rx_data					=> rx_data(1),
-		rx_datak					=> rx_datak(1),
+		rx_data					=> data_counter,
+		rx_datak					=> datak_counter,
 		dma_wen_reg				=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
 		event_length			=> event_length,
-		dma_data_wren			=> dma_data_wren,
-		dmamem_endofevent		=> dmamem_endofevent,
+		dma_data_wren			=> dma_wren_cnt,
+		dmamem_endofevent		=> dma_end_event_cnt,
 		dma_data					=> dma_event_data,
 		state_out				=> state_out_eventcounter--,
 );
-	
-dma_data <=	X"00000" & event_length &
+
+e_counter : entity work.dma_counter
+ port map (
+	i_clk			=> pcie_fastclk_out,
+	i_reset_n   	=> resets_n(RESET_BIT_EVENT_COUNTER),
+	i_enable    	=> writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_TEST),
+	i_dma_wen_reg 	=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+	i_fraccount 	=> writeregs(DMA_SLOW_DOWN_REGISTER_W)(7 downto 0),
+	i_halffull_mode => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_DMA_HALFFUL_MODE),
+	i_dma_halffull 	=> dmamemhalffull,
+	o_dma_end_event => dma_end_event_test,
+	o_dma_wen   	=> dma_wren_test,
+	o_cnt     		=> dma_data_test--,
+);
+
+process (pcie_fastclk_out, reset_n)
+begin
+	if (reset_n = '0') then
+		dma_data_wren <= '0';
+		dmamem_endofevent <= '0';
+		dma_data 	  <= (others => '0');
+	elsif (rising_edge(pcie_fastclk_out)) then
+		dma_data_wren <= '0';
+		dmamem_endofevent <= '0';
+		dma_data 	  <= (others => '0');
+		if(dma_wren_test = '1') then
+			dma_data_wren <= '1';
+			dmamem_endofevent <= dma_end_event_test;
+			dma_data(159 downto 0) <= dma_data_test;
+			dma_data(255 downto 160) <= (others => '0');
+		elsif(dma_wren_cnt = '1') then
+			dma_data_wren <= '1';
+			dmamem_endofevent <= dma_end_event_cnt;
+			dma_data <=	X"00000" & event_length &
 				dma_event_data 			&
 				x"1ABACAF" & state_out_eventcounter &
 				x"2ABACAF" & state_out_datagen &
@@ -546,6 +608,9 @@ dma_data <=	X"00000" & event_length &
 				x"4ABACAFE" &
 				x"5ABACAFE" &
 				x"6ABACAFE";
+		end if;
+	end if;
+end process;
 
 ------------- time algining data -------------
 
@@ -609,20 +674,57 @@ master : sc_master
 
 slave : sc_slave
 	port map(
-		clk					=> tx_clk(0),
-		reset_n				=> resets_n(RESET_BIT_SC_SLAVE),
-		enable				=> '1',
-		link_data_in		=> rx_data(0),
-		link_data_in_k		=> rx_datak(0),
-		mem_addr_out		=> readmem_writeaddr(15 downto 0),
+		clk							=> tx_clk(0),
+		reset_n						=> resets_n(RESET_BIT_SC_SLAVE),
+		enable						=> '1',
+		link_data_in				=> rx_data(0),
+		link_data_in_k				=> rx_datak(0),
+		mem_addr_out				=> mem_add_sc,
 		mem_addr_finished_out   => readmem_writeaddr_finished,
-		mem_data_out		=> readmem_writedata,
-		mem_wren				=> readmem_wren,
-		stateout				=> LED_BRACKET
+		mem_data_out				=> mem_data_sc,
+		mem_wren						=> mem_wen_sc,
+		stateout						=> LED_BRACKET--,
 );
 
 tx_data(0) <= mem_data_out(31 downto 0);
 tx_datak(0) <= mem_datak_out(3 downto 0);
+
+------------- Link Test -------------
+e_link_observer : entity work.link_observer
+generic map(
+	g_m 	=> 32,
+	g_poly 	=> "10000000001000000000000000000110"
+)
+ port map (
+	clk     				=> tx_clk(0),
+	reset_n     		=> resets_n(RESET_BIT_LINK_TEST),
+	rx_data     		=> rx_data(1),
+	rx_datak    		=> rx_datak(1),
+	mem_add      		=> mem_add_link_test,
+	mem_data     		=> mem_data_link_test,
+	mem_wen				=> mem_wen_link_test--,
+);
+
+process (tx_clk(0), reset_n)
+begin
+	if (reset_n = '0') then
+		readmem_writeaddr <= (others => '0');
+		readmem_writedata <= (others => '0');
+		readmem_wren		<= '0';
+	elsif (rising_edge(tx_clk(0))) then
+		readmem_writeaddr <= (others => '0');
+		if (writeregs(LINK_TEST_REGISTER_W)(LINK_TEST_BIT_ENABLE) = '1') then
+			readmem_writeaddr(2 downto 0)  <= mem_add_link_test;
+			readmem_writedata						<= mem_data_link_test;
+			readmem_wren							<= mem_wen_link_test;
+		else
+			readmem_writeaddr(15 downto 0)   <= mem_add_sc;
+			readmem_writedata						<= mem_data_sc;
+			readmem_wren							<= mem_wen_sc;
+		end if;
+	end if;
+end process;
+
 
 ------------- PCIe -------------
 
@@ -651,8 +753,8 @@ begin
 		clk_last <= clk_sync;
 		
 		if(clk_sync = '1' and clk_last = '0') then
-			readregs(PLL_REGISTER_R) 					<= readregs_slow(PLL_REGISTER_R);
-			readregs(VERSION_REGISTER_R) 				<= readregs_slow(VERSION_REGISTER_R);
+			readregs(PLL_REGISTER_R) 						<= readregs_slow(PLL_REGISTER_R);
+			readregs(VERSION_REGISTER_R) 					<= readregs_slow(VERSION_REGISTER_R);
 		end if;
 		
 		readregs(EVENTCOUNTER_REGISTER_R)			<= event_counter;

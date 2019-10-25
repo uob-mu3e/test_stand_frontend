@@ -33,6 +33,15 @@ package util is
         readdatavalid   :   std_logic;
     end record;
 
+    type rw_t is record
+        addr            :   std_logic_vector(31 downto 0);
+        re              :   std_logic;
+        rvalid          :   std_logic;
+        rdata           :   std_logic_vector(31 downto 0);
+        we              :   std_logic;
+        wdata           :   std_logic_vector(31 downto 0);
+    end record;
+
 
 
     -- Greatest Common Divisor

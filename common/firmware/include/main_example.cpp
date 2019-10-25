@@ -9,7 +9,10 @@ int main() {
     base_init();
 
     while (1) {
-        printf("'%s' example\n", ALT_DEVICE_FAMILY);
+        printf("\n");
+        printf("[example] -------- menu --------\n");
+
+        printf("\n");
         printf("  [1] => menu 1\n");
         printf("  [2] => menu 2\n");
 

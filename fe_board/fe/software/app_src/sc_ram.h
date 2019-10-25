@@ -1,82 +1,146 @@
+#ifndef __FE_SC_RAM_H__
+#define __FE_SC_RAM_H__
 
 struct sc_ram_t {
-    union {
-        alt_u32 data[AVM_SC_SPAN/4 - 256];
-        struct {
-            alt_u16 len;
-            alt_u16 cmd;
-            alt_u32 offset;
-            alt_u32 reserved[16 - 2];
-        } ctrl;
-    };
+    alt_u32 data[AVM_SC_SPAN/4 - 256];
 
-    struct {
-        alt_u32 reserved0[16 - 0];
+    struct regs_t {
+        union {
+            alt_u32 block0[16];
+        };
 
-        alt_u32 reserved1[16 - 0];
+        union {
+            alt_u32 block1[16];
+        };
 
-        alt_u32 reserved2[16 - 0];
+        union {
+            alt_u32 block2[16];
+        };
 
-        alt_u32 reserved3[16 - 0];
+        union {
+            alt_u32 block3[16];
+        };
 
-        struct {
+        union {
+            alt_u32 block4[16];
+
             struct {
-                alt_u32 data;
-                alt_u16 tag;
-                alt_u16 status;
+                struct {
+                    alt_u32 data;
+                    alt_u16 tag;
+                    alt_u16 status;
+                    alt_u32 reserved[2];
+                } fifo;
+
+                struct {
+                    alt_u32 status;
+                    alt_u32 rx_dpa_lock;
+                    alt_u32 rx_ready;
+                    alt_u32 reserved[1];
+                } mon;
+
+                struct {
+                    alt_u32 dummy;
+                    alt_u32 dp;
+                    alt_u32 reset;
+                    alt_u32 reserved[1];
+                } ctrl;
+            } malibu;
+        };
+
+        union {
+            alt_u32 block5[16];
+        };
+
+        union {
+            alt_u32 block6[16];
+
+            struct {
+                struct {
+                    alt_u32 data;
+                    alt_u16 tag;
+                    alt_u16 status;
+                    alt_u32 reserved[2];
+                } fifo;
+
+                struct {
+                    alt_u32 status;
+                    alt_u32 rx_dpa_lock;
+                    alt_u32 rx_ready;
+                    alt_u32 reserved[1];
+                } mon;
+
+                struct {
+                    alt_u32 dummy;
+                    alt_u32 dp;
+                    alt_u32 reset;
+                    alt_u32 reserved[1];
+                } ctrl;
+            } scifi;
+        };
+
+        union {
+            alt_u32 block7[16];
+        };
+
+        union {
+            alt_u32 block8[16];
+
+            struct {
+            } mupix;
+        };
+
+        union {
+            alt_u32 block9[16];
+        };
+
+        union {
+            alt_u32 block10[16];
+        };
+
+        union {
+            alt_u32 block11[16];
+        };
+
+        union {
+            alt_u32 block12[16];
+        };
+
+        union {
+            alt_u32 block13[16];
+        };
+
+        union {
+            alt_u32 block14[16];
+        };
+
+        union {
+            alt_u32 block15[16];
+
+            struct {
+                alt_u32 cmdlen;
+                alt_u32 offset;
+
                 alt_u32 reserved[2];
-            } fifo;
 
-            struct {
-                alt_u32 pll_lock;
-                alt_u32 ready;
-                alt_u32 dpa_lock;
-                alt_u32 reserved[1];
-            } rx;
+                alt_u32 reset_bypass;
 
-            struct {
-                alt_u32 desync;
-                alt_u32 reserved[3];
-            } frame;
+                alt_u32 reserved1;
 
-            alt_u32 reserved4[16 - 12];
-        } malibu;
+                alt_u32 mscb;
+            } fe;
+        };
 
-        struct {
-            alt_u32 reserved5[16 - 0];
-        } mupix;
-
-        struct {
-            alt_u32 reserved6[16 - 0];
-        } scifi;
-
-        alt_u32 reserved7[16 - 0];
-
-        alt_u32 reserved8[16 - 0];
-
-        alt_u32 reserved9[16 - 0];
-
-        alt_u32 reserved10[16 - 0];
-
-        alt_u32 reserved11[16 - 0];
-
-        alt_u32 reserved12[16 - 0];
-
-        alt_u32 reserved13[16 - 0];
-
-        alt_u32 reserved14[16 - 0];
-
-        struct {
-            alt_u32 reset_bypass;
-            alt_u32 reserved15[16 - 1];
-        } fe;
     } regs;
 };
 
 static_assert(sizeof(sc_ram_t) == 65536 * 4, "");
-static_assert(sizeof(sc_ram_t::ctrl) == 16 * 4, "");
 static_assert(sizeof(sc_ram_t::regs) == 256 * 4, "");
-static_assert(sizeof(sc_ram_t::regs.malibu) == 16 * 4, "");
-static_assert(sizeof(sc_ram_t::regs.mupix) == 16 * 4, "");
-static_assert(sizeof(sc_ram_t::regs.scifi) == 16 * 4, "");
-static_assert(sizeof(sc_ram_t::regs.fe) == 16 * 4, "");
+
+static_assert(offsetof(sc_ram_t, regs) % 1024 == 0, "");
+static_assert(offsetof(sc_ram_t::regs_t, malibu) % 64 == 0, "");
+static_assert(offsetof(sc_ram_t::regs_t, mupix) % 64 == 0, "");
+static_assert(offsetof(sc_ram_t::regs_t, scifi) % 64 == 0, "");
+static_assert(offsetof(sc_ram_t::regs_t, fe) % 64 == 0, "");
+
+#endif // __FE_SC_RAM_H__

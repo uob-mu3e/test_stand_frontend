@@ -12,7 +12,8 @@ PORT (
     clk_free         : in    std_logic; -- independent, free running clock (not required for operation, used for phase measurement between clk_reset_rx and clk_global)
     state_out_156    : out   run_state_t; -- run state in sync to 156 clk
     state_out_125    : out   run_state_t; -- run state in sync to 125 clk
-    reset_in         : in    std_logic; -- hard reset for testing, do not connect this to any "normal" reset
+    reset_in_125     : in    std_logic; -- hard reset for testing, do not connect this to any "normal" reset
+    reset_in_156     : in    std_logic; 
     resets_out       : out   std_logic_vector(15 downto 0); -- 16 bit reset mask, use this together with feb state .. example: nios_reset => (run_state=reset and resets(x)='1')  
     phase_out        : out   std_logic_vector(31 downto 0); -- phase between clk_reset_rx and clk_global
     data_in          : in    std_logic_vector(7 downto 0); -- 8b reset link input
@@ -44,6 +45,7 @@ architecture rtl of resetsys is
     signal terminated_125           : std_logic;
 
     signal state_controller_in      : std_logic_vector(7 downto 0);
+    signal reset_bypass_125_rx      : std_logic_vector(11 downto 0);
 
 ----------------begin resetsys------------------------
 BEGIN
@@ -51,8 +53,8 @@ BEGIN
     process(clk_reset_rx_125)
     begin
     if rising_edge(clk_reset_rx_125) then
-        if ( reset_bypass(8) = '1' ) then
-            state_controller_in <= reset_bypass(7 downto 0);
+        if ( reset_bypass_125_rx(8) = '1' ) then
+            state_controller_in <= reset_bypass_125_rx(7 downto 0);
         else
             state_controller_in <= data_in;
         end if;
@@ -65,14 +67,14 @@ BEGIN
     PORT MAP (
         d(0)    => terminated,
         q(0)    => terminated_125,
-        rst_n   => not reset_in,
+        rst_n   => not reset_in_125,
         clk     => clk_reset_rx_125
     );
 
     i_state_controller : entity work.state_controller
     PORT MAP (
         clk                     => clk_reset_rx_125,
-        reset                   => reset_in,
+        reset                   => reset_in_125,
         reset_link_8bData       => state_controller_in,
         state_idle              => ustate_idle_rx,
         state_run_prepare       => ustate_run_prepare_rx,
@@ -96,7 +98,7 @@ BEGIN
         clk_global              => clk_global_125,
         clk_rx_reset            => clk_reset_rx_125,
         clk_free                => clk_free,
-        reset                   => reset_in,
+        reset                   => reset_in_125,
         phase                   => phase_out,
         -- states in sync to clk_rx_reset:
         state_idle_rx           => ustate_idle_rx,
@@ -112,27 +114,43 @@ BEGIN
         state_sync_global       => state_out_125
     );
 
-     e_fifo_sync : entity work.fifo_sync
-     generic map (
-         DATA_WIDTH_g => run_state_t'length--,
-     )
-     port map (
-         o_rdata     => state_out_156,
-         i_rclk      => clk_156,
-         i_wdata     => '0' &
-                        ustate_out_of_DAQ_rx &
-                        ustate_reset_rx &
-                        ustate_sync_test_rx &
-                        ustate_link_test_rx &
-                        ustate_terminating_rx &
-                        ustate_running_rx &
-                        ustate_sync_rx &
-                        ustate_run_prepare_rx &
-                        ustate_idle_rx,
-         i_wclk      => clk_reset_rx_125,
-         i_fifo_aclr => reset_in--,
-     );
-    
+
+    e_fifo_sync : entity work.fifo_sync
+    generic map (
+        DATA_WIDTH_g => run_state_t'length--,
+    )
+    port map (
+        o_rdata     => state_out_156,
+        i_rclk      => clk_156,
+        i_reset_val => "0000000001",
+        i_wdata     => '0' &
+                       ustate_out_of_DAQ_rx &
+                       ustate_reset_rx &
+                       ustate_sync_test_rx &
+                       ustate_link_test_rx &
+                       ustate_terminating_rx &
+                       ustate_running_rx &
+                       ustate_sync_rx &
+                       ustate_run_prepare_rx &
+                       ustate_idle_rx,
+        i_wclk      => clk_reset_rx_125,
+
+        i_fifo_aclr => reset_in_156--,
+    );
+
+    e_fifo_sync2 : entity work.fifo_sync
+    generic map (
+        DATA_WIDTH_g => reset_bypass'length--,
+    )
+    port map (
+        o_rdata     => reset_bypass_125_rx,
+        i_rclk      => clk_reset_rx_125,
+        i_wdata     => reset_bypass,
+        i_wclk      => clk_156,
+        i_fifo_aclr => reset_in_125--,
+    );
+
+
     testout(0) <= ustate_idle_rx;
     testout(1) <= ustate_run_prepare_rx;
     testout(2) <= ustate_sync_rx;

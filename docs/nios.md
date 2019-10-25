@@ -12,11 +12,8 @@ The NIOS terminal has a menu like structure:
 
 ```
 'Arria 10' NIOS Menu
-  [0] => spi si chip
-  [1] => i2c fan
-  [2] => flash
-  [3] => xcvr qsfp
-  [r] => reset pll
+  [1] => flash
+  [2] => xcvr
 Select entry ...
 ```
 

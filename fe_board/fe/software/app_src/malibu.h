@@ -3,6 +3,8 @@
 malibu_t malibu;
 
 void menu_malibu() {
+    auto& regs = sc.ram->regs.malibu;
+
     while(1) {
         printf("  [0] => reset\n");
         printf("  [1] => powerup MALIBU\n");
@@ -28,8 +30,8 @@ void menu_malibu() {
             malibu.stic_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
             break;
         case 's':
-            printf("fifo_status / frame_desync : 0x%02X / 0x%02X\n", sc->regs.malibu.fifo.status, sc->regs.malibu.frame.desync);
-            printf("rx_pll_lock / rx_dpa_lock / rx_ready : 0x%01X / 0x%04X / 0x%04X\n", sc->regs.malibu.rx.pll_lock, sc->regs.malibu.rx.dpa_lock, sc->regs.malibu.rx.ready);
+            printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X\n", regs.mon.status);
+            printf("rx_dpa_lock / rx_ready : 0x%04X / 0x%04X\n", regs.mon.rx_dpa_lock, regs.mon.rx_ready);
             break;
         case 'q':
             return;

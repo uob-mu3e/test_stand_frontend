@@ -151,31 +151,31 @@
 /*---- info structures ---------------------------------------------*/
 
 typedef struct {
-   unsigned char protocol_version;
-   unsigned char node_status;
-   unsigned char n_variables;
-   unsigned short node_address;
-   unsigned short group_address;
-   unsigned short watchdog_resets;
-   char node_name[16];
-   unsigned char rtc[6];
-   unsigned short buf_size;
+    unsigned char protocol_version;
+    unsigned char node_status;
+    unsigned char n_variables;
+    unsigned short node_address;
+    unsigned short group_address;
+    unsigned short watchdog_resets;
+    char node_name[16];
+    unsigned char rtc[6];
+    unsigned short buf_size;
 } MSCB_INFO;
 
 typedef struct {
-   unsigned char width;         // width in bytes
-   unsigned char unit;          // physical units UNIT_xxxx
-   unsigned char prefix;        // unit prefix PRFX_xxx
-   unsigned char status;        // status (not yet used)
-   unsigned char flags;         // flags MSCBF_xxx
-   char name[8];                // name
-   void *ud;                    // point to user data buffer
+    unsigned char width;         // width in bytes
+    unsigned char unit;          // physical units UNIT_xxxx
+    unsigned char prefix;        // unit prefix PRFX_xxx
+    unsigned char status;        // status (not yet used)
+    unsigned char flags;         // flags MSCBF_xxx
+    char name[8];                // name
+    void *ud;                    // point to user data buffer
 
 #ifdef CFG_EXTENDED_VARIABLES
-   unsigned char  digits;       // number of digits to display after period
-   float min, max, delta;       // limits for button control
-   unsigned short node_address; // address for remote node on subbus
-   unsigned char  channel;      // address for remote channel subbus
+    unsigned char  digits;       // number of digits to display after period
+    float min, max, delta;       // limits for button control
+    unsigned short node_address; // address for remote node on subbus
+    unsigned char  channel;      // address for remote channel subbus
 #endif
 } MSCB_INFO_VAR;
 
@@ -246,10 +246,10 @@ typedef struct {
 /*------------------------------------------------------------------*/
 
 typedef struct {                // system info stored in EEPROM
-   unsigned int node_addr;
-   unsigned int group_addr;
-   unsigned int revision;
-   char node_name[16];
+    unsigned int node_addr;
+    unsigned int group_addr;
+    unsigned int revision;
+    char node_name[16];
 } SYS_INFO;
 
 

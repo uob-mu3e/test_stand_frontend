@@ -1,6 +1,6 @@
 #
 
-create_clock -name CLOCK -period 20.000 [get_ports {CLOCK}]
+create_clock -name CLOCK -period "50 MHz" [get_ports {CLOCK}]
 
 derive_clock_uncertainty
 

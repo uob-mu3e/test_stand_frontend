@@ -7,9 +7,12 @@ generic (
     FIFO_ADDR_WIDTH_g : positive := 3--;
 );
 port (
+    -- read domain
     o_rdata     : out   std_logic_vector(DATA_WIDTH_g-1 downto 0);
     i_rclk      : in    std_logic;
+    i_reset_val : in    std_logic_vector(DATA_WIDTH_g-1 downto 0) := (others => '0');
 
+    -- write domain
     i_wdata     : in    std_logic_vector(DATA_WIDTH_g-1 downto 0);
     i_wclk      : in    std_logic;
 
@@ -45,10 +48,10 @@ begin
         aclr        => i_fifo_aclr--,
     );
 
-    process(i_rclk, i_fifo_aclr, i_wdata)
+    process(i_rclk, i_fifo_aclr, i_reset_val)
     begin
     if ( i_fifo_aclr = '1' ) then
-        o_rdata <= i_wdata;
+        o_rdata <= i_reset_val;
         --
     elsif rising_edge(i_rclk) then
         if ( rempty = '0' ) then
