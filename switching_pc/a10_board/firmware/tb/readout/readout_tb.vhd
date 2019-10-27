@@ -38,7 +38,7 @@ architecture behav of readout_tb is
          event_length:      out std_logic_vector (7 downto 0);
          dma_data_wren:     out std_logic;
          dmamem_endofevent: out std_logic; 
-         dma_data:          out std_logic_vector (31 downto 0);
+         dma_data:          out std_logic_vector (95 downto 0);
          state_out:         out std_logic_vector(3 downto 0)
            );
     end component event_counter;
@@ -59,7 +59,7 @@ architecture behav of readout_tb is
       signal state_out_eventcounter : std_logic_vector(3 downto 0);
       signal event_length : std_logic_vector(7 downto 0);
       signal dma_data_wren : std_logic;
-      signal dma_data : std_logic_vector(31 downto 0);
+      signal dma_data : std_logic_vector(95 downto 0);
   		  		
   		constant ckTime: 		time	:= 10 ns;
 		

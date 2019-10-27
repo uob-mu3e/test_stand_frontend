@@ -17,7 +17,7 @@ entity event_counter is
 		event_length:      out std_logic_vector (7 downto 0);
 		dma_data_wren:     out std_logic;
 		dmamem_endofevent: out std_logic; 
- 		dma_data:          out std_logic_vector (31 downto 0);
+ 		dma_data:          out std_logic_vector (95 downto 0);
 		state_out:         out std_logic_vector(3 downto 0)
 );
 end entity event_counter;
@@ -27,11 +27,11 @@ architecture rtl of event_counter is
 component ip_ram is
    port(
    clock		: IN STD_LOGIC  := '1';
-   data		: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
+   data		: IN STD_LOGIC_VECTOR (95 DOWNTO 0);
    rdaddress	: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
    wraddress	: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
    wren		: IN STD_LOGIC  := '0';
-   q		    : OUT STD_LOGIC_VECTOR (31 DOWNTO 0)
+   q		    : OUT STD_LOGIC_VECTOR (95 DOWNTO 0)
    );
 end component ip_ram;
 
@@ -64,10 +64,10 @@ end component fifo_36;
 ----------------signals---------------------
 signal reset : std_logic;
 
-signal w_ram_data : std_logic_vector(31 downto 0);
+signal w_ram_data : std_logic_vector(95 downto 0);
 signal w_ram_add  : std_logic_vector(7 downto 0);
 signal w_ram_en   : std_logic;
-signal r_ram_data : std_logic_vector(31 downto 0);
+signal r_ram_data : std_logic_vector(95 downto 0);
 signal r_ram_add  : std_logic_vector(7 downto 0);
 
 signal w_fifo_data      : std_logic_vector(7 downto 0);
@@ -174,13 +174,13 @@ begin
                   fifo_data_out(3 downto 0) = "0001") then 
 						w_ram_en				  <= '1';
                   w_ram_add           <= w_ram_add + 1;
-						w_ram_data  		  <= fifo_data_out(35 downto 4);
+						w_ram_data(31 downto 0)  		  <= fifo_data_out(35 downto 4);
 						event_tagging_state <= ending;
 					end if;
 					
 				when ending =>
 					w_ram_en	  <= '1';
-					w_ram_data <= fifo_data_out(35 downto 4);
+					w_ram_data(31 downto 0) <= fifo_data_out(35 downto 4);
 					w_ram_add  <= w_ram_add + 1;
 					if(fifo_data_out(35 downto 4) = x"0000009c" and fifo_data_out(3 downto 0) = "0001") then
 						w_fifo_en   <= '1';
