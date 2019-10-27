@@ -15,9 +15,6 @@ port (
     o_CTRL_SCK2_A   : out std_logic;
     o_CTRL_Load_A   : out std_logic;
     o_CTRL_RB_A     : out std_logic;
-    i_data_chip_dacs : in std_logic_vector(31 downto 0);
-    o_add_chip_dacs : out std_logic_vector(15 downto 0);
-    
     
     
     -- board dacs
@@ -27,10 +24,15 @@ port (
     o_SPI_LD_ADC_A          : out std_logic;
     o_SPI_LD_TEMP_DAC_A     : out std_logic;
     o_SPI_LD_DAC_A          : out std_logic;
-    o_add_board_dacs        : out std_logic_vector(3 downto 0);
-    i_data_board_dacs       : in std_logic_vector(31 downto 0);
-    o_data_board_dacs       : out std_logic_vector(31 downto 0);
-    o_wen_data_board_dacs   : out std_logic;
+    
+   	
+
+   	-- mupix dac regs
+	i_reg_add               : in std_logic_vector(7 downto 0);
+	i_reg_re                : in std_logic;
+	o_reg_rdata       		: out std_logic_vector(31 downto 0);
+	i_reg_we   				: in std_logic;
+	i_reg_wdata 		    : in std_logic_vector(31 downto 0);
     
     i_ckdiv         : in std_logic_vector(15 downto 0);
 
@@ -108,24 +110,58 @@ architecture arch of mupix_block is
 		);		
     end component spi_master;
 
+    component dac_fifo is
+    port (
+   
+	   	-- mupix dac regs
+		i_reg_add               : in std_logic_vector(7 downto 0);
+		i_reg_re                : in std_logic;
+		o_reg_rdata       		: out std_logic_vector(31 downto 0);
+		i_reg_we   				: in std_logic;
+		i_reg_wdata 		    : in std_logic_vector(31 downto 0);
+
+	    -- mupix board dac data
+	    o_board_dac_data  : out std_logic_vector(31 downto 0);
+	    i_board_dac_ren   : in std_logic;
+	    o_board_dac_fifo_empty : out std_logic;
+	    o_board_dac_ready : out std_logic;
+
+	    i_board_dac_data  : in std_logic_vector(31 downto 0);
+	    i_board_dac_we  : in std_logic;
+
+	    -- mupix chip dac data
+	    o_chip_dac_data  : out std_logic_vector(31 downto 0);
+	    i_chip_dac_ren   : in std_logic;
+	    o_chip_dac_fifo_empty : out std_logic;
+	    o_chip_dac_ready : out std_logic;
+
+	    i_chip_dac_data : in std_logic_vector(31 downto 0);
+    	i_chip_dac_we  : in std_logic;
+	    
+	    i_reset_n         : in std_logic;
+	    -- 156.25 MHz
+	    i_clk           : in std_logic--;
+	);
+	end component dac_fifo;
+
     signal reset_n : std_logic;
     
     -- chip dacs
-	 signal mp8_busy_n : std_logic_vector(NCHIPS - 1 downto 0);
-	 signal mp8_mem_data_out : std_logic_vector(31 downto 0);
-	 signal mp8_wren : std_logic_vector(NCHIPS - 1 downto 0);
-	 signal mp8_ld : std_logic_vector(NCHIPS - 1 downto 0);
-	 signal mp8_rb : std_logic_vector(NCHIPS - 1 downto 0);
-	 signal mp8_ctrl_dout : std_logic_vector(NCHIPS - 1 downto 0);
-	 signal mp8_ctrl_din : std_logic_vector(NCHIPS - 1 downto 0);
-	 signal mp8_ctrl_clk1 : std_logic_vector(NCHIPS - 1 downto 0);
-	 signal mp8_ctrl_clk2 : std_logic_vector(NCHIPS - 1 downto 0);
-	 signal mp8_ctrl_ld : std_logic_vector(NCHIPS - 1 downto 0);
-	 signal mp8_ctrl_rb : std_logic_vector(NCHIPS - 1 downto 0);
-	 signal mp8_dataout : std_logic_vector(NCHIPS*32 - 1 downto 0);
+	signal mp8_busy_n : std_logic_vector(NCHIPS - 1 downto 0);
+	signal mp8_mem_data_out : std_logic_vector(31 downto 0);
+	signal mp8_wren : std_logic_vector(NCHIPS - 1 downto 0);
+	signal mp8_ld : std_logic_vector(NCHIPS - 1 downto 0);
+	signal mp8_rb : std_logic_vector(NCHIPS - 1 downto 0);
+	signal mp8_ctrl_dout : std_logic_vector(NCHIPS - 1 downto 0);
+	signal mp8_ctrl_din : std_logic_vector(NCHIPS - 1 downto 0);
+	signal mp8_ctrl_clk1 : std_logic_vector(NCHIPS - 1 downto 0);
+	signal mp8_ctrl_clk2 : std_logic_vector(NCHIPS - 1 downto 0);
+	signal mp8_ctrl_ld : std_logic_vector(NCHIPS - 1 downto 0);
+	signal mp8_ctrl_rb : std_logic_vector(NCHIPS - 1 downto 0);
+	signal mp8_dataout : std_logic_vector(NCHIPS*32 - 1 downto 0);
 	 
 	 -- board dacs
-	 type state_spi is (waiting, starting, read_out_pix, write_pix, read_out_th, ending);
+	type state_spi is (waiting, starting, read_out_pix, write_pix, read_out_th);
     signal spi_state : state_spi;
     signal A_spi_wren_front : std_logic_vector(2 downto 0);
     signal A_spi_busy_n_front : std_logic;
@@ -143,7 +179,21 @@ architecture arch of mupix_block is
     signal board_temp_adc : std_logic_vector(15 downto 0);
     signal board_temp_dac_out : std_logic_vector(15 downto 0);
     signal board_temp_adc_out : std_logic_vector(31 downto 0);
-    
+
+    signal board_dac_data_we : std_logic_vector(31 downto 0);
+    signal chip_dac_data_we : std_logic_vector(31 downto 0);
+    signal board_dac_we : std_logic;
+    signal chip_dac_we : std_logic;
+
+    signal board_dac_data : std_logic_vector(31 downto 0);
+	signal board_dac_ren : std_logic;
+	signal board_dac_fifo_empty : std_logic;
+	signal board_dac_ready : std_logic;
+
+	signal chip_dac_data : std_logic_vector(31 downto 0);
+	signal chip_dac_ren : std_logic;
+	signal chip_dac_fifo_empty : std_logic;
+	signal chip_dac_ready : std_logic;
 
 begin
 
@@ -155,10 +205,10 @@ begin
 	 port map (
 		  clk			   => i_clk,
 		  reset_n		=> reset_n,
-	 	  mem_data_in	=> i_data_chip_dacs,
+	 	  mem_data_in	=> (others => '0'), -- FIXME
 		  busy_n		   => mp8_busy_n,
 		
-		  mem_addr		=> o_add_chip_dacs,
+		  mem_addr		=> open, -- FIXME
 		  mem_data_out	=> mp8_mem_data_out,
 		  wren			=> mp8_wren,
 		  ctrl_ld		=> mp8_ld,
@@ -211,65 +261,90 @@ begin
 	 -- board dacs slow_controll
 	 A_spi_sdo_front 		<= i_SPI_DOUT_ADC_0_A & "00";-- A_spi_dout_dac_front & A_dac4_dout_front;
 	 o_SPI_LD_ADC_A 		<= A_spi_ldn_front(2);
-    o_SPI_LD_TEMP_DAC_A <= A_spi_ldn_front(1);
+     o_SPI_LD_TEMP_DAC_A <= A_spi_ldn_front(1);
 	 o_SPI_LD_DAC_A 		<= A_spi_ldn_front(0);
 
-    process(i_clk, reset_n) -- set_reg 
-	 begin
-		if(reset_n = '0') then
-        o_add_board_dacs        <= (others => '0');
-        o_wen_data_board_dacs   <= '0'; 
-        o_data_board_dacs       <= (others => '0');
-        A_spi_wren_front        <= (others => '0');
-        spi_state <= waiting;
-		elsif(rising_edge(i_clk)) then
-        o_wen_data_board_dacs   <= '0';
-        o_data_board_dacs       <= (others => '0');
-        A_spi_wren_front        <= (others => '0');
-			
-			case spi_state is
-				when waiting =>
-					if(i_data_board_dacs = x"00000001") then
-						o_add_board_dacs  <= x"1";
-						spi_state         <= starting;
-					end if;
-                                          
-				when starting =>
-                o_add_board_dacs    <= x"2";
-                board_th_low        <= i_data_board_dacs(15 downto 0);
-                board_th_high       <= i_data_board_dacs(31 downto 16);
-                spi_state           <= write_pix;		
-			
-				when write_pix =>
-                A_spi_wren_front   <= "001";
-                board_injection    <= i_data_board_dacs(15 downto 0);
-                board_th_pix       <= i_data_board_dacs(31 downto 16); 
-                spi_state          <= read_out_th;		
-		
-				when read_out_th =>
-                o_add_board_dacs                   <= x"3";
-                o_wen_data_board_dacs              <= '1';
-                o_data_board_dacs(15 downto 0)     <= threshold_low_out_A_front;
-                o_data_board_dacs(31 downto 16)    <= threshold_high_out_A_front;
-                spi_state <= read_out_pix;
 
-				when read_out_pix =>
-                o_add_board_dacs                   <= x"4";
-                o_wen_data_board_dacs              <= '1';
-                o_data_board_dacs(15 downto 0)     <= injection1_out_A_front;
-                o_data_board_dacs(31 downto 16)    <= threshold_pix_out_A_front;
-                spi_state <= ending;
-					
-				when ending =>
-                o_add_board_dacs        <= (others => '0');
-                o_data_board_dacs       <= (others => '0');
-                o_wen_data_board_dacs   <= '0';
-                spi_state <= waiting;
-					
-				when others =>
-                spi_state               <= waiting;
-                o_add_board_dacs        <= (others => '0');
-                o_wen_data_board_dacs   <= '0';
+	e_dac_fifo : component dac_fifo
+		port map (
+
+		   	-- mupix dac regs
+			i_reg_add         => i_reg_add,
+			i_reg_re          => i_reg_re,
+			o_reg_rdata       => o_reg_rdata,
+			i_reg_we   		  => i_reg_we,
+			i_reg_wdata 	  => i_reg_wdata,
+
+		    -- mupix board dac data
+		    o_board_dac_data  		=> board_dac_data,
+		    i_board_dac_ren   		=> board_dac_ren,
+		    o_board_dac_fifo_empty 	=> board_dac_fifo_empty,
+		    o_board_dac_ready 		=> board_dac_ready,
+
+		    i_board_dac_data  		=> board_dac_data_we,
+		    i_board_dac_we  		=> board_dac_we,
+
+		    -- mupix chip dac data
+		    o_chip_dac_data  		=> chip_dac_data,
+		    i_chip_dac_ren   		=> chip_dac_ren,
+		    o_chip_dac_fifo_empty 	=> chip_dac_fifo_empty,
+		    o_chip_dac_ready 		=> chip_dac_ready,
+
+		    i_chip_dac_data 		=> chip_dac_data_we,
+    		i_chip_dac_we  			=> chip_dac_we,
+		    
+		    i_reset_n         		=> reset_n,
+		    -- 156.25 MHz
+		    i_clk           		=> i_clk--,
+	);
+
+    process(i_clk, reset_n) -- handle dac fifo 
+	begin
+		if(reset_n = '0') then
+	        board_dac_data_we       <= (others => '0');
+	        board_dac_we   			<= '0';
+	        board_dac_ren 			<= '0';
+	        A_spi_wren_front        <= (others => '0');
+	        spi_state <= waiting;
+		elsif(rising_edge(i_clk)) then
+	        board_dac_we   		<= '0';
+	        board_dac_ren  		<= '0';
+	        board_dac_data_we 	<= (others => '0');
+	        A_spi_wren_front    <= (others => '0');
+			
+		case spi_state is
+			when waiting =>
+				if(board_dac_ready = '1') then
+					board_dac_ren 	<= '1';
+					spi_state       <= starting;
+				end if;
+                                      
+			when starting =>
+				board_dac_ren 		<= '1';
+            	board_th_low        <= board_dac_data(15 downto 0);
+            	board_th_high       <= board_dac_data(31 downto 16);
+            	spi_state           <= write_pix;	
+		
+			when write_pix =>
+            	A_spi_wren_front   	<= "001";
+            	board_injection    	<= board_dac_data(15 downto 0);
+            	board_th_pix       	<= board_dac_data(31 downto 16); 
+            	spi_state          	<= read_out_th;		
+	
+			when read_out_th =>
+	            board_dac_we              			<= '1';
+	            board_dac_data_we(15 downto 0)  	<= x"1234";--threshold_low_out_A_front;
+	            board_dac_data_we(31 downto 16)    	<= x"1234";--threshold_high_out_A_front;
+	            spi_state <= read_out_pix;
+
+			when read_out_pix =>
+	            board_dac_we 						<= '1';
+	            board_dac_data_we(15 downto 0)     	<= x"5678";--injection1_out_A_front;
+	            board_dac_data_we(31 downto 16)    	<= x"1234";--threshold_pix_out_A_front;
+	            spi_state <= waiting;
+				
+			when others =>
+	            spi_state               <= waiting;
 			
         end case;
 			
