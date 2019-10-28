@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity top is
 port (
     -- FE.A
-    clock_A					: out std_logic;
+     clock_A				: out std_logic;
 	 data_in_A_0			: in std_logic_vector(3 downto 0);
 	 data_in_A_1			: in std_logic_vector(3 downto 0);
 	 fast_reset_A			: out std_logic;
@@ -145,7 +145,7 @@ begin
     sc_reg.rdata <=
         malibu_reg.rdata when ( malibu_reg.rvalid = '1' ) else
         scifi_reg.rdata when ( scifi_reg.rvalid = '1' ) else
-		  mupix_reg.rdata when ( scifi_reg.rvalid = '1' ) else
+		mupix_reg.rdata when ( scifi_reg.rvalid = '1' ) else
         X"CCCCCCCC";
 
     process(qsfp_pll_clk)
@@ -255,12 +255,12 @@ begin
     ----------------------------------------------------------------------------
     -- I2C
 
-    i2c_scl <= not i2c_scl_oe;
-    i2c_sda <=
-        malibu_i2c_sda and
-        '1';
-    malibu_i2c_scl <= ZERO when i2c_scl_oe = '1' else 'Z';
-    malibu_i2c_sda <= ZERO when i2c_sda_oe = '1' else 'Z';
+--    i2c_scl <= not i2c_scl_oe;
+--    i2c_sda <=
+--        malibu_i2c_sda and
+--        '1';
+--    malibu_i2c_scl <= ZERO when i2c_scl_oe = '1' else 'Z';
+--    malibu_i2c_sda <= ZERO when i2c_sda_oe = '1' else 'Z';
 
     ----------------------------------------------------------------------------
 
@@ -268,13 +268,13 @@ begin
 
     ----------------------------------------------------------------------------
     -- SPI
-
-    malibu_spi_sdi <= spi_mosi;
-    malibu_spi_sck <= spi_sclk when spi_ss_n(1) = '0' else '0';
-
-    spi_miso <=
-        malibu_spi_sdo when spi_ss_n(1) = '0' else
-        '0';
+--
+--    malibu_spi_sdi <= spi_mosi;
+--    malibu_spi_sck <= spi_sclk when spi_ss_n(1) = '0' else '0';
+--
+--    spi_miso <=
+--        malibu_spi_sdo when spi_ss_n(1) = '0' else
+--        '0';
 
     ----------------------------------------------------------------------------
 
