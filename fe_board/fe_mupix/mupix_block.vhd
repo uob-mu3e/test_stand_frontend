@@ -108,12 +108,12 @@ begin
     
     -- chip dacs slow_controll
     e_mp8_sc_master : work.mp8_sc_master
-	 generic map(NCHIPS => NCHIPS)
-	 port map (
-		  clk			   => i_clk,
+	generic map(NCHIPS => NCHIPS)
+	port map (
+		  clk			=> i_clk,
 		  reset_n		=> reset_n,
 	 	  mem_data_in	=> i_data_chip_dacs,
-		  busy_n		   => mp8_busy_n,
+		  busy_n		=> mp8_busy_n,
 		
 		  mem_addr		=> o_add_chip_dacs,
 		  mem_data_out	=> mp8_mem_data_out,
@@ -122,13 +122,13 @@ begin
 		  ctrl_rb		=> mp8_rb,
 		  done			=> open, 
 		  stateout		=> open--,
-	 );
+	);
 	 
     gen_slowc:
-	 for i in 0 to NCHIPS-1 generate
-	 e_mp8_slowcontrol : work.mp8_slowcontrol
-	 port map(
-		  clk			=> i_clk,
+	for i in 0 to NCHIPS-1 generate
+	e_mp8_slowcontrol : work.mp8_slowcontrol
+	port map(
+		  clk	    => i_clk,
 		  reset_n	=> reset_n,
 		  ckdiv		=> i_ckdiv, -- this need to be set to a register at the moment 0
 		  mem_data	=> mp8_mem_data_out,
@@ -141,20 +141,20 @@ begin
 		  ctrl_clk2	=> mp8_ctrl_clk2(i),
 		  ctrl_ld	=> mp8_ctrl_ld(i),
 		  ctrl_rb	=> mp8_ctrl_rb(i),
-		  busy_n		=> mp8_busy_n(i),
+		  busy_n	=> mp8_busy_n(i),
 		  dataout	=> mp8_dataout--,
-	 );	
-	 end generate gen_slowc;
+	);	
+	end generate gen_slowc;
 	 
     process(i_clk)
-	 begin
+	begin
 		if(rising_edge(i_clk)) then	
-			mp8_ctrl_dout(0)	<= i_CTRL_SDO_A;
+			mp8_ctrl_dout(0)    <= i_CTRL_SDO_A;
 		end if;
-	 end process;
+	end process;
 	 
-	 process(i_clk)
-	 begin
+	process(i_clk)
+	begin
 		if(rising_edge(i_clk)) then	
 			o_CTRL_SDI_A	<= mp8_ctrl_din(0);
 			o_CTRL_SCK1_A	<= mp8_ctrl_clk1(0);
@@ -162,33 +162,33 @@ begin
 			o_CTRL_Load_A	<= mp8_ctrl_ld(0);
 			o_CTRL_RB_A		<= mp8_ctrl_rb(0);
 		end if;
-	 end process;
+	end process;
 	 
 	 
-	 -- board dacs slow_controll
-	 A_spi_sdo_front 		<= i_SPI_DOUT_ADC_0_A & "00";-- A_spi_dout_dac_front & A_dac4_dout_front;
-	 o_SPI_LD_ADC_A 		<= A_spi_ldn_front(2);
-    o_SPI_LD_TEMP_DAC_A <= A_spi_ldn_front(1);
-	 o_SPI_LD_DAC_A 		<= A_spi_ldn_front(0);
+	-- board dacs slow_controll
+	A_spi_sdo_front 		<= i_SPI_DOUT_ADC_0_A & "00";-- A_spi_dout_dac_front & A_dac4_dout_front;
+	o_SPI_LD_ADC_A 		<= A_spi_ldn_front(2);
+    o_SPI_LD_TEMP_DAC_A    <= A_spi_ldn_front(1);
+	o_SPI_LD_DAC_A 		<= A_spi_ldn_front(0);
      
-     e_dac_fifo : work.dac_fifo
+    e_dac_fifo : work.dac_fifo
 		port map (
 
 		   	-- mupix dac regs
 			i_reg_add         => i_reg_add,
 			i_reg_re          => i_reg_re,
-			o_reg_rdata       => o_reg_rdata,
+            o_reg_rdata       => open,--o_reg_rdata,
 			i_reg_we   		  => i_reg_we,
 			i_reg_wdata 	  => i_reg_wdata,
 
 		    -- mupix board dac data
-		    o_board_dac_data  		=> board_dac_data,
-		    i_board_dac_ren   		=> board_dac_ren,
-		    o_board_dac_fifo_empty 	=> board_dac_fifo_empty,
-		    o_board_dac_ready 		=> board_dac_ready,
+		    o_board_dac_data  		=> open,--board_dac_data,
+		    i_board_dac_ren   		=> '0',--,--board_dac_ren,
+		    o_board_dac_fifo_empty 	=> open,--board_dac_fifo_empty,
+		    o_board_dac_ready 		=> open,--board_dac_ready,
 
-		    i_board_dac_data  		=> board_dac_data_we,
-		    i_board_dac_we  		=> board_dac_we,
+		    i_board_dac_data  		=> (others => '0'),--board_dac_data_we,
+		    i_board_dac_we  		=> '0',--board_dac_we,
 
 		    -- mupix chip dac data
 		    o_chip_dac_data  		=> chip_dac_data,
@@ -204,82 +204,141 @@ begin
 		    i_clk           		=> i_clk--,
 	);
 
-    process(i_clk, reset_n) -- handle dac fifo 
-	begin
-		if(reset_n = '0') then
-	        board_dac_data_we       <= (others => '0');
-	        board_dac_we   			<= '0';
-	        board_dac_ren 			<= '0';
-	        A_spi_wren_front        <= (others => '0');
-	        spi_state <= waiting;
-		elsif(rising_edge(i_clk)) then
-	        board_dac_we   		<= '0';
-	        board_dac_ren  		<= '0';
-	        board_dac_data_we 	<= (others => '0');
+--    process(i_clk, reset_n) -- handle dac fifo 
+--	begin
+--		if(reset_n = '0') then
+--	        board_dac_data_we       <= (others => '0');
+--	        board_dac_we   			<= '0';
+--	        board_dac_ren 			<= '0';
+--	        A_spi_wren_front        <= (others => '0');
+--	        spi_state <= waiting;
+--		elsif(rising_edge(i_clk)) then
+--	        board_dac_we   		<= '0';
+--	        board_dac_ren  		<= '0';
+--	        board_dac_data_we 	<= (others => '0');
+--	        A_spi_wren_front    <= (others => '0');
+--			
+--		case spi_state is
+--			when waiting =>
+--				if(board_dac_ready = '1') then
+--					board_dac_ren 	<= '1';
+--					spi_state       <= starting;
+--				end if;
+--                                      
+--			when starting =>
+--				board_dac_ren 		<= '1';
+--            	board_th_low        <= board_dac_data(15 downto 0);
+--            	board_th_high       <= board_dac_data(31 downto 16);
+--            	spi_state           <= write_pix;	
+--		
+--			when write_pix =>
+--            	A_spi_wren_front   	<= "001";
+--            	board_injection    	<= board_dac_data(15 downto 0);
+--            	board_th_pix       	<= board_dac_data(31 downto 16); 
+--            	spi_state          	<= read_out_th;		
+--	
+--			when read_out_th =>
+--	            board_dac_we              			<= '1';
+--	            board_dac_data_we(15 downto 0)  	<= threshold_low_out_A_front;
+--	            board_dac_data_we(31 downto 16)    	<= threshold_high_out_A_front;
+--	            spi_state <= read_out_pix;
+--
+--			when read_out_pix =>
+--	            board_dac_we 						<= '1';
+--	            board_dac_data_we(15 downto 0)     	<= injection1_out_A_front;
+--	            board_dac_data_we(31 downto 16)    	<= threshold_pix_out_A_front;
+--	            spi_state <= waiting;
+--				
+--			when others =>
+--	            spi_state               <= waiting;
+--			
+--        end case;
+--			
+--    end if;
+--    end process;
+    
+    -- board dacs mapping
+    board_dac_regs : process (i_clk, reset_n)
+    begin 
+        if (reset_n = '0') then 
+            board_th_low        <= (others => '0');
+            board_th_high       <= (others => '0');
+            board_injection     <= (others => '0');
+            board_th_pix        <= (others => '0');
 	        A_spi_wren_front    <= (others => '0');
-			
-		case spi_state is
-			when waiting =>
-				if(board_dac_ready = '1') then
-					board_dac_ren 	<= '1';
-					spi_state       <= starting;
-				end if;
-                                      
-			when starting =>
-				board_dac_ren 		<= '1';
-            	board_th_low        <= board_dac_data(15 downto 0);
-            	board_th_high       <= board_dac_data(31 downto 16);
-            	spi_state           <= write_pix;	
-		
-			when write_pix =>
-            	A_spi_wren_front   	<= "001";
-            	board_injection    	<= board_dac_data(15 downto 0);
-            	board_th_pix       	<= board_dac_data(31 downto 16); 
-            	spi_state          	<= read_out_th;		
-	
-			when read_out_th =>
-	            board_dac_we              			<= '1';
-	            board_dac_data_we(15 downto 0)  	<= threshold_low_out_A_front;
-	            board_dac_data_we(31 downto 16)    	<= threshold_high_out_A_front;
-	            spi_state <= read_out_pix;
-
-			when read_out_pix =>
-	            board_dac_we 						<= '1';
-	            board_dac_data_we(15 downto 0)     	<= injection1_out_A_front;
-	            board_dac_data_we(31 downto 16)    	<= threshold_pix_out_A_front;
-	            spi_state <= waiting;
-				
-			when others =>
-	            spi_state               <= waiting;
-			
-        end case;
-			
-    end if;
-    end process;
+            o_reg_rdata         <= (others => '0');
+        elsif rising_edge(i_clk) then 
+            
+            if ( i_reg_add = x"83" and i_reg_we = '1' ) then
+                board_th_low    <= i_reg_wdata(15 downto 0);
+                board_th_high   <= i_reg_wdata(31 downto 16);
+            end if;
+            
+            if ( i_reg_add = x"84" and i_reg_we = '1' ) then
+                board_injection <= i_reg_wdata(15 downto 0);
+                board_th_pix    <= i_reg_wdata(31 downto 16);
+            end if;
+            
+            if ( i_reg_add = x"85" and i_reg_we = '1' ) then
+                board_temp_dac <= i_reg_wdata(15 downto 0);
+                board_temp_adc <= i_reg_wdata(31 downto 16);
+            end if;
+            
+            if ( i_reg_add = x"86" and i_reg_re = '1' ) then
+                o_reg_rdata(15 downto 0) <= injection1_out_A_front;
+            end if;
+            
+            if ( i_reg_add = x"87" and i_reg_re = '1' ) then
+                o_reg_rdata(15 downto 0) <= threshold_pix_out_A_front;
+            end if;
+            
+            if ( i_reg_add = x"88" and i_reg_re = '1' ) then
+                o_reg_rdata(15 downto 0) <= threshold_low_out_A_front;
+            end if;
+            
+            if ( i_reg_add = x"89" and i_reg_re = '1' ) then
+                o_reg_rdata(15 downto 0) <= threshold_high_out_A_front;
+            end if;
+            
+            if ( i_reg_add = x"8A" and i_reg_re = '1' ) then
+                o_reg_rdata(15 downto 0) <= board_temp_dac_out;
+            end if;
+            
+            if ( i_reg_add = x"8B" and i_reg_re = '1' ) then
+                o_reg_rdata <= board_temp_adc_out;
+            end if;
+            
+            if ( i_reg_add = x"8C" and i_reg_we = '1' ) then
+                A_spi_wren_front <= i_reg_wdata(2 downto 0);
+            end if;
+            
+        end if;
+    end process board_dac_regs;
 	 
-	 e_spi_master : work.spi_master 
-	 port map(
+	e_spi_master : work.spi_master 
+	port map(
 		clk                   => i_clk,
 		reset_n               => reset_n,
 		injection1_reg        => board_injection,
 		threshold_pix_reg     => board_th_pix,
-		threshold_low_reg	    => board_th_low,
+		threshold_low_reg	  => board_th_low,
 		threshold_high_reg    => board_th_high,
-		temp_dac_reg		    => board_temp_dac,
-		temp_adc_reg		    => board_temp_adc,	
+		temp_dac_reg		  => board_temp_dac,
+		temp_adc_reg		  => board_temp_adc,	
 		wren                  => A_spi_wren_front,
 		busy_n                => A_spi_busy_n_front,
-		spi_sdi               => o_SPI_DIN0_A,
+
+        spi_sdi               => o_SPI_DIN0_A,
 		spi_sclk              => o_SPI_CLK_A,
 		spi_load_n            => A_spi_ldn_front,
-		
 		spi_sdo               => A_spi_sdo_front,
-		injection1_out        => injection1_out_A_front,
+		
+        injection1_out        => injection1_out_A_front,
 		threshold_pix_out     => threshold_pix_out_A_front,
 		threshold_low_out     => threshold_low_out_A_front,
 		threshold_high_out    => threshold_high_out_A_front,
 		temp_dac_out          => board_temp_dac_out,
 		temp_adc_out          => board_temp_adc_out
-	 );	 
+	);	 
 
 end architecture;
