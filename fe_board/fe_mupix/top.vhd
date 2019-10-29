@@ -11,24 +11,31 @@ port (
 	 fast_reset_A			: out std_logic;
 	 test_pulse_A			: out std_logic;
  
-	 CTRL_SDO_A				: in std_logic; -- A_ctrl_dout_front
-	 CTRL_SDI_A				: out std_logic; -- A_ctrl_din_front
-	 CTRL_SCK1_A			: out std_logic; -- A_ctrl_clk1_front
-	 CTRL_SCK2_A			: out std_logic; -- A_ctrl_clk2_front
-	 CTRL_RB_A				: out std_logic; -- A_ctrl_rb_front
-	 CTRL_Load_A			: out std_logic; -- A_ctrl_ld_front
-	 
+--	 CTRL_SDO_A				: in std_logic; -- A_ctrl_dout_front
+--	 CTRL_SDI_A				: out std_logic; -- A_ctrl_din_front
+--	 CTRL_SCK1_A			: out std_logic; -- A_ctrl_clk1_front
+--	 CTRL_SCK2_A			: out std_logic; -- A_ctrl_clk2_front
+--	 CTRL_RB_A				: out std_logic; -- A_ctrl_rb_front
+--	 CTRL_Load_A			: out std_logic; -- A_ctrl_ld_front
+--	 
 	 -- A_trig_front
 	 chip_reset_A			: out std_logic; -- is called trigger on adapter card!
  
-	 SPI_DIN0_A				: out std_logic; -- A_spi_din_front
-	 SPI_DIN1_A				: out std_logic; -- A_spi_din_back
-	 SPI_CLK_A				: out std_logic; -- A_spi_clk_front
-	 SPI_LD_DAC_A			: out std_logic; -- A_spi_ld_front
-	 SPI_LD_ADC_A			: out std_logic; -- A_spi_ld_tmp_dac_front
-	 SPI_LD_TEMP_DAC_A		: out std_logic; -- A_spi_ld_adc_front
-	 SPI_DOUT_ADC_0_A		: in std_logic; -- A_spi_dout_adc_front
-	 SPI_DOUT_ADC_1_A		: in std_logic; -- A_spi_dout_adc_back
+	 --SPI_DIN0_A				: out std_logic; -- A_spi_din_front             -- AH9
+	 SPI_DIN1_A				: out std_logic; -- A_spi_din_back              -- 
+	 --SPI_CLK_A				: out std_logic; -- A_spi_clk_front             -- AH8
+	 --SPI_LD_DAC_A			: out std_logic; -- A_spi_ld_front              -- AW4
+	 --SPI_LD_ADC_A			: out std_logic; -- A_spi_ld_tmp_dac_front      -- AP7
+	 --SPI_LD_TEMP_DAC_A		: out std_logic; -- A_spi_ld_adc_front          -- AN7
+	 -- SPI_DOUT_ADC_0_A		: in std_logic; -- A_spi_dout_adc_front         -- AT9
+	 SPI_DOUT_ADC_1_A		: in std_logic; -- A_spi_dout_adc_back          -- 
+     
+     
+     SPI_SCK_A : out std_logic; -- SPI_CLK_A 
+     SPI_SDI_A : out std_logic; -- SPI_DIN0_A
+     SPI_SDO_A : in std_logic;  -- SPI_DOUT_ADC_0_A
+     SPI_Load_A : out std_logic_vector(2 downto 0); -- SPI_LD_ADC_A SPI_LD_TEMP_DAC_A SPI_LD_DAC_A
+     
 	 
     -- SI5345
 
@@ -120,6 +127,14 @@ architecture arch of top is
     signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n : std_logic_vector(15 downto 0);
+    
+    
+    signal SPI_DIN0_A : std_logic; -- MOSI
+    signal SPI_CLK_A : std_logic;
+    signal SPI_LD_DAC_A : std_logic;
+    signal SPI_LD_ADC_A : std_logic;
+    signal SPI_LD_TEMP_DAC_A : std_logic;
+    signal SPI_DOUT_ADC_0_A : std_logic;
 
 begin
 
@@ -169,12 +184,12 @@ begin
     port map(
    
         -- chip dacs
-        i_CTRL_SDO_A            => CTRL_SDO_A,
-        o_CTRL_SDI_A            => CTRL_SDI_A,
-        o_CTRL_SCK1_A           => CTRL_SCK1_A,
-        o_CTRL_SCK2_A           => CTRL_SCK2_A,
-        o_CTRL_Load_A           => CTRL_Load_A,
-        o_CTRL_RB_A             => CTRL_RB_A,
+        i_CTRL_SDO_A            => '0',--CTRL_SDO_A,
+        o_CTRL_SDI_A            => open,--CTRL_SDI_A,
+        o_CTRL_SCK1_A           => open,--CTRL_SCK1_A,
+        o_CTRL_SCK2_A           => open,--CTRL_SCK2_A,
+        o_CTRL_Load_A           => open,--CTRL_Load_A,
+        o_CTRL_RB_A             => open,--CTRL_RB_A,
         i_data_chip_dacs        => (others => '0'),
         o_add_chip_dacs         => open,
         
@@ -193,9 +208,9 @@ begin
 		  -- mupix dac regs
         i_reg_add               => mupix_reg.addr(7 downto 0),
         i_reg_re                => mupix_reg.re,
-        o_reg_rdata       		  => mupix_reg.rdata,
-        i_reg_we   				  => mupix_reg.we,
-        i_reg_wdata 				  => mupix_reg.wdata,
+        o_reg_rdata       		=> mupix_reg.rdata,
+        i_reg_we   				=> mupix_reg.we,
+        i_reg_wdata 			=> mupix_reg.wdata,
 		  
 		  
 		  
@@ -275,6 +290,11 @@ begin
 --    spi_miso <=
 --        malibu_spi_sdo when spi_ss_n(1) = '0' else
 --        '0';
+
+    SPI_SCK_A <= SPI_CLK_A;
+    SPI_SDI_A <= SPI_DIN0_A;
+    SPI_DOUT_ADC_0_A <= SPI_SDO_A;
+    SPI_Load_A <= SPI_LD_ADC_A & SPI_LD_TEMP_DAC_A & SPI_LD_DAC_A;
 
     ----------------------------------------------------------------------------
 
