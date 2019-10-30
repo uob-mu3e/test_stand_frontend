@@ -66,14 +66,31 @@ uint32_t i2c_reg_to_u32(i2c_reg_t i2c_reg){
 	data_u32 += i2c_reg.data;
 	return data_u32;
 }
-bool MALIBU::WriteTo_MALIBU(i2c_reg_t* regs, int n){//
+bool MALIBU::WriteTo_MALIBU(uint32_t START_ADD, uint32_t PCIE_MEM_START, uint16_t cmd, i2c_reg_t* regs, int n){//TODO: FPGA_ID should save in the class?
 	//n:number of the partern; TODO:need the information from MIDAS //return 1:good; 0:bad
-	
-	mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) n, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
-	mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF1, (uint32_t) NEW_PCIE_MEM_START);
-	mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF0, (uint32_t) NEW_PCIE_MEM_START);
+	std::vector<uint32_t> data;
+	cmd = 0x0105;// this is the i2c_write_u32() in the FEB NIOS
+	uint32_t cmd_n = cmd<<16 + (0xFFFF&n);
+	uint32_t PCIE_MEM_START_CURR = PCIE_MEM_START;
+	if(n!= (sizeof(regs)/sizeof(regs[0]))){
+		printf("Error: Input size n= %d, size of regs: %d\n",n,sizeof(regs)/sizeof(regs[0]));
+		return false;
+	}
+	if(n>0){
+		for(int i=0; i<n; i++){
+			data.push_back(i2c_reg_to_u32(regs[i]));
+		}
+		mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) n, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START_CURR);
+		PCIE_MEM_START_CURR = PCIE_MEM_START + 5 + n;
+
+		mu.FEB_write((uint32_t) FPGA_ID, &((uint32_t) START_ADD), (uint16_t) 1, (uint32_t) 0xFFF1, (uint32_t) PCIE_MEM_START_CURR);
+		PCIE_MEM_START_CURR = PCIE_MEM_START + 5 + 1;
+	}
+	mu.FEB_write((uint32_t) FPGA_ID, &cmd_n, (uint16_t) 1, (uint32_t) 0xFFF0, (uint32_t) PCIE_MEM_START_CURR);
+	PCIE_MEM_START_CURR = PCIE_MEM_START + 5 + 1;
+	//TODO:: save the start_add back to ODB//FIXME: what if I sent the first 2 data and there is not enough space for the third data? any crash? because I did not update the new add from the ODB
 	usleep(100000);
-	return 0;
+	return true;
 };
 alt_u8 MALIBU::ReadFrom_MALIBU(i2c_reg_t regs){return 0;};//n:number of the partern; TODO:need the information from MIDAS
 
@@ -295,3 +312,25 @@ int MALIBU::SetPLLtest(bool enable,bool useCoaxConnectors=false){
 	printf("Enable PLL test: signal from %d\n",(opt==1)?"MCRF connectors":"on Board");
 	return 0;
 }
+
+//==================================================/
+void MALIBU::Update_MALIBU(){
+	//do_flag_power  = get_odb_value_by_string("Equipment/Switching/Flags/do power");
+	//do_flag_clkSlct  = get_odb_value_by_string("Equipment/Switching/Flags/do clk select");
+	//do_flag_PLLtest  = get_odb_value_by_string("Equipment/Switching/Flags/do PLL test set");
+	do_flag_power  = true;
+	do_flag_clkSlct  = false;
+	do_flag_PLLtest  = true;
+	
+	if(do_flag_power)	{
+		printf("do MALIBU power related activity\n");
+	}
+	if(do_flag_clkSlct)	{
+		printf("do MALIBU select clk related activity\n");
+	}
+	if(do_flag_PLLtest)	{
+		printf("do MALIBU PLL test related activity\n");
+	}
+}
+
+

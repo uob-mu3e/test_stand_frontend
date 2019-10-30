@@ -13,6 +13,7 @@ to provide an abstraction layer to the (slow control) functions on the FE-FPGA
 
 #include "midas.h"
 #include "mudaq_device_scifi.h"
+using namespace std;
 
 namespace mudaq { 
 	class MALIBU {
@@ -21,7 +22,8 @@ namespace mudaq {
 			static MALIBU* m_instance; //signleton instance pointer
 			MALIBU(const MALIBU&)=delete;
 			MALIBU(mudaq::MudaqDevice& mu):m_mu(mu){};
-
+			
+			//MALIBU_ODB* odb;
 			// bits for MALIBU   all of them are chip related
 			const alt_u8 A_bit =  0x01;	//dis-/enable 1.8A
 			const alt_u8 D_bit =  0x02;	//dis-/enable 1.8D
@@ -56,8 +58,13 @@ namespace mudaq {
 			int		MALIBU_PowerUp();
 			int		MALIBU_PowerDown();
 			int		SetPLLtest(bool enable,bool useCoaxConnectors=false);
-			
 			//}}}
+			
+			//{{{functions used in fe code
+			void Update_MALIBU();
+			//}}}
+			
+			
 			struct	i2c_reg_t {                                                                                                                              
 				alt_u8 slave;                                                                                                                               
 				alt_u8 addr;                                                                                                                                
