@@ -170,14 +170,6 @@ architecture rtl of top is
 		signal push_button2_db : std_logic;
 		signal push_button3_db : std_logic;
 		
-		-- data generartor stuff
-		signal event_counter : std_logic_vector(31 downto 0);
-		signal time_counter : std_logic_vector(63 downto 0);
-
-		-- data generartor64 stuff
-		signal event_counter64 : std_logic_vector(31 downto 0);
-		signal time_counter64 : std_logic_vector(63 downto 0);
-		
 		-- sorting
 --		signal clk_fast 	: std_logic; -- 312 MHZ
 --		signal clks_read : std_logic_vector(4 - 1 downto 0);
@@ -745,7 +737,7 @@ vreg : entity work.version_reg
 		data_out  => readregs_slow(VERSION_REGISTER_R)(27 downto 0)
 );
 
---Sync read regs from slow  (50 MHz) to fast (250 MHz) clock
+--Sync read regs from slow (156.25 MHz) to fast (250 MHz) clock
 process(pcie_fastclk_out)
 begin
 	if(pcie_fastclk_out'event and pcie_fastclk_out = '1') then
@@ -755,10 +747,9 @@ begin
 		if(clk_sync = '1' and clk_last = '0') then
 			readregs(PLL_REGISTER_R) 						<= readregs_slow(PLL_REGISTER_R);
 			readregs(VERSION_REGISTER_R) 					<= readregs_slow(VERSION_REGISTER_R);
+			readregs(MEM_WRITEADDR_HIGH_REGISTER_R) 	<= (others => '0');
+			readregs(MEM_WRITEADDR_LOW_REGISTER_R) 	<= (X"0000" & readmem_writeaddr_finished);
 		end if;
-		
-		readregs(EVENTCOUNTER_REGISTER_R)			<= event_counter;
-		readregs(EVENTCOUNTER64_REGISTER_R)			<= event_counter64;
 		
 		readregs(DMA_STATUS_R)(DMA_DATA_WEN)		<= dma_data_wren;
 		
@@ -767,12 +758,7 @@ begin
 		
 		readregs(DMA_ENDEVENT_REGISTER_R)			<= endofevent_counter;
 		readregs(DMA_NOTENDEVENT_REGISTER_R)		<= notendofevent_counter;
-		
-		readregs(TIMECOUNTER_LOW_REGISTER_R)		<= time_counter(31 downto 0);
-		readregs(TIMECOUNTER_HIGH_REGISTER_R)		<= time_counter(63 downto 32);
 
-		readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= (others => '0');
-		readregs(MEM_WRITEADDR_LOW_REGISTER_R) <= (X"0000" & readmem_writeaddr_finished);
 	end if;
 end process;
 

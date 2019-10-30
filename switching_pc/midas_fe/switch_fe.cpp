@@ -374,6 +374,11 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
    if (std::string(key.name) == "Reset SC Master") {
        sc_settings_changed_hepler("Reset SC Master", hDB, hKey, TID_BOOL);
 
+       //clear memory to avoid sending old packets again
+       for(int i = 0; i <= 64*1024; i++){
+           mu.write_memory_rw(i, 0);
+       }
+
        mu.write_register_wait(RESET_REGISTER_W, SET_RESET_BIT_SC_MASTER(0), 1000);
        mu.write_register_wait(RESET_REGISTER_W, 0x0, 1000);
 
