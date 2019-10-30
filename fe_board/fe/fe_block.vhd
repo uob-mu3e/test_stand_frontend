@@ -9,15 +9,18 @@ generic (
     FPGA_ID_g : std_logic_vector(15 downto 0) := X"0000"--;
 );
 port (
-    -- 125 MHz
-    i_nios_clk      : in    std_logic;
-    i_nios_reset_n  : in    std_logic;
-
     i_i2c_scl       : in    std_logic;
     o_i2c_scl_oe    : out   std_logic;
     i_i2c_sda       : in    std_logic;
     o_i2c_sda_oe    : out   std_logic;
 
+    -- spi interface to si chip
+    i_spi_si_miso      : in    std_logic;
+    o_spi_si_mosi      : out   std_logic;
+    o_spi_si_sclk      : out   std_logic;
+    o_spi_si_ss_n      : out   std_logic;
+
+    -- spi interface to asics
     i_spi_miso      : in    std_logic;
     o_spi_mosi      : out   std_logic;
     o_spi_sclk      : out   std_logic;
@@ -25,10 +28,13 @@ port (
 
 
 
-    -- MSCB interface
-    i_mscb_data     : in    std_logic;
-    o_mscb_data     : out   std_logic;
-    o_mscb_oe       : out   std_logic;
+    -- QSFP links
+    i_qsfp_rx       : in    std_logic_vector(3 downto 0);
+    o_qsfp_tx       : out   std_logic_vector(3 downto 0);
+
+    -- POD links (reset system)
+    i_pod_rx        : in    std_logic_vector(3 downto 0);
+    o_pod_tx        : out   std_logic_vector(3 downto 0);
 
 
 
@@ -37,19 +43,10 @@ port (
     o_fifo_rack     : out   std_logic;
     i_fifo_rdata    : in    std_logic_vector(35 downto 0);
 
-
-
-    -- QSFP links
-    i_qsfp_rx       : in    std_logic_vector(3 downto 0);
-    o_qsfp_tx       : out   std_logic_vector(3 downto 0);
-    i_qsfp_refclk   : in    std_logic;
-
-    -- POD links (reset system)
-    i_pod_rx        : in    std_logic_vector(3 downto 0);
-    o_pod_tx        : out   std_logic_vector(3 downto 0);
-    i_pod_refclk    : in    std_logic;
-
-
+    -- MSCB interface
+    i_mscb_data     : in    std_logic;
+    o_mscb_data     : out   std_logic;
+    o_mscb_oe       : out   std_logic;
 
     -- slow control registers
     o_sc_reg_addr   : out   std_logic_vector(7 downto 0);
@@ -62,14 +59,24 @@ port (
 
     i_reset_n       : in    std_logic;
     -- 156.25 MHz
-    i_clk           : in    std_logic--;
+    i_clk           : in    std_logic;
+
+    -- qsfp clock - 156.25 MHz
+    i_qsfp_refclk   : in    std_logic;
+
+    -- pod clock - 125 MHz
+    i_pod_refclk    : in    std_logic;
+
+    -- nios clock - 125 MHz
+    i_nios_reset_n  : in    std_logic;
+    i_nios_clk      : in    std_logic--;
 );
 end entity;
 
 architecture arch of fe_block is
 
     signal nios_pio : std_logic_vector(31 downto 0);
-    signal nios_irq : std_logic_vector(3 downto 0);
+    signal nios_irq : std_logic_vector(3 downto 0) := (others => '0');
 
 
 
@@ -190,26 +197,22 @@ begin
 
     e_nios : component work.cmp.nios
     port map (
-        avm_sc_address      => av_sc.address(15 downto 0),
-        avm_sc_read         => av_sc.read,
-        avm_sc_readdata     => av_sc.readdata,
-        avm_sc_write        => av_sc.write,
-        avm_sc_writedata    => av_sc.writedata,
-        avm_sc_waitrequest  => av_sc.waitrequest,
-
-        irq_bridge_irq      => nios_irq,
-
         avm_clk_clk         => i_clk,
         avm_reset_reset_n   => i_reset_n,
-
-
 
         -- mscb
         parallel_mscb_in_export     => mscb_to_nios_parallel_in,
         parallel_mscb_out_export    => mscb_from_nios_parallel_out,
         counter_in_export           => std_logic_vector(mscb_counter_in),
 
+        irq_bridge_irq          => nios_irq,
 
+        avm_sc_address          => av_sc.address(15 downto 0),
+        avm_sc_read             => av_sc.read,
+        avm_sc_readdata         => av_sc.readdata,
+        avm_sc_write            => av_sc.write,
+        avm_sc_writedata        => av_sc.writedata,
+        avm_sc_waitrequest      => av_sc.waitrequest,
 
         avm_qsfp_address        => av_qsfp.address(13 downto 0),
         avm_qsfp_read           => av_qsfp.read,
@@ -239,6 +242,11 @@ begin
         spi_sclk => o_spi_sclk,
         spi_ss_n => o_spi_ss_n,
 
+        spi_si_miso => i_spi_si_miso,
+        spi_si_mosi => o_spi_si_mosi,
+        spi_si_sclk => o_spi_si_sclk,
+        spi_si_ss_n => o_spi_si_ss_n,
+
         pio_export => nios_pio,
 
         rst_reset_n => i_nios_reset_n,
@@ -249,7 +257,7 @@ begin
 
     e_sc_ram : entity work.sc_ram
     generic map (
-        RAM_ADDR_WIDTH_g => 14--;
+        RAM_ADDR_WIDTH_g => 14--,
     )
     port map (
         i_ram_addr          => sc_ram.addr(15 downto 0),

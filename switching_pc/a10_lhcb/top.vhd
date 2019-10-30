@@ -216,7 +216,7 @@ architecture rtl of top is
 
     signal nios_pio_i : std_logic_vector(31 downto 0);
 
-    signal av_qsfp : work.util.avalon_t;
+    signal av_pod0 : work.util.avalon_t;
 
 begin
 
@@ -268,12 +268,12 @@ begin
 
     i_nios : component work.cmp.nios
     port map (
-        avm_qsfp_address        => av_qsfp.address(13 downto 0),
-        avm_qsfp_read           => av_qsfp.read,
-        avm_qsfp_readdata       => av_qsfp.readdata,
-        avm_qsfp_write          => av_qsfp.write,
-        avm_qsfp_writedata      => av_qsfp.writedata,
-        avm_qsfp_waitrequest    => av_qsfp.waitrequest,
+        avm_qsfp_address        => av_pod0.address(13 downto 0),
+        avm_qsfp_read           => av_pod0.read,
+        avm_qsfp_readdata       => av_pod0.readdata,
+        avm_qsfp_write          => av_pod0.write,
+        avm_qsfp_writedata      => av_pod0.writedata,
+        avm_qsfp_waitrequest    => av_pod0.waitrequest,
 
         i2c_scl_in  => i2c_scl_in,
         i2c_scl_oe  => i2c_scl_oe,
@@ -289,6 +289,49 @@ begin
 
         rst_reset_n => nios_rst_n,
         clk_clk     => nios_clk--,
+    );
+
+
+
+    e_pod0 : entity work.xcvr_a10
+    generic map (
+        INPUT_CLOCK_FREQUENCY_g => 125000000,
+        DATA_RATE_g => 5000,
+        CLK_MHZ_g => 125--,
+    )
+    port map (
+        i_tx_data   => X"03CAFEBC"
+                     & X"02BABEBC"
+                     & X"01DEADBC"
+                     & X"00BEEFBC",
+        i_tx_datak  => "0001"
+                     & "0001"
+                     & "0001"
+                     & "0001",
+
+        o_rx_data   => open,
+        o_rx_datak  => open,
+
+        o_tx_clkout => open,
+        i_tx_clkin  => (others => A10_REFCLK_GBT_P_0),
+        o_rx_clkout => open,
+        i_rx_clkin  => (others => A10_REFCLK_GBT_P_0),
+
+        o_tx_serial => tx_gbt(3 downto 0),
+        i_rx_serial => rx_gbt(3 downto 0),
+
+        i_pll_clk   => A10_REFCLK_GBT_P_0,
+        i_cdr_clk   => A10_REFCLK_GBT_P_0,
+
+        i_avs_address     => av_pod0.address(13 downto 0),
+        i_avs_read        => av_pod0.read,
+        o_avs_readdata    => av_pod0.readdata,
+        i_avs_write       => av_pod0.write,
+        i_avs_writedata   => av_pod0.writedata,
+        o_avs_waitrequest => av_pod0.waitrequest,
+
+        i_reset     => not nios_rst_n,
+        i_clk       => nios_clk--,
     );
 
 end architecture;
