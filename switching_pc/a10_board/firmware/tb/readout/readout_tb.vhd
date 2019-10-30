@@ -68,7 +68,7 @@ begin
   
   reset <= not reset_n;
   enable_pix <= '1';
-  slow_down <= x"000003E8";--(others => '0');
+  slow_down <= (others => '0');--x"000003E8";--(others => '0');
   
   -- generate the clock
 ckProc: process
@@ -81,11 +81,13 @@ end process;
 
 inita : process
 begin
-   reset_n	 <= '0';
-   wait for 8 ns;
-   reset_n	 <= '1';
-   
-   wait;
+	   reset_n	 <= '0';
+	   wait for 8 ns;
+	   reset_n	 <= '1';
+	   wait for 20 ns;
+	   enable_pix    <= '1';
+	
+	   wait;
 end process inita;
  
 e_data_gen : component data_generator_a10_tb
