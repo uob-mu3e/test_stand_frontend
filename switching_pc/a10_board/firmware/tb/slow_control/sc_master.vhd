@@ -32,28 +32,26 @@ entity sc_master is
 		);		
 end entity sc_master;
 
-architecture RTL of sc_master is
+architecture rtl of sc_master is
 	
 	signal addr_reg	: std_logic_vector(15 downto 0) := (others => '0');
 	signal wren_reg	: std_logic_vector(NLINKS-1 downto 0);
-	signal cycles		: std_logic_vector(15 downto 0);
 	
-	type state_type is (waiting, start_wait, starting);
+	type state_type is (waiting, start_wait, starting, get_data);
 	signal state : state_type;
 	
 	constant CODE_START : std_logic_vector(11 downto 0) 	:= x"BAD";
-	constant CODE_STOP : std_logic_vector(31 downto 0) 	:= x"AFFEAFFE";
+	constant CODE_STOP : std_logic_vector(31 downto 0) 	:= x"0000009C";
 	
 	signal wait_cnt : std_logic;
 	
-	signal cycles_cnt : std_logic_vector(15 downto 0);
-	
 	signal mem_datak : std_logic_vector(3 downto 0); 
+
+	signal fpga_id : std_logic_vector(15 downto 0); 
 	
 begin
 
 	mem_addr	 <= addr_reg;
-	--mem_addr(15 downto 3) <= (others => '0');
 	
 	gen_output:
 	for I in 0 to NLINKS-1 generate
@@ -78,8 +76,6 @@ begin
 		if(reset_n = '0')then
 			addr_reg		<= (others => '0');
 			wren_reg		<= (others => '0');
-			cycles			<= (others => '0');
-			cycles_cnt		<= (others => '0');
 			state			<= waiting;
 			done			<= '0';
 			stateout		<= (others => '0');
@@ -87,59 +83,72 @@ begin
 			mem_datak 		<= (others => '0');
 		elsif(rising_edge(clk))then
 			wait_cnt		<= not wait_cnt;
-			mem_datak 		<= (others => '0');
+			mem_datak 	<= (others => '0');
+			wren_reg		<= (others => '0');
+			
+			if (addr_reg = x"FFFF") then
+				addr_reg		<= (others => '0');
+			end if;
+			
 			case state is
 			
 				when waiting =>
-					stateout(3 downto 0) 	<= x"1";
-					done					<= '1';			
-					wren_reg				<= (others => '0');
-					cycles_cnt				<= (others => '0');
-				-- toggled register to start
-					if(wait_cnt = '0')then
+					stateout(3 downto 0) <= x"1";
+					done						<= '1';
+					--if(wait_cnt = '0')then
 						if(enable = '1')then
 							if(mem_data_in(31 downto 20) = CODE_START)then
-								state		<= start_wait;
+								state		<= get_data;
 								addr_reg	<= addr_reg + '1';
 								done		<= '0';
-								cycles		<= mem_data_in(15 downto 0);
 							end if;
 						end if;
-					end if;
+					--end if;
+            
+            when get_data =>
+                state		<= start_wait;
 				
 				when start_wait =>
-					stateout(3 downto 0) <= x"2";
+					stateout(3 downto 0) <= x"3";
 					if(wait_cnt = '0')then	
 						state		<= starting;
 						addr_reg	<= addr_reg + '1';
-						mem_datak <= "1000";
-						if(mem_data_in(4) = '1') then
+						mem_datak <= "0001";
+						fpga_id <= mem_data_in(23 downto 8); -- get fpga id if zero write to all links, if 1 first link and so on
+						if(conv_integer(mem_data_in(23 downto 8)) = 0) then
 							wren_reg <= (others => '1');
 						else
 							wren_reg	<= (others => '0');
-							wren_reg(conv_integer(mem_data_in(3 downto 2)))	<= '1';
+							wren_reg(conv_integer(mem_data_in(23 downto 8)))	<= '1';
 						end if;
 					end if;
 				
 				when starting =>
-					stateout(3 downto 0) <= x"3";
-					if (mem_data_in = CODE_STOP) then
-						state		<= waiting;
-						--addr_reg <= (others => '0');
-						wren_reg	<= (others => '0');
-					else
-						addr_reg	<= addr_reg + '1';
-						cycles_cnt <= cycles_cnt + '1';
+					stateout(3 downto 0) <= x"4";
+					if(wait_cnt = '0')then
+						if(conv_integer(fpga_id) = 0) then
+							wren_reg <= (others => '1');
+						else
+							wren_reg	<= (others => '0');
+							wren_reg(conv_integer(fpga_id))	<= '1';
+						end if;
+						if (mem_data_in = CODE_STOP) then
+							mem_datak <= "0001";
+							state		<= waiting;
+							addr_reg	<= addr_reg + '1';
+						else
+							addr_reg	<= addr_reg + '1';
+						end if;
 					end if;
 										
 				when others =>
-					stateout(3 downto 0) <= x"F";
-					state	<= waiting;
+					state		<= waiting;
+					stateout(3 downto 0)		<= x"F";
 					addr_reg <= (others => '0');
-					
+					wren_reg	<= (others => '0');
 			end case;
 			
 		end if;
 	end process;
 
-end RTL;
+end rtl;

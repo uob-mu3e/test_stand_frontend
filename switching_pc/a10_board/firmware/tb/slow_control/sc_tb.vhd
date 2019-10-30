@@ -29,30 +29,29 @@ architecture behav of sc_tb is
 
 	component sc_slave is
 		port(
-			clk:				in std_logic;
-			reset_n:			in std_logic;
-			enable:				in std_logic;
-			link_data_in:		in std_logic_vector(31 downto 0);
-			link_data_in_k:		in std_logic_vector(3 downto 0);
-			mem_data_out:		out std_logic_vector(31 downto 0);
-			mem_addr_out:		out std_logic_vector(15 downto 0);
-			mem_wren:			out std_logic;			
-			done:				out std_logic;
-			stateout:			out std_logic_vector(27 downto 0)
+            clk:                in std_logic;
+            reset_n:            in std_logic;
+            enable:             in std_logic;
+            link_data_in:       in std_logic_vector(31 downto 0);
+            link_data_in_k:     in std_logic_vector(3 downto 0);
+            mem_data_out:       out std_logic_vector(31 downto 0);
+            mem_addr_out:       out std_logic_vector(15 downto 0);
+            mem_addr_finished_out:       out std_logic_vector(15 downto 0);
+            mem_wren:           out std_logic;
+            stateout:           out std_logic_vector(3 downto 0)
 			);		
 	end component sc_slave;
 
-	component sram is
+	component ip_ram is
   		port (
-    		clock   : in  std_logic;
-    		reset_n	: in  std_logic;
-    		we      : in  std_logic;
-    		read_address   : in  std_logic_vector(15 downto 0);
-    		write_address  : in  std_logic_vector(15 downto 0);
-    		datain  : in  std_logic_vector(31 downto 0);
-    		dataout : out std_logic_vector(31 downto 0)
+        clock   : in  STD_LOGIC;
+        wren : in  STD_LOGIC;
+        wraddress   : in  STD_LOGIC_VECTOR (7 downto 0);
+        rdaddress   : in  STD_LOGIC_VECTOR (7 downto 0);
+        data   : in  STD_LOGIC_VECTOR (31 downto 0);
+        q  : out STD_LOGIC_VECTOR (31 downto 0)
   		);
-	end component sram;
+	end component ip_ram;
 
   --  Specifies which entity is bound with the component.
   		for sc_master_0: sc_master use entity work.sc_master;
@@ -73,7 +72,7 @@ architecture behav of sc_tb is
   		constant ckTime: 		time	:= 10 ns;
 
   		constant CODE_START : std_logic_vector(11 downto 0) := x"BAD";
-  		constant CODE_STOP : std_logic_vector(31 downto 0) 	:= x"AFFEAFFE";
+  		constant CODE_STOP : std_logic_vector(31 downto 0) 	:= x"0000009C";
 
   		signal writememwren : std_logic;
 		
@@ -105,30 +104,29 @@ begin
 		mem_data_out		=> mem_data_out_slave,
 		mem_addr_out		=> mem_addr_out_slave,
 		mem_wren 			=> mem_wren_slave,
-		done				=> open,
+		mem_addr_finished_out				=> open,
 		stateout			=> open
   );
 
-	wram : sram
+	wram : ip_ram
   	port map (
 		clock   		=> clk,
-		reset_n			=> reset_n,
-		we      	  	=> writememwren,
-		read_address  	=> memaddr,
-		write_address 	=> writememaddr,
-		datain 			=> writememdata,
-		dataout 		=> writememdata_out
+		wren      	  	=> writememwren,
+		rdaddress  	=> memaddr(7 downto 0),
+		wraddress 	=> writememaddr(7 downto 0),
+		data 			=> writememdata,
+		q 		=> writememdata_out
   	);
 
-  	rram : sram
+  	rram : ip_ram
   	port map (
 		clock   		=> clk,
-		reset_n			=> reset_n,
-		we      	  	=> mem_wren_slave,
-		read_address  	=> (others => '0'),
-		write_address 	=> mem_addr_out_slave,
-		datain 			=> mem_data_out_slave,
-		dataout 		=> open
+		wren      	  	=> mem_wren_slave,
+		rdaddress  	=> (others => '0'),
+		wraddress 	=> mem_addr_out_slave(7 downto 0),
+		data 			=> mem_data_out_slave,
+		q 		=> open
+
   	);
 
   	-- generate the clock
@@ -170,15 +168,18 @@ begin
 				writememdata(31 downto 20) <= CODE_START;
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0) = x"0")then
-				writememdata <= x"BCC000FF";
+				writememdata <= x"1f0000bc";
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0)  = x"1")then
-				writememdata <= x"F00F0005";
+				writememdata <= x"0000000a";
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0)  = x"2")then
-				writememdata <= x"AFFEBABE";
+				writememdata <= x"00000001";
 				writememwren <= '1';	
-			elsif(writememaddr(3 downto 0)  = x"3")then
+         elsif(writememaddr(3 downto 0)  = x"3")then
+				writememdata <= x"0000000b";
+				writememwren <= '1';	
+			elsif(writememaddr(3 downto 0)  = x"4")then
 				writememdata <= CODE_STOP;
 				writememwren <= '1';
 			end if;
