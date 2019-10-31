@@ -16,3 +16,10 @@ add_library(libmudaq_scifi STATIC
     mudaq_circular_buffer.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/mudaq_registers.h ${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h)
 target_link_libraries(libmudaq_scifi  midas ${Boost_LIBRARIES})
+
+
+add_library(libmudaq_tile STATIC
+    mudaq_device_tile.cpp mudaq_device_tile.h utils.hpp
+    mudaq_circular_buffer.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/mudaq_registers.h ${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h)
+target_link_libraries(libmudaq_tile  midas ${Boost_LIBRARIES})

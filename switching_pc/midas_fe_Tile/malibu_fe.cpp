@@ -49,7 +49,8 @@
 
 #include "../../fe_board/fe/software/app_src/malibu/ALL_OFF.h"
 
-#include "mudaq_device.h"
+#include "mudaq_device_tile.h"
+#include "MALIBU.h"
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -84,12 +85,13 @@ uint32_t current_ro_idx = 0;
 INT read_sc_event(char *pevent, INT off);
 INT read_WMEM_event(char *pevent, INT off);
 void sc_settings_changed(HNDLE, HNDLE, int, void *);
-NT read_malibu_sc_event(char *pevent, INT off);
+INT read_malibu_sc_event(char *pevent, INT off);
 
 INT read_malibu_sc_event(char *pevent, INT off){//TODO
 	printf("Trying to read something from malibu.\n");
 	return 0;
 };
+
 /*-- Equipment list ------------------------------------------------*/
 
 /* Default values for /Equipment/Switching SC/Settings */
@@ -113,7 +115,7 @@ const char *sc_settings_str[] = {
 //"[32] Temp3",
 nullptr
 };
-
+enum EQUIPMENT_ID {Switching=0,malibu}; 
 EQUIPMENT equipment[] = {
 
    {"Switching",                /* equipment name */
@@ -162,6 +164,28 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
    return 1;
 };
 
+void setup_malibu(){
+	/*
+	   "/Equipment/MALIBU/Variables/MALIBU ID" 
+	   "/Equipment/MALIBU/Variables/MALIBU Ports"
+	   "/Equipment/MALIBU/Variables/Power State"
+	   "/Equipment/MALIBU/Variables/Enable PLL" 
+	   "/Equipment/MALIBU/Variables/External PLL"
+	   */
+
+	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/MALIBU ID", TID_INT);
+	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/MALIBU Ports", TID_INT);
+	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/Power State", TID_BOOL);
+	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/Enable PLL", TID_BOOL);
+	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/External PLL", TID_BOOL);
+
+	//The following lines are done in start_daq.sh
+	// add custom page of MALIBU_Monitor to ODB
+	//   db_create_key(hDB, 0, "Custom/MALIBU", TID_STRING);
+	//   const char * name = "Monitor.html";
+	//   db_set_value(hDB,0,"Custom/MALIBU", name, sizeof(name), 1, TID_STRING);
+
+};
 /*-- Frontend Init -------------------------------------------------*/
 
 INT frontend_init()
@@ -216,32 +240,11 @@ INT frontend_init()
    }
 
    //MALIBU setup
-   setup_malibu();
+   set_equipment_status(equipment[EQUIPMENT_ID::malibu].name, "Initializing...", "yellow");
    mudaq::MALIBU::Create(*mup);
+   setup_malibu();
    return CM_SUCCESS;
 }
-void setup_malibu(){
-	/*
-	   "/Equipment/MALIBU/Variables/MALIBU ID" 
-	   "/Equipment/MALIBU/Variables/MALIBU Ports"
-	   "/Equipment/MALIBU/Variables/Power State"
-	   "/Equipment/MALIBU/Variables/Enable PLL" 
-	   "/Equipment/MALIBU/Variables/External PLL"
-	   */
-
-	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/MALIBU ID", TID_INT);
-	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/MALIBU Ports", TID_INT);
-	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/Power State", TID_BOOL);
-	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/Enable PLL", TID_BOOL);
-	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/External PLL", TID_BOOL);
-
-	//The following lines are done in start_daq.sh
-	// add custom page of MALIBU_Monitor to ODB
-	//   db_create_key(hDB, 0, "Custom/MALIBU", TID_STRING);
-	//   const char * name = "Monitor.html";
-	//   db_set_value(hDB,0,"Custom/MALIBU", name, sizeof(name), 1, TID_STRING);
-
-};
 /*-- Frontend Exit -------------------------------------------------*/
 
 INT frontend_exit()

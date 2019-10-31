@@ -3,59 +3,59 @@
 /*
  *
  * LookUp Table for MALIBU v1
-Adresses:                                                                                                                                           
-GPIOs : GPIO_BP 0111000                                                                                                                             
+Adresses:
+GPIOs : GPIO_BP 0111000
 	(8 bit data:)
-	0: ena_AUX1 (PL)                                                                                                                                
-	1: ena_AUX2 (PL)                                                                                                                                
-	2: SEL_sysCLK  (0:CK_SI0      ; 1:CK_FPGA0)                                                                                                     
-	        -> Mainboard: '1'                                                                                                                           
-	3: SEL_pllCLK  (0:MCRF connectors ; 1:CK_SI1)                                                                                                   
-	        -> Mainboard: '1'                                                                                                                           
-	4: SEL_pllTEST (0:PLL_TEST    ; 1:MCRF connectors)                                                                                              
-	    -> Mainboard: '0'                                                                                                                           
-	5: OE_pllTEST  (1: enabled)                                                                                                                     
-	6,7: n.c.                                                                                                                                       
-GPIOs : GPIO_1  0111001 ASIC0,1                                                                                                                     
-GPIOs : GPIO_2  0111010 ASIC2,3                                                                                                                     
-GPIOs : GPIO_3  0111011 ASIC4,5                                                                                                                     
-GPIOs : GPIO_4  0111100 ASIC6,7                                                                                                                     
-GPIOs : GPIO_5  0111101 ASIC8,9                                                                                                                     
-GPIOs : GPIO_6  0111110 ASIC10,11                                                                                                                   
-GPIOs : GPIO_7  0111111 ASIC12,13                                                                                                                   
+	0: ena_AUX1 (PL)
+	1: ena_AUX2 (PL)
+	2: SEL_sysCLK  (0:CK_SI0      ; 1:CK_FPGA0)
+	        -> Mainboard: '1'
+	3: SEL_pllCLK  (0:MCRF connectors ; 1:CK_SI1)
+	        -> Mainboard: '1'
+	4: SEL_pllTEST (0:PLL_TEST    ; 1:MCRF connectors)
+	    -> Mainboard: '0'
+	5: OE_pllTEST  (1: enabled)
+	6,7: n.c.
+GPIOs : GPIO_1  0111001 ASIC0,1
+GPIOs : GPIO_2  0111010 ASIC2,3
+GPIOs : GPIO_3  0111011 ASIC4,5
+GPIOs : GPIO_4  0111100 ASIC6,7
+GPIOs : GPIO_5  0111101 ASIC8,9
+GPIOs : GPIO_6  0111110 ASIC10,11
+GPIOs : GPIO_7  0111111 ASIC12,13
 	(8 bit data:)
-    0: ASIC0 ena18A (PL)                                                                                                                            
-    1: ASIC0 ena18D (PL)                                                                                                                            
-    2: ASIC0 SPI_CSn                                                                                                                                
-    3: ASIC0 SPI_CSn_CEC (n.c.)                                                                                                                     
-    4: ASIC1 ena18A (PL)                                                                                                                            
-    5: ASIC1 ena18D (PL)                                                                                                                            
-    6: ASIC1 SPI_CSn                                                                                                                                
-    7: ASIC1 SPI_CSn_CEC (n.c.)                                                                                                                     
-                                                                                                                                                    
-MUX1: 1000000                                                                                                                                       
+    0: ASIC0 ena18A (PL)
+    1: ASIC0 ena18D (PL)
+    2: ASIC0 SPI_CSn
+    3: ASIC0 SPI_CSn_CEC (n.c.)
+    4: ASIC1 ena18A (PL)
+    5: ASIC1 ena18D (PL)
+    6: ASIC1 SPI_CSn
+    7: ASIC1 SPI_CSn_CEC (n.c.)
+                              
+MUX1: 1000000
 	(4 bit data:)
-    0: ASIC1                                                                                                                                        
-    1: ASIC2                                                                                                                                        
-    2: ASIC3                                                                                                                                        
-    3: ASIC0                                                                                                                                        
-MUX2: 1000001                                                                                                                                       
+    0: ASIC1
+    1: ASIC2
+    2: ASIC3
+    3: ASIC0
+MUX2: 1000001
 	(4 bit data:)
-    0: ASIC5                                                                                                                                        
-    1: ASIC6                                                                                                                                        
-    2: ASIC7                                                                                                                                        
-    3: ASIC4                                                                                                                                        
-MUX3: 1000010                                                                                                                                       
+    0: ASIC5
+    1: ASIC6
+    2: ASIC7
+    3: ASIC4
+MUX3: 1000010 
 	(4 bit data:)
-    0: ASIC9                                                                                                                                        
-    1: ASIC10                                                                                                                                       
-    2: ASIC11                                                                                                                                       
-    3: ASIC8                                                                                                                                        
-MUX4: 1000011                                                                                                                                       
+    0: ASIC9
+    1: ASIC10
+    2: ASIC11
+    3: ASIC8
+MUX4: 1000011
 	(4 bit data:)
-    0: ASIC13                                                                                                                                       
-    1: ASIC14                                                                                                                                       
-    2: ASIC15                                                                                                                                       
+    0: ASIC13
+    1: ASIC14
+    2: ASIC15
     3: ASIC12
 */
 uint32_t i2c_reg_to_u32(i2c_reg_t i2c_reg){	
@@ -66,7 +66,8 @@ uint32_t i2c_reg_to_u32(i2c_reg_t i2c_reg){
 	data_u32 += i2c_reg.data;
 	return data_u32;
 }
-bool MALIBU::WriteTo_MALIBU(uint32_t START_ADD, uint32_t PCIE_MEM_START, uint16_t cmd, i2c_reg_t* regs, int n){//TODO: FPGA_ID should save in the class?
+namespace mudaq { 
+/*bool MALIBU::WriteTo_MALIBU(uint32_t START_ADD, uint32_t PCIE_MEM_START, uint16_t cmd, i2c_reg_t* regs, int n){//TODO: FPGA_ID should save in the class?
 	//n:number of the partern; TODO:need the information from MIDAS //return 1:good; 0:bad
 	std::vector<uint32_t> data;
 	cmd = 0x0105;// this is the i2c_write_u32() in the FEB NIOS
@@ -92,7 +93,7 @@ bool MALIBU::WriteTo_MALIBU(uint32_t START_ADD, uint32_t PCIE_MEM_START, uint16_
 	usleep(100000);
 	return true;
 };
-alt_u8 MALIBU::ReadFrom_MALIBU(i2c_reg_t regs){return 0;};//n:number of the partern; TODO:need the information from MIDAS
+uint8_t MALIBU::ReadFrom_MALIBU(i2c_reg_t regs){return 0;};//n:number of the partern; TODO:need the information from MIDAS
 
 //==================================================/
 bool MALIBU::CheckWrite(i2c_reg_t* regs,int n){
@@ -107,7 +108,7 @@ bool MALIBU::CheckWrite(i2c_reg_t* regs,int n){
 }
 
 //==================================================/
-alt_u8 MALIBU::SetPattern(alt_u8 bit_data, alt_u8 bit_mask,bool enable){
+uint8_t MALIBU::SetPattern(uint8_t bit_data, uint8_t bit_mask,bool enable){
 	if(enable){
 		return  bit_data | bit_mask;		//enable bits in bit_mask and keep other bits same
 	}else{
@@ -169,7 +170,7 @@ int MALIBU::PowerAUX(bool enable, int i){//i: (0:AUX0, 1:AUX1 )
 	i2c_reg_t reg_curr = {0x38,0x01,0x00};
 	reg_curr.slave = 0x38;
 	reg_curr.addr = 0x01;
-	alt_u8 aux_mask;
+	uint8_t aux_mask;
 	if(i==0){
 		aux_mask = 0x01;
 	}else if(i==1){
@@ -191,7 +192,7 @@ int MALIBU::PowerAUX(bool enable, int i){//i: (0:AUX0, 1:AUX1 )
 //==================================================/
 int MALIBU::sel_sysclk(int opt){//opt:(0:CK_SI0, 1: CK_FPGA0)
 	if(opt!=0 and opt!=1){printf("option %d for sysclk selection donnot exist!!\n",opt); return -1;}
-	alt_u8 sysclk_mask = 0x04;
+	uint8_t sysclk_mask = 0x04;
 	bool enable = (opt==1) ? true : false;
 	
 	i2c_reg_t reg_curr = {0x38,0x01,0x00};
@@ -207,7 +208,7 @@ int MALIBU::sel_sysclk(int opt){//opt:(0:CK_SI0, 1: CK_FPGA0)
 //==================================================/
 int MALIBU::sel_pllclk(int opt){	//opt:(0: MCRF connector, 1: CK_SI1)	//choose clk line for the pll reference clk
 	if(opt!=0 and opt!=1){printf("option %d for sysclk selection donnot exist!!\n",opt); return -1;}
-	alt_u8 pllclk_mask = 0x08;
+	uint8_t pllclk_mask = 0x08;
 	bool enable = (opt==1) ? true : false;
 	
 	i2c_reg_t reg_curr = {0x38,0x01,0x00};
@@ -223,7 +224,7 @@ int MALIBU::sel_pllclk(int opt){	//opt:(0: MCRF connector, 1: CK_SI1)	//choose c
 //==================================================/
 int MALIBU::sel_pllTest(int opt){	//opt (0: on Board, 1: MCRF connecters) //choose input signal for pll test
 	if(opt!=0 and opt!=1){printf("option %d for sysclk selection donnot exist!!\n",opt); return -1;}
-	alt_u8 pllTest_mask = 0x10;
+	uint8_t pllTest_mask = 0x10;
 	bool enable = (opt==1) ? true : false;
 	
 	i2c_reg_t reg_curr = {0x38,0x01,0x00};
@@ -237,7 +238,7 @@ int MALIBU::sel_pllTest(int opt){	//opt (0: on Board, 1: MCRF connecters) //choo
 
 //==================================================/
 int MALIBU::Enable_pllTest(bool enable=false){	//enable pll test or not
-	alt_u8 en_pllTest_mask = 0x20;
+	uint8_t en_pllTest_mask = 0x20;
 	
 	i2c_reg_t reg_curr = {0x38,0x01,0x00};
 	reg_curr.data = ReadFrom_MALIBU(&reg_curr);
@@ -249,7 +250,7 @@ int MALIBU::Enable_pllTest(bool enable=false){	//enable pll test or not
 }
 
 //==================================================/
-int MALIBU::configure_chip(int asic_ID, alt_u8* chip_config_pattern){//send configuration twice /return: (0:good, -1:bad)
+int MALIBU::configure_chip(int asic_ID, uint8_t* chip_config_pattern){//send configuration twice /return: (0:good, -1:bad)
 
 	EnableSPI(asic_ID,true);
 	//TODO::send configuration bits to Pattern
@@ -257,7 +258,7 @@ int MALIBU::configure_chip(int asic_ID, alt_u8* chip_config_pattern){//send conf
 	
 };
 //==================================================/
-int MALIBU::ASIC_Power(int asic_ID, bool enable, const alt_u8* chip_config_pattern){ //Enable 1.8D and 1.8A and configure the chip to ALLOFF
+int MALIBU::ASIC_Power(int asic_ID, bool enable, const uint8_t* chip_config_pattern){ //Enable 1.8D and 1.8A and configure the chip to ALLOFF
 	if(!enable){
 		printf("MALIBU::ASIC_Power(): Switching off ASIC %d\n",asic_ID);
 		Power18A(asic_ID,enable);
@@ -312,15 +313,15 @@ int MALIBU::SetPLLtest(bool enable,bool useCoaxConnectors=false){
 	printf("Enable PLL test: signal from %d\n",(opt==1)?"MCRF connectors":"on Board");
 	return 0;
 }
-
+*/
 //==================================================/
 void MALIBU::Update_MALIBU(){
 	//do_flag_power  = get_odb_value_by_string("Equipment/Switching/Flags/do power");
 	//do_flag_clkSlct  = get_odb_value_by_string("Equipment/Switching/Flags/do clk select");
 	//do_flag_PLLtest  = get_odb_value_by_string("Equipment/Switching/Flags/do PLL test set");
-	do_flag_power  = true;
-	do_flag_clkSlct  = false;
-	do_flag_PLLtest  = true;
+	bool do_flag_power  = true;
+	bool do_flag_clkSlct  = false;
+	bool do_flag_PLLtest  = true;
 	
 	if(do_flag_power)	{
 		printf("do MALIBU power related activity\n");
@@ -333,4 +334,4 @@ void MALIBU::Update_MALIBU(){
 	}
 }
 
-
+}//namespace mudaq
