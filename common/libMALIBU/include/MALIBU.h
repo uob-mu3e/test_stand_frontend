@@ -13,7 +13,7 @@ to provide an abstraction layer to the (slow control) functions on the FE-FPGA
 
 #include "midas.h"
 #include "i2c_regs.h"
-#include "mudaq_device_tile.h"
+#include "mudaq_device.h"
 using namespace std;
 
 namespace mudaq { 

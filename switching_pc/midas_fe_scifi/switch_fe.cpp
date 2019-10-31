@@ -215,12 +215,12 @@ INT frontend_init()
    //SciFi setup part
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "yellow");
    mudaq::mutrig::FEB::Create(*mup); //create FEB interface signleton
-   int status=mudaq::mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",mudaq::mutrig::FEB::Instance(),false);
+ /*  int status=mudaq::mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",mudaq::mutrig::FEB::Instance(),false);
    if(status != SUCCESS){
       set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "red");
       return status;
    }
-   //end of SciFi setup part
+  */ //end of SciFi setup part
 
 
 
@@ -310,7 +310,8 @@ INT read_sc_event(char *pevent, INT off)
 
 INT read_scifi_sc_event(char *pevent, INT off){
 //TODO: implement this
-    return 0;
+    printf("Hello \n");
+	return 0;
 }
 
 /*--- Called whenever settings have changed ------------------------*/

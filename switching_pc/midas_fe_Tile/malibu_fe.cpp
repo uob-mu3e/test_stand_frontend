@@ -49,7 +49,7 @@
 
 #include "../../fe_board/fe/software/app_src/malibu/ALL_OFF.h"
 
-#include "mudaq_device_tile.h"
+#include "mudaq_device.h"
 #include "MALIBU.h"
 
 /*-- Globals -------------------------------------------------------*/

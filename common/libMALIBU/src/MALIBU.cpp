@@ -58,6 +58,7 @@ MUX4: 1000011
     2: ASIC15
     3: ASIC12
 */
+
 uint32_t i2c_reg_to_u32(i2c_reg_t i2c_reg){	
 	// package the i2c_reg_t data type to alt32; depackage function is in FEB NIOS malibu::u32_to_i2c_reg()
 	uint32_t data_u32=0x0; 
@@ -67,6 +68,8 @@ uint32_t i2c_reg_to_u32(i2c_reg_t i2c_reg){
 	return data_u32;
 }
 namespace mudaq { 
+MALIBU* MALIBU::m_instance=NULL;                                                       
+const uint8_t MALIBU::FPGA_broadcast_ID=0;
 /*bool MALIBU::WriteTo_MALIBU(uint32_t START_ADD, uint32_t PCIE_MEM_START, uint16_t cmd, i2c_reg_t* regs, int n){//TODO: FPGA_ID should save in the class?
 	//n:number of the partern; TODO:need the information from MIDAS //return 1:good; 0:bad
 	std::vector<uint32_t> data;
