@@ -6,6 +6,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
+use work.daq_constants.all;
 
 entity link_observer is
   	generic (
@@ -35,7 +36,7 @@ architecture rtl of link_observer is
 	
 	type state_type is (err_low, err_high, bit_low, bit_high);
 	signal state : state_type;
-	sing
+
 begin
 
 
@@ -99,13 +100,13 @@ begin
 			error_counter 	<= (others => '0');
 			bit_counter 	<= (others => '0');
 			tmp_rx_data		<=  x"000000BC";
-			enable			<= RUN_STATE_IDLE;
+			enable			<= (others => '0');
 			sync_reset 		<= '1';
 		elsif(rising_edge(clk)) then
 			tmp_rx_data		<= rx_data;
 			if (rx_data = x"000000BC" and rx_datak = "0001") then
 	         -- idle
-	         enable			<= RUN_STATE_IDLE;
+	         enable			<= (others => '0');
 	         sync_reset 		<= '1';
 	      elsif (rx_datak = "0000") then
 				enable			<= RUN_STATE_LINK_TEST;

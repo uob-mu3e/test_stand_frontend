@@ -38,7 +38,7 @@ architecture behav of readout_tb is
          event_length:      out std_logic_vector (7 downto 0);
          dma_data_wren:     out std_logic;
          dmamem_endofevent: out std_logic; 
-         dma_data:          out std_logic_vector (31 downto 0);
+         dma_data:          out std_logic_vector (95 downto 0);
          state_out:         out std_logic_vector(3 downto 0)
            );
     end component event_counter;
@@ -59,7 +59,7 @@ architecture behav of readout_tb is
       signal state_out_eventcounter : std_logic_vector(3 downto 0);
       signal event_length : std_logic_vector(7 downto 0);
       signal dma_data_wren : std_logic;
-      signal dma_data : std_logic_vector(31 downto 0);
+      signal dma_data : std_logic_vector(95 downto 0);
   		  		
   		constant ckTime: 		time	:= 10 ns;
 		
@@ -68,7 +68,7 @@ begin
   
   reset <= not reset_n;
   enable_pix <= '1';
-  slow_down <= x"000003E8";--(others => '0');
+  slow_down <= (others => '0');--x"000003E8";--(others => '0');
   
   -- generate the clock
 ckProc: process
@@ -81,11 +81,13 @@ end process;
 
 inita : process
 begin
-   reset_n	 <= '0';
-   wait for 8 ns;
-   reset_n	 <= '1';
-   
-   wait;
+	   reset_n	 <= '0';
+	   wait for 8 ns;
+	   reset_n	 <= '1';
+	   wait for 20 ns;
+	   enable_pix    <= '1';
+	
+	   wait;
 end process inita;
  
 e_data_gen : component data_generator_a10_tb

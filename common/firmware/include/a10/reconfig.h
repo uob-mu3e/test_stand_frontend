@@ -55,7 +55,7 @@ struct reconfig_t {
         wait(0x280, 0, 1); // wait pll_locked
     }
 
-    void phy(int ch) {
+    void phy(alt_u32 ch) {
         printf("INFO reconfig.phy(0x%02X)\n", ch);
         base = (alt_u32*)(AVM_QSFP_BASE) + 0x1000;
 

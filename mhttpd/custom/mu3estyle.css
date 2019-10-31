@@ -386,11 +386,12 @@ header a:hover{
 
 /* Footer */
 footer{
-	position:absolute;
+    clear: both;
+	position:relative;
 	background: #FFFFFF;
 	color:#000022;
 	padding-top:0px;
-	margin-bottom: 0px;
+	margin-top: 0px;
 	height:30px;
 	border-top: #C00000 3px solid;
 	bottom: 0;

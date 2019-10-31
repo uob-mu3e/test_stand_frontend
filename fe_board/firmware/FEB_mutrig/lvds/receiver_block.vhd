@@ -27,7 +27,8 @@ entity receiver_block is
 generic (
 	NINPUT : positive := 1;
 	LVDS_PLL_FREQ : real := 125.0;
-	LVDS_DATA_RATE : real := 1250.0--;
+	LVDS_DATA_RATE : real := 1250.0;
+	INPUT_SIGNFLIP : std_logic_vector:=x"0000"--;
 );
 port (
 	reset_n             : in std_logic;
@@ -153,7 +154,7 @@ flip_bits: process(rx_out)
 begin
 for i in NINPUT-1 downto 0 loop
 	for n in 9 downto 0 loop
-		rx_out_order(10*i+n) <= rx_out(10*i+9-n);
+		rx_out_order(10*i+n) <= INPUT_SIGNFLIP(i) xor rx_out(10*i+9-n);
 	end loop;
 end loop;
 end process flip_bits;

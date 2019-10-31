@@ -5,14 +5,16 @@ use ieee.numeric_std.all;
 entity top is
 port (
     -- FE.Ports
-    i_fee_rxd		: in  std_logic_vector (4*1 - 1 downto 0); --data inputs from ASICs
-    o_fee_spi_CSn	: out std_logic_vector (4*1 - 1 downto 0); --CSn signals to ASICs (one per ASIC)
-    o_fee_spi_MOSI	: out std_logic_vector (1 - 1 downto 0);   --MOSI signals to ASICs (one per board)
-    i_fee_spi_MISO	: in  std_logic_vector (1 - 1 downto 0);   --MISO signals from ASICs (one per board)
-    o_fee_spi_SCK	: out std_logic_vector (1 - 1 downto 0);   --SCK signals to ASICs (one per board)
+    i_fee_rxd		: in  std_logic_vector (4*4 - 1 downto 0); --data inputs from ASICs
+    o_fee_spi_CSn	: out std_logic_vector (4*4 - 1 downto 0); --CSn signals to ASICs (one per ASIC)
+    o_fee_spi_MOSI	: out std_logic_vector (4 - 1 downto 0);   --MOSI signals to ASICs (one per board)
+    i_fee_spi_MISO	: in  std_logic_vector (4 - 1 downto 0);   --MISO signals from ASICs (one per board)
+    o_fee_spi_SCK	: out std_logic_vector (4 - 1 downto 0);   --SCK signals to ASICs (one per board)
 
-    o_fee_ext_trig	: out std_logic_vector (1 - 1 downto 0);   --external trigger (data validation) signals to ASICs (one per board)
-    o_fee_chip_rst	: out std_logic_vector (1 - 1 downto 0);   --chip reset signals to ASICs (one per board)
+    o_fee_ext_trig	: out std_logic_vector (4 - 1 downto 0);   --external trigger (data validation) signals to ASICs (one per board)
+    o_fee_chip_rst	: out std_logic_vector (4 - 1 downto 0);   --chip reset signals to ASICs (one per board)
+    lvds_clk_A          : in std_logic; -- 125 MHz base clock for LVDS PLLs - right //	SI5345 OUT3
+    lvds_clk_B          : in std_logic; -- 125 MHz base clock for LVDS PLLs - left  //	SI5345 OUT6
 
 
 
@@ -166,7 +168,7 @@ begin
 
     e_scifi_path : entity work.scifi_path
     generic map (
-        N_g => 4
+        N_g => 8
     )
     port map (
         i_reg_addr      => scifi_reg.addr(3 downto 0),
@@ -175,22 +177,29 @@ begin
         i_reg_we        => scifi_reg.we,
         i_reg_wdata     => scifi_reg.wdata,
 
-        o_ck_fpga_0     => open,
         o_chip_reset    => s_fee_chip_rst_niosclk,
         o_pll_test      => open,
-        i_data          => i_fee_rxd(3 downto 0),
+        i_data          => i_fee_rxd(7 downto 0),
 
         o_fifo_rempty   => fifo_rempty,
         i_fifo_rack     => fifo_rack,
         o_fifo_rdata    => fifo_rdata,
 
         i_reset         => not reset_n,
-        i_clk           => qsfp_pll_clk--,
+        i_clk_core      => qsfp_pll_clk,
+        i_clk_ref       => clk_aux
     );
-    led(0) <= s_fee_chip_rst_niosclk;
 
     ----------------------------------------------------------------------------
 
+--LED maps:
+-- 15: clk_aux  (125M -> 1Hz)
+-- 14: clk_qsfp (156M -> 1Hz)
+-- 13: clk_pod  (125M -> 1Hz)
+-- 12: fee_chip_reset (niosclk)
+-- x..0 : CSn to SciFi boards
+
+    led(12) <= s_fee_chip_rst_niosclk;
 
 
     led_n <= not led;
@@ -253,12 +262,15 @@ begin
     -- SPI
     o_fee_spi_MOSI <= (others => spi_mosi);
     o_fee_spi_SCK  <= (others => spi_sclk);
-    o_fee_spi_CSn <=  spi_ss_n(4-1 downto 0);
+    o_fee_spi_CSn <=  spi_ss_n(o_fee_spi_CSn'range);
 
     spi_miso <=
-        i_fee_spi_MISO(0); -- TODO make working with multiple FEBs, if we need this
-
-    led(4 downto 1)<=spi_ss_n(3 downto 0);
+        si45_spi_out when spi_ss_n(0) = '0' else
+	i_fee_spi_MISO(0) when spi_ss_n(3 downto 0)/="1111" else
+	i_fee_spi_MISO(1) when spi_ss_n(7 downto 4)/="1111" else
+	i_fee_spi_MISO(2) when spi_ss_n(11 downto 8)/="1111" else
+	i_fee_spi_MISO(3) when spi_ss_n(15 downto 12)/="1111" else
+	'0';
 
     ----------------------------------------------------------------------------
 
@@ -266,7 +278,10 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        FPGA_ID_g => X"FEB0"--,
+        FPGA_ID_g => X"FEB0",
+        -- TODO: this is a mutrig FEB (111000) but we treat is as mupix (111010)
+        --       to make it work with switching board
+        FEB_type_in => "111000"--,
     )
     port map (
         i_nios_clk      => nios_clk,
