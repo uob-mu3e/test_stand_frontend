@@ -39,13 +39,16 @@ set_location_assignment PIN_60 -to MSCB_OE
 set_instance_assignment -name IO_STANDARD "2.5 V" -to MSCB_OE
 
 
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_global_assignment -name VHDL_FILE mscb.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_common/uart_transmitter.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_common/uart_reciever.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_common/mscb_addressing.vhd
+set_global_assignment -name VHDL_FILE ../firmware/FEB_common/daq_constants.vhd
 set_global_assignment -name QSYS_FILE myadc.qsys
 set_global_assignment -name VHDL_FILE my_fifo.vhd
-set_global_assignment -name VHDL_FILE mscb/uart_transmitter.vhd
-set_global_assignment -name VHDL_FILE mscb/uart_reciever.vhd
-set_global_assignment -name VHDL_FILE mscb/mscb_addressing.vhd
-set_global_assignment -name VHDL_FILE mscb/mscb.vhd
-set_global_assignment -name VHDL_FILE mscb/daq_constants.vhd
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/max10_dev.tcl
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
