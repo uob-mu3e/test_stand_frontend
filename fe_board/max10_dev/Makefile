@@ -6,7 +6,7 @@ BSP_DIR=software/hal_bsp
 APP_DIR=software/app
 
 IPs = \
-    nios.sopcinfo
+    nios.sopcinfo myadc.sopcinfo
 VHDs = \
     top.vhd
 
