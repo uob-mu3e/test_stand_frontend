@@ -98,7 +98,7 @@ begin
 		dataout 		=> writememdata_out
 	);
 
-	sc_master_0: sc_master 
+	sc_master_0: sc_master
 		generic map (
 		NLINKS => 1
 	)
@@ -219,7 +219,7 @@ begin
 				writememdata(7 downto 0) <= x"BC"; -- K28.5
 				writememdata(23 downto 8) <= (others => '0'); --FPGA ID
 				writememdata(25 downto 24) <= "11"; -- SC Type write
-				writememdata(31 downto 26) <= "000111"; -- 
+				writememdata(31 downto 26) <= "000111";
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0)  = x"1")then
 				writememdata <= x"00000001";
@@ -252,7 +252,7 @@ begin
 				writememdata(7 downto 0) <= x"BC"; -- K28.5
 				writememdata(23 downto 8) <= (others => '0'); --FPGA ID
 				writememdata(25 downto 24) <= "10"; -- SC Type read
-				writememdata(31 downto 26) <= "000111"; -- 
+				writememdata(31 downto 26) <= "000111";
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0)  = x"B")then
 				writememdata <= x"00000001";
