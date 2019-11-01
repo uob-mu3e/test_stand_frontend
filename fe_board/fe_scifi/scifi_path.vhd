@@ -173,7 +173,7 @@ begin
         N_ASICS => N_g,
         LVDS_PLL_FREQ => 125.0,
         LVDS_DATA_RATE => 1250.0,
-	INPUT_SIGNFLIP => (N_g-1 downto 0 => '1')--,
+        INPUT_SIGNFLIP => (N_g-1 downto 0 => '1')--,
     )
     port map (
         i_rst => i_reset or s_subdet_reset_reg(1),

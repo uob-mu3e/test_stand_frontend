@@ -5,36 +5,23 @@ set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 
 
 
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
 
 #============================================================
 # COMPONENTS
 #============================================================
 
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
+set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 
 set_global_assignment -name TOP_LEVEL_ENTITY top
-
-
-
-
-
-
-
-
-
-
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT -section_id Top
-set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-
-
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
-set_global_assignment -name VHDL_FILE ../../../fe_board/firmware/FEB_common/daq_constants.vhd
-set_global_assignment -name VHDL_FILE linear_shift_link.vhd
-set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
-set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
+
+
+
+set_global_assignment -name VHDL_FILE ../../../fe_board/firmware/FEB_common/daq_constants.vhd
+set_global_assignment -name VHDL_FILE linear_shift_link.vhd
 set_global_assignment -name VHDL_FILE link_observer.vhd
 set_global_assignment -name VHDL_FILE dma_counter.vhd
 set_global_assignment -name VHDL_FILE event_counter.vhd
@@ -79,3 +66,10 @@ set_global_assignment -name VHDL_FILE sw_algin_data.vhd
 set_global_assignment -name QSYS_FILE ip/ip_ram.qsys
 set_global_assignment -name QSYS_FILE ip/ip_tagging_fifo.qsys
 set_global_assignment -name VHDL_FILE a10/data_generator_a10.vhd
+
+
+
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
