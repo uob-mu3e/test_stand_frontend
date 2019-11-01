@@ -135,8 +135,9 @@ begin
     port map (
         i_rst => i_reset or s_subdet_reset_reg(1),
         i_stic_txd => i_data(N_g-1 downto 0),
-        i_refclk_125 => refclk,
-        i_ts_clk => refclk,
+        i_refclk_125_A => refclk, --KB: TODO: change to dedicated LVDS clock inputs
+        i_refclk_125_B => refclk,
+        i_ts_clk => refclk, --KB: TODO: better source?
         i_ts_rst => i_reset,
 
         -- interface to asic fifos
@@ -151,6 +152,7 @@ begin
         i_SC_datagen_enable => s_dummyctrl_reg(1),
         i_SC_datagen_shortmode => s_dummyctrl_reg(2),
         i_SC_datagen_count => s_dummyctrl_reg(12 downto 3),
+        i_SC_rx_wait_for_all => s_dpctrl_reg(30),
 
         -- monitors
         o_receivers_usrclk => open,

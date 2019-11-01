@@ -102,7 +102,7 @@ architecture arch of top is
 
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
-    signal nios_clk, nios_reset_n : std_logic;
+    signal nios_clk: std_logic;
     signal qsfp_reset_n : std_logic;
 
     -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
@@ -214,9 +214,6 @@ begin
 
     nios_clk <= clk_aux;
 
-    e_nios_reset_n : entity work.reset_sync
-    port map ( rstout_n => nios_reset_n, arst_n => reset_n, clk => nios_clk );
-
     e_qsfp_reset_n : entity work.reset_sync
     port map ( rstout_n => qsfp_reset_n, arst_n => reset_n, clk => qsfp_pll_clk );
 
@@ -252,11 +249,13 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        FPGA_ID_g => X"FEB0"--,
+        FPGA_ID_g => X"FEB0",
+	FEB_type_in => "111000"--, --this is a mutrig type FEB
     )
     port map (
-        i_nios_clk      => nios_clk,
-        i_nios_reset_n  => nios_reset_n,
+        i_nios_clk_startup => clk_aux,
+        i_nios_clk_main => clk_aux,
+        i_nios_areset_n => reset_n,
 
         i_i2c_scl       => i2c_scl,
         o_i2c_scl_oe    => i2c_scl_oe,
