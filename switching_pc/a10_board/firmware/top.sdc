@@ -85,9 +85,7 @@ set_false_path -from {data_generator_a10:*} -to {pcie_block:pcie_b|pcie_applicat
 set_false_path -from {sc_slave:*} -to {readregs*}
 set_false_path -from {data_generator_a10:*} -to {data_generator_a10:*}
 set_false_path -from {xcvr_a10:e_qsfp|ip_xcvr_reset:e_reset|altera_xcvr_reset_control:xcvr_reset_control_0|alt_xcvr_reset_counter:*} -to {xcvr_a10:e_qsfp|reset_sync:*}
-set_false_path -from {link_observer:*} -to {readregs[*]}
-set_false_path -from {e_qsfp|e_phy|xcvr_native_a10_0|g_xcvr_native_insts[0].twentynm_xcvr_native_inst|twentynm_xcvr_native_inst|inst_twentynm_pcs|gen_twentynm_hssi_8g_tx_pcs.inst_twentynm_hssi_8g_tx_pcs|sta_tx_clk2_by2_1_out} -to {clk_sync}
-set_false_path -from [get_clocks {e_qsfp|e_phy|xcvr_native_a10_0|tx_clkout}] -to [get_clocks {e_qsfp|e_phy|xcvr_native_a10_0|tx_clkout}]
+set_false_path -from {link_observer:*} -to {readregs*}
 
 #**************************************************************
 # Set Multicycle Path
