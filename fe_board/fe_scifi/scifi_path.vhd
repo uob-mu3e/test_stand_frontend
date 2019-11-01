@@ -2,9 +2,13 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+LIBRARY altera_mf;
+USE altera_mf.altera_mf_components.all;
+
 entity scifi_path is
 generic (
-    N_g : positive := 1--;
+    N_g : positive := 1;    --number of asics
+    N_m : positive := 1--;  --number of modules
 );
 port (
     -- read latency - 1
@@ -14,7 +18,7 @@ port (
     i_reg_we        : in    std_logic;
     i_reg_wdata     : in    std_logic_vector(31 downto 0);
 
-    o_chip_reset    : out   std_logic;
+    o_chip_reset    : out   std_logic_vector(N_m-1 downto 0);
     o_pll_test      : out   std_logic;
     i_data          : in    std_logic_vector(N_g-1 downto 0);
 
@@ -26,12 +30,15 @@ port (
     -- 156.25 MHz
     i_clk_core      : in    std_logic;
     -- 125 MHz
-    i_clk_ref       : in    std_logic--;
+    i_clk_ref_A     : in    std_logic;
+    i_clk_ref_B     : in    std_logic;
+
+    o_MON_rxrdy     : out   std_logic_vector(N_g - 1 downto 0)--;
 );
 end entity;
 
 architecture arch of scifi_path is
-
+    signal s_testpulse : std_logic;
 
     signal fifo_rempty : std_logic;
     signal fifo_rdata : std_logic_vector(35 downto 0);
@@ -47,12 +54,17 @@ architecture arch of scifi_path is
     signal s_dummyctrl_reg : std_logic_vector(31 downto 0);
     signal s_dpctrl_reg : std_logic_vector(31 downto 0);
     signal s_subdet_reset_reg : std_logic_vector(31 downto 0);
-
+    signal s_subdet_resetdly_reg : std_logic_vector(31 downto 0);
+    signal s_subdet_resetdly_reg_written : std_logic;
+    --chip reset synchronization/shift
+    signal s_chip_rst_refclk_sync : std_logic_vector(1 downto 0);
+	 signal s_chip_reset_out : std_logic_vector(3 downto 0);
 begin
 
     e_test_pulse : entity work.clkdiv
     generic map ( P => 1250 )
-    port map ( clkout => o_pll_test, rst_n => not i_reset, clk => i_clk_core );
+    port map ( clkout => s_testpulse, rst_n => not i_reset, clk => i_clk_ref_A );
+    o_pll_test <= s_testpulse;
 
     o_fifo_rdata <= fifo_rdata;
     o_fifo_rempty <= fifo_rempty;
@@ -64,9 +76,11 @@ begin
             s_dummyctrl_reg <= (others=>'0');
             s_dpctrl_reg <= (others=>'0');
             s_subdet_reset_reg <= (others=>'0');
+            s_subdet_resetdly_reg <= (others=>'0');
         --
     elsif rising_edge(i_clk_core) then
         o_reg_rdata <= X"CCCCCCCC";
+	s_subdet_resetdly_reg_written <= '0';
 
         -- data
         if ( i_reg_re = '1' and i_reg_addr = X"0" ) then
@@ -104,6 +118,10 @@ begin
         if ( i_reg_we = '1' and i_reg_addr = X"A" ) then
             s_subdet_reset_reg <= i_reg_wdata;
         end if;
+        if ( i_reg_we = '1' and i_reg_addr = X"B" ) then
+            s_subdet_resetdly_reg <= i_reg_wdata;
+	    s_subdet_resetdly_reg_written <= '1';
+        end if;
         -- output read
         if ( i_reg_re = '1' and i_reg_addr = X"8" ) then
             o_reg_rdata <= s_dummyctrl_reg;
@@ -114,13 +132,41 @@ begin
         if ( i_reg_re = '1' and i_reg_addr = X"A" ) then
             o_reg_rdata <= s_subdet_reset_reg;
         end if;
+        if ( i_reg_re = '1' and i_reg_addr = X"B" ) then
+            o_reg_rdata <= s_subdet_resetdly_reg;
+        end if;
 
         --
     end if;
     end process;
 
-    o_chip_reset <= s_subdet_reset_reg(0);
+        ----------------------------------------------------------------------------
+    --generation of reset signal synchronized to reference clock, make independent of nios clock
+    --shift each reset output by configurable delay
+    p_fee_reset_sync: process(i_clk_ref_A)
+    begin
+        if rising_edge(i_clk_ref_A) then
+            s_chip_rst_refclk_sync <= s_chip_rst_refclk_sync(0) & s_subdet_reset_reg(0);
+        end if;
+    end process;
 
+
+    u_resetshift: entity work.clockalign_block
+	generic map (CLKDIV => 2)
+	port map(
+		i_clk_config => i_clk_core,
+		i_rst        => i_reset,
+
+		i_pll_clk    => i_clk_ref_A,
+		i_pll_arst   => i_reset,
+
+		i_flag       => s_subdet_resetdly_reg_written,
+		i_data       => s_subdet_resetdly_reg,
+
+		i_sig => s_chip_rst_refclk_sync(1),
+		o_sig => o_chip_reset,
+		o_pll_clk    => open
+	 );
 
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (
@@ -132,8 +178,9 @@ begin
     port map (
         i_rst => i_reset or s_subdet_reset_reg(1),
         i_stic_txd => i_data(N_g-1 downto 0),
-        i_refclk_125 => i_clk_ref,
-        i_ts_clk => i_clk_ref,
+        i_refclk_125_A => i_clk_ref_A,
+        i_refclk_125_B => i_clk_ref_B,
+        i_ts_clk => i_clk_ref_A, --TODO: better source?
         i_ts_rst => i_reset,
 
         -- interface to asic fifos
@@ -158,5 +205,5 @@ begin
         o_frame_desync => frame_desync,
         o_buffer_full => buffer_full--,
     );
-
+    o_MON_rxrdy <= rx_ready;
 end architecture;

@@ -168,13 +168,13 @@ begin
 end process;
 
 --source data consistency_check (frame ID)
-consistency_check : process (i_source_data)
+consistency_check : process (i_source_data, l_common_data)
 variable frameid_nonsync : std_logic;
 begin
 	--check if all frameIDs match
-	frameid_nonsync:='1';
-	for i in N_INPUTS-2 downto 0 loop
-		if(i_source_data(i+1)(15 downto 0) /= i_source_data(i)(15 downto 0)) then frameid_nonsync:='0'; end if;
+	frameid_nonsync:='0';
+	for i in N_INPUTS-1 downto 0 loop
+		if(i_source_data(i)(15 downto 0) /= l_common_data(15 downto 0)) then frameid_nonsync:='1'; end if;
 	end loop;
 	l_frameid_nonsync<=frameid_nonsync;
 end process;
