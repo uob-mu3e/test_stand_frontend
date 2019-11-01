@@ -8,6 +8,9 @@ char wait_key(useconds_t us = 100000);
 //Standard slow control patterns for mutrig1
 #include "builtin_config/No_TDC_Power.h"
 #include "builtin_config/ALL_OFF.h"
+#include "builtin_config/PLL_TEST.h"
+#include "builtin_config/PRBS_single.h"
+
 #include <ctype.h>
 
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
@@ -59,19 +62,23 @@ int scifi_module_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
     return 0;
 }
 
-
+extern int uart;
 void scifi_module_t::menu(sc_t* sc){
 
+    int n=0;
     auto& regs = sc->ram->regs.scifi;
     while(1) {
         printf("  [0] => reset asic\n");
         printf("  [1] => reset datapath\n");
-        printf("  [2] => configure all off\n");
+        printf("  [2 || o] => configure all off\n");
+        printf("  [t] => configure pll test\n");
+        printf("  [p] => configure prbs single hit\n");
         printf("  [3] => data\n");
         printf("  [4] => get datapath status\n");
         printf("  [5] => get slow control registers\n");
 	printf("  [6] => dummy generator settings\n");
 	printf("  [7] => datapath settings\n");
+	printf("  [8] => reset skew settings\n");
 	printf("  [d] => show offsets\n");
         printf("  [q] => exit\n");
 
@@ -88,18 +95,36 @@ void scifi_module_t::menu(sc_t* sc){
             usleep(100);
             regs.ctrl.reset = 0;
             break;
-        case '2':
+	case '2':
+	case 'o':
             printf("[scifi] configuring all off\n");
             for(int i=0;i<n_ASICS;i++)
                 configure_asic(i,mutrig_config_ALL_OFF);
             break;
+        case 't':
+            printf("[scifi] configuring pll test\n");
+            for(int i=0;i<n_ASICS;i++)
+                configure_asic(i,mutrig_config_plltest);
+            break;
+        case 'p':
+            printf("[scifi] configuring prbs signle hit\n");
+            for(int i=0;i<n_ASICS;i++)
+		configure_asic(i,config_PRBS_single);
             break;
         case '3':
             printf("TODO...\n");
             break;
         case '4':
-            printf("rx_pll_lock / frame_desync / buffer_full : 0x%03X\n", regs.mon.status);
-            printf("rx_dpa_lock / rx_ready : 0x%04X / 0x%04X\n", regs.mon.rx_dpa_lock, regs.mon.rx_ready);
+            printf("Datapath status registers: press 'q' to end\n");
+	    while(1){
+                printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X ", regs.mon.status);
+                printf("rx_dpa_lock / rx_ready : 0x%04X / 0x%04X\r", regs.mon.rx_dpa_lock, regs.mon.rx_ready);
+		if (read(uart,&cmd, 1) > 0){
+		   printf("--\n");
+		   if(cmd=='q') break;
+		}
+                usleep(200000);
+	    };
             break;
         case '5':
             printf("dummyctrl_reg:    0x%08X\n", regs.ctrl.dummy);
@@ -121,6 +146,9 @@ void scifi_module_t::menu(sc_t* sc){
             break;
         case '7':
 	    menu_reg_datapathctrl(sc);
+            break;
+        case '8':
+	    menu_reg_resetskew(sc);
             break;
         case 'd':
             printf("span w=                   =%x\n",AVM_SC_SPAN/4);
@@ -191,6 +219,7 @@ void scifi_module_t::menu_reg_datapathctrl(sc_t* sc){
 
         printf("Select entry ...\n");
         char cmd = wait_key();
+	printf("Key= '%s'\n",cmd);
         switch(cmd) {
         case 'p':
             regs.ctrl.dp = regs.ctrl.dp ^ (1<<31);
@@ -213,6 +242,60 @@ void scifi_module_t::menu_reg_datapathctrl(sc_t* sc){
         }
     }
 }
+
+void scifi_module_t::menu_reg_resetskew(sc_t* sc){
+    auto& regs = sc->ram->regs.scifi;
+    int selected=0;
+    while(1) {
+        auto reg = regs.ctrl.resetdelay;
+	printf("Reset delay reg now: %16.16x\n",reg);
+        printf("  [0..3] => Select line N (currently %d)\n",selected);
+
+        printf("  [p] => swap phase bit (currently %d)\n",(reg>>(5+2*selected+1)&0x1));
+        printf("  [d] => swap delay bit (currently %d)\n",(reg>>(5+2*selected+0)&0x1));
+        printf("  [+] => increase count\n",(reg>>3&0x3fff));
+        printf("  [-] => decrease count\n");
+        printf("  [q] => exit\n");
+
+        printf("Select entry ...\n");
+        char cmd = wait_key();
+        switch(cmd) {
+        case '0':
+            break;
+        case '1':
+            selected=1;
+            break;
+        case '2':
+            selected=2;
+            break;
+        case '3':
+            selected=3;
+            break;
+        case '+':
+	    regs.ctrl.resetdelay = (regs.ctrl.resetdelay & 0x60) | (( (selected+2) << 1) + 1);
+            break;
+        case '-':
+	    regs.ctrl.resetdelay = (regs.ctrl.resetdelay & 0x60) | (( (selected+2) << 1) + 0);
+            break;
+        case 'd': //write twice so the phase stays the same
+            regs.ctrl.resetdelay = regs.ctrl.resetdelay^(1<<5+(2*selected+0));
+            regs.ctrl.resetdelay = regs.ctrl.resetdelay^(1<<0);
+            break;
+        case 'p': //write twice so the phase stays the same
+            regs.ctrl.resetdelay = regs.ctrl.resetdelay^(1<<5+(2*selected+1));
+            regs.ctrl.resetdelay = regs.ctrl.resetdelay^(1<<0);
+            break;
+        case 'q':
+            return;
+        default:
+	    if(isdigit(cmd) && (cmd - '0') < 4)
+		selected=(cmd-'0');
+	    else
+		printf("invalid command: '%c'\n", cmd);
+        }
+    }
+}
+
 
 
 void scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
