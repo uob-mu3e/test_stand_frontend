@@ -3,7 +3,6 @@
 - do development on _your_ branch
 - if you want to submit fix, make new branch with your changes and then make pull request
 - make pull request to latest dev branch
-  (v0.4_dev)
 - merge dev branch to your branch as often as possible
 
 - do not commit binary files, especially ones that can be generated

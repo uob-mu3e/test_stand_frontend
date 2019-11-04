@@ -13,6 +13,9 @@ void sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     case 0x0104:
         malibu.stic_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
         break;
+    case 0x0105:
+        malibu.i2c_write_u32(data, n);
+        break;
 
     case 0xFFFF:
         break;
