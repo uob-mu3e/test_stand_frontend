@@ -34,6 +34,7 @@ void menu_mupix() {
         printf("  [5] => stop spi master\n");
         printf("  [6] => start spi master\n");
         printf("  [7] => read data and regs\n");
+        printf("  [8/9] => write chip dacs\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -72,6 +73,20 @@ void menu_mupix() {
             printf("\n");
             printf("REGS:\n");
             print_data((volatile alt_u32*)&ram->regs, sizeof(ram->regs) / sizeof(alt_u32));    
+        break;
+        case '8':
+            ram->data[0xFF8D] = 0x005e0003;
+            for (int i = 0; i<93; i++) {
+                ram->data[0xFF8D] = 0x00000000;
+            }
+                ram->data[0xFF8E] = 0x00100001;
+        break;
+        case '9':
+            ram->data[0xFF8D] = 0x005e0003;
+            for (int i = 0; i<93; i++) {
+                ram->data[0xFF8D] = 0xAAAAAAAA;
+            }
+                ram->data[0xFF8E] = 0x00100001;
         break;
         case 'q':
             return;
