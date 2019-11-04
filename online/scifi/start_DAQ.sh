@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #./killdaq.sh
 source ../install/set_env.sh
 #sleep 2
