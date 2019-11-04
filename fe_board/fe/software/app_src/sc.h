@@ -18,7 +18,7 @@ struct sc_t {
         }
     }
 
-    void callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
+    alt_u16 callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
 
     void callback() {
         alt_u32 cmdlen = ram->regs.fe.cmdlen;
@@ -33,15 +33,16 @@ struct sc_t {
         // data offset
         alt_u32 offset = ram->regs.fe.offset & 0xFFFF;
 
+        alt_u16 status = -1;
         if(!(offset >= 0 && offset + n <= sizeof(sc_ram_t::data) / sizeof(sc_ram_t::data[0]))) {
             printf("[sc::callback] ERROR: ...\n");
         }
         else {
             auto data = n > 0 ? (ram->data + offset) : nullptr;
-            callback(cmd, data, n);
+            status = callback(cmd, data, n);
         }
 
-        ram->regs.fe.cmdlen = 0;
+        ram->regs.fe.cmdlen = 0xFFFF & status;
     }
 
     static

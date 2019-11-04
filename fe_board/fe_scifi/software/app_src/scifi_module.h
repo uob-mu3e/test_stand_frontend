@@ -43,7 +43,7 @@ struct scifi_module_t {
     void menu_reg_dummyctrl(sc_t* sc);
     void menu_reg_datapathctrl(sc_t* sc);
     void menu_reg_resetskew(sc_t* sc);
-    void callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
+    alt_u16 callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
 
 
 };

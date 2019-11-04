@@ -16,8 +16,8 @@ mscb_t mscb;
 scifi_module_t scifi_module;
 
 //definition of callback function for slow control packets
-void sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
-    scifi_module.callback(cmd,data,n);
+alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
+    return scifi_module.callback(cmd,data,n);
 }
 
 

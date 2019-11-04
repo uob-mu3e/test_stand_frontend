@@ -298,7 +298,7 @@ void scifi_module_t::menu_reg_resetskew(sc_t* sc){
 
 
 
-void scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
+alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 //    auto& regs = ram->regs.scifi;
     switch(cmd){
     case 0x0101: //power up (not implemented in current FEB)
@@ -323,4 +323,6 @@ void scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 	        //TODO: write some reply to RAM
         }
     }
+
+    return 0;
 }

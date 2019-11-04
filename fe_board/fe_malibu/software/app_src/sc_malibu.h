@@ -1,5 +1,5 @@
 
-void sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
+alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     switch(cmd) {
     case 0x0101:
         malibu.powerup();
@@ -36,4 +36,6 @@ void sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
             printf("[sc_callback] unknown command\n");
         }
     }
+
+    return 0;
 }
