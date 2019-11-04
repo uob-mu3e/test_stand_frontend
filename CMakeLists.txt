@@ -79,6 +79,7 @@ add_subdirectory(switching_pc/midas_fe)
 add_subdirectory(switching_pc/midas_fe_scifi)
 if (CUDA_FOUND)
 add_subdirectory(farm_pc/midas_fe)
+add_subdirectory(farm_pc/tools)
 endif(CUDA_FOUND)
 
 

@@ -78,13 +78,14 @@ set_false_path -from {debouncer:i_debouncer|q[0]}
 set_false_path -from {debouncer:i_debouncer|q[0]} -to {sc_slave:sc_slave_ch0|state}
 set_false_path -to {xcvr_a10:*|av_ctrl.readdata[*]}
 set_false_path -from {xcvr_a10:*|ip_xcvr_reset:i_reset|altera_xcvr_reset_control:xcvr_reset_control_0|alt_xcvr_reset_counter:g_rx.g_rx[*].g_rx.counter_rx_ready|r_reset} 
-set_false_path -from {{pcie_block:pcie_b|pcie_application:pcie_app|pcie_writeable_registers:*}} -to {reset_logic:*}
+set_false_path -from {pcie_block:pcie_b|pcie_application:pcie_app|pcie_writeable_registers:*} -to {reset_logic:*}
 set_false_path -from {pcie_block:pcie_b|pcie_application:pcie_app|pcie_writeable_registers:*} -to {data_generator_a10:*}
+set_false_path -from {pcie_block:pcie_b|pcie_application:pcie_app|pcie_writeable_registers:*} -to {event_counter:*}
 set_false_path -from {data_generator_a10:*} -to {pcie_block:pcie_b|pcie_application:pcie_app|dma_engine:dmaengine|dma_ram:*}
 set_false_path -from {sc_slave:*} -to {readregs*}
 set_false_path -from {data_generator_a10:*} -to {data_generator_a10:*}
 set_false_path -from {xcvr_a10:e_qsfp|ip_xcvr_reset:e_reset|altera_xcvr_reset_control:xcvr_reset_control_0|alt_xcvr_reset_counter:*} -to {xcvr_a10:e_qsfp|reset_sync:*}
-
+set_false_path -from {link_observer:*} -to {readregs*}
 
 #**************************************************************
 # Set Multicycle Path

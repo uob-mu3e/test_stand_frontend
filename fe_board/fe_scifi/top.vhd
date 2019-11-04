@@ -5,14 +5,14 @@ use ieee.numeric_std.all;
 entity top is
 port (
     -- FE.Ports
-    i_fee_rxd		: in  std_logic_vector (4*1 - 1 downto 0); --data inputs from ASICs
-    o_fee_spi_CSn	: out std_logic_vector (4*1 - 1 downto 0); --CSn signals to ASICs (one per ASIC)
-    o_fee_spi_MOSI	: out std_logic_vector (1 - 1 downto 0);   --MOSI signals to ASICs (one per board)
-    i_fee_spi_MISO	: in  std_logic_vector (1 - 1 downto 0);   --MISO signals from ASICs (one per board)
-    o_fee_spi_SCK	: out std_logic_vector (1 - 1 downto 0);   --SCK signals to ASICs (one per board)
+    i_fee_rxd		: in  std_logic_vector (4*4 - 1 downto 0); --data inputs from ASICs
+    o_fee_spi_CSn	: out std_logic_vector (4*4 - 1 downto 0); --CSn signals to ASICs (one per ASIC)
+    o_fee_spi_MOSI	: out std_logic_vector (4 - 1 downto 0);   --MOSI signals to ASICs (one per board)
+    i_fee_spi_MISO	: in  std_logic_vector (4 - 1 downto 0);   --MISO signals from ASICs (one per board)
+    o_fee_spi_SCK	: out std_logic_vector (4 - 1 downto 0);   --SCK signals to ASICs (one per board)
 
-    o_fee_ext_trig	: out std_logic_vector (1 - 1 downto 0);   --external trigger (data validation) signals to ASICs (one per board)
-    o_fee_chip_rst	: out std_logic_vector (1 - 1 downto 0);   --chip reset signals to ASICs (one per board)
+    o_fee_ext_trig	: out std_logic_vector (4 - 1 downto 0);   --external trigger (data validation) signals to ASICs (one per board)
+    o_fee_chip_rst	: out std_logic_vector (4 - 1 downto 0);   --chip reset signals to ASICs (one per board)
 
 
 
@@ -65,20 +65,26 @@ port (
     --
 
     led_n       : out   std_logic_vector(15 downto 0);
-
+    FPGA_Test   : out   std_logic_vector(7 downto 0);
     PushButton  : in    std_logic_vector(1 downto 0);
-
-
-
-    -- si5345 out8 (625 MHz)
-    clk_625     : in    std_logic;
-
-
 
     reset_n     : in    std_logic;
 
-    -- 125 MHz
-    clk_aux     : in    std_logic--;
+
+    -- clock inputs
+    -- SI45
+    clk_125_top     : in    std_logic;  -- 125 MHz (clk_125_top in schematic)       //  SI5345 OUT8
+    clk_125_bottom  : in    std_logic;  -- 125 MHz (clk_125_bottom in schematic)    //  SI5345 OUT7
+
+    lvds_clk_A      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right //	SI5345 OUT3
+    lvds_clk_B      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left  //	SI5345 OUT6
+
+    -- SI42
+    systemclock     : in    std_logic;  -- 40 MHz (sysclock in schematic)          //  SI5342 OUT1
+    systemclock_bottom : in std_logic;  -- 40 MHz (sysclk_bottom in schematic)     //  SI5342 OUT0
+
+    --direct input
+    clk_aux     : in    std_logic--;    -- 125 MHz
 );
 end entity;
 
@@ -94,7 +100,7 @@ architecture arch of top is
 
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
-    signal nios_clk, nios_reset_n : std_logic;
+    signal nios_clk: std_logic;
     signal qsfp_reset_n : std_logic;
 
     -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
@@ -108,9 +114,9 @@ architecture arch of top is
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n : std_logic_vector(15 downto 0);
 
-    signal s_fee_chip_rst_auxclk_sync : std_logic_vector(1 downto 0);
-    signal s_fee_chip_rst_niosclk : std_logic;
-
+    signal s_fee_chip_rst : std_logic_vector(3 downto 0);
+    signal s_FPGA_test : std_logic_vector (7 downto 0) := (others => '0');
+    signal s_MON_rxrdy : std_logic_vector (7 downto 0);
 begin
 
     -- malibu regs : 0x40-0x4F
@@ -147,26 +153,17 @@ begin
 
 
 
-    ----------------------------------------------------------------------------
-    --generation of reset signal synchronized to aux clock (125MHz, nios as source is running at 156MHz).
-    --using simple two-ff synchronizer, assuming the reset pulse is longer than 2 cc in the nios domain
-    p_fee_reset_sync: process(clk_aux)
-    begin
-        if rising_edge(clk_aux) then
-            s_fee_chip_rst_auxclk_sync <= s_fee_chip_rst_auxclk_sync(0) & s_fee_chip_rst_niosclk;
-        end if;
-    end process;
-    o_fee_chip_rst <= ( others => s_fee_chip_rst_auxclk_sync(1) );
-
     --fee assignments
     o_fee_ext_trig <= (others =>'0');
+    o_fee_chip_rst <= s_fee_chip_rst;
 
     ----------------------------------------------------------------------------
     -- SciFi FE board
 
     e_scifi_path : entity work.scifi_path
     generic map (
-        N_g => 4
+        N_g => 8,
+        N_m => 4
     )
     port map (
         i_reg_addr      => scifi_reg.addr(3 downto 0),
@@ -175,25 +172,42 @@ begin
         i_reg_we        => scifi_reg.we,
         i_reg_wdata     => scifi_reg.wdata,
 
-        o_ck_fpga_0     => open,
-        o_chip_reset    => s_fee_chip_rst_niosclk,
+        o_chip_reset    => s_fee_chip_rst,
         o_pll_test      => open,
-        i_data          => i_fee_rxd(3 downto 0),
+        i_data          => i_fee_rxd(7 downto 0),
 
         o_fifo_rempty   => fifo_rempty,
         i_fifo_rack     => fifo_rack,
         o_fifo_rdata    => fifo_rdata,
 
         i_reset         => not reset_n,
-        i_clk           => qsfp_pll_clk--,
+        i_clk_core      => qsfp_pll_clk,
+        i_clk_ref_A     => lvds_clk_A,
+        i_clk_ref_B     => lvds_clk_B,
+
+	o_MON_rxrdy     => s_MON_rxrdy
     );
-    led(0) <= s_fee_chip_rst_niosclk;
 
     ----------------------------------------------------------------------------
 
+--LED maps:
+-- 15: clk_aux  (125M -> 1Hz)
+-- 14: clk_qsfp (156M -> 1Hz)
+-- 13: clk_pod  (125M -> 1Hz)
+-- 12: clk_nios  (125M -> 1Hz)
+-- 11: fee_chip_reset (niosclk)
+-- 10: nios clock select bit
+-- x..0 : CSn to SciFi boards
 
+    led(11) <= s_fee_chip_rst(2);
+    led(7 downto 0) <= s_MON_rxrdy;
 
     led_n <= not led;
+
+    -- test outputs
+    FPGA_Test <= s_FPGA_test;
+    s_FPGA_test(2 downto 0) <= s_fee_chip_rst(2 downto 0);
+
 
     -- enable SI5345
     si45_oe_n <= '0';
@@ -225,10 +239,10 @@ begin
     generic map ( P => 125000000 )
     port map ( clkout => led(13), rst_n => reset_n, clk => pod_pll_clk );
 
-    nios_clk <= clk_aux;
-
-    e_nios_reset_n : entity work.reset_sync
-    port map ( rstout_n => nios_reset_n, arst_n => reset_n, clk => nios_clk );
+    -- 125 MHz -> 1 Hz
+    e_clk_nios_hz : entity work.clkdiv
+    generic map ( P => 125000000 )
+    port map ( clkout => led(12), rst_n => reset_n, clk => nios_clk );
 
     e_qsfp_reset_n : entity work.reset_sync
     port map ( rstout_n => qsfp_reset_n, arst_n => reset_n, clk => qsfp_pll_clk );
@@ -251,23 +265,17 @@ begin
 
     ----------------------------------------------------------------------------
     -- SPI
-
-    -- si chip assignments
-    si45_spi_in <= spi_mosi;
-    si45_spi_sclk <= spi_sclk when spi_ss_n(4) = '0' else '0';
-    si45_spi_cs_n <= spi_ss_n(4);
-
-    -- fee assignments
     o_fee_spi_MOSI <= (others => spi_mosi);
     o_fee_spi_SCK  <= (others => spi_sclk);
-    o_fee_spi_CSn <=  spi_ss_n(4-1 downto 0);
+    o_fee_spi_CSn <=  spi_ss_n(o_fee_spi_CSn'range);
 
-    -- MISO: multiplexing si chip / SciFi FEE
     spi_miso <=
-        si45_spi_out when spi_ss_n(4) = '0' else
-        i_fee_spi_MISO(0); -- TODO make working with multiple FEBs, if we need this
-
-    led(4 downto 1)<=spi_ss_n(3 downto 0);
+        si45_spi_out when spi_ss_n(0) = '0' else
+	i_fee_spi_MISO(0) when spi_ss_n(3 downto 0)/="1111" else
+	i_fee_spi_MISO(1) when spi_ss_n(7 downto 4)/="1111" else
+	i_fee_spi_MISO(2) when spi_ss_n(11 downto 8)/="1111" else
+	i_fee_spi_MISO(3) when spi_ss_n(15 downto 12)/="1111" else
+	'0';
 
     ----------------------------------------------------------------------------
 
@@ -275,11 +283,15 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        FPGA_ID_g => X"FEB0"--,
+        FPGA_ID_g => X"FEB0",
+	FEB_type_in => "111000"--, --this is a mutrig type FEB
     )
     port map (
-        i_nios_clk      => nios_clk,
-        i_nios_reset_n  => nios_reset_n,
+        i_nios_clk_startup => clk_aux,
+        i_nios_clk_main => clk_aux,
+        i_nios_areset_n => reset_n,
+        o_nios_clk_monitor => nios_clk,
+	o_nios_clk_selected => led(10),
 
         i_i2c_scl       => i2c_scl,
         o_i2c_scl_oe    => i2c_scl_oe,
@@ -290,6 +302,11 @@ begin
         o_spi_mosi      => spi_mosi,
         o_spi_sclk      => spi_sclk,
         o_spi_ss_n      => spi_ss_n,
+
+        i_spi_si_miso   => si45_spi_out,
+        o_spi_si_mosi   => si45_spi_in,
+        o_spi_si_sclk   => si45_spi_sclk,
+        o_spi_si_ss_n   => si45_spi_cs_n,
 
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,

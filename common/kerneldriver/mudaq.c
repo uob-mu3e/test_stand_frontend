@@ -612,7 +612,12 @@ static int mudaq_setup_dma( struct pci_dev * pdev, struct mudaq * mu )
   if ((rv = pci_set_dma_mask( pdev, DMA_BIT_MASK(64)) ) < 0) return rv;
   if ((rv = pci_set_consistent_dma_mask( pdev, DMA_BIT_MASK(64)) ) < 0) return rv;
 
+  #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
+  // https://lkml.org/lkml/2019/1/8/391 --> kernel > 5.0
+  ctrl_internal = dma_alloc_coherent(&pdev->dev, ctrl_size, &ctrl_addr, GFP_KERNEL);
+  #else
   ctrl_internal = dma_zalloc_coherent(&pdev->dev, ctrl_size, &ctrl_addr, GFP_KERNEL);
+  #endif
   if (ctrl_internal == NULL) {
     ERROR("could not allocate dma control buffer");
     rv = -ENOMEM;
@@ -777,12 +782,21 @@ long mudaq_fops_ioctl( struct file * filp,
    * VERIFY_WRITE = write to user space memory
    * _IOC_READ    = read kernel space memory
    * _IOC_WRITE   = write data to kernel space memory
+   * https://github.com/zfsonlinux/zfs/issues/8261 --> kernel > 5.0
    */
 
   if ( _IOC_DIR(cmd) & _IOC_READ )
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
+    err = !access_ok((void __user *)ioctl_param, _IOC_SIZE(cmd));
+    #else
     err = !access_ok(VERIFY_WRITE, (void __user *)ioctl_param, _IOC_SIZE(cmd));
+    #endif
   else if ( _IOC_DIR(cmd) & _IOC_WRITE)
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
+    err = !access_ok((void __user *)ioctl_param, _IOC_SIZE(cmd));
+    #else
     err = !access_ok(VERIFY_READ, (void __user *)ioctl_param, _IOC_SIZE(cmd));
+    #endif
   if (err) {
     retval = -EFAULT;
     goto fail;

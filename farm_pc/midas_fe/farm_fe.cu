@@ -50,6 +50,7 @@ uint32_t dma_buf_nwords = dma_buf_size/sizeof(uint32_t);
 uint32_t laddr;
 uint32_t newdata;
 uint32_t readindex;
+uint32_t lastreadindex;
 bool moreevents;
 bool firstevent;
 ofstream myfile;
@@ -242,14 +243,24 @@ INT begin_of_run(INT run_number, char *error)
    readindex = 0;
    moreevents = false;
    firstevent = true;
+
+   // Set up data generator
+//    uint32_t datagen_setup = 0;
+//    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
+//    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+//    //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
+//    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
    
-   // Reset all ToDo: no functionality in firmware at the moment
+   // reset all
    uint32_t reset_reg = 0;
    reset_reg = SET_RESET_BIT_ALL(reset_reg);
    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
+
+   // Enable register on FPGA for continous readout and enable dma
+   uint32_t lastlastWritten = mu.last_written_addr();
+   mu.enable_continous_readout(0);
+   usleep(10);
    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
-   // Enable register on FPGA for continous readout
-   mu.enable_continous_readout(0); // enable dma
    
    // Get ODB settings for this equipment
    HNDLE hDB, hStreamSettings;
@@ -272,29 +283,6 @@ INT begin_of_run(INT run_number, char *error)
       return status;
    }
    
-   /* Set up data generator */
-    uint32_t datagen_setup = 0;
-    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x8, 100);// settings.datagenerator.divider,100);//3E8); // slow down to 64 MBit/s
-    //sleep(3);
-    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
-    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
-//   mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, settings.datagenerator.divider);
-//   uint32_t datagen_setup = 0;
-//   if (settings.datagenerator.enable_pixel)
-//      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
-//   if (settings.datagenerator.enable_fibre)
-//      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_FIBRE(datagen_setup);
-//   if (settings.datagenerator.enable_tile)
-//      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_TILE(datagen_setup);
-//   datagen_setup = SET_DATAGENERATOR_NPIXEL_RANGE(datagen_setup, settings.datagenerator.npixel);
-//   datagen_setup = SET_DATAGENERATOR_NFIBRE_RANGE(datagen_setup, settings.datagenerator.nfibre);
-//   datagen_setup = SET_DATAGENERATOR_NTILE_RANGE(datagen_setup, settings.datagenerator.ntile);
-//   if (settings.datagenerator.enable)
-//      datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-   //cm_msg(MINFO, "begin_of_run" , "addr 0x%x" , mu.last_written_addr());
-   //mu.write_register(DATAGENERATOR_REGISTER_W, 0xffffffff);// start data generator
-   //mu.write_register(LED_REGISTER_W,0x0000ffff);
-   
    set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
    
    return SUCCESS;
@@ -306,21 +294,14 @@ INT end_of_run(INT run_number, char *error)
 {
    mudaq::DmaMudaqDevice & mu = *mup;
 
-   /* Unset data generator */
-   uint32_t datagen_setup = mu.read_register_rw(DATAGENERATOR_REGISTER_W);
-   datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
-   mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+   // stop generator
+//    datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
+//    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+//    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
 
-   /* Unset DMA Control */
-   // DMA_CONTROL_W
-   mu.write_register_wait(0x5,0x0,100);
+   // disable DMA
+   mu.disable();
 
-//   datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-   //mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
-
-//   mu.write_register(DATAGENERATOR_REGISTER_W, 0x0);
-   usleep(100000); // wait for remianing data to be pushed
-   mu.disable(); // disable DMA
    set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
    
    return SUCCESS;
@@ -332,9 +313,12 @@ INT pause_run(INT run_number, char *error)
 {
    mudaq::DmaMudaqDevice & mu = *mup;
    
-   uint32_t datagen_setup = mu.read_register_rw(DATAGENERATOR_REGISTER_W);
-   datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-   mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
+//   uint32_t datagen_setup = mu.read_register_rw(DATAGENERATOR_REGISTER_W);
+//   datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
+//   mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
+
+   // disable DMA
+   mu.disable(); // Marius Koeppel: not sure if this works
    
    set_equipment_status(equipment[0].name, "Paused", "var(--myellow)");
    
@@ -347,9 +331,12 @@ INT resume_run(INT run_number, char *error)
 {
    mudaq::DmaMudaqDevice & mu = *mup;
    
-   uint32_t datagen_setup = mu.read_register_rw(DATAGENERATOR_REGISTER_W);
-   datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-   mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
+//   uint32_t datagen_setup = mu.read_register_rw(DATAGENERATOR_REGISTER_W);
+//   datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
+//   mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup,1000);
+
+   // enable DMA
+   mu.enable_continous_readout(0); // Marius Koeppel: not sure if this works
    
    set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
    
@@ -446,93 +433,83 @@ INT read_stream_thread(void *param)
    mudaq::DmaMudaqDevice & mu = *mup;
    readindex = mu.last_written_addr();
 
-   // setup variables for dma alive counter
-   int aliveCounter = 0;
-
    // setup variables for event handling
-   uint32_t event_length=0;
    EVENT_HEADER *pEventHeader;
    void *pEventData;
    DWORD *pdata;
+
+   uint32_t event_length = 0;
    uint32_t lastWritten = 0;
-   uint32_t lastlastWritten = 0;
    int status;
-   int diff = 0;
+
+   ofstream monitoring_file;
+   monitoring_file.open("monitoring_data.txt");
+   if ( !monitoring_file ) {
+     cout << "Could not open file " << endl;
+     return -1;
+   }
 
    // tell framework that we are alive
    signal_readout_thread_active(0, TRUE);
    
    // obtain ring buffer for inter-thread data exchange
    int rbh = get_event_rbh(0);
-   
+
    while (is_readout_thread_enabled()) {
       lastWritten = mu.last_written_addr();
 
-      if (lastWritten == 0 || lastWritten == lastlastWritten ){
-          //cout<<"lastwritten = 0"<<endl;
+      if (lastWritten == 0){
+          //cout << "lastWritten == 0" << endl;
           continue;
       }
-      lastlastWritten = 1;
       
        //get event length
        event_length = dma_buf[(readindex+7)%dma_buf_nwords];
 
        if (event_length == 0){
-           //cout<<"eventlength 0"<<endl;
+           //cout << "event_length == 0" << endl;
            continue;
-       }
-       //      // alive countdown in firmware : no change in this reg for x cycles --> stop dma
-//      if(aliveCounter == 1000){
-//            // DMA_CONTROL_W
-//            mu.write_register(0x5,0x017D7840 + diff); // 25 M cycles (100 ms)
-//            aliveCounter=0;
-//            diff = 1 - diff;
-//      }
-//      aliveCounter++;
-      
+        }
+
       // obtain buffer space
       status = rb_get_wp(rbh, (void **)&pEventHeader, 0);
       if (!is_readout_thread_enabled()){
          break;
       }
 
+       // just sleep and try again if buffer has no space
       if (status == DB_TIMEOUT) {
-         // just sleep and try again if buffer has no space
-         //cout<<"not DB_TIMEOUT"<<endl;
+          //cout << "status == DB_TIMEOUT" << endl;
          ss_sleep(10);
          continue;
       }
 
       if (status != DB_SUCCESS){
-         //cout<<"not DB_SUCCESS"<<endl;
+          //cout << "DB_SUCCESS" << endl;
          break;
       }
 
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
+          //cout << "STATE_RUNNING" << endl;
          ss_sleep(10);
          continue;
       }
 
       // do not overtake dma engine
-      if(lastWritten < (readindex%dma_buf_nwords)){
-          event_length = dma_buf[lastWritten - 1];
-          for(int i = 0 ; i < 500; i++){
-              //cout<<hex<<dma_buf[i]<<" "<<"search"<<endl;
-              //cout<<lastWritten<<"  "<<i<<endl;
-          }
-          //cout<<endl;
-          readindex = lastWritten - event_length * 8;
-      }
+//      if(lastWritten < (readindex%dma_buf_nwords)){
+//          event_length = dma_buf[lastWritten - 1];
+//          readindex = lastWritten - event_length * 8;
+//      }
 
       if((readindex%dma_buf_nwords) > lastWritten){
           if(dma_buf_nwords - (readindex % dma_buf_nwords) + lastWritten < event_length * 8 + 1){
-              //cout<<"slow down 1"<<endl;
+              //cout << "BREAK1" << endl;
               continue;
           }
       }else{
           if(lastWritten - (readindex % dma_buf_nwords) < event_length * 8 + 1){
-              //cout<<"slow down 2"<<endl;
+              //cout << "BREAK2" << endl;
               continue;
           }
       }
@@ -551,24 +528,30 @@ INT read_stream_thread(void *param)
          *pdata++ = event_length;
          *pdata++ = 0xAFFEAFFE;
          
-         //cout<<"writing event of length "<<event_length<< "lastWr:" <<lastWritten<<"rdIdx"<<(readindex)%dma_buf_nwords<<" buflength"<<dma_buf_nwords<<endl;
          for (int i = 0; i < event_length; i++){
             *pdata++ = dma_buf[(readindex + 6)%dma_buf_nwords];
-            *pdata++ = dma_buf[(readindex + 7)%dma_buf_nwords];
+            //*pdata++ = dma_buf[(readindex + 7)%dma_buf_nwords];
+
+            if (lastreadindex % 1000 == 0){
+                char dma_buf_str[256];
+                sprintf(dma_buf_str, "%08X", dma_buf[(readindex + 6)%dma_buf_nwords]);
+                monitoring_file << readindex + 6 << "\t" << dma_buf_str << "\t" << event_length  << endl;
+            }
             readindex = readindex + 8;
          }
+
+         lastreadindex = readindex;
          
          bk_close(pEventData, pdata);
 
          pEventHeader->data_size = bk_size(pEventData);
          rb_increment_wp(rbh, sizeof(EVENT_HEADER) + pEventHeader->data_size);
                 
-         // send event to ring buffer
       }
    }
 
    // tell framework that we finished
+   monitoring_file.close();
    signal_readout_thread_active(0, FALSE);
-   mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x00000000,100);//3E8); // slow down to 64 MBit/s
    return 0;
 }

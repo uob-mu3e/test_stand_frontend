@@ -49,30 +49,50 @@ struct sc_t {
         ((sc_t*)context)->callback();
     }
 
+    static
+    void print_data(volatile alt_u32* data, int n) {
+        for(int i = 0; i < n; i++) {
+            alt_u32 d = data[i];
+            printf("[0x%04X] = 0x%08X\n", ((alt_u32)&data[i] / 4) & 0xFFFF, d);
+
+            int k = 1;
+            while(i+k < n && data[i+k] == d) k++;
+            if(k > 2) {
+                printf("[0x....]\n");
+                i += k - 2;
+            }
+        }
+    }
+
     void menu() {
         while(1) {
-            printf("  [r] => test read\n");
-            printf("  [w] => test write\n");
-            printf("  [R] => print regs\n");
+            printf("\n");
+            printf("[sc] -------- menu --------\n");
+
+            printf("\n");
+            printf("  [r] => read data and regs\n");
+            printf("  [w] => write [i] = i for i < 16\n");
+            printf("  [i] => test cmdlen irq\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
             char cmd = wait_key();
             switch(cmd) {
             case 'r':
-                for(int i = 0; i < 16; i++) {
-                    printf("[0x%04X] = 0x%08X\n", i, ram->data[i]);
-                }
+                printf("\n");
+                printf("DATA:\n");
+                print_data(ram->data, sizeof(ram->data) / sizeof(alt_u32));
+                printf("\n");
+                printf("REGS:\n");
+                print_data((volatile alt_u32*)&ram->regs, sizeof(ram->regs) / sizeof(alt_u32));
                 break;
             case 'w':
                 for(int i = 0; i < 16; i++) {
                     ram->data[i] = i;
                 }
                 break;
-            case 'R':
-                for(int i = 0; i < 256; i++) {
-                    printf("[0x%02X] = 0x%08X\n", i, ram->data[0xFF00 + i]);
-                }
+            case 't':
+                ram->regs.fe.cmdlen = 0xffff0000;
                 break;
             case 'q':
                 return;

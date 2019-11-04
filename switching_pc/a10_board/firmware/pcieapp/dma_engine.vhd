@@ -695,10 +695,21 @@ begin
         memwriteaddr_last <= memwriteaddr;
         start_dma_next <= start_dma;  -- wait one cycle until ref_clk sees transition
         
-        if(memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 1) >= memaddr_last_packet) then
-          diff := (memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 2) - memaddr_last_packet);
+--        if(memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 1) >= memaddr_last_packet) then
+--          diff := (memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 2) - memaddr_last_packet);
+--        else
+--          diff := (memaddr_last_packet- memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 2));
+--        end if;
+--        if(memwriteaddr_last >= memaddr_last_packet) then
+--          diff := (memwriteaddr_last - memaddr_last_packet);
+--        else
+--          diff := (memaddr_last_packet - memwriteaddr_last);
+--        end if;
+		  
+		  if(memwriteaddr >= memaddr_last_packet) then
+          diff := (memwriteaddr - memaddr_last_packet);
         else
-          diff := (memaddr_last_packet- memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 2));
+          diff := (memaddr_last_packet - memwriteaddr);
         end if;
         memhalffull <= diff(MEMREADADDRSIZE-1);
       end if;

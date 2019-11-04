@@ -10,7 +10,7 @@ use ieee.numeric_std.all;
 --
 entity sc_ram is
 generic (
-    RAM_ADDR_WIDTH_g : positive := 14--;
+    RAM_ADDR_WIDTH_g : positive := 16--;
 );
 port (
     -- ram slave
@@ -47,6 +47,8 @@ architecture arch of sc_ram is
 
     type ram_t is array (2**RAM_ADDR_WIDTH_g-1 downto 0) of std_logic_vector(31 downto 0);
     signal ram : ram_t;
+    attribute ramstyle : string;
+    attribute ramstyle of ram : signal is "no_rw_check";
 
     signal ram_addr : std_logic_vector(15 downto 0);
     signal ram_re, ram_re_q : std_logic;
@@ -79,10 +81,12 @@ begin
         i_avs_address when ( i_avs_read = '1' or i_avs_write = '1' ) else
         (others => '0');
     ram_re <=
+        '0' when ( ram_addr(15 downto RAM_ADDR_WIDTH_g) /= (15 downto RAM_ADDR_WIDTH_g => '0') ) else
         '1' when ( i_ram_re = '1' and reg_re = '0' ) else
         '1' when ( i_avs_read = '1' and reg_re = '0' and avs_waitrequest = '0' ) else
         '0';
     ram_we <=
+        '0' when ( ram_addr(15 downto RAM_ADDR_WIDTH_g) /= (15 downto RAM_ADDR_WIDTH_g => '0') ) else
         '1' when ( i_ram_we = '1' and reg_we = '0' ) else
         '1' when ( i_avs_write = '1' and reg_we = '0' and avs_waitrequest = '0' ) else
         '0';
@@ -136,7 +140,7 @@ begin
 
 
 
-    process(i_clk)
+    process(i_clk, i_reset_n)
     begin
     if ( i_reset_n = '0' ) then
         o_ram_rvalid <= '0';

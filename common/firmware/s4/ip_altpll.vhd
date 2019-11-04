@@ -41,6 +41,7 @@ USE altera_mf.all;
 
 ENTITY ip_altpll IS
     generic (
+        INCLK0_MHZ : real;
         DIV : positive := 1;
         MUL : positive := 1;
         DEVICE : string := "Stratix IV"--;
@@ -152,7 +153,7 @@ BEGIN
 		clk0_multiply_by => MUL,
 		clk0_phase_shift => "0",
 		compensate_clock => "CLK0",
-		inclk0_input_frequency => 8000,
+		inclk0_input_frequency => integer(1000000.0 / INCLK0_MHZ),
 		intended_device_family => DEVICE,
 		lpm_hint => "CBX_MODULE_PREFIX=ip_altpll",
 		lpm_type => "altpll",

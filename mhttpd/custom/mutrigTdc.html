@@ -20,19 +20,19 @@ var updateTimerId = 0;
 var counter=0;
   
 // all dac settings
-var asicsettings_global_int      = ['ext_trig_offset', 'ext_trig_endtime', 'ms_limits', 'lvds_tx_vcm', 'lvds_tx_bias']; 
+var asicsettings_global_int      = ['ext_trig_offset', 'ext_trig_endtime', 'lvds_tx_vcm', 'lvds_tx_bias']; 
 // special 'num asics' -> 'num_asics'
-var asicsettings_global_bool = ['ext_trig_mode', 'ext_trig_endtime_sign', 'gen_idle', 'ms_switch_sel', 'ms_debug', 'prbs_debug', 'prbs_single', 
+var asicsettings_global_bool = ['ext_trig_mode', 'ext_trig_endtime_sign', 'gen_idle', 'ms_debug', 'prbs_debug', 'prbs_single', 
 	       'recv_all', 'disable_coarse', 'pll_setcoarse', 'short_event_mode', 'pll_envomonitor'];
 var daqsettings_int     = ['dummy_data_n'];
 var daqsettings_bool= ['dummy_config', 'dummy_data', 'dummy_data_fast'];
 
 var asicsettings_tdc_int = ['vnpfc', 'vnpfc_offset', 'vncnt', 'vncnt_offset', 'vnvcobuffer', 'vnvcobuffer_offset', 
                  'vnd2c', 'vnd2c_offset', 'vnpcp', 'vnpcp_offset', 'vnhitlogic', 'vnhitlogic_offset', 
-                 'vncntbuffer', 'vncntbuffer_offset', 'vnvcodelay', 'vnvcodelay_offset', 'latchbias',
+                 'vncntbuffer', 'vncntbuffer_offset', 'vnvcodelay', 'vnvcodelay_offset', 'latchbias', 'ms_limits', 
 		 'amon_dac', 'dmon_1_dac', 'dmon_2_dac']
 var asicsettings_tdc_bool = ['vnpfc_scale', 'vncnt_scale', 'vnvcobuffer_scale', 'vnd2c_scale', 'vnpcp_scale', 
-                      'vnhitlogic_scale', 'vncntbuffer_scale', 'vnvcodelay_scale', 'amon_en', 'dmon_1_en', 'dmon_2_en']
+                      'vnhitlogic_scale', 'vncntbuffer_scale', 'vnvcodelay_scale', 'ms_switch_sel', 'amon_en', 'dmon_1_en', 'dmon_2_en']
 var asicsettings_channel_int = ['tthresh', 'tthresh_sc', 'ethresh', 'sipm', 'sipm_sc', 'inputbias', 'inputbias_sc', 
                    'pole', 'pole_sc', 'ampcom', 'ampcom_sc', 'cml', 'cml_sc','amonctrl', 'comp_spi'];
 var asicsettings_channel_bool = ['mask', 'tdctest_n', 'sswitch', 'delay', 'pole_en_n', 'energy_r_en', 
@@ -79,6 +79,8 @@ function init() {
             document.getElementsByName(name)[0].addEventListener("change", copyPage2json);
     }
 
+    //do not allow configuration while run is active
+/*
     mjsonrpc_db_get_values(["/Runinfo"]).then(function(rpc) {
         if(rpc.result.data[0].state == 3) {
             document.getElementById("config").disabled = true;
@@ -92,6 +94,7 @@ function init() {
             document.getElementById("readback").classList.remove("disabled")
         }
     }).catch(function(error) { mjsonrpc_error_alert(error); });
+*/
 }
 
 function checkODBvalues() {
@@ -220,8 +223,11 @@ function copy2page_global(data, rb) {
         dac = asicsettings_global_bool[i];
     	document.getElementsByName(dac+postfix)[0].checked = data[dac];
     }
-    if(rb)
-	    document.getElementsByName('num_asics_rb')[0].value = data['num asics'];
+    if(rb){
+	document.getElementsByName('num_asics_rb')[0].value = data['num asics'];
+        document.getElementById("tdc_select").max=data['num asics']-1;
+        document.getElementById("channel_select").max=data['num asics']*32-1;
+    }
 }
 
 function copy2page_daq(data, rb) {
@@ -248,10 +254,10 @@ function loadODB(init_set) {
 	// only the active chip, channel is shown
 	// be aware of the fact that all channels and chips are present
 
-	var paths = [	"/Equipment/SciFi/ASICs/Global",
-			"/Equipment/SciFi/ASICs/TDCs",
-			"/Equipment/SciFi/ASICs/Channels",
-			"/Equipment/SciFi/Daq",
+	var paths = [	"/Equipment/SciFi/Settings/ASICs/Global",
+			"/Equipment/SciFi/Settings/ASICs/TDCs",
+			"/Equipment/SciFi/Settings/ASICs/Channels",
+			"/Equipment/SciFi/Settings/Daq",
 		];
 	mjsonrpc_db_get_values(paths).then(function (rpc) {
 		//console.log(rpc)
@@ -310,7 +316,7 @@ function loadODB(init_set) {
 //Save all (all channels and tdcs) settings back to ODB
 function storeODB() {
 	var settings = JSON.parse(localStorage.getItem('settings'));
-	var prefix = "/Equipment/SciFi/"
+	var prefix = "/Equipment/SciFi/Settings/"
 	// global
 	var paths       = asicsettings_global_int.concat(asicsettings_global_bool).map(function(i) { return prefix+"ASICs/Global/"+i; });
 	var values      = asicsettings_global_int.concat(asicsettings_global_bool).map(function(n) { return settings.glob[n]; });
@@ -495,17 +501,6 @@ function dateToString(date) {
      return datetime;
 }
 
-//trigger asic configuration
-function config() {
-    mjsonrpc_db_paste(['/Equipment/Switching/Settings/'],[1]).then(function(rpc) {
-    	result=rpc.result;	      
-    	var currentdate = new Date(); 
-    	message('Triggered Configuration of ASICs @'+dateToString(currentdate));	      
-    }).catch(function(error) {
-    	mjsonrpc_error_alert(error);
-    });
-
-}
 
 //TODO: find out what this is doing...
 function readback() {
@@ -564,9 +559,6 @@ function readback() {
 							<th>Setting</th>
 							<th>value</th>
 							<th>ODB</th>
-							<th>Setting</th>
-							<th>value</th>
-							<th>ODB</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -579,6 +571,8 @@ function readback() {
 							<td><label for="ext_trig_offset">EXT TRG OFFSET</label></td>
 							<td><input type="number"   name="ext_trig_offset" id="ext_trig_offset" min="0" max="64" step="1" size="2" value="0"  class="store" /></td>
 							<td><input type="text"     name="ext_trig_offset_rb"                                             size="2" value="" class="odb" readonly="readonly" /></td>
+						</tr>
+						<tr>
 							<td><label for="ext_trig_endtime">EXT TRG ENDT</label></td>
 							<td><input type="number"   name="ext_trig_endtime" id="ext_trig_endtime" min="0" max="64" step="1" size="2" value="0"  class="store" /></td>
 							<td><input type="text"     name="ext_trig_endtime_rb"                                              size="2" value="" class="odb" readonly="readonly" /></td>
@@ -587,6 +581,8 @@ function readback() {
 							<td><label for="lvds_tx_vcm">LVDS VCM</label></td>
 							<td><input type="number"   name="lvds_tx_vcm" id="lvds_tx_vcm" min="0" max="255" step="1" size="3" value="155"  class="store" /></td>
 							<td><input type="text"     name="lvds_tx_vcm_rb"                                          size="3" value="" class="odb" readonly="readonly" /></td>
+						</tr>
+						<tr>
 							<td><label for="lvds_tx_bias">LVDS BIAS</label></td>
 							<td><input type="number"   name="lvds_tx_bias" id="lvds_tx_bias" min="0" max="64" step="1" size="2" value="0"  class="store" /></td>
 							<td><input type="text"     name="lvds_tx_bias_rb"                                          size="2" value="" class="odb" readonly="readonly" /></td>
@@ -623,8 +619,8 @@ function readback() {
 					<tr>
 						<td><label for="gen_idle">GEN IDLE</label></td>
 						<td><input type="checkbox" name="gen_idle"  class="store" /><input type="checkbox" name="gen_idle_rb" class="odb" disabled="disabled" /></td>
-						<td><label for="ms_switch_sel">SWITCH</label></td>
-						<td><input type="checkbox" name="ms_switch_sel"  class="store" /><input type="checkbox" name="ms_switch_sel_rb" class="odb" disabled="disabled" /></td>
+						<td></td>
+						<td></td>
 					</tr>
 		
 					<tr>
@@ -656,9 +652,9 @@ function readback() {
 	                             <th>DAC</th>
 	                             <th>value</th>
 	                             <th>ODB</th>
-	                             <th>scale</th>
+	                             <th>BIAS-offset</th>
 	                             <th>ODB</th>
-	                             <th>scaling</th>
+	                             <th>BIAS-scaling</th>
 	                         </tr>
 	                     </thead>
 	                     <tbody>
@@ -733,6 +729,18 @@ function readback() {
         	                     <td></td>
         	                     <td></td>
         	                 </tr>
+				 <tr>
+				     <td><label for="ms_limits">MS Limits</label></td>
+				     <td><input type="number"   name="ms_limits" id="ms_limits" min="0" max="64" step="1" size="2" value="0"  class="store" /></td>
+				     <td><input type="text"     name="ms_limits_rb"                                       size="2" value="" class="odb" readonly="readonly" /></td>
+				     <td>&nbsp;</td>
+				     <td>&nbsp;</td>
+				     <td>&nbsp;</td>
+				 </tr>
+				 <tr>
+						<td><label for="ms_switch_sel">MS Polarity</label></td>
+						<td><input type="checkbox" name="ms_switch_sel"  class="store" /><input type="checkbox" name="ms_switch_sel_rb" class="odb" disabled="disabled" /></td>
+				 </tr>
         	            <tbody>
         	        </table>
 		</div>
@@ -795,6 +803,8 @@ function readback() {
                              <td><label for="ethresh">ETHRESH</label></td>
                              <td><input type="number"   name="ethresh" id="ethresh" min="0" max="255" step="1" size="3" value="125"  class="store" /></td>
                              <td><input type="text"     name="ethresh_rb"                                      size="3" value="" class="odb" readonly="readonly" /></td>
+                         </tr>
+                         <tr>
                          <td><label for="mask">MASK</label></td>
                          <td><input type="checkbox" name="mask"  class="store" /><input type="checkbox" name="mask_rb" class="odb" disabled="disabled" /></td>
                          </tr>
