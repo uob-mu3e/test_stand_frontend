@@ -214,7 +214,7 @@ begin
     o_nios_clk_monitor <= s_nios_clk;
 
     -- nios system
-    nios_irq(0) <= '1' when ( reg_cmdlen /= (reg_cmdlen'range => '0') ) else '0';
+    nios_irq(0) <= '1' when ( reg_cmdlen(31 downto 16) /= (31 downto 16 => '0') ) else '0';
 
     e_nios : component work.cmp.nios
     port map (

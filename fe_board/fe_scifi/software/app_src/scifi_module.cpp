@@ -47,7 +47,7 @@ int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 }
 
 //configure ASIC
-int scifi_module_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
+alt_u16 scifi_module_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
     printf("[scifi] configure asic(%u)\n", asic);
 
     int ret;
@@ -56,10 +56,10 @@ int scifi_module_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
 
     if(ret != 0) {
         printf("[scifi] Configuration error\n");
-        return -1;
+        return FEB_REPLY_ERROR;
     }
 
-    return 0;
+    return FEB_REPLY_SUCCESS;
 }
 
 extern int uart;
@@ -298,8 +298,9 @@ void scifi_module_t::menu_reg_resetskew(sc_t* sc){
 
 
 
-void scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
+alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 //    auto& regs = ram->regs.scifi;
+    alt_u16 status=FEB_REPLY_SUCCESS; 
     switch(cmd){
     case 0x0101: //power up (not implemented in current FEB)
         break;
@@ -308,8 +309,9 @@ void scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     case 0x0103: //configure all off
 	printf("[scifi] configuring all off\n");
         for(int i=0;i<n_ASICS;i++)
-            configure_asic(i,mutrig_config_ALL_OFF);
-	    //TODO: write some reply to RAM
+           if(configure_asic(i,mutrig_config_ALL_OFF)==FEB_REPLY_ERROR)
+              status=FEB_REPLY_ERROR;
+	return status;
         break;
     case 0xfffe:
 	printf("-ping-\n");
@@ -318,9 +320,10 @@ void scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
         break;
     default:
         if((cmd&0xfff0) ==0x0110){ //configure ASIC
-		uint8_t chip=data[0];
-		configure_asic(chip,(alt_u8*) &(data[1]));
-	        //TODO: write some reply to RAM
-        }
+	   uint8_t chip=data[0];
+           return configure_asic(chip,(alt_u8*) &(data[1]));
+        }else{//unknown command
+           return FEB_REPLY_ERROR;
+	}
     }
 }
