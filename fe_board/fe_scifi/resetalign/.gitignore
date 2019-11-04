@@ -1,0 +1,7 @@
+*.bak
+source/greybox_tmp
+source/pll_ip.ppf
+
+vsim/transcript
+vsim/vsim.wlf
+vsim/work

@@ -216,9 +216,6 @@ begin
 
     nios_clk <= clk_aux;
 
-    e_nios_reset_n : entity work.reset_sync
-    port map ( rstout_n => nios_reset_n, arst_n => reset_n, clk => nios_clk );
-
     e_qsfp_reset_n : entity work.reset_sync
     port map ( rstout_n => qsfp_reset_n, arst_n => reset_n, clk => qsfp_pll_clk );
 
@@ -257,7 +254,8 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        FPGA_ID_g => X"FEB0"--,
+        FPGA_ID_g => X"FEB0",
+	FEB_type_in => "111000"--, --this is a mutrig type FEB
     )
     port map (
         i_i2c_scl       => i2c_scl,
@@ -296,13 +294,16 @@ begin
         o_sc_reg_wdata  => sc_reg.wdata,
 
         i_clk           => qsfp_pll_clk,
+        i_reset_n       => qsfp_reset_n,
 
         i_qsfp_refclk   => qsfp_pll_clk,
 
         i_pod_refclk    => pod_pll_clk,
 
-        i_nios_reset_n  => nios_reset_n,
-        i_nios_clk      => nios_clk--,
+        i_nios_clk_startup => clk_aux,
+        i_nios_clk_main => clk_aux,
+        i_nios_areset_n => reset_n--,
+
     );
 
 end architecture;

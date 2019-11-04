@@ -74,7 +74,7 @@ struct sc_ram_t {
                     alt_u32 dummy;
                     alt_u32 dp;
                     alt_u32 reset;
-                    alt_u32 reserved[1];
+                    alt_u32 resetdelay;
                 } ctrl;
             } scifi;
         };

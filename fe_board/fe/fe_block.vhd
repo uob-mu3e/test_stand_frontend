@@ -73,8 +73,11 @@ port (
     i_pod_refclk    : in    std_logic;
 
     -- nios clock - 125 MHz
-    i_nios_reset_n  : in    std_logic;
-    i_nios_clk      : in    std_logic--;
+    i_nios_clk_startup : in    std_logic;
+    i_nios_clk_main : in    std_logic;     --unused
+    i_nios_areset_n  : in    std_logic;
+    o_nios_clk_monitor : out std_logic;
+    o_nios_clk_selected : out std_logic--;   --unused
 );
 end entity;
 
@@ -83,7 +86,8 @@ architecture arch of fe_block is
     signal nios_pio : std_logic_vector(31 downto 0);
     signal nios_irq : std_logic_vector(3 downto 0) := (others => '0');
 
-
+    signal s_nios_clk : std_logic;
+    signal s_nios_reset_n : std_logic;
 
     signal av_sc : work.util.avalon_t;
 
@@ -194,11 +198,23 @@ begin
     end if;
     end process;
 
+    e_nios_reset_n : entity work.reset_sync
+    port map ( rstout_n => s_nios_reset_n, arst_n => i_nios_areset_n, clk => s_nios_clk );
 
+    -- nios clock selection: use startup clock until finishing the startup phase
+    --nios_clkswitch: clkctrl
+    --     port map(
+    --           inclk1x   => i_nios_clk_main,
+    --           inclk0x   => i_nios_clk_startup,
+    --           clkselect => nios_pio(31),
+    --           outclk    => s_nios_clk
+    --     );
+    --o_nios_clk_selected <= nios_pio(31);
+    s_nios_clk <= i_nios_clk_startup;
+    o_nios_clk_monitor <= s_nios_clk;
 
+    -- nios system
     nios_irq(0) <= '1' when ( reg_cmdlen /= (reg_cmdlen'range => '0') ) else '0';
-
-
 
     e_nios : component work.cmp.nios
     port map (
@@ -254,8 +270,8 @@ begin
 
         pio_export => nios_pio,
 
-        rst_reset_n => i_nios_reset_n,
-        clk_clk => i_nios_clk--,
+        rst_reset_n => s_nios_reset_n,
+        clk_clk => s_nios_clk--,
     );
 
 
@@ -364,12 +380,12 @@ begin
     e_reset_system : entity work.resetsys
     port map (
         clk_reset_rx_125=> i_pod_refclk,
-        clk_global_125  => i_nios_clk,
+        clk_global_125  => s_nios_clk,
         clk_156         => i_clk,
         clk_free        => i_clk,
         state_out_156   => run_state_156,
         state_out_125   => run_state_125,
-        reset_in_125    => not i_nios_reset_n,
+        reset_in_125    => not s_nios_reset_n,
         reset_in_156    => not i_reset_n,
         resets_out      => open,
         phase_out       => open,
@@ -395,8 +411,8 @@ begin
         o_mscb_irq                  => nios_irq(1),
         i_mscb_address              => X"ACA0",
 
-        reset                       => not i_nios_reset_n,
-        nios_clk                    => i_nios_clk--,
+        reset                       => not s_nios_reset_n,
+        nios_clk                    => s_nios_clk--,
     );
 
 
@@ -434,8 +450,8 @@ begin
         i_avs_writedata     => av_qsfp.writedata,
         o_avs_waitrequest   => av_qsfp.waitrequest,
 
-        i_reset => not i_nios_reset_n,
-        i_clk   => i_nios_clk--,
+        i_reset => not s_nios_reset_n,
+        i_clk   => s_nios_clk--,
     );
 
 
@@ -473,8 +489,8 @@ begin
         i_avs_writedata     => av_pod.writedata,
         o_avs_waitrequest   => av_pod.waitrequest,
 
-        i_reset => not i_nios_reset_n,
-        i_clk   => i_nios_clk--,
+        i_reset => not s_nios_reset_n,
+        i_clk   => s_nios_clk--,
     );
 
 end architecture;

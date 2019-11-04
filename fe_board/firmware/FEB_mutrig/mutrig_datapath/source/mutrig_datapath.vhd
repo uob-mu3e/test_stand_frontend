@@ -23,7 +23,8 @@ generic(
 port (
 	i_rst			: in  std_logic;				-- logic reset
 	i_stic_txd		: in  std_logic_vector( N_ASICS-1 downto 0);	-- serial data
-	i_refclk_125		: in  std_logic;                 		-- ref clk for pll
+	i_refclk_125_A		: in  std_logic;                 		-- ref clk for lvds pll (A-Side) 
+	i_refclk_125_B		: in  std_logic;                 		-- ref clk for lvds pll (B-Side)
 	i_ts_clk		: in  std_logic;                 		-- ref clk for global timestamp
 	i_ts_rst		: in  std_logic;				-- global timestamp reset, high active
 
@@ -241,7 +242,7 @@ port map(
 	reset_n			=> not i_rst,
 	reset_n_errcnt		=> '0',
 	rx_in			=> i_stic_txd,
-	rx_inclock		=> i_refclk_125,
+	rx_inclock		=> i_refclk_125_A,
 	rx_state		=> s_receivers_state,
 	rx_ready		=> s_receivers_ready,
 	rx_data			=> s_receivers_data,
