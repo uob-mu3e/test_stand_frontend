@@ -130,6 +130,25 @@ struct malibu_t {
     }
 
     int stic_configure(int asic, const alt_u8* bitpattern);
+
+    // send u32 to i2c
+    void i2c_write_u32(volatile alt_u32* data_u32, int n) {
+        for(int i = 0; i < n; i++) {
+            i2c_reg_t reg = u32_to_i2c_reg(data_u32[i]);
+            i2c_write_regs(&reg, 1);
+        }
+    }
+
+    // save the data to i2c_reg_t struct
+    i2c_reg_t u32_to_i2c_reg(alt_u32 data_u32) {
+        i2c_reg_t i2c_reg = {
+            data_u32 & 0x00FF0000,
+            data_u32 & 0x0000FF00,
+            data_u32 & 0x000000FF
+        };
+        return i2c_reg;
+    }
+
 };
 
 //Slow control pattern for stic3, pattern length and alloff configuration

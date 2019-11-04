@@ -46,9 +46,11 @@
 #include <switching_constants.h>
 #include "midas.h"
 #include "mfe.h"
+
 #include "../../fe_board/fe/software/app_src/malibu/ALL_OFF.h"
 
 #include "mudaq_device.h"
+#include "MALIBU.h"
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -83,6 +85,12 @@ uint32_t current_ro_idx = 0;
 INT read_sc_event(char *pevent, INT off);
 INT read_WMEM_event(char *pevent, INT off);
 void sc_settings_changed(HNDLE, HNDLE, int, void *);
+INT read_malibu_sc_event(char *pevent, INT off);
+
+INT read_malibu_sc_event(char *pevent, INT off){//TODO
+	printf("Trying to read something from malibu.\n");
+	return 0;
+};
 
 /*-- Equipment list ------------------------------------------------*/
 
@@ -107,7 +115,7 @@ const char *sc_settings_str[] = {
 //"[32] Temp3",
 nullptr
 };
-
+enum EQUIPMENT_ID {Switching=0,malibu}; 
 EQUIPMENT equipment[] = {
 
    {"Switching",                /* equipment name */
@@ -125,7 +133,21 @@ EQUIPMENT equipment[] = {
      "", "", ""} ,
      read_sc_event,             /* readout routine */
    },
-
+   {"malibu",                    /* equipment name */                                                                                                                               
+	   {2, 0,                      /* event ID, trigger mask */ //FIXME: the event ID should be different?
+		   "SYSTEM",                  /* event buffer */
+		   EQ_PERIODIC,                 /* equipment type */
+		   0,                         /* event source crate 0, all stations */
+		   "MIDAS",                   /* format */
+		   TRUE,                      /* enabled */
+		   RO_TRANSITIONS | RO_ODB,   /* read during run transitions and update ODB */
+		   1000,                      /* read every 1 sec */
+		   0,                         /* stop run after this event limit */
+		   0,                         /* number of sub events */
+		   1,                         /* log history every event */
+		   "", "", "",},
+	   read_malibu_sc_event,          /* readout routine */
+   },
    {""}
 };
 
@@ -142,6 +164,28 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
    return 1;
 };
 
+void setup_malibu(){
+	/*
+	   "/Equipment/MALIBU/Variables/MALIBU ID" 
+	   "/Equipment/MALIBU/Variables/MALIBU Ports"
+	   "/Equipment/MALIBU/Variables/Power State"
+	   "/Equipment/MALIBU/Variables/Enable PLL" 
+	   "/Equipment/MALIBU/Variables/External PLL"
+	   */
+
+	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/MALIBU ID", TID_INT);
+	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/MALIBU Ports", TID_INT);
+	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/Power State", TID_BOOL);
+	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/Enable PLL", TID_BOOL);
+	db_create_key(hDB, 0, "Equipment/MALIBU/Variables/External PLL", TID_BOOL);
+
+	//The following lines are done in start_daq.sh
+	// add custom page of MALIBU_Monitor to ODB
+	//   db_create_key(hDB, 0, "Custom/MALIBU", TID_STRING);
+	//   const char * name = "Monitor.html";
+	//   db_set_value(hDB,0,"Custom/MALIBU", name, sizeof(name), 1, TID_STRING);
+
+};
 /*-- Frontend Init -------------------------------------------------*/
 
 INT frontend_init()
@@ -195,9 +239,12 @@ INT frontend_init()
        return FE_ERR_DRIVER;
    }
 
+   //MALIBU setup
+   set_equipment_status(equipment[EQUIPMENT_ID::malibu].name, "Initializing...", "yellow");
+   mudaq::MALIBU::Create(*mup);
+   setup_malibu();
    return CM_SUCCESS;
 }
-
 /*-- Frontend Exit -------------------------------------------------*/
 
 INT frontend_exit()
@@ -374,11 +421,6 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
    if (std::string(key.name) == "Reset SC Master") {
        sc_settings_changed_hepler("Reset SC Master", hDB, hKey, TID_BOOL);
-
-       //clear memory to avoid sending old packets again
-       for(int i = 0; i <= 64*1024; i++){
-           mu.write_memory_rw(i, 0);
-       }
 
        mu.write_register_wait(RESET_REGISTER_W, SET_RESET_BIT_SC_MASTER(0), 1000);
        mu.write_register_wait(RESET_REGISTER_W, 0x0, 1000);

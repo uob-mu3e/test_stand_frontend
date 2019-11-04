@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html class="mcss">
+<head>
+   <meta charset="UTF-8">
+   <meta name="author" content="Tiancheng Zhong">
+   <link rel="stylesheet" href="midas.css">
+   <script src="controls.js"></script>
+   <script src="midas.js"></script>
+   <script src="mhttpd.js"></script>
+   <title>Example</title>
+
+   <style>
+      .mtable td { padding: 10px; }
+   </style>
+</head>
+
+
+<script>
+	// Here is all the JS function to control the web
+	/*
+	"Equipment/MALIBU/Variables/MALIBU ID"              
+	"Equipment/MALIBU/Variables/MALIBU Ports"
+	"Equipment/MALIBU/Variables/Power State"
+	"Equipment/MALIBU/Variables/Enable PLL"
+	"Equipment/MALIBU/Variables/External PLL"
+	 */
+</script>
+
+<body class="mcss" onload="mhttpd_init('Example');">
+
+<!-- header and side navigation will be filled in mhttpd_init -->
+<div id="mheader"></div>
+<div id="msidenav"></div>
+
+<div id="mmain">
+   <table class="mtable" >
+      <tr>
+         <th colspan="4" class="mtableheader">MALIBU Monitor</th>
+      </tr>
+      <tr>
+		  <td colspan="2" width="50%">
+			  <table class="mtable" id="MALIBU_POWER" width="100%"> 
+				  <!--======tabel to do power up and power down=== -->
+				  <tr>
+					  <td colspan="2" class="mtableheader">Power</td>
+				  </tr>
+				  <tr>
+					  <td width="50%">MALIBU ID</td>
+					  <td>
+						  <div name="modbvalue" data-odb-path="Equipment/MALIBU/Variables/MALIBU ID" data-odb-editable="0"></div>
+					  </td>
+				  </tr>
+
+				  <tr>
+					  <td width="50%">MALIBU ports</td>
+					  <td> <!-- TODO add more than 1 numbers to the parameters in ODB -->
+						  <div name="modbvalue" data-odb-path="Equipment/MALIBU/Variables/MALIBU Ports" data-odb-editable="0"></div>
+					  </td>
+				  </tr>
+				  <tr>
+					  <td style="text-align: center;">
+						  <button name="modbbutton" class="mbutton" data-odb-path="Equipment/Switching/Settings/MALIBUpower" data-odb-value="1">
+							  Power Up
+						  </button>
+						  <button name="modbbutton" class="mbutton" data-odb-path="Equipment/Switching/Settings/MALIBUpower" data-odb-value="0">
+							  Power Down
+						  </button>
+					  </td>
+					  <td align="center">
+						  <!-- box changes color according to Equipment/MALIBU/Variables/Power State --><!--TODO: this should link to the read back power state, which is not defined yet -->
+						  <div name="modbbox" style="width: 60%; height: 25px;" data-odb-path="Equipment/Switching/Settings/MALIBUpower" 
+															   data-color="lightgreen" data-background-color="red"></div>
+					  </td>
+				  </tr>
+			  </table>
+		  </td>
+
+		  <td colspan="2" width="50%">
+			  <table class="mtable" id="MALIBU_setting" width="100%">
+				  <!--======tabel to do setting for MALIBU=== -->
+				  <tr>
+					  <td colspan="2" class="mtableheader">Settings</td>
+				  </tr>
+				  <tr>
+					  <td width="50%">Enable PLL test</td>
+					  <td>
+						  <input type="checkbox" name="modbcheckbox" data-odb-path="/Equipment/malibu/Variables/Enable PLL"></input>
+					  </td>
+				  </tr>
+				  <tr>
+					  <td width="50%">External PLL signal</td>
+					  <td>
+						  <input type="checkbox" name="modbcheckbox" data-odb-path="/Equipment/malibu/Variables/External PLL"></input>
+					  </td>
+				  </tr>
+				  <tr>
+					  <td colspan="2" style="text-align: center;">
+						  <button name="modbbutton" class="mbutton" data-odb-path="Equipment/Switching/Settings/MALIBUsettings" data-odb-value="1">  <!-- TODO: set -->
+							 Configure Settings 
+						  </button>
+					  </td>
+				  </tr>
+			  </table>
+		  </td>
+      </tr>
+
+
+	  <tr>
+		  <td colspan="4" >
+		  <table class="mtable" id="MALIBU_online_data" width="100%">
+			  <tr>
+				  <th colspan="4" class="mtableheader">Online Data</th>
+			  </tr>
+			  <tr>
+
+			  </tr>
+			  <tr>
+				  <td colspan="4" style="text-align: center;">
+					  <img  id="data_win"  src="TileGUI/MALIBUMonitor/img/exp1.png" width="100%"></img>
+				  </td>
+			  </tr>
+		  </table> 
+		  </td>
+	  </tr>
+
+
+	  <tr>
+         <td>
+            Last run start:
+         </td>
+         <td>
+            <div name="modbvalue" data-odb-path="/Runinfo/Start time"></div>
+         </td>
+      </tr>
+      <tr>
+         <td>
+            Last run stop:
+         </td>
+         <td>
+            <div name="modbvalue" data-odb-path="/Runinfo/Stop time"></div>
+         </td>
+      </tr>
+      <tr>
+         <td>
+            Var a:
+         </td>
+         <td>
+            <!-- checkbox changes /Logger/Write data, fire dialog box on change (even if changed by odbedit) -->
+            <input type="checkbox" name="modbcheckbox" data-odb-path="/Equipment/malibu/Variables/a"></input>
+
+            <div name="modb" data-odb-path="/Logger/Write data" onchange="dlgAlert('Flag has changed');"></div>
+         </td>
+      </tr>
+      <tr>
+         <td>
+            Color box:
+         </td>
+         <td>
+            <!-- box changes color according to /Logger/Write data -->
+            <div name="modbbox" style="width: 30px; height: 30px;" data-odb-path="/Logger/Write data"
+                 data-color="lightgreen" data-background-color="red"></div>
+         </td>
+      </tr>
+      <tr>
+         <td>
+            Horizontal bars:
+         </td>
+         <td>
+            <div name="modbhbar" style="width:300px;height:20px;color:orange;" data-odb-path="/Runinfo/Run number"
+                 data-max-value="10" data-print-value="1"></div><br />
+
+            <div name="mhaxis" style="width:500px;height:22px;" data-min-value="0" data-max-value="10"></div>
+            <div name="modbhbar" style="width: 500px; height: 18px;color:lightblue" data-odb-path="/Runinfo/Run number"
+                 data-max-value="10"></div><br />
+
+            <div name="modbhbar" style="width: 200px; height: 10px;color:lightgreen;background-color:white"
+                 data-odb-path="/Runinfo/Run number" data-min-value="0.1" data-max-value="10" data-log="1"></div>
+            <div name="mhaxis" style="width:200px;height:22px;vertical-align:top;" data-min-value="0.1"
+                 data-max-value="10" data-line="0" data-log="1"></div>
+         </td>
+      </tr>
+      <tr>
+         <td>
+            Vertical bars:
+         </td>
+         <td>
+            <span name="mvaxis" style="width:100px;height:200px;text-align:right;" data-min-value="0" data-max-value="20"></span><span name="modbvbar"
+                  style="width:20px;height:200px;color:yellow;" data-odb-path="/Runinfo/Run number"
+                  data-min-value="0" data-max-value="20"></span>
+            <span name="modbvbar" style="width:10px;height:200px;vertical-align:top;color:red" data-odb-path="/Runinfo/Run number" data-min-value="0.1"
+                  data-max-value="10" data-log="1"></span><span name="mvaxis" style="width:100px;height:200px;text-align:left;" data-min-value="0.1"
+                                                                data-max-value="10" data-log="1"></span>
+         </td>
+      </tr>
+
+      <tr>
+         <td>
+            Thermometer:
+         </td>
+         <td>
+            <div name="modbthermo" style="width:30px;height:100px;" data-odb-path="/Runinfo/Run number" data-min-value="-10" data-max-value="30"
+                 data-color="darkgreen"></div>
+            <div name="modbthermo" style="width:60px;height:100px;" data-odb-path="/Runinfo/Run number" data-min-value="-10" data-max-value="30"
+                 data-color="blue" data-scale="1"
+                 onchange="this.dataset.color=this.value > 9?'red':'blue';"></div>
+            <div name="modbthermo" style="width:30px;height:100px;" data-odb-path="/Runinfo/Run number" data-min-value="-10" data-max-value="30"
+                 data-color="blue" data-background-color="white" data-value="1"></div>
+         </td>
+      </tr>
+
+      <tr>
+         <td>
+            Gauges:
+         </td>
+         <td>
+            <div name="modbgauge" style="width:100px;height:50px;" data-odb-path="/Runinfo/Run number" data-min-value="0" data-max-value="10"
+                 data-color="darkgreen" data-background-color="lightgrey" ></div>
+            <div name="modbgauge" style="width:100px;height:65px;" data-odb-path="/Runinfo/Run number" data-min-value="0" data-max-value="10"
+                 data-color="red" data-value="1" data-scale="1"></div>
+         </td>
+      </tr>
+
+      <tr>
+         <td colspan="2" style="text-align: center;">
+            <!-- div around image with "relative" position as anchor for labels and bars -->
+            <div style="position:relative;width:300px;margin:auto">
+
+               <img src="tank.gif"> <!-- background image of tank -->
+
+               <!-- label next to valve -->
+               <div name="modbvalue" data-odb-path="/Runinfo/Run number" data-odb-editable="1"
+                    style="position:absolute;top:157px;left:288px;"></div>
+
+               <!-- vertical bar inside tank, render red if value > 9 -->
+               <div name="modbvbar" style="position:absolute;top:80px;left:10px;width:104px;height:170px;"
+                    data-odb-path="/Runinfo/Run number" data-max-value="11" data-color="green"
+                    onchange="this.firstChild.style.backgroundColor=(this.value > 9)?'red':'green';"></div>
+
+               <!-- thermometer inside tank -->
+               <div name="modbthermo" style="position:absolute;top:140px;left:20px;width:20px;height:100px;"
+                    data-odb-path="/Runinfo/Run number" data-min-value="-10" data-max-value="30"
+                    data-color="blue" data-value="1"></div>
+
+            </div>
+         </td>
+      </tr>
+
+      <tr>
+         <td colspan="2" style="text-align: center;">
+            <!-- three buttons to change an ODB entry (run number in this example) -->
+            <button name="modbbutton" class="mbutton" data-odb-path="/Runinfo/Run number" data-odb-value="1">Set run
+               number to 1
+            </button>
+            <button name="modbbutton" class="mbutton" data-odb-path="/Runinfo/Run number" data-odb-value="5">Set run
+               number to 5
+            </button>
+            <button name="modbbutton" class="mbutton" data-odb-path="/Runinfo/Run number" data-odb-value="10">Set run
+               number to 10
+            </button>
+         </td>
+      </tr>
+   </table>
+</div>
+
+</body>
+</html>
