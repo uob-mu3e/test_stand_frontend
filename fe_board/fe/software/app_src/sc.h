@@ -47,7 +47,7 @@ struct sc_t {
 	    
         }
 	//zero out upper 16 bits of command register, lower bits are used as status
-        ram->regs.fe.cmdlen = 0xffff & status;
+        ram->regs.fe.cmdlen = 0xFFFF & status;
     }
 
     static

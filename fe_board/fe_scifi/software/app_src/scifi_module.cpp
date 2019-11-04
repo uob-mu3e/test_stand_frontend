@@ -326,4 +326,6 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
            return FEB_REPLY_ERROR;
 	}
     }
+
+    return 0;
 }
