@@ -32,70 +32,45 @@ const uint8_t MutrigFEB::FPGA_broadcast_ID=0;
 int MutrigFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix){
    printf("MutrigFEB::ConfigureASICs()\n");
    int status = mutrig::midasODB::MapForEach(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mutrig::Config* config, int asic){
-   int status=SUCCESS;
-   uint32_t reg;
-
-   //Write ASIC number
-   reg=asic;
-   m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg, 1, (uint32_t) FE_SPIDATA_ADDR,false);
-   //Write configuration
-   m_mu.FEBsc_write(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR+1,false);
-
-   //Write offset address
-   reg= FE_SPIDATA_ADDR;
-   m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg,1,0xfff1,false);
-
-   //Write command word to register FFF0: cmd | n
-   reg= 0x01100000 + (0xFFFF & config->length_32bits);
-   m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg,1,0xfff0,false);
-
-   usleep(100000);
-   //try each asic twice, i.e. give up when cnt>1
-/*
-   int cnt = 0;
-   while(cnt<2) {
+      int status=SUCCESS;
+      uint32_t reg;
+      cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/", odb_prefix, asic);
       try {
-         cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/", odb_prefix, asic);
-	 //Write configuration
-//	 for(int i=0;i<10;i++) printf("pattern[%d]=%8.8x\n",i,config->bitpattern_w[i]);
-	 m_mu.FEBsc_write(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR,false);
-	 //Write handleID and start bit to trigger SPI transaction
-	 uint32_t data=0;
-	 data=SET_FE_SPICTRL_BIT_START(data);
-	 data=SET_FE_SPICTRL_CHIPID_RANGE(data,ASICid_from_ID(asic));
-	 m_mu.FEBsc_write(FPGAid_from_ID(asic), &data, 1, (uint32_t) FE_SPICTRL_REGISTER,false);
-         //Wait for transaction to finish
+         //Write ASIC number
+         reg=asic;
+         m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg, 1, (uint32_t) FE_SPIDATA_ADDR,true);
+	 printf("reading back\n");
+         m_mu.FEBsc_read(FPGAid_from_ID(asic), &reg, 1,  (uint32_t) FE_SPIDATA_ADDR,true);
+         //Write configuration
+         m_mu.FEBsc_write(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR+1,true);
+
+         //Write offset address
+         reg= FE_SPIDATA_ADDR;
+         m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg,1,0xfff1,true);
+
+         //Write command word to register FFF0: cmd | n
+         reg= 0x01100000 + (0xFFFF & config->length_32bits);
+         m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg,1,0xfff0,true);
+
+         //Wait for configuration to finish
          uint timeout_cnt = 0;
-	 do{
+         do{
+            printf("Polling (%d)\n",timeout_cnt);
             if(++timeout_cnt >= 10000) throw std::runtime_error("SPI transaction timeout while configuring asic"+std::to_string(asic));
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	    m_mu.FEBsc_read(FPGAid_from_ID(asic), &data, 1, (uint32_t) FE_SPICTRL_REGISTER);
-
-         }while(GET_FE_SPICTRL_BIT_START(data));
-	 //Read back configuration
-	 m_mu.FEBsc_read(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_r), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR);
-
-	 status=config->VerifyReadbackPattern();
-         if(status==SUCCESS) break; //configuration good, stopping here. Otherwise try another time without complaining here.
+            m_mu.FEBsc_read(FPGAid_from_ID(asic), &reg, 1, 0xfff0);
+         }while( (reg&0xffff0000) != 0);
       } catch(std::exception& e) {
-         cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d, try %d: %s", asic,cnt, e.what());
-         set_equipment_status(equipment_name, "Communication error while configuring MuTRiG", "red");
-         return FE_ERR_HW; //note: return of lambda function
+          cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
+          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
+          return FE_ERR_HW; //note: return of lambda function
       }
-      cnt++;
-   }
-printf("Config class:\n");
-   std::cout<<*config;
-   if(status!=SUCCESS){
-      //configuration mismatch, report and break foreach-loop
-      set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
-      cm_msg(MERROR, "setup_mutrig", "MuTRiG configuration error for ASIC %i at try %d", asic, cnt);
-      cm_msg(MERROR, "setup_mutrig", "%s",config->GetVerificationError().c_str());
-      printf("Config class patterns after error condition seen:\n");
-      std::cout<<*config;
-   }
-*/
-   return status;//note: return of lambda function
+      if(status!=SUCCESS){
+         //configuration mismatch, report and break foreach-loop
+         set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
+         cm_msg(MERROR, "setup_mutrig", "MuTRiG configuration error for ASIC %i", asic);
+      }
+      return status;//note: return of lambda function
    });//MapForEach
    return status; //status of foreach function, SUCCESS when no error.
    return 0;

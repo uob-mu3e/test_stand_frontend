@@ -470,7 +470,7 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
     if(!request_reply)
 	return 0; //do not pretend we received what we wanted, but also do not signal a failure.
     //wait for reply
-    //printf("MudaqDevice::FEBsc_read(): Waiting for response, current=%d\n",m_FEBsc_rmem_addr);
+    printf("MudaqDevice::FEBsc_read(): Waiting for response, current=%d\n",m_FEBsc_rmem_addr);
     int count=0;
     while(count<1000){
     if(FEBsc_get_packet() && m_sc_packet_fifo.back().IsRD()) break;
@@ -530,6 +530,10 @@ MudaqDevice::SC_reply_packet packet;
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+0)); //save preamble
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+1)); //save startaddr
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+2)); //save length word
+   for (uint32_t i = 0; i < packet.GetLength(); i++) { // save data
+       packet.push_back(read_memory_ro(m_FEBsc_rmem_addr + 3 + i)); //save data
+   }
+   packet.push_back(read_memory_ro(m_FEBsc_rmem_addr + 3 + packet.GetLength())); //save trailer
 
    printf("Type %x\n", packet[0]&0x1f0000bc);
    printf("FPGA ID %x\n", packet.GetFPGA_ID());
@@ -544,10 +548,6 @@ MudaqDevice::SC_reply_packet packet;
     packet.Good()?'y':'n'
    );
 
-   for (uint32_t i = 0; i < packet.GetLength(); i++) { // getting data
-       printf("data[%d] = %x\n", i,read_memory_ro(m_FEBsc_rmem_addr + 3 + i));
-       packet.push_back(read_memory_ro(m_FEBsc_rmem_addr + 3 + i)); //save data
-   }
 
    //check type of SC packet
    if(!packet.IsResponse()){
@@ -571,30 +571,15 @@ MudaqDevice::SC_reply_packet packet;
    //printf("startaddr %x\n", packet.GetStartAddr());
    //printf("length %ld\n", packet.GetLength());
 
-   for (uint32_t i = 0; i < packet.GetLength(); i++) { // getting data
-       printf("data[%d] = %x\n", i,read_memory_ro(m_FEBsc_rmem_addr + 3 + i));
-       packet.push_back(read_memory_ro(m_FEBsc_rmem_addr + 3 + i)); //save data
+   //report and check
+   for(size_t i=0 ;i<packet.size();i++){
+      printf("packet: +%d: %16.16x\n",i,packet.at(i));
    }
-   packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+3+packet.GetLength())); //save trailer
-   /*
-   printf("packet: size=%lu length=%lu IsRD=%c IsWR=%c IsOOB=%c, IsResponse=%c, IsGood=%c\n",
-    packet.size(),packet.GetLength(),
-    packet.IsRD()?'y':'n',
-    packet.IsWR()?'y':'n',
-    packet.IsOOB()?'y':'n',
-    packet.IsResponse()?'y':'n',
-    packet.Good()?'y':'n'
-   );
-   */
-   if(packet[packet.GetLength()+3]!=0x9c){
+
+   if(packet[packet.size()-1]!=0x9c){
     printf("did not see trailer at %ld, something is wrong.\n",packet.GetLength()+3);
     throw;
    }
-   //report and check
-   //printf("packet: +0: %16.16x\n",packet.at(0));
-   //printf("packet: +1: %16.16x\n",packet.at(1));
-   //printf("packet: +2: %16.16x\n",packet.at(2));
-   //printf("packet: +3: %16.16x\n",packet.at(3));
    //store packet in fifo
    m_sc_packet_fifo.push_back(packet);
    m_FEBsc_rmem_addr += 3 + packet.GetLength() + 1;
