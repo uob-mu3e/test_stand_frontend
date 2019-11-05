@@ -31,12 +31,12 @@ int setup_db(HNDLE& hDB, const char* prefix,SciFiFEB* FEB_inteface,bool init_FEB
 
 //Map ODB structure under prefix (e.g. /Equipment/SciFi) to a Config instance (i.e. build the configuration pattern) for this asic.
 //Returns configuration class holding the pattern.
-Config MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic);
+MutrigConfig MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic);
 
 //Foreach loop over all asics under this prefix. Call with a lambda function,
 //e.g. midasODB::MapForEach(hDB, "/Equipment/SciFi",[mudaqdev_ptr](Config c,int asic){mudaqdev_ptr->ConfigureAsic(c,asic);});
 //Function must return SUCCESS, otherwise loop is stopped.
-int MapForEach(HNDLE& db_rootentry, const char* prefix, std::function<int(mutrig::Config* /*mutrig config*/,int /*ASIC #*/)> func);
+int MapForEach(HNDLE& db_rootentry, const char* prefix, std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/)> func);
 
 } } // namespace mutrig::midasODB
 

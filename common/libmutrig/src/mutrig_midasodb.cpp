@@ -131,8 +131,8 @@ int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface, bool init_
     return status;
 }
 
-mutrig::Config MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic) {
-    Config ret;
+mutrig::MutrigConfig MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic) {
+    MutrigConfig ret;
     ret.reset();
     char set_str[255];
     int status, size;
@@ -191,7 +191,7 @@ mutrig::Config MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic
     return ret;
 }
 
-int MapForEach(HNDLE& db_rootentry, const char* prefix, std::function<int(Config* /*mutrig config*/,int /*ASIC #*/)> func)
+int MapForEach(HNDLE& db_rootentry, const char* prefix, std::function<int(MutrigConfig* /*mutrig config*/,int /*ASIC #*/)> func)
 {
 	INT status = DB_SUCCESS;
 	char set_str[255];
@@ -208,7 +208,7 @@ int MapForEach(HNDLE& db_rootentry, const char* prefix, std::function<int(Config
 	//Iterate over ASICs
 	for(unsigned int asic = 0; asic < nasics; ++asic) {
     		//ddprintf("mutrig_midasodb: Mapping %s, asic %d\n",prefix, asic);
-		Config config(MapConfigFromDB(db_rootentry,prefix,asic));
+		MutrigConfig config(MapConfigFromDB(db_rootentry,prefix,asic));
 		//note: this needs to be passed as pointer, otherwise there is a memory corruption after exiting the lambda
 		status=func(&config,asic);
 		if (status != SUCCESS) break;

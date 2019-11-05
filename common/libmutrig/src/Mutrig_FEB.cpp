@@ -31,7 +31,7 @@ const uint8_t MutrigFEB::FPGA_broadcast_ID=0;
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
 int MutrigFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix){
    printf("MutrigFEB::ConfigureASICs()\n");
-   int status = mutrig::midasODB::MapForEach(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mutrig::Config* config, int asic){
+   int status = mutrig::midasODB::MapForEach(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mutrig::MutrigConfig* config, int asic){
       int status=SUCCESS;
       uint32_t reg;
       cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/", odb_prefix, asic);

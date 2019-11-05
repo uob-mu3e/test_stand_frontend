@@ -6,7 +6,7 @@
 
 namespace mutrig {
 
-Config::paras_t Config::parameters_tdc = {
+MutrigConfig::paras_t MutrigConfig::parameters_tdc = {
         std::make_tuple("vnd2c_scale",        1, 1),
         std::make_tuple("vnd2c_offset",       2, 1),
         std::make_tuple("vnd2c",              6, 1),
@@ -34,7 +34,7 @@ Config::paras_t Config::parameters_tdc = {
         std::make_tuple("latchbias",          12, 0)
     };
 
-Config::paras_t Config::parameters_ch = {
+MutrigConfig::paras_t MutrigConfig::parameters_ch = {
         std::make_tuple("energy_c_en",       1, 1), //old name: anode_flag
         std::make_tuple("energy_r_en",       1, 1), //old name: cathode_flag
         std::make_tuple("sswitch",           1, 1),
@@ -65,7 +65,7 @@ Config::paras_t Config::parameters_ch = {
         std::make_tuple("mask",              1, 1)
      };
 
-Config::paras_t Config::parameters_header = {
+MutrigConfig::paras_t MutrigConfig::parameters_header = {
         std::make_tuple("gen_idle",              1, 1),
         std::make_tuple("recv_all",              1, 1),
         std::make_tuple("ext_trig_mode",         1, 1), // new 
@@ -83,7 +83,7 @@ Config::paras_t Config::parameters_header = {
         std::make_tuple("disable_coarse",        1, 1)
     };
 
-Config::paras_t Config::parameters_footer = {
+MutrigConfig::paras_t MutrigConfig::parameters_footer = {
         std::make_tuple("amon_en",       1, 1),
         std::make_tuple("amon_dac",      8, 1),
         std::make_tuple("dmon_1_en",     1, 1),
@@ -94,16 +94,9 @@ Config::paras_t Config::parameters_footer = {
         std::make_tuple("lvds_tx_bias",  6, 1)  // new
     };
 
-void Config::addPara(const para_t& para, const std::string postfix) {
-    paras_offsets[std::get<0>(para)+postfix] = std::make_tuple(length_bits, std::get<1>(para), std::get<2>(para));
-    length_bits += std::get<1>(para);
-}
 
-
-
-Config::Config() {
+MutrigConfig::MutrigConfig() {
     // populate name/offset map
-
     length_bits = 0;
     // header 
     for(const auto& para : parameters_header )
@@ -114,7 +107,6 @@ Config::Config() {
     }
     for(const auto& para : parameters_tdc )
         addPara(para, "");
-    //for(const auto& para : parameters_tdc ) addPara(para, "_right");
     for(const auto& para : parameters_footer )
         addPara(para, "");
 
@@ -128,110 +120,13 @@ Config::Config() {
     reset();	
 }
 
-Config::~Config() {
+MutrigConfig::~MutrigConfig() {
     delete[] bitpattern_r;
     delete[] bitpattern_w;
 }
 
-int Config::setParameter(std::string name, uint32_t value) {
-    auto para = paras_offsets.find(name);
-    if( para == paras_offsets.end() ) {
-        std::cerr << "Parameter '" << name << "' is not present in mutrig config" << std::endl;
-        return 1; // parameter name not present
-    }
-    unsigned int offset;
-    size_t nbits;
-    bool endianess;
-    std::tie(offset, nbits, endianess) = para->second;
-    if( (value >> nbits) != 0 ) {
-        std::cerr << "Value '" << value << "' outside of range of " << nbits << " bits." << std::endl;
-        return 2; // out of range
-    }
 
-    uint32_t mask = 0x01;
-    unsigned int pos = offset + (endianess == false ? 0 : (nbits - 1) );
-    for(; (pos < offset + nbits) && (pos >= offset);
-        pos = pos + (endianess == false ? +1 : -1 ), mask <<= 1) {
-        unsigned int n = pos%8;
-        //unsigned int x = (mask & value) != 0 
-        if ((mask & value) != 0 ) bitpattern_w[pos/8] |=   1 << n;  // set nth bit 
-        else                      bitpattern_w[pos/8] &= ~(1 << n); // clear nth bit
-        //bitpattern_w[pos/8] ^= (-x ^ bitpattern_w[pos/8]) & (1 << n); // set nth bit to x 
-    }
-    return 0;
-}
-
-uint32_t Config::getParameter(std::string name) {
-    auto para = paras_offsets.find(name);
-    if( para == paras_offsets.end() ) {
-        std::cerr << "Parameter '" << name << "' is not present in mutrig config" << std::endl;
-        return uint32_t(-1); // parameter name not present
-    }
-    unsigned int offset;
-    size_t nbits;
-    bool endianess;
-    std::tie(offset, nbits, endianess) = para->second;
-
-    uint32_t value = 0;
-    unsigned int value_bit = 0;
-    unsigned int pos = offset + (endianess == false ? 0 : (nbits - 1) );
-    for(; (pos < offset + nbits) && (pos >= offset);
-        pos = pos + (endianess == false ? +1 : -1 ), value_bit++) {
-        value += ( ( (bitpattern_r[pos/8] & (1 << pos%8)) != 0 ) << value_bit);
-    }
-    return value;
-}
-
-int Config::reset(char o) {
-    switch(o) {
-      case 'r': std::memset(bitpattern_r, 0, length_32bits*4);
-                break;
-      case 'w': std::memset(bitpattern_w, 0, length_32bits*4);
-                break;
-      default:  std::memset(bitpattern_r, 0, length_32bits*4);
-                std::memset(bitpattern_w, 0, length_32bits*4);
-    }
-    return 0;
-}
-
-std::string Config::getPattern() {
-    std::stringstream buffer;
-    buffer << *this;
-    return buffer.str();
-}
-
-int Config::VerifyReadbackPattern(){
-    m_verification_error="";
-    for(size_t i=0;i<length-1;++i){
-    	if(bitpattern_w[i]!=bitpattern_r[i]){
-		m_verification_error="Write/Read mismatch at byte "+std::to_string(i)+", written value "+std::to_string(bitpattern_w[i])+" vs. "+std::to_string(bitpattern_r[i]);
-		return FE_ERR_HW;
-	}
-    }
-    for(size_t i=0;i<length_bits%8;i++){
-    	if((bitpattern_w[length-1]&(1<<i))!=(bitpattern_r[length-1]&(1<<i))){
-		m_verification_error="Write/Read mismatch at last byte ("+std::to_string(i)+"), written value "+std::to_string(bitpattern_w[i])+" vs. "+std::to_string(bitpattern_r[i]);
-		return FE_ERR_HW;
-	}
-    
-    }
-    return FE_SUCCESS;
-}
-
-std::ostream& operator<<(std::ostream& os, const Config& config) {
-    os << " bitpattern: (" << config.length << "/" << config.length_bits << ") 0x" << std::hex;
-    os << std::endl<<" write: 0x" << std::hex;
-    for( unsigned int i = 0; i < config.length; i++) os << std::setw(2) << std::setfill('0') << ((uint16_t)config.bitpattern_w[config.length - i - 1]); // << " ";// << config.bitpattern_r[i] << " ";
-    //os << std::endl;
-    os << std::endl<<" read:  0x" << std::hex;
-    for( unsigned int i = 0; i < config.length; i++) os << std::setw(2) << std::setfill('0') << ((uint16_t)config.bitpattern_r[config.length - i - 1]);
-    os << std::endl;
-    os << std::dec;
-    //std::cout << "bitpattern write: 0x" << std::hex << std::setw(2) << std::setfill('0') << config.bitpattern_w[0] << std::endl; 
-    return os;
-}
-
-void Config::Parse_GLOBAL_from_struct(MUTRIG_GLOBAL& mt_g){
+void MutrigConfig::Parse_GLOBAL_from_struct(MUTRIG_GLOBAL& mt_g){
     //hard coded in order to avoid macro magic
 //    setParameter("", mt_g.n_asics);
 //    setParameter("", mt_g.n_channels);
@@ -252,7 +147,7 @@ void Config::Parse_GLOBAL_from_struct(MUTRIG_GLOBAL& mt_g){
     setParameter("lvds_tx_bias", mt_g.lvds_tx_bias);
 }
 
-void Config::Parse_TDC_from_struct(MUTRIG_TDC& mt_tdc){
+void MutrigConfig::Parse_TDC_from_struct(MUTRIG_TDC& mt_tdc){
     setParameter("vnpfc", mt_tdc.vnpfc);
     setParameter("vnpfc_offset", mt_tdc.vnpfc_offset);
     setParameter("vnpfc_scale", mt_tdc.vnpfc_scale);
@@ -290,7 +185,7 @@ void Config::Parse_TDC_from_struct(MUTRIG_TDC& mt_tdc){
 }
 
 
-void Config::Parse_CH_from_struct(MUTRIG_CH& mt_ch, int channel){
+void MutrigConfig::Parse_CH_from_struct(MUTRIG_CH& mt_ch, int channel){
     setParameter("mask_" + std::to_string(channel), mt_ch.mask);
     setParameter("tthresh_" + std::to_string(channel), mt_ch.tthresh);
     setParameter("tthresh_sc_" + std::to_string(channel), mt_ch.tthresh_sc);
