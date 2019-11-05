@@ -503,51 +503,44 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
 uint32_t MudaqDevice::FEBsc_get_packet(){
    uint32_t fpga_rmem_addr=(read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
 //   printf("FEBsc_get_packet: index=%d, hwindex=%4.4x, value=%16.16x\n",m_FEBsc_rmem_addr,fpga_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr));
-   if(last_fpga_rmem_addr> 0xff00 && fpga_rmem_addr< 0x00ff) {
-     for(;last_fpga_rmem_addr<=0xffff;last_fpga_rmem_addr++){
-         fprintf(pFile_SC,"%u:%u  %16.16x\n",m_FEBsc_rmem_addr,last_fpga_rmem_addr,read_memory_ro(last_fpga_rmem_addr));
-     }
-     last_fpga_rmem_addr=0;
-   }
-   for(;last_fpga_rmem_addr<fpga_rmem_addr;last_fpga_rmem_addr++){
-         fprintf(pFile_SC,"%u:%u  %16.16x\n",m_FEBsc_rmem_addr,last_fpga_rmem_addr,read_memory_ro(last_fpga_rmem_addr));
-   }
-
-
    //hardware is in front of software? only then we can read, otherwise wait...
    if(fpga_rmem_addr==m_FEBsc_rmem_addr) return 0;
    //check if memory at current index is a SC packet
    if ((read_memory_ro(m_FEBsc_rmem_addr) & 0x1c0000bc) != 0x1c0000bc) {
     return 0; //TODO: correct when no event is to be written?
    }
-printf("---->>\n");
-printf("FEBsc_get_packet: index=%d  , value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr));
-printf("FEBsc_get_packet: index=%d+1, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+1));
-printf("FEBsc_get_packet: index=%d+2, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+2));
-printf("FEBsc_get_packet: index=%d+3, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+3));
-printf("FEBsc_get_packet: index=%d+4, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+4));
-MudaqDevice::SC_reply_packet packet;
+   //printf("---->>\n");
+   //printf("FEBsc_get_packet: index=%d  , value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr));
+   //printf("FEBsc_get_packet: index=%d+1, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+1));
+   //printf("FEBsc_get_packet: index=%d+2, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+2));
+   //printf("FEBsc_get_packet: index=%d+3, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+3));
+   //printf("FEBsc_get_packet: index=%d+4, value=%16.16x\n",m_FEBsc_rmem_addr,read_memory_ro(m_FEBsc_rmem_addr+4));
+
+   MudaqDevice::SC_reply_packet packet;
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+0)); //save preamble
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+1)); //save startaddr
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+2)); //save length word
-
-   printf("Type %x\n", packet[0]&0x1f0000bc);
-   printf("FPGA ID %x\n", packet.GetFPGA_ID());
-   printf("startaddr %x\n", packet.GetStartAddr());
-   printf("length %ld\n", packet.GetLength());
-   printf("packet: size=%lu length=%lu IsRD=%c IsWR=%c IsOOB=%c, IsResponse=%c, IsGood=%c\n",
-    packet.size(),packet.GetLength(),
-    packet.IsRD()?'y':'n',
-    packet.IsWR()?'y':'n',
-    packet.IsOOB()?'y':'n',
-    packet.IsResponse()?'y':'n',
-    packet.Good()?'y':'n'
-   );
-
    for (uint32_t i = 0; i < packet.GetLength(); i++) { // getting data
-       printf("data[%d] = %x\n", i,read_memory_ro(m_FEBsc_rmem_addr + 3 + i));
        packet.push_back(read_memory_ro(m_FEBsc_rmem_addr + 3 + i)); //save data
    }
+   packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+3+packet.GetLength())); //save trailer
+
+   //printf("Type %x\n", packet[0]&0x1f0000bc);
+   //printf("FPGA ID %x\n", packet.GetFPGA_ID());
+   //printf("startaddr %x\n", packet.GetStartAddr());
+   //printf("length %ld\n", packet.GetLength());
+   //printf("packet: size=%lu length=%lu IsRD=%c IsWR=%c IsOOB=%c, IsResponse=%c, IsGood=%c\n",
+   //  packet.size(),packet.GetLength(),
+   //  packet.IsRD()?'y':'n',
+   //  packet.IsWR()?'y':'n',
+   //  packet.IsOOB()?'y':'n',
+   //  packet.IsResponse()?'y':'n',
+   //  packet.Good()?'y':'n'
+   //);
+   ////report and check
+   //for(size_t i=0 ;i<packet.size();i++){
+   //   printf("packet: +%d: %16.16x\n",i,packet.at(i));
+   //}
 
    //check type of SC packet
    if(!packet.IsResponse()){
@@ -566,27 +559,8 @@ MudaqDevice::SC_reply_packet packet;
    if(packet.IsOOB()){
     //printf("read_sc_event: got an OOB packet!\n");
    }
-   //printf("Type %x\n", packet[0]&0x1f0000bc);
-   //printf("FPGA ID %x\n", packet.GetFPGA_ID());
-   //printf("startaddr %x\n", packet.GetStartAddr());
-   //printf("length %ld\n", packet.GetLength());
 
-   for (uint32_t i = 0; i < packet.GetLength(); i++) { // getting data
-       printf("data[%d] = %x\n", i,read_memory_ro(m_FEBsc_rmem_addr + 3 + i));
-       packet.push_back(read_memory_ro(m_FEBsc_rmem_addr + 3 + i)); //save data
-   }
-   packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+3+packet.GetLength())); //save trailer
-   /*
-   printf("packet: size=%lu length=%lu IsRD=%c IsWR=%c IsOOB=%c, IsResponse=%c, IsGood=%c\n",
-    packet.size(),packet.GetLength(),
-    packet.IsRD()?'y':'n',
-    packet.IsWR()?'y':'n',
-    packet.IsOOB()?'y':'n',
-    packet.IsResponse()?'y':'n',
-    packet.Good()?'y':'n'
-   );
-   */
-   if(packet[packet.GetLength()+3]!=0x9c){
+   if(packet[packet.size()-1]!=0x9c){
     printf("did not see trailer at %ld, something is wrong.\n",packet.GetLength()+3);
     throw;
    }
@@ -598,6 +572,10 @@ MudaqDevice::SC_reply_packet packet;
    //store packet in fifo
    m_sc_packet_fifo.push_back(packet);
    m_FEBsc_rmem_addr += 3 + packet.GetLength() + 1;
+   //no more events to read and close to the end of readable memory? then reset slave
+   if((fpga_rmem_addr==m_FEBsc_rmem_addr) && fpga_rmem_addr>0xff00){
+      FEBsc_resetSlave();
+   }
    return packet[0]&0x1f0000bc;
 }
 
