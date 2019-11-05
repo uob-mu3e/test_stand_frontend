@@ -7,91 +7,91 @@
 namespace mutrig {
 
 MutrigConfig::paras_t MutrigConfig::parameters_tdc = {
-        std::make_tuple("vnd2c_scale",        1, 1),
-        std::make_tuple("vnd2c_offset",       2, 1),
-        std::make_tuple("vnd2c",              6, 1),
-        std::make_tuple("vncntbuffer_scale",  1, 1),
-        std::make_tuple("vncntbuffer_offset", 2, 1),
-        std::make_tuple("vncntbuffer",        6, 1),
-        std::make_tuple("vncnt_scale",        1, 1),
-        std::make_tuple("vncnt_offset",       2, 1),
-        std::make_tuple("vncnt",              6, 1),
-        std::make_tuple("vnpcp_scale",        1, 1),
-        std::make_tuple("vnpcp_offset",       2, 1),
-        std::make_tuple("vnpcp",              6, 1),
-        std::make_tuple("vnvcodelay_scale",   1, 1),
-        std::make_tuple("vnvcodelay_offset",  2, 1),
-        std::make_tuple("vnvcodelay",         6, 1),
-        std::make_tuple("vnvcobuffer_scale",  1, 1),
-        std::make_tuple("vnvcobuffer_offset", 2, 1),
-        std::make_tuple("vnvcobuffer",        6, 1),
-        std::make_tuple("vnhitlogic_scale",   1, 1),
-        std::make_tuple("vnhitlogic_offset",  2, 1),
-        std::make_tuple("vnhitlogic",         6, 1),
-        std::make_tuple("vnpfc_scale",        1, 1),
-        std::make_tuple("vnpfc_offset",       2, 1),
-        std::make_tuple("vnpfc",              6, 1),
-        std::make_tuple("latchbias",          12, 0)
+        make_param("vnd2c_scale",        1, 1),
+        make_param("vnd2c_offset",       2, 1),
+        make_param("vnd2c",              6, 1),
+        make_param("vncntbuffer_scale",  1, 1),
+        make_param("vncntbuffer_offset", 2, 1),
+        make_param("vncntbuffer",        6, 1),
+        make_param("vncnt_scale",        1, 1),
+        make_param("vncnt_offset",       2, 1),
+        make_param("vncnt",              6, 1),
+        make_param("vnpcp_scale",        1, 1),
+        make_param("vnpcp_offset",       2, 1),
+        make_param("vnpcp",              6, 1),
+        make_param("vnvcodelay_scale",   1, 1),
+        make_param("vnvcodelay_offset",  2, 1),
+        make_param("vnvcodelay",         6, 1),
+        make_param("vnvcobuffer_scale",  1, 1),
+        make_param("vnvcobuffer_offset", 2, 1),
+        make_param("vnvcobuffer",        6, 1),
+        make_param("vnhitlogic_scale",   1, 1),
+        make_param("vnhitlogic_offset",  2, 1),
+        make_param("vnhitlogic",         6, 1),
+        make_param("vnpfc_scale",        1, 1),
+        make_param("vnpfc_offset",       2, 1),
+        make_param("vnpfc",              6, 1),
+        make_param("latchbias",          12, 0)
     };
 
 MutrigConfig::paras_t MutrigConfig::parameters_ch = {
-        std::make_tuple("energy_c_en",       1, 1), //old name: anode_flag
-        std::make_tuple("energy_r_en",       1, 1), //old name: cathode_flag
-        std::make_tuple("sswitch",           1, 1),
-        std::make_tuple("cm_sensing_high_r", 1, 1), //old name: SorD; should be always '0'
-        std::make_tuple("amon_en_n",         1, 1), //old name: SorD_not; 0: enable amon in the channel
-        std::make_tuple("edge",              1, 1),
-        std::make_tuple("edge_cml",          1, 1),
-        std::make_tuple("cml_sc",            1, 1),
-        std::make_tuple("dmon_en",           1, 1),
-        std::make_tuple("dmon_sw",           1, 1),
-        std::make_tuple("tdctest_n",           1, 1),
-        std::make_tuple("amonctrl",          3, 1),
-        std::make_tuple("comp_spi",          2, 1),
-        std::make_tuple("sipm_sc",           1, 1),
-        std::make_tuple("sipm",              6, 1),
-        std::make_tuple("tthresh_sc",        3, 1),
-        std::make_tuple("tthresh",           6, 1),
-        std::make_tuple("ampcom_sc",         2, 1),
-        std::make_tuple("ampcom",            6, 1),
-        std::make_tuple("inputbias_sc",      1, 1),
-        std::make_tuple("inputbias",         6, 1),
-        std::make_tuple("ethresh",           8, 1),
-        std::make_tuple("pole_sc",           1, 1),
-        std::make_tuple("pole",              6, 1),
-        std::make_tuple("cml",               4, 1),
-        std::make_tuple("delay",             1, 1),
-        std::make_tuple("pole_en_n",         1, 1), //old name: dac_delay_bit1; 0: DAC_pole on
-        std::make_tuple("mask",              1, 1)
+        make_param("energy_c_en",       1, 1), //old name: anode_flag
+        make_param("energy_r_en",       1, 1), //old name: cathode_flag
+        make_param("sswitch",           1, 1),
+        make_param("cm_sensing_high_r", 1, 1), //old name: SorD; should be always '0'
+        make_param("amon_en_n",         1, 1), //old name: SorD_not; 0: enable amon in the channel
+        make_param("edge",              1, 1),
+        make_param("edge_cml",          1, 1),
+        make_param("cml_sc",            1, 1),
+        make_param("dmon_en",           1, 1),
+        make_param("dmon_sw",           1, 1),
+        make_param("tdctest_n",           1, 1),
+        make_param("amonctrl",          3, 1),
+        make_param("comp_spi",          2, 1),
+        make_param("sipm_sc",           1, 1),
+        make_param("sipm",              6, 1),
+        make_param("tthresh_sc",        3, 1),
+        make_param("tthresh",           6, 1),
+        make_param("ampcom_sc",         2, 1),
+        make_param("ampcom",            6, 1),
+        make_param("inputbias_sc",      1, 1),
+        make_param("inputbias",         6, 1),
+        make_param("ethresh",           8, 1),
+        make_param("pole_sc",           1, 1),
+        make_param("pole",              6, 1),
+        make_param("cml",               4, 1),
+        make_param("delay",             1, 1),
+        make_param("pole_en_n",         1, 1), //old name: dac_delay_bit1; 0: DAC_pole on
+        make_param("mask",              1, 1)
      };
 
 MutrigConfig::paras_t MutrigConfig::parameters_header = {
-        std::make_tuple("gen_idle",              1, 1),
-        std::make_tuple("recv_all",              1, 1),
-        std::make_tuple("ext_trig_mode",         1, 1), // new 
-        std::make_tuple("ext_trig_endtime_sign", 1, 1), // sign of the external trigger matching window, 1: end time is after the trigger; 0: end time is before the trigger
-        std::make_tuple("ext_trig_offset",       4, 0), // offset of the external trigger matching window
-        std::make_tuple("ext_trig_endtime",      4, 0), // end time of external trigger matching window
-        std::make_tuple("ms_limits",             5, 0),
-        std::make_tuple("ms_switch_sel",         1, 1),
-        std::make_tuple("ms_debug",              1, 1),
-        std::make_tuple("prbs_debug",            1, 1), // new
-        std::make_tuple("prbs_single",           1, 1), // new
-        std::make_tuple("short_event_mode",      1, 1), //fast transmission mode
-        std::make_tuple("pll_setcoarse",         1, 1),
-        std::make_tuple("pll_envomonitor",       1, 1),
-        std::make_tuple("disable_coarse",        1, 1)
+        make_param("gen_idle",              1, 1),
+        make_param("recv_all",              1, 1),
+        make_param("ext_trig_mode",         1, 1), // new 
+        make_param("ext_trig_endtime_sign", 1, 1), // sign of the external trigger matching window, 1: end time is after the trigger; 0: end time is before the trigger
+        make_param("ext_trig_offset",       4, 0), // offset of the external trigger matching window
+        make_param("ext_trig_endtime",      4, 0), // end time of external trigger matching window
+        make_param("ms_limits",             5, 0),
+        make_param("ms_switch_sel",         1, 1),
+        make_param("ms_debug",              1, 1),
+        make_param("prbs_debug",            1, 1), // new
+        make_param("prbs_single",           1, 1), // new
+        make_param("short_event_mode",      1, 1), //fast transmission mode
+        make_param("pll_setcoarse",         1, 1),
+        make_param("pll_envomonitor",       1, 1),
+        make_param("disable_coarse",        1, 1)
     };
 
 MutrigConfig::paras_t MutrigConfig::parameters_footer = {
-        std::make_tuple("amon_en",       1, 1),
-        std::make_tuple("amon_dac",      8, 1),
-        std::make_tuple("dmon_1_en",     1, 1),
-        std::make_tuple("dmon_1_dac",    8, 1),
-        std::make_tuple("dmon_2_en",     1, 1),
-        std::make_tuple("dmon_2_dac",    8, 1),
-        std::make_tuple("lvds_tx_vcm",   8, 1), // new
-        std::make_tuple("lvds_tx_bias",  6, 1)  // new
+        make_param("amon_en",       1, 1),
+        make_param("amon_dac",      8, 1),
+        make_param("dmon_1_en",     1, 1),
+        make_param("dmon_1_dac",    8, 1),
+        make_param("dmon_2_en",     1, 1),
+        make_param("dmon_2_dac",    8, 1),
+        make_param("lvds_tx_vcm",   8, 1), // new
+        make_param("lvds_tx_bias",  6, 1)  // new
     };
 
 

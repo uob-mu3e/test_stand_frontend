@@ -10,15 +10,15 @@ namespace mupix {
 /// MUPIX configuration
 
 MupixConfig::paras_t MupixConfig::parameters_chipdacs = {
-        std::make_tuple("vnd2c_scale",        1, 1),
-        std::make_tuple("vnd2c_offset",       2, 1),
-        std::make_tuple("latchbias",          12, 0)
+        make_param("vnd2c_scale",        1, 1),
+        make_param("vnd2c_offset",       2, 1),
+        make_param("latchbias",          12, 0)
     };
 
 MupixConfig::paras_t MupixConfig::parameters_pixeldacs = {
-        std::make_tuple("energy_c_en",       1, 1),
-        std::make_tuple("energy_r_en",       1, 1),
-        std::make_tuple("mask",              1, 1)
+        make_param("energy_c_en",       1, 1),
+        make_param("energy_r_en",       1, 1),
+        make_param("mask",              1, 1)
      };
 
 
@@ -59,9 +59,9 @@ void MupixConfig::Parse_ChipDACs_from_struct(MUPIX_CHIPDACS mt_g){
 /// MUPIX board configuration
 
 MupixBoardConfig::paras_t MupixBoardConfig::parameters_boarddacs = {
-        std::make_tuple("vnd2c_scale",        1, 1),
-        std::make_tuple("vnd2c_offset",       2, 1),
-        std::make_tuple("latchbias",          12, 0)
+        make_param("vnd2c_scale",        1, 1),
+        make_param("vnd2c_offset",       2, 1),
+        make_param("latchbias",          12, 0)
     };
 
 

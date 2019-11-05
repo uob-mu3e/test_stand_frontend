@@ -6,6 +6,19 @@
 
 namespace mudaq {
 
+ASICConfigBase::para_t ASICConfigBase::make_param(std::string name, size_t nbits, bool endianess){
+    std::vector<uint8_t> bitorder(nbits);
+    if(endianess)
+        for(size_t i=0;i<nbits;i++) bitorder[i]=i;
+    else
+        for(size_t i=0;i<nbits;i++) bitorder[i]=nbits-1-i;
+    return std::make_tuple(name,nbits,bitorder);
+}
+
+ASICConfigBase::para_t ASICConfigBase::make_param(std::string name, size_t nbits, std::vector<uint8_t> bitorder){
+    return std::make_tuple(name,nbits,bitorder);
+}
+
 void ASICConfigBase::addPara(const para_t& para, const std::string postfix) {
     paras_offsets[std::get<0>(para)+postfix] = std::make_tuple(length_bits, std::get<1>(para), std::get<2>(para));
     length_bits += std::get<1>(para);
@@ -56,22 +69,19 @@ int ASICConfigBase::setParameter(std::string name, uint32_t value) {
     }
     unsigned int offset;
     size_t nbits;
-    bool endianess;
-    std::tie(offset, nbits, endianess) = para->second;
+    std::vector<uint8_t> bitorder;
+    std::tie(offset, nbits, bitorder) = para->second;
     if( (value >> nbits) != 0 ) {
         std::cerr << "Value '" << value << "' outside of range of " << nbits << " bits." << std::endl;
         return 2; // out of range
     }
 
     uint32_t mask = 0x01;
-    unsigned int pos = offset + (endianess == false ? 0 : (nbits - 1) );
-    for(; (pos < offset + nbits) && (pos >= offset);
-        pos = pos + (endianess == false ? +1 : -1 ), mask <<= 1) {
-        unsigned int n = pos%8;
-        //unsigned int x = (mask & value) != 0 
-        if ((mask & value) != 0 ) bitpattern_w[pos/8] |=   1 << n;  // set nth bit 
-        else                      bitpattern_w[pos/8] &= ~(1 << n); // clear nth bit
-        //bitpattern_w[pos/8] ^= (-x ^ bitpattern_w[pos/8]) & (1 << n); // set nth bit to x 
+    for(unsigned int pos = 0; (pos < nbits); pos++, mask <<= 1) {
+        unsigned int n = offset+bitorder.at(pos)%8;
+        unsigned int b = offset+bitorder.at(pos)/8;
+        if ((mask & value) != 0 ) bitpattern_w[b] |=   1 << n;  // set nth bit 
+        else                      bitpattern_w[b] &= ~(1 << n); // clear nth bit
     }
     return 0;
 }
@@ -84,15 +94,14 @@ uint32_t ASICConfigBase::getParameter(std::string name) {
     }
     unsigned int offset;
     size_t nbits;
-    bool endianess;
-    std::tie(offset, nbits, endianess) = para->second;
+    std::vector<uint8_t> bitorder;
+    std::tie(offset, nbits, bitorder) = para->second;
 
     uint32_t value = 0;
-    unsigned int value_bit = 0;
-    unsigned int pos = offset + (endianess == false ? 0 : (nbits - 1) );
-    for(; (pos < offset + nbits) && (pos >= offset);
-        pos = pos + (endianess == false ? +1 : -1 ), value_bit++) {
-        value += ( ( (bitpattern_r[pos/8] & (1 << pos%8)) != 0 ) << value_bit);
+    for(unsigned int pos = 0; pos < nbits; pos++) {
+        unsigned int n = offset+bitorder.at(pos)%8;
+        unsigned int b = offset+bitorder.at(pos)/8;
+        value += ( ( (bitpattern_r[b] & (1 << n)) != 0 ) << pos);
     }
     return value;
 }

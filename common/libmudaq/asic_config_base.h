@@ -60,7 +60,7 @@ public:
     uint8_t * bitpattern_w; ///< readback bitpattern
 
 protected:
-    typedef std::tuple<unsigned int, size_t, bool> para_offset_t;   ///< mutrig parameter offset/nbits/endianess pair (offset, endianess)
+    typedef std::tuple<unsigned int, size_t, std::vector<uint8_t>> para_offset_t;   ///< mutrig parameter offset/nbits/endianess pair (offset, endianess)
     typedef std::map<std::string, para_offset_t> paras_offset_t;    ///< mutrig parameters offset/nbits/endianess map
     paras_offset_t paras_offsets;                                   ///< initialized from parameters on construction
     //error message giving bitpattern verification error informations. Valid after calling VerifyReadbackPattern()
@@ -70,7 +70,12 @@ public:
     /**
      * ASIC parameters (name, number of bits, endianess)
      */ 
-    typedef std::tuple<std::string, size_t, bool> para_t;     ///< mutrig parameter (name, number of bits, endianess)
+    typedef std::tuple<std::string, size_t, std::vector<uint8_t>> para_t;     ///< mutrig parameter (name, number of bits, bit order)
+    //param from name,size,endianess
+    static para_t make_param(std::string, size_t, bool);
+    //param from name,size,bitorder-list
+    static para_t make_param(std::string, size_t, std::vector<uint8_t>);
+
     typedef std::vector<para_t> paras_t;                      ///< mutrig parameter in correct order (starting at bit offset 0)
 
     const paras_offset_t& getParameters() const { return paras_offsets; }
