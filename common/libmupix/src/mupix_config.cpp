@@ -29,6 +29,8 @@ MupixConfig::MupixConfig() {
     for(const auto& para : parameters_chipdacs)
         addPara(para, "");
     // pixels
+    unsigned int nrow = 8;
+    unsigned int ncol = 99;
     for(unsigned int row = 0; row < nrow; ++row) 
         for(unsigned int col = 0; col < ncol; ++col) 
             for(const auto& para : parameters_pixeldacs )
@@ -50,36 +52,26 @@ MupixConfig::~MupixConfig() {
 }
 
 void MupixConfig::Parse_ChipDACs_from_struct(MUPIX_CHIPDACS mt_g){
-    setParameter("ext_trig_mode", mt_g.ext_trig_mode);
-    setParameter("ext_trig_endtime_sign", mt_g.ext_trig_endtime_sign);
+    //setParameter("ext_trig_mode", mt_g.ext_trig_mode);
+    //setParameter("ext_trig_endtime_sign", mt_g.ext_trig_endtime_sign);
 }
 
 /// MUPIX board configuration
 
-MupixBoardConfig::paras_t MupixBoardConfig::parameters_chipdacs = {
+MupixBoardConfig::paras_t MupixBoardConfig::parameters_boarddacs = {
         std::make_tuple("vnd2c_scale",        1, 1),
         std::make_tuple("vnd2c_offset",       2, 1),
         std::make_tuple("latchbias",          12, 0)
     };
 
-MupixBoardConfig::paras_t MupixBoardConfig::parameters_pixeldacs = {
-        std::make_tuple("energy_c_en",       1, 1),
-        std::make_tuple("energy_r_en",       1, 1),
-        std::make_tuple("mask",              1, 1)
-     };
 
 
 MupixBoardConfig::MupixBoardConfig() {
     // populate name/offset map
     length_bits = 0;
     // header 
-    for(const auto& para : parameters_chipdacs)
+    for(const auto& para : parameters_boarddacs)
         addPara(para, "");
-    // pixels
-    for(unsigned int row = 0; row < nrow; ++row) 
-        for(unsigned int col = 0; col < ncol; ++col) 
-            for(const auto& para : parameters_pixeldacs )
-                addPara(para, "_"+std::to_string(row)+"_"+std::to_string(row));
 
     // allocate memory for bitpattern
     length = length_bits/8;
@@ -96,9 +88,9 @@ MupixBoardConfig::~MupixBoardConfig() {
     delete[] bitpattern_w;
 }
 
-void MupixBoardConfig::Parse_ChipDACs_from_struct(MUPIX_CHIPDACS mt_g){
-    setParameter("ext_trig_mode", mt_g.ext_trig_mode);
-    setParameter("ext_trig_endtime_sign", mt_g.ext_trig_endtime_sign);
+void MupixBoardConfig::Parse_BoardDACs_from_struct(MUPIX_BOARDDACS mt_g){
+    //setParameter("ext_trig_mode", mt_g.ext_trig_mode);
+    //setParameter("ext_trig_endtime_sign", mt_g.ext_trig_endtime_sign);
 }
 
 

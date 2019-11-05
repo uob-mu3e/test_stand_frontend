@@ -3,7 +3,7 @@ add_library(libmupix STATIC
     include/mupix_MIDAS_config.h
     include/mupix_midasodb.h
     include/mupix_FEB.h
-    #src/mupix_config.cpp
+    src/mupix_config.cpp
     src/mupix_MIDAS_config.cpp
     src/mupix_midasodb.cpp
     src/mupix_FEB.cpp

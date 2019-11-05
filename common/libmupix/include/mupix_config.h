@@ -22,7 +22,7 @@ public:
     MupixConfig();
     ~MupixConfig();
     
-    void Parse_ChipDACs_from_struct(MUPIX_CHIPDACS mt){};
+    void Parse_ChipDACs_from_struct(MUPIX_CHIPDACS mt);
 
 private:
     static paras_t parameters_chipdacs;                             ///< parameters for global dacs (name, nbits, endian) 
@@ -35,7 +35,7 @@ public:
     MupixBoardConfig();
     ~MupixBoardConfig();
     
-    void Parse_BoardDACs_from_struct(MUPIX_BOARDDACS mt){};
+    void Parse_BoardDACs_from_struct(MUPIX_BOARDDACS mt);
 private:
     static paras_t parameters_boarddacs;                             ///< parameters for global dacs (name, nbits, endian) 
 };
