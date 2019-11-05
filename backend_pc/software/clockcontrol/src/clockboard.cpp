@@ -17,19 +17,21 @@ clockboard::clockboard(const char *addr, int port):bus(addr, port)
 
 }
 
-int clockboard::init_clockboard(uint16_t clkinvert, uint16_t rstinvert)
+int clockboard::init_clockboard(uint16_t clkinvert, uint16_t rstinvert, uint16_t clkdisable, uint16_t rstdisable)
 {
-    init_12c();
+    init_i2c();
     // Turn on Si chip output  
     bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_CLK_CTRL,BIT_CTRL_CLK_CTRL_SI_OE) ;
 
 
     // set inverted channels on the reset firefly
     invert_tx_rst_channels(rstinvert);
+    disable_tx_clk_channels(clkdisable);
     //cout <<hex << "Inverted TX channels set: " <<  FIREFLY_RESET_INVERT_INIT << " " << read_inverted_tx_channels() << endl;
 
     // set inverted channels on the clock firefly
     invert_tx_clk_channels(clkinvert);
+    disable_tx_rst_channels(rstdisable);
     //cout << "Inverted TX channels set: " <<  FIREFLY_CLOCK_INVERT_INIT << " " << read_inverted_tx_channels() << endl;
     return 1;
 }
@@ -103,7 +105,7 @@ int clockboard::write_command(char *name, uint32_t payload, uint16_t address)
 }
 
 
-int clockboard::init_12c()
+int clockboard::init_i2c()
 {
     if(!isConnected())
         return -1;
@@ -659,13 +661,27 @@ float clockboard::read_tx_firefly_voltage(uint8_t daughter, uint8_t index)
 {
     enable_daughter_12c(DAUGHTERS[daughter],FIREFLY_SEL[index]);
     uint8_t data;
-    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_VOLTAGE_LO_REG,data);
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_VOLTAGE_LO_REG,data);
     uint16_t voltage = data;
-    read_i2c_reg(FIREFLY_RX_ADDR,FIREFLY_VOLTAGE_HI_REG,data);
+    read_i2c_reg(FIREFLY_TX_ADDR,FIREFLY_VOLTAGE_HI_REG,data);
     voltage += ((uint16_t)data << 8);
     disable_daughter_12c(DAUGHTERS[daughter]);
     return (float)voltage / 10.0;
     // voltage in mV
+}
+
+int clockboard::disable_tx_channels(uint8_t daughter, uint8_t firefly, uint16_t channelmask)
+{
+    // This part is not yet working as hoped for...
+    enable_daughter_12c(DAUGHTERS[daughter],FIREFLY_SEL[firefly]);
+    write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_HI_ADDR, (uint8_t)((channelmask>>8)&0x0f));
+    write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_LO_ADDR, (uint8_t)(channelmask&0xff));
+
+    uint8_t data;
+    read_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_HI_ADDR,data);
+    cout << "At " << (uint32_t) daughter << ": " << (uint32_t) firefly << " read back " << (uint32_t)data << endl;
+    disable_daughter_12c(DAUGHTERS[daughter]);
+    return 0;
 }
 
 
@@ -740,6 +756,17 @@ float clockboard::read_mother_board_voltage()
         return -1;
     // 1 = 4mV - *4 gives voltage in mV
     float current = ((data[0] << 5)|(data[1]>>3))*4.0;
+    return current;
+}
+
+float clockboard::read_fan_current()
+{
+
+    uint32_t reg;
+    reg = bus.read(ADDR_DATA_CALIBRATED);
+    reg = reg >> 16;
+    float current = (1000/89.95)*(((int)reg)-2058);
+    //cout << hex << reg << endl;
     return current;
 }
 

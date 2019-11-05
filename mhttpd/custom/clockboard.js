@@ -11,6 +11,7 @@ function Motherboard(x,y,dx,dy){
 
     this.current = "123 mA";
     this.voltage = "4567 mV";
+    this.fans = "Fans: 0 mV";
 
     this.rx = new RXFirefly(this.x+500, this.y+130,140, 140);
     this.txclk = new TXFirefly(this.x+300, this.y+30,140, 140, "TXClk");
@@ -26,6 +27,7 @@ function Motherboard(x,y,dx,dy){
         c.font = "12px Arial";
         c.fillText(this.current, this.x+40, this.y+100);
         c.fillText(this.voltage, this.x+100, this.y+100);
+        c.fillText(this.fans, this.x+40, this.y+200);
 
         this.rx.draw();
         this.txclk.draw();
@@ -342,7 +344,7 @@ window.addEventListener('click', function(event) {
 
 
 function update_boarddrawing(value) {
-    var doffset = 11;
+    var doffset = 12;
     var dnum = 11;
 
     motherboard.current = Number.parseFloat(value["crt1"][0]).toFixed(0) + "mA";
@@ -366,6 +368,7 @@ function update_boarddrawing(value) {
     motherboard.txrst.temp = Number.parseFloat(value["crt1"][9]).toFixed(0) + "C";
     motherboard.txrst.voltage = Number.parseFloat(value["crt1"][10]).toFixed(0) + "mV";
 
+    motherboard.fans = Number.parseFloat(value["crt1"][11].toFixed(0)+ "mA");
 
 
 

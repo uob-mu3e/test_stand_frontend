@@ -93,10 +93,10 @@ const char *cr_settings_str[] = {
 "Active = BOOL : 1",
 "IP = STRING : [16] 192.168.0.200",
 "PORT = INT : 50001",
-"TX_CLK_MASK = INT : 0",
-"TX_RST_MASK = INT : 0",
+"TX_CLK_MASK = INT : 0x0AA",
+"TX_RST_MASK = INT : 0xAA0",
 "TX_CLK_INVERT_MASK = INT : 0x0A00",
-"TX_RST_INVERT_MASK = INT : 0x0008",
+"TX_RST_INVERT_MASK = INT : 0x0000",
 "RX_MASK = INT : 0",
 "TX_MASK = INT[24]:",
     "[0] 0",\
@@ -348,6 +348,16 @@ INT frontend_init()
    if(!cb->isConnected())
         return CM_TIMEOUT;
 
+   int clkdisable;
+   size =sizeof(port);
+   if(!(db_get_value(hDB, hKey, "settings/TX_CLK_MASK", &clkdisable, &size, TID_INT, false)==DB_SUCCESS))
+           return CM_DB_ERROR;
+
+   int rstdisable;
+   size =sizeof(port);
+   if(!(db_get_value(hDB, hKey, "settings/TX_RST_MASK", &rstdisable, &size, TID_INT, false)==DB_SUCCESS))
+           return CM_DB_ERROR;
+
    int clkinvert;
    size =sizeof(port);
    if(!(db_get_value(hDB, hKey, "settings/TX_CLK_INVERT_MASK", &clkinvert, &size, TID_INT, false)==DB_SUCCESS))
@@ -358,7 +368,7 @@ INT frontend_init()
    if(!(db_get_value(hDB, hKey, "settings/TX_RST_INVERT_MASK", &rstinvert, &size, TID_INT, false)==DB_SUCCESS))
            return CM_DB_ERROR;
 
-   cb->init_clockboard(clkinvert, rstinvert);
+   cb->init_clockboard(clkinvert, rstinvert, clkdisable, rstdisable);
 
    // check which daughter cards are equipped
    uint8_t daughters = cb->daughters_present();
@@ -456,6 +466,8 @@ INT read_cr_event(char *pevent, INT off)
    *pdata++ = cb->read_tx_rst_firefly_temp();
    *pdata++ = cb->read_tx_rst_firefly_voltage();
 
+   *pdata++ = cb->read_fan_current();
+
 
    for(uint8_t i=0;i < 8; i++){
        if(daughters && (1<<i)){
@@ -512,6 +524,49 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       db_get_data(hDB, hKey, &value, &size, TID_INT);
       cm_msg(MINFO, "cr_settings_changed", "Set RX_MASK to %x", value);
       cb->disable_rx_channels(value);
+   }
+
+
+    if (std::string(key.name) == "TX_MASK") {
+        int value[24];
+        int size = sizeof(int)*24;
+        db_get_data(hDB, hKey, value, &size, TID_INT);
+        for(int i=0; i < 24; i++){
+            cm_msg(MINFO, "cr_settings_changed", "Set TX_MASK[%i] to %x", i, value[i]);
+            cb->disable_tx_channels(i/3,i%3,value[i]);
+        }
+   }
+
+    if (std::string(key.name) == "TX_CLK_MASK") {
+      int value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_INT);
+      cm_msg(MINFO, "cr_settings_changed", "Set TX_CLK_MASK to %x", value);
+      cb->disable_tx_clk_channels(value);
+   }
+
+    if (std::string(key.name) == "TX_RST_MASK") {
+      int value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_INT);
+      cm_msg(MINFO, "cr_settings_changed", "Set TX_RST_MASK to %x", value);
+      cb->disable_tx_rst_channels(value);
+   }
+
+    if (std::string(key.name) == "TX_CLK_INVERT_MASK") {
+      int value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_INT);
+      cm_msg(MINFO, "cr_settings_changed", "Set TX_CLK_INVERT_MASK to %x", value);
+      cb->invert_tx_clk_channels(value);
+   }
+
+    if (std::string(key.name) == "TX_RST_INVERT_MASK") {
+      int value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_INT);
+      cm_msg(MINFO, "cr_settings_changed", "Set TX_RST_INVERT_MASK to %x", value);
+      cb->invert_tx_rst_channels(value);
    }
 
     if (std::string(key.name) == "Addressed") {
