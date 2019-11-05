@@ -4,82 +4,73 @@ use ieee.numeric_std.all;
 
 entity top is
 port (
-    -- FE.A
-     clock_A				: out std_logic;
-	 data_in_A_0			: in std_logic_vector(3 downto 0);
-	 data_in_A_1			: in std_logic_vector(3 downto 0);
-	 fast_reset_A			: out std_logic;
-	 test_pulse_A			: out std_logic;
- 
-	 CTRL_SDO_A				: in std_logic; -- A_ctrl_dout_front
-	 CTRL_SDI_A				: out std_logic; -- A_ctrl_din_front
-	 CTRL_SCK1_A			: out std_logic; -- A_ctrl_clk1_front
-	 CTRL_SCK2_A			: out std_logic; -- A_ctrl_clk2_front
-	 CTRL_RB_A				: out std_logic; -- A_ctrl_rb_front
-	 CTRL_Load_A			: out std_logic; -- A_ctrl_ld_front
-	 
-	 -- A_trig_front
-	 chip_reset_A			: out std_logic; -- is called trigger on adapter card!
- 
-	 SPI_DIN0_A				: out std_logic; -- A_spi_din_front             -- AH9
-	 SPI_DIN1_A				: out std_logic; -- A_spi_din_back              -- 
-	 SPI_CLK_A				: out std_logic; -- A_spi_clk_front             -- AH8
-	 SPI_LD_DAC_A			: out std_logic; -- A_spi_ld_front              -- AW4
-	 SPI_LD_ADC_A			: out std_logic; -- A_spi_ld_tmp_dac_front      -- AP7
-	 SPI_LD_TEMP_DAC_A		: out std_logic; -- A_spi_ld_adc_front          -- AN7
-	 SPI_DOUT_ADC_0_A		: in std_logic; -- A_spi_dout_adc_front         -- AT9
-	 SPI_DOUT_ADC_1_A		: in std_logic; -- A_spi_dout_adc_back          -- 
-     
-     
---     SPI_SCK_A : out std_logic; -- SPI_CLK_A 
---     SPI_SDI_A : out std_logic; -- SPI_DIN0_A
---     SPI_SDO_A : in std_logic;  -- SPI_DOUT_ADC_0_A
---     SPI_Load_A : out std_logic_vector(2 downto 0); -- SPI_LD_ADC_A SPI_LD_TEMP_DAC_A SPI_LD_DAC_A
---     
-	 
-    -- SI5345
 
-    si45_oe_n       : out   std_logic; -- <= '0'
-    si45_rst_n      : out   std_logic; -- reset
-    si45_spi_out    : in    std_logic; -- slave data out
-    si45_spi_in     : out   std_logic; -- slave data in
-    si45_spi_sclk   : out   std_logic; -- clock
-    si45_spi_cs_n   : out   std_logic; -- chip select
+	-- FE.A
 
+	clock_A				: out std_logic;
+	data_in_A_0			: in std_logic_vector(3 downto 0);
+	data_in_A_1			: in std_logic_vector(3 downto 0);
+	fast_reset_A			: out std_logic;
+	test_pulse_A			: out std_logic;
 
+	CTRL_SDO_A				: in std_logic; -- A_ctrl_dout_front
+	CTRL_SDI_A				: out std_logic; -- A_ctrl_din_front
+	CTRL_SCK1_A			: out std_logic; -- A_ctrl_clk1_front
+	CTRL_SCK2_A			: out std_logic; -- A_ctrl_clk2_front
+	CTRL_RB_A				: out std_logic; -- A_ctrl_rb_front
+	CTRL_Load_A			: out std_logic; -- A_ctrl_ld_front
 
-    -- QSFP
+	-- A_trig_front
 
-    -- si5345 out2 (156.25 MHz)
-    qsfp_pll_clk    : in    std_logic;
+	chip_reset_A			: out std_logic; -- is called trigger on adapter card!
+	SPI_DIN0_A				: out std_logic; -- A_spi_din_front             -- AH9
+	SPI_DIN1_A				: out std_logic; -- A_spi_din_back              -- 
+	SPI_CLK_A				: out std_logic; -- A_spi_clk_front             -- AH8
+	SPI_LD_DAC_A			: out std_logic; -- A_spi_ld_front              -- AW4
+	SPI_LD_ADC_A			: out std_logic; -- A_spi_ld_tmp_dac_front      -- AP7
+	SPI_LD_TEMP_DAC_A		: out std_logic; -- A_spi_ld_adc_front          -- AN7
+	SPI_DOUT_ADC_0_A		: in std_logic; -- A_spi_dout_adc_front         -- AT9
+	SPI_DOUT_ADC_1_A		: in std_logic; -- A_spi_dout_adc_back          -- 
 
-    QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
-    QSFP_Rst_n      : out   std_logic;
-    QSFP_LPM        : out   std_logic; -- Low Power Mode
+	-- SI5345
 
-    qsfp_tx         : out   std_logic_vector(3 downto 0);
-    qsfp_rx         : in    std_logic_vector(3 downto 0);
+	si45_oe_n       : out   std_logic; -- <= '0'
+	si45_rst_n      : out   std_logic; -- reset
+	si45_spi_out    : in    std_logic; -- slave data out
+	si45_spi_in     : out   std_logic; -- slave data in
+	si45_spi_sclk   : out   std_logic; -- clock
+	si45_spi_cs_n   : out   std_logic; -- chip select
+
+	-- QSFP
+
+	-- si5345 out2 (156.25 MHz)
+	qsfp_pll_clk    : in    std_logic;
+	QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
+	QSFP_Rst_n      : out   std_logic;
+	QSFP_LPM        : out   std_logic; -- Low Power Mode
+	qsfp_tx         : out   std_logic_vector(3 downto 0);
+	qsfp_rx         : in    std_logic_vector(3 downto 0);
 
 
 
-    -- POD
+	-- POD
 
-    -- si5345 out0 (125 MHz)
-    pod_pll_clk     : in    std_logic;
+	-- si5345 out0 (125 MHz)
+	pod_pll_clk     : in    std_logic;
 
-    pod_tx_reset_n  : out   std_logic;
-    pod_rx_reset_n  : out   std_logic;
+	pod_tx_reset_n  : out   std_logic;
+	pod_rx_reset_n  : out   std_logic;
 
-    pod_tx          : out   std_logic_vector(3 downto 0);
-    pod_rx          : in    std_logic_vector(3 downto 0);
+	pod_tx          : out   std_logic_vector(3 downto 0);
+	pod_rx          : in    std_logic_vector(3 downto 0);
 
 
 
-    -- MSCB
+	-- MSCB
 
-    mscb_data_in    : in    std_logic;
-    mscb_data_out   : out   std_logic;
-    mscb_oe         : out   std_logic;
+	mscb_data_in    : in    std_logic;
+	mscb_data_out   : out   std_logic;
+	mscb_oe         : out   std_logic;
 
 
 
@@ -127,14 +118,6 @@ architecture arch of top is
     signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n : std_logic_vector(15 downto 0);
-    
---    
---    signal SPI_DIN0_A : std_logic;          -- MOSI
---    signal SPI_CLK_A : std_logic;           -- CLK
---    signal SPI_LD_DAC_A : std_logic;        -- SS
---    signal SPI_LD_ADC_A : std_logic;        -- SS
---    signal SPI_LD_TEMP_DAC_A : std_logic;   -- SS
---    signal SPI_DOUT_ADC_0_A : std_logic;    -- MISO
 
 begin
 
@@ -182,40 +165,45 @@ begin
     e_mupix_block : entity work.mupix_block
     generic map(NCHIPS => 1)
     port map(
-   
-        -- chip dacs
-        i_CTRL_SDO_A            => CTRL_SDO_A,
-        o_CTRL_SDI_A            => CTRL_SDI_A,
-        o_CTRL_SCK1_A           => CTRL_SCK1_A,
-        o_CTRL_SCK2_A           => CTRL_SCK2_A,
-        o_CTRL_Load_A           => CTRL_Load_A,
-        o_CTRL_RB_A             => CTRL_RB_A,
-		  
-          
-		  
-        -- board dacs
-        i_SPI_DOUT_ADC_0_A      => SPI_DOUT_ADC_0_A,
-        o_SPI_DIN0_A            => SPI_DIN0_A,
-        o_SPI_CLK_A             => SPI_CLK_A,
-        o_SPI_LD_ADC_A          => SPI_LD_ADC_A,
-        o_SPI_LD_TEMP_DAC_A     => SPI_LD_TEMP_DAC_A,
-        o_SPI_LD_DAC_A          => SPI_LD_DAC_A,
-		  
-		  
-		  
-		  -- mupix dac regs
-        i_reg_add               => mupix_reg.addr(7 downto 0),
-        i_reg_re                => mupix_reg.re,
-        o_reg_rdata       		=> mupix_reg.rdata,
-        i_reg_we   				=> mupix_reg.we,
-        i_reg_wdata 			=> mupix_reg.wdata,
-		  
-		  
-        i_reset                 => not reset_n,
-        -- 156.25 MHz
-        i_clk                   => qsfp_pll_clk,
-        i_clk125                => clk_aux--,
-    );
+
+		-- chip dacs
+		i_CTRL_SDO_A         => CTRL_SDO_A,
+		o_CTRL_SDI_A         => CTRL_SDI_A,
+		o_CTRL_SCK1_A        => CTRL_SCK1_A,
+		o_CTRL_SCK2_A        => CTRL_SCK2_A,
+		o_CTRL_Load_A        => CTRL_Load_A,
+		o_CTRL_RB_A          => CTRL_RB_A,
+
+		 
+
+		-- board dacs
+		i_SPI_DOUT_ADC_0_A   => SPI_DOUT_ADC_0_A,
+		o_SPI_DIN0_A         => SPI_DIN0_A,
+		o_SPI_CLK_A          => SPI_CLK_A,
+		o_SPI_LD_ADC_A       => SPI_LD_ADC_A,
+		o_SPI_LD_TEMP_DAC_A  => SPI_LD_TEMP_DAC_A,
+		o_SPI_LD_DAC_A       => SPI_LD_DAC_A,
+
+
+		-- mupix dac regs
+		i_reg_add            => mupix_reg.addr(7 downto 0),
+		i_reg_re             => mupix_reg.re,
+		o_reg_rdata       	=> mupix_reg.rdata,
+		i_reg_we   				=> mupix_reg.we,
+		i_reg_wdata 			=> mupix_reg.wdata,
+
+		
+		 -- data 
+		o_fifo_rdata    		=> fifo_rdata,
+		o_fifo_rempty   		=> fifo_rempty,
+		i_fifo_rack     		=> fifo_rack,
+		i_data_in_A_0 			=> data_in_A_0,
+
+		i_reset              => not reset_n,
+		-- 156.25 MHz
+		i_clk                => qsfp_pll_clk,
+		i_clk125             => clk_aux--,
+		);
     
 
     ----------------------------------------------------------------------------
@@ -297,7 +285,8 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        FPGA_ID_g => X"FEB0"--,
+        FPGA_ID_g 	=> X"FEB0",
+		  FEB_type_in	=> "111010"
     )
     port map (
         i_nios_clk      => nios_clk,

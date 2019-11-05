@@ -16,12 +16,12 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use work.lvds_components.all;
-use work.mupix_constants.all;
+use work.detectorfpga_constants.all;
 
 
 
 
-entity data_decoder_mupix is 
+entity data_decoder is 
 	port (
 		reset_n				: in std_logic;
 --		checker_rst_n		: in std_logic;
@@ -40,9 +40,9 @@ entity data_decoder_mupix is
 		state_out			: out std_logic_vector(1 downto 0);		-- 4 possible states
 		disp_err				: out std_logic
 		);
-end data_decoder_mupix;
+end data_decoder;
 
-architecture RTL of data_decoder_mupix is
+architecture RTL of data_decoder is
 
 type sync_state_type is (reset, waitforplllock, waitfordpalock, check_k28_5, align); --, rxready);
 signal sync_state		: sync_state_type;
@@ -217,7 +217,7 @@ end if;
 
 end process;
 
-d_checker : work.disparity_checker
+d_checker : disparity_checker
 	port map(
 		reset_n				=> reset_n,
 		clk					=> clk,
@@ -227,7 +227,7 @@ d_checker : work.disparity_checker
 		);
 
 
-dec8b10b: work.decode8b10b 
+dec8b10b: decode8b10b 
 	port map(
 		reset_n				=> reset_n,
 		clk					=> clk,

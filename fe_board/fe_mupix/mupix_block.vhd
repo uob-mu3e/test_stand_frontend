@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.mupix_types.all;
 
 entity mupix_block is
 generic(
@@ -32,7 +33,15 @@ port (
     o_reg_rdata       		 : out std_logic_vector(31 downto 0);
     i_reg_we   				 : in std_logic;
     i_reg_wdata 				 : in std_logic_vector(31 downto 0);
+	 
+	 
+	 -- data 
+	 o_fifo_rdata    : out   std_logic_vector(35 downto 0);
+    o_fifo_rempty   : out   std_logic;
+    i_fifo_rack     : in    std_logic;
+	 i_data_in_A_0	  : in std_logic_vector(3 downto 0);
     
+	 
     i_reset         : in std_logic;
     -- 156.25 MHz
     i_clk           : in std_logic;
@@ -87,6 +96,11 @@ architecture arch of mupix_block is
 	signal chip_dac_ready : std_logic;
     signal reset_chip_dac_fifo : std_logic;
     signal ckdiv         : std_logic_vector(15 downto 0);
+	 
+	signal write_regs_mupix : reg32array;
+	signal read_regs_mupix : reg32array;
+	
+	signal reset_n_lvds : std_logic;
 
 begin
 
@@ -178,47 +192,14 @@ begin
 	-- board dacs slow_controll
 	A_spi_sdo_front 		<= i_SPI_DOUT_ADC_0_A & "00";-- A_spi_dout_dac_front & A_dac4_dout_front;
 	o_SPI_LD_ADC_A 		<= A_spi_ldn_front(2);
-    o_SPI_LD_TEMP_DAC_A    <= A_spi_ldn_front(1);
+   o_SPI_LD_TEMP_DAC_A    <= A_spi_ldn_front(1);
 	o_SPI_LD_DAC_A 		<= A_spi_ldn_front(0);
-     
---    e_dac_fifo : work.dac_fifo
---		port map (
---
---		   	-- mupix dac regs
---			i_reg_add         => i_reg_add,
---			i_reg_re          => i_reg_re,
---            o_reg_rdata       => open,--o_reg_rdata,
---			i_reg_we   		  => i_reg_we,
---			i_reg_wdata 	  => i_reg_wdata,
---
---		    -- mupix board dac data
---		    o_board_dac_data  		=> open,--board_dac_data,
---		    i_board_dac_ren   		=> '0',--,--board_dac_ren,
---		    o_board_dac_fifo_empty 	=> open,--board_dac_fifo_empty,
---		    o_board_dac_ready 		=> open,--board_dac_ready,
---
---		    i_board_dac_data  		=> (others => '0'),--board_dac_data_we,
---		    i_board_dac_we  		=> '0',--board_dac_we,
---
---		    -- mupix chip dac data
---		    o_chip_dac_data  		=> chip_dac_data,
---		    i_chip_dac_ren   		=> chip_dac_ren,
---		    o_chip_dac_fifo_empty 	=> chip_dac_fifo_empty,
---		    o_chip_dac_ready 		=> chip_dac_ready,
---
---		    i_chip_dac_data 		=> chip_dac_data_we,
---    		i_chip_dac_we  			=> chip_dac_we,
---		    
---		    i_reset_n         		=> reset_n,
---		    -- 156.25 MHz
---		    i_clk           		=> i_clk--,
---	);
     
-    -- regs reading
-    board_dac_regs : process (i_clk, reset_n)
-    begin 
-        if (reset_n = '0') then 
-            board_th_low        <= (others => '0');
+   -- regs reading
+   board_dac_regs : process (i_clk, reset_n)
+   begin 
+       if (reset_n = '0') then 
+           board_th_low        <= (others => '0');
             board_th_high       <= (others => '0');
             board_injection     <= (others => '0');
             board_th_pix        <= (others => '0');
@@ -229,11 +210,13 @@ begin
             chip_dac_we         <= '0';
             reset_chip_dac_fifo <= '0';
             chip_dac_ready      <= '0';
+				reset_n_lvds		  <= '0';
         elsif rising_edge(i_clk) then 
             
             chip_dac_we         <= '0';
             chip_dac_ready      <= '0';
             reset_chip_dac_fifo <= '0';
+				reset_n_lvds		  <= '1';
             ckdiv               <= ckdiv;
             
             if ( i_reg_add = x"83" and i_reg_we = '1' ) then
@@ -289,6 +272,10 @@ begin
                 reset_chip_dac_fifo <= i_reg_wdata(1);
                 ckdiv               <= i_reg_wdata(31 downto 16);
             end if;
+				
+				if ( i_reg_add = x"8F" and i_reg_we = '1' ) then
+                reset_n_lvds      <= i_reg_wdata(0);
+            end if;
                   
         end if;
     end process board_dac_regs;
@@ -317,6 +304,30 @@ begin
 		threshold_high_out    => threshold_high_out_A_front,
 		temp_dac_out          => board_temp_dac_out,
 		temp_adc_out          => board_temp_adc_out
-	);	 
-
+	);	
+	
+	
+	e_mupix_datapath : work.mupix_datapath
+	generic map (
+		NCHIPS 				=> 8,
+		NLVDS 				=> 32,
+		NSORTERINPUTS	 	=> 8	--up to 4 LVDS links merge to one sorter
+	)
+	port map (
+		i_reset_n			=> reset_n,
+		i_reset_n_lvds		=> reset_n_lvds,
+		
+		i_clk					=> i_clk,
+		i_clk125				=> i_clk125,
+		
+		lvds_data_in		=> i_data_in_A_0,
+		
+		write_sc_regs		=> write_regs_mupix,
+		read_sc_regs		=> read_regs_mupix,
+		 
+		o_fifo_rdata		=> o_fifo_rdata,
+		o_fifo_rempty		=> o_fifo_rempty,
+		i_fifo_rack			=> i_fifo_rack--,
+	);
+	
 end architecture;

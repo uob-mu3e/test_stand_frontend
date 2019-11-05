@@ -65,7 +65,7 @@ with gray_TS2 select hit_out((TIMESTAMPSIZE_MPX8+CHARGESIZE-1) downto TIMESTAMPS
 	hit_in_reg((TIMESTAMPSIZE_MPX8+CHARGESIZE-1) downto TIMESTAMPSIZE_MPX8) when '0',
 	hit_out_TS2 when '1';	
 
-	i_degray_TS : work.gray_to_binary 
+	i_degray_TS : gray_to_binary 
 	generic map(NBITS => TS_SIZE)
 	port map(
 		reset_n				=> reset_n,
@@ -74,7 +74,7 @@ with gray_TS2 select hit_out((TIMESTAMPSIZE_MPX8+CHARGESIZE-1) downto TIMESTAMPS
 		bin_out				=> hit_out_TS
 		);
 		
-	i_degray_TS2 : work.gray_to_binary 
+	i_degray_TS2 : gray_to_binary 
 	generic map(NBITS => CHARGESIZE)
 	port map(
 		reset_n				=> reset_n,
