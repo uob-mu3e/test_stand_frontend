@@ -2,6 +2,7 @@
 
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE [file join $::quartus(qip_path) "assignments/FE_s4.tcl"]
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE [file join $::quartus(qip_path) "assignments.tcl"]
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE [file join $::quartus(qip_path) "assignments/FE_mupix.tcl"]
 
 set_global_assignment -name SDC_FILE [file join $::quartus(qip_path) "top.sdc"]
 
