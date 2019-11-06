@@ -31,7 +31,10 @@ xterm -hold -e "mhttpd" &
 sleep 0.2
 xterm -hold -e "mserver" &
 sleep 0.2
+# Start front-ends before the logger!
 xterm -hold -e "crfe" &
+sleep 0.2
+xterm -hold -e "switch_fe" &
 sleep 0.2
 xterm -hold -e "mlogger" &
 #xterm -hold -e "switch_fe" &
