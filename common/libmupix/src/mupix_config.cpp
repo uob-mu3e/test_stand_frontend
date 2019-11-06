@@ -61,6 +61,9 @@ MupixConfig::paras_t MupixConfig::parameters_chipdacs = {
 };
 
 MupixConfig::paras_t MupixConfig::parameters_pixeldacs = {
+    make_param("RAM", 6, {5,4,3,0,1,2}),
+    make_param("EnableHitbus", 1, 0),
+    make_param("EnableInjection", 1, 0),
 };
 
 MupixConfig::paras_t MupixConfig::parameters_chipdacs2 = {
@@ -77,6 +80,7 @@ MupixConfig::paras_t MupixConfig::parameters_chipdacs2 = {
     make_param("VNOutPix", "2 0 1 3 4 5 "),
     make_param("VPFoll", "2 0 1 3 4 5 "),
     make_param("VNDACPix", "2 0 1 3 4 5 "),
+    //voltage DACs:
     make_param("ThLow", "9 8 7 6 5 4 3 2 1 0 "),
     make_param("ThPix", "9 8 7 6 5 4 3 2 1 0 "),
     make_param("BLPix", "9 8 7 6 5 4 3 2 1 0 "),
@@ -85,9 +89,9 @@ MupixConfig::paras_t MupixConfig::parameters_chipdacs2 = {
 };
 
 MupixConfig::paras_t MupixConfig::parameters_rowdacs = {
-};
-
-MupixConfig::paras_t MupixConfig::parameters_voltagedacs = {
+    make_param("QLSB", 5,0),
+    make_param("EnableInjectionROW", 1,0),
+    make_param("EnableAnalogBuffer", 1,0),
 };
 
 MupixConfig::MupixConfig() {
@@ -107,14 +111,10 @@ MupixConfig::MupixConfig() {
     // row register (Q bits, 10.4 )
     for(unsigned int row = 0; row < nrow; ++row)
         for(const auto& para : parameters_rowdacs)
-            addPara(para, "");
+            addPara(para, "_row"+std::to_string(row));
     // MUPIX DAC block 2 (10.5)
     for(const auto& para : parameters_chipdacs2)
         addPara(para, "");
-    for(const auto& para : parameters_voltagedacs)
-        addPara(para, "");
-
-
 
     // allocate memory for bitpattern
     length = length_bits/8;

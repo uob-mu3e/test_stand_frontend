@@ -219,12 +219,9 @@ typedef struct {
 NULL }
 
 typedef struct {
-    BOOL      amon_en;
-    INT       amon_dac;
-    BOOL      dmon_1_en;
-    INT       dmon_1_dac;
-    BOOL      dmon_2_en;
-    INT       dmon_2_dac;
+    INT RAM[128];
+    BOOL EnableHitbus[128];
+    BOOL EnableInjection[128];
 } MUPIX_PIXELROWCONFIG;
 
 #define MUPIX_PIXELROWCONFIG_STR(_name) const char *_name[] = {\
