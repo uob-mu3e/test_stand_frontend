@@ -194,7 +194,7 @@ void MutrigFEB::setDummyConfig(int FPGA_ID, bool dummy){
 
         val=reg_setBit(val,0,dummy);
 	printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG,false);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG, m_ask_sc_reply);
 	m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
@@ -215,7 +215,7 @@ void MutrigFEB::setDummyData_Enable(int FPGA_ID, bool dummy)
 
         val=reg_setBit(val,1,dummy);
 	printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG,false);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG, m_ask_sc_reply);
 	m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
@@ -229,7 +229,7 @@ void MutrigFEB::setDummyData_Fast(int FPGA_ID, bool fast)
 
         val=reg_setBit(val,2,fast);
         printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG,false);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG, m_ask_sc_reply);
 	m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
@@ -244,7 +244,7 @@ void MutrigFEB::setDummyData_Count(int FPGA_ID, int n)
 	val=reg_setRange(val, 9, 3, n);
 
         printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG,false);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG,m_ask_sc_reply);
 	m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
@@ -260,7 +260,7 @@ void MutrigFEB::setMask(int asic, bool value){
 
         val=reg_setBit(val,ASICid_from_ID(asic),value);
         printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGAid_from_ID(asic),val);
-	m_mu.FEBsc_write(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG,false);
+	m_mu.FEBsc_write(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG,m_ask_sc_reply);
         m_reg_shadow[FPGAid_from_ID(asic)][FE_DPCTRL_REG]=val;
 }
 
@@ -275,7 +275,7 @@ void MutrigFEB::setPRBSDecoder(uint32_t FPGA_ID, bool enable){
 
         val=reg_setBit(val,31,enable);
         printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGA_ID,val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG,false);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG,m_ask_sc_reply);
         m_reg_shadow[FPGA_ID][FE_DPCTRL_REG]=val;
 }
 
@@ -289,11 +289,11 @@ void MutrigFEB::chipReset(int FPGA_ID){
 	//set and clear reset
         val=reg_setBit(val,0,true);
         printf("writing %x\n",val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 0 , (uint32_t) FE_SUBDET_RESET_REG,false);
+	m_mu.FEBsc_write(FPGA_ID, &val, 0 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         val=reg_setBit(val,0,false);
         printf("writing %x\n",val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 0 , (uint32_t) FE_SUBDET_RESET_REG,false);
+	m_mu.FEBsc_write(FPGA_ID, &val, 0 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
 }
 
 //reset full datapath upstream from merger
@@ -304,10 +304,10 @@ void MutrigFEB::DataPathReset(int FPGA_ID){
 	//assert(!GET_FE_SUBDET_REST_BIT_DPATH(val));
 	//set and clear reset
         val=reg_setBit(val,1,true);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,false);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         val=reg_setBit(val,1,false);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,false);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
 }
 
 
