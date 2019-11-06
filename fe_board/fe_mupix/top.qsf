@@ -25,6 +25,11 @@ set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/FEB_mupix.qip
 
 
 
+set_global_assignment -name QIP_FILE mupix_block/include.qip
+set_global_assignment -name VHDL_FILE dac_fifo.vhd
+set_global_assignment -name VHDL_FILE mupix_block.vhd
+set_global_assignment -name VHDL_FILE two_clk_sync_fifo.vhd
+
 
 
 set_global_assignment -name ENABLE_DRC_SETTINGS ON
@@ -33,38 +38,6 @@ set_global_assignment -name FLOW_ENABLE_IO_ASSIGNMENT_ANALYSIS ON
 set_global_assignment -name FLOW_ENABLE_RTL_VIEWER ON
 set_global_assignment -name SMART_RECOMPILE ON
 set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
-set_global_assignment -name VHDL_FILE mupix_block/comp_type_const/mupix_registers.vhd
-set_global_assignment -name VHDL_FILE mupix_block/comp_type_const/lvds_components.vhd
-set_global_assignment -name VHDL_FILE mupix_block/comp_type_const/hitsorter_components.vhd
-set_global_assignment -name VHDL_FILE mupix_block/comp_type_const/detectorfpga_types.vhd
-set_global_assignment -name VHDL_FILE mupix_block/comp_type_const/detectorfpga_constants.vhd
-set_global_assignment -name VHDL_FILE mupix_block/comp_type_const/transceivers_components.vhd
-set_global_assignment -name VHDL_FILE mupix_block/comp_type_const/datapath_components.vhd
-set_global_assignment -name VHDL_FILE mupix_block/multichip_ro/singlechip_ro.vhd
-set_global_assignment -name VHDL_FILE mupix_block/multichip_ro/single_zs_fifo.vhd
-set_global_assignment -name VHDL_FILE mupix_block/multichip_ro/singlechip_ro_zerosupressed.vhd
-set_global_assignment -name VHDL_FILE mupix_block/multichip_ro/multichip_ro_zerosupressed.vhd
-set_global_assignment -name VHDL_FILE mupix_block/receiver_block/rx_errcounter.vhd
-set_global_assignment -name VHDL_FILE mupix_block/receiver_block/lvdspll.vhd
-set_global_assignment -name VHDL_FILE mupix_block/receiver_block/receiver_block_mupix.vhd
-set_global_assignment -name VHDL_FILE mupix_block/receiver_block/lvds_receiver_small.vhd
-set_global_assignment -name VHDL_FILE mupix_block/receiver_block/fifo_Nb_sync.vhd
-set_global_assignment -name VHDL_FILE mupix_block/receiver_block/fifo_Nb.vhd
-set_global_assignment -name VHDL_FILE mupix_block/receiver_block/datadecoder.vhd
-set_global_assignment -name VHDL_FILE mupix_block/receiver_block/disparity_checker.vhd
-set_global_assignment -name VHDL_FILE mupix_block/data_unpacker/gray_to_binary.vhd
-set_global_assignment -name VHDL_FILE mupix_block/data_unpacker/hit_ts_conversion.vhd
-set_global_assignment -name VHDL_FILE mupix_block/data_unpacker/data_unpacker_new.vhd
-set_global_assignment -name VHDL_FILE mupix_block/mupix_datapath.vhd
-set_global_assignment -name VHDL_FILE dac_fifo.vhd
-set_global_assignment -name VHDL_FILE mupix_block/comp_type_const/mupix_constants.vhd
-set_global_assignment -name VHDL_FILE mupix_block/comp_type_const/mupix_types.vhd
-set_global_assignment -name VHDL_FILE mupix_block.vhd
-set_global_assignment -name VHDL_FILE mupix_block/slowcontrol/spi_master.vhd
-set_global_assignment -name VHDL_FILE mupix_block/slowcontrol/spi_if_write_bits.vhd
-set_global_assignment -name VHDL_FILE mupix_block/slowcontrol/mp8_slowcontrol.vhd
-set_global_assignment -name VHDL_FILE mupix_block/slowcontrol/mp8_sc_master.vhd
-set_global_assignment -name QIP_FILE two_clk_sync_fifo.qip
 
 
 
