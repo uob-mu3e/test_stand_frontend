@@ -60,7 +60,6 @@ struct sc_t {
         for(int i = 0; i < n; i++) {
             alt_u32 d = data[i];
             printf("[0x%04X] = 0x%08X\n", ((alt_u32)&data[i] / 4) & 0xFFFF, d);
-
             int k = 1;
             while(i+k < n && data[i+k] == d) k++;
             if(k > 2) {

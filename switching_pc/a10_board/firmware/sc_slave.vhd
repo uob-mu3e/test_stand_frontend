@@ -35,7 +35,7 @@ architecture RTL of sc_slave is
 	signal mem_addr_o : std_logic_vector(15 downto 0);
 	signal mem_wren_o : std_logic;
 
-	type state_type is (waiting, starting);
+	type state_type is (init, waiting, starting);
 	signal state : state_type;
 
 begin
@@ -52,7 +52,7 @@ begin
 		mem_addr_finished_out <= (others => '0');
 		stateout <= (others => '0');
 		mem_wren_o <= '0';
-		state <= waiting;
+		state <= init;		
 
 	elsif(rising_edge(clk))then
 		stateout <= (others => '0');
@@ -60,12 +60,15 @@ begin
 		mem_wren_o <= '0';
 		mem_wren_o <= '0';
 
-		if(link_data_in = x"000000BC" and link_data_in_k = "0001") then
-			stateout(3 downto 0) <= x"F";
-			mem_wren_o <= '0';
-		else
-
 		case state is
+		
+				when init =>
+					mem_addr_o 	<= mem_addr_o + '1';
+					mem_data_o	<= (others => '0');
+					mem_wren_o  <= '1';
+					if ( mem_addr_o = x"FFFE" ) then
+						state <= waiting;
+					end if;		
 
 				when waiting =>
 					stateout(3 downto 0) <= x"1";
@@ -85,7 +88,7 @@ begin
 						mem_addr_o <= mem_addr_o + '1';
 						mem_data_o <= link_data_in;
 						mem_wren_o <= '1';
-					elsif (link_data_in(7 downto 0) = x"0000009C" and link_data_in_k = "0001") then
+					elsif (link_data_in(7 downto 0) = x"9C" and link_data_in_k = "0001") then
 						mem_addr_o <= mem_addr_o + '1';
 						mem_addr_finished_out <= mem_addr_o + '1';
 						mem_data_o <= link_data_in;
@@ -99,8 +102,7 @@ begin
 					mem_wren_o <= '0';
 					state <= waiting;
 		end case;
-
-		end if;
+		
 	end if;
 	end process;
 

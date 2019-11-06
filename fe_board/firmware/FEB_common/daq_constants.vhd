@@ -3,12 +3,15 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use work.mupix_constants.all;
 
 package daq_constants is
 
 subtype links_reg32 is std_logic_vector(31 downto 0);
 subtype reg32 is std_logic_vector(31 downto 0);
+type reg32array	is array (NREGISTERS-1 downto 0) of reg32;
 
+subtype reg64 		is std_logic_vector(63 downto 0);
 type reg64b_array_t is array (natural range <>) of std_logic_vector(63 downto 0);
 
 subtype run_state_t is std_logic_vector(9 downto 0);
