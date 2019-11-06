@@ -31,6 +31,90 @@ port (
 	SPI_LD_TEMP_DAC_A		: out std_logic; -- A_spi_ld_adc_front          -- AN7
 	SPI_DOUT_ADC_0_A		: in std_logic; -- A_spi_dout_adc_front         -- AT9
 	SPI_DOUT_ADC_1_A		: in std_logic; -- A_spi_dout_adc_back          -- 
+	
+	-- FE.B
+
+	clock_B				: out std_logic;
+	data_in_B_0			: in std_logic_vector(3 downto 0);
+	data_in_B_1			: in std_logic_vector(3 downto 0);
+	fast_reset_B			: out std_logic;
+	test_pulse_B			: out std_logic;
+
+	CTRL_SDO_B				: in std_logic; -- A_ctrl_dout_front
+	CTRL_SDI_B				: out std_logic; -- A_ctrl_din_front
+	CTRL_SCK1_B			: out std_logic; -- A_ctrl_clk1_front
+	CTRL_SCK2_B			: out std_logic; -- A_ctrl_clk2_front
+	CTRL_RB_B				: out std_logic; -- A_ctrl_rb_front
+	CTRL_Load_B			: out std_logic; -- A_ctrl_ld_front
+
+	-- B_trig_front
+
+	chip_reset_B			: out std_logic; -- is called trigger on adapter card!
+	SPI_DIN0_B				: out std_logic; -- A_spi_din_front             -- AH9
+	SPI_DIN1_B				: out std_logic; -- A_spi_din_back              -- 
+	SPI_CLK_B				: out std_logic; -- A_spi_clk_front             -- AH8
+	SPI_LD_DAC_B			: out std_logic; -- A_spi_ld_front              -- AW4
+	SPI_LD_ADC_B			: out std_logic; -- A_spi_ld_tmp_dac_front      -- AP7
+	SPI_LD_TEMP_DAC_B		: out std_logic; -- A_spi_ld_adc_front          -- AN7
+	SPI_DOUT_ADC_0_B		: in std_logic; -- A_spi_dout_adc_front         -- AT9
+	SPI_DOUT_ADC_1_B		: in std_logic; -- A_spi_dout_adc_back          -- 
+
+	
+	-- FE.C
+
+	clock_C				: out std_logic;
+	data_in_C_0			: in std_logic_vector(3 downto 0);
+	data_in_C_1			: in std_logic_vector(3 downto 0);
+	fast_reset_C			: out std_logic;
+	test_pulse_C			: out std_logic;
+
+	CTRL_SDO_C				: in std_logic; -- A_ctrl_dout_front
+	CTRL_SDI_C				: out std_logic; -- A_ctrl_din_front
+	CTRL_SCK1_C			: out std_logic; -- A_ctrl_clk1_front
+	CTRL_SCK2_C			: out std_logic; -- A_ctrl_clk2_front
+	CTRL_RB_C				: out std_logic; -- A_ctrl_rb_front
+	CTRL_Load_C			: out std_logic; -- A_ctrl_ld_front
+
+	-- C_trig_front
+
+	chip_reset_C			: out std_logic; -- is called trigger on adapter card!
+	SPI_DIN0_C				: out std_logic; -- A_spi_din_front             -- AH9
+	SPI_DIN1_C				: out std_logic; -- A_spi_din_back              -- 
+	SPI_CLK_C				: out std_logic; -- A_spi_clk_front             -- AH8
+	SPI_LD_DAC_C			: out std_logic; -- A_spi_ld_front              -- AW4
+	SPI_LD_ADC_C			: out std_logic; -- A_spi_ld_tmp_dac_front      -- AP7
+	SPI_LD_TEMP_DAC_C		: out std_logic; -- A_spi_ld_adc_front          -- AN7
+	SPI_DOUT_ADC_0_C		: in std_logic; -- A_spi_dout_adc_front         -- AT9
+	SPI_DOUT_ADC_1_C		: in std_logic; -- A_spi_dout_adc_back          -- 
+	
+	
+	-- FE.E
+
+	clock_E				: out std_logic;
+	data_in_E_0			: in std_logic_vector(3 downto 0);
+	data_in_E_1			: in std_logic_vector(3 downto 0);
+	fast_reset_E			: out std_logic;
+	test_pulse_E			: out std_logic;
+
+	CTRL_SDO_E				: in std_logic; -- A_ctrl_dout_front
+	CTRL_SDI_E				: out std_logic; -- A_ctrl_din_front
+	CTRL_SCK1_E			: out std_logic; -- A_ctrl_clk1_front
+	CTRL_SCK2_E			: out std_logic; -- A_ctrl_clk2_front
+	CTRL_RB_E				: out std_logic; -- A_ctrl_rb_front
+	CTRL_Load_E			: out std_logic; -- A_ctrl_ld_front
+
+	-- E_trig_front
+
+	chip_reset_E			: out std_logic; -- is called trigger on adapter card!
+	SPI_DIN0_E				: out std_logic; -- A_spi_din_front             -- AH9
+	SPI_DIN1_E				: out std_logic; -- A_spi_din_back              -- 
+	SPI_CLK_E				: out std_logic; -- A_spi_clk_front             -- AH8
+	SPI_LD_DAC_E			: out std_logic; -- A_spi_ld_front              -- AW4
+	SPI_LD_ADC_E			: out std_logic; -- A_spi_ld_tmp_dac_front      -- AP7
+	SPI_LD_TEMP_DAC_E		: out std_logic; -- A_spi_ld_adc_front          -- AN7
+	SPI_DOUT_ADC_0_E		: in std_logic; -- A_spi_dout_adc_front         -- AT9
+	SPI_DOUT_ADC_1_E		: in std_logic; -- A_spi_dout_adc_back          -- 
+
 
 	-- SI5345
 
@@ -133,10 +217,10 @@ begin
     scifi_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
     scifi_reg.wdata <= sc_reg.wdata;
 	 
-	 -- mupix regs : 0x80-0x8F
+	 -- mupix regs : 0x80-0x9F
 	 mupix_reg.addr <= sc_reg.addr;
-	 mupix_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"8" ) else '0';
-	 mupix_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"8" ) else '0';
+	 mupix_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"8" or sc_reg.addr(7 downto 4) = X"9" ) else '0';
+	 mupix_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"8" or sc_reg.addr(7 downto 4) = X"9" ) else '0';
 	 mupix_reg.wdata <= sc_reg.wdata;
 	 
 	 -- select valid rdata
@@ -197,7 +281,15 @@ begin
 		o_fifo_rdata    		=> fifo_rdata,
 		o_fifo_rempty   		=> fifo_rempty,
 		i_fifo_rack     		=> fifo_rack,
+		
 		i_data_in_A_0 			=> data_in_A_0,
+		i_data_in_A_1 			=> data_in_A_1,
+		i_data_in_B_0 			=> data_in_B_0,
+		i_data_in_B_1 			=> data_in_B_1,
+		i_data_in_C_0 			=> data_in_C_0,
+		i_data_in_C_1 			=> data_in_C_1,
+		i_data_in_E_0 			=> data_in_E_0,
+		i_data_in_E_1 			=> data_in_E_1,
 
 		i_reset              => not reset_n,
 		-- 156.25 MHz
@@ -289,8 +381,11 @@ begin
 		  FEB_type_in	=> "111010"
     )
     port map (
-        i_nios_clk      => nios_clk,
-        i_nios_reset_n  => nios_reset_n,
+        i_nios_clk_startup => clk_aux,
+        i_nios_clk_main => clk_aux,
+        i_nios_areset_n => reset_n,
+        o_nios_clk_monitor => nios_clk,
+		o_nios_clk_selected => led(10),
 
         i_i2c_scl       => i2c_scl,
         o_i2c_scl_oe    => i2c_scl_oe,
