@@ -146,9 +146,9 @@ unsigned char user_read(unsigned char index)
 
 //void read_fpga_status()
 //{
-//	user_data.fpga_status[0] = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_STATUS_BASE);
-//	user_data.fpga_status2[0] = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_STATUS2_BASE);
-//	return;
+//    user_data.fpga_status[0] = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_STATUS_BASE);
+//    user_data.fpga_status2[0] = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_STATUS2_BASE);
+//    return;
 //}
 
 /*---- User write function -----------------------------------------*/
@@ -444,7 +444,7 @@ void mscb_uart_handler(void)
         n = mscb_interprete(0, in_buf, out_buf);
 
         for(int i_printf=0; i_printf < i_in;i_printf++){
-            //printf("0x%0x\t",in_buf[i_printf]);	
+            //printf("0x%0x\t",in_buf[i_printf]);
         }
         //printf("\n");
         //printf("n is %d\n",n);
@@ -708,7 +708,7 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
             }
 
             for(int j=0; j<size;j++){ // crc for mem write expects only crc of written data
-                buf[j]=buf[j+8];	
+                buf[j]=buf[j+8];
             }
 
             rb[0] = MCMD_ACK;
