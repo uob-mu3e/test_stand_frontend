@@ -91,7 +91,7 @@ void cr_settings_changed(HNDLE, HNDLE, int, void *);
 /* Default values for /Equipment/Clock Reset/Settings */
 const char *cr_settings_str[] = {
 "Active = BOOL : 1",
-"IP = STRING : [16] 192.168.0.200",
+"IP = STRING : [16] 192.168.0.220",
 "PORT = INT : 50001",
 "TX_CLK_MASK = INT : 0x0AA",
 "TX_RST_MASK = INT : 0xAA0",
@@ -165,7 +165,7 @@ const char *cr_settings_str[] = {
 "Addressed = BOOL : 0",
 "FEBAddress = INT : 0", // renamed to avoid match in commands.find(std::string(key.name))
 "Payload = INT : 0",
-"Names CRT1 = STRING[99] :",
+"Names CRT1 = STRING[100] :",
 "[32] Motherboard Current",
 "[32] Motherboard Voltage",
 "[32] RX Firefly Alarms",
@@ -177,6 +177,7 @@ const char *cr_settings_str[] = {
 "[32] TX Rst Firefly Alarms",
 "[32] TX Rst Firefly Temp",
 "[32] TX Rst Firefly Voltage",
+"[32] Fan Current",
 "[32] Daughterboard 0 Current",
 "[32] Daughterboard 0 Voltage",
 "[32] D 0 0 Firefly Alarms",
@@ -371,21 +372,21 @@ INT frontend_init()
    cb->init_clockboard(clkinvert, rstinvert, clkdisable, rstdisable);
 
    // check which daughter cards are equipped
-   uint8_t daughters = cb->daughters_present();
-   db_set_value(hDB,hKey,"Variables/Daughters Present",&daughters, sizeof(daughters), 1,TID_BYTE);
+   uint32_t daughters = cb->daughters_present();
+   db_set_value(hDB,hKey,"Variables/Daughters Present",&daughters, sizeof(daughters), 1,TID_DWORD);
 
     // check which fireflys are present
-   uint8_t ffs[8]={0};
+   uint32_t ffs[8]={0};
    for(uint8_t i=0; i < 8; i++){
        if(daughters & (1<<i)){
            for(uint8_t j =0; j < 3; j++){
-               ffs[i] |=  ((uint8_t)(cb->firefly_present(i,j))) << j;
+               ffs[i] |=  ((uint32_t)(cb->firefly_present(i,j))) << j;
            }
         }
     }
 
-   size = sizeof(uint8_t);
-   db_set_value(hDB, hKey, "Variables/Fireflys Present", ffs, 8*size,8,TID_BYTE);
+   size = sizeof(uint32_t);
+   db_set_value(hDB, hKey, "Variables/Fireflys Present", ffs, 8*size,8,TID_DWORD);
 
    return CM_SUCCESS;
 }
@@ -436,15 +437,15 @@ INT resume_run(INT run_number, char *error)
 
 INT read_cr_event(char *pevent, INT off)
 {
-    uint8_t daughters;
+    uint32_t daughters;
     int size = sizeof(daughters);
     db_get_value(hDB, 0, "/Equipment/Clock Reset/Variables/Daughters Present",
-                 &daughters, &size, TID_BYTE, false);
+                 &daughters, &size, TID_DWORD, false);
 
-    uint8_t fireflys[8];
-    size = sizeof(uint8_t)*8;
+    uint32_t fireflys[8];
+    size = sizeof(uint32_t)*8;
     db_get_value(hDB, 0, "/Equipment/Clock Reset/Variables/Fireflys Present",
-                 fireflys, &size, TID_BYTE, false);
+                 fireflys, &size, TID_DWORD, false);
 
    bk_init(pevent);
 
