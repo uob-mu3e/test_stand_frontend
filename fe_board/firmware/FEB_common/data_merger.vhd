@@ -57,11 +57,6 @@ architecture rtl of data_merger is
 	constant K284_datak:							std_logic_vector(3 downto 0)	:= "0001";
 	constant K307:									std_logic_vector(7 downto 0)	:= x"fe";
 	
-	constant run_prep_acknowledge:			std_logic_vector(31 downto 0)	:= x"000001fe";
-	constant run_prep_acknowledge_datak:	std_logic_vector(3 downto 0) 	:= "0001";
-	constant RUN_END:								std_logic_vector(31 downto 0)	:= x"000002fe";
-	constant RUN_END_DATAK:						std_logic_vector(3 downto 0)	:= "0001";
-	
 	constant MERGER_FIFO_RUN_END_MARKER:	std_logic_vector(3 downto 0)	:= "0111";
 
 
