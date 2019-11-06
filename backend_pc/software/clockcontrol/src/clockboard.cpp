@@ -20,7 +20,7 @@ clockboard::clockboard(const char *addr, int port):bus(addr, port)
 int clockboard::init_clockboard(uint16_t clkinvert, uint16_t rstinvert)
 {
     init_12c();
-    // Turn on Si chip output  
+    // Turn on Si chip output
     bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_CLK_CTRL,BIT_CTRL_CLK_CTRL_SI_OE) ;
 
 
