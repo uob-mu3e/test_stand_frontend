@@ -41,46 +41,14 @@ end mupix_datapath;
 architecture rtl of mupix_datapath is
 
 signal reset	: std_logic;
-
--- signals from LVDS block (NLVDS)
-signal lvds_clkout_async	: std_logic_vector(1 downto 0);
-signal lvds_clkout_tofifo	: std_logic_vector(NLVDS-1 downto 0);
-signal lvds_k_async			: std_logic_vector(NLVDS-1 downto 0);
-signal lvds_data_async		: std_logic_vector(NLVDS*8-1 downto 0);
-
-signal lvds_syncstatus		: std_logic_vector(NLVDS-1 downto 0);
 signal lvds_pll_locked		: std_logic_vector(1 downto 0);
-signal lvds_dpa_locked		: std_logic_vector(NLVDS-1 downto 0);
-	
 signal lvds_runcounter		: links_reg32;
 signal lvds_errcounter		: links_reg32;	
-
--- signals from syncfifo to mux
-signal rx_k_sync			: std_logic_vector(NLVDS-1 downto 0);
-signal rx_data_sync			: std_logic_vector(NLVDS*8-1 downto 0);
-signal rx_data_valid_sync	: std_logic_vector(NLVDS-1 downto 0);
-signal lvds_k_sync			: std_logic_vector(NLVDS-1 downto 0);
-signal lvds_data_sync		: std_logic_vector(NLVDS*8-1 downto 0);
-signal lvds_data_valid_sync	: std_logic_vector(NLVDS-1 downto 0);
 
 -- signals after mux
 signal rx_data				: inbyte_array;
 signal rx_k					: std_logic_vector(NLVDS-1 downto 0);
 signal data_valid			: std_logic_vector(NLVDS-1 downto 0);
-
--- signals to the unpacker
-signal rx_k_in				: std_logic_vector(NLVDS-1 downto 0);
-signal rx_data_in			: std_logic_vector(NLVDS*8-1 downto 0);
-signal rx_syncstatus_in		: std_logic_vector(NLVDS-1 downto 0);
-signal rx_syncstatus_nomask	: std_logic_vector(NLVDS-1 downto 0);
-
--- signals from the MP8 data generator, to muxed with data inputs
-signal rx_data_gen			: std_logic_vector(NLVDS*8-1 downto 0);
-signal rx_k_gen				: std_logic_vector(NLVDS-1 downto 0);
-signal rx_syncstatus_gen	: std_logic_vector(NLVDS-1 downto 0);
-signal gen_state_out		: std_logic_vector(NCHIPS*24-1 downto 0);
-signal gen_linken			: std_logic_vector(NCHIPS*4-1 downto 0);
-signal mux_fake_data		: std_logic := '0'; -- signal to mux between actual data and on-FPGA generated data
 
 -- hits + flag to indicate a word as a hit, after unpacker
 signal hits 				: std_logic_vector(NCHIPS*UNPACKER_HITSIZE-1 downto 0);
@@ -104,14 +72,8 @@ signal coarsecounters_ena 	: std_logic_vector(NCHIPS-1 downto 0);
 signal coarsecounters_del 		: std_logic_vector(NCHIPS *COARSECOUNTERSIZE-1 downto 0);
 signal coarsecounters_ena_del 	: std_logic_vector(NCHIPS-1 downto 0);
 
---signal sync_fifo_mux_sel: std_logic_vector(2 downto 0);
-signal sort_mux_sel		: std_logic_vector(2 downto 0);
-
 -- error signal output from unpacker
-signal unpack_errorout		: links_reg32;
 signal unpack_errorcounter	: links_reg32;
-signal unpack_readycounter	: links_reg32;
-
 
 -- writeregisters are registered once to reduce long combinational paths
 signal writeregs_reg				: reg32array;
@@ -120,9 +82,6 @@ signal s_buf_data				: std_logic_vector(35 downto 0);
 signal sync_fifo_empty		: std_logic;
 signal s_buf_full				: std_logic;
 signal s_buf_almost_full	: std_logic;
-signal o_fifo_empty			: std_logic;
-signal o_fifo_data			: std_logic_vector(35 downto 0);
-signal i_fifo_rd				: std_logic;
 
 
 signal s_buf_data_125		: std_logic_vector(33 downto 0);
@@ -131,6 +90,8 @@ signal s_buf_wr_125			: std_logic;
 signal counter125 			: std_logic_vector(63 downto 0);
 
 signal rx_state				: std_logic_vector(NLVDS*2-1 downto 0);
+
+signal MULTICHIP_RO_OVERFLOW : std_logic_vector(31 downto 0);
 
 begin
 
@@ -144,9 +105,9 @@ begin
 		wrreq           => not sync_fifo_empty,
 		full            => s_buf_full,
 		almost_full     => s_buf_almost_full,
-		empty           => o_fifo_empty,
-		q               => o_fifo_data,
-		rdreq           => i_fifo_rd--,
+		empty           => o_fifo_rempty,
+		q               => o_fifo_rdata,
+		rdreq           => i_fifo_rack--,
 	);
 	
 	e_two_clk_sync_fifo : work.two_clk_sync_fifo
@@ -171,10 +132,10 @@ begin
 			end loop;
 		end if;
 	end process writregs_clocking;
-
+	
 ------------------------------------------------------------------------------------
 ---------------------- LVDS Receiver part ------------------------------------------
-	lvds_block	: work.receiver_block_mupix
+	lvds_block : work.receiver_block_mupix
 	generic map(
 		NINPUT	=> NLVDS,
 		NCHIPS	=> NCHIPS
@@ -201,6 +162,7 @@ begin
 	read_sc_regs(RX_STATE_RECEIVER_0) <= rx_state(31 downto 0);
 	read_sc_regs(RX_STATE_RECEIVER_1) <= rx_state(63 downto 32);
 	read_sc_regs(LVDS_PLL_LOCKED_REG)(1 downto 0) <= lvds_pll_locked;
+	read_sc_regs(MULTICHIP_RO_OVERFLOW_REG)		  <= MULTICHIP_RO_OVERFLOW;
 	GEN_LVDS_REGS:
 	FOR I in 0 to NLVDS - 1 GENERATE
 		read_sc_regs(LVDS_RUNCOUNTER_REG + I) <= lvds_runcounter(I);
@@ -223,8 +185,8 @@ begin
 			reset_n				=> i_reset_n,
 			clk					=> i_clk125,
 			datain				=> rx_data(4*i), 
-			kin					=> rx_k_in(4*i), 
-			readyin				=> rx_syncstatus_in(4*i),
+			kin					=> rx_k(4*i), 
+			readyin				=> data_valid(4*i),
 			is_atlaspix			=> '0',
 			hit_out				=> hits((i+1)*UNPACKER_HITSIZE-1 downto i*UNPACKER_HITSIZE),
 			hit_ena				=> hits_ena(i),
@@ -286,15 +248,15 @@ begin
 		counter125				=> counter125,
 		link_flag				=> link_flag_del,		
 		hits_in					=> binhits,			
-		hits_ena					=> binhits_ena,	
+		hits_ena				=> binhits_ena,	
 		coarsecounters			=> coarsecounters_del,
-		coarsecounters_ena	=> coarsecounters_ena_del,
-		prescale					=> writeregs_reg(RO_PRESCALER_REGISTER_W)(RO_PRESCALER_RANGE),
+		coarsecounters_ena		=> coarsecounters_ena_del,
+		prescale				=> writeregs_reg(RO_PRESCALER_REGISTER_W)(RO_PRESCALER_RANGE),
 --		is_shared				=> writeregs_reg(LINK_REGISTER_W)(LINK_SHARED_RANGE),		
 		tomemdata				=> s_buf_data_125,
-		tomemena					=> s_buf_wr_125,
-		tomemeoe					=> open,
-		errcounter_overflow 	=> read_sc_regs(MULTICHIP_RO_OVERFLOW_REGISTER_R),
+		tomemena				=> s_buf_wr_125,
+		tomemeoe				=> open,
+		errcounter_overflow 	=> MULTICHIP_RO_OVERFLOW,
 		errcounter_sel_in		=> writeregs_reg(DEBUG_CHIP_SELECT_REGISTER_W)(CHIPRANGE-1 downto 0)
 	);	
 

@@ -77,7 +77,9 @@ port (
     i_nios_clk_main : in    std_logic;     --unused
     i_nios_areset_n  : in    std_logic;
     o_nios_clk_monitor : out std_logic;
-    o_nios_clk_selected : out std_logic--;   --unused
+    o_nios_clk_selected : out std_logic;   --unused
+	
+	o_run_state_125	: run_state_t
 );
 end entity;
 

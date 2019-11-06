@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.daq_constants.all;
 
 entity top is
 port (
@@ -205,6 +206,8 @@ architecture arch of top is
     signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n : std_logic_vector(15 downto 0);
+	
+	signal run_state_125 : run_state_t;
 
 begin
 
@@ -230,7 +233,7 @@ begin
     sc_reg.rdata <=
         malibu_reg.rdata when ( malibu_reg.rvalid = '1' ) else
         scifi_reg.rdata when ( scifi_reg.rvalid = '1' ) else
-        mupix_reg.rdata when ( scifi_reg.rvalid = '1' ) else
+        mupix_reg.rdata when ( mupix_reg.rvalid = '1' ) else
         X"CCCCCCCC";
 
     process(qsfp_pll_clk)
@@ -251,7 +254,7 @@ begin
 
     e_mupix_block : entity work.mupix_block
     generic map (
-        NCHIPS => 1
+        NCHIPS => 8
     )
     port map (
 
@@ -301,8 +304,30 @@ begin
 		i_clk                => qsfp_pll_clk,
 		i_clk125             => clk_aux--,
     );
+    
+	clock_A	<= clk_aux;
+	clock_B	<= clk_aux;
+	clock_C	<= clk_aux;
+	clock_E	<= clk_aux;
+	
+	process(clk_aux)
+	begin
+	if(falling_edge(clk_aux))then
+		if(run_state_125 = RUN_STATE_SYNC)then
+			fast_reset_A <= '1';
+			fast_reset_B <= '1';
+			fast_reset_C <= '1';
+			fast_reset_E <= '1';
+		else
+			fast_reset_A <= '0';
+			fast_reset_B <= '0';
+			fast_reset_C <= '0';
+			fast_reset_E <= '0';
+		end if;
+	end if;
+	end process;
 
-    ----------------------------------------------------------------------------
+	----------------------------------------------------------------------------
 
     led_n <= not led;
 
@@ -429,7 +454,9 @@ begin
         o_sc_reg_wdata  => sc_reg.wdata,
 
         i_reset_n       => qsfp_reset_n,
-        i_clk           => qsfp_pll_clk--,
+        i_clk           => qsfp_pll_clk,
+		
+		o_run_state_125	=> run_state_125
     );
 
 end architecture;

@@ -32,9 +32,9 @@ port (
 	-- mupix dac regs
 	i_reg_add               : in std_logic_vector(7 downto 0);
 	i_reg_re                : in std_logic;
-	o_reg_rdata       		 : out std_logic_vector(31 downto 0);
-	i_reg_we   				 : in std_logic;
-	i_reg_wdata 				 : in std_logic_vector(31 downto 0);
+	o_reg_rdata       		: out std_logic_vector(31 downto 0);
+	i_reg_we   				: in std_logic;
+	i_reg_wdata 			: in std_logic_vector(31 downto 0);
 	 
 	 
 	-- data 
@@ -75,7 +75,7 @@ signal reset_n : std_logic;
 	signal mp8_ctrl_clk2 : std_logic_vector(NCHIPS - 1 downto 0);
 	signal mp8_ctrl_ld : std_logic_vector(NCHIPS - 1 downto 0);
 	signal mp8_ctrl_rb : std_logic_vector(NCHIPS - 1 downto 0);
-	signal mp8_dataout : std_logic_vector(NCHIPS*32 - 1 downto 0);
+	signal mp8_dataout : std_logic_vector(31 downto 0);
 	
 	 -- board dacs
 	type state_spi is (waiting, starting, read_out_pix, write_pix, read_out_th, ending);
@@ -118,6 +118,8 @@ signal reset_n : std_logic;
 	signal mux_read_regs_nios : std_logic_vector(6 downto 0);
 	signal ro_prescaler : std_logic_vector(31 downto 0);
 	signal read_regs_mupix_mux : std_logic_vector(31 downto 0);
+	
+	signal lvds_data_in : std_logic_vector(4*NCHIPS-1 downto 0);
 
 begin
 
@@ -146,27 +148,30 @@ begin
 	);
  
 	-- chip dacs slow_controll
+	-- MK: since we have only one chip to configure at the moment
+	-- we hard code this 
 	e_mp8_sc_master : work.mp8_sc_master
-	generic map(NCHIPS => NCHIPS)
+	generic map(NCHIPS => 1)
+	--generic map(NCHIPS => NCHIPS)
 	port map (
 		clk			    => i_clk,
 		reset_n		    => reset_n,
 		mem_data_in	    => chip_dac_data,
-		busy_n		    => mp8_busy_n,
+		busy_n(0)		=> mp8_busy_n(0),--busy_n => mp8_busy_n,
 		start           => chip_dac_ready,
 
 		fifo_re         => chip_dac_ren,
 		fifo_empty      => chip_dac_fifo_empty,
-		mem_data_out	=> mp8_mem_data_out,
-		wren			=> mp8_wren,
-		ctrl_ld		    => mp8_ld,
-		ctrl_rb		    => mp8_rb,
+		mem_data_out(0)	=> mp8_mem_data_out(0),--mem_data_out => mp8_mem_data_out,
+		wren(0)			=> mp8_wren(0),--mp8_wren,
+		ctrl_ld(0)	    => mp8_ld(0),--mp8_ld,
+		ctrl_rb(0)		=> mp8_rb(0),--mp8_rb,
 		done			=> open, 
 		stateout		=> open--,
 	);
 	 
 	gen_slowc:
-	for i in 0 to NCHIPS-1 generate
+	for i in 0 to 0 generate --NCHIPS-1 generate
 	e_mp8_slowcontrol : work.mp8_slowcontrol
 	port map(
 		clk	    => i_clk,
@@ -224,10 +229,14 @@ begin
             o_reg_rdata         <= (others => '0');
             chip_dac_data_we    <= (others => '0');
             ckdiv               <= (others => '0');
+			ro_prescaler		<= (others => '0');
+			debug_chip_select	<= (others => '0');
+			timestamp_gray_invert <= (others => '0');
             chip_dac_we         <= '0';
             reset_chip_dac_fifo <= '0';
             chip_dac_ready      <= '0';
-				reset_n_lvds	<= '0';
+			reset_n_lvds		<= '0';
+			mux_read_regs_nios	<= (others => '0');
         elsif rising_edge(i_clk) then 
             
             chip_dac_we         <= '0';
@@ -343,6 +352,10 @@ begin
 		temp_adc_out          	=> board_temp_adc_out
 	);
 	
+	lvds_data_in	<= i_data_in_E_1 & i_data_in_E_0 &
+								i_data_in_C_1 & i_data_in_C_0 &
+								i_data_in_B_1 & i_data_in_B_0 &
+								i_data_in_A_1 & i_data_in_A_0;
 	
 	e_mupix_datapath : work.mupix_datapath
 	generic map (
@@ -357,10 +370,7 @@ begin
 		i_clk				=> i_clk,
 		i_clk125			=> i_clk125,
 		
-		lvds_data_in		=>	i_data_in_E_1 & i_data_in_E_0 &
-								i_data_in_C_1 & i_data_in_C_0 &
-								i_data_in_B_1 & i_data_in_B_0 &
-								i_data_in_A_1 & i_data_in_A_0,
+		lvds_data_in		=> lvds_data_in,
 		
 		write_sc_regs		=> write_regs_mupix,
 		read_sc_regs		=> read_regs_mupix,
@@ -370,16 +380,16 @@ begin
 		i_fifo_rack			=> i_fifo_rack--,
 	);
 	
-	ro_prescaler <= write_regs_mupix(RO_PRESCALER_REGISTER_W);
-	debug_chip_select <= write_regs_mupix(DEBUG_CHIP_SELECT_REGISTER_W);
-	timestamp_gray_invert <= write_regs_mupix(TIMESTAMP_GRAY_INVERT_REGISTER_W);
+	write_regs_mupix(RO_PRESCALER_REGISTER_W) 			<= ro_prescaler;
+	write_regs_mupix(DEBUG_CHIP_SELECT_REGISTER_W) 		<= debug_chip_select;
+	write_regs_mupix(TIMESTAMP_GRAY_INVERT_REGISTER_W) 	<= timestamp_gray_invert;
 	
 	mux_read_regs : process (i_clk, reset_n)
 	begin 
-       if (reset_n = '0') then 
+		if (reset_n = '0') then 
            read_regs_mupix_mux <= (others => '0');
         elsif rising_edge(i_clk) then 
-           read_regs_mupix_mux <= read_regs_mupix(conv_integer(mux_read_regs_nios));                  
+           read_regs_mupix_mux <= read_regs_mupix(conv_integer(mux_read_regs_nios));
         end if;
     end process mux_read_regs;
 	
