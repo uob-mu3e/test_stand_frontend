@@ -24,9 +24,16 @@ odbedit -c 'set Custom/CR cr.html'
 odbedit -d Custom -c 'create STRING SciFi-ASICs'
 odbedit -c 'set Custom/SciFi-ASICs mutrigTdc.html'
 
+odbedit -c 'set Logger/History/FILE/Active y'
+odbedit -c 'set Logger/History/MIDAS/Active n'
+
 xterm -hold -e "mhttpd" &
+sleep 0.2
 xterm -hold -e "mserver" &
-xterm -hold -e "mlogger" &
-xterm -hold -e "switch_fe" &
+sleep 0.2
 xterm -hold -e "crfe" &
+sleep 0.2
+xterm -hold -e "mlogger" &
+#xterm -hold -e "switch_fe" &
+
 
