@@ -5,96 +5,66 @@ use ieee.std_logic_unsigned.all;
 
 entity top is
 port (
+--    Arduino_IO13 : in std_logic;
+--    Arduino_IO12 : out std_logic;
+--    Arduino_IO11 : out std_logic;
+--    Arduino_IO10 : out std_logic;
 
-	CLOCK : in std_logic; -- 50 MHz
-	RESET_N : in std_logic;
---
---	Arduino_IO13 : in std_logic;
---	Arduino_IO12 : out std_logic;
---	Arduino_IO11 : out std_logic;
---	Arduino_IO10 : out std_logic;
-    
     MSCB_IN : in std_logic;
     MSCB_OUT :out std_logic;
     MSCB_OE : out std_logic;
-   -- DIFFIO_B16N : out std_logic;
-    --DIFFIO_B14P : out std_logic--;
-    
-    --Arduino_A0  : in std_logic;
-----
-	SWITCH1 : in std_logic;
-----	SWITCH2 : in std_logic;
-----	SWITCH3 : in std_logic;
-----	SWITCH4 : in std_logic;
-----    SWITCH5 : in std_logic;
---
---
-	LED1 : out std_logic;
-	LED2 : out std_logic;
-	LED3 : out std_logic;
-	LED4 : out std_logic;
-	LED5 : out std_logic--;
+--    DIFFIO_B16N : out std_logic;
+--    DIFFIO_B14P : out std_logic--;
 
+--    Arduino_A0  : in std_logic;
+
+    SWITCH1 : in    std_logic;
+--    SWITCH2 : in std_logic;
+--    SWITCH3 : in std_logic;
+--    SWITCH4 : in std_logic;
+--    SWITCH5 : in std_logic;
+
+    LED1    : out   std_logic;
+    LED2    : out   std_logic;
+    LED3    : out   std_logic;
+    LED4    : out   std_logic;
+    LED5    : out   std_logic;
+
+    RESET_N : in    std_logic;
+    CLOCK   : in    std_logic--; -- 50 MHz
 );
 end entity;
 
 architecture arch of top is
 
---    component my_altmult_add IS
---	PORT
---	(
---		clock0		: IN STD_LOGIC  := '1';
---		dataa_0		: IN STD_LOGIC_VECTOR (11 DOWNTO 0) :=  (OTHERS => '0');
---		datab_0		: IN STD_LOGIC_VECTOR (11 DOWNTO 0) :=  (OTHERS => '0');
---		result		: OUT STD_LOGIC_VECTOR (63 DOWNTO 0)
---	);
---    END component my_altmult_add;
-
-    component mscb IS
-
-    port (
-        nios_clk                    : in    std_logic;
-        reset                       : in    std_logic;
-        mscb_to_nios_parallel_in    : out   std_logic_vector(11 downto 0);
-        mscb_from_nios_parallel_out : in    std_logic_vector(11 downto 0);
-        mscb_data_in                : in    std_logic;
-        mscb_data_out               : out   std_logic;
-        mscb_oe                     : out   std_logic;
-        mscb_counter_in             : out   unsigned(15 downto 0);
-        o_mscb_irq                  : out   std_logic;
-        i_mscb_address              : in    std_logic_vector(15 downto 0)--;
-    );
-    END component mscb;
-
     constant count_max : unsigned(24 downto 0) := (others => '1');
     constant address :   std_logic_vector(15 downto 0) := x"ABCD" ; --Address of board
-    
-	signal adc_clk : std_logic; -- 10 MHz
-	signal nios_clk : std_logic; -- 50 MHz
 
-	signal pll_locked, slow_clk : std_logic;
+    signal adc_clk : std_logic; -- 10 MHz
+    signal nios_clk : std_logic; -- 50 MHz
+
+    signal pll_locked, slow_clk : std_logic;
     signal adc_response_valid ,adc_response_valid_save: std_logic;
 
-	signal sw : std_logic_vector(4 downto 0);
-	signal led : std_logic_vector(4 downto 0);
+    signal sw : std_logic_vector(4 downto 0);
+    signal led : std_logic_vector(4 downto 0);
 
-	signal nios_pio : std_logic_vector(31 downto 0);
-    
+    signal nios_pio : std_logic_vector(31 downto 0);
+
     signal adc_data : std_logic_vector(11 downto 0);
     --signal adc_data_store : std_logic_vector(11 downto 0);
 
     signal x2 : STD_LOGIC_VECTOR(63 DOWNTO 0);
-    
+
     signal e_x,e_x2 : unsigned(63 downto 0);
-    
+
     signal counter : unsigned(24 downto 0);
     signal mult_delay_cnt : unsigned(10 downto 0);
     
     signal mscb_out_parallel, mscb_in_parallel : std_logic_vector(11 downto 0);
     signal crc_check_en: std_logic;
     signal address_enable : std_logic_vector(1 downto 0); --one hot encoding
-   
-   
+
     TYPE state_type IS (idle, addr_cmd_msb, addr_cmd_lsb, crc_check, command_processing, full_operation, CMD_READ_MEM, CMD_READ_MEM_ANSWER);  -- Define the states
     SIGNAL state : state_type;    -- Create a signal that
     signal msg_save: std_logic_vector(31 downto 0);
@@ -102,27 +72,25 @@ architecture arch of top is
     signal read_receive_cnt,read_mem_answer_cnt : unsigned(3 downto 0) := (others => '0');
     signal  adc_cnt : unsigned(3 downto 0) := (others => '0');
     signal crc_reg: std_logic_vector(8 downto 0);
-    
-    
+
     signal receive_crc, numb_data_bytes, receive_ch_address: std_logic_vector(7 downto 0);
-    
+
     type array5 is array (integer range <>) of std_logic_vector(4 downto 0);
     type array8 is array (integer range <>) of std_logic_vector(7 downto 0);
     type array12 is array (integer range <>) of std_logic_vector(11 downto 0);
     signal full_operation_save: array8(8 downto 0);
     signal full_cmd_save, testfifo: std_logic_vector(7 downto 0);
-    
+
     constant cmd_read_mem_adc : array8(6 downto 0) := (x"07"       ,x"00",x"02",x"00",x"12",x"34",x"00");
     signal cmd_read_mem_answ : array8(5 downto 0) := ("01111111", x"80", x"02",x"12", x"34", x"36");
     signal cmd_read_mem_answ_total: array8(21 downto 0) := ("01111111", x"80", x"02",x"00", x"00",x"00", x"00",x"00", x"00",x"00", x"00",x"00", x"00",x"00", x"00",x"00", x"00",x"00", x"00",x"00", x"00", x"36");
-    
-    
+
     signal adc_data_store : array12(8 downto 0) := (others => (others => '0'));
-    
+
     constant adc_channels : array5(8 downto 0) := ( "00010","00001","00000","00111","00110","00101","00100", "00011","10001");
-    
+
     signal response_channel : std_logic_vector(4 downto 0);
-    
+
 begin
 
 
@@ -140,8 +108,8 @@ begin
         i_mscb_address              => address
     );
 
-    
-    
+
+
     process(CLOCK,reset_n)
     begin
         if reset_n = '0' then
@@ -357,19 +325,19 @@ begin
         end if;
     end process;
 
---    sw(0)   <= SWITCH1;
-----	sw(1)   <= SWITCH2;
-----	sw(2)   <= SWITCH3;
-----    sw(3)   <= SWITCH4;
-----    sw(4)   <= SWITCH5;
---    
---      LED1    <= full_operation_save(0)(0);
---    LED2    <= e_x(0);
---    LED3    <= e_x2(0);
---    LED4    <= counter(0);
---    LED5    <= led(0);
+--    sw(0) <= SWITCH1;
+--    sw(1) <= SWITCH2;
+--    sw(2) <= SWITCH3;
+--    sw(3) <= SWITCH4;
+--    sw(4) <= SWITCH5;
 
-    
+--    LED1 <= full_operation_save(0)(0);
+--    LED2 <= e_x(0);
+--    LED3 <= e_x2(0);
+--    LED4 <= counter(0);
+--    LED5 <= led(0);
+
+
 --    process(adc_clk,reset_n)
 --    begin
 --        if (reset_n='0') then
@@ -408,75 +376,74 @@ begin
 --			datab_0		=> adc_data,
 --			result		=> x2
 --	);
---
--- 
+
+
     ---ADC---
     testadc : component work.cmp.myadc
     port map(
-			adc_pll_clock_clk      => adc_clk,
-			adc_pll_locked_export  => pll_locked,           -- export
-			clock_clk              => adc_clk,             -- clk
-			command_valid          => '1',                -- valid
-			command_channel        => adc_channels(to_integer(adc_cnt)),              -- channel
-			command_startofpacket  => '1',                -- startofpacket
-			command_endofpacket    => '1',                -- endofpacket
-			command_ready          => open,                 -- ready
-			reset_sink_reset_n     => reset_n,              -- reset_n
-			response_valid         => adc_response_valid,   -- valid
-			response_channel       => response_channel,                 -- channel
-			response_data          => adc_data,             -- data
-			response_startofpacket => open,                 -- startofpacket
-			response_endofpacket   => open--,                 -- endofpacket
-		);
+        adc_pll_clock_clk      => adc_clk,
+        adc_pll_locked_export  => pll_locked,
+        clock_clk              => adc_clk,
+        command_valid          => '1',
+        command_channel        => adc_channels(to_integer(adc_cnt)),
+        command_startofpacket  => '1',
+        command_endofpacket    => '1',
+        command_ready          => open,
+        reset_sink_reset_n     => reset_n,
+        response_valid         => adc_response_valid,
+        response_channel       => response_channel,
+        response_data          => adc_data,
+        response_startofpacket => open,
+        response_endofpacket   => open--,
+    );
 
 
-	--- PLL ---
-	e_ip_altpll : entity work.ip_altpll
-	port map (
-		areset => not reset_n,
-		inclk0 => CLOCK,
-		c0     => adc_clk,
-		c1     => nios_clk,
+    --- PLL ---
+    e_ip_altpll : entity work.ip_altpll
+    port map (
+        areset => not reset_n,
+        inclk0 => CLOCK,
+        c0     => adc_clk,
+        c1     => nios_clk,
         c2     => slow_clk,
-		locked => pll_locked--,
-	);
-    
-       
-        --    process(adc_clk, reset_n)
+        locked => pll_locked--,
+    );
+
+--    process(adc_clk, reset_n)
 --    begin
 --        if (reset_n ='0') then
 --            led <= (others => '0');
 --            adc_data_store <= (others => '0');
---        elsif rising_edge(adc_clk) then 
+--        elsif rising_edge(adc_clk) then
 --            if adc_response_valid = '1' then
 --                adc_data_store <= adc_data;
---            end if; 
+--            end if;
 --            if (sw(1) = '1') then
 --                led <=  adc_data_store(4 downto 0);
 --            elsif ( sw(2) = '1') then
 --                led <= adc_data_store(9 downto 5);
---            else 
+--            else
 --                led <= "000" & adc_data_store(11 downto 10);
 --            end if;
 --        end if;
 --    end process;
-----    
---    channel <= "10001" when SWITCH4='1' else "00001";
 --
--- 	   
+--    channel <= "10001" when SWITCH4='1' else "00001";
 
---    	--- NIOS ---
---	e_nios : component work.cmp.nios
---	port map (
---			clk_clk           => CLOCK,
---			led_io_export     => led,
---			pio_export        => nios_pio,
---			rst_reset_n       => reset_n,
---			spi_MISO          => Arduino_IO13,
---			spi_MOSI          => Arduino_IO12,
---			spi_SCLK          => Arduino_IO11,
---			spi_SS_n          => Arduino_IO10,
---			sw_io_export      => sw--,
---	);
+
+
+    --- NIOS ---
+--    e_nios : component work.cmp.nios
+--    port map (
+--        clk_clk         => CLOCK,
+--        led_io_export   => led,
+--        pio_export      => nios_pio,
+--        rst_reset_n     => reset_n,
+--        spi_MISO        => Arduino_IO13,
+--        spi_MOSI        => Arduino_IO12,
+--        spi_SCLK        => Arduino_IO11,
+--        spi_SS_n        => Arduino_IO10,
+--        sw_io_export    => sw--,
+--    );
 
 end architecture;
