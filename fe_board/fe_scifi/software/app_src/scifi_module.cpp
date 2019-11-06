@@ -128,6 +128,7 @@ void scifi_module_t::menu(sc_t* sc){
             break;
         case '5':
             printf("dummyctrl_reg:    0x%08X\n", regs.ctrl.dummy);
+            printf("    :cfgdummy_en  0x%X\n", (regs.ctrl.dummy>>0)&1);
             printf("    :datagen_en   0x%X\n", (regs.ctrl.dummy>>1)&1);
             printf("    :datagen_fast 0x%X\n", (regs.ctrl.dummy>>2)&1);
             printf("    :datagen_cnt  0x%X\n", (regs.ctrl.dummy>>3)&0x3ff);
@@ -172,8 +173,9 @@ void scifi_module_t::menu_reg_dummyctrl(sc_t* sc){
     while(1) {
         auto reg = regs.ctrl.dummy;
 	//printf("Dummy reg now: %16.16x / %16.16x\n",regs.ctrl.dummy, reg);
-        printf("  [0] => %s dummy\n",(reg&2) == 0?"enable":"disable");
-        printf("  [1] => %s fast hit mode\n",(reg&4) == 0?"enable":"disable");
+        printf("  [0] => %s config dummy\n",(reg&1) == 0?"enable":"disable");
+        printf("  [1] => %s data dummy\n",(reg&2) == 0?"enable":"disable");
+        printf("  [2] => %s fast hit mode\n",(reg&4) == 0?"enable":"disable");
         printf("  [+] => increase count (currently %u)\n",(reg>>3&0x3fff));
         printf("  [-] => decrease count\n");
         printf("  [q] => exit\n");
@@ -183,9 +185,12 @@ void scifi_module_t::menu_reg_dummyctrl(sc_t* sc){
         char cmd = wait_key();
         switch(cmd) {
         case '0':
-            regs.ctrl.dummy = regs.ctrl.dummy ^ (1<<1);
+            regs.ctrl.dummy = regs.ctrl.dummy ^ (1<<0);
             break;
         case '1':
+            regs.ctrl.dummy = regs.ctrl.dummy ^ (1<<1);
+            break;
+        case '2':
             regs.ctrl.dummy = regs.ctrl.dummy ^ (1<<2);
             break;
         case '+':
@@ -321,7 +326,14 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
     default:
         if((cmd&0xfff0) ==0x0110){ //configure ASIC
 	   uint8_t chip=data[0];
-           return configure_asic(chip,(alt_u8*) &(data[1]));
+           status=configure_asic(chip,(alt_u8*) &(data[1]));
+           if(sc->ram->regs.scifi.ctrl.dummy&1){
+              //when configured as dummy do the spi transaction,
+              //but always return success to switching board
+	      if(status!=FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
+              status=FEB_REPLY_SUCCESS;
+           }
+	   return status;
         }else{//unknown command
            return FEB_REPLY_ERROR;
 	}
