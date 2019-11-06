@@ -8,6 +8,7 @@ package mupix_types is
 
 subtype reg32 		is std_logic_vector(31 downto 0);
 type reg32array	is array (NREGISTERS-1 downto 0) of reg32;
+type reg32array_128	is array (128-1 downto 0) of reg32;
 
 subtype reg64 		is std_logic_vector(63 downto 0);
 subtype REG64_TOP_RANGE is integer range 63 downto 32;

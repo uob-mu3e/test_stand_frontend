@@ -1,0 +1,7 @@
+#
+
+set_global_assignment -name QSYS_FILE [file join $::quartus(qip_path) "myadc.qsys"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "my_altmult_add.vhd"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "adc_lab_proj.vhd"]

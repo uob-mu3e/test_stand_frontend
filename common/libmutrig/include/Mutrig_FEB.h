@@ -16,7 +16,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include "mutrig_config.h"
 
 class MutrigFEB {
-   private:
+   protected:
       mudaq::MudaqDevice& m_mu;
       std::map<uint8_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
    public:

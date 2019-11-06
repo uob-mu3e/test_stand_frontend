@@ -4,6 +4,7 @@
 #include "sc_ram.h"
 
 #include <sys/alt_irq.h>
+#include "default_mupix_dacs.h"
 
 static
 void print_data(volatile alt_u32* data, int n) {
@@ -25,6 +26,8 @@ void menu_mupix() {
     auto& regs = sc.ram->regs.mupix;
     int i = 65409; // 0xFF81
     
+
+    
     while(1) {
         printf("  [0] => read th_pix reg\n");
         printf("  [1] => write th_pix step 1\n");
@@ -35,6 +38,8 @@ void menu_mupix() {
         printf("  [6] => start spi master\n");
         printf("  [7] => read data and regs\n");
         printf("  [8/9] => write chip dacs\n");
+        printf("  [d] => set default chip dacs\n");
+        printf("  [m] => monitor lvds\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -87,6 +92,19 @@ void menu_mupix() {
                 ram->data[0xFF8D] = 0xAAAAAAAA;
             }
                 ram->data[0xFF8E] = 0x00100001;
+        break;
+        case 'd':
+            ram->data[0xFF8D] = 0x005e0003;
+            for(int i = 0; i < sizeof(default_mupix_dacs); i++) {
+                ram->data[0xFF8D] = default_mupix_dacs[i];
+            }
+            ram->data[0xFF8E] = 0x00100001;
+        break;
+        case 'm ':
+            for (int i = 0; i<68; i++) {
+                ram->data[0xFF93] = i;
+ //               print_data((volatile alt_u32*)&ram->data[0xFF94], 1);
+            }
         break;
         case 'q':
             return;

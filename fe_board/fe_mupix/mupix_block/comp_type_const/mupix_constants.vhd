@@ -5,6 +5,13 @@ use ieee.std_logic_1164.all;
 
 package mupix_constants is
 
+constant RX_STATE_RECEIVER_0 : integer := 0;
+constant RX_STATE_RECEIVER_1 : integer := 1;
+constant LVDS_PLL_LOCKED_REG 	 : integer := 2;
+constant MULTICHIP_RO_OVERFLOW_REG : integer := 3;
+constant LVDS_RUNCOUNTER_REG	 : integer := 4;
+constant LVDS_ERRCOUNTER_REG	 : integer := 36;
+
 constant NCHIPS			: integer :=  8;
 constant NFEB_CARDS		: integer :=  4;
 constant NTRIGGERS		: integer :=  4;

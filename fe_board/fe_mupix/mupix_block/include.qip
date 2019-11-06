@@ -21,6 +21,12 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "multichip
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/datadecoder.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/disparity_checker.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/add_1_bit.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/add_2_bits.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/add_3_bits.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/decode8b10b.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/8b10_dec.vhd"]
+
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/fifo_Nb.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/fifo_Nb_sync.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/lvdspll.vhd"]

@@ -36,7 +36,7 @@ begin
 
 reset <= not reset_n;
 
-oc8b10b: dec_8b10b 	
+oc8b10b : work.dec_8b10b 	
     port map(
 		RESET 		=> reset,
 		RBYTECLK 	=> clk,

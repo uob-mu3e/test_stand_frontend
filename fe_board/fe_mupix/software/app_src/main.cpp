@@ -11,9 +11,8 @@ sc_t sc;
 #include "../../../fe/software/app_src/mscb_user.h"
 mscb_t mscb;
 #include "../../../fe/software/app_src/reset.h"
-
 #include "../../../fe/software/app_src/malibu.h"
-#include "sc_malibu.h"
+#include "../../../fe_malibu/software/app_src/sc_malibu.h"
 #include "../../../fe/software/app_src/sc_mupix.h"
 
 int main() {
