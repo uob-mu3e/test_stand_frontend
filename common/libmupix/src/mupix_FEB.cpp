@@ -41,7 +41,7 @@ int MupixFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* 
       int status=SUCCESS;
       uint32_t reg;
       cm_msg(MINFO, "setup_mupix" , "Configuring MuPIX asic %s/Settings/ASICs/%i/", odb_prefix, asic);
-/*
+
       try {
          //Write ASIC number
          reg=asic;
@@ -77,7 +77,7 @@ int MupixFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* 
          set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
          cm_msg(MERROR, "setup_mupix", "MuTRiG configuration error for ASIC %i", asic);
       }
-*/
+
       return status;//note: return of lambda function
    });//MapForEach
    return status; //status of foreach function, SUCCESS when no error.
@@ -150,4 +150,3 @@ void MupixFEB::setDummyConfig(int FPGA_ID, bool dummy){
 	m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 */
-

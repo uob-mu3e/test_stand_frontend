@@ -33,6 +33,9 @@ public:
 private:
     static paras_t parameters_chipdacs;                             ///< parameters for global dacs (name, nbits, endian) 
     static paras_t parameters_pixeldacs;                             ///< parameters for each pixel
+    static paras_t parameters_chipdacs2;                             ///< parameters for global dacs (name, nbits, endian)
+    static paras_t parameters_rowdacs;                             ///< parameters for each pixel
+    static paras_t parameters_voltagedacs;
 
 };
 

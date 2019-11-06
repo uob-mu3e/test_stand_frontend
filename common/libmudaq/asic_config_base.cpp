@@ -1,6 +1,7 @@
 #include <cstring>
 #include <iostream>
 #include <iomanip>
+#include <iterator>
 
 #include "asic_config_base.h"
 
@@ -17,6 +18,14 @@ ASICConfigBase::para_t ASICConfigBase::make_param(std::string name, size_t nbits
 
 ASICConfigBase::para_t ASICConfigBase::make_param(std::string name, size_t nbits, std::vector<uint8_t> bitorder){
     return std::make_tuple(name,nbits,bitorder);
+}
+
+ASICConfigBase::para_t ASICConfigBase::make_param(std::string name, std::string bitorderstring){
+    std::istringstream is(bitorderstring);
+    std::vector<uint8_t> order;
+    order.assign(std::istream_iterator<uint8_t>( is ), std::istream_iterator<uint8_t>() );
+    size_t sizze = order.size();
+    return std::make_tuple(name,sizze,order);
 }
 
 void ASICConfigBase::addPara(const para_t& para, const std::string postfix) {

@@ -74,12 +74,6 @@ typedef struct {
 
 #define MUPIX_BOARDDACS_STR(_name) const char *_name[] = {\
 "[.]",\
-"amon_en = BOOL : n",\
-"amon_dac = INT : 0",\
-"dmon_1_en = BOOL : n",\
-"dmon_1_dac = INT : 0",\
-"dmon_2_en = BOOL : n",\
-"dmon_2_dac = INT : 0",\
 "",\
 NULL }
 #endif
@@ -89,76 +83,152 @@ NULL }
 #define MUPIX_CHIPDACS_DEFINED
 
 typedef struct {
-    INT       vnpfc;
-    INT       vnpfc_offset;
-    BOOL      vnpfc_scale;
-    INT       vncnt;
-    INT       vncnt_offset;
-    BOOL      vncnt_scale;
-    INT       vnvcobuffer;
-    INT       vnvcobuffer_offset;
-    BOOL      vnvcobuffer_scale;
-    INT       vnd2c;
-    INT       vnd2c_offset;
-    BOOL      vnd2c_scale;
-    INT       vnpcp;
-    INT       vnpcp_offset;
-    BOOL      vnpcp_scale;
-    INT       vnhitlogic;
-    INT       vnhitlogic_offset;
-    BOOL      vnhitlogic_scale;
-    INT       vncntbuffer;
-    INT       vncntbuffer_offset;
-    BOOL      vncntbuffer_scale;
-    INT       vnvcodelay;
-    INT       vnvcodelay_offset;
-    BOOL      vnvcodelay_scale;
-    INT       latchbias;
-    INT       ms_limits;
-    BOOL      ms_switch_sel;
+    INT       Bandgap1_on;
+    INT       Biasblock1_on;
+    INT       VNRegCasc;
+    INT       VDel;
+    INT       VPComp;
+    INT       VPDAC;
+    INT       BLResDig;
+    INT       VPVCO;
+    INT       VNVCO;
+    INT       VPDelDclMux;
+    INT       VNDelDclMux;
+    INT       VPDelDcl;
+    INT       VNDelDcl;
+    INT       VPDelPreEmp;
+    INT       VNDelPreEmp;
+    INT       VPDcl;
+    INT       VNDcl;
+    INT       VNLVDS;
+    INT       VNLVDSDel;
+    INT       VPPump;
+    INT       resetckdivend;
+    INT       maxcycend;
+    INT       slowdownend;
+    INT       timerend;
+    INT       tsphase;
+    INT       ckdivend2;
+    INT       ckdivend;
+    INT       VPRegCasc;
+    INT       VPRamp;
+    INT       VPBiasReg;
+    INT       VNBiasReg;
+    INT       enable2threshold;
+    INT       enableADC;
+    INT       Invert;
+    INT       SelEx;
+    INT       SelSlow;
+    INT       EnablePLL;
+    INT       Readout_reset_n;
+    INT       Serializer_reset_n;
+    INT       Aurora_reset_n;
+    INT       sendcounter;
+    INT       Linkselect;
+    INT       Termination;
+    INT       AlwaysEnable;
+    INT       SelectTest;
+    INT       SelectTestOut;
+    INT       DisableHitbus;
+    INT       Bandgap2_on;
+    INT       Biasblock2_on;
+    INT       BLResPix;
+    INT       VNPix;
+    INT       VNFBPix;
+    INT       VNFollPix;
+    INT       VNPix2;
+    INT       VNBiasPix;
+    INT       VPLoadPix;
+    INT       VNOutPix;
+    INT       VPFoll;
+    INT       VNDACPix;
+    INT       ThLow;
+    INT       ThPix;
+    INT       BLPix;
+    INT       BLDig;
+    INT       ThHigh;
+} MUPIX_CHIPDACS;
+
+#define MUPIX_CHIPDACS_STR(_name) const char *_name[] = {\
+"[.]",\
+"Bandgap1_on = INT : 0",\
+"Biasblock1_on = INT : 5",\
+"VNRegCasc = INT : 0",\
+"VDel = INT : 16",\
+"VPComp = INT : 5",\
+"VPDAC = INT : 0",\
+"BLResDig = INT : 5",\
+"VPVCO = INT : 12",\
+"VNVCO = INT : 13",\
+"VPDelDclMux = INT : 24",\
+"VNDelDclMux = INT : 24",\
+"VPDelDcl = INT : 40",\
+"VNDelDcl = INT : 40",\
+"VPDelPreEmp = INT : 24",\
+"VNDelPreEmp = INT : 24",\
+"VPDcl = INT : 24",\
+"VNDcl = INT : 16",\
+"VNLVDS = INT : 24",\
+"VNLVDSDel = INT : 0",\
+"VPPump = INT : 63",\
+"resetckdivend = INT : 15",\
+"maxcycend = INT : 63",\
+"slowdownend = INT : 0",\
+"timerend = INT : 1",\
+"tsphase = INT : 0",\
+"ckdivend2 = INT : 7",\
+"ckdivend = INT : 0",\
+"VPRegCasc = INT : 0",\
+"VPRamp = INT : 0",\
+"VPBiasReg = INT : 0",\
+"VNBiasReg = INT : 0",\
+"enable2threshold = INT : 0",\
+"enableADC = INT : 1",\
+"Invert = INT : 0",\
+"SelEx = INT : 0",\
+"SelSlow = INT : 0",\
+"EnablePLL = INT : 1",\
+"Readout_reset_n = INT : 1",\
+"Serializer_reset_n = INT : 1",\
+"Aurora_reset_n = INT : 1",\
+"sendcounter = INT : 0",\
+"Linkselect = INT : 1",\
+"Termination = INT : 0",\
+"AlwaysEnable = INT : 0",\
+"SelectTest = INT : 0",\
+"SelectTestOut = INT : 0",\
+"DisableHitbus = INT : 1",\
+"Bandgap2_on = INT : 0",\
+"Biasblock2_on = INT : 5",\
+"BLResPix = INT : 5",\
+"VNPix = INT : 20",\
+"VNFBPix = INT : 10",\
+"VNFollPix = INT : 10",\
+"VNPix2 = INT : 0",\
+"VNBiasPix = INT : 0",\
+"VPLoadPix = INT : 5",\
+"VNOutPix = INT : 10",\
+"VPFoll = INT : 10",\
+"VNDACPix = INT : 0",\
+"ThLow = INT : 312",\
+"ThPix = INT : 454",\
+"BLPix = INT : 448",\
+"BLDig = INT : 256",\
+"ThHigh = INT : 318",\
+"",\
+NULL }
+
+typedef struct {
     BOOL      amon_en;
     INT       amon_dac;
     BOOL      dmon_1_en;
     INT       dmon_1_dac;
     BOOL      dmon_2_en;
     INT       dmon_2_dac;
-} MUPIX_CHIPDACS;
+} MUPIX_PIXELROWCONFIG;
 
-#define MUPIX_CHIPDACS_STR(_name) const char *_name[] = {\
+#define MUPIX_PIXELROWCONFIG_STR(_name) const char *_name[] = {\
 "[.]",\
-"vnpfc = INT : 63",\
-"vnpfc_offset = INT : 3",\
-"vnpfc_scale = BOOL : n",\
-"vncnt = INT : 63",\
-"vncnt_offset = INT : 3",\
-"vncnt_scale = BOOL : n",\
-"vnvcobuffer = INT : 63",\
-"vnvcobuffer_offset = INT : 3",\
-"vnvcobuffer_scale = BOOL : n",\
-"vnd2c = INT : 63",\
-"vnd2c_offset = INT : 3",\
-"vnd2c_scale = BOOL : n",\
-"vnpcp = INT : 63",\
-"vnpcp_offset = INT : 3",\
-"vnpcp_scale = BOOL : n",\
-"vnhitlogic = INT : 63",\
-"vnhitlogic_offset = INT : 3",\
-"vnhitlogic_scale = BOOL : n",\
-"vncntbuffer = INT : 63",\
-"vncntbuffer_offset = INT : 3",\
-"vncntbuffer_scale = BOOL : n",\
-"vnvcodelay = INT : 63",\
-"vnvcodelay_offset = INT : 3",\
-"vnvcodelay_scale = BOOL : n",\
-"latchbias = INT : 0",\
-"ms_limits = INT : 0",\
-"ms_switch_sel = BOOL : n",\
-"amon_en = BOOL : n",\
-"amon_dac = INT : 0",\
-"dmon_1_en = BOOL : n",\
-"dmon_1_dac = INT : 0",\
-"dmon_2_en = BOOL : n",\
-"dmon_2_dac = INT : 0",\
 "",\
 NULL }
 #endif

@@ -15,7 +15,6 @@ public:
     MutrigConfig();
     ~MutrigConfig();
 
-
     /**
      * Functions to parse MIDAS structs to MuTRiG patterns
      */

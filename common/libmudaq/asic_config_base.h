@@ -75,6 +75,8 @@ public:
     static para_t make_param(std::string, size_t, bool);
     //param from name,size,bitorder-list
     static para_t make_param(std::string, size_t, std::vector<uint8_t>);
+    //param from name,bitorder-string
+    static para_t make_param(std::string, std::string);
 
     typedef std::vector<para_t> paras_t;                      ///< mutrig parameter in correct order (starting at bit offset 0)
 
