@@ -23,6 +23,9 @@ public:
     uint32_t readModifyWriteBits(uint32_t addr, uint32_t andterm, uint32_t orterm);
 
 protected:
+    int disconnect();
+    int connect();
+
     error_code SendPacket();
     void StartPacket();
 
@@ -48,6 +51,8 @@ protected:
 
     uint16_t packetnumber;
     uint16_t transactionnumber;
+
+    uint32_t ntimeouts;
 };
 
 

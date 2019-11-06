@@ -11,7 +11,19 @@ using std::endl;
 using std::hex;
 
 ipbus::ipbus(const char * _addr, unsigned short _port):
-    addr(_addr),port(_port), connected(false), ios(), socket(ios), packetnumber(0)
+    addr(_addr),port(_port), connected(false), ios(), socket(ios), packetnumber(0),ntimeouts(0)
+{
+    connect();
+}
+
+int ipbus::disconnect()
+{
+    if(connected)
+        socket.close();
+    return 0;
+}
+
+int ipbus::connect()
 {
     socket.open(ip::udp::v4());
     remote_endpoint = ip::udp::endpoint(ip::address::from_string(addr),port);
@@ -37,7 +49,7 @@ ipbus::ipbus(const char * _addr, unsigned short _port):
             socket.close();
             connected = false;
             cout << "Connection failed" << endl;
-            return;
+            return -1;
         }
     }
 
@@ -45,12 +57,15 @@ ipbus::ipbus(const char * _addr, unsigned short _port):
     packetnumber = static_cast<uint16_t>(status);
 
     cout << "Starting at packet number " << packetnumber << endl;
+
+    return 0;
 }
 
 
+
+
 ipbus::~ipbus(){
-    if(connected)
-        socket.close();
+  disconnect();
 }
 
 int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
@@ -228,6 +243,7 @@ uint32_t ipbus::readModifyWriteBits(uint32_t addr, uint32_t andterm, uint32_t or
 }
 
 
+
 void ipbus::StartPacket(){
     uint32_t word = 0;
     word |= 0x0;            // control packet
@@ -315,14 +331,24 @@ int ipbus::ReadFromSocket(vector<uint32_t> & rbuffer)
             nbyte = socket.receive_from(buffer(rbuffer), remote_endpoint, 0, err);
             if(err == boost::asio::error::try_again){
                 cout << "UDP Timeout" << endl;
+                ntimeouts++;
                 return -2;
             }
          }
-        if(err)
+        if(err){
             throw boost::system::system_error(err);
+        }
+        if(ntimeouts > 0)
+            ntimeouts--;
+
     }
     catch(std::exception& e) {
         std::cerr << e.what() << endl;
+    }
+
+    if(ntimeouts > 50){
+        std::cerr << "Connection to clock boaerd lost, terminating!" << std::endl;
+        throw boost::system::system_error(boost::asio::error::connection_aborted);
     }
 
     /*
