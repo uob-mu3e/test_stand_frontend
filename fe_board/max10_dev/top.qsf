@@ -28,13 +28,8 @@ set_instance_assignment -name IO_STANDARD "2.5 V" -to MSCB_OUT
 set_location_assignment PIN_60 -to MSCB_OE
 set_instance_assignment -name IO_STANDARD "2.5 V" -to MSCB_OE
 
-set_global_assignment -name VHDL_FILE mscb.vhd
-set_global_assignment -name VHDL_FILE ../firmware/FEB_common/uart_transmitter.vhd
-set_global_assignment -name VHDL_FILE ../firmware/FEB_common/uart_reciever.vhd
-set_global_assignment -name VHDL_FILE ../firmware/FEB_common/mscb_addressing.vhd
-set_global_assignment -name VHDL_FILE ../firmware/FEB_common/daq_constants.vhd
-set_global_assignment -name QSYS_FILE adc_lab_proj/myadc.qsys
-set_global_assignment -name VHDL_FILE ip/my_fifo.vhd
+set_global_assignment -name QIP_FILE mscb/include.qip
+set_global_assignment -name QIP_FILE adc_lab_proj/include.qip
 
 
 
