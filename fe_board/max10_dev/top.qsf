@@ -21,6 +21,18 @@ set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 
 
 
+set_location_assignment PIN_58 -to MSCB_IN
+set_instance_assignment -name IO_STANDARD "2.5 V" -to MSCB_IN
+set_location_assignment PIN_59 -to MSCB_OUT
+set_instance_assignment -name IO_STANDARD "2.5 V" -to MSCB_OUT
+set_location_assignment PIN_60 -to MSCB_OE
+set_instance_assignment -name IO_STANDARD "2.5 V" -to MSCB_OE
+
+set_global_assignment -name QIP_FILE mscb/include.qip
+set_global_assignment -name QIP_FILE adc_lab_proj/include.qip
+
+
+
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
