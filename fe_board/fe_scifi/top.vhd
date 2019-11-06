@@ -5,14 +5,14 @@ use ieee.numeric_std.all;
 entity top is
 port (
     -- FE.Ports
-    i_fee_rxd		: in  std_logic_vector (4*4 - 1 downto 0); --data inputs from ASICs
-    o_fee_spi_CSn	: out std_logic_vector (4*4 - 1 downto 0); --CSn signals to ASICs (one per ASIC)
-    o_fee_spi_MOSI	: out std_logic_vector (4 - 1 downto 0);   --MOSI signals to ASICs (one per board)
-    i_fee_spi_MISO	: in  std_logic_vector (4 - 1 downto 0);   --MISO signals from ASICs (one per board)
-    o_fee_spi_SCK	: out std_logic_vector (4 - 1 downto 0);   --SCK signals to ASICs (one per board)
+    i_fee_rxd       : in    std_logic_vector(4*4 - 1 downto 0); -- data inputs from ASICs
+    o_fee_spi_CSn   : out   std_logic_vector(4*4 - 1 downto 0); -- CSn signals to ASICs (one per ASIC)
+    o_fee_spi_MOSI  : out   std_logic_vector(4 - 1 downto 0);   -- MOSI signals to ASICs (one per board)
+    i_fee_spi_MISO  : in    std_logic_vector(4 - 1 downto 0);   -- MISO signals from ASICs (one per board)
+    o_fee_spi_SCK   : out   std_logic_vector(4 - 1 downto 0);   -- SCK signals to ASICs (one per board)
 
-    o_fee_ext_trig	: out std_logic_vector (4 - 1 downto 0);   --external trigger (data validation) signals to ASICs (one per board)
-    o_fee_chip_rst	: out std_logic_vector (4 - 1 downto 0);   --chip reset signals to ASICs (one per board)
+    o_fee_ext_trig  : out   std_logic_vector(4 - 1 downto 0);   -- external trigger (data validation) signals to ASICs (one per board)
+    o_fee_chip_rst  : out   std_logic_vector(4 - 1 downto 0);   -- chip reset signals to ASICs (one per board)
 
 
 
@@ -73,15 +73,15 @@ port (
 
     -- clock inputs
     -- SI45
-    clk_125_top     : in    std_logic;  -- 125 MHz (clk_125_top in schematic)       //  SI5345 OUT8
-    clk_125_bottom  : in    std_logic;  -- 125 MHz (clk_125_bottom in schematic)    //  SI5345 OUT7
+    clk_125_top     : in    std_logic;  -- 125 MHz (clk_125_top in schematic)       // SI5345 OUT8
+    clk_125_bottom  : in    std_logic;  -- 125 MHz (clk_125_bottom in schematic)    // SI5345 OUT7
 
-    lvds_clk_A      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right //	SI5345 OUT3
-    lvds_clk_B      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left  //	SI5345 OUT6
+    lvds_clk_A      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right  // SI5345 OUT3
+    lvds_clk_B      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left   // SI5345 OUT6
 
     -- SI42
-    systemclock     : in    std_logic;  -- 40 MHz (sysclock in schematic)          //  SI5342 OUT1
-    systemclock_bottom : in std_logic;  -- 40 MHz (sysclk_bottom in schematic)     //  SI5342 OUT0
+    systemclock     : in    std_logic;  -- 40 MHz (sysclock in schematic)           // SI5342 OUT1
+    systemclock_bottom : in std_logic;  -- 40 MHz (sysclk_bottom in schematic)      // SI5342 OUT0
 
     --direct input
     clk_aux     : in    std_logic--;    -- 125 MHz
@@ -185,7 +185,7 @@ begin
         i_clk_ref_A     => lvds_clk_A,
         i_clk_ref_B     => lvds_clk_B,
 
-	o_MON_rxrdy     => s_MON_rxrdy
+        o_MON_rxrdy     => s_MON_rxrdy
     );
 
     ----------------------------------------------------------------------------
@@ -271,11 +271,11 @@ begin
 
     spi_miso <=
         si45_spi_out when spi_ss_n(0) = '0' else
-	i_fee_spi_MISO(0) when spi_ss_n(3 downto 0)/="1111" else
-	i_fee_spi_MISO(1) when spi_ss_n(7 downto 4)/="1111" else
-	i_fee_spi_MISO(2) when spi_ss_n(11 downto 8)/="1111" else
-	i_fee_spi_MISO(3) when spi_ss_n(15 downto 12)/="1111" else
-	'0';
+        i_fee_spi_MISO(0) when spi_ss_n(3 downto 0)/="1111" else
+        i_fee_spi_MISO(1) when spi_ss_n(7 downto 4)/="1111" else
+        i_fee_spi_MISO(2) when spi_ss_n(11 downto 8)/="1111" else
+        i_fee_spi_MISO(3) when spi_ss_n(15 downto 12)/="1111" else
+        '0';
 
     ----------------------------------------------------------------------------
 
@@ -284,14 +284,14 @@ begin
     e_fe_block : entity work.fe_block
     generic map (
         FPGA_ID_g => X"FEB0",
-	FEB_type_in => "111000"--, --this is a mutrig type FEB
+        FEB_type_in => "111000"--, --this is a mutrig type FEB
     )
     port map (
         i_nios_clk_startup => clk_aux,
         i_nios_clk_main => clk_aux,
         i_nios_areset_n => reset_n,
         o_nios_clk_monitor => nios_clk,
-	o_nios_clk_selected => led(10),
+        o_nios_clk_selected => led(10),
 
         i_i2c_scl       => i2c_scl,
         o_i2c_scl_oe    => i2c_scl_oe,

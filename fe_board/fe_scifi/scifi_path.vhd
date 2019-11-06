@@ -58,7 +58,7 @@ architecture arch of scifi_path is
     signal s_subdet_resetdly_reg_written : std_logic;
     --chip reset synchronization/shift
     signal s_chip_rst_refclk_sync : std_logic_vector(1 downto 0);
-	 signal s_chip_reset_out : std_logic_vector(3 downto 0);
+    signal s_chip_reset_out : std_logic_vector(3 downto 0);
 begin
 
     e_test_pulse : entity work.clkdiv
@@ -80,7 +80,7 @@ begin
         --
     elsif rising_edge(i_clk_core) then
         o_reg_rdata <= X"CCCCCCCC";
-	s_subdet_resetdly_reg_written <= '0';
+        s_subdet_resetdly_reg_written <= '0';
 
         -- data
         if ( i_reg_re = '1' and i_reg_addr = X"0" ) then
@@ -120,7 +120,7 @@ begin
         end if;
         if ( i_reg_we = '1' and i_reg_addr = X"B" ) then
             s_subdet_resetdly_reg <= i_reg_wdata;
-	    s_subdet_resetdly_reg_written <= '1';
+            s_subdet_resetdly_reg_written <= '1';
         end if;
         -- output read
         if ( i_reg_re = '1' and i_reg_addr = X"8" ) then
@@ -152,8 +152,8 @@ begin
 
 
     u_resetshift: entity work.clockalign_block
-	generic map (CLKDIV => 2)
-	port map(
+    generic map ( CLKDIV => 2 )
+    port map (
 		i_clk_config => i_clk_core,
 		i_rst        => i_reset,
 
@@ -166,7 +166,7 @@ begin
 		i_sig => s_chip_rst_refclk_sync(1),
 		o_sig => o_chip_reset,
 		o_pll_clk    => open
-	 );
+    );
 
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (

@@ -5,7 +5,7 @@
 Malibu board init procedure:
 - Set clock and test inputs
 - Enable 3.3V supplies
-- Disable 1.8 supplies for all ASICs 
+- Disable 1.8 supplies for all ASICs
 - Set CS lines for all ASICs
 -* Power monitor chips not initialized
 -* I2C multiplexers not initialized
@@ -61,24 +61,24 @@ struct malibu_t {
     }
 
     i2c_reg_t malibu_init_regs[18] = {
-	{0x38,0x01,0x0C^0x20},
-	{0x38,0x03,0x00},
-	{0x38,0x01,0x0D^0x20},
-	{0xff,0x00,0x00},
-	{0x38,0x01,0x0F^0x20},
-	{0xff,0x00,0x00},
-	{0x39,0x01,0x3C},
-	{0x39,0x03,0x00},
-	{0x3a,0x01,0x3C},
-	{0x3a,0x03,0x00},
-	{0x3b,0x01,0x3C},
-	{0x3b,0x03,0x00},
-	{0x3c,0x01,0x3C},
-	{0x3c,0x03,0x00},
-	{0x3d,0x01,0x3C},
-	{0x3d,0x03,0x00},
-	{0x3f,0x01,0x3C},
-	{0x3f,0x03,0x00}
+        {0x38,0x01,0x0C^0x20},
+        {0x38,0x03,0x00},
+        {0x38,0x01,0x0D^0x20},
+        {0xff,0x00,0x00},
+        {0x38,0x01,0x0F^0x20},
+        {0xff,0x00,0x00},
+        {0x39,0x01,0x3C},
+        {0x39,0x03,0x00},
+        {0x3a,0x01,0x3C},
+        {0x3a,0x03,0x00},
+        {0x3b,0x01,0x3C},
+        {0x3b,0x03,0x00},
+        {0x3c,0x01,0x3C},
+        {0x3c,0x03,0x00},
+        {0x3d,0x01,0x3C},
+        {0x3d,0x03,0x00},
+        {0x3f,0x01,0x3C},
+        {0x3f,0x03,0x00}
     };
 
     /**
@@ -87,23 +87,23 @@ struct malibu_t {
      * - Power down 3.3V supplies
     */
     i2c_reg_t malibu_powerdown_regs[17] = {
-	{0x3f,0x01,0x3C},
-	{0xff,0x00,0x00},
-	{0x3e,0x01,0x3C},
-	{0xff,0x00,0x00},
-	{0x3d,0x01,0x3C},
-	{0xff,0x00,0x00},
-	{0x3c,0x01,0x3C},
-	{0xff,0x00,0x00},
-	{0x3b,0x01,0x3C},
-	{0xff,0x00,0x00},
-	{0x3a,0x01,0x3C},
-	{0xff,0x00,0x00},
-	{0x39,0x01,0x3C},
-	{0xff,0x00,0x00},
-	{0x38,0x01,0x0D},
-	{0xff,0x00,0x00},
-	{0x38,0x01,0x0C}
+        {0x3f,0x01,0x3C},
+        {0xff,0x00,0x00},
+        {0x3e,0x01,0x3C},
+        {0xff,0x00,0x00},
+        {0x3d,0x01,0x3C},
+        {0xff,0x00,0x00},
+        {0x3c,0x01,0x3C},
+        {0xff,0x00,0x00},
+        {0x3b,0x01,0x3C},
+        {0xff,0x00,0x00},
+        {0x3a,0x01,0x3C},
+        {0xff,0x00,0x00},
+        {0x39,0x01,0x3C},
+        {0xff,0x00,0x00},
+        {0x38,0x01,0x0D},
+        {0xff,0x00,0x00},
+        {0x38,0x01,0x0C}
     };
 
     void i2c_write_regs(const i2c_reg_t* regs, int n) {
@@ -157,34 +157,34 @@ struct malibu_t {
 
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
 int SPI_write_pattern(uint32_t spi_slave, const alt_u8* bitpattern) {
-	int status=0;
-	uint16_t rx_pre=0xff00;
-	for(int nb=STIC3_CONFIG_LEN_BYTES-1; nb>=0; nb--){
-		uint8_t rx = malibu_t::spi_write(spi_slave, bitpattern[nb]);
-		//pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
-		unsigned char rx_check= (rx_pre | rx ) >> (8-STIC3_CONFIG_LEN_BITS%8);
-		if(nb==STIC3_CONFIG_LEN_BYTES-1){
-			rx_check &= 0xff>>(8-STIC3_CONFIG_LEN_BITS%8);
-		};
+    int status=0;
+    uint16_t rx_pre=0xff00;
+    for(int nb=STIC3_CONFIG_LEN_BYTES-1; nb>=0; nb--){
+        uint8_t rx = malibu_t::spi_write(spi_slave, bitpattern[nb]);
+        //pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
+        unsigned char rx_check= (rx_pre | rx ) >> (8-STIC3_CONFIG_LEN_BITS%8);
+        if(nb==STIC3_CONFIG_LEN_BYTES-1){
+            rx_check &= 0xff>>(8-STIC3_CONFIG_LEN_BITS%8);
+        };
 
-		if(rx_check!=bitpattern[nb]){
-//			printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
-			status=-1;
-		}
-		rx_pre=rx<<8;
-	}
-	return status;
+        if(rx_check!=bitpattern[nb]){
+//            printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
+            status=-1;
+        }
+        rx_pre=rx<<8;
+    }
+    return status;
 }
 
 //configure a specific ASIC returns 0 if configuration is correct, -1 otherwise.
 int SPI_configure(uint32_t slaveAddr, const unsigned char* bitpattern) {
-	//configure SPI. Note: pattern is not in full bytes, so validation gets a bit more complicated. Shifting out all bytes, and need to realign after.
-	//This is to be done still
-	int ret;
-	ret=SPI_write_pattern(slaveAddr, bitpattern);
-	ret=SPI_write_pattern(slaveAddr, bitpattern);
+    //configure SPI. Note: pattern is not in full bytes, so validation gets a bit more complicated. Shifting out all bytes, and need to realign after.
+    //This is to be done still
+    int ret;
+    ret=SPI_write_pattern(slaveAddr, bitpattern);
+    ret=SPI_write_pattern(slaveAddr, bitpattern);
 
-	return ret;
+    return ret;
 }
 
 /**

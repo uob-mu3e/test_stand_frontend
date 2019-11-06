@@ -27,7 +27,6 @@ int main() {
     si5345.init();
     mscb.init();
     sc.init();
-    
 
     while (1) {
         printf("\n");

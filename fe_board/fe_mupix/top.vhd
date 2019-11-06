@@ -58,7 +58,6 @@ port (
 	SPI_LD_TEMP_DAC_B		: out std_logic; -- A_spi_ld_adc_front          -- AN7
 	SPI_DOUT_ADC_0_B		: in std_logic; -- A_spi_dout_adc_front         -- AT9
 	SPI_DOUT_ADC_1_B		: in std_logic; -- A_spi_dout_adc_back          -- 
-
 	
 	-- FE.C
 
@@ -116,45 +115,49 @@ port (
 	SPI_DOUT_ADC_1_E		: in std_logic; -- A_spi_dout_adc_back          -- 
 
 
-	-- SI5345
+    -- SI5345
 
-	si45_oe_n       : out   std_logic; -- <= '0'
-	si45_rst_n      : out   std_logic; -- reset
-	si45_spi_out    : in    std_logic; -- slave data out
-	si45_spi_in     : out   std_logic; -- slave data in
-	si45_spi_sclk   : out   std_logic; -- clock
-	si45_spi_cs_n   : out   std_logic; -- chip select
-
-	-- QSFP
-
-	-- si5345 out2 (156.25 MHz)
-	qsfp_pll_clk    : in    std_logic;
-	QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
-	QSFP_Rst_n      : out   std_logic;
-	QSFP_LPM        : out   std_logic; -- Low Power Mode
-	qsfp_tx         : out   std_logic_vector(3 downto 0);
-	qsfp_rx         : in    std_logic_vector(3 downto 0);
+    si45_oe_n       : out   std_logic; -- <= '0'
+    si45_rst_n      : out   std_logic; -- reset
+    si45_spi_out    : in    std_logic; -- slave data out
+    si45_spi_in     : out   std_logic; -- slave data in
+    si45_spi_sclk   : out   std_logic; -- clock
+    si45_spi_cs_n   : out   std_logic; -- chip select
 
 
 
-	-- POD
+    -- QSFP
 
-	-- si5345 out0 (125 MHz)
-	pod_pll_clk     : in    std_logic;
+    -- si5345 out2 (156.25 MHz)
+    qsfp_pll_clk    : in    std_logic;
 
-	pod_tx_reset_n  : out   std_logic;
-	pod_rx_reset_n  : out   std_logic;
+    QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
+    QSFP_Rst_n      : out   std_logic;
+    QSFP_LPM        : out   std_logic; -- Low Power Mode
 
-	pod_tx          : out   std_logic_vector(3 downto 0);
-	pod_rx          : in    std_logic_vector(3 downto 0);
+    qsfp_tx         : out   std_logic_vector(3 downto 0);
+    qsfp_rx         : in    std_logic_vector(3 downto 0);
 
 
 
-	-- MSCB
+    -- POD
 
-	mscb_data_in    : in    std_logic;
-	mscb_data_out   : out   std_logic;
-	mscb_oe         : out   std_logic;
+    -- si5345 out0 (125 MHz)
+    pod_pll_clk     : in    std_logic;
+
+    pod_tx_reset_n  : out   std_logic;
+    pod_rx_reset_n  : out   std_logic;
+
+    pod_tx          : out   std_logic_vector(3 downto 0);
+    pod_rx          : in    std_logic_vector(3 downto 0);
+
+
+
+    -- MSCB
+
+    mscb_data_in    : in    std_logic;
+    mscb_data_out   : out   std_logic;
+    mscb_oe         : out   std_logic;
 
 
 
@@ -187,7 +190,7 @@ architecture arch of top is
     signal sc_reg : work.util.rw_t;
     signal malibu_reg : work.util.rw_t;
     signal scifi_reg : work.util.rw_t;
-	 signal mupix_reg : work.util.rw_t;
+    signal mupix_reg : work.util.rw_t;
 
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
@@ -205,7 +208,7 @@ architecture arch of top is
 
 begin
 
-	 -- malibu regs : 0x40-0x4F
+    -- malibu regs : 0x40-0x4F
     malibu_reg.addr <= sc_reg.addr;
     malibu_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
     malibu_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
@@ -227,7 +230,7 @@ begin
     sc_reg.rdata <=
         malibu_reg.rdata when ( malibu_reg.rvalid = '1' ) else
         scifi_reg.rdata when ( scifi_reg.rvalid = '1' ) else
-		mupix_reg.rdata when ( scifi_reg.rvalid = '1' ) else
+        mupix_reg.rdata when ( scifi_reg.rvalid = '1' ) else
         X"CCCCCCCC";
 
     process(qsfp_pll_clk)
@@ -237,18 +240,20 @@ begin
         malibu_reg.rvalid <= malibu_reg.re;
         scifi_reg.rdata <= X"CCCCCCCC";
         scifi_reg.rvalid <= scifi_reg.re;
-		  mupix_reg.rvalid <= mupix_reg.re;
+        mupix_reg.rvalid <= mupix_reg.re;
     end if;
     end process;
-	 
-	 
+
+
 
     ----------------------------------------------------------------------------
     -- MUPIX
-    
+
     e_mupix_block : entity work.mupix_block
-    generic map(NCHIPS => 1)
-    port map(
+    generic map (
+        NCHIPS => 1
+    )
+    port map (
 
 		-- chip dacs
 		i_CTRL_SDO_A         => CTRL_SDO_A,
@@ -258,7 +263,7 @@ begin
 		o_CTRL_Load_A        => CTRL_Load_A,
 		o_CTRL_RB_A          => CTRL_RB_A,
 
-		 
+
 
 		-- board dacs
 		i_SPI_DOUT_ADC_0_A   => SPI_DOUT_ADC_0_A,
@@ -270,11 +275,11 @@ begin
 
 
 		-- mupix dac regs
-		i_reg_add            => mupix_reg.addr(7 downto 0),
-		i_reg_re             => mupix_reg.re,
-		o_reg_rdata       	=> mupix_reg.rdata,
-		i_reg_we   				=> mupix_reg.we,
-		i_reg_wdata 			=> mupix_reg.wdata,
+		i_reg_add               => mupix_reg.addr(7 downto 0),
+		i_reg_re                => mupix_reg.re,
+		o_reg_rdata             => mupix_reg.rdata,
+		i_reg_we                => mupix_reg.we,
+		i_reg_wdata             => mupix_reg.wdata,
 
 		
 		 -- data 
@@ -295,8 +300,7 @@ begin
 		-- 156.25 MHz
 		i_clk                => qsfp_pll_clk,
 		i_clk125             => clk_aux--,
-		);
-    
+    );
 
     ----------------------------------------------------------------------------
 
@@ -377,8 +381,8 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        FPGA_ID_g 	=> X"FEB0",
-		  FEB_type_in	=> "111010"
+        FPGA_ID_g   => X"FEB0",
+        FEB_type_in => "111010"
     )
     port map (
         i_nios_clk_startup => clk_aux,
@@ -427,5 +431,5 @@ begin
         i_reset_n       => qsfp_reset_n,
         i_clk           => qsfp_pll_clk--,
     );
-	 
+
 end architecture;
