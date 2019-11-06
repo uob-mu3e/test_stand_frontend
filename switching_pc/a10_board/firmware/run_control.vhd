@@ -8,11 +8,11 @@ use work.daq_constants.all;
 
 ENTITY run_control is 
     PORT(
-		i_clk:                              in  std_logic; -- receive clock (156.25 MHz)
+        i_clk:                              in  std_logic; -- receive clock (156.25 MHz)
         i_reset_n:                          in  std_logic;
-		i_aligned:                          in  std_logic; -- word alignment achieved
-		i_data:                             in  std_logic_vector(31 downto 0); -- optical from frontend board
-		i_datak:                            in  std_logic_vector(3 downto 0);
+        i_aligned:                          in  std_logic; -- word alignment achieved
+        i_data:                             in  std_logic_vector(31 downto 0); -- optical from frontend board
+        i_datak:                            in  std_logic_vector(3 downto 0);
         o_FEB_status:                       out std_logic_vector(31 downto 0)
 );
 END ENTITY run_control;
@@ -29,9 +29,9 @@ BEGIN
         if (i_reset_n = '0' or i_aligned = '0') then 
             run_prep_acknowledge_received    <= '0';
             end_of_run_received              <= '0';
-            FEB_status                       <= (others => '0');
+            o_FEB_status                       <= (others => '0');
             
-        elsif (rising_edge(clk)) then
+        elsif (rising_edge(i_clk)) then
             o_FEB_status                    <=
                 (0 => run_prep_acknowledge_received,
                  1 => end_of_run_received,
