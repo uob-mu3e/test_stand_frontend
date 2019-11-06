@@ -3,8 +3,6 @@ package require qsys
 create_system {nios}
 source {device.tcl}
 
-source {myadc.tcl}
-
 source {util/nios_base.tcl}
 set_instance_parameter_value ram {memorySize} {0x00008000}
 
