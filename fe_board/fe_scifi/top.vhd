@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.daq_constants.all;
 
 entity top is
 port (
@@ -117,6 +118,9 @@ architecture arch of top is
     signal s_fee_chip_rst : std_logic_vector(3 downto 0);
     signal s_FPGA_test : std_logic_vector (7 downto 0) := (others => '0');
     signal s_MON_rxrdy : std_logic_vector (7 downto 0);
+
+    --reset system
+    signal run_state_125 : run_state_t;
 begin
 
     -- malibu regs : 0x40-0x4F
@@ -200,14 +204,15 @@ begin
 -- x..0 : CSn to SciFi boards
 
     led(11) <= s_fee_chip_rst(2);
-    led(7 downto 0) <= s_MON_rxrdy;
+    --led(7 downto 0) <= s_MON_rxrdy;
 
     led_n <= not led;
 
     -- test outputs
     FPGA_Test <= s_FPGA_test;
-    s_FPGA_test(2 downto 0) <= s_fee_chip_rst(2 downto 0);
-
+    --s_FPGA_test(2 downto 0) <= s_fee_chip_rst(2 downto 0);
+    led(4 downto 0) <= run_state_125(4 downto 0);
+    s_FPGA_test(4 downto 0) <= run_state_125(4 downto 0); 
 
     -- enable SI5345
     si45_oe_n <= '0';
@@ -331,7 +336,10 @@ begin
         o_sc_reg_wdata  => sc_reg.wdata,
 
         i_reset_n       => qsfp_reset_n,
-        i_clk           => qsfp_pll_clk--,
+        i_clk           => qsfp_pll_clk,
+
+        --reset system
+        o_run_state_125 => run_state_125--,
     );
 
 end architecture;
