@@ -4,6 +4,10 @@
   Created by:   Konrad Briggl
 
   Contents:     Assembly of bitpatterns from ODB
+                Configuration class MupixConfig contains bitpattern for one row.
+		Row address parameter is set during construction or by SetRowAddress().
+		The configuration is then assembled as follows:
+		rowaddr | chipdacs_g1 | pixelrowdacs | chipdacs_g2
 
   Created on:   Nov 05 2019
 
@@ -21,8 +25,10 @@ class MupixConfig: public mudaq::ASICConfigBase{
 public:
     MupixConfig();
     ~MupixConfig();
-    
+    //Set row selection bits
+    void SetRow(int16_t row); 
     void Parse_ChipDACs_from_struct(MUPIX_CHIPDACS mt);
+    void Parse_PixelRowDACs_from_struct(MUPIX_PIXELROWCONFIG mt);
 
 private:
     static paras_t parameters_chipdacs;                             ///< parameters for global dacs (name, nbits, endian) 

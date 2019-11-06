@@ -8,6 +8,7 @@ namespace mupix {
 
 
 /// MUPIX configuration
+// Pattern is assembled based on the scheme described in the mupix8 documentation, section 10
 
 MupixConfig::paras_t MupixConfig::parameters_chipdacs = {
         make_param("vnd2c_scale",        1, 1),
@@ -16,25 +17,37 @@ MupixConfig::paras_t MupixConfig::parameters_chipdacs = {
     };
 
 MupixConfig::paras_t MupixConfig::parameters_pixeldacs = {
-        make_param("energy_c_en",       1, 1),
-        make_param("energy_r_en",       1, 1),
-        make_param("mask",              1, 1)
+        make_param("RAM_IN",            6, {5,4,3,0,1,2}),
+        make_param("enable_hitbus",     1, 0),
+        make_param("enable_injection",  1, 0)
      };
 
 
 MupixConfig::MupixConfig() {
+    unsigned int nrow = 200;
+    unsigned int ncol = 128;
     // populate name/offset map
     length_bits = 0;
-    // header 
+    // MUPIX DAC block 1 (10.1)
     for(const auto& para : parameters_chipdacs)
         addPara(para, "");
-    // pixels
-    unsigned int nrow = 8;
-    unsigned int ncol = 99;
-    for(unsigned int row = 0; row < nrow; ++row) 
-        for(unsigned int col = 0; col < ncol; ++col) 
-            for(const auto& para : parameters_pixeldacs )
-                addPara(para, "_"+std::to_string(row)+"_"+std::to_string(row));
+    // row selection register (write bits, 10.2)
+    addPara(make_param("rowsel_reg",nrow,0), "");
+    // pixel row block (pixel settings, 10.3).
+    for(unsigned int col = 0; col < ncol; ++col) 
+        for(const auto& para : parameters_pixeldacs )
+            addPara(para, "_col"+std::to_string(col));
+    // row register (Q bits, 10.4 )
+    --row for(unsigned int col = 0; col < ncol; ++col) 
+    for(const auto& para : parameters_rowdacs)
+        addPara(para, "");
+    // MUPIX DAC block 2 (10.5)
+    for(const auto& para : parameters_chipdacs2)
+        addPara(para, "");
+    for(const auto& para : parameters_voltagedacs)
+        addPara(para, "");
+
+
 
     // allocate memory for bitpattern
     length = length_bits/8;
@@ -43,7 +56,7 @@ MupixConfig::MupixConfig() {
     if( length%4 > 0 ) length_32bits++;
     bitpattern_r = new uint8_t[length_32bits*4]; 
     bitpattern_w = new uint8_t[length_32bits*4]; 
-    reset();	
+    reset();
 }
 
 MupixConfig::~MupixConfig() {
