@@ -22,8 +22,8 @@ use work.mupix_constants.all;
 
 entity receiver_block_mupix is 
 	generic(
-		NINPUT: integer := 45;
-		NCHIPS: integer := 15
+		NINPUT: integer := 32;
+		NCHIPS: integer := 8
 	);
 	port (
 		reset_n				: in std_logic;
