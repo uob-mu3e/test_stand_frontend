@@ -368,7 +368,7 @@ function update_boarddrawing(value) {
     motherboard.txrst.temp = Number.parseFloat(value["crt1"][9]).toFixed(0) + "C";
     motherboard.txrst.voltage = Number.parseFloat(value["crt1"][10]).toFixed(0) + "mV";
 
-    motherboard.fans = Number.parseFloat(value["crt1"][11].toFixed(0)+ "mA");
+    motherboard.fans = "Fan current: " + Number.parseFloat(value["crt1"][11].toFixed(0)) + "mA";
 
 
 
