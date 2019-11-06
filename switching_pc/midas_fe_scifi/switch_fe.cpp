@@ -279,7 +279,8 @@ INT resume_run(INT run_number, char *error)
 INT read_sc_event(char *pevent, INT off)
 {
     while(mup->FEBsc_get_packet()){};
-    return mup->FEBsc_write_bank(pevent,off); 
+    //return mup->FEBsc_write_bank(pevent,off); 
+    mup->FEBsc_dump_packets();
 }
 
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/

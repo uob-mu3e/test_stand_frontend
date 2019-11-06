@@ -58,9 +58,8 @@ int MutrigFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char*
          //Wait for configuration to finish
          uint timeout_cnt = 0;
          do{
-            printf("Polling (%d)\n",timeout_cnt);
             if(++timeout_cnt >= 10000) throw std::runtime_error("SPI transaction timeout while configuring asic"+std::to_string(asic));
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
             m_mu.FEBsc_read(FPGAid_from_ID(asic), &reg, 1, 0xfff0);
          }while( (reg&0xffff0000) != 0);
       } catch(std::exception& e) {

@@ -221,7 +221,7 @@ begin
    board_dac_regs : process (i_clk, reset_n)
    begin 
        if (reset_n = '0') then 
-           board_th_low         <= (others => '0');
+			board_th_low        <= (others => '0');
             board_th_high       <= (others => '0');
             board_injection     <= (others => '0');
             board_th_pix        <= (others => '0');

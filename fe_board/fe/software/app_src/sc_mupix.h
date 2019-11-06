@@ -100,10 +100,24 @@ void menu_mupix() {
             }
             ram->data[0xFF8E] = 0x00100001;
         break;
-        case 'm ':
+        case 'm':
+           // ram->data[0xFF93] = 0;
+           // for (int i = 0; i<16; i++) {
+           //     receiver_state = ram->data[0xFF94];
+           //     
+           //    for (int j = 0; j < 32; ++j) {
+           //         volatile alt_u32* bits[j] = (hex >> j) & 1;
+           //     }
+           //     
+           //     printf("Receiver %08X\n State %08X\n", i, d);
+           // }
+           // print_data((volatile alt_u32*)&ram->data[0xFF94], 1);
+           // ram->data[0xFF93] = 0;
+            
+            
             for (int i = 0; i<68; i++) {
                 ram->data[0xFF93] = i;
- //               print_data((volatile alt_u32*)&ram->data[0xFF94], 1);
+                print_data((volatile alt_u32*)&ram->data[0xFF94], 1);
             }
         break;
         case 'q':

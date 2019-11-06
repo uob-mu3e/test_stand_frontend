@@ -88,6 +88,7 @@ namespace mudaq {
     int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply=true);
     //write all packets received into a midas bank. clears internal packet fifo and should be called from time to time to avoid storing all replies
     int FEBsc_write_bank(char *pevent, int off);
+    int FEBsc_dump_packets();
     //get
     uint32_t FEBsc_get_packet();
 

@@ -470,7 +470,7 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
     if(!request_reply)
 	return 0; //do not pretend we received what we wanted, but also do not signal a failure.
     //wait for reply
-    printf("MudaqDevice::FEBsc_read(): Waiting for response, current=%d\n",m_FEBsc_rmem_addr);
+    //printf("MudaqDevice::FEBsc_read(): Waiting for response, current=%d\n",m_FEBsc_rmem_addr);
     int count=0;
     while(count<1000){
     if(FEBsc_get_packet() && m_sc_packet_fifo.back().IsRD()) break;
@@ -572,6 +572,14 @@ uint32_t MudaqDevice::FEBsc_get_packet(){
       FEBsc_resetSlave();
    }
    return packet[0]&0x1f0000bc;
+}
+
+//if available, remove all slow control packet in the list, which is empty after the operation.
+int MudaqDevice::FEBsc_dump_packets(){
+   while(!m_sc_packet_fifo.empty()){
+     m_sc_packet_fifo.pop_front();
+   }
+   return 0;
 }
 
 //if available, generate and commit a midas event from all slow control packet in the list, which is empty after the operation.
