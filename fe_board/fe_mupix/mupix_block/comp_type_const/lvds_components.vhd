@@ -125,4 +125,15 @@ component decode8b10b
 		);
 end component;
 
+
+component disparity_checker is 
+	port (
+		reset_n				: in std_logic;
+		clk					: in std_logic;
+		rx_in					: in std_logic_vector (9 DOWNTO 0);	
+		ready					: in std_logic;
+		disp_err				: out std_logic
+		);
+end component;
+
 end package lvds_components;

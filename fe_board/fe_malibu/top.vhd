@@ -255,7 +255,7 @@ begin
     e_fe_block : entity work.fe_block
     generic map (
         FPGA_ID_g => X"FEB0",
-	FEB_type_in => "111000"--, --this is a mutrig type FEB
+        FEB_type_in => "111000"--, --this is a mutrig type FEB
     )
     port map (
         i_i2c_scl       => i2c_scl,

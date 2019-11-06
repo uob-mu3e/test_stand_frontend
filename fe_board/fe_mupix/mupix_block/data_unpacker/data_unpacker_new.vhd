@@ -217,29 +217,6 @@ errorcounter 	<= errorcounter_reg;
 --								k_error 		<= kin & kin_reg;
 							end if;
 
-											
---						when BINCNT =>
---							if kin = '0' then
---								data_i(31-8*bincnt_int downto 24-8*bincnt_int) <= datain;
---								if bincnt_int = 3 then
---									NS	<= DATA;
---									coarsecounter_ena <= '1';
---									coarsecounter <= datain & data_i(31 downto 8);								-- gray counter & binary counter
---									hit_ena <= '1';																		-- Also send the counter as a hit
---									hit_out <= data_i(31 downto 8) & link_i(3 downto 0) & x"3" & datain;	-- binary counter & link & x"3" & gray counter
---									bincnt_int	<= 0;
---								else
---									bincnt_int	<= bincnt_int+1;							
---								end if;
---							elsif kin = '1' and datain = k28_5 then			-- if there are no hits, we get unfortunately no binary counter
---								NS <= IDLE;
---							else
---								NS <= ERROR;
---								data_error 	<= datain & datain_reg;
---								k_error 		<= kin & kin_reg;
---								bincnt_int	<= 0;
---							end if;
-
 							
 						when DATA =>
 						
@@ -249,62 +226,12 @@ errorcounter 	<= errorcounter_reg;
 									hit_reg		<= '1';
 									NS 			<= IDLE;
 								end if;
---							if kin = '0' then
---								if data_int = 0 then
-----									data_i(15 downto 8)	<= datain;	-- Charge[5:0} & TS[9:8]
---									data_i(9 downto 2)	<= datain;	-- TS[9:2]
---									data_i(39 downto 32)	<= link_i;	-- link ID
---									data_int <= data_int+1;		
---								elsif data_int = 1 then
-----									data_i(7 downto 0)	<= datain;	-- TS[7:0]
---									data_i(1 downto 0)	<= datain(7 downto 6);	-- TS[1:0]
---									data_i(15 downto 10)	<= datain(5 downto 0);	-- Charge[5:0]
---									data_int <= data_int+1;
---								elsif data_int = 2 then
---									data_i(23 downto 16)	<= datain;	-- Col
---									data_int <= data_int+1;
---								elsif data_int = 3 then
---									data_i(31 downto 24)	<= datain;	-- Row
---									data_int <= 0;
---									hit_ena 	<= '1';
---									hit_out	<= data_i(39 downto 32) & datain & data_i(23 downto 0);	-- Link & Row & Col & Charge & TS
---								else
---									NS <= ERROR;
---									data_error 	<= datain & datain_reg;
---									k_error 		<= kin & kin_reg;
---									data_int 	<= 0;
---								end if;
 							elsif kin = '1' and datain = k28_5 then
 								NS 			<= IDLE;
 							else
 								NS 			<= ERROR;
---								data_error 	<= datain & datain_reg;
---								k_error 		<= kin & kin_reg;
 							end if;
-							
---						when COUNTER =>
---							if kin = '0' then
-----								data_i(39 downto 32)	<= (others => '0');
---								data_i(31-8*counter_int downto 24-8*counter_int)	<= datain;
---								if counter_int = 3 then
---									coarsecounter_ena <= '1';
---									coarsecounter <= datain & data_i(31 downto 8);								-- gray counter & binary counter
---									hit_ena <= '1';																		-- Also send the counter as a hit
---									hit_out <= data_i(31 downto 8) & link_i(3 downto 0) & x"3" & datain;	-- binary counter & link & x"3" & gray counter
---									counter_int	<= 0;
---								else
---									counter_int	<= counter_int+1;			
---								end if;
---							elsif kin = '1' and datain = k28_5 then	--and counter_int = 3 then
---								NS	<= IDLE;
---								counter_int	<= 0;
---							else
---								NS <= ERROR;
---								data_error 	<= datain & datain_reg;
---								k_error 		<= kin & kin_reg;
---								counter_int <= 0;
---							end if;
-						
+	
 						when ERROR =>
 							errorcounter_reg <= errorcounter_reg + '1';
 							if ( kin = '1' and datain = k28_5 ) then
@@ -317,18 +244,10 @@ errorcounter 	<= errorcounter_reg;
 						
 						when others =>
 							NS <= IDLE;
---							NS <= ERROR;
---							data_error 	<= datain & datain_reg;
---							k_error 		<= kin & kin_reg;	
+
 		
 					end case;	-- NS
---				end if;	--mux_ready
 			end if;	-- readyin
-			
---			if reset_out_n = '0' then
---				hit_ena				<= '0';
---				coarsecounter_ena	<= '0';
---			end if;
 			
 		end if;
 		

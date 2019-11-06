@@ -4,39 +4,36 @@ use ieee.numeric_std.all;
 
 entity top is
 port (
-    -- FE.A
-     clock_A				: out std_logic;
-	 data_in_A_0			: in std_logic_vector(3 downto 0);
-	 data_in_A_1			: in std_logic_vector(3 downto 0);
-	 fast_reset_A			: out std_logic;
-	 test_pulse_A			: out std_logic;
- 
-	 CTRL_SDO_A				: in std_logic; -- A_ctrl_dout_front
-	 CTRL_SDI_A				: out std_logic; -- A_ctrl_din_front
-	 CTRL_SCK1_A			: out std_logic; -- A_ctrl_clk1_front
-	 CTRL_SCK2_A			: out std_logic; -- A_ctrl_clk2_front
-	 CTRL_RB_A				: out std_logic; -- A_ctrl_rb_front
-	 CTRL_Load_A			: out std_logic; -- A_ctrl_ld_front
-	 
-	 -- A_trig_front
-	 chip_reset_A			: out std_logic; -- is called trigger on adapter card!
- 
-	 SPI_DIN0_A				: out std_logic; -- A_spi_din_front             -- AH9
-	 SPI_DIN1_A				: out std_logic; -- A_spi_din_back              -- 
-	 SPI_CLK_A				: out std_logic; -- A_spi_clk_front             -- AH8
-	 SPI_LD_DAC_A			: out std_logic; -- A_spi_ld_front              -- AW4
-	 SPI_LD_ADC_A			: out std_logic; -- A_spi_ld_tmp_dac_front      -- AP7
-	 SPI_LD_TEMP_DAC_A		: out std_logic; -- A_spi_ld_adc_front          -- AN7
-	 SPI_DOUT_ADC_0_A		: in std_logic; -- A_spi_dout_adc_front         -- AT9
-	 SPI_DOUT_ADC_1_A		: in std_logic; -- A_spi_dout_adc_back          -- 
-     
-     
---     SPI_SCK_A : out std_logic; -- SPI_CLK_A 
---     SPI_SDI_A : out std_logic; -- SPI_DIN0_A
---     SPI_SDO_A : in std_logic;  -- SPI_DOUT_ADC_0_A
---     SPI_Load_A : out std_logic_vector(2 downto 0); -- SPI_LD_ADC_A SPI_LD_TEMP_DAC_A SPI_LD_DAC_A
---     
-	 
+
+	-- FE.A
+
+	clock_A				: out std_logic;
+	data_in_A_0			: in std_logic_vector(3 downto 0);
+	data_in_A_1			: in std_logic_vector(3 downto 0);
+	fast_reset_A			: out std_logic;
+	test_pulse_A			: out std_logic;
+
+	CTRL_SDO_A				: in std_logic; -- A_ctrl_dout_front
+	CTRL_SDI_A				: out std_logic; -- A_ctrl_din_front
+	CTRL_SCK1_A			: out std_logic; -- A_ctrl_clk1_front
+	CTRL_SCK2_A			: out std_logic; -- A_ctrl_clk2_front
+	CTRL_RB_A				: out std_logic; -- A_ctrl_rb_front
+	CTRL_Load_A			: out std_logic; -- A_ctrl_ld_front
+
+	-- A_trig_front
+
+	chip_reset_A			: out std_logic; -- is called trigger on adapter card!
+	SPI_DIN0_A				: out std_logic; -- A_spi_din_front             -- AH9
+	SPI_DIN1_A				: out std_logic; -- A_spi_din_back              -- 
+	SPI_CLK_A				: out std_logic; -- A_spi_clk_front             -- AH8
+	SPI_LD_DAC_A			: out std_logic; -- A_spi_ld_front              -- AW4
+	SPI_LD_ADC_A			: out std_logic; -- A_spi_ld_tmp_dac_front      -- AP7
+	SPI_LD_TEMP_DAC_A		: out std_logic; -- A_spi_ld_adc_front          -- AN7
+	SPI_DOUT_ADC_0_A		: in std_logic; -- A_spi_dout_adc_front         -- AT9
+	SPI_DOUT_ADC_1_A		: in std_logic; -- A_spi_dout_adc_back          -- 
+
+
+
     -- SI5345
 
     si45_oe_n       : out   std_logic; -- <= '0'
@@ -112,7 +109,7 @@ architecture arch of top is
     signal sc_reg : work.util.rw_t;
     signal malibu_reg : work.util.rw_t;
     signal scifi_reg : work.util.rw_t;
-	 signal mupix_reg : work.util.rw_t;
+    signal mupix_reg : work.util.rw_t;
 
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
@@ -127,18 +124,10 @@ architecture arch of top is
     signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n : std_logic_vector(15 downto 0);
-    
---    
---    signal SPI_DIN0_A : std_logic;          -- MOSI
---    signal SPI_CLK_A : std_logic;           -- CLK
---    signal SPI_LD_DAC_A : std_logic;        -- SS
---    signal SPI_LD_ADC_A : std_logic;        -- SS
---    signal SPI_LD_TEMP_DAC_A : std_logic;   -- SS
---    signal SPI_DOUT_ADC_0_A : std_logic;    -- MISO
 
 begin
 
-	 -- malibu regs : 0x40-0x4F
+    -- malibu regs : 0x40-0x4F
     malibu_reg.addr <= sc_reg.addr;
     malibu_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
     malibu_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
@@ -149,18 +138,18 @@ begin
     scifi_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
     scifi_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
     scifi_reg.wdata <= sc_reg.wdata;
-	 
-	 -- mupix regs : 0x80-0x8F
-	 mupix_reg.addr <= sc_reg.addr;
-	 mupix_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"8" ) else '0';
-	 mupix_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"8" ) else '0';
-	 mupix_reg.wdata <= sc_reg.wdata;
-	 
-	 -- select valid rdata
+
+    -- mupix regs : 0x80-0x8F
+    mupix_reg.addr <= sc_reg.addr;
+    mupix_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"8" ) else '0';
+    mupix_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"8" ) else '0';
+    mupix_reg.wdata <= sc_reg.wdata;
+
+    -- select valid rdata
     sc_reg.rdata <=
         malibu_reg.rdata when ( malibu_reg.rvalid = '1' ) else
         scifi_reg.rdata when ( scifi_reg.rvalid = '1' ) else
-		mupix_reg.rdata when ( scifi_reg.rvalid = '1' ) else
+        mupix_reg.rdata when ( scifi_reg.rvalid = '1' ) else
         X"CCCCCCCC";
 
     process(qsfp_pll_clk)
@@ -170,53 +159,59 @@ begin
         malibu_reg.rvalid <= malibu_reg.re;
         scifi_reg.rdata <= X"CCCCCCCC";
         scifi_reg.rvalid <= scifi_reg.re;
-		  mupix_reg.rvalid <= mupix_reg.re;
+        mupix_reg.rvalid <= mupix_reg.re;
     end if;
     end process;
-	 
-	 
+
+
 
     ----------------------------------------------------------------------------
     -- MUPIX
-    
+
     e_mupix_block : entity work.mupix_block
-    generic map(NCHIPS => 1)
-    port map(
-   
-        -- chip dacs
-        i_CTRL_SDO_A            => CTRL_SDO_A,
-        o_CTRL_SDI_A            => CTRL_SDI_A,
-        o_CTRL_SCK1_A           => CTRL_SCK1_A,
-        o_CTRL_SCK2_A           => CTRL_SCK2_A,
-        o_CTRL_Load_A           => CTRL_Load_A,
-        o_CTRL_RB_A             => CTRL_RB_A,
-		  
-          
-		  
-        -- board dacs
-        i_SPI_DOUT_ADC_0_A      => SPI_DOUT_ADC_0_A,
-        o_SPI_DIN0_A            => SPI_DIN0_A,
-        o_SPI_CLK_A             => SPI_CLK_A,
-        o_SPI_LD_ADC_A          => SPI_LD_ADC_A,
-        o_SPI_LD_TEMP_DAC_A     => SPI_LD_TEMP_DAC_A,
-        o_SPI_LD_DAC_A          => SPI_LD_DAC_A,
-		  
-		  
-		  
-		  -- mupix dac regs
-        i_reg_add               => mupix_reg.addr(7 downto 0),
-        i_reg_re                => mupix_reg.re,
-        o_reg_rdata       		=> mupix_reg.rdata,
-        i_reg_we   				=> mupix_reg.we,
-        i_reg_wdata 			=> mupix_reg.wdata,
-		  
-		  
-        i_reset                 => not reset_n,
-        -- 156.25 MHz
-        i_clk                   => qsfp_pll_clk,
-        i_clk125                => clk_aux--,
+    generic map (
+        NCHIPS => 1
+    )
+    port map (
+
+		-- chip dacs
+		i_CTRL_SDO_A         => CTRL_SDO_A,
+		o_CTRL_SDI_A         => CTRL_SDI_A,
+		o_CTRL_SCK1_A        => CTRL_SCK1_A,
+		o_CTRL_SCK2_A        => CTRL_SCK2_A,
+		o_CTRL_Load_A        => CTRL_Load_A,
+		o_CTRL_RB_A          => CTRL_RB_A,
+
+
+
+		-- board dacs
+		i_SPI_DOUT_ADC_0_A   => SPI_DOUT_ADC_0_A,
+		o_SPI_DIN0_A         => SPI_DIN0_A,
+		o_SPI_CLK_A          => SPI_CLK_A,
+		o_SPI_LD_ADC_A       => SPI_LD_ADC_A,
+		o_SPI_LD_TEMP_DAC_A  => SPI_LD_TEMP_DAC_A,
+		o_SPI_LD_DAC_A       => SPI_LD_DAC_A,
+
+
+		-- mupix dac regs
+		i_reg_add               => mupix_reg.addr(7 downto 0),
+		i_reg_re                => mupix_reg.re,
+		o_reg_rdata             => mupix_reg.rdata,
+		i_reg_we                => mupix_reg.we,
+		i_reg_wdata             => mupix_reg.wdata,
+
+
+		-- data
+		o_fifo_rdata            => fifo_rdata,
+		o_fifo_rempty           => fifo_rempty,
+		i_fifo_rack             => fifo_rack,
+		i_data_in_A_0           => data_in_A_0,
+
+		i_reset              => not reset_n,
+		-- 156.25 MHz
+		i_clk                => qsfp_pll_clk,
+		i_clk125             => clk_aux--,
     );
-    
 
     ----------------------------------------------------------------------------
 
@@ -297,7 +292,8 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        FPGA_ID_g => X"FEB0"--,
+        FPGA_ID_g   => X"FEB0",
+        FEB_type_in => "111010"
     )
     port map (
         i_nios_clk      => nios_clk,
@@ -343,5 +339,5 @@ begin
         i_reset_n       => qsfp_reset_n,
         i_clk           => qsfp_pll_clk--,
     );
-	 
+
 end architecture;

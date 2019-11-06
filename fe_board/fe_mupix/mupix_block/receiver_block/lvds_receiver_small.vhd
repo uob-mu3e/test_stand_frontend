@@ -4,7 +4,7 @@
 -- MODULE: ALTLVDS_RX 
 
 -- ============================================================
--- File Name: lvds_receiver.vhd
+-- File Name: lvds_receiver_small.vhd
 -- Megafunction Name(s):
 -- 			ALTLVDS_RX
 --
@@ -40,28 +40,27 @@ USE ieee.std_logic_1164.all;
 LIBRARY altera_mf;
 USE altera_mf.all;
 
-ENTITY lvds_receiver_mupix IS
+ENTITY lvds_receiver_small IS
 	PORT
 	(
-		rx_channel_data_align		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-		rx_fifo_reset		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-		rx_in		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+		pll_areset		: IN STD_LOGIC ;
+		rx_channel_data_align		: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+		rx_enable		: IN STD_LOGIC ;
+		rx_fifo_reset		: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+		rx_in		: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
 		rx_inclock		: IN STD_LOGIC ;
-		rx_reset		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-		rx_dpa_locked		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0);
-		rx_locked		: OUT STD_LOGIC ;
-		rx_out		: OUT STD_LOGIC_VECTOR (79 DOWNTO 0);
-		rx_outclock		: OUT STD_LOGIC 
+		rx_reset		: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+		rx_syncclock		: IN STD_LOGIC ;
+		rx_dpa_locked		: OUT STD_LOGIC_VECTOR (15 DOWNTO 0);
+		rx_out		: OUT STD_LOGIC_VECTOR (159 DOWNTO 0)
 	);
-END lvds_receiver_mupix;
+END lvds_receiver_small;
 
 
-ARCHITECTURE SYN OF lvds_receiver_mupix IS
+ARCHITECTURE SYN OF lvds_receiver_small IS
 
-	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (7 DOWNTO 0);
-	SIGNAL sub_wire1	: STD_LOGIC ;
-	SIGNAL sub_wire2	: STD_LOGIC_VECTOR (79 DOWNTO 0);
-	SIGNAL sub_wire3	: STD_LOGIC ;
+	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (15 DOWNTO 0);
+	SIGNAL sub_wire1	: STD_LOGIC_VECTOR (159 DOWNTO 0);
 
 
 
@@ -116,23 +115,22 @@ ARCHITECTURE SYN OF lvds_receiver_mupix IS
 		clk_src_is_pll		: STRING
 	);
 	PORT (
-			rx_channel_data_align	: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-			rx_fifo_reset	: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-			rx_in	: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+			pll_areset	: IN STD_LOGIC ;
+			rx_channel_data_align	: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+			rx_enable	: IN STD_LOGIC ;
+			rx_fifo_reset	: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+			rx_in	: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
 			rx_inclock	: IN STD_LOGIC ;
-			rx_reset	: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-			rx_dpa_locked	: OUT STD_LOGIC_VECTOR (7 DOWNTO 0);
-			rx_locked	: OUT STD_LOGIC ;
-			rx_out	: OUT STD_LOGIC_VECTOR (79 DOWNTO 0);
-			rx_outclock	: OUT STD_LOGIC 
+			rx_reset	: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+			rx_syncclock	: IN STD_LOGIC ;
+			rx_dpa_locked	: OUT STD_LOGIC_VECTOR (15 DOWNTO 0);
+			rx_out	: OUT STD_LOGIC_VECTOR (159 DOWNTO 0)
 	);
 	END COMPONENT;
 
 BEGIN
-	rx_dpa_locked    <= sub_wire0(7 DOWNTO 0);
-	rx_locked    <= sub_wire1;
-	rx_out    <= sub_wire2(79 DOWNTO 0);
-	rx_outclock    <= sub_wire3;
+	rx_dpa_locked    <= sub_wire0(15 DOWNTO 0);
+	rx_out    <= sub_wire1(159 DOWNTO 0);
 
 	ALTLVDS_RX_component : ALTLVDS_RX
 	GENERIC MAP (
@@ -156,14 +154,14 @@ BEGIN
 		implement_in_les => "OFF",
 		inclock_boost => 0,
 		inclock_data_alignment => "EDGE_ALIGNED",
-		inclock_period => 8000,
+		inclock_period => 5000,
 		inclock_phase_shift => 0,
 		input_data_rate => 1250,
 		intended_device_family => "Stratix IV",
 		lose_lock_on_one_change => "UNUSED",
-		lpm_hint => "CBX_MODULE_PREFIX=lvds_receiver",
+		lpm_hint => "CBX_MODULE_PREFIX=lvds_receiver_small",
 		lpm_type => "altlvds_rx",
-		number_of_channels => 8,
+		number_of_channels => 16,
 		outclock_resource => "AUTO",
 		pll_operation_mode => "UNUSED",
 		pll_self_reset_on_loss_lock => "UNUSED",
@@ -171,7 +169,7 @@ BEGIN
 		port_rx_data_align => "PORT_UNUSED",
 		refclk_frequency => "UNUSED",
 		registered_data_align_input => "UNUSED",
-		registered_output => "ON",
+		registered_output => "OFF",
 		reset_fifo_at_first_lock => "UNUSED",
 		rx_align_data_reg => "UNUSED",
 		sim_dpa_is_negative_ppm_drift => "OFF",
@@ -179,21 +177,22 @@ BEGIN
 		sim_dpa_output_clock_phase_shift => 0,
 		use_coreclock_input => "OFF",
 		use_dpll_rawperror => "OFF",
-		use_external_pll => "OFF",
+		use_external_pll => "ON",
 		use_no_phase_shift => "ON",
 		x_on_bitslip => "ON",
 		clk_src_is_pll => "off"
 	)
 	PORT MAP (
+		pll_areset => pll_areset,
 		rx_channel_data_align => rx_channel_data_align,
+		rx_enable => rx_enable,
 		rx_fifo_reset => rx_fifo_reset,
 		rx_in => rx_in,
 		rx_inclock => rx_inclock,
 		rx_reset => rx_reset,
+		rx_syncclock => rx_syncclock,
 		rx_dpa_locked => sub_wire0,
-		rx_locked => sub_wire1,
-		rx_out => sub_wire2,
-		rx_outclock => sub_wire3
+		rx_out => sub_wire1
 	);
 
 
@@ -213,18 +212,18 @@ END SYN;
 -- Retrieval info: PRIVATE: Dpll_Lock_Window NUMERIC "0"
 -- Retrieval info: PRIVATE: Enable_DPA_Mode STRING "ON"
 -- Retrieval info: PRIVATE: Enable_FIFO_DPA_Channels NUMERIC "0"
--- Retrieval info: PRIVATE: Ext_PLL STRING "OFF"
+-- Retrieval info: PRIVATE: Ext_PLL STRING "ON"
 -- Retrieval info: PRIVATE: INTENDED_DEVICE_FAMILY STRING "Stratix IV"
 -- Retrieval info: PRIVATE: Le_Serdes STRING "OFF"
--- Retrieval info: PRIVATE: Num_Channel NUMERIC "8"
+-- Retrieval info: PRIVATE: Num_Channel NUMERIC "16"
 -- Retrieval info: PRIVATE: Outclock_Divide_By NUMERIC "0"
 -- Retrieval info: PRIVATE: pCNX_OUTCLK_ALIGN NUMERIC "0"
 -- Retrieval info: PRIVATE: pINCLOCK_PHASE_SHIFT STRING "0.00"
 -- Retrieval info: PRIVATE: PLL_Enable NUMERIC "0"
 -- Retrieval info: PRIVATE: PLL_Freq STRING "125.00"
--- Retrieval info: PRIVATE: PLL_Period STRING "8.000"
+-- Retrieval info: PRIVATE: PLL_Period NUMERIC "5"
 -- Retrieval info: PRIVATE: pOUTCLOCK_PHASE_SHIFT NUMERIC "0"
--- Retrieval info: PRIVATE: Reg_InOut NUMERIC "1"
+-- Retrieval info: PRIVATE: Reg_InOut NUMERIC "0"
 -- Retrieval info: PRIVATE: Use_Cda_Reset NUMERIC "0"
 -- Retrieval info: PRIVATE: Use_Clock_Resc STRING "AUTO"
 -- Retrieval info: PRIVATE: Use_Common_Rx_Tx_Plls NUMERIC "0"
@@ -254,14 +253,14 @@ END SYN;
 -- Retrieval info: CONSTANT: IMPLEMENT_IN_LES STRING "OFF"
 -- Retrieval info: CONSTANT: INCLOCK_BOOST NUMERIC "0"
 -- Retrieval info: CONSTANT: INCLOCK_DATA_ALIGNMENT STRING "EDGE_ALIGNED"
--- Retrieval info: CONSTANT: INCLOCK_PERIOD NUMERIC "8000"
+-- Retrieval info: CONSTANT: INCLOCK_PERIOD NUMERIC "5000"
 -- Retrieval info: CONSTANT: INCLOCK_PHASE_SHIFT NUMERIC "0"
 -- Retrieval info: CONSTANT: INPUT_DATA_RATE NUMERIC "1250"
 -- Retrieval info: CONSTANT: INTENDED_DEVICE_FAMILY STRING "Stratix IV"
 -- Retrieval info: CONSTANT: LOSE_LOCK_ON_ONE_CHANGE STRING "UNUSED"
 -- Retrieval info: CONSTANT: LPM_HINT STRING "UNUSED"
 -- Retrieval info: CONSTANT: LPM_TYPE STRING "altlvds_rx"
--- Retrieval info: CONSTANT: NUMBER_OF_CHANNELS NUMERIC "8"
+-- Retrieval info: CONSTANT: NUMBER_OF_CHANNELS NUMERIC "16"
 -- Retrieval info: CONSTANT: OUTCLOCK_RESOURCE STRING "AUTO"
 -- Retrieval info: CONSTANT: PLL_OPERATION_MODE STRING "UNUSED"
 -- Retrieval info: CONSTANT: PLL_SELF_RESET_ON_LOSS_LOCK STRING "UNUSED"
@@ -269,7 +268,7 @@ END SYN;
 -- Retrieval info: CONSTANT: PORT_RX_DATA_ALIGN STRING "PORT_UNUSED"
 -- Retrieval info: CONSTANT: REFCLK_FREQUENCY STRING "UNUSED"
 -- Retrieval info: CONSTANT: REGISTERED_DATA_ALIGN_INPUT STRING "UNUSED"
--- Retrieval info: CONSTANT: REGISTERED_OUTPUT STRING "ON"
+-- Retrieval info: CONSTANT: REGISTERED_OUTPUT STRING "OFF"
 -- Retrieval info: CONSTANT: RESET_FIFO_AT_FIRST_LOCK STRING "UNUSED"
 -- Retrieval info: CONSTANT: RX_ALIGN_DATA_REG STRING "UNUSED"
 -- Retrieval info: CONSTANT: SIM_DPA_IS_NEGATIVE_PPM_DRIFT STRING "OFF"
@@ -277,33 +276,35 @@ END SYN;
 -- Retrieval info: CONSTANT: SIM_DPA_OUTPUT_CLOCK_PHASE_SHIFT NUMERIC "0"
 -- Retrieval info: CONSTANT: USE_CORECLOCK_INPUT STRING "OFF"
 -- Retrieval info: CONSTANT: USE_DPLL_RAWPERROR STRING "OFF"
--- Retrieval info: CONSTANT: USE_EXTERNAL_PLL STRING "OFF"
+-- Retrieval info: CONSTANT: USE_EXTERNAL_PLL STRING "ON"
 -- Retrieval info: CONSTANT: USE_NO_PHASE_SHIFT STRING "ON"
 -- Retrieval info: CONSTANT: X_ON_BITSLIP STRING "ON"
--- Retrieval info: USED_PORT: rx_channel_data_align 0 0 8 0 INPUT NODEFVAL "rx_channel_data_align[7..0]"
--- Retrieval info: CONNECT: @rx_channel_data_align 0 0 8 0 rx_channel_data_align 0 0 8 0
--- Retrieval info: USED_PORT: rx_dpa_locked 0 0 8 0 OUTPUT NODEFVAL "rx_dpa_locked[7..0]"
--- Retrieval info: CONNECT: rx_dpa_locked 0 0 8 0 @rx_dpa_locked 0 0 8 0
--- Retrieval info: USED_PORT: rx_fifo_reset 0 0 8 0 INPUT NODEFVAL "rx_fifo_reset[7..0]"
--- Retrieval info: CONNECT: @rx_fifo_reset 0 0 8 0 rx_fifo_reset 0 0 8 0
--- Retrieval info: USED_PORT: rx_in 0 0 8 0 INPUT NODEFVAL "rx_in[7..0]"
--- Retrieval info: CONNECT: @rx_in 0 0 8 0 rx_in 0 0 8 0
+-- Retrieval info: USED_PORT: pll_areset 0 0 0 0 INPUT NODEFVAL "pll_areset"
+-- Retrieval info: CONNECT: @pll_areset 0 0 0 0 pll_areset 0 0 0 0
+-- Retrieval info: USED_PORT: rx_channel_data_align 0 0 16 0 INPUT NODEFVAL "rx_channel_data_align[15..0]"
+-- Retrieval info: CONNECT: @rx_channel_data_align 0 0 16 0 rx_channel_data_align 0 0 16 0
+-- Retrieval info: USED_PORT: rx_dpa_locked 0 0 16 0 OUTPUT NODEFVAL "rx_dpa_locked[15..0]"
+-- Retrieval info: CONNECT: rx_dpa_locked 0 0 16 0 @rx_dpa_locked 0 0 16 0
+-- Retrieval info: USED_PORT: rx_enable 0 0 0 0 INPUT NODEFVAL "rx_enable"
+-- Retrieval info: CONNECT: @rx_enable 0 0 0 0 rx_enable 0 0 0 0
+-- Retrieval info: USED_PORT: rx_fifo_reset 0 0 16 0 INPUT NODEFVAL "rx_fifo_reset[15..0]"
+-- Retrieval info: CONNECT: @rx_fifo_reset 0 0 16 0 rx_fifo_reset 0 0 16 0
+-- Retrieval info: USED_PORT: rx_in 0 0 16 0 INPUT NODEFVAL "rx_in[15..0]"
+-- Retrieval info: CONNECT: @rx_in 0 0 16 0 rx_in 0 0 16 0
 -- Retrieval info: USED_PORT: rx_inclock 0 0 0 0 INPUT NODEFVAL "rx_inclock"
 -- Retrieval info: CONNECT: @rx_inclock 0 0 0 0 rx_inclock 0 0 0 0
--- Retrieval info: USED_PORT: rx_locked 0 0 0 0 OUTPUT NODEFVAL "rx_locked"
--- Retrieval info: CONNECT: rx_locked 0 0 0 0 @rx_locked 0 0 0 0
--- Retrieval info: USED_PORT: rx_out 0 0 80 0 OUTPUT NODEFVAL "rx_out[79..0]"
--- Retrieval info: CONNECT: rx_out 0 0 80 0 @rx_out 0 0 80 0
--- Retrieval info: USED_PORT: rx_outclock 0 0 0 0 OUTPUT NODEFVAL "rx_outclock"
--- Retrieval info: CONNECT: rx_outclock 0 0 0 0 @rx_outclock 0 0 0 0
--- Retrieval info: USED_PORT: rx_reset 0 0 8 0 INPUT NODEFVAL "rx_reset[7..0]"
--- Retrieval info: CONNECT: @rx_reset 0 0 8 0 rx_reset 0 0 8 0
--- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver.vhd TRUE FALSE
--- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver.qip TRUE FALSE
--- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver.bsf FALSE TRUE
--- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver_inst.vhd FALSE TRUE
--- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver.inc FALSE TRUE
--- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver.cmp TRUE TRUE
--- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver.ppf TRUE FALSE
+-- Retrieval info: USED_PORT: rx_out 0 0 160 0 OUTPUT NODEFVAL "rx_out[159..0]"
+-- Retrieval info: CONNECT: rx_out 0 0 160 0 @rx_out 0 0 160 0
+-- Retrieval info: USED_PORT: rx_reset 0 0 16 0 INPUT NODEFVAL "rx_reset[15..0]"
+-- Retrieval info: CONNECT: @rx_reset 0 0 16 0 rx_reset 0 0 16 0
+-- Retrieval info: USED_PORT: rx_syncclock 0 0 0 0 INPUT NODEFVAL "rx_syncclock"
+-- Retrieval info: CONNECT: @rx_syncclock 0 0 0 0 rx_syncclock 0 0 0 0
+-- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver_small.vhd TRUE FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver_small.qip TRUE FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver_small.bsf TRUE TRUE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver_small_inst.vhd TRUE TRUE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver_small.inc TRUE TRUE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver_small.cmp TRUE TRUE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL lvds_receiver_small.ppf TRUE FALSE
 -- Retrieval info: LIB_FILE: altera_mf
 -- Retrieval info: CBX_MODULE_PREFIX: ON
