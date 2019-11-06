@@ -25,6 +25,10 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #define FE_SUBDET_RESET_REG    (SC_REG_OFFSET+0xa)
 #define FE_SPIDATA_ADDR		0
 
+//status flags from FEB
+#define FEB_REPLY_SUCCESS 0
+#define FEB_REPLY_ERROR   1
+
 const uint8_t MutrigFEB::FPGA_broadcast_ID=0;
 
 //ASIC configuration:
@@ -32,7 +36,6 @@ const uint8_t MutrigFEB::FPGA_broadcast_ID=0;
 int MutrigFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix){
    printf("MutrigFEB::ConfigureASICs()\n");
    int status = mutrig::midasODB::MapForEach(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mutrig::Config* config, int asic){
-      int status=SUCCESS;
       uint32_t reg;
       cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/", odb_prefix, asic);
       try {
@@ -65,12 +68,13 @@ int MutrigFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char*
           set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
           return FE_ERR_HW; //note: return of lambda function
       }
-      if(status!=SUCCESS){
+      if(reg!=FEB_REPLY_SUCCESS){
          //configuration mismatch, report and break foreach-loop
          set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
          cm_msg(MERROR, "setup_mutrig", "MuTRiG configuration error for ASIC %i", asic);
+         return FE_ERR_HW;
       }
-      return status;//note: return of lambda function
+      return FE_SUCCESS;//note: return of lambda function
    });//MapForEach
    return status; //status of foreach function, SUCCESS when no error.
    return 0;
