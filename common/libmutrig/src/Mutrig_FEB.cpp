@@ -115,12 +115,26 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set dummy_data_n to %d", value);
       _this->setDummyData_Count(MutrigFEB::FPGA_broadcast_ID,value);
    }
-   if (std::string(key.name) == "prbs_decode_bypass") {
+   if (std::string(key.name) == "prbs_decode_disable") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set prbs_decode_bypass to %d", value);
-      _this->setPRBSDecoder(MutrigFEB::FPGA_broadcast_ID,value);
+      cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set prbs_decode_disable to %d", value);
+      _this->setPRBSDecoderDisable(MutrigFEB::FPGA_broadcast_ID,value);
+   }
+   if (std::string(key.name) == "LVDS_waitforall") {
+      BOOL value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+      cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set LVDS_waitforall to %d", value);
+      _this->setPRBSDecoderDisable(MutrigFEB::FPGA_broadcast_ID,value);
+   }
+   if (std::string(key.name) == "LVDS_waitforall_sticky") {
+      BOOL value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+      cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set LVDS_waitforall_sticky to %d", value);
+      _this->setPRBSDecoderDisable(MutrigFEB::FPGA_broadcast_ID,value);
    }
    if (std::string(key.name) == "mask") {
       BOOL barray[16];
@@ -259,25 +273,55 @@ void MutrigFEB::setMask(int asic, bool value){
         //printf("MutrigFEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGAid_from_ID(asic),val);
 
         val=reg_setBit(val,ASICid_from_ID(asic),value);
-        printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGAid_from_ID(asic),val);
+        //printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGAid_from_ID(asic),val);
 	m_mu.FEBsc_write(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG,m_ask_sc_reply);
         m_reg_shadow[FPGAid_from_ID(asic)][FE_DPCTRL_REG]=val;
 }
 
+
+
 /**
-* Disable data from specified ASIC
+* Disable prbs decoder in FPGA
 */
-void MutrigFEB::setPRBSDecoder(uint32_t FPGA_ID, bool enable){
+void MutrigFEB::setPRBSDecoderDisable(uint32_t FPGA_ID, bool disable){
+	printf("MutrigFEB::setPRBSDecoderDisable(%d)=%d\n",FPGA_ID,disable);
 	uint32_t val;
         val=m_reg_shadow[FPGA_ID][FE_DPCTRL_REG];
 	//m_mu.FEBsc_read(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
         //printf("MutrigFEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGAid_from_ID(asic),val);
 
-        val=reg_setBit(val,31,enable);
-        printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGA_ID,val);
+        val=reg_setBit(val,31,disable);
+        //printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGA_ID,val);
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG,m_ask_sc_reply);
         m_reg_shadow[FPGA_ID][FE_DPCTRL_REG]=val;
 }
+
+void MutrigFEB::setWaitForAll(uint32_t FPGA_ID, bool value){
+	printf("MutrigFEB::setWaitForAll(%d)=%d\n",FPGA_ID,value);
+	uint32_t val;
+        val=m_reg_shadow[FPGA_ID][FE_DPCTRL_REG];
+	//m_mu.FEBsc_read(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
+        //printf("MutrigFEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGAid_from_ID(asic),val);
+
+        val=reg_setBit(val,30,value);
+        //printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGAid_from_ID(asic),val);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG,m_ask_sc_reply);
+        m_reg_shadow[FPGA_ID][FE_DPCTRL_REG]=val;
+}
+
+void MutrigFEB::setWaitForAllSticky(uint32_t FPGA_ID, bool value){
+	printf("MutrigFEB::setWaitForAllSticky(%d)=%d\n",FPGA_ID,value);
+	uint32_t val;
+        val=m_reg_shadow[FPGA_ID][FE_DPCTRL_REG];
+	//m_mu.FEBsc_read(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
+        //printf("MutrigFEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGAid_from_ID(asic),val);
+
+        val=reg_setBit(val,29,value);
+        //printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGAid_from_ID(asic),val);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG,m_ask_sc_reply);
+        m_reg_shadow[FPGA_ID][FE_DPCTRL_REG]=val;
+}
+
 
 
 //reset all asics (digital part, CC, fsms, etc.)

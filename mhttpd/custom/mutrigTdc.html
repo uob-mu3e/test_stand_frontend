@@ -25,7 +25,7 @@ var asicsettings_global_int      = ['ext_trig_offset', 'ext_trig_endtime', 'lvds
 var asicsettings_global_bool = ['ext_trig_mode', 'ext_trig_endtime_sign', 'gen_idle', 'ms_debug', 'prbs_debug', 'prbs_single', 
 	       'recv_all', 'disable_coarse', 'pll_setcoarse', 'short_event_mode', 'pll_envomonitor'];
 var daqsettings_int     = ['dummy_data_n'];
-var daqsettings_bool= ['dummy_config', 'dummy_data', 'dummy_data_fast'];
+var daqsettings_bool= ['dummy_config', 'dummy_data', 'dummy_data_fast', 'prbs_decode_disable', 'lvds_waitforall', 'lvds_waitforall_sticky'];
 
 var asicsettings_tdc_int = ['vnpfc', 'vnpfc_offset', 'vncnt', 'vncnt_offset', 'vnvcobuffer', 'vnvcobuffer_offset', 
                  'vnd2c', 'vnd2c_offset', 'vnpcp', 'vnpcp_offset', 'vnhitlogic', 'vnhitlogic_offset', 
@@ -530,23 +530,50 @@ function readback() {
 				<!--<span  onclick="toggle(daq_table)">-</span>-->
 				<table id="daq_table">
 					<tr>
-						<td><label for="dummy_config">DUMMY CONFIG</label></td>
+						<td colspan=2><label for="dummy_config">DUMMY CONFIG</label></td>
 						<td><input type="checkbox" name="dummy_config"  class="store" /><input type="checkbox" name="dummy_config_rb" class="odb" disabled="disabled" /></td>
-						<td></td>
 						<td></td>
 					</tr>
 					<tr>
-						<td><label for="dummy_data">DUMMY DATA</label></td>
+						<td colspan=2><label for="dummy_data">DUMMY DATA</label></td>
 						<td><input type="checkbox" name="dummy_data"  class="store" /><input type="checkbox" name="dummy_data_rb" class="odb" disabled="disabled" /></td>
-						<td><label for="dummy_data_fast">DUMMY FAST</label></td>
+						<td></td>
+					</tr>
+					<tr>
+
+						<td colspan=2><label for="dummy_data_fast">DUMMY FAST</label></td>
 						<td><input type="checkbox" name="dummy_data_fast"  class="store" /><input type="checkbox" name="dummy_data_fast_rb" class="odb" disabled="disabled" /></td>
+						<td></td>
 					</tr>
 					<tr>
 						<td><label for="dummy_data_n">DUMMY DATA NUM</label></td>
 						<td><input type="number"  name="dummy_data_n" id="dummy_data_n" min="0" max="255" step="1" size="3" value="254"  class="store" /></td>
 						<td><input type="text"    name="dummy_data_n_rb"                                           size="3" value="" class="odb" readonly="readonly"  /></td>
+					</tr>
+					<tr>
+						<td colspan=2><label for="prbs_decode_disable">PRBS decoder disable</label></td>
+						<td><input type="checkbox" name="prbs_decode_disable"  class="store" /><input type="checkbox" name="prbs_decode_disable_rb" class="odb" disabled="disabled" /></td>
 						<td></td>
 					</tr>
+					<tr>
+						<td colspan=2><label for="lvds_waitforall">LVDS-RX wait for all</label></td>
+						<td><input type="checkbox" name="lvds_waitforall"  class="store" /><input type="checkbox" name="lvds_waitforall_rb" class="odb" disabled="disabled" /></td>
+						<td></td>
+					</tr>
+					<tr>
+						<td colspan=2><label for="lvds_waitforall_sticky">LVDS wait for all is sticky</label></td>
+						<td><input type="checkbox" name="lvds_waitforall_sticky"  class="store" /><input type="checkbox" name="lvds_waitforall_sticky_rb" class="odb" disabled="disabled" /></td>
+						<td></td>
+					</tr>
+					<tr>
+						<td colspan=1>Reset regs</td>
+						<td colspan=2 align=center>
+						<button name="modbbutton" class="button_2 button_s" id="reset_datapath" data-odb-path="/Equipment/SciFi/Settings/Daq/reset_datapath" data-odb-value="1">
+							Reset Datapath</button>
+						<button name="modbbutton" class="button_2 button_s" id="reset_asics" data-odb-path="/Equipment/SciFi/Settings/Daq/reset_asics" data-odb-value="1">
+							Reset ASICs</button>
+		                                </button>
+					</td>
 				</table>
 			</div>
 			<h2 onclick="toggle(global_table)">Global settings</h2>

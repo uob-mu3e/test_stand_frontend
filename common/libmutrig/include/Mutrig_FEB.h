@@ -60,9 +60,16 @@ class MutrigFEB {
       void setMask(int ASIC, bool value);
   
       /**
-       * Disable data from specified ASIC
+       * Disable PRBS decoder in FPGA
        */
-      void setPRBSDecoder(uint32_t FPGA_ID,bool enable);
+      void setPRBSDecoderDisable(uint32_t FPGA_ID,bool disable);
+
+      /**
+       * Wait for lvds receivers ready strategy
+       */
+      void setWaitForAll(uint32_t FPGA_ID,bool val);
+      void setWaitForAllSticky(uint32_t FPGA_ID,bool val);
+
 
 
       void syncReset(int FPGA_ID){chipReset(FPGA_ID);}; //should be resetting the ASICs coarse counter only, missing pin on the asic. For future use

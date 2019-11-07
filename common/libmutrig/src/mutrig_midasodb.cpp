@@ -67,10 +67,20 @@ int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface, bool init_
         db_get_data(hDB,hTmp,&ival,&isize,TID_INT);
         FEB_interface->setDummyData_Count(SciFiFEB::FPGA_broadcast_ID,ival);
 
-        sprintf(set_str, "%s/Settings/Daq/prbs_decode_bypass", prefix);
+        sprintf(set_str, "%s/Settings/Daq/prbs_decode_disable", prefix);
         db_find_key(hDB, 0, set_str, &hTmp);
         db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
-        FEB_interface->setPRBSDecoder(SciFiFEB::FPGA_broadcast_ID,bval);
+        FEB_interface->setPRBSDecoderDisable(SciFiFEB::FPGA_broadcast_ID,bval);
+
+        sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall", prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        FEB_interface->setWaitForAll(SciFiFEB::FPGA_broadcast_ID,bval);
+
+        sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall_sticky", prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        FEB_interface->setWaitForAllSticky(SciFiFEB::FPGA_broadcast_ID,bval);
 
 	BOOL barray[16];
 	INT  barraysize=sizeof(barray);
