@@ -5,6 +5,8 @@ use ieee.numeric_std.all;
 LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
+use work.daq_constants.all;
+
 entity scifi_path is
 generic (
     N_g : positive := 1;    --number of asics
@@ -28,12 +30,16 @@ port (
 
     i_reset         : in    std_logic;
     -- 156.25 MHz
-    i_clk_core      : in    std_logic;
+    i_clk_core      : in    std_logic; --core system (QSFP) clock
     -- 125 MHz
-    i_clk_ref_A     : in    std_logic;
-    i_clk_ref_B     : in    std_logic;
+    i_clk_ref_A     : in    std_logic; --lvds reference only
+    i_clk_ref_B     : in    std_logic; --lvds reference only
+    i_clk_g125      : in    std_logic; --global 125MHz clock, signals to ASIC from this
 
-    o_MON_rxrdy     : out   std_logic_vector(N_g - 1 downto 0)--;
+    --reset system
+    i_run_state      : in    run_state_t; --run state sync to i_clk_g125
+
+    o_MON_rxrdy     : out   std_logic_vector(N_g - 1 downto 0)--; --receiver ready flags for monitoring, sync to lvds_userclocks(A/B depending on LVDS placement)
 );
 end entity;
 
@@ -63,7 +69,7 @@ begin
 
     e_test_pulse : entity work.clkdiv
     generic map ( P => 1250 )
-    port map ( clkout => s_testpulse, rst_n => not i_reset, clk => i_clk_ref_A );
+    port map ( clkout => s_testpulse, rst_n => not i_run_state(RUN_STATE_BITPOS_SYNC), clk => i_clk_g125 );
     o_pll_test <= s_testpulse;
 
     o_fifo_rdata <= fifo_rdata;
@@ -143,10 +149,10 @@ begin
         ----------------------------------------------------------------------------
     --generation of reset signal synchronized to reference clock, make independent of nios clock
     --shift each reset output by configurable delay
-    p_fee_reset_sync: process(i_clk_ref_A)
+    p_fee_reset_sync: process(i_clk_g125)
     begin
-        if rising_edge(i_clk_ref_A) then
-            s_chip_rst_refclk_sync <= s_chip_rst_refclk_sync(0) & s_subdet_reset_reg(0);
+        if rising_edge(i_clk_g125) then
+            s_chip_rst_refclk_sync <= s_chip_rst_refclk_sync(0) & (s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC));
         end if;
     end process;
 
@@ -157,7 +163,7 @@ begin
 		i_clk_config => i_clk_core,
 		i_rst        => i_reset,
 
-		i_pll_clk    => i_clk_ref_A,
+		i_pll_clk    => i_clk_g125,
 		i_pll_arst   => i_reset,
 
 		i_flag       => s_subdet_resetdly_reg_written,
@@ -176,12 +182,12 @@ begin
         INPUT_SIGNFLIP => (N_g-1 downto 0 => '1')--,
     )
     port map (
-        i_rst => i_reset or s_subdet_reset_reg(1),
+        i_rst => i_reset or s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_SYNC),
         i_stic_txd => i_data(N_g-1 downto 0),
         i_refclk_125_A => i_clk_ref_A,
         i_refclk_125_B => i_clk_ref_B,
-        i_ts_clk => i_clk_ref_A, --TODO: better source?
-        i_ts_rst => i_reset,
+        i_ts_clk => i_clk_g125,
+        i_ts_rst => i_run_state(RUN_STATE_BITPOS_SYNC),
 
         -- interface to asic fifos
         i_clk_core => i_clk_core,
