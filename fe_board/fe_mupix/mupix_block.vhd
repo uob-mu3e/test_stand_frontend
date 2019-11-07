@@ -7,7 +7,11 @@ use work.mupix_registers.all;
 
 entity mupix_block is
 generic(
-    NCHIPS : integer := 4--,
+    NCHIPS : integer := 8;
+	NCHIPS_SPI : integer := 8;
+	NLVDS  : integer := 32;
+	NINPUTS_BANK_A	: integer := 4;
+	NINPUTS_BANK_B	: integer := 4--;
 );
 port (
     
@@ -64,17 +68,17 @@ architecture arch of mupix_block is
 signal reset_n : std_logic;
 
 	-- chip dacs
-	signal mp8_busy_n : std_logic_vector(NCHIPS - 1 downto 0);
+	signal mp8_busy_n : std_logic_vector(NCHIPS_SPI - 1 downto 0);
 	signal mp8_mem_data_out : std_logic_vector(31 downto 0);
-	signal mp8_wren : std_logic_vector(NCHIPS - 1 downto 0);
-	signal mp8_ld : std_logic_vector(NCHIPS - 1 downto 0);
-	signal mp8_rb : std_logic_vector(NCHIPS - 1 downto 0);
-	signal mp8_ctrl_dout : std_logic_vector(NCHIPS - 1 downto 0);
-	signal mp8_ctrl_din : std_logic_vector(NCHIPS - 1 downto 0);
-	signal mp8_ctrl_clk1 : std_logic_vector(NCHIPS - 1 downto 0);
-	signal mp8_ctrl_clk2 : std_logic_vector(NCHIPS - 1 downto 0);
-	signal mp8_ctrl_ld : std_logic_vector(NCHIPS - 1 downto 0);
-	signal mp8_ctrl_rb : std_logic_vector(NCHIPS - 1 downto 0);
+	signal mp8_wren : std_logic_vector(NCHIPS_SPI - 1 downto 0);
+	signal mp8_ld : std_logic_vector(NCHIPS_SPI - 1 downto 0);
+	signal mp8_rb : std_logic_vector(NCHIPS_SPI - 1 downto 0);
+	signal mp8_ctrl_dout : std_logic_vector(NCHIPS_SPI - 1 downto 0);
+	signal mp8_ctrl_din : std_logic_vector(NCHIPS_SPI - 1 downto 0);
+	signal mp8_ctrl_clk1 : std_logic_vector(NCHIPS_SPI - 1 downto 0);
+	signal mp8_ctrl_clk2 : std_logic_vector(NCHIPS_SPI - 1 downto 0);
+	signal mp8_ctrl_ld : std_logic_vector(NCHIPS_SPI - 1 downto 0);
+	signal mp8_ctrl_rb : std_logic_vector(NCHIPS_SPI - 1 downto 0);
 	signal mp8_dataout : std_logic_vector(31 downto 0);
 	
 	 -- board dacs
@@ -151,27 +155,26 @@ begin
 	-- MK: since we have only one chip to configure at the moment
 	-- we hard code this 
 	e_mp8_sc_master : work.mp8_sc_master
-	generic map(NCHIPS => 1)
-	--generic map(NCHIPS => NCHIPS)
+	generic map(NCHIPS => NCHIPS_SPI)
 	port map (
 		clk			    => i_clk,
 		reset_n		    => reset_n,
 		mem_data_in	    => chip_dac_data,
-		busy_n(0)		=> mp8_busy_n(0),--busy_n => mp8_busy_n,
+		busy_n		=> mp8_busy_n,--busy_n => mp8_busy_n,
 		start           => chip_dac_ready,
 
 		fifo_re         => chip_dac_ren,
 		fifo_empty      => chip_dac_fifo_empty,
-		mem_data_out(0)	=> mp8_mem_data_out(0),--mem_data_out => mp8_mem_data_out,
-		wren(0)			=> mp8_wren(0),--mp8_wren,
-		ctrl_ld(0)	    => mp8_ld(0),--mp8_ld,
-		ctrl_rb(0)		=> mp8_rb(0),--mp8_rb,
+		mem_data_out	=> mp8_mem_data_out,--mem_data_out => mp8_mem_data_out,
+		wren			=> mp8_wren,--mp8_wren,
+		ctrl_ld	    => mp8_ld,--mp8_ld,
+		ctrl_rb		=> mp8_rb,--mp8_rb,
 		done			=> open, 
 		stateout		=> open--,
 	);
 	 
 	gen_slowc:
-	for i in 0 to 0 generate --NCHIPS-1 generate
+	for i in 0 to NCHIPS_SPI-1 generate
 	e_mp8_slowcontrol : work.mp8_slowcontrol
 	port map(
 		clk	    => i_clk,
@@ -242,7 +245,8 @@ begin
             chip_dac_we         <= '0';
             chip_dac_ready      <= '0';
             reset_chip_dac_fifo <= '0';
-			reset_n_lvds		<= '1';
+			o_reg_rdata			<= (others => '0');
+			
             ckdiv               <= ckdiv;
             
             if ( i_reg_add = x"83" and i_reg_we = '1' ) then
@@ -295,12 +299,17 @@ begin
             
             if ( i_reg_add = x"8E" and i_reg_we = '1' ) then
                 chip_dac_ready      <= i_reg_wdata(0);
-                reset_chip_dac_fifo <= i_reg_wdata(1);
                 ckdiv               <= i_reg_wdata(31 downto 16);
+            end if;
+			
+			if ( i_reg_add = x"95" and i_reg_re = '1' ) then
+                reset_chip_dac_fifo <= i_reg_wdata(1);
             end if;
 				
 			if ( i_reg_add = x"8F" and i_reg_we = '1' ) then
-                reset_n_lvds      <= i_reg_wdata(0);
+                reset_n_lvds    <= i_reg_wdata(0);
+			else
+				reset_n_lvds	<= '1';
             end if;
 			
 			if ( i_reg_add = x"90" and i_reg_we = '1' ) then
@@ -339,7 +348,7 @@ begin
 		wren                  	=> A_spi_wren_front,
 		busy_n                	=> A_spi_busy_n_front,
 
-      spi_sdi	                => o_SPI_DIN0_A,
+		spi_sdi	                => o_SPI_DIN0_A,
 		spi_sclk              	=> o_SPI_CLK_A,
 		spi_load_n            	=> A_spi_ldn_front,
 		spi_sdo               	=> A_spi_sdo_front,
@@ -353,15 +362,17 @@ begin
 	);
 	
 	lvds_data_in	<= i_data_in_E_1 & i_data_in_E_0 &
-								i_data_in_C_1 & i_data_in_C_0 &
-								i_data_in_B_1 & i_data_in_B_0 &
-								i_data_in_A_1 & i_data_in_A_0;
+					   i_data_in_C_1 & i_data_in_C_0 &
+					   i_data_in_B_1 & i_data_in_B_0 &
+					   i_data_in_A_1 & i_data_in_A_0;
 	
 	e_mupix_datapath : work.mupix_datapath
 	generic map (
-		NCHIPS 				=> 8,
-		NLVDS 				=> 32,
-		NSORTERINPUTS	 	=> 1	--up to 4 LVDS links merge to one sorter
+		NCHIPS 				=> NCHIPS,
+		NLVDS 				=> NLVDS,
+		NSORTERINPUTS	 	=> 1,	--up to 4 LVDS links merge to one sorter
+		NINPUTS_BANK_A		=> NINPUTS_BANK_A,
+		NINPUTS_BANK_B		=> NINPUTS_BANK_B
 	)
 	port map (
 		i_reset_n			=> reset_n,

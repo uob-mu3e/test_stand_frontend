@@ -17,8 +17,8 @@ constant NFEB_CARDS		: integer :=  4;
 constant NTRIGGERS		: integer :=  4;
 constant NREGISTERS		: integer := 64; 
 constant NINJECTIONS		: integer :=  1;
-constant NINPUTS_BANK_A : integer := 16;
-constant NINPUTS_BANK_B : integer := 16;
+--constant NINPUTS_BANK_A : integer := 16;
+--constant NINPUTS_BANK_B : integer := 16;
 constant NLVDS				: integer := 32;
 -- this should be equal to log2(NLVDS)
 constant NLVDSLOG			: integer := 5;

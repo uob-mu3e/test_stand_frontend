@@ -16,9 +16,11 @@ use work.hitsorter_components.all;
 
 entity mupix_datapath is
 generic(
-	NCHIPS: 				integer :=  4;
-	NLVDS: 				integer := 16;
-	NSORTERINPUTS: 	integer :=  4	--up to 4 LVDS links merge to one sorter
+	NCHIPS: 		integer :=  4;
+	NLVDS: 			integer := 16;
+	NSORTERINPUTS: 	integer :=  4;	--up to 4 LVDS links merge to one sorter
+	NINPUTS_BANK_A: integer :=  4;
+	NINPUTS_BANK_B: integer :=  4--;
 );
 port (
 	i_reset_n:			in std_logic;
@@ -76,7 +78,8 @@ signal coarsecounters_ena_del 	: std_logic_vector(NCHIPS-1 downto 0);
 signal unpack_errorcounter	: links_reg32;
 
 -- writeregisters are registered once to reduce long combinational paths
-signal writeregs_reg				: reg32array;
+signal writeregs_reg				: reg32array_128;
+signal read_regs				: reg32array_128;
 --signal regwritten_reg				: std_logic_vector(NREGISTERS-1 downto 0); 
 signal s_buf_data				: std_logic_vector(35 downto 0);
 signal sync_fifo_empty		: std_logic;
@@ -127,7 +130,7 @@ begin
 	writregs_clocking : process(i_clk)
 	begin
 		if(rising_edge(i_clk))then
-			for I in 63 downto 0 loop
+			for I in 127 downto 0 loop
 				writeregs_reg(I)	<= write_sc_regs(I);
 			end loop;
 		end if;
@@ -138,7 +141,9 @@ begin
 	lvds_block : work.receiver_block_mupix
 	generic map(
 		NINPUT	=> NLVDS,
-		NCHIPS	=> NCHIPS
+		NCHIPS	=> NCHIPS,
+		NINPUTS_BANK_A => NINPUTS_BANK_A,
+		NINPUTS_BANK_B => NINPUTS_BANK_B
 	)
 	port map(
 		reset_n				=> i_reset_n_lvds,
@@ -159,14 +164,23 @@ begin
 	);
 	
 	-- hard for now
-	read_sc_regs(RX_STATE_RECEIVER_0) <= rx_state(31 downto 0);
-	read_sc_regs(RX_STATE_RECEIVER_1) <= rx_state(63 downto 32);
-	read_sc_regs(LVDS_PLL_LOCKED_REG)(1 downto 0) <= lvds_pll_locked;
-	read_sc_regs(MULTICHIP_RO_OVERFLOW_REG)		  <= MULTICHIP_RO_OVERFLOW;
+	read_regs_clocking : process(i_clk)
+	begin
+		if(rising_edge(i_clk))then
+			for I in 127 downto 0 loop
+				read_sc_regs(I)	<= read_regs(I);
+			end loop;
+		end if;
+	end process read_regs_clocking;
+	
+	read_regs(RX_STATE_RECEIVER_0)(NLVDS-1 downto 0) 	<= rx_state(NLVDS-1 downto 0);
+	read_regs(RX_STATE_RECEIVER_1)(NLVDS-1 downto 0) 	<= rx_state(NLVDS*2-1 downto NLVDS);
+	read_regs(LVDS_PLL_LOCKED_REG)(1 downto 0) 			<= lvds_pll_locked;
+	read_regs(MULTICHIP_RO_OVERFLOW_REG)		  		<= MULTICHIP_RO_OVERFLOW;
 	GEN_LVDS_REGS:
 	FOR I in 0 to NLVDS - 1 GENERATE
-		read_sc_regs(LVDS_RUNCOUNTER_REG + I) <= lvds_runcounter(I);
-		read_sc_regs(LVDS_ERRCOUNTER_REG + I) <= lvds_errcounter(I);
+		read_regs(LVDS_RUNCOUNTER_REG + I) <= lvds_runcounter(I);
+		read_regs(LVDS_ERRCOUNTER_REG + I) <= lvds_errcounter(I);
 	END GENERATE GEN_LVDS_REGS;
 	
 

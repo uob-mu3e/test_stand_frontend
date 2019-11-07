@@ -254,7 +254,11 @@ begin
 
     e_mupix_block : entity work.mupix_block
     generic map (
-        NCHIPS => 8
+        NCHIPS => 8,
+		NCHIPS_SPI => 1,
+		NLVDS  => 32,
+		NINPUTS_BANK_A => 16,
+		NINPUTS_BANK_B => 16--,
     )
     port map (
 
