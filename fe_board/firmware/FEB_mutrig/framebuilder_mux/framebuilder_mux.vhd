@@ -127,17 +127,19 @@ begin
 	l_request<=(others => '1');
 	--incoming data is header or trailer?
 	for i in N_INPUTS-1 downto 0 loop
-		if (s_is_valid(i) = '0' and i_SC_mask(i)='0') then -- no valid data, no request, not all header or trailer
+		if (i_SC_mask(i)='1') then --do not request readout of masked channel, ignore for all_header/all_trailer
+			l_request(i)<='0';
+		elsif (s_is_valid(i) = '0') then -- no valid data, no request, not all header or trailer
 			l_all_header<='0';
 			l_all_trailer<='0';
 			l_request(i)<='0';
 		else
-			if (i_source_data(i)(51 downto 50)="10" or i_SC_mask(i)='1') then -- data is header
+			if (i_source_data(i)(51 downto 50)="10") then -- data is header
 				l_request(i)<='0';	--do not request readout of header
 			else 
 				l_all_header<='0';
 			end if;
-			if (i_source_data(i)(51 downto 50)="11" or i_SC_mask(i)='1') then -- data is trailer
+			if (i_source_data(i)(51 downto 50)="11") then -- data is trailer
 				l_request(i)<='0';	--do not request readout of trailer
 			else
 				l_all_trailer<='0';
