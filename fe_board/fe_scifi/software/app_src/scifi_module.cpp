@@ -12,6 +12,7 @@ char wait_key(useconds_t us = 100000);
 #include "builtin_config/PRBS_single.h"
 
 #include <ctype.h>
+extern sc_t sc;
 
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
 int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
@@ -327,7 +328,7 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
         if((cmd&0xfff0) ==0x0110){ //configure ASIC
 	   uint8_t chip=data[0];
            status=configure_asic(chip,(alt_u8*) &(data[1]));
-           if(sc->ram->regs.scifi.ctrl.dummy&1){
+           if(sc.ram->regs.scifi.ctrl.dummy&1){
               //when configured as dummy do the spi transaction,
               //but always return success to switching board
 	      if(status!=FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
