@@ -43,8 +43,12 @@
 #include <stdio.h>
 #include <cassert>
 #include <iostream>
+#include <string>
+#include <vector>
 #include "midas.h"
 #include "mfe.h"
+#include "history.h"
+
 
 
 #include "clockboard.h"
@@ -53,6 +57,8 @@
 using std::cout;
 using std::endl;
 using std::hex;
+using std::string;
+using std::vector;
 
 
 /*-- Globals -------------------------------------------------------*/
@@ -323,13 +329,49 @@ INT frontend_init()
    const char * name = "cr.html";
    db_set_value(hDB,0,"Custom/Clock and Reset&",name, sizeof(name), 1,TID_STRING);
 
-   HNDLE histKey;
 
-   db_find_key(hDB, 0, "/History/Display/Clock Reset", &histKey);
-   if(!histKey){
-#include "clock_and_reset_history_panels_odb.h"
-   db_create_record(hDB, 0, "/History/Display/Clock Reset", strcomb(clock_and_reset_history_panels));
+
+    // Define history panels
+   hs_define_panel("Clock Reset","Motherboard",{"Clock Reset:Motherboard Current",
+                                                "Clock Reset:Motherboard Voltage",
+                                                "Clock Reset:Fan Current"});
+
+   hs_define_panel("Clock Reset","Firefly Temperatures",{"Clock Reset:RX Firefly Temp",
+                                                         "Clock Reset:TX Clk Firefly Temp",
+                                                         "Clock Reset:TX Rst Firefly Temp"});
+
+   hs_define_panel("Clock Reset","Firefly Voltages",{"Clock Reset:RX Firefly Voltage",
+                                                     "Clock Reset:TX Clk Firefly Voltage",
+                                                     "Clock Reset:TX Rst Firefly Voltage"});
+
+   vector<string> cnames;
+   vector<string> vnames;
+   for(int i=0; i < 8; i++){
+        cnames.push_back(string("Clock Reset:Daughterboard ") +std::to_string(i)+string(" Current"));
+        vnames.push_back(string("Clock Reset:Daughterboard ") +std::to_string(i)+string(" Voltage"));
+        vector<string> fnames;
+        for(int j=0; j < 3; j++){
+            fnames.push_back(string("Clock Reset:D ") + std::to_string(i) + " " + std::to_string(j)+
+                                " Firefly Temp");
+        }
+        hs_define_panel("Clock Reset",(string("Firefly Temperatures Daughter ")+std::to_string(i)).c_str(),fnames);
    }
+
+   hs_define_panel("Clock Reset","Daughterboard Currents",cnames);
+   hs_define_panel("Clock Reset","Daughterboard Voltages",vnames);
+
+   for(int i=0; i < 8; i++){
+        vector<string> fnames;
+        for(int j=0; j < 3; j++){
+            fnames.push_back(string("Clock Reset:D ") + std::to_string(i) + " " + std::to_string(j)+
+                                " Firefly Voltage");
+        }
+        hs_define_panel("Clock Reset",(string("Firefly Voltages Daughter ")+std::to_string(i)).c_str(),fnames);
+   }
+
+   // Define alarms
+   //al_define_odb_alarm("Firefly temperature",
+    //                   "/Equipment/Clock Reset/Variables/CRT1[3] > 65","Alarm","Firefly temperature %s");
 
 
    /////////////////////////////////////////////
@@ -585,13 +627,11 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
        //int size=sizeof(addressed);
        //db_get_value(hDB, 0, "Equipment/Clock Reset/Settings/Addressed", &addressed, &size, TID_BOOL, false);
-       int address;
+       int address =0;
        if(addressed){
            int size=sizeof(address);
            db_get_value(hDB, 0, "Equipment/Clock Reset/Settings/FEBAddress", &address, &size, TID_INT, false);
            cm_msg(MINFO, "cr_settings_changed", "address reset command to addr:%d", address);
-       }else{
-           address=0;
        }
 
        // Easy case are commands without payload
@@ -601,7 +641,10 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
            db_get_data(hDB, hKey, &value, &size, TID_BOOL);
            if (value) {
               cm_msg(MINFO, "cr_settings_changed", "Execute %s", key.name);
-              cb->write_command(key.name,0,address);
+              if(address)
+                cb->write_command(key.name,0,address);
+              else
+                 cb->write_command(key.name);
               value = FALSE; // reset flag in ODB
               db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
            }
@@ -617,7 +660,10 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
                  int run;
                  int size = sizeof(run);
                  db_get_value(hDB, 0, "/Runinfo/Run number", &run, &size, TID_INT, false);
-                 cb->write_command(key.name,run,address);
+                 if(address)
+                    cb->write_command(key.name,run,address);
+                 else
+                    cb->write_command(key.name,run);
                  value = FALSE; // reset flag in ODB
                  db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
               }
@@ -631,7 +677,10 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
                     int payload;
                     int size = sizeof(payload);
                     db_get_value(hDB, 0, "/Equipment/Clock Reset/Settings/Payload", &payload, &size, TID_INT, false);
-                    cb->write_command(key.name,payload,address);
+                    if(address)
+                       cb->write_command(key.name,payload,address);
+                     else
+                       cb->write_command(key.name,payload);
                     value = FALSE; // reset flag in ODB
                     db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
                }

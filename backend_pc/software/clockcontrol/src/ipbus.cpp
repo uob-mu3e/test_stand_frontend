@@ -332,24 +332,25 @@ int ipbus::ReadFromSocket(vector<uint32_t> & rbuffer)
             if(err == boost::asio::error::try_again){
                 cout << "UDP Timeout" << endl;
                 ntimeouts++;
+                if(ntimeouts > 50){
+                    std::cerr << "Connection to clock boaerd lost, terminating!" << std::endl;
+                    throw boost::system::system_error(boost::asio::error::connection_aborted);
+                    // Deal with this properly
+                }
                 return -2;
             }
          }
         if(err){
             throw boost::system::system_error(err);
-        }
-        if(ntimeouts > 0)
-            ntimeouts--;
+        }else
+            if(ntimeouts > 0)
+                ntimeouts--;
 
     }
     catch(std::exception& e) {
         std::cerr << e.what() << endl;
     }
 
-    if(ntimeouts > 50){
-        std::cerr << "Connection to clock boaerd lost, terminating!" << std::endl;
-        throw boost::system::system_error(boost::asio::error::connection_aborted);
-    }
 
     /*
     cout << "Bytes received " << nbyte << endl;
