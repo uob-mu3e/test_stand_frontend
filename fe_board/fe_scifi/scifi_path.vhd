@@ -196,12 +196,13 @@ begin
         i_fifo_rd => i_fifo_rack or fifo_rack_ext,
 
         -- slow control
-        i_SC_disable_dec => not s_dpctrl_reg(31),
+        i_SC_disable_dec => s_dpctrl_reg(31),
+        i_SC_rx_wait_for_all => s_dpctrl_reg(30),
+        i_SC_rx_wait_for_all_sticky => s_dpctrl_reg(29),
         i_SC_mask => s_dpctrl_reg(N_g-1 downto 0),
         i_SC_datagen_enable => s_dummyctrl_reg(1),
         i_SC_datagen_shortmode => s_dummyctrl_reg(2),
         i_SC_datagen_count => s_dummyctrl_reg(12 downto 3),
-        i_SC_rx_wait_for_all => s_dpctrl_reg(30),
 
         -- monitors
         o_receivers_usrclk => open,
