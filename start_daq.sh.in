@@ -19,13 +19,8 @@ odbedit -c "set Custom/Path $SOURCE/mhttpd/custom"
 #create custom pages for DAQ slow control and Clock/Reset system
 odbedit -d Custom -c 'create STRING SC'
 odbedit -c 'set Custom/SC sc.html'
-odbedit -d Custom -c 'create STRING CR'
-odbedit -c 'set Custom/CR cr.html'
 odbedit -d Custom -c 'create STRING SciFi-ASICs'
 odbedit -c 'set Custom/SciFi-ASICs mutrigTdc.html'
-
-odbedit -c 'set Logger/History/FILE/Active y'
-odbedit -c 'set Logger/History/MIDAS/Active n'
 
 xterm -hold -e "mhttpd" &
 sleep 0.2
@@ -34,9 +29,23 @@ sleep 0.2
 # Start front-ends before the logger!
 xterm -hold -e "crfe" &
 sleep 0.2
-xterm -hold -e "switch_fe" &
+xterm -hold -e "msysmon-nvidia" &
 sleep 0.2
+# xterm -hold -e "switch_fe" &
+# sleep 0.2
 xterm -hold -e "mlogger" &
 #xterm -hold -e "switch_fe" &
 
+sleep 2
 
+odbedit -c 'set Logger/History/FILE/Active y'
+odbedit -c 'set Logger/History/MIDAS/Active n'
+
+odbedit -c 'set Programs/Logger/Required y'
+odbedit -c 'set "Programs/Logger/Start command" "mlogger -D"'
+
+odbedit -c 'set Programs/mserver/Required y'
+odbedit -c 'set "Programs/mserver/Start command" "mserver -D"'
+
+odbedit -c 'set Programs/msysmon/Required y'
+odbedit -c 'set "Programs/msysmon/Start command" "msysymon-nvidia -D"'
