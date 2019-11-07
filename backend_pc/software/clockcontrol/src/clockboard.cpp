@@ -23,6 +23,8 @@ int clockboard::init_clockboard(uint16_t clkinvert, uint16_t rstinvert, uint16_t
     // Turn on Si chip output  
     bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_CLK_CTRL,BIT_CTRL_CLK_CTRL_SI_OE) ;
 
+    // Turn on Reset output
+    bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_PARTITION,MASK_CTRL_PARTITION) ;
 
     // set inverted channels on the reset firefly
     invert_tx_rst_channels(rstinvert);
