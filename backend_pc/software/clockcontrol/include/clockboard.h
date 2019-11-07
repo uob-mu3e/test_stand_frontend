@@ -227,6 +227,7 @@ protected:
                                      DAUGHTER_6,
                                      DAUGHTER_7};
 
+    uint32_t reverse_bytes(uint32_t bytes);
 };
 
 #endif // CLOCKBOARD_H

@@ -65,13 +65,13 @@ int clockboard::map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num)
 int clockboard::write_command(uint8_t command, uint32_t payload, bool has_payload)
 {
     vector<uint32_t> senddata;
-    senddata.push_back(0xbcbcbc00 + command);
+    senddata.push_back(reverse_bytes(0xbcbcbc00 + command));
     if(has_payload)
-        senddata.push_back(payload);
+            senddata.push_back(reverse_bytes(payload));
     bus.write(ADDR_FIFO_REG_OUT,senddata,true);
 
     senddata.clear();
-    senddata.push_back(0xe);
+    senddata.push_back(0x7);
     if(has_payload)
         senddata.push_back(0x0);
     bus.write(ADDR_FIFO_REG_CHARISK, senddata, true);
@@ -90,8 +90,8 @@ int clockboard::write_command(char *name, uint32_t payload, uint16_t address)
             vector<uint32_t> senddata;
             bool has_payload = it->second.has_payload;
 
-            senddata.push_back(reset_protocol.commands.find("Address")->second.command*0x1000000 + address*0x100 + it->second.command);
-            if(has_payload) senddata.push_back(payload);
+            senddata.push_back(reverse_bytes(reset_protocol.commands.find("Address")->second.command*0x1000000 + address*0x100 + it->second.command));
+            if(has_payload) senddata.push_back(reverse_bytes(payload));
             bus.write(ADDR_FIFO_REG_OUT,senddata,true);
 
             senddata.clear();
@@ -839,5 +839,17 @@ int clockboard::setSlave(uint8_t dev_addr, bool read_bit)
 
 }
 
+uint32_t clockboard::reverse_bytes(uint32_t bytes)
+{
+    uint32_t aux = 0;
+    uint8_t byte;
+    int i;
 
+    for(i = 0; i < 32; i+=8)
+    {
+        byte = (bytes >> i) & 0xff;
+        aux |= byte << (32 - 8 - i);
+    }
+    return aux;
+}
 

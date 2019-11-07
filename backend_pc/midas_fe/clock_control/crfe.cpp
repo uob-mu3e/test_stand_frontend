@@ -86,7 +86,6 @@ INT event_buffer_size = 10 * 10000;
 
 // Clock board interface
 clockboard * cb;
-bool addressed=0;
 /*-- Function declarations -----------------------------------------*/
 
 INT read_cr_event(char *pevent, INT off);
@@ -553,6 +552,8 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
    db_get_key(hDB, hKey, &key);
 
+   BOOL addressed = false;
+
     if (std::string(key.name) == "Active") {
       BOOL value;
       int size = sizeof(value);
@@ -625,8 +626,8 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
    if(it != cb->reset_protocol.commands.end()){
 
-       //int size=sizeof(addressed);
-       //db_get_value(hDB, 0, "Equipment/Clock Reset/Settings/Addressed", &addressed, &size, TID_BOOL, false);
+       int size=sizeof(addressed);
+       db_get_value(hDB, 0, "Equipment/Clock Reset/Settings/Addressed", &addressed, &size, TID_BOOL, false);
        int address =0;
        if(addressed){
            int size=sizeof(address);
@@ -635,12 +636,13 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        }
 
        // Easy case are commands without payload
-       if(!(it->second.has_payload)){
+       //if(!(it->second.has_payload)){
+       if(true){
            BOOL value;
            int size = sizeof(value);
            db_get_data(hDB, hKey, &value, &size, TID_BOOL);
            if (value) {
-              cm_msg(MINFO, "cr_settings_changed", "Execute %s", key.name);
+              cm_msg(MINFO, "cr_settings_changed", "Execute1 %s", key.name);
               if(address)
                 cb->write_command(key.name,0,address);
               else
@@ -648,8 +650,9 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
               value = FALSE; // reset flag in ODB
               db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
            }
+       }
            // here the case with payload
-       } else {
+       /*} else {
            // Run prepare needs the run number
            if (std::string(key.name) == "Run Prepare") {
               BOOL value;
@@ -673,7 +676,7 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
                int size = sizeof(value);
                db_get_data(hDB, hKey, &value, &size, TID_BOOL);
                if (value) {
-                    cm_msg(MINFO, "cr_settings_changed", "Execute %s", key.name);
+                    cm_msg(MINFO, "cr_settings_changed", "Execute2 %s", key.name);
                     int payload;
                     int size = sizeof(payload);
                     db_get_value(hDB, 0, "/Equipment/Clock Reset/Settings/Payload", &payload, &size, TID_INT, false);
@@ -685,7 +688,7 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
                     db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
                }
            }
-       }
+       }*/
    }
 
 
