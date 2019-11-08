@@ -20,10 +20,10 @@ port (
     o_i2c_sda_oe    : out   std_logic;
 
     -- spi interface to si chip
-    i_spi_si_miso      : in    std_logic;
-    o_spi_si_mosi      : out   std_logic;
-    o_spi_si_sclk      : out   std_logic;
-    o_spi_si_ss_n      : out   std_logic;
+    i_spi_si_miso   : in    std_logic;
+    o_spi_si_mosi   : out   std_logic;
+    o_spi_si_sclk   : out   std_logic;
+    o_spi_si_ss_n   : out   std_logic;
 
     -- spi interface to asics
     i_spi_miso      : in    std_logic;
@@ -62,6 +62,15 @@ port (
 
 
 
+    -- reset system
+    o_run_state_125 : out   run_state_t;
+
+
+
+    -- nios clock - 125 MHz
+    i_nios_clk_startup  : in    std_logic;
+    i_nios_clk_main     : in    std_logic; -- unused
+    o_nios_clk_selected : out   std_logic; -- unused
     o_nios_clk_mon  : out   std_logic;
     -- qsfp clock - 156.25 MHz
     i_clk_156       : in    std_logic;
@@ -69,14 +78,6 @@ port (
     -- pod clock - 125 MHz
     i_clk_125       : in    std_logic;
     o_clk_125_mon   : out   std_logic;
-
-    -- nios clock - 125 MHz
-    i_nios_clk_startup : in    std_logic;
-    i_nios_clk_main : in    std_logic;     --unused
-    o_nios_clk_selected : out std_logic;   --unused
-
-    --reset system
-    o_run_state_125 : out   run_state_t;
 
     i_areset_n      : in    std_logic--;
 );
@@ -108,6 +109,8 @@ architecture arch of fe_block is
     signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
     signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
     signal mscb_counter_in : unsigned(15 downto 0);
+
+
 
     signal reg_reset_bypass : std_logic_vector(31 downto 0);
 
@@ -245,6 +248,8 @@ begin
 
     -- nios system
     nios_irq(0) <= '1' when ( reg_cmdlen(31 downto 16) /= (31 downto 16 => '0') ) else '0';
+
+
 
     e_nios : component work.cmp.nios
     port map (
@@ -429,7 +434,9 @@ begin
         terminated      => terminated,
         testout         => open--,
     );
+
     o_run_state_125 <= run_state_125;
+
 
 
     e_mscb : entity work.mscb

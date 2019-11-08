@@ -118,8 +118,9 @@ architecture arch of top is
     signal s_FPGA_test : std_logic_vector (7 downto 0) := (others => '0');
     signal s_MON_rxrdy : std_logic_vector (7 downto 0);
 
-    --reset system
+    -- reset system
     signal run_state_125 : run_state_t;
+
 begin
 
     -- malibu regs : 0x40-0x4F
@@ -269,10 +270,6 @@ begin
         FEB_type_in => "111000"--, --this is a mutrig type FEB
     )
     port map (
-        i_nios_clk_startup => clk_aux,
-        i_nios_clk_main => clk_aux,
-        o_nios_clk_selected => led(10),
-
         i_i2c_scl       => i2c_scl,
         o_i2c_scl_oe    => i2c_scl_oe,
         i_i2c_sda       => i2c_sda,
@@ -288,19 +285,19 @@ begin
         o_spi_si_sclk   => si45_spi_sclk,
         o_spi_si_ss_n   => si45_spi_cs_n,
 
-        i_mscb_data     => mscb_data_in,
-        o_mscb_data     => mscb_data_out,
-        o_mscb_oe       => mscb_oe,
-
         i_qsfp_rx       => qsfp_rx,
         o_qsfp_tx       => qsfp_tx,
+
+        i_pod_rx        => pod_rx,
+        o_pod_tx        => pod_tx,
 
         i_fifo_rempty   => fifo_rempty,
         o_fifo_rack     => fifo_rack,
         i_fifo_rdata    => fifo_rdata,
 
-        i_pod_rx        => pod_rx,
-        o_pod_tx        => pod_tx,
+        i_mscb_data     => mscb_data_in,
+        o_mscb_data     => mscb_data_out,
+        o_mscb_oe       => mscb_oe,
 
         o_sc_reg_addr   => sc_reg.addr(7 downto 0),
         o_sc_reg_re     => sc_reg.re,
@@ -310,7 +307,7 @@ begin
 
 
 
-        --reset system
+        -- reset system
         o_run_state_125 => run_state_125,
 
 
@@ -320,6 +317,10 @@ begin
         o_clk_156_mon   => led(14),
         i_clk_125       => pod_pll_clk,
         o_clk_125_mon   => led(13),
+
+        o_nios_clk_selected => led(10),
+        i_nios_clk_startup => clk_aux,
+        i_nios_clk_main => clk_aux,
 
         i_areset_n      => reset_n--,
     );

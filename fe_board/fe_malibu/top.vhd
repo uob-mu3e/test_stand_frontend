@@ -24,8 +24,7 @@ port (
 
 
 
-    -- SI5345
-
+    -- Si5345
     si45_oe_n       : out   std_logic; -- <= '0'
     si45_rst_n      : out   std_logic; -- reset
     si45_spi_out    : in    std_logic; -- slave data out
@@ -179,7 +178,7 @@ begin
 
     led_n <= not led;
 
-    -- enable SI5345
+    -- enable Si5345
     si45_oe_n <= '0';
     si45_rst_n <= '1';
 
@@ -225,7 +224,8 @@ begin
     e_fe_block : entity work.fe_block
     generic map (
         FPGA_ID_g => X"FEB0",
-        FEB_type_in => "111000"--, --this is a mutrig type FEB
+        -- mutrig FEB type
+        FEB_type_in => "111000"--,
     )
     port map (
         i_i2c_scl       => i2c_scl,
@@ -263,14 +263,13 @@ begin
         o_sc_reg_we     => sc_reg.we,
         o_sc_reg_wdata  => sc_reg.wdata,
 
+        i_nios_clk_startup => clk_aux,
+        i_nios_clk_main => clk_aux,
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
         o_clk_156_mon   => led(14),
         i_clk_125       => pod_pll_clk,
         o_clk_125_mon   => led(13),
-
-        i_nios_clk_startup => clk_aux,
-        i_nios_clk_main => clk_aux,
 
         i_areset_n      => reset_n--,
     );
