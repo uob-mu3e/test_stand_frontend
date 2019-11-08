@@ -478,6 +478,14 @@ INT resume_run(INT run_number, char *error)
 
 INT read_cr_event(char *pevent, INT off)
 {
+    if(!cb->isConnected()){
+        // terminate!
+        cm_msg(MERROR, "read_cr_event", "Connection to clock board lost");
+        cm_disconnect_experiment();
+        return 0;
+        //return CM_TIMEOUT;
+   }
+
     uint32_t daughters;
     int size = sizeof(daughters);
     db_get_value(hDB, 0, "/Equipment/Clock Reset/Variables/Daughters Present",

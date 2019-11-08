@@ -290,6 +290,9 @@ int ipbus::Status(unsigned int timeout)
 }
 
 error_code ipbus::SendStatusPacket(){
+    if(!connected)
+        return boost::asio::error::not_connected;
+
     error_code err;
     socket.send_to(buffer(statusbuffer), remote_endpoint, 0, err);
     return err;
@@ -299,6 +302,9 @@ error_code ipbus::SendStatusPacket(){
 
 
 error_code ipbus::SendPacket(){
+    if(!connected)
+        return boost::asio::error::not_connected;
+
     error_code err;
     socket.send_to(buffer(sendbuffer), remote_endpoint, 0, err);
     return err;
@@ -306,6 +312,9 @@ error_code ipbus::SendPacket(){
 
 error_code ipbus::CreateAndSendResendRequest(uint16_t packet)
 {
+        if(!connected)
+            return boost::asio::error::not_connected;
+
         uint32_t word = 0;
         word |= 0x2;            // resend packet
         word |= 0xf << 4;       // endians
@@ -321,6 +330,8 @@ error_code ipbus::CreateAndSendResendRequest(uint16_t packet)
 
 int ipbus::ReadFromSocket(vector<uint32_t> & rbuffer)
 {
+    if(!connected)
+        return -1;
     int nbyte =0;
     boost::system::error_code err;
     try{
@@ -332,12 +343,6 @@ int ipbus::ReadFromSocket(vector<uint32_t> & rbuffer)
             if(err == boost::asio::error::try_again){
                 cout << "UDP Timeout" << endl;
                 ntimeouts++;
-                if(ntimeouts > 50){
-                    std::cerr << "Connection to clock boaerd lost, terminating!" << std::endl;
-                    throw boost::system::system_error(boost::asio::error::connection_aborted);
-                    // Deal with this properly
-                }
-                return -2;
             }
          }
         if(err){
@@ -349,6 +354,12 @@ int ipbus::ReadFromSocket(vector<uint32_t> & rbuffer)
     }
     catch(std::exception& e) {
         std::cerr << e.what() << endl;
+    }
+
+    if(ntimeouts > 50){
+        std::cerr << "Connection to clock boaerd lost, terminating!" << std::endl;
+        connected = false;
+        throw boost::system::system_error(boost::asio::error::connection_aborted);
     }
 
 

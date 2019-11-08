@@ -19,6 +19,9 @@ clockboard::clockboard(const char *addr, int port):bus(addr, port)
 
 int clockboard::init_clockboard(uint16_t clkinvert, uint16_t rstinvert, uint16_t clkdisable, uint16_t rstdisable)
 {
+    if(!bus.isConnected())
+        return -1;
+
     init_i2c();
     // Turn on Si chip output  
     bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_CLK_CTRL,BIT_CTRL_CLK_CTRL_SI_OE) ;
@@ -64,6 +67,7 @@ int clockboard::map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num)
 
 int clockboard::write_command(uint8_t command, uint32_t payload, bool has_payload)
 {
+
     vector<uint32_t> senddata;
     senddata.push_back(reverse_bytes(0xbcbcbc00 + command));
     if(has_payload)
@@ -81,6 +85,7 @@ int clockboard::write_command(uint8_t command, uint32_t payload, bool has_payloa
 
 int clockboard::write_command(char *name, uint32_t payload, uint16_t address)
 {
+
     auto it = reset_protocol.commands.find(name);
     if(it != reset_protocol.commands.end()){
         if(address==0){
@@ -109,8 +114,6 @@ int clockboard::write_command(char *name, uint32_t payload, uint16_t address)
 
 int clockboard::init_i2c()
 {
-    if(!isConnected())
-        return -1;
 
     bus.write(ADDR_I2C_PS_LO,0x35);  // Clock prescale low byte
     //cout << hex << bus.read(ADDR_I2C_PS_LO) << endl;
@@ -143,7 +146,6 @@ int clockboard::read_i2c(uint8_t dev_addr, uint8_t & data)
 
 int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data)
 {
-
     if(!setSlave(dev_addr, false)){
         return 0;
     }
@@ -173,6 +175,7 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data)
 
 int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[])
 {
+
     if(!setSlave(dev_addr, false)){
         return 0;
     }
@@ -211,6 +214,7 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_nu
 
 int clockboard::write_i2c(uint8_t dev_addr, uint8_t data)
 {
+
     if(!setSlave(dev_addr,false)){
         return 0;
      }
@@ -325,6 +329,7 @@ uint16_t clockboard::read_disabled_tx_clk_channels()
 
 int clockboard::disable_tx_clk_channels(uint16_t channels)
 {
+
     bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
     write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_HI_ADDR, (uint8_t)((channels>>8)&0x0f));
     write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_DISABLE_LO_ADDR, (uint8_t)(channels&0xff));
@@ -333,7 +338,7 @@ int clockboard::disable_tx_clk_channels(uint16_t channels)
 }
 
 uint16_t clockboard::read_inverted_tx_clk_channels()
-{
+{    
     bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
     uint8_t data;
     uint16_t data_holder;
@@ -347,7 +352,7 @@ uint16_t clockboard::read_inverted_tx_clk_channels()
 }
 
 int clockboard::invert_tx_clk_channels(uint16_t channels)
-{
+{   
     bus.readModifyWriteBits(ADDR_CTRL_REG,~MASK_CTRL_FIREFLY_CTRL, BIT_FIREFLY_CLOCK_SEL);
     write_i2c_reg(FIREFLY_TX_ADDR, FIREFLY_INVERT_HI_ADDR, (uint8_t)((channels>>8)&0x0f));
     uint8_t dat;
