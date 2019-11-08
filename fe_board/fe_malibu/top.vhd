@@ -194,23 +194,6 @@ begin
 
 
 
-    -- 125 MHz -> 1 Hz
-    e_clk_aux_hz : entity work.clkdiv
-    generic map ( P => 125000000 )
-    port map ( clkout => led(15), rst_n => reset_n, clk => clk_aux );
-
-    -- 156.25 MHz -> 1 Hz
-    e_clk_qsfp_hz : entity work.clkdiv
-    generic map ( P => 156250000 )
-    port map ( clkout => led(14), rst_n => reset_n, clk => qsfp_pll_clk );
-
-    -- 125 MHz -> 1 Hz
-    e_clk_pod_hz : entity work.clkdiv
-    generic map ( P => 125000000 )
-    port map ( clkout => led(13), rst_n => reset_n, clk => pod_pll_clk );
-
-
-
     ----------------------------------------------------------------------------
     -- I2C
 
@@ -280,8 +263,11 @@ begin
         o_sc_reg_we     => sc_reg.we,
         o_sc_reg_wdata  => sc_reg.wdata,
 
+        o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
+        o_clk_156_mon   => led(14),
         i_clk_125       => pod_pll_clk,
+        o_clk_125_mon   => led(13),
 
         i_nios_clk_startup => clk_aux,
         i_nios_clk_main => clk_aux,

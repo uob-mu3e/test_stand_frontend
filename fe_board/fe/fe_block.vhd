@@ -62,15 +62,17 @@ port (
 
 
 
+    o_nios_clk_mon  : out   std_logic;
     -- qsfp clock - 156.25 MHz
     i_clk_156       : in    std_logic;
+    o_clk_156_mon   : out   std_logic;
     -- pod clock - 125 MHz
     i_clk_125       : in    std_logic;
+    o_clk_125_mon   : out   std_logic;
 
     -- nios clock - 125 MHz
     i_nios_clk_startup : in    std_logic;
     i_nios_clk_main : in    std_logic;     --unused
-    o_nios_clk_monitor : out std_logic;
     o_nios_clk_selected : out std_logic;   --unused
 
     --reset system
@@ -158,6 +160,25 @@ begin
 
 
 
+    -- generate 1 Hz clock monitor clocks
+
+    -- 125 MHz -> 1 Hz
+    e_nios_clk_hz : entity work.clkdiv
+    generic map ( P => 125000000 )
+    port map ( clkout => o_nios_clk_mon, rst_n => nios_reset_n, clk => s_nios_clk );
+
+    -- 156.25 MHz -> 1 Hz
+    e_clk_156_hz : entity work.clkdiv
+    generic map ( P => 156250000 )
+    port map ( clkout => o_clk_156_mon, rst_n => reset_156_n, clk => i_clk_156 );
+
+    -- 125 MHz -> 1 Hz
+    e_clk_125_hz : entity work.clkdiv
+    generic map ( P => 125000000 )
+    port map ( clkout => o_clk_125_mon, rst_n => reset_125_n, clk => i_clk_125 );
+
+
+
     -- local regs : 0xF0-0xFF
     fe_reg.addr <= sc_reg.addr;
     fe_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
@@ -221,7 +242,6 @@ begin
     --     );
     --o_nios_clk_selected <= nios_pio(31);
     s_nios_clk <= i_nios_clk_startup;
-    o_nios_clk_monitor <= s_nios_clk;
 
     -- nios system
     nios_irq(0) <= '1' when ( reg_cmdlen(31 downto 16) /= (31 downto 16 => '0') ) else '0';
