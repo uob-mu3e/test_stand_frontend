@@ -62,15 +62,13 @@ port (
 
 
 
-    i_reset_n       : in    std_logic;
-    -- 156.25 MHz
-    i_clk           : in    std_logic;
-
     -- qsfp clock - 156.25 MHz
-    i_qsfp_refclk   : in    std_logic;
+    i_reset_156_n   : in    std_logic;
+    i_clk_156       : in    std_logic;
 
     -- pod clock - 125 MHz
-    i_pod_refclk    : in    std_logic;
+    i_reset_125_n   : in    std_logic;
+    i_clk_125       : in    std_logic;
 
     -- nios clock - 125 MHz
     i_nios_clk_startup : in    std_logic;
@@ -166,9 +164,9 @@ begin
         fe_reg.rdata when ( fe_reg.rvalid = '1' ) else
         i_sc_reg_rdata;
 
-    process(i_clk)
+    process(i_clk_156)
     begin
-    if rising_edge(i_clk) then
+    if rising_edge(i_clk_156) then
         fe_reg.rdata <= X"CCCCCCCC";
         fe_reg.rvalid <= fe_reg.re;
 
@@ -222,8 +220,11 @@ begin
 
     e_nios : component work.cmp.nios
     port map (
-        avm_clk_clk         => i_clk,
-        avm_reset_reset_n   => i_reset_n,
+        clk_156_reset_reset_n   => i_reset_156_n,
+        clk_156_clock_clk       => i_clk_156,
+
+        clk_125_reset_reset_n   => i_reset_125_n,
+        clk_125_clock_clk       => i_clk_125,
 
         -- mscb
         parallel_mscb_in_export     => mscb_to_nios_parallel_in,
@@ -305,8 +306,8 @@ begin
         o_reg_we            => sc_reg.we,
         o_reg_wdata         => sc_reg.wdata,
 
-        i_reset_n           => i_reset_n,
-        i_clk               => i_clk--;
+        i_reset_n           => i_reset_156_n,
+        i_clk               => i_clk_156--;
     );
 
     e_sc_rx : entity work.sc_rx
@@ -325,8 +326,8 @@ begin
         o_ram_we        => sc_ram.we,
         o_ram_wdata     => sc_ram.wdata,
 
-        i_reset_n       => i_reset_n,
-        i_clk           => i_clk--,
+        i_reset_n       => i_reset_156_n,
+        i_clk           => i_clk_156--,
     );
 
 
@@ -358,8 +359,8 @@ begin
 
         leds                    => open,
 
-        reset                   => not i_reset_n,
-        clk                     => i_clk--,
+        reset                   => not i_reset_156_n,
+        clk                     => i_clk_156--,
     );
 
 
@@ -375,22 +376,22 @@ begin
         i_en            => run_state_156,
         o_lsfr          => qsfp_tx_data(63 downto 32),
         o_datak         => qsfp_tx_datak(7 downto 4),
-        reset_n         => i_reset_n,
-        i_clk           => i_clk--,
+        reset_n         => i_reset_156_n,
+        i_clk           => i_clk_156--,
     );
 
 
 
     e_reset_system : entity work.resetsys
     port map (
-        clk_reset_rx_125=> i_pod_refclk,
-        clk_global_125  => s_nios_clk,
-        clk_156         => i_clk,
-        clk_free        => i_clk,
+        clk_reset_rx_125=> i_clk_125,
+        clk_global_125  => i_clk_125,
+        clk_156         => i_clk_156,
+        clk_free        => s_nios_clk,
         state_out_156   => run_state_156,
         state_out_125   => run_state_125,
-        reset_in_125    => not s_nios_reset_n,
-        reset_in_156    => not i_reset_n,
+        reset_in_125    => not i_reset_125_n,
+        reset_in_156    => not i_reset_156_n,
         resets_out      => open,
         phase_out       => open,
         data_in         => pod_rx_data(7 downto 0),
@@ -427,7 +428,7 @@ begin
         CHANNEL_WIDTH_g => 32,
         INPUT_CLOCK_FREQUENCY_g => 156250000,
         DATA_RATE_g => 6250,
-        CLK_HZ_g => 125000000--,
+        CLK_HZ_g => 156250000--,
     )
     port map (
         i_tx_data   => qsfp_tx_data,
@@ -437,15 +438,15 @@ begin
         o_rx_datak  => qsfp_rx_datak,
 
         o_tx_clkout => open,
-        i_tx_clkin  => (others => i_qsfp_refclk),
+        i_tx_clkin  => (others => i_clk_156),
         o_rx_clkout => open,
-        i_rx_clkin  => (others => i_qsfp_refclk),
+        i_rx_clkin  => (others => i_clk_156),
 
         o_tx_serial => o_qsfp_tx,
         i_rx_serial => i_qsfp_rx,
 
-        i_pll_clk   => i_qsfp_refclk,
-        i_cdr_clk   => i_qsfp_refclk,
+        i_pll_clk   => i_clk_156,
+        i_cdr_clk   => i_clk_156,
 
         i_avs_address       => av_qsfp.address(13 downto 0),
         i_avs_read          => av_qsfp.read,
@@ -454,8 +455,8 @@ begin
         i_avs_writedata     => av_qsfp.writedata,
         o_avs_waitrequest   => av_qsfp.waitrequest,
 
-        i_reset => not s_nios_reset_n,
-        i_clk   => s_nios_clk--,
+        i_reset => not i_reset_156_n,
+        i_clk   => i_clk_156--,
     );
 
 
@@ -476,15 +477,15 @@ begin
         o_rx_datak  => pod_rx_datak,
 
         o_tx_clkout => open,
-        i_tx_clkin  => (others => i_pod_refclk),
+        i_tx_clkin  => (others => i_clk_125),
         o_rx_clkout => open,
-        i_rx_clkin  => (others => i_pod_refclk),
+        i_rx_clkin  => (others => i_clk_125),
 
         o_tx_serial => o_pod_tx,
         i_rx_serial => i_pod_rx,
 
-        i_pll_clk   => i_pod_refclk,
-        i_cdr_clk   => i_pod_refclk,
+        i_pll_clk   => i_clk_125,
+        i_cdr_clk   => i_clk_125,
 
         i_avs_address       => av_pod.address(13 downto 0),
         i_avs_read          => av_pod.read,
@@ -493,8 +494,8 @@ begin
         i_avs_writedata     => av_pod.writedata,
         o_avs_waitrequest   => av_pod.waitrequest,
 
-        i_reset => not s_nios_reset_n,
-        i_clk   => s_nios_clk--,
+        i_reset => not i_reset_125_n,
+        i_clk   => i_clk_125--,
     );
 
 end architecture;

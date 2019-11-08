@@ -437,7 +437,6 @@ begin
 
         i_qsfp_rx       => qsfp_rx,
         o_qsfp_tx       => qsfp_tx,
-        i_qsfp_refclk   => qsfp_pll_clk,
 
         i_fifo_rempty   => fifo_rempty,
         o_fifo_rack     => fifo_rack,
@@ -445,7 +444,6 @@ begin
 
         i_pod_rx        => pod_rx,
         o_pod_tx        => pod_tx,
-        i_pod_refclk    => pod_pll_clk,
 
         o_sc_reg_addr   => sc_reg.addr(7 downto 0),
         o_sc_reg_re     => sc_reg.re,
@@ -453,10 +451,17 @@ begin
         o_sc_reg_we     => sc_reg.we,
         o_sc_reg_wdata  => sc_reg.wdata,
 
-        i_reset_n       => qsfp_reset_n,
-        i_clk           => qsfp_pll_clk,
+
 
         o_run_state_125	=> run_state_125
+
+
+
+        i_reset_156_n   => qsfp_reset_n,
+        i_clk_156       => qsfp_pll_clk,
+
+        i_reset_125_n   => pod_reset_n,
+        i_clk_125       => pod_pll_clk--,
     );
 
 end architecture;

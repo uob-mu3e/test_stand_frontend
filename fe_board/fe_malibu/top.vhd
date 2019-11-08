@@ -293,17 +293,15 @@ begin
         o_sc_reg_we     => sc_reg.we,
         o_sc_reg_wdata  => sc_reg.wdata,
 
-        i_clk           => qsfp_pll_clk,
-        i_reset_n       => qsfp_reset_n,
+        i_reset_156_n   => qsfp_reset_n,
+        i_clk_156       => qsfp_pll_clk,
 
-        i_qsfp_refclk   => qsfp_pll_clk,
-
-        i_pod_refclk    => pod_pll_clk,
+        i_reset_125_n   => pod_reset_n,
+        i_clk_125       => pod_pll_clk,
 
         i_nios_clk_startup => clk_aux,
         i_nios_clk_main => clk_aux,
         i_nios_areset_n => reset_n--,
-
     );
 
 end architecture;
