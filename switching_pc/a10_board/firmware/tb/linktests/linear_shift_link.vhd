@@ -42,7 +42,7 @@ begin
 		elsif rising_edge(i_clk) then 
 			if (i_sync_reset = '1') then
 				r_lfsr	<= i_seed;
-			elsif (i_en = '1') then
+			elsif ( i_en = '1' ) then
 				r_lfsr	<= '0' & r_lfsr(g_m downto 2) xor w_mask;
 				o_datak <= "0000";
 			else
