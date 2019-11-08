@@ -57,6 +57,7 @@ component mutrig_datapath is
 	i_SC_datagen_shortmode	: in std_logic;
 	i_SC_datagen_count	: in std_logic_vector(9 downto 0);
 	i_SC_rx_wait_for_all	: in std_logic;
+	i_SC_rx_wait_for_all_sticky	: in std_logic;
 	--monitors
 	o_receivers_usrclk	: out std_logic;              		-- pll output clock
 	o_receivers_pll_lock	: out std_logic;			-- pll lock flag
@@ -147,7 +148,8 @@ dut: mutrig_datapath
 		i_SC_datagen_enable	=> '1',
 		i_SC_datagen_shortmode	=> '0',
 		i_SC_datagen_count	=> (3=>'1',others=>'0'),
-		i_SC_rx_wait_for_all	=> '1'
+		i_SC_rx_wait_for_all	=> '1',
+		i_SC_rx_wait_for_all_sticky => '1'
 	);
 
 ---------------------------------------------------------------

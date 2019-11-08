@@ -74,8 +74,8 @@ port (
 
     -- clock inputs
     -- SI45
-    clk_125_top     : in    std_logic;  -- 125 MHz (clk_125_top in schematic)       // SI5345 OUT8
-    clk_125_bottom  : in    std_logic;  -- 125 MHz (clk_125_bottom in schematic)    // SI5345 OUT7
+    clk_125_top     : in    std_logic;  -- 125 MHz (clk_125_top in schematic)       // SI5345 OUT8   --USED AS GLOBAL 125M CLOCK
+    clk_125_bottom  : in    std_logic;  -- 125 MHz (clk_125_bottom in schematic)    // SI5345 OUT7   --UNUSED
 
     lvds_clk_A      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right  // SI5345 OUT3
     lvds_clk_B      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left   // SI5345 OUT6
@@ -186,8 +186,11 @@ begin
 
         i_reset         => not reset_n,
         i_clk_core      => qsfp_pll_clk,
+        i_clk_g125      => clk_125_top,
         i_clk_ref_A     => lvds_clk_A,
         i_clk_ref_B     => lvds_clk_B,
+
+        i_run_state     => run_state_125,
 
         o_MON_rxrdy     => s_MON_rxrdy
     );

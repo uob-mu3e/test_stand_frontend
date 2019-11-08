@@ -112,9 +112,9 @@ begin
 			s_valid_1<='0';
 			o_valid<='0';
 		else
-			s_valid_2<= i_valid and (not s_init or i_SC_disable_dec);
+			s_valid_2<= i_valid;
 			s_valid_1<= s_valid_2;
-			o_valid<=s_valid_1 and not s_init;
+			o_valid<=s_valid_1 and ((not s_init) or i_SC_disable_dec);
 			s_data_bypass_2 <= i_data;
 			s_data_bypass_1 <= s_data_bypass_2;
 			s_data_bypass <= s_data_bypass_1;
