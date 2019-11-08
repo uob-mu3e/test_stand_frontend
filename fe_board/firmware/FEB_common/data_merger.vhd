@@ -24,24 +24,25 @@ ENTITY data_merger is
 	PORT(
 		clk:                    in  std_logic; -- 156.25 clk input
 		reset:                  in  std_logic; 
-		fpga_ID_in:					in  std_logic_vector(15 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now 
-		FEB_type_in:				in  std_logic_vector(5  downto 0); -- Type of the frontendboard (111010: mupix, 111000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
-		run_state:					in  run_state_t;
+		fpga_ID_in:             in  std_logic_vector(15 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now 
+		FEB_type_in:            in  std_logic_vector(5  downto 0); -- Type of the frontendboard (111010: mupix, 111000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
+		run_state:              in  run_state_t;
+		run_number:             in  std_logic_vector(31 downto 0);
 		data_out:               out std_logic_vector(31 downto 0); -- to optical transm.
 		data_is_k:              out std_logic_vector(3 downto 0);  -- to optical trasm.
-		data_in:						in  std_logic_vector(35 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
+		data_in:                in  std_logic_vector(35 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
 		data_in_slowcontrol:    in  std_logic_vector(35 downto 0); -- data input slowcontrol from SCFIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 SCData))
 		slowcontrol_fifo_empty: in  std_logic;
-		data_fifo_empty:			in  std_logic;
+		data_fifo_empty:        in  std_logic;
 		slowcontrol_read_req:   out std_logic;
 		data_read_req:          out std_logic;
 		terminated:             out std_logic; -- to state controller (when stop run acknowledge was transmitted the state controller can go from terminating into idle, this is the signal to tell him that)
-		override_data_in:			in  std_logic_vector(31 downto 0); -- data input for states link_test and sync_test;
+		override_data_in:       in  std_logic_vector(31 downto 0); -- data input for states link_test and sync_test;
 		override_data_is_k_in:  in  std_logic_vector(3 downto 0);
-		override_req:				in	 std_logic;
-		override_granted:			out std_logic;
-		data_priority:				in  std_logic; -- 0: slowcontrol packets have priority, 1: data packets have priority
-		leds:							out std_logic_vector(3 downto 0) -- debug
+		override_req:           in  std_logic;
+		override_granted:       out std_logic;
+		data_priority:          in  std_logic; -- 0: slowcontrol packets have priority, 1: data packets have priority
+		leds:                   out std_logic_vector(3 downto 0) -- debug
    );
 END ENTITY data_merger;
 
@@ -236,7 +237,7 @@ end process;
 					when idle =>
 						if(run_prep_acknowledge_send = '0') then	-- send run_prep_acknowledge
 							run_prep_acknowledge_send <='1';
-							data_out 					<= run_prep_acknowledge;
+							data_out 					<= run_number(23 downto 0) & run_prep_acknowledge(7 downto 0);
 							data_is_k					<= run_prep_acknowledge_datak;
 						elsif (slowcontrol_fifo_empty = '1') then -- no Slowcontrol --> do nothing
 							slowcontrol_read_req 	<= '0';
