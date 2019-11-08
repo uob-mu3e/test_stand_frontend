@@ -102,9 +102,6 @@ architecture arch of top is
 
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
-    signal nios_clk, nios_reset_n : std_logic;
-    signal qsfp_reset_n, pod_reset_n : std_logic;
-
     -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
     signal ZERO : std_logic := '0';
     attribute keep : boolean;
@@ -214,16 +211,6 @@ begin
 
 
 
-    nios_clk <= clk_aux;
-
-    e_qsfp_reset_n : entity work.reset_sync
-    port map ( rstout_n => qsfp_reset_n, arst_n => reset_n, clk => qsfp_pll_clk );
-
-    e_pod_reset_n : entity work.reset_sync
-    port map ( rstout_n => pod_reset_n, arst_n => reset_n, clk => pod_pll_clk );
-
-
-
     ----------------------------------------------------------------------------
     -- I2C
 
@@ -293,15 +280,13 @@ begin
         o_sc_reg_we     => sc_reg.we,
         o_sc_reg_wdata  => sc_reg.wdata,
 
-        i_reset_156_n   => qsfp_reset_n,
         i_clk_156       => qsfp_pll_clk,
-
-        i_reset_125_n   => pod_reset_n,
         i_clk_125       => pod_pll_clk,
 
         i_nios_clk_startup => clk_aux,
         i_nios_clk_main => clk_aux,
-        i_nios_areset_n => reset_n--,
+
+        i_areset_n      => reset_n--,
     );
 
 end architecture;
