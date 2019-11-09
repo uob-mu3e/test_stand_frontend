@@ -1,0 +1,7 @@
+#
+
+# vivado
+.Xil/
+*.str
+
+.cache/
