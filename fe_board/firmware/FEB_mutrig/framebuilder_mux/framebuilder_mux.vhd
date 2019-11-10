@@ -120,7 +120,7 @@ end process;
 
 --source data inspection: all trailer,all header,hit requests.
 ---> define signals l_all_header, l_all_trailer, l_request, common data (l_common_data, l_any_crc_err, l_any_asic_*) 
-gen_combinatorics: process(i_source_data, s_is_valid,i_SC_mask)
+gen_combinatorics : process(i_source_data, s_is_valid, i_SC_mask, i_SC_nomerge)
 begin
 	l_all_header <='1';
 	l_all_trailer<='1';
@@ -217,7 +217,7 @@ end process;
 
 
 ------------------------------------------------------------------
-p_fsm_async: process(s_state,l_all_header,l_all_trailer,l_request,s_sel_data, s_sel_gnt)
+p_fsm_async : process(s_state, l_all_header, l_all_trailer, l_request, s_sel_data, s_sel_gnt, i_SC_nomerge, i_source_data)
 begin
 	n_state <= s_state;
 	n_sel_gnt <= s_sel_gnt;
