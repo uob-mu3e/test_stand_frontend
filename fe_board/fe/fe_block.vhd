@@ -54,11 +54,21 @@ port (
     o_mscb_oe       : out   std_logic;
 
     -- slow control registers
-    o_sc_reg_addr   : out   std_logic_vector(7 downto 0);
-    o_sc_reg_re     : out   std_logic;
-    i_sc_reg_rdata  : in    std_logic_vector(31 downto 0);
-    o_sc_reg_we     : out   std_logic;
-    o_sc_reg_wdata  : out   std_logic_vector(31 downto 0);
+    o_malibu_reg_addr   : out   std_logic_vector(7 downto 0);
+    o_malibu_reg_re     : out   std_logic;
+    i_malibu_reg_rdata  : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
+    o_malibu_reg_we     : out   std_logic;
+    o_malibu_reg_wdata  : out   std_logic_vector(31 downto 0);
+    o_scifi_reg_addr    : out   std_logic_vector(7 downto 0);
+    o_scifi_reg_re      : out   std_logic;
+    i_scifi_reg_rdata   : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
+    o_scifi_reg_we      : out   std_logic;
+    o_scifi_reg_wdata   : out   std_logic_vector(31 downto 0);
+    o_mupix_reg_addr    : out   std_logic_vector(7 downto 0);
+    o_mupix_reg_re      : out   std_logic;
+    i_mupix_reg_rdata   : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
+    o_mupix_reg_we      : out   std_logic;
+    o_mupix_reg_wdata   : out   std_logic_vector(31 downto 0);
 
 
 
@@ -100,6 +110,7 @@ architecture arch of fe_block is
 
     signal sc_ram, sc_reg : work.util.rw_t;
     signal fe_reg : work.util.rw_t;
+    signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
     signal reg_cmdlen : std_logic_vector(31 downto 0);
     signal reg_offset : std_logic_vector(31 downto 0);
@@ -182,27 +193,50 @@ begin
 
 
 
+    -- map slow control address space
+
+    -- malibu regs : 0x40-0x5F
+    o_malibu_reg_addr <= sc_reg.addr(7 downto 0);
+    o_malibu_reg_re <= malibu_reg.re;
+      malibu_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 5) = "010" ) else '0';
+    o_malibu_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 5) = "010" ) else '0';
+    o_malibu_reg_wdata <= sc_reg.wdata;
+
+    -- scifi regs : 0x60-0x7F
+    o_scifi_reg_addr <= sc_reg.addr(7 downto 0);
+    o_scifi_reg_re <= scifi_reg.re;
+      scifi_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 5) = "011" ) else '0';
+    o_scifi_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 5) = "011" ) else '0';
+    o_scifi_reg_wdata <= sc_reg.wdata;
+
+    -- mupix regs : 0x80-0x9F
+    o_mupix_reg_addr <= sc_reg.addr(7 downto 0);
+    o_mupix_reg_re <= mupix_reg.re;
+      mupix_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 5) = "100" ) else '0';
+    o_mupix_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 5) = "100" ) else '0';
+    o_mupix_reg_wdata <= sc_reg.wdata;
+
     -- local regs : 0xF0-0xFF
     fe_reg.addr <= sc_reg.addr;
     fe_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
     fe_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
     fe_reg.wdata <= sc_reg.wdata;
 
-    -- external regs : 0x00-0xEF
-    o_sc_reg_addr <= sc_reg.addr(7 downto 0);
-    o_sc_reg_re <= sc_reg.re when ( sc_reg.addr(7 downto 4) /= X"F" ) else '0';
-    o_sc_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 4) /= X"F" ) else '0';
-    o_sc_reg_wdata <= sc_reg.wdata;
-
-    -- use fe_reg.rdata if prev cycle was fe_reg read
+    -- select valid rdata
     sc_reg.rdata <=
+        i_malibu_reg_rdata when ( malibu_reg.rvalid = '1' ) else
+        i_scifi_reg_rdata when ( scifi_reg.rvalid = '1' ) else
+        i_mupix_reg_rdata when ( mupix_reg.rvalid = '1' ) else
         fe_reg.rdata when ( fe_reg.rvalid = '1' ) else
-        i_sc_reg_rdata;
+        X"CCCCCCCC";
 
     process(i_clk_156)
     begin
     if rising_edge(i_clk_156) then
         fe_reg.rdata <= X"CCCCCCCC";
+        malibu_reg.rvalid <= malibu_reg.re;
+        scifi_reg.rvalid <= scifi_reg.re;
+        mupix_reg.rvalid <= mupix_reg.re;
         fe_reg.rvalid <= fe_reg.re;
 
         -- cmdlen

@@ -106,9 +106,7 @@ architecture arch of top is
     signal fifo_rack : std_logic;
     signal fifo_rdata : std_logic_vector(35 downto 0);
 
-    signal sc_reg : work.util.rw_t;
-    signal malibu_reg : work.util.rw_t;
-    signal scifi_reg : work.util.rw_t;
+    signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
@@ -122,36 +120,6 @@ architecture arch of top is
     signal spi_ss_n : std_logic_vector(15 downto 0);
 
 begin
-
-    -- malibu regs : 0x40-0x4F
-    malibu_reg.addr <= sc_reg.addr;
-    malibu_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
-    malibu_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
-    malibu_reg.wdata <= sc_reg.wdata;
-
-    -- scifi regs : 0x60-0x6F
-    scifi_reg.addr <= sc_reg.addr;
-    scifi_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
-    scifi_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
-    scifi_reg.wdata <= sc_reg.wdata;
-
-    -- select valid rdata
-    sc_reg.rdata <=
-        malibu_reg.rdata when ( malibu_reg.rvalid = '1' ) else
-        scifi_reg.rdata when ( scifi_reg.rvalid = '1' ) else
-        X"CCCCCCCC";
-
-    process(qsfp_pll_clk)
-    begin
-    if rising_edge(qsfp_pll_clk) then
---        malibu_reg.rdata <= X"CCCCCCCC";
-        malibu_reg.rvalid <= malibu_reg.re;
-        scifi_reg.rdata <= X"CCCCCCCC";
-        scifi_reg.rvalid <= scifi_reg.re;
-    end if;
-    end process;
-
-
 
     ----------------------------------------------------------------------------
     -- MALIBU
@@ -272,11 +240,11 @@ begin
         o_mscb_data     => mscb_data_out,
         o_mscb_oe       => mscb_oe,
 
-        o_sc_reg_addr   => sc_reg.addr(7 downto 0),
-        o_sc_reg_re     => sc_reg.re,
-        i_sc_reg_rdata  => sc_reg.rdata,
-        o_sc_reg_we     => sc_reg.we,
-        o_sc_reg_wdata  => sc_reg.wdata,
+        o_malibu_reg_addr   => malibu_reg.addr(7 downto 0),
+        o_malibu_reg_re     => malibu_reg.re,
+        i_malibu_reg_rdata  => malibu_reg.rdata,
+        o_malibu_reg_we     => malibu_reg.we,
+        o_malibu_reg_wdata  => malibu_reg.wdata,
 
         i_nios_clk_startup => clk_aux,
         i_nios_clk_main => clk_aux,
