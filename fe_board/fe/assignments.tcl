@@ -26,6 +26,14 @@ set_instance_assignment -name IO_STANDARD LVDS -to clk_aux
 
 
 
+# Si5342 clocks
+set_instance_assignment -name IO_STANDARD LVDS -to si42_clk_40
+set_location_assignment PIN_AN15 -to si42_clk_40
+set_instance_assignment -name IO_STANDARD LVDS -to si42_clk_80
+set_location_assignment PIN_B15 -to si42_clk_80
+
+
+
 # QSFP pins
 set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to qsfp_tx[3]
 set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to qsfp_tx[2]
