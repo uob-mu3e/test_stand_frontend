@@ -31,15 +31,7 @@ architecture rtl of resetsys is
 
     -- states in sync with clk_reset_rx:
     -- (single std_logic for each state connected to state phase box,  phase box output is of type feb_run_state)
-    signal ustate_idle_rx           : std_logic;
-    signal ustate_run_prepare_rx    : std_logic;
-    signal ustate_sync_rx           : std_logic;
-    signal ustate_running_rx        : std_logic;
-    signal ustate_terminating_rx    : std_logic;
-    signal ustate_link_test_rx      : std_logic;
-    signal ustate_sync_test_rx      : std_logic;
-    signal ustate_reset_rx          : std_logic;
-    signal ustate_out_of_DAQ_rx     : std_logic;
+    signal state_rx : run_state_t;
 
     -- terminated signal in sync to 125 clk of state controller
     signal terminated_125           : std_logic;
@@ -73,47 +65,33 @@ BEGIN
 
     i_state_controller : entity work.state_controller
     PORT MAP (
-        clk                     => clk_reset_rx_125,
-        reset                   => reset_in_125,
         reset_link_8bData       => state_controller_in,
-        state_idle              => ustate_idle_rx,
-        state_run_prepare       => ustate_run_prepare_rx,
-        state_sync              => ustate_sync_rx,
-        state_running           => ustate_running_rx,
-        state_terminating       => ustate_terminating_rx,
-        state_link_test         => ustate_link_test_rx,
-        state_sync_test         => ustate_sync_test_rx,
-        state_reset             => ustate_reset_rx,
-        state_out_of_DAQ        => ustate_out_of_DAQ_rx,
         fpga_addr               => fpga_id,
         runnumber               => run_number_out,
         reset_mask              => resets_out,
         link_test_payload       => open,
         sync_test_payload       => open,
-        terminated              => terminated_125
+        terminated              => terminated_125,
+
+        o_state                 => state_rx,
+
+        i_reset_n               => not reset_in_125,
+        i_clk                   => clk_reset_rx_125--,
     );
 
     i_state_phase_box : entity work.state_phase_box
     PORT MAP (
-        clk_global              => clk_global_125,
-        clk_rx_reset            => clk_reset_rx_125,
-        clk_free                => clk_free,
-        reset                   => reset_in_125,
-        phase                   => phase_out,
-        -- states in sync to clk_rx_reset:
-        state_idle_rx           => ustate_idle_rx,
-        state_run_prepare_rx    => ustate_run_prepare_rx,
-        state_sync_rx           => ustate_sync_rx,
-        state_running_rx        => ustate_running_rx,
-        state_terminating_rx    => ustate_terminating_rx,
-        state_link_test_rx      => ustate_link_test_rx,
-        state_sync_test_rx      => ustate_sync_test_rx,
-        state_reset_rx          => ustate_reset_rx,
-        state_out_of_DAQ_rx     => ustate_out_of_DAQ_rx,
-        -- state in sync to clk_global:
-        state_sync_global       => state_out_125
-    );
+        i_state_125_rx      => state_rx,
+        i_clk_125_rx        => clk_reset_rx_125,
 
+        o_state_125         => state_out_125,
+        i_reset_125_n       => not reset_in_125,
+        i_clk_125           => clk_global_125,
+
+        phase               => phase_out,
+        i_reset_n           => not reset_in_125,
+        i_clk               => clk_free--,
+    );
 
     e_fifo_sync : entity work.fifo_sync
     generic map (
@@ -122,17 +100,9 @@ BEGIN
     port map (
         o_rdata     => state_out_156,
         i_rclk      => clk_156,
-        i_reset_val => "0000000001",
-        i_wdata     => '0' &
-                       ustate_out_of_DAQ_rx &
-                       ustate_reset_rx &
-                       ustate_sync_test_rx &
-                       ustate_link_test_rx &
-                       ustate_terminating_rx &
-                       ustate_running_rx &
-                       ustate_sync_rx &
-                       ustate_run_prepare_rx &
-                       ustate_idle_rx,
+        i_reset_val => RUN_STATE_IDLE,
+
+        i_wdata     => state_rx,
         i_wclk      => clk_reset_rx_125,
 
         i_fifo_aclr => reset_in_156--,
@@ -150,12 +120,6 @@ BEGIN
         i_fifo_aclr => reset_in_125--,
     );
 
-
-    testout(0) <= ustate_idle_rx;
-    testout(1) <= ustate_run_prepare_rx;
-    testout(2) <= ustate_sync_rx;
-    testout(3) <= ustate_running_rx;
-    testout(4) <= ustate_terminating_rx;
-    testout(5) <= ustate_reset_rx;
+    testout <= state_rx(testout'range);
 
 end architecture;
