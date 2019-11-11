@@ -32,7 +32,7 @@ proc ip_config_diff {
         set val_1 [ get_property $property $ip_1 ]
         if { [ string equal $val $val_1 ] } continue
 
-        puts "    $property \{$val\} \\"
+        puts "    \{$property\} \{$val\} \\"
     }
     puts "\] \[ get_ips \$module_name \]"
 }
