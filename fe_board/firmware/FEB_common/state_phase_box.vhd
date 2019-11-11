@@ -1,5 +1,5 @@
--- sync FEB state from reset rx clk to global clock & measure phase between them 
--- Martin Mueller, March 2019 
+-- sync FEB state from reset rx clk to global clock & measure phase between them
+-- Martin Mueller, March 2019
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -49,21 +49,21 @@ begin
                 counter             <= (others => '0');
                 phase               <= std_logic_vector(phase_counter);
                 phase_counter       <= (others => '0');
-                
+
             -- metastable result :
             elsif ( i_clk_125_rx /= i_clk_125 ) then
                 single_result       <= '1';
             else
                 single_result       <= '0';
             end if;
-            
+
             -- count phase with stable result :
             if (single_result_stable = '1') then
                 phase_counter <= phase_counter + 1;
             end if;
         end if;
     end process;
-    
+
     -- sync metastable result
     i_ff_sync : entity work.ff_sync
     generic map ( W => 1, N => 5 )

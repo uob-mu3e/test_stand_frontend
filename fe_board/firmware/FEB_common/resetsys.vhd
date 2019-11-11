@@ -18,12 +18,12 @@ PORT (
     i_reset_156_n       : in    std_logic;
     i_clk_156           : in    std_logic;
 
-    resets_out       : out   std_logic_vector(15 downto 0); -- 16 bit reset mask, use this together with feb state .. example: nios_reset => (run_state=reset and resets(x)='1')  
-    reset_bypass     : in    std_logic_vector(11 downto 0); -- bypass of reset link using nios & jtag (for setups without the genesis board) 
-    run_number_out   : out   std_logic_vector(31 downto 0); -- run number from midas, updated on state run_prep
-    fpga_id          : in    std_logic_vector(15 downto 0); -- input of fpga id, needed for addressed reset commands in setups with >1 FEBs
-    terminated       : in    std_logic; -- changes run state from terminating to idle if set to 1  (data merger will set this if run was finished properly, signal will be synced to clk_reset_rx INSIDE this entity)
-    testout          : out   std_logic_vector(5 downto 0);
+    resets_out          : out   std_logic_vector(15 downto 0); -- 16 bit reset mask, use this together with feb state .. example: nios_reset => (run_state=reset and resets(x)='1')
+    reset_bypass        : in    std_logic_vector(11 downto 0); -- bypass of reset link using nios & jtag (for setups without the genesis board)
+    run_number_out      : out   std_logic_vector(31 downto 0); -- run number from midas, updated on state run_prep
+    fpga_id             : in    std_logic_vector(15 downto 0); -- input of fpga id, needed for addressed reset commands in setups with >1 FEBs
+    terminated          : in    std_logic; -- changes run state from terminating to idle if set to 1  (data merger will set this if run was finished properly, signal will be synced to clk_reset_rx INSIDE this entity)
+    testout             : out   std_logic_vector(5 downto 0);
 
     o_phase             : out   std_logic_vector(31 downto 0);
     i_reset_n           : in    std_logic;
@@ -33,15 +33,13 @@ END ENTITY;
 
 architecture rtl of resetsys is
 
-    -- states in sync with clk_reset_rx:
-    -- (single std_logic for each state connected to state phase box,  phase box output is of type feb_run_state)
     signal state_125_rx : run_state_t;
 
-    -- terminated signal in sync to 125 clk of state controller
+    -- terminated signal in sync to clk_125_rx of state controller
     signal terminated_125_rx : std_logic;
 
-    signal state_controller_in      : std_logic_vector(7 downto 0);
-    signal reset_bypass_125_rx      : std_logic_vector(11 downto 0);
+    signal state_controller_in : std_logic_vector(7 downto 0);
+    signal reset_bypass_125_rx : std_logic_vector(11 downto 0);
 
 ----------------begin resetsys------------------------
 BEGIN

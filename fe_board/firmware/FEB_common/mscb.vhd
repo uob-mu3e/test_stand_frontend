@@ -59,7 +59,7 @@ architecture rtl of mscb is
 
     signal Transmitting  :              std_logic; -- uart data is being send
     signal dummy :                      std_logic;
-    
+
     signal addressing_data_in :         std_logic_vector(8 downto 0);
     signal addressing_data_out :        std_logic_vector(8 downto 0);
     signal addressing_wrreq :           std_logic;
@@ -87,7 +87,7 @@ begin
     else
         mscb_data_out   <= 'Z';
         --mscb_oe       <= '0';       -- single FPGA connected to converter chip
-        mscb_oe         <= 'Z';         -- multiple FPGAs 
+        mscb_oe         <= 'Z';         -- multiple FPGAs
     end if;
     end process;
 
@@ -103,7 +103,7 @@ begin
     mscb_to_nios_parallel_in(9)             <= in_fifo_empty;
     mscb_to_nios_parallel_in(10)            <= in_fifo_full;
     mscb_to_nios_parallel_in(11)            <= '1';
-    
+
     ---- interrupt to nios ----
     o_mscb_irq                              <= not in_fifo_empty;
 
@@ -202,7 +202,7 @@ begin
     port map (
         sclr            => reset,
         clock           => clk,
-        data            => mscb_nios_out, 
+        data            => mscb_nios_out,
         rdreq           => out_fifo_read_request,
         wrreq           => out_fifo_write_request,
         empty           => out_fifo_empty,
@@ -229,7 +229,7 @@ begin
         signal_in       => mscb_from_nios_parallel_out(9),
         output          => out_fifo_write_request
     );
-    
+
 
     e_mscb_addressing : entity work.mscb_addressing
     port map (
