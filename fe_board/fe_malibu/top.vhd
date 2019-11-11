@@ -93,10 +93,9 @@ port (
     si42_clk_40 : in    std_logic;
     si42_clk_80 : in    std_logic;
 
-    reset_n     : in    std_logic;
 
-    -- 125 MHz
-    clk_aux     : in    std_logic--;
+
+    reset_n     : in    std_logic--;
 );
 end entity;
 
@@ -209,7 +208,7 @@ begin
         FPGA_ID_g => X"FEB0",
         -- mutrig FEB type
         FEB_type_in => "111000",
-        NIOS_CLK_HZ_g => 125000000--,
+        NIOS_CLK_HZ_g => 80000000--,
     )
     port map (
         i_i2c_scl       => i2c_scl,
@@ -247,8 +246,7 @@ begin
         o_malibu_reg_we     => malibu_reg.we,
         o_malibu_reg_wdata  => malibu_reg.wdata,
 
-        i_nios_clk_startup => clk_aux,
-        i_nios_clk_main => clk_aux,
+        i_nios_clk      => si42_clk_80,
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
         o_clk_156_mon   => led(14),

@@ -78,10 +78,8 @@ port (
 
 
 
-    -- nios clock - 125 MHz
-    i_nios_clk_startup  : in    std_logic;
-    i_nios_clk_main     : in    std_logic; -- unused
-    o_nios_clk_selected : out   std_logic; -- unused
+    -- nios clock (async)
+    i_nios_clk      : in    std_logic;
     o_nios_clk_mon  : out   std_logic;
     -- qsfp clock - 156.25 MHz
     i_clk_156       : in    std_logic;
@@ -100,8 +98,6 @@ architecture arch of fe_block is
 
     signal nios_pio : std_logic_vector(31 downto 0);
     signal nios_irq : std_logic_vector(3 downto 0) := (others => '0');
-
-    signal s_nios_clk : std_logic;
 
     signal av_sc : work.util.avalon_t;
 
@@ -165,7 +161,7 @@ begin
     -- generate resets
 
     e_nios_reset_n : entity work.reset_sync
-    port map ( rstout_n => nios_reset_n, arst_n => i_areset_n, clk => s_nios_clk );
+    port map ( rstout_n => nios_reset_n, arst_n => i_areset_n, clk => i_nios_clk );
 
     e_reset_156_n : entity work.reset_sync
     port map ( rstout_n => reset_156_n, arst_n => i_areset_n, clk => i_clk_156 );
@@ -180,7 +176,7 @@ begin
     -- NIOS_CLK_HZ_g -> 1 Hz
     e_nios_clk_hz : entity work.clkdiv
     generic map ( P => NIOS_CLK_HZ_g )
-    port map ( clkout => o_nios_clk_mon, rst_n => nios_reset_n, clk => s_nios_clk );
+    port map ( clkout => o_nios_clk_mon, rst_n => nios_reset_n, clk => i_nios_clk );
 
     -- 156.25 MHz -> 1 Hz
     e_clk_156_hz : entity work.clkdiv
@@ -270,16 +266,7 @@ begin
     end if;
     end process;
 
-    -- nios clock selection: use startup clock until finishing the startup phase
-    --nios_clkswitch: clkctrl
-    --     port map(
-    --           inclk1x   => i_nios_clk_main,
-    --           inclk0x   => i_nios_clk_startup,
-    --           clkselect => nios_pio(31),
-    --           outclk    => s_nios_clk
-    --     );
-    --o_nios_clk_selected <= nios_pio(31);
-    s_nios_clk <= i_nios_clk_startup;
+
 
     -- nios system
     nios_irq(0) <= '1' when ( reg_cmdlen(31 downto 16) /= (31 downto 16 => '0') ) else '0';
@@ -344,7 +331,7 @@ begin
         pio_export => nios_pio,
 
         rst_reset_n => nios_reset_n,
-        clk_clk => s_nios_clk--,
+        clk_clk => i_nios_clk--,
     );
 
 
@@ -455,7 +442,7 @@ begin
         clk_reset_rx_125=> i_clk_125,
         clk_global_125  => i_clk_125,
         clk_156         => i_clk_156,
-        clk_free        => s_nios_clk,
+        clk_free        => i_nios_clk,
         state_out_156   => run_state_156,
         state_out_125   => run_state_125,
         reset_in_125    => not reset_125_n,
@@ -490,7 +477,7 @@ begin
         i_mscb_address              => X"ACA0",
 
         reset                       => not nios_reset_n,
-        nios_clk                    => s_nios_clk--,
+        nios_clk                    => i_nios_clk--,
     );
 
 

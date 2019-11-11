@@ -116,6 +116,15 @@ port (
 	SPI_DOUT_ADC_1_E		: in std_logic; -- A_spi_dout_adc_back          --
 
 
+
+    -- Si5342
+    si42_oe_n       : out   std_logic; -- <= '0'
+    si42_rst_n      : out   std_logic; -- reset
+    si42_spi_out    : in    std_logic; -- slave data out
+    si42_spi_in     : out   std_logic; -- slave data in
+    si42_spi_sclk   : out   std_logic; -- clock
+    si42_spi_cs_n   : out   std_logic; -- chip select
+
     -- SI5345
 
     si45_oe_n       : out   std_logic; -- <= '0'
@@ -175,10 +184,12 @@ port (
 
 
 
-    reset_n     : in    std_logic;
+    si42_clk_40 : in    std_logic;
+    si42_clk_80 : in    std_logic;
 
-    -- 125 MHz
-    clk_aux     : in    std_logic--;
+
+
+    reset_n     : in    std_logic--;
 );
 end entity;
 
@@ -289,6 +300,10 @@ begin
 
     led_n <= not led;
 
+    -- enable Si5342
+    si42_oe_n <= '0';
+    si42_rst_n <= '1';
+
     -- enable SI5345
     si45_oe_n <= '0';
     si45_rst_n <= '1';
@@ -341,7 +356,7 @@ begin
     generic map (
         FPGA_ID_g => X"FEB0",
         FEB_type_in => "111010",
-        NIOS_CLK_HZ_g => 125000000--,
+        NIOS_CLK_HZ_g => 80000000--,
     )
     port map (
         i_i2c_scl       => i2c_scl,
@@ -385,15 +400,12 @@ begin
 
 
 
+        i_nios_clk      => si42_clk_80,
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
         o_clk_156_mon   => led(14),
         i_clk_125       => pod_pll_clk,
         o_clk_125_mon   => led(13),
-
-        o_nios_clk_selected => led(10),
-        i_nios_clk_startup => clk_aux,
-        i_nios_clk_main => clk_aux,
 
         i_areset_n      => reset_n--,
     );

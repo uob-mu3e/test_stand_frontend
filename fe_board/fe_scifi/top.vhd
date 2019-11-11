@@ -69,7 +69,6 @@ port (
     FPGA_Test   : out   std_logic_vector(7 downto 0);
     PushButton  : in    std_logic_vector(1 downto 0);
 
-    reset_n     : in    std_logic;
 
 
     -- clock inputs
@@ -80,12 +79,14 @@ port (
     lvds_clk_A      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right  // SI5345 OUT3
     lvds_clk_B      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left   // SI5345 OUT6
 
-    -- SI42
-    systemclock     : in    std_logic;  -- 40 MHz (sysclock in schematic)           // SI5342 OUT1
-    systemclock_bottom : in std_logic;  -- 40 MHz (sysclk_bottom in schematic)      // SI5342 OUT0
 
-    --direct input
-    clk_aux     : in    std_logic--;    -- 125 MHz
+
+    si42_clk_40 : in    std_logic;
+    si42_clk_80 : in    std_logic;
+
+
+
+    reset_n     : in    std_logic--;
 );
 end entity;
 
@@ -166,12 +167,10 @@ begin
     ----------------------------------------------------------------------------
 
 --LED maps:
--- 15: clk_aux  (125M -> 1Hz)
+    -- 15: si42_clk_80 (80MHz -> 1Hz)
 -- 14: clk_qsfp (156M -> 1Hz)
 -- 13: clk_pod  (125M -> 1Hz)
--- 12: clk_nios  (125M -> 1Hz)
 -- 11: fee_chip_reset (niosclk)
--- 10: nios clock select bit
 -- x..0 : CSn to SciFi boards
 
     led(11) <= s_fee_chip_rst(2);
@@ -184,6 +183,10 @@ begin
     --s_FPGA_test(2 downto 0) <= s_fee_chip_rst(2 downto 0);
     led(4 downto 0) <= run_state_125(4 downto 0);
     s_FPGA_test(4 downto 0) <= run_state_125(4 downto 0); 
+
+    -- enable Si5342
+    si42_oe_n <= '0';
+    si42_rst_n <= '1';
 
     -- enable SI5345
     si45_oe_n <= '0';
@@ -236,7 +239,7 @@ begin
     generic map (
         FPGA_ID_g => X"FEB0",
         FEB_type_in => "111000", -- mutrig FEB type
-        NIOS_CLK_HZ_g => 125000000--,
+        NIOS_CLK_HZ_g => 80000000--,
     )
     port map (
         i_i2c_scl       => i2c_scl,
@@ -281,15 +284,12 @@ begin
 
 
 
+        i_nios_clk      => si42_clk_80,
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
         o_clk_156_mon   => led(14),
         i_clk_125       => pod_pll_clk,
         o_clk_125_mon   => led(13),
-
-        o_nios_clk_selected => led(10),
-        i_nios_clk_startup => clk_aux,
-        i_nios_clk_main => clk_aux,
 
         i_areset_n      => reset_n--,
     );
