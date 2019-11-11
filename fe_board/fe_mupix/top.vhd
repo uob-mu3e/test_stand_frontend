@@ -125,8 +125,7 @@ port (
     si42_spi_sclk   : out   std_logic; -- clock
     si42_spi_cs_n   : out   std_logic; -- chip select
 
-    -- SI5345
-
+    -- Si5345
     si45_oe_n       : out   std_logic; -- <= '0'
     si45_rst_n      : out   std_logic; -- reset
     si45_spi_out    : in    std_logic; -- slave data out
@@ -138,7 +137,7 @@ port (
 
     -- QSFP
 
-    -- si5345 out2 (156.25 MHz)
+    -- Si5345 out2 (156.25 MHz)
     qsfp_pll_clk    : in    std_logic;
 
     QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
@@ -152,7 +151,7 @@ port (
 
     -- POD
 
-    -- si5345 out0 (125 MHz)
+    -- Si5345 out0 (125 MHz)
     pod_pll_clk     : in    std_logic;
 
     pod_tx_reset_n  : out   std_logic;
@@ -298,13 +297,15 @@ begin
 
     ----------------------------------------------------------------------------
 
+
+
     led_n <= not led;
 
     -- enable Si5342
     si42_oe_n <= '0';
     si42_rst_n <= '1';
 
-    -- enable SI5345
+    -- enable Si5345
     si45_oe_n <= '0';
     si45_rst_n <= '1';
 
@@ -313,7 +314,7 @@ begin
     QSFP_Rst_n <= '1';
     QSFP_LPM <= '0';
 
-    -- enable PID
+    -- enable POD
     pod_tx_reset_n <= '1';
     pod_rx_reset_n <= '1';
 

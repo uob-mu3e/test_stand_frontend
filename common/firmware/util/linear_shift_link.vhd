@@ -37,7 +37,7 @@ begin
 
 	p_lfsr : process (i_clk, reset_n)
 	begin
-		if ( reset_n = '0' ) then 
+		if ( reset_n = '0' ) then
 			r_lfsr <= x"000000BC";
 			o_datak <= "0001";
 		elsif rising_edge(i_clk) then

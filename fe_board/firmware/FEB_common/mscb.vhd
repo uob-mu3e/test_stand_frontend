@@ -6,7 +6,7 @@ use work.daq_constants.all;
 
 ENTITY mscb is
 generic (
-    CLK_FREQ_g : positive := 125000000--;
+    CLK_HZ_g : positive := 125000000--;
 );
 port (
     nios_clk                    : in    std_logic;
@@ -125,7 +125,7 @@ begin
   -- wire up uart reciever for mscb
     e_uart_rx : entity work.uart_reciever
     generic map (
-        Clk_Ratio   => CLK_FREQ_g / 115200--,
+        Clk_Ratio   => CLK_HZ_g / 115200--,
     )
     port map (
         Clk         => clk,
@@ -180,7 +180,7 @@ begin
     -- wire up uart transmitter for mscb
     e_uart_tx : entity work.uart_transmitter
     generic map (
-        Clk_Ratio   => CLK_FREQ_g / 115200--,
+        Clk_Ratio   => CLK_HZ_g / 115200--,
     )
     port map (
         Clk             => clk,

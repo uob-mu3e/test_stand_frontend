@@ -81,10 +81,10 @@ port (
     -- nios clock (async)
     i_nios_clk      : in    std_logic;
     o_nios_clk_mon  : out   std_logic;
-    -- qsfp clock - 156.25 MHz
+    -- 156.25 MHz (data, QSFP)
     i_clk_156       : in    std_logic;
     o_clk_156_mon   : out   std_logic;
-    -- pod clock - 125 MHz
+    -- 125 MHz (global clock, POD)
     i_clk_125       : in    std_logic;
     o_clk_125_mon   : out   std_logic;
 
@@ -230,33 +230,34 @@ begin
     process(i_clk_156)
     begin
     if rising_edge(i_clk_156) then
-        fe_reg.rdata <= X"CCCCCCCC";
         malibu_reg.rvalid <= malibu_reg.re;
         scifi_reg.rvalid <= scifi_reg.re;
         mupix_reg.rvalid <= mupix_reg.re;
         fe_reg.rvalid <= fe_reg.re;
 
+        fe_reg.rdata <= X"CCCCCCCC";
+
         -- cmdlen
-        if ( fe_reg.addr(3 downto 0) = X"0" and fe_reg.re = '1' ) then
+        if ( fe_reg.addr(7 downto 0) = X"F0" and fe_reg.re = '1' ) then
             fe_reg.rdata <= reg_cmdlen;
         end if;
-        if ( fe_reg.addr(3 downto 0) = X"0" and fe_reg.we = '1' ) then
+        if ( fe_reg.addr(7 downto 0) = X"F0" and fe_reg.we = '1' ) then
             reg_cmdlen <= fe_reg.wdata;
         end if;
 
         -- offset
-        if ( fe_reg.addr(3 downto 0) = X"1" and fe_reg.re = '1' ) then
+        if ( fe_reg.addr(7 downto 0) = X"F1" and fe_reg.re = '1' ) then
             fe_reg.rdata <= reg_offset;
         end if;
-        if ( fe_reg.addr(3 downto 0) = X"1" and fe_reg.we = '1' ) then
+        if ( fe_reg.addr(7 downto 0) = X"F1" and fe_reg.we = '1' ) then
             reg_offset <= fe_reg.wdata;
         end if;
 
         -- reset bypass
-        if ( fe_reg.addr(3 downto 0) = X"4" and fe_reg.re = '1' ) then
+        if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.re = '1' ) then
             fe_reg.rdata <= reg_reset_bypass;
         end if;
-        if ( fe_reg.addr(3 downto 0) = X"4" and fe_reg.we = '1' ) then
+        if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.we = '1' ) then
             reg_reset_bypass <= fe_reg.wdata;
         end if;
 
@@ -275,9 +276,11 @@ begin
 
     e_nios : component work.cmp.nios
     port map (
+        -- SC, QSFP and irq
         clk_156_reset_reset_n   => reset_156_n,
         clk_156_clock_clk       => i_clk_156,
 
+        -- POD
         clk_125_reset_reset_n   => reset_125_n,
         clk_125_clock_clk       => i_clk_125,
 
@@ -463,7 +466,7 @@ begin
 
     e_mscb : entity work.mscb
     generic map (
-        CLK_FREQ_g => NIOS_CLK_HZ_g--,
+        CLK_HZ_g => NIOS_CLK_HZ_g--,
     )
     port map (
         mscb_to_nios_parallel_in    => mscb_to_nios_parallel_in,

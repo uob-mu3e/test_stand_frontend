@@ -44,7 +44,7 @@ port (
 
     -- QSFP
 
-    -- si5345 out2 (156.25 MHz)
+    -- Si5345 out2 (156.25 MHz)
     qsfp_pll_clk    : in    std_logic;
 
     QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
@@ -58,7 +58,7 @@ port (
 
     -- POD
 
-    -- si5345 out0 (125 MHz)
+    -- Si5345 out0 (125 MHz)
     pod_pll_clk     : in    std_logic;
 
     pod_tx_reset_n  : out   std_logic;
@@ -85,7 +85,7 @@ port (
 
 
 
-    -- si5345 out8 (625 MHz)
+    -- Si5345 out8 (625 MHz)
     clk_625     : in    std_logic;
 
 
@@ -101,13 +101,13 @@ end entity;
 
 architecture arch of top is
 
+    signal led : std_logic_vector(led_n'range) := (others => '0');
+
     signal fifo_rempty : std_logic;
     signal fifo_rack : std_logic;
     signal fifo_rdata : std_logic_vector(35 downto 0);
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
-
-    signal led : std_logic_vector(led_n'range) := (others => '0');
 
     -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
     signal ZERO : std_logic := '0';
@@ -156,6 +156,8 @@ begin
 
     led_n <= not led;
 
+
+
     -- enable Si5342
     si42_oe_n <= '0';
     si42_rst_n <= '1';
@@ -169,7 +171,7 @@ begin
     QSFP_Rst_n <= '1';
     QSFP_LPM <= '0';
 
-    -- enable PID
+    -- enable POD
     pod_tx_reset_n <= '1';
     pod_rx_reset_n <= '1';
 

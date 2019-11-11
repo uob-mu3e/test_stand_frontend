@@ -166,17 +166,17 @@ begin
 
     ----------------------------------------------------------------------------
 
---LED maps:
+
+
+    -- LED maps:
     -- 15: si42_clk_80 (80MHz -> 1Hz)
--- 14: clk_qsfp (156M -> 1Hz)
--- 13: clk_pod  (125M -> 1Hz)
--- 11: fee_chip_reset (niosclk)
--- x..0 : CSn to SciFi boards
+    -- 14: clk_qsfp (156MHz -> 1Hz)
+    -- 13: clk_pod (125MHz -> 1Hz)
+    -- 11: fee_chip_reset (niosclk)
+    -- x..0 : CSn to SciFi boards
 
     led(11) <= s_fee_chip_rst(2);
     --led(7 downto 0) <= s_MON_rxrdy;
-
-    led_n <= not led;
 
     -- test outputs
     FPGA_Test <= s_FPGA_test;
@@ -184,11 +184,17 @@ begin
     led(4 downto 0) <= run_state_125(4 downto 0);
     s_FPGA_test(4 downto 0) <= run_state_125(4 downto 0); 
 
+
+
+    led_n <= not led;
+
+
+
     -- enable Si5342
     si42_oe_n <= '0';
     si42_rst_n <= '1';
 
-    -- enable SI5345
+    -- enable Si5345
     si45_oe_n <= '0';
     si45_rst_n <= '1';
 
@@ -197,7 +203,7 @@ begin
     QSFP_Rst_n <= '1';
     QSFP_LPM <= '0';
 
-    -- enable PID
+    -- enable POD
     pod_tx_reset_n <= '1';
     pod_rx_reset_n <= '1';
 
@@ -238,7 +244,8 @@ begin
     e_fe_block : entity work.fe_block
     generic map (
         FPGA_ID_g => X"FEB0",
-        FEB_type_in => "111000", -- mutrig FEB type
+        -- mutrig FEB type
+        FEB_type_in => "111000",
         NIOS_CLK_HZ_g => 80000000--,
     )
     port map (

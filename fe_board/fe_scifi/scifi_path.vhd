@@ -169,8 +169,8 @@ begin
 		i_flag       => s_subdet_resetdly_reg_written,
 		i_data       => s_subdet_resetdly_reg,
 
-		i_sig => s_chip_rst_refclk_sync(1),
-		o_sig => o_chip_reset,
+		i_sig        => s_chip_rst_refclk_sync(1),
+		o_sig        => o_chip_reset,
 		o_pll_clk    => open
     );
 
