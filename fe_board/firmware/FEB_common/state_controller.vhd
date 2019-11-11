@@ -23,32 +23,32 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.daq_constants.all;
 
-ENTITY state_controller is 
-    PORT(
-        clk:                    in  std_logic; -- 125 Mhz clock from reset transceiver
-        reset:                  in  std_logic; -- hard reset for testing
-        reset_link_8bData :     in  std_logic_vector(7 downto 0); -- input reset line
-        state_idle:             out std_logic; -- state outputs
-        state_run_prepare:      out std_logic;
-        state_sync:             out std_logic;
-        state_running:          out std_logic;
-        state_terminating:      out std_logic;
-        state_link_test:        out std_logic;
-        state_sync_test:        out std_logic;
-        state_reset:            out std_logic;
-        state_out_of_DAQ:       out std_logic;
-        fpga_addr:              in  std_logic_vector(15 downto 0); -- FPGA address input for addressed reset commands(from jumpers on final FEB board)
-        runnumber:              out std_logic_vector(31 downto 0); -- runnumber received from midas with the prep_run command
-        reset_mask:             out std_logic_vector(15 downto 0); -- payload output of the reset command
-        link_test_payload:      out std_logic_vector(15 downto 0); -- to be specified 
-        sync_test_payload:      out std_logic_vector(15 downto 0); -- to be specified
-        terminated:             in std_logic								 -- connect this to data merger "end of run was transmitted, run can be terminated"
-    );
-END ENTITY state_controller;
+ENTITY state_controller is
+port (
+    clk                 : in    std_logic; -- 125 Mhz clock from reset transceiver
+    reset               : in    std_logic; -- hard reset for testing
+    reset_link_8bData   : in    std_logic_vector(7 downto 0); -- input reset line
+    state_idle          : out   std_logic; -- state outputs
+    state_run_prepare   : out   std_logic;
+    state_sync          : out   std_logic;
+    state_running       : out   std_logic;
+    state_terminating   : out   std_logic;
+    state_link_test     : out   std_logic;
+    state_sync_test     : out   std_logic;
+    state_reset         : out   std_logic;
+    state_out_of_DAQ    : out   std_logic;
+    fpga_addr           : in    std_logic_vector(15 downto 0); -- FPGA address input for addressed reset commands(from jumpers on final FEB board)
+    runnumber           : out   std_logic_vector(31 downto 0); -- runnumber received from midas with the prep_run command
+    reset_mask          : out   std_logic_vector(15 downto 0); -- payload output of the reset command
+    link_test_payload   : out   std_logic_vector(15 downto 0); -- to be specified
+    sync_test_payload   : out   std_logic_vector(15 downto 0); -- to be specified
+    terminated          : in    std_logic -- connect this to data merger "end of run was transmitted, run can be terminated"
+);
+END ENTITY;
 
 architecture rtl of state_controller is
-
 
 ----------------signals---------------------
     signal states:                          std_logic_vector(8 downto 0);
@@ -56,22 +56,19 @@ architecture rtl of state_controller is
     signal payload_byte_counter:            integer range 0 to 10;
     signal addressing_payload_byte_counter: integer range 0 to 10;
     --signal terminated:                      std_logic;
-    
+
     -- address signals
     signal addressed:           std_logic;
     signal address_part1_match: std_logic;
     signal recieving_address:   std_logic;
     signal ignoring_signals:    std_logic;
-    
+
     type state_type is (idle, run_prep, sync, running, terminating, link_test, sync_test, reset_state, out_of_DAQ);
     signal state : state_type;
-    
+
 ----------------begin state controller------------------------
 
-
-
 BEGIN
-
 
      --state vector assignments
     state_idle <= states(0);
@@ -83,7 +80,7 @@ BEGIN
     state_sync_test <= states(6);
     state_reset <= states(7);
     state_out_of_DAQ <= states(8);
-    
+
     -- output process
     process (clk, recieving_payload)
     begin
@@ -110,9 +107,9 @@ BEGIN
             end case;
         end if;
     end process;
-    
+
     -- address
-    
+
     --- transition process
     process (clk, reset, addressed)
     begin
@@ -124,15 +121,15 @@ BEGIN
             link_test_payload <= (others =>'0');
             sync_test_payload <= (others =>'0');
             runnumber <= (others =>'0');
-            
+
         elsif (rising_edge(clk) and addressed = '1') then
-            
-            if recieving_payload = '1' then -- recieve payload 
+
+            if recieving_payload = '1' then -- recieve payload
                 payload_byte_counter <= payload_byte_counter - 1;
-                if payload_byte_counter = 1 then 
+                if payload_byte_counter = 1 then
                     recieving_payload <= '0';
                 end if;
-                
+
                 -- write payload to correct output
                 case state is
                     when run_prep =>
@@ -141,13 +138,12 @@ BEGIN
                          link_test_payload((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
                     when sync_test =>
                          sync_test_payload((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
-                    when reset_state => 
+                    when reset_state =>
                          reset_mask((payload_byte_counter ) * 8 - 1 downto (payload_byte_counter-1)*8) <= reset_link_8bData;
                     when others => -- should not happen
                 end case;
-            
-                    
-            else  -- command incoming --> listen and do stuff 
+
+            else  -- command incoming --> listen and do stuff
                 case state is
                         ------------ idle ------------
                         when idle =>
@@ -169,10 +165,9 @@ BEGIN
                                 state <= reset_state;
                             elsif reset_link_8bData = x"33" then -- disable
                                 state <= out_of_DAQ;
-                            else 
+                            else
                                 state <= idle;
                             end if;
-
 
                         ------------ run prepare --------------
                         when run_prep =>
@@ -186,17 +181,17 @@ BEGIN
                                 payload_byte_counter <= 2;
                             elsif reset_link_8bData = x"33" then -- disable
                                 state <= out_of_DAQ;
-                            else 
+                            else
                                 state <= run_prep;
                             end if;
-                                
+
                         ------------ sync --------------
-                        when sync => 
+                        when sync =>
                             if reset_link_8bData = x"12" then  -- start run
                                 state <= running;
                             elsif reset_link_8bData = x"14" then -- abort run
                                 state <= idle;
-                            elsif reset_link_8bData = x"30" then -- reset 
+                            elsif reset_link_8bData = x"30" then -- reset
                                 state <= reset_state;
                                 recieving_payload <= '1';
                                 payload_byte_counter <= 2;
@@ -205,7 +200,7 @@ BEGIN
                             else
                                 state <= sync;
                             end if;
-                        
+
                         ------------ running --------------
                         when running =>
                             if reset_link_8bData = x"13" then -- end run
@@ -221,7 +216,7 @@ BEGIN
                             else
                                 state <= running;
                             end if;
-                            
+
                         ------------ terminating --------------
                         when terminating =>
                             if terminated = '1' then            -- terminating finished
@@ -237,7 +232,7 @@ BEGIN
                             else
                                 state <= terminating;
                             end if;
-                            
+
                        ------------ link test --------------
                        when link_test =>
                             if reset_link_8bData = x"21" then  -- stop link test
@@ -251,7 +246,7 @@ BEGIN
                             else
                                 state <= link_test;
                             end if;
-                            
+
                        ------------ sync test --------------
                        when sync_test =>
                             if reset_link_8bData = x"25" then  -- stop sync test
@@ -265,30 +260,30 @@ BEGIN
                             else
                                 state <= sync_test;
                             end if;
-                            
+
                         ------------ reset state --------------
                         when reset_state =>
                             if reset_link_8bData = x"31" then        -- reset finished
                                 state <= idle;
                             elsif reset_link_8bData = x"33" then  -- disable
                                 state <= out_of_DAQ;
-                            else 
+                            else
                                 state <= reset_state;
                             end if;
-                            
+
                         when out_of_DAQ =>
-                            
+
                             if reset_link_8bData = x"32" then   -- enable
                                 state <= idle;
                             end if;
-								when others =>
-									state <= idle;
-                            
+                        when others =>
+                            state <= idle;
+
                     end case;
             end if;
         end if;
     end process;
-    
+
     -- address process
     process (clk, reset)
     begin
@@ -298,45 +293,44 @@ BEGIN
             recieving_address   <= '0';
             ignoring_signals    <= '0';
             addressing_payload_byte_counter <= 0;
-            
+
         elsif rising_edge(clk) then
-            
-            
+
             -- address command, not part of a payload, --> compare the next 32 bits with own address
-            if (recieving_payload = '0' and reset_link_8bData = x"40" and recieving_address = '0' and ignoring_signals = '0') then  
+            if (recieving_payload = '0' and reset_link_8bData = x"40" and recieving_address = '0' and ignoring_signals = '0') then
                 addressed <= '0';
                 recieving_address  <= '1';
                 address_part1_match <= '0';
                 addressing_payload_byte_counter <= 2;      -- 2 byte address
             end if;
-            
-            
+
+
             -- recieve address for 2 cycles
             if (recieving_address = '1' and ignoring_signals = '0') then
                 addressing_payload_byte_counter <= addressing_payload_byte_counter -1;
-                
+
                 -- check first address byte
                 if (addressing_payload_byte_counter = 2 and reset_link_8bData = fpga_addr(15 downto 8)) then
                     address_part1_match <= '1';
                 end if;
-                
+
                 -- check second address byte
                 if (addressing_payload_byte_counter = 1) then
                     recieving_address <= '0';
-                    
+
                     if (reset_link_8bData = fpga_addr(7 downto 0) and address_part1_match = '1') then
                         addressed <= '1'; -- address match, go into big case statement next
                         address_part1_match <= '0';
-                        
-                    else 
+
+                    else
                         addressed <= '0'; -- address mismatch
                     end if;
                 end if;
             end if;
-            
-            
-            -- full address recieved, address mismatch  --> this command is relevant to determine the cycle where fpga should start listening again (commands have different payload sizes)  
-            if(addressed = '0' and addressing_payload_byte_counter = 0 and ignoring_signals = '0') then 
+
+
+            -- full address recieved, address mismatch  --> this command is relevant to determine the cycle where fpga should start listening again (commands have different payload sizes)
+            if(addressed = '0' and addressing_payload_byte_counter = 0 and ignoring_signals = '0') then
                    case reset_link_8bData is
                         when x"10" => addressing_payload_byte_counter <= 4; ignoring_signals <= '1';
                         when x"20" => addressing_payload_byte_counter <= 2; ignoring_signals <= '1';-- to be specified
@@ -346,7 +340,7 @@ BEGIN
                         when others => addressed <= '1'; address_part1_match <= '0'; ignoring_signals <= '0'; -- all other commands dont have payload --> back to normal
                     end case;
             end if;
-            
+
             if(ignoring_signals = '1') then   -- ignore payload of commands to different fpgas
                 addressing_payload_byte_counter <= addressing_payload_byte_counter - 1;
                 if (addressing_payload_byte_counter = 1) then
@@ -355,7 +349,8 @@ BEGIN
                     address_part1_match <= '0';
                 end if;
             end if;
-            
+
         end if;
     end process;
-END rtl;
+
+end architecture;
