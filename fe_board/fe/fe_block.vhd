@@ -442,22 +442,28 @@ begin
 
     e_reset_system : entity work.resetsys
     port map (
-        clk_reset_rx_125=> i_clk_125,
-        clk_global_125  => i_clk_125,
-        clk_156         => i_clk_156,
-        clk_free        => i_nios_clk,
-        state_out_156   => run_state_156,
-        state_out_125   => run_state_125,
-        reset_in_125    => not reset_125_n,
-        reset_in_156    => not reset_156_n,
+        i_data_125_rx           => pod_rx_data(7 downto 0),
+        i_reset_125_rx_n        => reset_125_n,
+        i_clk_125_rx            => i_clk_125,
+
+        o_state_125             => run_state_125,
+        i_reset_125_n           => reset_125_n,
+        i_clk_125               => i_clk_125,
+
+        o_state_156             => run_state_156,
+        i_reset_156_n           => reset_156_n,
+        i_clk_156               => i_clk_156,
+
         resets_out      => open,
-        phase_out       => open,
-        data_in         => pod_rx_data(7 downto 0),
         reset_bypass    => reg_reset_bypass(11 downto 0),
         run_number_out  => open,
         fpga_id         => FPGA_ID_g,
         terminated      => terminated,
-        testout         => open--,
+        testout         => open,
+
+        o_phase                 => open,
+        i_reset_n               => nios_reset_n,
+        i_clk                   => i_nios_clk--,
     );
 
     o_run_state_125 <= run_state_125;
