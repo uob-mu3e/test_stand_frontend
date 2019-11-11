@@ -1,12 +1,12 @@
 #
 
-foreach { module_name dir } { vio_0 .cache/ } {
-    create_ip -vendor xilinx.com -library ip \
-              -name vio -version 3.0 \
-              -module_name $module_name -dir $dir
+set module_name vio_0
+set dir .cache/
 
-    set_property -dict [ list \
-        CONFIG.C_EN_PROBE_IN_ACTIVITY 1 \
-        CONFIG.C_NUM_PROBE_IN 1 \
-    ] [ get_ips $module_name ]
-}
+create_ip -vlnv xilinx.com:ip:vio:3.0 \
+          -module_name $module_name -dir $dir
+
+set_property -dict [ list \
+    CONFIG.C_EN_PROBE_IN_ACTIVITY 1 \
+    CONFIG.C_NUM_PROBE_IN 1 \
+] [ get_ips $module_name ]

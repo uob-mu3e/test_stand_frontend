@@ -18,16 +18,12 @@ proc ip_config_diff {
 
     set name_1 ${name}_1
     if { [ string equal [ get_ips $name_1 ] "" ] } {
-        set ipdef [ get_property IPDEF $ip ]
-        foreach { ip_vendor ip_library ip_name ip_version } [ split $ipdef ":" ] {}
-
-        create_ip -vendor $ip_vendor -library $ip_library \
-                  -name $ip_name -version $ip_version \
+        create_ip -vlnv [ get_property IPDEF $ip ] \
                   -module_name $name_1 -dir $dir
     }
     set ip_1 [ get_ips $name_1 ]
 
-    puts "set_property -dict \{"
+    puts "set_property -dict \[ list \\"
     foreach property $properties {
         if { ! [ string match "CONFIG.*" $property ] } continue;
         if { [ string equal $property "CONFIG.Component_Name" ] } continue;
@@ -36,7 +32,7 @@ proc ip_config_diff {
         set val_1 [ get_property $property $ip_1 ]
         if { [ string equal $val $val_1 ] } continue
 
-        puts "    $property $val"
+        puts "    $property \{$val\} \\"
     }
-    puts "\} \$ip"
+    puts "\] \[ get_ips \$module_name \]"
 }
