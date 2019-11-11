@@ -11,7 +11,8 @@ generic (
     -- - 111010 : mupix
     -- - 111000 : mutrig
     -- - 000111 and 000000 : reserved (DO NOT USE)
-    FEB_type_in:std_logic_vector(5  downto 0)--;
+    FEB_type_in : std_logic_vector(5 downto 0);
+    NIOS_CLK_HZ_g : positive := 125000000--;
 );
 port (
     i_i2c_scl       : in    std_logic;
@@ -176,9 +177,9 @@ begin
 
     -- generate 1 Hz clock monitor clocks
 
-    -- 125 MHz -> 1 Hz
+    -- NIOS_CLK_HZ_g -> 1 Hz
     e_nios_clk_hz : entity work.clkdiv
-    generic map ( P => 125000000 )
+    generic map ( P => NIOS_CLK_HZ_g )
     port map ( clkout => o_nios_clk_mon, rst_n => nios_reset_n, clk => s_nios_clk );
 
     -- 156.25 MHz -> 1 Hz
@@ -474,6 +475,9 @@ begin
 
 
     e_mscb : entity work.mscb
+    generic map (
+        CLK_FREQ_g => NIOS_CLK_HZ_g--,
+    )
     port map (
         mscb_to_nios_parallel_in    => mscb_to_nios_parallel_in,
         mscb_from_nios_parallel_out => mscb_from_nios_parallel_out,

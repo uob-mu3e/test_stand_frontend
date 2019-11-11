@@ -208,7 +208,8 @@ begin
     generic map (
         FPGA_ID_g => X"FEB0",
         -- mutrig FEB type
-        FEB_type_in => "111000"--,
+        FEB_type_in => "111000",
+        NIOS_CLK_HZ_g => 125000000--,
     )
     port map (
         i_i2c_scl       => i2c_scl,
