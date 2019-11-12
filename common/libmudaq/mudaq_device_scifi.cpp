@@ -399,6 +399,9 @@ void MudaqDevice::FEBsc_resetSlave(){
     //reset fpga entity
     write_register_wait(RESET_REGISTER_W, SET_RESET_BIT_SC_SLAVE(0), 1000);
     write_register_wait(RESET_REGISTER_W, 0x0, 1000);
+    //wait some time, reset takes time
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
 }
 
 /*
