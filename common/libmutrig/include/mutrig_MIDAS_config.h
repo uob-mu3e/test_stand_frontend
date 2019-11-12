@@ -31,7 +31,7 @@ typedef struct {
   BOOL dummy_data;
   INT  dummy_data_n;
   BOOL dummy_data_fast;
-  BOOL prbs_decode_bypass;
+  BOOL prbs_decode_disable;
   BOOL reset_datapath;
   BOOL reset_asics;
 } MUTRIG_DAQ;
@@ -42,9 +42,12 @@ typedef struct {
 "dummy_data = BOOL : n",\
 "dummy_data_n = INT : 255",\
 "dummy_data_fast = BOOL : n",\
-"prbs_decode_bypass = BOOL : n",\
+"prbs_decode_disable = BOOL : n",\
 "reset_datapath = BOOL : n",\
 "reset_asics = BOOL : n",\
+"reset_asics = BOOL : n",\
+"LVDS_waitforall = BOOL : n",\
+"LVDS_waitforall_sticky = BOOL : n",\
 "mask = BOOL[16] n",\
 "",\
 NULL }

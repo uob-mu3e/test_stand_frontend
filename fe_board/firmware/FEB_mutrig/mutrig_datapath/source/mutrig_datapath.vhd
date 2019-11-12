@@ -40,6 +40,7 @@ port (
 	i_SC_datagen_shortmode	: in std_logic;
 	i_SC_datagen_count	: in std_logic_vector(9 downto 0);
 	i_SC_rx_wait_for_all	: in std_logic;
+	i_SC_rx_wait_for_all_sticky	: in std_logic;
 	--monitors
 	o_receivers_usrclk	: out std_logic;              		-- pll output clock
 	o_receivers_pll_lock	: out std_logic;			-- pll lock flag
@@ -199,9 +200,9 @@ signal s_receivers_data_isk	: t_vector;
 
 signal s_receivers_usrclk	: std_logic;
 signal s_receivers_all_ready    : std_logic;
-
+signal s_receivers_block        : std_logic;
   -- frame_rcv/datagen - fifo: fifo side, frame-receiver side, dummy datagenerator side
-signal s_crc_error,      s_rec_crc_error: t_vector;
+signal s_crc_error: t_vector;
 signal s_frame_number,   s_rec_frame_number,   s_gen_frame_number   : t_array_16b;
 signal s_frame_info,     s_rec_frame_info,     s_gen_frame_info     : t_array_16b;
 signal s_new_frame,      s_rec_new_frame,      s_gen_new_frame      : t_vector;
@@ -272,6 +273,24 @@ begin
 	end if;
 end process;
 
+--if i_SC_rx_wait_for_all is set, wait for all (not masked) receivers to become ready before letting any data pass through the frame unpacking blocks.
+--if i_SC_rx_wait_for_all_sticky is set in addition, the all_ready property is sticky: once all receivers become ready do not block data again.
+--            The sticky bit is cleared with i_reset
+--            Otherwise, data is blocked as soon as one receiver is loosing the pattern or sync.
+releasedata_p: process(s_receivers_usrclk, i_rst)
+begin
+	if(rising_edge(s_receivers_usrclk)) then
+		if(i_rst='1') then
+			s_receivers_block <= '1';
+		elsif(i_SC_rx_wait_for_all_sticky='1') then
+			if(s_receivers_all_ready='1') then
+				s_receivers_block <= '0';
+			end if;
+		else
+			s_receivers_block <= not s_receivers_all_ready;
+		end if;
+	end if;
+end process;
 
 gen_frame: for i in 0 to N_ASICS-1 generate begin
 u_frame_rcv : frame_rcv
@@ -285,7 +304,7 @@ u_frame_rcv : frame_rcv
 		i_clk			=> s_receivers_usrclk,
 		i_data			=> s_receivers_data((i+1)*8-1 downto i*8),
 		i_byteisk		=> s_receivers_data_isk(i),
-		i_dser_no_sync		=> not (s_receivers_all_ready or (i_SC_rx_wait_for_all and s_receivers_ready(i))),
+		i_dser_no_sync		=> (s_receivers_block or (not s_receivers_ready(i) and not i_SC_rx_wait_for_all)),
 
 		-- to mutrig-store instance
 		o_frame_number		=> s_rec_frame_number(i),

@@ -3,24 +3,38 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use work.mupix_constants.all;
 
 package daq_constants is
 
 subtype links_reg32 is std_logic_vector(31 downto 0);
 subtype reg32 is std_logic_vector(31 downto 0);
+type reg32array	is array (NREGISTERS-1 downto 0) of reg32;
 
+subtype reg64 		is std_logic_vector(63 downto 0);
 type reg64b_array_t is array (natural range <>) of std_logic_vector(63 downto 0);
 
 subtype run_state_t is std_logic_vector(9 downto 0);
-constant RUN_STATE_IDLE        : run_state_t := "0000000001";
-constant RUN_STATE_PREP        : run_state_t := "0000000010";
-constant RUN_STATE_SYNC        : run_state_t := "0000000100";
-constant RUN_STATE_RUNNING     : run_state_t := "0000001000";
-constant RUN_STATE_TERMINATING : run_state_t := "0000010000";
-constant RUN_STATE_LINK_TEST   : run_state_t := "0000100000";
-constant RUN_STATE_SYNC_TEST   : run_state_t := "0001000000";
-constant RUN_STATE_RESET       : run_state_t := "0010000000";
-constant RUN_STATE_OUT_OF_DAQ  : run_state_t := "0100000000";
+
+constant RUN_STATE_BITPOS_IDLE        : natural := 0;
+constant RUN_STATE_BITPOS_PREP        : natural := 1;
+constant RUN_STATE_BITPOS_SYNC        : natural := 2;
+constant RUN_STATE_BITPOS_RUNNING     : natural := 3;
+constant RUN_STATE_BITPOS_TERMINATING : natural := 4;
+constant RUN_STATE_BITPOS_LINK_TEST   : natural := 5;
+constant RUN_STATE_BITPOS_SYNC_TEST   : natural := 6;
+constant RUN_STATE_BITPOS_RESET       : natural := 7;
+constant RUN_STATE_BITPOS_OUT_OF_DAQ  : natural := 8;
+
+constant RUN_STATE_IDLE        : run_state_t := (RUN_STATE_BITPOS_IDLE         => '1', others =>'0');
+constant RUN_STATE_PREP        : run_state_t := (RUN_STATE_BITPOS_PREP         => '1', others =>'0');
+constant RUN_STATE_SYNC        : run_state_t := (RUN_STATE_BITPOS_SYNC         => '1', others =>'0');
+constant RUN_STATE_RUNNING     : run_state_t := (RUN_STATE_BITPOS_RUNNING      => '1', others =>'0');
+constant RUN_STATE_TERMINATING : run_state_t := (RUN_STATE_BITPOS_TERMINATING  => '1', others =>'0');
+constant RUN_STATE_LINK_TEST   : run_state_t := (RUN_STATE_BITPOS_LINK_TEST    => '1', others =>'0');
+constant RUN_STATE_SYNC_TEST   : run_state_t := (RUN_STATE_BITPOS_SYNC_TEST    => '1', others =>'0');
+constant RUN_STATE_RESET       : run_state_t := (RUN_STATE_BITPOS_RESET        => '1', others =>'0');
+constant RUN_STATE_OUT_OF_DAQ  : run_state_t := (RUN_STATE_BITPOS_OUT_OF_DAQ   => '1', others =>'0');
 
 type feb_run_state is (
     idle,

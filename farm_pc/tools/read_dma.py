@@ -1,22 +1,107 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import matplotlib.animation as animation
 import numpy as np
 import collections
+import binascii
+
+fig = plt.figure()
+ax1 = fig.add_subplot(1,1,1)
+
+def animate(i):
+	df = pd.read_csv("../../build/farm_pc/midas_fe/memory_content.txt", sep="\t", encoding="ISO-8859-1")
+	data = np.array(df["data"])
+	course_counter = []
+	course_fine = []
+	next = 0
+	for d in data:
+		if "0000039C" == d:
+			next = 0
+		if next == 1:
+			binary = "{0:8b}".format(int(d, 16))
+			if len(binary) == 27:
+				binary_list = np.array(list(binary))
+				course_fine.append(int(''.join(binary_list[21:26]),2))
+				course_counter.append(int(''.join(binary_list[7:21]),2))
+		if "E80020BC" == d:
+			next = 1
+	bins = np.linspace(0, 40, 100)
+
+	ax1.clear()
+	ax1.hist(course_counter, bins=bins, alpha=0.5, label='course')
+	ax1.hist(course_fine, bins=bins, alpha=0.5, label='fine')
+	ax1.legend(loc='upper right')
+
+ani = animation.FuncAnimation(fig, animate, interval=1000)
+plt.show()
+
+"""
 
 df = pd.read_csv("../../build/farm_pc/midas_fe/memory_content.txt", sep="\t", encoding="ISO-8859-1")
 
-df["event_length"].plot.hist(bins=12, alpha=0.5)
-plt.show()
-plt.close()
+#df["event_length"].plot.hist(bins=12, alpha=0.5)
+#plt.show()
+#plt.close()
 
 print(df)
 
-df["event_length"].plot()
-plt.show()
-plt.close()
+#df["event_length"].plot()
+#plt.show()
+#plt.close()
 
 data = np.array(df["data"])
+
+ = 0
+
+course_counter = []
+course_fine = []
+hit_type = []
+energy_flag = []
+ch_number = []
+tmp_bad = []
+
+for d in data:
+	if "0000039C" == d:
+		next = 0
+	if next == 1:
+		binary = "{0:8b}".format(int(d, 16))
+		if len(binary) == 27:
+			binary_list = np.array(list(binary))
+			
+			hit_type.append(list(binary_list)[0])
+			ch_number.append(int(''.join(list(binary_list)[1:8]),2))
+			tmp_bad.append(list(binary_list)[21])
+			energy_flag.append(list(binary_list)[-1])
+			course_fine.append(int(''.join(binary_list[21:26]),2))
+			course_counter.append(int(''.join(binary_list[7:21]),2))
+	if "E80020BC" == d:
+		next = 1
+
+
+bins = np.linspace(0, 40, 100)
+
+
+plt.hist(course_counter, bins=bins, alpha=0.5, label='course')
+plt.hist(course_fine, bins=bins, alpha=0.5, label='fine')
+plt.legend(loc='upper right')
+plt.show()
+"""
+"""
+plt.hist(course_counter)
+plt.show()
+plt.hist(course_fine)
+plt.show()
+plt.hist(hit_type)
+plt.show()
+plt.hist(energy_flag)
+plt.show()
+plt.hist(ch_number)
+plt.show()
+plt.hist(tmp_bad)
+plt.show()
+"""
+"""
 length = np.array(df["event_length"])
 print(data)
 
@@ -93,6 +178,7 @@ print(events_wrong)
 #    old_length = int(length[read_idx], 16)
 
 
+"""
 
 """
 

@@ -63,7 +63,7 @@ begin
     begin
     if ( i_reset = '1' ) then
             s_dummyctrl_reg <= (others=>'0');
-            s_dpctrl_reg <= (others=>'0');
+            s_dpctrl_reg <= (31 => '1', others=>'0');
             s_subdet_reset_reg <= (others=>'0');
         --
     elsif rising_edge(i_clk) then

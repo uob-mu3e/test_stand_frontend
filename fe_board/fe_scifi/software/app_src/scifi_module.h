@@ -27,7 +27,7 @@ struct scifi_module_t {
     const uint8_t  n_ASICS=16;
     //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
     int spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern);
-    int configure_asic(alt_u32 asic, const alt_u8* bitpattern);
+    alt_u16 configure_asic(alt_u32 asic, const alt_u8* bitpattern);
 
     void powerup() {
         printf("[scifi] powerup: not implemented\n");
@@ -43,7 +43,7 @@ struct scifi_module_t {
     void menu_reg_dummyctrl(sc_t* sc);
     void menu_reg_datapathctrl(sc_t* sc);
     void menu_reg_resetskew(sc_t* sc);
-    void callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
+    alt_u16 callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
 
 
 };

@@ -10,7 +10,7 @@ public:
     clockboard(const char * addr, int port);
     bool isConnected(){return bus.isConnected();}
 
-    int init_clockboard(uint16_t clkinvert = 0x0A00, uint16_t rstinvert= 0x0008);
+    int init_clockboard(uint16_t clkinvert = 0x0A00, uint16_t rstinvert= 0x0008, uint16_t clkdisable = 0x0AA, uint16_t rstdisable = 0xAA0);
     int map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num);
 
     // Write "reset" commands
@@ -18,7 +18,7 @@ public:
     int write_command(char * name, uint32_t payload =0, uint16_t address =0);
 
     // I2C interface
-    int init_12c();
+    int init_i2c();
     int read_i2c(uint8_t dev_addr, uint8_t &data);
     int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data);
     int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
@@ -71,6 +71,8 @@ public:
     float read_tx_firefly_temp(uint8_t daughter, uint8_t index);
     float read_tx_firefly_voltage(uint8_t daughter, uint8_t index);
 
+    int disable_tx_channels(uint8_t daughter, uint8_t firefly, uint16_t channelmask);
+
     uint16_t read_tx_firefly_lf(uint8_t daughter, uint8_t index);
     uint16_t read_tx_firefly_alarms(uint8_t daughter, uint8_t index);
 
@@ -86,6 +88,8 @@ public:
 
     float read_daughter_board_voltage(uint8_t daughter);
     float read_mother_board_voltage();
+    
+    float read_fan_current();
 
     int configure_daughter_current_monitor(uint8_t daughter, uint16_t config);
     int configure_mother_current_monitor(uint16_t config);
@@ -111,6 +115,7 @@ protected:
     const uint32_t BIT_CTRL_CLK_CTRL_SI_OE  = 0x4000;
     const uint32_t BIT_CTRL_CLK_CTRL_SI_RST = 0x8000;
     const uint32_t MASK_CTRL_FIREFLY_CTRL   = 0xF0000;
+    const uint32_t MASK_FAN_CURRENT         = 0xFFFF0000;
     const uint32_t BIT_FIREFLY_RESET_RST    = 0x10000;
     const uint32_t BIT_FIREFLY_RESET_SEL    = 0x20000;
     const uint32_t BIT_FIREFLY_CLOCK_RST    = 0x40000;
@@ -197,10 +202,6 @@ protected:
 
     const uint8_t SI_I2C_ADDR              = 0x68;
 
-    // Default values for inverted channels - to/from ODB?
-    const uint16_t FIREFLY_RESET_INVERT_INIT = 0x0008;
-    const uint16_t FIREFLY_CLOCK_INVERT_INIT = 0x0A00;
-
     const uint8_t INVERTED      = 0x1;
     const uint8_t NON_INVERTED  = 0x0;
 
@@ -226,6 +227,7 @@ protected:
                                      DAUGHTER_6,
                                      DAUGHTER_7};
 
+    uint32_t reverse_bytes(uint32_t bytes);
 };
 
 #endif // CLOCKBOARD_H

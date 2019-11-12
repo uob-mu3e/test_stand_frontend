@@ -77,7 +77,11 @@ port (
     i_nios_clk_main : in    std_logic;     --unused
     i_nios_areset_n  : in    std_logic;
     o_nios_clk_monitor : out std_logic;
-    o_nios_clk_selected : out std_logic--;   --unused
+    o_nios_clk_selected : out std_logic;   --unused
+
+    --reset system
+    o_run_state_125 : out run_state_t--;
+
 );
 end entity;
 
@@ -214,7 +218,7 @@ begin
     o_nios_clk_monitor <= s_nios_clk;
 
     -- nios system
-    nios_irq(0) <= '1' when ( reg_cmdlen /= (reg_cmdlen'range => '0') ) else '0';
+    nios_irq(0) <= '1' when ( reg_cmdlen(31 downto 16) /= (31 downto 16 => '0') ) else '0';
 
     e_nios : component work.cmp.nios
     port map (
@@ -396,7 +400,7 @@ begin
         terminated      => terminated,
         testout         => open--,
     );
-
+    o_run_state_125 <= run_state_125;
 
 
     e_mscb : entity work.mscb

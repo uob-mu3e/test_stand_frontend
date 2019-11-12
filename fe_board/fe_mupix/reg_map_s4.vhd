@@ -35,5 +35,5 @@ package reg_map_s4 is
 		subtype TEMP_DAC_RANGE 				is integer range 15 downto 0;
 		subtype TEMP_ADC_W_RANGE 			is integer range 31 downto 16;
 
-		
+
 end package reg_map_s4;

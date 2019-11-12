@@ -87,6 +87,7 @@ struct sc_ram_t {
             alt_u32 block8[16];
 
             struct {
+                alt_u32 test;
             } mupix;
         };
 

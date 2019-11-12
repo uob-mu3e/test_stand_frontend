@@ -146,9 +146,9 @@ unsigned char user_read(unsigned char index)
 
 //void read_fpga_status()
 //{
-//	user_data.fpga_status[0] = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_STATUS_BASE);
-//	user_data.fpga_status2[0] = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_STATUS2_BASE);
-//	return;
+//    user_data.fpga_status[0] = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_STATUS_BASE);
+//    user_data.fpga_status2[0] = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_FPGA_STATUS2_BASE);
+//    return;
 //}
 
 /*---- User write function -----------------------------------------*/
@@ -444,7 +444,7 @@ void mscb_uart_handler(void)
         n = mscb_interprete(0, in_buf, out_buf);
 
         for(int i_printf=0; i_printf < i_in;i_printf++){
-            //printf("0x%0x\t",in_buf[i_printf]);	
+            //printf("0x%0x\t",in_buf[i_printf]);
         }
         //printf("\n");
         //printf("n is %d\n",n);
@@ -512,7 +512,7 @@ int mscb_main()
     //{
     //    ch = mscb_loop();
     //}
-    
+
     printf("mscb node already running, using interrupts in this version\n");
     printf("Nothing to see here at the moment .., bye!\n");
     return 0;
@@ -528,7 +528,7 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
     // determine length of MSCB command
     buflen = (buf[0] & 0x07);
     if (buflen == 7){
-        if (buf[1] & 0x80)  
+        if (buf[1] & 0x80)
             buflen = (((buf[1] & 0x7F) << 8) | buf[2]) + 4;
         else
             buflen = (buf[1] & 0x7F) + 3;  // add command, length and CRC
@@ -708,7 +708,7 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
             }
 
             for(int j=0; j<size;j++){ // crc for mem write expects only crc of written data
-                buf[j]=buf[j+8];	
+                buf[j]=buf[j+8];
             }
 
             rb[0] = MCMD_ACK;
@@ -727,14 +727,14 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
             adr = (adr << 8) | buf[8];
             //printf("READ MEM:\t addr:%08X size %d\n", adr, size);
 
-            //mscb only works with bytes 
+            //mscb only works with bytes
             //sc_data contains 32 bit per addr --> send 4 bytes per sc addr read:
             //buf[0]=(sc_data[adr]>>24);
             //buf[1]=(sc_data[adr]>>16);
             //buf[2]=(sc_data[adr]>>8);
             //buf[3]=sc_data[adr];
 
-            //the same with a block of memory: 
+            //the same with a block of memory:
             for(int j = 0; j < (size/4+(size%4!=0)) ; j++){
                 for(int i=0; i<4; i++){
                     buf[j*4+i]= (sc_data[adr+j]>>(24-8*i));
@@ -876,14 +876,14 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
 struct mscb_t {
     alt_alarm alarm;
     unsigned char data;
-    
+
     void init() {
         printf("[mscb] init\n");
         mscb_init();
         while (input_data_ready()){
             read_mscb_command();
         }
-        
+
         if(int err = alt_ic_isr_register(0, 17, callback, this, nullptr)) {
             printf("ERROR mscb init\n", err);
         }
@@ -892,7 +892,7 @@ struct mscb_t {
     void callback() {
         mscb_uart_handler();
         //printf("callback");
-        
+
         // ------------  TEST - OUTPUT --------------------
         //data = read_mscb_command();
         //if(data != 0xff){ // why is this happening ?? TODO: fix this when doing addressing in hardware !
@@ -904,7 +904,7 @@ struct mscb_t {
         //    print_byte(data);
         //}
     }
-    
+
     static void callback(void* context) {
         ((mscb_t*)context)->callback();
     }

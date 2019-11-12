@@ -88,6 +88,7 @@ namespace mudaq {
     int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply=true);
     //write all packets received into a midas bank. clears internal packet fifo and should be called from time to time to avoid storing all replies
     int FEBsc_write_bank(char *pevent, int off);
+    int FEBsc_dump_packets();
     //get
     uint32_t FEBsc_get_packet();
 
@@ -129,8 +130,7 @@ protected:
         uint16_t GetFPGA_ID(){return (this->at(0)>>8)&0xffff;};
         uint16_t GetStartAddr(){return this->at(1);};
         size_t GetLength(){if(IsWR() && IsResponse()) return 0; else return this->at(2)&0xffff;};
-
-
+	void Print();
     };
     std::list<SC_reply_packet> m_sc_packet_fifo; //storage of all received SC packets to be consumed by a MIDAS bank writer
 

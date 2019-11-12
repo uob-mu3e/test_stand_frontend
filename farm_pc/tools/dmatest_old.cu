@@ -32,18 +32,10 @@ using namespace std;
 int main(int argc, char *argv[])
 {
 
-    ofstream myfile;
-    myfile.open("memory_content.txt");
-    if ( !myfile ) {
-      cout << "Could not open file " << endl;
-      return -1;
-    }
 
-    myfile << "idx" << "\t" << "data" << "\t" << "event_length" << endl;
-
-    system("echo machmalkeins | sudo -S /home/labor/daq/driver/compactify.sh");
+    system("echo labor | sudo -S ../../../common/kerneldriver/compactify.sh");
     usleep(1000000);
-    system("echo machmalkeins | sudo -S /home/labor/daq/driver/compactify.sh");
+    system("echo labor | sudo -S ../../../common/kerneldriver/compactify.sh");
     usleep(1000000);
 
     size_t dma_buf_size = MUDAQ_DMABUF_DATA_LEN;
@@ -95,10 +87,12 @@ int main(int argc, char *argv[])
         return ret_val;
     }
 
+
+    while(true){
     // Set up data generator
     uint32_t datagen_setup = 0;
     mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
-    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+    datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
 
     // reset all
@@ -127,6 +121,17 @@ int main(int argc, char *argv[])
         cout << hex << "0x" <<  dma_buf[i] << " ";
     cout << endl;
 
+
+    sleep(5);
+    ofstream myfile;
+    myfile.open("memory_content.txt");
+    if ( !myfile ) {
+      cout << "Could not open file " << endl;
+      return -1;
+    }
+
+    myfile << "idx" << "\t" << "data" << "\t" << "event_length" << endl;
+
     while(true){
 
 
@@ -153,7 +158,7 @@ int main(int argc, char *argv[])
         event_length = dma_buf[(readindex+7)%dma_buf_nwords];
         if (event_length == 0) continue;
 
-        cout <<"length " << event_length << endl;
+        //cout <<"length " << event_length << endl;
         // do not overtake dma engine
           if((readindex%dma_buf_nwords) > lastWritten){
               if(dma_buf_nwords - (readindex % dma_buf_nwords) + lastWritten < event_length * 8 + 1){
@@ -210,9 +215,9 @@ int main(int argc, char *argv[])
 
     uint64_t lastmemaddr = mu.last_written_addr();
 
-    cout << "lastmemaddr is " << hex << lastmemaddr << endl;
+//    cout << "lastmemaddr is " << hex << lastmemaddr << endl;
 
-    cout << "Writing file!" << endl;
+//    cout << "Writing file!" << endl;
 
 //    int firstindex = -1;
 //    int lastindex = -1;
@@ -234,8 +239,12 @@ int main(int argc, char *argv[])
     mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
 
     mu.disable();
-    mu.close();
 
     myfile.close();
+
+    }
+
+    mu.close();
+
     return 0;
 }

@@ -100,10 +100,11 @@ const char *sc_settings_str[] = {
 "Clear WM = BOOL : 0",
 "Last RM ADD = BOOL : 0",
 "Read MALIBU File = BOOL : 0",
+"power MALIBU = BOOL : 0",
 "[32] Temp0",
 "[32] Temp1",
 "[32] Temp2",
-"[32] Temp3",
+//"[32] Temp3",
 nullptr
 };
 
@@ -697,5 +698,27 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         }
 
     }
+	if(std::string(key.name) == "power MALIBU"){
+		
+		BOOL value;
+		int size = sizeof(value);
+		db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+		if(value) {
+			char STR_PCIE_MEM_START[128];
+			INT PCIE_MEM_START, SIZE_PCIE_MEM_START;
+			SIZE_PCIE_MEM_START = sizeof(PCIE_MEM_START);
+			sprintf(STR_PCIE_MEM_START,"Equipment/Switching/Variables/PCIE_MEM_START");
+			db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
+			INT NEW_PCIE_MEM_START = PCIE_MEM_START + 6  ;
+			uint32_t data[1] = {0x01010000};
+            mu.FEB_write((uint32_t) 0, data, (uint16_t) 1, (uint32_t) 0xFFF0, (uint32_t) PCIE_MEM_START);
+			cm_msg(MINFO, "powerup MALIBU", "change power of malibu");
+            INT SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
+            db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
+			
+			value = FALSE; // reset flag in ODB
+			db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+        }
+	}
 
 }
