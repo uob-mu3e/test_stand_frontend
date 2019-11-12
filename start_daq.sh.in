@@ -27,9 +27,30 @@ odbedit -d Custom -c 'create STRING MALIBU'
 odbedit -c 'set Custom/MALIBU TileGUI/MALIBUMonitor/Monitor.html'
 
 xterm -hold -e "mhttpd" &
+sleep 0.2
 xterm -hold -e "mserver" &
-xterm -hold -e "mlogger" &
-xterm -hold -e "switch_fe" &
+sleep 0.2
+# Start front-ends before the logger!
 xterm -hold -e "crfe" &
+sleep 0.2
+xterm -hold -e "msysmon-nvidia" &
+sleep 0.2
+# xterm -hold -e "switch_fe" &
+# sleep 0.2
+xterm -hold -e "mlogger" &
+#xterm -hold -e "switch_fe" &
 #xterm -hold -e "malibu_fe" &
 
+sleep 2
+
+odbedit -c 'set Logger/History/FILE/Active y'
+odbedit -c 'set Logger/History/MIDAS/Active n'
+
+odbedit -c 'set Programs/Logger/Required y'
+odbedit -c 'set "Programs/Logger/Start command" "mlogger -D"'
+
+odbedit -c 'set Programs/mserver/Required y'
+odbedit -c 'set "Programs/mserver/Start command" "mserver -D"'
+
+odbedit -c 'set Programs/msysmon/Required y'
+odbedit -c 'set "Programs/msysmon/Start command" "msysymon-nvidia -D"'

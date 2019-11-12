@@ -11,6 +11,7 @@ function Motherboard(x,y,dx,dy){
 
     this.current = "123 mA";
     this.voltage = "4567 mV";
+    this.fans = "Fans: 0 mV";
 
     this.rx = new RXFirefly(this.x+500, this.y+130,140, 140);
     this.txclk = new TXFirefly(this.x+300, this.y+30,140, 140, "TXClk");
@@ -26,6 +27,7 @@ function Motherboard(x,y,dx,dy){
         c.font = "12px Arial";
         c.fillText(this.current, this.x+40, this.y+100);
         c.fillText(this.voltage, this.x+100, this.y+100);
+        c.fillText(this.fans, this.x+40, this.y+200);
 
         this.rx.draw();
         this.txclk.draw();
@@ -187,6 +189,7 @@ function Firefly(x,y,dx,dy, daughter, index){
 	this.ok= true;
     this.voltage ="2500mV";
     this.temp ="99C";
+    this.tempcolour = "Black";
 
     this.los = [12];
     this.channelmask = [12];
@@ -196,13 +199,21 @@ function Firefly(x,y,dx,dy, daughter, index){
 		if(this.active){
 			c.fillStyle = "rgb(90,90,90)";
 			c.fillRect( this.x, this.y, this.dx, this.dy);
-			if(this.ok)
+            if(this.ok && this.tempcolour != "Red")
 				c.fillStyle = "Green";
 			else
 				c.fillStyle = "Red";
 			c.beginPath();
 			c.arc(this.x+20, this.y+20, 10, 0, Math.PI*2, false);
 			c.fill();
+
+            if(this.tempcolour != "Black"){
+                c.fillStyle = "rgb(0,0,0)";
+                c.fillRect( this.x, this.y+dy, this.dx, 15);
+            }
+            c.fillStyle = this.tempcolour;
+            c.font = "12px Arial";
+            c.fillText(this.temp, this.x+10, this.y+this.dy+12);
 		}
 	}
 
@@ -342,7 +353,7 @@ window.addEventListener('click', function(event) {
 
 
 function update_boarddrawing(value) {
-    var doffset = 11;
+    var doffset = 12;
     var dnum = 11;
 
     motherboard.current = Number.parseFloat(value["crt1"][0]).toFixed(0) + "mA";
@@ -366,6 +377,7 @@ function update_boarddrawing(value) {
     motherboard.txrst.temp = Number.parseFloat(value["crt1"][9]).toFixed(0) + "C";
     motherboard.txrst.voltage = Number.parseFloat(value["crt1"][10]).toFixed(0) + "mV";
 
+    motherboard.fans = "Fan current: " + Number.parseFloat(value["crt1"][11].toFixed(0)) + "mA";
 
 
 
@@ -381,7 +393,14 @@ function update_boarddrawing(value) {
                      for(var k=0; k < 12; k++){
                          fireflys[i*3+j].los[k] = value["crt1"][doffset+i*dnum+j*3+2] & (1<<k);
                      }
-                     fireflys[i*3+j].temp = Number.parseFloat(value["crt1"][doffset+i*dnum+j*3+3]).toFixed(0) + "C";
+                     var t = value["crt1"][doffset+i*dnum+j*3+3];
+                     fireflys[i*3+j].temp = Number.parseFloat(t).toFixed(0) + "C";
+                     if(t < 55)
+                         fireflys[i*3+j].tempcolour = "Black";
+                     if(t >= 55)
+                         fireflys[i*3+j].tempcolour = "Orange";
+                     if(t >= 65)
+                         fireflys[i*3+j].tempcolour = "Red";
                      fireflys[i*3+j].voltage = Number.parseFloat(value["crt1"][doffset+i*dnum+j*3+4]).toFixed(0) + "mV";
                  }  else {
                      fireflys[i*3+j].active = false;
