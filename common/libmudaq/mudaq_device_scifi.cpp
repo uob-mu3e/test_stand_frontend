@@ -497,6 +497,27 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
     return length;
 }
 
+void MudaqDevice::SC_reply_packet::Print(){
+   printf("--- Packet dump ---\n");
+   printf("Type %x\n", this->at(0)&0x1f0000bc);
+   printf("FPGA ID %x\n", this->GetFPGA_ID());
+   printf("startaddr %x\n", this->GetStartAddr());
+   printf("length %ld\n", this->GetLength());
+   printf("packet: size=%lu length=%lu IsRD=%c IsWR=%c IsOOB=%c, IsResponse=%c, IsGood=%c\n",
+     this->size(),this->GetLength(),
+     this->IsRD()?'y':'n',
+     this->IsWR()?'y':'n',
+     this->IsOOB()?'y':'n',
+     this->IsResponse()?'y':'n',
+     this->Good()?'y':'n'
+   );
+   //report and check
+   for(size_t i=0 ;i<10;i++){
+      if(i>= this->size()) break;
+      printf("data: +%d: %16.16x\n",i,this->at(i));
+   }
+   printf("--- *********** ---\n");
+}
 
 //Read up to one packet from the sc slave interface, store in the sc packet fifo.
 //Return: type field of the packet, 0x00 when no new packet was available
@@ -525,26 +546,10 @@ uint32_t MudaqDevice::FEBsc_get_packet(){
    }
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+3+packet.GetLength())); //save trailer
 
-   //printf("Type %x\n", packet[0]&0x1f0000bc);
-   //printf("FPGA ID %x\n", packet.GetFPGA_ID());
-   //printf("startaddr %x\n", packet.GetStartAddr());
-   //printf("length %ld\n", packet.GetLength());
-   //printf("packet: size=%lu length=%lu IsRD=%c IsWR=%c IsOOB=%c, IsResponse=%c, IsGood=%c\n",
-   //  packet.size(),packet.GetLength(),
-   //  packet.IsRD()?'y':'n',
-   //  packet.IsWR()?'y':'n',
-   //  packet.IsOOB()?'y':'n',
-   //  packet.IsResponse()?'y':'n',
-   //  packet.Good()?'y':'n'
-   //);
-   ////report and check
-   //for(size_t i=0 ;i<packet.size();i++){
-   //   printf("packet: +%d: %16.16x\n",i,packet.at(i));
-   //}
-
    //check type of SC packet
    if(!packet.IsResponse()){
     printf("Received packet is a request, something is wrong...\n");
+    packet.Print();
     throw;
    }
    if(packet.IsRD()){
@@ -562,6 +567,7 @@ uint32_t MudaqDevice::FEBsc_get_packet(){
 
    if(packet[packet.size()-1]!=0x9c){
     printf("did not see trailer at %ld, something is wrong.\n",packet.GetLength()+3);
+    packet.Print();
     throw;
    }
    //store packet in fifo
