@@ -93,7 +93,7 @@ BEGIN
         i_reset_125_n       => i_reset_125_n,
         i_clk_125           => i_clk_125,
 
-        phase               => o_phase,
+        o_phase             => o_phase,
         i_reset_n           => i_reset_n,
         i_clk               => i_clk--,
     );

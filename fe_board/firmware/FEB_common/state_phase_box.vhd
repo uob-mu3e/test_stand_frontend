@@ -19,7 +19,7 @@ PORT (
     i_reset_125_n       : in    std_logic;
     i_clk_125           : in    std_logic;
 
-    phase               : out   std_logic_vector(31 downto 0);
+    o_phase             : out   std_logic_vector(31 downto 0);
     i_reset_n           : in    std_logic;
     -- free running clock
     i_clk               : in    std_logic--;
@@ -36,42 +36,16 @@ architecture rtl of state_phase_box is
 
 begin
 
-    -- measure phase between clk_reset and clk_global
-    process(i_clk, i_reset_n)
-    begin
-        if ( i_reset_n = '0' ) then
-            counter                 <= (others => '0');
-            phase                   <= (others => '0');
-            single_result           <= '0';
-        elsif rising_edge(i_clk) then
-            counter <= counter + 1;
-            if(counter(26)='1') then
-                counter             <= (others => '0');
-                phase               <= std_logic_vector(phase_counter);
-                phase_counter       <= (others => '0');
+    e_clk_phase : entity work.clk_phase
+    generic map ( W => 20 )
+    port map (
+        i_clk1              => i_clk_125,
+        i_clk2              => i_clk_125_rx,
 
-            -- metastable result :
-            elsif ( i_clk_125_rx /= i_clk_125 ) then
-                single_result       <= '1';
-            else
-                single_result       <= '0';
-            end if;
+        o_phase             => o_phase(19 downto 0),
 
-            -- count phase with stable result :
-            if (single_result_stable = '1') then
-                phase_counter <= phase_counter + 1;
-            end if;
-        end if;
-    end process;
-
-    -- sync metastable result
-    i_ff_sync : entity work.ff_sync
-    generic map ( W => 1, N => 5 )
-    PORT MAP (
-        d(0)    => single_result,
-        q(0)    => single_result_stable,
-        rst_n   => i_reset_n,
-        clk     => i_clk
+        i_reset_n           => i_reset_n,
+        i_clk               => i_clk--,
     );
 
     process(i_clk_125, i_reset_125_n)
