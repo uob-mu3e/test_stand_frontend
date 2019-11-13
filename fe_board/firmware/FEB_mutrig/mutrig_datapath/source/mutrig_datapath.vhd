@@ -260,7 +260,7 @@ o_receivers_usrclk <= s_receivers_usrclk;
 
 --generate a pll-synchronous all-ready signal for the data receivers.
 --this assures all start dumping data into the fifos at the same time, and we do not enter a deadlock scenario from the start
-gen_ready_all: process (s_receivers_usrclk,i_rst)
+gen_ready_all: process (s_receivers_usrclk,i_rst,s_receivers_ready, i_SC_mask)
 variable v_ready : std_logic_vector(N_ASICS-1 downto 0);
 begin
 	v_ready:=s_receivers_ready or i_SC_mask;

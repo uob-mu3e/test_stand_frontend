@@ -79,7 +79,7 @@ begin
 	end generate gen_noclkdiv;
 
 
-	p_sample_start: process(i_pll_clk)
+	p_sample_start: process(i_clk_config)
 	begin
 		if(rising_edge(i_clk_config)) then
 			if(i_rst='1') then
@@ -106,7 +106,7 @@ begin
 		end if;
 	end process;
 
-	fsm_comb : process (s_state, i_data, s_run, i_flag, s_PHASEUPDOWN, s_PHASECOUNTERSELECT, s_PHASEDONE, s_PHASEDONE_lat)	--{{{
+	fsm_comb : process (i_rst, s_state, i_data, s_run, i_flag, s_PHASEUPDOWN, s_PHASECOUNTERSELECT, s_PHASEDONE, s_PHASEDONE_lat)	--{{{
 	begin
 		n_state <= s_state;
 		n_PHASEUPDOWN <= s_PHASEUPDOWN;
