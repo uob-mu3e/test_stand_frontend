@@ -93,7 +93,7 @@ set_location_assignment PIN_K2 -to pod_pll_clk
 set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp_tx[*]
 set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp_rx[*]
 set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_tx[*]
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_rx[*]
+#set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_rx[*]
 
 
 

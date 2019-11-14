@@ -130,6 +130,9 @@ architecture arch of fe_block is
 
     signal av_qsfp, av_pod : work.util.avalon_t;
 
+    signal pod_rx_clk : std_logic_vector(3 downto 0);
+    signal pod_rx_reset_n : std_logic_vector(3 downto 0);
+
     signal qsfp_rx_data : std_logic_vector(127 downto 0);
     signal qsfp_rx_datak : std_logic_vector(15 downto 0);
     signal pod_rx_data : std_logic_vector(31 downto 0);
@@ -443,8 +446,8 @@ begin
     e_reset_system : entity work.resetsys
     port map (
         i_data_125_rx           => pod_rx_data(7 downto 0),
-        i_reset_125_rx_n        => reset_125_n,
-        i_clk_125_rx            => i_clk_125,
+        i_reset_125_rx_n        => pod_rx_reset_n(0),
+        i_clk_125_rx            => pod_rx_clk(0),
 
         o_state_125             => run_state_125,
         i_reset_125_n           => reset_125_n,
@@ -530,6 +533,12 @@ begin
 
 
 
+    g_pod_rx_reset_n : for i in pod_rx_reset_n'range generate
+    begin
+        e_pod_rx_reset_n : entity work.reset_sync
+        port map ( rstout_n => pod_rx_reset_n(i), arst_n => i_areset_n, clk => pod_rx_clk(i) );
+    end generate;
+
     e_pod : entity work.xcvr_s4
     generic map (
         NUMBER_OF_CHANNELS_g => 4,
@@ -547,8 +556,8 @@ begin
 
         o_tx_clkout => open,
         i_tx_clkin  => (others => i_clk_125),
-        o_rx_clkout => open,
-        i_rx_clkin  => (others => i_clk_125),
+        o_rx_clkout => pod_rx_clk,
+        i_rx_clkin  => pod_rx_clk,
 
         o_tx_serial => o_pod_tx,
         i_rx_serial => i_pod_rx,
