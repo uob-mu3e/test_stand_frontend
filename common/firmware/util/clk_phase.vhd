@@ -25,18 +25,38 @@ end entity;
 
 architecture arch of clk_phase is
 
-    signal q : std_logic;
+    signal d, q : std_logic_vector(1 downto 0) := (others => '0');
 
     signal cnt, phase : unsigned(o_phase'range);
 
+    -- avoid registers merge between clk_phase entities
+    attribute ALTERA_ATTRIBUTE : string;
+    attribute ALTERA_ATTRIBUTE of d : signal is "-name DONT_MERGE_REGISTER ON";
+
 begin
 
-    -- sync clock difference to i_clk clock domain
+    -- convert clk1 to ff output
+    process(i_clk1)
+    begin
+    if rising_edge(i_clk1) then
+        d(0) <= not d(0);
+    end if;
+    end process;
+
+    -- convert clk2 to ff output
+    process(i_clk2)
+    begin
+    if rising_edge(i_clk2) then
+        d(1) <= not d(1);
+    end if;
+    end process;
+
+    -- sync ff outputs to i_clk clock domain
     e_ff_sync : entity work.ff_sync
-    generic map ( W => 1 )
+    generic map ( W => 2 )
     port map (
-        d(0) => i_clk2 xor i_clk1,
-        q(0) => q,
+        d => d,
+        q => q,
         rst_n => i_reset_n,
         clk => i_clk--,
     );
@@ -51,7 +71,7 @@ begin
     elsif rising_edge(i_clk) then
         cnt <= cnt + 1;
 
-        if ( q = '1' ) then
+        if ( q(1) /= q(0) ) then
             phase <= phase + 1;
         end if;
 
