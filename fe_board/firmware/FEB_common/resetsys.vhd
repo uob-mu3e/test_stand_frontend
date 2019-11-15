@@ -101,31 +101,30 @@ BEGIN
     -- sync state from clk_125_rx to clk_156
     e_fifo_sync : entity work.fifo_sync
     generic map (
-        DATA_WIDTH_g => run_state_t'length--,
+        RDATA_RESET_g => RUN_STATE_IDLE--,
     )
     port map (
         o_rdata     => o_state_156,
+        i_rreset_n  => i_reset_156_n,
         i_rclk      => i_clk_156,
-        i_reset_val => RUN_STATE_IDLE,
 
         i_wdata     => state_125_rx,
-        i_wclk      => i_clk_125_rx,
-
-        i_fifo_aclr => not i_reset_156_n--,
+        i_wreset_n  => i_reset_125_n,
+        i_wclk      => i_clk_125_rx--,
     );
 
     e_fifo_sync2 : entity work.fifo_sync
     generic map (
-        DATA_WIDTH_g => reset_bypass'length--,
+        RDATA_RESET_g => (reset_bypass'range => '0')--,
     )
     port map (
         o_rdata     => reset_bypass_125_rx,
+        i_rreset_n  => i_reset_125_rx_n,
         i_rclk      => i_clk_125_rx,
 
         i_wdata     => reset_bypass,
-        i_wclk      => i_clk_156,
-
-        i_fifo_aclr => not i_reset_125_rx_n--,
+        i_wreset_n  => i_reset_156_n,
+        i_wclk      => i_clk_156--,
     );
 
     testout <= state_125_rx(testout'range);
