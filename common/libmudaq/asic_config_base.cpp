@@ -22,8 +22,12 @@ ASICConfigBase::para_t ASICConfigBase::make_param(std::string name, size_t nbits
 
 ASICConfigBase::para_t ASICConfigBase::make_param(std::string name, std::string bitorderstring){
     std::istringstream is(bitorderstring);
-    std::vector<uint8_t> order;
-    order.assign(std::istream_iterator<uint8_t>( is ), std::istream_iterator<uint8_t>() );
+    std::vector<uint8_t> order, order_t;
+    order_t.assign(std::istream_iterator<uint8_t>( is ), std::istream_iterator<uint8_t>() );
+    for (unsigned int i = 0; i < order_t.size(); ++ i)
+        for (unsigned int n = 0; n < order_t.size(); ++n)
+            if (order_t.at(n) == i)
+                order.push_back((uint8_t)n);
     size_t sizze = order.size();
     return std::make_tuple(name,sizze,order);
 }
@@ -70,7 +74,7 @@ ASICConfigBase::~ASICConfigBase(){
 */
 }
 
-int ASICConfigBase::setParameter(std::string name, uint32_t value) {
+int ASICConfigBase::setParameter(std::string name, uint32_t value, bool reverse) {
     auto para = paras_offsets.find(name);
     if( para == paras_offsets.end() ) {
         std::cerr << "Parameter '" << name << "' is not present in mutrig config" << std::endl;
@@ -89,13 +93,19 @@ int ASICConfigBase::setParameter(std::string name, uint32_t value) {
     for(unsigned int pos = 0; (pos < nbits); pos++, mask <<= 1) {
         unsigned int n = offset+bitorder.at(pos)%8;
         unsigned int b = offset+bitorder.at(pos)/8;
+        if (reverse) {
+            n = (offset + nbits -1 - bitorder.at(pos))%8;
+            b = (offset + nbits -1 - bitorder.at(pos))/8;
+            unsigned int b2 = length_bits/8;
+            b = b2 -b;
+        }
         if ((mask & value) != 0 ) bitpattern_w[b] |=   1 << n;  // set nth bit 
         else                      bitpattern_w[b] &= ~(1 << n); // clear nth bit
     }
     return 0;
 }
 
-uint32_t ASICConfigBase::getParameter(std::string name) {
+uint32_t ASICConfigBase::getParameter(std::string name, bool reverse) {
     auto para = paras_offsets.find(name);
     if( para == paras_offsets.end() ) {
         std::cerr << "Parameter '" << name << "' is not present in mutrig config" << std::endl;
@@ -110,6 +120,12 @@ uint32_t ASICConfigBase::getParameter(std::string name) {
     for(unsigned int pos = 0; pos < nbits; pos++) {
         unsigned int n = offset+bitorder.at(pos)%8;
         unsigned int b = offset+bitorder.at(pos)/8;
+        if (reverse) {
+            n = (offset + nbits -1 - bitorder.at(pos))%8;
+            b = (offset + nbits -1 - bitorder.at(pos))/8;
+            unsigned int b2 = length_bits/8;
+            b = b2 -b;
+        }
         value += ( ( (bitpattern_r[b] & (1 << n)) != 0 ) << pos);
     }
     return value;

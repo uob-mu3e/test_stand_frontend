@@ -30,12 +30,12 @@ public:
      * set parameter in write bitpattern by name
      * return 0 if success
      */
-    int setParameter(std::string name, uint32_t value);
+    int setParameter(std::string name, uint32_t value, bool reverse = false);
     
     /**
      * get parameter from read bitpattern
      */
-    uint32_t getParameter(std::string);
+    uint32_t getParameter(std::string, bool reverse = false);
 
     /**
      * resets bitpattern
