@@ -3,12 +3,12 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use work.mupix_constants.all;
 
 package daq_constants is
 
 subtype links_reg32 is std_logic_vector(31 downto 0);
 subtype reg32 is std_logic_vector(31 downto 0);
+constant NREGISTERS : integer := 64;
 type reg32array is array (NREGISTERS-1 downto 0) of reg32;
 
 subtype reg64 is std_logic_vector(63 downto 0);
@@ -73,7 +73,6 @@ constant k23_7 : std_logic_vector(7 downto 0) := X"F7"; -- used as "empty" data 
 constant k27_7 : std_logic_vector(7 downto 0) := X"FB";
 constant k29_7 : std_logic_vector(7 downto 0) := X"FD";
 constant k30_7 : std_logic_vector(7 downto 0) := X"FE";
-
 
 
 -- mscb addressing (for networks with 8bit and 16bit addresses, we will use 16 ?)

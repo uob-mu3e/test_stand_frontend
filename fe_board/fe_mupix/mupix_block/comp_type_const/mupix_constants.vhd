@@ -15,7 +15,7 @@ constant LVDS_ERRCOUNTER_REG	 : integer := 36;
 constant NCHIPS			: integer :=  8;
 constant NFEB_CARDS		: integer :=  4;
 constant NTRIGGERS		: integer :=  4;
-constant NREGISTERS		: integer := 64; 
+--constant NREGISTERS		: integer := 64;  --- defined in daq_constants.vhd
 constant NINJECTIONS		: integer :=  1;
 --constant NINPUTS_BANK_A : integer := 16;
 --constant NINPUTS_BANK_B : integer := 16;
@@ -71,20 +71,5 @@ constant DATAFAKER_SEED		: integer := 16;
 
 constant HITLABEL				: std_logic_vector(3 downto 0) := x"E";
 constant TIMELABEL			: std_logic_vector(3 downto 0) := x"F";
-
-
--- 8bit/10bit encoding
-constant k28_0	:	std_logic_vector(7 downto 0)	:= X"1C";	-- used in MuPix
-constant k28_1	:	std_logic_vector(7 downto 0)	:= X"3C";	-- used in data alignment (transceiver)
-constant k28_2 : 	std_logic_vector(7 downto 0)	:= X"5C";
-constant k28_3 : 	std_logic_vector(7 downto 0)	:= X"7C";
-constant k28_4 : 	std_logic_vector(7 downto 0)	:= X"9C";
-constant k28_5	: 	std_logic_vector(7 downto 0)	:= X"BC";	-- used in MuPix
-constant k28_6 : 	std_logic_vector(7 downto 0)	:= X"DC";
-constant k28_7 : 	std_logic_vector(7 downto 0)	:= X"FC";	-- not used, comma symbol with harder constraints!
-constant k23_7 : 	std_logic_vector(7 downto 0)	:= X"F7";	-- used as "empty" data (transceiver)
-constant k27_7 : 	std_logic_vector(7 downto 0)	:= X"FB";
-constant k29_7 : 	std_logic_vector(7 downto 0)	:= X"FD";
-constant k30_7 : 	std_logic_vector(7 downto 0)	:= X"FE";
 
 end package mupix_constants;
