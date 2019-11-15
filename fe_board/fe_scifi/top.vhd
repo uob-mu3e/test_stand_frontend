@@ -17,6 +17,14 @@ port (
 
 
 
+    -- Si5342
+    si42_oe_n       : out   std_logic; -- <= '0'
+    si42_rst_n      : out   std_logic; -- reset
+    si42_spi_out    : in    std_logic; -- slave data out
+    si42_spi_in     : out   std_logic; -- slave data in
+    si42_spi_sclk   : out   std_logic; -- clock
+    si42_spi_cs_n   : out   std_logic; -- chip select
+
     -- SI5345
 
     si45_oe_n       : out   std_logic; -- <= '0'

@@ -270,17 +270,17 @@ begin
 		i_reset              => not reset_n,
 		-- 156.25 MHz
 		i_clk                => qsfp_pll_clk,
-		i_clk125             => clk_aux--,
+		i_clk125             => pod_pll_clk--,
     );
 
-	clock_A <= clk_aux;
-	clock_B <= clk_aux;
-	clock_C <= clk_aux;
-	clock_E <= clk_aux;
+	clock_A <= pod_pll_clk;
+	clock_B <= pod_pll_clk;
+	clock_C <= pod_pll_clk;
+	clock_E <= pod_pll_clk;
 
-	process(clk_aux)
+	process(pod_pll_clk)
 	begin
-	if falling_edge(clk_aux) then
+	if falling_edge(pod_pll_clk) then
 		if(run_state_125 = RUN_STATE_SYNC)then
 			fast_reset_A <= '1';
 			fast_reset_B <= '1';
