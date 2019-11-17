@@ -29,7 +29,6 @@ set_global_assignment -name VHDL_FILE dma_evaluation.vhd
 set_global_assignment -name VHDL_FILE linear_shift.vhd
 set_global_assignment -name QSYS_FILE ip/ip_pll_125.qsys
 set_global_assignment -name QSYS_FILE nios.qsys
-set_global_assignment -name QSYS_FILE ip/ip_transceiver.qsys
 set_global_assignment -name VHDL_FILE mudaq_components.vhd -library work
 set_global_assignment -name VHDL_FILE pcieapp/pcie_components.vhd -library work
 set_global_assignment -name VHDL_FILE mudaq_registers.vhd -library work
@@ -37,7 +36,6 @@ set_global_assignment -name QIP_FILE util/util.qip
 set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 set_global_assignment -name QIP_FILE a10/xcvr.qip
 set_global_assignment -name QSYS_FILE ip/ip_clk_ctrl.qsys
-set_global_assignment -name QSYS_FILE ip/ip_receiving_fifo.qsys
 set_global_assignment -name QSYS_FILE ip/ip_pll_312.qsys
 set_global_assignment -name QSYS_FILE ip/ip_sw_fifo_32.qsys
 set_global_assignment -name QSYS_FILE ip/ip_sw_fifo_64.qsys
