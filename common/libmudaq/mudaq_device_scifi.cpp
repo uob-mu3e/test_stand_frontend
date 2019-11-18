@@ -167,7 +167,12 @@ namespace mudaq {
     _regs_ro = mmap_ro(MUDAQ_REGS_RO_INDEX, MUDAQ_REGS_RO_LEN);
     _mem_rw =  mmap_rw(MUDAQ_MEM_RW_INDEX,  MUDAQ_MEM_RW_LEN);  // added by DvB for rw mem
     _mem_ro =  mmap_ro(MUDAQ_MEM_RO_INDEX,  MUDAQ_MEM_RO_LEN);
-    return (_regs_rw != nullptr) && (_regs_ro != nullptr) && (_mem_rw != nullptr) && (_mem_ro != nullptr);  // added by DvB for rw mem
+    if (!is_ok()) return false;
+    if (read_register_ro(VERSION_REGISTER_R)==0xffffffff){
+	    ERROR("Failed reading version register\n");
+	    return false;
+    }
+    return true;
 }
 
 void MudaqDevice::close()
@@ -392,16 +397,24 @@ void MudaqDevice::FEBsc_resetMaster(){
 }
 void MudaqDevice::FEBsc_resetSlave(){
     cm_msg(MINFO, "MudaqDevice" , "Resetting slow control slave");
-    printf("MudaqDevice::FEBsc_resetSlave()\n");
-//TODO: need some way to clean data in slave, otherwise we will start reading the whole history again...
+    printf("MudaqDevice::FEBsc_resetSlave(): ");
     //reset our pointer
     m_FEBsc_rmem_addr=0;
     //reset fpga entity
     write_register_wait(RESET_REGISTER_W, SET_RESET_BIT_SC_SLAVE(0), 1000);
     write_register_wait(RESET_REGISTER_W, 0x0, 1000);
-    //wait some time, reset takes time
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
+    //wait until slave is reset, clearing the ram takes time
+    uint16_t timeout_cnt=0;
+    //poll register until reset. Should be 0xff... during reset and zero after, but we might be bombarded with packets, so give some margin for data to enter. 
+    while((read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R) > 0xff) && timeout_cnt++ < 50){
+	    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	    printf("."); fflush(stdout);
+    };
+    if(timeout_cnt>=50){
+        printf("\n ERROR: Slow control slave reset FAILED with timeout\n");
+    }else{
+        printf(" DONE\n");
+    };
 }
 
 /*
@@ -548,6 +561,7 @@ uint32_t MudaqDevice::FEBsc_get_packet(){
        packet.push_back(read_memory_ro(m_FEBsc_rmem_addr + 3 + i)); //save data
    }
    packet.push_back(read_memory_ro(m_FEBsc_rmem_addr+3+packet.GetLength())); //save trailer
+   //packet.Print();
 
    //check type of SC packet
    if(!packet.IsResponse()){
