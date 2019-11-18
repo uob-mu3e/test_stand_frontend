@@ -64,9 +64,8 @@ alt_u16 scifi_module_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
 }
 
 extern int uart;
-void scifi_module_t::menu(sc_t* sc){
+void scifi_module_t::menu(){
 
-    int n=0;
     auto& regs = sc->ram->regs.scifi;
     while(1) {
         printf("  [0] => reset asic\n");
@@ -144,13 +143,13 @@ void scifi_module_t::menu(sc_t* sc){
             printf("subdet_reset_reg: 0x%08X\n", regs.ctrl.reset);
             break;
         case '6':
-	    menu_reg_dummyctrl(sc);
+	    menu_reg_dummyctrl();
             break;
         case '7':
-	    menu_reg_datapathctrl(sc);
+	    menu_reg_datapathctrl();
             break;
         case '8':
-	    menu_reg_resetskew(sc);
+	    menu_reg_resetskew();
             break;
         case 'd':
             printf("span w=                   =%x\n",AVM_SC_SPAN/4);
@@ -160,6 +159,7 @@ void scifi_module_t::menu(sc_t* sc){
             printf("ram->regs.scifi.ctrl.dummy=%x (%x)\n",&(regs.ctrl.dummy)		,((uint32_t)&(regs.ctrl.dummy)- (uint32_t)(sc->ram))/4);
             printf("ram->regs.scifi.ctrl.dp   =%x (%x)\n",&(regs.ctrl.dp)		,((uint32_t)&(regs.ctrl.dp)   - (uint32_t)(sc->ram))/4);
             printf("ram->regs.scifi.ctrl.reset=%x (%x)\n",&(regs.ctrl.reset)		,((uint32_t)&(regs.ctrl.reset)- (uint32_t)(sc->ram))/4);
+            printf("ram->regs.scifi.ctrl.resetdelay=%x (%x)\n",&(regs.ctrl.resetdelay)		,((uint32_t)&(regs.ctrl.resetdelay)- (uint32_t)(sc->ram))/4);
 	    break;
         case 'q':
             return;
@@ -168,7 +168,7 @@ void scifi_module_t::menu(sc_t* sc){
         }
     }
 }
-void scifi_module_t::menu_reg_dummyctrl(sc_t* sc){
+void scifi_module_t::menu_reg_dummyctrl(){
     auto& regs = sc->ram->regs.scifi;
 
     while(1) {
@@ -211,7 +211,7 @@ void scifi_module_t::menu_reg_dummyctrl(sc_t* sc){
 }
 
 
-void scifi_module_t::menu_reg_datapathctrl(sc_t* sc){
+void scifi_module_t::menu_reg_datapathctrl(){
     auto& regs = sc->ram->regs.scifi;
 
     while(1) {
@@ -253,7 +253,38 @@ void scifi_module_t::menu_reg_datapathctrl(sc_t* sc){
     }
 }
 
-void scifi_module_t::menu_reg_resetskew(sc_t* sc){
+
+
+void scifi_module_t::RSTSKWctrl_Clear(){
+    auto& reg = sc->ram->regs.scifi.ctrl.resetdelay;
+    //reset pll to zero phase counters
+    reg = 0x8000;
+    for(int i=0; i<4;i++)
+       resetskew_count[i]=0;
+    reg = 0x0000;
+}
+
+void scifi_module_t::RSTSKWctrl_Set(uint8_t channel, uint8_t value){
+    if(channel>3) return;
+    if(value>7) return;
+    auto& regs = sc->ram->regs.scifi;
+    uint32_t val=regs.ctrl.resetdelay & 0xffc0;
+    while(value!=resetskew_count[channel]){
+        val |= (channel+2)<<2;
+        if(value>resetskew_count[channel]){ //increment counter
+            val |= 2;
+	    printf("+");
+	    resetskew_count[channel]++;
+	}else{
+            val |= 2;
+	    printf("-");
+	    resetskew_count[channel]--;
+	}
+        regs.ctrl.resetdelay = val;
+    }
+}
+
+void scifi_module_t::menu_reg_resetskew(){
     auto& regs = sc->ram->regs.scifi;
     int selected=0;
     while(1) {
@@ -263,8 +294,10 @@ void scifi_module_t::menu_reg_resetskew(sc_t* sc){
 
         printf("  [p] => swap phase bit (currently %d)\n",(reg>>(5+2*selected+1)&0x1));
         printf("  [d] => swap delay bit (currently %d)\n",(reg>>(5+2*selected+0)&0x1));
-        printf("  [+] => increase count\n",(reg>>3&0x3fff));
-        printf("  [-] => decrease count\n");
+        printf("  [+] => increase count (currently %d)\n",resetskew_count[selected]);
+        printf("  [-] => increase count (currently %d)\n",resetskew_count[selected]);
+        printf("  [r] => reset phase configuration\n");
+	
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -281,19 +314,20 @@ void scifi_module_t::menu_reg_resetskew(sc_t* sc){
         case '3':
             selected=3;
             break;
+	case 'r':
+	    RSTSKWctrl_Clear();
+	    break;
         case '+':
-	    regs.ctrl.resetdelay = (regs.ctrl.resetdelay & 0x60) | (( (selected+2) << 1) + 1);
+	    RSTSKWctrl_Set(selected, resetskew_count[selected]+1);
             break;
         case '-':
-	    regs.ctrl.resetdelay = (regs.ctrl.resetdelay & 0x60) | (( (selected+2) << 1) + 0);
+	    RSTSKWctrl_Set(selected, resetskew_count[selected]-1);
             break;
-        case 'd': //write twice so the phase stays the same
-            regs.ctrl.resetdelay = regs.ctrl.resetdelay^(1<<5+(2*selected+0));
-            regs.ctrl.resetdelay = regs.ctrl.resetdelay^(1<<0);
+        case 'd':
+            regs.ctrl.resetdelay = regs.ctrl.resetdelay^(1<<(10+selected));
             break;
-        case 'p': //write twice so the phase stays the same
-            regs.ctrl.resetdelay = regs.ctrl.resetdelay^(1<<5+(2*selected+1));
-            regs.ctrl.resetdelay = regs.ctrl.resetdelay^(1<<0);
+        case 'p':
+            regs.ctrl.resetdelay = regs.ctrl.resetdelay^(1<<( 6+selected));
             break;
         case 'q':
             return;
@@ -323,6 +357,12 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
               status=FEB_REPLY_ERROR;
 	return status;
         break;
+    case 0x0104: //configure reset skew phases
+	//data[0..3]=phases
+	printf("[scifi] configuring reset skews\n");
+        for(int i=0;i<3;i++)
+	    RSTSKWctrl_Set(i,data[i]);
+	return 0;
     case 0xfffe:
 	printf("-ping-\n");
         break;
@@ -332,7 +372,7 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
         if((cmd&0xfff0) ==0x0110){ //configure ASIC
 	   uint8_t chip=data[0];
            status=configure_asic(chip,(alt_u8*) &(data[1]));
-           if(sc.ram->regs.scifi.ctrl.dummy&1){
+           if(sc->ram->regs.scifi.ctrl.dummy&1){
               //when configured as dummy do the spi transaction,
               //but always return success to switching board
 	      if(status!=FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
