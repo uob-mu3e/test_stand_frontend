@@ -276,12 +276,13 @@ void scifi_module_t::RSTSKWctrl_Set(uint8_t channel, uint8_t value){
 	    printf("+");
 	    resetskew_count[channel]++;
 	}else{
-            val |= 2;
+            val |= 1;
 	    printf("-");
 	    resetskew_count[channel]--;
 	}
         regs.ctrl.resetdelay = val;
     }
+    regs.ctrl.resetdelay= val & 0xffc0;
 }
 
 void scifi_module_t::menu_reg_resetskew(){
