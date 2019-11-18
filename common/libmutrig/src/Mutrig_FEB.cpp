@@ -162,7 +162,7 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
         db_get_data(hDB, hKey, &barray, &barraysize, TID_BOOL);
 	_this->setResetSkewCdelay(MutrigFEB::FPGA_broadcast_ID,barray);
    }
-   if (std::string(key.name) == "resetskew_cdelay") {
+   if (std::string(key.name) == "resetskew_phases") {
         cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Updating reset skew phase settings");
         INT array[4];
         INT arraysize=sizeof(array);
@@ -358,8 +358,8 @@ void MutrigFEB::DataPathReset(int FPGA_ID){
 //set reset skew configuration
 void MutrigFEB::setResetSkewCphase(int FPGA_ID, BOOL cphase[4]){
         uint32_t val=m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG];
-        for(int i=0;i<3;i++){
-		if(cphase[i]) val|=1<<(i+6);  else val^=1<<(i+6);
+        for(int i=0;i<4;i++){
+            val=reg_setBit(val,i+6,cphase[i]);
         }
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_RESETSKEW_GLOBALS_REG, m_ask_sc_reply);
         m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG]=val;
@@ -367,8 +367,8 @@ void MutrigFEB::setResetSkewCphase(int FPGA_ID, BOOL cphase[4]){
 
 void MutrigFEB::setResetSkewCdelay(int FPGA_ID, BOOL cdelay[4]){
         uint32_t val=m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG];
-        for(int i=0;i<3;i++){
-		if(cdelay[i]) val|=1<<(i+10); else val^=1<<(i+10);
+        for(int i=0;i<4;i++){
+            val=reg_setBit(val,i+10,cdelay[i]);
         }
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_RESETSKEW_GLOBALS_REG, m_ask_sc_reply);
         m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG]=val;
@@ -376,7 +376,7 @@ void MutrigFEB::setResetSkewCdelay(int FPGA_ID, BOOL cdelay[4]){
 
 void MutrigFEB::setResetSkewPhases(int FPGA_ID, INT phases[4]){
 	uint32_t val[4];
-        for(int i=0;i<3;i++){
+        for(int i=0;i<4;i++){
         	val[i]=phases[i];
         }
 	m_mu.FEBsc_NiosRPC(FPGA_ID, 0x0104, {{val,4}});
