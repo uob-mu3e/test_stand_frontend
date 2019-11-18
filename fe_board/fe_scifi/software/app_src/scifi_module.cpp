@@ -269,6 +269,7 @@ void scifi_module_t::RSTSKWctrl_Set(uint8_t channel, uint8_t value){
     if(value>7) return;
     auto& regs = sc->ram->regs.scifi;
     uint32_t val=regs.ctrl.resetdelay & 0xffc0;
+    printf("PLL_phaseadjust #%u: ",channel);
     while(value!=resetskew_count[channel]){
         val |= (channel+2)<<2;
         if(value>resetskew_count[channel]){ //increment counter
@@ -282,6 +283,7 @@ void scifi_module_t::RSTSKWctrl_Set(uint8_t channel, uint8_t value){
 	}
         regs.ctrl.resetdelay = val;
     }
+    printf("\n");
 }
 
 void scifi_module_t::menu_reg_resetskew(){
@@ -292,8 +294,8 @@ void scifi_module_t::menu_reg_resetskew(){
 	printf("Reset delay reg now: %16.16x\n",reg);
         printf("  [0..3] => Select line N (currently %d)\n",selected);
 
-        printf("  [p] => swap phase bit (currently %d)\n",(reg>>(5+2*selected+1)&0x1));
-        printf("  [d] => swap delay bit (currently %d)\n",(reg>>(5+2*selected+0)&0x1));
+        printf("  [p] => swap phase bit (currently %d)\n",(reg>>(6 +selected)&0x1));
+        printf("  [d] => swap delay bit (currently %d)\n",(reg>>(10+selected)&0x1));
         printf("  [+] => increase count (currently %d)\n",resetskew_count[selected]);
         printf("  [-] => increase count (currently %d)\n",resetskew_count[selected]);
         printf("  [r] => reset phase configuration\n");
@@ -360,7 +362,7 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
     case 0x0104: //configure reset skew phases
 	//data[0..3]=phases
 	printf("[scifi] configuring reset skews\n");
-        for(int i=0;i<3;i++)
+        for(int i=0;i<4;i++)
 	    RSTSKWctrl_Set(i,data[i]);
 	return 0;
     case 0xfffe:
