@@ -594,6 +594,8 @@ int MudaqDevice::FEBsc_dump_packets(){
 //if available, generate and commit a midas event from all slow control packet in the list, which is empty after the operation.
 //returns length of event generated
 int MudaqDevice::FEBsc_write_bank(char *pevent, int off){
+   if(m_sc_packet_fifo.empty())
+       return 0;
    bk_init(pevent);
    uint32_t* pdata;
    while(!m_sc_packet_fifo.empty()){
