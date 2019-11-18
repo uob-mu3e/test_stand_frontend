@@ -112,6 +112,7 @@ architecture rtl of top is
 
 		-- pcie
 		signal writeregs				: reg32array;
+		signal writeregs_slow		: reg32array;
 		signal regwritten				: std_logic_vector(63 downto 0);
 		signal regwritten_fast		: std_logic_vector(63 downto 0);
 		signal regwritten_del1		: std_logic_vector(63 downto 0);
@@ -518,13 +519,13 @@ e_data_gen : entity work.data_generator_a10
 	port map (
 		clk 						=> tx_clk(0),
 		reset						=> resets(RESET_BIT_DATAGEN),
-		enable_pix	         => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL),
+		enable_pix	         => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL),
 		random_seed 			=> (others => '1'),
 		data_pix_generated   => data_pix_generated,
 		datak_pix_generated  => datak_pix_generated,
 		data_pix_ready			=>	data_pix_ready,
 		start_global_time		=> (others => '0'),
-		slow_down				=> writeregs(DMA_SLOW_DOWN_REGISTER_W),
+		slow_down				=> writeregs_slow(DMA_SLOW_DOWN_REGISTER_W),
 		state_out				=> state_out_datagen--,
 );
 
@@ -535,7 +536,7 @@ begin
 		datak_counter 	<= (others => '0');
 
 	elsif (rising_edge(tx_clk(0))) then
-		if (writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
+		if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
 			data_counter 	<= data_pix_generated;
 			datak_counter 	<= datak_pix_generated;
 		else
@@ -552,7 +553,7 @@ e_event_counter : entity work.event_counter
 		reset_n					=> resets_n(RESET_BIT_EVENT_COUNTER),
 		rx_data					=> data_counter,
 		rx_datak					=> datak_counter,
-		dma_wen_reg				=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+		dma_wen_reg				=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE), -- this is going to a process with pcie_fastclk_out
 		event_length			=> event_length,
 		dma_data_wren			=> dma_wren_cnt,
 		dmamem_endofevent		=> dma_end_event_cnt,
@@ -595,7 +596,7 @@ begin
 			dma_data <=	X"00000" & event_length &
 				dma_event_data 			&
 				x"1ABACAF" & state_out_eventcounter &
-				x"2ABACAF" & state_out_datagen &
+				x"2ABACAFE" &
 				x"3ABACAFE" &
 				x"4ABACAFE" &
 				x"5ABACAFE" &
@@ -705,7 +706,7 @@ begin
 		readmem_wren		<= '0';
 	elsif (rising_edge(tx_clk(0))) then
 		readmem_writeaddr <= (others => '0');
-		if (writeregs(LINK_TEST_REGISTER_W)(LINK_TEST_BIT_ENABLE) = '1') then
+		if (writeregs_slow(LINK_TEST_REGISTER_W)(LINK_TEST_BIT_ENABLE) = '1') then
 			readmem_writeaddr(2 downto 0)  <= mem_add_link_test;
 			readmem_writedata						<= mem_data_link_test;
 			readmem_wren							<= mem_wen_link_test;
@@ -722,15 +723,16 @@ end process;
 
 resetlogic : entity work.reset_logic
 	port map(
-		clk                     => tx_clk(0),--clk,
+		clk                     => tx_clk(0),
 		rst_n                   => push_button0_db,
 
-		reset_register          => writeregs(RESET_REGISTER_W),
-		reset_reg_written       => regwritten(RESET_REGISTER_W),
+		reset_register          => writeregs_slow(RESET_REGISTER_W),
+		--reset_reg_written       => regwritten(RESET_REGISTER_W),
 
 		resets                  => resets,
 		resets_n                => resets_n--,                                                           
 );
+
 
 vreg : entity work.version_reg
 	port map(
@@ -788,7 +790,8 @@ e_dma_evaluation : entity work.dma_evaluation
 --	end if;
 --end process;
 
---Prolong regwritten signals for 50 MHz clock
+-- Prolong regwritten signals for 156.25 MHz clock
+-- we just delay the fast signal so the slow clock will see it
 process(pcie_fastclk_out)
 begin
 	if(pcie_fastclk_out'event and pcie_fastclk_out = '1') then
@@ -806,6 +809,17 @@ begin
 				regwritten(I) 	<= '1';
 			else
 			regwritten(I) 		<= '0';
+			end if;
+		end loop;
+	end if;
+end process;
+
+process(tx_clk(0))
+begin
+	if(tx_clk(0)'event and tx_clk(0) = '1') then
+		for I in 63 downto 0 loop
+			if(regwritten(I) = '1') then
+				writeregs_slow(I) <= writeregs(I);
 			end if;
 		end loop;
 	end if;

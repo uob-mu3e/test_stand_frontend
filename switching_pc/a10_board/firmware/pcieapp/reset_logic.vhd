@@ -21,7 +21,7 @@ entity reset_logic is
 		rst_n:					in				std_logic;
 		
 		reset_register:		in				std_logic_vector(31 downto 0); 
-		reset_reg_written:   in				std_logic;
+		--reset_reg_written:   in				std_logic;
 		
 		resets:					out			std_logic_vector(31 downto 0);
 		resets_n:				out			std_logic_vector(31 downto 0)																		
@@ -67,12 +67,14 @@ elsif(clk'event and clk = '1') then
 	
 	
 	
-	if(reset_reg_written <= '1' and reset_register(RESET_BIT_ALL) = '1') then
+	--if(reset_reg_written <= '1' and reset_register(RESET_BIT_ALL) = '1') then
+	if(reset_register(RESET_BIT_ALL) = '1') then
 		resets_del0 <= (others => '1');
 	end if;
 	
 	for i in 31 downto 0 loop
-		if(reset_reg_written <= '1' and reset_register(i) = '1') then
+		--if(reset_reg_written <= '1' and reset_register(i) = '1') then
+		if(reset_register(i) = '1') then
 			resets_del0(i) <= '1';
 		end if;
 	end loop;
