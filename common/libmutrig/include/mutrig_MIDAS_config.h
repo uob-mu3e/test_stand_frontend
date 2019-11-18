@@ -25,7 +25,7 @@ typedef int INT;
 
 #ifndef MUTRIG_DAQ_DEFINED
 #define MUTRIG_DAQ_DEFINED
-
+/*
 typedef struct {
   BOOL dummy_config;
   BOOL dummy_data;
@@ -35,6 +35,7 @@ typedef struct {
   BOOL reset_datapath;
   BOOL reset_asics;
 } MUTRIG_DAQ;
+*/
 
 #define MUTRIG_DAQ_STR(_name) const char *_name[] = {\
 "[.]",\
@@ -49,6 +50,9 @@ typedef struct {
 "LVDS_waitforall = BOOL : n",\
 "LVDS_waitforall_sticky = BOOL : n",\
 "mask = BOOL[16] n",\
+"resetskew_cphase = BOOL[4] n",\
+"resetskew_cdelay = BOOL[4] n",\
+"resetskew_phases = INT[4] 0",\
 "",\
 NULL }
 

@@ -77,6 +77,12 @@ class MutrigFEB {
       void DataPathReset(int FPGA_ID); //in FE-FPGA: everything upstream of merger (in the stream path)
       //TODO: add more resets for FE-FPGA blocks
 
+
+      //reset signal alignment control
+      void setResetSkewCphase(int FPGA_ID, BOOL cphase[4]);
+      void setResetSkewCdelay(int FPGA_ID, BOOL cdelay[4]);
+      void setResetSkewPhases(int FPGA_ID, INT phases[4]);
+
 };//class MutrigFEB
 
 #endif // MUTRIG_FEB_H
