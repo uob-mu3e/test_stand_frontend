@@ -22,12 +22,17 @@ ASICConfigBase::para_t ASICConfigBase::make_param(std::string name, size_t nbits
 
 ASICConfigBase::para_t ASICConfigBase::make_param(std::string name, std::string bitorderstring){
     std::istringstream is(bitorderstring);
-    std::vector<uint8_t> order, order_t;
-    order_t.assign(std::istream_iterator<uint8_t>( is ), std::istream_iterator<uint8_t>() );
-    for (unsigned int i = 0; i < order_t.size(); ++ i)
-        for (unsigned int n = 0; n < order_t.size(); ++n)
-            if (order_t.at(n) == i)
+    std::vector<unsigned int> order_t;
+    std::vector<uint8_t> order;
+    order_t.assign(std::istream_iterator<unsigned int>( is ), std::istream_iterator<unsigned int>() );
+
+    for (unsigned int i = 0; i < order_t.size(); ++ i) {
+        for (unsigned int n = 0; n < order_t.size(); ++n) {
+            if (order_t.at(n) == i) {
                 order.push_back((uint8_t)n);
+            }
+        }
+    }
     size_t sizze = order.size();
     return std::make_tuple(name,sizze,order);
 }

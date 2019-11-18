@@ -203,93 +203,95 @@ MupixConfig::~MupixConfig() {
 }
 
 void MupixConfig::Parse_ChipDACs_from_struct(MUPIX_CHIPDACS mt_g){
-    setParameter("Bandgap1_on", mt_g.Bandgap1_on);
-    setParameter("Biasblock1_on", mt_g.Biasblock1_on);
-    setParameter("VNRegCasc", mt_g.VNRegCasc);
-    setParameter("VDel", mt_g.VDel);
-    setParameter("VPComp", mt_g.VPComp);
-    setParameter("VPDAC", mt_g.VPDAC);
-    setParameter("BLResDig", mt_g.BLResDig);
-    setParameter("VPVCO", mt_g.VPVCO);
-    setParameter("VNVCO", mt_g.VNVCO);
-    setParameter("VPDelDclMux", mt_g.VPDelDclMux);
-    setParameter("VNDelDclMux", mt_g.VNDelDclMux);
-    setParameter("VPDelDcl", mt_g.VPDelDcl);
-    setParameter("VNDelDcl", mt_g.VNDelDcl);
-    setParameter("VPDelPreEmp", mt_g.VPDelPreEmp);
-    setParameter("VNDelPreEmp", mt_g.VNDelPreEmp);
-    setParameter("VPDcl", mt_g.VPDcl);
-    setParameter("VNDcl", mt_g.VNDcl);
-    setParameter("VNLVDS", mt_g.VNLVDS);
-    setParameter("VNLVDSDel", mt_g.VNLVDSDel);
-    setParameter("VPPump", mt_g.VPPump);
-    setParameter("resetckdivend", mt_g.resetckdivend);
-    setParameter("maxcycend", mt_g.maxcycend);
-    setParameter("slowdownend", mt_g.slowdownend);
-    setParameter("timerend", mt_g.timerend);
-    setParameter("tsphase", mt_g.tsphase);
-    setParameter("ckdivend2", mt_g.ckdivend2);
-    setParameter("ckdivend", mt_g.ckdivend);
-    setParameter("VPRegCasc", mt_g.VPRegCasc);
-    setParameter("VPRamp", mt_g.VPRamp);
-    setParameter("VPBiasReg", mt_g.VPBiasReg);
-    setParameter("VNBiasReg", mt_g.VNBiasReg);
-    setParameter("enable2threshold", mt_g.enable2threshold);
-    setParameter("enableADC", mt_g.enableADC);
-    setParameter("Invert", mt_g.Invert);
-    setParameter("SelEx", mt_g.SelEx);
-    setParameter("SelSlow", mt_g.SelSlow);
-    setParameter("EnablePLL", mt_g.EnablePLL);
-    setParameter("Readout_reset_n", mt_g.Readout_reset_n);
-    setParameter("Serializer_reset_n", mt_g.Serializer_reset_n);
-    setParameter("Aurora_reset_n", mt_g.Aurora_reset_n);
-    setParameter("sendcounter", mt_g.sendcounter);
-    setParameter("Linkselect", mt_g.Linkselect);
-    setParameter("Termination", mt_g.Termination);
-    setParameter("AlwaysEnable", mt_g.AlwaysEnable);
-    setParameter("SelectTest", mt_g.SelectTest);
-    setParameter("SelectTestOut", mt_g.SelectTestOut);
-    setParameter("DisableHitbus", mt_g.DisableHitbus);
+    setParameter("Bandgap1_on", mt_g.Bandgap1_on, true);
+    std::cout << "Bandgap1_on set to " << mt_g.Bandgap1_on << std::endl;
+    setParameter("Biasblock1_on", mt_g.Biasblock1_on, true);
+    std::cout << "Biasblock1_on set to " << mt_g.Biasblock1_on << std::endl;
+    setParameter("VNRegCasc", mt_g.VNRegCasc, true);
+    setParameter("VDel", mt_g.VDel, true);
+    setParameter("VPComp", mt_g.VPComp, true);
+    setParameter("VPDAC", mt_g.VPDAC, true);
+    setParameter("BLResDig", mt_g.BLResDig, true);
+    setParameter("VPVCO", mt_g.VPVCO, true);
+    setParameter("VNVCO", mt_g.VNVCO, true);
+    setParameter("VPDelDclMux", mt_g.VPDelDclMux, true);
+    setParameter("VNDelDclMux", mt_g.VNDelDclMux, true);
+    setParameter("VPDelDcl", mt_g.VPDelDcl, true);
+    setParameter("VNDelDcl", mt_g.VNDelDcl, true);
+    setParameter("VPDelPreEmp", mt_g.VPDelPreEmp, true);
+    setParameter("VNDelPreEmp", mt_g.VNDelPreEmp, true);
+    setParameter("VPDcl", mt_g.VPDcl, true);
+    setParameter("VNDcl", mt_g.VNDcl, true);
+    setParameter("VNLVDS", mt_g.VNLVDS, true);
+    setParameter("VNLVDSDel", mt_g.VNLVDSDel, true);
+    setParameter("VPPump", mt_g.VPPump, true);
+    setParameter("resetckdivend", mt_g.resetckdivend, true);
+    setParameter("maxcycend", mt_g.maxcycend, true);
+    setParameter("slowdownend", mt_g.slowdownend, true);
+    setParameter("timerend", mt_g.timerend, true);
+    setParameter("tsphase", mt_g.tsphase, true);
+    setParameter("ckdivend2", mt_g.ckdivend2, true);
+    setParameter("ckdivend", mt_g.ckdivend, true);
+    setParameter("VPRegCasc", mt_g.VPRegCasc, true);
+    setParameter("VPRamp", mt_g.VPRamp, true);
+    setParameter("VPBiasReg", mt_g.VPBiasReg, true);
+    setParameter("VNBiasReg", mt_g.VNBiasReg, true);
+    setParameter("enable2threshold", mt_g.enable2threshold, true);
+    setParameter("enableADC", mt_g.enableADC, true);
+    setParameter("Invert", mt_g.Invert, true);
+    setParameter("SelEx", mt_g.SelEx, true);
+    setParameter("SelSlow", mt_g.SelSlow, true);
+    setParameter("EnablePLL", mt_g.EnablePLL, true);
+    setParameter("Readout_reset_n", mt_g.Readout_reset_n, true);
+    setParameter("Serializer_reset_n", mt_g.Serializer_reset_n, true);
+    setParameter("Aurora_reset_n", mt_g.Aurora_reset_n, true);
+    setParameter("sendcounter", mt_g.sendcounter, true);
+    setParameter("Linkselect", mt_g.Linkselect, true);
+    setParameter("Termination", mt_g.Termination, true);
+    setParameter("AlwaysEnable", mt_g.AlwaysEnable, true);
+    setParameter("SelectTest", mt_g.SelectTest, true);
+    setParameter("SelectTestOut", mt_g.SelectTestOut, true);
+    setParameter("DisableHitbus", mt_g.DisableHitbus, true);
 }
 
 void MupixConfig::Parse_DigiRowDACs_from_struct(MUPIX_DIGIROWDACS& mt_ch, int channel){
-    setParameter("digiWrite_" + std::to_string(channel), mt_ch.digiWrite);
+    setParameter("digiWrite_row" + std::to_string(channel), mt_ch.digiWrite, true);
 }
 
 void MupixConfig::Parse_RowDACs_from_struct(MUPIX_ROWDACS& mt_ch, int channel) {
-    //setParameter("unused_" + std::to_string(channel), mt_ch.unused);
-    setParameter("EnableInjection_" + std::to_string(channel), mt_ch.EnableInjection);
-    setParameter("EnableAnalogueBuffer_" + std::to_string(channel), mt_ch.EnableAnalogueBuffer);
+    setParameter("unused_row" + std::to_string(channel), mt_ch.unused, true);
+    setParameter("EnableInjection_row" + std::to_string(channel), mt_ch.EnableInjection, true);
+    setParameter("EnableAnalogueBuffer_row" + std::to_string(channel), mt_ch.EnableAnalogueBuffer, true);
 }
 
 void MupixConfig::Parse_ColDACs_from_struct(MUPIX_COLDACS& mt_ch, int channel) {
-    setParameter("RAM_" + std::to_string(channel), mt_ch.RAM);
-    setParameter("EnableInjection_" + std::to_string(channel), mt_ch.EnableInjection);
-    setParameter("EnableHitbus_" + std::to_string(channel), mt_ch.EnableHitbus);
+    setParameter("RAM_col" + std::to_string(channel), mt_ch.RAM, true);
+    setParameter("EnableInjection_col" + std::to_string(channel), mt_ch.EnableInjection, true);
+    setParameter("EnableHitbus_col" + std::to_string(channel), mt_ch.EnableHitbus, true);
 }
 
 void MupixConfig::Parse_ChipDACs2_from_struct(MUPIX_CHIPDACS2 mt_g){
 
-    setParameter("Bandgap2_on", mt_g.Bandgap2_on);
-    setParameter("Biasblock2_on", mt_g.Biasblock2_on);
-    setParameter("BLResPix", mt_g.BLResPix);
-    setParameter("VNPix", mt_g.VNPix);
-    setParameter("VNFBPix", mt_g.VNFBPix);
-    setParameter("VNFollPix", mt_g.VNFollPix);
-    setParameter("VNPix2", mt_g.VNPix2);
-    setParameter("VNBiasPix", mt_g.VNBiasPix);
-    setParameter("VPLoadPix", mt_g.VPLoadPix);
-    setParameter("VNOutPix", mt_g.VNOutPix);
-    setParameter("VPFoll", mt_g.VPFoll);
-    setParameter("VNDACPix", mt_g.VNDACPix);
+    setParameter("Bandgap2_on", mt_g.Bandgap2_on, true);
+    setParameter("Biasblock2_on", mt_g.Biasblock2_on, true);
+    setParameter("BLResPix", mt_g.BLResPix, true);
+    setParameter("VNPix", mt_g.VNPix, true);
+    setParameter("VNFBPix", mt_g.VNFBPix, true);
+    setParameter("VNFollPix", mt_g.VNFollPix, true);
+    setParameter("VNPix2", mt_g.VNPix2, true);
+    setParameter("VNBiasPix", mt_g.VNBiasPix, true);
+    setParameter("VPLoadPix", mt_g.VPLoadPix, true);
+    setParameter("VNOutPix", mt_g.VNOutPix, true);
+    setParameter("VPFoll", mt_g.VPFoll, true);
+    setParameter("VNDACPix", mt_g.VNDACPix, true);
 }
 
 void MupixConfig::Parse_VoltageDACs_from_struct(MUPIX_VOLTAGEDACS mt_g) {
-    setParameter("ThLow", mt_g.ThLow);
-    setParameter("ThPix", mt_g.ThPix);
-    setParameter("BLPix", mt_g.BLPix);
-    setParameter("BLDig", mt_g.BLDig);
-    setParameter("ThHigh", mt_g.ThHigh);
+    setParameter("ThLow", mt_g.ThLow, true);
+    setParameter("ThPix", mt_g.ThPix, true);
+    setParameter("BLPix", mt_g.BLPix, true);
+    setParameter("BLDig", mt_g.BLDig, true);
+    setParameter("ThHigh", mt_g.ThHigh, true);
 }
 
 /// MUPIX board configuration

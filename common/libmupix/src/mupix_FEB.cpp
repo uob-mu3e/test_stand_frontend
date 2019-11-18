@@ -49,6 +49,19 @@ int MupixFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* 
 	 printf("reading back\n");
          m_mu.FEBsc_read(FPGAid_from_ID(asic), &reg, 1,  (uint32_t) FE_SPIDATA_ADDR,true);
          //Write configuration
+         uint32_t * datastream = reinterpret_cast<uint32_t*>(config->bitpattern_w);
+         std::cout << "Sending: ";
+         for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
+             std::cout << std::hex << datastream[nbit] << "-";
+         }
+         std::cout << std::endl;
+         std::cout << "Or else: ";
+         for (unsigned int nbit = 0; nbit < config->length_32bits*4; ++nbit) {
+             if (config->bitpattern_w[nbit] < 16)
+                 std::cout << 0;
+             std::cout << std::hex << +config->bitpattern_w[nbit] << "-";
+         }
+         std::cout << std::endl;
          m_mu.FEBsc_write(FPGAid_from_ID(asic), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR+1,true);
 
          //Write offset address
@@ -60,22 +73,22 @@ int MupixFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* 
          m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg,1,0xfff0,true);
 
          //Wait for configuration to finish
-         uint timeout_cnt = 0;
+         /*uint timeout_cnt = 0;
          do{
             printf("Polling (%d)\n",timeout_cnt);
             if(++timeout_cnt >= 10000) throw std::runtime_error("SPI transaction timeout while configuring asic"+std::to_string(asic));
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
             m_mu.FEBsc_read(FPGAid_from_ID(asic), &reg, 1, 0xfff0);
-         }while( (reg&0xffff0000) != 0);
+         }while( (reg&0xffff0000) != 0);*/
       } catch(std::exception& e) {
-          cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
+          cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
           set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
           return FE_ERR_HW; //note: return of lambda function
       }
       if(status!=SUCCESS){
          //configuration mismatch, report and break foreach-loop
-         set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
-         cm_msg(MERROR, "setup_mupix", "MuTRiG configuration error for ASIC %i", asic);
+         set_equipment_status(equipment_name,  "MuPix config failed", "red");
+         cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
       }
 
       return status;//note: return of lambda function
