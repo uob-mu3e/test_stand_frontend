@@ -333,7 +333,7 @@ begin
 
     e_merger : entity work.data_merger
     port map (
-        fpga_ID_in              => (5=>'1',others => '0'),
+        fpga_ID_in              => FPGA_ID_g,
         FEB_type_in             => FEB_type_in,
         run_state               => run_state_156,
 

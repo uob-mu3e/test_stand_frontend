@@ -92,6 +92,9 @@ namespace mudaq {
     //get
     uint32_t FEBsc_get_packet();
 
+    //send an RPC request to nios, wait for finish. Returns status of value returned to nios2 callback function 
+    uint16_t FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, std::vector<std::pair<uint32_t* /*payload*/,uint16_t /*chunklen*/> > payload_chunks, int polltime_ms=10);
+
     void enable_led(unsigned which);
     void enable_leds(uint8_t pattern);
     void disable_leds();

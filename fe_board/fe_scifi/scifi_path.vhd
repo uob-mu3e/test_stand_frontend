@@ -62,8 +62,11 @@ architecture arch of scifi_path is
     signal s_subdet_reset_reg : std_logic_vector(31 downto 0);
     signal s_subdet_resetdly_reg : std_logic_vector(31 downto 0);
     signal s_subdet_resetdly_reg_written : std_logic;
+    --reset synchronizers
+    signal s_datapath_rst : std_logic;
+
     --chip reset synchronization/shift
-    signal s_chip_rst_refclk_sync : std_logic_vector(1 downto 0);
+    signal s_chip_rst : std_logic;
     signal s_chip_reset_out : std_logic_vector(3 downto 0);
 begin
 
@@ -146,15 +149,8 @@ begin
     end if;
     end process;
 
-        ----------------------------------------------------------------------------
-    --generation of reset signal synchronized to reference clock, make independent of nios clock
-    --shift each reset output by configurable delay
-    p_fee_reset_sync: process(i_clk_g125)
-    begin
-        if rising_edge(i_clk_g125) then
-            s_chip_rst_refclk_sync <= s_chip_rst_refclk_sync(0) & (s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC));
-        end if;
-    end process;
+    s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC);
+    s_datapath_rst <= s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_SYNC);
 
 
     u_resetshift: entity work.clockalign_block
@@ -169,7 +165,7 @@ begin
 		i_flag       => s_subdet_resetdly_reg_written,
 		i_data       => s_subdet_resetdly_reg,
 
-		i_sig => s_chip_rst_refclk_sync(1),
+		i_sig => s_chip_rst,
 		o_sig => o_chip_reset,
 		o_pll_clk    => open
     );
@@ -182,7 +178,7 @@ begin
         INPUT_SIGNFLIP => (N_g-1 downto 0 => '1')--,
     )
     port map (
-        i_rst => i_reset or s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_SYNC),
+        i_rst => i_reset or s_datapath_rst,
         i_stic_txd => i_data(N_g-1 downto 0),
         i_refclk_125_A => i_clk_ref_A,
         i_refclk_125_B => i_clk_ref_B,
