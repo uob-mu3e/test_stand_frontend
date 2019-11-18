@@ -41,18 +41,45 @@ typedef struct {
 "[.]",\
 "dummy_config = BOOL : n",\
 "dummy_data = BOOL : n",\
-"dummy_data_n = INT : 255",\
+"dummy_data_n = INT : 200",\
 "dummy_data_fast = BOOL : n",\
-"prbs_decode_disable = BOOL : n",\
-"reset_datapath = BOOL : n",\
-"reset_asics = BOOL : n",\
-"reset_asics = BOOL : n",\
+"prbs_decode_disable = BOOL : y",\
+"reset_datapath = BOOL : y",\
+"reset_asics = BOOL : y",\
 "LVDS_waitforall = BOOL : n",\
-"LVDS_waitforall_sticky = BOOL : n",\
-"mask = BOOL[16] n",\
-"resetskew_cphase = BOOL[4] n",\
-"resetskew_cdelay = BOOL[4] n",\
-"resetskew_phases = INT[4] 0",\
+"LVDS_waitforall_sticky = BOOL : y",\
+"mask = BOOL[16] :",\
+"[0] n",\
+"[1] n",\
+"[2] n",\
+"[3] n",\
+"[4] n",\
+"[5] n",\
+"[6] n",\
+"[7] n",\
+"[8] n",\
+"[9] n",\
+"[10] n",\
+"[11] n",\
+"[12] n",\
+"[13] n",\
+"[14] n",\
+"[15] n",\
+"resetskew_cphase = BOOL[4] :",\
+"[0] n",\
+"[1] n",\
+"[2] n",\
+"[3] n",\
+"resetskew_cdelay = BOOL[4] :",\
+"[0] n",\
+"[1] n",\
+"[2] n",\
+"[3] n",\
+"resetskew_phases = INT[4] :",\
+"[0] 0",\
+"[1] 0",\
+"[2] 0",\
+"[3] 0",\
 "",\
 NULL }
 
