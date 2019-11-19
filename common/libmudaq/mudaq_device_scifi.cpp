@@ -631,7 +631,7 @@ uint16_t MudaqDevice::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, std::vec
 	 //write payload chunks
 	 for(auto chunk: payload_chunks){
               FEBsc_write(FPGA_ID, chunk.first, chunk.second, (uint32_t) len+FEBsc_RPC_DATAOFFSET,true);
-	      printf("MudaqDevice::FEBsc_NiosRPC(): writing chunk of %d words\n", len);
+	      printf("MudaqDevice::FEBsc_NiosRPC(): writing chunk of %d words\n", chunk.second);
 	      len+=chunk.second;
 	 }
          uint32_t reg;
