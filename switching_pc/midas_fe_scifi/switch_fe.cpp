@@ -297,13 +297,12 @@ BOOL sc_settings_changed_hepler(const char *key_name, HNDLE hDB, HNDLE hKey, DWO
     BOOL value;
     int size = sizeof(value);
     db_get_data(hDB, hKey, &value, &size, type);
-    if(value)
-        cm_msg(MINFO, "sc_settings_changed", "trigger for key=\"%s\"", key_name);
+    //if(value) cm_msg(MINFO, "sc_settings_changed", "trigger for key=\"%s\"", key_name);
     return value;
 }
 
 void set_odb_flag_false(const char *key_name, HNDLE hDB, HNDLE hKey, DWORD type){
-    cm_msg(MINFO, "sc_settings_changed", "reseting odb flag of key \"\"", key_name);
+    //cm_msg(MINFO, "sc_settings_changed", "reseting odb flag of key \"\"", key_name);
     BOOL value = FALSE; // reset flag in ODB
     db_set_data(hDB, hKey, &value, sizeof(value), 1, type);
 }

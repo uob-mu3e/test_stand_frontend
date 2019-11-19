@@ -75,6 +75,7 @@ begin
 		wait for 10 ns;
 		wait until rising_edge(i_clk);
 		i_rst<='0';
+		--wait for 500 ns;
 		wait;
 	end process;
 
@@ -82,10 +83,22 @@ begin
 	begin
 		wait for 100 ns;
 		wait until rising_edge(i_clk);
-		i_data <= x"ffffff"&"00000101";
+		i_data <= x"ffff"&"0"&"0"&"0000"&"0000"&"0011"&"10";
 		i_flag <= '1';
 		wait until rising_edge(i_clk);
 		i_flag <= '0';
+		wait for 100 ns;
+		wait until rising_edge(i_clk);
+		i_data <= x"ffff"&"1"&"0"&"0000"&"0000"&"0011"&"00";
+		i_flag <= '1';
+		wait until rising_edge(i_clk);
+		i_flag <= '0';
+		wait until rising_edge(i_clk);
+		i_data <= x"ffff"&"0"&"0"&"0000"&"0000"&"0011"&"00";
+		i_flag <= '1';
+		wait until rising_edge(i_clk);
+		i_flag <= '0';
+
 	end process;
 end architecture;
 
