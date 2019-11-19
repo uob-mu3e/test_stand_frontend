@@ -457,12 +457,12 @@ begin
         i_reset_156_n           => reset_156_n,
         i_clk_156               => i_clk_156,
 
-        resets_out      => open,
-        reset_bypass    => reg_reset_bypass(11 downto 0),
-        run_number_out  => open,
-        fpga_id         => FPGA_ID_g,
-        terminated      => terminated,
-        testout         => open,
+        resets_out              => open,
+        reset_bypass            => reg_reset_bypass(11 downto 0),
+        run_number_out          => open,
+        fpga_id                 => FPGA_ID_g,
+        terminated              => terminated,
+        testout                 => open,
 
         o_phase                 => open,
         i_reset_n               => nios_reset_n,
@@ -527,8 +527,8 @@ begin
         i_avs_writedata     => av_qsfp.writedata,
         o_avs_waitrequest   => av_qsfp.waitrequest,
 
-        i_reset => not reset_156_n,
-        i_clk   => i_clk_156--,
+        i_reset     => not reset_156_n,
+        i_clk       => i_clk_156--,
     );
 
 
@@ -572,8 +572,8 @@ begin
         i_avs_writedata     => av_pod.writedata,
         o_avs_waitrequest   => av_pod.waitrequest,
 
-        i_reset => not reset_125_n,
-        i_clk   => i_clk_125--,
+        i_reset     => not reset_125_n,
+        i_clk       => i_clk_125--,
     );
 
 end architecture;

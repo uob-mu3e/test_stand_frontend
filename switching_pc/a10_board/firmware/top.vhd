@@ -250,8 +250,7 @@ architecture rtl of top is
 		signal data_counter : std_logic_vector(31 downto 0);
 		signal datak_counter : std_logic_vector(3 downto 0);
 
-		
-begin 
+begin
 
 --------- I/O, CLK, RESET, PLL ---------
 
