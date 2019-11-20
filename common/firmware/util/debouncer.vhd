@@ -33,7 +33,7 @@ architecture arch of debouncer is
 begin
 
     i_rst_n : entity work.reset_sync
-    port map ( rstout_n => rst_n, arst_n => arst_n, clk => clk );
+    port map ( o_reset_n => rst_n, i_reset_n => arst_n, i_clk => clk );
 
     i_ff_sync : entity work.ff_sync
     generic map ( W => W )

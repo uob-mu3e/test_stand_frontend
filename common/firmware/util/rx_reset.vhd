@@ -47,13 +47,13 @@ begin
     o_ready <= digitalreset_n;
 
     i_rst_n : entity work.reset_sync
-    port map ( rstout_n => reset_n, arst_n => i_areset_n, clk => i_clk );
+    port map ( o_reset_n => reset_n, i_reset_n => i_areset_n, i_clk => i_clk );
 
     e_analogreset_n : entity work.reset_sync
     port map (
-        rstout_n => analogreset_n,
-        arst_n => reset_n and not i_reconfig_busy,
-        clk => i_clk--,
+        o_reset_n => analogreset_n,
+        i_reset_n => reset_n and not i_reconfig_busy,
+        i_clk => i_clk--,
     );
 
     -- release digtal reset after delay

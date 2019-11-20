@@ -40,7 +40,7 @@ begin
     nios_clk <= CLK_A10_100MHZ_P;
 
     e_nios_reset_n : entity work.reset_sync
-    port map ( rstout_n => nios_reset_n, arst_n => A10_M5FL_CPU_RESET_N, clk => nios_clk );
+    port map ( o_reset_n => nios_reset_n, i_reset_n => A10_M5FL_CPU_RESET_N, i_clk => nios_clk );
 
     e_nios_clk_hz : entity work.clkdiv
     generic map ( P => 100 * 10**6 )

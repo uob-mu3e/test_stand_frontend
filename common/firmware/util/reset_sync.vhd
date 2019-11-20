@@ -7,15 +7,15 @@ use ieee.std_logic_1164.all;
 
 -- reset synchronizer
 entity reset_sync is
-    generic (
-        -- number of stages
-        N : positive := 2--;
-    );
-    port (
-        rstout_n    :   out std_logic;
-        arst_n      :   in  std_logic;
-        clk         :   in  std_logic--;
-    );
+generic (
+    -- number of stages
+    N : positive := 2--;
+);
+port (
+    o_reset_n   : out   std_logic;
+    i_reset_n   : in    std_logic;
+    i_clk       : in    std_logic--;
+);
 end entity;
 
 architecture arch of reset_sync is
@@ -26,16 +26,24 @@ architecture arch of reset_sync is
 
 begin
 
-    i_ff_sync : entity work.ff_sync
-    generic map ( W => 1, N => N )
-    port map ( i_d(0) => '1', o_q(0) => q, i_reset_n => arst_n, i_clk => clk );
+    e_ff_sync : entity work.ff_sync
+    generic map (
+        W => 1,
+        N => N--,
+    )
+    port map (
+        i_d(0) => '1',
+        o_q(0) => q,
+        i_reset_n => i_reset_n,
+        i_clk => i_clk--,
+    );
 
-    process(clk, arst_n)
+    process(i_clk, i_reset_n)
     begin
-    if ( arst_n = '0' ) then
-        rstout_n <= '0';
-    elsif rising_edge(clk) then
-        rstout_n <= q;
+    if ( i_reset_n = '0' ) then
+        o_reset_n <= '0';
+    elsif rising_edge(i_clk) then
+        o_reset_n <= q;
     end if;
     end process;
 

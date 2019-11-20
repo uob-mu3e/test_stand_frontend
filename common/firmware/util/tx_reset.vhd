@@ -58,9 +58,9 @@ begin
 
     e_digitalreset_n : entity work.reset_sync
     port map (
-        rstout_n => digitalreset_n,
-        arst_n => pll_powerdown_n and work.util.and_reduce(i_pll_locked),
-        clk => i_clk--,
+        o_reset_n => digitalreset_n,
+        i_reset_n => pll_powerdown_n and work.util.and_reduce(i_pll_locked),
+        i_clk => i_clk--,
     );
 
 end architecture;
