@@ -273,19 +273,19 @@ clk_input : ip_clk_ctrl
 
 --------- Debouncer/seg7 ---------
 
-    i_debouncer : entity work.debouncer
+    e_debouncer : entity work.debouncer
     generic map (
-	  W => 4,
-	  N => 125 * 10**3 -- 1ms
+        W => 4,
+        N => 125 * 10**3 -- 1ms
     )
     port map (
-	  d 		=> BUTTON,
-	  q(0) 	=> push_button0_db,
-	  q(1) 	=> push_button1_db,
-	  q(2) 	=> push_button2_db,
-	  q(3) 	=> push_button3_db,
-	  arst_n => CPU_RESET_n,
-	  clk 	=> clk--,
+        i_d => BUTTON,
+        o_q(0) => push_button0_db,
+        o_q(1) => push_button1_db,
+        o_q(2) => push_button2_db,
+        o_q(3) => push_button3_db,
+        i_reset_n => CPU_RESET_n,
+        i_clk => clk--,
     );
 
     clk_50_cnt_p : process(clk)

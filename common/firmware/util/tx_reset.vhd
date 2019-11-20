@@ -49,9 +49,9 @@ begin
     e_pll_powerdown_n : entity work.debouncer
     generic map ( W => 1, N => PLL_POWERDOWN_WIDTH_c * CLK_MHZ_g / 1000 )
     port map (
-        d(0) => '1', q(0) => pll_powerdown_n,
-        arst_n => i_areset_n,
-        clk => i_clk--,
+        i_d(0) => '1', o_q(0) => pll_powerdown_n,
+        i_reset_n => i_areset_n,
+        i_clk => i_clk--,
     );
 
     analogreset_n <= pll_powerdown_n;

@@ -62,9 +62,9 @@ begin
         e_digitalreset_n : entity work.debouncer
         generic map ( W => 1, N => LTD_DELAY_c * CLK_MHZ_g / 1000 )
         port map (
-            d(0) => '1', q(0) => digitalreset_n(i),
-            arst_n => reset_n and i_freqlocked(i),
-            clk => i_clk--,
+            i_d(0) => '1', o_q(0) => digitalreset_n(i),
+            i_reset_n => reset_n and i_freqlocked(i),
+            i_clk => i_clk--,
         );
     end generate;
 
