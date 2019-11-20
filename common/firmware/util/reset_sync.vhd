@@ -9,7 +9,7 @@ use ieee.std_logic_1164.all;
 entity reset_sync is
     generic (
         -- number of stages
-        N : positive := 1--;
+        N : positive := 2--;
     );
     port (
         rstout_n    :   out std_logic;
@@ -28,7 +28,7 @@ begin
 
     i_ff_sync : entity work.ff_sync
     generic map ( W => 1, N => N )
-    port map ( d(0) => '1', q(0) => q, rst_n => arst_n, clk => clk );
+    port map ( i_d(0) => '1', o_q(0) => q, i_reset_n => arst_n, i_clk => clk );
 
     process(clk, arst_n)
     begin

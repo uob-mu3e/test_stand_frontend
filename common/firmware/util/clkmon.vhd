@@ -39,7 +39,7 @@ begin
     -- sync tst_clk_slow to clk domain
     i_ff_sync : entity work.ff_sync
     generic map ( W => 1 )
-    port map ( d(0) => tst_clk_slow, q(0) => ff0, rst_n => rst_n, clk => clk );
+    port map ( i_d(0) => tst_clk_slow, o_q(0) => ff0, i_reset_n => rst_n, i_clk => clk );
 
     process(clk, rst_n)
     begin

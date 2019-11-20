@@ -37,7 +37,7 @@ begin
 
     i_ff_sync : entity work.ff_sync
     generic map ( W => W )
-    port map ( d => d, q => ff0, rst_n => rst_n, clk => clk );
+    port map ( i_d => d, o_q => ff0, i_reset_n => rst_n, i_clk => clk );
 
     process(clk, rst_n)
     begin

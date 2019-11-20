@@ -55,10 +55,10 @@ begin
     e_ff_sync : entity work.ff_sync
     generic map ( W => 2 )
     port map (
-        d => d,
-        q => q,
-        rst_n => i_reset_n,
-        clk => i_clk--,
+        i_d => d,
+        o_q => q,
+        i_reset_n => i_reset_n,
+        i_clk => i_clk--,
     );
 
     process(i_clk, i_reset_n)
