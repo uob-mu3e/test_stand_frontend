@@ -1,13 +1,25 @@
 #
 
-proc add_fifo { name width depth args } {
-    set dcfifo 0
+# ::add_fifo --
+#
+#   Add FIFO Intel FPGA IP (fifo) instance and auto export.
+#
+# Arguments:
+#   name        - name of the ip
+#   width       - fifo width [bits]
+#   depth       - fifo depth [words]
+#   -dc         - dual clock
+#   -usedw      - add usedw port (number of words in the fifo)
+#   -aclr       - add aclr port (asynchronous clear)
+#
+proc ::add_altera_fifo { name width depth args } {
+    set dc 0
     set usedw 0
     set aclr 0
     for { set i 0 } { $i < [ llength $args ] } { incr i } {
         switch -- [ lindex $args $i ] {
-            -dcfifo {
-                set dcfifo 1
+            -dc {
+                set dc 1
             }
             -usedw {
                 set usedw 1
@@ -23,7 +35,7 @@ proc add_fifo { name width depth args } {
 
     add_instance ${name} fifo
 
-    if { ${dcfifo} == 1 } {
+    if { ${dc} == 1 } {
         set_instance_parameter_value ${name} {GUI_Clock} {4}
     }
 
@@ -37,10 +49,10 @@ proc add_fifo { name width depth args } {
     set_instance_parameter_value ${name} {GUI_UsedW} ${usedw}
 
     # async clear port
-    if { ${aclr} && ${dcfifo} == 0 } {
+    if { ${aclr} && ${dc} == 0 } {
         set_instance_parameter_value ${name} {GUI_sc_aclr} {1}
     }
-    if { ${aclr} && ${dcfifo} == 1 } {
+    if { ${aclr} && ${dc} == 1 } {
         set_instance_parameter_value ${name} {GUI_dc_aclr} {1}
     }
 
