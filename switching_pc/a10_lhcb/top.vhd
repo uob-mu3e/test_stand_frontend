@@ -45,9 +45,9 @@ begin
     e_nios_clk_hz : entity work.clkdiv
     generic map ( P => 100 * 10**6 )
     port map (
-        clkout => A10_LED(0),
-        rst_n => nios_reset_n,
-        clk => nios_clk--,
+        o_clk => A10_LED(0),
+        i_reset_n => nios_reset_n,
+        i_clk => nios_clk--,
     );
 
     i_nios : component work.cmp.nios

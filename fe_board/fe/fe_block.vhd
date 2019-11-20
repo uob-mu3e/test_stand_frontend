@@ -179,17 +179,17 @@ begin
     -- NIOS_CLK_HZ_g -> 1 Hz
     e_nios_clk_hz : entity work.clkdiv
     generic map ( P => NIOS_CLK_HZ_g )
-    port map ( clkout => o_nios_clk_mon, rst_n => nios_reset_n, clk => i_nios_clk );
+    port map ( o_clk => o_nios_clk_mon, i_reset_n => nios_reset_n, i_clk => i_nios_clk );
 
     -- 156.25 MHz -> 1 Hz
     e_clk_156_hz : entity work.clkdiv
     generic map ( P => 156250000 )
-    port map ( clkout => o_clk_156_mon, rst_n => reset_156_n, clk => i_clk_156 );
+    port map ( o_clk => o_clk_156_mon, i_reset_n => reset_156_n, i_clk => i_clk_156 );
 
     -- 125 MHz -> 1 Hz
     e_clk_125_hz : entity work.clkdiv
     generic map ( P => 125000000 )
-    port map ( clkout => o_clk_125_mon, rst_n => reset_125_n, clk => i_clk_125 );
+    port map ( o_clk => o_clk_125_mon, i_reset_n => reset_125_n, i_clk => i_clk_125 );
 
 
 

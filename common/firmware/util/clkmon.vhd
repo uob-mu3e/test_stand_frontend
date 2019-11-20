@@ -67,14 +67,14 @@ begin
     i_tst_rst : entity work.reset_sync
     port map ( o_reset_n => tst_rst_n, i_reset_n => rst_n, i_clk => tst_clk );
 
-    i_tst_clk_slow : entity work.clkdiv
+    e_tst_clk_slow : entity work.clkdiv
     generic map (
         P => 2**W * 63 / 64 * TST_MHZ / CLK_MHZ * 2--,
     )
     port map (
-        clkout => tst_clk_slow,
-        rst_n => tst_rst_n,
-        clk => tst_clk--,
+        o_clk => tst_clk_slow,
+        i_reset_n => tst_rst_n,
+        i_clk => tst_clk--,
     );
 
 end architecture;

@@ -72,7 +72,7 @@ begin
 
     e_test_pulse : entity work.clkdiv
     generic map ( P => 1250 )
-    port map ( clkout => s_testpulse, rst_n => not i_run_state(RUN_STATE_BITPOS_SYNC), clk => i_clk_g125 );
+    port map ( o_clk => s_testpulse, i_reset_n => not i_run_state(RUN_STATE_BITPOS_SYNC), i_clk => i_clk_g125 );
     o_pll_test <= s_testpulse;
 
     o_fifo_rdata <= fifo_rdata;
