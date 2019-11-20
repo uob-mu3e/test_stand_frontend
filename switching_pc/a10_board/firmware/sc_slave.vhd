@@ -49,7 +49,7 @@ begin
 	if(reset_n = '0')then
 		mem_data_o <= (others => '0');
 		mem_addr_o <= (others => '1');
-		mem_addr_finished_out <= (others => '0');
+		mem_addr_finished_out <= (others => '1');
 		stateout <= (others => '0');
 		mem_wren_o <= '0';
 		state <= init;		
@@ -67,6 +67,7 @@ begin
 					mem_data_o	<= (others => '0');
 					mem_wren_o  <= '1';
 					if ( mem_addr_o = x"FFFE" ) then
+						mem_addr_finished_out <= (others => '0');
 						state <= waiting;
 					end if;		
 

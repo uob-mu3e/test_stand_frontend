@@ -120,24 +120,26 @@ end process;
 
 --source data inspection: all trailer,all header,hit requests.
 ---> define signals l_all_header, l_all_trailer, l_request, common data (l_common_data, l_any_crc_err, l_any_asic_*) 
-gen_combinatorics: process(i_source_data, s_is_valid,i_SC_mask)
+gen_combinatorics : process(i_source_data, s_is_valid, i_SC_mask, i_SC_nomerge)
 begin
 	l_all_header <='1';
 	l_all_trailer<='1';
 	l_request<=(others => '1');
 	--incoming data is header or trailer?
 	for i in N_INPUTS-1 downto 0 loop
-		if (s_is_valid(i) = '0' and i_SC_mask(i)='0') then -- no valid data, no request, not all header or trailer
+		if (i_SC_mask(i)='1') then --do not request readout of masked channel, ignore for all_header/all_trailer
+			l_request(i)<='0';
+		elsif (s_is_valid(i) = '0') then -- no valid data, no request, not all header or trailer
 			l_all_header<='0';
 			l_all_trailer<='0';
 			l_request(i)<='0';
 		else
-			if (i_source_data(i)(51 downto 50)="10" or i_SC_mask(i)='1') then -- data is header
+			if (i_source_data(i)(51 downto 50)="10") then -- data is header
 				l_request(i)<='0';	--do not request readout of header
 			else 
 				l_all_header<='0';
 			end if;
-			if (i_source_data(i)(51 downto 50)="11" or i_SC_mask(i)='1') then -- data is trailer
+			if (i_source_data(i)(51 downto 50)="11") then -- data is trailer
 				l_request(i)<='0';	--do not request readout of trailer
 			else
 				l_all_trailer<='0';
@@ -215,7 +217,7 @@ end process;
 
 
 ------------------------------------------------------------------
-p_fsm_async: process(s_state,l_all_header,l_all_trailer,l_request,s_sel_data, s_sel_gnt)
+p_fsm_async : process(s_state, l_all_header, l_all_trailer, l_request, s_sel_data, s_sel_gnt, i_SC_nomerge, i_source_data)
 begin
 	n_state <= s_state;
 	n_sel_gnt <= s_sel_gnt;
@@ -319,7 +321,7 @@ begin
 			o_sink_data(33 downto 32) <= "00"; --identifier (is a payload : type data)
 			o_sink_data(31 downto 16) <= s_global_timestamp(15 downto 0); --global timestamp 
 			o_sink_data(15) <= l_frameid_nonsync;		--frameID nonsync
-			o_sink_data(14 downto 0) <=i_source_data(0)(14 downto 0); --l_common_data(14 downto 0);  --frameID
+			o_sink_data(14 downto 0) <=l_common_data(14 downto 0);  --frameID
 		end if;
 	else --select data
 		--data common part

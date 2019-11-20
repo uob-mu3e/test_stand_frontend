@@ -13,7 +13,7 @@ mscb_t mscb;
 #include "../../../fe/software/app_src/reset.h"
 
 #include "scifi_module.h"
-scifi_module_t scifi_module;
+scifi_module_t scifi_module(&sc);
 
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
@@ -27,7 +27,8 @@ int main() {
     si5345.init();
     mscb.init();
     sc.init();
-    
+
+    scifi_module.RSTSKWctrl_Clear();
 
     while (1) {
         printf("\n");
@@ -49,7 +50,7 @@ int main() {
             menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '2':
-            scifi_module.menu(&sc);
+            scifi_module.menu();
             break;
         case '3':
             sc.menu();

@@ -705,8 +705,8 @@ begin
 --        else
 --          diff := (memaddr_last_packet - memwriteaddr_last);
 --        end if;
-		  
-		  if(memwriteaddr >= memaddr_last_packet) then
+
+        if(memwriteaddr >= memaddr_last_packet) then
           diff := (memwriteaddr - memaddr_last_packet);
         else
           diff := (memaddr_last_packet - memwriteaddr);

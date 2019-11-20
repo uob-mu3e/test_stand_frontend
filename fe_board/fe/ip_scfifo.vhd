@@ -10,7 +10,7 @@ port (
     full            : out   std_logic;
     almost_full     : out   std_logic;
     wrreq           : in    std_logic;
-    data	            : in    std_logic_vector(DATA_WIDTH-1 downto 0);
+    data            : in    std_logic_vector(DATA_WIDTH-1 downto 0);
 
     empty           : out   std_logic;
     almost_empty    : out   std_logic;

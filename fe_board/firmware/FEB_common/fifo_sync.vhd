@@ -3,34 +3,33 @@ use ieee.std_logic_1164.all;
 
 entity fifo_sync is
 generic (
-    DATA_WIDTH_g : positive := 8;
+    RDATA_RESET_g : std_logic_vector;
     FIFO_ADDR_WIDTH_g : positive := 3--;
 );
 port (
     -- read domain
-    o_rdata     : out   std_logic_vector(DATA_WIDTH_g-1 downto 0);
+    o_rdata     : out   std_logic_vector(RDATA_RESET_g'range);
+    i_rreset_n  : in    std_logic;
     i_rclk      : in    std_logic;
-    i_reset_val : in    std_logic_vector(DATA_WIDTH_g-1 downto 0) := (others => '0');
 
     -- write domain
-    i_wdata     : in    std_logic_vector(DATA_WIDTH_g-1 downto 0);
-    i_wclk      : in    std_logic;
-
-    i_fifo_aclr : in    std_logic--;
+    i_wdata     : in    std_logic_vector(RDATA_RESET_g'range);
+    i_wreset_n  : in    std_logic;
+    i_wclk      : in    std_logic--;
 );
 end entity;
 
 architecture rtl of fifo_sync is
 
-    signal rempty, wfull : std_logic;
-    signal rdata : std_logic_vector(DATA_WIDTH_g-1 downto 0);
+    signal rempty, wfull, we : std_logic;
+    signal rdata, wdata : std_logic_vector(RDATA_RESET_g'range);
 
 begin
 
     e_fifo : entity work.ip_dcfifo
     generic map (
         ADDR_WIDTH => FIFO_ADDR_WIDTH_g,
-        DATA_WIDTH => DATA_WIDTH_g--,
+        DATA_WIDTH => RDATA_RESET_g'length--,
     )
     port map (
         rdempty     => rempty,
@@ -40,23 +39,35 @@ begin
         rdclk       => i_rclk,
 
         wrfull      => wfull,
-        wrreq       => not wfull,
-        data        => i_wdata,
+        wrreq       => we,
+        data        => wdata,
         wrusedw     => open,
         wrclk       => i_wclk,
 
-        aclr        => i_fifo_aclr--,
+        aclr        => not i_rreset_n--,
     );
 
-    process(i_rclk, i_fifo_aclr, i_reset_val)
+    process(i_rclk, i_rreset_n)
     begin
-    if ( i_fifo_aclr = '1' ) then
-        o_rdata <= i_reset_val;
+    if ( i_rreset_n = '0' ) then
+        o_rdata <= RDATA_RESET_g;
         --
     elsif rising_edge(i_rclk) then
         if ( rempty = '0' ) then
             o_rdata <= rdata;
         end if;
+        --
+    end if;
+    end process;
+
+    process(i_wclk, i_wreset_n)
+    begin
+    if ( i_wreset_n = '0' ) then
+        we <= '0';
+        --
+    elsif rising_edge(i_wclk) then
+        wdata <= i_wdata;
+        we <= not wfull;
         --
     end if;
     end process;

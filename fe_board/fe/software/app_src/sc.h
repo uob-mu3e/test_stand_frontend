@@ -5,6 +5,11 @@
 
 #include <sys/alt_irq.h>
 
+#define FEB_REPLY_SUCCESS 0
+#define FEB_REPLY_ERROR   1
+
+
+
 struct sc_t {
     volatile sc_ram_t* ram = (sc_ram_t*)AVM_SC_BASE;
 
@@ -33,15 +38,18 @@ struct sc_t {
         // data offset
         alt_u32 offset = ram->regs.fe.offset & 0xFFFF;
 
-        alt_u16 status = -1;
+        alt_u16 status = 0;
         if(!(offset >= 0 && offset + n <= sizeof(sc_ram_t::data) / sizeof(sc_ram_t::data[0]))) {
             printf("[sc::callback] ERROR: ...\n");
         }
         else {
             auto data = n > 0 ? (ram->data + offset) : nullptr;
             status = callback(cmd, data, n);
+            printf("[sc::callback] status = 0x%04X\n", status);
         }
 
+        // zero upper 16 bits of command register
+        // lower 16 bits are used as status
         ram->regs.fe.cmdlen = 0xFFFF & status;
     }
 

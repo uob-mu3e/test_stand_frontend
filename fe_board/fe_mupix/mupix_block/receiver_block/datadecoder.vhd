@@ -217,7 +217,7 @@ end if;
 
 end process;
 
-d_checker : disparity_checker
+d_checker : work.disparity_checker
 	port map(
 		reset_n				=> reset_n,
 		clk					=> clk,
@@ -227,7 +227,7 @@ d_checker : disparity_checker
 		);
 
 
-dec8b10b: decode8b10b 
+dec8b10b : work.decode8b10b 
 	port map(
 		reset_n				=> reset_n,
 		clk					=> clk,

@@ -19,16 +19,11 @@ ip_%.qip : ip_%.v
 
 .PRECIOUS : %.qsys
 %.qsys : %.tcl
-	qsys-script --script=$*.tcl
-
-.PRECIOUS : ip/%.qsys
-ip/%.qsys : %.tcl
-	qsys-script --script=$*.tcl
+	qsys-script --cmd='source "$<"'
 
 .PRECIOUS : %.sopcinfo
 %.sopcinfo : %.qsys
-	qsys-generate --synthesis=VHDL $*.qsys
-#--search-path=$$,.
+	qsys-generate --synthesis=VHDL --output-directory='$(dir $<)' '$<'
 
 .PHONY : flow
 flow : $(IPs) $(VHDs)

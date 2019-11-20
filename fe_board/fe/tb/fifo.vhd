@@ -24,12 +24,12 @@ architecture rtl of fifo is
 signal wrcnt : std_logic_vector(add-1 downto 0);
 signal rdcnt : std_logic_vector(add-1 downto 0);
 type ram is array(0 to (2**add)-1) of std_logic_vector(width-1 downto 0);
-signal memory : ram;   
+signal memory : ram;
 signal full_loc  : std_logic;
 signal empty_loc : std_logic;
 
 begin
-  
+
   fifo_pro : process(reset_n, CLK)
   begin
   if(reset_n = '0')then

@@ -22,8 +22,10 @@ use work.mupix_constants.all;
 
 entity receiver_block_mupix is 
 	generic(
-		NINPUT: integer := 45;
-		NCHIPS: integer := 15
+		NINPUT: integer := 32;
+		NCHIPS: integer := 8;
+		NINPUTS_BANK_A: integer := 16;
+		NINPUTS_BANK_B: integer := 16--;
 	);
 	port (
 		reset_n				: in std_logic;
@@ -95,12 +97,12 @@ lvds_rec_small : work.lvds_receiver_small
 	PORT MAP
 	(
 		pll_areset						=> not rx_locked(0),
-		rx_channel_data_align		=> rx_align(NINPUTS_BANK_A-1 downto 0),
+		rx_channel_data_align			=> rx_align(NINPUTS_BANK_A-1 downto 0),
 		rx_enable						=> rx_enable_A,
 		rx_fifo_reset					=> rx_fifo_reset(NINPUTS_BANK_A-1 downto 0),
-		rx_in								=> rx_in(NINPUTS_BANK_A-1 downto 0),
+		rx_in							=> rx_in(NINPUTS_BANK_A-1 downto 0),
 		rx_inclock						=> rx_inclock_A_pll,
-		rx_reset							=> rx_reset(NINPUTS_BANK_A-1 downto 0),
+		rx_reset						=> rx_reset(NINPUTS_BANK_A-1 downto 0),
 		rx_syncclock					=> rx_synclock_A,
 		rx_dpa_locked					=> rx_dpa_locked(NINPUTS_BANK_A-1 downto 0),
 		rx_out							=> rx_out(NINPUTS_BANK_A*10-1 downto 0)
@@ -110,9 +112,9 @@ lpll_B : work.lvdspll
 	PORT MAP
 	(
 		inclk0		=> rx_inclock_B,
-		c0				=> rx_inclock_B_pll,
-		c1				=> rx_enable_B,
-		c2				=> rx_synclock_B,
+		c0			=> rx_inclock_B_pll,
+		c1			=> rx_enable_B,
+		c2			=> rx_synclock_B,
 		locked		=> rx_locked(1)
 );
 	
