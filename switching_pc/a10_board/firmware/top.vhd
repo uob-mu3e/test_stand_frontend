@@ -508,6 +508,16 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 --	);
 --end generate fifo_demerge;
 
+e_run_control : entity work.run_control
+port map (
+        i_clk                               => tx_clk(0),
+        i_reset_n                           => reset_n,
+        i_aligned                           => '1',
+        i_data                              => rx_data(0),
+        i_datak                             => rx_datak(0),
+        o_FEB_status                        => readregs_slow(FEBSTATUS_REGISTER_R)--,
+);
+
 
 ------------- Event Counter ------------------
 
