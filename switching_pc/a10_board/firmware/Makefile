@@ -10,11 +10,6 @@ IPs = \
     $(patsubst %.tcl,%.sopcinfo,$(wildcard pcieapp/*.tcl)) \
     a10/ip_xcvr_phy.sopcinfo a10/ip_xcvr_reset.sopcinfo a10/ip_xcvr_fpll.sopcinfo \
     nios.sopcinfo
-VHDs= \
-    a10/xcvr_a10.vhd \
-    sc_master.vhd \
-    sc_slave.vhd \
-    top.vhd
 
 include util/makefile.mk
 

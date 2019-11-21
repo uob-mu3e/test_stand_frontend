@@ -252,24 +252,28 @@ architecture rtl of top is
 
 begin
 
---------- I/O, CLK, RESET, PLL ---------
-
+    -- 50 MHz oscillator
 clk 		<= CLK_50_B2J;
+
+    -- generate reset
 reset 	<= not push_button0_db;
 reset_n 	<= not reset;
 
-    pll_125 : component ip_pll_125
+    -- generate 125 MHz clock on SMA output
+    -- (can be connected to SMA input as global clock)
+    e_pll_125 : component ip_pll_125
     port map (
-		outclk_0 	=> SMA_CLKOUT,
-		refclk   	=> clk,
-		rst      	=> not CPU_RESET_n
+        outclk_0 => SMA_CLKOUT,
+        refclk => clk,
+        rst => not CPU_RESET_n
     );
 
-clk_input : ip_clk_ctrl
-  port map (
-		inclk  => SMA_CLKIN,
-		outclk => input_clk--,
-);
+    -- 125 MHz global clock (from SMA input)
+    e_clk_125 : ip_clk_ctrl
+    port map (
+        inclk => SMA_CLKIN,
+        outclk => input_clk--,
+    );
 
 --------- Debouncer/seg7 ---------
 
@@ -288,33 +292,37 @@ clk_input : ip_clk_ctrl
         i_clk => clk--,
     );
 
-    clk_50_cnt_p : process(clk)
+
+
+    process(clk)
     begin
-	if rising_edge(clk) then
-		clk_50_cnt <= clk_50_cnt + 1;
-	end if;
+    if rising_edge(clk) then
+        clk_50_cnt <= clk_50_cnt + 1;
+    end if;
     end process;
 
-    clk_125_cnt_p : process(input_clk)
+    process(input_clk)
     begin
-	if rising_edge(input_clk) then
-		clk_125_cnt <= clk_125_cnt + 1;
-	end if;
+    if rising_edge(input_clk) then
+        clk_125_cnt <= clk_125_cnt + 1;
+    end if;
     end process;
 
     e_segment0 : entity work.hex2seg7
     port map (
-	i_hex => std_logic_vector(clk_50_cnt)(27 downto 24),
-	o_seg => HEX0_D
+        i_hex => std_logic_vector(clk_50_cnt)(27 downto 24),
+        o_seg => HEX0_D--,
     );
 
     e_segment1 : entity work.hex2seg7
     port map (
-	i_hex => std_logic_vector(clk_125_cnt)(27 downto 24),
-	o_seg => HEX1_D
+        i_hex => std_logic_vector(clk_125_cnt)(27 downto 24),
+        o_seg => HEX1_D--,
     );
 
-------------- NIOS -------------
+
+
+    -------- NIOS --------
 
     e_nios : work.cmp.nios
     port map (
@@ -347,21 +355,21 @@ clk_input : ip_clk_ctrl
         clk_clk                         => input_clk--,
     );
 
-QSFPA_LP_MODE <= '0';
-QSFPA_MOD_SEL_n <= '1';
-QSFPA_RST_n <= '1';
+    QSFPA_LP_MODE <= '0';
+    QSFPA_MOD_SEL_n <= '1';
+    QSFPA_RST_n <= '1';
 
--- generate reset sequence for flash and cpu
-    reset_ctrl_i : entity work.reset_ctrl
+    -- generate reset sequence for flash and nios
+    e_reset_ctrl : entity work.reset_ctrl
     generic map (
-		W => 2,
-		N => 125 * 10**5 -- 100ms
-	)
+        W => 2,
+        N => 125 * 10**5 -- 100ms
+    )
     port map (
-		rstout_n(1) => flash_rst_n,
-		rstout_n(0) => cpu_reset_n_q,
-		rst_n 		=> CPU_RESET_n,-- and wd_rst_n,
-		clk 			=> input_clk--,
+        rstout_n(1) => flash_rst_n,
+        rstout_n(0) => cpu_reset_n_q,
+        rst_n => CPU_RESET_n,
+        clk => input_clk--,
     );
 
     watchdog_i : entity work.watchdog
@@ -378,32 +386,34 @@ QSFPA_RST_n <= '1';
 		clk 		=> input_clk--,
     );
 
-LED(0) <= cpu_pio_i(7);
-LED(1) <= not cpu_reset_n_q;
-LED(2) <= not flash_rst_n;
-LED(3) <= '0';
+    -- monitor nios
+    LED(0) <= not cpu_pio_i(7);
+    LED(1) <= not cpu_reset_n_q;
+    LED(2) <= not flash_rst_n;
+    LED(3) <= '0';
 
-FLASH_A <= flash_tcm_address_out(27 downto 2);
+    FLASH_A <= flash_tcm_address_out(27 downto 2);
 
-FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
-FLASH_ADV_n <= '0';
-FLASH_CLK <= '0';
-FLASH_RESET_n <= flash_rst_n;
+    FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
+    FLASH_ADV_n <= '0';
+    FLASH_CLK <= '0';
+    FLASH_RESET_n <= flash_rst_n;
 
-i2c_scl_in <= not i2c_scl_oe;
-FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
+    i2c_scl_in <= not i2c_scl_oe;
+    FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
+    TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
+    POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
 
-i2c_sda_in <= FAN_I2C_SDA and
-				TEMP_I2C_SDA and
-				POWER_MONITOR_I2C_SDA and
-				'1';
-FAN_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
+    i2c_sda_in <=
+        FAN_I2C_SDA and
+        TEMP_I2C_SDA and
+        POWER_MONITOR_I2C_SDA and
+        '1';
+    FAN_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
+    TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
+    POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
 
-------------- Receiving Data and word aligning -------------
+    ------------- Receiving Data and word aligning -------------
 
     e_qsfp : entity work.xcvr_a10
     port map (
@@ -456,8 +466,8 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 --fifo_read <= (not fifo_empty(0)) and (not fifo_empty(1)) and (not fifo_empty(2)) and (not fifo_empty(3));
 
 --process(tx_clk(0), reset_n)
---begin
---	if(reset_n = '0') then
+--    begin
+--    if ( reset_n = '0' ) then
 --		idle_ch <= (others => '0');
 --	elsif(rising_edge(tx_clk(0))) then
 --		idle_ch <= (others => '0');
@@ -473,13 +483,13 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 --		if(rx_data(3) = x"000000BC" and rx_datak(3) = "0001") then
 --			idle_ch(3) <= '1';
 --		end if;
---	end if;
---end process;
+--    end if;
+--    end process;
 
---fifo_demerge :
---for i in 0 to 3 generate
-----		data_demerger : data_demerge
-----			port map(
+--    g_fifo_demerge :
+--    for i in 0 to 3 generate
+----        e_data_demerger : data_demerge
+----        port map (
 ----				clk				=> tx_clk(0),			-- receive clock (156.25 MHz)
 ----				reset				=> not reset_n,
 ----				aligned			=> '1',					-- word alignment achieved
@@ -492,10 +502,10 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 ----				sc_out_ready	=> sc_ready(i),
 ----				fpga_id			=> open,					-- FPGA ID of the connected frontend board
 ----				sck_out      	=> sc_datak(i)--,
-----		);
+----        );
 --
---	fifo : transceiver_fifo
---		port map (
+--        e_fifo : transceiver_fifo
+--        port map (
 --			data    => (i) & rx_datak(i), --fifo_data_in_ch0 & fifo_datak_in_ch0,
 --			wrreq   => not idle_ch(i),
 --			rdreq   => not fifo_empty(i),
@@ -505,15 +515,14 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 --			q       => fifo_out(i),
 --			rdempty => fifo_empty(i),
 --			wrfull  => open--,
---	);
---end generate fifo_demerge;
+--        );
+--    end generate;
 
 
 ------------- Event Counter ------------------
 
     e_data_gen : entity work.data_generator_a10
     port map (
-		clk 						=> tx_clk(0),
 		reset						=> resets(RESET_BIT_DATAGEN),
 		enable_pix	         => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL),
 		random_seed 			=> (others => '1'),
@@ -522,15 +531,15 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		data_pix_ready			=>	data_pix_ready,
 		start_global_time		=> (others => '0'),
 		slow_down				=> writeregs_slow(DMA_SLOW_DOWN_REGISTER_W),
-		state_out				=> state_out_datagen--,
+		state_out				=> state_out_datagen,
+        clk                     => tx_clk(0)--,
     );
 
     process(tx_clk(0), reset_n)
     begin
-	if(reset_n = '0') then
+    if ( reset_n = '0' ) then
 		data_counter 	<= (others => '0');
 		datak_counter 	<= (others => '0');
-
 	elsif (rising_edge(tx_clk(0))) then
 		if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
 			data_counter 	<= data_pix_generated;
@@ -539,12 +548,11 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 			data_counter 	<= rx_data(0);
 			datak_counter 	<= rx_datak(0);
 		end if;
-	end if;
+    end if;
     end process;
 
     e_event_counter : entity work.event_counter
     port map (
-		clk						=> tx_clk(0),
 		dma_clk					=> pcie_fastclk_out,
 		reset_n					=> resets_n(RESET_BIT_EVENT_COUNTER),
 		rx_data					=> data_counter,
@@ -554,7 +562,8 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		dma_data_wren			=> dma_wren_cnt,
 		dmamem_endofevent		=> dma_end_event_cnt,
 		dma_data					=> dma_event_data,
-		state_out				=> state_out_eventcounter--,
+		state_out				=> state_out_eventcounter,
+        clk                     => tx_clk(0)--,
     );
 
     e_counter : entity work.dma_counter
@@ -573,11 +582,11 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 
     process (pcie_fastclk_out, reset_n)
     begin
-	if (reset_n = '0') then
+    if ( reset_n = '0' ) then
 		dma_data_wren <= '0';
 		dmamem_endofevent <= '0';
 		dma_data 	  <= (others => '0');
-	elsif (rising_edge(pcie_fastclk_out)) then
+    elsif rising_edge(pcie_fastclk_out) then
 		dma_data_wren <= '0';
 		dmamem_endofevent <= '0';
 		dma_data 	  <= (others => '0');
@@ -598,7 +607,7 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 				x"5ABACAFE" &
 				x"6ABACAFE";
 		end if;
-	end if;
+    end if;
     end process;
 
 ------------- time algining data -------------
@@ -650,7 +659,6 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		NLINKS => 4
     )
     port map (
-		clk					=> tx_clk(0),
 		reset_n				=> resets_n(RESET_BIT_SC_MASTER),
 		enable				=> '1',
 		mem_data_in			=> writememreaddata,
@@ -658,12 +666,12 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		mem_data_out		=> mem_data_out,
 		mem_data_out_k		=> mem_datak_out,
 		done					=> open,
-		stateout				=> open--,
+		stateout				=> open,
+        clk                     => tx_clk(0)--,
     );
 
     e_slave : sc_slave
     port map (
-		clk							=> tx_clk(0),
 		reset_n						=> resets_n(RESET_BIT_SC_SLAVE),
 		enable						=> '1',
 		link_data_in				=> rx_data(0),
@@ -672,7 +680,8 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		mem_addr_finished_out   => readmem_writeaddr_finished,
 		mem_data_out				=> mem_data_sc,
 		mem_wren						=> mem_wen_sc,
-		stateout						=> LED_BRACKET--,
+		stateout						=> LED_BRACKET,
+        clk                     => tx_clk(0)--,
     );
 
 tx_data(0) <= mem_data_out(31 downto 0);
@@ -717,19 +726,20 @@ tx_datak(0) <= mem_datak_out(3 downto 0);
 
 ------------- PCIe -------------
 
-    resetlogic : entity work.reset_logic
+    e_reset_logic : entity work.reset_logic
     port map (
-		clk                     => tx_clk(0),
 		rst_n                   => push_button0_db,
 
 		reset_register          => writeregs_slow(RESET_REGISTER_W),
 		--reset_reg_written       => regwritten(RESET_REGISTER_W),
 
 		resets                  => resets,
-		resets_n                => resets_n--,
+		resets_n                => resets_n,
+
+        clk                     => tx_clk(0)--,
     );
 
-    vreg : entity work.version_reg
+    e_version_reg : entity work.version_reg
     port map (
         data_out  => readregs_slow(VERSION_REGISTER_R)(27 downto 0)
     );
@@ -737,7 +747,7 @@ tx_datak(0) <= mem_datak_out(3 downto 0);
 --Sync read regs from slow (156.25 MHz) to fast (250 MHz) clock
     process(pcie_fastclk_out)
     begin
-	if(pcie_fastclk_out'event and pcie_fastclk_out = '1') then
+    if rising_edge(pcie_fastclk_out) then
 		clk_sync <= tx_clk(0);--clk;
 		clk_last <= clk_sync;
 
@@ -755,8 +765,7 @@ tx_datak(0) <= mem_datak_out(3 downto 0);
 
 		readregs(DMA_ENDEVENT_REGISTER_R)			<= endofevent_counter;
 		readregs(DMA_NOTENDEVENT_REGISTER_R)		<= notendofevent_counter;
-
-	end if;
+    end if;
     end process;
 
     e_dma_evaluation : entity work.dma_evaluation
@@ -789,7 +798,7 @@ tx_datak(0) <= mem_datak_out(3 downto 0);
 -- we just delay the fast signal so the slow clock will see it
     process(pcie_fastclk_out)
     begin
-	if(pcie_fastclk_out'event and pcie_fastclk_out = '1') then
+    if rising_edge(pcie_fastclk_out) then
 		regwritten_del1 <= regwritten_fast;
 		regwritten_del2 <= regwritten_del1;
 		regwritten_del3 <= regwritten_del2;
@@ -806,24 +815,24 @@ tx_datak(0) <= mem_datak_out(3 downto 0);
 			regwritten(I) 		<= '0';
 			end if;
 		end loop;
-	end if;
+    end if;
     end process;
 
-process(tx_clk(0))
-begin
-	if(tx_clk(0)'event and tx_clk(0) = '1') then
+    process(tx_clk(0))
+    begin
+    if rising_edge(tx_clk(0)) then
 		for I in 63 downto 0 loop
 			if(regwritten(I) = '1') then
 				writeregs_slow(I) <= writeregs(I);
 			end if;
 		end loop;
-	end if;
-end process;
+    end if;
+    end process;
 
 readmem_writeaddr_lowbits 	<= readmem_writeaddr(15 downto 0);
 pb_in 							<= push_button0_db & push_button1_db & push_button2_db;
 
-    pcie_b : entity work.pcie_block
+    e_pcie_block : entity work.pcie_block
     generic map (
 		DMAMEMWRITEADDRSIZE 	=> 11,
 		DMAMEMREADADDRSIZE  	=> 11,

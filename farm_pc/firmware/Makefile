@@ -8,22 +8,15 @@ APP_DIR=software/app
 IPs = \
     $(patsubst %.tcl,%.sopcinfo,$(wildcard pcieapp/*.tcl)) \
     nios.sopcinfo
-VHDs= top.vhd \
-      mudaq_components.vhd \
-      mudaq_registers.vhd \
-      pcieapp/*.vhd \
-      helpers/*.vhd
-
-version_reg.vhd: FORCE
-	tclsh revision_number.tcl
-
-FORCE: ;
-
-clean:
-	rm -rf *.rpt *.chg smart.log *.htm *.eqn *.pin *.sof *.pof db incremental_db *.sopcinfo pcieapp/completer_fifo pcieapp/completer_wide_fifo pcieapp/data_addrs_ram pcieapp/data_pages_ram pcieapp/dma_ram pcieapp/pcie pcieapp/pcie_ram_narrow pcieapp/pcie_wram_narrow simulation helpers/ip_clk_ctrl helpers/receiver_switching *.bak helpers/*.sopcinfo helpers/ip_receiving_fifo
 
 include util/makefile.mk
 
-nios.qsys : device.tcl
+version_reg.vhd : FORCE
+	tclsh revision_number.tcl
 
-flow : nios.sopcinfo
+FORCE : ;
+
+clean :
+	rm -rf *.rpt *.chg smart.log *.htm *.eqn *.pin *.sof *.pof db incremental_db *.sopcinfo pcieapp/completer_fifo pcieapp/completer_wide_fifo pcieapp/data_addrs_ram pcieapp/data_pages_ram pcieapp/dma_ram pcieapp/pcie pcieapp/pcie_ram_narrow pcieapp/pcie_wram_narrow simulation helpers/ip_clk_ctrl helpers/receiver_switching *.bak helpers/*.sopcinfo helpers/ip_receiving_fifo
+
+nios.qsys : device.tcl
