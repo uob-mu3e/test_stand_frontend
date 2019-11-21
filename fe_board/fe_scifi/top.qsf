@@ -17,7 +17,6 @@ set_global_assignment -name SDC_FILE top.sdc
 
 
 
-set_global_assignment -name VHDL_FILE ../fe/fe_block.vhd
 set_global_assignment -name VHDL_FILE scifi_path.vhd
 
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
