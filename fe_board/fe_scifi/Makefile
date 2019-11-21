@@ -1,5 +1,5 @@
 
-CABLE=2
+CABLE=USB-Blaster
 SOF=output_files/top.sof
 
 BSP_DIR=software/hal_bsp

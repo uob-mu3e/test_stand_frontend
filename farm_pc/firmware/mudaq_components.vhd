@@ -335,17 +335,6 @@ component ip_fifodataoutpll is
   );
 end component ip_fifodataoutpll;
 
-component seven_segment is
-  port (
-    clk     	 : 	in 	std_logic;
-    reset     	 :   	in 	std_logic;
-    HEX0_D      :   	out 	std_logic_vector(6 downto 0);
-    HEX0_DP 	 : 	out 	std_logic;
-	 HEX1_D      :   	out 	std_logic_vector(6 downto 0);
-    HEX1_DP 	 : 	out 	std_logic
-    );
-end component seven_segment;
-
 component data_scan is	
 	generic (
 		constant state_length  : positive := 50
@@ -374,23 +363,4 @@ component linear_shift is
 	);
 end component linear_shift;
 
-component seg7_lut is
-    port (
-        clk : in  std_logic;
-        hex : in  std_logic_vector(3 downto 0);
-        seg : out std_logic_vector(6 downto 0)--;
-    );
-end component seg7_lut;
-
-
-component i2c_nios is
-  port (
-		clk_clk                          : in    std_logic                    := 'X'; -- clk
-		reset_reset_n                    : in    std_logic                    := 'X'; -- reset_n
-		pio_0_external_connection_export : out   std_logic_vector(9 downto 0);        -- export
-		i2c_scl_conduit_export           : out   std_logic;                           -- export
-		i2c_sda_conduit_export           : inout std_logic                    := 'X'  -- export
-  );
-end component i2c_nios;
- 
 end package mudaq_components;

@@ -1,107 +1,132 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+
 use work.daq_constants.all;
 
+ENTITY resetsys is
+PORT (
+    i_data_125_rx       : in    std_logic_vector(7 downto 0);
+    i_reset_125_rx_n    : in    std_logic;
+    i_clk_125_rx        : in    std_logic;
 
-ENTITY resetsys is 
-    PORT(
-        clk_reset_rx :                    in  std_logic; 										-- recovered clk from reset receiver
-		  clk_global : 							in  std_logic;											-- state transitions will be synchronised to this clock
-		  clk_free : 								in  std_logic;											-- independent, free running clock (not required for operation, used for phase measurement between clk_reset_rx and clk_global)
-        reset_in :              				in  std_logic;											-- hard reset for testing, do not connect this to any "normal" reset
-		  resets_out :				  				out std_logic_vector(15 downto 0);				-- 16 bit reset mask, use this together with feb state .. example: nios_reset => (run_state=reset and resets(x)='1')  
-        phase_out :								out std_logic_vector(31 downto 0);				-- phase between clk_reset_rx and clk_global
-		  data_in :    		     				in  std_logic_vector(7 downto 0); 				-- 8b reset link input
-		  reset_bypass : 							in  std_logic_vector(11 downto 0);				-- bypass of reset link using nios & jtag (for setups without the genesis board) 
-		  state_out :				  				out feb_run_state;									-- run state of the frontend board
-		  run_number_out :   	  				out std_logic_vector(31 downto 0);				-- run number from midas, updated on state run_prep
-		  fpga_id :									in  std_logic_vector(15 downto 0);				-- input of fpga id, needed for addressed reset commands in setups with >1 FEBs
-		  terminated : 							in  std_logic;											-- changes run state from terminating to idle if set to 1  (data merger will set this if run was finished properly)
-		  testout : 								out std_logic_vector(5 downto 0)
-	);
-END ENTITY resetsys;
+    o_state_125         : out   run_state_t;
+    i_reset_125_n       : in    std_logic;
+    i_clk_125           : in    std_logic;
+
+    o_state_156         : out   run_state_t;
+    i_reset_156_n       : in    std_logic;
+    i_clk_156           : in    std_logic;
+
+    resets_out          : out   std_logic_vector(15 downto 0); -- 16 bit reset mask, use this together with feb state .. example: nios_reset => (run_state=reset and resets(x)='1')
+    reset_bypass        : in    std_logic_vector(11 downto 0); -- bypass of reset link using nios & jtag (for setups without the genesis board)
+    run_number_out      : out   std_logic_vector(31 downto 0); -- run number from midas, updated on state run_prep
+    fpga_id             : in    std_logic_vector(15 downto 0); -- input of fpga id, needed for addressed reset commands in setups with >1 FEBs
+    terminated          : in    std_logic; -- changes run state from terminating to idle if set to 1  (data merger will set this if run was finished properly, signal will be synced to clk_reset_rx INSIDE this entity)
+    testout             : out   std_logic_vector(5 downto 0);
+
+    o_phase             : out   std_logic_vector(31 downto 0);
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
+);
+END ENTITY;
 
 architecture rtl of resetsys is
 
+    signal state_125_rx : run_state_t;
 
-----------------signals---------------------
-	 
-	 -- states in sync with clk_reset_rx:
-	 -- (single std_logic for each state connected to state phase box,  phase box output is of type feb_run_state)
-	 signal ustate_idle_rx:             std_logic;
-    signal ustate_run_prepare_rx:      std_logic;
-    signal ustate_sync_rx:             std_logic;
-    signal ustate_running_rx:          std_logic;
-    signal ustate_terminating_rx:      std_logic;
-    signal ustate_link_test_rx:        std_logic;
-    signal ustate_sync_test_rx:        std_logic;
-    signal ustate_reset_rx:            std_logic;
-    signal ustate_out_of_DAQ_rx:       std_logic;
-	 
-	 signal state_controller_in:			std_logic_vector(7 downto 0);
-    
+    -- terminated signal in sync to clk_125_rx of state controller
+    signal terminated_125_rx : std_logic;
+
+    signal state_controller_in : std_logic_vector(7 downto 0);
+    signal reset_bypass_125_rx : std_logic_vector(11 downto 0);
+
 ----------------begin resetsys------------------------
 BEGIN
 
- process (clk_reset_rx)
- begin
-	  if (rising_edge (clk_reset_rx))then
-			if(reset_bypass(8) = '1') then
-				state_controller_in <= reset_bypass(7 downto 0);
-			else
-				state_controller_in <= data_in;
-			end if;
-		end if;
- end process;
+    process(i_clk_125_rx)
+    begin
+    if rising_edge(i_clk_125_rx) then
+        if ( reset_bypass_125_rx(8) = '1' ) then
+            state_controller_in <= reset_bypass_125_rx(7 downto 0);
+        else
+            state_controller_in <= i_data_125_rx;
+        end if;
+    end if;
+    end process;
 
-i_state_controller: entity work.state_controller
-    PORT MAP(
-        clk                    => clk_reset_rx,
-        reset                  => reset_in,
-        reset_link_8bData      => state_controller_in,
-        state_idle             => ustate_idle_rx,
-        state_run_prepare      => ustate_run_prepare_rx,
-        state_sync             => ustate_sync_rx,
-        state_running          => ustate_running_rx,
-        state_terminating      => ustate_terminating_rx,
-        state_link_test        => ustate_link_test_rx,
-        state_sync_test        => ustate_sync_test_rx,
-        state_reset            => ustate_reset_rx,
-        state_out_of_DAQ       => ustate_out_of_DAQ_rx,
-        fpga_addr              => fpga_id,
-        runnumber              => run_number_out,
-        reset_mask             => resets_out,
-        link_test_payload      => open,
-        sync_test_payload      => open,
-        terminated             => terminated
+    -- sync terminated to 125 clk of state controller
+    i_ff_sync : entity work.ff_sync
+    generic map ( W => 1, N => 5 )
+    PORT MAP (
+        i_d(0)      => terminated,
+        o_q(0)      => terminated_125_rx,
+        i_reset_n   => i_reset_125_rx_n,
+        i_clk       => i_clk_125_rx--,
     );
 
-i_state_phase_box: entity work.state_phase_box
-    PORT MAP(
-        clk_global				 => clk_global,
-        clk_rx_reset           => clk_reset_rx,
-        clk_free					 => clk_free,
-		  reset						 => reset_in, 
-		  phase						 => phase_out,
-		  -- states in sync to clk_rx_reset:
-        state_idle_rx          => ustate_idle_rx,
-        state_run_prepare_rx   => ustate_run_prepare_rx,
-        state_sync_rx          => ustate_sync_rx,
-        state_running_rx       => ustate_running_rx,
-        state_terminating_rx   => ustate_terminating_rx,
-        state_link_test_rx     => ustate_link_test_rx,
-        state_sync_test_rx     => ustate_sync_test_rx,
-        state_reset_rx         => ustate_reset_rx,
-        state_out_of_DAQ_rx    => ustate_out_of_DAQ_rx,
-		  -- state in sync to clk_global:
-		  state_sync_global		 => state_out
+    -- decode state from rx
+    i_state_controller : entity work.state_controller
+    PORT MAP (
+        reset_link_8bData       => state_controller_in,
+        fpga_addr               => fpga_id,
+        runnumber               => run_number_out,
+        reset_mask              => resets_out,
+        link_test_payload       => open,
+        sync_test_payload       => open,
+        terminated              => terminated_125_rx,
+
+        o_state                 => state_125_rx,
+
+        i_reset_n               => i_reset_125_rx_n,
+        i_clk                   => i_clk_125_rx--,
     );
 
-testout(0) <= ustate_idle_rx;
-testout(1) <= ustate_run_prepare_rx;
-testout(2) <= ustate_sync_rx;
-testout(3) <= ustate_running_rx;
-testout(4) <= ustate_terminating_rx;
-testout(5) <= ustate_reset_rx;
-END rtl;
+    -- measure phase between clk_125_rx and clk_125
+    -- sync state from clk_125_rx to clk_125
+    i_state_phase_box : entity work.state_phase_box
+    PORT MAP (
+        i_state_125_rx      => state_125_rx,
+        i_clk_125_rx        => i_clk_125_rx,
+
+        o_state_125         => o_state_125,
+        i_reset_125_n       => i_reset_125_n,
+        i_clk_125           => i_clk_125,
+
+        o_phase             => o_phase,
+        i_reset_n           => i_reset_n,
+        i_clk               => i_clk--,
+    );
+
+    -- sync state from clk_125_rx to clk_156
+    e_fifo_sync : entity work.fifo_sync
+    generic map (
+        RDATA_RESET_g => RUN_STATE_IDLE--,
+    )
+    port map (
+        o_rdata     => o_state_156,
+        i_rreset_n  => i_reset_156_n,
+        i_rclk      => i_clk_156,
+
+        i_wdata     => state_125_rx,
+        i_wreset_n  => i_reset_125_n,
+        i_wclk      => i_clk_125_rx--,
+    );
+
+    e_fifo_sync2 : entity work.fifo_sync
+    generic map (
+        RDATA_RESET_g => (reset_bypass'range => '0')--,
+    )
+    port map (
+        o_rdata     => reset_bypass_125_rx,
+        i_rreset_n  => i_reset_125_rx_n,
+        i_rclk      => i_clk_125_rx,
+
+        i_wdata     => reset_bypass,
+        i_wreset_n  => i_reset_156_n,
+        i_wclk      => i_clk_156--,
+    );
+
+    testout <= state_125_rx(testout'range);
+
+end architecture;

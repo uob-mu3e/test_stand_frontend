@@ -1,22 +1,14 @@
 #
 
-set_global_assignment -name ORIGINAL_QUARTUS_VERSION 18.0.0
-set_global_assignment -name PROJECT_CREATION_TIME_DATE "10:48:43  OCTOBER 19, 2018"
 set_global_assignment -name LAST_QUARTUS_VERSION "18.1.0 Standard Edition"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
-set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
-set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
-set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (VHDL)"
-set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
-set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
 
 
 
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
 
 
 
-set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
-set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
 set_global_assignment -name PROGRAMMABLE_POWER_TECHNOLOGY_SETTING "FORCE ALL TILES WITH FAILING TIMING PATHS TO HIGH SPEED"
 set_global_assignment -name SAFE_STATE_MACHINE ON
@@ -39,9 +31,13 @@ set_global_assignment -name EDA_NATIVELINK_GENERATE_SCRIPT_ONLY ON -section_id e
 #============================================================
 
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
+set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 
 set_global_assignment -name TOP_LEVEL_ENTITY top
+set_global_assignment -name VHDL_FILE top.vhd
+set_global_assignment -name SDC_FILE top.sdc
 
+set_global_assignment -name QIP_FILE pcieapp/include.qip
 
 
 
@@ -52,13 +48,8 @@ set_global_assignment -name QSYS_FILE dataflow/memreadfifo.qsys
 set_global_assignment -name QSYS_FILE dataflow/tagram.qsys
 set_global_assignment -name QSYS_FILE dataflow/reqfifo.qsys
 set_global_assignment -name QSYS_FILE dataflow/dflowfifo.qsys
-set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
-set_global_assignment -name VHDL_FILE top.vhd
-set_global_assignment -name QSYS_FILE nios.qsys
-set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name QSYS_FILE ddr3/ddr3_if.qsys
 set_global_assignment -name VHDL_FILE mudaq_components.vhd -library work
-set_global_assignment -name VHDL_FILE pcieapp/pcie_components.vhd -library work
 set_global_assignment -name VHDL_FILE mudaq_registers.vhd -library work
 set_global_assignment -name VHDL_FILE helpers/counter.vhd
 set_global_assignment -name VHDL_FILE helpers/debouncer.vhd
@@ -67,26 +58,9 @@ set_global_assignment -name QSYS_FILE helpers/ip_clk_ctrl.qsys
 set_global_assignment -name QSYS_FILE helpers/receiver_switching.qsys
 set_global_assignment -name QSYS_FILE helpers/ip_receiving_fifo.qsys
 set_global_assignment -name QSYS_FILE helpers/ip_fifodataoutpll.qsys
-set_global_assignment -name VHDL_FILE pcieapp/reset_logic.vhd
-set_global_assignment -name VHDL_FILE pcieapp/dma_engine.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_application.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_block.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_cfgbus.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_completer.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_completion_bytecount.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_readable_memory.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_readable_registers.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_writeable_memory.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_writeable_registers.vhd
-set_global_assignment -name QSYS_FILE pcieapp/completer_fifo.qsys
-set_global_assignment -name QSYS_FILE pcieapp/completer_wide_fifo.qsys
-set_global_assignment -name QSYS_FILE pcieapp/pcie_wram_narrow.qsys
-set_global_assignment -name QSYS_FILE pcieapp/pcie_ram_narrow.qsys
-set_global_assignment -name QSYS_FILE pcieapp/pcie.qsys
-set_global_assignment -name QSYS_FILE pcieapp/dma_ram.qsys
-set_global_assignment -name QSYS_FILE pcieapp/data_addrs_ram.qsys
-set_global_assignment -name QSYS_FILE pcieapp/data_pages_ram.qsys
-set_global_assignment -name QSYS_FILE nios/nios.qsys
+
+set_global_assignment -name QSYS_FILE nios.qsys
+
 set_global_assignment -name VHDL_FILE util/rx_align.vhd
 set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 set_global_assignment -name VHDL_FILE ddr3/ddr3_components.vhd
@@ -94,11 +68,10 @@ set_global_assignment -name VHDL_FILE ddr3/ddr3_block.vhd
 set_global_assignment -name VHDL_FILE ddr3/ddr3_memory_controller.vhd
 set_global_assignment -name VHDL_FILE dataflow/data_flow.vhd
 set_global_assignment -name VHDL_FILE dataflow/dataflow_components.vhd
-set_global_assignment -name SDC_FILE top.sdc
+
+
 
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-
-
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

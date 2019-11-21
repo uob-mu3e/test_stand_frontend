@@ -2,6 +2,7 @@
 
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE [file join $::quartus(qip_path) "assignments/FE_s4.tcl"]
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE [file join $::quartus(qip_path) "assignments.tcl"]
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE [file join $::quartus(qip_path) "assignments/FE_mupix.tcl"]
 
 set_global_assignment -name SDC_FILE [file join $::quartus(qip_path) "top.sdc"]
 
@@ -16,3 +17,4 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "s4/ip_scf
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "s4/xcvr.qip"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "sc_rx.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "sc_ram.vhd"]

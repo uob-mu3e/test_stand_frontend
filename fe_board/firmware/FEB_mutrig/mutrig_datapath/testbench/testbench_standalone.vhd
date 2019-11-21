@@ -40,7 +40,8 @@ component mutrig_datapath is
   port (
 	i_rst			: in  std_logic;
 	i_stic_txd		: in  std_logic_vector( N_ASICS-1 downto 0);-- serial data
-	i_refclk_125		: in  std_logic;                 		-- ref clk for pll
+	i_refclk_125_A		: in  std_logic;                 		-- ref clk for lvds pll (A-Side) 
+	i_refclk_125_B		: in  std_logic;                 		-- ref clk for lvds pll (B-Side)
 	i_ts_clk		: in  std_logic;                 		-- ref clk for global timestamp
 	i_ts_rst		: in  std_logic;				-- global timestamp reset, high active
 
@@ -55,6 +56,8 @@ component mutrig_datapath is
 	i_SC_datagen_enable	: in std_logic;
 	i_SC_datagen_shortmode	: in std_logic;
 	i_SC_datagen_count	: in std_logic_vector(9 downto 0);
+	i_SC_rx_wait_for_all	: in std_logic;
+	i_SC_rx_wait_for_all_sticky	: in std_logic;
 	--monitors
 	o_receivers_usrclk	: out std_logic;              		-- pll output clock
 	o_receivers_pll_lock	: out std_logic;			-- pll lock flag
@@ -126,7 +129,8 @@ dut: mutrig_datapath
 	port map (
 		i_rst			=> i_rst,
 		i_stic_txd		=> i_asic_tx_p,
-		i_refclk_125		=> i_refclk_125,
+		i_refclk_125_A		=> i_refclk_125,
+		i_refclk_125_B		=> i_refclk_125,
 		i_ts_clk		=> i_tsclk_125,
 		i_ts_rst		=> i_rst,
 		o_receivers_usrclk	=> o_receivers_pll_clock,
@@ -143,7 +147,9 @@ dut: mutrig_datapath
 		o_frame_desync		=> o_frame_desync,
 		i_SC_datagen_enable	=> '1',
 		i_SC_datagen_shortmode	=> '0',
-		i_SC_datagen_count	=> (3=>'1',others=>'0')
+		i_SC_datagen_count	=> (3=>'1',others=>'0'),
+		i_SC_rx_wait_for_all	=> '1',
+		i_SC_rx_wait_for_all_sticky => '1'
 	);
 
 ---------------------------------------------------------------

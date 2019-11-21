@@ -11,17 +11,22 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity sc_rx is
+generic (
+    FIFO_ADDR_WIDTH_g : positive := 10--;
+);
 port (
     i_link_data     : in    std_logic_vector(31 downto 0);
     i_link_datak    : in    std_logic_vector(3 downto 0);
 
-    o_fifo_we       : out   std_logic;
-    o_fifo_wdata    : out   std_logic_vector(35 downto 0);
+    o_fifo_rempty   : out   std_logic;
+    i_fifo_rack     : in    std_logic;
+    o_fifo_rdata    : out   std_logic_vector(35 downto 0);
+    o_fifo_wfull    : out   std_logic;
 
     o_ram_addr      : out   std_logic_vector(31 downto 0);
     o_ram_re        : out   std_logic;
-    i_ram_rdata     : in    std_logic_vector(31 downto 0);
     i_ram_rvalid    : in    std_logic;
+    i_ram_rdata     : in    std_logic_vector(31 downto 0);
     o_ram_we        : out   std_logic;
     o_ram_wdata     : out   std_logic_vector(31 downto 0);
 
@@ -44,6 +49,10 @@ architecture arch of sc_rx is
     signal idle_counter : unsigned(15 downto 0);
     signal sc_type : std_logic_vector(1 downto 0);
 
+    signal fifo_we : std_logic;
+    signal fifo_wdata : std_logic_vector(35 downto 0);
+    signal fifo_reset : std_logic;
+
 begin
 
     process(i_clk, i_reset_n)
@@ -51,7 +60,7 @@ begin
     if ( i_reset_n = '0' ) then
         state <= S_IDLE;
 
-        o_fifo_we <= '0';
+        fifo_we <= '0';
         o_ram_re <= '0';
         o_ram_we <= '0';
 
@@ -59,7 +68,7 @@ begin
         idle_counter <= (others => '0');
         --
     elsif rising_edge(i_clk) then
-        o_fifo_we <= '0';
+        fifo_we <= '0';
         o_ram_re <= '0';
         o_ram_we <= '0';
 
@@ -73,8 +82,8 @@ begin
             --
         elsif ( state = S_ADDR and i_link_datak = "0000" ) then
             -- ack addr
-            o_fifo_we <= '1';
-            o_fifo_wdata <= sc_type & "10" & i_link_data;
+            fifo_we <= '1';
+            fifo_wdata <= sc_type & "10" & i_link_data;
 
             ram_addr <= unsigned(i_link_data);
 
@@ -82,8 +91,8 @@ begin
             --
         elsif ( state = S_LENGTH and i_link_datak = "0000" ) then
             -- ack length
-            o_fifo_we <= '1';
-            o_fifo_wdata <= "0000" & X"0001" & i_link_data(15 downto 0);
+            fifo_we <= '1';
+            fifo_wdata <= "0000" & X"0001" & i_link_data(15 downto 0);
 
             ram_addr_end <= ram_addr + unsigned(i_link_data(15 downto 0));
 
@@ -106,8 +115,8 @@ begin
 
             if ( ram_addr = ram_addr_end ) then
                 -- write end of packet
-                o_fifo_we <= '1';
-                o_fifo_wdata <= "0011" & X"00000000";
+                fifo_we <= '1';
+                fifo_wdata <= "0011" & X"00000000";
                 state <= S_IDLE;
             end if;
             --
@@ -122,8 +131,8 @@ begin
 
             if ( ram_read_nreq /= 0 and i_ram_rvalid = '1' ) then
                 -- write to fifo
-                o_fifo_we <= '1';
-                o_fifo_wdata <= "0000" & i_ram_rdata;
+                fifo_we <= '1';
+                fifo_wdata <= "0000" & i_ram_rdata;
                 if ( ram_addr /= ram_addr_end and ram_read_nreq /= (ram_read_nreq'range => '1') ) then
                     ram_read_nreq <= ram_read_nreq;
                 else
@@ -133,8 +142,8 @@ begin
 
             if ( ram_addr = ram_addr_end and ram_read_nreq = 0 ) then
                 -- write end of packet
-                o_fifo_we <= '1';
-                o_fifo_wdata <= "0011" & X"00000000";
+                fifo_we <= '1';
+                fifo_wdata <= "0011" & X"00000000";
                 state <= S_IDLE;
             end if;
             --
@@ -143,8 +152,8 @@ begin
         ) then
             -- trailer
             -- write end of packet
-            o_fifo_we <= '1';
-            o_fifo_wdata <= "0011" & X"00000000";
+            fifo_we <= '1';
+            fifo_wdata <= "0011" & X"00000000";
             state <= S_IDLE;
             --
         elsif ( state = S_TIMEOUT ) then
@@ -175,5 +184,29 @@ begin
         --
     end if;
     end process;
+
+    e_fifo : entity work.ip_scfifo
+    generic map (
+        ADDR_WIDTH => FIFO_ADDR_WIDTH_g,
+        DATA_WIDTH => 36--,
+    )
+    port map (
+        empty           => o_fifo_rempty,
+        almost_empty    => open,
+        rdreq           => i_fifo_rack,
+        q               => o_fifo_rdata,
+
+        full            => o_fifo_wfull,
+        almost_full     => open,
+        wrreq           => fifo_we,
+        data            => fifo_wdata,
+
+        usedw           => open,
+
+        sclr            => fifo_reset,
+        clock           => i_clk--,
+    );
+
+    fifo_reset <= not i_reset_n;
 
 end architecture;

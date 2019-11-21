@@ -12,6 +12,7 @@ incremental_db/
 output_files/
 reconfig_mif/
 simulation/modelsim/
+*.qdf
 *.qws
 *.bak
 *.rpt
@@ -53,6 +54,7 @@ dvt_build.log
 
 *~
 *.bak
+*.swp
 build
 install
 online/exptab
@@ -77,3 +79,7 @@ online/*
 include/mudaq_registers.h
 cmake-build-debug/
 cmp_pkg.vhd
+
+#
+*.npy
+*.vcd

@@ -1,3 +1,5 @@
+#ifndef __FE_SI5345_H__
+#define __FE_SI5345_H__
 
 #include "../include/si.h"
 
@@ -7,8 +9,8 @@ struct si5345_t : si_t {
 
     const char* DESIGN_ID = "feb.v01";
 
-    si5345_t(int spi_slave)
-        : si_t(spi_slave)
+    si5345_t(alt_u32 spi_base, alt_u32 spi_slave)
+        : si_t(spi_base, spi_slave)
     {
     }
 
@@ -92,3 +94,5 @@ struct si5345_t : si_t {
     }
 
 };
+
+#endif // __FE_SI5345_H__

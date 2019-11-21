@@ -4,7 +4,7 @@
 
 #include "mutrig_config.h"
 
-namespace mudaq { namespace mutrig {
+namespace mutrig {
 
 Config::paras_t Config::parameters_tdc = {
         std::make_tuple("vnd2c_scale",        1, 1),
@@ -219,10 +219,11 @@ int Config::VerifyReadbackPattern(){
 }
 
 std::ostream& operator<<(std::ostream& os, const Config& config) {
-    os << "bitpattern write: (" << config.length << "/" << config.length_bits << ") 0x" << std::hex;
+    os << " bitpattern: (" << config.length << "/" << config.length_bits << ") 0x" << std::hex;
+    os << std::endl<<" write: 0x" << std::hex;
     for( unsigned int i = 0; i < config.length; i++) os << std::setw(2) << std::setfill('0') << ((uint16_t)config.bitpattern_w[config.length - i - 1]); // << " ";// << config.bitpattern_r[i] << " ";
     //os << std::endl;
-    os << " read:         0x" << std::hex;
+    os << std::endl<<" read:  0x" << std::hex;
     for( unsigned int i = 0; i < config.length; i++) os << std::setw(2) << std::setfill('0') << ((uint16_t)config.bitpattern_r[config.length - i - 1]);
     os << std::endl;
     os << std::dec;
@@ -239,7 +240,6 @@ void Config::Parse_GLOBAL_from_struct(MUTRIG_GLOBAL& mt_g){
     setParameter("ext_trig_offset", mt_g.ext_trig_offset);
     setParameter("ext_trig_endtime", mt_g.ext_trig_endtime);
     setParameter("gen_idle", mt_g.gen_idle);
-    setParameter("ms_switch_sel", mt_g.ms_switch_sel);
     setParameter("ms_debug", mt_g.ms_debug);
     setParameter("prbs_debug", mt_g.prbs_debug);
     setParameter("prbs_single", mt_g.prbs_single);
@@ -247,7 +247,6 @@ void Config::Parse_GLOBAL_from_struct(MUTRIG_GLOBAL& mt_g){
     setParameter("disable_coarse", mt_g.disable_coarse);
     setParameter("pll_setcoarse", mt_g.pll_setcoarse);
     setParameter("short_event_mode", mt_g.short_event_mode);
-    setParameter("ms_limits", mt_g.ms_limits);
     setParameter("pll_envomonitor", mt_g.pll_envomonitor);
     setParameter("lvds_tx_vcm", mt_g.lvds_tx_vcm);
     setParameter("lvds_tx_bias", mt_g.lvds_tx_bias);
@@ -279,6 +278,8 @@ void Config::Parse_TDC_from_struct(MUTRIG_TDC& mt_tdc){
     setParameter("vnvcodelay_offset", mt_tdc.vnvcodelay_offset);
     setParameter("vnvcodelay_scale", mt_tdc.vnvcodelay_scale);
     setParameter("latchbias", mt_tdc.latchbias);
+    setParameter("ms_limits", mt_tdc.ms_limits);
+    setParameter("ms_switch_sel", mt_tdc.ms_switch_sel);
     setParameter("amon_en", mt_tdc.amon_en);
     setParameter("amon_dac", mt_tdc.amon_dac);
     setParameter("dmon_1_en", mt_tdc.dmon_1_en);
@@ -321,4 +322,4 @@ void Config::Parse_CH_from_struct(MUTRIG_CH& mt_ch, int channel){
 }
 
 
-} } // namespace mudaq::mutrig
+} // namespace mutrig

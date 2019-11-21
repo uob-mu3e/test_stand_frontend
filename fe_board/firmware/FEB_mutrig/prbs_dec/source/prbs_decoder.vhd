@@ -86,7 +86,7 @@ GENERIC MAP (
 PORT MAP (
 	address_a => s_addr_a,
 	clock0 => i_coreclk,
-	data_a => s_init_dec,
+	data_a => s_init_dec_d,
 	wren_a => s_init,
 	q_a => s_data_dec
 );
@@ -112,9 +112,9 @@ begin
 			s_valid_1<='0';
 			o_valid<='0';
 		else
-			s_valid_2<= i_valid and (not s_init or i_SC_disable_dec);
+			s_valid_2<= i_valid;
 			s_valid_1<= s_valid_2;
-			o_valid<=s_valid_1 and not s_init;
+			o_valid<=s_valid_1 and ((not s_init) or i_SC_disable_dec);
 			s_data_bypass_2 <= i_data;
 			s_data_bypass_1 <= s_data_bypass_2;
 			s_data_bypass <= s_data_bypass_1;
@@ -142,6 +142,6 @@ end process;
 
 --output assignment: replace TCC and ECC by their decoded counterparts when not bypassing
 o_data<=s_data_bypass	when s_select_bypass='1' or l_is_header='1' else
-	s_data_bypass(33 downto 22) & s_data_dec(14 downto 0) & s_data_bypass(6 downto 0);
+	s_data_bypass(33 downto 21) & s_data_dec(14 downto 0) & s_data_bypass(5 downto 0);
 end architecture;
 

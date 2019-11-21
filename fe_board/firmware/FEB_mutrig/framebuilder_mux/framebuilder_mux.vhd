@@ -37,7 +37,8 @@ port (
 	o_sink_wr   	 : out std_logic;
 --monitoring, write-when-fill is prevented internally
 	o_sync_error     : out std_logic;
-	i_SC_mask	 : in std_logic_vector(N_INPUTS-1 downto 0)		-- allow missing header or tailer from masked asic, block read requests from this 
+	i_SC_mask	 : in std_logic_vector(N_INPUTS-1 downto 0);		-- allow missing header or tailer from masked asic, block read requests from this 
+	i_SC_nomerge     : in std_logic --do not enforce merging data withing frames, instead only use the first (!!) asic to generate frames
 );
 end framebuilder_mux;
 
@@ -77,6 +78,7 @@ architecture impl of framebuilder_mux is
 	signal l_frameid_nonsync: std_logic;					--combining header, frame numbers do not match
 	signal l_any_crc_err : std_logic;
 	signal l_any_asic_overflow : std_logic;
+	signal l_any_asic_hitdropped : std_logic;
 	signal l_common_data	: std_logic_vector(55 downto 0); --select first non-masked data input for retreiving header and trailer information
 --header data
 	signal s_global_timestamp	: std_logic_vector(47 downto 0);
@@ -117,56 +119,64 @@ begin
 end process;
 
 --source data inspection: all trailer,all header,hit requests.
----> define signals l_all_header, l_all_trailer, l_request, common data (l_common_data, l_any_crc_err, l_any_asic_overflow) 
-gen_combinatorics: process(i_source_data, s_is_valid,i_SC_mask)
+---> define signals l_all_header, l_all_trailer, l_request, common data (l_common_data, l_any_crc_err, l_any_asic_*) 
+gen_combinatorics : process(i_source_data, s_is_valid, i_SC_mask, i_SC_nomerge)
 begin
 	l_all_header <='1';
 	l_all_trailer<='1';
 	l_request<=(others => '1');
 	--incoming data is header or trailer?
 	for i in N_INPUTS-1 downto 0 loop
-		if (s_is_valid(i) = '0' and i_SC_mask(i)='0') then -- no valid data, no request, not all header or trailer
+		if (i_SC_mask(i)='1') then --do not request readout of masked channel, ignore for all_header/all_trailer
+			l_request(i)<='0';
+		elsif (s_is_valid(i) = '0') then -- no valid data, no request, not all header or trailer
 			l_all_header<='0';
 			l_all_trailer<='0';
 			l_request(i)<='0';
 		else
-			if (i_source_data(i)(51 downto 50)="10" or i_SC_mask(i)='1') then -- data is header
+			if (i_source_data(i)(51 downto 50)="10") then -- data is header
 				l_request(i)<='0';	--do not request readout of header
 			else 
 				l_all_header<='0';
 			end if;
-			if (i_source_data(i)(51 downto 50)="11" or i_SC_mask(i)='1') then -- data is trailer
+			if (i_source_data(i)(51 downto 50)="11") then -- data is trailer
 				l_request(i)<='0';	--do not request readout of trailer
 			else
 				l_all_trailer<='0';
 			end if;
 		end if;
 	end loop;
+	--deadlock fix: pretend we have a header from all when we see it from 0
+	if(i_SC_nomerge='1' and i_source_data(0)(51 downto 50)="10") then
+		l_all_header <='1';
+	end if;
 
 	--common data: find a candidate for common frame delimiter data (frameID)
 	--TODO: separate selection (may be slow based on flag, even false_path) and multiplexing (synchronous)
 	l_common_data <=i_source_data(0);
-	for i in 1 to N_INPUTS-1 loop
-		if(i_SC_mask(i)='0') then l_common_data<= i_source_data(i); end if;
-	end loop;
+	--for i in 1 to N_INPUTS-1 loop
+	--	if(i_SC_mask(i)='0') then l_common_data<= i_source_data(i); end if;
+	--end loop;
 	--common data: "ERROR" flags : valid during trailer
 	l_any_crc_err <= '0';
 	l_any_asic_overflow <= '0';
+	l_any_asic_hitdropped <= '0';
 	for i in N_INPUTS-1 downto 0 loop
 		if(i_source_data(i)(16)='1') then l_any_crc_err <= '1'; end if;
 		if(i_source_data(i)(17)='1') then l_any_asic_overflow <= '1'; end if;
+		if(i_source_data(i)(18)='1') then l_any_asic_hitdropped <= '1'; end if;
 	end loop;
 
 end process;
 
 --source data consistency_check (frame ID)
-consistency_check : process (i_source_data)
+consistency_check : process (i_source_data, l_common_data)
 variable frameid_nonsync : std_logic;
 begin
 	--check if all frameIDs match
-	frameid_nonsync:='1';
-	for i in N_INPUTS-2 downto 0 loop
-		if(i_source_data(i+1)(15 downto 0) /= i_source_data(i)(15 downto 0)) then frameid_nonsync:='0'; end if;
+	frameid_nonsync:='0';
+	for i in N_INPUTS-1 downto 0 loop
+		if(i_source_data(i)(15 downto 0) /= l_common_data(15 downto 0)) then frameid_nonsync:='1'; end if;
 	end loop;
 	l_frameid_nonsync<=frameid_nonsync;
 end process;
@@ -207,7 +217,7 @@ end process;
 
 
 ------------------------------------------------------------------
-p_fsm_async: process(s_state,l_all_header,l_all_trailer,l_request,s_sel_data, s_sel_gnt)
+p_fsm_async : process(s_state, l_all_header, l_all_trailer, l_request, s_sel_data, s_sel_gnt, i_SC_nomerge, i_source_data)
 begin
 	n_state <= s_state;
 	n_sel_gnt <= s_sel_gnt;
@@ -218,7 +228,11 @@ begin
 	case s_state is
 		when fs_idle =>
 			--wait for request -- TODO: move next selection to common part to speed up process
-			if(l_all_header='1') then
+
+			--deadlock fix: check only first asic for header or trailer, then write it.
+			if   (i_SC_nomerge='1' and i_source_data(0)(51 downto 50)="10") then -- data is header from chip0, and we do not merge frames
+				n_state <= fs_headerH;
+			elsif(l_all_header='1') then
 				n_state <= fs_headerH;
 			elsif(l_all_trailer='1') then
 				n_state <= fs_trailer;
@@ -239,7 +253,14 @@ begin
 			s_sink_wr <= '1';
 			n_state <= fs_idle; -- TODO: select next already here
 		when fs_hitH =>
-			if(s_sel_data(48)='0') then --long event, continue with writing E-part
+			--TODO: deadlock fix: check if header or trailer here and only acknowledge, no write.
+			if(i_SC_nomerge='1' and s_sel_data(51 downto 50)="10") then -- data is header and we do not merge frames, drop
+				s_read <= s_sel_gnt; 
+				n_state <= fs_idle; -- TODO: select next already here
+			elsif(i_SC_nomerge='1' and s_sel_data(51 downto 50)="11") then -- data is trailer and we do not merge frames, drop
+				s_read <= s_sel_gnt; 
+				n_state <= fs_idle; -- TODO: select next already here
+			elsif(s_sel_data(48)='0') then --long event, continue with writing E-part
 				s_sink_wr <= '1';
 				n_state <= fs_hitL;
 				n_Tpart <= '1';
@@ -283,12 +304,13 @@ end process;
 --headerdataH (first part) is selected when l_all_header='1' and  s_Hpart='0'
 --headerdataL (second part) is selected when l_all_header='1' and  s_Hpart='1'
 --trailerdata  is selected when l_all_trailer='1'
-def_mux_out : process (s_sel_data, s_chnum, l_common_data,s_global_timestamp,l_frameid_nonsync,l_any_crc_err,l_any_asic_overflow, l_all_header,l_all_trailer, s_Tpart,s_Hpart)
+def_mux_out : process (s_sel_data, s_chnum, l_common_data,s_global_timestamp,l_frameid_nonsync,l_any_crc_err,l_any_asic_overflow,l_any_asic_hitdropped, l_all_header,l_all_trailer, s_Tpart,s_Hpart)
 begin
 
 	if(l_all_trailer='1') then --select global trailer
 		o_sink_data(33 downto 32) <= "11"; --identifier
-		o_sink_data(31 downto 2) <= (others=>'0'); --filler
+		o_sink_data(31 downto 3) <= (others=>'0'); --filler
+		o_sink_data(2) <= l_any_asic_hitdropped;  --fpga fifo overflow flag
 		o_sink_data(1) <= l_any_asic_overflow;  --asic fifo overflow flag
 		o_sink_data(0) <= l_any_crc_err; --crc error flag
 	elsif(l_all_header='1') then --select global header

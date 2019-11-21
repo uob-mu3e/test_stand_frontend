@@ -5,8 +5,12 @@ add_library(libmutrig STATIC
     src/mutrig_config.cpp
     src/mutrig_MIDAS_config.cpp
     src/mutrig_midasodb.cpp
+    include/Mutrig_FEB.h
+    src/Mutrig_FEB.cpp
     include/SciFi_FEB.h
     src/SciFi_FEB.cpp
+    include/Tiles_FEB.h
+    src/Tiles_FEB.cpp
 )
 target_link_libraries(libmutrig  libmudaq ${Boost_LIBRARIES})
 target_include_directories(libmutrig

@@ -1,8 +1,5 @@
 #
 
-set_global_assignment -name TOP_LEVEL_ENTITY top
-set_global_assignment -name ORIGINAL_QUARTUS_VERSION 16.1.0
-set_global_assignment -name PROJECT_CREATION_TIME_DATE "12:00:00  JANUARY 12, 2017"
 set_global_assignment -name LAST_QUARTUS_VERSION "18.0.0 Standard Edition"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 
@@ -13,30 +10,20 @@ set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 
+set_global_assignment -name TOP_LEVEL_ENTITY top
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 
+set_global_assignment -name QIP_FILE util/include.qip
+set_global_assignment -name QIP_FILE ip/include.qip
+
+set_global_assignment -name QIP_FILE a10/xcvr.qip
+
 set_global_assignment -name QSYS_FILE nios.qsys
 
-set_global_assignment -name QIP_FILE util/util.qip
 
-set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
-
-set_global_assignment -name QSYS_FILE ip/ip_clkctrl.qsys
-set_global_assignment -name QSYS_FILE ip/ip_iopll_125.qsys
-
-set_global_assignment -name QIP_FILE xcvr.qip
-
-
-
-set_global_assignment -name FLOW_DISABLE_ASSEMBLER OFF
-set_global_assignment -name FLOW_ENABLE_IO_ASSIGNMENT_ANALYSIS ON
-set_global_assignment -name FLOW_ENABLE_RTL_VIEWER ON
-set_global_assignment -name PROJECT_IP_REGENERATION_POLICY SKIP_REGENERATING_IP_IF_HDL_MODIFIED
-set_global_assignment -name SMART_RECOMPILE ON
 
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_global_assignment -name ENABLE_DRC_SETTINGS OFF
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

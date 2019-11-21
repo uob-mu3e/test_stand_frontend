@@ -55,7 +55,7 @@ architecture arch of xcvr_a10 is
 
     signal reset_n : std_logic;
 
-    signal ch : integer range NUMBER_OF_CHANNELS_g-1 downto 0;
+    signal ch : integer range NUMBER_OF_CHANNELS_g-1 downto 0 := 0;
 
     signal av_ctrl : work.util.avalon_t;
     signal av_phy, av_pll : work.util.avalon_t;
@@ -135,7 +135,7 @@ begin
     g_rx_align : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
     begin
         e_rx_rst_n : entity work.reset_sync
-        port map ( rstout_n => rx(i).rst_n, arst_n => rx_ready(i), clk => i_rx_clkin(i) );
+        port map ( o_reset_n => rx(i).rst_n, i_reset_n => rx_ready(i), i_clk => i_rx_clkin(i) );
 
         e_rx_align : entity work.rx_align
         generic map (
@@ -189,7 +189,7 @@ begin
     end generate;
 
     -- av_ctrl process, avalon iface
-    p_av_ctrl : process(i_clk, reset_n)
+    process(i_clk, reset_n)
     begin
     if ( reset_n = '0' ) then
         av_ctrl.waitrequest <= '1';
@@ -403,7 +403,7 @@ begin
         unused_tx_parallel_data => (others => '0'),
         unused_rx_parallel_data => open,
 
-        reconfig_address        => std_logic_vector(to_unsigned(ch, 2)) & av_phy.address(9 downto 0),
+        reconfig_address        => std_logic_vector(to_unsigned(ch, work.util.vector_width(NUMBER_OF_CHANNELS_g))) & av_phy.address(9 downto 0),
         reconfig_read(0)        => av_phy.read,
         reconfig_readdata       => av_phy.readdata,
         reconfig_write(0)       => av_phy.write,

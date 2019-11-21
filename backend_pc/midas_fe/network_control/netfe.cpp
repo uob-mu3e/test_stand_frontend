@@ -49,7 +49,7 @@ vector <string> reserved_mac_addr;
 vector <string> reserved_ips;
 vector <string> reserved_hostnames;
 
-    
+
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -120,8 +120,8 @@ void read_leases(string path, vector <string> *ips, vector <string> *requestedHo
     bool hostname_requested = false;
     bool expirationfound = false;
     bool macfound = false;
-    //int lease_number = -1; 
-    
+    //int lease_number = -1;
+
     if (leases.is_open()){
         while ( getline (leases,line)){
             if(line.substr(0,5)=="lease"){
@@ -129,7 +129,7 @@ void read_leases(string path, vector <string> *ips, vector <string> *requestedHo
                 hostname_requested=false;
                 expirationfound = false;
                 macfound = false;
-                
+
                 // search for requested hostname, macaddr, etc. in this lease now:
                 while(line != "}" and getline(leases,line)){
                     if(line.length()<17) continue;
@@ -144,16 +144,16 @@ void read_leases(string path, vector <string> *ips, vector <string> *requestedHo
                     if(line.substr(2,17)=="hardware ethernet"){
                         macs->push_back(line.substr(20,line.length()-21));
                         macfound = true;
-                        
+
                     }
-                    
+
                 }
-                
+
                 if(!hostname_requested) requestedHostnames->push_back("-");
                 if(!expirationfound) expiration->push_back("not found");
                 if(!macfound) macs->push_back("-");
             }
-            
+
         }
         leases.close();
     }
@@ -168,7 +168,7 @@ void write_dns_table(string path, vector <string> ips, vector <string> requested
   {
     //TODO: this needs to be changed for a different gateway server  --> read on frontend init ??
     dnstable << "$TTL 2D\n@\t\tIN SOA\t\tDHCP-214.mu3e.kph.\troot.DHCP-214.mu3e.kph. (\n\t\t\t\t2019062601\t; serial\n\t\t\t\t3H\t\t; refresh\n\t\t\t\t1H\t\t; retry\n\t\t\t\t1W\t\t; expiry\n\t\t\t\t1D )\t\t; minimum\n\nmu3e.\t\tIN NS\t\tDHCP-214.mu3e.kph.\n";
-    
+
     for(int i = 0; i<ips.size(); i++){
         if(requestedHostnames[i]!="-"){
             dnstable<<requestedHostnames[i]<<"              IN      A       "<<ips[i]<<"\n";
@@ -188,22 +188,22 @@ vector <string> find_active_ips(string subnet){
     vector <string> active_ips;
     string pingcmd;
     string ip;
-    
+
     for(int i=2; i<255;i++){
         ip="";
         ip.append(subnet);
         ip.append(to_string(i));
-        
+
         pingcmd="if (timeout 0.05 ping -c1 ";
         pingcmd.append(ip);
         pingcmd.append(" |grep \"1 received\") >/dev/null; then sleep 0.05; exit \"1\"; else exit \"0\"; fi");
-        
+
         if(system(pingcmd.c_str())){
             //cout<<"found "<<ip<<endl;
             active_ips.push_back(ip);
         }
     }
-    
+
     return active_ips;
 }
 
@@ -217,7 +217,7 @@ vector <string> find_unknown(vector <string> ips, vector <string> active_ips){
             if(ips[j]==active_ips[i])
                 known = 1;
         }
-        
+
         if (known != 1)
             unknown_ips.push_back(active_ips[i]);
     }
@@ -228,12 +228,12 @@ vector <string> find_unknown(vector <string> ips, vector <string> active_ips){
 void read_reserved(string path, vector <string> *ips, vector <string> *hostnames, vector <string> *mac){
     string line;
     ifstream reserved(path);
-    
+
     if (reserved.is_open()){
         while ( getline (reserved,line)){
             if(line.substr(0,4)=="host"){
                 hostnames->push_back(line.substr(5,line.length()-7));
-                
+
                 // search for reserved ip, macaddr:
                 while(line != "}" and getline(reserved,line)){
                     if(line.length()<17) continue;
@@ -245,7 +245,7 @@ void read_reserved(string path, vector <string> *ips, vector <string> *hostnames
                     }
                 }
             }
-            
+
         }
         reserved.close();
     }
@@ -270,7 +270,7 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 INT frontend_init()
 {
    HNDLE hKey;
-   
+
    system("touch /var/lib/dhcp/etc/dhcpd_reservations.conf");
 
    // create Settings structure in ODB
@@ -316,11 +316,11 @@ INT frontend_loop()
 {
     // slow down
     sleep(10);
-    
+
     string subnet = "192.168.0.";  // only X.X.X. here !!!
     string dhcpd_lease_path = "/var/lib/dhcp/db/dhcpd.leases";
     string dns_zone_def_path = "/var/lib/named/master/mu3e";
-    
+
     // string dhcpd_conf_path = "/etc/dhcpd.conf";
     // i dont want to edit /etc/dhcpd.conf directly
     // --> manually insert   include "/etc/dhcpd-reservations.conf";   into "/etc/dhcpd.conf";
@@ -336,26 +336,26 @@ INT frontend_loop()
     reserved_ips.clear();
     reserved_hostnames.clear();
     reserved_mac_addr.clear();
-    
+
     read_leases(dhcpd_lease_path, &ips, &requestedHostnames, &expiration, &macs);
     read_reserved(dhcpd_conf_path, &reserved_ips, &reserved_hostnames, &reserved_mac_addr);
-    
+
     // append reserved ips tp ip list:
     ips.insert(ips.end(), reserved_ips.begin(), reserved_ips.end());
     requestedHostnames.insert(requestedHostnames.end(), reserved_hostnames.begin(), reserved_hostnames.end());
     macs.insert(macs.end(),reserved_mac_addr.begin(),reserved_mac_addr.end());
     for(int i = 0; i< reserved_ips.size();i++)
         expiration.push_back("inf");
-    
+
     // if new dhcp request:   --> update dns table
 
     if(prev_ips!=ips){
         cm_msg(MINFO, "netfe_settings_changed", "new dhcp lease, odb updated");
-        
+
         system("wall new dhcp lease, update and restart of dns server");
         write_dns_table(dns_zone_def_path,ips,requestedHostnames);
         system("rcnamed restart");
-        
+
         //update odb only if there was a change (prev_ips!=ips). Rewrite everything if something changed
         db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/leasedIPs", ips[0].c_str(), sizeof(ips[0]), 1, TID_STRING);
         for (int i = 0; i < ips.size(); i++) {
@@ -366,22 +366,22 @@ INT frontend_loop()
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/leasedMACs", macs[i].c_str(), sizeof(macs[i]), i, TID_STRING, FALSE);
         }
         db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/nLeased", to_string(ips.size()).c_str(), sizeof(to_string(ips.size()).c_str()), 1,TID_STRING);
-        
+
         for (int i = 0; i < reserved_ips.size(); i++) {
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/reservedIPs", reserved_ips[i].c_str(), sizeof(reserved_ips[i]), i, TID_STRING, FALSE);
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/reservedHostnames", reserved_hostnames[i].c_str(), sizeof(reserved_hostnames[i]), i, TID_STRING, FALSE);
             db_set_value_index(hDB, 0, "Equipment/DHCP DNS/Settings/reservedMACs", reserved_mac_addr[i].c_str(), sizeof(reserved_mac_addr[i]), i, TID_STRING, FALSE);
         }
         db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/nReserved",to_string(reserved_ips.size()).c_str(), sizeof(to_string(reserved_ips.size()).c_str()), 1,TID_STRING);
-        
+
     }
-    
+
     // ping everything in subnet
     active_ips = find_active_ips("192.168.0.");
-    
+
     unknown_ips = find_unknown(ips, active_ips);
     int nUnknown= unknown_ips.size();
-    
+
     if(nUnknown>0){
         //cout<<"---------------------------------------"<<endl;
         //cout<<"WARNING: found unknown fixed IPs ------"<<endl;
@@ -392,7 +392,7 @@ INT frontend_loop()
         }
          db_set_value(hDB,0,"Equipment/DHCP DNS/Settings/nUnknown",to_string(nUnknown).c_str(), sizeof(to_string(nUnknown).c_str()), 1,TID_STRING);
     }
-    
+
    return CM_SUCCESS;
 }
 
@@ -459,7 +459,7 @@ void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         else
             cm_msg(MINFO, "netfe_settings_changed", "DNS deactivated by user");
    }
-   
+
    if (std::string(key.name) == "usercmdReserve") {
         BOOL value;
         int size = sizeof(value);
@@ -471,30 +471,30 @@ void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         int sizemac = sizeof(mac);
         int sizehostname = sizeof(hostname);
         db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-        
+
         if(value){
             cm_msg(MINFO, "netfe_settings_changed", "Execute reserve IP");
             value = FALSE; // reset flag in ODB
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-            
+
             db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usereditReserveIP",ip, &sizeip, TID_STRING, TRUE);
             db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usereditReserveMAC",mac, &sizemac, TID_STRING, TRUE);
             db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usereditReserveHost",hostname, &sizehostname, TID_STRING, TRUE);
 
-            
+
             ofstream dhcpdconf ("/var/lib/dhcp/etc/dhcpd_reservations.conf", std::ios_base::app);
             if (dhcpdconf.is_open())
             {
                 dhcpdconf << "host "<<hostname<<" {\n  hardware ethernet "<<mac<<";\n  fixed-address "<<ip<<";\n  ddns-hostname \""<<hostname<<"\";\n  option host-name \""<<hostname<<"\";\n}\n\n";
-                
+
                 dhcpdconf.close();
             }
             else cout << "Unable to write dhcpdconf"<<endl;
-            
+
             system("rcdhcpd restart");
         }
    }
-   
+
     if (std::string(key.name) == "usercmdRmReserve") {
         BOOL value;
         int size = sizeof(value);
@@ -506,7 +506,7 @@ void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             value = FALSE; // reset flag in ODB
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
             db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usereditRemReserveIP",removeip, &sizeip, TID_STRING, TRUE);
-            
+
             ofstream dhcpdconf ("/var/lib/dhcp/etc/dhcpd_reservations.conf");
             int n = reserved_ips.size();
             if (dhcpdconf.is_open())
@@ -519,9 +519,9 @@ void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
                 dhcpdconf.close();
             }
             else cout << "Unable to write dhcpdconf"<<endl;
-            
+
             system("rcdhcpd restart");
         }
     }
-   
-} 
+
+}

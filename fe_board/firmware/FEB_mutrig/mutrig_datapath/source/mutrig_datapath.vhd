@@ -4,6 +4,7 @@
 -- Konrad Briggl updated using lvds deserializer instead of gbt, preparation for multiple channels
 -- April 2019
 -- May 2019: Added frame-collecting multiplexer, prbs decoder and common buffer (standard fifo)
+-- Oct 2019: Added generic to flip sign of input depending on PCB design
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
@@ -15,13 +16,15 @@ entity mutrig_datapath is
 generic(
 	N_ASICS : positive := 1;
 	LVDS_PLL_FREQ : real := 125.0;
-	LVDS_DATA_RATE : positive := 1250;
-	GEN_DUMMIES : boolean := TRUE
+	LVDS_DATA_RATE : real := 1250.0;
+	GEN_DUMMIES : boolean := TRUE;
+	INPUT_SIGNFLIP : std_logic_vector:=x"0000"--;
 );
 port (
 	i_rst			: in  std_logic;				-- logic reset
 	i_stic_txd		: in  std_logic_vector( N_ASICS-1 downto 0);	-- serial data
-	i_refclk_125		: in  std_logic;                 		-- ref clk for pll
+	i_refclk_125_A		: in  std_logic;                 		-- ref clk for lvds pll (A-Side) 
+	i_refclk_125_B		: in  std_logic;                 		-- ref clk for lvds pll (B-Side)
 	i_ts_clk		: in  std_logic;                 		-- ref clk for global timestamp
 	i_ts_rst		: in  std_logic;				-- global timestamp reset, high active
 
@@ -36,6 +39,8 @@ port (
 	i_SC_datagen_enable	: in std_logic;
 	i_SC_datagen_shortmode	: in std_logic;
 	i_SC_datagen_count	: in std_logic_vector(9 downto 0);
+	i_SC_rx_wait_for_all	: in std_logic;
+	i_SC_rx_wait_for_all_sticky	: in std_logic;
 	--monitors
 	o_receivers_usrclk	: out std_logic;              		-- pll output clock
 	o_receivers_pll_lock	: out std_logic;			-- pll lock flag
@@ -141,7 +146,8 @@ port (
 		o_sink_wr   	 : out std_logic;
 	--monitoring, write-when-fill is prevented internally
 		o_sync_error     : out std_logic;
-		i_SC_mask	 : in std_logic_vector(N_INPUTS-1 downto 0)
+		i_SC_mask	 : in std_logic_vector(N_INPUTS-1 downto 0);
+		i_SC_nomerge : in std_logic
 );
 end component; --framebuilder_mux;
 
@@ -193,8 +199,10 @@ signal s_receivers_data		: std_logic_vector(8*N_ASICS-1 downto 0);
 signal s_receivers_data_isk	: t_vector;
 
 signal s_receivers_usrclk	: std_logic;
+signal s_receivers_all_ready    : std_logic;
+signal s_receivers_block        : std_logic;
   -- frame_rcv/datagen - fifo: fifo side, frame-receiver side, dummy datagenerator side
-signal s_crc_error,      s_rec_crc_error: t_vector;
+signal s_crc_error: t_vector;
 signal s_frame_number,   s_rec_frame_number,   s_gen_frame_number   : t_array_16b;
 signal s_frame_info,     s_rec_frame_info,     s_gen_frame_info     : t_array_16b;
 signal s_new_frame,      s_rec_new_frame,      s_gen_new_frame      : t_vector;
@@ -228,13 +236,14 @@ u_rxdeser: entity work.receiver_block
 generic map(
 	NINPUT => N_ASICS,
 	LVDS_PLL_FREQ => LVDS_PLL_FREQ,
-	LVDS_DATA_RATE => LVDS_DATA_RATE--,
+	LVDS_DATA_RATE => LVDS_DATA_RATE,
+	INPUT_SIGNFLIP => INPUT_SIGNFLIP--,
 )
 port map(
 	reset_n			=> not i_rst,
 	reset_n_errcnt		=> '0',
 	rx_in			=> i_stic_txd,
-	rx_inclock		=> i_refclk_125,
+	rx_inclock		=> i_refclk_125_A,
 	rx_state		=> s_receivers_state,
 	rx_ready		=> s_receivers_ready,
 	rx_data			=> s_receivers_data,
@@ -249,6 +258,39 @@ port map(
 o_receivers_ready <= s_receivers_ready;
 o_receivers_usrclk <= s_receivers_usrclk;
 
+--generate a pll-synchronous all-ready signal for the data receivers.
+--this assures all start dumping data into the fifos at the same time, and we do not enter a deadlock scenario from the start
+gen_ready_all: process (s_receivers_usrclk,i_rst,s_receivers_ready, i_SC_mask)
+variable v_ready : std_logic_vector(N_ASICS-1 downto 0);
+begin
+	if(i_rst='1') then
+		s_receivers_all_ready<='0';
+	elsif( rising_edge(s_receivers_usrclk)) then
+		v_ready := s_receivers_ready or i_SC_mask;
+		if(v_ready = ((v_ready'range)=>'1')) then
+			s_receivers_all_ready<='1';
+		end if;
+	end if;
+end process;
+
+--if i_SC_rx_wait_for_all is set, wait for all (not masked) receivers to become ready before letting any data pass through the frame unpacking blocks.
+--if i_SC_rx_wait_for_all_sticky is set in addition, the all_ready property is sticky: once all receivers become ready do not block data again.
+--            The sticky bit is cleared with i_reset
+--            Otherwise, data is blocked as soon as one receiver is loosing the pattern or sync.
+releasedata_p: process(s_receivers_usrclk, i_rst)
+begin
+	if(rising_edge(s_receivers_usrclk)) then
+		if(i_rst='1') then
+			s_receivers_block <= '1';
+		elsif(i_SC_rx_wait_for_all_sticky='1') then
+			if(s_receivers_all_ready='1') then
+				s_receivers_block <= '0';
+			end if;
+		else
+			s_receivers_block <= not s_receivers_all_ready;
+		end if;
+	end if;
+end process;
 
 gen_frame: for i in 0 to N_ASICS-1 generate begin
 u_frame_rcv : frame_rcv
@@ -262,7 +304,7 @@ u_frame_rcv : frame_rcv
 		i_clk			=> s_receivers_usrclk,
 		i_data			=> s_receivers_data((i+1)*8-1 downto i*8),
 		i_byteisk		=> s_receivers_data_isk(i),
-		i_dser_no_sync		=> not s_receivers_ready(i),
+		i_dser_no_sync		=> (s_receivers_block or (not s_receivers_ready(i) and not i_SC_rx_wait_for_all)),
 
 		-- to mutrig-store instance
 		o_frame_number		=> s_rec_frame_number(i),
@@ -307,7 +349,8 @@ gen_dummy: if GEN_DUMMIES generate begin
 	s_event_data	 	<= s_gen_event_data		when i_SC_datagen_enable='1' else s_rec_event_data;
 	s_event_ready	 	<= s_gen_event_ready		when i_SC_datagen_enable='1' else s_rec_event_ready;
 	s_end_of_frame	 	<= s_gen_end_of_frame	when i_SC_datagen_enable='1' else s_rec_end_of_frame;
-else generate
+end generate;
+gen_dummy_not : if not GEN_DUMMIES generate begin
 	s_frame_number		<= s_rec_frame_number;
 	s_frame_info		<= s_rec_frame_info;
 	s_frame_info_rdy 	<= s_rec_frame_info_rdy;
@@ -365,7 +408,8 @@ u_mux: framebuilder_mux
 		o_sink_wr		=> s_buf_predec_wr,
 	--monitoring, errors, slow control
 		o_sync_error		=> o_frame_desync,
-		i_SC_mask		=> i_SC_mask
+		i_SC_mask		=> i_SC_mask,
+		i_SC_nomerge	=> '0'
 	);
 --prbs decoder
 s_buf_predec_full <= s_buf_almost_full;
@@ -380,23 +424,18 @@ u_decoder: prbs_decoder
 		i_SC_disable_dec=> i_SC_disable_dec
 	);
 
-    e_fifo : entity work.ip_scfifo
-    generic map (
-        ADDR_WIDTH => 8,
-        DATA_WIDTH => 36--,
-    )
+--common fifo buffer
+u_common_fifo: common_fifo
     port map (
         clock           => i_clk_core,
-        data            => "00" & s_buf_data,
-        rdreq           => i_fifo_rd,
         sclr            => i_rst,
+        data            => "00" & s_buf_data,
         wrreq           => s_buf_wr,
-        almost_empty    => open,
+        full            => s_buf_full,
         almost_full     => s_buf_almost_full,
         empty           => o_fifo_empty,
-        full            => s_buf_full,
         q               => o_fifo_data,
-        usedw           => open--,
+        rdreq           => i_fifo_rd--,
     );
 
 o_buffer_full <= s_buf_full;

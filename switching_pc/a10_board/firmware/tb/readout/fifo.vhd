@@ -1,53 +1,89 @@
-library ieee;
-use ieee.numeric_std.all;
-use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
-
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+USE IEEE.NUMERIC_STD.ALL;
+ 
 entity fifo is
-    Port ( Din   : in  STD_LOGIC_VECTOR (11 downto 0);
-           Wr    : in  STD_LOGIC;
-           Dout  : out STD_LOGIC_VECTOR (11 downto 0);
-           Rd    : in  STD_LOGIC;
-           Empty : out STD_LOGIC;
-           Full  : out STD_LOGIC;
-           CLK   : in  STD_LOGIC;
-           reset_n : in  STD_LOGIC
-           );
+	Port ( 
+		CLK		: in  STD_LOGIC;
+		RST		: in  STD_LOGIC;
+		WriteEn	: in  STD_LOGIC;
+		DataIn	: in  STD_LOGIC_VECTOR (7 downto 0);
+		ReadEn	: in  STD_LOGIC;
+		DataOut	: out STD_LOGIC_VECTOR (7 downto 0);
+		Empty	: out STD_LOGIC;
+		Full	: out STD_LOGIC
+	);
 end fifo;
-
-architecture rtl of fifo is
-
-signal wrcnt : std_logic_vector(31 downto 0);
-signal rdcnt : std_logic_vector(31 downto 0);
-type ram is array(0 to 63) of std_logic_vector(11 downto 0);
-signal memory : ram;   
-signal full_loc  : std_logic;
-signal empty_loc : std_logic;
-
+ 
+architecture Behavioral of fifo is
+ 
 begin
-  
-  fifo_pro : process(reset_n, CLK)
-  begin
-  if(reset_n = '0')then
-    wrcnt   <= (others => '0');
-    rdcnt   <= (others => '0');
-    Dout    <= (others => '0');
-    memory    <= (others => (others => '0'));
-  elsif(rising_edge(CLK)) then
-     if (Wr='1' and full_loc='0') then
-        memory(to_integer(unsigned(wrcnt))) <= Din;
-        wrcnt <= wrcnt + '1';
-     end if;
-     if (Rd='1' and empty_loc='0') then
-        Dout <= memory(to_integer(unsigned(rdcnt)));
-        rdcnt <= rdcnt + '1';
-     end if;
-  end if;
-  end process;
-
-  full_loc  <= '1' when rdcnt = wrcnt + '1' else '0';
-  empty_loc <= '1' when rdcnt = wrcnt   else '0';
-  Full  <= full_loc;
-  Empty <= empty_loc;
-
-end rtl;
+ 
+	-- Memory Pointer Process
+	fifo_proc : process (CLK)
+		type FIFO_Memory is array (0 to 8 - 1) of STD_LOGIC_VECTOR (7 downto 0);
+		variable Memory : FIFO_Memory;
+		
+		variable Head : natural range 0 to 8 - 1;
+		variable Tail : natural range 0 to 8 - 1;
+		
+		variable Looped : boolean;
+	begin
+		if rising_edge(CLK) then
+			if RST = '1' then
+				Head := 0;
+				Tail := 0;
+				
+				Looped := false;
+				
+				Full  <= '0';
+				Empty <= '1';
+			else
+				if (ReadEn = '1') then
+					if ((Looped = true) or (Head /= Tail)) then
+						-- Update Tail pointer as needed
+						if (Tail = 8 - 1) then
+							Tail := 0;
+							
+							Looped := false;
+						else
+							Tail := Tail + 1;
+						end if;
+					end if;
+				end if;
+				
+				if (WriteEn = '1') then
+					if ((Looped = false) or (Head /= Tail)) then
+						-- Write Data to Memory
+						Memory(Head) := DataIn;
+						
+						-- Increment Head pointer as needed
+						if (Head = 8 - 1) then
+							Head := 0;
+							
+							Looped := true;
+						else
+							Head := Head + 1;
+						end if;
+					end if;
+				end if;
+				
+				-- Update data output
+				DataOut <= Memory(Tail);
+				
+				-- Update Empty and Full flags
+				if (Head = Tail) then
+					if Looped then
+						Full <= '1';
+					else
+						Empty <= '1';
+					end if;
+				else
+					Empty	<= '0';
+					Full	<= '0';
+				end if;
+			end if;
+		end if;
+	end process;
+	
+end Behavioral;

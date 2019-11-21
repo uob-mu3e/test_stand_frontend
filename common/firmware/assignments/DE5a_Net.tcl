@@ -3,11 +3,13 @@
 #============================================================
 
 set_global_assignment -name FAMILY "Arria 10"
-#set_global_assignment -name DEVICE 10AX115N3F45I2SG
-set_global_assignment -name DEVICE 10AX115N2F45I1SG
-set_global_assignment -name DEVICE_FILTER_PACKAGE FBGA
-set_global_assignment -name DEVICE_FILTER_PIN_COUNT 1932
-#set_global_assignment -name DEVICE_FILTER_SPEED_GRADE C2
+set_global_assignment -name DEVICE 10AX115N2F45E1SG
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+
+
 
 set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to DDR3A_REFCLK_p
 set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to DDR3B_REFCLK_p

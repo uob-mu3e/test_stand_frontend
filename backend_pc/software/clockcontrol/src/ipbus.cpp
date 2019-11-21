@@ -11,7 +11,19 @@ using std::endl;
 using std::hex;
 
 ipbus::ipbus(const char * _addr, unsigned short _port):
-    addr(_addr),port(_port), connected(false), ios(), socket(ios), packetnumber(0)
+    addr(_addr),port(_port), connected(false), ios(), socket(ios), packetnumber(0),ntimeouts(0)
+{
+    connect();
+}
+
+int ipbus::disconnect()
+{
+    if(connected)
+        socket.close();
+    return 0;
+}
+
+int ipbus::connect()
 {
     socket.open(ip::udp::v4());
     remote_endpoint = ip::udp::endpoint(ip::address::from_string(addr),port);
@@ -37,7 +49,7 @@ ipbus::ipbus(const char * _addr, unsigned short _port):
             socket.close();
             connected = false;
             cout << "Connection failed" << endl;
-            return;
+            return -1;
         }
     }
 
@@ -45,12 +57,15 @@ ipbus::ipbus(const char * _addr, unsigned short _port):
     packetnumber = static_cast<uint16_t>(status);
 
     cout << "Starting at packet number " << packetnumber << endl;
+
+    return 0;
 }
 
 
+
+
 ipbus::~ipbus(){
-    if(connected)
-        socket.close();
+  disconnect();
 }
 
 int ipbus::write(uint32_t addr, vector<uint32_t> data, bool nonicrementing)
@@ -228,6 +243,7 @@ uint32_t ipbus::readModifyWriteBits(uint32_t addr, uint32_t andterm, uint32_t or
 }
 
 
+
 void ipbus::StartPacket(){
     uint32_t word = 0;
     word |= 0x0;            // control packet
@@ -274,6 +290,9 @@ int ipbus::Status(unsigned int timeout)
 }
 
 error_code ipbus::SendStatusPacket(){
+    if(!connected)
+        return boost::asio::error::not_connected;
+
     error_code err;
     socket.send_to(buffer(statusbuffer), remote_endpoint, 0, err);
     return err;
@@ -283,6 +302,9 @@ error_code ipbus::SendStatusPacket(){
 
 
 error_code ipbus::SendPacket(){
+    if(!connected)
+        return boost::asio::error::not_connected;
+
     error_code err;
     socket.send_to(buffer(sendbuffer), remote_endpoint, 0, err);
     return err;
@@ -290,6 +312,9 @@ error_code ipbus::SendPacket(){
 
 error_code ipbus::CreateAndSendResendRequest(uint16_t packet)
 {
+        if(!connected)
+            return boost::asio::error::not_connected;
+
         uint32_t word = 0;
         word |= 0x2;            // resend packet
         word |= 0xf << 4;       // endians
@@ -305,6 +330,8 @@ error_code ipbus::CreateAndSendResendRequest(uint16_t packet)
 
 int ipbus::ReadFromSocket(vector<uint32_t> & rbuffer)
 {
+    if(!connected)
+        return -1;
     int nbyte =0;
     boost::system::error_code err;
     try{
@@ -315,15 +342,26 @@ int ipbus::ReadFromSocket(vector<uint32_t> & rbuffer)
             nbyte = socket.receive_from(buffer(rbuffer), remote_endpoint, 0, err);
             if(err == boost::asio::error::try_again){
                 cout << "UDP Timeout" << endl;
-                return -2;
+                ntimeouts++;
             }
          }
-        if(err)
+        if(err){
             throw boost::system::system_error(err);
+        }else
+            if(ntimeouts > 0)
+                ntimeouts--;
+
     }
     catch(std::exception& e) {
         std::cerr << e.what() << endl;
     }
+
+    if(ntimeouts > 50){
+        std::cerr << "Connection to clock boaerd lost, terminating!" << std::endl;
+        connected = false;
+        throw boost::system::system_error(boost::asio::error::connection_aborted);
+    }
+
 
     /*
     cout << "Bytes received " << nbyte << endl;

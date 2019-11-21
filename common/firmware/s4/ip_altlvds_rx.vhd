@@ -46,7 +46,7 @@ ENTITY ip_altlvds_rx IS
         -- deserialization factor
         W : positive := 10;
         PLL_FREQ : real := 125.0; -- MHz
-        DATA_RATE : positive := 1250; -- Mbps
+        DATA_RATE : real := 1250.0; -- Mbps
         DEVICE : string := "Stratix IV"--;
     );
 	PORT
@@ -148,7 +148,7 @@ BEGIN
 		cds_mode => "UNUSED",
 		common_rx_tx_pll => "OFF",
 		data_align_rollover => W,
-		data_rate => integer'image(DATA_RATE) & ".0 Mbps",
+		data_rate => real'image(DATA_RATE) & " Mbps",
 		deserialization_factor => W,
 		dpa_initial_phase_value => 0,
 		dpll_lock_count => 0,
@@ -166,7 +166,7 @@ BEGIN
 		inclock_data_alignment => "EDGE_ALIGNED",
 		inclock_period => integer(1000000.0 / PLL_FREQ),
 		inclock_phase_shift => 0,
-		input_data_rate => DATA_RATE,
+		input_data_rate => integer(DATA_RATE),
 		intended_device_family => DEVICE,
 		lose_lock_on_one_change => "UNUSED",
 		lpm_hint => "CBX_MODULE_PREFIX=ip_altlvds_rx",

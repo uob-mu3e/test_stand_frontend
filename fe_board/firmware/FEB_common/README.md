@@ -10,7 +10,7 @@ state_controller:
         - the run state (idle, run_prep, sync, running, terminating, reset, link_test, sync_test, out_of_DAQ)
         - the run number
         - 16 reset lines
-        
+
     - possible transitions:
         - idle  -> run_prep    -> sync -> running -> terminating -> idle
         - all   -> reset       -> idle
@@ -27,8 +27,8 @@ data_merger:
         - data from detectors
         - control data (temperatures, pixel dacs, ...)
         - run control signals (run_prep_acknowledge, run end, ...)
-        - comma words for alignment of the 
-        
+        - comma words for alignment of the
+
     - the data merger ...
         - decides what is send next (detector data or control data)
         - in general: sends packets as specified in the spec book
@@ -38,7 +38,7 @@ data_merger:
         - fills gaps with k285
         - gives permisson to the state controller to do the terminating -> idle transition when the end of a data packet is reached
         - provides a override (on request) directly to the optical link for BERTs & Co (only in state *_test from state controller)
-        
+
     - inputs:
         - run state from state controller (everything in here is heavily based on run state)
         - FPGA id that should be added to all packets as specified in the spec book (set by 16 jumpers on the board)
@@ -46,15 +46,15 @@ data_merger:
         - connection to a data fifo and control fifo
         - data_priority input 0: slowcontrol packets have priority, 1: data packets have priority in run state "running"
         - override inputs (ToDo connected to something that does BERTs etc)
-        
+
 mergerfifo: This is the point where we leave FEB_common - land !!!!!
 
     - the data merger reads from 2 of these fifos
-    
-    - HOW TO WRITE TO THIS FIFO:   
-    
-    - width: 36 bit 
-    
+
+    - HOW TO WRITE TO THIS FIFO:
+
+    - width: 36 bit
+
         - 31 downto 0: whatever you want (for data merger this is payload, see spec book for specifications for pixel, control, tiles, fibres)
         - 35 downto 32: ( 0010: this is the begin of something  0011: this is the end of something, 0000: else) !!!!!!!!!!!
             - This tells the data merger what should be used to build a spec book packet

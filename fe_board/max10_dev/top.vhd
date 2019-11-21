@@ -1,119 +1,119 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use ieee.std_logic_unsigned.all;
 
 entity top is
 port (
+    MSCB_IN         : in    std_logic;
+    MSCB_OUT        : out   std_logic;
+    MSCB_OE         : out   std_logic;
 
-	CLOCK : in std_logic; -- 50 MHz
-	RESET_N : in std_logic;
+    Arduino_IO13    : in   std_logic;
+    Arduino_IO12    : out  std_logic;
+    Arduino_IO11    : out  std_logic;
+    Arduino_IO10    : out  std_logic;
 
-	Arduino_IO13 : in std_logic;
-	Arduino_IO12 : out std_logic;
-	Arduino_IO11 : out std_logic;
-	Arduino_IO10 : out std_logic;
+    SWITCH1         : in    std_logic;
+    SWITCH2         : in    std_logic;
+    SWITCH3         : in    std_logic;
+    SWITCH4         : in    std_logic;
+    SWITCH5         : in    std_logic;
 
-	SWITCH1 : in std_logic;
-	SWITCH2 : in std_logic;
-	SWITCH3 : in std_logic;
-	SWITCH4 : in std_logic;
+    LED1            : out   std_logic;
+    LED2            : out   std_logic;
+    LED3            : out   std_logic;
+    LED4            : out   std_logic;
+    LED5            : out   std_logic;
 
-	LED1 : out std_logic;
-	LED2 : out std_logic;
-	LED3 : out std_logic;
-	LED4 : out std_logic;
-	LED5 : out std_logic--;
-
+    RESET_N         : in    std_logic;
+    CLOCK           : in    std_logic--; -- 50 MHz
 );
 end entity;
 
 architecture arch of top is
 
-	signal adc_clk : std_logic; -- 10 MHz
-	signal nios_clk : std_logic; -- 50 MHz
+    signal sw : std_logic_vector(4 downto 0);
+    signal led : std_logic_vector(4 downto 0);
 
-	signal pll_locked : std_logic;
+    signal nios_clk : std_logic; -- 50 MHz
+    signal nios_reset_n : std_logic;
 
-	signal sw : std_logic_vector(2 downto 0);
-	signal led : std_logic_vector(2 downto 0);
+    signal adc_pll_clk : std_logic; -- 10 MHz
+    signal adc_pll_locked : std_logic;
 
-	signal counter_0 : std_logic_vector(31 downto 0) := (others => '0');
-	signal counter_1 : std_logic_vector(31 downto 0) := (others => '0');
-	signal nios_pio : std_logic_vector(31 downto 0);
+    signal slow_clk : std_logic;
 
 begin
 
-	sw(0)   <= SWITCH1;
-	sw(1)   <= SWITCH2;
-	sw(2)   <= SWITCH3;
---	LED3    <= led(0);
-	LED4    <= reset_n;
-	LED5    <= SWITCH4;
+    sw <= SWITCH5 & SWITCH4 & SWITCH3 & SWITCH2 & SWITCH1;
 
-	--- PLL ---
-	e_ip_altpll : entity work.ip_altpll
-	port map (
-		areset => not reset_n,
-		inclk0 => CLOCK,
-		c0     => adc_clk,
---		c1     => nios_clk,
-		locked => pll_locked--,
-	);
+    LED1 <= not (led(0) and CLOCK);
+    LED2 <= not (led(1) and CLOCK);
+    LED3 <= not (led(2) and CLOCK);
+    LED4 <= not (led(3) and CLOCK);
+    LED5 <= not (led(4) and CLOCK);
 
-	e_clock_hz : entity work.clkdiv
-	generic map (
-		P => 50000000--,
-	)
-	port map (
-        clkout  => LED1,
-        rst_n   => '1',
-        clk     => CLOCK--,
-	);
+    e_nios_reset_n : entity work.reset_sync
+    port map ( o_reset_n => nios_reset_n, i_reset_n => reset_n, i_clk => nios_clk );
 
-	e_adc_clk_hz : entity work.clkdiv
-	generic map (
-		P => 10000000--,
-	)
-	port map (
-        clkout  => LED2,
-        rst_n   => '1',
-        clk     => adc_clk--,
-	);
+    e_nios_clk_hz : entity work.clkdiv
+    generic map (
+        P => 50000000--,
+    )
+    port map (
+        o_clk       => led(0),
+        i_reset_n   => nios_reset_n,
+        i_clk       => nios_clk--,
+    );
 
-	--- LEDs ---
---	LED1 <= not counter_0(20);
---	LED2 <= not counter_1(20);
-	LED3 <= not pll_locked;
+    --- PLL ---
+    e_adc_pll_clk : entity work.ip_altpll
+    port map (
+        c0      => adc_pll_clk,
+        c1      => nios_clk,
+        c2      => slow_clk,
+        locked  => adc_pll_locked,
+        areset  => not reset_n,
+        inclk0  => CLOCK--,
+    );
 
-	process(CLOCK)
-	begin
-		if(rising_edge(CLOCK)) then
-			counter_0 <= counter_0 + 1;
-		end if;
-	end process;
+    e_adc_pll_clk_hz : entity work.clkdiv
+    generic map (
+        P => 10000000--,
+    )
+    port map (
+        o_clk       => led(1),
+        i_reset_n   => nios_reset_n,
+        i_clk       => adc_pll_clk--,
+    );
 
-	process(adc_clk)
-	begin
-		if(rising_edge(adc_clk)) then
-			counter_1 <= counter_1 + 1;
-		end if;
-	end process;
+    led(2) <= adc_pll_locked;
 
-	--- NIOS ---
-	e_nios : component work.cmp.nios
-	port map (
-			adc_clock_clk     => adc_clk,
-			adc_locked_export => pll_locked,
-			clk_clk           => CLOCK,
-			led_io_export     => led,
-			pio_export        => nios_pio,
-			rst_reset_n       => reset_n,
-			spi_MISO          => Arduino_IO13,
-			spi_MOSI          => Arduino_IO12,
-			spi_SCLK          => Arduino_IO11,
-			spi_SS_n          => Arduino_IO10,
-			sw_io_export      => sw--,
-	);
+    e_nios : component work.cmp.nios
+    port map (
+        adc_pll_clock_clk       => adc_pll_clk,
+        adc_pll_locked_export   => adc_pll_locked,
+
+        spi_MISO    => Arduino_IO13,
+        spi_MOSI    => Arduino_IO12,
+        spi_SCLK    => Arduino_IO11,
+        spi_SS_n    => Arduino_IO10,
+
+        rst_reset_n => nios_reset_n,
+        clk_clk     => nios_clk--,
+    );
+
+--    e_adc_lab_proj : entity work.adc_lab_proj
+--    port map (
+--        MSCB_IN         => MSCB_IN,
+--        MSCB_OUT        => MSCB_OUT,
+--        MSCB_OE         => MSCB_OE,
+--
+--        adc_pll_clk     => adc_pll_clk,
+--        adc_pll_locked  => adc_pll_locked,
+--
+--        RESET_N         => RESET_N,
+--        CLOCK           => CLOCK--,
+--    );
 
 end architecture;

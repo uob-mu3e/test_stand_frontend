@@ -5,6 +5,9 @@ SOF=output_files/top.sof
 BSP_DIR=software/hal_bsp
 APP_DIR=software/app
 
+IPs = \
+    $(patsubst %.tcl,%.sopcinfo,$(wildcard pcieapp/*.tcl)) \
+    nios.sopcinfo
 VHDs= top.vhd \
       mudaq_components.vhd \
       mudaq_registers.vhd \

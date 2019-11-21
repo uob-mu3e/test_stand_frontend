@@ -1,5 +1,7 @@
 # Mu3e online repository
 
+- current development branch is `v0.6_dev`
+
 ## Structure
 
 - `backend_pc` - _TODO_

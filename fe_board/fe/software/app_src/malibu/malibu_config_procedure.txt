@@ -1,4 +1,4 @@
-Adresses: 
+Adresses:
 GPIOs : GPIO_BP	0111000 (0x38)
 	0: ena_AUX1 (PL)
 	1: ena_AUX2 (PL)

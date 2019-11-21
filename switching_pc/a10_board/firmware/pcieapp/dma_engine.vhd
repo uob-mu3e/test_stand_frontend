@@ -598,12 +598,13 @@ begin
             if ( to_integer( unsigned(count_pages) ) >= to_integer( unsigned(dma_data_pages_out_fpga) ) ) then
               dma_data_mem_addr_fpga 	<= dma_data_mem_addr_fpga + '1';
               count_pages 				<= (others => '0');
+              
+              if ( dma_data_mem_addr_fpga + '1' >= dma_data_n_addrs_reg) then	-- reached end of DMA buffer, start at beginning again
+                dma_data_mem_addr_fpga 	<= (others => '0');
+                remoteaddress_var 		<= (others => '0');
+              end if;
+              
             end if;
-            
-            if ( dma_data_mem_addr_fpga + '1' >= dma_data_n_addrs_reg) then	-- reached end of DMA buffer, start at beginning again
-              dma_data_mem_addr_fpga 	<= (others => '0');
-              remoteaddress_var 		<= (others => '0');
-            end if;	
             
             
             tx_valid_r		<= '1';
@@ -694,10 +695,21 @@ begin
         memwriteaddr_last <= memwriteaddr;
         start_dma_next <= start_dma;  -- wait one cycle until ref_clk sees transition
         
-        if(memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 1) >= memaddr_last_packet) then
-          diff := (memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 2) - memaddr_last_packet);
+--        if(memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 1) >= memaddr_last_packet) then
+--          diff := (memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 2) - memaddr_last_packet);
+--        else
+--          diff := (memaddr_last_packet- memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 2));
+--        end if;
+--        if(memwriteaddr_last >= memaddr_last_packet) then
+--          diff := (memwriteaddr_last - memaddr_last_packet);
+--        else
+--          diff := (memaddr_last_packet - memwriteaddr_last);
+--        end if;
+
+        if(memwriteaddr >= memaddr_last_packet) then
+          diff := (memwriteaddr - memaddr_last_packet);
         else
-          diff := (memaddr_last_packet- memwriteaddr_last(MEMWRITEADDRSIZE-1 downto 2));
+          diff := (memaddr_last_packet - memwriteaddr);
         end if;
         memhalffull <= diff(MEMREADADDRSIZE-1);
       end if;
