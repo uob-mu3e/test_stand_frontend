@@ -117,47 +117,6 @@ component data_generator_a10 is
 );
 end component data_generator_a10;
 
-component ip_transiver is
-	port (
-		reconfig_write          : in  std_logic_vector(0 downto 0)   := (others => 'X'); -- write
-      reconfig_read           : in  std_logic_vector(0 downto 0)   := (others => 'X'); -- read
-      reconfig_address        : in  std_logic_vector(11 downto 0)  := (others => 'X'); -- address
-      reconfig_writedata      : in  std_logic_vector(31 downto 0)  := (others => 'X'); -- writedata
-      reconfig_readdata       : out std_logic_vector(31 downto 0);                     -- readdata
-      reconfig_waitrequest    : out std_logic_vector(0 downto 0);                      -- waitrequest
-      reconfig_clk            : in  std_logic_vector(0 downto 0)   := (others => 'X'); -- clk
-      reconfig_reset          : in  std_logic_vector(0 downto 0)   := (others => 'X'); -- reset
-      rx_analogreset          : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- rx_analogreset
-      rx_cal_busy             : out std_logic_vector(3 downto 0);                      -- rx_cal_busy
-      rx_cdr_refclk0          : in  std_logic                      := 'X';             -- clk
-      rx_clkout               : out std_logic_vector(3 downto 0);                      -- clk
-      rx_coreclkin            : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- clk
-      rx_datak                : out std_logic_vector(15 downto 0);                     -- rx_datak
-      rx_digitalreset         : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- rx_digitalreset
-      rx_disperr              : out std_logic_vector(15 downto 0);                     -- rx_disperr
-      rx_errdetect            : out std_logic_vector(15 downto 0);                     -- rx_errdetect
-      rx_is_lockedtodata      : out std_logic_vector(3 downto 0);                      -- rx_is_lockedtodata
-      rx_is_lockedtoref       : out std_logic_vector(3 downto 0);                      -- rx_is_lockedtoref
-      rx_parallel_data        : out std_logic_vector(127 downto 0);                    -- rx_parallel_data
-      rx_patterndetect        : out std_logic_vector(15 downto 0);                     -- rx_patterndetect
-      rx_runningdisp          : out std_logic_vector(15 downto 0);                     -- rx_runningdisp
-      rx_serial_data          : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- rx_serial_data
-      rx_seriallpbken         : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- rx_seriallpbken
-      rx_syncstatus           : out std_logic_vector(15 downto 0);                     -- rx_syncstatus
-      tx_analogreset          : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- tx_analogreset
-      tx_cal_busy             : out std_logic_vector(3 downto 0);                      -- tx_cal_busy
-      tx_clkout               : out std_logic_vector(3 downto 0);                      -- clk
-      tx_coreclkin            : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- clk
-      tx_datak                : in  std_logic_vector(15 downto 0)  := (others => 'X'); -- tx_datak
-      tx_digitalreset         : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- tx_digitalreset
-      tx_parallel_data        : in  std_logic_vector(127 downto 0) := (others => 'X'); -- tx_parallel_data
-      tx_serial_clk0          : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- clk
-      tx_serial_data          : out std_logic_vector(3 downto 0);                      -- tx_serial_data
-      unused_rx_parallel_data : out std_logic_vector(287 downto 0);                    -- unused_rx_parallel_data
-      unused_tx_parallel_data : in  std_logic_vector(367 downto 0) := (others => 'X')  -- unused_tx_parallel_data
-	);
-end component ip_transiver;
-
 component ip_clk_ctrl is
   port (
 		inclk  : in  std_logic := 'X'; -- inclk
@@ -289,86 +248,6 @@ component watchdog is
         clk 		: in  std_logic--;
     );
 end component;
-
-component ip_xcvr_fpll is
-  port (
-		pll_cal_busy          : out std_logic;                                        -- pll_cal_busy
-		pll_locked            : out std_logic;                                        -- pll_locked
-		pll_powerdown         : in  std_logic                     := 'X';             -- pll_powerdown
-		pll_refclk0           : in  std_logic                     := 'X';             -- clk
-		reconfig_write0       : in  std_logic                     := 'X';             -- write
-		reconfig_read0        : in  std_logic                     := 'X';             -- read
-		reconfig_address0     : in  std_logic_vector(9 downto 0)  := (others => 'X'); -- address
-		reconfig_writedata0   : in  std_logic_vector(31 downto 0) := (others => 'X'); -- writedata
-		reconfig_readdata0    : out std_logic_vector(31 downto 0);                    -- readdata
-		reconfig_waitrequest0 : out std_logic;                                        -- waitrequest
-		reconfig_clk0         : in  std_logic                     := 'X';             -- clk
-		reconfig_reset0       : in  std_logic                     := 'X';             -- reset
-		tx_serial_clk         : out std_logic                                         -- clk
-  );
-end component ip_xcvr_fpll;
-
-component ip_xcvr_phy is
-  port (
-		reconfig_write          : in  std_logic_vector(0 downto 0)   := (others => 'X'); -- write
-		reconfig_read           : in  std_logic_vector(0 downto 0)   := (others => 'X'); -- read
-		reconfig_address        : in  std_logic_vector(11 downto 0)  := (others => 'X'); -- address
-		reconfig_writedata      : in  std_logic_vector(31 downto 0)  := (others => 'X'); -- writedata
-		reconfig_readdata       : out std_logic_vector(31 downto 0);                     -- readdata
-		reconfig_waitrequest    : out std_logic_vector(0 downto 0);                      -- waitrequest
-		reconfig_clk            : in  std_logic_vector(0 downto 0)   := (others => 'X'); -- clk
-		reconfig_reset          : in  std_logic_vector(0 downto 0)   := (others => 'X'); -- reset
-		rx_analogreset          : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- rx_analogreset
-		rx_cal_busy             : out std_logic_vector(3 downto 0);                      -- rx_cal_busy
-		rx_cdr_refclk0          : in  std_logic                      := 'X';             -- clk
-		rx_clkout               : out std_logic_vector(3 downto 0);                      -- clk
-		rx_coreclkin            : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- clk
-		rx_datak                : out std_logic_vector(15 downto 0);                     -- rx_datak
-		rx_digitalreset         : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- rx_digitalreset
-		rx_disperr              : out std_logic_vector(15 downto 0);                     -- rx_disperr
-		rx_errdetect            : out std_logic_vector(15 downto 0);                     -- rx_errdetect
-		rx_is_lockedtodata      : out std_logic_vector(3 downto 0);                      -- rx_is_lockedtodata
-		rx_is_lockedtoref       : out std_logic_vector(3 downto 0);                      -- rx_is_lockedtoref
-		rx_parallel_data        : out std_logic_vector(127 downto 0);                    -- rx_parallel_data
-		rx_patterndetect        : out std_logic_vector(15 downto 0);                     -- rx_patterndetect
-		rx_runningdisp          : out std_logic_vector(15 downto 0);                     -- rx_runningdisp
-		rx_serial_data          : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- rx_serial_data
-		rx_seriallpbken         : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- rx_seriallpbken
-		rx_syncstatus           : out std_logic_vector(15 downto 0);                     -- rx_syncstatus
-		tx_analogreset          : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- tx_analogreset
-		tx_cal_busy             : out std_logic_vector(3 downto 0);                      -- tx_cal_busy
-		tx_clkout               : out std_logic_vector(3 downto 0);                      -- clk
-		tx_coreclkin            : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- clk
-		tx_datak                : in  std_logic_vector(15 downto 0)  := (others => 'X'); -- tx_datak
-		tx_digitalreset         : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- tx_digitalreset
-		tx_parallel_data        : in  std_logic_vector(127 downto 0) := (others => 'X'); -- tx_parallel_data
-		tx_serial_clk0          : in  std_logic_vector(3 downto 0)   := (others => 'X'); -- clk
-		tx_serial_data          : out std_logic_vector(3 downto 0);                      -- tx_serial_data
-		unused_rx_parallel_data : out std_logic_vector(287 downto 0);                    -- unused_rx_parallel_data
-		unused_tx_parallel_data : in  std_logic_vector(367 downto 0) := (others => 'X')  -- unused_tx_parallel_data
-  );
-end component ip_xcvr_phy;
-
-component ip_xcvr_reset is
-  port (
-		clock              : in  std_logic                    := 'X';             -- clk
-		pll_cal_busy       : in  std_logic_vector(0 downto 0) := (others => 'X'); -- pll_cal_busy
-		pll_locked         : in  std_logic_vector(0 downto 0) := (others => 'X'); -- pll_locked
-		pll_powerdown      : out std_logic_vector(0 downto 0);                    -- pll_powerdown
-		pll_select         : in  std_logic_vector(0 downto 0) := (others => 'X'); -- pll_select
-		reset              : in  std_logic                    := 'X';             -- reset
-		rx_analogreset     : out std_logic_vector(3 downto 0);                    -- rx_analogreset
-		rx_cal_busy        : in  std_logic_vector(3 downto 0) := (others => 'X'); -- rx_cal_busy
-		rx_digitalreset    : out std_logic_vector(3 downto 0);                    -- rx_digitalreset
-		rx_is_lockedtodata : in  std_logic_vector(3 downto 0) := (others => 'X'); -- rx_is_lockedtodata
-		rx_ready           : out std_logic_vector(3 downto 0);                    -- rx_ready
-		tx_analogreset     : out std_logic_vector(3 downto 0);                    -- tx_analogreset
-		tx_cal_busy        : in  std_logic_vector(3 downto 0) := (others => 'X'); -- tx_cal_busy
-		tx_digitalreset    : out std_logic_vector(3 downto 0);                    -- tx_digitalreset
-		tx_ready           : out std_logic_vector(3 downto 0)                     -- tx_ready
-  );
-end component ip_xcvr_reset;
-
 component ip_pll_125 is
   port (
 		outclk_0 : out std_logic;        -- clk
@@ -376,6 +255,5 @@ component ip_pll_125 is
 		rst      : in  std_logic := 'X' -- reset
 );
 end component ip_pll_125;
-
 
 end package mudaq_components;

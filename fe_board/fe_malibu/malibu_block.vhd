@@ -53,7 +53,7 @@ begin
     -- 125 kHz
     e_test_pulse : entity work.clkdiv
     generic map ( P => 1250 )
-    port map ( clkout => o_pll_test, rst_n => not i_reset, clk => i_clk );
+    port map ( o_clk => o_pll_test, i_reset_n => not i_reset, i_clk => i_clk );
 
     o_fifo_rdata <= fifo_rdata;
     o_fifo_rempty <= fifo_rempty;

@@ -3,7 +3,7 @@
 #============================================================
 
 set_global_assignment -name FAMILY "Arria 10"
-set_global_assignment -name DEVICE 10AX115N2F45I1SG
+set_global_assignment -name DEVICE 10AX115N2F45E1SG
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
 set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"

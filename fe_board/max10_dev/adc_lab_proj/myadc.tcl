@@ -1,14 +1,14 @@
-# qsys scripting (.tcl) file for myadc
-package require qsys 16.0
+#
 
-create_system {myadc}
+package require qsys
 
-set_project_property DEVICE_FAMILY {MAX 10}
-set_project_property DEVICE {10M08SAE144C8GES}
-set_project_property HIDE_FROM_IP_CATALOG {true}
+set dir0 [ file dirname [ info script ] ]
 
-# Instances and instance parameters
-# (disabled instances are intentionally culled)
+source [ file join $dir0 "../device.tcl" ]
+
+set name [ file tail [ file rootname [ info script ] ] ]
+
+create_system $name
 add_instance modular_adc_0 altera_modular_adc 18.0
 set_instance_parameter_value modular_adc_0 {CORE_VAR} {3}
 set_instance_parameter_value modular_adc_0 {ENABLE_DEBUG} {0}
@@ -195,14 +195,5 @@ set_instance_parameter_value modular_adc_0 {use_ch7} {1}
 set_instance_parameter_value modular_adc_0 {use_ch8} {1}
 set_instance_parameter_value modular_adc_0 {use_ch9} {0}
 set_instance_parameter_value modular_adc_0 {use_tsd} {1}
-
-# exported interfaces
 set_instance_property modular_adc_0 AUTO_EXPORT {true}
-
-# interconnect requirements
-set_interconnect_requirement {$system} {qsys_mm.clockCrossingAdapter} {HANDSHAKE}
-set_interconnect_requirement {$system} {qsys_mm.enableEccProtection} {FALSE}
-set_interconnect_requirement {$system} {qsys_mm.insertDefaultSlave} {FALSE}
-set_interconnect_requirement {$system} {qsys_mm.maxAdditionalLatency} {1}
-
-save_system {myadc.qsys}
+save_system [ file join $dir0 "$name.qsys" ]

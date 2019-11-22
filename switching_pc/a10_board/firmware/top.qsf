@@ -24,7 +24,6 @@ set_global_assignment -name QIP_FILE "pcieapp/include.qip"
 
 
 set_global_assignment -name VHDL_FILE ../../../fe_board/firmware/FEB_common/daq_constants.vhd
-set_global_assignment -name VHDL_FILE linear_shift_link.vhd
 set_global_assignment -name VHDL_FILE link_observer.vhd
 set_global_assignment -name VHDL_FILE dma_counter.vhd
 set_global_assignment -name VHDL_FILE event_counter.vhd

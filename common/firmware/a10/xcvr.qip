@@ -9,10 +9,4 @@ foreach { ip } {
     set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "$ip/synth/$ip.vhd"]
 }
 
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/counter.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/ff_sync.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/reset_sync.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/rx_align.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../util/util_pkg.vhd"]
-
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "xcvr_a10.vhd"]

@@ -59,10 +59,10 @@ BEGIN
     i_ff_sync : entity work.ff_sync
     generic map ( W => 1, N => 5 )
     PORT MAP (
-        d(0)    => terminated,
-        q(0)    => terminated_125_rx,
-        rst_n   => i_reset_125_rx_n,
-        clk     => i_clk_125_rx--,
+        i_d(0)      => terminated,
+        o_q(0)      => terminated_125_rx,
+        i_reset_n   => i_reset_125_rx_n,
+        i_clk       => i_clk_125_rx--,
     );
 
     -- decode state from rx

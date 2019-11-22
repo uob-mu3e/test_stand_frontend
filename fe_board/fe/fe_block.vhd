@@ -164,13 +164,13 @@ begin
     -- generate resets
 
     e_nios_reset_n : entity work.reset_sync
-    port map ( rstout_n => nios_reset_n, arst_n => i_areset_n, clk => i_nios_clk );
+    port map ( o_reset_n => nios_reset_n, i_reset_n => i_areset_n, i_clk => i_nios_clk );
 
     e_reset_156_n : entity work.reset_sync
-    port map ( rstout_n => reset_156_n, arst_n => i_areset_n, clk => i_clk_156 );
+    port map ( o_reset_n => reset_156_n, i_reset_n => i_areset_n, i_clk => i_clk_156 );
 
     e_reset_125_n : entity work.reset_sync
-    port map ( rstout_n => reset_125_n, arst_n => i_areset_n, clk => i_clk_125 );
+    port map ( o_reset_n => reset_125_n, i_reset_n => i_areset_n, i_clk => i_clk_125 );
 
 
 
@@ -179,17 +179,17 @@ begin
     -- NIOS_CLK_HZ_g -> 1 Hz
     e_nios_clk_hz : entity work.clkdiv
     generic map ( P => NIOS_CLK_HZ_g )
-    port map ( clkout => o_nios_clk_mon, rst_n => nios_reset_n, clk => i_nios_clk );
+    port map ( o_clk => o_nios_clk_mon, i_reset_n => nios_reset_n, i_clk => i_nios_clk );
 
     -- 156.25 MHz -> 1 Hz
     e_clk_156_hz : entity work.clkdiv
     generic map ( P => 156250000 )
-    port map ( clkout => o_clk_156_mon, rst_n => reset_156_n, clk => i_clk_156 );
+    port map ( o_clk => o_clk_156_mon, i_reset_n => reset_156_n, i_clk => i_clk_156 );
 
     -- 125 MHz -> 1 Hz
     e_clk_125_hz : entity work.clkdiv
     generic map ( P => 125000000 )
-    port map ( clkout => o_clk_125_mon, rst_n => reset_125_n, clk => i_clk_125 );
+    port map ( o_clk => o_clk_125_mon, i_reset_n => reset_125_n, i_clk => i_clk_125 );
 
 
 
@@ -537,7 +537,7 @@ begin
     g_pod_rx_reset_n : for i in pod_rx_reset_n'range generate
     begin
         e_pod_rx_reset_n : entity work.reset_sync
-        port map ( rstout_n => pod_rx_reset_n(i), arst_n => i_areset_n, clk => pod_rx_clk(i) );
+        port map ( o_reset_n => pod_rx_reset_n(i), i_reset_n => i_areset_n, i_clk => pod_rx_clk(i) );
     end generate;
 
     e_pod : entity work.xcvr_s4
