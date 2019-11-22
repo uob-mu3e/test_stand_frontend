@@ -5,7 +5,7 @@ if [ -z ${ALTERAD_LICENSE_FILE:+x} ] ; then
 fi
 
 if [ -z "${QUARTUS_ROOTDIR:+x}" ] ; then
-    export QUARTUS_ROOTDIR="/opt/altera/18.0/quartus"
+    export QUARTUS_ROOTDIR="/home/labor/intelFPGA/18.1/quartus"
 fi
 
 [ -d "$QUARTUS_ROOTDIR" ] || return
