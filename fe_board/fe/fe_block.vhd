@@ -126,7 +126,7 @@ architecture arch of fe_block is
     signal run_state_156 : run_state_t;
     signal terminated : std_logic;
 
-
+    signal run_number : std_logic_vector(31 downto 0);
 
     signal av_qsfp, av_pod : work.util.avalon_t;
 
@@ -398,6 +398,7 @@ begin
         fpga_ID_in              => FPGA_ID_g,
         FEB_type_in             => FEB_type_in,
         run_state               => run_state_156,
+        run_number              => run_number,
 
         data_out                => qsfp_tx_data(31 downto 0),
         data_is_k               => qsfp_tx_datak(3 downto 0),
@@ -459,7 +460,7 @@ begin
 
         resets_out              => open,
         reset_bypass            => reg_reset_bypass(11 downto 0),
-        run_number_out          => open,
+        run_number_out          => run_number,
         fpga_id                 => FPGA_ID_g,
         terminated              => terminated,
         testout                 => open,

@@ -84,4 +84,12 @@ constant MSCB_CMD_ADDR_BC       : std_logic_vector(7 downto 0) := X"10"; --broad
 constant MSCB_CMD_PING8         : std_logic_vector(7 downto 0) := X"19";
 constant MSCB_CMD_PING16        : std_logic_vector(7 downto 0) := X"1A";
 
+constant run_prep_acknowledge:          std_logic_vector(31 downto 0)	:= x"000001fe";
+constant run_prep_acknowledge_datak:    std_logic_vector(3 downto 0) 	:= "0001";
+constant RUN_END:                       std_logic_vector(31 downto 0)	:= x"000002fe";
+constant RUN_END_DATAK:                 std_logic_vector(3 downto 0)	:= "0001";
+constant MERGER_TIMEOUT:                std_logic_vector(31 downto 0)	:= x"000003fe";
+constant MERGER_TIMEOUT_DATAK:          std_logic_vector(3 downto 0)	:= "0001";
+    
+
 end package;

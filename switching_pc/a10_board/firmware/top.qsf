@@ -39,6 +39,8 @@ set_global_assignment -name QIP_FILE a10/xcvr.qip
 set_global_assignment -name VHDL_FILE data_demerge.vhd
 set_global_assignment -name VHDL_FILE sw_algin_data.vhd
 set_global_assignment -name VHDL_FILE a10/data_generator_a10.vhd
+set_global_assignment -name VHDL_FILE run_control.vhd
+set_global_assignment -name VHDL_FILE ../../../fe_board/fe_mupix/mupix_block/comp_type_const/mupix_constants.vhd
 
 
 
