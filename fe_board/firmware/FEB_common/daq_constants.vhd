@@ -1,21 +1,40 @@
 -- Basic constants for DAQ communication
 -- K. Briggl, April 2019 : stripped from mupix8_daq repository / mupix_constants.vhd
+-- last change: S. Dittmeier, 22.11.2019 (dittmeier@physi.uni-heidelberg.de)
 
 library ieee;
 use ieee.std_logic_1164.all;
 
 package daq_constants is
 
-subtype links_reg32 is std_logic_vector(31 downto 0);
+-- multi-purpose types
+subtype links_reg32 is std_logic_vector(31 downto 0);	-- same as reg32, used in MUTRIG setup with only one link?
 subtype reg32 is std_logic_vector(31 downto 0);
 constant NREGISTERS : integer := 64;
 type reg32array is array (NREGISTERS-1 downto 0) of reg32;
+type reg32array_t is array (natural range <>) of reg32;
 
 subtype reg64 is std_logic_vector(63 downto 0);
-type reg64b_array_t is array (natural range <>) of std_logic_vector(63 downto 0);
+type reg64array_t is array (natural range <>) of std_logic_vector(63 downto 0);
 
+subtype byte_t is std_logic_vector(7 downto 0);
+type bytearray_t is array (natural range <>)  of byte_t;
 
+subtype REG64_TOP_RANGE is integer range 63 downto 32;
+subtype REG64_BOTTOM_RANGE is integer range 31 downto 0;
+-- general FEB constants
+constant NLVDS				: integer := 32;	-- number of total links available
+constant NINPUTS_BANK_A	: integer := 16;	-- number of links available on bank A (dividing LVDS banks into physical regions)
+constant NINPUTS_BANK_B	: integer := 16;	-- number of links available on bank B (dividing LVDS banks into physical regions)
+-- this should be equal to log2(NLVDS)
+constant NLVDSLOG			: integer := 5;
 
+-- two types below may be removed
+-- types
+type fifo_init_array is array (NLVDS-1 downto 0) of std_logic_vector(1 downto 0);
+type fifo_usedw_array is array(NLVDS-1 downto 0) of std_logic_vector(3 downto 0);
+
+-- type for run state
 subtype run_state_t is std_logic_vector(9 downto 0);
 
 constant RUN_STATE_BITPOS_IDLE        : natural := 0;
@@ -51,7 +70,7 @@ type feb_run_state is (
 );
 
 
-
+-- time constants
 constant TIME_125MHz_1s     : std_logic_vector(27 DOWNTO 0) := x"7735940";
 constant TIME_125MHz_1ms    : std_logic_vector(27 DOWNTO 0) := x"001E848";
 constant TIME_125MHz_2s     : std_logic_vector(27 DOWNTO 0) := x"EE6B280";

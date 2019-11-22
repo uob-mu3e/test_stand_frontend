@@ -220,15 +220,15 @@ begin
     ----------------------------------------------------------------------------
     -- MUPIX
 
-    e_mupix_block : entity work.mupix_block
-    generic map (
-        NCHIPS => 8,
+	e_mupix_block : entity work.mupix_block
+	generic map (
+		NCHIPS => 8,
 		NCHIPS_SPI => 1,
 		NLVDS  => 32,
 		NINPUTS_BANK_A => 16,
 		NINPUTS_BANK_B => 16--,
-    )
-    port map (
+	)
+	port map (
 
 		-- chip dacs
 		i_CTRL_SDO_A         => CTRL_SDO_A,
@@ -270,8 +270,9 @@ begin
 		i_reset              => not reset_n,
 		-- 156.25 MHz
 		i_clk                => qsfp_pll_clk,
-		i_clk125             => pod_pll_clk--,
-    );
+		i_clk125             => pod_pll_clk,
+		i_sync_reset_cnt		=> sync_reset_cnt--,
+	);
 
 	clock_A <= pod_pll_clk;
 	clock_B <= pod_pll_clk;
@@ -286,11 +287,13 @@ begin
 			fast_reset_B <= '1';
 			fast_reset_C <= '1';
 			fast_reset_E <= '1';
+			sync_reset_cnt	<= '1';
 		else
 			fast_reset_A <= '0';
 			fast_reset_B <= '0';
 			fast_reset_C <= '0';
 			fast_reset_E <= '0';
+			sync_reset_cnt	<= '0';
 		end if;
 	end if;
 	end process;

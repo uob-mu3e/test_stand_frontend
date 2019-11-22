@@ -16,9 +16,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.datapath_components.all;
 use work.mupix_constants.all;
-use work.mupix_types.all;
+use work.daq_constants.all;
 
 entity multichip_ro_zerosupressed is 
 	generic (
