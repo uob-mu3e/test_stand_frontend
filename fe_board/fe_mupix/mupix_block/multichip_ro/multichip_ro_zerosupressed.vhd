@@ -48,36 +48,32 @@ end multichip_ro_zerosupressed;
 		
 architecture RTL of multichip_ro_zerosupressed is
 
+type reg33array_t is array (natural range <>) of std_logic_vector(32 downto 0);
+type reg9array_t is array (natural range <>) of std_logic_vector(8 downto 0);
 
-signal 	singlezs2fifo		: links_reg32;
+signal 	singlezs2fifo		: reg32array_t(NCHIPS-1 downto 0);
 signal 	singlezs2fifoena	: std_logic_vector(NCHIPS-1 downto 0);
 signal 	singlezs2fifoeoe	: std_logic_vector(NCHIPS-1 downto 0);
 signal 	fifo_rdreq			: std_logic_vector(NCHIPS-1 downto 0);
-signal 	fifo_q				: links_vec33;
-signal 	fifo_usedw			: links_vec9;
+signal 	fifo_q				: reg33array_t(NCHIPS-1 downto 0);
+signal 	fifo_usedw			: reg9array_t(NCHIPS-1 downto 0);
 signal	drop_block			: std_logic_vector(NCHIPS-1 downto 0);
-
 signal 	fifo_wrreq			: std_logic_vector(NCHIPS-1 downto 0);
-
-signal 	fifo_data			: links_vec33;
-signal 	fifo_q_reg			: links_vec33;
-
-signal 	fifo_eoe_cnt		: links_vec8;
+signal 	fifo_data			: reg33array_t(NCHIPS-1 downto 0);
+signal 	fifo_q_reg			: reg33array_t(NCHIPS-1 downto 0);
+signal 	fifo_eoe_cnt		: bytearray_t(NCHIPS-1 downto 0);
 signal 	roundrobin			: integer range 0 to NCHIPS-1;
 signal 	fifo_aclr			: std_logic;
-
-signal 	fifo_overflow		: links_reg32;
-
-signal 	errcounter_sel	: std_logic_vector(2 downto 0);
+signal 	fifo_overflow		: reg32array_t(NCHIPS-1 downto 0);
+signal 	errcounter_sel		: std_logic_vector(2 downto 0);
 
 type ro_type is (WAITING_FAST, INIT_READ, READING, FINISH_READ);
 signal 	multi_ro : ro_type;
 
-signal 	triggercounter : reg32;
-signal 	hbcounter		: reg32;
-
 signal	prescale_r		: reg32;
-signal 	marker 			: links_vec8;
+signal	marker 			: bytearray_t(NCHIPS-1 downto 0);
+
+signal tomemena_r : std_logic;
 
 begin
 
@@ -222,6 +218,8 @@ for i in 0 to NCHIPS-1 generate
 		
 end generate time_demux_zs;
 
+tomemena		<= tomemena_r;
+
 	fifo_roundrobin : process	(clk, reset_n)
 	
 	variable success : std_logic := '0';	
@@ -230,16 +228,16 @@ end generate time_demux_zs;
 		if(reset_n = '0')then
 			roundrobin		<= 0;
 			fifo_rdreq		<= (others => '0');
-			tomemena		 	<= '0';
+			tomemena_r	 	<= '0';
 			tomemdata		<= (others => '0');	
 			tomemeoe			<= '0';	
 			multi_ro			<= WAITING_FAST;
 			success			:= '0';
-		elsif(rising_edge(clk))then					
+		elsif(rising_edge(clk))then
 
-			tomemena		<= '0';
-			tomemdata	<= (others => '0');	
-			tomemeoe		<= '0';			
+			tomemena_r	<= '0';
+			tomemdata	<= (others => '0');
+			tomemeoe		<= '0';
 
 			case multi_ro is
 								
@@ -267,10 +265,10 @@ end generate time_demux_zs;
 				when READING	=>
 					tomemdata(31 downto 0)		<= fifo_q_reg(roundrobin)(31 downto 0);
 					tomemeoe							<= fifo_q_reg(roundrobin)(32);
-					if(tomemena	= '0')then
+					if(tomemena_r	= '0')then
 						tomemdata(33 downto 32) <= "10";
 					end if;
-					tomemena			<= '1';
+					tomemena_r			<= '1';
 					if(fifo_q(roundrobin)(32)='1')then
 						multi_ro		<= FINISH_READ;
 						fifo_rdreq(roundrobin)	<= '0';						
@@ -280,13 +278,13 @@ end generate time_demux_zs;
 					tomemdata(31 downto 0)		<= fifo_q_reg(roundrobin)(31 downto 0);
 					tomemdata(33 downto 32) 	<= "11";
 					tomemeoe			<= fifo_q_reg(roundrobin)(32);
-					tomemena			<= '1';
+					tomemena_r			<= '1';
 					multi_ro			<= WAITING_FAST;
 					roundrobin		<= roundrobin + 1;				-- only for fast mode
 
 				when others	=>
 					multi_ro 	<= WAITING_FAST;
-					tomemena		<= '0';
+					tomemena_r		<= '0';
 					tomemdata	<= (others => '0');	
 					tomemeoe		<= '0';	
 					roundrobin	<= 0;				-- only for fast mode						

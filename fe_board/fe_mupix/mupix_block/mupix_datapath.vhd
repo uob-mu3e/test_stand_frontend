@@ -75,11 +75,11 @@ signal coarsecounters_del 		: std_logic_vector(NCHIPS *COARSECOUNTERSIZE-1 downt
 signal coarsecounters_ena_del 	: std_logic_vector(NCHIPS-1 downto 0);
 
 -- error signal output from unpacker
-signal unpack_errorcounter	: reg32array_t(NLVDS-1 downto 0);;
+signal unpack_errorcounter	: reg32array_t(NLVDS-1 downto 0);
 
 -- writeregisters are registered once to reduce long combinational paths
-signal writeregs_reg			: reg32array_t(NREGISTERS_MUPIX_WR-1 downto 0);;
-signal read_regs				: reg32array_t(NREGISTERS_MUPIX_RD-1 downto 0);;
+signal writeregs_reg			: reg32array_t(NREGISTERS_MUPIX_WR-1 downto 0);
+signal read_regs				: reg32array_t(NREGISTERS_MUPIX_RD-1 downto 0);
 --signal regwritten_reg				: std_logic_vector(NREGISTERS-1 downto 0); 
 signal s_buf_data				: std_logic_vector(35 downto 0);
 signal sync_fifo_empty		: std_logic;
@@ -247,12 +247,16 @@ begin
 -----------------------------------------------------------------------------------------------------		
 -------------------------- For all chips: Single chip RO mode, zero suppressed ----------------------
 
-	process(i_clk125, i_sync_reset_cnt)
+	process(i_clk125, i_reset_n)
 	begin
-		if(i_sync_reset_cnt = '1')then
+		if(i_reset_n = '0')then
 			counter125	<= (others => '0');
 		elsif(rising_edge(i_clk125))then
-			counter125	<=  counter125 + 1;
+			if(i_sync_reset_cnt = '1')then
+				counter125	<= (others => '0');
+			else
+				counter125	<=  counter125 + 1;
+			end if;
 		end if;
 	end process;
 
@@ -271,7 +275,7 @@ begin
 		hits_ena					=> binhits_ena,
 		coarsecounters			=> coarsecounters_del,
 		coarsecounters_ena	=> coarsecounters_ena_del,
-		prescale					=> writeregs_reg(RO_PRESCALER_REGISTER_W)(RO_PRESCALER_RANGE),
+		prescale					=> writeregs_reg(RO_PRESCALER_REGISTER_W),
 --		is_shared				=> writeregs_reg(LINK_REGISTER_W)(LINK_SHARED_RANGE),		
 		tomemdata				=> s_buf_data_125,
 		tomemena					=> s_buf_wr_125,

@@ -400,7 +400,7 @@ begin
 		o_fifo_rdata		=> o_fifo_rdata,
 		o_fifo_rempty		=> o_fifo_rempty,
 		i_fifo_rack			=> i_fifo_rack,
-		i_sync_reset_cnt	=> sync_reset_cnt--,
+		i_sync_reset_cnt	=> i_sync_reset_cnt--,
 	);
 	
 	write_regs_mupix(RO_PRESCALER_REGISTER_W) 			<= ro_prescaler;

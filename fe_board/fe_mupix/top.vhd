@@ -214,6 +214,8 @@ architecture arch of top is
     signal spi_ss_n : std_logic_vector(15 downto 0);
 
     signal run_state_125 : run_state_t;
+	 
+	 signal sync_reset_cnt: std_logic;
 
 begin
 

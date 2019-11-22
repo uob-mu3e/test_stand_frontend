@@ -1,4 +1,5 @@
 -- Constants solely for use in mupix block
+-- check which of these are actually used and remove those that are not needed!
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -53,7 +54,7 @@ constant TIMESTAMPSIZE_MPX8: integer := 10;
 constant CHARGESIZE			: integer := 6;
 
 constant CHIPMARKERSIZE 	: integer := 8;
-constant CHIPRANGE			: integer := 4;
+constant CHIPRANGE			: integer := 3;
 
 constant BEGINOFEVENT 		: std_logic_vector(31 downto 0) := x"FABEABBA";
 constant ENDOFEVENT 			: std_logic_vector(31 downto 0) := x"BEEFBEEF";

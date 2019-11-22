@@ -14,25 +14,21 @@ constant NREGISTERS : integer := 64;
 type reg32array is array (NREGISTERS-1 downto 0) of reg32;
 type reg32array_t is array (natural range <>) of reg32;
 
-subtype reg64 is std_logic_vector(63 downto 0);
-type reg64array_t is array (natural range <>) of std_logic_vector(63 downto 0);
-
 subtype byte_t is std_logic_vector(7 downto 0);
 type bytearray_t is array (natural range <>)  of byte_t;
 
+subtype reg64 is std_logic_vector(63 downto 0);
+type reg64array_t is array (natural range <>) of std_logic_vector(63 downto 0);
+
 subtype REG64_TOP_RANGE is integer range 63 downto 32;
 subtype REG64_BOTTOM_RANGE is integer range 31 downto 0;
+
 -- general FEB constants
 constant NLVDS				: integer := 32;	-- number of total links available
 constant NINPUTS_BANK_A	: integer := 16;	-- number of links available on bank A (dividing LVDS banks into physical regions)
 constant NINPUTS_BANK_B	: integer := 16;	-- number of links available on bank B (dividing LVDS banks into physical regions)
 -- this should be equal to log2(NLVDS)
 constant NLVDSLOG			: integer := 5;
-
--- two types below may be removed
--- types
-type fifo_init_array is array (NLVDS-1 downto 0) of std_logic_vector(1 downto 0);
-type fifo_usedw_array is array(NLVDS-1 downto 0) of std_logic_vector(3 downto 0);
 
 -- type for run state
 subtype run_state_t is std_logic_vector(9 downto 0);
