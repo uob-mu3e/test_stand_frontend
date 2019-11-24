@@ -739,7 +739,7 @@ counter256 : component counter
 		rst_n                   => push_button0_db,
 
 		reset_register          => writeregs(RESET_REGISTER_W),
-		reset_reg_written       => regwritten(RESET_REGISTER_W),
+--		reset_reg_written       => regwritten(RESET_REGISTER_W),
 
 		resets                  => resets,
 		resets_n                => resets_n,
