@@ -27,8 +27,8 @@ entity pcie_cfgbus is
 		cfg_tcvcmap		: out std_logic_vector(23 downto 0);
 		cfg_msi_data	: out std_logic_vector(15 downto 0)
     );
-end pcie_cfgbus;
-	 
+end entity;
+
 architecture RTL of pcie_cfgbus is
 
 begin
@@ -84,4 +84,4 @@ elsif(pld_clk'event and pld_clk = '1') then
 end if;
 end process;
 
-end RTL;
+end architecture;

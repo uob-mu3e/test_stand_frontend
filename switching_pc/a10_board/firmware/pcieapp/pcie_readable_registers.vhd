@@ -34,8 +34,8 @@ entity pcie_readable_registers is
 		inaddr32_r			: out STD_LOGIC_VECTOR (31 DOWNTO 0)
 	
 	);
-	end pcie_readable_registers;
-	
+end entity;
+
 
 
 architecture RTL of pcie_readable_registers is
@@ -114,5 +114,5 @@ begin
 		end case;	
 	end if; -- if clk event
 	end process;
-	
-end RTL;
+
+end architecture;

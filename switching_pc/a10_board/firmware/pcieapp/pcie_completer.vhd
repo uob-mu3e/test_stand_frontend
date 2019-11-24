@@ -94,11 +94,11 @@ entity pcie_completer is
 		testout_ena			: out std_logic
 		
 	);
-	end pcie_completer;
-	
-	
-	
-	architecture RTL of pcie_completer is
+end entity;
+
+
+
+architecture RTL of pcie_completer is
 	
 	
 	type completer_state_type is (reset, waiting, 
@@ -894,5 +894,5 @@ entity pcie_completer is
 	end if; -- clock
 
 	end process;
-	
-	end RTL;
+
+end architecture;

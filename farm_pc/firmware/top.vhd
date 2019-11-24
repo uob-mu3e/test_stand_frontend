@@ -10,77 +10,83 @@ use work.mudaq_components.all;
 
 entity top is
 port (
-    BUTTON : in std_logic_vector(3 downto 0);
+    BUTTON              : in    std_logic_vector(3 downto 0);
 
-    CLK_50_B2J  :   in  std_logic;
+    HEX0_D              : out   std_logic_vector(6 downto 0);
+--    HEX0_DP             : out   std_logic;
 
-    HEX0_D      :   out std_logic_vector(6 downto 0);
-    --HEX0_DP     :   out std_logic;
+    HEX1_D              : out   std_logic_vector(6 downto 0);
+--    HEX1_DP             : out   std_logic;
 
-    HEX1_D      :   out std_logic_vector(6 downto 0);
-    --HEX1_DP     :   out std_logic;
+    LED                 : out   std_logic_vector(3 downto 0) := "0000";
+    LED_BRACKET         : out   std_logic_vector(3 downto 0) := "0000";
 
-    LED         :   out std_logic_vector(3 downto 0);
-    LED_BRACKET :   out std_logic_vector(3 downto 0);
+    SMA_CLKOUT          : out std_logic;
+    SMA_CLKIN           : in std_logic;
 
-    SMA_CLKOUT : out std_logic;
-    SMA_CLKIN : in std_logic;
-	 
-	 --      ///////// FAN /////////
-    FAN_I2C_SCL :   out     std_logic;
-    FAN_I2C_SDA :   inout   std_logic;
-	 
-	 --      ///////// FLASH /////////
-	 FLASH_A         :   out     std_logic_vector(26 downto 1);
-    FLASH_D         :   inout   std_logic_vector(31 downto 0);
-    FLASH_OE_n      :   inout   std_logic;
-    FLASH_WE_n      :   out     std_logic;
-    FLASH_CE_n      :   out     std_logic_vector(1 downto 0);
-    FLASH_ADV_n     :   out     std_logic;
-    FLASH_CLK       :   out     std_logic;
-    FLASH_RESET_n   :   out     std_logic;
-	 
-	 --      ///////// POWER /////////
-    POWER_MONITOR_I2C_SCL   :   out     std_logic;
-    POWER_MONITOR_I2C_SDA   :   inout   std_logic;
-	 
-	 --      ///////// TEMP /////////
-    TEMP_I2C_SCL    :   out     std_logic;
-    TEMP_I2C_SDA    :   inout   std_logic;
+    RS422_DE            : out   std_logic;
+    RS422_DIN           : in    std_logic; -- 1.8-V
+    RS422_DOUT          : out   std_logic;
+--    RS422_RE_n          : out   std_logic;
+--    RJ45_LED_L          : out   std_logic;
+    RJ45_LED_R          : out   std_logic;
 
-    --RS422_DE : out std_logic;
-    --RS422_DIN : in std_logic; -- 1.8-V
-    --RS422_DOUT : out std_logic;
-    --RS422_RE_n : out std_logic;
-    --RJ45_LED_L : out std_logic;
-    --RJ45_LED_R : out std_logic;
-	 
-	 refclk2_qr1_p	: in std_logic;--					1.5-V PCML, default 125MHz
-	 refclk1_qr0_p : in std_logic;-- 1.5-V PCML, default 156.25MHz
+--    refclk2_qr1_p       : in    std_logic; -- 1.5-V PCML, default 125MHz
+--    refclk1_qr0_p       : in    std_logic; -- 1.5-V PCML, default 156.25MHz
 
-    --SW : in std_logic_vector(1 downto 0);
-	 
-	 --clkin_50_top	: in std_logic;--					2.5V, default 50MHz
-	 
-	 --///////// Transiver /////////
-	 --QSFPA_TX_p          :   out std_logic_vector(3 downto 0);
-    QSFPA_RX_p          :   in std_logic_vector(3 downto 0);
-    QSFPA_REFCLK_p 		: 	 in std_logic;
-	 
-	 --QSFPB_TX_p          :   out std_logic_vector(3 downto 0);
-    QSFPB_RX_p          :   in std_logic_vector(3 downto 0);
-    QSFPB_REFCLK_p 		: 	 in std_logic;
-	
-	 --///////// PCIE /////////
-	 PCIE_PERST_n			:	in	std_logic;
-    PCIE_REFCLK_p			:	in	std_logic;
-    PCIE_RX_p				:	in	std_logic_vector(7 downto 0);
-    PCIE_SMBCLK			:	in	std_logic;
-    PCIE_SMBDAT			:	inout	std_logic;
-    PCIE_TX_p				:	out std_logic_vector(7 downto 0);
-    PCIE_WAKE_n			:	out std_logic
-	
-	 );
+    -- //////// FAN ////////
+    FAN_I2C_SCL         : out   std_logic;
+    FAN_I2C_SDA         : inout std_logic;
+
+    -- //////// FLASH ////////
+    FLASH_A             : out   std_logic_vector(26 downto 1);
+    FLASH_D             : inout std_logic_vector(31 downto 0);
+    FLASH_OE_n          : inout std_logic;
+    FLASH_WE_n          : out   std_logic;
+    FLASH_CE_n          : out   std_logic_vector(1 downto 0);
+    FLASH_ADV_n         : out   std_logic;
+    FLASH_CLK           : out   std_logic;
+    FLASH_RESET_n       : out   std_logic;
+
+    -- //////// POWER ////////
+    POWER_MONITOR_I2C_SCL   : out   std_logic;
+    POWER_MONITOR_I2C_SDA   : inout std_logic;
+
+    -- //////// TEMP ////////
+    TEMP_I2C_SCL        : out   std_logic;
+    TEMP_I2C_SDA        : inout std_logic;
+
+    SW : in std_logic_vector(1 downto 0);
+
+--    clkin_50_top        : in    std_logic; -- 2.5V, default 50MHz
+
+    -- //////// Transiver ////////
+    QSFPA_TX_p          : out   std_logic_vector(3 downto 0);
+    QSFPB_TX_p          : out   std_logic_vector(3 downto 0);
+
+    QSFPA_RX_p          : in    std_logic_vector(3 downto 0);
+    QSFPB_RX_p          : in    std_logic_vector(3 downto 0);
+
+    QSFPA_REFCLK_p      : in    std_logic;
+--    QSFPB_REFCLK_p      : in    std_logic;
+    QSFPA_LP_MODE       : out   std_logic;
+    QSFPA_MOD_SEL_n     : out   std_logic;
+    QSFPA_RST_n         : out   std_logic;
+
+
+
+    -- //////// PCIE ////////
+    PCIE_PERST_n        : in    std_logic;
+    PCIE_REFCLK_p       : in    std_logic;
+    PCIE_RX_p           : in    std_logic_vector(7 downto 0);
+    PCIE_SMBCLK         : in    std_logic;
+    PCIE_SMBDAT         : inout std_logic;
+    PCIE_TX_p           : out   std_logic_vector(7 downto 0);
+    PCIE_WAKE_n         : out   std_logic;
+
+    CPU_RESET_n         : in    std_logic;
+    CLK_50_B2J          : in    std_logic--;
+);
 
 end entity top;
 
@@ -405,15 +411,15 @@ architecture rtl of top is
 		signal i2c_scl_oe   : std_logic;
 		signal i2c_sda_in   : std_logic;
 		signal i2c_sda_oe   : std_logic;
-		
+		signal flash_tcm_address_out : std_logic_vector(27 downto 0);
+
 		-- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
 		signal ZERO : std_logic := '0';
 		attribute keep : boolean;
 		attribute keep of ZERO : signal is true;
-		
-		
-		
-begin 
+
+
+begin
 
 --------- I/O ---------
 
@@ -435,51 +441,55 @@ LED_BRACKET(3) <= writeregs(LED_REGISTER_W)(3);
 
 --input_clk <= refclk2_qr1_p;
 
---------- NIOS ---------
+    -------- NIOS --------
 
 cpu_reset_n_q <= push_button1_db;
 
-nios_i : component work.cmp.nios
-port map (
-	clk_clk                    			=> clk,               
-	flash_tcm_address_out(27 downto 2) 	=> FLASH_A,
-	flash_tcm_data_out 						=> FLASH_D,
-	flash_tcm_read_n_out(0) 				=> FLASH_OE_n,
-	flash_tcm_write_n_out(0) 				=> FLASH_WE_n,
-	flash_tcm_chipselect_n_out(0) 		=> flash_ce_n_i,
-	i2c_scl_in  								=> i2c_scl_in,
-	i2c_scl_oe  								=> i2c_scl_oe,
-	i2c_sda_in  								=> i2c_sda_in,
-	i2c_sda_oe  								=> i2c_sda_oe,
-	rst_reset_n              			=> push_button3_db--resets_n(RESET_NIOS)          
-);
+    e_nios : work.cmp.nios
+    port map (
+        flash_tcm_address_out           => flash_tcm_address_out,
+        flash_tcm_data_out              => FLASH_D,
+        flash_tcm_read_n_out(0)         => FLASH_OE_n,
+        flash_tcm_write_n_out(0)        => FLASH_WE_n,
+        flash_tcm_chipselect_n_out(0)   => flash_ce_n_i,
 
-FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
-FLASH_ADV_n <= '0';
-FLASH_CLK <= '0';
-FLASH_RESET_n <= cpu_reset_n_q;
+        i2c_sda_in                      => i2c_sda_in,
+        i2c_scl_in                      => i2c_scl_in,
+        i2c_sda_oe                      => i2c_sda_oe,
+        i2c_scl_oe                      => i2c_scl_oe,
 
-i2c_scl_in <= not i2c_scl_oe;
-FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
+        rst_reset_n                     => push_button3_db,--resets_n(RESET_NIOS)
+        clk_clk                         => clk--,
+    );
 
-i2c_sda_in <= FAN_I2C_SDA and
-				TEMP_I2C_SDA and
-				POWER_MONITOR_I2C_SDA and
-				'1';
-FAN_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
+    FLASH_A <= flash_tcm_address_out(27 downto 2);
+    FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
+    FLASH_ADV_n <= '0';
+    FLASH_CLK <= '0';
+    FLASH_RESET_n <= cpu_reset_n_q;
+
+    i2c_scl_in <= not i2c_scl_oe;
+    FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
+    TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
+    POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
+
+    i2c_sda_in <=
+        FAN_I2C_SDA and
+        TEMP_I2C_SDA and
+        POWER_MONITOR_I2C_SDA and
+        '1';
+    FAN_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
+    TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
+    POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
 
 --------- Debouncer/seg7 ---------
 
-deb1 : component debouncer
-	port map(
-		clk => clk, 
-		din => BUTTON(0), 
-		dout => push_button0_db
-);
+    e_deb1 : component debouncer
+    port map (
+        clk => clk,
+        din => BUTTON(0),
+        dout => push_button0_db
+    );
 
 deb2 : component debouncer
 	port map(
@@ -724,27 +734,28 @@ counter256 : component counter
 		time_counter 	=> counter_256
 );
 
-resetlogic:reset_logic
-	port map(
-		clk                     => clk,--clk_125,
+    e_reset_logic : entity work.reset_logic
+    port map (
 		rst_n                   => push_button0_db,
 
 		reset_register          => writeregs(RESET_REGISTER_W),
 		reset_reg_written       => regwritten(RESET_REGISTER_W),
 
 		resets                  => resets,
-		resets_n                => resets_n                                                             
-);
+		resets_n                => resets_n,
 
-vreg:version_reg
-	port map(
-		data_out  => readregs_slow(VERSION_REGISTER_R)(27 downto 0)
-);
+        clk                     => clk--,--clk_125,
+    );
+
+    e_version_reg : entity work.version_reg
+    port map (
+        data_out  => readregs_slow(VERSION_REGISTER_R)(27 downto 0)
+    );
 
 --Sync read regs from slow  (125 MHz) to fast (250 MHz) clock
-process(pcie_fastclk_out)
-begin
-	if(pcie_fastclk_out'event and pcie_fastclk_out = '1') then
+    process(pcie_fastclk_out)
+    begin
+    if rising_edge(pcie_fastclk_out) then
 		clk_sync <= clk;
 		clk_last <= clk_sync;
 		
@@ -787,8 +798,8 @@ begin
 --			readregs(STATUS_R)(CH3_ALIGN) <= ch3_align_status;
 --		end if;
 		
-	end if;
-end process;
+    end if;
+    end process;
 
 -- Increase address
 process(pcie_fastclk_out, resets_n(RESET_BIT_DATAGEN))
@@ -805,37 +816,43 @@ begin
 end process;
 
 --Prolong regwritten signals for 50 MHz clock
-process(pcie_fastclk_out)
-begin
-	if(pcie_fastclk_out'event and pcie_fastclk_out = '1') then
+    process(pcie_fastclk_out)
+    begin
+    if rising_edge(pcie_fastclk_out) then
 		regwritten_del1 <= regwritten_fast;
 		regwritten_del2 <= regwritten_del1;
 		regwritten_del3 <= regwritten_del2;
 		regwritten_del4 <= regwritten_del3;
 		for I in 63 downto 0 loop
-			if(regwritten_fast(I) = '1' or regwritten_del1(I) = '1'  or regwritten_del2(I) = '1'  or regwritten_del3(I) = '1'  or regwritten_del4(I) = '1') then
-				regwritten(I) <= '1';
+			if(regwritten_fast(I) = '1' or
+				regwritten_del1(I) = '1' or
+				regwritten_del2(I) = '1' or
+				regwritten_del3(I) = '1' or
+				regwritten_del4(I) = '1')
+				then
+				regwritten(I) 	<= '1';
 			else
-			regwritten(I) <= '0';
+			regwritten(I) 		<= '0';
 			end if;
 		end loop;
-	end if;
-end process;
+    end if;
+    end process;
+
   --  LED         :   out std_logic_vector(3 downto 0);
 readmem_writeaddr_lowbits <= readmem_writeaddr(15 downto 0);
 
-pcie_b: pcie_block 
-	generic map(
+    e_pcie_block : entity work.pcie_block
+    generic map (
 		DMAMEMWRITEADDRSIZE => 11,
 		DMAMEMREADADDRSIZE  => 11,
 		DMAMEMWRITEWIDTH	  => 256
-	)
-	port map(
+    )
+    port map (
 		local_rstn				=> '1',
 		appl_rstn				=> '1', --resets_n(RESET_BIT_PCIE),
 		refclk					=> PCIE_REFCLK_p,
 		pcie_fastclk_out		=> pcie_fastclk_out,
-		
+
 		--//PCI-Express--------------------------//25 pins //--------------------------
 		pcie_rx_p				=> PCIE_RX_p,
 		pcie_tx_p 				=> PCIE_TX_p,
@@ -871,7 +888,7 @@ pcie_b: pcie_block
 		readmem_wren			=> readmem_wren,
 		readmem_endofevent	=> readmem_endofevent,
 
-		-- dma memory 
+		-- dma memory
 		dma_data 				=> dma_data_ch0 & X"DECAFBAD" & dma_data_ch1 & X"DECAFBAD" & dma_data_ch2 & X"DECAFBAD" & dma_data_ch3 & X"DECAFBAD",--counter_256,--rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data & rx_parallel_data,
 		dmamemclk				=> pcie_fastclk_out,--rx_clkout_ch0_clk,--rx_clkout_ch0_clk,
 		dmamem_wren				=> writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE) and rdreg_fifo_dma,--'1',
@@ -885,13 +902,12 @@ pcie_b: pcie_block
 		dma2mem_endofevent	=> dma2mem_endofevent,
 		dma2memhalffull		=> dma2memhalffull,
 
-		-- test ports  
+		-- test ports
 		testout					=> pcie_testout,
 		testout_ena				=> open,
 		pb_in						=> push_button0_db & push_button1_db & push_button2_db,
 		inaddr32_r				=> readregs(inaddr32_r),
 		inaddr32_w				=> readregs(inaddr32_w)
-);
-  
+    );
 
-end;
+end architecture;

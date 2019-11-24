@@ -23,7 +23,7 @@ entity pcie_completion_bytecount is
 		bytecount: out std_logic_vector(11 downto 0);
 		lower_address : out std_logic_vector(1 downto 0)
 	);
-end pcie_completion_bytecount;
+end entity;
 
 
 architecture RTL of pcie_completion_bytecount is
@@ -66,5 +66,5 @@ begin
 							"01" when fdw_be(1 downto 0) = "10" else
 							"10" when fdw_be(2 downto 0) = "100" else
 							"11";
-								
-end RTL;
+
+end architecture;
