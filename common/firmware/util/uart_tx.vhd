@@ -38,6 +38,8 @@ end entity;
 
 architecture arch of uart_tx is
 
+    signal wfull : std_logic;
+
     signal rdata : std_logic_vector(DATA_BITS_g-1 downto 0);
     signal rempty : std_logic;
 
@@ -77,7 +79,8 @@ begin
         '1' when ( state /= STATE_IDLE ) else
         '0';
 
-    o_wfull <=
+    o_wfull <= wfull;
+    wfull <=
         '1' when ( rempty = '0' ) else
         '0';
 
@@ -97,7 +100,7 @@ begin
         state <= STATE_IDLE;
         --
     elsif rising_edge(i_clk) then
-        if ( i_we = '1' ) then
+        if ( wfull = '0' and i_we = '1' ) then
             rdata <= i_wdata;
             rempty <= '0';
         end if;
