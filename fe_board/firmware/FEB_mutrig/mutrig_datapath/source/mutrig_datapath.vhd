@@ -93,7 +93,8 @@ component stic_dummy_data is
 		o_frame_number   : out std_logic_vector(15 downto 0);                    -- counter
 		o_frame_info     : out std_logic_vector(15 downto 0);                    -- frame_flags(6) + frame_length(10)
 		o_new_frame	   : out std_logic;                                        -- begin of new frame
-		o_frame_info_rdy : out std_logic
+		o_frame_info_rdy : out std_logic;
+		o_busy           : out std_logic
 	);
 end component;
 
@@ -210,6 +211,7 @@ signal s_frame_info_rdy, s_rec_frame_info_rdy, s_gen_frame_info_rdy : t_vector;
 signal s_event_data,     s_rec_event_data,     s_gen_event_data     : t_array_48b;
 signal s_event_ready,    s_rec_event_ready,    s_gen_event_ready    : t_vector;
 signal s_end_of_frame,   s_rec_end_of_frame,   s_gen_end_of_frame   : t_vector;
+signal s_gen_busy  : t_vector;
 
 --fifo - frame collector mux
 signal s_fifos_empty 		: std_logic_vector(N_ASICS-1 downto 0);
@@ -335,33 +337,34 @@ u_frame_rcv : frame_rcv
 				o_new_frame	 	=> s_gen_new_frame(i),
 				o_event_data	 	=> s_gen_event_data(i),
 				o_event_ready	 	=> s_gen_event_ready(i),
-				o_end_of_frame	 	=> s_gen_end_of_frame(i)
+				o_end_of_frame	 	=> s_gen_end_of_frame(i),
+				o_busy			=> s_gen_busy(i)
 			);
+
+		--multiplex between physical and generated data sent to the elastic buffers
+		s_frame_number(i)	<= s_gen_frame_number(i)	when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_frame_number(i);
+		s_frame_info(i)		<= s_gen_frame_info(i)		when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_frame_info(i);
+		s_frame_info_rdy(i) 	<= s_gen_frame_info_rdy(i)	when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_frame_info_rdy(i);
+		s_new_frame(i)	 	<= s_gen_new_frame(i)		when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_new_frame(i);
+		s_event_data(i)	 	<= s_gen_event_data(i)		when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_event_data(i);
+		s_event_ready(i)	<= s_gen_event_ready(i)		when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_event_ready(i);
+		s_end_of_frame(i)	<= s_gen_end_of_frame(i)	when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_end_of_frame(i);
 	end generate;
+
+	gen_dummy_not : if not GEN_DUMMIES generate begin
+		s_frame_number(i)	<= s_rec_frame_number(i);
+		s_frame_info(i)		<= s_rec_frame_info(i);
+		s_frame_info_rdy(i) 	<= s_rec_frame_info_rdy(i);
+		s_new_frame(i)	 	<= s_rec_new_frame(i);
+		s_event_data(i)	 	<= s_rec_event_data(i);
+		s_event_ready(i)	<= s_rec_event_ready(i);
+		s_end_of_frame(i)	<= s_rec_end_of_frame(i);
+	end generate;
+
 end generate;
 
---multiplex between physical and generated data sent to the elastic buffers
-gen_dummy: if GEN_DUMMIES generate begin
-	s_frame_number		<= s_gen_frame_number	when i_SC_datagen_enable='1' else s_rec_frame_number;
-	s_frame_info		<= s_gen_frame_info		when i_SC_datagen_enable='1' else s_rec_frame_info;
-	s_frame_info_rdy 	<= s_gen_frame_info_rdy	when i_SC_datagen_enable='1' else s_rec_frame_info_rdy;
-	s_new_frame	 	<= s_gen_new_frame		when i_SC_datagen_enable='1' else s_rec_new_frame;
-	s_event_data	 	<= s_gen_event_data		when i_SC_datagen_enable='1' else s_rec_event_data;
-	s_event_ready	 	<= s_gen_event_ready		when i_SC_datagen_enable='1' else s_rec_event_ready;
-	s_end_of_frame	 	<= s_gen_end_of_frame	when i_SC_datagen_enable='1' else s_rec_end_of_frame;
-end generate;
-gen_dummy_not : if not GEN_DUMMIES generate begin
-	s_frame_number		<= s_rec_frame_number;
-	s_frame_info		<= s_rec_frame_info;
-	s_frame_info_rdy 	<= s_rec_frame_info_rdy;
-	s_new_frame	 	<= s_rec_new_frame;
-	s_event_data	 	<= s_rec_event_data;
-	s_event_ready	 	<= s_rec_event_ready;
-	s_end_of_frame	 	<= s_rec_end_of_frame;
-end generate;
+g_buffer: for i in 0 to N_ASICS-1 generate begin
 
-
-rcv_fifo: for i in 0 to N_ASICS-1 generate begin
 u_elastic_buffer : mutrig_store
 port map(
 	i_clk_deser      => s_receivers_usrclk,
