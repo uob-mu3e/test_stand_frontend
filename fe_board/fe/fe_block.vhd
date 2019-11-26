@@ -476,7 +476,7 @@ begin
 
     e_mscb : entity work.mscb
     generic map (
-        CLK_HZ_g => NIOS_CLK_HZ_g--,
+        CLK_MHZ_g => real(NIOS_CLK_HZ_g) / 1000000.0--,
     )
     port map (
         mscb_to_nios_parallel_in    => mscb_to_nios_parallel_in,
@@ -489,8 +489,8 @@ begin
         o_mscb_irq                  => nios_irq(1),
         i_mscb_address              => X"ACA0",
 
-        reset                       => not nios_reset_n,
-        nios_clk                    => i_nios_clk--,
+        i_reset_n                   => nios_reset_n,
+        i_clk                       => i_nios_clk--,
     );
 
 

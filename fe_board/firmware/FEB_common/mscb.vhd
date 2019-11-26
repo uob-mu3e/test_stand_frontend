@@ -4,13 +4,12 @@ use ieee.numeric_std.all;
 
 use work.daq_constants.all;
 
-ENTITY mscb is
+entity mscb is
 generic (
-    CLK_HZ_g : positive := 125000000--;
+    BAUD_RATE_g : positive := 115200;
+    CLK_MHZ_g : real--;
 );
 port (
-    nios_clk                    : in    std_logic;
-    reset                       : in    std_logic;
     mscb_to_nios_parallel_in    : out   std_logic_vector(11 downto 0);
     mscb_from_nios_parallel_out : in    std_logic_vector(11 downto 0);
     mscb_data_in                : in    std_logic;
@@ -18,16 +17,14 @@ port (
     mscb_oe                     : out   std_logic;
     mscb_counter_in             : out   unsigned(15 downto 0);
     o_mscb_irq                  : out   std_logic;
-    i_mscb_address              : in    std_logic_vector(15 downto 0)--;
+    i_mscb_address              : in    std_logic_vector(15 downto 0);
+
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
-END ENTITY;
+end entity;
 
 architecture rtl of mscb is
-
------------------- Signal declaration ------------------------
-
-    -- external connections
-    signal clk :                        std_logic;
 
     -- mscb data flow
     signal uart_generated_data :        std_logic;
@@ -72,14 +69,10 @@ architecture rtl of mscb is
 
 begin
 
---------- external input connections -----------
-
-  clk <= nios_clk;
-
 ------------- external input/output connections -----------------
 
   --i/o switches
-    process(Transmitting, reset, Clk)
+    process(Transmitting, i_reset_n, i_clk)
     begin
     if (Transmitting = '1') then
         mscb_data_out   <= uart_serial_out;
@@ -116,8 +109,8 @@ begin
     port map(
         CounterOut(15 downto 0)  => mscb_counter_in,
         Enable                   => '1',
-        Reset                    => reset,
-        Clk                      => clk,
+        Reset                    => not i_reset_n,
+        Clk                      => i_clk,
         CountDown                => '0',
         Init                     => to_unsigned(0,32)
     );
@@ -125,11 +118,11 @@ begin
   -- wire up uart reciever for mscb
     e_uart_rx : entity work.uart_reciever
     generic map (
-        Clk_Ratio   => CLK_HZ_g / 115200--,
+        Clk_Ratio   => positive(1000000.0 * CLK_MHZ_g / real(BAUD_RATE_g))--,
     )
     port map (
-        Clk         => clk,
-        Reset       => reset,
+        Clk         => i_clk,
+        Reset       => not i_reset_n,
         DataIn      => uart_serial_in,
         ReadEnable  => uart_read_enable,
         DataOut     => uart_parallel_out
@@ -143,17 +136,14 @@ begin
         SHOWAHEAD   => "OFF"--,
     )
     port map (
-        sclr            => reset,
-        clock           => clk,
+        sclr            => not i_reset_n,
+        clock           => i_clk,
         data            => addressing_data_out,
         rdreq           => in_fifo_read_request,
         wrreq           => addressing_wrreq,
         empty           => in_fifo_empty,
         full            => in_fifo_full,
-        q               => in_fifo_data_out,
-        usedw           => open,
-        almost_full     => open,
-        almost_empty    => open--,
+        q               => in_fifo_data_out
     );
 
     -- fifo receiver to addressing
@@ -164,27 +154,24 @@ begin
         SHOWAHEAD   => "ON"--,
     )
     port map (
-        sclr            => reset,
-        clock           => clk,
+        sclr            => not i_reset_n,
+        clock           => i_clk,
         data            => uart_parallel_out,
         rdreq           => addressing_rdreq,
         wrreq           => in_fifo_write_request,
         empty           => rec_fifo_empty,
         full            => open,
-        q               => addressing_data_in,
-        usedw           => open,
-        almost_full     => open,
-        almost_empty    => open--,
+        q               => addressing_data_in
     );
 
     -- wire up uart transmitter for mscb
     e_uart_tx : entity work.uart_transmitter
     generic map (
-        Clk_Ratio   => CLK_HZ_g / 115200--,
+        Clk_Ratio   => positive(1000000.0 * CLK_MHZ_g / real(BAUD_RATE_g))--,
     )
     port map (
-        Clk             => clk,
-        Reset           => reset,
+        Clk             => i_clk,
+        Reset           => not i_reset_n,
         DataIn          => out_fifo_data_out,
         DataReady       => DataReady,
         ReadRequest     => out_fifo_read_request,
@@ -200,24 +187,21 @@ begin
         SHOWAHEAD   => "OFF"--,
     )
     port map (
-        sclr            => reset,
-        clock           => clk,
+        sclr            => not i_reset_n,
+        clock           => i_clk,
         data            => mscb_nios_out,
         rdreq           => out_fifo_read_request,
         wrreq           => out_fifo_write_request,
         empty           => out_fifo_empty,
         full            => out_fifo_full,
-        q               => out_fifo_data_out,
-        usedw           => open,
-        almost_full     => open,
-        almost_empty    => open--,
+        q               => out_fifo_data_out
     );
 
 
     -- make the fifo read request from the nios one clocktick long
     e_uEdgeFIFORead : entity work.edge_detector
     port map (
-        clk         => clk,
+        clk         => i_clk,
         signal_in   => mscb_from_nios_parallel_out(10),
         output      => in_fifo_read_request
     );
@@ -225,7 +209,7 @@ begin
     -- make the fifo write request from the nios one clocktick long
     e_uEdgeFIFOWrite : entity work.edge_detector
     port map (
-        clk             => clk,
+        clk             => i_clk,
         signal_in       => mscb_from_nios_parallel_out(9),
         output          => out_fifo_write_request
     );
@@ -233,8 +217,8 @@ begin
 
     e_mscb_addressing : entity work.mscb_addressing
     port map (
-        i_clk           => clk,
-        i_reset         => reset,
+        i_clk           => i_clk,
+        i_reset         => not i_reset_n,
         i_data          => addressing_data_in,
         i_empty         => rec_fifo_empty,
         i_address       => i_mscb_address,
@@ -244,13 +228,13 @@ begin
     );
 
 
-    process(Clk, reset)
+    process(i_clk, i_reset_n)
     begin
-        if reset = '1' then
+        if i_reset_n = '0' then
             DataGeneratorEnable         <= '0';
             --uart_serial_in            <='1';
             --hsma_d(0)                 <='Z';
-        elsif rising_edge(clk) then
+        elsif rising_edge(i_clk) then
             DataGeneratorEnable         <= '1';
             in_fifo_write_request       <= uart_read_enable;
             uart_serial_in              <= signal_in;
