@@ -4,7 +4,6 @@ use ieee.std_logic_1164.all;
 package protocol is
 
     type data_merger_state is (idle, sending_data, sending_slowcontrol);
-    --type feb_state is (idle, run_prep, sync, running, terminating, link_test, sync_test, reset_state, out_of_DAQ);
 
     constant HEADER_K:    std_logic_vector(31 downto 0) := x"000000bc";
     constant HEADER_K_DATAK:    std_logic_vector(3 downto 0) := "0001";

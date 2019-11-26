@@ -14,67 +14,64 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.lvds_components.all;
-use work.transceiver_components.all;
-use work.mupix_types.all;
 use work.mupix_constants.all;
+use work.daq_constants.all;
 
 
 entity receiver_block_mupix is 
 	generic(
-		NINPUT: integer := 32;
-		NCHIPS: integer := 8;
+		NLVDS: integer := 32;
 		NINPUTS_BANK_A: integer := 16;
 		NINPUTS_BANK_B: integer := 16--;
 	);
 	port (
 		reset_n				: in std_logic;
-		checker_rst_n		: in std_logic;--_vector(NINPUT-1 downto 0);
-		rx_in					: IN STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
+		checker_rst_n		: in std_logic;--_vector(NLVDS-1 downto 0);
+		rx_in					: IN STD_LOGIC_VECTOR (NLVDS-1 DOWNTO 0);
 		rx_inclock_A		: IN STD_LOGIC ;
 		rx_inclock_B		: IN STD_LOGIC ;
-		rx_state				: out std_logic_vector(NINPUT*2-1 downto 0);
-		rx_ready				: out std_logic_vector(NINPUT-1 downto 0);		-- sync with rx_inclock_A
-		rx_data				: out inbyte_array;										-- sync with rx_inclock_A
-		rx_k					: out std_logic_vector(NINPUT-1 downto 0);		-- sync with rx_inclock_A
+		rx_state				: out std_logic_vector(NLVDS*2-1 downto 0);
+		rx_ready				: out std_logic_vector(NLVDS-1 downto 0);		-- sync with rx_inclock_A
+		rx_data				: out bytearray_t(NLVDS-1 downto 0);				-- sync with rx_inclock_A
+		rx_k					: out std_logic_vector(NLVDS-1 downto 0);		-- sync with rx_inclock_A
 
 		pll_locked			: out std_logic_vector(1 downto 0);
 		
 		nios_clock			: in std_logic;
-		rx_runcounter:			out links_reg32;
-		rx_errorcounter:		out links_reg32	
+		rx_runcounter:		out reg32array_t(NLVDS-1 downto 0);
+		rx_errorcounter:	out reg32array_t(NLVDS-1 downto 0)
 		);
 end receiver_block_mupix;		
 		
 architecture rtl of receiver_block_mupix is
 
-	signal rx_out : 			std_logic_vector(NINPUT*10-1 downto 0);
-	signal rx_out_order :	std_logic_vector(NINPUT*10-1 downto 0);
-	signal rx_out_order_to_sync :	std_logic_vector(NINPUT*8-1 downto 0);
-	signal rx_k_to_sync :	std_logic_vector(NINPUT*1 downto 0);
-	signal rx_to_sync :	std_logic_vector(NINPUT*10-1 downto 0);
-	signal rx_sync :	std_logic_vector(NINPUT*10-1 downto 0);
+	signal rx_out : 			std_logic_vector(NLVDS*10-1 downto 0);
+	signal rx_out_order :	std_logic_vector(NLVDS*10-1 downto 0);
+	signal rx_out_order_to_sync :	std_logic_vector(NLVDS*8-1 downto 0);
+	signal rx_k_to_sync :	std_logic_vector(NLVDS*1 downto 0);
+	signal rx_to_sync :	std_logic_vector(NLVDS*10-1 downto 0);
+	signal rx_sync :	std_logic_vector(NLVDS*10-1 downto 0);
 	signal rx_clk :			std_logic_vector(1 downto 0);
 
-	signal rx_dpa_locked		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
-	signal rx_align			: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
-	signal rx_fifo_reset		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
-	signal rx_reset			: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
+	signal rx_dpa_locked		: STD_LOGIC_VECTOR (NLVDS-1 DOWNTO 0);
+	signal rx_align			: STD_LOGIC_VECTOR (NLVDS-1 DOWNTO 0);
+	signal rx_fifo_reset		: STD_LOGIC_VECTOR (NLVDS-1 DOWNTO 0);
+	signal rx_reset			: STD_LOGIC_VECTOR (NLVDS-1 DOWNTO 0);
 	
 	signal rx_locked			: STD_LOGIC_VECTOR(1 downto 0);
 	
 	signal 	rx_inclock_A_pll:		std_logic;
 	signal 	rx_enable_A:			std_logic;
-	signal   rx_synclock_A:			std_logic;	
+	signal   rx_synclock_A:			std_logic;
 	
 	signal 	rx_inclock_B_pll:		std_logic;
 	signal 	rx_enable_B:			std_logic;
-	signal   rx_synclock_B:			std_logic;				
+	signal   rx_synclock_B:			std_logic;
 	
-	signal rx_ready_reg		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);	
-	signal rx_disperr			: std_logic_vector(NINPUT-1 downto 0);
+	signal rx_ready_reg		: STD_LOGIC_VECTOR (NLVDS-1 DOWNTO 0);	
+	signal rx_disperr			: std_logic_vector(NLVDS-1 downto 0);
 	
-	signal rx_valid : std_logic_vector(NINPUT-1 downto 0);
+	signal rx_valid : std_logic_vector(NLVDS-1 downto 0);
 	
 
 begin
@@ -136,7 +133,7 @@ lvds_rec : work.lvds_receiver_small
 		
 
 gendec:
-FOR i in NINPUT-1 downto 0 generate	
+FOR i in NLVDS-1 downto 0 generate	
 
 	process(rx_clk(i/NINPUTS_BANK_A), reset_n)
 	begin
@@ -152,8 +149,8 @@ FOR i in NINPUT-1 downto 0 generate
 			rx_out_order(i*10+4) <= rx_out(i*10+5);
 			rx_out_order(i*10+3) <= rx_out(i*10+6);
 			rx_out_order(i*10+2) <= rx_out(i*10+7);
-			rx_out_order(i*10+1) <= rx_out(i*10+8);			
-			rx_out_order(i*10+0) <= rx_out(i*10+9);			
+			rx_out_order(i*10+1) <= rx_out(i*10+8);
+			rx_out_order(i*10+0) <= rx_out(i*10+9);
 		end if;
 	end process;
 
@@ -212,7 +209,7 @@ FOR i in NINPUT-1 downto 0 generate
 	end process output_clocking;
 
 
-	errcounter : work.rx_errcounter 
+	errcounter : work.rx_errcounter
 	port map(
 		reset_n					=> checker_rst_n,
 		clk						=> rx_clk(i/NINPUTS_BANK_A),

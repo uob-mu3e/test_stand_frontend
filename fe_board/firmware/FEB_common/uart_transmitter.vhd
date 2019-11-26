@@ -84,7 +84,7 @@ begin
                 DataOut <= '0';
             end if;
 
-        -- generates a start bit, and lowers the read request	
+        -- generates a start bit, and lowers the read request
         when S_StartBit =>
             Transmitting <= '1';
             DataOut <= '0';

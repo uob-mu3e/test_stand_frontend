@@ -263,10 +263,10 @@ o_receivers_usrclk <= s_receivers_usrclk;
 gen_ready_all: process (s_receivers_usrclk,i_rst,s_receivers_ready, i_SC_mask)
 variable v_ready : std_logic_vector(N_ASICS-1 downto 0);
 begin
-	v_ready:=s_receivers_ready or i_SC_mask;
 	if(i_rst='1') then
 		s_receivers_all_ready<='0';
 	elsif( rising_edge(s_receivers_usrclk)) then
+		v_ready := s_receivers_ready or i_SC_mask;
 		if(v_ready = ((v_ready'range)=>'1')) then
 			s_receivers_all_ready<='1';
 		end if;

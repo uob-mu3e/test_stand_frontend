@@ -15,8 +15,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.lvds_components.all;
-use work.detectorfpga_constants.all;
+use work.daq_constants.all;
 
 
 
@@ -216,6 +215,10 @@ elsif(clk'event and clk = '1') then
 end if;
 
 end process;
+
+
+-- TBD: change disparity checker to simple addition of all bits in a line
+-- and use information to reject bad data, so add a pipeline for the data
 
 d_checker : work.disparity_checker
 	port map(

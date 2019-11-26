@@ -8,13 +8,27 @@ set_global_assignment -name PROJECT_IP_REGENERATION_POLICY SKIP_REGENERATING_IP_
 
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 
+set_global_assignment -name QIP_FILE ../fe/top.qip
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "../fe/assignments/FE_scifi.tcl"
 
 set_global_assignment -name TOP_LEVEL_ENTITY top
+set_global_assignment -name VHDL_FILE top.vhd
+set_global_assignment -name SDC_FILE top.sdc
 
 
 
+set_global_assignment -name VHDL_FILE scifi_path.vhd
 
+set_global_assignment -name VHDL_FILE cmp_pkg.vhd
+set_global_assignment -name QSYS_FILE nios.qsys
 
+set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/FEB_mupix.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
+
+set_global_assignment -name QIP_FILE resetalign/realign_block.qip
+set_global_assignment -name VHDL_FILE resetalign/source/pll_ip.vhd
+set_global_assignment -name VHDL_FILE resetalign/source/clockalign_block.vhd
 
 
 
@@ -23,20 +37,4 @@ set_global_assignment -name TOP_LEVEL_ENTITY top
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-
-set_global_assignment -name QIP_FILE ../fe/top.qip
-set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../fe/assignments/FE_scifi.tcl
-set_global_assignment -name VHDL_FILE top.vhd
-set_global_assignment -name SDC_FILE top.sdc
-set_global_assignment -name VHDL_FILE ../fe/fe_block.vhd
-set_global_assignment -name QIP_FILE resetalign/realign_block.qip
-set_global_assignment -name VHDL_FILE resetalign/source/pll_ip.vhd
-set_global_assignment -name VHDL_FILE resetalign/source/clockalign_block.vhd
-set_global_assignment -name VHDL_FILE scifi_path.vhd
-set_global_assignment -name VHDL_FILE cmp_pkg.vhd
-set_global_assignment -name QSYS_FILE nios.qsys
-set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
-set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/FEB_mupix.qip
-set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
-set_global_assignment -name DEVICE AUTO
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

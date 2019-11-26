@@ -1,8 +1,9 @@
 #
 
-set_global_assignment -name LAST_QUARTUS_VERSION "18.0.0 Standard Edition"
+set_global_assignment -name LAST_QUARTUS_VERSION "18.1.0 Standard Edition"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 set_global_assignment -name PROJECT_IP_REGENERATION_POLICY SKIP_REGENERATING_IP_IF_HDL_MODIFIED
+
 
 
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
@@ -14,8 +15,6 @@ set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 
 
-
-set_global_assignment -name VHDL_FILE ../fe/fe_block.vhd
 
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
@@ -29,15 +28,6 @@ set_global_assignment -name QIP_FILE mupix_block/include.qip
 set_global_assignment -name VHDL_FILE dac_fifo.vhd
 set_global_assignment -name VHDL_FILE mupix_block.vhd
 set_global_assignment -name VHDL_FILE two_clk_sync_fifo.vhd
-
-
-
-set_global_assignment -name ENABLE_DRC_SETTINGS ON
-set_global_assignment -name FLOW_DISABLE_ASSEMBLER OFF
-set_global_assignment -name FLOW_ENABLE_IO_ASSIGNMENT_ANALYSIS ON
-set_global_assignment -name FLOW_ENABLE_RTL_VIEWER ON
-set_global_assignment -name SMART_RECOMPILE ON
-set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
 
 
 

@@ -1,4 +1,4 @@
--- mscb addressing 
+-- mscb addressing
 -- Martin Mueller August 2019
 
 library ieee;
@@ -24,7 +24,7 @@ architecture rtl of mscb_addressing is
 
     type mscb_rd_state is (idle,rd,proc);
     type process_state is (idle, addressing1, addressing2, addressed, not_addressed);
-    
+
     signal state :           mscb_rd_state;
     signal proc_state :      process_state;
     signal data :            std_logic_vector(8 downto 0);
@@ -48,7 +48,7 @@ begin
             cmd_buffer      <= (others => '1');
         elsif rising_edge(i_clk) then
             timeout         <= std_logic_vector( unsigned(timeout) + 1 );
-            
+
             case state is
                 when idle =>
                     o_wrreq             <= '0';
@@ -58,7 +58,7 @@ begin
                         send_buffer     <= (others => '0');
                         cmd_buffer      <= (others => '1');
                     end if;
-                    
+
                     if(i_empty = '0') then
                         o_rdreq     <= '1';
                         state       <= rd;
@@ -66,18 +66,18 @@ begin
                     else
                         o_rdreq     <= '0';
                     end if;
-                    
+
                 when rd =>
                     o_rdreq     <= '0';
                     o_wrreq     <= '0';
                     state       <= proc;
-                    
+
                 when proc =>
                     -- for tests:
                     -- state       <= idle;
                     -- o_wrreq     <= '1';
                     -- o_data      <= data;
-                    
+
                     case proc_state is
                         when idle =>
                             if((data(7 downto 0) = MSCB_CMD_ADDR_NODE16) or (data(7 downto 0) = MSCB_CMD_PING16)) then
@@ -92,7 +92,7 @@ begin
                                 timeout                     <= (others => '0');
                             end if;
                             state                           <= idle;
-                            
+
                         when addressing1 =>
                             if(data(7 downto 0) = i_address(15 downto 8)) then
                                 proc_state                  <= addressing2;
@@ -101,7 +101,7 @@ begin
                                 proc_state                  <= not_addressed;
                             end if;
                             state                           <= idle;
-                            
+
                         when addressing2 =>
                             if(data(7 downto 0) = i_address(7 downto 0)) then
                                 proc_state                  <= addressed;
@@ -112,7 +112,7 @@ begin
                             -- the next one is a CRC, we let the software do that  => wait for CRC and send to nios
                             state                           <= idle;
                             send_buffer                     <= "000";
-                            
+
                         when addressed =>
                             if(send_buffer = "000") then
                                 o_data                      <= cmd_buffer(8 downto 0);-- send MSCB_CMD_ADDR_NODE16
@@ -140,10 +140,10 @@ begin
                                 o_wrreq                     <= '1';
                                 o_data                      <= data;
                                 state                       <= idle;
-                                
+
                                 -- stay here for some time and forward everthing to nios for now
                                 -- TODO: read length from command and adjust timeout
-                                
+
                                 if(timeout = "11111111111111111") then
                                     proc_state      <= idle;
                                     state           <= idle;
@@ -151,29 +151,29 @@ begin
                                     timeout         <= (others => '0');
                                 end if;
                             end if;
-                            
+
                         when not_addressed =>
                             proc_state      <= idle;
                             -- TODO: do something intellegent here --MM
                             -- data (write mem etc.) might contain a sequence like MSCB_CMD_ADDR_NODE16, NodeAddress1, NodeAddress2, CORRECT CRC, VALID COMMAND, VALID PAYLOAD by chance
                             -- should i just sit here for a while to avoid this ? how long ?
                             -- if i dont't interpret the commad i don't know the length => cannot ignore the correct length here ...
-                            
-                            -- => have to read at least the length of command here 
+
+                            -- => have to read at least the length of command here
                             -- https://elog.psi.ch/mscb/protocol/index.html
                             -- xxxxx 000    [CRC]           command only
                             -- xxxxx 001    [byte1] [CRC]   Single byte parameter
                             -- ..
                         when others =>
                             proc_state      <= idle;
-                            
+
                     end case;
-                    
+
                 when others =>
                     state       <= idle;
-                    
+
             end case;
-            
+
         end if;
     end process;
 end architecture;

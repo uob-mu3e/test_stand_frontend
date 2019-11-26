@@ -37,7 +37,7 @@ architecture rtl of data_demerge is
 ----------------signals---------------------
     type   data_demerge_state is (idle,receiving_data, receiving_slowcontrol);
     signal demerge_state : 		data_demerge_state;
-	 signal slowcontrol_type:		std_logic_vector(1 downto 0);
+	signal slowcontrol_type:		std_logic_vector(1 downto 0);
     
 ----------------begin data_demerge------------------------
 BEGIN

@@ -5,8 +5,9 @@ SOF=output_files/top.sof
 BSP_DIR=software/hal_bsp
 APP_DIR=software/app
 
-include util/makefile.mk
+IPs = \
+    $(patsubst %.tcl,%.sopcinfo,$(wildcard ip/*.tcl)) \
+    a10/ip_xcvr_phy.sopcinfo a10/ip_xcvr_fpll.sopcinfo a10/ip_xcvr_reset.sopcinfo \
+    nios.sopcinfo
 
-flow : nios.sopcinfo
-flow : a10/ip_clkctrl.sopcinfo a10/ip_iopll_125.sopcinfo
-flow : a10/ip_xcvr_phy.sopcinfo a10/ip_xcvr_fpll.sopcinfo a10/ip_xcvr_reset.sopcinfo
+include util/makefile.mk

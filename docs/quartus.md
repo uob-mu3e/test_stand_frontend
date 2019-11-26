@@ -44,10 +44,7 @@ NOTE: in most cases `make flow` will also compile ip components (`qsys` and `sop
 
 ```console
 cd "$project_dir"
-make nios.sopcinfo
-make ip/ip_xcvr_fpll.sopcinfo
-make ip/ip_xcvr_reset.sopcinfo
-make ip/ip_xcvr_phy.sopcinfo
+make
 make flow
 make pgm
 make app_upload

@@ -96,6 +96,7 @@ package mudaq_registers is
 		constant DMA_NOTHALFFUL_REGISTER_R					: integer := 16#15#;
 		constant DMA_ENDEVENT_REGISTER_R						: integer := 16#16#;
 		constant DMA_NOTENDEVENT_REGISTER_R					: integer := 16#17#;
+        constant FEBSTATUS_REGISTER_R                       : integer := 16#18#;
 
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;
