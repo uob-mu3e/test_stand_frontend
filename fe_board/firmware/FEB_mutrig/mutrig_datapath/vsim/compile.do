@@ -4,8 +4,9 @@ vcom -2008 ../../../../fe/s4/ip_altlvds_rx.vhd
 vcom -2008 ../../lvds/add_3_bits.vhd
 vcom -2008 ../../lvds/add_2_bits.vhd
 vcom -2008 ../../lvds/add_1_bit.vhd
-vcom -2008 ../../lvds/8b10_dec.vhd
-vcom -2008 ../../lvds/decode8b10b.vhd
+vcom -2008 ../../../../fe/util/8b10b/8b10_dec.vhd
+vcom -2008 ../../../../fe/util/8b10b/decode8b10b.vhd
+
 vcom -2008 ../../lvds/datadecoder.vhd
 vcom -2008 ../../lvds/disparity_checker.vhd
 vcom -2008 ../../lvds/rx_errcounter.vhd
