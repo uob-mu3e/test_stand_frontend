@@ -69,7 +69,7 @@ architecture impl of framebuilder_mux is
 	function RR_Select(requests: std_logic_vector ; token:std_logic_vector) return std_logic_vector is
 	begin
 		--build request vector for previous state, equivalent to Priority_res(token)
-		return Priority_Select(requests and not token);
+		return Priority_Select(requests and (not token) );
 	end function;
 
 --intput-data based combinatorics
@@ -86,6 +86,7 @@ architecture impl of framebuilder_mux is
 --input data reading
 	signal s_is_valid, n_is_valid	: std_logic_vector(N_INPUTS-1 downto 0); --data at source input is valid
 	signal l_request		: std_logic_vector(N_INPUTS-1 downto 0); --data at source input is valid and hit data
+	signal l_request_next		: std_logic_vector(N_INPUTS-1 downto 0); --data at source input is valid and hit data and not current request
 	signal s_read			: std_logic_vector(N_INPUTS-1 downto 0);
 --selection and state machine
 	--one-hot grant
@@ -146,10 +147,6 @@ begin
 			end if;
 		end if;
 	end loop;
-	--deadlock fix: pretend we have a header from all when we see it from 0
-	if(i_SC_nomerge='1' and i_source_data(0)(51 downto 50)="10") then
-		l_all_header <='1';
-	end if;
 
 	--common data: find a candidate for common frame delimiter data (frameID)
 	--TODO: separate selection (may be slow based on flag, even false_path) and multiplexing (synchronous)
@@ -168,6 +165,7 @@ begin
 	end loop;
 
 end process;
+l_request_next <= l_request and not s_sel_gnt;
 
 --source data consistency_check (frame ID)
 consistency_check : process (i_source_data, l_common_data)
@@ -217,7 +215,7 @@ end process;
 
 
 ------------------------------------------------------------------
-p_fsm_async: process(s_state,l_all_header,l_all_trailer,l_request,s_sel_data, s_sel_gnt, i_SC_nomerge, i_source_data)
+p_fsm_async: process(s_state,l_all_header,l_all_trailer,l_request, l_request_next, s_sel_data, s_sel_gnt, i_source_data)
 begin
 	n_state <= s_state;
 	n_sel_gnt <= s_sel_gnt;
@@ -230,14 +228,12 @@ begin
 			--wait for request -- TODO: move next selection to common part to speed up process
 
 			--deadlock fix: check only first asic for header or trailer, then write it.
-			if   (i_SC_nomerge='1' and i_source_data(0)(51 downto 50)="10") then -- data is header from chip0, and we do not merge frames
-				n_state <= fs_headerH;
-			elsif(l_all_header='1') then
+			if(l_all_header='1') then
 				n_state <= fs_headerH;
 			elsif(l_all_trailer='1') then
 				n_state <= fs_trailer;
-			elsif(unsigned(l_request) /= 0) then
-				n_sel_gnt <= Priority_Select(l_request);
+			elsif(unsigned(l_request_next) /= 0) then
+				n_sel_gnt <= Priority_Select(l_request_next);--,s_sel_gnt);
 				n_state <= fs_hitH;
 			end if;
 		when fs_headerH =>
@@ -247,32 +243,35 @@ begin
 		when fs_headerL =>
 			s_read <= (others =>'1');
 			s_sink_wr <= '1';
-			n_state <= fs_idle; -- TODO: select next already here
+			n_state <= fs_idle;
 		when fs_trailer =>
 			s_read <= (others =>'1');
 			s_sink_wr <= '1';
 			n_state <= fs_idle; -- TODO: select next already here
 		when fs_hitH =>
-			--TODO: deadlock fix: check if header or trailer here and only acknowledge, no write.
-			if(i_SC_nomerge='1' and s_sel_data(51 downto 50)="10") then -- data is header and we do not merge frames, drop
-				s_read <= s_sel_gnt; 
-				n_state <= fs_idle; -- TODO: select next already here
-			elsif(i_SC_nomerge='1' and s_sel_data(51 downto 50)="11") then -- data is trailer and we do not merge frames, drop
-				s_read <= s_sel_gnt; 
-				n_state <= fs_idle; -- TODO: select next already here
-			elsif(s_sel_data(48)='0') then --long event, continue with writing E-part
+			if(s_sel_data(48)='0') then --long event, continue with writing E-part
 				s_sink_wr <= '1';
 				n_state <= fs_hitL;
 				n_Tpart <= '1';
 			else
 				s_sink_wr <= '1';
 				s_read <= s_sel_gnt; 
-				n_state <= fs_idle; -- TODO: select next already here
+				n_state <= fs_idle;
+				if(unsigned(l_request_next) /= 0) then
+					--n_sel_gnt <= RR_Select(l_request,s_sel_gnt);
+					n_sel_gnt <= Priority_Select(l_request_next);
+					n_state <= fs_hitH;
+				end if;
 			end if;
 		when fs_hitL =>
 			s_sink_wr <= '1';
 			s_read <= s_sel_gnt; 
-			n_state <= fs_idle; -- TODO: select next already here
+			n_state <= fs_idle;
+			if(unsigned(l_request_next) /= 0) then
+				--n_sel_gnt <= RR_Select(l_request,s_sel_gnt);
+				n_sel_gnt <= Priority_Select(l_request_next);
+				n_state <= fs_hitH;
+			end if;
 	end case;
 end process;
 
