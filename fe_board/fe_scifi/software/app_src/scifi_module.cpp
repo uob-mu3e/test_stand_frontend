@@ -73,12 +73,15 @@ void scifi_module_t::menu(){
         printf("  [2 || o] => configure all off\n");
         printf("  [t] => configure pll test\n");
         printf("  [p] => configure prbs single hit\n");
-        printf("  [3] => data\n");
-        printf("  [4] => get datapath status\n");
+	printf("\n");
+	printf("  [3] => counters\n");
+	printf("  [4] => get datapath status\n");
         printf("  [5] => get slow control registers\n");
+	printf("\n");
 	printf("  [6] => dummy generator settings\n");
 	printf("  [7] => datapath settings\n");
 	printf("  [8] => reset skew settings\n");
+	printf("\n");
 	printf("  [d] => show offsets\n");
         printf("  [q] => exit\n");
 
@@ -112,7 +115,7 @@ void scifi_module_t::menu(){
 		configure_asic(i,config_PRBS_single);
             break;
         case '3':
-            printf("TODO...\n");
+            menu_counters();
             break;
         case '4':
             printf("Datapath status registers: press 'q' to end\n");
@@ -343,7 +346,40 @@ void scifi_module_t::menu_reg_resetskew(){
     }
 }
 
+void scifi_module_t::menu_counters(){
+    auto& regs = sc->ram->regs.scifi;
+    char cmd;
+    printf("Counters: press 'q' to end / 'r' to reset\n");
+    while(1){
+	for(char selected=0;selected<3; selected++){
+		regs.counters.ctrl = selected<<3;
+		switch(selected){
+			case 0: printf("Events/Time  [8ns] "); break;
+			case 1: printf("Errors/Frame       "); break;
+			case 2: printf("PRBS: Errors/Word  "); break;
+		}
+		for(int i=0;i<4;i++){
+			regs.counters.ctrl = (regs.counters.ctrl & 0x18) + i;
+			float frag=regs.counters.nom*1.e6/regs.counters.denom;
+			printf("| %10u / %18lu |", regs.counters.nom, regs.counters.denom);
+		}
+		printf("\n");
+	}
+	printf("\n");
 
+	if (read(uart,&cmd, 1) > 0){
+	   printf("--\n");
+	   if(cmd=='q') return;
+	   if(cmd=='r'){
+		regs.counters.ctrl = regs.counters.ctrl | 1<<15;
+	   	printf("-- reset\n");
+		regs.counters.ctrl = regs.counters.ctrl ^ 1<<15;
+	   };
+	 }
+        usleep(200000);
+    };
+
+}
 
 alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 //    auto& regs = ram->regs.scifi;

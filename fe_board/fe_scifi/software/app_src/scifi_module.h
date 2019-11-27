@@ -52,6 +52,7 @@ struct scifi_module_t {
 
 
     void menu();
+    void menu_counters();
     void menu_reg_dummyctrl();
     void menu_reg_datapathctrl();
     void menu_reg_resetskew();

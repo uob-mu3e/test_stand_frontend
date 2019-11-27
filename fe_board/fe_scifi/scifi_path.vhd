@@ -56,6 +56,12 @@ architecture arch of scifi_path is
     signal frame_desync : std_logic;
     signal buffer_full : std_logic;
 
+    -- counters
+    signal s_cntreg_ctrl : std_logic_vector(31 downto 0);
+    signal s_cntreg_nom : std_logic_vector(31 downto 0);
+    signal s_cntreg_denom_low : std_logic_vector(31 downto 0);
+    signal s_cntreg_denom_high : std_logic_vector(31 downto 0);
+
     -- registers controlled from midas
     signal s_dummyctrl_reg : std_logic_vector(31 downto 0);
     signal s_dpctrl_reg : std_logic_vector(31 downto 0);
@@ -91,14 +97,21 @@ begin
         o_reg_rdata <= X"CCCCCCCC";
         s_subdet_resetdly_reg_written <= '0';
 
-        -- data
+        -- counters
         if ( i_reg_re = '1' and i_reg_addr = X"0" ) then
-            o_reg_rdata <= fifo_rdata(31 downto 0);
+            o_reg_rdata <= s_cntreg_ctrl;
+        end if;
+        if ( i_reg_we = '1' and i_reg_addr = X"0" ) then
+            s_cntreg_ctrl <= i_reg_wdata;
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"1" ) then
-            o_reg_rdata <= (others => '0');
-            o_reg_rdata(3 downto 0) <= fifo_rdata(35 downto 32);
-            o_reg_rdata(16) <= fifo_rempty;
+            o_reg_rdata <= s_cntreg_nom;
+        end if;
+        if ( i_reg_re = '1' and i_reg_addr = X"2" ) then
+            o_reg_rdata <= s_cntreg_denom_low;
+        end if;
+        if ( i_reg_re = '1' and i_reg_addr = X"3" ) then
+            o_reg_rdata <= s_cntreg_denom_high;
         end if;
 
         -- monitors
@@ -206,7 +219,13 @@ begin
         o_receivers_dpa_lock=> rx_dpa_lock,
         o_receivers_ready => rx_ready,
         o_frame_desync => frame_desync,
-        o_buffer_full => buffer_full--,
+        o_buffer_full => buffer_full,
+
+	i_SC_reset_counters => s_cntreg_ctrl(15),
+	i_SC_counterselect => s_cntreg_ctrl(4 downto 0),
+	o_counter_nominator => s_cntreg_nom,
+	o_counter_denominator_low => s_cntreg_denom_low,
+	o_counter_denominator_high =>s_cntreg_denom_high
     );
     o_MON_rxrdy <= rx_ready;
 end architecture;

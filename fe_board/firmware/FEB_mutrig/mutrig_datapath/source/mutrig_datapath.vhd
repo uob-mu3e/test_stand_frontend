@@ -47,7 +47,13 @@ port (
 	o_receivers_dpa_lock	: out std_logic_vector( N_ASICS-1 downto 0);			-- dpa lock flag per channel
 	o_receivers_ready	: out std_logic_vector( N_ASICS-1 downto 0);-- receiver output ready flag
 	o_frame_desync		: out std_logic;
-	o_buffer_full		: out std_logic
+	o_buffer_full		: out std_logic;
+
+        i_SC_reset_counters	: in std_logic;
+	i_SC_counterselect      : in std_logic_vector(4 downto 0);
+	o_counter_nominator     : out std_logic_vector(31 downto 0);
+	o_counter_denominator_low  : out std_logic_vector(31 downto 0);
+	o_counter_denominator_high : out std_logic_vector(31 downto 0)--;
 );
 end entity mutrig_datapath;
 
@@ -117,8 +123,16 @@ port (
 		i_fifo_rd	:  in std_logic;
 	--monitoring, write-when-fill is prevented internally
 		o_fifo_full       : out std_logic;					-- sync to i_clk_deser
-		o_eventcounter   : out std_logic_vector(63 downto 0);			-- sync to i_clk_deser
+		i_reset_counters : in std_logic;
+		o_eventcounter   : out std_logic_vector(31 downto 0);			-- sync to i_clk_deser
 		o_timecounter    : out std_logic_vector(63 downto 0);			-- sync to i_clk_deser
+		o_crcerrorcounter: out std_logic_vector(31 downto 0);			-- sync to i_clk_deser
+		o_framecounter   : out std_logic_vector(63 downto 0);			-- sync to i_clk_deser
+
+		o_prbs_err_cnt   : out std_logic_vector(31 downto 0);
+		o_prbs_wrd_cnt   : out std_logic_vector(63 downto 0);
+
+
 		i_SC_mask	: in std_logic						-- '1':  block any data from being written to the fifo
 	);
 end component; --mutrig_store;
@@ -187,6 +201,7 @@ end component;
 subtype t_vector is std_logic_vector(N_ASICS-1 downto 0);
 type t_array_64b is array (N_ASICS-1 downto 0) of std_logic_vector(64-1 downto 0);
 type t_array_48b is array (N_ASICS-1 downto 0) of std_logic_vector(48-1 downto 0);
+type t_array_32b is array (N_ASICS-1 downto 0) of std_logic_vector(32-1 downto 0);
 type t_array_16b is array (N_ASICS-1 downto 0) of std_logic_vector(16-1 downto 0);
 type t_array_8b  is array (N_ASICS-1 downto 0) of std_logic_vector(8-1 downto 0);
 type t_array_2b  is array (N_ASICS-1 downto 0) of std_logic_vector(2-1 downto 0);
@@ -229,8 +244,12 @@ signal s_buf_wr			: std_logic;
 
 -- monitoring signals TODO: connect as needed
 signal s_fifos_full      : t_vector;	--elastic fifo full flags
-signal s_eventcounter   : t_array_64b;
-signal s_timecounter    : t_array_64b;
+signal s_eventcounter    : t_array_32b;
+signal s_timecounter     : t_array_64b;
+signal s_crcerrorcounter : t_array_32b;
+signal s_framecounter     : t_array_64b;
+signal s_prbs_wrd_cnt    : t_array_64b;
+signal s_prbs_err_cnt    : t_array_32b;
 
 
 begin
@@ -382,13 +401,43 @@ port map(
 	o_fifo_data	 => s_fifos_data(i),
 	o_fifo_empty     => s_fifos_empty(i),
 	i_fifo_rd	 => s_fifos_rd(i),
---monitoring, write-when-fill is prevented internally
+--monitoring
 	o_fifo_full      => s_fifos_full(i),
+	i_reset_counters => i_SC_reset_counters,
 	o_eventcounter   => s_eventcounter(i),
 	o_timecounter    => s_timecounter(i),
+	o_crcerrorcounter=> s_crcerrorcounter(i),
+	o_framecounter=> s_framecounter(i),
+	o_prbs_wrd_cnt   => s_prbs_wrd_cnt(i),
+	o_prbs_err_cnt   => s_prbs_err_cnt(i),
+
 	i_SC_mask	 => i_SC_mask(i)
 );
 end generate;
+
+p_counterselect: process (s_timecounter, s_eventcounter, s_crcerrorcounter, s_prbs_err_cnt, i_SC_counterselect)
+begin
+	for i in 0 to N_ASICS loop
+		if(unsigned(i_SC_counterselect(2 downto 0)) = i) then
+		case i_SC_counterselect(4 downto 3) is
+			when "00" => 
+				o_counter_nominator <= s_eventcounter(i);
+				o_counter_denominator_high <= s_timecounter(i)(63 downto 32);
+				o_counter_denominator_low  <= s_timecounter(i)(31 downto  0);
+			when "01" => 
+				o_counter_nominator <= s_crcerrorcounter(i);
+				o_counter_denominator_high <= s_framecounter(i)(63 downto 32);
+				o_counter_denominator_low  <= s_framecounter(i)(31 downto  0);
+			when "10" =>
+				o_counter_nominator <= s_prbs_err_cnt(i);
+				o_counter_denominator_high <= s_prbs_wrd_cnt(i)(63 downto 32);
+				o_counter_denominator_low  <= s_prbs_wrd_cnt(i)(31 downto  0);
+			when others =>
+		end case;
+		end if;
+	end loop;
+end process;
+
 
 --mux between asic channels
 u_mux: framebuilder_mux

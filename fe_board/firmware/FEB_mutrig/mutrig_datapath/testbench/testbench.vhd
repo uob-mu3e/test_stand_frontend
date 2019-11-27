@@ -64,8 +64,14 @@ component mutrig_datapath is
 	o_receivers_dpa_lock	: out std_logic_vector( N_ASICS-1 downto 0);			-- dpa lock flag per channel
 	o_receivers_ready	: out std_logic_vector( N_ASICS-1 downto 0);-- receiver output ready flag
 	o_frame_desync		: out std_logic;
-	o_buffer_full		: out std_logic
-  );
+	o_buffer_full		: out std_logic;
+
+	i_SC_reset_counters	: in std_logic;
+	i_SC_counterselect      : in std_logic_vector(4 downto 0);
+	o_counter_nominator     : out std_logic_vector(31 downto 0);
+	o_counter_denominator_low  : out std_logic_vector(31 downto 0);
+	o_counter_denominator_high : out std_logic_vector(31 downto 0)--;
+);
 end component mutrig_datapath;
 
 constant N_ASICS 	: natural := 4;
@@ -107,6 +113,12 @@ signal o_receivers_pll_lock	: std_logic;
 signal o_receivers_dpa_lock	: std_logic_vector(N_ASICS-1 downto 0);
 signal o_receivers_ready	: std_logic_vector(N_ASICS-1 downto 0);
 signal o_frame_desync		: std_logic;
+--counters
+signal i_SC_reset_counters	: std_logic;
+signal i_SC_counterselect       : std_logic_vector(4 downto 0);
+signal o_counter_nominator      :  std_logic_vector(31 downto 0);
+signal o_counter_denominator_low  : std_logic_vector(31 downto 0);
+signal o_counter_denominator_high : std_logic_vector(31 downto 0);
 --fifo interface
 signal s_fifo_empty 		: std_logic:='0';
 signal s_fifo_data		: std_logic_vector(35 downto 0);
@@ -199,7 +211,13 @@ dut: mutrig_datapath
 		i_SC_datagen_shortmode	=> '0',
 		i_SC_datagen_count	=> (3=>'1',others=>'0'),
 		i_SC_rx_wait_for_all	=> '1',
-		i_SC_rx_wait_for_all_sticky	=> '1'
+		i_SC_rx_wait_for_all_sticky	=> '1',
+
+		i_SC_reset_counters => i_SC_reset_counters,
+		i_SC_counterselect => i_SC_counterselect,
+		o_counter_nominator => o_counter_nominator,
+		o_counter_denominator_low => o_counter_denominator_low,
+		o_counter_denominator_high => o_counter_denominator_high
 	);
 
 ---------------------------------------------------------------
@@ -270,6 +288,24 @@ begin
 
 		flush(log_file);
 	end if;
+end process;
+
+--generate counter selection
+stim_counterctrl: process
+begin	
+	i_SC_reset_counters <= '0';
+	wait for 20 us;
+	i_SC_reset_counters <= '1';
+	wait for 100 ns;
+	i_SC_reset_counters <= '0';
+	wait for 100 ns;
+	i_SC_counterselect <= '0'& X"0";
+	wait for 100 ns;
+	i_SC_counterselect <= '0'& X"1";
+	wait for 100 ns;
+	i_SC_counterselect <= '0'& X"2";
+	wait for 100 ns;
+	i_SC_counterselect <= '0'& X"3";
 end process;
 
 

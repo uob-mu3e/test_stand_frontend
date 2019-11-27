@@ -81,7 +81,7 @@ begin
 				else
 					n_wait_cnt <= "00000000011"; -- 3 bytes
 				end if;
-				if i_cnt = (i_cnt'range=>'0') then
+				if(unsigned(i_cnt) = 0) then
 					n_state <= fs_end_of_frame;
 				else
 					n_event_cnt <= i_cnt - 1;
