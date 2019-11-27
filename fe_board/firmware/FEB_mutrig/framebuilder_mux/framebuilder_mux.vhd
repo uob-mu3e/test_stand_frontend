@@ -174,7 +174,7 @@ begin
 	--check if all frameIDs match
 	frameid_nonsync:='0';
 	for i in N_INPUTS-1 downto 0 loop
-		if(i_source_data(i)(15 downto 0) /= l_common_data(15 downto 0)) then frameid_nonsync:='1'; end if;
+		if(i_SC_mask(i)='0' and i_source_data(i)(15 downto 0) /= l_common_data(15 downto 0)) then frameid_nonsync:='1'; end if;
 	end loop;
 	l_frameid_nonsync<=frameid_nonsync;
 end process;
