@@ -114,9 +114,7 @@ architecture arch of fe_block is
 
 
 
-    signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
-    signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
-    signal mscb_counter_in : unsigned(15 downto 0);
+    signal av_mscb : work.util.avalon_t;
 
 
 
@@ -288,9 +286,12 @@ begin
         clk_125_clock_clk       => i_clk_125,
 
         -- mscb
-        parallel_mscb_in_export     => mscb_to_nios_parallel_in,
-        parallel_mscb_out_export    => mscb_from_nios_parallel_out,
-        counter_in_export           => std_logic_vector(mscb_counter_in),
+        avm_mscb_address        => av_mscb.address(3 downto 0),
+        avm_mscb_read           => av_mscb.read,
+        avm_mscb_readdata       => av_mscb.readdata,
+        avm_mscb_write          => av_mscb.write,
+        avm_mscb_writedata      => av_mscb.writedata,
+        avm_mscb_waitrequest    => av_mscb.waitrequest,
 
         irq_bridge_irq          => nios_irq,
 
@@ -479,18 +480,23 @@ begin
         CLK_MHZ_g => real(NIOS_CLK_HZ_g) / 1000000.0--,
     )
     port map (
-        mscb_to_nios_parallel_in    => mscb_to_nios_parallel_in,
-        mscb_from_nios_parallel_out => mscb_from_nios_parallel_out,
+        i_avs_address           => av_mscb.address(3 downto 0),
+        i_avs_read              => av_mscb.read,
+        o_avs_readdata          => av_mscb.readdata,
+        i_avs_write             => av_mscb.write,
+        i_avs_writedata         => av_mscb.writedata,
+        o_avs_waitrequest       => av_mscb.waitrequest,
+
+
         mscb_data_in                => i_mscb_data,
         mscb_data_out               => o_mscb_data,
         mscb_oe                     => o_mscb_oe,
-        mscb_counter_in             => mscb_counter_in,
 
         o_mscb_irq                  => nios_irq(1),
         i_mscb_address              => X"ACA0",
 
-        i_reset_n                   => nios_reset_n,
-        i_clk                       => i_nios_clk--,
+        i_reset_n               => nios_reset_n,
+        i_clk                   => i_nios_clk--,
     );
 
 

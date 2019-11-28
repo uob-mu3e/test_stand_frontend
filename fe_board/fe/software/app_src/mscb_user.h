@@ -173,7 +173,7 @@ void print_byte(unsigned char byte)
 
 int get_times(void)
 {
-    int counter = IORD_ALTERA_AVALON_PIO_DATA(COUNTER_IN_BASE);
+    int counter = alt_nticks();
     return counter;
 }
 
@@ -257,10 +257,8 @@ void mscb_init()
     //start timer
     //if( alt_timestamp_start() < 0) printf("no timer available\n");
     //set default out values
-    IOWR_ALTERA_AVALON_PIO_DATA(PARALLEL_MSCB_OUT_BASE,0x0FF);
-    IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PARALLEL_MSCB_OUT_BASE,0x200);
-    IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PARALLEL_MSCB_OUT_BASE,0x400); //set read request bit to 0
-    printf("PARALLEL_MSCB_IN_BASE %x\n",PARALLEL_MSCB_IN_BASE);
+    *(volatile alt_u32*)(AVM_MSCB_BASE) = 0x0FF; // fifo data
+    printf("PARALLEL_MSCB_IN_BASE %x\n", *(volatile alt_u32*)(AVM_MSCB_BASE));
 
     const char *p;
     int i, adr, flag;
@@ -321,7 +319,7 @@ int input_data_ready(void)
 {
     //2560 = 1010 0000 0000
     //printf("input parrallel port reading polling 0x%x\n",IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_MSCB_IN_BASE));
-    int input = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_MSCB_IN_BASE);
+    int input = *(volatile alt_u32*)(AVM_MSCB_BASE);
     int empty_bit = 0x200;
     int empty = input&empty_bit;
     //usleep(10);
@@ -339,18 +337,11 @@ unsigned char read_mscb_command(void)
 {
     //printf("input parrallel port reading before request 0x%x\n",IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_MSCB_IN_BASE));
     //generate read request for the fifo
-    IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PARALLEL_MSCB_OUT_BASE,0x400);\
-    usleep(1);
-    IOWR_ALTERA_AVALON_PIO_SET_BITS(PARALLEL_MSCB_OUT_BASE,0x400);
-    usleep(1);
-    //assume the on signal lasts at least a clock cycle
-    IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PARALLEL_MSCB_OUT_BASE,0x400);
+    *(volatile alt_u32*)(AVM_MSCB_BASE) = 0x400;
 
     //printf("input parrallel port reading 0x%x\n",IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_MSCB_IN_BASE));
 
-    int byte = IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_MSCB_IN_BASE) & 0x0FF;
-    unsigned char mscb_byte = (char)byte;
-    return mscb_byte;
+    return 0x1F & *(volatile alt_u32*)(AVM_MSCB_BASE);
 }
 
 void send_data(unsigned char *buf, unsigned int n)
@@ -361,15 +352,10 @@ void send_data(unsigned char *buf, unsigned int n)
     {
         //print_byte(buf[i]);
 
-        int data = buf[i];
-        IOWR_ALTERA_AVALON_PIO_DATA(PARALLEL_MSCB_OUT_BASE,data);
+        *(volatile alt_u32*)(AVM_MSCB_BASE) = 0x1F & buf[i];
 
         //write request to FIFO
-        IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PARALLEL_MSCB_OUT_BASE,0x200);
-        usleep(1);
-        IOWR_ALTERA_AVALON_PIO_SET_BITS(PARALLEL_MSCB_OUT_BASE,0x200);
-        usleep(1);
-        IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(PARALLEL_MSCB_OUT_BASE,0x200);
+        *(volatile alt_u32*)(AVM_MSCB_BASE) = 0x200;
     }
 }
 

@@ -10,12 +10,19 @@ generic (
     CLK_MHZ_g : real--;
 );
 port (
-    mscb_to_nios_parallel_in    : out   std_logic_vector(11 downto 0);
-    mscb_from_nios_parallel_out : in    std_logic_vector(11 downto 0);
+    -- avalon slave interface
+    -- - read latency 1
+    i_avs_address       : in    std_logic_vector(3 downto 0);
+    i_avs_read          : in    std_logic;
+    o_avs_readdata      : out   std_logic_vector(31 downto 0);
+    i_avs_write         : in    std_logic;
+    i_avs_writedata     : in    std_logic_vector(31 downto 0);
+    o_avs_waitrequest   : out   std_logic;
+
     mscb_data_in                : in    std_logic;
     mscb_data_out               : out   std_logic;
     mscb_oe                     : out   std_logic;
-    mscb_counter_in             : out   unsigned(15 downto 0);
+
     o_mscb_irq                  : out   std_logic;
     i_mscb_address              : in    std_logic_vector(15 downto 0);
 
@@ -27,7 +34,6 @@ end entity;
 architecture rtl of mscb is
 
     -- mscb data flow
-    signal uart_generated_data :        std_logic;
     signal signal_in :                  std_logic;
     signal signal_out :                 std_logic;
     signal uart_serial_in :             std_logic;
@@ -46,16 +52,12 @@ architecture rtl of mscb is
     signal out_fifo_full :              std_logic;
     signal out_fifo_data_out :          std_logic_vector(8 downto 0);
 
-    signal DataReady :                  std_logic;
-
     signal mscb_nios_out :              std_logic_vector(8 downto 0);
     signal mscb_data_ready :            std_logic;
 
-    signal DataGeneratorEnable :        std_logic;
     signal uart_serial_out :            std_logic; --uart data for the output pin
 
     signal Transmitting  :              std_logic; -- uart data is being send
-    signal dummy :                      std_logic;
 
     signal addressing_data_in :         std_logic_vector(8 downto 0);
     signal addressing_data_out :        std_logic_vector(8 downto 0);
@@ -91,29 +93,31 @@ begin
 
 
 
-    ---- parallel in for the nios ----
-    mscb_to_nios_parallel_in(8 downto 0)    <= in_fifo_data_out; -- 8+1 bit mscb words
-    mscb_to_nios_parallel_in(9)             <= in_fifo_empty;
-    mscb_to_nios_parallel_in(10)            <= in_fifo_full;
-    mscb_to_nios_parallel_in(11)            <= '1';
+    process(i_clk)
+    begin
+    if rising_edge(i_clk) then
+        o_avs_readdata <= X"CCCCCCCC";
+
+        if ( i_avs_address = X"0" and i_avs_read = '1' ) then
+            o_avs_readdata <= (others => '0');
+            o_avs_readdata(11 downto 0) <= '1' & in_fifo_full & in_fifo_empty & in_fifo_data_out;
+        end if;
+
+        in_fifo_read_request <= '0';
+        out_fifo_write_request <= '0';
+        if ( i_avs_address = X"0" and i_avs_write = '1' ) then
+            in_fifo_read_request <= i_avs_writedata(10);
+            out_fifo_write_request <= i_avs_writedata(9);
+            mscb_nios_out <= i_avs_writedata(8 downto 0);
+        end if;
+        --
+    end if;
+    end process;
 
     ---- interrupt to nios ----
     o_mscb_irq                              <= not in_fifo_empty;
 
-    mscb_nios_out                           <= mscb_from_nios_parallel_out(8 downto 0);
-    DataReady                               <= not out_fifo_empty;
-
 ------------- Wire up components --------------------
-
-    e_slow_counter : entity work.counter_async
-    port map(
-        CounterOut(15 downto 0)  => mscb_counter_in,
-        Enable                   => '1',
-        Reset                    => not i_reset_n,
-        Clk                      => i_clk,
-        CountDown                => '0',
-        Init                     => to_unsigned(0,32)
-    );
 
   -- wire up uart reciever for mscb
     e_uart_rx : entity work.uart_reciever
@@ -173,7 +177,7 @@ begin
         Clk             => i_clk,
         Reset           => not i_reset_n,
         DataIn          => out_fifo_data_out,
-        DataReady       => DataReady,
+        DataReady       => not out_fifo_empty,
         ReadRequest     => out_fifo_read_request,
         DataOut         => uart_serial_out,
         Transmitting    => Transmitting
@@ -197,24 +201,6 @@ begin
         q               => out_fifo_data_out
     );
 
-
-    -- make the fifo read request from the nios one clocktick long
-    e_uEdgeFIFORead : entity work.edge_detector
-    port map (
-        clk         => i_clk,
-        signal_in   => mscb_from_nios_parallel_out(10),
-        output      => in_fifo_read_request
-    );
-
-    -- make the fifo write request from the nios one clocktick long
-    e_uEdgeFIFOWrite : entity work.edge_detector
-    port map (
-        clk             => i_clk,
-        signal_in       => mscb_from_nios_parallel_out(9),
-        output          => out_fifo_write_request
-    );
-
-
     e_mscb_addressing : entity work.mscb_addressing
     port map (
         i_clk           => i_clk,
@@ -231,11 +217,9 @@ begin
     process(i_clk, i_reset_n)
     begin
         if i_reset_n = '0' then
-            DataGeneratorEnable         <= '0';
             --uart_serial_in            <='1';
             --hsma_d(0)                 <='Z';
         elsif rising_edge(i_clk) then
-            DataGeneratorEnable         <= '1';
             in_fifo_write_request       <= uart_read_enable;
             uart_serial_in              <= signal_in;
         end if;
