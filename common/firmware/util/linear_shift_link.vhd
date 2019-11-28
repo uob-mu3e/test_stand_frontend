@@ -5,19 +5,19 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 entity linear_shift_link is 
-	generic (
-		g_m             : integer           := 7;
-		g_poly          : std_logic_vector  := "1100000" -- x^7+x^6+1
-	);
-	port (
-		i_clk           : in  std_logic;
-		reset_n         : in  std_logic;
-		i_sync_reset    : in  std_logic;
-		i_seed          : in  std_logic_vector (g_m-1 downto 0);
-		i_en            : in  std_logic;
-		o_lsfr          : out std_logic_vector (g_m-1 downto 0);
-		o_datak         : out std_logic_vector (3 downto 0)--;
-	);
+generic (
+	g_m             : integer           := 7;
+	g_poly          : std_logic_vector  := "1100000" -- x^7+x^6+1
+);
+port (
+	i_clk           : in    std_logic;
+	reset_n         : in    std_logic;
+	i_sync_reset    : in    std_logic;
+	i_seed          : in    std_logic_vector (g_m-1 downto 0);
+	i_en            : in    std_logic;
+	o_lsfr          : out   std_logic_vector (g_m-1 downto 0);
+	o_datak         : out   std_logic_vector (3 downto 0)--;
+);
 end entity;
 
 architecture rtl of linear_shift_link is

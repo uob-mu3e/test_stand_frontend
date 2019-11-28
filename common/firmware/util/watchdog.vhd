@@ -8,18 +8,18 @@ use ieee.numeric_std.all;
 
 -- generate one cycle reset signal if input (d) is stable for N cycles
 entity watchdog is
-    generic (
-        W : positive := 1;
-        N : positive := 16#FFFF#--;
-    );
-    port (
-        d : in std_logic_vector(W-1 downto 0);
+generic (
+    W : positive := 1;
+    N : positive := 16#FFFF#--;
+);
+port (
+    d           : in    std_logic_vector(W-1 downto 0);
 
-        rstout_n : out std_logic;
+    rstout_n    : out   std_logic;
 
-        rst_n : in  std_logic;
-        clk : in  std_logic--;
-    );
+    rst_n       : in    std_logic;
+    clk         : in    std_logic--;
+);
 end entity;
 
 architecture arch of watchdog is
