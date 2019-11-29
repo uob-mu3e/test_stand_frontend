@@ -235,7 +235,10 @@ begin
 			elsif(unsigned(l_request_next) /= 0) then
 				n_sel_gnt <= Priority_Select(l_request_next);--,s_sel_gnt);
 				n_state <= fs_hitH;
+			else
+				n_sel_gnt <= (others => '0');
 			end if;
+
 		when fs_headerH =>
 			s_sink_wr <= '1';
 			n_Hpart <= '1';

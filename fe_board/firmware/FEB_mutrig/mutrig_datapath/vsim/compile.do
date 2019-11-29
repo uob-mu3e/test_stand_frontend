@@ -1,4 +1,5 @@
 
+vcom -2008 ../../../FEB_common/daq_constants.vhd
 vcom -2008 ../../mutrig_constants.vhd
 vcom -2008 ../../../../fe/s4/ip_altlvds_rx.vhd
 vcom -2008 ../../lvds/add_3_bits.vhd

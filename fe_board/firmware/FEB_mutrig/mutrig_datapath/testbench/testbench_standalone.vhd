@@ -135,7 +135,7 @@ i_tsclk_125	<= not i_tsclk_125 and i_rst after  4 ns;
 
 i_SC_datagen_enable <= '1', '0' after 10 us;
 
-i_SC_mask <= (3=>'0',  others=>'0');
+i_SC_mask <= (0=>'0',  others=>'1');
 
 --dut
 dut: mutrig_datapath
@@ -160,7 +160,7 @@ dut: mutrig_datapath
 		i_SC_mask		=> i_SC_mask,
 		o_frame_desync		=> o_frame_desync,
 		i_SC_datagen_enable	=> i_SC_datagen_enable,
-		i_SC_datagen_shortmode	=> '1',
+		i_SC_datagen_shortmode	=> '0',
 		i_SC_datagen_count	=> (5=>'1',others=>'0'),
 		i_SC_rx_wait_for_all	=> '1',
 		i_SC_rx_wait_for_all_sticky => '1',
