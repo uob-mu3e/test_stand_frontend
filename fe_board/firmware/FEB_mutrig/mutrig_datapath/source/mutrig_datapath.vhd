@@ -201,7 +201,7 @@ end component;
 subtype t_vector is std_logic_vector(N_ASICS-1 downto 0);
 type t_array_64b is array (N_ASICS-1 downto 0) of std_logic_vector(64-1 downto 0);
 type t_array_48b is array (N_ASICS-1 downto 0) of std_logic_vector(48-1 downto 0);
-type t_array_32b is array (N_ASICS-1 downto 0) of std_logic_vector(32-1 downto 0);
+subtype t_array_32b is reg32array_t(N_ASICS-1 downto 0);
 type t_array_16b is array (N_ASICS-1 downto 0) of std_logic_vector(16-1 downto 0);
 type t_array_8b  is array (N_ASICS-1 downto 0) of std_logic_vector(8-1 downto 0);
 type t_array_2b  is array (N_ASICS-1 downto 0) of std_logic_vector(2-1 downto 0);
@@ -243,13 +243,15 @@ signal s_buf_almost_full 	: std_logic;
 signal s_buf_wr			: std_logic;
 
 -- monitoring signals TODO: connect as needed
-signal s_fifos_full      : t_vector;	--elastic fifo full flags
-signal s_eventcounter    : t_array_32b;
-signal s_timecounter     : t_array_64b;
-signal s_crcerrorcounter : t_array_32b;
-signal s_framecounter     : t_array_64b;
-signal s_prbs_wrd_cnt    : t_array_64b;
-signal s_prbs_err_cnt    : t_array_32b;
+signal s_fifos_full           : t_vector;	--elastic fifo full flags
+signal s_eventcounter         : t_array_32b;
+signal s_timecounter          : t_array_64b;
+signal s_crcerrorcounter      : t_array_32b;
+signal s_framecounter         : t_array_64b;
+signal s_prbs_wrd_cnt         : t_array_64b;
+signal s_prbs_err_cnt         : t_array_32b;
+signal s_receivers_runcounter : t_array_32b;
+signal s_receivers_errorcounter : t_array_32b;
 
 
 begin
@@ -262,7 +264,7 @@ generic map(
 )
 port map(
 	reset_n			=> not i_rst,
-	reset_n_errcnt		=> '0',
+	reset_n_errcnt		=> not i_SC_reset_counters,
 	rx_in			=> i_stic_txd,
 	rx_inclock		=> i_refclk_125_A,
 	rx_state		=> s_receivers_state,
@@ -272,8 +274,8 @@ port map(
 	rx_clkout		=> s_receivers_usrclk,
 	pll_locked		=> o_receivers_pll_lock,
 	rx_dpa_locked_out	=> o_receivers_dpa_lock,
-	rx_runcounter		=> open,		--TODO: connect
-	rx_errorcounter		=> open		--TODO: connect
+	rx_runcounter		=> s_receivers_runcounter,
+	rx_errorcounter		=> s_receivers_errorcounter
 );
 
 o_receivers_ready <= s_receivers_ready;
@@ -432,6 +434,10 @@ begin
 				o_counter_nominator <= s_prbs_err_cnt(i);
 				o_counter_denominator_high <= s_prbs_wrd_cnt(i)(63 downto 32);
 				o_counter_denominator_low  <= s_prbs_wrd_cnt(i)(31 downto  0);
+			when "11" =>
+				o_counter_nominator <= s_receivers_errorcounter(i);
+				o_counter_denominator_high <= (others =>'0');
+				o_counter_denominator_low  <= s_receivers_runcounter(i);
 			when others =>
 		end case;
 		end if;
