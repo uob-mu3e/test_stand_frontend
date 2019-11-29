@@ -46,6 +46,14 @@ int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 //        printf("\n");
 	return status;
 }
+void scifi_module_t::print_config(const alt_u8* bitpattern) {
+	uint16_t nb=MUTRIG1_CONFIG_LEN_BYTES;
+	do{
+		nb--;
+                printf("%02X ",bitpattern[nb]);
+	}while(nb>0);
+}
+
 
 //configure ASIC
 alt_u16 scifi_module_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
@@ -108,6 +116,10 @@ void scifi_module_t::menu(){
             printf("[scifi] configuring pll test\n");
             for(int i=0;i<n_ASICS;i++)
                 configure_asic(i,mutrig_config_plltest);
+            break;
+	case 'l':
+            printf("[scifi] last configured:\n");
+            print_config((alt_u8*)(&sc->ram->data[1]));
             break;
         case 'p':
             printf("[scifi] configuring prbs signle hit\n");
@@ -351,12 +363,13 @@ void scifi_module_t::menu_counters(){
     char cmd;
     printf("Counters: press 'q' to end / 'r' to reset\n");
     while(1){
-	for(char selected=0;selected<3; selected++){
+	for(char selected=0;selected<4; selected++){
 		regs.counters.ctrl = selected<<3;
 		switch(selected){
 			case 0: printf("Events/Time  [8ns] "); break;
 			case 1: printf("Errors/Frame       "); break;
-			case 2: printf("PRBS: Errors/Word  "); break;
+			case 2: printf("PRBS: Errors/Words "); break;
+			case 3: printf("LVDS: Errors/Words "); break;
 		}
 		for(int i=0;i<4;i++){
 			regs.counters.ctrl = (regs.counters.ctrl & 0x18) + i;
