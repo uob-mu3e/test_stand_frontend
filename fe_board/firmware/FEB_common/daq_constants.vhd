@@ -8,7 +8,6 @@ use ieee.std_logic_1164.all;
 package daq_constants is
 
 -- multi-purpose types
-subtype links_reg32 is std_logic_vector(31 downto 0);	-- same as reg32, used in MUTRIG setup with only one link?
 subtype reg32 is std_logic_vector(31 downto 0);
 constant NREGISTERS : integer := 64;
 type reg32array is array (NREGISTERS-1 downto 0) of reg32;
