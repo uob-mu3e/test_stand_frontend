@@ -477,7 +477,7 @@ begin
 
     e_mscb : entity work.mscb
     generic map (
-        CLK_MHZ_g => real(NIOS_CLK_HZ_g) / 1000000.0--,
+        CLK_MHZ_g => 156.25--,
     )
     port map (
         i_avs_address           => av_mscb.address(3 downto 0),
@@ -495,8 +495,8 @@ begin
         o_mscb_irq                  => nios_irq(1),
         i_mscb_address              => X"ACA0",
 
-        i_reset_n               => nios_reset_n,
-        i_clk                   => i_nios_clk--,
+        i_reset_n               => reset_156_n,
+        i_clk                   => i_clk_156--,
     );
 
 
