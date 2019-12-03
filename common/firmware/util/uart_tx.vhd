@@ -89,9 +89,9 @@ begin
         i_rack          => rack,
         o_rempty        => rempty,
 
-        o_wfull         => o_wfull,
-        i_we            => i_we,
         i_wdata         => i_wdata,
+        i_we            => i_we,
+        o_wfull         => o_wfull,
 
         i_reset_n       => i_reset_n,
         i_clk           => i_clk--;

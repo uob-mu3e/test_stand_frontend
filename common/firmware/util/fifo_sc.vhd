@@ -11,7 +11,7 @@ use ieee.std_logic_1164.all;
 --
 -- FIFO
 -- - Single Clock
--- - Fall Through
+-- - Fall-Through
 --
 entity fifo_sc is
 generic (
@@ -19,13 +19,13 @@ generic (
     ADDR_WIDTH_g : positive := 8--;
 );
 port (
-    o_rempty    : out   std_logic;
-    i_rack      : in    std_logic;
     o_rdata     : out   std_logic_vector(DATA_WIDTH_g-1 downto 0);
+    i_rack      : in    std_logic;
+    o_rempty    : out   std_logic;
 
-    o_wfull     : out   std_logic;
-    i_we        : in    std_logic;
     i_wdata     : in    std_logic_vector(DATA_WIDTH_g-1 downto 0);
+    i_we        : in    std_logic;
+    o_wfull     : out   std_logic;
 
     i_reset_n   : in    std_logic;
     i_clk       : in    std_logic--;
@@ -39,8 +39,6 @@ architecture arch of fifo_sc is
 
     type ram_t is array (2**ADDR_WIDTH_g-1 downto 0) of std_logic_vector(DATA_WIDTH_g-1 downto 0);
     signal ram : ram_t;
-    attribute ramstyle : string;
-    attribute ramstyle of ram : signal is "no_rw_check";
 
     subtype addr_t is unsigned(ADDR_WIDTH_g-1 downto 0);
     subtype ptr_t is unsigned(ADDR_WIDTH_g downto 0);
@@ -49,9 +47,15 @@ architecture arch of fifo_sc is
 
     signal rack, we : std_logic;
     signal rempty, wfull : std_logic;
-    signal rptr, wptr : ptr_t := (others => '0');
+    signal rptr, wptr, rptr_next, wptr_next : ptr_t := (others => '0');
 
 begin
+
+    -- psl default clock is rising_edge(i_clk) ;
+    -- psl assert always ( i_rack = '0' or o_rempty = '0' ) ;
+    -- psl assert always ( i_we = '0' or o_wfull = '0' ) ;
+
+
 
     o_rempty <= rempty;
     o_wfull <= wfull;
@@ -60,8 +64,10 @@ begin
     rack <= ( i_rack and not rempty );
     we <= ( i_we and not wfull );
 
+    rptr_next <= rptr + ("" & rack);
+    wptr_next <= wptr + ("" & we);
+
     process(i_clk, i_reset_n)
-        variable rptr_v, wptr_v : ptr_t;
     begin
     if ( i_reset_n = '0' ) then
         rempty <= '1';
@@ -70,25 +76,22 @@ begin
         wptr <= (others => '0');
         --
     elsif rising_edge(i_clk) then
-        -- inferred ram
+        -- advance pointers
+        rptr <= rptr_next;
+        wptr <= wptr_next;
+
+        rempty <= work.util.to_std_logic( rptr_next = wptr_next );
+        wfull <= work.util.to_std_logic( (rptr_next xor wptr_next) = XOR_FULL_c );
+
+        -- infer RAM
         if ( we = '1' ) then
             ram(to_integer(wptr(addr_t'range))) <= i_wdata;
         end if;
-
-        -- advance pointers
-        rptr_v := rptr + ("" & rack);
-        wptr_v := wptr + ("" & we);
-        rptr <= rptr_v;
-        wptr <= wptr_v;
-
-        rempty <= work.util.to_std_logic( rptr_v = wptr_v );
-        wfull <= work.util.to_std_logic( (rptr_v xor wptr_v) = XOR_FULL_c );
-
         --
     end if; -- rising_edge
     end process;
 
-    -- sync ram
+    -- synchronous read (new data)
     o_rdata <= ram(to_integer(rptr(addr_t'range)));
 
 end architecture;

@@ -17,6 +17,7 @@ cd .cache || exit 1
 
 OPTS=(
     --ieee=synopsys -fexplicit
+    -fpsl
 )
 
 if [ -d "$HOME/.cache/altera-quartus" ] ; then

@@ -2,6 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+-- <https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter>
 entity tb_uart is
 end entity;
 
@@ -123,7 +124,7 @@ begin
     process
     begin
         wait for 4000 ns;
-        assert ( DONE = (DONE'range => '1') ) severity error;
+        assert ( DONE = (DONE'range => '1') ) severity failure;
         wait;
     end process;
 

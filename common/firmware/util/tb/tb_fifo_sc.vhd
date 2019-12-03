@@ -46,14 +46,12 @@ begin
 
         for i in 0 to wd'length**2-1 loop
             wait until rising_edge(clk) and wfull = '0';
-
             we <= '1';
             wd <= std_logic_vector(to_unsigned(i, wd'length));
+
             wait until rising_edge(clk);
             report "i = " & integer'image(i) & ", wd = 0x" & work.util.to_hstring(wd);
-
             we <= '0';
-            wait until rising_edge(clk);
         end loop;
 
         DONE(0) <= '1';
@@ -67,13 +65,11 @@ begin
 
         for i in 0 to rd'length**2-1 loop
             wait until rising_edge(clk) and rempty = '0';
-
             report "i = " & integer'image(i) & ", rd = 0x" & work.util.to_hstring(rd);
             rack <= '1';
-            wait until rising_edge(clk);
 
-            rack <= '0';
             wait until rising_edge(clk);
+            rack <= '0';
         end loop;
 
         DONE(1) <= '1';
