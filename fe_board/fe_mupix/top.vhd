@@ -188,7 +188,9 @@ port (
 
 
 
-    reset_n     : in    std_logic--;
+    reset_n     : in    std_logic;
+	 clk_aux		 : in 	std_logic;
+	 FPGA_Test	 : in		std_logic_vector(0 downto 0)--;
 );
 end entity;
 
@@ -216,6 +218,7 @@ architecture arch of top is
     signal run_state_125 : run_state_t;
 	 
 	 signal sync_reset_cnt: std_logic;
+	 signal nios_clock	: std_logic;
 
 begin
 
@@ -356,6 +359,14 @@ begin
 
     ----------------------------------------------------------------------------
 
+	e_clk_ctrl: component work.cmp.clk_ctrl 
+		port map(
+			inclk1x   => clk_aux,
+			inclk0x   => si42_clk_80,
+			clkselect => FPGA_Test(0), -- clkselect
+			outclk    => nios_clk--,
+		);
+
 
 
     e_fe_block : entity work.fe_block
@@ -406,7 +417,7 @@ begin
 
 
 
-        i_nios_clk      => si42_clk_80,
+        i_nios_clk      => nios_clk,
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
         o_clk_156_mon   => led(14),
