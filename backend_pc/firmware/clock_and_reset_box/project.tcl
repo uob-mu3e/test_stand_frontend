@@ -18,6 +18,7 @@ read_xdc "src/constrs_1/new/genesys_master.xdc"
 set_property top mu3e_top [ current_fileset ]
 set_property file_type {VHDL 2008} [ get_files -filter {FILE_TYPE == VHDL} ]
 
+file mkdir ".cache"
 source "ip/gtx_reset_firefly.tcl"
 source "ip/ila_0.tcl"
 source "ip/mac_fifo_axi4.tcl"

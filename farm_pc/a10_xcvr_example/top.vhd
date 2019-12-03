@@ -86,9 +86,9 @@ begin
     e_nios_clk_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map (
-        clkout => LED(0),
-        rst_n => CPU_RESET_n,
-        clk => refclk_125--,
+        o_clk => LED(0),
+        i_reset_n => CPU_RESET_n,
+        i_clk => refclk_125--,
     );
 
 

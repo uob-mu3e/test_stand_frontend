@@ -15,7 +15,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use work.mupix_constants.all;
-use work.mupix_types.all;
+use work.daq_constants.all;
 
 entity singlechip_ro is 
 	generic (
@@ -31,7 +31,7 @@ entity singlechip_ro is
 		hit_ena				: in STD_LOGIC;
 		coarsecounter		: in STD_LOGIC_VECTOR(COARSECOUNTERSIZE-1 DOWNTO 0);
 		coarsecounter_ena	: in STD_LOGIC;
-		chip_marker			: in chipmarkertype;
+		chip_marker			: in byte_t;
 		tomemdata			: out reg32;
 		tomemena				: out std_logic;
 		tomemeoe				: out std_logic
@@ -52,7 +52,7 @@ signal hit_lsb					: reg32;
 
 signal timestamp_reg			: reg64;
 
-signal chip_marker_r		: chipmarkertype;
+signal chip_marker_r		: byte_t;
 
 begin
 

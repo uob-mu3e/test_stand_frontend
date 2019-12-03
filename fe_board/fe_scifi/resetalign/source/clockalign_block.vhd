@@ -72,7 +72,7 @@ begin
 	gen_clkdiv: if CLKDIV > 1 generate
 		    e_chainclk_div : entity work.clkdiv
 		    generic map ( P => CLKDIV )
-		    port map ( clkout => s_chainclk, rst_n => not i_rst, clk => i_clk_config );
+		    port map ( o_clk => s_chainclk, i_reset_n => not i_rst, i_clk => i_clk_config );
 	end generate gen_clkdiv;
 
 	gen_noclkdiv: if CLKDIV = 1 generate

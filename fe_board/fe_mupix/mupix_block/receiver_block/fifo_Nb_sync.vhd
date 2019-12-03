@@ -8,7 +8,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.lvds_components.all;
 
 entity fifo_Nb_sync is
 	generic(

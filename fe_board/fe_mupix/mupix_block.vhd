@@ -1,17 +1,19 @@
+-- last change: S. Dittmeier, 22.11.2019 (dittmeier@physi.uni-heidelberg.de)
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
-use work.mupix_types.all;
-use work.mupix_registers.all;
+use work.daq_constants.all;
+use work.mupix_constants.all;
 
 entity mupix_block is
 generic(
-    NCHIPS : integer := 8;
-	NCHIPS_SPI : integer := 8;
-	NLVDS  : integer := 32;
-	NINPUTS_BANK_A	: integer := 4;
-	NINPUTS_BANK_B	: integer := 4--;
+	NCHIPS		: integer := 8;
+	NCHIPS_SPI	: integer := 8;
+	NLVDS			: integer := 32;
+	NINPUTS_BANK_A	: integer := 16;
+	NINPUTS_BANK_B	: integer := 16--;
 );
 port (
     
@@ -59,7 +61,8 @@ port (
 	i_reset         : in std_logic;
 	-- 156.25 MHz
 	i_clk           : in std_logic;
-	i_clk125        : in std_logic--;
+	i_clk125        : in std_logic;
+	i_sync_reset_cnt: in std_logic--;
 );
 end entity;
 
@@ -82,8 +85,9 @@ signal reset_n : std_logic;
 	signal mp8_dataout : std_logic_vector(31 downto 0);
 	
 	 -- board dacs
-	type state_spi is (waiting, starting, read_out_pix, write_pix, read_out_th, ending);
-	signal spi_state : state_spi;
+	type state_spi is (waiting, starting, read_out_pix, write_pix, read_out_th, ending);	-- to be used somewhere?
+	signal spi_state : state_spi;																				-- to be used somewhere?
+	
 	signal A_spi_wren_front : std_logic_vector(2 downto 0);
 	signal A_spi_busy_n_front : std_logic;
 	signal A_spi_sdo_front : std_logic_vector(2 downto 0);
@@ -111,19 +115,20 @@ signal reset_n : std_logic;
 	signal reset_chip_dac_fifo : std_logic;
 	signal ckdiv         : std_logic_vector(15 downto 0);
 	 
-	signal write_regs_mupix : reg32array_128;
-	signal read_regs_mupix : reg32array_128;
+	signal write_regs_mupix : reg32array_t(NREGISTERS_MUPIX_WR-1 downto 0);
+	signal read_regs_mupix : reg32array_t(NREGISTERS_MUPIX_RD-1 downto 0);
 	
 	signal reset_n_lvds : std_logic;
 	
 	-- regs nios
 	signal debug_chip_select : std_logic_vector(31 downto 0);
 	signal timestamp_gray_invert : std_logic_vector(31 downto 0);
+	signal link_mask : std_logic_vector(31 downto 0);
 	signal mux_read_regs_nios : std_logic_vector(6 downto 0);
 	signal ro_prescaler : std_logic_vector(31 downto 0);
 	signal read_regs_mupix_mux : std_logic_vector(31 downto 0);
 	
-	signal lvds_data_in : std_logic_vector(4*NCHIPS-1 downto 0);
+	signal lvds_data_in : std_logic_vector(NLVDS-1 downto 0);
 
 begin
 
@@ -157,20 +162,20 @@ begin
 	e_mp8_sc_master : work.mp8_sc_master
 	generic map(NCHIPS => NCHIPS_SPI)
 	port map (
-		clk			    => i_clk,
-		reset_n		    => reset_n,
-		mem_data_in	    => chip_dac_data,
-		busy_n		=> mp8_busy_n,--busy_n => mp8_busy_n,
-		start           => chip_dac_ready,
+		clk			 	=> i_clk,
+		reset_n			=> reset_n,
+		mem_data_in		=> chip_dac_data,
+		busy_n			=> mp8_busy_n,--busy_n => mp8_busy_n,
+		start				=> chip_dac_ready,
 
-		fifo_re         => chip_dac_ren,
-		fifo_empty      => chip_dac_fifo_empty,
+		fifo_re			=> chip_dac_ren,
+		fifo_empty		=> chip_dac_fifo_empty,
 		mem_data_out	=> mp8_mem_data_out,--mem_data_out => mp8_mem_data_out,
-		wren			=> mp8_wren,--mp8_wren,
-		ctrl_ld	    => mp8_ld,--mp8_ld,
-		ctrl_rb		=> mp8_rb,--mp8_rb,
-		done			=> open, 
-		stateout		=> open--,
+		wren				=> mp8_wren,--mp8_wren,
+		ctrl_ld			=> mp8_ld,--mp8_ld,
+		ctrl_rb			=> mp8_rb,--mp8_rb,
+		done				=> open, 
+		stateout			=> open--,
 	);
 	 
 	gen_slowc:
@@ -215,9 +220,9 @@ begin
 	 
 	 
 	-- board dacs slow_controll
-	A_spi_sdo_front 	<= i_SPI_DOUT_ADC_0_A & "00";-- A_spi_dout_dac_front & A_dac4_dout_front;
-	o_SPI_LD_ADC_A 		<= A_spi_ldn_front(2);
-    o_SPI_LD_TEMP_DAC_A <= A_spi_ldn_front(1);
+	A_spi_sdo_front		<= i_SPI_DOUT_ADC_0_A & "00";-- A_spi_dout_dac_front & A_dac4_dout_front;
+	o_SPI_LD_ADC_A			<= A_spi_ldn_front(2);
+	o_SPI_LD_TEMP_DAC_A	<= A_spi_ldn_front(1);
 	o_SPI_LD_DAC_A 		<= A_spi_ldn_front(0);
     
    -- regs reading
@@ -225,19 +230,20 @@ begin
    begin 
        if (reset_n = '0') then 
 			board_th_low        <= (others => '0');
-            board_th_high       <= (others => '0');
-            board_injection     <= (others => '0');
-            board_th_pix        <= (others => '0');
-	        A_spi_wren_front    <= (others => '0');
-            o_reg_rdata         <= (others => '0');
-            chip_dac_data_we    <= (others => '0');
-            ckdiv               <= (others => '0');
+			board_th_high       <= (others => '0');
+			board_injection     <= (others => '0');
+			board_th_pix        <= (others => '0');
+			A_spi_wren_front    <= (others => '0');
+			o_reg_rdata         <= (others => '0');
+			chip_dac_data_we    <= (others => '0');
+			ckdiv               <= (others => '0');
 			ro_prescaler		<= (others => '0');
 			debug_chip_select	<= (others => '0');
 			timestamp_gray_invert <= (others => '0');
-            chip_dac_we         <= '0';
-            reset_chip_dac_fifo <= '0';
-            chip_dac_ready      <= '0';
+			link_mask				<= (others => '0');
+			chip_dac_we         <= '0';
+			reset_chip_dac_fifo <= '0';
+			chip_dac_ready      <= '0';
 			reset_n_lvds		<= '0';
 			mux_read_regs_nios	<= (others => '0');
         elsif rising_edge(i_clk) then 
@@ -249,6 +255,7 @@ begin
 			
             ckdiv               <= ckdiv;
             
+				-- here we have to apply a register map with constants!
             if ( i_reg_add = x"83" and i_reg_we = '1' ) then
                 board_th_low    <= i_reg_wdata(15 downto 0);
                 board_th_high   <= i_reg_wdata(31 downto 16);
@@ -331,6 +338,10 @@ begin
 			if ( i_reg_add = x"94" and i_reg_re = '1' ) then
                 o_reg_rdata      <= read_regs_mupix_mux;
             end if;
+				
+			if ( i_reg_add = x"95" and i_reg_we = '1' ) then
+                link_mask      <= i_reg_wdata;
+            end if;
 			
         end if;
     end process board_dac_regs;
@@ -353,7 +364,7 @@ begin
 		spi_load_n            	=> A_spi_ldn_front,
 		spi_sdo               	=> A_spi_sdo_front,
 		
-        injection1_out          => injection1_out_A_front,
+		injection1_out          => injection1_out_A_front,
 		threshold_pix_out     	=> threshold_pix_out_A_front,
 		threshold_low_out     	=> threshold_low_out_A_front,
 		threshold_high_out    	=> threshold_high_out_A_front,
@@ -370,7 +381,7 @@ begin
 	generic map (
 		NCHIPS 				=> NCHIPS,
 		NLVDS 				=> NLVDS,
-		NSORTERINPUTS	 	=> 1,	--up to 4 LVDS links merge to one sorter
+		NSORTERINPUTS	 	=> NSORTERINPUTS,	--up to 4 LVDS links merge to one sorter
 		NINPUTS_BANK_A		=> NINPUTS_BANK_A,
 		NINPUTS_BANK_B		=> NINPUTS_BANK_B
 	)
@@ -388,20 +399,27 @@ begin
 		 
 		o_fifo_rdata		=> o_fifo_rdata,
 		o_fifo_rempty		=> o_fifo_rempty,
-		i_fifo_rack			=> i_fifo_rack--,
+		i_fifo_rack			=> i_fifo_rack,
+		i_sync_reset_cnt	=> i_sync_reset_cnt--,
 	);
 	
 	write_regs_mupix(RO_PRESCALER_REGISTER_W) 			<= ro_prescaler;
-	write_regs_mupix(DEBUG_CHIP_SELECT_REGISTER_W) 		<= debug_chip_select;
-	write_regs_mupix(TIMESTAMP_GRAY_INVERT_REGISTER_W) 	<= timestamp_gray_invert;
+	write_regs_mupix(DEBUG_CHIP_SELECT_REGISTER_W)		<= debug_chip_select;
+	write_regs_mupix(TIMESTAMP_GRAY_INVERT_REGISTER_W)	<= timestamp_gray_invert;
+	write_regs_mupix(LINK_MASK_REGISTER_W)	<= link_mask;
 	
 	mux_read_regs : process (i_clk, reset_n)
 	begin 
 		if (reset_n = '0') then 
-           read_regs_mupix_mux <= (others => '0');
-        elsif rising_edge(i_clk) then 
-           read_regs_mupix_mux <= read_regs_mupix(conv_integer(mux_read_regs_nios));
-        end if;
-    end process mux_read_regs;
+			read_regs_mupix_mux <= (others => '0');
+		elsif rising_edge(i_clk) then 
+		-- make sure we cannot access signals that are not there
+			if(mux_read_regs_nios < NREGISTERS_MUPIX_RD)then
+				read_regs_mupix_mux <= read_regs_mupix(conv_integer(mux_read_regs_nios));
+			else
+				read_regs_mupix_mux <= read_regs_mupix(NREGISTERS_MUPIX_RD-1);
+			end if;
+		end if;
+	end process mux_read_regs;
 	
 end architecture;

@@ -114,9 +114,7 @@ architecture arch of fe_block is
 
 
 
-    signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
-    signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
-    signal mscb_counter_in : unsigned(15 downto 0);
+    signal av_mscb : work.util.avalon_t;
 
 
 
@@ -164,13 +162,13 @@ begin
     -- generate resets
 
     e_nios_reset_n : entity work.reset_sync
-    port map ( rstout_n => nios_reset_n, arst_n => i_areset_n, clk => i_nios_clk );
+    port map ( o_reset_n => nios_reset_n, i_reset_n => i_areset_n, i_clk => i_nios_clk );
 
     e_reset_156_n : entity work.reset_sync
-    port map ( rstout_n => reset_156_n, arst_n => i_areset_n, clk => i_clk_156 );
+    port map ( o_reset_n => reset_156_n, i_reset_n => i_areset_n, i_clk => i_clk_156 );
 
     e_reset_125_n : entity work.reset_sync
-    port map ( rstout_n => reset_125_n, arst_n => i_areset_n, clk => i_clk_125 );
+    port map ( o_reset_n => reset_125_n, i_reset_n => i_areset_n, i_clk => i_clk_125 );
 
 
 
@@ -179,17 +177,17 @@ begin
     -- NIOS_CLK_HZ_g -> 1 Hz
     e_nios_clk_hz : entity work.clkdiv
     generic map ( P => NIOS_CLK_HZ_g )
-    port map ( clkout => o_nios_clk_mon, rst_n => nios_reset_n, clk => i_nios_clk );
+    port map ( o_clk => o_nios_clk_mon, i_reset_n => nios_reset_n, i_clk => i_nios_clk );
 
     -- 156.25 MHz -> 1 Hz
     e_clk_156_hz : entity work.clkdiv
     generic map ( P => 156250000 )
-    port map ( clkout => o_clk_156_mon, rst_n => reset_156_n, clk => i_clk_156 );
+    port map ( o_clk => o_clk_156_mon, i_reset_n => reset_156_n, i_clk => i_clk_156 );
 
     -- 125 MHz -> 1 Hz
     e_clk_125_hz : entity work.clkdiv
     generic map ( P => 125000000 )
-    port map ( clkout => o_clk_125_mon, rst_n => reset_125_n, clk => i_clk_125 );
+    port map ( o_clk => o_clk_125_mon, i_reset_n => reset_125_n, i_clk => i_clk_125 );
 
 
 
@@ -288,9 +286,12 @@ begin
         clk_125_clock_clk       => i_clk_125,
 
         -- mscb
-        parallel_mscb_in_export     => mscb_to_nios_parallel_in,
-        parallel_mscb_out_export    => mscb_from_nios_parallel_out,
-        counter_in_export           => std_logic_vector(mscb_counter_in),
+        avm_mscb_address        => av_mscb.address(3 downto 0),
+        avm_mscb_read           => av_mscb.read,
+        avm_mscb_readdata       => av_mscb.readdata,
+        avm_mscb_write          => av_mscb.write,
+        avm_mscb_writedata      => av_mscb.writedata,
+        avm_mscb_waitrequest    => av_mscb.waitrequest,
 
         irq_bridge_irq          => nios_irq,
 
@@ -476,21 +477,26 @@ begin
 
     e_mscb : entity work.mscb
     generic map (
-        CLK_HZ_g => NIOS_CLK_HZ_g--,
+        CLK_MHZ_g => real(NIOS_CLK_HZ_g) / 1000000.0--,
     )
     port map (
-        mscb_to_nios_parallel_in    => mscb_to_nios_parallel_in,
-        mscb_from_nios_parallel_out => mscb_from_nios_parallel_out,
+        i_avs_address           => av_mscb.address(3 downto 0),
+        i_avs_read              => av_mscb.read,
+        o_avs_readdata          => av_mscb.readdata,
+        i_avs_write             => av_mscb.write,
+        i_avs_writedata         => av_mscb.writedata,
+        o_avs_waitrequest       => av_mscb.waitrequest,
+
+
         mscb_data_in                => i_mscb_data,
         mscb_data_out               => o_mscb_data,
         mscb_oe                     => o_mscb_oe,
-        mscb_counter_in             => mscb_counter_in,
 
         o_mscb_irq                  => nios_irq(1),
         i_mscb_address              => X"ACA0",
 
-        reset                       => not nios_reset_n,
-        nios_clk                    => i_nios_clk--,
+        i_reset_n               => nios_reset_n,
+        i_clk                   => i_nios_clk--,
     );
 
 
@@ -537,7 +543,7 @@ begin
     g_pod_rx_reset_n : for i in pod_rx_reset_n'range generate
     begin
         e_pod_rx_reset_n : entity work.reset_sync
-        port map ( rstout_n => pod_rx_reset_n(i), arst_n => i_areset_n, clk => pod_rx_clk(i) );
+        port map ( o_reset_n => pod_rx_reset_n(i), i_reset_n => i_areset_n, i_clk => pod_rx_clk(i) );
     end generate;
 
     e_pod : entity work.xcvr_s4
