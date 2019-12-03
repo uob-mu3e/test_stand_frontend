@@ -1,4 +1,4 @@
--- event_counter.vhd
+-- midas_bank_builder.vhd
 -- entity for counting event length for dma readout
 -- Marius Koeppel, July 2019
 
@@ -9,23 +9,21 @@ use ieee.std_logic_unsigned.all;
 use work.mudaq_components.all;
 
 
-entity event_counter is
+entity midas_bank_builder is
     port(
-		clk:               in std_logic;
-		dma_clk:           in std_logic;
-		reset_n:           in std_logic;
-		rx_data:           in std_logic_vector (31 downto 0);
-		rx_datak:          in std_logic_vector (3 downto 0);
-		dma_wen_reg:       in std_logic;
-		event_length:      out std_logic_vector (11 downto 0);
-		dma_data_wren:     out std_logic;
-		dmamem_endofevent: out std_logic; 
- 		dma_data:          out std_logic_vector (31 downto 0);
-		state_out:         out std_logic_vector(3 downto 0)--;
+		i_clk_data:               in std_logic;
+		i_clk_dma:           in std_logic;
+		i_reset_n:           in std_logic;
+		i_rx_data:           in std_logic_vector (31 downto 0);
+		i_rx_datak:          in std_logic_vector (3 downto 0);
+		o_bank_length:      out std_logic_vector (11 downto 0);
+		o_bank_wren:		   out std_logic;
+ 		o_bank_data:          out std_logic_vector (31 downto 0);
+		o_state_out:         out std_logic_vector(3 downto 0)--;
 );
-end entity event_counter;
+end entity midas_bank_builder;
 
-architecture rtl of event_counter is
+architecture rtl of midas_bank_builder is
 
 ----------------signals---------------------
 signal reset : std_logic;
@@ -56,17 +54,17 @@ signal fifo_empty : std_logic;
 signal not_fifo_empty : std_logic;
 signal fifo_data_ready : std_logic;
 
-----------------begin event_counter------------------------
+----------------begin midas_bank_builder------------------------
 begin
 
-reset <= not reset_n;
-dma_data <= r_ram_data;
+reset <= not i_reset_n;
+o_bank_data <= r_ram_data;
 
 not_fifo_empty <= not fifo_empty;
 
-e_ram : ip_ram
+e_ram : entity work.ip_ram
    port map (
-		clock          => dma_clk,
+		clock          => i_clk_dma,
 		data           => w_ram_data,
 		rdaddress      => r_ram_add,
 		wraddress      => w_ram_add,
@@ -74,25 +72,25 @@ e_ram : ip_ram
 		q              => r_ram_data--,
 );
 
-e_tagging_fifo : ip_tagging_fifo
+e_tagging_fifo : entity work.ip_tagging_fifo
    port map (
 		data     => w_fifo_data,
 		wrreq    => w_fifo_en,
 		rdreq    => r_fifo_en,
-		clock    => dma_clk,
+		clock    => i_clk_dma,
 		q    		=> r_fifo_data,
 		full     => open,
 		empty    => tag_fifo_empty,
 		aclr     => reset--,
 );
 
-fifo : transceiver_fifo
+fifo : entity work.transceiver_fifo
 	port map (
 		data    => rx_data_in,
 		wrreq   => fifo_wrreq,
 		rdreq   => not_fifo_empty,
-		wrclk   => clk,
-		rdclk   => dma_clk,
+		wrclk   => i_clk_data,
+		rdclk   => i_clk_dma,
 		aclr    => reset,
 		q       => fifo_data_out,
 		rdempty => fifo_empty,
@@ -100,14 +98,14 @@ fifo : transceiver_fifo
 );
 
 -- write fifo
-process(clk, reset_n)
+process(i_clk_data, reset_n)
 begin
 	if(reset_n = '0') then
 		fifo_wrreq <= '0';
 		rx_data_in <= (others => '0');
-	elsif(rising_edge(clk)) then
-		rx_data_in <= rx_data & rx_datak;
-		if (rx_data = x"000000BC" and rx_datak = "0001") then
+	elsif(rising_edge(i_clk_data)) then
+		rx_data_in <= i_rx_data & i_rx_datak;
+		if (i_rx_data = x"000000BC" and i_rx_datak = "0001") then
          fifo_wrreq <= '0';
         else
 			fifo_wrreq <= '1';
@@ -116,7 +114,7 @@ begin
 end process;
 
 -- link data to dma ram
-process(dma_clk, reset_n)
+process(i_clk_dma, reset_n)
 begin
 	if(reset_n = '0') then
 		event_tagging_state	<= waiting;
@@ -125,7 +123,7 @@ begin
 		w_fifo_data				<= (others => '0');
 		w_ram_data				<= (others => '0');
 		w_ram_add				<= (others => '1');
-	elsif(rising_edge(dma_clk)) then
+	elsif(rising_edge(i_clk_dma)) then
 	
 		w_ram_en  <= '0';
 		w_fifo_en <= '0';
@@ -153,6 +151,11 @@ begin
 						w_fifo_en   			<= '1';
 						w_fifo_data 			<= w_ram_add + 1;
 						event_tagging_state 	<= waiting;
+					elsif(fifo_data_out(11 downto 4) = x"EE" and -- run end / termi command
+						fifo_data_out(3 downto 0) = "0001") then
+						w_fifo_en   			<= '1';
+						w_fifo_data 			<= w_ram_add + 1;
+						event_tagging_state 	<= waiting;
 					end if;
 					
 				when others =>
@@ -164,63 +167,60 @@ begin
 end process;
 
 -- dma end of events, count events and write control
-process(dma_clk, reset_n)
+process(i_clk_dma, reset_n)
 begin
 	if(reset_n = '0') then
-		state_out               <= x"0";
-		dmamem_endofevent 		<= '0';
+		o_state_out               <= x"0";
 		r_fifo_en					<= '0';
-		dma_data_wren	    		<= '0';
+		o_bank_wren	    		<= '0';
 		wait_cnt 					<= '0';
-		event_length				<= (others => '0');
+		o_bank_length				<= (others => '0');
 		r_ram_add					<= (others => '1');
 		event_last_ram_add		<= (others => '1');
 		event_counter_state 		<= waiting;	
-	elsif(rising_edge(dma_clk)) then
+	elsif(rising_edge(i_clk_dma)) then
 	
-		dmamem_endofevent <= '0';
 		r_fifo_en			<= '0';
-		dma_data_wren		<= '0';
+		o_bank_wren		<= '0';
 		wait_cnt          <= '0';
 			
       case event_counter_state is
 		
 			when waiting =>
-				state_out					<= x"A";
+				o_state_out					<= x"A";
 				if (tag_fifo_empty = '0') then
 					r_fifo_en    		  	<= '1';
 					event_last_ram_add  	<= r_fifo_data;
-					event_length			<= r_fifo_data - event_last_ram_add;
+					o_bank_length			<= r_fifo_data - event_last_ram_add;
 					r_ram_add			  	<= r_ram_add + '1';
 					event_counter_state	<= get_data;
 				end if;
 				
 			when get_data =>
-				state_out 				<= x"B";
+				o_state_out 				<= x"B";
 				r_fifo_en    		  	<= '0';
 				r_ram_add			  	<= r_ram_add + '1';
 				event_counter_state	<= runing;
 				
 			when runing =>
-				state_out 		<= x"C";
+				o_state_out 		<= x"C";
 				r_ram_add 		<= r_ram_add + '1';
-				dma_data_wren	<= dma_wen_reg;
+				o_bank_wren	<= '1';
 				if(r_ram_add = event_last_ram_add - '1') then
 					event_counter_state 	<= ending;
 				end if;
 				
 			when ending =>
-				state_out <= x"D";
+				o_state_out <= x"D";
 				if (wait_cnt = '0') then
                wait_cnt <= '1';
             else
                event_counter_state 	<= waiting;
-               dmamem_endofevent   	<= '1';
             end if;
-            dma_data_wren	<= dma_wen_reg;
+            o_bank_wren	<= '1';
 				
 			when others =>
-				state_out 				<= x"E";
+				o_state_out 				<= x"E";
 				event_counter_state	<= waiting;
 				
 		end case;
