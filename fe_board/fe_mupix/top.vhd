@@ -190,7 +190,7 @@ port (
 
     reset_n     : in    std_logic;
 	 clk_aux		 : in 	std_logic;
-	 FPGA_Test	 : in		std_logic_vector(0 downto 0)--;
+	 FPGA_Test	 : inout		std_logic_vector(2 downto 0)--;
 );
 end entity;
 
@@ -363,9 +363,12 @@ begin
 		port map(
 			inclk1x   => clk_aux,
 			inclk0x   => si42_clk_80,
-			clkselect => FPGA_Test(0), -- clkselect
+			clkselect => FPGA_Test(1), -- clkselect
 			outclk    => nios_clk--,
 		);
+	-- use these two signals with a jumper to FPGA_Test(1) to select the clock	
+	FPGA_Test(0) <= '0';
+	FPGA_Test(2) <= '1';
 
 
 
