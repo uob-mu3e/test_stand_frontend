@@ -159,24 +159,22 @@ begin
 	l_any_asic_overflow <= '0';
 	l_any_asic_hitdropped <= '0';
 	for i in N_INPUTS-1 downto 0 loop
-		if(i_source_data(i)(16)='1') then l_any_crc_err <= '1'; end if;
-		if(i_source_data(i)(17)='1') then l_any_asic_overflow <= '1'; end if;
-		if(i_source_data(i)(18)='1') then l_any_asic_hitdropped <= '1'; end if;
+		if(i_SC_mask(i)='0' and i_source_data(i)(16)='1') then l_any_crc_err <= '1'; end if;
+		if(i_SC_mask(i)='0' and i_source_data(i)(17)='1') then l_any_asic_overflow <= '1'; end if;
+		if(i_SC_mask(i)='0' and i_source_data(i)(18)='1') then l_any_asic_hitdropped <= '1'; end if;
 	end loop;
 
 end process;
 l_request_next <= l_request and not s_sel_gnt;
 
 --source data consistency_check (frame ID)
-consistency_check : process (i_source_data, l_common_data)
-variable frameid_nonsync : std_logic;
+consistency_check : process (i_source_data, l_common_data,i_SC_mask,l_all_header)
 begin
 	--check if all frameIDs match
-	frameid_nonsync:='0';
+	l_frameid_nonsync<='0';
 	for i in N_INPUTS-1 downto 0 loop
-		if(i_SC_mask(i)='0' and i_source_data(i)(15 downto 0) /= l_common_data(15 downto 0)) then frameid_nonsync:='1'; end if;
+		if(l_all_header='1' and i_SC_mask(i)='0' and i_source_data(i)(15 downto 0) /= l_common_data(15 downto 0)) then l_frameid_nonsync<='1'; end if;
 	end loop;
-	l_frameid_nonsync<=frameid_nonsync;
 end process;
 o_sync_error<=l_frameid_nonsync and s_Hpart; --show when valid, can be used for counting
 
