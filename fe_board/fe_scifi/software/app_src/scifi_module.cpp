@@ -364,7 +364,7 @@ void scifi_module_t::menu_counters(){
     printf("Counters: press 'q' to end / 'r' to reset\n");
     while(1){
 	for(char selected=0;selected<4; selected++){
-		regs.counters.ctrl = selected<<3;
+		regs.counters.ctrl = selected&0x3;
 		switch(selected){
 			case 0: printf("Events/Time  [8ns] "); break;
 			case 1: printf("Errors/Frame       "); break;
@@ -372,7 +372,7 @@ void scifi_module_t::menu_counters(){
 			case 3: printf("LVDS: Errors/Words "); break;
 		}
 		for(int i=0;i<4;i++){
-			regs.counters.ctrl = (regs.counters.ctrl & 0x18) + i;
+			regs.counters.ctrl = (regs.counters.ctrl & 0x3) + i<<2;
 			float frag=regs.counters.nom*1.e6/regs.counters.denom;
 			printf("| %10u / %18lu |", regs.counters.nom, regs.counters.denom);
 		}

@@ -53,7 +53,7 @@ port (
 	o_buffer_full		: out std_logic;
 
         i_SC_reset_counters	: in std_logic;
-	i_SC_counterselect      : in std_logic_vector(4 downto 0);
+	i_SC_counterselect      : in std_logic_vector(5 downto 0); --select counter to be read out. 1..0: counter type selection. 5..2: counter channel selection
 	o_counter_nominator     : out std_logic_vector(31 downto 0);
 	o_counter_denominator_low  : out std_logic_vector(31 downto 0);
 	o_counter_denominator_high : out std_logic_vector(31 downto 0)--;
@@ -424,8 +424,8 @@ end generate;
 p_counterselect: process (s_timecounter, s_eventcounter, s_crcerrorcounter, s_prbs_err_cnt, i_SC_counterselect)
 begin
 	for i in 0 to N_ASICS-1 loop
-		if(unsigned(i_SC_counterselect(2 downto 0)) = i) then
-		case i_SC_counterselect(4 downto 3) is
+		if(unsigned(i_SC_counterselect(5 downto 2)) = i) then
+		case i_SC_counterselect(1 downto 0) is
 			when "00" => 
 				o_counter_nominator <= s_eventcounter(i);
 				o_counter_denominator_high <= s_timecounter(i)(63 downto 32);
