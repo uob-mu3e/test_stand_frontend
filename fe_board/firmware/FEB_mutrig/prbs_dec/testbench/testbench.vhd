@@ -33,11 +33,11 @@ port (
 	i_rst		: in  std_logic;
 	o_initializing  : out std_logic;
 --data stream input
-	i_data	: in std_logic_vector(33 downto 0);
-	i_valid	: in std_logic;
+	i_A_data	: in std_logic_vector(33 downto 0);
+	i_A_valid	: in std_logic;
 --data stream output
-	o_data	: out std_logic_vector(33 downto 0);
-	o_valid	: out std_logic;
+	o_A_data	: out std_logic_vector(33 downto 0);
+	o_A_valid	: out std_logic;
 --disable block (make transparent)
 	i_SC_disable_dec : in std_logic
 );
@@ -325,10 +325,10 @@ X"000000001",
 X"00800005F",
 X"300000000"
 );
-signal i_data	  	: std_logic_vector(35 downto 0):=(others =>'0');
-signal i_valid	: std_logic:='0';
-signal o_data	  	: std_logic_vector(33 downto 0);
-signal o_valid	: std_logic;
+signal i_A_data	  	: std_logic_vector(35 downto 0):=(others =>'0');
+signal i_A_valid	: std_logic:='0';
+signal o_A_data	  	: std_logic_vector(33 downto 0);
+signal o_A_valid	: std_logic;
 
 --system signals
 signal i_rst		: std_logic:='0';
@@ -347,10 +347,10 @@ dut: prbs_decoder
 	port map (
 		i_coreclk	=> i_coreclk,
 		i_rst		=> i_rst,
-    		i_data		=> i_data(33 downto 0),
-    		i_valid		=> i_valid,
-    		o_data		=> o_data,
-    		o_valid		=> o_valid,
+    		i_A_data		=> i_A_data(33 downto 0),
+    		i_A_valid		=> i_A_valid,
+    		o_A_data		=> o_A_data,
+    		o_A_valid		=> o_A_valid,
 		i_SC_disable_dec=> '0',
 		o_initializing  => o_initializing
 	);
@@ -358,16 +358,16 @@ dut: prbs_decoder
 stim: process
 begin
 	wait for 1 us;
-	i_valid<='0';
+	i_A_valid<='0';
 	wait until falling_edge(o_initializing);
 	wait until rising_edge(i_coreclk);
 	wait until rising_edge(i_coreclk);
 	for i in 1 to 100 loop
-		i_valid<='1';
-		i_data<=s_stimulus(i);
+		i_A_valid<='1';
+		i_A_data<=s_stimulus(i);
 		wait until rising_edge(i_coreclk);
 	end loop;
-	i_valid<='0';
+	i_A_valid<='0';
 	wait for 200 ns;
 	assert false report "Simulation Finished." severity FAILURE;
 	wait;	
@@ -382,38 +382,38 @@ begin
 		-- write header
 	write(l, string'("--------------------------------------------------"));
 		
-	elsif (rising_edge(i_coreclk) and i_valid='1') then
-		if(i_data(33 downto 32)="10") then
+	elsif (rising_edge(i_coreclk) and i_A_valid='1') then
+		if(i_A_data(33 downto 32)="10") then
 			write(log_file,"Frame Header / Payload 1"&
-				HT & "RAW "& to_hstring(i_data) & 
+				HT & "RAW "& to_hstring(i_A_data) & 
 				LF);
 				s_header_payload_pre<='1';
-		elsif(i_data(33 downto 32)="11") then
+		elsif(i_A_data(33 downto 32)="11") then
 			write(log_file,"Frame Trailer "&
-				HT & "RAW "& to_hstring(i_data) & 
-				HT & "L2F="& "0x" & to_hstring(i_data(1 downto 1)) &
-				HT & "CRC="& "0x" & to_hstring(i_data(0 downto 0)) &
+				HT & "RAW "& to_hstring(i_A_data) & 
+				HT & "L2F="& "0x" & to_hstring(i_A_data(1 downto 1)) &
+				HT & "CRC="& "0x" & to_hstring(i_A_data(0 downto 0)) &
 				LF);
-		elsif(i_data(33 downto 32)="00") then
+		elsif(i_A_data(33 downto 32)="00") then
 			if(s_header_payload_pre='1') then
 				write(log_file,"Frame Header / Payload 2"&
-					HT & "RAW "& to_hstring(i_data) & 
-					HT & "TS(LO)="& "0x" & to_hstring(i_data(31 downto 16)) &
-					HT & "FSYN="& "0x" & to_hstring(i_data(15 downto 15)) &
-					HT & "FID ="& "0x" & to_hstring(i_data(14 downto 0)) & 
+					HT & "RAW "& to_hstring(i_A_data) & 
+					HT & "TS(LO)="& "0x" & to_hstring(i_A_data(31 downto 16)) &
+					HT & "FSYN="& "0x" & to_hstring(i_A_data(15 downto 15)) &
+					HT & "FID ="& "0x" & to_hstring(i_A_data(14 downto 0)) & 
 					LF);
 				s_header_payload_pre<='0';
 			else
 				write(log_file,"Hit data");
 				write(log_file,
-					HT & " RAW "& to_hstring(i_data) & 
-					HT & "ASIC "& natural'image(to_integer(unsigned(i_data(31 downto 28)))) & 
-					HT & "TYPE "& natural'image(to_integer(unsigned(i_data(27 downto 27)))) & 
-					HT & "  CH "& natural'image(to_integer(unsigned(i_data(26 downto 22)))) & 
-					HT & " EBH "& to_hstring(i_data(21 downto 21)) & 
-					HT & " ECC "& to_hstring(i_data(20 downto  6)) & 
-					HT & " EFC "& to_hstring(i_data( 5 downto  1)) & 
-					HT & "EFLG "& to_hstring(i_data( 0 downto  0)) &
+					HT & " RAW "& to_hstring(i_A_data) & 
+					HT & "ASIC "& natural'image(to_integer(unsigned(i_A_data(31 downto 28)))) & 
+					HT & "TYPE "& natural'image(to_integer(unsigned(i_A_data(27 downto 27)))) & 
+					HT & "  CH "& natural'image(to_integer(unsigned(i_A_data(26 downto 22)))) & 
+					HT & " EBH "& to_hstring(i_A_data(21 downto 21)) & 
+					HT & " ECC "& to_hstring(i_A_data(20 downto  6)) & 
+					HT & " EFC "& to_hstring(i_A_data( 5 downto  1)) & 
+					HT & "EFLG "& to_hstring(i_A_data( 0 downto  0)) &
 					LF);
 			end if;
 		end if;
@@ -432,38 +432,38 @@ begin
 		-- write header
 	write(l, string'("--------------------------------------------------"));
 		
-	elsif (rising_edge(i_coreclk) and o_valid='1') then
-		if(o_data(33 downto 32)="10") then
+	elsif (rising_edge(i_coreclk) and o_A_valid='1') then
+		if(o_A_data(33 downto 32)="10") then
 			write(log_file,"Frame Header / Payload 1"&
-				HT & "RAW "& to_hstring(o_data) & 
+				HT & "RAW "& to_hstring(o_A_data) & 
 				LF);
 				s_header_payload_post<='1';
-		elsif(o_data(33 downto 32)="11") then
+		elsif(o_A_data(33 downto 32)="11") then
 			write(log_file,"Frame Trailer "&
-				HT & "RAW "& to_hstring(o_data) & 
-				HT & "L2F="& "0x" & to_hstring(o_data(1 downto 1)) &
-				HT & "CRC="& "0x" & to_hstring(o_data(0 downto 0)) &
+				HT & "RAW "& to_hstring(o_A_data) & 
+				HT & "L2F="& "0x" & to_hstring(o_A_data(1 downto 1)) &
+				HT & "CRC="& "0x" & to_hstring(o_A_data(0 downto 0)) &
 				LF);
-		elsif(o_data(33 downto 32)="00") then
+		elsif(o_A_data(33 downto 32)="00") then
 			if(s_header_payload_post='1') then
 				write(log_file,"Frame Header / Payload 2"&
-					HT & "RAW "& to_hstring(o_data) & 
-					HT & "TS(LO)="& "0x" & to_hstring(o_data(31 downto 16)) &
-					HT & "FSYN="& "0x" & to_hstring(o_data(15 downto 15)) &
-					HT & "FID ="& "0x" & to_hstring(o_data(14 downto 0)) & 
+					HT & "RAW "& to_hstring(o_A_data) & 
+					HT & "TS(LO)="& "0x" & to_hstring(o_A_data(31 downto 16)) &
+					HT & "FSYN="& "0x" & to_hstring(o_A_data(15 downto 15)) &
+					HT & "FID ="& "0x" & to_hstring(o_A_data(14 downto 0)) & 
 					LF);
 				s_header_payload_post<='0';
 			else
 				write(log_file,"Hit data");
 				write(log_file,
-					HT & " RAW "& to_hstring(o_data) & 
-					HT & "ASIC "& natural'image(to_integer(unsigned(o_data(31 downto 28)))) & 
-					HT & "TYPE "& natural'image(to_integer(unsigned(o_data(27 downto 27)))) & 
-					HT & "  CH "& natural'image(to_integer(unsigned(o_data(26 downto 22)))) & 
-					HT & " EBH "& to_hstring(o_data(21 downto 21)) & 
-					HT & " ECC "& to_hstring(o_data(20 downto  6)) & 
-					HT & " EFC "& to_hstring(o_data( 5 downto  1)) & 
-					HT & "EFLG "& to_hstring(o_data( 0 downto  0)) &
+					HT & " RAW "& to_hstring(o_A_data) & 
+					HT & "ASIC "& natural'image(to_integer(unsigned(o_A_data(31 downto 28)))) & 
+					HT & "TYPE "& natural'image(to_integer(unsigned(o_A_data(27 downto 27)))) & 
+					HT & "  CH "& natural'image(to_integer(unsigned(o_A_data(26 downto 22)))) & 
+					HT & " EBH "& to_hstring(o_A_data(21 downto 21)) & 
+					HT & " ECC "& to_hstring(o_A_data(20 downto  6)) & 
+					HT & " EFC "& to_hstring(o_A_data( 5 downto  1)) & 
+					HT & "EFLG "& to_hstring(o_A_data( 0 downto  0)) &
 					LF);
 			end if;
 		end if;
