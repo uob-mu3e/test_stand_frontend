@@ -27,8 +27,8 @@ port (
 --data stream input
 	i_A_data		: in std_logic_vector(33 downto 0);
 	i_A_valid		: in std_logic;
-	i_B_data		: in std_logic_vector(33 downto 0);
-	i_B_valid		: in std_logic;
+	i_B_data		: in std_logic_vector(33 downto 0) := (others =>'-');
+	i_B_valid		: in std_logic := '0';
 
 --data stream output
 	o_A_data		: out std_logic_vector(33 downto 0);
