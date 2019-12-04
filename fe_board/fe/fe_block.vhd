@@ -487,12 +487,11 @@ begin
         i_avs_writedata         => av_mscb.writedata,
         o_avs_waitrequest       => av_mscb.waitrequest,
 
+        i_rx_data               => i_mscb_data,
+        o_tx_data               => o_mscb_data,
+        o_tx_data_oe            => o_mscb_oe,
 
-        mscb_data_in                => i_mscb_data,
-        mscb_data_out               => o_mscb_data,
-        mscb_oe                     => o_mscb_oe,
-
-        o_mscb_irq                  => nios_irq(1),
+        o_irq                   => nios_irq(1),
         i_mscb_address              => X"ACA0",
 
         i_reset_n               => reset_156_n,
