@@ -51,19 +51,19 @@ architecture impl of prbs_decoder is
 	signal s_init_dec,s_init_dec_d : std_logic_vector(14 downto 0); --initialization vector(decoded data)
 	signal s_A_addr,n_A_addr : std_logic_vector(14 downto 0);    --r/w address on port a (init and T decoding)
 
-	signal s_valid_2 : std_logic;
-	signal s_valid_1 : std_logic;
-	signal s_data_bypass_2  : std_logic_vector(33 downto 0); -- undecoded data bypass
-	signal s_data_bypass_1  : std_logic_vector(33 downto 0); -- undecoded data bypass
-	signal s_data_bypass_0    : std_logic_vector(33 downto 0); -- undecoded data bypass
-	signal s_data_dec : std_logic_vector(14 downto 0); -- decoded data E timestamp
-	signal s_select_bypass_2 : std_logic;
-	signal s_select_bypass_1 : std_logic;
-	signal s_select_bypass_0 : std_logic;
-	signal s_is_header_3 : std_logic;
-	signal s_is_header_2 : std_logic;
-	signal s_is_header_1 : std_logic;
-	signal s_is_header_0 : std_logic;
+	signal s_A_valid_2 : std_logic;
+	signal s_A_valid_1 : std_logic;
+	signal s_A_data_bypass_2  : std_logic_vector(33 downto 0); -- undecoded data bypass
+	signal s_A_data_bypass_1  : std_logic_vector(33 downto 0); -- undecoded data bypass
+	signal s_A_data_bypass_0    : std_logic_vector(33 downto 0); -- undecoded data bypass
+	signal s_A_data_dec : std_logic_vector(14 downto 0); -- decoded data E timestamp
+	signal s_A_select_bypass_2 : std_logic;
+	signal s_A_select_bypass_1 : std_logic;
+	signal s_A_select_bypass_0 : std_logic;
+	signal s_A_is_header_3 : std_logic;
+	signal s_A_is_header_2 : std_logic;
+	signal s_A_is_header_1 : std_logic;
+	signal s_A_is_header_0 : std_logic;
 begin
 
 
@@ -92,7 +92,7 @@ PORT MAP (
 	clock0 => i_coreclk,
 	data_a => s_init_dec_d,
 	wren_a => s_init,
-	q_a => s_data_dec
+	q_a => s_A_data_dec
 );
 
 
@@ -111,8 +111,8 @@ begin
 			s_init <='1';
 
 		--A_part
-			s_valid_2<='0';
-			s_valid_1<='0';
+			s_A_valid_2<='0';
+			s_A_valid_1<='0';
 			o_A_valid<='0';
 		else
 		--init part
@@ -124,26 +124,26 @@ begin
 			end if;
 
 		--A_part
-			s_valid_2<= i_A_valid;
-			s_valid_1<= s_valid_2;
-			o_A_valid<=s_valid_1 and ((not s_init) or i_SC_disable_dec); --A or init
-			s_data_bypass_2 <= i_A_data;
-			s_data_bypass_1 <= s_data_bypass_2;
-			s_data_bypass_0 <= s_data_bypass_1;
+			s_A_valid_2<= i_A_valid;
+			s_A_valid_1<= s_A_valid_2;
+			o_A_valid<=s_A_valid_1 and ((not s_init) or i_SC_disable_dec); --A or init
+			s_A_data_bypass_2 <= i_A_data;
+			s_A_data_bypass_1 <= s_A_data_bypass_2;
+			s_A_data_bypass_0 <= s_A_data_bypass_1;
 
 			--scan input data for header or trailer, to be bypassed
-			s_select_bypass_2 <=i_A_data(33);
+			s_A_select_bypass_2 <=i_A_data(33);
 			if(i_A_data(33 downto 32)="10") then
-				s_is_header_3 <='1';
+				s_A_is_header_3 <='1';
 			else
-				s_is_header_3 <='0';
+				s_A_is_header_3 <='0';
 			end if;
-			if(i_SC_disable_dec='1') then s_select_bypass_2 <= '1'; end if;
-			s_select_bypass_1<= s_select_bypass_2;
-			s_select_bypass_0<= s_select_bypass_1;
-			s_is_header_2 <=s_is_header_3;
-			s_is_header_1 <=s_is_header_2;
-			s_is_header_0 <=s_is_header_1;
+			if(i_SC_disable_dec='1') then s_A_select_bypass_2 <= '1'; end if;
+			s_A_select_bypass_1<= s_A_select_bypass_2;
+			s_A_select_bypass_0<= s_A_select_bypass_1;
+			s_A_is_header_2 <=s_A_is_header_3;
+			s_A_is_header_1 <=s_A_is_header_2;
+			s_A_is_header_0 <=s_A_is_header_1;
 		end if;
 	end if;
 end process;
@@ -153,8 +153,8 @@ end process;
 n_A_addr <= s_init_prbs when s_init='1' else i_A_data(20 downto 6);
 
 --output assignment: replace TCC and ECC by their decoded counterparts when not bypassing
-o_A_data<=s_data_bypass_0	when s_select_bypass_0='1' or s_is_header_0='1' else
-	s_data_bypass_0(33 downto 21) & s_data_dec(14 downto 0) & s_data_bypass_0(5 downto 0);
+o_A_data<=s_A_data_bypass_0	when s_A_select_bypass_0='1' or s_A_is_header_0='1' else
+	s_A_data_bypass_0(33 downto 21) & s_A_data_dec(14 downto 0) & s_A_data_bypass_0(5 downto 0);
 
 o_initializing <= s_init;
 end architecture;
