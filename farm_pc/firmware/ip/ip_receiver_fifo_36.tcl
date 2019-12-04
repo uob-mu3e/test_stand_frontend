@@ -10,5 +10,5 @@ source [ file join $dir0 "../util/altera_ip.tcl" ]
 set name [ file tail [ file rootname [ info script ] ] ]
 
 create_system $name
-add_fifo 32 32 -dc -usedw -aclr
+add_fifo 36 36 -dc -usedw -aclr
 save_system [ file join $dir0 "$name.qsys" ]

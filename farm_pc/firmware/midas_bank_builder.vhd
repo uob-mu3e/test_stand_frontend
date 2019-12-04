@@ -6,7 +6,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
-use work.mudaq_components.all;
 
 
 entity midas_bank_builder is
@@ -18,7 +17,7 @@ entity midas_bank_builder is
 		i_rx_datak:          in std_logic_vector (3 downto 0);
 		o_bank_length:      out std_logic_vector (11 downto 0);
 		o_bank_wren:		   out std_logic;
- 		o_bank_data:          out std_logic_vector (31 downto 0);
+ 		o_bank_data:          out std_logic_vector (35 downto 0);
 		o_state_out:         out std_logic_vector(3 downto 0)--;
 );
 end entity midas_bank_builder;
@@ -28,10 +27,10 @@ architecture rtl of midas_bank_builder is
 ----------------signals---------------------
 signal reset : std_logic;
 
-signal w_ram_data : std_logic_vector(31 downto 0);
+signal w_ram_data : std_logic_vector(35 downto 0);
 signal w_ram_add  : std_logic_vector(11 downto 0);
 signal w_ram_en   : std_logic;
-signal r_ram_data : std_logic_vector(31 downto 0);
+signal r_ram_data : std_logic_vector(35 downto 0);
 signal r_ram_add  : std_logic_vector(11 downto 0);
 
 signal w_fifo_data      : std_logic_vector(11 downto 0);
@@ -40,10 +39,10 @@ signal r_fifo_data      : std_logic_vector(11 downto 0);
 signal r_fifo_en        : std_logic;
 signal tag_fifo_empty   : std_logic;
 
-type event_tagging_state_type is (waiting, ending);
-type event_counter_state_type is (waiting, get_data, runing, ending);
-signal event_counter_state : event_counter_state_type;
-signal event_tagging_state : event_tagging_state_type;
+type bank_tagging_state_type is (waiting, ending);
+type bank_counter_state_type is (waiting, get_data, runing, ending);
+signal bank_counter_state : bank_counter_state_type;
+signal bank_tagging_state : bank_tagging_state_type;
 signal wait_cnt : std_logic;
 signal event_last_ram_add : std_logic_vector(11 downto 0);
 
@@ -62,45 +61,91 @@ o_bank_data <= r_ram_data;
 
 not_fifo_empty <= not fifo_empty;
 
+-- write buffer data to ram
+-- e_ram : entity work.ip_ram_36
+-- simulation only
 e_ram : entity work.ip_ram
+generic map (
+	ADDR_WIDTH_A => 12,
+    ADDR_WIDTH_B => 12,
+    DATA_WIDTH_A => 36,
+    DATA_WIDTH_B => 36--,
+)
    port map (
-		clock          => i_clk_dma,
-		data           => w_ram_data,
-		rdaddress      => r_ram_add,
-		wraddress      => w_ram_add,
-		wren           => w_ram_en,
-		q              => r_ram_data--,
+		--clock          => i_clk_dma,
+		--data           => w_ram_data,
+		--rdaddress      => r_ram_add,
+		--wraddress      => w_ram_add,
+		--wren           => w_ram_en,
+		--q              => r_ram_data--,
+		address_a => w_ram_add,
+		address_b => r_ram_add,
+		clock_a => i_clk_dma,
+		clock_b => i_clk_dma,
+		data_a => w_ram_data,
+		data_b => (others => '0'),
+		wren_a => w_ram_en,
+		wren_b => '0',
+		q_a => open,
+		q_b => r_ram_data--,
 );
 
-e_tagging_fifo : entity work.ip_tagging_fifo
-   port map (
+-- e_tagging_fifo : entity work.ip_tagging_fifo
+-- simulation only
+e_bank_length : entity work.ip_scfifo
+    generic map(
+        ADDR_WIDTH => 12,
+        DATA_WIDTH => 12--,
+)
+-- simulation only
+		port map (
 		data     => w_fifo_data,
 		wrreq    => w_fifo_en,
 		rdreq    => r_fifo_en,
 		clock    => i_clk_dma,
-		q    		=> r_fifo_data,
+		q    	 => r_fifo_data,
 		full     => open,
 		empty    => tag_fifo_empty,
-		aclr     => reset--,
+		-- simulation only
+		almost_empty => open,
+		almost_full => open,
+		usedw => open,
+		sclr     => reset--,
+		-- simulation only
+		--aclr     => reset--,
 );
 
-fifo : entity work.transceiver_fifo
-	port map (
-		data    => rx_data_in,
-		wrreq   => fifo_wrreq,
-		rdreq   => not_fifo_empty,
+--e_fifo : entity work.ip_receiver_fifo_36
+-- simulation only
+e_fifo : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH => 8,
+        DATA_WIDTH => 36--,
+)
+-- simulation only
+		port map (
+		data     => rx_data_in,
+		wrreq    => fifo_wrreq,
+		rdreq    => not_fifo_empty,
 		wrclk   => i_clk_data,
 		rdclk   => i_clk_dma,
-		aclr    => reset,
-		q       => fifo_data_out,
-		rdempty => fifo_empty,
-		wrfull  => open--,
+		q    	 => fifo_data_out,
+
+		-- simulation only
+		rdempty	 => fifo_empty,
+		rdusedw	 => open,
+		wrfull	 => open,
+		wrusedw	 => open,
+		aclr     => reset--,
+		-- simulation only
+		--full     => open,
+		--empty    => fifo_empty,
 );
 
 -- write fifo
-process(i_clk_data, reset_n)
+process(i_clk_data, i_reset_n)
 begin
-	if(reset_n = '0') then
+	if(i_reset_n = '0') then
 		fifo_wrreq <= '0';
 		rx_data_in <= (others => '0');
 	elsif(rising_edge(i_clk_data)) then
@@ -114,10 +159,10 @@ begin
 end process;
 
 -- link data to dma ram
-process(i_clk_dma, reset_n)
+process(i_clk_dma, i_reset_n)
 begin
-	if(reset_n = '0') then
-		event_tagging_state	<= waiting;
+	if(i_reset_n = '0') then
+		bank_tagging_state	<= waiting;
 		w_ram_en             <= '0';
 		w_fifo_en            <= '0';
 		w_fifo_data				<= (others => '0');
@@ -130,7 +175,7 @@ begin
 
 		if (not_fifo_empty = '1') then
 			
-			case event_tagging_state is
+			case bank_tagging_state is
 			
 				when waiting =>
 					if(((fifo_data_out(35 downto 30) = "111010") or (fifo_data_out(35 downto 30) = "111000")) and --mupix or mutrig data header
@@ -138,28 +183,25 @@ begin
 						fifo_data_out(3 downto 0) = "0001") then --data header k
 						w_ram_en				  <= '1';
 						w_ram_add   		  <= w_ram_add + 1;
-						w_ram_data  		  <= fifo_data_out(35 downto 4);
-						event_tagging_state <= ending;
+						w_ram_data  		  <= fifo_data_out;
+						bank_tagging_state <= ending;
 					end if;
 					
 				when ending =>
 					w_ram_en		<= '1';
-					w_ram_data  <= fifo_data_out(35 downto 4);
+					w_ram_data  <= fifo_data_out;
 					w_ram_add   <= w_ram_add + 1;
-					if(fifo_data_out(11 downto 4) = x"9c" and --x"0000009c" and
-						fifo_data_out(3 downto 0) = "0001") then
+					if( (fifo_data_out(11 downto 4) = x"9c" and --x"0000009c" and
+						fifo_data_out(3 downto 0) = "0001") or
+						(fifo_data_out(11 downto 4) = x"EE" and -- run end / termi command
+						fifo_data_out(3 downto 0) = "0001") ) then
 						w_fifo_en   			<= '1';
 						w_fifo_data 			<= w_ram_add + 1;
-						event_tagging_state 	<= waiting;
-					elsif(fifo_data_out(11 downto 4) = x"EE" and -- run end / termi command
-						fifo_data_out(3 downto 0) = "0001") then
-						w_fifo_en   			<= '1';
-						w_fifo_data 			<= w_ram_add + 1;
-						event_tagging_state 	<= waiting;
+						bank_tagging_state 	<= waiting;
 					end if;
 					
 				when others =>
-					event_tagging_state <= waiting;
+					bank_tagging_state <= waiting;
 
 			end case;
 		end if;
@@ -167,24 +209,24 @@ begin
 end process;
 
 -- dma end of events, count events and write control
-process(i_clk_dma, reset_n)
+process(i_clk_dma, i_reset_n)
 begin
-	if(reset_n = '0') then
+	if(i_reset_n = '0') then
 		o_state_out               <= x"0";
 		r_fifo_en					<= '0';
 		o_bank_wren	    		<= '0';
 		wait_cnt 					<= '0';
 		o_bank_length				<= (others => '0');
 		r_ram_add					<= (others => '1');
-		event_last_ram_add		<= (others => '1');
-		event_counter_state 		<= waiting;	
+		event_last_ram_add		<= (others => '0');
+		bank_counter_state 		<= waiting;	
 	elsif(rising_edge(i_clk_dma)) then
 	
 		r_fifo_en			<= '0';
 		o_bank_wren		<= '0';
 		wait_cnt          <= '0';
 			
-      case event_counter_state is
+      case bank_counter_state is
 		
 			when waiting =>
 				o_state_out					<= x"A";
@@ -193,35 +235,36 @@ begin
 					event_last_ram_add  	<= r_fifo_data;
 					o_bank_length			<= r_fifo_data - event_last_ram_add;
 					r_ram_add			  	<= r_ram_add + '1';
-					event_counter_state	<= get_data;
+					bank_counter_state	<= get_data;
 				end if;
 				
 			when get_data =>
 				o_state_out 				<= x"B";
 				r_fifo_en    		  	<= '0';
+				o_bank_wren	<= '1'; -- todo: check this for arria10 ram
 				r_ram_add			  	<= r_ram_add + '1';
-				event_counter_state	<= runing;
+				bank_counter_state	<= runing;
 				
 			when runing =>
 				o_state_out 		<= x"C";
 				r_ram_add 		<= r_ram_add + '1';
 				o_bank_wren	<= '1';
 				if(r_ram_add = event_last_ram_add - '1') then
-					event_counter_state 	<= ending;
+					bank_counter_state 	<= ending;
 				end if;
 				
 			when ending =>
 				o_state_out <= x"D";
-				if (wait_cnt = '0') then
-               wait_cnt <= '1';
-            else
-               event_counter_state 	<= waiting;
-            end if;
-            o_bank_wren	<= '1';
+				--if (wait_cnt = '0') then -- todo: check this for arria10 ram
+    --           		wait_cnt <= '1';
+    --        	else
+               		bank_counter_state 	<= waiting;
+            	--end if;
+            	o_bank_wren	<= '1';
 				
 			when others =>
 				o_state_out 				<= x"E";
-				event_counter_state	<= waiting;
+				bank_counter_state	<= waiting;
 				
 		end case;
 			

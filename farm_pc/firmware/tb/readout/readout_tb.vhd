@@ -27,30 +27,12 @@ architecture behav of readout_tb is
                 state_out:  	out std_logic_vector(3 downto 0)
 			);		
 	end component data_generator_a10_tb;
-    
-    component midas_event_builder is
-        port (
-         clk_data           in std_logic;
-         clk_dma:           in std_logic;
-         reset_n:           in std_logic;
-         rx_data_mupix:     in std_logic_vector (31 downto 0);
-         rx_datak_mupix:    in std_logic_vector (3 downto 0);
-         rx_data_scifi:     in std_logic_vector (31 downto 0);
-         rx_datak_scifi:    in std_logic_vector (3 downto 0);
-         rx_data_tile:      in std_logic_vector (31 downto 0);
-         rx_datak_tile:     in std_logic_vector (3 downto 0);
-         dma_wen_reg:       in std_logic;
-         dma_data_wren:     out std_logic;
-         dmamem_endofevent: out std_logic; 
-         dma_data:          out std_logic_vector (255 downto 0);
-         state_out:         out std_logic_vector(3 downto 0)
-    );
-    end component midas_event_builder;
 
 
   --  Specifies which entity is bound with the component.
   		
       signal clk : std_logic;
+      signal clk_half : std_logic;
   	  signal reset_n : std_logic := '1';
   	  signal reset : std_logic;
   	  signal enable_pix : std_logic;
@@ -64,10 +46,12 @@ architecture behav of readout_tb is
       signal data_pix_ready : std_logic;
       signal dmamem_endofevent : std_logic;
       signal state_out_datagen : std_logic_vector(3 downto 0);
-      signal state_out_eventcounter : std_logic_vector(3 downto 0);
-      signal event_length : std_logic_vector(7 downto 0);
+      signal state_out_eventbuilder : std_logic_vector(3 downto 0);
       signal dma_data_wren : std_logic;
       signal dma_data : std_logic_vector(255 downto 0);
+
+      signal rx_data : std_logic_vector(95 downto 0);
+      signal rx_datak : std_logic_vector(11 downto 0);
   		  		
   		constant ckTime: 		time	:= 10 ns;
 		
@@ -85,6 +69,14 @@ begin
    wait for ckTime/2;
    clk <= '1';
    wait for ckTime/2;
+end process;
+
+ckProc2: process
+begin
+   clk_half <= '0';
+   wait for ckTime/4;
+   clk_half <= '1';
+   wait for ckTime/4;
 end process;
 
 inita : process
@@ -140,22 +132,25 @@ e_data_gen_tiles : component data_generator_a10_tb
 		state_out			  => state_out_datagen--,
 );
 
-e_event_counter : component midas_event_builder
-   port map(
-   		clk_data            => clk,
-   		clk_dma             => clk,
-         reset_n            => reset_n,
-         rx_data_mupix      => data_pix_generated,
-         rx_datak_mupi      => datak_pix_generated,
-         rx_data_scifi      => data_scifi_generated,
-         rx_datak_scif      => datak_scifi_generated,
-         rx_data_tile       => data_tile_generated,
-         rx_datak_tile      => datak_tile_generated,
-         dma_wen_reg        => '1',
-         dma_data_wren      => dma_data_wren,
-         dmamem_endofevent  => dmamem_endofevent,
-         dma_data           => dma_data,
-         state_out          => state_out_eventcounter--,
-   );
+
+rx_data <= data_pix_generated & data_scifi_generated & data_tile_generated;
+rx_datak <= datak_pix_generated & datak_scifi_generated & datak_tile_generated;
+
+e_midas_event_builder : entity work.midas_event_builder
+  generic map (
+    NLINKS => 3--;
+  )
+  port map(
+    i_clk_data => clk,
+    i_clk_dma  => clk_half,
+    i_reset_n  => reset_n,
+    i_rx_data  => rx_data,
+    i_rx_datak => rx_datak,
+    i_wen_reg  => '1',
+    o_event_wren => dma_data_wren,
+    o_endofevent => dmamem_endofevent,
+    o_event_data => dma_data,
+    o_state_out => state_out_eventbuilder--,
+);
 
 end behav;

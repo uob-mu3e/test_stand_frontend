@@ -16,7 +16,7 @@ mkdir -p .cache
 cd .cache || exit 1
 
 OPTS=(
-    --ieee=synopsys -fexplicit
+    --ieee=synopsys -fexplicit -P=/home/labor/ghdl/libraries/vendors/altera/ 
 )
 
 if [ -d "$HOME/.cache/altera-quartus" ] ; then
