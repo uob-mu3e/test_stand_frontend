@@ -23,6 +23,7 @@ port (
 --system
 	i_coreclk	: in  std_logic;
 	i_rst		: in  std_logic;
+	o_initializing  : out std_logic;
 --data stream input
 	i_data	: in std_logic_vector(33 downto 0);
 	i_valid	: in std_logic;
@@ -57,9 +58,11 @@ architecture impl of prbs_decoder is
 	signal s_data_dec,s_init_dec_d : std_logic_vector(14 downto 0); -- decoded data E timestamp
 	signal n_select_bypass : std_logic;
 	signal s_select_bypass : std_logic;
+	signal l_select_bypass : std_logic;
 	signal n_is_header : std_logic;
 	signal s_is_header : std_logic;
 	signal l_is_header : std_logic;
+	signal ll_is_header : std_logic;
 begin
 
 
@@ -90,10 +93,6 @@ PORT MAP (
 	wren_a => s_init,
 	q_a => s_data_dec
 );
-
---address assignments: PRBS data for TCC and ECC or initialization vector
---pipelined to improve timing budget
-n_addr_a <= s_init_prbs when s_init='1' else i_data(20 downto 6);
 
 
 --decoder init and bypass registers
@@ -134,14 +133,22 @@ begin
 			end if;
 			if(i_SC_disable_dec='1') then n_select_bypass <= '1'; end if;
 			s_select_bypass<= n_select_bypass;
+			l_select_bypass<= s_select_bypass;
 			s_is_header <=n_is_header;
 			l_is_header <=s_is_header;
+			ll_is_header <=l_is_header;
 		end if;
 	end if;
 end process;
 
+--address assignments: PRBS data for TCC and ECC or initialization vector
+--pipelined to improve timing budget
+n_addr_a <= s_init_prbs when s_init='1' else i_data(20 downto 6);
+
 --output assignment: replace TCC and ECC by their decoded counterparts when not bypassing
-o_data<=s_data_bypass	when s_select_bypass='1' or l_is_header='1' else
+o_data<=s_data_bypass	when l_select_bypass='1' or ll_is_header='1' else
 	s_data_bypass(33 downto 21) & s_data_dec(14 downto 0) & s_data_bypass(5 downto 0);
+
+o_initializing <= s_init;
 end architecture;
 
