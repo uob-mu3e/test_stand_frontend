@@ -233,7 +233,7 @@ void scifi_module_t::menu_reg_datapathctrl(){
         auto reg = regs.ctrl.dp;
         printf("  [p] => %s prbs decoder\n",(reg&(1<<31)) == 0?"enable":"disable");
         printf("  [w] => %s wait for all RX ready\n",(reg&(1<<30)) == 0?"enable":"disable");
-        printf("  [s] => %s wait sticky\n",(reg&(1<<30)) == 0?"set":"unset");
+        printf("  [s] => %s wait sticky\n",(reg&(1<<29)) == 0?"set":"unset");
 	for(alt_u8 i=0;i<16;i++){
             printf("  [%1x] => %s ASIC %u\n",i,(reg&(1<<i)) == 0?"  mask":"unmask",i);
 	}
@@ -284,21 +284,21 @@ void scifi_module_t::RSTSKWctrl_Set(uint8_t channel, uint8_t value){
     if(value>7) return;
     auto& regs = sc->ram->regs.scifi;
     uint32_t val=regs.ctrl.resetdelay & 0xffc0;
-    printf("PLL_phaseadjust #%u: ",channel);
+    //printf("PLL_phaseadjust #%u: ",channel);
     while(value!=resetskew_count[channel]){
         val |= (channel+2)<<2;
         if(value>resetskew_count[channel]){ //increment counter
             val |= 2;
-	    printf("+");
+	    //printf("+");
 	    resetskew_count[channel]++;
 	}else{
             val |= 1;
-	    printf("-");
+	    //printf("-");
 	    resetskew_count[channel]--;
 	}
         regs.ctrl.resetdelay = val;
     }
-    printf("\n");
+    //printf("\n");
     regs.ctrl.resetdelay= val & 0xffc0;
 }
 
