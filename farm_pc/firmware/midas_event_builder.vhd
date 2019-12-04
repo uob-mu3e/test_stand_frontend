@@ -157,7 +157,7 @@ begin
 		buffer_not_empty <= '0';
 		not_empty := '1';
 	elsif( rising_edge(i_clk_dma) ) then
-		buffer_not_empty <= not_empty;
+		buffer_not_empty <= not not_empty;
 		l_empty : FOR i in 0 to NLINKS - 1 LOOP
 			not_empty := not_empty and bank_empty(i);
 		END LOOP l_empty;
@@ -220,7 +220,7 @@ e_tagging_fifo_event : entity work.ip_scfifo
 
 -- write banks to event ram
 process(i_clk_dma, i_reset_n)
-	variable count_size : std_logic_vector(31 downto 0);
+	variable count_size : integer range 0 to 2**12*NLINKS;
 begin
 	if( i_reset_n = '0' ) then
 		event_tagging_state	<= waiting;
@@ -233,7 +233,7 @@ begin
 		bank_length_ren		<= (others => '0');
 		w_ram_add			<= (others => '1');
 
-		count_size 			:= (others => '0');
+		count_size 			:= 0;
 		event_id 			<= (others => '0');
 		trigger_mask		<= x"FFFF";
 		serial_number 		<= x"BABEBABE";
@@ -246,7 +246,7 @@ begin
 	
 		w_ram_en  <= '0';
 		w_fifo_en <= '0';
-		count_size := (others => '0');
+		count_size := 0;
 		time_stamp <= time_stamp + '1'; -- TODO: this counts now all the time
 
 		case event_tagging_state is
@@ -257,10 +257,10 @@ begin
 					w_ram_add   		<= w_ram_add + 1;
 					w_ram_data  		<= event_id & trigger_mask;
 					l_count_size : FOR i in 0 to NLINKS - 1 LOOP
-						count_size := count_size + bank_length_fifo(11 + 12 * i downto i * 12);
+						count_size := count_size + conv_integer(bank_length_fifo(11 + 12 * i downto i * 12));
 					END LOOP l_count_size;
-					event_data_size		<= std_logic_vector(to_unsigned((3 * NLINKS + 6) * 32 + conv_integer(count_size), event_data_size'length));
-					all_bank_size		<= std_logic_vector(to_unsigned(3 * NLINKS * 32 + conv_integer(count_size), event_data_size'length));
+					event_data_size		<= std_logic_vector(to_unsigned((3 * NLINKS + 6) * 32 + count_size, event_data_size'length));
+					all_bank_size		<= std_logic_vector(to_unsigned(3 * NLINKS * 32 + count_size, event_data_size'length));
 					event_tagging_state <= event_serial_number;
 				end if;
 
