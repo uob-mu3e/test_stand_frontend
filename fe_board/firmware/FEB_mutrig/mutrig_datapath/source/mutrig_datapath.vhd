@@ -18,7 +18,10 @@ generic(
 	LVDS_PLL_FREQ : real := 125.0;
 	LVDS_DATA_RATE : real := 1250.0;
 	GEN_DUMMIES : boolean := TRUE;
-	INPUT_SIGNFLIP : std_logic_vector:=x"0000"--;
+	INPUT_SIGNFLIP : std_logic_vector:=x"0000";
+	C_CHANNELNO_PREFIX : std_logic_vector:="" --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
+	--(e.g. Tiles,  one module with up to 16 ASICs, PREFIX="")
+        --(e.g. Fibers, two modules with up to 4 ASICs each, PREFIX="00" ; "01" for the different instances )
 );
 port (
 	i_rst			: in  std_logic;				-- logic reset
@@ -140,7 +143,8 @@ end component; --mutrig_store;
 component framebuilder_mux is
 generic(
 		N_INPUTS : integer;
-		N_INPUTID_BITS : integer
+		N_INPUTID_BITS : integer;
+		C_CHANNELNO_PREFIX : std_logic_vector:=""
 );
 port (
 		i_coreclk        : in  std_logic;                                     -- system clock
@@ -449,7 +453,8 @@ end process;
 u_mux: framebuilder_mux
 	generic map( 
 		N_INPUTS => N_ASICS,
-		N_INPUTID_BITS => 4 
+		N_INPUTID_BITS => 4,
+		C_CHANNELNO_PREFIX => C_CHANNELNO_PREFIX
 	)
 	port map(
 		i_coreclk		=> i_clk_core,

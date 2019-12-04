@@ -18,7 +18,8 @@ use work.mutrig_constants.all;
 entity framebuilder_mux is
 generic(
 	N_INPUTS : integer;
-	N_INPUTID_BITS : integer
+	N_INPUTID_BITS : integer;			--total length of chip number field that will be appended in the data
+	C_CHANNELNO_PREFIX : std_logic_vector:=""       --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering 
 );
 port (
 	i_coreclk        : in  std_logic;                                     -- system clock
@@ -187,7 +188,8 @@ begin
 	for i in N_INPUTS-1 downto 0 loop
 		if(s_sel_gnt(i)='1') then
 			s_sel_data<=i_source_data(i);
-			s_chnum<= std_logic_vector(to_unsigned(i,s_chnum'length));
+			s_chnum<= C_CHANNELNO_PREFIX & std_logic_vector(to_unsigned(i,s_chnum'length-C_CHANNELNO_PREFIX'length));
+			--s_chnum<= std_logic_vector(to_unsigned(i,s_chnum'length));
 		end if;
 	end loop;
 end process;

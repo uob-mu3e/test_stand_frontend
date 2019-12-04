@@ -35,7 +35,10 @@ architecture RTL of testbench_standalone is
 --dut definition
 component mutrig_datapath is
   generic(
-	N_ASICS : integer :=1
+	N_ASICS : integer :=1;
+	C_CHANNELNO_PREFIX : std_logic_vector:="" --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
+	--(e.g. Tiles,  one module with up to 16 ASICs, PREFIX="")
+        --(e.g. Fibers, two modules with up to 4 ASICs each, PREFIX="00" ; "01" for the different instances )
   );
   port (
 	i_rst			: in  std_logic;
@@ -135,11 +138,14 @@ i_tsclk_125	<= not i_tsclk_125 after 4 ns;
 
 i_SC_datagen_enable <= '1', '0' after 10 us;
 
-i_SC_mask <= (0=>'0',  others=>'1');
+i_SC_mask <= (0=>'0',  others=>'0');
 
 --dut
 dut: mutrig_datapath
-	generic map ( N_ASICS => N_ASICS )
+	generic map (
+		N_ASICS => N_ASICS,
+		C_CHANNELNO_PREFIX => "10"
+	)
 	port map (
 		i_rst			=> i_rst,
 		i_stic_txd		=> i_asic_tx_p,
