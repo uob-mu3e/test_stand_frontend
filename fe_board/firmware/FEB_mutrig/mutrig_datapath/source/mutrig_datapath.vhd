@@ -419,7 +419,7 @@ end generate;
 
 p_counterselect: process (s_timecounter, s_eventcounter, s_crcerrorcounter, s_prbs_err_cnt, i_SC_counterselect)
 begin
-	for i in 0 to N_ASICS loop
+	for i in 0 to N_ASICS-1 loop
 		if(unsigned(i_SC_counterselect(2 downto 0)) = i) then
 		case i_SC_counterselect(4 downto 3) is
 			when "00" => 

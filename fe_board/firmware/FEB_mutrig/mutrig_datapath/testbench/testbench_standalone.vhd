@@ -128,10 +128,10 @@ begin
 -- basic stimulus for receiver
 i_coreclk	<= not i_coreclk after  3 ns;	-- 166 MHz system core clock (actually 156MHz)
 i_refclk_125	<= not i_refclk_125 after  4 ns;	-- 125 MHz tranceiver reference clock
-i_rst		<= '1' after 20 ns, '0' after 200 ns;	-- Basic reset of GBT
+i_rst		<= '1' after 20 ns, '0' after 200 ns;--, '1' after 3 us, '0' after 3.1 us;	-- Basic reset of GBT
 
 -- basic stimulus for asics
-i_tsclk_125	<= not i_tsclk_125 and i_rst after  4 ns;
+i_tsclk_125	<= not i_tsclk_125 after 4 ns;
 
 i_SC_datagen_enable <= '1', '0' after 10 us;
 
