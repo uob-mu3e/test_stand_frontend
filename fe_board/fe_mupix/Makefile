@@ -6,9 +6,7 @@ BSP_DIR=software/hal_bsp
 APP_DIR=software/app
 
 IPs = \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard ../fe/clk_ctrl.tcl)) \
+    $(patsubst %.tcl,%.sopcinfo,$(wildcard ../fe/ip/*.tcl)) \
     nios.sopcinfo
 
 include util/makefile.mk
-
-nios.qsys : device.tcl

@@ -359,7 +359,7 @@ begin
 
     ----------------------------------------------------------------------------
 
-	e_clk_ctrl: component work.cmp.clk_ctrl 
+	e_clk_ctrl : component work.cmp.clk_ctrl
 		port map(
 			inclk1x   => clk_aux,
 			inclk0x   => si42_clk_80,
