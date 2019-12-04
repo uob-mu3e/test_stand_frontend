@@ -44,10 +44,24 @@ port (
 
 
 
-    --
+    --main fiber data fifo
     i_fifo_rempty   : in    std_logic;
     o_fifo_rack     : out   std_logic;
     i_fifo_rdata    : in    std_logic_vector(35 downto 0);
+
+
+    --secondary fiber: leave open if unused
+    --secondary fiber data fifo
+    i_secondary_fifo_rempty   : in    std_logic:='1';
+    o_secondary_fifo_rack     : out   std_logic;
+    i_secondary_fifo_rdata    : in    std_logic_vector(35 downto 0):=(others =>'-');
+    --secondary fiber slow control fifo
+    --no slow control here, so we might use this as a secondary data generator (e.g. trigger/heartbeat channel)
+    i_secondary_scfifo_rempty   : in    std_logic:='1';
+    o_secondary_scfifo_rack     : out   std_logic;
+    i_secondary_scfifo_rdata    : in    std_logic_vector(35 downto 0):=(others =>'-');
+
+
 
     -- MSCB interface
     i_mscb_data     : in    std_logic;
@@ -112,7 +126,9 @@ architecture arch of fe_block is
     signal reg_cmdlen : std_logic_vector(31 downto 0);
     signal reg_offset : std_logic_vector(31 downto 0);
 
-
+    signal linktest_data    : std_logic_vector(31 downto 0);
+    signal linktest_datak   : std_logic_vector(3 downto 0);
+    signal linktest_granted : std_logic_vector(1 downto 0);
 
     signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
     signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
@@ -124,7 +140,7 @@ architecture arch of fe_block is
 
     signal run_state_125 : run_state_t;
     signal run_state_156 : run_state_t;
-    signal terminated : std_logic;
+    signal terminated : std_logic_vector(1 downto 0);
 
     signal run_number : std_logic_vector(31 downto 0);
 
@@ -411,12 +427,46 @@ begin
         data_read_req           => o_fifo_rack,
         data_in                 => i_fifo_rdata,
 
-        override_data_in        => (others => '0'),
+        override_data_in        => (others => '0'), --TODO: connect link test signal here? (see more comments below)
         override_data_is_k_in   => (others => '0'),
         override_req            => '0',
         override_granted        => open,
 
-        terminated              => terminated,
+        terminated              => terminated(0),
+        data_priority           => '0',
+
+        leds                    => open,
+
+        reset                   => not reset_156_n,
+        clk                     => i_clk_156--,
+    );
+
+    --TODO: is this optimized away correctly when data inputs are not connected?
+    -- otherwise add generation switch.
+    e_merger_secondary : entity work.data_merger
+    port map (
+        fpga_ID_in              => FPGA_ID_g,
+        FEB_type_in             => FEB_type_in,
+        run_state               => run_state_156,
+        run_number              => run_number,
+
+        data_out                => qsfp_tx_data(63 downto 32),
+        data_is_k               => qsfp_tx_datak(7 downto 4),
+
+        slowcontrol_fifo_empty  => i_secondary_scfifo_rempty,
+        slowcontrol_read_req    => o_secondary_scfifo_rack,
+        data_in_slowcontrol     => i_secondary_scfifo_rdata,
+
+        data_fifo_empty         => i_secondary_fifo_rempty,
+        data_read_req           => o_secondary_fifo_rack,
+        data_in                 => i_secondary_fifo_rdata,
+
+        override_data_in        => linktest_data, --TODO: connect link test signal here. done correctly?
+        override_data_is_k_in   => linktest_datak,
+        override_req            => '1',   --changed to '1'. TODO needs connection? 
+	override_granted        => linktest_granted(1), --TODO: can we use the negated version as e_link_test.i_sync_reset? Then link test is started with consistent word
+
+        terminated              => terminated(1),
         data_priority           => '0',
 
         leds                    => open,
@@ -426,18 +476,18 @@ begin
     );
 
 
-
+    --TODO: do we need two independent link test modules for both fibers?
     e_link_test : entity work.linear_shift_link
     generic map (
         g_m => 32,
         g_poly => "10000000001000000000000000000110"--,
     )
     port map (
-        i_sync_reset    => '0',
+        i_sync_reset    => not linktest_granted(1),
         i_seed          => (others => '1'),
         i_en            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),
-        o_lsfr          => qsfp_tx_data(63 downto 32),
-        o_datak         => qsfp_tx_datak(7 downto 4),
+        o_lsfr          => linktest_data, --qsfp_tx_data(63 downto 32),
+        o_datak         => linktest_datak, --qsfp_tx_datak(7 downto 4),
         reset_n         => reset_156_n,
         i_clk           => i_clk_156--,
     );
@@ -462,7 +512,7 @@ begin
         reset_bypass            => reg_reset_bypass(11 downto 0),
         run_number_out          => run_number,
         fpga_id                 => FPGA_ID_g,
-        terminated              => terminated,
+        terminated              => terminated(0), --TODO: how to handle two mergers? use AND combination?
         testout                 => open,
 
         o_phase                 => open,
