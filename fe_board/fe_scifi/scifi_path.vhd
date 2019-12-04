@@ -9,7 +9,6 @@ use work.daq_constants.all;
 
 entity scifi_path is
 generic (
-    N_g : positive := 1;    --number of asics
     N_m : positive := 1--;  --number of modules
 );
 port (
@@ -22,7 +21,7 @@ port (
 
     o_chip_reset    : out   std_logic_vector(N_m-1 downto 0);
     o_pll_test      : out   std_logic;
-    i_data          : in    std_logic_vector(N_g-1 downto 0);
+    i_data          : in    std_logic_vector(N_m*4-1 downto 0);
 
     o_fifo_rdata    : out   std_logic_vector(35 downto 0);
     o_fifo_rempty   : out   std_logic;
@@ -39,7 +38,7 @@ port (
     --reset system
     i_run_state      : in    run_state_t; --run state sync to i_clk_g125
 
-    o_MON_rxrdy     : out   std_logic_vector(N_g - 1 downto 0)--; --receiver ready flags for monitoring, sync to lvds_userclocks(A/B depending on LVDS placement)
+    o_MON_rxrdy     : out   std_logic_vector(N_m*4 - 1 downto 0)--; --receiver ready flags for monitoring, sync to lvds_userclocks(A/B depending on LVDS placement)
 );
 end entity;
 
@@ -73,7 +72,7 @@ architecture arch of scifi_path is
 
     --chip reset synchronization/shift
     signal s_chip_rst : std_logic;
-    signal s_chip_reset_out : std_logic_vector(3 downto 0);
+    signal s_chip_rst_shifted : std_logic_vector(3 downto 0);
 begin
 
     e_test_pulse : entity work.clkdiv
@@ -163,7 +162,7 @@ begin
     end process;
 
     s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC);
-    s_datapath_rst <= s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_SYNC);
+    s_datapath_rst <= i_reset or s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_SYNC);
 
 
     u_resetshift: entity work.clockalign_block
@@ -179,20 +178,20 @@ begin
 		i_data       => s_subdet_resetdly_reg,
 
 		i_sig => s_chip_rst,
-		o_sig => o_chip_reset,
+		o_sig => s_chip_rst_shifted,
 		o_pll_clk    => open
     );
-
+    o_chip_reset <= s_chip_rst_shifted(N_m-1 downto 0);
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (
-        N_ASICS => N_g,
+        N_ASICS => 4,
         LVDS_PLL_FREQ => 125.0,
         LVDS_DATA_RATE => 1250.0,
-        INPUT_SIGNFLIP => (N_g-1 downto 0 => '1')--,
+        INPUT_SIGNFLIP => ("1111")--,
     )
     port map (
-        i_rst => i_reset or s_datapath_rst,
-        i_stic_txd => i_data(N_g-1 downto 0),
+        i_rst => s_datapath_rst,
+        i_stic_txd => i_data(3 downto 0),
         i_refclk_125_A => i_clk_ref_A,
         i_refclk_125_B => i_clk_ref_B,
         i_ts_clk => i_clk_g125,
@@ -208,7 +207,7 @@ begin
         i_SC_disable_dec => s_dpctrl_reg(31),
         i_SC_rx_wait_for_all => s_dpctrl_reg(30),
         i_SC_rx_wait_for_all_sticky => s_dpctrl_reg(29),
-        i_SC_mask => s_dpctrl_reg(N_g-1 downto 0),
+        i_SC_mask => s_dpctrl_reg(3 downto 0),
         i_SC_datagen_enable => s_dummyctrl_reg(1),
         i_SC_datagen_shortmode => s_dummyctrl_reg(2),
         i_SC_datagen_count => s_dummyctrl_reg(12 downto 3),
