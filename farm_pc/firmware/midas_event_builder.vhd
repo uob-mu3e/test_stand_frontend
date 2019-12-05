@@ -248,6 +248,8 @@ begin
 		w_fifo_en <= '0';
 		count_size := 0;
 		time_stamp <= time_stamp + '1'; -- TODO: this counts now all the time
+		bank_ren <= (others => '0');
+		bank_length_ren <= (others => '0');
 
 		case event_tagging_state is
 
@@ -259,8 +261,8 @@ begin
 					l_count_size : FOR i in 0 to NLINKS - 1 LOOP
 						count_size := count_size + conv_integer(bank_length_fifo(11 + 12 * i downto i * 12));
 					END LOOP l_count_size;
-					event_data_size		<= std_logic_vector(to_unsigned((3 * NLINKS + 6) * 32 + count_size, event_data_size'length));
-					all_bank_size		<= std_logic_vector(to_unsigned(3 * NLINKS * 32 + count_size, event_data_size'length));
+					event_data_size		<= std_logic_vector(to_unsigned(3 * NLINKS + 6 + count_size, event_data_size'length)); -- length in 32 bit
+					all_bank_size		<= std_logic_vector(to_unsigned(3 * NLINKS + count_size, event_data_size'length)); -- length in 32 bit
 					event_tagging_state <= event_serial_number;
 				end if;
 
@@ -307,12 +309,16 @@ begin
 				event_tagging_state <= bank_length_state;
 
 			when bank_length_state =>
-				w_ram_en					<= '1';
-				w_ram_add   				<= w_ram_add + 1;
-				bank_length_ren(mux_link) 	<= '1';
-				w_ram_data(11 downto 0)  	<= bank_length_fifo(11 + 12 * mux_link downto mux_link * 12);
-				w_ram_data(11 downto 0)  	<= (others => '0');
-				event_tagging_state 		<= bank_data_state;
+				if ( (bank_data_fifo(11 + 36 * mux_link downto mux_link * 36 + 4) = x"bc" and
+					 bank_data_fifo(3 + 36 * mux_link downto mux_link * 36 ) = "0001") ) then 
+					w_ram_en					<= '1';
+					w_ram_add   				<= w_ram_add + 1;
+					bank_length_ren(mux_link) 	<= '1';
+					bank_ren(mux_link) 			<= '1';
+					w_ram_data(11 downto 0)  	<= bank_length_fifo(11 + 12 * mux_link downto mux_link * 12);
+					w_ram_data(31 downto 12)  	<= (others => '0');
+					event_tagging_state 		<= bank_data_state;
+				end if;
 
 			when bank_data_state =>
 				w_ram_en			<= '1';
@@ -322,10 +328,8 @@ begin
 					 bank_data_fifo(3 + 36 * mux_link downto mux_link * 36 ) = "0001") or  
 					 (bank_data_fifo(11 + 36 * mux_link downto mux_link * 36 + 4) = x"EE" and
 					 bank_data_fifo(3 + 36 * mux_link downto mux_link * 36 ) = "0001") ) then 
-					bank_length_ren(mux_link) 	<= '0';
-					bank_ren(mux_link) 	<= '0';
 					if ( mux_link = NLINKS - 1 ) then
-						 if ( conv_integer(w_ram_add) mod 8 = 0 ) then
+						 if ( conv_integer(w_ram_add + 1) mod 8 = 0 ) then
 						 	event_tagging_state <= waiting;
 						 	w_fifo_en   <= '1';
 							w_fifo_data <= w_ram_add + 1;
@@ -344,10 +348,8 @@ begin
 				end if;
 
 			when trailer => -- if one is in this state the midas event size will not match the size in the ram
-				if ( conv_integer(w_ram_add) mod 8 = 0 ) then
+				if ( conv_integer(w_ram_add + 1) mod 8 = 0 ) then
 					event_tagging_state <= waiting;
-					w_fifo_en   <= '1';
-					w_fifo_data <= w_ram_add + 1;
 				else
 					w_ram_en			<= '1';
 					w_ram_add   		<= w_ram_add + 1;

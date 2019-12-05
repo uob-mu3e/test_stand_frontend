@@ -35,6 +35,8 @@ architecture behav of readout_tb is
       signal clk_half : std_logic;
   	  signal reset_n : std_logic := '1';
   	  signal reset : std_logic;
+      signal reset_0 : std_logic;
+      signal reset_1 : std_logic;
   	  signal enable_pix : std_logic;
   	  signal slow_down : std_logic_vector(31 downto 0);
   	  signal data_pix_generated : std_logic_vector(31 downto 0);
@@ -49,6 +51,15 @@ architecture behav of readout_tb is
       signal state_out_eventbuilder : std_logic_vector(3 downto 0);
       signal dma_data_wren : std_logic;
       signal dma_data : std_logic_vector(255 downto 0);
+
+      signal dma_data_32_0 : std_logic_vector(31 downto 0);
+      signal dma_data_32_1 : std_logic_vector(31 downto 0);
+      signal dma_data_32_2 : std_logic_vector(31 downto 0);
+      signal dma_data_32_3 : std_logic_vector(31 downto 0);
+      signal dma_data_32_4 : std_logic_vector(31 downto 0);
+      signal dma_data_32_5 : std_logic_vector(31 downto 0);
+      signal dma_data_32_6 : std_logic_vector(31 downto 0);
+      signal dma_data_32_7 : std_logic_vector(31 downto 0);
 
       signal rx_data : std_logic_vector(95 downto 0);
       signal rx_datak : std_logic_vector(11 downto 0);
@@ -89,13 +100,23 @@ begin
 	
 	   wait;
 end process inita;
+
+inita0 : process
+begin
+     reset_n   <= '0';
+     wait for 7 ns;
+     reset_n   <= '1';
+     wait for 20 ns;
+  
+     wait;
+end process inita0;
  
 e_data_gen_mupix : component data_generator_a10_tb
 	port map (
 		clk 				   => clk,
 		reset				   => reset,
 		enable_pix	           => enable_pix,
-		random_seed 		   => (others => '1'),
+		random_seed 		   => "010100101001010",
 		start_global_time	   => (others => '0'),
 		data_pix_generated     => data_pix_generated,
 		datak_pix_generated    => datak_pix_generated,
@@ -107,7 +128,7 @@ e_data_gen_mupix : component data_generator_a10_tb
 e_data_gen_scifi : component data_generator_a10_tb
 	port map (
 		clk 				     => clk,
-		reset				     => reset,
+		reset				     => reset_0,
 		enable_pix	        => enable_pix,
 		random_seed 		  => (others => '1'),
 		start_global_time	  => (others => '0'),
@@ -121,9 +142,9 @@ e_data_gen_scifi : component data_generator_a10_tb
 e_data_gen_tiles : component data_generator_a10_tb
 	port map (
 		clk 				     => clk,
-		reset				     => reset,
+		reset				     => reset_1,
 		enable_pix	        => enable_pix,
-		random_seed 		  => (others => '1'),
+		random_seed 		  => "010100101001111",
 		start_global_time	  => (others => '0'),
 		data_pix_generated  => data_tile_generated,
 		datak_pix_generated => datak_tile_generated,
@@ -152,5 +173,14 @@ e_midas_event_builder : entity work.midas_event_builder
     o_event_data => dma_data,
     o_state_out => state_out_eventbuilder--,
 );
+
+  dma_data_32_0 <= dma_data(31 downto 0);
+  dma_data_32_1 <= dma_data(63 downto 32);
+  dma_data_32_2 <= dma_data(95 downto 64);
+  dma_data_32_3 <= dma_data(127 downto 96);
+  dma_data_32_4 <= dma_data(159 downto 128);
+  dma_data_32_5 <= dma_data(191 downto 160);
+  dma_data_32_6 <= dma_data(223 downto 192);
+  dma_data_32_7 <= dma_data(255 downto 224);
 
 end behav;
