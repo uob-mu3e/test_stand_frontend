@@ -396,8 +396,8 @@ begin
 	wait until falling_edge(o_initializing);
 	wait until rising_edge(i_coreclk);
 	wait until rising_edge(i_coreclk);
-	wait until rising_edge(i_coreclk);
-	wait until rising_edge(i_coreclk);
+--	wait until rising_edge(i_coreclk);
+--	wait until rising_edge(i_coreclk);
 	for i in 1 to 100 loop
 		i_B_valid<='1';
 		i_B_data<=s_stimulus(i);
@@ -407,6 +407,14 @@ begin
 	wait for 200 ns;
 	assert false report "Simulation Finished." severity FAILURE;
 	wait;	
+end process;
+
+check: process(i_coreclk)
+begin
+	assert o_A_valid=o_B_valid report "A!=B (valid)" severity FAILURE;
+	if(o_A_valid='1') then
+		assert o_A_data=o_B_data   report "A!=B (data)" severity FAILURE;
+	end if;
 end process;
 
 -------------------------------------------A side logger --------------------------------------------------------

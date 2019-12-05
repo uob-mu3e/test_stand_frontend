@@ -139,6 +139,8 @@ begin
 	if rising_edge(i_coreclk) then
 		--ram address and data input, data delay is only to compensate address pipelining.
 		s_A_addr <= n_A_addr;
+		s_B_addr <= n_B_addr;
+
 		s_init_dec_d <= s_init_dec;
 		--memory initialisation state machine, data bypass control
 		if(i_rst='1') then
