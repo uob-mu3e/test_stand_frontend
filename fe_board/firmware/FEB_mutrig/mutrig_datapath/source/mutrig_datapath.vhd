@@ -14,18 +14,20 @@ use work.mutrig_constants.all;
 
 entity mutrig_datapath is
 generic(
+	N_MODULES: integer range 1 to 2 := 1;
 	N_ASICS : positive := 1;
 	LVDS_PLL_FREQ : real := 125.0;
 	LVDS_DATA_RATE : real := 1250.0;
 	GEN_DUMMIES : boolean := TRUE;
 	INPUT_SIGNFLIP : std_logic_vector:=x"0000";
-	C_CHANNELNO_PREFIX : std_logic_vector:="" --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
+	C_CHANNELNO_PREFIX_A : std_logic_vector:=""; --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
+	C_CHANNELNO_PREFIX_B : std_logic_vector:=""
 	--(e.g. Tiles,  one module with up to 16 ASICs, PREFIX="")
-        --(e.g. Fibers, two modules with up to 4 ASICs each, PREFIX="00" ; "01" for the different instances )
+        --(e.g. Fibers, two modules with up to 4 ASICs each, PREFIX="00" ; "01" for A and B )
 );
 port (
 	i_rst			: in  std_logic;				-- logic reset
-	i_stic_txd		: in  std_logic_vector( N_ASICS-1 downto 0);	-- serial data
+	i_stic_txd		: in  std_logic_vector(N_MODULES*N_ASICS-1 downto 0);	-- serial data
 	i_refclk_125_A		: in  std_logic;                 		-- ref clk for lvds pll (A-Side) 
 	i_refclk_125_B		: in  std_logic;                 		-- ref clk for lvds pll (B-Side)
 	i_ts_clk		: in  std_logic;                 		-- ref clk for global timestamp
@@ -33,12 +35,17 @@ port (
 
 	--interface to asic fifos
 	i_clk_core		: in  std_logic; --fifo reading side clock
-	o_fifo_empty		: out std_logic;
-	o_fifo_data		: out std_logic_vector(35 downto 0);
-	i_fifo_rd		: in  std_logic;
+	o_A_fifo_empty		: out std_logic;
+	o_A_fifo_data		: out std_logic_vector(35 downto 0);
+	i_A_fifo_rd		: in  std_logic;
+	--secondary interface used if DUAL_FIBER=TRUE
+	o_B_fifo_empty		: out std_logic;
+	o_B_fifo_data		: out std_logic_vector(35 downto 0);
+	i_B_fifo_rd		: in  std_logic:='0';
+
 	--slow control
 	i_SC_disable_dec	: in std_logic;
-	i_SC_mask		: in std_logic_vector( N_ASICS-1 downto 0);
+	i_SC_mask		: in std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 	i_SC_datagen_enable	: in std_logic;
 	i_SC_datagen_shortmode	: in std_logic;
 	i_SC_datagen_count	: in std_logic_vector(9 downto 0);
@@ -47,14 +54,14 @@ port (
 	--monitors
 	o_receivers_usrclk	: out std_logic;              		-- pll output clock
 	o_receivers_pll_lock	: out std_logic;			-- pll lock flag
-	o_receivers_dpa_lock	: out std_logic_vector( N_ASICS-1 downto 0);			-- dpa lock flag per channel
-	o_receivers_ready	: out std_logic_vector( N_ASICS-1 downto 0);-- receiver output ready flag
-	o_frame_desync		: out std_logic;
-	o_buffer_full		: out std_logic;
+	o_receivers_dpa_lock	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0);			-- dpa lock flag per channel
+	o_receivers_ready	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0);-- receiver output ready flag
+	o_frame_desync		: out std_logic_vector(1 downto 0) :=(others =>'0');
+	o_buffer_full		: out std_logic_vector(1 downto 0) :=(others =>'0');
 
         i_SC_reset_counters	: in std_logic;
-	i_SC_counterselect      : in std_logic_vector(5 downto 0); --select counter to be read out. 1..0: counter type selection. 5..2: counter channel selection
-	o_counter_nominator     : out std_logic_vector(31 downto 0);
+	i_SC_counterselect      : in std_logic_vector(6 downto 0); --select counter to be read out. 1..0: counter type selection. 5..2: counter channel selection
+	o_counter_numerator     : out std_logic_vector(31 downto 0);
 	o_counter_denominator_low  : out std_logic_vector(31 downto 0);
 	o_counter_denominator_high : out std_logic_vector(31 downto 0)--;
 );
@@ -176,11 +183,15 @@ port (
 		i_coreclk	: in  std_logic;
 		i_rst		: in  std_logic;
 	--data stream input
-		i_data	: in std_logic_vector(33 downto 0);
-		i_valid	: in std_logic;
+		i_A_data	: in std_logic_vector(33 downto 0);
+		i_A_valid	: in std_logic;
+		i_B_data	: in std_logic_vector(33 downto 0);
+		i_B_valid	: in std_logic;
 	--data stream output
-		o_data	: out std_logic_vector(33 downto 0);
-		o_valid	: out std_logic;
+		o_A_data	: out std_logic_vector(33 downto 0);
+		o_A_valid	: out std_logic;
+		o_B_data	: out std_logic_vector(33 downto 0);
+		o_B_valid	: out std_logic;
 	--disable block (make transparent)
 		i_SC_disable_dec : in std_logic
 );
@@ -201,21 +212,22 @@ component common_fifo
 		usedw		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
 	);
 end component;
+constant N_ASICS_TOTAL : natural :=N_MODULES*N_ASICS;
 
-subtype t_vector is std_logic_vector(N_ASICS-1 downto 0);
-type t_array_64b is array (N_ASICS-1 downto 0) of std_logic_vector(64-1 downto 0);
-type t_array_48b is array (N_ASICS-1 downto 0) of std_logic_vector(48-1 downto 0);
-subtype t_array_32b is reg32array_t(N_ASICS-1 downto 0);
-type t_array_16b is array (N_ASICS-1 downto 0) of std_logic_vector(16-1 downto 0);
-type t_array_8b  is array (N_ASICS-1 downto 0) of std_logic_vector(8-1 downto 0);
-type t_array_2b  is array (N_ASICS-1 downto 0) of std_logic_vector(2-1 downto 0);
+subtype t_vector is std_logic_vector(N_ASICS_TOTAL-1 downto 0);
+type t_array_64b is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(64-1 downto 0);
+type t_array_48b is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(48-1 downto 0);
+subtype t_array_32b is reg32array_t(N_ASICS_TOTAL-1 downto 0);
+type t_array_16b is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(16-1 downto 0);
+type t_array_8b  is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(8-1 downto 0);
+type t_array_2b  is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(2-1 downto 0);
 
   -- clocks
 
   -- serdes-frame_rcv
-signal s_receivers_state	: std_logic_vector(2*N_ASICS-1 downto 0);
+signal s_receivers_state	: std_logic_vector(2*N_ASICS_TOTAL-1 downto 0);
 signal s_receivers_ready	: t_vector;
-signal s_receivers_data		: std_logic_vector(8*N_ASICS-1 downto 0);
+signal s_receivers_data		: std_logic_vector(8*N_ASICS_TOTAL-1 downto 0);
 signal s_receivers_data_isk	: t_vector;
 
 signal s_receivers_usrclk	: std_logic;
@@ -233,18 +245,23 @@ signal s_end_of_frame,   s_rec_end_of_frame,   s_gen_end_of_frame   : t_vector;
 signal s_gen_busy  : t_vector;
 
 --fifo - frame collector mux
-signal s_fifos_empty 		: std_logic_vector(N_ASICS-1 downto 0);
-signal s_fifos_data		: mutrig_evtdata_array_t(N_ASICS-1 downto 0);
-signal s_fifos_rd		: std_logic_vector(N_ASICS-1 downto 0);
+signal s_fifos_empty 		: std_logic_vector(N_ASICS_TOTAL-1 downto 0);
+signal s_fifos_data		: mutrig_evtdata_array_t(N_ASICS_TOTAL-1 downto 0);
+signal s_fifos_rd		: std_logic_vector(N_ASICS_TOTAL-1 downto 0);
 -- frame collector mux - prbs decoder 
-signal s_buf_predec_data	: std_logic_vector(33 downto 0);
-signal s_buf_predec_full 	: std_logic;
-signal s_buf_predec_wr		: std_logic;
+signal s_A_buf_predec_data	: std_logic_vector(33 downto 0);
+signal s_A_buf_predec_full 	: std_logic;
+signal s_A_buf_predec_wr		: std_logic;
+signal s_B_buf_predec_data	: std_logic_vector(33 downto 0);
+signal s_B_buf_predec_full 	: std_logic;
+signal s_B_buf_predec_wr		: std_logic;
 -- prbs decoder - mu3edataformat-writer - common fifo
-signal s_buf_data		: std_logic_vector(33 downto 0);
-signal s_buf_full 		: std_logic;	--internal only, almost_full is checked
-signal s_buf_almost_full 	: std_logic;
-signal s_buf_wr			: std_logic;
+signal s_A_buf_data		: std_logic_vector(33 downto 0);
+signal s_A_buf_almost_full 	: std_logic:='0';
+signal s_A_buf_wr		: std_logic;
+signal s_B_buf_data		: std_logic_vector(33 downto 0);
+signal s_B_buf_almost_full 	: std_logic:='0';
+signal s_B_buf_wr		: std_logic;
 
 -- monitoring signals TODO: connect as needed
 signal s_fifos_full           : t_vector;	--elastic fifo full flags
@@ -261,7 +278,7 @@ signal s_receivers_errorcounter : t_array_32b;
 begin
 u_rxdeser: entity work.receiver_block
 generic map(
-	NINPUT => N_ASICS,
+	NINPUT => N_ASICS_TOTAL,
 	LVDS_PLL_FREQ => LVDS_PLL_FREQ,
 	LVDS_DATA_RATE => LVDS_DATA_RATE,
 	INPUT_SIGNFLIP => INPUT_SIGNFLIP--,
@@ -288,7 +305,7 @@ o_receivers_usrclk <= s_receivers_usrclk;
 --generate a pll-synchronous all-ready signal for the data receivers.
 --this assures all start dumping data into the fifos at the same time, and we do not enter a deadlock scenario from the start
 gen_ready_all: process (s_receivers_usrclk,i_rst,s_receivers_ready, i_SC_mask)
-variable v_ready : std_logic_vector(N_ASICS-1 downto 0);
+variable v_ready : std_logic_vector(N_ASICS_TOTAL-1 downto 0);
 begin
 	if(i_rst='1') then
 		s_receivers_all_ready<='0';
@@ -319,7 +336,7 @@ begin
 	end if;
 end process;
 
-gen_frame: for i in 0 to N_ASICS-1 generate begin
+gen_frame: for i in 0 to N_ASICS_TOTAL-1 generate begin
 u_frame_rcv : frame_rcv
 	generic map(
 		EVENT_DATA_WIDTH	=> 48,
@@ -388,7 +405,7 @@ u_frame_rcv : frame_rcv
 
 end generate;
 
-g_buffer: for i in 0 to N_ASICS-1 generate begin
+g_buffer: for i in 0 to N_ASICS_TOTAL-1 generate begin
 
 u_elastic_buffer : mutrig_store
 port map(
@@ -421,25 +438,29 @@ port map(
 );
 end generate;
 
-p_counterselect: process (s_timecounter, s_eventcounter, s_crcerrorcounter, s_prbs_err_cnt, i_SC_counterselect)
+p_counterselect: process (s_timecounter, s_eventcounter, s_crcerrorcounter, s_framecounter, s_prbs_err_cnt, s_prbs_wrd_cnt, s_receivers_errorcounter,s_receivers_runcounter,i_SC_counterselect)
 begin
-	for i in 0 to N_ASICS-1 loop
+   o_counter_numerator<=(others =>'0');
+   o_counter_denominator_high<=(others =>'0');
+   o_counter_denominator_low<=(others =>'0');
+
+	for i in 0 to N_ASICS_TOTAL-1 loop
 		if(unsigned(i_SC_counterselect(5 downto 2)) = i) then
 		case i_SC_counterselect(1 downto 0) is
-			when "00" => 
-				o_counter_nominator <= s_eventcounter(i);
+			when "00" =>
+				o_counter_numerator <= s_eventcounter(i);
 				o_counter_denominator_high <= s_timecounter(i)(63 downto 32);
 				o_counter_denominator_low  <= s_timecounter(i)(31 downto  0);
 			when "01" => 
-				o_counter_nominator <= s_crcerrorcounter(i);
+				o_counter_numerator <= s_crcerrorcounter(i);
 				o_counter_denominator_high <= s_framecounter(i)(63 downto 32);
 				o_counter_denominator_low  <= s_framecounter(i)(31 downto  0);
 			when "10" =>
-				o_counter_nominator <= s_prbs_err_cnt(i);
+				o_counter_numerator <= s_prbs_err_cnt(i);
 				o_counter_denominator_high <= s_prbs_wrd_cnt(i)(63 downto 32);
 				o_counter_denominator_low  <= s_prbs_wrd_cnt(i)(31 downto  0);
 			when "11" =>
-				o_counter_nominator <= s_receivers_errorcounter(i);
+				o_counter_numerator <= s_receivers_errorcounter(i);
 				o_counter_denominator_high <= (others =>'0');
 				o_counter_denominator_low  <= s_receivers_runcounter(i);
 			when others =>
@@ -450,11 +471,11 @@ end process;
 
 
 --mux between asic channels
-u_mux: framebuilder_mux
+u_mux_A: framebuilder_mux
 	generic map( 
 		N_INPUTS => N_ASICS,
 		N_INPUTID_BITS => 4,
-		C_CHANNELNO_PREFIX => C_CHANNELNO_PREFIX
+		C_CHANNELNO_PREFIX => C_CHANNELNO_PREFIX_A
 	)
 	port map(
 		i_coreclk		=> i_clk_core,
@@ -462,44 +483,95 @@ u_mux: framebuilder_mux
 		i_timestamp_clk		=> i_ts_clk,
 		i_timestamp_rst		=> i_ts_rst,
 	--event data inputs interface
-    		i_source_data		=> s_fifos_data,
-		i_source_empty		=> s_fifos_empty,
-		o_source_rd		=> s_fifos_rd,
+    		i_source_data		=> s_fifos_data(N_ASICS-1 downto 0),
+		i_source_empty		=> s_fifos_empty(N_ASICS-1 downto 0),
+		o_source_rd		=> s_fifos_rd(N_ASICS-1 downto 0),
 	--event data output interface to big buffer storage
-		o_sink_data		=> s_buf_predec_data,
-		i_sink_full		=> s_buf_predec_full,
-		o_sink_wr		=> s_buf_predec_wr,
+		o_sink_data		=> s_A_buf_predec_data,
+		i_sink_full		=> s_A_buf_predec_full,
+		o_sink_wr		=> s_A_buf_predec_wr,
 	--monitoring, errors, slow control
-		o_sync_error		=> o_frame_desync,
-		i_SC_mask		=> i_SC_mask,
+		o_sync_error		=> o_frame_desync(0),
+		i_SC_mask		=> i_SC_mask(N_ASICS-1 downto 0),
 		i_SC_nomerge	=> '0'
 	);
---prbs decoder
-s_buf_predec_full <= s_buf_almost_full;
+
+gen_dual_mux: if(N_MODULES>1) generate
+u_mux_B: framebuilder_mux
+	generic map( 
+		N_INPUTS => N_ASICS,
+		N_INPUTID_BITS => 4,
+		C_CHANNELNO_PREFIX => C_CHANNELNO_PREFIX_B
+	)
+	port map(
+		i_coreclk		=> i_clk_core,
+		i_rst			=> i_rst,
+		i_timestamp_clk		=> i_ts_clk,
+		i_timestamp_rst		=> i_ts_rst,
+	--event data inputs interface
+    		i_source_data		=> s_fifos_data(N_ASICS_TOTAL-1 downto N_ASICS),
+		i_source_empty		=> s_fifos_empty(N_ASICS_TOTAL-1 downto N_ASICS),
+		o_source_rd		=> s_fifos_rd(N_ASICS_TOTAL-1 downto N_ASICS),
+	--event data output interface to big buffer storage
+		o_sink_data		=> s_B_buf_predec_data,
+		i_sink_full		=> s_B_buf_predec_full,
+		o_sink_wr		=> s_B_buf_predec_wr,
+	--monitoring, errors, slow control
+		o_sync_error		=> o_frame_desync(1),
+		i_SC_mask		=> i_SC_mask(N_ASICS_TOTAL-1 downto N_ASICS),
+		i_SC_nomerge	=> '0'
+	);
+
+end generate;
+
+
+--prbs decoder (two-stream)
+s_A_buf_predec_full <= s_A_buf_almost_full;
+s_B_buf_predec_full <= s_B_buf_almost_full;
 u_decoder: prbs_decoder
 	port map (
 		i_coreclk	=> i_clk_core,
 		i_rst		=> i_rst,
-    		i_data		=> s_buf_predec_data,
-    		i_valid		=> s_buf_predec_wr,
-    		o_data		=> s_buf_data,
-    		o_valid		=> s_buf_wr,
+
+		i_A_data	=> s_A_buf_predec_data,
+    		i_A_valid	=> s_A_buf_predec_wr,
+    		i_B_data	=> s_B_buf_predec_data,
+    		i_B_valid	=> s_B_buf_predec_wr,
+
+    		o_A_data	=> s_A_buf_data,
+    		o_A_valid	=> s_A_buf_wr,
+    		o_B_data	=> s_B_buf_data,
+    		o_B_valid	=> s_B_buf_wr,
 		i_SC_disable_dec=> i_SC_disable_dec
 	);
 
 --common fifo buffer
-u_common_fifo: common_fifo
+u_common_fifo_A: common_fifo
     port map (
         clock           => i_clk_core,
         sclr            => i_rst,
-        data            => "00" & s_buf_data,
-        wrreq           => s_buf_wr,
-        full            => s_buf_full,
-        almost_full     => s_buf_almost_full,
-        empty           => o_fifo_empty,
-        q               => o_fifo_data,
-        rdreq           => i_fifo_rd--,
+        data            => "00" & s_A_buf_data,
+        wrreq           => s_A_buf_wr,
+        full            => o_buffer_full(0),
+        almost_full     => s_A_buf_almost_full,
+        empty           => o_A_fifo_empty,
+        q               => o_A_fifo_data,
+        rdreq           => i_A_fifo_rd--,
     );
 
-o_buffer_full <= s_buf_full;
+gen_dual_cfifo: if(N_MODULES>1) generate
+u_common_fifo_B: common_fifo
+    port map (
+        clock           => i_clk_core,
+        sclr            => i_rst,
+        data            => "00" & s_B_buf_data,
+        wrreq           => s_B_buf_wr,
+        full            => o_buffer_full(1),
+        almost_full     => s_B_buf_almost_full,
+        empty           => o_B_fifo_empty,
+        q               => o_B_fifo_data,
+        rdreq           => i_B_fifo_rd--,
+    );
+end generate;
+
 end architecture RTL;

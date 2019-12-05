@@ -6,14 +6,14 @@ use work.daq_constants.all;
 entity top is
 port (
     -- FE.Ports
-    i_fee_rxd       : in    std_logic_vector(1*4 - 1 downto 0); -- data inputs from ASICs
-    o_fee_spi_CSn   : out   std_logic_vector(1*4 - 1 downto 0); -- CSn signals to ASICs (one per ASIC)
-    o_fee_spi_MOSI  : out   std_logic_vector(1 - 1 downto 0);   -- MOSI signals to ASICs (one per board)
-    i_fee_spi_MISO  : in    std_logic_vector(1 - 1 downto 0);   -- MISO signals from ASICs (one per board)
-    o_fee_spi_SCK   : out   std_logic_vector(1 - 1 downto 0);   -- SCK signals to ASICs (one per board)
+    i_fee_rxd       : in    std_logic_vector(2*4 - 1 downto 0); -- data inputs from ASICs
+    o_fee_spi_CSn   : out   std_logic_vector(2*4 - 1 downto 0); -- CSn signals to ASICs (one per ASIC)
+    o_fee_spi_MOSI  : out   std_logic_vector(2 - 1 downto 0);   -- MOSI signals to ASICs (one per board)
+    i_fee_spi_MISO  : in    std_logic_vector(2 - 1 downto 0);   -- MISO signals from ASICs (one per board)
+    o_fee_spi_SCK   : out   std_logic_vector(2 - 1 downto 0);   -- SCK signals to ASICs (one per board)
 
-    o_fee_ext_trig  : out   std_logic_vector(1 - 1 downto 0);   -- external trigger (data validation) signals to ASICs (one per board)
-    o_fee_chip_rst  : out   std_logic_vector(1 - 1 downto 0);   -- chip reset signals to ASICs (one per board)
+    o_fee_ext_trig  : out   std_logic_vector(2 - 1 downto 0);   -- external trigger (data validation) signals to ASICs (one per board)
+    o_fee_chip_rst  : out   std_logic_vector(2 - 1 downto 0);   -- chip reset signals to ASICs (one per board)
 
 
 
@@ -99,9 +99,9 @@ end entity;
 
 architecture arch of top is
 
-    signal fifo_rempty : std_logic;
-    signal fifo_rack : std_logic;
-    signal fifo_rdata : std_logic_vector(35 downto 0);
+    signal fifoA_rempty, fifoB_rempty : std_logic;
+    signal fifoA_rack,   fifoB_rack   : std_logic;
+    signal fifoA_rdata,  fifoB_rdata  : std_logic_vector(35 downto 0);
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
@@ -120,9 +120,9 @@ architecture arch of top is
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n : std_logic_vector(15 downto 0);
 
-    signal s_fee_chip_rst : std_logic_vector(0 downto 0);
+    signal s_fee_chip_rst : std_logic_vector(1 downto 0);
     signal s_FPGA_test : std_logic_vector (7 downto 0) := (others => '0');
-    signal s_MON_rxrdy : std_logic_vector (3 downto 0);
+    signal s_MON_rxrdy : std_logic_vector (7 downto 0);
 
     -- reset system
     signal run_state_125 : run_state_t;
@@ -142,7 +142,7 @@ begin
 
     e_scifi_path : entity work.scifi_path
     generic map (
-        N_m => 1
+        N_m => 2
     )
     port map (
         i_reg_addr      => scifi_reg.addr(3 downto 0),
@@ -153,11 +153,15 @@ begin
 
         o_chip_reset    => s_fee_chip_rst,
         o_pll_test      => open,
-        i_data          => i_fee_rxd(3 downto 0),
+        i_data          => i_fee_rxd,
 
-        o_fifo_rempty   => fifo_rempty,
-        i_fifo_rack     => fifo_rack,
-        o_fifo_rdata    => fifo_rdata,
+        o_fifoA_rempty   => fifoA_rempty,
+        i_fifoA_rack     => fifoA_rack,
+        o_fifoA_rdata    => fifoA_rdata,
+
+        o_fifoB_rempty   => fifoB_rempty,
+        i_fifoB_rack     => fifoB_rack,
+        o_fifoB_rdata    => fifoB_rdata,
 
         i_reset         => not reset_n,
         i_clk_core      => qsfp_pll_clk,
@@ -238,7 +242,7 @@ begin
     spi_miso <=
         si45_spi_out when spi_ss_n(0) = '0' else
         i_fee_spi_MISO(0) when spi_ss_n(3 downto 0)/="1111" else
---        i_fee_spi_MISO(1) when spi_ss_n(7 downto 4)/="1111" else
+        i_fee_spi_MISO(1) when spi_ss_n(7 downto 4)/="1111" else
 --        i_fee_spi_MISO(2) when spi_ss_n(11 downto 8)/="1111" else
 --        i_fee_spi_MISO(3) when spi_ss_n(15 downto 12)/="1111" else
         '0';
@@ -276,9 +280,13 @@ begin
         i_pod_rx        => pod_rx,
         o_pod_tx        => pod_tx,
 
-        i_fifo_rempty   => fifo_rempty,
-        o_fifo_rack     => fifo_rack,
-        i_fifo_rdata    => fifo_rdata,
+        i_fifo_rempty   => fifoA_rempty,
+        o_fifo_rack     => fifoA_rack,
+        i_fifo_rdata    => fifoA_rdata,
+
+	i_secondary_fifo_rempty   => fifoB_rempty,
+        o_secondary_fifo_rack     => fifoB_rack,
+        i_secondary_fifo_rdata    => fifoB_rdata,
 
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,

@@ -9,7 +9,7 @@ use work.daq_constants.all;
 
 entity scifi_path is
 generic (
-    N_m : positive := 1--;  --number of modules
+    N_m : positive := 2--;  --number of modules
 );
 port (
     -- read latency - 1
@@ -23,9 +23,13 @@ port (
     o_pll_test      : out   std_logic;
     i_data          : in    std_logic_vector(N_m*4-1 downto 0);
 
-    o_fifo_rdata    : out   std_logic_vector(35 downto 0);
-    o_fifo_rempty   : out   std_logic;
-    i_fifo_rack     : in    std_logic;
+    o_fifoA_rdata    : out   std_logic_vector(35 downto 0);
+    o_fifoA_rempty   : out   std_logic;
+    i_fifoA_rack     : in    std_logic;
+
+    o_fifoB_rdata    : out   std_logic_vector(35 downto 0);
+    o_fifoB_rempty   : out   std_logic;
+    i_fifoB_rack     : in    std_logic;
 
     i_reset         : in    std_logic;
     -- 156.25 MHz
@@ -45,21 +49,17 @@ end entity;
 architecture arch of scifi_path is
     signal s_testpulse : std_logic;
 
-    signal fifo_rempty : std_logic;
-    signal fifo_rdata : std_logic_vector(35 downto 0);
-    signal fifo_rack_ext : std_logic;
-
     signal rx_pll_lock : std_logic;
     signal rx_dpa_lock : std_logic_vector(i_data'range);
     signal rx_ready : std_logic_vector(i_data'range);
-    signal frame_desync : std_logic;
-    signal buffer_full : std_logic;
+    signal frame_desync : std_logic_vector(1 downto 0);
+    signal buffer_full : std_logic_vector(1 downto 0);
 
     -- counters
     signal s_cntreg_ctrl : std_logic_vector(31 downto 0);
-    signal s_cntreg_nom : std_logic_vector(31 downto 0);
+    signal s_cntreg_num       : std_logic_vector(31 downto 0);
     signal s_cntreg_denom_low : std_logic_vector(31 downto 0);
-    signal s_cntreg_denom_high : std_logic_vector(31 downto 0);
+    signal s_cntreg_denom_high: std_logic_vector(31 downto 0);
 
     -- registers controlled from midas
     signal s_dummyctrl_reg : std_logic_vector(31 downto 0);
@@ -80,9 +80,6 @@ begin
     port map ( o_clk => s_testpulse, i_reset_n => not i_run_state(RUN_STATE_BITPOS_SYNC), i_clk => i_clk_g125 );
     o_pll_test <= s_testpulse;
 
-    o_fifo_rdata <= fifo_rdata;
-    o_fifo_rempty <= fifo_rempty;
-    fifo_rack_ext <= '1' when ( i_reg_we = '1' and i_reg_addr = X"1" and fifo_rempty = '0' ) else '0';
 
     process(i_clk_core, i_reset)
     begin
@@ -104,7 +101,7 @@ begin
             s_cntreg_ctrl <= i_reg_wdata;
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"1" ) then
-            o_reg_rdata <= s_cntreg_nom;
+            o_reg_rdata <= s_cntreg_num;
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"2" ) then
             o_reg_rdata <= s_cntreg_denom_low;
@@ -117,8 +114,8 @@ begin
         if ( i_reg_re = '1' and i_reg_addr = X"4" ) then
             o_reg_rdata <= (others => '0');
             o_reg_rdata(0) <= rx_pll_lock;
-            o_reg_rdata(4) <= frame_desync;
-            o_reg_rdata(8) <= buffer_full;
+            o_reg_rdata(5 downto 4) <= frame_desync;
+            o_reg_rdata(9 downto 8) <= buffer_full;
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"5" ) then
             o_reg_rdata <= (others => '0');
@@ -182,16 +179,21 @@ begin
 		o_pll_clk    => open
     );
     o_chip_reset <= s_chip_rst_shifted(N_m-1 downto 0);
+
+
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (
+        N_MODULES => N_m,
         N_ASICS => 4,
         LVDS_PLL_FREQ => 125.0,
         LVDS_DATA_RATE => 1250.0,
-        INPUT_SIGNFLIP => ("1111")--,
-    )
+        INPUT_SIGNFLIP => "1111"&"1111",
+		  C_CHANNELNO_PREFIX_A => "00",
+		  C_CHANNELNO_PREFIX_B => "01"
+	 )
     port map (
         i_rst => s_datapath_rst,
-        i_stic_txd => i_data(3 downto 0),
+        i_stic_txd => i_data,
         i_refclk_125_A => i_clk_ref_A,
         i_refclk_125_B => i_clk_ref_B,
         i_ts_clk => i_clk_g125,
@@ -199,15 +201,19 @@ begin
 
         -- interface to asic fifos
         i_clk_core => i_clk_core,
-        o_fifo_empty => fifo_rempty,
-        o_fifo_data => fifo_rdata,
-        i_fifo_rd => i_fifo_rack or fifo_rack_ext,
+        o_A_fifo_empty => o_fifoA_rempty,
+        o_A_fifo_data => o_fifoA_rdata,
+        i_A_fifo_rd => i_fifoA_rack,
+
+        o_B_fifo_empty => o_fifoB_rempty,
+        o_B_fifo_data => o_fifoB_rdata,
+        i_B_fifo_rd => i_fifoB_rack,
 
         -- slow control
         i_SC_disable_dec => s_dpctrl_reg(31),
         i_SC_rx_wait_for_all => s_dpctrl_reg(30),
         i_SC_rx_wait_for_all_sticky => s_dpctrl_reg(29),
-        i_SC_mask => s_dpctrl_reg(3 downto 0),
+        i_SC_mask => s_dpctrl_reg(4*N_m-1 downto 0),
         i_SC_datagen_enable => s_dummyctrl_reg(1),
         i_SC_datagen_shortmode => s_dummyctrl_reg(2),
         i_SC_datagen_count => s_dummyctrl_reg(12 downto 3),
@@ -220,11 +226,12 @@ begin
         o_frame_desync => frame_desync,
         o_buffer_full => buffer_full,
 
-	i_SC_reset_counters => s_cntreg_ctrl(15),
-	i_SC_counterselect => s_cntreg_ctrl(4 downto 0),
-	o_counter_nominator => s_cntreg_nom,
-	o_counter_denominator_low => s_cntreg_denom_low,
-	o_counter_denominator_high =>s_cntreg_denom_high
+        i_SC_reset_counters => s_cntreg_ctrl(15),
+        i_SC_counterselect => s_cntreg_ctrl(6 downto 0),
+        o_counter_numerator => s_cntreg_num,
+        o_counter_denominator_low => s_cntreg_denom_low,
+        o_counter_denominator_high =>s_cntreg_denom_high
     );
+
     o_MON_rxrdy <= rx_ready;
 end architecture;
