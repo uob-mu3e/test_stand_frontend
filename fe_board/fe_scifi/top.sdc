@@ -9,9 +9,5 @@ set_false_path -to {scifi_path:e_scifi_path|mutrig_datapath:e_mutrig_datapath|mu
 
 
 #reset alignment block: fals paths between slow and fast shifted clock, user needs to find proper dynamic phase shift and cycle settings
-set_false_path -from [get_clocks {clk_125_top}] -to [get_clocks {e_scifi_path|u_resetshift|pll|altpll_component|auto_generated|pll1|clk[1]}]
-set_false_path -from [get_clocks {clk_125_top}] -to [get_clocks {e_scifi_path|u_resetshift|pll|altpll_component|auto_generated|pll1|clk[0]}]
-#todo: clock should be removed - we only want to have one clock
-set_false_path -from [get_clocks {clk_aux}] -to [get_clocks {e_scifi_path|u_resetshift|pll|altpll_component|auto_generated|pll1|clk[0]}]
-set_false_path -from [get_clocks {clk_aux}] -to [get_clocks {e_scifi_path|u_resetshift|pll|altpll_component|auto_generated|pll1|clk[1]}]
-
+set_false_path -to [get_clocks {e_scifi_path|u_resetshift|pll|altpll_component|auto_generated|pll1|clk[0]}]
+set_false_path -to [get_clocks {e_scifi_path|u_resetshift|pll|altpll_component|auto_generated|pll1|clk[1]}]
