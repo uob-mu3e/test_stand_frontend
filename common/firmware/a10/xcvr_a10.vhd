@@ -55,7 +55,7 @@ architecture arch of xcvr_a10 is
 
     signal reset_n : std_logic;
 
-    signal ch : integer range NUMBER_OF_CHANNELS_g-1 downto 0 := 0;
+    signal ch : integer range 0 to NUMBER_OF_CHANNELS_g-1 := 0;
 
     signal av_ctrl : work.util.avalon_t;
     signal av_phy, av_pll : work.util.avalon_t;
@@ -164,27 +164,27 @@ begin
 
         -- data counter
         e_rx_Gbit : entity work.counter
-        generic map ( W => rx(i).Gbit'length, DIV => 2**30/32 )
+        generic map ( DIV => 2**30/32, W => rx(i).Gbit'length )
         port map (
-            cnt => rx(i).Gbit, ena => '1',
-            reset => not rx(i).rst_n, clk => i_rx_clkin(i)
+            o_cnt => rx(i).Gbit, i_ena => '1',
+            i_reset_n => rx(i).rst_n, i_clk => i_rx_clkin(i)
         );
 
         -- Loss-of-Lock (LoL) counter
         e_rx_LoL_cnt : entity work.counter
-        generic map ( W => rx(i).LoL_cnt'length, EDGE => -1 ) -- falling edge
+        generic map ( EDGE => -1, W => rx(i).LoL_cnt'length ) -- falling edge
         port map (
-            cnt => rx(i).LoL_cnt, ena => rx(i).locked,
-            reset => not rx(i).rst_n, clk => i_rx_clkin(i)
+            o_cnt => rx(i).LoL_cnt, i_ena => rx(i).locked,
+            i_reset_n => rx(i).rst_n, i_clk => i_rx_clkin(i)
         );
 
         -- 8b10b error counter
         e_rx_err_cnt : entity work.counter
         generic map ( W => rx(i).err_cnt'length )
         port map (
-            cnt => rx(i).err_cnt,
-            ena => work.util.to_std_logic( rx(i).errdetect /= 0 or rx(i).disperr /= 0 ),
-            reset => not rx(i).rst_n, clk => i_rx_clkin(i)
+            o_cnt => rx(i).err_cnt,
+            i_ena => work.util.to_std_logic( rx(i).errdetect /= 0 or rx(i).disperr /= 0 ),
+            i_reset_n => rx(i).rst_n, i_clk => i_rx_clkin(i)
         );
     end generate;
 
