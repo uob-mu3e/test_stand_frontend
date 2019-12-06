@@ -240,7 +240,7 @@ architecture rtl of top is
 		signal dma_data_wren : std_logic;
 		signal dma_data : std_logic_vector(255 downto 0);
 		signal dma_data_test : std_logic_vector(159 downto 0);
-		signal dma_event_data : std_logic_vector(31 downto 0);
+		signal dma_event_data : std_logic_vector(255 downto 0);
 		signal dma_wren_cnt : std_logic;
 		signal dma_wren_test : std_logic;
 		signal dma_end_event_cnt : std_logic;
@@ -549,21 +549,23 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		end if;
     end if;
     end process;
-
-    e_event_counter : entity work.event_counter
-    port map (
-		dma_clk					=> pcie_fastclk_out,
-		reset_n					=> resets_n(RESET_BIT_EVENT_COUNTER),
-		rx_data					=> data_counter,
-		rx_datak					=> datak_counter,
-		dma_wen_reg				=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE), -- this is going to a process with pcie_fastclk_out
-		event_length			=> event_length,
-		dma_data_wren			=> dma_wren_cnt,
-		dmamem_endofevent		=> dma_end_event_cnt,
-		dma_data					=> dma_event_data,
-		state_out				=> state_out_eventcounter,
-        clk                     => tx_clk(0)--,
-    );
+	 
+	 e_midas_event_builder : entity work.midas_event_builder
+	  generic map (
+		 NLINKS => 3--;
+	 )
+	  port map(
+		 i_clk_data => tx_clk(0),
+		 i_clk_dma  => pcie_fastclk_out,
+		 i_reset_n  => resets_n(RESET_BIT_EVENT_COUNTER),
+		 i_rx_data  => data_counter & data_counter & data_counter,
+		 i_rx_datak => datak_counter & datak_counter & datak_counter,
+		 i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+		 o_event_wren => dma_wren_cnt,
+		 o_endofevent => dma_end_event_cnt,
+		 o_event_data => dma_event_data,
+		 o_state_out => state_out_eventcounter--,
+	);
 
     e_counter : entity work.dma_counter
     port map (
@@ -597,14 +599,7 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		elsif(dma_wren_cnt = '1') then
 			dma_data_wren <= '1';
 			dmamem_endofevent <= dma_end_event_cnt;
-			dma_data <=	X"00000" & event_length &
-				dma_event_data 			&
-				x"1ABACAF" & state_out_eventcounter &
-				x"2ABACAFE" &
-				x"3ABACAFE" &
-				x"4ABACAFE" &
-				x"5ABACAFE" &
-				x"6ABACAFE";
+			dma_data <=	dma_event_data;
 		end if;
     end if;
     end process;
