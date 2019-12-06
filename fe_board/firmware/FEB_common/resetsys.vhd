@@ -5,6 +5,9 @@ use ieee.numeric_std.all;
 use work.daq_constants.all;
 
 ENTITY resetsys is
+generic (
+    PHASE_WIDTH_g : positive := 16--;
+);
 PORT (
     i_data_125_rx       : in    std_logic_vector(7 downto 0);
     i_reset_125_rx_n    : in    std_logic;
@@ -25,7 +28,7 @@ PORT (
     terminated          : in    std_logic; -- changes run state from terminating to idle if set to 1  (data merger will set this if run was finished properly, signal will be synced to clk_reset_rx INSIDE this entity)
     testout             : out   std_logic_vector(5 downto 0);
 
-    o_phase             : out   std_logic_vector(31 downto 0);
+    o_phase             : out   std_logic_vector(PHASE_WIDTH_g-1 downto 0);
     i_reset_n           : in    std_logic;
     i_clk               : in    std_logic--;
 );
@@ -85,6 +88,9 @@ BEGIN
     -- measure phase between clk_125_rx and clk_125
     -- sync state from clk_125_rx to clk_125
     i_state_phase_box : entity work.state_phase_box
+    generic map (
+        PHASE_WIDTH_g => PHASE_WIDTH_g--,
+    )
     PORT MAP (
         i_state_125_rx      => state_125_rx,
         i_clk_125_rx        => i_clk_125_rx,
