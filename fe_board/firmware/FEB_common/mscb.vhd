@@ -51,6 +51,7 @@ begin
     begin
     if rising_edge(i_clk) then
         o_avs_readdata <= X"CCCCCCCC";
+        o_avs_waitrequest <= '0';
 
         if ( i_avs_address = X"0" and i_avs_read = '1' ) then
             o_avs_readdata <= (others => '0');
