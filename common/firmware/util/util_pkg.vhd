@@ -65,6 +65,10 @@ package util is
         v : std_logic_vector--;
     ) return std_logic_vector;
 
+    function gray_inc (
+        v : std_logic_vector--;
+    ) return std_logic_vector;
+
     function shift_right (
         v : std_logic_vector;
         n : natural--;
@@ -221,6 +225,13 @@ package body util is
             r(i) := b;
         end loop;
         return r;
+    end function;
+
+    function gray_inc (
+        v : std_logic_vector
+    ) return std_logic_vector is
+    begin
+        return bin2gray(std_logic_vector(unsigned(gray2bin(v))+1));
     end function;
 
     function shift_right (

@@ -8,7 +8,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use work.daq_constants.all;
-
+use work.util.all;
 
 entity rx_errcounter is
 port (
@@ -112,12 +112,12 @@ begin
 			timer 		<= timer + '1';
 			if(timer = TIME_125MHz_1ms)then	-- use 1 ms instead of 1 second (but beware: runs actually with 156.25 MHz, not 125 MHz!)
 				timer 	<= (others => '0');
-				run		<= run + '1';
+				run		<= gray_inc(run);
 			end if;
 			if((rx_status(3) = '1') or (rx_status(2) = '1'))then
-				err 	<= err + '1';
+				err 	<= gray_inc(err);
 			end if;
-			if(sync_init = '0')then
+			if(sync_init = '0') then
 				sync_init <= '1';
 			end if;
 		end if;

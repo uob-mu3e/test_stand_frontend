@@ -11,7 +11,7 @@
 Library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
-
+use work.util.all;
 
 entity prbs48_checker is
 	port(
@@ -33,11 +33,11 @@ architecture checker of prbs48_checker is
 
 	signal s_first_prbs	: std_logic;
 
-	signal s_err_cnt	: unsigned(31 downto 0);
-	signal s_wrd_cnt	: unsigned(63 downto 0);
+	signal s_err_cnt	: std_logic_vector(31 downto 0);
+	signal s_wrd_cnt	: std_logic_vector(63 downto 0);
 begin
-	o_err_cnt <= std_logic_vector(s_err_cnt);
-	o_wrd_cnt <= std_logic_vector(s_wrd_cnt);
+	o_err_cnt <= s_err_cnt;
+	o_wrd_cnt <= s_wrd_cnt;
 
 	-- calculate the expected prbs for checking
 	s_exp_prbs <= s_pre_prbs(s_pre_prbs'high-1 downto 0) & (s_pre_prbs(47) xor s_pre_prbs(42));
@@ -58,11 +58,11 @@ begin
 						s_first_prbs <= '0';
 					else
 						if(unsigned(s_wrd_cnt)+1 /= 0) then
-							s_wrd_cnt <= s_wrd_cnt + 1;
+							s_wrd_cnt <= gray_inc(s_wrd_cnt);
 						end if;
 						-- if it's not the first prbs in the frame, check the prbs word
-						if ((i_prbs_word /= s_exp_prbs) and (s_err_cnt /= X"ffffffff")) then
-							s_err_cnt <= s_err_cnt + 1;
+						if ((i_prbs_word /= s_exp_prbs) and (s_err_cnt /= bin2gray(X"ffffffff"))) then
+							s_err_cnt <= gray_inc(s_err_cnt);
 						end if;
 					end if;
 

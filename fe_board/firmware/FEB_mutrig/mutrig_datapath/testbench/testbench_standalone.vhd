@@ -35,6 +35,7 @@ architecture RTL of testbench_standalone is
 --dut definition
 component mutrig_datapath is
   generic(
+	N_MODULES: integer range 1 to 2 := 1;
 	N_ASICS : integer :=1;
 	C_CHANNELNO_PREFIX : std_logic_vector:="" --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
 	--(e.g. Tiles,  one module with up to 16 ASICs, PREFIX="")
@@ -50,12 +51,17 @@ component mutrig_datapath is
 
 	--interface to asic fifos
 	i_clk_core		: in  std_logic; --fifo reading side clock
-	o_fifo_empty		: out std_logic;
-	o_fifo_data		: out std_logic_vector(35 downto 0);
-	i_fifo_rd		: in  std_logic;
+	o_A_fifo_empty		: out std_logic;
+	o_A_fifo_data		: out std_logic_vector(35 downto 0);
+	i_A_fifo_rd		: in  std_logic;
+	--secondary interface used if DUAL_FIBER=TRUE
+	o_B_fifo_empty		: out std_logic;
+	o_B_fifo_data		: out std_logic_vector(35 downto 0);
+	i_B_fifo_rd		: in  std_logic:='0';
+
 	--slow control
 	i_SC_disable_dec	: in std_logic;
-	i_SC_mask		: in std_logic_vector( N_ASICS-1 downto 0);
+	i_SC_mask		: in std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 	i_SC_datagen_enable	: in std_logic;
 	i_SC_datagen_shortmode	: in std_logic;
 	i_SC_datagen_count	: in std_logic_vector(9 downto 0);
@@ -64,10 +70,10 @@ component mutrig_datapath is
 	--monitors
 	o_receivers_usrclk	: out std_logic;              		-- pll output clock
 	o_receivers_pll_lock	: out std_logic;			-- pll lock flag
-	o_receivers_dpa_lock	: out std_logic_vector( N_ASICS-1 downto 0);			-- dpa lock flag per channel
-	o_receivers_ready	: out std_logic_vector( N_ASICS-1 downto 0);-- receiver output ready flag
-	o_frame_desync		: out std_logic;
-	o_buffer_full		: out std_logic;
+	o_receivers_dpa_lock	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0);			-- dpa lock flag per channel
+	o_receivers_ready	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0);-- receiver output ready flag
+	o_frame_desync		: out std_logic_vector(N_MODULES-1 downto 0);
+	o_buffer_full		: out std_logic_vector(N_MODULES-1 downto 0);
 
 	i_SC_reset_counters	: in std_logic;
 	i_SC_counterselect      : in std_logic_vector(4 downto 0);
@@ -159,9 +165,9 @@ dut: mutrig_datapath
 		o_receivers_ready	=> o_receivers_ready,
 
 		i_clk_core		=> i_coreclk,
-    		o_fifo_empty		=> s_fifo_empty,
-    		o_fifo_data		=> s_fifo_data,
-    		i_fifo_rd		=> s_fifo_rd,
+    		o_A_fifo_empty		=> s_fifo_empty,
+    		o_A_fifo_data		=> s_fifo_data,
+    		i_A_fifo_rd		=> s_fifo_rd,
 		i_SC_disable_dec	=> '1',				--disable decoder to speed up simulation
 		i_SC_mask		=> i_SC_mask,
 		o_frame_desync		=> o_frame_desync,
