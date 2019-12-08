@@ -41,6 +41,7 @@ port (
 
     --reset system
     i_run_state      : in    run_state_t; --run state sync to i_clk_g125
+    o_run_state_all_done : out std_logic; --all fifos empty, all data read
 
     o_MON_rxrdy     : out   std_logic_vector(N_m*4 - 1 downto 0)--; --receiver ready flags for monitoring, sync to lvds_userclocks(A/B depending on LVDS placement)
 );
@@ -159,7 +160,7 @@ begin
     end process;
 
     s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC);
-    s_datapath_rst <= i_reset or s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_SYNC);
+    s_datapath_rst <= i_reset or s_subdet_reset_reg(1); -- or i_run_state(RUN_STATE_BITPOS_SYNC);
 
 
     u_resetshift: entity work.clockalign_block
@@ -217,6 +218,9 @@ begin
         i_SC_datagen_enable => s_dummyctrl_reg(1),
         i_SC_datagen_shortmode => s_dummyctrl_reg(2),
         i_SC_datagen_count => s_dummyctrl_reg(12 downto 3),
+        --run control
+	i_RC_may_generate => i_run_state(RUN_STATE_BITPOS_RUNNING), 
+	o_RC_all_done     => o_run_state_all_done,
 
         -- monitors
         o_receivers_usrclk => open,
@@ -227,7 +231,7 @@ begin
         o_buffer_full => buffer_full,
 
         i_SC_reset_counters => s_cntreg_ctrl(15),
-        i_SC_counterselect => s_cntreg_ctrl(6 downto 0),
+        i_SC_counterselect => s_cntreg_ctrl(5 downto 0),
         o_counter_numerator => s_cntreg_num,
         o_counter_denominator_low => s_cntreg_denom_low,
         o_counter_denominator_high =>s_cntreg_denom_high
