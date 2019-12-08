@@ -18,6 +18,8 @@ create_clock -period "125 MHz" [ get_ports pod_pll_clk ]
 derive_pll_clocks -create_base_clocks
 derive_clock_uncertainty
 
-
+#run counter signal to data output - where to put this?
+set_false_path -from {fe_block:e_fe_block|resetsys:e_reset_system|state_controller:i_state_controller|runnumber[*]} -to {fe_block:e_fe_block|data_merger:e_merger|data_out[*]}
+set_false_path -from {fe_block:e_fe_block|resetsys:e_reset_system|state_controller:i_state_controller|runnumber[*]} -to {fe_block:e_fe_block|data_merger:e_merger_secondary|data_out[*]}
 
 #set_false_path -to [ get_ports {LED[*]} ]
