@@ -427,10 +427,10 @@ begin
         data_read_req           => o_fifo_rack,
         data_in                 => i_fifo_rdata,
 
-        override_data_in        => (others => '0'), --TODO: connect link test signal here? (see more comments below)
-        override_data_is_k_in   => (others => '0'),
-        override_req            => '0',
-        override_granted        => open,
+        override_data_in        => linktest_data, --TODO: separate link test entity?
+        override_data_is_k_in   => linktest_datak,
+        override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
+        override_granted        => linktest_granted(0),
 
         terminated              => terminated(0),
         data_priority           => '0',
@@ -461,10 +461,10 @@ begin
         data_read_req           => o_secondary_fifo_rack,
         data_in                 => i_secondary_fifo_rdata,
 
-        override_data_in        => linktest_data, --TODO: connect link test signal here. done correctly?
+        override_data_in        => linktest_data,
         override_data_is_k_in   => linktest_datak,
-        override_req            => '1',   --changed to '1'. TODO needs connection? 
-	override_granted        => linktest_granted(1), --TODO: can we use the negated version as e_link_test.i_sync_reset? Then link test is started with consistent word
+        override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
+        override_granted        => linktest_granted(1),
 
         terminated              => terminated(1),
         data_priority           => '0',
@@ -483,11 +483,11 @@ begin
         g_poly => "10000000001000000000000000000110"--,
     )
     port map (
-        i_sync_reset    => not linktest_granted(1),
+        i_sync_reset    => not (linktest_granted(0) and linktest_granted(1)),
         i_seed          => (others => '1'),
         i_en            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),
-        o_lsfr          => linktest_data, --qsfp_tx_data(63 downto 32),
-        o_datak         => linktest_datak, --qsfp_tx_datak(7 downto 4),
+        o_lsfr          => linktest_data,
+        o_datak         => linktest_datak,
         reset_n         => reset_156_n,
         i_clk           => i_clk_156--,
     );
@@ -512,7 +512,7 @@ begin
         reset_bypass            => reg_reset_bypass(11 downto 0),
         run_number_out          => run_number,
         fpga_id                 => FPGA_ID_g,
-        terminated              => terminated(0), --TODO: how to handle two mergers? use AND combination?
+        terminated              => (terminated(0) and terminated (1)), --TODO: test with two datamergers
         testout                 => open,
 
         o_phase                 => open,
