@@ -36,6 +36,9 @@ port (
 	o_sink_data	 : out std_logic_vector(33 downto 0);		      -- event data output, asic number appended
 	i_sink_full      :  in std_logic;
 	o_sink_wr   	 : out std_logic;
+--still data to process. Does not check packet state, only if there is data in the chain.
+	o_busy           : out std_logic;
+
 --monitoring, write-when-fill is prevented internally
 	o_sync_error     : out std_logic;
 	i_SC_mask	 : in std_logic_vector(N_INPUTS-1 downto 0);		-- allow missing header or tailer from masked asic, block read requests from this 
@@ -107,7 +110,10 @@ architecture impl of framebuilder_mux is
 begin
 --output assignments
 o_sink_wr <= s_sink_wr;
-
+o_busy <= '1' when
+		unsigned(s_is_valid)/=0 and
+		s_state/=fs_idle
+	  else '0';
 --global timestamp generation
 p_gen_timestamp: process(i_timestamp_clk)
 begin

@@ -51,16 +51,20 @@ port (
 	i_SC_datagen_count	: in std_logic_vector(9 downto 0);
 	i_SC_rx_wait_for_all	: in std_logic;
 	i_SC_rx_wait_for_all_sticky	: in std_logic;
+        --run control
+	i_RC_may_generate       : in std_logic; --do not generate new frames for runstates that are not RUNNING, allows to let fifos run empty
+	o_RC_all_done           : out std_logic; --all fifos empty, all data read
+
 	--monitors
 	o_receivers_usrclk	: out std_logic;              		-- pll output clock
 	o_receivers_pll_lock	: out std_logic;			-- pll lock flag
 	o_receivers_dpa_lock	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0);			-- dpa lock flag per channel
-	o_receivers_ready	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0);-- receiver output ready flag
-	o_frame_desync		: out std_logic_vector(1 downto 0) :=(others =>'0');
-	o_buffer_full		: out std_logic_vector(1 downto 0) :=(others =>'0');
+	o_receivers_ready	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- receiver output ready flag
+	o_frame_desync		: out std_logic_vector(1 downto 0);
+	o_buffer_full		: out std_logic_vector(1 downto 0);
 
         i_SC_reset_counters	: in std_logic;
-	i_SC_counterselect      : in std_logic_vector(6 downto 0); --select counter to be read out. 1..0: counter type selection. 5..2: counter channel selection
+	i_SC_counterselect      : in std_logic_vector(5 downto 0); --select counter to be read out. 1..0: counter type selection. 5..2: counter channel selection
 	o_counter_numerator     : out std_logic_vector(31 downto 0);
 	o_counter_denominator_low  : out std_logic_vector(31 downto 0);
 	o_counter_denominator_high : out std_logic_vector(31 downto 0)--;
@@ -81,7 +85,7 @@ component frame_rcv is
 		i_clk              : in std_logic;
 		i_data             : in std_logic_vector(7 downto 0);
 		i_byteisk          : in std_logic;
-		i_dser_no_sync     : in std_logic; -- deserialzer not synced after rst
+		i_enable           : in std_logic; --do not accept new frames
 
 		o_frame_number     : out std_logic_vector(15 downto 0);
 		o_frame_info       : out std_logic_vector(15 downto 0);
@@ -89,6 +93,7 @@ component frame_rcv is
 		o_new_frame        : out std_logic;
 		o_word             : out std_logic_vector(EVENT_DATA_WIDTH -1 downto 0);
 		o_new_word         : out std_logic;
+		o_busy             : out std_logic;
 
 		o_end_of_frame     : out std_logic;
 		o_crc_error        : out std_logic;
@@ -170,6 +175,7 @@ port (
 		o_sink_data	 : out std_logic_vector(33 downto 0);		      -- event data output
 		i_sink_full      :  in std_logic;
 		o_sink_wr   	 : out std_logic;
+		o_busy           : out std_logic;
 	--monitoring, write-when-fill is prevented internally
 		o_sync_error     : out std_logic;
 		i_SC_mask	 : in std_logic_vector(N_INPUTS-1 downto 0);
@@ -242,13 +248,15 @@ signal s_frame_info_rdy, s_rec_frame_info_rdy, s_gen_frame_info_rdy : t_vector;
 signal s_event_data,     s_rec_event_data,     s_gen_event_data     : t_array_48b;
 signal s_event_ready,    s_rec_event_ready,    s_gen_event_ready    : t_vector;
 signal s_end_of_frame,   s_rec_end_of_frame,   s_gen_end_of_frame   : t_vector;
-signal s_gen_busy  : t_vector;
+signal s_frec_busy, s_gen_busy  : t_vector;
+signal s_any_framegen_busy, s_any_framegen_busy_156 : std_logic;
 
 --fifo - frame collector mux
 signal s_fifos_empty 		: std_logic_vector(N_ASICS_TOTAL-1 downto 0);
 signal s_fifos_data		: mutrig_evtdata_array_t(N_ASICS_TOTAL-1 downto 0);
 signal s_fifos_rd		: std_logic_vector(N_ASICS_TOTAL-1 downto 0);
 -- frame collector mux - prbs decoder 
+signal s_A_mux_busy, s_B_mux_busy : std_logic :='0';
 signal s_A_buf_predec_data	: std_logic_vector(33 downto 0);
 signal s_A_buf_predec_full 	: std_logic;
 signal s_A_buf_predec_wr		: std_logic;
@@ -262,6 +270,9 @@ signal s_A_buf_wr		: std_logic;
 signal s_B_buf_data		: std_logic_vector(33 downto 0);
 signal s_B_buf_almost_full 	: std_logic:='0';
 signal s_B_buf_wr		: std_logic;
+
+signal s_A_fifo_empty		: std_logic:='1';
+signal s_B_fifo_empty		: std_logic:='1';
 
 -- monitoring signals TODO: connect as needed
 signal s_fifos_full           : t_vector;	--elastic fifo full flags
@@ -348,7 +359,7 @@ u_frame_rcv : frame_rcv
 		i_clk			=> s_receivers_usrclk,
 		i_data			=> s_receivers_data((i+1)*8-1 downto i*8),
 		i_byteisk		=> s_receivers_data_isk(i),
-		i_dser_no_sync		=> (s_receivers_block or (not s_receivers_ready(i) and not i_SC_rx_wait_for_all)),
+		i_enable		=> i_RC_may_generate and not (s_receivers_block or (not s_receivers_ready(i) and not i_SC_rx_wait_for_all)),
 
 		-- to mutrig-store instance
 		o_frame_number		=> s_rec_frame_number(i),
@@ -358,6 +369,7 @@ u_frame_rcv : frame_rcv
 		o_word		 	=> s_rec_event_data(i),
 		o_new_word	 	=> s_rec_event_ready(i),
 		o_end_of_frame	 	=> s_rec_end_of_frame(i),
+		o_busy			=> s_frec_busy(i),
 
 		o_crc_error	 	=> s_crc_error(i),
 		o_crc_err_count		=> open
@@ -369,7 +381,7 @@ u_frame_rcv : frame_rcv
 				i_reset			=> i_rst,
 				i_clk			=> s_receivers_usrclk,
 				--configuration
-				i_enable		=> i_SC_datagen_enable,
+				i_enable		=> i_SC_datagen_enable and i_RC_may_generate,
 				i_fast			=> i_SC_datagen_shortmode,
 				i_cnt			=> i_SC_datagen_count,
 				-- to mutrig-store instance
@@ -383,7 +395,7 @@ u_frame_rcv : frame_rcv
 				o_busy			=> s_gen_busy(i)
 			);
 
-		--multiplex between physical and generated data sent to the elastic buffers
+		--multiplex between physical and generated data sent to the elastic buffers. Use busy from datagenerator to ensure safe takeover
 		s_frame_number(i)	<= s_gen_frame_number(i)	when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_frame_number(i);
 		s_frame_info(i)		<= s_gen_frame_info(i)		when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_frame_info(i);
 		s_frame_info_rdy(i) 	<= s_gen_frame_info_rdy(i)	when (i_SC_datagen_enable='1' or s_gen_busy(i)='1') else s_rec_frame_info_rdy(i);
@@ -404,6 +416,23 @@ u_frame_rcv : frame_rcv
 	end generate;
 
 end generate;
+
+p_frec_busy_sync: process (i_clk_core, s_receivers_usrclk)
+begin
+	if rising_edge(s_receivers_usrclk) then
+		s_any_framegen_busy <= '0';
+		if(i_SC_datagen_enable='1' and unsigned(s_gen_busy)/=0) then
+			s_any_framegen_busy <= '1';
+		end if;
+		if(i_SC_datagen_enable='0' and unsigned(s_frec_busy)/=0) then
+			s_any_framegen_busy <= '1';
+		end if;
+		--TODO: also add lvds frame generators
+	end if;
+	if rising_edge(i_clk_core) then
+		s_any_framegen_busy_156 <= s_any_framegen_busy;
+	end if;
+end process;
 
 g_buffer: for i in 0 to N_ASICS_TOTAL-1 generate begin
 
@@ -491,6 +520,7 @@ u_mux_A: framebuilder_mux
 		i_sink_full		=> s_A_buf_predec_full,
 		o_sink_wr		=> s_A_buf_predec_wr,
 	--monitoring, errors, slow control
+		o_busy                  => s_A_mux_busy,
 		o_sync_error		=> o_frame_desync(0),
 		i_SC_mask		=> i_SC_mask(N_ASICS-1 downto 0),
 		i_SC_nomerge	=> '0'
@@ -517,13 +547,13 @@ u_mux_B: framebuilder_mux
 		i_sink_full		=> s_B_buf_predec_full,
 		o_sink_wr		=> s_B_buf_predec_wr,
 	--monitoring, errors, slow control
+		o_busy                  => s_B_mux_busy,
 		o_sync_error		=> o_frame_desync(1),
 		i_SC_mask		=> i_SC_mask(N_ASICS_TOTAL-1 downto N_ASICS),
 		i_SC_nomerge	=> '0'
 	);
 
 end generate;
-
 
 --prbs decoder (two-stream)
 s_A_buf_predec_full <= s_A_buf_almost_full;
@@ -554,10 +584,12 @@ u_common_fifo_A: common_fifo
         wrreq           => s_A_buf_wr,
         full            => o_buffer_full(0),
         almost_full     => s_A_buf_almost_full,
-        empty           => o_A_fifo_empty,
+        empty           => s_A_fifo_empty,
         q               => o_A_fifo_data,
         rdreq           => i_A_fifo_rd--,
     );
+
+o_A_fifo_empty <= s_A_fifo_empty;
 
 gen_dual_cfifo: if(N_MODULES>1) generate
 u_common_fifo_B: common_fifo
@@ -568,10 +600,35 @@ u_common_fifo_B: common_fifo
         wrreq           => s_B_buf_wr,
         full            => o_buffer_full(1),
         almost_full     => s_B_buf_almost_full,
-        empty           => o_B_fifo_empty,
+        empty           => s_B_fifo_empty,
         q               => o_B_fifo_data,
         rdreq           => i_B_fifo_rd--,
     );
 end generate;
+
+nogen_dual: if(N_MODULES=1) generate
+	o_frame_desync(1)<='0';
+	s_B_buf_predec_wr <='0';
+        o_buffer_full(1) <='0';
+end generate;
+
+o_B_fifo_empty <= s_B_fifo_empty;
+
+p_RC_all_done: process (i_clk_core)
+begin
+	if rising_edge(i_clk_core) then
+		if(
+			s_any_framegen_busy_156='0' and
+			s_fifos_empty=(s_fifos_empty'range => '1') and
+			s_A_mux_busy='0' and s_B_mux_busy='0' and
+			s_A_buf_wr='0' and s_B_buf_wr='0' and
+			s_A_fifo_empty='1' and s_B_fifo_empty='1'
+		) then
+			o_RC_all_done <='1';
+		else
+			o_RC_all_done <= '0';
+		end if;
+	end if;
+end process;
 
 end architecture RTL;
