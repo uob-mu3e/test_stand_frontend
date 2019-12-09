@@ -35,6 +35,7 @@ architecture RTL of testbench_standalone is
 --dut definition
 component mutrig_datapath is
   generic(
+	N_MODULES: integer range 1 to 2 := 1;
 	N_ASICS : integer :=1;
 	C_CHANNELNO_PREFIX_A : std_logic_vector:=""; --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
 	C_CHANNELNO_PREFIX_B : std_logic_vector:=""
@@ -57,9 +58,13 @@ component mutrig_datapath is
 	o_B_fifo_empty		: out std_logic;
 	o_B_fifo_data		: out std_logic_vector(35 downto 0);
 	i_B_fifo_rd		: in  std_logic := '0';
+	--secondary interface used if N_MODULES=2
+	o_B_fifo_empty		: out std_logic;
+	o_B_fifo_data		: out std_logic_vector(35 downto 0);
+	i_B_fifo_rd		: in  std_logic:='0';
 	--slow control
 	i_SC_disable_dec	: in std_logic;
-	i_SC_mask		: in std_logic_vector( N_ASICS-1 downto 0);
+	i_SC_mask		: in std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 	i_SC_datagen_enable	: in std_logic;
 	i_SC_datagen_shortmode	: in std_logic;
 	i_SC_datagen_count	: in std_logic_vector(9 downto 0);
@@ -68,10 +73,10 @@ component mutrig_datapath is
 	--monitors
 	o_receivers_usrclk	: out std_logic;              		-- pll output clock
 	o_receivers_pll_lock	: out std_logic;			-- pll lock flag
-	o_receivers_dpa_lock	: out std_logic_vector( N_ASICS-1 downto 0);			-- dpa lock flag per channel
-	o_receivers_ready	: out std_logic_vector( N_ASICS-1 downto 0);-- receiver output ready flag
 	o_frame_desync		: out std_logic_vector(1 downto 0);
 	o_buffer_full		: out std_logic_vector(1 downto 0);
+	o_receivers_dpa_lock	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0);			-- dpa lock flag per channel
+	o_receivers_ready	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0);-- receiver output ready flag
 	o_counter_numerator     : out std_logic_vector(31 downto 0);
 	o_counter_denominator_low  : out std_logic_vector(31 downto 0);
 	o_counter_denominator_high : out std_logic_vector(31 downto 0);

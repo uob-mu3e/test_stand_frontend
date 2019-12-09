@@ -8,6 +8,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
+use work.util.all;
 --use work.mutrig_components.all;
 
 entity mutrig_store is
@@ -126,16 +127,16 @@ if rising_edge(i_clk_deser) then
 		s_framecounter  <= (others=>'0');
 		s_crcerrorcounter <= (others=>'0');
 	else
-		s_timecounter  <= std_logic_vector(unsigned(s_timecounter) + 1);
+		s_timecounter  <= gray_inc(s_timecounter);
 		if ( i_event_ready = '1' ) then
-			s_eventcounter <= std_logic_vector(unsigned(s_eventcounter) + 1);
+			s_eventcounter <= gray_inc(s_eventcounter);
 		end if;
 		if ( i_end_of_frame = '1') then
-			s_framecounter  <= std_logic_vector(unsigned(s_framecounter) + 1);
+			s_framecounter  <= gray_inc(s_framecounter);
 		end if;
 		if ( i_end_of_frame = '1' and i_crc_error='1') then
 			if(s_crcerrorcounter /= X"ffffffff") then
-				s_crcerrorcounter <= std_logic_vector(unsigned(s_crcerrorcounter) + 1);
+				s_crcerrorcounter <= gray_inc(s_crcerrorcounter);
 			end if;
 		end if;
 	end if;

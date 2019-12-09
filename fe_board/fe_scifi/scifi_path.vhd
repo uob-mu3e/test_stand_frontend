@@ -6,6 +6,7 @@ LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
 use work.daq_constants.all;
+use work.util.all;
 
 entity scifi_path is
 generic (
@@ -58,9 +59,9 @@ architecture arch of scifi_path is
 
     -- counters
     signal s_cntreg_ctrl : std_logic_vector(31 downto 0);
-    signal s_cntreg_num       : std_logic_vector(31 downto 0);
-    signal s_cntreg_denom_low : std_logic_vector(31 downto 0);
-    signal s_cntreg_denom_high: std_logic_vector(31 downto 0);
+    signal s_cntreg_num_g,       s_cntreg_num       : std_logic_vector(31 downto 0);
+    signal s_cntreg_denom_low_g, s_cntreg_denom_low : std_logic_vector(31 downto 0);
+    signal s_cntreg_denom_high_g,s_cntreg_denom_high: std_logic_vector(31 downto 0);
 
     -- registers controlled from midas
     signal s_dummyctrl_reg : std_logic_vector(31 downto 0);
@@ -93,7 +94,9 @@ begin
     elsif rising_edge(i_clk_core) then
         o_reg_rdata <= X"CCCCCCCC";
         s_subdet_resetdly_reg_written <= '0';
-
+	s_cntreg_denom_low<=s_cntreg_denom_low_g;
+	s_cntreg_denom_high<=s_cntreg_denom_high_g;
+	s_cntreg_num<=s_cntreg_num_g;
         -- counters
         if ( i_reg_re = '1' and i_reg_addr = X"0" ) then
             o_reg_rdata <= s_cntreg_ctrl;
@@ -102,13 +105,13 @@ begin
             s_cntreg_ctrl <= i_reg_wdata;
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"1" ) then
-            o_reg_rdata <= s_cntreg_num;
+            o_reg_rdata <= gray2bin(s_cntreg_num);
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"2" ) then
-            o_reg_rdata <= s_cntreg_denom_low;
+            o_reg_rdata <= gray2bin(s_cntreg_denom_low);
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"3" ) then
-            o_reg_rdata <= s_cntreg_denom_high;
+            o_reg_rdata <= gray2bin(s_cntreg_denom_high);
         end if;
 
         -- monitors
@@ -232,9 +235,9 @@ begin
 
         i_SC_reset_counters => s_cntreg_ctrl(15),
         i_SC_counterselect => s_cntreg_ctrl(5 downto 0),
-        o_counter_numerator => s_cntreg_num,
-        o_counter_denominator_low => s_cntreg_denom_low,
-        o_counter_denominator_high =>s_cntreg_denom_high
+        o_counter_numerator => s_cntreg_num_g,
+        o_counter_denominator_low => s_cntreg_denom_low_g,
+        o_counter_denominator_high =>s_cntreg_denom_high_g
     );
 
     o_MON_rxrdy <= rx_ready;
