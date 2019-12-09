@@ -92,6 +92,8 @@ end entity top;
 
 architecture rtl of top is
 
+        constant N_links : positive := 1;
+
 		 signal clk : std_logic;
 		 signal input_clk : std_logic;
 		 
@@ -517,15 +519,22 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 --        );
 --    end generate;
 
-e_run_control : entity work.run_control
-port map (
-        i_clk                               => tx_clk(0),
-        i_reset_n                           => reset_n,
-        i_aligned                           => '1',
-        i_data                              => rx_data(0),
-        i_datak                             => rx_datak(0),
-        o_FEB_status                        => readregs_slow(FEBSTATUS_REGISTER_R)--,
-);
+    e_run_control : entity work.run_control
+    generic map(
+            N_LINKS_g                           => N_links--,
+    )
+    port map (
+            i_clk                               => tx_clk(0),
+            i_reset_n                           => reset_n,
+            i_aligned                           => "1",
+            i_data                              => rx_data(0),
+            i_datak                             => rx_datak(0),
+            i_link_mask                         => (others => '0'), -- TODO: define and connect write regs here
+            i_addr                              => (others => '0'),
+            o_run_number                        => open,
+            o_link_active                       => open,
+            o_runNr_ack                         => open--,
+    );
 
 
 ------------- Event Counter ------------------
