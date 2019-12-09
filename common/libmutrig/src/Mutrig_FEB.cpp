@@ -146,7 +146,18 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
    }
-   
+   if (std::string(key.name) == "reset_lvds") {
+      BOOL value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+      if(value){
+         cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_lvds");
+         _this->LVDS_RX_Reset(MutrigFEB::FPGA_broadcast_ID);
+         value = FALSE; // reset flag in ODB
+         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+      }
+   }
+
    //reset skew settings
    if (std::string(key.name) == "resetskew_cphase") {
         cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Updating reset skew cphase settings");
@@ -352,6 +363,17 @@ void MutrigFEB::DataPathReset(int FPGA_ID){
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         val=reg_setBit(val,1,false);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
+}
+
+//reset lvds receivers
+void MutrigFEB::LVDS_RX_Reset(int FPGA_ID){
+	uint32_t val=0;
+	//set and clear reset
+        val=reg_setBit(val,2,true);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        val=reg_setBit(val,2,false);
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
 }
 

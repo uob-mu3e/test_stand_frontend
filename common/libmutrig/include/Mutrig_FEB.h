@@ -75,7 +75,7 @@ class MutrigFEB {
       void syncReset(int FPGA_ID){chipReset(FPGA_ID);}; //should be resetting the ASICs coarse counter only, missing pin on the asic. For future use
       void chipReset(int FPGA_ID); //reset all asics (digital part, CC, fsms, etc.)
       void DataPathReset(int FPGA_ID); //in FE-FPGA: everything upstream of merger (in the stream path)
-      //TODO: add more resets for FE-FPGA blocks
+      void LVDS_RX_Reset(int FPGA_ID); //in FE-FPGA: LVDS receiver blocks
 
 
       //reset signal alignment control
