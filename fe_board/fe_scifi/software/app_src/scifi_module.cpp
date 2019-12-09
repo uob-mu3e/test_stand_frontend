@@ -78,7 +78,8 @@ void scifi_module_t::menu(){
     while(1) {
         printf("  [0] => reset asic\n");
         printf("  [1] => reset datapath\n");
-        printf("  [2 || o] => configure all off\n");
+        printf("  [2] => reset lvds_rx\n");
+        printf("  [o] => configure all off\n");
         printf("  [t] => configure pll test\n");
         printf("  [p] => configure prbs single hit\n");
 	printf("\n");
@@ -107,6 +108,10 @@ void scifi_module_t::menu(){
             regs.ctrl.reset = 0;
             break;
 	case '2':
+            regs.ctrl.reset = 4;
+            usleep(100);
+            regs.ctrl.reset = 0;
+            break;
 	case 'o':
             printf("[scifi] configuring all off\n");
             for(int i=0;i<n_ASICS;i++)

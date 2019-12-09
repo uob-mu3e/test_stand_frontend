@@ -16,14 +16,9 @@ set_false_path -from {scifi_path:e_scifi_path|mutrig_datapath:e_mutrig_datapath|
 set_false_path -through {e_scifi_path|e_mutrig_datapath|u_rxdeser|lvds_rx|ALTLVDS_RX_component|auto_generated|rx_dpa_locked[*]|combout} -to {scifi_path:e_scifi_path|o_reg_rdata[*]}
 
 #counters (gray encoded)
-set_false_path -from {scifi_path:e_scifi_path|mutrig_datapath:e_mutrig_datapath|mutrig_store:\g_buffer:*:u_elastic_buffer|s_crcerrorcounter[*]}				-to {scifi_path:e_scifi_path|o_reg_rdata[*]}
-set_false_path -from {scifi_path:e_scifi_path|mutrig_datapath:e_mutrig_datapath|mutrig_store:\g_buffer:*:u_elastic_buffer|s_framecounter[*]}				-to {scifi_path:e_scifi_path|o_reg_rdata[*]}
-set_false_path -from {scifi_path:e_scifi_path|mutrig_datapath:e_mutrig_datapath|mutrig_store:\g_buffer:*:u_elastic_buffer|s_eventcounter[*]}				-to {scifi_path:e_scifi_path|o_reg_rdata[*]}
-set_false_path -from {scifi_path:e_scifi_path|mutrig_datapath:e_mutrig_datapath|mutrig_store:\g_buffer:*:u_elastic_buffer|s_timecounter[*]}				-to {scifi_path:e_scifi_path|o_reg_rdata[*]}
-set_false_path -from {scifi_path:e_scifi_path|mutrig_datapath:e_mutrig_datapath|mutrig_store:\g_buffer:*:u_elastic_buffer|prbs48_checker:u_prbs_checker|s_err_cnt[*]}	-to {scifi_path:e_scifi_path|o_reg_rdata[*]}
-set_false_path -from {scifi_path:e_scifi_path|mutrig_datapath:e_mutrig_datapath|mutrig_store:\g_buffer:*:u_elastic_buffer|prbs48_checker:u_prbs_checker|s_wrd_cnt[*]}	-to {scifi_path:e_scifi_path|o_reg_rdata[*]}
-set_false_path -from {scifi_path:e_scifi_path|mutrig_datapath:e_mutrig_datapath|receiver_block:u_rxdeser|rx_errcounter:\gen_channels:*:errcounter|errcounter[*]}	-to {scifi_path:e_scifi_path|o_reg_rdata[*]}
-set_false_path -from {scifi_path:e_scifi_path|mutrig_datapath:e_mutrig_datapath|receiver_block:u_rxdeser|rx_errcounter:\gen_channels:*:errcounter|runcounter[*]}	-to {scifi_path:e_scifi_path|o_reg_rdata[*]}
+set_false_path -to {scifi_path:e_scifi_path|s_cntreg_num[*]}
+set_false_path -to {scifi_path:e_scifi_path|s_cntreg_denom_low[*]}
+set_false_path -to {scifi_path:e_scifi_path|s_cntreg_denom_high[*]}
 #counter reset. Should add synchronizer!
 set_false_path -from {scifi_path:e_scifi_path|s_cntreg_ctrl[15]}
 

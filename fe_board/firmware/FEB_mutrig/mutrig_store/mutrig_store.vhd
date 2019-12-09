@@ -122,7 +122,7 @@ if rising_edge(i_clk_deser) then
 	end if;
 
 	--counters (event/time, errors/frame, errors/hit (prbs))
-	if(i_reset_counters='1' or i_reset='1') then
+	if(i_reset_counters='1') then
 		s_timecounter  <= (others=>'0');
 		s_eventcounter <= (others=>'0');
 		s_framecounter  <= (others=>'0');
