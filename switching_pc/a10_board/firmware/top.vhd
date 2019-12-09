@@ -527,13 +527,13 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
     port map (
             i_clk                               => tx_clk(0),
             i_reset_n                           => reset_n,
-            i_aligned                           => "1",
+            i_aligned                           => (others => '1'),
             i_data                              => rx_data(0),
             i_datak                             => rx_datak(0),
-            i_link_mask                         => (others => '0'), -- TODO: define and connect write regs here
+            i_link_enable                       => (others => '0'), -- TODO: define and connect write regs here
             i_addr                              => (others => '0'),
+            i_run_number                        => (others => '0'),
             o_run_number                        => open,
-            o_link_active                       => open,
             o_runNr_ack                         => open--,
     );
 
