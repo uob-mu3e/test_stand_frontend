@@ -47,6 +47,14 @@ architecture rtl of mscb is
 begin
 
     -- memory interface
+    -- - 0x00 - status register (mscb decoder rack and rempty, uart tx wfull, uart loopback)
+    --   - byte 0x0 - ...
+    --   - byte 0x1 - tx_wfull
+    --   - byte 0x2 - rx_rempty
+    --   - byte 0x3 - decoder_rempty/rack
+    -- - 0x01 - write uart tx wdata
+    -- - 0x02 - read uart rx rdata
+    -- - 0x03 - read mscb decoder rdata
     process(i_clk)
     begin
     if rising_edge(i_clk) then
@@ -55,16 +63,34 @@ begin
 
         if ( i_avs_address = X"0" and i_avs_read = '1' ) then
             o_avs_readdata <= (others => '0');
-            o_avs_readdata(11 downto 0) <= '1' & in_fifo_full & addressing_rempty & addressing_rdata;
+            o_avs_readdata(8) <= tx_wfull;
+            o_avs_readdata(16) <= rx_rempty;
+            o_avs_readdata(24) <= addressing_rempty;
+        end if;
+        addressing_rack <= '0';
+        if ( i_avs_address = X"0" and i_avs_write = '1' ) then
+            addressing_rack <= i_avs_writedata(24);
         end if;
 
-        addressing_rack <= '0';
+        -- uart tx wdata
         tx_we <= '0';
-        if ( i_avs_address = X"0" and i_avs_write = '1' ) then
-            addressing_rack <= i_avs_writedata(10);
-            tx_we <= i_avs_writedata(9);
-            tx_wdata <= i_avs_writedata(8 downto 0);
+        if ( i_avs_address = X"1" and i_avs_write = '1' ) then
+            tx_we <= '1';
+            tx_wdata <= i_avs_writedata(tx_wdata'range);
         end if;
+
+        -- uart rx rdata
+        if ( i_avs_address = X"2" and i_avs_read = '1' ) then
+            o_avs_readdata <= (others => '0');
+            o_avs_readdata(rx_rdata'range) <= rx_rdata;
+        end if;
+
+        -- mscb decoder rdata
+        if ( i_avs_address = X"3" and i_avs_read = '1' ) then
+            o_avs_readdata <= (others => '0');
+            o_avs_readdata(addressing_rdata'range) <= addressing_rdata;
+        end if;
+
         --
     end if;
     end process;
