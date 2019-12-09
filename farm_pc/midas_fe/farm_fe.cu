@@ -253,9 +253,15 @@ INT begin_of_run(INT run_number, char *error)
    
    // reset all
    uint32_t reset_reg = 0;
-   reset_reg = SET_RESET_BIT_ALL(reset_reg);
-   mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
+   reset_reg |= 1<<RESET_BIT_PCIE;
+   reset_reg |= 1<<RESET_BIT_PCIE_LOCAL;
+   reset_reg |= 1<<RESET_BIT_FIFOPLL;
+   reset_reg |= 1<<RESET_BIT_DATAFIFO;
+   reset_reg |= 1<<RESET_BIT_RECEIVER;
+   reset_reg |= 1<<RESET_BIT_WORDALIGN;
+   reset_reg |= 1<<RESET_BIT_BOARD;
 
+   mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
    // Enable register on FPGA for continous readout and enable dma
    uint32_t lastlastWritten = mu.last_written_addr();
    mu.enable_continous_readout(0);
