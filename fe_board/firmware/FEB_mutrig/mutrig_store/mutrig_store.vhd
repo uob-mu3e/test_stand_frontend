@@ -15,7 +15,8 @@ entity mutrig_store is
 port (
 	i_clk_deser         : in  std_logic;
 	i_clk_rd         : in  std_logic;					-- fast PCIe memory clk 
-	i_reset          : in  std_logic;					-- reset, active low
+	i_reset          : in  std_logic;					-- reset, active high
+	i_aclear         : in  std_logic;					-- asyncronous reset for buffer clear
 	i_event_data     : in  std_logic_vector(47 downto 0);	-- event data from deserelizer
 	i_event_ready    : in  std_logic;
 	i_new_frame      : in  std_logic;					-- start of frame
@@ -191,7 +192,7 @@ end process;
 
 u_channel_data_fifo : channeldata_fifo   
 PORT MAP (
-	aclr     => i_reset,
+	aclr     => i_reset or i_aclear,
 	data	   => s_full_event_data,
 	rdclk	   => i_clk_rd,
 	rdreq	   => i_fifo_rd,

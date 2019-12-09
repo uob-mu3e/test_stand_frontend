@@ -70,7 +70,8 @@ architecture arch of scifi_path is
     signal s_subdet_resetdly_reg : std_logic_vector(31 downto 0);
     signal s_subdet_resetdly_reg_written : std_logic;
     --reset synchronizers
-    signal s_datapath_rst : std_logic;
+    signal s_datapath_rst,s_datapath_rst_n_156 : std_logic;
+    signal s_lvds_rx_rst, s_lvds_rx_rst_n_125  : std_logic;
 
     --chip reset synchronization/shift
     signal s_chip_rst : std_logic;
@@ -162,8 +163,14 @@ begin
     end if;
     end process;
 
-    s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC);
-    s_datapath_rst <= i_reset or s_subdet_reset_reg(1); -- or i_run_state(RUN_STATE_BITPOS_SYNC);
+    s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC); --TODO: remove register
+    s_datapath_rst <= i_reset or s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_PREP); --TODO: remove register
+    s_lvds_rx_rst <= i_reset or s_subdet_reset_reg(1);
+
+rst_sync_dprst: entity work.reset_sync
+    port map( i_reset_n   => s_datapath_rst, o_reset_n   => s_datapath_rst_n_156, i_clk       => i_clk_core);
+rst_sync_lvdsrst: entity work.reset_sync
+    port map( i_reset_n   => s_lvds_rx_rst, o_reset_n   => s_lvds_rx_rst_n_125, i_clk       => i_clk_core);
 
 
     u_resetshift: entity work.clockalign_block
@@ -196,7 +203,8 @@ begin
 		  C_CHANNELNO_PREFIX_B => "01"
 	 )
     port map (
-        i_rst => s_datapath_rst,
+        i_rst_core => not s_datapath_rst_n_156,
+        i_rst_rx => not s_lvds_rx_rst_n_125,
         i_stic_txd => i_data,
         i_refclk_125_A => i_clk_ref_A,
         i_refclk_125_B => i_clk_ref_B,

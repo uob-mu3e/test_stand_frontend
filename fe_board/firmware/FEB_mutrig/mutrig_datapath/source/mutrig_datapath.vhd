@@ -26,7 +26,8 @@ generic(
         --(e.g. Fibers, two modules with up to 4 ASICs each, PREFIX="00" ; "01" for A and B )
 );
 port (
-	i_rst			: in  std_logic;				-- logic reset
+	i_rst_core		: in  std_logic;				-- logic reset of digital core (buffer clear, 156MHz clock synced)
+	i_rst_rx		: in  std_logic;				-- logic reset of lvds receivers (125MHz clock synced)
 	i_stic_txd		: in  std_logic_vector(N_MODULES*N_ASICS-1 downto 0);	-- serial data
 	i_refclk_125_A		: in  std_logic;                 		-- ref clk for lvds pll (A-Side) 
 	i_refclk_125_B		: in  std_logic;                 		-- ref clk for lvds pll (B-Side)
@@ -124,6 +125,7 @@ port (
 		i_clk_deser      : in  std_logic;
 		i_clk_rd         : in  std_logic;					-- fast PCIe memory clk 
 		i_reset          : in  std_logic;					-- reset, active low
+		i_aclear         : in  std_logic;					-- asyncronous reset for buffer clear
 		i_event_data     : in  std_logic_vector(47 downto 0);	-- event data from deserelizer
 		i_event_ready    : in  std_logic;     
 		i_new_frame      : in  std_logic;					-- start of frame
@@ -295,7 +297,7 @@ generic map(
 	INPUT_SIGNFLIP => INPUT_SIGNFLIP--,
 )
 port map(
-	reset_n			=> not i_rst,
+	reset_n			=> not i_rst_rx,
 	reset_n_errcnt		=> not i_SC_reset_counters,
 	rx_in			=> i_stic_txd,
 	rx_inclock		=> i_refclk_125_A,
@@ -315,10 +317,10 @@ o_receivers_usrclk <= s_receivers_usrclk;
 
 --generate a pll-synchronous all-ready signal for the data receivers.
 --this assures all start dumping data into the fifos at the same time, and we do not enter a deadlock scenario from the start
-gen_ready_all: process (s_receivers_usrclk,i_rst,s_receivers_ready, i_SC_mask)
+gen_ready_all: process (s_receivers_usrclk,i_rst_rx,s_receivers_ready, i_SC_mask)
 variable v_ready : std_logic_vector(N_ASICS_TOTAL-1 downto 0);
 begin
-	if(i_rst='1') then
+	if(i_rst_rx='1') then
 		s_receivers_all_ready<='0';
 	elsif( rising_edge(s_receivers_usrclk)) then
 		v_ready := s_receivers_ready or i_SC_mask;
@@ -332,10 +334,10 @@ end process;
 --if i_SC_rx_wait_for_all_sticky is set in addition, the all_ready property is sticky: once all receivers become ready do not block data again.
 --            The sticky bit is cleared with i_reset
 --            Otherwise, data is blocked as soon as one receiver is loosing the pattern or sync.
-releasedata_p: process(s_receivers_usrclk, i_rst)
+releasedata_p: process(s_receivers_usrclk, i_rst_rx)
 begin
 	if(rising_edge(s_receivers_usrclk)) then
-		if(i_rst='1') then
+		if(i_rst_rx='1') then
 			s_receivers_block <= '1';
 		elsif(i_SC_rx_wait_for_all_sticky='1') then
 			if(s_receivers_all_ready='1') then
@@ -355,7 +357,7 @@ u_frame_rcv : frame_rcv
 		N_BYTES_PER_WORD_SHORT	=> 3
 	)
 	port map (
-		i_rst			=> i_rst,
+		i_rst			=> i_rst_rx,
 		i_clk			=> s_receivers_usrclk,
 		i_data			=> s_receivers_data((i+1)*8-1 downto i*8),
 		i_byteisk		=> s_receivers_data_isk(i),
@@ -378,7 +380,7 @@ u_frame_rcv : frame_rcv
 		--data generator
 		u_data_dummy : stic_dummy_data
 			port map (
-				i_reset			=> i_rst,
+				i_reset			=> i_rst_rx,
 				i_clk			=> s_receivers_usrclk,
 				--configuration
 				i_enable		=> i_SC_datagen_enable and i_RC_may_generate,
@@ -440,7 +442,8 @@ u_elastic_buffer : mutrig_store
 port map(
 	i_clk_deser      => s_receivers_usrclk,
 	i_clk_rd         => i_clk_core,
-	i_reset          => i_rst,
+	i_reset          => i_rst_rx,
+	i_aclear         => i_rst_core,
 	i_event_data     => s_event_data(i),
 	i_event_ready    => s_event_ready(i),
 	i_new_frame      => s_new_frame(i),
@@ -515,7 +518,7 @@ u_mux_A: framebuilder_mux
 	)
 	port map(
 		i_coreclk		=> i_clk_core,
-		i_rst			=> i_rst,
+		i_rst			=> i_rst_core,
 		i_timestamp_clk		=> i_ts_clk,
 		i_timestamp_rst		=> i_ts_rst,
 	--event data inputs interface
@@ -542,7 +545,7 @@ u_mux_B: framebuilder_mux
 	)
 	port map(
 		i_coreclk		=> i_clk_core,
-		i_rst			=> i_rst,
+		i_rst			=> i_rst_core,
 		i_timestamp_clk		=> i_ts_clk,
 		i_timestamp_rst		=> i_ts_rst,
 	--event data inputs interface
@@ -568,7 +571,7 @@ s_B_buf_predec_full <= s_B_buf_almost_full;
 u_decoder: prbs_decoder
 	port map (
 		i_coreclk	=> i_clk_core,
-		i_rst		=> i_rst,
+		i_rst		=> i_rst_core,
 
 		i_A_data	=> s_A_buf_predec_data,
     		i_A_valid	=> s_A_buf_predec_wr,
@@ -586,7 +589,7 @@ u_decoder: prbs_decoder
 u_common_fifo_A: common_fifo
     port map (
         clock           => i_clk_core,
-        sclr            => i_rst,
+        sclr            => i_rst_core,
         data            => "00" & s_A_buf_data,
         wrreq           => s_A_buf_wr,
         full            => o_buffer_full(0),
@@ -602,7 +605,7 @@ gen_dual_cfifo: if(N_MODULES>1) generate
 u_common_fifo_B: common_fifo
     port map (
         clock           => i_clk_core,
-        sclr            => i_rst,
+        sclr            => i_rst_core,
         data            => "00" & s_B_buf_data,
         wrreq           => s_B_buf_wr,
         full            => o_buffer_full(1),
