@@ -193,7 +193,7 @@ begin
     -- test outputs
     FPGA_Test <= s_FPGA_test;
     --s_FPGA_test(2 downto 0) <= s_fee_chip_rst(2 downto 0);
-    led(4 downto 0) <= run_state_125(4 downto 0);
+    led(8 downto 0) <= run_state_125(8 downto 0);
     s_FPGA_test(4 downto 0) <= run_state_125(4 downto 0); 
 
 

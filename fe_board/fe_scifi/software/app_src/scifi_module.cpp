@@ -114,12 +114,12 @@ void scifi_module_t::menu(){
             break;
 	case 'o':
             printf("[scifi] configuring all off\n");
-            for(int i=0;i<n_ASICS;i++)
+            for(int i=0;i<4*n_MODULES;i++)
                 configure_asic(i,mutrig_config_ALL_OFF);
             break;
         case 't':
             printf("[scifi] configuring pll test\n");
-            for(int i=0;i<n_ASICS;i++)
+            for(int i=0;i<4*n_MODULES;i++)
                 configure_asic(i,mutrig_config_plltest);
             break;
 	case 'l':
@@ -128,7 +128,7 @@ void scifi_module_t::menu(){
             break;
         case 'p':
             printf("[scifi] configuring prbs signle hit\n");
-            for(int i=0;i<n_ASICS;i++)
+            for(int i=0;i<4*n_MODULES;i++)
 		configure_asic(i,config_PRBS_single);
             break;
         case '3':
@@ -377,8 +377,7 @@ void scifi_module_t::menu_counters(){
 			case 3: printf("LVDS: Errors/Words "); break;
 		}
 		for(int i=0;i<4;i++){
-			regs.counters.ctrl = (regs.counters.ctrl & 0x3) + i<<2;
-			float frag=regs.counters.nom*1.e6/regs.counters.denom;
+			regs.counters.ctrl = (regs.counters.ctrl & 0x3) + (i<<2);
 			printf("| %10u / %18lu |", regs.counters.nom, regs.counters.denom);
 		}
 		printf("\n");
@@ -398,6 +397,18 @@ void scifi_module_t::menu_counters(){
     };
 
 }
+//write counter values of all channels to memory address *data and following. Return number of asic channels written.
+alt_u16 scifi_module_t::store_counters(volatile alt_u32* data){
+	for(int i=0;i<4*n_MODULES;i++){
+		for(char selected=0;selected<4; selected++){
+			sc->ram->regs.scifi.counters.ctrl = selected&0x3 + (i<<2);
+			*data=sc->ram->regs.scifi.counters.nom; data++;
+			*data=sc->ram->regs.scifi.counters.denom>>32; data++;
+			*data=sc->ram->regs.scifi.counters.denom&0xffffffff; data++;
+		}
+	}
+	return 4*n_MODULES; //return number of asic channels written so we can parse correctly later
+}
 
 alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 //    auto& regs = ram->regs.scifi;
@@ -409,7 +420,7 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
         break;
     case 0x0103: //configure all off
 	printf("[scifi] configuring all off\n");
-        for(int i=0;i<n_ASICS;i++)
+        for(int i=0;i<n_MODULES*4;i++)
            if(configure_asic(i,mutrig_config_ALL_OFF)==FEB_REPLY_ERROR)
               status=FEB_REPLY_ERROR;
 	return status;
@@ -420,6 +431,9 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
         for(int i=0;i<4;i++)
 	    RSTSKWctrl_Set(i,data[i]);
 	return 0;
+    case 0x0105: //read back counters. Write as continuous field to memory pointed to by data.
+	printf("[scifi] reporting back counters\n");
+	return store_counters(data);
     case 0xfffe:
 	printf("-ping-\n");
         break;

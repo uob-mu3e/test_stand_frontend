@@ -81,6 +81,8 @@ int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface, bool init_
         db_find_key(hDB, 0, set_str, &hTmp);
         db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
         FEB_interface->setWaitForAllSticky(SciFiFEB::FPGA_broadcast_ID,bval);
+
+      //chip mask settings
       {
 	BOOL barray[16];
 	INT  barraysize=sizeof(barray);
@@ -90,7 +92,7 @@ int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface, bool init_
 	for(int i=0;i<16;i++)
 		FEB_interface->setMask(i,barray[i]);
       }
-
+      //reset skew settings
       {
 	BOOL cphase[4];
 	BOOL cdelay[4];
@@ -112,7 +114,6 @@ int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface, bool init_
 	FEB_interface->setResetSkewCdelay(SciFiFEB::FPGA_broadcast_ID,cdelay);
 	FEB_interface->setResetSkewPhases(SciFiFEB::FPGA_broadcast_ID,phases);
       }
-
     }
 
     /* Map Equipment/SciFi/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
@@ -161,6 +162,56 @@ int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface, bool init_
             }
         }
     }
+
+    //set up variables read from FEB
+    sprintf(set_str, "%s/Variables/Counters/nHits", prefix);
+    status=db_create_key(hDB, 0, set_str, TID_DWORD);
+    if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/Counters/Timer", prefix);
+    status=db_create_key(hDB, 0, set_str, TID_DWORD);
+    if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/Counters/nBadFrames", prefix);
+    status=db_create_key(hDB, 0, set_str, TID_DWORD);
+    if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/Counters/nFrames", prefix);
+    status=db_create_key(hDB, 0, set_str, TID_DWORD);
+    if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/Counters/nErrorsLVDS", prefix);
+    status=db_create_key(hDB, 0, set_str, TID_DWORD);
+    if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/Counters/nWordsLVDS", prefix);
+    status=db_create_key(hDB, 0, set_str, TID_DWORD);
+    if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
+
+
+    sprintf(set_str, "%s/Variables/Counters/nErrorsPRBS", prefix);
+    status=db_create_key(hDB, 0, set_str, TID_DWORD);
+    if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/Counters/nWordsPRBS", prefix);
+    status=db_create_key(hDB, 0, set_str, TID_DWORD);
+    if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
 
     return status;
 }

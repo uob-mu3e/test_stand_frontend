@@ -31,8 +31,11 @@ class MutrigFEB {
       virtual uint8_t FPGAid_from_ID(int asic)=0;
       virtual uint8_t ASICid_from_ID(int asic)=0;
 
+      //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/ 
+      int ReadBackCounters(HNDLE hDB, int FPGA_ID, const char* odb_prefix);
+
       //ASIC configuration:
-      //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
+      //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi"), report any errors as equipment_name
       int ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix);
 
       //FEB registers and functions

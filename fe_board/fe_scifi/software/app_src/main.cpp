@@ -13,7 +13,7 @@ mscb_t mscb;
 #include "../../../fe/software/app_src/reset.h"
 
 #include "scifi_module.h"
-scifi_module_t scifi_module(&sc);
+scifi_module_t scifi_module(&sc,2);
 
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
