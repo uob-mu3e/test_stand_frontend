@@ -660,7 +660,7 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
            }
        }
            // here the case with payload
-       /*} else {
+       } else {
            // Run prepare needs the run number
            if (std::string(key.name) == "Run Prepare") {
               BOOL value;
@@ -696,7 +696,7 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
                     db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
                }
            }
-       }*/
+       }
    }
 
 
