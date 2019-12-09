@@ -131,7 +131,7 @@ begin
     g_rx_align : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
     begin
         e_rx_rst_n : entity work.reset_sync
-        port map ( rstout_n => rx(i).rst_n, arst_n => rx_ready(i), clk => i_rx_clkin(i) );
+        port map ( o_reset_n => rx(i).rst_n, i_reset_n => rx_ready(i), i_clk => i_rx_clkin(i) );
 
         e_rx_align : entity work.rx_align
         generic map (
@@ -395,7 +395,7 @@ begin
     end generate;
 
     e_reconfig_rst_n : entity work.reset_sync
-    port map ( rstout_n => reconfig_rst_n, arst_n => reset_n, clk => reconfig_clk );
+    port map ( o_reset_n => reconfig_rst_n, i_reset_n => reset_n, i_clk => reconfig_clk );
 
     e_reconfig : entity work.ip_altgx_reconfig
     port map (

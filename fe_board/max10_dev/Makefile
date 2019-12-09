@@ -6,9 +6,8 @@ BSP_DIR=software/hal_bsp
 APP_DIR=software/app
 
 IPs = \
+    adc_lab_proj/myadc.sopcinfo \
     nios.sopcinfo
-VHDs = \
-    top.vhd
 
 include util/makefile.mk
 

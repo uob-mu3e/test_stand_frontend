@@ -1,11 +1,12 @@
 library ieee;
 use ieee.std_logic_1164.all;
+
 use work.mupix_constants.all;
 use work.mupix_types.all;
 use work.mupix_registers.all;
 
 package datapath_components is
-  
+
 -- telescope components  
 component data_path is
 generic(

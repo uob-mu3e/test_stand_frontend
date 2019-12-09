@@ -16,6 +16,6 @@ install(TARGETS clockboard DESTINATION lib)
 add_executable(ipbustest "src/ipbustest.cpp")
 target_include_directories(ipbustest PRIVATE "include")
 target_link_libraries(ipbustest ipbus clockboard ${Boost_LIBRARIES})
-
+message(${Boost_LIBRARIES}) 
 install(TARGETS ipbustest DESTINATION bin)
 

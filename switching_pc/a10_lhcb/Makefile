@@ -5,7 +5,8 @@ SOF=output_files/top.sof
 BSP_DIR=software/hal_bsp
 APP_DIR=software/app
 
-include util/makefile.mk
+IPs = \
+    a10/ip_xcvr_phy.sopcinfo a10/ip_xcvr_fpll.sopcinfo a10/ip_xcvr_reset.sopcinfo \
+    nios.sopcinfo
 
-flow : nios.sopcinfo
-flow : a10/ip_xcvr_phy.sopcinfo a10/ip_xcvr_fpll.sopcinfo a10/ip_xcvr_reset.sopcinfo
+include util/makefile.mk

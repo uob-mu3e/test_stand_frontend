@@ -14,9 +14,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.datapath_components.all;
 use work.mupix_constants.all;
-use work.mupix_types.all;
+use work.daq_constants.all;
 
 entity singlechip_ro_zerosupressed is 
 	generic (
@@ -33,7 +32,7 @@ entity singlechip_ro_zerosupressed is
 		coarsecounter		: in STD_LOGIC_VECTOR (COARSECOUNTERSIZE-1 DOWNTO 0);
 		coarsecounter_ena	: in STD_LOGIC;
 --		error_flags			: in STD_LOGIC_VECTOR(3 downto 0);		
-		chip_marker			: in chipmarkertype;
+		chip_marker			: in byte_t;
 		prescale				: in STD_LOGIC_VECTOR(31 downto 0);
 		tomemdata			: out reg32;
 		tomemena				: out std_logic;
@@ -53,8 +52,7 @@ signal eventcounter			: reg32;
 signal timestamp_reg			: reg64;
 
 constant NDELAY : integer := 7;		-- in case of error in counter but no hit
-type delayarray_t is array (NDELAY-1 downto 0) of reg32;
-signal delayarray : delayarray_t;
+signal delayarray : reg32array_t(NDELAY-1 downto 0);
 signal enadelay : std_logic_vector(NDELAY-1 downto 0);
 signal eoedelay : std_logic_vector(NDELAY-1 downto 0);
 
@@ -69,12 +67,11 @@ signal prescale_cnt		: STD_LOGIC_VECTOR(31 downto 0);
 signal prescale_ena_r	: std_logic;
 signal prescale_r			: STD_LOGIC_VECTOR(31 downto 0);
 
---signal chip_marker_r		: chipmarkertype;
 
 begin
 
 
-singlero : work.singlechip_ro 
+singlero: work.singlechip_ro 
 	generic map(
 		COARSECOUNTERSIZE	=> COARSECOUNTERSIZE,
 		HITSIZE				=> HITSIZE
@@ -88,7 +85,7 @@ singlero : work.singlechip_ro
 		hit_ena				=> hit_ena,
 		coarsecounter		=> coarsecounter,
 		coarsecounter_ena	=> coarsecounter_ena,
-		chip_marker			=> chip_marker,		
+		chip_marker			=> chip_marker,
 		tomemdata			=> todelaydata,
 		tomemena				=> todelayena,
 		tomemeoe				=> todelayeoe
@@ -97,8 +94,7 @@ singlero : work.singlechip_ro
 process(clk)
 begin
 if(rising_edge(clk))then
-		prescale_r		<=	prescale;
---		chip_marker_r	<= chip_marker;
+	prescale_r		<=	prescale;
 	if(prescale_r = 0)then		-- enable prescaler if non-zero prescaling value is used, otherwise don't use it
 		prescale_ena_r <= '0';
 	else
@@ -117,7 +113,6 @@ process(reset_n, clk)
 begin
 if(reset_n = '0') then
 	eventcounter	<= (others => '0');
---	hitspresent		<= '0';
 	prescale_cnt	<= (others => '0');
 	count_ena		<= (others => '0');
 	delayarray		<= (others => (others => '0'));

@@ -43,8 +43,12 @@
 #include <stdio.h>
 #include <cassert>
 #include <iostream>
+#include <string>
+#include <vector>
 #include "midas.h"
 #include "mfe.h"
+#include "history.h"
+
 
 
 #include "clockboard.h"
@@ -53,6 +57,8 @@
 using std::cout;
 using std::endl;
 using std::hex;
+using std::string;
+using std::vector;
 
 
 /*-- Globals -------------------------------------------------------*/
@@ -80,7 +86,6 @@ INT event_buffer_size = 10 * 10000;
 
 // Clock board interface
 clockboard * cb;
-bool addressed=0;
 /*-- Function declarations -----------------------------------------*/
 
 INT read_cr_event(char *pevent, INT off);
@@ -91,12 +96,12 @@ void cr_settings_changed(HNDLE, HNDLE, int, void *);
 /* Default values for /Equipment/Clock Reset/Settings */
 const char *cr_settings_str[] = {
 "Active = BOOL : 1",
-"IP = STRING : [16] 192.168.0.200",
+"IP = STRING : [16] 192.168.0.220",
 "PORT = INT : 50001",
-"TX_CLK_MASK = INT : 0",
-"TX_RST_MASK = INT : 0",
+"TX_CLK_MASK = INT : 0x0AA",
+"TX_RST_MASK = INT : 0xAA0",
 "TX_CLK_INVERT_MASK = INT : 0x0A00",
-"TX_RST_INVERT_MASK = INT : 0x0008",
+"TX_RST_INVERT_MASK = INT : 0x0000",
 "RX_MASK = INT : 0",
 "TX_MASK = INT[24]:",
     "[0] 0",\
@@ -165,7 +170,7 @@ const char *cr_settings_str[] = {
 "Addressed = BOOL : 0",
 "FEBAddress = INT : 0", // renamed to avoid match in commands.find(std::string(key.name))
 "Payload = INT : 0",
-"Names CRT1 = STRING[99] :",
+"Names CRT1 = STRING[100] :",
 "[32] Motherboard Current",
 "[32] Motherboard Voltage",
 "[32] RX Firefly Alarms",
@@ -177,6 +182,7 @@ const char *cr_settings_str[] = {
 "[32] TX Rst Firefly Alarms",
 "[32] TX Rst Firefly Temp",
 "[32] TX Rst Firefly Voltage",
+"[32] Fan Current",
 "[32] Daughterboard 0 Current",
 "[32] Daughterboard 0 Voltage",
 "[32] D 0 0 Firefly Alarms",
@@ -322,13 +328,49 @@ INT frontend_init()
    const char * name = "cr.html";
    db_set_value(hDB,0,"Custom/Clock and Reset&",name, sizeof(name), 1,TID_STRING);
 
-   HNDLE histKey;
 
-   db_find_key(hDB, 0, "/History/Display/Clock Reset", &histKey);
-   if(!histKey){
-#include "clock_and_reset_history_panels_odb.h"
-   db_create_record(hDB, 0, "/History/Display/Clock Reset", strcomb(clock_and_reset_history_panels));
+
+    // Define history panels
+   hs_define_panel("Clock Reset","Motherboard",{"Clock Reset:Motherboard Current",
+                                                "Clock Reset:Motherboard Voltage",
+                                                "Clock Reset:Fan Current"});
+
+   hs_define_panel("Clock Reset","Firefly Temperatures",{"Clock Reset:RX Firefly Temp",
+                                                         "Clock Reset:TX Clk Firefly Temp",
+                                                         "Clock Reset:TX Rst Firefly Temp"});
+
+   hs_define_panel("Clock Reset","Firefly Voltages",{"Clock Reset:RX Firefly Voltage",
+                                                     "Clock Reset:TX Clk Firefly Voltage",
+                                                     "Clock Reset:TX Rst Firefly Voltage"});
+
+   vector<string> cnames;
+   vector<string> vnames;
+   for(int i=0; i < 8; i++){
+        cnames.push_back(string("Clock Reset:Daughterboard ") +std::to_string(i)+string(" Current"));
+        vnames.push_back(string("Clock Reset:Daughterboard ") +std::to_string(i)+string(" Voltage"));
+        vector<string> fnames;
+        for(int j=0; j < 3; j++){
+            fnames.push_back(string("Clock Reset:D ") + std::to_string(i) + " " + std::to_string(j)+
+                                " Firefly Temp");
+        }
+        hs_define_panel("Clock Reset",(string("Firefly Temperatures Daughter ")+std::to_string(i)).c_str(),fnames);
    }
+
+   hs_define_panel("Clock Reset","Daughterboard Currents",cnames);
+   hs_define_panel("Clock Reset","Daughterboard Voltages",vnames);
+
+   for(int i=0; i < 8; i++){
+        vector<string> fnames;
+        for(int j=0; j < 3; j++){
+            fnames.push_back(string("Clock Reset:D ") + std::to_string(i) + " " + std::to_string(j)+
+                                " Firefly Voltage");
+        }
+        hs_define_panel("Clock Reset",(string("Firefly Voltages Daughter ")+std::to_string(i)).c_str(),fnames);
+   }
+
+   // Define alarms
+   //al_define_odb_alarm("Firefly temperature",
+    //                   "/Equipment/Clock Reset/Variables/CRT1[3] > 65","Alarm","Firefly temperature %s");
 
 
    /////////////////////////////////////////////
@@ -348,6 +390,16 @@ INT frontend_init()
    if(!cb->isConnected())
         return CM_TIMEOUT;
 
+   int clkdisable;
+   size =sizeof(port);
+   if(!(db_get_value(hDB, hKey, "settings/TX_CLK_MASK", &clkdisable, &size, TID_INT, false)==DB_SUCCESS))
+           return CM_DB_ERROR;
+
+   int rstdisable;
+   size =sizeof(port);
+   if(!(db_get_value(hDB, hKey, "settings/TX_RST_MASK", &rstdisable, &size, TID_INT, false)==DB_SUCCESS))
+           return CM_DB_ERROR;
+
    int clkinvert;
    size =sizeof(port);
    if(!(db_get_value(hDB, hKey, "settings/TX_CLK_INVERT_MASK", &clkinvert, &size, TID_INT, false)==DB_SUCCESS))
@@ -358,24 +410,24 @@ INT frontend_init()
    if(!(db_get_value(hDB, hKey, "settings/TX_RST_INVERT_MASK", &rstinvert, &size, TID_INT, false)==DB_SUCCESS))
            return CM_DB_ERROR;
 
-   cb->init_clockboard(clkinvert, rstinvert);
+   cb->init_clockboard(clkinvert, rstinvert, clkdisable, rstdisable);
 
    // check which daughter cards are equipped
-   uint8_t daughters = cb->daughters_present();
-   db_set_value(hDB,hKey,"Variables/Daughters Present",&daughters, sizeof(daughters), 1,TID_BYTE);
+   uint32_t daughters = cb->daughters_present();
+   db_set_value(hDB,hKey,"Variables/Daughters Present",&daughters, sizeof(daughters), 1,TID_DWORD);
 
     // check which fireflys are present
-   uint8_t ffs[8]={0};
+   uint32_t ffs[8]={0};
    for(uint8_t i=0; i < 8; i++){
        if(daughters & (1<<i)){
            for(uint8_t j =0; j < 3; j++){
-               ffs[i] |=  ((uint8_t)(cb->firefly_present(i,j))) << j;
+               ffs[i] |=  ((uint32_t)(cb->firefly_present(i,j))) << j;
            }
         }
     }
 
-   size = sizeof(uint8_t);
-   db_set_value(hDB, hKey, "Variables/Fireflys Present", ffs, 8*size,8,TID_BYTE);
+   size = sizeof(uint32_t);
+   db_set_value(hDB, hKey, "Variables/Fireflys Present", ffs, 8*size,8,TID_DWORD);
 
    return CM_SUCCESS;
 }
@@ -426,15 +478,23 @@ INT resume_run(INT run_number, char *error)
 
 INT read_cr_event(char *pevent, INT off)
 {
-    uint8_t daughters;
+    if(!cb->isConnected()){
+        // terminate!
+        cm_msg(MERROR, "read_cr_event", "Connection to clock board lost");
+        cm_disconnect_experiment();
+        return 0;
+        //return CM_TIMEOUT;
+   }
+
+    uint32_t daughters;
     int size = sizeof(daughters);
     db_get_value(hDB, 0, "/Equipment/Clock Reset/Variables/Daughters Present",
-                 &daughters, &size, TID_BYTE, false);
+                 &daughters, &size, TID_DWORD, false);
 
-    uint8_t fireflys[8];
-    size = sizeof(uint8_t)*8;
+    uint32_t fireflys[8];
+    size = sizeof(uint32_t)*8;
     db_get_value(hDB, 0, "/Equipment/Clock Reset/Variables/Fireflys Present",
-                 fireflys, &size, TID_BYTE, false);
+                 fireflys, &size, TID_DWORD, false);
 
    bk_init(pevent);
 
@@ -455,6 +515,8 @@ INT read_cr_event(char *pevent, INT off)
    *pdata++= ((cb->read_tx_rst_firefly_alarms()) << 16) + cb->read_tx_rst_firefly_lf();
    *pdata++ = cb->read_tx_rst_firefly_temp();
    *pdata++ = cb->read_tx_rst_firefly_voltage();
+
+   *pdata++ = cb->read_fan_current();
 
 
    for(uint8_t i=0;i < 8; i++){
@@ -498,6 +560,8 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
    db_get_key(hDB, hKey, &key);
 
+   BOOL addressed = false;
+
     if (std::string(key.name) == "Active") {
       BOOL value;
       int size = sizeof(value);
@@ -514,6 +578,49 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       cb->disable_rx_channels(value);
    }
 
+
+    if (std::string(key.name) == "TX_MASK") {
+        int value[24];
+        int size = sizeof(int)*24;
+        db_get_data(hDB, hKey, value, &size, TID_INT);
+        for(int i=0; i < 24; i++){
+            cm_msg(MINFO, "cr_settings_changed", "Set TX_MASK[%i] to %x", i, value[i]);
+            cb->disable_tx_channels(i/3,i%3,value[i]);
+        }
+   }
+
+    if (std::string(key.name) == "TX_CLK_MASK") {
+      int value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_INT);
+      cm_msg(MINFO, "cr_settings_changed", "Set TX_CLK_MASK to %x", value);
+      cb->disable_tx_clk_channels(value);
+   }
+
+    if (std::string(key.name) == "TX_RST_MASK") {
+      int value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_INT);
+      cm_msg(MINFO, "cr_settings_changed", "Set TX_RST_MASK to %x", value);
+      cb->disable_tx_rst_channels(value);
+   }
+
+    if (std::string(key.name) == "TX_CLK_INVERT_MASK") {
+      int value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_INT);
+      cm_msg(MINFO, "cr_settings_changed", "Set TX_CLK_INVERT_MASK to %x", value);
+      cb->invert_tx_clk_channels(value);
+   }
+
+    if (std::string(key.name) == "TX_RST_INVERT_MASK") {
+      int value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_INT);
+      cm_msg(MINFO, "cr_settings_changed", "Set TX_RST_INVERT_MASK to %x", value);
+      cb->invert_tx_rst_channels(value);
+   }
+
     if (std::string(key.name) == "Addressed") {
       int size = sizeof(addressed);
       db_get_data(hDB, hKey, &addressed, &size, TID_BOOL);
@@ -527,30 +634,33 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
    if(it != cb->reset_protocol.commands.end()){
 
-       //int size=sizeof(addressed);
-       //db_get_value(hDB, 0, "Equipment/Clock Reset/Settings/Addressed", &addressed, &size, TID_BOOL, false);
-       int address;
+       int size=sizeof(addressed);
+       db_get_value(hDB, 0, "Equipment/Clock Reset/Settings/Addressed", &addressed, &size, TID_BOOL, false);
+       int address =0;
        if(addressed){
            int size=sizeof(address);
            db_get_value(hDB, 0, "Equipment/Clock Reset/Settings/FEBAddress", &address, &size, TID_INT, false);
            cm_msg(MINFO, "cr_settings_changed", "address reset command to addr:%d", address);
-       }else{
-           address=0;
        }
 
        // Easy case are commands without payload
-       if(!(it->second.has_payload)){
+       //if(!(it->second.has_payload)){
+       if(true){
            BOOL value;
            int size = sizeof(value);
            db_get_data(hDB, hKey, &value, &size, TID_BOOL);
            if (value) {
-              cm_msg(MINFO, "cr_settings_changed", "Execute %s", key.name);
-              cb->write_command(key.name,0,address);
+              cm_msg(MINFO, "cr_settings_changed", "Execute1 %s", key.name);
+              if(address)
+                cb->write_command(key.name,0,address);
+              else
+                 cb->write_command(key.name);
               value = FALSE; // reset flag in ODB
               db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
            }
+       }
            // here the case with payload
-       } else {
+       /*} else {
            // Run prepare needs the run number
            if (std::string(key.name) == "Run Prepare") {
               BOOL value;
@@ -561,7 +671,10 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
                  int run;
                  int size = sizeof(run);
                  db_get_value(hDB, 0, "/Runinfo/Run number", &run, &size, TID_INT, false);
-                 cb->write_command(key.name,run,address);
+                 if(address)
+                    cb->write_command(key.name,run,address);
+                 else
+                    cb->write_command(key.name,run);
                  value = FALSE; // reset flag in ODB
                  db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
               }
@@ -571,16 +684,19 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
                int size = sizeof(value);
                db_get_data(hDB, hKey, &value, &size, TID_BOOL);
                if (value) {
-                    cm_msg(MINFO, "cr_settings_changed", "Execute %s", key.name);
+                    cm_msg(MINFO, "cr_settings_changed", "Execute2 %s", key.name);
                     int payload;
                     int size = sizeof(payload);
                     db_get_value(hDB, 0, "/Equipment/Clock Reset/Settings/Payload", &payload, &size, TID_INT, false);
-                    cb->write_command(key.name,payload,address);
+                    if(address)
+                       cb->write_command(key.name,payload,address);
+                     else
+                       cb->write_command(key.name,payload);
                     value = FALSE; // reset flag in ODB
                     db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
                }
            }
-       }
+       }*/
    }
 
 

@@ -74,8 +74,9 @@ signal s_prbs_err_cnt		: std_logic_vector(7 downto 0);
 
 
 -- fifo
-signal s_fifofull     : std_logic;
-signal s_fifoused     : std_logic_vector(7 downto 0);
+signal s_fifofull                 : std_logic;
+signal s_fifoused, s_fifoused_reg : std_logic_vector(7 downto 0);
+
 signal s_fifofull_almost : std_logic;
 --save data loss implementation
 signal s_have_dropped    : std_logic;
@@ -102,6 +103,13 @@ port map(
 pro_mux_event_data : process(i_clk_deser)
 begin
 if rising_edge(i_clk_deser) then
+	s_fifoused_reg <= s_fifoused;
+	if(s_fifoused_reg(7 downto 3)="1111") then
+	       s_fifofull_almost <= '1';
+	else
+	       s_fifofull_almost <= '0';
+	end if;
+
 	if i_reset = '1' then
 		s_timecounter  <= (others=>'0');
 		s_eventcounter <= (others=>'0');
@@ -170,7 +178,6 @@ PORT MAP (
 	wrfull	=> s_fifofull,
 	rdusedw   => s_fifoused
 );
-s_fifofull_almost <= '1' when s_fifoused(7 downto 3)="1111" else '0';
 
 o_fifo_full     <= s_fifofull;
 o_eventcounter <= s_eventcounter;

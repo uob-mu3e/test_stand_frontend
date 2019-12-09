@@ -8,6 +8,7 @@ package mupix_types is
 
 subtype reg32 		is std_logic_vector(31 downto 0);
 type reg32array	is array (NREGISTERS-1 downto 0) of reg32;
+type reg32array_128	is array (128-1 downto 0) of reg32;
 
 subtype reg64 		is std_logic_vector(63 downto 0);
 subtype REG64_TOP_RANGE is integer range 63 downto 32;
@@ -29,6 +30,11 @@ type hitsorter_debug_array	is array (7 downto 0) of reg32;
 subtype readmemaddrtype 		is std_logic_vector(15 downto 0);
 
 subtype chipmarkertype 			is std_logic_vector(7 downto 0);
+
+subtype byte_t is std_logic_vector(7 downto 0);
+type inbyte_array is array (NLVDS-1 downto 0) of byte_t;
+
+type state_type is (INIT, START, PRECOUNT, COUNT);
 
 type chips_reg32	is array (NCHIPS-1 downto 0) of reg32;
 type gxlinks_reg32 is array(NGX-1 downto 0) of reg32;

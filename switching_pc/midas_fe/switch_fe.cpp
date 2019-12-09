@@ -50,6 +50,10 @@
 
 #include "mudaq_device.h"
 
+ // TODO cleanup header files and remove this
+#define FEBSTATUS_REGISTER_R           0x18
+
+
 /*-- Globals -------------------------------------------------------*/
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
@@ -177,6 +181,8 @@ INT frontend_init()
    db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_START_ADD", TID_INT);
    db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_LENGTH", TID_INT);
    db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", TID_INT);
+   
+   db_create_key(hDB, 0, "Equipment/Switching/Variables/FEB_STATUS_REG7", TID_INT);
 
     // add custom page to ODB
    db_create_key(hDB, 0, "Custom/Switching&", TID_STRING);

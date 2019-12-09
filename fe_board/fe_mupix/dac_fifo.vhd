@@ -4,13 +4,13 @@ use ieee.numeric_std.all;
 
 entity dac_fifo is
 port (
-   
-   	-- mupix dac regs
+
+    -- mupix dac regs
 	i_reg_add               : in std_logic_vector(7 downto 0);
 	i_reg_re                : in std_logic;
-	o_reg_rdata       		: out std_logic_vector(31 downto 0);
-	i_reg_we   				: in std_logic;
-	i_reg_wdata 		    : in std_logic_vector(31 downto 0);
+	o_reg_rdata             : out std_logic_vector(31 downto 0);
+	i_reg_we                : in std_logic;
+	i_reg_wdata             : in std_logic_vector(31 downto 0);
 
     -- mupix board dac data
     o_board_dac_data  : out std_logic_vector(31 downto 0);

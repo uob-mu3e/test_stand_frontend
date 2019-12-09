@@ -1,29 +1,40 @@
--- Constants for use in mupix telescope
+-- Constants solely for use in mupix block
+-- check which of these are actually used and remove those that are not needed!
 
 library ieee;
 use ieee.std_logic_1164.all;
 
 package mupix_constants is
 
+-- read register number
+constant NREGISTERS_MUPIX_RD:	integer := 68;
+-- read register map
+constant RX_STATE_RECEIVER_0_REGISTER_R		: integer := 16#00#;	-- dec 0
+constant RX_STATE_RECEIVER_1_REGISTER_R		: integer := 16#01#;	-- dec 1
+constant LVDS_PLL_LOCKED_REGISTER_R				: integer := 16#02#;	-- dec 2
+constant MULTICHIP_RO_OVERFLOW_REGISTER_R		: integer := 16#03#;	-- dec 3
+constant LVDS_RUNCOUNTER_REGISTER_R	 			: integer := 16#04#;	-- dec 4 (to 35)
+constant LVDS_ERRCOUNTER_REGISTER_R				: integer := 16#24#;	-- dec 36 (to 67)
+
+-- write register number
+constant NREGISTERS_MUPIX_WR:	integer := 4;
+-- read register map
+constant RO_PRESCALER_REGISTER_W							: integer := 16#00#;	-- dec 0
+constant DEBUG_CHIP_SELECT_REGISTER_W					: integer := 16#01#;
+constant TIMESTAMP_GRAY_INVERT_REGISTER_W				: integer := 16#02#;
+	constant TS_INVERT_BIT	: integer := 0;
+	constant TS2_INVERT_BIT	: integer := 1;
+	constant TS_GRAY_BIT		: integer := 2;
+	constant TS2_GRAY_BIT	: integer := 3;
+constant LINK_MASK_REGISTER_W								: integer := 16#03#;
+
+-- constants
 constant NCHIPS			: integer :=  8;
 constant NFEB_CARDS		: integer :=  4;
-constant NTRIGGERS		: integer :=  4;
-constant NREGISTERS		: integer := 64; 
 constant NINJECTIONS		: integer :=  1;
-constant NLVDS				: integer := 32;
--- this should be equal to log2(NLVDS)
-constant NLVDSLOG			: integer := 5;
-constant NGX 				: integer :=  8;
-constant NSORTERINPUTS	: integer :=  2;	-- 8 does not fit into FPGA :(
+constant NSORTERINPUTS	: integer :=  1;	-- 8 does not fit into FPGA :(
 
 constant NMATRIX		: integer := 3; -- for pseudo data generator
-
-constant TIME_125MHz_1s 	: STD_LOGIC_VECTOR(27 DOWNTO 0) := x"7735940";
-constant TIME_125MHz_1ms 	: STD_LOGIC_VECTOR(27 DOWNTO 0) := x"001E848";
-constant TIME_125MHz_2s		: STD_LOGIC_VECTOR(27 DOWNTO 0) := x"EE6B280";
-
-constant HUNDRED_MILLION: 		std_logic_vector(27 downto 0) := x"5F5E100"; 
-constant HUNDRED_MILLION32:	std_logic_vector(31 downto 0) := x"05F5E100";
 
 constant COARSECOUNTERSIZE : integer := 32;
 constant BINCOUNTERSIZE		: integer := 24;
@@ -43,7 +54,7 @@ constant TIMESTAMPSIZE_MPX8: integer := 10;
 constant CHARGESIZE			: integer := 6;
 
 constant CHIPMARKERSIZE 	: integer := 8;
-constant CHIPRANGE			: integer := 4;
+constant CHIPRANGE			: integer := 3;
 
 constant BEGINOFEVENT 		: std_logic_vector(31 downto 0) := x"FABEABBA";
 constant ENDOFEVENT 			: std_logic_vector(31 downto 0) := x"BEEFBEEF";
@@ -64,18 +75,5 @@ constant HITLABEL				: std_logic_vector(3 downto 0) := x"E";
 constant TIMELABEL			: std_logic_vector(3 downto 0) := x"F";
 
 
--- 8bit/10bit encoding
-constant k28_0	:	std_logic_vector(7 downto 0)	:= X"1C";	-- used in MuPix
-constant k28_1	:	std_logic_vector(7 downto 0)	:= X"3C";	-- used in data alignment (transceiver)
-constant k28_2 : 	std_logic_vector(7 downto 0)	:= X"5C";
-constant k28_3 : 	std_logic_vector(7 downto 0)	:= X"7C";
-constant k28_4 : 	std_logic_vector(7 downto 0)	:= X"9C";
-constant k28_5	: 	std_logic_vector(7 downto 0)	:= X"BC";	-- used in MuPix
-constant k28_6 : 	std_logic_vector(7 downto 0)	:= X"DC";
-constant k28_7 : 	std_logic_vector(7 downto 0)	:= X"FC";	-- not used, comma symbol with harder constraints!
-constant k23_7 : 	std_logic_vector(7 downto 0)	:= X"F7";	-- used as "empty" data (transceiver)
-constant k27_7 : 	std_logic_vector(7 downto 0)	:= X"FB";
-constant k29_7 : 	std_logic_vector(7 downto 0)	:= X"FD";
-constant k30_7 : 	std_logic_vector(7 downto 0)	:= X"FE";
 
 end package mupix_constants;
