@@ -530,6 +530,7 @@ port map (
 
 ------------- Event Counter ------------------
 
+
     e_data_gen : entity work.data_generator_a10
     port map (
 		reset						=> resets(RESET_BIT_DATAGEN),
@@ -559,21 +560,23 @@ port map (
 		end if;
     end if;
     end process;
-
-    e_event_counter : entity work.event_counter
-    port map (
-		dma_clk					=> pcie_fastclk_out,
-		reset_n					=> resets_n(RESET_BIT_EVENT_COUNTER),
-		rx_data					=> data_counter,
-		rx_datak					=> datak_counter,
-		dma_wen_reg				=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE), -- this is going to a process with pcie_fastclk_out
-		event_length			=> event_length,
-		dma_data_wren			=> dma_wren_cnt,
-		dmamem_endofevent		=> dma_end_event_cnt,
-		dma_data					=> dma_event_data,
-		state_out				=> state_out_eventcounter,
-        clk                     => tx_clk(0)--,
-    );
+	 
+	 e_midas_event_builder : entity work.midas_event_builder
+	  generic map (
+		 NLINKS => 3--;
+	 )
+	  port map(
+		 i_clk_data => tx_clk(0),
+		 i_clk_dma  => pcie_fastclk_out,
+		 i_reset_n  => resets_n(RESET_BIT_EVENT_COUNTER),
+		 i_rx_data  => data_counter & data_counter & data_counter,
+		 i_rx_datak => datak_counter & datak_counter & datak_counter,
+		 i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+		 o_event_wren => dma_wren_cnt,
+		 o_endofevent => dma_end_event_cnt,
+		 o_event_data => dma_event_data,
+		 o_state_out => state_out_eventcounter--,
+	);
 
     e_counter : entity work.dma_counter
     port map (
