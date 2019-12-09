@@ -43,6 +43,7 @@ port (
     o_pod_tx        : out   std_logic_vector(3 downto 0);
 
 
+    i_can_terminate : in std_logic:='0';
 
     --main fiber data fifo
     i_fifo_rempty   : in    std_logic;
@@ -432,6 +433,7 @@ begin
         override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
         override_granted        => linktest_granted(0),
 
+	can_terminate           => i_can_terminate,
         terminated              => terminated(0),
         data_priority           => '0',
 
@@ -466,6 +468,7 @@ begin
         override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
         override_granted        => linktest_granted(1),
 
+	can_terminate           => i_can_terminate,
         terminated              => terminated(1),
         data_priority           => '0',
 

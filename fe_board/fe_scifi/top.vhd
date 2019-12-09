@@ -126,7 +126,7 @@ architecture arch of top is
 
     -- reset system
     signal run_state_125 : run_state_t;
-
+    signal s_run_state_all_done : std_logic;
 begin
 
     ----------------------------------------------------------------------------
@@ -170,6 +170,8 @@ begin
         i_clk_ref_B     => lvds_clk_B,
 
         i_run_state     => run_state_125,
+
+        o_run_state_all_done => s_run_state_all_done,
 
         o_MON_rxrdy     => s_MON_rxrdy
     );
@@ -302,7 +304,7 @@ begin
 
         -- reset system
         o_run_state_125 => run_state_125,
-
+        i_can_terminate => s_run_state_all_done,
 
 
         i_nios_clk      => si42_clk_80,
