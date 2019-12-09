@@ -245,18 +245,14 @@ INT frontend_loop()
 }
 
 /*-- Begin of Run --------------------------------------------------*/
-/*
- * link mask -> write from odb via write with check from read register
- * registers from martin (mudaq_registers.vhd)
- * write all address 0xFFFFFFFF
- *   -> read out run number for specified link address
- *   -> if pass: read out run number for all, if equal, write run number, else error code in read register (distinct from run number, eg FFFFFFF)
- *   -> if fail, read out run nr correct reg,
- * read run number, compare to midas run number
- *
- */
+
 INT begin_of_run(INT run_number, char *error)
 {
+   /* send run prepare signal via CR system */
+   BOOL value = TRUE;
+   db_set_value(hDB,0,"Equipment/Clock Reset/Settings/Run Prepare", value, sizeof(value), 1, TID_BOOL);
+
+
    mu.FEBsc_resetMaster();
    mu.FEBsc_resetSlave();
    int status=SciFiFEB::Instance()->ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
