@@ -78,6 +78,9 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
 
+const int MAX_N_SWITCHINGBOARDS = 4;
+const int MAX_N_FRONTENDBOARDS = 48*MAX_N_SWITCHINGBOARDS;
+
 /* DMA Buffer and related */
 mudaq::DmaMudaqDevice * mup;
 
@@ -174,7 +177,7 @@ INT frontend_init()
 
    db_watch(hDB, hKeySC, sc_settings_changed, nullptr);
 
-   // set default values of variables
+   // create keys for switching board status variables
    db_create_key(hDB, 0, "Equipment/Switching/Variables/FPGA_ID_READ", TID_INT);
    db_create_key(hDB, 0, "Equipment/Switching/Variables/START_ADD_READ", TID_INT);
    db_create_key(hDB, 0, "Equipment/Switching/Variables/LENGTH_READ", TID_INT);
@@ -226,6 +229,18 @@ INT frontend_init()
 //   //end of SciFi setup part
 //
 
+   /*
+    * Set our transition sequence. The default is 500. Setting it
+    * to 400 means we are called BEFORE most other clients.
+    */
+   cm_set_transition_sequence(TR_START, 400);
+
+   /*
+    * Set our transition sequence. The default is 500. Setting it
+    * to 600 means we are called AFTER most other clients.
+    */
+    cm_set_transition_sequence(TR_STOP, 600);
+
 
    return CM_SUCCESS;
 }
@@ -249,15 +264,15 @@ INT frontend_loop()
 INT begin_of_run(INT run_number, char *error)
 {
    HNDLE hVar;
-   int status = db_find_key(hDB, 0, "/Equipment/Links/Variables", &hVar);
+   int status = db_find_key(hDB, 0, "/Equipment/Links/Settings", &hVar);
    if (status != SUCCESS){
-      cm_msg(MERROR,"switch_fe","ODB Tree /Equipment/Links/Variables not found");
+      cm_msg(MERROR,"switch_fe","ODB Tree /Equipment/Links/Settings not found");
       return CM_TRANSITION_CANCELED;
    }
 
-   BOOL frontend_board_active_odb[192];
-   int size = sizeof(frontend_board_active_odb);
-   status = db_get_record(hDB, hVar, &frontend_board_active_odb, &size, 0);
+   INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
+   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
+   status = db_get_value(hDB, hVar, "FrontendBoardMask", frontend_board_active_odb, &size, TID_INT, false);
    if (status != SUCCESS){
       cm_msg(MERROR,"switch_fe","Error getting record for /Equipment/Links/Variables");
       return CM_TRANSITION_CANCELED;
@@ -273,20 +288,20 @@ INT begin_of_run(INT run_number, char *error)
       return CM_TRANSITION_CANCELED;
    }
 
-   /* send run prepare signal via CR system */
-   BOOL value = TRUE;
-   db_set_value(hDB,0,"Equipment/Clock Reset/RunTransitions/RequestRunPrepare[0]", &value, sizeof(value), 1, TID_BOOL);
-
-
-   /* get link active from odb */
+   /* get link active from odb TODO...*/
    uint32_t link_active_from_odb;
 
    mup->write_register(FEB_ENABLE_REGISTER_W, link_active_from_odb);
    mup->write_register(RUN_NR_REGISTER_W, run_number);
 
 
+   /* send run prepare signal via CR system */
+   INT value = 1;
+   //TODO: Will have to add index here for more than one switching board
+   db_set_value(hDB,0,"Equipment/Clock Reset/RunTransitions/RequestRunPrepare[0]", &value, sizeof(value), 1, TID_INT);
+
+
    uint16_t timeout_cnt=0;
-   uint32_t read_run_number = 0;
    while(mup->read_register_ro(RUN_NR_ACK_REGISTER_R) != link_active_from_odb &&
          timeout_cnt++ < 50) {
       timeout_cnt++;

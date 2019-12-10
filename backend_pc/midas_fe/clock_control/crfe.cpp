@@ -488,10 +488,9 @@ INT frontend_init()
    db_set_value(hDB, hKey, "Variables/Fireflys Present", ffs, 8*size,8,TID_DWORD);
 
    /*
-    * Set our transition sequence. The default is 500. Setting it
-    * to 600 means we are called AFTER most other clients.
+    * Set our transition sequence. The default is 500.
     */
-   cm_set_transition_sequence(TR_START, 600);
+   cm_set_transition_sequence(TR_START, 500);
 
    /*
     * Set our transition sequence. The default is 500. Setting it
@@ -793,8 +792,8 @@ void link_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
     if (std::string(key.name) == "FrontendBoardMask") {
       INT value[MAX_N_FRONTENBOARDS];
-      int size = sizeof(INT);
-      db_get_data(hDB, hKey, value, &size, TID_BOOL);
+      int size = sizeof(INT)*MAX_N_FRONTENBOARDS;
+      db_get_data(hDB, hKey, value, &size, TID_INT);
       cm_msg(MINFO, "link_settings_changed", "Seting Frontend Board Mask");
 
       for(int i = 0; i < MAX_N_FRONTENBOARDS; i++){
