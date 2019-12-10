@@ -137,8 +137,8 @@ EQUIPMENT equipment[] = {
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
-     RO_TRANSITIONS | RO_ODB,   /* read during run transitions and update ODB */
-     1000,                      /* read every 1 sec */
+     RO_ALWAYS | RO_ODB,        /* read always and update ODB */
+     10000,                      /* read every 10 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
      1,                         /* log history every event */
@@ -345,17 +345,18 @@ INT resume_run(INT run_number, char *error)
 
 INT read_sc_event(char *pevent, INT off)
 {
-//    while(mup->FEBsc_get_packet()){};
-//    //TODO: make this a switch
-//    //return mup->FEBsc_write_bank(pevent,off);
-//    return mup->FEBsc_dump_packets();
-return 0;
+    while(mup->FEBsc_get_packet()){};
+    //TODO: make this a switch
+    mup->FEBsc_dump_packets();
+    return 0;
+    //return mup->FEBsc_write_bank(pevent,off);
 }
 
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
 
 INT read_scifi_sc_event(char *pevent, INT off){
-//TODO: implement this
+    printf("read_scifi_sc_event\n");
+    int status=SciFiFEB::Instance()->ReadBackCounters(hDB, 0 /*FPGA-ID*/, "/Equipment/SciFi");
     return 0;
 }
 

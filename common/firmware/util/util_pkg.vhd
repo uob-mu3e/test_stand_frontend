@@ -65,7 +65,7 @@ package util is
         v : std_logic_vector--;
     ) return std_logic_vector;
 
-    function grayinc (
+    function gray_inc (
         v : std_logic_vector--;
     ) return std_logic_vector;
 
@@ -244,20 +244,11 @@ package body util is
         return r;
     end function;
 
-    function grayinc (
-        v : std_logic_vector--;
+    function gray_inc (
+        v : std_logic_vector
     ) return std_logic_vector is
-        variable r : std_logic_vector(v'range) := (others => '0');
     begin
-        r(r'right) := '1';
-        if ( xor_reduce(v) /= '0' ) then
-            for i in v'reverse_range loop
-                exit when ( i = v'left );
-                r := shift_left(r, 1);
-                exit when ( v(i) = '1' );
-            end loop;
-        end if;
-        return v xor r;
+        return bin2gray(std_logic_vector(unsigned(gray2bin(v))+1));
     end function;
 
     function shift_right (

@@ -37,6 +37,7 @@ PORT (
     data_fifo_empty             : in    std_logic;
     slowcontrol_read_req        : out   std_logic;
     data_read_req               : out   std_logic;
+    can_terminate               : in    std_logic :='0'; -- during state terminating, wait for this signal to go high or the data stream to send a run end marker before finally terminating the run.
     terminated                  : out   std_logic; -- to state controller (when stop run acknowledge was transmitted the state controller can go from terminating into idle, this is the signal to tell him that)
     override_data_in            : in    std_logic_vector(31 downto 0); -- data input for states link_test and sync_test;
     override_data_is_k_in       : in    std_logic_vector(3 downto 0);
@@ -303,7 +304,7 @@ BEGIN
                     data_out                    <= K285;
                     data_is_k                   <= K285_datak;
 
-                elsif ( last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or data_in(35 downto 32) = MERGER_FIFO_RUN_END_MARKER ) then
+                elsif ( last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or data_in(35 downto 32) = MERGER_FIFO_RUN_END_MARKER or can_terminate='1') then
                     -- allows run end for idle and sending data, run end in state sending_data is always packet end
                     terminated                  <= '1';
                     data_out                    <= RUN_END;

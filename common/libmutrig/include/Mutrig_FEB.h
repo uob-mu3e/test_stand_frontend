@@ -31,8 +31,11 @@ class MutrigFEB {
       virtual uint8_t FPGAid_from_ID(int asic)=0;
       virtual uint8_t ASICid_from_ID(int asic)=0;
 
+      //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/ 
+      int ReadBackCounters(HNDLE hDB, int FPGA_ID, const char* odb_prefix);
+
       //ASIC configuration:
-      //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
+      //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi"), report any errors as equipment_name
       int ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix);
 
       //FEB registers and functions
@@ -75,7 +78,7 @@ class MutrigFEB {
       void syncReset(int FPGA_ID){chipReset(FPGA_ID);}; //should be resetting the ASICs coarse counter only, missing pin on the asic. For future use
       void chipReset(int FPGA_ID); //reset all asics (digital part, CC, fsms, etc.)
       void DataPathReset(int FPGA_ID); //in FE-FPGA: everything upstream of merger (in the stream path)
-      //TODO: add more resets for FE-FPGA blocks
+      void LVDS_RX_Reset(int FPGA_ID); //in FE-FPGA: LVDS receiver blocks
 
 
       //reset signal alignment control

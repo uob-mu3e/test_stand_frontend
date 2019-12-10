@@ -59,6 +59,39 @@ int MutrigFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char*
    return 0;
 }
 
+int MutrigFEB::ReadBackCounters(HNDLE hDB, int FPGA_ID, const char* odb_prefix){
+   auto rpc_ret=m_mu.FEBsc_NiosRPC(FPGA_ID,0x0105,{});
+   //retrieve results
+   uint32_t* val=new uint32_t(rpc_ret*4*3); //nASICs * 4 counterbanks * 3 words
+   INT val_size = sizeof(DWORD);
+
+   m_mu.FEBsc_read(FPGA_ID, val, rpc_ret*4*3 , (uint32_t) m_mu.FEBsc_RPC_DATAOFFSET);
+   //store in midas
+   INT status;
+   int index=0;
+   std::string path=odb_prefix+std::string("/Variables/Counters/");
+   for(int nASIC=0;nASIC<rpc_ret;nASIC++){
+       if((status=db_set_value_index(hDB, 0, (path+"nHits").c_str(),       &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       index+=1;
+       if((status=db_set_value_index(hDB, 0, (path+"Timer").c_str(),       &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       index+=2;
+       if((status=db_set_value_index(hDB, 0, (path+"nBadFrames").c_str(),  &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       index+=1;
+       if((status=db_set_value_index(hDB, 0, (path+"nFrames").c_str(),     &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       index+=2;
+       if((status=db_set_value_index(hDB, 0, (path+"nErrorsLVDS").c_str(), &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       index+=1;
+       if((status=db_set_value_index(hDB, 0, (path+"nWordsLVDS").c_str(),  &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       index+=2;
+       if((status=db_set_value_index(hDB, 0, (path+"nErrorsPRBS").c_str(), &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       index+=1;
+       if((status=db_set_value_index(hDB, 0, (path+"nWordsPRBS").c_str(),  &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       index+=2;
+   }
+
+ 
+}
+
 //MIDAS callback function for FEB register Setter functions
 void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 {
@@ -70,21 +103,21 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set dummy_config to %d", value);
+      //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set dummy_config to %d", value);
       _this->setDummyConfig(MutrigFEB::FPGA_broadcast_ID,value);
    }
    if (std::string(key.name) == "dummy_data") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set dummy_data to %d", value);
+      //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set dummy_data to %d", value);
       _this->setDummyData_Enable(MutrigFEB::FPGA_broadcast_ID,value);
    }
    if (std::string(key.name) == "dummy_data_fast") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set dummy_data_fast to %d", value);
+      //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set dummy_data_fast to %d", value);
       _this->setDummyData_Fast(MutrigFEB::FPGA_broadcast_ID,value);
    }
    if (std::string(key.name) == "dummy_data_n") {
@@ -98,21 +131,21 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set prbs_decode_disable to %d", value);
+      //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set prbs_decode_disable to %d", value);
       _this->setPRBSDecoderDisable(MutrigFEB::FPGA_broadcast_ID,value);
    }
    if (std::string(key.name) == "LVDS_waitforall") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set LVDS_waitforall to %d", value);
+      //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set LVDS_waitforall to %d", value);
       _this->setPRBSDecoderDisable(MutrigFEB::FPGA_broadcast_ID,value);
    }
    if (std::string(key.name) == "LVDS_waitforall_sticky") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set LVDS_waitforall_sticky to %d", value);
+      //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set LVDS_waitforall_sticky to %d", value);
       _this->setPRBSDecoderDisable(MutrigFEB::FPGA_broadcast_ID,value);
    }
    if (std::string(key.name) == "mask") {
@@ -120,7 +153,7 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       INT  barraysize=sizeof(barray);
       db_get_data(hDB, hKey, &barray, &barraysize, TID_BOOL);
       for(int i=0;i<16;i++){
-           cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set mask[%d] %d",i, barray[i]);
+           //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set mask[%d] %d",i, barray[i]);
            _this->setMask(i,barray[i]);
       }
    }
@@ -146,7 +179,18 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
    }
-   
+   if (std::string(key.name) == "reset_lvds") {
+      BOOL value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+      if(value){
+         cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_lvds");
+         _this->LVDS_RX_Reset(MutrigFEB::FPGA_broadcast_ID);
+         value = FALSE; // reset flag in ODB
+         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+      }
+   }
+
    //reset skew settings
    if (std::string(key.name) == "resetskew_cphase") {
         cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Updating reset skew cphase settings");
@@ -333,11 +377,9 @@ void MutrigFEB::chipReset(int FPGA_ID){
 	//assert(!GET_FE_SUBDET_REST_BIT_CHIP(val));
 	//set and clear reset
         val=reg_setBit(val,0,true);
-        printf("writing %x\n",val);
 	m_mu.FEBsc_write(FPGA_ID, &val, 0 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         val=reg_setBit(val,0,false);
-        printf("writing %x\n",val);
 	m_mu.FEBsc_write(FPGA_ID, &val, 0 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
 }
 
@@ -349,9 +391,22 @@ void MutrigFEB::DataPathReset(int FPGA_ID){
 	//assert(!GET_FE_SUBDET_REST_BIT_DPATH(val));
 	//set and clear reset
         val=reg_setBit(val,1,true);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
+	//do not expect a reply in write below, the data generator is in reset (not having sent a trailer) and this may block the data merger sending a slow control reply
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,false);
+
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         val=reg_setBit(val,1,false);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
+}
+
+//reset lvds receivers
+void MutrigFEB::LVDS_RX_Reset(int FPGA_ID){
+	uint32_t val=0;
+	//set and clear reset
+        val=reg_setBit(val,2,true);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        val=reg_setBit(val,2,false);
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
 }
 
