@@ -3,6 +3,9 @@
  * date : 2019
  */
 
+#ifndef __MU3E_UTIL_SI_H__
+#define __MU3E_UTIL_SI_H__
+
 #include <altera_avalon_i2c.h>
 #include <altera_avalon_spi.h>
 
@@ -152,3 +155,5 @@ struct si_t {
     }
 
 };
+
+#endif // __MU3E_UTIL_SI_H__
