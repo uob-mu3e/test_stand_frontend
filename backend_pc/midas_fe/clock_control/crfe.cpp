@@ -430,6 +430,8 @@ INT frontend_init()
 
 
    /////////////////////////////////////////////
+   db_find_key(hDB, 0, "/Equipment/Clock Reset", &hKey);
+   assert(hKey);
 
    char ip[256];// = "10.32.113.218";
    int size = 256;
