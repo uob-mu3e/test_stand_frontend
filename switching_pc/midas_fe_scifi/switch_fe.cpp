@@ -81,8 +81,8 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 INT event_buffer_size = 10 * 10000;
 
 const int MAX_N_SWITCHINGBOARDS = 4;
-const int N_LINKS_PER_SWITCHINGBOARD = 48;
-const int MAX_N_FRONTENDBOARDS = N_LINKS_PER_SWITCHINGBOARD * MAX_N_SWITCHINGBOARDS;
+const int MAX_LINKS_PER_SWITCHINGBOARD = 48;
+const int MAX_N_FRONTENDBOARDS = MAX_LINKS_PER_SWITCHINGBOARD*MAX_N_SWITCHINGBOARDS;
 int switch_id = 0; // TODO to be loaded from outside
 
 /* DMA Buffer and related */
@@ -303,8 +303,8 @@ INT begin_of_run(INT run_number, char *error)
 
    /* get link active from odb */
    uint64_t link_active_from_odb = 0;
-   for(int link = 0; link < N_LINKS_PER_SWITCHINGBOARD; link++) {
-      int offset = N_LINKS_PER_SWITCHINGBOARD * switch_id;
+   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
+      int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
       if(frontend_board_active_odb[offset + link] > 0)
          link_active_from_odb += (1 << link);
    }
@@ -338,7 +338,7 @@ INT begin_of_run(INT run_number, char *error)
 
    if(timeout_cnt>=50) {
       cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
-      for(int i = 0; i < N_LINKS_PER_SWITCHINGBOARD; i++) {
+      for(int i = 0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++) {
          if ((link_active_from_register >> i) & 0x1)
             mup->write_register_wait(RUN_NR_ADDR_REGISTER_W, i, 1000);
             cm_msg(MINFO,"switch_fe","Switching board %d, Link %d: Run number %d", switch_id, i, mup->read_register_ro(RUN_NR_REGISTER_R));
