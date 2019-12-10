@@ -42,11 +42,11 @@ struct si_t {
             alt_u8 w[] = { address };
             int write_err = alt_avalon_i2c_master_tx(i2c_dev, w, 1, ALT_AVALON_I2C_NO_INTERRUPTS);
             if(write_err != ALT_AVALON_I2C_SUCCESS) {
-                printf("[si.read_byte] alt_avalon_i2c_master_tx => %d\n", write_err);
+                printf("[si.read_byte] ERROR: alt_avalon_i2c_master_tx => %d\n", write_err);
             }
             int read_err = alt_avalon_i2c_master_rx(i2c_dev, r, 1, ALT_AVALON_I2C_NO_INTERRUPTS);
             if(read_err != ALT_AVALON_I2C_SUCCESS) {
-                printf("[si.read_byte] alt_avalon_i2c_master_rx => %d\n", read_err);
+                printf("[si.read_byte] ERROR: alt_avalon_i2c_master_rx => %d\n", read_err);
             }
         }
         else if(spi_slave != alt_u32(-1)) {
@@ -54,7 +54,7 @@ struct si_t {
             alt_avalon_spi_command(spi_base, spi_slave, 3, w, 1, r, 0);
         }
         else {
-            printf("[si.read_byte] no spi/i2c interface\n");
+            printf("[si.read_byte] ERROR: no spi/i2c interface\n");
         }
         return r[0];
     }
@@ -65,7 +65,7 @@ struct si_t {
             alt_u8 w[] = { address, value };
             int write_err = alt_avalon_i2c_master_tx(i2c_dev, w, 2, ALT_AVALON_I2C_NO_INTERRUPTS);
             if(write_err != ALT_AVALON_I2C_SUCCESS) {
-                printf("[si.read_byte] alt_avalon_i2c_master_tx => %d\n", write_err);
+                printf("[si.read_byte] ERROR: alt_avalon_i2c_master_tx => %d\n", write_err);
             }
         }
         else if(spi_slave != alt_u32(-1)) {
@@ -73,16 +73,16 @@ struct si_t {
             alt_avalon_spi_command(spi_base, spi_slave, 4, w, 0, 0, 0);
         }
         else {
-            printf("[si.write_byte] no spi/i2c interface\n");
+            printf("[si.write_byte] ERROR: no spi/i2c interface\n");
         }
     }
 
-    int wait_ready() {
-        for(int i = 0; i < 8; i++) {
+    int wait_ready(int timeout = 8) {
+        for(int i = 0; i < timeout; i++) {
             if(read_byte(0xFE) == 0x0F) return 0;
             usleep(1000);
         }
-        printf("[si] device ready != 0x0F\n");
+        printf("[si.wait_ready] WARN: DEVICE_READY != 0x0F\n");
         return -1;
     }
 

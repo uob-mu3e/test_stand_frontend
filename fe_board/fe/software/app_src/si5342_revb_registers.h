@@ -7,10 +7,10 @@
  * export tool.
  *
  * Part:		                                       Si5342 Rev B
- * Design ID:                                          feb.42.1
+ * Design ID:                                          feb.42.2
  * Includes Pre/Post Download Control Register Writes: Yes
  * Created By:                                         ClockBuilder Pro v2.38 [2019-10-31]
- * Timestamp:                                          2019-12-10 11:02:04 GMT+01:00
+ * Timestamp:                                          2019-12-10
  *
  * A complete design report corresponding to this export is included at the end 
  * of this header file.
@@ -54,7 +54,7 @@ si5342_revb_register_t const si5342_revb_registers[] =
 	{ 0x002B, 0x02 },
 	{ 0x002C, 0x01 },
 	{ 0x002D, 0x01 },
-	{ 0x002E, 0x70 },
+	{ 0x002E, 0x39 },
 	{ 0x002F, 0x00 },
 	{ 0x0030, 0x00 },
 	{ 0x0031, 0x00 },
@@ -62,7 +62,7 @@ si5342_revb_register_t const si5342_revb_registers[] =
 	{ 0x0033, 0x00 },
 	{ 0x0034, 0x00 },
 	{ 0x0035, 0x00 },
-	{ 0x0036, 0x70 },
+	{ 0x0036, 0x39 },
 	{ 0x0037, 0x00 },
 	{ 0x0038, 0x00 },
 	{ 0x0039, 0x00 },
@@ -124,17 +124,17 @@ si5342_revb_register_t const si5342_revb_registers[] =
 	{ 0x009E, 0x20 },
 	{ 0x00A0, 0x00 },
 	{ 0x00A2, 0x02 },
-	{ 0x00A8, 0x33 },
-	{ 0x00A9, 0x02 },
-	{ 0x00AA, 0x08 },
+	{ 0x00A8, 0x41 },
+	{ 0x00A9, 0xCA },
+	{ 0x00AA, 0x07 },
 	{ 0x00AB, 0x00 },
 	{ 0x00AC, 0x00 },
 	{ 0x0102, 0x01 },
 	{ 0x0112, 0x02 },
 	{ 0x0113, 0x09 },
 	{ 0x0114, 0x3B },
-	{ 0x0115, 0x01 },
-	{ 0x0117, 0x06 },
+	{ 0x0115, 0x00 },
+	{ 0x0117, 0x02 },
 	{ 0x0118, 0x09 },
 	{ 0x0119, 0x3B },
 	{ 0x011A, 0x00 },
@@ -147,7 +147,7 @@ si5342_revb_register_t const si5342_revb_registers[] =
 	{ 0x0204, 0x00 },
 	{ 0x0205, 0x00 },
 	{ 0x0206, 0x00 },
-	{ 0x0208, 0x7D },
+	{ 0x0208, 0x41 },
 	{ 0x0209, 0x00 },
 	{ 0x020A, 0x00 },
 	{ 0x020B, 0x00 },
@@ -195,16 +195,16 @@ si5342_revb_register_t const si5342_revb_registers[] =
 	{ 0x0236, 0x00 },
 	{ 0x0237, 0x00 },
 	{ 0x0238, 0x00 },
-	{ 0x0239, 0xAE },
+	{ 0x0239, 0x87 },
 	{ 0x023A, 0x00 },
 	{ 0x023B, 0x00 },
 	{ 0x023C, 0x00 },
 	{ 0x023D, 0x00 },
-	{ 0x023E, 0xA0 },
-	{ 0x0250, 0x02 },
+	{ 0x023E, 0x80 },
+	{ 0x0250, 0x01 },
 	{ 0x0251, 0x00 },
 	{ 0x0252, 0x00 },
-	{ 0x0253, 0x00 },
+	{ 0x0253, 0x04 },
 	{ 0x0254, 0x00 },
 	{ 0x0255, 0x00 },
 	{ 0x026B, 0x66 },
@@ -214,12 +214,12 @@ si5342_revb_register_t const si5342_revb_registers[] =
 	{ 0x026F, 0x34 },
 	{ 0x0270, 0x32 },
 	{ 0x0271, 0x2E },
-	{ 0x0272, 0x31 },
+	{ 0x0272, 0x32 },
 	{ 0x0302, 0x00 },
 	{ 0x0303, 0x00 },
 	{ 0x0304, 0x00 },
 	{ 0x0305, 0x80 },
-	{ 0x0306, 0x2B },
+	{ 0x0306, 0x0D },
 	{ 0x0307, 0x00 },
 	{ 0x0308, 0x00 },
 	{ 0x0309, 0x00 },
@@ -229,13 +229,13 @@ si5342_revb_register_t const si5342_revb_registers[] =
 	{ 0x030D, 0x00 },
 	{ 0x030E, 0x00 },
 	{ 0x030F, 0x00 },
-	{ 0x0310, 0x80 },
-	{ 0x0311, 0x0E },
+	{ 0x0310, 0x00 },
+	{ 0x0311, 0x00 },
 	{ 0x0312, 0x00 },
 	{ 0x0313, 0x00 },
 	{ 0x0314, 0x00 },
 	{ 0x0315, 0x00 },
-	{ 0x0316, 0xC8 },
+	{ 0x0316, 0x00 },
 	{ 0x0317, 0x00 },
 	{ 0x0338, 0x00 },
 	{ 0x0339, 0x1F },
@@ -260,20 +260,20 @@ si5342_revb_register_t const si5342_revb_registers[] =
 	{ 0x0509, 0x22 },
 	{ 0x050A, 0x0C },
 	{ 0x050B, 0x0B },
-	{ 0x050C, 0x0F },
+	{ 0x050C, 0x07 },
 	{ 0x050D, 0x3F },
 	{ 0x050E, 0x16 },
 	{ 0x050F, 0x2A },
 	{ 0x0510, 0x09 },
 	{ 0x0511, 0x08 },
-	{ 0x0512, 0x0F },
+	{ 0x0512, 0x07 },
 	{ 0x0513, 0x3F },
 	{ 0x0515, 0x00 },
 	{ 0x0516, 0x00 },
 	{ 0x0517, 0x00 },
 	{ 0x0518, 0x00 },
-	{ 0x0519, 0x70 },
-	{ 0x051A, 0x05 },
+	{ 0x0519, 0xBE },
+	{ 0x051A, 0x02 },
 	{ 0x051B, 0x00 },
 	{ 0x051C, 0x00 },
 	{ 0x051D, 0x00 },
@@ -287,8 +287,8 @@ si5342_revb_register_t const si5342_revb_registers[] =
 	{ 0x052E, 0x19 },
 	{ 0x052F, 0x19 },
 	{ 0x0531, 0x00 },
-	{ 0x0532, 0x83 },
-	{ 0x0533, 0x06 },
+	{ 0x0532, 0x63 },
+	{ 0x0533, 0x03 },
 	{ 0x0534, 0x00 },
 	{ 0x0535, 0x00 },
 	{ 0x0536, 0x0C },
@@ -303,14 +303,14 @@ si5342_revb_register_t const si5342_revb_registers[] =
 	{ 0x0949, 0x01 },
 	{ 0x094A, 0x01 },
 	{ 0x0A02, 0x00 },
-	{ 0x0A03, 0x03 },
+	{ 0x0A03, 0x01 },
 	{ 0x0A04, 0x01 },
-	{ 0x0A05, 0x03 },
+	{ 0x0A05, 0x01 },
 	{ 0x0B44, 0x2F },
 	{ 0x0B46, 0x00 },
 	{ 0x0B47, 0x0E },
 	{ 0x0B48, 0x0E },
-	{ 0x0B4A, 0x00 },
+	{ 0x0B4A, 0x02 },
 	/* End configuration registers */
 
 	/* Start configuration postamble */
@@ -328,11 +328,11 @@ si5342_revb_register_t const si5342_revb_registers[] =
  *
  * Overview
  * ========
- * Part:               Si5342AB Rev B
- * Project File:       F:\Si5342-RevB-feb.42.1-Project-new.slabtimeproj
- * Design ID:          feb.42.1
+ * Part:               Si5342ABCD Rev B
+ * Project File:       F:\Si5342-RevB-feb.42.2-Project.slabtimeproj
+ * Design ID:          feb.42.2
  * Created By:         ClockBuilder Pro v2.38 [2019-10-31]
- * Timestamp:          2019-12-10 11:02:03 GMT+01:00
+ * Timestamp:          2019-12-10
  * 
  * Design Rule Check
  * =================
@@ -340,37 +340,24 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * - No errors
  * 
  * Warnings:
- * - IN0: LOS threshold 'set for me' mode is recommended when hitless switching is enabled [1]
- * - OUT0 [125 MHz] and OUT1 [80 MHz] may have coupling [2]
  * - Revision B is not recommended for new designs
- * 
- * Footnotes:
- * [1] Assert and de-assert thresholds are critical to optimum hitless switching performance. When 'set for me' is checked on the LOS page, LOS thresholds will be calculated and updated based on your design's frequency plan.
- * 
- * [2] To avoid coupling in outputs, Silicon Labs recommends the following:
- * 
- * - Avoid adjacent frequency values that are close. CBPro uses an output's integration bandwidth (IBW) to determine whether two adjacent frequencies are too close. An IBW of 20 MHz is used for frequencies 80 MHz and larger. Lower frequencies will use IBW of OUT/4. CBPro will flag fundamental coupling and coupling up to the fourth harmonic, where coupling frequency = Absolute(OUTa*x - OUTb*y) for all combinations of x and y 1 through 4. If any one of these values is less than or equal to the IBW, the output is flagged as having possible coupling.
- * - Adjacent frequency values that are integer multiples of one another are okay and these outputs should be grouped accordingly. For example, a 155.52 MHz and 622.08 MHz (155.52 x 4) can be adjacent.
- * - Unused outputs can be used to separate clock outputs that might otherwise interfere with one another.
- * 
- * Silicon Labs recommends you validate your design's jitter performance using an Evaluation Board. You can request a custom phase noise report for your design from CBPro's design dashboard.
  * 
  * Device Grade
  * ============
  * Maximum Output Frequency: 125 MHz
- * Frequency Synthesis Mode: Fractional
- * Frequency Plan Grade:     B
- * Minimum Base OPN:         Si5342B*
+ * Frequency Synthesis Mode: Integer
+ * Frequency Plan Grade:     D
+ * Minimum Base OPN:         Si5342D*
  * 
  * Base       Output Clock         Supported Frequency Synthesis Modes
  * OPN Grade  Frequency Range      (Typical Jitter)
  * ---------  -------------------  --------------------------------------------
  * Si5342A    100 Hz to 712.5 MHz  Integer (< 100 fs) and fractional (< 150 fs)
- * Si5342B*   100 Hz to 350 MHz    "
+ * Si5342B    100 Hz to 350 MHz    "
  * Si5342C    100 Hz to 712.5 MHz  Integer only (< 100 fs)
- * Si5342D    100 Hz to 350 MHz    "
+ * Si5342D*   100 Hz to 350 MHz    "
  * 
- * * Based on your calculated frequency plan, a Si5342B grade device is
+ * * Based on your calculated frequency plan, a Si5342D grade device is
  * sufficient for your design. For more in-system configuration flexibility
  * (higher frequencies and/or to enable fractional synthesis), consider
  * selecting device grade Si5342A when specifying an ordering part number (OPN)
@@ -396,58 +383,57 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * Outputs:
  *    OUT0: 125 MHz
  *          Enabled, LVDS 2.5 V
- *    OUT1: 80 MHz
+ *    OUT1: 50 MHz
  *          Enabled, LVDS 2.5 V
  * 
  * Frequency Plan
  * ==============
  * Priority: maximize the number of low jitter outputs
  * 
- * Fvco = 13.92 GHz
- * Fpfd = 1 MHz
- * Fms0 = 160 MHz
- * Fms1 = 750 MHz
+ * Fvco = 13.5 GHz
+ * Fpfd = 1.9230769230769230... MHz [ 1 + 12/13 MHz ]
+ * Fms0 = 500 MHz
  * 
  * P dividers:
- *    P0  = 125
+ *    P0  = 65
  *    P1  = Unused
  *    P2  = Unused
  *    P3  = Unused
  *    Pxaxb = 1
  * 
- * MXAXB = 278.4
- * M = 2784
+ * MXAXB = 270
+ * M = 1404
  * N dividers:
  *    N0:
- *       Value: 87
- *       OUT1: 80 MHz
- *    N1:
- *       Value: 18.56
+ *       Value: 27
  *       OUT0: 125 MHz
+ *       OUT1: 50 MHz
+ *    N1:
+ *       Unused
  * 
  * R dividers:
- *    R0 = 6
- *    R1 = 2
+ *    R0 = 4
+ *    R1 = 10
  * 
  * Nominal Bandwidth:
  *   Desired: 100.000 Hz
- *   Actual:  89.504 Hz
+ *   Actual:  89.238 Hz
  *   Coefficients:
  *      BW0:  19
  *      BW1:  34
  *      BW2:  12
  *      BW3:  11
- *      BW4:  15
+ *      BW4:  7
  *      BW5:  63
  * Fastlock Bandwidth:
  *   Desired: 1.000 kHz
- *   Actual:  717.323 Hz
+ *   Actual:  714.652 Hz
  *   Coefficients:
  *      BW0:  22
  *      BW1:  42
  *      BW2:  9
  *      BW3:  8
- *      BW4:  15
+ *      BW4:  7
  *      BW5:  63
  * 
  * Dividers listed above show effective values. These values are translated to register settings by ClockBuilder Pro. For the actual register values, see below. Refer to the Family Reference Manual for information on registers related to frequency plan.
@@ -466,7 +452,7 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * Output  Frequency  Offset(Max,ppt)
  * ------  ---------  ---------------
  * OUT0    125 MHz    0.000000       
- * OUT1    80 MHz     0.000000       
+ * OUT1    50 MHz     0.000000       
  * 
  * Offset is reported in parts-per-trillion (1e12).
  * 
@@ -480,16 +466,16 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * Theta-JA: 18.4 C/W
  * Airflow:  2 m/s
  * 
- * Total Power: 691 mW, On Chip Power: 679 mW, Tj: 37 C
+ * Total Power: 638 mW, On Chip Power: 626 mW, Tj: 37 C
  * 
  *         Frequency  Format   Voltage   Current     Power
  *         ---------  ------  --------  --------  --------
- * VDD                           1.8 V  127.5 mA    230 mW
- * VDDA                          3.3 V  116.4 mA    384 mW
+ * VDD                           1.8 V  101.2 mA    182 mW
+ * VDDA                          3.3 V  114.8 mA    379 mW
  * VDDO0     125 MHz  LVDS       2.5 V   15.6 mA     39 mW
- * VDDO1      80 MHz  LVDS       2.5 V   15.4 mA     38 mW
+ * VDDO1      50 MHz  LVDS       2.5 V   15.2 mA     38 mW
  *                                      --------  --------
- *                               Total  274.8 mA    691 mW
+ *                               Total  246.8 mA    638 mW
  * 
  * Note:
  * 
@@ -521,11 +507,11 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * 0x002D[3:2]   LOS1_VAL_TIME         0                  0x0              
  * 0x002D[5:4]   LOS2_VAL_TIME         0                  0x0              
  * 0x002D[7:6]   LOS3_VAL_TIME         0                  0x0              
- * 0x002E[15:0]  LOS0_TRG_THR          112                0x0070           
+ * 0x002E[15:0]  LOS0_TRG_THR          57                 0x0039           
  * 0x0030[15:0]  LOS1_TRG_THR          0                  0x0000           
  * 0x0032[15:0]  LOS2_TRG_THR          0                  0x0000           
  * 0x0034[15:0]  LOS3_TRG_THR          0                  0x0000           
- * 0x0036[15:0]  LOS0_CLR_THR          112                0x0070           
+ * 0x0036[15:0]  LOS0_CLR_THR          57                 0x0039           
  * 0x0038[15:0]  LOS1_CLR_THR          0                  0x0000           
  * 0x003A[15:0]  LOS2_CLR_THR          0                  0x0000           
  * 0x003C[15:0]  LOS3_CLR_THR          0                  0x0000           
@@ -577,7 +563,7 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * 0x009E[7:4]   LOL_SLW_SET_THR       2                  0x2              
  * 0x00A0[7:4]   LOL_SLW_CLR_THR       0                  0x0              
  * 0x00A2[1]     LOL_TIMER_EN          1                  0x1              
- * 0x00A8[34:0]  LOL_CLR_DELAY         524851             0x000080233      
+ * 0x00A8[34:0]  LOL_CLR_DELAY         510529             0x00007CA41      
  * 0x0102[0]     OUTALL_DISABLE_LOW    1                  0x1              
  * 0x0112[0]     OUT0_PDN              0                  0x0              
  * 0x0112[1]     OUT0_OE               1                  0x1              
@@ -588,11 +574,11 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * 0x0113[7:6]   OUT0_CMOS_DRV         0                  0x0              
  * 0x0114[3:0]   OUT0_CM               11                 0xB              
  * 0x0114[6:4]   OUT0_AMPL             3                  0x3              
- * 0x0115[2:0]   OUT0_MUX_SEL          1                  0x1              
+ * 0x0115[2:0]   OUT0_MUX_SEL          0                  0x0              
  * 0x0115[7:6]   OUT0_INV              0                  0x0              
  * 0x0117[0]     OUT1_PDN              0                  0x0              
  * 0x0117[1]     OUT1_OE               1                  0x1              
- * 0x0117[2]     OUT1_RDIV_FORCE2      1                  0x1              
+ * 0x0117[2]     OUT1_RDIV_FORCE2      0                  0x0              
  * 0x0118[2:0]   OUT1_FORMAT           1                  0x1              
  * 0x0118[3]     OUT1_SYNC_EN          1                  0x1              
  * 0x0118[5:4]   OUT1_DIS_STATE        0                  0x0              
@@ -610,7 +596,7 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * 0x0142[5]     OUT_DIS_MSK_HOLD      1                  0x1              
  * 0x0202[31:0]  XAXB_FREQ_OFFSET      0                  0x00000000       
  * 0x0206[1:0]   PXAXB                 0                  0x0              
- * 0x0208[47:0]  P0_NUM                125                0x00000000007D   
+ * 0x0208[47:0]  P0_NUM                65                 0x000000000041   
  * 0x020E[31:0]  P0_DEN                1                  0x00000001       
  * 0x0212[47:0]  P1_NUM                0                  0x000000000000   
  * 0x0218[31:0]  P1_DEN                0                  0x00000000       
@@ -626,10 +612,10 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * 0x0233[4]     P2_FRACN_EN           0                  0x0              
  * 0x0234[3:0]   P3_FRACN_MODE         1                  0x1              
  * 0x0234[4]     P3_FRACN_EN           0                  0x0              
- * 0x0235[43:0]  MXAXB_NUM             747324309504       0x0AE00000000    
- * 0x023B[31:0]  MXAXB_DEN             2684354560         0xA0000000       
- * 0x0250[23:0]  R0_REG                2                  0x000002         
- * 0x0253[23:0]  R1_REG                0                  0x000000         
+ * 0x0235[43:0]  MXAXB_NUM             579820584960       0x08700000000    
+ * 0x023B[31:0]  MXAXB_DEN             2147483648         0x80000000       
+ * 0x0250[23:0]  R0_REG                1                  0x000001         
+ * 0x0253[23:0]  R1_REG                4                  0x000004         
  * 0x026B[7:0]   DESIGN_ID0            102                0x66             
  * 0x026C[7:0]   DESIGN_ID1            101                0x65             
  * 0x026D[7:0]   DESIGN_ID2            98                 0x62             
@@ -637,12 +623,12 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * 0x026F[7:0]   DESIGN_ID4            52                 0x34             
  * 0x0270[7:0]   DESIGN_ID5            50                 0x32             
  * 0x0271[7:0]   DESIGN_ID6            46                 0x2E             
- * 0x0272[7:0]   DESIGN_ID7            49                 0x31             
- * 0x0302[43:0]  N0_NUM                186831077376       0x02B80000000    
+ * 0x0272[7:0]   DESIGN_ID7            50                 0x32             
+ * 0x0302[43:0]  N0_NUM                57982058496        0x00D80000000    
  * 0x0308[31:0]  N0_DEN                2147483648         0x80000000       
  * 0x030C[0]     N0_UPDATE             0                  0x0              
- * 0x030D[43:0]  N1_NUM                62277025792        0x00E80000000    
- * 0x0313[31:0]  N1_DEN                3355443200         0xC8000000       
+ * 0x030D[43:0]  N1_NUM                0                  0x00000000000    
+ * 0x0313[31:0]  N1_DEN                0                  0x00000000       
  * 0x0317[0]     N1_UPDATE             0                  0x0              
  * 0x0338[1]     N_UPDATE              0                  0x0              
  * 0x0339[4:0]   N_FSTEP_MSK           31                 0x1F             
@@ -656,15 +642,15 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * 0x0509[5:0]   BW1_PLL               34                 0x22             
  * 0x050A[5:0]   BW2_PLL               12                 0x0C             
  * 0x050B[5:0]   BW3_PLL               11                 0x0B             
- * 0x050C[5:0]   BW4_PLL               15                 0x0F             
+ * 0x050C[5:0]   BW4_PLL               7                  0x07             
  * 0x050D[5:0]   BW5_PLL               63                 0x3F             
  * 0x050E[5:0]   FAST_BW0_PLL          22                 0x16             
  * 0x050F[5:0]   FAST_BW1_PLL          42                 0x2A             
  * 0x0510[5:0]   FAST_BW2_PLL          9                  0x09             
  * 0x0511[5:0]   FAST_BW3_PLL          8                  0x08             
- * 0x0512[5:0]   FAST_BW4_PLL          15                 0x0F             
+ * 0x0512[5:0]   FAST_BW4_PLL          7                  0x07             
  * 0x0513[5:0]   FAST_BW5_PLL          63                 0x3F             
- * 0x0515[55:0]  M_NUM                 5978594476032      0x00057000000000 
+ * 0x0515[55:0]  M_NUM                 3015067041792      0x0002BE00000000 
  * 0x051C[31:0]  M_DEN                 2147483648         0x80000000       
  * 0x0521[3:0]   M_FRAC_MODE           1                  0x1              
  * 0x0521[4]     M_FRAC_EN             0                  0x0              
@@ -680,7 +666,7 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * 0x052E[4:0]   HOLD_HIST_LEN         25                 0x19             
  * 0x052F[4:0]   HOLD_HIST_DELAY       25                 0x19             
  * 0x0531[4:0]   HOLD_REF_COUNT_FRC    0                  0x00             
- * 0x0532[23:0]  HOLD_15M_CYC_COUNT    1667               0x000683         
+ * 0x0532[23:0]  HOLD_15M_CYC_COUNT    867                0x000363         
  * 0x0535[0]     FORCE_HOLD            0                  0x0              
  * 0x0536[1:0]   CLK_SWITCH_MODE       0                  0x0              
  * 0x0536[2]     HSW_EN                1                  0x1              
@@ -699,15 +685,15 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * 0x0949[7:4]   IN_PULSED_CMOS_EN     0                  0x0              
  * 0x094A[3:0]   INX_TO_PFD_EN         1                  0x1              
  * 0x0A02[4:0]   N_ADD_0P5             0                  0x00             
- * 0x0A03[4:0]   N_CLK_TO_OUTX_EN      3                  0x03             
+ * 0x0A03[4:0]   N_CLK_TO_OUTX_EN      1                  0x01             
  * 0x0A04[4:0]   N_PIBYP               1                  0x01             
- * 0x0A05[4:0]   N_PDNB                3                  0x03             
+ * 0x0A05[4:0]   N_PDNB                1                  0x01             
  * 0x0B44[3:0]   PDIV_FRACN_CLK_DIS    15                 0xF              
  * 0x0B44[5]     FRACN_CLK_DIS_PLL     1                  0x1              
  * 0x0B46[3:0]   LOS_CLK_DIS           0                  0x0              
  * 0x0B47[4:0]   OOF_CLK_DIS           14                 0x0E             
  * 0x0B48[4:0]   OOF_DIV_CLK_DIS       14                 0x0E             
- * 0x0B4A[4:0]   N_CLK_DIS             0                  0x00
+ * 0x0B4A[4:0]   N_CLK_DIS             2                  0x02
  * 
  *
  */
