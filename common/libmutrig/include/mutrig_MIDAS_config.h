@@ -43,9 +43,10 @@ typedef struct {
 "dummy_data = BOOL : n",\
 "dummy_data_n = INT : 200",\
 "dummy_data_fast = BOOL : n",\
-"prbs_decode_disable = BOOL : y",\
-"reset_datapath = BOOL : y",\
-"reset_asics = BOOL : y",\
+"prbs_decode_disable = BOOL : n",\
+"reset_datapath = BOOL : n",\
+"reset_asics = BOOL : n",\
+"reset_lvds = BOOL : n",\
 "LVDS_waitforall = BOOL : n",\
 "LVDS_waitforall_sticky = BOOL : y",\
 "mask = BOOL[16] :",\
