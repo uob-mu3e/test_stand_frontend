@@ -356,7 +356,7 @@ INT read_sc_event(char *pevent, INT off)
 
 INT read_scifi_sc_event(char *pevent, INT off){
     printf("read_scifi_sc_event\n");
-    //int status=SciFiFEB::Instance()->ReadBackCounters(hDB, 0 /*FPGA-ID*/, "/Equipment/SciFi");
+    int status=SciFiFEB::Instance()->ReadBackCounters(hDB, 0 /*FPGA-ID*/, "/Equipment/SciFi");
     return 0;
 }
 
