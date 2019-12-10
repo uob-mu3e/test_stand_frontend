@@ -99,6 +99,7 @@ clockboard * cb;
 INT read_cr_event(char *pevent, INT off);
 void cr_settings_changed(HNDLE, HNDLE, int, void *);
 void link_settings_changed(HNDLE, HNDLE, int, void *);
+void prepare_run_on_request(HNDLE, HNDLE, int, void *);
 
 /*-- Equipment list ------------------------------------------------*/
 
@@ -364,6 +365,14 @@ INT frontend_init()
 
    db_create_record(hDB, 0, "Equipment/Links/Variables", strcomb(link_variables_str));
 
+   // Create run transition structure
+   db_create_key(hDB, 0, "/Equipment/Clock Reset/Run transitions/Request Sync", TID_INT);
+   db_find_key(hDB, 0, "/Equipment/Clock Reset/Run transitions/Request Sync", &hKey);
+   INT zeros[MAX_N_SWITCHINGBOARDS];
+   for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++)
+       zeros[i] =0;
+   db_set_data(hDB, hKey, zeros, sizeof(INT)*MAX_N_SWITCHINGBOARDS, MAX_N_SWITCHINGBOARDS, TID_INT);
+   db_watch(hDB, hKey, prepare_run_on_request, nullptr);
 
    // add custom pages to ODB
    db_create_key(hDB, 0, "Custom/Clock and Reset&", TID_STRING);
@@ -504,64 +513,12 @@ INT frontend_loop()
 
 INT begin_of_run(INT run_number, char *error)
 {
-    /*
-     * This example code starts a run transition, then waits on some
-     * external conditions by polling an array in the ODB. It expects
-     * that other programs set the readback array in the ODB to the
-     * current run number
-     */
-
-    HNDLE hDB, hKey;
-    cm_get_experiment_database(&hDB, nullptr);
-
-    int N_READBACK;
-    int size =sizeof(N_READBACK);
-    if(!(db_get_value(hDB, hKey, "/Equipment/Clock Reset/settings/N_READBACK", &N_READBACK, &size, TID_INT, false)==DB_SUCCESS))
-            return CM_DB_ERROR;
-
-    INT readback[N_READBACK];
-    // set requested run number in ODB
-    db_set_value(hDB, 0, "/Equipment/Clock Reset/Run transitions/Requested run number", &run_number, sizeof(INT), 1, TID_INT);
-
-    // retrieve readback array form ODB
-    size = sizeof(readback);
-    memset(readback, 0, size);
-    db_find_key(hDB, 0, "/Equipment/Clock Reset/Run transitions/FEB readback", &hKey);
-    if (!hKey) {
-       // create readback array if not existing
-       db_create_key(hDB, 0, "/Equipment/Clock Reset/Run transitions/FEB readback", TID_INT);
-       db_find_key(hDB, 0, "/Equipment/Clock Reset/Run transitions/FEB readback", &hKey);
-       db_set_data(hDB, hKey, readback, size, N_READBACK, TID_INT);
-    }
-
     // set equipment status for status web page
-    set_equipment_status("Clock Reset", "Waiting for readback", "yellowLight");
-
-    // wait until readback succeeds
-    int start_time = ss_time();
-    int i = 0;
-    do {
-       db_get_data(hDB, hKey, readback, &size, TID_INT);
-       for (i=0 ; i<N_READBACK ; i++) {
-          if (readback[i] != run_number)
-             break;
-       }
-       if (i == N_READBACK)
-          break;
-
-       // don't waste 100% CPU time
-       ss_sleep(10);
-
-    } while (ss_time() < start_time + 5); // wait maximal 5 seconds
-
-    if (i < N_READBACK) {
-       strcpy(error, "Timeout receiving FEB feedback");
-       return FE_ERR_HW;
-    }
-
-    // set equipment status for status web page
+    set_equipment_status("Clock Reset", "Starting run", "yellowLight");
+    cb->write_command("Sync");
+    usleep(100);
+    cb->write_command("Start Run");
     set_equipment_status("Clock Reset", "Ok", "greenLight");
-
 
    return CM_SUCCESS;
 }
@@ -831,4 +788,39 @@ void link_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       cm_msg(MINFO, "link_settings_changed", "Set Frontend Board Mask");
       // TODO: propagate to hardware
    }
+}
+
+void prepare_run_on_request(HNDLE hDB, HNDLE hKey, INT, void *){
+    KEY key;
+    db_get_key(hDB, hKey, &key);
+    INT request[MAX_N_SWITCHINGBOARDS];
+    int size = sizeof(INT)*MAX_N_SWITCHINGBOARDS;
+    db_get_data(hDB, hKey, request, &size, TID_INT);
+
+    INT active[MAX_N_SWITCHINGBOARDS];
+    db_get_value(hDB, 0, "/Equipment/Links/Settings/SwitchingBoardMask",
+                 active, &size, TID_INT, false);
+
+    bool allok = true;
+    for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++){
+        allok = allok && ((request[i] > 0) || (active[i] == 0));
+    }
+
+    if(allok){
+        cm_msg(MINFO, "prepare_run_on_request", "Execute Run Prepare on request");
+        int run;
+        int size = sizeof(run);
+        db_get_value(hDB, 0, "/Runinfo/Run number", &run, &size, TID_INT, false);
+        cb->write_command("Run Prepare",run);
+
+        // reset requests
+        for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++){
+            active[i] =0;
+        }
+        size =  sizeof(INT)*MAX_N_SWITCHINGBOARDS;
+        db_set_value(hDB,0,"/Equipment/Clock Reset/Run Transitions/Request Run Prepare/", active, size, MAX_N_SWITCHINGBOARDS, TID_INT);
+
+    } else {
+        cm_msg(MINFO, "prepare_run_on_request", "Waiting for more switching boards");
+    }
 }
