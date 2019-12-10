@@ -11,7 +11,7 @@ use ieee.std_logic_1164.all;
 --
 -- single clock fallthrough fifo
 --
-entity scfifo is
+entity fifo_sc is
 generic (
     DATA_WIDTH_g : positive := 8;
     ADDR_WIDTH_g : positive := 8--;
@@ -33,7 +33,7 @@ end entity;
 library ieee;
 use ieee.numeric_std.all;
 
-architecture arch of scfifo is
+architecture arch of fifo_sc is
 
     type ram_t is array (2**ADDR_WIDTH_g-1 downto 0) of std_logic_vector(DATA_WIDTH_g-1 downto 0);
     signal ram : ram_t;

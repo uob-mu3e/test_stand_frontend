@@ -50,7 +50,6 @@ else()
 endif()
 
 find_package(CUDA)
-find_package(CUDA)
 
 if (CUDA_FOUND)
     message("-- CUDA ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} was found at ${CUDA_TOOLKIT_ROOT_DIR}")

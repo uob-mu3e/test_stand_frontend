@@ -64,13 +64,20 @@ int MutrigFEB::ReadBackCounters(HNDLE hDB, int FPGA_ID, const char* odb_prefix){
    //retrieve results
    uint32_t* val=new uint32_t(rpc_ret*4*3); //nASICs * 4 counterbanks * 3 words
    INT val_size = sizeof(DWORD);
-
+   printf("RPC return: %u\n",rpc_ret);
    m_mu.FEBsc_read(FPGA_ID, val, rpc_ret*4*3 , (uint32_t) m_mu.FEBsc_RPC_DATAOFFSET);
+   printf("done reading:\n");
+   for(int i=0;i<rpc_ret*4*3;i++){
+      printf("%8x\n",val[i]);
+   }
    //store in midas
    INT status;
    int index=0;
+   printf("done reading: odb:%s\n",odb_prefix);
    std::string path=odb_prefix+std::string("/Variables/Counters/");
-   for(int nASIC=0;nASIC<rpc_ret;nASIC++){
+   printf("odb var:%s\n",path.c_str());
+   for(int nASIC=0;nASIC<rpc_ret*4;nASIC++){
+       printf("writing %d\n",nASIC);
        if((status=db_set_value_index(hDB, 0, (path+"nHits").c_str(),       &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=1;
        if((status=db_set_value_index(hDB, 0, (path+"Timer").c_str(),       &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
@@ -89,7 +96,7 @@ int MutrigFEB::ReadBackCounters(HNDLE hDB, int FPGA_ID, const char* odb_prefix){
        index+=2;
    }
 
- 
+   delete[] val; 
 }
 
 //MIDAS callback function for FEB register Setter functions

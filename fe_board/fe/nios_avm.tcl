@@ -9,3 +9,4 @@ nios_base.export_avm avm_sc 16 0x70080000 -readLatency 1 -clk clk_156
 
 nios_base.export_avm avm_qsfp 14 0x70010000 -clk clk_156
 nios_base.export_avm avm_pod 14 0x70020000 -clk clk_125
+nios_base.export_avm avm_mscb 4 0x70030000 -clk clk_156

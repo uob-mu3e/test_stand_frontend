@@ -234,20 +234,6 @@ component ip_pll_312 is
   );
 end component ip_pll_312;
 
-component watchdog is
-    generic (
-        W : positive := 1;
-        N : positive := 16#FFFF#--;
-    );
-    port (
-        d			: in std_logic_vector(W-1 downto 0);
-
-        rstout_n 	: out std_logic;
-
-        rst_n 		: in  std_logic;
-        clk 		: in  std_logic--;
-    );
-end component;
 component ip_pll_125 is
   port (
 		outclk_0 : out std_logic;        -- clk

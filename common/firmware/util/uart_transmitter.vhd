@@ -81,6 +81,7 @@ begin
                 present_state <= S_StartBit;
                 ReadRequest <= '1';
                 Reset_Counter <= '0';
+                Transmitting <= '1';
                 DataOut <= '0';
             end if;
 
