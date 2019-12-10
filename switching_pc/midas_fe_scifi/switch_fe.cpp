@@ -1,3 +1,5 @@
+#define FEB_ENABLE_REGISTER_LOW_W FEB_ENABLE_REGISTER_W
+#define RUN_NR_ACK_REGISTER_LOW_R RUN_NR_ACK_REGISTER_R
 /********************************************************************\
 
   Name:         taken from switch_fe.cpp
@@ -78,6 +80,11 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
 
+const int MAX_N_SWITCHINGBOARDS = 4;
+const int MAX_LINKS_PER_SWITCHINGBOARD = 48;
+const int MAX_N_FRONTENDBOARDS = MAX_LINKS_PER_SWITCHINGBOARD*MAX_N_SWITCHINGBOARDS;
+int switch_id = 0; // TODO to be loaded from outside
+
 /* DMA Buffer and related */
 mudaq::DmaMudaqDevice * mup;
 
@@ -88,6 +95,7 @@ INT read_sc_event(char *pevent, INT off);
 INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
 void sc_settings_changed(HNDLE, HNDLE, int, void *);
+void switching_board_mask_changed(HNDLE, HNDLE, int, void *);
 
 /*-- Equipment list ------------------------------------------------*/
 
@@ -174,7 +182,7 @@ INT frontend_init()
 
    db_watch(hDB, hKeySC, sc_settings_changed, nullptr);
 
-   // set default values of variables
+   // create keys for switching board status variables
    db_create_key(hDB, 0, "Equipment/Switching/Variables/FPGA_ID_READ", TID_INT);
    db_create_key(hDB, 0, "Equipment/Switching/Variables/START_ADD_READ", TID_INT);
    db_create_key(hDB, 0, "Equipment/Switching/Variables/LENGTH_READ", TID_INT);
@@ -225,6 +233,17 @@ INT frontend_init()
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
    //end of SciFi setup part
 
+   /*
+    * Set our transition sequence. The default is 500. Setting it
+    * to 400 means we are called BEFORE most other clients.
+    */
+   cm_set_transition_sequence(TR_START, 400);
+
+   /*
+    * Set our transition sequence. The default is 500. Setting it
+    * to 600 means we are called AFTER most other clients.
+    */
+    cm_set_transition_sequence(TR_STOP, 600);
 
 
    return CM_SUCCESS;
@@ -249,15 +268,15 @@ INT frontend_loop()
 INT begin_of_run(INT run_number, char *error)
 {
    HNDLE hVar;
-   int status = db_find_key(hDB, 0, "/Equipment/Links/Variables", &hVar);
+   int status = db_find_key(hDB, 0, "/Equipment/Links/Settings", &hVar);
    if (status != SUCCESS){
-      cm_msg(MERROR,"switch_fe","ODB Tree /Equipment/Links/Variables not found");
+      cm_msg(MERROR,"switch_fe","ODB Tree /Equipment/Links/Settings not found");
       return CM_TRANSITION_CANCELED;
    }
 
-   BOOL frontend_board_active_odb[192];
-   int size = sizeof(frontend_board_active_odb);
-   status = db_get_record(hDB, hVar, &frontend_board_active_odb, &size, 0);
+   INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
+   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
+   status = db_get_value(hDB, hVar, "FrontendBoardMask", frontend_board_active_odb, &size, TID_INT, false);
    if (status != SUCCESS){
       cm_msg(MERROR,"switch_fe","Error getting record for /Equipment/Links/Variables");
       return CM_TRANSITION_CANCELED;
@@ -273,31 +292,47 @@ INT begin_of_run(INT run_number, char *error)
       return CM_TRANSITION_CANCELED;
    }
 
-   /* send run prepare signal via CR system */
-   BOOL value = TRUE;
-   db_set_value(hDB,0,"Equipment/Clock Reset/RunTransitions/RequestRunPrepare[0]", &value, sizeof(value), 1, TID_BOOL);
-
-
    /* get link active from odb */
-   uint32_t link_active_from_odb;
+   uint64_t link_active_from_odb = 0;
+   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
+      int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
+      if(frontend_board_active_odb[offset + link] > 0)
+         link_active_from_odb += (1 << link);
+   }
 
-   mup->write_register(FEB_ENABLE_REGISTER_W, link_active_from_odb);
+   mup->write_register(FEB_ENABLE_REGISTER_LOW_W, link_active_from_odb & 0xFFFFFFFF);
+//   mup->write_register(FEB_ENABLE_REGISTER_HIGH_W, link_active_from_odb >> 32);
    mup->write_register(RUN_NR_REGISTER_W, run_number);
 
 
+   /* send run prepare signal via CR system */
+   INT value = 1;
+   char str[128];
+   sprintf(str,"Equipment/Clock Reset/RunTransitions/RequestRunPrepare[%d]", switch_id);
+   db_set_value(hDB,0,str, &value, sizeof(value), 1, TID_INT);
+
+
    uint16_t timeout_cnt=0;
-   uint32_t read_run_number = 0;
-   while(mup->read_register_ro(RUN_NR_ACK_REGISTER_R) != link_active_from_odb &&
+   uint32_t link_active_from_register_low = mup->read_register_ro(RUN_NR_ACK_REGISTER_LOW_R);
+//   uint32_t link_active_from_register_high = mup->read_register_ro(RUN_NR_ACK_REGISTER_HIGH_R);
+   uint32_t link_active_from_register_high = 0;
+   uint64_t link_active_from_register = link_active_from_register_low + (link_active_from_register_low >> 32);
+   while(link_active_from_register != link_active_from_odb &&
          timeout_cnt++ < 50) {
       timeout_cnt++;
       usleep(1000);
+      link_active_from_register_low = mup->read_register_ro(RUN_NR_ACK_REGISTER_LOW_R);
+//      link_active_from_register_high = mup->read_register_ro(RUN_NR_ACK_REGISTER_HIGH_R);
+      uint32_t link_active_from_register_high = 0;
+      link_active_from_register = link_active_from_register_low + (link_active_from_register_low >> 32);
    };
 
    if(timeout_cnt>=50) {
       cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
-      for(int i = 0; i < 48; i++) { // TODO: addresses, better output
-         mup->write_register_wait(RUN_NR_ADDR_REGISTER_W, i, 1000);
-         cm_msg(MINFO,"switch_fe","Frontend board %d: Run number %d", i, mup->read_register_ro(RUN_NR_REGISTER_R));
+      for(int i = 0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++) {
+         if ((link_active_from_register >> i) & 0x1)
+            mup->write_register_wait(RUN_NR_ADDR_REGISTER_W, i, 1000);
+            cm_msg(MINFO,"switch_fe","Switching board %d, Link %d: Run number %d", switch_id, i, mup->read_register_ro(RUN_NR_REGISTER_R));
       }
       return CM_TRANSITION_CANCELED;
    }
@@ -583,4 +618,18 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
           }
 	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
+}
+
+
+void switching_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
+   INT value[MAX_N_SWITCHINGBOARDS];
+   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
+   db_get_data(hDB, hKey, &value, &size, TID_INT);
+
+   if(value[switch_id] != equipment[0].info.enabled){
+      equipment[0].info.enabled = value[switch_id];
+      equipment[1].info.enabled = value[switch_id];
+      cm_msg(MINFO, "switching_board_mask_changed", "Set switching board %d enabled to %d", switch_id, value);
+   }
+
 }

@@ -2,7 +2,7 @@ var canvas = document.querySelector('canvas');
 
 var c = canvas.getContext('2d');
 
-function RXLink(xmin,y,xmax, name){
+function RXLink(xmin,y,xmax, index, name){
     this.status =0;
     this.selected = false;
     this.xmin = xmin;
@@ -17,7 +17,8 @@ function RXLink(xmin,y,xmax, name){
     this.lymax = y+50;
 
     this.col = "rgb(150,150,150)"
-
+    this.name = name;
+    this.index = index;
 
     this.draw = function(){
         if(this.status == 0)
@@ -39,6 +40,12 @@ function RXLink(xmin,y,xmax, name){
         } else {
             c.fillStyle = this.col;
             c.fillRect(this.lxmin, this.lymin,this.lxmax-this.lxmin, this.lymax-this.lymin);
+            c.fillStyle = "Black";
+            c.font = "12px Arial";
+            c.fillText(this.name, this.lxmin+10, this.lymin+10);
+
+            c.fillStyle = "rgb(100,100,100)";
+            c.fillRect(this.lxmin+10, this.lymin,this.lxmax-this.lxmin, this.lymax-this.lymin);
         }
 
     }
@@ -97,7 +104,7 @@ function RXPod(x,y,dx,dy, name, swboard){
 
 
     for(var i=0; i < 12; i ++){
-        rxlinks[swboard*48+name*12+i] = new RXLink(this.x-40, this.y+10+i*12, this.x+10, swboard*48+name*12+i);
+        rxlinks[swboard*48+name*12+i] = new RXLink(this.x-40, this.y+10+i*12, this.x+10, swboard*48+name*12+i,"FEB");
         this.links[i] = rxlinks[swboard*48+name*12+i];
     }
 
