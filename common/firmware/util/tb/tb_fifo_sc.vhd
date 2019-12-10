@@ -2,10 +2,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity tb_scfifo is
+entity tb_fifo_sc is
 end entity;
 
-architecture arch of tb_scfifo is
+architecture arch of tb_fifo_sc is
 
     signal clk, reset_n : std_logic := '0';
 
@@ -17,7 +17,7 @@ begin
     clk <= not clk after 5 ns;
     reset_n <= '0', '1' after 100 ns;
 
-    e_fifo : entity work.scfifo
+    e_fifo : entity work.fifo_sc
     generic map (
         DATA_WIDTH_g => wd'length,
         ADDR_WIDTH_g => 4--,

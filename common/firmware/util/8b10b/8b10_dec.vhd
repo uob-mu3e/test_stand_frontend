@@ -221,4 +221,3 @@ begin
 	end process DEC3B ;
 				
 end behavioral;
-

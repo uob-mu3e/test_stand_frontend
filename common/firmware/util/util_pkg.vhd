@@ -54,7 +54,7 @@ package util is
     ) return integer;
 
     function vector_width (
-        entries : natural--;
+        v : natural--;
     ) return positive;
 
     function bin2gray (
@@ -92,8 +92,12 @@ package util is
         v : std_logic_vector--;
     ) return std_logic;
 
+    function xor_reduce (
+        v : std_logic_vector--;
+    ) return std_logic;
+
     function to_std_logic (
-        constant b : in boolean--;
+        b : in boolean--;
     ) return std_logic;
 
     function reverse (
@@ -128,6 +132,16 @@ package util is
         data : std_logic_vector(31 downto 0)--;
     ) return std_logic_vector;
 
+    -- CRC-32C (Castagnoli) 0x1.1EDC6F41
+    -- src: http://www.easics.com/services/freesics/crctool.html
+    -- polynomial: x^32 + x^28 + x^27 + x^26 + x^25 + x^23 + x^22 + x^20 + x^19 + x^18 + x^14 + x^13 + x^11 + x^10 + x^9 + x^8 + x^6 + 1
+    -- data width: 32
+    -- convention: the first serial bit is D[31] -- TODO: D[0]
+    function crc32 (
+        data : std_logic_vector(31 downto 0);
+        crc  : std_logic_vector(31 downto 0)--;
+    ) return std_logic_vector;
+
 
 
     function count_bits_4 (
@@ -142,16 +156,11 @@ package util is
         data : std_logic_vector--;
     ) return natural;
 
-
-
-    -- CRC-32C (Castagnoli) 0x1.1EDC6F41
-    -- src: http://www.easics.com/services/freesics/crctool.html
-    -- polynomial: x^32 + x^28 + x^27 + x^26 + x^25 + x^23 + x^22 + x^20 + x^19 + x^18 + x^14 + x^13 + x^11 + x^10 + x^9 + x^8 + x^6 + 1
-    -- data width: 32
-    -- convention: the first serial bit is D[31] -- TODO: D[0]
-    function crc32 (
-        data : std_logic_vector(31 downto 0);
-        crc  : std_logic_vector(31 downto 0)--;
+    impure
+    function read_hex (
+        fname : in string;
+        N : in positive;
+        W : in positive--;
     ) return std_logic_vector;
 
     function to_string (
@@ -164,6 +173,14 @@ package util is
 
     function to_string (
         v : in unsigned--;
+    ) return string;
+
+    function to_hstring (
+        v : std_logic_vector--;
+    ) return string;
+
+    function to_hstring (
+        v : unsigned--;
     ) return string;
 
 end package;
@@ -198,13 +215,13 @@ package body util is
     end function;
 
     function vector_width (
-        entries : natural--;
+        v : natural--;
     ) return positive is
     begin
-        if ( entries = 0 or entries = 1 ) then
+        if ( v = 0 or v = 1 ) then
             return 1;
         end if;
-        return positive(ceil(log2(real(entries))));
+        return positive(ceil(log2(real(v))));
     end function;
 
     function bin2gray (
@@ -272,8 +289,23 @@ package body util is
         return to_std_logic(v /= (v'range => '0'));
     end function;
 
+    function xor_reduce (
+        v : std_logic_vector--;
+    ) return std_logic is
+        alias a : std_logic_vector(v'length-1 downto 0) is v;
+    begin
+        if ( v'length = 0 ) then
+            report "(xor_reduce) v'length = 0" severity failure;
+            return 'X';
+        end if;
+        if ( a'length = 1 ) then
+            return a(0);
+        end if;
+        return xor_reduce(a(a'length-1 downto a'length/2)) xor xor_reduce(a(a'length/2-1 downto 0));
+    end function;
+
     function to_std_logic (
-        constant b : in boolean--;
+        b : in boolean--;
     ) return std_logic is
     begin
         if b then
@@ -322,8 +354,9 @@ package body util is
         when 'f' | 'F' => v := X"F";
 
         when others =>
-           assert false report "ERROR char_to_hex: invalid hex character '" & c & "'";
+           report "(char_to_hex) invalid hex character '" & c & "'" severity failure;
            good := false;
+           v := "XXXX";
         end case;
     end procedure;
 
@@ -333,15 +366,14 @@ package body util is
         good : out boolean--;
     ) is
         variable ok : boolean;
+        variable good_i : boolean;
     begin
-        good := false;
+        good_i := true;
         for i in 0 to s'length-1 loop
-            char_to_hex(s(s'length-i), v(4*i+3 downto 4*i), ok);
-            if not ok then
-                return;
-            end if;
+            char_to_hex(s(s'right-i), v(3+4*i+v'right downto 4*i+v'right), ok);
+            good_i := good_i and ok;
         end loop;
-        good := true;
+        good := good_i;
     end procedure;
 
     procedure read_hex (
@@ -357,6 +389,7 @@ package body util is
         good := false;
 
         if value'length mod 4 /= 0 then
+            report "(read_hex) value'length mod 4 /= 0" severity failure;
             return;
         end if;
 
@@ -386,6 +419,46 @@ package body util is
         good := true;
     end procedure;
 
+    impure
+    function read_hex (
+        fname : in string;
+        N : in positive;
+        W : in positive--;
+    ) return std_logic_vector is
+        variable data : std_logic_vector(N*W-1 downto 0);
+        variable data_i : std_logic_vector(W-1 downto 0);
+        variable i : integer := 0;
+        file f : text;
+        variable fs : file_open_status;
+        variable l : line;
+        variable c : character;
+        variable s : string(1 to W/4);
+        variable ok : boolean;
+    begin
+        if fname = "" then
+            return data;
+        end if;
+
+        file_open(fs, f, fname, READ_MODE);
+        assert ( fs = open_ok ) report "(read_hex) file_open_status = '" & FILE_OPEN_STATUS'image(fs) & "'" severity failure;
+
+        while ( not endfile(f) ) loop
+            readline(f, l);
+            read(l, c, ok);
+            next when ( not ok or c = '#' );
+            s(1) := c;
+            read(l, s(2 to s'right), ok);
+            next when ( not ok );
+            work.util.string_to_hex(s, data_i, ok);
+            next when ( not ok );
+            data(W-1+i*W downto i*W) := data_i;
+            i := i + 1;
+        end loop;
+
+        file_close(f);
+        return data;
+    end function;
+
 
 
     function lfsr_32(
@@ -394,6 +467,53 @@ package body util is
     begin
         return data(30 downto 0) &
               (data(31) xor data(21) xor data(1) xor data(0));
+    end function;
+
+    function crc32 (
+        data : std_logic_vector(31 downto 0);
+        crc  : std_logic_vector(31 downto 0)--;
+    ) return std_logic_vector is
+        variable d      : std_logic_vector(31 downto 0);
+        variable c      : std_logic_vector(31 downto 0);
+        variable newcrc : std_logic_vector(31 downto 0);
+    begin
+        d := data;
+        c := crc;
+
+        newcrc(0) := d(31) xor d(30) xor d(28) xor d(27) xor d(26) xor d(25) xor d(23) xor d(21) xor d(18) xor d(17) xor d(16) xor d(12) xor d(9) xor d(8) xor d(7) xor d(6) xor d(5) xor d(4) xor d(0) xor c(0) xor c(4) xor c(5) xor c(6) xor c(7) xor c(8) xor c(9) xor c(12) xor c(16) xor c(17) xor c(18) xor c(21) xor c(23) xor c(25) xor c(26) xor c(27) xor c(28) xor c(30) xor c(31);
+        newcrc(1) := d(31) xor d(29) xor d(28) xor d(27) xor d(26) xor d(24) xor d(22) xor d(19) xor d(18) xor d(17) xor d(13) xor d(10) xor d(9) xor d(8) xor d(7) xor d(6) xor d(5) xor d(1) xor c(1) xor c(5) xor c(6) xor c(7) xor c(8) xor c(9) xor c(10) xor c(13) xor c(17) xor c(18) xor c(19) xor c(22) xor c(24) xor c(26) xor c(27) xor c(28) xor c(29) xor c(31);
+        newcrc(2) := d(30) xor d(29) xor d(28) xor d(27) xor d(25) xor d(23) xor d(20) xor d(19) xor d(18) xor d(14) xor d(11) xor d(10) xor d(9) xor d(8) xor d(7) xor d(6) xor d(2) xor c(2) xor c(6) xor c(7) xor c(8) xor c(9) xor c(10) xor c(11) xor c(14) xor c(18) xor c(19) xor c(20) xor c(23) xor c(25) xor c(27) xor c(28) xor c(29) xor c(30);
+        newcrc(3) := d(31) xor d(30) xor d(29) xor d(28) xor d(26) xor d(24) xor d(21) xor d(20) xor d(19) xor d(15) xor d(12) xor d(11) xor d(10) xor d(9) xor d(8) xor d(7) xor d(3) xor c(3) xor c(7) xor c(8) xor c(9) xor c(10) xor c(11) xor c(12) xor c(15) xor c(19) xor c(20) xor c(21) xor c(24) xor c(26) xor c(28) xor c(29) xor c(30) xor c(31);
+        newcrc(4) := d(31) xor d(30) xor d(29) xor d(27) xor d(25) xor d(22) xor d(21) xor d(20) xor d(16) xor d(13) xor d(12) xor d(11) xor d(10) xor d(9) xor d(8) xor d(4) xor c(4) xor c(8) xor c(9) xor c(10) xor c(11) xor c(12) xor c(13) xor c(16) xor c(20) xor c(21) xor c(22) xor c(25) xor c(27) xor c(29) xor c(30) xor c(31);
+        newcrc(5) := d(31) xor d(30) xor d(28) xor d(26) xor d(23) xor d(22) xor d(21) xor d(17) xor d(14) xor d(13) xor d(12) xor d(11) xor d(10) xor d(9) xor d(5) xor c(5) xor c(9) xor c(10) xor c(11) xor c(12) xor c(13) xor c(14) xor c(17) xor c(21) xor c(22) xor c(23) xor c(26) xor c(28) xor c(30) xor c(31);
+        newcrc(6) := d(30) xor d(29) xor d(28) xor d(26) xor d(25) xor d(24) xor d(22) xor d(21) xor d(17) xor d(16) xor d(15) xor d(14) xor d(13) xor d(11) xor d(10) xor d(9) xor d(8) xor d(7) xor d(5) xor d(4) xor d(0) xor c(0) xor c(4) xor c(5) xor c(7) xor c(8) xor c(9) xor c(10) xor c(11) xor c(13) xor c(14) xor c(15) xor c(16) xor c(17) xor c(21) xor c(22) xor c(24) xor c(25) xor c(26) xor c(28) xor c(29) xor c(30);
+        newcrc(7) := d(31) xor d(30) xor d(29) xor d(27) xor d(26) xor d(25) xor d(23) xor d(22) xor d(18) xor d(17) xor d(16) xor d(15) xor d(14) xor d(12) xor d(11) xor d(10) xor d(9) xor d(8) xor d(6) xor d(5) xor d(1) xor c(1) xor c(5) xor c(6) xor c(8) xor c(9) xor c(10) xor c(11) xor c(12) xor c(14) xor c(15) xor c(16) xor c(17) xor c(18) xor c(22) xor c(23) xor c(25) xor c(26) xor c(27) xor c(29) xor c(30) xor c(31);
+        newcrc(8) := d(25) xor d(24) xor d(21) xor d(19) xor d(15) xor d(13) xor d(11) xor d(10) xor d(8) xor d(5) xor d(4) xor d(2) xor d(0) xor c(0) xor c(2) xor c(4) xor c(5) xor c(8) xor c(10) xor c(11) xor c(13) xor c(15) xor c(19) xor c(21) xor c(24) xor c(25);
+        newcrc(9) := d(31) xor d(30) xor d(28) xor d(27) xor d(23) xor d(22) xor d(21) xor d(20) xor d(18) xor d(17) xor d(14) xor d(11) xor d(8) xor d(7) xor d(4) xor d(3) xor d(1) xor d(0) xor c(0) xor c(1) xor c(3) xor c(4) xor c(7) xor c(8) xor c(11) xor c(14) xor c(17) xor c(18) xor c(20) xor c(21) xor c(22) xor c(23) xor c(27) xor c(28) xor c(30) xor c(31);
+        newcrc(10) := d(30) xor d(29) xor d(27) xor d(26) xor d(25) xor d(24) xor d(22) xor d(19) xor d(17) xor d(16) xor d(15) xor d(7) xor d(6) xor d(2) xor d(1) xor d(0) xor c(0) xor c(1) xor c(2) xor c(6) xor c(7) xor c(15) xor c(16) xor c(17) xor c(19) xor c(22) xor c(24) xor c(25) xor c(26) xor c(27) xor c(29) xor c(30);
+        newcrc(11) := d(21) xor d(20) xor d(12) xor d(9) xor d(6) xor d(5) xor d(4) xor d(3) xor d(2) xor d(1) xor d(0) xor c(0) xor c(1) xor c(2) xor c(3) xor c(4) xor c(5) xor c(6) xor c(9) xor c(12) xor c(20) xor c(21);
+        newcrc(12) := d(22) xor d(21) xor d(13) xor d(10) xor d(7) xor d(6) xor d(5) xor d(4) xor d(3) xor d(2) xor d(1) xor c(1) xor c(2) xor c(3) xor c(4) xor c(5) xor c(6) xor c(7) xor c(10) xor c(13) xor c(21) xor c(22);
+        newcrc(13) := d(31) xor d(30) xor d(28) xor d(27) xor d(26) xor d(25) xor d(22) xor d(21) xor d(18) xor d(17) xor d(16) xor d(14) xor d(12) xor d(11) xor d(9) xor d(3) xor d(2) xor d(0) xor c(0) xor c(2) xor c(3) xor c(9) xor c(11) xor c(12) xor c(14) xor c(16) xor c(17) xor c(18) xor c(21) xor c(22) xor c(25) xor c(26) xor c(27) xor c(28) xor c(30) xor c(31);
+        newcrc(14) := d(30) xor d(29) xor d(25) xor d(22) xor d(21) xor d(19) xor d(16) xor d(15) xor d(13) xor d(10) xor d(9) xor d(8) xor d(7) xor d(6) xor d(5) xor d(3) xor d(1) xor d(0) xor c(0) xor c(1) xor c(3) xor c(5) xor c(6) xor c(7) xor c(8) xor c(9) xor c(10) xor c(13) xor c(15) xor c(16) xor c(19) xor c(21) xor c(22) xor c(25) xor c(29) xor c(30);
+        newcrc(15) := d(31) xor d(30) xor d(26) xor d(23) xor d(22) xor d(20) xor d(17) xor d(16) xor d(14) xor d(11) xor d(10) xor d(9) xor d(8) xor d(7) xor d(6) xor d(4) xor d(2) xor d(1) xor c(1) xor c(2) xor c(4) xor c(6) xor c(7) xor c(8) xor c(9) xor c(10) xor c(11) xor c(14) xor c(16) xor c(17) xor c(20) xor c(22) xor c(23) xor c(26) xor c(30) xor c(31);
+        newcrc(16) := d(31) xor d(27) xor d(24) xor d(23) xor d(21) xor d(18) xor d(17) xor d(15) xor d(12) xor d(11) xor d(10) xor d(9) xor d(8) xor d(7) xor d(5) xor d(3) xor d(2) xor c(2) xor c(3) xor c(5) xor c(7) xor c(8) xor c(9) xor c(10) xor c(11) xor c(12) xor c(15) xor c(17) xor c(18) xor c(21) xor c(23) xor c(24) xor c(27) xor c(31);
+        newcrc(17) := d(28) xor d(25) xor d(24) xor d(22) xor d(19) xor d(18) xor d(16) xor d(13) xor d(12) xor d(11) xor d(10) xor d(9) xor d(8) xor d(6) xor d(4) xor d(3) xor c(3) xor c(4) xor c(6) xor c(8) xor c(9) xor c(10) xor c(11) xor c(12) xor c(13) xor c(16) xor c(18) xor c(19) xor c(22) xor c(24) xor c(25) xor c(28);
+        newcrc(18) := d(31) xor d(30) xor d(29) xor d(28) xor d(27) xor d(21) xor d(20) xor d(19) xor d(18) xor d(16) xor d(14) xor d(13) xor d(11) xor d(10) xor d(8) xor d(6) xor d(0) xor c(0) xor c(6) xor c(8) xor c(10) xor c(11) xor c(13) xor c(14) xor c(16) xor c(18) xor c(19) xor c(20) xor c(21) xor c(27) xor c(28) xor c(29) xor c(30) xor c(31);
+        newcrc(19) := d(29) xor d(27) xor d(26) xor d(25) xor d(23) xor d(22) xor d(20) xor d(19) xor d(18) xor d(16) xor d(15) xor d(14) xor d(11) xor d(8) xor d(6) xor d(5) xor d(4) xor d(1) xor d(0) xor c(0) xor c(1) xor c(4) xor c(5) xor c(6) xor c(8) xor c(11) xor c(14) xor c(15) xor c(16) xor c(18) xor c(19) xor c(20) xor c(22) xor c(23) xor c(25) xor c(26) xor c(27) xor c(29);
+        newcrc(20) := d(31) xor d(25) xor d(24) xor d(20) xor d(19) xor d(18) xor d(15) xor d(8) xor d(4) xor d(2) xor d(1) xor d(0) xor c(0) xor c(1) xor c(2) xor c(4) xor c(8) xor c(15) xor c(18) xor c(19) xor c(20) xor c(24) xor c(25) xor c(31);
+        newcrc(21) := d(26) xor d(25) xor d(21) xor d(20) xor d(19) xor d(16) xor d(9) xor d(5) xor d(3) xor d(2) xor d(1) xor c(1) xor c(2) xor c(3) xor c(5) xor c(9) xor c(16) xor c(19) xor c(20) xor c(21) xor c(25) xor c(26);
+        newcrc(22) := d(31) xor d(30) xor d(28) xor d(25) xor d(23) xor d(22) xor d(20) xor d(18) xor d(16) xor d(12) xor d(10) xor d(9) xor d(8) xor d(7) xor d(5) xor d(3) xor d(2) xor d(0) xor c(0) xor c(2) xor c(3) xor c(5) xor c(7) xor c(8) xor c(9) xor c(10) xor c(12) xor c(16) xor c(18) xor c(20) xor c(22) xor c(23) xor c(25) xor c(28) xor c(30) xor c(31);
+        newcrc(23) := d(30) xor d(29) xor d(28) xor d(27) xor d(25) xor d(24) xor d(19) xor d(18) xor d(16) xor d(13) xor d(12) xor d(11) xor d(10) xor d(7) xor d(5) xor d(3) xor d(1) xor d(0) xor c(0) xor c(1) xor c(3) xor c(5) xor c(7) xor c(10) xor c(11) xor c(12) xor c(13) xor c(16) xor c(18) xor c(19) xor c(24) xor c(25) xor c(27) xor c(28) xor c(29) xor c(30);
+        newcrc(24) := d(31) xor d(30) xor d(29) xor d(28) xor d(26) xor d(25) xor d(20) xor d(19) xor d(17) xor d(14) xor d(13) xor d(12) xor d(11) xor d(8) xor d(6) xor d(4) xor d(2) xor d(1) xor c(1) xor c(2) xor c(4) xor c(6) xor c(8) xor c(11) xor c(12) xor c(13) xor c(14) xor c(17) xor c(19) xor c(20) xor c(25) xor c(26) xor c(28) xor c(29) xor c(30) xor c(31);
+        newcrc(25) := d(29) xor d(28) xor d(25) xor d(23) xor d(20) xor d(17) xor d(16) xor d(15) xor d(14) xor d(13) xor d(8) xor d(6) xor d(4) xor d(3) xor d(2) xor d(0) xor c(0) xor c(2) xor c(3) xor c(4) xor c(6) xor c(8) xor c(13) xor c(14) xor c(15) xor c(16) xor c(17) xor c(20) xor c(23) xor c(25) xor c(28) xor c(29);
+        newcrc(26) := d(31) xor d(29) xor d(28) xor d(27) xor d(25) xor d(24) xor d(23) xor d(15) xor d(14) xor d(12) xor d(8) xor d(6) xor d(3) xor d(1) xor d(0) xor c(0) xor c(1) xor c(3) xor c(6) xor c(8) xor c(12) xor c(14) xor c(15) xor c(23) xor c(24) xor c(25) xor c(27) xor c(28) xor c(29) xor c(31);
+        newcrc(27) := d(31) xor d(29) xor d(27) xor d(24) xor d(23) xor d(21) xor d(18) xor d(17) xor d(15) xor d(13) xor d(12) xor d(8) xor d(6) xor d(5) xor d(2) xor d(1) xor d(0) xor c(0) xor c(1) xor c(2) xor c(5) xor c(6) xor c(8) xor c(12) xor c(13) xor c(15) xor c(17) xor c(18) xor c(21) xor c(23) xor c(24) xor c(27) xor c(29) xor c(31);
+        newcrc(28) := d(31) xor d(27) xor d(26) xor d(24) xor d(23) xor d(22) xor d(21) xor d(19) xor d(17) xor d(14) xor d(13) xor d(12) xor d(8) xor d(5) xor d(4) xor d(3) xor d(2) xor d(1) xor d(0) xor c(0) xor c(1) xor c(2) xor c(3) xor c(4) xor c(5) xor c(8) xor c(12) xor c(13) xor c(14) xor c(17) xor c(19) xor c(21) xor c(22) xor c(23) xor c(24) xor c(26) xor c(27) xor c(31);
+        newcrc(29) := d(28) xor d(27) xor d(25) xor d(24) xor d(23) xor d(22) xor d(20) xor d(18) xor d(15) xor d(14) xor d(13) xor d(9) xor d(6) xor d(5) xor d(4) xor d(3) xor d(2) xor d(1) xor c(1) xor c(2) xor c(3) xor c(4) xor c(5) xor c(6) xor c(9) xor c(13) xor c(14) xor c(15) xor c(18) xor c(20) xor c(22) xor c(23) xor c(24) xor c(25) xor c(27) xor c(28);
+        newcrc(30) := d(29) xor d(28) xor d(26) xor d(25) xor d(24) xor d(23) xor d(21) xor d(19) xor d(16) xor d(15) xor d(14) xor d(10) xor d(7) xor d(6) xor d(5) xor d(4) xor d(3) xor d(2) xor c(2) xor c(3) xor c(4) xor c(5) xor c(6) xor c(7) xor c(10) xor c(14) xor c(15) xor c(16) xor c(19) xor c(21) xor c(23) xor c(24) xor c(25) xor c(26) xor c(28) xor c(29);
+        newcrc(31) := d(30) xor d(29) xor d(27) xor d(26) xor d(25) xor d(24) xor d(22) xor d(20) xor d(17) xor d(16) xor d(15) xor d(11) xor d(8) xor d(7) xor d(6) xor d(5) xor d(4) xor d(3) xor c(3) xor c(4) xor c(5) xor c(6) xor c(7) xor c(8) xor c(11) xor c(15) xor c(16) xor c(17) xor c(20) xor c(22) xor c(24) xor c(25) xor c(26) xor c(27) xor c(29) xor c(30);
+
+        return newcrc;
     end function;
 
 
@@ -447,55 +567,6 @@ package body util is
         end if;
     end function;
 
-
-
-    function crc32 (
-        data : std_logic_vector(31 downto 0);
-        crc  : std_logic_vector(31 downto 0)--;
-    ) return std_logic_vector is
-        variable d      : std_logic_vector(31 downto 0);
-        variable c      : std_logic_vector(31 downto 0);
-        variable newcrc : std_logic_vector(31 downto 0);
-    begin
-        d := data;
-        c := crc;
-
-        newcrc(0) := d(31) xor d(30) xor d(28) xor d(27) xor d(26) xor d(25) xor d(23) xor d(21) xor d(18) xor d(17) xor d(16) xor d(12) xor d(9) xor d(8) xor d(7) xor d(6) xor d(5) xor d(4) xor d(0) xor c(0) xor c(4) xor c(5) xor c(6) xor c(7) xor c(8) xor c(9) xor c(12) xor c(16) xor c(17) xor c(18) xor c(21) xor c(23) xor c(25) xor c(26) xor c(27) xor c(28) xor c(30) xor c(31);
-        newcrc(1) := d(31) xor d(29) xor d(28) xor d(27) xor d(26) xor d(24) xor d(22) xor d(19) xor d(18) xor d(17) xor d(13) xor d(10) xor d(9) xor d(8) xor d(7) xor d(6) xor d(5) xor d(1) xor c(1) xor c(5) xor c(6) xor c(7) xor c(8) xor c(9) xor c(10) xor c(13) xor c(17) xor c(18) xor c(19) xor c(22) xor c(24) xor c(26) xor c(27) xor c(28) xor c(29) xor c(31);
-        newcrc(2) := d(30) xor d(29) xor d(28) xor d(27) xor d(25) xor d(23) xor d(20) xor d(19) xor d(18) xor d(14) xor d(11) xor d(10) xor d(9) xor d(8) xor d(7) xor d(6) xor d(2) xor c(2) xor c(6) xor c(7) xor c(8) xor c(9) xor c(10) xor c(11) xor c(14) xor c(18) xor c(19) xor c(20) xor c(23) xor c(25) xor c(27) xor c(28) xor c(29) xor c(30);
-        newcrc(3) := d(31) xor d(30) xor d(29) xor d(28) xor d(26) xor d(24) xor d(21) xor d(20) xor d(19) xor d(15) xor d(12) xor d(11) xor d(10) xor d(9) xor d(8) xor d(7) xor d(3) xor c(3) xor c(7) xor c(8) xor c(9) xor c(10) xor c(11) xor c(12) xor c(15) xor c(19) xor c(20) xor c(21) xor c(24) xor c(26) xor c(28) xor c(29) xor c(30) xor c(31);
-        newcrc(4) := d(31) xor d(30) xor d(29) xor d(27) xor d(25) xor d(22) xor d(21) xor d(20) xor d(16) xor d(13) xor d(12) xor d(11) xor d(10) xor d(9) xor d(8) xor d(4) xor c(4) xor c(8) xor c(9) xor c(10) xor c(11) xor c(12) xor c(13) xor c(16) xor c(20) xor c(21) xor c(22) xor c(25) xor c(27) xor c(29) xor c(30) xor c(31);
-        newcrc(5) := d(31) xor d(30) xor d(28) xor d(26) xor d(23) xor d(22) xor d(21) xor d(17) xor d(14) xor d(13) xor d(12) xor d(11) xor d(10) xor d(9) xor d(5) xor c(5) xor c(9) xor c(10) xor c(11) xor c(12) xor c(13) xor c(14) xor c(17) xor c(21) xor c(22) xor c(23) xor c(26) xor c(28) xor c(30) xor c(31);
-        newcrc(6) := d(30) xor d(29) xor d(28) xor d(26) xor d(25) xor d(24) xor d(22) xor d(21) xor d(17) xor d(16) xor d(15) xor d(14) xor d(13) xor d(11) xor d(10) xor d(9) xor d(8) xor d(7) xor d(5) xor d(4) xor d(0) xor c(0) xor c(4) xor c(5) xor c(7) xor c(8) xor c(9) xor c(10) xor c(11) xor c(13) xor c(14) xor c(15) xor c(16) xor c(17) xor c(21) xor c(22) xor c(24) xor c(25) xor c(26) xor c(28) xor c(29) xor c(30);
-        newcrc(7) := d(31) xor d(30) xor d(29) xor d(27) xor d(26) xor d(25) xor d(23) xor d(22) xor d(18) xor d(17) xor d(16) xor d(15) xor d(14) xor d(12) xor d(11) xor d(10) xor d(9) xor d(8) xor d(6) xor d(5) xor d(1) xor c(1) xor c(5) xor c(6) xor c(8) xor c(9) xor c(10) xor c(11) xor c(12) xor c(14) xor c(15) xor c(16) xor c(17) xor c(18) xor c(22) xor c(23) xor c(25) xor c(26) xor c(27) xor c(29) xor c(30) xor c(31);
-        newcrc(8) := d(25) xor d(24) xor d(21) xor d(19) xor d(15) xor d(13) xor d(11) xor d(10) xor d(8) xor d(5) xor d(4) xor d(2) xor d(0) xor c(0) xor c(2) xor c(4) xor c(5) xor c(8) xor c(10) xor c(11) xor c(13) xor c(15) xor c(19) xor c(21) xor c(24) xor c(25);
-        newcrc(9) := d(31) xor d(30) xor d(28) xor d(27) xor d(23) xor d(22) xor d(21) xor d(20) xor d(18) xor d(17) xor d(14) xor d(11) xor d(8) xor d(7) xor d(4) xor d(3) xor d(1) xor d(0) xor c(0) xor c(1) xor c(3) xor c(4) xor c(7) xor c(8) xor c(11) xor c(14) xor c(17) xor c(18) xor c(20) xor c(21) xor c(22) xor c(23) xor c(27) xor c(28) xor c(30) xor c(31);
-        newcrc(10) := d(30) xor d(29) xor d(27) xor d(26) xor d(25) xor d(24) xor d(22) xor d(19) xor d(17) xor d(16) xor d(15) xor d(7) xor d(6) xor d(2) xor d(1) xor d(0) xor c(0) xor c(1) xor c(2) xor c(6) xor c(7) xor c(15) xor c(16) xor c(17) xor c(19) xor c(22) xor c(24) xor c(25) xor c(26) xor c(27) xor c(29) xor c(30);
-        newcrc(11) := d(21) xor d(20) xor d(12) xor d(9) xor d(6) xor d(5) xor d(4) xor d(3) xor d(2) xor d(1) xor d(0) xor c(0) xor c(1) xor c(2) xor c(3) xor c(4) xor c(5) xor c(6) xor c(9) xor c(12) xor c(20) xor c(21);
-        newcrc(12) := d(22) xor d(21) xor d(13) xor d(10) xor d(7) xor d(6) xor d(5) xor d(4) xor d(3) xor d(2) xor d(1) xor c(1) xor c(2) xor c(3) xor c(4) xor c(5) xor c(6) xor c(7) xor c(10) xor c(13) xor c(21) xor c(22);
-        newcrc(13) := d(31) xor d(30) xor d(28) xor d(27) xor d(26) xor d(25) xor d(22) xor d(21) xor d(18) xor d(17) xor d(16) xor d(14) xor d(12) xor d(11) xor d(9) xor d(3) xor d(2) xor d(0) xor c(0) xor c(2) xor c(3) xor c(9) xor c(11) xor c(12) xor c(14) xor c(16) xor c(17) xor c(18) xor c(21) xor c(22) xor c(25) xor c(26) xor c(27) xor c(28) xor c(30) xor c(31);
-        newcrc(14) := d(30) xor d(29) xor d(25) xor d(22) xor d(21) xor d(19) xor d(16) xor d(15) xor d(13) xor d(10) xor d(9) xor d(8) xor d(7) xor d(6) xor d(5) xor d(3) xor d(1) xor d(0) xor c(0) xor c(1) xor c(3) xor c(5) xor c(6) xor c(7) xor c(8) xor c(9) xor c(10) xor c(13) xor c(15) xor c(16) xor c(19) xor c(21) xor c(22) xor c(25) xor c(29) xor c(30);
-        newcrc(15) := d(31) xor d(30) xor d(26) xor d(23) xor d(22) xor d(20) xor d(17) xor d(16) xor d(14) xor d(11) xor d(10) xor d(9) xor d(8) xor d(7) xor d(6) xor d(4) xor d(2) xor d(1) xor c(1) xor c(2) xor c(4) xor c(6) xor c(7) xor c(8) xor c(9) xor c(10) xor c(11) xor c(14) xor c(16) xor c(17) xor c(20) xor c(22) xor c(23) xor c(26) xor c(30) xor c(31);
-        newcrc(16) := d(31) xor d(27) xor d(24) xor d(23) xor d(21) xor d(18) xor d(17) xor d(15) xor d(12) xor d(11) xor d(10) xor d(9) xor d(8) xor d(7) xor d(5) xor d(3) xor d(2) xor c(2) xor c(3) xor c(5) xor c(7) xor c(8) xor c(9) xor c(10) xor c(11) xor c(12) xor c(15) xor c(17) xor c(18) xor c(21) xor c(23) xor c(24) xor c(27) xor c(31);
-        newcrc(17) := d(28) xor d(25) xor d(24) xor d(22) xor d(19) xor d(18) xor d(16) xor d(13) xor d(12) xor d(11) xor d(10) xor d(9) xor d(8) xor d(6) xor d(4) xor d(3) xor c(3) xor c(4) xor c(6) xor c(8) xor c(9) xor c(10) xor c(11) xor c(12) xor c(13) xor c(16) xor c(18) xor c(19) xor c(22) xor c(24) xor c(25) xor c(28);
-        newcrc(18) := d(31) xor d(30) xor d(29) xor d(28) xor d(27) xor d(21) xor d(20) xor d(19) xor d(18) xor d(16) xor d(14) xor d(13) xor d(11) xor d(10) xor d(8) xor d(6) xor d(0) xor c(0) xor c(6) xor c(8) xor c(10) xor c(11) xor c(13) xor c(14) xor c(16) xor c(18) xor c(19) xor c(20) xor c(21) xor c(27) xor c(28) xor c(29) xor c(30) xor c(31);
-        newcrc(19) := d(29) xor d(27) xor d(26) xor d(25) xor d(23) xor d(22) xor d(20) xor d(19) xor d(18) xor d(16) xor d(15) xor d(14) xor d(11) xor d(8) xor d(6) xor d(5) xor d(4) xor d(1) xor d(0) xor c(0) xor c(1) xor c(4) xor c(5) xor c(6) xor c(8) xor c(11) xor c(14) xor c(15) xor c(16) xor c(18) xor c(19) xor c(20) xor c(22) xor c(23) xor c(25) xor c(26) xor c(27) xor c(29);
-        newcrc(20) := d(31) xor d(25) xor d(24) xor d(20) xor d(19) xor d(18) xor d(15) xor d(8) xor d(4) xor d(2) xor d(1) xor d(0) xor c(0) xor c(1) xor c(2) xor c(4) xor c(8) xor c(15) xor c(18) xor c(19) xor c(20) xor c(24) xor c(25) xor c(31);
-        newcrc(21) := d(26) xor d(25) xor d(21) xor d(20) xor d(19) xor d(16) xor d(9) xor d(5) xor d(3) xor d(2) xor d(1) xor c(1) xor c(2) xor c(3) xor c(5) xor c(9) xor c(16) xor c(19) xor c(20) xor c(21) xor c(25) xor c(26);
-        newcrc(22) := d(31) xor d(30) xor d(28) xor d(25) xor d(23) xor d(22) xor d(20) xor d(18) xor d(16) xor d(12) xor d(10) xor d(9) xor d(8) xor d(7) xor d(5) xor d(3) xor d(2) xor d(0) xor c(0) xor c(2) xor c(3) xor c(5) xor c(7) xor c(8) xor c(9) xor c(10) xor c(12) xor c(16) xor c(18) xor c(20) xor c(22) xor c(23) xor c(25) xor c(28) xor c(30) xor c(31);
-        newcrc(23) := d(30) xor d(29) xor d(28) xor d(27) xor d(25) xor d(24) xor d(19) xor d(18) xor d(16) xor d(13) xor d(12) xor d(11) xor d(10) xor d(7) xor d(5) xor d(3) xor d(1) xor d(0) xor c(0) xor c(1) xor c(3) xor c(5) xor c(7) xor c(10) xor c(11) xor c(12) xor c(13) xor c(16) xor c(18) xor c(19) xor c(24) xor c(25) xor c(27) xor c(28) xor c(29) xor c(30);
-        newcrc(24) := d(31) xor d(30) xor d(29) xor d(28) xor d(26) xor d(25) xor d(20) xor d(19) xor d(17) xor d(14) xor d(13) xor d(12) xor d(11) xor d(8) xor d(6) xor d(4) xor d(2) xor d(1) xor c(1) xor c(2) xor c(4) xor c(6) xor c(8) xor c(11) xor c(12) xor c(13) xor c(14) xor c(17) xor c(19) xor c(20) xor c(25) xor c(26) xor c(28) xor c(29) xor c(30) xor c(31);
-        newcrc(25) := d(29) xor d(28) xor d(25) xor d(23) xor d(20) xor d(17) xor d(16) xor d(15) xor d(14) xor d(13) xor d(8) xor d(6) xor d(4) xor d(3) xor d(2) xor d(0) xor c(0) xor c(2) xor c(3) xor c(4) xor c(6) xor c(8) xor c(13) xor c(14) xor c(15) xor c(16) xor c(17) xor c(20) xor c(23) xor c(25) xor c(28) xor c(29);
-        newcrc(26) := d(31) xor d(29) xor d(28) xor d(27) xor d(25) xor d(24) xor d(23) xor d(15) xor d(14) xor d(12) xor d(8) xor d(6) xor d(3) xor d(1) xor d(0) xor c(0) xor c(1) xor c(3) xor c(6) xor c(8) xor c(12) xor c(14) xor c(15) xor c(23) xor c(24) xor c(25) xor c(27) xor c(28) xor c(29) xor c(31);
-        newcrc(27) := d(31) xor d(29) xor d(27) xor d(24) xor d(23) xor d(21) xor d(18) xor d(17) xor d(15) xor d(13) xor d(12) xor d(8) xor d(6) xor d(5) xor d(2) xor d(1) xor d(0) xor c(0) xor c(1) xor c(2) xor c(5) xor c(6) xor c(8) xor c(12) xor c(13) xor c(15) xor c(17) xor c(18) xor c(21) xor c(23) xor c(24) xor c(27) xor c(29) xor c(31);
-        newcrc(28) := d(31) xor d(27) xor d(26) xor d(24) xor d(23) xor d(22) xor d(21) xor d(19) xor d(17) xor d(14) xor d(13) xor d(12) xor d(8) xor d(5) xor d(4) xor d(3) xor d(2) xor d(1) xor d(0) xor c(0) xor c(1) xor c(2) xor c(3) xor c(4) xor c(5) xor c(8) xor c(12) xor c(13) xor c(14) xor c(17) xor c(19) xor c(21) xor c(22) xor c(23) xor c(24) xor c(26) xor c(27) xor c(31);
-        newcrc(29) := d(28) xor d(27) xor d(25) xor d(24) xor d(23) xor d(22) xor d(20) xor d(18) xor d(15) xor d(14) xor d(13) xor d(9) xor d(6) xor d(5) xor d(4) xor d(3) xor d(2) xor d(1) xor c(1) xor c(2) xor c(3) xor c(4) xor c(5) xor c(6) xor c(9) xor c(13) xor c(14) xor c(15) xor c(18) xor c(20) xor c(22) xor c(23) xor c(24) xor c(25) xor c(27) xor c(28);
-        newcrc(30) := d(29) xor d(28) xor d(26) xor d(25) xor d(24) xor d(23) xor d(21) xor d(19) xor d(16) xor d(15) xor d(14) xor d(10) xor d(7) xor d(6) xor d(5) xor d(4) xor d(3) xor d(2) xor c(2) xor c(3) xor c(4) xor c(5) xor c(6) xor c(7) xor c(10) xor c(14) xor c(15) xor c(16) xor c(19) xor c(21) xor c(23) xor c(24) xor c(25) xor c(26) xor c(28) xor c(29);
-        newcrc(31) := d(30) xor d(29) xor d(27) xor d(26) xor d(25) xor d(24) xor d(22) xor d(20) xor d(17) xor d(16) xor d(15) xor d(11) xor d(8) xor d(7) xor d(6) xor d(5) xor d(4) xor d(3) xor c(3) xor c(4) xor c(5) xor c(6) xor c(7) xor c(8) xor c(11) xor c(15) xor c(16) xor c(17) xor c(20) xor c(22) xor c(24) xor c(25) xor c(26) xor c(27) xor c(29) xor c(30);
-
-        return newcrc;
-    end function;
-
     function to_string (
         v : in std_logic--;
     ) return string is
@@ -523,6 +594,28 @@ package body util is
     ) return string is
     begin
         return to_string(std_logic_vector(v));
+    end function;
+
+    function to_hstring (
+        v : std_logic_vector--;
+    ) return string is
+        variable r : string(1 to (v'length + 3) / 4) := (others => 'X');
+        variable u : unsigned(v'length+3 downto 0);
+        constant lut : string(1 to 16) := "0123456789ABCDEF";
+    begin
+        u := resize(unsigned(v), u'length);
+        for i in r'range loop
+            next when ( is_x(std_logic_vector(u(4*i-1 downto 4*i-4))) );
+            r(r'length-i+1) := lut(1 + to_integer(u(4*i-1 downto 4*i-4)));
+        end loop;
+        return r;
+    end function;
+
+    function to_hstring (
+        v : unsigned--;
+    ) return string is
+    begin
+        return to_hstring(std_logic_vector(v));
     end function;
 
 end package body;

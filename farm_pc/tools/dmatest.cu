@@ -29,8 +29,31 @@
 
 using namespace std;
 
+void print_usage(){
+    cout << "Usage: " << endl;
+    cout << "       dmatest <use_data_gen> <stop_dma>" << endl;
+}
+
 int main(int argc, char *argv[])
 {
+
+    if(argc < 3){
+        print_usage();
+        return -1;
+    }
+
+    if(atoi(argv[2]) == 1) {
+        /* Open mudaq device */
+        mudaq::DmaMudaqDevice mu("/dev/mudaq0");
+        if ( !mu.open() ) {
+            cout << "Could not open device " << endl;
+            return -1;
+        }
+
+        mu.disable();
+        mu.close();
+        return 0;
+    }
 
     ofstream myfile;
     myfile.open("memory_content.txt");
@@ -41,9 +64,9 @@ int main(int argc, char *argv[])
 
     myfile << "idx" << "\t" << "data" << "\t" << "event_length" << endl;
 
-    system("echo machmalkeins | sudo -S /home/labor/daq/driver/compactify.sh");
+    system("echo labor | sudo -S ../../../common/kerneldriver/compactify.sh");
     usleep(1000000);
-    system("echo machmalkeins | sudo -S /home/labor/daq/driver/compactify.sh");
+    system("echo labor | sudo -S ../../../common/kerneldriver/compactify.sh");
     usleep(1000000);
 
     size_t dma_buf_size = MUDAQ_DMABUF_DATA_LEN;
@@ -51,7 +74,9 @@ int main(int argc, char *argv[])
     size_t size = MUDAQ_DMABUF_DATA_LEN;
     uint32_t dma_buf_nwords = dma_buf_size/sizeof(uint32_t);
 
-    if(cudaMallocHost( (void**)&dma_buf, size ) != cudaSuccess){
+    cudaError_t cuda_error = cudaMallocHost( (void**)&dma_buf, size );
+    if(cuda_error != cudaSuccess){
+        cout << "Error: " << cudaGetErrorString(cuda_error) << endl;
         cout << "Allocation failed!" << endl;
         return -1;
     }
@@ -59,7 +84,6 @@ int main(int argc, char *argv[])
     // initialize to zero
     for (int i = 0; i <  size/sizeof(uint32_t) ; i++) {
       (dma_buf)[ i ] = 0;
-
     }
 
     // Host memory
@@ -96,12 +120,13 @@ int main(int argc, char *argv[])
     }
 
     // Set up data generator
-//    uint32_t datagen_setup = 0;
-//    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
-//    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
-//    //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
-//    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
-
+    if (atoi(argv[1]) == 1) {
+        uint32_t datagen_setup = 0;
+        mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
+        datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+        //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
+        mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+    }
     // reset all
     uint32_t reset_reg = 0;
     reset_reg = SET_RESET_BIT_ALL(reset_reg);
@@ -148,7 +173,8 @@ int main(int argc, char *argv[])
                 cout << hex << "0x" <<  dma_buf[i] << " ";
             cout << endl;
         }
-
+        sleep(1);
+        break;
         lastlastWritten = 1;
 
         event_length = dma_buf[(readindex+7)%dma_buf_nwords];
@@ -177,12 +203,7 @@ int main(int argc, char *argv[])
 
 
 
-        for (int j = 0 ; j < event_length; j++){
-            char dma_buf_str[256];
-            sprintf(dma_buf_str, "%08X", dma_buf[(readindex + 6)%dma_buf_nwords]);
-            myfile << readindex + 6 << "\t" << dma_buf_str << "\t" << event_length  << endl;
-            readindex = readindex + 8;
-        }
+
 
 
 
@@ -227,6 +248,12 @@ int main(int argc, char *argv[])
 //        lastindex = i;
 //        }
 //    }
+    }
+
+    for (int j = 0 ; j < sizeof (dma_buf); j++){
+        char dma_buf_str[256];
+        sprintf(dma_buf_str, "%08X", dma_buf[(readindex++)%dma_buf_nwords]);
+        myfile << readindex + 1 << "\t" << dma_buf_str << endl;
     }
 
     // stop generator

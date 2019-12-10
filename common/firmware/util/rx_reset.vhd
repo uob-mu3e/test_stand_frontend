@@ -6,27 +6,27 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 entity rx_reset is
-    generic (
-        NUMBER_OF_CHANNELS_g : positive := 4;
-        CLK_MHZ_g : positive := 50--;
-    );
-    port (
-        -- reset the receiver CDR present in the receiver channel
-        o_analogreset   : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-        -- reset all digital logic in the receiver PCS
-        o_digitalreset  : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+generic (
+    NUMBER_OF_CHANNELS_g : positive := 4;
+    CLK_MHZ_g : positive := 50--;
+);
+port (
+    -- reset the receiver CDR present in the receiver channel
+    o_analogreset       : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    -- reset all digital logic in the receiver PCS
+    o_digitalreset      : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-        o_ready         : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    o_ready             : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-        -- status of the receiver CDR lock mode
-        i_freqlocked    : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    -- status of the receiver CDR lock mode
+    i_freqlocked        : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-        -- status of the dynamic reconfiguration controller
-        i_reconfig_busy : in    std_logic;
+    -- status of the dynamic reconfiguration controller
+    i_reconfig_busy     : in    std_logic;
 
-        i_areset_n    : in    std_logic;
-        i_clk       : in    std_logic--;
-    );
+    i_areset_n          : in    std_logic;
+    i_clk               : in    std_logic--;
+);
 end entity;
 
 architecture arch of rx_reset is

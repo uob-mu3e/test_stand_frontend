@@ -34,8 +34,8 @@ entity pcie_readable_memory is
 		readen :					out std_logic
 	
 	);
-	end pcie_readable_memory;
-	
+end entity;
+
 
 
 architecture RTL of pcie_readable_memory is
@@ -105,5 +105,5 @@ begin
 		end case;	
 	end if; -- if clk event
 	end process;
-	
-end RTL;
+
+end architecture;
