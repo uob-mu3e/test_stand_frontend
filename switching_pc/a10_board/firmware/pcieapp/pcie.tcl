@@ -25,5 +25,6 @@ set_instance_parameter_value pcie_a10_hip_0 {maximum_payload_size_hwtcl} {2048}
 set_instance_parameter_value pcie_a10_hip_0 {revision_id_hwtcl} {1}
 set_instance_parameter_value pcie_a10_hip_0 {subsystem_device_id_hwtcl} {4}
 set_instance_parameter_value pcie_a10_hip_0 {subsystem_vendor_id_hwtcl} {4466}
+set_instance_parameter_value pcie_a10_hip_0 {wrala_hwtcl} {0}
 set_instance_property pcie_a10_hip_0 AUTO_EXPORT {true}
 save_system [ file join $dir0 "$name.qsys" ]
