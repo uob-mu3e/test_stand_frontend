@@ -491,7 +491,13 @@ INT frontend_init()
     * Set our transition sequence. The default is 500. Setting it
     * to 600 means we are called AFTER most other clients.
     */
-   cm_set_transition_sequence(TR_START, 500);
+   cm_set_transition_sequence(TR_START, 600);
+
+   /*
+    * Set our transition sequence. The default is 500. Setting it
+    * to 100 means we are called BEFORE most other clients.
+    */
+    cm_set_transition_sequence(TR_STOP, 100);
 
 
    return CM_SUCCESS;
@@ -529,6 +535,9 @@ INT begin_of_run(INT run_number, char *error)
 
 INT end_of_run(INT run_number, char *error)
 {
+
+   cb->write_command("Stop Run");
+   set_equipment_status("Clock Reset", "Run stopped", "yellowLight");
    return CM_SUCCESS;
 }
 
@@ -780,15 +789,23 @@ void link_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_INT);
       cm_msg(MINFO, "link_settings_changed", "Set Switching Board Mask to %d", value);
-      // TODO: propagate to hardware
    }
 
     if (std::string(key.name) == "FrontendBoardMask") {
       INT value[MAX_N_FRONTENBOARDS];
       int size = sizeof(INT);
       db_get_data(hDB, hKey, value, &size, TID_BOOL);
-      cm_msg(MINFO, "link_settings_changed", "Set Frontend Board Mask");
-      // TODO: propagate to hardware
+      cm_msg(MINFO, "link_settings_changed", "Seting Frontend Board Mask");
+
+      for(int i = 0; i < MAX_N_FRONTENBOARDS; i++){
+          if(value[i] == 0){
+              cb->write_command("Disable",0,i);
+          } else {
+              cb->write_command("Enable",0,i);
+          }
+      }
+
+
    }
 }
 
@@ -820,7 +837,7 @@ void prepare_run_on_request(HNDLE hDB, HNDLE hKey, INT, void *){
             active[i] =0;
         }
         size =  sizeof(INT)*MAX_N_SWITCHINGBOARDS;
-        db_set_value(hDB,0,"/Equipment/Clock Reset/Run Transitions/Request Run Prepare/", active, size, MAX_N_SWITCHINGBOARDS, TID_INT);
+        db_set_value(hDB,0,"/Equipment/Clock Reset/Run Transitions/Request Run Prepare", active, size, MAX_N_SWITCHINGBOARDS, TID_INT);
 
     } else {
         cm_msg(MINFO, "prepare_run_on_request", "Waiting for more switching boards");
