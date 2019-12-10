@@ -199,32 +199,32 @@ INT frontend_init()
    const char * name = "sc.html";
    db_set_value(hDB,0,"Custom/Switching&", name, sizeof(name), 1, TID_STRING);
 
-   // open mudaq
-   mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
-   if ( !mup->open() ) {
-       cm_msg(MERROR, "frontend_init" , "Could not open device");
-       return FE_ERR_DRIVER;
-   }
-
-   if ( !mup->is_ok() ) {
-       cm_msg(MERROR, "frontend_init", "Mudaq is not ok");
-       return FE_ERR_DRIVER;
-   }
-   mup->FEBsc_resetMaster();
-   mup->FEBsc_resetSlave();
-
-
-   //SciFi setup part
-   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
-   SciFiFEB::Create(*mup); //create FEB interface signleton
-   int status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance(),true);
-   if(status != SUCCESS){
-      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
-      return status;
-   }
-   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
-   //end of SciFi setup part
-
+//   // open mudaq
+//   mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
+//   if ( !mup->open() ) {
+//       cm_msg(MERROR, "frontend_init" , "Could not open device");
+//       return FE_ERR_DRIVER;
+//   }
+//
+//   if ( !mup->is_ok() ) {
+//       cm_msg(MERROR, "frontend_init", "Mudaq is not ok");
+//       return FE_ERR_DRIVER;
+//   }
+//   mup->FEBsc_resetMaster();
+//   mup->FEBsc_resetSlave();
+//
+//
+//   //SciFi setup part
+//   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
+//   SciFiFEB::Create(*mup); //create FEB interface signleton
+//   int status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance(),true);
+//   if(status != SUCCESS){
+//      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
+//      return status;
+//   }
+//   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
+//   //end of SciFi setup part
+//
 
 
    return CM_SUCCESS;
@@ -248,29 +248,46 @@ INT frontend_loop()
 
 INT begin_of_run(INT run_number, char *error)
 {
+   HNDLE hVar;
+   int status = db_find_key(hDB, 0, "/Equipment/Links/Variables", &hVar);
+   if (status != SUCCESS){
+      cm_msg(MERROR,"switch_fe","ODB Tree /Equipment/Links/Variables not found");
+      return CM_TRANSITION_CANCELED;
+   }
+
+   BOOL frontend_board_active_odb[192];
+   int size = sizeof(frontend_board_active_odb);
+   status = db_get_record(hDB, hVar, &frontend_board_active_odb, &size, 0);
+   if (status != SUCCESS){
+      cm_msg(MERROR,"switch_fe","Error getting record for /Equipment/Links/Variables");
+      return CM_TRANSITION_CANCELED;
+   }
+
+
+   mup->FEBsc_resetMaster();
+   mup->FEBsc_resetSlave();
+
+   status=SciFiFEB::Instance()->ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
+   if(status!=SUCCESS){
+      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
+      return CM_TRANSITION_CANCELED;
+   }
+
    /* send run prepare signal via CR system */
    BOOL value = TRUE;
-   db_set_value(hDB,0,"Equipment/Clock Reset/Settings/Run Prepare", value, sizeof(value), 1, TID_BOOL);
+   db_set_value(hDB,0,"Equipment/Clock Reset/RunTransitions/RequestRunPrepare[0]", &value, sizeof(value), 1, TID_BOOL);
 
-
-   mu.FEBsc_resetMaster();
-   mu.FEBsc_resetSlave();
-   int status=SciFiFEB::Instance()->ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
-   if(status!=SUCCESS){
-       cm_msg(MERROR,"switch_fe","ASIC configuration failed");
-       return CM_TRANSITION_CANCELED;
-   }
 
    /* get link active from odb */
    uint32_t link_active_from_odb;
 
-   write_register(FEB_ENABLE_REGISTER_W, link_active_from_odb);
-   write_register(/* run number */, run_number);
+   mup->write_register(FEB_ENABLE_REGISTER_W, link_active_from_odb);
+   mup->write_register(RUN_NR_REGISTER_W, run_number);
 
 
    uint16_t timeout_cnt=0;
    uint32_t read_run_number = 0;
-   while(read_register_ro(RUN_NR_ACK_REGISTER_R) != link_active_from_odb &&
+   while(mup->read_register_ro(RUN_NR_ACK_REGISTER_R) != link_active_from_odb &&
          timeout_cnt++ < 50) {
       timeout_cnt++;
       usleep(1000);
@@ -278,13 +295,12 @@ INT begin_of_run(INT run_number, char *error)
 
    if(timeout_cnt>=50) {
       cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
-      for(/*addresses*/) {
-         write_register_wait(RUN_NR_ADDR_REGISTER_W, /*address*/, 1000);
-         cm_msg(MINFO,"switch_fe","Frontend board %d: Run number %d", /*address*/, read_register_ro(RUN_NR_REGISTER_R));
+      for(int i = 0; i < 48; i++) { // TODO: addresses, better output
+         mup->write_register_wait(RUN_NR_ADDR_REGISTER_W, i, 1000);
+         cm_msg(MINFO,"switch_fe","Frontend board %d: Run number %d", i, mup->read_register_ro(RUN_NR_REGISTER_R));
       }
       return CM_TRANSITION_CANCELED;
    }
-
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "lightBlue");
    return CM_SUCCESS;
 }
@@ -293,8 +309,22 @@ INT begin_of_run(INT run_number, char *error)
 
 INT end_of_run(INT run_number, char *error)
 {
-   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
-   return CM_SUCCESS;
+//   uint32_t stop_signal_seen = read_register_ro(/* stop signal seen */);
+//   while(stop_signal_seen != link_active_from_odb &&
+//         timeout_cnt++ < 50) {
+//      timeout_cnt++;
+//      usleep(1000);
+//      stop_signal_seen = read_register_ro(/* stop signal seen */);
+//   };
+//
+//   if(timeout_cnt>=50) {
+//      cm_msg(MERROR,"switch_fe","No end of run marker found for frontends %d", stop_signal_seen);
+//      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
+//      return CM_TRANSITION_CANCELED;
+//   }
+//
+//   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
+//   return CM_SUCCESS;
 }
 
 /*-- Pause Run -----------------------------------------------------*/
@@ -315,10 +345,11 @@ INT resume_run(INT run_number, char *error)
 
 INT read_sc_event(char *pevent, INT off)
 {
-    while(mup->FEBsc_get_packet()){};
-    //TODO: make this a switch
-    //return mup->FEBsc_write_bank(pevent,off);
-    return mup->FEBsc_dump_packets();
+//    while(mup->FEBsc_get_packet()){};
+//    //TODO: make this a switch
+//    //return mup->FEBsc_write_bank(pevent,off);
+//    return mup->FEBsc_dump_packets();
+return 0;
 }
 
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
@@ -359,7 +390,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
    db_get_key(hDB, hKey, &key);
 
-   mudaq::DmaMudaqDevice & mu = *mup;
+//   mudaq::DmaMudaqDevice & mu = *mup;
 
    if (std::string(key.name) == "Active") {
       BOOL value;
@@ -378,12 +409,12 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
    }
 
    if (std::string(key.name) == "Reset SC Master" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-       mu.FEBsc_resetMaster();
+//       mu.FEBsc_resetMaster();
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
    if (std::string(key.name) == "Reset SC Slave" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-       mu.FEBsc_resetSlave();
+//       mu.FEBsc_resetSlave();
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
@@ -403,7 +434,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
        int count=0;
        while(count < 3){
-           if(mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD)!=-1) break;
+//           if(mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD)!=-1) break;
            count++;
       }
       if(count==3) 
@@ -419,8 +450,8 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        uint32_t data[LENGTH];
        int count=0;
        while(count < 3){
-           if(mu.FEBsc_read((uint32_t) FPGA_ID, data, (uint16_t) LENGTH, (uint32_t) START_ADD)>=0)
-                break;
+//           if(mu.FEBsc_read((uint32_t) FPGA_ID, data, (uint16_t) LENGTH, (uint32_t) START_ADD)>=0)
+//                break;
            count++;
        }
        if(count==3) cm_msg(MERROR,"switch_fe","Tried 4 times to get a slow control read response but did not succeed");
@@ -436,7 +467,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 	uint32_t data_arr[1] = {0};
         data_arr[0] = (uint32_t) DATA;
         uint32_t *data = data_arr;
-        mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD);
+//        mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD);
 
         set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
@@ -451,8 +482,8 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         db_find_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", &key_WM_DATA);
         db_set_num_values(hDB, key_WM_DATA, WM_LENGTH);
         for (int i = 0; i < WM_LENGTH; i++) {
-            WM_DATA = mu.read_memory_rw((uint32_t) WM_START_ADD + i);
-            db_set_value_index(hDB, 0, "Equipment/Switching/Variables/WM_DATA", &WM_DATA, SIZE_WM_DATA, i, TID_INT, FALSE);
+//            WM_DATA = mu.read_memory_rw((uint32_t) WM_START_ADD + i);
+//            db_set_value_index(hDB, 0, "Equipment/Switching/Variables/WM_DATA", &WM_DATA, SIZE_WM_DATA, i, TID_INT, FALSE);
         }
 
         set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
@@ -470,7 +501,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         db_find_key(hDB, 0, "Equipment/Switching/Variables/RM_DATA", &key_WM_DATA);
         db_set_num_values(hDB, key_WM_DATA, RM_LENGTH);
         for (int i = 0; i < RM_LENGTH; i++) {
-            RM_DATA = mu.read_memory_ro((uint32_t) RM_START_ADD + i);
+//            RM_DATA = mu.read_memory_ro((uint32_t) RM_START_ADD + i);
             db_set_value_index(hDB, 0, "Equipment/Switching/Variables/RM_DATA", &RM_DATA, SIZE_RM_DATA, i, TID_INT, FALSE);
         }
 
@@ -482,10 +513,10 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         SIZE_LAST_RM_ADD = sizeof(LAST_RM_ADD);
         char STR_LAST_RM_ADD[128];
         sprintf(STR_LAST_RM_ADD,"Equipment/Switching/Variables/LAST_RM_ADD");
-        INT NEW_LAST_RM_ADD = mu.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R);
+//        INT NEW_LAST_RM_ADD = mu.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R);
         INT SIZE_NEW_LAST_RM_ADD;
-        SIZE_NEW_LAST_RM_ADD = sizeof(NEW_LAST_RM_ADD);
-        db_set_value(hDB, 0, STR_LAST_RM_ADD, &NEW_LAST_RM_ADD, SIZE_NEW_LAST_RM_ADD, 1, TID_INT);
+//        SIZE_NEW_LAST_RM_ADD = sizeof(NEW_LAST_RM_ADD);
+//        db_set_value(hDB, 0, STR_LAST_RM_ADD, &NEW_LAST_RM_ADD, SIZE_NEW_LAST_RM_ADD, 1, TID_INT);
 
 	set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
