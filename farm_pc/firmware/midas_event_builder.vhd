@@ -18,6 +18,7 @@ entity midas_event_builder is
          i_rx_data:     	  in std_logic_vector (NLINKS * 32 - 1 downto 0);
          i_rx_datak:          in std_logic_vector (NLINKS * 4 - 1 downto 0);
          i_wen_reg:       	  in std_logic;
+         i_link_mask:         in std_logic_vector (NLINKS - 1 downto 0);
          o_event_wren:     	  out std_logic;
          o_endofevent: 		  out std_logic; 
          o_event_data:        out std_logic_vector (255 downto 0);
@@ -297,10 +298,24 @@ begin
 				event_tagging_state <= bank_name;
 
 			when bank_name =>
-				w_ram_en			<= '1';
-				w_ram_add   		<= w_ram_add + 1;
-				w_ram_data  		<= std_logic_vector(to_unsigned(mux_link, w_ram_data'length));  -- MIDAS Bank Name
-				event_tagging_state <= bank_type;
+                if ( mux_link = NLINKS - 1 ) then
+                    if ( conv_integer(w_ram_add + 1) mod 8 = 0 ) then
+						event_tagging_state <= waiting;
+					 	w_fifo_en   <= '1';
+						w_fifo_data <= w_ram_add + 1;
+					else
+					 	event_tagging_state <= trailer;
+					end if;
+					mux_link <= 0;
+					event_id <= event_id + '1';
+                elsif ( i_link_mask(mux_link) = '0' ) then
+                    mux_link <= mux_link + 1;
+                else
+                    w_ram_en			<= '1';
+                    w_ram_add   		<= w_ram_add + 1;
+                    w_ram_data  		<= std_logic_vector(to_unsigned(mux_link, w_ram_data'length));  -- MIDAS Bank Name
+                    event_tagging_state <= bank_type;
+                end if;
 
 			when bank_type =>
 				w_ram_en			<= '1';

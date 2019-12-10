@@ -242,7 +242,7 @@ architecture rtl of top is
 		signal dma_data_wren : std_logic;
 		signal dma_data : std_logic_vector(255 downto 0);
 		signal dma_data_test : std_logic_vector(159 downto 0);
-		signal dma_event_data : std_logic_vector(31 downto 0);
+		signal dma_event_data : std_logic_vector(255 downto 0);
 		signal dma_wren_cnt : std_logic;
 		signal dma_wren_test : std_logic;
 		signal dma_end_event_cnt : std_logic;
@@ -526,14 +526,14 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
     port map (
             i_clk                               => tx_clk(0),
             i_reset_n                           => reset_n,
-            i_aligned                           => "1",
+            i_aligned                           => (others => '1'),
             i_data                              => rx_data(0),
             i_datak                             => rx_datak(0),
-            i_link_mask                         => (others => '0'), -- TODO: define and connect write regs here
-            i_addr                              => (others => '0'),
-            o_run_number                        => open,
-            o_link_active                       => open,
-            o_runNr_ack                         => open--,
+            i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
+            i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
+            i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
+            o_run_number                        => readregs(RUN_NR_REGISTER_R), -- run number of i_addr
+            o_runNr_ack                         => readregs(RUN_NR_ACK_REGISTER_R)--, -- which FEBs have responded with run number in i_run_number
     );
 
 
@@ -581,6 +581,7 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		 i_rx_data  => data_counter & data_counter & data_counter,
 		 i_rx_datak => datak_counter & datak_counter & datak_counter,
 		 i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+         i_link_mask => writeregs_slow(FEB_ENABLE_REGISTER_W)(3 - 1 downto 0),
 		 o_event_wren => dma_wren_cnt,
 		 o_endofevent => dma_end_event_cnt,
 		 o_event_data => dma_event_data,
@@ -619,14 +620,7 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		elsif(dma_wren_cnt = '1') then
 			dma_data_wren <= '1';
 			dmamem_endofevent <= dma_end_event_cnt;
-			dma_data <=	X"00000" & event_length &
-				dma_event_data 			&
-				x"1ABACAF" & state_out_eventcounter &
-				x"2ABACAFE" &
-				x"3ABACAFE" &
-				x"4ABACAFE" &
-				x"5ABACAFE" &
-				x"6ABACAFE";
+			dma_data <=	dma_event_data;
 		end if;
     end if;
     end process;

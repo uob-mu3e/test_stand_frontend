@@ -2,7 +2,7 @@
 
   Name:         taken from switch_fe.cpp
   Created by:   Stefan Ritt
-  Updated by:   Marius Koeppel, Konrad Briggl
+  Updated by:   Marius Koeppel, Konrad Briggl, Lukas Gerritzen
 
   Contents:     Code for switching front-end to illustrate
                 manual generation of slow control events
@@ -248,6 +248,43 @@ INT frontend_loop()
 
 INT begin_of_run(INT run_number, char *error)
 {
+   /* send run prepare signal via CR system */
+   BOOL value = TRUE;
+   db_set_value(hDB,0,"Equipment/Clock Reset/Settings/Run Prepare", value, sizeof(value), 1, TID_BOOL);
+
+
+   mu.FEBsc_resetMaster();
+   mu.FEBsc_resetSlave();
+   int status=SciFiFEB::Instance()->ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
+   if(status!=SUCCESS){
+       cm_msg(MERROR,"switch_fe","ASIC configuration failed");
+       return CM_TRANSITION_CANCELED;
+   }
+
+   /* get link active from odb */
+   uint32_t link_active_from_odb;
+
+   write_register(FEB_ENABLE_REGISTER_W, link_active_from_odb);
+   write_register(/* run number */, run_number);
+
+
+   uint16_t timeout_cnt=0;
+   uint32_t read_run_number = 0;
+   while(read_register_ro(RUN_NR_ACK_REGISTER_R) != link_active_from_odb &&
+         timeout_cnt++ < 50) {
+      timeout_cnt++;
+      usleep(1000);
+   };
+
+   if(timeout_cnt>=50) {
+      cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
+      for(/*addresses*/) {
+         write_register_wait(RUN_NR_ADDR_REGISTER_W, /*address*/, 1000);
+         cm_msg(MINFO,"switch_fe","Frontend board %d: Run number %d", /*address*/, read_register_ro(RUN_NR_REGISTER_R));
+      }
+      return CM_TRANSITION_CANCELED;
+   }
+
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "lightBlue");
    return CM_SUCCESS;
 }
