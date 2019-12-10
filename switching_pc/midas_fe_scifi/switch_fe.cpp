@@ -79,7 +79,8 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 INT event_buffer_size = 10 * 10000;
 
 const int MAX_N_SWITCHINGBOARDS = 4;
-const int MAX_N_FRONTENDBOARDS = 48*MAX_N_SWITCHINGBOARDS;
+const int MAX_LINKS_PER_SWITCHINGBOARD = 48;
+const int MAX_N_FRONTENDBOARDS = MAX_LINKS_PER_SWITCHINGBOARD*MAX_N_SWITCHINGBOARDS;
 
 /* DMA Buffer and related */
 mudaq::DmaMudaqDevice * mup;
@@ -310,7 +311,7 @@ INT begin_of_run(INT run_number, char *error)
 
    if(timeout_cnt>=50) {
       cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
-      for(int i = 0; i < 48; i++) { // TODO: addresses, better output
+      for(int i = 0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++) { // TODO: addresses, better output
          mup->write_register_wait(RUN_NR_ADDR_REGISTER_W, i, 1000);
          cm_msg(MINFO,"switch_fe","Frontend board %d: Run number %d", i, mup->read_register_ro(RUN_NR_REGISTER_R));
       }
