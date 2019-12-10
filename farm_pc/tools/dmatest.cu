@@ -64,9 +64,9 @@ int main(int argc, char *argv[])
 
     myfile << "idx" << "\t" << "data" << "\t" << "event_length" << endl;
 
-    system("echo machmalkeins | sudo -S /home/labor/daq/driver/compactify.sh");
+    system("echo labor | sudo -S ../../../common/kerneldriver/compactify.sh");
     usleep(1000000);
-    system("echo machmalkeins | sudo -S /home/labor/daq/driver/compactify.sh");
+    system("echo labor | sudo -S ../../../common/kerneldriver/compactify.sh");
     usleep(1000000);
 
     size_t dma_buf_size = MUDAQ_DMABUF_DATA_LEN;
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 
     cudaError_t cuda_error = cudaMallocHost( (void**)&dma_buf, size );
     if(cuda_error != cudaSuccess){
-        cout << cudaGetErrorString(cuda_error) << endl;
+        cout << "Error: " << cudaGetErrorString(cuda_error) << endl;
         cout << "Allocation failed!" << endl;
         return -1;
     }

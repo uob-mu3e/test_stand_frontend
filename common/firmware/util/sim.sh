@@ -16,12 +16,12 @@ mkdir -p .cache
 cd .cache || exit 1
 
 OPTS=(
-    --ieee=synopsys -fexplicit -P=/home/labor/ghdl/libraries/vendors/altera/ 
+    --ieee=synopsys --mb-comments -fexplicit -P=/usr/local/lib/ghdl/vendors/altera/ 
 )
 
 if [ -d "$HOME/.cache/altera-quartus" ] ; then
     OPTS+=(
-        -P"$HOME/.cache/altera-quartus" --mb-comments
+        -P"$HOME/.cache/altera-quartus"
     )
 fi
 
