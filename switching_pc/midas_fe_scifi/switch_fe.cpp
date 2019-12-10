@@ -622,6 +622,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
 
 void switching_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
+   printf("switching_board_mask_changed\n");
    INT value[MAX_N_SWITCHINGBOARDS];
    int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
    db_get_data(hDB, hKey, &value, &size, TID_INT);
