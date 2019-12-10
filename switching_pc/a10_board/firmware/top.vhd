@@ -12,8 +12,6 @@ entity top is
 port (
     BUTTON              : in    std_logic_vector(3 downto 0);
 
-    CLK_100_B3D         : in    std_logic;
-
     HEX0_D              : out   std_logic_vector(6 downto 0);
 --    HEX0_DP             : out   std_logic;
 
@@ -357,9 +355,11 @@ reset_n 	<= not reset;
         clk_clk                         => input_clk--,
     );
 
-    QSFPA_LP_MODE <= '0';
-    QSFPA_MOD_SEL_n <= '1';
-    QSFPA_RST_n <= '1';
+    FLASH_A <= flash_tcm_address_out(27 downto 2);
+    FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
+    FLASH_ADV_n <= '0';
+    FLASH_CLK <= '0';
+    FLASH_RESET_n <= flash_rst_n;
 
     -- generate reset sequence for flash and nios
     e_reset_ctrl : entity work.reset_ctrl
@@ -394,13 +394,6 @@ reset_n 	<= not reset;
     LED(2) <= not flash_rst_n;
     LED(3) <= '0';
 
-    FLASH_A <= flash_tcm_address_out(27 downto 2);
-
-    FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
-    FLASH_ADV_n <= '0';
-    FLASH_CLK <= '0';
-    FLASH_RESET_n <= flash_rst_n;
-
     i2c_scl_in <= not i2c_scl_oe;
     FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
     TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
@@ -415,7 +408,13 @@ reset_n 	<= not reset;
     TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
     POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
 
+
+
     ------------- Receiving Data and word aligning -------------
+
+    QSFPA_LP_MODE <= '0';
+    QSFPA_MOD_SEL_n <= '1';
+    QSFPA_RST_n <= '1';
 
     e_qsfp : entity work.xcvr_a10
     port map (
@@ -540,6 +539,7 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 
 ------------- Event Counter ------------------
 
+
     e_data_gen : entity work.data_generator_a10
     port map (
 		reset						=> resets(RESET_BIT_DATAGEN),
@@ -569,21 +569,23 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		end if;
     end if;
     end process;
-
-    e_event_counter : entity work.event_counter
-    port map (
-		dma_clk					=> pcie_fastclk_out,
-		reset_n					=> resets_n(RESET_BIT_EVENT_COUNTER),
-		rx_data					=> data_counter,
-		rx_datak					=> datak_counter,
-		dma_wen_reg				=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE), -- this is going to a process with pcie_fastclk_out
-		event_length			=> event_length,
-		dma_data_wren			=> dma_wren_cnt,
-		dmamem_endofevent		=> dma_end_event_cnt,
-		dma_data					=> dma_event_data,
-		state_out				=> state_out_eventcounter,
-        clk                     => tx_clk(0)--,
-    );
+	 
+	 e_midas_event_builder : entity work.midas_event_builder
+	  generic map (
+		 NLINKS => 3--;
+	 )
+	  port map(
+		 i_clk_data => tx_clk(0),
+		 i_clk_dma  => pcie_fastclk_out,
+		 i_reset_n  => resets_n(RESET_BIT_EVENT_COUNTER),
+		 i_rx_data  => data_counter & data_counter & data_counter,
+		 i_rx_datak => datak_counter & datak_counter & datak_counter,
+		 i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+		 o_event_wren => dma_wren_cnt,
+		 o_endofevent => dma_end_event_cnt,
+		 o_event_data => dma_event_data,
+		 o_state_out => state_out_eventcounter--,
+	);
 
     e_counter : entity work.dma_counter
     port map (

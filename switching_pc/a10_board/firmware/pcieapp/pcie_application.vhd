@@ -90,12 +90,12 @@ entity pcie_application is
 		inaddr32_w			: out STD_LOGIC_VECTOR (31 DOWNTO 0)
 		
 	);
-	end pcie_application;
-	
-	
-	
-	architecture RTL of pcie_application is
-	
+end entity;
+
+
+
+architecture RTL of pcie_application is
+
 	
 		-- from register read part
 		signal rreg_readaddr :			 std_logic_vector(5 downto 0);
@@ -659,5 +659,5 @@ elsif(refclk'event and refclk = '1') then
 	--readregs_int(63)    <= (others => '0');
 end if;
 end process;
-	
-end RTL;
+
+end architecture;

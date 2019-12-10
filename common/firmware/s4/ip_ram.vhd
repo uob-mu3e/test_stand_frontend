@@ -41,34 +41,36 @@ USE altera_mf.altera_mf_components.all;
 
 ENTITY ip_ram IS
     generic (
-        ADDR_WIDTH : positive := 8;
-        DATA_WIDTH : positive := 8;
+        ADDR_WIDTH_A : positive := 8;
+        ADDR_WIDTH_B : positive := 8;
+        DATA_WIDTH_A : positive := 8;
+        DATA_WIDTH_B : positive := 8;
         DEVICE : string := "Stratix IV"--;
     );
 	PORT
 	(
-		address_a		: IN STD_LOGIC_VECTOR (ADDR_WIDTH-1 DOWNTO 0);
-		address_b		: IN STD_LOGIC_VECTOR (ADDR_WIDTH-1 DOWNTO 0);
+		address_a		: IN STD_LOGIC_VECTOR (ADDR_WIDTH_A-1 DOWNTO 0);
+		address_b		: IN STD_LOGIC_VECTOR (ADDR_WIDTH_B-1 DOWNTO 0);
 		clock_a		: IN STD_LOGIC  := '1';
 		clock_b		: IN STD_LOGIC ;
-		data_a		: IN STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0);
-		data_b		: IN STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0);
+		data_a		: IN STD_LOGIC_VECTOR (DATA_WIDTH_A-1 DOWNTO 0);
+		data_b		: IN STD_LOGIC_VECTOR (DATA_WIDTH_B-1 DOWNTO 0);
 		wren_a		: IN STD_LOGIC  := '0';
 		wren_b		: IN STD_LOGIC  := '0';
-		q_a		: OUT STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0);
-		q_b		: OUT STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0)
+		q_a		: OUT STD_LOGIC_VECTOR (DATA_WIDTH_A-1 DOWNTO 0);
+		q_b		: OUT STD_LOGIC_VECTOR (DATA_WIDTH_B-1 DOWNTO 0)
 	);
 END ip_ram;
 
 
 ARCHITECTURE SYN OF ip_ram IS
 
-	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0);
-	SIGNAL sub_wire1	: STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0);
+	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (DATA_WIDTH_A-1 DOWNTO 0);
+	SIGNAL sub_wire1	: STD_LOGIC_VECTOR (DATA_WIDTH_B-1 DOWNTO 0);
 
 BEGIN
-	q_a    <= sub_wire0(DATA_WIDTH-1 DOWNTO 0);
-	q_b    <= sub_wire1(DATA_WIDTH-1 DOWNTO 0);
+	q_a    <= sub_wire0(DATA_WIDTH_A-1 DOWNTO 0);
+	q_b    <= sub_wire1(DATA_WIDTH_B-1 DOWNTO 0);
 
 	altsyncram_component : altsyncram
 	GENERIC MAP (
@@ -80,8 +82,8 @@ BEGIN
 		indata_reg_b => "CLOCK1",
 		intended_device_family => DEVICE,
 		lpm_type => "altsyncram",
-		numwords_a => 2**ADDR_WIDTH,
-		numwords_b => 2**ADDR_WIDTH,
+		numwords_a => 2**ADDR_WIDTH_A,
+		numwords_b => 2**ADDR_WIDTH_B,
 		operation_mode => "BIDIR_DUAL_PORT",
 		outdata_aclr_a => "NONE",
 		outdata_aclr_b => "NONE",
@@ -90,10 +92,10 @@ BEGIN
 		power_up_uninitialized => "FALSE",
 		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
 		read_during_write_mode_port_b => "NEW_DATA_NO_NBE_READ",
-		widthad_a => ADDR_WIDTH,
-		widthad_b => ADDR_WIDTH,
-		width_a => DATA_WIDTH,
-		width_b => DATA_WIDTH,
+		widthad_a => ADDR_WIDTH_A,
+		widthad_b => ADDR_WIDTH_B,
+		width_a => DATA_WIDTH_A,
+		width_b => DATA_WIDTH_B,
 		width_byteena_a => 1,
 		width_byteena_b => 1,
 		wrcontrol_wraddress_reg_b => "CLOCK1"

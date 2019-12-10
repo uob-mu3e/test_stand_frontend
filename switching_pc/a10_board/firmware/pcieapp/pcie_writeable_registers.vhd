@@ -38,8 +38,8 @@ entity pcie_writeable_registers is
 		inaddr32_w			: out STD_LOGIC_VECTOR (31 DOWNTO 0)
 	
 	);
-	end pcie_writeable_registers;
-	
+end entity;
+
 
 
 architecture RTL of pcie_writeable_registers is
@@ -187,5 +187,5 @@ begin
 		end case;	
 	end if; -- if clk event
 	end process;
-	
-end RTL;
+
+end architecture;
