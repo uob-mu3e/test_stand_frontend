@@ -532,8 +532,8 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
             i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
             i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
             i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
-            o_run_number                        => readregs(RUN_NR_REGISTER_R), -- run number of i_addr
-            o_runNr_ack                         => readregs(RUN_NR_ACK_REGISTER_R)--, -- which FEBs have responded with run number in i_run_number
+            o_run_number                        => readregs_slow(RUN_NR_REGISTER_R), -- run number of i_addr
+            o_runNr_ack                         => readregs_slow(RUN_NR_ACK_REGISTER_R)--, -- which FEBs have responded with run number in i_run_number
     );
 
 
@@ -769,6 +769,8 @@ tx_datak(0) <= mem_datak_out(3 downto 0);
 		if(clk_sync = '1' and clk_last = '0') then
 			readregs(PLL_REGISTER_R) 						<= readregs_slow(PLL_REGISTER_R);
 			readregs(VERSION_REGISTER_R) 					<= readregs_slow(VERSION_REGISTER_R);
+            readregs(RUN_NR_REGISTER_R)                 <= readregs_slow(RUN_NR_REGISTER_R);
+            readregs(RUN_NR_ACK_REGISTER_R)             <= readregs_slow(RUN_NR_ACK_REGISTER_R);
 			readregs(MEM_WRITEADDR_HIGH_REGISTER_R) 	<= (others => '0');
 			readregs(MEM_WRITEADDR_LOW_REGISTER_R) 	<= (X"0000" & readmem_writeaddr_finished);
 		end if;
