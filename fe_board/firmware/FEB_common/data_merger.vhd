@@ -304,7 +304,10 @@ BEGIN
                     data_out                    <= K285;
                     data_is_k                   <= K285_datak;
 
-                elsif ( last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or data_in(35 downto 32) = MERGER_FIFO_RUN_END_MARKER or can_terminate='1') then
+                elsif ( last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or
+		        data_in(35 downto 32) = MERGER_FIFO_RUN_END_MARKER or
+			(run_state=RUN_STATE_TERMINATING and can_terminate='1')
+		) then
                     -- allows run end for idle and sending data, run end in state sending_data is always packet end
                     terminated                  <= '1';
                     data_out                    <= RUN_END;
