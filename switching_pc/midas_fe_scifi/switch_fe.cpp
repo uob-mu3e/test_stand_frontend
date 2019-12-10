@@ -199,32 +199,32 @@ INT frontend_init()
    const char * name = "sc.html";
    db_set_value(hDB,0,"Custom/Switching&", name, sizeof(name), 1, TID_STRING);
 
-//   // open mudaq
-//   mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
-//   if ( !mup->open() ) {
-//       cm_msg(MERROR, "frontend_init" , "Could not open device");
-//       return FE_ERR_DRIVER;
-//   }
-//
-//   if ( !mup->is_ok() ) {
-//       cm_msg(MERROR, "frontend_init", "Mudaq is not ok");
-//       return FE_ERR_DRIVER;
-//   }
-//   mup->FEBsc_resetMaster();
-//   mup->FEBsc_resetSlave();
-//
-//
-//   //SciFi setup part
-//   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
-//   SciFiFEB::Create(*mup); //create FEB interface signleton
-//   int status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance(),true);
-//   if(status != SUCCESS){
-//      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
-//      return status;
-//   }
-//   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
-//   //end of SciFi setup part
-//
+   // open mudaq
+   mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
+   if ( !mup->open() ) {
+       cm_msg(MERROR, "frontend_init" , "Could not open device");
+       return FE_ERR_DRIVER;
+   }
+
+   if ( !mup->is_ok() ) {
+       cm_msg(MERROR, "frontend_init", "Mudaq is not ok");
+       return FE_ERR_DRIVER;
+   }
+   mup->FEBsc_resetMaster();
+   mup->FEBsc_resetSlave();
+
+
+   //SciFi setup part
+   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
+   SciFiFEB::Create(*mup); //create FEB interface signleton
+   int status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance(),true);
+   if(status != SUCCESS){
+      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
+      return status;
+   }
+   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
+   //end of SciFi setup part
+
 
 
    return CM_SUCCESS;
@@ -356,7 +356,7 @@ INT read_sc_event(char *pevent, INT off)
 
 INT read_scifi_sc_event(char *pevent, INT off){
     printf("read_scifi_sc_event\n");
-    int status=SciFiFEB::Instance()->ReadBackCounters(hDB, 0 /*FPGA-ID*/, "/Equipment/SciFi");
+    //int status=SciFiFEB::Instance()->ReadBackCounters(hDB, 0 /*FPGA-ID*/, "/Equipment/SciFi");
     return 0;
 }
 
