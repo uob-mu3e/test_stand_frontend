@@ -644,8 +644,8 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        }
 
        // Easy case are commands without payload
-       //if(!(it->second.has_payload)){
-       if(true){
+       if(!(it->second.has_payload)){
+       //if(true){
            BOOL value;
            int size = sizeof(value);
            db_get_data(hDB, hKey, &value, &size, TID_BOOL);
@@ -658,7 +658,7 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
               value = FALSE; // reset flag in ODB
               db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
            }
-       }
+       
            // here the case with payload
        } else {
            // Run prepare needs the run number
