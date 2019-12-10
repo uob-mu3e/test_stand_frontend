@@ -1,3 +1,5 @@
+#define FEB_ENABLE_REGISTER_LOW_W FEB_ENABLE_REGISTER_W
+#define RUN_NR_ACK_REGISTER_LOW_R RUN_NR_ACK_REGISTER_R
 /********************************************************************\
 
   Name:         taken from switch_fe.cpp
@@ -79,7 +81,9 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 INT event_buffer_size = 10 * 10000;
 
 const int MAX_N_SWITCHINGBOARDS = 4;
-const int MAX_N_FRONTENDBOARDS = 48*MAX_N_SWITCHINGBOARDS;
+const int N_LINKS_PER_SWITCHINGBOARD = 48;
+const int MAX_N_FRONTENDBOARDS = N_LINKS_PER_SWITCHINGBOARD * MAX_N_SWITCHINGBOARDS;
+int switch_id = 0; // TODO to be loaded from outside
 
 /* DMA Buffer and related */
 mudaq::DmaMudaqDevice * mup;
@@ -91,6 +95,7 @@ INT read_sc_event(char *pevent, INT off);
 INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
 void sc_settings_changed(HNDLE, HNDLE, int, void *);
+void switching_board_mask_changed(HNDLE, HNDLE, int, void *);
 
 /*-- Equipment list ------------------------------------------------*/
 
@@ -202,6 +207,14 @@ INT frontend_init()
    const char * name = "sc.html";
    db_set_value(hDB,0,"Custom/Switching&", name, sizeof(name), 1, TID_STRING);
 
+   // watch if this switching board is enabled
+   HNDLE hKey;
+   db_find_key(hDB, 0, "/Equipment/Links/Settings/SwitchingBoardMask", &hKey);
+   assert(hKey);
+
+   db_watch(hDB, hKey, switching_board_mask_changed, nullptr);
+
+
 //   // open mudaq
 //   mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
 //   if ( !mup->open() ) {
@@ -288,31 +301,47 @@ INT begin_of_run(INT run_number, char *error)
       return CM_TRANSITION_CANCELED;
    }
 
-   /* get link active from odb TODO...*/
-   uint32_t link_active_from_odb;
+   /* get link active from odb */
+   uint64_t link_active_from_odb = 0;
+   for(int link = 0; link < N_LINKS_PER_SWITCHINGBOARD; link++) {
+      int offset = N_LINKS_PER_SWITCHINGBOARD * switch_id;
+      if(frontend_board_active_odb[offset + link] > 0)
+         link_active_from_odb += (1 << link);
+   }
 
-   mup->write_register(FEB_ENABLE_REGISTER_W, link_active_from_odb);
+   mup->write_register(FEB_ENABLE_REGISTER_LOW_W, link_active_from_odb & 0xFFFFFFFF);
+//   mup->write_register(FEB_ENABLE_REGISTER_HIGH_W, link_active_from_odb >> 32);
    mup->write_register(RUN_NR_REGISTER_W, run_number);
 
 
    /* send run prepare signal via CR system */
    INT value = 1;
-   //TODO: Will have to add index here for more than one switching board
-   db_set_value(hDB,0,"Equipment/Clock Reset/RunTransitions/RequestRunPrepare[0]", &value, sizeof(value), 1, TID_INT);
+   char str[128];
+   sprintf(str,"Equipment/Clock Reset/RunTransitions/RequestRunPrepare[%d]", switch_id);
+   db_set_value(hDB,0,str, &value, sizeof(value), 1, TID_INT);
 
 
    uint16_t timeout_cnt=0;
-   while(mup->read_register_ro(RUN_NR_ACK_REGISTER_R) != link_active_from_odb &&
+   uint32_t link_active_from_register_low = mup->read_register_ro(RUN_NR_ACK_REGISTER_LOW_R);
+//   uint32_t link_active_from_register_high = mup->read_register_ro(RUN_NR_ACK_REGISTER_HIGH_R);
+   uint32_t link_active_from_register_high = 0;
+   uint64_t link_active_from_register = link_active_from_register_low + (link_active_from_register_low >> 32);
+   while(link_active_from_register != link_active_from_odb &&
          timeout_cnt++ < 50) {
       timeout_cnt++;
       usleep(1000);
+      link_active_from_register_low = mup->read_register_ro(RUN_NR_ACK_REGISTER_LOW_R);
+//      link_active_from_register_high = mup->read_register_ro(RUN_NR_ACK_REGISTER_HIGH_R);
+      uint32_t link_active_from_register_high = 0;
+      link_active_from_register = link_active_from_register_low + (link_active_from_register_low >> 32);
    };
 
    if(timeout_cnt>=50) {
       cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
-      for(int i = 0; i < 48; i++) { // TODO: addresses, better output
-         mup->write_register_wait(RUN_NR_ADDR_REGISTER_W, i, 1000);
-         cm_msg(MINFO,"switch_fe","Frontend board %d: Run number %d", i, mup->read_register_ro(RUN_NR_REGISTER_R));
+      for(int i = 0; i < N_LINKS_PER_SWITCHINGBOARD; i++) {
+         if ((link_active_from_register >> i) & 0x1)
+            mup->write_register_wait(RUN_NR_ADDR_REGISTER_W, i, 1000);
+            cm_msg(MINFO,"switch_fe","Switching board %d, Link %d: Run number %d", switch_id, i, mup->read_register_ro(RUN_NR_REGISTER_R));
       }
       return CM_TRANSITION_CANCELED;
    }
@@ -598,4 +627,18 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
           }
 	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
+}
+
+
+void switching_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
+   INT value[MAX_N_SWITCHINGBOARDS];
+   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
+   db_get_data(hDB, hKey, &value, &size, TID_INT);
+
+   if(value[switch_id] != equipment[0].info.enabled){
+      equipment[0].info.enabled = value[switch_id];
+      equipment[1].info.enabled = value[switch_id];
+      cm_msg(MINFO, "switching_board_mask_changed", "Set switching board %d enabled to %d", switch_id, value);
+   }
+
 }
