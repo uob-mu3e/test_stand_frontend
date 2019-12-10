@@ -169,9 +169,9 @@ begin
     s_lvds_rx_rst <= i_reset or s_subdet_reset_reg(2)  or i_run_state(RUN_STATE_BITPOS_RESET);--TODO: remove register, replace by generic reset from resetsys
 
 rst_sync_dprst: entity work.reset_sync
-    port map( i_reset_n   => s_datapath_rst, o_reset_n   => s_datapath_rst_n_156, i_clk       => i_clk_core);
+    port map( i_reset_n   => not s_datapath_rst, o_reset_n   => s_datapath_rst_n_156, i_clk       => i_clk_core);
 rst_sync_lvdsrst: entity work.reset_sync
-    port map( i_reset_n   => s_lvds_rx_rst, o_reset_n   => s_lvds_rx_rst_n_125, i_clk       => i_clk_g125);
+    port map( i_reset_n   => not s_lvds_rx_rst, o_reset_n   => s_lvds_rx_rst_n_125, i_clk       => i_clk_g125);
 
 
     u_resetshift: entity work.clockalign_block
