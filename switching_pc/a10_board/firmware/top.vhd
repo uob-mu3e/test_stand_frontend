@@ -247,8 +247,8 @@ architecture rtl of top is
 		signal dma_wren_test : std_logic;
 		signal dma_end_event_cnt : std_logic;
 		signal dma_end_event_test : std_logic;
-		signal data_counter : std_logic_vector(31 downto 0);
-		signal datak_counter : std_logic_vector(3 downto 0);
+		signal data_counter : std_logic_vector(63 downto 0);
+		signal datak_counter : std_logic_vector(7 downto 0);
 
 begin
 
@@ -532,8 +532,8 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
             i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
             i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
             i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
-            o_run_number                        => readregs(RUN_NR_REGISTER_R), -- run number of i_addr
-            o_runNr_ack                         => readregs(RUN_NR_ACK_REGISTER_R)--, -- which FEBs have responded with run number in i_run_number
+            o_run_number                        => readregs_slow(RUN_NR_REGISTER_R), -- run number of i_addr
+            o_runNr_ack                         => readregs_slow(RUN_NR_ACK_REGISTER_R)--, -- which FEBs have responded with run number in i_run_number
     );
 
 
@@ -561,27 +561,27 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		datak_counter 	<= (others => '0');
 	elsif (rising_edge(tx_clk(0))) then
 		if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
-			data_counter 	<= data_pix_generated;
-			datak_counter 	<= datak_pix_generated;
+			data_counter 	<= data_pix_generated & data_pix_generated;
+			datak_counter 	<= datak_pix_generated & datak_pix_generated;
 		else
-			data_counter 	<= rx_data(0);
-			datak_counter 	<= rx_datak(0);
+			data_counter 	<= rx_data(0) & rx_data(1);
+			datak_counter 	<= rx_datak(0) & rx_datak(1);
 		end if;
     end if;
     end process;
 	 
 	 e_midas_event_builder : entity work.midas_event_builder
 	  generic map (
-		 NLINKS => 3--;
+		 NLINKS => 2--;
 	 )
 	  port map(
 		 i_clk_data => tx_clk(0),
 		 i_clk_dma  => pcie_fastclk_out,
 		 i_reset_n  => resets_n(RESET_BIT_EVENT_COUNTER),
-		 i_rx_data  => data_counter & data_counter & data_counter,
-		 i_rx_datak => datak_counter & datak_counter & datak_counter,
+		 i_rx_data  => data_counter,
+		 i_rx_datak => datak_counter,
 		 i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-         i_link_mask => writeregs_slow(FEB_ENABLE_REGISTER_W)(3 - 1 downto 0),
+         i_link_mask => "11",
 		 o_event_wren => dma_wren_cnt,
 		 o_endofevent => dma_end_event_cnt,
 		 o_event_data => dma_event_data,
@@ -769,6 +769,8 @@ tx_datak(0) <= mem_datak_out(3 downto 0);
 		if(clk_sync = '1' and clk_last = '0') then
 			readregs(PLL_REGISTER_R) 						<= readregs_slow(PLL_REGISTER_R);
 			readregs(VERSION_REGISTER_R) 					<= readregs_slow(VERSION_REGISTER_R);
+            readregs(RUN_NR_REGISTER_R)                 <= readregs_slow(RUN_NR_REGISTER_R);
+            readregs(RUN_NR_ACK_REGISTER_R)             <= readregs_slow(RUN_NR_ACK_REGISTER_R);
 			readregs(MEM_WRITEADDR_HIGH_REGISTER_R) 	<= (others => '0');
 			readregs(MEM_WRITEADDR_LOW_REGISTER_R) 	<= (X"0000" & readmem_writeaddr_finished);
 		end if;

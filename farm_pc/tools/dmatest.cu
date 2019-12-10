@@ -64,9 +64,9 @@ int main(int argc, char *argv[])
 
     myfile << "idx" << "\t" << "data" << "\t" << "event_length" << endl;
 
-    system("echo labor | sudo -S ../../../common/kerneldriver/compactify.sh");
+    system("echo machmalkeins | sudo -S ../../../common/kerneldriver/compactify.sh");
     usleep(1000000);
-    system("echo labor | sudo -S ../../../common/kerneldriver/compactify.sh");
+    system("echo machmalkeins | sudo -S ../../../common/kerneldriver/compactify.sh");
     usleep(1000000);
 
     size_t dma_buf_size = MUDAQ_DMABUF_DATA_LEN;
@@ -169,11 +169,13 @@ int main(int argc, char *argv[])
             continue;
         }
         if(lastlastWritten != 1){
-            for(int i=0; i < 8; i++)
-                cout << hex << "0x" <<  dma_buf[i] << " ";
-            cout << endl;
+            for (int j=0; j<100; j++){
+                for(int i=0; i < 8; i++)
+                    cout << hex << "0x" <<  dma_buf[i] << " ";
+                cout << endl;
+            }
         }
-        sleep(1);
+
         break;
         lastlastWritten = 1;
 
@@ -252,14 +254,17 @@ int main(int argc, char *argv[])
 
     for (int j = 0 ; j < sizeof (dma_buf); j++){
         char dma_buf_str[256];
-        sprintf(dma_buf_str, "%08X", dma_buf[(readindex++)%dma_buf_nwords]);
-        myfile << readindex + 1 << "\t" << dma_buf_str << endl;
+        sprintf(dma_buf_str, "%08X", dma_buf[j]);
+        myfile << j + 1 << "\t" << dma_buf_str << endl;
     }
 
     // stop generator
-//    datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-//    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
-//    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
+    if (atoi(argv[1]) == 1) {
+        uint32_t datagen_setup = 0;
+        datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
+        mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+        mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
+    }
 
     mu.disable();
     mu.close();
