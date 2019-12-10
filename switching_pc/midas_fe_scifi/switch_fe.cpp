@@ -207,6 +207,13 @@ INT frontend_init()
    const char * name = "sc.html";
    db_set_value(hDB,0,"Custom/Switching&", name, sizeof(name), 1, TID_STRING);
 
+   // watch if this switching board is enabled
+   HNDLE hKey;
+   db_find_key(hDB, 0, "/Equipment/Links/Settings/SwitchingBoardMask", &hKey);
+   assert(hKey);
+
+   db_watch(hDB, hKey, switching_board_mask_changed, nullptr);
+
    // open mudaq
    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
    if ( !mup->open() ) {
@@ -308,7 +315,7 @@ INT begin_of_run(INT run_number, char *error)
    /* send run prepare signal via CR system */
    INT value = 1;
    char str[128];
-   sprintf(str,"Equipment/Clock Reset/RunTransitions/RequestRunPrepare[%d]", switch_id);
+   sprintf(str,"Equipment/Clock Reset/RunTransitions/RequestRunPrepare", switch_id);
    db_set_value(hDB,0,str, &value, sizeof(value), 1, TID_INT);
 
 
@@ -623,14 +630,17 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
 void switching_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
    printf("switching_board_mask_changed\n");
-   INT value[MAX_N_SWITCHINGBOARDS];
+   INT switching_board_mask[MAX_N_SWITCHINGBOARDS];
    int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
-   db_get_data(hDB, hKey, &value, &size, TID_INT);
+   db_get_data(hDB, hKey, &switching_board_mask, &size, TID_INT);
+   BOOL value = switching_board_mask[switch_id] > 0 ? true : false;
 
-   if(value[switch_id] != equipment[0].info.enabled){
-      equipment[0].info.enabled = value[switch_id];
-      equipment[1].info.enabled = value[switch_id];
-      cm_msg(MINFO, "switching_board_mask_changed", "Set switching board %d enabled to %d", switch_id, value);
+   for(int i = 0; i < 2; i++) {
+      char str[128];
+      sprintf(str,"Equipment/%s/Common/Enabled", equipment[i].name);
+      db_set_value(hDB,0,str, &value, sizeof(value), 1, TID_BOOL);
+
+      cm_msg(MINFO, "switching_board_mask_changed", "Set Equipment %s enabled to %d", equipment[i].name, value);
    }
 
 }
