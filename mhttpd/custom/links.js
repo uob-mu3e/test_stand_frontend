@@ -88,6 +88,11 @@ function Switchingboard(x,y,dx,dy, index){
     this.dx= dx;
 	this.dy= dy;
 
+    this.bxmin = this.x+30;
+    this.bymin = this.y+760;
+    this.bxmax = this.x+100;
+    this.bymax = this.y+790;
+
     this.index = index;
     this.active = 0;
     this.name = "";
@@ -131,6 +136,17 @@ function Switchingboard(x,y,dx,dy, index){
         c.fillStyle = "Black";
         c.font = "12px Arial";
         c.fillText(this.name, this.x+10, this.y+740);
+
+        c.fillStyle = "rgb(50,50,50)";
+        c.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
+        c.fillStyle = "White";
+        c.font = "12px Arial";
+        if(this.active == 0){
+            c.fillText("Enable", this.bxmin+12, this.bymin+19);
+        } else {
+            c.fillText("Disable", this.bxmin+12, this.bymin+19);
+        }
+
 	}
 }
 
@@ -179,9 +195,9 @@ Math.floor(y/x);
 
 var switchingboards = new Array(4);
 switchingboards[0] = new Switchingboard( 50,25,120,800,0);
-switchingboards[1] = new Switchingboard(250,25,120,800,1);
-switchingboards[2] = new Switchingboard(450,25,120,800,2);
-switchingboards[3] = new Switchingboard(650,25,120,800,3);
+switchingboards[1] = new Switchingboard(350,25,120,800,1);
+switchingboards[2] = new Switchingboard(650,25,120,800,2);
+switchingboards[3] = new Switchingboard(950,25,120,800,3);
 
 function init(){
 
@@ -223,7 +239,23 @@ window.addEventListener('click', function(event) {
 
     var found = false;
 
-    for(var i=0; i < 192; i++){
+    for(var i=0; i < 4; i++){
+        if(mouse.x >= switchingboards[i].bxmin &&
+            mouse.x <= switchingboards[i].bxmax &&
+            mouse.y >= switchingboards[i].bymin &&
+            mouse.y <= switchingboards[i].bymax ){
+            if(switchingboards[i].active==0){
+                switchingboards[i].active=1;
+            } else {
+                switchingboards[i].active=0;
+            }
+            mjsonrpc_db_set_value("/Equipment/Links/Settings/SwitchingBoardMask["+i+"]", switchingboards[i].active);
+            found = true;
+        }
+
+    }
+
+    for(var i=1000*found; i < 192; i++){
         if(rxlinks[i].selected && !found){
              if(rxselindex == i){
                     if(mouse.x >= rxlinks[i].lxmin &&
