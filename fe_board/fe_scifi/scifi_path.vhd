@@ -52,7 +52,7 @@ architecture arch of scifi_path is
     signal s_testpulse : std_logic;
 
     signal rx_pll_lock : std_logic;
-    signal rx_dpa_lock : std_logic_vector(i_data'range);
+    signal rx_dpa_lock, rx_dpa_lock_reg : std_logic_vector(i_data'range);
     signal rx_ready : std_logic_vector(i_data'range);
     signal frame_desync : std_logic_vector(1 downto 0);
     signal buffer_full : std_logic_vector(1 downto 0);
@@ -97,8 +97,12 @@ begin
     elsif rising_edge(i_clk_core) then
         o_reg_rdata <= X"CCCCCCCC";
         s_subdet_resetdly_reg_written <= '0';
+	--synchronizers for monitoring flags / counters (false path at transition)
 	s_cntreg_denom_g_156<=s_cntreg_denom_g;
 	s_cntreg_num<=s_cntreg_num_g;
+	rx_dpa_lock_reg <= rx_dpa_lock;
+
+	---REGISTER MAPPING---
         -- counters
         if ( i_reg_re = '1' and i_reg_addr = X"0" ) then
             o_reg_rdata <= s_cntreg_ctrl;
@@ -125,7 +129,7 @@ begin
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"5" ) then
             o_reg_rdata <= (others => '0');
-            o_reg_rdata(rx_dpa_lock'range) <= rx_dpa_lock;
+            o_reg_rdata(rx_dpa_lock'range) <= rx_dpa_lock_reg;
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"6" ) then
             o_reg_rdata <= (others => '0');
