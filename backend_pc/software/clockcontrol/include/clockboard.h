@@ -95,6 +95,7 @@ public:
     int configure_mother_current_monitor(uint16_t config);
 
     reset reset_protocol;
+
 protected:
     ipbus bus;
 
