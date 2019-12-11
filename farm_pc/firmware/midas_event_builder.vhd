@@ -336,12 +336,15 @@ begin
 				w_ram_data  		<= std_logic_vector(to_unsigned(mux_link, w_ram_data'length)); -- MIDAS Bank Type
 				event_tagging_state <= bank_length_state;
 
-			when bank_length_state =>
-				w_ram_en					<= '1';
-				w_ram_add   				<= w_ram_add + 1;
-				w_ram_data(11 downto 0)  	<= bank_length_fifo(11 + 12 * mux_link downto mux_link * 12);
-				w_ram_data(31 downto 12)  	<= (others => '0');
-				event_tagging_state 		<= bank_data_state;
+			when bank_length_state => -- check for preamble and start then
+                if ( bank_data_fifo(11 + 36 * mux_link downto mux_link * 36 + 4) = x"bc" and
+					 bank_data_fifo(3 + 36 * mux_link downto mux_link * 36 ) = "0001" ) then
+                    w_ram_en					<= '1';
+                    w_ram_add   				<= w_ram_add + 1;
+                    w_ram_data(11 downto 0)  	<= bank_length_fifo(11 + 12 * mux_link downto mux_link * 12);
+                    w_ram_data(31 downto 12)  	<= (others => '0');
+                    event_tagging_state 		<= bank_data_state;
+                end if;
 
 			when bank_data_state =>
 				w_ram_en			<= '1';
