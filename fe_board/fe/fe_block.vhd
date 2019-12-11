@@ -265,6 +265,22 @@ begin
 
         -- mscb
 
+        -- git head hash
+        if ( fe_reg.addr(7 downto 0) = X"FA" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            fe_reg.rdata <= work.cmp.GIT_HEAD(0 to 31);
+        end if;
+        -- fpga id
+        if ( fe_reg.addr(7 downto 0) = X"FB" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            fe_reg.rdata(i_fpga_id'range) <= i_fpga_id;
+        end if;
+        -- fpga type
+        if ( fe_reg.addr(7 downto 0) = X"FC" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
+        end if;
+
         --
     end if;
     end process;
