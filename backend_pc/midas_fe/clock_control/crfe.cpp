@@ -52,6 +52,7 @@
 
 #include "clockboard.h"
 #include "reset_protocol.h"
+#include "link_constants.h"
 
 using std::cout;
 using std::endl;
@@ -81,18 +82,6 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
-
-/* Maximum number of  swiutching boards */
-const int MAX_N_SWITCHINGBOARDS = 4;
-
-/* Maximum number of frontenboards */
-const int MAX_N_FRONTENBOARDS = MAX_N_SWITCHINGBOARDS*48;
-
-/* Identification of FEB by subsystem */
-enum FEBTYPE {Undefined, Pixel, Fibre, Tile};
-/* Status of links */
-enum LINKSTATUS {Disabled, OK, Unknown, Fault};
-
 
 // Clock board interface
 clockboard * cb;
