@@ -1,15 +1,15 @@
 [*]
-[*] GTKWave Analyzer v3.3.101 (w)1999-2019 BSI
-[*] Thu Dec  5 12:22:07 2019
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Wed Dec 11 14:08:16 2019
 [*]
-[dumpfile] "/home/labor/online/farm_pc/firmware/tb/readout/.cache/readout_tb.ghw"
-[dumpfile_mtime] "Thu Dec  5 12:19:38 2019"
-[dumpfile_size] 1638047
-[savefile] "/home/labor/online/farm_pc/firmware/tb/readout/signal_view.sav"
-[timestart] 689070000
-[size] 2560 1376
-[pos] -51 -51
-*-24.000000 734620000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/home/makoeppe/mu3e/online/farm_pc/firmware/tb/readout/.cache/readout_tb.ghw"
+[dumpfile_mtime] "Wed Dec 11 14:08:16 2019"
+[dumpfile_size] 1142337
+[savefile] "/home/makoeppe/mu3e/online/farm_pc/firmware/tb/readout/signal_view.sav"
+[timestart] 366800000
+[size] 1280 1317
+[pos] 1234 -46
+*-25.000000 734620000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.readout_tb.
 [treeopen] top.readout_tb.e_midas_event_builder.
@@ -32,13 +32,18 @@ top.readout_tb.dma_data_wren
 #{top.readout_tb.dma_data_32_5[31:0]} top.readout_tb.dma_data_32_5[31] top.readout_tb.dma_data_32_5[30] top.readout_tb.dma_data_32_5[29] top.readout_tb.dma_data_32_5[28] top.readout_tb.dma_data_32_5[27] top.readout_tb.dma_data_32_5[26] top.readout_tb.dma_data_32_5[25] top.readout_tb.dma_data_32_5[24] top.readout_tb.dma_data_32_5[23] top.readout_tb.dma_data_32_5[22] top.readout_tb.dma_data_32_5[21] top.readout_tb.dma_data_32_5[20] top.readout_tb.dma_data_32_5[19] top.readout_tb.dma_data_32_5[18] top.readout_tb.dma_data_32_5[17] top.readout_tb.dma_data_32_5[16] top.readout_tb.dma_data_32_5[15] top.readout_tb.dma_data_32_5[14] top.readout_tb.dma_data_32_5[13] top.readout_tb.dma_data_32_5[12] top.readout_tb.dma_data_32_5[11] top.readout_tb.dma_data_32_5[10] top.readout_tb.dma_data_32_5[9] top.readout_tb.dma_data_32_5[8] top.readout_tb.dma_data_32_5[7] top.readout_tb.dma_data_32_5[6] top.readout_tb.dma_data_32_5[5] top.readout_tb.dma_data_32_5[4] top.readout_tb.dma_data_32_5[3] top.readout_tb.dma_data_32_5[2] top.readout_tb.dma_data_32_5[1] top.readout_tb.dma_data_32_5[0]
 #{top.readout_tb.dma_data_32_6[31:0]} top.readout_tb.dma_data_32_6[31] top.readout_tb.dma_data_32_6[30] top.readout_tb.dma_data_32_6[29] top.readout_tb.dma_data_32_6[28] top.readout_tb.dma_data_32_6[27] top.readout_tb.dma_data_32_6[26] top.readout_tb.dma_data_32_6[25] top.readout_tb.dma_data_32_6[24] top.readout_tb.dma_data_32_6[23] top.readout_tb.dma_data_32_6[22] top.readout_tb.dma_data_32_6[21] top.readout_tb.dma_data_32_6[20] top.readout_tb.dma_data_32_6[19] top.readout_tb.dma_data_32_6[18] top.readout_tb.dma_data_32_6[17] top.readout_tb.dma_data_32_6[16] top.readout_tb.dma_data_32_6[15] top.readout_tb.dma_data_32_6[14] top.readout_tb.dma_data_32_6[13] top.readout_tb.dma_data_32_6[12] top.readout_tb.dma_data_32_6[11] top.readout_tb.dma_data_32_6[10] top.readout_tb.dma_data_32_6[9] top.readout_tb.dma_data_32_6[8] top.readout_tb.dma_data_32_6[7] top.readout_tb.dma_data_32_6[6] top.readout_tb.dma_data_32_6[5] top.readout_tb.dma_data_32_6[4] top.readout_tb.dma_data_32_6[3] top.readout_tb.dma_data_32_6[2] top.readout_tb.dma_data_32_6[1] top.readout_tb.dma_data_32_6[0]
 #{top.readout_tb.dma_data_32_7[31:0]} top.readout_tb.dma_data_32_7[31] top.readout_tb.dma_data_32_7[30] top.readout_tb.dma_data_32_7[29] top.readout_tb.dma_data_32_7[28] top.readout_tb.dma_data_32_7[27] top.readout_tb.dma_data_32_7[26] top.readout_tb.dma_data_32_7[25] top.readout_tb.dma_data_32_7[24] top.readout_tb.dma_data_32_7[23] top.readout_tb.dma_data_32_7[22] top.readout_tb.dma_data_32_7[21] top.readout_tb.dma_data_32_7[20] top.readout_tb.dma_data_32_7[19] top.readout_tb.dma_data_32_7[18] top.readout_tb.dma_data_32_7[17] top.readout_tb.dma_data_32_7[16] top.readout_tb.dma_data_32_7[15] top.readout_tb.dma_data_32_7[14] top.readout_tb.dma_data_32_7[13] top.readout_tb.dma_data_32_7[12] top.readout_tb.dma_data_32_7[11] top.readout_tb.dma_data_32_7[10] top.readout_tb.dma_data_32_7[9] top.readout_tb.dma_data_32_7[8] top.readout_tb.dma_data_32_7[7] top.readout_tb.dma_data_32_7[6] top.readout_tb.dma_data_32_7[5] top.readout_tb.dma_data_32_7[4] top.readout_tb.dma_data_32_7[3] top.readout_tb.dma_data_32_7[2] top.readout_tb.dma_data_32_7[1] top.readout_tb.dma_data_32_7[0]
-@420
+@421
 top.readout_tb.e_midas_event_builder.event_counter_state
+@420
 top.readout_tb.e_midas_event_builder.event_tagging_state
 @22
 #{top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[31:0]} top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[31] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[30] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[29] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[28] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[27] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[26] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[25] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[24] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[23] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[22] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[21] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[20] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[19] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[18] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[17] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[16] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[15] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[14] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[13] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[12] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[11] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[10] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[9] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[8] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[7] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[6] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[5] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[4] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[3] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[2] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[1] top.readout_tb.e_midas_event_builder.e_ram_32_256.data_a[0]
 #{top.readout_tb.e_midas_event_builder.w_ram_add[11:0]} top.readout_tb.e_midas_event_builder.w_ram_add[11] top.readout_tb.e_midas_event_builder.w_ram_add[10] top.readout_tb.e_midas_event_builder.w_ram_add[9] top.readout_tb.e_midas_event_builder.w_ram_add[8] top.readout_tb.e_midas_event_builder.w_ram_add[7] top.readout_tb.e_midas_event_builder.w_ram_add[6] top.readout_tb.e_midas_event_builder.w_ram_add[5] top.readout_tb.e_midas_event_builder.w_ram_add[4] top.readout_tb.e_midas_event_builder.w_ram_add[3] top.readout_tb.e_midas_event_builder.w_ram_add[2] top.readout_tb.e_midas_event_builder.w_ram_add[1] top.readout_tb.e_midas_event_builder.w_ram_add[0]
 @28
 top.readout_tb.e_midas_event_builder.w_ram_en
+@22
+#{top.readout_tb.e_midas_event_builder.o_state_out[3:0]} top.readout_tb.e_midas_event_builder.o_state_out[3] top.readout_tb.e_midas_event_builder.o_state_out[2] top.readout_tb.e_midas_event_builder.o_state_out[1] top.readout_tb.e_midas_event_builder.o_state_out[0]
+@28
+top.readout_tb.e_midas_event_builder.tag_fifo_empty
 [pattern_trace] 1
 [pattern_trace] 0

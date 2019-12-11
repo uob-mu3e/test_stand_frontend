@@ -227,7 +227,7 @@ e_tagging_fifo_event : entity work.ip_scfifo
 		almost_empty => open,
 		almost_full => open,
 		usedw => open,
-		sclr     => i_reset_dma_n--,
+		sclr     => reset_dma--,
 		-- simulation only
 		--aclr     => reset--,
 );
