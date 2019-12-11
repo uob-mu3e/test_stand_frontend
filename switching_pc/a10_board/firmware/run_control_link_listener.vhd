@@ -40,14 +40,14 @@ BEGIN
                 end_of_run_received &
                 run_number;
                 
-            if(i_data(7 downto 0) = run_prep_acknowledge(7 downto 0) and i_datak = run_prep_acknowledge_datak) then 
+            if (i_data = RUN_END and i_datak = RUN_END_DATAK) then
+                run_prep_acknowledge_received   <= '0';
+                end_of_run_received             <= '1';
+                
+            elsif(i_data(7 downto 0) = run_prep_acknowledge(7 downto 0) and i_datak = run_prep_acknowledge_datak) then 
                 run_prep_acknowledge_received   <= '1';
                 end_of_run_received             <= '0';
                 run_number                      <= i_data(31 downto 8);
-                
-            elsif (i_data = RUN_END and i_datak = RUN_END_DATAK) then
-                run_prep_acknowledge_received   <= '0';
-                end_of_run_received             <= '1';
             end if;
 		end if;
     end process;

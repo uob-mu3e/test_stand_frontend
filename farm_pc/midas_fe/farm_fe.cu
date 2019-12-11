@@ -8,6 +8,7 @@
 #include "msystem.h"
 #include "mcstd.h"
 #include "experim.h"
+#include "switching_constants.h"
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -218,7 +219,6 @@ void speed_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 {
     KEY key;
     db_get_key(hDB, hKey, &key);
-    mudaq::DmaMudaqDevice & mu = *mup;
 
     if (std::string(key.name) == "Divider") {
        int value;
