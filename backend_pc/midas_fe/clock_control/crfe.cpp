@@ -50,9 +50,9 @@
 #include "history.h"
 
 
-
 #include "clockboard.h"
 #include "reset_protocol.h"
+#include "link_constants.h"
 
 using std::cout;
 using std::endl;
@@ -82,15 +82,6 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
-
-/* Maximum number of  swiutching boards */
-const int MAX_N_SWITCHINGBOARDS = 4;
-
-/* Maximum number of frontenboards */
-const int MAX_N_FRONTENBOARDS = MAX_N_SWITCHINGBOARDS*48;
-
-
-
 
 // Clock board interface
 clockboard * cb;
@@ -294,7 +285,7 @@ EQUIPMENT equipment[] = {
      0,                         /* event source */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,        /* read always and update ODB */
+     RO_RUNNING | RO_STOPPED | RO_ODB,        /* read while running and stopped but not at transitions and update ODB */
      10000,                     /* read every 10 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
@@ -532,7 +523,7 @@ INT begin_of_run(INT run_number, char *error)
     // set equipment status for status web page
     set_equipment_status("Clock Reset", "Starting run", "yellowLight");
     cb->write_command("Sync");
-    usleep(100);
+    //usleep(1);
     cb->write_command("Start Run");
     set_equipment_status("Clock Reset", "Ok", "greenLight");
 
