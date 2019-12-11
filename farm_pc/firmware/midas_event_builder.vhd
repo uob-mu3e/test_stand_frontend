@@ -14,11 +14,13 @@ entity midas_event_builder is
     port(
          i_clk_data:          in std_logic;
          i_clk_dma:           in std_logic;
-         i_reset_n:           in std_logic;
+         i_reset_data_n:      in std_logic;
+         i_reset_dma_n:       in std_logic;
          i_rx_data:     	  in std_logic_vector (NLINKS * 32 - 1 downto 0);
          i_rx_datak:          in std_logic_vector (NLINKS * 4 - 1 downto 0);
          i_wen_reg:       	  in std_logic;
          i_link_mask:         in std_logic_vector (NLINKS - 1 downto 0);
+         o_all_done:          out std_logic_vector (NLINKS * 2 + NLINKS downto 0);
          o_event_wren:     	  out std_logic;
          o_endofevent: 		  out std_logic; 
          o_event_data:        out std_logic_vector (255 downto 0);
@@ -29,7 +31,8 @@ end entity midas_event_builder;
 architecture rtl of midas_event_builder is
 
 ----------------signals---------------------
-signal reset : std_logic;
+signal reset_data : std_logic;
+signal reset_dma : std_logic;
 
 -- bank
 signal bank_length 		: std_logic_vector(NLINKS * 12 - 1 downto 0);
@@ -43,6 +46,8 @@ signal bank_length_empty: std_logic_vector(NLINKS - 1 downto 0);
 signal bank_data_fifo	: std_logic_vector(NLINKS * 36 - 1 downto 0);
 signal bank_ren	 		: std_logic_vector(NLINKS - 1 downto 0);
 signal bank_empty	 	: std_logic_vector(NLINKS - 1 downto 0);
+
+signal banks_all_done   : std_logic_vector(NLINKS * 2 - 1 downto 0);
 
 signal mux_link			: integer range 0 to NLINKS - 1;
 signal buffer_not_empty	: std_logic;
@@ -81,19 +86,27 @@ signal event_last_ram_add : std_logic_vector(8 downto 0);
 ----------------begin event_counter------------------------
 begin
 
-reset <= not i_reset_n;
+reset_data <= not i_reset_data_n;
+reset_dma <= not i_reset_dma_n;
 o_event_data <= r_ram_data;
+o_all_done(NLINKS - 1 + (NLINKS) * 2 + 1) <= tag_fifo_empty;
 
 -- generate buffer
 buffer_banks:
 FOR i in 0 to NLINKS - 1 GENERATE	
+
+    o_all_done(1 + 2 * i downto i * 2) <= banks_all_done(1 + 2 * i downto i * 2);
+    o_all_done(i + (NLINKS) * 2) <= bank_empty(i);
+
 	e_bank : entity work.midas_bank_builder
 	    port map(
-			i_clk_data          => i_clk_data,	
+			i_clk_data          => i_clk_data,
 			i_clk_dma			=> i_clk_dma,
-			i_reset_n			=> i_reset_n,
+			i_reset_data_n		=> i_reset_data_n,
+            i_reset_dma_n		=> i_reset_dma_n,
 			i_rx_data 			=> i_rx_data(31 + 32 * i downto i * 32),
 			i_rx_datak 			=> i_rx_datak(3 + 4 * i downto i * 4),
+            o_all_done          => banks_all_done(1 + 2 * i downto i * 2),
 			o_bank_length 		=> bank_length(11 + 12 * i downto i * 12),
 			o_bank_wren 		=> bank_wren(i),
 			o_bank_data 		=> bank_data(35 + 36 * i downto i * 36),
@@ -114,7 +127,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
 			rdreq   => bank_ren(i),
 			wrclk   => i_clk_dma,
 			rdclk   => i_clk_dma,
-			aclr    => reset,
+			aclr    => reset_dma,
 			q       => bank_data_fifo(35 + 36 * i downto i * 36),
 			rdempty => bank_empty(i),
 			-- simulation only
@@ -144,17 +157,17 @@ FOR i in 0 to NLINKS - 1 GENERATE
 			almost_empty => open,
 			almost_full => open,
 			usedw => open,
-			sclr     => reset--,
+			sclr     => reset_dma--,
 			-- simulation only
 			--aclr     => reset--,
 	);
 END GENERATE buffer_banks;
 
 -- check if buffer is empty
-process(i_clk_dma, i_reset_n)
+process(i_clk_dma, i_reset_dma_n)
 variable not_empty : std_logic;
 begin
-	if( i_reset_n = '0' ) then
+	if( i_reset_dma_n = '0' ) then
 		buffer_not_empty <= '0';
 		not_empty := '1';
 	elsif( rising_edge(i_clk_dma) ) then
@@ -214,16 +227,16 @@ e_tagging_fifo_event : entity work.ip_scfifo
 		almost_empty => open,
 		almost_full => open,
 		usedw => open,
-		sclr     => reset--,
+		sclr     => i_reset_dma_n--,
 		-- simulation only
 		--aclr     => reset--,
 );
 
 -- write banks to event ram
-process(i_clk_dma, i_reset_n)
+process(i_clk_dma, i_reset_dma_n)
 	variable count_size : integer range 0 to 2**12*NLINKS;
 begin
-	if( i_reset_n = '0' ) then
+	if( i_reset_dma_n = '0' ) then
 		event_tagging_state	<= waiting;
 		w_ram_en            <= '0';
 		w_fifo_en           <= '0';
@@ -380,9 +393,9 @@ end process;
 
 
 -- dma end of events, count events and write control
-process(i_clk_dma, i_reset_n)
+process(i_clk_dma, i_reset_dma_n)
 begin
-	if(i_reset_n = '0') then
+	if(i_reset_dma_n = '0') then
 		o_event_wren				<= '0';
 		o_endofevent				<= '0';
 		o_state_out              	<= x"0";
