@@ -215,6 +215,19 @@ INT frontend_init()
 
    db_watch(hDB, hKey, switching_board_mask_changed, nullptr);
 
+    // Define history panels
+   hs_define_panel("SciFi","Counters",{"SciFi:Counters_nHits",
+                                       "SciFi:Counters_nFrames",
+                                       "SciFi:Counters_nWordsLVDS",
+                                       "SciFi:Counters_nWordsPRBS"});
+
+   hs_define_panel("SciFi","Errors",{"SciFi:Counters_nBadFrames",
+                                     "SciFi:Counters_nErrorsLVDS",
+                                     "SciFi:Counters_nErrorsPRBS"});
+
+   hs_define_panel("SciFi","Times",{"SciFi:Counters_Timer",
+                                    "SciFi:Counters_Time"});
+
    // open mudaq
    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
    if ( !mup->open() ) {
@@ -254,11 +267,6 @@ INT frontend_init()
     cm_set_transition_sequence(TR_STOP, 600);
 
 
-    // Define history panels
-   hs_define_panel("SciFi","Counters",{"SciFi:nHits",
-                                       "SciFi:Timer",
-                                       "SciFi:Counters:Timer",
-                                       "SciFi:Counters_nHits"});
 
    return CM_SUCCESS;
 }
