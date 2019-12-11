@@ -276,7 +276,8 @@ INT begin_of_run(INT run_number, char *error)
 {
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Starting Run", "var(--morange)");
    /* Reset acknowledge/end of run seen registers before start of run */
-   mup->write_register(0/* TODO Reset Register */, 0x1);
+   mup->write_register_wait(RESET_REGISTER_W, 0x0/* TODO Right bits, eg SET_RESET_BIT_SC_SLAVE(0) */, 1000);
+   mup->write_register_wait(RESET_REGISTER_W, 0x0, 1000);
 
 
    HNDLE hVar;
