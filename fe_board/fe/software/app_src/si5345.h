@@ -1,16 +1,16 @@
 #ifndef __FE_SI5345_H__
 #define __FE_SI5345_H__
 
-#include "../include/si.h"
+#include "../include/si534x.h"
 
 #include "si5345_revb_registers.h"
 
-struct si5345_t : si_t {
+struct si5345_t : si534x_t {
 
     const char* DESIGN_ID = "feb.v01";
 
     si5345_t(alt_u32 spi_base, alt_u32 spi_slave)
-        : si_t(spi_base, spi_slave)
+        : si534x_t(spi_base, spi_slave)
     {
     }
 
@@ -23,12 +23,7 @@ struct si5345_t : si_t {
         si_t::init(si5345_revb_registers, sizeof(si5345_revb_registers) / sizeof(si5345_revb_registers[0]));
         for(int i = 0; i < 8; i++) write(0x026B + i, DESIGN_ID[i]);
 
-        for(int i = 0; i < 8; i++) {
-            alt_u8 sysincal = read(0x000C);
-            if(sysincal == 0) break;
-            printf("[si5345.init] SYSINCAL = %u => wait ...\n", sysincal);
-            usleep(1000);
-        }
+        wait_sysincal();
     }
 
     void reset() {
@@ -65,7 +60,7 @@ struct si5345_t : si_t {
             status();
             printf("\n");
 
-            printf("si5340:\n");
+            printf("si5345:\n");
             printf("  [I] => init\n");
             printf("  [R] => reset\n");
             printf("  [r] => read regs\n");
