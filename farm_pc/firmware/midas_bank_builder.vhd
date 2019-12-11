@@ -7,14 +7,18 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
+use work.daq_constants.all;
+
 
 entity midas_bank_builder is
     port(
 		i_clk_data:               in std_logic;
 		i_clk_dma:           in std_logic;
-		i_reset_n:           in std_logic;
+		i_reset_data_n:           in std_logic;
+        i_reset_dma_n:           in std_logic;
 		i_rx_data:           in std_logic_vector (31 downto 0);
 		i_rx_datak:          in std_logic_vector (3 downto 0);
+        o_all_done:      out std_logic_vector (1 downto 0);
 		o_bank_length:      out std_logic_vector (11 downto 0);
 		o_bank_wren:		   out std_logic;
  		o_bank_data:          out std_logic_vector (35 downto 0);
@@ -25,7 +29,8 @@ end entity midas_bank_builder;
 architecture rtl of midas_bank_builder is
 
 ----------------signals---------------------
-signal reset : std_logic;
+signal reset_data : std_logic;
+signal reset_dma : std_logic;
 
 signal w_ram_data : std_logic_vector(35 downto 0);
 signal w_ram_add  : std_logic_vector(11 downto 0);
@@ -56,10 +61,15 @@ signal fifo_data_ready : std_logic;
 ----------------begin midas_bank_builder------------------------
 begin
 
-reset <= not i_reset_n;
+reset_data <= not i_reset_data_n;
+reset_dma <= not i_reset_dma_n;
 o_bank_data <= r_ram_data;
 
 not_fifo_empty <= not fifo_empty;
+
+o_all_done(0) <= tag_fifo_empty; -- tag fifo
+o_all_done(1) <= fifo_empty; -- data fifo
+
 
 -- write buffer data to ram
 -- e_ram : entity work.ip_ram_36
@@ -110,7 +120,7 @@ e_bank_length : entity work.ip_scfifo
 		almost_empty => open,
 		almost_full => open,
 		usedw => open,
-		sclr     => reset--,
+		sclr     => reset_dma--,
 		-- simulation only
 		--aclr     => reset--,
 );
@@ -136,22 +146,24 @@ e_fifo : entity work.ip_dcfifo
 		rdusedw	 => open,
 		wrfull	 => open,
 		wrusedw	 => open,
-		aclr     => reset--,
+		aclr     => reset_data--,
 		-- simulation only
 		--full     => open,
 		--empty    => fifo_empty,
 );
 
 -- write fifo
-process(i_clk_data, i_reset_n)
+process(i_clk_data, i_reset_data_n)
 begin
-	if(i_reset_n = '0') then
+	if(i_reset_data_n = '0') then
 		fifo_wrreq <= '0';
 		rx_data_in <= (others => '0');
 	elsif(rising_edge(i_clk_data)) then
 		rx_data_in <= i_rx_data & i_rx_datak;
-		if (i_rx_data = x"000000BC" and i_rx_datak = "0001") then
-         fifo_wrreq <= '0';
+		if ( (i_rx_data = x"000000BC" and i_rx_datak = "0001") or 
+            (i_rx_data = RUN_END and i_rx_datak = "0001") or 
+            (i_rx_data = run_prep_acknowledge and i_rx_datak = "0001") ) then
+            fifo_wrreq <= '0';
         else
 			fifo_wrreq <= '1';
       end if;
@@ -159,9 +171,9 @@ begin
 end process;
 
 -- link data to dma ram
-process(i_clk_dma, i_reset_n)
+process(i_clk_dma, i_reset_dma_n)
 begin
-	if(i_reset_n = '0') then
+	if(i_reset_dma_n = '0') then
 		bank_tagging_state	<= waiting;
 		w_ram_en             <= '0';
 		w_fifo_en            <= '0';
@@ -177,7 +189,7 @@ begin
 			
 			case bank_tagging_state is
 			
-				when waiting =>
+				when waiting =>       
 					if(((fifo_data_out(35 downto 30) = "111010") or (fifo_data_out(35 downto 30) = "111000")) and --mupix or mutrig data header
 						fifo_data_out(11 downto 4) = x"bc" and --data header identifier
 						fifo_data_out(3 downto 0) = "0001") then --data header k
@@ -192,8 +204,6 @@ begin
 					w_ram_data  <= fifo_data_out;
 					w_ram_add   <= w_ram_add + 1;
 					if( (fifo_data_out(11 downto 4) = x"9c" and --x"0000009c" and
-						fifo_data_out(3 downto 0) = "0001") or
-						(fifo_data_out(11 downto 4) = x"EE" and -- run end / termi command
 						fifo_data_out(3 downto 0) = "0001") ) then
 						w_fifo_en   			<= '1';
 						w_fifo_data 			<= w_ram_add + 1;
@@ -209,9 +219,9 @@ begin
 end process;
 
 -- dma end of events, count events and write control
-process(i_clk_dma, i_reset_n)
+process(i_clk_dma, i_reset_dma_n)
 begin
-	if(i_reset_n = '0') then
+	if(i_reset_dma_n = '0') then
 		o_state_out               <= x"0";
 		r_fifo_en					<= '0';
 		o_bank_wren	    		<= '0';

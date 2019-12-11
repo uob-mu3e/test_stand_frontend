@@ -101,6 +101,8 @@ architecture rtl of top is
 		 signal reset_n : std_logic;
 		 signal resets : std_logic_vector(31 downto 0);
 		 signal resets_n: std_logic_vector(31 downto 0);
+         signal resets_fast : std_logic_vector(31 downto 0);
+		 signal resets_n_fast: std_logic_vector(31 downto 0);
 		 
 		 signal clk_50_cnt : std_logic_vector(31 downto 0);
 		 signal clk_125_cnt : std_logic_vector(31 downto 0);
@@ -524,16 +526,20 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
             N_LINKS_g                           => N_links--,
     )
     port map (
-            i_clk                               => tx_clk(0),
-            i_reset_n                           => reset_n,
-            i_aligned                           => (others => '1'),
-            i_data                              => rx_data(0),
-            i_datak                             => rx_datak(0),
-            i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
-            i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
-            i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
-            o_run_number                        => readregs(RUN_NR_REGISTER_R), -- run number of i_addr
-            o_runNr_ack                         => readregs(RUN_NR_ACK_REGISTER_R)--, -- which FEBs have responded with run number in i_run_number
+        i_clk                               => tx_clk(0),
+        i_reset_ack_seen_n                  => resets_n(RESET_BIT_RUN_START_ACK),
+        i_reset_run_end_n                   => resets_n(RESET_BIT_RUN_END_ACK),
+        i_buffers_empty                     => (others => '1'), -- TODO: connect buffers emtpy from dma here
+        i_aligned                           => (others => '1'),
+        i_data                              => rx_data(0),
+        i_datak                             => rx_datak(0),
+        i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
+        i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
+        i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
+        o_run_number                        => readregs(RUN_NR_REGISTER_R), -- run number of i_addr
+        o_runNr_ack                         => readregs(RUN_NR_ACK_REGISTER_R), -- which FEBs have responded with run number in i_run_number
+        o_run_stop_ack                      => readregs(RUN_STOP_ACK_REGISTER_R),
+        o_buffers_empty                     => readregs(BUFFER_STATUS_REGISTER_R)--,
     );
 
 
@@ -577,7 +583,8 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 	  port map(
 		 i_clk_data => tx_clk(0),
 		 i_clk_dma  => pcie_fastclk_out,
-		 i_reset_n  => resets_n(RESET_BIT_EVENT_COUNTER),
+		 i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
+         i_reset_dma_n  => resets_n_fast(RESET_BIT_EVENT_COUNTER),
 		 i_rx_data  => data_counter & data_counter & data_counter,
 		 i_rx_datak => datak_counter & datak_counter & datak_counter,
 		 i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
@@ -753,7 +760,20 @@ tx_datak(0) <= mem_datak_out(3 downto 0);
 
         clk                     => tx_clk(0)--,
     );
+    
+    e_reset_logic_fast : entity work.reset_logic
+    port map (
+		rst_n                   => push_button0_db,
 
+		reset_register          => writeregs(RESET_REGISTER_W),
+		--reset_reg_written       => regwritten(RESET_REGISTER_W),
+
+		resets                  => resets_fast,
+		resets_n                => resets_n_fast,
+
+        clk                     => pcie_fastclk_out--,
+    );
+    
     e_version_reg : entity work.version_reg
     port map (
         data_out  => readregs_slow(VERSION_REGISTER_R)(27 downto 0)

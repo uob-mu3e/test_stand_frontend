@@ -60,36 +60,51 @@ int MutrigFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char*
 }
 
 int MutrigFEB::ReadBackCounters(HNDLE hDB, int FPGA_ID, const char* odb_prefix){
-   auto rpc_ret=m_mu.FEBsc_NiosRPC(FPGA_ID,0x0105,{});
+   int rpc_ret=m_mu.FEBsc_NiosRPC(FPGA_ID,0x0105,{});
    //retrieve results
-   uint32_t* val=new uint32_t(rpc_ret*4*3); //nASICs * 4 counterbanks * 3 words
+   uint32_t* val=new uint32_t[rpc_ret*3]; //nASICs * 4 counterbanks * 3 words
    INT val_size = sizeof(DWORD);
-
-   m_mu.FEBsc_read(FPGA_ID, val, rpc_ret*4*3 , (uint32_t) m_mu.FEBsc_RPC_DATAOFFSET);
+   printf("RPC return: %u\n",rpc_ret);
+   m_mu.FEBsc_read(FPGA_ID, val, rpc_ret*3 , (uint32_t) m_mu.FEBsc_RPC_DATAOFFSET);
+   printf("done reading:\n");
+   for(int i=0;i<rpc_ret*4*3;i++){
+      printf("%8x\n",val[i]);
+   }
    //store in midas
    INT status;
    int index=0;
-   std::string path=odb_prefix+std::string("/Variables/Counters/");
+   printf("done reading: odb:%s\n",odb_prefix);
+   char path[255];
+   printf("odb var:%s\n",path);
    for(int nASIC=0;nASIC<rpc_ret;nASIC++){
-       if((status=db_set_value_index(hDB, 0, (path+"nHits").c_str(),       &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       printf("writing %d\n",nASIC);
+       sprintf(path,"%s/Variables/Counters/nHits",odb_prefix);
+       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=1;
-       if((status=db_set_value_index(hDB, 0, (path+"Timer").c_str(),       &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/Time",odb_prefix);
+       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=2;
-       if((status=db_set_value_index(hDB, 0, (path+"nBadFrames").c_str(),  &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/nBadFrames",odb_prefix);
+       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=1;
-       if((status=db_set_value_index(hDB, 0, (path+"nFrames").c_str(),     &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/nFrames",odb_prefix);
+       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=2;
-       if((status=db_set_value_index(hDB, 0, (path+"nErrorsLVDS").c_str(), &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/nErrorsLVDS",odb_prefix);
+       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=1;
-       if((status=db_set_value_index(hDB, 0, (path+"nWordsLVDS").c_str(),  &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/nWordsLVDS",odb_prefix);
+       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=2;
-       if((status=db_set_value_index(hDB, 0, (path+"nErrorsPRBS").c_str(), &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/nErrorsPRBS",odb_prefix);
+       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=1;
-       if((status=db_set_value_index(hDB, 0, (path+"nWordsPRBS").c_str(),  &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/nWordsPRBS",odb_prefix);
+       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=2;
    }
 
- 
+   delete[] val; 
 }
 
 //MIDAS callback function for FEB register Setter functions

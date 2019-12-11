@@ -51,6 +51,7 @@ architecture behav of readout_tb is
       signal state_out_eventbuilder : std_logic_vector(3 downto 0);
       signal dma_data_wren : std_logic;
       signal dma_data : std_logic_vector(255 downto 0);
+      signal all_done : std_logic_vector(3 * 2 + 3 downto 0);
 
       signal dma_data_32_0 : std_logic_vector(31 downto 0);
       signal dma_data_32_1 : std_logic_vector(31 downto 0);
@@ -116,7 +117,7 @@ e_data_gen_mupix : component data_generator_a10_tb
 		clk 				   => clk,
 		reset				   => reset,
 		enable_pix	           => enable_pix,
-		random_seed 		   => "010100101001010",
+		random_seed 		   => (others => '1'),
 		start_global_time	   => (others => '0'),
 		data_pix_generated     => data_pix_generated,
 		datak_pix_generated    => datak_pix_generated,
@@ -128,7 +129,7 @@ e_data_gen_mupix : component data_generator_a10_tb
 e_data_gen_scifi : component data_generator_a10_tb
 	port map (
 		clk 				     => clk,
-		reset				     => reset_0,
+		reset				     => reset,
 		enable_pix	        => enable_pix,
 		random_seed 		  => (others => '1'),
 		start_global_time	  => (others => '0'),
@@ -142,9 +143,9 @@ e_data_gen_scifi : component data_generator_a10_tb
 e_data_gen_tiles : component data_generator_a10_tb
 	port map (
 		clk 				     => clk,
-		reset				     => reset_1,
+		reset				     => reset,
 		enable_pix	        => enable_pix,
-		random_seed 		  => "010100101001111",
+		random_seed 		  => (others => '1'),
 		start_global_time	  => (others => '0'),
 		data_pix_generated  => data_tile_generated,
 		datak_pix_generated => datak_tile_generated,
@@ -164,10 +165,13 @@ e_midas_event_builder : entity work.midas_event_builder
   port map(
     i_clk_data => clk,
     i_clk_dma  => clk_half,
-    i_reset_n  => reset_n,
+    i_reset_data_n  => reset_n,
+    i_reset_dma_n => reset_n,
     i_rx_data  => rx_data,
     i_rx_datak => rx_datak,
     i_wen_reg  => '1',
+    i_link_mask => "111",
+    o_all_done => all_done,
     o_event_wren => dma_data_wren,
     o_endofevent => dmamem_endofevent,
     o_event_data => dma_data,
