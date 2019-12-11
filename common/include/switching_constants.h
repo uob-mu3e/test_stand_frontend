@@ -1,7 +1,7 @@
 /************************************************
 * Register map header file 
 * Automatically generated from ../../switching_pc/a10_board/firmware/mudaq_registers.vhd
-* On 2019-12-09T16:11:46.168996
+* On 2019-12-11T16:20:20.028115
 ************************************************/
 
 #ifndef MUDAQ_REGISTERS__H 
@@ -70,6 +70,14 @@
 #define GET_RESET_BIT_LINK_TEST(REG) ((REG>>15)& 0x1) 
 #define SET_RESET_BIT_LINK_TEST(REG) ((1<<15)| REG) 
 #define UNSET_RESET_BIT_LINK_TEST(REG) ((~(1<<15)) & REG) 
+#define RESET_BIT_RUN_START_ACK		16
+#define GET_RESET_BIT_RUN_START_ACK(REG) ((REG>>16)& 0x1) 
+#define SET_RESET_BIT_RUN_START_ACK(REG) ((1<<16)| REG) 
+#define UNSET_RESET_BIT_RUN_START_ACK(REG) ((~(1<<16)) & REG) 
+#define RESET_BIT_RUN_END_ACK		17
+#define GET_RESET_BIT_RUN_END_ACK(REG) ((REG>>17)& 0x1) 
+#define SET_RESET_BIT_RUN_END_ACK(REG) ((1<<17)| REG) 
+#define UNSET_RESET_BIT_RUN_END_ACK(REG) ((~(1<<17)) & REG) 
 #define RESET_BIT_PCIE		31
 #define GET_RESET_BIT_PCIE(REG) ((REG>>31)& 0x1) 
 #define SET_RESET_BIT_PCIE(REG) ((1<<31)| REG) 
@@ -209,6 +217,8 @@
 #define DMA_NOTENDEVENT_REGISTER_R		0x17
 #define RUN_NR_ACK_REGISTER_R		0x18
 #define RUN_NR_REGISTER_R		0x19
+#define RUN_STOP_ACK_REGISTER_R		0x1a
+#define BUFFER_STATUS_REGISTER_R		0x1b
 #define DMA_STATUS_REGISTER_R		0x38
 #define DMA_DATA_ADDR_LOW_REGISTER_R		0x39
 #define DMA_DATA_ADDR_HI_REGISTER_R		0x3a

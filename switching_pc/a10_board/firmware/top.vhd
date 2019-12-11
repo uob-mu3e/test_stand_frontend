@@ -101,6 +101,8 @@ architecture rtl of top is
 		 signal reset_n : std_logic;
 		 signal resets : std_logic_vector(31 downto 0);
 		 signal resets_n: std_logic_vector(31 downto 0);
+         signal resets_fast : std_logic_vector(31 downto 0);
+		 signal resets_n_fast: std_logic_vector(31 downto 0);
 		 
 		 signal clk_50_cnt : std_logic_vector(31 downto 0);
 		 signal clk_125_cnt : std_logic_vector(31 downto 0);
@@ -524,16 +526,19 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
             N_LINKS_g                           => N_links--,
     )
     port map (
-            i_clk                               => tx_clk(0),
-            i_reset_n                           => reset_n,
-            i_aligned                           => (others => '1'),
-            i_data                              => rx_data(0),
-            i_datak                             => rx_datak(0),
-            i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
-            i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
-            i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
-            o_run_number                        => readregs_slow(RUN_NR_REGISTER_R), -- run number of i_addr
-            o_runNr_ack                         => readregs_slow(RUN_NR_ACK_REGISTER_R)--, -- which FEBs have responded with run number in i_run_number
+        i_clk                               => tx_clk(0),
+        i_reset_ack_seen_n                  => resets_n(RESET_BIT_RUN_START_ACK),
+        i_reset_run_end_n                   => resets_n(RESET_BIT_RUN_END_ACK),
+        i_buffers_empty                     => (others => '1'), -- TODO: connect buffers emtpy from dma here
+        i_aligned                           => (others => '1'),
+        i_data                              => rx_data(0),
+        i_datak                             => rx_datak(0),
+        i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
+        i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
+        i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
+        o_run_number                        => readregs_slow(RUN_NR_REGISTER_R), -- run number of i_addr
+        o_runNr_ack                         => readregs_slow(RUN_NR_ACK_REGISTER_R), -- which FEBs have responded with run number in i_run_number
+        o_run_stop_ack                      => readregs_slow(RUN_STOP_ACK_REGISTER_R)--,
     );
 
 
@@ -577,53 +582,58 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 	  port map(
 		 i_clk_data => tx_clk(0),
 		 i_clk_dma  => pcie_fastclk_out,
-		 i_reset_n  => resets_n(RESET_BIT_EVENT_COUNTER),
-		 i_rx_data  => data_counter,
-		 i_rx_datak => datak_counter,
+		 i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
+		 i_reset_dma_n  => resets_n_fast(RESET_BIT_EVENT_COUNTER),
+		 i_rx_data  => data_counter & data_counter & data_counter,
+		 i_rx_datak => datak_counter & datak_counter & datak_counter,
 		 i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-         i_link_mask => "11",
+		 i_link_mask => "11",
 		 o_event_wren => dma_wren_cnt,
 		 o_endofevent => dma_end_event_cnt,
 		 o_event_data => dma_event_data,
 		 o_state_out => state_out_eventcounter--,
 	);
+    
+    dma_data <= dma_event_data;
+    dma_data_wren <= dma_wren_cnt;
+    dmamem_endofevent <= dma_end_event_cnt;
 
-    e_counter : entity work.dma_counter
-    port map (
-	i_clk			=> pcie_fastclk_out,
-	i_reset_n   	=> resets_n(RESET_BIT_EVENT_COUNTER),
-	i_enable    	=> writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_TEST),
-	i_dma_wen_reg 	=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-	i_fraccount 	=> writeregs(DMA_SLOW_DOWN_REGISTER_W)(7 downto 0),
-	i_halffull_mode => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_DMA_HALFFUL_MODE),
-	i_dma_halffull 	=> dmamemhalffull,
-	o_dma_end_event => dma_end_event_test,
-	o_dma_wen   	=> dma_wren_test,
-	o_cnt     		=> dma_data_test--,
-    );
+--    e_counter : entity work.dma_counter
+--    port map (
+--	i_clk			=> pcie_fastclk_out,
+--	i_reset_n   	=> resets_n(RESET_BIT_EVENT_COUNTER),
+--	i_enable    	=> writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_TEST),
+--	i_dma_wen_reg 	=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+--	i_fraccount 	=> writeregs(DMA_SLOW_DOWN_REGISTER_W)(7 downto 0),
+--	i_halffull_mode => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_DMA_HALFFUL_MODE),
+--	i_dma_halffull 	=> dmamemhalffull,
+--	o_dma_end_event => dma_end_event_test,
+--	o_dma_wen   	=> dma_wren_test,
+--	o_cnt     		=> dma_data_test--,
+--    );
 
-    process (pcie_fastclk_out, reset_n)
-    begin
-    if ( reset_n = '0' ) then
-		dma_data_wren <= '0';
-		dmamem_endofevent <= '0';
-		dma_data 	  <= (others => '0');
-    elsif rising_edge(pcie_fastclk_out) then
-		dma_data_wren <= '0';
-		dmamem_endofevent <= '0';
-		dma_data 	  <= (others => '0');
-		if(dma_wren_test = '1') then
-			dma_data_wren <= '1';
-			dmamem_endofevent <= dma_end_event_test;
-			dma_data(159 downto 0) <= dma_data_test;
-			dma_data(255 downto 160) <= (others => '0');
-		elsif(dma_wren_cnt = '1') then
-			dma_data_wren <= '1';
-			dmamem_endofevent <= dma_end_event_cnt;
-			dma_data <=	dma_event_data;
-		end if;
-    end if;
-    end process;
+--    process (pcie_fastclk_out, reset_n)
+--    begin
+--    if ( reset_n = '0' ) then
+--		dma_data_wren <= '0';
+--		dmamem_endofevent <= '0';
+--		dma_data 	  <= (others => '0');
+--    elsif rising_edge(pcie_fastclk_out) then
+--		dma_data_wren <= '0';
+--		dmamem_endofevent <= '0';
+--		dma_data 	  <= (others => '0');
+--		if(dma_wren_test = '1') then
+--			dma_data_wren <= '1';
+--			dmamem_endofevent <= dma_end_event_test;
+--			dma_data(159 downto 0) <= dma_data_test;
+--			dma_data(255 downto 160) <= (others => '0');
+--		elsif(dma_wren_cnt = '1') then
+--			dma_data_wren <= '1';
+--			dmamem_endofevent <= dma_end_event_cnt;
+--			dma_data <=	dma_event_data;
+--		end if;
+--    end if;
+--    end process;
 
 ------------- time algining data -------------
 
@@ -753,7 +763,20 @@ tx_datak(0) <= mem_datak_out(3 downto 0);
 
         clk                     => tx_clk(0)--,
     );
+    
+    e_reset_logic_fast : entity work.reset_logic
+    port map (
+		rst_n                   => push_button0_db,
 
+		reset_register          => writeregs(RESET_REGISTER_W),
+		--reset_reg_written       => regwritten(RESET_REGISTER_W),
+
+		resets                  => resets_fast,
+		resets_n                => resets_n_fast,
+
+        clk                     => pcie_fastclk_out--,
+    );
+    
     e_version_reg : entity work.version_reg
     port map (
         data_out  => readregs_slow(VERSION_REGISTER_R)(27 downto 0)
@@ -767,11 +790,12 @@ tx_datak(0) <= mem_datak_out(3 downto 0);
 		clk_last <= clk_sync;
 
 		if(clk_sync = '1' and clk_last = '0') then
-			readregs(PLL_REGISTER_R) 						<= readregs_slow(PLL_REGISTER_R);
-			readregs(VERSION_REGISTER_R) 					<= readregs_slow(VERSION_REGISTER_R);
-            readregs(RUN_NR_REGISTER_R)                 <= readregs_slow(RUN_NR_REGISTER_R);
-            readregs(RUN_NR_ACK_REGISTER_R)             <= readregs_slow(RUN_NR_ACK_REGISTER_R);
-			readregs(MEM_WRITEADDR_HIGH_REGISTER_R) 	<= (others => '0');
+			readregs(PLL_REGISTER_R) 			    <= readregs_slow(PLL_REGISTER_R);
+			readregs(VERSION_REGISTER_R) 		    <= readregs_slow(VERSION_REGISTER_R);
+			readregs(RUN_NR_REGISTER_R)             <= readregs_slow(RUN_NR_REGISTER_R);
+			readregs(RUN_NR_ACK_REGISTER_R)         <= readregs_slow(RUN_NR_ACK_REGISTER_R);
+			readregs(RUN_STOP_ACK_REGISTER_R)       <= readregs_slow(RUN_STOP_ACK_REGISTER_R);
+			readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= (others => '0');
 			readregs(MEM_WRITEADDR_LOW_REGISTER_R) 	<= (X"0000" & readmem_writeaddr_finished);
 		end if;
 

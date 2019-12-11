@@ -8,6 +8,7 @@
 #include "msystem.h"
 #include "mcstd.h"
 #include "experim.h"
+#include "switching_constants.h"
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -218,7 +219,6 @@ void speed_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 {
     KEY key;
     db_get_key(hDB, hKey, &key);
-    mudaq::DmaMudaqDevice & mu = *mup;
 
     if (std::string(key.name) == "Divider") {
        int value;
@@ -298,7 +298,41 @@ INT begin_of_run(INT run_number, char *error)
 
 INT end_of_run(INT run_number, char *error)
 {
-   mudaq::DmaMudaqDevice & mu = *mup;
+   printf("farm_fe: Waiting for buffers to empty\n");
+   uint16_t timeout_cnt = 0;
+   while(! mup->read_register_ro(BUFFER_STATUS_REGISTER_R) & 1<<0/* TODO right bit */ &&
+         timeout_cnt++ < 50) {
+      printf("Waiting for buffers to empty %d/50\n", timeout_cnt);
+      timeout_cnt++;
+      usleep(1000);
+   };
+
+   if(timeout_cnt>=50) {
+      cm_msg(MERROR,"farm_fe","Buffers on Switching Board not empty at end of run");
+      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
+      return CM_TRANSITION_CANCELED;
+   }
+   printf("Buffers all empty\n");
+
+
+   // TODO: Find a better way to see when DMA is finished.
+
+   printf("Waiting for DMA to finish\n");
+   usleep(1000); // Wait for DMA to finish
+   timeout_cnt = 0;
+   while(mup->last_written_addr() != (readindex % dma_buf_nwords) &&
+         timeout_cnt++ < 50) {
+      printf("Waiting for DMA to finish %d/50\n", timeout_cnt);
+      timeout_cnt++;
+      usleep(1000);
+   };
+
+   if(timeout_cnt>=50) {
+      cm_msg(MERROR,"farm_fe","DMA did not finish");
+      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
+      return CM_TRANSITION_CANCELED;
+   }
+   printf("DMA is finished\n");
 
    // stop generator
 //    datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
@@ -306,7 +340,7 @@ INT end_of_run(INT run_number, char *error)
 //    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
 
    // disable DMA
-   mu.disable();
+   mup->disable();
 
    set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
    

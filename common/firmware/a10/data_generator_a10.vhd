@@ -146,7 +146,7 @@ begin
 -- slow down process
 process(clk, reset)
 begin
-	if(reset = '1' or enable_pix = '0') then
+	if(reset = '1') then
 		waiting 			<= '0';
 		wait_counter	<= (others => '0');
 	elsif(rising_edge(clk)) then
@@ -171,7 +171,7 @@ begin
 	if (reset = '1') then
 		data_pix_ready          <= '0';
 		data_pix_generated      <= (others => '0');
-		global_time       		<= start_global_time;
+		global_time       		<= (others => '0');--start_global_time;
 		data_header_state			<= part1;
 		current_overflow 			:= "0000000000000000";
 		overflow_idx				:= 0;

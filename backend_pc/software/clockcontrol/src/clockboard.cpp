@@ -83,7 +83,7 @@ int clockboard::write_command(uint8_t command, uint32_t payload, bool has_payloa
     return 0;
 }
 
-int clockboard::write_command(char *name, uint32_t payload, uint16_t address)
+int clockboard::write_command(const char *name, uint32_t payload, uint16_t address)
 {
 
     auto it = reset_protocol.commands.find(name);
