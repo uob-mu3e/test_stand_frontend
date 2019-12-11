@@ -49,6 +49,7 @@
 #include <stdio.h>
 #include <cassert>
 #include <switching_constants.h>
+#include <history.h>
 #include "midas.h"
 #include "mfe.h"
 
@@ -252,6 +253,12 @@ INT frontend_init()
     */
     cm_set_transition_sequence(TR_STOP, 600);
 
+
+    // Define history panels
+   hs_define_panel("SciFi","Counters",{"SciFi:nHits",
+                                       "SciFi:Timer",
+                                       "SciFi:Counters:Timer",
+                                       "SciFi:Counters_nHits"});
 
    return CM_SUCCESS;
 }
