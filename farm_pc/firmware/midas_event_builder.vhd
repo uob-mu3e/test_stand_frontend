@@ -311,8 +311,8 @@ begin
 				event_tagging_state <= bank_name;
 
 			when bank_name =>
-		                if ( mux_link = NLINKS ) then -- here we stop to not overflow with the mux_link
-                    			if ( conv_integer(w_ram_add + 2) mod 8 = 0 ) then
+                if ( mux_link = NLINKS ) then -- here we stop to not overflow with the mux_link
+                    if ( conv_integer(w_ram_add + 2) mod 8 = 0 ) then
 						event_tagging_state <= waiting;
 					 	w_fifo_en   <= '1';
 						w_fifo_data <= w_ram_add + 1;
@@ -321,14 +321,14 @@ begin
 					end if;
 					mux_link <= 0;
 					event_id <= event_id + '1';
-                		elsif ( i_link_mask(mux_link) = '0' ) then
-		                	mux_link <= mux_link + 1;
-                		else
-		                	w_ram_en			<= '1';
-                	    		w_ram_add   		<= w_ram_add + 1;
-		 	                w_ram_data  		<= std_logic_vector(to_unsigned(mux_link, w_ram_data'length));  -- MIDAS Bank Name
-                    			event_tagging_state <= bank_type;
-                		end if;
+                elsif ( i_link_mask(mux_link) = '0' ) then
+                    mux_link <= mux_link + 1;
+                else
+		           	w_ram_en			<= '1';
+                	w_ram_add   		<= w_ram_add + 1;
+		 	        w_ram_data  		<= std_logic_vector(to_unsigned(mux_link, w_ram_data'length));  -- MIDAS Bank Name
+                    event_tagging_state <= bank_type;
+                end if;
 
 			when bank_type =>
 				w_ram_en			<= '1';
@@ -337,25 +337,18 @@ begin
 				event_tagging_state <= bank_length_state;
 
 			when bank_length_state =>
-				if ( (bank_data_fifo(11 + 36 * mux_link downto mux_link * 36 + 4) = x"bc" and
-					 bank_data_fifo(3 + 36 * mux_link downto mux_link * 36 ) = "0001") ) then 
-					w_ram_en					<= '1';
-					w_ram_add   				<= w_ram_add + 1;
-					bank_length_ren(mux_link) 	<= '1';
-					bank_ren(mux_link) 			<= '1';
-					w_ram_data(11 downto 0)  	<= bank_length_fifo(11 + 12 * mux_link downto mux_link * 12);
-					w_ram_data(31 downto 12)  	<= (others => '0');
-					event_tagging_state 		<= bank_data_state;
-				end if;
+				w_ram_en					<= '1';
+				w_ram_add   				<= w_ram_add + 1;
+				w_ram_data(11 downto 0)  	<= bank_length_fifo(11 + 12 * mux_link downto mux_link * 12);
+				w_ram_data(31 downto 12)  	<= (others => '0');
+				event_tagging_state 		<= bank_data_state;
 
 			when bank_data_state =>
 				w_ram_en			<= '1';
 				w_ram_add   		<= w_ram_add + 1;
 				w_ram_data			<= bank_data_fifo(35 + 36 * mux_link downto mux_link * 36 + 4);
-				if ( (bank_data_fifo(11 + 36 * mux_link downto mux_link * 36 + 4) = x"9c" and
-					 bank_data_fifo(3 + 36 * mux_link downto mux_link * 36 ) = "0001") or  
-					 (bank_data_fifo(11 + 36 * mux_link downto mux_link * 36 + 4) = x"EE" and
-					 bank_data_fifo(3 + 36 * mux_link downto mux_link * 36 ) = "0001") ) then 
+				if ( bank_data_fifo(11 + 36 * mux_link downto mux_link * 36 + 4) = x"9c" and
+					 bank_data_fifo(3 + 36 * mux_link downto mux_link * 36 ) = "0001" ) then 
 					if ( mux_link = NLINKS - 1 ) then
 						 if ( conv_integer(w_ram_add + 2) mod 8 = 0 ) then
 						 	event_tagging_state <= waiting;

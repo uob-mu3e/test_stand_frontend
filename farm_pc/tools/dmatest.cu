@@ -25,7 +25,8 @@
 
 #include "mudaq_device.h"
 
-#define DMA_SLOW_DOWN_REGISTER_W		0x06
+#define DMA_SLOW_DOWN_REGISTER_W	0x06
+#define FEB_ENABLE_REGISTER_W		0x0A
 
 using namespace std;
 
@@ -119,14 +120,6 @@ int main(int argc, char *argv[])
         return ret_val;
     }
 
-    // Set up data generator
-    if (atoi(argv[1]) == 1) {
-        uint32_t datagen_setup = 0;
-        mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
-        datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
-        //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
-        mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
-    }
     // reset all
     uint32_t reset_reg = 0;
     reset_reg = SET_RESET_BIT_ALL(reset_reg);
@@ -137,6 +130,18 @@ int main(int argc, char *argv[])
     mu.enable_continous_readout(0);
     usleep(10);
     mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
+
+    // Set up data generator
+    if (atoi(argv[1]) == 1) {
+        uint32_t datagen_setup = 0;
+        mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
+        datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+        //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
+        mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+    }
+
+    // Enable all links
+    mu.write_register_wait(FEB_ENABLE_REGISTER_W, 0xF, 100);
 
     mudaq::DmaMudaqDevice::DataBlock block;
     uint32_t newoffset;
@@ -153,7 +158,10 @@ int main(int argc, char *argv[])
         cout << hex << "0x" <<  dma_buf[i] << " ";
     cout << endl;
 
-    while(dma_buf[size/sizeof(uint32_t)-8] <= 0){ }
+    while(dma_buf[size/sizeof(uint32_t)-8] <= 0){
+
+        sleep(1);
+    }
 
 
 //        if (readindex > 1000000) break;
@@ -262,10 +270,10 @@ int main(int argc, char *argv[])
     reset_reg = SET_RESET_BIT_ALL(reset_reg);
     mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
 
-    for (int j = 0 ; j < sizeof (dma_buf); j++){
+    for (int j = 0 ; j < size/sizeof(uint32_t); j++){
         char dma_buf_str[256];
         sprintf(dma_buf_str, "%08X", dma_buf[j]);
-        myfile << readindex + 1 << "\t" << dma_buf_str << endl;
+        myfile << j << "\t" << dma_buf_str << endl;
     }
 
     // stop generator

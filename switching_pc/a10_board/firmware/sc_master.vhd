@@ -112,8 +112,8 @@ begin
 						state		<= starting;
 						addr_reg	<= addr_reg + '1';
 						mem_datak <= "0001";
-						fpga_id <= mem_data_in(23 downto 8); -- get fpga id if zero write to all links, if 1 first link and so on
-						if(conv_integer(mem_data_in(23 downto 8)) = 0) then
+						fpga_id <= mem_data_in(23 downto 8); -- get fpga id if x"FFFF" write to all links, if 1 first link and so on
+						if(mem_data_in(23 downto 8) = x"FFFF") then
 							wren_reg <= (others => '1');
 						else
 							wren_reg	<= (others => '0');

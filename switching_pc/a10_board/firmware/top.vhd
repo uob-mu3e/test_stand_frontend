@@ -593,43 +593,47 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		 o_event_data => dma_event_data,
 		 o_state_out => state_out_eventcounter--,
 	);
+    
+    dma_data <= dma_event_data;
+    dma_data_wren <= dma_wren_cnt;
+    dmamem_endofevent <= dma_end_event_cnt;
 
-    e_counter : entity work.dma_counter
-    port map (
-	i_clk			=> pcie_fastclk_out,
-	i_reset_n   	=> resets_n(RESET_BIT_EVENT_COUNTER),
-	i_enable    	=> writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_TEST),
-	i_dma_wen_reg 	=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-	i_fraccount 	=> writeregs(DMA_SLOW_DOWN_REGISTER_W)(7 downto 0),
-	i_halffull_mode => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_DMA_HALFFUL_MODE),
-	i_dma_halffull 	=> dmamemhalffull,
-	o_dma_end_event => dma_end_event_test,
-	o_dma_wen   	=> dma_wren_test,
-	o_cnt     		=> dma_data_test--,
-    );
+--    e_counter : entity work.dma_counter
+--    port map (
+--	i_clk			=> pcie_fastclk_out,
+--	i_reset_n   	=> resets_n(RESET_BIT_EVENT_COUNTER),
+--	i_enable    	=> writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_TEST),
+--	i_dma_wen_reg 	=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+--	i_fraccount 	=> writeregs(DMA_SLOW_DOWN_REGISTER_W)(7 downto 0),
+--	i_halffull_mode => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_DMA_HALFFUL_MODE),
+--	i_dma_halffull 	=> dmamemhalffull,
+--	o_dma_end_event => dma_end_event_test,
+--	o_dma_wen   	=> dma_wren_test,
+--	o_cnt     		=> dma_data_test--,
+--    );
 
-    process (pcie_fastclk_out, reset_n)
-    begin
-    if ( reset_n = '0' ) then
-		dma_data_wren <= '0';
-		dmamem_endofevent <= '0';
-		dma_data 	  <= (others => '0');
-    elsif rising_edge(pcie_fastclk_out) then
-		dma_data_wren <= '0';
-		dmamem_endofevent <= '0';
-		dma_data 	  <= (others => '0');
-		if(dma_wren_test = '1') then
-			dma_data_wren <= '1';
-			dmamem_endofevent <= dma_end_event_test;
-			dma_data(159 downto 0) <= dma_data_test;
-			dma_data(255 downto 160) <= (others => '0');
-		elsif(dma_wren_cnt = '1') then
-			dma_data_wren <= '1';
-			dmamem_endofevent <= dma_end_event_cnt;
-			dma_data <=	dma_event_data;
-		end if;
-    end if;
-    end process;
+--    process (pcie_fastclk_out, reset_n)
+--    begin
+--    if ( reset_n = '0' ) then
+--		dma_data_wren <= '0';
+--		dmamem_endofevent <= '0';
+--		dma_data 	  <= (others => '0');
+--    elsif rising_edge(pcie_fastclk_out) then
+--		dma_data_wren <= '0';
+--		dmamem_endofevent <= '0';
+--		dma_data 	  <= (others => '0');
+--		if(dma_wren_test = '1') then
+--			dma_data_wren <= '1';
+--			dmamem_endofevent <= dma_end_event_test;
+--			dma_data(159 downto 0) <= dma_data_test;
+--			dma_data(255 downto 160) <= (others => '0');
+--		elsif(dma_wren_cnt = '1') then
+--			dma_data_wren <= '1';
+--			dmamem_endofevent <= dma_end_event_cnt;
+--			dma_data <=	dma_event_data;
+--		end if;
+--    end if;
+--    end process;
 
 ------------- time algining data -------------
 
