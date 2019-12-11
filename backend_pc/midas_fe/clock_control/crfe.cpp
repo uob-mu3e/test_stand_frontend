@@ -313,8 +313,17 @@ const char *link_settings_str[] = {
     "[1] 0",\
     "[2] 0",\
     "[3] 0",\
+"SwitchingBoardNames = STRING[4] :",
+    "[32] Central",
+    "[32] Recurl US",
+    "[32] Recurl DS",
+    "[32] Fibres",
     "FrontEndBoardMask = INT[192] :",
 #include "zeros192.h"
+    "FrontEndBoardType = INT[192] :",
+#include "zeros192.h"
+    "FrontEndBoardNames = STRING[192] :",
+#include "defaultfebnames192.h"
 nullptr
 };
 

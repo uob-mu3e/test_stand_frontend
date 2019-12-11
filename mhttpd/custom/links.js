@@ -4,6 +4,8 @@ var c = canvas.getContext('2d');
 
 function RXLink(xmin,y,xmax, index, name){
     this.status =0;
+    this.type="Undefined type";
+    this.shorttype="U";
     this.selected = false;
     this.xmin = xmin;
     this.y = y;
@@ -12,9 +14,14 @@ function RXLink(xmin,y,xmax, index, name){
     this.ymax = y+5;
 
     this.lxmin = xmin-10;
-    this.lymin = y-50;
-    this.lxmax = xmax+40;
-    this.lymax = y+50;
+    this.lymin = y-10;
+    this.lxmax = xmax+60;
+    this.lymax = y+90;
+
+    this.bxmin = this.lxmin+10;
+    this.bymin = this.lymin+60;
+    this.bxmax = this.lxmin+70;
+    this.bymax = this.lymin+90;
 
     this.col = "rgb(150,150,150)"
     this.name = name;
@@ -37,15 +44,37 @@ function RXLink(xmin,y,xmax, index, name){
             c.lineWidth = 6;
             c.strokeStyle = this.col;
             c.stroke();
+
+            c.fillStyle = "Black";
+            if(this.shorttype == "P")
+               c.fillStyle = "Blue";
+            if(this.shorttype == "F")
+               c.fillStyle = "Magenta";
+            if(this.shorttype == "T")
+               c.fillStyle = "Cyan";
+            c.font = "8px Arial";
+            c.fillText(this.shorttype, this.xmin-8, this.y+2);
         } else {
             c.fillStyle = this.col;
             c.fillRect(this.lxmin, this.lymin,this.lxmax-this.lxmin, this.lymax-this.lymin);
             c.fillStyle = "Black";
             c.font = "12px Arial";
-            c.fillText(this.name, this.lxmin+10, this.lymin+10);
+            c.fillText(this.name, this.lxmin+10, this.lymin+15);
+            c.fillStyle = "Black";
+            c.font = "12px Arial";
+            c.fillText(this.type, this.lxmin+10, this.lymin+30);
 
-            c.fillStyle = "rgb(100,100,100)";
-            c.fillRect(this.lxmin+10, this.lymin,this.lxmax-this.lxmin, this.lymax-this.lymin);
+
+            c.fillStyle = "rgb(50,50,50)";
+            c.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
+            c.fillStyle = "White";
+            c.font = "12px Arial";
+            if(this.status == 0){
+                c.fillText("Enable", this.bxmin+10, this.bymin+17);
+            } else {
+                c.fillText("Disable", this.bxmin+10, this.bymin+17);
+            }
+
         }
 
     }
@@ -61,6 +90,7 @@ function Switchingboard(x,y,dx,dy, index){
 
     this.index = index;
     this.active = 0;
+    this.name = "";
 
     this.RX = new Array(4);
     this.TX = new Array(4);
@@ -88,6 +118,19 @@ function Switchingboard(x,y,dx,dy, index){
                 this.TX[i].draw();
             }
         }
+
+
+        c.fillStyle = "Black";
+        c.font = "16px Arial";
+        c.fillText("RX", this.x+20, this.y+700);
+
+        c.fillStyle = "Black";
+        c.font = "16px Arial";
+        c.fillText("TX", this.x+75, this.y+700);
+
+        c.fillStyle = "Black";
+        c.font = "12px Arial";
+        c.fillText(this.name, this.x+10, this.y+740);
 	}
 }
 
@@ -187,16 +230,34 @@ window.addEventListener('click', function(event) {
                         mouse.x <= rxlinks[i].lxmax &&
                         mouse.y >= rxlinks[i].lymin &&
                         mouse.y <= rxlinks[i].lymax ){
-                            rxselindex = -1;
-                            found = true;
-                            rxlinks[i].selected = false;
-                        }
+                            // check for button
+                            if(mouse.x >= rxlinks[i].bxmin &&
+                                mouse.x <= rxlinks[i].bxmax &&
+                                mouse.y >= rxlinks[i].bymin &&
+                                mouse.y <= rxlinks[i].bymax ){
+                                if(rxlinks[i].status==0){
+                                    rxlinks[i].status=1;
+                                } else {
+                                    rxlinks[i].status=0;
+                                }
+                                mjsonrpc_db_set_value("/Equipment/Links/Settings/FrontEndBoardMask["+i+"]", rxlinks[i].status);
+                                found = true;
+
+                            } else {
+                                rxselindex = -1;
+                                found = true;
+                                rxlinks[i].selected = false;
+                            }
                  }
+             }
             } else {
-                if(mouse.x >= rxlinks[i].xmin &&
+                if( found == false &&
+                        mouse.x >= rxlinks[i].xmin &&
                        mouse.x <= rxlinks[i].xmax &&
                        mouse.y >= rxlinks[i].ymin &&
                        mouse.y <= rxlinks[i].ymax){
+                       if(rxselindex > -1)
+                           rxlinks[rxselindex].selected = false;
                        rxselindex = i;
                        found = true;
                        rxlinks[i].selected = true;
@@ -218,7 +279,7 @@ function update_boarddrawing(value) {
 
     var femask = value["frontendboardstatus"];
     for(var i=0; i < 192; i++){
-       switchingboards[Math.floor(i/48)].RX[Math.floor(i/12)%4].links[i%12].status = femask[i];
+       rxlinks[i].status = femask[i];
     }
 
     draw(rxselindex);
@@ -226,16 +287,34 @@ function update_boarddrawing(value) {
 
 function update_masks(value) {
     var swmask = value["switchingboardmask"];
+    var swnames = value["switchingboardnames"];
     for(var i=0; i < 4; i++){
         switchingboards[i].active = swmask[i];
+        switchingboards[i].name  = swnames[i];
     }
     var femask = value["frontendboardmask"];
+    var fenames = value["frontendboardnames"];
+    var fetypes = value["frontendboardtype"];
     for(var i=0; i < 192; i++){
         if(femask[i] == 0)
-            switchingboards[Math.floor(i/48)].RX[Math.floor(i/12)%4].links[i%12].status = 0;
+           rxlinks[i].status = 0;
         else {
-            if(switchingboards[Math.floor(i/48)].RX[Math.floor(i/12)%4].links[i%12].status == 0)
-                switchingboards[Math.floor(i/48)].RX[Math.floor(i/12)%4].links[i%12].status = 2;
+            if(rxlinks[i].status == 0)
+                rxlinks[i].status = 2;
+        }
+        rxlinks[i].name = fenames[i];
+        if(fetypes[i] == 1){
+            rxlinks[i].type = "Pixel";
+            rxlinks[i].shorttype = "P";
+        } else if   (fetypes[i] == 2){
+            rxlinks[i].type = "Fibre";
+            rxlinks[i].shorttype = "F";
+        } else if   (fetypes[i] == 3){
+            rxlinks[i].type = "Tiles";
+            rxlinks[i].shorttype = "T";
+        } else {
+            rxlinks[i].type = "Undefined Type";
+            rxlinks[i].shorttype = "U";
         }
     }
     draw(rxselindex);
