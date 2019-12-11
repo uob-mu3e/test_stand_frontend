@@ -105,6 +105,7 @@ package mudaq_registers is
         constant RUN_NR_ACK_REGISTER_R                       : integer := 16#18#;
         constant RUN_NR_REGISTER_R                       : integer := 16#19#;
         constant RUN_STOP_ACK_REGISTER_R                 : integer := 16#1a#;
+        constant BUFFER_STATUS_REGISTER_R                : integer := 16#1b#;
         
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;

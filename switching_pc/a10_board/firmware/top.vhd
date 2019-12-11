@@ -536,7 +536,8 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
         i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
         o_run_number                        => readregs(RUN_NR_REGISTER_R), -- run number of i_addr
         o_runNr_ack                         => readregs(RUN_NR_ACK_REGISTER_R), -- which FEBs have responded with run number in i_run_number
-        o_run_stop_ack                      => readregs(RUN_STOP_ACK_REGISTER_R)--,
+        o_run_stop_ack                      => readregs(RUN_STOP_ACK_REGISTER_R),
+        o_buffers_empty                     => readregs(BUFFER_STATUS_REGISTER_R)--,
     );
 
 

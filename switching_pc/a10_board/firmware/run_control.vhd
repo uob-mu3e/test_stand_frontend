@@ -6,6 +6,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.daq_constants.all;
+use ieee.std_logic_misc.all;
 
 ENTITY run_control is
     generic (
@@ -24,7 +25,8 @@ ENTITY run_control is
         i_run_number:                       in  std_logic_vector(23 downto 0);
         o_run_number:                       out std_logic_vector(31 downto 0);
         o_runNr_ack:                        out std_logic_vector(31 downto 0);
-        o_run_stop_ack:                     out std_logic_vector(31 downto 0)--;
+        o_run_stop_ack:                     out std_logic_vector(31 downto 0);
+        o_buffers_empty:                    out std_logic_vector(31 downto 0)--;
 );
 END ENTITY run_control;
 
@@ -56,6 +58,12 @@ BEGIN
         elsif (i_reset_run_end_n = '0') then
             o_run_stop_ack                  <= (others => '0');
         elsif (rising_edge(i_clk)) then
+                if (and_reduce(i_buffers_empty) = '1') then
+                    o_buffers_empty         <= (0 => '1', others => '0');
+                else 
+                    o_buffers_empty         <= (others => '0');
+                end if;
+                
                 for J in 0 to N_LINKS_g-1 loop
                     if (FEB_status(23+J*26 downto 0+J*26) = i_run_number and i_link_enable(J)='1') then
                         o_runNr_ack(J)      <= '1';
@@ -63,7 +71,7 @@ BEGIN
                         o_runNr_ack(J)      <= '0';
                     end if;
                     
-                    o_run_stop_ack(J)       <= FEB_status(24+J*26);
+                    o_run_stop_ack(J)       <= FEB_status(24+J*26) and i_link_enable(J);
                 end loop;
                 
                 o_run_number                <= x"00" & FEB_status(23+to_integer(unsigned(i_addr))*26 downto to_integer(unsigned(i_addr))*26);
