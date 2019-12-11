@@ -300,7 +300,7 @@ INT end_of_run(INT run_number, char *error)
 {
    printf("farm_fe: Waiting for buffers to empty\n");
    uint16_t timeout_cnt = 0;
-   while(! mup->read_register_ro(0/* TODO Buffer Empty */) & 1<<0/* TODO right bit */ &&
+   while(! mup->read_register_ro(BUFFER_STATUS_REGISTER_R) & 1<<0/* TODO right bit */ &&
          timeout_cnt++ < 50) {
       printf("Waiting for buffers to empty %d/50\n", timeout_cnt);
       timeout_cnt++;
