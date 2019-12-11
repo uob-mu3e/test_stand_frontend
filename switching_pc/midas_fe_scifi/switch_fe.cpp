@@ -274,6 +274,11 @@ INT frontend_loop()
 
 INT begin_of_run(INT run_number, char *error)
 {
+   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Starting Run", "var(--morange)");
+   /* Reset acknowledge/end of run seen registers before start of run */
+   mup->write_register(0/* TODO Reset Register */, 0x1);
+
+
    HNDLE hVar;
    int status = db_find_key(hDB, 0, "/Equipment/Links/Settings", &hVar);
    if (status != SUCCESS){
@@ -289,6 +294,14 @@ INT begin_of_run(INT run_number, char *error)
       return CM_TRANSITION_CANCELED;
    }
 
+   /* get link active from odb */
+   uint64_t link_active_from_odb = 0;
+   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
+      int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
+      if(frontend_board_active_odb[offset + link] > 0)
+         link_active_from_odb += (1 << link);
+   }
+
 
    mup->FEBsc_resetMaster();
    mup->FEBsc_resetSlave();
@@ -299,13 +312,6 @@ INT begin_of_run(INT run_number, char *error)
       return CM_TRANSITION_CANCELED;
    }
 
-   /* get link active from odb */
-   uint64_t link_active_from_odb = 0;
-   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
-      int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
-      if(frontend_board_active_odb[offset + link] > 0)
-         link_active_from_odb += (1 << link);
-   }
 
    mup->write_register(FEB_ENABLE_REGISTER_LOW_W, link_active_from_odb & 0xFFFFFFFF);
 //   mup->write_register(FEB_ENABLE_REGISTER_HIGH_W, link_active_from_odb >> 32);
@@ -351,22 +357,84 @@ INT begin_of_run(INT run_number, char *error)
 
 INT end_of_run(INT run_number, char *error)
 {
-//   uint32_t stop_signal_seen = read_register_ro(/* stop signal seen */);
-//   while(stop_signal_seen != link_active_from_odb &&
-//         timeout_cnt++ < 50) {
-//      timeout_cnt++;
-//      usleep(1000);
-//      stop_signal_seen = read_register_ro(/* stop signal seen */);
-//   };
-//
-//   if(timeout_cnt>=50) {
-//      cm_msg(MERROR,"switch_fe","No end of run marker found for frontends %d", stop_signal_seen);
-//      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
-//      return CM_TRANSITION_CANCELED;
-//   }
-//
-//   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
-//   return CM_SUCCESS;
+   HNDLE hVar;
+   int status = db_find_key(hDB, 0, "/Equipment/Links/Settings", &hVar);
+   if (status != SUCCESS){
+      cm_msg(MERROR,"switch_fe","ODB Tree /Equipment/Links/Settings not found");
+      return CM_TRANSITION_CANCELED;
+   }
+
+   INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
+   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
+   status = db_get_value(hDB, hVar, "FrontendBoardMask", frontend_board_active_odb, &size, TID_INT, false);
+   if (status != SUCCESS){
+      cm_msg(MERROR,"switch_fe","Error getting record for /Equipment/Links/Variables");
+      return CM_TRANSITION_CANCELED;
+   }
+
+   /* get link active from odb */
+   uint64_t link_active_from_odb = 0;
+   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
+      int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
+      if(frontend_board_active_odb[offset + link] > 0)
+         link_active_from_odb += (1 << link);
+   }
+
+   printf("Waiting for stop signals from all FEBs\n");
+   uint16_t timeout_cnt = 0;
+   uint32_t stop_signal_seen = mup->read_register_ro(0/* TODO stop signal seen */); //TODO make 64 bits
+   printf("Stop signal seen from 0x%08x, expect stop signals from 0x%08x\n", stop_signal_seen, link_active_from_odb);
+   while(stop_signal_seen != link_active_from_odb &&
+         timeout_cnt++ < 50) {
+      timeout_cnt++;
+      usleep(1000);
+      stop_signal_seen = mup->read_register_ro(0/* TODO stop signal seen */);
+      printf("Stop signal seen from 0x%08x, expect stop signals from 0x%08x\n", stop_signal_seen, link_active_from_odb);
+   };
+
+   if(timeout_cnt>=50) {
+      cm_msg(MERROR,"switch_fe","No end of run marker found for frontends %d", stop_signal_seen);
+      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
+      return CM_TRANSITION_CANCELED;
+   }
+
+   printf("Waiting for buffers to empty\n");
+   timeout_cnt = 0;
+   while(! mup->read_register_ro(0/* TODO Buffer Empty */) &&
+         timeout_cnt++ < 50) {
+      timeout_cnt++;
+      usleep(1000);
+      stop_signal_seen = mup->read_register_ro(0/* TODO stop signal seen */);
+   };
+
+   if(timeout_cnt>=50) {
+      cm_msg(MERROR,"switch_fe","Buffers on Switching Board %d not empty at end of run", switch_id);
+      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
+      return CM_TRANSITION_CANCELED;
+   }
+   printf("Buffers all empty\n");
+
+   printf("Waiting for DMA to finish\n");
+   timeout_cnt = 0;
+   while(mup->read_register_ro(0/* TODO Last Written Address */) != 0/* TODO Last read address from DMA */ &&
+         timeout_cnt++ < 50) {
+      timeout_cnt++;
+      usleep(1000);
+      stop_signal_seen = mup->read_register_ro(0/* TODO stop signal seen */);
+   };
+
+   if(timeout_cnt>=50) {
+      cm_msg(MERROR,"switch_fe","DMA did not finish", switch_id);
+      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
+      return CM_TRANSITION_CANCELED;
+   }
+   printf("DMA is finished\n");
+
+   printf("EOR successful\n");
+
+
+   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
+   return CM_SUCCESS;
 }
 
 /*-- Pause Run -----------------------------------------------------*/
