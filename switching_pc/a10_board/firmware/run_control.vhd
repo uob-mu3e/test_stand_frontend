@@ -13,7 +13,9 @@ ENTITY run_control is
     );
     PORT(
         i_clk:                              in  std_logic; -- receive clock (156.25 MHz)
-        i_reset_n:                          in  std_logic;
+        i_reset_ack_seen:                   in  std_logic;
+        i_reset_run_stop:                   in  std_logic;
+        i_buffers_empty:                    in  std_logic_vector(31 downto 0);
         i_aligned:                          in  std_logic_vector(31 downto 0); -- word alignment achieved
         i_data:                             in  std_logic_vector(32*N_LINKS_g-1 downto 0); -- optical from frontend board
         i_datak:                            in  std_logic_vector(4*N_LINKS_g-1 downto 0);
