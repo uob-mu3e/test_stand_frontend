@@ -276,8 +276,11 @@ INT begin_of_run(INT run_number, char *error)
 {
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Starting Run", "var(--morange)");
    /* Reset acknowledge/end of run seen registers before start of run */
-   mup->write_register_wait(RESET_REGISTER_W, 0x0/* TODO Right bits, eg SET_RESET_BIT_SC_SLAVE(0) */, 1000);
-   mup->write_register_wait(RESET_REGISTER_W, 0x0, 1000);
+   uint32_t start_setup = 0;
+   start_setup = SET_RESET_BIT_RUN_START_ACK(start_setup);
+   start_setup = SET_RESET_BIT_RUN_END_ACK(start_setup);
+   mup->write_register_wait(RESET_REGISTER_W, start_setup, 1000);
+   mup->write_register(RESET_REGISTER_W, 0x0);
 
 
    HNDLE hVar;
