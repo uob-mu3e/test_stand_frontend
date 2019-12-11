@@ -393,7 +393,7 @@ void MudaqDevice::FEBsc_resetMaster(){
     m_FEBsc_wmem_addr=0;
     //reset fpga entity
     write_register_wait(RESET_REGISTER_W, SET_RESET_BIT_SC_MASTER(0), 1000);
-    write_register_wait(RESET_REGISTER_W, 0x0, 1000);
+    write_register(RESET_REGISTER_W, 0x0);
 }
 void MudaqDevice::FEBsc_resetSlave(){
     cm_msg(MINFO, "MudaqDevice" , "Resetting slow control slave");
@@ -402,7 +402,7 @@ void MudaqDevice::FEBsc_resetSlave(){
     m_FEBsc_rmem_addr=0;
     //reset fpga entity
     write_register_wait(RESET_REGISTER_W, SET_RESET_BIT_SC_SLAVE(0), 1000);
-    write_register_wait(RESET_REGISTER_W, 0x0, 1000);
+    write_register(RESET_REGISTER_W, 0x0);
     //wait until slave is reset, clearing the ram takes time
     uint16_t timeout_cnt=0;
     //poll register until reset. Should be 0xff... during reset and zero after, but we might be bombarded with packets, so give some margin for data to enter. 

@@ -274,6 +274,15 @@ INT frontend_loop()
 
 INT begin_of_run(INT run_number, char *error)
 {
+   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Starting Run", "var(--morange)");
+   /* Reset acknowledge/end of run seen registers before start of run */
+   uint32_t start_setup = 0;
+   start_setup = SET_RESET_BIT_RUN_START_ACK(start_setup);
+   start_setup = SET_RESET_BIT_RUN_END_ACK(start_setup);
+   mup->write_register_wait(RESET_REGISTER_W, start_setup, 1000);
+   mup->write_register(RESET_REGISTER_W, 0x0);
+
+
    HNDLE hVar;
    int status = db_find_key(hDB, 0, "/Equipment/Links/Settings", &hVar);
    if (status != SUCCESS){
@@ -289,6 +298,14 @@ INT begin_of_run(INT run_number, char *error)
       return CM_TRANSITION_CANCELED;
    }
 
+   /* get link active from odb */
+   uint64_t link_active_from_odb = 0;
+   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
+      int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
+      if(frontend_board_active_odb[offset + link] > 0)
+         link_active_from_odb += (1 << link);
+   }
+
 
    mup->FEBsc_resetMaster();
    mup->FEBsc_resetSlave();
@@ -299,13 +316,6 @@ INT begin_of_run(INT run_number, char *error)
       return CM_TRANSITION_CANCELED;
    }
 
-   /* get link active from odb */
-   uint64_t link_active_from_odb = 0;
-   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
-      int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
-      if(frontend_board_active_odb[offset + link] > 0)
-         link_active_from_odb += (1 << link);
-   }
 
    mup->write_register(FEB_ENABLE_REGISTER_LOW_W, link_active_from_odb & 0xFFFFFFFF);
 //   mup->write_register(FEB_ENABLE_REGISTER_HIGH_W, link_active_from_odb >> 32);
@@ -351,22 +361,84 @@ INT begin_of_run(INT run_number, char *error)
 
 INT end_of_run(INT run_number, char *error)
 {
-//   uint32_t stop_signal_seen = read_register_ro(/* stop signal seen */);
-//   while(stop_signal_seen != link_active_from_odb &&
-//         timeout_cnt++ < 50) {
-//      timeout_cnt++;
-//      usleep(1000);
-//      stop_signal_seen = read_register_ro(/* stop signal seen */);
-//   };
-//
-//   if(timeout_cnt>=50) {
-//      cm_msg(MERROR,"switch_fe","No end of run marker found for frontends %d", stop_signal_seen);
-//      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
-//      return CM_TRANSITION_CANCELED;
-//   }
-//
-//   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
-//   return CM_SUCCESS;
+   HNDLE hVar;
+   int status = db_find_key(hDB, 0, "/Equipment/Links/Settings", &hVar);
+   if (status != SUCCESS){
+      cm_msg(MERROR,"switch_fe","ODB Tree /Equipment/Links/Settings not found");
+      return CM_TRANSITION_CANCELED;
+   }
+
+   INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
+   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
+   status = db_get_value(hDB, hVar, "FrontendBoardMask", frontend_board_active_odb, &size, TID_INT, false);
+   if (status != SUCCESS){
+      cm_msg(MERROR,"switch_fe","Error getting record for /Equipment/Links/Variables");
+      return CM_TRANSITION_CANCELED;
+   }
+
+   /* get link active from odb */
+   uint64_t link_active_from_odb = 0;
+   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
+      int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
+      if(frontend_board_active_odb[offset + link] > 0)
+         link_active_from_odb += (1 << link);
+   }
+
+   printf("Waiting for stop signals from all FEBs\n");
+   uint16_t timeout_cnt = 0;
+   uint32_t stop_signal_seen = mup->read_register_ro(0/* TODO stop signal seen */); //TODO make 64 bits
+   printf("Stop signal seen from 0x%08x, expect stop signals from 0x%08x\n", stop_signal_seen, link_active_from_odb);
+   while(stop_signal_seen != link_active_from_odb &&
+         timeout_cnt++ < 50) {
+      timeout_cnt++;
+      usleep(1000);
+      stop_signal_seen = mup->read_register_ro(0/* TODO stop signal seen */);
+      printf("Stop signal seen from 0x%08x, expect stop signals from 0x%08x\n", stop_signal_seen, link_active_from_odb);
+   };
+
+   if(timeout_cnt>=50) {
+      cm_msg(MERROR,"switch_fe","No end of run marker found for frontends %d", stop_signal_seen);
+      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
+      return CM_TRANSITION_CANCELED;
+   }
+
+   printf("Waiting for buffers to empty\n");
+   timeout_cnt = 0;
+   while(! mup->read_register_ro(0/* TODO Buffer Empty */) &&
+         timeout_cnt++ < 50) {
+      timeout_cnt++;
+      usleep(1000);
+      stop_signal_seen = mup->read_register_ro(0/* TODO stop signal seen */);
+   };
+
+   if(timeout_cnt>=50) {
+      cm_msg(MERROR,"switch_fe","Buffers on Switching Board %d not empty at end of run", switch_id);
+      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
+      return CM_TRANSITION_CANCELED;
+   }
+   printf("Buffers all empty\n");
+
+   printf("Waiting for DMA to finish\n");
+   timeout_cnt = 0;
+   while(mup->read_register_ro(0/* TODO Last Written Address */) != 0/* TODO Last read address from DMA */ &&
+         timeout_cnt++ < 50) {
+      timeout_cnt++;
+      usleep(1000);
+      stop_signal_seen = mup->read_register_ro(0/* TODO stop signal seen */);
+   };
+
+   if(timeout_cnt>=50) {
+      cm_msg(MERROR,"switch_fe","DMA did not finish", switch_id);
+      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
+      return CM_TRANSITION_CANCELED;
+   }
+   printf("DMA is finished\n");
+
+   printf("EOR successful\n");
+
+
+   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
+   return CM_SUCCESS;
 }
 
 /*-- Pause Run -----------------------------------------------------*/
@@ -433,7 +505,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
    db_get_key(hDB, hKey, &key);
 
-//   mudaq::DmaMudaqDevice & mu = *mup;
+   mudaq::DmaMudaqDevice & mu = *mup;
 
    if (std::string(key.name) == "Active") {
       BOOL value;
@@ -452,12 +524,12 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
    }
 
    if (std::string(key.name) == "Reset SC Master" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-//       mu.FEBsc_resetMaster();
+       mu.FEBsc_resetMaster();
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
    if (std::string(key.name) == "Reset SC Slave" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-//       mu.FEBsc_resetSlave();
+       mu.FEBsc_resetSlave();
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
@@ -477,7 +549,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
        int count=0;
        while(count < 3){
-//           if(mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD)!=-1) break;
+           if(mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD)!=-1) break;
            count++;
       }
       if(count==3) 
@@ -493,8 +565,8 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        uint32_t data[LENGTH];
        int count=0;
        while(count < 3){
-//           if(mu.FEBsc_read((uint32_t) FPGA_ID, data, (uint16_t) LENGTH, (uint32_t) START_ADD)>=0)
-//                break;
+           if(mu.FEBsc_read((uint32_t) FPGA_ID, data, (uint16_t) LENGTH, (uint32_t) START_ADD)>=0)
+                break;
            count++;
        }
        if(count==3) cm_msg(MERROR,"switch_fe","Tried 4 times to get a slow control read response but did not succeed");
@@ -510,7 +582,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 	uint32_t data_arr[1] = {0};
         data_arr[0] = (uint32_t) DATA;
         uint32_t *data = data_arr;
-//        mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD);
+        mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD);
 
         set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
@@ -525,8 +597,8 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         db_find_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", &key_WM_DATA);
         db_set_num_values(hDB, key_WM_DATA, WM_LENGTH);
         for (int i = 0; i < WM_LENGTH; i++) {
-//            WM_DATA = mu.read_memory_rw((uint32_t) WM_START_ADD + i);
-//            db_set_value_index(hDB, 0, "Equipment/Switching/Variables/WM_DATA", &WM_DATA, SIZE_WM_DATA, i, TID_INT, FALSE);
+            WM_DATA = mu.read_memory_rw((uint32_t) WM_START_ADD + i);
+            db_set_value_index(hDB, 0, "Equipment/Switching/Variables/WM_DATA", &WM_DATA, SIZE_WM_DATA, i, TID_INT, FALSE);
         }
 
         set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
@@ -544,7 +616,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         db_find_key(hDB, 0, "Equipment/Switching/Variables/RM_DATA", &key_WM_DATA);
         db_set_num_values(hDB, key_WM_DATA, RM_LENGTH);
         for (int i = 0; i < RM_LENGTH; i++) {
-//            RM_DATA = mu.read_memory_ro((uint32_t) RM_START_ADD + i);
+            RM_DATA = mu.read_memory_ro((uint32_t) RM_START_ADD + i);
             db_set_value_index(hDB, 0, "Equipment/Switching/Variables/RM_DATA", &RM_DATA, SIZE_RM_DATA, i, TID_INT, FALSE);
         }
 
@@ -556,10 +628,10 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         SIZE_LAST_RM_ADD = sizeof(LAST_RM_ADD);
         char STR_LAST_RM_ADD[128];
         sprintf(STR_LAST_RM_ADD,"Equipment/Switching/Variables/LAST_RM_ADD");
-//        INT NEW_LAST_RM_ADD = mu.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R);
+        INT NEW_LAST_RM_ADD = mu.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R);
         INT SIZE_NEW_LAST_RM_ADD;
-//        SIZE_NEW_LAST_RM_ADD = sizeof(NEW_LAST_RM_ADD);
-//        db_set_value(hDB, 0, STR_LAST_RM_ADD, &NEW_LAST_RM_ADD, SIZE_NEW_LAST_RM_ADD, 1, TID_INT);
+        SIZE_NEW_LAST_RM_ADD = sizeof(NEW_LAST_RM_ADD);
+        db_set_value(hDB, 0, STR_LAST_RM_ADD, &NEW_LAST_RM_ADD, SIZE_NEW_LAST_RM_ADD, 1, TID_INT);
 
 	set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
