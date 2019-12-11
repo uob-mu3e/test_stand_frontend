@@ -349,7 +349,7 @@ INT begin_of_run(INT run_number, char *error)
    uint32_t link_active_from_register_high = 0;
    uint64_t link_active_from_register = link_active_from_register_low + (link_active_from_register_low >> 32);
    while(link_active_from_register != link_active_from_odb &&
-         timeout_cnt++ < 50) {
+         timeout_cnt++ < 300) {
       timeout_cnt++;
       printf("%u  %x  %x\n",timeout_cnt,link_active_from_odb, link_active_from_register);
       usleep(100000);
