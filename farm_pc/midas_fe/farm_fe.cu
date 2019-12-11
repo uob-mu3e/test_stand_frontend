@@ -308,8 +308,8 @@ INT end_of_run(INT run_number, char *error)
    };
 
    if(timeout_cnt>=50) {
-      cm_msg(MERROR,"farm_fe","Buffers on Switching Board %d not empty at end of run", switch_id);
-      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
+      cm_msg(MERROR,"farm_fe","Buffers on Switching Board not empty at end of run");
+      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
       return CM_TRANSITION_CANCELED;
    }
    printf("Buffers all empty\n");
@@ -320,7 +320,7 @@ INT end_of_run(INT run_number, char *error)
    printf("Waiting for DMA to finish\n");
    usleep(1000); // Wait for DMA to finish
    timeout_cnt = 0;
-   while(lastWritten != (readindex % dma_buf_nwords) &&
+   while(mup->last_written_addr() != (readindex % dma_buf_nwords) &&
          timeout_cnt++ < 50) {
       printf("Waiting for DMA to finish %d/50\n", timeout_cnt);
       timeout_cnt++;
@@ -328,8 +328,8 @@ INT end_of_run(INT run_number, char *error)
    };
 
    if(timeout_cnt>=50) {
-      cm_msg(MERROR,"farm_fe","DMA did not finish", switch_id);
-      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
+      cm_msg(MERROR,"farm_fe","DMA did not finish");
+      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
       return CM_TRANSITION_CANCELED;
    }
    printf("DMA is finished\n");
