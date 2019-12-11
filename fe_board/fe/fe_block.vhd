@@ -6,15 +6,16 @@ use work.daq_constants.all;
 
 entity fe_block is
 generic (
-    FPGA_ID_g : std_logic_vector(15 downto 0) := X"0000";
+    NIOS_CLK_HZ_g : positive := 125000000--;
+);
+port (
+    i_fpga_id       : in    std_logic_vector(15 downto 0);
     -- frontend board type
     -- - 111010 : mupix
     -- - 111000 : mutrig
     -- - 000111 and 000000 : reserved (DO NOT USE)
-    FEB_type_in : std_logic_vector(5 downto 0);
-    NIOS_CLK_HZ_g : positive := 125000000--;
-);
-port (
+    i_fpga_type     : in    std_logic_vector(5 downto 0);
+
     i_i2c_scl       : in    std_logic;
     o_i2c_scl_oe    : out   std_logic;
     i_i2c_sda       : in    std_logic;
@@ -396,8 +397,9 @@ begin
 
     e_merger : entity work.data_merger
     port map (
-        fpga_ID_in              => FPGA_ID_g,
-        FEB_type_in             => FEB_type_in,
+        fpga_ID_in              => i_fpga_id,
+        FEB_type_in             => i_fpga_type,
+
         run_state               => run_state_156,
         run_number              => run_number,
 
@@ -462,7 +464,7 @@ begin
         resets_out              => open,
         reset_bypass            => reg_reset_bypass(11 downto 0),
         run_number_out          => run_number,
-        fpga_id                 => FPGA_ID_g,
+        fpga_id                 => i_fpga_id,
         terminated              => terminated,
         testout                 => open,
 

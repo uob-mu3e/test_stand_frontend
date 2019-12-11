@@ -375,11 +375,12 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        FPGA_ID_g => X"FEB0",
-        FEB_type_in => "111010",
         NIOS_CLK_HZ_g => 125000000--,
     )
     port map (
+        i_fpga_id       => X"FEB0",
+        i_fpga_type     => "111010",
+
         i_i2c_scl       => i2c_scl,
         o_i2c_scl_oe    => i2c_scl_oe,
         i_i2c_sda       => i2c_sda,
