@@ -294,7 +294,7 @@ EQUIPMENT equipment[] = {
      0,                         /* event source */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,        /* read always and update ODB */
+     RO_RUNNING | RO_STOPPED | RO_ODB,        /* read while running and stopped but not at transitions and update ODB */
      10000,                     /* read every 10 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
