@@ -88,8 +88,8 @@ port (
 
 
 
-    si42_clk_40 : in    std_logic;
-    si42_clk_80 : in    std_logic;
+    si42_clk_125        : in    std_logic;
+    si42_clk_50         : in    std_logic;
 
 
 
@@ -253,7 +253,7 @@ begin
         FPGA_ID_g => X"FEB0",
         -- mutrig FEB type
         FEB_type_in => "111000",
-        NIOS_CLK_HZ_g => 80000000--,
+        NIOS_CLK_HZ_g => 125000000--,
     )
     port map (
         i_i2c_scl       => i2c_scl,
@@ -298,7 +298,7 @@ begin
 
 
 
-        i_nios_clk      => si42_clk_80,
+        i_nios_clk      => si42_clk_125,
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
         o_clk_156_mon   => led(14),

@@ -186,8 +186,8 @@ port (
 
 
 
-    si42_clk_40 : in    std_logic;
-    si42_clk_80 : in    std_logic;
+    si42_clk_125        : in    std_logic;
+    si42_clk_50         : in    std_logic;
 
 
 
@@ -363,7 +363,7 @@ begin
 	e_clk_ctrl : component work.cmp.clk_ctrl
 		port map(
 			inclk1x   => clk_aux,
-			inclk0x   => si42_clk_80,
+			inclk0x   => si42_clk_125,
 			clkselect => FPGA_Test(1), -- clkselect
 			outclk    => nios_clk--,
 		);
@@ -377,7 +377,7 @@ begin
     generic map (
         FPGA_ID_g => X"FEB0",
         FEB_type_in => "111010",
-        NIOS_CLK_HZ_g => 80000000--,
+        NIOS_CLK_HZ_g => 125000000--,
     )
     port map (
         i_i2c_scl       => i2c_scl,
