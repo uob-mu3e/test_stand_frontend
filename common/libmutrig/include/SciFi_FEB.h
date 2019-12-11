@@ -18,9 +18,9 @@ class SciFiFEB : public MutrigFEB{
    private:
       static SciFiFEB* m_instance; //signleton instance pointer: only one instance of SciFiFEB
       SciFiFEB(const SciFiFEB&)=delete;
-      SciFiFEB(mudaq::MudaqDevice& mu):MutrigFEB(mu){};
+      SciFiFEB(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix):MutrigFEB(mu,hDB,equipment_name,odb_prefix){};
    public:
-      static SciFiFEB* Create(mudaq::MudaqDevice& mu){printf("FEB::Create()");if(!m_instance) m_instance=new SciFiFEB(mu); return m_instance;};
+      static SciFiFEB* Create(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix){printf("SciFiFEB::Create(%s) as %s\n",odb_prefix,equipment_name);if(!m_instance) m_instance=new SciFiFEB(mu,hDB,equipment_name,odb_prefix); return m_instance;};
       static SciFiFEB* Instance(){return m_instance;};
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID

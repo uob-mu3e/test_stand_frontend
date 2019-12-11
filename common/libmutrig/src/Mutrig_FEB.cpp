@@ -32,7 +32,26 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 
 const uint16_t MutrigFEB::FPGA_broadcast_ID=0xffff;
 
-int MutrigFEB::WriteAll(HNDLE hDB, const char* odb_prefix){
+void MutrigFEB::on_mapping_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
+{
+   MutrigFEB* _this=static_cast<MutrigFEB*>(userdata);
+   KEY key;
+   db_get_key(hDB, hKey, &key);
+   printf("MutrigFEB::on_mapping_changed(%s)\n",key.name);
+   //clear map, we will rebuild it now
+   _this->m_FPGA_IDs.clear();
+/*
+   if (std::string(key.name) == "type") {
+      INT type;
+      int size = sizeof(type);
+      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+   }
+*/
+}
+
+
+
+int MutrigFEB::WriteAll(){
         INT ival;
         HNDLE hTmp;
         char set_str[255];
@@ -40,48 +59,48 @@ int MutrigFEB::WriteAll(HNDLE hDB, const char* odb_prefix){
 	INT bsize=sizeof(bval);
 	INT isize=sizeof(ival);
 
-        sprintf(set_str, "%s/Settings/Daq/dummy_config", odb_prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/Daq/dummy_config", m_odb_prefix);
+        db_find_key(m_hDB, 0, set_str, &hTmp);
+        db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
         this->setDummyConfig(SciFiFEB::FPGA_broadcast_ID,bval);
 
-        sprintf(set_str, "%s/Settings/Daq/dummy_data", odb_prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/Daq/dummy_data", m_odb_prefix);
+        db_find_key(m_hDB, 0, set_str, &hTmp);
+        db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
         this->setDummyData_Enable(SciFiFEB::FPGA_broadcast_ID,bval);
 
-        sprintf(set_str, "%s/Settings/daq/dummy_data_fast", odb_prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/daq/dummy_data_fast", m_odb_prefix);
+        db_find_key(m_hDB, 0, set_str, &hTmp);
+        db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
         this->setDummyData_Fast(SciFiFEB::FPGA_broadcast_ID,bval);
 
-        sprintf(set_str, "%s/Settings/Daq/dummy_data_n", odb_prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,&ival,&isize,TID_INT);
+        sprintf(set_str, "%s/Settings/Daq/dummy_data_n", m_odb_prefix);
+        db_find_key(m_hDB, 0, set_str, &hTmp);
+        db_get_data(m_hDB,hTmp,&ival,&isize,TID_INT);
         this->setDummyData_Count(SciFiFEB::FPGA_broadcast_ID,ival);
 
-        sprintf(set_str, "%s/Settings/Daq/prbs_decode_disable", odb_prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/Daq/prbs_decode_disable", m_odb_prefix);
+        db_find_key(m_hDB, 0, set_str, &hTmp);
+        db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
         this->setPRBSDecoderDisable(SciFiFEB::FPGA_broadcast_ID,bval);
 
-        sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall", odb_prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall", m_odb_prefix);
+        db_find_key(m_hDB, 0, set_str, &hTmp);
+        db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
         this->setWaitForAll(SciFiFEB::FPGA_broadcast_ID,bval);
 
-        sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall_sticky", odb_prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall_sticky", m_odb_prefix);
+        db_find_key(m_hDB, 0, set_str, &hTmp);
+        db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
         this->setWaitForAllSticky(SciFiFEB::FPGA_broadcast_ID,bval);
 
       //chip mask settings
       {
 	BOOL barray[16];
 	INT  barraysize=sizeof(barray);
-        sprintf(set_str, "%s/Settings/Daq/mask", odb_prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,barray,&barraysize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/Daq/mask", m_odb_prefix);
+        db_find_key(m_hDB, 0, set_str, &hTmp);
+        db_get_data(m_hDB,hTmp,barray,&barraysize,TID_BOOL);
 	for(int i=0;i<16;i++)
 		this->setMask(i,barray[i]);
       }
@@ -93,15 +112,15 @@ int MutrigFEB::WriteAll(HNDLE hDB, const char* odb_prefix){
 	INT  phases[4];
 	INT  iarraysize=sizeof(phases);
 
-        sprintf(set_str, "%s/Settings/Daq/resetskew_cphase", odb_prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,cphase,&barraysize,TID_BOOL);
-        sprintf(set_str, "%s/Settings/Daq/resetskew_cdelay", odb_prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,cdelay,&barraysize,TID_BOOL);
-        sprintf(set_str, "%s/Settings/Daq/resetskew_phases", odb_prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,phases,&iarraysize,TID_INT);
+        sprintf(set_str, "%s/Settings/Daq/resetskew_cphase", m_odb_prefix);
+        db_find_key(m_hDB, 0, set_str, &hTmp);
+        db_get_data(m_hDB,hTmp,cphase,&barraysize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/Daq/resetskew_cdelay", m_odb_prefix);
+        db_find_key(m_hDB, 0, set_str, &hTmp);
+        db_get_data(m_hDB,hTmp,cdelay,&barraysize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/Daq/resetskew_phases", m_odb_prefix);
+        db_find_key(m_hDB, 0, set_str, &hTmp);
+        db_get_data(m_hDB,hTmp,phases,&iarraysize,TID_INT);
 
 	this->setResetSkewCphase(SciFiFEB::FPGA_broadcast_ID,cphase);
 	this->setResetSkewCdelay(SciFiFEB::FPGA_broadcast_ID,cdelay);
@@ -112,22 +131,22 @@ int MutrigFEB::WriteAll(HNDLE hDB, const char* odb_prefix){
 
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
-int MutrigFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix){
+int MutrigFEB::ConfigureASICs(){
    printf("MutrigFEB::ConfigureASICs()\n");
-   int status = mutrig::midasODB::MapForEach(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mutrig::Config* config, int asic){
-      cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to FPGA #%d ASIC #%d", odb_prefix, asic,FPGAid_from_ID(asic),ASICid_from_ID(asic));
+   int status = mutrig::midasODB::MapForEach(m_hDB,m_odb_prefix,[this](mutrig::Config* config, int asic){
+      cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to FPGA #%d ASIC #%d", m_odb_prefix, asic,FPGAid_from_ID(asic),ASICid_from_ID(asic));
       uint32_t rpc_status;
       try {
          //Write ASIC number & Configuraton
 	 rpc_status=m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic),0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
-          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
+          set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
           return FE_ERR_HW; //note: return of lambda function
       }
       if(rpc_status!=FEB_REPLY_SUCCESS){
          //configuration mismatch, report and break foreach-loop
-         set_equipment_status(equipment_name,  "MuTRiG config failed", "red");
+         set_equipment_status(m_equipment_name,  "MuTRiG config failed", "red");
          cm_msg(MERROR, "setup_mutrig", "MuTRiG configuration error for ASIC %i", asic);
          return FE_ERR_HW;//note: return of lambda function
       }
@@ -137,7 +156,7 @@ int MutrigFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char*
    return 0;
 }
 
-int MutrigFEB::ReadBackCounters(HNDLE hDB, uint16_t FPGA_ID, const char* odb_prefix){
+int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
    auto rpc_ret=m_mu.FEBsc_NiosRPC(FPGA_ID,0x0105,{});
    //retrieve results
    uint32_t* val=new uint32_t[rpc_ret*3]; //nASICs * 4 counterbanks * 3 words
@@ -151,38 +170,39 @@ int MutrigFEB::ReadBackCounters(HNDLE hDB, uint16_t FPGA_ID, const char* odb_pre
    //store in midas
    INT status;
    int index=0;
-   printf("done reading: odb:%s\n",odb_prefix);
+   printf("done reading: odb:%s\n",m_odb_prefix);
    char path[255];
    printf("odb var:%s\n",path);
    for(int nASIC=0;nASIC<rpc_ret;nASIC++){
        printf("writing %d\n",nASIC);
-       sprintf(path,"%s/Variables/Counters/nHits",odb_prefix);
-       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/nHits",m_odb_prefix);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=1;
-       sprintf(path,"%s/Variables/Counters/Time",odb_prefix);
-       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/Time",m_odb_prefix);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=2;
-       sprintf(path,"%s/Variables/Counters/nBadFrames",odb_prefix);
-       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/nBadFrames",m_odb_prefix);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=1;
-       sprintf(path,"%s/Variables/Counters/nFrames",odb_prefix);
-       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/nFrames",m_odb_prefix);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=2;
-       sprintf(path,"%s/Variables/Counters/nErrorsLVDS",odb_prefix);
-       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/nErrorsLVDS",m_odb_prefix);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=1;
-       sprintf(path,"%s/Variables/Counters/nWordsLVDS",odb_prefix);
-       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/nWordsLVDS",m_odb_prefix);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=2;
-       sprintf(path,"%s/Variables/Counters/nErrorsPRBS",odb_prefix);
-       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       sprintf(path,"%s/Variables/Counters/nErrorsPRBS",m_odb_prefix);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=1;
-       sprintf(path,"%s/Variables/Counters/nWordsPRBS",odb_prefix);
+       sprintf(path,"%s/Variables/Counters/nWordsPRBS",m_odb_prefix);
        if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=2;
    }
 
    delete[] val; 
+   return SUCCESS;
 }
 
 //MIDAS callback function for FEB register Setter functions

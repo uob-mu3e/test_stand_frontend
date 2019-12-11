@@ -20,37 +20,55 @@ class MutrigFEB {
       mudaq::MudaqDevice& m_mu;
       std::map<uint16_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
       bool m_ask_sc_reply;
+      const char* m_odb_prefix;
+      const char* m_equipment_name;
+      HNDLE m_hDB;
    public:
       MutrigFEB(const MutrigFEB&)=delete;
-      MutrigFEB(mudaq::MudaqDevice& mu):m_mu(mu),m_ask_sc_reply(true){};
+      MutrigFEB(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix):
+	      m_mu(mu),
+	      m_ask_sc_reply(true),
+	      m_odb_prefix(odb_prefix),
+	      m_equipment_name(equipment_name),
+	      m_hDB(hDB)
+	{};
 
       void SetAskSCReply(bool ask){m_ask_sc_reply=ask;};
 
-      //MIDAS callback for all setters below. Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
+      //MIDAS callback for all setters below (DAQ related, mapped to functions on FEB / settings from the DAQ subdirectory).
+      //Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
       static void on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *);
 
+      //MIDAS callback for changed mapping of FEB IDs. Will clear m_FPGA_IDs and rebuild this vector.
+      //Using user data argument as "this"
+      //TODO: move to generic FEB class after merging with pixel SC
+      static void on_mapping_changed(HNDLE hDB, HNDLE hKey, INT, void *);
+
       //Write all registers based on ODB values
-      int WriteAll(HNDLE hDB, const char* odb_prefix);
+      int WriteAll();
 
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi"), report any errors as equipment_name
-      int ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix);
+      int ConfigureASICs();
 
    protected:
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
       static const uint16_t FPGA_broadcast_ID;
       virtual uint16_t FPGAid_from_ID(int asic)=0;
       virtual uint16_t ASICid_from_ID(int asic)=0;
-
+      //list of all FPGAs mapped to this subdetector. Used for pushing common configurations to all FEBs
+      //TODO: move to generic FEB class after merging with pixel SC
+      //TODO: extend to map<ID, FPGA_ID_TYPE> with more information (name, etc. for reporting).
+      std::vector<uint16_t> m_FPGA_IDs;
 
       //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/ 
-      int ReadBackCounters(HNDLE hDB, uint16_t FPGA_ID, const char* odb_prefix);
+      int ReadBackCounters(uint16_t FPGA_ID);
 
 
       //FEB registers and functions
 
       /**
-       * Use emulated mutric on fpga for config (NOT IMPLEMENTED IN FW)
+       * Use emulated mutric on fpga for config
        */
       void setDummyConfig(uint16_t FPGA_ID,bool dummy = true);
   
@@ -64,9 +82,9 @@ class MutrigFEB {
       void setDummyData_Fast(uint16_t FPGA_ID, bool fast = false);
   
       /**
-       * Disable data from specified ASIC
+       * Disable data from specified ASIC (asic number in global numbering scheme)
        */
-      void setMask(int ASIC, bool value); //ASIC: global ASIC ID
+      void setMask(int ASIC, bool value);
   
       /**
        * Disable PRBS decoder in FPGA

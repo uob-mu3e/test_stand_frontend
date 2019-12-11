@@ -2,7 +2,8 @@
 #include <iostream>
 #include <iomanip>
 #include <mutrig_config.h>
-#include "midas.h"
+#include <midas.h>
+#include <history.h>
 //#include "experim.h"
 #include "mutrig_MIDAS_config.h"
 #include "mutrig_midasodb.h"
@@ -14,7 +15,7 @@ namespace mutrig { namespace midasODB {
 //#endif
 
 
-int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface, bool init_FEB){
+int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface){
     /* Book Setting space */
 
     HNDLE hTmp;
@@ -40,8 +41,6 @@ int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface, bool init_
 
     //open hot link
     db_watch(hDB, hTmp, &SciFiFEB::on_settings_changed, FEB_interface);
-    //init all values on FEB
-    if(init_FEB) FEB_interface->WriteAll(hDB,prefix);
 
     /* Map Equipment/SciFi/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
     //TODO some globals should be per asic
@@ -127,7 +126,6 @@ int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface, bool init_
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
     if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
 
-
     sprintf(set_str, "%s/Variables/Counters/nErrorsPRBS", prefix);
     status=db_create_key(hDB, 0, set_str, TID_DWORD);
     if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
@@ -140,7 +138,20 @@ int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface, bool init_
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
     if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
 
-    return status;
+    // Define history panels
+    hs_define_panel("SciFi","Counters",{"SciFi:Counters_nHits",
+                                       "SciFi:Counters_nFrames",
+                                       "SciFi:Counters_nWordsLVDS",
+                                       "SciFi:Counters_nWordsPRBS"});
+
+    hs_define_panel("SciFi","Errors",{"SciFi:Counters_nBadFrames",
+                                     "SciFi:Counters_nErrorsLVDS",
+                                     "SciFi:Counters_nErrorsPRBS"});
+
+    hs_define_panel("SciFi","Times",{"SciFi:Counters_Timer",
+                                    "SciFi:Counters_Time"});
+
+return status;
 }
 
 mutrig::Config MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic) {
