@@ -72,7 +72,7 @@ const char *frontend_file_name = __FILE__;
 BOOL frontend_call_loop = FALSE;
 
 /* a frontend status page is displayed with this frequency in ms    */
-INT display_period = 1000;
+INT display_period = 0;
 
 /* maximum event size produced by this frontend */
 INT max_event_size = 10000;
@@ -366,8 +366,8 @@ INT frontend_init()
    db_create_record(hDB, 0, "Equipment/Links/Variables", strcomb(link_variables_str));
 
    // Create run transition structure
-   db_create_key(hDB, 0, "/Equipment/Clock Reset/Run transitions/Request Sync", TID_INT);
-   db_find_key(hDB, 0, "/Equipment/Clock Reset/Run transitions/Request Sync", &hKey);
+   db_create_key(hDB, 0, "/Equipment/Clock Reset/Run Transitions/Request Run Prepare", TID_INT);
+   db_find_key(hDB, 0, "/Equipment/Clock Reset/Run Transitions/Request Run Prepare", &hKey);
    INT zeros[MAX_N_SWITCHINGBOARDS];
    for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++)
        zeros[i] =0;
@@ -535,7 +535,7 @@ INT begin_of_run(INT run_number, char *error)
 INT end_of_run(INT run_number, char *error)
 {
 
-   cb->write_command("Stop Run");
+   cb->write_command("End Run");
    set_equipment_status("Clock Reset", "Run stopped", "yellowLight");
    return CM_SUCCESS;
 }
@@ -809,6 +809,9 @@ void link_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 }
 
 void prepare_run_on_request(HNDLE hDB, HNDLE hKey, INT, void *){
+
+    cm_msg(MINFO, "prepare_run_on_request", "Execute Run Prepare on request called");
+
     KEY key;
     db_get_key(hDB, hKey, &key);
     INT request[MAX_N_SWITCHINGBOARDS];
@@ -820,11 +823,14 @@ void prepare_run_on_request(HNDLE hDB, HNDLE hKey, INT, void *){
                  active, &size, TID_INT, false);
 
     bool allok = true;
+    bool notalloff = false;
     for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++){
+        printf("%i : %i : %i\n", i, request[i], active[i]);
         allok = allok && ((request[i] > 0) || (active[i] == 0));
+        notalloff = notalloff || active[i];
     }
 
-    if(allok){
+    if(allok && notalloff){
         cm_msg(MINFO, "prepare_run_on_request", "Execute Run Prepare on request");
         int run;
         int size = sizeof(run);

@@ -314,9 +314,8 @@ INT begin_of_run(INT run_number, char *error)
 
    /* send run prepare signal via CR system */
    INT value = 1;
-   char str[128];
-   sprintf(str,"Equipment/Clock Reset/RunTransitions/RequestRunPrepare", switch_id);
-   db_set_value(hDB,0,str, &value, sizeof(value), 1, TID_INT);
+   db_set_value_index(hDB,0,"Equipment/Clock Reset/Run Transitions/Request Run Prepare",
+                      &value, sizeof(value), switch_id, TID_INT, false);
 
 
    uint16_t timeout_cnt=0;
@@ -327,7 +326,8 @@ INT begin_of_run(INT run_number, char *error)
    while(link_active_from_register != link_active_from_odb &&
          timeout_cnt++ < 50) {
       timeout_cnt++;
-      usleep(1000);
+      printf("%u  %x  %x\n",timeout_cnt,link_active_from_odb, link_active_from_register);
+      usleep(100000);
       link_active_from_register_low = mup->read_register_ro(RUN_NR_ACK_REGISTER_LOW_R);
 //      link_active_from_register_high = mup->read_register_ro(RUN_NR_ACK_REGISTER_HIGH_R);
       uint32_t link_active_from_register_high = 0;
@@ -398,7 +398,7 @@ INT read_sc_event(char *pevent, INT off)
 
 INT read_scifi_sc_event(char *pevent, INT off){
     printf("read_scifi_sc_event\n");
-    int status=SciFiFEB::Instance()->ReadBackCounters(hDB, 0 /*FPGA-ID*/, "/Equipment/SciFi");
+    //int status=SciFiFEB::Instance()->ReadBackCounters(hDB, 0 /*FPGA-ID*/, "/Equipment/SciFi");
     return 0;
 }
 

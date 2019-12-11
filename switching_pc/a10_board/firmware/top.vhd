@@ -524,16 +524,18 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
             N_LINKS_g                           => N_links--,
     )
     port map (
-            i_clk                               => tx_clk(0),
-            i_reset_n                           => reset_n,
-            i_aligned                           => (others => '1'),
-            i_data                              => rx_data(0),
-            i_datak                             => rx_datak(0),
-            i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
-            i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
-            i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
-            o_run_number                        => readregs(RUN_NR_REGISTER_R), -- run number of i_addr
-            o_runNr_ack                         => readregs(RUN_NR_ACK_REGISTER_R)--, -- which FEBs have responded with run number in i_run_number
+        i_clk                               => tx_clk(0),
+        i_reset_ack_seen:                   => '0', --TODO: define and connect bit from reset reg
+        i_reset_run_stop:                   => '0',
+        i_buffers_empty:                    => (others => '1') -- TODO: connect buffers emtpy from dma here
+        i_aligned                           => (others => '1'),
+        i_data                              => rx_data(0),
+        i_datak                             => rx_datak(0),
+        i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
+        i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
+        i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
+        o_run_number                        => readregs(RUN_NR_REGISTER_R), -- run number of i_addr
+        o_runNr_ack                         => readregs(RUN_NR_ACK_REGISTER_R)--, -- which FEBs have responded with run number in i_run_number
     );
 
 
