@@ -311,8 +311,8 @@ begin
 				event_tagging_state <= bank_name;
 
 			when bank_name =>
-                if ( mux_link = NLINKS - 1 ) then
-                    if ( conv_integer(w_ram_add + 1) mod 8 = 0 ) then
+		                if ( mux_link = NLINKS ) then -- here we stop to not overflow with the mux_link
+                    			if ( conv_integer(w_ram_add + 2) mod 8 = 0 ) then
 						event_tagging_state <= waiting;
 					 	w_fifo_en   <= '1';
 						w_fifo_data <= w_ram_add + 1;
@@ -321,14 +321,14 @@ begin
 					end if;
 					mux_link <= 0;
 					event_id <= event_id + '1';
-                elsif ( i_link_mask(mux_link) = '0' ) then
-                    mux_link <= mux_link + 1;
-                else
-                    w_ram_en			<= '1';
-                    w_ram_add   		<= w_ram_add + 1;
-                    w_ram_data  		<= std_logic_vector(to_unsigned(mux_link, w_ram_data'length));  -- MIDAS Bank Name
-                    event_tagging_state <= bank_type;
-                end if;
+                		elsif ( i_link_mask(mux_link) = '0' ) then
+		                	mux_link <= mux_link + 1;
+                		else
+		                	w_ram_en			<= '1';
+                	    		w_ram_add   		<= w_ram_add + 1;
+		 	                w_ram_data  		<= std_logic_vector(to_unsigned(mux_link, w_ram_data'length));  -- MIDAS Bank Name
+                    			event_tagging_state <= bank_type;
+                		end if;
 
 			when bank_type =>
 				w_ram_en			<= '1';
@@ -357,7 +357,7 @@ begin
 					 (bank_data_fifo(11 + 36 * mux_link downto mux_link * 36 + 4) = x"EE" and
 					 bank_data_fifo(3 + 36 * mux_link downto mux_link * 36 ) = "0001") ) then 
 					if ( mux_link = NLINKS - 1 ) then
-						 if ( conv_integer(w_ram_add + 1) mod 8 = 0 ) then
+						 if ( conv_integer(w_ram_add + 2) mod 8 = 0 ) then
 						 	event_tagging_state <= waiting;
 						 	w_fifo_en   <= '1';
 							w_fifo_data <= w_ram_add + 1;
@@ -378,6 +378,8 @@ begin
 			when trailer => -- if one is in this state the midas event size will not match the size in the ram
 				if ( conv_integer(w_ram_add + 1) mod 8 = 0 ) then
 					event_tagging_state <= waiting;
+					w_fifo_en <= '1';
+					w_fifo_data <= w_ram_add + 1;
 				else
 					w_ram_en			<= '1';
 					w_ram_add   		<= w_ram_add + 1;
@@ -417,7 +419,7 @@ begin
 				o_state_out					<= x"A";
 				if (tag_fifo_empty = '0') then
 					r_fifo_en    		  	<= '1';
-					event_last_ram_add  	<= std_logic_vector(to_unsigned((conv_integer(r_fifo_data) * 32 / 256), event_last_ram_add'length));
+					event_last_ram_add  	<= std_logic_vector(to_unsigned((conv_integer(r_fifo_data) / 8), event_last_ram_add'length));
 					r_ram_add			  	<= r_ram_add + '1';
 					event_counter_state		<= get_data;
 				end if;
@@ -431,10 +433,12 @@ begin
 				
 			when runing =>
 				o_state_out 	<= x"C";
-				r_ram_add 		<= r_ram_add + '1';
 				o_event_wren	<= i_wen_reg;
 				if(r_ram_add = event_last_ram_add - '1') then
-					event_counter_state 	<= ending;
+					event_counter_state 	<= waiting;
+					o_endofevent <= '1';
+				else
+					r_ram_add <= r_ram_add + '1';
 				end if;
 				
 			when ending =>

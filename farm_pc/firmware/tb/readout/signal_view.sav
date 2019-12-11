@@ -1,12 +1,12 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Wed Dec 11 14:08:16 2019
+[*] Wed Dec 11 14:13:27 2019
 [*]
 [dumpfile] "/home/makoeppe/mu3e/online/farm_pc/firmware/tb/readout/.cache/readout_tb.ghw"
-[dumpfile_mtime] "Wed Dec 11 14:08:16 2019"
-[dumpfile_size] 1142337
+[dumpfile_mtime] "Wed Dec 11 14:08:19 2019"
+[dumpfile_size] 1623047
 [savefile] "/home/makoeppe/mu3e/online/farm_pc/firmware/tb/readout/signal_view.sav"
-[timestart] 366800000
+[timestart] 911900000
 [size] 1280 1317
 [pos] 1234 -46
 *-25.000000 734620000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1

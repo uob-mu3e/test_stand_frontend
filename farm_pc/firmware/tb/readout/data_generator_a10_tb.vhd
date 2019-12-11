@@ -228,6 +228,8 @@ begin
 						elsif (current_overflow(overflow_idx) = '1') then
 							overflow_idx 						:= overflow_idx + 1;
 							data_header_state					<= overflow;
+						elsif (overflow_idx = 15 ) then
+							overflow_idx := 0;
 						else
 							overflow_idx 						:= overflow_idx + 1;
 						end if;
