@@ -401,13 +401,13 @@ INT end_of_run(INT run_number, char *error)
 
    printf("Waiting for stop signals from all FEBs\n");
    uint16_t timeout_cnt = 0;
-   uint32_t stop_signal_seen = mup->read_register_ro(0/* TODO stop signal seen */); //TODO make 64 bits
+   uint32_t stop_signal_seen = mup->read_register_ro(RUN_STOP_ACK_REGISTER_R); //TODO make 64 bits
    printf("Stop signal seen from 0x%08x, expect stop signals from 0x%08x\n", stop_signal_seen, link_active_from_odb);
    while(stop_signal_seen != link_active_from_odb &&
          timeout_cnt++ < 50) {
       timeout_cnt++;
       usleep(1000);
-      stop_signal_seen = mup->read_register_ro(0/* TODO stop signal seen */);
+      stop_signal_seen = mup->read_register_ro(RUN_STOP_ACK_REGISTER_R);
       printf("Stop signal seen from 0x%08x, expect stop signals from 0x%08x\n", stop_signal_seen, link_active_from_odb);
    };
 
@@ -417,37 +417,20 @@ INT end_of_run(INT run_number, char *error)
       return CM_TRANSITION_CANCELED;
    }
 
-   printf("Waiting for buffers to empty\n");
-   timeout_cnt = 0;
-   while(! mup->read_register_ro(0/* TODO Buffer Empty */) &&
-         timeout_cnt++ < 50) {
-      timeout_cnt++;
-      usleep(1000);
-      stop_signal_seen = mup->read_register_ro(0/* TODO stop signal seen */);
-   };
-
-   if(timeout_cnt>=50) {
-      cm_msg(MERROR,"switch_fe","Buffers on Switching Board %d not empty at end of run", switch_id);
-      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
-      return CM_TRANSITION_CANCELED;
-   }
-   printf("Buffers all empty\n");
-
-   printf("Waiting for DMA to finish\n");
-   timeout_cnt = 0;
-   while(mup->read_register_ro(0/* TODO Last Written Address */) != 0/* TODO Last read address from DMA */ &&
-         timeout_cnt++ < 50) {
-      timeout_cnt++;
-      usleep(1000);
-      stop_signal_seen = mup->read_register_ro(0/* TODO stop signal seen */);
-   };
-
-   if(timeout_cnt>=50) {
-      cm_msg(MERROR,"switch_fe","DMA did not finish", switch_id);
-      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
-      return CM_TRANSITION_CANCELED;
-   }
-   printf("DMA is finished\n");
+//   printf("Waiting for buffers to empty\n");
+//   timeout_cnt = 0;
+//   while(! mup->read_register_ro(0/* TODO Buffer Empty */) &&
+//         timeout_cnt++ < 50) {
+//      timeout_cnt++;
+//      usleep(1000);
+//   };
+//
+//   if(timeout_cnt>=50) {
+//      cm_msg(MERROR,"switch_fe","Buffers on Switching Board %d not empty at end of run", switch_id);
+//      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
+//      return CM_TRANSITION_CANCELED;
+//   }
+//   printf("Buffers all empty\n");
 
    printf("EOR successful\n");
 
