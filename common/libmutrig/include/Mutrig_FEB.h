@@ -18,7 +18,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 class MutrigFEB {
    protected:
       mudaq::MudaqDevice& m_mu;
-      std::map<uint8_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
+      std::map<uint16_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
       bool m_ask_sc_reply;
    public:
       MutrigFEB(const MutrigFEB&)=delete;
@@ -26,41 +26,47 @@ class MutrigFEB {
 
       void SetAskSCReply(bool ask){m_ask_sc_reply=ask;};
 
-      //Mapping from ASIC number to FPGA_ID and ASIC_ID
-      static const uint8_t FPGA_broadcast_ID;
-      virtual uint8_t FPGAid_from_ID(int asic)=0;
-      virtual uint8_t ASICid_from_ID(int asic)=0;
+      //MIDAS callback for all setters below. Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
+      static void on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *);
 
-      //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/ 
-      int ReadBackCounters(HNDLE hDB, int FPGA_ID, const char* odb_prefix);
+      //Write all registers based on ODB values
+      int WriteAll(HNDLE hDB, const char* odb_prefix);
 
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi"), report any errors as equipment_name
       int ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix);
 
-      //FEB registers and functions
+   protected:
+      //Mapping from ASIC number to FPGA_ID and ASIC_ID
+      static const uint16_t FPGA_broadcast_ID;
+      virtual uint16_t FPGAid_from_ID(int asic)=0;
+      virtual uint16_t ASICid_from_ID(int asic)=0;
 
-      //MIDAS callback for all setters below. Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
-      static void on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *);
+
+      //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/ 
+      int ReadBackCounters(HNDLE hDB, uint16_t FPGA_ID, const char* odb_prefix);
+
+
+      //FEB registers and functions
 
       /**
        * Use emulated mutric on fpga for config (NOT IMPLEMENTED IN FW)
        */
-      void setDummyConfig(int FPGA_ID,bool dummy = true);
+      void setDummyConfig(uint16_t FPGA_ID,bool dummy = true);
   
       /**
        * use mutrig data emulator on fpga
        * n:    number of events per frame
        * fast: enable fast mode for data generator (shorter events)
        */
-      void setDummyData_Enable(int FPGA_ID, bool dummy = true);
-      void setDummyData_Count(int FPGA_ID, int n = 255);
-      void setDummyData_Fast(int FPGA_ID, bool fast = false);
+      void setDummyData_Enable(uint16_t FPGA_ID, bool dummy = true);
+      void setDummyData_Count(uint16_t FPGA_ID, int n = 255);
+      void setDummyData_Fast(uint16_t FPGA_ID, bool fast = false);
   
       /**
        * Disable data from specified ASIC
        */
-      void setMask(int ASIC, bool value);
+      void setMask(int ASIC, bool value); //ASIC: global ASIC ID
   
       /**
        * Disable PRBS decoder in FPGA
@@ -75,16 +81,16 @@ class MutrigFEB {
 
 
 
-      void syncReset(int FPGA_ID){chipReset(FPGA_ID);}; //should be resetting the ASICs coarse counter only, missing pin on the asic. For future use
-      void chipReset(int FPGA_ID); //reset all asics (digital part, CC, fsms, etc.)
-      void DataPathReset(int FPGA_ID); //in FE-FPGA: everything upstream of merger (in the stream path)
-      void LVDS_RX_Reset(int FPGA_ID); //in FE-FPGA: LVDS receiver blocks
+      void syncReset(uint16_t FPGA_ID){chipReset(FPGA_ID);}; //should be resetting the ASICs coarse counter only, missing pin on the asic. For future use
+      void chipReset(uint16_t FPGA_ID); //reset all asics (digital part, CC, fsms, etc.)
+      void DataPathReset(uint16_t FPGA_ID); //in FE-FPGA: everything upstream of merger (in the stream path)
+      void LVDS_RX_Reset(uint16_t FPGA_ID); //in FE-FPGA: LVDS receiver blocks
 
 
       //reset signal alignment control
-      void setResetSkewCphase(int FPGA_ID, BOOL cphase[4]);
-      void setResetSkewCdelay(int FPGA_ID, BOOL cdelay[4]);
-      void setResetSkewPhases(int FPGA_ID, INT phases[4]);
+      void setResetSkewCphase(uint16_t FPGA_ID, BOOL cphase[4]);
+      void setResetSkewCdelay(uint16_t FPGA_ID, BOOL cdelay[4]);
+      void setResetSkewPhases(uint16_t FPGA_ID, INT phases[4]);
 
 };//class MutrigFEB
 

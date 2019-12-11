@@ -24,8 +24,8 @@ class TilesFEB : public MutrigFEB{
       static TilesFEB* Instance(){return m_instance;};
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
-      virtual uint8_t FPGAid_from_ID(int asic);
-      virtual uint8_t ASICid_from_ID(int asic);
+      virtual uint16_t FPGAid_from_ID(int asic);
+      virtual uint16_t ASICid_from_ID(int asic);
 
       //MIDAS callback for all ___ Tiles specific ___ setters. Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
       static void on_tiles_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *);

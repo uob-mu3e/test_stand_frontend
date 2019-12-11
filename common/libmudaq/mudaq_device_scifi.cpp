@@ -430,7 +430,7 @@ void MudaqDevice::FEBsc_resetSlave(){
  *      1 word as dummy: 0x00000000
  *      First word (0xBAD...) to be written last (serves as start condition)
  */
-int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
+int MudaqDevice::FEBsc_write(uint16_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
 //printf("FEBsc_write() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr, m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_WRITE = 0x3; // this is 11 in binary
@@ -472,7 +472,7 @@ int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, 
     return 0;
 }
 
-int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
+int MudaqDevice::FEBsc_read(uint16_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
 //printf("FEBsc_read() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr,m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_READ = 0x2; // this is 10 in binary
@@ -626,7 +626,7 @@ int MudaqDevice::FEBsc_write_bank(char *pevent, int off){
 const uint32_t MudaqDevice::FEBsc_RPC_DATAOFFSET=0;
 
 //send an RPC command with payload to the nios, wait for finish. Returns status of Nios2 callback returned from FEB
-uint16_t MudaqDevice::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, std::vector<std::pair<uint32_t* /*payload*/,uint16_t /*chunklen*/> > payload_chunks, int polltime_ms){
+uint16_t MudaqDevice::FEBsc_NiosRPC(uint16_t FPGA_ID, uint16_t command, std::vector<std::pair<uint32_t* /*payload*/,uint16_t /*chunklen*/> > payload_chunks, int polltime_ms){
          uint32_t len=0;
 	 printf("MudaqDevice::FEBsc_NiosRPC(): command %x\n",command, len);
 	 //write payload chunks

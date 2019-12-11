@@ -30,14 +30,92 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #define FEB_REPLY_SUCCESS 0
 #define FEB_REPLY_ERROR   1
 
-const uint8_t MutrigFEB::FPGA_broadcast_ID=0;
+const uint16_t MutrigFEB::FPGA_broadcast_ID=0xffff;
+
+int MutrigFEB::WriteAll(HNDLE hDB, const char* odb_prefix){
+        INT ival;
+        HNDLE hTmp;
+        char set_str[255];
+        BOOL bval;
+	INT bsize=sizeof(bval);
+	INT isize=sizeof(ival);
+
+        sprintf(set_str, "%s/Settings/Daq/dummy_config", odb_prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        this->setDummyConfig(SciFiFEB::FPGA_broadcast_ID,bval);
+
+        sprintf(set_str, "%s/Settings/Daq/dummy_data", odb_prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        this->setDummyData_Enable(SciFiFEB::FPGA_broadcast_ID,bval);
+
+        sprintf(set_str, "%s/Settings/daq/dummy_data_fast", odb_prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        this->setDummyData_Fast(SciFiFEB::FPGA_broadcast_ID,bval);
+
+        sprintf(set_str, "%s/Settings/Daq/dummy_data_n", odb_prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,&ival,&isize,TID_INT);
+        this->setDummyData_Count(SciFiFEB::FPGA_broadcast_ID,ival);
+
+        sprintf(set_str, "%s/Settings/Daq/prbs_decode_disable", odb_prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        this->setPRBSDecoderDisable(SciFiFEB::FPGA_broadcast_ID,bval);
+
+        sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall", odb_prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        this->setWaitForAll(SciFiFEB::FPGA_broadcast_ID,bval);
+
+        sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall_sticky", odb_prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        this->setWaitForAllSticky(SciFiFEB::FPGA_broadcast_ID,bval);
+
+      //chip mask settings
+      {
+	BOOL barray[16];
+	INT  barraysize=sizeof(barray);
+        sprintf(set_str, "%s/Settings/Daq/mask", odb_prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,barray,&barraysize,TID_BOOL);
+	for(int i=0;i<16;i++)
+		this->setMask(i,barray[i]);
+      }
+      //reset skew settings
+      {
+	BOOL cphase[4];
+	BOOL cdelay[4];
+	INT  barraysize=sizeof(cphase);
+	INT  phases[4];
+	INT  iarraysize=sizeof(phases);
+
+        sprintf(set_str, "%s/Settings/Daq/resetskew_cphase", odb_prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,cphase,&barraysize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/Daq/resetskew_cdelay", odb_prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,cdelay,&barraysize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/Daq/resetskew_phases", odb_prefix);
+        db_find_key(hDB, 0, set_str, &hTmp);
+        db_get_data(hDB,hTmp,phases,&iarraysize,TID_INT);
+
+	this->setResetSkewCphase(SciFiFEB::FPGA_broadcast_ID,cphase);
+	this->setResetSkewCdelay(SciFiFEB::FPGA_broadcast_ID,cdelay);
+	this->setResetSkewPhases(SciFiFEB::FPGA_broadcast_ID,phases);
+      }
+    return 0;
+}
 
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
 int MutrigFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix){
    printf("MutrigFEB::ConfigureASICs()\n");
    int status = mutrig::midasODB::MapForEach(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mutrig::Config* config, int asic){
-      cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/", odb_prefix, asic);
+      cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to FPGA #%d ASIC #%d", odb_prefix, asic,FPGAid_from_ID(asic),ASICid_from_ID(asic));
       uint32_t rpc_status;
       try {
          //Write ASIC number & Configuraton
@@ -59,7 +137,7 @@ int MutrigFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char*
    return 0;
 }
 
-int MutrigFEB::ReadBackCounters(HNDLE hDB, int FPGA_ID, const char* odb_prefix){
+int MutrigFEB::ReadBackCounters(HNDLE hDB, uint16_t FPGA_ID, const char* odb_prefix){
    auto rpc_ret=m_mu.FEBsc_NiosRPC(FPGA_ID,0x0105,{});
    //retrieve results
    uint32_t* val=new uint32_t(rpc_ret*4*3); //nASICs * 4 counterbanks * 3 words
@@ -248,7 +326,7 @@ uint32_t reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t 
 /**
 * Use emulated mutric on fpga for config
 */
-void MutrigFEB::setDummyConfig(int FPGA_ID, bool dummy){
+void MutrigFEB::setDummyConfig(uint16_t FPGA_ID, bool dummy){
 	printf("MutrigFEB::setDummyConfig(%d)=%d\n",FPGA_ID,dummy);
 	uint32_t val;
 
@@ -270,7 +348,7 @@ void MutrigFEB::setDummyConfig(int FPGA_ID, bool dummy){
 * fast: enable fast mode for data generator (shorter events)
 */
 
-void MutrigFEB::setDummyData_Enable(int FPGA_ID, bool dummy)
+void MutrigFEB::setDummyData_Enable(uint16_t FPGA_ID, bool dummy)
 {
 	printf("MutrigFEB::setDummyData_Enable(%d)=%d\n",FPGA_ID,dummy);
 	uint32_t val;
@@ -285,7 +363,7 @@ void MutrigFEB::setDummyData_Enable(int FPGA_ID, bool dummy)
 	m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
-void MutrigFEB::setDummyData_Fast(int FPGA_ID, bool fast)
+void MutrigFEB::setDummyData_Fast(uint16_t FPGA_ID, bool fast)
 {
 	printf("MutrigFEB::setDummyData_Fast(%d)=%d\n",FPGA_ID,fast);
 	uint32_t  val;
@@ -299,7 +377,7 @@ void MutrigFEB::setDummyData_Fast(int FPGA_ID, bool fast)
 	m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
-void MutrigFEB::setDummyData_Count(int FPGA_ID, int n)
+void MutrigFEB::setDummyData_Count(uint16_t FPGA_ID, int n)
 {
         if(n > 255) n = 255;
 	printf("MutrigFEB::setDummyData_Count(%d)=%d\n",FPGA_ID,n);
@@ -377,7 +455,7 @@ void MutrigFEB::setWaitForAllSticky(uint32_t FPGA_ID, bool value){
 
 
 //reset all asics (digital part, CC, fsms, etc.)
-void MutrigFEB::chipReset(int FPGA_ID){
+void MutrigFEB::chipReset(uint16_t FPGA_ID){
 	uint32_t val=0;
 	//m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 	//constant reset should not happen...
@@ -391,7 +469,7 @@ void MutrigFEB::chipReset(int FPGA_ID){
 }
 
 //reset full datapath upstream from merger
-void MutrigFEB::DataPathReset(int FPGA_ID){
+void MutrigFEB::DataPathReset(uint16_t FPGA_ID){
 	uint32_t val=0;
 	//m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG);
 	//constant reset should not happen...
@@ -407,7 +485,7 @@ void MutrigFEB::DataPathReset(int FPGA_ID){
 }
 
 //reset lvds receivers
-void MutrigFEB::LVDS_RX_Reset(int FPGA_ID){
+void MutrigFEB::LVDS_RX_Reset(uint16_t FPGA_ID){
 	uint32_t val=0;
 	//set and clear reset
         val=reg_setBit(val,2,true);
@@ -418,7 +496,7 @@ void MutrigFEB::LVDS_RX_Reset(int FPGA_ID){
 }
 
 //set reset skew configuration
-void MutrigFEB::setResetSkewCphase(int FPGA_ID, BOOL cphase[4]){
+void MutrigFEB::setResetSkewCphase(uint16_t FPGA_ID, BOOL cphase[4]){
         uint32_t val=m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG];
         for(int i=0;i<4;i++){
             val=reg_setBit(val,i+6,cphase[i]);
@@ -427,7 +505,7 @@ void MutrigFEB::setResetSkewCphase(int FPGA_ID, BOOL cphase[4]){
         m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG]=val;
 }
 
-void MutrigFEB::setResetSkewCdelay(int FPGA_ID, BOOL cdelay[4]){
+void MutrigFEB::setResetSkewCdelay(uint16_t FPGA_ID, BOOL cdelay[4]){
         uint32_t val=m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG];
         for(int i=0;i<4;i++){
             val=reg_setBit(val,i+10,cdelay[i]);
@@ -436,7 +514,7 @@ void MutrigFEB::setResetSkewCdelay(int FPGA_ID, BOOL cdelay[4]){
         m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG]=val;
 }
 
-void MutrigFEB::setResetSkewPhases(int FPGA_ID, INT phases[4]){
+void MutrigFEB::setResetSkewPhases(uint16_t FPGA_ID, INT phases[4]){
 	uint32_t val[4];
         for(int i=0;i<4;i++){
         	val[i]=phases[i];
