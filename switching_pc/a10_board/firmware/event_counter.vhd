@@ -8,7 +8,6 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use work.mudaq_components.all;
 
-
 entity event_counter is
     port(
 		clk:               in std_logic;
@@ -64,18 +63,18 @@ dma_data <= r_ram_data;
 
 not_fifo_empty <= not fifo_empty;
 
-e_ram : ip_ram
-   port map (
+    e_ram : work.cmp.ip_ram
+    port map (
 		clock          => dma_clk,
 		data           => w_ram_data,
 		rdaddress      => r_ram_add,
 		wraddress      => w_ram_add,
 		wren           => w_ram_en,
 		q              => r_ram_data--,
-);
+    );
 
-e_tagging_fifo : ip_tagging_fifo
-   port map (
+    e_tagging_fifo : work.cmp.ip_tagging_fifo
+    port map (
 		data     => w_fifo_data,
 		wrreq    => w_fifo_en,
 		rdreq    => r_fifo_en,
@@ -84,10 +83,10 @@ e_tagging_fifo : ip_tagging_fifo
 		full     => open,
 		empty    => tag_fifo_empty,
 		aclr     => reset--,
-);
+    );
 
-fifo : transceiver_fifo
-	port map (
+    fifo : work.cmp.transceiver_fifo
+    port map (
 		data    => rx_data_in,
 		wrreq   => fifo_wrreq,
 		rdreq   => not_fifo_empty,
@@ -97,7 +96,7 @@ fifo : transceiver_fifo
 		q       => fifo_data_out,
 		rdempty => fifo_empty,
 		wrfull  => open--,
-);
+    );
 
 -- write fifo
 process(clk, reset_n)

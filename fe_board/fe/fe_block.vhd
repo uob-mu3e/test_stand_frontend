@@ -349,28 +349,28 @@ begin
         RAM_ADDR_WIDTH_g => 14--,
     )
     port map (
-        i_ram_addr          => sc_ram.addr(15 downto 0),
-        i_ram_re            => sc_ram.re,
-        o_ram_rvalid        => sc_ram.rvalid,
-        o_ram_rdata         => sc_ram.rdata,
-        i_ram_we            => sc_ram.we,
-        i_ram_wdata         => sc_ram.wdata,
+        i_ram_addr              => sc_ram.addr(15 downto 0),
+        i_ram_re                => sc_ram.re,
+        o_ram_rvalid            => sc_ram.rvalid,
+        o_ram_rdata             => sc_ram.rdata,
+        i_ram_we                => sc_ram.we,
+        i_ram_wdata             => sc_ram.wdata,
 
-        i_avs_address       => av_sc.address(15 downto 0),
-        i_avs_read          => av_sc.read,
-        o_avs_readdata      => av_sc.readdata,
-        i_avs_write         => av_sc.write,
-        i_avs_writedata     => av_sc.writedata,
-        o_avs_waitrequest   => av_sc.waitrequest,
+        i_avs_address           => av_sc.address(15 downto 0),
+        i_avs_read              => av_sc.read,
+        o_avs_readdata          => av_sc.readdata,
+        i_avs_write             => av_sc.write,
+        i_avs_writedata         => av_sc.writedata,
+        o_avs_waitrequest       => av_sc.waitrequest,
 
-        o_reg_addr          => sc_reg.addr(7 downto 0),
-        o_reg_re            => sc_reg.re,
-        i_reg_rdata         => sc_reg.rdata,
-        o_reg_we            => sc_reg.we,
-        o_reg_wdata         => sc_reg.wdata,
+        o_reg_addr              => sc_reg.addr(7 downto 0),
+        o_reg_re                => sc_reg.re,
+        i_reg_rdata             => sc_reg.rdata,
+        o_reg_we                => sc_reg.we,
+        o_reg_wdata             => sc_reg.wdata,
 
-        i_reset_n           => reset_156_n,
-        i_clk               => i_clk_156--;
+        i_reset_n               => reset_156_n,
+        i_clk                   => i_clk_156--;
     );
 
     e_sc_rx : entity work.sc_rx

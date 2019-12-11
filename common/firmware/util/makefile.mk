@@ -30,7 +30,7 @@ ip_%.qip : ip_%.v
 	qsys-generate --synthesis=VHDL --output-directory='$(dir $<)' '$<'
 
 .PHONY : flow
-flow : $(IPs) $(VHDs)
+flow : $(IPs)
 	quartus_sh -t util/flow.tcl top
 
 .PHONY : sof2flash

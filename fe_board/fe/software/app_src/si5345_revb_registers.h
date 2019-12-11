@@ -24,8 +24,8 @@
 
 typedef struct
 {
-	alt_u16 address; /* 16-bit register address */
-	alt_u16 value; /* 8-bit register data */
+	uint16_t address; /* 16-bit register address */
+	uint16_t value; /* 8-bit register data */
 
 } si5345_revb_register_t;
 

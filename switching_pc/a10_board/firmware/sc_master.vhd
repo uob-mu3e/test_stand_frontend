@@ -30,7 +30,7 @@ entity sc_master is
 		done:				out std_logic;
 		stateout:			out std_logic_vector(27 downto 0)
 		);		
-end entity sc_master;
+end entity;
 
 architecture rtl of sc_master is
 	
@@ -148,4 +148,4 @@ begin
 		end if;
 	end process;
 
-end rtl;
+end architecture;

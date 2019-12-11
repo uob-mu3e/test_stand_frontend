@@ -517,15 +517,15 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 --        );
 --    end generate;
 
-e_run_control : entity work.run_control
-port map (
+    e_run_control : entity work.run_control
+    port map (
         i_clk                               => tx_clk(0),
         i_reset_n                           => reset_n,
         i_aligned                           => '1',
         i_data                              => rx_data(0),
         i_datak                             => rx_datak(0),
         o_FEB_status                        => readregs_slow(FEBSTATUS_REGISTER_R)--,
-);
+    );
 
 
 ------------- Event Counter ------------------
@@ -589,7 +589,7 @@ port map (
 	o_cnt     		=> dma_data_test--,
     );
 
-    process (pcie_fastclk_out, reset_n)
+    process(pcie_fastclk_out, reset_n)
     begin
     if ( reset_n = '0' ) then
 		dma_data_wren <= '0';
@@ -663,7 +663,7 @@ port map (
 
 ------------- Slow Control -------------
 
-    e_master : sc_master
+    e_master : entity work.sc_master
     generic map (
 		NLINKS => 4
     )
@@ -679,7 +679,7 @@ port map (
         clk                     => tx_clk(0)--,
     );
 
-    e_slave : sc_slave
+    e_slave : entity work.sc_slave
     port map (
 		reset_n						=> resets_n(RESET_BIT_SC_SLAVE),
 		enable						=> '1',

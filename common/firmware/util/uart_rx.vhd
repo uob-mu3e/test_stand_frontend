@@ -27,8 +27,8 @@ port (
     i_data      : in    std_logic;
 
     o_rdata     : out   std_logic_vector(DATA_BITS_g-1 downto 0);
-    o_rempty    : out   std_logic;
     i_rack      : in    std_logic;
+    o_rempty    : out   std_logic;
 
     i_reset_n   : in    std_logic;
     i_clk       : in    std_logic--;

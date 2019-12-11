@@ -99,7 +99,7 @@ struct sc_t {
                     ram->data[i] = i;
                 }
                 break;
-            case 't':
+            case 'i':
                 ram->regs.fe.cmdlen = 0xffff0000;
                 break;
             case 'q':

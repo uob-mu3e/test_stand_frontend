@@ -1,17 +1,13 @@
-/*
- * main.c
- *
+/**
  *  Created on: Apr 1, 2016
  *      Author: fwauters
  *
  *      Description: Get the MSCB interpreter for the Wavedream going on the NIOS processor
  */
 
-
 #define EOT 0x4
 
 #include "mscb.h"
-#include "system.h"
 
 #include "../include/util.h"
 
@@ -128,8 +124,7 @@ void user_init(unsigned char init)
 
 /*---- User read function ------------------------------------------*/
 
-unsigned char user_read(unsigned char index)
-{
+unsigned char user_read(unsigned char index) {
     if (index);
     return 0;
 }
@@ -155,14 +150,12 @@ unsigned char user_read(unsigned char index)
 
 /*---- User write function -----------------------------------------*/
 
-void user_write(unsigned char index)
-{
+void user_write(unsigned char index) {
     //set_fpga();
     return;
 }
 
-void print_byte(unsigned char byte)
-{
+void print_byte(unsigned char byte) {
     int i;
     printf("%0x\t",byte);
     for(i = 7; i >=0; i--)
@@ -173,22 +166,19 @@ void print_byte(unsigned char byte)
 }
 
 
-int get_times(void)
-{
+int get_times(void) {
     int counter = alt_nticks();
     return counter;
 }
 
 
-int time_diff(int t1, int t2)
-{
+int time_diff(int t1, int t2) {
     //int diff_ = (t2 - t1);
     //alt_u32 diff = (alt_u32)(t2-t1);/// (alt_u32)TIME_FREQUENCY;
     return t2-t1;
 }
 
-void mscb_init()
-{
+void mscb_init() {
     //printf("Starting MSCB test program\n");
     //start timer
     //if( alt_timestamp_start() < 0) printf("no timer available\n");
@@ -204,7 +194,7 @@ void mscb_init()
 
 
     // count variables
-    for (g_n_variables = 0; variables[g_n_variables].width > 0 ; g_n_variables++);
+    for(g_n_variables = 0; variables[g_n_variables].width > 0; g_n_variables++);
     /*
     // obtain settings and variables from flash
     flag = mscb_flash_read();
@@ -237,8 +227,7 @@ void mscb_init()
 
 /*------------------------------------------------------------------*/
 
-int mscb_loop(void)
-{
+int mscb_loop(void) {
     unsigned int reg;
     quit=0;
 
@@ -251,8 +240,7 @@ int mscb_loop(void)
     return ch;
 }
 
-int input_data_ready(void)
-{
+int input_data_ready(void) {
     //2560 = 1010 0000 0000
     //printf("input parrallel port reading polling 0x%x\n",IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_MSCB_IN_BASE));
     int input = *(volatile alt_u32*)(AVM_MSCB_BASE);
@@ -269,8 +257,7 @@ int input_data_ready(void)
     }
 }
 
-unsigned char read_mscb_command(void)
-{
+int read_mscb_command(void) {
     //printf("input parrallel port reading before request 0x%x\n",IORD_ALTERA_AVALON_PIO_DATA(PARALLEL_MSCB_IN_BASE));
     //generate read request for the fifo
     *(volatile alt_u32*)(AVM_MSCB_BASE) = 0x400;
@@ -280,8 +267,7 @@ unsigned char read_mscb_command(void)
     return 0x1F & *(volatile alt_u32*)(AVM_MSCB_BASE);
 }
 
-void send_data(unsigned char *buf, unsigned int n)
-{
+void send_data(unsigned char* buf, int n) {
     //printf("Data (%d bytes) ready to be send \n",n);
     unsigned int i;
     for(i=0; i<n;i++)
@@ -301,8 +287,7 @@ unsigned char in_buf[256], out_buf[256]; //A char is one byte long, or 8 bits FW
 unsigned int i_in = 0;
 alt_u32  last_received = 0;
 
-void mscb_uart_handler(void)
-{
+void mscb_uart_handler(void) {
     unsigned char data;
     unsigned int cmd_len, n;
 
@@ -312,8 +297,7 @@ void mscb_uart_handler(void)
         i_in = 0;//printf("reset buffer\n");
     }
 
-    while (input_data_ready())
-    {
+    while(input_data_ready()) {
         //printf("int read byte loop, input_data_ready = %d\n",input_data_ready());
         data = read_mscb_command();
         usleep(1);                       // wait inter-char delay
@@ -357,20 +341,19 @@ void mscb_uart_handler(void)
 
         //hmmm, so what is hapemning here, return out of the function, so the data in reinterpreted?
         // I believe this is because the data gets transmitted byte by byte
-        if (i_in < cmd_len)
-        {
+        if (i_in < cmd_len) {
             //printf("Buffer not full yet, %d\n",cmd_len);
             return;                        // return if command not yet complete
         }
 
         n = mscb_interprete(0, in_buf, out_buf);
 
-        for(int i_printf=0; i_printf < i_in;i_printf++){
+        for(int i_printf = 0; i_printf < i_in; i_printf++) {
             //printf("0x%0x\t",in_buf[i_printf]);
         }
         //printf("\n");
         //printf("n is %d\n",n);
-        if (n > 0){
+        if(n > 0) {
             send_data(out_buf, n);
             printf("sending mscb reply\n");
         }
@@ -388,34 +371,38 @@ void mscb_uart_handler(void)
 
 /*------------------------------------------------------------------*/
 
-void addr_node16(unsigned char mode, unsigned int adr, unsigned int node_addr)
-{
+void addr_node16(unsigned char mode, unsigned int adr, unsigned int node_addr) {
     //printf("entering addressing, current node address = %x, MSCB command address = %x, addressed status = %d, mode = %d\n",node_addr, adr, addressed, mode);
     if (node_addr == 0xFFFF) {
         if (adr == node_addr) {
             addressed = 1;
             g_cur_sub_addr = 0;
             addr_mode = mode;
-        } else {
+        }
+        else {
             addressed = 0;
             addr_mode = ADDR_NONE;
         }
-    } else {
+    }
+    else {
         if (mode == ADDR_NODE) {
             if (adr >= node_addr && adr <  node_addr + g_n_sub_addr) {
                 addressed = 1;// printf("addressed \n");
                 g_cur_sub_addr = adr - node_addr;
                 addr_mode = ADDR_NODE;
-            } else {
+            }
+            else {
                 addressed = 0;
                 addr_mode = ADDR_NONE;
             }
-        } else if (mode == ADDR_GROUP) {
+        }
+        else if (mode == ADDR_GROUP) {
             if (adr == node_addr) {
                 addressed = 1;
                 g_cur_sub_addr = 0;
                 addr_mode = ADDR_GROUP;
-            } else {
+            }
+            else {
                 addressed = 0;
                 addr_mode = ADDR_NONE;
             }
@@ -440,10 +427,7 @@ int mscb_main()
     return 0;
 }
 
-
-
-unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *rb)
-{
+unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *rb) {
     unsigned char ch, a1, a2;
     unsigned int size, u, adr, i, j, buflen, n = 0;
 
@@ -475,17 +459,17 @@ unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *r
     }
     //else printf("CRC ok\n");
 
-    if (!addressed &&
-            buf[0] != MCMD_ADDR_NODE16 &&
-            buf[0] != MCMD_ADDR_GRP16 &&
-            buf[0] != MCMD_ADDR_BC &&
-            buf[0] != MCMD_PING16){
+    if(!addressed
+        && buf[0] != MCMD_ADDR_NODE16
+        && buf[0] != MCMD_ADDR_GRP16
+        && buf[0] != MCMD_ADDR_BC
+        && buf[0] != MCMD_PING16
+    ) {
         //printf("not addressed\n");
         return 0;
     }
 
     switch (buf[0]) {
-
         case MCMD_ADDR_NODE16:
             addr_node16(ADDR_NODE, (buf[1] << 8) | buf[2], sys_info.node_addr);
             break;
@@ -802,7 +786,8 @@ struct mscb_t {
     void init() {
         printf("[mscb] init\n");
         mscb_init();
-        while (input_data_ready()){
+
+        while(input_data_ready()) {
             read_mscb_command();
         }
 
@@ -810,7 +795,7 @@ struct mscb_t {
             printf("ERROR mscb init\n", err);
         }
     }
-    //void callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
+
     void callback() {
         mscb_uart_handler();
         //printf("callback");
