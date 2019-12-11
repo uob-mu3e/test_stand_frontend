@@ -107,7 +107,7 @@ BEGIN
 		almost_full_value => 250,
 		intended_device_family => "Stratix IV",
 		lpm_numwords => 256,
-		lpm_showahead => "OFF",
+		lpm_showahead => "ON",
 		lpm_type => "scfifo",
 		lpm_width => 36,
 		lpm_widthu => 8,

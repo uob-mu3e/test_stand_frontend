@@ -254,7 +254,7 @@ signal s_frec_busy, s_gen_busy  : t_vector;
 signal s_any_framegen_busy, s_any_framegen_busy_156 : std_logic;
 
 --fifo - frame collector mux
-signal s_fifos_empty 		: std_logic_vector(N_ASICS_TOTAL-1 downto 0);
+signal s_fifos_empty 		: std_logic_vector(N_ASICS_TOTAL-1 downto 0):=(others =>'1');
 signal s_fifos_data		: mutrig_evtdata_array_t(N_ASICS_TOTAL-1 downto 0);
 signal s_fifos_rd		: std_logic_vector(N_ASICS_TOTAL-1 downto 0);
 -- frame collector mux - prbs decoder 
@@ -429,7 +429,6 @@ begin
 		if(i_SC_datagen_enable='0' and unsigned(s_frec_busy)/=0) then
 			s_any_framegen_busy <= '1';
 		end if;
-		--TODO: also add lvds frame generators
 	end if;
 	if rising_edge(i_clk_core) then
 		s_any_framegen_busy_156 <= s_any_framegen_busy;
