@@ -45,13 +45,17 @@ architecture behav of readout_tb is
       signal datak_scifi_generated : std_logic_vector(3 downto 0);
       signal data_tile_generated : std_logic_vector(31 downto 0);
       signal datak_tile_generated : std_logic_vector(3 downto 0);
+      signal data_tile_generated2 : std_logic_vector(31 downto 0);
+      signal datak_tile_generated2 : std_logic_vector(3 downto 0);
+      signal data_tile_generated3 : std_logic_vector(31 downto 0);
+      signal datak_tile_generated3 : std_logic_vector(3 downto 0);
       signal data_pix_ready : std_logic;
       signal dmamem_endofevent : std_logic;
       signal state_out_datagen : std_logic_vector(3 downto 0);
       signal state_out_eventbuilder : std_logic_vector(3 downto 0);
       signal dma_data_wren : std_logic;
       signal dma_data : std_logic_vector(255 downto 0);
-      signal all_done : std_logic_vector(3 * 2 + 3 downto 0);
+      signal all_done : std_logic_vector(5 * 2 + 5 downto 0);
 
       signal dma_data_32_0 : std_logic_vector(31 downto 0);
       signal dma_data_32_1 : std_logic_vector(31 downto 0);
@@ -62,8 +66,8 @@ architecture behav of readout_tb is
       signal dma_data_32_6 : std_logic_vector(31 downto 0);
       signal dma_data_32_7 : std_logic_vector(31 downto 0);
 
-      signal rx_data : std_logic_vector(95 downto 0);
-      signal rx_datak : std_logic_vector(11 downto 0);
+      signal rx_data : std_logic_vector(159 downto 0);
+      signal rx_datak : std_logic_vector(19 downto 0);
   		  		
   		constant ckTime: 		time	:= 10 ns;
 		
@@ -123,7 +127,7 @@ e_data_gen_mupix : component data_generator_a10_tb
 		datak_pix_generated    => datak_pix_generated,
 		data_pix_ready		   => data_pix_ready,
 		slow_down			   => slow_down,
-		state_out			   => state_out_datagen--,
+		state_out			   => open--,
 );
 
 e_data_gen_scifi : component data_generator_a10_tb
@@ -137,7 +141,7 @@ e_data_gen_scifi : component data_generator_a10_tb
 		datak_pix_generated => datak_scifi_generated,
 		data_pix_ready		  => data_pix_ready,
 		slow_down			  => slow_down,
-		state_out			  => state_out_datagen--,
+		state_out			  => open--,
 );
 
 e_data_gen_tiles : component data_generator_a10_tb
@@ -151,16 +155,46 @@ e_data_gen_tiles : component data_generator_a10_tb
 		datak_pix_generated => datak_tile_generated,
 		data_pix_ready		  => data_pix_ready,
 		slow_down			  => slow_down,
-		state_out			  => state_out_datagen--,
+		state_out			  => open--,
 );
 
 
-rx_data <= data_pix_generated & data_scifi_generated & data_tile_generated;
-rx_datak <= datak_pix_generated & datak_scifi_generated & datak_tile_generated;
+ e_data_gen_tiles2 : component data_generator_a10_tb
+     port map (
+         clk                      => clk,
+         reset                    => reset,
+         enable_pix          => enable_pix,
+         random_seed           => (others => '1'),
+         start_global_time     => (others => '0'),
+         data_pix_generated  => data_tile_generated2,
+         datak_pix_generated => datak_tile_generated2,
+         data_pix_ready        => data_pix_ready,
+         slow_down             => slow_down,
+         state_out             => open--,
+ );
+
+ e_data_gen_tiles3 : component data_generator_a10_tb
+     port map (
+         clk                      => clk,
+         reset                    => reset,
+         enable_pix          => enable_pix,
+         random_seed           => (others => '1'),
+         start_global_time     => (others => '0'),
+         data_pix_generated  => data_tile_generated3,
+         datak_pix_generated => datak_tile_generated3,
+         data_pix_ready        => data_pix_ready,
+         slow_down             => slow_down,
+         state_out             => open--,
+ );
+
+
+
+rx_data <= data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 & data_tile_generated3;
+rx_datak <= datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & datak_tile_generated3;
 
 e_midas_event_builder : entity work.midas_event_builder
   generic map (
-    NLINKS => 3--;
+    NLINKS => 5--;
   )
   port map(
     i_clk_data => clk,
@@ -170,7 +204,7 @@ e_midas_event_builder : entity work.midas_event_builder
     i_rx_data  => rx_data,
     i_rx_datak => rx_datak,
     i_wen_reg  => '1',
-    i_link_mask => "111",
+    i_link_mask => "11111",
     o_all_done => all_done,
     o_event_wren => dma_data_wren,
     o_endofevent => dmamem_endofevent,

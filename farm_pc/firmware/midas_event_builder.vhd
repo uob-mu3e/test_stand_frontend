@@ -141,7 +141,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
 	-- simulation only
 	e_bank_length : entity work.ip_scfifo
 	    generic map(
-        ADDR_WIDTH => 12,
+        ADDR_WIDTH => 8,
         DATA_WIDTH => 12--,
     )
 	-- simulation only
