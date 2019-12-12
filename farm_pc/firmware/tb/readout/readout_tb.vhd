@@ -99,7 +99,7 @@ begin
      wait;
 end process inita0;
  
-e_data_gen_mupix : entity work.data_generator_a10_tb
+e_data_gen_mupix : entity work.data_generator_a10
 	port map (
 		clk 				   => clk,
 		reset				   => reset,
@@ -113,7 +113,7 @@ e_data_gen_mupix : entity work.data_generator_a10_tb
 		state_out			   => open--,
 );
 
-e_data_gen_scifi : entity work.data_generator_a10_tb
+e_data_gen_scifi : entity work.data_generator_a10
 	port map (
 		clk 				     => clk,
 		reset				     => reset,
@@ -127,7 +127,7 @@ e_data_gen_scifi : entity work.data_generator_a10_tb
 		state_out			  => open--,
 );
 
-e_data_gen_tiles : entity work.data_generator_a10_tb
+e_data_gen_tiles : entity work.data_generator_a10
 	port map (
 		clk 				     => clk,
 		reset				     => reset,
@@ -142,7 +142,7 @@ e_data_gen_tiles : entity work.data_generator_a10_tb
 );
 
 
- e_data_gen_tiles2 : entity work.data_generator_a10_tb
+ e_data_gen_tiles2 : entity work.data_generator_a10
      port map (
          clk                      => clk,
          reset                    => reset,
@@ -156,7 +156,7 @@ e_data_gen_tiles : entity work.data_generator_a10_tb
          state_out             => open--,
  );
 
- e_data_gen_tiles3 : entity work.data_generator_a10_tb
+ e_data_gen_tiles3 : entity work.data_generator_a10
      port map (
          clk                      => clk,
          reset                    => reset,
