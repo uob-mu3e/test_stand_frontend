@@ -20,11 +20,11 @@ class MupixFEB {
       std::map<uint8_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
       static MupixFEB* m_instance; //singleton instance pointer: only one instance of MupixFEB
       MupixFEB(const MupixFEB&)=delete;
-      MupixFEB(mudaq::MudaqDevice& mu):m_mu(mu){};
+      MupixFEB(mudaq::MudaqDevice& mu):m_mu(mu){;}
 
    public:
-      static MupixFEB* Create(mudaq::MudaqDevice& mu){printf("FEB::Create()");if(!m_instance) m_instance=new MupixFEB(mu); return m_instance;};
-      static MupixFEB* Instance(){return m_instance;};
+      static MupixFEB* Create(mudaq::MudaqDevice& mu){printf("FEB::Create()");if(!m_instance) m_instance=new MupixFEB(mu); return m_instance;}
+      static MupixFEB* Instance(){return m_instance;}
 
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
@@ -35,6 +35,8 @@ class MupixFEB {
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
       int ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix);
+      //Configure all boards under prefix (e.g. prefix="/Equipment/Mupix")
+      int ConfigureBoards(HNDLE hDB, const char* equipment_name, const char* odb_prefix);
 
       //FEB registers and functions
 

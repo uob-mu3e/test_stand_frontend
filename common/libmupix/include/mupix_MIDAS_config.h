@@ -54,30 +54,12 @@ typedef struct {
 "prbs_decode_bypass = BOOL : n",\
 "reset_datapath = BOOL : n",\
 "reset_asics = BOOL : n",\
+"reset_boards = BOOL : n",\
 "mask = BOOL[16] n",\
 "",\
 NULL }
 
 #endif
-
-#ifndef MUPIX_BOARDDACS_DEFINED
-#define MUPIX_BOARDDACS_DEFINED
-
-typedef struct {
-    BOOL      amon_en;
-    INT       amon_dac;
-    BOOL      dmon_1_en;
-    INT       dmon_1_dac;
-    BOOL      dmon_2_en;
-    INT       dmon_2_dac;
-} MUPIX_BOARDDACS;
-
-#define MUPIX_BOARDDACS_STR(_name) const char *_name[] = {\
-"[.]",\
-"",\
-NULL }
-#endif
-
 
 #ifndef MUPIX_CHIPDACS_DEFINED
 #define MUPIX_CHIPDACS_DEFINED
@@ -252,32 +234,19 @@ typedef struct {
     int       Bandgap2_on;
     int       Biasblock2_on;
     int       BLResPix;
-    int       unused_1;
+    int       unused_14;
     int       VNPix;
     int       VNFBPix;
     int       VNFollPix;
-    int       unused_2;
-    int       unused_3;
-    int       unused_4;
-    int       unused_5;
-    int       VNPix2;
-    int       unused_6;
-    int       VNBiasPix;
-    int       VPLoadPix;
-    int       VNOutPix;
-    int       unused_7;
-    int       unused_8;
-    int       unused_9;
-    int       unused_10;
-    int       unused_11;
-    int       unused_12;
-    int       unused_13;
-    int       unused_14;
     int       unused_15;
     int       unused_16;
     int       unused_17;
     int       unused_18;
+    int       VNPix2;
     int       unused_19;
+    int       VNBiasPix;
+    int       VPLoadPix;
+    int       VNOutPix;
     int       unused_20;
     int       unused_21;
     int       unused_22;
@@ -288,8 +257,6 @@ typedef struct {
     int       unused_27;
     int       unused_28;
     int       unused_29;
-    int       VPFoll;
-    int       VNDACPix;
     int       unused_30;
     int       unused_31;
     int       unused_32;
@@ -303,12 +270,27 @@ typedef struct {
     int       unused_40;
     int       unused_41;
     int       unused_42;
+    int       VPFoll;
+    int       VNDACPix;
     int       unused_43;
     int       unused_44;
     int       unused_45;
     int       unused_46;
     int       unused_47;
     int       unused_48;
+    int       unused_49;
+    int       unused_50;
+    int       unused_51;
+    int       unused_52;
+    int       unused_53;
+    int       unused_54;
+    int       unused_55;
+    int       unused_56;
+    int       unused_57;
+    int       unused_58;
+    int       unused_59;
+    int       unused_60;
+    int       unused_61;
 } MUPIX_CHIPDACS2;
 
 #define MUPIX_CHIPDACS2_STR(_name) const char *_name[] = {\
@@ -316,32 +298,19 @@ typedef struct {
 "Bandgap2_on = INT : 0",\
 "Biasblock2_on = INT : 5",\
 "BLResPix = INT : 5",\
-"unused_1 = INT : 0",\
+"unused_14 = INT : 0",\
 "VNPix = INT : 20",\
 "VNFBPix = INT : 10",\
 "VNFollPix = INT : 10",\
-"unused_2 = INT : 0",\
-"unused_3 = INT : 0",\
-"unused_4 = INT : 0",\
-"unused_5 = INT : 0",\
-"VNPix2 = INT : 0",\
-"unused_6 = INT : 0",\
-"VNBiasPix = INT : 0",\
-"VPLoadPix = INT : 5",\
-"VNOutPix = INT : 10",\
-"unused_7 = INT : 0",\
-"unused_8 = INT : 0",\
-"unused_9 = INT : 0",\
-"unused_10 = INT : 0",\
-"unused_11 = INT : 0",\
-"unused_12 = INT : 0",\
-"unused_13 = INT : 0",\
-"unused_14 = INT : 0",\
 "unused_15 = INT : 0",\
 "unused_16 = INT : 0",\
 "unused_17 = INT : 0",\
 "unused_18 = INT : 0",\
+"VNPix2 = INT : 0",\
 "unused_19 = INT : 0",\
+"VNBiasPix = INT : 0",\
+"VPLoadPix = INT : 5",\
+"VNOutPix = INT : 10",\
 "unused_20 = INT : 0",\
 "unused_21 = INT : 0",\
 "unused_22 = INT : 0",\
@@ -352,8 +321,6 @@ typedef struct {
 "unused_27 = INT : 0",\
 "unused_28 = INT : 0",\
 "unused_29 = INT : 0",\
-"VPFoll = INT : 10",\
-"VNDACPix = INT : 0",\
 "unused_30 = INT : 0",\
 "unused_31 = INT : 0",\
 "unused_32 = INT : 0",\
@@ -367,12 +334,27 @@ typedef struct {
 "unused_40 = INT : 0",\
 "unused_41 = INT : 0",\
 "unused_42 = INT : 0",\
+"VPFoll = INT : 10",\
+"VNDACPix = INT : 0",\
 "unused_43 = INT : 0",\
 "unused_44 = INT : 0",\
 "unused_45 = INT : 0",\
 "unused_46 = INT : 0",\
 "unused_47 = INT : 0",\
 "unused_48 = INT : 0",\
+"unused_49 = INT : 0",\
+"unused_50 = INT : 0",\
+"unused_51 = INT : 0",\
+"unused_52 = INT : 0",\
+"unused_53 = INT : 0",\
+"unused_54 = INT : 0",\
+"unused_55 = INT : 0",\
+"unused_56 = INT : 0",\
+"unused_57 = INT : 0",\
+"unused_58 = INT : 0",\
+"unused_59 = INT : 0",\
+"unused_60 = INT : 0",\
+"unused_61 = INT : 0",\
 NULL }
 
 typedef struct {
@@ -405,5 +387,29 @@ typedef struct {
 NULL }
 
 #endif
+
+#ifndef MUPIX_BOARDDACS_DEFINED
+#define MUPIX_BOARDDACS_DEFINED
+
+typedef struct {
+    INT      Threshold_High;
+    INT      Threshold_Low;
+    INT      Threshold_Pix;
+    INT      Injection;
+    INT      TDiode_Current;
+    INT      TDiode_ADC;
+} MUPIX_BOARDDACS;
+
+#define MUPIX_BOARDDACS_STR(_name) const char *_name[] = {\
+"[.]",\
+"Threshold_High = INT : 5096",\
+"Threshold_Low = INT : 4992",\
+"Threshold_Pix = INT : 7281",\
+"Injection = INT : 0",\
+"TDiode_Current = INT : 0",\
+"TDiode_ADC = INT : 0",\
+NULL }
+#endif
+
 
 #endif //MU3EDAQ_MUPIX_MIDAS_CONFIG_H

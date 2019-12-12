@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <iterator>
+#include <algorithm>
 
 #include "asic_config_base.h"
 
@@ -33,7 +34,8 @@ ASICConfigBase::para_t ASICConfigBase::make_param(std::string name, std::string 
             }
         }
     }
-    size_t sizze = order.size();
+    //std::reverse(order.begin(), order.end());
+    size_t sizze = (size_t)order.size();
     return std::make_tuple(name,sizze,order);
 }
 
@@ -85,7 +87,7 @@ int ASICConfigBase::setParameter(std::string name, uint32_t value, bool reverse)
         std::cerr << "Parameter '" << name << "' is not present in mutrig config" << std::endl;
         return 1; // parameter name not present
     }
-    unsigned int offset;
+    size_t offset;
     size_t nbits;
     std::vector<uint8_t> bitorder;
     std::tie(offset, nbits, bitorder) = para->second;
@@ -94,18 +96,27 @@ int ASICConfigBase::setParameter(std::string name, uint32_t value, bool reverse)
         return 2; // out of range
     }
 
+//    if (reverse)
+//        offset += length_bits%8;
+
     uint32_t mask = 0x01;
     for(unsigned int pos = 0; (pos < nbits); pos++, mask <<= 1) {
-        unsigned int n = offset+bitorder.at(pos)%8;
-        unsigned int b = offset+bitorder.at(pos)/8;
+        unsigned int n = (offset+bitorder.at(pos))%8;
+        unsigned int b = (offset+bitorder.at(pos))/8;
         if (reverse) {
             n = (offset + nbits -1 - bitorder.at(pos))%8;
             b = (offset + nbits -1 - bitorder.at(pos))/8;
-            unsigned int b2 = length_bits/8;
+            //unsigned int b2 = length_bits/8;
+            unsigned int b2 = length-1;
             b = b2 -b;
         }
         if ((mask & value) != 0 ) bitpattern_w[b] |=   1 << n;  // set nth bit 
         else                      bitpattern_w[b] &= ~(1 << n); // clear nth bit
+        if ((name.find("row") == std::string::npos && name.find("col") == std::string::npos) || b == 371) {
+             if (b == 371)
+                 std::cout << "----------------------------------------HERE\n";
+            std::cout << "name = " << name << ", value = " << std::dec << value << ", offset: " << std::dec << offset << "->" << offset + length_bits%8 << ", pos = " << pos << ", n = " << n << ", b = " << b << ", (mask & value) = " << (mask & value) << ", bitpattern_w[b] = " << std::hex << +bitpattern_w[b] << std::endl;
+        }
     }
     return 0;
 }

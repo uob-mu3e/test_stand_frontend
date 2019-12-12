@@ -105,6 +105,7 @@ const char *sc_settings_str[] = {
 "Clear WM = BOOL : 0",
 "Last RM ADD = BOOL : 0",
 "MupixConfig = BOOL : 0",
+"MupixBoard = BOOL : 0",
 "[32] Temp0",
 "[32] Temp1",
 "[32] Temp2",
@@ -512,5 +513,12 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
          	//TODO: what to do? 
           }
 	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
+    }
+    if (std::string(key.name) == "MupixBoard" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+          int status=MupixFEB::Instance()->ConfigureBoards(hDB, "Mupix", "/Equipment/Mupix");
+          if(status!=SUCCESS){
+            //TODO: what to do?
+          }
+      set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
 }
