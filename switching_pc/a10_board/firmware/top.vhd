@@ -62,16 +62,20 @@ port (
 
     -- //////// Transiver ////////
     QSFPA_TX_p          : out   std_logic_vector(3 downto 0);
---    QSFPB_TX_p          : out   std_logic_vector(3 downto 0);
+    QSFPB_TX_p          : out   std_logic_vector(3 downto 0);
 
     QSFPA_RX_p          : in    std_logic_vector(3 downto 0);
---    QSFPB_RX_p          : in    std_logic_vector(3 downto 0);
+    QSFPB_RX_p          : in    std_logic_vector(3 downto 0);
 
     QSFPA_REFCLK_p      : in    std_logic;
---    QSFPB_REFCLK_p      : in    std_logic;
+    QSFPB_REFCLK_p      : in    std_logic;
     QSFPA_LP_MODE       : out   std_logic;
     QSFPA_MOD_SEL_n     : out   std_logic;
     QSFPA_RST_n         : out   std_logic;
+    
+    QSFPB_LP_MODE       : out   std_logic;
+    QSFPB_MOD_SEL_n     : out   std_logic;
+    QSFPB_RST_n         : out   std_logic;
 
 
 
@@ -199,15 +203,17 @@ architecture rtl of top is
 
 		-- data processing
 		type fifo_out_array_type is array (3 downto 0) of std_logic_vector(35 downto 0);
-		type data_array_type is array (3 downto 0) of std_logic_vector(31 downto 0);
-		type datak_array_type is array (3 downto 0) of std_logic_vector(3 downto 0);
+		type data_array_type is array (7 downto 0) of std_logic_vector(31 downto 0);
+		type datak_array_type is array (7 downto 0) of std_logic_vector(3 downto 0);
 
 		signal rx_data : data_array_type;
 		signal tx_data : data_array_type;
 		signal rx_datak : datak_array_type;
 		signal tx_datak : datak_array_type;
-		signal rx_data_v : std_logic_vector(4*32-1 downto 0);
-		signal rx_datak_v : std_logic_vector(4*4-1 downto 0);
+		signal rx_data_A_v : std_logic_vector(4*32-1 downto 0);
+		signal rx_datak_A_v : std_logic_vector(4*4-1 downto 0);
+        signal rx_data_B_v : std_logic_vector(4*32-1 downto 0);
+        signal rx_datak_B_v : std_logic_vector(4*4-1 downto 0);
 
 		signal idle_ch : std_logic_vector(3 downto 0);
 
@@ -223,8 +229,8 @@ architecture rtl of top is
 		signal fifo_empty : std_logic_vector(3 downto 0);
 
 		-- Slow Control
-		signal mem_data_out : std_logic_vector(127 downto 0);
-		signal mem_datak_out : std_logic_vector(15 downto 0);
+		signal mem_data_out : std_logic_vector(63 downto 0);
+		signal mem_datak_out : std_logic_vector(7 downto 0);
 		signal mem_add_sc : std_logic_vector(15 downto 0);
 		signal mem_data_sc : std_logic_vector(31 downto 0);
 		signal mem_wen_sc : std_logic;
@@ -249,8 +255,8 @@ architecture rtl of top is
 		signal dma_wren_test : std_logic;
 		signal dma_end_event_cnt : std_logic;
 		signal dma_end_event_test : std_logic;
-		signal data_counter : std_logic_vector(31 downto 0);
-		signal datak_counter : std_logic_vector(3 downto 0);
+		signal data_counter : std_logic_vector(95 downto 0);
+		signal datak_counter : std_logic_vector(11 downto 0);
 
 begin
 
@@ -417,8 +423,12 @@ reset_n 	<= not reset;
     QSFPA_LP_MODE <= '0';
     QSFPA_MOD_SEL_n <= '1';
     QSFPA_RST_n <= '1';
+    
+    QSFPB_LP_MODE <= '0';
+    QSFPB_MOD_SEL_n <= '1';
+    QSFPB_RST_n <= '1';
 
-    e_qsfp : entity work.xcvr_a10
+    e_qsfp_A : entity work.xcvr_a10
     port map (
         i_tx_data   => X"03CAFEBC"
                      & X"02CAFEBC"
@@ -429,8 +439,8 @@ reset_n 	<= not reset;
                      & "0001"
                      & tx_datak(0),
 
-        o_rx_data   => rx_data_v,
-        o_rx_datak  => rx_datak_v,
+        o_rx_data   => rx_data_A_v,
+        o_rx_datak  => rx_datak_A_v,
 
         o_tx_clkout => tx_clk,
         i_tx_clkin  => (others => tx_clk(0)),
@@ -453,16 +463,61 @@ reset_n 	<= not reset;
         i_reset     => not CPU_RESET_n,
         i_clk       => input_clk--,
     );
+    
+    e_qsfp_B : entity work.xcvr_a10
+    port map (
+        i_tx_data   => X"03CAFEBC"
+                     & X"02CAFEBC"
+                     & X"01CAFEBC"
+                     & tx_data(4),
+        i_tx_datak  => "0001"
+                     & "0001"
+                     & "0001"
+                     & tx_datak(4),
+
+        o_rx_data   => rx_data_B_v,
+        o_rx_datak  => rx_datak_B_v,
+
+        o_tx_clkout => open,
+        i_tx_clkin  => (others => tx_clk(0)),
+        o_rx_clkout => open,--rx_clk,
+        i_rx_clkin  => (others => tx_clk(0)),
+
+        o_tx_serial => QSFPB_TX_p,
+        i_rx_serial => QSFPB_RX_p,
+
+        i_pll_clk   => input_clk,
+        i_cdr_clk   => input_clk,
+
+        i_avs_address       => (others => '0'),
+        i_avs_read          => '0',
+        o_avs_readdata      => open,
+        i_avs_write         => '0',
+        i_avs_writedata     => (others => '0'),
+        o_avs_waitrequest   => open,
+
+        i_reset     => not CPU_RESET_n,
+        i_clk       => input_clk--,
+    );
 
 --assign vector types to array types for qsfp rx signals
-rx_data(3)<=rx_data_v(32*4-1 downto 32*3);
-rx_data(2)<=rx_data_v(32*3-1 downto 32*2);
-rx_data(1)<=rx_data_v(32*2-1 downto 32*1);
-rx_data(0)<=rx_data_v(32*1-1 downto 32*0);
-rx_datak(3)<=rx_datak_v(4*4-1 downto 4*3);
-rx_datak(2)<=rx_datak_v(4*3-1 downto 4*2);
-rx_datak(1)<=rx_datak_v(4*2-1 downto 4*1);
-rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
+rx_data(3)<=rx_data_A_v(32*4-1 downto 32*3);
+rx_data(2)<=rx_data_A_v(32*3-1 downto 32*2);
+rx_data(1)<=rx_data_A_v(32*2-1 downto 32*1);
+rx_data(0)<=rx_data_A_v(32*1-1 downto 32*0);
+rx_datak(3)<=rx_datak_A_v(4*4-1 downto 4*3);
+rx_datak(2)<=rx_datak_A_v(4*3-1 downto 4*2);
+rx_datak(1)<=rx_datak_A_v(4*2-1 downto 4*1);
+rx_datak(0)<=rx_datak_A_v(4*1-1 downto 4*0);
+
+rx_data(7)<=rx_data_B_v(32*4-1 downto 32*3);
+rx_data(6)<=rx_data_B_v(32*3-1 downto 32*2);
+rx_data(5)<=rx_data_B_v(32*2-1 downto 32*1);
+rx_data(4)<=rx_data_B_v(32*1-1 downto 32*0);
+rx_datak(7)<=rx_datak_B_v(4*4-1 downto 4*3);
+rx_datak(6)<=rx_datak_B_v(4*3-1 downto 4*2);
+rx_datak(5)<=rx_datak_B_v(4*2-1 downto 4*1);
+rx_datak(4)<=rx_datak_B_v(4*1-1 downto 4*0);
 
 ------------- data demerger and fifos -------------
 
@@ -566,11 +621,11 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		datak_counter 	<= (others => '0');
 	elsif (rising_edge(tx_clk(0))) then
 		if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
-			data_counter 	<= data_pix_generated;
-			datak_counter 	<= datak_pix_generated;
+			data_counter 	<= data_pix_generated & data_pix_generated & data_pix_generated;
+			datak_counter 	<= datak_pix_generated & datak_pix_generated & datak_pix_generated;
 		else
-			data_counter 	<= rx_data(0);
-			datak_counter 	<= rx_datak(0);
+			data_counter 	<= rx_data(0) & rx_data(1) & rx_data(4);
+			datak_counter 	<= rx_datak(0) & rx_datak(1) & rx_datak(4);
 		end if;
     end if;
     end process;
@@ -584,8 +639,8 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		 i_clk_dma  => pcie_fastclk_out,
 		 i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
          i_reset_dma_n  => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-		 i_rx_data  => data_counter & data_counter & data_counter,
-		 i_rx_datak => datak_counter & datak_counter & datak_counter,
+		 i_rx_data  => data_counter,
+		 i_rx_datak => datak_counter,
 		 i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
          i_link_mask => writeregs_slow(FEB_ENABLE_REGISTER_W)(3 - 1 downto 0),
 		 o_event_wren => dma_wren_cnt,
@@ -679,9 +734,9 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 
 ------------- Slow Control -------------
 
-    e_master : sc_master
+    e_master : work.sc_master
     generic map (
-		NLINKS => 4
+		NLINKS => 2
     )
     port map (
 		reset_n				=> resets_n(RESET_BIT_SC_MASTER),
@@ -695,12 +750,15 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
         clk                     => tx_clk(0)--,
     );
 
-    e_slave : sc_slave
+    e_slave : work.sc_slave
+    generic map (
+		NLINKS => 2
+    )
     port map (
 		reset_n						=> resets_n(RESET_BIT_SC_SLAVE),
 		enable						=> '1',
-		link_data_in				=> rx_data(0),
-		link_data_in_k				=> rx_datak(0),
+		link_data_in				=> rx_data(0) & rx_data(4),
+		link_data_in_k				=> rx_datak(0) & rx_datak(4),
 		mem_addr_out				=> mem_add_sc,
 		mem_addr_finished_out   => readmem_writeaddr_finished,
 		mem_data_out				=> mem_data_sc,
@@ -711,6 +769,9 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 
 tx_data(0) <= mem_data_out(31 downto 0);
 tx_datak(0) <= mem_datak_out(3 downto 0);
+
+tx_data(4) <= mem_data_out(63 downto 32);
+tx_datak(4) <= mem_datak_out(7 downto 4);
 
 ------------- Link Test -------------
     e_link_observer : entity work.link_observer

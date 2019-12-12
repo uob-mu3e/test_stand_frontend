@@ -19,8 +19,8 @@ entity sc_slave is
 		clk:                in std_logic;
 		reset_n:            in std_logic;
 		enable:             in std_logic;
-		link_data_in:       in std_logic_vector(31 downto 0);
-		link_data_in_k:     in std_logic_vector(3 downto 0);
+		link_data_in:       in std_logic_vector(NLINKS * 32 - 1 downto 0);
+		link_data_in_k:     in std_logic_vector(NLINKS * 4 - 1 downto 0);
 		mem_data_out:       out std_logic_vector(31 downto 0);
 		mem_addr_out:       out std_logic_vector(15 downto 0);
 		mem_addr_finished_out:       out std_logic_vector(15 downto 0);
@@ -35,7 +35,7 @@ architecture RTL of sc_slave is
 	signal mem_addr_o : std_logic_vector(15 downto 0);
 	signal mem_wren_o : std_logic;
 
-	type state_type is (init, waiting, starting);
+	type state_type is (init, waiting, starting1, starting2);
 	signal state : state_type;
 
 begin
@@ -74,25 +74,47 @@ begin
 				when waiting =>
 					stateout(3 downto 0) <= x"1";
 					if (link_data_in(7 downto 0) = x"BC" 
-						and link_data_in_k = "0001" 
+						and link_data_in_k(3 downto 0) = "0001" 
 						and link_data_in(31 downto 26) = "000111") then
 							stateout(3 downto 0) <= x"1";
 							mem_addr_o <= mem_addr_o + '1';
-							mem_data_o <= link_data_in;
+							mem_data_o <= link_data_in(31 downto 0);
 							mem_wren_o <= '1';
-							state <= starting;
+							state <= starting1;
+                    elsif (link_data_in(7 + 32 downto 32) = x"BC" 
+						and link_data_in_k(7 downto 4) = "0001" 
+						and link_data_in(31 + 32 downto 26 + 32) = "000111") then
+							stateout(3 downto 0) <= x"1";
+							mem_addr_o <= mem_addr_o + '1';
+							mem_data_o <= link_data_in(63 downto 32);
+							mem_wren_o <= '1';
+							state <= starting2;
 				 	end if;
 
-				when starting =>
+				when starting1 =>
 					stateout(3 downto 0) <= x"2";
-					if (link_data_in_k = "0000") then
+					if (link_data_in_k(3 downto 0) = "0000") then
 						mem_addr_o <= mem_addr_o + '1';
-						mem_data_o <= link_data_in;
+						mem_data_o <= link_data_in(31 downto 0);
 						mem_wren_o <= '1';
-					elsif (link_data_in(7 downto 0) = x"9C" and link_data_in_k = "0001") then
+					elsif (link_data_in(7 downto 0) = x"9C" and link_data_in_k(3 downto 0) = "0001") then
 						mem_addr_o <= mem_addr_o + '1';
 						mem_addr_finished_out <= mem_addr_o + '1';
-						mem_data_o <= link_data_in;
+						mem_data_o <= link_data_in(31 downto 0);
+						mem_wren_o <= '1';
+						state <= waiting;
+					end if;
+                    
+                when starting2 =>
+					stateout(3 downto 0) <= x"2";
+					if (link_data_in_k(7 downto 4) = "0000") then
+						mem_addr_o <= mem_addr_o + '1';
+						mem_data_o <= link_data_in(63 downto 32);
+						mem_wren_o <= '1';
+					elsif (link_data_in(7 + 32 downto 32) = x"9C" and link_data_in_k(7 downto 4) = "0001") then
+						mem_addr_o <= mem_addr_o + '1';
+						mem_addr_finished_out <= mem_addr_o + '1';
+						mem_data_o <= link_data_in(63 downto 32);
 						mem_wren_o <= '1';
 						state <= waiting;
 					end if;
