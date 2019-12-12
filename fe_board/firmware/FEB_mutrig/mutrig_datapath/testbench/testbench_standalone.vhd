@@ -43,7 +43,9 @@ component mutrig_datapath is
         --(e.g. Fibers, two modules with up to 4 ASICs each, PREFIX="00" ; "01" for A and B )
   );
   port (
-	i_rst			: in  std_logic;
+	i_rst_core		: in  std_logic;
+	i_rst_rx		: in  std_logic;
+
 	i_stic_txd		: in  std_logic_vector( N_ASICS-1 downto 0);-- serial data
 	i_refclk_125_A		: in  std_logic;                 		-- ref clk for lvds pll (A-Side) 
 	i_refclk_125_B		: in  std_logic;                 		-- ref clk for lvds pll (B-Side)
@@ -55,10 +57,7 @@ component mutrig_datapath is
 	o_A_fifo_empty		: out std_logic;
 	o_A_fifo_data		: out std_logic_vector(35 downto 0);
 	i_A_fifo_rd		: in  std_logic;
-	o_B_fifo_empty		: out std_logic;
-	o_B_fifo_data		: out std_logic_vector(35 downto 0);
-	i_B_fifo_rd		: in  std_logic := '0';
-	--secondary interface used if N_MODULES=2
+ 	--secondary interface used if N_MODULES=2
 	o_B_fifo_empty		: out std_logic;
 	o_B_fifo_data		: out std_logic_vector(35 downto 0);
 	i_B_fifo_rd		: in  std_logic:='0';
@@ -129,6 +128,8 @@ signal i_SC_counterselect       : std_logic_vector(5 downto 0);
 signal o_counter_numerator      :  std_logic_vector(31 downto 0);
 signal o_counter_denominator_low  : std_logic_vector(31 downto 0);
 signal o_counter_denominator_high : std_logic_vector(31 downto 0);
+signal o_counter_numerator_b      :  std_logic_vector(31 downto 0);
+signal o_counter_denominator_b : std_logic_vector(63 downto 0);
 --fifo interface
 signal s_A_fifo_empty 		: std_logic:='0';
 signal s_A_fifo_data		: std_logic_vector(35 downto 0);
@@ -169,7 +170,8 @@ dut: mutrig_datapath
 		C_CHANNELNO_PREFIX_B => "10"
 	)
 	port map (
-		i_rst			=> i_rst,
+		i_rst_core		=> i_rst,
+		i_rst_rx		=> i_rst,
 		i_stic_txd		=> i_asic_tx_p,
 		i_refclk_125_A		=> i_refclk_125,
 		i_refclk_125_B		=> i_refclk_125,
@@ -202,6 +204,8 @@ dut: mutrig_datapath
 		o_counter_denominator_high => o_counter_denominator_high
 	);
 
+o_counter_denominator_b<=work.util.gray2bin(o_counter_denominator_high&o_counter_denominator_low);
+o_counter_numerator_b<=work.util.gray2bin(o_counter_numerator);
 ---------------------------------------------------------------
 -- fifo readout stimulus
 fifo_ro: process (i_coreclk)

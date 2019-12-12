@@ -88,8 +88,8 @@ port (
 
 
 
-    si42_clk_40 : in    std_logic;
-    si42_clk_80 : in    std_logic;
+    si42_clk_125 : in    std_logic;
+    si42_clk_50 : in    std_logic;
 
     clk_aux     : in    std_logic;
 
@@ -181,7 +181,7 @@ begin
 
 
     -- LED maps:
-    -- 15: si42_clk_80 (80MHz -> 1Hz)
+    -- 15: si42_clk_50 (80MHz -> 1Hz)
     -- 14: clk_qsfp (156MHz -> 1Hz)
     -- 13: clk_pod (125MHz -> 1Hz)
     -- 11: fee_chip_reset (niosclk)
@@ -258,7 +258,7 @@ begin
         FPGA_ID_g => X"FEB0",
         -- mutrig FEB type
         FEB_type_in => "111000",
-        NIOS_CLK_HZ_g => 80000000--,
+        NIOS_CLK_HZ_g => 50000000--,
     )
     port map (
         i_i2c_scl       => i2c_scl,
@@ -307,7 +307,7 @@ begin
         i_can_terminate => s_run_state_all_done,
 
 
-        i_nios_clk      => si42_clk_80,
+        i_nios_clk      => si42_clk_50,
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
         o_clk_156_mon   => led(14),

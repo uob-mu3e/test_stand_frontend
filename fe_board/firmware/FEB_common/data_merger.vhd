@@ -50,7 +50,7 @@ END ENTITY;
 
 architecture rtl of data_merger is
 
-    type data_merger_state is (idle, sending_data, sending_slowcontrol);
+    type data_merger_state is (idle, sending_data, sending_slowcontrol, wait_for_terminate);
     --type feb_state is (idle, run_prep, sync, running, terminating, link_test, sync_test, reset_state, out_of_DAQ);
 
     -- ToDo: Move this to some common location (for all boards !!)
@@ -69,7 +69,7 @@ architecture rtl of data_merger is
     signal merger_state                         : data_merger_state;
     signal run_prep_acknowledge_send            : std_logic;
     signal last_merger_fifo_control_bits        : std_logic_vector(3 downto 0); -- used for run termination
-    signal merger_timeout_counter               : std_logic_vector(15 downto 0);
+    signal merger_timeout_counter               : integer range 0 to 11000;--std_logic_vector(15 downto 0);
     signal prev_merger_state                    : data_merger_state;
 
 
@@ -101,25 +101,25 @@ BEGIN
         data_is_k                       <= K285_datak;
         data_out                        <= K285;
         override_granted                <= '0';
-        merger_timeout_counter          <= (others => '0');
+        merger_timeout_counter          <= 0;
         --
     elsif rising_edge(clk) then
         prev_merger_state               <= merger_state;
 
         -- if the merger stays in read slowcontrol or read data for 2^16 cycles --> trigger merger timeout
         if ( merger_state = prev_merger_state and merger_state /= idle ) then
-            if ( merger_timeout_counter = x"1111" ) then
+            if ( merger_timeout_counter = 10000 ) then
                 merger_state            <= idle;
                 slowcontrol_read_req    <= '0';
                 data_read_req           <= '0';
                 data_is_k               <= MERGER_TIMEOUT_DATAK;
                 data_out                <= MERGER_TIMEOUT;
-                merger_timeout_counter  <= (others => '0');
+                merger_timeout_counter  <= 0;
             else
-                merger_timeout_counter  <= merger_timeout_counter + '1';
+                merger_timeout_counter  <= merger_timeout_counter + 1;
             end if;
         else
-            merger_timeout_counter      <= (others => '0');
+            merger_timeout_counter      <= 0;
         end if;
 
         ------------------------------- feb state link test or sync test ----------------------------
@@ -241,7 +241,7 @@ BEGIN
                     data_is_k                   <= "0000";
                 end if;
 
-            when others => -- send data state in FEB state idle should not happen (except if this is the end of *_test state) --> goto merger state idle
+            when others => -- send data state in FEB state idle should not happen (except if this is the end of *_test state or wait_for_terminate) --> goto merger state idle
                 merger_state <= idle;
                 data_out <= K285;
                 data_is_k <= K285_datak;
@@ -299,16 +299,19 @@ BEGIN
             run_prep_acknowledge_send <= '0';
             case merger_state is
             when idle =>
-                if ( slowcontrol_fifo_empty = '1' and data_fifo_empty = '1' ) then -- no data, state is idle --> do nothing
-                    slowcontrol_read_req        <= '0';
-                    data_out                    <= K285;
-                    data_is_k                   <= K285_datak;
-
-                elsif ( last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or data_in(35 downto 32) = MERGER_FIFO_RUN_END_MARKER or can_terminate='1') then
+		if ( last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or
+							data_in(35 downto 32) = MERGER_FIFO_RUN_END_MARKER or
+							(run_state=RUN_STATE_TERMINATING and can_terminate='1')
+							) then
                     -- allows run end for idle and sending data, run end in state sending_data is always packet end
                     terminated                  <= '1';
                     data_out                    <= RUN_END;
                     data_is_k                   <= RUN_END_DATAK;
+		    merger_state                <= wait_for_terminate;
+                elsif ( slowcontrol_fifo_empty = '1' and data_fifo_empty = '1' ) then -- no data, state is idle --> do nothing
+                    slowcontrol_read_req        <= '0';
+                    data_out                    <= K285;
+                    data_is_k                   <= K285_datak;
 
                 elsif ( (slowcontrol_fifo_empty = '0' and data_fifo_empty = '1') or (slowcontrol_fifo_empty = '0' and data_priority = '0') ) then
                     slowcontrol_read_req <= '1'; -- need 2 cycles to get new data from fifo --> start reading now
@@ -330,6 +333,9 @@ BEGIN
                     data_out(7  downto 0)       <= x"bc";
                     merger_state                <= sending_data; -- go to sending data state next
                 end if;
+            when wait_for_terminate=>
+                    data_out(31 downto 0)       <= K285;
+                    data_is_k                   <= K285_datak;
 
             when sending_data=>
                 if ( data_fifo_empty = '1' ) then -- send k285 idle, leave read req = 1 ?

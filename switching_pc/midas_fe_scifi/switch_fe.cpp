@@ -57,6 +57,7 @@
 
 //Slow control for mutrig/scifi
 #include "mutrig_midasodb.h"
+#include "link_constants.h"
 #include "SciFi_FEB.h"
 /*-- Globals -------------------------------------------------------*/
 
@@ -81,9 +82,6 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
 
-const int MAX_N_SWITCHINGBOARDS = 4;
-const int MAX_LINKS_PER_SWITCHINGBOARD = 48;
-const int MAX_N_FRONTENDBOARDS = MAX_LINKS_PER_SWITCHINGBOARD*MAX_N_SWITCHINGBOARDS;
 int switch_id = 0; // TODO to be loaded from outside
 
 /* DMA Buffer and related */
@@ -97,6 +95,7 @@ INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
 void sc_settings_changed(HNDLE, HNDLE, int, void *);
 void switching_board_mask_changed(HNDLE, HNDLE, int, void *);
+void frontend_board_mask_changed(HNDLE, HNDLE, int, void *);
 
 /*-- Equipment list ------------------------------------------------*/
 
@@ -215,18 +214,14 @@ INT frontend_init()
 
    db_watch(hDB, hKey, switching_board_mask_changed, nullptr);
 
-    // Define history panels
-   hs_define_panel("SciFi","Counters",{"SciFi:Counters_nHits",
-                                       "SciFi:Counters_nFrames",
-                                       "SciFi:Counters_nWordsLVDS",
-                                       "SciFi:Counters_nWordsPRBS"});
+   // watch if this frontend board is enabled
+   db_find_key(hDB, 0, "/Equipment/Links/Settings/FrontendBoardMask", &hKey);
+   assert(hKey);
 
-   hs_define_panel("SciFi","Errors",{"SciFi:Counters_nBadFrames",
-                                     "SciFi:Counters_nErrorsLVDS",
-                                     "SciFi:Counters_nErrorsPRBS"});
+   db_watch(hDB, hKey, frontend_board_mask_changed, nullptr);
 
-   hs_define_panel("SciFi","Times",{"SciFi:Counters_Timer",
-                                    "SciFi:Counters_Time"});
+   // Define history panels
+   // --- SciFi panels created in mutrig::midasODB::setup_db, below
 
    // open mudaq
    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
@@ -245,12 +240,15 @@ INT frontend_init()
 
    //SciFi setup part
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
-   SciFiFEB::Create(*mup); //create FEB interface signleton
-   int status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance(),true);
+   SciFiFEB::Create(*mup,hDB,equipment[EQUIPMENT_ID::SciFi].name,"/Equipment/SciFi"); //create FEB interface signleton for scifi
+   int status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance());
    if(status != SUCCESS){
       set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
       return status;
    }
+    //init all values on FEB
+   //SciFiFEB::Instance()->WriteAll();
+
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
    //end of SciFi setup part
 
@@ -325,7 +323,7 @@ INT begin_of_run(INT run_number, char *error)
    mup->FEBsc_resetMaster();
    mup->FEBsc_resetSlave();
 
-   status=SciFiFEB::Instance()->ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
+   status=SciFiFEB::Instance()->ConfigureASICs();
    if(status!=SUCCESS){
       cm_msg(MERROR,"switch_fe","ASIC configuration failed");
       return CM_TRANSITION_CANCELED;
@@ -343,28 +341,26 @@ INT begin_of_run(INT run_number, char *error)
                       &value, sizeof(value), switch_id, TID_INT, false);
 
 
-   uint16_t timeout_cnt=0;
-   uint32_t link_active_from_register_low = mup->read_register_ro(RUN_NR_ACK_REGISTER_LOW_R);
-//   uint32_t link_active_from_register_high = mup->read_register_ro(RUN_NR_ACK_REGISTER_HIGH_R);
-   uint32_t link_active_from_register_high = 0;
-   uint64_t link_active_from_register = link_active_from_register_low + (link_active_from_register_low >> 32);
-   while(link_active_from_register != link_active_from_odb &&
-         timeout_cnt++ < 300) {
-      timeout_cnt++;
-      printf("%u  %x  %x\n",timeout_cnt,link_active_from_odb, link_active_from_register);
-      usleep(100000);
+   uint16_t timeout_cnt=300;
+   uint64_t link_active_from_register_low = 0;
+   uint64_t link_active_from_register_high = 0;
+   uint64_t link_active_from_register;
+   do{
+   
       link_active_from_register_low = mup->read_register_ro(RUN_NR_ACK_REGISTER_LOW_R);
-//      link_active_from_register_high = mup->read_register_ro(RUN_NR_ACK_REGISTER_HIGH_R);
-      uint32_t link_active_from_register_high = 0;
-      link_active_from_register = link_active_from_register_low + (link_active_from_register_low >> 32);
-   };
+       //link_active_from_register_high = mup->read_register_ro(RUN_NR_ACK_REGISTER_HIGH_R) << 32;
+       link_active_from_register = link_active_from_register_high + link_active_from_register_low;
+      printf("%u  %lx  %lx\n",timeout_cnt,link_active_from_odb, link_active_from_register);
+      usleep(100000);
+   }while(link_active_from_register != link_active_from_odb && (timeout_cnt-- > 0));
 
-   if(timeout_cnt>=50) {
+   if(timeout_cnt==0) {
       cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
       for(int i = 0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++) {
-         if ((link_active_from_register >> i) & 0x1)
+         if ((link_active_from_register >> i) & 0x1){
             mup->write_register_wait(RUN_NR_ADDR_REGISTER_W, i, 1000);
             cm_msg(MINFO,"switch_fe","Switching board %d, Link %d: Run number %d", switch_id, i, mup->read_register_ro(RUN_NR_REGISTER_R));
+         }
       }
       return CM_TRANSITION_CANCELED;
    }
@@ -400,19 +396,19 @@ INT end_of_run(INT run_number, char *error)
    }
 
    printf("Waiting for stop signals from all FEBs\n");
-   uint16_t timeout_cnt = 0;
-   uint32_t stop_signal_seen = mup->read_register_ro(RUN_STOP_ACK_REGISTER_R); //TODO make 64 bits
-   printf("Stop signal seen from 0x%08x, expect stop signals from 0x%08x\n", stop_signal_seen, link_active_from_odb);
+   uint16_t timeout_cnt = 50;
+   uint64_t stop_signal_seen = mup->read_register_ro(RUN_STOP_ACK_REGISTER_R); //TODO make 64 bits
+   printf("Stop signal seen from 0x%16lx, expect stop signals from 0x%16lx\n", stop_signal_seen, link_active_from_odb);
    while(stop_signal_seen != link_active_from_odb &&
-         timeout_cnt++ < 50) {
-      timeout_cnt++;
+         timeout_cnt-- > 0) {
       usleep(1000);
       stop_signal_seen = mup->read_register_ro(RUN_STOP_ACK_REGISTER_R);
-      printf("Stop signal seen from 0x%08x, expect stop signals from 0x%08x\n", stop_signal_seen, link_active_from_odb);
+      printf("Stop signal seen from 0x%16lx, expect stop signals from 0x%16lx\n", stop_signal_seen, link_active_from_odb);
    };
 
-   if(timeout_cnt>=50) {
-      cm_msg(MERROR,"switch_fe","No end of run marker found for frontends %d", stop_signal_seen);
+   if(timeout_cnt==0) {
+      cm_msg(MERROR,"switch_fe","End of run marker only found for frontends %16lx", stop_signal_seen);
+      cm_msg(MINFO,"switch_fe","... Expected to see from frontends %16lx", link_active_from_odb);
       set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
       return CM_TRANSITION_CANCELED;
    }
@@ -468,7 +464,7 @@ INT read_sc_event(char *pevent, INT off)
 
 INT read_scifi_sc_event(char *pevent, INT off){
     printf("read_scifi_sc_event\n");
-    //int status=SciFiFEB::Instance()->ReadBackCounters(hDB, 0 /*FPGA-ID*/, "/Equipment/SciFi");
+    //int status=SciFiFEB::Instance()->ReadBackCounters(0 /*FPGA-ID*/);
     return 0;
 }
 
@@ -689,7 +685,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
     }
 */
     if (std::string(key.name) == "SciFiConfig" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-          int status=SciFiFEB::Instance()->ConfigureASICs(hDB, "SciFi", "/Equipment/SciFi");
+          int status=SciFiFEB::Instance()->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }
@@ -712,5 +708,12 @@ void switching_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
 
       cm_msg(MINFO, "switching_board_mask_changed", "Set Equipment %s enabled to %d", equipment[i].name, value);
    }
+
+   SciFiFEB::Instance()->RebuildFEBsMap();
+
+}
+
+void frontend_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
+   SciFiFEB::Instance()->RebuildFEBsMap();
 
 }

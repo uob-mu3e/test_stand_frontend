@@ -76,6 +76,7 @@ o_all_done(1) <= fifo_empty; -- data fifo
 -- simulation only
 e_ram : entity work.ip_ram
 generic map (
+    DEVICE => "Arria X",
 	ADDR_WIDTH_A => 12,
     ADDR_WIDTH_B => 12,
     DATA_WIDTH_A => 36,
@@ -105,6 +106,7 @@ generic map (
 -- simulation only
 e_bank_length : entity work.ip_scfifo
     generic map(
+        DEVICE => "Arria X",
         ADDR_WIDTH => 12,
         DATA_WIDTH => 12,
         DEVICE => "Arria 10"--,
@@ -131,6 +133,7 @@ e_bank_length : entity work.ip_scfifo
 -- simulation only
 e_fifo : entity work.ip_dcfifo
     generic map(
+        DEVICE => "Arria X",
         ADDR_WIDTH => 8,
         DATA_WIDTH => 36,
         DEVICE => "Arria 10"--,

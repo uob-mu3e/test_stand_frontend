@@ -26,8 +26,7 @@ namespace midasODB {
 // /Equipment/SciFi/Settings/ASICs/%d/TDC
 // /Equipment/SciFi/Settings/ASICs/%d/Channels/%d/Conf
 //Relies on {prefix}/Settings/ASICs/Global/Num asics to build the tree of the right size
-//If init_FEB is set, the registers on the FEB-FPGA are initialized
-int setup_db(HNDLE& hDB, const char* prefix,SciFiFEB* FEB_inteface,bool init_FEB);
+int setup_db(HNDLE& hDB, const char* prefix,SciFiFEB* FEB_inteface);
 
 //Map ODB structure under prefix (e.g. /Equipment/SciFi) to a Config instance (i.e. build the configuration pattern) for this asic.
 //Returns configuration class holding the pattern.

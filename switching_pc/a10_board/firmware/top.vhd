@@ -632,7 +632,7 @@ rx_datak(4)<=rx_datak_B_v(4*1-1 downto 4*0);
 	 
 	 e_midas_event_builder : entity work.midas_event_builder
 	  generic map (
-		 NLINKS => 3--;
+		 NLINKS => 2--;
 	 )
 	  port map(
 		 i_clk_data => tx_clk(0),
@@ -642,7 +642,7 @@ rx_datak(4)<=rx_datak_B_v(4*1-1 downto 4*0);
 		 i_rx_data  => data_counter,
 		 i_rx_datak => datak_counter,
 		 i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-         i_link_mask => writeregs_slow(FEB_ENABLE_REGISTER_W)(3 - 1 downto 0),
+		 i_link_mask => "11",
 		 o_event_wren => dma_wren_cnt,
 		 o_endofevent => dma_end_event_cnt,
 		 o_event_data => dma_event_data,
@@ -853,9 +853,9 @@ tx_datak(4) <= mem_datak_out(7 downto 4);
 		if(clk_sync = '1' and clk_last = '0') then
 			readregs(PLL_REGISTER_R) 			    <= readregs_slow(PLL_REGISTER_R);
 			readregs(VERSION_REGISTER_R) 		    <= readregs_slow(VERSION_REGISTER_R);
-            readregs(RUN_NR_REGISTER_R)             <= readregs_slow(RUN_NR_REGISTER_R);
-            readregs(RUN_NR_ACK_REGISTER_R)         <= readregs_slow(RUN_NR_ACK_REGISTER_R);
-            readregs(RUN_STOP_ACK_REGISTER_R)       <= readregs_slow(RUN_STOP_ACK_REGISTER_R);
+			readregs(RUN_NR_REGISTER_R)             <= readregs_slow(RUN_NR_REGISTER_R);
+			readregs(RUN_NR_ACK_REGISTER_R)         <= readregs_slow(RUN_NR_ACK_REGISTER_R);
+			readregs(RUN_STOP_ACK_REGISTER_R)       <= readregs_slow(RUN_STOP_ACK_REGISTER_R);
 			readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= (others => '0');
 			readregs(MEM_WRITEADDR_LOW_REGISTER_R) 	<= (X"0000" & readmem_writeaddr_finished);
 		end if;

@@ -223,7 +223,7 @@ begin
 
 		case p_state is
 			when FS_IDLE =>
-				o_busy           <= '1';
+				o_busy           <= '0';
 				--Initialize the frame len meta information
 				n_frame_len      <= (others => '0');
 				n_frame_flags    <= (others => '0');
