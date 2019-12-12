@@ -119,7 +119,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
     generic map(
         ADDR_WIDTH => 8,
         DATA_WIDTH => 36,
-        DEVICE => "Arria X"--,
+        DEVICE => "Arria 10"--,
     )
 	-- simulation only
 		port map(
@@ -144,7 +144,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
 	    generic map(
         ADDR_WIDTH => 8,
         DATA_WIDTH => 12,
-        DEVICE => "Arria X"--,
+        DEVICE => "Arria 10"--,
     )
 	-- simulation only
    		port map (
@@ -189,7 +189,7 @@ generic map (
     ADDR_WIDTH_B => 9,
     DATA_WIDTH_A => 32,
     DATA_WIDTH_B => 256,
-    DEVICE => "Arria X"--,
+    DEVICE => "Arria 10"--,
 )
    port map (
 		--clock          => i_clk_dma,
@@ -216,7 +216,7 @@ e_tagging_fifo_event : entity work.ip_scfifo
     generic map(
         ADDR_WIDTH => 12,
         DATA_WIDTH => 12,
-        DEVICE => "Arria X"--,
+        DEVICE => "Arria 10"--,
 	)
 -- simulation only
 	port map (

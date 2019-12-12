@@ -80,7 +80,7 @@ generic map (
     ADDR_WIDTH_B => 12,
     DATA_WIDTH_A => 36,
     DATA_WIDTH_B => 36,
-    DEVICE => "Arria X"--,
+    DEVICE => "Arria 10"--,
 )
    port map (
 		--clock          => i_clk_dma,
@@ -107,7 +107,7 @@ e_bank_length : entity work.ip_scfifo
     generic map(
         ADDR_WIDTH => 12,
         DATA_WIDTH => 12,
-        DEVICE => "Arria X"--,
+        DEVICE => "Arria 10"--,
 )
 -- simulation only
 		port map (
@@ -133,7 +133,7 @@ e_fifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH => 8,
         DATA_WIDTH => 36,
-        DEVICE => "Arria X"--,
+        DEVICE => "Arria 10"--,
 )
 -- simulation only
 		port map (
