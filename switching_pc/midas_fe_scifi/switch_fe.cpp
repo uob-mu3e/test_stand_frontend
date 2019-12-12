@@ -95,6 +95,7 @@ INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
 void sc_settings_changed(HNDLE, HNDLE, int, void *);
 void switching_board_mask_changed(HNDLE, HNDLE, int, void *);
+void frontend_board_mask_changed(HNDLE, HNDLE, int, void *);
 
 /*-- Equipment list ------------------------------------------------*/
 
@@ -213,6 +214,12 @@ INT frontend_init()
 
    db_watch(hDB, hKey, switching_board_mask_changed, nullptr);
 
+   // watch if this frontend board is enabled
+   db_find_key(hDB, 0, "/Equipment/Links/Settings/FrontendBoardMask", &hKey);
+   assert(hKey);
+
+   db_watch(hDB, hKey, frontend_board_mask_changed, nullptr);
+
    // Define history panels
    // --- SciFi panels created in mutrig::midasODB::setup_db, below
 
@@ -240,7 +247,7 @@ INT frontend_init()
       return status;
    }
     //init all values on FEB
-   SciFiFEB::Instance()->WriteAll();
+   //SciFiFEB::Instance()->WriteAll();
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
    //end of SciFi setup part
@@ -701,5 +708,12 @@ void switching_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
 
       cm_msg(MINFO, "switching_board_mask_changed", "Set Equipment %s enabled to %d", equipment[i].name, value);
    }
+
+   SciFiFEB::Instance()->RebuildFEBsMap();
+
+}
+
+void frontend_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
+   SciFiFEB::Instance()->RebuildFEBsMap();
 
 }

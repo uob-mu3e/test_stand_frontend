@@ -18,7 +18,13 @@ class TilesFEB : public MutrigFEB{
    private:
       static TilesFEB* m_instance; //signleton instance pointer: only one instance of TilesFEB
       TilesFEB(const TilesFEB&)=delete;
-      TilesFEB(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix):MutrigFEB(mu,hDB,equipment_name,odb_prefix){};
+      TilesFEB(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix)
+	:
+	MutrigFEB(mu,hDB,equipment_name,odb_prefix)
+        {
+		RebuildFEBsMap();
+        };
+
    public:
       static TilesFEB* Create(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix){printf("TilesFEB::Create(%s) as %s\n",odb_prefix,equipment_name);if(!m_instance) m_instance=new TilesFEB(mu,hDB,equipment_name,odb_prefix); return m_instance;};
       static TilesFEB* Instance(){return m_instance;};
