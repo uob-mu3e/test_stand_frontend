@@ -160,7 +160,6 @@ int main(int argc, char *argv[])
 
     while(dma_buf[size/sizeof(uint32_t)-8] <= 0){
 
-        sleep(1);
     }
 
 

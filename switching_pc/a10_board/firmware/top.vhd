@@ -604,6 +604,7 @@ rx_datak(4)<=rx_datak_B_v(4*1-1 downto 4*0);
     port map (
 		reset						=> resets(RESET_BIT_DATAGEN),
 		enable_pix	         => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL),
+        i_dma_half_full        => dmamemhalffull,
 		random_seed 			=> (others => '1'),
 		data_pix_generated   => data_pix_generated,
 		datak_pix_generated  => datak_pix_generated,

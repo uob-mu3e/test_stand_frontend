@@ -38,6 +38,7 @@ entity data_generator_a10 is
 		clk:                 	in  std_logic;
 		reset:               	in  std_logic;
 		enable_pix:          	in  std_logic;
+        i_dma_half_full:     	in  std_logic;
 		random_seed:				in  std_logic_vector (15 downto 0);
 		start_global_time:		in  std_logic_vector(47 downto 0);
 		data_pix_generated:  	out std_logic_vector(31 downto 0);
@@ -178,7 +179,7 @@ begin
 		state_out					<= (others => '0');
 		datak_pix_generated		<= (others => '0');
 	elsif rising_edge(clk) then
-		if(enable_pix = '1' and waiting = '0') then
+		if(enable_pix = '1' and waiting = '0' and i_dma_half_full = '0') then
 				data_pix_ready <= '1';
 				case data_header_state is
 					when part1 =>
