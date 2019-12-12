@@ -791,12 +791,12 @@ void link_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
    }
 
     if (std::string(key.name) == "FrontendBoardMask") {
-      INT value[MAX_N_FRONTENBOARDS];
-      int size = sizeof(INT)*MAX_N_FRONTENBOARDS;
+      INT value[MAX_N_FRONTENDBOARDS];
+      int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
       db_get_data(hDB, hKey, value, &size, TID_INT);
       cm_msg(MINFO, "link_settings_changed", "Seting Frontend Board Mask");
 
-      for(int i = 0; i < MAX_N_FRONTENBOARDS; i++){
+      for(int i = 0; i < MAX_N_FRONTENDBOARDS; i++){
           if(value[i] == 0){
               cb->write_command("Disable",0,i);
           } else {

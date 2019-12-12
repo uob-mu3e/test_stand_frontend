@@ -30,7 +30,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #define FEB_REPLY_SUCCESS 0
 #define FEB_REPLY_ERROR   1
 
-const uint16_t MutrigFEB::FPGA_broadcast_ID=0xffff;
+const uint16_t MutrigFEB::FPGA_broadcast_ID=0;//0xffff;
 
 //handler function for update of switching board fiber mapping / status
 void MutrigFEB::on_mapping_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
@@ -103,16 +103,16 @@ const char *link_settings_str[] = {
    db_get_data(m_hDB, hKey, &sbmask, &size, TID_INT);
    for(size_t n=0;n<m_FPGAs.size();n++){
       assert(m_FPGAs[n].FPGA_ID/MAX_LINKS_PER_SWITCHINGBOARD<MAX_N_SWITCHINGBOARDS);
-      if(sbmask[m_FPGAs[n].FPGA_ID/MAX_LINKS_PER_SWITCHINGBOARD]==0){ //TODO: disabled == 0?
+      if(sbmask[m_FPGAs[n].FPGA_ID/MAX_LINKS_PER_SWITCHINGBOARD]==0){
          m_FPGAs[n].mask=0;
       }
    }
 
 
    //report mapping
-   printf("MutrigFEB::RebuildFEBsMap(): Found %lu FEBs of type %s:",m_FPGAs.size(),FEBTYPE_STR[GetTypeID()].c_str());
+   printf("MutrigFEB::RebuildFEBsMap(): Found %lu FEBs of type %s:\n",m_FPGAs.size(),FEBTYPE_STR[GetTypeID()].c_str());
    for(size_t i=0;i<m_FPGAs.size();i++){
-      printf("  #%lu is mapped to FPGA_ID %u Link \"%s\"%s\n",i,m_FPGAs[i].FPGA_ID,m_FPGAs[i].fullname_link.c_str(),m_FPGAs[i].mask==0?"":"\t[disabled]");
+      printf("  #%lu is mapped to FPGA_ID %u Link \"%s\" --> SB=%u.%u %s\n",i,m_FPGAs[i].FPGA_ID,m_FPGAs[i].fullname_link.c_str(),m_FPGAs[i].SB_Number(),m_FPGAs[i].SB_Port(),m_FPGAs[i].mask==0?"\t[disabled]":"");
    }
 }
 
