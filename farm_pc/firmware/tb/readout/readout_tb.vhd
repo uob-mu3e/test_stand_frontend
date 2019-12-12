@@ -12,23 +12,6 @@ entity readout_tb is
 end readout_tb;
 
 architecture behav of readout_tb is
-  --  Declaration of the component that will be instantiated.
-	component data_generator_a10_tb is
-		port(
-                clk:                 	in std_logic;
-                reset:               	in std_logic;
-                enable_pix:          	in std_logic;
-                random_seed:				in std_logic_vector (15 downto 0);
-                start_global_time:		in std_logic_vector(47 downto 0);
-                data_pix_generated:  	out std_logic_vector(31 downto 0);
-                datak_pix_generated:  	out std_logic_vector(3 downto 0);
-                data_pix_ready:      	out std_logic;
-                slow_down:					in std_logic_vector (31 downto 0);
-                state_out:  	out std_logic_vector(3 downto 0)
-			);		
-	end component data_generator_a10_tb;
-
-
   --  Specifies which entity is bound with the component.
   		
       signal clk : std_logic;
@@ -116,7 +99,7 @@ begin
      wait;
 end process inita0;
  
-e_data_gen_mupix : component data_generator_a10_tb
+e_data_gen_mupix : entity work.data_generator_a10_tb
 	port map (
 		clk 				   => clk,
 		reset				   => reset,
@@ -130,7 +113,7 @@ e_data_gen_mupix : component data_generator_a10_tb
 		state_out			   => open--,
 );
 
-e_data_gen_scifi : component data_generator_a10_tb
+e_data_gen_scifi : entity work.data_generator_a10_tb
 	port map (
 		clk 				     => clk,
 		reset				     => reset,
@@ -144,7 +127,7 @@ e_data_gen_scifi : component data_generator_a10_tb
 		state_out			  => open--,
 );
 
-e_data_gen_tiles : component data_generator_a10_tb
+e_data_gen_tiles : entity work.data_generator_a10_tb
 	port map (
 		clk 				     => clk,
 		reset				     => reset,
@@ -159,7 +142,7 @@ e_data_gen_tiles : component data_generator_a10_tb
 );
 
 
- e_data_gen_tiles2 : component data_generator_a10_tb
+ e_data_gen_tiles2 : entity work.data_generator_a10_tb
      port map (
          clk                      => clk,
          reset                    => reset,
@@ -173,7 +156,7 @@ e_data_gen_tiles : component data_generator_a10_tb
          state_out             => open--,
  );
 
- e_data_gen_tiles3 : component data_generator_a10_tb
+ e_data_gen_tiles3 : entity work.data_generator_a10_tb
      port map (
          clk                      => clk,
          reset                    => reset,
