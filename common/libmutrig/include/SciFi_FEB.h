@@ -26,6 +26,8 @@ class SciFiFEB : public MutrigFEB{
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
       virtual uint16_t FPGAid_from_ID(int asic);
       virtual uint16_t ASICid_from_ID(int asic);
+      virtual uint8_t nModulesPerFEB(){return 2;}
+      virtual uint8_t nAsicsPerModule(){return 4;}
       //Return typeID for building FEB ID map
       virtual FEBTYPE  GetTypeID(){return FEBTYPE::Fibre;};
 

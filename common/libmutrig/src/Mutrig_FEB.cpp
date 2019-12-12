@@ -118,84 +118,44 @@ const char *link_settings_str[] = {
 
 
 int MutrigFEB::WriteAll(){
-        INT ival;
-        HNDLE hTmp;
-        char set_str[255];
-        BOOL bval;
-	INT bsize=sizeof(bval);
-	INT isize=sizeof(ival);
+	HNDLE hTmp;
+	char set_str[255];
 
-        sprintf(set_str, "%s/Settings/Daq/dummy_config", m_odb_prefix);
-        db_find_key(m_hDB, 0, set_str, &hTmp);
-        db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
-//        for(FEB: m_FPGAs){
-//		if(FEB.
-//	}
-		this->setDummyConfig(SciFiFEB::FPGA_broadcast_ID,bval);
+	sprintf(set_str, "%s/Settings/Daq/dummy_config", m_odb_prefix);
+	db_find_key(m_hDB, 0, set_str, &hTmp);
 
-        sprintf(set_str, "%s/Settings/Daq/dummy_data", m_odb_prefix);
-        db_find_key(m_hDB, 0, set_str, &hTmp);
-        db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
-        this->setDummyData_Enable(SciFiFEB::FPGA_broadcast_ID,bval);
+	sprintf(set_str, "%s/Settings/Daq/dummy_data", m_odb_prefix);
+	db_find_key(m_hDB, 0, set_str, &hTmp);
+	on_settings_changed(m_hDB,hTmp,0,this);
 
-        sprintf(set_str, "%s/Settings/daq/dummy_data_fast", m_odb_prefix);
-        db_find_key(m_hDB, 0, set_str, &hTmp);
-        db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
-        this->setDummyData_Fast(SciFiFEB::FPGA_broadcast_ID,bval);
+	sprintf(set_str, "%s/Settings/daq/dummy_data_fast", m_odb_prefix);
+	db_find_key(m_hDB, 0, set_str, &hTmp);
+	on_settings_changed(m_hDB,hTmp,0,this);
 
-        sprintf(set_str, "%s/Settings/Daq/dummy_data_n", m_odb_prefix);
-        db_find_key(m_hDB, 0, set_str, &hTmp);
-        db_get_data(m_hDB,hTmp,&ival,&isize,TID_INT);
-        this->setDummyData_Count(SciFiFEB::FPGA_broadcast_ID,ival);
+	sprintf(set_str, "%s/Settings/Daq/dummy_data_n", m_odb_prefix);
+	db_find_key(m_hDB, 0, set_str, &hTmp);
+	on_settings_changed(m_hDB,hTmp,0,this);
 
-        sprintf(set_str, "%s/Settings/Daq/prbs_decode_disable", m_odb_prefix);
-        db_find_key(m_hDB, 0, set_str, &hTmp);
-        db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
-        this->setPRBSDecoderDisable(SciFiFEB::FPGA_broadcast_ID,bval);
+	sprintf(set_str, "%s/Settings/Daq/prbs_decode_disable", m_odb_prefix);
+	db_find_key(m_hDB, 0, set_str, &hTmp);
+	on_settings_changed(m_hDB,hTmp,0,this);
 
-        sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall", m_odb_prefix);
-        db_find_key(m_hDB, 0, set_str, &hTmp);
-        db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
-        this->setWaitForAll(SciFiFEB::FPGA_broadcast_ID,bval);
+	sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall", m_odb_prefix);
+	db_find_key(m_hDB, 0, set_str, &hTmp);
+	on_settings_changed(m_hDB,hTmp,0,this);
 
-        sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall_sticky", m_odb_prefix);
-        db_find_key(m_hDB, 0, set_str, &hTmp);
-        db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
-        this->setWaitForAllSticky(SciFiFEB::FPGA_broadcast_ID,bval);
+	sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall_sticky", m_odb_prefix);
+	db_find_key(m_hDB, 0, set_str, &hTmp);
+	on_settings_changed(m_hDB,hTmp,0,this);
 
-      //chip mask settings
-      {
-	BOOL barray[16];
-	INT  barraysize=sizeof(barray);
-        sprintf(set_str, "%s/Settings/Daq/mask", m_odb_prefix);
-        db_find_key(m_hDB, 0, set_str, &hTmp);
-        db_get_data(m_hDB,hTmp,barray,&barraysize,TID_BOOL);
-	for(int i=0;i<16;i++)
-		this->setMask(i,barray[i]);
-      }
-      //reset skew settings
-      {
-	BOOL cphase[4];
-	BOOL cdelay[4];
-	INT  barraysize=sizeof(cphase);
-	INT  phases[4];
-	INT  iarraysize=sizeof(phases);
+	sprintf(set_str, "%s/Settings/Daq/mask", m_odb_prefix);
+	db_find_key(m_hDB, 0, set_str, &hTmp);
+	on_settings_changed(m_hDB,hTmp,0,this);
 
-        sprintf(set_str, "%s/Settings/Daq/resetskew_cphase", m_odb_prefix);
-        db_find_key(m_hDB, 0, set_str, &hTmp);
-        db_get_data(m_hDB,hTmp,cphase,&barraysize,TID_BOOL);
-        sprintf(set_str, "%s/Settings/Daq/resetskew_cdelay", m_odb_prefix);
-        db_find_key(m_hDB, 0, set_str, &hTmp);
-        db_get_data(m_hDB,hTmp,cdelay,&barraysize,TID_BOOL);
-        sprintf(set_str, "%s/Settings/Daq/resetskew_phases", m_odb_prefix);
-        db_find_key(m_hDB, 0, set_str, &hTmp);
-        db_get_data(m_hDB,hTmp,phases,&iarraysize,TID_INT);
-
-	this->setResetSkewCphase(SciFiFEB::FPGA_broadcast_ID,cphase);
-	this->setResetSkewCdelay(SciFiFEB::FPGA_broadcast_ID,cdelay);
-	this->setResetSkewPhases(SciFiFEB::FPGA_broadcast_ID,phases);
-      }
-    return 0;
+	sprintf(set_str, "%s/Settings/Daq/resetskew_cphase", m_odb_prefix);
+	db_find_key(m_hDB, 0, set_str, &hTmp);
+	on_settings_changed(m_hDB,hTmp,0,this);
+	return 0;
 }
 
 //ASIC configuration:
@@ -281,73 +241,101 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
    KEY key;
    db_get_key(hDB, hKey, &key);
    printf("MutrigFEB::on_settings_changed(%s)\n",key.name);
+   INT ival;
+   BOOL bval;
+   INT bsize=sizeof(bval);
+   INT isize=sizeof(ival);
+
+
    if (std::string(key.name) == "dummy_config") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set dummy_config to %d", value);
-      _this->setDummyConfig(MutrigFEB::FPGA_broadcast_ID,value);
+        db_get_data(hDB,hKey,&bval,&bsize,TID_BOOL);
+        for(auto FEB: _this->m_FPGAs){
+		if(FEB.mask==0) continue; //skip disabled
+		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+		_this->setDummyConfig(FEB.SB_Port(),bval);
+	}
    }
    if (std::string(key.name) == "dummy_data") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set dummy_data to %d", value);
-      _this->setDummyData_Enable(MutrigFEB::FPGA_broadcast_ID,value);
+        db_get_data(hDB,hKey,&bval,&bsize,TID_BOOL);
+        for(auto FEB: _this->m_FPGAs){
+		if(FEB.mask==0) continue; //skip disabled
+		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+		_this->setDummyData_Enable(FEB.SB_Port(),bval);
+	}
+
    }
+
    if (std::string(key.name) == "dummy_data_fast") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set dummy_data_fast to %d", value);
-      _this->setDummyData_Fast(MutrigFEB::FPGA_broadcast_ID,value);
+        db_get_data(hDB,hKey,&bval,&bsize,TID_BOOL);
+        for(auto FEB: _this->m_FPGAs){
+		if(FEB.mask==0) continue; //skip disabled
+		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+		_this->setDummyData_Fast(FEB.SB_Port(),bval);
+	}
    }
+
    if (std::string(key.name) == "dummy_data_n") {
-      INT value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_INT);
-      cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set dummy_data_n to %d", value);
-      _this->setDummyData_Count(MutrigFEB::FPGA_broadcast_ID,value);
+        db_get_data(hDB,hKey,&ival,&isize,TID_INT);
+	for(auto FEB: _this->m_FPGAs){
+		if(FEB.mask==0) continue; //skip disabled
+		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+		_this->setDummyData_Count(FEB.SB_Port(),ival);
+	}
    }
+
    if (std::string(key.name) == "prbs_decode_disable") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set prbs_decode_disable to %d", value);
-      _this->setPRBSDecoderDisable(MutrigFEB::FPGA_broadcast_ID,value);
+        db_get_data(hDB,hKey,&bval,&bsize,TID_BOOL);
+	for(auto FEB: _this->m_FPGAs){
+		if(FEB.mask==0) continue; //skip disabled
+		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+		_this->setPRBSDecoderDisable(FEB.SB_Port(),bval);
+	}
    }
+
    if (std::string(key.name) == "LVDS_waitforall") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set LVDS_waitforall to %d", value);
-      _this->setPRBSDecoderDisable(MutrigFEB::FPGA_broadcast_ID,value);
+        db_get_data(hDB,hKey,&bval,&bsize,TID_BOOL);
+	for(auto FEB: _this->m_FPGAs){
+		if(FEB.mask==0) continue; //skip disabled
+		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+		_this->setWaitForAll(FEB.SB_Port(),bval);
+	}
    }
+
    if (std::string(key.name) == "LVDS_waitforall_sticky") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set LVDS_waitforall_sticky to %d", value);
-      _this->setPRBSDecoderDisable(MutrigFEB::FPGA_broadcast_ID,value);
+        db_get_data(hDB,hKey,&bval,&bsize,TID_BOOL);
+	for(auto FEB: _this->m_FPGAs){
+		if(FEB.mask==0) continue; //skip disabled
+		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+		_this->setWaitForAllSticky(FEB.SB_Port(),bval);
+	}
    }
+
    if (std::string(key.name) == "mask") {
-      BOOL barray[16];
-      INT  barraysize=sizeof(barray);
-      db_get_data(hDB, hKey, &barray, &barraysize, TID_BOOL);
-      for(int i=0;i<16;i++){
-           //cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Set mask[%d] %d",i, barray[i]);
-           _this->setMask(i,barray[i]);
-      }
+	BOOL* barray=new BOOL[_this->GetNumASICs()];
+	INT  barraysize=sizeof(BOOL)*_this->GetNumASICs();
+        db_get_data(hDB,hKey,barray,&barraysize,TID_BOOL);
+
+	for(int i=0;i<_this->GetNumASICs();i++){
+		if(_this->m_FPGAs[_this->FPGAid_from_ID(i)].mask==0) continue;
+		if(_this->m_FPGAs[_this->FPGAid_from_ID(i)].SB_Number()!=_this->m_SB_number) continue;
+		_this->setMask(_this->m_FPGAs[_this->FPGAid_from_ID(i)].SB_Port(),barray[i]);
+	}
+	delete[] barray;
    }
+
    if (std::string(key.name) == "reset_datapath") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
       if(value){
-         cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_datapath");
-         _this->DataPathReset(MutrigFEB::FPGA_broadcast_ID);
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+	for(auto FEB: _this->m_FPGAs){
+		if(FEB.mask==0) continue; //skip disabled
+		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+         	cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_datapath");
+         	_this->DataPathReset(FEB.SB_Port());
+	}
+        value = FALSE; // reset flag in ODB
+        db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
    }
    if (std::string(key.name) == "reset_asics") {
@@ -355,10 +343,14 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
       if(value){
-         cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_asics");
-         _this->chipReset(MutrigFEB::FPGA_broadcast_ID);
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+	for(auto FEB: _this->m_FPGAs){
+		if(FEB.mask==0) continue; //skip disabled
+		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+		cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_asics");
+         	_this->chipReset(FEB.SB_Port());
+	}
+        value = FALSE; // reset flag in ODB
+        db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
    }
    if (std::string(key.name) == "reset_lvds") {
@@ -366,35 +358,53 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
       if(value){
-         cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_lvds");
-         _this->LVDS_RX_Reset(MutrigFEB::FPGA_broadcast_ID);
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+        cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_lvds");
+       	for(auto FEB: _this->m_FPGAs){
+		if(FEB.mask==0) continue; //skip disabled
+		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+		cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_asics");
+  		_this->LVDS_RX_Reset(FEB.SB_Port());
+	}
+        value = FALSE; // reset flag in ODB
+        db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
       }
    }
 
    //reset skew settings
-   if (std::string(key.name) == "resetskew_cphase") {
-        cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Updating reset skew cphase settings");
-        BOOL barray[4];
-        INT  barraysize=sizeof(barray);
-        db_get_data(hDB, hKey, &barray, &barraysize, TID_BOOL);
-	_this->setResetSkewCphase(MutrigFEB::FPGA_broadcast_ID,barray);
-   }
-   if (std::string(key.name) == "resetskew_cdelay") {
-        cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Updating reset skew cdelay settings");
-        BOOL barray[4];
-        INT  barraysize=sizeof(barray);
-        db_get_data(hDB, hKey, &barray, &barraysize, TID_BOOL);
-	_this->setResetSkewCdelay(MutrigFEB::FPGA_broadcast_ID,barray);
-   }
-   if (std::string(key.name) == "resetskew_phases") {
-        cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Updating reset skew phase settings");
-        INT array[4];
-        INT arraysize=sizeof(array);
-        db_get_data(hDB, hKey, &array, &arraysize, TID_INT);
-	_this->setResetSkewPhases(MutrigFEB::FPGA_broadcast_ID,array);
-   }
+   if ((std::string(key.name) == "resetskew_cphase")||
+       (std::string(key.name) == "resetskew_cdelay")||
+       (std::string(key.name) == "resetskew_phases")){
+        cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Updating reset skew settings");
+	char set_str[255];
+   	BOOL* cphase=new BOOL[_this->m_FPGAs.size()*_this->nModulesPerFEB()];
+	BOOL* cdelay=new BOOL[_this->m_FPGAs.size()*_this->nModulesPerFEB()];
+	INT  barraysize=sizeof(BOOL)*_this->m_FPGAs.size()*_this->nModulesPerFEB();
+	INT*  phases=new INT[_this->m_FPGAs.size()*_this->nModulesPerFEB()];
+	INT  iarraysize=sizeof(INT)*_this->m_FPGAs.size()*_this->nModulesPerFEB();
+
+        sprintf(set_str, "%s/Settings/Daq/resetskew_cphase", _this->m_odb_prefix);
+        db_find_key(hDB, 0, set_str, &hKey);
+        db_get_data(hDB,hKey,cphase,&barraysize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/Daq/resetskew_cdelay", _this->m_odb_prefix);
+        db_find_key(hDB, 0, set_str, &hKey);
+        db_get_data(hDB,hKey,cdelay,&barraysize,TID_BOOL);
+        sprintf(set_str, "%s/Settings/Daq/resetskew_phases", _this->m_odb_prefix);
+        db_find_key(hDB, 0, set_str, &hKey);
+        db_get_data(hDB,hKey,phases,&iarraysize,TID_INT);
+
+	for(size_t i=0;i<_this->m_FPGAs.size();i++){
+		if(_this->m_FPGAs[i].mask==0) continue; //skip disabled
+		if(_this->m_FPGAs[i].SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+		BOOL vals[2];
+		vals[0]=cphase[i]; vals[1]=cphase[i+1];
+		_this->setResetSkewCphase(_this->m_FPGAs[i].SB_Port(),vals);
+		vals[0]=cdelay[i]; vals[1]=cdelay[i+1];
+		_this->setResetSkewCdelay(_this->m_FPGAs[i].SB_Port(),vals);
+		INT ivals[2];
+		ivals[0]=phases[i]; ivals[1]=phases[i+1];
+		_this->setResetSkewPhases(_this->m_FPGAs[i].SB_Port(),ivals);
+	}
+}
 }
 
 //Helper functions
@@ -593,27 +603,27 @@ void MutrigFEB::LVDS_RX_Reset(uint16_t FPGA_ID){
 }
 
 //set reset skew configuration
-void MutrigFEB::setResetSkewCphase(uint16_t FPGA_ID, BOOL cphase[4]){
+void MutrigFEB::setResetSkewCphase(uint16_t FPGA_ID, BOOL cphase[2]){
         uint32_t val=m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG];
-        for(int i=0;i<4;i++){
+        for(int i=0;i<2;i++){
             val=reg_setBit(val,i+6,cphase[i]);
         }
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_RESETSKEW_GLOBALS_REG, m_ask_sc_reply);
         m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG]=val;
 }
 
-void MutrigFEB::setResetSkewCdelay(uint16_t FPGA_ID, BOOL cdelay[4]){
+void MutrigFEB::setResetSkewCdelay(uint16_t FPGA_ID, BOOL cdelay[2]){
         uint32_t val=m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG];
-        for(int i=0;i<4;i++){
+        for(int i=0;i<2;i++){
             val=reg_setBit(val,i+10,cdelay[i]);
         }
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_RESETSKEW_GLOBALS_REG, m_ask_sc_reply);
         m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG]=val;
 }
 
-void MutrigFEB::setResetSkewPhases(uint16_t FPGA_ID, INT phases[4]){
-	uint32_t val[4];
-        for(int i=0;i<4;i++){
+void MutrigFEB::setResetSkewPhases(uint16_t FPGA_ID, INT phases[2]){
+	uint32_t val[2];
+        for(int i=0;i<2;i++){
         	val[i]=phases[i];
         }
 	m_mu.FEBsc_NiosRPC(FPGA_ID, 0x0104, {{val,4}});

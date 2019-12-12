@@ -23,6 +23,8 @@ class MutrigFEB {
       bool m_ask_sc_reply;
       const char* m_odb_prefix;
       const char* m_equipment_name;
+      uint8_t m_SB_number;
+
       HNDLE m_hDB;
    public:
       MutrigFEB(const MutrigFEB&)=delete;
@@ -31,9 +33,11 @@ class MutrigFEB {
 	      m_ask_sc_reply(true),
 	      m_odb_prefix(odb_prefix),
 	      m_equipment_name(equipment_name),
+	      m_SB_number(0xff),
 	      m_hDB(hDB)
 	{};
-
+      void SetSBnumber(uint8_t n){m_SB_number=n;}
+      uint16_t GetNumASICs(){return m_FPGAs.size()*nModulesPerFEB()*nAsicsPerModule();}
       void SetAskSCReply(bool ask){m_ask_sc_reply=ask;};
 
       //MIDAS callback for all setters below (DAQ related, mapped to functions on FEB / settings from the DAQ subdirectory).
@@ -58,6 +62,8 @@ class MutrigFEB {
       static const uint16_t FPGA_broadcast_ID;
       virtual uint16_t FPGAid_from_ID(int asic)=0; //global asic number to global FEB number
       virtual uint16_t ASICid_from_ID(int asic)=0; //global asic number to FEB-local asic number
+      virtual uint8_t nModulesPerFEB()=0;
+      virtual uint8_t nAsicsPerModule()=0;
       //Return typeID for building FEB ID map
       virtual FEBTYPE  GetTypeID()=0;
 
