@@ -10,48 +10,6 @@ end sc_tb;
 
 architecture behav of sc_tb is
   --  Declaration of the component that will be instantiated.
-	component sc_master is
-		generic(
-			NLINKS : integer :=4
-		);
-		port(
-			clk:					in std_logic;
-			reset_n:				in std_logic;
-			enable:					in std_logic;
-			mem_data_in:			in std_logic_vector(31 downto 0);
-			mem_addr:				out std_logic_vector(15 downto 0);
-			mem_data_out:			out std_logic_vector(NLINKS * 32 - 1 downto 0);
-			mem_data_out_k:			out std_logic_vector(NLINKS * 4 - 1 downto 0);
-			done:					out std_logic;
-			stateout:				out std_logic_vector(27 downto 0)
-			);		
-	end component sc_master;
-
-	component sc_slave is
-		port(
-            clk:                in std_logic;
-            reset_n:            in std_logic;
-            enable:             in std_logic;
-            link_data_in:       in std_logic_vector(31 downto 0);
-            link_data_in_k:     in std_logic_vector(3 downto 0);
-            mem_data_out:       out std_logic_vector(31 downto 0);
-            mem_addr_out:       out std_logic_vector(15 downto 0);
-            mem_addr_finished_out:       out std_logic_vector(15 downto 0);
-            mem_wren:           out std_logic;
-            stateout:           out std_logic_vector(3 downto 0)
-			);		
-	end component sc_slave;
-
-	component ip_ram is
-  		port (
-        clock   : in  STD_LOGIC;
-        wren : in  STD_LOGIC;
-        wraddress   : in  STD_LOGIC_VECTOR (7 downto 0);
-        rdaddress   : in  STD_LOGIC_VECTOR (7 downto 0);
-        data   : in  STD_LOGIC_VECTOR (31 downto 0);
-        q  : out STD_LOGIC_VECTOR (31 downto 0)
-  		);
-	end component ip_ram;
 
   --  Specifies which entity is bound with the component.
   		for sc_master_0: sc_master use entity work.sc_master;
@@ -62,8 +20,8 @@ architecture behav of sc_tb is
   		signal writememdata_out : std_logic_vector(31 downto 0);
   		signal writememaddr : std_logic_vector(15 downto 0);
   		signal memaddr : std_logic_vector(15 downto 0);
-  		signal mem_data_out : std_logic_vector(31 downto 0);
-  		signal mem_datak_out : std_logic_vector(3 downto 0);
+  		signal mem_data_out : std_logic_vector(63 downto 0);
+  		signal mem_datak_out : std_logic_vector(7 downto 0);
   		signal mem_data_out_slave : std_logic_vector(31 downto 0);
   		signal mem_datak_out_slave : std_logic_vector(3 downto 0);
   		signal mem_addr_out_slave : std_logic_vector(15 downto 0);
@@ -78,9 +36,9 @@ architecture behav of sc_tb is
 		
 begin
   --  Component instantiation.
-  sc_master_0: sc_master 
+  sc_master_0 : work.sc_master 
   	generic map (
-		NLINKS => 1
+		NLINKS => 2
 	)
 	port map(
 		clk					=> clk,
@@ -94,7 +52,10 @@ begin
 		stateout			=> open
   );
 
-  sc_slave_0: sc_slave
+  sc_slave_0 : work.sc_slave
+    generic map (
+		NLINKS => 2
+	)
 	port map(
 		clk					=> clk,
 		reset_n				=> reset_n,
@@ -108,24 +69,24 @@ begin
 		stateout			=> open
   );
 
-	wram : ip_ram
+	wram : work.ip_ram
   	port map (
-		clock   		=> clk,
-		wren      	  	=> writememwren,
+		clock   	=> clk,
+		wren      	=> writememwren,
 		rdaddress  	=> memaddr(7 downto 0),
 		wraddress 	=> writememaddr(7 downto 0),
-		data 			=> writememdata,
-		q 		=> writememdata_out
+		data 		=> writememdata,
+		q 		    => writememdata_out
   	);
 
-  	rram : ip_ram
+  	rram : work.ip_ram
   	port map (
-		clock   		=> clk,
-		wren      	  	=> mem_wren_slave,
+		clock   	=> clk,
+		wren      	=> mem_wren_slave,
 		rdaddress  	=> (others => '0'),
 		wraddress 	=> mem_addr_out_slave(7 downto 0),
-		data 			=> mem_data_out_slave,
-		q 		=> open
+		data 		=> mem_data_out_slave,
+		q 		    => open
 
   	);
 
