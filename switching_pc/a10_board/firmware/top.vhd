@@ -632,7 +632,7 @@ rx_datak(4)<=rx_datak_B_v(4*1-1 downto 4*0);
 	 
 	 e_midas_event_builder : entity work.midas_event_builder
 	  generic map (
-		 NLINKS => 2--;
+		 NLINKS => 3--;
 	 )
 	  port map(
 		 i_clk_data => tx_clk(0),
@@ -642,7 +642,7 @@ rx_datak(4)<=rx_datak_B_v(4*1-1 downto 4*0);
 		 i_rx_data  => data_counter,
 		 i_rx_datak => datak_counter,
 		 i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-		 i_link_mask => "11",
+		 i_link_mask => "111",
 		 o_event_wren => dma_wren_cnt,
 		 o_endofevent => dma_end_event_cnt,
 		 o_event_data => dma_event_data,
