@@ -96,7 +96,7 @@ end entity top;
 
 architecture rtl of top is
 
-        constant N_links : positive := 1;
+        constant N_links : positive := 2;
 
 		 signal clk : std_logic;
 		 signal input_clk : std_logic;
@@ -157,7 +157,7 @@ architecture rtl of top is
 		-- //pcie fast clock
 		signal pcie_fastclk_out		: std_logic;
 
-		-- //pcie debug signals
+		-- //pcie debug signalsN_links
 		signal pcie_testout				: std_logic_vector(127 downto 0);
 
 		-- Clocksync stuff
@@ -586,8 +586,8 @@ rx_datak(4)<=rx_datak_B_v(4*1-1 downto 4*0);
         i_reset_run_end_n                   => resets_n(RESET_BIT_RUN_END_ACK),
         i_buffers_empty                     => (others => '1'), -- TODO: connect buffers emtpy from dma here
         i_aligned                           => (others => '1'),
-        i_data                              => rx_data(0),
-        i_datak                             => rx_datak(0),
+        i_data                              => rx_data(0) & rx_data(4),
+        i_datak                             => rx_datak(0) & rx_datak(4),
         i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
         i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
         i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),

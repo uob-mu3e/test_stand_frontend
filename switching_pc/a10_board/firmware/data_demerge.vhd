@@ -4,6 +4,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.daq_constants.all;
 
 ENTITY data_demerge is 
     PORT(
@@ -68,13 +69,13 @@ BEGIN
 				  
 				  when receiving_data =>
 						data_ready 					<= '1';
-						if(data_in (31 downto 0) = K284 and datak_in = K285_datak) then 
+						if(data_in (31 downto 0) = K28_4 and datak_in = "0001") then 
 							 demerge_state 		<= idle;
 							 data_ready				<= '0';					-- TODO: do something with the trailer bits (31 downto 8) here (They are used for Mutrig, DAQ Week 2019)
 							 data_out				<= (others => '0');
 							 datak_out				<= (others => '0');
 							 
-						elsif(data_in (31 downto 0)= K285 and datak_in = K285_datak) then
+						elsif(data_in (31 downto 0)= K28_5 and datak_in = "0001") then
 							 data_ready				<= '0';
 							 data_out				<= (others => '0');
 							 datak_out				<= (others => '0');
@@ -85,12 +86,12 @@ BEGIN
 						
 				  when receiving_slowcontrol =>
 						sc_out_ready						<= '1';
-						if(data_in (31 downto 0) = K284 and datak_in = K285_datak) then 
+						if(data_in (31 downto 0) = K28_4 and datak_in = "0001") then 
 							 demerge_state 		<= idle;
 							 sc_out_ready			<= '0';
 							 sc_out					<= (others => '0');
 							 sck_out					<= (others => '0');
-						elsif(data_in (31 downto 0)= K285 and datak_in = K285_datak) then
+						elsif(data_in (31 downto 0)= K28_5 and datak_in = "0001") then
 							 sc_out_ready			<= '0';
 							 sc_out					<= (others => '0');
 							 sck_out					<= (others => '0');
