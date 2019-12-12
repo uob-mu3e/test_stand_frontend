@@ -52,7 +52,7 @@ architecture arch of scifi_path is
     signal s_testpulse : std_logic;
 
     signal rx_pll_lock : std_logic;
-    signal rx_dpa_lock : std_logic_vector(i_data'range);
+    signal rx_dpa_lock, rx_dpa_lock_reg : std_logic_vector(i_data'range);
     signal rx_ready : std_logic_vector(i_data'range);
     signal frame_desync : std_logic_vector(1 downto 0);
     signal buffer_full : std_logic_vector(1 downto 0);
@@ -60,8 +60,8 @@ architecture arch of scifi_path is
     -- counters
     signal s_cntreg_ctrl : std_logic_vector(31 downto 0);
     signal s_cntreg_num_g,       s_cntreg_num       : std_logic_vector(31 downto 0);
-    signal s_cntreg_denom_low_g, s_cntreg_denom_low : std_logic_vector(31 downto 0);
-    signal s_cntreg_denom_high_g,s_cntreg_denom_high: std_logic_vector(31 downto 0);
+    signal s_cntreg_denom_g, s_cntreg_denom_g_156 : std_logic_vector(63 downto 0);
+    signal s_cntreg_denom_b : std_logic_vector(63 downto 0);
 
     -- registers controlled from midas
     signal s_dummyctrl_reg : std_logic_vector(31 downto 0);
@@ -84,6 +84,8 @@ begin
     o_pll_test <= s_testpulse;
 
 
+    s_cntreg_denom_b<=gray2bin(s_cntreg_denom_g_156);
+
     process(i_clk_core, i_reset)
     begin
     if ( i_reset = '1' ) then
@@ -95,9 +97,12 @@ begin
     elsif rising_edge(i_clk_core) then
         o_reg_rdata <= X"CCCCCCCC";
         s_subdet_resetdly_reg_written <= '0';
-	s_cntreg_denom_low<=s_cntreg_denom_low_g;
-	s_cntreg_denom_high<=s_cntreg_denom_high_g;
+	--synchronizers for monitoring flags / counters (false path at transition)
+	s_cntreg_denom_g_156<=s_cntreg_denom_g;
 	s_cntreg_num<=s_cntreg_num_g;
+	rx_dpa_lock_reg <= rx_dpa_lock;
+
+	---REGISTER MAPPING---
         -- counters
         if ( i_reg_re = '1' and i_reg_addr = X"0" ) then
             o_reg_rdata <= s_cntreg_ctrl;
@@ -109,10 +114,10 @@ begin
             o_reg_rdata <= gray2bin(s_cntreg_num);
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"2" ) then
-            o_reg_rdata <= gray2bin(s_cntreg_denom_low);
+            o_reg_rdata <= s_cntreg_denom_b(31 downto 0);
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"3" ) then
-            o_reg_rdata <= gray2bin(s_cntreg_denom_high);
+            o_reg_rdata <= s_cntreg_denom_b(63 downto 32);
         end if;
 
         -- monitors
@@ -124,7 +129,7 @@ begin
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"5" ) then
             o_reg_rdata <= (others => '0');
-            o_reg_rdata(rx_dpa_lock'range) <= rx_dpa_lock;
+            o_reg_rdata(rx_dpa_lock'range) <= rx_dpa_lock_reg;
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"6" ) then
             o_reg_rdata <= (others => '0');
@@ -168,9 +173,9 @@ begin
     s_lvds_rx_rst <= i_reset or s_subdet_reset_reg(2)  or i_run_state(RUN_STATE_BITPOS_RESET);--TODO: remove register, replace by generic reset from resetsys
 
 rst_sync_dprst: entity work.reset_sync
-    port map( i_reset_n   => s_datapath_rst, o_reset_n   => s_datapath_rst_n_156, i_clk       => i_clk_core);
+    port map( i_reset_n   => not s_datapath_rst, o_reset_n   => s_datapath_rst_n_156, i_clk       => i_clk_core);
 rst_sync_lvdsrst: entity work.reset_sync
-    port map( i_reset_n   => s_lvds_rx_rst, o_reset_n   => s_lvds_rx_rst_n_125, i_clk       => i_clk_g125);
+    port map( i_reset_n   => not s_lvds_rx_rst, o_reset_n   => s_lvds_rx_rst_n_125, i_clk       => i_clk_g125);
 
 
     u_resetshift: entity work.clockalign_block
@@ -244,8 +249,8 @@ rst_sync_lvdsrst: entity work.reset_sync
         i_SC_reset_counters => s_cntreg_ctrl(15),
         i_SC_counterselect => s_cntreg_ctrl(5 downto 0),
         o_counter_numerator => s_cntreg_num_g,
-        o_counter_denominator_low => s_cntreg_denom_low_g,
-        o_counter_denominator_high =>s_cntreg_denom_high_g
+        o_counter_denominator_low => s_cntreg_denom_g(31 downto 0),
+        o_counter_denominator_high =>s_cntreg_denom_g(63 downto 32)
     );
 
     o_MON_rxrdy <= rx_ready;

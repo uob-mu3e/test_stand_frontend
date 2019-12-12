@@ -403,8 +403,11 @@ alt_u16 scifi_module_t::store_counters(volatile alt_u32* data){
 		for(char selected=0;selected<4; selected++){
 			sc->ram->regs.scifi.counters.ctrl = selected&0x3 + (i<<2);
 			*data=sc->ram->regs.scifi.counters.nom; data++;
-			*data=sc->ram->regs.scifi.counters.denom>>32; data++;
-			*data=sc->ram->regs.scifi.counters.denom&0xffffffff; data++;
+			printf("%u: %8x\n",sc->ram->regs.scifi.counters.ctrl,sc->ram->regs.scifi.counters.nom);
+			*data=(sc->ram->regs.scifi.counters.denom>>32)&0xffffffff; data++;
+			*data=(sc->ram->regs.scifi.counters.denom    )&0xffffffff; data++;
+			printf("%u: %8x\n",sc->ram->regs.scifi.counters.ctrl,sc->ram->regs.scifi.counters.denom&0xffffffff);
+			printf("%u: %8x\n",sc->ram->regs.scifi.counters.ctrl,sc->ram->regs.scifi.counters.denom>>32);
 		}
 	}
 	return 4*n_MODULES; //return number of asic channels written so we can parse correctly later
@@ -439,21 +442,18 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
         break;
     case 0xffff:
         break;
+    case 0x0110:
+        //configure ASIC
+        status=configure_asic(data[0],(alt_u8*) &(data[1]));
+        if(sc->ram->regs.scifi.ctrl.dummy&1){
+           //when configured as dummy do the spi transaction,
+           //but always return success to switching board
+           if(status!=FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
+           status=FEB_REPLY_SUCCESS;
+        }
+	return status;
     default:
-        if((cmd&0xfff0) ==0x0110){ //configure ASIC
-	   uint8_t chip=data[0];
-           status=configure_asic(chip,(alt_u8*) &(data[1]));
-           if(sc->ram->regs.scifi.ctrl.dummy&1){
-              //when configured as dummy do the spi transaction,
-              //but always return success to switching board
-	      if(status!=FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
-              status=FEB_REPLY_SUCCESS;
-           }
-	   return status;
-        }else{//unknown command
-           return FEB_REPLY_ERROR;
-	}
+        return FEB_REPLY_ERROR;
     }
-
     return 0;
 }
