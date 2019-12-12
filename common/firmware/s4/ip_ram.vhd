@@ -45,6 +45,7 @@ ENTITY ip_ram IS
         ADDR_WIDTH_B : positive := 8;
         DATA_WIDTH_A : positive := 8;
         DATA_WIDTH_B : positive := 8;
+        OUTDATA_REG_A : string := "UNREGISTERED";
         DEVICE : string := "Stratix IV"--;
     );
 	PORT
@@ -87,7 +88,7 @@ BEGIN
 		operation_mode => "BIDIR_DUAL_PORT",
 		outdata_aclr_a => "NONE",
 		outdata_aclr_b => "NONE",
-		outdata_reg_a => "UNREGISTERED",
+		outdata_reg_a => OUTDATA_REG_A,
 		outdata_reg_b => "UNREGISTERED",
 		power_up_uninitialized => "FALSE",
 		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",

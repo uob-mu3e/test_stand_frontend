@@ -13,21 +13,25 @@ architecture behav of sc_tb is
 
   --  Specifies which entity is bound with the component.
   		
+        constant NLINKS : integer := 2;
+  		
   		signal clk : std_logic;
   		signal reset_n : std_logic := '1';
   		signal writememdata : std_logic_vector(31 downto 0);
   		signal writememdata_out : std_logic_vector(31 downto 0);
+  		signal writememdata_out_reg : std_logic_vector(31 downto 0);
   		signal writememaddr : std_logic_vector(15 downto 0);
   		signal memaddr : std_logic_vector(15 downto 0);
-  		signal mem_data_out : std_logic_vector(63 downto 0);
-  		signal mem_datak_out : std_logic_vector(7 downto 0);
+  		signal memaddr_reg : std_logic_vector(15 downto 0);
+  		signal mem_data_out : std_logic_vector(NLINKS * 32 - 1 downto 0);
+  		signal mem_datak_out : std_logic_vector(NLINKS * 4 - 1 downto 0);
   		signal mem_data_out_slave : std_logic_vector(31 downto 0);
   		signal mem_datak_out_slave : std_logic_vector(3 downto 0);
   		signal mem_addr_out_slave : std_logic_vector(15 downto 0);
   		signal mem_wren_slave : std_logic;
 
   		constant ckTime: 		time	:= 10 ns;
-
+  		
   		constant CODE_START : std_logic_vector(11 downto 0) := x"BAD";
   		constant CODE_STOP : std_logic_vector(31 downto 0) 	:= x"0000009C";
 
@@ -37,7 +41,7 @@ begin
   --  Component instantiation.
     sc_master_0 : entity work.sc_master 
   	generic map (
-		NLINKS => 2
+		NLINKS => NLINKS
 	)
 	port map(
 		clk					=> clk,
@@ -53,7 +57,7 @@ begin
 
   sc_slave_0 : entity work.sc_slave
     generic map (
-		NLINKS => 2
+		NLINKS => NLINKS
 	)
 	port map(
 		clk					=> clk,
@@ -69,20 +73,44 @@ begin
   );
 
 	wram : entity work.ip_ram
+    generic map(
+        ADDR_WIDTH_A => 8,
+        ADDR_WIDTH_B => 8,
+        DATA_WIDTH_A => 32,
+        DATA_WIDTH_B => 32,
+        OUTDATA_REG_A => "UNREGISTERED"--,
+    )
   	port map (
         address_a => writememaddr(7 downto 0),
-        address_b => (others => '0'),
+        address_b => memaddr(7 downto 0),
         clock_a => clk,
-        clock_b => '0',
+        clock_b => clk,
         data_a => writememdata,
         data_b => (others => '0'),
         wren_a => writememwren,
         wren_b => '0',
-        q_a => writememdata_out,
-        q_b => open--,
+        q_a => open,
+        q_b => writememdata_out--,
   	);
+  	
+--   	reg : process(reset_n, clk)
+--   	begin
+--   	if(reset_n = '0')then
+--         memaddr_reg <= (others => '0');
+--     elsif(rising_edge(clk))then
+--         memaddr_reg <= memaddr;
+--     end if;
+--     end process;
+    
 
      rram : entity work.ip_ram
+     generic map(
+           ADDR_WIDTH_A => 8,
+           ADDR_WIDTH_B => 8,
+           DATA_WIDTH_A => 32,
+           DATA_WIDTH_B => 32,
+           OUTDATA_REG_A => "UNREGISTERED"--,
+     )
      port map (
            address_a => mem_addr_out_slave(7 downto 0),
            address_b => (others => '0'),
@@ -135,7 +163,7 @@ begin
 				writememdata(31 downto 20) <= CODE_START;
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0) = x"0")then
-				writememdata <= x"1f0000bc";
+				writememdata <= x"1fffffbc";
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0)  = x"1")then
 				writememdata <= x"0000000a";
@@ -143,13 +171,32 @@ begin
 			elsif(writememaddr(3 downto 0)  = x"2")then
 				writememdata <= x"00000001";
 				writememwren <= '1';	
-         elsif(writememaddr(3 downto 0)  = x"3")then
+            elsif(writememaddr(3 downto 0)  = x"3")then
 				writememdata <= x"0000000b";
 				writememwren <= '1';	
 			elsif(writememaddr(3 downto 0)  = x"4")then
 				writememdata <= CODE_STOP;
 				writememwren <= '1';
-			end if;
+			elsif(writememaddr(3 downto 0)  = x"5")then
+                writememdata(31 downto 20) <= CODE_START;
+				writememwren <= '1';
+            elsif(writememaddr(3 downto 0) = x"6")then
+				writememdata <= x"1ffff1bc";
+				writememwren <= '1';
+			elsif(writememaddr(3 downto 0)  = x"7")then
+				writememdata <= x"0000000a";
+				writememwren <= '1';
+			elsif(writememaddr(3 downto 0)  = x"8")then
+				writememdata <= x"00000001";
+				writememwren <= '1';	
+            elsif(writememaddr(3 downto 0)  = x"9")then
+				writememdata <= x"0000000b";
+				writememwren <= '1';	
+			elsif(writememaddr(3 downto 0)  = x"a")then
+				writememdata <= CODE_STOP;
+				writememwren <= '1';
+			end if;            
+            
 		end if;
 
 	end if;

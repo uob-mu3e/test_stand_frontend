@@ -33,9 +33,18 @@ entity sc_master is
 end entity sc_master;
 
 architecture rtl of sc_master is
+
+    --integer to one hot encoding
+    function to_onehot(a:integer ; n:integer) return std_logic_vector is
+    variable res: std_logic_vector(n-1 downto 0):=(others =>'0');
+    begin
+            res(a):='1';
+            return res;
+    end function;
+
 	
 	signal addr_reg	: std_logic_vector(15 downto 0) := (others => '0');
-	signal wren_reg	: std_logic_vector(NLINKS-1 downto 0);
+	signal wren_reg	: std_logic_vector(15 downto 0);--)(NLINKS-1 downto 0);
 	
 	type state_type is (waiting, start_wait, starting);
 	signal state : state_type;
@@ -61,11 +70,12 @@ begin
 				mem_data_out((I+1)*32-1 downto I*32) <= (others => '0');
 				mem_data_out_k((I+1)*4-1 downto I*4) <= (others => '0');
 			elsif(rising_edge(clk))then
-				mem_data_out((I+1)*32-1 downto I*32) <= x"000000BC";
-				mem_data_out_k((I+1)*4-1 downto I*4) <= "0001";
 				if (wren_reg(I) = '1') then
 					mem_data_out((I+1)*32-1 downto I*32) <= mem_data_in;
 					mem_data_out_k((I+1)*4-1 downto I*4) <= mem_datak;
+				else 
+                    mem_data_out((I+1)*32-1 downto I*32) <= x"000000BC";
+                    mem_data_out_k((I+1)*4-1 downto I*4) <= "0001";
 				end if;
 			end if;
 		end process;
@@ -116,19 +126,17 @@ begin
 						if(mem_data_in(23 downto 8) = x"FFFF") then
 							wren_reg <= (others => '1');
 						else
-							wren_reg	<= (others => '0');
-							wren_reg(conv_integer(mem_data_in(23 downto 8)))	<= '1';
+                            wren_reg <= mem_data_in(23 downto 8); -- todo fix me to more the 16 addr one hot
 						end if;
 					end if;
 				
 				when starting =>
 					stateout(3 downto 0) <= x"3";
 					if(wait_cnt = '0')then
-						if(conv_integer(fpga_id) = 0) then
+						if(fpga_id(15 downto 0) = x"FFFF") then
 							wren_reg <= (others => '1');
 						else
-							wren_reg	<= (others => '0');
-							wren_reg(conv_integer(fpga_id))	<= '1';
+							wren_reg <= fpga_id(15 downto 0);
 						end if;
 						if (mem_data_in = CODE_STOP) then
 							mem_datak <= "0001";
