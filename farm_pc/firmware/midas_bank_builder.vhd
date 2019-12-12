@@ -165,7 +165,7 @@ begin
 		rx_data_in <= i_rx_data & i_rx_datak;
 		if ( (i_rx_data = x"000000BC" and i_rx_datak = "0001") or 
             (i_rx_data = RUN_END and i_rx_datak = "0001") or 
-            (i_rx_data = run_prep_acknowledge and i_rx_datak = "0001") ) then
+            (i_rx_data(7 downto 0) = run_prep_acknowledge(7 downto 0) and i_rx_datak = "0001") ) then
             fifo_wrreq <= '0';
         else
 			fifo_wrreq <= '1';

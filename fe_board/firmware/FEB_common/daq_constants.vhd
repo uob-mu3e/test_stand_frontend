@@ -1,6 +1,6 @@
 -- Basic constants for DAQ communication
 -- K. Briggl, April 2019 : stripped from mupix8_daq repository / mupix_constants.vhd
--- last change: S. Dittmeier, 22.11.2019 (dittmeier@physi.uni-heidelberg.de)
+-- last change: M. Mueller, 12.12.2019
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -76,15 +76,15 @@ constant HUNDRED_MILLION32  : std_logic_vector(31 downto 0) := x"05F5E100";
 
 
 -- 8bit/10bit encoding
-constant k28_0 : std_logic_vector(7 downto 0) := X"1C"; -- used in MuPix
-constant k28_1 : std_logic_vector(7 downto 0) := X"3C"; -- used in data alignment (transceiver)
+constant k28_0 : std_logic_vector(7 downto 0) := X"1C"; -- still used in MuPix ??
+constant k28_1 : std_logic_vector(7 downto 0) := X"3C"; -- still used in data alignment (transceiver) ??
 constant k28_2 : std_logic_vector(7 downto 0) := X"5C";
 constant k28_3 : std_logic_vector(7 downto 0) := X"7C";
-constant k28_4 : std_logic_vector(7 downto 0) := X"9C";
-constant k28_5 : std_logic_vector(7 downto 0) := X"BC"; -- used in MuPix
+constant k28_4 : std_logic_vector(7 downto 0) := X"9C"; -- used as end of packet marker between FEB <--> SW board
+constant k28_5 : std_logic_vector(7 downto 0) := X"BC"; -- still used in MuPix ???
 constant k28_6 : std_logic_vector(7 downto 0) := X"DC";
 constant k28_7 : std_logic_vector(7 downto 0) := X"FC"; -- not used, comma symbol with harder constraints!
-constant k23_7 : std_logic_vector(7 downto 0) := X"F7"; -- used as "empty" data (transceiver)
+constant k23_7 : std_logic_vector(7 downto 0) := X"F7"; -- still used as "empty" data (transceiver) ??
 constant k27_7 : std_logic_vector(7 downto 0) := X"FB";
 constant k29_7 : std_logic_vector(7 downto 0) := X"FD";
 constant k30_7 : std_logic_vector(7 downto 0) := X"FE";
@@ -99,12 +99,12 @@ constant MSCB_CMD_ADDR_BC       : std_logic_vector(7 downto 0) := X"10"; --broad
 constant MSCB_CMD_PING8         : std_logic_vector(7 downto 0) := X"19";
 constant MSCB_CMD_PING16        : std_logic_vector(7 downto 0) := X"1A";
 
-constant run_prep_acknowledge:          std_logic_vector(31 downto 0)	:= x"000001fe";
-constant run_prep_acknowledge_datak:    std_logic_vector(3 downto 0) 	:= "0001";
-constant RUN_END:                       std_logic_vector(31 downto 0)	:= x"000002fe";
-constant RUN_END_DATAK:                 std_logic_vector(3 downto 0)	:= "0001";
-constant MERGER_TIMEOUT:                std_logic_vector(31 downto 0)	:= x"000003fe";
-constant MERGER_TIMEOUT_DATAK:          std_logic_vector(3 downto 0)	:= "0001";
+constant run_prep_acknowledge:          std_logic_vector(31 downto 0)   := x"000000FE";
+constant run_prep_acknowledge_datak:    std_logic_vector(3 downto 0)    := "0001";
+constant RUN_END:                       std_logic_vector(31 downto 0)   := x"000000FD";
+constant RUN_END_DATAK:                 std_logic_vector(3 downto 0)    := "0001";
+constant MERGER_TIMEOUT:                std_logic_vector(31 downto 0)   := x"000000FB";
+constant MERGER_TIMEOUT_DATAK:          std_logic_vector(3 downto 0)    := "0001";
     
 
 end package;

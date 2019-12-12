@@ -22,17 +22,7 @@ ENTITY data_demerge is
 );
 END ENTITY data_demerge;
 
-architecture rtl of data_demerge is
-----------------TODO: put this into a common file---------------------
-	constant K285:									std_logic_vector(31 downto 0) :=x"000000bc";
-	constant K285_datak:							std_logic_vector(3 downto 0):= "0001";
-	constant K284:									std_logic_vector(31 downto 0) :=x"0000009c";
-	constant K284_datak:							std_logic_vector(3 downto 0):= "0001";
-	constant run_prep_acknowledge:			std_logic_vector(31 downto 0):= x"000000fe";
-	constant run_prep_acknowledge_datak:	std_logic_vector(3 downto 0):= "0001";
-	constant RUN_END:								std_logic_vector(31 downto 0):= x"000000fe";
-	constant RUN_END_DATAK:						std_logic_vector(3 downto 0):= "0001";
-	
+architecture rtl of data_demerge is	
 
 ----------------signals---------------------
     type   data_demerge_state is (idle,receiving_data, receiving_slowcontrol);
