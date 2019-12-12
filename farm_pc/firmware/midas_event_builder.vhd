@@ -344,6 +344,8 @@ begin
                     w_ram_data(11 downto 0)  	<= bank_length_fifo(11 + 12 * mux_link downto mux_link * 12);
                     w_ram_data(31 downto 12)  	<= (others => '0');
                     event_tagging_state 		<= bank_data_state;
+                    bank_length_ren(mux_link)   <= '1';
+                    bank_ren(mux_link)  <= '1';
                 end if;
 
 			when bank_data_state =>
