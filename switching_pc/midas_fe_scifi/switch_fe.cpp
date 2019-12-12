@@ -57,6 +57,7 @@
 
 //Slow control for mutrig/scifi
 #include "mutrig_midasodb.h"
+#include "link_constants.h"
 #include "SciFi_FEB.h"
 /*-- Globals -------------------------------------------------------*/
 
@@ -81,9 +82,6 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
 
-const int MAX_N_SWITCHINGBOARDS = 4;
-const int MAX_LINKS_PER_SWITCHINGBOARD = 48;
-const int MAX_N_FRONTENDBOARDS = MAX_LINKS_PER_SWITCHINGBOARD*MAX_N_SWITCHINGBOARDS;
 int switch_id = 0; // TODO to be loaded from outside
 
 /* DMA Buffer and related */

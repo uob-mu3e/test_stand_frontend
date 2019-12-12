@@ -628,7 +628,7 @@ const uint32_t MudaqDevice::FEBsc_RPC_DATAOFFSET=0;
 //send an RPC command with payload to the nios, wait for finish. Returns status of Nios2 callback returned from FEB
 uint16_t MudaqDevice::FEBsc_NiosRPC(uint16_t FPGA_ID, uint16_t command, std::vector<std::pair<uint32_t* /*payload*/,uint16_t /*chunklen*/> > payload_chunks, int polltime_ms){
          uint32_t len=0;
-	 printf("MudaqDevice::FEBsc_NiosRPC(): command %x\n",command, len);
+	 printf("MudaqDevice::FEBsc_NiosRPC(): command %x\n",command);
 	 //write payload chunks
 	 for(auto chunk: payload_chunks){
               FEBsc_write(FPGA_ID, chunk.first, chunk.second, (uint32_t) len+FEBsc_RPC_DATAOFFSET,true);

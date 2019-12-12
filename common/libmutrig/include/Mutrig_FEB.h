@@ -14,6 +14,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include "midas.h"
 #include "mudaq_device_scifi.h"
 #include "mutrig_config.h"
+#include "link_constants.h"
 
 class MutrigFEB {
    protected:
@@ -39,10 +40,11 @@ class MutrigFEB {
       //Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
       static void on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *);
 
-      //MIDAS callback for changed mapping of FEB IDs. Will clear m_FPGA_IDs and rebuild this vector.
+      //MIDAS callback for changed mapping of FEB IDs. Will clear m_FPGAs and rebuild this vector.
       //Using user data argument as "this"
       //TODO: move to generic FEB class after merging with pixel SC
       static void on_mapping_changed(HNDLE hDB, HNDLE hKey, INT, void *);
+      void RebuildFEBsMap();
 
       //Write all registers based on ODB values
       int WriteAll();
@@ -54,12 +56,24 @@ class MutrigFEB {
    protected:
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
       static const uint16_t FPGA_broadcast_ID;
-      virtual uint16_t FPGAid_from_ID(int asic)=0;
-      virtual uint16_t ASICid_from_ID(int asic)=0;
+      virtual uint16_t FPGAid_from_ID(int asic)=0; //global asic number to global FEB number
+      virtual uint16_t ASICid_from_ID(int asic)=0; //global asic number to FEB-local asic number
+      //Return typeID for building FEB ID map
+      virtual FEBTYPE  GetTypeID()=0;
+
       //list of all FPGAs mapped to this subdetector. Used for pushing common configurations to all FEBs
       //TODO: move to generic FEB class after merging with pixel SC
       //TODO: extend to map<ID, FPGA_ID_TYPE> with more information (name, etc. for reporting).
-      std::vector<uint16_t> m_FPGA_IDs;
+      struct mapped_FEB_t{
+	 uint16_t FPGA_ID;	//global numbering. sb_id=FPGA_ID/MAX_LINKS_PER_SWITCHINGBOARD, sb_port=FPGA_ID%MAX_LINKS_PER_SWITCHINGBOARD
+	 INT mask; 
+	 std::string fullname_link;
+	 //getters for FPGAPORT_ID and SB_ID (physical link address, independent on number of links per FEB)
+	 uint8_t SB_Number(){return FPGA_ID/MAX_LINKS_PER_SWITCHINGBOARD;}
+	 uint8_t SB_Port()  {return FPGA_ID%MAX_LINKS_PER_SWITCHINGBOARD;}
+      };
+      //map m_FPGAs[global_FEB_number] to a struct giving the physical link addres to a struct giving the physical link address
+      std::vector<mapped_FEB_t> m_FPGAs;
 
       //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/ 
       int ReadBackCounters(uint16_t FPGA_ID);

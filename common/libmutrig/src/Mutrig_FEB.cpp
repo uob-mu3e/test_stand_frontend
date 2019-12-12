@@ -32,23 +32,89 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 
 const uint16_t MutrigFEB::FPGA_broadcast_ID=0xffff;
 
+//handler function for update of switching board fiber mapping / status
 void MutrigFEB::on_mapping_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 {
    MutrigFEB* _this=static_cast<MutrigFEB*>(userdata);
    KEY key;
    db_get_key(hDB, hKey, &key);
    printf("MutrigFEB::on_mapping_changed(%s)\n",key.name);
-   //clear map, we will rebuild it now
-   _this->m_FPGA_IDs.clear();
-/*
-   if (std::string(key.name) == "type") {
-      INT type;
-      int size = sizeof(type);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-   }
-*/
+   _this->RebuildFEBsMap();
 }
 
+void MutrigFEB::RebuildFEBsMap(){
+   HNDLE hKey;
+   int size;
+
+   //clear map, we will rebuild it now
+   m_FPGAs.clear();
+/*
+const char *link_settings_str[] = {
+"SwitchingBoardMask = INT[4] :",
+"SwitchingBoardNames = STRING[4] :",
+"FrontEndBoardMask = INT[192] :",
+"FrontEndBoardType = INT[192] :",
+"FrontEndBoardNames = STRING[192] :",
+*/
+
+   //TODO: create struct and use db_get_record
+
+   //get FEB type -> find ours
+   INT febtype[MAX_N_FRONTENDBOARDS];
+   size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
+   db_find_key(m_hDB, 0, "/Equipment/Links/Settings/FrontEndBoardType", &hKey);
+   assert(hKey);
+   db_get_data(m_hDB, hKey, &febtype, &size, TID_INT);
+   //get FEB mask -> set enable for our FEBs
+   INT febmask[MAX_N_FRONTENDBOARDS];
+   size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
+   db_find_key(m_hDB, 0, "/Equipment/Links/Settings/FrontEndBoardMask", &hKey);
+   assert(hKey);
+   db_get_data(m_hDB, hKey, &febmask, &size, TID_INT);
+   //fields to assemble fiber-driven name
+   char sbnames[MAX_N_SWITCHINGBOARDS][32];
+   size = sizeof(char)*MAX_N_SWITCHINGBOARDS*32;
+   db_find_key(m_hDB, 0, "/Equipment/Links/Settings/SwitchingBoardNames", &hKey);
+   assert(hKey);
+   db_get_data(m_hDB, hKey, &sbnames, &size, TID_STRING);
+   char febnames[MAX_N_FRONTENDBOARDS][32];
+   size = sizeof(char)*MAX_N_FRONTENDBOARDS*32;
+   db_find_key(m_hDB, 0, "/Equipment/Links/Settings/FrontEndBoardNames", &hKey);
+   assert(hKey);
+   db_get_data(m_hDB, hKey, &febnames, &size, TID_STRING);
+
+
+   //fill our list
+   for(uint16_t ID=0;ID<MAX_N_FRONTENDBOARDS;ID++){
+      if(febtype[ID]==this->GetTypeID()){
+         std::string name_link;
+	 name_link=sbnames[ID/MAX_LINKS_PER_SWITCHINGBOARD];
+         name_link+=":";
+	 name_link+=febnames[ID];
+         m_FPGAs.push_back({ID,febmask[ID],name_link.c_str()});
+      }
+   }
+
+   //get SB mask -> update enable, overriding all FEB enables on that SB
+   INT sbmask[MAX_N_SWITCHINGBOARDS];
+   size = sizeof(INT)*MAX_N_SWITCHINGBOARDS;
+   db_find_key(m_hDB, 0, "/Equipment/Links/Settings/SwitchingBoardMask", &hKey);
+   assert(hKey);
+   db_get_data(m_hDB, hKey, &sbmask, &size, TID_INT);
+   for(size_t n=0;n<m_FPGAs.size();n++){
+      assert(m_FPGAs[n].FPGA_ID/MAX_LINKS_PER_SWITCHINGBOARD<MAX_N_SWITCHINGBOARDS);
+      if(sbmask[m_FPGAs[n].FPGA_ID/MAX_LINKS_PER_SWITCHINGBOARD]==0){ //TODO: disabled == 0?
+         m_FPGAs[n].mask=0;
+      }
+   }
+
+
+   //report mapping
+   printf("MutrigFEB::RebuildFEBsMap(): Found %lu FEBs of type %s:",m_FPGAs.size(),FEBTYPE_STR[GetTypeID()].c_str());
+   for(size_t i=0;i<m_FPGAs.size();i++){
+      printf("  #%lu is mapped to FPGA_ID %u Link \"%s\"%s\n",i,m_FPGAs[i].FPGA_ID,m_FPGAs[i].fullname_link.c_str(),m_FPGAs[i].mask==0?"":"\t[disabled]");
+   }
+}
 
 
 int MutrigFEB::WriteAll(){
@@ -62,7 +128,10 @@ int MutrigFEB::WriteAll(){
         sprintf(set_str, "%s/Settings/Daq/dummy_config", m_odb_prefix);
         db_find_key(m_hDB, 0, set_str, &hTmp);
         db_get_data(m_hDB,hTmp,&bval,&bsize,TID_BOOL);
-        this->setDummyConfig(SciFiFEB::FPGA_broadcast_ID,bval);
+//        for(FEB: m_FPGAs){
+//		if(FEB.
+//	}
+		this->setDummyConfig(SciFiFEB::FPGA_broadcast_ID,bval);
 
         sprintf(set_str, "%s/Settings/Daq/dummy_data", m_odb_prefix);
         db_find_key(m_hDB, 0, set_str, &hTmp);
@@ -197,7 +266,7 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
        if((status=db_set_value_index(m_hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=1;
        sprintf(path,"%s/Variables/Counters/nWordsPRBS",m_odb_prefix);
-       if((status=db_set_value_index(hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+       if((status=db_set_value_index(m_hDB, 0, path, &val[index], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
        index+=2;
    }
 
