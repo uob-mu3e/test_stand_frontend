@@ -118,7 +118,8 @@ FOR i in 0 to NLINKS - 1 GENERATE
 	e_receiver_fifo_32 : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH => 8,
-        DATA_WIDTH => 36--,
+        DATA_WIDTH => 36,
+        DEVICE => "Arria X"--,
     )
 	-- simulation only
 		port map(
@@ -142,7 +143,8 @@ FOR i in 0 to NLINKS - 1 GENERATE
 	e_bank_length : entity work.ip_scfifo
 	    generic map(
         ADDR_WIDTH => 8,
-        DATA_WIDTH => 12--,
+        DATA_WIDTH => 12,
+        DEVICE => "Arria X"--,
     )
 	-- simulation only
    		port map (
@@ -186,7 +188,8 @@ generic map (
 	ADDR_WIDTH_A => 12,
     ADDR_WIDTH_B => 9,
     DATA_WIDTH_A => 32,
-    DATA_WIDTH_B => 256--,
+    DATA_WIDTH_B => 256,
+    DEVICE => "Arria X"--,
 )
    port map (
 		--clock          => i_clk_dma,
@@ -212,7 +215,8 @@ generic map (
 e_tagging_fifo_event : entity work.ip_scfifo
     generic map(
         ADDR_WIDTH => 12,
-        DATA_WIDTH => 12--,
+        DATA_WIDTH => 12,
+        DEVICE => "Arria X"--,
 	)
 -- simulation only
 	port map (
