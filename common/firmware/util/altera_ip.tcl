@@ -230,3 +230,59 @@ proc ::add_altera_iopll { refclk outclk args } {
 
     set_instance_property ${name} AUTO_EXPORT {true}
 }
+
+# ::add_modular_adc --
+#
+#   Add Modular ADC Core instance and auto export.
+#
+# Arguments:
+#   channels    - list of active channels
+#   -seq_order  - channel acquisition sequence
+#   -name $     - instance name
+#
+proc ::add_modular_adc { channels args } {
+    set name modular_adc_0
+    set seq_order ""
+    for { set i 0 } { $i < [ llength $args ] } { incr i } {
+        switch -- [ lindex $args $i ] {
+            -name { incr i
+                set name [ lindex $args $i ]
+            }
+            -seq_order { incr i
+                set seq_order [ lindex $args $i ]
+            }
+            default {
+                send_message "Error" "\[add_modular_adc\] invalid argument '[ lindex $args $i ]'"
+            }
+        }
+    }
+
+    add_instance ${name} altera_modular_adc
+
+    set_instance_parameter_value ${name} {CORE_VAR} {3}
+
+    foreach channel $channels {
+        if { [ string equal $channel tsd ] } {
+            # temperature sensing diode
+            set_instance_parameter_value ${name} {use_tsd} {1}
+        } \
+        else {
+            set_instance_parameter_value ${name} use_ch$channel {1}
+        }
+    }
+
+    set n 0
+    foreach slot $seq_order {
+        incr n
+    }
+    if { $n > 0 } {
+        set_instance_parameter_value ${name} {seq_order_length} $n
+        set i 0
+        foreach slot $seq_order {
+            incr i
+            set_instance_parameter_value ${name} seq_order_slot_$i $slot
+        }
+    }
+
+    set_instance_property ${name} AUTO_EXPORT {true}
+}
