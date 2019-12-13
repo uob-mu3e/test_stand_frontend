@@ -10,7 +10,7 @@ use ieee.std_logic_misc.all;
 
 ENTITY run_control is
     generic (
-        N_LINKS_g : positive := 4--;
+        N_LINKS_g : integer := 4--;
     );
     PORT(
         i_clk:                              in  std_logic; -- receive clock (156.25 MHz)
