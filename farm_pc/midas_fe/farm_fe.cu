@@ -33,7 +33,7 @@ const char *frontend_file_name = __FILE__;
 BOOL frontend_call_loop = FALSE;
 
 /* a frontend status page is displayed with this frequency in ms */
-INT display_period = 3000;
+INT display_period = 0;
 
 /* maximum event size produced by this frontend */
 INT max_event_size = 1000000;
@@ -52,6 +52,7 @@ uint32_t laddr;
 uint32_t newdata;
 uint32_t readindex;
 uint32_t lastreadindex;
+uint32_t lastlastWritten;
 bool moreevents;
 bool firstevent;
 ofstream myfile;
@@ -122,7 +123,8 @@ INT frontend_init()
       cm_msg(MINFO,"frontend_init","Key %s not found", set_str);
       return status;
    }
-
+   cm_set_transition_sequence(TR_START,300);
+   cm_set_transition_sequence(TR_STOP,700);
    // add custom page to ODB
    db_create_key(hDB, 0, "Custom/Farm&", TID_STRING);
    const char * name = "farm.html";
@@ -147,6 +149,7 @@ INT frontend_init()
    for (int i = 0; i <  dma_buf_nwords ; i++) {
       (dma_buf)[i] = 0;
    }
+   lastlastWritten = 0;
    
    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
    if ( !mup->open() ) {
@@ -263,7 +266,7 @@ INT begin_of_run(INT run_number, char *error)
 
    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
    // Enable register on FPGA for continous readout and enable dma
-   uint32_t lastlastWritten = mu.last_written_addr();
+   lastlastWritten = mu.last_written_addr();
    mu.enable_continous_readout(0);
    usleep(10);
    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
@@ -471,11 +474,11 @@ INT read_stream_thread(void *param)
    // we are at mu.last_written_addr() ...  ask for a new bunch of x 256-bit words
    // get mudaq and set readindex to last written addr
    mudaq::DmaMudaqDevice & mu = *mup;
-   readindex = mu.last_written_addr();
+   //readindex = mu.last_written_addr()+1;
 /* ---KB
    EVENT_HEADER *pEventHeader;
 */
-   void* pdata;
+   uint32_t* pdata;
 
    uint32_t lastWritten = 0;
    int status;
@@ -492,7 +495,7 @@ INT read_stream_thread(void *param)
    
    // obtain ring buffer for inter-thread data exchange
    int rbh = get_event_rbh(0);
-
+   bool starting=false;
    while (is_readout_thread_enabled()) {
       lastWritten = mu.last_written_addr();
 
@@ -505,11 +508,8 @@ INT read_stream_thread(void *param)
       // obtain buffer space
       status = rb_get_wp(rbh, (void **)&pdata, 10);
 
-      if (!is_readout_thread_enabled()){
-         break;
-      }
 
-       // just sleep and try again if buffer has no space
+      // just sleep and try again if buffer has no space
       if (status == DB_TIMEOUT) {
           cout << "status == DB_TIMEOUT" << endl;
          //TODO: throw data here?
@@ -524,32 +524,51 @@ INT read_stream_thread(void *param)
 
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
-          //cout << "STATE_RUNNING" << endl;
+          cout << "!STATE_RUNNING" << endl;
+	  starting=true;
          ss_sleep(100);
 	 //TODO: signalling from main thread?
          continue;
       }
 
-      if((readindex) <= lastWritten){
+      if(starting){
+	//wait for first DMA packet, last written is still from old run
+	 if(lastlastWritten==lastWritten){
+		continue;
+	 }
+	 starting=false;
+	 readindex++; //TODO: remove and fix in fw
+      }
+
+      if(readindex == lastWritten+1){
+	continue;
+      }
+      for(int i=0;i<6;i++){printf("%8.8x ",dma_buf[readindex+i]);};
+      EVENT_HEADER* eh=(EVENT_HEADER*)(&dma_buf[readindex]);
+      printf("lastW=%8.8x read=%8.8x EID%4.4x TM%4.4x SERNO%8.8x TS%8.8x EDsiz%8.8x\n",lastWritten,readindex,eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
+      if(readindex < lastWritten+1){
 	 //WP before RP. Complete copy
-	 size_t wlen=(lastWritten-(readindex));
-	 memcpy(pdata,&dma_buf[readindex],wlen*sizeof(dma_buf[0]));
+	 size_t wlen=(lastWritten-(readindex))+1;
+     //memcpy(pdata,&dma_buf[readindex],wlen*sizeof(dma_buf[0]));
+     copy_n(&dma_buf[readindex],wlen,pdata);
 	 readindex+=wlen;
 	 readindex=readindex%dma_buf_nwords;
       }else{
 	 //RP before WP. May wrap
-	 size_t wlen=(dma_buf_nwords-lastWritten+readindex);
+	 size_t wlen=(dma_buf_nwords-lastWritten+readindex)+1;
 	 //copy with wrapping
 	 //#1
-	 memcpy(pdata,&dma_buf[readindex],(dma_buf_nwords-readindex)*sizeof(dma_buf[0]));
+     //memcpy(pdata,&dma_buf[readindex],(dma_buf_nwords-readindex)*sizeof(dma_buf[0]));
+     copy_n(&dma_buf[readindex],dma_buf_nwords-readindex,pdata);
 	 readindex=0;
 	 pdata+=dma_buf_nwords-readindex;
 	 wlen-=dma_buf_nwords-readindex;
 
 	 //#2
-	 memcpy(pdata,&dma_buf[readindex],wlen*sizeof(dma_buf[0]));
+     //memcpy(pdata,&dma_buf[readindex],wlen*sizeof(dma_buf[0]));
+     copy_n(&dma_buf[readindex],wlen,pdata);
 	 readindex+=wlen;
-	 readindex=readindex;
+	 readindex=readindex%dma_buf_nwords;
       }
    }
    // tell framework that we finished

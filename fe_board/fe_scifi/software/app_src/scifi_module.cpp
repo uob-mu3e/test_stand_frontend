@@ -399,7 +399,6 @@ void scifi_module_t::menu_counters(){
 }
 //write counter values of all channels to memory address *data and following. Return number of asic channels written.
 alt_u16 scifi_module_t::store_counters(volatile alt_u32* data){
-        printf("store: %p\n",data);
 	for(uint8_t i=0;i<4*n_MODULES;i++){
 		for(uint8_t selected=0;selected<4; selected++){
 			sc->ram->regs.scifi.counters.ctrl = (selected&0x3) + (i<<2);
