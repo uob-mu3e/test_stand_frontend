@@ -11,7 +11,7 @@ const int MAX_LINKS_PER_SWITCHINGBOARD = 48;
 const int MAX_N_FRONTENDBOARDS = MAX_N_SWITCHINGBOARDS*MAX_LINKS_PER_SWITCHINGBOARD;
 
 /* Identification of FEB by subsystem */
-enum FEBTYPE {Undefined, Pixel, Fibre, Tile, FibresSecondary};
+enum FEBTYPE {Undefined, Pixel, Fibre, Tile, FibreSecondary};
 const std::string FEBTYPE_STR[5]={"Undefined","Pixel","Fibre","Tile", "FibreSecondary"};
 
 /* Status of links */
