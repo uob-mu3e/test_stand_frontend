@@ -170,6 +170,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
 	);
 END GENERATE buffer_banks;
 
+-- check if buffer is empty
 buffer_not_empty <= '1' when ( bank_empty = (bank_empty'range => '0') ) else '0';
 
 -- write buffer data to ram
