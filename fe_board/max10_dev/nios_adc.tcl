@@ -15,9 +15,4 @@ set_interface_property adc_pll_locked EXPORT_OF adc.adc_pll_locked
 nios_base.connect adc clock reset_sink sequencer_csr 0x700F0380
 nios_base.connect adc ""    ""         sample_store_csr 0x700F0400
 
-foreach { name irq } {
-    adc.sample_store_irq 1
-} {
-    add_connection cpu.irq $name
-    set_connection_parameter_value cpu.irq/$name irqNumber $irq
-}
+nios_base.connect_irq adc.sample_store_irq 3

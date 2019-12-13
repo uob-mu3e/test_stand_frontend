@@ -791,7 +791,7 @@ struct mscb_t {
             read_mscb_command();
         }
 
-        if(int err = alt_ic_isr_register(0, 17, callback, this, nullptr)) {
+        if(int err = alt_ic_isr_register(0, 13, callback, this, nullptr)) {
             printf("ERROR mscb init\n", err);
         }
     }
