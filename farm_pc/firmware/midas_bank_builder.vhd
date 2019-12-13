@@ -83,12 +83,6 @@ generic map (
     DEVICE => "Arria 10"--,
 )
    port map (
-		--clock          => i_clk_dma,
-		--data           => w_ram_data,
-		--rdaddress      => r_ram_add,
-		--wraddress      => w_ram_add,
-		--wren           => w_ram_en,
-		--q              => r_ram_data--,
 		address_a => w_ram_add,
 		address_b => r_ram_add,
 		clock_a => i_clk_dma,

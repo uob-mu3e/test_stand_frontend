@@ -170,20 +170,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
 	);
 END GENERATE buffer_banks;
 
--- check if buffer is empty
-process(i_clk_dma, i_reset_dma_n)
-variable not_empty : std_logic;
-begin
-	if( i_reset_dma_n = '0' ) then
-		buffer_not_empty <= '0';
-		not_empty := '1';
-	elsif( rising_edge(i_clk_dma) ) then
-		buffer_not_empty <= not not_empty;
-		l_empty : FOR i in 0 to NLINKS - 1 LOOP
-			not_empty := not_empty and bank_empty(i);
-		END LOOP l_empty;
-	end if;
-end process;
+buffer_not_empty <= '1' when ( bank_empty = (bank_empty'range => '0') ) else '0';
 
 -- write buffer data to ram
 -- e_ram_32_256 : entity work.ip_ram_32_256
@@ -197,12 +184,6 @@ generic map (
     DEVICE => "Arria 10"--,
 )
    port map (
-		--clock          => i_clk_dma,
-		--data           => w_ram_data,
-		--rdaddress      => r_ram_add,
-		--wraddress      => w_ram_add,
-		--wren           => w_ram_en,
-		--q              => r_ram_data--,
 		address_a => w_ram_add,
 		address_b => r_ram_add,
 		clock_a => i_clk_dma,
