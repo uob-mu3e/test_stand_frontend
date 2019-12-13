@@ -421,7 +421,7 @@ begin
 				o_state_out					<= x"A";
 				if (tag_fifo_empty = '0') then
 					r_fifo_en    		  	<= '1';
-					event_last_ram_add  	<= std_logic_vector(to_unsigned((conv_integer(r_fifo_data) / 8), event_last_ram_add'length));
+					event_last_ram_add  	<= r_fifo_data(11 downto 3);
 					r_ram_add			  	<= r_ram_add + '1';
 					event_counter_state		<= get_data;
 				end if;
