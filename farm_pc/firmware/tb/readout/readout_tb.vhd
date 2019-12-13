@@ -88,16 +88,6 @@ begin
 	
 	   wait;
 end process inita;
-
-inita0 : process
-begin
-     reset_n   <= '0';
-     wait for 7 ns;
-     reset_n   <= '1';
-     wait for 20 ns;
-  
-     wait;
-end process inita0;
  
 e_data_gen_mupix : entity work.data_generator_a10
 	port map (
