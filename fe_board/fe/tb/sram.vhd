@@ -35,5 +35,4 @@ begin
     end if;
   end process RamProc;
 
-
-end architecture RTL;
+end architecture;

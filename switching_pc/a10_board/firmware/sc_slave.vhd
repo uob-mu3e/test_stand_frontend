@@ -12,10 +12,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
 entity sc_slave is
-	generic(
+generic (
 		NLINKS : integer :=4
-	);
-	port(
+);
+port (
 		clk:                in std_logic;
 		reset_n:            in std_logic;
 		enable:             in std_logic;
@@ -26,8 +26,8 @@ entity sc_slave is
 		mem_addr_finished_out:       out std_logic_vector(15 downto 0);
 		mem_wren:           out std_logic;
 		stateout:           out std_logic_vector(3 downto 0)
-	);
-end entity sc_slave;
+);
+end entity;
 
 architecture RTL of sc_slave is
 
@@ -107,4 +107,4 @@ begin
 	end if;
 	end process;
 
-end RTL;
+end architecture;

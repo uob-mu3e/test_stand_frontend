@@ -34,44 +34,43 @@ use ieee.std_logic_unsigned.all;
 --use work.mudaq_components.all;
 
 entity sw_algin_data is 
-	generic(
-		NLINKS : integer := 4
-	);
-	port (
+generic (
+	NLINKS : integer := 4
+);
+port (
 		clks_read 		: in  std_logic_vector(NLINKS - 1 downto 0); -- 312,50 MHZ
 		clks_write     : in  std_logic_vector(NLINKS - 1 downto 0); -- 156,25 MHZ
-		
+
 		clk_node_write : in  std_logic; -- 312,50 MHZ
 		clk_node_read  : in  std_logic;
 
 		reset_n			: in  std_logic;
-		
+
 		data_in 			: in std_logic_vector(NLINKS * 32 - 1 downto 0);
 		fpga_id_in		: in std_logic_vector(NLINKS * 16 - 1 downto 0);
-				
+
 		enables_in		: in std_logic_vector(NLINKS - 1 downto 0);
-		
+
 		node_rdreq		: in std_logic;
-		
+
 		data_out	      : out std_logic_vector((NLINKS / 4) * 64 - 1 downto 0);
 		state_out		: out std_logic_vector(3 downto 0);
 		node_full_out  : out std_logic_vector(NLINKS / 4 - 1 downto 0);
 		node_empty_out	: out std_logic_vector(NLINKS / 4 - 1 downto 0)
-		
-	);
-end sw_algin_data;
+);
+end entity;
 
 architecture rtl of sw_algin_data is
 
 	type state_type is (wait_for_ts, read_ts, algining);
 	signal state 				: state_type;
 	signal align_state		: integer;
-	
+
 	type data_array_type is array (NLINKS - 1 downto 0) of std_logic_vector(31 downto 0);
 	type ts_array_type is array (NLINKS - 1 downto 0) of std_logic_vector(47 downto 0);
 	type idx_type is array (NLINKS - 1 downto 0) of integer;
 	type node_data_array_type is array (NLINKS / 4 - 1 downto 0) of std_logic_vector(63 downto 0);
-		
+
 	signal data_array : data_array_type;
 	signal fifo_data_out_array : data_array_type;
 	signal ts_array : ts_array_type;
@@ -83,53 +82,25 @@ architecture rtl of sw_algin_data is
 	signal fifo_full			: std_logic_vector(NLINKS - 1 downto 0);
 	signal fifo_empty			: std_logic_vector(NLINKS - 1 downto 0);
 	signal fifos_not_empty  : integer;
-	
+
 	signal node_wreq			: std_logic_vector(NLINKS / 4 - 1 downto 0);
-	
+
 	signal low_bits         : std_logic_vector(NLINKS - 1 downto 0);
 
 	signal empty_counter 	: std_logic_vector(9 downto 0); -- length is equal to 6 bit time from header and 4 bit time from event
 
 	signal writing_events  	: std_logic_vector(NLINKS - 1 downto 0);
-	
-	signal reset				: std_logic;
-	
-	signal wait_cnt			: std_logic;
-	
-	signal test             : std_logic_vector(NLINKS - 1 downto 0);
-	
-	component ip_sw_fifo_32 is
-		  port (
-				data  : in  std_logic_vector(31 downto 0) := (others => 'X'); -- datain
-				wrreq : in  std_logic                     := 'X';             -- wrreq
-				rdreq : in  std_logic                     := 'X';             -- rdreq
-				rdclk : in  std_logic                     := 'X';             -- rdclk
-				wrclk : in  std_logic                     := 'X';             -- wrclk
-				aclr  : in  std_logic                     := 'X';             -- aclr
-				q     : out std_logic_vector(31 downto 0);                    -- dataout
-				wrfull  : out std_logic;                                        -- full
-				rdempty : out std_logic                                         -- empty
-		  );
-	end component ip_sw_fifo_32;
 
-	component ip_sw_fifo_64 is
-		  port (
-				data  : in  std_logic_vector(63 downto 0) := (others => 'X'); -- datain
-				wrreq : in  std_logic                     := 'X';             -- wrreq
-				rdreq : in  std_logic                     := 'X';             -- rdreq
-				rdclk : in  std_logic                     := 'X';             -- rdclk
-				wrclk : in  std_logic                     := 'X';             -- wrclk
-				aclr  : in  std_logic                     := 'X';             -- aclr
-				q     : out std_logic_vector(63 downto 0);                    -- dataout
-				wrfull  : out std_logic;                                        -- full
-				rdempty : out std_logic                                         -- empty
-		  );
-	end component ip_sw_fifo_64;
-	
-begin	
-		
+	signal reset				: std_logic;
+
+	signal wait_cnt			: std_logic;
+
+	signal test             : std_logic_vector(NLINKS - 1 downto 0);
+
+begin
+
 		reset <= not reset_n;
-		
+
 		set_array:
 		for I in 0 to (NLINKS - 1) generate
 			process(clks_write(I), reset_n)
@@ -137,38 +108,38 @@ begin
 				data_array(I) <= data_in((I+1)*32-1 downto I*32);
 			end process;
 		end generate set_array;
-		
+
 		fifos_not_empty <= conv_integer(fifo_empty);
-		
+
 		gen_nodes:
 		for I in 0 to (NLINKS / 4 - 1) generate
-			node_fifo : component ip_sw_fifo_64
-				port map (
-					data  	=> node_data_array(I),
-					wrreq 	=> node_wreq(I),
-					rdreq 	=> node_rdreq,
-					rdclk 	=> clk_node_read,
-					wrclk 	=> clk_node_write,
-					aclr  	=> reset,
-					q     	=> data_out((I+1)*64-1 downto I*64),
-					wrfull 	=> node_full_out(I),
-					rdempty 	=> node_empty_out(I)
+			e_node_fifo : component work.cmp.ip_sw_fifo_64
+			port map (
+				data    => node_data_array(I),
+				wrreq   => node_wreq(I),
+				rdreq   => node_rdreq,
+				rdclk   => clk_node_read,
+				wrclk   => clk_node_write,
+				aclr    => reset,
+				q       => data_out((I+1)*64-1 downto I*64),
+				wrfull  => node_full_out(I),
+				rdempty => node_empty_out(I)--,
 			);
 		end generate gen_nodes;
-		
+
 		gen_fifo:
 		for I in 0 to (NLINKS - 1) generate
-			tree_fifo : component ip_sw_fifo_32
-				port map (
-					data  	=> data_array(I),
-					wrreq 	=> enables_in(I),
-					rdreq 	=> rdreg_fifo(I),
-					rdclk 	=> clks_read(I),
-					wrclk 	=> clks_write(I),
-					aclr  	=> reset,
-					q     	=> fifo_data_out_array(I),
-					wrfull  	=> fifo_full(I),
-					rdempty 	=> fifo_empty(I)
+			e_tree_fifo : component work.cmp.ip_sw_fifo_32
+			port map (
+				data    => data_array(I),
+				wrreq   => enables_in(I),
+				rdreq   => rdreg_fifo(I),
+				rdclk   => clks_read(I),
+				wrclk   => clks_write(I),
+				aclr    => reset,
+				q       => fifo_data_out_array(I),
+				wrfull  => fifo_full(I),
+				rdempty => fifo_empty(I)--,
 			);
 		end generate gen_fifo;
 
@@ -314,5 +285,5 @@ begin
 				end if;
 			end if;
 		end process;
-		
-end architecture rtl;
+
+end architecture;

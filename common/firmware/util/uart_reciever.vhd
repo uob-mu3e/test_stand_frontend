@@ -52,8 +52,8 @@ begin
         Init        => to_unsigned(0,32)
     );
 
-    wait_period <= Clk_Ratio;
-    wait_period_init <= Clk_Ratio/2;
+    wait_period <= Clk_Ratio-1-2;
+    wait_period_init <= (Clk_Ratio-1)/2-2;
 
 
     -- main process

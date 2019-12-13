@@ -2,93 +2,44 @@ library ieee;
 use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 
---  A testbench has no ports.
+-- A testbench has no ports.
 entity sc_tb is
-end sc_tb;
+end entity;
 
 architecture behav of sc_tb is
-  --  Declaration of the component that will be instantiated.
-	component sc_master is
-		generic(
-			NLINKS : integer :=4
-		);
-		port(
-			clk:					in std_logic;
-			reset_n:				in std_logic;
-			enable:					in std_logic;
-			mem_data_in:			in std_logic_vector(31 downto 0);
-			mem_addr:				out std_logic_vector(15 downto 0);
-			mem_data_out:			out std_logic_vector(NLINKS * 32 - 1 downto 0);
-			mem_data_out_k:			out std_logic_vector(NLINKS * 4 - 1 downto 0);
-			done:					out std_logic;
-			stateout:				out std_logic_vector(27 downto 0)
-			);		
-	end component sc_master;
 
-	component sc_slave is
-		port(
-			clk:				in std_logic;
-			reset_n:			in std_logic;
-			enable:				in std_logic;
-			link_data_in:		in std_logic_vector(31 downto 0);
-			link_data_in_k:		in std_logic_vector(3 downto 0);
-			mem_data_out:		out std_logic_vector(31 downto 0);
-			mem_addr_out:		out std_logic_vector(15 downto 0);
-			mem_wren:			out std_logic;			
-			done:				out std_logic;
-			stateout:			out std_logic_vector(27 downto 0)
-			);		
-	end component sc_slave;
+	signal clk : std_logic;
+	signal reset_n : std_logic := '1';
+	signal writememdata : std_logic_vector(31 downto 0);
+	signal writememdata_out : std_logic_vector(31 downto 0);
+	signal writememaddr : unsigned(15 downto 0);
+	signal memaddr : std_logic_vector(15 downto 0);
+	signal mem_data_out : std_logic_vector(31 downto 0);
+	signal mem_datak_out : std_logic_vector(3 downto 0);
+	signal mem_data_out_slave : std_logic_vector(31 downto 0);
+	signal mem_datak_out_slave : std_logic_vector(3 downto 0);
+	signal mem_addr_out_slave : std_logic_vector(15 downto 0);
+	signal mem_wren_slave : std_logic;
+	signal dataout_ram : std_logic_vector(31 downto 0);
+	signal mem_addr_read_sc_s4 : std_logic_vector(15 downto 0);
+	signal mem_addr_write_sc_s4 : std_logic_vector(15 downto 0);
+	signal mem_wren_sc_s4 : std_logic;
+	signal mem_data_out_sc_s4 : std_logic_vector(31 downto 0);
+	signal mem_addr_out : std_logic_vector(31 downto 0);
 
-	component sram is
-  		port (
-    		clock   : in  std_logic;
-    		reset_n	: in  std_logic;
-    		we      : in  std_logic;
-    		read_address   : in  std_logic_vector(15 downto 0);
-    		write_address  : in  std_logic_vector(15 downto 0);
-    		datain  : in  std_logic_vector(31 downto 0);
-    		dataout : out std_logic_vector(31 downto 0)
-  		);
-	end component sram;
+	constant ckTime : time := 10 ns;
 
+	constant CODE_START : std_logic_vector(11 downto 0) := x"BAD";
+	constant CODE_STOP : std_logic_vector(31 downto 0) 	:= x"0000009C";
 
-  --  Specifies which entity is bound with the component.
-  		for sc_master_0: sc_master use entity work.sc_master;
-  		
-  		signal clk : std_logic;
-  		signal reset_n : std_logic := '1';
-  		signal writememdata : std_logic_vector(31 downto 0);
-  		signal writememdata_out : std_logic_vector(31 downto 0);
-  		signal writememaddr : unsigned(15 downto 0);
-  		signal memaddr : std_logic_vector(15 downto 0);
-  		signal mem_data_out : std_logic_vector(31 downto 0);
-  		signal mem_datak_out : std_logic_vector(3 downto 0);
-  		signal mem_data_out_slave : std_logic_vector(31 downto 0);
-  		signal mem_datak_out_slave : std_logic_vector(3 downto 0);
-  		signal mem_addr_out_slave : std_logic_vector(15 downto 0);
-  		signal mem_wren_slave : std_logic;
-  		signal dataout_ram : std_logic_vector(31 downto 0);
-  		signal mem_addr_read_sc_s4 : std_logic_vector(15 downto 0);
-  		signal mem_addr_write_sc_s4 : std_logic_vector(15 downto 0);
-  		signal mem_wren_sc_s4 : std_logic;
-  		signal mem_data_out_sc_s4 : std_logic_vector(31 downto 0);
-  		signal mem_addr_out : std_logic_vector(31 downto 0);
+	signal writememwren : std_logic;
 
-  		constant ckTime: 		time	:= 10 ns;
-
-  		constant CODE_START : std_logic_vector(11 downto 0) := x"BAD";
-  		constant CODE_STOP : std_logic_vector(31 downto 0) 	:= x"0000009C";
-
-  		signal writememwren : std_logic;
-
-    signal ram_re, ram_rvalid : std_logic;
+	signal ram_re, ram_rvalid : std_logic;
 
 begin
-  --  Component instantiation.
 
-	wram : sram
-		port map (
+	e_wram : entity work.sram
+	port map (
 		clock   		=> clk,
 		reset_n			=> reset_n,
 		we      	  	=> writememwren,
@@ -98,11 +49,11 @@ begin
 		dataout 		=> writememdata_out
 	);
 
-	sc_master_0: sc_master
-		generic map (
+	e_sc_master : entity work.sc_master
+	generic map (
 		NLINKS => 1
 	)
-	port map(
+	port map (
 		clk					=> clk,
 		reset_n				=> reset_n,
 		enable				=> '1',
@@ -144,8 +95,8 @@ begin
 	mem_addr_write_sc_s4 <= mem_addr_out(15 downto 0);
 	mem_addr_read_sc_s4 <= mem_addr_out(15 downto 0);
 
-	rram : sram
-  	port map (
+	e_rram : entity work.sram
+	port map (
 		clock   		=> clk,
 		reset_n			=> reset_n,
 		we      	  	=> mem_wren_sc_s4,
@@ -153,10 +104,10 @@ begin
 		write_address 	=> mem_addr_write_sc_s4,
 		datain 			=> mem_data_out_sc_s4,
 		dataout 		=> dataout_ram
-  	);
+	);
 
 
-	--sc_slave_0: sc_slave
+	--e_sc_slave_0 : entity work.sc_slave
 	--port map(
 	--	clk					=> clk,
 	--	reset_n				=> reset_n,
@@ -197,7 +148,7 @@ begin
 
 		wait for 8 ns;
 		reset_n  <= '1';
-		
+
 		wait;
 	end process inita;
 
@@ -207,7 +158,7 @@ begin
 		writememdata <= (others => '0');
 		writememaddr <= x"FFFF";
 		writememwren <= '0';
-		
+
 	elsif(rising_edge(clk))then
 		writememwren <= '0';
 		writememaddr <= writememaddr + 1;
@@ -250,7 +201,7 @@ begin
 				writememwren <= '1';
 			elsif(writememaddr(3 downto 0) = x"A")then
 				writememdata(7 downto 0) <= x"BC"; -- K28.5
-				writememdata(23 downto 8) <= (others => '0'); --FPGA ID
+				writememdata(23 downto 8) <= (others => '0'); -- FPGA ID
 				writememdata(25 downto 24) <= "10"; -- SC Type read
 				writememdata(31 downto 26) <= "000111";
 				writememwren <= '1';
@@ -267,5 +218,6 @@ begin
 		end if;
 
 	end if;
-	end process memory;
-end behav;
+	end process;
+
+end architecture;

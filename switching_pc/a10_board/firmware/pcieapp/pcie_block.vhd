@@ -85,8 +85,8 @@ entity pcie_block is
 		inaddr32_r			: out STD_LOGIC_VECTOR (31 DOWNTO 0);
 		inaddr32_w			: out STD_LOGIC_VECTOR (31 DOWNTO 0)
 	);
-	end pcie_block;
-	
+end entity;
+
 
 
 architecture RTL of pcie_block is
@@ -725,6 +725,6 @@ cfgbus: pcie_cfgbus
 	);
 	
 
-	
 
-end RTL;
+
+end architecture;
