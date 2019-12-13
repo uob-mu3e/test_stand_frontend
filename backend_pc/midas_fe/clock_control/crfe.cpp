@@ -309,7 +309,7 @@ const char *link_settings_str[] = {
     "[32] Recurl US",
     "[32] Recurl DS",
     "[32] Fibres",
-    "FrontEndBoardMask = INT[192] :",
+    "LinkMask = INT[192] :",
 #include "zeros192.h"
     "FrontEndBoardType = INT[192] :",
 #include "zeros192.h"
@@ -324,7 +324,9 @@ const char *link_variables_str[] = {
 "[1] 0",\
 "[2] 0",\
 "[3] 0",\
-"FrontEndBoardStatus = INT[192] :",
+"RXLinkStatus = INT[192] :",
+#include "zeros192.h"
+"TXLinkStatus = INT[192] :",
 #include "zeros192.h"
 nullptr
 };
@@ -790,18 +792,19 @@ void link_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       cm_msg(MINFO, "link_settings_changed", "Set Switching Board Mask to %d", value);
    }
 
-    if (std::string(key.name) == "FrontendBoardMask") {
+    if (std::string(key.name) == "LinkMask") {
       INT value[MAX_N_FRONTENDBOARDS];
       int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
       db_get_data(hDB, hKey, value, &size, TID_INT);
-      cm_msg(MINFO, "link_settings_changed", "Seting Frontend Board Mask");
+      cm_msg(MINFO, "link_settings_changed", "Seting Link Board Mask");
 
       for(int i = 0; i < MAX_N_FRONTENDBOARDS; i++){
-          if(value[i] == 0){
+          if(value[i] == FEBLINKMASK::OFF || value[i] ==  FEBLINKMASK::SCOn){
               cb->write_command("Disable",0,i);
           } else {
               cb->write_command("Enable",0,i);
           }
+          //TODO: Deal with enabling/diabling slow control
       }
 
 

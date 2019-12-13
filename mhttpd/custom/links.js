@@ -52,6 +52,8 @@ function RXLink(xmin,y,xmax, index, name){
                c.fillStyle = "Magenta";
             if(this.shorttype == "T")
                c.fillStyle = "Cyan";
+            if(this.shorttype == "FS")
+               c.fillStyle = "Magenta";
             c.font = "8px Arial";
             c.fillText(this.shorttype, this.xmin-8, this.y+2);
         } else {
@@ -80,7 +82,91 @@ function RXLink(xmin,y,xmax, index, name){
     }
 }
 
+
+function TXLink(xmin,y,xmax, index, name){
+    this.status =0;
+    this.type="Undefined type";
+    this.shorttype="U";
+    this.selected = false;
+    this.xmin = xmin;
+    this.y = y;
+    this.ymin = y-5;
+    this.xmax = xmax;
+    this.ymax = y+5;
+
+    this.lxmin = xmin-10;
+    this.lymin = y-10;
+    this.lxmax = xmax+60;
+    this.lymax = y+90;
+
+    this.bxmin = this.lxmin+10;
+    this.bymin = this.lymin+60;
+    this.bxmax = this.lxmin+70;
+    this.bymax = this.lymin+90;
+
+    this.col = "rgb(150,150,150)"
+    this.name = name;
+    this.index = index;
+
+    this.draw = function(){
+        if(this.status == 0)
+            this.col = "rgb(150,150,150)";
+        if(this.status == 1)
+            this.col = "rgb(100,200,100)";
+        if(this.status == 2)
+            this.col = "rgb(255,165,0)";
+        if(this.status == 3)
+            this.col = "rgb(255,0,0)";
+
+        if(this.selected == false){
+            c.beginPath();
+            c.moveTo(this.xmin, this.y);
+            c.lineTo(this.xmax, this.y);
+            c.lineWidth = 6;
+            c.strokeStyle = this.col;
+            c.stroke();
+
+            c.fillStyle = "Black";
+            if(this.shorttype == "P")
+               c.fillStyle = "Blue";
+            if(this.shorttype == "F")
+               c.fillStyle = "Magenta";
+            if(this.shorttype == "T")
+               c.fillStyle = "Cyan";
+            if(this.shorttype == "FS")
+               c.fillStyle = "Magenta";
+            c.font = "8px Arial";
+            c.fillText(this.shorttype, this.xmax+8, this.y+2);
+        } else {
+            c.fillStyle = this.col;
+            c.fillRect(this.lxmin, this.lymin,this.lxmax-this.lxmin, this.lymax-this.lymin);
+            c.fillStyle = "Black";
+            c.font = "12px Arial";
+            c.fillText(this.name, this.lxmin+10, this.lymin+15);
+            c.fillStyle = "Black";
+            c.font = "12px Arial";
+            c.fillText(this.type, this.lxmin+10, this.lymin+30);
+
+            if(rxlinks[index].shorttype != "FS"){
+                c.fillStyle = "rgb(50,50,50)";
+                c.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
+                c.fillStyle = "White";
+                c.font = "12px Arial";
+                if(this.status == 0){
+                    c.fillText("Enable", this.bxmin+10, this.bymin+17);
+                } else {
+                    c.fillText("Disable", this.bxmin+10, this.bymin+17);
+                }
+            }
+
+        }
+
+    }
+}
+
+
 var rxlinks = new Array(192);
+var txlinks = new Array(192);
 
 function Switchingboard(x,y,dx,dy, index){
 	this.x = x;
@@ -180,16 +266,29 @@ function RXPod(x,y,dx,dy, name, swboard){
 
 
 
-function TXPod(x,y,dx,dy, name){
+function TXPod(x,y,dx,dy, name, swboard){
     this.x = x;
     this.y = y;
     this.dx= dx;
     this.dy= dy;
     this.name = name;
-Math.floor(y/x);
+    this.links = [12];
+
+    for(var i=0; i < 12; i ++){
+        txlinks[swboard*48+name*12+i] = new TXLink(this.x+this.dx-10, this.y+10+i*12, this.x+this.dx+40, swboard*48+name*12+i,"FEB");
+        this.links[i] = txlinks[swboard*48+name*12+i];
+    }
+
+
+
     this.draw = function(){
         c.fillStyle = "rgb(120,200,80)";
         c.fillRect(this.x, this.y,this.dx, this.dy);
+
+        for(var i=0; i < 12; i ++){
+           this.links[i].draw();
+        }
+
     }
 }
 
@@ -210,8 +309,9 @@ function init(){
 }
 
 var rxselindex = -1;
+var txselindex = -1;
 
-function draw(rxselindex){
+function draw(rxselindex, txselindex){
 	c.fillStyle = "Silver";
 	c.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -221,10 +321,13 @@ function draw(rxselindex){
 
     if(rxselindex > -1)
         rxlinks[rxselindex].draw();
+    if(txselindex > -1)
+        txlinks[txselindex].draw();
+
 }
 
 init();
-draw(rxselindex);
+draw(rxselindex, txselindex);
 
 var mouse = {
 	x: undefined,
@@ -272,7 +375,7 @@ window.addEventListener('click', function(event) {
                                 } else {
                                     rxlinks[i].status=0;
                                 }
-                                mjsonrpc_db_set_value("/Equipment/Links/Settings/FrontEndBoardMask["+i+"]", rxlinks[i].status);
+                                mjsonrpc_db_set_value("/Equipment/Links/Settings/LinkMask["+i+"]", 3*rxlinks[i].status);
                                 found = true;
 
                             } else {
@@ -296,10 +399,50 @@ window.addEventListener('click', function(event) {
                     }
             }
 
+        if(txlinks[i].selected && !found){
+             if(txselindex == i){
+                    if(mouse.x >= txlinks[i].lxmin &&
+                        mouse.x <= txlinks[i].lxmax &&
+                        mouse.y >= txlinks[i].lymin &&
+                        mouse.y <= txlinks[i].lymax ){
+                            // check for button
+                            if(mouse.x >= txlinks[i].bxmin &&
+                                mouse.x <= txlinks[i].bxmax &&
+                                mouse.y >= txlinks[i].bymin &&
+                                mouse.y <= txlinks[i].bymax ){
+                                if(txlinks[i].status==0){
+                                    txlinks[i].status=1;
+                                } else {
+                                    txlinks[i].status=0;
+                                }
+                                mjsonrpc_db_set_value("/Equipment/Links/Settings/LinkMask["+i+"]", txlinks[i].status);
+                                found = true;
+
+                            } else {
+                                txselindex = -1;
+                                found = true;
+                                txlinks[i].selected = false;
+                            }
+                 }
+             }
+            } else {
+                if( found == false &&
+                        mouse.x >= txlinks[i].xmin &&
+                       mouse.x <= txlinks[i].xmax &&
+                       mouse.y >= txlinks[i].ymin &&
+                       mouse.y <= txlinks[i].ymax){
+                       if(txselindex > -1)
+                           txlinks[txselindex].selected = false;
+                       txselindex = i;
+                       found = true;
+                       txlinks[i].selected = true;
+                    }
+            }
+
+
         }
-    console.log(mouse,found,rxselindex);
     if(found)
-        draw(rxselindex);
+        draw(rxselindex, txselindex);
 })
 
 
@@ -309,12 +452,14 @@ function update_boarddrawing(value) {
         switchingboards[i].active = swmask[i];
     }
 
-    var femask = value["frontendboardstatus"];
+    var rxstat = value["rxlinkstatus"];
+    var txstat = value["txlinkstatus"];
     for(var i=0; i < 192; i++){
-       rxlinks[i].status = femask[i];
+       rxlinks[i].status = rxstat[i];
+       txlinks[i].status = txstat[i];
     }
 
-    draw(rxselindex);
+    draw(rxselindex, txselindex);
 }
 
 function update_masks(value) {
@@ -324,30 +469,53 @@ function update_masks(value) {
         switchingboards[i].active = swmask[i];
         switchingboards[i].name  = swnames[i];
     }
-    var femask = value["frontendboardmask"];
+    var femask = value["linkmask"];
     var fenames = value["frontendboardnames"];
     var fetypes = value["frontendboardtype"];
     for(var i=0; i < 192; i++){
-        if(femask[i] == 0)
+        if(femask[i] == 0){
            rxlinks[i].status = 0;
-        else {
+           txlinks[i].status = 0;
+        } else if(femask[i] == 1){
+            if(txlinks[i].status == 0)
+                txlinks[i].status = 2;
+            rxlinks[i].status = 0;
+        } else {
             if(rxlinks[i].status == 0)
                 rxlinks[i].status = 2;
+            if(txlinks[i].status == 0)
+                txlinks[i].status = 2;
         }
         rxlinks[i].name = fenames[i];
+        txlinks[i].name = fenames[i];
         if(fetypes[i] == 1){
             rxlinks[i].type = "Pixel";
             rxlinks[i].shorttype = "P";
+            txlinks[i].type = "Pixel";
+            txlinks[i].shorttype = "P";
+
         } else if   (fetypes[i] == 2){
             rxlinks[i].type = "Fibre";
             rxlinks[i].shorttype = "F";
+            txlinks[i].type = "Fibre";
+            txlinks[i].shorttype = "F";
+
         } else if   (fetypes[i] == 3){
             rxlinks[i].type = "Tiles";
             rxlinks[i].shorttype = "T";
+            txlinks[i].type = "Tiles";
+            txlinks[i].shorttype = "T";
+
+        } else if   (fetypes[i] == 4){
+            rxlinks[i].type = "Fibre 2nd";
+            rxlinks[i].shorttype = "FS";
+            txlinks[i].type = "Unconnected";
+            txlinks[i].shorttype = "U";
+            txlinks[i].status = 0;
         } else {
             rxlinks[i].type = "Undefined Type";
             rxlinks[i].shorttype = "U";
         }
     }
-    draw(rxselindex);
+    draw(rxselindex, txselindex);
 }
