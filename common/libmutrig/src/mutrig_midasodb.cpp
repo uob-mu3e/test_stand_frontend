@@ -15,7 +15,7 @@ namespace mutrig { namespace midasODB {
 //#endif
 
 
-int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface){
+int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
     /* Book Setting space */
 
     HNDLE hTmp;
@@ -40,7 +40,7 @@ int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface){
 //    }
 
     //open hot link
-    db_watch(hDB, hTmp, &SciFiFEB::on_settings_changed, FEB_interface);
+    db_watch(hDB, hTmp, &MutrigFEB::on_settings_changed, FEB_interface);
 
     /* Map Equipment/SciFi/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
     //TODO some globals should be per asic
@@ -55,12 +55,7 @@ int setup_db(HNDLE& hDB, const char* prefix, SciFiFEB* FEB_interface){
     }
 
    //Get predefined number of asics from ODB
-    unsigned int nasics;
-    int size = sizeof(nasics);
-    sprintf(set_str, "%s/Settings/ASICs/Global/Num asics", prefix);
-    db_get_value(hDB, 0, set_str, &nasics, &size, TID_INT, 0);
-
-    //ddprintf("mutrig_midasodb: number of asics set to %d\n",nasics);
+    unsigned int nasics=FEB_interface->GetNumASICs();
 
     /* Map Equipment/SciFi/ASICs/TDCs and /Equipment/Scifi/ASICs/Channels 
      * (structure defined in mutrig_MIDAS_config.h) */
@@ -214,28 +209,4 @@ mutrig::Config MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic
     return ret;
 }
 
-int MapForEach(HNDLE& db_rootentry, const char* prefix, std::function<int(Config* /*mutrig config*/,int /*ASIC #*/)> func)
-{
-	INT status = DB_SUCCESS;
-	char set_str[255];
-
-	//Retrieve number of ASICs
-	unsigned int nasics;
-	int size = sizeof(nasics);
-	sprintf(set_str, "%s/Settings/ASICs/Global/Num asics", prefix);
-	status=db_get_value(db_rootentry, 0, set_str, &nasics, &size, TID_INT, 0);
-	if (status != DB_SUCCESS) {
-		cm_msg(MINFO,"mutrig::midasODB::MapForEach", "Key %s not found", set_str);
-		return status;
-	}
-	//Iterate over ASICs
-	for(unsigned int asic = 0; asic < nasics; ++asic) {
-    		//ddprintf("mutrig_midasodb: Mapping %s, asic %d\n",prefix, asic);
-		Config config(MapConfigFromDB(db_rootentry,prefix,asic));
-		//note: this needs to be passed as pointer, otherwise there is a memory corruption after exiting the lambda
-		status=func(&config,asic);
-		if (status != SUCCESS) break;
-	}
-	return status;
-}
 } } // namespace mutrig::midasODB
