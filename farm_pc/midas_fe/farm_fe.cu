@@ -472,13 +472,11 @@ INT read_stream_thread(void *param)
    // get mudaq and set readindex to last written addr
    mudaq::DmaMudaqDevice & mu = *mup;
    readindex = mu.last_written_addr();
-
-   // setup variables for event handling
+/* ---KB
    EVENT_HEADER *pEventHeader;
-   void *pEventData;
-   DWORD *pdata;
+*/
+   void* pdata;
 
-   uint32_t event_length = 0;
    uint32_t lastWritten = 0;
    int status;
 
@@ -500,96 +498,60 @@ INT read_stream_thread(void *param)
 
       if (lastWritten == 0){
           //cout << "lastWritten == 0" << endl;
+          ss_sleep(10);
           continue;
       }
       
-       //get event length
-       event_length = dma_buf[(readindex+7)%dma_buf_nwords];
-
-       if (event_length == 0){
-           //cout << "event_length == 0" << endl;
-           continue;
-        }
-
       // obtain buffer space
-      status = rb_get_wp(rbh, (void **)&pEventHeader, 0);
+      status = rb_get_wp(rbh, (void **)&pdata, 10);
+
       if (!is_readout_thread_enabled()){
          break;
       }
 
        // just sleep and try again if buffer has no space
       if (status == DB_TIMEOUT) {
-          //cout << "status == DB_TIMEOUT" << endl;
-         ss_sleep(10);
+          cout << "status == DB_TIMEOUT" << endl;
+         //TODO: throw data here?
+         //readindex = mu.last_written_addr()+1;
          continue;
       }
 
       if (status != DB_SUCCESS){
-          //cout << "DB_SUCCESS" << endl;
+         cout << "!DB_SUCCESS" << endl;
          break;
       }
 
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
           //cout << "STATE_RUNNING" << endl;
-         ss_sleep(10);
+         ss_sleep(100);
+	 //TODO: signalling from main thread?
          continue;
       }
 
-      // do not overtake dma engine
-//      if(lastWritten < (readindex%dma_buf_nwords)){
-//          event_length = dma_buf[lastWritten - 1];
-//          readindex = lastWritten - event_length * 8;
-//      }
-
-      if((readindex%dma_buf_nwords) > lastWritten){
-          if(dma_buf_nwords - (readindex % dma_buf_nwords) + lastWritten < event_length * 8 + 1){
-              //cout << "BREAK1" << endl;
-              continue;
-          }
+      if((readindex) <= lastWritten){
+	 //WP before RP. Complete copy
+	 size_t wlen=(lastWritten-(readindex));
+	 memcpy(pdata,&dma_buf[readindex],wlen*sizeof(dma_buf[0]));
+	 readindex+=wlen;
+	 readindex=readindex%dma_buf_nwords;
       }else{
-          if(lastWritten - (readindex % dma_buf_nwords) < event_length * 8 + 1){
-              //cout << "BREAK2" << endl;
-              continue;
-          }
-      }
+	 //RP before WP. May wrap
+	 size_t wlen=(dma_buf_nwords-lastWritten+readindex);
+	 //copy with wrapping
+	 //#1
+	 memcpy(pdata,&dma_buf[readindex],(dma_buf_nwords-readindex)*sizeof(dma_buf[0]));
+	 readindex=0;
+	 pdata+=dma_buf_nwords-readindex;
+	 wlen-=dma_buf_nwords-readindex;
 
-      status = TRUE;
-      if (status) {
-
-         bm_compose_event(pEventHeader, equipment[0].info.event_id, 0, 0, equipment[0].serial_number++);
-         pEventData = (void *)(pEventHeader + 1);
-         
-         // init bank structure
-         bk_init32(pEventData);
-
-         // create "HEAD" bank
-         bk_create(pEventData, "HEAD", TID_DWORD, (void **)&pdata);
-         *pdata++ = event_length;
-         *pdata++ = 0xAFFEAFFE;
-         
-         for (int i = 0; i < event_length; i++){
-            *pdata++ = dma_buf[(readindex + 6)%dma_buf_nwords];
-            //*pdata++ = dma_buf[(readindex + 7)%dma_buf_nwords];
-
-            if (lastreadindex % 1000 == 0){
-                char dma_buf_str[256];
-                sprintf(dma_buf_str, "%08X", dma_buf[(readindex + 6)%dma_buf_nwords]);
-                monitoring_file << readindex + 6 << "\t" << dma_buf_str << "\t" << event_length  << endl;
-            }
-            readindex = readindex + 8;
-         }
-
-         lastreadindex = readindex;
-         
-         bk_close(pEventData, pdata);
-
-         pEventHeader->data_size = bk_size(pEventData);
-         rb_increment_wp(rbh, sizeof(EVENT_HEADER) + pEventHeader->data_size);
-                
+	 //#2
+	 memcpy(pdata,&dma_buf[readindex],wlen*sizeof(dma_buf[0]));
+	 readindex+=wlen;
+	 readindex=readindex;
       }
    }
-
    // tell framework that we finished
    monitoring_file.close();
    signal_readout_thread_active(0, FALSE);
