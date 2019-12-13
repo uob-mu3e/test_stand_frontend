@@ -171,7 +171,6 @@ NULL }
 #define MUTRIG_GLOBAL_DEFINED
 
 typedef struct {
-    INT       n_asics;
     BOOL      ext_trig_mode;
     BOOL      ext_trig_endtime_sign;
     INT       ext_trig_offset;
@@ -191,7 +190,6 @@ typedef struct {
 
 #define MUTRIG_GLOBAL_STR(_name) const char *_name[] = {\
 "[.]",\
-"Num asics = INT : 1",\
 "ext_trig_mode = BOOL : n",\
 "ext_trig_endtime_sign = BOOL : n",\
 "ext_trig_offset = INT : 32",\

@@ -241,13 +241,14 @@ INT frontend_init()
    //SciFi setup part
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
    SciFiFEB::Create(*mup,hDB,equipment[EQUIPMENT_ID::SciFi].name,"/Equipment/SciFi"); //create FEB interface signleton for scifi
+   SciFiFEB::Instance()->SetSBnumber(switch_id);
    int status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance());
    if(status != SUCCESS){
       set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
       return status;
    }
     //init all values on FEB
-   //SciFiFEB::Instance()->WriteAll();
+   SciFiFEB::Instance()->WriteAll();
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
    //end of SciFi setup part
@@ -346,13 +347,13 @@ INT begin_of_run(INT run_number, char *error)
    uint64_t link_active_from_register_high = 0;
    uint64_t link_active_from_register;
    do{
-   
+      timeout_cnt--;
       link_active_from_register_low = mup->read_register_ro(RUN_NR_ACK_REGISTER_LOW_R);
        //link_active_from_register_high = mup->read_register_ro(RUN_NR_ACK_REGISTER_HIGH_R) << 32;
        link_active_from_register = link_active_from_register_high + link_active_from_register_low;
       printf("%u  %lx  %lx\n",timeout_cnt,link_active_from_odb, link_active_from_register);
       usleep(100000);
-   }while(link_active_from_register != link_active_from_odb && (timeout_cnt-- > 0));
+   }while(link_active_from_register != link_active_from_odb && (timeout_cnt > 0));
 
    if(timeout_cnt==0) {
       cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
@@ -400,11 +401,13 @@ INT end_of_run(INT run_number, char *error)
    uint64_t stop_signal_seen = mup->read_register_ro(RUN_STOP_ACK_REGISTER_R); //TODO make 64 bits
    printf("Stop signal seen from 0x%16lx, expect stop signals from 0x%16lx\n", stop_signal_seen, link_active_from_odb);
    while(stop_signal_seen != link_active_from_odb &&
-         timeout_cnt-- > 0) {
+         timeout_cnt > 0) {
       usleep(1000);
       stop_signal_seen = mup->read_register_ro(RUN_STOP_ACK_REGISTER_R);
-      printf("Stop signal seen from 0x%16lx, expect stop signals from 0x%16lx\n", stop_signal_seen, link_active_from_odb);
+      printf("%u:  Stop signal seen from %16lx, expect stop signals from %16lx\n", timeout_cnt,stop_signal_seen, link_active_from_odb);
+      timeout_cnt--;
    };
+      printf("%u:  Stop signal seen from %16lx, expect stop signals from %16lx\n", timeout_cnt,stop_signal_seen, link_active_from_odb);
 
    if(timeout_cnt==0) {
       cm_msg(MERROR,"switch_fe","End of run marker only found for frontends %16lx", stop_signal_seen);
