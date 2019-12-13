@@ -97,9 +97,30 @@ proc nios_base.add_pio { name width direction addr } {
     set_interface_property ${name} EXPORT_OF ${name}.external_connection
 }
 
+proc nios_base.add_vic { name width addr } {
+    add_instance ${name} altera_vic
+    set_instance_parameter_value ${name} {NUMBER_OF_INT_PORTS} ${width}
+
+    set_instance_parameter_value cpu {setting_interruptControllerType} {External}
+    set_instance_parameter_value cpu {setting_shadowRegisterSets} {4}
+    add_connection ${name}.interrupt_controller_out cpu.interrupt_controller_in
+
+    nios_base.connect ${name} clk reset csr_access ${addr}
+}
+
 proc nios_base.connect_irq { name irq } {
-    add_connection cpu.irq $name
-    set_connection_parameter_value cpu.irq/$name irqNumber $irq
+    set cpu cpu
+    set irq_iface ${cpu}.irq
+    set eic vic
+
+    set ic_type [ get_instance_parameter_value ${cpu} setting_interruptControllerType ]
+    if { [ string equal ${ic_type} External ] } {
+#        set eic [ get_connections ${cpu}.interrupt_controller_in ]
+        set irq_iface ${eic}.irq_input
+    }
+
+    add_connection ${irq_iface} ${name}
+    set_connection_parameter_value ${irq_iface}/${name} irqNumber $irq
 }
 
 # uart, timers, i2c, spi
