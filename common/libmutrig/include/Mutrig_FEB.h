@@ -59,7 +59,6 @@ class MutrigFEB {
 
    protected:
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
-      static const uint16_t FPGA_broadcast_ID;
       virtual uint16_t FPGAid_from_ID(int asic)=0; //global asic number to global FEB number
       virtual uint16_t ASICid_from_ID(int asic)=0; //global asic number to FEB-local asic number
       virtual uint8_t nModulesPerFEB()=0;
@@ -80,6 +79,14 @@ class MutrigFEB {
       };
       //map m_FPGAs[global_FEB_number] to a struct giving the physical link addres to a struct giving the physical link address
       std::vector<mapped_FEB_t> m_FPGAs;
+
+
+      //Foreach loop over all asics under this prefix. Call with a lambda function,
+      //e.g. midasODB::MapForEach(hDB, "/Equipment/SciFi",[mudaqdev_ptr](Config c,int asic){mudaqdev_ptr->ConfigureAsic(c,asic);});
+      //Function must return SUCCESS, otherwise loop is stopped.
+      int MapForEach(std::function<int(mutrig::Config* /*mutrig config*/,int /*ASIC #*/)> func);
+
+
 
       //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/ 
       int ReadBackCounters(uint16_t FPGA_ID);

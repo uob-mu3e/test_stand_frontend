@@ -80,6 +80,9 @@ namespace mudaq {
 
     void FEBsc_resetMaster();
     void FEBsc_resetSlave();
+
+
+    static const uint16_t FEBsc_broadcast_ID;
     //write slow control packet with payload of length words in data. Returns 0 on success, -1 on error receiving acknowledge packet.
     //Disable any check of reply by setting the request_reply to false, then only the write request will be sent.
     int FEBsc_write(uint16_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply=true);

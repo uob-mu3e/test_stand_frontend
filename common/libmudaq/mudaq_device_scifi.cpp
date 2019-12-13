@@ -382,6 +382,7 @@ void MudaqDevice::munmap_wrapper(volatile uint32_t** addr, unsigned len,
     munmap_wrapper(tmp, len, error_msg);
 }
 
+const uint16_t MudaqDevice::FEBsc_broadcast_ID=0xffff;
 
 void MudaqDevice::FEBsc_resetMaster(){
     cm_msg(MINFO, "MudaqDevice" , "Resetting slow control master");
@@ -431,11 +432,12 @@ void MudaqDevice::FEBsc_resetSlave(){
  *      First word (0xBAD...) to be written last (serves as start condition)
  */
 int MudaqDevice::FEBsc_write(uint16_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
-//printf("FEBsc_write() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr, m_FEBsc_wmem_addr);
+//printf("FEBsc_write() FPGA:%u length%u startaddr%x @ %d\n",FPGA_ID,length,startaddr, m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_WRITE = 0x3; // this is 11 in binary
-
-    write_memory_rw(1 + m_FEBsc_wmem_addr, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_WRITE << 24 | (uint16_t) FPGA_ID << 8 | 0xBC); // two most significant bits are 0
+    uint16_t FPGAID_field=1<<FPGA_ID;//!FPGA ID is to be one-hot encoded (TODO in firmware)
+    if(FPGA_ID==FEBsc_broadcast_ID) FPGAID_field=FEBsc_broadcast_ID;
+    write_memory_rw(1 + m_FEBsc_wmem_addr, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_WRITE << 24 | (uint16_t) FPGAID_field << 8 | 0xBC); // two most significant bits are 0
     write_memory_rw(2 + m_FEBsc_wmem_addr, startaddr);
     write_memory_rw(3 + m_FEBsc_wmem_addr, length);
 
@@ -477,7 +479,9 @@ int MudaqDevice::FEBsc_read(uint16_t FPGA_ID, uint32_t* data, uint16_t length, u
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_READ = 0x2; // this is 10 in binary
 
-    write_memory_rw(1 + m_FEBsc_wmem_addr, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_READ << 24 | (uint16_t) FPGA_ID << 8 | 0xBC);
+    uint16_t FPGAID_field=1<<FPGA_ID;//!FPGA ID is to be one-hot encoded (TODO in firmware)
+    if(FPGA_ID==FEBsc_broadcast_ID) FPGAID_field=FEBsc_broadcast_ID;
+    write_memory_rw(1 + m_FEBsc_wmem_addr, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_READ << 24 | (uint16_t) FPGAID_field << 8 | 0xBC);
     write_memory_rw(2 + m_FEBsc_wmem_addr, startaddr);
     write_memory_rw(3 + m_FEBsc_wmem_addr, length);
     write_memory_rw(m_FEBsc_wmem_addr + 4, 0x0000009c);

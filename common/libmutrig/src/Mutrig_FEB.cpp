@@ -30,7 +30,6 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #define FEB_REPLY_SUCCESS 0
 #define FEB_REPLY_ERROR   1
 
-const uint16_t MutrigFEB::FPGA_broadcast_ID=0;//0xffff;
 
 //handler function for update of switching board fiber mapping / status
 void MutrigFEB::on_mapping_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
@@ -123,6 +122,7 @@ int MutrigFEB::WriteAll(){
 
 	sprintf(set_str, "%s/Settings/Daq/dummy_config", m_odb_prefix);
 	db_find_key(m_hDB, 0, set_str, &hTmp);
+	on_settings_changed(m_hDB,hTmp,0,this);
 
 	sprintf(set_str, "%s/Settings/Daq/dummy_data", m_odb_prefix);
 	db_find_key(m_hDB, 0, set_str, &hTmp);
@@ -158,16 +158,49 @@ int MutrigFEB::WriteAll(){
 	return 0;
 }
 
+
+int MutrigFEB::MapForEach(std::function<int(mutrig::Config* /*mutrig config*/,int /*ASIC #*/)> func)
+{
+	INT status = DB_SUCCESS;
+	//Iterate over ASICs
+	for(unsigned int asic = 0; asic < GetNumASICs(); ++asic) {
+		//ddprintf("mutrig_midasodb: Mapping %s, asic %d\n",prefix, asic);
+		mutrig::Config config(mutrig::midasODB::MapConfigFromDB(m_hDB,m_odb_prefix,asic));
+		//note: this needs to be passed as pointer, otherwise there is a memory corruption after exiting the lambda
+		status=func(&config,asic);
+		if (status != SUCCESS) break;
+	}
+	return status;
+}
+
+
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
 int MutrigFEB::ConfigureASICs(){
-   printf("MutrigFEB::ConfigureASICs()\n");
-   int status = mutrig::midasODB::MapForEach(m_hDB,m_odb_prefix,[this](mutrig::Config* config, int asic){
-      cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to FPGA #%d ASIC #%d", m_odb_prefix, asic,FPGAid_from_ID(asic),ASICid_from_ID(asic));
+   int status = MapForEach([this](mutrig::Config* config, int asic){
       uint32_t rpc_status;
+      //mapping
+      uint16_t SB_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Number();
+      uint16_t SP_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Port();
+      uint16_t FA_ID=ASICid_from_ID(asic);
+
+      if(m_FPGAs[FPGAid_from_ID(asic)].mask==0){
+      //    printf(" [skipped]\n");
+          return FE_SUCCESS;
+      }
+      if(SB_ID!=m_SB_number){
+      //    printf(" [skipped]\n");
+          return FE_SUCCESS;
+      }
+      //printf("\n");
+
+      cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to SB%u.%u  ASIC #%d", m_odb_prefix, asic,SB_ID,SP_ID,FA_ID);
+
+
       try {
          //Write ASIC number & Configuraton
-	 rpc_status=m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic),0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
+	 //rpc_status=m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic),0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
+	 rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
           set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
@@ -182,7 +215,6 @@ int MutrigFEB::ConfigureASICs(){
       return FE_SUCCESS;//note: return of lambda function
    });//MapForEach
    return status; //status of foreach function, SUCCESS when no error.
-   return 0;
 }
 
 int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
