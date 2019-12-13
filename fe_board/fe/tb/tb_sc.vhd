@@ -3,10 +3,10 @@ use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 
 -- A testbench has no ports.
-entity sc_tb is
+entity tb_sc is
 end entity;
 
-architecture behav of sc_tb is
+architecture behav of tb_sc is
 
 	signal clk : std_logic;
 	signal reset_n : std_logic := '1';
@@ -77,8 +77,10 @@ begin
         i_link_data => mem_data_out,
         i_link_datak => mem_datak_out,
 
-        o_fifo_we => open,
-        o_fifo_wdata => open,
+--        o_fifo_rempty
+        i_fifo_rack => '1',
+--        o_fifo_rdata
+--        o_fifo_wfull
 
         o_ram_addr => mem_addr_out,
         o_ram_re => ram_re,
