@@ -220,13 +220,13 @@ int MutrigFEB::ConfigureASICs(){
 int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
    auto rpc_ret=m_mu.FEBsc_NiosRPC(FPGA_ID,0x0105,{});
    //retrieve results
-   uint32_t* val=new uint32_t[rpc_ret*3]; //nASICs * 4 counterbanks * 3 words
+   uint32_t* val=new uint32_t[rpc_ret*4*3]; //nASICs * 4 counterbanks * 3 words
    INT val_size = sizeof(DWORD);
    printf("RPC return: %u\n",rpc_ret);
-   m_mu.FEBsc_read(FPGA_ID, val, rpc_ret*3 , (uint32_t) m_mu.FEBsc_RPC_DATAOFFSET);
+   m_mu.FEBsc_read(FPGA_ID, val, rpc_ret*4*3 , (uint32_t) m_mu.FEBsc_RPC_DATAOFFSET);
    printf("done reading:\n");
    for(int i=0;i<rpc_ret*4*3;i++){
-      printf("%8x\n",val[i]);
+      printf("%2.2d %2.2d: %8.8x\n",i/(3*4),(i/3)%4,val[i]);
    }
    //store in midas
    INT status;

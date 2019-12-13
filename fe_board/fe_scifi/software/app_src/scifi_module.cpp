@@ -399,15 +399,19 @@ void scifi_module_t::menu_counters(){
 }
 //write counter values of all channels to memory address *data and following. Return number of asic channels written.
 alt_u16 scifi_module_t::store_counters(volatile alt_u32* data){
-	for(int i=0;i<4*n_MODULES;i++){
-		for(char selected=0;selected<4; selected++){
-			sc->ram->regs.scifi.counters.ctrl = selected&0x3 + (i<<2);
-			*data=sc->ram->regs.scifi.counters.nom; data++;
-			printf("%u: %8x\n",sc->ram->regs.scifi.counters.ctrl,sc->ram->regs.scifi.counters.nom);
-			*data=(sc->ram->regs.scifi.counters.denom>>32)&0xffffffff; data++;
-			*data=(sc->ram->regs.scifi.counters.denom    )&0xffffffff; data++;
-			printf("%u: %8x\n",sc->ram->regs.scifi.counters.ctrl,sc->ram->regs.scifi.counters.denom&0xffffffff);
-			printf("%u: %8x\n",sc->ram->regs.scifi.counters.ctrl,sc->ram->regs.scifi.counters.denom>>32);
+        printf("store: %p\n",data);
+	for(uint8_t i=0;i<4*n_MODULES;i++){
+		for(uint8_t selected=0;selected<4; selected++){
+			sc->ram->regs.scifi.counters.ctrl = (selected&0x3) + (i<<2);
+			*data=sc->ram->regs.scifi.counters.nom;
+			//printf("%u: %8.8x\n",sc->ram->regs.scifi.counters.ctrl,*data);
+			data++;
+			*data=(sc->ram->regs.scifi.counters.denom>>32)&0xffffffff;
+			//printf("%u: %8.8x\n",sc->ram->regs.scifi.counters.ctrl,*data);
+			data++;
+			*data=(sc->ram->regs.scifi.counters.denom    )&0xffffffff;
+			//printf("%u: %8.8x\n",sc->ram->regs.scifi.counters.ctrl,*data);
+			data++;
 		}
 	}
 	return 4*n_MODULES; //return number of asic channels written so we can parse correctly later

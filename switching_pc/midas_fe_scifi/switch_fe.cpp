@@ -466,8 +466,8 @@ INT read_sc_event(char *pevent, INT off)
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
 
 INT read_scifi_sc_event(char *pevent, INT off){
-    printf("read_scifi_sc_event\n");
-    //int status=SciFiFEB::Instance()->ReadBackCounters(0 /*FPGA-ID*/);
+    printf("Readin Scifi FEB status event for FPGA 1\n");
+    int status=SciFiFEB::Instance()->ReadBackCounters(1 /*FPGA-ID*/);
     return 0;
 }
 
