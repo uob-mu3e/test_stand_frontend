@@ -22,25 +22,20 @@ end entity;
 
 architecture arch of debouncer is
 
-    signal reset_n : std_logic;
-
     signal ff0, ff1 : std_logic_vector(i_d'range);
 
-    type cnt_array_t is array(i_d'range) of integer range 0 to N;
+    type cnt_array_t is array(i_d'range) of integer range 0 to N-1;
     signal cnt : cnt_array_t;
 
 begin
-
-    e_reset_n : entity work.reset_sync
-    port map ( o_reset_n => reset_n, i_reset_n => i_reset_n, i_clk => i_clk );
 
     e_ff_sync : entity work.ff_sync
     generic map ( W => W )
     port map ( i_d => i_d, o_q => ff0, i_reset_n => i_reset_n, i_clk => i_clk );
 
-    process(i_clk, reset_n)
+    process(i_clk, i_reset_n)
     begin
-    if ( reset_n = '0' ) then
+    if ( i_reset_n = '0' ) then
         o_q <= (others => '0');
         ff1 <= (others => '0');
         cnt <= (others => 0);
@@ -51,7 +46,7 @@ begin
         for i in i_d'range loop
             if ( ff0(i) /= ff1(i) ) then
                 cnt(i) <= 0;
-            elsif ( cnt(i) = N ) then
+            elsif ( cnt(i) = N-1 ) then
                 o_q(i) <= ff1(i);
             else
                 cnt(i) <= cnt(i) + 1;

@@ -15,15 +15,15 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use work.pcie_components.all;
 
-entity pcie_completion_bytecount is 
-	port (
+entity pcie_completion_bytecount is
+port (
 		fdw_be:	in std_logic_vector(3 downto 0);
 		ldw_be:	in std_logic_vector(3 downto 0);	
 		plength: in std_logic_vector(9 downto 0);	
 		bytecount: out std_logic_vector(11 downto 0);
 		lower_address : out std_logic_vector(1 downto 0)
-	);
-end pcie_completion_bytecount;
+);
+end entity;
 
 
 architecture RTL of pcie_completion_bytecount is
@@ -66,5 +66,5 @@ begin
 							"01" when fdw_be(1 downto 0) = "10" else
 							"10" when fdw_be(2 downto 0) = "100" else
 							"11";
-								
-end RTL;
+
+end architecture;

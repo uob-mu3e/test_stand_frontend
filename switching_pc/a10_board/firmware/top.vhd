@@ -12,8 +12,6 @@ entity top is
 port (
     BUTTON              : in    std_logic_vector(3 downto 0);
 
-    CLK_100_B3D         : in    std_logic;
-
     HEX0_D              : out   std_logic_vector(6 downto 0);
 --    HEX0_DP             : out   std_logic;
 
@@ -355,9 +353,11 @@ reset_n 	<= not reset;
         clk_clk                         => input_clk--,
     );
 
-    QSFPA_LP_MODE <= '0';
-    QSFPA_MOD_SEL_n <= '1';
-    QSFPA_RST_n <= '1';
+    FLASH_A <= flash_tcm_address_out(27 downto 2);
+    FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
+    FLASH_ADV_n <= '0';
+    FLASH_CLK <= '0';
+    FLASH_RESET_n <= flash_rst_n;
 
     -- generate reset sequence for flash and nios
     e_reset_ctrl : entity work.reset_ctrl
@@ -392,13 +392,6 @@ reset_n 	<= not reset;
     LED(2) <= not flash_rst_n;
     LED(3) <= '0';
 
-    FLASH_A <= flash_tcm_address_out(27 downto 2);
-
-    FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
-    FLASH_ADV_n <= '0';
-    FLASH_CLK <= '0';
-    FLASH_RESET_n <= flash_rst_n;
-
     i2c_scl_in <= not i2c_scl_oe;
     FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
     TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
@@ -413,7 +406,13 @@ reset_n 	<= not reset;
     TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
     POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
 
+
+
     ------------- Receiving Data and word aligning -------------
+
+    QSFPA_LP_MODE <= '0';
+    QSFPA_MOD_SEL_n <= '1';
+    QSFPA_RST_n <= '1';
 
     e_qsfp : entity work.xcvr_a10
     port map (
@@ -518,15 +517,15 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 --        );
 --    end generate;
 
-e_run_control : entity work.run_control
-port map (
+    e_run_control : entity work.run_control
+    port map (
         i_clk                               => tx_clk(0),
         i_reset_n                           => reset_n,
         i_aligned                           => '1',
         i_data                              => rx_data(0),
         i_datak                             => rx_datak(0),
         o_FEB_status                        => readregs_slow(FEBSTATUS_REGISTER_R)--,
-);
+    );
 
 
 ------------- Event Counter ------------------
@@ -590,7 +589,7 @@ port map (
 	o_cnt     		=> dma_data_test--,
     );
 
-    process (pcie_fastclk_out, reset_n)
+    process(pcie_fastclk_out, reset_n)
     begin
     if ( reset_n = '0' ) then
 		dma_data_wren <= '0';
@@ -664,7 +663,7 @@ port map (
 
 ------------- Slow Control -------------
 
-    e_master : sc_master
+    e_master : entity work.sc_master
     generic map (
 		NLINKS => 4
     )
@@ -680,7 +679,7 @@ port map (
         clk                     => tx_clk(0)--,
     );
 
-    e_slave : sc_slave
+    e_slave : entity work.sc_slave
     port map (
 		reset_n						=> resets_n(RESET_BIT_SC_SLAVE),
 		enable						=> '1',

@@ -97,6 +97,11 @@ proc nios_base.add_pio { name width direction addr } {
     set_interface_property ${name} EXPORT_OF ${name}.external_connection
 }
 
+proc nios_base.connect_irq { name irq } {
+    add_connection cpu.irq $name
+    set_connection_parameter_value cpu.irq/$name irqNumber $irq
+}
+
 # uart, timers, i2c, spi
 if 1 {
     add_instance sysid altera_avalon_sysid_qsys
@@ -123,13 +128,12 @@ if 1 {
 
     # IRQ assignments
     foreach { name irq } {
-        jtag_uart.irq 3
+        jtag_uart.irq 2
         timer.irq 0
-        i2c.interrupt_sender 10
-        spi.irq 11
+        i2c.interrupt_sender 4
+        spi.irq 5
     } {
-        add_connection cpu.irq $name
-        set_connection_parameter_value cpu.irq/$name irqNumber $irq
+        nios_base.connect_irq $name $irq
     }
 
     add_interface i2c conduit end
@@ -218,8 +222,7 @@ proc nios_base.add_irq_bridge { name width args } {
     set_instance_parameter_value ${name} {IRQ_N} {0}
 
     for { set i 0 } { $i < $width } { incr i } {
-        add_connection                 ${cpu}.irq ${name}.sender${i}_irq
-        set_connection_parameter_value ${cpu}.irq/${name}.sender${i}_irq irqNumber [ expr 16 + $i ]
+        nios_base.connect_irq ${name}.sender${i}_irq [ expr 16 - $width + $i ]
     }
 
     add_connection ${clk}.clk ${name}.clk

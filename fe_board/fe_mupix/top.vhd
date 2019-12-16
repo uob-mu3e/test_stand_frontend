@@ -176,6 +176,9 @@ port (
 
     PushButton  : in    std_logic_vector(1 downto 0);
 
+    clk_aux     : in    std_logic;
+    FPGA_Test   : inout std_logic_vector(2 downto 0);
+
 
 
     -- si5345 out8 (625 MHz)
@@ -183,8 +186,8 @@ port (
 
 
 
-    si42_clk_40 : in    std_logic;
-    si42_clk_80 : in    std_logic;
+    si42_clk_125        : in    std_logic;
+    si42_clk_50         : in    std_logic;
 
 
 
@@ -214,8 +217,9 @@ architecture arch of top is
     signal spi_ss_n : std_logic_vector(15 downto 0);
 
     signal run_state_125 : run_state_t;
-	 
-	 signal sync_reset_cnt: std_logic;
+
+    signal sync_reset_cnt : std_logic;
+    signal nios_clock : std_logic;
 
 begin
 
@@ -356,15 +360,27 @@ begin
 
     ----------------------------------------------------------------------------
 
+	e_clk_ctrl : component work.cmp.clk_ctrl
+		port map(
+			inclk1x   => clk_aux,
+			inclk0x   => si42_clk_125,
+			clkselect => FPGA_Test(1), -- clkselect
+			outclk    => nios_clk--,
+		);
+	-- use these two signals with a jumper to FPGA_Test(1) to select the clock	
+	FPGA_Test(0) <= '0';
+	FPGA_Test(2) <= '1';
+
 
 
     e_fe_block : entity work.fe_block
     generic map (
-        FPGA_ID_g => X"FEB0",
-        FEB_type_in => "111010",
-        NIOS_CLK_HZ_g => 80000000--,
+        NIOS_CLK_HZ_g => 125000000--,
     )
     port map (
+        i_fpga_id       => X"FEB0",
+        i_fpga_type     => "111010",
+
         i_i2c_scl       => i2c_scl,
         o_i2c_scl_oe    => i2c_scl_oe,
         i_i2c_sda       => i2c_sda,
@@ -406,7 +422,7 @@ begin
 
 
 
-        i_nios_clk      => si42_clk_80,
+        i_nios_clk      => nios_clk,
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
         o_clk_156_mon   => led(14),

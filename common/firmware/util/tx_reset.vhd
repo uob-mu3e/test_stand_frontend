@@ -6,26 +6,26 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 entity tx_reset is
-    generic (
-        NUMBER_OF_CHANNELS_g : positive := 4;
-        NUMBER_OF_PLLS_g : positive := 1;
-        CLK_MHZ_g : positive := 50--;
-    );
-    port (
-        o_analogreset   : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-        -- asynchronous reset to all digital logic in the transmitter PCS
-        o_digitalreset  : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+generic (
+    NUMBER_OF_CHANNELS_g : positive := 4;
+    NUMBER_OF_PLLS_g : positive := 1;
+    CLK_MHZ_g : positive := 50--;
+);
+port (
+    o_analogreset       : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    -- asynchronous reset to all digital logic in the transmitter PCS
+    o_digitalreset      : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-        o_ready         : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    o_ready             : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-        -- powers down the CMU PLLs
-        o_pll_powerdown : out   std_logic_vector(NUMBER_OF_PLLS_g-1 downto 0);
-        -- status of the transmitter PLL
-        i_pll_locked    : in    std_logic_vector(NUMBER_OF_PLLS_g-1 downto 0);
+    -- powers down the CMU PLLs
+    o_pll_powerdown     : out   std_logic_vector(NUMBER_OF_PLLS_g-1 downto 0);
+    -- status of the transmitter PLL
+    i_pll_locked        : in    std_logic_vector(NUMBER_OF_PLLS_g-1 downto 0);
 
-        i_areset_n  : in    std_logic;
-        i_clk       : in    std_logic--;
-    );
+    i_areset_n          : in    std_logic;
+    i_clk               : in    std_logic--;
+);
 end entity;
 
 architecture arch of tx_reset is

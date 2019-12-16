@@ -8,6 +8,9 @@ use ieee.numeric_std.all;
 use work.daq_constants.all;
 
 ENTITY state_phase_box is
+generic (
+    PHASE_WIDTH_g : positive := 16--;
+);
 PORT (
     -- input state (rx recovered clock)
     i_state_125_rx      : in    run_state_t;
@@ -19,7 +22,7 @@ PORT (
     i_reset_125_n       : in    std_logic;
     i_clk_125           : in    std_logic;
 
-    o_phase             : out   std_logic_vector(31 downto 0);
+    o_phase             : out   std_logic_vector(PHASE_WIDTH_g-1 downto 0);
     i_reset_n           : in    std_logic;
     -- free running clock
     i_clk               : in    std_logic--;
@@ -37,12 +40,12 @@ architecture rtl of state_phase_box is
 begin
 
     e_clk_phase : entity work.clk_phase
-    generic map ( W => 20 )
+    generic map ( W => PHASE_WIDTH_g )
     port map (
         i_clk1              => i_clk_125,
         i_clk2              => i_clk_125_rx,
 
-        o_phase             => o_phase(19 downto 0),
+        o_phase             => o_phase,
 
         i_reset_n           => i_reset_n,
         i_clk               => i_clk--,

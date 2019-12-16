@@ -5,10 +5,12 @@ ENTITY version_reg IS
 PORT (
     data_out : OUT STD_LOGIC_VECTOR(27 downto 0)
 );
-END version_reg;
+end entity;
 
 ARCHITECTURE rtl OF version_reg IS
 
 BEGIN
+
     data_out <= X"1be1f41";
-END rtl;
+
+end architecture;

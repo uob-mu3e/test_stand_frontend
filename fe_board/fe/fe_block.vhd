@@ -6,15 +6,16 @@ use work.daq_constants.all;
 
 entity fe_block is
 generic (
-    FPGA_ID_g : std_logic_vector(15 downto 0) := X"0000";
+    NIOS_CLK_HZ_g : positive := 125000000--;
+);
+port (
+    i_fpga_id       : in    std_logic_vector(15 downto 0);
     -- frontend board type
     -- - 111010 : mupix
     -- - 111000 : mutrig
     -- - 000111 and 000000 : reserved (DO NOT USE)
-    FEB_type_in : std_logic_vector(5 downto 0);
-    NIOS_CLK_HZ_g : positive := 125000000--;
-);
-port (
+    i_fpga_type     : in    std_logic_vector(5 downto 0);
+
     i_i2c_scl       : in    std_logic;
     o_i2c_scl_oe    : out   std_logic;
     i_i2c_sda       : in    std_logic;
@@ -114,9 +115,7 @@ architecture arch of fe_block is
 
 
 
-    signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
-    signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
-    signal mscb_counter_in : unsigned(15 downto 0);
+    signal av_mscb : work.util.avalon_t;
 
 
 
@@ -266,6 +265,22 @@ begin
 
         -- mscb
 
+        -- git head hash
+        if ( fe_reg.addr(7 downto 0) = X"FA" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            fe_reg.rdata <= work.cmp.GIT_HEAD(0 to 31);
+        end if;
+        -- fpga id
+        if ( fe_reg.addr(7 downto 0) = X"FB" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            fe_reg.rdata(i_fpga_id'range) <= i_fpga_id;
+        end if;
+        -- fpga type
+        if ( fe_reg.addr(7 downto 0) = X"FC" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
+        end if;
+
         --
     end if;
     end process;
@@ -288,9 +303,12 @@ begin
         clk_125_clock_clk       => i_clk_125,
 
         -- mscb
-        parallel_mscb_in_export     => mscb_to_nios_parallel_in,
-        parallel_mscb_out_export    => mscb_from_nios_parallel_out,
-        counter_in_export           => std_logic_vector(mscb_counter_in),
+        avm_mscb_address        => av_mscb.address(3 downto 0),
+        avm_mscb_read           => av_mscb.read,
+        avm_mscb_readdata       => av_mscb.readdata,
+        avm_mscb_write          => av_mscb.write,
+        avm_mscb_writedata      => av_mscb.writedata,
+        avm_mscb_waitrequest    => av_mscb.waitrequest,
 
         irq_bridge_irq          => nios_irq,
 
@@ -347,28 +365,28 @@ begin
         RAM_ADDR_WIDTH_g => 14--,
     )
     port map (
-        i_ram_addr          => sc_ram.addr(15 downto 0),
-        i_ram_re            => sc_ram.re,
-        o_ram_rvalid        => sc_ram.rvalid,
-        o_ram_rdata         => sc_ram.rdata,
-        i_ram_we            => sc_ram.we,
-        i_ram_wdata         => sc_ram.wdata,
+        i_ram_addr              => sc_ram.addr(15 downto 0),
+        i_ram_re                => sc_ram.re,
+        o_ram_rvalid            => sc_ram.rvalid,
+        o_ram_rdata             => sc_ram.rdata,
+        i_ram_we                => sc_ram.we,
+        i_ram_wdata             => sc_ram.wdata,
 
-        i_avs_address       => av_sc.address(15 downto 0),
-        i_avs_read          => av_sc.read,
-        o_avs_readdata      => av_sc.readdata,
-        i_avs_write         => av_sc.write,
-        i_avs_writedata     => av_sc.writedata,
-        o_avs_waitrequest   => av_sc.waitrequest,
+        i_avs_address           => av_sc.address(15 downto 0),
+        i_avs_read              => av_sc.read,
+        o_avs_readdata          => av_sc.readdata,
+        i_avs_write             => av_sc.write,
+        i_avs_writedata         => av_sc.writedata,
+        o_avs_waitrequest       => av_sc.waitrequest,
 
-        o_reg_addr          => sc_reg.addr(7 downto 0),
-        o_reg_re            => sc_reg.re,
-        i_reg_rdata         => sc_reg.rdata,
-        o_reg_we            => sc_reg.we,
-        o_reg_wdata         => sc_reg.wdata,
+        o_reg_addr              => sc_reg.addr(7 downto 0),
+        o_reg_re                => sc_reg.re,
+        i_reg_rdata             => sc_reg.rdata,
+        o_reg_we                => sc_reg.we,
+        o_reg_wdata             => sc_reg.wdata,
 
-        i_reset_n           => reset_156_n,
-        i_clk               => i_clk_156--;
+        i_reset_n               => reset_156_n,
+        i_clk                   => i_clk_156--;
     );
 
     e_sc_rx : entity work.sc_rx
@@ -395,8 +413,9 @@ begin
 
     e_merger : entity work.data_merger
     port map (
-        fpga_ID_in              => FPGA_ID_g,
-        FEB_type_in             => FEB_type_in,
+        fpga_ID_in              => i_fpga_id,
+        FEB_type_in             => i_fpga_type,
+
         run_state               => run_state_156,
         run_number              => run_number,
 
@@ -461,7 +480,7 @@ begin
         resets_out              => open,
         reset_bypass            => reg_reset_bypass(11 downto 0),
         run_number_out          => run_number,
-        fpga_id                 => FPGA_ID_g,
+        fpga_id                 => i_fpga_id,
         terminated              => terminated,
         testout                 => open,
 
@@ -476,21 +495,25 @@ begin
 
     e_mscb : entity work.mscb
     generic map (
-        CLK_HZ_g => NIOS_CLK_HZ_g--,
+        CLK_MHZ_g => 156.25--,
     )
     port map (
-        mscb_to_nios_parallel_in    => mscb_to_nios_parallel_in,
-        mscb_from_nios_parallel_out => mscb_from_nios_parallel_out,
-        mscb_data_in                => i_mscb_data,
-        mscb_data_out               => o_mscb_data,
-        mscb_oe                     => o_mscb_oe,
-        mscb_counter_in             => mscb_counter_in,
+        i_avs_address           => av_mscb.address(3 downto 0),
+        i_avs_read              => av_mscb.read,
+        o_avs_readdata          => av_mscb.readdata,
+        i_avs_write             => av_mscb.write,
+        i_avs_writedata         => av_mscb.writedata,
+        o_avs_waitrequest       => av_mscb.waitrequest,
 
-        o_mscb_irq                  => nios_irq(1),
+        i_rx_data               => i_mscb_data,
+        o_tx_data               => o_mscb_data,
+        o_tx_data_oe            => o_mscb_oe,
+
+        o_irq                   => nios_irq(1),
         i_mscb_address              => X"ACA0",
 
-        reset                       => not nios_reset_n,
-        nios_clk                    => i_nios_clk--,
+        i_reset_n               => reset_156_n,
+        i_clk                   => i_clk_156--,
     );
 
 

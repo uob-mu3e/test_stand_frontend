@@ -1,3 +1,5 @@
+#
+
 #false path for slow control registers (156MHz) to receiver clock (125M)
 #signals are quasi-static and have synchronizers
 set_false_path -through {scifi_path:e_scifi_path|s_subdet_reset_reg[*]}
@@ -14,4 +16,3 @@ set_false_path -from [get_clocks {clk_125_top}] -to [get_clocks {e_scifi_path|u_
 #todo: clock should be removed - we only want to have one clock
 set_false_path -from [get_clocks {clk_aux}] -to [get_clocks {e_scifi_path|u_resetshift|pll|altpll_component|auto_generated|pll1|clk[0]}]
 set_false_path -from [get_clocks {clk_aux}] -to [get_clocks {e_scifi_path|u_resetshift|pll|altpll_component|auto_generated|pll1|clk[1]}]
-

@@ -136,7 +136,11 @@ begin
     );
 
     -- fifo addressing to nios (addressing is done, only commands intended for this mscb node)
-    e_nios_fifo : entity work.my_fifo
+    e_nios_fifo : entity work.ip_scfifo
+    generic map (
+        DATA_WIDTH => 9,
+        DEVICE => "MAX 10"--,
+    )
     port map (
         sclr            => reset,
         clock           => clk,
@@ -149,7 +153,11 @@ begin
     );
 
     -- fifo receiver to addressing
-    e_fifo_data_in : entity work.my_fifo
+    e_fifo_data_in : entity work.ip_scfifo
+    generic map (
+        DATA_WIDTH => 9,
+        DEVICE => "MAX 10"--,
+    )
     port map (
         sclr            => reset,
         clock           => clk,
@@ -177,7 +185,11 @@ begin
     );
 
     -- fifo nios to transmitter
-    e_fifo_data_out : entity work.my_fifo
+    e_fifo_data_out : entity work.ip_scfifo
+    generic map (
+        DATA_WIDTH => 9,
+        DEVICE => "MAX 10"--,
+    )
     port map (
         sclr            => reset,
         clock           => clk,
