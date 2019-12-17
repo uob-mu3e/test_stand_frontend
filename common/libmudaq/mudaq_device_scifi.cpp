@@ -430,7 +430,7 @@ void MudaqDevice::FEBsc_resetSlave(){
  *      1 word as dummy: 0x00000000
  *      First word (0xBAD...) to be written last (serves as start condition)
  */
-int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
+int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError) {
 //printf("FEBsc_write() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr, m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_WRITE = 0x3; // this is 11 in binary
@@ -459,7 +459,15 @@ int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, 
     }
     if(count==1000){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Timeout occured waiting for reply");
-        return -1;
+	//most common case of failure! retry after resetting the SC blocks
+	if(retryOnError){
+	    cm_msg(MINFO, "MudaqDevice::FEBsc_read" , "Retry after timeout");
+
+	    FEBsc_resetMaster();
+	    FEBsc_resetSlave();
+	    return FEBsc_write(FPGA_ID,data,length,startaddr,request_reply,false);
+	}else
+            return -1;
     }
     if(!m_sc_packet_fifo.back().Good()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received bad packet");
@@ -472,7 +480,7 @@ int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, 
     return 0;
 }
 
-int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
+int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError) {
 //printf("FEBsc_read() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr,m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_READ = 0x2; // this is 10 in binary
@@ -495,7 +503,15 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
     }
     if(count==1000){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Timeout occured waiting for reply");
-        return -1;
+	//most common case of failure! retry after resetting the SC blocks
+	if(retryOnError){
+	    cm_msg(MINFO, "MudaqDevice::FEBsc_read" , "Retry after timeout");
+
+	    FEBsc_resetMaster();
+	    FEBsc_resetSlave();
+	    return FEBsc_read(FPGA_ID,data,length,startaddr,request_reply,false);
+	}else
+            return -1;
     }
     if(!m_sc_packet_fifo.back().Good()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet");
