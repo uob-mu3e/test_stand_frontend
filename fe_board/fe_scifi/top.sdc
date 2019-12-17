@@ -1,3 +1,5 @@
+#
+
 #false path for slow control registers (156MHz) to receiver clock (125M)
 #signals are quasi-static and have synchronizers
 set_false_path -through {scifi_path:e_scifi_path|s_subdet_reset_reg[*]}
@@ -21,4 +23,3 @@ set_false_path -to {scifi_path:e_scifi_path|s_cntreg_num[*]}
 set_false_path -to {scifi_path:e_scifi_path|s_cntreg_denom_g_156[*]}
 #counter reset. Should add synchronizer!
 set_false_path -from {scifi_path:e_scifi_path|s_cntreg_ctrl[15]}
-

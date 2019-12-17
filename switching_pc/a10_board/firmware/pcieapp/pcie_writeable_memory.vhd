@@ -14,8 +14,8 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use work.pcie_components.all;
 
-entity pcie_writeable_memory is 
-	port (
+entity pcie_writeable_memory is
+port (
 		local_rstn:				in		std_logic;
 		refclk:					in		std_logic;
 	
@@ -37,8 +37,8 @@ entity pcie_writeable_memory is
 		readlength :			out std_logic_vector(9 downto 0);
 		header2 :				out std_logic_vector(31 downto 0);
 		readen :					out std_logic
-	
-	);
+
+);
 end entity;
 
 

@@ -6,18 +6,18 @@
 --
 -----------------------------------------------------------------------------
 
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
+
 use work.pcie_components.all;
 
-entity pcie_writeable_registers is 
-	port (
+entity pcie_writeable_registers is
+port (
 		local_rstn:				in		std_logic;
 		refclk:					in		std_logic;
-	
+
 		-- from IF
 		rx_st_data0 :  		in 	STD_LOGIC_VECTOR (255 DOWNTO 0);
 		rx_st_eop0 :  			in		STD_LOGIC;
@@ -25,19 +25,18 @@ entity pcie_writeable_registers is
 		rx_st_ready0 :			out 	STD_LOGIC;
 		rx_st_valid0 :			in 	STD_LOGIC;
 		rx_bar :					in 	STD_LOGIC;
-		
+
 		-- registers
 		writeregs :				out	reg32array;
 		regwritten :			out   std_logic_vector(63 downto 0);
-		
+
 		-- to response engine
 		readaddr :				out std_logic_vector(5 downto 0);
 		readlength :			out std_logic_vector(9 downto 0);
 		header2 :				out std_logic_vector(31 downto 0);
 		readen :					out std_logic;
 		inaddr32_w			: out STD_LOGIC_VECTOR (31 DOWNTO 0)
-	
-	);
+);
 end entity;
 
 

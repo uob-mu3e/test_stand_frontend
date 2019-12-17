@@ -6,13 +6,13 @@ package pcie_components is
 subtype reg32           is std_logic_vector(31 downto 0);
 type reg32array is array (63 downto 0) of reg32;
 
-component pcie_block 
-	generic (
+component pcie_block
+generic (
 			DMAMEMWRITEADDRSIZE : integer := 14;
 			DMAMEMREADADDRSIZE  : integer := 12;
 			DMAMEMWRITEWIDTH	  : integer := 32
-	);
-	port (
+);
+port (
 		local_rstn:				in		std_logic;
 		appl_rstn:				in 	std_logic;
 		refclk:					in		std_logic;
@@ -73,7 +73,7 @@ component pcie_block
 		pb_in					: in std_logic_vector(2 downto 0);
 		inaddr32_r			: out STD_LOGIC_VECTOR (31 DOWNTO 0);
 		inaddr32_w			: out STD_LOGIC_VECTOR (31 DOWNTO 0)
-	);
+);
 end component;
 
 
@@ -861,4 +861,4 @@ end component;
 
 
 
-end package pcie_components;
+end package;

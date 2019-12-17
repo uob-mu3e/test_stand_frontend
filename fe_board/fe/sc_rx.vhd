@@ -188,7 +188,7 @@ begin
     e_fifo : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH => FIFO_ADDR_WIDTH_g,
-        DATA_WIDTH => 36--,
+        DATA_WIDTH => o_fifo_rdata'length--,
     )
     port map (
         empty           => o_fifo_rempty,
