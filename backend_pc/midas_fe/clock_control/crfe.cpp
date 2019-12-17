@@ -50,6 +50,7 @@
 #include "history.h"
 
 
+#include "clockboard_bypass.h"
 #include "clockboard.h"
 #include "reset_protocol.h"
 #include "link_constants.h"
@@ -445,7 +446,12 @@ INT frontend_init()
            return CM_DB_ERROR;
 
    cout << "IP: " << ip << " port: " << port << endl;
-   cb = new clockboard(ip, port);
+   if(std::string(ip)=="0.0.0.0"){
+       cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
+       cb = new clockboard_bypass(ip, port);
+   }else{
+       cb = new clockboard(ip, port);
+   }
 
    if(!cb->isConnected())
         return CM_TIMEOUT;
