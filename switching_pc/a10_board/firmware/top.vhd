@@ -96,7 +96,7 @@ end entity top;
 architecture rtl of top is
 
         constant NLINKS_SC : integer := 2;
-        constant NLINKS : integer := 3;
+        constant NLINKS : integer := 2;
         
         signal clk : std_logic;
         signal input_clk : std_logic;
@@ -585,10 +585,10 @@ begin
             i_clk_dma  => pcie_fastclk_out,
             i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
             i_reset_dma_n  => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-            i_rx_data  => data_counter,
-            i_rx_datak => datak_counter,
+            i_rx_data  => data_counter(32*NLINKS-1 downto 0),
+            i_rx_datak => datak_counter(4*NLINKS-1 downto 0),
             i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-            i_link_mask => "111",
+            i_link_mask => writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS-1 downto 0),
             o_event_wren => dma_wren_cnt,
             o_endofevent => dma_end_event_cnt,
             o_event_data => dma_event_data,
