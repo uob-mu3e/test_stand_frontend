@@ -261,7 +261,7 @@ INT begin_of_run(INT run_number, char *error)
 
    // Set up data generator
    uint32_t datagen_setup = 0;
-    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0xFFF, 100);//3E8); // slow down to 64 MBit/s
+    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
     datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
 
@@ -481,7 +481,7 @@ INT read_stream_thread(void *param)
    uint32_t* pdata;
 
    uint32_t lastWritten = 0;
-   uint32_t lastEndofevent = 0;
+   uint32_t lastEndOfEvent = 0;
    int status;
 
    ofstream monitoring_file;
@@ -498,19 +498,9 @@ INT read_stream_thread(void *param)
    int rbh = get_event_rbh(0);
    bool starting=false;
    while (is_readout_thread_enabled()) {
-
-      lastWritten = mu.last_written_addr();
-      lastEndofevent = mu.last_endofevent_addr();
-
-      if (lastWritten == 0){
-          cout << "lastWritten == 0" << endl;
-          ss_sleep(10);
-          continue;
-      }
       
       // obtain buffer space
       status = rb_get_wp(rbh, (void **)&pdata, 10);
-
 
       // just sleep and try again if buffer has no space
       if (status == DB_TIMEOUT) {
@@ -533,55 +523,62 @@ INT read_stream_thread(void *param)
         continue;
       }
 
-     //wait for first DMA packet, last written is still from old run
-	 if(lastlastWritten==lastWritten){
-        ss_sleep(100);
-        continue;
-	 }
+      if (mu.last_written_addr() == 0) continue;
+      if (mu.last_written_addr() == lastlastWritten) continue;
+      if (mu.last_written_addr() == lastWritten) continue;
 
-     if(lastWritten==readindex) {
-         ss_sleep(100);
-         continue;
-     }
+      lastWritten = mu.last_written_addr();
+      lastEndOfEvent = mu.last_endofevent_addr();
 
-//     printf("LASTEVENTT=%8.8x ",lastEndofevent*8);
-//              printf("%8.8x \n",dma_buf[lastEndofevent*8]);
-//              printf("%8.8x \n",dma_buf[lastEndofevent*8-7]);
-//              printf("%8.8x \n",dma_buf[lastEndofevent*8+7]);
-//              printf("%8.8x \n",dma_buf[lastEndofevent*8-8]);
-              printf("%8.8x \n",dma_buf[lastEndofevent*8-8]);
-              printf("%8.8x \n",dma_buf[lastEndofevent*8-9]);
-              printf("%8.8x \n",dma_buf[lastEndofevent*8-10]);
-              printf("%8.8x \n",dma_buf[lastEndofevent*8-11]);
+      // not so sure if we need this
+      if(lastWritten==readindex) continue;
 
+     // in the FPGA the endofevent is one off, since it can be that
+     // the end of event does not fit into the 4kB anymore so we have
+     // to check this here. Also the endofevent is in 256 bit words
+     // so we have to multiply by 8 to get to 32 bit words
+//     if (((lastEndOfEvent+1)*8)%dma_buf_nwords > lastlastWritten) {
+//         ss_sleep(100);
+//         continue;
+//     }
 
+     // only to make it save that we are at the end. Sometimes it fails and
+     // the end of event is off so we would then take the next one
+     if (((dma_buf[((lastEndOfEvent+1)*8)%dma_buf_nwords] == 0xAFFEAFFE) or
+             (dma_buf[((lastEndOfEvent+1)*8)%dma_buf_nwords] == 0x0000009c)) and
+         (dma_buf[((lastEndOfEvent+1)*8+1)%dma_buf_nwords] == 0x00010000)
+             ){
 
-     EVENT_HEADER* eh=(EVENT_HEADER*)(&dma_buf[readindex]);
-     printf("lastW=%8.8x read=%8.8x EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",lastWritten,readindex,eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
-     if(readindex < lastWritten){
+         //printf("%8.8x \n",dma_buf[(lastEndOfEvent+1)*8%dma_buf_nwords]);
+
+     EVENT_HEADER* eh=(EVENT_HEADER*)(&dma_buf[((lastEndOfEvent+1)*8+1)%dma_buf_nwords]);
+     printf("bufW=%8.8x lastW=%8.8x eoe=%8.8x readindex=%8.8x EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",dma_buf_nwords,lastWritten,(lastEndOfEvent+1)*8+1,readindex,eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
+
+     if(readindex < ((lastEndOfEvent+1)*8+1)%dma_buf_nwords){
         //WP before RP. Complete copy
-        size_t wlen = lastWritten - readindex;
+        size_t wlen = ((lastEndOfEvent+1)*8+1)%dma_buf_nwords - readindex;
         //memcpy(pdata,&dma_buf[readindex],wlen*sizeof(dma_buf[0]));
-        copy_n(&dma_buf[readindex], wlen, pdata);
+        copy_n(&dma_buf[readindex], wlen-1, pdata);
         readindex += wlen;
         readindex = readindex%dma_buf_nwords;
      }else{
         //RP before WP. May wrap
-        size_t wlen = dma_buf_nwords - lastWritten + readindex;
         //copy with wrapping
         //#1
         //memcpy(pdata,&dma_buf[readindex],(dma_buf_nwords-readindex)*sizeof(dma_buf[0]));
         copy_n(&dma_buf[readindex],dma_buf_nwords-readindex,pdata);
-        readindex=0;
         pdata+=dma_buf_nwords-readindex;
-        wlen-=dma_buf_nwords-readindex;
-
+        cout << hex << dma_buf[readindex] << endl;
         //#2
         //memcpy(pdata,&dma_buf[readindex],wlen*sizeof(dma_buf[0]));
+        readindex=0;
+        size_t wlen = ((lastEndOfEvent)*8)%dma_buf_nwords;
         copy_n(&dma_buf[readindex], wlen, pdata);
+        cout << hex << dma_buf[((lastEndOfEvent)*8)%dma_buf_nwords] << endl;
         readindex += wlen;
         readindex = readindex%dma_buf_nwords;
       }
+     }
    }
    // tell framework that we finished
    monitoring_file.close();

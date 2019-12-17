@@ -149,6 +149,8 @@ int main(int argc, char *argv[])
 
     uint32_t event_length = 0;
     uint32_t readindex = 0;
+    uint32_t endofevent = 0;
+    uint32_t lastendofevent = 0;
     uint32_t lastWritten = 0;
     int errno;
     uint64_t noData = 0;
@@ -160,6 +162,31 @@ int main(int argc, char *argv[])
 
     while(dma_buf[size/sizeof(uint32_t)-8] <= 0){
 
+        if (mu.last_written_addr() == 0) continue;
+        if (mu.last_written_addr() == lastlastWritten) continue;
+        lastlastWritten = lastWritten;
+        lastWritten = mu.last_written_addr();
+
+//        myfile << "lastWritten" << endl;
+//        for (int i = 0; i < 20; i++) {
+//        char dma_buf_str[256];
+//        sprintf(dma_buf_str, "%08X", dma_buf[lastWritten+i-20]);
+//        myfile << lastWritten + i - 20 << "\t" << dma_buf_str << endl;
+//        }
+
+//        myfile << "endofevent" << endl;
+        lastendofevent = endofevent;
+        endofevent = mu.last_endofevent_addr();
+
+        if ((endofevent+1)*8 > lastlastWritten) continue;
+        if ((dma_buf[(endofevent+1)*8] == 0xAFFEAFFE) or (dma_buf[(endofevent+1)*8] == 0x0000009c)){
+        cout << hex << (endofevent+1)*8 << " " << lastWritten << " " << dma_buf[(endofevent+1)*8] << endl;
+        };
+//        for (int i = 0; i < 20; i++) {
+//        char dma_buf_str[256];
+//        sprintf(dma_buf_str, "%08X", dma_buf[endofevent+i-20]);
+//        myfile << endofevent + i - 20 << "\t" << dma_buf_str << endl;
+//        }
     }
 
 
