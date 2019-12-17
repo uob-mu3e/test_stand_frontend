@@ -107,7 +107,7 @@ BEGIN
 		almost_full_value => 250,
 		intended_device_family => "Stratix IV",
 		lpm_numwords => 256,
-		lpm_showahead => "OFF",
+		lpm_showahead => "ON",
 		lpm_type => "scfifo",
 		lpm_width => 36,
 		lpm_widthu => 8,
@@ -146,7 +146,7 @@ END SYN;
 -- Retrieval info: PRIVATE: Full NUMERIC "1"
 -- Retrieval info: PRIVATE: INTENDED_DEVICE_FAMILY STRING "Stratix IV"
 -- Retrieval info: PRIVATE: LE_BasedFIFO NUMERIC "0"
--- Retrieval info: PRIVATE: LegacyRREQ NUMERIC "1"
+-- Retrieval info: PRIVATE: LegacyRREQ NUMERIC "0"
 -- Retrieval info: PRIVATE: MAX_DEPTH_BY_9 NUMERIC "0"
 -- Retrieval info: PRIVATE: OVERFLOW_CHECKING NUMERIC "0"
 -- Retrieval info: PRIVATE: Optimize NUMERIC "1"
@@ -172,7 +172,7 @@ END SYN;
 -- Retrieval info: CONSTANT: ALMOST_FULL_VALUE NUMERIC "250"
 -- Retrieval info: CONSTANT: INTENDED_DEVICE_FAMILY STRING "Stratix IV"
 -- Retrieval info: CONSTANT: LPM_NUMWORDS NUMERIC "256"
--- Retrieval info: CONSTANT: LPM_SHOWAHEAD STRING "OFF"
+-- Retrieval info: CONSTANT: LPM_SHOWAHEAD STRING "ON"
 -- Retrieval info: CONSTANT: LPM_TYPE STRING "scfifo"
 -- Retrieval info: CONSTANT: LPM_WIDTH NUMERIC "36"
 -- Retrieval info: CONSTANT: LPM_WIDTHU NUMERIC "8"

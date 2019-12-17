@@ -44,8 +44,8 @@ port (
 
 	rx_dpa_locked_out   : out std_logic_vector(NINPUT-1 downto 0);
 
-	rx_runcounter       : out links_reg32;
-	rx_errorcounter     : out links_reg32
+	rx_runcounter       : out reg32array_t(NINPUT-1 downto 0);
+	rx_errorcounter     : out reg32array_t(NINPUT-1 downto 0)
 );
 end receiver_block;
 
@@ -119,13 +119,13 @@ end component; --rx_errcounter;
 	signal rx_reset			: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
 
 	signal rx_ready_reg		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);	
-	signal rx_locked		: STD_LOGIC;
+	signal rx_pll_locked		: STD_LOGIC;
 	signal rx_disperr		: std_logic_vector(NINPUT-1 downto 0);
 
 begin
 
 	rx_dpa_locked_out	<= rx_dpa_locked;
-	pll_locked 			<= rx_locked;
+	pll_locked 			<= rx_pll_locked;
 	rx_clkout 			<= rx_clk;
 
 	lvds_rx : entity work.ip_altlvds_rx
@@ -141,7 +141,7 @@ begin
 		rx_inclock		=> rx_inclock,
 		rx_reset		=> rx_reset,
 		rx_dpa_locked		=> rx_dpa_locked,
-		rx_locked		=> rx_locked,
+		rx_locked		=> rx_pll_locked,
 		rx_out			=> rx_out,
 		rx_outclock		=> rx_clk
 	);
@@ -175,7 +175,7 @@ gen_channels: for i in NINPUT-1 downto 0 generate
 			rx_reset		=> rx_reset(i),
 			rx_fifo_reset		=> rx_fifo_reset(i),
 			rx_dpa_locked		=> rx_dpa_locked(i),
-			rx_locked		=> rx_locked,
+			rx_locked		=> rx_pll_locked,
 			rx_bitslip		=> rx_bitslip(i),
 		
 			ready			=> rx_ready_reg(i),
@@ -190,18 +190,18 @@ gen_channels: for i in NINPUT-1 downto 0 generate
 		port map(
 			reset_n			=> reset_n_errcnt,
 			clk			=> rx_clk,
-			clk_out			=> rx_inclock,
+			clk_out			=> rx_clk,
 
-			rx_freqlocked		=> '0',--rx_freqlocked,
+			rx_freqlocked		=> rx_pll_locked,
 			rx_sync			=> rx_ready_reg(i),
 			rx_err			=> '0',--rx_errdetect,
 			rx_disperr		=> rx_disperr(i),
-			rx_pll_locked		=> '0',--rx_pll_locked,
+			rx_pll_locked		=> rx_dpa_locked(i),
 			rx_patterndetect	=> '0',--rx_patterndetect,
 
-			runcounter		=> rx_runcounter,--readregs_slow(RECEIVER_RUNTIME_REGISTER_R+i),
-			errcounter		=> rx_errorcounter,--readregs_slow(RECEIVER_ERRCOUNT_REGISTER_R+i),
-		--	sync_lost		=> sync_lost,--readregs_slow(RECEIVER_SYNCLOST_SYNCFIFO_REGISTER_R+i)
+			runcounter		=> rx_runcounter(i),
+			errcounter		=> rx_errorcounter(i),
+		--	sync_lost		=> sync_lost,
 		--	freq_lost		=> freq_lost,
 
 			rx_freqlocked_out	=> open,--rx_freqlocked_out,

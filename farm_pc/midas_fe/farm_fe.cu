@@ -8,6 +8,7 @@
 #include "msystem.h"
 #include "mcstd.h"
 #include "experim.h"
+#include "switching_constants.h"
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -32,7 +33,7 @@ const char *frontend_file_name = __FILE__;
 BOOL frontend_call_loop = FALSE;
 
 /* a frontend status page is displayed with this frequency in ms */
-INT display_period = 3000;
+INT display_period = 0;
 
 /* maximum event size produced by this frontend */
 INT max_event_size = 1000000;
@@ -51,6 +52,7 @@ uint32_t laddr;
 uint32_t newdata;
 uint32_t readindex;
 uint32_t lastreadindex;
+uint32_t lastlastWritten;
 bool moreevents;
 bool firstevent;
 ofstream myfile;
@@ -121,7 +123,8 @@ INT frontend_init()
       cm_msg(MINFO,"frontend_init","Key %s not found", set_str);
       return status;
    }
-
+   cm_set_transition_sequence(TR_START,300);
+   cm_set_transition_sequence(TR_STOP,700);
    // add custom page to ODB
    db_create_key(hDB, 0, "Custom/Farm&", TID_STRING);
    const char * name = "farm.html";
@@ -146,6 +149,7 @@ INT frontend_init()
    for (int i = 0; i <  dma_buf_nwords ; i++) {
       (dma_buf)[i] = 0;
    }
+   lastlastWritten = 0;
    
    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
    if ( !mup->open() ) {
@@ -218,7 +222,6 @@ void speed_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 {
     KEY key;
     db_get_key(hDB, hKey, &key);
-    mudaq::DmaMudaqDevice & mu = *mup;
 
     if (std::string(key.name) == "Divider") {
        int value;
@@ -244,29 +247,26 @@ INT begin_of_run(INT run_number, char *error)
    moreevents = false;
    firstevent = true;
 
-   // Set up data generator
-//    uint32_t datagen_setup = 0;
-//    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
-//    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
-//    //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
-//    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
-   
    // reset all
    uint32_t reset_reg = 0;
-   reset_reg |= 1<<RESET_BIT_PCIE;
-   reset_reg |= 1<<RESET_BIT_PCIE_LOCAL;
-   reset_reg |= 1<<RESET_BIT_FIFOPLL;
-   reset_reg |= 1<<RESET_BIT_DATAFIFO;
-   reset_reg |= 1<<RESET_BIT_RECEIVER;
-   reset_reg |= 1<<RESET_BIT_WORDALIGN;
-   reset_reg |= 1<<RESET_BIT_BOARD;
+   reset_reg |= 1<<RESET_BIT_EVENT_COUNTER;
+   reset_reg |= 1<<RESET_BIT_DATAGEN;
 
    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
    // Enable register on FPGA for continous readout and enable dma
-   uint32_t lastlastWritten = mu.last_written_addr();
+   lastlastWritten = mu.last_written_addr();
    mu.enable_continous_readout(0);
    usleep(10);
    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
+
+   // Set up data generator
+   uint32_t datagen_setup = 0;
+    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0xFFF, 100);//3E8); // slow down to 64 MBit/s
+    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+
+    // Enable all links
+    mu.write_register_wait(FEB_ENABLE_REGISTER_W, 0xF, 100);
    
    // Get ODB settings for this equipment
    HNDLE hDB, hStreamSettings;
@@ -298,12 +298,49 @@ INT begin_of_run(INT run_number, char *error)
 
 INT end_of_run(INT run_number, char *error)
 {
-   mudaq::DmaMudaqDevice & mu = *mup;
 
-   // stop generator
-//    datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-//    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
-//    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
+   mudaq::DmaMudaqDevice & mu = *mup;
+   printf("farm_fe: Waiting for buffers to empty\n");
+   uint16_t timeout_cnt = 0;
+   while(! mu.read_register_ro(BUFFER_STATUS_REGISTER_R) & 1<<0/* TODO right bit */ &&
+         timeout_cnt++ < 50) {
+      printf("Waiting for buffers to empty %d/50\n", timeout_cnt);
+      timeout_cnt++;
+      usleep(1000);
+   };
+
+//   if(timeout_cnt>=50) {
+//      cm_msg(MERROR,"farm_fe","Buffers on Switching Board not empty at end of run");
+//      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
+//      return CM_TRANSITION_CANCELED;
+//   }
+   printf("Buffers all empty\n");
+
+
+   // TODO: Find a better way to see when DMA is finished.
+
+   printf("Waiting for DMA to finish\n");
+   usleep(1000); // Wait for DMA to finish
+   timeout_cnt = 0;
+   while(mu.last_written_addr() != (readindex % dma_buf_nwords) &&
+         timeout_cnt++ < 50) {
+      printf("Waiting for DMA to finish %d/50\n", timeout_cnt);
+      timeout_cnt++;
+      usleep(1000);
+   };
+
+//   if(timeout_cnt>=50) {
+//      cm_msg(MERROR,"farm_fe","DMA did not finish");
+//      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
+//      return CM_TRANSITION_CANCELED;
+//   }
+   printf("DMA is finished\n");
+
+    // stop generator
+   uint32_t datagen_setup = 0;
+   datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
+   mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+   mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x0, 100);
 
    // disable DMA
    mu.disable();
@@ -437,15 +474,14 @@ INT read_stream_thread(void *param)
    // we are at mu.last_written_addr() ...  ask for a new bunch of x 256-bit words
    // get mudaq and set readindex to last written addr
    mudaq::DmaMudaqDevice & mu = *mup;
-   readindex = mu.last_written_addr();
-
-   // setup variables for event handling
+   //readindex = mu.last_written_addr()+1;
+/* ---KB
    EVENT_HEADER *pEventHeader;
-   void *pEventData;
-   DWORD *pdata;
+*/
+   uint32_t* pdata;
 
-   uint32_t event_length = 0;
    uint32_t lastWritten = 0;
+   uint32_t lastEndofevent = 0;
    int status;
 
    ofstream monitoring_file;
@@ -460,102 +496,93 @@ INT read_stream_thread(void *param)
    
    // obtain ring buffer for inter-thread data exchange
    int rbh = get_event_rbh(0);
-
+   bool starting=false;
    while (is_readout_thread_enabled()) {
+
       lastWritten = mu.last_written_addr();
+      lastEndofevent = mu.last_endofevent_addr();
 
       if (lastWritten == 0){
-          //cout << "lastWritten == 0" << endl;
+          cout << "lastWritten == 0" << endl;
+          ss_sleep(10);
           continue;
       }
       
-       //get event length
-       event_length = dma_buf[(readindex+7)%dma_buf_nwords];
-
-       if (event_length == 0){
-           //cout << "event_length == 0" << endl;
-           continue;
-        }
-
       // obtain buffer space
-      status = rb_get_wp(rbh, (void **)&pEventHeader, 0);
-      if (!is_readout_thread_enabled()){
-         break;
-      }
+      status = rb_get_wp(rbh, (void **)&pdata, 10);
 
-       // just sleep and try again if buffer has no space
+
+      // just sleep and try again if buffer has no space
       if (status == DB_TIMEOUT) {
-          //cout << "status == DB_TIMEOUT" << endl;
-         ss_sleep(10);
+          cout << "status == DB_TIMEOUT" << endl;
+         //TODO: throw data here?
+         //readindex = mu.last_written_addr()+1;
          continue;
       }
 
       if (status != DB_SUCCESS){
-          //cout << "DB_SUCCESS" << endl;
+         cout << "!DB_SUCCESS" << endl;
          break;
       }
 
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
-          //cout << "STATE_RUNNING" << endl;
-         ss_sleep(10);
+        //cout << "!STATE_RUNNING" << endl;
+        ss_sleep(100);
+        //TODO: signalling from main thread?
+        continue;
+      }
+
+     //wait for first DMA packet, last written is still from old run
+	 if(lastlastWritten==lastWritten){
+        ss_sleep(100);
+        continue;
+	 }
+
+     if(lastWritten==readindex) {
+         ss_sleep(100);
          continue;
-      }
+     }
 
-      // do not overtake dma engine
-//      if(lastWritten < (readindex%dma_buf_nwords)){
-//          event_length = dma_buf[lastWritten - 1];
-//          readindex = lastWritten - event_length * 8;
-//      }
+//     printf("LASTEVENTT=%8.8x ",lastEndofevent*8);
+//              printf("%8.8x \n",dma_buf[lastEndofevent*8]);
+//              printf("%8.8x \n",dma_buf[lastEndofevent*8-7]);
+//              printf("%8.8x \n",dma_buf[lastEndofevent*8+7]);
+//              printf("%8.8x \n",dma_buf[lastEndofevent*8-8]);
+              printf("%8.8x \n",dma_buf[lastEndofevent*8-8]);
+              printf("%8.8x \n",dma_buf[lastEndofevent*8-9]);
+              printf("%8.8x \n",dma_buf[lastEndofevent*8-10]);
+              printf("%8.8x \n",dma_buf[lastEndofevent*8-11]);
 
-      if((readindex%dma_buf_nwords) > lastWritten){
-          if(dma_buf_nwords - (readindex % dma_buf_nwords) + lastWritten < event_length * 8 + 1){
-              //cout << "BREAK1" << endl;
-              continue;
-          }
-      }else{
-          if(lastWritten - (readindex % dma_buf_nwords) < event_length * 8 + 1){
-              //cout << "BREAK2" << endl;
-              continue;
-          }
-      }
 
-      status = TRUE;
-      if (status) {
 
-         bm_compose_event(pEventHeader, equipment[0].info.event_id, 0, 0, equipment[0].serial_number++);
-         pEventData = (void *)(pEventHeader + 1);
-         
-         // init bank structure
-         bk_init32(pEventData);
+     EVENT_HEADER* eh=(EVENT_HEADER*)(&dma_buf[readindex]);
+     printf("lastW=%8.8x read=%8.8x EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",lastWritten,readindex,eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
+     if(readindex < lastWritten){
+        //WP before RP. Complete copy
+        size_t wlen = lastWritten - readindex;
+        //memcpy(pdata,&dma_buf[readindex],wlen*sizeof(dma_buf[0]));
+        copy_n(&dma_buf[readindex], wlen, pdata);
+        readindex += wlen;
+        readindex = readindex%dma_buf_nwords;
+     }else{
+        //RP before WP. May wrap
+        size_t wlen = dma_buf_nwords - lastWritten + readindex;
+        //copy with wrapping
+        //#1
+        //memcpy(pdata,&dma_buf[readindex],(dma_buf_nwords-readindex)*sizeof(dma_buf[0]));
+        copy_n(&dma_buf[readindex],dma_buf_nwords-readindex,pdata);
+        readindex=0;
+        pdata+=dma_buf_nwords-readindex;
+        wlen-=dma_buf_nwords-readindex;
 
-         // create "HEAD" bank
-         bk_create(pEventData, "HEAD", TID_DWORD, (void **)&pdata);
-         *pdata++ = event_length;
-         *pdata++ = 0xAFFEAFFE;
-         
-         for (int i = 0; i < event_length; i++){
-            *pdata++ = dma_buf[(readindex + 6)%dma_buf_nwords];
-            //*pdata++ = dma_buf[(readindex + 7)%dma_buf_nwords];
-
-            if (lastreadindex % 1000 == 0){
-                char dma_buf_str[256];
-                sprintf(dma_buf_str, "%08X", dma_buf[(readindex + 6)%dma_buf_nwords]);
-                monitoring_file << readindex + 6 << "\t" << dma_buf_str << "\t" << event_length  << endl;
-            }
-            readindex = readindex + 8;
-         }
-
-         lastreadindex = readindex;
-         
-         bk_close(pEventData, pdata);
-
-         pEventHeader->data_size = bk_size(pEventData);
-         rb_increment_wp(rbh, sizeof(EVENT_HEADER) + pEventHeader->data_size);
-                
+        //#2
+        //memcpy(pdata,&dma_buf[readindex],wlen*sizeof(dma_buf[0]));
+        copy_n(&dma_buf[readindex], wlen, pdata);
+        readindex += wlen;
+        readindex = readindex%dma_buf_nwords;
       }
    }
-
    // tell framework that we finished
    monitoring_file.close();
    signal_readout_thread_active(0, FALSE);

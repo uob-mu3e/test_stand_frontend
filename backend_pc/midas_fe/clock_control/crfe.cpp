@@ -50,9 +50,9 @@
 #include "history.h"
 
 
-
 #include "clockboard.h"
 #include "reset_protocol.h"
+#include "link_constants.h"
 
 using std::cout;
 using std::endl;
@@ -72,7 +72,7 @@ const char *frontend_file_name = __FILE__;
 BOOL frontend_call_loop = FALSE;
 
 /* a frontend status page is displayed with this frequency in ms    */
-INT display_period = 1000;
+INT display_period = 0;
 
 /* maximum event size produced by this frontend */
 INT max_event_size = 10000;
@@ -83,13 +83,14 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
 
-
 // Clock board interface
 clockboard * cb;
 /*-- Function declarations -----------------------------------------*/
 
 INT read_cr_event(char *pevent, INT off);
 void cr_settings_changed(HNDLE, HNDLE, int, void *);
+void link_settings_changed(HNDLE, HNDLE, int, void *);
+void prepare_run_on_request(HNDLE, HNDLE, int, void *);
 
 /*-- Equipment list ------------------------------------------------*/
 
@@ -98,6 +99,7 @@ const char *cr_settings_str[] = {
 "Active = BOOL : 1",
 "IP = STRING : [16] 192.168.0.220",
 "PORT = INT : 50001",
+"N_READBACK = INT : 4",
 "TX_CLK_MASK = INT : 0x0AA",
 "TX_RST_MASK = INT : 0xAA0",
 "TX_CLK_INVERT_MASK = INT : 0x0A00",
@@ -283,7 +285,7 @@ EQUIPMENT equipment[] = {
      0,                         /* event source */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
-     RO_ALWAYS | RO_ODB,        /* read always and update ODB */
+     RO_RUNNING | RO_STOPPED | RO_ODB,        /* read while running and stopped but not at transitions and update ODB */
      10000,                     /* read every 10 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
@@ -296,17 +298,50 @@ EQUIPMENT equipment[] = {
 };
 
 
+const char *link_settings_str[] = {
+"SwitchingBoardMask = INT[4] :",
+    "[0] 0",\
+    "[1] 0",\
+    "[2] 0",\
+    "[3] 0",\
+"SwitchingBoardNames = STRING[4] :",
+    "[32] Central",
+    "[32] Recurl US",
+    "[32] Recurl DS",
+    "[32] Fibres",
+    "LinkMask = INT[192] :",
+#include "zeros192.h"
+    "FrontEndBoardType = INT[192] :",
+#include "zeros192.h"
+    "FrontEndBoardNames = STRING[192] :",
+#include "defaultfebnames192.h"
+nullptr
+};
+
+const char *link_variables_str[] = {
+"SwitchingBoardStatus = INT[4] :",
+"[0] 0",\
+"[1] 0",\
+"[2] 0",\
+"[3] 0",\
+"RXLinkStatus = INT[192] :",
+#include "zeros192.h"
+"TXLinkStatus = INT[192] :",
+#include "zeros192.h"
+nullptr
+};
+
 /*-- Dummy routines ------------------------------------------------*/
 
 INT poll_event(INT source, INT count, BOOL test)
 {
    return 1;
-};
+}
 
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 {
    return 1;
-};
+}
 
 /*-- Frontend Init -------------------------------------------------*/
 
@@ -323,10 +358,33 @@ INT frontend_init()
 
    db_watch(hDB, hKey, cr_settings_changed, nullptr);
 
-   // add custom page to ODB
+
+   // Create link structure in ODB
+   db_create_record(hDB, 0, "Equipment/Links/Settings", strcomb(link_settings_str));
+   db_find_key(hDB, 0, "/Equipment/Links", &hKey);
+   assert(hKey);
+   db_watch(hDB, hKey, link_settings_changed, nullptr);
+
+   db_create_record(hDB, 0, "Equipment/Links/Variables", strcomb(link_variables_str));
+
+   // Create run transition structure
+   db_create_key(hDB, 0, "/Equipment/Clock Reset/Run Transitions/Request Run Prepare", TID_INT);
+   db_find_key(hDB, 0, "/Equipment/Clock Reset/Run Transitions/Request Run Prepare", &hKey);
+   INT zeros[MAX_N_SWITCHINGBOARDS];
+   for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++)
+       zeros[i] =0;
+   db_set_data(hDB, hKey, zeros, sizeof(INT)*MAX_N_SWITCHINGBOARDS, MAX_N_SWITCHINGBOARDS, TID_INT);
+   db_watch(hDB, hKey, prepare_run_on_request, nullptr);
+
+   // add custom pages to ODB
    db_create_key(hDB, 0, "Custom/Clock and Reset&", TID_STRING);
    const char * name = "cr.html";
-   db_set_value(hDB,0,"Custom/Clock and Reset&",name, sizeof(name), 1,TID_STRING);
+   db_set_value(hDB,0,"Custom/Clock and Reset&",name, strlen(name), 1,TID_STRING);
+
+   // add custom pages to ODB
+   db_create_key(hDB, 0, "Custom/Links&", TID_STRING);
+   const char * name2 = "links.html";
+   db_set_value(hDB,0,"Custom/Links&",name2, strlen(name2), 1,TID_STRING);
 
 
 
@@ -374,6 +432,8 @@ INT frontend_init()
 
 
    /////////////////////////////////////////////
+   db_find_key(hDB, 0, "/Equipment/Clock Reset", &hKey);
+   assert(hKey);
 
    char ip[256];// = "10.32.113.218";
    int size = 256;
@@ -391,22 +451,22 @@ INT frontend_init()
         return CM_TIMEOUT;
 
    int clkdisable;
-   size =sizeof(port);
+   size =sizeof(clkdisable);
    if(!(db_get_value(hDB, hKey, "settings/TX_CLK_MASK", &clkdisable, &size, TID_INT, false)==DB_SUCCESS))
            return CM_DB_ERROR;
 
    int rstdisable;
-   size =sizeof(port);
+   size =sizeof(rstdisable);
    if(!(db_get_value(hDB, hKey, "settings/TX_RST_MASK", &rstdisable, &size, TID_INT, false)==DB_SUCCESS))
            return CM_DB_ERROR;
 
    int clkinvert;
-   size =sizeof(port);
+   size =sizeof(clkinvert);
    if(!(db_get_value(hDB, hKey, "settings/TX_CLK_INVERT_MASK", &clkinvert, &size, TID_INT, false)==DB_SUCCESS))
            return CM_DB_ERROR;
 
    int rstinvert;
-   size =sizeof(port);
+   size =sizeof(rstinvert);
    if(!(db_get_value(hDB, hKey, "settings/TX_RST_INVERT_MASK", &rstinvert, &size, TID_INT, false)==DB_SUCCESS))
            return CM_DB_ERROR;
 
@@ -429,6 +489,18 @@ INT frontend_init()
    size = sizeof(uint32_t);
    db_set_value(hDB, hKey, "Variables/Fireflys Present", ffs, 8*size,8,TID_DWORD);
 
+   /*
+    * Set our transition sequence. The default is 500.
+    */
+   cm_set_transition_sequence(TR_START, 500);
+
+   /*
+    * Set our transition sequence. The default is 500. Setting it
+    * to 100 means we are called BEFORE most other clients.
+    */
+    cm_set_transition_sequence(TR_STOP, 100);
+
+
    return CM_SUCCESS;
 }
 
@@ -450,6 +522,13 @@ INT frontend_loop()
 
 INT begin_of_run(INT run_number, char *error)
 {
+    // set equipment status for status web page
+    set_equipment_status("Clock Reset", "Starting run", "yellowLight");
+    cb->write_command("Sync");
+    //usleep(1);
+    cb->write_command("Start Run");
+    set_equipment_status("Clock Reset", "Ok", "greenLight");
+
    return CM_SUCCESS;
 }
 
@@ -457,6 +536,9 @@ INT begin_of_run(INT run_number, char *error)
 
 INT end_of_run(INT run_number, char *error)
 {
+
+   cb->write_command("End Run");
+   set_equipment_status("Clock Reset", "Run stopped", "yellowLight");
    return CM_SUCCESS;
 }
 
@@ -520,11 +602,11 @@ INT read_cr_event(char *pevent, INT off)
 
 
    for(uint8_t i=0;i < 8; i++){
-       if(daughters && (1<<i)){
+       if(daughters & (1<<i)){
            *pdata++ = cb->read_daughter_board_current(i);
            *pdata++ = cb->read_daughter_board_voltage(i);
            for(uint8_t j=0;j < 3; j++){
-               if(fireflys[i] && (1<<j)){
+               if(fireflys[i] & (1<<j)){
                    *pdata++= ((cb->read_tx_firefly_alarms(i,j)) << 16) + cb->read_tx_firefly_lf(i,j);
                    *pdata++ = cb->read_tx_firefly_temp(i,j);
                    *pdata++ = cb->read_tx_firefly_voltage(i,j);
@@ -644,8 +726,7 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        }
 
        // Easy case are commands without payload
-       //if(!(it->second.has_payload)){
-       if(true){
+       if(!(it->second.has_payload)){
            BOOL value;
            int size = sizeof(value);
            db_get_data(hDB, hKey, &value, &size, TID_BOOL);
@@ -658,9 +739,8 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
               value = FALSE; // reset flag in ODB
               db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
            }
-       }
-           // here the case with payload
-       /*} else {
+
+       } else {
            // Run prepare needs the run number
            if (std::string(key.name) == "Run Prepare") {
               BOOL value;
@@ -696,8 +776,78 @@ void cr_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
                     db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
                }
            }
-       }*/
+       }
+   }
+}
+
+void link_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
+{
+   KEY key;
+
+   db_get_key(hDB, hKey, &key);
+    if (std::string(key.name) == "SwitchingBoardMask") {
+      INT value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_INT);
+      cm_msg(MINFO, "link_settings_changed", "Set Switching Board Mask to %d", value);
    }
 
+    if (std::string(key.name) == "LinkMask") {
+      INT value[MAX_N_FRONTENDBOARDS];
+      int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
+      db_get_data(hDB, hKey, value, &size, TID_INT);
+      cm_msg(MINFO, "link_settings_changed", "Seting Link Board Mask");
 
+      for(int i = 0; i < MAX_N_FRONTENDBOARDS; i++){
+          if(value[i] == FEBLINKMASK::OFF || value[i] ==  FEBLINKMASK::SCOn){
+              cb->write_command("Disable",0,i);
+          } else {
+              cb->write_command("Enable",0,i);
+          }
+          //TODO: Deal with enabling/diabling slow control
+      }
+
+
+   }
+}
+
+void prepare_run_on_request(HNDLE hDB, HNDLE hKey, INT, void *){
+
+    cm_msg(MINFO, "prepare_run_on_request", "Execute Run Prepare on request called");
+
+    KEY key;
+    db_get_key(hDB, hKey, &key);
+    INT request[MAX_N_SWITCHINGBOARDS];
+    int size = sizeof(INT)*MAX_N_SWITCHINGBOARDS;
+    db_get_data(hDB, hKey, request, &size, TID_INT);
+
+    INT active[MAX_N_SWITCHINGBOARDS];
+    db_get_value(hDB, 0, "/Equipment/Links/Settings/SwitchingBoardMask",
+                 active, &size, TID_INT, false);
+
+    bool allok = true;
+    bool notalloff = false;
+    for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++){
+        printf("%i : %i : %i\n", i, request[i], active[i]);
+        allok = allok && ((request[i] > 0) || (active[i] == 0));
+        notalloff = notalloff || active[i];
+    }
+
+    if(allok && notalloff){
+        cm_msg(MINFO, "prepare_run_on_request", "Execute Run Prepare on request");
+        int run;
+        int size = sizeof(run);
+        db_get_value(hDB, 0, "/Runinfo/Run number", &run, &size, TID_INT, false);
+        cb->write_command("Run Prepare",run);
+
+        // reset requests
+        for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++){
+            active[i] =0;
+        }
+        size =  sizeof(INT)*MAX_N_SWITCHINGBOARDS;
+        db_set_value(hDB,0,"/Equipment/Clock Reset/Run Transitions/Request Run Prepare", active, size, MAX_N_SWITCHINGBOARDS, TID_INT);
+
+    } else {
+        cm_msg(MINFO, "prepare_run_on_request", "Waiting for more switching boards");
+    }
 }

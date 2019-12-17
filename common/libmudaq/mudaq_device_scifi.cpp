@@ -382,6 +382,7 @@ void MudaqDevice::munmap_wrapper(volatile uint32_t** addr, unsigned len,
     munmap_wrapper(tmp, len, error_msg);
 }
 
+const uint16_t MudaqDevice::FEBsc_broadcast_ID=0xffff;
 
 void MudaqDevice::FEBsc_resetMaster(){
     cm_msg(MINFO, "MudaqDevice" , "Resetting slow control master");
@@ -393,7 +394,7 @@ void MudaqDevice::FEBsc_resetMaster(){
     m_FEBsc_wmem_addr=0;
     //reset fpga entity
     write_register_wait(RESET_REGISTER_W, SET_RESET_BIT_SC_MASTER(0), 1000);
-    write_register_wait(RESET_REGISTER_W, 0x0, 1000);
+    write_register(RESET_REGISTER_W, 0x0);
 }
 void MudaqDevice::FEBsc_resetSlave(){
     cm_msg(MINFO, "MudaqDevice" , "Resetting slow control slave");
@@ -402,7 +403,7 @@ void MudaqDevice::FEBsc_resetSlave(){
     m_FEBsc_rmem_addr=0;
     //reset fpga entity
     write_register_wait(RESET_REGISTER_W, SET_RESET_BIT_SC_SLAVE(0), 1000);
-    write_register_wait(RESET_REGISTER_W, 0x0, 1000);
+    write_register(RESET_REGISTER_W, 0x0);
     //wait until slave is reset, clearing the ram takes time
     uint16_t timeout_cnt=0;
     //poll register until reset. Should be 0xff... during reset and zero after, but we might be bombarded with packets, so give some margin for data to enter. 
@@ -430,12 +431,13 @@ void MudaqDevice::FEBsc_resetSlave(){
  *      1 word as dummy: 0x00000000
  *      First word (0xBAD...) to be written last (serves as start condition)
  */
-int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
-//printf("FEBsc_write() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr, m_FEBsc_wmem_addr);
+int MudaqDevice::FEBsc_write(uint16_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
+//printf("FEBsc_write() FPGA:%u length%u startaddr%x @ %d\n",FPGA_ID,length,startaddr, m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_WRITE = 0x3; // this is 11 in binary
-
-    write_memory_rw(1 + m_FEBsc_wmem_addr, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_WRITE << 24 | (uint16_t) FPGA_ID << 8 | 0xBC); // two most significant bits are 0
+    uint16_t FPGAID_field=1<<FPGA_ID;//!FPGA ID is to be one-hot encoded (TODO in firmware)
+    if(FPGA_ID==FEBsc_broadcast_ID) FPGAID_field=FEBsc_broadcast_ID;
+    write_memory_rw(1 + m_FEBsc_wmem_addr, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_WRITE << 24 | (uint16_t) FPGAID_field << 8 | 0xBC); // two most significant bits are 0
     write_memory_rw(2 + m_FEBsc_wmem_addr, startaddr);
     write_memory_rw(3 + m_FEBsc_wmem_addr, length);
 
@@ -472,12 +474,14 @@ int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, 
     return 0;
 }
 
-int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
+int MudaqDevice::FEBsc_read(uint16_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
 //printf("FEBsc_read() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr,m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_READ = 0x2; // this is 10 in binary
 
-    write_memory_rw(1 + m_FEBsc_wmem_addr, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_READ << 24 | (uint16_t) FPGA_ID << 8 | 0xBC);
+    uint16_t FPGAID_field=1<<FPGA_ID;//!FPGA ID is to be one-hot encoded (TODO in firmware)
+    if(FPGA_ID==FEBsc_broadcast_ID) FPGAID_field=FEBsc_broadcast_ID;
+    write_memory_rw(1 + m_FEBsc_wmem_addr, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_READ << 24 | (uint16_t) FPGAID_field << 8 | 0xBC);
     write_memory_rw(2 + m_FEBsc_wmem_addr, startaddr);
     write_memory_rw(3 + m_FEBsc_wmem_addr, length);
     write_memory_rw(m_FEBsc_wmem_addr + 4, 0x0000009c);
@@ -623,15 +627,16 @@ int MudaqDevice::FEBsc_write_bank(char *pevent, int off){
    return bk_size(pevent);
 }
 
-#define FEBsc_RPC_DATAOFFSET 0
+const uint32_t MudaqDevice::FEBsc_RPC_DATAOFFSET=0;
+
 //send an RPC command with payload to the nios, wait for finish. Returns status of Nios2 callback returned from FEB
-uint16_t MudaqDevice::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, std::vector<std::pair<uint32_t* /*payload*/,uint16_t /*chunklen*/> > payload_chunks, int polltime_ms){
+uint16_t MudaqDevice::FEBsc_NiosRPC(uint16_t FPGA_ID, uint16_t command, std::vector<std::pair<uint32_t* /*payload*/,uint16_t /*chunklen*/> > payload_chunks, int polltime_ms){
          uint32_t len=0;
-	 printf("MudaqDevice::FEBsc_NiosRPC(): command %x\n",command, len);
+	 printf("MudaqDevice::FEBsc_NiosRPC(): command %x\n",command);
 	 //write payload chunks
 	 for(auto chunk: payload_chunks){
               FEBsc_write(FPGA_ID, chunk.first, chunk.second, (uint32_t) len+FEBsc_RPC_DATAOFFSET,true);
-	      printf("MudaqDevice::FEBsc_NiosRPC(): writing chunk of %d words\n", len);
+	      printf("MudaqDevice::FEBsc_NiosRPC(): writing chunk of %d words\n", chunk.second);
 	      len+=chunk.second;
 	 }
          uint32_t reg;

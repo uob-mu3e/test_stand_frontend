@@ -15,7 +15,7 @@ public:
 
     // Write "reset" commands
     int write_command(uint8_t command, uint32_t payload =0, bool has_payload = false);
-    int write_command(char * name, uint32_t payload =0, uint16_t address =0);
+    int write_command(const char * name, uint32_t payload =0, uint16_t address =0);
 
     // I2C interface
     int init_i2c();
@@ -95,6 +95,7 @@ public:
     int configure_mother_current_monitor(uint16_t config);
 
     reset reset_protocol;
+
 protected:
     ipbus bus;
 

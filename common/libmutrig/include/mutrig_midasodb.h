@@ -8,7 +8,7 @@
 #include <midas.h>
 #include "mutrig_config.h"
 #include "mutrig_MIDAS_config.h"
-#include "SciFi_FEB.h"
+#include "Mutrig_FEB.h"
 
 namespace mutrig {
 
@@ -26,17 +26,11 @@ namespace midasODB {
 // /Equipment/SciFi/Settings/ASICs/%d/TDC
 // /Equipment/SciFi/Settings/ASICs/%d/Channels/%d/Conf
 //Relies on {prefix}/Settings/ASICs/Global/Num asics to build the tree of the right size
-//If init_FEB is set, the registers on the FEB-FPGA are initialized
-int setup_db(HNDLE& hDB, const char* prefix,SciFiFEB* FEB_inteface,bool init_FEB);
+int setup_db(HNDLE& hDB, const char* prefix,MutrigFEB* FEB_inteface);
 
 //Map ODB structure under prefix (e.g. /Equipment/SciFi) to a Config instance (i.e. build the configuration pattern) for this asic.
 //Returns configuration class holding the pattern.
 Config MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic);
-
-//Foreach loop over all asics under this prefix. Call with a lambda function,
-//e.g. midasODB::MapForEach(hDB, "/Equipment/SciFi",[mudaqdev_ptr](Config c,int asic){mudaqdev_ptr->ConfigureAsic(c,asic);});
-//Function must return SUCCESS, otherwise loop is stopped.
-int MapForEach(HNDLE& db_rootentry, const char* prefix, std::function<int(mutrig::Config* /*mutrig config*/,int /*ASIC #*/)> func);
 
 } } // namespace mutrig::midasODB
 
