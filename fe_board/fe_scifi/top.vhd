@@ -310,7 +310,7 @@ begin
 
 
 
-        i_nios_clk      => si42_clk_125,
+        i_nios_clk      => si42_clk_80,
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
         o_clk_156_mon   => led(14),
