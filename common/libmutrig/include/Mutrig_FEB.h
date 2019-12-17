@@ -68,17 +68,25 @@ class MutrigFEB {
       virtual uint8_t nAsicsPerModule()=0;
       //Return typeID for building FEB ID map
       virtual FEBTYPE  GetTypeID()=0;
+      virtual bool IsSecondary(int t){return false;}
 
       //list of all FPGAs mapped to this subdetector. Used for pushing common configurations to all FEBs
       //TODO: move to generic FEB class after merging with pixel SC
       //TODO: extend to map<ID, FPGA_ID_TYPE> with more information (name, etc. for reporting).
       struct mapped_FEB_t{
-	 uint16_t FPGA_ID;	//global numbering. sb_id=FPGA_ID/MAX_LINKS_PER_SWITCHINGBOARD, sb_port=FPGA_ID%MAX_LINKS_PER_SWITCHINGBOARD
+	 private:
+	 uint16_t LinkID;	//global numbering. sb_id=LinkID/MAX_LINKS_PER_SWITCHINGBOARD, sb_port=LinkID%MAX_LINKS_PER_SWITCHINGBOARD
 	 INT mask; 
 	 std::string fullname_link;
+	 public:
+	 mapped_FEB_t(uint16_t ID, INT linkmask, std::string physName):LinkID(ID),mask(linkmask),fullname_link(physName){};
+	 bool IsScEnabled(){return mask&FEBLINKMASK::SCOn;}
+	 bool IsDataEnabled(){return mask&FEBLINKMASK::DataOn;}
+	 uint16_t GetLinkID(){return LinkID;}
+	 std::string GetLinkName(){return fullname_link;}
 	 //getters for FPGAPORT_ID and SB_ID (physical link address, independent on number of links per FEB)
-	 uint8_t SB_Number(){return FPGA_ID/MAX_LINKS_PER_SWITCHINGBOARD;}
-	 uint8_t SB_Port()  {return FPGA_ID%MAX_LINKS_PER_SWITCHINGBOARD;}
+	 uint8_t SB_Number(){return LinkID/MAX_LINKS_PER_SWITCHINGBOARD;}
+	 uint8_t SB_Port()  {return LinkID%MAX_LINKS_PER_SWITCHINGBOARD;}
       };
       //map m_FPGAs[global_FEB_number] to a struct giving the physical link addres to a struct giving the physical link address
       std::vector<mapped_FEB_t> m_FPGAs;

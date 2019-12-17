@@ -22,6 +22,13 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
     INT status = DB_SUCCESS;
     char set_str[255];
 
+    //Get predefined number of asics from ODB
+    unsigned int nasics=FEB_interface->GetNumASICs();
+    if(nasics==0){
+        cm_msg(MINFO,"mutrig_midasodb::setup_db","Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
+	return DB_SUCCESS;
+    }
+
     /* Map Equipment/SciFi/Daq (structure defined in mutrig_MIDAS_config.h) */
     //TODO: if we have more than one FE-FPGA, there might be more than one DAQ class.
     MUTRIG_DAQ_STR(mutrig_daq);         // global settings for daq/fpga
@@ -29,7 +36,7 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
     status = db_create_record(hDB, 0, set_str, strcomb(mutrig_daq));
     status = db_find_key (hDB, 0, set_str, &hTmp);
     if (status != DB_SUCCESS) {
-        cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
+        cm_msg(MINFO,"mutrig_midasodb", "Key %s not found", set_str);
         return status;   
     }
 //    HNDLE key_tmp;
@@ -50,12 +57,9 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
     status = db_create_record(hDB, 0, set_str, strcomb(mutrig_global));
     status = db_find_key (hDB, 0, set_str, &hTmp);
     if (status != DB_SUCCESS) {
-        cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
+        cm_msg(MINFO,"mutrig_midasodb", "Key %s not found", set_str);
         return status;
     }
-
-   //Get predefined number of asics from ODB
-    unsigned int nasics=FEB_interface->GetNumASICs();
 
     /* Map Equipment/SciFi/ASICs/TDCs and /Equipment/Scifi/ASICs/Channels 
      * (structure defined in mutrig_MIDAS_config.h) */

@@ -34,7 +34,8 @@ class SciFiFEB : public MutrigFEB{
       virtual uint8_t nModulesPerFEB(){return 2;}
       virtual uint8_t nAsicsPerModule(){return 4;}
       //Return typeID for building FEB ID map
-      virtual FEBTYPE  GetTypeID(){return FEBTYPE::Fibre;};
+      virtual FEBTYPE  GetTypeID(){return FEBTYPE::Fibre;}
+      virtual bool IsSecondary(int t){return t==FEBTYPE::FibreSecondary;}
 
       //MIDAS callback for all ___ SciFi specific ___ setters. Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
       static void on_scifi_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *);
