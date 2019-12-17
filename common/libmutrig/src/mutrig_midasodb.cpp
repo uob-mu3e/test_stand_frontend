@@ -149,6 +149,12 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
 
     hs_define_panel("SciFi","Times",{"SciFi:Counters_Timer",
                                     "SciFi:Counters_Time"});
+    //Add configuration custom page to ODB
+    db_create_key(hDB, 0, "Custom/SciFi-ASICs&", TID_STRING);
+    const char * name = "mutrigTdc.html";
+    db_set_value(hDB,0,"Custom/SciFi-ASICs&", name, sizeof(name), 1, TID_STRING);
+
+
 
 return status;
 }
