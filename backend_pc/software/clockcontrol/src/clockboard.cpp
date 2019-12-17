@@ -478,6 +478,11 @@ vector<uint8_t> clockboard::read_rx_emphasis()
     return res;
 }
 
+vector<uint8_t> clockboard::read_rx_amplitude(){
+	//KB: Unused function, implementation added to link properly
+	return vector<uint8_t>();
+};
+
 float clockboard::read_rx_firefly_temp()
 {
     uint8_t data;
