@@ -37,9 +37,11 @@ tmux rename-window 'Midas'
 tmux split-window -v 'source ../install/set_env.sh; echo "---- MHTTPD ----" ; mhttpd; bash -i'
 sleep 1
 tmux split-window -v 'source ../install/set_env.sh; echo "---- MSERVER ----" ; mserver; bash -i'
-tmux split-window -v 'source ../install/set_env.sh; echo "---- MHIST ----" ; mhist; bash -i'
+tmux split-window -v 'source ../install/set_env.sh; echo "---- MSEQUENCER (DEAMON) ----" ; msequencer -D ; ---- MHIST (DEAMON) ----" ; mhist; bash -i'
 sleep 1
 sleep 1
+tmux select-layout tiled
+tmux split-window -v 'source ../install/set_env.sh; echo " bash -i'
 
 tmux select-layout tiled
 
