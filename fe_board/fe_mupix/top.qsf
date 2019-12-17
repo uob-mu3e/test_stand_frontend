@@ -9,6 +9,8 @@ set_global_assignment -name PROJECT_IP_REGENERATION_POLICY SKIP_REGENERATING_IP_
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 
 set_global_assignment -name QIP_FILE ../fe/top.qip
+set_location_assignment PIN_B15 -to si42_clk_125
+set_location_assignment PIN_AN15 -to si42_clk_50
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../fe/assignments/FE_mupix.tcl
 
 set_global_assignment -name TOP_LEVEL_ENTITY top

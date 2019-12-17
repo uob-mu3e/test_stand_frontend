@@ -470,8 +470,8 @@ begin
     -- otherwise add generation switch.
     e_merger_secondary : entity work.data_merger
     port map (
-        fpga_ID_in              => FPGA_ID_g,
-        FEB_type_in             => FEB_type_in,
+        fpga_ID_in              => i_fpga_id,
+        FEB_type_in             => i_fpga_type,
         run_state               => run_state_156,
         run_number              => run_number,
 
