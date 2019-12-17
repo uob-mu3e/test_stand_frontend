@@ -333,10 +333,10 @@ void MutrigFEB::chipReset(int FPGA_ID){
 	//assert(!GET_FE_SUBDET_REST_BIT_CHIP(val));
 	//set and clear reset
         val=reg_setBit(val,0,true);
-	m_mu.FEBsc_write(FPGA_ID, &val, 0 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         val=reg_setBit(val,0,false);
-	m_mu.FEBsc_write(FPGA_ID, &val, 0 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
+	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_SUBDET_RESET_REG,m_ask_sc_reply);
 }
 
 //reset full datapath upstream from merger
