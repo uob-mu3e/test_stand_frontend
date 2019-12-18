@@ -336,12 +336,12 @@ nullptr
 INT poll_event(INT source, INT count, BOOL test)
 {
    return 1;
-};
+}
 
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 {
    return 1;
-};
+}
 
 /*-- Frontend Init -------------------------------------------------*/
 
@@ -602,11 +602,11 @@ INT read_cr_event(char *pevent, INT off)
 
 
    for(uint8_t i=0;i < 8; i++){
-       if(daughters && (1<<i)){
+       if(daughters & (1<<i)){
            *pdata++ = cb->read_daughter_board_current(i);
            *pdata++ = cb->read_daughter_board_voltage(i);
            for(uint8_t j=0;j < 3; j++){
-               if(fireflys[i] && (1<<j)){
+               if(fireflys[i] & (1<<j)){
                    *pdata++= ((cb->read_tx_firefly_alarms(i,j)) << 16) + cb->read_tx_firefly_lf(i,j);
                    *pdata++ = cb->read_tx_firefly_temp(i,j);
                    *pdata++ = cb->read_tx_firefly_voltage(i,j);

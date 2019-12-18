@@ -215,7 +215,7 @@ INT frontend_init()
    db_watch(hDB, hKey, switching_board_mask_changed, nullptr);
 
    // watch if this frontend board is enabled
-   db_find_key(hDB, 0, "/Equipment/Links/Settings/FrontendBoardMask", &hKey);
+   db_find_key(hDB, 0, "/Equipment/Links/Settings/LinkMask", &hKey);
    assert(hKey);
 
    db_watch(hDB, hKey, frontend_board_mask_changed, nullptr);
