@@ -6,7 +6,7 @@ use work.daq_constants.all;
 
 entity fe_block is
 generic (
-    NIOS_CLK_HZ_g : positive := 125000000--;
+    NIOS_CLK_HZ_g : positive--;
 );
 port (
     i_fpga_id       : in    std_logic_vector(15 downto 0);
@@ -470,8 +470,8 @@ begin
     -- otherwise add generation switch.
     e_merger_secondary : entity work.data_merger
     port map (
-        fpga_ID_in              => FPGA_ID_g,
-        FEB_type_in             => FEB_type_in,
+        fpga_ID_in              => i_fpga_id,
+        FEB_type_in             => i_fpga_type,
         run_state               => run_state_156,
         run_number              => run_number,
 

@@ -363,7 +363,7 @@ begin
 	e_clk_ctrl : component work.cmp.clk_ctrl
 		port map(
 			inclk1x   => clk_aux,
-			inclk0x   => si42_clk_125,
+			inclk0x   => si42_clk_50,
 			clkselect => FPGA_Test(1), -- clkselect
 			outclk    => nios_clk--,
 		);
@@ -375,7 +375,7 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        NIOS_CLK_HZ_g => 125000000--,
+        NIOS_CLK_HZ_g => 50000000--,
     )
     port map (
         i_fpga_id       => X"FEB0",
