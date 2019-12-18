@@ -6,7 +6,7 @@ use work.daq_constants.all;
 
 entity fe_block is
 generic (
-    NIOS_CLK_HZ_g : positive := 125000000--;
+    NIOS_CLK_HZ_g : positive--;
 );
 port (
     i_fpga_id       : in    std_logic_vector(15 downto 0);
