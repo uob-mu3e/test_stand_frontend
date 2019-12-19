@@ -207,7 +207,7 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        NIOS_CLK_HZ_g => 50000000--,
+        NIOS_CLK_MHZ_g => 50.0--,
     )
     port map (
         i_fpga_id       => X"FEB0",
@@ -249,7 +249,7 @@ begin
         o_malibu_reg_we     => malibu_reg.we,
         o_malibu_reg_wdata  => malibu_reg.wdata,
 
-        i_nios_clk      => si42_clk_125,
+        i_nios_clk      => si42_clk_50,
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
         o_clk_156_mon   => led(14),

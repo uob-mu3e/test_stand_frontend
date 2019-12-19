@@ -6,7 +6,7 @@ use work.daq_constants.all;
 
 entity fe_block is
 generic (
-    NIOS_CLK_HZ_g : positive--;
+    NIOS_CLK_MHZ_g : real--;
 );
 port (
     i_fpga_id       : in    std_logic_vector(15 downto 0);
@@ -196,9 +196,9 @@ begin
 
     -- generate 1 Hz clock monitor clocks
 
-    -- NIOS_CLK_HZ_g -> 1 Hz
+    -- NIOS_CLK_MHZ_g -> 1 Hz
     e_nios_clk_hz : entity work.clkdiv
-    generic map ( P => NIOS_CLK_HZ_g )
+    generic map ( P => integer(NIOS_CLK_MHZ_g * 1000000.0) )
     port map ( o_clk => o_nios_clk_mon, i_reset_n => nios_reset_n, i_clk => i_nios_clk );
 
     -- 156.25 MHz -> 1 Hz
