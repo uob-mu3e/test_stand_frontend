@@ -20,8 +20,8 @@ set_global_assignment -name SDC_FILE top.sdc
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
 
-set_global_assignment -name QIP_FILE ../firmware/FEB_common/FEB_common.qip
-set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/FEB_mupix.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_common/include.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/include.qip
 
 
 
