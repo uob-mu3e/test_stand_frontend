@@ -1,3 +1,5 @@
+#
+
 #files to be included for mutrig based FEBs
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mutrig_constants.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds/add_3_bits.vhd"]
@@ -17,7 +19,6 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mutrig_st
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mutrig_store/mutrig_store.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "framebuilder_mux/framebuilder_mux.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "prbs_dec/source/prbs_decoder.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "common_fifo/common_fifo.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mutrig_datapath/source/mutrig_datapath.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "hitcounter/source/hitcounter.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "hitcounter/source/cec_clk.vhd"]

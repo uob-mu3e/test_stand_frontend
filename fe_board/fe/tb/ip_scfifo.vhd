@@ -26,35 +26,32 @@ end entity;
 
 architecture arch of ip_scfifo is
 
-    signal wfull, rempty, reset : std_logic;
+    signal reset_n : std_logic;
 
 begin
 
-    e_fifo : entity work.scfifo
+    reset_n <= not sclr;
+
+    e_fifo : entity work.fifo_sc
     generic map (
         DATA_WIDTH_g => DATA_WIDTH,
         ADDR_WIDTH_g => ADDR_WIDTH--,
     )
     port map (
-        o_wfull     => wfull,
-        i_we        => wrreq,
         i_wdata     => data,
+        i_we        => wrreq,
+        o_wfull     => full,
 
-        o_rempty    => rempty,
         o_rdata     => q,
-        i_re        => rdreq,
+        i_rack      => rdreq,
+        o_rempty    => empty,
 
-        i_reset_n   => reset,
+        i_reset_n   => reset_n,
         i_clk       => clock--;
     );
 
-    full <= wfull;
     almost_full <= 'X';
-    empty <= rempty;
     almost_empty <= 'X';
-
-    reset <= not sclr;
-
     usedw <= (others => 'X');
 
 end architecture;

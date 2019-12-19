@@ -314,7 +314,7 @@ begin
     process
     begin
         wait for 1000 ns;
-        assert ( DONE = (DONE'range => '1') ) severity error;
+        assert ( DONE = (DONE'range => '1') ) severity failure;
         wait;
     end process;
 
