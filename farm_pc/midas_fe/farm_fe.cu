@@ -36,13 +36,13 @@ BOOL frontend_call_loop = FALSE;
 INT display_period = 0;
 
 /* maximum event size produced by this frontend */
-INT max_event_size = 1000000;
+INT max_event_size = 10000;
 
 /* maximum event size for fragmented events (EQ_FRAGMENTED) */
 INT max_event_size_frag = 5 * 1024 * 1024;
 
 /* buffer size to hold events */
-INT event_buffer_size = 100 * 1000000;
+INT event_buffer_size = 10000 * max_event_size;
 
 /* DMA Buffer and related */
 volatile uint32_t *dma_buf;
@@ -55,7 +55,6 @@ uint32_t lastreadindex;
 uint32_t lastlastWritten;
 bool moreevents;
 bool firstevent;
-ofstream myfile;
 
 mudaq::DmaMudaqDevice * mup;
 mudaq::DmaMudaqDevice::DataBlock block;
@@ -467,6 +466,26 @@ INT read_stream_event(char *pevent, INT off)
    return 0;
 }
 
+INT check_event(volatile uint32_t * buffer, uint32_t idx_eoe)
+{
+    // check if the event is good
+    EVENT_HEADER* eh=(EVENT_HEADER*)(&buffer[((idx_eoe+1)*8+1)%dma_buf_nwords]);
+    BANK_HEADER* bh=(BANK_HEADER*)(&buffer[((idx_eoe+1)*8+5)%dma_buf_nwords]);
+    BANK32* ba=(BANK32*)(&buffer[((idx_eoe+1)*8+7)%dma_buf_nwords]);
+
+    if ( eh->event_id != 0x0 ) return -1;
+    if ( eh->trigger_mask != 0x1 ) return -1;
+    if ( bh->flags != 0x11 ) return -1;
+    if ( ba->type != 0x6 ) return -1;
+
+    printf("EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
+    printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
+    printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
+
+    return 0;
+}
+
+
 /*-- Event readout -------------------------------------------------*/
 
 INT read_stream_thread(void *param)
@@ -482,17 +501,11 @@ INT read_stream_thread(void *param)
    // dummy data
    uint32_t SERIAL = 0x00000001;
    uint32_t TIME = 0x00000001;
+   bool use_dmmy_data = false;
    // dummy data
    uint32_t lastWritten = 0;
    uint32_t lastEndOfEvent = 0;
    int status;
-
-   ofstream monitoring_file;
-   monitoring_file.open("monitoring_data.txt");
-   if ( !monitoring_file ) {
-     cout << "Could not open file " << endl;
-     return -1;
-   }
 
    // tell framework that we are alive
    signal_readout_thread_active(0, TRUE);
@@ -507,9 +520,9 @@ INT read_stream_thread(void *param)
 
       // just sleep and try again if buffer has no space
       if (status == DB_TIMEOUT) {
-          cout << "status == DB_TIMEOUT" << endl;
+         set_equipment_status(equipment[0].name, "Buffer full", "var(--myellow)");
          //TODO: throw data here?
-         //readindex = mu.last_written_addr()+1;
+         //readindex = ((mu.last_endofevent_addr() + 1) * 8) % dma_buf_nwords;
          continue;
       }
 
@@ -520,6 +533,7 @@ INT read_stream_thread(void *param)
 
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
+        set_equipment_status(equipment[0].name, "Not running", "var(--myellow)");
         //cout << "!STATE_RUNNING" << endl;
         ss_sleep(100);
         //TODO: signalling from main thread?
@@ -528,46 +542,49 @@ INT read_stream_thread(void *param)
 
 
       // dummy data
-      uint32_t dma_buf_dummy[25];
+      if (use_dmmy_data == true) {
+      uint32_t dma_buf_dummy[52];
 
-      dma_buf_dummy[0] = 0x00010000; // Trigger and Event ID
-      dma_buf_dummy[1] = SERIAL; // Serial number
-      dma_buf_dummy[2] = TIME; // time
-      dma_buf_dummy[3] = 26*4; // event size
-      dma_buf_dummy[4] = 26*4-4*4; // all bank size
+      for (int i = 0; i<2; i++) {
+      // event header
+      dma_buf_dummy[0+i*26] = 0x00010000; // Trigger and Event ID
+      dma_buf_dummy[1+i*26] = SERIAL; // Serial number
+      dma_buf_dummy[2+i*26] = TIME; // time
+      dma_buf_dummy[3+i*26] = 26*4; // event size
+      dma_buf_dummy[4+i*26] = 26*4-4*4; // all bank size
       // bank 0
-      dma_buf_dummy[5] = 0x11; // flags
-      dma_buf_dummy[6] = 0x0; // bank name
-      dma_buf_dummy[7] = 0x6; // bank type TID_DWORD
-      dma_buf_dummy[8] = 0x3*4; // data size
-      dma_buf_dummy[9] = 0xAFFEAFFE; // data
-      dma_buf_dummy[10] = 0xAFFEAFFE; // data
-      dma_buf_dummy[11] = 0xAFFEAFFE; // data
+      dma_buf_dummy[5+i*26] = 0x11; // flags
+      dma_buf_dummy[6+i*26] = 0x0; // bank name
+      dma_buf_dummy[7+i*26] = 0x6; // bank type TID_DWORD
+      dma_buf_dummy[8+i*26] = 0x3*4; // data size
+      dma_buf_dummy[9+i*26] = 0xAFFEAFFE; // data
+      dma_buf_dummy[10+i*26] = 0xAFFEAFFE; // data
+      dma_buf_dummy[11+i*26] = 0xAFFEAFFE; // data
       // bank 1
-      dma_buf_dummy[12] = 0x11; // flags
-      dma_buf_dummy[13] = 0x1; // bank name
-      dma_buf_dummy[14] = 0x6; // bank type TID_DWORD
-      dma_buf_dummy[15] = 0x3*4; // data size
-      dma_buf_dummy[16] = 0xAFFEAFFE; // data
-      dma_buf_dummy[17] = 0xAFFEAFFE; // data
-      dma_buf_dummy[18] = 0xAFFEAFFE; // data
+      dma_buf_dummy[12+i*26] = 0x11; // flags
+      dma_buf_dummy[13+i*26] = 0x1; // bank name
+      dma_buf_dummy[14+i*26] = 0x6; // bank type TID_DWORD
+      dma_buf_dummy[15+i*26] = 0x3*4; // data size
+      dma_buf_dummy[16+i*26] = 0xAFFEAFFE; // data
+      dma_buf_dummy[17+i*26] = 0xAFFEAFFE; // data
+      dma_buf_dummy[18+i*26] = 0xAFFEAFFE; // data
       // bank 2
-      dma_buf_dummy[19] = 0x11; // flags
-      dma_buf_dummy[20] = 0x2; // bank name
-      dma_buf_dummy[21] = 0x6; // bank type TID_DWORD
-      dma_buf_dummy[22] = 0x3*4; // data size
-      dma_buf_dummy[23] = 0xAFFEAFFE; // data
-      dma_buf_dummy[24] = 0xAFFEAFFE; // data
-      dma_buf_dummy[25] = 0xAFFEAFFE; // data
+      dma_buf_dummy[19+i*26] = 0x11; // flags
+      dma_buf_dummy[20+i*26] = 0x2; // bank name
+      dma_buf_dummy[21+i*26] = 0x6; // bank type TID_DWORD
+      dma_buf_dummy[22+i*26] = 0x3*4; // data size
+      dma_buf_dummy[23+i*26] = 0xAFFEAFFE; // data
+      dma_buf_dummy[24+i*26] = 0xAFFEAFFE; // data
+      dma_buf_dummy[25+i*26] = 0xAFFEAFFE; // data
       SERIAL += 1;
       TIME += 1;
+      }
 
       volatile uint32_t * dma_buf_volatile;
       dma_buf_volatile = dma_buf_dummy;
 
-      copy_n(&dma_buf_volatile[0], 26, pdata);
-      //memcpy(pevent,,&dma_buf_dummy,sizeof(dma_buf_dummy));
-      for (int i = 0; i<26; i++){
+      copy_n(&dma_buf_volatile[0], 52, pdata);
+      for (int i = 0; i<52; i++){
           cout << hex << pdata[i] << endl;
       }
 
@@ -577,10 +594,11 @@ INT read_stream_thread(void *param)
       printf("EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
       printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
       printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
-      pdata+=sizeof(dma_buf_volatile);
-      rb_increment_wp(rbh, sizeof(EVENT_HEADER) + eh->data_size);
+      pdata+=sizeof(dma_buf_dummy);
+      rb_increment_wp(rbh, sizeof(dma_buf_dummy));
       ss_sleep(1000);
       continue;
+      }
 
 
       if (mu.last_written_addr() == 0) continue;
@@ -598,10 +616,13 @@ INT read_stream_thread(void *param)
      // the end of event does not fit into the 4kB anymore so we have
      // to check this here. Also the endofevent is in 256 bit words
      // so we have to multiply by 8 to get to 32 bit words
-//     if (((lastEndOfEvent+1)*8)%dma_buf_nwords > lastlastWritten) {
-//         ss_sleep(100);
-//         continue;
-//     }
+     // here we check if the lastWritten is aligned with the end of event
+     // this is not really a problem but later we need to check somehow if
+     // we are at the end of the event so for now we continue if they are equal
+     if (((lastEndOfEvent+1)*8)%dma_buf_nwords == lastWritten) {
+         ss_sleep(100);
+         continue;
+     }
 
      // only to make it save that we are at the end. Sometimes it fails and
      // the end of event is off so we would then take the next one
@@ -610,46 +631,36 @@ INT read_stream_thread(void *param)
          (dma_buf[((lastEndOfEvent+1)*8+1)%dma_buf_nwords] == 0x00010000)
              ){
 
-         //printf("%8.8x \n",dma_buf[(lastEndOfEvent+1)*8%dma_buf_nwords]);
+         if(readindex < ((lastEndOfEvent+1)*8)%dma_buf_nwords){
+            if ( check_event(dma_buf, lastEndOfEvent) != 0 ) continue;
 
-     EVENT_HEADER* eh=(EVENT_HEADER*)(&dma_buf[((lastEndOfEvent+1)*8+1)%dma_buf_nwords]);
-     BANK_HEADER* bh=(BANK_HEADER*)(&dma_buf[((lastEndOfEvent+1)*8+1+4)%dma_buf_nwords]);
-     BANK32* ba=(BANK32*)(&dma_buf[((lastEndOfEvent+1)*8+1+6)%dma_buf_nwords]);
-     printf("bufW=%8.8x lastW=%8.8x eoe=%8.8x readindex=%8.8x\n",dma_buf_nwords,lastWritten,(lastEndOfEvent+1)*8+1,readindex);
-     printf("EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
-     printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
-     printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
+            //WP before RP. Complete copy
+            size_t wlen = ((lastEndOfEvent+1)*8)%dma_buf_nwords - readindex; // len in 32 bit words
+            copy_n(&dma_buf[readindex], wlen, pdata);
+            pdata+=wlen;
+            readindex += wlen+1;
+            readindex = readindex%dma_buf_nwords;
+            rb_increment_wp(rbh, wlen*4); // len in byte
+         }else{
+            if ( check_event(dma_buf, lastEndOfEvent) != 0 ) continue;
 
-     if(readindex < ((lastEndOfEvent+1)*8+1)%dma_buf_nwords){
-        //WP before RP. Complete copy
-        size_t wlen = ((lastEndOfEvent+1)*8+1)%dma_buf_nwords - readindex;
-        //memcpy(pdata,&dma_buf[readindex],wlen*sizeof(dma_buf[0]));
-        copy_n(&dma_buf[readindex], wlen-1, pdata);
-        readindex += wlen;
-        readindex = readindex%dma_buf_nwords;
-        //rb_increment_wp(rbh, sizeof(EVENT_HEADER) + eh->data_size);
-     }else{
-        //RP before WP. May wrap
-        //copy with wrapping
-        //#1
-        //memcpy(pdata,&dma_buf[readindex],(dma_buf_nwords-readindex)*sizeof(dma_buf[0]));
-        copy_n(&dma_buf[readindex],dma_buf_nwords-readindex,pdata);
-        pdata+=dma_buf_nwords-readindex;
-        cout << hex << dma_buf[readindex] << endl;
-        //#2
-        //memcpy(pdata,&dma_buf[readindex],wlen*sizeof(dma_buf[0]));
-        readindex=0;
-        size_t wlen = ((lastEndOfEvent)*8)%dma_buf_nwords;
-        copy_n(&dma_buf[readindex], wlen, pdata);
-        cout << hex << dma_buf[((lastEndOfEvent)*8)%dma_buf_nwords] << endl;
-        readindex += wlen;
-        readindex = readindex%dma_buf_nwords;
-        rb_increment_wp(rbh, sizeof(EVENT_HEADER) + eh->data_size);
-      }
+            //RP before WP. May wrap
+            //copy with wrapping
+            //#1
+            copy_n(&dma_buf[readindex],(dma_buf_nwords-readindex),pdata); // len in 32 bit words
+            pdata+=(dma_buf_nwords-readindex);
+            //#2
+            readindex=0;
+            size_t wlen = ((lastEndOfEvent+1)*8)%dma_buf_nwords; // len in 32 bit words
+            copy_n(&dma_buf[readindex], wlen, pdata);
+            pdata+=wlen;
+            rb_increment_wp(rbh, (wlen + dma_buf_nwords - readindex)*4); // len in byte
+            readindex += wlen+1;
+            readindex = readindex%dma_buf_nwords;
+          }
      }
    }
    // tell framework that we finished
-   monitoring_file.close();
    signal_readout_thread_active(0, FALSE);
    return 0;
 }
