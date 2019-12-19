@@ -360,14 +360,16 @@ begin
 
     ----------------------------------------------------------------------------
 
-	e_clk_ctrl : component work.cmp.clk_ctrl
-		port map(
-			inclk1x   => clk_aux,
-			inclk0x   => si42_clk_50,
-			clkselect => FPGA_Test(1), -- clkselect
-			outclk    => nios_clk--,
-		);
-	-- use these two signals with a jumper to FPGA_Test(1) to select the clock	
+
+
+    e_nios_clk : component work.cmp.clk_ctrl
+    port map (
+		inclk1x   => clk_aux,
+		inclk0x   => si42_clk_50,
+		clkselect => FPGA_Test(1),
+		outclk    => nios_clk--,
+    );
+	-- use these two signals with a jumper to FPGA_Test(1) to select the clock
 	FPGA_Test(0) <= '0';
 	FPGA_Test(2) <= '1';
 

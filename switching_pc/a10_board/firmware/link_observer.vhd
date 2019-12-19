@@ -9,11 +9,11 @@ use ieee.std_logic_unsigned.all;
 use work.daq_constants.all;
 
 entity link_observer is
-  	generic (
+generic (
         g_m             : integer           := 7;
         g_poly          : std_logic_vector  := "1100000" -- x^7+x^6+1 
-    );
-    port(
+);
+port (
 		clk:               in std_logic;
 		reset_n:           in std_logic;
 		rx_data:           in std_logic_vector (g_m - 1 downto 0);
@@ -22,7 +22,7 @@ entity link_observer is
 		mem_data:          out std_logic_vector (31 downto 0);
 		mem_wen:				 out std_logic--;
 );
-end entity link_observer;
+end entity;
 
 architecture rtl of link_observer is
 
@@ -122,4 +122,4 @@ begin
 	end process;
 
 
-end rtl;
+end architecture;

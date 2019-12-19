@@ -13,4 +13,4 @@ package protocol is
     constant TIMING_MEAS_HEADER_ID:    std_logic_vector(5 downto 0) := "111100";
     constant SC_HEADER_ID:    std_logic_vector(5 downto 0) := "111011";
 
-end package protocol;
+end package;

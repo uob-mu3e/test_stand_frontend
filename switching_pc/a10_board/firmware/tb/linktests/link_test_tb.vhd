@@ -8,7 +8,7 @@ use IEEE.std_logic_textio.all;
 
 --  A testbench has no ports.
 entity link_test_tb is
-end link_test_tb;
+end entity;
 
 architecture behav of link_test_tb is
   --  Declaration of the component that will be instantiated.
@@ -111,4 +111,4 @@ begin
 		mem_data     => mem_data--,
 	);
 
-end behav;
+end architecture;
