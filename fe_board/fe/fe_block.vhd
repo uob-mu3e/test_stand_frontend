@@ -6,7 +6,7 @@ use work.daq_constants.all;
 
 entity fe_block is
 generic (
-    NIOS_CLK_HZ_g : positive := 125000000;
+    NIOS_CLK_HZ_g : positive;
     feb_mapping   : natural_array_t(3 downto 0):=3&2&1&0--;
 );
 port (

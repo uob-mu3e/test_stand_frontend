@@ -115,5 +115,4 @@ begin
 --        RESET_N         => RESET_N,
 --        CLOCK           => CLOCK--,
 --    );
-
 end architecture;
