@@ -42,9 +42,9 @@ ASICConfigBase::para_t ASICConfigBase::make_param(std::string name, std::string 
 void ASICConfigBase::addPara(const para_t& para, const std::string postfix) {
     paras_offsets[std::get<0>(para)+postfix] = std::make_tuple(length_bits, std::get<1>(para), std::get<2>(para));
 //reporting
-    printf("%s\t[%lu:%lu] (",(std::get<0>(para)+postfix).c_str(),length_bits,length_bits+std::get<1>(para));
-    for(size_t i=0;i<std::get<1>(para);i++) printf("%d ",std::get<2>(para)[i]);
-    printf(")\n");
+//    printf("%s\t[%lu:%lu] (",(std::get<0>(para)+postfix).c_str(),length_bits,length_bits+std::get<1>(para));
+//    for(size_t i=0;i<std::get<1>(para);i++) printf("%d ",std::get<2>(para)[i]);
+//    printf(")\n");
 //reporting
 
     length_bits += std::get<1>(para);
@@ -101,7 +101,7 @@ int ASICConfigBase::setParameter(std::string name, uint32_t value, bool reverse)
         std::cerr << "Value '" << value << "' outside of range of " << nbits << " bits." << std::endl;
         return 2; // out of range
     }
-    printf("offset=%lu n=%lu\n",offset,nbits);
+    //printf("offset=%lu n=%lu\n",offset,nbits);
     uint32_t mask = 0x01;
     for(unsigned int pos = 0; (pos < nbits); pos++, mask <<= 1) {
         unsigned int n = (offset+bitorder.at(nbits-pos-1))%8;
@@ -113,7 +113,7 @@ int ASICConfigBase::setParameter(std::string name, uint32_t value, bool reverse)
             unsigned int b2 = length-1;
             b = b2 -b;
         }
-	printf("b:%3.3u.%1.1u = %u\n",b,n,mask&value);
+	//printf("b:%3.3u.%1.1u = %u\n",b,n,mask&value);
         if ((mask & value) != 0 ) bitpattern_w[b] |=   1 << n;  // set nth bit 
         else                      bitpattern_w[b] &= ~(1 << n); // clear nth bit
     }
@@ -133,8 +133,8 @@ uint32_t ASICConfigBase::getParameter(std::string name, bool reverse) {
 
     uint32_t value = 0;
     for(unsigned int pos = 0; pos < nbits; pos++) {
-        unsigned int n = offset+bitorder.at(pos)%8;
-        unsigned int b = offset+bitorder.at(pos)/8;
+        unsigned int n = offset+bitorder.at(nbits-pos-1)%8;
+        unsigned int b = offset+bitorder.at(nbits-pos-1)/8;
         if (reverse) {
             n = (offset + nbits -1 - bitorder.at(pos))%8;
             b = (offset + nbits -1 - bitorder.at(pos))/8;
