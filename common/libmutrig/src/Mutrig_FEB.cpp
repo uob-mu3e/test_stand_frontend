@@ -140,47 +140,47 @@ int MutrigFEB::WriteAll(){
 
 	sprintf(set_str, "%s/Settings/Daq/dummy_config", m_odb_prefix);
 	db_find_key(m_hDB, 0, set_str, &hTmp);
-	assert(hKey);
+	assert(hTmp);
 	on_settings_changed(m_hDB,hTmp,0,this);
 
 	sprintf(set_str, "%s/Settings/Daq/dummy_data", m_odb_prefix);
 	db_find_key(m_hDB, 0, set_str, &hTmp);
-	assert(hKey);
+	assert(hTmp);
 	on_settings_changed(m_hDB,hTmp,0,this);
 
 	sprintf(set_str, "%s/Settings/daq/dummy_data_fast", m_odb_prefix);
 	db_find_key(m_hDB, 0, set_str, &hTmp);
-	assert(hKey);
+	assert(hTmp);
 	on_settings_changed(m_hDB,hTmp,0,this);
 
 	sprintf(set_str, "%s/Settings/Daq/dummy_data_n", m_odb_prefix);
 	db_find_key(m_hDB, 0, set_str, &hTmp);
-	assert(hKey);
+	assert(hTmp);
 	on_settings_changed(m_hDB,hTmp,0,this);
 
 	sprintf(set_str, "%s/Settings/Daq/prbs_decode_disable", m_odb_prefix);
 	db_find_key(m_hDB, 0, set_str, &hTmp);
-	assert(hKey);
+	assert(hTmp);
 	on_settings_changed(m_hDB,hTmp,0,this);
 
 	sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall", m_odb_prefix);
 	db_find_key(m_hDB, 0, set_str, &hTmp);
-	assert(hKey);
+	assert(hTmp);
 	on_settings_changed(m_hDB,hTmp,0,this);
 
 	sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall_sticky", m_odb_prefix);
 	db_find_key(m_hDB, 0, set_str, &hTmp);
-	assert(hKey);
+	assert(hTmp);
 	on_settings_changed(m_hDB,hTmp,0,this);
 
 	sprintf(set_str, "%s/Settings/Daq/mask", m_odb_prefix);
 	db_find_key(m_hDB, 0, set_str, &hTmp);
-	assert(hKey);
+	assert(hTmp);
 	on_settings_changed(m_hDB,hTmp,0,this);
 
 	sprintf(set_str, "%s/Settings/Daq/resetskew_cphase", m_odb_prefix);
 	db_find_key(m_hDB, 0, set_str, &hTmp);
-	assert(hKey);
+	assert(hTmp);
 	on_settings_changed(m_hDB,hTmp,0,this);
 	return 0;
 }
