@@ -1,10 +1,8 @@
 add_library(libmutrig STATIC
-    include/mutrig_config.h
-    include/mutrig_config_new.h
+    include/MutrigConfig.h
     include/mutrig_MIDAS_config.h
     include/mutrig_midasodb.h
-    src/mutrig_config.cpp
-    src/mutrig_config_new.cpp
+    src/MutrigConfig.cpp
     src/mutrig_MIDAS_config.cpp
     src/mutrig_midasodb.cpp
     include/Mutrig_FEB.h
