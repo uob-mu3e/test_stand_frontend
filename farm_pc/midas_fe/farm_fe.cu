@@ -466,8 +466,11 @@ INT read_stream_event(char *pevent, INT off)
    return 0;
 }
 
-INT check_event(volatile uint32_t * buffer, uint32_t idx_eoe)
+INT check_event(volatile uint32_t * buffer, uint32_t idx_eoe, bool rp_before_wp)
 {
+    // rp_before_wp no event check here ...
+    if ( rp_before_wp ) return 0;
+
     // check if the event is good
     EVENT_HEADER* eh=(EVENT_HEADER*)(&buffer[((idx_eoe+1)*8+1)%dma_buf_nwords]);
     BANK_HEADER* bh=(BANK_HEADER*)(&buffer[((idx_eoe+1)*8+5)%dma_buf_nwords]);
@@ -476,11 +479,11 @@ INT check_event(volatile uint32_t * buffer, uint32_t idx_eoe)
     if ( eh->event_id != 0x0 ) return -1;
     if ( eh->trigger_mask != 0x1 ) return -1;
     if ( bh->flags != 0x11 ) return -1;
-    if ( ba->type != 0x6 ) return -1;
+    //if ( ba->type != 0x6 ) return -1;
 
     printf("EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
     printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
-    printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
+//    printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
 
     return 0;
 }
@@ -543,61 +546,59 @@ INT read_stream_thread(void *param)
 
       // dummy data
       if (use_dmmy_data == true) {
-      uint32_t dma_buf_dummy[52];
+          uint32_t dma_buf_dummy[48];
 
-      for (int i = 0; i<2; i++) {
-      // event header
-      dma_buf_dummy[0+i*26] = 0x00010000; // Trigger and Event ID
-      dma_buf_dummy[1+i*26] = SERIAL; // Serial number
-      dma_buf_dummy[2+i*26] = TIME; // time
-      dma_buf_dummy[3+i*26] = 26*4; // event size
-      dma_buf_dummy[4+i*26] = 26*4-4*4; // all bank size
-      // bank 0
-      dma_buf_dummy[5+i*26] = 0x11; // flags
-      dma_buf_dummy[6+i*26] = 0x0; // bank name
-      dma_buf_dummy[7+i*26] = 0x6; // bank type TID_DWORD
-      dma_buf_dummy[8+i*26] = 0x3*4; // data size
-      dma_buf_dummy[9+i*26] = 0xAFFEAFFE; // data
-      dma_buf_dummy[10+i*26] = 0xAFFEAFFE; // data
-      dma_buf_dummy[11+i*26] = 0xAFFEAFFE; // data
-      // bank 1
-      dma_buf_dummy[12+i*26] = 0x11; // flags
-      dma_buf_dummy[13+i*26] = 0x1; // bank name
-      dma_buf_dummy[14+i*26] = 0x6; // bank type TID_DWORD
-      dma_buf_dummy[15+i*26] = 0x3*4; // data size
-      dma_buf_dummy[16+i*26] = 0xAFFEAFFE; // data
-      dma_buf_dummy[17+i*26] = 0xAFFEAFFE; // data
-      dma_buf_dummy[18+i*26] = 0xAFFEAFFE; // data
-      // bank 2
-      dma_buf_dummy[19+i*26] = 0x11; // flags
-      dma_buf_dummy[20+i*26] = 0x2; // bank name
-      dma_buf_dummy[21+i*26] = 0x6; // bank type TID_DWORD
-      dma_buf_dummy[22+i*26] = 0x3*4; // data size
-      dma_buf_dummy[23+i*26] = 0xAFFEAFFE; // data
-      dma_buf_dummy[24+i*26] = 0xAFFEAFFE; // data
-      dma_buf_dummy[25+i*26] = 0xAFFEAFFE; // data
-      SERIAL += 1;
-      TIME += 1;
-      }
+          for (int i = 0; i<2; i++) {
+          // event header
+          dma_buf_dummy[0+i*24] = 0x00010000; // Trigger and Event ID
+          dma_buf_dummy[1+i*24] = SERIAL; // Serial number
+          dma_buf_dummy[2+i*24] = TIME; // time
+          dma_buf_dummy[3+i*24] = 24*4; // event size
+          dma_buf_dummy[4+i*24] = 24*4-4*4; // all bank size
+          dma_buf_dummy[5+i*24] = 0x11; // flags
+          // bank 0
+          dma_buf_dummy[6+i*24] = 0x0; // bank name
+          dma_buf_dummy[7+i*24] = 0x6; // bank type TID_DWORD
+          dma_buf_dummy[8+i*24] = 0x3*4; // data size
+          dma_buf_dummy[9+i*24] = 0xAFFEAFFE; // data
+          dma_buf_dummy[10+i*24] = 0xAFFEAFFE; // data
+          dma_buf_dummy[11+i*24] = 0xAFFEAFFE; // data
+          // bank 1
+          dma_buf_dummy[12+i*24] = 0x1; // bank name
+          dma_buf_dummy[13+i*24] = 0x6; // bank type TID_DWORD
+          dma_buf_dummy[14+i*24] = 0x3*4; // data size
+          dma_buf_dummy[15+i*24] = 0xAFFEAFFE; // data
+          dma_buf_dummy[16+i*24] = 0xAFFEAFFE; // data
+          dma_buf_dummy[17+i*24] = 0xAFFEAFFE; // data
+          // bank 2
+          dma_buf_dummy[18+i*24] = 0x2; // bank name
+          dma_buf_dummy[19+i*24] = 0x6; // bank type TID_DWORD
+          dma_buf_dummy[20+i*24] = 0x3*4; // data size
+          dma_buf_dummy[21+i*24] = 0xAFFEAFFE; // data
+          dma_buf_dummy[22+i*24] = 0xAFFEAFFE; // data
+          dma_buf_dummy[23+i*24] = 0xAFFEAFFE; // data
+          SERIAL += 1;
+          TIME += 1;
+          }
 
-      volatile uint32_t * dma_buf_volatile;
-      dma_buf_volatile = dma_buf_dummy;
+          volatile uint32_t * dma_buf_volatile;
+          dma_buf_volatile = dma_buf_dummy;
 
-      copy_n(&dma_buf_volatile[0], 52, pdata);
-      for (int i = 0; i<52; i++){
-          cout << hex << pdata[i] << endl;
-      }
+          copy_n(&dma_buf_volatile[0], 48, pdata);
+          for (int i = 0; i<48; i++){
+              cout << hex << pdata[i] << endl;
+          }
 
-      EVENT_HEADER* eh=(EVENT_HEADER*)(&pdata[0]);
-      BANK_HEADER* bh=(BANK_HEADER*)(&pdata[4]);
-      BANK32* ba=(BANK32*)(&pdata[6]);
-      printf("EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
-      printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
-      printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
-      pdata+=sizeof(dma_buf_dummy);
-      rb_increment_wp(rbh, sizeof(dma_buf_dummy));
-      ss_sleep(1000);
-      continue;
+          EVENT_HEADER* eh=(EVENT_HEADER*)(&pdata[0]);
+          BANK_HEADER* bh=(BANK_HEADER*)(&pdata[4]);
+          BANK32* ba=(BANK32*)(&pdata[6]);
+          printf("EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
+          printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
+          printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
+          pdata+=sizeof(dma_buf_dummy);
+          rb_increment_wp(rbh, sizeof(dma_buf_dummy));
+          ss_sleep(1000);
+          continue;
       }
 
 
@@ -632,29 +633,29 @@ INT read_stream_thread(void *param)
              ){
 
          if(readindex < ((lastEndOfEvent+1)*8)%dma_buf_nwords){
-            if ( check_event(dma_buf, lastEndOfEvent) != 0 ) continue;
+            if ( check_event(dma_buf, lastEndOfEvent, false) != 0 ) continue;
 
             //WP before RP. Complete copy
             size_t wlen = ((lastEndOfEvent+1)*8)%dma_buf_nwords - readindex; // len in 32 bit words
             copy_n(&dma_buf[readindex], wlen, pdata);
-            pdata+=wlen;
+            pdata += wlen;
             readindex += wlen+1;
             readindex = readindex%dma_buf_nwords;
-            rb_increment_wp(rbh, wlen*4); // len in byte
+            rb_increment_wp(rbh, wlen);
          }else{
-            if ( check_event(dma_buf, lastEndOfEvent) != 0 ) continue;
+            if ( check_event(dma_buf, lastEndOfEvent, true) != 0 ) continue;
 
             //RP before WP. May wrap
             //copy with wrapping
             //#1
             copy_n(&dma_buf[readindex],(dma_buf_nwords-readindex),pdata); // len in 32 bit words
-            pdata+=(dma_buf_nwords-readindex);
+            pdata += (dma_buf_nwords-readindex);
             //#2
             readindex=0;
             size_t wlen = ((lastEndOfEvent+1)*8)%dma_buf_nwords; // len in 32 bit words
             copy_n(&dma_buf[readindex], wlen, pdata);
-            pdata+=wlen;
-            rb_increment_wp(rbh, (wlen + dma_buf_nwords - readindex)*4); // len in byte
+            pdata += wlen;
+            rb_increment_wp(rbh, (wlen + dma_buf_nwords - readindex));
             readindex += wlen+1;
             readindex = readindex%dma_buf_nwords;
           }
