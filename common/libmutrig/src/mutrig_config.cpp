@@ -68,7 +68,7 @@ Config::paras_t Config::parameters_ch = {
 Config::paras_t Config::parameters_header = {
         std::make_tuple("gen_idle",              1, 1),
         std::make_tuple("recv_all",              1, 1),
-        std::make_tuple("ext_trig_mode",         1, 1), // new 
+        std::make_tuple("ext_trig_mode",         1, 1), // new
         std::make_tuple("ext_trig_endtime_sign", 1, 1), // sign of the external trigger matching window, 1: end time is after the trigger; 0: end time is before the trigger
         std::make_tuple("ext_trig_offset",       4, 0), // offset of the external trigger matching window
         std::make_tuple("ext_trig_endtime",      4, 0), // end time of external trigger matching window
@@ -105,10 +105,10 @@ Config::Config() {
     // populate name/offset map
 
     length_bits = 0;
-    // header 
+    // header
     for(const auto& para : parameters_header )
         addPara(para, "");
-    for(unsigned int ch = 0; ch < nch; ++ch) { 
+    for(unsigned int ch = 0; ch < nch; ++ch) {
         for(const auto& para : parameters_ch )
             addPara(para, "_"+std::to_string(ch));
     }
@@ -123,9 +123,9 @@ Config::Config() {
     if( length_bits%8 > 0 ) length++;
     length_32bits = length/4;
     if( length%4 > 0 ) length_32bits++;
-    bitpattern_r = new uint8_t[length_32bits*4]; 
-    bitpattern_w = new uint8_t[length_32bits*4]; 
-    reset();	
+    bitpattern_r = new uint8_t[length_32bits*4];
+    bitpattern_w = new uint8_t[length_32bits*4];
+    reset();
 }
 
 Config::~Config() {
@@ -153,10 +153,10 @@ int Config::setParameter(std::string name, uint32_t value) {
     for(; (pos < offset + nbits) && (pos >= offset);
         pos = pos + (endianess == false ? +1 : -1 ), mask <<= 1) {
         unsigned int n = pos%8;
-        //unsigned int x = (mask & value) != 0 
-        if ((mask & value) != 0 ) bitpattern_w[pos/8] |=   1 << n;  // set nth bit 
+        //unsigned int x = (mask & value) != 0
+        if ((mask & value) != 0 ) bitpattern_w[pos/8] |=   1 << n;  // set nth bit
         else                      bitpattern_w[pos/8] &= ~(1 << n); // clear nth bit
-        //bitpattern_w[pos/8] ^= (-x ^ bitpattern_w[pos/8]) & (1 << n); // set nth bit to x 
+        //bitpattern_w[pos/8] ^= (-x ^ bitpattern_w[pos/8]) & (1 << n); // set nth bit to x
     }
     return 0;
 }
@@ -203,17 +203,17 @@ std::string Config::getPattern() {
 int Config::VerifyReadbackPattern(){
     m_verification_error="";
     for(size_t i=0;i<length-1;++i){
-    	if(bitpattern_w[i]!=bitpattern_r[i]){
-		m_verification_error="Write/Read mismatch at byte "+std::to_string(i)+", written value "+std::to_string(bitpattern_w[i])+" vs. "+std::to_string(bitpattern_r[i]);
-		return FE_ERR_HW;
-	}
+        if(bitpattern_w[i]!=bitpattern_r[i]){
+        m_verification_error="Write/Read mismatch at byte "+std::to_string(i)+", written value "+std::to_string(bitpattern_w[i])+" vs. "+std::to_string(bitpattern_r[i]);
+        return FE_ERR_HW;
+    }
     }
     for(size_t i=0;i<length_bits%8;i++){
-    	if((bitpattern_w[length-1]&(1<<i))!=(bitpattern_r[length-1]&(1<<i))){
-		m_verification_error="Write/Read mismatch at last byte ("+std::to_string(i)+"), written value "+std::to_string(bitpattern_w[i])+" vs. "+std::to_string(bitpattern_r[i]);
-		return FE_ERR_HW;
-	}
-    
+        if((bitpattern_w[length-1]&(1<<i))!=(bitpattern_r[length-1]&(1<<i))){
+        m_verification_error="Write/Read mismatch at last byte ("+std::to_string(i)+"), written value "+std::to_string(bitpattern_w[i])+" vs. "+std::to_string(bitpattern_r[i]);
+        return FE_ERR_HW;
+    }
+
     }
     return FE_SUCCESS;
 }
@@ -227,7 +227,7 @@ std::ostream& operator<<(std::ostream& os, const Config& config) {
     for( unsigned int i = 0; i < config.length; i++) os << std::setw(2) << std::setfill('0') << ((uint16_t)config.bitpattern_r[config.length - i - 1]);
     os << std::endl;
     os << std::dec;
-    //std::cout << "bitpattern write: 0x" << std::hex << std::setw(2) << std::setfill('0') << config.bitpattern_w[0] << std::endl; 
+    //std::cout << "bitpattern write: 0x" << std::hex << std::setw(2) << std::setfill('0') << config.bitpattern_w[0] << std::endl;
     return os;
 }
 
