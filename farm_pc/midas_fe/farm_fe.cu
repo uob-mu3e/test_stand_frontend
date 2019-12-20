@@ -36,7 +36,7 @@ BOOL frontend_call_loop = FALSE;
 INT display_period = 0;
 
 /* maximum event size produced by this frontend */
-INT max_event_size = 10000;
+INT max_event_size = 5000;
 
 /* maximum event size for fragmented events (EQ_FRAGMENTED) */
 INT max_event_size_frag = 5 * 1024 * 1024;
@@ -466,24 +466,24 @@ INT read_stream_event(char *pevent, INT off)
    return 0;
 }
 
-INT check_event(volatile uint32_t * buffer, uint32_t idx_eoe, bool rp_before_wp)
+INT check_event(volatile uint32_t * buffer, uint32_t idx, bool rp_before_wp)
 {
     // rp_before_wp no event check here ...
     if ( rp_before_wp ) return 0;
 
     // check if the event is good
-    EVENT_HEADER* eh=(EVENT_HEADER*)(&buffer[((idx_eoe+1)*8+1)%dma_buf_nwords]);
-    BANK_HEADER* bh=(BANK_HEADER*)(&buffer[((idx_eoe+1)*8+5)%dma_buf_nwords]);
-    BANK32* ba=(BANK32*)(&buffer[((idx_eoe+1)*8+7)%dma_buf_nwords]);
+    EVENT_HEADER* eh=(EVENT_HEADER*)(&buffer[idx]);
+    BANK_HEADER* bh=(BANK_HEADER*)(&buffer[idx+4]);
+    // BANK32* ba=(BANK32*)(&buffer[((idx_eoe+1)*8+7)%dma_buf_nwords]);
 
-    if ( eh->event_id != 0x0 ) return -1;
-    if ( eh->trigger_mask != 0x1 ) return -1;
+    if ( eh->event_id != 0x1 ) return -1;
+    if ( eh->trigger_mask != 0x0 ) return -1;
     if ( bh->flags != 0x11 ) return -1;
     //if ( ba->type != 0x6 ) return -1;
 
     printf("EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
     printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
-//    printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
+    // printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
 
     return 0;
 }
@@ -515,7 +515,8 @@ INT read_stream_thread(void *param)
    
    // obtain ring buffer for inter-thread data exchange
    int rbh = get_event_rbh(0);
-   bool starting=false;
+   int rb_status;
+
    while (is_readout_thread_enabled()) {
       
       // obtain buffer space
@@ -525,7 +526,7 @@ INT read_stream_thread(void *param)
       if (status == DB_TIMEOUT) {
          set_equipment_status(equipment[0].name, "Buffer full", "var(--myellow)");
          //TODO: throw data here?
-         //readindex = ((mu.last_endofevent_addr() + 1) * 8) % dma_buf_nwords;
+         readindex = ((mu.last_endofevent_addr() + 1) * 8) % dma_buf_nwords;
          continue;
       }
 
@@ -553,7 +554,7 @@ INT read_stream_thread(void *param)
           dma_buf_dummy[0+i*24] = 0x00010000; // Trigger and Event ID
           dma_buf_dummy[1+i*24] = SERIAL; // Serial number
           dma_buf_dummy[2+i*24] = TIME; // time
-          dma_buf_dummy[3+i*24] = 24*4; // event size
+          dma_buf_dummy[3+i*24] = 24*4-4*4; // event size
           dma_buf_dummy[4+i*24] = 24*4-4*4; // all bank size
           dma_buf_dummy[5+i*24] = 0x11; // flags
           // bank 0
@@ -596,11 +597,10 @@ INT read_stream_thread(void *param)
           printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
           printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
           pdata+=sizeof(dma_buf_dummy);
-          rb_increment_wp(rbh, sizeof(dma_buf_dummy));
+          rb_increment_wp(rbh, sizeof(dma_buf_dummy)); // in byte length
           ss_sleep(1000);
           continue;
       }
-
 
       if (mu.last_written_addr() == 0) continue;
       if (mu.last_written_addr() == lastlastWritten) continue;
@@ -611,7 +611,6 @@ INT read_stream_thread(void *param)
 
       // not so sure if we need this
       if(lastWritten==readindex) continue;
-
 
      // in the FPGA the endofevent is one off, since it can be that
      // the end of event does not fit into the 4kB anymore so we have
@@ -629,33 +628,47 @@ INT read_stream_thread(void *param)
      // the end of event is off so we would then take the next one
      if (((dma_buf[((lastEndOfEvent+1)*8)%dma_buf_nwords] == 0xAFFEAFFE) or
              (dma_buf[((lastEndOfEvent+1)*8)%dma_buf_nwords] == 0x0000009c)) and
-         (dma_buf[((lastEndOfEvent+1)*8+1)%dma_buf_nwords] == 0x00010000)
+         (dma_buf[((lastEndOfEvent+1)*8+1)%dma_buf_nwords] == 0x1)
              ){
 
          if(readindex < ((lastEndOfEvent+1)*8)%dma_buf_nwords){
-            if ( check_event(dma_buf, lastEndOfEvent, false) != 0 ) continue;
+            if ( check_event(dma_buf, readindex, false) != 0 ) continue;
 
             //WP before RP. Complete copy
-            size_t wlen = ((lastEndOfEvent+1)*8)%dma_buf_nwords - readindex; // len in 32 bit words
+            size_t wlen = ((lastEndOfEvent+1)*8)%dma_buf_nwords - readindex; // len in 32 bit words -- only one wlen = dma_buf[readindex+3];
             copy_n(&dma_buf[readindex], wlen, pdata);
+            printf("wlen=%d Idx=%d LW=%d EOE=%d\n", wlen, readindex, lastWritten, lastEndOfEvent);
+
+            rb_status = rb_increment_wp(rbh, wlen);
+            if ( rb_status != DB_SUCCESS ) {
+                printf("RBstat=%8.8x\n", rb_status);
+                set_equipment_status(equipment[0].name, "Buffer ERROR", "var(--myellow)");
+                continue;
+            }
             pdata += wlen;
             readindex += wlen+1;
             readindex = readindex%dma_buf_nwords;
-            rb_increment_wp(rbh, wlen);
          }else{
-            if ( check_event(dma_buf, lastEndOfEvent, true) != 0 ) continue;
+            if ( check_event(dma_buf, readindex, false) != 0 ) continue;
 
             //RP before WP. May wrap
             //copy with wrapping
             //#1
-            copy_n(&dma_buf[readindex],(dma_buf_nwords-readindex),pdata); // len in 32 bit words
-            pdata += (dma_buf_nwords-readindex);
+            copy_n(&dma_buf[readindex],dma_buf_nwords-readindex,pdata); // len in 32 bit words
+            printf("wlen=%d\n", dma_buf_nwords-readindex);
+            pdata += dma_buf_nwords-readindex;
             //#2
             readindex=0;
             size_t wlen = ((lastEndOfEvent+1)*8)%dma_buf_nwords; // len in 32 bit words
             copy_n(&dma_buf[readindex], wlen, pdata);
+            printf("wlen=%d\n", wlen);
             pdata += wlen;
-            rb_increment_wp(rbh, (wlen + dma_buf_nwords - readindex));
+            rb_status = rb_increment_wp(rbh, (wlen + dma_buf_nwords - readindex));
+            if ( rb_status != DB_SUCCESS) {  // in byte length
+                printf("RBstat=%8.8\nx", rb_status);
+                set_equipment_status(equipment[0].name, "Buffer ERROR", "var(--myellow)");
+                continue;
+            }
             readindex += wlen+1;
             readindex = readindex%dma_buf_nwords;
           }
