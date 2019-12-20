@@ -148,44 +148,14 @@ int MupixFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* 
          m_mu.FEBsc_read(FPGAid_from_ID(asic), &reg, 1,  (uint32_t) FE_SPIDATA_ADDR,true);
          //Write configuration
 
-         const uint8_t * bitpattern = config->bitpattern_w;
          uint8_t bitpatterna[config->length +1];
-         std::cout << "Or else: ";
-         for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
-             if (config->bitpattern_w[nbit] < 16)
-                 std::cout << 0;
-             //std::cout << "byte n " << std::dec << nbit << " - " << std::hex << +bitpattern[nbit] << " / ";
-             std::cout << std::hex << +bitpattern[nbit] << "-";
-             bitpatterna[nbit+1] = bitpattern[nbit];
-         }
-         std::cout << std::endl;
-         //for (unsigned int nbit = 0; nbit < config->length_32bits*4; ++nbit) {
-         //    bitpattern[nbit] = bitpattern[nbit] >> 8;
-         //}
          uint32_t * datastream = (uint32_t*)(bitpatterna);
-
-         std::cout << "Sending: ";
-         for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
-             std::cout << std::hex << datastream[nbit] << "-";
-         }
-         std::cout << std::endl;
 
          for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
              uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
              datastream[nbit] = tmp;
          }
-         std::cout << "Reversed: ";
-         for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
-             std::cout << std::hex << datastream[nbit] << "-";
-         }
-         std::cout << std::endl;
-         uint32_t * datastream2 = reinterpret_cast<uint32_t*>(default_mupix_dacs);
-         uint32_t * datastream3[config->length_32bits];
-         std::cout << "Default:\n";
-         for (unsigned int nbit2 = 0; nbit2 < config->length_32bits; ++nbit2) {
-             std::cout << std::hex << default_mupix_dacs[nbit2] << "-";
-         }
-         std::cout << std::endl;
+
          m_mu.FEBsc_write(FPGAid_from_ID(asic), datastream, config->length_32bits , (uint32_t) FE_SPIDATA_ADDR+1,true);
          //m_mu.FEBsc_write(FPGAid_from_ID(asic), (default_mupix_dacs), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR+1,true);
 
@@ -274,11 +244,6 @@ int MupixFEB::ConfigureBoards(HNDLE hDB, const char* equipment_name, const char*
          m_mu.FEBsc_read(FPGAid_from_ID(board), &reg, 1,  (uint32_t) FE_SPIDATA_ADDR,true);
          //Write configuration
 
-         std::cout << "Board, writing:\n";
-         for (unsigned int nbit2 = 0; nbit2 < config->length_32bits; ++nbit2) {
-             std::cout << std::hex << reinterpret_cast<uint32_t*>(config->bitpattern_w)[nbit2] << "-";
-         }
-         std::cout << std::endl;
          m_mu.FEBsc_write(FPGAid_from_ID(board), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR+1,true);
 
          //Write offset address

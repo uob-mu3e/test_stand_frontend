@@ -96,8 +96,6 @@ int ASICConfigBase::setParameter(std::string name, uint32_t value, bool reverse)
         return 2; // out of range
     }
 
-//    if (reverse)
-//        offset += length_bits%8;
 
     uint32_t mask = 0x01;
     for(unsigned int pos = 0; (pos < nbits); pos++, mask <<= 1) {
@@ -112,11 +110,6 @@ int ASICConfigBase::setParameter(std::string name, uint32_t value, bool reverse)
         }
         if ((mask & value) != 0 ) bitpattern_w[b] |=   1 << n;  // set nth bit 
         else                      bitpattern_w[b] &= ~(1 << n); // clear nth bit
-        if ((name.find("row") == std::string::npos && name.find("col") == std::string::npos) || b == 371) {
-             if (b == 371)
-                 std::cout << "----------------------------------------HERE\n";
-            std::cout << "name = " << name << ", value = " << std::dec << value << ", offset: " << std::dec << offset << "->" << offset + length_bits%8 << ", pos = " << pos << ", n = " << n << ", b = " << b << ", (mask & value) = " << (mask & value) << ", bitpattern_w[b] = " << std::hex << +bitpattern_w[b] << std::endl;
-        }
     }
     return 0;
 }
