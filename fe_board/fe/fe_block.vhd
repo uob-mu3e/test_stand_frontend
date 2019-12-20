@@ -412,8 +412,8 @@ begin
 
     e_sc_rx : entity work.sc_rx
     port map (
-        i_link_data     => qsfp_rx_data(31 downto 0),
-        i_link_datak    => qsfp_rx_datak(3 downto 0),
+        i_link_data     => qsfp_rx_data(63 downto 32),
+        i_link_datak    => qsfp_rx_datak(7 downto 4),
 
         o_fifo_rempty   => sc_fifo_rempty,
         i_fifo_rack     => sc_fifo_rack,
@@ -440,8 +440,8 @@ begin
         run_state               => run_state_156,
         run_number              => run_number,
 
-        data_out                => qsfp_tx_data(31 downto 0),
-        data_is_k               => qsfp_tx_datak(3 downto 0),
+        data_out                => qsfp_tx_data(63 downto 32),
+        data_is_k               => qsfp_tx_datak(7 downto 4),
 
         slowcontrol_fifo_empty  => sc_fifo_rempty,
         slowcontrol_read_req    => sc_fifo_rack,
@@ -475,8 +475,8 @@ begin
         run_state               => run_state_156,
         run_number              => run_number,
 
-        data_out                => qsfp_tx_data(63 downto 32),
-        data_is_k               => qsfp_tx_datak(7 downto 4),
+        data_out                => qsfp_tx_data(95 downto 64),
+        data_is_k               => qsfp_tx_datak(11 downto 8),
 
         slowcontrol_fifo_empty  => i_secondary_scfifo_rempty,
         slowcontrol_read_req    => o_secondary_scfifo_rack,

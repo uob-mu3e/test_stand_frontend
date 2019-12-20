@@ -98,7 +98,6 @@ port (
 end entity;
 
 architecture arch of top is
-
     signal fifoA_rempty, fifoB_rempty : std_logic;
     signal fifoA_rack,   fifoB_rack   : std_logic;
     signal fifoA_rdata,  fifoB_rdata  : std_logic_vector(35 downto 0);
@@ -251,8 +250,6 @@ begin
         '0';
 
     ----------------------------------------------------------------------------
-
-
 
     e_fe_block : entity work.fe_block
     generic map (
