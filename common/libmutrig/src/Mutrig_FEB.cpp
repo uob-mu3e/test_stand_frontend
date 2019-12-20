@@ -365,11 +365,13 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 	for(auto FEB: _this->m_FPGAs){
 		if(!FEB.IsScEnabled()) continue; //skip disabled
 		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+		printf("LVDS_waitforall_sticky -> %u.%u\n",FEB.SB_Number(),FEB.SB_Port());
 		_this->setWaitForAllSticky(FEB.SB_Port(),bval);
 	}
    }
 
    if (std::string(key.name) == "mask") {
+	   printf("mask: GetNumASICs()=%d\n",_this->GetNumASICs());
 	BOOL* barray=new BOOL[_this->GetNumASICs()];
 	INT  barraysize=sizeof(BOOL)*_this->GetNumASICs();
         db_get_data(hDB,hKey,barray,&barraysize,TID_BOOL);
@@ -377,6 +379,7 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 	for(int i=0;i<_this->GetNumASICs();i++){
 		if(_this->m_FPGAs[_this->FPGAid_from_ID(i)].IsScEnabled()==false) continue;
 		if(_this->m_FPGAs[_this->FPGAid_from_ID(i)].SB_Number()!=_this->m_SB_number) continue;
+		//printf("mask(%d) -> %u -> %u.%u\n",i,_this->FPGAid_from_ID(i),_this->m_FPGAs[_this->FPGAid_from_ID(i)].SB_Port());
 		_this->setMask(_this->m_FPGAs[_this->FPGAid_from_ID(i)].SB_Port(),barray[i]);
 	}
 	delete[] barray;
@@ -457,12 +460,12 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 	for(size_t i=0;i<_this->m_FPGAs.size();i++){
 		if(_this->m_FPGAs[i].IsScEnabled()==false) continue; //skip disabled
 		if(_this->m_FPGAs[i].SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-		BOOL vals[2];
+		BOOL vals[_this->nModulesPerFEB()];
 		vals[0]=cphase[i]; vals[1]=cphase[i+1];
 		_this->setResetSkewCphase(_this->m_FPGAs[i].SB_Port(),vals);
 		vals[0]=cdelay[i]; vals[1]=cdelay[i+1];
 		_this->setResetSkewCdelay(_this->m_FPGAs[i].SB_Port(),vals);
-		INT ivals[2];
+		INT ivals[_this->nModulesPerFEB()];
 		ivals[0]=phases[i]; ivals[1]=phases[i+1];
 		_this->setResetSkewPhases(_this->m_FPGAs[i].SB_Port(),ivals);
 	}
@@ -565,16 +568,27 @@ void MutrigFEB::setDummyData_Count(uint16_t FPGA_ID, int n)
 * Disable data from specified ASIC
 */
 void MutrigFEB::setMask(int asic, bool value){
-	printf("MutrigFEB::setMask(%d)=%d (Mapped to %d:%d)\n",asic,value,FPGAid_from_ID(asic),ASICid_from_ID(asic));
+        //mapping
+        uint16_t SB_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Number();
+        uint16_t SP_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Port();
+        uint16_t FB_ID=FPGAid_from_ID(asic);
+        uint16_t FA_ID=ASICid_from_ID(asic);
+	printf("MutrigFEB::setMask(%d)=%d (Mapped to %u->%u:%u:%u)\n",asic,value,FB_ID,SB_ID,SP_ID,FA_ID);
+
+        if(!m_FPGAs[FPGAid_from_ID(asic)].IsScEnabled()) 
+            return;
+        if(SB_ID!=m_SB_number)
+           return;
+
 	uint32_t val;
-        val=m_reg_shadow[FPGAid_from_ID(asic)][FE_DPCTRL_REG];
+        val=m_reg_shadow[FB_ID][FE_DPCTRL_REG];
 	//m_mu.FEBsc_read(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
         //printf("MutrigFEB(%d)::FE_DPCTRL_REG readback=%8.8x\n",FPGAid_from_ID(asic),val);
 
-        val=reg_setBit(val,ASICid_from_ID(asic),value);
+        val=reg_setBit(val,FA_ID,value);
         //printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGAid_from_ID(asic),val);
-	m_mu.FEBsc_write(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG,m_ask_sc_reply);
-        m_reg_shadow[FPGAid_from_ID(asic)][FE_DPCTRL_REG]=val;
+	m_mu.FEBsc_write(SP_ID, &val, 1 , (uint32_t) FE_DPCTRL_REG,m_ask_sc_reply);
+        m_reg_shadow[FB_ID][FE_DPCTRL_REG]=val;
 }
 
 
@@ -665,28 +679,28 @@ void MutrigFEB::LVDS_RX_Reset(uint16_t FPGA_ID){
 }
 
 //set reset skew configuration
-void MutrigFEB::setResetSkewCphase(uint16_t FPGA_ID, BOOL cphase[2]){
+void MutrigFEB::setResetSkewCphase(uint16_t FPGA_ID, BOOL cphase[]){
         uint32_t val=m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG];
-        for(int i=0;i<2;i++){
+        for(int i=0;i<nModulesPerFEB();i++){
             val=reg_setBit(val,i+6,cphase[i]);
         }
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_RESETSKEW_GLOBALS_REG, m_ask_sc_reply);
         m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG]=val;
 }
 
-void MutrigFEB::setResetSkewCdelay(uint16_t FPGA_ID, BOOL cdelay[2]){
+void MutrigFEB::setResetSkewCdelay(uint16_t FPGA_ID, BOOL cdelay[]){
         uint32_t val=m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG];
-        for(int i=0;i<2;i++){
+        for(int i=0;i<nModulesPerFEB();i++){
             val=reg_setBit(val,i+10,cdelay[i]);
         }
 	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_RESETSKEW_GLOBALS_REG, m_ask_sc_reply);
         m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG]=val;
 }
 
-void MutrigFEB::setResetSkewPhases(uint16_t FPGA_ID, INT phases[2]){
-	uint32_t val[2];
-        for(int i=0;i<2;i++){
+void MutrigFEB::setResetSkewPhases(uint16_t FPGA_ID, INT phases[]){
+	uint32_t val[5];
+        for(int i=0;i<nModulesPerFEB();i++){
         	val[i]=phases[i];
         }
-	m_mu.FEBsc_NiosRPC(FPGA_ID, 0x0104, {{val,4}});
+	m_mu.FEBsc_NiosRPC(FPGA_ID, 0x0104, {{val,nModulesPerFEB()}});
 }

@@ -695,16 +695,9 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 //
 
 uint64_t get_link_active_from_odb(){
-   HNDLE hVar;
-   int status = db_find_key(hDB, 0, "/Equipment/Links/Settings", &hVar);
-   if (status != SUCCESS){
-      cm_msg(MERROR,"switch_fe","ODB Tree /Equipment/Links/Settings not found");
-      throw;
-   }
-
    INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
    int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
-   status = db_get_value(hDB, hVar, "FrontendBoardMask", frontend_board_active_odb, &size, TID_INT, false);
+   int status = db_get_value(hDB, 0, "/Equipment/Links/Settings/LinkMask", frontend_board_active_odb, &size, TID_INT, false);
    if (status != SUCCESS){
       cm_msg(MERROR,"switch_fe","Error getting record for /Equipment/Links/Settings");
       throw;

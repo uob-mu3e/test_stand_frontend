@@ -38,6 +38,7 @@ class MutrigFEB {
 	{};
       void SetSBnumber(uint8_t n){m_SB_number=n;}
       uint16_t GetNumASICs(){return m_FPGAs.size()*nModulesPerFEB()*nAsicsPerModule();}
+      uint16_t GetNumModules(){return m_FPGAs.size()*nModulesPerFEB();}
       void SetAskSCReply(bool ask){m_ask_sc_reply=ask;};
 
       //MIDAS callback for all setters below (DAQ related, mapped to functions on FEB / settings from the DAQ subdirectory).
@@ -142,9 +143,9 @@ class MutrigFEB {
 
 
       //reset signal alignment control
-      void setResetSkewCphase(uint16_t FPGA_ID, BOOL cphase[4]);
-      void setResetSkewCdelay(uint16_t FPGA_ID, BOOL cdelay[4]);
-      void setResetSkewPhases(uint16_t FPGA_ID, INT phases[4]);
+      void setResetSkewCphase(uint16_t FPGA_ID, BOOL cphase[]);
+      void setResetSkewCdelay(uint16_t FPGA_ID, BOOL cdelay[]);
+      void setResetSkewPhases(uint16_t FPGA_ID, INT phases[]);
 
 };//class MutrigFEB
 

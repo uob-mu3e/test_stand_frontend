@@ -39,15 +39,26 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
         cm_msg(MINFO,"mutrig_midasodb", "Key %s not found", set_str);
         return status;   
     }
-//    HNDLE key_tmp;
-//    if(nasics >0){
-//        sprintf(set_str, "%s/Daq/mask", prefix);
-//        db_find_key(hDB, 0, set_str, &key_tmp);
-//        db_set_num_values(hDB, key_tmp, nasics);
-//    }
-
     //open hot link
     db_watch(hDB, hTmp, &MutrigFEB::on_settings_changed, FEB_interface);
+
+    //update length flags for DAQ section
+    sprintf(set_str, "%s/Settings/Daq/mask", prefix);
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Settings/Daq/resetskew_cphase", prefix);
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumModules()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Settings/Daq/resetskew_cdelay", prefix);
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumModules()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Settings/Daq/resetskew_phases", prefix);
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumModules()))!=DB_SUCCESS) return status;
+
 
     /* Map Equipment/SciFi/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
     //TODO some globals should be per asic
