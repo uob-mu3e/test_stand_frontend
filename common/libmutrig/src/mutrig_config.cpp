@@ -95,7 +95,14 @@ Config::paras_t Config::parameters_footer = {
     };
 
 void Config::addPara(const para_t& para, const std::string postfix) {
+	                                                     //offset       paramlength        param_endianness
     paras_offsets[std::get<0>(para)+postfix] = std::make_tuple(length_bits, std::get<1>(para), std::get<2>(para));
+//reporting
+    printf("%s\t[%lu:%lu] (",(std::get<0>(para)+postfix).c_str(),length_bits,length_bits+std::get<1>(para));
+    if(std::get<2>(para)) for(size_t i=0;i<std::get<1>(para);i++) printf("%lu ",i);
+    else                  for(size_t i=std::get<1>(para);i>0;i--) printf("%lu ",i-1);
+    printf(")\n");
+//reporting
     length_bits += std::get<1>(para);
 }
 
@@ -147,16 +154,18 @@ int Config::setParameter(std::string name, uint32_t value) {
         std::cerr << "Value '" << value << "' outside of range of " << nbits << " bits." << std::endl;
         return 2; // out of range
     }
-
+    printf("offset=%lu n=%lu\n",offset,nbits);
     uint32_t mask = 0x01;
     unsigned int pos = offset + (endianess == false ? 0 : (nbits - 1) );
     for(; (pos < offset + nbits) && (pos >= offset);
         pos = pos + (endianess == false ? +1 : -1 ), mask <<= 1) {
         unsigned int n = pos%8;
+        unsigned int b = pos/8;
         //unsigned int x = (mask & value) != 0
         if ((mask & value) != 0 ) bitpattern_w[pos/8] |=   1 << n;  // set nth bit
         else                      bitpattern_w[pos/8] &= ~(1 << n); // clear nth bit
         //bitpattern_w[pos/8] ^= (-x ^ bitpattern_w[pos/8]) & (1 << n); // set nth bit to x
+	printf("b:%3.3u.%1.1u = %u\n",b,n,mask&value);
     }
     return 0;
 }
