@@ -1,10 +1,10 @@
 #include <cstring>
 #include <iostream>
 #include <iomanip>
-#include <mutrig_config.h>
 #include <midas.h>
 #include <history.h>
 //#include "experim.h"
+#include "MutrigConfig.h"
 #include "mutrig_MIDAS_config.h"
 #include "mutrig_midasodb.h"
 namespace mutrig { namespace midasODB {
@@ -170,8 +170,8 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
 return status;
 }
 
-mutrig::Config MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic) {
-    Config ret;
+mutrig::MutrigConfig MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic) {
+    MutrigConfig ret;
     ret.reset();
     char set_str[255];
     int status, size;

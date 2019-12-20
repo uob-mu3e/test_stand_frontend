@@ -12,7 +12,6 @@ Contents:       Class to alter settings on a SciFi-FE-FPGA. Derives from MutrigF
 
 #include "midas.h"
 #include "mudaq_device_scifi.h"
-#include "mutrig_config.h"
 #include "Mutrig_FEB.h"
 class SciFiFEB : public MutrigFEB{
    private:

@@ -13,7 +13,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include "mfe.h" //for set_equipment_status
 
 #include "mudaq_device_scifi.h"
-#include "mutrig_config.h"
+#include "MutrigConfig.h"
 #include "mutrig_midasodb.h"
 #include <thread>
 #include <chrono>
@@ -186,13 +186,13 @@ int MutrigFEB::WriteAll(){
 }
 
 
-int MutrigFEB::MapForEach(std::function<int(mutrig::Config* /*mutrig config*/,int /*ASIC #*/)> func)
+int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/)> func)
 {
     INT status = DB_SUCCESS;
     //Iterate over ASICs
     for(unsigned int asic = 0; asic < GetNumASICs(); ++asic) {
         //ddprintf("mutrig_midasodb: Mapping %s, asic %d\n",prefix, asic);
-        mutrig::Config config(mutrig::midasODB::MapConfigFromDB(m_hDB,m_odb_prefix,asic));
+        mutrig::MutrigConfig config(mutrig::midasODB::MapConfigFromDB(m_hDB,m_odb_prefix,asic));
         //note: this needs to be passed as pointer, otherwise there is a memory corruption after exiting the lambda
         status=func(&config,asic);
         if (status != SUCCESS) break;
@@ -204,7 +204,7 @@ int MutrigFEB::MapForEach(std::function<int(mutrig::Config* /*mutrig config*/,in
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
 int MutrigFEB::ConfigureASICs(){
-   int status = MapForEach([this](mutrig::Config* config, int asic){
+   int status = MapForEach([this](mutrig::MutrigConfig* config, int asic){
       uint32_t rpc_status;
       //mapping
       uint16_t SB_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Number();

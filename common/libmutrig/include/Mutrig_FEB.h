@@ -13,7 +13,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 
 #include "midas.h"
 #include "mudaq_device_scifi.h"
-#include "mutrig_config.h"
+#include "MutrigConfig.h"
 #include "link_constants.h"
 
 class MutrigFEB {
@@ -96,7 +96,7 @@ class MutrigFEB {
       //Foreach loop over all asics under this prefix. Call with a lambda function,
       //e.g. midasODB::MapForEach(hDB, "/Equipment/SciFi",[mudaqdev_ptr](Config c,int asic){mudaqdev_ptr->ConfigureAsic(c,asic);});
       //Function must return SUCCESS, otherwise loop is stopped.
-      int MapForEach(std::function<int(mutrig::Config* /*mutrig config*/,int /*ASIC #*/)> func);
+      int MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/)> func);
 
 
 

@@ -2,7 +2,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "mutrig_config_new.h"
+#include "MutrigConfig.h"
 
 namespace mutrig {
 
