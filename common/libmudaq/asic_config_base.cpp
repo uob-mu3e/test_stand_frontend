@@ -104,10 +104,9 @@ int ASICConfigBase::setParameter(std::string name, uint32_t value, bool reverse)
     printf("offset=%lu n=%lu\n",offset,nbits);
     uint32_t mask = 0x01;
     for(unsigned int pos = 0; (pos < nbits); pos++, mask <<= 1) {
-        unsigned int n = (offset+bitorder.at(pos))%8;
-        unsigned int b = (offset+bitorder.at(pos))/8;
+        unsigned int n = (offset+bitorder.at(nbits-pos-1))%8;
+        unsigned int b = (offset+bitorder.at(nbits-pos-1))/8;
         if (reverse) {
-	    printf("r!");
             n = (offset + nbits -1 - bitorder.at(pos))%8;
             b = (offset + nbits -1 - bitorder.at(pos))/8;
             //unsigned int b2 = length_bits/8;
