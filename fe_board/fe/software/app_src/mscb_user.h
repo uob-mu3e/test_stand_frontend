@@ -227,6 +227,8 @@ void mscb_init() {
 
 /*------------------------------------------------------------------*/
 
+void mscb_uart_handler(void); //LUIGI: added pre-declaration to make it compile
+
 int mscb_loop(void) {
     unsigned int reg;
     quit=0;
@@ -282,7 +284,7 @@ void send_data(unsigned char* buf, int n) {
 }
 
 /*------------------------------------------------------------------*/
-
+unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *rb); //LUIGI: added pre-declaration to make it compile.
 unsigned char in_buf[256], out_buf[256]; //A char is one byte long, or 8 bits FW
 unsigned int i_in = 0;
 alt_u32  last_received = 0;
