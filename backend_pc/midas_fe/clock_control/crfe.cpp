@@ -838,14 +838,13 @@ void prepare_run_on_request(HNDLE hDB, HNDLE hKey, INT, void *){
         allok = allok && ((request[i] > 0) || (active[i] == 0));
         notalloff = notalloff || active[i];
     }
-
+    if(!notalloff) return;
     if(allok && notalloff){
         cm_msg(MINFO, "prepare_run_on_request", "Execute Run Prepare on request");
         int run;
         int size = sizeof(run);
         db_get_value(hDB, 0, "/Runinfo/Run number", &run, &size, TID_INT, false);
         cb->write_command("Run Prepare",run);
-
         // reset requests
         for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++){
             active[i] =0;

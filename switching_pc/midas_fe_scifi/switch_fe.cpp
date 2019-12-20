@@ -328,6 +328,7 @@ try{
 
    uint16_t timeout_cnt=300;
    uint64_t link_active_from_register;
+   printf("Waiting for run prepare acknowledge from all FEBs\n");
    do{
       timeout_cnt--;
       link_active_from_register = get_runstart_ack();
@@ -673,10 +674,11 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
     if (std::string(key.name) == "Reset Bypass Payload") {
           DWORD value;
-          int size = sizeof(INT);
+          int size = sizeof(DWORD);
           db_get_data(hDB, hKey, &value, &size, TID_DWORD);
-          //FPGA_ID=0 - Assume only one board in this mode
-          int status=mup->FEBsc_write(0, &value,1,0xfff5,true);
+	  //printf("Reset Bypass Payload now %8.8x\n",value);
+	  //do not expect a reply here, for example during sync no data is returned (in reset state)
+          int status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff5,false);
           if(status!=SUCCESS){/**/}
     }
 
@@ -684,8 +686,9 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
           DWORD value;
           int size = sizeof(DWORD);
           db_get_data(hDB, hKey, &value, &size, TID_DWORD);
-          //FPGA_ID=0 - Assume only one board in this mode
-          int status=mup->FEBsc_write(0, &value,1,0xfff4,true);
+	  printf("Reset Bypass Command now %8.8x\n",value);
+	  //do not expect a reply here, for example during sync no data is returned (in reset state)
+          int status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,false);
           if(status!=SUCCESS){/**/}
     }
 
