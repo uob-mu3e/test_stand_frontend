@@ -253,7 +253,8 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        NIOS_CLK_HZ_g => 125000000--,
+        NIOS_CLK_HZ_g => 125000000,
+        feb_mapping   => 0&3&2&1
     )
     port map (
         i_fpga_id       => X"FEB0",

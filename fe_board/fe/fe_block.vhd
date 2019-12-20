@@ -6,7 +6,8 @@ use work.daq_constants.all;
 
 entity fe_block is
 generic (
-    NIOS_CLK_HZ_g : positive := 125000000--;
+    NIOS_CLK_HZ_g : positive := 125000000;
+    feb_mapping   : natural_array_t(3 downto 0):=3&2&1&0--;
 );
 port (
     i_fpga_id       : in    std_logic_vector(15 downto 0);
@@ -412,8 +413,8 @@ begin
 
     e_sc_rx : entity work.sc_rx
     port map (
-        i_link_data     => qsfp_rx_data(63 downto 32),
-        i_link_datak    => qsfp_rx_datak(7 downto 4),
+        i_link_data     => qsfp_rx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
+        i_link_datak    => qsfp_rx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
         o_fifo_rempty   => sc_fifo_rempty,
         i_fifo_rack     => sc_fifo_rack,
@@ -440,8 +441,8 @@ begin
         run_state               => run_state_156,
         run_number              => run_number,
 
-        data_out                => qsfp_tx_data(63 downto 32),
-        data_is_k               => qsfp_tx_datak(7 downto 4),
+        data_out                => qsfp_tx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
+        data_is_k               => qsfp_tx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
         slowcontrol_fifo_empty  => sc_fifo_rempty,
         slowcontrol_read_req    => sc_fifo_rack,
@@ -475,8 +476,8 @@ begin
         run_state               => run_state_156,
         run_number              => run_number,
 
-        data_out                => qsfp_tx_data(95 downto 64),
-        data_is_k               => qsfp_tx_datak(11 downto 8),
+        data_out                => qsfp_tx_data(32*(feb_mapping(1)+1)-1 downto 32*feb_mapping(1)),
+        data_is_k               => qsfp_tx_datak(4*(feb_mapping(1)+1)-1 downto 4*feb_mapping(1)),
 
         slowcontrol_fifo_empty  => i_secondary_scfifo_rempty,
         slowcontrol_read_req    => o_secondary_scfifo_rack,

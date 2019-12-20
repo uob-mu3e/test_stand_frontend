@@ -22,6 +22,8 @@ type reg64array_t is array (natural range <>) of std_logic_vector(63 downto 0);
 subtype REG64_TOP_RANGE is integer range 63 downto 32;
 subtype REG64_BOTTOM_RANGE is integer range 31 downto 0;
 
+type natural_array_t is array(integer range<>) of natural;
+
 -- general FEB constants
 constant NLVDS				: integer := 32;	-- number of total links available
 constant NINPUTS_BANK_A	: integer := 16;	-- number of links available on bank A (dividing LVDS banks into physical regions)
