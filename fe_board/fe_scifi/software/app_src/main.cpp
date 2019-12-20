@@ -8,8 +8,8 @@ si5345_t si5345 { SPI_SI_BASE, 0 };
 #include "../../../fe/software/app_src/sc.h"
 sc_t sc;
 
-#include "../../../fe/software/app_src/mscb_user.h"
-mscb_t mscb;
+//#include "../../../fe/software/app_src/mscb_user.h"
+//mscb_t mscb;
 #include "../../../fe/software/app_src/reset.h"
 
 #include "scifi_module.h"
@@ -62,7 +62,7 @@ int main() {
             si5345.menu();
             break;
         case '6':
-            mscb_main();
+            //mscb_main();
             break;
         case '7':
             menu_reset();
