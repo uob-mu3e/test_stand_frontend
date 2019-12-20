@@ -18,14 +18,24 @@ class SciFiFEB : public MutrigFEB{
    private:
       static SciFiFEB* m_instance; //signleton instance pointer: only one instance of SciFiFEB
       SciFiFEB(const SciFiFEB&)=delete;
-      SciFiFEB(mudaq::MudaqDevice& mu):MutrigFEB(mu){};
+      SciFiFEB(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix)
+	:
+	MutrigFEB(mu,hDB,equipment_name,odb_prefix)
+        {
+		RebuildFEBsMap();
+        };
    public:
-      static SciFiFEB* Create(mudaq::MudaqDevice& mu){printf("FEB::Create()");if(!m_instance) m_instance=new SciFiFEB(mu); return m_instance;};
+      static SciFiFEB* Create(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix){printf("SciFiFEB::Create(%s) as %s\n",odb_prefix,equipment_name);if(!m_instance) m_instance=new SciFiFEB(mu,hDB,equipment_name,odb_prefix); return m_instance;};
       static SciFiFEB* Instance(){return m_instance;};
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
-      virtual uint8_t FPGAid_from_ID(int asic);
-      virtual uint8_t ASICid_from_ID(int asic);
+      virtual uint16_t FPGAid_from_ID(int asic);
+      virtual uint16_t ASICid_from_ID(int asic);
+      virtual uint8_t nModulesPerFEB(){return 2;}
+      virtual uint8_t nAsicsPerModule(){return 4;}
+      //Return typeID for building FEB ID map
+      virtual FEBTYPE  GetTypeID(){return FEBTYPE::Fibre;}
+      virtual bool IsSecondary(int t){return t==FEBTYPE::FibreSecondary;}
 
       //MIDAS callback for all ___ SciFi specific ___ setters. Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
       static void on_scifi_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *);

@@ -33,7 +33,7 @@ struct sc_t {
         alt_u32 cmd = cmdlen >> 16;
         alt_u32 n = cmdlen & 0xFFFF;
 
-        printf("[sc::callback] cmd = 0x%04X, n = 0x%04X\n", cmd, n);
+        //printf("[sc::callback] cmd = 0x%04X, n = 0x%04X\n", cmd, n);
 
         // data offset
         alt_u32 offset = ram->regs.fe.offset & 0xFFFF;
@@ -45,7 +45,7 @@ struct sc_t {
         else {
             auto data = n > 0 ? (ram->data + offset) : nullptr;
             status = callback(cmd, data, n);
-            printf("[sc::callback] status = 0x%04X\n", status);
+            //printf("[sc::callback] status = 0x%04X\n", status);
         }
 
         // zero upper 16 bits of command register

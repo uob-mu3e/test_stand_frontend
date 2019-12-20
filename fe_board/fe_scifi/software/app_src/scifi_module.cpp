@@ -46,6 +46,14 @@ int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 //        printf("\n");
 	return status;
 }
+void scifi_module_t::print_config(const alt_u8* bitpattern) {
+	uint16_t nb=MUTRIG1_CONFIG_LEN_BYTES;
+	do{
+		nb--;
+                printf("%02X ",bitpattern[nb]);
+	}while(nb>0);
+}
+
 
 //configure ASIC
 alt_u16 scifi_module_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
@@ -70,15 +78,19 @@ void scifi_module_t::menu(){
     while(1) {
         printf("  [0] => reset asic\n");
         printf("  [1] => reset datapath\n");
-        printf("  [2 || o] => configure all off\n");
+        printf("  [2] => reset lvds_rx\n");
+        printf("  [o] => configure all off\n");
         printf("  [t] => configure pll test\n");
         printf("  [p] => configure prbs single hit\n");
-        printf("  [3] => data\n");
-        printf("  [4] => get datapath status\n");
+	printf("\n");
+	printf("  [3] => counters\n");
+	printf("  [4] => get datapath status\n");
         printf("  [5] => get slow control registers\n");
+	printf("\n");
 	printf("  [6] => dummy generator settings\n");
 	printf("  [7] => datapath settings\n");
 	printf("  [8] => reset skew settings\n");
+	printf("\n");
 	printf("  [d] => show offsets\n");
         printf("  [q] => exit\n");
 
@@ -96,23 +108,31 @@ void scifi_module_t::menu(){
             regs.ctrl.reset = 0;
             break;
 	case '2':
+            regs.ctrl.reset = 4;
+            usleep(100);
+            regs.ctrl.reset = 0;
+            break;
 	case 'o':
             printf("[scifi] configuring all off\n");
-            for(int i=0;i<n_ASICS;i++)
+            for(int i=0;i<4*n_MODULES;i++)
                 configure_asic(i,mutrig_config_ALL_OFF);
             break;
         case 't':
             printf("[scifi] configuring pll test\n");
-            for(int i=0;i<n_ASICS;i++)
+            for(int i=0;i<4*n_MODULES;i++)
                 configure_asic(i,mutrig_config_plltest);
+            break;
+	case 'l':
+            printf("[scifi] last configured:\n");
+            print_config((alt_u8*)(&sc->ram->data[1]));
             break;
         case 'p':
             printf("[scifi] configuring prbs signle hit\n");
-            for(int i=0;i<n_ASICS;i++)
+            for(int i=0;i<4*n_MODULES;i++)
 		configure_asic(i,config_PRBS_single);
             break;
         case '3':
-            printf("TODO...\n");
+            menu_counters();
             break;
         case '4':
             printf("Datapath status registers: press 'q' to end\n");
@@ -218,7 +238,7 @@ void scifi_module_t::menu_reg_datapathctrl(){
         auto reg = regs.ctrl.dp;
         printf("  [p] => %s prbs decoder\n",(reg&(1<<31)) == 0?"enable":"disable");
         printf("  [w] => %s wait for all RX ready\n",(reg&(1<<30)) == 0?"enable":"disable");
-        printf("  [s] => %s wait sticky\n",(reg&(1<<30)) == 0?"set":"unset");
+        printf("  [s] => %s wait sticky\n",(reg&(1<<29)) == 0?"set":"unset");
 	for(alt_u8 i=0;i<16;i++){
             printf("  [%1x] => %s ASIC %u\n",i,(reg&(1<<i)) == 0?"  mask":"unmask",i);
 	}
@@ -269,21 +289,21 @@ void scifi_module_t::RSTSKWctrl_Set(uint8_t channel, uint8_t value){
     if(value>7) return;
     auto& regs = sc->ram->regs.scifi;
     uint32_t val=regs.ctrl.resetdelay & 0xffc0;
-    printf("PLL_phaseadjust #%u: ",channel);
+    //printf("PLL_phaseadjust #%u: ",channel);
     while(value!=resetskew_count[channel]){
         val |= (channel+2)<<2;
         if(value>resetskew_count[channel]){ //increment counter
             val |= 2;
-	    printf("+");
+	    //printf("+");
 	    resetskew_count[channel]++;
 	}else{
             val |= 1;
-	    printf("-");
+	    //printf("-");
 	    resetskew_count[channel]--;
 	}
         regs.ctrl.resetdelay = val;
     }
-    printf("\n");
+    //printf("\n");
     regs.ctrl.resetdelay= val & 0xffc0;
 }
 
@@ -343,7 +363,58 @@ void scifi_module_t::menu_reg_resetskew(){
     }
 }
 
+void scifi_module_t::menu_counters(){
+    auto& regs = sc->ram->regs.scifi;
+    char cmd;
+    printf("Counters: press 'q' to end / 'r' to reset\n");
+    while(1){
+	for(char selected=0;selected<4; selected++){
+		regs.counters.ctrl = selected&0x3;
+		switch(selected){
+			case 0: printf("Events/Time  [8ns] "); break;
+			case 1: printf("Errors/Frame       "); break;
+			case 2: printf("PRBS: Errors/Words "); break;
+			case 3: printf("LVDS: Errors/Words "); break;
+		}
+		for(int i=0;i<4;i++){
+			regs.counters.ctrl = (regs.counters.ctrl & 0x3) + (i<<2);
+			printf("| %10u / %18lu |", regs.counters.nom, regs.counters.denom);
+		}
+		printf("\n");
+	}
+	printf("\n");
 
+	if (read(uart,&cmd, 1) > 0){
+	   printf("--\n");
+	   if(cmd=='q') return;
+	   if(cmd=='r'){
+		regs.counters.ctrl = regs.counters.ctrl | 1<<15;
+	   	printf("-- reset\n");
+		regs.counters.ctrl = regs.counters.ctrl ^ 1<<15;
+	   };
+	 }
+        usleep(200000);
+    };
+
+}
+//write counter values of all channels to memory address *data and following. Return number of asic channels written.
+alt_u16 scifi_module_t::store_counters(volatile alt_u32* data){
+	for(uint8_t i=0;i<4*n_MODULES;i++){
+		for(uint8_t selected=0;selected<4; selected++){
+			sc->ram->regs.scifi.counters.ctrl = (selected&0x3) + (i<<2);
+			*data=sc->ram->regs.scifi.counters.nom;
+			//printf("%u: %8.8x\n",sc->ram->regs.scifi.counters.ctrl,*data);
+			data++;
+			*data=(sc->ram->regs.scifi.counters.denom>>32)&0xffffffff;
+			//printf("%u: %8.8x\n",sc->ram->regs.scifi.counters.ctrl,*data);
+			data++;
+			*data=(sc->ram->regs.scifi.counters.denom    )&0xffffffff;
+			//printf("%u: %8.8x\n",sc->ram->regs.scifi.counters.ctrl,*data);
+			data++;
+		}
+	}
+	return 4*n_MODULES; //return number of asic channels written so we can parse correctly later
+}
 
 alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 //    auto& regs = ram->regs.scifi;
@@ -355,7 +426,7 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
         break;
     case 0x0103: //configure all off
 	printf("[scifi] configuring all off\n");
-        for(int i=0;i<n_ASICS;i++)
+        for(int i=0;i<n_MODULES*4;i++)
            if(configure_asic(i,mutrig_config_ALL_OFF)==FEB_REPLY_ERROR)
               status=FEB_REPLY_ERROR;
 	return status;
@@ -366,26 +437,26 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
         for(int i=0;i<4;i++)
 	    RSTSKWctrl_Set(i,data[i]);
 	return 0;
+    case 0x0105: //read back counters. Write as continuous field to memory pointed to by data.
+	printf("[scifi] reporting back counters\n");
+	return store_counters(data);
     case 0xfffe:
 	printf("-ping-\n");
         break;
     case 0xffff:
         break;
+    case 0x0110:
+        //configure ASIC
+        status=configure_asic(data[0],(alt_u8*) &(data[1]));
+        if(sc->ram->regs.scifi.ctrl.dummy&1){
+           //when configured as dummy do the spi transaction,
+           //but always return success to switching board
+           if(status!=FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
+           status=FEB_REPLY_SUCCESS;
+        }
+	return status;
     default:
-        if((cmd&0xfff0) ==0x0110){ //configure ASIC
-	   uint8_t chip=data[0];
-           status=configure_asic(chip,(alt_u8*) &(data[1]));
-           if(sc->ram->regs.scifi.ctrl.dummy&1){
-              //when configured as dummy do the spi transaction,
-              //but always return success to switching board
-	      if(status!=FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
-              status=FEB_REPLY_SUCCESS;
-           }
-	   return status;
-        }else{//unknown command
-           return FEB_REPLY_ERROR;
-	}
+        return FEB_REPLY_ERROR;
     }
-
     return 0;
 }

@@ -402,9 +402,9 @@ typedef struct {
 
 #define MUPIX_BOARDDACS_STR(_name) const char *_name[] = {\
 "[.]",\
-"Threshold_High = INT : 5096",\
-"Threshold_Low = INT : 4992",\
-"Threshold_Pix = INT : 7281",\
+"Threshold_High = INT : 19312",\
+"Threshold_Low = INT : 19312",\
+"Threshold_Pix = INT : 48284",\
 "Injection = INT : 0",\
 "TDiode_Current = INT : 0",\
 "TDiode_ADC = INT : 0",\

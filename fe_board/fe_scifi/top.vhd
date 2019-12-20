@@ -6,14 +6,14 @@ use work.daq_constants.all;
 entity top is
 port (
     -- FE.Ports
-    i_fee_rxd       : in    std_logic_vector(4*4 - 1 downto 0); -- data inputs from ASICs
-    o_fee_spi_CSn   : out   std_logic_vector(4*4 - 1 downto 0); -- CSn signals to ASICs (one per ASIC)
-    o_fee_spi_MOSI  : out   std_logic_vector(4 - 1 downto 0);   -- MOSI signals to ASICs (one per board)
-    i_fee_spi_MISO  : in    std_logic_vector(4 - 1 downto 0);   -- MISO signals from ASICs (one per board)
-    o_fee_spi_SCK   : out   std_logic_vector(4 - 1 downto 0);   -- SCK signals to ASICs (one per board)
+    i_fee_rxd       : in    std_logic_vector(2*4 - 1 downto 0); -- data inputs from ASICs
+    o_fee_spi_CSn   : out   std_logic_vector(2*4 - 1 downto 0); -- CSn signals to ASICs (one per ASIC)
+    o_fee_spi_MOSI  : out   std_logic_vector(2 - 1 downto 0);   -- MOSI signals to ASICs (one per board)
+    i_fee_spi_MISO  : in    std_logic_vector(2 - 1 downto 0);   -- MISO signals from ASICs (one per board)
+    o_fee_spi_SCK   : out   std_logic_vector(2 - 1 downto 0);   -- SCK signals to ASICs (one per board)
 
-    o_fee_ext_trig  : out   std_logic_vector(4 - 1 downto 0);   -- external trigger (data validation) signals to ASICs (one per board)
-    o_fee_chip_rst  : out   std_logic_vector(4 - 1 downto 0);   -- chip reset signals to ASICs (one per board)
+    o_fee_ext_trig  : out   std_logic_vector(2 - 1 downto 0);   -- external trigger (data validation) signals to ASICs (one per board)
+    o_fee_chip_rst  : out   std_logic_vector(2 - 1 downto 0);   -- chip reset signals to ASICs (one per board)
 
 
 
@@ -80,18 +80,18 @@ port (
 
     -- clock inputs
     -- SI45
-    clk_125_top     : in    std_logic;  -- 125 MHz (clk_125_top in schematic)       // SI5345 OUT8   --USED AS GLOBAL 125M CLOCK
-    clk_125_bottom  : in    std_logic;  -- 125 MHz (clk_125_bottom in schematic)    // SI5345 OUT7   --UNUSED
+    clk_125_top     : in    std_logic;  -- 625 MHz (clk_125_top in schematic)       // SI5345 OUT8  --UNUSED
+    clk_125_bottom  : in    std_logic;  -- 125 MHz (clk_125_bottom in schematic)    // SI5345 OUT7  --USED AS GLOBAL 125M CLOCK
 
     lvds_clk_A      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right  // SI5345 OUT3
     lvds_clk_B      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left   // SI5345 OUT6
 
 
 
-    si42_clk_125        : in    std_logic;
-    si42_clk_50         : in    std_logic;
+    si42_clk_40 : in    std_logic;
+    si42_clk_80 : in    std_logic;
 
-
+    clk_aux     : in    std_logic;
 
     reset_n     : in    std_logic--;
 );
@@ -99,9 +99,9 @@ end entity;
 
 architecture arch of top is
 
-    signal fifo_rempty : std_logic;
-    signal fifo_rack : std_logic;
-    signal fifo_rdata : std_logic_vector(35 downto 0);
+    signal fifoA_rempty, fifoB_rempty : std_logic;
+    signal fifoA_rack,   fifoB_rack   : std_logic;
+    signal fifoA_rdata,  fifoB_rdata  : std_logic_vector(35 downto 0);
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
@@ -120,12 +120,13 @@ architecture arch of top is
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n : std_logic_vector(15 downto 0);
 
-    signal s_fee_chip_rst : std_logic_vector(3 downto 0);
+    signal s_fee_chip_rst : std_logic_vector(1 downto 0);
     signal s_FPGA_test : std_logic_vector (7 downto 0) := (others => '0');
     signal s_MON_rxrdy : std_logic_vector (7 downto 0);
 
     -- reset system
     signal run_state_125 : run_state_t;
+    signal s_run_state_all_done : std_logic;
 
 begin
 
@@ -142,8 +143,7 @@ begin
 
     e_scifi_path : entity work.scifi_path
     generic map (
-        N_g => 8,
-        N_m => 4
+        N_m => 2
     )
     port map (
         i_reg_addr      => scifi_reg.addr(3 downto 0),
@@ -154,19 +154,25 @@ begin
 
         o_chip_reset    => s_fee_chip_rst,
         o_pll_test      => open,
-        i_data          => i_fee_rxd(7 downto 0),
+        i_data          => i_fee_rxd,
 
-        o_fifo_rempty   => fifo_rempty,
-        i_fifo_rack     => fifo_rack,
-        o_fifo_rdata    => fifo_rdata,
+        o_fifoA_rempty   => fifoA_rempty,
+        i_fifoA_rack     => fifoA_rack,
+        o_fifoA_rdata    => fifoA_rdata,
+
+        o_fifoB_rempty   => fifoB_rempty,
+        i_fifoB_rack     => fifoB_rack,
+        o_fifoB_rdata    => fifoB_rdata,
 
         i_reset         => not reset_n,
         i_clk_core      => qsfp_pll_clk,
-        i_clk_g125      => clk_125_top,
+        i_clk_g125      => clk_125_bottom,
         i_clk_ref_A     => lvds_clk_A,
         i_clk_ref_B     => lvds_clk_B,
 
         i_run_state     => run_state_125,
+
+        o_run_state_all_done => s_run_state_all_done,
 
         o_MON_rxrdy     => s_MON_rxrdy
     );
@@ -176,19 +182,19 @@ begin
 
 
     -- LED maps:
-    -- 15: si42_clk_80 (80MHz -> 1Hz)
+    -- 15: si42_clk_50 (80MHz -> 1Hz)
     -- 14: clk_qsfp (156MHz -> 1Hz)
     -- 13: clk_pod (125MHz -> 1Hz)
     -- 11: fee_chip_reset (niosclk)
     -- x..0 : CSn to SciFi boards
 
-    led(11) <= s_fee_chip_rst(2);
+    led(11) <= s_fee_chip_rst(0);
     --led(7 downto 0) <= s_MON_rxrdy;
 
     -- test outputs
     FPGA_Test <= s_FPGA_test;
     --s_FPGA_test(2 downto 0) <= s_fee_chip_rst(2 downto 0);
-    led(4 downto 0) <= run_state_125(4 downto 0);
+    led(8 downto 0) <= run_state_125(8 downto 0);
     s_FPGA_test(4 downto 0) <= run_state_125(4 downto 0); 
 
 
@@ -240,8 +246,8 @@ begin
         si45_spi_out when spi_ss_n(0) = '0' else
         i_fee_spi_MISO(0) when spi_ss_n(3 downto 0)/="1111" else
         i_fee_spi_MISO(1) when spi_ss_n(7 downto 4)/="1111" else
-        i_fee_spi_MISO(2) when spi_ss_n(11 downto 8)/="1111" else
-        i_fee_spi_MISO(3) when spi_ss_n(15 downto 12)/="1111" else
+--        i_fee_spi_MISO(2) when spi_ss_n(11 downto 8)/="1111" else
+--        i_fee_spi_MISO(3) when spi_ss_n(15 downto 12)/="1111" else
         '0';
 
     ----------------------------------------------------------------------------
@@ -278,9 +284,13 @@ begin
         i_pod_rx        => pod_rx,
         o_pod_tx        => pod_tx,
 
-        i_fifo_rempty   => fifo_rempty,
-        o_fifo_rack     => fifo_rack,
-        i_fifo_rdata    => fifo_rdata,
+        i_fifo_rempty   => fifoA_rempty,
+        o_fifo_rack     => fifoA_rack,
+        i_fifo_rdata    => fifoA_rdata,
+
+        i_secondary_fifo_rempty   => fifoB_rempty,
+        o_secondary_fifo_rack     => fifoB_rack,
+        i_secondary_fifo_rdata    => fifoB_rdata,
 
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,
@@ -296,6 +306,7 @@ begin
 
         -- reset system
         o_run_state_125 => run_state_125,
+        i_can_terminate => s_run_state_all_done,
 
 
 

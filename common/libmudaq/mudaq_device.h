@@ -144,6 +144,7 @@ public:
     int get_current_interrupt_number();  // via ioctl from driver (no need for read_block() function)
 
     uint32_t last_written_addr() const;
+    uint32_t last_endofevent_addr() const;
 
   private:
     volatile uint32_t * _dmabuf_ctrl;

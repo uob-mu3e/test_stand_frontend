@@ -43,7 +43,7 @@ entity frame_rcv is
 		i_clk			       : in std_logic;
 		i_data			    : in std_logic_vector(7 downto 0);
 		i_byteisk		    : in std_logic;
-		i_dser_no_sync		 : in std_logic; -- deserialzer not synced after rst
+		i_enable		 : in std_logic; -- do not generate new frames (but may finish pending one)
 
 		o_frame_number		 : out std_logic_vector(15 downto 0);
 		o_frame_info		 : out std_logic_vector(15 downto 0);
@@ -51,6 +51,7 @@ entity frame_rcv is
 		o_new_frame		    : out std_logic;
 		o_word			    : out std_logic_vector(EVENT_DATA_WIDTH -1 downto 0);
 		o_new_word		    : out std_logic;
+		o_busy			    : out std_logic;
 
 		o_end_of_frame	    : out std_logic;
 		o_crc_error		    : out std_logic;
@@ -194,10 +195,11 @@ begin
 	comb: process(
 		i_data, i_byteisk, 
 		p_state, p_state_wait_cnt, p_crc_err_count, p_crc_din_valid, p_word_cnt, p_new_frame, p_frame_number, p_frame_len, 
-		n_word_cnt, s_crc_result, p_word, p_word_extra, p_crc_rst, i_dser_no_sync, p_frame_flags
+		n_word_cnt, s_crc_result, p_word, p_word_extra, p_crc_rst, i_enable, p_frame_flags
 	) --{{{
 	begin
 		--DEFAULT SIGNAL ASSIGNMENTS
+		o_busy			<= '1';
 		n_state			    <= p_state;
 		n_state_wait_cnt	 <= p_state_wait_cnt;
 
@@ -221,6 +223,7 @@ begin
 
 		case p_state is
 			when FS_IDLE =>
+				o_busy           <= '0';
 				--Initialize the frame len meta information
 				n_frame_len      <= (others => '0');
 				n_frame_flags    <= (others => '0');
@@ -232,7 +235,7 @@ begin
 				n_new_frame      <= '0';
 
 				--State transition
-				if i_dser_no_sync = '0' and i_byteisk = '1' and i_data = c_header then -- detect frame_header, go to FS_FRAME_COUNTER
+				if i_enable = '1' and i_byteisk = '1' and i_data = c_header then -- detect frame_header, go to FS_FRAME_COUNTER
 					n_new_frame		<= '1';
 					n_state			<= FS_FRAME_COUNTER;
 					n_state_wait_cnt	<= 2;

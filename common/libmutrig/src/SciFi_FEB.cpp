@@ -14,8 +14,8 @@ Contents:       Class to alter settings on a SciFi-FE-FPGA. Derives from MutrigF
 SciFiFEB* SciFiFEB::m_instance=NULL;
 
 //Mapping to physical ports of switching board.
-uint8_t SciFiFEB::FPGAid_from_ID(int asic){return 0;}//return asic/4;}
-uint8_t SciFiFEB::ASICid_from_ID(int asic){return asic;}//return asic%4;}
+uint16_t SciFiFEB::FPGAid_from_ID(int asic){return asic/8;}
+uint16_t SciFiFEB::ASICid_from_ID(int asic){return asic%8;}
 
 
 
