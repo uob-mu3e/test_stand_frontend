@@ -270,25 +270,29 @@ begin
 				if( buffer_not_empty = '1' ) then
 					w_ram_en			<= '1';
 					w_ram_add   		<= w_ram_add + 1;
-					w_ram_data  		<= event_id & trigger_mask;
+                    -- "eventID" describes the type of event. Usually 1 is used for triggered events, 2 for scaler events, 3 for HV events etc. 
+                    -- "trigger mask" can be used to describe the sub-type of an event. 
+					w_ram_data  		<= trigger_mask & event_id; 
 					l_count_size : FOR i in 0 to NLINKS - 1 LOOP
-						count_size := count_size + conv_integer(bank_length_fifo(11 + 12 * i downto i * 12));
+						count_size := count_size + conv_integer(bank_length_fifo(11 + 12 * i downto i * 12)) + 1; -- bcz we count from 0
 					END LOOP l_count_size;
-					event_data_size		<= std_logic_vector(to_unsigned((3 * NLINKS + 6 + count_size) * 4, event_data_size'length)); -- length in 8 bit
+					event_data_size		<= std_logic_vector(to_unsigned((3 * NLINKS + 2 + count_size) * 4, event_data_size'length)); -- The event data size contains the size of the event in bytes excluding the header. 
 					event_size_int      <= 3 * NLINKS + 6 + count_size;
-					all_bank_size		<= std_logic_vector(to_unsigned((3 * NLINKS + 2 + count_size) * 4, event_data_size'length)); -- length in 8 bit
+					all_bank_size		<= std_logic_vector(to_unsigned((3 * NLINKS + 2 + count_size) * 4, event_data_size'length)); -- Size in bytes of the following data plus the size of the bank header
 					event_tagging_state <= event_serial_number;
 				end if;
 
 			when event_serial_number =>
 				w_ram_en			<= '1';
 				w_ram_add   		<= w_ram_add + 1;
-				w_ram_data  		<= serial_number;
+				w_ram_data  		<= serial_number; -- The serial number starts at 1 and is incremented by the front-end for each event.
 				event_tagging_state <= event_tmp;
 
 			when event_tmp =>
 				w_ram_en			<= '1';
 				w_ram_add   		<= w_ram_add + 1;
+                -- the time stamp is written by the front-end before an event is read out. It uses the time() function which returns the time in seconds since 1.1.1970 00:00:00 UTC.
+                -- here it is just a counter
 				w_ram_data  		<= time_stamp;
 				event_tagging_state <= event_size;
 
@@ -296,6 +300,7 @@ begin
 				w_ram_en			<= '1';
 				w_ram_add   		<= w_ram_add + 1;
 				event_length_add    <= w_ram_add + 1;
+                -- The event data size contains the size of the event in bytes excluding the header. 
 				w_ram_data  		<= event_data_size;
 				event_tagging_state <= event_bank_size;
 
@@ -303,12 +308,14 @@ begin
 				w_ram_en			<= '1';
 				w_ram_add   		<= w_ram_add + 1;
 				all_bank_add        <= w_ram_add + 1;
+                -- Size in bytes of the following data plus the size of the bank header
 				w_ram_data  		<= all_bank_size;
 				event_tagging_state <= event_flags;
 
 			when event_flags =>
 				w_ram_en			<= '1';
 				w_ram_add   		<= w_ram_add + 1;
+                -- in doc: not used -- but its an endian thing for midas
 				w_ram_data  		<= flags;
 				event_tagging_state <= bank_name;
 
@@ -322,6 +329,7 @@ begin
                 else
 		           	w_ram_en			<= '1';
                 	w_ram_add   		<= w_ram_add + 1;
+                    -- four characters for the name of each bank. Each bank in an event must have a unique name.
 		 	        w_ram_data  		<= std_logic_vector(to_unsigned(mux_link, w_ram_data'length));  -- MIDAS Bank Name
                     event_tagging_state <= bank_type;
                 end if;
@@ -329,6 +337,7 @@ begin
 			when bank_type =>
 				w_ram_en			<= '1';
 				w_ram_add   		<= w_ram_add + 1;
+                -- one of the TID_xxx values defined in midas.h to encode the data type (e.g. TID_INT or TID_FLOAT for integer or floating point data).
 				w_ram_data  		<= x"00000006"; -- MIDAS Bank Type TID_DWORD
 				event_tagging_state <= bank_length_state;
 
@@ -337,7 +346,8 @@ begin
 					 bank_data_fifo(3 + 36 * mux_link downto mux_link * 36 ) = "0001" ) then
                     w_ram_en					<= '1';
                     w_ram_add   				<= w_ram_add + 1;
-                    w_ram_data                	<= std_logic_vector(to_unsigned(conv_integer(bank_length_fifo(11 + 12 * mux_link downto mux_link * 12)) * 4, w_ram_data'length)); -- length in 8 bit
+                    -- size in bytes of the following data.
+                    w_ram_data                	<= std_logic_vector(to_unsigned(conv_integer(bank_length_fifo(11 + 12 * mux_link downto mux_link * 12)) * 4 + 4, w_ram_data'length)); -- length in 8 bit, +4 bcz we count from 0
                     event_tagging_state 		<= bank_data_state;
                     bank_length_ren(mux_link)   <= '1';
                     bank_ren(mux_link)  <= '1';
@@ -377,7 +387,7 @@ begin
             when trailer_length =>
                 w_ram_en			<= '1';
                 w_ram_add   		<= w_ram_add + 1;
-                w_ram_data       <= std_logic_vector(to_unsigned(4 * (8 - conv_integer(w_ram_add + 2) mod 8 + 3), w_ram_data'length)); -- length in 8 bit
+                w_ram_data       <= std_logic_vector(to_unsigned(4 * (8 - conv_integer(w_ram_add + 2) mod 8), w_ram_data'length)); -- length in 8 bit of following data
 				trailer_size_sig     <= 8 - conv_integer(w_ram_add + 2) mod 8 + 3;
                 if ( conv_integer(w_ram_add + 2) mod 8 = 0 ) then
 					event_tagging_state <= event_size_trailer;
@@ -402,13 +412,13 @@ begin
             when event_size_trailer =>
                 w_ram_en			<= '1';
                 w_ram_add   		<= event_length_add;
-                w_ram_data          <= std_logic_vector(to_unsigned(4 * (event_size_int + 3 + trailer_size_sig), w_ram_data'length));
+                w_ram_data          <= std_logic_vector(to_unsigned(4 * (event_size_int + trailer_size_sig), w_ram_data'length));
 				event_tagging_state <= bank_size_trailer;
             
             when bank_size_trailer =>
                 w_ram_en			<= '1';
                 w_ram_add   		<= all_bank_add;
-                w_ram_data          <= std_logic_vector(to_unsigned(4 * (event_size_int + 3 + trailer_size_sig - 4), w_ram_data'length));
+                w_ram_data          <= std_logic_vector(to_unsigned(4 * (event_size_int + trailer_size_sig - 4), w_ram_data'length));
                 event_tagging_state <= reset_ram_add;
             
             when reset_ram_add =>

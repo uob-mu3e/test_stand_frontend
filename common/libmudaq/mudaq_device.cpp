@@ -539,18 +539,16 @@ int DmaMudaqDevice::map_pinned_dma_mem( struct mesg user_message ) {
 // in words!
 uint32_t DmaMudaqDevice::last_written_addr() const
 {
-
+    // returns: remoteaddress_var <= remoteaddress_var + (packet_length & "00");
+    // shifted by two bits
     return (_dmabuf_ctrl[3]>>2);
 
 }
 
 uint32_t DmaMudaqDevice::last_endofevent_addr() const
 {
-
-    uint32_t lower_bits = _dmabuf_ctrl[0];
-    uint32_t higher_bits = (_dmabuf_ctrl[1] << 32);
-
-    return lower_bits + higher_bits;
+    // returns: d0 := memwriteaddreoedma_long(31 downto 0);
+    return _dmabuf_ctrl[0];
 }
 
 // enable interrupts
