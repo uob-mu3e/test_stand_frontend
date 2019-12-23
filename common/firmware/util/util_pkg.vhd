@@ -245,10 +245,13 @@ package body util is
     end function;
 
     function gray_inc (
-        v : std_logic_vector
+        v : std_logic_vector--;
     ) return std_logic_vector is
+        variable r : std_logic_vector(v'range) := (others => '0');
     begin
-        return bin2gray(std_logic_vector(unsigned(gray2bin(v))+1));
+        r := gray2bin(v);
+        r := std_logic_vector(unsigned(r) + 1);
+        return bin2gray(r);
     end function;
 
     function shift_right (

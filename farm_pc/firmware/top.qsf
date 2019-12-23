@@ -20,9 +20,6 @@ set_global_assignment -name TOP_LEVEL_ENTITY top
 
 
 
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT -section_id Top
-set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name VHDL_FILE midas_event_builder.vhd
 set_global_assignment -name VHDL_FILE midas_bank_builder.vhd
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
@@ -37,8 +34,8 @@ set_global_assignment -name VHDL_FILE dma_counter.vhd
 set_global_assignment -name VHDL_FILE dma_evaluation.vhd
 set_global_assignment -name VHDL_FILE linear_shift.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
-set_global_assignment -name VHDL_FILE mudaq_components.vhd -library work
-set_global_assignment -name VHDL_FILE mudaq_registers.vhd -library work
+set_global_assignment -name VHDL_FILE mudaq_components.vhd
+set_global_assignment -name VHDL_FILE mudaq_registers.vhd
 set_global_assignment -name QIP_FILE util/util.qip
 set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 set_global_assignment -name QIP_FILE a10/xcvr.qip
@@ -50,9 +47,10 @@ set_global_assignment -name VHDL_FILE ../../../fe_board/fe_mupix/mupix_block/com
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_scfifo.vhd
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram.vhd
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_dcfifo.vhd
-set_global_assignment -name SOURCE_FILE assignments/DE5a_Net.tcl
-set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
-set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
-set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
-set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+
+
+
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

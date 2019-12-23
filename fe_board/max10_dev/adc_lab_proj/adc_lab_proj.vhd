@@ -65,10 +65,8 @@ architecture arch of adc_lab_proj is
 
 begin
 
-    my_mscb : entity work.mscb
+    e_mscb : entity work.mscb
     port map (
-        nios_clk                    => CLOCK,
-        reset                       => not RESET_N,
         mscb_to_nios_parallel_in    => mscb_in_parallel,
         mscb_from_nios_parallel_out => mscb_out_parallel,
         mscb_data_in                => MSCB_IN,
@@ -76,7 +74,10 @@ begin
         mscb_oe                     => MSCB_OE,
         mscb_counter_in             => open,
         o_mscb_irq                  => open,
-        i_mscb_address              => address
+        i_mscb_address              => address,
+
+        reset                       => not RESET_N,
+        nios_clk                    => CLOCK--,
     );
 
     process(CLOCK, reset_n)

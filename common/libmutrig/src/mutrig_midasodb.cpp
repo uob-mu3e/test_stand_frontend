@@ -26,7 +26,7 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
     unsigned int nasics=FEB_interface->GetNumASICs();
     if(nasics==0){
         cm_msg(MINFO,"mutrig_midasodb::setup_db","Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
-	return DB_SUCCESS;
+    return DB_SUCCESS;
     }
 
     /* Map Equipment/SciFi/Daq (structure defined in mutrig_MIDAS_config.h) */
@@ -37,7 +37,7 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
     status = db_find_key (hDB, 0, set_str, &hTmp);
     if (status != DB_SUCCESS) {
         cm_msg(MINFO,"mutrig_midasodb", "Key %s not found", set_str);
-        return status;   
+        return status;
     }
 //    HNDLE key_tmp;
 //    if(nasics >0){
@@ -61,13 +61,13 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
         return status;
     }
 
-    /* Map Equipment/SciFi/ASICs/TDCs and /Equipment/Scifi/ASICs/Channels 
+    /* Map Equipment/SciFi/ASICs/TDCs and /Equipment/Scifi/ASICs/Channels
      * (structure defined in mutrig_MIDAS_config.h) */
-    MUTRIG_TDC_STR(mutrig_tdc_str);  
-    MUTRIG_CH_STR(mutrig_ch_str);   
+    MUTRIG_TDC_STR(mutrig_tdc_str);
+    MUTRIG_CH_STR(mutrig_ch_str);
     for(unsigned int asic = 0; asic < nasics; ++asic) {
         sprintf(set_str, "%s/Settings/ASICs/TDCs/%i", prefix, asic);
-    	//ddprintf("mutrig_midasodb: adding struct %s\n",set_str);
+        //ddprintf("mutrig_midasodb: adding struct %s\n",set_str);
         status = db_create_record(hDB, 0, set_str, strcomb(mutrig_tdc_str));
         status = db_find_key (hDB, 0, set_str, &hTmp);
         if (status != DB_SUCCESS) {
@@ -76,9 +76,9 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
         }
 
         for(unsigned int ch = 0; ch < 32; ++ch) {
-            sprintf(set_str, "%s/Settings/ASICs/Channels/%i", 
+            sprintf(set_str, "%s/Settings/ASICs/Channels/%i",
                     prefix, asic*32+ch);
-    	    //ddprintf("mutrig_midasodb: adding struct %s\n",set_str);
+            //ddprintf("mutrig_midasodb: adding struct %s\n",set_str);
             status = db_create_record(hDB, 0, set_str, strcomb(mutrig_ch_str));
             status = db_find_key (hDB, 0, set_str, &hTmp);
             if (status != DB_SUCCESS) {
@@ -196,7 +196,7 @@ mutrig::Config MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic
     MUTRIG_CH mt_ch;
     for(int ch = 0; ch < 32 ; ch++) {
         sprintf(set_str, "%s/Settings/ASICs/Channels/%i", prefix, asic*32+ch);
-    	//ddprintf("mutrig_midasodb: Mapping ODB to Config for %s, asic %d: Using key %s as channel %d\n",prefix,asic, set_str,ch);
+        //ddprintf("mutrig_midasodb: Mapping ODB to Config for %s, asic %d: Using key %s as channel %d\n",prefix,asic, set_str,ch);
         status = db_find_key(db_rootentry, 0, set_str, &hCh);
         if(status != DB_SUCCESS) {
             cm_msg(MERROR, "mutrig::midasODB::MapConfigFromDB", "Cannot find key %s", set_str);

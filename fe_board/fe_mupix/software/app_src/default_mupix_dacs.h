@@ -1,4 +1,4 @@
-    uint32_t default_mupix_dacs[94] =
+uint32_t default_mupix_dacs[94] =
 {
     0x12d3e2,
     0x1abc52d0,
@@ -95,3 +95,9 @@
     0xc0200,
     0xa
     };
+
+uint32_t default_board_dacs[2] =
+{
+   0x4b704b70,
+   0xbc9c0000
+};

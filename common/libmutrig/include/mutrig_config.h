@@ -29,7 +29,7 @@ public:
      * return 0 if success
      */
     int setParameter(std::string name, uint32_t value);
-    
+
     /**
      * get parameter from read bitpattern
      */
@@ -37,7 +37,7 @@ public:
 
     /**
      * resets bitpattern
-     * input r: 
+     * input r:
      */
     int reset(char o = 'b');
 
@@ -53,7 +53,7 @@ public:
     std::string GetVerificationError(){ return m_verification_error; };
 
     friend std::ostream& operator<<(std::ostream& os, const Config& config);
-    
+
     uint8_t * bitpattern_r; ///< bitpattern to be written
     uint8_t * bitpattern_w; ///< readback bitpattern
 
@@ -74,17 +74,17 @@ protected:
 public:
     /**
      * MuTRiG parameters (name, number of bits, endianess)
-     */ 
+     */
     typedef std::tuple<std::string, size_t, bool> para_t;     ///< mutrig parameter (name, number of bits, endianess)
     typedef std::vector<para_t> paras_t;                      ///< mutrig parameter in correct order (starting at bit offset 0)
 
     const paras_offset_t& getParameters() const { return paras_offsets; }
 
 private:
-    static paras_t parameters_ch;                             ///< static which stores the parameters for each channel (name, nbits, endian) 
-    static paras_t parameters_tdc;                            ///< static which stores the parameters for the tdcs (name, nbits, endian) 
-    static paras_t parameters_header;                         ///< static which stores the parameters for the header (name, nbits, endian) 
-    static paras_t parameters_footer;                         ///< static which stores the parameters for the footer (name, nbits, endian) 
+    static paras_t parameters_ch;                             ///< static which stores the parameters for each channel (name, nbits, endian)
+    static paras_t parameters_tdc;                            ///< static which stores the parameters for the tdcs (name, nbits, endian)
+    static paras_t parameters_header;                         ///< static which stores the parameters for the header (name, nbits, endian)
+    static paras_t parameters_footer;                         ///< static which stores the parameters for the footer (name, nbits, endian)
     static const unsigned int nch = 32;                       ///< number of channels used to generate config map
 
 

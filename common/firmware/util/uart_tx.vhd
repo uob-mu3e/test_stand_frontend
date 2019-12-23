@@ -20,6 +20,7 @@ generic (
     PARITY_g : integer := 0;
     STOP_BITS_g : positive := 1;
     BAUD_RATE_g : positive := 115200; -- bps
+    FIFO_ADDR_WIDTH_g : positive := 2;
     CLK_MHZ_g : real--;
 );
 port (
@@ -38,10 +39,8 @@ end entity;
 
 architecture arch of uart_tx is
 
-    signal wfull : std_logic;
-
     signal rdata : std_logic_vector(DATA_BITS_g-1 downto 0);
-    signal rempty : std_logic;
+    signal rack, rempty : std_logic;
 
     constant CNT_MAX_c : positive := positive(1000000.0 * CLK_MHZ_g / real(BAUD_RATE_g)) - 1;
     signal cnt : integer range 0 to CNT_MAX_c;
@@ -79,10 +78,24 @@ begin
         '1' when ( state /= STATE_IDLE ) else
         '0';
 
-    o_wfull <= wfull;
-    wfull <=
-        '1' when ( rempty = '0' ) else
-        '0';
+    -- use fifo to buffer input data
+    e_fifo : entity work.fifo_sc
+    generic map (
+        DATA_WIDTH_g => DATA_BITS_g,
+        ADDR_WIDTH_g => FIFO_ADDR_WIDTH_g--,
+    )
+    port map (
+        o_rdata         => rdata,
+        i_rack          => rack,
+        o_rempty        => rempty,
+
+        i_wdata         => i_wdata,
+        i_we            => i_we,
+        o_wfull         => o_wfull,
+
+        i_reset_n       => i_reset_n,
+        i_clk           => i_clk--;
+    );
 
     parity <=
         -- total parity odd
@@ -94,16 +107,12 @@ begin
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n = '0' ) then
-        rdata <= (others => '-');
-        rempty <= '1';
+        rack <= '0';
         cnt <= 0;
         state <= STATE_IDLE;
         --
     elsif rising_edge(i_clk) then
-        if ( wfull = '0' and i_we = '1' ) then
-            rdata <= i_wdata;
-            rempty <= '0';
-        end if;
+        rack <= '0';
 
         -- change state at baud rate
         if ( cnt = CNT_MAX_c ) then
@@ -117,16 +126,14 @@ begin
                 if ( data_bit /= DATA_BITS_g-1) then
                     data_bit <= data_bit + 1;
                 elsif ( PARITY_g /= 0 ) then
-                    rdata <= (others => '-');
-                    rempty <= '1';
                     state <= STATE_PARITY;
                 else
-                    rdata <= (others => '-');
-                    rempty <= '1';
+                    rack <= '1';
                     state <= STATE_STOP;
                 end if;
                 --
             when STATE_PARITY =>
+                rack <= '1';
                 state <= STATE_STOP;
                 --
             when STATE_STOP =>

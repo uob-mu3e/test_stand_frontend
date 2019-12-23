@@ -6,15 +6,16 @@ use work.daq_constants.all;
 
 entity fe_block is
 generic (
-    FPGA_ID_g : std_logic_vector(15 downto 0) := X"0000";
+    NIOS_CLK_HZ_g : positive--;
+);
+port (
+    i_fpga_id       : in    std_logic_vector(15 downto 0);
     -- frontend board type
     -- - 111010 : mupix
     -- - 111000 : mutrig
     -- - 000111 and 000000 : reserved (DO NOT USE)
-    FEB_type_in : std_logic_vector(5 downto 0);
-    NIOS_CLK_HZ_g : positive := 125000000--;
-);
-port (
+    i_fpga_type     : in    std_logic_vector(5 downto 0);
+
     i_i2c_scl       : in    std_logic;
     o_i2c_scl_oe    : out   std_logic;
     i_i2c_sda       : in    std_logic;
@@ -43,13 +44,13 @@ port (
     o_pod_tx        : out   std_logic_vector(3 downto 0);
 
 
+
     i_can_terminate : in std_logic:='0';
 
     --main fiber data fifo
     i_fifo_rempty   : in    std_logic;
     o_fifo_rack     : out   std_logic;
     i_fifo_rdata    : in    std_logic_vector(35 downto 0);
-
 
     --secondary fiber: leave open if unused
     --secondary fiber data fifo
@@ -127,9 +128,13 @@ architecture arch of fe_block is
     signal reg_cmdlen : std_logic_vector(31 downto 0);
     signal reg_offset : std_logic_vector(31 downto 0);
 
+
+
     signal linktest_data    : std_logic_vector(31 downto 0);
     signal linktest_datak   : std_logic_vector(3 downto 0);
     signal linktest_granted : std_logic_vector(1 downto 0);
+
+
 
     signal av_mscb : work.util.avalon_t;
 
@@ -281,6 +286,22 @@ begin
 
         -- mscb
 
+        -- git head hash
+        if ( fe_reg.addr(7 downto 0) = X"FA" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            fe_reg.rdata <= work.cmp.GIT_HEAD(0 to 31);
+        end if;
+        -- fpga id
+        if ( fe_reg.addr(7 downto 0) = X"FB" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            fe_reg.rdata(i_fpga_id'range) <= i_fpga_id;
+        end if;
+        -- fpga type
+        if ( fe_reg.addr(7 downto 0) = X"FC" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
+        end if;
+
         --
     end if;
     end process;
@@ -365,28 +386,28 @@ begin
         RAM_ADDR_WIDTH_g => 14--,
     )
     port map (
-        i_ram_addr          => sc_ram.addr(15 downto 0),
-        i_ram_re            => sc_ram.re,
-        o_ram_rvalid        => sc_ram.rvalid,
-        o_ram_rdata         => sc_ram.rdata,
-        i_ram_we            => sc_ram.we,
-        i_ram_wdata         => sc_ram.wdata,
+        i_ram_addr              => sc_ram.addr(15 downto 0),
+        i_ram_re                => sc_ram.re,
+        o_ram_rvalid            => sc_ram.rvalid,
+        o_ram_rdata             => sc_ram.rdata,
+        i_ram_we                => sc_ram.we,
+        i_ram_wdata             => sc_ram.wdata,
 
-        i_avs_address       => av_sc.address(15 downto 0),
-        i_avs_read          => av_sc.read,
-        o_avs_readdata      => av_sc.readdata,
-        i_avs_write         => av_sc.write,
-        i_avs_writedata     => av_sc.writedata,
-        o_avs_waitrequest   => av_sc.waitrequest,
+        i_avs_address           => av_sc.address(15 downto 0),
+        i_avs_read              => av_sc.read,
+        o_avs_readdata          => av_sc.readdata,
+        i_avs_write             => av_sc.write,
+        i_avs_writedata         => av_sc.writedata,
+        o_avs_waitrequest       => av_sc.waitrequest,
 
-        o_reg_addr          => sc_reg.addr(7 downto 0),
-        o_reg_re            => sc_reg.re,
-        i_reg_rdata         => sc_reg.rdata,
-        o_reg_we            => sc_reg.we,
-        o_reg_wdata         => sc_reg.wdata,
+        o_reg_addr              => sc_reg.addr(7 downto 0),
+        o_reg_re                => sc_reg.re,
+        i_reg_rdata             => sc_reg.rdata,
+        o_reg_we                => sc_reg.we,
+        o_reg_wdata             => sc_reg.wdata,
 
-        i_reset_n           => reset_156_n,
-        i_clk               => i_clk_156--;
+        i_reset_n               => reset_156_n,
+        i_clk                   => i_clk_156--;
     );
 
     e_sc_rx : entity work.sc_rx
@@ -413,8 +434,9 @@ begin
 
     e_merger : entity work.data_merger
     port map (
-        fpga_ID_in              => FPGA_ID_g,
-        FEB_type_in             => FEB_type_in,
+        fpga_ID_in              => i_fpga_id,
+        FEB_type_in             => i_fpga_type,
+
         run_state               => run_state_156,
         run_number              => run_number,
 
@@ -434,7 +456,7 @@ begin
         override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
         override_granted        => linktest_granted(0),
 
-	can_terminate           => i_can_terminate,
+        can_terminate           => i_can_terminate,
         terminated              => terminated(0),
         data_priority           => '0',
 
@@ -448,8 +470,8 @@ begin
     -- otherwise add generation switch.
     e_merger_secondary : entity work.data_merger
     port map (
-        fpga_ID_in              => FPGA_ID_g,
-        FEB_type_in             => FEB_type_in,
+        fpga_ID_in              => i_fpga_id,
+        FEB_type_in             => i_fpga_type,
         run_state               => run_state_156,
         run_number              => run_number,
 
@@ -515,7 +537,7 @@ begin
         resets_out              => open,
         reset_bypass            => reg_reset_bypass(11 downto 0),
         run_number_out          => run_number,
-        fpga_id                 => FPGA_ID_g,
+        fpga_id                 => i_fpga_id,
         terminated              => (terminated(0) and terminated (1)), --TODO: test with two datamergers
         testout                 => open,
 
@@ -530,7 +552,7 @@ begin
 
     e_mscb : entity work.mscb
     generic map (
-        CLK_MHZ_g => real(NIOS_CLK_HZ_g) / 1000000.0--,
+        CLK_MHZ_g => 156.25--,
     )
     port map (
         i_avs_address           => av_mscb.address(3 downto 0),
@@ -540,16 +562,15 @@ begin
         i_avs_writedata         => av_mscb.writedata,
         o_avs_waitrequest       => av_mscb.waitrequest,
 
+        i_rx_data               => i_mscb_data,
+        o_tx_data               => o_mscb_data,
+        o_tx_data_oe            => o_mscb_oe,
 
-        mscb_data_in                => i_mscb_data,
-        mscb_data_out               => o_mscb_data,
-        mscb_oe                     => o_mscb_oe,
-
-        o_mscb_irq                  => nios_irq(1),
+        o_irq                   => nios_irq(1),
         i_mscb_address              => X"ACA0",
 
-        i_reset_n               => nios_reset_n,
-        i_clk                   => i_nios_clk--,
+        i_reset_n               => reset_156_n,
+        i_clk                   => i_clk_156--,
     );
 
 

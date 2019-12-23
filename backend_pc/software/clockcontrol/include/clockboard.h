@@ -8,91 +8,91 @@ class clockboard
 {
 public:
     clockboard(const char * addr, int port);
-    bool isConnected(){return bus.isConnected();}
+    virtual bool isConnected(){return bus.isConnected();}
 
-    int init_clockboard(uint16_t clkinvert = 0x0A00, uint16_t rstinvert= 0x0008, uint16_t clkdisable = 0x0AA, uint16_t rstdisable = 0xAA0);
-    int map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num);
+    virtual int init_clockboard(uint16_t clkinvert = 0x0A00, uint16_t rstinvert= 0x0008, uint16_t clkdisable = 0x0AA, uint16_t rstdisable = 0xAA0);
+    virtual int map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num);
 
     // Write "reset" commands
-    int write_command(uint8_t command, uint32_t payload =0, bool has_payload = false);
-    int write_command(const char * name, uint32_t payload =0, uint16_t address =0);
+    virtual int write_command(uint8_t command, uint32_t payload =0, bool has_payload = false);
+    virtual int write_command(const char * name, uint32_t payload =0, uint16_t address =0);
 
     // I2C interface
-    int init_i2c();
-    int read_i2c(uint8_t dev_addr, uint8_t &data);
-    int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data);
-    int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
+    virtual int init_i2c();
+    virtual int read_i2c(uint8_t dev_addr, uint8_t &data);
+    virtual int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data);
+    virtual int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
 
-    int write_i2c(uint8_t dev_addr, uint8_t data);
-    int write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data);
-    int write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
+    virtual int write_i2c(uint8_t dev_addr, uint8_t data);
+    virtual int write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data);
+    virtual int write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
 
     // SI3545 programming - note that this uses the register map
     // generated with the clock builder tool
-    int load_SI3545_reg_map();
+    virtual int load_SI3545_reg_map();
 
     // Firefly interface
-    bool firefly_present(uint8_t daughter, uint8_t index);
+    virtual bool firefly_present(uint8_t daughter, uint8_t index);
 
-    uint16_t read_disabled_tx_clk_channels();
-    int disable_tx_clk_channels(uint16_t channels);
-    uint16_t read_inverted_tx_clk_channels();
-    int invert_tx_clk_channels(uint16_t channels);
+    virtual uint16_t read_disabled_tx_clk_channels();
+    virtual int disable_tx_clk_channels(uint16_t channels);
+    virtual uint16_t read_inverted_tx_clk_channels();
+    virtual int invert_tx_clk_channels(uint16_t channels);
 
-    uint16_t read_disabled_tx_rst_channels();
-    int disable_tx_rst_channels(uint16_t channels);
-    uint16_t read_inverted_tx_rst_channels();
-    int invert_tx_rst_channels(uint16_t channels);
+    virtual uint16_t read_disabled_tx_rst_channels();
+    virtual int disable_tx_rst_channels(uint16_t channels);
+    virtual uint16_t read_inverted_tx_rst_channels();
+    virtual int invert_tx_rst_channels(uint16_t channels);
 
-    int disable_rx_channels(uint16_t channelmask);
-    uint16_t read_disabled_rx_channels();
+    virtual int disable_rx_channels(uint16_t channelmask);
+    virtual uint16_t read_disabled_rx_channels();
 
-    int set_rx_amplitude(uint8_t amplitude);
-    int set_rx_emphasis(uint8_t emphasis);
+    virtual int set_rx_amplitude(uint8_t amplitude);
+    virtual int set_rx_emphasis(uint8_t emphasis);
 
-    vector<uint8_t> read_rx_amplitude();
-    vector<uint8_t> read_rx_emphasis();
+    virtual vector<uint8_t> read_rx_amplitude();
+    virtual vector<uint8_t> read_rx_emphasis();
 
-    float read_rx_firefly_temp();
-    float read_rx_firefly_voltage();
-    uint16_t read_rx_firefly_los();
-    uint16_t read_rx_firefly_alarms();
+    virtual float read_rx_firefly_temp();
+    virtual float read_rx_firefly_voltage();
+    virtual uint16_t read_rx_firefly_los();
+    virtual uint16_t read_rx_firefly_alarms();
 
 
-    float read_tx_clk_firefly_temp();
-    float read_tx_rst_firefly_temp();
-    float read_tx_clk_firefly_voltage();
-    float read_tx_rst_firefly_voltage();
-    uint16_t read_tx_clk_firefly_lf();
-    uint16_t read_tx_clk_firefly_alarms();
-    uint16_t read_tx_rst_firefly_lf();
-    uint16_t read_tx_rst_firefly_alarms();
+    virtual float read_tx_clk_firefly_temp();
+    virtual float read_tx_rst_firefly_temp();
+    virtual float read_tx_clk_firefly_voltage();
+    virtual float read_tx_rst_firefly_voltage();
+    virtual uint16_t read_tx_clk_firefly_lf();
+    virtual uint16_t read_tx_clk_firefly_alarms();
+    virtual uint16_t read_tx_rst_firefly_lf();
+    virtual uint16_t read_tx_rst_firefly_alarms();
 
-    float read_tx_firefly_temp(uint8_t daughter, uint8_t index);
-    float read_tx_firefly_voltage(uint8_t daughter, uint8_t index);
+    virtual float read_tx_firefly_temp(uint8_t daughter, uint8_t index);
+    virtual float read_tx_firefly_voltage(uint8_t daughter, uint8_t index);
 
-    int disable_tx_channels(uint8_t daughter, uint8_t firefly, uint16_t channelmask);
+    virtual int disable_tx_channels(uint8_t daughter, uint8_t firefly, uint16_t channelmask);
 
-    uint16_t read_tx_firefly_lf(uint8_t daughter, uint8_t index);
-    uint16_t read_tx_firefly_alarms(uint8_t daughter, uint8_t index);
+    virtual uint16_t read_tx_firefly_lf(uint8_t daughter, uint8_t index);
+    virtual uint16_t read_tx_firefly_alarms(uint8_t daughter, uint8_t index);
 
     // Mother and daughter card monitoring
-    bool daughter_present(uint8_t daughter);
-    uint8_t daughters_present();
+    virtual bool daughter_present(uint8_t daughter);
+    virtual uint8_t daughters_present();
 
-    int enable_daughter_12c(uint8_t dev_addr, uint8_t i2c_bus_num);
-    int disable_daughter_12c(uint8_t dev_addr);
+    virtual int enable_daughter_12c(uint8_t dev_addr, uint8_t i2c_bus_num);
+    virtual int disable_daughter_12c(uint8_t dev_addr);
 
-    float read_daughter_board_current(uint8_t daughter);
-    float read_mother_board_current();
+    virtual float read_daughter_board_current(uint8_t daughter);
+    virtual float read_mother_board_current();
 
-    float read_daughter_board_voltage(uint8_t daughter);
-    float read_mother_board_voltage();
+    virtual float read_daughter_board_voltage(uint8_t daughter);
+    virtual float read_mother_board_voltage();
     
-    float read_fan_current();
+    virtual float read_fan_current();
 
-    int configure_daughter_current_monitor(uint8_t daughter, uint16_t config);
-    int configure_mother_current_monitor(uint16_t config);
+    virtual int configure_daughter_current_monitor(uint8_t daughter, uint16_t config);
+    virtual int configure_mother_current_monitor(uint16_t config);
 
     reset reset_protocol;
 

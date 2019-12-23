@@ -4,4 +4,4 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mscb.vhd"
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../../firmware/FEB_common/mscb_addressing.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../../firmware/FEB_common/daq_constants.vhd"]
 
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "my_fifo.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../../../common/firmware/s4/ip_scfifo.vhd"]

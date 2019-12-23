@@ -18,7 +18,7 @@ struct sc_t {
     void init() {
         printf("[sc] init\n");
 
-        if(int err = alt_ic_isr_register(0, 16, callback, this, nullptr)) {
+        if(int err = alt_ic_isr_register(0, 12, callback, this, nullptr)) {
             printf("[sc] ERROR: alt_ic_isr_register => %d\n", err);
         }
     }
@@ -99,7 +99,7 @@ struct sc_t {
                     ram->data[i] = i;
                 }
                 break;
-            case 't':
+            case 'i':
                 ram->regs.fe.cmdlen = 0xffff0000;
                 break;
             case 'q':

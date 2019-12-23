@@ -72,7 +72,6 @@ port (
     QSFPA_LP_MODE       : out   std_logic;
     QSFPA_MOD_SEL_n     : out   std_logic;
     QSFPA_RST_n         : out   std_logic;
-    
     QSFPB_LP_MODE       : out   std_logic;
     QSFPB_MOD_SEL_n     : out   std_logic;
     QSFPB_RST_n         : out   std_logic;
@@ -276,9 +275,9 @@ begin
         inclk => SMA_CLKIN,
         outclk => input_clk--,
     );
-    
+
     -------- Debouncer/seg7 --------
-    
+
     e_debouncer : entity work.debouncer
     generic map (
         W => 4,
@@ -293,7 +292,9 @@ begin
         i_reset_n => CPU_RESET_n,
         i_clk => clk--,
     );
-    
+
+
+
     process(clk)
     begin
     if rising_edge(clk) then
@@ -319,9 +320,11 @@ begin
         i_hex => std_logic_vector(clk_125_cnt)(27 downto 24),
         o_seg => HEX1_D--,
     );
-    
+
+
+
     -------- NIOS --------
-    
+
     e_nios : work.cmp.nios
     port map (
         avm_qsfp_address                => av_qsfp.address(13 downto 0),
@@ -383,18 +386,18 @@ begin
         rst_n       => CPU_RESET_n,
         clk         => input_clk--,
     );
-    
+
     -- monitor nios
     LED(0) <= not cpu_pio_i(7);
     LED(1) <= not cpu_reset_n_q;
     LED(2) <= not flash_rst_n;
     LED(3) <= '0';
-    
+
     i2c_scl_in <= not i2c_scl_oe;
     FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
     TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
     POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-    
+
     i2c_sda_in <=
         FAN_I2C_SDA and
         TEMP_I2C_SDA and
@@ -403,13 +406,14 @@ begin
     FAN_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
     TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
     POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-    
+
+
+
     -------- Receiving Data and word aligning --------
-    
+
     QSFPA_LP_MODE <= '0';
     QSFPA_MOD_SEL_n <= '1';
     QSFPA_RST_n <= '1';
-    
     QSFPB_LP_MODE <= '0';
     QSFPB_MOD_SEL_n <= '1';
     QSFPB_RST_n <= '1';
@@ -424,32 +428,32 @@ begin
                      & "0001"
                      & "0001"
                      & tx_datak(0),
-                     
+
         o_rx_data   => rx_data_A_v,
         o_rx_datak  => rx_datak_A_v,
-        
+
         o_tx_clkout => tx_clk,
         i_tx_clkin  => (others => tx_clk(0)),
         o_rx_clkout => open,--rx_clk,
         i_rx_clkin  => (others => tx_clk(0)),
-        
+
         o_tx_serial => QSFPA_TX_p,
         i_rx_serial => QSFPA_RX_p,
-        
+
         i_pll_clk   => input_clk,
         i_cdr_clk   => input_clk,
-        
+
         i_avs_address       => av_qsfp.address(13 downto 0),
         i_avs_read          => av_qsfp.read,
         o_avs_readdata      => av_qsfp.readdata,
         i_avs_write         => av_qsfp.write,
         i_avs_writedata     => av_qsfp.writedata,
         o_avs_waitrequest   => av_qsfp.waitrequest,
-        
+
         i_reset     => not CPU_RESET_n,
         i_clk       => input_clk--,
     );
-    
+
     e_qsfp_B : entity work.xcvr_a10
     port map (
         i_tx_data   => X"03CAFEBC"
@@ -504,11 +508,11 @@ begin
     rx_datak(6)<=rx_datak_B_v(4*3-1 downto 4*2);
     rx_datak(5)<=rx_datak_B_v(4*2-1 downto 4*1);
     rx_datak(4)<=rx_datak_B_v(4*1-1 downto 4*0);
-    
+
     -------- MIDAS RUN control --------
-    
+
     e_run_control : entity work.run_control
-    generic map(
+    generic map (
             N_LINKS_g                       => NLINKS_SC--,
     )
     port map (
@@ -526,9 +530,9 @@ begin
         o_runNr_ack                         => readregs_slow(RUN_NR_ACK_REGISTER_R), -- which FEBs have responded with run number in i_run_number
         o_run_stop_ack                      => readregs_slow(RUN_STOP_ACK_REGISTER_R)--,
     );
-    
+
     -------- Event Builder --------
-    
+
     e_data_gen : entity work.data_generator_a10
     port map (
         reset               => resets(RESET_BIT_DATAGEN),
@@ -652,7 +656,7 @@ begin
         mem_data    => mem_data_link_test,
         mem_wen     => mem_wen_link_test--,
     );
-    
+
     process(tx_clk(0), reset_n)
     begin
     if ( reset_n = '0' ) then
@@ -672,9 +676,9 @@ begin
         end if;
     end if;
     end process;
-    
+
     -------- PCIe --------
-    
+
     -- reset regs
     e_reset_logic : entity work.reset_logic
     port map (
@@ -693,7 +697,7 @@ begin
         resets_n                => resets_n_fast,
         clk                     => pcie_fastclk_out--,
     );
-    
+
     e_version_reg : entity work.version_reg
     port map (
         data_out  => readregs_slow(VERSION_REGISTER_R)(27 downto 0)
@@ -723,9 +727,9 @@ begin
         readregs(DMA_NOTENDEVENT_REGISTER_R)        <= notendofevent_counter;
     end if;
     end process;
-    
+
     -- DMA status stuff
-        e_dma_evaluation : entity work.dma_evaluation
+    e_dma_evaluation : entity work.dma_evaluation
     port map (
         clk							=> pcie_fastclk_out,
         reset_n						=> resets_n_fast(RESET_BIT_DMA_EVAL),
@@ -811,7 +815,7 @@ begin
         end loop;
     end if;
     end process;
-    
+
     process(tx_clk(0))
     begin
     if rising_edge(tx_clk(0)) then
@@ -822,10 +826,10 @@ begin
         end loop;
     end if;
     end process;
-    
+
     readmem_writeaddr_lowbits   <= readmem_writeaddr(15 downto 0);
     pb_in                       <= push_button0_db & push_button1_db & push_button2_db;
-    
+
     e_pcie_block : entity work.pcie_block
     generic map (
         DMAMEMWRITEADDRSIZE     => 11,
@@ -894,5 +898,5 @@ begin
         inaddr32_r              => readregs(inaddr32_r),
         inaddr32_w              => readregs(inaddr32_w)--,
     );
-    
+
 end architecture;

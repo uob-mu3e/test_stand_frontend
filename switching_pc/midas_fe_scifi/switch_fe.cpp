@@ -113,6 +113,8 @@ const char *sc_settings_str[] = {
 "Clear WM = BOOL : 0",
 "Last RM ADD = BOOL : 0",
 "SciFiConfig = BOOL : 0",
+"Reset Bypass Payload = DWORD : 0",
+"Reset Bypass Command = DWORD : 0",
 "[32] Temp0",
 "[32] Temp1",
 "[32] Temp2",
@@ -694,6 +696,25 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
           }
 	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
+
+    if (std::string(key.name) == "Reset Bypass Payload") {
+          DWORD value;
+          int size = sizeof(INT);
+          db_get_data(hDB, hKey, &value, &size, TID_DWORD);
+          //FPGA_ID=0 - Assume only one board in this mode
+          int status=mup->FEBsc_write(0, &value,1,0xfff5,true);
+          if(status!=SUCCESS){/**/}
+    }
+
+    if (std::string(key.name) == "Reset Bypass Command") {
+          DWORD value;
+          int size = sizeof(DWORD);
+          db_get_data(hDB, hKey, &value, &size, TID_DWORD);
+          //FPGA_ID=0 - Assume only one board in this mode
+          int status=mup->FEBsc_write(0, &value,1,0xfff4,true);
+          if(status!=SUCCESS){/**/}
+    }
+
 }
 
 

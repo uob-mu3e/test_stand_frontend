@@ -17,18 +17,6 @@
 #define __MSCB_H__
 
 /******************************************************************************/
-/* Include Files                                                              */
-/******************************************************************************/
-
-//#include "ether_com.h"
-//#include "network_if.h"
-//#include "gmac_lite.h"
-#include "alt_types.h"
-#include "altera_avalon_pio_regs.h"
-#include "system.h"
-#include "sys/alt_irq.h"
-
-/******************************************************************************/
 /* constant definitions                                                       */
 /******************************************************************************/
 
@@ -251,42 +239,5 @@ typedef struct {                // system info stored in EEPROM
     unsigned int revision;
     char node_name[16];
 } SYS_INFO;
-
-
-/******************************************************************************/
-/* function prototypes                                                        */
-/******************************************************************************/
-
-// functions implemented in mscb_main.cpp
-// utility functions
-int get_times(void);
-int time_diff(int t1, int t2);
-
-void mscb_init(void);
-int mscb_loop(void);
-void mscb_uart_handler(void);
-
-int input_data_ready(void);
-unsigned char read_mscb_command(void);
-void send_data(unsigned char *buf, unsigned int n);
-unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *retbuf);
-
-/*unsigned int mscb_handler(network_if_class *nw_if, unsigned char* frame, int frame_len);
-unsigned int mscb_interprete(int submaster, unsigned char *buf, unsigned char *retbuf);
-
-// utility functions
-unsigned int time(void);
-double time_diff(unsigned int t1, unsigned int t2);
-unsigned char cur_sub_addr();
-
-// functions implemented in mscb_user.cpp
-void user_vars(unsigned char *n_sub_addr, unsigned char *var_size);
-void user_init(unsigned char init);
-unsigned char user_read(unsigned char index);
-void user_write(unsigned char index);*/
-void user_loop(void);
-
-/******************************************************************************/
-
 
 #endif /* MSCB_H_ */

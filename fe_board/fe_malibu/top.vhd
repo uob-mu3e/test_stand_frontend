@@ -90,8 +90,8 @@ port (
 
 
 
-    si42_clk_40 : in    std_logic;
-    si42_clk_80 : in    std_logic;
+    si42_clk_125        : in    std_logic;
+    si42_clk_50         : in    std_logic;
 
 
 
@@ -207,12 +207,13 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        FPGA_ID_g => X"FEB0",
-        -- mutrig FEB type
-        FEB_type_in => "111000",
-        NIOS_CLK_HZ_g => 80000000--,
+        NIOS_CLK_HZ_g => 50000000--,
     )
     port map (
+        i_fpga_id       => X"FEB0",
+        -- mutrig FEB type
+        i_fpga_type     => "111000",
+
         i_i2c_scl       => i2c_scl,
         o_i2c_scl_oe    => i2c_scl_oe,
         i_i2c_sda       => i2c_sda,
@@ -248,7 +249,7 @@ begin
         o_malibu_reg_we     => malibu_reg.we,
         o_malibu_reg_wdata  => malibu_reg.wdata,
 
-        i_nios_clk      => si42_clk_80,
+        i_nios_clk      => si42_clk_125,
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
         o_clk_156_mon   => led(14),
