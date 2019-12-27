@@ -42,6 +42,33 @@ struct si5345_t : si534x_t {
         write(0x0B25, 0x02);
     }
 
+    static const int N_OUT = 10;
+    const int16_t REG_OUT[N_OUT] = { 0x0108, 0x010D, 0x0112, 0x0117, 0x0121, 0x0126, 0x012B, 0x0130, 0x013A };
+
+    /**
+     * divide value = (R + 1) * 2
+     */
+    int set_R(int i, int r) {
+        if(!(0 <= i && i <= 9)) return -1;
+        if(!(0 <= r && r < (1 << 24))) return -1;
+
+        uint16_t O_reg = REG_OUT[i];
+        uint16_t R_reg = 0x024A + 3 * i;
+
+        const uint8_t RDIV_FORCE2 = (1 << 2);
+
+        if(r == 0) {
+            write(O_reg, read(O_reg) | RDIV_FORCE2);
+            write_n(R_reg, r, 3);
+        }
+        else {
+            write_n(R_reg, r, 3);
+            write(O_reg, read(O_reg) & ~RDIV_FORCE2);
+        }
+
+        return 0;
+    }
+
     void menu() {
         alt_u32 pn_base = (read(0x0003) << 8) | read(0x0002);
         if(pn_base != 0x5345) {
