@@ -22,10 +22,10 @@ port (
     o_i2c_sda_oe    : out   std_logic;
 
     -- spi interface to si chip
-    i_spi_si_miso   : in    std_logic;
-    o_spi_si_mosi   : out   std_logic;
-    o_spi_si_sclk   : out   std_logic;
-    o_spi_si_ss_n   : out   std_logic;
+    i_spi_si_miso   : in    std_logic_vector(1 downto 0) := (others => '0');
+    o_spi_si_mosi   : out   std_logic_vector(1 downto 0);
+    o_spi_si_sclk   : out   std_logic_vector(1 downto 0);
+    o_spi_si_ss_n   : out   std_logic_vector(1 downto 0);
 
     -- spi interface to asics
     i_spi_miso      : in    std_logic;
@@ -114,6 +114,9 @@ architecture arch of fe_block is
 
     signal nios_pio : std_logic_vector(31 downto 0);
     signal nios_irq : std_logic_vector(3 downto 0) := (others => '0');
+
+    signal spi_si_miso, spi_si_mosi, spi_si_sclk : std_logic;
+    signal spi_si_ss_n : std_logic_vector(o_spi_si_ss_n'range);
 
     signal av_sc : work.util.avalon_t;
 
@@ -210,6 +213,14 @@ begin
     e_clk_125_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( o_clk => o_clk_125_mon, i_reset_n => reset_125_n, i_clk => i_clk_125 );
+
+
+
+    -- SPI
+    spi_si_miso <= '1' when ( (i_spi_si_miso or spi_si_ss_n) = (spi_si_ss_n'range => '1') ) else '0';
+    o_spi_si_mosi <= (o_spi_si_mosi'range => spi_si_mosi);
+    o_spi_si_sclk <= (o_spi_si_sclk'range => spi_si_sclk);
+    o_spi_si_ss_n <= spi_si_ss_n;
 
 
 
@@ -368,10 +379,10 @@ begin
         spi_sclk => o_spi_sclk,
         spi_ss_n => o_spi_ss_n,
 
-        spi_si_miso => i_spi_si_miso,
-        spi_si_mosi => o_spi_si_mosi,
-        spi_si_sclk => o_spi_si_sclk,
-        spi_si_ss_n => o_spi_si_ss_n,
+        spi_si_miso => spi_si_miso,
+        spi_si_mosi => spi_si_mosi,
+        spi_si_sclk => spi_si_sclk,
+        spi_si_ss_n => spi_si_ss_n,
 
         pio_export => nios_pio,
 

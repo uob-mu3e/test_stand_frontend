@@ -273,10 +273,14 @@ begin
         o_spi_sclk      => spi_sclk,
         o_spi_ss_n      => spi_ss_n,
 
-        i_spi_si_miso   => si45_spi_out,
-        o_spi_si_mosi   => si45_spi_in,
-        o_spi_si_sclk   => si45_spi_sclk,
-        o_spi_si_ss_n   => si45_spi_cs_n,
+        i_spi_si_miso(1)    => si42_spi_out,
+        o_spi_si_mosi(1)    => si42_spi_in,
+        o_spi_si_sclk(1)    => si42_spi_sclk,
+        o_spi_si_ss_n(1)    => si42_spi_cs_n,
+        i_spi_si_miso(0)    => si45_spi_out,
+        o_spi_si_mosi(0)    => si45_spi_in,
+        o_spi_si_sclk(0)    => si45_spi_sclk,
+        o_spi_si_ss_n(0)    => si45_spi_cs_n,
 
         i_qsfp_rx       => qsfp_rx,
         o_qsfp_tx       => qsfp_tx,
