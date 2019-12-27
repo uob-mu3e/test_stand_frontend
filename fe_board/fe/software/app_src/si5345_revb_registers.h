@@ -7,10 +7,10 @@
  * export tool.
  *
  * Part:                                               Si5345 Rev B
- * Design ID:                                          Mu3e_v0
+ * Design ID:                                          
  * Includes Pre/Post Download Control Register Writes: Yes
- * Created By:                                         ClockBuilder Pro v2.34.1 [2019-05-31]
- * Timestamp:                                          2019-06-19 12:51:30 GMT+02:00
+ * Created By:                                         
+ * Timestamp:                                          
  *
  * A complete design report corresponding to this export is included at the end 
  * of this header file.
@@ -162,7 +162,7 @@ si5345_revb_register_t const si5345_revb_registers[] =
 	{ 0x012C, 0x09 },
 	{ 0x012D, 0x3B },
 	{ 0x012E, 0x00 },
-	{ 0x0130, 0x06 },
+	{ 0x0130, 0x02 },
 	{ 0x0131, 0x09 },
 	{ 0x0132, 0x3B },
 	{ 0x0133, 0x00 },
@@ -257,19 +257,19 @@ si5345_revb_register_t const si5345_revb_registers[] =
 	{ 0x025F, 0x04 },
 	{ 0x0260, 0x00 },
 	{ 0x0261, 0x00 },
-	{ 0x0262, 0x00 },
+	{ 0x0262, 0x04 },
 	{ 0x0263, 0x00 },
 	{ 0x0264, 0x00 },
 	{ 0x0268, 0x00 },
 	{ 0x0269, 0x00 },
 	{ 0x026A, 0x00 },
-	{ 0x026B, 0x4D },
-	{ 0x026C, 0x75 },
-	{ 0x026D, 0x33 },
-	{ 0x026E, 0x65 },
-	{ 0x026F, 0x5F },
-	{ 0x0270, 0x76 },
-	{ 0x0271, 0x30 },
+	{ 0x026B, 's' },
+	{ 0x026C, 'i' },
+	{ 0x026D, '4' },
+	{ 0x026E, '5' },
+	{ 0x026F, '.' },
+	{ 0x0270, 'v' },
+	{ 0x0271, '1' },
 	{ 0x0272, 0x00 },
 	{ 0x0302, 0x00 },
 	{ 0x0303, 0x00 },
@@ -441,10 +441,10 @@ si5345_revb_register_t const si5345_revb_registers[] =
  * Overview
  * ========
  * Part:               Si5345AC Rev B
- * Project File:       C:\Users\labor\AppData\Local\Temp\Si5345-RevB-Mu3e_v0-Project.slabtimeproj
- * Design ID:          Mu3e_v0
- * Created By:         ClockBuilder Pro v2.34.1 [2019-05-31]
- * Timestamp:          2019-06-19 12:51:30 GMT+02:00
+ * Project File:       
+ * Design ID:          
+ * Created By:         
+ * Timestamp:          
  * 
  * Design Rule Check
  * =================
@@ -509,7 +509,7 @@ si5345_revb_register_t const si5345_revb_registers[] =
  *          Enabled, LVDS 2.5 V
  *    OUT7: 125 MHz
  *          Enabled, LVDS 2.5 V
- *    OUT8: 625 MHz
+ *    OUT8: 125 MHz
  *          Enabled, LVDS 2.5 V
  *    OUT9: Unused
  * 
@@ -540,7 +540,7 @@ si5345_revb_register_t const si5345_revb_registers[] =
  *       OUT5: 125 MHz
  *       OUT6: 125 MHz
  *       OUT7: 125 MHz
- *       OUT8: 625 MHz
+ *       OUT8: 125 MHz
  *    N1:
  *       Unused
  *    N2:
@@ -559,7 +559,7 @@ si5345_revb_register_t const si5345_revb_registers[] =
  *    R5 = 10
  *    R6 = 10
  *    R7 = 10
- *    R8 = 2
+ *    R8 = 10
  *    R9 = Unused
  * 
  * Nominal Bandwidth:
@@ -612,7 +612,7 @@ si5345_revb_register_t const si5345_revb_registers[] =
  * OUT5    125 MHz     0.000000       
  * OUT6    125 MHz     0.000000       
  * OUT7    125 MHz     0.000000       
- * OUT8    625 MHz     0.000000       
+ * OUT8    125 MHz     0.000000       
  * OUT9    Unused                     
  * 
  * Offset is reported in parts-per-trillion (1e12).
@@ -824,7 +824,7 @@ si5345_revb_register_t const si5345_revb_registers[] =
  * 0x012E[7:6]   OUT7_INV              0                  0x0              
  * 0x0130[0]     OUT8_PDN              0                  0x0              
  * 0x0130[1]     OUT8_OE               1                  0x1              
- * 0x0130[2]     OUT8_RDIV_FORCE2      1                  0x1              
+ * 0x0130[2]     OUT8_RDIV_FORCE2      0                  0x0              
  * 0x0131[2:0]   OUT8_FORMAT           1                  0x1              
  * 0x0131[3]     OUT8_SYNC_EN          1                  0x1              
  * 0x0131[5:4]   OUT8_DIS_STATE        0                  0x0              
@@ -879,15 +879,15 @@ si5345_revb_register_t const si5345_revb_registers[] =
  * 0x0259[23:0]  R5_REG                4                  0x000004         
  * 0x025C[23:0]  R6_REG                4                  0x000004         
  * 0x025F[23:0]  R7_REG                4                  0x000004         
- * 0x0262[23:0]  R8_REG                0                  0x000000         
+ * 0x0262[23:0]  R8_REG                4                  0x000004         
  * 0x0268[23:0]  R9_REG                0                  0x000000         
- * 0x026B[7:0]   DESIGN_ID0            77                 0x4D             
- * 0x026C[7:0]   DESIGN_ID1            117                0x75             
- * 0x026D[7:0]   DESIGN_ID2            51                 0x33             
- * 0x026E[7:0]   DESIGN_ID3            101                0x65             
- * 0x026F[7:0]   DESIGN_ID4            95                 0x5F             
- * 0x0270[7:0]   DESIGN_ID5            118                0x76             
- * 0x0271[7:0]   DESIGN_ID6            48                 0x30             
+ * 0x026B[7:0]   DESIGN_ID0            's'                0x..             
+ * 0x026C[7:0]   DESIGN_ID1            'i'                0x..             
+ * 0x026D[7:0]   DESIGN_ID2            '4'                0x..             
+ * 0x026E[7:0]   DESIGN_ID3            '5'                0x..             
+ * 0x026F[7:0]   DESIGN_ID4            '.'                0x..             
+ * 0x0270[7:0]   DESIGN_ID5            'v'                0x..             
+ * 0x0271[7:0]   DESIGN_ID6            '1'                0x..             
  * 0x0272[7:0]   DESIGN_ID7            0                  0x00             
  * 0x0302[43:0]  N0_NUM                23622320128        0x00580000000    
  * 0x0308[31:0]  N0_DEN                2147483648         0x80000000       

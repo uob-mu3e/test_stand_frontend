@@ -62,6 +62,13 @@ port (
 
 
 
+    -- Si5345 out7 (125 MHz)
+    clk_125_bottom      : in    std_logic; -- global 125 MHz clock
+    -- Si5345 out8 (125 MHz)
+    clk_125_top         : in    std_logic;
+
+
+
     -- MSCB
 
     mscb_data_in    : in    std_logic;
@@ -78,18 +85,15 @@ port (
 
 
 
-    -- clock inputs
-    -- SI45
-    clk_125_top     : in    std_logic;  -- 625 MHz (clk_125_top in schematic)       // SI5345 OUT8  --UNUSED
-    clk_125_bottom  : in    std_logic;  -- 125 MHz (clk_125_bottom in schematic)    // SI5345 OUT7  --USED AS GLOBAL 125M CLOCK
+    -- Si5345 out0 (125 MHz)
+    si42_clk_125        : in    std_logic;
+    -- Si5345 out1 (50 MHz)
+    si42_clk_50         : in    std_logic;
 
     lvds_clk_A      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right  // SI5345 OUT3
     lvds_clk_B      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left   // SI5345 OUT6
 
 
-
-    si42_clk_40 : in    std_logic;
-    si42_clk_80 : in    std_logic;
 
     clk_aux     : in    std_logic;
 

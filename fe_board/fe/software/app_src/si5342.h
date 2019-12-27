@@ -7,21 +7,18 @@
 
 struct si5342_t : si534x_t {
 
-    const char* DESIGN_ID = "feb.42.2";
+    const char* DESIGN_ID = "si42.v1";
 
     si5342_t(alt_u32 spi_base, alt_u32 spi_slave)
         : si534x_t(spi_base, spi_slave)
     {
     }
 
-    void init() {
+    void init(int force = 0) {
         char id[9];
         id[8] = '\0';
         for(int i = 0; i < 8; i++) id[i] = (char)read(0x026B + i);
-        if(strcmp(id, DESIGN_ID) == 0) return;
-
-        si_t::init(si5342_revb_registers, sizeof(si5342_revb_registers) / sizeof(si5342_revb_registers[0]));
-        for(int i = 0; i < 8; i++) write(0x026B + i, DESIGN_ID[i]);
+        if(force == 0 && strcmp(id, DESIGN_ID) == 0) return;
 
         wait_sysincal();
     }
@@ -40,23 +37,16 @@ struct si5342_t : si534x_t {
             printf("si5342:\n");
             printf("  [I] => init\n");
             printf("  [W] => write to NVM\n");
-            printf("  [r] => read regs\n");
 
             printf("Select entry ...\n");
             char cmd = wait_key();
             switch(cmd) {
             case 'I':
-                init();
+                init(1);
                 break;
             case 'W':
                 nvm_write();
                 return;
-            case 'r':
-                printf("si5342.read:\n");
-                for(alt_u16 address = 0x0000; address < 0x0100; address++) {
-                    printf("  [0x%02X] = 0x%02X\n", address, read(address));
-                }
-                break;
             case 'q':
                 return;
             default:

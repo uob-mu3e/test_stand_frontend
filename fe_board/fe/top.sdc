@@ -5,10 +5,10 @@
 create_clock -period "125 MHz" [ get_ports si42_clk_125 ]
 create_clock -period "50 MHz" [ get_ports si42_clk_50 ]
 
-#for the mutrig FEs the Si output is currently configured to 625MHz
-create_clock -period "625 MHz" [ get_ports clk_125_top ]
-
+# si5345
 create_clock -period "125 MHz" [ get_ports clk_125_bottom ]
+create_clock -period "125 MHz" [ get_ports clk_125_top ]
+
 create_clock -period "50 MHz" [ get_ports clk_aux ]
 create_clock -period "156.25 MHz" [ get_ports qsfp_pll_clk ]
 create_clock -period "125 MHz" [ get_ports pod_pll_clk ]

@@ -7,10 +7,10 @@
  * export tool.
  *
  * Part:		                                       Si5342 Rev B
- * Design ID:                                          feb.42.2
+ * Design ID:                                          
  * Includes Pre/Post Download Control Register Writes: Yes
- * Created By:                                         ClockBuilder Pro v2.38 [2019-10-31]
- * Timestamp:                                          2019-12-10
+ * Created By:                                         
+ * Timestamp:                                          
  *
  * A complete design report corresponding to this export is included at the end 
  * of this header file.
@@ -207,14 +207,14 @@ si5342_revb_register_t const si5342_revb_registers[] =
 	{ 0x0253, 0x04 },
 	{ 0x0254, 0x00 },
 	{ 0x0255, 0x00 },
-	{ 0x026B, 0x66 },
-	{ 0x026C, 0x65 },
-	{ 0x026D, 0x62 },
-	{ 0x026E, 0x2E },
-	{ 0x026F, 0x34 },
-	{ 0x0270, 0x32 },
-	{ 0x0271, 0x2E },
-	{ 0x0272, 0x32 },
+	{ 0x026B, 's' },
+	{ 0x026C, 'i' },
+	{ 0x026D, '4' },
+	{ 0x026E, '2' },
+	{ 0x026F, '.' },
+	{ 0x0270, 'v' },
+	{ 0x0271, '1' },
+	{ 0x0272, 0x00 },
 	{ 0x0302, 0x00 },
 	{ 0x0303, 0x00 },
 	{ 0x0304, 0x00 },
@@ -329,10 +329,10 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * Overview
  * ========
  * Part:               Si5342ABCD Rev B
- * Project File:       F:\Si5342-RevB-feb.42.2-Project.slabtimeproj
- * Design ID:          feb.42.2
- * Created By:         ClockBuilder Pro v2.38 [2019-10-31]
- * Timestamp:          2019-12-10
+ * Project File:       
+ * Design ID:          
+ * Created By:         
+ * Timestamp:          
  * 
  * Design Rule Check
  * =================
@@ -616,14 +616,14 @@ si5342_revb_register_t const si5342_revb_registers[] =
  * 0x023B[31:0]  MXAXB_DEN             2147483648         0x80000000       
  * 0x0250[23:0]  R0_REG                1                  0x000001         
  * 0x0253[23:0]  R1_REG                4                  0x000004         
- * 0x026B[7:0]   DESIGN_ID0            102                0x66             
- * 0x026C[7:0]   DESIGN_ID1            101                0x65             
- * 0x026D[7:0]   DESIGN_ID2            98                 0x62             
- * 0x026E[7:0]   DESIGN_ID3            46                 0x2E             
- * 0x026F[7:0]   DESIGN_ID4            52                 0x34             
- * 0x0270[7:0]   DESIGN_ID5            50                 0x32             
- * 0x0271[7:0]   DESIGN_ID6            46                 0x2E             
- * 0x0272[7:0]   DESIGN_ID7            50                 0x32             
+ * 0x026B[7:0]   DESIGN_ID0            's'                0x..             
+ * 0x026C[7:0]   DESIGN_ID1            'i'                0x..             
+ * 0x026D[7:0]   DESIGN_ID2            '4'                0x..             
+ * 0x026E[7:0]   DESIGN_ID3            '2'                0x..             
+ * 0x026F[7:0]   DESIGN_ID4            '.'                0x..             
+ * 0x0270[7:0]   DESIGN_ID5            'v'                0x..             
+ * 0x0271[7:0]   DESIGN_ID6            '1'                0x..             
+ * 0x0272[7:0]   DESIGN_ID7            0                  0x00             
  * 0x0302[43:0]  N0_NUM                57982058496        0x00D80000000    
  * 0x0308[31:0]  N0_DEN                2147483648         0x80000000       
  * 0x030C[0]     N0_UPDATE             0                  0x0              

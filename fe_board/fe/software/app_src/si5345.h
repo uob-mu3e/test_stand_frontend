@@ -7,27 +7,27 @@
 
 struct si5345_t : si534x_t {
 
-    const char* DESIGN_ID = "feb.v01";
+    const char* DESIGN_ID = "si45.v1";
 
     si5345_t(alt_u32 spi_base, alt_u32 spi_slave)
         : si534x_t(spi_base, spi_slave)
     {
     }
 
-    void init() {
+    void init(int force = 0) {
         char id[9];
         id[8] = '\0';
         for(int i = 0; i < 8; i++) id[i] = (char)read(0x026B + i);
-        if(strcmp(id, DESIGN_ID) == 0) return;
+        if(force == 0 && strcmp(id, DESIGN_ID) == 0) return;
 
         si_t::init(si5345_revb_registers, sizeof(si5345_revb_registers) / sizeof(si5345_revb_registers[0]));
-        for(int i = 0; i < 8; i++) write(0x026B + i, DESIGN_ID[i]);
+//        for(int i = 0; i < 8; i++) write(0x026B + i, DESIGN_ID[i]);
 
         wait_sysincal();
     }
 
-    void reset() {
-        write(0x001C, 0x01);
+    void soft_reset() {
+        write(0x001C, read(0x001c) | (1 << 0));
     }
 
     void preamble() {
@@ -62,15 +62,21 @@ struct si5345_t : si534x_t {
             char cmd = wait_key();
             switch(cmd) {
             case 'I':
-                init();
+                init(1); // force init
                 break;
             case 'R':
-                reset();
+                soft_reset();
                 break;
             case 'r': {
+                printf("select page (0): ");
+                char page = wait_key();
+                if('0' <= page && page <= '9') page = page - '0';
+                else if('a' <= page && page <= 'f') page = 10 + page - 'a';
+                else if('A' <= page && page <= 'F') page = 10 + page - 'A';
+                else page = 0;
                 printf("si5345.read:\n");
-                for(alt_u16 address = 0x0200; address < 0x0300; address++) {
-                    printf("  [0x%02X] = 0x%02X\n", address, read(address));
+                for(alt_u16 address = 0x0000; address < 0x0100; address++) {
+                    printf("  [0x%04X] = 0x%02X\n", (page << 8) + address, read((page << 8) + address));
                 }
                 break;
             }
