@@ -17,6 +17,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include "mutrig_midasodb.h"
 #include <thread>
 #include <chrono>
+#include "reset_protocol.h"
 
 //offset for registers on nios SC memory
 #define SC_REG_OFFSET 0xff60
@@ -242,6 +243,51 @@ int MutrigFEB::ConfigureASICs(){
       return FE_SUCCESS;//note: return of lambda function
    });//MapForEach
    return status; //status of foreach function, SUCCESS when no error.
+}
+
+int MutrigFEB::ReadBackRunState(uint16_t FPGA_ID){
+   uint32_t val[2];
+   int status=m_mu.FEBsc_read(FPGA_ID, val, 2, 0xfffe);
+   if(status!=SUCCESS) return status;
+   //val[0] is reset_bypass register
+   //val[1] is reset_bypass payload
+   std::string cmd_name="undefined";
+   reset cmds;
+   for(auto it : cmds.commands){
+      if(it.second.command==val[0] & 0xff) cmd_name=it.first;
+   }
+   std::string state_str="undefined";
+   switch(val[0]&0xffff0000){
+      case 1<<0:
+      state_str="RUN_STATE_BITPOS_IDLE"; 
+      break;
+      case 1<<1:
+      state_str="RUN_STATE_BITPOS_PREP"; 
+      break;
+      case 1<<2:
+      state_str="RUN_STATE_BITPOS_SYNC"; 
+      break;
+      case 1<<3:
+      state_str="RUN_STATE_BITPOS_RUNNING"; 
+      break;
+      case 1<<4:
+      state_str="RUN_STATE_BITPOS_TERMINATING"; 
+      break;
+      case 1<<5:
+      state_str="RUN_STATE_BITPOS_LINK_TEST"; 
+      break;
+      case 1<<6:
+      state_str="RUN_STATE_BITPOS_SYNC_TEST"; 
+      break;
+      case 1<<7:
+      state_str="RUN_STATE_BITPOS_RESET"; 
+      break;
+      case 1<<8:
+      state_str="RUN_STATE_BITPOS_OUT_OF_DAQ"; 
+      break;
+      default:
+      state_str="-broken-";
+   }
 }
 
 int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){

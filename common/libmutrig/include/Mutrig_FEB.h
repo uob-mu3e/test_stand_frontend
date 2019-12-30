@@ -60,6 +60,8 @@ class MutrigFEB {
 
       //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/ 
       int ReadBackCounters(uint16_t FPGA_ID);
+      //Read run state and reset bypass command
+      int ReadBackRunState(uint16_t FPGA_ID);
 
    protected:
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
