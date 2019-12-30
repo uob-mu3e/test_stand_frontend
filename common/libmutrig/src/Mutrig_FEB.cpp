@@ -288,6 +288,15 @@ int MutrigFEB::ReadBackRunState(uint16_t FPGA_ID){
       default:
       state_str="-broken-";
    }
+   char path[255];
+   sprintf(path, "%s/Variables/FEB Run State/Bypass command", m_odb_prefix);
+   if((status = db_set_value_index(m_hDB, 0, path, cmd_name.c_str(), cmd_name.length(),FPGA_ID, TID_STRING,false))!=DB_SUCCESS) return status;
+
+   sprintf(path, "%s/Variables/FEB Run State/Run state", m_odb_prefix);
+   if((status = db_set_value_index(m_hDB, 0, path, state_str.c_str(), state_str.length(),FPGA_ID, TID_STRING,false))!=DB_SUCCESS) return status;
+
+
+
 }
 
 int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
