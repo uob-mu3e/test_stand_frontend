@@ -142,6 +142,7 @@ architecture arch of fe_block is
 
 
     signal reg_reset_bypass : std_logic_vector(31 downto 0);
+    signal reg_reset_bypass_pl : std_logic_vector(31 downto 0);
 
     signal run_state_125 : run_state_t;
     signal run_state_156 : run_state_t;
@@ -279,11 +280,21 @@ begin
 
         -- reset bypass
         if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_reset_bypass;
+            fe_reg.rdata(15 downto 0) <= reg_reset_bypass(15 downto 0);
+            fe_reg.rdata(16+9 downto 16) <= run_state_156;
         end if;
         if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.we = '1' ) then
-            reg_reset_bypass <= fe_reg.wdata;
+            reg_reset_bypass(15 downto 0) <= fe_reg.wdata(15 downto 0); --upper bits are read-only status
         end if;
+
+	-- reset bypass payload
+        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= reg_reset_bypass_pl;
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.we = '1' ) then
+            reg_reset_bypass_pl <= fe_reg.wdata;
+        end if;
+
 
         -- mscb
 
@@ -537,6 +548,7 @@ begin
 
         resets_out              => open,
         reset_bypass            => reg_reset_bypass(11 downto 0),
+        reset_bypass_payload    => reg_reset_bypass_pl,
         run_number_out          => run_number,
         fpga_id                 => i_fpga_id,
         terminated              => (terminated(0) and terminated (1)), --TODO: test with two datamergers
