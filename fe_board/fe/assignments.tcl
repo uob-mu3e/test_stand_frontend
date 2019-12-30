@@ -26,6 +26,14 @@ set_instance_assignment -name IO_STANDARD LVDS -to clk_aux
 
 
 
+# Si5342 clocks
+set_instance_assignment -name IO_STANDARD LVDS -to si42_clk_125
+set_location_assignment PIN_AN15 -to si42_clk_125
+set_instance_assignment -name IO_STANDARD LVDS -to si42_clk_50
+set_location_assignment PIN_B15 -to si42_clk_50
+
+
+
 # QSFP pins
 set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to qsfp_tx[3]
 set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to qsfp_tx[2]
@@ -44,7 +52,7 @@ set_location_assignment PIN_Y33 -to qsfp_rx[2]
 set_location_assignment PIN_AF33 -to qsfp_rx[1]
 set_location_assignment PIN_AH33 -to qsfp_rx[0]
 
-# QSFP clock from si5345 chip
+# QSFP clock from Si5345 chip
 set_instance_assignment -name IO_STANDARD LVDS -to qsfp_pll_clk
 set_location_assignment PIN_AB33 -to qsfp_pll_clk
 
@@ -73,7 +81,7 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to pod_rx_reset_n
 set_location_assignment PIN_AE18 -to pod_tx_reset_n
 set_location_assignment PIN_AP18 -to pod_rx_reset_n
 
-# POD clock from si5345 chip
+# POD clock from Si5345 chip
 set_instance_assignment -name IO_STANDARD LVDS -to pod_pll_clk
 set_location_assignment PIN_K2 -to pod_pll_clk
 #set_instance_assignment -name IO_STANDARD LVDS -to pod_pll_clk_right
@@ -85,7 +93,7 @@ set_location_assignment PIN_K2 -to pod_pll_clk
 set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp_tx[*]
 set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp_rx[*]
 set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_tx[*]
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_rx[*]
+#set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_rx[*]
 
 
 

@@ -5,67 +5,53 @@ set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 
 
 
-set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
 
 #============================================================
 # COMPONENTS
 #============================================================
 
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
-set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 
 set_global_assignment -name TOP_LEVEL_ENTITY top
+
+
+
+
+
+
+
+
+set_global_assignment -name VHDL_FILE run_control_link_listener.vhd
+set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_scfifo.vhd
+set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_ram.vhd
+set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_dcfifo.vhd
+set_global_assignment -name VHDL_FILE ../../../farm_pc/firmware/midas_event_builder.vhd
+set_global_assignment -name VHDL_FILE ../../../farm_pc/firmware/midas_bank_builder.vhd
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
+set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
-
-
-
+set_global_assignment -name QIP_FILE ip/include.qip
+set_global_assignment -name QIP_FILE pcieapp/include.qip
 set_global_assignment -name VHDL_FILE ../../../fe_board/firmware/FEB_common/daq_constants.vhd
-set_global_assignment -name VHDL_FILE linear_shift_link.vhd
 set_global_assignment -name VHDL_FILE link_observer.vhd
 set_global_assignment -name VHDL_FILE dma_counter.vhd
 set_global_assignment -name VHDL_FILE event_counter.vhd
 set_global_assignment -name VHDL_FILE dma_evaluation.vhd
 set_global_assignment -name VHDL_FILE linear_shift.vhd
-set_global_assignment -name QSYS_FILE ip/ip_pll_125.qsys
 set_global_assignment -name QSYS_FILE nios.qsys
-set_global_assignment -name QSYS_FILE ip/ip_transceiver.qsys
-set_global_assignment -name VHDL_FILE mudaq_components.vhd -library work
-set_global_assignment -name VHDL_FILE pcieapp/pcie_components.vhd -library work
-set_global_assignment -name VHDL_FILE mudaq_registers.vhd -library work
+set_global_assignment -name VHDL_FILE mudaq_components.vhd
+set_global_assignment -name VHDL_FILE mudaq_registers.vhd
 set_global_assignment -name QIP_FILE util/util.qip
 set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 set_global_assignment -name QIP_FILE a10/xcvr.qip
-set_global_assignment -name QSYS_FILE ip/ip_clk_ctrl.qsys
-set_global_assignment -name QSYS_FILE ip/ip_receiving_fifo.qsys
-set_global_assignment -name QSYS_FILE ip/ip_pll_312.qsys
-set_global_assignment -name QSYS_FILE ip/ip_sw_fifo_32.qsys
-set_global_assignment -name QSYS_FILE ip/ip_sw_fifo_64.qsys
-set_global_assignment -name QSYS_FILE ip/transceiver_fifo.qsys
-set_global_assignment -name VHDL_FILE pcieapp/reset_logic.vhd
-set_global_assignment -name VHDL_FILE pcieapp/dma_engine.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_application.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_block.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_cfgbus.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_completer.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_completion_bytecount.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_readable_memory.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_readable_registers.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_writeable_memory.vhd
-set_global_assignment -name VHDL_FILE pcieapp/pcie_writeable_registers.vhd
-set_global_assignment -name QSYS_FILE pcieapp/completer_fifo.qsys
-set_global_assignment -name QSYS_FILE pcieapp/completer_wide_fifo.qsys
-set_global_assignment -name QSYS_FILE pcieapp/pcie_wram_narrow.qsys
-set_global_assignment -name QSYS_FILE pcieapp/pcie_ram_narrow.qsys
-set_global_assignment -name QSYS_FILE pcieapp/pcie.qsys
-set_global_assignment -name QSYS_FILE pcieapp/dma_ram.qsys
-set_global_assignment -name QSYS_FILE pcieapp/data_addrs_ram.qsys
-set_global_assignment -name QSYS_FILE pcieapp/data_pages_ram.qsys
 set_global_assignment -name VHDL_FILE data_demerge.vhd
 set_global_assignment -name VHDL_FILE sw_algin_data.vhd
-set_global_assignment -name QSYS_FILE ip/ip_ram.qsys
-set_global_assignment -name QSYS_FILE ip/ip_tagging_fifo.qsys
+set_global_assignment -name VHDL_FILE sc_master.vhd
+set_global_assignment -name VHDL_FILE sc_slave.vhd
 set_global_assignment -name VHDL_FILE a10/data_generator_a10.vhd
+set_global_assignment -name VHDL_FILE run_control.vhd
+set_global_assignment -name VHDL_FILE ../../../fe_board/fe_mupix/mupix_block/comp_type_const/mupix_constants.vhd
 
 
 

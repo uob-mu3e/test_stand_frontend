@@ -44,12 +44,22 @@ NOTE: in most cases `make flow` will also compile ip components (`qsys` and `sop
 
 ```console
 cd "$project_dir"
-make nios.sopcinfo
-make ip/ip_xcvr_fpll.sopcinfo
-make ip/ip_xcvr_reset.sopcinfo
-make ip/ip_xcvr_phy.sopcinfo
+make
 make flow
 make pgm
 make app_upload
 make terminal
+```
+
+
+
+## Troubleshooting
+
+- Quartus 19.1 / Perl Getopt::Long
+
+```
+# ... Can't locate Getopt/Long.pm in @INC ...
+cd $QUARTUS_ROOTDIR/linux64/perl/bin
+mv perl perl_old
+ln -s /usr/bin/perl
 ```

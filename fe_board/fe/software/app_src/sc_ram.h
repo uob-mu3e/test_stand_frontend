@@ -57,19 +57,16 @@ struct sc_ram_t {
 
             struct {
                 struct {
-                    alt_u32 data;
-                    alt_u16 tag;
-                    alt_u16 status;
-                    alt_u32 reserved[2];
-                } fifo;
-
+                    alt_u32 ctrl;
+                    alt_u32 nom;
+                    alt_u64 denom;
+                } counters;
                 struct {
                     alt_u32 status;
                     alt_u32 rx_dpa_lock;
                     alt_u32 rx_ready;
                     alt_u32 reserved[1];
                 } mon;
-
                 struct {
                     alt_u32 dummy;
                     alt_u32 dp;

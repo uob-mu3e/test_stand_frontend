@@ -20,7 +20,8 @@ port (
 	o_frame_number   : out std_logic_vector(15 downto 0);                    -- counter
 	o_frame_info     : out std_logic_vector(15 downto 0);                    -- frame_flags(6) + frame_length(10)
 	o_new_frame	   : out std_logic;                                        -- begin of new frame
-	o_frame_info_rdy : out std_logic
+	o_frame_info_rdy : out std_logic;
+	o_busy           : out std_logic					--currently transmitting frame, do not cut off
 );
 end stic_dummy_data;
 
@@ -45,7 +46,8 @@ architecture RTL of stic_dummy_data is
 begin
 
 
-	 
+o_busy <= '0' when (p_state=fs_idle or p_state=fs_wait) else '1';
+
 fsm_comb : process(p_state, i_cnt, i_fast, i_enable, p_wait_cnt, p_event_cnt, p_frame_number, p_event_data)
 begin
 	n_state <= p_state;
@@ -79,7 +81,7 @@ begin
 				else
 					n_wait_cnt <= "00000000011"; -- 3 bytes
 				end if;
-				if i_cnt = (i_cnt'range=>'0') then
+				if(unsigned(i_cnt) = 0) then
 					n_state <= fs_end_of_frame;
 				else
 					n_event_cnt <= i_cnt - 1;

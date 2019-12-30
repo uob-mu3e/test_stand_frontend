@@ -131,7 +131,7 @@ begin
     g_rx_align : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
     begin
         e_rx_rst_n : entity work.reset_sync
-        port map ( rstout_n => rx(i).rst_n, arst_n => rx_ready(i), clk => i_rx_clkin(i) );
+        port map ( o_reset_n => rx(i).rst_n, i_reset_n => rx_ready(i), i_clk => i_rx_clkin(i) );
 
         e_rx_align : entity work.rx_align
         generic map (
@@ -160,32 +160,32 @@ begin
 
         -- data counter
         e_rx_Gbit : entity work.counter
-        generic map ( W => rx(i).Gbit'length, DIV => 2**30/32 )
+        generic map ( DIV => 2**30/32, W => rx(i).Gbit'length )
         port map (
-            cnt => rx(i).Gbit, ena => '1',
-            reset => not rx(i).rst_n, clk => i_rx_clkin(i)
+            o_cnt => rx(i).Gbit, i_ena => '1',
+            i_reset_n => rx(i).rst_n, i_clk => i_rx_clkin(i)
         );
 
         -- Loss-of-Lock (LoL) counter
         e_rx_LoL_cnt : entity work.counter
-        generic map ( W => rx(i).LoL_cnt'length, EDGE => -1 ) -- falling edge
+        generic map ( EDGE => -1, W => rx(i).LoL_cnt'length ) -- falling edge
         port map (
-            cnt => rx(i).LoL_cnt, ena => rx(i).locked,
-            reset => not rx(i).rst_n, clk => i_rx_clkin(i)
+            o_cnt => rx(i).LoL_cnt, i_ena => rx(i).locked,
+            i_reset_n => rx(i).rst_n, i_clk => i_rx_clkin(i)
         );
 
         -- 8b10b error counter
         e_rx_err_cnt : entity work.counter
         generic map ( W => rx(i).err_cnt'length )
         port map (
-            cnt => rx(i).err_cnt,
-            ena => work.util.to_std_logic( rx(i).errdetect /= 0 or rx(i).disperr /= 0 ),
-            reset => not rx(i).rst_n, clk => i_rx_clkin(i)
+            o_cnt => rx(i).err_cnt,
+            i_ena => work.util.to_std_logic( rx(i).errdetect /= 0 or rx(i).disperr /= 0 ),
+            i_reset_n => rx(i).rst_n, i_clk => i_rx_clkin(i)
         );
     end generate;
 
     -- av_ctrl process, avalon iface
-    p_av_ctrl : process(i_clk, reset_n)
+    process(i_clk, reset_n)
     begin
     if ( reset_n = '0' ) then
         av_ctrl.waitrequest <= '1';
@@ -395,7 +395,7 @@ begin
     end generate;
 
     e_reconfig_rst_n : entity work.reset_sync
-    port map ( rstout_n => reconfig_rst_n, arst_n => reset_n, clk => reconfig_clk );
+    port map ( o_reset_n => reconfig_rst_n, i_reset_n => reset_n, i_clk => reconfig_clk );
 
     e_reconfig : entity work.ip_altgx_reconfig
     port map (

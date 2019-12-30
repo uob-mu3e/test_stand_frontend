@@ -1,14 +1,7 @@
 #
 
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/datapath_components.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/detectorfpga_constants.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/detectorfpga_types.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/hitsorter_components.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/lvds_components.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/transceivers_components.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_constants.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_registers.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_types.vhd"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "data_unpacker/data_unpacker_new.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "data_unpacker/gray_to_binary.vhd"]
@@ -24,8 +17,6 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/add_1_bit.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/add_2_bits.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/add_3_bits.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/decode8b10b.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/8b10_dec.vhd"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/fifo_Nb.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/fifo_Nb_sync.vhd"]

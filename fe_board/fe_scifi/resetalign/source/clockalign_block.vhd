@@ -1,10 +1,11 @@
 -- PLL with register interface to reconfigure the dynamic phase settings of an ALTPLL IP
 -- input: write flag - action will be taken if raised
--- input: data[0]: If set, increment phase counter. If not set, decrement the counter.
--- input: data[4..1]: Selects PLL output to be reconfigured.
--- input: data[6..5]: Sets phase & 1cc shift of line 0
--- input: data[8..7]: Sets phase & 1cc shift of line 1
-
+-- input: data[0]: If set, decrement phase counter.
+-- input: data[1]: If set, increment phase counter.
+-- input: data[5..2]: Select PLL output to be altered. "10" - first channel ; "11" - second channel
+-- input: data[9..6]: Sets output phase 
+-- input: data[13..10]: Sets output shift 
+-- input: data[15]: Reset pll - resets phases to known state
 Library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.STD_LOGIC_ARITH.all;
@@ -61,7 +62,7 @@ architecture a of clockalign_block is
 	signal s_PHASEDONE : std_logic;
 	signal s_PHASEDONE_lat : std_logic;
 
-	type fsm_states is (FS_IDLE, FS_TICK, FS_WAIT);
+	type fsm_states is (FS_IDLE, FS_TICK, FS_WAIT, FS_RETURN);
 	signal s_state, n_state : fsm_states;
 
 	signal s_pll_clk          : std_logic_vector(3 downto 0);
@@ -71,7 +72,7 @@ begin
 	gen_clkdiv: if CLKDIV > 1 generate
 		    e_chainclk_div : entity work.clkdiv
 		    generic map ( P => CLKDIV )
-		    port map ( clkout => s_chainclk, rst_n => not i_rst, clk => i_clk_config );
+		    port map ( o_clk => s_chainclk, i_reset_n => not i_rst, i_clk => i_clk_config );
 	end generate gen_clkdiv;
 
 	gen_noclkdiv: if CLKDIV = 1 generate
@@ -79,7 +80,7 @@ begin
 	end generate gen_noclkdiv;
 
 
-	p_sample_start: process(i_pll_clk)
+	p_sample_start: process(i_clk_config)
 	begin
 		if(rising_edge(i_clk_config)) then
 			if(i_rst='1') then
@@ -106,7 +107,7 @@ begin
 		end if;
 	end process;
 
-	fsm_comb : process (s_state, i_data, s_run, i_flag, s_PHASEUPDOWN, s_PHASECOUNTERSELECT, s_PHASEDONE, s_PHASEDONE_lat)	--{{{
+	fsm_comb : process (i_rst, s_state, i_data, s_run, i_flag, s_PHASEUPDOWN, s_PHASECOUNTERSELECT, s_PHASEDONE, s_PHASEDONE_lat)	--{{{
 	begin
 		n_state <= s_state;
 		n_PHASEUPDOWN <= s_PHASEUPDOWN;
@@ -121,13 +122,16 @@ begin
 		else case s_state is
 			when FS_IDLE =>
 				if s_run = '1' then
-					n_state <= FS_TICK;
 					-- set configuration vector outputs to pll IP
-					n_PHASECOUNTERSELECT <= i_data(4 downto 1);
-					n_PHASEUPDOWN <= i_data(0);
-					n_PHASESTEP <= '1';
+					n_PHASECOUNTERSELECT <= i_data(5 downto 2);
+					if((i_data(0) xor i_data(1))='0') then
+						n_state <= FS_RETURN;
+					else
+						n_PHASEUPDOWN <= i_data(1);
+						n_PHASESTEP <= '1';
+						n_state <= FS_TICK;
+					end if;
 				end if;
-
 			when FS_TICK =>
 				n_PHASESTEP <= '1';
 				if(s_PHASEDONE_lat='0') then 
@@ -136,6 +140,10 @@ begin
 			when FS_WAIT =>
 				n_PHASESTEP <= '1';
 				if s_PHASEDONE = '1' then
+					n_state <= FS_RETURN;
+				end if;
+			when FS_RETURN =>
+				if(s_run='0') then
 					n_state <= FS_IDLE;
 				end if;
 			when others => NULL;
@@ -158,7 +166,7 @@ begin
 
 	pll: pll_ip
 	port map(
-		areset             => i_pll_arst,                  
+		areset             => i_pll_arst or i_data(15),                  
 		inclk0             => i_pll_clk,
 		phasecounterselect => s_PHASECOUNTERSELECT,
 		phasestep          => s_PHASESTEP,
@@ -188,8 +196,8 @@ begin
 				s_sig_f_d(i) <= s_sig_f(i);
 			end if;
 		end process;
-
-		with (i_data(5+i*2+1 downto 5+i*2)) select o_sig(i) <= 
+		--vector type to ease type resolution
+		with (i_data(6+i downto 6+i) & i_data(10+i)) select o_sig(i) <= 
 			s_sig_r(i) when "00",
 			s_sig_r_d(i) when "01",
 			s_sig_f(i) when "10",

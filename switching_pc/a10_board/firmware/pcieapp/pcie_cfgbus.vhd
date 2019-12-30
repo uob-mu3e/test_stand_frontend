@@ -6,8 +6,8 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use work.pcie_components.all;
 
-entity pcie_cfgbus is 
-    port(
+entity pcie_cfgbus is
+port (
 		reset_n			: in std_logic;
 		pld_clk			: in std_logic;
 		tl_cfg_add		: in std_logic_vector(3 downto 0);
@@ -26,9 +26,9 @@ entity pcie_cfgbus is
 		rx_errcheck		: out std_logic;
 		cfg_tcvcmap		: out std_logic_vector(23 downto 0);
 		cfg_msi_data	: out std_logic_vector(15 downto 0)
-    );
-end pcie_cfgbus;
-	 
+);
+end entity;
+
 architecture RTL of pcie_cfgbus is
 
 begin
@@ -84,4 +84,4 @@ elsif(pld_clk'event and pld_clk = '1') then
 end if;
 end process;
 
-end RTL;
+end architecture;

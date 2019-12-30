@@ -54,16 +54,16 @@ begin
     LED5 <= not (led(4) and CLOCK);
 
     e_nios_reset_n : entity work.reset_sync
-    port map ( rstout_n => nios_reset_n, arst_n => reset_n, clk => nios_clk );
+    port map ( o_reset_n => nios_reset_n, i_reset_n => reset_n, i_clk => nios_clk );
 
     e_nios_clk_hz : entity work.clkdiv
     generic map (
         P => 50000000--,
     )
     port map (
-        clkout  => led(0),
-        rst_n   => nios_reset_n,
-        clk     => nios_clk--,
+        o_clk       => led(0),
+        i_reset_n   => nios_reset_n,
+        i_clk       => nios_clk--,
     );
 
     --- PLL ---
@@ -82,9 +82,9 @@ begin
         P => 10000000--,
     )
     port map (
-        clkout  => led(1),
-        rst_n   => nios_reset_n,
-        clk     => adc_pll_clk--,
+        o_clk       => led(1),
+        i_reset_n   => nios_reset_n,
+        i_clk       => adc_pll_clk--,
     );
 
     led(2) <= adc_pll_locked;
@@ -115,5 +115,4 @@ begin
 --        RESET_N         => RESET_N,
 --        CLOCK           => CLOCK--,
 --    );
-
 end architecture;

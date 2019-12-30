@@ -6,10 +6,10 @@ for {set i 0} {$i < 4} {incr i} {
     set_instance_assignment -name IO_STANDARD LVDS -to i_fee_rxd[$i]
     set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to i_fee_rxd[$i]
 }
-set_location_assignment PIN_AH28 -to i_fee_rxd[0]
-set_location_assignment PIN_AJ26 -to i_fee_rxd[1]
-set_location_assignment PIN_AH26 -to i_fee_rxd[2]
-set_location_assignment PIN_AE28 -to i_fee_rxd[3]
+set_location_assignment PIN_AH28 -to i_fee_rxd[3]
+set_location_assignment PIN_AJ26 -to i_fee_rxd[2]
+set_location_assignment PIN_AH26 -to i_fee_rxd[1]
+set_location_assignment PIN_AE28 -to i_fee_rxd[0]
 
 #slow control
 #o_fee_spi_CSn[0:3]={monitor_A_1_p,CLOCK_A_p,data_in_A_1_1_p,data_in_A_1_0_p}
@@ -50,10 +50,10 @@ for {set i 4} {$i < 8} {incr i} {
     set_instance_assignment -name IO_STANDARD LVDS -to i_fee_rxd[$i]
     set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to i_fee_rxd[$i]
 }
-set_location_assignment PIN_G28 -to i_fee_rxd[4]
-set_location_assignment PIN_F26 -to i_fee_rxd[5]
-set_location_assignment PIN_G26 -to i_fee_rxd[6]
-set_location_assignment PIN_L26 -to i_fee_rxd[7]
+set_location_assignment PIN_G28 -to i_fee_rxd[7]
+set_location_assignment PIN_F26 -to i_fee_rxd[6]
+set_location_assignment PIN_G26 -to i_fee_rxd[5]
+set_location_assignment PIN_L26 -to i_fee_rxd[4]
 
 #slow control
 #o_fee_spi_CSn[0:3]={monitor_B_1_p,CLOCK_B_p,data_B_1_1_p,data_B_1_0_p}
@@ -96,10 +96,10 @@ for {set i 8} {$i < 12} {incr i} {
     set_instance_assignment -name IO_STANDARD LVDS -to i_fee_rxd[$i]
     set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to i_fee_rxd[$i]
 }
-set_location_assignment PIN_J5 -to i_fee_rxd[8]
-set_location_assignment PIN_J7 -to i_fee_rxd[9]
-set_location_assignment PIN_G9 -to i_fee_rxd[10]
-set_location_assignment PIN_F7 -to i_fee_rxd[11]
+set_location_assignment PIN_J5 -to i_fee_rxd[11]
+set_location_assignment PIN_J7 -to i_fee_rxd[10]
+set_location_assignment PIN_G9 -to i_fee_rxd[9]
+set_location_assignment PIN_F7 -to i_fee_rxd[8]
 
 #slow control
 #o_fee_spi_CSn[0:3]={monitor_C_1_p,CLOCK_C_p,data_C_1_1_p,data_C_1_0_p}
@@ -188,10 +188,10 @@ for {set i 12} {$i < 16} {incr i} {
     set_instance_assignment -name IO_STANDARD LVDS -to i_fee_rxd[$i]
     set_instance_assignment -name INPUT_TERMINATION DIFFERENTIAL -to i_fee_rxd[$i]
 }
-set_location_assignment PIN_AM7 -to i_fee_rxd[12]
-set_location_assignment PIN_AM6 -to i_fee_rxd[13]
-set_location_assignment PIN_AK6 -to i_fee_rxd[14]
-set_location_assignment PIN_AJ7 -to i_fee_rxd[15]
+set_location_assignment PIN_AM7 -to i_fee_rxd[15]
+set_location_assignment PIN_AM6 -to i_fee_rxd[14]
+set_location_assignment PIN_AK6 -to i_fee_rxd[13]
+set_location_assignment PIN_AJ7 -to i_fee_rxd[12]
 
 #slow control
 #o_fee_spi_CSn[0:3]={monitor_E_1_p,CLOCK_E_p,data_E_1_1_p,data_E_1_0_p}

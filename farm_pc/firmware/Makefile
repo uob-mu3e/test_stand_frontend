@@ -5,22 +5,13 @@ SOF=output_files/top.sof
 BSP_DIR=software/hal_bsp
 APP_DIR=software/app
 
-VHDs= top.vhd \
-      mudaq_components.vhd \
-      mudaq_registers.vhd \
-      pcieapp/*.vhd \
-      helpers/*.vhd
-
-version_reg.vhd: FORCE
-	tclsh revision_number.tcl
-
-FORCE: ;
-
-clean:
-	rm -rf *.rpt *.chg smart.log *.htm *.eqn *.pin *.sof *.pof db incremental_db *.sopcinfo pcieapp/completer_fifo pcieapp/completer_wide_fifo pcieapp/data_addrs_ram pcieapp/data_pages_ram pcieapp/dma_ram pcieapp/pcie pcieapp/pcie_ram_narrow pcieapp/pcie_wram_narrow simulation helpers/ip_clk_ctrl helpers/receiver_switching *.bak helpers/*.sopcinfo helpers/ip_receiving_fifo
+IPs = \
+    $(patsubst %.tcl,%.sopcinfo,$(wildcard ip/*.tcl)) \
+    $(patsubst %.tcl,%.sopcinfo,$(wildcard pcieapp/*.tcl)) \
+    a10/ip_xcvr_phy.sopcinfo a10/ip_xcvr_reset.sopcinfo a10/ip_xcvr_fpll.sopcinfo \
+    nios.sopcinfo
 
 include util/makefile.mk
 
-nios.qsys : device.tcl
-
-flow : nios.sopcinfo
+clean :
+	rm -rf *.rpt *.chg smart.log *.htm *.eqn *.pin *.sof *.pof db incremental_db *.sopcinfo *.bak

@@ -24,8 +24,15 @@ port (
 
 
 
-    -- SI5345
+    -- Si5342
+    si42_oe_n       : out   std_logic; -- <= '0'
+    si42_rst_n      : out   std_logic; -- reset
+    si42_spi_out    : in    std_logic; -- slave data out
+    si42_spi_in     : out   std_logic; -- slave data in
+    si42_spi_sclk   : out   std_logic; -- clock
+    si42_spi_cs_n   : out   std_logic; -- chip select
 
+    -- Si5345
     si45_oe_n       : out   std_logic; -- <= '0'
     si45_rst_n      : out   std_logic; -- reset
     si45_spi_out    : in    std_logic; -- slave data out
@@ -37,7 +44,7 @@ port (
 
     -- QSFP
 
-    -- si5345 out2 (156.25 MHz)
+    -- Si5345 out2 (156.25 MHz)
     qsfp_pll_clk    : in    std_logic;
 
     QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
@@ -51,7 +58,7 @@ port (
 
     -- POD
 
-    -- si5345 out0 (125 MHz)
+    -- Si5345 out0 (125 MHz)
     pod_pll_clk     : in    std_logic;
 
     pod_tx_reset_n  : out   std_logic;
@@ -78,32 +85,29 @@ port (
 
 
 
-    -- si5345 out8 (625 MHz)
+    -- Si5345 out8 (625 MHz)
     clk_625     : in    std_logic;
 
 
 
-    reset_n     : in    std_logic;
+    si42_clk_125        : in    std_logic;
+    si42_clk_50         : in    std_logic;
 
-    -- 125 MHz
-    clk_aux     : in    std_logic--;
+
+
+    reset_n     : in    std_logic--;
 );
 end entity;
 
 architecture arch of top is
 
+    signal led : std_logic_vector(led_n'range) := (others => '0');
+
     signal fifo_rempty : std_logic;
     signal fifo_rack : std_logic;
     signal fifo_rdata : std_logic_vector(35 downto 0);
 
-    signal sc_reg : work.util.rw_t;
-    signal malibu_reg : work.util.rw_t;
-    signal scifi_reg : work.util.rw_t;
-
-    signal led : std_logic_vector(led_n'range) := (others => '0');
-
-    signal nios_clk, nios_reset_n : std_logic;
-    signal qsfp_reset_n, pod_reset_n : std_logic;
+    signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
     -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
     signal ZERO : std_logic := '0';
@@ -115,36 +119,6 @@ architecture arch of top is
     signal spi_ss_n : std_logic_vector(15 downto 0);
 
 begin
-
-    -- malibu regs : 0x40-0x4F
-    malibu_reg.addr <= sc_reg.addr;
-    malibu_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
-    malibu_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"4" ) else '0';
-    malibu_reg.wdata <= sc_reg.wdata;
-
-    -- scifi regs : 0x60-0x6F
-    scifi_reg.addr <= sc_reg.addr;
-    scifi_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
-    scifi_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"6" ) else '0';
-    scifi_reg.wdata <= sc_reg.wdata;
-
-    -- select valid rdata
-    sc_reg.rdata <=
-        malibu_reg.rdata when ( malibu_reg.rvalid = '1' ) else
-        scifi_reg.rdata when ( scifi_reg.rvalid = '1' ) else
-        X"CCCCCCCC";
-
-    process(qsfp_pll_clk)
-    begin
-    if rising_edge(qsfp_pll_clk) then
---        malibu_reg.rdata <= X"CCCCCCCC";
-        malibu_reg.rvalid <= malibu_reg.re;
-        scifi_reg.rdata <= X"CCCCCCCC";
-        scifi_reg.rvalid <= scifi_reg.re;
-    end if;
-    end process;
-
-
 
     ----------------------------------------------------------------------------
     -- MALIBU
@@ -182,7 +156,13 @@ begin
 
     led_n <= not led;
 
-    -- enable SI5345
+
+
+    -- enable Si5342
+    si42_oe_n <= '0';
+    si42_rst_n <= '1';
+
+    -- enable Si5345
     si45_oe_n <= '0';
     si45_rst_n <= '1';
 
@@ -191,36 +171,9 @@ begin
     QSFP_Rst_n <= '1';
     QSFP_LPM <= '0';
 
-    -- enable PID
+    -- enable POD
     pod_tx_reset_n <= '1';
     pod_rx_reset_n <= '1';
-
-
-
-    -- 125 MHz -> 1 Hz
-    e_clk_aux_hz : entity work.clkdiv
-    generic map ( P => 125000000 )
-    port map ( clkout => led(15), rst_n => reset_n, clk => clk_aux );
-
-    -- 156.25 MHz -> 1 Hz
-    e_clk_qsfp_hz : entity work.clkdiv
-    generic map ( P => 156250000 )
-    port map ( clkout => led(14), rst_n => reset_n, clk => qsfp_pll_clk );
-
-    -- 125 MHz -> 1 Hz
-    e_clk_pod_hz : entity work.clkdiv
-    generic map ( P => 125000000 )
-    port map ( clkout => led(13), rst_n => reset_n, clk => pod_pll_clk );
-
-
-
-    nios_clk <= clk_aux;
-
-    e_qsfp_reset_n : entity work.reset_sync
-    port map ( rstout_n => qsfp_reset_n, arst_n => reset_n, clk => qsfp_pll_clk );
-
-    e_pod_reset_n : entity work.reset_sync
-    port map ( rstout_n => pod_reset_n, arst_n => reset_n, clk => pod_pll_clk );
 
 
 
@@ -254,10 +207,13 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        FPGA_ID_g => X"FEB0",
-        FEB_type_in => "111000"--, --this is a mutrig type FEB
+        NIOS_CLK_HZ_g => 50000000--,
     )
     port map (
+        i_fpga_id       => X"FEB0",
+        -- mutrig FEB type
+        i_fpga_type     => "111000",
+
         i_i2c_scl       => i2c_scl,
         o_i2c_scl_oe    => i2c_scl_oe,
         i_i2c_sda       => i2c_sda,
@@ -287,23 +243,20 @@ begin
         o_mscb_data     => mscb_data_out,
         o_mscb_oe       => mscb_oe,
 
-        o_sc_reg_addr   => sc_reg.addr(7 downto 0),
-        o_sc_reg_re     => sc_reg.re,
-        i_sc_reg_rdata  => sc_reg.rdata,
-        o_sc_reg_we     => sc_reg.we,
-        o_sc_reg_wdata  => sc_reg.wdata,
+        o_malibu_reg_addr   => malibu_reg.addr(7 downto 0),
+        o_malibu_reg_re     => malibu_reg.re,
+        i_malibu_reg_rdata  => malibu_reg.rdata,
+        o_malibu_reg_we     => malibu_reg.we,
+        o_malibu_reg_wdata  => malibu_reg.wdata,
 
-        i_clk           => qsfp_pll_clk,
-        i_reset_n       => qsfp_reset_n,
+        i_nios_clk      => si42_clk_125,
+        o_nios_clk_mon  => led(15),
+        i_clk_156       => qsfp_pll_clk,
+        o_clk_156_mon   => led(14),
+        i_clk_125       => pod_pll_clk,
+        o_clk_125_mon   => led(13),
 
-        i_qsfp_refclk   => qsfp_pll_clk,
-
-        i_pod_refclk    => pod_pll_clk,
-
-        i_nios_clk_startup => clk_aux,
-        i_nios_clk_main => clk_aux,
-        i_nios_areset_n => reset_n--,
-
+        i_areset_n      => reset_n--,
     );
 
 end architecture;

@@ -22,12 +22,25 @@ struct sc_t;
 
 //declaration of interface to scifi module: hardware access, menu, slow control handler
 struct scifi_module_t {
+    sc_t* sc;
+    const uint8_t  n_MODULES;
+    scifi_module_t(sc_t* sc_,uint8_t n_modules=1): sc(sc_), n_MODULES(n_modules){};
+
     const uint32_t MUTRIG1_CONFIG_LEN_BYTES=295;
     const uint32_t MUTRIG1_CONFIG_LEN_BITS =2358;
-    const uint8_t  n_ASICS=16;
+    //Reset skew configuration
+    //shadow storage of reset skew configuration,
+    //we do not have this in a register
+    uint8_t resetskew_count[4];
+    void RSTSKWctrl_Clear();
+    void RSTSKWctrl_Set(uint8_t channel, uint8_t value);
+
+
+
     //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
     int spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern);
     alt_u16 configure_asic(alt_u32 asic, const alt_u8* bitpattern);
+    void print_config(const alt_u8* bitpattern);
 
     void powerup() {
         printf("[scifi] powerup: not implemented\n");
@@ -39,10 +52,12 @@ struct scifi_module_t {
 
 
 
-    void menu(sc_t* sc);
-    void menu_reg_dummyctrl(sc_t* sc);
-    void menu_reg_datapathctrl(sc_t* sc);
-    void menu_reg_resetskew(sc_t* sc);
+    void menu();
+    void menu_counters();
+    alt_u16 store_counters(volatile alt_u32* data);
+    void menu_reg_dummyctrl();
+    void menu_reg_datapathctrl();
+    void menu_reg_resetskew();
     alt_u16 callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
 
 

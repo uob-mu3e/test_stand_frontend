@@ -1,8 +1,8 @@
 add_library(libmutrig STATIC
-    include/mutrig_config.h
+    include/MutrigConfig.h
     include/mutrig_MIDAS_config.h
     include/mutrig_midasodb.h
-    src/mutrig_config.cpp
+    src/MutrigConfig.cpp
     src/mutrig_MIDAS_config.cpp
     src/mutrig_midasodb.cpp
     include/Mutrig_FEB.h
@@ -19,4 +19,5 @@ PUBLIC
 PRIVATE
 	${MIDASINCLUDE_DIR}
 	${LIBMUDAQ_DIR}
+	${INCMUDAQ_DIR}
 )

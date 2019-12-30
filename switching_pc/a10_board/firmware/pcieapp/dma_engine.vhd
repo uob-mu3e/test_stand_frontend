@@ -21,7 +21,7 @@ use work.pcie_components.all;
 use work.mudaq_registers.all;
 
 entity dma_engine is
-  generic (
+generic (
     MEMWRITEADDRSIZE : integer := 13;
     MEMREADADDRSIZE  : integer := 11;
     MEMWRITEWIDTH	  : integer := 64;
@@ -29,8 +29,8 @@ entity dma_engine is
 	 ENABLE_BIT		 : integer := 0;
 	 NOW_BIT			 : integer := 0;
 	 ENABLE_INTERRUPT_BIT : integer := 0
-    );
-  port (
+);
+port (
     local_rstn:				in		std_logic;
     refclk:					in		std_logic;
     
@@ -76,8 +76,8 @@ entity dma_engine is
     dma_status_register: 		out	std_logic_vector(31 downto 0);
     
     test_out:						out std_logic_vector(71 downto 0)
-    );
-end dma_engine;
+);
+end entity;
 
 
 architecture RTL of dma_engine is
@@ -705,8 +705,8 @@ begin
 --        else
 --          diff := (memaddr_last_packet - memwriteaddr_last);
 --        end if;
-		  
-		  if(memwriteaddr >= memaddr_last_packet) then
+
+        if(memwriteaddr >= memaddr_last_packet) then
           diff := (memwriteaddr - memaddr_last_packet);
         else
           diff := (memaddr_last_packet - memwriteaddr);
@@ -770,6 +770,6 @@ begin
       q_a			=> dma_data_pages_out_reg,
       q_b			=> dma_data_pages_out_fpga
       );
-  
-  
-end RTL;
+
+
+end architecture;

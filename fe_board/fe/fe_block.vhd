@@ -6,24 +6,26 @@ use work.daq_constants.all;
 
 entity fe_block is
 generic (
-    FPGA_ID_g : std_logic_vector(15 downto 0) := X"0000";
+    NIOS_CLK_HZ_g : positive--;
+);
+port (
+    i_fpga_id       : in    std_logic_vector(15 downto 0);
     -- frontend board type
     -- - 111010 : mupix
     -- - 111000 : mutrig
     -- - 000111 and 000000 : reserved (DO NOT USE)
-    FEB_type_in:std_logic_vector(5  downto 0)--;
-);
-port (
+    i_fpga_type     : in    std_logic_vector(5 downto 0);
+
     i_i2c_scl       : in    std_logic;
     o_i2c_scl_oe    : out   std_logic;
     i_i2c_sda       : in    std_logic;
     o_i2c_sda_oe    : out   std_logic;
 
     -- spi interface to si chip
-    i_spi_si_miso      : in    std_logic;
-    o_spi_si_mosi      : out   std_logic;
-    o_spi_si_sclk      : out   std_logic;
-    o_spi_si_ss_n      : out   std_logic;
+    i_spi_si_miso   : in    std_logic;
+    o_spi_si_mosi   : out   std_logic;
+    o_spi_si_sclk   : out   std_logic;
+    o_spi_si_ss_n   : out   std_logic;
 
     -- spi interface to asics
     i_spi_miso      : in    std_logic;
@@ -43,10 +45,25 @@ port (
 
 
 
-    --
+    i_can_terminate : in std_logic:='0';
+
+    --main fiber data fifo
     i_fifo_rempty   : in    std_logic;
     o_fifo_rack     : out   std_logic;
     i_fifo_rdata    : in    std_logic_vector(35 downto 0);
+
+    --secondary fiber: leave open if unused
+    --secondary fiber data fifo
+    i_secondary_fifo_rempty   : in    std_logic:='1';
+    o_secondary_fifo_rack     : out   std_logic;
+    i_secondary_fifo_rdata    : in    std_logic_vector(35 downto 0):=(others =>'-');
+    --secondary fiber slow control fifo
+    --no slow control here, so we might use this as a secondary data generator (e.g. trigger/heartbeat channel)
+    i_secondary_scfifo_rempty   : in    std_logic:='1';
+    o_secondary_scfifo_rack     : out   std_logic;
+    i_secondary_scfifo_rdata    : in    std_logic_vector(35 downto 0):=(others =>'-');
+
+
 
     -- MSCB interface
     i_mscb_data     : in    std_logic;
@@ -54,44 +71,49 @@ port (
     o_mscb_oe       : out   std_logic;
 
     -- slow control registers
-    o_sc_reg_addr   : out   std_logic_vector(7 downto 0);
-    o_sc_reg_re     : out   std_logic;
-    i_sc_reg_rdata  : in    std_logic_vector(31 downto 0);
-    o_sc_reg_we     : out   std_logic;
-    o_sc_reg_wdata  : out   std_logic_vector(31 downto 0);
+    o_malibu_reg_addr   : out   std_logic_vector(7 downto 0);
+    o_malibu_reg_re     : out   std_logic;
+    i_malibu_reg_rdata  : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
+    o_malibu_reg_we     : out   std_logic;
+    o_malibu_reg_wdata  : out   std_logic_vector(31 downto 0);
+    o_scifi_reg_addr    : out   std_logic_vector(7 downto 0);
+    o_scifi_reg_re      : out   std_logic;
+    i_scifi_reg_rdata   : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
+    o_scifi_reg_we      : out   std_logic;
+    o_scifi_reg_wdata   : out   std_logic_vector(31 downto 0);
+    o_mupix_reg_addr    : out   std_logic_vector(7 downto 0);
+    o_mupix_reg_re      : out   std_logic;
+    i_mupix_reg_rdata   : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
+    o_mupix_reg_we      : out   std_logic;
+    o_mupix_reg_wdata   : out   std_logic_vector(31 downto 0);
 
 
 
-    i_reset_n       : in    std_logic;
-    -- 156.25 MHz
-    i_clk           : in    std_logic;
+    -- reset system
+    o_run_state_125 : out   run_state_t;
 
-    -- qsfp clock - 156.25 MHz
-    i_qsfp_refclk   : in    std_logic;
 
-    -- pod clock - 125 MHz
-    i_pod_refclk    : in    std_logic;
 
-    -- nios clock - 125 MHz
-    i_nios_clk_startup : in    std_logic;
-    i_nios_clk_main : in    std_logic;     --unused
-    i_nios_areset_n  : in    std_logic;
-    o_nios_clk_monitor : out std_logic;
-    o_nios_clk_selected : out std_logic;   --unused
+    -- nios clock (async)
+    i_nios_clk      : in    std_logic;
+    o_nios_clk_mon  : out   std_logic;
+    -- 156.25 MHz (data, QSFP)
+    i_clk_156       : in    std_logic;
+    o_clk_156_mon   : out   std_logic;
+    -- 125 MHz (global clock, POD)
+    i_clk_125       : in    std_logic;
+    o_clk_125_mon   : out   std_logic;
 
-    --reset system
-    o_run_state_125 : out run_state_t--;
-
+    i_areset_n      : in    std_logic--;
 );
 end entity;
 
 architecture arch of fe_block is
 
+    signal nios_reset_n, reset_156_n, reset_125_n : std_logic;
+
     signal nios_pio : std_logic_vector(31 downto 0);
     signal nios_irq : std_logic_vector(3 downto 0) := (others => '0');
-
-    signal s_nios_clk : std_logic;
-    signal s_nios_reset_n : std_logic;
 
     signal av_sc : work.util.avalon_t;
 
@@ -101,25 +123,35 @@ architecture arch of fe_block is
 
     signal sc_ram, sc_reg : work.util.rw_t;
     signal fe_reg : work.util.rw_t;
+    signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
     signal reg_cmdlen : std_logic_vector(31 downto 0);
     signal reg_offset : std_logic_vector(31 downto 0);
 
 
 
-    signal mscb_to_nios_parallel_in : std_logic_vector(11 downto 0);
-    signal mscb_from_nios_parallel_out : std_logic_vector(11 downto 0);
-    signal mscb_counter_in : unsigned(15 downto 0);
+    signal linktest_data    : std_logic_vector(31 downto 0);
+    signal linktest_datak   : std_logic_vector(3 downto 0);
+    signal linktest_granted : std_logic_vector(1 downto 0);
+
+
+
+    signal av_mscb : work.util.avalon_t;
+
+
 
     signal reg_reset_bypass : std_logic_vector(31 downto 0);
 
     signal run_state_125 : run_state_t;
     signal run_state_156 : run_state_t;
-    signal terminated : std_logic;
+    signal terminated : std_logic_vector(1 downto 0);
 
-
+    signal run_number : std_logic_vector(31 downto 0);
 
     signal av_qsfp, av_pod : work.util.avalon_t;
+
+    signal pod_rx_clk : std_logic_vector(3 downto 0);
+    signal pod_rx_reset_n : std_logic_vector(3 downto 0);
 
     signal qsfp_rx_data : std_logic_vector(127 downto 0);
     signal qsfp_rx_datak : std_logic_vector(15 downto 0);
@@ -149,86 +181,155 @@ architecture arch of fe_block is
 
 begin
 
+    -- generate resets
+
+    e_nios_reset_n : entity work.reset_sync
+    port map ( o_reset_n => nios_reset_n, i_reset_n => i_areset_n, i_clk => i_nios_clk );
+
+    e_reset_156_n : entity work.reset_sync
+    port map ( o_reset_n => reset_156_n, i_reset_n => i_areset_n, i_clk => i_clk_156 );
+
+    e_reset_125_n : entity work.reset_sync
+    port map ( o_reset_n => reset_125_n, i_reset_n => i_areset_n, i_clk => i_clk_125 );
+
+
+
+    -- generate 1 Hz clock monitor clocks
+
+    -- NIOS_CLK_HZ_g -> 1 Hz
+    e_nios_clk_hz : entity work.clkdiv
+    generic map ( P => NIOS_CLK_HZ_g )
+    port map ( o_clk => o_nios_clk_mon, i_reset_n => nios_reset_n, i_clk => i_nios_clk );
+
+    -- 156.25 MHz -> 1 Hz
+    e_clk_156_hz : entity work.clkdiv
+    generic map ( P => 156250000 )
+    port map ( o_clk => o_clk_156_mon, i_reset_n => reset_156_n, i_clk => i_clk_156 );
+
+    -- 125 MHz -> 1 Hz
+    e_clk_125_hz : entity work.clkdiv
+    generic map ( P => 125000000 )
+    port map ( o_clk => o_clk_125_mon, i_reset_n => reset_125_n, i_clk => i_clk_125 );
+
+
+
+    -- map slow control address space
+
+    -- malibu regs : 0x40-0x5F
+    o_malibu_reg_addr <= sc_reg.addr(7 downto 0);
+    o_malibu_reg_re <= malibu_reg.re;
+      malibu_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 5) = "010" ) else '0';
+    o_malibu_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 5) = "010" ) else '0';
+    o_malibu_reg_wdata <= sc_reg.wdata;
+
+    -- scifi regs : 0x60-0x7F
+    o_scifi_reg_addr <= sc_reg.addr(7 downto 0);
+    o_scifi_reg_re <= scifi_reg.re;
+      scifi_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 5) = "011" ) else '0';
+    o_scifi_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 5) = "011" ) else '0';
+    o_scifi_reg_wdata <= sc_reg.wdata;
+
+    -- mupix regs : 0x80-0x9F
+    o_mupix_reg_addr <= sc_reg.addr(7 downto 0);
+    o_mupix_reg_re <= mupix_reg.re;
+      mupix_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 5) = "100" ) else '0';
+    o_mupix_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 5) = "100" ) else '0';
+    o_mupix_reg_wdata <= sc_reg.wdata;
+
     -- local regs : 0xF0-0xFF
     fe_reg.addr <= sc_reg.addr;
     fe_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
     fe_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
     fe_reg.wdata <= sc_reg.wdata;
 
-    -- external regs : 0x00-0xEF
-    o_sc_reg_addr <= sc_reg.addr(7 downto 0);
-    o_sc_reg_re <= sc_reg.re when ( sc_reg.addr(7 downto 4) /= X"F" ) else '0';
-    o_sc_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 4) /= X"F" ) else '0';
-    o_sc_reg_wdata <= sc_reg.wdata;
-
-    -- use fe_reg.rdata if prev cycle was fe_reg read
+    -- select valid rdata
     sc_reg.rdata <=
+        i_malibu_reg_rdata when ( malibu_reg.rvalid = '1' ) else
+        i_scifi_reg_rdata when ( scifi_reg.rvalid = '1' ) else
+        i_mupix_reg_rdata when ( mupix_reg.rvalid = '1' ) else
         fe_reg.rdata when ( fe_reg.rvalid = '1' ) else
-        i_sc_reg_rdata;
+        X"CCCCCCCC";
 
-    process(i_clk)
+    process(i_clk_156)
     begin
-    if rising_edge(i_clk) then
-        fe_reg.rdata <= X"CCCCCCCC";
+    if rising_edge(i_clk_156) then
+        malibu_reg.rvalid <= malibu_reg.re;
+        scifi_reg.rvalid <= scifi_reg.re;
+        mupix_reg.rvalid <= mupix_reg.re;
         fe_reg.rvalid <= fe_reg.re;
 
+        fe_reg.rdata <= X"CCCCCCCC";
+
         -- cmdlen
-        if ( fe_reg.addr(3 downto 0) = X"0" and fe_reg.re = '1' ) then
+        if ( fe_reg.addr(7 downto 0) = X"F0" and fe_reg.re = '1' ) then
             fe_reg.rdata <= reg_cmdlen;
         end if;
-        if ( fe_reg.addr(3 downto 0) = X"0" and fe_reg.we = '1' ) then
+        if ( fe_reg.addr(7 downto 0) = X"F0" and fe_reg.we = '1' ) then
             reg_cmdlen <= fe_reg.wdata;
         end if;
 
         -- offset
-        if ( fe_reg.addr(3 downto 0) = X"1" and fe_reg.re = '1' ) then
+        if ( fe_reg.addr(7 downto 0) = X"F1" and fe_reg.re = '1' ) then
             fe_reg.rdata <= reg_offset;
         end if;
-        if ( fe_reg.addr(3 downto 0) = X"1" and fe_reg.we = '1' ) then
+        if ( fe_reg.addr(7 downto 0) = X"F1" and fe_reg.we = '1' ) then
             reg_offset <= fe_reg.wdata;
         end if;
 
         -- reset bypass
-        if ( fe_reg.addr(3 downto 0) = X"4" and fe_reg.re = '1' ) then
+        if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.re = '1' ) then
             fe_reg.rdata <= reg_reset_bypass;
         end if;
-        if ( fe_reg.addr(3 downto 0) = X"4" and fe_reg.we = '1' ) then
+        if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.we = '1' ) then
             reg_reset_bypass <= fe_reg.wdata;
         end if;
 
         -- mscb
 
+        -- git head hash
+        if ( fe_reg.addr(7 downto 0) = X"FA" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            fe_reg.rdata <= work.cmp.GIT_HEAD(0 to 31);
+        end if;
+        -- fpga id
+        if ( fe_reg.addr(7 downto 0) = X"FB" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            fe_reg.rdata(i_fpga_id'range) <= i_fpga_id;
+        end if;
+        -- fpga type
+        if ( fe_reg.addr(7 downto 0) = X"FC" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
+        end if;
+
         --
     end if;
     end process;
 
-    e_nios_reset_n : entity work.reset_sync
-    port map ( rstout_n => s_nios_reset_n, arst_n => i_nios_areset_n, clk => s_nios_clk );
 
-    -- nios clock selection: use startup clock until finishing the startup phase
-    --nios_clkswitch: clkctrl
-    --     port map(
-    --           inclk1x   => i_nios_clk_main,
-    --           inclk0x   => i_nios_clk_startup,
-    --           clkselect => nios_pio(31),
-    --           outclk    => s_nios_clk
-    --     );
-    --o_nios_clk_selected <= nios_pio(31);
-    s_nios_clk <= i_nios_clk_startup;
-    o_nios_clk_monitor <= s_nios_clk;
 
     -- nios system
     nios_irq(0) <= '1' when ( reg_cmdlen(31 downto 16) /= (31 downto 16 => '0') ) else '0';
 
+
+
     e_nios : component work.cmp.nios
     port map (
-        avm_clk_clk         => i_clk,
-        avm_reset_reset_n   => i_reset_n,
+        -- SC, QSFP and irq
+        clk_156_reset_reset_n   => reset_156_n,
+        clk_156_clock_clk       => i_clk_156,
+
+        -- POD
+        clk_125_reset_reset_n   => reset_125_n,
+        clk_125_clock_clk       => i_clk_125,
 
         -- mscb
-        parallel_mscb_in_export     => mscb_to_nios_parallel_in,
-        parallel_mscb_out_export    => mscb_from_nios_parallel_out,
-        counter_in_export           => std_logic_vector(mscb_counter_in),
+        avm_mscb_address        => av_mscb.address(3 downto 0),
+        avm_mscb_read           => av_mscb.read,
+        avm_mscb_readdata       => av_mscb.readdata,
+        avm_mscb_write          => av_mscb.write,
+        avm_mscb_writedata      => av_mscb.writedata,
+        avm_mscb_waitrequest    => av_mscb.waitrequest,
 
         irq_bridge_irq          => nios_irq,
 
@@ -274,8 +375,8 @@ begin
 
         pio_export => nios_pio,
 
-        rst_reset_n => s_nios_reset_n,
-        clk_clk => s_nios_clk--,
+        rst_reset_n => nios_reset_n,
+        clk_clk => i_nios_clk--,
     );
 
 
@@ -285,28 +386,28 @@ begin
         RAM_ADDR_WIDTH_g => 14--,
     )
     port map (
-        i_ram_addr          => sc_ram.addr(15 downto 0),
-        i_ram_re            => sc_ram.re,
-        o_ram_rvalid        => sc_ram.rvalid,
-        o_ram_rdata         => sc_ram.rdata,
-        i_ram_we            => sc_ram.we,
-        i_ram_wdata         => sc_ram.wdata,
+        i_ram_addr              => sc_ram.addr(15 downto 0),
+        i_ram_re                => sc_ram.re,
+        o_ram_rvalid            => sc_ram.rvalid,
+        o_ram_rdata             => sc_ram.rdata,
+        i_ram_we                => sc_ram.we,
+        i_ram_wdata             => sc_ram.wdata,
 
-        i_avs_address       => av_sc.address(15 downto 0),
-        i_avs_read          => av_sc.read,
-        o_avs_readdata      => av_sc.readdata,
-        i_avs_write         => av_sc.write,
-        i_avs_writedata     => av_sc.writedata,
-        o_avs_waitrequest   => av_sc.waitrequest,
+        i_avs_address           => av_sc.address(15 downto 0),
+        i_avs_read              => av_sc.read,
+        o_avs_readdata          => av_sc.readdata,
+        i_avs_write             => av_sc.write,
+        i_avs_writedata         => av_sc.writedata,
+        o_avs_waitrequest       => av_sc.waitrequest,
 
-        o_reg_addr          => sc_reg.addr(7 downto 0),
-        o_reg_re            => sc_reg.re,
-        i_reg_rdata         => sc_reg.rdata,
-        o_reg_we            => sc_reg.we,
-        o_reg_wdata         => sc_reg.wdata,
+        o_reg_addr              => sc_reg.addr(7 downto 0),
+        o_reg_re                => sc_reg.re,
+        i_reg_rdata             => sc_reg.rdata,
+        o_reg_we                => sc_reg.we,
+        o_reg_wdata             => sc_reg.wdata,
 
-        i_reset_n           => i_reset_n,
-        i_clk               => i_clk--;
+        i_reset_n               => reset_156_n,
+        i_clk                   => i_clk_156--;
     );
 
     e_sc_rx : entity work.sc_rx
@@ -325,17 +426,19 @@ begin
         o_ram_we        => sc_ram.we,
         o_ram_wdata     => sc_ram.wdata,
 
-        i_reset_n       => i_reset_n,
-        i_clk           => i_clk--,
+        i_reset_n       => reset_156_n,
+        i_clk           => i_clk_156--,
     );
 
 
 
     e_merger : entity work.data_merger
     port map (
-        fpga_ID_in              => (5=>'1',others => '0'),
-        FEB_type_in             => FEB_type_in,
+        fpga_ID_in              => i_fpga_id,
+        FEB_type_in             => i_fpga_type,
+
         run_state               => run_state_156,
+        run_number              => run_number,
 
         data_out                => qsfp_tx_data(31 downto 0),
         data_is_k               => qsfp_tx_datak(3 downto 0),
@@ -348,75 +451,126 @@ begin
         data_read_req           => o_fifo_rack,
         data_in                 => i_fifo_rdata,
 
-        override_data_in        => (others => '0'),
-        override_data_is_k_in   => (others => '0'),
-        override_req            => '0',
-        override_granted        => open,
+        override_data_in        => linktest_data, --TODO: separate link test entity?
+        override_data_is_k_in   => linktest_datak,
+        override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
+        override_granted        => linktest_granted(0),
 
-        terminated              => terminated,
+        can_terminate           => i_can_terminate,
+        terminated              => terminated(0),
         data_priority           => '0',
 
         leds                    => open,
 
-        reset                   => not i_reset_n,
-        clk                     => i_clk--,
+        reset                   => not reset_156_n,
+        clk                     => i_clk_156--,
+    );
+
+    --TODO: is this optimized away correctly when data inputs are not connected?
+    -- otherwise add generation switch.
+    e_merger_secondary : entity work.data_merger
+    port map (
+        fpga_ID_in              => i_fpga_id,
+        FEB_type_in             => i_fpga_type,
+        run_state               => run_state_156,
+        run_number              => run_number,
+
+        data_out                => qsfp_tx_data(63 downto 32),
+        data_is_k               => qsfp_tx_datak(7 downto 4),
+
+        slowcontrol_fifo_empty  => i_secondary_scfifo_rempty,
+        slowcontrol_read_req    => o_secondary_scfifo_rack,
+        data_in_slowcontrol     => i_secondary_scfifo_rdata,
+
+        data_fifo_empty         => i_secondary_fifo_rempty,
+        data_read_req           => o_secondary_fifo_rack,
+        data_in                 => i_secondary_fifo_rdata,
+
+        override_data_in        => linktest_data,
+        override_data_is_k_in   => linktest_datak,
+        override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
+        override_granted        => linktest_granted(1),
+
+	can_terminate           => i_can_terminate,
+        terminated              => terminated(1),
+        data_priority           => '0',
+
+        leds                    => open,
+
+        reset                   => not reset_156_n,
+        clk                     => i_clk_156--,
     );
 
 
-
+    --TODO: do we need two independent link test modules for both fibers?
     e_link_test : entity work.linear_shift_link
     generic map (
         g_m => 32,
         g_poly => "10000000001000000000000000000110"--,
     )
     port map (
-        i_sync_reset    => '0',
+        i_sync_reset    => not (linktest_granted(0) and linktest_granted(1)),
         i_seed          => (others => '1'),
-        i_en            => run_state_156,
-        o_lsfr          => qsfp_tx_data(63 downto 32),
-        o_datak         => qsfp_tx_datak(7 downto 4),
-        reset_n         => i_reset_n,
-        i_clk           => i_clk--,
+        i_en            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),
+        o_lsfr          => linktest_data,
+        o_datak         => linktest_datak,
+        reset_n         => reset_156_n,
+        i_clk           => i_clk_156--,
     );
 
 
 
     e_reset_system : entity work.resetsys
     port map (
-        clk_reset_rx_125=> i_pod_refclk,
-        clk_global_125  => s_nios_clk,
-        clk_156         => i_clk,
-        clk_free        => i_clk,
-        state_out_156   => run_state_156,
-        state_out_125   => run_state_125,
-        reset_in_125    => not s_nios_reset_n,
-        reset_in_156    => not i_reset_n,
-        resets_out      => open,
-        phase_out       => open,
-        data_in         => pod_rx_data(7 downto 0),
-        reset_bypass    => reg_reset_bypass(11 downto 0),
-        run_number_out  => open,
-        fpga_id         => FPGA_ID_g,
-        terminated      => terminated,
-        testout         => open--,
+        i_data_125_rx           => pod_rx_data(7 downto 0),
+        i_reset_125_rx_n        => pod_rx_reset_n(0),
+        i_clk_125_rx            => pod_rx_clk(0),
+
+        o_state_125             => run_state_125,
+        i_reset_125_n           => reset_125_n,
+        i_clk_125               => i_clk_125,
+
+        o_state_156             => run_state_156,
+        i_reset_156_n           => reset_156_n,
+        i_clk_156               => i_clk_156,
+
+        resets_out              => open,
+        reset_bypass            => reg_reset_bypass(11 downto 0),
+        run_number_out          => run_number,
+        fpga_id                 => i_fpga_id,
+        terminated              => (terminated(0) and terminated (1)), --TODO: test with two datamergers
+        testout                 => open,
+
+        o_phase                 => open,
+        i_reset_n               => nios_reset_n,
+        i_clk                   => i_nios_clk--,
     );
+
     o_run_state_125 <= run_state_125;
 
 
-    e_mscb : entity work.mscb
-    port map (
-        mscb_to_nios_parallel_in    => mscb_to_nios_parallel_in,
-        mscb_from_nios_parallel_out => mscb_from_nios_parallel_out,
-        mscb_data_in                => i_mscb_data,
-        mscb_data_out               => o_mscb_data,
-        mscb_oe                     => o_mscb_oe,
-        mscb_counter_in             => mscb_counter_in,
 
-        o_mscb_irq                  => nios_irq(1),
+    e_mscb : entity work.mscb
+    generic map (
+        CLK_MHZ_g => 156.25--,
+    )
+    port map (
+        i_avs_address           => av_mscb.address(3 downto 0),
+        i_avs_read              => av_mscb.read,
+        o_avs_readdata          => av_mscb.readdata,
+        i_avs_write             => av_mscb.write,
+        i_avs_writedata         => av_mscb.writedata,
+        o_avs_waitrequest       => av_mscb.waitrequest,
+
+        i_rx_data               => i_mscb_data,
+        o_tx_data               => o_mscb_data,
+        o_tx_data_oe            => o_mscb_oe,
+
+        o_irq                   => nios_irq(1),
         i_mscb_address              => X"ACA0",
 
-        reset                       => not s_nios_reset_n,
-        nios_clk                    => s_nios_clk--,
+        i_reset_n               => reset_156_n,
+        i_clk                   => i_clk_156--,
     );
 
 
@@ -427,7 +581,7 @@ begin
         CHANNEL_WIDTH_g => 32,
         INPUT_CLOCK_FREQUENCY_g => 156250000,
         DATA_RATE_g => 6250,
-        CLK_HZ_g => 125000000--,
+        CLK_HZ_g => 156250000--,
     )
     port map (
         i_tx_data   => qsfp_tx_data,
@@ -437,15 +591,15 @@ begin
         o_rx_datak  => qsfp_rx_datak,
 
         o_tx_clkout => open,
-        i_tx_clkin  => (others => i_qsfp_refclk),
+        i_tx_clkin  => (others => i_clk_156),
         o_rx_clkout => open,
-        i_rx_clkin  => (others => i_qsfp_refclk),
+        i_rx_clkin  => (others => i_clk_156),
 
         o_tx_serial => o_qsfp_tx,
         i_rx_serial => i_qsfp_rx,
 
-        i_pll_clk   => i_qsfp_refclk,
-        i_cdr_clk   => i_qsfp_refclk,
+        i_pll_clk   => i_clk_156,
+        i_cdr_clk   => i_clk_156,
 
         i_avs_address       => av_qsfp.address(13 downto 0),
         i_avs_read          => av_qsfp.read,
@@ -454,11 +608,17 @@ begin
         i_avs_writedata     => av_qsfp.writedata,
         o_avs_waitrequest   => av_qsfp.waitrequest,
 
-        i_reset => not s_nios_reset_n,
-        i_clk   => s_nios_clk--,
+        i_reset     => not reset_156_n,
+        i_clk       => i_clk_156--,
     );
 
 
+
+    g_pod_rx_reset_n : for i in pod_rx_reset_n'range generate
+    begin
+        e_pod_rx_reset_n : entity work.reset_sync
+        port map ( o_reset_n => pod_rx_reset_n(i), i_reset_n => i_areset_n, i_clk => pod_rx_clk(i) );
+    end generate;
 
     e_pod : entity work.xcvr_s4
     generic map (
@@ -476,15 +636,15 @@ begin
         o_rx_datak  => pod_rx_datak,
 
         o_tx_clkout => open,
-        i_tx_clkin  => (others => i_pod_refclk),
-        o_rx_clkout => open,
-        i_rx_clkin  => (others => i_pod_refclk),
+        i_tx_clkin  => (others => i_clk_125),
+        o_rx_clkout => pod_rx_clk,
+        i_rx_clkin  => pod_rx_clk,
 
         o_tx_serial => o_pod_tx,
         i_rx_serial => i_pod_rx,
 
-        i_pll_clk   => i_pod_refclk,
-        i_cdr_clk   => i_pod_refclk,
+        i_pll_clk   => i_clk_125,
+        i_cdr_clk   => i_clk_125,
 
         i_avs_address       => av_pod.address(13 downto 0),
         i_avs_read          => av_pod.read,
@@ -493,8 +653,8 @@ begin
         i_avs_writedata     => av_pod.writedata,
         o_avs_waitrequest   => av_pod.waitrequest,
 
-        i_reset => not s_nios_reset_n,
-        i_clk   => s_nios_clk--,
+        i_reset     => not reset_125_n,
+        i_clk       => i_clk_125--,
     );
 
 end architecture;

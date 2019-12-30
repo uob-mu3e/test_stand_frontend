@@ -6,6 +6,10 @@ ifndef QUARTUS_ROOTDIR
     $(error QUARTUS_ROOTDIR is undefined)
 endif
 
+ifeq ($(NIOS_SOPCINFO),)
+    NIOS_SOPCINFO := nios.sopcinfo
+endif
+
 .PRECIOUS : %.qip %.sip %.qsys %.sopcinfo $(BSP_DIR) $(APP_DIR)
 
 all : $(IPs)
@@ -19,19 +23,14 @@ ip_%.qip : ip_%.v
 
 .PRECIOUS : %.qsys
 %.qsys : %.tcl
-	qsys-script --script=$*.tcl
-
-.PRECIOUS : ip/%.qsys
-ip/%.qsys : %.tcl
-	qsys-script --script=$*.tcl
+	qsys-script --cmd='source "$<"'
 
 .PRECIOUS : %.sopcinfo
 %.sopcinfo : %.qsys
-	qsys-generate --synthesis=VHDL $*.qsys
-#--search-path=$$,.
+	qsys-generate --synthesis=VHDL --output-directory='$(dir $<)' '$<'
 
 .PHONY : flow
-flow : $(IPs) $(VHDs)
+flow : $(IPs)
 	quartus_sh -t util/flow.tcl top
 
 .PHONY : sof2flash
@@ -47,11 +46,11 @@ pgm : $(SOF)
 	quartus_pgm -m jtag -c $(CABLE) --operation="p;$(SOF)"
 
 .PRECIOUS : $(BSP_DIR)
-$(BSP_DIR) : $(BSP_DIR).tcl nios.sopcinfo
+$(BSP_DIR) : $(BSP_DIR).tcl $(NIOS_SOPCINFO)
 	mkdir -p $(BSP_DIR)
 	nios2-bsp-create-settings \
 	--type hal --script $(SOPC_KIT_NIOS2)/sdk2/bin/bsp-set-defaults.tcl \
-	--sopc nios.sopcinfo --cpu-name cpu \
+	--sopc $(NIOS_SOPCINFO) --cpu-name cpu \
 	--bsp-dir $(BSP_DIR) --settings $(BSP_DIR)/settings.bsp --script $(BSP_DIR).tcl
 
 bsp : $(BSP_DIR)

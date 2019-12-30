@@ -1,6 +1,0 @@
-#
-
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "data_generator.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "linear_shift.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "common_fifo.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../../fe_mupix/mupix_block/comp_type_const/mupix_constants.vhd"]
