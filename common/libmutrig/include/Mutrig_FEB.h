@@ -37,8 +37,11 @@ class MutrigFEB {
 	      m_hDB(hDB)
 	{};
       void SetSBnumber(uint8_t n){m_SB_number=n;}
+
       uint16_t GetNumASICs(){return m_FPGAs.size()*nModulesPerFEB()*nAsicsPerModule();}
       uint16_t GetNumModules(){return m_FPGAs.size()*nModulesPerFEB();}
+      uint16_t GetNumFPGAs(){return m_FPGAs.size();}
+
       void SetAskSCReply(bool ask){m_ask_sc_reply=ask;};
 
       //MIDAS callback for all setters below (DAQ related, mapped to functions on FEB / settings from the DAQ subdirectory).
