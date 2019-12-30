@@ -247,47 +247,51 @@ int MutrigFEB::ConfigureASICs(){
 
 int MutrigFEB::ReadBackRunState(uint16_t FPGA_ID){
    uint32_t val[2];
-   int status=m_mu.FEBsc_read(FPGA_ID, val, 2, 0xfffe);
-   if(status!=SUCCESS) return status;
+   int status=m_mu.FEBsc_read(FPGA_ID, val, 2, 0xfff4);
+   if(status!=2) return status;
+   //printf("MutrigFEB::ReadBackRunState(): val[]={%8.8x,%8.8x}\n",val[0],val[1]);
    //val[0] is reset_bypass register
    //val[1] is reset_bypass payload
    std::string cmd_name="undefined";
    reset cmds;
    for(auto it : cmds.commands){
-      if(it.second.command==val[0] & 0xff) cmd_name=it.first;
+      if(it.second.command==(val[0]&0xff)) cmd_name=it.first;
    }
    std::string state_str="undefined";
-   switch(val[0]&0xffff0000){
+   switch(val[0]>>16&0x3ff){
       case 1<<0:
-      state_str="RUN_STATE_BITPOS_IDLE"; 
+      state_str="RUN_STATE_IDLE"; 
       break;
       case 1<<1:
-      state_str="RUN_STATE_BITPOS_PREP"; 
+      state_str="RUN_STATE_PREP"; 
       break;
       case 1<<2:
-      state_str="RUN_STATE_BITPOS_SYNC"; 
+      state_str="RUN_STATE_SYNC"; 
       break;
       case 1<<3:
-      state_str="RUN_STATE_BITPOS_RUNNING"; 
+      state_str="RUN_STATE_RUNNING"; 
       break;
       case 1<<4:
-      state_str="RUN_STATE_BITPOS_TERMINATING"; 
+      state_str="RUN_STATE_TERMINATING"; 
       break;
       case 1<<5:
-      state_str="RUN_STATE_BITPOS_LINK_TEST"; 
+      state_str="RUN_STATE_LINK_TEST"; 
       break;
       case 1<<6:
-      state_str="RUN_STATE_BITPOS_SYNC_TEST"; 
+      state_str="RUN_STATE_SYNC_TEST"; 
       break;
       case 1<<7:
-      state_str="RUN_STATE_BITPOS_RESET"; 
+      state_str="RUN_STATE_RESET"; 
       break;
       case 1<<8:
-      state_str="RUN_STATE_BITPOS_OUT_OF_DAQ"; 
+      state_str="RUN_STATE_OUT_OF_DAQ"; 
       break;
       default:
       state_str="-broken-";
    }
+   printf("MutrigFEB::ReadBackRunState(): transition_cmd=%s\n",cmd_name.c_str());
+   printf("MutrigFEB::ReadBackRunState(): current_state=%s\n",state_str.c_str());
+
    char path[255];
    sprintf(path, "%s/Variables/FEB Run State/Bypass command", m_odb_prefix);
    if((status = db_set_value_index(m_hDB, 0, path, cmd_name.c_str(), cmd_name.length(),FPGA_ID, TID_STRING,false))!=DB_SUCCESS) return status;

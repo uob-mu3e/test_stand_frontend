@@ -17,7 +17,7 @@ namespace mutrig { namespace midasODB {
 
 int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
     /* Book Setting space */
-
+printf("setting up db\n");
     HNDLE hTmp;
     INT status = DB_SUCCESS;
     char set_str[255];
@@ -148,24 +148,25 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
     if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
 
-
     //set up variables read from FEB: run state & reset system bypass
     const char * val = "-undefined-";
     sprintf(set_str, "%s/Variables/FEB Run State/Bypass command", prefix);
     status=db_create_key(hDB, 0, set_str, TID_STRING);
     if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
-    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
-    for(int i=0;i<FEB_interface->GetNumFPGAs();i++)
-    	if((status = db_set_value_index(hDB,0,set_str, val, strlen(val),i, TID_STRING,false))!=DB_SUCCESS) return status;
+//TODO: fix below
+//    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
+//    for(int i=0;i<FEB_interface->GetNumFPGAs();i++)
+//    	if((status = db_set_value_index(hDB,0,set_str, val, strlen(val),i, TID_STRING,false))!=DB_SUCCESS) return status;
 
     sprintf(set_str, "%s/Variables/FEB Run State/Run state", prefix);
     status=db_create_key(hDB, 0, set_str, TID_STRING);
     if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
-    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
-    for(int i=0;i<FEB_interface->GetNumFPGAs();i++)
-    	if((status = db_set_value_index(hDB,0,set_str, val, strlen(val),i, TID_STRING,false))!=DB_SUCCESS) return status;
+//TODO: fix below
+//    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
+//    for(int i=0;i<FEB_interface->GetNumFPGAs();i++)
+//    	if((status = db_set_value_index(hDB,0,set_str, val, strlen(val),i, TID_STRING,false))!=DB_SUCCESS) return status;
 
 
     // Define history panels
