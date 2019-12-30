@@ -1,6 +1,7 @@
 
 void menu_reset() {
     auto& reset_bypass = sc.ram->regs.fe.reset_bypass;
+    auto& reset_bypass_payload = sc.ram->regs.fe.reset_bypass_payload;
 
     while(1) {
         printf("\n");
@@ -21,9 +22,21 @@ void menu_reset() {
 		case 1<<8: printf("RUN_STATE_OUT_OF_DAQ\n"); break;
 		default:   printf("UNKNOWN\n"); break;
 	}
-        if(reset_bypass & 0x03ff != 0){
-		printf("Bypass enabled. Payload: %4.4x\n",sc.ram->regs.fe.reset_bypass_payload);
+	printf("fe.reset_bypass: transition_command=");
+        switch((reset_bypass) & 0xffff) {
+		case 0x0000 : printf("USE GENESIS\n"); break;
+		case 0x0110 : printf("RUN_PREP\n"); break;
+		case 0x0111 : printf("SYNC\n"); break;
+		case 0x0112 : printf("START_RUN\n"); break;
+		case 0x0113 : printf("END_RUN\n"); break;
+		case 0x0114 : printf("ABORT_RUN\n"); break;
+		case 0x0130 : printf("START_RESET\n"); break;
+		case 0x0131 : printf("STOP_RESET\n"); break;
+		case 0x0120 : printf("START_LINKTEST\n"); break;
+		case 0x0121 : printf("STOP_LINKTEST\n"); break;
+		default:   printf("UNKNOWN\n"); break;
 	}
+	printf("fe.reset_bypass: command payload=0x%8.8x (%d)\n",sc.ram->regs.fe.reset_bypass_payload,sc.ram->regs.fe.reset_bypass_payload);
 
 
         printf("\n");
