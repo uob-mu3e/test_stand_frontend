@@ -8,6 +8,23 @@ void menu_reset() {
 
         printf("\n");
         printf("fe.reset_bypass = 0x%04X\n", reset_bypass);
+	printf("fe.reset_bypass: run state=");
+        switch((reset_bypass >> 16) & 0x3f) {
+		case 1<<0: printf("RUN_STATE_IDLE\n"); break;
+		case 1<<1: printf("RUN_STATE_PREP\n"); break;
+		case 1<<2: printf("RUN_STATE_SYNC\n"); break;
+		case 1<<3: printf("RUN_STATE_RUNNING\n"); break;
+		case 1<<4: printf("RUN_STATE_TERMINATING\n"); break;
+		case 1<<5: printf("RUN_STATE_LINK_TEST\n"); break;
+		case 1<<6: printf("RUN_STATE_SYNC_TEST\n"); break;
+		case 1<<7: printf("RUN_STATE_RESET\n"); break;
+		case 1<<8: printf("RUN_STATE_OUT_OF_DAQ\n"); break;
+		default:   printf("UNKNOWN\n"); break;
+	}
+        if(reset_bypass & 0x03ff != 0){
+		printf("Bypass enabled. Payload: %4.4x\n",sc.ram->regs.fe.reset_bypass_payload);
+	}
+
 
         printf("\n");
         printf("  [0] => use genesis\n");
