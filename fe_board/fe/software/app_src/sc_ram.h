@@ -123,7 +123,7 @@ struct sc_ram_t {
 
                 alt_u32 reset_bypass;
 
-                alt_u32 reserved1;
+                alt_u32 reset_bypass_payload;
 
                 alt_u32 mscb;
             } fe;

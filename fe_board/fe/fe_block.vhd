@@ -141,6 +141,7 @@ architecture arch of fe_block is
 
 
     signal reg_reset_bypass : std_logic_vector(31 downto 0);
+    signal reg_reset_bypass_payload : std_logic_vector(31 downto 0);
 
     signal run_state_125 : run_state_t;
     signal run_state_156 : run_state_t;
@@ -282,6 +283,14 @@ begin
         end if;
         if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.we = '1' ) then
             reg_reset_bypass <= fe_reg.wdata;
+        end if;
+        
+        -- reset payload
+        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= reg_reset_bypass_payload;
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.we = '1' ) then
+            reg_reset_bypass_payload <= fe_reg.wdata;
         end if;
 
         -- mscb
@@ -491,7 +500,7 @@ begin
         override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
         override_granted        => linktest_granted(1),
 
-	can_terminate           => i_can_terminate,
+        can_terminate           => i_can_terminate,
         terminated              => terminated(1),
         data_priority           => '0',
 
@@ -536,6 +545,7 @@ begin
 
         resets_out              => open,
         reset_bypass            => reg_reset_bypass(11 downto 0),
+        reset_bypass_payload    => reg_reset_bypass_payload,
         run_number_out          => run_number,
         fpga_id                 => i_fpga_id,
         terminated              => (terminated(0) and terminated (1)), --TODO: test with two datamergers
