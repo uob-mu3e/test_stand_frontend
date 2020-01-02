@@ -1,6 +1,8 @@
 
 void menu_reset() {
     auto& reset_bypass = sc.ram->regs.fe.reset_bypass;
+    auto& reset_bypass_payload = sc.ram->regs.fe.reset_bypass_payload;
+    alt_u32 payload = 0x0;
 
     while(1) {
         printf("\n");
@@ -20,6 +22,7 @@ void menu_reset() {
         printf("  [7] => stop reset\n");
         printf("  [8] => start link test\n");
         printf("  [9] => stop link test\n");
+        printf("  [p] => set payload");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -53,6 +56,19 @@ void menu_reset() {
             break;
         case '9':
             reset_bypass = 0x0121;
+            break;
+        case 'p':
+            payload = 0x0;
+            printf("Enter payload in hex: ");
+
+            for(int i = 0; i<8; i++){
+                printf("payload: 0x%08x\n", payload);
+                cmd = wait_key();
+                payload = payload*16+cmd;
+            }
+
+            printf("setting payload to 0x%08x\n", payload);
+            reset_bypass_payload = payload;
             break;
         case 'q':
             return;
