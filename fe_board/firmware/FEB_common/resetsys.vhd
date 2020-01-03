@@ -68,16 +68,16 @@ BEGIN
                 reset_bypass_state      <= "010";
                 
             when "010" =>
-                state_controller_in     <= reset_bypass_payload_125_rx(7 downto 0);
+                state_controller_in     <= reset_bypass_payload_125_rx(31 downto 24);
                 reset_bypass_state      <= "011";
             when "011" =>
-                state_controller_in     <= reset_bypass_payload_125_rx(15 downto 8);
+                state_controller_in     <= reset_bypass_payload_125_rx(23 downto 16);
                 reset_bypass_state      <= "100";
             when "100" =>
-                state_controller_in     <= reset_bypass_payload_125_rx(23 downto 16);
+                state_controller_in     <= reset_bypass_payload_125_rx(15 downto 8);
                 reset_bypass_state      <= "101";
             when "101" =>
-                state_controller_in     <= reset_bypass_payload_125_rx(31 downto 24);
+                state_controller_in     <= reset_bypass_payload_125_rx(7 downto 0);
                 reset_bypass_state      <= "000";
             when others => reset_bypass_state      <= "000";
         end case;
