@@ -2,6 +2,8 @@
 void menu_reset() {
     auto& reset_bypass = sc.ram->regs.fe.reset_bypass;
     auto& reset_bypass_payload = sc.ram->regs.fe.reset_bypass_payload;
+    alt_u32 payload = 0x0;
+    char str[2] = {0};
 
     while(1) {
         printf("\n");
@@ -22,6 +24,7 @@ void menu_reset() {
 		case 1<<8: printf("RUN_STATE_OUT_OF_DAQ\n"); break;
 		default:   printf("UNKNOWN\n"); break;
 	}
+/*
 	printf("fe.reset_bypass: transition_command=");
         switch((reset_bypass) & 0xffff) {
 		case 0x0000 : printf("USE GENESIS\n"); break;
@@ -36,11 +39,12 @@ void menu_reset() {
 		case 0x0121 : printf("STOP_LINKTEST\n"); break;
 		default:   printf("UNKNOWN\n"); break;
 	}
+*/
 	printf("fe.reset_bypass: command payload=0x%8.8x (%d)\n",sc.ram->regs.fe.reset_bypass_payload,sc.ram->regs.fe.reset_bypass_payload);
 
 
         printf("\n");
-        printf("  [0] => use genesis\n");
+        //printf("  [0] => use genesis\n");
         printf("  [1] => run_prep\n");
         printf("  [2] => sync\n");
         printf("  [3] => start run\n");
@@ -51,12 +55,15 @@ void menu_reset() {
         printf("  [8] => start link test\n");
         printf("  [9] => stop link test\n");
 
+        printf("  [p] => set payload   payload: 0x%08x\n", payload);
+
         printf("Select entry ...\n");
+        reset_bypass = 0x0000;
         char cmd = wait_key();
         switch(cmd) {
-        case '0':
-            reset_bypass = 0x0000;
-            break;
+        //case '0':
+        //    reset_bypass = 0x0000;
+        //    break;
         case '1':
             reset_bypass = 0x0110;
             break;
@@ -84,10 +91,24 @@ void menu_reset() {
         case '9':
             reset_bypass = 0x0121;
             break;
+        case 'p':
+            payload = 0x0;
+            printf("Enter payload in hex: ");
+
+            for(int i = 0; i<8; i++){
+                printf("payload: 0x%08x\n", payload);
+                str[0] = wait_key();
+                payload = payload*16+strtol(str,NULL,16);
+            }
+
+            printf("setting payload to 0x%08x\n", payload);
+            reset_bypass_payload = payload;
+            break;
         case 'q':
             return;
         default:
             printf("invalid command: '%c'\n", cmd);
         }
+        reset_bypass = 0x0000;
     }
 }

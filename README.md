@@ -1,6 +1,6 @@
 # Mu3e online repository
 
-- current development branch is `v0.6_dev`
+- current development branch is `v0.7_dev`
 
 ## Structure
 

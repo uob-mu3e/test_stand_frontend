@@ -22,8 +22,8 @@ PORT (
     i_clk_156           : in    std_logic;
 
     resets_out          : out   std_logic_vector(15 downto 0); -- 16 bit reset mask, use this together with feb state .. example: nios_reset => (run_state=reset and resets(x)='1')
-    reset_bypass        : in    std_logic_vector(11 downto 0); -- bypass of reset link using nios & jtag (for setups without the genesis board)
-    reset_bypass_payload: in    std_logic_vector(31 downto 0); -- use this as payload when in genesys bypass mode. currently only used for run number in run prepare
+    reset_bypass        : in    std_logic_vector(11 downto 0); -- bypass of reset commands (for setups without the genesis board)
+    reset_bypass_payload: in    std_logic_vector(31 downto 0); -- bypass of reset payloads
     run_number_out      : out   std_logic_vector(31 downto 0); -- run number from midas, updated on state run_prep
     fpga_id             : in    std_logic_vector(15 downto 0); -- input of fpga id, needed for addressed reset commands in setups with >1 FEBs
     terminated          : in    std_logic; -- changes run state from terminating to idle if set to 1  (data merger will set this if run was finished properly, signal will be synced to clk_reset_rx INSIDE this entity)
@@ -37,30 +37,59 @@ END ENTITY;
 
 architecture rtl of resetsys is
 
-    signal state_125_rx : run_state_t;
-
-    -- terminated signal in sync to clk_125_rx of state controller
-    signal terminated_125_rx : std_logic;
-
-    signal state_controller_in : std_logic_vector(7 downto 0);
-    signal reset_bypass_125_rx : std_logic_vector(11 downto 0);
-    signal runnumber_statectrl : std_logic_vector(31 downto 0);  -- run number from state controller
+    -- terminated signal in sync to clk_125_rx of state controller:
+    signal terminated_125_rx            : std_logic;
+    
+    signal state_125_rx                 : run_state_t;
+    signal state_controller_in          : std_logic_vector(7 downto 0);
+    signal reset_bypass_125_rx          : std_logic_vector(11 downto 0);
+    signal reset_bypass_payload_125_rx  : std_logic_vector(31 downto 0);
+    signal reset_bypass_request         : std_logic;
+    signal reset_bypass_state           : std_logic_vector(2 downto 0);
+    
 ----------------begin resetsys------------------------
 BEGIN
 
     process(i_clk_125_rx)
     begin
     if rising_edge(i_clk_125_rx) then
-        if ( reset_bypass_125_rx(8) = '1' ) then
-            state_controller_in <= reset_bypass_125_rx(7 downto 0);
-        else
-            state_controller_in <= i_data_125_rx;
-        end if;
+        case reset_bypass_state is
+            when "000" =>
+                -- idle, use genesis
+                state_controller_in     <= i_data_125_rx;
+                
+                -- bypass request
+                if(reset_bypass_request = '1') then
+                    reset_bypass_state  <= "001";
+                end if;
+                
+            when "001" =>
+                state_controller_in     <= reset_bypass_125_rx(7 downto 0);
+                reset_bypass_state      <= "010";
+                
+            when "010" =>
+                state_controller_in     <= reset_bypass_payload_125_rx(31 downto 24);
+                reset_bypass_state      <= "011";
+            when "011" =>
+                state_controller_in     <= reset_bypass_payload_125_rx(23 downto 16);
+                reset_bypass_state      <= "100";
+            when "100" =>
+                state_controller_in     <= reset_bypass_payload_125_rx(15 downto 8);
+                reset_bypass_state      <= "101";
+            when "101" =>
+                state_controller_in     <= reset_bypass_payload_125_rx(7 downto 0);
+                reset_bypass_state      <= "000";
+            when others => reset_bypass_state      <= "000";
+        end case;
     end if;
     end process;
-    --use run number from register when in bypass mode
-    run_number_out <= runnumber_statectrl when reset_bypass_125_rx(8)='0' else
-                      reset_bypass_payload;
+
+    e_edge_detector : entity work.edge_detector
+    PORT MAP(
+        clk         => i_clk_125_rx,
+        signal_in   => reset_bypass_125_rx(8),
+        output      => reset_bypass_request--,
+    );
 
     -- sync terminated to 125 clk of state controller
     i_ff_sync : entity work.ff_sync
@@ -77,7 +106,7 @@ BEGIN
     PORT MAP (
         reset_link_8bData       => state_controller_in,
         fpga_addr               => fpga_id,
-        runnumber               => runnumber_statectrl,
+        runnumber               => run_number_out,
         reset_mask              => resets_out,
         link_test_payload       => open,
         sync_test_payload       => open,
@@ -133,6 +162,20 @@ BEGIN
         i_rclk      => i_clk_125_rx,
 
         i_wdata     => reset_bypass,
+        i_wreset_n  => i_reset_156_n,
+        i_wclk      => i_clk_156--,
+    );
+
+    e_fifo_sync3 : entity work.fifo_sync
+    generic map (
+        RDATA_RESET_g => (reset_bypass_payload'range => '0')--,
+    )
+    port map (
+        o_rdata     => reset_bypass_payload_125_rx,
+        i_rreset_n  => i_reset_125_rx_n,
+        i_rclk      => i_clk_125_rx,
+
+        i_wdata     => reset_bypass_payload,
         i_wreset_n  => i_reset_156_n,
         i_wclk      => i_clk_156--,
     );
