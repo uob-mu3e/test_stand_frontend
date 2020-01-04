@@ -22,6 +22,7 @@ public:
 	//write reset char ODB - Switching frontend will send this to FEB
 	val=(1<<8) | command;
         db_set_value(hDB,0,"/Equipment/Switching/Settings/Reset Bypass Command", &val, sizeof(uint32_t), 1, TID_DWORD);
+	usleep(100000);
 	return SUCCESS;
     }
 
