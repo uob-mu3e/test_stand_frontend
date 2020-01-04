@@ -336,6 +336,8 @@ try{
    mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff5,true); //run number
    value= (1<<8) | 0x10;
    mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,true); //run prep command
+   value= 0;//(1<<8) | 0x00;
+   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,true); //reset command
 #endif
 
    uint16_t timeout_cnt=300;
@@ -685,6 +687,10 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 	  printf("Reset Bypass Command now %8.8x\n",value);
 	  //do not expect a reply here, for example during sync no data is returned (in reset state)
           int status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,false);
+          if(status!=SUCCESS){/**/}
+	  //reset last command
+          value=0;//value&(1<<8);
+          status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,false);
           if(status!=SUCCESS){/**/}
     }
 
