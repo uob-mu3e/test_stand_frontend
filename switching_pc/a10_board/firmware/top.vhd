@@ -110,8 +110,8 @@ end entity top;
 
 architecture rtl of top is
 
-        constant NLINKS_SC : integer := 16;
-        constant NLINKS : integer := 16;
+        constant NLINKS_DATA : integer := 2;
+        constant NLINKS_TOTL : integer := 16;
         
         signal clk : std_logic;
         signal input_clk : std_logic;
@@ -216,18 +216,24 @@ architecture rtl of top is
         signal QSFP_TX : std_logic_vector(15 downto 0);
         signal QSFP_RX : std_logic_vector(15 downto 0);
         --data behind QSFP tranceivers
-        type data_array_type is array (15 downto 0) of std_logic_vector(31 downto 0);
-        type datak_array_type is array (15 downto 0) of std_logic_vector(3 downto 0);
+        type data_array_type is array (NLINKS_TOTL-1 downto 0) of std_logic_vector(31 downto 0);
+        type datak_array_type is array (NLINKS_TOTL-1 downto 0) of std_logic_vector(3 downto 0);
         signal rx_data : data_array_type;
 --        signal tx_data : data_array_type;
         signal rx_datak : datak_array_type;
 --        signal tx_datak : datak_array_type;
 
-	signal rx_data_v : std_logic_vector(NLINKS*32-1 downto 0);
-        signal rx_datak_v : std_logic_vector(NLINKS*4-1 downto 0);
-	signal tx_data_v : std_logic_vector(NLINKS*32-1 downto 0);
-        signal tx_datak_v : std_logic_vector(NLINKS*4-1 downto 0);
+	signal rx_data_v : std_logic_vector(NLINKS_TOTL*32-1 downto 0);
+        signal rx_datak_v : std_logic_vector(NLINKS_TOTL*4-1 downto 0);
+	signal tx_data_v : std_logic_vector(NLINKS_TOTL*32-1 downto 0);
+        signal tx_datak_v : std_logic_vector(NLINKS_TOTL*4-1 downto 0);
 
+	type mapping_t is array(natural range <>) of integer;
+	--mapping as follows: fiber link_mapping(0)=1 - Fiber QSFPA.1 is mapped to first(0) link
+        constant link_mapping : mapping_t(NLINKS_DATA-1 downto 0):=(1,2);
+	signal rx_mapped_data_v : std_logic_vector(NLINKS_DATA*32-1 downto 0);
+        signal rx_mapped_datak_v : std_logic_vector(NLINKS_DATA*4-1 downto 0);
+        signal rx_mapped_linkmask : std_logic_vector(NLINKS_DATA-1  downto 0); --writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_-1 downto 0),
 
 --        signal idle_ch : std_logic_vector(3 downto 0);
 --        
@@ -269,8 +275,8 @@ architecture rtl of top is
         signal dma_wren_test : std_logic;
         signal dma_end_event_cnt : std_logic;
         signal dma_end_event_test : std_logic;
-        signal data_counter : std_logic_vector(32*NLINKS-1 downto 0);
-        signal datak_counter : std_logic_vector(4*NLINKS-1 downto 0);
+        signal data_counter : std_logic_vector(32*NLINKS_DATA-1 downto 0);
+        signal datak_counter : std_logic_vector(4*NLINKS_DATA-1 downto 0);
 
 begin
 
@@ -514,17 +520,25 @@ begin
         i_clk       => input_clk--,
     );
     end generate;
-    --assign vector types to array types for qsfp rx signals
-    g_rx_assign: for i in 0 to 15 generate
+    --assign vector types to array types for qsfp rx signals (used by link observer module)
+    g_rx_assign: for i in 0 to NLINKS_TOTL-1 generate
        rx_data(i)    <=rx_data_v(32*(i+1)-1 downto 32*i);
        rx_datak(i)   <=rx_datak_v(4*(i+1)-1 downto 4*i);
     end generate;
+
+    --assign long vectors for used fibers. Wired to run_control, sc, data receivers
+    g_assign_usedlinks: for i in NLINKS_DATA-1 downto 0 generate
+       rx_mapped_data_v(32*(i+1)-1 downto 32*i) <= rx_data_v(32*(link_mapping(i)+1)-1 downto 32*link_mapping(i));
+       rx_mapped_datak_v(4*(i+1)-1 downto  4*i) <= rx_datak_v(4*(link_mapping(i)+1)-1 downto  4*link_mapping(i));
+       rx_mapped_linkmask(i) <= writeregs_slow(FEB_ENABLE_REGISTER_W)(link_mapping(i));
+    end generate;
+
 
     -------- MIDAS RUN control --------
 
     e_run_control : entity work.run_control
     generic map (
-            N_LINKS_g                       => NLINKS--,
+            N_LINKS_g                       => NLINKS_TOTL--,
     )
     port map (
         i_clk                               => tx_clk(0),
@@ -571,52 +585,52 @@ begin
     
     dmamemhalffull_tx <= sync_chain_halffull(sync_chain_halffull'high);
     
-    process(tx_clk(0), reset_n)
-    begin
-    if ( reset_n = '0' ) then
-        data_counter    <= (others => '0');
-        datak_counter   <= (others => '0');
-    elsif (rising_edge(tx_clk(0))) then
-        if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
-            for i in 0 to 15 loop
-               data_counter(32*(i+1)-1 downto 32*i)    <= data_pix_generated;
-               datak_counter(4*(i+1)-1 downto 4*i)    <= datak_pix_generated;
-            end loop;
-        else
-            data_counter    <=rx_data_v;
-            datak_counter   <=rx_datak_v;
-        end if;
-    end if;
-    end process;
+    --process(tx_clk(0), reset_n)
+    --begin
+    --if ( reset_n = '0' ) then
+    --    data_counter    <= (others => '0');
+    --    datak_counter   <= (others => '0');
+    --elsif (rising_edge(tx_clk(0))) then
+    --    if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
+    --        for i in 0 to NLINKS_DATA-1 loop
+    --           data_counter(32*(i+1)-1 downto 32*i)    <= data_pix_generated;
+    --           datak_counter(4*(i+1)-1 downto 4*i)    <= datak_pix_generated;
+    --        end loop;
+    --    else
+    --        data_counter    <=rx_mapped_data_v;
+    --        datak_counter   <=rx_mapped_datak_v;
+    --    end if;
+    --end if;
+    --end process;
+    --
+    --e_midas_event_builder : entity work.midas_event_builder
+    --    generic map (
+    --        NLINKS => NLINKS_DATA--;
+    --    )
+    --    port map(
+    --        i_clk_data => tx_clk(0),
+    --        i_clk_dma  => pcie_fastclk_out,
+    --        i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
+    --        i_reset_dma_n  => resets_n_fast(RESET_BIT_EVENT_COUNTER),
+    --        i_rx_data  => data_counter,
+    --        i_rx_datak => datak_counter,
+    --        i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+    --        i_link_mask => rx_mapped_linkmask, --writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_-1 downto 0),
+    --        o_event_wren => dma_wren_cnt,
+    --        o_endofevent => dma_end_event_cnt,
+    --        o_event_data => dma_event_data,
+    --        o_state_out => state_out_eventcounter--,
+    --);
     
-    e_midas_event_builder : entity work.midas_event_builder
-        generic map (
-            NLINKS => NLINKS--;
-        )
-        port map(
-            i_clk_data => tx_clk(0),
-            i_clk_dma  => pcie_fastclk_out,
-            i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
-            i_reset_dma_n  => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-            i_rx_data  => data_counter,
-            i_rx_datak => datak_counter,
-            i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-            i_link_mask => writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS-1 downto 0),
-            o_event_wren => dma_wren_cnt,
-            o_endofevent => dma_end_event_cnt,
-            o_event_data => dma_event_data,
-            o_state_out => state_out_eventcounter--,
-    );
-    
-    dma_data <= dma_event_data;
-    dma_data_wren <= dma_wren_cnt;
-    dmamem_endofevent <= dma_end_event_cnt;
+    dma_data <= (others =>'0');--dma_event_data;
+    dma_data_wren <= '0';--dma_wren_cnt;
+    dmamem_endofevent <= '0';--dma_end_event_cnt;
     
     -------- Slow Control --------
     
     e_master : work.sc_master
     generic map (
-        NLINKS => NLINKS_SC
+        NLINKS => NLINKS_TOTL
     )
     port map (
         reset_n         => resets_n(RESET_BIT_SC_MASTER),
@@ -632,11 +646,11 @@ begin
     
     e_slave : work.sc_slave
     generic map (
-        NLINKS => NLINKS_SC
+        NLINKS => NLINKS_TOTL
     )
     port map (
         reset_n                 => resets_n(RESET_BIT_SC_SLAVE),
-        i_link_enable           => writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_SC-1 downto 0),
+        i_link_enable           => writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_TOTL-1 downto 0),
         link_data_in            => rx_data_v,
         link_data_in_k          => rx_datak_v,
         mem_addr_out            => mem_add_sc,
