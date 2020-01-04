@@ -297,10 +297,10 @@ begin
 
 	-- reset bypass payload
         if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_reset_bypass_pl;
+            fe_reg.rdata <= reg_reset_bypass_payload;
         end if;
         if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.we = '1' ) then
-            reg_reset_bypass_pl <= fe_reg.wdata;
+            reg_reset_bypass_payload <= fe_reg.wdata;
         end if;
 
 
