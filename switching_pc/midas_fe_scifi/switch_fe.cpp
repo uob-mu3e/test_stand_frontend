@@ -88,7 +88,7 @@ int switch_id = 0; // TODO to be loaded from outside
 mudaq::DmaMudaqDevice * mup;
 
 /* Use CRFE bypass during run-start transitions, directly send command to FEB*/
-#define CRFE_BYPASS
+//#define CRFE_BYPASS
 
 /*-- Function declarations -----------------------------------------*/
 
