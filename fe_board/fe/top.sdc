@@ -1,17 +1,20 @@
 #
 
-# clocks
+# ext SMA input
+create_clock -period "50 MHz" [ get_ports clk_aux ]
 
+# si5342
 create_clock -period "125 MHz" [ get_ports si42_clk_125 ]
 create_clock -period "50 MHz" [ get_ports si42_clk_50 ]
 
 # si5345
+create_clock -period "125 MHz" [ get_ports pod_clk_left ]
+create_clock -period "125 MHz" [ get_ports pod_clk_right ]
+create_clock -period "156.25 MHz" [ get_ports qsfp_clk ]
+create_clock -period "156.25 MHz" [ get_ports lvds_clk_A ]
+create_clock -period "156.25 MHz" [ get_ports lvds_clk_b ]
 create_clock -period "125 MHz" [ get_ports clk_125_bottom ]
 create_clock -period "125 MHz" [ get_ports clk_125_top ]
-
-create_clock -period "50 MHz" [ get_ports clk_aux ]
-create_clock -period "156.25 MHz" [ get_ports qsfp_pll_clk ]
-create_clock -period "125 MHz" [ get_ports pod_pll_clk ]
 
 
 

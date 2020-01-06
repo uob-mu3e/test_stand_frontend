@@ -35,10 +35,25 @@ port (
 
 
 
+    -- POD
+
+    -- Si5345 out0 (125 MHz)
+    pod_clk_left        : in    std_logic;
+    -- Si5345 out1 (125 MHz)
+--    pod_clk_right       : in    std_logic;
+
+    pod_tx_reset_n  : out   std_logic;
+    pod_rx_reset_n  : out   std_logic;
+
+    pod_tx          : out   std_logic_vector(3 downto 0);
+    pod_rx          : in    std_logic_vector(3 downto 0);
+
+
+
     -- QSFP
 
-    -- si5345 out2 (156.25 MHz)
-    qsfp_pll_clk    : in    std_logic;
+    -- Si5345 out2 (156.25 MHz)
+    qsfp_clk        : in    std_logic;
 
     QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
     QSFP_Rst_n      : out   std_logic;
@@ -49,18 +64,10 @@ port (
 
 
 
-    -- POD
-
-    -- si5345 out0 (125 MHz)
-    pod_pll_clk     : in    std_logic;
-
-    pod_tx_reset_n  : out   std_logic;
-    pod_rx_reset_n  : out   std_logic;
-
-    pod_tx          : out   std_logic_vector(3 downto 0);
-    pod_rx          : in    std_logic_vector(3 downto 0);
-
-
+    -- Si5345 out3 (125 MHz, right)
+    lvds_clk_A          : in    std_logic;
+    -- Si5345 out6 (125 MHz, left)
+    lvds_clk_B          : in    std_logic;
 
     -- Si5345 out7 (125 MHz)
     clk_125_bottom      : in    std_logic; -- global 125 MHz clock
@@ -89,9 +96,6 @@ port (
     si42_clk_125        : in    std_logic;
     -- Si5345 out1 (50 MHz)
     si42_clk_50         : in    std_logic;
-
-    lvds_clk_A      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right  // SI5345 OUT3
-    lvds_clk_B      : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left   // SI5345 OUT6
 
 
 
@@ -169,7 +173,7 @@ begin
         o_fifoB_rdata    => fifoB_rdata,
 
         i_reset         => not reset_n,
-        i_clk_core      => qsfp_pll_clk,
+        i_clk_core      => qsfp_clk,
         i_clk_g125      => clk_125_bottom,
         i_clk_ref_A     => lvds_clk_A,
         i_clk_ref_B     => lvds_clk_B,
@@ -186,7 +190,7 @@ begin
 
 
     -- LED maps:
-    -- 15: si42_clk_50 (80MHz -> 1Hz)
+    -- 15: si42_clk_50 (50MHz -> 1Hz)
     -- 14: clk_qsfp (156MHz -> 1Hz)
     -- 13: clk_pod (125MHz -> 1Hz)
     -- 11: fee_chip_reset (niosclk)
@@ -310,19 +314,16 @@ begin
         o_scifi_reg_we      => scifi_reg.we,
         o_scifi_reg_wdata   => scifi_reg.wdata,
 
-
-
         -- reset system
         o_run_state_125 => run_state_125,
         i_can_terminate => s_run_state_all_done,
 
-
-
+        -- clocks
         i_nios_clk      => si42_clk_50,
         o_nios_clk_mon  => led(15),
-        i_clk_156       => qsfp_pll_clk,
+        i_clk_156       => qsfp_clk,
         o_clk_156_mon   => led(14),
-        i_clk_125       => pod_pll_clk,
+        i_clk_125       => pod_clk_left,
         o_clk_125_mon   => led(13),
 
         i_areset_n      => reset_n--,

@@ -135,10 +135,25 @@ port (
 
 
 
+    -- POD
+
+    -- Si5345 out0 (125 MHz)
+    pod_clk_left        : in    std_logic;
+    -- Si5345 out1 (125 MHz)
+--    pod_clk_right       : in    std_logic;
+
+    pod_tx_reset_n  : out   std_logic;
+    pod_rx_reset_n  : out   std_logic;
+
+    pod_tx          : out   std_logic_vector(3 downto 0);
+    pod_rx          : in    std_logic_vector(3 downto 0);
+
+
+
     -- QSFP
 
     -- Si5345 out2 (156.25 MHz)
-    qsfp_pll_clk    : in    std_logic;
+    qsfp_clk        : in    std_logic;
 
     QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
     QSFP_Rst_n      : out   std_logic;
@@ -149,16 +164,15 @@ port (
 
 
 
-    -- POD
+    -- Si5345 out3 (125 MHz, right)
+    lvds_clk_A          : in    std_logic;
+    -- Si5345 out6 (125 MHz, left)
+    lvds_clk_B          : in    std_logic;
 
-    -- Si5345 out0 (125 MHz)
-    pod_pll_clk     : in    std_logic;
-
-    pod_tx_reset_n  : out   std_logic;
-    pod_rx_reset_n  : out   std_logic;
-
-    pod_tx          : out   std_logic_vector(3 downto 0);
-    pod_rx          : in    std_logic_vector(3 downto 0);
+    -- Si5345 out7 (125 MHz)
+    clk_125_bottom      : in    std_logic; -- global 125 MHz clock
+    -- Si5345 out8 (125 MHz)
+    clk_125_top         : in    std_logic;
 
 
 
@@ -173,23 +187,19 @@ port (
     --
 
     led_n       : out   std_logic_vector(15 downto 0);
-
+    FPGA_Test   : inout std_logic_vector(2 downto 0);
     PushButton  : in    std_logic_vector(1 downto 0);
 
-    clk_aux     : in    std_logic;
-    FPGA_Test   : inout std_logic_vector(2 downto 0);
 
 
-
-    -- si5345 out8 (625 MHz)
-    clk_625     : in    std_logic;
-
-
-
+    -- Si5345 out0 (125 MHz)
     si42_clk_125        : in    std_logic;
+    -- Si5345 out1 (50 MHz)
     si42_clk_50         : in    std_logic;
 
 
+
+    clk_aux     : in    std_logic;
 
     reset_n     : in    std_logic--;
 );
@@ -275,9 +285,9 @@ begin
 
 		i_reset              => not reset_n,
 		-- 156.25 MHz
-		i_clk                => qsfp_pll_clk,
-		i_clk125             => pod_pll_clk,
-		i_sync_reset_cnt		=> sync_reset_cnt--,
+		i_clk                => qsfp_clk,
+		i_clk125             => clk_125_bottom,
+		i_sync_reset_cnt    => sync_reset_cnt--,
 	);
 
 	clock_A <= pod_pll_clk;
@@ -309,6 +319,8 @@ begin
 
 
     led_n <= not led;
+
+
 
     -- enable Si5342
     si42_oe_n <= '0';
@@ -422,17 +434,16 @@ begin
         o_mupix_reg_we      => mupix_reg.we,
         o_mupix_reg_wdata   => mupix_reg.wdata,
 
-
-
+        -- reset system
         o_run_state_125 => run_state_125,
 
 
-
+        -- clocks
         i_nios_clk      => nios_clk,
         o_nios_clk_mon  => led(15),
-        i_clk_156       => qsfp_pll_clk,
+        i_clk_156       => qsfp_clk,
         o_clk_156_mon   => led(14),
-        i_clk_125       => pod_pll_clk,
+        i_clk_125       => pod_clk_left,
         o_clk_125_mon   => led(13),
 
         i_areset_n      => reset_n--,
