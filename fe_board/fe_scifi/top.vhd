@@ -88,8 +88,8 @@ port (
 
 
 
-    si42_clk_40 : in    std_logic;
-    si42_clk_80 : in    std_logic;
+    si42_clk_50 : in    std_logic;  -- systemclk in schematic
+    si42_clk_125 : in    std_logic; -- sysclk_bottom in schematic
 
     clk_aux     : in    std_logic;
 
@@ -182,7 +182,7 @@ begin
 
 
     -- LED maps:
-    -- 15: si42_clk_50 (80MHz -> 1Hz)
+    -- 15: nios clock (125 MHz -> 1Hz)
     -- 14: clk_qsfp (156MHz -> 1Hz)
     -- 13: clk_pod (125MHz -> 1Hz)
     -- 11: fee_chip_reset (niosclk)
