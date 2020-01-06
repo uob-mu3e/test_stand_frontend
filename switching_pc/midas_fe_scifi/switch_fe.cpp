@@ -684,6 +684,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
           DWORD value;
           int size = sizeof(DWORD);
           db_get_data(hDB, hKey, &value, &size, TID_DWORD);
+	  if((value&0xff) == 0) return;
 	  printf("Reset Bypass Command now %8.8x\n",value);
 	  //do not expect a reply here, for example during sync no data is returned (in reset state)
           int status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,false);
@@ -692,6 +693,9 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
           value=0;//value&(1<<8);
           status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,false);
           if(status!=SUCCESS){/**/}
+	  //reset odb flag
+          value=value&(1<<8);
+          db_set_data(hDB, hKey, &value, size, 1, TID_DWORD);
     }
 
 }

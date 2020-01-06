@@ -23,6 +23,19 @@ public:
 	val=(1<<8) | command;
         db_set_value(hDB,0,"/Equipment/Switching/Settings/Reset Bypass Command", &val, sizeof(uint32_t), 1, TID_DWORD);
 	usleep(100000);
+	//wait for flag to be resetted
+	INT valsiz=sizeof(uint32_t);
+	int timeout_cnt=500;
+	do{
+		db_get_value(hDB,0,"/Equipment/Switching/Settings/Reset Bypass Command", &val, &valsiz, TID_DWORD,false);
+		printf("%d: %2.2x\n",timeout_cnt,val);
+		if((val&0xff) == 0) break;
+		usleep(100000);
+	}while(--timeout_cnt>0);
+	if(timeout_cnt==0){
+		cm_msg(MERROR, "clockboard_bypass::write_command", "timeout waiting for odb flag reset. Switching FE running?");
+		return -1;
+	}
 	return SUCCESS;
     }
 
