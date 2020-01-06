@@ -151,6 +151,10 @@ architecture arch of fe_block is
 
     signal run_number : std_logic_vector(31 downto 0);
 
+
+
+    signal reconfig_clk : std_logic;
+
     signal av_qsfp, av_pod : work.util.avalon_t;
 
     signal pod_rx_clk : std_logic_vector(3 downto 0);
@@ -586,6 +590,28 @@ begin
 
 
 
+    g_reconfig_clk : if ( NIOS_CLK_MHZ_g <= 50.0 ) generate
+        reconfig_clk <= i_nios_clk; -- Frequency Range : 37.5 to 50 MHz
+    end generate;
+
+    -- generate reconfig_clk = 50 MHz
+    g_reconfig_clk_altpll : if ( NIOS_CLK_MHZ_g > 50.0 ) generate
+        e_reconfig_clk : entity work.ip_altpll
+        generic map (
+            INCLK0_MHZ => NIOS_CLK_MHZ_g,
+            DIV => integer(NIOS_CLK_MHZ_g * 1000000.0) / work.util.gcd(integer(NIOS_CLK_MHZ_g * 1000000.0), 50000000),
+            MUL => 50000000 / work.util.gcd(integer(NIOS_CLK_MHZ_g * 1000000.0), 50000000)--,
+        )
+        port map (
+            c0 => reconfig_clk,
+            locked => open,
+            areset => not nios_reset_n,
+            inclk0 => i_nios_clk--,
+        );
+    end generate;
+
+
+
     e_qsfp : entity work.xcvr_s4
     generic map (
         NUMBER_OF_CHANNELS_g => 4,
@@ -618,6 +644,8 @@ begin
         i_avs_write         => av_qsfp.write,
         i_avs_writedata     => av_qsfp.writedata,
         o_avs_waitrequest   => av_qsfp.waitrequest,
+
+        i_reconfig_clk  => reconfig_clk,
 
         i_reset     => not reset_156_n,
         i_clk       => i_clk_156--,
@@ -663,6 +691,8 @@ begin
         i_avs_write         => av_pod.write,
         i_avs_writedata     => av_pod.writedata,
         o_avs_waitrequest   => av_pod.waitrequest,
+
+        i_reconfig_clk  => reconfig_clk,
 
         i_reset     => not reset_125_n,
         i_clk       => i_clk_125--,
