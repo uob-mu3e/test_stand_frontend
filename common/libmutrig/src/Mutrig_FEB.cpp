@@ -263,7 +263,8 @@ int MutrigFEB::ReadBackRunState(uint16_t FPGA_ID){
    if(((val[0])&0x1ff)==0x000) bypass_enabled=false;
    sprintf(path, "%s/Variables/FEB Run State/Bypass enabled", m_odb_prefix);
    if((status = db_set_value_index(m_hDB, 0, path, &bypass_enabled, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
-
+/*
+// string variables are not possible with mlogger, so use raw state
    char state_str[32];
    switch((val[0]>>16)&0x3ff){
       case 1<<0:
@@ -298,9 +299,10 @@ int MutrigFEB::ReadBackRunState(uint16_t FPGA_ID){
    }
    //printf("MutrigFEB::ReadBackRunState(): bypass=%s\n",bypass_enabled?"y":"n");
    //printf("MutrigFEB::ReadBackRunState(): current_state=%s\n",state_str);
-
+*/
    sprintf(path, "%s/Variables/FEB Run State/Run state", m_odb_prefix);
-   if((status = db_set_value_index(m_hDB, 0, path, state_str, 32,FPGA_ID, TID_STRING,false))!=DB_SUCCESS) return status;
+   DWORD value=(val[0]>>16) & 0x3ff;
+   if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(DWORD),FPGA_ID, TID_DWORD,false))!=DB_SUCCESS) return status;
 
 
 

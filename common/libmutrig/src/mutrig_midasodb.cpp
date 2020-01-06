@@ -153,9 +153,9 @@ printf("setting up db\n");
     "Bypass enabled = BOOL[2] :",\
     "[0] n",\
     "[1] n",\
-    "Run state = STRING[2] :",\
-    "[32] undefined",\
-    "[32] undefined",\
+    "Run state = DWORD[2] :",\
+    "[0] 255",\
+    "[1] 255",\
     "",\
     NULL};
 
@@ -171,8 +171,9 @@ printf("setting up db\n");
     db_find_key (hDB, 0, set_str, &hTmp);
     assert(hTmp);
     if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
+    DWORD val=0xff;
     for(int i=0;i<FEB_interface->GetNumFPGAs();i++)
-    	if((status = db_set_value_index(hDB,0,set_str, "undefined", 32,i, TID_STRING,false))!=DB_SUCCESS) return status;
+    	if((status = db_set_value_index(hDB,0,set_str, &val, sizeof(DWORD),i, TID_DWORD,false))!=DB_SUCCESS) return status;
 
 
     // Define history panels
