@@ -448,6 +448,12 @@ int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, 
     write_memory_rw(m_FEBsc_wmem_addr, 0xBAD << 20);
     m_FEBsc_wmem_addr += 4 + length + 1;
 
+
+    //SC master is close to the end of accessible memory? then reset block
+    if(m_FEBsc_wmem_addr>0xff00){
+       FEBsc_resetMaster();
+    }
+
     if(!request_reply)
 	return 0; //do not wait for reply
 
@@ -495,6 +501,12 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
     write_memory_rw(m_FEBsc_wmem_addr + 4, 0x0000009c);
     write_memory_rw(m_FEBsc_wmem_addr, 0xBAD << 20);
     m_FEBsc_wmem_addr += 4 + 1;
+
+    //SC master is close to the end of accessible memory? then reset block
+    if(m_FEBsc_wmem_addr>0xff00){
+       FEBsc_resetMaster();
+    }
+
     if(!request_reply)
 	return 0; //do not pretend we received what we wanted, but also do not signal a failure.
     //wait for reply
@@ -530,6 +542,7 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
         return -1;
     }
     memcpy(data,m_sc_packet_fifo.back().data()+3,length*sizeof(uint32_t));
+
     return length;
 }
 
@@ -648,10 +661,13 @@ const uint32_t MudaqDevice::FEBsc_RPC_DATAOFFSET=0;
 //send an RPC command with payload to the nios, wait for finish. Returns status of Nios2 callback returned from FEB
 uint16_t MudaqDevice::FEBsc_NiosRPC(uint16_t FPGA_ID, uint16_t command, std::vector<std::pair<uint32_t* /*payload*/,uint16_t /*chunklen*/> > payload_chunks, int polltime_ms){
          uint32_t len=0;
+	 int error_cnt=0;
+	 int status;
 //	 printf("MudaqDevice::FEBsc_NiosRPC(): command %x\n",command);
 	 //write payload chunks
 	 for(auto chunk: payload_chunks){
-              FEBsc_write(FPGA_ID, chunk.first, chunk.second, (uint32_t) len+FEBsc_RPC_DATAOFFSET,true);
+              status=FEBsc_write(FPGA_ID, chunk.first, chunk.second, (uint32_t) len+FEBsc_RPC_DATAOFFSET,true);
+	      if(status < 0) error_cnt++;
 //	      printf("MudaqDevice::FEBsc_NiosRPC(): writing chunk of %d words\n", chunk.second);
 	      len+=chunk.second;
 	 }
@@ -660,19 +676,23 @@ uint16_t MudaqDevice::FEBsc_NiosRPC(uint16_t FPGA_ID, uint16_t command, std::vec
          //Write offset address
          reg= FEBsc_RPC_DATAOFFSET;
 //	 printf("MudaqDevice::FEBsc_NiosRPC(): writing offset\n");
-         FEBsc_write(FPGA_ID, &reg,1,0xfff1,true);
+         status=FEBsc_write(FPGA_ID, &reg,1,0xfff1,true);
+	 if(status < 0) error_cnt++;
 
          //Write command word to register FFF0: cmd | n
          reg= ((command<<16)&0xffff0000) + (len&0x0000ffff);
 //	 printf("MudaqDevice::FEBsc_NiosRPC(): writing command\n");
-         FEBsc_write(FPGA_ID, &reg,1,0xfff0,true);
+         status=FEBsc_write(FPGA_ID, &reg,1,0xfff0,true);
+	 if(status < 0) error_cnt++;
 
          //Wait for remote command to finish, poll register
          uint timeout_cnt = 0;
          while(1){
             if(++timeout_cnt >= 500) throw std::runtime_error("MudaqDevice::FEBsc_NiosRPC: RPC timeout");
+	    if(error_cnt > 5) throw std::runtime_error("MudaqDevice::FEBsc_NiosRPC: Too many SC transmission failures");
             std::this_thread::sleep_for(std::chrono::milliseconds(polltime_ms));
-            FEBsc_read(FPGA_ID, &reg, 1, 0xfff0);
+            status=FEBsc_read(FPGA_ID, &reg, 1, 0xfff0);
+	    if(status < 0) error_cnt++;
 	    if(timeout_cnt > 5) printf("MudaqDevice::FEBsc_NiosRPC(): Polling for command %x @%d: %x, %x\n",command,timeout_cnt,reg,reg&0xffff0000);
 	    if((reg&0xffff0000) == 0) break;
          }
