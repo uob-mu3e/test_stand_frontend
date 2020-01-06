@@ -42,6 +42,10 @@ printf("setting up db\n");
     //open hot link
     db_watch(hDB, hTmp, &MutrigFEB::on_settings_changed, FEB_interface);
 
+    sprintf(set_str, "%s/Settings/Daq/num_asics", prefix);
+    INT ival=nasics;
+    if((status = db_set_value(hDB ,0,set_str, &ival, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
+
     //update length flags for DAQ section
     sprintf(set_str, "%s/Settings/Daq/mask", prefix);
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
