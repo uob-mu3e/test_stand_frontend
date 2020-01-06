@@ -648,23 +648,23 @@ const uint32_t MudaqDevice::FEBsc_RPC_DATAOFFSET=0;
 //send an RPC command with payload to the nios, wait for finish. Returns status of Nios2 callback returned from FEB
 uint16_t MudaqDevice::FEBsc_NiosRPC(uint16_t FPGA_ID, uint16_t command, std::vector<std::pair<uint32_t* /*payload*/,uint16_t /*chunklen*/> > payload_chunks, int polltime_ms){
          uint32_t len=0;
-	 printf("MudaqDevice::FEBsc_NiosRPC(): command %x\n",command);
+//	 printf("MudaqDevice::FEBsc_NiosRPC(): command %x\n",command);
 	 //write payload chunks
 	 for(auto chunk: payload_chunks){
               FEBsc_write(FPGA_ID, chunk.first, chunk.second, (uint32_t) len+FEBsc_RPC_DATAOFFSET,true);
-	      printf("MudaqDevice::FEBsc_NiosRPC(): writing chunk of %d words\n", chunk.second);
+//	      printf("MudaqDevice::FEBsc_NiosRPC(): writing chunk of %d words\n", chunk.second);
 	      len+=chunk.second;
 	 }
          uint32_t reg;
 
          //Write offset address
          reg= FEBsc_RPC_DATAOFFSET;
-	 printf("MudaqDevice::FEBsc_NiosRPC(): writing offset\n");
+//	 printf("MudaqDevice::FEBsc_NiosRPC(): writing offset\n");
          FEBsc_write(FPGA_ID, &reg,1,0xfff1,true);
 
          //Write command word to register FFF0: cmd | n
          reg= ((command<<16)&0xffff0000) + (len&0x0000ffff);
-	 printf("MudaqDevice::FEBsc_NiosRPC(): writing command\n");
+//	 printf("MudaqDevice::FEBsc_NiosRPC(): writing command\n");
          FEBsc_write(FPGA_ID, &reg,1,0xfff0,true);
 
          //Wait for remote command to finish, poll register
@@ -673,7 +673,7 @@ uint16_t MudaqDevice::FEBsc_NiosRPC(uint16_t FPGA_ID, uint16_t command, std::vec
             if(++timeout_cnt >= 500) throw std::runtime_error("MudaqDevice::FEBsc_NiosRPC: RPC timeout");
             std::this_thread::sleep_for(std::chrono::milliseconds(polltime_ms));
             FEBsc_read(FPGA_ID, &reg, 1, 0xfff0);
-	    printf("poll %d: %x, %x\n",timeout_cnt,reg,reg&0xffff0000);
+	    if(timeout_cnt > 5) printf("MudaqDevice::FEBsc_NiosRPC(): Polling for command %x @%d: %x, %x\n",command,timeout_cnt,reg,reg&0xffff0000);
 	    if((reg&0xffff0000) == 0) break;
          }
 	 return reg&0xffff;

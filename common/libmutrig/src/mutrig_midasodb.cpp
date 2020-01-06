@@ -106,7 +106,7 @@ printf("setting up db\n");
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
     if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
 
-    sprintf(set_str, "%s/Variables/Counters/Timer", prefix);
+    sprintf(set_str, "%s/Variables/Counters/Time", prefix);
     status=db_create_key(hDB, 0, set_str, TID_DWORD);
     if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
@@ -149,24 +149,30 @@ printf("setting up db\n");
     if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
 
     //set up variables read from FEB: run state & reset system bypass
-    const char * val = "-undefined-";
-    sprintf(set_str, "%s/Variables/FEB Run State/Bypass command", prefix);
-    status=db_create_key(hDB, 0, set_str, TID_STRING);
-    if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
-    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
-//TODO: fix below
-//    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
-//    for(int i=0;i<FEB_interface->GetNumFPGAs();i++)
-//    	if((status = db_set_value_index(hDB,0,set_str, val, strlen(val),i, TID_STRING,false))!=DB_SUCCESS) return status;
+    const char *bypass_settings_str[] = {
+    "Bypass enabled = BOOL[2] :",\
+    "[0] n",\
+    "[1] n",\
+    "Run state = STRING[2] :",\
+    "[32] undefined",\
+    "[32] undefined",\
+    "",\
+    NULL};
+
+    sprintf(set_str, "%s/Variables/FEB Run State", prefix);
+    db_create_record(hDB, 0, set_str, strcomb(bypass_settings_str));
+
+    sprintf(set_str, "%s/Variables/FEB Run State/Bypass enabled", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    assert(hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
 
     sprintf(set_str, "%s/Variables/FEB Run State/Run state", prefix);
-    status=db_create_key(hDB, 0, set_str, TID_STRING);
-    if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
-    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
-//TODO: fix below
-//    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
-//    for(int i=0;i<FEB_interface->GetNumFPGAs();i++)
-//    	if((status = db_set_value_index(hDB,0,set_str, val, strlen(val),i, TID_STRING,false))!=DB_SUCCESS) return status;
+    db_find_key (hDB, 0, set_str, &hTmp);
+    assert(hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
+    for(int i=0;i<FEB_interface->GetNumFPGAs();i++)
+    	if((status = db_set_value_index(hDB,0,set_str, "undefined", 32,i, TID_STRING,false))!=DB_SUCCESS) return status;
 
 
     // Define history panels
@@ -179,7 +185,7 @@ printf("setting up db\n");
                                      "SciFi:Counters_nErrorsLVDS",
                                      "SciFi:Counters_nErrorsPRBS"});
 
-    hs_define_panel("SciFi","Times",{"SciFi:Counters_Timer",
+    hs_define_panel("SciFi","Times",{"SciFi:Counters_Time",
                                     "SciFi:Counters_Time"});
     //Add configuration custom page to ODB
     db_create_key(hDB, 0, "Custom/SciFi-ASICs&", TID_STRING);
