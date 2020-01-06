@@ -290,14 +290,14 @@ begin
 		i_sync_reset_cnt    => sync_reset_cnt--,
 	);
 
-	clock_A <= pod_pll_clk;
-	clock_B <= pod_pll_clk;
-	clock_C <= pod_pll_clk;
-	clock_E <= pod_pll_clk;
+	clock_A <= pod_clk_left;
+	clock_B <= pod_clk_left;
+	clock_C <= pod_clk_left;
+	clock_E <= pod_clk_left;
 
-	process(pod_pll_clk)
+	process(pod_clk_left)
 	begin
-	if falling_edge(pod_pll_clk) then
+	if falling_edge(pod_clk_left) then
 		if(run_state_125 = RUN_STATE_SYNC)then
 			fast_reset_A <= '1';
 			fast_reset_B <= '1';

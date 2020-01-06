@@ -164,7 +164,7 @@ begin
 
 
 
-	pll: pll_ip
+	e_pll: entity work.pll_ip
 	port map(
 		areset             => i_pll_arst or i_data(15),                  
 		inclk0             => i_pll_clk,

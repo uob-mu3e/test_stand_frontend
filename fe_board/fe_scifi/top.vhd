@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+
 use work.daq_constants.all;
 
 entity top is
@@ -151,7 +152,11 @@ begin
 
     e_scifi_path : entity work.scifi_path
     generic map (
-        N_m => 2
+        N_MODULES => 2,
+        N_ASICS => 4,
+        INPUT_SIGNFLIP => "11111111",
+        LVDS_PLL_FREQ => 125.0,
+        LVDS_DATA_RATE => 1250.0--,
     )
     port map (
         i_reg_addr      => scifi_reg.addr(3 downto 0),
@@ -164,25 +169,25 @@ begin
         o_pll_test      => open,
         i_data          => i_fee_rxd,
 
-        o_fifoA_rempty   => fifoA_rempty,
-        i_fifoA_rack     => fifoA_rack,
-        o_fifoA_rdata    => fifoA_rdata,
+        o_fifoA_rempty  => fifoA_rempty,
+        i_fifoA_rack    => fifoA_rack,
+        o_fifoA_rdata   => fifoA_rdata,
 
-        o_fifoB_rempty   => fifoB_rempty,
-        i_fifoB_rack     => fifoB_rack,
-        o_fifoB_rdata    => fifoB_rdata,
+        o_fifoB_rempty  => fifoB_rempty,
+        i_fifoB_rack    => fifoB_rack,
+        o_fifoB_rdata   => fifoB_rdata,
 
-        i_reset         => not reset_n,
+        i_run_state     => run_state_125,
+        o_run_state_all_done => s_run_state_all_done,
+
+        o_MON_rxrdy     => s_MON_rxrdy,
+
         i_clk_core      => qsfp_clk,
         i_clk_g125      => clk_125_bottom,
         i_clk_ref_A     => lvds_clk_A,
         i_clk_ref_B     => lvds_clk_B,
 
-        i_run_state     => run_state_125,
-
-        o_run_state_all_done => s_run_state_all_done,
-
-        o_MON_rxrdy     => s_MON_rxrdy
+        i_reset         => not reset_n--,
     );
 
     ----------------------------------------------------------------------------

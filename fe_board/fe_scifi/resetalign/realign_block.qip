@@ -1,2 +1,4 @@
-set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "source/pll_ip.qip"]
+#
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "source/pll_ip.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "source/clockalign_block.vhd"]

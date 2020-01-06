@@ -2,6 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.daq_constants.all;
+
 entity top is
 port (
     -- FE.A
@@ -131,6 +133,9 @@ architecture arch of top is
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n : std_logic_vector(15 downto 0);
 
+    signal run_state_125 : run_state_t;
+    signal s_run_state_all_done : std_logic;
+
 begin
 
     ----------------------------------------------------------------------------
@@ -143,9 +148,12 @@ begin
 
     malibu_pll_reset <= '0';
 
-    e_malibu_block : entity work.malibu_block
+    e_malibu_block : entity work.scifi_path
     generic map (
-        N_g => 1--,
+        N_MODULES => 1,
+        N_ASICS => 1,
+        LVDS_PLL_FREQ => 156.25,
+        LVDS_DATA_RATE => 156.25--,
     )
     port map (
         i_reg_addr      => malibu_reg.addr(3 downto 0),
@@ -154,17 +162,29 @@ begin
         i_reg_we        => malibu_reg.we,
         i_reg_wdata     => malibu_reg.wdata,
 
-        o_ck_fpga_0     => malibu_ck_fpga_0,
-        o_chip_reset    => malibu_chip_reset,
+        o_chip_reset(0) => malibu_chip_reset,
         o_pll_test      => malibu_pll_test,
         i_data          => malibu_data(0 downto 0),
 
-        o_fifo_rempty   => fifo_rempty,
-        i_fifo_rack     => fifo_rack,
-        o_fifo_rdata    => fifo_rdata,
+        o_fifoA_rempty  => fifo_rempty,
+        i_fifoA_rack    => fifo_rack,
+        o_fifoA_rdata   => fifo_rdata,
 
-        i_reset         => not reset_n,
-        i_clk           => qsfp_pll_clk--,
+        o_fifoB_rempty  => open,
+        i_fifoB_rack    => '0',
+        o_fifoB_rdata   => open,
+
+        i_run_state     => run_state_125,
+        o_run_state_all_done => s_run_state_all_done,
+
+        o_MON_rxrdy     => open,
+
+        i_clk_core      => qsfp_clk,
+        i_clk_g125      => clk_125_bottom,
+        i_clk_ref_A     => qsfp_clk,
+        i_clk_ref_B     => qsfp_clk,
+
+        i_reset         => not reset_n--,
     );
 
     ----------------------------------------------------------------------------
@@ -269,6 +289,10 @@ begin
         i_malibu_reg_rdata  => malibu_reg.rdata,
         o_malibu_reg_we     => malibu_reg.we,
         o_malibu_reg_wdata  => malibu_reg.wdata,
+
+        -- reset system
+        o_run_state_125 => run_state_125,
+        i_can_terminate => s_run_state_all_done,
 
         -- clocks
         i_nios_clk      => si42_clk_50,
