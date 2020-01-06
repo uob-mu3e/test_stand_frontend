@@ -65,6 +65,8 @@ class MutrigFEB {
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
       int ReadBackCounters(uint16_t FPGA_ID);
       void ReadBackAllCounters(){for(size_t i=0;i<m_FPGAs.size();i++) ReadBackCounters(i);};
+      int ResetCounters(uint16_t FPGA_ID);
+      void ResetAllCounters(){for(size_t i=0;i<m_FPGAs.size();i++) ResetCounters(i);};
       //Read run state and reset bypass command
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
       int ReadBackRunState(uint16_t FPGA_ID);

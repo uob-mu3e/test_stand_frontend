@@ -1,3 +1,4 @@
+#include "stdlib.h"
 
 void menu_reset() {
     auto& reset_bypass = sc.ram->regs.fe.reset_bypass;

@@ -355,6 +355,9 @@ try{
       print_ack_state();
       return CM_TRANSITION_CANCELED;
    }
+
+   SciFiFEB::Instance()->ResetAllCounters();
+
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "lightBlue");
    return CM_SUCCESS;
 }catch(...){return CM_TRANSITION_CANCELED;}

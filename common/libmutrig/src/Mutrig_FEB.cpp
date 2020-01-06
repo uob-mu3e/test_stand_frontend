@@ -307,6 +307,16 @@ int MutrigFEB::ReadBackRunState(uint16_t FPGA_ID){
    return SUCCESS;
 }
 
+int MutrigFEB::ResetCounters(uint16_t FPGA_ID){
+   //map to SB fiber
+   auto FEB = m_FPGAs[FPGA_ID];
+   if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+   if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+
+   auto rpc_ret=m_mu.FEBsc_NiosRPC(FEB.SB_Port(),0x0106,{});
+   return rpc_ret;
+}
+
 int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
    //map to SB fiber
    auto FEB = m_FPGAs[FPGA_ID];
@@ -544,6 +554,17 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 	    delete [] ivals;
         }
     }
+   if (std::string(key.name) == "reset_counters") {
+      BOOL value;
+      int size = sizeof(value);
+      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+      if(value){
+	 _this->ResetAllCounters();
+         value = FALSE; // reset flag in ODB
+         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+      }
+   }
+
 }
 
 //Helper functions

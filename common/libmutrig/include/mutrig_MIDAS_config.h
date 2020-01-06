@@ -47,6 +47,7 @@ typedef struct {
 "reset_datapath = BOOL : n",\
 "reset_asics = BOOL : n",\
 "reset_lvds = BOOL : n",\
+"reset_counters = BOOL : n",\
 "LVDS_waitforall = BOOL : n",\
 "LVDS_waitforall_sticky = BOOL : y",\
 "mask = BOOL[16] :",\
