@@ -28,10 +28,11 @@ struct si534x_t : si_t {
     int wait_sysincal(int timeout = 8) {
         for(int i = 0; i < timeout; i++) {
             alt_u8 sysincal = read(0x000C);
-            if(sysincal == 0) break;
+            if(sysincal == 0) return 0;
             printf("[si534x.init] SYSINCAL = %u => wait ...\n", sysincal);
             usleep(1000);
         }
+        return -1;
     }
 
     int nvm_write() {
