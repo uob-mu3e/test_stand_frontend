@@ -461,10 +461,7 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       db_get_data(hDB,hKey,barray,&barraysize,TID_BOOL);
       
       for(int i=0;i<_this->GetNumASICs();i++){
-         if(_this->m_FPGAs[_this->FPGAid_from_ID(i)].IsScEnabled()==false) continue;
-         if(_this->m_FPGAs[_this->FPGAid_from_ID(i)].SB_Number()!=_this->m_SB_number) continue;
-         //printf("mask(%d) -> %u -> %u.%u\n",i,_this->FPGAid_from_ID(i),_this->m_FPGAs[_this->FPGAid_from_ID(i)].SB_Port());
-         _this->setMask(_this->m_FPGAs[_this->FPGAid_from_ID(i)].SB_Port(),barray[i]);
+         _this->setMask(i,barray[i]);
       }
       delete[] barray;
    }
