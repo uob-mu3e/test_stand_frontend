@@ -195,7 +195,7 @@ begin
 
 
     -- LED maps:
-    -- 15: si42_clk_50 (50MHz -> 1Hz)
+    -- 15: nios clock (125 MHz -> 1Hz) - si42_clk_50
     -- 14: clk_qsfp (156MHz -> 1Hz)
     -- 13: clk_pod (125MHz -> 1Hz)
     -- 11: fee_chip_reset (niosclk)
@@ -269,6 +269,7 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
+        feb_mapping => 0&3&2&1,
         NIOS_CLK_MHZ_g => 50.0--,
     )
     port map (

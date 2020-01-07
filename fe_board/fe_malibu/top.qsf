@@ -25,7 +25,7 @@ set_global_assignment -name QSYS_FILE nios.qsys
 
 set_global_assignment -name QIP_FILE ../firmware/FEB_common/include.qip
 set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/include.qip
-set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/FEB_mutrig.qip
+set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/include.qip
 
 
 

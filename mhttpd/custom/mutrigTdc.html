@@ -225,11 +225,6 @@ function copy2page_global(data, rb) {
         dac = asicsettings_global_bool[i];
     	document.getElementsByName(dac+postfix)[0].checked = data[dac];
     }
-    if(rb){
-	document.getElementsByName('num_asics_rb')[0].value = data['num asics'];
-        document.getElementById("tdc_select").max=data['num asics']-1;
-        document.getElementById("channel_select").max=data['num asics']*32-1;
-    }
 }
 
 function copy2page_daq(data) {
@@ -282,16 +277,22 @@ function loadODB(init_set) {
 		copy2page_tdc(tdcs[getTDCNumber()], true);
 		copy2page_ch(channels[getChannel()], true);
 		//copy2page_daq(daq); direct odb divs, not needed
+
+		//fields depending on number of asics
+                document.getElementsByName('num_asics_rb')[0].value = daq['num_asics'];
+                document.getElementById("tdc_select").max=daq['num_asics']-1;
+                document.getElementById("channel_select").max=daq['num_asics']*32-1;
+
 		//synchronize setpoint to odb value
 		if(init_set==true){
 			//console.log("Syncing set points");
 			var settings = JSON.parse(localStorage.getItem('settings'));
 			settings.glob=global;
 			settings.daq=daq;
-			for(var iasic = 0; iasic < settings.glob['num asics']; iasic++) {
+			for(var iasic = 0; iasic < settings.daq['num_asics']; iasic++) {
 				settings.asic[iasic]=tdcs[iasic];
 			}
-			for(var ich = 0; ich < settings.glob['num asics']*32; ich++) {
+			for(var ich = 0; ich < settings.daq['num_asics']*32; ich++) {
 				settings.channel[ich]=channels[ich];
 			}
 			localStorage.setItem('settings', JSON.stringify(settings));
@@ -344,7 +345,7 @@ function storeODB() {
 	});
 */
 	// asic
-	for(var asic = 0; asic < settings.glob['num asics']; asic++) {
+	for(var asic = 0; asic < settings.daq['num_asics']; asic++) {
 		paths       = asicsettings_tdc_int.concat(asicsettings_tdc_bool).map(function(v)  { return prefix+"ASICs/TDCs/"+asic+"/"+v; });
 		values      = asicsettings_tdc_int.concat(asicsettings_tdc_bool).map(function (n) { return settings.asic[asic][n]; });
 		mjsonrpc_db_paste(paths, values).then(function(rpc) {
@@ -357,7 +358,7 @@ function storeODB() {
 	}
 
 	// channel
-	for(var channel = 0; channel < settings.glob['num asics']*32; channel++) {
+	for(var channel = 0; channel < settings.daq['num_asics']*32; channel++) {
 		paths       = asicsettings_channel_int.concat(asicsettings_channel_bool).map(function(v) { return prefix+"ASICs/Channels/"+channel+"/"+v; });
 		values      = asicsettings_channel_int.concat(asicsettings_channel_bool).map(function(v) { return settings.channel[channel][v]; });
 		mjsonrpc_db_paste(paths, values).then(function(rpc) {
@@ -424,7 +425,7 @@ function loadFromDisk(event) {
 //mask all channels
 function mask(value=true) {
 	var settings = JSON.parse(localStorage.getItem('settings'));
-	for(var ch = 0; ch < settings.glob['num asics']*32; ch++) {
+	for(var ch = 0; ch < settings.daq['num_asics']*32; ch++) {
 		settings.channel[ch]['mask'] = value;
 	}
 	localStorage.setItem('settings', JSON.stringify(settings));
@@ -442,14 +443,14 @@ function copy() {
 			// range a - b
 			var rangel = rangestrl.split("-");
 			for(var ch = parseInt(rangel[0]); ch <= parseInt(rangel[1]); ch++) {
-				if(ch < settings.glob['num asics']*32) {
+				if(ch < settings.daq['num_asics']*32) {
 					channels.push(ch);
 				}
 			}		
 		} else {
 			// single channel
 			var ch = parseInt(rangestrl);
-			if(ch < settings.glob['num asics']*32) {
+			if(ch < settings.daq['num_asics']*32) {
 					channels.push(ch);
 				}
 		}
@@ -568,19 +569,24 @@ function readback() {
 						<td></td>
 					</tr>
 					<tr>
-						<td colspan=1>Reset regs</td>
+						<td colspan=1>Reset Blocks</td>
 						<td>
 						<button name="modbbutton" class="button_2 button_s" id="reset_datapath" data-odb-path="/Equipment/SciFi/Settings/Daq/reset_datapath" data-odb-value="1">
-							Reset Datapath</button>
+							Datapath</button>
 						</td>
 						<td>
 						<button name="modbbutton" class="button_2 button_s" id="reset_asics" data-odb-path="/Equipment/SciFi/Settings/Daq/reset_asics" data-odb-value="1">
-							Reset ASICs</button>
+							ASICs</button>
 		                                </button>
 						</td>
 						<td>
 						<button name="modbbutton" class="button_2 button_s" id="reset_lvds" data-odb-path="/Equipment/SciFi/Settings/Daq/reset_lvds" data-odb-value="1">
-							Reset LVDS-RXs</button>
+							LVDS_RXs</button>
+		                                </button>
+						</td>
+						<td>
+						<button name="modbbutton" class="button_2 button_s" id="reset_counters" data-odb-path="/Equipment/SciFi/Settings/Daq/reset_counters" data-odb-value="1">
+							Counters</button>
 		                                </button>
 						</td>
 						<td></td>

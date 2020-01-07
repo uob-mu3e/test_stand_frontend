@@ -13,7 +13,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 
 #include "midas.h"
 #include "mudaq_device_scifi.h"
-#include "mutrig_config.h"
+#include "MutrigConfig.h"
 #include "link_constants.h"
 
 class MutrigFEB {
@@ -37,7 +37,11 @@ class MutrigFEB {
 	      m_hDB(hDB)
 	{};
       void SetSBnumber(uint8_t n){m_SB_number=n;}
+
       uint16_t GetNumASICs(){return m_FPGAs.size()*nModulesPerFEB()*nAsicsPerModule();}
+      uint16_t GetNumModules(){return m_FPGAs.size()*nModulesPerFEB();}
+      uint16_t GetNumFPGAs(){return m_FPGAs.size();}
+
       void SetAskSCReply(bool ask){m_ask_sc_reply=ask;};
 
       //MIDAS callback for all setters below (DAQ related, mapped to functions on FEB / settings from the DAQ subdirectory).
@@ -57,8 +61,18 @@ class MutrigFEB {
       //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi"), report any errors as equipment_name
       int ConfigureASICs();
 
-      //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/ 
+      //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/
+      //Parameter FPGA_ID refers to global numbering, i.e. before mapping
       int ReadBackCounters(uint16_t FPGA_ID);
+      void ReadBackAllCounters(){for(size_t i=0;i<m_FPGAs.size();i++) ReadBackCounters(i);};
+      int ResetCounters(uint16_t FPGA_ID);
+      void ResetAllCounters(){for(size_t i=0;i<m_FPGAs.size();i++) ResetCounters(i);};
+      //Read run state and reset bypass command
+      //Parameter FPGA_ID refers to global numbering, i.e. before mapping
+      int ReadBackRunState(uint16_t FPGA_ID);
+      void ReadBackAllRunState(){for(size_t i=0;i<m_FPGAs.size();i++) ReadBackRunState(i);};
+
+
 
    protected:
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
@@ -73,6 +87,7 @@ class MutrigFEB {
       //list of all FPGAs mapped to this subdetector. Used for pushing common configurations to all FEBs
       //TODO: move to generic FEB class after merging with pixel SC
       //TODO: extend to map<ID, FPGA_ID_TYPE> with more information (name, etc. for reporting).
+      //TODO: add possibility to have febs with different number of asics (relevant only for pixel)
       struct mapped_FEB_t{
 	 private:
 	 uint16_t LinkID;	//global numbering. sb_id=LinkID/MAX_LINKS_PER_SWITCHINGBOARD, sb_port=LinkID%MAX_LINKS_PER_SWITCHINGBOARD
@@ -95,13 +110,15 @@ class MutrigFEB {
       //Foreach loop over all asics under this prefix. Call with a lambda function,
       //e.g. midasODB::MapForEach(hDB, "/Equipment/SciFi",[mudaqdev_ptr](Config c,int asic){mudaqdev_ptr->ConfigureAsic(c,asic);});
       //Function must return SUCCESS, otherwise loop is stopped.
-      int MapForEach(std::function<int(mutrig::Config* /*mutrig config*/,int /*ASIC #*/)> func);
+      int MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/)> func);
 
 
 
 
 
-      //FEB registers and functions
+      //FEB registers and functions.
+      //Parameter FPGA_ID refers to the physical FEB port, i.e. after mapping
+      //Parameter ASIC refers to the global numbering scheme, i.e. before mapping
 
       /**
        * Use emulated mutric on fpga for config
@@ -118,7 +135,7 @@ class MutrigFEB {
       void setDummyData_Fast(uint16_t FPGA_ID, bool fast = false);
   
       /**
-       * Disable data from specified ASIC (asic number in global numbering scheme)
+       * Disable data from specified ASIC (asic number in global numbering scheme, i.e. before mapping)
        */
       void setMask(int ASIC, bool value);
   
@@ -142,9 +159,9 @@ class MutrigFEB {
 
 
       //reset signal alignment control
-      void setResetSkewCphase(uint16_t FPGA_ID, BOOL cphase[4]);
-      void setResetSkewCdelay(uint16_t FPGA_ID, BOOL cdelay[4]);
-      void setResetSkewPhases(uint16_t FPGA_ID, INT phases[4]);
+      void setResetSkewCphase(uint16_t FPGA_ID, BOOL cphase[]);
+      void setResetSkewCdelay(uint16_t FPGA_ID, BOOL cdelay[]);
+      void setResetSkewPhases(uint16_t FPGA_ID, INT phases[]);
 
 };//class MutrigFEB
 

@@ -6,7 +6,7 @@
 #include <sstream>
 #include <functional>
 #include <midas.h>
-#include "mutrig_config.h"
+#include "MutrigConfig.h"
 #include "mutrig_MIDAS_config.h"
 #include "Mutrig_FEB.h"
 
@@ -30,7 +30,7 @@ int setup_db(HNDLE& hDB, const char* prefix,MutrigFEB* FEB_inteface);
 
 //Map ODB structure under prefix (e.g. /Equipment/SciFi) to a Config instance (i.e. build the configuration pattern) for this asic.
 //Returns configuration class holding the pattern.
-Config MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic);
+MutrigConfig MapConfigFromDB(HNDLE& db_rootentry, const char* prefix, int asic);
 
 } } // namespace mutrig::midasODB
 
