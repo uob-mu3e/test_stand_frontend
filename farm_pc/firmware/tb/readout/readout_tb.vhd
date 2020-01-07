@@ -38,7 +38,7 @@ architecture behav of readout_tb is
       signal state_out_eventbuilder : std_logic_vector(3 downto 0);
       signal dma_data_wren : std_logic;
       signal dma_data : std_logic_vector(255 downto 0);
-      signal all_done : std_logic_vector(5 * 2 + 5 downto 0);
+      signal all_done : std_logic_vector(5 downto 0);
 
       signal dma_data_32_0 : std_logic_vector(31 downto 0);
       signal dma_data_32_1 : std_logic_vector(31 downto 0);

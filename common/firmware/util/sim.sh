@@ -16,7 +16,7 @@ mkdir -p .cache
 cd .cache || exit 1
 
 OPTS=(
-    --ieee=synopsys -fexplicit
+    --ieee=synopsys -fexplicit -P=/usr/local/lib/ghdl/vendors/altera
     -fpsl
     --mb-comments
 )
