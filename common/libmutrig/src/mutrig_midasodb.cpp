@@ -181,17 +181,27 @@ printf("setting up db\n");
 
 
     // Define history panels
-    hs_define_panel("SciFi","Counters",{"SciFi:Counters_nHits",
-                                       "SciFi:Counters_nFrames",
-                                       "SciFi:Counters_nWordsLVDS",
-                                       "SciFi:Counters_nWordsPRBS"});
+    for(std::string panel: {
+       "Counters_nHits",
+       "Counters_nFrames",
+       "Counters_nWordsLVDS",
+       "Counters_nWordsPRBS",
+       "Counters_nBadFrames",
+       "Counters_nErrorsLVDS",
+       "Counters_nErrorsPRBS"
+       }){
+        std::vector<std::string> varlist;
+        char name[255];
+        for(int i=0;i<FEB_interface->GetNumASICs();i++){
+            snprintf(name,255,"%s:%s[%d]",FEB_interface->GetName(),panel.c_str(),i);
+            varlist.push_back(name);
+        }
+        hs_define_panel(FEB_interface->GetName(),panel.c_str(),varlist);
+    }
 
-    hs_define_panel("SciFi","Errors",{"SciFi:Counters_nBadFrames",
-                                     "SciFi:Counters_nErrorsLVDS",
-                                     "SciFi:Counters_nErrorsPRBS"});
+    //hs_define_panel("SciFi","Times",{"SciFi:Counters_Time",
+    //                                "SciFi:Counters_Time"});
 
-    hs_define_panel("SciFi","Times",{"SciFi:Counters_Time",
-                                    "SciFi:Counters_Time"});
     //Add configuration custom page to ODB
     db_create_key(hDB, 0, "Custom/SciFi-ASICs&", TID_STRING);
     const char * name = "mutrigTdc.html";

@@ -37,6 +37,8 @@ class MutrigFEB {
 	      m_hDB(hDB)
 	{};
       void SetSBnumber(uint8_t n){m_SB_number=n;}
+      const char* GetName(){return m_equipment_name;}
+      const char* GetPrefix(){return m_odb_prefix;}
 
       uint16_t GetNumASICs(){return m_FPGAs.size()*nModulesPerFEB()*nAsicsPerModule();}
       uint16_t GetNumModules(){return m_FPGAs.size()*nModulesPerFEB();}
