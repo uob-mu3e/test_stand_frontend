@@ -57,7 +57,7 @@ begin
 					if(s_first_prbs = '1' ) then -- if it's the first prbs word in the frame, reset the flag
 						s_first_prbs <= '0';
 					else
-						if(unsigned(s_wrd_cnt)+1 /= 0) then
+						if(s_err_cnt /= bin2gray(X"ffffffff")) then
 							s_wrd_cnt <= gray_inc(s_wrd_cnt);
 						end if;
 						-- if it's not the first prbs in the frame, check the prbs word
