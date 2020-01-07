@@ -6,7 +6,7 @@ use ieee.std_logic_unsigned.all;
 
 --  A testbench has no ports.
 entity sc_tb is
-end sc_tb;
+end entity;
 
 architecture behav of sc_tb is
   --  Declaration of the component that will be instantiated.
@@ -201,4 +201,5 @@ begin
 
 	end if;
 	end process memory;
-end behav;
+
+end architecture;

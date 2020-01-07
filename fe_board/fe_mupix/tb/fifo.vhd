@@ -1,22 +1,22 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.NUMERIC_STD.ALL;
- 
+
 entity fifo is
-	Port ( 
-		CLK		: in  STD_LOGIC;
-		RST		: in  STD_LOGIC;
-		WriteEn	: in  STD_LOGIC;
-		DataIn	: in  STD_LOGIC_VECTOR (31 downto 0);
-		ReadEn	: in  STD_LOGIC;
-		DataOut	: out STD_LOGIC_VECTOR (31 downto 0);
-		Empty	: out STD_LOGIC;
-		Full	: out STD_LOGIC
-	);
-end fifo;
- 
+port (
+	CLK		: in  STD_LOGIC;
+	RST		: in  STD_LOGIC;
+	WriteEn	: in  STD_LOGIC;
+	DataIn	: in  STD_LOGIC_VECTOR (31 downto 0);
+	ReadEn	: in  STD_LOGIC;
+	DataOut	: out STD_LOGIC_VECTOR (31 downto 0);
+	Empty	: out STD_LOGIC;
+	Full	: out STD_LOGIC
+);
+end entity;
+
 architecture Behavioral of fifo is
- 
+
 begin
  
 	-- Memory Pointer Process
@@ -85,5 +85,5 @@ begin
 			end if;
 		end if;
 	end process;
-	
-end Behavioral;
+
+end architecture;

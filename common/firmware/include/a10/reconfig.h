@@ -33,8 +33,8 @@ struct reconfig_t {
         printf(" '%u'\n", b);
     }
 
-    void pll(int QSFP_BASE) {
-        printf("reconfig.pll %lx\n",QSFP_BASE);
+    void pll(alt_u32 QSFP_BASE) {
+        printf("reconfig.pll 0x%08X\n", QSFP_BASE);
         base = (alt_u32*)(QSFP_BASE) + 0x2000;
 
 //        if(get(0x280, 0) == 1) return; // pll_locked
@@ -55,8 +55,8 @@ struct reconfig_t {
         wait(0x280, 0, 1); // wait pll_locked
     }
 
-    void phy(alt_u32 ch, int QSFP_BASE) {
-        printf("INFO reconfig.phy(0x%04X.0x%02X)\n", QSFP_BASE,ch);
+    void phy(alt_u32 ch, alt_u32 QSFP_BASE) {
+        printf("INFO reconfig.phy(0x%04X.0x%02X)\n", QSFP_BASE, ch);
         base = (alt_u32*)(QSFP_BASE) + 0x1000;
 
         // channel id

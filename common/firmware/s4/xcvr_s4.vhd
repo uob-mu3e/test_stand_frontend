@@ -41,6 +41,9 @@ port (
     i_avs_writedata     : in    std_logic_vector(31 downto 0);
     o_avs_waitrequest   : out   std_logic;
 
+    -- 37.5 to 50 MHz
+    i_reconfig_clk      : in    std_logic;
+
     i_reset         : in    std_logic;
     i_clk           : in    std_logic--;
 );
@@ -374,25 +377,9 @@ begin
         reconfig_clk        => reconfig_clk--,
     );
 
-    g_reconfig_clk : if ( CLK_HZ_g <= 50000000 ) generate
-        reconfig_clk <= i_clk; -- Frequency Range : 37.5 to 50 MHz
-    end generate;
 
-    -- generate reconfig_clk = 50 MHz
-    g_reconfig_clk_altpll : if ( CLK_HZ_g > 50000000 ) generate
-        e_reconfig_clk : entity work.ip_altpll
-        generic map (
-            INCLK0_MHZ => real(CLK_HZ_g) / 1000000.0,
-            DIV => CLK_HZ_g / work.util.gcd(CLK_HZ_g, 50000000),
-            MUL => 50000000 / work.util.gcd(CLK_HZ_g, 50000000)--,
-        )
-        port map (
-            c0 => reconfig_clk,
-            locked => open,
-            areset => i_reset,
-            inclk0 => i_clk--,
-        );
-    end generate;
+
+    reconfig_clk <= i_reconfig_clk;
 
     e_reconfig_rst_n : entity work.reset_sync
     port map ( o_reset_n => reconfig_rst_n, i_reset_n => reset_n, i_clk => reconfig_clk );

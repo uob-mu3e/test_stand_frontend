@@ -6,7 +6,7 @@ use ieee.std_logic_unsigned.all;
 
 --  A testbench has no ports.
 entity sw_algin_data_tb is
-end sw_algin_data_tb;
+end entity;
 
 architecture behav of sw_algin_data_tb is
   --  Declaration of the component that will be instantiated.
@@ -287,4 +287,5 @@ begin
 
 	end if;
 	end process data;
-end behav;
+
+end architecture;

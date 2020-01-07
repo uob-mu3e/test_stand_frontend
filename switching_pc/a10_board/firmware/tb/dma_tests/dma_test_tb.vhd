@@ -6,7 +6,7 @@ use ieee.std_logic_unsigned.all;
 
 --  A testbench has no ports.
 entity dma_test_tb is
-end dma_test_tb;
+end entity;
 
 architecture behav of dma_test_tb is
   --  Declaration of the component that will be instantiated.
@@ -273,4 +273,4 @@ begin
         
         );
 
-end behav;
+end architecture;

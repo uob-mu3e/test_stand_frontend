@@ -3,7 +3,7 @@
  * date : 2019
  */
 
-void menu_xcvr(volatile alt_u32* xcvr,char ID='A') {
+void menu_xcvr(volatile alt_u32* xcvr, char ID = 'A') {
     while (1) {
         char cmd;
         if(read(uart, &cmd, 1) > 0) switch(cmd) {

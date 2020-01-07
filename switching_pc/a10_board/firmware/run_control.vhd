@@ -9,10 +9,10 @@ use work.daq_constants.all;
 use ieee.std_logic_misc.all;
 
 ENTITY run_control is
-    generic (
+generic (
         N_LINKS_g : integer := 4--;
-    );
-    PORT(
+);
+port (
         i_clk:                              in  std_logic; -- receive clock (156.25 MHz)
         i_reset_ack_seen_n:                 in  std_logic;
         i_reset_run_end_n:                  in  std_logic;
@@ -28,7 +28,7 @@ ENTITY run_control is
         o_run_stop_ack:                     out std_logic_vector(31 downto 0);
         o_buffers_empty:                    out std_logic_vector(31 downto 0)--;
 );
-END ENTITY run_control;
+end entity;
 
 architecture rtl of run_control is
 
@@ -50,7 +50,6 @@ BEGIN
     end generate;
 
     process (i_clk, i_reset_ack_seen_n, i_reset_run_end_n)
-
     begin
         if (i_reset_ack_seen_n = '0') then 
             o_run_number                    <= (others => '0');
@@ -78,4 +77,4 @@ BEGIN
         end if;
     end process;
 
-END rtl;
+end architecture;

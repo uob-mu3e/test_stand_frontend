@@ -9,7 +9,7 @@ use IEEE.std_logic_textio.all;
 
 --  A testbench has no ports.
 entity readout_tb is
-end readout_tb;
+end entity;
 
 architecture behav of readout_tb is
   --  Specifies which entity is bound with the component.
@@ -199,4 +199,4 @@ e_midas_event_builder : entity work.midas_event_builder
   dma_data_32_6 <= dma_data(223 downto 192);
   dma_data_32_7 <= dma_data(255 downto 224);
 
-end behav;
+end architecture;
