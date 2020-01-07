@@ -98,7 +98,6 @@ port (
 end entity;
 
 architecture arch of top is
-
     signal fifoA_rempty, fifoB_rempty : std_logic;
     signal fifoA_rack,   fifoB_rack   : std_logic;
     signal fifoA_rdata,  fifoB_rdata  : std_logic_vector(35 downto 0);
@@ -252,11 +251,10 @@ begin
 
     ----------------------------------------------------------------------------
 
-
-
     e_fe_block : entity work.fe_block
     generic map (
-        NIOS_CLK_HZ_g => 50000000--,
+        NIOS_CLK_HZ_g => 50000000,
+        feb_mapping   => 0&3&2&1
     )
     port map (
         i_fpga_id       => X"FEB0",
@@ -310,7 +308,7 @@ begin
 
 
 
-        i_nios_clk      => si42_clk_125,
+        i_nios_clk      => si42_clk_50,
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_pll_clk,
         o_clk_156_mon   => led(14),

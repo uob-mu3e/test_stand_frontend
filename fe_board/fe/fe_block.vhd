@@ -6,7 +6,8 @@ use work.daq_constants.all;
 
 entity fe_block is
 generic (
-    NIOS_CLK_HZ_g : positive--;
+    NIOS_CLK_HZ_g : positive;
+    feb_mapping   : natural_array_t(3 downto 0):=3&2&1&0--;
 );
 port (
     i_fpga_id       : in    std_logic_vector(15 downto 0);
@@ -279,10 +280,11 @@ begin
 
         -- reset bypass
         if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_reset_bypass;
+            fe_reg.rdata(15 downto 0) <= reg_reset_bypass(15 downto 0);
+            fe_reg.rdata(16+9 downto 16) <= run_state_156;
         end if;
         if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.we = '1' ) then
-            reg_reset_bypass <= fe_reg.wdata;
+            reg_reset_bypass(15 downto 0) <= fe_reg.wdata(15 downto 0); --upper bits are read-only status
         end if;
         
         -- reset payload
@@ -292,6 +294,15 @@ begin
         if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.we = '1' ) then
             reg_reset_bypass_payload <= fe_reg.wdata;
         end if;
+
+	-- reset bypass payload
+        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= reg_reset_bypass_payload;
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.we = '1' ) then
+            reg_reset_bypass_payload <= fe_reg.wdata;
+        end if;
+
 
         -- mscb
 
@@ -421,8 +432,8 @@ begin
 
     e_sc_rx : entity work.sc_rx
     port map (
-        i_link_data     => qsfp_rx_data(31 downto 0),
-        i_link_datak    => qsfp_rx_datak(3 downto 0),
+        i_link_data     => qsfp_rx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
+        i_link_datak    => qsfp_rx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
         o_fifo_rempty   => sc_fifo_rempty,
         i_fifo_rack     => sc_fifo_rack,
@@ -449,8 +460,8 @@ begin
         run_state               => run_state_156,
         run_number              => run_number,
 
-        data_out                => qsfp_tx_data(31 downto 0),
-        data_is_k               => qsfp_tx_datak(3 downto 0),
+        data_out                => qsfp_tx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
+        data_is_k               => qsfp_tx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
         slowcontrol_fifo_empty  => sc_fifo_rempty,
         slowcontrol_read_req    => sc_fifo_rack,
@@ -484,8 +495,8 @@ begin
         run_state               => run_state_156,
         run_number              => run_number,
 
-        data_out                => qsfp_tx_data(63 downto 32),
-        data_is_k               => qsfp_tx_datak(7 downto 4),
+        data_out                => qsfp_tx_data(32*(feb_mapping(1)+1)-1 downto 32*feb_mapping(1)),
+        data_is_k               => qsfp_tx_datak(4*(feb_mapping(1)+1)-1 downto 4*feb_mapping(1)),
 
         slowcontrol_fifo_empty  => i_secondary_scfifo_rempty,
         slowcontrol_read_req    => o_secondary_scfifo_rack,
