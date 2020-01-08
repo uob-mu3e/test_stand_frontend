@@ -62,7 +62,7 @@ int main() {
             si5345.menu();
             break;
         case '6':
-            //mscb_main();
+//            mscb_main();
             break;
         case '7':
             menu_reset();

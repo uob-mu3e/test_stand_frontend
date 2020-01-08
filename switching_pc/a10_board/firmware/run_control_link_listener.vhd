@@ -8,7 +8,7 @@ use ieee.numeric_std.all;
 use work.daq_constants.all;
 
 ENTITY run_control_link_listener is
-    PORT(
+port (
         i_clk:                              in  std_logic; -- receive clock (156.25 MHz)
         i_reset_ack_seen_n:                 in  std_logic;
         i_reset_run_end_n:                  in  std_logic;
@@ -17,7 +17,7 @@ ENTITY run_control_link_listener is
         i_datak:                            in  std_logic_vector(3  downto 0);
         o_FEB_status:                       out std_logic_vector(25 downto 0)--;
 );
-END ENTITY run_control_link_listener;
+end entity;
 
 architecture rtl of run_control_link_listener is
 
@@ -51,4 +51,5 @@ BEGIN
             end if;
 		end if;
     end process;
-END rtl;
+
+end architecture;

@@ -140,4 +140,4 @@ end generate;
 		end if;
 	end process;
 
-end RTL;
+end architecture;

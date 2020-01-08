@@ -92,19 +92,18 @@ port (
 
 
     -- //////// PCIE ////////
+    PCIE_RX_p           : in    std_logic_vector(7 downto 0);
+    PCIE_TX_p           : out   std_logic_vector(7 downto 0);
     PCIE_PERST_n        : in    std_logic;
     PCIE_REFCLK_p       : in    std_logic;
-    PCIE_RX_p           : in    std_logic_vector(7 downto 0);
     PCIE_SMBCLK         : in    std_logic;
     PCIE_SMBDAT         : inout std_logic;
-    PCIE_TX_p           : out   std_logic_vector(7 downto 0);
     PCIE_WAKE_n         : out   std_logic;
 
     CPU_RESET_n         : in    std_logic;
     CLK_50_B2J          : in    std_logic--;
 );
-
-end entity top;
+end entity;
 
 architecture rtl of top is
 
@@ -129,6 +128,7 @@ architecture rtl of top is
     signal nios_clk : std_logic;
     signal nios_reset_n : std_logic;
     signal flash_rst_n : std_logic;
+    signal flash_ce_n_i : std_logic;
 
 
 
@@ -137,7 +137,7 @@ architecture rtl of top is
 
         signal reset : std_logic;
         signal reset_n : std_logic;
-        
+
         signal resets : std_logic_vector(31 downto 0);
         signal resets_n: std_logic_vector(31 downto 0);
         
@@ -203,9 +203,8 @@ architecture rtl of top is
         signal push_button1_db : std_logic;
         signal push_button2_db : std_logic;
         signal push_button3_db : std_logic;
-        
+
         -- NIOS
-        signal flash_ce_n_i : std_logic;
         signal i2c_scl_in   : std_logic;
         signal i2c_scl_oe   : std_logic;
         signal i2c_sda_in   : std_logic;
@@ -215,12 +214,12 @@ architecture rtl of top is
         signal cpu_pio_i : std_logic_vector(31 downto 0);
         signal debug_nios : std_logic_vector(31 downto 0);
         signal av_qsfp : work.util.avalon_array_t(3 downto 0);
-        
+
         -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
         signal ZERO : std_logic := '0';
         attribute keep : boolean;
         attribute keep of ZERO : signal is true;
-        
+
         -- tranciever ip signals
         signal tx_clk : std_logic_vector(15 downto 0);
         signal rx_clk : std_logic_vector(15 downto 0);
@@ -509,7 +508,6 @@ begin
     QSFPC_RST_n <= '1';
     QSFPD_RST_n <= '1';
 
-
     --mapping of qsfp signals
     QSFPA_TX_p <= QSFP_TX(3 downto 0);
     QSFPB_TX_p <= QSFP_TX(7 downto 4);
@@ -521,10 +519,10 @@ begin
     QSFP_RX(11 downto 8)  <= QSFPC_RX_p;
     QSFP_RX(15 downto 12) <= QSFPD_RX_p;
 
-    gen_qsfp: for i in 0 to 3 generate
+    gen_qsfp : for i in 0 to 3 generate
     e_qsfp : entity work.xcvr_a10
-    generic map(
-       NUMBER_OF_CHANNELS_g => 4
+    generic map (
+        NUMBER_OF_CHANNELS_g => 4--,
     )
     port map (
         i_tx_data   => tx_data_v(4*32*(i+1)-1 downto 4*32*i),
@@ -556,9 +554,9 @@ begin
     );
     end generate;
     --assign vector types to array types for qsfp rx signals (used by link observer module)
-    g_rx_assign: for i in 0 to NLINKS_TOTL-1 generate
-       rx_data(i)    <=rx_data_v(32*(i+1)-1 downto 32*i);
-       rx_datak(i)   <=rx_datak_v(4*(i+1)-1 downto 4*i);
+    gen_rx_data : for i in 0 to NLINKS_TOTL-1 generate
+        rx_data(i) <= rx_data_v(32*(i+1)-1 downto 32*i);
+        rx_datak(i) <= rx_datak_v(4*(i+1)-1 downto 4*i);
     end generate;
 
     --assign long vectors for used fibers. Wired to run_control, sc, data receivers
@@ -573,7 +571,7 @@ begin
 
     e_run_control : entity work.run_control
     generic map (
-            N_LINKS_g                       => NLINKS_TOTL--,
+        N_LINKS_g                           => NLINKS_TOTL--,
     )
     port map (
         i_reset_ack_seen_n                  => resets_n(RESET_BIT_RUN_START_ACK),
@@ -596,7 +594,7 @@ begin
     e_data_gen : entity work.data_generator_a10
     port map (
         reset               => resets(RESET_BIT_DATAGEN),
-        enable_pix	        => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL),
+        enable_pix          => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL),
         i_dma_half_full     => dmamemhalffull_tx,
         random_seed         => (others => '1'),
         data_pix_generated  => data_pix_generated,
@@ -617,7 +615,7 @@ begin
         sync_chain_halffull <= sync_chain_halffull(sync_chain_halffull'high-1 downto 0) & dmamemhalffull;
     end if;
     end process;
-    
+
     dmamemhalffull_tx <= sync_chain_halffull(sync_chain_halffull'high);
 
     --process(clk_156, reset_156_n)
@@ -718,7 +716,7 @@ begin
     if ( reset_156_n = '0' ) then
         readmem_writeaddr <= (others => '0');
         readmem_writedata <= (others => '0');
-        readmem_wren		<= '0';
+        readmem_wren <= '0';
     elsif rising_edge(clk_156) then
         readmem_writeaddr <= (others => '0');
         if (writeregs_slow(LINK_TEST_REGISTER_W)(LINK_TEST_BIT_ENABLE) = '1') then
