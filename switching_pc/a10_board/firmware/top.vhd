@@ -5,8 +5,6 @@ use ieee.std_logic_unsigned.all;
 
 use work.pcie_components.all;
 use work.mudaq_registers.all;
-use work.mudaq_components.all;
-
 
 entity top is
 port (

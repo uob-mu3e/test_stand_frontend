@@ -40,7 +40,6 @@ set_global_assignment -name VHDL_FILE event_counter.vhd
 set_global_assignment -name VHDL_FILE dma_evaluation.vhd
 set_global_assignment -name VHDL_FILE linear_shift.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
-set_global_assignment -name VHDL_FILE mudaq_components.vhd
 set_global_assignment -name VHDL_FILE mudaq_registers.vhd
 set_global_assignment -name QIP_FILE util/util.qip
 set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
