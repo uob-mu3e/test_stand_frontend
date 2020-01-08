@@ -384,10 +384,13 @@ begin
 
     -------- NIOS --------
 
-    nios_clk <= clk_125;
+    nios_clk <= clk_50;
 
     e_nios : work.cmp.nios
     port map (
+        clk_156_reset_reset_n           => reset_156_n,
+        clk_156_clock_clk               => clk_156,
+
         avm_qsfpA_address               => av_qsfp(0).address(13 downto 0),
         avm_qsfpA_read                  => av_qsfp(0).read,
         avm_qsfpA_readdata              => av_qsfp(0).readdata,
@@ -453,8 +456,8 @@ begin
     port map (
         rstout_n(1) => flash_rst_n,
         rstout_n(0) => nios_reset_n,
-        rst_n => reset_125_n,
-        clk => clk_125--,
+        rst_n => reset_50_n,
+        clk => clk_50--,
     );
 
     watchdog_i : entity work.watchdog
@@ -465,8 +468,8 @@ begin
     port map (
         d           => cpu_pio_i(3 downto 0),
         rstout_n    => wd_rst_n,
-        rst_n       => reset_125_n,
-        clk         => clk_125--,
+        rst_n       => reset_50_n,
+        clk         => clk_50--,
     );
 
     -- monitor nios
@@ -550,8 +553,8 @@ begin
         i_avs_writedata     => av_qsfp(i).writedata,
         o_avs_waitrequest   => av_qsfp(i).waitrequest,
 
-        i_reset     => not reset_125_n,
-        i_clk       => clk_125--,
+        i_reset     => not reset_156_n,
+        i_clk       => clk_156--,
     );
     end generate;
     --assign vector types to array types for qsfp rx signals (used by link observer module)
