@@ -415,9 +415,10 @@ int MutrigFEB::ReadBackDatapathStatus(uint16_t FPGA_ID){
    int status=m_mu.FEBsc_read(FEB.SB_Port(), val, 3, FE_DPMON_STATUS_REG);
    if(status!=3) return status;
 
+   //printf("MutrigFEB::ReadBackDatapathStatus(): val[]={%8.8x,%8.8x,%8.8x} --> ",val[0],val[1],val[2]);
    char path[255];
 
-   value=val[0] & (1<<8);
+   value=val[0] & (1<<0);
    sprintf(path, "%s/Variables/FEB datapath status/PLL locked", m_odb_prefix);
    if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
 
@@ -430,13 +431,14 @@ int MutrigFEB::ReadBackDatapathStatus(uint16_t FPGA_ID){
    if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
 
    for(int i=0; i < nModulesPerFEB()*nAsicsPerModule(); i++){
+      int a=FPGA_ID*nModulesPerFEB()*nAsicsPerModule()+i;
       sprintf(path, "%s/Variables/FEB datapath status/DPA locked", m_odb_prefix);
-      value=val[1] & (1<<i);
-      if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID*nModulesPerFEB()*nAsicsPerModule()+i, TID_BOOL,false))!=DB_SUCCESS) return status;
+      value=(val[1]>>i) & 1;
+      if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),a, TID_BOOL,false))!=DB_SUCCESS) return status;
 
       sprintf(path, "%s/Variables/FEB datapath status/RX ready", m_odb_prefix);
-      value=val[2] & (1<<i);
-      if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
+      value=(val[2]>>i) & 1;
+      if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),a, TID_BOOL,false))!=DB_SUCCESS) return status;
    }
 
    return SUCCESS;

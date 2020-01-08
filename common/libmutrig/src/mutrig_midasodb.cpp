@@ -200,7 +200,7 @@ printf("setting up db\n");
     NULL};
 
     sprintf(set_str, "%s/Variables/FEB datapath status", prefix);
-    db_create_record(hDB, 0, set_str, strcomb(bypass_settings_str));
+    db_create_record(hDB, 0, set_str, strcomb(datapath_status_str));
 
     sprintf(set_str, "%s/Variables/FEB datapath status/PLL locked", prefix);
     db_find_key (hDB, 0, set_str, &hTmp);
@@ -235,7 +235,8 @@ printf("setting up db\n");
        "Counters_nWordsPRBS",
        "Counters_nBadFrames",
        "Counters_nErrorsLVDS",
-       "Counters_nErrorsPRBS"
+       "Counters_nErrorsPRBS",
+       "FEB datapath status_RX ready"
        }){
         std::vector<std::string> varlist;
         char name[255];
