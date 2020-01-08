@@ -20,7 +20,33 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include "reset_protocol.h"
 
 //offset for registers on nios SC memory
+/*
+ *            struct {
+                struct {
+                    alt_u32 ctrl;
+                    alt_u32 nom;
+                    alt_u64 denom;
+                } counters;
+                struct {
+                    alt_u32 status;
+                    alt_u32 rx_dpa_lock;
+                    alt_u32 rx_ready;
+                    alt_u32 reserved[1];
+                } mon;
+                struct {
+                    alt_u32 dummy;
+                    alt_u32 dp;
+                    alt_u32 reset;
+                    alt_u32 resetdelay;
+                } ctrl;
+            } scifi;
+
+ * */
 #define SC_REG_OFFSET 0xff60
+#define FE_DPMON_STATUS_REG    (SC_REG_OFFSET+0x4)
+#define FE_DPMON_DPALOCK_REG   (SC_REG_OFFSET+0x5)
+#define FE_DPMON_RXRDY_REG     (SC_REG_OFFSET+0x6)
+#define FE_DPMON_RESERVED_REG  (SC_REG_OFFSET+0x7)
 #define FE_DUMMYCTRL_REG       (SC_REG_OFFSET+0x8)
 #define FE_DPCTRL_REG          (SC_REG_OFFSET+0x9)
 #define FE_SUBDET_RESET_REG    (SC_REG_OFFSET+0xa)
@@ -377,6 +403,48 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
    delete[] val;
    return SUCCESS;
 }
+
+int MutrigFEB::ReadBackDatapathStatus(uint16_t FPGA_ID){
+   //map to SB fiber
+   auto FEB = m_FPGAs[FPGA_ID];
+   if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+   if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+
+   uint32_t val[3];
+   BOOL value;
+   int status=m_mu.FEBsc_read(FEB.SB_Port(), val, 3, FE_DPMON_STATUS_REG);
+   if(status!=3) return status;
+
+   char path[255];
+
+   value=val[0] & (1<<8);
+   sprintf(path, "%s/Variables/FEB datapath status/PLL locked", m_odb_prefix);
+   if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
+
+   value=val[0] & (1<<8);
+   sprintf(path, "%s/Variables/FEB datapath status/Buffer full", m_odb_prefix);
+   if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
+
+   value=val[0] & (1<<4);
+   sprintf(path, "%s/Variables/FEB datapath status/Frame desync", m_odb_prefix);
+   if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
+
+   for(int i=0; i < nModulesPerFEB()*nAsicsPerModule(); i++){
+      sprintf(path, "%s/Variables/FEB datapath status/DPA locked", m_odb_prefix);
+      value=val[1] & (1<<i);
+      if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID*nModulesPerFEB()*nAsicsPerModule()+i, TID_BOOL,false))!=DB_SUCCESS) return status;
+
+      sprintf(path, "%s/Variables/FEB datapath status/RX ready", m_odb_prefix);
+      value=val[2] & (1<<i);
+      if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
+   }
+
+   return SUCCESS;
+}
+
+
+
+
 
 //MIDAS callback function for FEB register Setter functions
 void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)

@@ -311,8 +311,8 @@ try{
    mup->write_register_wait(RESET_REGISTER_W, start_setup, 1000);
    mup->write_register(RESET_REGISTER_W, 0x0);
 
-   mup->FEBsc_resetMaster(); //KB: needed?
-   mup->FEBsc_resetSlave(); //KB: needed?
+//   mup->FEBsc_resetMaster(); //KB: needed?
+//   mup->FEBsc_resetSlave(); //KB: needed?
 
    /* get link active from odb. */
    uint64_t link_active_from_odb = get_link_active_from_odb();
@@ -447,8 +447,11 @@ INT read_sc_event(char *pevent, INT off)
 INT read_scifi_sc_event(char *pevent, INT off){
 	static int i=0;
     printf("Reading Scifi FEB status data from all FEBs %d\n",i++);
+    //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
+    //Add readout function for this one that gets data from class variables and writes midas banks
     SciFiFEB::Instance()->ReadBackAllCounters();
     SciFiFEB::Instance()->ReadBackAllRunState();
+    SciFiFEB::Instance()->ReadBackAllDatapathStatus();
     return 0;
 }
 

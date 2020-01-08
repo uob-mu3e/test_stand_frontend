@@ -179,6 +179,53 @@ printf("setting up db\n");
     for(int i=0;i<FEB_interface->GetNumFPGAs();i++)
     	if((status = db_set_value_index(hDB,0,set_str, &val, sizeof(DWORD),i, TID_DWORD,false))!=DB_SUCCESS) return status;
 
+    //set up variables read from FEB: run state & reset system bypass
+    const char *datapath_status_str[] = {
+    "PLL locked = BOOL[2] :",\
+    "[0] n",\
+    "[1] n",\
+    "Buffer full = BOOL[2] :",\
+    "[0] n",\
+    "[1] n",\
+    "Frame desync = BOOL[2] :",\
+    "[0] n",\
+    "[1] n",\
+    "DPA locked = BOOL[2] :",\
+    "[0] n",\
+    "[1] n",\
+    "RX ready = BOOL[2] :",\
+    "[0] n",\
+    "[1] n",\
+    "",\
+    NULL};
+
+    sprintf(set_str, "%s/Variables/FEB datapath status", prefix);
+    db_create_record(hDB, 0, set_str, strcomb(bypass_settings_str));
+
+    sprintf(set_str, "%s/Variables/FEB datapath status/PLL locked", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/FEB datapath status/Buffer full", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/FEB datapath status/Frame desync", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/FEB datapath status/DPA locked", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumASICs()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/FEB datapath status/DPA locked", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumASICs()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/FEB datapath status/RX ready", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumASICs()))!=DB_SUCCESS) return status;
+
 
     // Define history panels
     for(std::string panel: {
