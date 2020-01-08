@@ -88,7 +88,7 @@ int switch_id = 0; // TODO to be loaded from outside
 mudaq::DmaMudaqDevice * mup;
 
 /* Use CRFE bypass during run-start transitions, directly send command to FEB*/
-//#define CRFE_BYPASS
+#define CRFE_BYPASS
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -149,7 +149,7 @@ EQUIPMENT equipment[] = {
      read_sc_event,             /* readout routine */
    },
    {"SciFi",                    /* equipment name */
-    {2, 0,                      /* event ID, trigger mask */
+    {3, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
@@ -330,12 +330,14 @@ try{
    db_set_value_index(hDB,0,"Equipment/Clock Reset/Run Transitions/Request Run Prepare",
                       &value, sizeof(value), switch_id, TID_INT, false);
 #else
-   /* direct sending of run prepare, CRFE bypass is not working during run transitions */
+   /* direct sending of run prepare, CRFE bypass frontend is not working during run transitions*/
    cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
    DWORD value = run_number;
    mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff5,true); //run number
    value= (1<<8) | 0x10;
    mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,true); //run prep command
+   value= 0xbcbcbcbc;
+   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff5,true); //reset payload
    value= 0;//(1<<8) | 0x00;
    mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,true); //reset command
 #endif
@@ -443,7 +445,8 @@ INT read_sc_event(char *pevent, INT off)
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
 
 INT read_scifi_sc_event(char *pevent, INT off){
-    //printf("Reading Scifi FEB status event for all FEBs\n");
+	static int i=0;
+    printf("Reading Scifi FEB status data from all FEBs %d\n",i++);
     SciFiFEB::Instance()->ReadBackAllCounters();
     SciFiFEB::Instance()->ReadBackAllRunState();
     return 0;
@@ -672,33 +675,28 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
           }
 	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
-
-    if (std::string(key.name) == "Reset Bypass Payload") {
-          DWORD value;
-          int size = sizeof(DWORD);
-          db_get_data(hDB, hKey, &value, &size, TID_DWORD);
-	  //printf("Reset Bypass Payload now %8.8x\n",value);
-	  //do not expect a reply here, for example during sync no data is returned (in reset state)
-          int status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff5,false);
-          if(status!=SUCCESS){/**/}
-    }
-
     if (std::string(key.name) == "Reset Bypass Command") {
-          DWORD value;
+          DWORD command, payload;
           int size = sizeof(DWORD);
-          db_get_data(hDB, hKey, &value, &size, TID_DWORD);
-	  if((value&0xff) == 0) return;
-	  printf("Reset Bypass Command now %8.8x\n",value);
+          db_get_data(hDB, hKey, &command, &size, TID_DWORD);
+	  if((command&0xff) == 0) return;
+          int status = db_get_value(hDB, 0, "/Equipment/Switching/Settings/Reset Bypass Payload", &payload, &size, TID_DWORD, false);
+
+	  printf("Reset Bypass Command %8.8x, payload %8.8x\n",command,payload);
+          //first send payload
+          status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &payload,1,0xfff5,false);
 	  //do not expect a reply here, for example during sync no data is returned (in reset state)
-          int status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,false);
+          status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &command,1,0xfff4,false);
           if(status!=SUCCESS){/**/}
-	  //reset last command
-          value=0;//value&(1<<8);
-          status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,false);
+	  //reset last command & payload
+	  payload=0xbcbcbcbc;
+          status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &payload,1,0xfff5,false);
+          command=0;//value&(1<<8);
+          status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &command,1,0xfff4,false);
           if(status!=SUCCESS){/**/}
 	  //reset odb flag
-          value=value&(1<<8);
-          db_set_data(hDB, hKey, &value, size, 1, TID_DWORD);
+          command=command&(1<<8);
+          db_set_data(hDB, hKey, &command, size, 1, TID_DWORD);
     }
 
 }
