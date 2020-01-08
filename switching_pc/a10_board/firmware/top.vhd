@@ -110,12 +110,33 @@ end entity top;
 
 architecture rtl of top is
 
+    -- free running clock (used as nios clock)
+    signal clk_50 : std_logic;
+    signal reset_50_n : std_logic;
+    signal clk_50_cnt : unsigned(31 downto 0);
+
+    -- global 125 MHz clock
+    signal clk_125 : std_logic;
+    signal reset_125_n : std_logic;
+    signal clk_125_cnt : unsigned(31 downto 0);
+
+    -- 156.25 MHz data clock (derived from global 125 MHz clock)
+    signal clk_156 : std_logic;
+    signal reset_156_n : std_logic;
+
+    -- PCIe clock
+    signal pcie_clk : std_logic;
+    signal pcie_reset_n : std_logic;
+
+    signal nios_clk : std_logic;
+    signal nios_reset_n : std_logic;
+    signal flash_rst_n : std_logic;
+
+
+
         constant NLINKS_DATA : integer := 2;
         constant NLINKS_TOTL : integer := 16;
-        
-        signal clk : std_logic;
-        signal input_clk : std_logic;
-        
+
         signal reset : std_logic;
         signal reset_n : std_logic;
         
@@ -124,10 +145,7 @@ architecture rtl of top is
         
         signal resets_fast : std_logic_vector(31 downto 0);
         signal resets_n_fast: std_logic_vector(31 downto 0);
-        
-        signal clk_50_cnt : std_logic_vector(31 downto 0);
-        signal clk_125_cnt : std_logic_vector(31 downto 0);
-        
+
         ------------------ Signal declaration ------------------------
         
         -- pcie read / write regs
@@ -190,7 +208,6 @@ architecture rtl of top is
         
         -- NIOS
         signal flash_ce_n_i : std_logic;
-        signal cpu_reset_n_q : std_logic;
         signal i2c_scl_in   : std_logic;
         signal i2c_scl_oe   : std_logic;
         signal i2c_sda_in   : std_logic;
@@ -198,7 +215,6 @@ architecture rtl of top is
         signal flash_tcm_address_out : std_logic_vector(27 downto 0);
         signal wd_rst_n     : std_logic;
         signal cpu_pio_i : std_logic_vector(31 downto 0);
-        signal flash_rst_n : std_logic;
         signal debug_nios : std_logic_vector(31 downto 0);
         signal av_qsfp : work.util.avalon_array_t(3 downto 0);
         
@@ -280,28 +296,42 @@ architecture rtl of top is
 
 begin
 
-        -- 50 MHz oscillator
-    clk 		<= CLK_50_B2J;
+    -- 50 MHz oscillator
+    clk_50 <= CLK_50_B2J;
 
-        -- generate reset
-    reset 	<= not push_button0_db;
-    reset_n 	<= not reset;
+    -- generate reset
+    e_reset_50_n : entity work.reset_sync
+    port map ( o_reset_n => reset_50_n, i_reset_n => CPU_RESET_n, i_clk => clk_50 );
 
     -- generate 125 MHz clock on SMA output
     -- (can be connected to SMA input as global clock)
-    e_pll_125 : component ip_pll_125
+    e_pll_125 : component work.cmp.ip_pll_125
     port map (
         outclk_0 => SMA_CLKOUT,
-        refclk => clk,
-        rst => not CPU_RESET_n
+        refclk => clk_50,
+        rst => not reset_50_n
     );
 
     -- 125 MHz global clock (from SMA input)
-    e_clk_125 : ip_clk_ctrl
+    e_clk_125 : work.cmp.ip_clk_ctrl
     port map (
         inclk => SMA_CLKIN,
-        outclk => input_clk--,
+        outclk => clk_125--,
     );
+
+    e_reset_125_n : entity work.reset_sync
+    port map ( o_reset_n => reset_125_n, i_reset_n => CPU_RESET_n, i_clk => clk_125 );
+
+    -- 156.25 MHz data clock (from tx pll, reference is 125 MHz global clock)
+    clk_156 <= tx_clk(0);
+
+    e_reset_156_n : entity work.reset_sync
+    port map ( o_reset_n => reset_156_n, i_reset_n => CPU_RESET_n, i_clk => clk_156 );
+
+--    e_pcie_reset_n : entity work.reset_sync
+--    port map ( o_reset_n => pcie_reset_n, i_reset_n => CPU_RESET_n and BUTTON(0), i_clk => pcie_clk );
+
+
 
     -------- Debouncer/seg7 --------
 
@@ -317,32 +347,34 @@ begin
         o_q(2) => push_button2_db,
         o_q(3) => push_button3_db,
         i_reset_n => CPU_RESET_n,
-        i_clk => clk--,
+        i_clk => clk_50--,
     );
 
 
 
-    process(clk)
+    process(clk_50)
     begin
-    if rising_edge(clk) then
+    if rising_edge(clk_50) then
         clk_50_cnt <= clk_50_cnt + 1;
     end if;
     end process;
 
-    process(input_clk)
+    process(clk_125)
     begin
-    if rising_edge(input_clk) then
+    if rising_edge(clk_125) then
         clk_125_cnt <= clk_125_cnt + 1;
     end if;
     end process;
 
-    e_segment0 : entity work.hex2seg7
+    -- monitor 50 MHz clock
+    e_hex2seg7_50 : entity work.hex2seg7
     port map (
         i_hex => std_logic_vector(clk_50_cnt)(27 downto 24),
         o_seg => HEX0_D--,
     );
 
-    e_segment1 : entity work.hex2seg7
+    -- monitor 125 MHz external clock
+    e_hex2seg7_125 : entity work.hex2seg7
     port map (
         i_hex => std_logic_vector(clk_125_cnt)(27 downto 24),
         o_seg => HEX1_D--,
@@ -351,6 +383,8 @@ begin
 
 
     -------- NIOS --------
+
+    nios_clk <= clk_125;
 
     e_nios : work.cmp.nios
     port map (
@@ -400,8 +434,8 @@ begin
         spi_SCLK                        => RJ45_LED_R,
         spi_SS_n                        => RS422_DE,
 
-        rst_reset_n                     => cpu_reset_n_q,
-        clk_clk                         => input_clk--,
+        rst_reset_n                     => nios_reset_n,
+        clk_clk                         => nios_clk--,
     );
 
     FLASH_A <= flash_tcm_address_out(27 downto 2);
@@ -418,9 +452,9 @@ begin
     )
     port map (
         rstout_n(1) => flash_rst_n,
-        rstout_n(0) => cpu_reset_n_q,
-        rst_n => CPU_RESET_n,
-        clk => input_clk--,
+        rstout_n(0) => nios_reset_n,
+        rst_n => reset_125_n,
+        clk => clk_125--,
     );
 
     watchdog_i : entity work.watchdog
@@ -431,8 +465,8 @@ begin
     port map (
         d           => cpu_pio_i(3 downto 0),
         rstout_n    => wd_rst_n,
-        rst_n       => CPU_RESET_n,
-        clk         => input_clk--,
+        rst_n       => reset_125_n,
+        clk         => clk_125--,
     );
 
     -- monitor nios
@@ -499,15 +533,15 @@ begin
         o_rx_datak  => rx_datak_v(4*4*(i+1)-1 downto 4*4*i),
 
         o_tx_clkout => tx_clk(4*(i+1)-1 downto 4*i),
-        i_tx_clkin  => (others => tx_clk(0)),
+        i_tx_clkin  => (others => clk_156),
         o_rx_clkout => open,--rx_clk,
-        i_rx_clkin  => (others => tx_clk(0)),
+        i_rx_clkin  => (others => clk_156),
 
         o_tx_serial => QSFP_TX(4*(i+1)-1 downto 4*i),
         i_rx_serial => QSFP_RX(4*(i+1)-1 downto 4*i),
 
-        i_pll_clk   => input_clk,
-        i_cdr_clk   => input_clk,
+        i_pll_clk   => clk_125,
+        i_cdr_clk   => clk_125,
 
         i_avs_address       => av_qsfp(i).address(13 downto 0),
         i_avs_read          => av_qsfp(i).read,
@@ -516,8 +550,8 @@ begin
         i_avs_writedata     => av_qsfp(i).writedata,
         o_avs_waitrequest   => av_qsfp(i).waitrequest,
 
-        i_reset     => not CPU_RESET_n,
-        i_clk       => input_clk--,
+        i_reset     => not reset_125_n,
+        i_clk       => clk_125--,
     );
     end generate;
     --assign vector types to array types for qsfp rx signals (used by link observer module)
@@ -541,7 +575,6 @@ begin
             N_LINKS_g                       => NLINKS_TOTL--,
     )
     port map (
-        i_clk                               => tx_clk(0),
         i_reset_ack_seen_n                  => resets_n(RESET_BIT_RUN_START_ACK),
         i_reset_run_end_n                   => resets_n(RESET_BIT_RUN_END_ACK),
         i_buffers_empty                     => (others => '1'), -- TODO: connect buffers emtpy from dma here
@@ -553,7 +586,8 @@ begin
         i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
         o_run_number                        => readregs_slow(RUN_NR_REGISTER_R), -- run number of i_addr
         o_runNr_ack                         => readregs_slow(RUN_NR_ACK_REGISTER_R), -- which FEBs have responded with run number in i_run_number
-        o_run_stop_ack                      => readregs_slow(RUN_STOP_ACK_REGISTER_R)--,
+        o_run_stop_ack                      => readregs_slow(RUN_STOP_ACK_REGISTER_R),
+        i_clk                               => clk_156--,
     );
 
     -------- Event Builder --------
@@ -570,27 +604,27 @@ begin
         start_global_time   => (others => '0'),
         slow_down           => writeregs_slow(DMA_SLOW_DOWN_REGISTER_W),
         state_out           => state_out_datagen,
-        clk                 => tx_clk(0)--,
+        clk                 => clk_156--,
     );
     
     -- sync halffull 2 flip-flops
-    sync_halffull : process(tx_clk(0), reset_n)
+    sync_halffull : process(clk_156, reset_156_n)
     begin
-    if (reset_n = '0') then
+    if ( reset_156_n = '0' ) then
         sync_chain_halffull <= (others => '0');
-    elsif rising_edge(tx_clk(0)) then
+    elsif rising_edge(clk_156) then
         sync_chain_halffull <= sync_chain_halffull(sync_chain_halffull'high-1 downto 0) & dmamemhalffull;
     end if;
     end process;
     
     dmamemhalffull_tx <= sync_chain_halffull(sync_chain_halffull'high);
-    
-    --process(tx_clk(0), reset_n)
+
+    --process(clk_156, reset_156_n)
     --begin
-    --if ( reset_n = '0' ) then
+    --if ( reset_156_n = '0' ) then
     --    data_counter    <= (others => '0');
     --    datak_counter   <= (others => '0');
-    --elsif (rising_edge(tx_clk(0))) then
+    --elsif rising_edge(clk_156) then
     --    if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
     --        for i in 0 to NLINKS_DATA-1 loop
     --           data_counter(32*(i+1)-1 downto 32*i)    <= data_pix_generated;
@@ -608,7 +642,7 @@ begin
     --        NLINKS => NLINKS_DATA--;
     --    )
     --    port map(
-    --        i_clk_data => tx_clk(0),
+    --        i_clk_data => clk_156,
     --        i_clk_dma  => pcie_fastclk_out,
     --        i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
     --        i_reset_dma_n  => resets_n_fast(RESET_BIT_EVENT_COUNTER),
@@ -641,7 +675,7 @@ begin
         mem_data_out_k  => tx_datak_v,
         done            => open,
         stateout        => open,
-        clk             => tx_clk(0)--,
+        clk             => clk_156--,
     );
     
     e_slave : work.sc_slave
@@ -658,7 +692,7 @@ begin
         mem_data_out            => mem_data_sc,
         mem_wren                => mem_wen_sc,
         stateout                => LED_BRACKET,
-        clk                     => tx_clk(0)--,
+        clk                     => clk_156--,
     );
     
     -------- Link Test --------
@@ -669,22 +703,22 @@ begin
         g_poly  => "10000000001000000000000000000110"
     )
     port map (
-        clk         => tx_clk(0),
         reset_n     => resets_n(RESET_BIT_LINK_TEST),
         rx_data     => rx_data(1),
         rx_datak    => rx_datak(1),
         mem_add     => mem_add_link_test,
         mem_data    => mem_data_link_test,
-        mem_wen     => mem_wen_link_test--,
+        mem_wen     => mem_wen_link_test,
+        clk         => clk_156--,
     );
 
-    process(tx_clk(0), reset_n)
+    process(clk_156, reset_156_n)
     begin
-    if ( reset_n = '0' ) then
+    if ( reset_156_n = '0' ) then
         readmem_writeaddr <= (others => '0');
         readmem_writedata <= (others => '0');
         readmem_wren		<= '0';
-    elsif (rising_edge(tx_clk(0))) then
+    elsif rising_edge(clk_156) then
         readmem_writeaddr <= (others => '0');
         if (writeregs_slow(LINK_TEST_REGISTER_W)(LINK_TEST_BIT_ENABLE) = '1') then
             readmem_writeaddr(2 downto 0)   <= mem_add_link_test;
@@ -707,7 +741,7 @@ begin
         reset_register          => writeregs_slow(RESET_REGISTER_W),
         resets                  => resets,
         resets_n                => resets_n,
-        clk                     => tx_clk(0)--,
+        clk                     => clk_156--,
     );
     
     e_reset_logic_fast : entity work.reset_logic
@@ -728,7 +762,7 @@ begin
     process(pcie_fastclk_out)
     begin
     if rising_edge(pcie_fastclk_out) then
-        clk_sync <= tx_clk(0);
+        clk_sync <= clk_156;
         clk_last <= clk_sync;
         
         if(clk_sync = '1' and clk_last = '0') then
@@ -752,14 +786,14 @@ begin
     -- DMA status stuff
     e_dma_evaluation : entity work.dma_evaluation
     port map (
-        clk							=> pcie_fastclk_out,
         reset_n						=> resets_n_fast(RESET_BIT_DMA_EVAL),
         dmamemhalffull				=> dmamemhalffull,
         dmamem_endofevent			=> dmamem_endofevent,
         halffull_counter			=> dmamemhalffull_counter,
         nothalffull_counter		=> dmamemnothalffull_counter,
         endofevent_counter		=> endofevent_counter,
-        notendofevent_counter	=> notendofevent_counter--,
+        notendofevent_counter	=> notendofevent_counter,
+        clk                     => pcie_fastclk_out--,
     );
        
     -- Prolong regwritten signals for 156.25 MHz clock
@@ -786,9 +820,9 @@ begin
     end if;
     end process;
 
-    process(tx_clk(0))
+    process(clk_156)
     begin
-    if rising_edge(tx_clk(0)) then
+    if rising_edge(clk_156) then
         for I in 63 downto 0 loop
             if(regwritten(I) = '1') then
                 writeregs_slow(I) <= writeregs(I);
@@ -836,14 +870,14 @@ begin
         readregs                => readregs,
 
         -- pcie writeable memory
-        writememclk             => tx_clk(0),
+        writememclk             => clk_156,
         writememreadaddr        => writememreadaddr,
         writememreaddata        => writememreaddata,
 
         -- pcie readable memory
         readmem_data            => readmem_writedata,
         readmem_addr            => readmem_writeaddr_lowbits,
-        readmemclk              => tx_clk(0),
+        readmemclk              => clk_156,
         readmem_wren            => readmem_wren,
         readmem_endofevent      => readmem_endofevent,
         
