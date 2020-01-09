@@ -45,7 +45,7 @@ begin
 gen_adds:
 for i in 0 to 1 generate
 
-	i_adder_1_lo : work.add_1_bit 
+	i_adder_1_lo : entity work.add_1_bit
 	port map(
 		clk	=> clk,
 		x		=> rx_in(i*3),
@@ -55,7 +55,7 @@ for i in 0 to 1 generate
 		cout	=> add_stage_1(i)(1)
 	);
 	
-	i_adder_1_hi : work.add_1_bit 
+	i_adder_1_hi : entity work.add_1_bit
 	port map(
 		clk	=> clk,
 		x		=> rx_in(i*2+6),
@@ -65,7 +65,7 @@ for i in 0 to 1 generate
 		cout	=> add_stage_1(i+2)(1)
 	);	
 	
-	i_adder_2 :work.add_2_bits
+	i_adder_2 : entity work.add_2_bits
 	PORT map
 	(
 		clock		=> clk,
@@ -77,7 +77,7 @@ for i in 0 to 1 generate
 	
 end generate;
 
-	i_adder_3 :work.add_3_bits
+	i_adder_3 : entity work.add_3_bits
 	PORT map
 	(
 		clock		=> clk,
