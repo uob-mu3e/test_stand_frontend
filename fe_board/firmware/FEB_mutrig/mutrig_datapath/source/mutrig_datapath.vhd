@@ -64,9 +64,9 @@ port (
 	o_frame_desync		: out std_logic_vector(1 downto 0);
 	o_buffer_full		: out std_logic_vector(1 downto 0);
 
-        i_SC_reset_counters	: in std_logic;
+        i_SC_reset_counters	: in std_logic; --synchronous to i_clk_core
 	i_SC_counterselect      : in std_logic_vector(5 downto 0); --select counter to be read out. 1..0: counter type selection. 5..2: counter channel selection
-	o_counter_numerator     : out std_logic_vector(31 downto 0);
+	o_counter_numerator     : out std_logic_vector(31 downto 0); --gray encoded, different clock domains 
 	o_counter_denominator_low  : out std_logic_vector(31 downto 0);
 	o_counter_denominator_high : out std_logic_vector(31 downto 0)--;
 );
@@ -140,7 +140,7 @@ port (
 		i_fifo_rd	:  in std_logic;
 	--monitoring, write-when-fill is prevented internally
 		o_fifo_full       : out std_logic;					-- sync to i_clk_deser
-		i_reset_counters : in std_logic;
+		i_reset_counters : in std_logic;					-- sync to i_clk_deser
 		o_eventcounter   : out std_logic_vector(31 downto 0);			-- sync to i_clk_deser
 		o_timecounter    : out std_logic_vector(63 downto 0);			-- sync to i_clk_deser
 		o_crcerrorcounter: out std_logic_vector(31 downto 0);			-- sync to i_clk_deser
@@ -286,9 +286,11 @@ signal s_prbs_wrd_cnt         : t_array_64b;
 signal s_prbs_err_cnt         : t_array_32b;
 signal s_receivers_runcounter : t_array_32b;
 signal s_receivers_errorcounter : t_array_32b;
-
+signal s_SC_reset_counters_125_n : std_logic;
 
 begin
+rst_sync_counter : entity work.reset_sync
+	port map( i_reset_n => not i_SC_reset_counters, o_reset_n => s_SC_reset_counters_125_n, i_clk => s_receivers_usrclk);
 
 u_rxdeser: entity work.receiver_block
 generic map(
@@ -299,7 +301,7 @@ generic map(
 )
 port map(
 	reset_n			=> not i_rst_rx,
-	reset_n_errcnt		=> not i_SC_reset_counters,
+	reset_n_errcnt		=> s_SC_reset_counters_125_n,
 	rx_in			=> i_stic_txd,
 	rx_inclock		=> i_refclk_125_A,
 	rx_state		=> s_receivers_state,
@@ -458,7 +460,7 @@ port map(
 	i_fifo_rd	 => s_fifos_rd(i),
 --monitoring
 	o_fifo_full      => s_fifos_full(i),
-	i_reset_counters => i_SC_reset_counters,
+	i_reset_counters => not s_SC_reset_counters_125_n,
 	o_eventcounter   => s_eventcounter(i),
 	o_timecounter    => s_timecounter(i),
 	o_crcerrorcounter=> s_crcerrorcounter(i),

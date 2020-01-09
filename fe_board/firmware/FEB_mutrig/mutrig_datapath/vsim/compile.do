@@ -1,15 +1,18 @@
 
 vcom -2008 ../../../../fe/util/util_pkg.vhd
-vcom -2008 ../../../FEB_common/daq_constants.vhd
+vcom -2008 ../../../../fe/util/ff_sync.vhd
+vcom -2008 ../../../../fe/util/reset_sync.vhd
 vcom -2008 ../../../../fe/s4/ip_altlvds_rx.vhd
+vcom -2008 ../../../../fe/util/8b10b/8b10_dec.vhd
+vcom -2008 ../../../../fe/util/8b10b/decode8b10b.vhd
+
+vcom -2008 ../../../FEB_common/daq_constants.vhd
 vcom -2008 ../../../FEB_common/add_3_bits.vhd
 vcom -2008 ../../../FEB_common/add_2_bits.vhd
 vcom -2008 ../../../FEB_common/add_1_bit.vhd
 vcom -2008 ../../../FEB_common/disparity_checker.vhd
 vcom -2008 ../../../FEB_common/common_fifo.vhd
 
-vcom -2008 ../../../../fe/util/8b10b/8b10_dec.vhd
-vcom -2008 ../../../../fe/util/8b10b/decode8b10b.vhd
 
 vcom -2008 ../../mutrig_constants.vhd
 vcom -2008 ../../lvds/datadecoder.vhd

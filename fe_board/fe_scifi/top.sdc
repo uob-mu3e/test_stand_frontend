@@ -21,5 +21,5 @@ set_false_path -to {scifi_path:e_scifi_path|rx_dpa_lock_reg}
 #counters (gray encoded)
 set_false_path -to {scifi_path:e_scifi_path|s_cntreg_num[*]}
 set_false_path -to {scifi_path:e_scifi_path|s_cntreg_denom_g_156[*]}
-#counter reset. Should add synchronizer!
-set_false_path -from {scifi_path:e_scifi_path|s_cntreg_ctrl[15]}
+#counter reset.
+#set_false_path -from {scifi_path:e_scifi_path|s_cntreg_ctrl[15]}
