@@ -45,7 +45,8 @@ port (
 	rx_dpa_locked_out   : out std_logic_vector(NINPUT-1 downto 0);
 
 	rx_runcounter       : out reg32array_t(NINPUT-1 downto 0);
-	rx_errorcounter     : out reg32array_t(NINPUT-1 downto 0)
+	rx_errorcounter     : out reg32array_t(NINPUT-1 downto 0);
+	rx_synclosscounter  : out reg32array_t(NINPUT-1 downto 0)
 );
 end entity;
 
@@ -79,36 +80,6 @@ component data_decoder is
 		);
 end component; --data_decoder;
 
-component rx_errcounter is
-port (
-	reset_n:					in std_logic;
-	clk:						in std_logic;
-	clk_out:					in std_logic;	-- to sync these values
-	
-	rx_freqlocked:			in std_logic;
-	rx_sync:					in std_logic; 
-	rx_err:					in std_logic;
-	rx_disperr:				in std_logic;
-	rx_pll_locked:			in std_logic;
-	rx_patterndetect:		in std_logic;
-	
-	runcounter:				out reg32;
-	errcounter:				out reg32;
---	sync_lost:				out reg32;
---	freq_lost:				out reg32;
-	
-	rx_freqlocked_out:			out std_logic;
-	rx_sync_out:					out std_logic; 
-	rx_err_out:						out std_logic;
-	rx_disperr_out:				out std_logic;
-	rx_pll_locked_out:			out std_logic;
-	rx_patterndetect_out:		out std_logic
-
-);
-end component; --rx_errcounter;
-
-
-
 	signal rx_out : 		std_logic_vector(NINPUT*10-1 downto 0);
 	signal rx_out_order : 		std_logic_vector(NINPUT*10-1 downto 0);
 	signal rx_clk :			std_logic;
@@ -123,7 +94,6 @@ end component; --rx_errcounter;
 	signal rx_disperr		: std_logic_vector(NINPUT-1 downto 0);
 
 begin
-
 	rx_dpa_locked_out	<= rx_dpa_locked;
 	pll_locked 			<= rx_pll_locked;
 	rx_clkout 			<= rx_clk;
@@ -186,30 +156,18 @@ gen_channels: for i in NINPUT-1 downto 0 generate
 		);
 
 
-	errcounter:rx_errcounter 
+		errcounter: entity work.rx_errcounter 
 		port map(
 			reset_n			=> reset_n_errcnt,
 			clk			=> rx_clk,
-			clk_out			=> rx_clk,
 
-			rx_freqlocked		=> rx_pll_locked,
 			rx_sync			=> rx_ready_reg(i),
-			rx_err			=> '0',--rx_errdetect,
 			rx_disperr		=> rx_disperr(i),
-			rx_pll_locked		=> rx_dpa_locked(i),
-			rx_patterndetect	=> '0',--rx_patterndetect,
 
-			runcounter		=> rx_runcounter(i),
-			errcounter		=> rx_errorcounter(i),
-		--	sync_lost		=> sync_lost,
-		--	freq_lost		=> freq_lost,
+			o_runcounter		=> rx_runcounter(i),
+			o_errcounter		=> rx_errorcounter(i),
+			o_synclosscounter	=> rx_synclosscounter(i)
 
-			rx_freqlocked_out	=> open,--rx_freqlocked_out,
-			rx_sync_out		=> open,
-			rx_err_out		=> open,--rx_errdetect_out,
-			rx_disperr_out		=> open,--rx_disperr_out,
-			rx_pll_locked_out	=> open,
-			rx_patterndetect_out	=> open--rx_patterndetect_out
 		);
 end generate;
 

@@ -65,7 +65,7 @@ port (
 	o_buffer_full		: out std_logic_vector(1 downto 0);
 
         i_SC_reset_counters	: in std_logic; --synchronous to i_clk_core
-	i_SC_counterselect      : in std_logic_vector(5 downto 0); --select counter to be read out. 1..0: counter type selection. 5..2: counter channel selection
+	i_SC_counterselect      : in std_logic_vector(6 downto 0); --select counter to be read out. 2..0: counter type selection. 6..3: counter channel selection
 	o_counter_numerator     : out std_logic_vector(31 downto 0); --gray encoded, different clock domains 
 	o_counter_denominator_low  : out std_logic_vector(31 downto 0);
 	o_counter_denominator_high : out std_logic_vector(31 downto 0)--;
@@ -286,6 +286,7 @@ signal s_prbs_wrd_cnt         : t_array_64b;
 signal s_prbs_err_cnt         : t_array_32b;
 signal s_receivers_runcounter : t_array_32b;
 signal s_receivers_errorcounter : t_array_32b;
+signal s_receivers_synclosscounter : t_array_32b;
 signal s_SC_reset_counters_125_n : std_logic;
 
 begin
@@ -312,7 +313,8 @@ port map(
 	pll_locked		=> o_receivers_pll_lock,
 	rx_dpa_locked_out	=> o_receivers_dpa_lock,
 	rx_runcounter		=> s_receivers_runcounter,
-	rx_errorcounter		=> s_receivers_errorcounter
+	rx_errorcounter		=> s_receivers_errorcounter,
+	rx_synclosscounter	=> s_receivers_synclosscounter
 );
 
 o_receivers_ready <= s_receivers_ready;
@@ -472,39 +474,46 @@ port map(
 );
 end generate;
 
-p_counterselect: process (s_timecounter, s_eventcounter, s_crcerrorcounter, s_framecounter, s_prbs_err_cnt, s_prbs_wrd_cnt, s_receivers_errorcounter,s_receivers_runcounter,i_SC_counterselect)
+p_counterselect: process (s_timecounter, s_eventcounter, s_crcerrorcounter, s_framecounter, s_prbs_err_cnt, s_prbs_wrd_cnt, s_receivers_errorcounter,s_receivers_runcounter, s_receivers_synclosscounter, i_SC_counterselect)
 begin
 	o_counter_numerator<=(others =>'0');
 	o_counter_denominator_high<=(others =>'0');
 	o_counter_denominator_low<=(others =>'0');
 
 	for i in 0 to N_ASICS_TOTAL-1 loop
-		case i_SC_counterselect(1 downto 0) is
-			when "00" =>
-				if(unsigned(i_SC_counterselect(5 downto 2)) = i) then
+		case i_SC_counterselect(2 downto 0) is
+			when "000" =>
+				if(unsigned(i_SC_counterselect(6 downto 3)) = i) then
 					o_counter_numerator <= s_eventcounter(i);
 				end if;
 				--opt: always use first
 				o_counter_denominator_high <= s_timecounter(0)(63 downto 32);
 				o_counter_denominator_low  <= s_timecounter(0)(31 downto  0);
-			when "01" => 
-				if(unsigned(i_SC_counterselect(5 downto 2)) = i) then
+			when "001" => 
+				if(unsigned(i_SC_counterselect(6 downto 3)) = i) then
 					o_counter_numerator <= s_crcerrorcounter(i);
 					o_counter_denominator_high <= s_framecounter(i)(63 downto 32);
 					o_counter_denominator_low  <= s_framecounter(i)(31 downto  0);
 				end if;
-			when "10" =>
-				if(unsigned(i_SC_counterselect(5 downto 2)) = i) then
+			when "010" =>
+				if(unsigned(i_SC_counterselect(6 downto 3)) = i) then
 					o_counter_numerator <= s_prbs_err_cnt(i);
 					o_counter_denominator_high <= s_prbs_wrd_cnt(i)(63 downto 32);
 					o_counter_denominator_low  <= s_prbs_wrd_cnt(i)(31 downto  0);
 				end if;
-			when "11" =>
-				if(unsigned(i_SC_counterselect(5 downto 2)) = i) then
+			when "011" =>
+				if(unsigned(i_SC_counterselect(6 downto 3)) = i) then
 					o_counter_numerator <= s_receivers_errorcounter(i);
 					o_counter_denominator_high <= (others =>'0');
 					o_counter_denominator_low  <= s_receivers_runcounter(i);
 				end if;
+			when "100" =>
+				if(unsigned(i_SC_counterselect(6 downto 3)) = i) then
+					o_counter_numerator <= s_receivers_synclosscounter(i);
+					o_counter_denominator_high <= (others =>'0');
+					o_counter_denominator_low <= (others =>'0');
+				end if;
+
 			when others =>
 		end case;
 	end loop;

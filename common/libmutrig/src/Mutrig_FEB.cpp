@@ -354,10 +354,10 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
 
    auto rpc_ret=m_mu.FEBsc_NiosRPC(FEB.SB_Port(),0x0105,{});
    //retrieve results
-   uint32_t* val=new uint32_t[rpc_ret*4*3]; //nASICs * 4 counterbanks * 3 words
+   uint32_t* val=new uint32_t[rpc_ret*5*3]; //nASICs * 5 counterbanks * 3 words
    INT val_size = sizeof(DWORD);
 //   printf("RPC return: %u\n",rpc_ret);
-   m_mu.FEBsc_read(FEB.SB_Port(), val, rpc_ret*4*3 , (uint32_t) m_mu.FEBsc_RPC_DATAOFFSET);
+   m_mu.FEBsc_read(FEB.SB_Port(), val, rpc_ret*5*3 , (uint32_t) m_mu.FEBsc_RPC_DATAOFFSET);
 //   printf("done reading:\n");
 //   for(int i=0;i<rpc_ret*4*3;i++){
 //      printf("%2.2d %2.2d: %8.8x (%u)\n",i/(3*4),(i/3)%4,val[i],val[i]);
@@ -368,36 +368,39 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
    char path[255];
    for(int nASIC=0;nASIC<rpc_ret;nASIC++){
        sprintf(path,"%s/Variables/Counters/nHits",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+0], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+0]);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*15+0], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+0]);
 
        sprintf(path,"%s/Variables/Counters/Time",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+2], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+2]);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*15+2], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+2]);
 
        sprintf(path,"%s/Variables/Counters/nBadFrames",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+3], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+3]);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*15+3], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+3]);
 
        sprintf(path,"%s/Variables/Counters/nFrames",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+5], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+5]);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*15+5], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+5]);
 
        sprintf(path,"%s/Variables/Counters/nErrorsPRBS",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+6], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+6]);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*15+6], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+6]);
 
        sprintf(path,"%s/Variables/Counters/nWordsPRBS",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+8], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+8]);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*15+8], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+8]);
 
        sprintf(path,"%s/Variables/Counters/nErrorsLVDS",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+9], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+9]);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*15+9], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+9]);
 
        sprintf(path,"%s/Variables/Counters/nWordsLVDS",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+11], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+11]);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*15+11], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+11]);
+
+       sprintf(path,"%s/Variables/Counters/nWordsPRBS",m_odb_prefix);
+       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*15+14], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
    }
 
    delete[] val;

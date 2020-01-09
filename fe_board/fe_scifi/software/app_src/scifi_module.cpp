@@ -368,16 +368,17 @@ void scifi_module_t::menu_counters(){
     char cmd;
     printf("Counters: press 'q' to end / 'r' to reset\n");
     while(1){
-	for(char selected=0;selected<4; selected++){
-		regs.counters.ctrl = selected&0x3;
+	for(char selected=0;selected<5; selected++){
+		regs.counters.ctrl = selected&0x7;
 		switch(selected){
 			case 0: printf("Events/Time  [8ns] "); break;
 			case 1: printf("Errors/Frame       "); break;
 			case 2: printf("PRBS: Errors/Words "); break;
 			case 3: printf("LVDS: Errors/Words "); break;
+			case 4: printf("SYNCLOSS: Count/-- "); break;
 		}
 		for(int i=0;i<4;i++){
-			regs.counters.ctrl = (regs.counters.ctrl & 0x3) + (i<<2);
+			regs.counters.ctrl = (regs.counters.ctrl & 0x7) + (i<<3);
 			printf("| %10u / %18lu |", regs.counters.nom, regs.counters.denom);
 		}
 		printf("\n");
@@ -405,8 +406,8 @@ alt_u16 scifi_module_t::reset_counters(){
 //write counter values of all channels to memory address *data and following. Return number of asic channels written.
 alt_u16 scifi_module_t::store_counters(volatile alt_u32* data){
 	for(uint8_t i=0;i<4*n_MODULES;i++){
-		for(uint8_t selected=0;selected<4; selected++){
-			sc->ram->regs.scifi.counters.ctrl = (selected&0x3) + (i<<2);
+		for(uint8_t selected=0;selected<5; selected++){
+			sc->ram->regs.scifi.counters.ctrl = (selected&0x7) + (i<<3);
 			*data=sc->ram->regs.scifi.counters.nom;
 			//printf("%u: %8.8x\n",sc->ram->regs.scifi.counters.ctrl,*data);
 			data++;

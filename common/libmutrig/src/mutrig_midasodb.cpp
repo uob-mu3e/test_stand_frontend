@@ -152,6 +152,13 @@ printf("setting up db\n");
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
     if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
 
+    sprintf(set_str, "%s/Variables/Counters/nDatasyncloss", prefix);
+    status=db_create_key(hDB, 0, set_str, TID_DWORD);
+    if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
+
+
     //set up variables read from FEB: run state & reset system bypass
     const char *bypass_settings_str[] = {
     "Bypass enabled = BOOL[2] :",\
