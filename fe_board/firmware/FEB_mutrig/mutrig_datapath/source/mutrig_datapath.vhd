@@ -289,6 +289,7 @@ signal s_receivers_errorcounter : t_array_32b;
 
 
 begin
+
 u_rxdeser: entity work.receiver_block
 generic map(
 	NINPUT => N_ASICS_TOTAL,

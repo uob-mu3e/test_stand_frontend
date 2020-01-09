@@ -207,13 +207,13 @@ end entity;
 
 architecture arch of top is
 
+    signal led : std_logic_vector(led_n'range) := (others => '0');
+
     signal fifo_rempty : std_logic;
     signal fifo_rack : std_logic;
     signal fifo_rdata : std_logic_vector(35 downto 0);
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
-
-    signal led : std_logic_vector(led_n'range) := (others => '0');
 
     signal nios_clk : std_logic;
 

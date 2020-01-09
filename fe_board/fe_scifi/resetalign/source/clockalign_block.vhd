@@ -13,10 +13,10 @@ use IEEE.STD_LOGIC_UNSIGNED.all;
 
 
 entity clockalign_block is
-	generic(
+generic (
 			CLKDIV  : integer := 125--;
-	);
-	port(
+);
+port (
 		--SYSTEM SIGNALS
 		i_clk_config : in std_logic;
 		i_rst : in std_logic;
@@ -30,8 +30,8 @@ entity clockalign_block is
 		o_pll_locked : out std_logic;
 		i_sig : in std_logic;
 		o_sig : out std_logic_vector(3 downto 0)
-	    );
-end entity clockalign_block;
+);
+end entity;
 
 
 
@@ -204,5 +204,5 @@ begin
 			s_sig_f_d(i) when "11",
 			s_sig_r(i) when others;
 	end generate;
-end architecture;
 
+end architecture;

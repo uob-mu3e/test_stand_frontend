@@ -28,7 +28,7 @@ generic (
 	NINPUT : positive := 1;
 	LVDS_PLL_FREQ : real := 125.0;
 	LVDS_DATA_RATE : real := 1250.0;
-	INPUT_SIGNFLIP : std_logic_vector:=x"0000"--;
+	INPUT_SIGNFLIP : std_logic_vector := x"0000"--;
 );
 port (
 	reset_n             : in std_logic;
@@ -47,7 +47,7 @@ port (
 	rx_runcounter       : out reg32array_t(NINPUT-1 downto 0);
 	rx_errorcounter     : out reg32array_t(NINPUT-1 downto 0)
 );
-end receiver_block;
+end entity;
 
 
 
@@ -162,9 +162,9 @@ end process flip_bits;
 gen_channels: for i in NINPUT-1 downto 0 generate
 	datadec: data_decoder 
 		generic map(
-			EVAL_WINDOW_WORDCNT_BITS => 10,
-			EVAL_WINDOW_PATTERN_BITS => 1,
-			ALIGN_WORD	 	 => k28_5
+			EVAL_WINDOW_WORDCNT_BITS => 13,
+			EVAL_WINDOW_PATTERN_BITS => 2,
+			ALIGN_WORD	 	 => k28_0
 		)
 		port map(
 			reset_n			=> reset_n,
