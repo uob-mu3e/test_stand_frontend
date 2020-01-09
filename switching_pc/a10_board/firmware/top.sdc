@@ -26,9 +26,6 @@ set_multicycle_path -to {midas_event_builder:e_midas_event_builder|event_data_si
 
 set_false_path -from {debouncer:e_debouncer|o_q[0]}
 
-set_min_delay -to {xcvr_a10:*|av_ctrl.readdata[*]} -100
-set_max_delay -to {xcvr_a10:*|av_ctrl.readdata[*]} 100
-
 set_min_delay -to {readregs[*]} -100
 set_max_delay -to {readregs[*]} 100
 
