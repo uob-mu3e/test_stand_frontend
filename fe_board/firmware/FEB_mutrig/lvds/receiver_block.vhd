@@ -162,9 +162,9 @@ end process flip_bits;
 gen_channels: for i in NINPUT-1 downto 0 generate
 	datadec: data_decoder 
 		generic map(
-			EVAL_WINDOW_WORDCNT_BITS => 10,
-			EVAL_WINDOW_PATTERN_BITS => 1,
-			ALIGN_WORD	 	 => k28_5
+			EVAL_WINDOW_WORDCNT_BITS => 13,
+			EVAL_WINDOW_PATTERN_BITS => 2,
+			ALIGN_WORD	 	 => k28_0
 		)
 		port map(
 			reset_n			=> reset_n,
