@@ -57,9 +57,9 @@ begin
 			if(rx_disperr = '1')then
 				errcounter <= gray_inc(errcounter);
 			end if;
-			if(rx_sync='0' and synced_d = '1') then
-				synclosscounter <= gray_inc(synclosscounter);
-			end if;
+		end if;
+		if(rx_sync='0' and synced_d = '1') then
+			synclosscounter <= gray_inc(synclosscounter);
 		end if;
 	end if;
 end process;

@@ -243,6 +243,7 @@ printf("setting up db\n");
        "Counters_nBadFrames",
        "Counters_nErrorsLVDS",
        "Counters_nErrorsPRBS",
+       "Counters_nDatasyncloss",
        "FEB datapath status_RX ready"
        }){
         std::vector<std::string> varlist;
@@ -260,7 +261,7 @@ printf("setting up db\n");
     //Add configuration custom page to ODB
     db_create_key(hDB, 0, "Custom/SciFi-ASICs&", TID_STRING);
     const char * name = "mutrigTdc.html";
-    db_set_value(hDB,0,"Custom/SciFi-ASICs&", name, sizeof(name), 1, TID_STRING);
+    db_set_value(hDB,0,"Custom/SciFi-ASICs&", name, strlen(name), 1, TID_STRING);
 
 
 

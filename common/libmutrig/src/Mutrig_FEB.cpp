@@ -399,8 +399,9 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
        if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*15+11], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
 //       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+11]);
 
-       sprintf(path,"%s/Variables/Counters/nWordsPRBS",m_odb_prefix);
+       sprintf(path,"%s/Variables/Counters/nDatasyncloss",m_odb_prefix);
        if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*15+14], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+14]);
    }
 
    delete[] val;
