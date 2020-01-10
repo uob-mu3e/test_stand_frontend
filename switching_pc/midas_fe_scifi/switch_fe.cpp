@@ -323,6 +323,8 @@ try{
       cm_msg(MERROR,"switch_fe","ASIC configuration failed");
       return CM_TRANSITION_CANCELED;
    }
+   SciFiFEB::Instance()->ResetAllCounters();
+
 
 #ifndef CRFE_BYPASS
    /* send run prepare signal via CR system */
@@ -357,8 +359,6 @@ try{
       print_ack_state();
       return CM_TRANSITION_CANCELED;
    }
-
-   SciFiFEB::Instance()->ResetAllCounters();
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "lightBlue");
    return CM_SUCCESS;
