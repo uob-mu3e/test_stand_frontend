@@ -578,17 +578,17 @@ begin
     
     e_midas_event_builder : entity work.midas_event_builder
         generic map (
-            NLINKS => NLINKS--;
+            NLINKS => 16--;NLINKS--;
         )
         port map(
             i_clk_data => tx_clk(0),
             i_clk_dma  => pcie_fastclk_out,
             i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
             i_reset_dma_n  => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-            i_rx_data  => data_counter,
-            i_rx_datak => datak_counter,
+            i_rx_data  => data_counter & data_counter & data_counter & data_counter & data_counter & data_pix_generated,
+            i_rx_datak => datak_counter & datak_counter & datak_counter & datak_counter & datak_counter & datak_pix_generated,
             i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-            i_link_mask => "111",
+            i_link_mask => (others => '1'),
             o_event_wren => dma_wren_cnt,
             o_endofevent => dma_end_event_cnt,
             o_event_data => dma_event_data,
