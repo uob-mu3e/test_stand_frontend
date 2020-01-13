@@ -36,13 +36,11 @@ port (
 
 	--interface to asic fifos
 	i_clk_core		: in  std_logic; --fifo reading side clock
-	o_A_fifo_empty		: out std_logic;
 	o_A_fifo_data		: out std_logic_vector(35 downto 0);
-	o_A_fifo_wr		: in  std_logic;
+	o_A_fifo_wr		: out  std_logic;
 	--secondary interface used if DUAL_FIBER=TRUE
-	o_B_fifo_empty		: out std_logic;
 	o_B_fifo_data		: out std_logic_vector(35 downto 0);
-	o_B_fifo_wr		: in  std_logic:='0';
+	o_B_fifo_wr		: out  std_logic:='0';
 
 	--slow control
 	i_SC_disable_dec	: in std_logic;
@@ -272,9 +270,6 @@ signal s_A_buf_wr		: std_logic;
 signal s_B_buf_data		: std_logic_vector(33 downto 0);
 signal s_B_buf_almost_full 	: std_logic:='0';
 signal s_B_buf_wr		: std_logic;
-
-signal s_A_fifo_empty		: std_logic:='1';
-signal s_B_fifo_empty		: std_logic:='1';
 
 -- monitoring signals TODO: connect as needed
 signal s_fifos_full           : t_vector;	--elastic fifo full flags
@@ -599,8 +594,6 @@ nogen_dual: if(N_MODULES=1) generate
 	s_B_buf_predec_wr <='0';
         o_buffer_full(1) <='0';
 end generate;
-
-o_B_fifo_empty <= s_B_fifo_empty;
 
 p_RC_all_done: process (i_clk_core)
 begin

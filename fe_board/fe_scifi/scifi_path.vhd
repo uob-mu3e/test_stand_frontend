@@ -24,13 +24,11 @@ port (
     o_pll_test      : out   std_logic;
     i_data          : in    std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
-    o_fifoA_rdata   : out   std_logic_vector(35 downto 0);
-    o_fifoA_rempty  : out   std_logic;
-    o_fifoA_write   : in    std_logic;
+    o_fifoA_wdata   : out   std_logic_vector(35 downto 0);
+    o_fifoA_write   : out    std_logic;
 
-    o_fifoB_rdata   : out   std_logic_vector(35 downto 0);
-    o_fifoB_rempty  : out   std_logic;
-    o_fifoB_write   : in    std_logic;
+    o_fifoB_wdata   : out   std_logic_vector(35 downto 0);
+    o_fifoB_write   : out    std_logic;
 
     -- reset system
     i_run_state     : in    run_state_t; --run state sync to i_clk_g125
@@ -222,12 +220,10 @@ begin
 
         -- interface to asic fifos
         i_clk_core => i_clk_core,
-        o_A_fifo_empty => o_fifoA_rempty,
-        o_A_fifo_data => o_fifoA_rdata,
+        o_A_fifo_data => o_fifoA_wdata,
         o_A_fifo_wr => o_fifoA_write,
-
-        o_B_fifo_empty => o_fifoB_rempty,
-        o_B_fifo_data => o_fifoB_rdata,
+        
+        o_B_fifo_data => o_fifoB_wdata,
         o_B_fifo_wr => o_fifoB_write,
 
         -- slow control

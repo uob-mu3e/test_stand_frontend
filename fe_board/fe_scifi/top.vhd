@@ -108,9 +108,8 @@ end entity;
 
 architecture arch of top is
 
-    signal fifoA_rempty, fifoB_rempty : std_logic;
-    signal fifoA_rack,   fifoB_rack   : std_logic;
-    signal fifoA_rdata,  fifoB_rdata  : std_logic_vector(35 downto 0);
+    signal fifoA_write, fifoB_write : std_logic;
+    signal fifoA_wdata, fifoB_wdata : std_logic_vector(35 downto 0);
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
@@ -169,13 +168,11 @@ begin
         o_pll_test      => open,
         i_data          => i_fee_rxd,
 
-        o_fifoA_rempty  => fifoA_rempty,
         o_fifoA_write   => fifoA_write,
-        o_fifoA_rdata   => fifoA_rdata,
+        o_fifoA_wdata   => fifoA_wdata,
 
-        o_fifoB_rempty  => fifoB_rempty,
         o_fifoB_write   => fifoB_write,
-        o_fifoB_rdata   => fifoB_rdata,
+        o_fifoB_wdata   => fifoB_wdata,
 
         i_run_state     => run_state_125,
         o_run_state_all_done => s_run_state_all_done,
@@ -302,13 +299,11 @@ begin
         i_pod_rx        => pod_rx,
         o_pod_tx        => pod_tx,
 
-        i_fifo_rempty   => fifoA_rempty,
         i_fifo_write    => fifoA_write,
-        i_fifo_rdata    => fifoA_rdata,
+        i_fifo_wdata    => fifoA_wdata,
 
-        i_secondary_fifo_rempty   => fifoB_rempty,
         i_secondary_fifo_write    => fifoB_write,
-        i_secondary_fifo_rdata    => fifoB_rdata,
+        i_secondary_fifo_wdata    => fifoB_wdata,
 
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,

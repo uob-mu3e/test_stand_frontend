@@ -72,11 +72,14 @@ architecture rtl of data_merger is
     signal data_fifo_empty                      : std_logic;
     signal slowcontrol_fifo_empty               : std_logic;
     signal data_in                              : std_logic_vector(35 downto 0);
+    signal data_in_slowcontrol                  : std_logic_vector(35 downto 0);
+    signal data_read_req                        : std_logic;
+    signal slowcontrol_read_req                 : std_logic;
     
 ----------------begin data merger------------------------
 
 BEGIN
-    u_common_fifo_data: common_fifo
+    u_common_fifo_data: entity work.common_fifo
     port map (
         clock           => clk,  --TODO: 156 ??
         sclr            => reset,
@@ -89,7 +92,7 @@ BEGIN
         rdreq           => data_read_req--,
     );
     
-    u_common_fifo_sc: common_fifo
+    u_common_fifo_sc: entity work.common_fifo
     port map (
         clock           => clk,  --TODO: 156 ??
         sclr            => reset,
