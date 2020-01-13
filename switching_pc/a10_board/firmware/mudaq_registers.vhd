@@ -117,4 +117,4 @@ package mudaq_registers is
 		constant DMA2_DATA_ADDR_HI_REGISTER_R				: integer := 16#3E#;
 		constant DMA2_NUM_PAGES_REGISTER_R					: integer := 16#3F#;
 		
-end package mudaq_registers;
+end package;

@@ -17,7 +17,7 @@ namespace mutrig { namespace midasODB {
 
 int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
     /* Book Setting space */
-
+printf("setting up db\n");
     HNDLE hTmp;
     INT status = DB_SUCCESS;
     char set_str[255];
@@ -39,15 +39,30 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
         cm_msg(MINFO,"mutrig_midasodb", "Key %s not found", set_str);
         return status;
     }
-//    HNDLE key_tmp;
-//    if(nasics >0){
-//        sprintf(set_str, "%s/Daq/mask", prefix);
-//        db_find_key(hDB, 0, set_str, &key_tmp);
-//        db_set_num_values(hDB, key_tmp, nasics);
-//    }
-
     //open hot link
     db_watch(hDB, hTmp, &MutrigFEB::on_settings_changed, FEB_interface);
+
+    sprintf(set_str, "%s/Settings/Daq/num_asics", prefix);
+    INT ival=nasics;
+    if((status = db_set_value(hDB ,0,set_str, &ival, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
+
+    //update length flags for DAQ section
+    sprintf(set_str, "%s/Settings/Daq/mask", prefix);
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Settings/Daq/resetskew_cphase", prefix);
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumModules()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Settings/Daq/resetskew_cdelay", prefix);
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumModules()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Settings/Daq/resetskew_phases", prefix);
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumModules()))!=DB_SUCCESS) return status;
+
 
     /* Map Equipment/SciFi/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
     //TODO some globals should be per asic
@@ -88,14 +103,14 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
         }
     }
 
-    //set up variables read from FEB
+    //set up variables read from FEB: counters
     sprintf(set_str, "%s/Variables/Counters/nHits", prefix);
     status=db_create_key(hDB, 0, set_str, TID_DWORD);
     if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
     if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
 
-    sprintf(set_str, "%s/Variables/Counters/Timer", prefix);
+    sprintf(set_str, "%s/Variables/Counters/Time", prefix);
     status=db_create_key(hDB, 0, set_str, TID_DWORD);
     if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
@@ -137,6 +152,34 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
     if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
 
+    //set up variables read from FEB: run state & reset system bypass
+    const char *bypass_settings_str[] = {
+    "Bypass enabled = BOOL[2] :",\
+    "[0] n",\
+    "[1] n",\
+    "Run state = DWORD[2] :",\
+    "[0] 255",\
+    "[1] 255",\
+    "",\
+    NULL};
+
+    sprintf(set_str, "%s/Variables/FEB Run State", prefix);
+    db_create_record(hDB, 0, set_str, strcomb(bypass_settings_str));
+
+    sprintf(set_str, "%s/Variables/FEB Run State/Bypass enabled", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    assert(hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/FEB Run State/Run state", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    assert(hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
+    DWORD val=0xff;
+    for(int i=0;i<FEB_interface->GetNumFPGAs();i++)
+    	if((status = db_set_value_index(hDB,0,set_str, &val, sizeof(DWORD),i, TID_DWORD,false))!=DB_SUCCESS) return status;
+
+
     // Define history panels
     hs_define_panel("SciFi","Counters",{"SciFi:Counters_nHits",
                                        "SciFi:Counters_nFrames",
@@ -147,8 +190,14 @@ int setup_db(HNDLE& hDB, const char* prefix, MutrigFEB* FEB_interface){
                                      "SciFi:Counters_nErrorsLVDS",
                                      "SciFi:Counters_nErrorsPRBS"});
 
-    hs_define_panel("SciFi","Times",{"SciFi:Counters_Timer",
+    hs_define_panel("SciFi","Times",{"SciFi:Counters_Time",
                                     "SciFi:Counters_Time"});
+    //Add configuration custom page to ODB
+    db_create_key(hDB, 0, "Custom/SciFi-ASICs&", TID_STRING);
+    const char * name = "mutrigTdc.html";
+    db_set_value(hDB,0,"Custom/SciFi-ASICs&", name, sizeof(name), 1, TID_STRING);
+
+
 
 return status;
 }

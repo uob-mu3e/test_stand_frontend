@@ -63,18 +63,33 @@ port (
     -- //////// Transiver ////////
     QSFPA_TX_p          : out   std_logic_vector(3 downto 0);
     QSFPB_TX_p          : out   std_logic_vector(3 downto 0);
+    QSFPC_TX_p          : out   std_logic_vector(3 downto 0);
+    QSFPD_TX_p          : out   std_logic_vector(3 downto 0);
 
     QSFPA_RX_p          : in    std_logic_vector(3 downto 0);
     QSFPB_RX_p          : in    std_logic_vector(3 downto 0);
+    QSFPC_RX_p          : in    std_logic_vector(3 downto 0);
+    QSFPD_RX_p          : in    std_logic_vector(3 downto 0);
 
     QSFPA_REFCLK_p      : in    std_logic;
     QSFPB_REFCLK_p      : in    std_logic;
+    QSFPC_REFCLK_p      : in    std_logic;
+    QSFPD_REFCLK_p      : in    std_logic;
+
     QSFPA_LP_MODE       : out   std_logic;
-    QSFPA_MOD_SEL_n     : out   std_logic;
-    QSFPA_RST_n         : out   std_logic;
     QSFPB_LP_MODE       : out   std_logic;
+    QSFPC_LP_MODE       : out   std_logic;
+    QSFPD_LP_MODE       : out   std_logic;
+
+    QSFPA_MOD_SEL_n     : out   std_logic;
     QSFPB_MOD_SEL_n     : out   std_logic;
+    QSFPC_MOD_SEL_n     : out   std_logic;
+    QSFPD_MOD_SEL_n     : out   std_logic;
+
+    QSFPA_RST_n         : out   std_logic;
     QSFPB_RST_n         : out   std_logic;
+    QSFPC_RST_n         : out   std_logic;
+    QSFPD_RST_n         : out   std_logic;
 
 
 
@@ -95,8 +110,8 @@ end entity top;
 
 architecture rtl of top is
 
-        constant NLINKS_SC : integer := 2;
-        constant NLINKS : integer := 3;
+        constant NLINKS_DATA : integer := 3;
+        constant NLINKS_TOTL : integer := 16;
         
         signal clk : std_logic;
         signal input_clk : std_logic;
@@ -185,7 +200,7 @@ architecture rtl of top is
         signal cpu_pio_i : std_logic_vector(31 downto 0);
         signal flash_rst_n : std_logic;
         signal debug_nios : std_logic_vector(31 downto 0);
-        signal av_qsfp : work.util.avalon_t;
+        signal av_qsfp : work.util.avalon_array_t(3 downto 0);
         
         -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
         signal ZERO : std_logic := '0';
@@ -193,33 +208,45 @@ architecture rtl of top is
         attribute keep of ZERO : signal is true;
         
         -- tranciever ip signals
-        signal tx_clk : std_logic_vector(3 downto 0);
-        signal rx_clk : std_logic_vector(3 downto 0);
+        signal tx_clk : std_logic_vector(15 downto 0);
+        signal rx_clk : std_logic_vector(15 downto 0);
         type fifo_out_array_type is array (3 downto 0) of std_logic_vector(35 downto 0);
-        type data_array_type is array (7 downto 0) of std_logic_vector(31 downto 0);
-        type datak_array_type is array (7 downto 0) of std_logic_vector(3 downto 0);
-        
+
+        --all signals from QSFP plugs
+        signal QSFP_TX : std_logic_vector(15 downto 0);
+        signal QSFP_RX : std_logic_vector(15 downto 0);
+        --data behind QSFP tranceivers
+        type data_array_type is array (NLINKS_TOTL-1 downto 0) of std_logic_vector(31 downto 0);
+        type datak_array_type is array (NLINKS_TOTL-1 downto 0) of std_logic_vector(3 downto 0);
         signal rx_data : data_array_type;
-        signal tx_data : data_array_type;
+--        signal tx_data : data_array_type;
         signal rx_datak : datak_array_type;
-        signal tx_datak : datak_array_type;
-        signal rx_data_A_v : std_logic_vector(4*32-1 downto 0);
-        signal rx_datak_A_v : std_logic_vector(4*4-1 downto 0);
-        signal rx_data_B_v : std_logic_vector(4*32-1 downto 0);
-        signal rx_datak_B_v : std_logic_vector(4*4-1 downto 0);
-        
-        signal idle_ch : std_logic_vector(3 downto 0);
-        
-        signal sc_data : data_array_type;
-        signal sc_datak : datak_array_type;
-        signal sc_ready : std_logic_vector(3 downto 0);
-        signal fifo_data : data_array_type;
-        signal fifo_datak : datak_array_type;
-        signal fifo_wren : std_logic_vector(3 downto 0);
-        signal fifo_out : fifo_out_array_type;
-        
-        signal fifo_read : std_logic;
-        signal fifo_empty : std_logic_vector(3 downto 0);
+--        signal tx_datak : datak_array_type;
+
+	signal rx_data_v : std_logic_vector(NLINKS_TOTL*32-1 downto 0);
+        signal rx_datak_v : std_logic_vector(NLINKS_TOTL*4-1 downto 0);
+	signal tx_data_v : std_logic_vector(NLINKS_TOTL*32-1 downto 0);
+        signal tx_datak_v : std_logic_vector(NLINKS_TOTL*4-1 downto 0);
+
+	type mapping_t is array(natural range <>) of integer;
+	--mapping as follows: fiber link_mapping(0)=1 - Fiber QSFPA.1 is mapped to first(0) link
+        constant link_mapping : mapping_t(NLINKS_DATA-1 downto 0):=(1,2,4);
+	signal rx_mapped_data_v : std_logic_vector(NLINKS_DATA*32-1 downto 0);
+        signal rx_mapped_datak_v : std_logic_vector(NLINKS_DATA*4-1 downto 0);
+        signal rx_mapped_linkmask : std_logic_vector(NLINKS_DATA-1  downto 0); --writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_-1 downto 0),
+
+--        signal idle_ch : std_logic_vector(3 downto 0);
+--        
+--        signal sc_data : data_array_type;
+--        signal sc_datak : datak_array_type;
+--        signal sc_ready : std_logic_vector(3 downto 0);
+--        signal fifo_data : data_array_type;
+--        signal fifo_datak : datak_array_type;
+--        signal fifo_wren : std_logic_vector(3 downto 0);
+--        signal fifo_out : fifo_out_array_type;
+--        
+--        signal fifo_read : std_logic;
+--        signal fifo_empty : std_logic_vector(3 downto 0);
         
         -- Slow Control
         signal mem_data_out : std_logic_vector(63 downto 0);
@@ -248,8 +275,8 @@ architecture rtl of top is
         signal dma_wren_test : std_logic;
         signal dma_end_event_cnt : std_logic;
         signal dma_end_event_test : std_logic;
-        signal data_counter : std_logic_vector(95 downto 0);
-        signal datak_counter : std_logic_vector(11 downto 0);
+        signal data_counter : std_logic_vector(32*NLINKS_DATA-1 downto 0);
+        signal datak_counter : std_logic_vector(4*NLINKS_DATA-1 downto 0);
 
 begin
 
@@ -327,12 +354,33 @@ begin
 
     e_nios : work.cmp.nios
     port map (
-        avm_qsfp_address                => av_qsfp.address(13 downto 0),
-        avm_qsfp_read                   => av_qsfp.read,
-        avm_qsfp_readdata               => av_qsfp.readdata,
-        avm_qsfp_write                  => av_qsfp.write,
-        avm_qsfp_writedata              => av_qsfp.writedata,
-        avm_qsfp_waitrequest            => av_qsfp.waitrequest,
+        avm_qsfpA_address               => av_qsfp(0).address(13 downto 0),
+        avm_qsfpA_read                  => av_qsfp(0).read,
+        avm_qsfpA_readdata              => av_qsfp(0).readdata,
+        avm_qsfpA_write                 => av_qsfp(0).write,
+        avm_qsfpA_writedata             => av_qsfp(0).writedata,
+        avm_qsfpA_waitrequest           => av_qsfp(0).waitrequest,
+
+        avm_qsfpB_address               => av_qsfp(1).address(13 downto 0),
+        avm_qsfpB_read                  => av_qsfp(1).read,
+        avm_qsfpB_readdata              => av_qsfp(1).readdata,
+        avm_qsfpB_write                 => av_qsfp(1).write,
+        avm_qsfpB_writedata             => av_qsfp(1).writedata,
+        avm_qsfpB_waitrequest           => av_qsfp(1).waitrequest,
+
+        avm_qsfpC_address               => av_qsfp(2).address(13 downto 0),
+        avm_qsfpC_read                  => av_qsfp(2).read,
+        avm_qsfpC_readdata              => av_qsfp(2).readdata,
+        avm_qsfpC_write                 => av_qsfp(2).write,
+        avm_qsfpC_writedata             => av_qsfp(2).writedata,
+        avm_qsfpC_waitrequest           => av_qsfp(2).waitrequest,
+
+        avm_qsfpD_address               => av_qsfp(3).address(13 downto 0),
+        avm_qsfpD_read                  => av_qsfp(3).read,
+        avm_qsfpD_readdata              => av_qsfp(3).readdata,
+        avm_qsfpD_write                 => av_qsfp(3).write,
+        avm_qsfpD_writedata             => av_qsfp(3).writedata,
+        avm_qsfpD_waitrequest           => av_qsfp(3).waitrequest,
 
         flash_tcm_address_out           => flash_tcm_address_out,
         flash_tcm_data_out              => FLASH_D,
@@ -412,108 +460,85 @@ begin
     -------- Receiving Data and word aligning --------
 
     QSFPA_LP_MODE <= '0';
-    QSFPA_MOD_SEL_n <= '1';
-    QSFPA_RST_n <= '1';
     QSFPB_LP_MODE <= '0';
+    QSFPC_LP_MODE <= '0';
+    QSFPD_LP_MODE <= '0';
+
+    QSFPA_MOD_SEL_n <= '1';
     QSFPB_MOD_SEL_n <= '1';
+    QSFPC_MOD_SEL_n <= '1';
+    QSFPD_MOD_SEL_n <= '1';
+
+    QSFPA_RST_n <= '1';
     QSFPB_RST_n <= '1';
+    QSFPC_RST_n <= '1';
+    QSFPD_RST_n <= '1';
 
-    e_qsfp_A : entity work.xcvr_a10
+
+    --mapping of qsfp signals
+    QSFPA_TX_p <= QSFP_TX(3 downto 0);
+    QSFPB_TX_p <= QSFP_TX(7 downto 4);
+    QSFPC_TX_p <= QSFP_TX(11 downto 8);
+    QSFPD_TX_p <= QSFP_TX(15 downto 12);
+
+    QSFP_RX(3 downto 0)   <= QSFPA_RX_p;
+    QSFP_RX(7 downto 4)   <= QSFPB_RX_p;
+    QSFP_RX(11 downto 8)  <= QSFPC_RX_p;
+    QSFP_RX(15 downto 12) <= QSFPD_RX_p;
+
+    gen_qsfp: for i in 0 to 3 generate
+    e_qsfp : entity work.xcvr_a10
+    generic map(
+       NUMBER_OF_CHANNELS_g => 4
+    )
     port map (
-        i_tx_data   => X"03CAFEBC"
-                     & X"02CAFEBC"
-                     & X"01CAFEBC"
-                     & tx_data(0),
-        i_tx_datak  => "0001"
-                     & "0001"
-                     & "0001"
-                     & tx_datak(0),
+        i_tx_data   => tx_data_v(4*32*(i+1)-1 downto 4*32*i),
+        i_tx_datak  => tx_datak_v(4*4*(i+1)-1 downto 4*4*i),
 
-        o_rx_data   => rx_data_A_v,
-        o_rx_datak  => rx_datak_A_v,
+        o_rx_data   => rx_data_v(4*32*(i+1)-1 downto 4*32*i),
+        o_rx_datak  => rx_datak_v(4*4*(i+1)-1 downto 4*4*i),
 
-        o_tx_clkout => tx_clk,
+        o_tx_clkout => tx_clk(4*(i+1)-1 downto 4*i),
         i_tx_clkin  => (others => tx_clk(0)),
         o_rx_clkout => open,--rx_clk,
         i_rx_clkin  => (others => tx_clk(0)),
 
-        o_tx_serial => QSFPA_TX_p,
-        i_rx_serial => QSFPA_RX_p,
+        o_tx_serial => QSFP_TX(4*(i+1)-1 downto 4*i),
+        i_rx_serial => QSFP_RX(4*(i+1)-1 downto 4*i),
 
         i_pll_clk   => input_clk,
         i_cdr_clk   => input_clk,
 
-        i_avs_address       => av_qsfp.address(13 downto 0),
-        i_avs_read          => av_qsfp.read,
-        o_avs_readdata      => av_qsfp.readdata,
-        i_avs_write         => av_qsfp.write,
-        i_avs_writedata     => av_qsfp.writedata,
-        o_avs_waitrequest   => av_qsfp.waitrequest,
+        i_avs_address       => av_qsfp(i).address(13 downto 0),
+        i_avs_read          => av_qsfp(i).read,
+        o_avs_readdata      => av_qsfp(i).readdata,
+        i_avs_write         => av_qsfp(i).write,
+        i_avs_writedata     => av_qsfp(i).writedata,
+        o_avs_waitrequest   => av_qsfp(i).waitrequest,
 
         i_reset     => not CPU_RESET_n,
         i_clk       => input_clk--,
     );
+    end generate;
+    --assign vector types to array types for qsfp rx signals (used by link observer module)
+    g_rx_assign: for i in 0 to NLINKS_TOTL-1 generate
+       rx_data(i)    <=rx_data_v(32*(i+1)-1 downto 32*i);
+       rx_datak(i)   <=rx_datak_v(4*(i+1)-1 downto 4*i);
+    end generate;
 
-    e_qsfp_B : entity work.xcvr_a10
-    port map (
-        i_tx_data   => X"03CAFEBC"
-                     & X"02CAFEBC"
-                     & X"01CAFEBC"
-                     & tx_data(4),
-        i_tx_datak  => "0001"
-                     & "0001"
-                     & "0001"
-                     & tx_datak(4),
-                     
-        o_rx_data   => rx_data_B_v,
-        o_rx_datak  => rx_datak_B_v,
-        
-        o_tx_clkout => open,
-        i_tx_clkin  => (others => tx_clk(0)),
-        o_rx_clkout => open,--rx_clk,
-        i_rx_clkin  => (others => tx_clk(0)),
-        
-        o_tx_serial => QSFPB_TX_p,
-        i_rx_serial => QSFPB_RX_p,
-        
-        i_pll_clk   => input_clk,
-        i_cdr_clk   => input_clk,
-        
-        i_avs_address       => (others => '0'),
-        i_avs_read          => '0',
-        o_avs_readdata      => open,
-        i_avs_write         => '0',
-        i_avs_writedata     => (others => '0'),
-        o_avs_waitrequest   => open,
-        
-        i_reset     => not CPU_RESET_n,
-        i_clk       => input_clk--,
-    );
-    
-    --assign vector types to array types for qsfp rx signals
-    rx_data(3)<=rx_data_A_v(32*4-1 downto 32*3);
-    rx_data(2)<=rx_data_A_v(32*3-1 downto 32*2);
-    rx_data(1)<=rx_data_A_v(32*2-1 downto 32*1);
-    rx_data(0)<=rx_data_A_v(32*1-1 downto 32*0);
-    rx_datak(3)<=rx_datak_A_v(4*4-1 downto 4*3);
-    rx_datak(2)<=rx_datak_A_v(4*3-1 downto 4*2);
-    rx_datak(1)<=rx_datak_A_v(4*2-1 downto 4*1);
-    rx_datak(0)<=rx_datak_A_v(4*1-1 downto 4*0);
-    
-    rx_data(7)<=rx_data_B_v(32*4-1 downto 32*3);
-    rx_data(6)<=rx_data_B_v(32*3-1 downto 32*2);
-    rx_data(5)<=rx_data_B_v(32*2-1 downto 32*1);
-    rx_data(4)<=rx_data_B_v(32*1-1 downto 32*0);
-    rx_datak(7)<=rx_datak_B_v(4*4-1 downto 4*3);
-    rx_datak(6)<=rx_datak_B_v(4*3-1 downto 4*2);
-    rx_datak(5)<=rx_datak_B_v(4*2-1 downto 4*1);
-    rx_datak(4)<=rx_datak_B_v(4*1-1 downto 4*0);
+    --assign long vectors for used fibers. Wired to run_control, sc, data receivers
+    g_assign_usedlinks: for i in NLINKS_DATA-1 downto 0 generate
+       rx_mapped_data_v(32*(i+1)-1 downto 32*i) <= rx_data_v(32*(link_mapping(i)+1)-1 downto 32*link_mapping(i));
+       rx_mapped_datak_v(4*(i+1)-1 downto  4*i) <= rx_datak_v(4*(link_mapping(i)+1)-1 downto  4*link_mapping(i));
+       rx_mapped_linkmask(i) <= writeregs_slow(FEB_ENABLE_REGISTER_W)(link_mapping(i));
+    end generate;
+
 
     -------- MIDAS RUN control --------
 
     e_run_control : entity work.run_control
     generic map (
-            N_LINKS_g                       => NLINKS_SC--,
+            N_LINKS_g                       => NLINKS_TOTL--,
     )
     port map (
         i_clk                               => tx_clk(0),
@@ -521,8 +546,8 @@ begin
         i_reset_run_end_n                   => resets_n(RESET_BIT_RUN_END_ACK),
         i_buffers_empty                     => (others => '1'), -- TODO: connect buffers emtpy from dma here
         i_aligned                           => (others => '1'),
-        i_data                              => rx_data(0) & rx_data(4),
-        i_datak                             => rx_datak(0) & rx_datak(4),
+        i_data                              => rx_data_v,
+        i_datak                             => rx_datak_v,
         i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
         i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
         i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
@@ -578,15 +603,15 @@ begin
     
     e_midas_event_builder : entity work.midas_event_builder
         generic map (
-            NLINKS => 16--;NLINKS--;
+            NLINKS => NLINKS_DATA--;
         )
         port map(
             i_clk_data => tx_clk(0),
             i_clk_dma  => pcie_fastclk_out,
             i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
             i_reset_dma_n  => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-            i_rx_data  => data_counter & data_counter & data_counter & data_counter & data_counter & data_pix_generated,
-            i_rx_datak => datak_counter & datak_counter & datak_counter & datak_counter & datak_counter & datak_pix_generated,
+            i_rx_data  => data_counter,
+            i_rx_datak => datak_counter,
             i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
             i_link_mask => (others => '1'),
             o_event_wren => dma_wren_cnt,
@@ -603,35 +628,29 @@ begin
     
     e_master : work.sc_master
     generic map (
-        NLINKS => NLINKS_SC
+        NLINKS => NLINKS_TOTL
     )
     port map (
         reset_n         => resets_n(RESET_BIT_SC_MASTER),
         enable          => '1',
         mem_data_in     => writememreaddata,
         mem_addr        => writememreadaddr,
-        mem_data_out    => mem_data_out,
-        mem_data_out_k  => mem_datak_out,
+        mem_data_out    => tx_data_v,
+        mem_data_out_k  => tx_datak_v,
         done            => open,
         stateout        => open,
         clk             => tx_clk(0)--,
     );
     
-    tx_data(0) <= mem_data_out(31 downto 0);
-    tx_datak(0) <= mem_datak_out(3 downto 0);
-    
-    tx_data(4) <= mem_data_out(63 downto 32);
-    tx_datak(4) <= mem_datak_out(7 downto 4);
-    
     e_slave : work.sc_slave
     generic map (
-        NLINKS => NLINKS_SC
+        NLINKS => NLINKS_TOTL
     )
     port map (
         reset_n                 => resets_n(RESET_BIT_SC_SLAVE),
-        enable                  => '1',
-        link_data_in            => rx_data(0) & rx_data(4),
-        link_data_in_k          => rx_datak(0) & rx_datak(4),
+        i_link_enable           => writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_TOTL-1 downto 0),
+        link_data_in            => rx_data_v,
+        link_data_in_k          => rx_datak_v,
         mem_addr_out            => mem_add_sc,
         mem_addr_finished_out   => readmem_writeaddr_finished,
         mem_data_out            => mem_data_sc,
@@ -740,58 +759,7 @@ begin
         endofevent_counter		=> endofevent_counter,
         notendofevent_counter	=> notendofevent_counter--,
     );
-    
-    --    e_counter : entity work.dma_counter
-    --    port map (
-    --	i_clk			=> pcie_fastclk_out,
-    --	i_reset_n   	=> resets_n(RESET_BIT_EVENT_COUNTER),
-    --	i_enable    	=> writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_TEST),
-    --	i_dma_wen_reg 	=> writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-    --	i_fraccount 	=> writeregs(DMA_SLOW_DOWN_REGISTER_W)(7 downto 0),
-    --	i_halffull_mode => writeregs(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_DMA_HALFFUL_MODE),
-    --	i_dma_halffull 	=> dmamemhalffull,
-    --	o_dma_end_event => dma_end_event_test,
-    --	o_dma_wen   	=> dma_wren_test,
-    --	o_cnt     		=> dma_data_test--,
-    --    );
-    
-    --    process (pcie_fastclk_out, reset_n)
-    --    begin
-    --    if ( reset_n = '0' ) then
-    --		dma_data_wren <= '0';
-    --		dmamem_endofevent <= '0';
-    --		dma_data 	  <= (others => '0');
-    --    elsif rising_edge(pcie_fastclk_out) then
-    --		dma_data_wren <= '0';
-    --		dmamem_endofevent <= '0';
-    --		dma_data 	  <= (others => '0');
-    --		if(dma_wren_test = '1') then
-    --			dma_data_wren <= '1';
-    --			dmamem_endofevent <= dma_end_event_test;
-    --			dma_data(159 downto 0) <= dma_data_test;
-    --			dma_data(255 downto 160) <= (others => '0');
-    --		elsif(dma_wren_cnt = '1') then
-    --			dma_data_wren <= '1';
-    --			dmamem_endofevent <= dma_end_event_cnt;
-    --			dma_data <=	dma_event_data;
-    --		end if;
-    --    end if;
-    --    end process;
-    
-    -- Increase address
-    --process(pcie_fastclk_out, resets_n(RESET_BIT_DATAGEN))
-    --begin
-    --	if(resets_n(RESET_BIT_DATAGEN) = '0') then
-    --		readmem_writeaddr  <= (others => '0');
-    --	elsif(pcie_fastclk_out'event and pcie_fastclk_out = '1') then
-    --		if(readmem_wren = '1') then
-    --			readmem_writeaddr    <= readmem_writeaddr + '1';
-    --			readregs(MEM_WRITEADDR_LOW_REGISTER_R) <= readmem_writeaddr(31 downto 0);
-    --			readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= readmem_writeaddr(63 downto 32);
-    --		end if;
-    --	end if;
-    --end process;
-    
+       
     -- Prolong regwritten signals for 156.25 MHz clock
     -- we just delay the fast signal so the slow clock will see it
     process(pcie_fastclk_out)

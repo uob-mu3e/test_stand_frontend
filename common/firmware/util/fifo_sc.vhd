@@ -11,7 +11,7 @@ use ieee.std_logic_1164.all;
 --
 -- FIFO
 -- - Single Clock
--- - Fall-Through
+-- - Fall-Through (Show-Ahead)
 --
 entity fifo_sc is
 generic (

@@ -121,7 +121,7 @@ struct sc_ram_t {
 
                 alt_u32 reserved[2];
 
-                alt_u32 reset_bypass;
+                alt_u32 reset_bypass; //11 downto 0: requested bypass (R/W) ; 9+16 downto 16: actual runstate (R)
 
                 alt_u32 reset_bypass_payload;
 

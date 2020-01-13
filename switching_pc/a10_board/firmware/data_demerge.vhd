@@ -6,8 +6,8 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.daq_constants.all;
 
-ENTITY data_demerge is 
-    PORT(
+ENTITY data_demerge is
+port (
 		clk:                    in  std_logic; -- receive clock (156.25 MHz)
  		reset:                  in  std_logic;
 		aligned:						in  std_logic; -- word alignment achieved
@@ -21,7 +21,7 @@ ENTITY data_demerge is
 		sc_out_ready:				out std_logic;
 		fpga_id:						out std_logic_vector(15 downto 0)  -- FPGA ID of the connected frontend board
 );
-END ENTITY data_demerge;
+end entity;
 
 architecture rtl of data_demerge is	
 
@@ -103,4 +103,4 @@ BEGIN
 			 
 		end if;
     end process;
-END rtl;
+END architecture;

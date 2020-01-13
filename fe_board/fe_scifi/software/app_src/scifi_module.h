@@ -54,6 +54,7 @@ struct scifi_module_t {
 
     void menu();
     void menu_counters();
+    alt_u16 reset_counters();
     alt_u16 store_counters(volatile alt_u32* data);
     void menu_reg_dummyctrl();
     void menu_reg_datapathctrl();

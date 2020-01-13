@@ -73,7 +73,7 @@ set(INCMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/include)
 set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mxml)
 set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mscb)
 
-#add_subdirectory(backend_pc)
+add_subdirectory(backend_pc)
 add_subdirectory(common/libmudaq)
 add_subdirectory(common/libmupix)
 add_subdirectory(common/libmutrig)

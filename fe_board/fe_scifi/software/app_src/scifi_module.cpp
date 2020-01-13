@@ -388,14 +388,19 @@ void scifi_module_t::menu_counters(){
 	   printf("--\n");
 	   if(cmd=='q') return;
 	   if(cmd=='r'){
-		regs.counters.ctrl = regs.counters.ctrl | 1<<15;
+                reset_counters();
 	   	printf("-- reset\n");
-		regs.counters.ctrl = regs.counters.ctrl ^ 1<<15;
 	   };
 	 }
         usleep(200000);
     };
 
+}
+
+alt_u16 scifi_module_t::reset_counters(){
+	sc->ram->regs.scifi.counters.ctrl = sc->ram->regs.scifi.counters.ctrl | 1<<15;
+	sc->ram->regs.scifi.counters.ctrl = sc->ram->regs.scifi.counters.ctrl ^ 1<<15;
+	return 0;
 }
 //write counter values of all channels to memory address *data and following. Return number of asic channels written.
 alt_u16 scifi_module_t::store_counters(volatile alt_u32* data){
@@ -440,6 +445,9 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
     case 0x0105: //read back counters. Write as continuous field to memory pointed to by data.
 	printf("[scifi] reporting back counters\n");
 	return store_counters(data);
+    case 0x0106: //reset counters.
+	printf("[scifi] resetting counters\n");
+	return reset_counters();
     case 0xfffe:
 	printf("-ping-\n");
         break;

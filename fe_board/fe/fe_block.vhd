@@ -6,7 +6,8 @@ use work.daq_constants.all;
 
 entity fe_block is
 generic (
-    NIOS_CLK_HZ_g : positive--;
+    feb_mapping : natural_array_t(3 downto 0) := 3&2&1&0;
+    NIOS_CLK_MHZ_g : real--;
 );
 port (
     i_fpga_id       : in    std_logic_vector(15 downto 0);
@@ -22,10 +23,10 @@ port (
     o_i2c_sda_oe    : out   std_logic;
 
     -- spi interface to si chip
-    i_spi_si_miso   : in    std_logic;
-    o_spi_si_mosi   : out   std_logic;
-    o_spi_si_sclk   : out   std_logic;
-    o_spi_si_ss_n   : out   std_logic;
+    i_spi_si_miso   : in    std_logic_vector(1 downto 0) := (others => '0');
+    o_spi_si_mosi   : out   std_logic_vector(1 downto 0);
+    o_spi_si_sclk   : out   std_logic_vector(1 downto 0);
+    o_spi_si_ss_n   : out   std_logic_vector(1 downto 0);
 
     -- spi interface to asics
     i_spi_miso      : in    std_logic;
@@ -115,6 +116,9 @@ architecture arch of fe_block is
     signal nios_pio : std_logic_vector(31 downto 0);
     signal nios_irq : std_logic_vector(3 downto 0) := (others => '0');
 
+    signal spi_si_miso, spi_si_mosi, spi_si_sclk : std_logic;
+    signal spi_si_ss_n : std_logic_vector(o_spi_si_ss_n'range);
+
     signal av_sc : work.util.avalon_t;
 
     signal sc_fifo_rempty : std_logic;
@@ -148,6 +152,10 @@ architecture arch of fe_block is
     signal terminated : std_logic_vector(1 downto 0);
 
     signal run_number : std_logic_vector(31 downto 0);
+
+
+
+    signal reconfig_clk : std_logic;
 
     signal av_qsfp, av_pod : work.util.avalon_t;
 
@@ -197,9 +205,9 @@ begin
 
     -- generate 1 Hz clock monitor clocks
 
-    -- NIOS_CLK_HZ_g -> 1 Hz
+    -- NIOS_CLK_MHZ_g -> 1 Hz
     e_nios_clk_hz : entity work.clkdiv
-    generic map ( P => NIOS_CLK_HZ_g )
+    generic map ( P => integer(NIOS_CLK_MHZ_g * 1000000.0) )
     port map ( o_clk => o_nios_clk_mon, i_reset_n => nios_reset_n, i_clk => i_nios_clk );
 
     -- 156.25 MHz -> 1 Hz
@@ -211,6 +219,14 @@ begin
     e_clk_125_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( o_clk => o_clk_125_mon, i_reset_n => reset_125_n, i_clk => i_clk_125 );
+
+
+
+    -- SPI
+    spi_si_miso <= '1' when ( (i_spi_si_miso or spi_si_ss_n) = (spi_si_ss_n'range => '1') ) else '0';
+    o_spi_si_mosi <= (o_spi_si_mosi'range => spi_si_mosi);
+    o_spi_si_sclk <= (o_spi_si_sclk'range => spi_si_sclk);
+    o_spi_si_ss_n <= spi_si_ss_n;
 
 
 
@@ -279,10 +295,11 @@ begin
 
         -- reset bypass
         if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_reset_bypass;
+            fe_reg.rdata(15 downto 0) <= reg_reset_bypass(15 downto 0);
+            fe_reg.rdata(16+9 downto 16) <= run_state_156;
         end if;
         if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.we = '1' ) then
-            reg_reset_bypass <= fe_reg.wdata;
+            reg_reset_bypass(15 downto 0) <= fe_reg.wdata(15 downto 0); -- upper bits are read-only status
         end if;
         
         -- reset payload
@@ -292,6 +309,15 @@ begin
         if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.we = '1' ) then
             reg_reset_bypass_payload <= fe_reg.wdata;
         end if;
+
+        -- reset bypass payload
+        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= reg_reset_bypass_payload;
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.we = '1' ) then
+            reg_reset_bypass_payload <= fe_reg.wdata;
+        end if;
+
 
         -- mscb
 
@@ -377,10 +403,10 @@ begin
         spi_sclk => o_spi_sclk,
         spi_ss_n => o_spi_ss_n,
 
-        spi_si_miso => i_spi_si_miso,
-        spi_si_mosi => o_spi_si_mosi,
-        spi_si_sclk => o_spi_si_sclk,
-        spi_si_ss_n => o_spi_si_ss_n,
+        spi_si_miso => spi_si_miso,
+        spi_si_mosi => spi_si_mosi,
+        spi_si_sclk => spi_si_sclk,
+        spi_si_ss_n => spi_si_ss_n,
 
         pio_export => nios_pio,
 
@@ -421,8 +447,8 @@ begin
 
     e_sc_rx : entity work.sc_rx
     port map (
-        i_link_data     => qsfp_rx_data(31 downto 0),
-        i_link_datak    => qsfp_rx_datak(3 downto 0),
+        i_link_data     => qsfp_rx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
+        i_link_datak    => qsfp_rx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
         o_fifo_rempty   => sc_fifo_rempty,
         i_fifo_rack     => sc_fifo_rack,
@@ -449,8 +475,8 @@ begin
         run_state               => run_state_156,
         run_number              => run_number,
 
-        data_out                => qsfp_tx_data(31 downto 0),
-        data_is_k               => qsfp_tx_datak(3 downto 0),
+        data_out                => qsfp_tx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
+        data_is_k               => qsfp_tx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
         slowcontrol_fifo_empty  => sc_fifo_rempty,
         slowcontrol_read_req    => sc_fifo_rack,
@@ -484,8 +510,8 @@ begin
         run_state               => run_state_156,
         run_number              => run_number,
 
-        data_out                => qsfp_tx_data(63 downto 32),
-        data_is_k               => qsfp_tx_datak(7 downto 4),
+        data_out                => qsfp_tx_data(32*(feb_mapping(1)+1)-1 downto 32*feb_mapping(1)),
+        data_is_k               => qsfp_tx_datak(4*(feb_mapping(1)+1)-1 downto 4*feb_mapping(1)),
 
         slowcontrol_fifo_empty  => i_secondary_scfifo_rempty,
         slowcontrol_read_req    => o_secondary_scfifo_rack,
@@ -585,6 +611,28 @@ begin
 
 
 
+    g_reconfig_clk : if ( NIOS_CLK_MHZ_g <= 50.0 ) generate
+        reconfig_clk <= i_nios_clk; -- Frequency Range : 37.5 to 50 MHz
+    end generate;
+
+    -- generate reconfig_clk = 50 MHz
+    g_reconfig_clk_altpll : if ( NIOS_CLK_MHZ_g > 50.0 ) generate
+        e_reconfig_clk : entity work.ip_altpll
+        generic map (
+            INCLK0_MHZ => NIOS_CLK_MHZ_g,
+            DIV => integer(NIOS_CLK_MHZ_g * 1000000.0) / work.util.gcd(integer(NIOS_CLK_MHZ_g * 1000000.0), 50000000),
+            MUL => 50000000 / work.util.gcd(integer(NIOS_CLK_MHZ_g * 1000000.0), 50000000)--,
+        )
+        port map (
+            c0 => reconfig_clk,
+            locked => open,
+            areset => not nios_reset_n,
+            inclk0 => i_nios_clk--,
+        );
+    end generate;
+
+
+
     e_qsfp : entity work.xcvr_s4
     generic map (
         NUMBER_OF_CHANNELS_g => 4,
@@ -617,6 +665,8 @@ begin
         i_avs_write         => av_qsfp.write,
         i_avs_writedata     => av_qsfp.writedata,
         o_avs_waitrequest   => av_qsfp.waitrequest,
+
+        i_reconfig_clk  => reconfig_clk,
 
         i_reset     => not reset_156_n,
         i_clk       => i_clk_156--,
@@ -662,6 +712,8 @@ begin
         i_avs_write         => av_pod.write,
         i_avs_writedata     => av_pod.writedata,
         o_avs_waitrequest   => av_pod.waitrequest,
+
+        i_reconfig_clk  => reconfig_clk,
 
         i_reset     => not reset_125_n,
         i_clk       => i_clk_125--,
