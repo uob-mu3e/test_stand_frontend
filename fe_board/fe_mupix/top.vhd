@@ -209,9 +209,8 @@ architecture arch of top is
 
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
-    signal fifo_rempty : std_logic;
-    signal fifo_rack : std_logic;
-    signal fifo_rdata : std_logic_vector(35 downto 0);
+    signal fifo_write: std_logic;
+    signal fifo_wdata : std_logic_vector(35 downto 0);
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
@@ -270,9 +269,8 @@ begin
 		i_reg_wdata             => mupix_reg.wdata,
 
 		-- data
-		o_fifo_rdata            => fifo_rdata,
-		o_fifo_rempty           => fifo_rempty,
-		i_fifo_rack             => fifo_rack,
+		o_fifo_wdata            => fifo_wdata,
+		o_fifo_write            => fifo_write,
 
 		i_data_in_A_0           => data_in_A_0,
 		i_data_in_A_1           => data_in_A_1,
@@ -420,9 +418,8 @@ begin
         i_pod_rx        => pod_rx,
         o_pod_tx        => pod_tx,
 
-        i_fifo_rempty   => fifo_rempty,
-        o_fifo_rack     => fifo_rack,
-        i_fifo_rdata    => fifo_rdata,
+        i_fifo_write    => fifo_write,
+        i_fifo_wdata    => fifo_wdata,
 
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,
