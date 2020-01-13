@@ -18,10 +18,8 @@ port (
     i_link_data     : in    std_logic_vector(31 downto 0);
     i_link_datak    : in    std_logic_vector(3 downto 0);
 
-    o_fifo_rempty   : out   std_logic;
-    i_fifo_rack     : in    std_logic;
-    o_fifo_rdata    : out   std_logic_vector(35 downto 0);
-    o_fifo_wfull    : out   std_logic;
+    o_fifo_write    : out    std_logic;
+    o_fifo_wdata    : out   std_logic_vector(35 downto 0);
 
     o_ram_addr      : out   std_logic_vector(31 downto 0);
     o_ram_re        : out   std_logic;
@@ -51,7 +49,6 @@ architecture arch of sc_rx is
 
     signal fifo_we : std_logic;
     signal fifo_wdata : std_logic_vector(35 downto 0);
-    signal fifo_reset : std_logic;
 
 begin
 
@@ -185,28 +182,29 @@ begin
     end if;
     end process;
 
-    e_fifo : entity work.ip_scfifo
-    generic map (
-        ADDR_WIDTH => FIFO_ADDR_WIDTH_g,
-        DATA_WIDTH => o_fifo_rdata'length--,
-    )
-    port map (
-        empty           => o_fifo_rempty,
-        almost_empty    => open,
-        rdreq           => i_fifo_rack,
-        q               => o_fifo_rdata,
-
-        full            => o_fifo_wfull,
-        almost_full     => open,
-        wrreq           => fifo_we,
-        data            => fifo_wdata,
-
-        usedw           => open,
-
-        sclr            => fifo_reset,
-        clock           => i_clk--,
-    );
-
-    fifo_reset <= not i_reset_n;
+--    e_fifo : entity work.ip_scfifo
+--    generic map (
+--        ADDR_WIDTH => FIFO_ADDR_WIDTH_g,
+--        DATA_WIDTH => o_fifo_rdata'length--,
+--    )
+--    port map (
+--        empty           => o_fifo_rempty,
+--        almost_empty    => open,
+--        rdreq           => i_fifo_rack,
+--        q               => o_fifo_rdata,
+--
+--        full            => o_fifo_wfull,
+--        almost_full     => open,
+--        wrreq           => fifo_we,
+--        data            => fifo_wdata,
+--
+--        usedw           => open,
+--
+--        sclr            => fifo_reset,
+--        clock           => i_clk--,
+--    );
+    
+    o_fifo_write        <= fifo_we;
+    o_fifo_wdata        <= fifo_wdata;
 
 end architecture;

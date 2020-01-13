@@ -102,6 +102,27 @@ BEGIN
         rdreq           => slowcontrol_read_req--,
     );
 
+    --    e_fifo : entity work.ip_scfifo
+--    generic map (
+--        ADDR_WIDTH => FIFO_ADDR_WIDTH_g,
+--        DATA_WIDTH => o_fifo_rdata'length--,
+--    )
+--    port map (
+--        empty           => o_fifo_rempty,
+--        almost_empty    => open,
+--        rdreq           => i_fifo_rack,
+--        q               => o_fifo_rdata,
+--
+--        full            => o_fifo_wfull,
+--        almost_full     => open,
+--        wrreq           => fifo_we,
+--        data            => fifo_wdata,
+--
+--        usedw           => open,
+--
+--        sclr            => fifo_reset,
+--        clock           => i_clk--,
+--    );
 
     -- debug led merger state
     process(merger_state)
