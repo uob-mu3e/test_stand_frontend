@@ -471,7 +471,7 @@ begin
 
     -- monitor nios
     LED(0) <= not cpu_pio_i(7);
-    LED(1) <= not cpu_reset_n_q;
+    LED(1) <= not nios_reset_n;
     LED(2) <= not flash_rst_n;
     LED(3) <= '0';
 
