@@ -50,7 +50,7 @@ port (
 
     --secondary fiber: leave open if unused
     --secondary fiber data fifo
-    i_secondary_fifo_write    : in    std_logic;
+    i_secondary_fifo_write    : in    std_logic := '0';
     i_secondary_fifo_wdata    : in    std_logic_vector(35 downto 0):=(others =>'-');
 
     -- slow control fifo
