@@ -38,11 +38,11 @@ port (
 	i_clk_core		: in  std_logic; --fifo reading side clock
 	o_A_fifo_empty		: out std_logic;
 	o_A_fifo_data		: out std_logic_vector(35 downto 0);
-	i_A_fifo_rd		: in  std_logic;
+	o_A_fifo_wr		: in  std_logic;
 	--secondary interface used if DUAL_FIBER=TRUE
 	o_B_fifo_empty		: out std_logic;
 	o_B_fifo_data		: out std_logic_vector(35 downto 0);
-	i_B_fifo_rd		: in  std_logic:='0';
+	o_B_fifo_wr		: in  std_logic:='0';
 
 	--slow control
 	i_SC_disable_dec	: in std_logic;
@@ -585,35 +585,13 @@ u_decoder: prbs_decoder
 		i_SC_disable_dec=> i_SC_disable_dec
 	);
 
---common fifo buffer
-u_common_fifo_A: common_fifo
-    port map (
-        clock           => i_clk_core,
-        sclr            => i_rst_core,
-        data            => "00" & s_A_buf_data,
-        wrreq           => s_A_buf_wr,
-        full            => o_buffer_full(0),
-        almost_full     => s_A_buf_almost_full,
-        empty           => s_A_fifo_empty,
-        q               => o_A_fifo_data,
-        rdreq           => i_A_fifo_rd--,
-    );
-
-o_A_fifo_empty <= s_A_fifo_empty;
+--to common fifo buffer:
+o_A_fifo_wr     <= s_A_buf_wr;
+o_A_fifo_data   <= "00" & s_A_buf_data;
 
 gen_dual_cfifo: if(N_MODULES>1) generate
-u_common_fifo_B: common_fifo
-    port map (
-        clock           => i_clk_core,
-        sclr            => i_rst_core,
-        data            => "00" & s_B_buf_data,
-        wrreq           => s_B_buf_wr,
-        full            => o_buffer_full(1),
-        almost_full     => s_B_buf_almost_full,
-        empty           => s_B_fifo_empty,
-        q               => o_B_fifo_data,
-        rdreq           => i_B_fifo_rd--,
-    );
+    o_B_fifo_wr     <= s_B_buf_wr;
+    o_B_fifo_data   <= "00" & s_B_buf_data;
 end generate;
 
 nogen_dual: if(N_MODULES=1) generate
@@ -631,8 +609,7 @@ begin
 			s_any_framegen_busy_156='0' and
 			s_fifos_empty=(s_fifos_empty'range => '1') and
 			s_A_mux_busy='0' and s_B_mux_busy='0' and
-			s_A_buf_wr='0' and s_B_buf_wr='0' and
-			s_A_fifo_empty='1' and s_B_fifo_empty='1'
+			s_A_buf_wr='0' and s_B_buf_wr='0'
 		) then
 			o_RC_all_done <='1';
 		else

@@ -50,13 +50,13 @@ port (
 
     --main fiber data fifo
     i_fifo_rempty   : in    std_logic;
-    o_fifo_rack     : out   std_logic;
+    i_fifo_write    : in    std_logic;
     i_fifo_rdata    : in    std_logic_vector(35 downto 0);
 
     --secondary fiber: leave open if unused
     --secondary fiber data fifo
     i_secondary_fifo_rempty   : in    std_logic:='1';
-    o_secondary_fifo_rack     : out   std_logic;
+    i_secondary_fifo_write    : in    std_logic;
     i_secondary_fifo_rdata    : in    std_logic_vector(35 downto 0):=(others =>'-');
     --secondary fiber slow control fifo
     --no slow control here, so we might use this as a secondary data generator (e.g. trigger/heartbeat channel)
@@ -478,13 +478,13 @@ begin
         data_out                => qsfp_tx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
         data_is_k               => qsfp_tx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
-        slowcontrol_fifo_empty  => sc_fifo_rempty,
-        slowcontrol_read_req    => sc_fifo_rack,
-        data_in_slowcontrol     => sc_fifo_rdata,
+        --slowcontrol_fifo_empty  => sc_fifo_rempty,
+        slowcontrol_write_req   => sc_fifo_write,
+        i_data_in_slowcontrol   => sc_fifo_rdata,
 
-        data_fifo_empty         => i_fifo_rempty,
-        data_read_req           => o_fifo_rack,
-        data_in                 => i_fifo_rdata,
+        --data_fifo_empty         => i_fifo_rempty,
+        data_write_req          => i_fifo_write,
+        i_data_in               => i_fifo_rdata,
 
         override_data_in        => linktest_data, --TODO: separate link test entity?
         override_data_is_k_in   => linktest_datak,
@@ -518,7 +518,7 @@ begin
         data_in_slowcontrol     => i_secondary_scfifo_rdata,
 
         data_fifo_empty         => i_secondary_fifo_rempty,
-        data_read_req           => o_secondary_fifo_rack,
+        data_write_req          => i_secondary_fifo_write,
         data_in                 => i_secondary_fifo_rdata,
 
         override_data_in        => linktest_data,

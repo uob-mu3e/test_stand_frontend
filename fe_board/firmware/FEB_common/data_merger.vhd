@@ -31,12 +31,10 @@ PORT (
     run_number                  : in    std_logic_vector(31 downto 0);
     data_out                    : out   std_logic_vector(31 downto 0); -- to optical transm.
     data_is_k                   : out   std_logic_vector(3 downto 0);  -- to optical trasm.
-    data_in                     : in    std_logic_vector(35 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
-    data_in_slowcontrol         : in    std_logic_vector(35 downto 0); -- data input slowcontrol from SCFIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 SCData))
-    slowcontrol_fifo_empty      : in    std_logic;
-    data_fifo_empty             : in    std_logic;
-    slowcontrol_read_req        : out   std_logic;
-    data_read_req               : out   std_logic;
+    i_data_in                   : in    std_logic_vector(35 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
+    i_data_in_slowcontrol       : in    std_logic_vector(35 downto 0); -- data input slowcontrol from SCFIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 SCData))
+    slowcontrol_write_req       : in    std_logic;
+    data_write_req              : in    std_logic;
     can_terminate               : in    std_logic :='0'; -- during state terminating, wait for this signal to go high or the data stream to send a run end marker before finally terminating the run.
     terminated                  : out   std_logic; -- to state controller (when stop run acknowledge was transmitted the state controller can go from terminating into idle, this is the signal to tell him that)
     override_data_in            : in    std_logic_vector(31 downto 0); -- data input for states link_test and sync_test;
@@ -71,11 +69,39 @@ architecture rtl of data_merger is
     signal last_merger_fifo_control_bits        : std_logic_vector(3 downto 0); -- used for run termination
     signal merger_timeout_counter               : integer range 0 to 11000;--std_logic_vector(15 downto 0);
     signal prev_merger_state                    : data_merger_state;
-
-
+    signal data_fifo_empty                      : std_logic;
+    signal slowcontrol_fifo_empty               : std_logic;
+    signal data_in                              : std_logic_vector(35 downto 0);
+    
 ----------------begin data merger------------------------
 
 BEGIN
+    u_common_fifo_data: common_fifo
+    port map (
+        clock           => clk,  --TODO: 156 ??
+        sclr            => reset,
+        data            => i_data_in,
+        wrreq           => data_write_req,
+        full            => open,
+        almost_full     => open,
+        empty           => data_fifo_empty,
+        q               => data_in,
+        rdreq           => data_read_req--,
+    );
+    
+    u_common_fifo_sc: common_fifo
+    port map (
+        clock           => clk,  --TODO: 156 ??
+        sclr            => reset,
+        data            => i_data_in_slowcontrol,
+        wrreq           => slowcontrol_write_req,
+        full            => open,
+        almost_full     => open,
+        empty           => slowcontrol_fifo_empty,
+        q               => data_in_slowcontrol,
+        rdreq           => slowcontrol_read_req--,
+    );
+
 
     -- debug led merger state
     process(merger_state)

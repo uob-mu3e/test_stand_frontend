@@ -26,11 +26,11 @@ port (
 
     o_fifoA_rdata   : out   std_logic_vector(35 downto 0);
     o_fifoA_rempty  : out   std_logic;
-    i_fifoA_rack    : in    std_logic;
+    o_fifoA_write   : in    std_logic;
 
     o_fifoB_rdata   : out   std_logic_vector(35 downto 0);
     o_fifoB_rempty  : out   std_logic;
-    i_fifoB_rack    : in    std_logic;
+    o_fifoB_write   : in    std_logic;
 
     -- reset system
     i_run_state     : in    run_state_t; --run state sync to i_clk_g125
@@ -129,7 +129,7 @@ begin
             o_reg_rdata <= (others => '0');
             o_reg_rdata(0) <= rx_pll_lock;
             o_reg_rdata(5 downto 4) <= frame_desync;
-            o_reg_rdata(9 downto 8) <= buffer_full;
+            o_reg_rdata(9 downto 8) <= "00";
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"5" ) then
             o_reg_rdata <= (others => '0');
@@ -224,11 +224,11 @@ begin
         i_clk_core => i_clk_core,
         o_A_fifo_empty => o_fifoA_rempty,
         o_A_fifo_data => o_fifoA_rdata,
-        i_A_fifo_rd => i_fifoA_rack,
+        o_A_fifo_wr => o_fifoA_write,
 
         o_B_fifo_empty => o_fifoB_rempty,
         o_B_fifo_data => o_fifoB_rdata,
-        i_B_fifo_rd => i_fifoB_rack,
+        o_B_fifo_wr => o_fifoB_write,
 
         -- slow control
         i_SC_disable_dec => s_dpctrl_reg(31),

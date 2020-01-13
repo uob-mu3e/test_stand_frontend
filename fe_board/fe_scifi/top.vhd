@@ -170,11 +170,11 @@ begin
         i_data          => i_fee_rxd,
 
         o_fifoA_rempty  => fifoA_rempty,
-        i_fifoA_rack    => fifoA_rack,
+        o_fifoA_write   => fifoA_write,
         o_fifoA_rdata   => fifoA_rdata,
 
         o_fifoB_rempty  => fifoB_rempty,
-        i_fifoB_rack    => fifoB_rack,
+        o_fifoB_write   => fifoB_write,
         o_fifoB_rdata   => fifoB_rdata,
 
         i_run_state     => run_state_125,
@@ -303,11 +303,11 @@ begin
         o_pod_tx        => pod_tx,
 
         i_fifo_rempty   => fifoA_rempty,
-        o_fifo_rack     => fifoA_rack,
+        i_fifo_write    => fifoA_write,
         i_fifo_rdata    => fifoA_rdata,
 
         i_secondary_fifo_rempty   => fifoB_rempty,
-        o_secondary_fifo_rack     => fifoB_rack,
+        i_secondary_fifo_write    => fifoB_write,
         i_secondary_fifo_rdata    => fifoB_rdata,
 
         i_mscb_data     => mscb_data_in,
