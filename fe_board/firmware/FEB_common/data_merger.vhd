@@ -76,15 +76,41 @@ architecture rtl of data_merger is
     signal data_read_req                        : std_logic;
     signal slowcontrol_read_req                 : std_logic;
     
+    signal data_write_req_checked               : std_logic;
+    signal i_data_in_checked                    : std_logic_vector(35 downto 0);
+    signal slowcontrol_write_req_checked        : std_logic;
+    signal i_data_in_slowcontrol_checked        : std_logic_vector(35 downto 0);
+    
 ----------------begin data merger------------------------
 
 BEGIN
-    u_common_fifo_data: entity work.common_fifo
+
+    e_data_overflow_check: entity work.overflow_check
+    port map(
+        i_clk           => clk,
+        i_reset         => reset,
+        i_write_req     => data_write_req,
+        i_wdata         => i_data_in,
+        o_write_req     => data_write_req_checked,
+        o_wdata         => i_data_in_checked--,
+    );
+
+    e_slowcontrol_overflow_check: entity work.overflow_check
+    port map(
+        i_clk           => clk,
+        i_reset         => reset,
+        i_write_req     => slowcontrol_write_req,
+        i_wdata         => i_data_in_slowcontrol,
+        o_write_req     => slowcontrol_write_req_checked,
+        o_wdata         => i_data_in_slowcontrol_checked--,
+    );
+
+    e_common_fifo_data: entity work.common_fifo
     port map (
-        clock           => clk,  --TODO: 156 ??
+        clock           => clk,
         sclr            => reset,
-        data            => i_data_in,
-        wrreq           => data_write_req,
+        data            => i_data_in_checked,
+        wrreq           => data_write_req_checked,
         full            => open,
         almost_full     => open,
         empty           => data_fifo_empty,
@@ -92,40 +118,18 @@ BEGIN
         rdreq           => data_read_req--,
     );
     
-    u_common_fifo_sc: entity work.common_fifo
+    e_common_fifo_sc: entity work.common_fifo
     port map (
-        clock           => clk,  --TODO: 156 ??
+        clock           => clk,
         sclr            => reset,
-        data            => i_data_in_slowcontrol,
-        wrreq           => slowcontrol_write_req,
+        data            => i_data_in_slowcontrol_checked,
+        wrreq           => slowcontrol_write_req_checked,
         full            => open,
         almost_full     => open,
         empty           => slowcontrol_fifo_empty,
         q               => data_in_slowcontrol,
         rdreq           => slowcontrol_read_req--,
     );
-
-    --    e_fifo : entity work.ip_scfifo
---    generic map (
---        ADDR_WIDTH => FIFO_ADDR_WIDTH_g,
---        DATA_WIDTH => o_fifo_rdata'length--,
---    )
---    port map (
---        empty           => o_fifo_rempty,
---        almost_empty    => open,
---        rdreq           => i_fifo_rack,
---        q               => o_fifo_rdata,
---
---        full            => o_fifo_wfull,
---        almost_full     => open,
---        wrreq           => fifo_we,
---        data            => fifo_wdata,
---
---        usedw           => open,
---
---        sclr            => fifo_reset,
---        clock           => i_clk--,
---    );
 
     -- debug led merger state
     process(merger_state)
@@ -349,15 +353,15 @@ BEGIN
             run_prep_acknowledge_send <= '0';
             case merger_state is
             when idle =>
-		if ( last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or
-							data_in(35 downto 32) = MERGER_FIFO_RUN_END_MARKER or
-							(run_state=RUN_STATE_TERMINATING and can_terminate='1')
-							) then
+                if ( last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or
+                    data_in(35 downto 32) = MERGER_FIFO_RUN_END_MARKER or
+                    (run_state=RUN_STATE_TERMINATING and can_terminate='1')
+                    ) then
                     -- allows run end for idle and sending data, run end in state sending_data is always packet end
                     terminated                  <= '1';
                     data_out                    <= RUN_END;
                     data_is_k                   <= RUN_END_DATAK;
-		    merger_state                <= wait_for_terminate;
+                    merger_state                <= wait_for_terminate;
                 elsif ( slowcontrol_fifo_empty = '1' and data_fifo_empty = '1' ) then -- no data, state is idle --> do nothing
                     slowcontrol_read_req        <= '0';
                     data_out                    <= K285;
