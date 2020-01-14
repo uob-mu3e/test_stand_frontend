@@ -24,6 +24,9 @@ entity pcie_block is
 			DMAMEMWRITEWIDTH	  : integer := 32
 		);
 	port (
+    o_writeregs_B               : out   reg32array;
+    i_clk_B                     : in    std_logic := '0';
+
 		local_rstn:				in		std_logic;
 		appl_rstn:				in    std_logic;
 		refclk:					in		std_logic;
@@ -656,6 +659,9 @@ cfgbus: pcie_cfgbus
 			DMAMEMWRITEWIDTH	  => DMAMEMWRITEWIDTH
 	)
 	port map(
+        o_writeregs_B           => o_writeregs_B,
+        i_clk_B                 => i_clk_B,
+
 		local_rstn			=> application_reset_n,
 		refclk				=> pld_clk,
 	
