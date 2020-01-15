@@ -275,8 +275,8 @@ architecture rtl of top is
         signal dma_wren_test : std_logic;
         signal dma_end_event_cnt : std_logic;
         signal dma_end_event_test : std_logic;
-        signal data_counter : std_logic_vector(32*NLINKS_DATA-1 downto 0);
-        signal datak_counter : std_logic_vector(4*NLINKS_DATA-1 downto 0);
+        signal data_counter : std_logic_vector(32*NLINKS_TOTL-1 downto 0);
+        signal datak_counter : std_logic_vector(4*NLINKS_TOTL-1 downto 0);
 
 begin
 
@@ -592,32 +592,36 @@ begin
         datak_counter   <= (others => '0');
     elsif (rising_edge(tx_clk(0))) then
         if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
-            data_counter    <= data_pix_generated & data_pix_generated & data_pix_generated;
-            datak_counter   <= datak_pix_generated & datak_pix_generated & datak_pix_generated;
+            set_gen_data : FOR i in 0 to NLINKS_TOTL - 1 LOOP
+                data_counter(31 + i * 32 downto i * 32) <= data_pix_generated;
+                datak_counter(3 + i * 4 downto i * 4) <= datak_pix_generated;
+            END LOOP set_gen_data;
         else
-            data_counter    <= rx_data(0) & rx_data(1) & rx_data(4);
-            datak_counter   <= rx_datak(0) & rx_datak(1) & rx_datak(4);
+            set_link_data : FOR i in 0 to NLINKS_TOTL - 1 LOOP
+                data_counter(31 + i * 32 downto i * 32) <= rx_data(i);
+                datak_counter(3 + i * 4 downto i * 4) <= rx_datak(i);
+            END LOOP set_link_data;
         end if;
     end if;
     end process;
     
     e_midas_event_builder : entity work.midas_event_builder
         generic map (
-            NLINKS => NLINKS_DATA--;
+            NLINKS => NLINKS_TOTL--;
         )
         port map(
-            i_clk_data => tx_clk(0),
-            i_clk_dma  => pcie_fastclk_out,
+            i_clk_data      => tx_clk(0),
+            i_clk_dma       => pcie_fastclk_out,
             i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
-            i_reset_dma_n  => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-            i_rx_data  => data_counter,
-            i_rx_datak => datak_counter,
-            i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-            i_link_mask => (others => '1'),
-            o_event_wren => dma_wren_cnt,
-            o_endofevent => dma_end_event_cnt,
-            o_event_data => dma_event_data,
-            o_state_out => state_out_eventcounter--,
+            i_reset_dma_n   => resets_n_fast(RESET_BIT_EVENT_COUNTER),
+            i_rx_data       => data_counter,
+            i_rx_datak      => datak_counter,
+            i_wen_reg       => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+            i_link_mask_n   => writeregs(DATA_LINK_MAKS_REGISTER_W)(NLINKS_TOTL - 1 downto 0),--(others => '1'), -- if 0 the link is active
+            o_event_wren    => dma_wren_cnt,
+            o_endofevent    => dma_end_event_cnt,
+            o_event_data    => dma_event_data,
+            o_state_out     => state_out_eventcounter--,
     );
     
     dma_data <= dma_event_data;

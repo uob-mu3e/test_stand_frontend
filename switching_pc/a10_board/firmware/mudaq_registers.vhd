@@ -54,6 +54,7 @@ package mudaq_registers is
         constant RUN_NR_REGISTER_W							: integer := 16#08#;
         constant RUN_NR_ADDR_REGISTER_W							: integer := 16#09#;
         constant FEB_ENABLE_REGISTER_W							: integer := 16#0A#;
+        constant DATA_LINK_MAKS_REGISTER_W                  : integer := 16#09#;
 
 		-- Registers above 0x36 are in use for the PCIe controller/DMA
 		constant DMA2_CTRL_ADDR_LOW_REGISTER_W				: integer := 16#36#;

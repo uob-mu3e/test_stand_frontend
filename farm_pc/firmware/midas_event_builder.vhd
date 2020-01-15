@@ -19,7 +19,7 @@ entity midas_event_builder is
          i_rx_data:     	  in std_logic_vector (NLINKS * 32 - 1 downto 0);
          i_rx_datak:          in std_logic_vector (NLINKS * 4 - 1 downto 0);
          i_wen_reg:       	  in std_logic;
-         i_link_mask:         in std_logic_vector (NLINKS - 1 downto 0);
+         i_link_mask_n:       in std_logic_vector (NLINKS - 1 downto 0);
          o_all_done:          out std_logic_vector (NLINKS downto 0);
          o_event_wren:     	  out std_logic;
          o_endofevent: 		  out std_logic; 
@@ -277,7 +277,7 @@ begin
 
 				when bank_name =>
 
-					if ( i_link_mask(current_link) = '0' ) then
+					if ( i_link_mask_n(current_link) = '1' ) then
 						current_link <= current_link + 1;
 						if ( current_link + 1 = NLINKS ) then
 							event_tagging_state <= trailer_name;
