@@ -22,6 +22,9 @@ use ieee.std_logic_unsigned.all;
 use work.daq_constants.all;
 
 ENTITY data_merger is
+GENERIC (
+    FIFO_ADDR_WIDTH             : positive := 10--;
+);
 PORT (
     clk                         : in    std_logic; -- 156.25 clk input
     reset                       : in    std_logic;
@@ -81,31 +84,48 @@ architecture rtl of data_merger is
     signal slowcontrol_write_req_checked        : std_logic;
     signal i_data_in_slowcontrol_checked        : std_logic_vector(35 downto 0);
     
+    signal usedw_data_fifo                      : std_logic_vector(FIFO_ADDR_WIDTH-1 downto 0);
+    signal usedw_slowcontrol_fifo               : std_logic_vector(FIFO_ADDR_WIDTH-1 downto 0);
+    
 ----------------begin data merger------------------------
 
 BEGIN
 
     e_data_overflow_check: entity work.overflow_check
+    generic map(
+        FIFO_ADDR_WIDTH => FIFO_ADDR_WIDTH--,
+    )
     port map(
         i_clk           => clk,
         i_reset         => reset,
         i_write_req     => data_write_req,
         i_wdata         => i_data_in,
+        i_usedw         => usedw_data_fifo,
         o_write_req     => data_write_req_checked,
         o_wdata         => i_data_in_checked--,
     );
 
     e_slowcontrol_overflow_check: entity work.overflow_check
+    generic map(
+        FIFO_ADDR_WIDTH => FIFO_ADDR_WIDTH--,
+    )
     port map(
         i_clk           => clk,
         i_reset         => reset,
         i_write_req     => slowcontrol_write_req,
         i_wdata         => i_data_in_slowcontrol,
+        i_usedw         => usedw_slowcontrol_fifo,
         o_write_req     => slowcontrol_write_req_checked,
         o_wdata         => i_data_in_slowcontrol_checked--,
     );
 
-    e_common_fifo_data: entity work.common_fifo
+    e_common_fifo_data: entity work.ip_scfifo
+    generic map(
+        ADDR_WIDTH      => FIFO_ADDR_WIDTH,
+        DATA_WIDTH      => 36,
+        SHOWAHEAD       => "ON",
+        DEVICE          => "Arria V"--,
+    )
     port map (
         clock           => clk,
         sclr            => reset,
@@ -115,10 +135,18 @@ BEGIN
         almost_full     => open,
         empty           => data_fifo_empty,
         q               => data_in,
-        rdreq           => data_read_req--,
+        rdreq           => data_read_req,
+        almost_empty    => open,
+        usedw           => usedw_data_fifo--,
     );
     
-    e_common_fifo_sc: entity work.common_fifo
+    e_common_fifo_sc: entity work.ip_scfifo
+    generic map(
+        ADDR_WIDTH      => FIFO_ADDR_WIDTH,
+        DATA_WIDTH      => 36,
+        SHOWAHEAD       => "ON",
+        DEVICE          => "Arria V"--,
+    )
     port map (
         clock           => clk,
         sclr            => reset,
@@ -128,8 +156,11 @@ BEGIN
         almost_full     => open,
         empty           => slowcontrol_fifo_empty,
         q               => data_in_slowcontrol,
-        rdreq           => slowcontrol_read_req--,
+        rdreq           => slowcontrol_read_req,
+        almost_empty    => open,
+        usedw           => usedw_slowcontrol_fifo--,
     );
+
 
     -- debug led merger state
     process(merger_state)

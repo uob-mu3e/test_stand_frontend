@@ -203,21 +203,6 @@ port (
 );
 end component; --prbs_decoder;
 
-component common_fifo
-	PORT
-	(
-		clock		: IN STD_LOGIC ;
-		data		: IN STD_LOGIC_VECTOR (35 DOWNTO 0);
-		rdreq		: IN STD_LOGIC ;
-		sclr		: IN STD_LOGIC ;
-		wrreq		: IN STD_LOGIC ;
-		almost_full		: OUT STD_LOGIC ;
-		empty		: OUT STD_LOGIC ;
-		full		: OUT STD_LOGIC ;
-		q		: OUT STD_LOGIC_VECTOR (35 DOWNTO 0);
-		usedw		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
-	);
-end component;
 constant N_ASICS_TOTAL : natural :=N_MODULES*N_ASICS;
 
 subtype t_vector is std_logic_vector(N_ASICS_TOTAL-1 downto 0);
