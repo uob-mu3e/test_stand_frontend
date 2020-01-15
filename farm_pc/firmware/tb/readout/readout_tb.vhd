@@ -182,7 +182,7 @@ e_midas_event_builder : entity work.midas_event_builder
     i_rx_data  => rx_data,
     i_rx_datak => rx_datak,
     i_wen_reg  => '1',
-    i_link_mask => "01010",
+    i_link_mask_n => "01010",
     o_all_done => all_done,
     o_event_wren => dma_data_wren,
     o_endofevent => dmamem_endofevent,
