@@ -96,7 +96,9 @@ begin
 	elsif(rising_edge(i_clk_data)) then
 		set_link_data : FOR i in 0 to NLINKS - 1 LOOP
 			link_fifo_data(35 + i * 36 downto i * 36) <= i_rx_data(31 + i * 32 downto i * 32) & i_rx_datak(3 + i * 4 downto i * 4);
-			if ( i_rx_data(31 + i * 32 downto i * 32) = x"000000BC" and i_rx_datak(3 + i * 4 downto i * 4) = "0001" ) then
+			if ( ( i_rx_data(31 + i * 32 downto i * 32) = x"000000BC" and i_rx_datak(3 + i * 4 downto i * 4) = "0001" ) or 
+                 ( i_rx_data(31 + i * 32 downto i * 32) = x"00000000" and i_rx_datak(3 + i * 4 downto i * 4) = "1111" )                 
+            ) then
 	            link_fifo_wren(i) <= '0';
         	else
 				link_fifo_wren(i) <= '1';
