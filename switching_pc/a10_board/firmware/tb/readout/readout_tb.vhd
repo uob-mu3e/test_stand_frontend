@@ -9,7 +9,7 @@ use IEEE.std_logic_textio.all;
 
 --  A testbench has no ports.
 entity readout_tb is
-end readout_tb;
+end entity;
 
 architecture behav of readout_tb is
   --  Declaration of the component that will be instantiated.
@@ -118,4 +118,4 @@ e_event_counter : component event_counter
          state_out          => state_out_eventcounter--,
    );
 
-end behav;
+end architecture;

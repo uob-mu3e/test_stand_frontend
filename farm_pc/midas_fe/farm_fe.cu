@@ -259,13 +259,14 @@ INT begin_of_run(INT run_number, char *error)
    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
 
    // Set up data generator
+   //KB: TODO: remove / move to ODB
    uint32_t datagen_setup = 0;
     mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
     datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
 
-    // Enable all links
-    mu.write_register_wait(FEB_ENABLE_REGISTER_W, 0xF, 100);
+    // Enable all links (KB: TODO: copy from switching board)
+    //mu.write_register_wait(FEB_ENABLE_REGISTER_W, 0xF, 100);
    
    // Get ODB settings for this equipment
    HNDLE hDB, hStreamSettings;

@@ -9,7 +9,7 @@ use IEEE.std_logic_textio.all;
 
 --  A testbench has no ports.
 entity mupix_block_tb is
-end mupix_block_tb;
+end entity;
 
 architecture behav of mupix_block_tb is
   --  Declaration of the component that will be instantiated.
@@ -179,4 +179,4 @@ port map (
 );
 
 
-end behav;
+end architecture;

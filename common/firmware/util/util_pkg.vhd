@@ -32,6 +32,8 @@ package util is
         waitrequest     :   std_logic;
         readdatavalid   :   std_logic;
     end record;
+  
+    type avalon_array_t is array(natural range <>) of avalon_t;
 
     type rw_t is record
         addr            :   std_logic_vector(31 downto 0);

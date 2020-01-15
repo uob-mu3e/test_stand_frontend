@@ -19,7 +19,7 @@ entity midas_event_builder is
          i_rx_data:     	  in std_logic_vector (NLINKS * 32 - 1 downto 0);
          i_rx_datak:          in std_logic_vector (NLINKS * 4 - 1 downto 0);
          i_wen_reg:       	  in std_logic;
-         i_link_mask:         in std_logic_vector (NLINKS - 1 downto 0);
+         i_link_mask_n:       in std_logic_vector (NLINKS - 1 downto 0);
          o_all_done:          out std_logic_vector (NLINKS downto 0);
          o_event_wren:     	  out std_logic;
          o_endofevent: 		  out std_logic; 
@@ -96,7 +96,9 @@ begin
 	elsif(rising_edge(i_clk_data)) then
 		set_link_data : FOR i in 0 to NLINKS - 1 LOOP
 			link_fifo_data(35 + i * 36 downto i * 36) <= i_rx_data(31 + i * 32 downto i * 32) & i_rx_datak(3 + i * 4 downto i * 4);
-			if ( i_rx_data(31 + i * 32 downto i * 32) = x"000000BC" and i_rx_datak(3 + i * 4 downto i * 4) = "0001" ) then
+			if ( ( i_rx_data(31 + i * 32 downto i * 32) = x"000000BC" and i_rx_datak(3 + i * 4 downto i * 4) = "0001" ) or 
+                 ( i_rx_data(31 + i * 32 downto i * 32) = x"00000000" and i_rx_datak(3 + i * 4 downto i * 4) = "1111" )                 
+            ) then
 	            link_fifo_wren(i) <= '0';
         	else
 				link_fifo_wren(i) <= '1';
@@ -275,7 +277,7 @@ begin
 
 				when bank_name =>
 
-					if ( i_link_mask(current_link) = '0' ) then
+					if ( i_link_mask_n(current_link) = '1' ) then
 						current_link <= current_link + 1;
 						if ( current_link + 1 = NLINKS ) then
 							event_tagging_state <= trailer_name;
