@@ -329,13 +329,13 @@ begin
 					w_ram_data	<= std_logic_vector(to_unsigned(conv_integer(w_ram_add_reg - cur_bank_length_add(11 + current_link * 12 downto current_link * 12)) * 4, w_ram_data'length));
 					if ( current_link + 1 = NLINKS ) then
 						event_tagging_state <= trailer_name;
-						current_link <= 0;
 					else
 						current_link <= current_link + 1;
 						event_tagging_state <= bank_name;
 					end if;
 
 				when trailer_name =>
+					current_link <= 0;
 					w_ram_en			<= '1';
 	                w_ram_add   		<= w_ram_add_reg + 1;
 			 	    w_ram_data  		<= x"FFFFFFFF";
