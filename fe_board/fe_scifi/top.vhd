@@ -108,8 +108,11 @@ end entity;
 
 architecture arch of top is
 
+    constant N_LINKS : positive := 2;
+
     signal fifoA_write, fifoB_write : std_logic;
     signal fifoA_wdata, fifoB_wdata : std_logic_vector(35 downto 0);
+    signal common_fifos_almost_full : std_logic_vector(N_LINKS-1 downto 0);
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
@@ -153,6 +156,7 @@ begin
     generic map (
         N_MODULES => 2,
         N_ASICS => 4,
+        N_LINKS => N_LINKS,
         INPUT_SIGNFLIP => "11111111",
         LVDS_PLL_FREQ => 125.0,
         LVDS_DATA_RATE => 1250.0--,
@@ -173,6 +177,8 @@ begin
 
         o_fifoB_write   => fifoB_write,
         o_fifoB_wdata   => fifoB_wdata,
+
+        i_common_fifos_almost_full => common_fifos_almost_full,
 
         i_run_state     => run_state_125,
         o_run_state_all_done => s_run_state_all_done,
@@ -304,6 +310,7 @@ begin
 
         i_secondary_fifo_write    => fifoB_write,
         i_secondary_fifo_wdata    => fifoB_wdata,
+        o_fifos_almost_full       => common_fifos_almost_full,
 
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,

@@ -38,6 +38,7 @@ PORT (
     i_data_in_slowcontrol       : in    std_logic_vector(35 downto 0); -- data input slowcontrol from SCFIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 SCData))
     slowcontrol_write_req       : in    std_logic;
     data_write_req              : in    std_logic;
+    o_fifos_almost_full         : out   std_logic;
     can_terminate               : in    std_logic :='0'; -- during state terminating, wait for this signal to go high or the data stream to send a run end marker before finally terminating the run.
     terminated                  : out   std_logic; -- to state controller (when stop run acknowledge was transmitted the state controller can go from terminating into idle, this is the signal to tell him that)
     override_data_in            : in    std_logic_vector(31 downto 0); -- data input for states link_test and sync_test;
@@ -60,8 +61,6 @@ architecture rtl of data_merger is
     constant K284                               : std_logic_vector(7 downto 0) :=x"9c";
     constant K284_datak                         : std_logic_vector(3 downto 0) := "0001";
     constant K307                               : std_logic_vector(7 downto 0) := x"fe";
-    constant MERGER_FIFO_RUN_END_MARKER         : std_logic_vector(3 downto 0) := "0111";
-
 
     ----------------components------------------
 
@@ -124,7 +123,7 @@ BEGIN
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
-        DEVICE          => "Arria V"--,
+        DEVICE          => "Stratix IV"--,
     )
     port map (
         clock           => clk,
@@ -132,7 +131,7 @@ BEGIN
         data            => i_data_in_checked,
         wrreq           => data_write_req_checked,
         full            => open,
-        almost_full     => open,
+        almost_full     => o_fifos_almost_full,
         empty           => data_fifo_empty,
         q               => data_in,
         rdreq           => data_read_req,
@@ -145,7 +144,7 @@ BEGIN
         ADDR_WIDTH      => FIFO_ADDR_WIDTH,
         DATA_WIDTH      => 36,
         SHOWAHEAD       => "ON",
-        DEVICE          => "Arria V"--,
+        DEVICE          => "Stratix IV"--,
     )
     port map (
         clock           => clk,

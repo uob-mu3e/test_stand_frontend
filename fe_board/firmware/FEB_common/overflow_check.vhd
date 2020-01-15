@@ -8,6 +8,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
+use work.daq_constants.all;
 
 entity overflow_check is
 generic (
@@ -27,18 +28,38 @@ end entity;
 
 architecture rtl of overflow_check is
 
+    type state_type is (forwarding, throwing);
+    signal state : state_type;
+
 begin
 
     process(i_clk, i_reset)
     begin
         if ( i_reset = '1' ) then
-            o_write_req         <= '0';
-            o_wdata             <= (others => '0');
+            o_write_req             <= '0';
+            o_wdata                 <= (others => '0');
+            state                   <= forwarding;
         elsif rising_edge(i_clk) then
-            if (unsigned(i_usedw) < (2**FIFO_ADDR_WIDTH)-MAX_PAKET_SIZE) then
-                o_write_req     <= i_write_req;
-                o_wdata         <= i_wdata;
-            end if;
+            o_wdata         <= i_wdata;
+            case state is
+                when forwarding =>
+                    if (i_write_req = '1' and i_wdata(35 downto 32) = MERGER_FIFO_PAKET_START_MARKER and unsigned(i_usedw) > (2**FIFO_ADDR_WIDTH)-MAX_PAKET_SIZE) then
+                        state           <= throwing;
+                        o_write_req     <= '0';
+                    else
+                        o_write_req     <= i_write_req;
+                    end if;
+                    
+                when throwing =>
+                    if (i_write_req = '1' and i_wdata(35 downto 32) = MERGER_FIFO_PAKET_START_MARKER and unsigned(i_usedw) < (2**FIFO_ADDR_WIDTH)-MAX_PAKET_SIZE) then
+                        state           <= forwarding;
+                        o_write_req     <= i_write_req;
+                    else
+                        o_write_req     <= '0';
+                    end if;
+                when others =>
+                    state           <= forwarding;
+            end case;
         end if;
     end process;
 

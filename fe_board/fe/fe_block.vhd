@@ -7,7 +7,8 @@ use work.daq_constants.all;
 entity fe_block is
 generic (
     feb_mapping : natural_array_t(3 downto 0) := 3&2&1&0;
-    NIOS_CLK_MHZ_g : real--;
+    NIOS_CLK_MHZ_g : real;
+    N_LINKS : positive := 2--;
 );
 port (
     i_fpga_id       : in    std_logic_vector(15 downto 0);
@@ -50,8 +51,10 @@ port (
 
     --secondary fiber: leave open if unused
     --secondary fiber data fifo
-    i_secondary_fifo_write    : in    std_logic := '0';
-    i_secondary_fifo_wdata    : in    std_logic_vector(35 downto 0):=(others =>'-');
+    i_secondary_fifo_write      : in    std_logic := '0';
+    i_secondary_fifo_wdata      : in    std_logic_vector(35 downto 0):=(others =>'-');
+
+    o_fifos_almost_full         : out   std_logic_vector(N_LINKS-1 downto 0);
 
     -- slow control fifo
     o_scfifo_write     : out   std_logic;
@@ -460,6 +463,7 @@ begin
 
         data_write_req          => i_fifo_write,
         i_data_in               => i_fifo_wdata,
+        o_fifos_almost_full     => o_fifos_almost_full(0),
 
         override_data_in        => linktest_data, --TODO: separate link test entity?
         override_data_is_k_in   => linktest_datak,
@@ -493,6 +497,7 @@ begin
 
         data_write_req          => i_secondary_fifo_write,
         i_data_in               => i_secondary_fifo_wdata,
+        o_fifos_almost_full     => o_fifos_almost_full(1),
 
         override_data_in        => linktest_data,
         override_data_is_k_in   => linktest_datak,

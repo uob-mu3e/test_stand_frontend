@@ -8,6 +8,7 @@ entity scifi_path is
 generic (
     N_MODULES : positive;
     N_ASICS : positive;
+    N_LINKS : positive;
     INPUT_SIGNFLIP : std_logic_vector := (31 downto 0 => '0');
     LVDS_PLL_FREQ : real;
     LVDS_DATA_RATE : real--;
@@ -25,10 +26,12 @@ port (
     i_data          : in    std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
     o_fifoA_wdata   : out   std_logic_vector(35 downto 0);
-    o_fifoA_write   : out    std_logic;
+    o_fifoA_write   : out   std_logic;
 
     o_fifoB_wdata   : out   std_logic_vector(35 downto 0);
-    o_fifoB_write   : out    std_logic;
+    o_fifoB_write   : out   std_logic;
+
+    i_common_fifos_almost_full : in std_logic_vector(N_LINKS-1 downto 0); 
 
     -- reset system
     i_run_state     : in    run_state_t; --run state sync to i_clk_g125
