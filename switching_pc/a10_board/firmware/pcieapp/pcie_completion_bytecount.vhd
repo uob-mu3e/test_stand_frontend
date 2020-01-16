@@ -13,7 +13,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.pcie_components.all;
 
 entity pcie_completion_bytecount is
 port (

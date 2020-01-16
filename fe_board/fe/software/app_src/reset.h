@@ -13,7 +13,7 @@ void menu_reset() {
         printf("\n");
         printf("fe.reset_bypass = 0x%04X\n", reset_bypass);
 	printf("fe.reset_bypass: run state=");
-        switch((reset_bypass >> 16) & 0x3f) {
+        switch((reset_bypass >> 16) & 0x3ff) {
 		case 1<<0: printf("RUN_STATE_IDLE\n"); break;
 		case 1<<1: printf("RUN_STATE_PREP\n"); break;
 		case 1<<2: printf("RUN_STATE_SYNC\n"); break;

@@ -251,7 +251,7 @@ begin
         o_buffer_full => buffer_full,
 
         i_SC_reset_counters => s_cntreg_ctrl(15),
-        i_SC_counterselect => s_cntreg_ctrl(5 downto 0),
+        i_SC_counterselect => s_cntreg_ctrl(6 downto 0),
         o_counter_numerator => s_cntreg_num_g,
         o_counter_denominator_low => s_cntreg_denom_g(31 downto 0),
         o_counter_denominator_high => s_cntreg_denom_g(63 downto 32)

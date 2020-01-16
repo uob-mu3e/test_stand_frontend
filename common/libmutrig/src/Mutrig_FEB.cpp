@@ -20,7 +20,33 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include "reset_protocol.h"
 
 //offset for registers on nios SC memory
+/*
+ *            struct {
+                struct {
+                    alt_u32 ctrl;
+                    alt_u32 nom;
+                    alt_u64 denom;
+                } counters;
+                struct {
+                    alt_u32 status;
+                    alt_u32 rx_dpa_lock;
+                    alt_u32 rx_ready;
+                    alt_u32 reserved[1];
+                } mon;
+                struct {
+                    alt_u32 dummy;
+                    alt_u32 dp;
+                    alt_u32 reset;
+                    alt_u32 resetdelay;
+                } ctrl;
+            } scifi;
+
+ * */
 #define SC_REG_OFFSET 0xff60
+#define FE_DPMON_STATUS_REG    (SC_REG_OFFSET+0x4)
+#define FE_DPMON_DPALOCK_REG   (SC_REG_OFFSET+0x5)
+#define FE_DPMON_RXRDY_REG     (SC_REG_OFFSET+0x6)
+#define FE_DPMON_RESERVED_REG  (SC_REG_OFFSET+0x7)
 #define FE_DUMMYCTRL_REG       (SC_REG_OFFSET+0x8)
 #define FE_DPCTRL_REG          (SC_REG_OFFSET+0x9)
 #define FE_SUBDET_RESET_REG    (SC_REG_OFFSET+0xa)
@@ -205,6 +231,7 @@ int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig confi
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/SciFi")
 int MutrigFEB::ConfigureASICs(){
+      cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asics under prefix %s/Settings/ASICs/", m_odb_prefix);
    int status = MapForEach([this](mutrig::MutrigConfig* config, int asic){
       uint32_t rpc_status;
       //mapping
@@ -222,7 +249,7 @@ int MutrigFEB::ConfigureASICs(){
       }
       //printf("\n");
 
-      cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to SB%u.%u  ASIC #%d", m_odb_prefix, asic,SB_ID,SP_ID,FA_ID);
+      //cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d", m_odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
 
 
       try {
@@ -327,55 +354,133 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
 
    auto rpc_ret=m_mu.FEBsc_NiosRPC(FEB.SB_Port(),0x0105,{});
    //retrieve results
-   uint32_t* val=new uint32_t[rpc_ret*4*3]; //nASICs * 4 counterbanks * 3 words
+   uint32_t* val=new uint32_t[rpc_ret*5*3]; //nASICs * 5 counterbanks * 3 words
    INT val_size = sizeof(DWORD);
 //   printf("RPC return: %u\n",rpc_ret);
-   m_mu.FEBsc_read(FEB.SB_Port(), val, rpc_ret*4*3 , (uint32_t) m_mu.FEBsc_RPC_DATAOFFSET);
+   m_mu.FEBsc_read(FEB.SB_Port(), val, rpc_ret*5*3 , (uint32_t) m_mu.FEBsc_RPC_DATAOFFSET);
 //   printf("done reading:\n");
 //   for(int i=0;i<rpc_ret*4*3;i++){
 //      printf("%2.2d %2.2d: %8.8x (%u)\n",i/(3*4),(i/3)%4,val[i],val[i]);
 //   }
+   static std::array<std::array<uint32_t,9>,8> last_counters;
    //store in midas
    INT status;
    int index=0;
    char path[255];
+   uint32_t value;
+   uint32_t odbval;
    for(int nASIC=0;nASIC<rpc_ret;nASIC++){
        sprintf(path,"%s/Variables/Counters/nHits",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+0], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+0]);
+       value=val[nASIC*15+0];
+       odbval=value-last_counters[nASIC][0];
+       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+0]);
+       last_counters[nASIC][0]=value;
 
        sprintf(path,"%s/Variables/Counters/Time",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+2], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+2]);
+       value=val[nASIC*15+2];
+       odbval=value-last_counters[nASIC][1];
+       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+2]);
+       last_counters[nASIC][1]=value;
 
        sprintf(path,"%s/Variables/Counters/nBadFrames",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+3], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+3]);
+       value=val[nASIC*15+3];
+       odbval=value-last_counters[nASIC][2];
+       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+3]);
+       last_counters[nASIC][2]=value;
 
        sprintf(path,"%s/Variables/Counters/nFrames",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+5], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+5]);
+       value=val[nASIC*15+5];
+       odbval=value-last_counters[nASIC][3];
+       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+5]);
+       last_counters[nASIC][3]=value;
 
        sprintf(path,"%s/Variables/Counters/nErrorsPRBS",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+6], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+6]);
+       value=val[nASIC*15+6];
+       odbval=value-last_counters[nASIC][4];
+       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+6]);
+       last_counters[nASIC][4]=value;
 
        sprintf(path,"%s/Variables/Counters/nWordsPRBS",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+8], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+8]);
+       value=val[nASIC*15+8];
+       odbval=value-last_counters[nASIC][5];
+       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+8]);
+       last_counters[nASIC][5]=value;
 
        sprintf(path,"%s/Variables/Counters/nErrorsLVDS",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+9], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+9]);
+       value=val[nASIC*15+9];
+       odbval=value-last_counters[nASIC][6];
+       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+9]);
+       last_counters[nASIC][6]=value;
 
        sprintf(path,"%s/Variables/Counters/nWordsLVDS",m_odb_prefix);
-       if((status=db_set_value_index(m_hDB, 0, path, &val[nASIC*12+11], val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*12+11]);
+       value=val[nASIC*15+11];
+       odbval=value-last_counters[nASIC][7];
+       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+11]);
+       last_counters[nASIC][7]=value;
+
+       sprintf(path,"%s/Variables/Counters/nDatasyncloss",m_odb_prefix);
+       value=val[nASIC*15+12];
+       odbval=value-last_counters[nASIC][8];
+       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
+//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+14]);
+       last_counters[nASIC][8]=value;
    }
 
    delete[] val;
    return SUCCESS;
 }
+
+int MutrigFEB::ReadBackDatapathStatus(uint16_t FPGA_ID){
+   //map to SB fiber
+   auto FEB = m_FPGAs[FPGA_ID];
+   if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+   if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+
+   uint32_t val[3];
+   BOOL value;
+   int status=m_mu.FEBsc_read(FEB.SB_Port(), val, 3, FE_DPMON_STATUS_REG);
+   if(status!=3) return status;
+
+   //printf("MutrigFEB::ReadBackDatapathStatus(): val[]={%8.8x,%8.8x,%8.8x} --> ",val[0],val[1],val[2]);
+   char path[255];
+
+   value=val[0] & (1<<0);
+   sprintf(path, "%s/Variables/FEB datapath status/PLL locked", m_odb_prefix);
+   if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
+
+   value=val[0] & (1<<8);
+   sprintf(path, "%s/Variables/FEB datapath status/Buffer full", m_odb_prefix);
+   if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
+
+   value=val[0] & (1<<4);
+   sprintf(path, "%s/Variables/FEB datapath status/Frame desync", m_odb_prefix);
+   if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
+
+   for(int i=0; i < nModulesPerFEB()*nAsicsPerModule(); i++){
+      int a=FPGA_ID*nModulesPerFEB()*nAsicsPerModule()+i;
+      sprintf(path, "%s/Variables/FEB datapath status/DPA locked", m_odb_prefix);
+      value=(val[1]>>i) & 1;
+      if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),a, TID_BOOL,false))!=DB_SUCCESS) return status;
+
+      sprintf(path, "%s/Variables/FEB datapath status/RX ready", m_odb_prefix);
+      value=(val[2]>>i) & 1;
+      if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),a, TID_BOOL,false))!=DB_SUCCESS) return status;
+   }
+
+   return SUCCESS;
+}
+
+
+
+
 
 //MIDAS callback function for FEB register Setter functions
 void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
@@ -449,22 +554,17 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 	for(auto FEB: _this->m_FPGAs){
 		if(!FEB.IsScEnabled()) continue; //skip disabled
 		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-		printf("LVDS_waitforall_sticky -> %u.%u\n",FEB.SB_Number(),FEB.SB_Port());
 		_this->setWaitForAllSticky(FEB.SB_Port(),bval);
 	}
    }
 
    if (std::string(key.name) == "mask") {
-      printf("mask: GetNumASICs()=%d\n",_this->GetNumASICs());
       BOOL* barray=new BOOL[_this->GetNumASICs()];
       INT  barraysize=sizeof(BOOL)*_this->GetNumASICs();
       db_get_data(hDB,hKey,barray,&barraysize,TID_BOOL);
       
       for(int i=0;i<_this->GetNumASICs();i++){
-         if(_this->m_FPGAs[_this->FPGAid_from_ID(i)].IsScEnabled()==false) continue;
-         if(_this->m_FPGAs[_this->FPGAid_from_ID(i)].SB_Number()!=_this->m_SB_number) continue;
-         //printf("mask(%d) -> %u -> %u.%u\n",i,_this->FPGAid_from_ID(i),_this->m_FPGAs[_this->FPGAid_from_ID(i)].SB_Port());
-         _this->setMask(_this->m_FPGAs[_this->FPGAid_from_ID(i)].SB_Port(),barray[i]);
+         _this->setMask(i,barray[i]);
       }
       delete[] barray;
    }
@@ -477,7 +577,6 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
     for(auto FEB: _this->m_FPGAs){
         if(!FEB.IsScEnabled()) continue; //skip disabled
         if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-            cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_datapath");
             _this->DataPathReset(FEB.SB_Port());
     }
         value = FALSE; // reset flag in ODB
@@ -492,7 +591,6 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
     for(auto FEB: _this->m_FPGAs){
         if(!FEB.IsScEnabled()) continue; //skip disabled
         if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-        cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_asics");
             _this->chipReset(FEB.SB_Port());
     }
         value = FALSE; // reset flag in ODB
@@ -504,11 +602,9 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
       if(value){
-         cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_lvds");
          for(auto FEB: _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-            cm_msg(MINFO, "MutrigFEB::on_settings_changed", "reset_asics");
             _this->LVDS_RX_Reset(FEB.SB_Port());
          }
          value = FALSE; // reset flag in ODB
@@ -520,7 +616,6 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
    if ((std::string(key.name) == "resetskew_cphase")||
        (std::string(key.name) == "resetskew_cdelay")||
        (std::string(key.name) == "resetskew_phases")){
-        cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Updating reset skew settings");
         char set_str[255];
         BOOL* cphase=new BOOL[_this->m_FPGAs.size()*_this->nModulesPerFEB()];
         BOOL* cdelay=new BOOL[_this->m_FPGAs.size()*_this->nModulesPerFEB()];
@@ -596,7 +691,7 @@ uint32_t reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t 
 * Use emulated mutric on fpga for config
 */
 void MutrigFEB::setDummyConfig(uint16_t FPGA_ID, bool dummy){
-    printf("MutrigFEB::setDummyConfig(%d)=%d\n",FPGA_ID,dummy);
+    //printf("MutrigFEB::setDummyConfig(%d)=%d\n",FPGA_ID,dummy);
     uint32_t val;
 
     //TODO: shadowing should know about broadcast FPGA ID
@@ -606,7 +701,7 @@ void MutrigFEB::setDummyConfig(uint16_t FPGA_ID, bool dummy){
     val=m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG];
 
     val=reg_setBit(val,0,dummy);
-    printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
+    //printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
     m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG, m_ask_sc_reply);
     m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
@@ -619,7 +714,7 @@ void MutrigFEB::setDummyConfig(uint16_t FPGA_ID, bool dummy){
 
 void MutrigFEB::setDummyData_Enable(uint16_t FPGA_ID, bool dummy)
 {
-    printf("MutrigFEB::setDummyData_Enable(%d)=%d\n",FPGA_ID,dummy);
+    //printf("MutrigFEB::setDummyData_Enable(%d)=%d\n",FPGA_ID,dummy);
     uint32_t val;
 
     val=m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG];
@@ -627,21 +722,21 @@ void MutrigFEB::setDummyData_Enable(uint16_t FPGA_ID, bool dummy)
     //printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
 
     val=reg_setBit(val,1,dummy);
-    printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
+    //printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
     m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG, m_ask_sc_reply);
     m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
 void MutrigFEB::setDummyData_Fast(uint16_t FPGA_ID, bool fast)
 {
-    printf("MutrigFEB::setDummyData_Fast(%d)=%d\n",FPGA_ID,fast);
+    //printf("MutrigFEB::setDummyData_Fast(%d)=%d\n",FPGA_ID,fast);
     uint32_t  val;
     val=m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG];
     //m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
     //printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
 
     val=reg_setBit(val,2,fast);
-    printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
+    //printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
     m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG, m_ask_sc_reply);
     m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
@@ -649,14 +744,14 @@ void MutrigFEB::setDummyData_Fast(uint16_t FPGA_ID, bool fast)
 void MutrigFEB::setDummyData_Count(uint16_t FPGA_ID, int n)
 {
     if(n > 255) n = 255;
-    printf("MutrigFEB::setDummyData_Count(%d)=%d\n",FPGA_ID,n);
+    //printf("MutrigFEB::setDummyData_Count(%d)=%d\n",FPGA_ID,n);
     uint32_t  val;
     val=m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG];
     //m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
     //printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
     val=reg_setRange(val, 9, 3, n);
 
-    printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
+    //printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
     m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG,m_ask_sc_reply);
     m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
@@ -694,7 +789,7 @@ void MutrigFEB::setMask(int asic, bool value){
 * Disable prbs decoder in FPGA
 */
 void MutrigFEB::setPRBSDecoderDisable(uint32_t FPGA_ID, bool disable){
-    printf("MutrigFEB::setPRBSDecoderDisable(%d)=%d\n",FPGA_ID,disable);
+    //printf("MutrigFEB::setPRBSDecoderDisable(%d)=%d\n",FPGA_ID,disable);
     uint32_t val;
     val=m_reg_shadow[FPGA_ID][FE_DPCTRL_REG];
     //m_mu.FEBsc_read(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
@@ -707,7 +802,7 @@ void MutrigFEB::setPRBSDecoderDisable(uint32_t FPGA_ID, bool disable){
 }
 
 void MutrigFEB::setWaitForAll(uint32_t FPGA_ID, bool value){
-    printf("MutrigFEB::setWaitForAll(%d)=%d\n",FPGA_ID,value);
+    //printf("MutrigFEB::setWaitForAll(%d)=%d\n",FPGA_ID,value);
     uint32_t val;
     val=m_reg_shadow[FPGA_ID][FE_DPCTRL_REG];
     //m_mu.FEBsc_read(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);
@@ -720,7 +815,7 @@ void MutrigFEB::setWaitForAll(uint32_t FPGA_ID, bool value){
 }
 
 void MutrigFEB::setWaitForAllSticky(uint32_t FPGA_ID, bool value){
-    printf("MutrigFEB::setWaitForAllSticky(%d)=%d\n",FPGA_ID,value);
+    //printf("MutrigFEB::setWaitForAllSticky(%d)=%d\n",FPGA_ID,value);
     uint32_t val;
     val=m_reg_shadow[FPGA_ID][FE_DPCTRL_REG];
     //m_mu.FEBsc_read(FPGAid_from_ID(asic), &val, 1 , (uint32_t) FE_DPCTRL_REG);

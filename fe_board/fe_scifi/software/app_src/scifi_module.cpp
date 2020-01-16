@@ -57,14 +57,14 @@ void scifi_module_t::print_config(const alt_u8* bitpattern) {
 
 //configure ASIC
 alt_u16 scifi_module_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
-    printf("[scifi] configure asic(%u)\n", asic);
+//    printf("[scifi] configure asic(%u)\n", asic);
 
     int ret;
     ret = spi_write_pattern(asic, bitpattern);
     ret = spi_write_pattern(asic, bitpattern);
 
     if(ret != 0) {
-        printf("[scifi] Configuration error\n");
+//        printf("[scifi] Configuration error\n");
         return FEB_REPLY_ERROR;
     }
 
@@ -368,16 +368,17 @@ void scifi_module_t::menu_counters(){
     char cmd;
     printf("Counters: press 'q' to end / 'r' to reset\n");
     while(1){
-	for(char selected=0;selected<4; selected++){
-		regs.counters.ctrl = selected&0x3;
+	for(char selected=0;selected<5; selected++){
+		regs.counters.ctrl = selected&0x7;
 		switch(selected){
 			case 0: printf("Events/Time  [8ns] "); break;
 			case 1: printf("Errors/Frame       "); break;
 			case 2: printf("PRBS: Errors/Words "); break;
 			case 3: printf("LVDS: Errors/Words "); break;
+			case 4: printf("SYNCLOSS: Count/-- "); break;
 		}
 		for(int i=0;i<4;i++){
-			regs.counters.ctrl = (regs.counters.ctrl & 0x3) + (i<<2);
+			regs.counters.ctrl = (regs.counters.ctrl & 0x7) + (i<<3);
 			printf("| %10u / %18lu |", regs.counters.nom, regs.counters.denom);
 		}
 		printf("\n");
@@ -405,8 +406,8 @@ alt_u16 scifi_module_t::reset_counters(){
 //write counter values of all channels to memory address *data and following. Return number of asic channels written.
 alt_u16 scifi_module_t::store_counters(volatile alt_u32* data){
 	for(uint8_t i=0;i<4*n_MODULES;i++){
-		for(uint8_t selected=0;selected<4; selected++){
-			sc->ram->regs.scifi.counters.ctrl = (selected&0x3) + (i<<2);
+		for(uint8_t selected=0;selected<5; selected++){
+			sc->ram->regs.scifi.counters.ctrl = (selected&0x7) + (i<<3);
 			*data=sc->ram->regs.scifi.counters.nom;
 			//printf("%u: %8.8x\n",sc->ram->regs.scifi.counters.ctrl,*data);
 			data++;
@@ -430,7 +431,7 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
     case 0x0102: //power down (not implemented in current FEB)
         break;
     case 0x0103: //configure all off
-	printf("[scifi] configuring all off\n");
+	//printf("[scifi] configuring all off\n");
         for(int i=0;i<n_MODULES*4;i++)
            if(configure_asic(i,mutrig_config_ALL_OFF)==FEB_REPLY_ERROR)
               status=FEB_REPLY_ERROR;
@@ -438,15 +439,15 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
         break;
     case 0x0104: //configure reset skew phases
 	//data[0..3]=phases
-	printf("[scifi] configuring reset skews\n");
+	//printf("[scifi] configuring reset skews\n");
         for(int i=0;i<4;i++)
 	    RSTSKWctrl_Set(i,data[i]);
 	return 0;
     case 0x0105: //read back counters. Write as continuous field to memory pointed to by data.
-	printf("[scifi] reporting back counters\n");
+	//printf("[scifi] reporting back counters\n");
 	return store_counters(data);
     case 0x0106: //reset counters.
-	printf("[scifi] resetting counters\n");
+	//printf("[scifi] resetting counters\n");
 	return reset_counters();
     case 0xfffe:
 	printf("-ping-\n");
@@ -459,7 +460,7 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
         if(sc->ram->regs.scifi.ctrl.dummy&1){
            //when configured as dummy do the spi transaction,
            //but always return success to switching board
-           if(status!=FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
+           //if(status!=FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
            status=FEB_REPLY_SUCCESS;
         }
 	return status;

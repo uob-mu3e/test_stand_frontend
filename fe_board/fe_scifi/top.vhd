@@ -195,9 +195,9 @@ begin
 
 
     -- LED maps:
-    -- 15: nios clock (125 MHz -> 1Hz) - si42_clk_50
-    -- 14: clk_qsfp (156MHz -> 1Hz)
-    -- 13: clk_pod (125MHz -> 1Hz)
+    -- 15: nios clock (50 MHz -> 1Hz) - si42_clk_50
+    -- 14: clk_qsfp (156.25 MHz -> 1Hz)
+    -- 13: clk_pod (125 MHz -> 1Hz)
     -- 11: fee_chip_reset (niosclk)
     -- x..0 : CSn to SciFi boards
 

@@ -152,6 +152,13 @@ printf("setting up db\n");
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
     if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
 
+    sprintf(set_str, "%s/Variables/Counters/nDatasyncloss", prefix);
+    status=db_create_key(hDB, 0, set_str, TID_DWORD);
+    if (!(status==DB_SUCCESS || status==DB_KEY_EXIST)) return status;
+    if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
+    if((status = db_set_num_values(hDB, hTmp, nasics))!=DB_SUCCESS) return status;
+
+
     //set up variables read from FEB: run state & reset system bypass
     const char *bypass_settings_str[] = {
     "Bypass enabled = BOOL[2] :",\
@@ -179,23 +186,82 @@ printf("setting up db\n");
     for(int i=0;i<FEB_interface->GetNumFPGAs();i++)
     	if((status = db_set_value_index(hDB,0,set_str, &val, sizeof(DWORD),i, TID_DWORD,false))!=DB_SUCCESS) return status;
 
+    //set up variables read from FEB: run state & reset system bypass
+    const char *datapath_status_str[] = {
+    "PLL locked = BOOL[2] :",\
+    "[0] n",\
+    "[1] n",\
+    "Buffer full = BOOL[2] :",\
+    "[0] n",\
+    "[1] n",\
+    "Frame desync = BOOL[2] :",\
+    "[0] n",\
+    "[1] n",\
+    "DPA locked = BOOL[2] :",\
+    "[0] n",\
+    "[1] n",\
+    "RX ready = BOOL[2] :",\
+    "[0] n",\
+    "[1] n",\
+    "",\
+    NULL};
+
+    sprintf(set_str, "%s/Variables/FEB datapath status", prefix);
+    db_create_record(hDB, 0, set_str, strcomb(datapath_status_str));
+
+    sprintf(set_str, "%s/Variables/FEB datapath status/PLL locked", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/FEB datapath status/Buffer full", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/FEB datapath status/Frame desync", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumFPGAs()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/FEB datapath status/DPA locked", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumASICs()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/FEB datapath status/DPA locked", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumASICs()))!=DB_SUCCESS) return status;
+
+    sprintf(set_str, "%s/Variables/FEB datapath status/RX ready", prefix);
+    db_find_key (hDB, 0, set_str, &hTmp);
+    if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumASICs()))!=DB_SUCCESS) return status;
+
 
     // Define history panels
-    hs_define_panel("SciFi","Counters",{"SciFi:Counters_nHits",
-                                       "SciFi:Counters_nFrames",
-                                       "SciFi:Counters_nWordsLVDS",
-                                       "SciFi:Counters_nWordsPRBS"});
+    for(std::string panel: {
+       "Counters_nHits",
+       "Counters_nFrames",
+       "Counters_nWordsLVDS",
+       "Counters_nWordsPRBS",
+       "Counters_nBadFrames",
+       "Counters_nErrorsLVDS",
+       "Counters_nErrorsPRBS",
+       "Counters_nDatasyncloss",
+       "FEB datapath status_RX ready"
+       }){
+        std::vector<std::string> varlist;
+        char name[255];
+        for(int i=0;i<FEB_interface->GetNumASICs();i++){
+            snprintf(name,255,"%s:%s[%d]",FEB_interface->GetName(),panel.c_str(),i);
+            varlist.push_back(name);
+        }
+        hs_define_panel(FEB_interface->GetName(),panel.c_str(),varlist);
+    }
 
-    hs_define_panel("SciFi","Errors",{"SciFi:Counters_nBadFrames",
-                                     "SciFi:Counters_nErrorsLVDS",
-                                     "SciFi:Counters_nErrorsPRBS"});
+    //hs_define_panel("SciFi","Times",{"SciFi:Counters_Time",
+    //                                "SciFi:Counters_Time"});
 
-    hs_define_panel("SciFi","Times",{"SciFi:Counters_Time",
-                                    "SciFi:Counters_Time"});
     //Add configuration custom page to ODB
     db_create_key(hDB, 0, "Custom/SciFi-ASICs&", TID_STRING);
     const char * name = "mutrigTdc.html";
-    db_set_value(hDB,0,"Custom/SciFi-ASICs&", name, sizeof(name), 1, TID_STRING);
+    db_set_value(hDB,0,"Custom/SciFi-ASICs&", name, strlen(name), 1, TID_STRING);
 
 
 

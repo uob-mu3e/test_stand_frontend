@@ -14,11 +14,12 @@ public:
     int map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num){return 1;}
     // Write "reset" commands
     int write_command(uint8_t command, uint32_t payload =0, bool has_payload = false){
-        printf("write_command(%2.2x,%8.8x,%s)\n",command,payload,has_payload?"true":"false");
-	DWORD val;
+        //printf("write_command(%2.2x,%8.8x,%s)\n",command,payload,has_payload?"true":"false");
+	DWORD val=0xbcbcbcbc;
 	//write payload ODB - Switching frontend will send this to FEB
-	val=payload;
-        db_set_value(hDB,0,"/Equipment/Switching/Settings/Reset Bypass Payload", &payload, sizeof(uint32_t), 1, TID_DWORD);
+	if(has_payload)
+		val=payload;
+        db_set_value(hDB,0,"/Equipment/Switching/Settings/Reset Bypass Payload", &val, sizeof(uint32_t), 1, TID_DWORD);
 	//write reset char ODB - Switching frontend will send this to FEB
 	val=(1<<8) | command;
         db_set_value(hDB,0,"/Equipment/Switching/Settings/Reset Bypass Command", &val, sizeof(uint32_t), 1, TID_DWORD);
@@ -40,7 +41,8 @@ public:
     }
 
     int write_command(const char * name, uint32_t payload =0, uint16_t address =0){
-        printf("write_command(%s,%8.8x,%u)\n",name,payload,address);
+        //printf("write_command(%s,%8.8x,%u)\n",name,payload,address);
+        //cm_msg(MINFO, "clockboard_bypass::write_command", "sending %s",name);
         auto it = reset_protocol.commands.find(name);
         if(it != reset_protocol.commands.end()){
            if(address==0){

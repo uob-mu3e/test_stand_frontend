@@ -37,6 +37,8 @@ class MutrigFEB {
 	      m_hDB(hDB)
 	{};
       void SetSBnumber(uint8_t n){m_SB_number=n;}
+      const char* GetName(){return m_equipment_name;}
+      const char* GetPrefix(){return m_odb_prefix;}
 
       uint16_t GetNumASICs(){return m_FPGAs.size()*nModulesPerFEB()*nAsicsPerModule();}
       uint16_t GetNumModules(){return m_FPGAs.size()*nModulesPerFEB();}
@@ -67,11 +69,16 @@ class MutrigFEB {
       void ReadBackAllCounters(){for(size_t i=0;i<m_FPGAs.size();i++) ReadBackCounters(i);};
       int ResetCounters(uint16_t FPGA_ID);
       void ResetAllCounters(){for(size_t i=0;i<m_FPGAs.size();i++) ResetCounters(i);};
+
       //Read run state and reset bypass command
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
       int ReadBackRunState(uint16_t FPGA_ID);
       void ReadBackAllRunState(){for(size_t i=0;i<m_FPGAs.size();i++) ReadBackRunState(i);};
 
+      //Read datapath status values from FEB, store in subtree $odb_prefix/Variables/FEB datapath status
+      //Parameter FPGA_ID refers to global numbering, i.e. before mapping
+      int ReadBackDatapathStatus(uint16_t FPGA_ID);
+      void ReadBackAllDatapathStatus(){for(size_t i=0;i<m_FPGAs.size();i++) ReadBackDatapathStatus(i);};
 
 
    protected:

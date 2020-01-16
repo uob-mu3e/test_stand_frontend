@@ -688,8 +688,8 @@ uint16_t MudaqDevice::FEBsc_NiosRPC(uint16_t FPGA_ID, uint16_t command, std::vec
          //Wait for remote command to finish, poll register
          uint timeout_cnt = 0;
          while(1){
-            if(++timeout_cnt >= 500) throw std::runtime_error("MudaqDevice::FEBsc_NiosRPC: RPC timeout");
-	    if(error_cnt > 5) throw std::runtime_error("MudaqDevice::FEBsc_NiosRPC: Too many SC transmission failures");
+            if(++timeout_cnt >= 500) return 0;//throw std::runtime_error("MudaqDevice::FEBsc_NiosRPC: RPC timeout");
+	    if(error_cnt > 5) return 0;//throw std::runtime_error("MudaqDevice::FEBsc_NiosRPC: Too many SC transmission failures");
             std::this_thread::sleep_for(std::chrono::milliseconds(polltime_ms));
             status=FEBsc_read(FPGA_ID, &reg, 1, 0xfff0);
 	    if(status < 0) error_cnt++;
