@@ -461,9 +461,9 @@ begin
         slowcontrol_write_req   => sc_fifo_write,
         i_data_in_slowcontrol   => sc_fifo_wdata,
 
-        data_write_req          => i_fifo_write,
+        data_write_req(0)       => i_fifo_write,
         i_data_in               => i_fifo_wdata,
-        o_fifos_almost_full     => o_fifos_almost_full(0),
+        o_fifos_almost_full(0)  => o_fifos_almost_full(0),
 
         override_data_in        => linktest_data, --TODO: separate link test entity?
         override_data_is_k_in   => linktest_datak,
@@ -471,10 +471,8 @@ begin
         override_granted        => linktest_granted(0),
 
         can_terminate           => i_can_terminate,
-        terminated              => terminated(0),
+        o_terminated            => terminated(0),
         data_priority           => '0',
-
-        leds                    => open,
 
         reset                   => not reset_156_n,
         clk                     => i_clk_156--,
@@ -495,9 +493,9 @@ begin
         slowcontrol_write_req   => sc_fifo_write,
         i_data_in_slowcontrol   => sc_fifo_wdata,
 
-        data_write_req          => i_secondary_fifo_write,
+        data_write_req(0)       => i_secondary_fifo_write,
         i_data_in               => i_secondary_fifo_wdata,
-        o_fifos_almost_full     => o_fifos_almost_full(1),
+        o_fifos_almost_full(0)  => o_fifos_almost_full(1),
 
         override_data_in        => linktest_data,
         override_data_is_k_in   => linktest_datak,
@@ -505,10 +503,8 @@ begin
         override_granted        => linktest_granted(1),
 
         can_terminate           => i_can_terminate,
-        terminated              => terminated(1),
+        o_terminated            => terminated(1),
         data_priority           => '0',
-
-        leds                    => open,
 
         reset                   => not reset_156_n,
         clk                     => i_clk_156--,
