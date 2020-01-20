@@ -8,7 +8,7 @@ entity fe_block is
 generic (
     feb_mapping : natural_array_t(3 downto 0) := 3&2&1&0;
     NIOS_CLK_MHZ_g : real;
-    N_LINKS : positive := 2--;
+    N_LINKS : positive := 1--;
 );
 port (
     i_fpga_id       : in    std_logic_vector(15 downto 0);
@@ -123,7 +123,7 @@ architecture arch of fe_block is
 
     signal linktest_data    : std_logic_vector(31 downto 0);
     signal linktest_datak   : std_logic_vector(3 downto 0);
-    signal linktest_granted : std_logic_vector(1 downto 0);
+    signal linktest_granted : std_logic_vector(N_LINKS-1 downto 0);
 
     signal av_mscb : work.util.avalon_t;
 
@@ -132,7 +132,7 @@ architecture arch of fe_block is
 
     signal run_state_125 : run_state_t;
     signal run_state_156 : run_state_t;
-    signal terminated : std_logic_vector(1 downto 0);
+    signal terminated : std_logic;
 
     signal run_number : std_logic_vector(31 downto 0);
 
@@ -445,65 +445,34 @@ begin
         i_clk           => i_clk_156--,
     );
 
-
-
     e_merger : entity work.data_merger
-    port map (
-        fpga_ID_in              => i_fpga_id,
-        FEB_type_in             => i_fpga_type,
-
-        run_state               => run_state_156,
-        run_number              => run_number,
-
-        data_out                => qsfp_tx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
-        data_is_k               => qsfp_tx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
-
-        slowcontrol_write_req   => sc_fifo_write,
-        i_data_in_slowcontrol   => sc_fifo_wdata,
-
-        data_write_req(0)       => i_fifo_write,
-        i_data_in               => i_fifo_wdata,
-        o_fifos_almost_full(0)  => o_fifos_almost_full(0),
-
-        override_data_in        => linktest_data, --TODO: separate link test entity?
-        override_data_is_k_in   => linktest_datak,
-        override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
-        override_granted        => linktest_granted(0),
-
-        can_terminate           => i_can_terminate,
-        o_terminated            => terminated(0),
-        data_priority           => '0',
-
-        reset                   => not reset_156_n,
-        clk                     => i_clk_156--,
-    );
-
-    --TODO: is this optimized away correctly when data inputs are not connected?
-    -- otherwise add generation switch.
-    e_merger_secondary : entity work.data_merger
+    generic map(
+        N_LINKS                 => N_LINKS,
+        feb_mapping             => feb_mapping--,
+    )
     port map (
         fpga_ID_in              => i_fpga_id,
         FEB_type_in             => i_fpga_type,
         run_state               => run_state_156,
         run_number              => run_number,
 
-        data_out                => qsfp_tx_data(32*(feb_mapping(1)+1)-1 downto 32*feb_mapping(1)),
-        data_is_k               => qsfp_tx_datak(4*(feb_mapping(1)+1)-1 downto 4*feb_mapping(1)),
+        o_data_out              => qsfp_tx_data,
+        o_data_is_k             => qsfp_tx_datak,
 
         slowcontrol_write_req   => sc_fifo_write,
         i_data_in_slowcontrol   => sc_fifo_wdata,
 
-        data_write_req(0)       => i_secondary_fifo_write,
-        i_data_in               => i_secondary_fifo_wdata,
-        o_fifos_almost_full(0)  => o_fifos_almost_full(1),
+        data_write_req          => i_secondary_fifo_write & i_fifo_write,
+        i_data_in               => i_secondary_fifo_wdata & i_fifo_wdata,
+        o_fifos_almost_full     => o_fifos_almost_full,
 
         override_data_in        => linktest_data,
         override_data_is_k_in   => linktest_datak,
         override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
-        override_granted        => linktest_granted(1),
+        override_granted        => linktest_granted,
 
         can_terminate           => i_can_terminate,
-        o_terminated            => terminated(1),
+        o_terminated            => terminated,
         data_priority           => '0',
 
         reset                   => not reset_156_n,
@@ -548,7 +517,7 @@ begin
         reset_bypass_payload    => reg_reset_bypass_payload,
         run_number_out          => run_number,
         fpga_id                 => i_fpga_id,
-        terminated              => (terminated(0) and terminated (1)), --TODO: test with two datamergers
+        terminated              => terminated, --TODO: test with two datamergers
         testout                 => open,
 
         o_phase                 => open,

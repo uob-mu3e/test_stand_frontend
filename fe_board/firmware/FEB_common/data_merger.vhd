@@ -26,7 +26,8 @@ use ieee.std_logic_misc.all;
 ENTITY data_merger is
 GENERIC (
     FIFO_ADDR_WIDTH             : positive := 10;
-    N_LINKS                     : positive := 1--;
+    N_LINKS                     : positive := 1;
+    feb_mapping                 : natural_array_t(3 downto 0)--;
 );
 PORT (
     clk                         : in    std_logic; -- 156.25 clk input
@@ -35,8 +36,12 @@ PORT (
     FEB_type_in                 : in    std_logic_vector(5  downto 0); -- Type of the frontendboard (111010: mupix, 111000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
     run_state                   : in    run_state_t;
     run_number                  : in    std_logic_vector(31 downto 0);
-    data_out                    : out   std_logic_vector(32*N_LINKS-1 downto 0); -- to optical transm.
-    data_is_k                   : out   std_logic_vector(4*N_LINKS-1 downto 0);  -- to optical trasm.
+    o_data_out                  : out   std_logic_vector(127 downto 0):= -- to optical transm.
+                                          X"03CAFE" & work.util.D28_5
+                                        & X"02BABE" & work.util.D28_5
+                                        & X"01DEAD" & work.util.D28_5
+                                        & X"00BEEF" & work.util.D28_5;
+    o_data_is_k                 : out   std_logic_vector(15 downto 0):= "0001" & "0001" & "0001" & "0001";
     i_data_in                   : in    std_logic_vector(36*N_LINKS-1 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
     i_data_in_slowcontrol       : in    std_logic_vector(35 downto 0); -- data input slowcontrol from SCFIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 SCData))
     slowcontrol_write_req       : in    std_logic;
@@ -47,7 +52,7 @@ PORT (
     override_data_in            : in    std_logic_vector(31 downto 0); -- data input for states link_test and sync_test;
     override_data_is_k_in       : in    std_logic_vector(3 downto 0);
     override_req                : in    std_logic;
-    override_granted            : out   std_logic;
+    override_granted            : out   std_logic_vector(N_LINKS-1 downto 0);
     data_priority               : in    std_logic--; -- 0: slowcontrol packets have priority, 1: data packets have priority
     --leds                        : out   std_logic_vector(3 downto 0) -- debug
 );
@@ -66,10 +71,18 @@ architecture rtl of data_merger is
     constant K307                               : std_logic_vector(7 downto 0) := x"fe";
     
     signal   terminated                         : std_logic_vector(N_LINKS-1 downto 0);
-
+    signal   data_out                           : std_logic_vector(32*N_LINKS-1 downto 0);
+    signal   data_is_k                          : std_logic_vector(4*N_LINKS-1 downto 0);
 BEGIN 
 
 o_terminated    <= and_reduce(terminated);
+
+-- TODO: make SC Link selectable / is SC part synthesised away if no sc_rx connected ??
+feb_map: for j in N_LINKS-1 downto 0 generate
+begin
+    o_data_out(32*(feb_mapping(j)+1)-1 downto 32*feb_mapping(j)) <= data_out(31+32*j downto 32*j);
+end generate;
+
 
 g_merger: for i in N_LINKS-1 downto 0 generate
 
@@ -177,7 +190,7 @@ begin
         run_prep_acknowledge_send       <= '0';
         data_is_k(4*i+3 downto 4*i)     <= K285_datak;
         data_out(32*i+31 downto 32*i)   <= K285;
-        override_granted                <= '0';
+        override_granted(i)             <= '0';
         merger_timeout_counter          <= 0;
         --
     elsif rising_edge(clk) then
@@ -215,7 +228,7 @@ begin
                     data_out (32*i+7  downto 0 +32*i)       <= x"bc";
 
                     merger_state                            <= sending_data;
-                    override_granted                        <= '1';
+                    override_granted(i)                     <= '1';
                 else
                     data_out(32*i+31 downto 32*i)           <= K285;
                     data_is_k(4*i+3 downto 4*i)             <= K285_datak;
@@ -243,7 +256,7 @@ begin
                     data_is_k(4*i+3 downto 4*i)             <= override_data_is_k_in;
                 else
                     merger_state                            <= idle;
-                    override_granted                        <= '0';
+                    override_granted(i)                     <= '0';
                     data_out(32*i+31 downto 32*i)           <= x"000000" & K284;
                     data_is_k(4*i+3 downto 4*i)             <= K284_datak;
                 end if;
@@ -279,7 +292,7 @@ begin
         elsif ( run_state = RUN_STATE_IDLE or run_state = RUN_STATE_OUT_OF_DAQ ) then
             terminated(i)                       <= '0';
             run_prep_acknowledge_send           <= '0';
-            override_granted                    <= '0';
+            override_granted(i)                 <= '0';
             last_merger_fifo_control_bits       <= "0000";
 
             case merger_state is
