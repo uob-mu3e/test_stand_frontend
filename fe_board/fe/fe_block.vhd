@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-
+use ieee.std_logic_misc.all;
 use work.daq_constants.all;
 
 entity fe_block is
@@ -46,13 +46,8 @@ port (
     i_can_terminate : in std_logic:='0';
 
     --main fiber data fifo
-    i_fifo_write    : in    std_logic;
-    i_fifo_wdata    : in    std_logic_vector(35 downto 0);
-
-    --secondary fiber: leave open if unused
-    --secondary fiber data fifo
-    i_secondary_fifo_write      : in    std_logic := '0';
-    i_secondary_fifo_wdata      : in    std_logic_vector(35 downto 0):=(others =>'-');
+    i_fifo_write    : in    std_logic_vector(N_LINKS-1 downto 0);
+    i_fifo_wdata    : in    std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
     o_fifos_almost_full         : out   std_logic_vector(N_LINKS-1 downto 0);
 
@@ -462,8 +457,8 @@ begin
         slowcontrol_write_req   => sc_fifo_write,
         i_data_in_slowcontrol   => sc_fifo_wdata,
 
-        data_write_req          => i_secondary_fifo_write & i_fifo_write,
-        i_data_in               => i_secondary_fifo_wdata & i_fifo_wdata,
+        data_write_req          => i_fifo_write,
+        i_data_in               => i_fifo_wdata,
         o_fifos_almost_full     => o_fifos_almost_full,
 
         override_data_in        => linktest_data,
@@ -487,7 +482,7 @@ begin
         g_poly => "10000000001000000000000000000110"--,
     )
     port map (
-        i_sync_reset    => not (linktest_granted(0) and linktest_granted(1)),
+        i_sync_reset    => not and_reduce(linktest_granted),
         i_seed          => (others => '1'),
         i_en            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),
         o_lsfr          => linktest_data,

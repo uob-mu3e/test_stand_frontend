@@ -16,6 +16,7 @@ entity mutrig_datapath is
 generic(
 	N_MODULES: integer range 1 to 2 := 1;
 	N_ASICS : positive := 1;
+    N_LINKS : positive := 1;
 	LVDS_PLL_FREQ : real := 125.0;
 	LVDS_DATA_RATE : real := 1250.0;
 	GEN_DUMMIES : boolean := TRUE;
@@ -36,11 +37,9 @@ port (
 
 	--interface to asic fifos
 	i_clk_core		: in  std_logic; --fifo reading side clock
-	o_A_fifo_data		: out std_logic_vector(35 downto 0);
-	o_A_fifo_wr		: out  std_logic;
-	--secondary interface used if DUAL_FIBER=TRUE
-	o_B_fifo_data		: out std_logic_vector(35 downto 0);
-	o_B_fifo_wr		: out  std_logic:='0';
+	o_fifo_data		: out std_logic_vector(36*(N_LINKS-1)+35 downto 0);
+	o_fifo_wr		: out  std_logic_vector(N_LINKS-1 downto 0);
+	i_common_fifos_almost_full : in std_logic_vector(N_LINKS-1 downto 0); 
 
 	--slow control
 	i_SC_disable_dec	: in std_logic;
@@ -60,7 +59,6 @@ port (
 	o_receivers_dpa_lock	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0);			-- dpa lock flag per channel
 	o_receivers_ready	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- receiver output ready flag
 	o_frame_desync		: out std_logic_vector(1 downto 0);
-	o_buffer_full		: out std_logic_vector(1 downto 0);
 
         i_SC_reset_counters	: in std_logic;
 	i_SC_counterselect      : in std_logic_vector(5 downto 0); --select counter to be read out. 1..0: counter type selection. 5..2: counter channel selection
@@ -246,14 +244,12 @@ signal s_A_buf_predec_data	: std_logic_vector(33 downto 0);
 signal s_A_buf_predec_full 	: std_logic;
 signal s_A_buf_predec_wr		: std_logic;
 signal s_B_buf_predec_data	: std_logic_vector(33 downto 0);
-signal s_B_buf_predec_full 	: std_logic;
+signal s_B_buf_predec_full 	: std_logic :='0';
 signal s_B_buf_predec_wr		: std_logic;
 -- prbs decoder - mu3edataformat-writer - common fifo
 signal s_A_buf_data		: std_logic_vector(33 downto 0);
-signal s_A_buf_almost_full 	: std_logic:='0';
 signal s_A_buf_wr		: std_logic;
 signal s_B_buf_data		: std_logic_vector(33 downto 0);
-signal s_B_buf_almost_full 	: std_logic:='0';
 signal s_B_buf_wr		: std_logic;
 
 -- monitoring signals TODO: connect as needed
@@ -546,8 +542,6 @@ u_mux_B: framebuilder_mux
 end generate;
 
 --prbs decoder (two-stream)
-s_A_buf_predec_full <= s_A_buf_almost_full;
-s_B_buf_predec_full <= s_B_buf_almost_full;
 u_decoder: prbs_decoder
 	port map (
 		i_coreclk	=> i_clk_core,
@@ -566,18 +560,19 @@ u_decoder: prbs_decoder
 	);
 
 --to common fifo buffer:
-o_A_fifo_wr     <= s_A_buf_wr;
-o_A_fifo_data   <= "00" & s_A_buf_data;
+o_fifo_wr(0)                    <= s_A_buf_wr;
+o_fifo_data(35 downto 0)        <= "00" & s_A_buf_data;
+s_A_buf_predec_full             <= i_common_fifos_almost_full(0);
 
-gen_dual_cfifo: if(N_MODULES>1) generate
-    o_B_fifo_wr     <= s_B_buf_wr;
-    o_B_fifo_data   <= "00" & s_B_buf_data;
+gen_dual_cfifo: if(N_LINKS>1) generate
+    o_fifo_wr(1)                <= s_B_buf_wr;
+    o_fifo_data(71 downto 36)   <= "00" & s_B_buf_data;
+    s_B_buf_predec_full         <= i_common_fifos_almost_full(1);
 end generate;
 
 nogen_dual: if(N_MODULES=1) generate
 	o_frame_desync(1)<='0';
 	s_B_buf_predec_wr <='0';
-        o_buffer_full(1) <='0';
 end generate;
 
 p_RC_all_done: process (i_clk_core)

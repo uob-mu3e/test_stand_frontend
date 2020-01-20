@@ -207,10 +207,12 @@ end entity;
 
 architecture arch of top is
 
+    constant N_LINKS : positive := 1;
+
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
-    signal fifo_write: std_logic;
-    signal fifo_wdata : std_logic_vector(35 downto 0);
+    signal fifo_write: std_logic_vector(N_LINKS-1 downto 0);
+    signal fifo_wdata : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
@@ -270,7 +272,7 @@ begin
 
 		-- data
 		o_fifo_wdata            => fifo_wdata,
-		o_fifo_write            => fifo_write,
+		o_fifo_write            => fifo_write(0),
 
 		i_data_in_A_0           => data_in_A_0,
 		i_data_in_A_1           => data_in_A_1,

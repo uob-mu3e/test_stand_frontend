@@ -116,10 +116,13 @@ end entity;
 
 architecture arch of top is
 
+    constant N_LINKS : positive := 1;
+
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
-    signal fifo_write : std_logic;
-    signal fifo_wdata : std_logic_vector(35 downto 0);
+    signal fifo_write : std_logic_vector(N_LINKS-1 downto 0);
+    signal fifo_wdata : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
+    signal common_fifos_almost_full : std_logic_vector(N_LINKS-1 downto 0);
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
@@ -152,7 +155,8 @@ begin
         N_MODULES => 1,
         N_ASICS => 1,
         LVDS_PLL_FREQ => 156.25,
-        LVDS_DATA_RATE => 156.25--,
+        LVDS_DATA_RATE => 156.25,
+        N_LINKS => N_LINKS--,
     )
     port map (
         i_reg_addr      => malibu_reg.addr(3 downto 0),
@@ -165,11 +169,10 @@ begin
         o_pll_test      => malibu_pll_test,
         i_data          => malibu_data(0 downto 0),
 
-        o_fifoA_write   => fifo_write,
-        o_fifoA_wdata   => fifo_wdata,
+        o_fifo_write   => fifo_write,
+        o_fifo_wdata   => fifo_wdata,
 
-        o_fifoB_write   => open,
-        o_fifoB_wdata   => open,
+        i_common_fifos_almost_full => common_fifos_almost_full,
 
         i_run_state     => run_state_125,
         o_run_state_all_done => s_run_state_all_done,
@@ -241,7 +244,8 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        NIOS_CLK_MHZ_g => 50.0--,
+        NIOS_CLK_MHZ_g => 50.0,
+        N_LINKS => N_LINKS--,
     )
     port map (
         i_fpga_id       => X"FEB0",
@@ -267,14 +271,16 @@ begin
         o_spi_si_sclk(0)    => si45_spi_sclk,
         o_spi_si_ss_n(0)    => si45_spi_cs_n,
 
-        i_qsfp_rx       => qsfp_rx,
-        o_qsfp_tx       => qsfp_tx,
+        i_qsfp_rx           => qsfp_rx,
+        o_qsfp_tx           => qsfp_tx,
 
-        i_pod_rx        => pod_rx,
-        o_pod_tx        => pod_tx,
+        i_pod_rx            => pod_rx,
+        o_pod_tx            => pod_tx,
 
-        i_fifo_write    => fifo_write,
-        i_fifo_wdata    => fifo_wdata,
+        i_fifo_write        => fifo_write,
+        i_fifo_wdata        => fifo_wdata,
+
+        o_fifos_almost_full => common_fifos_almost_full,
 
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,

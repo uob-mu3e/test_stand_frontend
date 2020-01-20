@@ -110,8 +110,8 @@ architecture arch of top is
 
     constant N_LINKS : positive := 2;
 
-    signal fifoA_write, fifoB_write : std_logic;
-    signal fifoA_wdata, fifoB_wdata : std_logic_vector(35 downto 0);
+    signal fifo_write : std_logic_vector(N_LINKS-1 downto 0);
+    signal fifo_wdata : std_logic_vector((N_LINKS-1)*36+35 downto 0);
     signal common_fifos_almost_full : std_logic_vector(N_LINKS-1 downto 0);
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
@@ -172,11 +172,8 @@ begin
         o_pll_test      => open,
         i_data          => i_fee_rxd,
 
-        o_fifoA_write   => fifoA_write,
-        o_fifoA_wdata   => fifoA_wdata,
-
-        o_fifoB_write   => fifoB_write,
-        o_fifoB_wdata   => fifoB_wdata,
+        o_fifo_write   => fifo_write,
+        o_fifo_wdata   => fifo_wdata,
 
         i_common_fifos_almost_full => common_fifos_almost_full,
 
@@ -274,7 +271,7 @@ begin
     generic map (
         feb_mapping => 0&3&2&1,
         NIOS_CLK_MHZ_g => 50.0,
-        N_LINKS => 2--,
+        N_LINKS => N_LINKS--,
     )
     port map (
         i_fpga_id       => X"FEB0",
@@ -306,11 +303,9 @@ begin
         i_pod_rx        => pod_rx,
         o_pod_tx        => pod_tx,
 
-        i_fifo_write    => fifoA_write,
-        i_fifo_wdata    => fifoA_wdata,
+        i_fifo_write    => fifo_write,
+        i_fifo_wdata    => fifo_wdata,
 
-        i_secondary_fifo_write    => fifoB_write,
-        i_secondary_fifo_wdata    => fifoB_wdata,
         o_fifos_almost_full       => common_fifos_almost_full,
 
         i_mscb_data     => mscb_data_in,

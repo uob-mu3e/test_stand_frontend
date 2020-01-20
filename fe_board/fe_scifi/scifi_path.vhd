@@ -25,11 +25,8 @@ port (
     o_pll_test      : out   std_logic;
     i_data          : in    std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
-    o_fifoA_wdata   : out   std_logic_vector(35 downto 0);
-    o_fifoA_write   : out   std_logic;
-
-    o_fifoB_wdata   : out   std_logic_vector(35 downto 0);
-    o_fifoB_write   : out   std_logic;
+    o_fifo_wdata   : out   std_logic_vector(36*N_LINKS-1 downto 0);
+    o_fifo_write   : out   std_logic_vector(N_LINKS-1 downto 0);
 
     i_common_fifos_almost_full : in std_logic_vector(N_LINKS-1 downto 0); 
 
@@ -206,6 +203,7 @@ begin
     generic map (
         N_MODULES => N_MODULES,
         N_ASICS => N_ASICS,
+        N_LINKS => N_LINKS,
         LVDS_PLL_FREQ => LVDS_PLL_FREQ,
         LVDS_DATA_RATE => LVDS_DATA_RATE,
         INPUT_SIGNFLIP => INPUT_SIGNFLIP,
@@ -223,11 +221,9 @@ begin
 
         -- interface to asic fifos
         i_clk_core => i_clk_core,
-        o_A_fifo_data => o_fifoA_wdata,
-        o_A_fifo_wr => o_fifoA_write,
-        
-        o_B_fifo_data => o_fifoB_wdata,
-        o_B_fifo_wr => o_fifoB_write,
+        o_fifo_data => o_fifo_wdata,
+        o_fifo_wr => o_fifo_write,
+        i_common_fifos_almost_full => i_common_fifos_almost_full,
 
         -- slow control
         i_SC_disable_dec => s_dpctrl_reg(31),
@@ -247,7 +243,6 @@ begin
         o_receivers_dpa_lock => rx_dpa_lock,
         o_receivers_ready => rx_ready,
         o_frame_desync => frame_desync,
-        o_buffer_full => buffer_full,
 
         i_SC_reset_counters => s_cntreg_ctrl(15),
         i_SC_counterselect => s_cntreg_ctrl(5 downto 0),
