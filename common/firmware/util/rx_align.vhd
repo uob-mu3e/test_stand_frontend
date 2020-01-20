@@ -103,7 +103,7 @@ begin
         pattern <= "0000";
         quality <= 0;
         o_data <= (others => '0');
-        o_datak <= (others => '0');
+        o_datak <= (others => '1');
         --
     elsif rising_edge(i_clk) then
         error_v := false;

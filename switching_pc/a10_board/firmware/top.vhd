@@ -132,7 +132,7 @@ architecture rtl of top is
 
 
 
-        constant NLINKS_DATA : integer := 2;
+        constant NLINKS_DATA : integer := 3;
         constant NLINKS_TOTL : integer := 16;
 
         signal reset : std_logic;
@@ -243,7 +243,7 @@ architecture rtl of top is
 
 	type mapping_t is array(natural range <>) of integer;
 	--mapping as follows: fiber link_mapping(0)=1 - Fiber QSFPA.1 is mapped to first(0) link
-        constant link_mapping : mapping_t(NLINKS_DATA-1 downto 0):=(1,2);
+        constant link_mapping : mapping_t(NLINKS_DATA-1 downto 0):=(1,2,4);
 	signal rx_mapped_data_v : std_logic_vector(NLINKS_DATA*32-1 downto 0);
         signal rx_mapped_datak_v : std_logic_vector(NLINKS_DATA*4-1 downto 0);
         signal rx_mapped_linkmask : std_logic_vector(NLINKS_DATA-1  downto 0); --writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_-1 downto 0),
@@ -288,8 +288,8 @@ architecture rtl of top is
         signal dma_wren_test : std_logic;
         signal dma_end_event_cnt : std_logic;
         signal dma_end_event_test : std_logic;
-        signal data_counter : std_logic_vector(32*NLINKS_DATA-1 downto 0);
-        signal datak_counter : std_logic_vector(4*NLINKS_DATA-1 downto 0);
+        signal data_counter : std_logic_vector(32*NLINKS_TOTL-1 downto 0);
+        signal datak_counter : std_logic_vector(4*NLINKS_TOTL-1 downto 0);
 
 begin
 
@@ -618,46 +618,48 @@ begin
 
     dmamemhalffull_tx <= sync_chain_halffull(sync_chain_halffull'high);
 
-    --process(clk_156, reset_156_n)
-    --begin
-    --if ( reset_156_n = '0' ) then
-    --    data_counter    <= (others => '0');
-    --    datak_counter   <= (others => '0');
-    --elsif rising_edge(clk_156) then
-    --    if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
-    --        for i in 0 to NLINKS_DATA-1 loop
-    --           data_counter(32*(i+1)-1 downto 32*i)    <= data_pix_generated;
-    --           datak_counter(4*(i+1)-1 downto 4*i)    <= datak_pix_generated;
-    --        end loop;
-    --    else
-    --        data_counter    <=rx_mapped_data_v;
-    --        datak_counter   <=rx_mapped_datak_v;
-    --    end if;
-    --end if;
-    --end process;
-    --
-    --e_midas_event_builder : entity work.midas_event_builder
-    --    generic map (
-    --        NLINKS => NLINKS_DATA--;
-    --    )
-    --    port map(
-    --        i_clk_data => clk_156,
-    --        i_clk_dma  => pcie_fastclk_out,
-    --        i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
-    --        i_reset_dma_n  => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-    --        i_rx_data  => data_counter,
-    --        i_rx_datak => datak_counter,
-    --        i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-    --        i_link_mask => rx_mapped_linkmask, --writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_-1 downto 0),
-    --        o_event_wren => dma_wren_cnt,
-    --        o_endofevent => dma_end_event_cnt,
-    --        o_event_data => dma_event_data,
-    --        o_state_out => state_out_eventcounter--,
-    --);
+    process(clk_156, reset_156_n)
+    begin
+    if ( reset_156_n = '0' ) then
+        data_counter    <= (others => '0');
+        datak_counter   <= (others => '0');
+    elsif rising_edge(clk_156) then
+        if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
+            set_gen_data : FOR i in 0 to NLINKS_TOTL - 1 LOOP
+                data_counter(31 + i * 32 downto i * 32) <= data_pix_generated;
+                datak_counter(3 + i * 4 downto i * 4) <= datak_pix_generated;
+            END LOOP set_gen_data;
+        else
+            set_link_data : FOR i in 0 to NLINKS_TOTL - 1 LOOP
+                data_counter(31 + i * 32 downto i * 32) <= rx_data(i);
+                datak_counter(3 + i * 4 downto i * 4) <= rx_datak(i);
+            END LOOP set_link_data;
+        end if;
+    end if;
+    end process;
     
-    dma_data <= (others =>'0');--dma_event_data;
-    dma_data_wren <= '0';--dma_wren_cnt;
-    dmamem_endofevent <= '0';--dma_end_event_cnt;
+    e_midas_event_builder : entity work.midas_event_builder
+    generic map (
+        NLINKS => NLINKS_TOTL--;
+    )
+    port map (
+        i_clk_data      => clk_156,
+        i_clk_dma       => pcie_fastclk_out,
+        i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
+        i_reset_dma_n   => resets_n_fast(RESET_BIT_EVENT_COUNTER),
+        i_rx_data       => data_counter,
+        i_rx_datak      => datak_counter,
+        i_wen_reg       => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+        i_link_mask_n   => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0),--(others => '1'), -- if 0 the link is active
+        o_event_wren    => dma_wren_cnt,
+        o_endofevent    => dma_end_event_cnt,
+        o_event_data    => dma_event_data,
+        o_state_out     => state_out_eventcounter--,
+    );
+    
+    dma_data <= dma_event_data;
+    dma_data_wren <= dma_wren_cnt;
+    dmamem_endofevent <= dma_end_event_cnt;
     
     -------- Slow Control --------
     
