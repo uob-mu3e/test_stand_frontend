@@ -385,8 +385,8 @@ begin
 
     e_nios : work.cmp.nios
     port map (
-        clk_156_reset_reset_n           => reset_156_n,
-        clk_156_clock_clk               => clk_156,
+        avm_reset_reset_n               => reset_156_n,
+        avm_clock_clk                   => clk_156,
 
         avm_qsfpA_address               => av_qsfp(0).address(13 downto 0),
         avm_qsfpA_read                  => av_qsfp(0).read,
