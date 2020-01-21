@@ -385,8 +385,8 @@ begin
 
     e_nios : work.cmp.nios
     port map (
-        avm_reset_reset_n               => reset_156_n,
-        avm_clock_clk                   => clk_156,
+        avm_reset_reset_n               => reset_125_n,
+        avm_clock_clk                   => clk_125,
 
         avm_qsfpA_address               => av_qsfp(0).address(13 downto 0),
         avm_qsfpA_read                  => av_qsfp(0).read,
@@ -549,8 +549,8 @@ begin
         i_avs_writedata     => av_qsfp(i).writedata,
         o_avs_waitrequest   => av_qsfp(i).waitrequest,
 
-        i_reset     => not reset_156_n,
-        i_clk       => clk_156--,
+        i_reset     => not reset_125_n,
+        i_clk       => clk_125--,
     );
     end generate;
     --assign vector types to array types for qsfp rx signals (used by link observer module)
