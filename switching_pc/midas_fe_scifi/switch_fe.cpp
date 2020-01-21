@@ -377,7 +377,7 @@ try{
    uint16_t timeout_cnt = 50;
    uint64_t stop_signal_seen = get_runend_ack();
    printf("Stop signal seen from 0x%16lx, expect stop signals from 0x%16lx\n", stop_signal_seen, link_active_from_odb);
-   while(stop_signal_seen != link_active_from_odb &&
+   while( (stop_signal_seen & link_active_from_odb) != link_active_from_odb &&
          timeout_cnt > 0) {
       usleep(1000);
       stop_signal_seen = get_runend_ack();
