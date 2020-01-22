@@ -25,9 +25,6 @@
 
 #include "mudaq_device.h"
 
-#define DMA_SLOW_DOWN_REGISTER_W	0x06
-#define FEB_ENABLE_REGISTER_W		0x0A
-
 using namespace std;
 
 void print_usage(){
