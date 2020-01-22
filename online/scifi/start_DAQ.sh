@@ -3,31 +3,7 @@
 source ../install/set_env.sh
 #sleep 2
 
-odbedit -c "set '/Experiment/Security/Enable non-localhost RPC'  y"
-#odbedit -c "set '/Experiment/Security/RPC hosts/Allowed hosts'  '10.20.212.100 10.20.212.13'"
-
-odbedit -c 'mkdir Custom'
-odbedit -d Custom -c 'create STRING Path'
-odbedit -c "set Custom/Path $SOURCE/mhttpd/custom"
-
-odbedit -c 'mkdir rootana'
-odbedit -d rootana -c 'create STRING cors'
-odbedit -c 'set rootana/cors *'
-
-#create custom pages for DAQ slow control and Clock/Reset system
-odbedit -d Custom -c 'create STRING SC'
-odbedit -c 'set Custom/SC sc.html'
-odbedit -d Custom -c 'create STRING CR'
-odbedit -c 'set Custom/CR cr.html'
-
-
-#custom pages for SciFi
-odbedit -d Custom -c 'create STRING SciFi-ASICs'
-odbedit -c 'set Custom/SciFi-ASICs mutrigTdc.html'
-
-odbedit -d Custom -c 'create STRING MutrigAna'
-odbedit -c 'set Custom/MutrigAna ana_mutrig/mutrig/mutrigana.html'
-
+./scifi/setup_odb.sh
 
 tmux new-session -s "DAQ" -d 'bash -i'
 
@@ -48,11 +24,11 @@ tmux select-layout tiled
 tmux new-window
 tmux rename-window 'Frontends' 
 
+tmux split-window -v 'source ../install/set_env.sh; echo "---- CRFE ----" ; crfe; bash -i'
+sleep 1
 tmux split-window -v 'source ../install/set_env.sh; echo "---- SWITCH ----" ; switch_fe_scifi; bash -i'
 sleep 1
 tmux split-window -v 'source ../install/set_env.sh; echo "---- FARM ----" ; farm_fe; bash -i'
-sleep 1
-tmux split-window -v 'source ../install/set_env.sh; echo "---- CRFE ----" ; crfe; bash -i'
 tmux select-layout tiled
 
 

@@ -162,8 +162,14 @@ int main(int argc, char *argv[])
 
     while(dma_buf[size/sizeof(uint32_t)-8] <= 0){
 
-        if (mu.last_written_addr() == 0) continue;
-        if (mu.last_written_addr() == lastlastWritten) continue;
+        if (mu.last_written_addr() == 0) {
+            //cout << "last_written" << endl;
+            continue;
+        }
+        if (mu.last_written_addr() == lastlastWritten) {
+            //cout << "lastlast_written" << endl;
+            continue;
+        }
         lastlastWritten = lastWritten;
         lastWritten = mu.last_written_addr();
 
@@ -178,9 +184,12 @@ int main(int argc, char *argv[])
         lastendofevent = endofevent;
         endofevent = mu.last_endofevent_addr();
 
-        if ((endofevent+1)*8 > lastlastWritten) continue;
+        if ((endofevent+1)*8 > lastlastWritten) {
+            //cout << "endofevent" << endl;
+            continue;
+        }
         if ((dma_buf[(endofevent+1)*8] == 0xAFFEAFFE) or (dma_buf[(endofevent+1)*8] == 0x0000009c)){
-        cout << hex << (endofevent+1)*8 << " " << lastWritten << " " << dma_buf[(endofevent+1)*8] << endl;
+            cout << hex << (endofevent+1)*8 << " " << lastWritten << " " << dma_buf[(endofevent+1)*8] << endl;
         };
 //        for (int i = 0; i < 20; i++) {
 //        char dma_buf_str[256];
