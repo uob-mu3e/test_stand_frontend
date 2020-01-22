@@ -601,7 +601,7 @@ begin
         datak_pix_generated => datak_pix_generated,
         data_pix_ready      => data_pix_ready,
         start_global_time   => (others => '0'),
-        slow_down           => writeregs_slow(DATAGENERATOR_DIVIDER_REGISTR_W),
+        slow_down           => writeregs_slow(DATAGENERATOR_DIVIDER_REGISTER_W),
         state_out           => state_out_datagen,
         clk                 => clk_156--,
     );
