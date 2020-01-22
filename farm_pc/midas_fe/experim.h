@@ -88,14 +88,8 @@ typedef struct {
 
 #define STREAM_SETTINGS_STR(_name) const char *_name[] = {\
 "[Datagenerator]",\
+"Divider = INT : 1000",\
 "Enable = BOOL : n",\
-"Divider = INT : 32768",\
-"Enable pixel = BOOL : n",\
-"Enable fibre = BOOL : n",\
-"Enable tile = BOOL : n",\
-"NPixel = INT : 0",\
-"NFibre = INT : 0",\
-"NTile = INT : 0",\
 "",\
 NULL }
 

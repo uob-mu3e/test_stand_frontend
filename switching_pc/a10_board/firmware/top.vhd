@@ -594,14 +594,14 @@ begin
     e_data_gen : entity work.data_generator_a10
     port map (
         reset               => resets(RESET_BIT_DATAGEN),
-        enable_pix          => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL),
+        enable_pix          => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE),
         i_dma_half_full     => dmamemhalffull_tx,
         random_seed         => (others => '1'),
         data_pix_generated  => data_pix_generated,
         datak_pix_generated => datak_pix_generated,
         data_pix_ready      => data_pix_ready,
         start_global_time   => (others => '0'),
-        slow_down           => writeregs_slow(DMA_SLOW_DOWN_REGISTER_W),
+        slow_down           => writeregs_slow(DATAGENERATOR_DIVIDER_REGISTR_W),
         state_out           => state_out_datagen,
         clk                 => clk_156--,
     );
@@ -624,7 +624,7 @@ begin
         data_counter    <= (others => '0');
         datak_counter   <= (others => '0');
     elsif rising_edge(clk_156) then
-        if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
+        if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE) = '1') then
             set_gen_data : FOR i in 0 to NLINKS_TOTL - 1 LOOP
                 data_counter(31 + i * 32 downto i * 32) <= data_pix_generated;
                 datak_counter(3 + i * 4 downto i * 4) <= datak_pix_generated;
