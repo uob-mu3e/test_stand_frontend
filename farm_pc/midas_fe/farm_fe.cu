@@ -9,6 +9,7 @@
 #include "mcstd.h"
 #include "experim.h"
 #include "switching_constants.h"
+#include "link_constants.h"
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -76,6 +77,7 @@ INT poll_event(INT source, INT count, BOOL test);
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
 
 void datagen_settings_changed(HNDLE, HNDLE, int, void *);
+void link_active_settings_changed(HNDLE, HNDLE, int, void *);
 /*-- Equipment list ------------------------------------------------*/
 
 EQUIPMENT equipment[] = {
@@ -230,7 +232,6 @@ void datagen_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 {
     KEY key;
     db_get_key(hDB, hKey, &key);
-    int size;
     cm_msg(MINFO, "datagen_settings_changed", "Set Farm: %s", key.name);
 
     if (std::string(key.name) == "Enable") {
@@ -241,11 +242,11 @@ void datagen_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        int value;
        int size = sizeof(value);
        db_get_data(hDB, hKey, &value, &size, TID_INT);
-       mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTR_W,value,100);
+       mup->write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W,value,100);
     }
 }
 
-uint64_t update_link_active_from_odb(){
+uint64_t get_link_active_from_odb(){
    INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
    int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
    int status = db_get_value(hDB, 0, "/Equipment/Links/Settings/LinkMask", frontend_board_active_odb, &size, TID_INT, false);
@@ -306,26 +307,25 @@ INT begin_of_run(INT run_number, char *error)
    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
 
    // Set up data generator: enable only if set in ODB
-   db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator/Enable", &hKey);
+   HNDLE hKey;
    BOOL value;
-   size = sizeof(value);
+   INT size = sizeof(value);
+   db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator/Enable", &hKey);
    db_get_data(hDB, hKey, &value, &size, TID_BOOL);
    uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
    if(value) reg=SET_DATAGENERATOR_BIT_ENABLE(reg);
    mu.write_register(DATAGENERATOR_REGISTER_W,reg);
 
 
-    // Enable links based on ODB settings TODO!!
-    //mu.write_register_wait(FEB_ENABLE_REGISTER_W, 0xF, 100);
-   
+   // Note: link masks are already set during fe_init and via ODB callback
+
+   /*
    // Get ODB settings for this equipment
    HNDLE hDB, hStreamSettings;
-   INT status, size;
+   INT status;
    char set_str[256];
    STREAM_SETTINGS settings;  // defined in experim.h
    
-   /* Get current  settings */
-   /*
    cm_get_experiment_database(&hDB, NULL);
    sprintf(set_str, "/Equipment/Stream/Settings");
    status = db_find_key (hDB, 0, set_str, &hStreamSettings);
