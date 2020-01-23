@@ -142,7 +142,6 @@ INT frontend_init()
    db_find_key(hDB, 0, "/Equipment/Links/Settings/LinkMask", &hKey);
    assert(hKey);
    db_watch(hDB, hKey, link_active_settings_changed, nullptr);
-   link_active_settings_changed(hDB,hKey,0,NULL);
 
    // Allocate memory for the DMA buffer - this can fail!
    if(cudaMallocHost( (void**)&dma_buf, dma_buf_size ) != cudaSuccess){
@@ -199,6 +198,10 @@ INT frontend_init()
    usleep(2000);
    // DMA_CONTROL_W
    mup->write_register(0x5,0x0);
+
+   //set data link enable
+   link_active_settings_changed(hDB,hKey,0,NULL);
+
    usleep(5000);
    
    // create ring buffer for readout thread
@@ -257,14 +260,17 @@ uint64_t get_link_active_from_odb(){
 
    /* get link active from odb */
    uint64_t link_active_from_odb = 0;
-   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
+   //printf("Data link active: 0x");
+   for(int link = MAX_LINKS_PER_SWITCHINGBOARD-1 ; link>=0; link--) {
       int offset = 0;//MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
       if(frontend_board_active_odb[offset + link] & FEBLINKMASK::DataOn)
 	 //a standard FEB link (SC and data) is considered enabled if RX and TX are. 
 	 //a secondary FEB link (only data) is enabled if RX is.
 	 //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
          link_active_from_odb += (1 << link);
+      //printf("%u",(frontend_board_active_odb[offset + link] & FEBLINKMASK::DataOn?1:0));
    }
+   //printf("\n");
    return link_active_from_odb;
 }
 
@@ -315,7 +321,6 @@ INT begin_of_run(INT run_number, char *error)
    uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
    if(value) reg=SET_DATAGENERATOR_BIT_ENABLE(reg);
    mu.write_register(DATAGENERATOR_REGISTER_W,reg);
-
 
    // Note: link masks are already set during fe_init and via ODB callback
 
@@ -592,7 +597,7 @@ INT read_stream_thread(void *param)
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
         set_equipment_status(equipment[0].name, "Not running", "var(--myellow)");
-        //cout << "!STATE_RUNNING" << endl;
+        cout << "!STATE_RUNNING" << endl;
         ss_sleep(100);
         //TODO: signalling from main thread?
         continue;
@@ -655,7 +660,7 @@ INT read_stream_thread(void *param)
           ss_sleep(1000);
           continue;
       }
-
+      printf("mu.last_written_addr()=%x ; mu.last_endofevent_addr()=%x; lastlastWritten=%x lastWritten=%x\n",mu.last_written_addr(),mu.last_endofevent_addr(),lastlastWritten,lastWritten);
       if (mu.last_written_addr() == 0) continue;
       if (mu.last_written_addr() == lastlastWritten) continue;
       if (mu.last_written_addr() == lastWritten) continue;
