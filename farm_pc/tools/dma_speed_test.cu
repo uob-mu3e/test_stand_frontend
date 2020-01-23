@@ -129,8 +129,9 @@ int main(int argc, char *argv[])
     // Set up data generator
     datagen_setup = 0;
     uint32_t frac = atoi(argv[1]);
-    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, frac, 100);//3E8); // slow down to 64 MBit/s
+    mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, frac, 100);//3E8); // slow down to 64 MBit/s
     //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
+    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
     if (atoi(argv[2]) == 1) datagen_setup = ((1<<5)| datagen_setup); // enable dma_half_mode
     mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
 
