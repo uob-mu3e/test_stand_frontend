@@ -13,7 +13,8 @@ use work.daq_constants.all;
 entity overflow_check is
 generic (
     FIFO_ADDR_WIDTH     : positive := 10;
-    MAX_PAKET_SIZE      : positive := 100--;
+    MAX_PAKET_SIZE      : positive := 100;
+    DISABLE             : integer := 0--;
 );
 port (
     i_clk               : in  std_logic;
@@ -35,7 +36,7 @@ begin
 
     process(i_clk, i_reset)
     begin
-        if ( i_reset = '1' ) then
+        if ( i_reset = '1' or DISABLE /= 0) then
             o_write_req             <= '0';
             o_wdata                 <= (others => '0');
             state                   <= forwarding;

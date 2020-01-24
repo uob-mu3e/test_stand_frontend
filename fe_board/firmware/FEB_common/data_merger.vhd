@@ -126,7 +126,8 @@ begin
 
     e_slowcontrol_overflow_check: entity work.overflow_check
     generic map(
-        FIFO_ADDR_WIDTH => FIFO_ADDR_WIDTH--,
+        FIFO_ADDR_WIDTH => FIFO_ADDR_WIDTH,
+        DISABLE         => i--,
     )
     port map(
         i_clk           => clk,
