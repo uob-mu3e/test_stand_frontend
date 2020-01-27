@@ -15,26 +15,15 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include "mudaq_device_scifi.h"
 #include "MutrigConfig.h"
 #include "link_constants.h"
-
-class MutrigFEB {
+#include "MuFEB.h"
+class MutrigFEB : public MuFEB{
    protected:
-      mudaq::MudaqDevice& m_mu;
       std::map<uint16_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
-      bool m_ask_sc_reply;
-      const char* m_odb_prefix;
-      const char* m_equipment_name;
-      uint8_t m_SB_number;
 
-      HNDLE m_hDB;
    public:
       MutrigFEB(const MutrigFEB&)=delete;
       MutrigFEB(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix):
-	      m_mu(mu),
-	      m_ask_sc_reply(true),
-	      m_odb_prefix(odb_prefix),
-	      m_equipment_name(equipment_name),
-	      m_SB_number(0xff),
-	      m_hDB(hDB)
+              MuFEB(mu,hDB,equipment_name,odb_prefix):
 	{};
       void SetSBnumber(uint8_t n){m_SB_number=n;}
       const char* GetName(){return m_equipment_name;}
@@ -42,19 +31,11 @@ class MutrigFEB {
 
       uint16_t GetNumASICs(){return m_FPGAs.size()*nModulesPerFEB()*nAsicsPerModule();}
       uint16_t GetNumModules(){return m_FPGAs.size()*nModulesPerFEB();}
-      uint16_t GetNumFPGAs(){return m_FPGAs.size();}
 
-      void SetAskSCReply(bool ask){m_ask_sc_reply=ask;};
 
       //MIDAS callback for all setters below (DAQ related, mapped to functions on FEB / settings from the DAQ subdirectory).
       //Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
       static void on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *);
-
-      //MIDAS callback for changed mapping of FEB IDs. Will clear m_FPGAs and rebuild this vector.
-      //Using user data argument as "this"
-      //TODO: move to generic FEB class after merging with pixel SC
-      static void on_mapping_changed(HNDLE hDB, HNDLE hKey, INT, void *);
-      void RebuildFEBsMap();
 
       //Write all registers based on ODB values
       int WriteAll();
@@ -70,10 +51,6 @@ class MutrigFEB {
       int ResetCounters(uint16_t FPGA_ID);
       void ResetAllCounters(){for(size_t i=0;i<m_FPGAs.size();i++) ResetCounters(i);};
 
-      //Read run state and reset bypass command
-      //Parameter FPGA_ID refers to global numbering, i.e. before mapping
-      int ReadBackRunState(uint16_t FPGA_ID);
-      void ReadBackAllRunState(){for(size_t i=0;i<m_FPGAs.size();i++) ReadBackRunState(i);};
 
       //Read datapath status values from FEB, store in subtree $odb_prefix/Variables/FEB datapath status
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
@@ -82,43 +59,11 @@ class MutrigFEB {
 
 
    protected:
-      //Mapping from ASIC number to FPGA_ID and ASIC_ID
-      virtual uint16_t FPGAid_from_ID(int asic)=0; //global asic number to global FEB number
-      virtual uint16_t ASICid_from_ID(int asic)=0; //global asic number to FEB-local asic number
-      virtual uint8_t nModulesPerFEB()=0;
-      virtual uint8_t nAsicsPerModule()=0;
-      //Return typeID for building FEB ID map
-      virtual FEBTYPE  GetTypeID()=0;
-      virtual bool IsSecondary(int t){return false;}
-
-      //list of all FPGAs mapped to this subdetector. Used for pushing common configurations to all FEBs
-      //TODO: move to generic FEB class after merging with pixel SC
-      //TODO: extend to map<ID, FPGA_ID_TYPE> with more information (name, etc. for reporting).
-      //TODO: add possibility to have febs with different number of asics (relevant only for pixel)
-      struct mapped_FEB_t{
-	 private:
-	 uint16_t LinkID;	//global numbering. sb_id=LinkID/MAX_LINKS_PER_SWITCHINGBOARD, sb_port=LinkID%MAX_LINKS_PER_SWITCHINGBOARD
-	 INT mask; 
-	 std::string fullname_link;
-	 public:
-	 mapped_FEB_t(uint16_t ID, INT linkmask, std::string physName):LinkID(ID),mask(linkmask),fullname_link(physName){};
-	 bool IsScEnabled(){return mask&FEBLINKMASK::SCOn;}
-	 bool IsDataEnabled(){return mask&FEBLINKMASK::DataOn;}
-	 uint16_t GetLinkID(){return LinkID;}
-	 std::string GetLinkName(){return fullname_link;}
-	 //getters for FPGAPORT_ID and SB_ID (physical link address, independent on number of links per FEB)
-	 uint8_t SB_Number(){return LinkID/MAX_LINKS_PER_SWITCHINGBOARD;}
-	 uint8_t SB_Port()  {return LinkID%MAX_LINKS_PER_SWITCHINGBOARD;}
-      };
-      //map m_FPGAs[global_FEB_number] to a struct giving the physical link addres to a struct giving the physical link address
-      std::vector<mapped_FEB_t> m_FPGAs;
-
 
       //Foreach loop over all asics under this prefix. Call with a lambda function,
       //e.g. midasODB::MapForEach(hDB, "/Equipment/SciFi",[mudaqdev_ptr](Config c,int asic){mudaqdev_ptr->ConfigureAsic(c,asic);});
       //Function must return SUCCESS, otherwise loop is stopped.
       int MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig config*/,int /*ASIC #*/)> func);
-
 
 
 
