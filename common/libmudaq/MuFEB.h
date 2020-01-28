@@ -38,7 +38,6 @@ class MuFEB {
       const char* GetPrefix(){return m_odb_prefix;}
 
       virtual uint16_t GetNumASICs()=0;
-      virtual uint16_t GetNumModules()=0;
       virtual uint16_t GetNumFPGAs(){return m_FPGAs.size();}
 
       void SetAskSCReply(bool ask){m_ask_sc_reply=ask;};
@@ -58,8 +57,7 @@ class MuFEB {
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
       virtual uint16_t FPGAid_from_ID(int asic)=0; //global asic number to global FEB number
       virtual uint16_t ASICid_from_ID(int asic)=0; //global asic number to FEB-local asic number
-      virtual uint8_t nModulesPerFEB()=0;
-      virtual uint8_t nAsicsPerModule()=0;
+
       //Return typeID for building FEB ID map
       virtual FEBTYPE  GetTypeID()=0;
       virtual bool IsSecondary(int t){return false;}

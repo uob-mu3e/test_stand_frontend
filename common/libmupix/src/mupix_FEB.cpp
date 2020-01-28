@@ -25,13 +25,13 @@ Contents:       Definition of functions to talk to a mupix-based FEB. Designed t
 #define FE_SUBDET_RESET_REG    (SC_REG_OFFSET+0xa)
 #define FE_SPIDATA_ADDR		0
 
-const uint8_t MupixFEB::FPGA_broadcast_ID=0;
-
 MupixFEB* MupixFEB::m_instance=NULL;
 
 //Mapping to physical ports of switching board.
-uint8_t MupixFEB::FPGAid_from_ID(int asic){return 0;}//return asic/4;}
-uint8_t MupixFEB::ASICid_from_ID(int asic){return asic;}//return asic%4;}
+uint16_t MupixFEB::FPGAid_from_ID(int asic){return 0;}//return asic/4;}
+uint16_t MupixFEB::ASICid_from_ID(int asic){return asic;}//return asic%4;}
+
+uint16_t MupixFEB::GetNumASICs(){return m_FPGAs.size()*1;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
 
 uint32_t default_mupix_dacs[94] =
 {

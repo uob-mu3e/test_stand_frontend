@@ -14,8 +14,8 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include "midas.h"
 #include "mudaq_device_scifi.h"
 #include "MutrigConfig.h"
-#include "link_constants.h"
 #include "MuFEB.h"
+
 class MutrigFEB : public MuFEB{
    protected:
       std::map<uint16_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
@@ -23,12 +23,13 @@ class MutrigFEB : public MuFEB{
    public:
       MutrigFEB(const MutrigFEB&)=delete;
       MutrigFEB(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix):
-              MuFEB(mu,hDB,equipment_name,odb_prefix):
-	{};
+        MuFEB(mu,hDB,equipment_name,odb_prefix)
+        {};
       void SetSBnumber(uint8_t n){m_SB_number=n;}
       const char* GetName(){return m_equipment_name;}
       const char* GetPrefix(){return m_odb_prefix;}
-
+      virtual uint16_t nModulesPerFEB()=0;
+      virtual uint16_t nAsicsPerModule()=0;
       uint16_t GetNumASICs(){return m_FPGAs.size()*nModulesPerFEB()*nAsicsPerModule();}
       uint16_t GetNumModules(){return m_FPGAs.size()*nModulesPerFEB();}
 
