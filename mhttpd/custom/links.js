@@ -2,7 +2,7 @@ var canvas = document.querySelector('canvas');
 
 var c = canvas.getContext('2d');
 
-function RXLink(xmin,y,xmax, index, name){
+function DataLink(xmin,y,xmax, index, name){
     this.status =0;
     this.type="Undefined type";
     this.shorttype="U";
@@ -83,7 +83,7 @@ function RXLink(xmin,y,xmax, index, name){
 }
 
 
-function TXLink(xmin,y,xmax, index, name){
+function SCLink(xmin,y,xmax, index, name){
     this.status =0;
     this.type="Undefined type";
     this.shorttype="U";
@@ -183,11 +183,11 @@ function Switchingboard(x,y,dx,dy, index){
     this.active = 0;
     this.name = "";
 
-    this.RX = new Array(4);
-    this.TX = new Array(4);
+    this.Data = new Array(4);
+    this.SC = new Array(4);
     for(var i =0; i < 4; i++){
-       this.RX[i] = new RXPod(this.x+10, this.y+10+170*i,40, 160,i, index);
-       this.TX[i] = new TXPod(this.x+65, this.y+10+170*i,40, 160,i, index);
+       this.Data[i] = new DataPod(this.x+10, this.y+10+170*i,40, 160,i, index);
+       this.SC[i] = new SCPod(this.x+65, this.y+10+170*i,40, 160,i, index);
     }
 
 
@@ -205,19 +205,19 @@ function Switchingboard(x,y,dx,dy, index){
         c.fillText(this.index, this.x+10, this.y+780);
         if(this.active > 0){
             for(var i =0; i < 4; i++){
-                this.RX[i].draw();
-                this.TX[i].draw();
+                this.Data[i].draw();
+                this.SC[i].draw();
             }
         }
 
 
         c.fillStyle = "Black";
         c.font = "16px Arial";
-        c.fillText("RX", this.x+20, this.y+700);
+        c.fillText("Data", this.x+20, this.y+700);
 
         c.fillStyle = "Black";
         c.font = "16px Arial";
-        c.fillText("TX", this.x+75, this.y+700);
+        c.fillText("SC", this.x+75, this.y+700);
 
         c.fillStyle = "Black";
         c.font = "12px Arial";
@@ -238,7 +238,7 @@ function Switchingboard(x,y,dx,dy, index){
 
 
 
-function RXPod(x,y,dx,dy, name, swboard){
+function DataPod(x,y,dx,dy, name, swboard){
     this.x = x;
     this.y = y;
     this.dx= dx;
@@ -249,7 +249,7 @@ function RXPod(x,y,dx,dy, name, swboard){
 
 
     for(var i=0; i < 12; i ++){
-        rxlinks[swboard*48+name*12+i] = new RXLink(this.x-40, this.y+10+i*12, this.x+10, swboard*48+name*12+i,"FEB");
+        rxlinks[swboard*48+name*12+i] = new DataLink(this.x-40, this.y+10+i*12, this.x+10, swboard*48+name*12+i,"FEB");
         this.links[i] = rxlinks[swboard*48+name*12+i];
     }
 
@@ -266,7 +266,7 @@ function RXPod(x,y,dx,dy, name, swboard){
 
 
 
-function TXPod(x,y,dx,dy, name, swboard){
+function SCPod(x,y,dx,dy, name, swboard){
     this.x = x;
     this.y = y;
     this.dx= dx;
@@ -275,7 +275,7 @@ function TXPod(x,y,dx,dy, name, swboard){
     this.links = [12];
 
     for(var i=0; i < 12; i ++){
-        txlinks[swboard*48+name*12+i] = new TXLink(this.x+this.dx-10, this.y+10+i*12, this.x+this.dx+40, swboard*48+name*12+i,"FEB");
+        txlinks[swboard*48+name*12+i] = new SCLink(this.x+this.dx-10, this.y+10+i*12, this.x+this.dx+40, swboard*48+name*12+i,"FEB");
         this.links[i] = txlinks[swboard*48+name*12+i];
     }
 
