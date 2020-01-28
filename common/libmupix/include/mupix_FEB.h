@@ -38,9 +38,9 @@ class MupixFEB  : public MuFEB{
 
       //ASIC configuration:
       //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
-      int ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix);
+      int ConfigureASICs();
       //Configure all boards under prefix (e.g. prefix="/Equipment/Mupix")
-      int ConfigureBoards(HNDLE hDB, const char* equipment_name, const char* odb_prefix);
+      int ConfigureBoards();
 
       //FEB registers and functions
 

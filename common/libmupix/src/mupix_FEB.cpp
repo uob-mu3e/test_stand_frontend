@@ -133,12 +133,12 @@ uint32_t default_mupix_dacs[94] =
 
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
-int MupixFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix){
+int MupixFEB::ConfigureASICs(){
    printf("MupixFEB::ConfigureASICs()\n");
-   int status = mupix::midasODB::MapForEachASIC(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mupix::MupixConfig* config, int asic){
+   int status = mupix::midasODB::MapForEachASIC(hDB,m_odb_prefix,[this](mupix::MupixConfig* config, int asic){
       int status=SUCCESS;
       uint32_t reg;
-      cm_msg(MINFO, "setup_mupix" , "Configuring MuPIX asic %s/Settings/ASICs/%i/", odb_prefix, asic);
+      cm_msg(MINFO, "setup_mupix" , "Configuring MuPIX asic %s/Settings/ASICs/%i/", m_odb_prefix, asic);
 
       try {
          //Write ASIC number
@@ -177,12 +177,12 @@ int MupixFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* 
          }while( (reg&0xffff0000) != 0);*/
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
+          set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
           return FE_ERR_HW; //note: return of lambda function
       }
       if(status!=SUCCESS){
          //configuration mismatch, report and break foreach-loop
-         set_equipment_status(equipment_name,  "MuPix config failed", "red");
+         set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
          cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
       }
 
@@ -229,12 +229,12 @@ void MupixFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
    }
 }
 
-int MupixFEB::ConfigureBoards(HNDLE hDB, const char* equipment_name, const char* odb_prefix){
+int MupixFEB::ConfigureBoards(){
    printf("MupixFEB::ConfigureASICs()\n");
-   int status = mupix::midasODB::MapForEachBOARD(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mupix::MupixBoardConfig* config, int board){
+   int status = mupix::midasODB::MapForEachBOARD(hDB,m_odb_prefix,[this](mupix::MupixBoardConfig* config, int board){
       int status=SUCCESS;
       uint32_t reg;
-      cm_msg(MINFO, "setup_mupix" , "Configuring MuPIX board %s/Settings/Boards/%i/", odb_prefix, board);
+      cm_msg(MINFO, "setup_mupix" , "Configuring MuPIX board %s/Settings/Boards/%i/", m_odb_prefix, board);
 
       try {
          //Write ASIC number
@@ -265,12 +265,12 @@ int MupixFEB::ConfigureBoards(HNDLE hDB, const char* equipment_name, const char*
          }while( (reg&0xffff0000) != 0);*/
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", board, e.what());
-          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
+          set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
           return FE_ERR_HW; //note: return of lambda function
       }
       if(status!=SUCCESS){
          //configuration mismatch, report and break foreach-loop
-         set_equipment_status(equipment_name,  "MuPix config failed", "red");
+         set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
          cm_msg(MERROR, "setup_mupix", "MuPix configuration error for Board %i", board);
       }
 

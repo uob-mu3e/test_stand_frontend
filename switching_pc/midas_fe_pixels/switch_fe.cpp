@@ -311,7 +311,7 @@ try{
    uint64_t link_active_from_odb = get_link_active_from_odb();
 
    //configure ASICs
-   int status=MupixFEB::Instance()->ConfigureASICs(hDB, "Mupix", "/Equipment/Mupix");
+   int status=MupixFEB::Instance()->ConfigureASICs();
    if(status!=SUCCESS){
       cm_msg(MERROR,"switch_fe","ASIC configuration failed");
       return CM_TRANSITION_CANCELED;
@@ -661,14 +661,14 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
     }
 */
     if (std::string(key.name) == "MupixConfig" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-          int status=MupixFEB::Instance()->ConfigureASICs(hDB, "Mupix", "/Equipment/Mupix");
+          int status=MupixFEB::Instance()->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }
 	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
     if (std::string(key.name) == "MupixBoard" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-          int status=MupixFEB::Instance()->ConfigureBoards(hDB, "Mupix", "/Equipment/Mupix");
+          int status=MupixFEB::Instance()->ConfigureBoards();
           if(status!=SUCCESS){
             //TODO: what to do?
           }
