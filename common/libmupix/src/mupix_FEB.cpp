@@ -32,8 +32,8 @@ Contents:       Definition of functions to talk to a mupix-based FEB. Designed t
 MupixFEB* MupixFEB::m_instance=NULL;
 
 //Mapping to physical ports of switching board.
-uint16_t MupixFEB::FPGAid_from_ID(int asic){return 0;}//return asic/4;}
-uint16_t MupixFEB::ASICid_from_ID(int asic){return asic;}//return asic%4;}
+uint16_t MupixFEB::FPGAid_from_ID(int asic){return asic;}
+uint16_t MupixFEB::ASICid_from_ID(int asic){return 0;}
 
 uint16_t MupixFEB::GetNumASICs(){return m_FPGAs.size()*1;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
 
@@ -227,51 +227,44 @@ void MupixFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 }
 
 int MupixFEB::ConfigureBoards(){
-   printf("MupixFEB::ConfigureASICs()\n");
+   cm_msg(MINFO, "MupixFEB" , "Configuring boards under prefix %s/Settings/Boards/", m_odb_prefix);
    int status = mupix::midasODB::MapForEachBOARD(hDB,m_odb_prefix,[this](mupix::MupixBoardConfig* config, int board){
-      int status=SUCCESS;
-      uint32_t reg;
-      cm_msg(MINFO, "setup_mupix" , "Configuring MuPIX board %s/Settings/Boards/%i/", m_odb_prefix, board);
+      uint32_t rpc_status;
+      //mapping
+      uint16_t SB_ID=m_FPGAs[FPGAid_from_ID(board)].SB_Number();
+      uint16_t SP_ID=m_FPGAs[FPGAid_from_ID(board)].SB_Port();
+
+      uint32_t board_ID=board;
+
+      if(!m_FPGAs[FPGAid_from_ID(board)].IsScEnabled()){
+      //    printf(" [skipped]\n");
+          return FE_SUCCESS;
+      }
+      if(SB_ID!=m_SB_number){
+      //    printf(" [skipped]\n");
+          return FE_SUCCESS;
+      }
+      //printf("\n");
+
+      cm_msg(MINFO, "MupixFEB" , "Configuring MuPIX board %s/Settings/Boards/%i/: Mapped to FEB%u -> SB%u.%u", m_odb_prefix,board,FPGAid_from_ID(board),SB_ID,SP_ID);
+
+
 
       try {
-         //Write ASIC number
-         reg=board;
-         m_mu.FEBsc_write(FPGAid_from_ID(board), &reg, 1, (uint32_t) FE_SPIDATA_ADDR,true);
-         printf("reading back\n");
-         m_mu.FEBsc_read(FPGAid_from_ID(board), &reg, 1,  (uint32_t) FE_SPIDATA_ADDR,true);
-         //Write configuration
+         rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0120,{{reinterpret_cast<uint32_t*>(&board),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
 
-         m_mu.FEBsc_write(FPGAid_from_ID(board), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR+1,true);
-
-         //Write offset address
-         reg= FE_SPIDATA_ADDR;
-         m_mu.FEBsc_write(FPGAid_from_ID(board), &reg,1,0xfff1,true);
-
-         //Write command word to register FFF0: cmd | n
-         //reg= 0x01100000 + (0xFFFF & config->length_32bits);
-         reg= 0x01200000 + (0xFFFF & config->length_32bits);
-         m_mu.FEBsc_write(FPGAid_from_ID(board), &reg,1,0xfff0,true);
-
-         //Wait for configuration to finish
-         /*uint timeout_cnt = 0;
-         do{
-            printf("Polling (%d)\n",timeout_cnt);
-            if(++timeout_cnt >= 10000) throw std::runtime_error("SPI transaction timeout while configuring board"+std::to_string(board));
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            m_mu.FEBsc_read(FPGAid_from_ID(board), &reg, 1, 0xfff0);
-         }while( (reg&0xffff0000) != 0);*/
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", board, e.what());
           set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
           return FE_ERR_HW; //note: return of lambda function
       }
-      if(status!=SUCCESS){
+      if(rpc_status!=FEB_REPLY_SUCCESS){
          //configuration mismatch, report and break foreach-loop
          set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
          cm_msg(MERROR, "setup_mupix", "MuPix configuration error for Board %i", board);
       }
 
-      return status;//note: return of lambda function
+      return FE_SUCCESS;//note: return of lambda function
    });//MapForEach
    return status; //status of foreach function, SUCCESS when no error.
 }
