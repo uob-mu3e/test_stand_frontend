@@ -439,7 +439,8 @@ begin
 
 
         -- clocks
-        i_nios_clk      => nios_clk,
+        i_nios_clk      => si42_clk_50,
+        -- i replaced nios_clk with si42_clk_50 here, M.Mueller, FPGA_Test jumper not used for testbeam version
         o_nios_clk_mon  => led(15),
         i_clk_156       => qsfp_clk,
         o_clk_156_mon   => led(14),
