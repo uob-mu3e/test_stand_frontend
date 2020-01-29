@@ -398,7 +398,7 @@ try{
       link_active_from_register = get_runstart_ack();
       printf("%u  %lx  %lx\n",timeout_cnt,link_active_from_odb, link_active_from_register);
       usleep(10000);
-   }while(link_active_from_register != link_active_from_odb && (timeout_cnt > 0));
+   }while( (link_active_from_register & link_active_from_odb) != link_active_from_odb && (timeout_cnt > 0));
 
    if(timeout_cnt==0) {
       cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
@@ -424,7 +424,7 @@ try{
    uint16_t timeout_cnt = 50;
    uint64_t stop_signal_seen = get_runend_ack();
    printf("Stop signal seen from 0x%16lx, expect stop signals from 0x%16lx\n", stop_signal_seen, link_active_from_odb);
-   while(stop_signal_seen != link_active_from_odb &&
+   while( (stop_signal_seen & link_active_from_odb) != link_active_from_odb &&
          timeout_cnt > 0) {
       usleep(1000);
       stop_signal_seen = get_runend_ack();
