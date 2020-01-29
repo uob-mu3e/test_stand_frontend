@@ -19,7 +19,33 @@ int setup_db(HNDLE& hDB, const char* prefix, MupixFEB* FEB_interface, bool init_
     INT status = DB_SUCCESS;
     char set_str[255];
 
-    /* Map Equipment/Pixel/Daq (structure defined in mupix_MIDAS_config.h) */
+    /* Add [prefix]/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
+    //TODO some globals should be per asic
+    MUPIX_GLOBAL_STR(mupix_global);   // global mutrig settings
+    sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
+    //ddprintf("mutrig_midasodb: adding struct %s\n",set_str);
+    status = db_create_record(hDB, 0, set_str, strcomb(mupix_global));
+    status = db_find_key (hDB, 0, set_str, &hTmp);
+    if (status != DB_SUCCESS) {
+        cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
+        return status;
+    }
+
+    //Set number of ASICs, derived from mapping
+    unsigned int nasics=FEB_interface->GetNumASICs();
+    INT ival=nasics;
+    sprintf(set_str, "%s/Settings/ASICs/Global/Num asics", prefix);
+    if((status = db_set_value(hDB ,0,set_str, &ival, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
+    //TODO: assume number of boards is same as number of asics. AFAIK this is currently a correct assumption
+    sprintf(set_str, "%s/Settings/ASICs/Global/Num boards", prefix);
+    if((status = db_set_value(hDB ,0,set_str, &ival, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
+
+    if(nasics==0){
+        cm_msg(MINFO,"mutrig_midasodb::setup_db","Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
+    return DB_SUCCESS;
+    }
+
+    /* Add [prefix]/Daq (structure defined in mupix_MIDAS_config.h) */
     //TODO: if we have more than one FE-FPGA, there might be more than one DAQ class.
     MUPIX_DAQ_STR(mupix_daq);         // global settings for daq/fpga
     sprintf(set_str, "%s/Settings/Daq", prefix);
@@ -60,24 +86,7 @@ int setup_db(HNDLE& hDB, const char* prefix, MupixFEB* FEB_interface, bool init_
     unsigned int n;
     int size = sizeof(n);
 
-    /* Map Equipment/SciFi/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
-    //TODO some globals should be per asic
-    MUPIX_GLOBAL_STR(mupix_global);   // global mutrig settings
-    sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
-    //ddprintf("mutrig_midasodb: adding struct %s\n",set_str);
-    status = db_create_record(hDB, 0, set_str, strcomb(mupix_global));
-    status = db_find_key (hDB, 0, set_str, &hTmp);
-    if (status != DB_SUCCESS) {
-        cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
-        return status;
-    }
-
     /* Equipment/Pixel/Settings/Chipdacs (structure defined in mupix_MIDAS_config.h) */
-    //Get predefined number of asics from ODB
-    unsigned int nasics;
-    int asize = sizeof(nasics);
-    sprintf(set_str, "%s/Settings/ASICs/Global/Num asics", prefix);
-    db_get_value(hDB, 0, set_str, &nasics, &asize, TID_INT, 0);
 
     MUPIX_CHIPDACS_STR(mupix_chipdacs);
     for(unsigned int i = 0; i < nasics; ++i) {
