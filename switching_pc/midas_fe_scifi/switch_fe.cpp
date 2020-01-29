@@ -99,7 +99,7 @@ void sc_settings_changed(HNDLE, HNDLE, int, void *);
 void switching_board_mask_changed(HNDLE, HNDLE, int, void *);
 void frontend_board_mask_changed(HNDLE, HNDLE, int, void *);
 
-uint64_t get_link_active_from_odb(); //throws
+uint64_t get_datataking_state_from_odb(); //throws
 void set_feb_enable(uint64_t enablebits);
 uint64_t get_runstart_ack();
 uint64_t get_runend_ack();
@@ -246,7 +246,7 @@ INT frontend_init()
    mup->FEBsc_resetSlave();
 
    //set link enables so slow control can pass 
-   try{ set_feb_enable(get_link_active_from_odb()); }
+   try{ set_feb_enable(get_datataking_state_from_odb()); }
    catch(...){ return FE_ERR_ODB;}
 
    //SciFi setup part
@@ -315,7 +315,7 @@ try{
 //   mup->FEBsc_resetSlave(); //KB: needed?
 
    /* get link active from odb. */
-   uint64_t link_active_from_odb = get_link_active_from_odb();
+   uint64_t link_active_from_odb = get_datataking_state_from_odb();
 
    //configure ASICs
    int status=SciFiFEB::Instance()->ConfigureASICs();
@@ -371,13 +371,13 @@ INT end_of_run(INT run_number, char *error)
 {
 try{
    /* get link active from odb */
-   uint64_t link_active_from_odb = get_link_active_from_odb();
+   uint64_t link_active_from_odb = get_datataking_state_from_odb();
 
    printf("end_of_run: Waiting for stop signals from all FEBs\n");
    uint16_t timeout_cnt = 50;
    uint64_t stop_signal_seen = get_runend_ack();
    printf("Stop signal seen from 0x%16lx, expect stop signals from 0x%16lx\n", stop_signal_seen, link_active_from_odb);
-   while(stop_signal_seen != link_active_from_odb &&
+   while( (stop_signal_seen & link_active_from_odb) != link_active_from_odb &&
          timeout_cnt > 0) {
       usleep(1000);
       stop_signal_seen = get_runend_ack();
@@ -707,7 +707,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 //--------------- Link related settings
 //
 
-uint64_t get_link_active_from_odb(){
+uint64_t get_datataking_state_from_odb(){
    INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
    int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
    int status = db_get_value(hDB, 0, "/Equipment/Links/Settings/LinkMask", frontend_board_active_odb, &size, TID_INT, false);
@@ -720,11 +720,8 @@ uint64_t get_link_active_from_odb(){
    uint64_t link_active_from_odb = 0;
    for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
       int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
-      if((frontend_board_active_odb[offset + link] == FEBLINKMASK::ON) ||
-	(frontend_board_active_odb[offset + link] == FEBLINKMASK::DataOn))
-	 //a standard FEB link (SC and data) is considered enabled if RX and TX are. 
-	 //a secondary FEB link (only data) is enabled if RX is.
-	 //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
+      if(frontend_board_active_odb[offset + link] & FEBLINKMASK::DataOn)
+	 //both standard FEB link (SC and data) as well as secondary FEB link (data only) are considered enabled in this context if their DataOn bit is set.
          link_active_from_odb += (1 << link);
    }
    return link_active_from_odb;
@@ -778,7 +775,7 @@ void switching_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
 
 void frontend_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
    try{
-      set_feb_enable(get_link_active_from_odb());
+      set_feb_enable(get_datataking_state_from_odb());
       SciFiFEB::Instance()->RebuildFEBsMap();
    }catch(...){}
 }

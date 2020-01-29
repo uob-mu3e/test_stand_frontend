@@ -22,7 +22,6 @@
 
 #include "mudaq_device.h"
 #include "utils.hpp"
-#include "../include/mudaq_registers.h"
 
 
 #define PAGEMAP_LENGTH 8 // each page table entry has 64 bits = 8 bytes

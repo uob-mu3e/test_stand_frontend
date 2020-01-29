@@ -497,27 +497,6 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 
 }
 
-//Helper functions
-uint32_t reg_setBit  (uint32_t reg_in, uint8_t bit, bool value=true){
-    if(value)
-        return (reg_in | 1<<bit);
-    else
-        return (reg_in & (~(1<<bit)));
-}
-uint32_t reg_unsetBit(uint32_t reg_in, uint8_t bit){return reg_setBit(reg_in,bit,false);}
-
-bool reg_getBit(uint32_t reg_in, uint8_t bit){
-    return (reg_in & (1<<bit)) != 0;
-}
-
-uint32_t reg_getRange(uint32_t reg_in, uint8_t length, uint8_t offset){
-    return (reg_in>>offset) & ((1<<length)-1);
-}
-uint32_t reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t value){
-    return (reg_in & ~(((1<<length)-1)<<offset)) | ((value & ((1<<length)-1))<<offset);
-}
-
-
 //MutrigFEB registers and functions
 
 /**

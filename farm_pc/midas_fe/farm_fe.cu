@@ -9,6 +9,7 @@
 #include "mcstd.h"
 #include "experim.h"
 #include "switching_constants.h"
+#include "link_constants.h"
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -75,7 +76,8 @@ INT read_stream_thread(void *param);
 INT poll_event(INT source, INT count, BOOL test);
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
 
-void speed_settings_changed(HNDLE, HNDLE, int, void *);
+void datagen_settings_changed(HNDLE, HNDLE, int, void *);
+void link_active_settings_changed(HNDLE, HNDLE, int, void *);
 /*-- Equipment list ------------------------------------------------*/
 
 EQUIPMENT equipment[] = {
@@ -134,9 +136,13 @@ INT frontend_init()
    // create Settings structure in ODB
    db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator", &hKey);
    assert(hKey);
-   db_watch(hDB, hKey, speed_settings_changed, nullptr);
+   db_watch(hDB, hKey, datagen_settings_changed, nullptr);
+  
+   //link mask changed settings - init & connect to ODB
+   db_find_key(hDB, 0, "/Equipment/Links/Settings/LinkMask", &hKey);
+   assert(hKey);
+   db_watch(hDB, hKey, link_active_settings_changed, nullptr);
 
-   
    // Allocate memory for the DMA buffer - this can fail!
    if(cudaMallocHost( (void**)&dma_buf, dma_buf_size ) != cudaSuccess){
       cout << "Allocation failed, aborting!" << endl;
@@ -183,11 +189,19 @@ INT frontend_init()
    // switch off and reset DMA for now
    mup->disable();
    
+   //update data generator from ODB
+   db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator/Divider", &hKey);
+   datagen_settings_changed(hDB,hKey,0,NULL);
+
    // switch off the data generator (just in case..)
    mup->write_register(DATAGENERATOR_REGISTER_W, 0x0);
    usleep(2000);
    // DMA_CONTROL_W
    mup->write_register(0x5,0x0);
+
+   //set data link enable
+   link_active_settings_changed(hDB,hKey,0,NULL);
+
    usleep(5000);
    
    // create ring buffer for readout thread
@@ -217,19 +231,59 @@ INT frontend_exit()
    return SUCCESS;
 }
 
-void speed_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
+void datagen_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 {
     KEY key;
     db_get_key(hDB, hKey, &key);
+    cm_msg(MINFO, "datagen_settings_changed", "Set Farm: %s", key.name);
+
+    if (std::string(key.name) == "Enable") {
+       //this is set once we start the run
+    }
 
     if (std::string(key.name) == "Divider") {
        int value;
        int size = sizeof(value);
        db_get_data(hDB, hKey, &value, &size, TID_INT);
-       cm_msg(MINFO, "speed_settings_changed", "Set divider to %d", value);
-      // mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W,value,100);
+       mup->write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W,value,100);
     }
 }
+
+uint64_t get_link_active_from_odb(){
+   INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
+   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
+   int status = db_get_value(hDB, 0, "/Equipment/Links/Settings/LinkMask", frontend_board_active_odb, &size, TID_INT, false);
+   if (status != SUCCESS){
+      cm_msg(MERROR,"switch_fe","Error getting record for /Equipment/Links/Settings");
+      throw;
+   }
+
+   /* get link active from odb */
+   uint64_t link_active_from_odb = 0;
+   //printf("Data link active: 0x");
+   for(int link = MAX_LINKS_PER_SWITCHINGBOARD-1 ; link>=0; link--) {
+      int offset = 0;//MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
+      if(frontend_board_active_odb[offset + link] & FEBLINKMASK::DataOn)
+	 //a standard FEB link (SC and data) is considered enabled if RX and TX are. 
+	 //a secondary FEB link (only data) is enabled if RX is.
+	 //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
+         link_active_from_odb += (1 << link);
+      //printf("%u",(frontend_board_active_odb[offset + link] & FEBLINKMASK::DataOn?1:0));
+   }
+   //printf("\n");
+   return link_active_from_odb;
+}
+
+void set_link_enable(uint64_t enablebits){
+   //mup->write_register(DATA_LINK_MASK_REGISTER_HIGH_W, enablebits >> 32); TODO make 64 bits
+   mup->write_register(DATA_LINK_MASK_REGISTER_W,  enablebits & 0xFFFFFFFF);
+}
+
+void link_active_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *){
+    set_link_enable(get_link_active_from_odb());
+}
+
+
 
 /*-- Begin of Run --------------------------------------------------*/
 
@@ -258,23 +312,25 @@ INT begin_of_run(INT run_number, char *error)
    usleep(10);
    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
 
-   // Set up data generator
-   //KB: TODO: remove / move to ODB
-   uint32_t datagen_setup = 0;
-    mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
-    datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
-    mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+   // Set up data generator: enable only if set in ODB
+   HNDLE hKey;
+   BOOL value;
+   INT size = sizeof(value);
+   db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator/Enable", &hKey);
+   db_get_data(hDB, hKey, &value, &size, TID_BOOL);
+   uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
+   if(value) reg=SET_DATAGENERATOR_BIT_ENABLE(reg);
+   mu.write_register(DATAGENERATOR_REGISTER_W,reg);
 
-    // Enable all links (KB: TODO: copy from switching board)
-    //mu.write_register_wait(FEB_ENABLE_REGISTER_W, 0xF, 100);
-   
+   // Note: link masks are already set during fe_init and via ODB callback
+
+   /*
    // Get ODB settings for this equipment
    HNDLE hDB, hStreamSettings;
-   INT status, size;
+   INT status;
    char set_str[256];
    STREAM_SETTINGS settings;  // defined in experim.h
    
-   /* Get current  settings */
    cm_get_experiment_database(&hDB, NULL);
    sprintf(set_str, "/Equipment/Stream/Settings");
    status = db_find_key (hDB, 0, set_str, &hStreamSettings);
@@ -288,7 +344,8 @@ INT begin_of_run(INT run_number, char *error)
       cm_msg(MERROR, "begin_of_run", "cannot retrieve stream settings from ODB");
       return status;
    }
-   
+   */
+
    set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
    
    return SUCCESS;
@@ -309,13 +366,13 @@ INT end_of_run(INT run_number, char *error)
       usleep(1000);
    };
 
-//   if(timeout_cnt>=50) {
-//      cm_msg(MERROR,"farm_fe","Buffers on Switching Board not empty at end of run");
-//      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
-//      return CM_TRANSITION_CANCELED;
-//   }
-   printf("Buffers all empty\n");
-
+   if(timeout_cnt>=50) {
+      cm_msg(MERROR,"farm_fe","Buffers on Switching Board not empty at end of run");
+      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
+      //return CM_TRANSITION_CANCELED;
+   }else{
+      printf("Buffers all empty\n");
+   }
 
    // TODO: Find a better way to see when DMA is finished.
 
@@ -329,12 +386,13 @@ INT end_of_run(INT run_number, char *error)
       usleep(1000);
    };
 
-//   if(timeout_cnt>=50) {
-//      cm_msg(MERROR,"farm_fe","DMA did not finish");
-//      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
+   if(timeout_cnt>=50) {
+      cm_msg(MERROR,"farm_fe","DMA did not finish");
+      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
 //      return CM_TRANSITION_CANCELED;
-//   }
-   printf("DMA is finished\n");
+   }else{
+      printf("DMA is finished\n");
+   }
 
     // stop generator
    uint32_t datagen_setup = 0;
@@ -539,7 +597,7 @@ INT read_stream_thread(void *param)
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
         set_equipment_status(equipment[0].name, "Not running", "var(--myellow)");
-        //cout << "!STATE_RUNNING" << endl;
+        cout << "!STATE_RUNNING" << endl;
         ss_sleep(100);
         //TODO: signalling from main thread?
         continue;
@@ -602,7 +660,7 @@ INT read_stream_thread(void *param)
           ss_sleep(1000);
           continue;
       }
-
+      printf("mu.last_written_addr()=%x ; mu.last_endofevent_addr()=%x; lastlastWritten=%x lastWritten=%x\n",mu.last_written_addr(),mu.last_endofevent_addr(),lastlastWritten,lastWritten);
       if (mu.last_written_addr() == 0) continue;
       if (mu.last_written_addr() == lastlastWritten) continue;
       if (mu.last_written_addr() == lastWritten) continue;

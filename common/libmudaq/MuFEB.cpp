@@ -189,3 +189,24 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
 }
 
 
+//Helper functions
+uint32_t MuFEB::reg_setBit  (uint32_t reg_in, uint8_t bit, bool value){
+    if(value)
+        return (reg_in | 1<<bit);
+    else
+        return (reg_in & (~(1<<bit)));
+}
+uint32_t MuFEB::reg_unsetBit(uint32_t reg_in, uint8_t bit){return reg_setBit(reg_in,bit,false);}
+
+bool MuFEB::reg_getBit(uint32_t reg_in, uint8_t bit){
+    return (reg_in & (1<<bit)) != 0;
+}
+
+uint32_t MuFEB::reg_getRange(uint32_t reg_in, uint8_t length, uint8_t offset){
+    return (reg_in>>offset) & ((1<<length)-1);
+}
+uint32_t MuFEB::reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t value){
+    return (reg_in & ~(((1<<length)-1)<<offset)) | ((value & ((1<<length)-1))<<offset);
+}
+
+
