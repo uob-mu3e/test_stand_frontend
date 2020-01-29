@@ -83,6 +83,14 @@ class MuFEB {
       //map m_FPGAs[global_FEB_number] to a struct giving the physical link addres to a struct giving the physical link address
       std::vector<mapped_FEB_t> m_FPGAs;
 
+      //Helper functions
+      uint32_t reg_setBit  (uint32_t reg_in, uint8_t bit, bool value=true);
+      uint32_t reg_unsetBit(uint32_t reg_in, uint8_t bit);
+      bool reg_getBit(uint32_t reg_in, uint8_t bit);
+      uint32_t reg_getRange(uint32_t reg_in, uint8_t length, uint8_t offset);
+      uint32_t reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t value);
+
 };//class MuFEB
+
 
 #endif // MUFEB_H
