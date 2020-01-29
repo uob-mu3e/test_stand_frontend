@@ -167,7 +167,7 @@ int MupixFEB::ConfigureASICs(){
 
          for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
              uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
-             datastream[nbit] = tmp;
+             datastream[nbit] = default_mupix_dacs[nbit];//tmp;
          }
          rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
 

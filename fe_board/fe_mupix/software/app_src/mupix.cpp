@@ -14,6 +14,7 @@ alt_u16 mupix_t::set_chip_dacs(alt_u32 asic, volatile alt_u32* bitpattern) {
     sc->ram->data[0xFF8D] = 0x005e0003;
     for(int i = 0; i < MUPIX8_LEN32; i++) {
         sc->ram->data[0xFF8D] = bitpattern[i];
+        printf("0x%08x\n",bitpattern[i]);
         }
    sc->ram->data[0xFF8E] = 0x00100001;
    sc->ram->data[0xFF95] = 0;
@@ -27,6 +28,7 @@ alt_u16 mupix_t::set_board_dacs(alt_u32 asic, volatile alt_u32* bitpattern) {
 
     for(unsigned int i = 0; i < MUPIXBOARD_LEN32; i++) {
         sc->ram->data[0xFF83+i] = bitpattern[i];
+        printf("0x%08x\n",bitpattern[i]);
         }
    sc->ram->data[0xFF8C] = 0x1;
    sc->ram->data[0xFF8C] = 0x0;

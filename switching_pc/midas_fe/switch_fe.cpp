@@ -284,7 +284,7 @@ INT frontend_init()
       return status;
    }
     //init all values on FEB
-   SciFiFEB::Instance()->WriteAll();
+   //SciFiFEB::Instance()->WriteAll();  TODO: insert this again, M.Mueller
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
    //end of SciFi setup part
