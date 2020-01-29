@@ -244,6 +244,10 @@ INT frontend_init()
    mup->FEBsc_resetMaster();
    mup->FEBsc_resetSlave();
 
+   //set link enables so slow control can pass 
+   try{ set_feb_enable(get_link_active_from_odb()); }
+   catch(...){ return FE_ERR_ODB;}
+
 
    //Mupix setup part
    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");

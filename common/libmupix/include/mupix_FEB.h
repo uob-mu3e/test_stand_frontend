@@ -22,7 +22,9 @@ class MupixFEB  : public MuFEB{
       MupixFEB(const MupixFEB&)=delete;
       MupixFEB(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix):
         MuFEB(mu,hDB,equipment_name,odb_prefix)
-        {};
+        {
+		RebuildFEBsMap();
+        };
 
    public:
       static MupixFEB* Create(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix){printf("MupixFEB::Create(%s) as %s\n",odb_prefix,equipment_name);if(!m_instance) m_instance=new MupixFEB(mu,hDB,equipment_name,odb_prefix); return m_instance;};
