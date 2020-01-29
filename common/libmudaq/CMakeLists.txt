@@ -18,7 +18,16 @@ add_library(libmudaq_scifi STATIC
     mudaq_circular_buffer.hpp
     asic_config_base.h
     asic_config_base.cpp
+    MuFEB.cpp MuFEB.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/mudaq_registers.h ${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h)
 target_link_libraries(libmudaq_scifi  midas ${Boost_LIBRARIES})
 
 
+target_include_directories(libmudaq_scifi
+PUBLIC 
+	"include"
+PRIVATE
+	${MIDASINCLUDE_DIR}
+	${LIBMUDAQ_DIR}
+	${INCMUDAQ_DIR}
+)
