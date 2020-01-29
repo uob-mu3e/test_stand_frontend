@@ -61,7 +61,8 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 int MutrigFEB::WriteAll(){
     HNDLE hTmp;
     char set_str[255];
-    
+    if(GetNumASICs()==0) return 0;
+
     sprintf(set_str, "%s/Settings/Daq/dummy_config", m_odb_prefix);
     db_find_key(m_hDB, 0, set_str, &hTmp);
     assert(hTmp);
