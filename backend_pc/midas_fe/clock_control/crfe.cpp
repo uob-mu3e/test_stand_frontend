@@ -804,13 +804,14 @@ void link_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       db_get_data(hDB, hKey, value, &size, TID_INT);
       cm_msg(MINFO, "link_settings_changed", "Seting Link Board Mask");
 
+      //A FEB is only disabled if both SC and datataking are disabled. Typically these settings are linked,
+      //here we do not infer any kind of consistency.
       for(int i = 0; i < MAX_N_FRONTENDBOARDS; i++){
-          if(value[i] == FEBLINKMASK::OFF || value[i] ==  FEBLINKMASK::SCOn){
+          if(value[i] == FEBLINKMASK::OFF){
               cb->write_command("Disable",0,i);
           } else {
               cb->write_command("Enable",0,i);
           }
-          //TODO: Deal with enabling/diabling slow control
       }
 
 

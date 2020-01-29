@@ -21,7 +21,7 @@
 
 #include "mudaq_circular_buffer.hpp"
 #include "../include/mudaq_device_constants.h"
-#include "../include/mudaq_registers.h"
+#include "../include/switching_constants.h" //K.B. changed from "mudaq_registers.h"
 #include "utils.hpp"
 #include "time.h"
 #include <stdlib.h>
