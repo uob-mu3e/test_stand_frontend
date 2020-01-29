@@ -274,6 +274,8 @@ begin
 		o_fifo_rempty           => fifo_rempty,
 		i_fifo_rack             => fifo_rack,
 
+        i_run_state_125         => run_state_125,
+
 		i_data_in_A_0           => data_in_A_0,
 		i_data_in_A_1           => data_in_A_1,
 		i_data_in_B_0           => data_in_B_0,

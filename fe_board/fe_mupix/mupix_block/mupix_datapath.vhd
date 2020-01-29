@@ -36,7 +36,9 @@ port (
 	o_fifo_rempty   : out   std_logic;
 	i_fifo_rack     : in    std_logic;
 	
-	i_sync_reset_cnt: in std_logic--;
+	i_sync_reset_cnt: in std_logic;
+    
+    i_run_state_125 : run_state_t--;
 );
 end mupix_datapath;
 
@@ -87,7 +89,7 @@ signal s_buf_full				: std_logic;
 signal s_buf_almost_full	: std_logic;
 
 
-signal s_buf_data_125		: std_logic_vector(33 downto 0);
+signal s_buf_data_125		: std_logic_vector(35 downto 0);
 signal s_buf_wr_125			: std_logic;
 
 signal counter125 			: std_logic_vector(63 downto 0);
@@ -119,7 +121,7 @@ begin
 	e_two_clk_sync_fifo : work.two_clk_sync_fifo
 	port map
 	(
-		data			=> "00" & s_buf_data_125,
+		data			=> s_buf_data_125,
 		rdclk			=> i_clk,
 		aclr			=> reset,
 		rdreq			=> not sync_fifo_empty,
@@ -281,7 +283,8 @@ begin
 		tomemena					=> s_buf_wr_125,
 		tomemeoe					=> open,
 		errcounter_overflow	=> multichip_ro_overflow,
-		errcounter_sel_in		=> writeregs_reg(DEBUG_CHIP_SELECT_REGISTER_W)(CHIPRANGE-1 downto 0)
+		errcounter_sel_in		=> writeregs_reg(DEBUG_CHIP_SELECT_REGISTER_W)(CHIPRANGE-1 downto 0),
+        i_run_state_125         => i_run_state_125--,
 	);	
 
 

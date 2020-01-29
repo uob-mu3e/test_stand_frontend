@@ -9,60 +9,57 @@ use work.mupix_constants.all;
 
 entity mupix_block is
 generic(
-	NCHIPS		: integer := 8;
-	NCHIPS_SPI	: integer := 8;
-	NLVDS			: integer := 32;
-	NINPUTS_BANK_A	: integer := 16;
-	NINPUTS_BANK_B	: integer := 16--;
+    NCHIPS                  : integer := 8;
+    NCHIPS_SPI              : integer := 8;
+    NLVDS                   : integer := 32;
+    NINPUTS_BANK_A          : integer := 16;
+    NINPUTS_BANK_B          : integer := 16--;
 );
 port (
-    
-	-- chip dacs
-	i_CTRL_SDO_A    : in std_logic;
-	o_CTRL_SDI_A    : out std_logic;
-	o_CTRL_SCK1_A   : out std_logic;
-	o_CTRL_SCK2_A   : out std_logic;
-	o_CTRL_Load_A   : out std_logic;
-	o_CTRL_RB_A     : out std_logic;
+    -- chip dacs
+    i_CTRL_SDO_A            : in std_logic;
+    o_CTRL_SDI_A            : out std_logic;
+    o_CTRL_SCK1_A           : out std_logic;
+    o_CTRL_SCK2_A           : out std_logic;
+    o_CTRL_Load_A           : out std_logic;
+    o_CTRL_RB_A             : out std_logic;
 
+    -- board dacs
+    i_SPI_DOUT_ADC_0_A      : in std_logic;
+    o_SPI_DIN0_A            : out std_logic;
+    o_SPI_CLK_A             : out std_logic;
+    o_SPI_LD_ADC_A          : out std_logic;
+    o_SPI_LD_TEMP_DAC_A     : out std_logic;
+    o_SPI_LD_DAC_A          : out std_logic;  
 
-	-- board dacs
-	i_SPI_DOUT_ADC_0_A      : in std_logic;
-	o_SPI_DIN0_A            : out std_logic;
-	o_SPI_CLK_A             : out std_logic;
-	o_SPI_LD_ADC_A          : out std_logic;
-	o_SPI_LD_TEMP_DAC_A     : out std_logic;
-	o_SPI_LD_DAC_A          : out std_logic;  
+    -- mupix dac regs
+    i_reg_add               : in std_logic_vector(7 downto 0);
+    i_reg_re                : in std_logic;
+    o_reg_rdata             : out std_logic_vector(31 downto 0);
+    i_reg_we                : in std_logic;
+    i_reg_wdata             : in std_logic_vector(31 downto 0);
 
+    -- data 
+    o_fifo_rdata            : out   std_logic_vector(35 downto 0);
+    o_fifo_rempty           : out   std_logic;
+    i_fifo_rack             : in    std_logic;
 
-	-- mupix dac regs
-	i_reg_add               : in std_logic_vector(7 downto 0);
-	i_reg_re                : in std_logic;
-	o_reg_rdata       		: out std_logic_vector(31 downto 0);
-	i_reg_we   				: in std_logic;
-	i_reg_wdata 			: in std_logic_vector(31 downto 0);
-	 
-	 
-	-- data 
-	o_fifo_rdata    : out   std_logic_vector(35 downto 0);
-	o_fifo_rempty   : out   std_logic;
-	i_fifo_rack     : in    std_logic;
-	 
-	i_data_in_A_0	 : in std_logic_vector(3 downto 0);
-	i_data_in_A_1 	 : in std_logic_vector(3 downto 0);
-	i_data_in_B_0 	 : in std_logic_vector(3 downto 0);
-	i_data_in_B_1 	 : in std_logic_vector(3 downto 0);
-	i_data_in_C_0 	 : in std_logic_vector(3 downto 0);
-	i_data_in_C_1 	 : in std_logic_vector(3 downto 0);
-	i_data_in_E_0 	 : in std_logic_vector(3 downto 0);
-	i_data_in_E_1 	 : in std_logic_vector(3 downto 0);
-    
-	 
-	i_reset         : in std_logic;
-	-- 156.25 MHz
-	i_clk           : in std_logic;
-	i_clk125        : in std_logic;
-	i_sync_reset_cnt: in std_logic--;
+    i_run_state_125         : in    run_state_t;
+
+    i_data_in_A_0           : in std_logic_vector(3 downto 0);
+    i_data_in_A_1           : in std_logic_vector(3 downto 0);
+    i_data_in_B_0           : in std_logic_vector(3 downto 0);
+    i_data_in_B_1           : in std_logic_vector(3 downto 0);
+    i_data_in_C_0           : in std_logic_vector(3 downto 0);
+    i_data_in_C_1           : in std_logic_vector(3 downto 0);
+    i_data_in_E_0           : in std_logic_vector(3 downto 0);
+    i_data_in_E_1           : in std_logic_vector(3 downto 0);
+
+    i_reset                 : in std_logic;
+    -- 156.25 MHz
+    i_clk                   : in std_logic;
+    i_clk125                : in std_logic;
+    i_sync_reset_cnt        : in std_logic--;
 );
 end entity;
 
@@ -400,7 +397,8 @@ begin
 		o_fifo_rdata		=> o_fifo_rdata,
 		o_fifo_rempty		=> o_fifo_rempty,
 		i_fifo_rack			=> i_fifo_rack,
-		i_sync_reset_cnt	=> i_sync_reset_cnt--,
+		i_sync_reset_cnt	=> i_sync_reset_cnt,
+        i_run_state_125     => i_run_state_125--,
 	);
 	
 	write_regs_mupix(RO_PRESCALER_REGISTER_W) 			<= ro_prescaler;

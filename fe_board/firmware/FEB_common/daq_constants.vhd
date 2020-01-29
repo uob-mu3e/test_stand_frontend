@@ -107,6 +107,6 @@ constant RUN_END:                       std_logic_vector(31 downto 0)   := x"000
 constant RUN_END_DATAK:                 std_logic_vector(3 downto 0)    := "0001";
 constant MERGER_TIMEOUT:                std_logic_vector(31 downto 0)   := x"000000FB";
 constant MERGER_TIMEOUT_DATAK:          std_logic_vector(3 downto 0)    := "0001";
-    
+constant MERGER_FIFO_RUN_END_MARKER:    std_logic_vector(3 downto 0)    := "0111";
 
 end package;

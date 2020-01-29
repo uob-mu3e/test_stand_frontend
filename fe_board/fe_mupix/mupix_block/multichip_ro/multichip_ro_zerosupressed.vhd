@@ -38,11 +38,12 @@ entity multichip_ro_zerosupressed is
 --		error_flags			: in STD_LOGIC_VECTOR (NCHIPS*4-1 downto 0);		
 		prescale				: in STD_LOGIC_VECTOR(31 downto 0);
 --		is_shared			: in std_logic_vector(NCHIPS-1 downto 0);
-		tomemdata			: out std_logic_vector(33 downto 0);
+		tomemdata			: out std_logic_vector(35 downto 0);
 		tomemena				: out std_logic;
 		tomemeoe				: out std_logic;
 		errcounter_overflow : out reg32;
-		errcounter_sel_in		: in std_logic_vector(CHIPRANGE-1 downto 0)
+		errcounter_sel_in		: in std_logic_vector(CHIPRANGE-1 downto 0);
+        i_run_state_125         : run_state_t--;
 		);
 end multichip_ro_zerosupressed;
 		
@@ -266,21 +267,25 @@ tomemena		<= tomemena_r;
 					tomemdata(31 downto 0)		<= fifo_q_reg(roundrobin)(31 downto 0);
 					tomemeoe							<= fifo_q_reg(roundrobin)(32);
 					if(tomemena_r	= '0')then
-						tomemdata(33 downto 32) <= "10";
+						tomemdata(35 downto 32) <= "0010";
 					end if;
 					tomemena_r			<= '1';
 					if(fifo_q(roundrobin)(32)='1')then
 						multi_ro		<= FINISH_READ;
 						fifo_rdreq(roundrobin)	<= '0';						
 					end if;
-					
-				when FINISH_READ	=>
-					tomemdata(31 downto 0)		<= fifo_q_reg(roundrobin)(31 downto 0);
-					tomemdata(33 downto 32) 	<= "11";
-					tomemeoe			<= fifo_q_reg(roundrobin)(32);
-					tomemena_r			<= '1';
-					multi_ro			<= WAITING_FAST;
-					roundrobin		<= roundrobin + 1;				-- only for fast mode
+
+                when FINISH_READ =>
+                    tomemdata(31 downto 0)          <= fifo_q_reg(roundrobin)(31 downto 0);
+                    if (i_run_state_125 = RUN_STATE_TERMINATING) then
+                        tomemdata(35 downto 32)     <= MERGER_FIFO_RUN_END_MARKER;
+                    else
+                        tomemdata(35 downto 32)     <= "0011";
+                    end if;
+                    tomemeoe                        <= fifo_q_reg(roundrobin)(32);
+                    tomemena_r                      <= '1';
+                    multi_ro                        <= WAITING_FAST;
+                    roundrobin                      <= roundrobin + 1;				-- only for fast mode
 
 				when others	=>
 					multi_ro 	<= WAITING_FAST;
