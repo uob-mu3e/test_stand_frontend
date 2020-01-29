@@ -267,7 +267,7 @@ begin
 
 				when bank_name =>
 					-- here we check if the link is masked and if the current fifo is empty
-					if ( i_link_mask_n(current_link) = '1' or link_fifo_empty(current_link) = '1' ) then
+					if ( i_link_mask_n(current_link) = '0' or link_fifo_empty(current_link) = '1' ) then
 						current_link <= current_link + 1;
 						if ( current_link + 1 = NLINKS ) then
 							event_tagging_state <= trailer_name;
