@@ -299,15 +299,15 @@ BEGIN
             run_prep_acknowledge_send <= '0';
             case merger_state is
             when idle =>
-		if ( last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or
-							data_in(35 downto 32) = MERGER_FIFO_RUN_END_MARKER or
-							(run_state=RUN_STATE_TERMINATING and can_terminate='1')
-							) then
+        if ( last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or
+                            data_in(35 downto 32) = MERGER_FIFO_RUN_END_MARKER or
+                            (run_state=RUN_STATE_TERMINATING and can_terminate='1')
+                            ) then
                     -- allows run end for idle and sending data, run end in state sending_data is always packet end
                     terminated                  <= '1';
                     data_out                    <= RUN_END;
                     data_is_k                   <= RUN_END_DATAK;
-		    merger_state                <= wait_for_terminate;
+                    merger_state                <= wait_for_terminate;
                 elsif ( slowcontrol_fifo_empty = '1' and data_fifo_empty = '1' ) then -- no data, state is idle --> do nothing
                     slowcontrol_read_req        <= '0';
                     data_out                    <= K285;
