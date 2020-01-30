@@ -147,14 +147,14 @@ int MupixFEB::ConfigureASICs(){
       uint16_t SP_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Port();
       uint16_t FA_ID=ASICid_from_ID(asic);
 
-      if(!m_FPGAs[FPGAid_from_ID(asic)].IsScEnabled()){
+      //if(!m_FPGAs[FPGAid_from_ID(asic)].IsScEnabled()){
       //    printf(" [skipped]\n");
-          return FE_SUCCESS;
-      }
-      if(SB_ID!=m_SB_number){
+      //    return FE_SUCCESS;
+      //}
+      //if(SB_ID!=m_SB_number){
       //    printf(" [skipped]\n");
-          return FE_SUCCESS;
-      }
+      //    return FE_SUCCESS;
+      //} //TODO
       //printf("\n");
 
       cm_msg(MINFO, "MupixFEB" , "Configuring sensor %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d", m_odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
@@ -239,14 +239,14 @@ int MupixFEB::ConfigureBoards(){
 
       uint32_t board_ID=board;
 
-      if(!m_FPGAs[FPGAid_from_ID(board)].IsScEnabled()){
+      //if(!m_FPGAs[FPGAid_from_ID(board)].IsScEnabled()){
       //    printf(" [skipped]\n");
-          return FE_SUCCESS;
-      }
-      if(SB_ID!=m_SB_number){
+      //    return FE_SUCCESS;
+      //}
+      //if(SB_ID!=m_SB_number){
       //    printf(" [skipped]\n");
-          return FE_SUCCESS;
-      }
+      //    return FE_SUCCESS;
+      //} //TODO
       //printf("\n");
 
       cm_msg(MINFO, "MupixFEB" , "Configuring MuPIX board %s/Settings/Boards/%i/: Mapped to FEB%u -> SB%u.%u", m_odb_prefix,board,FPGAid_from_ID(board),SB_ID,SP_ID);

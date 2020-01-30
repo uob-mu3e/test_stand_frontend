@@ -25,6 +25,9 @@ int setup_db(HNDLE& hDB, const char* prefix, MupixFEB* FEB_interface, bool init_
     sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
     //ddprintf("mutrig_midasodb: adding struct %s\n",set_str);
     status = db_create_record(hDB, 0, set_str, strcomb(mupix_global));
+    //std::cout << "Created record for ";
+    //for (int i = 0; i < 100; ++i) std::cout << mupix_global[i];
+    //std::cout << std::endl;
     status = db_find_key (hDB, 0, set_str, &hTmp);
     if (status != DB_SUCCESS) {
         cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
@@ -33,13 +36,15 @@ int setup_db(HNDLE& hDB, const char* prefix, MupixFEB* FEB_interface, bool init_
 
     //Set number of ASICs, derived from mapping
     unsigned int nasics=FEB_interface->GetNumASICs();
-    INT ival=nasics;
+    //INT ival=nasics;
+    INT ival=2; //TODO!!!
     sprintf(set_str, "%s/Settings/ASICs/Global/Num asics", prefix);
     if((status = db_set_value(hDB ,0,set_str, &ival, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
     //TODO: assume number of boards is same as number of asics. AFAIK this is currently a correct assumption
     sprintf(set_str, "%s/Settings/ASICs/Global/Num boards", prefix);
     if((status = db_set_value(hDB ,0,set_str, &ival, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
 
+    nasics = ival;
     if(nasics==0){
         cm_msg(MINFO,"mutrig_midasodb::setup_db","Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
     return DB_SUCCESS;

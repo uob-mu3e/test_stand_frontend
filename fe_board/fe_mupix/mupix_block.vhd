@@ -11,18 +11,19 @@ entity mupix_block is
 generic(
     NCHIPS                  : integer := 8;
     NCHIPS_SPI              : integer := 8;
+    NPORTS                  : integer := 1;
     NLVDS                   : integer := 32;
     NINPUTS_BANK_A          : integer := 16;
     NINPUTS_BANK_B          : integer := 16--;
 );
 port (
     -- chip dacs
-    i_CTRL_SDO_A            : in std_logic;
-    o_CTRL_SDI_A            : out std_logic;
-    o_CTRL_SCK1_A           : out std_logic;
-    o_CTRL_SCK2_A           : out std_logic;
-    o_CTRL_Load_A           : out std_logic;
-    o_CTRL_RB_A             : out std_logic;
+    i_CTRL_SDO_A            : in std_logic; --TODO !!
+    o_CTRL_SDI              : out std_logic_vector(NPORTS-1 downto 0);
+    o_CTRL_SCK1             : out std_logic_vector(NPORTS-1 downto 0);
+    o_CTRL_SCK2             : out std_logic_vector(NPORTS-1 downto 0);
+    o_CTRL_Load             : out std_logic_vector(NPORTS-1 downto 0);
+    o_CTRL_RB               : out std_logic_vector(NPORTS-1 downto 0);
 
     -- board dacs
     i_SPI_DOUT_ADC_0_A      : in std_logic;
@@ -194,33 +195,32 @@ begin
 		ctrl_rb	=> mp8_ctrl_rb(i),
 		busy_n	=> mp8_busy_n(i),
 		dataout	=> mp8_dataout--,
-	);	
+	);
 	end generate gen_slowc;
-	 
-   process(i_clk)
-	begin
-		if(rising_edge(i_clk)) then	
-			mp8_ctrl_dout(0)    <= i_CTRL_SDO_A;
-		end if;
-	end process;
-	 
-	process(i_clk)
-	begin
-		if(rising_edge(i_clk)) then	
-			o_CTRL_SDI_A	<= mp8_ctrl_din(0);
-			o_CTRL_SCK1_A	<= mp8_ctrl_clk1(0);
-			o_CTRL_SCK2_A	<= mp8_ctrl_clk2(0);
-			o_CTRL_Load_A	<= mp8_ctrl_ld(0);
-			o_CTRL_RB_A		<= mp8_ctrl_rb(0);
-		end if;
-	end process;
-	 
-	 
-	-- board dacs slow_controll
-	A_spi_sdo_front		<= i_SPI_DOUT_ADC_0_A & "00";-- A_spi_dout_dac_front & A_dac4_dout_front;
-	o_SPI_LD_ADC_A			<= A_spi_ldn_front(2);
-	o_SPI_LD_TEMP_DAC_A	<= A_spi_ldn_front(1);
-	o_SPI_LD_DAC_A 		<= A_spi_ldn_front(0);
+
+    process(i_clk)
+    begin
+        if(rising_edge(i_clk)) then	
+            mp8_ctrl_dout(0)    <= i_CTRL_SDO_A;
+        end if;
+    end process;
+     
+    process(i_clk)
+    begin
+        if(rising_edge(i_clk)) then	
+            o_CTRL_SDI      <= mp8_ctrl_din;
+            o_CTRL_SCK1     <= mp8_ctrl_clk1;
+            o_CTRL_SCK2     <= mp8_ctrl_clk2;
+            o_CTRL_Load     <= mp8_ctrl_ld;
+            o_CTRL_RB       <= mp8_ctrl_rb;
+        end if;
+    end process;
+
+    -- board dacs slow_controll
+    A_spi_sdo_front         <= i_SPI_DOUT_ADC_0_A & "00";-- A_spi_dout_dac_front & A_dac4_dout_front;
+    o_SPI_LD_ADC_A          <= A_spi_ldn_front(2);
+    o_SPI_LD_TEMP_DAC_A     <= A_spi_ldn_front(1);
+    o_SPI_LD_DAC_A          <= A_spi_ldn_front(0);
     
    -- regs reading
    board_dac_regs : process (i_clk, reset_n)

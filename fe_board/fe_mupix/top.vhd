@@ -207,6 +207,8 @@ end entity;
 
 architecture arch of top is
 
+    constant NPORTS : integer := 2;
+
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
     signal fifo_rempty : std_logic;
@@ -230,72 +232,97 @@ architecture arch of top is
 
     signal sync_reset_cnt : std_logic;
     signal nios_clock : std_logic;
+    
+    signal SPI_DIN  : std_logic;
+    signal CTRL_SDI : std_logic_vector(NPORTS-1 downto 0);
+    signal CTRL_SCK1: std_logic_vector(NPORTS-1 downto 0);
+    signal CTRL_SCK2: std_logic_vector(NPORTS-1 downto 0);
+    signal CTRL_LOAD: std_logic_vector(NPORTS-1 downto 0);
+    signal CTRL_RB  : std_logic_vector(NPORTS-1 downto 0);
 
 begin
 
     ----------------------------------------------------------------------------
     -- MUPIX
 
-	e_mupix_block : entity work.mupix_block
-	generic map (
-		NCHIPS => 8,
-		NCHIPS_SPI => 1,
-		NLVDS  => 32,
-		NINPUTS_BANK_A => 16,
-		NINPUTS_BANK_B => 16--,
-	)
-	port map (
+    SPI_DIN0_A  <= SPI_DIN;
+    SPI_DIN0_B  <= SPI_DIN;
+    
+    CTRL_SDI_A  <= CTRL_SDI(0);
+    CTRL_SCK1_A <= CTRL_SCK1(0);
+    CTRL_SCK2_A <= CTRL_SCK2(0);
+    CTRL_LOAD_A <= CTRL_LOAD(0);
+    CTRL_RB_A   <= CTRL_RB(0);
+    
+    gen_port2: if NPORTS > 1 generate
+    CTRL_SDI_B  <= CTRL_SDI(1);
+    CTRL_SCK1_B <= CTRL_SCK1(1);
+    CTRL_SCK2_B <= CTRL_SCK2(1);
+    CTRL_LOAD_B <= CTRL_LOAD(1);
+    CTRL_RB_B   <= CTRL_RB(1);
+    end generate;
 
-		-- chip dacs
-		i_CTRL_SDO_A         => CTRL_SDO_A,
-		o_CTRL_SDI_A         => CTRL_SDI_A,
-		o_CTRL_SCK1_A        => CTRL_SCK1_A,
-		o_CTRL_SCK2_A        => CTRL_SCK2_A,
-		o_CTRL_Load_A        => CTRL_Load_A,
-		o_CTRL_RB_A          => CTRL_RB_A,
+    e_mupix_block : entity work.mupix_block
+    generic map (
+        NCHIPS          => 8,
+        NCHIPS_SPI      => 2,
+        NPORTS          => NPORTS,
+        NLVDS           => 32,
+        NINPUTS_BANK_A  => 16,
+        NINPUTS_BANK_B  => 16--,
+    )
+    port map (
 
-		-- board dacs
-		i_SPI_DOUT_ADC_0_A   => SPI_DOUT_ADC_0_A,
-		o_SPI_DIN0_A         => SPI_DIN0_A,
-		o_SPI_CLK_A          => SPI_CLK_A,
-		o_SPI_LD_ADC_A       => SPI_LD_ADC_A,
-		o_SPI_LD_TEMP_DAC_A  => SPI_LD_TEMP_DAC_A,
-		o_SPI_LD_DAC_A       => SPI_LD_DAC_A,
+        -- chip dacs
+        i_CTRL_SDO_A            => CTRL_SDO_A,
+        o_CTRL_SDI              => CTRL_SDI,
+        o_CTRL_SCK1             => CTRL_SCK1,
+        o_CTRL_SCK2             => CTRL_SCK2,
+        o_CTRL_Load             => CTRL_Load,
+        o_CTRL_RB               => CTRL_RB,
 
-		-- mupix dac regs
-		i_reg_add               => mupix_reg.addr(7 downto 0),
-		i_reg_re                => mupix_reg.re,
-		o_reg_rdata             => mupix_reg.rdata,
-		i_reg_we                => mupix_reg.we,
-		i_reg_wdata             => mupix_reg.wdata,
+        -- board dacs
+        i_SPI_DOUT_ADC_0_A      => SPI_DOUT_ADC_0_A,
+        o_SPI_DIN0_A            => SPI_DIN,
+        o_SPI_CLK_A             => SPI_CLK_A,
+        o_SPI_LD_ADC_A          => SPI_LD_ADC_A,
+        o_SPI_LD_TEMP_DAC_A     => SPI_LD_TEMP_DAC_A,
+        o_SPI_LD_DAC_A          => SPI_LD_DAC_A,
 
-		-- data
-		o_fifo_rdata            => fifo_rdata,
-		o_fifo_rempty           => fifo_rempty,
-		i_fifo_rack             => fifo_rack,
+        -- mupix dac regs
+        i_reg_add               => mupix_reg.addr(7 downto 0),
+        i_reg_re                => mupix_reg.re,
+        o_reg_rdata             => mupix_reg.rdata,
+        i_reg_we                => mupix_reg.we,
+        i_reg_wdata             => mupix_reg.wdata,
+
+        -- data
+        o_fifo_rdata            => fifo_rdata,
+        o_fifo_rempty           => fifo_rempty,
+        i_fifo_rack             => fifo_rack,
 
         i_run_state_125         => run_state_125,
 
-		i_data_in_A_0           => data_in_A_0,
-		i_data_in_A_1           => data_in_A_1,
-		i_data_in_B_0           => data_in_B_0,
-		i_data_in_B_1           => data_in_B_1,
-		i_data_in_C_0           => data_in_C_0,
-		i_data_in_C_1           => data_in_C_1,
-		i_data_in_E_0           => data_in_E_0,
-		i_data_in_E_1           => data_in_E_1,
+        i_data_in_A_0           => data_in_A_0,
+        i_data_in_A_1           => data_in_A_1,
+        i_data_in_B_0           => data_in_B_0,
+        i_data_in_B_1           => data_in_B_1,
+        i_data_in_C_0           => data_in_C_0,
+        i_data_in_C_1           => data_in_C_1,
+        i_data_in_E_0           => data_in_E_0,
+        i_data_in_E_1           => data_in_E_1,
 
-		i_reset              => not reset_n,
-		-- 156.25 MHz
-		i_clk                => qsfp_clk,
-		i_clk125             => clk_125_bottom,
-		i_sync_reset_cnt    => sync_reset_cnt--,
-	);
+        i_reset                 => not reset_n,
+        -- 156.25 MHz
+        i_clk                   => qsfp_clk,
+        i_clk125                => clk_125_bottom,
+        i_sync_reset_cnt        => sync_reset_cnt--,
+    );
 
-	clock_A <= pod_clk_left;
-	clock_B <= pod_clk_left;
-	clock_C <= pod_clk_left;
-	clock_E <= pod_clk_left;
+    clock_A <= pod_clk_left;
+    clock_B <= pod_clk_left;
+    clock_C <= pod_clk_left;
+    clock_E <= pod_clk_left;
 
 	process(pod_clk_left)
 	begin

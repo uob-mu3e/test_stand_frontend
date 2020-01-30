@@ -11,10 +11,10 @@ char wait_key(useconds_t us = 100000);
 alt_u16 mupix_t::set_chip_dacs(alt_u32 asic, volatile alt_u32* bitpattern) {
     printf("[mupix] configure asic(%u)\n", asic);
 
-    sc->ram->data[0xFF8D] = 0x005e0003;
+    sc->ram->data[0xFF8D] = 0x005e0000 + (5 << asic);
     for(int i = 0; i < MUPIX8_LEN32; i++) {
         sc->ram->data[0xFF8D] = bitpattern[i];
-        printf("0x%08x\n",bitpattern[i]);
+        //printf("0x%08x\n",bitpattern[i]);
         }
    sc->ram->data[0xFF8E] = 0x00100001;
    sc->ram->data[0xFF95] = 0;
@@ -28,7 +28,7 @@ alt_u16 mupix_t::set_board_dacs(alt_u32 asic, volatile alt_u32* bitpattern) {
 
     for(unsigned int i = 0; i < MUPIXBOARD_LEN32; i++) {
         sc->ram->data[0xFF83+i] = bitpattern[i];
-        printf("0x%08x\n",bitpattern[i]);
+        //printf("0x%08x\n",bitpattern[i]);
         }
    sc->ram->data[0xFF8C] = 0x1;
    sc->ram->data[0xFF8C] = 0x0;
@@ -42,14 +42,18 @@ void mupix_t::menu(){
     auto& regs = sc->ram->regs.scifi;
     while(1) {
 	printf("  [b] => set default board DACs\n");
-	printf("  [d] => set default chip  DACs\n");
+	printf("  [0] => set default chip 0 DACs\n");
+    printf("  [1] => set default chip 1 DACs\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
-        case 'd':
+        case '0':
             set_chip_dacs(0, default_mupix_dacs);
+            break;
+        case '1':
+            set_chip_dacs(1, default_mupix_dacs);
             break;
         case 'b':
             set_board_dacs(0, default_board_dacs);
