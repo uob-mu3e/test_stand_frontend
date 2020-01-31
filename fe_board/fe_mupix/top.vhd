@@ -178,7 +178,7 @@ end entity;
 
 architecture arch of top is
 
-    constant NPORTS         : integer := 2;
+    constant NPORTS         : integer := 4;
     signal led              : std_logic_vector(led_n'range) := (others => '0');
 
     signal fifo_rempty      : std_logic;
@@ -217,25 +217,43 @@ begin
 
     SPI_DIN0_A  <= SPI_DIN;
     SPI_DIN0_B  <= SPI_DIN;
-    
+    SPI_DIN0_C  <= SPI_DIN;
+    SPI_DIN0_E  <= SPI_DIN;
+
     CTRL_SDI_A  <= CTRL_SDI(0);
     CTRL_SCK1_A <= CTRL_SCK1(0);
     CTRL_SCK2_A <= CTRL_SCK2(0);
     CTRL_LOAD_A <= CTRL_LOAD(0);
     CTRL_RB_A   <= CTRL_RB(0);
-    
-    gen_port2: if NPORTS > 1 generate
-    CTRL_SDI_B  <= CTRL_SDI(1);
-    CTRL_SCK1_B <= CTRL_SCK1(1);
-    CTRL_SCK2_B <= CTRL_SCK2(1);
-    CTRL_LOAD_B <= CTRL_LOAD(1);
-    CTRL_RB_B   <= CTRL_RB(1);
+
+    gen_portB: if NPORTS > 1 generate
+        CTRL_SDI_B  <= CTRL_SDI(1);
+        CTRL_SCK1_B <= CTRL_SCK1(1);
+        CTRL_SCK2_B <= CTRL_SCK2(1);
+        CTRL_LOAD_B <= CTRL_LOAD(1);
+        CTRL_RB_B   <= CTRL_RB(1);
+    end generate;
+
+    gen_portC: if NPORTS > 2 generate
+        CTRL_SDI_C  <= CTRL_SDI(2);
+        CTRL_SCK1_C <= CTRL_SCK1(2);
+        CTRL_SCK2_C <= CTRL_SCK2(2);
+        CTRL_LOAD_C <= CTRL_LOAD(2);
+        CTRL_RB_C   <= CTRL_RB(2);
+    end generate;
+
+    gen_portE: if NPORTS > 3 generate
+        CTRL_SDI_E  <= CTRL_SDI(3);
+        CTRL_SCK1_E <= CTRL_SCK1(3);
+        CTRL_SCK2_E <= CTRL_SCK2(3);
+        CTRL_LOAD_E <= CTRL_LOAD(3);
+        CTRL_RB_E   <= CTRL_RB(3);
     end generate;
 
     e_mupix_block : entity work.mupix_block
     generic map (
         NCHIPS          => 8,
-        NCHIPS_SPI      => 2,
+        NCHIPS_SPI      => 4,
         NPORTS          => NPORTS,
         NLVDS           => 32,
         NINPUTS_BANK_A  => 16,

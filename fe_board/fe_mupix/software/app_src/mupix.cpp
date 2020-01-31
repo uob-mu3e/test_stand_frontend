@@ -11,7 +11,7 @@ char wait_key(useconds_t us = 100000);
 alt_u16 mupix_t::set_chip_dacs(alt_u32 asic, volatile alt_u32* bitpattern) {
     printf("[mupix] configure asic(%u)\n", asic);
 
-    sc->ram->data[0xFF8D] = 0x005e0000 + (5 << asic);
+    sc->ram->data[0xFF8D] = 0x005e0000 + (17 << asic);
     for(int i = 0; i < MUPIX8_LEN32; i++) {
         sc->ram->data[0xFF8D] = bitpattern[i];
         //printf("0x%08x\n",bitpattern[i]);
