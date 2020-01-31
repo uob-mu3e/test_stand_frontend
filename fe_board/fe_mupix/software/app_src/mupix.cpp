@@ -41,9 +41,11 @@ void mupix_t::menu(){
 
     auto& regs = sc->ram->regs.scifi;
     while(1) {
-	printf("  [b] => set default board DACs\n");
-	printf("  [0] => set default chip 0 DACs\n");
-    printf("  [1] => set default chip 1 DACs\n");
+        printf("  [b] => set default board DACs (All)\n");
+        printf("  [0] => set default chip A DACs\n");
+        printf("  [1] => set default chip B DACs\n");
+        printf("  [2] => set default chip C DACs\n");
+        printf("  [3] => set default chip E DACs\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -54,6 +56,12 @@ void mupix_t::menu(){
             break;
         case '1':
             set_chip_dacs(1, default_mupix_dacs);
+            break;
+        case '2':
+            set_chip_dacs(2, default_mupix_dacs);
+            break;
+        case '3':
+            set_chip_dacs(3, default_mupix_dacs);
             break;
         case 'b':
             set_board_dacs(0, default_board_dacs);
