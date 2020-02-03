@@ -179,6 +179,8 @@ end entity;
 architecture arch of top is
 
     constant NPORTS         : integer := 4;
+    constant N_LINKS        : integer := 1;
+
     signal led              : std_logic_vector(led_n'range) := (others => '0');
 
     signal fifo_write: std_logic_vector(N_LINKS-1 downto 0);
@@ -283,7 +285,7 @@ begin
         i_reg_we                => mupix_reg.we,
         i_reg_wdata             => mupix_reg.wdata,
 
-	-- data
+    -- data
         o_fifo_wdata            => fifo_wdata,
         o_fifo_write            => fifo_write(0),
 

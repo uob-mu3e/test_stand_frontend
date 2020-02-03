@@ -17,6 +17,7 @@ generic(
     NINPUTS_BANK_B          : integer := 16--;
 );
 port (
+    -- chip dacs
     i_CTRL_SDO_A            : in std_logic; --TODO !!
     o_CTRL_SDI              : out std_logic_vector(NPORTS-1 downto 0);
     o_CTRL_SCK1             : out std_logic_vector(NPORTS-1 downto 0);
@@ -32,7 +33,6 @@ port (
     o_SPI_LD_TEMP_DAC_A     : out std_logic;
     o_SPI_LD_DAC_A          : out std_logic;  
 
-
     i_run_state_125         : in    run_state_t;
 
     -- mupix dac regs
@@ -41,12 +41,11 @@ port (
     o_reg_rdata             : out std_logic_vector(31 downto 0);
     i_reg_we                : in std_logic;
     i_reg_wdata             : in std_logic_vector(31 downto 0);
-     
-     
+
     -- data 
     o_fifo_wdata     : out std_logic_vector(35 downto 0);
     o_fifo_write     : out std_logic;
-     
+
     i_data_in_A_0    : in std_logic_vector(3 downto 0);
     i_data_in_A_1    : in std_logic_vector(3 downto 0);
     i_data_in_B_0    : in std_logic_vector(3 downto 0);
@@ -56,36 +55,8 @@ port (
     i_data_in_E_0    : in std_logic_vector(3 downto 0);
     i_data_in_E_1    : in std_logic_vector(3 downto 0);
 
-	-- mupix dac regs
-	i_reg_add               : in std_logic_vector(7 downto 0);
-	i_reg_re                : in std_logic;
-	o_reg_rdata       		: out std_logic_vector(31 downto 0);
-	i_reg_we   				: in std_logic;
-	i_reg_wdata 			: in std_logic_vector(31 downto 0);
-	 
-	 
-	-- data 
-	o_fifo_rdata    : out   std_logic_vector(35 downto 0);
-	o_fifo_rempty   : out   std_logic;
-	i_fifo_rack     : in    std_logic;
-	 
-	i_data_in_A_0	 : in std_logic_vector(3 downto 0);
-	i_data_in_A_1 	 : in std_logic_vector(3 downto 0);
-	i_data_in_B_0 	 : in std_logic_vector(3 downto 0);
-	i_data_in_B_1 	 : in std_logic_vector(3 downto 0);
-	i_data_in_C_0 	 : in std_logic_vector(3 downto 0);
-	i_data_in_C_1 	 : in std_logic_vector(3 downto 0);
-	i_data_in_E_0 	 : in std_logic_vector(3 downto 0);
-	i_data_in_E_1 	 : in std_logic_vector(3 downto 0);
-    
-	 
-	i_reset         : in std_logic;
-	-- 156.25 MHz
-	i_clk           : in std_logic;
-	i_clk125        : in std_logic;
-	i_sync_reset_cnt: in std_logic--;
-     
     i_reset         : in std_logic;
+    -- 156.25 MHz
     i_clk           : in std_logic;
     i_clk125        : in std_logic;
     i_sync_reset_cnt: in std_logic--;
@@ -420,9 +391,8 @@ begin
         write_sc_regs       => write_regs_mupix,
         read_sc_regs        => read_regs_mupix,
         
-        o_fifo_rdata        => o_fifo_rdata,
-        o_fifo_rempty       => o_fifo_rempty,
-        i_fifo_rack         => i_fifo_rack,
+        o_fifo_wdata        => o_fifo_wdata,
+        o_fifo_write        => o_fifo_write,
         i_sync_reset_cnt    => i_sync_reset_cnt,
         i_run_state_125     => i_run_state_125--,
     );
