@@ -32,9 +32,8 @@ port (
 	write_sc_regs:		in reg32array_t(NREGISTERS_MUPIX_WR-1 downto 0);
 	read_sc_regs: 		out reg32array_t(NREGISTERS_MUPIX_RD-1 downto 0);
 
-	o_fifo_rdata    : out   std_logic_vector(35 downto 0);
-	o_fifo_rempty   : out   std_logic;
-	i_fifo_rack     : in    std_logic;
+	o_fifo_wdata    : out std_logic_vector(35 downto 0);
+	o_fifo_write    : out std_logic;
 	
 	i_sync_reset_cnt: in std_logic;
     
@@ -85,8 +84,6 @@ signal read_regs				: reg32array_t(NREGISTERS_MUPIX_RD-1 downto 0);
 --signal regwritten_reg				: std_logic_vector(NREGISTERS-1 downto 0); 
 signal s_buf_data				: std_logic_vector(35 downto 0);
 signal sync_fifo_empty		: std_logic;
-signal s_buf_full				: std_logic;
-signal s_buf_almost_full	: std_logic;
 
 
 signal s_buf_data_125		: std_logic_vector(35 downto 0);
@@ -103,21 +100,11 @@ signal link_enable			: std_logic_vector(NLVDS-1 downto 0);
 
 begin
 
-	reset <= not i_reset_n;
+    reset           <= not i_reset_n;
+    -- to common merger FiFo:
+    o_fifo_wdata    <= s_buf_data;
+    o_fifo_write    <= not sync_fifo_empty;
 
-	u_common_fifo : work.common_fifo
-	port map (
-		clock           => i_clk,
-		sclr            => reset,
-		data            => s_buf_data,
-		wrreq           => not sync_fifo_empty,
-		full            => s_buf_full,
-		almost_full     => s_buf_almost_full,
-		empty           => o_fifo_rempty,
-		q               => o_fifo_rdata,
-		rdreq           => i_fifo_rack--,
-	);
-	
 	e_two_clk_sync_fifo : work.two_clk_sync_fifo
 	port map
 	(

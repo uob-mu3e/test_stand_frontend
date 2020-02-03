@@ -108,9 +108,11 @@ end entity;
 
 architecture arch of top is
 
-    signal fifoA_rempty, fifoB_rempty : std_logic;
-    signal fifoA_rack,   fifoB_rack   : std_logic;
-    signal fifoA_rdata,  fifoB_rdata  : std_logic_vector(35 downto 0);
+    constant N_LINKS : positive := 2;
+
+    signal fifo_write : std_logic_vector(N_LINKS-1 downto 0);
+    signal fifo_wdata : std_logic_vector((N_LINKS-1)*36+35 downto 0);
+    signal common_fifos_almost_full : std_logic_vector(N_LINKS-1 downto 0);
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
@@ -154,6 +156,7 @@ begin
     generic map (
         N_MODULES => 2,
         N_ASICS => 4,
+        N_LINKS => N_LINKS,
         INPUT_SIGNFLIP => "11111111",
         LVDS_PLL_FREQ => 125.0,
         LVDS_DATA_RATE => 1250.0--,
@@ -169,13 +172,10 @@ begin
         o_pll_test      => open,
         i_data          => i_fee_rxd,
 
-        o_fifoA_rempty  => fifoA_rempty,
-        i_fifoA_rack    => fifoA_rack,
-        o_fifoA_rdata   => fifoA_rdata,
+        o_fifo_write   => fifo_write,
+        o_fifo_wdata   => fifo_wdata,
 
-        o_fifoB_rempty  => fifoB_rempty,
-        i_fifoB_rack    => fifoB_rack,
-        o_fifoB_rdata   => fifoB_rdata,
+        i_common_fifos_almost_full => common_fifos_almost_full,
 
         i_run_state     => run_state_125,
         o_run_state_all_done => s_run_state_all_done,
@@ -270,7 +270,8 @@ begin
     e_fe_block : entity work.fe_block
     generic map (
         feb_mapping => 0&3&2&1,
-        NIOS_CLK_MHZ_g => 50.0--,
+        NIOS_CLK_MHZ_g => 50.0,
+        N_LINKS => N_LINKS--,
     )
     port map (
         i_fpga_id       => X"FEB0",
@@ -302,13 +303,10 @@ begin
         i_pod_rx        => pod_rx,
         o_pod_tx        => pod_tx,
 
-        i_fifo_rempty   => fifoA_rempty,
-        o_fifo_rack     => fifoA_rack,
-        i_fifo_rdata    => fifoA_rdata,
+        i_fifo_write    => fifo_write,
+        i_fifo_wdata    => fifo_wdata,
 
-        i_secondary_fifo_rempty   => fifoB_rempty,
-        o_secondary_fifo_rack     => fifoB_rack,
-        i_secondary_fifo_rdata    => fifoB_rdata,
+        o_fifos_almost_full       => common_fifos_almost_full,
 
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,

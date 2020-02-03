@@ -8,6 +8,7 @@ entity scifi_path is
 generic (
     N_MODULES : positive;
     N_ASICS : positive;
+    N_LINKS : positive;
     INPUT_SIGNFLIP : std_logic_vector := (31 downto 0 => '0');
     LVDS_PLL_FREQ : real;
     LVDS_DATA_RATE : real--;
@@ -24,13 +25,10 @@ port (
     o_pll_test      : out   std_logic;
     i_data          : in    std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
-    o_fifoA_rdata   : out   std_logic_vector(35 downto 0);
-    o_fifoA_rempty  : out   std_logic;
-    i_fifoA_rack    : in    std_logic;
+    o_fifo_wdata   : out   std_logic_vector(36*N_LINKS-1 downto 0);
+    o_fifo_write   : out   std_logic_vector(N_LINKS-1 downto 0);
 
-    o_fifoB_rdata   : out   std_logic_vector(35 downto 0);
-    o_fifoB_rempty  : out   std_logic;
-    i_fifoB_rack    : in    std_logic;
+    i_common_fifos_almost_full : in std_logic_vector(N_LINKS-1 downto 0); 
 
     -- reset system
     i_run_state     : in    run_state_t; --run state sync to i_clk_g125
@@ -129,7 +127,7 @@ begin
             o_reg_rdata <= (others => '0');
             o_reg_rdata(0) <= rx_pll_lock;
             o_reg_rdata(5 downto 4) <= frame_desync;
-            o_reg_rdata(9 downto 8) <= buffer_full;
+            o_reg_rdata(9 downto 8) <= "00";
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"5" ) then
             o_reg_rdata <= (others => '0');
@@ -205,6 +203,7 @@ begin
     generic map (
         N_MODULES => N_MODULES,
         N_ASICS => N_ASICS,
+        N_LINKS => N_LINKS,
         LVDS_PLL_FREQ => LVDS_PLL_FREQ,
         LVDS_DATA_RATE => LVDS_DATA_RATE,
         INPUT_SIGNFLIP => INPUT_SIGNFLIP,
@@ -222,13 +221,9 @@ begin
 
         -- interface to asic fifos
         i_clk_core => i_clk_core,
-        o_A_fifo_empty => o_fifoA_rempty,
-        o_A_fifo_data => o_fifoA_rdata,
-        i_A_fifo_rd => i_fifoA_rack,
-
-        o_B_fifo_empty => o_fifoB_rempty,
-        o_B_fifo_data => o_fifoB_rdata,
-        i_B_fifo_rd => i_fifoB_rack,
+        o_fifo_data => o_fifo_wdata,
+        o_fifo_wr => o_fifo_write,
+        i_common_fifos_almost_full => i_common_fifos_almost_full,
 
         -- slow control
         i_SC_disable_dec => s_dpctrl_reg(31),
@@ -248,7 +243,6 @@ begin
         o_receivers_dpa_lock => rx_dpa_lock,
         o_receivers_ready => rx_ready,
         o_frame_desync => frame_desync,
-        o_buffer_full => buffer_full,
 
         i_SC_reset_counters => s_cntreg_ctrl(15),
         i_SC_counterselect => s_cntreg_ctrl(6 downto 0),
