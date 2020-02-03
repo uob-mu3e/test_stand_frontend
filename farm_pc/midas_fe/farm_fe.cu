@@ -319,6 +319,7 @@ INT begin_of_run(INT run_number, char *error)
    db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator/Enable", &hKey);
    db_get_data(hDB, hKey, &value, &size, TID_BOOL);
    uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
+   cout << value << endl;
    if(value) reg=SET_DATAGENERATOR_BIT_ENABLE(reg);
    mu.write_register(DATAGENERATOR_REGISTER_W,reg);
 
@@ -563,7 +564,7 @@ INT read_stream_thread(void *param)
    // dummy data
    uint32_t SERIAL = 0x00000001;
    uint32_t TIME = 0x00000001;
-   bool use_dmmy_data = false;
+   bool use_dmmy_data = true;
    // dummy data
    uint32_t lastWritten = 0;
    uint32_t lastEndOfEvent = 0;
@@ -597,7 +598,7 @@ INT read_stream_thread(void *param)
       // don't readout events if we are not running
       if (run_state != STATE_RUNNING) {
         set_equipment_status(equipment[0].name, "Not running", "var(--myellow)");
-        cout << "!STATE_RUNNING" << endl;
+        //cout << "!STATE_RUNNING" << endl;
         ss_sleep(100);
         //TODO: signalling from main thread?
         continue;
@@ -610,7 +611,7 @@ INT read_stream_thread(void *param)
 
           for (int i = 0; i<2; i++) {
           // event header
-          dma_buf_dummy[0+i*24] = 0x00010000; // Trigger and Event ID
+          dma_buf_dummy[0+i*24] = 0x00000001; // Trigger and Event ID
           dma_buf_dummy[1+i*24] = SERIAL; // Serial number
           dma_buf_dummy[2+i*24] = TIME; // time
           dma_buf_dummy[3+i*24] = 24*4-4*4; // event size
@@ -645,22 +646,22 @@ INT read_stream_thread(void *param)
           dma_buf_volatile = dma_buf_dummy;
 
           copy_n(&dma_buf_volatile[0], 48, pdata);
-          for (int i = 0; i<48; i++){
-              cout << hex << pdata[i] << endl;
-          }
+          //for (int i = 0; i<48; i++){
+          //    cout << hex << pdata[i] << endl;
+          //}
 
           EVENT_HEADER* eh=(EVENT_HEADER*)(&pdata[0]);
           BANK_HEADER* bh=(BANK_HEADER*)(&pdata[4]);
           BANK32* ba=(BANK32*)(&pdata[6]);
-          printf("EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
-          printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
-          printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
+          //printf("EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
+          //printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
+          //printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
           pdata+=sizeof(dma_buf_dummy);
           rb_increment_wp(rbh, sizeof(dma_buf_dummy)); // in byte length
-          ss_sleep(1000);
+          //ss_sleep(1000);
           continue;
       }
-      printf("mu.last_written_addr()=%x ; mu.last_endofevent_addr()=%x; lastlastWritten=%x lastWritten=%x\n",mu.last_written_addr(),mu.last_endofevent_addr(),lastlastWritten,lastWritten);
+     //printf("mu.last_written_addr()=%x ; mu.last_endofevent_addr()=%x; lastlastWritten=%x lastWritten=%x\n",mu.last_written_addr(),mu.last_endofevent_addr(),lastlastWritten,lastWritten);
       if (mu.last_written_addr() == 0) continue;
       if (mu.last_written_addr() == lastlastWritten) continue;
       if (mu.last_written_addr() == lastWritten) continue;
@@ -685,9 +686,9 @@ INT read_stream_thread(void *param)
 
      // only to make it save that we are at the end. Sometimes it fails and
      // the end of event is off so we would then take the next one
-     if (((dma_buf[((lastEndOfEvent+1)*8)%dma_buf_nwords] == 0xAFFEAFFE) or
-             (dma_buf[((lastEndOfEvent+1)*8)%dma_buf_nwords] == 0x0000009c)) and
-         (dma_buf[((lastEndOfEvent+1)*8+1)%dma_buf_nwords] == 0x1)
+     if (((dma_buf[((lastEndOfEvent+1)*8-1)%dma_buf_nwords] == 0xAFFEAFFE) or
+             (dma_buf[((lastEndOfEvent+1)*8-1)%dma_buf_nwords] == 0x0000009c)) and
+         (dma_buf[((lastEndOfEvent+1)*8)%dma_buf_nwords] == 0x1)
              ){
 
          if(readindex < ((lastEndOfEvent+1)*8)%dma_buf_nwords){

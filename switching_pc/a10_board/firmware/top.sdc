@@ -13,11 +13,6 @@ set_false_path -to {clk_sync}
 
 set_false_path -to {sync_chain_halffull[*]}
 
-set_false_path -from {midas_event_builder:e_midas_event_builder|ip_dcfifo:\buffer_link_fifos:*:e_fifo|dcfifo:dcfifo_component|dcfifo_g1r1:auto_generated|altsyncram_ena1:fifo_ram|*} -to {midas_event_builder:e_midas_event_builder|w_ram_data[*]};
-set_false_path -from {midas_event_builder:e_midas_event_builder|ip_dcfifo:\buffer_link_fifos:*:e_fifo|dcfifo:dcfifo_component|dcfifo_g1r1:auto_generated|altsyncram_ena1:fifo_ram|*} -to {midas_event_builder:e_midas_event_builder|w_ram_add[*]};
-set_false_path -from {midas_event_builder:e_midas_event_builder|ip_dcfifo:\buffer_link_fifos:*:e_fifo|dcfifo:dcfifo_component|dcfifo_g1r1:auto_generated|altsyncram_ena1:fifo_ram|*} -to {midas_event_builder:e_midas_event_builder|w_ram_add_reg[*]};
-set_false_path -from {midas_event_builder:e_midas_event_builder|ip_dcfifo:\buffer_link_fifos:*:e_fifo|dcfifo:dcfifo_component|dcfifo_g1r1:auto_generated|altsyncram_ena1:fifo_ram|*} -to {midas_event_builder:e_midas_event_builder|event_tagging_state.*};
-
 set_false_path -from {debouncer:e_debouncer|o_q[0]}
 
 set_min_delay -to {xcvr_a10:*|av_ctrl.readdata[*]} -100

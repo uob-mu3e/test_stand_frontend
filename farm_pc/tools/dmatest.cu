@@ -49,6 +49,11 @@ int main(int argc, char *argv[])
         }
 
         mu.disable();
+        uint32_t datagen_setup = 0;
+        datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
+        mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+        mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0, 100);
+        mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0x0, 100);
         mu.close();
         return 0;
     }
@@ -140,7 +145,9 @@ int main(int argc, char *argv[])
     // Enable all links (SC)
     mu.write_register_wait(FEB_ENABLE_REGISTER_W, 0xF, 100);
     // Enable all links (DATA)
-    mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0xF, 100);
+    //mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0xF, 100);
+    // Enable only one link
+    mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0x1, 100);
 
     mudaq::DmaMudaqDevice::DataBlock block;
     uint32_t newoffset;
@@ -296,7 +303,7 @@ int main(int argc, char *argv[])
         uint32_t datagen_setup = 0;
         datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
         mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
-        mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x0, 100);
+        mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0, 100);
     }
 
     // reset all
