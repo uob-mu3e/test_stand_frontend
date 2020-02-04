@@ -178,7 +178,7 @@ end entity;
 
 architecture arch of top is
 
-    constant NPORTS         : integer := 4;
+    constant NPORTS         : integer := 2;
     constant N_LINKS        : integer := 1;
 
     signal led              : std_logic_vector(led_n'range) := (others => '0');
@@ -204,29 +204,57 @@ architecture arch of top is
     signal sync_reset_cnt   : std_logic;
     signal nios_clock       : std_logic;
     
+    -- board dacs
     signal SPI_DIN          : std_logic;
+    signal SPI_CLK          : std_logic;
+    signal SPI_LD_ADC       : std_logic;
+    signal SPI_LD_TEMP_DAC  : std_logic;
+    signal SPI_LD_DAC       : std_logic;
+    
+    -- chip dacs
     signal CTRL_SDI         : std_logic_vector(NPORTS-1 downto 0);
     signal CTRL_SCK1        : std_logic_vector(NPORTS-1 downto 0);
     signal CTRL_SCK2        : std_logic_vector(NPORTS-1 downto 0);
     signal CTRL_LOAD        : std_logic_vector(NPORTS-1 downto 0);
     signal CTRL_RB          : std_logic_vector(NPORTS-1 downto 0);
+    
+    
 
 begin
 
     ----------------------------------------------------------------------------
     -- MUPIX
-
-    SPI_DIN0_A  <= SPI_DIN;
-    SPI_DIN0_B  <= SPI_DIN;
-    SPI_DIN0_C  <= SPI_DIN;
-    SPI_DIN0_E  <= SPI_DIN;
+    
+    SPI_DIN0_A            <= SPI_DIN;
+    SPI_CLK_A             <= SPI_CLK;
+    SPI_LD_ADC_A          <= SPI_LD_ADC;
+    SPI_LD_TEMP_DAC_A     <= SPI_LD_TEMP_DAC;
+    SPI_LD_DAC_A          <= SPI_LD_DAC;
+    
+    SPI_DIN0_B            <= SPI_DIN;
+    SPI_CLK_B             <= SPI_CLK;
+    SPI_LD_ADC_B          <= SPI_LD_ADC;
+    SPI_LD_TEMP_DAC_B     <= SPI_LD_TEMP_DAC;
+    SPI_LD_DAC_B          <= SPI_LD_DAC;
+    
+    SPI_DIN0_C            <= SPI_DIN;
+    SPI_CLK_C             <= SPI_CLK;
+    SPI_LD_ADC_C          <= SPI_LD_ADC;
+    SPI_LD_TEMP_DAC_C     <= SPI_LD_TEMP_DAC;
+    SPI_LD_DAC_C          <= SPI_LD_DAC;
+    
+    SPI_DIN0_E            <= SPI_DIN;
+    SPI_CLK_E             <= SPI_CLK;
+    SPI_LD_ADC_E          <= SPI_LD_ADC;
+    SPI_LD_TEMP_DAC_E     <= SPI_LD_TEMP_DAC;
+    SPI_LD_DAC_E          <= SPI_LD_DAC;
 
     CTRL_SDI_A  <= CTRL_SDI(0);
     CTRL_SCK1_A <= CTRL_SCK1(0);
     CTRL_SCK2_A <= CTRL_SCK2(0);
     CTRL_LOAD_A <= CTRL_LOAD(0);
     CTRL_RB_A   <= CTRL_RB(0);
-
+    
     gen_portB: if NPORTS > 1 generate
         CTRL_SDI_B  <= CTRL_SDI(1);
         CTRL_SCK1_B <= CTRL_SCK1(1);
@@ -253,8 +281,8 @@ begin
 
     e_mupix_block : entity work.mupix_block
     generic map (
-        NCHIPS          => 8,
-        NCHIPS_SPI      => 4,
+        NCHIPS          => 2,
+        NCHIPS_SPI      => 2,
         NPORTS          => NPORTS,
         NLVDS           => 32,
         NINPUTS_BANK_A  => 16,
@@ -273,10 +301,10 @@ begin
         -- board dacs
         i_SPI_DOUT_ADC_0_A      => SPI_DOUT_ADC_0_A,
         o_SPI_DIN0_A            => SPI_DIN,
-        o_SPI_CLK_A             => SPI_CLK_A,
-        o_SPI_LD_ADC_A          => SPI_LD_ADC_A,
-        o_SPI_LD_TEMP_DAC_A     => SPI_LD_TEMP_DAC_A,
-        o_SPI_LD_DAC_A          => SPI_LD_DAC_A,
+        o_SPI_CLK_A             => SPI_CLK,
+        o_SPI_LD_ADC_A          => SPI_LD_ADC,
+        o_SPI_LD_TEMP_DAC_A     => SPI_LD_TEMP_DAC,
+        o_SPI_LD_DAC_A          => SPI_LD_DAC,
 
         -- mupix dac regs
         i_reg_add               => mupix_reg.addr(7 downto 0),

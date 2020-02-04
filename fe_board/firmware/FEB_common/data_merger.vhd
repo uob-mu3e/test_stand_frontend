@@ -37,10 +37,10 @@ PORT (
     run_state                   : in    run_state_t;
     run_number                  : in    std_logic_vector(31 downto 0);
     o_data_out                  : out   std_logic_vector(127 downto 0):= -- to optical transm.
-                                          X"03CAFE" & work.util.D28_5
-                                        & X"02BABE" & work.util.D28_5
-                                        & X"01DEAD" & work.util.D28_5
-                                        & X"00BEEF" & work.util.D28_5;
+                                          X"000000" & work.util.D28_5
+                                        & X"000000" & work.util.D28_5
+                                        & X"000000" & work.util.D28_5
+                                        & X"000000" & work.util.D28_5;
     o_data_is_k                 : out   std_logic_vector(15 downto 0):= "0001" & "0001" & "0001" & "0001";
     i_data_in                   : in    std_logic_vector(36*N_LINKS-1 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
     i_data_in_slowcontrol       : in    std_logic_vector(35 downto 0); -- data input slowcontrol from SCFIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 SCData))
@@ -81,6 +81,7 @@ o_terminated    <= and_reduce(terminated);
 feb_map: for j in N_LINKS-1 downto 0 generate
 begin
     o_data_out(32*(feb_mapping(j)+1)-1 downto 32*feb_mapping(j)) <= data_out(31+32*j downto 32*j);
+    o_data_is_k(4*(feb_mapping(j)+1)-1 downto 4*feb_mapping(j)) <= data_is_k(3+4*j downto 4*j);
 end generate;
 
 
