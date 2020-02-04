@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
             //cout << "endofevent" << endl;
             continue;
         }
-        if ((dma_buf[(endofevent+1)*8] == 0xAFFEAFFE) or (dma_buf[(endofevent+1)*8] == 0x0000009c)){
+        if ((dma_buf[(endofevent+1)*8-1] == 0xAFFEAFFE) or (dma_buf[(endofevent+1)*8-1] == 0x0000009c)){
             cout << hex << (endofevent+1)*8 << " " << lastWritten << " " << dma_buf[(endofevent+1)*8] << endl;
         };
 //        for (int i = 0; i < 20; i++) {
