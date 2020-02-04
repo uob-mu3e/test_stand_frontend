@@ -132,8 +132,8 @@ FOR i in 0 to NLINKS - 1 GENERATE
 	);
 END GENERATE buffer_link_fifos;
 
--- check if all fifos are not empty
-link_fifo_not_empty <= '1' when ( link_fifo_empty = (link_fifo_empty'range => '0') ) else '0';
+-- check if one fifo is not empty
+link_fifo_not_empty <= '0' when ( link_fifo_empty = (link_fifo_empty'range => '1') ) else '1';
 
 e_ram_32_256 : entity work.ip_ram
 generic map (
@@ -267,7 +267,7 @@ begin
 
 				when bank_name =>
 					-- here we check if the link is masked and if the current fifo is empty
-					if ( i_link_mask_n(current_link) = '0') then-- or link_fifo_empty(current_link) = '1' ) then
+					if ( i_link_mask_n(current_link) = '0' or link_fifo_empty(current_link) = '1' ) then
 						current_link <= current_link + 1;
 						if ( current_link + 1 = NLINKS ) then
 							event_tagging_state <= trailer_name;
@@ -304,7 +304,7 @@ begin
 
 				when bank_data =>
 					-- check again if the fifo is empty
-					--if ( link_fifo_empty(current_link) = '0' ) then
+					if ( link_fifo_empty(current_link) = '0' ) then
 						w_ram_en	<= '1';
 						w_ram_add   <= w_ram_add + 1;
 						w_ram_data  <= link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 4);
@@ -320,7 +320,7 @@ begin
 						else
 							link_fifo_ren(current_link) <= '1';
 						end if;
-					--end if;
+					end if;
 
 				when bank_set_length =>
 					w_ram_en	<= '1';
