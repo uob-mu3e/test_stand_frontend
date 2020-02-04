@@ -541,8 +541,8 @@ INT check_event(volatile uint32_t * buffer, uint32_t idx, bool rp_before_wp)
     if ( bh->flags != 0x11 ) return -1;
     //if ( ba->type != 0x6 ) return -1;
 
-    printf("EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
-    printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
+    //printf("EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
+    //printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
     // printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
 
     return 0;
@@ -564,7 +564,7 @@ INT read_stream_thread(void *param)
    // dummy data
    uint32_t SERIAL = 0x00000001;
    uint32_t TIME = 0x00000001;
-   bool use_dmmy_data = true;
+   bool use_dmmy_data = false;
    // dummy data
    uint32_t lastWritten = 0;
    uint32_t lastEndOfEvent = 0;
@@ -691,17 +691,20 @@ INT read_stream_thread(void *param)
          (dma_buf[((lastEndOfEvent+1)*8)%dma_buf_nwords] == 0x1)
              ){
 
-         if(readindex < ((lastEndOfEvent+1)*8)%dma_buf_nwords){
+         //printf("end=%8.8x start=%8.8x E8=%8.8x \n", dma_buf[((lastEndOfEvent+1)*8-1)%dma_buf_nwords], dma_buf[((lastEndOfEvent+1)*8)%dma_buf_nwords], dma_buf[((lastEndOfEvent+1)*8+9)%dma_buf_nwords]);
+         
+         if(readindex < ((lastEndOfEvent+1)*8-1)%dma_buf_nwords){
             if ( check_event(dma_buf, readindex, false) != 0 ) continue;
 
             //WP before RP. Complete copy
-            size_t wlen = ((lastEndOfEvent+1)*8)%dma_buf_nwords - readindex; // len in 32 bit words -- only one wlen = dma_buf[readindex+3];
+            size_t wlen = ((lastEndOfEvent+1)*8-1)%dma_buf_nwords - readindex; // len in 32 bit words -- only one wlen = dma_buf[readindex+3];
             copy_n(&dma_buf[readindex], wlen, pdata);
-            printf("wlen=%d Idx=%d LW=%d EOE=%d\n", wlen, readindex, lastWritten, lastEndOfEvent);
+            printf("start=%8.8x end=%8.8x end+1=%8.8x\n", dma_buf[readindex], dma_buf[readindex+wlen], dma_buf[(readindex+wlen+1)%dma_buf_nwords]);
+            //printf("wlen=%d Idx=%d LW=%d EOE=%d\n", wlen, readindex, lastWritten, lastEndOfEvent);
 
             rb_status = rb_increment_wp(rbh, wlen);
             if ( rb_status != DB_SUCCESS ) {
-                printf("RBstat=%8.8x\n", rb_status);
+                //printf("RBstat=%8.8x\n", rb_status);
                 set_equipment_status(equipment[0].name, "Buffer ERROR", "var(--myellow)");
                 continue;
             }
@@ -715,17 +718,19 @@ INT read_stream_thread(void *param)
             //copy with wrapping
             //#1
             copy_n(&dma_buf[readindex],dma_buf_nwords-readindex,pdata); // len in 32 bit words
-            printf("wlen=%d\n", dma_buf_nwords-readindex);
+            //printf("wlen=%d\n", dma_buf_nwords-readindex);
+            printf("start=%8.8x \n", dma_buf[readindex]);
             pdata += dma_buf_nwords-readindex;
             //#2
             readindex=0;
-            size_t wlen = ((lastEndOfEvent+1)*8)%dma_buf_nwords; // len in 32 bit words
+            size_t wlen = ((lastEndOfEvent+1)*8-1)%dma_buf_nwords; // len in 32 bit words
             copy_n(&dma_buf[readindex], wlen, pdata);
-            printf("wlen=%d\n", wlen);
+            printf("end=%8.8x \n", dma_buf[readindex+wlen]);
+            //printf("wlen=%d\n", wlen);
             pdata += wlen;
             rb_status = rb_increment_wp(rbh, (wlen + dma_buf_nwords - readindex));
             if ( rb_status != DB_SUCCESS) {  // in byte length
-                printf("RBstat=%8.8\nx", rb_status);
+                //printf("RBstat=%8.8\nx", rb_status);
                 set_equipment_status(equipment[0].name, "Buffer ERROR", "var(--myellow)");
                 continue;
             }
