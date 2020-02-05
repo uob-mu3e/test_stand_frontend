@@ -32,7 +32,7 @@ Contents:       Definition of functions to talk to a mupix-based FEB. Designed t
 MupixFEB* MupixFEB::m_instance=NULL;
 
 //Mapping to physical ports of switching board.
-uint16_t MupixFEB::FPGAid_from_ID(int asic){return asic;}
+uint16_t MupixFEB::FPGAid_from_ID(int asic){return 0;} //TODO !!!
 uint16_t MupixFEB::ASICid_from_ID(int asic){return 0;}
 
 uint16_t MupixFEB::GetNumASICs(){return m_FPGAs.size()*1;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB

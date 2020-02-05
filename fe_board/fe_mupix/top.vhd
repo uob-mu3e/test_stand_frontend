@@ -178,7 +178,7 @@ end entity;
 
 architecture arch of top is
 
-    constant NPORTS         : integer := 2;
+    constant NPORTS         : integer := 4;
     constant N_LINKS        : integer := 1;
 
     signal led              : std_logic_vector(led_n'range) := (others => '0');
@@ -282,7 +282,7 @@ begin
     e_mupix_block : entity work.mupix_block
     generic map (
         NCHIPS          => 2,
-        NCHIPS_SPI      => 2,
+        NCHIPS_SPI      => 4,
         NPORTS          => NPORTS,
         NLVDS           => 32,
         NINPUTS_BANK_A  => 16,

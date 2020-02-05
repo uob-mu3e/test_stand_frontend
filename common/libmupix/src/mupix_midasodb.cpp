@@ -37,7 +37,7 @@ int setup_db(HNDLE& hDB, const char* prefix, MupixFEB* FEB_interface, bool init_
     //Set number of ASICs, derived from mapping
     unsigned int nasics=FEB_interface->GetNumASICs();
     //INT ival=nasics;
-    INT ival=2; //TODO!!!
+    INT ival=4; //TODO!!!
     sprintf(set_str, "%s/Settings/ASICs/Global/Num asics", prefix);
     if((status = db_set_value(hDB ,0,set_str, &ival, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
     //TODO: assume number of boards is same as number of asics. AFAIK this is currently a correct assumption
