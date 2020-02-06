@@ -185,26 +185,26 @@ begin
 	FOR i in 0 to NCHIPS-1 GENERATE	
 	-- we currently only use link 0 of each chip (up to 8 possible)
  
-		unpacker_single : work.data_unpacker_new
-		generic map(
-			COARSECOUNTERSIZE	=> COARSECOUNTERSIZE,
-			UNPACKER_HITSIZE	=> UNPACKER_HITSIZE
-		)
-		port map(
-			reset_n				=> i_reset_n,
-			clk					=> i_clk125,
-			datain				=> rx_data(4*i), 
-			kin					=> rx_k(4*i), 
-			readyin				=> link_enable(4*i),
-			is_atlaspix			=> '0',	-- we limit ourselves to MuPix8 here
-			hit_out				=> hits((i+1)*UNPACKER_HITSIZE-1 downto i*UNPACKER_HITSIZE),
-			hit_ena				=> hits_ena(i),
-			coarsecounter		=> coarsecounters((i+1)*COARSECOUNTERSIZE-1 downto i*COARSECOUNTERSIZE),
-			coarsecounter_ena	=> coarsecounters_ena(i),
-			link_flag			=> link_flag(i),
-			errorcounter		=> unpack_errorcounter(i)	-- could be useful!
-		);	
-		
+        unpacker_single : work.data_unpacker_new
+        generic map(
+            COARSECOUNTERSIZE   => COARSECOUNTERSIZE,
+            UNPACKER_HITSIZE    => UNPACKER_HITSIZE
+        )
+        port map(
+            reset_n             => i_reset_n,
+            clk                 => i_clk125,
+            datain              => rx_data(8*i), 
+            kin                 => rx_k(8*i), 
+            readyin             => link_enable(8*i),
+            is_atlaspix         => '0',	-- we limit ourselves to MuPix8 here
+            hit_out             => hits((i+1)*UNPACKER_HITSIZE-1 downto i*UNPACKER_HITSIZE),
+            hit_ena             => hits_ena(i),
+            coarsecounter       => coarsecounters((i+1)*COARSECOUNTERSIZE-1 downto i*COARSECOUNTERSIZE),
+            coarsecounter_ena   => coarsecounters_ena(i),
+            link_flag           => link_flag(i),
+            errorcounter        => unpack_errorcounter(i) -- could be useful!
+        );
+
 		degray_single : work.hit_ts_conversion 
 		port map(
 			reset_n				=> i_reset_n,
