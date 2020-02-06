@@ -144,10 +144,10 @@ architecture arch of fe_block is
     signal pod_rx_datak : std_logic_vector(3 downto 0);
 
     signal qsfp_tx_data : std_logic_vector(127 downto 0) :=
-          X"03CAFE" & work.util.D28_5
-        & X"02BABE" & work.util.D28_5
-        & X"01DEAD" & work.util.D28_5
-        & X"00BEEF" & work.util.D28_5;
+          X"000000" & work.util.D28_5
+        & X"000000" & work.util.D28_5
+        & X"000000" & work.util.D28_5
+        & X"000000" & work.util.D28_5;
     signal qsfp_tx_datak : std_logic_vector(15 downto 0) :=
           "0001"
         & "0001"
