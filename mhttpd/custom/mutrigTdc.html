@@ -415,6 +415,18 @@ function loadFromDisk(event) {
     reader.readAsText(file);
 }
 
+function configure() {
+	var paths       = ["/Equipment/Switching/Settings/SciFiConfig"];
+	var values      = [1];
+	console.log(paths);
+	console.log(values);
+
+	mjsonrpc_db_paste(paths, values).then(function(rpc) {
+	}).catch(function(error) {
+		mjsonrpc_error_alert(error);
+	});
+}
+
 
 //*********************************************************************************//
 //high level page functions
@@ -1009,12 +1021,12 @@ function readback() {
                <div style="text-align:center;">
                     <button class="button_2" type="submit" onclick="storeODB()">Set ODB</button>
 		    <button class="button_2" type="submit" onclick="loadODB(false)">Reload ODB</button>
-                            <button name="modbbutton" class="button_2" id="config"
-                                    data-odb-path="/Equipment/Switching/Settings/SciFiConfig"
-                                    data-odb-value="1">
-                                Configure SciFi ASICs
-                            </button>
-
+		    <button name="modbbutton" class="button_2" id="config"
+			    data-odb-path="/Equipment/Switching/Settings/SciFiConfig"
+			    data-odb-value="1">
+			Configure
+		    </button>
+                    <button class="button_2" type="submit" onclick="storeODB();configure();">Set ODB & Configure</button>
                     <button class="button_2" type="submit" id="readback" onClick='readback()'  style="display:none;">read ASIC</button>
                </div>
                <div style="text-align:center;">
