@@ -132,7 +132,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
 	);
 END GENERATE buffer_link_fifos;
 
--- check if at least one fifo is not empty
+-- check if one fifo is not empty
 link_fifo_not_empty <= '0' when ( link_fifo_empty = (link_fifo_empty'range => '1') ) else '1';
 
 e_ram_32_256 : entity work.ip_ram

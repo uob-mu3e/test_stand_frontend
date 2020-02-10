@@ -167,8 +167,8 @@ e_data_gen_tiles : entity work.data_generator_a10
 
 
 
-rx_data <= data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 & data_tile_generated3;
-rx_datak <= datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & datak_tile_generated3;
+rx_data <= data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 & x"000000BC";--data_tile_generated3;
+rx_datak <= datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & "0001";--datak_tile_generated3;
 
 e_midas_event_builder : entity work.midas_event_builder
   generic map (
@@ -182,7 +182,7 @@ e_midas_event_builder : entity work.midas_event_builder
     i_rx_data  => rx_data,
     i_rx_datak => rx_datak,
     i_wen_reg  => '1',
-    i_link_mask_n => "01010",
+    i_link_mask_n => "01011",
     o_all_done => all_done,
     o_event_wren => dma_data_wren,
     o_endofevent => dmamem_endofevent,

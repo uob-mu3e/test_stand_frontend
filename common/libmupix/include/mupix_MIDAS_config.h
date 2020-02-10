@@ -20,18 +20,18 @@ typedef int INT;
 #ifndef MU3EDAQ_MUPIX_MIDAS_CONFIG_H
 #define MU3EDAQ_MUPIX_MIDAS_CONFIG_H
 
-#ifndef MUTRIG_GLOBAL_DEFINED
-#define MUTRIG_GLOBAL_DEFINED
+#ifndef MUPIX_GLOBAL_DEFINED
+#define MUPIX_GLOBAL_DEFINED
 
 typedef struct {
     INT       n_asics;
     INT       n_boards;
-} MUTRIG_GLOBAL;
+} MUPIX_GLOBAL;
 
 #define MUPIX_GLOBAL_STR(_name) const char *_name[] = {\
 "[.]",\
-"Num asics = INT : 1",\
-"Num boards = INT : 1",\
+"Num asics = INT : 0",\
+"Num boards = INT : 0",\
 "",\
 NULL }
 

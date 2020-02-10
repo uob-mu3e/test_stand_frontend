@@ -93,20 +93,23 @@ constant k30_7 : std_logic_vector(7 downto 0) := X"FE";
 
 
 -- mscb addressing (for networks with 8bit and 16bit addresses, we will use 16 ?)
-constant MSCB_CMD_ADDR_NODE16   : std_logic_vector(7 downto 0) := X"0A";
-constant MSCB_CMD_ADDR_NODE8    : std_logic_vector(7 downto 0) := X"09";
-constant MSCB_CMD_ADDR_GRP8     : std_logic_vector(7 downto 0) := X"11"; -- group addressing
-constant MSCB_CMD_ADDR_GRP16    : std_logic_vector(7 downto 0) := X"12";
-constant MSCB_CMD_ADDR_BC       : std_logic_vector(7 downto 0) := X"10"; --broadcast
-constant MSCB_CMD_PING8         : std_logic_vector(7 downto 0) := X"19";
-constant MSCB_CMD_PING16        : std_logic_vector(7 downto 0) := X"1A";
+constant MSCB_CMD_ADDR_NODE16           : std_logic_vector(7 downto 0)      := X"0A";
+constant MSCB_CMD_ADDR_NODE8            : std_logic_vector(7 downto 0)      := X"09";
+constant MSCB_CMD_ADDR_GRP8             : std_logic_vector(7 downto 0)      := X"11"; -- group addressing
+constant MSCB_CMD_ADDR_GRP16            : std_logic_vector(7 downto 0)      := X"12";
+constant MSCB_CMD_ADDR_BC               : std_logic_vector(7 downto 0)      := X"10"; --broadcast
+constant MSCB_CMD_PING8                 : std_logic_vector(7 downto 0)      := X"19";
+constant MSCB_CMD_PING16                : std_logic_vector(7 downto 0)      := X"1A";
 
-constant run_prep_acknowledge:          std_logic_vector(31 downto 0)   := x"000000FE";
-constant run_prep_acknowledge_datak:    std_logic_vector(3 downto 0)    := "0001";
-constant RUN_END:                       std_logic_vector(31 downto 0)   := x"000000FD";
-constant RUN_END_DATAK:                 std_logic_vector(3 downto 0)    := "0001";
-constant MERGER_TIMEOUT:                std_logic_vector(31 downto 0)   := x"000000FB";
-constant MERGER_TIMEOUT_DATAK:          std_logic_vector(3 downto 0)    := "0001";
-    
+constant run_prep_acknowledge           : std_logic_vector(31 downto 0)     := x"000000FE";
+constant run_prep_acknowledge_datak     : std_logic_vector(3 downto 0)      := "0001";
+constant RUN_END                        : std_logic_vector(31 downto 0)     := x"000000FD";
+constant RUN_END_DATAK                  : std_logic_vector(3 downto 0)      := "0001";
+constant MERGER_TIMEOUT                 : std_logic_vector(31 downto 0)     := x"000000FB";
+constant MERGER_TIMEOUT_DATAK           : std_logic_vector(3 downto 0)      := "0001";
+
+constant MERGER_FIFO_RUN_END_MARKER     : std_logic_vector(3 downto 0)      := "0111";
+constant MERGER_FIFO_PAKET_END_MARKER   : std_logic_vector(3 downto 0)      := "0011";
+constant MERGER_FIFO_PAKET_START_MARKER : std_logic_vector(3 downto 0)      := "0010";
 
 end package;

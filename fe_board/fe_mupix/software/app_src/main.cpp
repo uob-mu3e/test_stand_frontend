@@ -25,7 +25,7 @@ int main() {
     base_init();
 
     si5345.init();
-    mscb.init();
+    //mscb.init();
     sc.init();
 
     while (1) {
