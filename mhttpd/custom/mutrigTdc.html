@@ -418,8 +418,6 @@ function loadFromDisk(event) {
 function configure() {
 	var paths       = ["/Equipment/Switching/Settings/SciFiConfig"];
 	var values      = [1];
-	console.log(paths);
-	console.log(values);
 
 	mjsonrpc_db_paste(paths, values).then(function(rpc) {
 	}).catch(function(error) {
@@ -975,17 +973,20 @@ title="Change the tail compensation effect.
                     </tr>-->
                     <tr>
                          <td><label for="tdctest_n">TDCTEST_N</label></td>
-                         <td><input type="checkbox" name="tdctest_n"  class="store" /><input type="checkbox" name="tdctest_n_rb" class="odb" disabled="disabled" title="1: disable TDC test input to this channel. (0 enables TDC input and shorts with the normal hitlogic output. Note that DMON and tdc test signals are shared, so only one can be used at a time, this requires hardware changes - typically removing a jumper)"/></td>
+                         <td><input type="checkbox" name="tdctest_n"  class="store" 
+title="1: disable TDC test input to this channel. (0 enables TDC input and shorts with the normal hitlogic output. Note that DMON and tdc test signals are shared, so only one can be used at a time, this requires hardware changes - typically removing a jumper)"
+			     />
+			     <input type="checkbox" name="tdctest_n_rb" class="odb" disabled="disabled" /></td>
                          <td></td>
                          <td></td>
                     </tr>
                     <tr>
                          <td><label for="sswitch">S SWITCH</label></td>
-                         <td><input type="checkbox" name="sswitch"  class="store" /><input type="checkbox" name="sswitch_rb" class="odb" disabled="disabled"
-title="single or differetial signals:
+                         <td><input type="checkbox" name="sswitch"  class="store" title="single or differetial signals:
 0: suitable for single-ended input from P input of the chip
 1: suitable for differetial input"
-/></td>
+/>
+<input type="checkbox" name="sswitch_rb" class="odb" disabled="disabled"/></td>
                          <td></td>
                          <td></td>
                     </tr>
@@ -993,32 +994,32 @@ title="single or differetial signals:
                          <td><label for="delay">DELAY</label></td>
                          <td><input type="checkbox" name="delay"  class="store" /><input type="checkbox" name="delay_rb" class="odb" disabled="disabled" /></td>
                          <td><label for="pole_en_n">POLE_EN_N</label></td>
-                         <td><input type="checkbox" name="pole_en_n"  class="store" /><input type="checkbox" name="pole_en_n_rb" class="odb" disabled="disabled" /></td>
+                         <td><input type="checkbox" name="pole_en_n"  class="store" title="0: enable dac for PZC. Only controls the dac, not the feature itself"/><input type="checkbox" name="pole_en_n_rb" class="odb" disabled="disabled"/></td>
                     </tr>
                     <tr>
                          <td><label for="energy_c_en">ENERGY_C_EN</label></td>
-                         <td><input type="checkbox" name="energy_c_en"  class="store" /><input type="checkbox" name="energy_c_en_rb" class="odb" disabled="disabled" title="Enable the Capacitantor in the low pass filter before Energy branch."/></td>
+                         <td><input type="checkbox" name="energy_c_en"  class="store" title="Enable the Capacitantor in the low pass filter before the E-Comparator." /><input type="checkbox" name="energy_c_en_rb" class="odb" disabled="disabled"/></td>
                          <td><label for="energy_r_en">ENERGY_R_EN</label></td>
-                         <td><input type="checkbox" name="energy_r_en"  class="store" /><input type="checkbox" name="energy_r_en_rb" class="odb" disabled="disabled" /></td>
+                         <td><input type="checkbox" name="energy_r_en"  class="store" title="Enable the Resistor in the low pass filter before the E-Comparator."/><input type="checkbox" name="energy_r_en_rb" class="odb" disabled="disabled" /></td>
                     </tr>
                     <tr>
                          <td><label for="cm_sensing_high_r">SENSING_HIGH_R</label></td>
-                         <td><input type="checkbox" name="cm_sensing_high_r"  class="store" /><input type="checkbox" name="cm_sensing_high_r_rb" class="odb" disabled="disabled" title="Enable the Resistor in the low pass filter before Energy branch."/></td>
+                         <td><input type="checkbox" name="cm_sensing_high_r"  class="store" title="Enables high impedance source in the feedback path. Should be set to 0"/><input type="checkbox" name="cm_sensing_high_r_rb" class="odb" disabled="disabled"/></td>
                          <td><label for="amon_en_n">AMON_EN_N</label></td>
-                         <td><input type="checkbox" name="amon_en_n"  class="store" /><input type="checkbox" name="amon_en_n_rb" class="odb" disabled="disabled" title="1: disable analog monitor output from this channel"/></td>
+                         <td><input type="checkbox" name="amon_en_n"  class="store" title="1: disable analog monitor output from this channel. Analog monitor should only be enabled for up to one channel in a chip!"/><input type="checkbox" name="amon_en_n_rb" class="odb" disabled="disabled"/></td>
                     </tr>
                     <tr>
                          <td><label for="edge">EDGE</label></td>
-                         <td><input type="checkbox" name="edge"  class="store" /><input type="checkbox" name="edge_rb" class="odb" disabled="disabled" title="Select polarity of E-branch comparator (see edge-cml)."/></td>
+                         <td><input type="checkbox" name="edge"  class="store" title="Select polarity of E-branch comparator (see edge-cml)."/><input type="checkbox" name="edge_rb" class="odb" disabled="disabled""/></td>
                          <td><label for="edge_cml">EDGE CML</label></td>
                          <td><input type="checkbox" name="edge_cml"  class="store" /><input type="checkbox" name="edge_cml_rb" class="odb" disabled="disabled" title="Invert polarity of digital signals to hitlogic in channel." /></td>
                     </tr>
 
                     <tr>
                          <td><label for="dmon_en">DMON ENA</label></td>
-                         <td><input type="checkbox" name="dmon_en"  class="store" /><input type="checkbox" name="dmon_en_rb" class="odb" disabled="disabled" title="Enable digital monitor for this channel. Maximum one should be enabled at all times!"/></td>
+                         <td><input type="checkbox" name="dmon_en"  class="store" title="Enable digital monitor for this channel. Maximum one should be enabled at all times!"/><input type="checkbox" name="dmon_en_rb" class="odb" disabled="disabled"/></td>
                          <td><label for="dmon_sw">DMON SW</label></td>
-                         <td><input type="checkbox" name="dmon_sw"  class="store" /><input type="checkbox" name="dmon_sw_rb" class="odb" disabled="disabled" title="Digital monitor output mode. 0: Show Q and flag output (as it goes to the TDC), 1: show raw T & E flags"/></td>
+                         <td><input type="checkbox" name="dmon_sw"  class="store" title="Digital monitor output mode. 0: Show Q and flag output (as it goes to the TDC), 1: show raw T & E flags"/><input type="checkbox" name="dmon_sw_rb" class="odb" disabled="disabled"/></td>
                     </tr>
                 </table>
 		</div>
