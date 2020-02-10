@@ -322,10 +322,6 @@ function storeODB() {
 	// global
 	var paths       = asicsettings_global_int.concat(asicsettings_global_bool).map(function(i) { return prefix+"ASICs/Global/"+i; });
 	var values      = asicsettings_global_int.concat(asicsettings_global_bool).map(function(n) { return settings.glob[n]; });
-	console.log(settings);
-	console.log(settings.glob);
-	console.log(paths);
-	console.log(values);
 
 	mjsonrpc_db_paste(paths, values).then(function(rpc) {
 		result=rpc.result;	      
@@ -422,8 +418,6 @@ function loadFromDisk(event) {
 function configure() {
 	var paths       = ["/Equipment/Switching/Settings/SciFiConfig"];
 	var values      = [1];
-	console.log(paths);
-	console.log(values);
 
 	mjsonrpc_db_paste(paths, values).then(function(rpc) {
 	}).catch(function(error) {
@@ -1016,7 +1010,7 @@ title="1: disable TDC test input to this channel. (0 enables TDC input and short
                     </tr>
                     <tr>
                          <td><label for="edge">EDGE</label></td>
-                         <td><input type="checkbox" name="edge"  class="store" title="Select polarity of E-branch comparator (see edge-cml)./><input type="checkbox" name="edge_rb" class="odb" disabled="disabled""/></td>
+                         <td><input type="checkbox" name="edge"  class="store" title="Select polarity of E-branch comparator (see edge-cml)."/><input type="checkbox" name="edge_rb" class="odb" disabled="disabled""/></td>
                          <td><label for="edge_cml">EDGE CML</label></td>
                          <td><input type="checkbox" name="edge_cml"  class="store" /><input type="checkbox" name="edge_cml_rb" class="odb" disabled="disabled" title="Invert polarity of digital signals to hitlogic in channel." /></td>
                     </tr>
