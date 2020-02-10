@@ -545,17 +545,17 @@ function readback() {
 				<table id="daq_table">
 					<tr>
 						<td colspan=2><label for="dummy_config">DUMMY CONFIG</label></td>
-						<td><input type="checkbox" name="modbcheckbox" id="dummy_config" data-odb-path="/Equipment/SciFi/Settings/Daq/dummy_config"></input></td>
+						<td><input type="checkbox" name="modbcheckbox" id="dummy_config" data-odb-path="/Equipment/SciFi/Settings/Daq/dummy_config" title="If enabled, ignore different replies from ASICs when configuring via SPI"></input></td>
 						<td></td>
 					</tr>
 					<tr>
 						<td colspan=2><label for="dummy_data">DUMMY DATA</label></td>
-						<td><input type="checkbox" name="modbcheckbox" id="dummy_data" data-odb-path="/Equipment/SciFi/Settings/Daq/dummy_data"></input></td>
+						<td><input type="checkbox" name="modbcheckbox" id="dummy_data" data-odb-path="/Equipment/SciFi/Settings/Daq/dummy_data" title="Enable dummy data generator on FPGA"></input></td>
 						<td></td>
 					</tr>
 					<tr>
 						<td colspan=2><label for="dummy_data_fast">DUMMY FAST</label></td>
-						<td><input type="checkbox" name="modbcheckbox" id="dummy_data_fast" data-odb-path="/Equipment/SciFi/Settings/Daq/dummy_data_fast"></input></td>
+						<td><input type="checkbox" name="modbcheckbox" id="dummy_data_fast" data-odb-path="/Equipment/SciFi/Settings/Daq/dummy_data_fast" title="Produce short events in dummy data generator on FPGA"></input></td>
 						<td></td>
 					</tr>
 					<tr>
@@ -563,21 +563,21 @@ function readback() {
 						<td></td>
 						<!--<td><input type="number"  name="modbnumber" id="dummy_data_n" min="0" max="255" step="1" size="3" value="254"  data-odb-path="/Equipment/SciFi/Settings/Daq/dummy_data_n" data-odb-editable="1" /></td> -->
 						<!-- FIXME: odb connection seems to be broken once id is set, thus we can not save this field to json at the moment-->
-						<td><div name="modbvalue" data-odb-path="/Equipment/SciFi/Settings/Daq/dummy_data_n" data-odb-editable="1"></div></td>
+						<td><div name="modbvalue" data-odb-path="/Equipment/SciFi/Settings/Daq/dummy_data_n" data-odb-editable="1" title="Number of hits to be generated per ASIC using the FPGAs dummy data generator"></div></td>
 					</tr>
 					<tr>
 						<td colspan=2><label for="prbs_decode_disable">PRBS decoder disable</label></td>
-						<td><input type="checkbox" name="modbcheckbox" id="prbs_decode_disable" data-odb-path="/Equipment/SciFi/Settings/Daq/prbs_decode_disable"></input></td>
+						<td><input type="checkbox" name="modbcheckbox" id="prbs_decode_disable" data-odb-path="/Equipment/SciFi/Settings/Daq/prbs_decode_disable" title="bypass PRBS decoder on the FPGA"></input></td>
 						<td></td>
 					</tr>
 					<tr>
 						<td colspan=2><label for="lvds_waitforall">LVDS-RX wait for all</label></td>
-						<td><input type="checkbox" name="modbcheckbox" id="lvds_waitforall" data-odb-path="/Equipment/SciFi/Settings/Daq/lvds_waitforall"></input></td>
+						<td><input type="checkbox" name="modbcheckbox" id="lvds_waitforall" data-odb-path="/Equipment/SciFi/Settings/Daq/lvds_waitforall" title="data receivers are only allowed to produce frames when all enabled receivers are locked. Helps to keep synchronization and avoid buffer overruns at start of a run."></input></td>
 						<td></td>
 					</tr>
 					<tr>
 						<td colspan=2><label for="lvds_waitforall_sticky">LVDS wait for all is sticky</label></td>
-						<td><input type="checkbox" name="modbcheckbox" id="lvds_waitforall_sticky" data-odb-path="/Equipment/SciFi/Settings/Daq/lvds_waitforall_sticky"></input></td>
+						<td><input type="checkbox" name="modbcheckbox" id="lvds_waitforall_sticky" data-odb-path="/Equipment/SciFi/Settings/Daq/lvds_waitforall_sticky" title="Once a receiver has locked, do not stop producing data even if it the link is lost. Ready bits are reset at start of run."></input></td>
 						<td></td>
 					</tr>
 					<tr>
@@ -635,21 +635,13 @@ function readback() {
 						</tr>
 						<tr>
 							<td><label for="lvds_tx_vcm">LVDS VCM</label></td>
-							<td><input type="number"   name="lvds_tx_vcm" id="lvds_tx_vcm" min="0" max="255" step="1" size="3" value="155"  class="store" /></td>
+							<td><input type="number"   name="lvds_tx_vcm" id="lvds_tx_vcm" min="0" max="255" step="1" size="3" value="155"  class="store" title="LVDS driver common mode voltage. Typical value=155" /></td>
 							<td><input type="text"     name="lvds_tx_vcm_rb"                                          size="3" value="" class="odb" readonly="readonly" /></td>
 						</tr>
 						<tr>
 							<td><label for="lvds_tx_bias">LVDS BIAS</label></td>
-							<td><input type="number"   name="lvds_tx_bias" id="lvds_tx_bias" min="0" max="64" step="1" size="2" value="0"  class="store" /></td>
+							<td><input type="number"   name="lvds_tx_bias" id="lvds_tx_bias" min="0" max="64" step="1" size="2" value="0"  class="store" title="LVDS driver bias current. Higher value is higher current." /></td>
 							<td><input type="text"     name="lvds_tx_bias_rb"                                          size="2" value="" class="odb" readonly="readonly" /></td>
-						</tr>
-						<tr>
-							<td><label for="ms_limits">MS LIMITS</label></td>
-							<td><input type="number"   name="ms_limits" id="ms_limits" min="0" max="64" step="1" size="2" value="0"  class="store" /></td>
-							<td><input type="text"     name="ms_limits_rb"                                       size="2" value="" class="odb" readonly="readonly" /></td>
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
 						</tr>
 					</tbody>
 				</table>
@@ -794,8 +786,8 @@ function readback() {
 				     <td>&nbsp;</td>
 				 </tr>
 				 <tr>
-						<td><label for="ms_switch_sel">MS Polarity</label></td>
-						<td><input type="checkbox" name="ms_switch_sel"  class="store" /><input type="checkbox" name="ms_switch_sel_rb" class="odb" disabled="disabled" /></td>
+				     <td><label for="ms_switch_sel">MS Polarity</label></td>
+				     <td><input type="checkbox" name="ms_switch_sel"  class="store" /><input type="checkbox" name="ms_switch_sel_rb" class="odb" disabled="disabled" /></td>
 				 </tr>
         	            <tbody>
         	        </table>
@@ -821,13 +813,13 @@ function readback() {
 					</tr>
 					<tr>
 						<td><label for="dmon_1">DMON 1</label></td>
-						<td><input type="number"   name="dmon_1_dac" id="dmon_1_dac" min="0" max="64" step="1" size="2" value="0"  class="store" /></td>
+						<td><input type="number"   name="dmon_1_dac" id="dmon_1_dac" min="0" max="64" step="1" size="2" value="0"  class="store" title="bias current and enable for Q/T digital monitor. Higher value=higher current."/></td>
 						<td><input type="text"     name="dmon_1_dac_rb"                                      size="2" value=""   class="odb" readonly="readonly" /></td>
 						<td><input type="checkbox" name="dmon_1_en"  class="store" /><input type="checkbox" name="dmon_1_en_rb" class="odb" disabled="disabled" /></td>
 					</tr>
 					<tr>
 						<td><label for="dmon_2">DMON 2</label></td>
-						<td><input type="number"   name="dmon_2_dac" id="dmon_2_dac" min="0" max="64" step="1" size="2" value="0"  class="store" /></td>
+						<td><input type="number"   name="dmon_2_dac" id="dmon_2_dac" min="0" max="64" step="1" size="2" value="0"  class="store" title="bias current and enable for flag/E digital monitor. Higher value=higher current."/></td>
 						<td><input type="text"     name="dmon_2_dac_rb"                                      size="2" value=""   class="odb" readonly="readonly" /></td>
 						<td><input type="checkbox" name="dmon_2_en"  class="store" /><input type="checkbox" name="dmon_2_en_rb" class="odb" disabled="disabled" /></td>
 					</tr>
@@ -850,9 +842,9 @@ function readback() {
                      <tbody>
                          <tr>
                              <td><label for="tthresh">TTHRESH</label></td>
-                             <td><input type="number"   name="tthresh" id="tthresh" min="0" max="63" step="1" size="2" value="32"  class="store" /></td>
+                             <td><input type="number"   name="tthresh" id="tthresh" min="0" max="63" step="1" size="2" value="32"  class="store" title="T-threshold setting. Lower values are higher thresholds."/></td>
                              <td><input type="text"     name="tthresh_rb"                                     size="2" value="" class="odb" readonly="readonly" /></td>
-                             <td><input type="number"   name="tthresh_sc"           min="0" max="7"  step="1" size="1" value="0"  class="store" /></td>
+                             <td><input type="number"   name="tthresh_sc"           min="0" max="7"  step="1" size="1" value="0"  class="store" title="T-Threshold current scaling. 0=1:1 4=1:2 (1:2 means higher maximum threshold)"/></td>
                              <td><input type="text"     name="tthresh_sc_rb"                                  size="1" value="" class="odb" readonly="readonly" /></td>
                          </tr>
                          <tr>
@@ -905,28 +897,32 @@ function readback() {
                          </tr>-->
                          <tr>
                              <td><label for="sipm">SIPM</label></td>
-                             <td><input type="number"   name="sipm" id="sipm" min="0" max="63" step="1" size="2" value="16"  class="store" /></td>
+                             <td><input type="number"   name="sipm" id="sipm" min="0" max="63" step="1" size="2" value="16"  class="store" title="Voltage tuning at SiPM input terminal. 0=low voltage, 63=high voltage. Keep at values in the middle. Scaling: 0=normal, 1=higher current"/></td>
                              <td><input type="text"     name="sipm_rb"                                     size="2" value="" class="odb" readonly="readonly" /></td>
                              <td><input type="number"   name="sipm_sc"        min="0" max="1"  step="1" size="1" value="0"  class="store" /></td>
                              <td><input type="text"     name="sipm_sc_rb"                                  size="1" value="" class="odb" readonly="readonly" /></td>
                          </tr>
                          <tr>
                              <td><label for="inputbias">INPUTBIAS</label></td>
-                             <td><input type="number"   name="inputbias" id="inputbias" min="0" max="63" step="1" size="2" value="16"  class="store" /></td>
+                             <td><input type="number"   name="inputbias" id="inputbias" min="0" max="63" step="1" size="2" value="16"  class="store" title="Main bias current of the input stage, affects all later stages (i.e. also thresholds, SiPM voltage) and general performance. higher values means higher current."/></td>
                              <td><input type="text"     name="inputbias_rb"                                       size="2" value="" class="odb" readonly="readonly" /></td>
-                             <td><input type="number"   name="inputbias_sc"             min="0" max="1"  step="1" size="1" value="0"  class="store" /></td>
+                             <td><input type="number"   name="inputbias_sc"             min="0" max="1"  step="1" size="1" value="0"  class="store" title="0: scale=1"/></td>
                              <td><input type="text"     name="inputbias_sc_rb"                                    size="1" value="" class="odb" readonly="readonly" /></td>
                          </tr>
                          <tr>
                              <td><label for="pole">POLE</label></td>
                              <td><input type="number"   name="pole" id="pole" min="0" max="63" step="1" size="2" value="16"  class="store" /></td>
-                             <td><input type="text"     name="pole_rb"                                  size="2" value="" class="odb" readonly="readonly" /></td>
+                             <td><input type="text"     name="pole_rb"                                  size="2" value="" class="odb" readonly="readonly" title="DAC setting for pole-zero cancellation feature"/></td>
                              <td><input type="number"   name="pole_sc"        min="0" max="1"  step="1" size="1" value="0"  class="store" /></td>
                              <td><input type="text"     name="pole_sc_rb"                               size="1" value="" class="odb" readonly="readonly" /></td>
                          </tr>
                          <tr>
                              <td><label for="ampcom">AMPCOM</label></td>
-                             <td><input type="number"   name="ampcom" id="ampcom" min="0" max="63" step="1" size="2" value="16"  class="store" /></td>
+                             <td><input type="number"   name="ampcom" id="ampcom" min="0" max="63" step="1" size="2" value="16"  class="store"
+title="Tuning the bias current of amplifers, to change the gain of the amplifer and the hysteresis of the comparator.
+scale = 0: value 0: no effect, value 63: high gain, less hysteresis;
+scale = 3: value 0: no effect, value 63: low gain, higher hysteresis.
+"/></td>
                              <td><input type="text"     name="ampcom_rb"                                  size="2" value="" class="odb" readonly="readonly" /></td>
                              <td><input type="number"   name="ampcom_sc"          min="0" max="3"  step="1" size="1" value="0"  class="store" /></td>
                              <td><input type="text"     name="ampcom_sc_rb"                               size="1" value="" class="odb" readonly="readonly" /></td>
@@ -940,14 +936,30 @@ function readback() {
                          </tr>
                          <tr>
                              <td><label for="amonctrl">AMON CTRL</label></td>
-                             <td><input type="number"   name="amonctrl" id="amonctrl" min="0" max="7" step="1" size="2" value="0"  class="store" /></td>
+                             <td><input type="number"   name="amonctrl" id="amonctrl" min="0" max="7" step="1" size="2" value="0"  class="store" 
+title="
+Ananlog monitor selection:
+0: no selection
+1: top_monitor
+2: input stage cascode voltage
+3: Timing trigger monitor P
+4: SiPM_vbias, SiPM cascode bias
+5: Timing trigger monitor N
+6: fb_pbias
+7: Energy trigger monitor N
+"
+/></td>
                              <td><input type="text"     name="amonctrl_rb"                                 size="2" value="" class="odb" readonly="readonly" /></td>
                              <td></td>
                              <td></td>
                          </tr>
                          <tr>
                              <td><label for="comp_spi">COMP SPI</label></td>
-                             <td><input type="number"   name="comp_spi" id="comp_spi" min="0" max="3" step="1" size="2" value="0"  class="store" /></td>
+                             <td><input type="number"   name="comp_spi" id="comp_spi" min="0" max="3" step="1" size="2" value="0"  class="store"
+title="Change the tail compensation effect.
+1: moderate tail compensation
+2: aggressive tail compensation"
+/></td>
                              <td><input type="text"     name="comp_spi_rb"                            size="2" value="" class="odb" readonly="readonly" /></td>
                              <td></td>
                              <td></td>
@@ -963,13 +975,17 @@ function readback() {
                     </tr>-->
                     <tr>
                          <td><label for="tdctest_n">TDCTEST_N</label></td>
-                         <td><input type="checkbox" name="tdctest_n"  class="store" /><input type="checkbox" name="tdctest_n_rb" class="odb" disabled="disabled" /></td>
+                         <td><input type="checkbox" name="tdctest_n"  class="store" /><input type="checkbox" name="tdctest_n_rb" class="odb" disabled="disabled" title="1: disable TDC test input to this channel. (0 enables TDC input and shorts with the normal hitlogic output. Note that DMON and tdc test signals are shared, so only one can be used at a time, this requires hardware changes - typically removing a jumper)"/></td>
                          <td></td>
                          <td></td>
                     </tr>
                     <tr>
                          <td><label for="sswitch">S SWITCH</label></td>
-                         <td><input type="checkbox" name="sswitch"  class="store" /><input type="checkbox" name="sswitch_rb" class="odb" disabled="disabled" /></td>
+                         <td><input type="checkbox" name="sswitch"  class="store" /><input type="checkbox" name="sswitch_rb" class="odb" disabled="disabled"
+title="single or differetial signals:
+0: suitable for single-ended input from P input of the chip
+1: suitable for differetial input"
+/></td>
                          <td></td>
                          <td></td>
                     </tr>
@@ -981,28 +997,28 @@ function readback() {
                     </tr>
                     <tr>
                          <td><label for="energy_c_en">ENERGY_C_EN</label></td>
-                         <td><input type="checkbox" name="energy_c_en"  class="store" /><input type="checkbox" name="energy_c_en_rb" class="odb" disabled="disabled" /></td>
+                         <td><input type="checkbox" name="energy_c_en"  class="store" /><input type="checkbox" name="energy_c_en_rb" class="odb" disabled="disabled" title="Enable the Capacitantor in the low pass filter before Energy branch."/></td>
                          <td><label for="energy_r_en">ENERGY_R_EN</label></td>
                          <td><input type="checkbox" name="energy_r_en"  class="store" /><input type="checkbox" name="energy_r_en_rb" class="odb" disabled="disabled" /></td>
                     </tr>
                     <tr>
                          <td><label for="cm_sensing_high_r">SENSING_HIGH_R</label></td>
-                         <td><input type="checkbox" name="cm_sensing_high_r"  class="store" /><input type="checkbox" name="cm_sensing_high_r_rb" class="odb" disabled="disabled" /></td>
+                         <td><input type="checkbox" name="cm_sensing_high_r"  class="store" /><input type="checkbox" name="cm_sensing_high_r_rb" class="odb" disabled="disabled" title="Enable the Resistor in the low pass filter before Energy branch."/></td>
                          <td><label for="amon_en_n">AMON_EN_N</label></td>
-                         <td><input type="checkbox" name="amon_en_n"  class="store" /><input type="checkbox" name="amon_en_n_rb" class="odb" disabled="disabled" /></td>
+                         <td><input type="checkbox" name="amon_en_n"  class="store" /><input type="checkbox" name="amon_en_n_rb" class="odb" disabled="disabled" title="1: disable analog monitor output from this channel"/></td>
                     </tr>
                     <tr>
                          <td><label for="edge">EDGE</label></td>
-                         <td><input type="checkbox" name="edge"  class="store" /><input type="checkbox" name="edge_rb" class="odb" disabled="disabled" /></td>
+                         <td><input type="checkbox" name="edge"  class="store" /><input type="checkbox" name="edge_rb" class="odb" disabled="disabled" title="Select polarity of E-branch comparator (see edge-cml)."/></td>
                          <td><label for="edge_cml">EDGE CML</label></td>
-                         <td><input type="checkbox" name="edge_cml"  class="store" /><input type="checkbox" name="edge_cml_rb" class="odb" disabled="disabled" /></td>
+                         <td><input type="checkbox" name="edge_cml"  class="store" /><input type="checkbox" name="edge_cml_rb" class="odb" disabled="disabled" title="Invert polarity of digital signals to hitlogic in channel." /></td>
                     </tr>
 
                     <tr>
                          <td><label for="dmon_en">DMON ENA</label></td>
-                         <td><input type="checkbox" name="dmon_en"  class="store" /><input type="checkbox" name="dmon_en_rb" class="odb" disabled="disabled" /></td>
+                         <td><input type="checkbox" name="dmon_en"  class="store" /><input type="checkbox" name="dmon_en_rb" class="odb" disabled="disabled" title="Enable digital monitor for this channel. Maximum one should be enabled at all times!"/></td>
                          <td><label for="dmon_sw">DMON SW</label></td>
-                         <td><input type="checkbox" name="dmon_sw"  class="store" /><input type="checkbox" name="dmon_sw_rb" class="odb" disabled="disabled" /></td>
+                         <td><input type="checkbox" name="dmon_sw"  class="store" /><input type="checkbox" name="dmon_sw_rb" class="odb" disabled="disabled" title="Digital monitor output mode. 0: Show Q and flag output (as it goes to the TDC), 1: show raw T & E flags"/></td>
                     </tr>
                 </table>
 		</div>
