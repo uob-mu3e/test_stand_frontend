@@ -37,13 +37,13 @@ BOOL frontend_call_loop = FALSE;
 INT display_period = 0;
 
 /* maximum event size produced by this frontend */
-INT max_event_size = 5000;
+INT max_event_size = 100000;
 
 /* maximum event size for fragmented events (EQ_FRAGMENTED) */
 INT max_event_size_frag = 5 * 1024 * 1024;
 
 /* buffer size to hold events */
-INT event_buffer_size = 10000 * max_event_size;
+INT event_buffer_size = 100000 * max_event_size;
 
 /* DMA Buffer and related */
 volatile uint32_t *dma_buf;
@@ -52,6 +52,7 @@ uint32_t dma_buf_nwords = dma_buf_size/sizeof(uint32_t);
 uint32_t laddr;
 uint32_t newdata;
 uint32_t readindex;
+uint32_t wlen;
 uint32_t lastreadindex;
 uint32_t lastlastWritten;
 bool moreevents;
@@ -322,7 +323,7 @@ INT begin_of_run(INT run_number, char *error)
    cout << value << endl;
    if(value) reg=SET_DATAGENERATOR_BIT_ENABLE(reg);
    mu.write_register(DATAGENERATOR_REGISTER_W,reg);
-
+    mu.enable_continous_readout(1);
    // Note: link masks are already set during fe_init and via ODB callback
 
    /*
@@ -548,6 +549,20 @@ INT check_event(volatile uint32_t * buffer, uint32_t idx, bool rp_before_wp)
     return 0;
 }
 
+INT update_equipment_status(int status, EQUIPMENT *eq)
+{
+    
+    if ( status != DB_SUCCESS ) {
+        set_equipment_status(eq[0].name, "Buffer ERROR", "var(--myellow)");
+        return -1;
+    }
+    
+    if ( status == DB_SUCCESS ) {
+        set_equipment_status(eq[0].name, "Running", "var(--mgreen)");
+        return DB_SUCCESS;
+    }
+
+}
 
 /*-- Event readout -------------------------------------------------*/
 
@@ -569,7 +584,9 @@ INT read_stream_thread(void *param)
    uint32_t lastWritten = 0;
    uint32_t lastEndOfEvent = 0;
    int status;
-
+   wlen = 0;
+   readindex = 0;
+   
    // tell framework that we are alive
    signal_readout_thread_active(0, TRUE);
    
@@ -656,15 +673,15 @@ INT read_stream_thread(void *param)
           //printf("EID=%4.4x TM=%4.4x SERNO=%8.8x TS=%8.8x EDsiz=%8.8x\n",eh->event_id,eh->trigger_mask,eh->serial_number,eh->time_stamp,eh->data_size);
           //printf("DAsiz=%8.8x FLAG=%8.8x\n",bh->data_size,bh->flags);
           //printf("BAname=%8.8x TYP=%8.8x BAsiz=%8.8x\n",ba->name,ba->type,ba->data_size);
-          pdata+=sizeof(dma_buf_dummy);
+
           rb_increment_wp(rbh, sizeof(dma_buf_dummy)); // in byte length
           //ss_sleep(1000);
           continue;
       }
-     //printf("mu.last_written_addr()=%x ; mu.last_endofevent_addr()=%x; lastlastWritten=%x lastWritten=%x\n",mu.last_written_addr(),mu.last_endofevent_addr(),lastlastWritten,lastWritten);
-      if (mu.last_written_addr() == 0) continue;
-      if (mu.last_written_addr() == lastlastWritten) continue;
-      if (mu.last_written_addr() == lastWritten) continue;
+     //printf("mu.last_written_addr()=%x ; mu.last_endofevent_addr()=%x; lastlastWritten=%x lastWritten=%x readindex= %x\n",mu.last_written_addr(),mu.last_endofevent_addr(),lastlastWritten,lastWritten, readindex);
+      //if (mu.last_written_addr() == 0) continue;
+      //if (mu.last_written_addr() == lastlastWritten) continue;
+      //if (mu.last_written_addr() == lastWritten) continue;
 
       lastWritten = mu.last_written_addr();
       lastEndOfEvent = mu.last_endofevent_addr();
@@ -693,47 +710,90 @@ INT read_stream_thread(void *param)
 
          //printf("end=%8.8x start=%8.8x E8=%8.8x \n", dma_buf[((lastEndOfEvent+1)*8-1)%dma_buf_nwords], dma_buf[((lastEndOfEvent+1)*8)%dma_buf_nwords], dma_buf[((lastEndOfEvent+1)*8+9)%dma_buf_nwords]);
          
-         if(readindex < ((lastEndOfEvent+1)*8-1)%dma_buf_nwords){
-            if ( check_event(dma_buf, readindex, false) != 0 ) continue;
-
-            //WP before RP. Complete copy
-            size_t wlen = ((lastEndOfEvent+1)*8-1)%dma_buf_nwords - readindex; // len in 32 bit words -- only one wlen = dma_buf[readindex+3];
-            copy_n(&dma_buf[readindex], wlen, pdata);
-            printf("start=%8.8x end=%8.8x end+1=%8.8x\n", dma_buf[readindex], dma_buf[readindex+wlen], dma_buf[(readindex+wlen+1)%dma_buf_nwords]);
-            //printf("wlen=%d Idx=%d LW=%d EOE=%d\n", wlen, readindex, lastWritten, lastEndOfEvent);
-
-            rb_status = rb_increment_wp(rbh, wlen);
-            if ( rb_status != DB_SUCCESS ) {
+         // debugging //
+        //copy_n(&dma_buf[0], 55, pdata);
+        //rb_status = rb_increment_wp(rbh, 55*4);
+        //             if ( rb_status != DB_SUCCESS ) {
                 //printf("RBstat=%8.8x\n", rb_status);
-                set_equipment_status(equipment[0].name, "Buffer ERROR", "var(--myellow)");
+        //        set_equipment_status(equipment[0].name, "Buffer ERROR", "var(--myellow)");
+        //        continue;
+        //    }
+        //continue;
+         
+         if(readindex < ((lastEndOfEvent+1)*8-1)%dma_buf_nwords){
+            if ( check_event(dma_buf, readindex, false) != 0 ){
+                //cout<< "check event failed"<<endl;
                 continue;
             }
-            pdata += wlen;
+            
+            //WP before RP. Complete copy
+            wlen = ((lastEndOfEvent+1)*8-1)%dma_buf_nwords - readindex; // len in 32 bit words -- only one wlen = dma_buf[readindex+3];
+            copy_n(&dma_buf[readindex], wlen, pdata);
+            
+            //for (int i = 0; i<100; i++){
+            //  cout << i << " " << hex << pdata[i] << endl;
+            //}
+            //break;
+            
+            
+            //printf("start=%8.8x end=%8.8x end+1=%8.8x\n", dma_buf[readindex], dma_buf[readindex+wlen], dma_buf[(readindex+wlen+1)%dma_buf_nwords]);
+            //printf("wlen=%d Idx=%d LW=%d EOE=%d\n", wlen, readindex, lastWritten, lastEndOfEvent);
+
+            //cout << " wlen * 4: " <<  wlen * 4 << endl;
+            rb_status = rb_increment_wp(rbh, wlen * 4);
+            //cout << rb_status << endl;
+            cout << wlen * 4 << endl;
+            update_equipment_status(rb_status, equipment);
+            
+            //pdata += wlen * 4;
             readindex += wlen+1;
             readindex = readindex%dma_buf_nwords;
          }else{
-            if ( check_event(dma_buf, readindex, false) != 0 ) continue;
+             if ( check_event(dma_buf, readindex, false) != 0 ){
+                 //cout<< "check event failed"<<endl;
+                 continue;
+             }
 
             //RP before WP. May wrap
             //copy with wrapping
             //#1
-            copy_n(&dma_buf[readindex],dma_buf_nwords-readindex,pdata); // len in 32 bit words
+            copy_n(&dma_buf[readindex], dma_buf_nwords - readindex, pdata); // len in 32 bit words
+            rb_status = rb_increment_wp(rbh, (dma_buf_nwords - readindex) * 4);
+            update_equipment_status(rb_status, equipment);
+            
             //printf("wlen=%d\n", dma_buf_nwords-readindex);
             printf("start=%8.8x \n", dma_buf[readindex]);
-            pdata += dma_buf_nwords-readindex;
+            printf("wlen=%d\n", (dma_buf_nwords - readindex) * 4);
+            //pdata += (dma_buf_nwords-readindex) * 4;
+            
+            while (true) {
+                status = rb_get_wp(rbh, (void **)&pdata, 10);
+            
+                // just sleep and try again if buffer has no space
+                if (status == DB_TIMEOUT) {
+                    set_equipment_status(equipment[0].name, "Buffer full", "var(--myellow)");
+                    //TODO: throw data here?
+                    readindex = ((mu.last_endofevent_addr() + 1) * 8) % dma_buf_nwords;
+                continue;
+                }
+
+                if (status != DB_SUCCESS){
+                    cout << "!DB_SUCCESS" << endl;
+                    break;
+                }
+            break;
+            }
+            
             //#2
             readindex=0;
-            size_t wlen = ((lastEndOfEvent+1)*8-1)%dma_buf_nwords; // len in 32 bit words
+            wlen = ((lastEndOfEvent+1)*8-1)%dma_buf_nwords; // len in 32 bit words
             copy_n(&dma_buf[readindex], wlen, pdata);
             printf("end=%8.8x \n", dma_buf[readindex+wlen]);
-            //printf("wlen=%d\n", wlen);
-            pdata += wlen;
-            rb_status = rb_increment_wp(rbh, (wlen + dma_buf_nwords - readindex));
-            if ( rb_status != DB_SUCCESS) {  // in byte length
-                //printf("RBstat=%8.8\nx", rb_status);
-                set_equipment_status(equipment[0].name, "Buffer ERROR", "var(--myellow)");
-                continue;
-            }
+            printf("wlen=%d\n", wlen * 4);
+            //pdata += wlen * 4;
+            rb_status = rb_increment_wp(rbh, wlen * 4);
+            update_equipment_status(rb_status, equipment);
+            
             readindex += wlen+1;
             readindex = readindex%dma_buf_nwords;
           }
