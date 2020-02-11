@@ -49,7 +49,7 @@ BEGIN
                 end_of_run_received             <= '0';
                 run_number                      <= i_data(31 downto 8);
             end if;
-		end if;
+        end if;
     end process;
 
 end architecture;

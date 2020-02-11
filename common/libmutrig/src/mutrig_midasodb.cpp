@@ -22,14 +22,30 @@ printf("setting up db\n");
     INT status = DB_SUCCESS;
     char set_str[255];
 
-    //Get predefined number of asics from ODB
+    /* Add [prefix]/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
+    //TODO some globals should be per asic
+    MUTRIG_GLOBAL_STR(mutrig_global);   // global mutrig settings
+    sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
+    //ddprintf("mutrig_midasodb: adding struct %s\n",set_str);
+    status = db_create_record(hDB, 0, set_str, strcomb(mutrig_global));
+    status = db_find_key (hDB, 0, set_str, &hTmp);
+    if (status != DB_SUCCESS) {
+        cm_msg(MINFO,"mutrig_midasodb", "Key %s not found", set_str);
+        return status;
+    }
+
+    //Set number of ASICs, derived from mapping
     unsigned int nasics=FEB_interface->GetNumASICs();
+    sprintf(set_str, "%s/Settings/Daq/num_asics", prefix);
+    INT ival=nasics;
+    if((status = db_set_value(hDB ,0,set_str, &ival, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
+
     if(nasics==0){
         cm_msg(MINFO,"mutrig_midasodb::setup_db","Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
     return DB_SUCCESS;
     }
 
-    /* Map Equipment/SciFi/Daq (structure defined in mutrig_MIDAS_config.h) */
+    /* Add [prefix]/Daq (structure defined in mutrig_MIDAS_config.h) */
     //TODO: if we have more than one FE-FPGA, there might be more than one DAQ class.
     MUTRIG_DAQ_STR(mutrig_daq);         // global settings for daq/fpga
     sprintf(set_str, "%s/Settings/Daq", prefix);
@@ -41,10 +57,6 @@ printf("setting up db\n");
     }
     //open hot link
     db_watch(hDB, hTmp, &MutrigFEB::on_settings_changed, FEB_interface);
-
-    sprintf(set_str, "%s/Settings/Daq/num_asics", prefix);
-    INT ival=nasics;
-    if((status = db_set_value(hDB ,0,set_str, &ival, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
 
     //update length flags for DAQ section
     sprintf(set_str, "%s/Settings/Daq/mask", prefix);
@@ -63,18 +75,6 @@ printf("setting up db\n");
     if((status = db_find_key (hDB, 0, set_str, &hTmp))!=DB_SUCCESS) return status;
     if((status = db_set_num_values(hDB, hTmp, FEB_interface->GetNumModules()))!=DB_SUCCESS) return status;
 
-
-    /* Map Equipment/SciFi/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
-    //TODO some globals should be per asic
-    MUTRIG_GLOBAL_STR(mutrig_global);   // global mutrig settings
-    sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
-    //ddprintf("mutrig_midasodb: adding struct %s\n",set_str);
-    status = db_create_record(hDB, 0, set_str, strcomb(mutrig_global));
-    status = db_find_key (hDB, 0, set_str, &hTmp);
-    if (status != DB_SUCCESS) {
-        cm_msg(MINFO,"mutrig_midasodb", "Key %s not found", set_str);
-        return status;
-    }
 
     /* Map Equipment/SciFi/ASICs/TDCs and /Equipment/Scifi/ASICs/Channels
      * (structure defined in mutrig_MIDAS_config.h) */
