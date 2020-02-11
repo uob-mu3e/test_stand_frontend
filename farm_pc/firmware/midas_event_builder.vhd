@@ -52,6 +52,7 @@ signal r_ram_add  : std_logic_vector(8 downto 0);
 type event_tagging_state_type is (event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, trailer_name, trailer_type, trailer_length, trailer_data, trailer_set_length, event_set_size, bank_set_size, write_tagging_fifo);
 signal event_tagging_state : event_tagging_state_type;
 signal current_link : integer;
+signal data_flag : std_logic;
 signal cur_size_add : std_logic_vector(11 downto 0);
 signal cur_bank_size_add : std_logic_vector(11 downto 0);
 signal cur_bank_length_add : std_logic_vector(NLINKS * 12 - 1 downto 0);
@@ -180,6 +181,7 @@ begin
 		-- state machine singals
 		event_tagging_state	<= event_head;
 		current_link <= 0;
+		data_flag <= '0';
 		cur_size_add <= (others => '0');
 		cur_bank_size_add <= (others => '0');
 		cur_bank_length_add <= (others => '0');
@@ -271,7 +273,11 @@ begin
 						current_link <= current_link + 1;
 						--last link, go to trailer bank
 						if ( current_link + 1 = NLINKS ) then
-							event_tagging_state <= trailer_name;
+                            if ( data_flag = '0' ) then
+                                current_link <= 0;
+                            else
+                                event_tagging_state <= trailer_name;
+                            end if;
 						end if;
 					else
 						--check for mupix or mutrig data header
@@ -282,6 +288,7 @@ begin
 							and
 							(link_fifo_data_out(3 + current_link * 36 downto current_link * 36) = "0001")
 						) then
+                            data_flag           <= '1';
 							w_ram_en			<= '1';
 							w_ram_add   		<= w_ram_add_reg + 1;
 							w_ram_data  		<= std_logic_vector(to_unsigned(current_link, w_ram_data'length));
@@ -335,7 +342,8 @@ begin
 					end if;
 
 				when trailer_name =>
-					current_link <= 0;
+                    data_flag           <= '0';
+					current_link        <= 0;
 					w_ram_en			<= '1';
 	                w_ram_add   		<= w_ram_add_reg + 1;
 			 	    w_ram_data  		<= x"FFFFFFFF";
