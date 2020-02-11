@@ -20,7 +20,7 @@ var updateTimerId = 0;
 var counter=0;
   
 // all dac settings
-var asicsettings_global_int      = ['ext_trig_offset', 'ext_trig_endtime', 'lvds_tx_vcm', 'lvds_tx_bias']; 
+var asicsettings_global_int      = ['ext_trig_offset', 'ext_trig_endtime']; 
 // special 'num asics' -> 'num_asics'
 var asicsettings_global_bool = ['ext_trig_mode', 'ext_trig_endtime_sign', 'gen_idle', 'ms_debug', 'prbs_debug', 'prbs_single', 
 	       'recv_all', 'disable_coarse', 'pll_setcoarse', 'short_event_mode', 'pll_envomonitor'];
@@ -30,7 +30,7 @@ var daqsettings_bool= ['dummy_config', 'dummy_data', 'dummy_data_fast', 'prbs_de
 var asicsettings_tdc_int = ['vnpfc', 'vnpfc_offset', 'vncnt', 'vncnt_offset', 'vnvcobuffer', 'vnvcobuffer_offset', 
                  'vnd2c', 'vnd2c_offset', 'vnpcp', 'vnpcp_offset', 'vnhitlogic', 'vnhitlogic_offset', 
                  'vncntbuffer', 'vncntbuffer_offset', 'vnvcodelay', 'vnvcodelay_offset', 'latchbias', 'ms_limits', 
-		 'amon_dac', 'dmon_1_dac', 'dmon_2_dac']
+		 'amon_dac', 'dmon_1_dac', 'dmon_2_dac', 'lvds_tx_vcm', 'lvds_tx_bias']
 var asicsettings_tdc_bool = ['vnpfc_scale', 'vncnt_scale', 'vnvcobuffer_scale', 'vnd2c_scale', 'vnpcp_scale', 
                       'vnhitlogic_scale', 'vncntbuffer_scale', 'vnvcodelay_scale', 'ms_switch_sel', 'amon_en', 'dmon_1_en', 'dmon_2_en']
 var asicsettings_channel_int = ['tthresh', 'tthresh_sc', 'ethresh', 'sipm', 'sipm_sc', 'inputbias', 'inputbias_sc', 
@@ -631,16 +631,6 @@ function readback() {
 							<td><input type="number"   name="ext_trig_endtime" id="ext_trig_endtime" min="0" max="64" step="1" size="2" value="0"  class="store" /></td>
 							<td><input type="text"     name="ext_trig_endtime_rb"                                              size="2" value="" class="odb" readonly="readonly" /></td>
 						</tr>
-						<tr>
-							<td><label for="lvds_tx_vcm">LVDS VCM</label></td>
-							<td><input type="number"   name="lvds_tx_vcm" id="lvds_tx_vcm" min="0" max="255" step="1" size="3" value="155"  class="store" title="LVDS driver common mode voltage. Typical value=155" /></td>
-							<td><input type="text"     name="lvds_tx_vcm_rb"                                          size="3" value="" class="odb" readonly="readonly" /></td>
-						</tr>
-						<tr>
-							<td><label for="lvds_tx_bias">LVDS BIAS</label></td>
-							<td><input type="number"   name="lvds_tx_bias" id="lvds_tx_bias" min="0" max="64" step="1" size="2" value="0"  class="store" title="LVDS driver bias current. Higher value is higher current." /></td>
-							<td><input type="text"     name="lvds_tx_bias_rb"                                          size="2" value="" class="odb" readonly="readonly" /></td>
-						</tr>
 					</tbody>
 				</table>
 				<table>
@@ -824,6 +814,33 @@ function readback() {
 				</tbody>
 			</table>
 		</div>
+		---
+		<h2 onclick="toggle(lvds)">LVDS driver settings</h2>
+			<div class="details">	
+				<span class="toggle" onclick="toggle(lvds_table)">&#9776;</span>
+				<div id="lvds_table">
+				<table>
+					<thead>
+						<tr>
+							<th>Setting</th>
+							<th>value</th>
+							<th>ODB</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+iii							<td><label for="lvds_tx_vcm">LVDS VCM</label></td>
+							<td><input type="number"   name="lvds_tx_vcm" id="lvds_tx_vcm" min="0" max="255" step="1" size="3" value="155"  class="store" title="LVDS driver common mode voltage. Typical value=155" /></td>
+							<td><input type="text"     name="lvds_tx_vcm_rb"                                          size="3" value="" class="odb" readonly="readonly" /></td>
+						</tr>
+						<tr>
+							<td><label for="lvds_tx_bias">LVDS BIAS</label></td>
+							<td><input type="number"   name="lvds_tx_bias" id="lvds_tx_bias" min="0" max="64" step="1" size="2" value="0"  class="store" title="LVDS driver bias current. Higher value is higher current." /></td>
+							<td><input type="text"     name="lvds_tx_bias_rb"                                          size="2" value="" class="odb" readonly="readonly" /></td>
+						</tr>
+					</tbody>
+				</table>
+			<tr>
             </section>
             <section class="contentbox" id="chsettings"  draggable="true">
                 <h2 onclick="toggle(channel_table)">Channel settings</h2>
