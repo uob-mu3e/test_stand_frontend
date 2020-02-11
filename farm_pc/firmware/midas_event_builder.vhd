@@ -40,7 +40,6 @@ signal link_fifo_data 		: std_logic_vector(NLINKS * 36 - 1 downto 0);
 signal link_fifo_ren 		: std_logic_vector(NLINKS downto 0);
 signal link_fifo_data_out 	: std_logic_vector(NLINKS * 36 - 1 downto 0);
 signal link_fifo_empty 		: std_logic_vector(NLINKS - 1 downto 0);
-signal link_fifo_not_empty 	: std_logic;
 
 -- event ram
 signal w_ram_data : std_logic_vector(31 downto 0);
@@ -56,6 +55,7 @@ signal current_link : integer;
 signal cur_size_add : std_logic_vector(11 downto 0);
 signal cur_bank_size_add : std_logic_vector(11 downto 0);
 signal cur_bank_length_add : std_logic_vector(NLINKS * 12 - 1 downto 0);
+
 signal w_ram_add_reg : std_logic_vector(11 downto 0);
 signal last_event_add : std_logic_vector(11 downto 0);
 signal align_event_size : std_logic_vector(11 downto 0);
@@ -131,9 +131,6 @@ FOR i in 0 to NLINKS - 1 GENERATE
 		aclr     => reset_data--,
 	);
 END GENERATE buffer_link_fifos;
-
--- check if one fifo is not empty
-link_fifo_not_empty <= '0' when ( link_fifo_empty = (link_fifo_empty'range => '1') ) else '1';
 
 e_ram_32_256 : entity work.ip_ram
 generic map (
@@ -218,7 +215,9 @@ begin
 		--link_fifo_ren 	<= (others => '0');
 
 		-- Note: we only do something if there is data in all fifos
-		if( link_fifo_not_empty = '1' ) then
+		-- KB: if( link_fifo_not_empty = '1' ) then
+		-- KB: change to do something once there is data from at least one enabled link
+		if( unsigned( (not link_fifo_empty) and i_link_mask_n) /= 0 ) then
 
 			-- count time for midas event header
 			time_tmp <= time_tmp + '1';
@@ -268,7 +267,9 @@ begin
 				when bank_name =>
 					-- here we check if the link is masked and if the current fifo is empty
 					if ( i_link_mask_n(current_link) = '0' or link_fifo_empty(current_link) = '1' ) then
+						--skip this link
 						current_link <= current_link + 1;
+						--last link, go to trailer bank
 						if ( current_link + 1 = NLINKS ) then
 							event_tagging_state <= trailer_name;
 						end if;
@@ -308,7 +309,6 @@ begin
 						w_ram_en	<= '1';
 						w_ram_add   <= w_ram_add + 1;
 						w_ram_data  <= link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 4);
-						
 						if(  
 							(link_fifo_data_out(11 + current_link * 36 downto current_link * 36 + 4) = x"9c")
 							and 
