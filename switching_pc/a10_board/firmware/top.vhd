@@ -236,10 +236,17 @@ architecture rtl of top is
         signal rx_datak : datak_array_type;
 --        signal tx_datak : datak_array_type;
 
-	signal rx_data_v : std_logic_vector(NLINKS_TOTL*32-1 downto 0);
-        signal rx_datak_v : std_logic_vector(NLINKS_TOTL*4-1 downto 0);
-	signal tx_data_v : std_logic_vector(NLINKS_TOTL*32-1 downto 0);
-        signal tx_datak_v : std_logic_vector(NLINKS_TOTL*4-1 downto 0);
+    signal rx_data_v:       std_logic_vector(NLINKS_TOTL*32-1 downto 0);
+    signal rx_datak_v:      std_logic_vector(NLINKS_TOTL*4-1 downto 0);
+    signal rx_data_v_raw:   std_logic_vector(NLINKS_TOTL*32-1 downto 0);
+    signal rx_datak_v_raw:  std_logic_vector(NLINKS_TOTL*4-1 downto 0);
+    signal rx_sc_v:         std_logic_vector(NLINKS_TOTL*32-1 downto 0);
+    signal rx_sck_v:        std_logic_vector(NLINKS_TOTL*4-1 downto 0);
+    signal rx_rc_v:         std_logic_vector(NLINKS_TOTL*32-1 downto 0);
+    signal rx_rck_v:        std_logic_vector(NLINKS_TOTL*4-1 downto 0);
+    
+    signal tx_data_v:       std_logic_vector(NLINKS_TOTL*32-1 downto 0);
+    signal tx_datak_v:      std_logic_vector(NLINKS_TOTL*4-1 downto 0);
 
 	type mapping_t is array(natural range <>) of integer;
 	--mapping as follows: fiber link_mapping(0)=1 - Fiber QSFPA.1 is mapped to first(0) link
@@ -528,8 +535,8 @@ begin
         i_tx_data   => tx_data_v(4*32*(i+1)-1 downto 4*32*i),
         i_tx_datak  => tx_datak_v(4*4*(i+1)-1 downto 4*4*i),
 
-        o_rx_data   => rx_data_v(4*32*(i+1)-1 downto 4*32*i),
-        o_rx_datak  => rx_datak_v(4*4*(i+1)-1 downto 4*4*i),
+        o_rx_data   => rx_data_v_raw(4*32*(i+1)-1 downto 4*32*i),
+        o_rx_datak  => rx_datak_v_raw(4*4*(i+1)-1 downto 4*4*i),
 
         o_tx_clkout => tx_clk(4*(i+1)-1 downto 4*i),
         i_tx_clkin  => (others => clk_156),
@@ -566,6 +573,25 @@ begin
        rx_mapped_linkmask(i) <= writeregs_slow(FEB_ENABLE_REGISTER_W)(link_mapping(i));
     end generate;
 
+    -------- Demerge Data --------
+    g_demerge: for i in NLINKS_TOTL-1 downto 0 generate
+        e_data_demerge : entity work.data_demerge
+        port map(
+            i_clk           => clk_156,
+            i_reset         => not reset_156_n,
+            i_aligned       => '1',
+            i_data          => rx_data_v_raw(31+i*32 downto i*32),
+            i_datak         => rx_datak_v_raw(3+i* 4 downto i* 4),
+            o_data          => rx_data_v(31+i*32 downto i*32),
+            o_datak         => rx_datak_v(3+i* 4 downto i* 4),
+            o_sc            => rx_sc_v(31+i*32 downto i*32),
+            o_sck           => rx_sck_v(3+i* 4 downto i* 4),
+            o_rc            => rx_rc_v(31+i*32 downto i*32),
+            o_rck           => rx_rck_v(3+i* 4 downto i* 4),
+            o_fpga_id       => open--,
+        );
+    end generate;
+
 
     -------- MIDAS RUN control --------
 
@@ -578,8 +604,8 @@ begin
         i_reset_run_end_n                   => resets_n(RESET_BIT_RUN_END_ACK),
         i_buffers_empty                     => (others => '1'), -- TODO: connect buffers emtpy from dma here
         i_aligned                           => (others => '1'),
-        i_data                              => rx_data_v,
-        i_datak                             => rx_datak_v,
+        i_data                              => rx_rc_v,
+        i_datak                             => rx_rck_v,
         i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
         i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
         i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
@@ -686,8 +712,8 @@ begin
     port map (
         reset_n                 => resets_n(RESET_BIT_SC_SLAVE),
         i_link_enable           => writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_TOTL-1 downto 0),
-        link_data_in            => rx_data_v,
-        link_data_in_k          => rx_datak_v,
+        link_data_in            => rx_sc_v,
+        link_data_in_k          => rx_sck_v,
         mem_addr_out            => mem_add_sc,
         mem_addr_finished_out   => readmem_writeaddr_finished,
         mem_data_out            => mem_data_sc,
