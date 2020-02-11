@@ -35,9 +35,9 @@ signal reset_data : std_logic;
 signal reset_dma : std_logic;
 
 -- link fifos
-signal link_fifo_wren 		: std_logic_vector(NLINKS downto 0);
+signal link_fifo_wren 		: std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_data 		: std_logic_vector(NLINKS * 36 - 1 downto 0);
-signal link_fifo_ren 		: std_logic_vector(NLINKS downto 0);
+signal link_fifo_ren 		: std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_data_out 	: std_logic_vector(NLINKS * 36 - 1 downto 0);
 signal link_fifo_empty 		: std_logic_vector(NLINKS - 1 downto 0);
 
@@ -267,7 +267,8 @@ begin
 					event_tagging_state <= bank_name;
 
 				when bank_name =>
-					-- here we check if the link is masked and if the current fifo is empty
+                    link_fifo_ren(current_link) <= '0';
+					--here we check if the link is masked and if the current fifo is empty
 					if ( i_link_mask_n(current_link) = '0' or link_fifo_empty(current_link) = '1' ) then
 						--skip this link
 						current_link <= current_link + 1;
@@ -293,6 +294,9 @@ begin
 							w_ram_add   		<= w_ram_add_reg + 1;
 							w_ram_data  		<= std_logic_vector(to_unsigned(current_link, w_ram_data'length));
 							event_tagging_state <= bank_type;
+                        else
+                            --throw data away until a header
+                            link_fifo_ren(current_link) <= '1';
 						end if;
 					end if;
 
