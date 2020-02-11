@@ -557,7 +557,7 @@ function readback() {
 						<td></td>
 					</tr>
 					<tr>
-						<td colspan><label for="dummy_data_n">DUMMY DATA NUM</label></td>
+						<td colspan><label for="dummy_data_n">DUMMY NUM</label></td>
 						<td></td>
 						<!--<td><input type="number"  name="modbnumber" id="dummy_data_n" min="0" max="255" step="1" size="3" value="254"  data-odb-path="/Equipment/SciFi/Settings/Daq/dummy_data_n" data-odb-editable="1" /></td> -->
 						<!-- FIXME: odb connection seems to be broken once id is set, thus we can not save this field to json at the moment-->
@@ -569,12 +569,12 @@ function readback() {
 						<td></td>
 					</tr>
 					<tr>
-						<td colspan=2><label for="lvds_waitforall">LVDS-RX wait for all</label></td>
+						<td colspan=2><label for="lvds_waitforall">Wait for all</label></td>
 						<td><input type="checkbox" name="modbcheckbox" id="lvds_waitforall" data-odb-path="/Equipment/SciFi/Settings/Daq/lvds_waitforall" title="data receivers are only allowed to produce frames when all enabled receivers are locked. Helps to keep synchronization and avoid buffer overruns at start of a run."></input></td>
 						<td></td>
 					</tr>
 					<tr>
-						<td colspan=2><label for="lvds_waitforall_sticky">LVDS wait for all is sticky</label></td>
+						<td colspan=2><label for="lvds_waitforall_sticky">Wait for all sticky</label></td>
 						<td><input type="checkbox" name="modbcheckbox" id="lvds_waitforall_sticky" data-odb-path="/Equipment/SciFi/Settings/Daq/lvds_waitforall_sticky" title="Once a receiver has locked, do not stop producing data even if it the link is lost. Ready bits are reset at start of run."></input></td>
 						<td></td>
 					</tr>
@@ -582,7 +582,7 @@ function readback() {
 						<td colspan=1>Reset Blocks</td>
 						<td>
 						<button name="modbbutton" class="button_2 button_s" id="reset_datapath" data-odb-path="/Equipment/SciFi/Settings/Daq/reset_datapath" data-odb-value="1">
-							Datapath</button>
+							Dpath</button>
 						</td>
 						<td>
 						<button name="modbbutton" class="button_2 button_s" id="reset_asics" data-odb-path="/Equipment/SciFi/Settings/Daq/reset_asics" data-odb-value="1">
@@ -591,7 +591,7 @@ function readback() {
 						</td>
 						<td>
 						<button name="modbbutton" class="button_2 button_s" id="reset_lvds" data-odb-path="/Equipment/SciFi/Settings/Daq/reset_lvds" data-odb-value="1">
-							LVDS_RXs</button>
+							LVDS</button>
 		                                </button>
 						</td>
 						<td>
@@ -679,7 +679,7 @@ function readback() {
 
 
             <section class="contentbox" id="pllsettings"  draggable="true">
-		<h2 onclick="toggle(pll_table); toggle(pll_table2);">PLL settings</h2>
+		<h2 onclick="toggle(pll_table)">PLL settings</h2>
 		<div class="details">	
 			<span class="toggle" onclick="toggle(pll_table)">&#9776;</span>
 	                 <table id="pll_table">
@@ -781,6 +781,7 @@ function readback() {
         	        </table>
 		</div>
 		<br />
+		<h2 onclick="toggle(pll_table2)">Monitor driver settings</h2>
 		<div class="details">	
 			<span class="toggle" onclick="toggle(pll_table2)">&#9776;</span>
 			<table id="pll_table2">
@@ -814,7 +815,6 @@ function readback() {
 				</tbody>
 			</table>
 		</div>
-		---
 		<h2 onclick="toggle(lvds)">LVDS driver settings</h2>
 			<div class="details">	
 				<span class="toggle" onclick="toggle(lvds_table)">&#9776;</span>
@@ -829,7 +829,7 @@ function readback() {
 					</thead>
 					<tbody>
 						<tr>
-iii							<td><label for="lvds_tx_vcm">LVDS VCM</label></td>
+							<td><label for="lvds_tx_vcm">LVDS VCM</label></td>
 							<td><input type="number"   name="lvds_tx_vcm" id="lvds_tx_vcm" min="0" max="255" step="1" size="3" value="155"  class="store" title="LVDS driver common mode voltage. Typical value=155" /></td>
 							<td><input type="text"     name="lvds_tx_vcm_rb"                                          size="3" value="" class="odb" readonly="readonly" /></td>
 						</tr>
