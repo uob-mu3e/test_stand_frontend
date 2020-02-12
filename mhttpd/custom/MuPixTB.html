@@ -1,3 +1,10 @@
+<!-- 
+    Custom Page for MuPix test setup (testbeams etc.)
+    preliminary hardcoded for 4 MuPix chips
+    
+    Martin Mueller feb 2020
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,8 +15,72 @@
     <script src="mhttpd.js"></script>
     <script src="obsolete.js"> </script>
     
-        <script>
-         </script>
+    <script>
+        function reloadMuPixSettings(jsonData){
+             var th_high=jsonData["Threshold_High"];
+             var th_low=jsonData["Threshold_Low"];
+             var th_pix=jsonData["Threshold_Pix"];
+             
+            
+        }
+
+        function convert0(){
+             var x = document.getElementById("thlow0").value;
+             if(x!=""){
+                x = x * 16383/1900;
+                x = x << 2;
+                modbset("/Equipment/MuPix/Settings/Boarddacs/0/Threshold_Low", x);
+             }
+             x = document.getElementById("thhigh0").value;
+             if(x!=""){
+                x = x * 16383/1900;
+                x = x << 2;
+                modbset("/Equipment/MuPix/Settings/Boarddacs/0/Threshold_High", x);
+             }
+        }
+        function convert1(){
+             var x = document.getElementById("thlow1").value;
+             if(x!=""){
+                x = x * 16383/1900;
+                x = x << 2;
+                modbset("/Equipment/MuPix/Settings/Boarddacs/1/Threshold_Low", x);
+             }
+             x = document.getElementById("thhigh1").value;
+             if(x!=""){
+                x = x * 16383/1900;
+                x = x << 2;
+                modbset("/Equipment/MuPix/Settings/Boarddacs/1/Threshold_High", x);
+             }
+        }
+        function convert2(){
+             var x = document.getElementById("thlow2").value;
+             if(x!=""){
+                x = x * 16383/1900;
+                x = x << 2;
+                modbset("/Equipment/MuPix/Settings/Boarddacs/2/Threshold_Low", x);
+             }
+             x = document.getElementById("thhigh2").value;
+             if(x!=""){
+                x = x * 16383/1900;
+                x = x << 2;
+                modbset("/Equipment/MuPix/Settings/Boarddacs/2/Threshold_High", x);
+             }
+        }
+        function convert3(){
+             var x = document.getElementById("thlow3").value;
+             if(x!=""){
+                x = x * 16383/1900;
+                x = x << 2;
+                modbset("/Equipment/MuPix/Settings/Boarddacs/3/Threshold_Low", x);
+             }
+             x = document.getElementById("thhigh3").value;
+             if(x!=""){
+                x = x * 16383/1900;
+                x = x << 2;
+                modbset("/Equipment/MuPix/Settings/Boarddacs/3/Threshold_High", x);
+             }
+        }
+    </script>
     
     <title>MuPix Testbeam GUI</title>
 </head>
@@ -19,6 +90,8 @@
 <div id="mheader"></div>
 <div id="msidenav"></div>
 <div id="mmain">
+<div name="modb" data-odb-path="/Equipment/MuPix/Settings/Boarddacs/0" onchange="reloadMuPixSettings(this.value)"> </div >
+
       <table class="mtable" width="100%" id="unknown">
            <tr>
                <td colspan="100" class="mtableheader"> Configuration:</td>
@@ -26,12 +99,123 @@
            <tr>
               <td>       
                  <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/Switching/Settings/MupixBoard" data-odb-value="y"> Config Boards </button>
-              </td>
-              <td>  
                  <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/Switching/Settings/MupixConfig" data-odb-value="y"> Config Chips </button>
+                 <td>
+                 LVDS Power MP_Boards <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/LV/Variables/ChSet[5]"/>
+                 <td>
+                 LVDS Power FPGA <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/LV/Variables/ChSet[6]"/>
+                 <td>
+                 Clk Converter Power <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/LV/Variables/ChSet[7]" />
               </td>
-              </tr>
+            </tr>
+            <tr>
+                <td colspan=100>   -------------------------------------- HV ----------------------------------------</td>
+            </tr>
+            <tr>
+                <td>HV enable <div name="modbvalue" data-odb-path="/Equipment/HV/Settings/ChState" data-odb-editable="1"><td>HV Demand [V] <div name="modbvalue" data-odb-path="/Equipment/HV/Variables/Demand" data-odb-editable="1"></div><td>HV measured [V] <div name="modbvalue" data-odb-path="/Equipment/HV/Variables/Measured"></div></div><td>Current measured [A]<div name="modbvalue" data-odb-path="/Equipment/HV/Variables/Current"></div></td>
+            </tr>
+            <tr>
+                <td>HV Current Limit [A] <div name="modbvalue" data-odb-path="/Equipment/HV/Settings/Current Limit" data-odb-editable="1"><td>HV Ramp Current Limit [A] <div name="modbvalue" data-odb-path="/Equipment/HV/Settings/Ramp Current Limit" data-odb-editable="1"></td>
+            </tr>
       </table>
+     
+     
+     <!-- MuPix 0                                         -->
+    <table class="mtable" width="100%" id="unknown">
+    <tr>
+        <td colspan="100" class="mtableheader"> MuPix 0 </td>
+    </tr>
+    <tr>
+        <td>LV Power <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/LV/Variables/ChSet[0]" /> <td> <div name="modbvalue" data-odb-path="/Equipment/LV/Variables/Current[0]"></div>  <td>mA
+        </td>
+    </tr>
+    <tr>
+        <td> TH_LOW </td>
+        <td><input type="text" id="thlow0" value="560" oninput="convert0()">mV</td>
+        <td><div name="modbvalue"
+                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/0/Threshold_Low" data-format="x" id="thlow0odb"></div></td>
+    </tr>
+    <tr>
+        <td> TH_HIGH </td>
+        <td><input type="text" id="thhigh0" value="560" oninput="convert0()">mV</td>
+        <td><div name="modbvalue"
+                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/0/Threshold_High" data-format="x" id="thhigh0odb"></div></td>
+    </tr>
+    </table>
+    
+    
+     <!-- MuPix 1                                        -->
+        <table class="mtable" width="100%" id="unknown">
+    <tr>
+        <td colspan="100" class="mtableheader"> MuPix 1 </td>
+    </tr>
+    <tr>
+        <td>LV Power <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/LV/Variables/ChSet[1]" /> <td> <div name="modbvalue" data-odb-path="/Equipment/LV/Variables/Current[1]"></div>  <td>mA
+        </td>
+    </tr>
+    <tr>
+        <td> TH_LOW </td>
+        <td><input type="text" id="thlow1" value="560" oninput="convert1()">mV</td>
+        <td><div name="modbvalue"
+                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/1/Threshold_Low" data-format="x" id="thlow1odb"></div></td>
+    </tr>
+    <tr>
+        <td> TH_HIGH </td>
+        <td><input type="text" id="thhigh1" value="560" oninput="convert1()">mV</td>
+        <td><div name="modbvalue"
+                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/1/Threshold_High" data-format="x" id="thhigh1odb"></div></td>
+    </tr>
+    </table>
+    
+    
+     <!-- MuPix 2                                         -->
+        <table class="mtable" width="100%" id="unknown">
+    <tr>
+        <td colspan="100" class="mtableheader"> MuPix 2 </td>
+    </tr>
+    <tr>
+        <td>LV Power <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/LV/Variables/ChSet[2]" /> <td> <div name="modbvalue" data-odb-path="/Equipment/LV/Variables/Current[2]"></div>  <td>mA
+        </td>
+    </tr>
+    <tr>
+        <td> TH_LOW </td>
+        <td><input type="text" id="thlow2" value="560" oninput="convert2()">mV</td>
+        <td><div name="modbvalue"
+                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/2/Threshold_Low" data-format="x" id="thlow2odb"></div></td>
+    </tr>
+    <tr>
+        <td> TH_HIGH </td>
+        <td><input type="text" id="thhigh2" value="560" oninput="convert2()">mV</td>
+        <td><div name="modbvalue"
+                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/2/Threshold_High" data-format="x" id="thhigh2odb"></div></td>
+    </tr>
+    </table>
+    
+    
+    
+     <!-- MuPix 3                                         -->
+    <table class="mtable" width="100%" id="unknown">
+    <tr>
+        <td colspan="100" class="mtableheader"> MuPix 3 </td>
+    </tr>
+    <tr>
+        <td>LV Power <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/LV/Variables/ChSet[3]" /> <td> <div name="modbvalue" data-odb-path="/Equipment/LV/Variables/Current[3]"></div>  <td>mA
+        </td>
+    </tr>
+    <tr>
+        <td> TH_LOW </td>
+        <td><input type="text" id="thlow3" value="560" oninput="convert3()">mV</td>
+        <td><div name="modbvalue"
+                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/3/Threshold_Low" data-format="x" id="thlow3odb"></div></td>
+    </tr>
+    <tr>
+        <td> TH_HIGH </td>
+        <td><input type="text" id="thhigh3" value="560" oninput="convert3()">mV</td>
+        <td><div name="modbvalue"
+                data-odb-path="/Equipment/MuPix/Settings/Boarddacs/3/Threshold_High" data-format="x" id="thhigh3odb"></div></td>
+    </tr>
+    </table>
+    
 </div>
 </body>
 </html>
