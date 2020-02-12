@@ -231,7 +231,7 @@ proc ::add_altera_iopll { refclk outclk args } {
     set_instance_property ${name} AUTO_EXPORT {true}
 }
 
-# ::add_modular_adc --
+# ::add_altera_modular_adc --
 #
 #   Add Modular ADC Core instance and auto export.
 #
@@ -240,7 +240,7 @@ proc ::add_altera_iopll { refclk outclk args } {
 #   -seq_order  - channel acquisition sequence
 #   -name $     - instance name
 #
-proc ::add_modular_adc { channels args } {
+proc ::add_altera_modular_adc { channels args } {
     set name modular_adc_0
     set seq_order ""
     for { set i 0 } { $i < [ llength $args ] } { incr i } {
