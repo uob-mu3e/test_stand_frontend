@@ -292,7 +292,7 @@ begin
                             data_flag           <= '1';
 							w_ram_en			<= '1';
 							w_ram_add   		<= w_ram_add_reg + 1;
-							w_ram_data  		<= std_logic_vector(to_unsigned(current_link, w_ram_data'length));
+							w_ram_data  		<= x"30424546"; -- one link fixed bank name + std_logic_vector(to_unsigned(current_link, 4));
 							event_tagging_state <= bank_type;
                         else
                             --throw data away until a header
@@ -350,7 +350,7 @@ begin
 					current_link        <= 0;
 					w_ram_en			<= '1';
 	                w_ram_add   		<= w_ram_add_reg + 1;
-			 	    w_ram_data  		<= x"FFFFFFFF";
+			 	    w_ram_data  		<= x"454b4146"; -- FAKE in ascii
 	                event_tagging_state <= trailer_type;
 	                
 	            when trailer_type =>
@@ -389,15 +389,15 @@ begin
 	            when event_set_size =>
 	            	w_ram_en  <= '1';
 	            	w_ram_add <= cur_size_add;
-	            	-- Event Data Size: The event data size contains the size of the event in bytes excluding the header
-	            	w_ram_data <= std_logic_vector(to_unsigned((conv_integer(w_ram_add_reg - last_event_add) - 4 - 1) * 4, w_ram_data'length));
+	            	-- Event Data Size: The event data size contains the size of the event in bytes excluding the event header
+	            	w_ram_data <= std_logic_vector(to_unsigned((conv_integer(w_ram_add_reg - last_event_add) - 4) * 4, w_ram_data'length));
 	            	event_tagging_state <= bank_set_size;
 
 	            when bank_set_size =>
 	            	w_ram_en <= '1';
 	            	w_ram_add <= cur_bank_size_add;
 	            	-- All Bank Size: Size in bytes of the following data plus the size of the bank header
-	            	w_ram_data <= std_logic_vector(to_unsigned((conv_integer(w_ram_add_reg - last_event_add) - 4 - 1) * 4, w_ram_data'length));
+	            	w_ram_data <= std_logic_vector(to_unsigned((conv_integer(w_ram_add_reg - last_event_add) - 6) * 4, w_ram_data'length));
 	            	event_tagging_state <= write_tagging_fifo;
 
 	            when write_tagging_fifo =>

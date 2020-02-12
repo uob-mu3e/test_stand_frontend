@@ -37,13 +37,13 @@ BOOL frontend_call_loop = FALSE;
 INT display_period = 0;
 
 /* maximum event size produced by this frontend */
-INT max_event_size = 100000;
+INT max_event_size = 1000000;
 
 /* maximum event size for fragmented events (EQ_FRAGMENTED) */
 INT max_event_size_frag = 5 * 1024 * 1024;
 
 /* buffer size to hold events */
-INT event_buffer_size = 100000 * max_event_size;
+INT event_buffer_size = 10000 * max_event_size;
 
 /* DMA Buffer and related */
 volatile uint32_t *dma_buf;
@@ -54,6 +54,7 @@ uint32_t newdata;
 uint32_t readindex;
 uint32_t wlen;
 uint32_t lastreadindex;
+uint32_t lastWritten;
 uint32_t lastlastWritten;
 bool moreevents;
 bool firstevent;
@@ -308,7 +309,7 @@ INT begin_of_run(INT run_number, char *error)
 
    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
    // Enable register on FPGA for continous readout and enable dma
-   lastlastWritten = mu.last_written_addr();
+
    mu.enable_continous_readout(0);
    usleep(10);
    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
@@ -323,12 +324,16 @@ INT begin_of_run(INT run_number, char *error)
    
    if(value) {
        // TODO: make odb value for slowdown
-       mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x5FFF, 100);
+       mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);
        reg = SET_DATAGENERATOR_BIT_ENABLE(reg);
    }
    
    mu.write_register(DATAGENERATOR_REGISTER_W,reg);
-    mu.enable_continous_readout(1);
+   
+   lastWritten = mu.last_written_addr();
+   lastlastWritten = lastWritten;//lastWritten;
+   
+    //mu.enable_continous_readout(1);
    // Note: link masks are already set during fe_init and via ODB callback
 
    /*
@@ -572,8 +577,8 @@ INT read_stream_thread(void *param)
     mudaq::DmaMudaqDevice & mu = *mup;
 
     uint32_t* pdata;
-    uint32_t lastWritten = 0;
     uint32_t lastEndOfEvent = 0;
+    uint32_t lastlastEndOfEvent = 0;
     int status;
     wlen = 0;
     readindex = 0;
@@ -600,7 +605,7 @@ INT read_stream_thread(void *param)
         if (status == DB_TIMEOUT) {
             set_equipment_status(equipment[0].name, "Buffer full", "var(--myellow)");
             //TODO: throw data here?
-            readindex = ((mu.last_endofevent_addr() + 1) * 8) % dma_buf_nwords;
+            //readindex = ((mu.last_endofevent_addr() + 1) * 8) % dma_buf_nwords;
             continue;
         }
 
@@ -612,7 +617,7 @@ INT read_stream_thread(void *param)
         // don't readout events if we are not running
         if (run_state != STATE_RUNNING) {
         set_equipment_status(equipment[0].name, "Not running", "var(--myellow)");
-        ss_sleep(100);
+        //ss_sleep(100);
         //TODO: signalling from main thread?
         continue;
         }
@@ -630,14 +635,14 @@ INT read_stream_thread(void *param)
             dma_buf_dummy[4+i*24] = 24*4-4*4; // all bank size
             dma_buf_dummy[5+i*24] = 0x11; // flags
             // bank 0
-            dma_buf_dummy[6+i*24] = 0x0; // bank name
+            dma_buf_dummy[6+i*24] = 0x46454230; // bank name
             dma_buf_dummy[7+i*24] = 0x6; // bank type TID_DWORD
             dma_buf_dummy[8+i*24] = 0x3*4; // data size
             dma_buf_dummy[9+i*24] = 0xAFFEAFFE; // data
             dma_buf_dummy[10+i*24] = 0xAFFEAFFE; // data
             dma_buf_dummy[11+i*24] = 0xAFFEAFFE; // data
             // bank 1
-            dma_buf_dummy[12+i*24] = 0x1; // bank name
+            dma_buf_dummy[12+i*24] = 0x46454231; // bank name
             dma_buf_dummy[13+i*24] = 0x6; // bank type TID_DWORD
             dma_buf_dummy[14+i*24] = 0x3*4; // data size
             dma_buf_dummy[15+i*24] = 0xAFFEAFFE; // data
@@ -662,12 +667,17 @@ INT read_stream_thread(void *param)
             continue;
         }
 
-        lastWritten = mu.last_written_addr();
-        lastEndOfEvent = mu.last_endofevent_addr();
-
-        // not so sure if we need this
-        if(lastWritten==readindex) continue;
-
+        //if (mu.last_endofevent_addr() == 0) continue;
+        //if (mu.last_written_addr() == 0) continue;
+        //if (mu.last_endofevent_addr() == lastlastEndOfEvent) continue;
+        //if (mu.last_written_addr() == lastlastWritten) continue;
+        
+        //lastlastEndOfEvent = lastEndOfEvent;
+        
+        //lastEndOfEvent = mu.last_endofevent_addr();
+        
+        //if ((lastEndOfEvent+1)*8 > lastlastWritten) continue;
+        
         // in the FPGA the endofevent is one off, since it can be that
         // the end of event does not fit into the 4kB anymore so we have
         // to check this here. Also the endofevent is in 256 bit words
@@ -675,71 +685,81 @@ INT read_stream_thread(void *param)
         // here we check if the lastWritten is aligned with the end of event
         // this is not really a problem but later we need to check somehow if
         // we are at the end of the event so for now we continue if they are equal
-        if (((lastEndOfEvent+1)*8)%dma_buf_nwords == lastWritten) {
-            ss_sleep(100);
-            continue;
-        }
-
+        //if (((lastEndOfEvent+1)*8)%dma_buf_nwords == lastWritten) {
+        //    ss_sleep(100);
+        //    continue;
+        //}
+        
         // only to make it save that we are at the end. Sometimes it fails and
         // the end of event is off so we would then take the next one
-        if (((dma_buf[((lastEndOfEvent+1)*8-1)%dma_buf_nwords] == 0xAFFEAFFE) or
-                (dma_buf[((lastEndOfEvent+1)*8-1)%dma_buf_nwords] == 0x0000009c)) and
-            (dma_buf[((lastEndOfEvent+1)*8)%dma_buf_nwords] == 0x1)
-                ){
+        
+        //if (((dma_buf[((lastEndOfEvent+1)*8-1)%dma_buf_nwords] == 0xAFFEAFFE) or
+        //        (dma_buf[((lastEndOfEvent+1)*8-1)%dma_buf_nwords] == 0x0000009c)) 
+        //        ){
+        //    cout << hex << (lastEndOfEvent+1)*8 << " " << lastWritten << " " << dma_buf[(lastEndOfEvent+1)*8] << endl;
+        //}
+
+            //cout << hex << lastWritten << endl;
+            //cout << hex << lastlastWritten << endl;
+        
+            lastWritten = mu.last_written_addr();
+        
+            if (lastWritten == 0) {
+                //cout << "last_written" << endl;
+                continue;
+            }
+
+            if ( lastWritten == lastlastWritten ) continue;
+              
             
-            if ( check_event(dma_buf, readindex, false) != 0 ) continue;
             
-            if(readindex < ((lastEndOfEvent+1)*8-1)%dma_buf_nwords){
+
+            
+            if(lastlastWritten < lastWritten){
                 
                 //WP before RP. Complete copy
-                wlen = ((lastEndOfEvent+1)*8-1)%dma_buf_nwords - readindex; // len in 32 bit words
-                copy_n(&dma_buf[readindex], wlen, pdata); // len in 32 bit words
+                wlen = (lastWritten - lastlastWritten); // len in 32 bit words
+                copy_n(&dma_buf[lastlastWritten], wlen, pdata); // len in 32 bit words
                 
                 rb_status = rb_increment_wp(rbh, wlen * 4); // in byte length
-                update_equipment_status(rb_status, equipment);
+                //cout << "1------" << endl;
+                //cout << (wlen) * 4 << " ";
+                //cout << wlen << " ";
+                //cout << lastlastWritten << " ";
+                //cout << dma_buf_nwords << endl;
+                //update_equipment_status(rb_status, equipment);
                 
-                readindex += wlen+1;
-                readindex = readindex%dma_buf_nwords;
-            }else{
-
+                //readindex += wlen+1;
+                //readindex = readindex%dma_buf_nwords;
+                
+            }
+            
+            else{
+                
                 //RP before WP. May wrap
                 //copy with wrapping
                 //#1
-                copy_n(&dma_buf[readindex], dma_buf_nwords - readindex, pdata); // len in 32 bit words
+                copy_n(&dma_buf[lastlastWritten], dma_buf_nwords - lastlastWritten, pdata); // len in 32 bit words
+                //rb_status = rb_increment_wp(rbh, (dma_buf_nwords - lastlastWritten) * 4); // in byte length
                 
-                rb_status = rb_increment_wp(rbh, (dma_buf_nwords - readindex) * 4); // in byte length
-                update_equipment_status(rb_status, equipment);
-            
-                while (true) {
-                    status = rb_get_wp(rbh, (void **)&pdata, 10);
-
-                    // just sleep and try again if buffer has no space
-                    if (status == DB_TIMEOUT) {
-                        set_equipment_status(equipment[0].name, "Buffer full", "var(--myellow)");
-                        //TODO: throw data here?
-                        readindex = ((mu.last_endofevent_addr() + 1) * 8) % dma_buf_nwords;
-                    continue;
-                    }
-
-                    if (status != DB_SUCCESS){
-                        cout << "!DB_SUCCESS" << endl;
-                        break;
-                    }
-                    break;
-                }
-            
+                //update_equipment_status(rb_status, equipment);
+                            
                 //#2
-                readindex=0;
-                wlen = ((lastEndOfEvent+1)*8-1)%dma_buf_nwords; // len in 32 bit words
-                copy_n(&dma_buf[readindex], wlen, pdata); // len in 32 bit words
+                wlen = lastWritten; // len in 32 bit words
+                copy_n(&dma_buf[0], wlen, pdata); // len in 32 bit words
                 
-                rb_status = rb_increment_wp(rbh, wlen * 4); // in byte length
-                update_equipment_status(rb_status, equipment);
-                
-                readindex += wlen+1;
-                readindex = readindex%dma_buf_nwords;
+                rb_status = rb_increment_wp(rbh, (dma_buf_nwords - lastlastWritten + wlen) * 4); // in byte length
+                //cout << "2------" << endl;
+                //cout << (dma_buf_nwords - lastlastWritten + wlen) * 4 << " ";
+                //cout << wlen << " ";
+                //cout << lastlastWritten << " ";
+                //cout << dma_buf_nwords << endl;
+                //update_equipment_status(rb_status, equipment);
+                //readindex += wlen+1;
+                //readindex = readindex%dma_buf_nwords;
             }
-        }
+        lastlastWritten = lastWritten;
+       
    }
    // tell framework that we finished
    signal_readout_thread_active(0, FALSE);
