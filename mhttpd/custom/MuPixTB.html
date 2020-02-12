@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="midas.css">
+    <script src="controls.js"></script>
+    <script src="midas.js"></script>
+    <script src="mhttpd.js"></script>
+    <script src="obsolete.js"> </script>
+    
+        <script>
+         </script>
+    
+    <title>MuPix Testbeam GUI</title>
+</head>
+<body class="mcss" onload="mhttpd_init('myPage');">
+
+<!-- header and side navigation will be filled in mhttpd_start -->
+<div id="mheader"></div>
+<div id="msidenav"></div>
+<div id="mmain">
+      <table class="mtable" width="100%" id="unknown">
+           <tr>
+               <td colspan="100" class="mtableheader"> Configuration:</td>
+           </tr>
+           <tr>
+              <td>       
+                 <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/Switching/Settings/MupixBoard" data-odb-value="y"> Config Boards </button>
+              </td>
+              <td>  
+                 <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/Switching/Settings/MupixConfig" data-odb-value="y"> Config Chips </button>
+              </td>
+              </tr>
+      </table>
+</div>
+</body>
+</html>
