@@ -8,11 +8,11 @@ use ieee.std_logic_unsigned.all;
 
 
 entity midas_event_builder is
-    generic (
+generic (
         NLINKS: integer := 4;
         LINK_FIFO_ADDR_WIDTH : integer := 10 --;
-    );
-    port(
+);
+port(
         i_clk_data:         in  std_logic;
         i_clk_dma:          in  std_logic;
         i_reset_data_n:     in  std_logic;
@@ -32,7 +32,7 @@ entity midas_event_builder is
         o_state_out:        out std_logic_vector(3 downto 0);
         o_fifo_almost_full: out std_logic_vector(NLINKS - 1 downto 0)--;
 );
-end entity midas_event_builder;
+end entity;
 
 architecture rtl of midas_event_builder is
 
