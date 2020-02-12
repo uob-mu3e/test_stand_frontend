@@ -10,18 +10,18 @@ use work.mudaq_registers.all;
 entity top is
 port (
     BUTTON              : in    std_logic_vector(3 downto 0);
+    SW                  : in    std_logic_vector(1 downto 0);
 
     HEX0_D              : out   std_logic_vector(6 downto 0);
 --    HEX0_DP             : out   std_logic;
-
     HEX1_D              : out   std_logic_vector(6 downto 0);
 --    HEX1_DP             : out   std_logic;
 
     LED                 : out   std_logic_vector(3 downto 0) := "0000";
     LED_BRACKET         : out   std_logic_vector(3 downto 0) := "0000";
 
-    SMA_CLKOUT          : out std_logic;
-    SMA_CLKIN           : in std_logic;
+    SMA_CLKOUT          : out   std_logic;
+    SMA_CLKIN           : in    std_logic;
 
     RS422_DE            : out   std_logic;
     RS422_DIN           : in    std_logic; -- 1.8-V
@@ -29,9 +29,6 @@ port (
 --    RS422_RE_n          : out   std_logic;
 --    RJ45_LED_L          : out   std_logic;
     RJ45_LED_R          : out   std_logic;
-
---    refclk2_qr1_p       : in    std_logic; -- 1.5-V PCML, default 125MHz
---    refclk1_qr0_p       : in    std_logic; -- 1.5-V PCML, default 156.25MHz
 
     -- //////// FAN ////////
     FAN_I2C_SCL         : out   std_logic;
@@ -54,10 +51,6 @@ port (
     -- //////// TEMP ////////
     TEMP_I2C_SCL        : out   std_logic;
     TEMP_I2C_SDA        : inout std_logic;
-
-    SW : in std_logic_vector(1 downto 0);
-
---    clkin_50_top        : in    std_logic; -- 2.5V, default 50MHz
 
     -- //////// Transiver ////////
     QSFPA_TX_p          : out   std_logic_vector(3 downto 0);

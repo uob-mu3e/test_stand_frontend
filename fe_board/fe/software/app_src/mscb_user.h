@@ -794,7 +794,7 @@ struct mscb_t {
         }
 
         if(int err = alt_ic_isr_register(0, 13, callback, this, nullptr)) {
-            printf("ERROR mscb init\n", err);
+            printf("[mscb] ERROR: alt_ic_isr_register => %d\n", err);
         }
     }
 
