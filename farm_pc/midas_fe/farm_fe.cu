@@ -229,6 +229,7 @@ INT frontend_exit()
 
    // following code crashes the frontend, please fix!
    // free( (void *)dma_buf );
+   cudaFreeHost((void *)dma_buf);
    
    return SUCCESS;
 }
@@ -391,7 +392,7 @@ INT end_of_run(INT run_number, char *error)
    printf("Waiting for DMA to finish\n");
    usleep(1000); // Wait for DMA to finish
    timeout_cnt = 0;
-   while(mu.last_written_addr() != (readindex % dma_buf_nwords) &&
+   while(mu.last_written_addr() != lastlastWritten && //(readindex % dma_buf_nwords) &&
          timeout_cnt++ < 50) {
       printf("Waiting for DMA to finish %d/50\n", timeout_cnt);
       timeout_cnt++;
@@ -599,7 +600,7 @@ INT read_stream_thread(void *param)
     while (is_readout_thread_enabled()) {
 
         // obtain buffer space
-        status = rb_get_wp(rbh, (void **)&pdata, 10);
+        status = rb_get_wp(rbh, (void **)&pdata, 0);
 
         // just sleep and try again if buffer has no space
         if (status == DB_TIMEOUT) {
