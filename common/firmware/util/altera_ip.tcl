@@ -346,6 +346,18 @@ proc ::add_altera_xcvr_native_a10 { channels channel_width cdr_refclk_freq data_
     add_instance ${name} altera_xcvr_native_a10
     set_instance_parameter_value ${name} {design_environment} {NATIVE}
 
+    if { ${channel_width} == 8 } {
+        set_instance_parameter_value ${name} {std_pcs_pma_width} {10}
+    } \
+    else {
+        set_instance_parameter_value ${name} {std_pcs_pma_width} {20}
+    }
+
+    if { ${channel_width} == 32 } {
+        set_instance_parameter_value ${name} {std_tx_byte_ser_mode} {Serialize x2}
+        set_instance_parameter_value ${name} {std_rx_byte_deser_mode} {Deserialize x2}
+    }
+
     set_instance_parameter_value ${name} {support_mode} {user_mode}
     set_instance_parameter_value ${name} {protocol_mode} {basic_std}
     set_instance_parameter_value ${name} {pma_mode} {basic}
@@ -363,17 +375,6 @@ proc ::add_altera_xcvr_native_a10 { channels channel_width cdr_refclk_freq data_
 
     set_instance_parameter_value ${name} {enable_port_rx_seriallpbken_tx} {1}
     set_instance_parameter_value ${name} {enable_port_rx_seriallpbken} {1}
-    if { ${channel_width} == 8 } {
-        set_instance_parameter_value ${name} {std_pcs_pma_width} {10}
-    } \
-    else {
-        set_instance_parameter_value ${name} {std_pcs_pma_width} {20}
-    }
-
-    if { ${channel_width} == 32 } {
-        set_instance_parameter_value ${name} {std_tx_byte_ser_mode} {Serialize x2}
-        set_instance_parameter_value ${name} {std_rx_byte_deser_mode} {Deserialize x2}
-    }
 
     set_instance_parameter_value ${name} {std_tx_8b10b_enable} {1}
     set_instance_parameter_value ${name} {std_rx_8b10b_enable} {1}
