@@ -35,16 +35,13 @@ int setup_db(HNDLE& hDB, const char* prefix, MupixFEB* FEB_interface, bool init_
     }
 
     //Set number of ASICs, derived from mapping
-    unsigned int nasics=FEB_interface->GetNumASICs();
-    //INT ival=nasics;
-    INT ival=4; //TODO!!!
+    INT nasics=FEB_interface->GetNumASICs();
     sprintf(set_str, "%s/Settings/ASICs/Global/Num asics", prefix);
-    if((status = db_set_value(hDB ,0,set_str, &ival, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
+    if((status = db_set_value(hDB ,0,set_str, &nasics, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
     //TODO: assume number of boards is same as number of asics. AFAIK this is currently a correct assumption
     sprintf(set_str, "%s/Settings/ASICs/Global/Num boards", prefix);
-    if((status = db_set_value(hDB ,0,set_str, &ival, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
+    if((status = db_set_value(hDB ,0,set_str, &nasics, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
 
-    nasics = ival;
     if(nasics==0){
         cm_msg(MINFO,"mutrig_midasodb::setup_db","Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
     return DB_SUCCESS;
@@ -198,7 +195,7 @@ int MapForEachASIC(HNDLE& db_rootentry, const char* prefix, std::function<int(Mu
     unsigned int ncol = 128; //TODO: somewhere global?
 
     //Retrieve number of ASICs
-	unsigned int nasics;
+	INT nasics;
 	int size = sizeof(nasics);
     sprintf(set_str, "%s/Settings/ASICs/Global/Num asics", prefix);
     status=db_get_value(db_rootentry, 0, set_str, &nasics, &size, TID_INT, 0);
