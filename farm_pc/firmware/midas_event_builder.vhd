@@ -292,7 +292,17 @@ begin
                             data_flag           <= '1';
 							w_ram_en			<= '1';
 							w_ram_add   		<= w_ram_add_reg + 1;
-							w_ram_data  		<= x"30424546"; -- one link fixed bank name + std_logic_vector(to_unsigned(current_link, 4));
+                            -- toDo: proper conversion into ASCII for the midas banks here !! 
+                            if(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB0") then
+                                w_ram_data  		<= x"30424546";
+                            elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB1") then
+                                w_ram_data  		<= x"31424546";
+                            elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB2") then
+                                w_ram_data  		<= x"32424546";
+                            else
+                                w_ram_data  		<= x"33424546"; -- We should not see this !! (FEB3)
+                            end if;
+							--w_ram_data  		<= x"30424546"; -- one link fixed bank name + std_logic_vector(to_unsigned(current_link, 4));
 							event_tagging_state <= bank_type;
                         else
                             --throw data away until a header
