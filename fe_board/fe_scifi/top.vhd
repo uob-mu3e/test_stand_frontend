@@ -269,7 +269,6 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        feb_mapping => 0&3&2&1,
         NIOS_CLK_MHZ_g => 50.0,
         N_LINKS => N_LINKS--,
     )
