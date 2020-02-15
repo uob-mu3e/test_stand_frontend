@@ -78,7 +78,6 @@ function init() {
             var name = store_fields.item(i).name;
             document.getElementsByName(name)[0].addEventListener("change", copyPage2json);
     }
-
     //do not allow configuration while run is active
 /*
     mjsonrpc_db_get_values(["/Runinfo"]).then(function(rpc) {
@@ -431,6 +430,26 @@ function configure() {
 //*********************************************************************************//
 
 
+function dmon_set() {
+	var settings = JSON.parse(localStorage.getItem('settings'));
+	var start = 0;
+	var end   = settings.daq['num_asics']*32-1;
+	var chS = [
+		parseInt(document.getElementById("dmon_select_m0").value),
+  		parseInt(document.getElementById("dmon_select_m1").value)
+	];
+	for(var ch = start; ch < end; ch++) {
+		settings.channel[ch]['dmon_en'] = false;
+		for(var m = 0; m < 2;m++){
+			if((chS[m]>=0) && (ch == m*4*32+chS[m])){
+				settings.channel[ch]['dmon_en'] = true;
+				console.log("Enabling dmon for channel "+ch);
+			}
+		}
+	}
+	localStorage.setItem('settings', JSON.stringify(settings));
+        copy2page_ch(settings.channel[getChannel()], false);
+}
 
 //mask all channels
 function mask(value=true) {
@@ -815,32 +834,32 @@ function readback() {
 				</tbody>
 			</table>
 		</div>
-		<h2 onclick="toggle(lvds)">LVDS driver settings</h2>
-			<div class="details">	
-				<span class="toggle" onclick="toggle(lvds_table)">&#9776;</span>
-				<div id="lvds_table">
-				<table>
-					<thead>
-						<tr>
-							<th>Setting</th>
-							<th>value</th>
-							<th>ODB</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td><label for="lvds_tx_vcm">LVDS VCM</label></td>
-							<td><input type="number"   name="lvds_tx_vcm" id="lvds_tx_vcm" min="0" max="255" step="1" size="3" value="155"  class="store" title="LVDS driver common mode voltage. Typical value=155" /></td>
-							<td><input type="text"     name="lvds_tx_vcm_rb"                                          size="3" value="" class="odb" readonly="readonly" /></td>
-						</tr>
-						<tr>
-							<td><label for="lvds_tx_bias">LVDS BIAS</label></td>
-							<td><input type="number"   name="lvds_tx_bias" id="lvds_tx_bias" min="0" max="64" step="1" size="2" value="0"  class="store" title="LVDS driver bias current. Higher value is higher current." /></td>
-							<td><input type="text"     name="lvds_tx_bias_rb"                                          size="2" value="" class="odb" readonly="readonly" /></td>
-						</tr>
-					</tbody>
-				</table>
-			<tr>
+		<h2 onclick="toggle(lvds_table)">LVDS driver settings</h2>
+		<div class="details">	
+			<span class="toggle" onclick="toggle(lvds_table)">&#9776;</span>
+			<div id="lvds_table">
+			<table>
+				<thead>
+					<tr>
+						<th>Setting</th>
+						<th>value</th>
+						<th>ODB</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><label for="lvds_tx_vcm">LVDS VCM</label></td>
+						<td><input type="number"   name="lvds_tx_vcm" id="lvds_tx_vcm" min="0" max="255" step="1" size="3" value="155"  class="store" title="LVDS driver common mode voltage. Typical value=155" /></td>
+						<td><input type="text"     name="lvds_tx_vcm_rb"                                          size="3" value="" class="odb" readonly="readonly" /></td>
+					</tr>
+					<tr>
+						<td><label for="lvds_tx_bias">LVDS BIAS</label></td>
+						<td><input type="number"   name="lvds_tx_bias" id="lvds_tx_bias" min="0" max="64" step="1" size="2" value="0"  class="store" title="LVDS driver bias current. Higher value is higher current." /></td>
+						<td><input type="text"     name="lvds_tx_bias_rb"                                          size="2" value="" class="odb" readonly="readonly" /></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
             </section>
             <section class="contentbox" id="chsettings"  draggable="true">
                 <h2 onclick="toggle(channel_table)">Channel settings</h2>
@@ -1069,12 +1088,33 @@ title="1: disable TDC test input to this channel. (0 enables TDC input and short
 	        <!--<input type="file" name="filename" id="filename" />-->
                 <label for="file" class="button_2">Load config</label>
                </div>
-               <!-- <button class="button_2" type="submit" onclick="load()">Get ODB</button><br /> -->
-               <br />
                <div style="text-align:center;" id='message'>&nbsp;</div>
+		<h2 onclick="toggle(dmon_table)">Digital monitor control</h2>
+		<div class="details">	
+			<span class="toggle" onclick="toggle(dmon_table)">&#9776;</span>
+			<div id="dmon_table">
+			<table>
+				<thead>
+					<tr>
+						<th>Module</th>
+						<th>Selected channel</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><label for="dmon_select_m0">#0</label></td>
+						<td><input type="number"   name="dmon_select_m0" id="dmon_select_m0" min="-1" max="127" step="1" size="-1" value="-1" onchange="dmon_set()"  class="store" title="Selected digital monitor output on this module (-1 for none)" /></td>
+					</tr>
+					<tr>
+						<td><label for="dmon_select_m1">#1</label></td>
+						<td><input type="number"   name="dmon_select_m1" id="dmon_select_m1" min="-1" max="127" step="1" size="-1" value="-1" onchange="dmon_set()" class="store" title="Selected digital monitor output on this module (-1 for none)" /></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		</div>
             </section>
         </div>
-
 <div id="updateStatus" align="left">
    Loading...
 </div>
