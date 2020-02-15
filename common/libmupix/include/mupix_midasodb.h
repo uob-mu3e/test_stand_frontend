@@ -1,5 +1,5 @@
-#ifndef MUTRIG_MIDASODB_H
-#define MUTRIG_MIDASODB_H
+#ifndef MUPIX_MIDASODB_H
+#define MUPIX_MIDASODB_H
 
 #include <string>
 #include <vector>
@@ -37,4 +37,4 @@ int MapForEachBOARD(HNDLE& db_rootentry, const char* prefix, std::function<int(M
 
 } } // namespace mupix::midasODB
 
-#endif // MUTRIG_MIDASODB_H
+#endif // MUPIX_MIDASODB_H

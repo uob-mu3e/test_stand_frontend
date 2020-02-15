@@ -1,13 +1,14 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-
+use ieee.std_logic_misc.all;
 use work.daq_constants.all;
 
 entity fe_block is
 generic (
     feb_mapping : natural_array_t(3 downto 0) := 3&2&1&0;
-    NIOS_CLK_MHZ_g : real--;
+    NIOS_CLK_MHZ_g : real;
+    N_LINKS : positive := 1--;
 );
 port (
     i_fpga_id       : in    std_logic_vector(15 downto 0);
@@ -34,8 +35,6 @@ port (
     o_spi_sclk      : out   std_logic;
     o_spi_ss_n      : out   std_logic_vector(15 downto 0);
 
-
-
     -- QSFP links
     i_qsfp_rx       : in    std_logic_vector(3 downto 0);
     o_qsfp_tx       : out   std_logic_vector(3 downto 0);
@@ -44,27 +43,17 @@ port (
     i_pod_rx        : in    std_logic_vector(3 downto 0);
     o_pod_tx        : out   std_logic_vector(3 downto 0);
 
-
-
     i_can_terminate : in std_logic:='0';
 
     --main fiber data fifo
-    i_fifo_rempty   : in    std_logic;
-    o_fifo_rack     : out   std_logic;
-    i_fifo_rdata    : in    std_logic_vector(35 downto 0);
+    i_fifo_write    : in    std_logic_vector(N_LINKS-1 downto 0);
+    i_fifo_wdata    : in    std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
-    --secondary fiber: leave open if unused
-    --secondary fiber data fifo
-    i_secondary_fifo_rempty   : in    std_logic:='1';
-    o_secondary_fifo_rack     : out   std_logic;
-    i_secondary_fifo_rdata    : in    std_logic_vector(35 downto 0):=(others =>'-');
-    --secondary fiber slow control fifo
-    --no slow control here, so we might use this as a secondary data generator (e.g. trigger/heartbeat channel)
-    i_secondary_scfifo_rempty   : in    std_logic:='1';
-    o_secondary_scfifo_rack     : out   std_logic;
-    i_secondary_scfifo_rdata    : in    std_logic_vector(35 downto 0):=(others =>'-');
+    o_fifos_almost_full         : out   std_logic_vector(N_LINKS-1 downto 0);
 
-
+    -- slow control fifo
+    o_scfifo_write     : out   std_logic;
+    o_scfifo_wdata     : in    std_logic_vector(35 downto 0):=(others =>'-');
 
     -- MSCB interface
     i_mscb_data     : in    std_logic;
@@ -88,12 +77,8 @@ port (
     o_mupix_reg_we      : out   std_logic;
     o_mupix_reg_wdata   : out   std_logic_vector(31 downto 0);
 
-
-
     -- reset system
     o_run_state_125 : out   run_state_t;
-
-
 
     -- nios clock (async)
     i_nios_clk      : in    std_logic;
@@ -121,9 +106,8 @@ architecture arch of fe_block is
 
     signal av_sc : work.util.avalon_t;
 
-    signal sc_fifo_rempty : std_logic;
-    signal sc_fifo_rack : std_logic;
-    signal sc_fifo_rdata : std_logic_vector(35 downto 0);
+    signal sc_fifo_write : std_logic;
+    signal sc_fifo_wdata : std_logic_vector(35 downto 0);
 
     signal sc_ram, sc_reg : work.util.rw_t;
     signal fe_reg : work.util.rw_t;
@@ -132,28 +116,20 @@ architecture arch of fe_block is
     signal reg_cmdlen : std_logic_vector(31 downto 0);
     signal reg_offset : std_logic_vector(31 downto 0);
 
-
-
     signal linktest_data    : std_logic_vector(31 downto 0);
     signal linktest_datak   : std_logic_vector(3 downto 0);
-    signal linktest_granted : std_logic_vector(1 downto 0);
-
-
+    signal linktest_granted : std_logic_vector(N_LINKS-1 downto 0);
 
     signal av_mscb : work.util.avalon_t;
-
-
 
     signal reg_reset_bypass : std_logic_vector(31 downto 0);
     signal reg_reset_bypass_payload : std_logic_vector(31 downto 0);
 
     signal run_state_125 : run_state_t;
     signal run_state_156 : run_state_t;
-    signal terminated : std_logic_vector(1 downto 0);
+    signal terminated : std_logic;
 
     signal run_number : std_logic_vector(31 downto 0);
-
-
 
     signal reconfig_clk : std_logic;
 
@@ -168,10 +144,10 @@ architecture arch of fe_block is
     signal pod_rx_datak : std_logic_vector(3 downto 0);
 
     signal qsfp_tx_data : std_logic_vector(127 downto 0) :=
-          X"03CAFE" & work.util.D28_5
-        & X"02BABE" & work.util.D28_5
-        & X"01DEAD" & work.util.D28_5
-        & X"00BEEF" & work.util.D28_5;
+          X"000000" & work.util.D28_5
+        & X"000000" & work.util.D28_5
+        & X"000000" & work.util.D28_5
+        & X"000000" & work.util.D28_5;
     signal qsfp_tx_datak : std_logic_vector(15 downto 0) :=
           "0001"
         & "0001"
@@ -450,9 +426,8 @@ begin
         i_link_data     => qsfp_rx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
         i_link_datak    => qsfp_rx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
-        o_fifo_rempty   => sc_fifo_rempty,
-        i_fifo_rack     => sc_fifo_rack,
-        o_fifo_rdata    => sc_fifo_rdata,
+        o_fifo_write    => sc_fifo_write,
+        o_fifo_wdata    => sc_fifo_wdata,
 
         o_ram_addr      => sc_ram.addr,
         o_ram_re        => sc_ram.re,
@@ -465,72 +440,35 @@ begin
         i_clk           => i_clk_156--,
     );
 
-
-
     e_merger : entity work.data_merger
-    port map (
-        fpga_ID_in              => i_fpga_id,
-        FEB_type_in             => i_fpga_type,
-
-        run_state               => run_state_156,
-        run_number              => run_number,
-
-        data_out                => qsfp_tx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
-        data_is_k               => qsfp_tx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
-
-        slowcontrol_fifo_empty  => sc_fifo_rempty,
-        slowcontrol_read_req    => sc_fifo_rack,
-        data_in_slowcontrol     => sc_fifo_rdata,
-
-        data_fifo_empty         => i_fifo_rempty,
-        data_read_req           => o_fifo_rack,
-        data_in                 => i_fifo_rdata,
-
-        override_data_in        => linktest_data, --TODO: separate link test entity?
-        override_data_is_k_in   => linktest_datak,
-        override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
-        override_granted        => linktest_granted(0),
-
-        can_terminate           => i_can_terminate,
-        terminated              => terminated(0),
-        data_priority           => '0',
-
-        leds                    => open,
-
-        reset                   => not reset_156_n,
-        clk                     => i_clk_156--,
-    );
-
-    --TODO: is this optimized away correctly when data inputs are not connected?
-    -- otherwise add generation switch.
-    e_merger_secondary : entity work.data_merger
+    generic map(
+        N_LINKS                 => N_LINKS,
+        feb_mapping             => feb_mapping--,
+    )
     port map (
         fpga_ID_in              => i_fpga_id,
         FEB_type_in             => i_fpga_type,
         run_state               => run_state_156,
         run_number              => run_number,
 
-        data_out                => qsfp_tx_data(32*(feb_mapping(1)+1)-1 downto 32*feb_mapping(1)),
-        data_is_k               => qsfp_tx_datak(4*(feb_mapping(1)+1)-1 downto 4*feb_mapping(1)),
+        o_data_out              => qsfp_tx_data,
+        o_data_is_k             => qsfp_tx_datak,
 
-        slowcontrol_fifo_empty  => i_secondary_scfifo_rempty,
-        slowcontrol_read_req    => o_secondary_scfifo_rack,
-        data_in_slowcontrol     => i_secondary_scfifo_rdata,
+        slowcontrol_write_req   => sc_fifo_write,
+        i_data_in_slowcontrol   => sc_fifo_wdata,
 
-        data_fifo_empty         => i_secondary_fifo_rempty,
-        data_read_req           => o_secondary_fifo_rack,
-        data_in                 => i_secondary_fifo_rdata,
+        data_write_req          => i_fifo_write,
+        i_data_in               => i_fifo_wdata,
+        o_fifos_almost_full     => o_fifos_almost_full,
 
         override_data_in        => linktest_data,
         override_data_is_k_in   => linktest_datak,
         override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
-        override_granted        => linktest_granted(1),
+        override_granted        => linktest_granted,
 
         can_terminate           => i_can_terminate,
-        terminated              => terminated(1),
+        o_terminated            => terminated,
         data_priority           => '0',
-
-        leds                    => open,
 
         reset                   => not reset_156_n,
         clk                     => i_clk_156--,
@@ -544,7 +482,7 @@ begin
         g_poly => "10000000001000000000000000000110"--,
     )
     port map (
-        i_sync_reset    => not (linktest_granted(0) and linktest_granted(1)),
+        i_sync_reset    => not and_reduce(linktest_granted),
         i_seed          => (others => '1'),
         i_en            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),
         o_lsfr          => linktest_data,
@@ -574,7 +512,7 @@ begin
         reset_bypass_payload    => reg_reset_bypass_payload,
         run_number_out          => run_number,
         fpga_id                 => i_fpga_id,
-        terminated              => (terminated(0) and terminated (1)), --TODO: test with two datamergers
+        terminated              => terminated, --TODO: test with two datamergers
         testout                 => open,
 
         o_phase                 => open,

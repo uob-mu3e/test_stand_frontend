@@ -25,13 +25,17 @@ Contents:       Definition of functions to talk to a mupix-based FEB. Designed t
 #define FE_SUBDET_RESET_REG    (SC_REG_OFFSET+0xa)
 #define FE_SPIDATA_ADDR		0
 
-const uint8_t MupixFEB::FPGA_broadcast_ID=0;
+//status flags from FEB
+#define FEB_REPLY_SUCCESS 0
+#define FEB_REPLY_ERROR   1
 
 MupixFEB* MupixFEB::m_instance=NULL;
 
 //Mapping to physical ports of switching board.
-uint8_t MupixFEB::FPGAid_from_ID(int asic){return 0;}//return asic/4;}
-uint8_t MupixFEB::ASICid_from_ID(int asic){return asic;}//return asic%4;}
+uint16_t MupixFEB::FPGAid_from_ID(int asic){return 0;} //TODO !!!
+uint16_t MupixFEB::ASICid_from_ID(int asic){return 0;}
+
+uint16_t MupixFEB::GetNumASICs(){return m_FPGAs.size()*1;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
 
 uint32_t default_mupix_dacs[94] =
 {
@@ -133,60 +137,56 @@ uint32_t default_mupix_dacs[94] =
 
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
-int MupixFEB::ConfigureASICs(HNDLE hDB, const char* equipment_name, const char* odb_prefix){
+int MupixFEB::ConfigureASICs(){
    printf("MupixFEB::ConfigureASICs()\n");
-   int status = mupix::midasODB::MapForEachASIC(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mupix::MupixConfig* config, int asic){
-      int status=SUCCESS;
-      uint32_t reg;
-      cm_msg(MINFO, "setup_mupix" , "Configuring MuPIX asic %s/Settings/ASICs/%i/", odb_prefix, asic);
+   cm_msg(MINFO, "MupixFEB" , "Configuring sensors under prefix %s/Settings/ASICs/", m_odb_prefix);
+   int status = mupix::midasODB::MapForEachASIC(hDB,m_odb_prefix,[this](mupix::MupixConfig* config, int asic){
+      uint32_t rpc_status;
+      //mapping
+      uint16_t SB_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Number();
+      uint16_t SP_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Port();
+      uint16_t FA_ID=ASICid_from_ID(asic);
+
+      //if(!m_FPGAs[FPGAid_from_ID(asic)].IsScEnabled()){
+      //    printf(" [skipped]\n");
+      //    return FE_SUCCESS;
+      //}
+      //if(SB_ID!=m_SB_number){
+      //    printf(" [skipped]\n");
+      //    return FE_SUCCESS;
+      //} //TODO
+      //printf("\n");
+
+      cm_msg(MINFO, "MupixFEB" , "Configuring sensor %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d", m_odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
+
 
       try {
-         //Write ASIC number
-         reg=asic;
-         m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg, 1, (uint32_t) FE_SPIDATA_ADDR,true);
-	 printf("reading back\n");
-         m_mu.FEBsc_read(FPGAid_from_ID(asic), &reg, 1,  (uint32_t) FE_SPIDATA_ADDR,true);
-         //Write configuration
 
          uint8_t bitpatterna[config->length +1];
+         for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
+             bitpatterna[nbit+1] = config->bitpattern_w[nbit];
+         }
          uint32_t * datastream = (uint32_t*)(bitpatterna);
 
          for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
              uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
              datastream[nbit] = tmp;
          }
+         rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
 
-         m_mu.FEBsc_write(FPGAid_from_ID(asic), datastream, config->length_32bits , (uint32_t) FE_SPIDATA_ADDR+1,true);
-         //m_mu.FEBsc_write(FPGAid_from_ID(asic), (default_mupix_dacs), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR+1,true);
-
-         //Write offset address
-         reg= FE_SPIDATA_ADDR;
-         m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg,1,0xfff1,true);
-
-         //Write command word to register FFF0: cmd | n
-         reg= 0x01100000 + (0xFFFF & config->length_32bits);
-         m_mu.FEBsc_write(FPGAid_from_ID(asic), &reg,1,0xfff0,true);
-
-         //Wait for configuration to finish
-         /*uint timeout_cnt = 0;
-         do{
-            printf("Polling (%d)\n",timeout_cnt);
-            if(++timeout_cnt >= 10000) throw std::runtime_error("SPI transaction timeout while configuring asic"+std::to_string(asic));
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            m_mu.FEBsc_read(FPGAid_from_ID(asic), &reg, 1, 0xfff0);
-         }while( (reg&0xffff0000) != 0);*/
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
+          set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
           return FE_ERR_HW; //note: return of lambda function
       }
-      if(status!=SUCCESS){
+      if(rpc_status!=FEB_REPLY_SUCCESS){
          //configuration mismatch, report and break foreach-loop
-         set_equipment_status(equipment_name,  "MuPix config failed", "red");
+         set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
          cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
+         return FE_ERR_HW;//note: return of lambda function
       }
 
-      return status;//note: return of lambda function
+      return FE_SUCCESS;//note: return of lambda function
    });//MapForEach
    return status; //status of foreach function, SUCCESS when no error.
 }
@@ -229,52 +229,62 @@ void MupixFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
    }
 }
 
-int MupixFEB::ConfigureBoards(HNDLE hDB, const char* equipment_name, const char* odb_prefix){
-   printf("MupixFEB::ConfigureASICs()\n");
-   int status = mupix::midasODB::MapForEachBOARD(hDB,odb_prefix,[this,&odb_prefix,&equipment_name](mupix::MupixBoardConfig* config, int board){
-      int status=SUCCESS;
-      uint32_t reg;
-      cm_msg(MINFO, "setup_mupix" , "Configuring MuPIX board %s/Settings/Boards/%i/", odb_prefix, board);
+unsigned char reverse(unsigned char b) {
+   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+   return b;
+}
 
-      try {
-         //Write ASIC number
-         reg=board;
-         m_mu.FEBsc_write(FPGAid_from_ID(board), &reg, 1, (uint32_t) FE_SPIDATA_ADDR,true);
-         printf("reading back\n");
-         m_mu.FEBsc_read(FPGAid_from_ID(board), &reg, 1,  (uint32_t) FE_SPIDATA_ADDR,true);
-         //Write configuration
 
-         m_mu.FEBsc_write(FPGAid_from_ID(board), reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits , (uint32_t) FE_SPIDATA_ADDR+1,true);
+int MupixFEB::ConfigureBoards(){
+   cm_msg(MINFO, "MupixFEB" , "Configuring boards under prefix %s/Settings/Boards/", m_odb_prefix);
+   int status = mupix::midasODB::MapForEachBOARD(hDB,m_odb_prefix,[this](mupix::MupixBoardConfig* config, int board){
+      uint32_t rpc_status;
+      //mapping
+      uint16_t SB_ID=m_FPGAs[FPGAid_from_ID(board)].SB_Number();
+      uint16_t SP_ID=m_FPGAs[FPGAid_from_ID(board)].SB_Port();
 
-         //Write offset address
-         reg= FE_SPIDATA_ADDR;
-         m_mu.FEBsc_write(FPGAid_from_ID(board), &reg,1,0xfff1,true);
+      uint32_t board_ID=board;
 
-         //Write command word to register FFF0: cmd | n
-         //reg= 0x01100000 + (0xFFFF & config->length_32bits);
-         reg= 0x01200000 + (0xFFFF & config->length_32bits);
-         m_mu.FEBsc_write(FPGAid_from_ID(board), &reg,1,0xfff0,true);
+      //if(!m_FPGAs[FPGAid_from_ID(board)].IsScEnabled()){
+      //    printf(" [skipped]\n");
+      //    return FE_SUCCESS;
+      //}
+      //if(SB_ID!=m_SB_number){
+      //    printf(" [skipped]\n");
+      //    return FE_SUCCESS;
+      //} //TODO
+      //printf("\n");
 
-         //Wait for configuration to finish
-         /*uint timeout_cnt = 0;
-         do{
-            printf("Polling (%d)\n",timeout_cnt);
-            if(++timeout_cnt >= 10000) throw std::runtime_error("SPI transaction timeout while configuring board"+std::to_string(board));
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            m_mu.FEBsc_read(FPGAid_from_ID(board), &reg, 1, 0xfff0);
-         }while( (reg&0xffff0000) != 0);*/
+      cm_msg(MINFO, "MupixFEB" , "Configuring MuPIX board %s/Settings/Boards/%i/: Mapped to FEB%u -> SB%u.%u", m_odb_prefix,board,FPGAid_from_ID(board),SB_ID,SP_ID);
+
+       uint8_t bitpattern[config->length +1];
+       for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
+           bitpattern[nbit] = (uint8_t) reverse((unsigned char) config->bitpattern_w[nbit]);
+       }
+
+       uint32_t * datastream = (uint32_t*)(bitpattern);
+
+       for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
+           uint32_t tmp = ((datastream[nbit]>>8)&0x00FF0000) | ((datastream[nbit]<<8)&0xFF000000) | ((datastream[nbit]>>8)&0x000000FF) | ((datastream[nbit]<<8)&0x0000FF00);
+           datastream[nbit] = tmp;
+       }
+       try {
+           rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0120,{{reinterpret_cast<uint32_t*>(&board),1},{reinterpret_cast<uint32_t*> (datastream), config->length_32bits}});
+
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", board, e.what());
-          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
+          set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
           return FE_ERR_HW; //note: return of lambda function
       }
-      if(status!=SUCCESS){
+      if(rpc_status!=FEB_REPLY_SUCCESS){
          //configuration mismatch, report and break foreach-loop
-         set_equipment_status(equipment_name,  "MuPix config failed", "red");
+         set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
          cm_msg(MERROR, "setup_mupix", "MuPix configuration error for Board %i", board);
       }
 
-      return status;//note: return of lambda function
+      return FE_SUCCESS;//note: return of lambda function
    });//MapForEach
    return status; //status of foreach function, SUCCESS when no error.
 }
