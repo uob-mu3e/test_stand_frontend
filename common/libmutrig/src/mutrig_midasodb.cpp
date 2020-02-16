@@ -258,13 +258,6 @@ printf("setting up db\n");
     //hs_define_panel("SciFi","Times",{"SciFi:Counters_Time",
     //                                "SciFi:Counters_Time"});
 
-    //Add configuration custom page to ODB
-    db_create_key(hDB, 0, "Custom/SciFi-ASICs&", TID_STRING);
-    const char * name = "mutrigTdc.html";
-    db_set_value(hDB,0,"Custom/SciFi-ASICs&", name, strlen(name), 1, TID_STRING);
-
-
-
 return status;
 }
 

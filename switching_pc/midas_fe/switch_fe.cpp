@@ -237,9 +237,11 @@ INT frontend_init()
    db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", TID_INT);
 
     // add custom page to ODB
+   {
    db_create_key(hDB, 0, "Custom/Switching&", TID_STRING);
    const char * name = "sc.html";
    db_set_value(hDB,0,"Custom/Switching&", name, sizeof(name), 1, TID_STRING);
+   }
 
    HNDLE hKey;
    // watch if this switching board is enabled
@@ -257,6 +259,7 @@ INT frontend_init()
 
    // open mudaq
    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
+/*
    if ( !mup->open() ) {
        cm_msg(MERROR, "frontend_init" , "Could not open device");
        return FE_ERR_DRIVER;
@@ -268,12 +271,12 @@ INT frontend_init()
    }
    mup->FEBsc_resetMaster();
    mup->FEBsc_resetSlave();
-
    //set link enables so slow control can pass 
    try{ set_feb_enable(get_link_active_from_odb()); }
    catch(...){ return FE_ERR_ODB;}
+*/
 
-
+printf("...\n");
    //SciFi setup part
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
    SciFiFEB::Create(*mup,hDB,equipment[EQUIPMENT_ID::SciFi].name,"/Equipment/SciFi"); //create FEB interface signleton for scifi
@@ -284,11 +287,17 @@ INT frontend_init()
       return status;
    }
     //init all values on FEB
-   SciFiFEB::Instance()->WriteAll();
+   //SciFiFEB::Instance()->WriteAll();
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
-   //end of SciFi setup part
+   {
+   db_create_key(hDB, 0, "Custom/SciFi-ASICs&", TID_STRING);
+   const char * name = "mutrigTdc.html";
+   db_set_value(hDB,0,"Custom/SciFi-ASICs&", name, sizeof(name), 1, TID_STRING);
+   }
 
+   //end of SciFi setup part
+/*
    //Mupix setup part
    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");
    MupixFEB::Create(*mup,hDB,equipment[EQUIPMENT_ID::Mupix].name,"/Equipment/Mupix"); //create FEB interface signleton for scifi
@@ -300,7 +309,7 @@ INT frontend_init()
    }
    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
    //end of Mupix setup part
-
+*/
    /*
     * Set our transition sequence. The default is 500. Setting it
     * to 400 means we are called BEFORE most other clients.
