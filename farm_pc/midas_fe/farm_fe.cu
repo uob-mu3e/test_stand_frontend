@@ -36,15 +36,6 @@ BOOL frontend_call_loop = FALSE;
 /* a frontend status page is displayed with this frequency in ms */
 INT display_period = 0;
 
-/* maximum event size produced by this frontend */
-INT max_event_size = 1000000;
-
-/* maximum event size for fragmented events (EQ_FRAGMENTED) */
-INT max_event_size_frag = 5 * 1024 * 1024;
-
-/* buffer size to hold events */
-INT event_buffer_size = 10000 * max_event_size;
-
 /* DMA Buffer and related */
 volatile uint32_t *dma_buf;
 size_t dma_buf_size = MUDAQ_DMABUF_DATA_LEN;
@@ -59,6 +50,15 @@ uint32_t lastlastWritten;
 uint32_t lastRunWritten;
 bool moreevents;
 bool firstevent;
+
+/* maximum event size produced by this frontend */
+INT max_event_size = dma_buf_nwords;
+
+/* maximum event size for fragmented events (EQ_FRAGMENTED) */
+INT max_event_size_frag = 5 * 1024 * 1024;
+
+/* buffer size to hold events */
+INT event_buffer_size = 32 * max_event_size;
 
 mudaq::DmaMudaqDevice * mup;
 mudaq::DmaMudaqDevice::DataBlock block;
@@ -605,27 +605,11 @@ INT read_stream_thread(void *param)
 
     while (is_readout_thread_enabled()) {
 
-        // obtain buffer space
-        status = rb_get_wp(rbh, (void **)&pdata, 0);
-
-        // just sleep and try again if buffer has no space
-        if (status == DB_TIMEOUT) {
-            set_equipment_status(equipment[0].name, "Buffer full", "var(--myellow)");
-            //TODO: throw data here?
-            //readindex = ((mu.last_endofevent_addr() + 1) * 8) % dma_buf_nwords;
-            continue;
-        }
-
-        if (status != DB_SUCCESS){
-            cout << "!DB_SUCCESS" << endl;
-            break;
-        }
-
         // don't readout events if we are not running
         if (run_state != STATE_RUNNING) {
-        set_equipment_status(equipment[0].name, "Not running", "var(--myellow)");
-        //ss_sleep(100);
-        //TODO: signalling from main thread?
+            set_equipment_status(equipment[0].name, "Not running", "var(--myellow)");
+            //ss_sleep(100);
+            //TODO: signalling from main thread?
         continue;
         }
 
@@ -724,39 +708,49 @@ INT read_stream_thread(void *param)
 
             if(lastWritten % dma_buf_nwords == lastlastWritten % dma_buf_nwords) continue;
 
-            printf("lastlastWritten = 0x%08X\n", lastlastWritten);
-            printf("lastWritten = 0x%08X\n", lastWritten);
+//            printf("lastlastWritten = 0x%08X\n", lastlastWritten);
+//            printf("lastWritten = 0x%08X\n", lastWritten);
 //            break;
-
-
 
             if(lastWritten < lastlastWritten) lastWritten += dma_buf_nwords;
 
 //            uint32_t rb_space = rb_get_space(rbh);
             uint32_t offset = lastlastWritten;
+//            printf("event: data[0] = 0x%08X\n", dma_buf[(offset + 0) % dma_buf_nwords]);
+//            printf("event: data[1] = 0x%08X\n", dma_buf[(offset + 1) % dma_buf_nwords]);
+//            printf("event: data[2] = 0x%08X\n", dma_buf[(offset + 2) % dma_buf_nwords]);
+//            printf("event: data[3] = 0x%08X\n", dma_buf[(offset + 3) % dma_buf_nwords]);
             while(true) {
-                printf("event: data[0] = 0x%08X\n", dma_buf[(offset + 0) % dma_buf_nwords]);
-                printf("event: data[1] = 0x%08X\n", dma_buf[(offset + 1) % dma_buf_nwords]);
-                printf("event: data[2] = 0x%08X\n", dma_buf[(offset + 2) % dma_buf_nwords]);
-                printf("event: data[3] = 0x%08X\n", dma_buf[(offset + 3) % dma_buf_nwords]);
-
                 // check enough words for header
                 if(lastWritten - offset < 4) break;
                 uint32_t eventLength = dma_buf[(offset + 3) % dma_buf_nwords];
                 // check enough words for data
                 if(lastWritten - offset < 4 + eventLength / 4) break;
-//                if(offset - lastlastWritten + 4 + eventLength / 4 > rb_space / 4) break;
+                if(offset - lastlastWritten + 4 + eventLength / 4 > max_event_size / 4) break;
                 offset += 4; // header
                 offset += eventLength / 4; // data
                 //printf("1. event: offset = 0x%08X, eventLength = 0x%08X, data = 0x%08X\n", offset, eventLength, dma_buf[offset]);
             }
-            printf("offset = 0x%08X, lastWritten = 0x%08X\n", offset, lastWritten);
+//            printf("offset = 0x%08X, lastWritten = 0x%08X\n", offset, lastWritten);
             lastWritten = offset % dma_buf_nwords;
 
             if(lastWritten == lastlastWritten) continue;
 
-            printf("lastlastWritten = 0x%08X\n", lastlastWritten);
-            printf("lastWritten = 0x%08X\n", lastWritten);
+            // obtain buffer space
+            status = rb_get_wp(rbh, (void **)&pdata, 0);
+
+            if (status == DB_TIMEOUT) {
+                set_equipment_status(equipment[0].name, "Buffer full", "var(--myellow)");
+            }
+
+            if(status != DB_SUCCESS) {
+//                cout << "warn: status != DB_SUCCESS, discard data" << endl;
+                lastlastWritten = lastWritten;
+                continue;
+            }
+
+            //printf("lastlastWritten = 0x%08X\n", lastlastWritten);
+            //printf("lastWritten = 0x%08X\n", lastWritten);
 
             uint32_t wlen = 0;
             if(lastWritten < lastlastWritten) {
@@ -771,13 +765,13 @@ INT read_stream_thread(void *param)
                 wlen += lastWritten - lastlastWritten;
                 lastlastWritten = lastWritten;
             }
-            printf("wlen = 0x%08X\n", wlen);
+            //printf("wlen = 0x%08X\n", wlen);
 
             rb_status = rb_increment_wp(rbh, wlen * 4); // in byte length
+            if(rb_status != DB_SUCCESS) {
+                printf("warn: rb_status != DB_SUCCESS\n");
+            }
             cur_status = update_equipment_status(rb_status, cur_status, equipment);
-
-
-
    }
    // tell framework that we finished
    signal_readout_thread_active(0, FALSE);
