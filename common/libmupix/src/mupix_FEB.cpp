@@ -229,6 +229,14 @@ void MupixFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
    }
 }
 
+unsigned char reverse(unsigned char b) {
+   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+   return b;
+}
+
+
 int MupixFEB::ConfigureBoards(){
    cm_msg(MINFO, "MupixFEB" , "Configuring boards under prefix %s/Settings/Boards/", m_odb_prefix);
    int status = mupix::midasODB::MapForEachBOARD(hDB,m_odb_prefix,[this](mupix::MupixBoardConfig* config, int board){
@@ -251,10 +259,19 @@ int MupixFEB::ConfigureBoards(){
 
       cm_msg(MINFO, "MupixFEB" , "Configuring MuPIX board %s/Settings/Boards/%i/: Mapped to FEB%u -> SB%u.%u", m_odb_prefix,board,FPGAid_from_ID(board),SB_ID,SP_ID);
 
+       uint8_t bitpattern[config->length +1];
+       for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
+           bitpattern[nbit] = (uint8_t) reverse((unsigned char) config->bitpattern_w[nbit]);
+       }
 
+       uint32_t * datastream = (uint32_t*)(bitpattern);
 
-      try {
-         rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0120,{{reinterpret_cast<uint32_t*>(&board),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
+       for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
+           uint32_t tmp = ((datastream[nbit]>>8)&0x00FF0000) | ((datastream[nbit]<<8)&0xFF000000) | ((datastream[nbit]>>8)&0x000000FF) | ((datastream[nbit]<<8)&0x0000FF00);
+           datastream[nbit] = tmp;
+       }
+       try {
+           rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0120,{{reinterpret_cast<uint32_t*>(&board),1},{reinterpret_cast<uint32_t*> (datastream), config->length_32bits}});
 
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", board, e.what());

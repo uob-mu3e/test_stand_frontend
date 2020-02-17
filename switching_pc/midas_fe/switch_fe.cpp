@@ -93,7 +93,7 @@ int switch_id = 0; // TODO to be loaded from outside
 mudaq::DmaMudaqDevice * mup;
 
 /* Use CRFE bypass during run-start transitions, directly send command to FEB*/
-#define CRFE_BYPASS
+//#define CRFE_BYPASS
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -384,6 +384,7 @@ try{
 #ifndef CRFE_BYPASS
    /* send run prepare signal via CR system */
    INT value = 1;
+   cm_msg(MINFO,"switch_fe","Using CRFE for run transition");
    db_set_value_index(hDB,0,"Equipment/Clock Reset/Run Transitions/Request Run Prepare",
                       &value, sizeof(value), switch_id, TID_INT, false);
 #else

@@ -177,7 +177,7 @@ begin
 		current_overflow 			:= "0000000000000000";
 		overflow_idx				:= 0;
 		state_out					<= (others => '0');
-		datak_pix_generated		<= (others => '0');
+		datak_pix_generated		<= (others => '1');
 	elsif rising_edge(clk) then
 		if(enable_pix = '1' and waiting = '0' and i_dma_half_full = '0') then
 				data_pix_ready <= '1';
@@ -223,11 +223,11 @@ begin
 							data_header_state					<= trailer;
 						elsif (global_time(2 downto 0) = "111") then
 							data_header_state					<= part4;
-						elsif (current_overflow(overflow_idx) = '1') then
-							overflow_idx 						:= overflow_idx + 1;
-							data_header_state					<= overflow;
-						else
-							overflow_idx 						:= overflow_idx + 1;
+--						elsif (current_overflow(overflow_idx) = '1') then
+--							overflow_idx 						:= overflow_idx + 1;
+--							data_header_state					<= overflow;
+--						else
+--							overflow_idx 						:= overflow_idx + 1;
 						end if;
 							
 					when overflow =>

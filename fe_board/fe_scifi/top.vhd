@@ -269,12 +269,11 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        feb_mapping => 0&3&2&1,
         NIOS_CLK_MHZ_g => 50.0,
         N_LINKS => N_LINKS--,
     )
     port map (
-        i_fpga_id       => X"FEB0",
+        i_fpga_id       => X"FEB1",
         -- mutrig FEB type
         i_fpga_type     => "111000",
 

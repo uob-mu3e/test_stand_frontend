@@ -35,9 +35,9 @@ signal reset_data : std_logic;
 signal reset_dma : std_logic;
 
 -- link fifos
-signal link_fifo_wren 		: std_logic_vector(NLINKS downto 0);
+signal link_fifo_wren 		: std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_data 		: std_logic_vector(NLINKS * 36 - 1 downto 0);
-signal link_fifo_ren 		: std_logic_vector(NLINKS downto 0);
+signal link_fifo_ren 		: std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_data_out 	: std_logic_vector(NLINKS * 36 - 1 downto 0);
 signal link_fifo_empty 		: std_logic_vector(NLINKS - 1 downto 0);
 
@@ -267,7 +267,8 @@ begin
 					event_tagging_state <= bank_name;
 
 				when bank_name =>
-					-- here we check if the link is masked and if the current fifo is empty
+                    link_fifo_ren(current_link) <= '0';
+					--here we check if the link is masked and if the current fifo is empty
 					if ( i_link_mask_n(current_link) = '0' or link_fifo_empty(current_link) = '1' ) then
 						--skip this link
 						current_link <= current_link + 1;
@@ -291,8 +292,21 @@ begin
                             data_flag           <= '1';
 							w_ram_en			<= '1';
 							w_ram_add   		<= w_ram_add_reg + 1;
-							w_ram_data  		<= std_logic_vector(to_unsigned(current_link, w_ram_data'length));
+                            -- toDo: proper conversion into ASCII for the midas banks here !! 
+                            if(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB0") then
+                                w_ram_data  		<= x"30424546";
+                            elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB1") then
+                                w_ram_data  		<= x"31424546";
+                            elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB2") then
+                                w_ram_data  		<= x"32424546";
+                            else
+                                w_ram_data  		<= x"33424546"; -- We should not see this !! (FEB3)
+                            end if;
+							--w_ram_data  		<= x"30424546"; -- one link fixed bank name + std_logic_vector(to_unsigned(current_link, 4));
 							event_tagging_state <= bank_type;
+                        else
+                            --throw data away until a header
+                            link_fifo_ren(current_link) <= '1';
 						end if;
 					end if;
 
@@ -346,7 +360,7 @@ begin
 					current_link        <= 0;
 					w_ram_en			<= '1';
 	                w_ram_add   		<= w_ram_add_reg + 1;
-			 	    w_ram_data  		<= x"FFFFFFFF";
+			 	    w_ram_data  		<= x"454b4146"; -- FAKE in ascii
 	                event_tagging_state <= trailer_type;
 	                
 	            when trailer_type =>
@@ -385,15 +399,15 @@ begin
 	            when event_set_size =>
 	            	w_ram_en  <= '1';
 	            	w_ram_add <= cur_size_add;
-	            	-- Event Data Size: The event data size contains the size of the event in bytes excluding the header
-	            	w_ram_data <= std_logic_vector(to_unsigned((conv_integer(w_ram_add_reg - last_event_add) - 4 - 1) * 4, w_ram_data'length));
+	            	-- Event Data Size: The event data size contains the size of the event in bytes excluding the event header
+	            	w_ram_data <= std_logic_vector(to_unsigned((conv_integer(w_ram_add_reg - last_event_add) - 4) * 4, w_ram_data'length));
 	            	event_tagging_state <= bank_set_size;
 
 	            when bank_set_size =>
 	            	w_ram_en <= '1';
 	            	w_ram_add <= cur_bank_size_add;
 	            	-- All Bank Size: Size in bytes of the following data plus the size of the bank header
-	            	w_ram_data <= std_logic_vector(to_unsigned((conv_integer(w_ram_add_reg - last_event_add) - 4 - 1) * 4, w_ram_data'length));
+	            	w_ram_data <= std_logic_vector(to_unsigned((conv_integer(w_ram_add_reg - last_event_add) - 6) * 4, w_ram_data'length));
 	            	event_tagging_state <= write_tagging_fifo;
 
 	            when write_tagging_fifo =>
