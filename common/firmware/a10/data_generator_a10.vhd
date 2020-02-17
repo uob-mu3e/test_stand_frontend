@@ -223,11 +223,11 @@ begin
 							data_header_state					<= trailer;
 						elsif (global_time(2 downto 0) = "111") then
 							data_header_state					<= part4;
---						elsif (current_overflow(overflow_idx) = '1') then
---							overflow_idx 						:= overflow_idx + 1;
---							data_header_state					<= overflow;
---						else
---							overflow_idx 						:= overflow_idx + 1;
+						elsif (current_overflow(overflow_idx) = '1') then
+							overflow_idx 						:= overflow_idx + 1;
+							data_header_state					<= overflow;
+						else
+							overflow_idx 						:= overflow_idx + 1;
 						end if;
 							
 					when overflow =>

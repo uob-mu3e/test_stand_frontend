@@ -238,7 +238,7 @@ begin
       memwraddr_last_dma	<= (others => '0');
       state						<= disabled;
       
-      memaddr				<= (others => '0');
+      memaddr				<= (others => '1');
       
       dma_status_register_reg <= (others => '0');
       
@@ -306,7 +306,7 @@ begin
           
           memwraddr_last_dma	<= (others => '0');
           memaddr_last_packet	<= (others => '0');
-          memaddr					<= (others => '0');
+          memaddr					<= (others => '1');
           memwriteaddreoedma	<= (others => '0');
 			 memwriteaddreoedma_long	<= (others => '0');
           words_sent 				<= (others => '0');
@@ -670,7 +670,7 @@ begin
 
       if(state = disabled) then
         memwriteaddr 			<= (others => '0');
-		  memwriteaddr_long 	<= (others => '0');
+        memwriteaddr_long 	<= (others => '0');
         memwriteaddr_last    <= (others => '0');
         memwriteaddreoe		<= (others => '0');
         start_dma				<= '0';
