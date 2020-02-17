@@ -32,10 +32,10 @@ Contents:       Definition of functions to talk to a mupix-based FEB. Designed t
 MupixFEB* MupixFEB::m_instance=NULL;
 
 //Mapping to physical ports of switching board.
-uint16_t MupixFEB::FPGAid_from_ID(int asic){return 0;} //TODO !!!
-uint16_t MupixFEB::ASICid_from_ID(int asic){return 0;}
+uint16_t MupixFEB::FPGAid_from_ID(int asic){return asic/4;}
+uint16_t MupixFEB::ASICid_from_ID(int asic){return asic%4;}
 
-uint16_t MupixFEB::GetNumASICs(){return m_FPGAs.size()*1;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
+uint16_t MupixFEB::GetNumASICs(){return m_FPGAs.size()*4;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
 
 uint32_t default_mupix_dacs[94] =
 {
@@ -147,15 +147,14 @@ int MupixFEB::ConfigureASICs(){
       uint16_t SP_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Port();
       uint16_t FA_ID=ASICid_from_ID(asic);
 
-      //if(!m_FPGAs[FPGAid_from_ID(asic)].IsScEnabled()){
-      //    printf(" [skipped]\n");
-      //    return FE_SUCCESS;
-      //}
-      //if(SB_ID!=m_SB_number){
-      //    printf(" [skipped]\n");
-      //    return FE_SUCCESS;
-      //} //TODO
-      //printf("\n");
+      if(!m_FPGAs[FPGAid_from_ID(asic)].IsScEnabled()){
+          printf(" [skipped]\n");
+          return FE_SUCCESS;
+      }
+      if(SB_ID!=m_SB_number){
+          printf(" [skipped]\n");
+          return FE_SUCCESS;
+      } //TODO
 
       cm_msg(MINFO, "MupixFEB" , "Configuring sensor %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d", m_odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
 
@@ -247,14 +246,14 @@ int MupixFEB::ConfigureBoards(){
 
       uint32_t board_ID=board;
 
-      //if(!m_FPGAs[FPGAid_from_ID(board)].IsScEnabled()){
-      //    printf(" [skipped]\n");
-      //    return FE_SUCCESS;
-      //}
-      //if(SB_ID!=m_SB_number){
-      //    printf(" [skipped]\n");
-      //    return FE_SUCCESS;
-      //} //TODO
+      if(!m_FPGAs[FPGAid_from_ID(board)].IsScEnabled()){
+          printf(" [skipped]\n");
+          return FE_SUCCESS;
+      }
+      if(SB_ID!=m_SB_number){
+          printf(" [skipped]\n");
+          return FE_SUCCESS;
+      } //TODO
       //printf("\n");
 
       cm_msg(MINFO, "MupixFEB" , "Configuring MuPIX board %s/Settings/Boards/%i/: Mapped to FEB%u -> SB%u.%u", m_odb_prefix,board,FPGAid_from_ID(board),SB_ID,SP_ID);

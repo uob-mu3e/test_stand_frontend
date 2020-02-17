@@ -63,6 +63,7 @@
 #include "mupix_midasodb.h"
 #include "link_constants.h"
 #include "SciFi_FEB.h"
+#include "Tiles_FEB.h"
 #include "mupix_FEB.h"
 /*-- Globals -------------------------------------------------------*/
 
@@ -100,6 +101,7 @@ mudaq::DmaMudaqDevice * mup;
 INT read_sc_event(char *pevent, INT off);
 INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
+INT read_scitiles_sc_event(char *pevent, INT off);
 INT read_mupix_sc_event(char *pevent, INT off);
 void sc_settings_changed(HNDLE, HNDLE, int, void *);
 void switching_board_mask_changed(HNDLE, HNDLE, int, void *);
@@ -129,6 +131,7 @@ const char *sc_settings_str[] = {
 "MupixConfig = BOOL : 0",
 "MupixBoard = BOOL : 0",
 "SciFiConfig = BOOL : 0",
+"SciTilesConfig = BOOL : 0",
 "Reset Bypass Payload = DWORD : 0",
 "Reset Bypass Command = DWORD : 0",
 "[32] Temp0",
@@ -138,7 +141,7 @@ const char *sc_settings_str[] = {
 nullptr
 };
 
-enum EQUIPMENT_ID {Switching=0,SciFi,Mupix};
+enum EQUIPMENT_ID {Switching=0,SciFi,SciTiles,Mupix};
 EQUIPMENT equipment[] = {
 
    {"Switching",                /* equipment name */
@@ -170,6 +173,21 @@ EQUIPMENT equipment[] = {
      1,                         /* log history every event */
      "", "", "",},
      read_scifi_sc_event,          /* readout routine */
+    },
+   {"SciTiles",                    /* equipment name */
+    {4, 0,                      /* event ID, trigger mask */
+     "SYSTEM",                  /* event buffer */
+     EQ_PERIODIC,                 /* equipment type */
+     0,                         /* event source crate 0, all stations */
+     "MIDAS",                   /* format */
+     TRUE,                      /* enabled */
+     RO_ALWAYS | RO_ODB,        /* read always and update ODB */
+     10000,                      /* read every 10 sec */
+     0,                         /* stop run after this event limit */
+     0,                         /* number of sub events */
+     1,                         /* log history every event */
+     "", "", "",},
+     read_scitiles_sc_event,          /* readout routine */
     },
     {"Mupix",                    /* equipment name */
     {2, 0,                      /* event ID, trigger mask */
@@ -259,7 +277,6 @@ INT frontend_init()
 
    // open mudaq
    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
-/*
    if ( !mup->open() ) {
        cm_msg(MERROR, "frontend_init" , "Could not open device");
        return FE_ERR_DRIVER;
@@ -274,9 +291,7 @@ INT frontend_init()
    //set link enables so slow control can pass 
    try{ set_feb_enable(get_link_active_from_odb()); }
    catch(...){ return FE_ERR_ODB;}
-*/
 
-printf("...\n");
    //SciFi setup part
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
    SciFiFEB::Create(*mup,hDB,equipment[EQUIPMENT_ID::SciFi].name,"/Equipment/SciFi"); //create FEB interface signleton for scifi
@@ -297,7 +312,21 @@ printf("...\n");
    }
 
    //end of SciFi setup part
-/*
+   //SciTiles setup part
+   set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Initializing...", "var(--myellow)");
+   TilesFEB::Create(*mup,hDB,equipment[EQUIPMENT_ID::SciTiles].name,"/Equipment/SciTiles"); //create FEB interface signleton for scifi
+   TilesFEB::Instance()->SetSBnumber(switch_id);
+   status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciTiles", TilesFEB::Instance());
+   if(status != SUCCESS){
+      set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Start up failed", "var(--mred)");
+      return status;
+   }
+    //init all values on FEB
+   TilesFEB::Instance()->WriteAll();
+
+   set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Ok", "var(--mgreen)");
+   //end of SciTiles setup part
+
    //Mupix setup part
    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");
    MupixFEB::Create(*mup,hDB,equipment[EQUIPMENT_ID::Mupix].name,"/Equipment/Mupix"); //create FEB interface signleton for scifi
@@ -309,7 +338,7 @@ printf("...\n");
    }
    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
    //end of Mupix setup part
-*/
+
    /*
     * Set our transition sequence. The default is 500. Setting it
     * to 400 means we are called BEFORE most other clients.
@@ -364,6 +393,13 @@ try{
 
    //configure ASICs for SciFi
    status=SciFiFEB::Instance()->ConfigureASICs();
+   if(status!=SUCCESS){
+      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
+      return CM_TRANSITION_CANCELED;
+   }
+
+   //configure ASICs for Tiles
+   status=TilesFEB::Instance()->ConfigureASICs();
    if(status!=SUCCESS){
       cm_msg(MERROR,"switch_fe","ASIC configuration failed");
       return CM_TRANSITION_CANCELED;
@@ -513,6 +549,19 @@ INT read_scifi_sc_event(char *pevent, INT off){
     SciFiFEB::Instance()->ReadBackAllCounters();
     SciFiFEB::Instance()->ReadBackAllRunState();
     SciFiFEB::Instance()->ReadBackAllDatapathStatus();
+    return 0;
+}
+
+/*--- Read Slow Control Event from SciTiles to be put into data stream --------*/
+
+INT read_scitiles_sc_event(char *pevent, INT off){
+	static int i=0;
+    printf("Reading SciTiles FEB status data from all FEBs %d\n",i++);
+    //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
+    //Add readout function for this one that gets data from class variables and writes midas banks
+    TilesFEB::Instance()->ReadBackAllCounters();
+    TilesFEB::Instance()->ReadBackAllRunState();
+    TilesFEB::Instance()->ReadBackAllDatapathStatus();
     return 0;
 }
 
@@ -742,6 +791,13 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
     }
 */
     if (std::string(key.name) == "SciFiConfig" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+          int status=SciFiFEB::Instance()->ConfigureASICs();
+          if(status!=SUCCESS){ 
+         	//TODO: what to do? 
+          }
+	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
+    }
+    if (std::string(key.name) == "SciTilesConfig" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
           int status=SciFiFEB::Instance()->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
