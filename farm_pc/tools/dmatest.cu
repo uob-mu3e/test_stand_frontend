@@ -145,9 +145,9 @@ int main(int argc, char *argv[])
     // Enable all links (SC)
     mu.write_register_wait(FEB_ENABLE_REGISTER_W, 0xF, 100);
     // Enable all links (DATA)
-    //mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0xF, 100);
+    mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0xF, 100);
     // Enable only one link
-    mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0x1, 100);
+    //mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0x1, 100);
 
     mudaq::DmaMudaqDevice::DataBlock block;
     uint32_t newoffset;

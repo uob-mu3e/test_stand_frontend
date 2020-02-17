@@ -56,6 +56,7 @@ uint32_t wlen;
 uint32_t lastreadindex;
 uint32_t lastWritten;
 uint32_t lastlastWritten;
+uint32_t lastRunWritten;
 bool moreevents;
 bool firstevent;
 
@@ -156,7 +157,6 @@ INT frontend_init()
    for (int i = 0; i <  dma_buf_nwords ; i++) {
       (dma_buf)[i] = 0;
    }
-   lastlastWritten = 0;
    
    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
    if ( !mup->open() ) {
@@ -171,6 +171,11 @@ INT frontend_init()
    cm_msg(MINFO, "frontend_init" , "Mudaq device is ok");
    cout << "Mudaq device is ok " << endl;
    
+   // set fpga write pointers
+   lastWritten = 0;
+   lastlastWritten = 0;
+   lastRunWritten = mup->last_written_addr();
+
    struct mesg user_message;
    user_message.address = dma_buf;
    user_message.size = dma_buf_size;
@@ -331,8 +336,9 @@ INT begin_of_run(INT run_number, char *error)
    
    mu.write_register(DATAGENERATOR_REGISTER_W,reg);
    
-   lastWritten = mu.last_written_addr();
-   lastlastWritten = lastWritten;//lastWritten;
+   lastWritten = 0;
+   lastlastWritten = 0;
+   lastRunWritten = mu.last_written_addr();//lastWritten;
    
     //mu.enable_continous_readout(1);
    // Note: link masks are already set during fe_init and via ODB callback
@@ -554,18 +560,19 @@ INT check_event(volatile uint32_t * buffer, uint32_t idx, bool rp_before_wp)
     return 0;
 }
 
-INT update_equipment_status(int status, EQUIPMENT *eq)
+INT update_equipment_status(int status, int cur_status, EQUIPMENT *eq)
 {
     
     if ( status != DB_SUCCESS ) {
         set_equipment_status(eq[0].name, "Buffer ERROR", "var(--myellow)");
         return -1;
     }
-    
-    if ( status == DB_SUCCESS ) {
+
+    if ( cur_status != DB_SUCCESS ) {
         set_equipment_status(eq[0].name, "Running", "var(--mgreen)");
-        return DB_SUCCESS;
     }
+
+    return DB_SUCCESS;
 
 }
 
@@ -578,9 +585,8 @@ INT read_stream_thread(void *param)
     mudaq::DmaMudaqDevice & mu = *mup;
 
     uint32_t* pdata;
-    uint32_t lastEndOfEvent = 0;
-    uint32_t lastlastEndOfEvent = 0;
     int status;
+    int cur_status = -1;
     wlen = 0;
     readindex = 0;
    
