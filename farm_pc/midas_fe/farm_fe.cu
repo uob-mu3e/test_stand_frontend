@@ -710,57 +710,68 @@ INT read_stream_thread(void *param)
                 continue;
             }
 
-            if ( lastWritten == lastlastWritten ) continue;
-              
-            
-            
+            if ( lastWritten == lastRunWritten ) {
+                continue;
+            } else {
+                lastRunWritten = 999999999;
+            }
 
-            
-            if(lastlastWritten < lastWritten){
-                
-                //WP before RP. Complete copy
-                wlen = (lastWritten - lastlastWritten); // len in 32 bit words
-                copy_n(&dma_buf[lastlastWritten], wlen, pdata); // len in 32 bit words
-                
-                rb_status = rb_increment_wp(rbh, wlen * 4); // in byte length
-                //cout << "1------" << endl;
-                //cout << (wlen) * 4 << " ";
-                //cout << wlen << " ";
-                //cout << lastlastWritten << " ";
-                //cout << dma_buf_nwords << endl;
-                //update_equipment_status(rb_status, equipment);
-                
-                //readindex += wlen+1;
-                //readindex = readindex%dma_buf_nwords;
-                
+            if(lastWritten % dma_buf_nwords == lastlastWritten % dma_buf_nwords) continue;
+
+            printf("lastlastWritten = 0x%08X\n", lastlastWritten);
+            printf("lastWritten = 0x%08X\n", lastWritten);
+//            break;
+
+
+
+            if(lastWritten < lastlastWritten) lastWritten += dma_buf_nwords;
+
+//            uint32_t rb_space = rb_get_space(rbh);
+            uint32_t offset = lastlastWritten;
+            while(true) {
+                printf("event: data[0] = 0x%08X\n", dma_buf[(offset + 0) % dma_buf_nwords]);
+                printf("event: data[1] = 0x%08X\n", dma_buf[(offset + 1) % dma_buf_nwords]);
+                printf("event: data[2] = 0x%08X\n", dma_buf[(offset + 2) % dma_buf_nwords]);
+                printf("event: data[3] = 0x%08X\n", dma_buf[(offset + 3) % dma_buf_nwords]);
+
+                // check enough words for header
+                if(lastWritten - offset < 4) break;
+                uint32_t eventLength = dma_buf[(offset + 3) % dma_buf_nwords];
+                // check enough words for data
+                if(lastWritten - offset < 4 + eventLength / 4) break;
+//                if(offset - lastlastWritten + 4 + eventLength / 4 > rb_space / 4) break;
+                offset += 4; // header
+                offset += eventLength / 4; // data
+                //printf("1. event: offset = 0x%08X, eventLength = 0x%08X, data = 0x%08X\n", offset, eventLength, dma_buf[offset]);
             }
-            
-            else{
-                
-                //RP before WP. May wrap
-                //copy with wrapping
-                //#1
-                copy_n(&dma_buf[lastlastWritten], dma_buf_nwords - lastlastWritten, pdata); // len in 32 bit words
-                //rb_status = rb_increment_wp(rbh, (dma_buf_nwords - lastlastWritten) * 4); // in byte length
-                
-                //update_equipment_status(rb_status, equipment);
-                            
-                //#2
-                wlen = lastWritten; // len in 32 bit words
-                copy_n(&dma_buf[0], wlen, pdata); // len in 32 bit words
-                
-                rb_status = rb_increment_wp(rbh, (dma_buf_nwords - lastlastWritten + wlen) * 4); // in byte length
-                //cout << "2------" << endl;
-                //cout << (dma_buf_nwords - lastlastWritten + wlen) * 4 << " ";
-                //cout << wlen << " ";
-                //cout << lastlastWritten << " ";
-                //cout << dma_buf_nwords << endl;
-                //update_equipment_status(rb_status, equipment);
-                //readindex += wlen+1;
-                //readindex = readindex%dma_buf_nwords;
+            printf("offset = 0x%08X, lastWritten = 0x%08X\n", offset, lastWritten);
+            lastWritten = offset % dma_buf_nwords;
+
+            if(lastWritten == lastlastWritten) continue;
+
+            printf("lastlastWritten = 0x%08X\n", lastlastWritten);
+            printf("lastWritten = 0x%08X\n", lastWritten);
+
+            uint32_t wlen = 0;
+            if(lastWritten < lastlastWritten) {
+                // partial copy when wrapping
+                copy_n(&dma_buf[lastlastWritten], dma_buf_nwords - lastlastWritten, pdata);
+                wlen += dma_buf_nwords - lastlastWritten;
+                lastlastWritten = 0;
             }
-        lastlastWritten = lastWritten;
-       
+            if(lastlastWritten != lastWritten) {
+                // complete copy
+                copy_n(&dma_buf[lastlastWritten], lastWritten - lastlastWritten, pdata + wlen);
+                wlen += lastWritten - lastlastWritten;
+                lastlastWritten = lastWritten;
+            }
+            printf("wlen = 0x%08X\n", wlen);
+
+            rb_status = rb_increment_wp(rbh, wlen * 4); // in byte length
+            cur_status = update_equipment_status(rb_status, cur_status, equipment);
+
+
+
    }
    // tell framework that we finished
    signal_readout_thread_active(0, FALSE);
