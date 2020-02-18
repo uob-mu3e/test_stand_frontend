@@ -188,13 +188,13 @@ int main(int argc, char *argv[])
 
 //        myfile << "endofevent" << endl;
         lastendofevent = endofevent;
-        endofevent = mu.last_endofevent_addr();
+        endofevent = mu.last_endofevent_addr(); // now begin of event :)
 
         if ((endofevent+1)*8 > lastlastWritten) {
             //cout << "endofevent" << endl;
             continue;
         }
-        if ((dma_buf[(endofevent+1)*8-1] == 0xAFFEAFFE) or (dma_buf[(endofevent+1)*8-1] == 0x0000009c)){
+        if ((dma_buf[(endofevent)*8-1] == 0xAFFEAFFE or dma_buf[(endofevent)*8-1] == 0x0000009c) && dma_buf[(endofevent)*8] == 0x1){
             cout << hex << (endofevent+1)*8 << " " << lastWritten << " " << dma_buf[(endofevent+1)*8] << endl;
         };
 //        for (int i = 0; i < 20; i++) {
