@@ -726,18 +726,25 @@ INT read_stream_thread(void *param)
                 uint32_t eventLength = dma_buf[(offset + 3) % dma_buf_nwords];
                 // check enough words for data
                 if(lastWritten - offset < 4 + eventLength / 4) break;
-                if(offset - lastlastWritten + 4 + eventLength / 4 > max_event_size / 4) break;
+                if(eventLength > max_event_size) {
+                    printf("ERROR: (eventLength = 0x%08X) > max_event_size\n", eventLength);
+                    abort();
+                    exit(1);
+                }
+//                printf("event: id = 0x%08X\n", dma_buf[(offset + 1) % dma_buf_nwords]);
                 offset += 4; // header
                 offset += eventLength / 4; // data
-                //printf("1. event: offset = 0x%08X, eventLength = 0x%08X, data = 0x%08X\n", offset, eventLength, dma_buf[offset]);
+//                printf("event: offset = 0x%08X, eventLength = 0x%08X, data = 0x%08X\n", offset, eventLength, dma_buf[offset % dma_buf_nwords]);
             }
-//            printf("offset = 0x%08X, lastWritten = 0x%08X\n", offset, lastWritten);
-            lastWritten = offset % dma_buf_nwords;
+//            printf("offset = 0x%08X, lastWritten = 0x%08X, lastlastWritten = 0x%08X\n", offset, lastWritten, lastlastWritten);
+            lastWritten = offset;
+            if(lastWritten > dma_buf_nwords) lastWritten -= dma_buf_nwords;
 
             if(lastWritten == lastlastWritten) continue;
 
             // obtain buffer space
             status = rb_get_wp(rbh, (void **)&pdata, 0);
+//            printf("rb_get_wp = 0x%08X\n", pdata);
 
             if (status == DB_TIMEOUT) {
                 set_equipment_status(equipment[0].name, "Buffer full", "var(--myellow)");
@@ -752,6 +759,11 @@ INT read_stream_thread(void *param)
             //printf("lastlastWritten = 0x%08X\n", lastlastWritten);
             //printf("lastWritten = 0x%08X\n", lastWritten);
 
+            // sanity check
+            if(lastlastWritten + 3 < dma_buf_nwords and dma_buf[lastlastWritten + 3] > 0x1000) {
+                printf("NOT GOOD\n");
+            }
+
             uint32_t wlen = 0;
             if(lastWritten < lastlastWritten) {
                 // partial copy when wrapping
@@ -759,7 +771,7 @@ INT read_stream_thread(void *param)
                 wlen += dma_buf_nwords - lastlastWritten;
                 lastlastWritten = 0;
             }
-            if(lastlastWritten != lastWritten) {
+            if(lastWritten != lastlastWritten) {
                 // complete copy
                 copy_n(&dma_buf[lastlastWritten], lastWritten - lastlastWritten, pdata + wlen);
                 wlen += lastWritten - lastlastWritten;
