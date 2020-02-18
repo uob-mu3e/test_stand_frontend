@@ -115,13 +115,13 @@ elsif(clk'event and clk = '1') then
         when TIMESTAMP2 =>      -- 4 after link_flag: counter might be available (timerend = 0 and hits available) or 1 after cnt_ena
             tomemdata           <= timestamp_reg(15 downto 0) & x"0000";	-- for now: send FPGA timestamp
             tomemena            <= '1';
-            NS                  <= OVERFLOW;
+            NS                  <= EVCOUNT;
             
         when EVCOUNT =>				-- 2 or 3 after link_flag
 			tomemdata			<= '0' & eventcounter(30 downto 0);		-- counts all blocks that are produced by this entity
 			eventcounter		<= eventcounter + '1';
 			tomemena				<= '1';
-			NS						<= TIMESTAMP1;
+			NS						<= OVERFLOW;
 		when OVERFLOW	=>				-- 1 or 2 after cnt_ena 
 			tomemdata			<= (others => '0');	-- here some useful information can be transferred
 			tomemena				<= '1';
