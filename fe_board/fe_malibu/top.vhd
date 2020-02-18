@@ -248,7 +248,7 @@ begin
         N_LINKS => N_LINKS--,
     )
     port map (
-        i_fpga_id       => X"FEB2",
+        i_fpga_id       => X"FEB3",
         -- mutrig FEB type
         i_fpga_type     => "111000",
 

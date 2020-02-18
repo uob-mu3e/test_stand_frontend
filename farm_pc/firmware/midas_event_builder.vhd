@@ -299,8 +299,10 @@ begin
                                 w_ram_data  		<= x"31424546";
                             elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB2") then
                                 w_ram_data  		<= x"32424546";
+                            elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB3") then
+                                w_ram_data  		<= x"33424546";
                             else
-                                w_ram_data  		<= x"33424546"; -- We should not see this !! (FEB3)
+                                w_ram_data  		<= x"34424546"; -- We should not see this !! (FEB3)
                             end if;
 							--w_ram_data  		<= x"30424546"; -- one link fixed bank name + std_logic_vector(to_unsigned(current_link, 4));
 							event_tagging_state <= bank_type;

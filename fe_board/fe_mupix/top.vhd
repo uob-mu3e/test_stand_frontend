@@ -397,7 +397,7 @@ begin
         NIOS_CLK_MHZ_g  => 50.0--,
     )
     port map (
-        i_fpga_id       => X"FEB0",
+        i_fpga_id       => X"FEB2",
         i_fpga_type     => "111010",
 
         i_i2c_scl       => i2c_scl,
