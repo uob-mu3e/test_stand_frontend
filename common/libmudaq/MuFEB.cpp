@@ -123,6 +123,22 @@ const char *link_settings_str[] = {
    */
 }
 
+int MuFEB::WriteFEBID(){
+    for(auto FEB: m_FPGAs){
+       if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+       if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+       uint32_t val=0xFEB0;
+       val+=FEB.GetLinkID();
+
+       char reportStr[255];
+       sprintf(reportStr,"Setting FEBID of %s: Link%u, SB%u.%u to %4.4x",
+             FEB.GetLinkName().c_str(),FEB.GetLinkID(),
+             FEB.SB_Number(),FEB.SB_Port(),val);
+       cm_msg(MINFO,"MuFEB::WriteFEBID",reportStr);
+       m_mu.FEBsc_write(FEB.SB_Port(), &val, 1 , (uint32_t) 0xFFFB, m_ask_sc_reply);
+
+    }
+}
 
 int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
    //map to SB fiber

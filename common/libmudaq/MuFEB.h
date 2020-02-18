@@ -52,6 +52,7 @@ class MuFEB {
       int ReadBackRunState(uint16_t FPGA_ID);
       void ReadBackAllRunState(){for(size_t i=0;i<m_FPGAs.size();i++) ReadBackRunState(i);};
 
+      int WriteFEBID();
 
    protected:
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
@@ -61,6 +62,7 @@ class MuFEB {
       //Return typeID for building FEB ID map
       virtual FEBTYPE  GetTypeID()=0;
       virtual bool IsSecondary(int t){return false;}
+
 
       //list of all FPGAs mapped to this subdetector. Used for pushing common configurations to all FEBs
       //TODO: extend to map<ID, FPGA_ID_TYPE> with more information (name, etc. for reporting).

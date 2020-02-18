@@ -302,7 +302,8 @@ INT frontend_init()
       return status;
    }
     //init all values on FEB
-   //SciFiFEB::Instance()->WriteAll();
+   SciFiFEB::Instance()->WriteAll();
+   SciFiFEB::Instance()->WriteFEBID();
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
    {
@@ -323,6 +324,7 @@ INT frontend_init()
    }
     //init all values on FEB
    TilesFEB::Instance()->WriteAll();
+   TilesFEB::Instance()->WriteFEBID();
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Ok", "var(--mgreen)");
    //end of SciTiles setup part
@@ -337,6 +339,7 @@ INT frontend_init()
       return status;
    }
    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
+   MupixFEB::Instance()->WriteFEBID();
    //end of Mupix setup part
 
    /*
