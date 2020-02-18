@@ -146,7 +146,7 @@ namespace mudaq {
 
   bool MudaqDevice::open()
 {
-    // O_SYNC only affects 'write´. not really needed but doesnt hurt and makes
+    // O_SYNC only affects 'write'. not really needed but doesnt hurt and makes
     // things safer if we later decide to use 'write'.
     _fd = ::open(_path.c_str(), O_RDWR | O_SYNC);
     if (_fd < 0) {
