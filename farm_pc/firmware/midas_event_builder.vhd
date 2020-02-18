@@ -460,6 +460,7 @@ begin
 				o_state_out 		<= x"B";
 				o_event_wren		<= i_wen_reg;
 				r_ram_add			<= r_ram_add + '1';
+                o_endofevent <= '1'; -- begin of event
 				event_counter_state	<= runing;
 				
 			when runing =>
@@ -467,7 +468,6 @@ begin
 				o_event_wren	<= i_wen_reg;
 				if(r_ram_add = event_last_ram_add - '1') then
 					event_counter_state	<= waiting;
-					o_endofevent <= '1';
 				else
 					r_ram_add <= r_ram_add + '1';
 				end if;
