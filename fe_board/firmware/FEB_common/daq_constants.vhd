@@ -9,9 +9,11 @@ package daq_constants is
 
 -- multi-purpose types
 subtype reg32 is std_logic_vector(31 downto 0);
+subtype reg16 is std_logic_vector(15 downto 0);
 constant NREGISTERS : integer := 64;
 type reg32array is array (NREGISTERS-1 downto 0) of reg32;
 type reg32array_t is array (natural range <>) of reg32;
+type reg16array_t is array (natural range <>) of reg16;
 
 subtype byte_t is std_logic_vector(7 downto 0);
 type bytearray_t is array (natural range <>)  of byte_t;

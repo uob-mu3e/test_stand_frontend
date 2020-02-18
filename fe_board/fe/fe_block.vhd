@@ -11,7 +11,7 @@ generic (
     N_LINKS : positive := 1--;
 );
 port (
-    i_fpga_id       : in    std_logic_vector(15 downto 0);
+    i_fpga_id       : in    std_logic_vector(N_LINKS*16 - 1 downto 0);
     -- frontend board type
     -- - 111010 : mupix
     -- - 111000 : mutrig
@@ -142,6 +142,8 @@ architecture arch of fe_block is
     signal qsfp_rx_datak : std_logic_vector(15 downto 0);
     signal pod_rx_data : std_logic_vector(31 downto 0);
     signal pod_rx_datak : std_logic_vector(3 downto 0);
+    
+    signal i_fpga_id_reg : std_logic_vector(N_LINKS*16-1 downto 0) := i_fpga_id;
 
     signal qsfp_tx_data : std_logic_vector(127 downto 0) :=
           X"000000" & work.util.D28_5
@@ -305,7 +307,11 @@ begin
         -- fpga id
         if ( fe_reg.addr(7 downto 0) = X"FB" and fe_reg.re = '1' ) then
             fe_reg.rdata <= (others => '0');
-            fe_reg.rdata(i_fpga_id'range) <= i_fpga_id;
+            fe_reg.rdata(i_fpga_id_reg'range) <= i_fpga_id_reg;
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"FB" and fe_reg.we = '1' ) then
+            fe_reg.rdata <= (others => '0');
+            i_fpga_id_reg(N_LINKS*16-1 downto 0) <= fe_reg.wdata(N_LINKS*16-1 downto 0);
         end if;
         -- fpga type
         if ( fe_reg.addr(7 downto 0) = X"FC" and fe_reg.re = '1' ) then
@@ -446,7 +452,7 @@ begin
         feb_mapping             => feb_mapping--,
     )
     port map (
-        fpga_ID_in              => i_fpga_id,
+        fpga_ID_in              => i_fpga_id_reg,
         FEB_type_in             => i_fpga_type,
         run_state               => run_state_156,
         run_number              => run_number,
@@ -511,7 +517,7 @@ begin
         reset_bypass            => reg_reset_bypass(11 downto 0),
         reset_bypass_payload    => reg_reset_bypass_payload,
         run_number_out          => run_number,
-        fpga_id                 => i_fpga_id,
+        fpga_id                 => i_fpga_id_reg(15 downto 0),
         terminated              => terminated, --TODO: test with two datamergers
         testout                 => open,
 

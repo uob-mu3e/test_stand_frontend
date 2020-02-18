@@ -32,7 +32,7 @@ GENERIC (
 PORT (
     clk                         : in    std_logic; -- 156.25 clk input
     reset                       : in    std_logic;
-    fpga_ID_in                  : in    std_logic_vector(15 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now
+    fpga_ID_in                  : in    std_logic_vector(N_LINKS*16-1 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now
     FEB_type_in                 : in    std_logic_vector(5  downto 0); -- Type of the frontendboard (111010: mupix, 111000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
     run_state                   : in    run_state_t;
     run_number                  : in    std_logic_vector(31 downto 0);
@@ -226,7 +226,7 @@ begin
                     data_is_k(4*i+3 downto 4*i)             <= "0001";
                     data_out (32*i+31 downto 26+32*i)       <= "010101";
                     data_out (32*i+25 downto 24+32*i)       <= "00";
-                    data_out (32*i+23 downto 8 +32*i)       <= fpga_ID_in;
+                    data_out (32*i+23 downto 8 +32*i)       <= fpga_ID_in(16+i*16-1 downto i*16);
                     data_out (32*i+7  downto 0 +32*i)       <= x"bc";
 
                     merger_state                            <= sending_data;
@@ -307,7 +307,7 @@ begin
                     data_is_k(4*i+3 downto 4*i)             <= "0001";
                     data_out(32*i+31 downto 26+32*i)        <= "000111";
                     data_out(32*i+25 downto 24+32*i)        <= data_in_slowcontrol(35 downto 34);
-                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in;
+                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in(16+i*16-1 downto i*16);
                     data_out(32*i+ 7 downto 0 +32*i)        <= x"bc";
                     merger_state                            <= sending_slowcontrol; -- go to sending slowcontrol state next
 
@@ -359,7 +359,7 @@ begin
                     data_is_k(4*i+3 downto 4*i)             <= "0001";
                     data_out(32*i+31 downto 26+32*i)        <= "000111";
                     data_out(32*i+25 downto 24+32*i)        <= data_in_slowcontrol(35 downto 34);
-                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in;
+                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in(16+i*16-1 downto i*16);
                     data_out(32*i+ 7 downto 0 +32*i)        <= x"bc";
                     merger_state                            <= sending_slowcontrol; -- go to sending slowcontrol state next
                 end if;
@@ -411,7 +411,7 @@ begin
                     data_is_k(4*i+3 downto 4*i)             <= "0001";
                     data_out(32*i+31 downto 26+32*i)        <= "000111";
                     data_out(32*i+25 downto 24+32*i)        <= data_in_slowcontrol(35 downto 34);
-                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in;
+                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in(16+i*16-1 downto i*16);
                     data_out(32*i+ 7 downto 0 +32*i)        <= x"bc";
                     merger_state                            <= sending_slowcontrol; -- go to sending slowcontrol state next
 
@@ -421,7 +421,7 @@ begin
                     data_is_k(4*i+3 downto 4*i)             <= "0001";
                     data_out(32*i+31 downto 26+32*i)        <= FEB_type_in;
                     data_out(32*i+25 downto 24+32*i)        <= "00";
-                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in;
+                    data_out(32*i+23 downto 8 +32*i)        <= fpga_ID_in(16+i*16-1 downto i*16);
                     data_out(32*i+ 7 downto 0 +32*i)        <= x"bc";
                     merger_state                            <= sending_data; -- go to sending data state next
                 end if;
