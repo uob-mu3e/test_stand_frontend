@@ -117,7 +117,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
 	
 	e_fifo : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH => 8,
+        ADDR_WIDTH => 14,
         DATA_WIDTH => 36,
         DEVICE => "Arria 10"--,
 	)
@@ -127,7 +127,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
 		rdreq    => link_fifo_ren(i),
 		wrclk    => i_clk_data,
 		rdclk    => i_clk_dma,
-		q    	 => link_fifo_data_out(35 + i * 36 downto i * 36),
+		q    	 	=> link_fifo_data_out(35 + i * 36 downto i * 36),
 		rdempty	 => link_fifo_empty(i),
 		rdusedw	 => open,
 		wrfull	 => open,
