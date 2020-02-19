@@ -712,6 +712,7 @@ INT read_stream_thread(void *param)
 //            printf("lastWritten = 0x%08X\n", lastWritten);
 //            break;
 
+            uint32_t oldEventLength = ((volatile uint32_t*)dma_buf)[(lastlastWritten + 3) % dma_buf_nwords];
             if(lastWritten < lastlastWritten) lastWritten += dma_buf_nwords;
 
 //            uint32_t rb_space = rb_get_space(rbh);
@@ -722,21 +723,21 @@ INT read_stream_thread(void *param)
 //            printf("event: data[3] = 0x%08X\n", dma_buf[(offset + 3) % dma_buf_nwords]);
             while(true) {
                 // check enough words for header
-                if(lastWritten - offset < 4) break;
+                if(offset + 4 > lastWritten) break;
+//                printf("event: offset = 0x%08X, eventLength = 0x%08X, data = 0x%08X\n", offset, eventLength, dma_buf[offset % dma_buf_nwords]);
                 uint32_t eventLength = dma_buf[(offset + 3) % dma_buf_nwords];
-                // check enough words for data
-                if(lastWritten - offset < 4 + eventLength / 4) break;
                 if(eventLength > max_event_size) {
                     printf("ERROR: (eventLength = 0x%08X) > max_event_size\n", eventLength);
                     abort();
                     exit(1);
                 }
-//                printf("event: id = 0x%08X\n", dma_buf[(offset + 1) % dma_buf_nwords]);
+                // check enough words for data
+                if(offset + 4 + eventLength / 4 > lastWritten) break;
                 offset += 4; // header
                 offset += eventLength / 4; // data
-//                printf("event: offset = 0x%08X, eventLength = 0x%08X, data = 0x%08X\n", offset, eventLength, dma_buf[offset % dma_buf_nwords]);
             }
 //            printf("offset = 0x%08X, lastWritten = 0x%08X, lastlastWritten = 0x%08X\n", offset, lastWritten, lastlastWritten);
+//            printf("offset = 0x%08X, lastWritten = 0x%08X, lastlastWritten = 0x%08X, lastEventAddr = 0x%08X, lastEventData = 0x%08X\n", offset, lastWritten, lastlastWritten, mu.last_endofevent_addr()*8, dma_buf[mu.last_endofevent_addr()*8]);
             if(offset > dma_buf_nwords) offset -= dma_buf_nwords;
             lastWritten = offset;
 
@@ -760,8 +761,8 @@ INT read_stream_thread(void *param)
             //printf("lastWritten = 0x%08X\n", lastWritten);
 
             // sanity check
-            if(lastlastWritten + 3 < dma_buf_nwords and dma_buf[lastlastWritten + 3] > 0x1000) {
-                printf("NOT GOOD\n");
+            if(((volatile uint32_t*)dma_buf)[(lastlastWritten + 3) % dma_buf_nwords] != oldEventLength) {
+                printf("ERROR: DMA buffer overflow?\n");
             }
 
             uint32_t wlen = 0;
