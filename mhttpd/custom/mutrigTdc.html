@@ -78,6 +78,7 @@ function init() {
             var name = store_fields.item(i).name;
             document.getElementsByName(name)[0].addEventListener("change", copyPage2json);
     }
+
     //do not allow configuration while run is active
 /*
     mjsonrpc_db_get_values(["/Runinfo"]).then(function(rpc) {
@@ -534,7 +535,6 @@ function copyTDC() {
 					ASICs.push(ch);
 				}
 		}
-
 	}
 	for(var i in ASICs) {
 		for (j in asicsettings_tdc_int) {
@@ -932,6 +932,16 @@ function readback() {
                          <td><input type="checkbox" name="mask"  class="store" /><input type="checkbox" name="mask_rb" class="odb" disabled="disabled" /></td>
                          </tr>
 		</table>
+		<div>
+		<button class="button_2 button_s" type="submit" onclick="mask()">mask</button>
+		<button class="button_2 button_s" type="submit" onclick="mask(false)">unmask</button>
+		<button class="button_2 button_s" type="submit" onclick="copy(false)">copy to</button>
+		<input type="text" name="copyrange" id="copyrange" size="5" value="1-32"/>
+		<input type="checkbox" id="copy_thr" checked="checked" /> thrs
+		<input type="checkbox" id="copy_set" /> set
+		<!--<input type="radio" name="copy_all" value="all"> all-->
+		</div>
+
 		<div class="details">	
 			<span class="toggle" onclick="toggle(channel_table)">&#9776;</span>
 			<div id="channel_table">
@@ -1093,44 +1103,36 @@ title="1: disable TDC test input to this channel. (0 enables TDC input and short
 		</div>
             </section>
             <section class="contentbox" id="controle"  draggable="true">
-               <h2 onclick="toggle(channel_table)">Channel select, Copy & Configuration</h2>
-	       <div class="details">	
-		<span class="toggle" onclick="toggle(select_block)">&#9776;  Channel & ASIC selection</span>
-		<div id="select_block">
-                 <div style="text-align:center;">
+               <div style="text-align:center;">
                     TDC # 
                     <input class="tdc_select" id="tdc_select" type="number" min="0" size="2" value="0" onChange="copyJSON2Page();" />
-                 </div>
-                 <div style="text-align:center;">
+               </div>
+               <div style="text-align:center;">
                     Channel # 
                     <input class="channel_select" id="channel_select" type="number" min="0" size="2" value="0" onChange="copyJSON2Page();" />
-                 </div>
-		</div>
-	       </div>
-	       <div class="details">	
-		<span class="toggle" onclick="toggle(buttons_block)">&#9776;  ODB update & Configuration</span>
-		<div id="buttons_block">
-		 <div style="text-align:center;">
-                     <button class="button_2" type="submit" onclick="storeODB()">Set ODB</button>
-		     <button class="button_2" type="submit" onclick="loadODB(false)">Reload ODB</button>
-		     <button name="modbbutton" class="button_2" id="config"
-		 	    data-odb-path="/Equipment/Switching/Settings/SciFiConfig"
-		 	    data-odb-value="1">
-		 	Configure
-		     </button>
-                     <button class="button_2" type="submit" onclick="storeODB();configure();">Set ODB & Configure</button>
-                     <button class="button_2" type="submit" id="readback" onClick='readback()'  style="display:none;">read ASIC</button>
-                 </div>
-                 <div style="text-align:center;">
-                  <button class="button_2" type="submit" onClick="storeOnDisk()">Save config</button>
-                  <input type="file" name="file" id="file" class="button_2" onChange="loadFromDisk(event)" />
-	          <!--<input type="file" name="filename" id="filename" />-->
-                  <label for="file" class="button_2">Load config</label>
-                 </div>
-                </div>
                </div>
+
+               <div style="text-align:center;">
+                    <button class="button_2" type="submit" onclick="storeODB()">Set ODB</button>
+		    <button class="button_2" type="submit" onclick="loadODB(false)">Reload ODB</button>
+		    <button name="modbbutton" class="button_2" id="config"
+			    data-odb-path="/Equipment/Switching/Settings/SciFiConfig"
+			    data-odb-value="1">
+			Configure
+		    </button>
+                    <button class="button_2" type="submit" onclick="storeODB();configure();">Set ODB & Configure</button>
+                    <button class="button_2" type="submit" id="readback" onClick='readback()'  style="display:none;">read ASIC</button>
+               </div>
+               <div style="text-align:center;">
+                <button class="button_2" type="submit" onClick="storeOnDisk()">Save config</button>
+                <input type="file" name="file" id="file" class="button_2" onChange="loadFromDisk(event)" />
+	        <!--<input type="file" name="filename" id="filename" />-->
+                <label for="file" class="button_2">Load config</label>
+               </div>
+               <div style="text-align:center;" id='message'>&nbsp;</div>
+		<h2 onclick="toggle(dmon_table)">Digital monitor control</h2>
 		<div class="details">	
-			<span class="toggle" onclick="toggle(dmon_table)">&#9776; Digital monitor control</span>
+			<span class="toggle" onclick="toggle(dmon_table)">&#9776;</span>
 			<div id="dmon_table">
 			<table>
 				<thead>
@@ -1151,26 +1153,7 @@ title="1: disable TDC test input to this channel. (0 enables TDC input and short
 				</tbody>
 			</table>
 		</div>
-	       </div>
-	       <div class="details">	
-		<span class="toggle"">&#9776;  Copy / mask channels</span>
-		<div>
-		<button class="button_2 button_s" type="submit" onclick="mask()">mask</button>
-		<button class="button_2 button_s" type="submit" onclick="mask(false)">unmask</button>
-		<button class="button_2 button_s" type="submit" onclick="copy(false)">copy to</button>
-		<input type="text" name="copyrange" id="copyrange" size="3" value="0-255"/>
-		<input type="checkbox" id="copy_thr" />thrs
-		<input type="checkbox" id="copy_set" checked="checked" />set
-		<!--<input type="radio" name="copy_all" value="all"> all-->
 		</div>
-	       </div>
-	       <div class="details">	
-		<span class="toggle"">&#9776;  Copy TDC & ASIC settings</span>
-		<div>
-		<button class="button_2 button_s" type="submit" onclick="copyTDC()">Copy to TDC</button>
-		<input type="text" name="copyrange_tdc" id="copyrange_tdc" size="5" value="0-7"/>
-		</div>
-	       </div>
             </section>
         </div>
 <div id="updateStatus" align="left">
