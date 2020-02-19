@@ -55,7 +55,7 @@
 #include <history.h>
 #include "midas.h"
 #include "mfe.h"
-
+#include "string.h"
 #include "mudaq_device_scifi.h"
 
 //Slow control for mutrig/scifi ; mupix
@@ -308,8 +308,7 @@ INT frontend_init()
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
    {
    db_create_key(hDB, 0, "Custom/SciFi-ASICs&", TID_STRING);
-   const char * name = "mutrigTdc.html";
-   db_set_value(hDB,0,"Custom/SciFi-ASICs&", name, sizeof(name), 1, TID_STRING);
+   db_set_value(hDB,0,"Custom/SciFi-ASICs&", "mutrigTdc.html", sizeof("mutrigTdc.html"), 1, TID_STRING);
    }
 
    //end of SciFi setup part
@@ -327,6 +326,12 @@ INT frontend_init()
    TilesFEB::Instance()->WriteFEBID();
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Ok", "var(--mgreen)");
+
+   {
+   db_create_key(hDB, 0, "Custom/SciTiles-ASICs&", TID_STRING);
+   db_set_value(hDB,0,"Custom/SciTiles-ASICs&", "tile_custompage.html", sizeof("tile_custompage.html"), 1, TID_STRING);
+   }
+
    //end of SciTiles setup part
 
    //Mupix setup part
