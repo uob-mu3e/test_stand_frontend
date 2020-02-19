@@ -52,7 +52,7 @@ bool moreevents;
 bool firstevent;
 
 /* maximum event size produced by this frontend */
-INT max_event_size = dma_buf_nwords;
+INT max_event_size = dma_buf_size;
 
 /* maximum event size for fragmented events (EQ_FRAGMENTED) */
 INT max_event_size_frag = 5 * 1024 * 1024;
@@ -737,8 +737,8 @@ INT read_stream_thread(void *param)
 //                printf("event: offset = 0x%08X, eventLength = 0x%08X, data = 0x%08X\n", offset, eventLength, dma_buf[offset % dma_buf_nwords]);
             }
 //            printf("offset = 0x%08X, lastWritten = 0x%08X, lastlastWritten = 0x%08X\n", offset, lastWritten, lastlastWritten);
+            if(offset > dma_buf_nwords) offset -= dma_buf_nwords;
             lastWritten = offset;
-            if(lastWritten > dma_buf_nwords) lastWritten -= dma_buf_nwords;
 
             if(lastWritten == lastlastWritten) continue;
 
@@ -781,7 +781,7 @@ INT read_stream_thread(void *param)
 
             rb_status = rb_increment_wp(rbh, wlen * 4); // in byte length
             if(rb_status != DB_SUCCESS) {
-                printf("warn: rb_status != DB_SUCCESS\n");
+                printf("ERROR: rb_status != DB_SUCCESS\n");
             }
             cur_status = update_equipment_status(rb_status, cur_status, equipment);
    }
