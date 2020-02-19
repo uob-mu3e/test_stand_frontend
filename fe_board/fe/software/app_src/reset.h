@@ -1,8 +1,27 @@
 #include "stdlib.h"
 
+void menu_print_rate() {
+    auto& rate = sc.ram->regs.fe.merger_rate_count;
+    while (1) {
+            char cmd;
+            if(read(uart, &cmd, 1) > 0) switch(cmd) {
+            case 'q':
+                return;
+            default:
+                printf("invalid command: '%c'\n", cmd);
+            }   break;
+
+            printf("merger rate:  0x%08x\n",rate);
+
+            usleep(200000);
+        }
+}
+
 void menu_reset() {
     auto& reset_bypass = sc.ram->regs.fe.reset_bypass;
     auto& reset_bypass_payload = sc.ram->regs.fe.reset_bypass_payload;
+    auto& rate = sc.ram->regs.fe.merger_rate_count;
+        
     alt_u32 payload = 0x0;
     char str[2] = {0};
 
@@ -12,6 +31,7 @@ void menu_reset() {
 
         printf("\n");
         printf("fe.reset_bypass = 0x%04X\n", reset_bypass);
+        printf("fe.reset_bypass = 0x%08X\n", rate);
 	printf("fe.reset_bypass: run state=");
         switch((reset_bypass >> 16) & 0x3ff) {
 		case 1<<0: printf("RUN_STATE_IDLE\n"); break;
@@ -55,6 +75,7 @@ void menu_reset() {
         printf("  [7] => stop reset\n");
         printf("  [8] => start link test\n");
         printf("  [9] => stop link test\n");
+        printf("  [r] => print rate\n");
 
         printf("  [p] => set payload   payload: 0x%08x\n", payload);
 
@@ -91,6 +112,9 @@ void menu_reset() {
             break;
         case '9':
             reset_bypass = 0x0121;
+            break;
+        case 'r':
+            menu_print_rate();
             break;
         case 'p':
             payload = 0x0;

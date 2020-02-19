@@ -130,6 +130,7 @@ architecture arch of fe_block is
     signal terminated : std_logic;
 
     signal run_number : std_logic_vector(31 downto 0);
+    signal merger_rate_count : std_logic_vector(31 downto 0);
 
     signal reconfig_clk : std_logic;
 
@@ -296,6 +297,10 @@ begin
             reg_reset_bypass_payload <= fe_reg.wdata;
         end if;
 
+        -- rate measurement
+        if ( fe_reg.addr(7 downto 0) = X"F6" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= merger_rate_count;
+        end if;
 
         -- mscb
 
@@ -475,6 +480,7 @@ begin
         can_terminate           => i_can_terminate,
         o_terminated            => terminated,
         data_priority           => '0',
+        o_rate_count            => merger_rate_count,
 
         reset                   => not reset_156_n,
         clk                     => i_clk_156--,

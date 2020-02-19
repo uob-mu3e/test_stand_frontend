@@ -53,9 +53,9 @@ PORT (
     override_data_is_k_in       : in    std_logic_vector(3 downto 0);
     override_req                : in    std_logic;
     override_granted            : out   std_logic_vector(N_LINKS-1 downto 0);
-    data_priority               : in    std_logic--; -- 0: slowcontrol packets have priority, 1: data packets have priority
-    --leds                        : out   std_logic_vector(3 downto 0) -- debug
-);
+    data_priority               : in    std_logic; -- 0: slowcontrol packets have priority, 1: data packets have priority
+    o_rate_count                : out   std_logic_vector(31 downto 0)--;
+    );
 END ENTITY;
 
 architecture rtl of data_merger is
@@ -70,12 +70,16 @@ architecture rtl of data_merger is
     constant K284_datak                         : std_logic_vector(3 downto 0) := "0001";
     constant K307                               : std_logic_vector(7 downto 0) := x"fe";
     
-    signal   terminated                         : std_logic_vector(N_LINKS-1 downto 0);
+    signal   terminated                         : std_logic_vector(   N_LINKS-1 downto 0);
     signal   data_out                           : std_logic_vector(32*N_LINKS-1 downto 0);
-    signal   data_is_k                          : std_logic_vector(4*N_LINKS-1 downto 0);
+    signal   data_is_k                          : std_logic_vector(4 *N_LINKS-1 downto 0);
+    signal   rate_counter                       : unsigned(31 downto 0);
+    signal   time_counter                       : unsigned(31 downto 0);
+
 BEGIN 
 
 o_terminated    <= and_reduce(terminated);
+
 
 -- TODO: make SC Link selectable / is SC part synthesised away if no sc_rx connected ??
 feb_map: for j in N_LINKS-1 downto 0 generate
@@ -84,6 +88,20 @@ begin
     o_data_is_k(4*(feb_mapping(j)+1)-1 downto 4*feb_mapping(j)) <= data_is_k(3+4*j downto 4*j);
 end generate;
 
+
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if (time_counter > x"9502f90") then
+                o_rate_count    <= std_logic_vector(x"9502f90" * N_LINKS - rate_counter)(31 downto 0);
+                time_counter    <= (others => '0');
+                rate_counter    <= (others => '0');
+            else
+                rate_counter    <= rate_counter + work.util.count_bits(data_is_k);
+                time_counter    <= time_counter + 1;
+            end if;
+        end if;
+    end process;
 
 g_merger: for i in N_LINKS-1 downto 0 generate
 

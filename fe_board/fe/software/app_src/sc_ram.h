@@ -124,6 +124,8 @@ struct sc_ram_t {
                 alt_u32 reset_bypass; //11 downto 0: requested bypass (R/W) ; 9+16 downto 16: actual runstate (R)
 
                 alt_u32 reset_bypass_payload;
+                
+                alt_u32 merger_rate_count;
 
                 alt_u32 mscb;
             } fe;
