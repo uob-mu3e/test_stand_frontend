@@ -597,8 +597,9 @@ INT read_stream_thread(void *param) {
     // obtain ring buffer for inter-thread data exchange
     int rbh = get_event_rbh(0);
 
+    uint32_t max_requested_words = dma_buf_nwords/2;
     // request to read dma_buffer_size/2 (count in blocks of 256 bits)
-    mu.write_register_wait(0xC, dma_buf_nwords/2 / (256/32), 100);
+    mu.write_register_wait(0xC, max_requested_words / (256/32), 100);
 
     while (is_readout_thread_enabled()) {
         // don't readout events if we are not running
@@ -611,22 +612,18 @@ INT read_stream_thread(void *param) {
 
         set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
 
-        printf("before = %d\n", mu.read_register_ro(0x1C));
         // start dma
         mu.enable_continous_readout(0);
 
         // wait for requested data
         while ( mu.read_register_ro(0x1C) == 0 ) {}
-        printf("after = %d\n", mu.read_register_ro(0x1C));
 
         // disable dma
         mu.disable();
         // and get lastWritten
         lastlastWritten = 0;
         uint32_t lastWritten = mu.last_written_addr();
-        printf("lastWritten = 0x%08X\n", lastWritten);
-
-//        if(lastWritten % dma_buf_nwords == lastlastWritten % dma_buf_nwords) continue;
+//        printf("lastWritten = 0x%08X\n", lastWritten);
 
         // print dma_buf content
 //        for ( int i = lastWritten - 0x100; i < lastWritten + 0x100; i++) {
@@ -643,10 +640,9 @@ INT read_stream_thread(void *param) {
             if(offset + 4 > lastWritten) break;
 //            printf("event: offset = 0x%08X, event_id = 0x%08X, data_size = 0x%08X\n", offset, dma_buf[offset % dma_buf_nwords], dma_buf[(offset + 3) % dma_buf_nwords]);
             uint32_t eventLength = 16 + dma_buf[(offset + 3) % dma_buf_nwords];
-            if(eventLength > max_event_size) {
+            if(eventLength > max_requested_words * 4) {
                 printf("ERROR: (eventLength = 0x%08X) > max_event_size\n", eventLength);
-                abort();
-                exit(1);
+                break;
             }
             // check enough space for data
             if(offset + eventLength / 4 > lastWritten) break;
@@ -659,9 +655,6 @@ INT read_stream_thread(void *param) {
         // get midas buffer
         uint32_t* pdata = nullptr;
         int rb_status = rb_get_wp(rbh, (void**)&pdata, 0);
-        if ( rb_status == DB_TIMEOUT ) {
-            printf("ERROR: rb_get_wp -> rb_status == DB_TIMEOUT\n");
-        }
         if ( rb_status != DB_SUCCESS ) {
             printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
             lastlastWritten = lastWritten;
