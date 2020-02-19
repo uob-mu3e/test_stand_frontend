@@ -117,7 +117,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
 	
 	e_fifo : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH => 14,
+        ADDR_WIDTH => 10,
         DATA_WIDTH => 36,
         DEVICE => "Arria 10"--,
 	)
