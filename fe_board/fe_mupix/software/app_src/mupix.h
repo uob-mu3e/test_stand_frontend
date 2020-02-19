@@ -5,6 +5,9 @@
 
 #include "sc_mupix.h"
 
+#include "../../../../common/include/firmware/feb.h"
+using namespace mu3e::feb;
+
 //declaration of interface to scifi module: hardware access, menu, slow control handler
 struct mupix_t {
     sc_t* sc;
@@ -97,19 +100,13 @@ struct mupix_t {
 //        auto& regs = ram->regs.scifi;
         alt_u16 status=FEB_REPLY_SUCCESS;
         switch(cmd){
-        case 0x0101: //power up (not implemented in current FEB)
-            break;
-        case 0x0102: //power down (not implemented in current FEB)
-            break;
-        case 0xfffe:
+        case CMD_PING:
             printf("-ping-\n");
             break;
-        case 0xffff:
-            break;
-        case 0x0110:
+        case CMD_MUPIX_CHIP_CFG:
             status=set_chip_dacs(data[0], &(data[1]));
             return status;
-        case 0x0120:
+        case CMD_MUPIX_BOARD_CFG:
             status=set_board_dacs(data[0], &(data[1]));
 
 /*

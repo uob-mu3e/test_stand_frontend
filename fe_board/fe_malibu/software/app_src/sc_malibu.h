@@ -1,27 +1,26 @@
 
+#include "../../../../common/include/firmware/feb.h"
+using namespace mu3e::feb;
+
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     switch(cmd) {
-    case 0x0101:
+    case CMD_TILE_ON:
         malibu.powerup();
         break;
-    case 0x0102:
+    case CMD_TILE_OFF:
         malibu.powerdown();
         break;
-    case 0x0103:
+    case CMD_TILE_STIC_OFF:
         malibu.stic_configure(0, stic3_config_ALL_OFF);
         break;
-    case 0x0104:
+    case CMD_TILE_STIC_PLL_TEST:
         malibu.stic_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
         break;
-    case 0x0105:
+    case CMD_TILE_I2C_WRITE:
         malibu.i2c_write_u32(data, n);
         break;
-
-    case 0xFFFF:
-        break;
-
     default:
-        if((cmd & 0xFFF0) == 0x0110) {
+        if((cmd & 0xFFF0) == CMD_TILE_STIC_CFG) {
             printf("try stic_configure\n");
             int stic = cmd & 0x000F;
             int ok = 1;
