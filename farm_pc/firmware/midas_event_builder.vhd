@@ -16,13 +16,15 @@ entity midas_event_builder is
          i_clk_dma:           in std_logic;
          i_reset_data_n:      in std_logic;
          i_reset_dma_n:       in std_logic;
-         i_rx_data:     	  in std_logic_vector (NLINKS * 32 - 1 downto 0);
+         i_rx_data:     	   in std_logic_vector (NLINKS * 32 - 1 downto 0);
          i_rx_datak:          in std_logic_vector (NLINKS * 4 - 1 downto 0);
-         i_wen_reg:       	  in std_logic;
+         i_wen_reg:       	   in std_logic;
          i_link_mask_n:       in std_logic_vector (NLINKS - 1 downto 0);
+			i_get_n_words:			in std_logic_vector (31 downto 0);
+			o_done:					out std_logic;
          o_all_done:          out std_logic_vector (NLINKS downto 0);
-         o_event_wren:     	  out std_logic;
-         o_endofevent: 		  out std_logic; 
+         o_event_wren:     	out std_logic;
+         o_endofevent: 		  	out std_logic; 
          o_event_data:        out std_logic_vector (255 downto 0);
          o_state_out:         out std_logic_vector(3 downto 0)--;
 );
@@ -78,6 +80,7 @@ signal flags 			: std_logic_vector(31 downto 0);
 type event_counter_state_type is (waiting, get_data, runing);
 signal event_counter_state : event_counter_state_type;
 signal event_last_ram_add : std_logic_vector(8 downto 0);
+signal word_counter : std_logic_vector(31 downto 0);
 
 ----------------begin event_counter------------------------
 begin
@@ -436,16 +439,28 @@ begin
 	if(i_reset_dma_n = '0') then
 		o_event_wren				<= '0';
 		o_endofevent				<= '0';
-		o_state_out              	<= x"0";
+		o_state_out             <= x"0";
+		o_done 						<= '0';
 		r_fifo_en					<= '0';
 		r_ram_add					<= (others => '1');
-		event_last_ram_add			<= (others => '0');
+		event_last_ram_add		<= (others => '0');
 		event_counter_state 		<= waiting;	
+      word_counter <= (others => '0');
 	elsif(rising_edge(i_clk_dma)) then
-	
+		
+		wen_reg 			<= i_wen_reg;
+		o_done 			<= '0';
 		r_fifo_en		<= '0';
 		o_event_wren	<= '0';
-		o_endofevent    <= '0';
+		o_endofevent   <= '0';
+		
+		if ( wen_reg = '0' and i_wen_reg = '1' ) then
+		    word_counter <= (others => '0');
+		end if;
+		
+		if ( i_wen_reg = '1' and word_counter >= i_get_n_words ) then
+			o_done <= '1';
+		end if;
 			
       case event_counter_state is
 		
@@ -460,14 +475,20 @@ begin
 				
 			when get_data =>
 				o_state_out 		<= x"B";
-				o_event_wren		<= i_wen_reg;
+				if ( word_counter < i_get_n_words or i_get_n_words = (others => '0') ) then
+					o_event_wren <= i_wen_reg;
+					o_endofevent <= '1'; -- begin of event
+					word_counter <= word_counter + '1';
+				end if:
 				r_ram_add			<= r_ram_add + '1';
-                o_endofevent <= '1'; -- begin of event
 				event_counter_state	<= runing;
 				
 			when runing =>
 				o_state_out 	<= x"C";
-				o_event_wren	<= i_wen_reg;
+				if ( word_counter < i_get_n_words or i_get_n_words = (others => '0') ) then
+					o_event_wren <= i_wen_reg;
+					word_counter <= word_counter + '1';
+				end if:
 				if(r_ram_add = event_last_ram_add - '1') then
 					event_counter_state	<= waiting;
 				else

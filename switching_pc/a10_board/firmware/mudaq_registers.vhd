@@ -55,6 +55,7 @@ package mudaq_registers is
 		constant RUN_NR_ADDR_REGISTER_W							: integer := 16#09#;
 		constant FEB_ENABLE_REGISTER_W							: integer := 16#0A#;
 		constant DATA_LINK_MASK_REGISTER_W                  : integer := 16#0B#;
+		constant GET_N_DMA_WORDS_REGISTER_W                  : integer := 16#0C#;
 
 		-- Registers above 0x36 are in use for the PCIe controller/DMA
 		constant DMA2_CTRL_ADDR_LOW_REGISTER_W				: integer := 16#36#;
@@ -103,11 +104,13 @@ package mudaq_registers is
 		constant DMA_NOTHALFFUL_REGISTER_R					: integer := 16#15#;
 		constant DMA_ENDEVENT_REGISTER_R						: integer := 16#16#;
 		constant DMA_NOTENDEVENT_REGISTER_R					: integer := 16#17#;
-        constant RUN_NR_ACK_REGISTER_R                       : integer := 16#18#;
-        constant RUN_NR_REGISTER_R                       : integer := 16#19#;
-        constant RUN_STOP_ACK_REGISTER_R                 : integer := 16#1a#;
-        constant BUFFER_STATUS_REGISTER_R                : integer := 16#1b#;
-        
+      constant RUN_NR_ACK_REGISTER_R                  : integer := 16#18#;
+      constant RUN_NR_REGISTER_R                      : integer := 16#19#;
+      constant RUN_STOP_ACK_REGISTER_R                : integer := 16#1A#;
+      constant BUFFER_STATUS_REGISTER_R               : integer := 16#1B#;
+		constant EVENT_BUILD_STATUS_REGISTER_R          : integer := 16#1C#;
+		constant EVENT_BUILD_DONE								: integer:= 0;
+		
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;
 		constant DMA_DATA_ADDR_LOW_REGISTER_R				: integer := 16#39#;
