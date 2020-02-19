@@ -448,13 +448,12 @@ begin
       word_counter <= (others => '0');
 	elsif(rising_edge(i_clk_dma)) then
 		
-		wen_reg 			<= i_wen_reg;
 		o_done 			<= '0';
 		r_fifo_en		<= '0';
 		o_event_wren	<= '0';
 		o_endofevent   <= '0';
 		
-		if ( wen_reg = '0' and i_wen_reg = '1' ) then
+		if ( i_wen_reg = '0' ) then
 		    word_counter <= (others => '0');
 		end if;
 		
@@ -475,20 +474,20 @@ begin
 				
 			when get_data =>
 				o_state_out 		<= x"B";
-				if ( word_counter < i_get_n_words or i_get_n_words = (others => '0') ) then
+				if ( word_counter < i_get_n_words or i_get_n_words = (i_get_n_words'range => '0') ) then
 					o_event_wren <= i_wen_reg;
 					o_endofevent <= '1'; -- begin of event
 					word_counter <= word_counter + '1';
-				end if:
+				end if;
 				r_ram_add			<= r_ram_add + '1';
 				event_counter_state	<= runing;
 				
 			when runing =>
 				o_state_out 	<= x"C";
-				if ( word_counter < i_get_n_words or i_get_n_words = (others => '0') ) then
+				if ( word_counter < i_get_n_words or i_get_n_words = (i_get_n_words'range => '0') ) then
 					o_event_wren <= i_wen_reg;
 					word_counter <= word_counter + '1';
-				end if:
+				end if;
 				if(r_ram_add = event_last_ram_add - '1') then
 					event_counter_state	<= waiting;
 				else
