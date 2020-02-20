@@ -677,6 +677,8 @@ begin
         i_rx_datak      => datak_counter,
         i_wen_reg       => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
         i_link_mask_n   => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
+		  i_get_n_words	=> writeregs(GET_N_DMA_WORDS_REGISTER_W),
+		  o_done				=> readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
         o_event_wren    => dma_wren_cnt,
         o_endofevent    => dma_end_event_cnt,
         o_event_data    => dma_event_data,
