@@ -248,12 +248,13 @@ architecture rtl of top is
     signal tx_data_v:       std_logic_vector(NLINKS_TOTL*32-1 downto 0);
     signal tx_datak_v:      std_logic_vector(NLINKS_TOTL*4-1 downto 0);
 
-	type mapping_t is array(natural range <>) of integer;
-	--mapping as follows: fiber link_mapping(0)=1 - Fiber QSFPA.1 is mapped to first(0) link
-        constant link_mapping : mapping_t(NLINKS_DATA-1 downto 0):=(1,2,4);
-	signal rx_mapped_data_v : std_logic_vector(NLINKS_DATA*32-1 downto 0);
-        signal rx_mapped_datak_v : std_logic_vector(NLINKS_DATA*4-1 downto 0);
-        signal rx_mapped_linkmask : std_logic_vector(NLINKS_DATA-1  downto 0); --writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_-1 downto 0),
+    type mapping_t is array(natural range <>) of integer;
+    --mapping as follows: fiber link_mapping(0)=1 - Fiber QSFPA.1 is mapped to first(0) link
+    constant link_mapping:          mapping_t(NLINKS_DATA-1 downto 0):=(1,2,4);
+    signal rx_mapped_data_v:        std_logic_vector(NLINKS_DATA*32-1 downto 0);
+    signal rx_mapped_datak_v:       std_logic_vector(NLINKS_DATA*4-1 downto 0);
+    signal rx_mapped_linkmask:      std_logic_vector(NLINKS_DATA-1  downto 0); --writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_-1 downto 0),
+    signal link_fifo_almost_full:   std_logic_vector(NLINKS_TOTL-1 downto 0);
 
 --        signal idle_ch : std_logic_vector(3 downto 0);
 --        
@@ -577,18 +578,19 @@ begin
     g_demerge: for i in NLINKS_TOTL-1 downto 0 generate
         e_data_demerge : entity work.data_demerge
         port map(
-            i_clk           => clk_156,
-            i_reset         => not reset_156_n,
-            i_aligned       => '1',
-            i_data          => rx_data_v_raw(31+i*32 downto i*32),
-            i_datak         => rx_datak_v_raw(3+i* 4 downto i* 4),
-            o_data          => rx_data_v(31+i*32 downto i*32),
-            o_datak         => rx_datak_v(3+i* 4 downto i* 4),
-            o_sc            => rx_sc_v(31+i*32 downto i*32),
-            o_sck           => rx_sck_v(3+i* 4 downto i* 4),
-            o_rc            => rx_rc_v(31+i*32 downto i*32),
-            o_rck           => rx_rck_v(3+i* 4 downto i* 4),
-            o_fpga_id       => open--,
+            i_clk               => clk_156,
+            i_reset             => not reset_156_n,
+            i_aligned           => '1',
+            i_data              => rx_data_v_raw(31+i*32 downto i*32),
+            i_datak             => rx_datak_v_raw(3+i* 4 downto i* 4),
+            i_fifo_almost_full  => link_fifo_almost_full(i),
+            o_data              => rx_data_v(31+i*32 downto i*32),
+            o_datak             => rx_datak_v(3+i* 4 downto i* 4),
+            o_sc                => rx_sc_v(31+i*32 downto i*32),
+            o_sck               => rx_sck_v(3+i* 4 downto i* 4),
+            o_rc                => rx_rc_v(31+i*32 downto i*32),
+            o_rck               => rx_rck_v(3+i* 4 downto i* 4),
+            o_fpga_id           => open--,
         );
     end generate;
 
@@ -669,20 +671,21 @@ begin
         NLINKS => NLINKS_TOTL--;
     )
     port map (
-        i_clk_data      => clk_156,
-        i_clk_dma       => pcie_fastclk_out,
-        i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
-        i_reset_dma_n   => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-        i_rx_data       => data_counter,
-        i_rx_datak      => datak_counter,
-        i_wen_reg       => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-        i_link_mask_n   => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
-		  i_get_n_words	=> writeregs(GET_N_DMA_WORDS_REGISTER_W),
-		  o_done				=> readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
-        o_event_wren    => dma_wren_cnt,
-        o_endofevent    => dma_end_event_cnt,
-        o_event_data    => dma_event_data,
-        o_state_out     => state_out_eventcounter--,
+        i_clk_data          => clk_156,
+        i_clk_dma           => pcie_fastclk_out,
+        i_reset_data_n      => resets_n(RESET_BIT_EVENT_COUNTER),
+        i_reset_dma_n       => resets_n_fast(RESET_BIT_EVENT_COUNTER),
+        i_rx_data           => data_counter,
+        i_rx_datak          => datak_counter,
+        i_wen_reg           => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+        i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
+        i_get_n_words       => writeregs(GET_N_DMA_WORDS_REGISTER_W),
+        o_done              => readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
+        o_event_wren        => dma_wren_cnt,
+        o_endofevent        => dma_end_event_cnt,
+        o_event_data        => dma_event_data,
+        o_state_out         => state_out_eventcounter,
+        o_fifo_almost_full  => link_fifo_almost_full--,
     );
     
     dma_data <= dma_event_data;
