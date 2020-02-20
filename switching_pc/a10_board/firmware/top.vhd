@@ -678,6 +678,8 @@ begin
         i_wen_reg       => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
         i_link_mask_n   => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
 		  i_get_n_words	=> writeregs(GET_N_DMA_WORDS_REGISTER_W),
+		  i_dmamemhalffull => dmamemhalffull,
+		  o_fifos_full		=> readregs(EVENT_BUILD_STATUS_REGISTER_R)(31 downto NLINKS_TOTL - 1),
 		  o_done				=> readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
         o_event_wren    => dma_wren_cnt,
         o_endofevent    => dma_end_event_cnt,
