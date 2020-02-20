@@ -366,9 +366,9 @@ begin
 					if ( link_fifo_empty(current_link) = '0' ) then
 						w_ram_en	<= '1';
 						w_ram_add   <= w_ram_add + 1;
-						bank_size_cnt <= bank_size_cnt + 4;
 						event_size_cnt      <= event_size_cnt + 4;
-						w_ram_data  <= link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 4);
+ 					    bank_size_cnt <= bank_size_cnt + 4;
+                        w_ram_data  <= link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 4);
 						if(  
 							(link_fifo_data_out(11 + current_link * 36 downto current_link * 36 + 4) = x"9c")
 							and 
@@ -382,8 +382,9 @@ begin
 							end if;
 							link_fifo_ren(current_link) <= '0';
 						else
-							link_fifo_ren(current_link) <= '1';
+                            link_fifo_ren(current_link) <= '1';
 						end if;
+
 					end if;
 					
 				when set_algin_word =>
@@ -436,12 +437,13 @@ begin
 	            when trailer_data =>
 	            	w_ram_en	<= '1';
 	                w_ram_add   <= w_ram_add + 1;
-	                bank_size_cnt <= bank_size_cnt + 4;
-	                event_size_cnt      <= event_size_cnt + 4;
                     align_event_size <= align_event_size + 1;
 	                w_ram_data	<= x"AFFEAFFE";
 	            	if ( align_event_size(2 downto 0) + '1' = "000" ) then
 	            		event_tagging_state <= trailer_set_length;
+                    else
+                         bank_size_cnt <= bank_size_cnt + 4;
+                         event_size_cnt      <= event_size_cnt + 4;
 	            	end if;
 
 	            when trailer_set_length =>
@@ -458,7 +460,6 @@ begin
 	            	w_ram_add <= cur_size_add;
 	            	-- Event Data Size: The event data size contains the size of the event in bytes excluding the event header
 	            	w_ram_data <= event_size_cnt;
-	            	event_size_cnt <= (others => '0');
 	            	event_tagging_state <= bank_set_size;
 
 	            when bank_set_size =>
@@ -466,7 +467,8 @@ begin
 	            	w_ram_add <= cur_bank_size_add;
 	            	-- All Bank Size: Size in bytes of the following data plus the size of the bank header
 	            	w_ram_data <= event_size_cnt - 8;
-	            	event_tagging_state <= write_tagging_fifo;
+	            	event_size_cnt <= (others => '0');
+                    event_tagging_state <= write_tagging_fifo;
 
 	            when write_tagging_fifo =>
 	            	w_fifo_en <= '1';
