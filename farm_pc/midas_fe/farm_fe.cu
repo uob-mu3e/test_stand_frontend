@@ -546,11 +546,11 @@ INT read_stream_event(char *pevent, INT off)
    return 0;
 }
 
+// check if the event is good
 template < typename T >
 INT check_event(T* buffer, uint32_t idx) {
-    // check if the event is good
-    EVENT_HEADER* eh = (EVENT_HEADER*)(&buffer[idx]);
-    BANK_HEADER* bh = (BANK_HEADER*)(&buffer[idx+4]);
+    EVENT_HEADER* eh = (EVENT_HEADER*)(buffer + idx);
+    BANK_HEADER* bh = (BANK_HEADER*)(eh + 1);
 
     if ( eh->event_id != 0x1 ) {
         printf("Error: Wrong event id 0x%08X\n", eh->event_id);
@@ -583,10 +583,13 @@ INT check_event(T* buffer, uint32_t idx) {
 }
 
 int copy_event(uint32_t* dst, volatile uint32_t* src) {
+    // copy event header and global bank header to destination
     std::copy_n(src, sizeof(EVENT_HEADER) / 4 + sizeof(BANK_HEADER) / 4, dst);
+    // get header for future asjustment
     EVENT_HEADER* eh = (EVENT_HEADER*)(dst);
     BANK_HEADER* bh = (BANK_HEADER*)(eh + 1);
 
+    // start from first bank
     int src_i = 6, dst_i = 6;
 
     while(true) {
@@ -599,10 +602,15 @@ int copy_event(uint32_t* dst, volatile uint32_t* src) {
         // insert empty word if needed in dst
         dst_i += sizeof(BANK32) / 4 + bank->data_size / 4;
         if(src_i >= sizeof(EVENT_HEADER) / 4 + eh->data_size / 4) break;
-        dst[dst_i] = 0xFFFFFFFF;
-        dst_i += (bank->data_size / 4) % 2;
+        // at this point we expect next bank
+        if(bank->data_size % 8) {
+            // insert padding word
+            dst[dst_i] = 0xFFFFFFFF;
+            dst_i += 1;
+        }
     }
 
+    // update data_size's
     bh->data_size = dst_i * 4 - sizeof(EVENT_HEADER) - sizeof(BANK_HEADER);
     eh->data_size = dst_i * 4 - sizeof(EVENT_HEADER);
 
