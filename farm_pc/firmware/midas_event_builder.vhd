@@ -81,8 +81,9 @@ signal serial_number 	: std_logic_vector(31 downto 0);
 signal time_tmp 		: std_logic_vector(31 downto 0);
 signal type_bank 		: std_logic_vector(31 downto 0);
 signal flags 			: std_logic_vector(31 downto 0);
-signal bank_length_cnt : std_logic_vector(31 downto 0);
 signal used_algin   : std_logic;
+signal bank_size_cnt : std_logic_vector(31 downto 0);
+signal event_size_cnt : std_logic_vector(31 downto 0);
 
 -- event readout state machine
 type event_counter_state_type is (waiting, get_data, runing, skip_event);
@@ -230,8 +231,10 @@ begin
 		time_tmp			<= (others => '0');
 		flags				<= x"00000001";
 		type_bank			<= x"00000006"; -- MIDAS Bank Type TID_DWORD
-		bank_length_cnt	<= (others => '0');
-        used_algin <= '0';
+        used_algin          <= '0';
+        -- for size counting in bytes
+        bank_size_cnt		<= (others => '0');
+        event_size_cnt		<= (others => '0');
 
 	elsif( rising_edge(i_clk_dma) ) then
 	
@@ -282,6 +285,7 @@ begin
 
 				when bank_size =>
 					w_ram_en			<= '1';
+					event_size_cnt      <= event_size_cnt + 4;
 					w_ram_add   		<= w_ram_add + 1;
 					cur_bank_size_add 	<= w_ram_add + 1;
 					w_ram_data  		<= (others => '0');
@@ -289,6 +293,7 @@ begin
 
 				when bank_flags =>
 					w_ram_en	<= '1';
+					event_size_cnt      <= event_size_cnt + 4;
 					w_ram_add   <= w_ram_add + 1;
 					w_ram_add_reg <= w_ram_add + 1;
 					w_ram_data	<= flags;
@@ -332,8 +337,8 @@ begin
                             else
                                 w_ram_data  		<= x"34424546"; -- We should not see this !! (FEB3)
                             end if;
-							--w_ram_data  		<= x"30424546"; -- one link fixed bank name + std_logic_vector(to_unsigned(current_link, 4));
 							event_tagging_state <= bank_type;
+							event_size_cnt      <= event_size_cnt + 4;
                         else
                             --throw data away until a header
                             link_fifo_ren(current_link) <= '1';
@@ -343,12 +348,14 @@ begin
 				when bank_type =>
 					w_ram_en	<= '1';
 					w_ram_add   <= w_ram_add + 1;
+					event_size_cnt      <= event_size_cnt + 4;
 					w_ram_data	<= type_bank;
 					event_tagging_state <= bank_length;
 
 				when bank_length =>
 					w_ram_en			<= '1';
 					w_ram_add   		<= w_ram_add + 1;
+					event_size_cnt      <= event_size_cnt + 4;
 					cur_bank_length_add(11 + current_link * 12 downto current_link * 12) <= w_ram_add + 1;
 					w_ram_data  		<= (others => '0');
 					link_fifo_ren(current_link) <= '1';
@@ -359,15 +366,15 @@ begin
 					if ( link_fifo_empty(current_link) = '0' ) then
 						w_ram_en	<= '1';
 						w_ram_add   <= w_ram_add + 1;
-						bank_length_cnt <= bank_length_cnt + 1;
+						bank_size_cnt <= bank_size_cnt + 4;
+						event_size_cnt      <= event_size_cnt + 4;
 						w_ram_data  <= link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 4);
 						if(  
 							(link_fifo_data_out(11 + current_link * 36 downto current_link * 36 + 4) = x"9c")
 							and 
 							(link_fifo_data_out(3 + current_link * 36 downto current_link * 36) = "0001")
 						) then
-						
-							if ( bank_length_cnt(0) = '0' ) then
+							if ( bank_size_cnt(2 downto 0) = "000" ) then
 								event_tagging_state <= set_algin_word;
 							else
 								event_tagging_state <= bank_set_length;
@@ -381,24 +388,17 @@ begin
 					
 				when set_algin_word =>
 					w_ram_en	<= '1';
-					bank_length_cnt <= bank_length_cnt + 1;
 					w_ram_add   <= w_ram_add + 1;
 					w_ram_add_reg <= w_ram_add + 1;
 					w_ram_data <= x"AFFEAFFE";
-               used_algin <= '1';
+					event_size_cnt      <= event_size_cnt + 4;
 					event_tagging_state <= bank_set_length;
 
 				when bank_set_length =>
-					bank_length_cnt <= (others => '0');
-				   w_ram_en	<= '1';
+					bank_size_cnt <= (others => '0');
+                    w_ram_en	<= '1';
 					w_ram_add   <= cur_bank_length_add(11 + current_link * 12 downto current_link * 12);
-					used_algin <= '0';
-					-- bank length: size in bytes of the following data
-					if ( used_algin = '1' ) then
-						w_ram_data	<= std_logic_vector(to_unsigned(conv_integer(w_ram_add_reg - cur_bank_length_add(11 + current_link * 12 downto current_link * 12) - 1) * 4, w_ram_data'length));
-               else
-                  w_ram_data  <= std_logic_vector(to_unsigned(conv_integer(w_ram_add_reg - cur_bank_length_add(11 + current_link * 12 downto current_link * 12)) * 4, w_ram_data'length));
-               end if;
+					w_ram_data <= bank_size_cnt;
 					if ( current_link + 1 = NLINKS ) then
 						event_tagging_state <= trailer_name;
 					else
@@ -411,6 +411,7 @@ begin
 					current_link        <= 0;
 					w_ram_en			<= '1';
 	                w_ram_add   		<= w_ram_add_reg + 1;
+	                event_size_cnt      <= event_size_cnt + 4;
 			 	    w_ram_data  		<= x"454b4146"; -- FAKE in ascii
 	                event_tagging_state <= trailer_type;
 	                
@@ -418,6 +419,7 @@ begin
 	                w_ram_en			<= '1';
 	                w_ram_add   		<= w_ram_add + 1;
 			 	    w_ram_data  		<= type_bank;
+			 	    event_size_cnt      <= event_size_cnt + 4;
 	                event_tagging_state <= trailer_length;
 
 	            when trailer_length =>
@@ -426,6 +428,7 @@ begin
 	                -- here trailer length add
 	                w_ram_add_reg 		<= w_ram_add + 1;
 			 	    w_ram_data  		<= (others => '0');
+			 	    event_size_cnt      <= event_size_cnt + 4;
 			 	    -- write at least one AFFEAFFE
 			 	    align_event_size	<= w_ram_add + 1 - last_event_add;
 			 	    event_tagging_state <= trailer_data;
@@ -433,7 +436,8 @@ begin
 	            when trailer_data =>
 	            	w_ram_en	<= '1';
 	                w_ram_add   <= w_ram_add + 1;
-	                bank_length_cnt <= bank_length_cnt + 1;
+	                bank_size_cnt <= bank_size_cnt + 4;
+	                event_size_cnt      <= event_size_cnt + 4;
                     align_event_size <= align_event_size + 1;
 	                w_ram_data	<= x"AFFEAFFE";
 	            	if ( align_event_size(2 downto 0) + '1' = "000" ) then
@@ -442,25 +446,26 @@ begin
 
 	            when trailer_set_length =>
 	            	w_ram_en		<= '1';
-                    bank_length_cnt <= (others => '0');
+                    bank_size_cnt <= (others => '0');
 	                w_ram_add   	<= w_ram_add_reg;
 	                w_ram_add_reg 	<= w_ram_add;
 	                -- bank length: size in bytes of the following data
-	                w_ram_data 		<= std_logic_vector(to_unsigned((conv_integer(w_ram_add - w_ram_add_reg) - 1) * 4, w_ram_data'length));
+	                w_ram_data 		<= bank_size_cnt;
 	                event_tagging_state <= event_set_size;
 
 	            when event_set_size =>
 	            	w_ram_en  <= '1';
 	            	w_ram_add <= cur_size_add;
 	            	-- Event Data Size: The event data size contains the size of the event in bytes excluding the event header
-	            	w_ram_data <= std_logic_vector(to_unsigned((conv_integer(w_ram_add_reg - last_event_add) - 4) * 4, w_ram_data'length));
+	            	w_ram_data <= event_size_cnt;
+	            	event_size_cnt <= (others => '0');
 	            	event_tagging_state <= bank_set_size;
 
 	            when bank_set_size =>
 	            	w_ram_en <= '1';
 	            	w_ram_add <= cur_bank_size_add;
 	            	-- All Bank Size: Size in bytes of the following data plus the size of the bank header
-	            	w_ram_data <= std_logic_vector(to_unsigned((conv_integer(w_ram_add_reg - last_event_add) - 6) * 4, w_ram_data'length));
+	            	w_ram_data <= event_size_cnt - 8;
 	            	event_tagging_state <= write_tagging_fifo;
 
 	            when write_tagging_fifo =>
