@@ -546,7 +546,8 @@ INT read_stream_event(char *pevent, INT off)
    return 0;
 }
 
-INT check_event(volatile uint32_t* buffer, uint32_t idx) {
+template < typename T >
+INT check_event(T* buffer, uint32_t idx) {
     // check if the event is good
     EVENT_HEADER* eh = (EVENT_HEADER*)(&buffer[idx]);
     BANK_HEADER* bh = (BANK_HEADER*)(&buffer[idx+4]);
@@ -563,8 +564,49 @@ INT check_event(volatile uint32_t* buffer, uint32_t idx) {
         printf("Error: Wrong flags 0x%08X\n", bh->flags);
         return -1;
     }
+    
+    uint32_t eventDataSize = eh->data_size; // bytes
+    printf("eventDataSize = %u bytes\n", eventDataSize);
+
+    // offset bank relative to event data
+    uint32_t bankOffset = 8; // bytes
+    // iterate through banks
+    while(true) {
+        BANK32* b = (BANK32*)(&buffer[idx + 4 + bankOffset / 4]);
+	printf("bank: name = %4.4s, data_size = %u bytes, offset = %u bytes\n", b->name, b->data_size, bankOffset);
+        bankOffset += sizeof(BANK32) + b->data_size; // bytes
+        if(bankOffset > eventDataSize) { sleep(10); return -1; }
+        if(bankOffset == eventDataSize) break;
+    }
 
     return 0;
+}
+
+int copy_event(uint32_t* dst, volatile uint32_t* src) {
+    std::copy_n(src, sizeof(EVENT_HEADER) / 4 + sizeof(BANK_HEADER) / 4, dst);
+    EVENT_HEADER* eh = (EVENT_HEADER*)(dst);
+    BANK_HEADER* bh = (BANK_HEADER*)(eh + 1);
+
+    int src_i = 6, dst_i = 6;
+
+    while(true) {
+        // get bank
+        BANK32* bank = (BANK32*)(src + src_i);
+        // copy bank to dst
+        std::copy_n((uint32_t*)bank, sizeof(BANK32) / 4 + bank->data_size / 4, dst + dst_i);
+        // go to next bank
+        src_i += sizeof(BANK32) / 4 + bank->data_size / 4;
+        // insert empty word if needed in dst
+        dst_i += sizeof(BANK32) / 4 + bank->data_size / 4;
+        if(src_i >= sizeof(EVENT_HEADER) / 4 + eh->data_size / 4) break;
+        dst[dst_i] = 0xFFFFFFFF;
+        dst_i += (bank->data_size / 4) % 2;
+    }
+
+    bh->data_size = dst_i * 4 - sizeof(EVENT_HEADER) - sizeof(BANK_HEADER);
+    eh->data_size = dst_i * 4 - sizeof(EVENT_HEADER);
+
+    return dst_i;
 }
 
 INT update_equipment_status(int status, int cur_status, EQUIPMENT *eq)
@@ -616,7 +658,7 @@ INT read_stream_thread(void *param) {
         mu.enable_continous_readout(0);
 
         // wait for requested data
-        while ( mu.read_register_ro(0x1C) == 0 ) {}
+        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
 
         // disable dma
         mu.disable();
@@ -646,6 +688,10 @@ INT read_stream_thread(void *param) {
             }
             // check enough space for data
             if(offset + eventLength / 4 > lastWritten) break;
+	    if(check_event(dma_buf, offset) < 0) {
+                printf("ERROR: bad event\n");
+                break;
+            }
             offset += eventLength / 4;
         }
 //        printf("lastlastWritten = 0x%08X, offset = 0x%08X, lastWritten = 0x%08X\n", lastlastWritten, offset, lastWritten);
@@ -661,8 +707,19 @@ INT read_stream_thread(void *param) {
             continue;
         }
 
-        // copy data to midas and increment wp of the midas buffer
+        // number of words written to midas buffer
         uint32_t wlen = 0;
+
+        // copy midas buffer and adjust bank data_size to multiple of 8 bytes
+        for(int src_i = 0, dst_i = 0; src_i < lastWritten;) {
+            int nwords = copy_event(pdata + dst_i, dma_buf + src_i);
+            src_i += 4 + dma_buf[src_i + 3] / 4;
+            dst_i += nwords;
+            wlen = dst_i;
+        }
+        lastlastWritten = lastWritten;
+
+        // copy data to midas and increment wp of the midas buffer
         if(lastWritten < lastlastWritten) {
             // partial copy when wrap around
             copy_n(&dma_buf[lastlastWritten], dma_buf_nwords - lastlastWritten, pdata);
