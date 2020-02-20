@@ -100,14 +100,13 @@ elsif(clk'event and clk = '1') then
     case NS is
         when IDLE =>
             if(link_flag = '1') then
-                --NS <= BEGINEVENT;
-                NS              <= TIMESTAMP1;
+                NS <= BEGINEVENT;
                 hit_ena_reg	    <= '0';-- no hit stored!
             end if;
---      when BEGINEVENT =>      -- 1 or 2 after link_flag
---      tomemdata           <= BEGINOFEVENT;
---      tomemena            <= '1';
---      NS                  <= EVCOUNT;
+        when BEGINEVENT =>      -- 1 or 2 after link_flag
+            tomemdata           <= BEGINOFEVENT;
+            tomemena            <= '1';
+            NS                  <= TIMESTAMP1;
         when TIMESTAMP1 =>      -- 3 after link_flag or 4: counter might be available
             tomemdata           <= timestamp_reg(47 downto 16);	-- for now: send FPGA timestamp
             tomemena            <= '1';
@@ -116,7 +115,6 @@ elsif(clk'event and clk = '1') then
             tomemdata           <= timestamp_reg(15 downto 0) & x"0000";	-- for now: send FPGA timestamp
             tomemena            <= '1';
             NS                  <= EVCOUNT;
-            
         when EVCOUNT =>				-- 2 or 3 after link_flag
 			tomemdata			<= '0' & eventcounter(30 downto 0);		-- counts all blocks that are produced by this entity
 			eventcounter		<= eventcounter + '1';
