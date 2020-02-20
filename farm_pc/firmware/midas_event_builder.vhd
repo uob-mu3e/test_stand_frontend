@@ -21,7 +21,9 @@ entity midas_event_builder is
         i_rx_datak:         in  std_logic_vector (NLINKS * 4 - 1 downto 0);
         i_wen_reg:          in  std_logic;
         i_link_mask_n:      in  std_logic_vector (NLINKS - 1 downto 0);
-        i_get_n_words:      in  std_logic_vector (31 downto 0);
+        i_get_n_words:      in std_logic_vector (31 downto 0);
+        i_dmamemhalffull:   in std_logic;
+        o_fifos_full:       out std_logic_vector (NLINKS downto 0); -- fifos and dmamemhalffull
         o_done:             out std_logic;
         o_all_done:         out std_logic_vector (NLINKS downto 0);
         o_event_wren:       out std_logic;
@@ -57,7 +59,7 @@ signal r_ram_data : std_logic_vector(255 downto 0);
 signal r_ram_add  : std_logic_vector(8 downto 0);
 
 -- tagging fifo
-type event_tagging_state_type is (event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, trailer_name, trailer_type, trailer_length, trailer_data, trailer_set_length, event_set_size, bank_set_size, write_tagging_fifo);
+type event_tagging_state_type is (event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, trailer_name, trailer_type, trailer_length, trailer_data, trailer_set_length, event_set_size, bank_set_size, write_tagging_fifo, set_algin_word);
 signal event_tagging_state : event_tagging_state_type;
 signal current_link : integer;
 signal data_flag : std_logic;
@@ -81,9 +83,10 @@ signal serial_number 	: std_logic_vector(31 downto 0);
 signal time_tmp 		: std_logic_vector(31 downto 0);
 signal type_bank 		: std_logic_vector(31 downto 0);
 signal flags 			: std_logic_vector(31 downto 0);
+signal bank_length_cnt : std_logic_vector(31 downto 0);
 
 -- event readout state machine
-type event_counter_state_type is (waiting, get_data, runing);
+type event_counter_state_type is (waiting, get_data, runing, skip_event);
 signal event_counter_state : event_counter_state_type;
 signal event_last_ram_add : std_logic_vector(8 downto 0);
 signal word_counter : std_logic_vector(31 downto 0);
@@ -96,6 +99,7 @@ reset_dma <= not i_reset_dma_n;
 o_event_data <= r_ram_data;
 o_all_done(0) <= tag_fifo_empty;
 o_all_done(NLINKS downto 1) <= link_fifo_empty;
+o_fifos_full(NLINKS) <= i_dmamemhalffull;
 
 -- write to link fifos
 process(i_clk_data, i_reset_data_n)
@@ -136,7 +140,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
         q           => link_fifo_data_out(35 + i * 36 downto i * 36),
         rdempty     => link_fifo_empty(i),
         rdusedw     => open,
-        wrfull      => open,
+        wrfull      => o_fifos_full(i),
         wrusedw     => link_fifo_usedw(i*LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH-1 downto i*LINK_FIFO_ADDR_WIDTH),
         aclr        => reset_data--,
     );
@@ -227,6 +231,7 @@ begin
 		time_tmp			<= (others => '0');
 		flags				<= x"00000001";
 		type_bank			<= x"00000006"; -- MIDAS Bank Type TID_DWORD
+		bank_length_cnt	<= (others => '0');
 
 	elsif( rising_edge(i_clk_dma) ) then
 	
@@ -354,19 +359,33 @@ begin
 					if ( link_fifo_empty(current_link) = '0' ) then
 						w_ram_en	<= '1';
 						w_ram_add   <= w_ram_add + 1;
+						bank_length_cnt <= bank_length_cnt + 1;
 						w_ram_data  <= link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 4);
 						if(  
 							(link_fifo_data_out(11 + current_link * 36 downto current_link * 36 + 4) = x"9c")
 							and 
 							(link_fifo_data_out(3 + current_link * 36 downto current_link * 36) = "0001")
 						) then
-							event_tagging_state <= bank_set_length;
-							w_ram_add_reg <= w_ram_add + 1;
+						
+							if ( bank_length_cnt(0) = '0' ) then
+								event_tagging_state <= set_algin_word;
+							else
+								event_tagging_state <= bank_set_length;
+								w_ram_add_reg <= w_ram_add + 1;
+							end if;
 							link_fifo_ren(current_link) <= '0';
 						else
 							link_fifo_ren(current_link) <= '1';
 						end if;
 					end if;
+					
+				when set_algin_word =>
+					w_ram_en	<= '1';
+					bank_length_cnt <= bank_length_cnt + 1;
+					w_ram_add   <= w_ram_add + 1;
+					w_ram_add_reg <= w_ram_add + 1;
+					w_ram_data <= x"AFFEAFFE";
+					event_tagging_state <= bank_set_length;
 
 				when bank_set_length =>
 					w_ram_en	<= '1';
@@ -494,26 +513,35 @@ begin
 				
 			when get_data =>
 				o_state_out 		<= x"B";
-				if ( word_counter < i_get_n_words or i_get_n_words = (i_get_n_words'range => '0') ) then
+				if ( i_dmamemhalffull = '1' or ( i_get_n_words /= (i_get_n_words'range => '0') and word_counter >= i_get_n_words ) ) then
+					event_counter_state <= skip_event;
+				else
 					o_event_wren <= i_wen_reg;
 					o_endofevent <= '1'; -- begin of event
 					word_counter <= word_counter + '1';
+					event_counter_state	<= runing;
 				end if;
 				r_ram_add			<= r_ram_add + '1';
-				event_counter_state	<= runing;
 				
 			when runing =>
 				o_state_out 	<= x"C";
-				if ( word_counter < i_get_n_words or i_get_n_words = (i_get_n_words'range => '0') ) then
-					o_event_wren <= i_wen_reg;
-					word_counter <= word_counter + '1';
-				end if;
+				o_event_wren <= i_wen_reg;
+				word_counter <= word_counter + '1';
 				if(r_ram_add = event_last_ram_add - '1') then
 					event_counter_state	<= waiting;
 				else
 					r_ram_add <= r_ram_add + '1';
 				end if;
 				
+			when skip_event =>
+				o_state_out 	<= x"E";
+				if(r_ram_add = event_last_ram_add - '1') then
+					event_counter_state	<= waiting;
+				else
+					r_ram_add <= r_ram_add + '1';
+				end if;
+				
+			
 			when others =>
 				o_state_out 		<= x"D";
 				event_counter_state	<= waiting;
