@@ -36,8 +36,6 @@ end entity midas_event_builder;
 
 architecture rtl of midas_event_builder is
 
-constant usedw_almost_full_level : std_logic_vector(LINK_FIFO_ADDR_WIDTH-1 downto 0) := (LINK_FIFO_ADDR_WIDTH - 2 => '1', others => '0'); --(half-full)
-
 ----------------signals---------------------
 signal reset_data : std_logic;
 signal reset_dma : std_logic;
@@ -150,7 +148,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
         if(i_reset_data_n = '0') then
             o_fifo_almost_full(i)       <= '0';
         elsif(rising_edge(i_clk_data)) then
-            if(link_fifo_usedw(i*LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH-1 downto i*LINK_FIFO_ADDR_WIDTH) > usedw_almost_full_level) then
+            if(link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1) = '1') then
                 o_fifo_almost_full(i)   <= '1';
             else 
                 o_fifo_almost_full(i)   <= '0';
