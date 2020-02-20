@@ -8,42 +8,48 @@ use ieee.std_logic_unsigned.all;
 
 
 entity midas_event_builder is
-	generic (
-		NLINKS: integer := 4--;
-	);
+    generic (
+        NLINKS: integer := 4;
+        LINK_FIFO_ADDR_WIDTH : integer := 10 --;
+    );
     port(
-         i_clk_data:          in std_logic;
-         i_clk_dma:           in std_logic;
-         i_reset_data_n:      in std_logic;
-         i_reset_dma_n:       in std_logic;
-         i_rx_data:     	   in std_logic_vector (NLINKS * 32 - 1 downto 0);
-         i_rx_datak:          in std_logic_vector (NLINKS * 4 - 1 downto 0);
-         i_wen_reg:       	   in std_logic;
-         i_link_mask_n:       in std_logic_vector (NLINKS - 1 downto 0);
-			i_get_n_words:			in std_logic_vector (31 downto 0);
-			i_dmamemhalffull: 	in std_logic;
-			o_fifos_full:			out std_logic_vector (NLINKS downto 0); -- fifos and dmamemhalffull
-			o_done:					out std_logic;
-         o_all_done:          out std_logic_vector (NLINKS downto 0);
-         o_event_wren:     	out std_logic;
-         o_endofevent: 		  	out std_logic; 
-         o_event_data:        out std_logic_vector (255 downto 0);
-         o_state_out:         out std_logic_vector(3 downto 0)--;
+        i_clk_data:         in  std_logic;
+        i_clk_dma:          in  std_logic;
+        i_reset_data_n:     in  std_logic;
+        i_reset_dma_n:      in  std_logic;
+        i_rx_data:          in  std_logic_vector (NLINKS * 32 - 1 downto 0);
+        i_rx_datak:         in  std_logic_vector (NLINKS * 4 - 1 downto 0);
+        i_wen_reg:          in  std_logic;
+        i_link_mask_n:      in  std_logic_vector (NLINKS - 1 downto 0);
+        i_get_n_words:      in std_logic_vector (31 downto 0);
+        i_dmamemhalffull:   in std_logic;
+        o_fifos_full:       out std_logic_vector (NLINKS downto 0); -- fifos and dmamemhalffull
+        o_done:             out std_logic;
+        o_all_done:         out std_logic_vector (NLINKS downto 0);
+        o_event_wren:       out std_logic;
+        o_endofevent:       out std_logic; 
+        o_event_data:       out std_logic_vector (255 downto 0);
+        o_state_out:        out std_logic_vector(3 downto 0);
+        o_fifo_almost_full: out std_logic_vector(NLINKS - 1 downto 0)--;
 );
 end entity midas_event_builder;
 
 architecture rtl of midas_event_builder is
+
+constant usedw_almost_full_level : std_logic_vector(LINK_FIFO_ADDR_WIDTH-1 downto 0) := (LINK_FIFO_ADDR_WIDTH - 2 => '1', others => '0'); --(half-full)
 
 ----------------signals---------------------
 signal reset_data : std_logic;
 signal reset_dma : std_logic;
 
 -- link fifos
-signal link_fifo_wren 		: std_logic_vector(NLINKS - 1 downto 0);
-signal link_fifo_data 		: std_logic_vector(NLINKS * 36 - 1 downto 0);
-signal link_fifo_ren 		: std_logic_vector(NLINKS - 1 downto 0);
-signal link_fifo_data_out 	: std_logic_vector(NLINKS * 36 - 1 downto 0);
-signal link_fifo_empty 		: std_logic_vector(NLINKS - 1 downto 0);
+signal link_fifo_wren       : std_logic_vector(NLINKS - 1 downto 0);
+signal link_fifo_data       : std_logic_vector(NLINKS * 36 - 1 downto 0);
+signal link_fifo_ren        : std_logic_vector(NLINKS - 1 downto 0);
+signal link_fifo_data_out   : std_logic_vector(NLINKS * 36 - 1 downto 0);
+signal link_fifo_empty      : std_logic_vector(NLINKS - 1 downto 0);
+signal link_fifo_full       : std_logic_vector(NLINKS - 1 downto 0);
+signal link_fifo_usedw      : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS - 1 downto 0);
 
 -- event ram
 signal w_ram_data : std_logic_vector(31 downto 0);
@@ -121,23 +127,37 @@ FOR i in 0 to NLINKS - 1 GENERATE
 	
 	e_fifo : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH => 10,
+        ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH,
         DATA_WIDTH => 36,
         DEVICE => "Arria 10"--,
-	)
-	port map (
-		data     => link_fifo_data(35 + i * 36 downto i * 36),
-		wrreq    => link_fifo_wren(i),
-		rdreq    => link_fifo_ren(i),
-		wrclk    => i_clk_data,
-		rdclk    => i_clk_dma,
-		q    	 	=> link_fifo_data_out(35 + i * 36 downto i * 36),
-		rdempty	 => link_fifo_empty(i),
-		rdusedw	 => open,
-		wrfull	 => o_fifos_full(i),
-		wrusedw	 => open,
-		aclr     => reset_data--,
-	);
+    )
+    port map (
+        data        => link_fifo_data(35 + i * 36 downto i * 36),
+        wrreq       => link_fifo_wren(i),
+        rdreq       => link_fifo_ren(i),
+        wrclk       => i_clk_data,
+        rdclk       => i_clk_dma,
+        q           => link_fifo_data_out(35 + i * 36 downto i * 36),
+        rdempty     => link_fifo_empty(i),
+        rdusedw     => open,
+        wrfull      => o_fifos_full(i),
+        wrusedw     => link_fifo_usedw(i*LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH-1 downto i*LINK_FIFO_ADDR_WIDTH),
+        aclr        => reset_data--,
+    );
+
+    process(i_clk_data, i_reset_data_n)
+    begin
+        if(i_reset_data_n = '0') then
+            o_fifo_almost_full(i)       <= '0';
+        elsif(rising_edge(i_clk_data)) then
+            if(link_fifo_usedw(i*LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH-1 downto i*LINK_FIFO_ADDR_WIDTH) > usedw_almost_full_level) then
+                o_fifo_almost_full(i)   <= '1';
+            else 
+                o_fifo_almost_full(i)   <= '0';
+            end if;
+        end if;
+    end process;
+
 END GENERATE buffer_link_fifos;
 
 e_ram_32_256 : entity work.ip_ram
