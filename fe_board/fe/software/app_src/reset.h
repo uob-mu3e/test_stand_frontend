@@ -20,7 +20,6 @@ void menu_print_rate() {
 void menu_reset() {
     auto& reset_bypass = sc.ram->regs.fe.reset_bypass;
     auto& reset_bypass_payload = sc.ram->regs.fe.reset_bypass_payload;
-    //auto& rate = sc.ram->regs.fe.merger_rate_count;
         
     alt_u32 payload = 0x0;
     char str[2] = {0};

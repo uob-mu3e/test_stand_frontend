@@ -13,6 +13,7 @@ port (
     i_aligned:                  in  std_logic; -- word alignment achieved
     i_data:                     in  std_logic_vector(31 downto 0); -- optical from frontend board
     i_datak:                    in  std_logic_vector(3 downto 0);
+    i_fifo_almost_full:         in  std_logic;
     o_data:                     out std_logic_vector(31 downto 0); -- to sorting fifos
     o_datak:                    out std_logic_vector(3 downto 0); -- to sorting fifos
     o_sc:                       out std_logic_vector(31 downto 0); -- slowcontrol from frontend board
@@ -58,7 +59,7 @@ BEGIN
                     if (i_datak = "0001" and i_data(7 downto 0) /= k28_5 and i_data(7 downto 0) /= k28_4) then
                         o_rc                    <= i_data;
                         o_rck                   <= i_datak;
-                    elsif (i_datak(3 downto 0) = "0001" and i_data(7 downto 0) = k28_5 and i_data(31 downto 29)="111") then -- Mupix or MuTrig preamble
+                    elsif (i_datak(3 downto 0) = "0001" and i_data(7 downto 0) = k28_5 and i_data(31 downto 29)="111" and i_fifo_almost_full='0') then -- Mupix or MuTrig preamble
                         o_fpga_id               <= i_data(23 downto 8);
                         demerge_state           <= receiving_data;
                         o_data                  <= i_data;
