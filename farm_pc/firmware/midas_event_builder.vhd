@@ -82,6 +82,7 @@ signal time_tmp 		: std_logic_vector(31 downto 0);
 signal type_bank 		: std_logic_vector(31 downto 0);
 signal flags 			: std_logic_vector(31 downto 0);
 signal bank_length_cnt : std_logic_vector(31 downto 0);
+signal used_algin   : std_logic;
 
 -- event readout state machine
 type event_counter_state_type is (waiting, get_data, runing, skip_event);
@@ -230,6 +231,7 @@ begin
 		flags				<= x"00000001";
 		type_bank			<= x"00000006"; -- MIDAS Bank Type TID_DWORD
 		bank_length_cnt	<= (others => '0');
+        used_algin <= '0';
 
 	elsif( rising_edge(i_clk_dma) ) then
 	
@@ -383,6 +385,7 @@ begin
 					w_ram_add   <= w_ram_add + 1;
 					w_ram_add_reg <= w_ram_add + 1;
 					w_ram_data <= x"AFFEAFFE";
+                    used_algin <= '1';
 					event_tagging_state <= bank_set_length;
 
 				when bank_set_length =>
@@ -390,7 +393,12 @@ begin
                     w_ram_en	<= '1';
 					w_ram_add   <= cur_bank_length_add(11 + current_link * 12 downto current_link * 12);
 					-- bank length: size in bytes of the following data
-					w_ram_data	<= std_logic_vector(to_unsigned(conv_integer(w_ram_add_reg - cur_bank_length_add(11 + current_link * 12 downto current_link * 12)) * 4, w_ram_data'length));
+                    if ( used_algin = '1' ) then
+    					w_ram_data	<= std_logic_vector(to_unsigned(conv_integer(w_ram_add_reg - cur_bank_length_add(11 + current_link * 12 downto current_link * 12) - 1) * 4, w_ram_data'length));
+                    else
+                        used_algin <= '0';
+                        w_ram_data  <= std_logic_vector(to_unsigned(conv_integer(w_ram_add_reg - cur_bank_length_add(11 + current_link * 12 downto current_link * 12)) * 4, w_ram_data'length));
+                    end if;
 					if ( current_link + 1 = NLINKS ) then
 						event_tagging_state <= trailer_name;
 					else
@@ -428,7 +436,7 @@ begin
 	                bank_length_cnt <= bank_length_cnt + 1;
                     align_event_size <= align_event_size + 1;
 	                w_ram_data	<= x"AFFEAFFE";
-	            	if ( align_event_size(2 downto 0) + '1' = "000" and bank_length_cnt(0) = '0' ) then
+	            	if ( align_event_size(2 downto 0) + '1' = "000" ) then
 	            		event_tagging_state <= trailer_set_length;
 	            	end if;
 
