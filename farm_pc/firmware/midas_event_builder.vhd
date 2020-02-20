@@ -368,7 +368,8 @@ begin
 					event_tagging_state <= bank_set_length;
 
 				when bank_set_length =>
-					w_ram_en	<= '1';
+					bank_length_cnt <= (others => '0');
+                    w_ram_en	<= '1';
 					w_ram_add   <= cur_bank_length_add(11 + current_link * 12 downto current_link * 12);
 					-- bank length: size in bytes of the following data
 					w_ram_data	<= std_logic_vector(to_unsigned(conv_integer(w_ram_add_reg - cur_bank_length_add(11 + current_link * 12 downto current_link * 12)) * 4, w_ram_data'length));
@@ -406,14 +407,16 @@ begin
 	            when trailer_data =>
 	            	w_ram_en	<= '1';
 	                w_ram_add   <= w_ram_add + 1;
-	                align_event_size <= align_event_size + 1;
+	                bank_length_cnt <= bank_length_cnt + 1;
+                    align_event_size <= align_event_size + 1;
 	                w_ram_data	<= x"AFFEAFFE";
-	            	if ( align_event_size(2 downto 0) + '1' = "000" ) then
+	            	if ( align_event_size(2 downto 0) + '1' = "000" and bank_length_cnt(0) = '0' ) then
 	            		event_tagging_state <= trailer_set_length;
 	            	end if;
 
 	            when trailer_set_length =>
 	            	w_ram_en		<= '1';
+                    bank_length_cnt <= (others => '0');
 	                w_ram_add   	<= w_ram_add_reg;
 	                w_ram_add_reg 	<= w_ram_add;
 	                -- bank length: size in bytes of the following data
