@@ -566,17 +566,19 @@ INT check_event(T* buffer, uint32_t idx) {
     }
     
     uint32_t eventDataSize = eh->data_size; // bytes
-    printf("eventDataSize = %u bytes\n", eventDataSize);
+    //printf("eventDataSize = %u bytes\n", eventDataSize);
 
     // offset bank relative to event data
     uint32_t bankOffset = 8; // bytes
     // iterate through banks
     while(true) {
         BANK32* b = (BANK32*)(&buffer[idx + 4 + bankOffset / 4]);
-	printf("bank: name = %4.4s, data_size = %u bytes, offset = %u bytes\n", b->name, b->data_size, bankOffset);
+	//printf("bank: name = %4.4s, data_size = %u bytes, offset = %u bytes\n", b->name, b->data_size, bankOffset);
         bankOffset += sizeof(BANK32) + b->data_size; // bytes
         if(bankOffset > eventDataSize) { sleep(10); return -1; }
         if(bankOffset == eventDataSize) break;
+        // TODO: uncomment for new bank format from firmware
+//        bankOffset += b->data_size % 8;
     }
 
     return 0;
@@ -599,6 +601,8 @@ int copy_event(uint32_t* dst, volatile uint32_t* src) {
         std::copy_n((uint32_t*)bank, sizeof(BANK32) / 4 + bank->data_size / 4, dst + dst_i);
         // go to next bank
         src_i += sizeof(BANK32) / 4 + bank->data_size / 4;
+        // TODO: uncomment for new bank format from firmware
+//        src_i += b->data_size % 8;
         // insert empty word if needed in dst
         dst_i += sizeof(BANK32) / 4 + bank->data_size / 4;
         if(src_i >= sizeof(EVENT_HEADER) / 4 + eh->data_size / 4) break;

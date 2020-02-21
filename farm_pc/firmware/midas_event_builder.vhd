@@ -332,7 +332,7 @@ begin
 							elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB3") then
 								w_ram_data  		<= x"33424546";
 							else
-								w_ram_data  		<= x"34424546"; -- We should not see this !! (FEB3)
+								w_ram_data  		<= x"34424546"; -- We should not see this !! (FEB4)
 							end if;
 							event_size_cnt      	<= event_size_cnt + 4;
 							event_tagging_state 	<= bank_type;

@@ -97,6 +97,8 @@ BEGIN
                             o_sc                <= i_data;
                             o_sck               <= i_datak;
                         end if;
+		   when others =>
+			demerge_state <= idle;
              end case;
 
         end if;

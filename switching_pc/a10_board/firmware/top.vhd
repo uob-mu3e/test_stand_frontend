@@ -579,7 +579,7 @@ begin
         e_data_demerge : entity work.data_demerge
         port map(
             i_clk               => clk_156,
-            i_reset             => not reset_156_n,
+            i_reset             => not resets_n(RESET_BIT_EVENT_COUNTER),
             i_aligned           => '1',
             i_data              => rx_data_v_raw(31+i*32 downto i*32),
             i_datak             => rx_datak_v_raw(3+i* 4 downto i* 4),
@@ -681,7 +681,7 @@ begin
 			i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
 			i_get_n_words       => writeregs(GET_N_DMA_WORDS_REGISTER_W),
 			i_dmamemhalffull    => dmamemhalffull,
-			o_fifos_full	     => readregs(EVENT_BUILD_STATUS_REGISTER_R)(31 downto NLINKS_TOTL - 1),
+			o_fifos_full	    => open,--readregs(EVENT_BUILD_STATUS_REGISTER_R)(31 downto NLINKS_TOTL - 1),
 			o_done              => readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
 			o_event_wren        => dma_wren_cnt,
 			o_endofevent        => dma_end_event_cnt,
