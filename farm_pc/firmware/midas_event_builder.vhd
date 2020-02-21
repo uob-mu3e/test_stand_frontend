@@ -90,6 +90,10 @@ signal event_counter_state : event_counter_state_type;
 signal event_last_ram_add : std_logic_vector(8 downto 0);
 signal word_counter : std_logic_vector(31 downto 0);
 
+
+    signal link_data : std_logic_vector(31 downto 0);
+    signal link_datak : std_logic_vector(3 downto 0);
+
 ----------------begin event_counter------------------------
 begin
 
@@ -199,6 +203,9 @@ e_tagging_fifo_event : entity work.ip_scfifo
 		usedw 			=> open,
 		sclr     		=> reset_dma--,
 );
+
+    link_data <= link_fifo_data_out(35 + current_link * 36 downto 4 + current_link * 36);
+    link_datak <= link_fifo_data_out(3 + current_link * 36 downto 0 + current_link * 36);
 
 -- write link data to event ram
 process(i_clk_dma, i_reset_dma_n)
@@ -312,24 +319,22 @@ begin
 						end if;
 					else
 						--check for mupix or mutrig data header
-						if(	
-							(link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 30) = "111010" or link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 30) = "111000")
+						if(
+							( link_data(31 downto 26) = "111010" or link_data(31 downto 26) = "111000" )
 							and
-							(link_fifo_data_out(11 + current_link * 36 downto current_link * 36 + 4) = x"bc")
-							and
-							(link_fifo_data_out(3 + current_link * 36 downto current_link * 36) = "0001")
+							link_data(7 downto 0) = x"BC" and link_datak = "0001"
 						) then
                      data_flag	<= '1';
 							w_ram_en		<= '1';
 							w_ram_add   <= w_ram_add_reg + 1;
 							-- toDo: proper conversion into ASCII for the midas banks here !! 
-							if(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB0") then
+							if(link_data(23 downto 8) = x"FEB0") then
 								w_ram_data  		<= x"30424546";
-							elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB1") then
+							elsif(link_data(23 downto 8) = x"FEB1") then
 								w_ram_data  		<= x"31424546";
-							elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB2") then
+							elsif(link_data(23 downto 8) = x"FEB2") then
 								w_ram_data  		<= x"32424546";
-							elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB3") then
+							elsif(link_data(23 downto 8) = x"FEB3") then
 								w_ram_data  		<= x"33424546";
 							else
 								w_ram_data  		<= x"34424546"; -- We should not see this !! (FEB3)
@@ -363,13 +368,13 @@ begin
 					if ( link_fifo_empty(current_link) = '0' ) then
 						w_ram_en				<= '1';
 						w_ram_add   		<= w_ram_add + 1;
-						w_ram_data  		<= link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 4);
+						w_ram_data  		<= link_data;
 						event_size_cnt 	<= event_size_cnt + 4;
  					   bank_size_cnt 		<= bank_size_cnt + 4;
 						if(  
-							(link_fifo_data_out(11 + current_link * 36 downto current_link * 36 + 4) = x"9c")
+							link_data(7 downto 0) = x"9C"
 							and 
-							(link_fifo_data_out(3 + current_link * 36 downto current_link * 36) = "0001")
+							link_datak = "0001"
 						) then
 							-- check if the size of the bank data is in 64 bit if not add a word
 							-- this word is not counted to the bank size
