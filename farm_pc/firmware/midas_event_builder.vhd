@@ -57,7 +57,11 @@ signal r_ram_data : std_logic_vector(255 downto 0);
 signal r_ram_add  : std_logic_vector(8 downto 0);
 
 -- tagging fifo
-type event_tagging_state_type is (event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, trailer_name, trailer_type, trailer_length, trailer_data, trailer_set_length, event_set_size, bank_set_size, write_tagging_fifo, set_algin_word);
+    type event_tagging_state_type is (
+        event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, trailer_name, trailer_type, trailer_length, trailer_data, trailer_set_length, event_set_size, bank_set_size, write_tagging_fifo, set_algin_word,
+        EVENT_IDLE--,
+    );
+
 signal event_tagging_state : event_tagging_state_type;
 signal current_link 			: integer;
 signal data_flag 				: std_logic;
@@ -93,6 +97,7 @@ signal word_counter : std_logic_vector(31 downto 0);
 
     signal link_data : std_logic_vector(31 downto 0);
     signal link_datak : std_logic_vector(3 downto 0);
+    signal link_empty : std_logic;
 
 ----------------begin event_counter------------------------
 begin
@@ -206,13 +211,14 @@ e_tagging_fifo_event : entity work.ip_scfifo
 
     link_data <= link_fifo_data_out(35 + current_link * 36 downto 4 + current_link * 36);
     link_datak <= link_fifo_data_out(3 + current_link * 36 downto 0 + current_link * 36);
+    link_empty <= link_fifo_empty(current_link);
 
 -- write link data to event ram
 process(i_clk_dma, i_reset_dma_n)
 begin
 	if( i_reset_dma_n = '0' ) then
 		-- state machine singals
-		event_tagging_state	<= event_head;
+    event_tagging_state <= EVENT_IDLE;
 		current_link 			<= 0;
 		data_flag 				<= '0';
 		cur_size_add 			<= (others => '0');
@@ -251,15 +257,18 @@ begin
 		w_ram_en  		<= '0';
 		w_fifo_en 		<= '0';
 
-		-- Note: we only do something if there is data in all fifos
-		-- KB: if( link_fifo_not_empty = '1' ) then
-		-- KB: change to do something once there is data from at least one enabled link
-		if( unsigned( (not link_fifo_empty) and i_link_mask_n) /= 0 ) then
 
-			-- count time for midas event header
-			time_tmp <= time_tmp + '1';
+    if ( event_tagging_state /= EVENT_IDLE ) then
+        -- count time for midas event header
+        time_tmp <= time_tmp + '1';
+    end if;
 
-			case event_tagging_state is
+    case event_tagging_state is
+    when EVENT_IDLE =>
+        -- start if at least one not masked link has data
+        if ( unsigned( (not link_fifo_empty) and i_link_mask_n) /= 0 ) then
+            event_tagging_state <= event_head;
+        end if;
 
 				when event_head =>
 					w_ram_en					<= '1';
@@ -306,7 +315,7 @@ begin
 				when bank_name =>
                link_fifo_ren(current_link) <= '0';
 					--here we check if the link is masked and if the current fifo is empty
-					if ( i_link_mask_n(current_link) = '0' or link_fifo_empty(current_link) = '1' ) then
+					if ( link_empty = '1' or i_link_mask_n(current_link) = '0' ) then
 						--skip this link
 						current_link <= current_link + 1;
 						--last link, go to trailer bank
@@ -365,7 +374,7 @@ begin
 
 				when bank_data =>
 					-- check again if the fifo is empty
-					if ( link_fifo_empty(current_link) = '0' ) then
+					if ( link_empty = '0' ) then
 						w_ram_en				<= '1';
 						w_ram_add   		<= w_ram_add + 1;
 						w_ram_data  		<= link_data;
@@ -478,15 +487,15 @@ begin
 					w_fifo_data 				<= w_ram_add_reg;
 					last_event_add				<= w_ram_add_reg;
 					w_ram_add 					<= w_ram_add_reg - 1;
-					event_tagging_state 		<= event_head;
+					event_tagging_state 		<= EVENT_IDLE;
 					cur_bank_length_add 		<= (others => '0');
 					serial_number 				<= serial_number + '1';
 
 				when others =>
-					event_tagging_state <= event_head;
+					event_tagging_state <= EVENT_IDLE;
 
 			end case;
-		end if;
+
 	end if;
 end process;
 
