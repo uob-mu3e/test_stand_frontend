@@ -67,11 +67,9 @@ signal current_link 			: integer;
 signal data_flag 				: std_logic;
 signal cur_size_add 			: std_logic_vector(11 downto 0);
 signal cur_bank_size_add 	: std_logic_vector(11 downto 0);
-signal cur_bank_length_add : std_logic_vector(NLINKS * 12 - 1 downto 0);
+signal cur_bank_length_add : std_logic_vector(12 - 1 downto 0);
 
 signal w_ram_add_reg 	: std_logic_vector(11 downto 0);
-signal last_event_add 	: std_logic_vector(11 downto 0);
-signal align_event_size : std_logic_vector(11 downto 0);
 signal w_fifo_data      : std_logic_vector(11 downto 0);
 signal w_fifo_en        : std_logic;
 signal r_fifo_data      : std_logic_vector(11 downto 0);
@@ -99,6 +97,7 @@ signal word_counter : std_logic_vector(31 downto 0);
     signal link_data : std_logic_vector(31 downto 0);
     signal link_datak : std_logic_vector(3 downto 0);
     signal link_empty : std_logic;
+    signal link_header, link_trailer : std_logic;
 
 ----------------begin event_counter------------------------
 begin
@@ -214,12 +213,20 @@ END GENERATE buffer_link_fifos;
     link_datak <= link_fifo_data_out(3 + current_link * 36 downto 0 + current_link * 36);
     link_empty <= link_fifo_empty(current_link);
 
+    link_header <=
+        '1' when link_datak = "0001" and link_data(7 downto 0) = x"BC"
+        and ( link_data(31 downto 26) = "111010" or link_data(31 downto 26) = "111000" )
+        else '0';
+    link_trailer <=
+        '1' when link_datak = "0001" and link_data(7 downto 0) = x"9C"
+        else '0';
+
     -- write link data to event ram
     process(i_clk_dma, i_reset_dma_n)
     begin
     if ( i_reset_dma_n = '0' ) then
 		-- state machine singals
-    event_tagging_state <= EVENT_IDLE;
+        event_tagging_state <= EVENT_IDLE;
 		current_link 			<= 0;
 		data_flag 				<= '0';
 		cur_size_add 			<= (others => '0');
@@ -227,8 +234,6 @@ END GENERATE buffer_link_fifos;
 		cur_bank_length_add 	<= (others => '0');
 		link_fifo_ren 			<= (others => '0');
 		w_ram_add_reg 			<= (others => '0');
-		last_event_add 		<= (others => '0');
-		align_event_size 		<= (others => '0');
 
 		-- ram and tagging fifo write signals
 		w_ram_en            	<= '0';
@@ -274,7 +279,6 @@ END GENERATE buffer_link_fifos;
 					w_ram_en					<= '1';
 					w_ram_add   			<= w_ram_add + 1;
 					w_ram_data  			<= trigger_mask & event_id;
-					last_event_add 		<= w_ram_add + 1;
 					event_tagging_state 	<= event_num;
 
         when event_num =>
@@ -329,11 +333,7 @@ END GENERATE buffer_link_fifos;
 						end if;
 					else
 						--check for mupix or mutrig data header
-						if(
-							( link_data(31 downto 26) = "111010" or link_data(31 downto 26) = "111000" )
-							and
-							link_data(7 downto 0) = x"BC" and link_datak = "0001"
-						) then
+						if( link_header = '1' ) then
                      data_flag	<= '1';
 							w_ram_en		<= '1';
 							w_ram_add   <= w_ram_add_reg + 1;
@@ -369,7 +369,7 @@ END GENERATE buffer_link_fifos;
 					w_ram_add   						<= w_ram_add + 1;
 					w_ram_data  						<= (others => '0');
 					event_size_cnt      				<= event_size_cnt + 4;
-					cur_bank_length_add(11 + current_link * 12 downto current_link * 12) <= w_ram_add + 1;
+					cur_bank_length_add <= w_ram_add + 1;
 					link_fifo_ren(current_link) 	<= '1';
 					event_tagging_state 				<= bank_data;
 
@@ -382,11 +382,7 @@ END GENERATE buffer_link_fifos;
 						w_ram_data  		<= link_data;
 						event_size_cnt 	<= event_size_cnt + 4;
  					   bank_size_cnt 		<= bank_size_cnt + 4;
-						if(  
-							link_data(7 downto 0) = x"9C"
-							and 
-							link_datak = "0001"
-						) then
+						if ( link_trailer = '1' ) then
 							-- check if the size of the bank data is in 64 bit if not add a word
 							-- this word is not counted to the bank size
 							if ( bank_size_cnt(2 downto 0) = "000" ) then
@@ -411,7 +407,7 @@ END GENERATE buffer_link_fifos;
 
         when bank_set_length =>
                w_ram_en						<= '1';
-					w_ram_add   				<= cur_bank_length_add(11 + current_link * 12 downto current_link * 12);
+					w_ram_add   				<= cur_bank_length_add;
 					w_ram_data 					<= bank_size_cnt;
 					bank_size_cnt 				<= (others => '0');
 					if ( current_link + 1 = NLINKS ) then
@@ -445,15 +441,15 @@ END GENERATE buffer_link_fifos;
 					w_ram_add_reg 			<= w_ram_add + 1;
 					event_size_cnt      	<= event_size_cnt + 4;
 					-- write at least one AFFEAFFE
-					align_event_size		<= w_ram_add + 1 - last_event_add;
 					event_tagging_state 	<= trailer_data;
 
         when trailer_data =>
+            w_ram_add_reg <= w_ram_add;
 					w_ram_en						<= '1';
 					w_ram_add   				<= w_ram_add + 1;
 					w_ram_data					<= x"AFFEAFFE";
-					align_event_size 			<= align_event_size + 1;
-					if ( align_event_size(2 downto 0) + '1' = "000" ) then
+            -- align to DMA word (32 bytes) boundary
+            if ( event_size_cnt(4 downto 0) /= "00000" ) then
 						event_tagging_state 	<= trailer_set_length;
             else
 						bank_size_cnt 			<= bank_size_cnt + 4;
@@ -462,10 +458,9 @@ END GENERATE buffer_link_fifos;
 
         when trailer_set_length =>
 					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add_reg;
+					
 					-- bank length: size in bytes of the following data
 					w_ram_data 				<= bank_size_cnt;
-					w_ram_add_reg 			<= w_ram_add;
 					bank_size_cnt 			<= (others => '0');
 					event_tagging_state 	<= event_set_size;
 
@@ -486,15 +481,14 @@ END GENERATE buffer_link_fifos;
 
         when write_tagging_fifo =>
 					w_fifo_en 					<= '1';
-					w_fifo_data 				<= w_ram_add_reg;
-					last_event_add				<= w_ram_add_reg;
-					w_ram_add 					<= w_ram_add_reg - 1;
+					w_fifo_data 				<= w_ram_add_reg + 1;
+					w_ram_add 					<= w_ram_add_reg;
 					event_tagging_state 		<= EVENT_IDLE;
 					cur_bank_length_add 		<= (others => '0');
 					serial_number 				<= serial_number + '1';
 
         when others =>
-        event_tagging_state <= EVENT_IDLE;
+            event_tagging_state <= EVENT_IDLE;
 
         end case;
 
