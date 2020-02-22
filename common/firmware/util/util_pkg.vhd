@@ -124,6 +124,10 @@ package util is
         good : out boolean--;
     );
 
+    function hex_to_ascii (
+        h : in std_logic_vector--;
+    ) return std_logic_vector;
+
 
 
     -- LFSR 32
@@ -364,6 +368,34 @@ package body util is
            v := "XXXX";
         end case;
     end procedure;
+
+    function hex_to_ascii (
+        h : in  std_logic_vector--;
+    ) return std_logic_vector is
+    
+    begin
+        case h is
+        when x"0" => return X"30";
+        when x"1" => return X"31";
+        when x"2" => return X"32";
+        when x"3" => return X"33";
+        when x"4" => return X"34";
+        when x"5" => return X"35";
+        when x"6" => return X"36";
+        when x"7" => return X"37";
+        when x"8" => return X"38";
+        when x"9" => return X"39";
+        when x"A" => return X"41";
+        when x"B" => return X"42";
+        when x"C" => return X"43";
+        when x"D" => return X"44";
+        when x"E" => return X"45";
+        when x"F" => return X"46";
+
+        when others =>
+            return x"3F";
+        end case;
+    end function;
 
     procedure string_to_hex (
         s : in string;
