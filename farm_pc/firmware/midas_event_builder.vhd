@@ -214,7 +214,7 @@ END GENERATE buffer_link_fifos;
 		sclr     		=> reset_dma--,
     );
 
-    e_fifo_merger : entity work.fifo_merger
+    e_stream : entity work.stream_merger
     generic map (
         W => 36,
         N => NLINKS--,
@@ -227,6 +227,7 @@ END GENERATE buffer_link_fifos;
         o_rack      => link_fifo_ren,
 
         o_wdata     => stream_wdata,
+        i_wfull     => stream_wfull,
         o_we        => stream_we,
 
         i_reset_n   => i_reset_dma_n,
@@ -244,6 +245,7 @@ END GENERATE buffer_link_fifos;
         empty           => stream_rempty,
         rdreq           => stream_rack,
         q               => stream_wdata,
+        full            => stream_wfull,
         wrreq           => stream_we,
         sclr            => i_reset_dma_n,
         clock           => i_clk_dma--,
@@ -356,7 +358,7 @@ END GENERATE buffer_link_fifos;
 
         when bank_name =>
 
-            stram_rack <= '0';
+            stream_rack <= '0';
 					--here we check if the link is masked and if the current fifo is empty
             if ( stream_rempty = '0' ) then
 						--check for mupix or mutrig data header
@@ -440,7 +442,6 @@ END GENERATE buffer_link_fifos;
             if ( stream_rempty = '1' ) then
 						event_tagging_state 	<= trailer_name;
             else
-						current_link <= current_link + 1;
 						event_tagging_state 	<= bank_name;
             end if;
 

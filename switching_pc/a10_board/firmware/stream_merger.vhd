@@ -3,7 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 --use ieee.std_logic_unsigned.all;
 
-entity fifo_merger is
+entity stream_merger is
 generic (
     W : positive := 32;
     N : positive--;
@@ -18,6 +18,7 @@ port (
     o_wdata     : out   std_logic_vector(W-1 downto 0);
     o_wsop      : out   std_logic; -- SOP
     o_weop      : out   std_logic; -- EOP
+    i_wfull     : in    std_logic;
     o_we        : out   std_logic;
 
     i_reset_n   : in    std_logic;
@@ -25,7 +26,7 @@ port (
 );
 end entity;
 
-architecture arch of fifo_merger is
+architecture arch of stream_merger is
 
     -- current index
     signal index : integer range 0 to N-1 := 0;
@@ -35,12 +36,13 @@ architecture arch of fifo_merger is
         index : integer;
         empty : std_logic_vector--;
     ) return integer is
+        variable i : integer;
     begin
-        for i in empty'range loop
-            index := (index + 1) mod empty'length;
-            exit when ( empty(index) = '0' );
+        for j in empty'range loop
+            i := (index + j + 1) mod empty'length;
+            exit when ( empty(i) = '0' );
         end loop;
-        return index;
+        return i;
     end function;
 
     -- SOP marker
@@ -52,7 +54,7 @@ begin
     process(index, i_rempty, i_reset_n)
     begin
         o_rack <= (others => '0');
-        if ( i_rempty(index) = '0' and i_reset_n = '1' ) then
+        if ( i_rempty(index) = '0' and i_wfull = '0' and i_reset_n = '1' ) then
             o_rack(index) <= '1';
         end if;
     end process;
@@ -61,8 +63,8 @@ begin
     begin
     if ( i_reset_n /= '1' ) then
         o_wdata <= (others => '0');
-        o_wsop <= (others => '0');
-        o_weop <= (others => '0');
+        o_wsop <= '0';
+        o_weop <= '0';
         o_we <= '0';
 
         index <= 0;
@@ -74,7 +76,7 @@ begin
         o_weop <= i_reop(index);
         o_we <= '0';
 
-        if ( i_rempty(index) = '0' ) then
+        if ( i_rempty(index) = '0' and i_wfull = '0' ) then
             -- write data
             o_we <= '1';
 
