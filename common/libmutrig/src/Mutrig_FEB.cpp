@@ -66,7 +66,7 @@ int MutrigFEB::WriteAll(){
 
     //as a starting point, set all mask bits to 1. in the shadow register and override after.
     //This will ensure any asics that are not part of the detector configuration but exist in firmware are masked.
-    m_reg_shadow[FB_ID][FE_DPCTRL_REG]=0x1FFFFFFF;
+    for(size_t i=0;i<m_FPGAs.size();i++) m_reg_shadow[i][FE_DPCTRL_REG]=0x1FFFFFFF;
 
     sprintf(set_str, "%s/Settings/Daq/dummy_config", m_odb_prefix);
     db_find_key(m_hDB, 0, set_str, &hTmp);
