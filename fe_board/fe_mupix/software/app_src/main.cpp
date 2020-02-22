@@ -6,6 +6,7 @@
 si5345_t si5345 { SPI_SI_BASE, 0 };
 
 #include "../../../fe/software/app_src/sc.h"
+#include "../../../fe/software/app_src/sc_ram.h"
 sc_t sc;
 
 #include "../../../fe/software/app_src/mscb_user.h"
@@ -27,10 +28,12 @@ int main() {
     si5345.init();
     //mscb.init();
     sc.init();
+    volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
 
     while (1) {
         printf("\n");
         printf("[fe_mupix] -------- menu --------\n");
+	printf("ID: 0x%08x\n", ram->data[0xFFFB]);
 
         printf("\n");
         printf("  [1] => xcvr qsfp\n");
