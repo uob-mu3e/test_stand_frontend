@@ -63,7 +63,6 @@ signal r_ram_add  : std_logic_vector(8 downto 0);
     );
 
 signal event_tagging_state : event_tagging_state_type;
-signal current_link 			: integer;
 signal data_flag 				: std_logic;
 signal cur_size_add 			: std_logic_vector(11 downto 0);
 signal cur_bank_size_add 	: std_logic_vector(11 downto 0);
@@ -94,9 +93,12 @@ signal word_counter : std_logic_vector(31 downto 0);
 
 
     -- current link data/datak/empty
+    signal link_fifo_sop : std_logic_vector(NLINKS-1 downto 0);
+    signal link_fifo_eop : std_logic_vector(NLINKS-1 downto 0);
+    signal stream_wdata, stream_rdata : std_logic_vector(35 downto 0);
+    signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
     signal link_data : std_logic_vector(31 downto 0);
     signal link_datak : std_logic_vector(3 downto 0);
-    signal link_empty : std_logic;
     signal link_header, link_trailer : std_logic;
 
 ----------------begin event_counter------------------------
@@ -152,6 +154,9 @@ FOR i in 0 to NLINKS - 1 GENERATE
         wrusedw     => link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1 downto i * LINK_FIFO_ADDR_WIDTH),
         aclr        => reset_data--,
     );
+
+    link_fifo_sop(i) <= '1' when ( link_fifo_data_out(3 downto 0) = "0001" and link_fifo_data_out(11 downto 4) = x"BC" ) else '0';
+    link_fifo_eop(i) <= '1' when ( link_fifo_data_out(3 downto 0) = "0001" and link_fifo_data_out(11 downto 4) = x"9C" ) else '0';
 
 --    process(i_clk_data, i_reset_data_n)
 --    begin
@@ -209,10 +214,43 @@ END GENERATE buffer_link_fifos;
 		sclr     		=> reset_dma--,
     );
 
-    link_data <= link_fifo_data_out(35 + current_link * 36 downto 4 + current_link * 36);
-    link_datak <= link_fifo_data_out(3 + current_link * 36 downto 0 + current_link * 36);
-    link_empty <= link_fifo_empty(current_link);
+    e_fifo_merger : entity work.fifo_merger
+    generic map (
+        W => 36,
+        N => NLINKS--,
+    )
+    port map (
+        i_rdata     => link_fifo_data_out,
+        i_rsop      => link_fifo_sop,
+        i_reop      => link_fifo_eop,
+        i_rempty    => link_fifo_empty or not i_link_mask_n,
+        o_rack      => link_fifo_ren,
 
+        o_wdata     => stream_wdata,
+        o_we        => stream_we,
+
+        i_reset_n   => i_reset_dma_n,
+        i_clk       => i_clk_dma--,
+    );
+
+    e_stream_fifo : entity work.ip_scfifo
+    generic map (
+        ADDR_WIDTH => 8,
+        DATA_WIDTH => 36,
+        DEVICE => "Arria 10"--,
+    )
+    port map (
+        data            => stream_rdata,
+        empty           => stream_rempty,
+        rdreq           => stream_rack,
+        q               => stream_wdata,
+        wrreq           => stream_we,
+        sclr            => i_reset_dma_n,
+        clock           => i_clk_dma--,
+    );
+
+    link_data <= stream_rdata(35 downto 4);
+    link_datak <= stream_rdata(3 downto 0);
     link_header <=
         '1' when link_datak = "0001" and link_data(7 downto 0) = x"BC"
         and ( link_data(31 downto 26) = "111010" or link_data(31 downto 26) = "111000" )
@@ -225,14 +263,14 @@ END GENERATE buffer_link_fifos;
     process(i_clk_dma, i_reset_dma_n)
     begin
     if ( i_reset_dma_n = '0' ) then
+        stream_rack <= '0';
+
 		-- state machine singals
         event_tagging_state <= EVENT_IDLE;
-		current_link 			<= 0;
 		data_flag 				<= '0';
 		cur_size_add 			<= (others => '0');
 		cur_bank_size_add 	<= (others => '0');
 		cur_bank_length_add 	<= (others => '0');
-		link_fifo_ren 			<= (others => '0');
 		w_ram_add_reg 			<= (others => '0');
 
 		-- ram and tagging fifo write signals
@@ -271,7 +309,7 @@ END GENERATE buffer_link_fifos;
         case event_tagging_state is
         when EVENT_IDLE =>
             -- start if at least one not masked link has data
-            if ( unsigned( (not link_fifo_empty) and i_link_mask_n) /= 0 ) then
+            if ( stream_rempty = '0' ) then
                 event_tagging_state <= event_head;
             end if;
 
@@ -318,23 +356,11 @@ END GENERATE buffer_link_fifos;
 
         when bank_name =>
 
-               link_fifo_ren(current_link) <= '0';
+            stram_rack <= '0';
 					--here we check if the link is masked and if the current fifo is empty
-            if ( link_empty = '1' or i_link_mask_n(current_link) = '0' ) then
-						--skip this link
-						current_link <= current_link + 1;
-						--last link, go to trailer bank
-                if ( current_link + 1 = NLINKS ) then
-                    if ( data_flag = '0' ) then
-                        current_link <= 0;
-                    else
-                        event_tagging_state <= trailer_name;
-                    end if;
-                end if;
-            else
+            if ( stream_rempty = '0' ) then
 						--check for mupix or mutrig data header
-                if( link_header = '1'
-                ) then
+                if( link_header = '1' ) then
                      data_flag	<= '1';
 							w_ram_en		<= '1';
 							w_ram_add   <= w_ram_add_reg + 1;
@@ -354,7 +380,7 @@ END GENERATE buffer_link_fifos;
 							event_tagging_state 	<= bank_type;
 						--throw data away until a header
                 else
-						   link_fifo_ren(current_link) <= '1';
+                    stream_rack <= '1';
                 end if;
             end if;
 
@@ -371,13 +397,13 @@ END GENERATE buffer_link_fifos;
 					w_ram_data  						<= (others => '0');
 					event_size_cnt      				<= event_size_cnt + 4;
 					cur_bank_length_add <= w_ram_add + 1;
-					link_fifo_ren(current_link) 	<= '1';
+            stream_rack <= '1';
 					event_tagging_state 				<= bank_data;
 
         when bank_data =>
 
 					-- check again if the fifo is empty
-            if ( link_empty = '0' ) then
+            if ( stream_rempty = '0' ) then
 						w_ram_en				<= '1';
 						w_ram_add   		<= w_ram_add + 1;
 						w_ram_data  		<= link_data;
@@ -392,9 +418,9 @@ END GENERATE buffer_link_fifos;
 								event_tagging_state 	<= bank_set_length;
 								w_ram_add_reg 			<= w_ram_add + 1;
                     end if;
-							link_fifo_ren(current_link) <= '0';
+                    stream_rack <= '0';
                 else
-							link_fifo_ren(current_link) <= '1';
+                    stream_rack <= '1';
                 end if;
             end if;
 
@@ -411,7 +437,7 @@ END GENERATE buffer_link_fifos;
 					w_ram_add   				<= cur_bank_length_add;
 					w_ram_data 					<= bank_size_cnt;
 					bank_size_cnt 				<= (others => '0');
-            if ( current_link + 1 = NLINKS ) then
+            if ( stream_rempty = '1' ) then
 						event_tagging_state 	<= trailer_name;
             else
 						current_link <= current_link + 1;
@@ -423,7 +449,6 @@ END GENERATE buffer_link_fifos;
 	            w_ram_add   			<= w_ram_add_reg + 1;
 					w_ram_data  			<= x"454b4146"; -- FAKE in ascii
 					data_flag      		<= '0';
-					current_link   		<= 0;
 	            event_size_cnt 		<= event_size_cnt + 4;
 	            event_tagging_state 	<= trailer_type;
 
