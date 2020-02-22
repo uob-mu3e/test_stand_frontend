@@ -78,7 +78,7 @@ struct sc_t {
         while(1) {
             printf("\n");
             printf("[sc] -------- menu --------\n");
-
+            printf("ID: 0x%08x\n", ram->data[0xFFFB]);
             printf("\n");
             printf("  [r] => read data and regs\n");
             printf("  [w] => write [i] = i for i < 16\n");
