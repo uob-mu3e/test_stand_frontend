@@ -9,12 +9,14 @@ generic (
     N : positive--;
 );
 port (
+    -- input streams
     i_rdata     : in    std_logic_vector(N*W-1 downto 0);
     i_rsop      : in    std_logic_vector(N-1 downto 0); -- start of packet (SOP)
     i_reop      : in    std_logic_vector(N-1 downto 0); -- end of packet (EOP)
     i_rempty    : in    std_logic_vector(N-1 downto 0);
     o_rack      : out   std_logic_vector(N-1 downto 0); -- read ACK
 
+    -- output stream
     o_wdata     : out   std_logic_vector(W-1 downto 0);
     o_wsop      : out   std_logic; -- SOP
     o_weop      : out   std_logic; -- EOP
