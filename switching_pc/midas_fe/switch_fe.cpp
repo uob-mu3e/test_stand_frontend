@@ -806,7 +806,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
     if (std::string(key.name) == "SciTilesConfig" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-          int status=SciFiFEB::Instance()->ConfigureASICs();
+          int status=TilesFEB::Instance()->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }
