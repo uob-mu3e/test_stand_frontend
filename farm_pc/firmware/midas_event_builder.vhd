@@ -241,10 +241,10 @@ END GENERATE buffer_link_fifos;
         DEVICE => "Arria 10"--,
     )
     port map (
-        data            => stream_rdata,
+        q               => stream_rdata,
         empty           => stream_rempty,
         rdreq           => stream_rack,
-        q               => stream_wdata,
+        data            => stream_wdata,
         full            => stream_wfull,
         wrreq           => stream_we,
         sclr            => i_reset_dma_n,
