@@ -320,20 +320,21 @@ END GENERATE buffer_link_fifos;
 
                link_fifo_ren(current_link) <= '0';
 					--here we check if the link is masked and if the current fifo is empty
-					if ( link_empty = '1' or i_link_mask_n(current_link) = '0' ) then
+            if ( link_empty = '1' or i_link_mask_n(current_link) = '0' ) then
 						--skip this link
 						current_link <= current_link + 1;
 						--last link, go to trailer bank
-						if ( current_link + 1 = NLINKS ) then
-                     if ( data_flag = '0' ) then
+                if ( current_link + 1 = NLINKS ) then
+                    if ( data_flag = '0' ) then
                         current_link <= 0;
-                     else
+                    else
                         event_tagging_state <= trailer_name;
-                     end if;
-						end if;
-					else
+                    end if;
+                end if;
+            else
 						--check for mupix or mutrig data header
-						if( link_header = '1' ) then
+                if( link_header = '1'
+                ) then
                      data_flag	<= '1';
 							w_ram_en		<= '1';
 							w_ram_add   <= w_ram_add_reg + 1;
@@ -352,10 +353,10 @@ END GENERATE buffer_link_fifos;
 							event_size_cnt      	<= event_size_cnt + 4;
 							event_tagging_state 	<= bank_type;
 						--throw data away until a header
-						else
+                else
 						   link_fifo_ren(current_link) <= '1';
-						end if;
-					end if;
+                end if;
+            end if;
 
         when bank_type =>
 					w_ram_en					<= '1';
@@ -376,26 +377,26 @@ END GENERATE buffer_link_fifos;
         when bank_data =>
 
 					-- check again if the fifo is empty
-					if ( link_empty = '0' ) then
+            if ( link_empty = '0' ) then
 						w_ram_en				<= '1';
 						w_ram_add   		<= w_ram_add + 1;
 						w_ram_data  		<= link_data;
 						event_size_cnt 	<= event_size_cnt + 4;
  					   bank_size_cnt 		<= bank_size_cnt + 4;
-						if ( link_trailer = '1' ) then
+                if ( link_trailer = '1' ) then
 							-- check if the size of the bank data is in 64 bit if not add a word
 							-- this word is not counted to the bank size
-							if ( bank_size_cnt(2 downto 0) = "000" ) then
+                    if ( bank_size_cnt(2 downto 0) = "000" ) then
 								event_tagging_state 	<= set_algin_word;
-							else
+                    else
 								event_tagging_state 	<= bank_set_length;
 								w_ram_add_reg 			<= w_ram_add + 1;
-							end if;
+                    end if;
 							link_fifo_ren(current_link) <= '0';
-						else
+                else
 							link_fifo_ren(current_link) <= '1';
-						end if;
-					end if;
+                end if;
+            end if;
 
         when set_algin_word =>
 					w_ram_en					<= '1';
@@ -410,12 +411,12 @@ END GENERATE buffer_link_fifos;
 					w_ram_add   				<= cur_bank_length_add;
 					w_ram_data 					<= bank_size_cnt;
 					bank_size_cnt 				<= (others => '0');
-					if ( current_link + 1 = NLINKS ) then
+            if ( current_link + 1 = NLINKS ) then
 						event_tagging_state 	<= trailer_name;
-					else
+            else
 						current_link <= current_link + 1;
 						event_tagging_state 	<= bank_name;
-					end if;
+            end if;
 
         when trailer_name =>
 					w_ram_en					<= '1';
