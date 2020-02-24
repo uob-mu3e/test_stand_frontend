@@ -30,9 +30,6 @@ end entity;
 
 architecture arch of stream_merger is
 
-    -- current index
-    signal index : integer range 0 to N-1 := 0;
-
     -- get next (Round-Robin) index such that empty(index) = '0'
     function next_index (
         index : integer;
@@ -40,19 +37,22 @@ architecture arch of stream_merger is
     ) return integer is
         variable i : integer;
     begin
-        for j in empty'range loop
-            i := (index + 1 + j) mod empty'length;
+        for j in 1 to empty'length loop
+            i := (index + j) mod empty'length;
             exit when ( empty(i) = '0' );
         end loop;
         return i;
     end function;
+
+    -- current index
+    signal index : integer range 0 to N-1 := 0;
 
     -- SOP mark
     signal busy : std_logic;
 
 begin
 
-    -- drive rack for current not empty input (and not full and not reset)
+    -- set rack for current not empty input (and not full and not reset)
     process(index, i_rempty, i_reset_n)
     begin
         o_rack <= (others => '0');
