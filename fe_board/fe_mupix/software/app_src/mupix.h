@@ -5,8 +5,8 @@
 
 #include "sc_mupix.h"
 
-#include "../../../../common/include/firmware/feb.h"
-using namespace mu3e::feb;
+#include "../../../../common/include/feb.h"
+using namespace mu3e::daq::feb;
 
 //declaration of interface to scifi module: hardware access, menu, slow control handler
 struct mupix_t {

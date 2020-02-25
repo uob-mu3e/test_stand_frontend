@@ -1,6 +1,6 @@
 
-#include "../../../../common/include/firmware/feb.h"
-using namespace mu3e::feb;
+#include "../../../../common/include/feb.h"
+using namespace mu3e::daq::feb;
 
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     switch(cmd) {
