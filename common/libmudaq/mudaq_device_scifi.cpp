@@ -26,6 +26,9 @@
 #include "utils.hpp"
 #include "midas.h"
 
+#include "../include/feb.h"
+using namespace mu3e::daq;
+
 #define PAGEMAP_LENGTH 8 // each page table entry has 64 bits = 8 bytes
 #define PAGE_SHIFT 12    // on x86_64: 4 kB pages, so shifts of 12 bits
 
@@ -679,7 +682,7 @@ uint16_t MudaqDevice::FEBsc_NiosRPC(uint16_t FPGA_ID, uint16_t command, std::vec
 	 if(status < 0) error_cnt++;
 
          //Write command word to register FFF0: cmd | n
-         reg= ((command<<16)&0xffff0000) + (len&0x0000ffff);
+    reg = feb::make_cmd(command, len);
 //	 printf("MudaqDevice::FEBsc_NiosRPC(): writing command\n");
          status=FEBsc_write(FPGA_ID, &reg,1,0xfff0,true);
 	 if(status < 0) error_cnt++;

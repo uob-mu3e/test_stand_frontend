@@ -22,6 +22,11 @@ const uint16_t CMD_MUPIX_BOARD_CFG           = 0x0120;
 const uint16_t CMD_PING                      = 0xFFFE;
 const uint16_t CMD_FFFF                      = 0xFFFF;
 
+inline
+uint32_t make_cmd(uint16_t cmd, uint16_t n = 0) {
+    return ((uint32_t)cmd << 16) | ((uint32_t)n & 0xFFFF);
+}
+
 } } } // namespace mu3e::daq::feb
 
 #endif // __MU3E_HARDWARE_SC_H__
