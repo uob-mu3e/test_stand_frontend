@@ -45,11 +45,6 @@ end entity;
 
 architecture arch of sc_ram is
 
-    type ram_t is array (2**RAM_ADDR_WIDTH_g-1 downto 0) of std_logic_vector(31 downto 0);
-    signal ram : ram_t;
-    attribute ramstyle : string;
-    attribute ramstyle of ram : signal is "no_rw_check";
-
     signal ram_addr : std_logic_vector(15 downto 0);
     signal ram_re, ram_re_q : std_logic;
     signal ram_rdata : std_logic_vector(31 downto 0);
@@ -62,18 +57,31 @@ architecture arch of sc_ram is
 
 begin
 
-    -- sync ram
-    process(i_clk)
-        variable ram_addr_v : integer;
-    begin
-    if rising_edge(i_clk) then
-        ram_addr_v := to_integer(unsigned(ram_addr(RAM_ADDR_WIDTH_g-1 downto 0)));
-        if ( ram_we = '1' ) then
-            ram(ram_addr_v) <= ram_wdata;
-        end if;
-        ram_rdata <= ram(ram_addr_v);
-    end if;
-    end process;
+    -- psl default clock is rising_edge(i_clk) ;
+
+    -- psl assert always ( i_ram_re = '0' or i_ram_we = '0' ) ;
+    -- psl assert always ( i_avs_read = '0' or i_avs_write = '0' ) ;
+    -- psl assert always ( o_reg_re = '0' or o_reg_we = '0' ) ;
+
+    -- psl assert always ( i_ram_re -> next o_ram_rvalid ) ;
+
+
+
+    e_ram : entity work.ram_1r1w
+    generic map (
+        DATA_WIDTH_g => 32,
+        ADDR_WIDTH_g => RAM_ADDR_WIDTH_g--,
+    )
+    port map (
+        i_raddr => ram_addr(RAM_ADDR_WIDTH_g-1 downto 0),
+        o_rdata => ram_rdata,
+        i_rclk => i_clk,
+
+        i_waddr => ram_addr(RAM_ADDR_WIDTH_g-1 downto 0),
+        i_wdata => ram_wdata,
+        i_we => ram_we,
+        i_wclk => i_clk--,
+    );
 
     ram_addr <=
         (others => '0') when ( reg_re = '1' or reg_we = '1' ) else
