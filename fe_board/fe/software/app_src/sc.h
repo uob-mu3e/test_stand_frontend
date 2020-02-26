@@ -38,7 +38,7 @@ struct sc_t {
         // data offset
         alt_u32 offset = ram->regs.fe.offset & 0xFFFF;
 
-        alt_u16 status = 0;
+        alt_u16 status = FEB_REPLY_ERROR;
         if(!(offset >= 0 && offset + n <= sizeof(sc_ram_t::data) / sizeof(sc_ram_t::data[0]))) {
             printf("[sc::callback] ERROR: ...\n");
         }
