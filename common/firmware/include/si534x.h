@@ -18,11 +18,11 @@ struct si534x_t : si_t {
     }
 
     void read_design_id(char design_id[8]) {
-        for(int i = 0; i < 8; i++) design_id[i] = (char)read(0x026B + i);
+        read_n(0x026B, (alt_u8*)design_id, 8);
     }
 
     void write_design_id(const char design_id[8]) {
-        for(int i = 0; i < 8; i++) write(0x026B + i, design_id[i]);
+        write_n(0x026B, (alt_u8*)design_id, 8);
     }
 
     int wait_sysincal(int timeout = 8) {

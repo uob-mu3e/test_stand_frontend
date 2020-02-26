@@ -110,6 +110,18 @@ struct si_t {
         wait_ready();
     }
 
+    void read_n(alt_u16 address, alt_u8* value, alt_u8 n) {
+        for(alt_u8 i = 0; i < n; i++) {
+            value[i] = read(address + i);
+        }
+    }
+
+    void write_n(alt_u16 address, const alt_u8* value, alt_u8 n) {
+        for(alt_u8 i = 0; i < n; i++) {
+            write(address + i, value[i]);
+        }
+    }
+
     alt_u64 read_n(alt_u16 address, alt_u8 n) {
         alt_u64 value = 0;
 
