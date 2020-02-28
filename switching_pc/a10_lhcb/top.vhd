@@ -26,6 +26,8 @@ port (
     A10_SI5345_1_JITTER_CLOCK_P         : out   std_logic;
 
     -- SI5345_2
+    A10_SI5345_2_SMB_SCL                : inout std_logic;
+    A10_SI5345_2_SMB_SDA                : inout std_logic;
     A10_SI5345_2_JITTER_CLOCK_P         : out   std_logic;
 
     --  Reset from push button through Max5
@@ -45,6 +47,10 @@ architecture rtl of top is
 
     signal nios_clk, nios_reset_n : std_logic;
     signal i2c_scl_in, i2c_scl_oe, i2c_sda_in, i2c_sda_oe : std_logic;
+    signal i2c_cs : std_logic_vector(31 downto 0);
+
+    constant I2C_CS_SI5341_1_c : std_logic_vector(i2c_cs'range) := (1 => '1', others => '0');
+    constant I2C_CS_SI5341_2_c : std_logic_vector(i2c_cs'range) := (2 => '1', others => '0');
 
     signal av_pod0 : work.util.avalon_t;
 
@@ -78,6 +84,7 @@ begin
         i2c_scl_oe      => i2c_scl_oe,
         i2c_sda_in      => i2c_sda_in,
         i2c_sda_oe      => i2c_sda_oe,
+        i2c_cs_export   => i2c_cs,
 
         rst_reset_n => nios_reset_n,
         clk_clk     => nios_clk--,
@@ -85,14 +92,18 @@ begin
 
     -- i2c SCL
     i2c_scl_in <=
-        not i2c_scl_oe
+        '0' when ( i2c_cs = I2C_CS_SI5341_1_c and A10_SI5345_1_SMB_SCL = '0' ) else
+        '0' when ( i2c_cs = I2C_CS_SI5341_2_c and A10_SI5345_2_SMB_SCL = '0' ) else
         '1';
-    A10_SI5345_1_SMB_SCL <= ZERO when ( i2c_scl_oe = '1' ) else 'Z';
+    A10_SI5345_1_SMB_SCL <= ZERO when ( i2c_cs = I2C_CS_SI5341_1_c and i2c_scl_oe = '1' ) else 'Z';
+    A10_SI5345_2_SMB_SCL <= ZERO when ( i2c_cs = I2C_CS_SI5341_2_c and i2c_scl_oe = '1' ) else 'Z';
     -- i2c SDA
     i2c_sda_in <=
-        A10_SI5345_1_SMB_SDA and
+        '0' when ( i2c_cs = I2C_CS_SI5341_1_c and A10_SI5345_1_SMB_SDA = '0' ) else
+        '0' when ( i2c_cs = I2C_CS_SI5341_2_c and A10_SI5345_2_SMB_SDA = '0' ) else
         '1';
-    A10_SI5345_1_SMB_SDA <= ZERO when ( i2c_sda_oe = '1' ) else 'Z';
+    A10_SI5345_1_SMB_SDA <= ZERO when ( i2c_cs = I2C_CS_SI5341_1_c and i2c_sda_oe = '1' ) else 'Z';
+    A10_SI5345_2_SMB_SDA <= ZERO when ( i2c_cs = I2C_CS_SI5341_2_c and i2c_sda_oe = '1' ) else 'Z';
 
 
 

@@ -25,6 +25,7 @@ int main() {
         case '1':
             break;
         case 'c':
+            IOWR_ALTERA_AVALON_PIO_DATA(I2C_CS_BASE, 1 << 1);
             si5345_1.menu();
             break;
         default:

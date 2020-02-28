@@ -15,4 +15,8 @@ nios_base.export_avm avm_pod 14 0x70010000 -clk clk_pod
 
 
 
+nios_base.add_pio i2c_cs 32 Output 0x700F0260
+
+
+
 save_system {nios.qsys}
