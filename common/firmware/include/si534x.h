@@ -5,6 +5,11 @@
 
 struct si534x_t : si_t {
 
+    si534x_t(ALT_AVALON_I2C_DEV_t* i2c_dev, alt_u32 i2c_slave)
+        : si_t(i2c_dev, i2c_slave)
+    {
+    }
+
     si534x_t(alt_u32 spi_base, alt_u32 spi_slave)
         : si_t(spi_base, spi_slave)
     {
@@ -33,6 +38,10 @@ struct si534x_t : si_t {
             usleep(1000);
         }
         return -1;
+    }
+
+    void soft_reset() {
+        write(0x001C, read(0x001c) | (1 << 0));
     }
 
     int nvm_write() {
@@ -83,6 +92,44 @@ struct si534x_t : si_t {
         }
 
         return 0;
+    }
+
+    void menu() {
+        alt_u32 pn_base = (read(0x0003) << 8) | read(0x0002);
+
+        while (1) {
+            status();
+            printf("\n");
+
+            printf("SI%04X:\n", pn_base);
+            printf("  [R] => reset\n");
+            printf("  [r] => read regs\n");
+
+            printf("Select entry ...\n");
+            char cmd = wait_key();
+            switch(cmd) {
+            case 'R':
+                soft_reset();
+                break;
+            case 'r': {
+                printf("select page (0): ");
+                char page = wait_key();
+                if('0' <= page && page <= '9') page = page - '0';
+                else if('a' <= page && page <= 'f') page = 10 + page - 'a';
+                else if('A' <= page && page <= 'F') page = 10 + page - 'A';
+                else page = 0;
+                printf("si5345.read:\n");
+                for(alt_u16 address = 0x0000; address < 0x0100; address++) {
+                    printf("  [0x%04X] = 0x%02X\n", (page << 8) + address, read((page << 8) + address));
+                }
+                break;
+            }
+            case 'q':
+                return;
+            default:
+                printf("invalid command: '%c'\n", cmd);
+            }
+        }
     }
 
 };
