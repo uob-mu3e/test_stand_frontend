@@ -9,22 +9,27 @@ port (
     tx_gbt                              : OUT   STD_LOGIC_VECTOR(47 DOWNTO 0);
     A10_REFCLK_GBT_P_0                  : IN    STD_LOGIC;
 
-    --  Reset from push button through Max5
-    A10_M5FL_CPU_RESET_N                : IN    STD_LOGIC;
+    --  LEDs
+    A10_LED                             : OUT   STD_LOGIC_VECTOR(7 DOWNTO 0);
 
-    --  COLOR LEDS
+    --  Color LEDs
     A10_LED_3C_1                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
     A10_LED_3C_2                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
     A10_LED_3C_3                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
     A10_LED_3C_4                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
 
-    --  LEDS
-    A10_LED                             : OUT   STD_LOGIC_VECTOR(7 DOWNTO 0);
-
     A10_SI53340_2_CLK_40_P              : in    std_logic;
 
+    -- SI5345_1
+    A10_SI5345_1_SMB_SCL                : inout std_logic;
+    A10_SI5345_1_SMB_SDA                : inout std_logic;
     A10_SI5345_1_JITTER_CLOCK_P         : out   std_logic;
+
+    -- SI5345_2
     A10_SI5345_2_JITTER_CLOCK_P         : out   std_logic;
+
+    --  Reset from push button through Max5
+    A10_M5FL_CPU_RESET_N                : IN    STD_LOGIC;
 
     --  general purpose internal clock
     CLK_A10_100MHZ_P                    : IN    STD_LOGIC--; -- from internal 100 MHz oscillator
@@ -33,7 +38,13 @@ end entity;
 
 architecture rtl of top is
 
+    -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
+    signal ZERO : std_logic := '0';
+    attribute keep : boolean;
+    attribute keep of ZERO : signal is true;
+
     signal nios_clk, nios_reset_n : std_logic;
+    signal i2c_scl_in, i2c_scl_oe, i2c_sda_in, i2c_sda_oe : std_logic;
 
     signal av_pod0 : work.util.avalon_t;
 
@@ -63,9 +74,27 @@ begin
         avm_pod_writedata       => av_pod0.writedata,
         avm_pod_waitrequest     => av_pod0.waitrequest,
 
+        i2c_scl_in      => i2c_scl_in,
+        i2c_scl_oe      => i2c_scl_oe,
+        i2c_sda_in      => i2c_sda_in,
+        i2c_sda_oe      => i2c_sda_oe,
+
         rst_reset_n => nios_reset_n,
         clk_clk     => nios_clk--,
     );
+
+    -- i2c SCL
+    i2c_scl_in <=
+        not i2c_scl_oe
+        '1';
+    A10_SI5345_1_SMB_SCL <= ZERO when ( i2c_scl_oe = '1' ) else 'Z';
+    -- i2c SDA
+    i2c_sda_in <=
+        A10_SI5345_1_SMB_SDA and
+        '1';
+    A10_SI5345_1_SMB_SDA <= ZERO when ( i2c_sda_oe = '1' ) else 'Z';
+
+
 
     generate_pod : for i in 0 downto 0 generate
     begin
@@ -115,6 +144,8 @@ begin
         i_clk       => nios_clk--,
     );
     end generate;
+
+
 
     process(nios_clk)
     begin
