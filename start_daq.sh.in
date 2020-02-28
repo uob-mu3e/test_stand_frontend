@@ -21,9 +21,10 @@ odbedit -d Custom -c 'create STRING SC'
 odbedit -c 'set Custom/SC sc.html'
 odbedit -d Custom -c 'create STRING SciFi-ASICs'
 odbedit -c 'set Custom/SciFi-ASICs mutrigTdc.html'
-odbedit -d Custom -c 'create STRING MALIBU'
-odbedit -c 'set Custom/MALIBU TileGUI/MALIBUMonitor/Monitor.html'
-
+#odbedit -d Custom -c 'create STRING MALIBU'
+#odbedit -c 'set Custom/MALIBU TileGUI/MALIBUMonitor/Monitor.html'
+odbedit -d Custom -c 'create STRING MuPix'
+odbedit -c 'set Custom/MuPix MuPixTB.html'
 
 #set mhttpd to run http
 odbedit -c 'set "Experiment/http redirect to https" "n"'

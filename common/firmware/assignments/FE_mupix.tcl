@@ -1,5 +1,6 @@
-#----------------------------------------------------------------------------
-#PORT A ---------------------------------------------------------------------
+#
+
+#PORT A
 #SPI Board DACs
 # A_spi_clk_front
 # A_spi_din_front
@@ -13,5 +14,3 @@
 # set_location_assignment PIN_AL27 -to SPI_LD_DAC_A SPI_Load_A[0]
 # set_location_assignment PIN_AJ25 -to SPI_LD_TEMP_DAC_A SPI_Load_A[1]
 # set_location_assignment PIN_AH25 -to SPI_LD_ADC_A SPI_Load_A[2]
-
-

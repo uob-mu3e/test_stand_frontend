@@ -22,7 +22,7 @@ OPTS=(
 )
 
 [ -d "$HOME/.cache/altera-quartus" ] && OPTS+=(-P"$HOME/.cache/altera-quartus")
-[ -d "$HOME/.cache/altera-quartus" ] && OPTS+=(-P"/usr/local/lib/ghdl/vendors/altera")
+[ -d "/usr/local/lib/ghdl/vendors/altera" ] && OPTS+=(-P"/usr/local/lib/ghdl/vendors/altera")
 
 #ghdl -s "${OPTS[@]}" "${SRC[@]}"
 ghdl -i "${OPTS[@]}" "${SRC[@]}"

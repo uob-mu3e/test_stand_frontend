@@ -22,7 +22,6 @@
 
 #include "mudaq_device.h"
 #include "utils.hpp"
-#include "../include/mudaq_registers.h"
 
 
 #define PAGEMAP_LENGTH 8 // each page table entry has 64 bits = 8 bytes
@@ -146,7 +145,7 @@ namespace mudaq {
 
   bool MudaqDevice::open()
 {
-    // O_SYNC only affects 'write´. not really needed but doesnt hurt and makes
+    // O_SYNC only affects 'write'. not really needed but doesnt hurt and makes
     // things safer if we later decide to use 'write'.
     _fd = ::open(_path.c_str(), O_RDWR | O_SYNC);
     if (_fd < 0) {

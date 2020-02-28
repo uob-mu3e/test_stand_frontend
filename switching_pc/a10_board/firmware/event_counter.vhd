@@ -6,10 +6,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
-use work.mudaq_components.all;
 
 entity event_counter is
-    port(
+port (
 		clk:               in std_logic;
 		dma_clk:           in std_logic;
 		reset_n:           in std_logic;
@@ -22,7 +21,7 @@ entity event_counter is
  		dma_data:          out std_logic_vector (31 downto 0);
 		state_out:         out std_logic_vector(3 downto 0)--;
 );
-end entity event_counter;
+end entity;
 
 architecture rtl of event_counter is
 
@@ -227,4 +226,4 @@ begin
 	end if;
 end process;
 
-end rtl;
+end architecture;

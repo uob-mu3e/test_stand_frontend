@@ -25,9 +25,6 @@
 
 #include "mudaq_device.h"
 
-#define DMA_SLOW_DOWN_REGISTER_W	0x06
-#define FEB_ENABLE_REGISTER_W		0x0A
-
 using namespace std;
 
 void print_usage(){
@@ -52,6 +49,11 @@ int main(int argc, char *argv[])
         }
 
         mu.disable();
+        uint32_t datagen_setup = 0;
+        datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
+        mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
+        mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0, 100);
+        mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0x0, 100);
         mu.close();
         return 0;
     }
@@ -134,14 +136,18 @@ int main(int argc, char *argv[])
     // Set up data generator
     if (atoi(argv[1]) == 1) {
         uint32_t datagen_setup = 0;
-        mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
-        datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_PIXEL(datagen_setup);
+        mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
+        datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
         //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
         mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
     }
 
-    // Enable all links
+    // Enable all links (SC)
     mu.write_register_wait(FEB_ENABLE_REGISTER_W, 0xF, 100);
+    // Enable all links (DATA)
+    mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0xF, 100);
+    // Enable only one link
+    //mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0x1, 100);
 
     mudaq::DmaMudaqDevice::DataBlock block;
     uint32_t newoffset;
@@ -162,8 +168,14 @@ int main(int argc, char *argv[])
 
     while(dma_buf[size/sizeof(uint32_t)-8] <= 0){
 
-        if (mu.last_written_addr() == 0) continue;
-        if (mu.last_written_addr() == lastlastWritten) continue;
+        if (mu.last_written_addr() == 0) {
+            //cout << "last_written" << endl;
+            continue;
+        }
+        if (mu.last_written_addr() == lastlastWritten) {
+            //cout << "lastlast_written" << endl;
+            continue;
+        }
         lastlastWritten = lastWritten;
         lastWritten = mu.last_written_addr();
 
@@ -176,11 +188,14 @@ int main(int argc, char *argv[])
 
 //        myfile << "endofevent" << endl;
         lastendofevent = endofevent;
-        endofevent = mu.last_endofevent_addr();
+        endofevent = mu.last_endofevent_addr(); // now begin of event :)
 
-        if ((endofevent+1)*8 > lastlastWritten) continue;
-        if ((dma_buf[(endofevent+1)*8] == 0xAFFEAFFE) or (dma_buf[(endofevent+1)*8] == 0x0000009c)){
-        cout << hex << (endofevent+1)*8 << " " << lastWritten << " " << dma_buf[(endofevent+1)*8] << endl;
+        if ((endofevent+1)*8 > lastlastWritten) {
+            //cout << "endofevent" << endl;
+            continue;
+        }
+        if ((dma_buf[(endofevent)*8-1] == 0xAFFEAFFE or dma_buf[(endofevent)*8-1] == 0x0000009c) && dma_buf[(endofevent)*8] == 0x1){
+            cout << hex << (endofevent+1)*8 << " " << lastWritten << " " << dma_buf[(endofevent+1)*8] << endl;
         };
 //        for (int i = 0; i < 20; i++) {
 //        char dma_buf_str[256];
@@ -288,7 +303,7 @@ int main(int argc, char *argv[])
         uint32_t datagen_setup = 0;
         datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
         mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
-        mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x0, 100);
+        mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0, 100);
     }
 
     // reset all

@@ -143,8 +143,6 @@ void MutrigConfig::Parse_GLOBAL_from_struct(MUTRIG_GLOBAL& mt_g){
     setParameter("pll_setcoarse", mt_g.pll_setcoarse);
     setParameter("short_event_mode", mt_g.short_event_mode);
     setParameter("pll_envomonitor", mt_g.pll_envomonitor);
-    setParameter("lvds_tx_vcm", mt_g.lvds_tx_vcm);
-    setParameter("lvds_tx_bias", mt_g.lvds_tx_bias);
 }
 
 void MutrigConfig::Parse_TDC_from_struct(MUTRIG_TDC& mt_tdc){
@@ -181,7 +179,8 @@ void MutrigConfig::Parse_TDC_from_struct(MUTRIG_TDC& mt_tdc){
     setParameter("dmon_1_dac", mt_tdc.dmon_1_dac);
     setParameter("dmon_2_en", mt_tdc.dmon_2_en);
     setParameter("dmon_2_dac", mt_tdc.dmon_2_dac);
-
+    setParameter("lvds_tx_vcm", mt_tdc.lvds_tx_vcm);
+    setParameter("lvds_tx_bias", mt_tdc.lvds_tx_bias);
 }
 
 

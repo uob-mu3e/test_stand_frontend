@@ -3,7 +3,8 @@
  * date : 2019
  */
 
-void menu_xcvr(volatile alt_u32* xcvr) {
+void menu_xcvr(volatile alt_u32* xcvr, char ID = 'A') {
+    
     while (1) {
         char cmd;
         if(read(uart, &cmd, 1) > 0) switch(cmd) {
@@ -28,7 +29,7 @@ void menu_xcvr(volatile alt_u32* xcvr) {
 
         int ch = xcvr[0x00] & 0xFF;
 
-        printf("xcvr[A].ch[0x%02X], lpbk = %d\n", ch, xcvr[0x2F]);
+        printf("xcvr[%c].ch[0x%02X], lpbk = %d\n", ID, ch, xcvr[0x2F]);
         printf("                R_DA S_LS_R E__FDE\n");
         printf("  tx    :   %s  0x%02X 0x%04X 0x%04X\n",
             xcvr[0x10] == 0x00 && xcvr[0x11] == 0x0001 && xcvr[0x12] == 0x0000 ? "OK" : "  ",

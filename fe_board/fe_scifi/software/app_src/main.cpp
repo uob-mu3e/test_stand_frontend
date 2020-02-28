@@ -6,10 +6,11 @@
 si5345_t si5345 { SPI_SI_BASE, 0 };
 
 #include "../../../fe/software/app_src/sc.h"
+#include "../../../fe/software/app_src/sc_ram.h"
 sc_t sc;
 
-#include "../../../fe/software/app_src/mscb_user.h"
-mscb_t mscb;
+//#include "../../../fe/software/app_src/mscb_user.h"
+//mscb_t mscb;
 #include "../../../fe/software/app_src/reset.h"
 
 #include "scifi_module.h"
@@ -20,6 +21,7 @@ alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     return scifi_module.callback(cmd,data,n);
 }
 
+volatile sc_ram_t* ram =(sc_ram_t*) AVM_SC_BASE;
 
 int main() {
     base_init();
@@ -27,13 +29,13 @@ int main() {
     si5345.init();
 //    mscb.init();
     sc.init();
-
+    
     scifi_module.RSTSKWctrl_Clear();
 
     while (1) {
         printf("\n");
         printf("[fe_scifi] -------- menu --------\n");
-
+        printf("ID: 0x%08x\n", ram->data[0xFFFB]);
         printf("\n");
         printf("  [1] => xcvr qsfp\n");
         printf("  [2] => scifi\n");
@@ -62,7 +64,7 @@ int main() {
             si5345.menu();
             break;
         case '6':
-            mscb_main();
+//            mscb_main();
             break;
         case '7':
             menu_reset();

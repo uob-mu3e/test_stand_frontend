@@ -47,8 +47,10 @@ typedef struct {
 "reset_datapath = BOOL : n",\
 "reset_asics = BOOL : n",\
 "reset_lvds = BOOL : n",\
+"reset_counters = BOOL : n",\
 "LVDS_waitforall = BOOL : n",\
 "LVDS_waitforall_sticky = BOOL : y",\
+"num_asics = INT : 16",\
 "mask = BOOL[16] :",\
 "[0] n",\
 "[1] n",\
@@ -124,6 +126,8 @@ typedef struct {
     INT       dmon_1_dac;
     BOOL      dmon_2_en;
     INT       dmon_2_dac;
+    INT       lvds_tx_vcm;
+    INT       lvds_tx_bias;
 } MUTRIG_TDC;
 
 #define MUTRIG_TDC_STR(_name) const char *_name[] = {\
@@ -161,6 +165,8 @@ typedef struct {
 "dmon_1_dac = INT : 0",\
 "dmon_2_en = BOOL : n",\
 "dmon_2_dac = INT : 0",\
+"lvds_tx_vcm = INT : 0",\
+"lvds_tx_bias = INT : 0",\
 "",\
 NULL }
 
@@ -184,8 +190,6 @@ typedef struct {
     BOOL      pll_setcoarse;
     BOOL      short_event_mode;
     BOOL      pll_envomonitor;
-    INT       lvds_tx_vcm;
-    INT       lvds_tx_bias;
 } MUTRIG_GLOBAL;
 
 #define MUTRIG_GLOBAL_STR(_name) const char *_name[] = {\
@@ -203,8 +207,6 @@ typedef struct {
 "pll_setcoarse = BOOL : n",\
 "short_event_mode = BOOL : n",\
 "pll_envomonitor = BOOL : n",\
-"lvds_tx_vcm = INT : 0",\
-"lvds_tx_bias = INT : 0",\
 "",\
 NULL }
 

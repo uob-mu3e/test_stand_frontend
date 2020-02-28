@@ -6,7 +6,7 @@ use ieee.std_logic_unsigned.all;
 
 --  A testbench has no ports.
 entity halffull_tb is
-end halffull_tb;
+end entity;
 
 architecture behav of halffull_tb is
   --  Declaration of the component that will be instantiated.
@@ -137,4 +137,4 @@ begin
         o_cnt           => cnt--,
     );
 
-end behav;
+end architecture;

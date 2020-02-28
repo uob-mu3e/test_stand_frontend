@@ -5,7 +5,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
 entity sram is
-  port (
+port (
     clock          : in  std_logic;
     reset_n        : in  std_logic;
     we             : in  std_logic;
@@ -13,8 +13,8 @@ entity sram is
     write_address  : in  std_logic_vector(15 downto 0);
     datain         : in  std_logic_vector(31 downto 0);
     dataout        : out std_logic_vector(31 downto 0)
-  );
-end entity sram;
+);
+end entity;
 
 architecture RTL of sram is
 
@@ -34,6 +34,5 @@ begin
       dataout <= ram(to_integer(unsigned(read_address)));
     end if;
   end process RamProc;
-
 
 end architecture;

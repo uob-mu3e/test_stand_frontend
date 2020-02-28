@@ -4,7 +4,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.pcie_components.all;
 
 entity pcie_cfgbus is
 port (
@@ -17,7 +16,7 @@ port (
 		cfg_dev_ctrl	: out std_logic_vector(31 downto 0);
 		cfg_slot_ctrl	: out std_logic_vector(15 downto 0);
 		cfg_link_ctrl	: out std_logic_vector(31 downto 0);
-		cfg_prm_cmd		: out std_logic_vector(15 downto 0);	
+		cfg_prm_cmd		: out std_logic_vector(15 downto 0);
 		cfg_msi_addr	: out std_logic_vector(63 downto 0);
 		cfg_pmcsr		: out std_logic_vector(31 downto 0);
 		cfg_msixcsr		: out std_logic_vector(15 downto 0);

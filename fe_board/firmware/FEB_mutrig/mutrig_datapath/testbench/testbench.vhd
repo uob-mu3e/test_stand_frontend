@@ -35,6 +35,7 @@ architecture RTL of testbench is
 --dut definition
 component mutrig_datapath is
   generic(
+	N_MODULES: integer range 1 to 2 := 1;
 	N_ASICS : integer :=1;
 	C_CHANNELNO_PREFIX_A : std_logic_vector:=""; --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
 	C_CHANNELNO_PREFIX_B : std_logic_vector:=""
@@ -42,7 +43,9 @@ component mutrig_datapath is
         --(e.g. Fibers, two modules with up to 4 ASICs each, PREFIX="00" ; "01" for A and B )
   );
   port (
-	i_rst			: in  std_logic;
+	i_rst_core		: in  std_logic;
+	i_rst_rx		: in  std_logic;
+
 	i_stic_txd		: in  std_logic_vector( N_ASICS-1 downto 0);-- serial data
 	i_refclk_125_A		: in  std_logic;                 		-- ref clk for lvds pll (A-Side) 
 	i_refclk_125_B		: in  std_logic;                 		-- ref clk for lvds pll (B-Side)
@@ -54,12 +57,13 @@ component mutrig_datapath is
 	o_A_fifo_empty		: out std_logic;
 	o_A_fifo_data		: out std_logic_vector(35 downto 0);
 	i_A_fifo_rd		: in  std_logic;
+ 	--secondary interface used if N_MODULES=2
 	o_B_fifo_empty		: out std_logic;
 	o_B_fifo_data		: out std_logic_vector(35 downto 0);
-	i_B_fifo_rd		: in  std_logic := '0';
+	i_B_fifo_rd		: in  std_logic:='0';
 	--slow control
 	i_SC_disable_dec	: in std_logic;
-	i_SC_mask		: in std_logic_vector( N_ASICS-1 downto 0);
+	i_SC_mask		: in std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 	i_SC_datagen_enable	: in std_logic;
 	i_SC_datagen_shortmode	: in std_logic;
 	i_SC_datagen_count	: in std_logic_vector(9 downto 0);
@@ -68,10 +72,10 @@ component mutrig_datapath is
 	--monitors
 	o_receivers_usrclk	: out std_logic;              		-- pll output clock
 	o_receivers_pll_lock	: out std_logic;			-- pll lock flag
-	o_receivers_dpa_lock	: out std_logic_vector( N_ASICS-1 downto 0);			-- dpa lock flag per channel
-	o_receivers_ready	: out std_logic_vector( N_ASICS-1 downto 0);-- receiver output ready flag
 	o_frame_desync		: out std_logic_vector(1 downto 0);
 	o_buffer_full		: out std_logic_vector(1 downto 0);
+	o_receivers_dpa_lock	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0);			-- dpa lock flag per channel
+	o_receivers_ready	: out std_logic_vector(N_MODULES*N_ASICS-1 downto 0);-- receiver output ready flag
 	o_counter_numerator     : out std_logic_vector(31 downto 0);
 	o_counter_denominator_low  : out std_logic_vector(31 downto 0);
 	o_counter_denominator_high : out std_logic_vector(31 downto 0);
@@ -129,6 +133,8 @@ signal i_SC_counterselect       : std_logic_vector(5 downto 0);
 signal o_counter_numerator      :  std_logic_vector(31 downto 0);
 signal o_counter_denominator_low  : std_logic_vector(31 downto 0);
 signal o_counter_denominator_high : std_logic_vector(31 downto 0);
+signal o_counter_numerator_b      :  std_logic_vector(31 downto 0);
+signal o_counter_denominator_b : std_logic_vector(63 downto 0);
 --fifo interface
 signal s_A_fifo_empty 		: std_logic:='0';
 signal s_A_fifo_data		: std_logic_vector(35 downto 0);
@@ -144,6 +150,7 @@ signal i_RC_may_generate        : std_logic:='1';
 signal o_RC_all_done            : std_logic;
 
 signal i_SC_mask		: std_logic_vector(N_ASICS-1 downto 0);
+signal i_SC_datagen_enable      : std_logic;
 signal s_header_payload		: std_logic :='0';
 begin
 i_RC_may_generate <= '1';
@@ -151,10 +158,10 @@ i_RC_may_generate <= '1';
 -- basic stimulus for receiver
 i_coreclk	<= not i_coreclk after  3 ns;	-- 166 MHz system core clock (actually 156MHz)
 i_refclk_125	<= not i_refclk_125 after  4 ns;	-- 125 MHz tranceiver reference clock
-i_rst		<= '1' after 20 ns, '0' after 200 ns;	-- Basic reset of GBT
+i_rst		<= '1' after 20 ns, '0' after 200 ns;--, '1' after 3 us, '0' after 3.1 us;	-- Basic reset of GBT
 
 -- basic stimulus for asics
-i_tsclk_125	<= not i_tsclk_125 and i_rst after  4 ns;
+i_tsclk_125	<= not i_tsclk_125 after 4 ns;
 asic_clk_common			<= not asic_clk_common  after 0.8 ns;	--  625 MHz ASIC clock
 asics_rst			<= '1' after 20 ns, '0' after 60 ns;	-- Basic reset of ASIC
 
@@ -212,7 +219,8 @@ dut: mutrig_datapath
 		C_CHANNELNO_PREFIX_B => "10"
 	)
 	port map (
-		i_rst			=> i_rst,
+		i_rst_core		=> i_rst,
+		i_rst_rx		=> i_rst,
 		i_stic_txd		=> i_asic_tx_p,
 		i_refclk_125_A		=> i_refclk_125,
 		i_refclk_125_B		=> i_refclk_125,
@@ -232,7 +240,7 @@ dut: mutrig_datapath
 		o_frame_desync		=> o_frame_desync,
 		i_SC_datagen_enable	=> '0',
 		i_SC_datagen_shortmode	=> '0',
-		i_SC_datagen_count	=> (3=>'1',others=>'0'),
+		i_SC_datagen_count	=> (others=>'0'),
 		i_SC_rx_wait_for_all	=> '1',
 		i_SC_rx_wait_for_all_sticky => '1',
 
@@ -245,6 +253,8 @@ dut: mutrig_datapath
 		o_counter_denominator_high => o_counter_denominator_high
 	);
 
+o_counter_denominator_b<=work.util.gray2bin(o_counter_denominator_high&o_counter_denominator_low);
+o_counter_numerator_b<=work.util.gray2bin(o_counter_numerator);
 ---------------------------------------------------------------
 -- fifo readout stimulus
 fifo_ro: process (i_coreclk)

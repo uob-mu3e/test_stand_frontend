@@ -2,6 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.daq_constants.all;
+
 entity top is
 port (
     -- FE.A
@@ -42,10 +44,25 @@ port (
 
 
 
+    -- POD
+
+    -- Si5345 out0 (125 MHz)
+    pod_clk_left        : in    std_logic;
+    -- Si5345 out1 (125 MHz)
+--    pod_clk_right       : in    std_logic;
+
+    pod_tx_reset_n  : out   std_logic;
+    pod_rx_reset_n  : out   std_logic;
+
+    pod_tx          : out   std_logic_vector(3 downto 0);
+    pod_rx          : in    std_logic_vector(3 downto 0);
+
+
+
     -- QSFP
 
     -- Si5345 out2 (156.25 MHz)
-    qsfp_pll_clk    : in    std_logic;
+    qsfp_clk        : in    std_logic;
 
     QSFP_ModSel_n   : out   std_logic; -- module select (i2c)
     QSFP_Rst_n      : out   std_logic;
@@ -56,16 +73,15 @@ port (
 
 
 
-    -- POD
+    -- Si5345 out3 (125 MHz, right)
+    lvds_clk_A          : in    std_logic;
+    -- Si5345 out6 (125 MHz, left)
+    lvds_clk_B          : in    std_logic;
 
-    -- Si5345 out0 (125 MHz)
-    pod_pll_clk     : in    std_logic;
-
-    pod_tx_reset_n  : out   std_logic;
-    pod_rx_reset_n  : out   std_logic;
-
-    pod_tx          : out   std_logic_vector(3 downto 0);
-    pod_rx          : in    std_logic_vector(3 downto 0);
+    -- Si5345 out7 (125 MHz)
+    clk_125_bottom      : in    std_logic; -- global 125 MHz clock
+    -- Si5345 out8 (125 MHz)
+    clk_125_top         : in    std_logic;
 
 
 
@@ -85,15 +101,14 @@ port (
 
 
 
-    -- Si5345 out8 (625 MHz)
-    clk_625     : in    std_logic;
-
-
-
+    -- Si5345 out0 (125 MHz)
     si42_clk_125        : in    std_logic;
+    -- Si5345 out1 (50 MHz)
     si42_clk_50         : in    std_logic;
 
 
+
+    clk_aux     : in    std_logic;
 
     reset_n     : in    std_logic--;
 );
@@ -101,11 +116,13 @@ end entity;
 
 architecture arch of top is
 
+    constant N_LINKS : positive := 1;
+
     signal led : std_logic_vector(led_n'range) := (others => '0');
 
-    signal fifo_rempty : std_logic;
-    signal fifo_rack : std_logic;
-    signal fifo_rdata : std_logic_vector(35 downto 0);
+    signal fifo_write : std_logic_vector(N_LINKS-1 downto 0);
+    signal fifo_wdata : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
+    signal common_fifos_almost_full : std_logic_vector(N_LINKS-1 downto 0);
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
@@ -118,17 +135,28 @@ architecture arch of top is
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n : std_logic_vector(15 downto 0);
 
+    signal run_state_125 : run_state_t;
+    signal s_run_state_all_done : std_logic;
+
 begin
 
     ----------------------------------------------------------------------------
     -- MALIBU
 
-    malibu_ck_fpga_1 <= clk_625;
+    -- lvds clock (156.25 MHz)
+    malibu_ck_fpga_0 <= qsfp_clk;
+    -- timestamp clock (625 MHz, conf from nios)
+    malibu_ck_fpga_1 <= lvds_clk_A;
+
     malibu_pll_reset <= '0';
 
-    e_malibu_block : entity work.malibu_block
+    e_malibu_block : entity work.scifi_path
     generic map (
-        N_g => 1--,
+        N_MODULES => 1,
+        N_ASICS => 1,
+        LVDS_PLL_FREQ => 156.25,
+        LVDS_DATA_RATE => 156.25,
+        N_LINKS => N_LINKS--,
     )
     port map (
         i_reg_addr      => malibu_reg.addr(3 downto 0),
@@ -137,17 +165,26 @@ begin
         i_reg_we        => malibu_reg.we,
         i_reg_wdata     => malibu_reg.wdata,
 
-        o_ck_fpga_0     => malibu_ck_fpga_0,
-        o_chip_reset    => malibu_chip_reset,
+        o_chip_reset(0) => malibu_chip_reset,
         o_pll_test      => malibu_pll_test,
         i_data          => malibu_data(0 downto 0),
 
-        o_fifo_rempty   => fifo_rempty,
-        i_fifo_rack     => fifo_rack,
-        o_fifo_rdata    => fifo_rdata,
+        o_fifo_write   => fifo_write,
+        o_fifo_wdata   => fifo_wdata,
 
-        i_reset         => not reset_n,
-        i_clk           => qsfp_pll_clk--,
+        i_common_fifos_almost_full => common_fifos_almost_full,
+
+        i_run_state     => run_state_125,
+        o_run_state_all_done => s_run_state_all_done,
+
+        o_MON_rxrdy     => open,
+
+        i_clk_core      => qsfp_clk,
+        i_clk_g125      => clk_125_bottom,
+        i_clk_ref_A     => qsfp_clk,
+        i_clk_ref_B     => qsfp_clk,
+
+        i_reset         => not reset_n--,
     );
 
     ----------------------------------------------------------------------------
@@ -207,10 +244,11 @@ begin
 
     e_fe_block : entity work.fe_block
     generic map (
-        NIOS_CLK_HZ_g => 50000000--,
+        NIOS_CLK_MHZ_g => 50.0,
+        N_LINKS => N_LINKS--,
     )
     port map (
-        i_fpga_id       => X"FEB0",
+        i_fpga_id       => X"FEB3",
         -- mutrig FEB type
         i_fpga_type     => "111000",
 
@@ -224,20 +262,25 @@ begin
         o_spi_sclk      => spi_sclk,
         o_spi_ss_n      => spi_ss_n,
 
-        i_spi_si_miso   => si45_spi_out,
-        o_spi_si_mosi   => si45_spi_in,
-        o_spi_si_sclk   => si45_spi_sclk,
-        o_spi_si_ss_n   => si45_spi_cs_n,
+        i_spi_si_miso(1)    => si42_spi_out,
+        o_spi_si_mosi(1)    => si42_spi_in,
+        o_spi_si_sclk(1)    => si42_spi_sclk,
+        o_spi_si_ss_n(1)    => si42_spi_cs_n,
+        i_spi_si_miso(0)    => si45_spi_out,
+        o_spi_si_mosi(0)    => si45_spi_in,
+        o_spi_si_sclk(0)    => si45_spi_sclk,
+        o_spi_si_ss_n(0)    => si45_spi_cs_n,
 
-        i_qsfp_rx       => qsfp_rx,
-        o_qsfp_tx       => qsfp_tx,
+        i_qsfp_rx           => qsfp_rx,
+        o_qsfp_tx           => qsfp_tx,
 
-        i_pod_rx        => pod_rx,
-        o_pod_tx        => pod_tx,
+        i_pod_rx            => pod_rx,
+        o_pod_tx            => pod_tx,
 
-        i_fifo_rempty   => fifo_rempty,
-        o_fifo_rack     => fifo_rack,
-        i_fifo_rdata    => fifo_rdata,
+        i_fifo_write        => fifo_write,
+        i_fifo_wdata        => fifo_wdata,
+
+        o_fifos_almost_full => common_fifos_almost_full,
 
         i_mscb_data     => mscb_data_in,
         o_mscb_data     => mscb_data_out,
@@ -249,11 +292,16 @@ begin
         o_malibu_reg_we     => malibu_reg.we,
         o_malibu_reg_wdata  => malibu_reg.wdata,
 
-        i_nios_clk      => si42_clk_125,
+        -- reset system
+        o_run_state_125 => run_state_125,
+        i_can_terminate => s_run_state_all_done,
+
+        -- clocks
+        i_nios_clk      => si42_clk_50,
         o_nios_clk_mon  => led(15),
-        i_clk_156       => qsfp_pll_clk,
+        i_clk_156       => qsfp_clk,
         o_clk_156_mon   => led(14),
-        i_clk_125       => pod_pll_clk,
+        i_clk_125       => pod_clk_left,
         o_clk_125_mon   => led(13),
 
         i_areset_n      => reset_n--,

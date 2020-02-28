@@ -80,7 +80,8 @@ end component;
 signal s_full_event_data	: std_logic_vector(55 downto 0);
 signal s_event_ready		: std_logic;
 
-
+--fifo clear from core, synced to rxclk
+signal s_clear_rxclk_n : std_logic;
 
 -- fifo
 signal s_fifofull                 : std_logic;
@@ -190,9 +191,12 @@ if rising_edge(i_clk_deser) then
 end if;
 end process;
 
+rst_sync_clear : entity work.reset_sync
+port map( i_reset_n => not i_aclear, o_reset_n => s_clear_rxclk_n, i_clk => i_clk_deser);
+
 u_channel_data_fifo : channeldata_fifo   
 PORT MAP (
-	aclr     => i_reset or i_aclear,
+	aclr     => i_reset or (not s_clear_rxclk_n),
 	data	   => s_full_event_data,
 	rdclk	   => i_clk_rd,
 	rdreq	   => i_fifo_rd,

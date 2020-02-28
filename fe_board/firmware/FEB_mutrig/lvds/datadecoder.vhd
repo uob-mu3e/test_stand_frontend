@@ -144,33 +144,12 @@ elsif(clk'event and clk = '1') then
 		end if;
 		
 	when count_ALIGNWORD =>
--- -- -- -- -- -- THIS IS NIK's ALIGNMENT --> doesn't work for Jens
---		if(rx_k = '1' and rx_decoded = ALIGN_WORD) then
---			kcounter <= kcounter + '1';
---			if(kcounter = "1111") then
---				sync_state		<= rxready;
---			end if;
---		else
---			kcounter <= (others => '0');
---			alignment_phase_cnt	<= alignment_phase_cnt + '1';
---			if(alignment_phase_cnt = "1111") then
---				rx_bitslip <= '1';
---			end if;
---		end if;
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 		rx_bitslip 	<= '0';
 		eval_alignment_ctr	<= eval_alignment_ctr + 1;
 		if(rx_locked = '0') then
 			sync_state 	<= reset;
 			ready_buf			<= '0';
-			
-		-- we assume the Mupix data format here to fulfill the following criteria:
-		-- reset mode: a lot of k28_5 in a row
-		-- regular data format:
-		-- maxcycend 6 bits: 64 hits in a row + counter +link identifier = 264 cycles without k28_5-word in data stream
-		-- so within 512 cycles we should definitely see a few k28_5 words
-		-- in worst case we check for 36 us (9*512*8ns) until we find the right pattern
-			
+		
 		elsif(rx_decoded = ALIGN_WORD and rx_k = '1') then -- correct k-word coming in
 			if(k_seen /= (0 to k_seen'high=>'1'))then
 				k_seen <= k_seen + 1;
@@ -197,48 +176,6 @@ elsif(clk'event and clk = '1') then
 			state_out	<= "10";
 			ready_buf			<= '1';
 		end if;
-
---			rx_bitslip <= '0';
---				if(k_seen = 0) then
---					eval_alignment_ctr 	<= (others => '0');
---					k_seen 		<= k_seen + 1;
---				elsif(eval_alignment_ctr = 256) then
---					eval_alignment_ctr 	<= (others => '0');
---					k_seen 		<= k_seen + 1;
---					if(k_seen = 1000) then		-- find 1000 k-words "in a row"
---						sync_state 	<= rxready;
---						state_out  	<= x"5";
---						k_seen 		<= (others => '0');
---						eval_alignment_ctr 	<= (others => '0');
---					end if;
---				end if;
---			elsif(rx_decoded = k28_0 and rx_k = '1') then -- correct k-word coming in
---	
---				
---			else -- not = k-word
---				if(eval_alignment_ctr = 512) then
---					eval_alignment_ctr 	<= (others => '0');
---					k_seen		<= (others => '0');
---					rx_bitslip 	<= '1';
---				else
---					rx_bitslip 	<= '0';
---					eval_alignment_ctr 	<= eval_alignment_ctr + 1;
---				end if;
---			end if; 
--- -- -- -- -- end Jens'align -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
---	when rxready =>
---
---		if(rx_locked = '0')then-- or checker_rst_n = '0') then
---			sync_state 	<= reset;
---			state_out	<= "00";
---			ready			<= '0';
---		else
---			sync_state 	<= rxready;
---			state_out	<= "11";
---			ready			<= '1';
---			rx_reset		<= '0';
---		end if;
-		
 	when others =>
 		sync_state <= reset;
 	end case;

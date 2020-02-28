@@ -8,7 +8,7 @@
 #define FEB_REPLY_SUCCESS 0
 #define FEB_REPLY_ERROR   1
 
-
+#include "stdlib.h"
 
 struct sc_t {
     volatile sc_ram_t* ram = (sc_ram_t*)AVM_SC_BASE;
@@ -73,14 +73,18 @@ struct sc_t {
     }
 
     void menu() {
+	alt_u32 feb_id = 0x0;
+	char str[2] = {0};
         while(1) {
             printf("\n");
             printf("[sc] -------- menu --------\n");
-
+            printf("ID: 0x%08x\n", ram->data[0xFFFB]);
             printf("\n");
             printf("  [r] => read data and regs\n");
             printf("  [w] => write [i] = i for i < 16\n");
-            printf("  [i] => test cmdlen irq\n");
+            printf("  [t] => read fpga id\n");
+	    printf("  [f] => write fpga id\n");
+	    printf("  [i] => test cmdlen irq\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -98,6 +102,22 @@ struct sc_t {
                 for(int i = 0; i < 16; i++) {
                     ram->data[i] = i;
                 }
+                break;
+	    case 't':
+		printf("FPGA ID: 0x%08X\n", ram->data[0xFFFB]);
+                break;
+            case 'f':
+		feb_id = 0x0;
+                printf("Enter feb id in hex: ");
+
+                for(int i = 0; i<8; i++){
+                    printf("payload: 0x%08x\n", feb_id);
+                    str[0] = wait_key();
+                    feb_id = feb_id*16+strtol(str,NULL,16);
+                }
+
+                printf("setting feb_id to 0x%08x\n", feb_id);
+                ram->data[0xFFFB] = feb_id;
                 break;
             case 'i':
                 ram->regs.fe.cmdlen = 0xffff0000;

@@ -7,27 +7,27 @@
 
 struct si5345_t : si534x_t {
 
-    const char* DESIGN_ID = "feb.v01";
+    const char* DESIGN_ID = "si45.v1";
 
     si5345_t(alt_u32 spi_base, alt_u32 spi_slave)
         : si534x_t(spi_base, spi_slave)
     {
     }
 
-    void init() {
+    void init(int force = 0) {
         char id[9];
         id[8] = '\0';
         for(int i = 0; i < 8; i++) id[i] = (char)read(0x026B + i);
-        if(strcmp(id, DESIGN_ID) == 0) return;
+        if(force == 0 && strcmp(id, DESIGN_ID) == 0) return;
 
         si_t::init(si5345_revb_registers, sizeof(si5345_revb_registers) / sizeof(si5345_revb_registers[0]));
-        for(int i = 0; i < 8; i++) write(0x026B + i, DESIGN_ID[i]);
+//        for(int i = 0; i < 8; i++) write(0x026B + i, DESIGN_ID[i]);
 
         wait_sysincal();
     }
 
-    void reset() {
-        write(0x001C, 0x01);
+    void soft_reset() {
+        write(0x001C, read(0x001c) | (1 << 0));
     }
 
     void preamble() {
@@ -40,6 +40,33 @@ struct si5345_t : si534x_t {
         write(0x0540, 0x00);
         write(0x0B24, 0xC3);
         write(0x0B25, 0x02);
+    }
+
+    static const int N_OUT = 10;
+    const int16_t REG_OUT[N_OUT] = { 0x0108, 0x010D, 0x0112, 0x0117, 0x0121, 0x0126, 0x012B, 0x0130, 0x013A };
+
+    /**
+     * divide value = (R + 1) * 2
+     */
+    int set_R(int i, int r) {
+        if(!(0 <= i && i <= 9)) return -1;
+        if(!(0 <= r && r < (1 << 24))) return -1;
+
+        uint16_t O_reg = REG_OUT[i];
+        uint16_t R_reg = 0x024A + 3 * i;
+
+        const uint8_t RDIV_FORCE2 = (1 << 2);
+
+        if(r == 0) {
+            write(O_reg, read(O_reg) | RDIV_FORCE2);
+            write_n(R_reg, r, 3);
+        }
+        else {
+            write_n(R_reg, r, 3);
+            write(O_reg, read(O_reg) & ~RDIV_FORCE2);
+        }
+
+        return 0;
     }
 
     void menu() {
@@ -62,15 +89,21 @@ struct si5345_t : si534x_t {
             char cmd = wait_key();
             switch(cmd) {
             case 'I':
-                init();
+                init(1); // force init
                 break;
             case 'R':
-                reset();
+                soft_reset();
                 break;
             case 'r': {
+                printf("select page (0): ");
+                char page = wait_key();
+                if('0' <= page && page <= '9') page = page - '0';
+                else if('a' <= page && page <= 'f') page = 10 + page - 'a';
+                else if('A' <= page && page <= 'F') page = 10 + page - 'A';
+                else page = 0;
                 printf("si5345.read:\n");
-                for(alt_u16 address = 0x0200; address < 0x0300; address++) {
-                    printf("  [0x%02X] = 0x%02X\n", address, read(address));
+                for(alt_u16 address = 0x0000; address < 0x0100; address++) {
+                    printf("  [0x%04X] = 0x%02X\n", (page << 8) + address, read((page << 8) + address));
                 }
                 break;
             }

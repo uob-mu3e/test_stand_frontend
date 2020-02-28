@@ -24,7 +24,6 @@
 
 #include "mudaq_device_scifi.h"
 #include "utils.hpp"
-#include "../include/mudaq_registers.h"
 #include "midas.h"
 
 #define PAGEMAP_LENGTH 8 // each page table entry has 64 bits = 8 bytes
@@ -156,7 +155,7 @@ namespace mudaq {
 
   bool MudaqDevice::open()
 {
-    // O_SYNC only affects 'write´. not really needed but doesnt hurt and makes
+    // O_SYNC only affects 'write'. not really needed but doesnt hurt and makes
     // things safer if we later decide to use 'write'.
     _fd = ::open(_path.c_str(), O_RDWR | O_SYNC);
     if (_fd < 0) {
@@ -431,8 +430,8 @@ void MudaqDevice::FEBsc_resetSlave(){
  *      1 word as dummy: 0x00000000
  *      First word (0xBAD...) to be written last (serves as start condition)
  */
-int MudaqDevice::FEBsc_write(uint16_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
-//printf("FEBsc_write() FPGA:%u length%u startaddr%x @ %d\n",FPGA_ID,length,startaddr, m_FEBsc_wmem_addr);
+int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError) {
+//printf("FEBsc_write() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr, m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_WRITE = 0x3; // this is 11 in binary
     uint16_t FPGAID_field=1<<FPGA_ID;//!FPGA ID is to be one-hot encoded (TODO in firmware)
@@ -448,6 +447,12 @@ int MudaqDevice::FEBsc_write(uint16_t FPGA_ID, uint32_t* data, uint16_t length, 
     write_memory_rw(m_FEBsc_wmem_addr, 0xBAD << 20);
     m_FEBsc_wmem_addr += 4 + length + 1;
 
+
+    //SC master is close to the end of accessible memory? then reset block
+    if(m_FEBsc_wmem_addr>0xff00){
+       FEBsc_resetMaster();
+    }
+
     if(!request_reply)
 	return 0; //do not wait for reply
 
@@ -461,7 +466,15 @@ int MudaqDevice::FEBsc_write(uint16_t FPGA_ID, uint32_t* data, uint16_t length, 
     }
     if(count==1000){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Timeout occured waiting for reply");
-        return -1;
+	//most common case of failure! retry after resetting the SC blocks
+	if(retryOnError){
+	    cm_msg(MINFO, "MudaqDevice::FEBsc_read" , "Retry after timeout");
+
+	    FEBsc_resetMaster();
+	    FEBsc_resetSlave();
+	    return FEBsc_write(FPGA_ID,data,length,startaddr,request_reply,false);
+	}else
+            return -1;
     }
     if(!m_sc_packet_fifo.back().Good()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received bad packet");
@@ -474,7 +487,7 @@ int MudaqDevice::FEBsc_write(uint16_t FPGA_ID, uint32_t* data, uint16_t length, 
     return 0;
 }
 
-int MudaqDevice::FEBsc_read(uint16_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply) {
+int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError) {
 //printf("FEBsc_read() FPGA:%u length%u startaddr%u @ %d\n",FPGA_ID,length,startaddr,m_FEBsc_wmem_addr);
     uint32_t FEB_PACKET_TYPE_SC = 0x7;
     uint32_t FEB_PACKET_TYPE_SC_READ = 0x2; // this is 10 in binary
@@ -487,6 +500,12 @@ int MudaqDevice::FEBsc_read(uint16_t FPGA_ID, uint32_t* data, uint16_t length, u
     write_memory_rw(m_FEBsc_wmem_addr + 4, 0x0000009c);
     write_memory_rw(m_FEBsc_wmem_addr, 0xBAD << 20);
     m_FEBsc_wmem_addr += 4 + 1;
+
+    //SC master is close to the end of accessible memory? then reset block
+    if(m_FEBsc_wmem_addr>0xff00){
+       FEBsc_resetMaster();
+    }
+
     if(!request_reply)
 	return 0; //do not pretend we received what we wanted, but also do not signal a failure.
     //wait for reply
@@ -499,7 +518,15 @@ int MudaqDevice::FEBsc_read(uint16_t FPGA_ID, uint32_t* data, uint16_t length, u
     }
     if(count==1000){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Timeout occured waiting for reply");
-        return -1;
+	//most common case of failure! retry after resetting the SC blocks
+	if(retryOnError){
+	    cm_msg(MINFO, "MudaqDevice::FEBsc_read" , "Retry after timeout");
+
+	    FEBsc_resetMaster();
+	    FEBsc_resetSlave();
+	    return FEBsc_read(FPGA_ID,data,length,startaddr,request_reply,false);
+	}else
+            return -1;
     }
     if(!m_sc_packet_fifo.back().Good()){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet");
@@ -514,6 +541,7 @@ int MudaqDevice::FEBsc_read(uint16_t FPGA_ID, uint32_t* data, uint16_t length, u
         return -1;
     }
     memcpy(data,m_sc_packet_fifo.back().data()+3,length*sizeof(uint32_t));
+
     return length;
 }
 
@@ -632,32 +660,39 @@ const uint32_t MudaqDevice::FEBsc_RPC_DATAOFFSET=0;
 //send an RPC command with payload to the nios, wait for finish. Returns status of Nios2 callback returned from FEB
 uint16_t MudaqDevice::FEBsc_NiosRPC(uint16_t FPGA_ID, uint16_t command, std::vector<std::pair<uint32_t* /*payload*/,uint16_t /*chunklen*/> > payload_chunks, int polltime_ms){
          uint32_t len=0;
-	 printf("MudaqDevice::FEBsc_NiosRPC(): command %x\n",command);
+	 int error_cnt=0;
+	 int status;
+//	 printf("MudaqDevice::FEBsc_NiosRPC(): command %x\n",command);
 	 //write payload chunks
 	 for(auto chunk: payload_chunks){
-              FEBsc_write(FPGA_ID, chunk.first, chunk.second, (uint32_t) len+FEBsc_RPC_DATAOFFSET,true);
-	      printf("MudaqDevice::FEBsc_NiosRPC(): writing chunk of %d words\n", chunk.second);
+              status=FEBsc_write(FPGA_ID, chunk.first, chunk.second, (uint32_t) len+FEBsc_RPC_DATAOFFSET,true);
+	      if(status < 0) error_cnt++;
+//	      printf("MudaqDevice::FEBsc_NiosRPC(): writing chunk of %d words\n", chunk.second);
 	      len+=chunk.second;
 	 }
          uint32_t reg;
 
          //Write offset address
          reg= FEBsc_RPC_DATAOFFSET;
-	 printf("MudaqDevice::FEBsc_NiosRPC(): writing offset\n");
-         FEBsc_write(FPGA_ID, &reg,1,0xfff1,true);
+//	 printf("MudaqDevice::FEBsc_NiosRPC(): writing offset\n");
+         status=FEBsc_write(FPGA_ID, &reg,1,0xfff1,true);
+	 if(status < 0) error_cnt++;
 
          //Write command word to register FFF0: cmd | n
          reg= ((command<<16)&0xffff0000) + (len&0x0000ffff);
-	 printf("MudaqDevice::FEBsc_NiosRPC(): writing command\n");
-         FEBsc_write(FPGA_ID, &reg,1,0xfff0,true);
+//	 printf("MudaqDevice::FEBsc_NiosRPC(): writing command\n");
+         status=FEBsc_write(FPGA_ID, &reg,1,0xfff0,true);
+	 if(status < 0) error_cnt++;
 
          //Wait for remote command to finish, poll register
          uint timeout_cnt = 0;
          while(1){
-            if(++timeout_cnt >= 500) throw std::runtime_error("MudaqDevice::FEBsc_NiosRPC: RPC timeout");
+            if(++timeout_cnt >= 500) return 0;//throw std::runtime_error("MudaqDevice::FEBsc_NiosRPC: RPC timeout");
+	    if(error_cnt > 5) return 0;//throw std::runtime_error("MudaqDevice::FEBsc_NiosRPC: Too many SC transmission failures");
             std::this_thread::sleep_for(std::chrono::milliseconds(polltime_ms));
-            FEBsc_read(FPGA_ID, &reg, 1, 0xfff0);
-	    printf("poll %d: %x, %x\n",timeout_cnt,reg,reg&0xffff0000);
+            status=FEBsc_read(FPGA_ID, &reg, 1, 0xfff0);
+	    if(status < 0) error_cnt++;
+	    if(timeout_cnt > 5) printf("MudaqDevice::FEBsc_NiosRPC(): Polling for command %x @%d: %x, %x\n",command,timeout_cnt,reg,reg&0xffff0000);
 	    if((reg&0xffff0000) == 0) break;
          }
 	 return reg&0xffff;
@@ -758,7 +793,7 @@ int DmaMudaqDevice::enable_continous_readout(int interTrue)
 
    _last_end_of_buffer = 0;
   if (interTrue == 1){
-    write_register_wait(DMA_REGISTER_W, 0x9, 100);
+	    write_register_wait(DMA_REGISTER_W, 0x9, 100);
   }
   else {
     write_register_wait(DMA_REGISTER_W, SET_DMA_BIT_ENABLE(0x0), 100);

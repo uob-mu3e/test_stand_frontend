@@ -32,11 +32,12 @@ port (
 	write_sc_regs:		in reg32array_t(NREGISTERS_MUPIX_WR-1 downto 0);
 	read_sc_regs: 		out reg32array_t(NREGISTERS_MUPIX_RD-1 downto 0);
 
-	o_fifo_rdata    : out   std_logic_vector(35 downto 0);
-	o_fifo_rempty   : out   std_logic;
-	i_fifo_rack     : in    std_logic;
+	o_fifo_wdata    : out std_logic_vector(35 downto 0);
+	o_fifo_write    : out std_logic;
 	
-	i_sync_reset_cnt: in std_logic--;
+	i_sync_reset_cnt: in std_logic;
+    
+    i_run_state_125 : run_state_t--;
 );
 end mupix_datapath;
 
@@ -83,11 +84,9 @@ signal read_regs				: reg32array_t(NREGISTERS_MUPIX_RD-1 downto 0);
 --signal regwritten_reg				: std_logic_vector(NREGISTERS-1 downto 0); 
 signal s_buf_data				: std_logic_vector(35 downto 0);
 signal sync_fifo_empty		: std_logic;
-signal s_buf_full				: std_logic;
-signal s_buf_almost_full	: std_logic;
 
 
-signal s_buf_data_125		: std_logic_vector(33 downto 0);
+signal s_buf_data_125		: std_logic_vector(35 downto 0);
 signal s_buf_wr_125			: std_logic;
 
 signal counter125 			: std_logic_vector(63 downto 0);
@@ -101,25 +100,15 @@ signal link_enable			: std_logic_vector(NLVDS-1 downto 0);
 
 begin
 
-	reset <= not i_reset_n;
+    reset           <= not i_reset_n;
+    -- to common merger FiFo:
+    o_fifo_wdata    <= s_buf_data;
+    o_fifo_write    <= not sync_fifo_empty;
 
-	u_common_fifo : work.common_fifo
-	port map (
-		clock           => i_clk,
-		sclr            => reset,
-		data            => s_buf_data,
-		wrreq           => not sync_fifo_empty,
-		full            => s_buf_full,
-		almost_full     => s_buf_almost_full,
-		empty           => o_fifo_rempty,
-		q               => o_fifo_rdata,
-		rdreq           => i_fifo_rack--,
-	);
-	
 	e_two_clk_sync_fifo : work.two_clk_sync_fifo
 	port map
 	(
-		data			=> "00" & s_buf_data_125,
+		data			=> s_buf_data_125,
 		rdclk			=> i_clk,
 		aclr			=> reset,
 		rdreq			=> not sync_fifo_empty,
@@ -196,26 +185,26 @@ begin
 	FOR i in 0 to NCHIPS-1 GENERATE	
 	-- we currently only use link 0 of each chip (up to 8 possible)
  
-		unpacker_single : work.data_unpacker_new
-		generic map(
-			COARSECOUNTERSIZE	=> COARSECOUNTERSIZE,
-			UNPACKER_HITSIZE	=> UNPACKER_HITSIZE
-		)
-		port map(
-			reset_n				=> i_reset_n,
-			clk					=> i_clk125,
-			datain				=> rx_data(4*i), 
-			kin					=> rx_k(4*i), 
-			readyin				=> link_enable(4*i),
-			is_atlaspix			=> '0',	-- we limit ourselves to MuPix8 here
-			hit_out				=> hits((i+1)*UNPACKER_HITSIZE-1 downto i*UNPACKER_HITSIZE),
-			hit_ena				=> hits_ena(i),
-			coarsecounter		=> coarsecounters((i+1)*COARSECOUNTERSIZE-1 downto i*COARSECOUNTERSIZE),
-			coarsecounter_ena	=> coarsecounters_ena(i),
-			link_flag			=> link_flag(i),
-			errorcounter		=> unpack_errorcounter(i)	-- could be useful!
-		);	
-		
+        unpacker_single : work.data_unpacker_new
+        generic map(
+            COARSECOUNTERSIZE   => COARSECOUNTERSIZE,
+            UNPACKER_HITSIZE    => UNPACKER_HITSIZE
+        )
+        port map(
+            reset_n             => i_reset_n,
+            clk                 => i_clk125,
+            datain              => rx_data(8*i), 
+            kin                 => rx_k(8*i), 
+            readyin             => link_enable(8*i),
+            is_atlaspix         => '0',	-- we limit ourselves to MuPix8 here
+            hit_out             => hits((i+1)*UNPACKER_HITSIZE-1 downto i*UNPACKER_HITSIZE),
+            hit_ena             => hits_ena(i),
+            coarsecounter       => coarsecounters((i+1)*COARSECOUNTERSIZE-1 downto i*COARSECOUNTERSIZE),
+            coarsecounter_ena   => coarsecounters_ena(i),
+            link_flag           => link_flag(i),
+            errorcounter        => unpack_errorcounter(i) -- could be useful!
+        );
+
 		degray_single : work.hit_ts_conversion 
 		port map(
 			reset_n				=> i_reset_n,
@@ -249,7 +238,7 @@ begin
 
 	process(i_clk125, i_reset_n)
 	begin
-		if(i_reset_n = '0')then
+		if(i_reset_n = '0' or i_run_state_125 = RUN_STATE_SYNC)then
 			counter125	<= (others => '0');
 		elsif(rising_edge(i_clk125))then
 			if(i_sync_reset_cnt = '1')then
@@ -281,7 +270,8 @@ begin
 		tomemena					=> s_buf_wr_125,
 		tomemeoe					=> open,
 		errcounter_overflow	=> multichip_ro_overflow,
-		errcounter_sel_in		=> writeregs_reg(DEBUG_CHIP_SELECT_REGISTER_W)(CHIPRANGE-1 downto 0)
+		errcounter_sel_in		=> writeregs_reg(DEBUG_CHIP_SELECT_REGISTER_W)(CHIPRANGE-1 downto 0),
+        i_run_state_125         => i_run_state_125--,
 	);	
 
 

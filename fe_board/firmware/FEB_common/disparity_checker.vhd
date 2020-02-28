@@ -24,36 +24,6 @@ entity disparity_checker is
 end disparity_checker;
 
 architecture RTL of disparity_checker is
-component add_1_bit is
-port (
-	clk : in std_logic;
-	x: in std_logic;
-	y: in std_logic;
-	cin: in std_logic;
-	sum: out std_logic;
-	cout: out std_logic
-);
-end component;
-component add_2_bits
-	PORT
-	(
-		clock		: IN STD_LOGIC ;
-		dataa		: IN STD_LOGIC_VECTOR (1 DOWNTO 0);
-		datab		: IN STD_LOGIC_VECTOR (1 DOWNTO 0);
-		cout		: OUT STD_LOGIC ;
-		result		: OUT STD_LOGIC_VECTOR (1 DOWNTO 0)
-	);
-end component;
-component add_3_bits
-	PORT
-	(
-		clock		: IN STD_LOGIC ;
-		dataa		: IN STD_LOGIC_VECTOR (2 DOWNTO 0);
-		datab		: IN STD_LOGIC_VECTOR (2 DOWNTO 0);
-		cout		: OUT STD_LOGIC ;
-		result		: OUT STD_LOGIC_VECTOR (2 DOWNTO 0)
-	);
-end component;
 
 	signal running_disp : std_logic_vector(1 downto 0);
 	signal ready_reg	  : std_logic_vector(3 downto 0);
@@ -75,7 +45,7 @@ begin
 gen_adds:
 for i in 0 to 1 generate
 
-	i_adder_1_lo : add_1_bit 
+	i_adder_1_lo : entity work.add_1_bit
 	port map(
 		clk	=> clk,
 		x		=> rx_in(i*3),
@@ -85,7 +55,7 @@ for i in 0 to 1 generate
 		cout	=> add_stage_1(i)(1)
 	);
 	
-	i_adder_1_hi : add_1_bit 
+	i_adder_1_hi : entity work.add_1_bit
 	port map(
 		clk	=> clk,
 		x		=> rx_in(i*2+6),
@@ -95,7 +65,7 @@ for i in 0 to 1 generate
 		cout	=> add_stage_1(i+2)(1)
 	);	
 	
-	i_adder_2 :add_2_bits
+	i_adder_2 : entity work.add_2_bits
 	PORT map
 	(
 		clock		=> clk,
@@ -107,7 +77,7 @@ for i in 0 to 1 generate
 	
 end generate;
 
-	i_adder_3 :add_3_bits
+	i_adder_3 : entity work.add_3_bits
 	PORT map
 	(
 		clock		=> clk,
@@ -170,4 +140,4 @@ end generate;
 		end if;
 	end process;
 
-end RTL;
+end architecture;

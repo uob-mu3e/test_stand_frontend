@@ -1,2 +1,3 @@
 add_subdirectory(clock_control)
 add_subdirectory(network_control)
+add_subdirectory(lab_power_control)

@@ -13,9 +13,6 @@ set_false_path -to {clk_sync}
 
 set_false_path -to {sync_chain_halffull[*]}
 
-set_false_path -from {reset_logic:e_reset_logic|resets_reg[13]} -to {midas_event_builder:e_midas_event_builder|midas_bank_builder:\buffer_banks:*:e_bank|ip_dcfifo:e_fifo|dcfifo:dcfifo_component|dcfifo_g1r1:auto_generated|dffpipe_3dc:rdaclr|dffe13a[0]}; 
-set_false_path -from {reset_logic:e_reset_logic|resets_reg[13]} -to {midas_event_builder:e_midas_event_builder|midas_bank_builder:\buffer_banks:*:e_bank|ip_dcfifo:e_fifo|dcfifo:dcfifo_component|dcfifo_g1r1:auto_generated|dffpipe_3dc:rdaclr|dffe12a[0]}; 
-
 set_false_path -from {debouncer:e_debouncer|o_q[0]}
 
 set_min_delay -to {xcvr_a10:*|av_ctrl.readdata[*]} -100

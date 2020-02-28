@@ -87,6 +87,8 @@ int switch_id = 0; // TODO to be loaded from outside
 /* DMA Buffer and related */
 mudaq::DmaMudaqDevice * mup;
 
+/* Use CRFE bypass during run-start transitions, directly send command to FEB*/
+#define CRFE_BYPASS
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -96,6 +98,12 @@ INT read_scifi_sc_event(char *pevent, INT off);
 void sc_settings_changed(HNDLE, HNDLE, int, void *);
 void switching_board_mask_changed(HNDLE, HNDLE, int, void *);
 void frontend_board_mask_changed(HNDLE, HNDLE, int, void *);
+
+uint64_t get_datataking_state_from_odb(); //throws
+void set_feb_enable(uint64_t enablebits);
+uint64_t get_runstart_ack();
+uint64_t get_runend_ack();
+void print_ack_state();
 
 /*-- Equipment list ------------------------------------------------*/
 
@@ -141,7 +149,7 @@ EQUIPMENT equipment[] = {
      read_sc_event,             /* readout routine */
    },
    {"SciFi",                    /* equipment name */
-    {2, 0,                      /* event ID, trigger mask */
+    {3, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
@@ -209,17 +217,15 @@ INT frontend_init()
    const char * name = "sc.html";
    db_set_value(hDB,0,"Custom/Switching&", name, sizeof(name), 1, TID_STRING);
 
-   // watch if this switching board is enabled
    HNDLE hKey;
+   // watch if this switching board is enabled
    db_find_key(hDB, 0, "/Equipment/Links/Settings/SwitchingBoardMask", &hKey);
    assert(hKey);
-
    db_watch(hDB, hKey, switching_board_mask_changed, nullptr);
 
    // watch if this frontend board is enabled
    db_find_key(hDB, 0, "/Equipment/Links/Settings/LinkMask", &hKey);
    assert(hKey);
-
    db_watch(hDB, hKey, frontend_board_mask_changed, nullptr);
 
    // Define history panels
@@ -239,6 +245,9 @@ INT frontend_init()
    mup->FEBsc_resetMaster();
    mup->FEBsc_resetSlave();
 
+   //set link enables so slow control can pass 
+   try{ set_feb_enable(get_datataking_state_from_odb()); }
+   catch(...){ return FE_ERR_ODB;}
 
    //SciFi setup part
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
@@ -290,7 +299,11 @@ INT frontend_loop()
 
 INT begin_of_run(INT run_number, char *error)
 {
+try{
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Starting Run", "var(--morange)");
+
+   /* Set new run number */
+   mup->write_register(RUN_NR_REGISTER_W, run_number);
    /* Reset acknowledge/end of run seen registers before start of run */
    uint32_t start_setup = 0;
    start_setup = SET_RESET_BIT_RUN_START_ACK(start_setup);
@@ -298,114 +311,76 @@ INT begin_of_run(INT run_number, char *error)
    mup->write_register_wait(RESET_REGISTER_W, start_setup, 1000);
    mup->write_register(RESET_REGISTER_W, 0x0);
 
+//   mup->FEBsc_resetMaster(); //KB: needed?
+//   mup->FEBsc_resetSlave(); //KB: needed?
 
-   HNDLE hVar;
-   int status = db_find_key(hDB, 0, "/Equipment/Links/Settings", &hVar);
-   if (status != SUCCESS){
-      cm_msg(MERROR,"switch_fe","ODB Tree /Equipment/Links/Settings not found");
-      return CM_TRANSITION_CANCELED;
-   }
+   /* get link active from odb. */
+   uint64_t link_active_from_odb = get_datataking_state_from_odb();
 
-   INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
-   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
-   status = db_get_value(hDB, hVar, "FrontendBoardMask", frontend_board_active_odb, &size, TID_INT, false);
-   if (status != SUCCESS){
-      cm_msg(MERROR,"switch_fe","Error getting record for /Equipment/Links/Variables");
-      return CM_TRANSITION_CANCELED;
-   }
-
-   /* get link active from odb */
-   uint64_t link_active_from_odb = 0;
-   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
-      int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
-      if(frontend_board_active_odb[offset + link] > 0)
-         link_active_from_odb += (1 << link);
-   }
-
-
-   mup->FEBsc_resetMaster();
-   mup->FEBsc_resetSlave();
-
-   status=SciFiFEB::Instance()->ConfigureASICs();
+   //configure ASICs
+   int status=SciFiFEB::Instance()->ConfigureASICs();
    if(status!=SUCCESS){
       cm_msg(MERROR,"switch_fe","ASIC configuration failed");
       return CM_TRANSITION_CANCELED;
    }
+   SciFiFEB::Instance()->ResetAllCounters();
 
 
-   mup->write_register(FEB_ENABLE_REGISTER_LOW_W, link_active_from_odb & 0xFFFFFFFF);
-//   mup->write_register(FEB_ENABLE_REGISTER_HIGH_W, link_active_from_odb >> 32);
-   mup->write_register(RUN_NR_REGISTER_W, run_number);
-
-
+#ifndef CRFE_BYPASS
    /* send run prepare signal via CR system */
    INT value = 1;
    db_set_value_index(hDB,0,"Equipment/Clock Reset/Run Transitions/Request Run Prepare",
                       &value, sizeof(value), switch_id, TID_INT, false);
-
+#else
+   /* direct sending of run prepare, CRFE bypass frontend is not working during run transitions*/
+   cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
+   DWORD value = run_number;
+   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff5,true); //run number
+   value= (1<<8) | 0x10;
+   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,true); //run prep command
+   value= 0xbcbcbcbc;
+   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff5,true); //reset payload
+   value= 0;//(1<<8) | 0x00;
+   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,true); //reset command
+#endif
 
    uint16_t timeout_cnt=300;
-   uint64_t link_active_from_register_low = 0;
-   uint64_t link_active_from_register_high = 0;
    uint64_t link_active_from_register;
+   printf("Waiting for run prepare acknowledge from all FEBs\n");
    do{
       timeout_cnt--;
-      link_active_from_register_low = mup->read_register_ro(RUN_NR_ACK_REGISTER_LOW_R);
-       //link_active_from_register_high = mup->read_register_ro(RUN_NR_ACK_REGISTER_HIGH_R) << 32;
-       link_active_from_register = link_active_from_register_high + link_active_from_register_low;
+      link_active_from_register = get_runstart_ack();
       printf("%u  %lx  %lx\n",timeout_cnt,link_active_from_odb, link_active_from_register);
-      usleep(100000);
-   }while(link_active_from_register != link_active_from_odb && (timeout_cnt > 0));
+      usleep(10000);
+   }while( (link_active_from_register & link_active_from_odb) != link_active_from_odb && (timeout_cnt > 0));
 
    if(timeout_cnt==0) {
       cm_msg(MERROR,"switch_fe","Run number mismatch on run %d", run_number);
-      for(int i = 0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++) {
-         if ((link_active_from_register >> i) & 0x1){
-            mup->write_register_wait(RUN_NR_ADDR_REGISTER_W, i, 1000);
-            cm_msg(MINFO,"switch_fe","Switching board %d, Link %d: Run number %d", switch_id, i, mup->read_register_ro(RUN_NR_REGISTER_R));
-         }
-      }
+      print_ack_state();
       return CM_TRANSITION_CANCELED;
    }
+
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Scintillating...", "lightBlue");
    return CM_SUCCESS;
+}catch(...){return CM_TRANSITION_CANCELED;}
 }
 
 /*-- End of Run ----------------------------------------------------*/
 
 INT end_of_run(INT run_number, char *error)
 {
-   HNDLE hVar;
-   int status = db_find_key(hDB, 0, "/Equipment/Links/Settings", &hVar);
-   if (status != SUCCESS){
-      cm_msg(MERROR,"switch_fe","ODB Tree /Equipment/Links/Settings not found");
-      return CM_TRANSITION_CANCELED;
-   }
-
-   INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
-   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
-   status = db_get_value(hDB, hVar, "FrontendBoardMask", frontend_board_active_odb, &size, TID_INT, false);
-   if (status != SUCCESS){
-      cm_msg(MERROR,"switch_fe","Error getting record for /Equipment/Links/Variables");
-      return CM_TRANSITION_CANCELED;
-   }
-
+try{
    /* get link active from odb */
-   uint64_t link_active_from_odb = 0;
-   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
-      int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
-      if(frontend_board_active_odb[offset + link] > 0)
-         link_active_from_odb += (1 << link);
-   }
+   uint64_t link_active_from_odb = get_datataking_state_from_odb();
 
-   printf("Waiting for stop signals from all FEBs\n");
+   printf("end_of_run: Waiting for stop signals from all FEBs\n");
    uint16_t timeout_cnt = 50;
-   uint64_t stop_signal_seen = mup->read_register_ro(RUN_STOP_ACK_REGISTER_R); //TODO make 64 bits
+   uint64_t stop_signal_seen = get_runend_ack();
    printf("Stop signal seen from 0x%16lx, expect stop signals from 0x%16lx\n", stop_signal_seen, link_active_from_odb);
-   while(stop_signal_seen != link_active_from_odb &&
+   while( (stop_signal_seen & link_active_from_odb) != link_active_from_odb &&
          timeout_cnt > 0) {
       usleep(1000);
-      stop_signal_seen = mup->read_register_ro(RUN_STOP_ACK_REGISTER_R);
+      stop_signal_seen = get_runend_ack();
       printf("%u:  Stop signal seen from %16lx, expect stop signals from %16lx\n", timeout_cnt,stop_signal_seen, link_active_from_odb);
       timeout_cnt--;
    };
@@ -414,6 +389,7 @@ INT end_of_run(INT run_number, char *error)
    if(timeout_cnt==0) {
       cm_msg(MERROR,"switch_fe","End of run marker only found for frontends %16lx", stop_signal_seen);
       cm_msg(MINFO,"switch_fe","... Expected to see from frontends %16lx", link_active_from_odb);
+      print_ack_state();
       set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Not OK", "var(--mred)");
       return CM_TRANSITION_CANCELED;
    }
@@ -438,6 +414,7 @@ INT end_of_run(INT run_number, char *error)
 
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
    return CM_SUCCESS;
+}catch(...){return CM_TRANSITION_CANCELED;}
 }
 
 /*-- Pause Run -----------------------------------------------------*/
@@ -468,8 +445,13 @@ INT read_sc_event(char *pevent, INT off)
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
 
 INT read_scifi_sc_event(char *pevent, INT off){
-    printf("Readin Scifi FEB status event for FPGA 1\n");
-    int status=SciFiFEB::Instance()->ReadBackCounters(1 /*FPGA-ID*/);
+	static int i=0;
+    printf("Reading Scifi FEB status data from all FEBs %d\n",i++);
+    //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
+    //Add readout function for this one that gets data from class variables and writes midas banks
+    SciFiFEB::Instance()->ReadBackAllCounters();
+    SciFiFEB::Instance()->ReadBackAllRunState();
+    SciFiFEB::Instance()->ReadBackAllDatapathStatus();
     return 0;
 }
 
@@ -696,27 +678,81 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
           }
 	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
-
-    if (std::string(key.name) == "Reset Bypass Payload") {
-          DWORD value;
-          int size = sizeof(INT);
-          db_get_data(hDB, hKey, &value, &size, TID_DWORD);
-          //FPGA_ID=0 - Assume only one board in this mode
-          int status=mup->FEBsc_write(0, &value,1,0xfff5,true);
-          if(status!=SUCCESS){/**/}
-    }
-
     if (std::string(key.name) == "Reset Bypass Command") {
-          DWORD value;
+          DWORD command, payload;
           int size = sizeof(DWORD);
-          db_get_data(hDB, hKey, &value, &size, TID_DWORD);
-          //FPGA_ID=0 - Assume only one board in this mode
-          int status=mup->FEBsc_write(0, &value,1,0xfff4,true);
+          db_get_data(hDB, hKey, &command, &size, TID_DWORD);
+	  if((command&0xff) == 0) return;
+          int status = db_get_value(hDB, 0, "/Equipment/Switching/Settings/Reset Bypass Payload", &payload, &size, TID_DWORD, false);
+
+	  printf("Reset Bypass Command %8.8x, payload %8.8x\n",command,payload);
+          //first send payload
+          status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &payload,1,0xfff5,false);
+	  //do not expect a reply here, for example during sync no data is returned (in reset state)
+          status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &command,1,0xfff4,false);
           if(status!=SUCCESS){/**/}
+	  //reset last command & payload
+	  payload=0xbcbcbcbc;
+          status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &payload,1,0xfff5,false);
+          command=0;//value&(1<<8);
+          status=mup->FEBsc_write(mup->FEBsc_broadcast_ID, &command,1,0xfff4,false);
+          if(status!=SUCCESS){/**/}
+	  //reset odb flag
+          command=command&(1<<8);
+          db_set_data(hDB, hKey, &command, size, 1, TID_DWORD);
     }
 
 }
 
+//--------------- Link related settings
+//
+
+uint64_t get_datataking_state_from_odb(){
+   INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
+   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
+   int status = db_get_value(hDB, 0, "/Equipment/Links/Settings/LinkMask", frontend_board_active_odb, &size, TID_INT, false);
+   if (status != SUCCESS){
+      cm_msg(MERROR,"switch_fe","Error getting record for /Equipment/Links/Settings");
+      throw;
+   }
+
+   /* get link active from odb */
+   uint64_t link_active_from_odb = 0;
+   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
+      int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
+      if(frontend_board_active_odb[offset + link] & FEBLINKMASK::DataOn)
+	 //both standard FEB link (SC and data) as well as secondary FEB link (data only) are considered enabled in this context if their DataOn bit is set.
+         link_active_from_odb += (1 << link);
+   }
+   return link_active_from_odb;
+}
+
+void set_feb_enable(uint64_t enablebits){
+   //mup->write_register(FEB_ENABLE_REGISTER_HIGH_W, enablebits >> 32); TODO make 64 bits
+   mup->write_register(FEB_ENABLE_REGISTER_LOW_W,  enablebits & 0xFFFFFFFF);
+}
+
+uint64_t get_runstart_ack(){
+   uint64_t reg = mup->read_register_ro(RUN_NR_ACK_REGISTER_LOW_R);
+//   reg |= mup->read_register_ro(RUN_NR_ACK_REGISTER_HIGH_R) << 32; TODO make 64 bits
+   return reg;
+}
+uint64_t get_runend_ack(){
+   uint64_t reg = mup->read_register_ro(RUN_STOP_ACK_REGISTER_R);
+//   reg |= mup->read_register_ro(RUN_STOP_ACK_REGISTER_HIGH_R) << 32; TODO make 64 bits
+   return reg;
+}
+
+void print_ack_state(){
+   uint64_t link_active_from_register = get_runstart_ack();
+   for(int i = 0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++) {
+      //if ((link_active_from_register >> i) & 0x1){
+         mup->write_register_wait(RUN_NR_ADDR_REGISTER_W, uint32_t(i), 1000);
+         uint32_t val=mup->read_register_ro(RUN_NR_REGISTER_R);
+         cm_msg(MINFO,"switch_fe","Switching board %d, Link %d: PREP_ACK=%u STOP_ACK=%u RNo=0x%8.8x", switch_id, i, (val>>25)&1, (val>>24)&1,(val>>0)&0xffffff);
+      //}
+   }
+}
 
 void switching_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
    printf("switching_board_mask_changed\n");
@@ -738,6 +774,8 @@ void switching_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
 }
 
 void frontend_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
-   SciFiFEB::Instance()->RebuildFEBsMap();
-
+   try{
+      set_feb_enable(get_datataking_state_from_odb());
+      SciFiFEB::Instance()->RebuildFEBsMap();
+   }catch(...){}
 }

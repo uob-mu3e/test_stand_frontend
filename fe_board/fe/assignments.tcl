@@ -26,9 +26,10 @@ set_instance_assignment -name IO_STANDARD LVDS -to clk_aux
 
 
 
-# Si5342 clocks
+# Si5342 clock out0
 set_instance_assignment -name IO_STANDARD LVDS -to si42_clk_125
 set_location_assignment PIN_AN15 -to si42_clk_125
+# Si5342 clock out1
 set_instance_assignment -name IO_STANDARD LVDS -to si42_clk_50
 set_location_assignment PIN_B15 -to si42_clk_50
 
@@ -52,9 +53,9 @@ set_location_assignment PIN_Y33 -to qsfp_rx[2]
 set_location_assignment PIN_AF33 -to qsfp_rx[1]
 set_location_assignment PIN_AH33 -to qsfp_rx[0]
 
-# QSFP clock from Si5345 chip
-set_instance_assignment -name IO_STANDARD LVDS -to qsfp_pll_clk
-set_location_assignment PIN_AB33 -to qsfp_pll_clk
+# Si5345 clock out2 (QSFP)
+set_instance_assignment -name IO_STANDARD LVDS -to qsfp_clk
+set_location_assignment PIN_AB33 -to qsfp_clk
 
 
 
@@ -81,22 +82,17 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to pod_rx_reset_n
 set_location_assignment PIN_AE18 -to pod_tx_reset_n
 set_location_assignment PIN_AP18 -to pod_rx_reset_n
 
-# POD clock from Si5345 chip
-set_instance_assignment -name IO_STANDARD LVDS -to pod_pll_clk
-set_location_assignment PIN_K2 -to pod_pll_clk
-#set_instance_assignment -name IO_STANDARD LVDS -to pod_pll_clk_right
-#set_location_assignment PIN_K33 -to pod_pll_clk_right
+# Si5345 clock out0 (POD left)
+set_instance_assignment -name IO_STANDARD LVDS -to pod_clk_left
+set_location_assignment PIN_K2 -to pod_clk_left
+# Si5345 clock out1 (POD right)
+set_instance_assignment -name IO_STANDARD LVDS -to pod_clk_right
+set_location_assignment PIN_K33 -to pod_clk_right
 
 
 
 # "Altera Quartus Settings File Reference Manual - Advanced I/O Timing Assignments"
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp_tx[*]
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_pll_clk -to qsfp_rx[*]
-set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_tx[*]
-#set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_pll_clk -to pod_rx[*]
-
-
-
-# ...
-set_instance_assignment -name IO_STANDARD LVDS -to clk_625
-set_location_assignment PIN_B17 -to clk_625
+set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_clk -to qsfp_tx[*]
+set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from qsfp_clk -to qsfp_rx[*]
+set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_clk_left -to pod_tx[*]
+#set_instance_assignment -name GXB_0PPM_CORE_CLOCK ON -from pod_clk_left -to pod_rx[*]

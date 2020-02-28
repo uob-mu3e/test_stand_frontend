@@ -21,7 +21,7 @@
 
 #include "mudaq_circular_buffer.hpp"
 #include "../include/mudaq_device_constants.h"
-#include "../include/mudaq_registers.h"
+#include "../include/switching_constants.h" //K.B. changed from "mudaq_registers.h"
 #include "utils.hpp"
 #include "time.h"
 #include <stdlib.h>
@@ -85,10 +85,10 @@ namespace mudaq {
     static const uint16_t FEBsc_broadcast_ID;
     //write slow control packet with payload of length words in data. Returns 0 on success, -1 on error receiving acknowledge packet.
     //Disable any check of reply by setting the request_reply to false, then only the write request will be sent.
-    int FEBsc_write(uint16_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply=true);
+    int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply=true, bool retryOnError=true);
     //request write slow control read packet, with payload of length words saved in data. Returns length of packet returned, -1 on error receiving reply packet
     //Disable any check of reply by setting the request_reply to false, then only the read request will be sent.
-    int FEBsc_read(uint16_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply=true);
+    int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply=true, bool retryOnError=true);
     //write all packets received into a midas bank. clears internal packet fifo and should be called from time to time to avoid storing all replies
     int FEBsc_write_bank(char *pevent, int off);
     int FEBsc_dump_packets();

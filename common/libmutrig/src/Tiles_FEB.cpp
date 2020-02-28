@@ -14,8 +14,8 @@ Contents:       Class to alter settings on a Tiles-FE-FPGA. Derives from MutrigF
 TilesFEB* TilesFEB::m_instance=NULL;
 
 //Mapping to physical ports of switching board.
-uint16_t TilesFEB::FPGAid_from_ID(int asic){return asic/2 + 1;} //first FPGA is #1
-uint16_t TilesFEB::ASICid_from_ID(int asic){return asic%2 + 2;} //only second two chips are connected
+uint16_t TilesFEB::FPGAid_from_ID(int asic){return asic/4 + 0;} //first FPGA is #1
+uint16_t TilesFEB::ASICid_from_ID(int asic){return asic%4 + 0;} //only second two chips are connected
 
 
 

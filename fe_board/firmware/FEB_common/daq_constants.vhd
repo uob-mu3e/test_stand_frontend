@@ -9,9 +9,11 @@ package daq_constants is
 
 -- multi-purpose types
 subtype reg32 is std_logic_vector(31 downto 0);
+subtype reg16 is std_logic_vector(15 downto 0);
 constant NREGISTERS : integer := 64;
 type reg32array is array (NREGISTERS-1 downto 0) of reg32;
 type reg32array_t is array (natural range <>) of reg32;
+type reg16array_t is array (natural range <>) of reg16;
 
 subtype byte_t is std_logic_vector(7 downto 0);
 type bytearray_t is array (natural range <>)  of byte_t;
@@ -21,6 +23,8 @@ type reg64array_t is array (natural range <>) of std_logic_vector(63 downto 0);
 
 subtype REG64_TOP_RANGE is integer range 63 downto 32;
 subtype REG64_BOTTOM_RANGE is integer range 31 downto 0;
+
+type natural_array_t is array(integer range<>) of natural;
 
 -- general FEB constants
 constant NLVDS				: integer := 32;	-- number of total links available
@@ -91,20 +95,23 @@ constant k30_7 : std_logic_vector(7 downto 0) := X"FE";
 
 
 -- mscb addressing (for networks with 8bit and 16bit addresses, we will use 16 ?)
-constant MSCB_CMD_ADDR_NODE16   : std_logic_vector(7 downto 0) := X"0A";
-constant MSCB_CMD_ADDR_NODE8    : std_logic_vector(7 downto 0) := X"09";
-constant MSCB_CMD_ADDR_GRP8     : std_logic_vector(7 downto 0) := X"11"; -- group addressing
-constant MSCB_CMD_ADDR_GRP16    : std_logic_vector(7 downto 0) := X"12";
-constant MSCB_CMD_ADDR_BC       : std_logic_vector(7 downto 0) := X"10"; --broadcast
-constant MSCB_CMD_PING8         : std_logic_vector(7 downto 0) := X"19";
-constant MSCB_CMD_PING16        : std_logic_vector(7 downto 0) := X"1A";
+constant MSCB_CMD_ADDR_NODE16           : std_logic_vector(7 downto 0)      := X"0A";
+constant MSCB_CMD_ADDR_NODE8            : std_logic_vector(7 downto 0)      := X"09";
+constant MSCB_CMD_ADDR_GRP8             : std_logic_vector(7 downto 0)      := X"11"; -- group addressing
+constant MSCB_CMD_ADDR_GRP16            : std_logic_vector(7 downto 0)      := X"12";
+constant MSCB_CMD_ADDR_BC               : std_logic_vector(7 downto 0)      := X"10"; --broadcast
+constant MSCB_CMD_PING8                 : std_logic_vector(7 downto 0)      := X"19";
+constant MSCB_CMD_PING16                : std_logic_vector(7 downto 0)      := X"1A";
 
-constant run_prep_acknowledge:          std_logic_vector(31 downto 0)   := x"000000FE";
-constant run_prep_acknowledge_datak:    std_logic_vector(3 downto 0)    := "0001";
-constant RUN_END:                       std_logic_vector(31 downto 0)   := x"000000FD";
-constant RUN_END_DATAK:                 std_logic_vector(3 downto 0)    := "0001";
-constant MERGER_TIMEOUT:                std_logic_vector(31 downto 0)   := x"000000FB";
-constant MERGER_TIMEOUT_DATAK:          std_logic_vector(3 downto 0)    := "0001";
-    
+constant run_prep_acknowledge           : std_logic_vector(31 downto 0)     := x"000000FE";
+constant run_prep_acknowledge_datak     : std_logic_vector(3 downto 0)      := "0001";
+constant RUN_END                        : std_logic_vector(31 downto 0)     := x"000000FD";
+constant RUN_END_DATAK                  : std_logic_vector(3 downto 0)      := "0001";
+constant MERGER_TIMEOUT                 : std_logic_vector(31 downto 0)     := x"000000FB";
+constant MERGER_TIMEOUT_DATAK           : std_logic_vector(3 downto 0)      := "0001";
+
+constant MERGER_FIFO_RUN_END_MARKER     : std_logic_vector(3 downto 0)      := "0111";
+constant MERGER_FIFO_PAKET_END_MARKER   : std_logic_vector(3 downto 0)      := "0011";
+constant MERGER_FIFO_PAKET_START_MARKER : std_logic_vector(3 downto 0)      := "0010";
 
 end package;

@@ -154,6 +154,11 @@ begin
 			end if;
 		end if;
 	end loop;
+	--Do not do anything when all are masked (do not keep all_header, all_trailer flags).
+	if(i_SC_mask = (i_SC_mask'range => '1')) then
+		l_all_header <='0';
+		l_all_trailer<='0';
+	end if;
 
 	--common data: find a candidate for common frame delimiter data (frameID)
 	--TODO: separate selection (may be slow based on flag, even false_path) and multiplexing (synchronous)
