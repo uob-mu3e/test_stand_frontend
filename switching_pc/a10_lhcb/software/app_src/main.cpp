@@ -9,6 +9,7 @@
 i2c_t i2c;
 
 #include "Si5345-RevD-SI5345_1-Registers.h"
+#include "Si5345-RevD-SI5345_2-Registers.h"
 si534x_t si5345 { i2c.dev, 0x68 };
 
 void clocks_menu() {
@@ -36,7 +37,10 @@ void clocks_menu() {
             si5345.menu();
             break;
         case 'I':
-            si5345.init(si5345_revd_registers, sizeof(si5345_revd_registers) / sizeof(si5345_revd_registers[0]));
+            IOWR_ALTERA_AVALON_PIO_DATA(I2C_CS_BASE, 1 << 1);
+            si5345.init(si5345_1_registers, sizeof(si5345_1_registers) / sizeof(si5345_1_registers[0]));
+            IOWR_ALTERA_AVALON_PIO_DATA(I2C_CS_BASE, 1 << 2);
+            si5345.init(si5345_2_registers, sizeof(si5345_2_registers) / sizeof(si5345_2_registers[0]));
             break;
         case 'q':
             return;

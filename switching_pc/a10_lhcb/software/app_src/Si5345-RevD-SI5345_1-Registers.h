@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef SI5345_REVD_REG_CONFIG_HEADER
-#define SI5345_REVD_REG_CONFIG_HEADER
+#ifndef SI5345_1_REG_CONFIG_HEADER
+#define SI5345_1_REG_CONFIG_HEADER
 
 #define SI5345_REVD_REG_CONFIG_NUM_REGS 526
 
@@ -29,7 +29,7 @@ typedef struct
 
 } si5345_revd_register_t;
 
-si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_REGS+1] =
+si5345_revd_register_t const si5345_1_registers[SI5345_REVD_REG_CONFIG_NUM_REGS+1] =
 {
 
 	/* Start configuration preamble */
