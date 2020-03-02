@@ -112,8 +112,8 @@ begin
     e_pod0 : entity work.xcvr_a10
     generic map (
         NUMBER_OF_CHANNELS_g => 6,
-        INPUT_CLOCK_FREQUENCY_g => 240000000,
-        DATA_RATE_g => 4800,
+        INPUT_CLOCK_FREQUENCY_g => 125000000,
+        DATA_RATE_g => 5000,
         CLK_MHZ_g => 100--,
     )
     port map (
