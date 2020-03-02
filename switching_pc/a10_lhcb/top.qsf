@@ -21,6 +21,8 @@ set_global_assignment -name QIP_FILE ip/include.qip
 
 set_global_assignment -name VHDL_FILE ../../common/firmware/a10/xcvr_a10.vhd
 
+set_global_assignment -name VHDL_FILE xcvr_block.vhd
+
 set_global_assignment -name QSYS_FILE nios.qsys
 
 
