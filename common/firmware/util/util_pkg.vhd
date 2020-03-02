@@ -44,6 +44,20 @@ package util is
   
     type avalon_array_t is array(natural range <>) of avalon_t;
 
+
+
+    -- avalon memory mapped interface
+    type avmm_t is record
+        address         :   std_logic_vector(31 downto 0);
+        read            :   std_logic;
+        readdata        :   std_logic_vector(31 downto 0);
+        write           :   std_logic;
+        writedata       :   std_logic_vector(31 downto 0);
+        waitrequest     :   std_logic;
+        readdatavalid   :   std_logic;
+    end record;
+    type avmm_array_t is array(natural range <>) of avmm_t;
+
     type rw_t is record
         addr            :   std_logic_vector(31 downto 0);
         re              :   std_logic;

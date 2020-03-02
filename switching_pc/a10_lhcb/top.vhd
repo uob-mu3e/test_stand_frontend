@@ -4,11 +4,6 @@ use ieee.numeric_std.all;
 
 entity top is
 port (
-    --  PODs
-    rx_gbt                              : IN    STD_LOGIC_VECTOR(47 DOWNTO 0);
-    tx_gbt                              : OUT   STD_LOGIC_VECTOR(47 DOWNTO 0);
-    A10_REFCLK_GBT_P_0                  : IN    STD_LOGIC;
-
     --  LEDs
     A10_LED                             : OUT   STD_LOGIC_VECTOR(7 DOWNTO 0);
 
@@ -18,17 +13,25 @@ port (
     A10_LED_3C_3                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
     A10_LED_3C_4                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
 
-    A10_SI53340_2_CLK_40_P              : in    std_logic;
+    --  PODs
+    rx_gbt                              : IN    STD_LOGIC_VECTOR(47 DOWNTO 0);
+    tx_gbt                              : OUT   STD_LOGIC_VECTOR(47 DOWNTO 0);
+    A10_REFCLK_GBT_P_0                  : IN    STD_LOGIC;
+    A10_REFCLK_GBT_P_1                  : IN    STD_LOGIC;
+    A10_REFCLK_GBT_P_2                  : IN    STD_LOGIC;
+    A10_REFCLK_GBT_P_3                  : IN    STD_LOGIC;
+    A10_REFCLK_GBT_P_4                  : IN    STD_LOGIC;
+    A10_REFCLK_GBT_P_5                  : IN    STD_LOGIC;
+    A10_REFCLK_GBT_P_6                  : IN    STD_LOGIC;
+    A10_REFCLK_GBT_P_7                  : IN    STD_LOGIC;
 
     -- SI5345_1
     A10_SI5345_1_SMB_SCL                : inout std_logic;
     A10_SI5345_1_SMB_SDA                : inout std_logic;
-    A10_SI5345_1_JITTER_CLOCK_P         : out   std_logic;
 
     -- SI5345_2
     A10_SI5345_2_SMB_SCL                : inout std_logic;
     A10_SI5345_2_SMB_SDA                : inout std_logic;
-    A10_SI5345_2_JITTER_CLOCK_P         : out   std_logic;
 
     --  Reset from push button through Max5
     A10_M5FL_CPU_RESET_N                : IN    STD_LOGIC;
@@ -76,7 +79,7 @@ begin
     port map (
         avm_pod_reset_reset_n   => pod_reset_n,
         avm_pod_clock_clk       => pod_clk,
-        avm_pod_address         => av_pod.address(13 downto 0),
+        avm_pod_address         => av_pod.address(16 downto 0),
         avm_pod_read            => av_pod.read,
         avm_pod_readdata        => av_pod.readdata,
         avm_pod_write           => av_pod.write,
@@ -126,38 +129,26 @@ begin
 
     e_pods : entity work.xcvr_block
     generic map (
-        N_XCVR_g => 1--,
+        N_XCVR_g => 8--,
     )
     port map (
-        i_rx_serial => rx_gbt(5 downto 0),
-        o_tx_serial => tx_gbt(5 downto 0),
+        i_rx_serial => rx_gbt,
+        o_tx_serial => tx_gbt,
 
-        i_refclk(0) => A10_REFCLK_GBT_P_0,
+        i_refclk    => A10_REFCLK_GBT_P_7 & A10_REFCLK_GBT_P_6 & A10_REFCLK_GBT_P_5 & A10_REFCLK_GBT_P_4 & A10_REFCLK_GBT_P_3 & A10_REFCLK_GBT_P_2 & A10_REFCLK_GBT_P_1 & A10_REFCLK_GBT_P_0,
 
-        i_avs_address     => av_pod.address(13 downto 0),
+        i_avs_address     => av_pod.address(16 downto 0),
         i_avs_read        => av_pod.read,
         o_avs_readdata    => av_pod.readdata,
         i_avs_write       => av_pod.write,
         i_avs_writedata   => av_pod.writedata,
         o_avs_waitrequest => av_pod.waitrequest,
 
-        o_data   => open,
-        o_datak  => open,
+        o_rx_data   => open,
+        o_rx_datak  => open,
 
-        i_data =>
-            X"050000BC"
-          & X"040000BC"
-          & X"030000BC"
-          & X"020000BC"
-          & X"010000BC"
-          & X"000000BC",
-        i_datak =>
-            "0001"
-          & "0001"
-          & "0001"
-          & "0001"
-          & "0001"
-          & "0001",
+        i_tx_data   => (others => X"000000BC"),
+        i_tx_datak  => (others => "0001"),
 
         i_reset_n   => pod_reset_n,
         i_clk       => pod_clk--,
@@ -170,10 +161,5 @@ begin
     if rising_edge(nios_clk) then
     end if;
     end process;
-
-
-
-    A10_SI5345_1_JITTER_CLOCK_P <= A10_SI53340_2_CLK_40_P;
-    A10_SI5345_2_JITTER_CLOCK_P <= A10_SI53340_2_CLK_40_P;
 
 end architecture;
