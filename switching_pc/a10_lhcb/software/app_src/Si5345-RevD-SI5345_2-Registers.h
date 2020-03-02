@@ -7,7 +7,7 @@
  * export tool.
  *
  * Part:                                               Si5345 Rev D
- * Design ID:                                          SI5345_1
+ * Design ID:                                          SI5345_2
  * Includes Pre/Post Download Control Register Writes: Yes
  * Created By:                                         
  * Timestamp:                                          
@@ -145,7 +145,7 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
 	{ 0x010E, 0x09 },
 	{ 0x010F, 0x3E },
 	{ 0x0110, 0x18 },
-	{ 0x0112, 0x02 },
+	{ 0x0112, 0x01 },
 	{ 0x0113, 0x09 },
 	{ 0x0114, 0x3E },
 	{ 0x0115, 0x18 },
@@ -169,10 +169,10 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
 	{ 0x012C, 0x09 },
 	{ 0x012D, 0x3B },
 	{ 0x012E, 0x28 },
-	{ 0x0130, 0x01 },
+	{ 0x0130, 0x02 },
 	{ 0x0131, 0x09 },
-	{ 0x0132, 0x3B },
-	{ 0x0133, 0x28 },
+	{ 0x0132, 0x3E },
+	{ 0x0133, 0x18 },
 	{ 0x013A, 0x02 },
 	{ 0x013B, 0x09 },
 	{ 0x013C, 0x3E },
@@ -242,13 +242,13 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
 	{ 0x024D, 0x07 },
 	{ 0x024E, 0x00 },
 	{ 0x024F, 0x00 },
-	{ 0x0250, 0x07 },
+	{ 0x0250, 0x00 },
 	{ 0x0251, 0x00 },
 	{ 0x0252, 0x00 },
 	{ 0x0253, 0x07 },
 	{ 0x0254, 0x00 },
 	{ 0x0255, 0x00 },
-	{ 0x0256, 0x03 },
+	{ 0x0256, 0x07 },
 	{ 0x0257, 0x00 },
 	{ 0x0258, 0x00 },
 	{ 0x0259, 0x00 },
@@ -260,7 +260,7 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
 	{ 0x025F, 0x00 },
 	{ 0x0260, 0x00 },
 	{ 0x0261, 0x00 },
-	{ 0x0262, 0x00 },
+	{ 0x0262, 0x03 },
 	{ 0x0263, 0x00 },
 	{ 0x0264, 0x00 },
 	{ 0x0268, 0x18 },
@@ -273,7 +273,7 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
 	{ 0x026F, 0x34 },
 	{ 0x0270, 0x35 },
 	{ 0x0271, 0x5F },
-	{ 0x0272, 0x31 },
+	{ 0x0272, 0x32 },
 	{ 0x028A, 0x00 },
 	{ 0x028B, 0x00 },
 	{ 0x028C, 0x00 },
@@ -582,7 +582,7 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
  * ========
  * Part:               Si5345ABCD Rev D
  * Project File:       
- * Design ID:          SI5345_1
+ * Design ID:          SI5345_2
  * Created By:         
  * Timestamp:          
  * 
@@ -640,16 +640,16 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
  *          Enabled, LVDS 1.8 V
  *    OUT1: 125 MHz
  *          Enabled, LVDS 1.8 V
- *    OUT2: 125 MHz
- *          Enabled, LVDS 1.8 V
+ *    OUT2: Unused
  *    OUT3: 125 MHz
  *          Enabled, LVDS 1.8 V
- *    OUT4: 250 MHz
+ *    OUT4: 125 MHz
  *          Enabled, LVDS 1.8 V
  *    OUT5: Unused
  *    OUT6: Unused
  *    OUT7: Unused
- *    OUT8: Unused
+ *    OUT8: 250 MHz
+ *          Enabled, LVDS 1.8 V
  *    OUT9: ZDM - 40 MHz
  *          Enabled, LVDS 1.8 V
  * 
@@ -675,9 +675,9 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
  *       Value: 7
  *       OUT0: 125 MHz
  *       OUT1: 125 MHz
- *       OUT2: 125 MHz
  *       OUT3: 125 MHz
- *       OUT4: 250 MHz
+ *       OUT4: 125 MHz
+ *       OUT8: 250 MHz
  *       OUT9: 40 MHz
  *    N1:
  *       Unused
@@ -691,13 +691,13 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
  * R dividers:
  *    R0 = 16
  *    R1 = 16
- *    R2 = 16
+ *    R2 = Unused
  *    R3 = 16
- *    R4 = 8
+ *    R4 = 16
  *    R5 = Unused
  *    R6 = Unused
  *    R7 = Unused
- *    R8 = Unused
+ *    R8 = 8
  *    R9 = 50
  * 
  * Nominal Bandwidth:
@@ -757,13 +757,13 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
  * VDDA                          3.3 V  116.1 mA    383 mW
  * VDDO0     125 MHz  LVDS       1.8 V   15.6 mA     28 mW
  * VDDO1     125 MHz  LVDS       1.8 V   15.6 mA     28 mW
- * VDDO2     125 MHz  LVDS       1.8 V   15.6 mA     28 mW
+ * VDDO2      Unused                                      
  * VDDO3     125 MHz  LVDS       1.8 V   15.6 mA     28 mW
- * VDDO4     250 MHz  LVDS       1.8 V   16.1 mA     29 mW
+ * VDDO4     125 MHz  LVDS       1.8 V   15.6 mA     28 mW
  * VDDO5      Unused                                      
  * VDDO6      Unused                                      
  * VDDO7      Unused                                      
- * VDDO8      Unused                                      
+ * VDDO8     250 MHz  LVDS       1.8 V   16.1 mA     29 mW
  * VDDO9      40 MHz  LVDS       1.8 V   15.2 mA     27 mW
  *                                      --------  --------
  *                               Total  352.6 mA    809 mW
@@ -886,8 +886,8 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
  * 0x0110[5:4]   OUT1_VDD_SEL                1                  0x1              
  * 0x0110[3]     OUT1_VDD_SEL_EN             1                  0x1              
  * 0x0110[7:6]   OUT1_INV                    0                  0x0              
- * 0x0112[0]     OUT2_PDN                    0                  0x0              
- * 0x0112[1]     OUT2_OE                     1                  0x1              
+ * 0x0112[0]     OUT2_PDN                    1                  0x1              
+ * 0x0112[1]     OUT2_OE                     0                  0x0              
  * 0x0112[2]     OUT2_RDIV_FORCE2            0                  0x0              
  * 0x0113[2:0]   OUT2_FORMAT                 1                  0x1              
  * 0x0113[3]     OUT2_SYNC_EN                1                  0x1              
@@ -964,17 +964,17 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
  * 0x012E[5:4]   OUT7_VDD_SEL                2                  0x2              
  * 0x012E[3]     OUT7_VDD_SEL_EN             1                  0x1              
  * 0x012E[7:6]   OUT7_INV                    0                  0x0              
- * 0x0130[0]     OUT8_PDN                    1                  0x1              
- * 0x0130[1]     OUT8_OE                     0                  0x0              
+ * 0x0130[0]     OUT8_PDN                    0                  0x0              
+ * 0x0130[1]     OUT8_OE                     1                  0x1              
  * 0x0130[2]     OUT8_RDIV_FORCE2            0                  0x0              
  * 0x0131[2:0]   OUT8_FORMAT                 1                  0x1              
  * 0x0131[3]     OUT8_SYNC_EN                1                  0x1              
  * 0x0131[5:4]   OUT8_DIS_STATE              0                  0x0              
  * 0x0131[7:6]   OUT8_CMOS_DRV               0                  0x0              
- * 0x0132[3:0]   OUT8_CM                     11                 0xB              
+ * 0x0132[3:0]   OUT8_CM                     14                 0xE              
  * 0x0132[6:4]   OUT8_AMPL                   3                  0x3              
  * 0x0133[2:0]   OUT8_MUX_SEL                0                  0x0              
- * 0x0133[5:4]   OUT8_VDD_SEL                2                  0x2              
+ * 0x0133[5:4]   OUT8_VDD_SEL                1                  0x1              
  * 0x0133[3]     OUT8_VDD_SEL_EN             1                  0x1              
  * 0x0133[7:6]   OUT8_INV                    0                  0x0              
  * 0x013A[0]     OUT9_PDN                    0                  0x0              
@@ -1018,13 +1018,13 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
  * 0x023B[31:0]  MXAXB_DEN                   3623878656         0xD8000000       
  * 0x024A[23:0]  R0_REG                      7                  0x000007         
  * 0x024D[23:0]  R1_REG                      7                  0x000007         
- * 0x0250[23:0]  R2_REG                      7                  0x000007         
+ * 0x0250[23:0]  R2_REG                      0                  0x000000         
  * 0x0253[23:0]  R3_REG                      7                  0x000007         
- * 0x0256[23:0]  R4_REG                      3                  0x000003         
+ * 0x0256[23:0]  R4_REG                      7                  0x000007         
  * 0x0259[23:0]  R5_REG                      0                  0x000000         
  * 0x025C[23:0]  R6_REG                      0                  0x000000         
  * 0x025F[23:0]  R7_REG                      0                  0x000000         
- * 0x0262[23:0]  R8_REG                      0                  0x000000         
+ * 0x0262[23:0]  R8_REG                      3                  0x000003         
  * 0x0268[23:0]  R9_REG                      24                 0x000018         
  * 0x026B[7:0]   DESIGN_ID0                  83                 0x53             
  * 0x026C[7:0]   DESIGN_ID1                  73                 0x49             
@@ -1033,7 +1033,7 @@ si5345_revd_register_t const si5345_revd_registers[SI5345_REVD_REG_CONFIG_NUM_RE
  * 0x026F[7:0]   DESIGN_ID4                  52                 0x34             
  * 0x0270[7:0]   DESIGN_ID5                  53                 0x35             
  * 0x0271[7:0]   DESIGN_ID6                  95                 0x5F             
- * 0x0272[7:0]   DESIGN_ID7                  49                 0x31             
+ * 0x0272[7:0]   DESIGN_ID7                  50                 0x32             
  * 0x028A[4:0]   OOF0_TRG_THR_EXT            0                  0x00             
  * 0x028B[4:0]   OOF1_TRG_THR_EXT            0                  0x00             
  * 0x028C[4:0]   OOF2_TRG_THR_EXT            0                  0x00             
