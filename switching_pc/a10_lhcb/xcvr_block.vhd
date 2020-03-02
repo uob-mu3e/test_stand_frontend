@@ -4,9 +4,10 @@ use ieee.numeric_std.all;
 
 entity xcvr_block is
 generic (
-    N_CHANNELS_g : positive := 6;
     N_XCVR_g : positive := 8;
+    N_CHANNELS_g : positive := 6;
     REFCLK_MHZ_g : positive := 125;
+    DATA_RATE_MBPS_g : positive := 5000;
     CLK_MHZ_g : positive := 125--;
 );
 port (
@@ -62,7 +63,7 @@ begin
         generic map (
             NUMBER_OF_CHANNELS_g => N_CHANNELS_g,
             INPUT_CLOCK_FREQUENCY_g => REFCLK_MHZ_g * 1000000,
-            DATA_RATE_g => 5000,
+            DATA_RATE_g => DATA_RATE_MBPS_g,
             CLK_MHZ_g => CLK_MHZ_g--,
         )
         port map (

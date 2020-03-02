@@ -41,12 +41,16 @@ port (
 );
 end entity;
 
-architecture rtl of top is
+architecture arch of top is
 
     -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
     signal ZERO : std_logic := '0';
     attribute keep : boolean;
     attribute keep of ZERO : signal is true;
+
+    signal led : std_logic_vector(7 downto 0) := (others => '0');
+
+
 
     signal nios_clk, nios_reset_n : std_logic;
     signal i2c_scl_in, i2c_scl_oe, i2c_sda_in, i2c_sda_oe : std_logic;
@@ -55,12 +59,18 @@ architecture rtl of top is
     constant I2C_CS_SI5341_1_c : std_logic_vector(i2c_cs'range) := (1 => '1', others => '0');
     constant I2C_CS_SI5341_2_c : std_logic_vector(i2c_cs'range) := (2 => '1', others => '0');
 
+
+
     signal pod_clk, pod_reset_n : std_logic;
     signal pod_tx_clkout : std_logic_vector(47 downto 0);
 
     signal av_pod : work.util.avalon_t;
 
 begin
+
+    A10_LED <= not led;
+
+
 
     nios_clk <= CLK_A10_100MHZ_P;
 
@@ -70,7 +80,7 @@ begin
     e_nios_clk_hz : entity work.clkdiv
     generic map ( P => 100 * 10**6 )
     port map (
-        o_clk => A10_LED(0),
+        o_clk => led(0),
         i_reset_n => nios_reset_n,
         i_clk => nios_clk--,
     );
@@ -122,7 +132,7 @@ begin
     e_pod_clk_hz : entity work.clkdiv
     generic map ( P => 125 * 10**6 )
     port map (
-        o_clk => A10_LED(4),
+        o_clk => led(4),
         i_reset_n => pod_reset_n,
         i_clk => pod_clk--,
     );
