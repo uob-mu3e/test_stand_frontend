@@ -1,6 +1,7 @@
 # Mu3e online repository
 
 - current development branch is `v0.8_dev`
+- preliminary User Manual: https://www.overleaf.com/8596488843pnpknzfsvkfg (please add stuff)
 
 ## Structure
 
