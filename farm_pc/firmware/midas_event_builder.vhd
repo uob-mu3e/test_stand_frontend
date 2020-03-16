@@ -95,6 +95,7 @@ signal word_counter : std_logic_vector(31 downto 0);
     -- current link data/datak/empty
     signal link_fifo_sop : std_logic_vector(NLINKS-1 downto 0);
     signal link_fifo_eop : std_logic_vector(NLINKS-1 downto 0);
+    signal stream_in_rempty : std_logic_vector(NLINKS-1 downto 0);
     signal stream_wdata, stream_rdata : std_logic_vector(35 downto 0);
     signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
     signal link_data : std_logic_vector(31 downto 0);
@@ -214,6 +215,8 @@ END GENERATE buffer_link_fifos;
 		sclr     		=> reset_dma--,
     );
 
+    stream_in_rempty <= link_fifo_empty or not i_link_mask_n;
+
     e_stream : entity work.stream_merger
     generic map (
         W => 36,
@@ -223,7 +226,7 @@ END GENERATE buffer_link_fifos;
         i_rdata     => link_fifo_data_out,
         i_rsop      => link_fifo_sop,
         i_reop      => link_fifo_eop,
-        i_rempty    => link_fifo_empty or not i_link_mask_n,
+        i_rempty    => stream_in_rempty,
         o_rack      => link_fifo_ren,
 
         o_wdata     => stream_wdata,
@@ -247,7 +250,7 @@ END GENERATE buffer_link_fifos;
         data            => stream_wdata,
         full            => stream_wfull,
         wrreq           => stream_we,
-        sclr            => i_reset_dma_n,
+        sclr            => reset_dma,
         clock           => i_clk_dma--,
     );
 
