@@ -62,6 +62,11 @@ int MutrigFEB::WriteAll(){
     HNDLE hTmp;
     char set_str[255];
     if(GetNumASICs()==0) return 0;
+    //initial Shadow register values
+
+    //as a starting point, set all mask bits to 1. in the shadow register and override after.
+    //This will ensure any asics that are not part of the detector configuration but exist in firmware are masked.
+    for(size_t i=0;i<m_FPGAs.size();i++) m_reg_shadow[i][FE_DPCTRL_REG]=0x1FFFFFFF;
 
     sprintf(set_str, "%s/Settings/Daq/dummy_config", m_odb_prefix);
     db_find_key(m_hDB, 0, set_str, &hTmp);
@@ -138,16 +143,16 @@ int MutrigFEB::ConfigureASICs(){
       uint16_t FA_ID=ASICid_from_ID(asic);
 
       if(!m_FPGAs[FPGAid_from_ID(asic)].IsScEnabled()){
-      //    printf(" [skipped]\n");
+          printf(" [skipped -nonenable]\n");
           return FE_SUCCESS;
       }
       if(SB_ID!=m_SB_number){
-      //    printf(" [skipped]\n");
+          printf(" [skipped -SB]\n");
           return FE_SUCCESS;
       }
       //printf("\n");
 
-      //cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d", m_odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
+      cm_msg(MINFO, "setup_mutrig" , "Configuring MuTRiG asic %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d", m_odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
 
 
       try {
