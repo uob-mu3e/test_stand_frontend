@@ -135,7 +135,7 @@ begin
     g_rx_align : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
     begin
         e_rx_rst_n : entity work.reset_sync
-        port map ( o_reset_n => rx(i).rst_n, i_reset_n => rx_ready(i), i_clk => i_rx_clkin(i) );
+        port map ( o_reset_n => rx(i).rst_n, i_reset_n => reset_n and rx_rst_n(i), i_clk => i_rx_clkin(i) );
 
         e_rx_align : entity work.rx_align
         generic map (
@@ -183,7 +183,7 @@ begin
         generic map ( W => rx(i).err_cnt'length )
         port map (
             o_cnt => rx(i).err_cnt,
-            i_ena => work.util.to_std_logic( rx(i).errdetect /= 0 or rx(i).disperr /= 0 ),
+            i_ena => rx(i).locked and work.util.to_std_logic( rx(i).errdetect /= 0 or rx(i).disperr /= 0 ),
             i_reset_n => rx(i).rst_n, i_clk => i_rx_clkin(i)
         );
     end generate;
@@ -195,8 +195,8 @@ begin
         av_ctrl.waitrequest <= '1';
         ch <= 0;
         rx_seriallpbken <= (others => '0');
-        tx_rst_n <= (others => '1');
-        rx_rst_n <= (others => '1');
+        tx_rst_n <= (others => '0');
+        rx_rst_n <= (others => '0');
         --
     elsif rising_edge(i_clk) then
         av_ctrl.waitrequest <= '1';
