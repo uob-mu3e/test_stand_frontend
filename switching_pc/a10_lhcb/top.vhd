@@ -4,16 +4,20 @@ use ieee.numeric_std.all;
 
 entity top is
 port (
-    --  LEDs
+    -- LEDs
     A10_LED                             : OUT   STD_LOGIC_VECTOR(7 DOWNTO 0);
 
-    --  Color LEDs
+    -- Color LEDs
     A10_LED_3C_1                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
     A10_LED_3C_2                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
     A10_LED_3C_3                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
     A10_LED_3C_4                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
 
-    --  PODs
+    
+
+
+
+    -- POD
     rx_gbt                              : IN    STD_LOGIC_VECTOR(47 DOWNTO 0);
     tx_gbt                              : OUT   STD_LOGIC_VECTOR(47 DOWNTO 0);
     A10_REFCLK_GBT_P_0                  : IN    STD_LOGIC;
@@ -33,10 +37,10 @@ port (
     A10_SI5345_2_SMB_SCL                : inout std_logic;
     A10_SI5345_2_SMB_SDA                : inout std_logic;
 
-    --  Reset from push button through Max5
+    -- Reset from push button through Max5
     A10_M5FL_CPU_RESET_N                : IN    STD_LOGIC;
 
-    --  general purpose internal clock
+    -- general purpose internal clock
     CLK_A10_100MHZ_P                    : IN    STD_LOGIC--; -- from internal 100 MHz oscillator
 );
 end entity;
@@ -66,6 +70,17 @@ architecture arch of top is
 
     signal av_pod : work.util.avalon_t;
 
+    signal pod_rx_data : work.util.slv32_array_t(47 downto 0);
+    signal pod_tx_data : work.util.slv32_array_t(47 downto 0) := (
+        others => X"000000BC"--,
+    );
+    signal pod_rx_datak : work.util.slv4_array_t(47 downto 0);
+    signal pod_tx_datak : work.util.slv4_array_t(47 downto 0) := (
+        others => "0001"--,
+    );
+
+
+
 begin
 
     A10_LED <= not led;
@@ -87,8 +102,8 @@ begin
 
     i_nios : component work.cmp.nios
     port map (
-        avm_pod_reset_reset_n   => pod_reset_n,
-        avm_pod_clock_clk       => pod_clk,
+        avm_pod_reset_reset_n   => nios_reset_n,
+        avm_pod_clock_clk       => nios_clk,
         avm_pod_address         => av_pod.address(16 downto 0),
         avm_pod_read            => av_pod.read,
         avm_pod_readdata        => av_pod.readdata,
@@ -132,7 +147,7 @@ begin
     e_pod_clk_hz : entity work.clkdiv
     generic map ( P => 125 * 10**6 )
     port map (
-        o_clk => led(4),
+        o_clk => led(1),
         i_reset_n => pod_reset_n,
         i_clk => pod_clk--,
     );
@@ -147,6 +162,11 @@ begin
 
         i_refclk    => A10_REFCLK_GBT_P_7 & A10_REFCLK_GBT_P_6 & A10_REFCLK_GBT_P_5 & A10_REFCLK_GBT_P_4 & A10_REFCLK_GBT_P_3 & A10_REFCLK_GBT_P_2 & A10_REFCLK_GBT_P_1 & A10_REFCLK_GBT_P_0,
 
+        o_rx_data   => pod_rx_data,
+        o_rx_datak  => pod_rx_datak,
+        i_tx_data   => pod_tx_data,
+        i_tx_datak  => pod_tx_datak,
+
         i_avs_address     => av_pod.address(16 downto 0),
         i_avs_read        => av_pod.read,
         o_avs_readdata    => av_pod.readdata,
@@ -154,14 +174,8 @@ begin
         i_avs_writedata   => av_pod.writedata,
         o_avs_waitrequest => av_pod.waitrequest,
 
-        o_rx_data   => open,
-        o_rx_datak  => open,
-
-        i_tx_data   => (others => X"000000BC"),
-        i_tx_datak  => (others => "0001"),
-
-        i_reset_n   => pod_reset_n,
-        i_clk       => pod_clk--,
+        i_reset_n   => nios_reset_n,
+        i_clk       => nios_clk--,
     );
 
 
