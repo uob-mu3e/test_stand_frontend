@@ -7,8 +7,8 @@ generic (
     N_XCVR_g : positive := 8;
     N_CHANNELS_g : positive := 6;
     REFCLK_MHZ_g : positive := 125;
-    DATA_RATE_MBPS_g : positive := 5000;
-    CLK_MHZ_g : positive := 125--;
+    DATA_RATE_MBPS_g : positive := 10000;
+    CLK_MHZ_g : positive := 100--;
 );
 port (
     i_rx_serial         : in    std_logic_vector(N_XCVR_g*N_CHANNELS_g-1 downto 0);
@@ -38,6 +38,8 @@ end entity;
 
 architecture arch of xcvr_block is
 
+    signal rx_clkout, tx_clkout : std_logic_vector(N_XCVR_g*N_CHANNELS_g-1 downto 0);
+
     type data_array_t is array ( natural range <> ) of std_logic_vector(N_CHANNELS_g*32-1 downto 0);
     signal rx_data, tx_data : data_array_t(N_XCVR_g-1 downto 0);
 
@@ -59,7 +61,7 @@ begin
             tx_datak(i)(4*j+3 downto 0 + 4*j) <= i_tx_datak(i*N_CHANNELS_g+j);
         end generate;
 
-        e_xcvr : entity work.xcvr_a10
+        e_xcvr : entity work.xcvr_enh
         generic map (
             NUMBER_OF_CHANNELS_g => N_CHANNELS_g,
             INPUT_CLOCK_FREQUENCY_g => REFCLK_MHZ_g * 1000000,
@@ -78,10 +80,10 @@ begin
             i_tx_data   => tx_data(i),
             i_tx_datak  => tx_datak(i),
 
-            o_rx_clkout => open,
-            i_rx_clkin  => (others => i_refclk(i)),
-            o_tx_clkout => open,
-            i_tx_clkin  => (others => i_clk),
+            o_rx_clkout => rx_clkout(N_CHANNELS_g*i + N_CHANNELS_g-1 downto 0 + N_CHANNELS_g*i),
+            i_rx_clkin  => (others => tx_clkout(0)),
+            o_tx_clkout => tx_clkout(N_CHANNELS_g*i + N_CHANNELS_g-1 downto 0 + N_CHANNELS_g*i),
+            i_tx_clkin  => (others => tx_clkout(0)),
 
             i_avs_address     => i_avs_address(13 downto 0),
             i_avs_read        => av(i).read,
