@@ -32,10 +32,14 @@ port (
     -- SI5345_1
     A10_SI5345_1_SMB_SCL                : inout std_logic;
     A10_SI5345_1_SMB_SDA                : inout std_logic;
+    A10_SI5345_1_JITTER_CLOCK_P         : out   std_logic;
 
     -- SI5345_2
     A10_SI5345_2_SMB_SCL                : inout std_logic;
     A10_SI5345_2_SMB_SDA                : inout std_logic;
+    A10_SI5345_2_JITTER_CLOCK_P         : out   std_logic;
+
+
 
     -- Reset from push button through Max5
     A10_M5FL_CPU_RESET_N                : IN    STD_LOGIC;
@@ -84,6 +88,9 @@ architecture arch of top is
 begin
 
     A10_LED <= not led;
+
+    A10_SI5345_1_JITTER_CLOCK_P <= CLK_A10_100MHZ_P;
+    A10_SI5345_2_JITTER_CLOCK_P <= CLK_A10_100MHZ_P;
 
 
 
