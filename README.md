@@ -4,7 +4,7 @@
 
 ## Structure
 
-- `backend_pc` - _TODO_
+- `backend_pc` - software for the backend pc, plus timing and reset system firmware
 - `common` - common firmware and software
 - `farm_px` - _TODO_
 - `fe_board` - front-end board firmware (si, fb and tl readout)
