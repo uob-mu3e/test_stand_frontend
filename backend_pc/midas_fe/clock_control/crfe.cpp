@@ -702,7 +702,7 @@ INT read_cr_event(char *pevent, INT off)
     db_get_value(hDB, 0, "/Equipment/Clock Reset/Variables/Fireflys Present",
                  fireflys, &size, TID_DWORD, false);
 
-   bk_init(pevent);
+   bk_init32a(pevent);
 
    float *pdata;
    bk_create(pevent, "CRT1", TID_FLOAT, (void **)&pdata);
