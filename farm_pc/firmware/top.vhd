@@ -99,8 +99,10 @@ architecture rtl of top is
 		 signal reset_n : std_logic;
 		 signal resets : std_logic_vector(31 downto 0);
 		 signal resets_n: std_logic_vector(31 downto 0);
+         signal resets_fast : std_logic_vector(31 downto 0);
+         signal resets_n_fast: std_logic_vector(31 downto 0); 
 		 
-		 signal clk_50_cnt : std_logic_vector(31 downto 0);
+         signal clk_50_cnt : std_logic_vector(31 downto 0);
 		 signal clk_125_cnt : std_logic_vector(31 downto 0);
 
 		------------------ Signal declaration ------------------------
@@ -193,17 +195,21 @@ architecture rtl of top is
 		attribute keep : boolean;
 		attribute keep of ZERO : signal is true;
 
+        -- constants
+        constant NLINKS_DATA : integer := 3;
+        constant NLINKS_TOTL : integer := 4;
+
 		-- data processing
-		type fifo_out_array_type is array (3 downto 0) of std_logic_vector(35 downto 0);
-		type data_array_type is array (3 downto 0) of std_logic_vector(31 downto 0);
-		type datak_array_type is array (3 downto 0) of std_logic_vector(3 downto 0);
+		type fifo_out_array_type is array (NLINKS_TOTL-1 downto 0) of std_logic_vector(35 downto 0);
+		type data_array_type is array (NLINKS_TOTL-1 downto 0) of std_logic_vector(31 downto 0);
+		type datak_array_type is array (NLINKS_TOTL-1 downto 0) of std_logic_vector(3 downto 0);
 
 		signal rx_data : data_array_type;
 		signal tx_data : data_array_type;
 		signal rx_datak : datak_array_type;
 		signal tx_datak : datak_array_type;
-		signal rx_data_v : std_logic_vector(4*32-1 downto 0);
-		signal rx_datak_v : std_logic_vector(4*4-1 downto 0);
+		signal rx_data_v : std_logic_vector(NLINKS_TOTL*32-1 downto 0);
+		signal rx_datak_v : std_logic_vector(NLINKS_TOTL*4-1 downto 0);
 
 		signal idle_ch : std_logic_vector(3 downto 0);
 
@@ -245,8 +251,8 @@ architecture rtl of top is
 		signal dma_wren_test : std_logic;
 		signal dma_end_event_cnt : std_logic;
 		signal dma_end_event_test : std_logic;
-		signal data_counter : std_logic_vector(31 downto 0);
-		signal datak_counter : std_logic_vector(3 downto 0);
+		signal data_counter : std_logic_vector(32*NLINKS_TOTL - 1 downto 0);
+		signal datak_counter : std_logic_vector(4*NLINKS_TOTL - 1 downto 0);
 
 begin
 
@@ -541,34 +547,43 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
 		data_counter 	<= (others => '0');
 		datak_counter 	<= (others => '0');
 	elsif (rising_edge(tx_clk(0))) then
-		if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE_PIXEL) = '1') then
-			data_counter 	<= data_pix_generated;
-			datak_counter 	<= datak_pix_generated;
-		else
-			data_counter 	<= rx_data(0);
-			datak_counter 	<= rx_datak(0);
-		end if;
+		if (writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE) = '1') then
+            set_gen_data : FOR i in 0 to NLINKS_TOTL - 1 LOOP
+                data_counter(31 + i * 32 downto i * 32) <= data_pix_generated;
+                datak_counter(3 + i * 4 downto i * 4) <= datak_pix_generated;
+            END LOOP set_gen_data;
+        else
+            set_link_data : FOR i in 0 to NLINKS_TOTL - 1 LOOP
+                data_counter(31 + i * 32 downto i * 32) <= rx_data(i);
+                datak_counter(3 + i * 4 downto i * 4) <= rx_datak(i);
+            END LOOP set_link_data;
+        end if;
     end if;
     end process;
 	 
 	 e_midas_event_builder : entity work.midas_event_builder
 	  generic map (
-		 NLINKS => 3--;
+		 NLINKS => NLINKS_TOTL--;
 	 )
 	  port map(
-		 i_clk_data => tx_clk(0),
-		 i_clk_dma  => pcie_fastclk_out,
-		 i_reset_data_n  => resets_n(RESET_BIT_EVENT_COUNTER),
-         i_reset_dma_n   => resets_n(RESET_BIT_EVENT_COUNTER),
-		 i_rx_data  => data_counter & data_counter & data_counter,
-		 i_rx_datak => datak_counter & datak_counter & datak_counter,
-		 i_wen_reg  => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-         i_link_mask_n => (others => '0'),
-		 o_event_wren => dma_wren_cnt,
-		 o_endofevent => dma_end_event_cnt,
-		 o_event_data => dma_event_data,
-		 o_state_out => state_out_eventcounter--,
-	);
+        i_clk_data          => tx_clk(0),
+        i_clk_dma           => pcie_fastclk_out,
+        i_reset_data_n      => resets_n(RESET_BIT_EVENT_COUNTER),
+        i_reset_dma_n       => resets_n_fast(RESET_BIT_EVENT_COUNTER),
+        i_rx_data           => data_counter,
+        i_rx_datak          => datak_counter,
+        i_wen_reg           => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+        i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
+        i_get_n_words       => writeregs(GET_N_DMA_WORDS_REGISTER_W),
+        i_dmamemhalffull    => dmamemhalffull,
+        o_fifos_full        => readregs(EVENT_BUILD_STATUS_REGISTER_R)(31 downto 31 - NLINKS_TOTL),
+        o_done              => readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
+        o_event_wren        => dma_wren_cnt,
+        o_endofevent        => dma_end_event_cnt,
+        o_event_data        => dma_event_data,
+        o_state_out         => state_out_eventcounter,
+        o_fifo_almost_full  => open--link_fifo_almost_full--,
+   );
 
     e_counter : entity work.dma_counter
     port map (
@@ -691,15 +706,21 @@ rx_datak(0)<=rx_datak_v(4*1-1 downto 4*0);
     e_reset_logic : entity work.reset_logic
     port map (
 		rst_n                   => push_button0_db,
-
 		reset_register          => writeregs_slow(RESET_REGISTER_W),
-		--reset_reg_written       => regwritten(RESET_REGISTER_W),
-
 		resets                  => resets,
 		resets_n                => resets_n,
-
         clk                     => tx_clk(0)--,
     );
+
+    e_reset_logic_fast : entity work.reset_logic
+    port map (
+        rst_n                   => push_button0_db,
+        reset_register          => writeregs(RESET_REGISTER_W),
+        resets                  => resets_fast,
+        resets_n                => resets_n_fast,
+        clk                     => pcie_fastclk_out--,
+    );
+
 
     e_version_reg : entity work.version_reg
     port map (

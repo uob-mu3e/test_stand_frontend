@@ -7,10 +7,8 @@ set dir0 [ file dirname [ info script ] ]
 source [ file join $dir0 "../device.tcl" ]
 source [ file join $dir0 "../util/altera_ip.tcl" ]
 
-
-
 set name [ file tail [ file rootname [ info script ] ] ]
 
 create_system $name
-add_altera_modular_adc { 1 2 3 4 5 6 7 8 tsd } -seq_order { 17 1 2 3 4 5 6 7 }
+add_altera_xcvr_native_a10 ${xcvr_enh_channels} 40 ${xcvr_enh_refclk_mhz} ${xcvr_enh_data_mbps} -mode basic_enh
 save_system [ file join $dir0 "$name.qsys" ]

@@ -762,7 +762,7 @@ INT cd_lv_read(char *pevent, int offset)
 //       return sizeof(float) * (lv_info->num_channels_input + lv_info->num_channels_output);
    }
    else if (lv_info->format == FORMAT_MIDAS) {
-      bk_init(pevent);
+      bk_init32a(pevent);
 
       /* create INPT bank */
 //       if (lv_info->num_channels_input) {

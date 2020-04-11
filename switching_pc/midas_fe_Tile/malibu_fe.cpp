@@ -291,7 +291,7 @@ INT resume_run(INT run_number, char *error)
 
 INT read_sc_event(char *pevent, INT off)
 {
-   bk_init(pevent);
+   bk_init32a(pevent);
 
    mudaq::DmaMudaqDevice & mu = *mup;
 

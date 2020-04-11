@@ -645,7 +645,7 @@ int MudaqDevice::FEBsc_dump_packets(){
 int MudaqDevice::FEBsc_write_bank(char *pevent, int off){
    if(m_sc_packet_fifo.empty())
        return 0;
-   bk_init(pevent);
+   bk_init32a(pevent);
    uint32_t* pdata;
    while(!m_sc_packet_fifo.empty()){
      bk_create(pevent, "SCRP", TID_DWORD, (void **)&pdata);
