@@ -1,7 +1,6 @@
 library ieee;
 use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
---use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use std.textio.all;
 use IEEE.std_logic_textio.all; 
@@ -11,47 +10,23 @@ use IEEE.std_logic_textio.all;
 entity readout_tb is
 end entity;
 
-architecture behav of readout_tb is
+architecture behav of tree_tb is
   --  Specifies which entity is bound with the component.
   		
       signal clk : std_logic;
-      signal clk_half : std_logic;
-  	  signal reset_n : std_logic := '1';
-  	  signal reset : std_logic;
-      signal reset_0 : std_logic;
-      signal reset_1 : std_logic;
-  	  signal enable_pix : std_logic;
+      signal reset_n : std_logic := '1';
+      signal enable_pix : std_logic;
   	  signal slow_down : std_logic_vector(31 downto 0);
-  	  signal data_pix_generated : std_logic_vector(31 downto 0);
-      signal datak_pix_generated : std_logic_vector(3 downto 0);
-      signal data_scifi_generated : std_logic_vector(31 downto 0);
-      signal datak_scifi_generated : std_logic_vector(3 downto 0);
-      signal data_tile_generated : std_logic_vector(31 downto 0);
-      signal datak_tile_generated : std_logic_vector(3 downto 0);
-      signal data_tile_generated2 : std_logic_vector(31 downto 0);
-      signal datak_tile_generated2 : std_logic_vector(3 downto 0);
-      signal data_tile_generated3 : std_logic_vector(31 downto 0);
-      signal datak_tile_generated3 : std_logic_vector(3 downto 0);
-      signal data_pix_ready : std_logic;
-      signal dmamem_endofevent : std_logic;
-      signal state_out_datagen : std_logic_vector(3 downto 0);
-      signal state_out_eventbuilder : std_logic_vector(3 downto 0);
-      signal dma_data_wren : std_logic;
-      signal dma_data : std_logic_vector(255 downto 0);
-      signal all_done : std_logic_vector(5 downto 0);
-
-      signal dma_data_32_0 : std_logic_vector(31 downto 0);
-      signal dma_data_32_1 : std_logic_vector(31 downto 0);
-      signal dma_data_32_2 : std_logic_vector(31 downto 0);
-      signal dma_data_32_3 : std_logic_vector(31 downto 0);
-      signal dma_data_32_4 : std_logic_vector(31 downto 0);
-      signal dma_data_32_5 : std_logic_vector(31 downto 0);
-      signal dma_data_32_6 : std_logic_vector(31 downto 0);
-      signal dma_data_32_7 : std_logic_vector(31 downto 0);
-
-      signal rx_data : std_logic_vector(159 downto 0);
-      signal rx_datak : std_logic_vector(19 downto 0);
-  		  		
+  	  signal data_pix_generated_0 : std_logic_vector(31 downto 0);
+      signal datak_pix_generated_0 : std_logic_vector(3 downto 0);
+      signal data_pix_generated_1 : std_logic_vector(31 downto 0);
+      signal datak_pix_generated_1 : std_logic_vector(3 downto 0);
+      signal data_pix_generated_2 : std_logic_vector(31 downto 0);
+      signal datak_pix_generated_2 : std_logic_vector(3 downto 0);
+      signal data_pix_generated_3 : std_logic_vector(31 downto 0);
+      signal datak_pix_generated_3 : std_logic_vector(3 downto 0);
+      signal alginment_tree_data : std_logic_vector(32 * 32 - 1 downto 0);
+      signal alginment_tree_datak : std_logic_vector(32 * 3 - 1 downto 0);
   		constant ckTime: 		time	:= 10 ns;
 		
 begin
@@ -70,14 +45,6 @@ begin
    wait for ckTime/2;
 end process;
 
-ckProc2: process
-begin
-   clk_half <= '0';
-   wait for ckTime/4;
-   clk_half <= '1';
-   wait for ckTime/4;
-end process;
-
 inita : process
 begin
 	   reset_n	 <= '0';
@@ -89,86 +56,68 @@ begin
 	   wait;
 end process inita;
  
-e_data_gen_mupix : entity work.data_generator_a10
+e_data_gen_0 : entity work.data_generator_mupix
 	port map (
-		clk 				   => clk,
-		reset				   => reset,
-		enable_pix	           => enable_pix,
-        i_dma_half_full       => '0',
+		clk 				       => clk,
+		reset				       => reset,
+		enable_pix	       => enable_pix,
+    i_dma_half_full    => '0',
 		random_seed 		   => (others => '1'),
-		start_global_time	   => (others => '0'),
-		data_pix_generated     => data_pix_generated,
-		datak_pix_generated    => datak_pix_generated,
-		data_pix_ready		   => data_pix_ready,
-		slow_down			   => slow_down,
-		state_out			   => open--,
+		start_global_time	 => (others => '0'),
+		data_pix_generated => data_pix_generated_0,
+		datak_pix_generated=> datak_pix_generated_0,
+		data_pix_ready		 => open,
+		slow_down			     => slow_down,
+		state_out			     => open--,
 );
 
-e_data_gen_scifi : entity work.data_generator_a10
-	port map (
-		clk 				     => clk,
-		reset				     => reset,
-		enable_pix	        => enable_pix,
-         i_dma_half_full       => '0',
-		random_seed 		  => (others => '1'),
-		start_global_time	  => (others => '0'),
-		data_pix_generated  => data_scifi_generated,
-		datak_pix_generated => datak_scifi_generated,
-		data_pix_ready		  => data_pix_ready,
-		slow_down			  => slow_down,
-		state_out			  => open--,
+e_data_gen_1 : entity work.data_generator_mupix
+  port map (
+    clk                => clk,
+    reset              => reset,
+    enable_pix         => enable_pix,
+    i_dma_half_full    => '0',
+    random_seed        => (others => '1'),
+    start_global_time  => (others => '0'),
+    data_pix_generated => data_pix_generated_1,
+    datak_pix_generated=> datak_pix_generated_1,
+    data_pix_ready     => open,
+    slow_down          => slow_down,
+    state_out          => open--,
 );
 
-e_data_gen_tiles : entity work.data_generator_a10
-	port map (
-		clk 				     => clk,
-		reset				     => reset,
-		enable_pix	        => enable_pix,
-         i_dma_half_full       => '0',
-		random_seed 		  => (others => '1'),
-		start_global_time	  => (others => '0'),
-		data_pix_generated  => data_tile_generated,
-		datak_pix_generated => datak_tile_generated,
-		data_pix_ready		  => data_pix_ready,
-		slow_down			  => slow_down,
-		state_out			  => open--,
+e_data_gen_2 : entity work.data_generator_mupix
+  port map (
+    clk                => clk,
+    reset              => reset,
+    enable_pix         => enable_pix,
+    i_dma_half_full    => '0',
+    random_seed        => (others => '1'),
+    start_global_time  => (others => '0'),
+    data_pix_generated => data_pix_generated_2,
+    datak_pix_generated=> datak_pix_generated_2,
+    data_pix_ready     => open,
+    slow_down          => slow_down,
+    state_out          => open--,
 );
 
+e_data_gen_3 : entity work.data_generator_mupix
+  port map (
+    clk                => clk,
+    reset              => reset,
+    enable_pix         => enable_pix,
+    i_dma_half_full    => '0',
+    random_seed        => (others => '1'),
+    start_global_time  => (others => '0'),
+    data_pix_generated => data_pix_generated_3,
+    datak_pix_generated=> datak_pix_generated_3,
+    data_pix_ready     => open,
+    slow_down          => slow_down,
+    state_out          => open--,
+);
 
- e_data_gen_tiles2 : entity work.data_generator_a10
-     port map (
-         clk                      => clk,
-         reset                    => reset,
-         enable_pix          => enable_pix,
-          i_dma_half_full       => '0',
-         random_seed           => (others => '1'),
-         start_global_time     => (others => '0'),
-         data_pix_generated  => data_tile_generated2,
-         datak_pix_generated => datak_tile_generated2,
-         data_pix_ready        => data_pix_ready,
-         slow_down             => slow_down,
-         state_out             => open--,
- );
-
- e_data_gen_tiles3 : entity work.data_generator_a10
-     port map (
-         clk                      => clk,
-         reset                    => reset,
-         enable_pix          => enable_pix,
-          i_dma_half_full       => '0',
-         random_seed           => (others => '1'),
-         start_global_time     => (others => '0'),
-         data_pix_generated  => data_tile_generated3,
-         datak_pix_generated => datak_tile_generated3,
-         data_pix_ready        => data_pix_ready,
-         slow_down             => slow_down,
-         state_out             => open--,
- );
-
-
-
-rx_data <= data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 & x"000000BC";--data_tile_generated3;
-rx_datak <= datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & "0001";--datak_tile_generated3;
+alginment_tree_data  <= data_pix_generated_0 & data_scifi_generated & data_tile_generated & data_tile_generated2 & x"000000BC";--data_tile_generated3;
+alginment_tree_datak <= datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & "0001";--datak_tile_generated3;
 
 e_midas_event_builder : entity work.midas_event_builder
   generic map (

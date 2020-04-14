@@ -45,6 +45,7 @@ signal link_fpga_id : array_16_type;
 signal link_sub_overflow : array_16_type;
 type ts_array_type is array (NLINKS - 1 downto 0) of std_logic_vector(47 downto 0);
 signal link_fpga_ts : ts_array_type;
+type data_array_type is array (31 downto 0) of std_logic_vector(37 downto 0);
 
 signal first_layer_wren       : std_logic_vector(NFIRST - 1 downto 0);
 signal first_layer_data       : std_logic_vector(NFIRST * 38 - 1 downto 0);
@@ -111,7 +112,7 @@ END GENERATE link_fifos;
 -- write link data to first tree layer
 process(i_clk_250, i_reset_n)
 	variable temp_hit_ts : std_logic_vector (3 downto 0);  -- lower 4 bits of ts
-    variable var_hits    : std_logic_vector (37 downto 0); -- new hit sice
+	variable var_hits    : data_array_type; -- new hit sice
 begin
 	if( i_reset_n = '0' ) then
 		-- state machine singals
@@ -184,7 +185,7 @@ begin
 			when algin_first_layer =>
 				-- TODO: timeout?
 				if ( saw_trailer = all_ones ) then
-					first_layer_state <= saw_trailer;
+					first_layer_state <= trailer;
 				elsif ( saw_sheader = all_ones ) then
 					link_fifo_ren <= (others => '1');
 					first_layer_state <= read_out_sub_header;
@@ -207,244 +208,31 @@ begin
 						end if;
 					END LOOP;
 				end if;
-
 				-- start with alignment here
+				-- align 0-31 links
+				FOR K in 0 TO 31 LOOP
+					-- TODO: add FPGA ID right
+					var_hits(K) := link_fifo_data_out((K + 1) * 36 - 1 downto K * 36 + 4) & "000000";
+				END LOOP;
+				FOR J IN 0 TO 31 LOOP
+	                FOR I IN 0 TO 31 - J LOOP
+	                    if unsigned(var_array(I) > unsigned(var_array(I + 1) then
+	                        temp_hit_ts 	:= var_array(I);
+	                        var_hits(I) 	:= var_array(I + 1);
+	                        var_hits(I + 1) := temp;
+	                    end if;
+	                END LOOP;
+            	END LOOP;
 
+            when trailer =>
+            	first_layer_state <= wait_for_preamble;
 
 			when ts_error =>
 				o_error <= x"1";
 
 			when others =>
-				first_layer_state <= wait_for_preamble;
-
-
-				w_ram_en					<= '1';
-				w_ram_add   			<= w_ram_add + 1;
-				w_ram_data  			<= trigger_mask & event_id;
-				last_event_add 		<= w_ram_add + 1;
-				event_tagging_state 	<= event_num;
-
-				when event_num =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= serial_number;
-					event_tagging_state 	<= event_tmp;
-
-				when event_tmp =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= time_tmp;
-					event_tagging_state 	<= event_size;
-
-				when event_size =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= (others => '0');
-					cur_size_add 			<= w_ram_add + 1;
-					event_tagging_state 	<= bank_size;
-
-				when bank_size =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= (others => '0');
-					cur_bank_size_add 	<= w_ram_add + 1;
-					event_size_cnt      	<= event_size_cnt + 4;
-					event_tagging_state 	<= bank_flags;
-
-				when bank_flags =>
-					w_ram_en					<= '1';
-					event_size_cnt      	<= event_size_cnt + 4;
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_add_reg 			<= w_ram_add + 1;
-					w_ram_data				<= flags;
-					event_tagging_state 	<= bank_name;
-
-				when bank_name =>
-               link_fifo_ren(current_link) <= '0';
-					--here we check if the link is masked and if the current fifo is empty
-					if ( i_link_mask_n(current_link) = '0' or link_fifo_empty(current_link) = '1' ) then
-						--skip this link
-						current_link <= current_link + 1;
-						--last link, go to trailer bank
-						if ( current_link + 1 = NLINKS ) then
-                     if ( data_flag = '0' ) then
-                        current_link <= 0;
-                     else
-                        event_tagging_state <= trailer_name;
-                     end if;
-						end if;
-					else
-						--check for mupix or mutrig data header
-						if(	
-							(link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 30) = "111010" or link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 30) = "111000")
-							and
-							(link_fifo_data_out(11 + current_link * 36 downto current_link * 36 + 4) = x"bc")
-							and
-							(link_fifo_data_out(3 + current_link * 36 downto current_link * 36) = "0001")
-						) then
-                     data_flag	<= '1';
-							w_ram_en		<= '1';
-							w_ram_add   <= w_ram_add_reg + 1;
-							-- toDo: proper conversion into ASCII for the midas banks here !! 
-							if(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB0") then
-								w_ram_data  		<= x"30424546";
-							elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB1") then
-								w_ram_data  		<= x"31424546";
-							elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB2") then
-								w_ram_data  		<= x"32424546";
-							elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB3") then
-								w_ram_data  		<= x"33424546";
-							else
-								w_ram_data  		<= x"34424546"; -- We should not see this !! (FEB4)
-							end if;
-							event_size_cnt      	<= event_size_cnt + 4;
-							event_tagging_state 	<= bank_type;
-						--throw data away until a header
-						else
-						   link_fifo_ren(current_link) <= '1';
-						end if;
-					end if;
-
-				when bank_type =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data				<= type_bank;
-					event_size_cnt    	<= event_size_cnt + 4;
-					event_tagging_state 	<= bank_length;
-
-				when bank_length =>
-					w_ram_en								<= '1';
-					w_ram_add   						<= w_ram_add + 1;
-					w_ram_data  						<= (others => '0');
-					event_size_cnt      				<= event_size_cnt + 4;
-					cur_bank_length_add(11 + current_link * 12 downto current_link * 12) <= w_ram_add + 1;
-					link_fifo_ren(current_link) 	<= '1';
-					event_tagging_state 				<= bank_data;
-
-				when bank_data =>
-					-- check again if the fifo is empty
-					if ( link_fifo_empty(current_link) = '0' ) then
-						w_ram_en				<= '1';
-						w_ram_add   		<= w_ram_add + 1;
-						w_ram_data  		<= link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 4);
-						event_size_cnt 	<= event_size_cnt + 4;
- 					   bank_size_cnt 		<= bank_size_cnt + 4;
-						if(  
-							(link_fifo_data_out(11 + current_link * 36 downto current_link * 36 + 4) = x"9c")
-							and 
-							(link_fifo_data_out(3 + current_link * 36 downto current_link * 36) = "0001")
-						) then
-							-- check if the size of the bank data is in 64 bit if not add a word
-							-- this word is not counted to the bank size
-							if ( bank_size_cnt(2 downto 0) = "000" ) then
-								event_tagging_state 	<= set_algin_word;
-							else
-								event_tagging_state 	<= bank_set_length;
-								w_ram_add_reg 			<= w_ram_add + 1;
-							end if;
-							link_fifo_ren(current_link) <= '0';
-						else
-							link_fifo_ren(current_link) <= '1';
-						end if;
-					end if;
-					
-				when set_algin_word =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data 				<= x"AFFEAFFE";
-					w_ram_add_reg 			<= w_ram_add + 1;
-					event_size_cnt      	<= event_size_cnt + 4;
-					event_tagging_state 	<= bank_set_length;
-
-				when bank_set_length =>
-               w_ram_en						<= '1';
-					w_ram_add   				<= cur_bank_length_add(11 + current_link * 12 downto current_link * 12);
-					w_ram_data 					<= bank_size_cnt;
-					bank_size_cnt 				<= (others => '0');
-					if ( current_link + 1 = NLINKS ) then
-						event_tagging_state 	<= trailer_name;
-					else
-						current_link <= current_link + 1;
-						event_tagging_state 	<= bank_name;
-					end if;
-
-				when trailer_name =>
-					w_ram_en					<= '1';
-	            w_ram_add   			<= w_ram_add_reg + 1;
-					w_ram_data  			<= x"454b4146"; -- FAKE in ascii
-					data_flag      		<= '0';
-					current_link   		<= 0;
-	            event_size_cnt 		<= event_size_cnt + 4;
-	            event_tagging_state 	<= trailer_type;
-	                
-				when trailer_type =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= type_bank;
-					event_size_cnt      	<= event_size_cnt + 4;
-					event_tagging_state 	<= trailer_length;
-
-				when trailer_length =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= (others => '0');
-					-- reg trailer length add
-					w_ram_add_reg 			<= w_ram_add + 1;
-					event_size_cnt      	<= event_size_cnt + 4;
-					-- write at least one AFFEAFFE
-					align_event_size		<= w_ram_add + 1 - last_event_add;
-					event_tagging_state 	<= trailer_data;
-
-				when trailer_data =>
-					w_ram_en						<= '1';
-					w_ram_add   				<= w_ram_add + 1;
-					w_ram_data					<= x"AFFEAFFE";
-					align_event_size 			<= align_event_size + 1;
-					if ( align_event_size(2 downto 0) + '1' = "000" ) then
-						event_tagging_state 	<= trailer_set_length;
-					else
-						bank_size_cnt 			<= bank_size_cnt + 4;
-						event_size_cnt 		<= event_size_cnt + 4;
-					end if;
-
-				when trailer_set_length =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add_reg;
-					-- bank length: size in bytes of the following data
-					w_ram_data 				<= bank_size_cnt;
-					w_ram_add_reg 			<= w_ram_add;
-					bank_size_cnt 			<= (others => '0');
-					event_tagging_state 	<= event_set_size;
-
-				when event_set_size =>
-					w_ram_en  				<= '1';
-					w_ram_add 				<= cur_size_add;
-					-- Event Data Size: The event data size contains the size of the event in bytes excluding the event header
-					w_ram_data 				<= event_size_cnt;
-					event_tagging_state 	<= bank_set_size;
-
-				when bank_set_size =>
-					w_ram_en 					<= '1';
-					w_ram_add 					<= cur_bank_size_add;
-					-- All Bank Size: Size in bytes of the following data plus the size of the bank header
-					w_ram_data 					<= event_size_cnt - 8;
-					event_size_cnt 			<= (others => '0');
-					event_tagging_state 		<= write_tagging_fifo;
-
-				when write_tagging_fifo =>
-					w_fifo_en 					<= '1';
-					w_fifo_data 				<= w_ram_add_reg;
-					last_event_add				<= w_ram_add_reg;
-					w_ram_add 					<= w_ram_add_reg - 1;
-					event_tagging_state 		<= event_head;
-					cur_bank_length_add 		<= (others => '0');
-					serial_number 				<= serial_number + '1';
-
-				when others =>
-					event_tagging_state <= event_head;
-
-			end case;
-		end if;
+            	first_layer_state <= wait_for_preamble;
+		end case;
 	end if;
 end process;
 
