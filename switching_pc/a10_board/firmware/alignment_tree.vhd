@@ -1,7 +1,6 @@
 library ieee;
 use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
 entity alginment_tree is 
@@ -32,25 +31,26 @@ signal reset : std_logic;
 signal link_fifo_wren       : std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_data       : std_logic_vector(NLINKS * 36 - 1 downto 0);
 signal link_fifo_ren        : std_logic_vector(NLINKS - 1 downto 0);
-signal link_fifo_data_out   : std_logic_vector(NLINKS * 36 - 1 downto 0);
+type data_array_type is array (NLINKS - 1 downto 0) of std_logic_vector(35 downto 0);
+signal link_fifo_data_out   : data_array_type;
 signal link_fifo_empty      : std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_full       : std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_almost_full: std_logic_vector(NLINKS - 1 downto 0);
 
 -- first layer fifos
-type first_layer_type is (wait_for_preamble, read_out_ts_1, read_out_ts_2, read_out_sub_header, ts_error, algin_first_layer);
+type first_layer_type is (wait_for_preamble, read_out_ts_1, read_out_ts_2, read_out_sub_header, ts_error, algin_first_layer, trailer);
 signal first_layer_state : first_layer_type;
 type array_16_type is array (NLINKS - 1 downto 0) of std_logic_vector(15 downto 0);
 signal link_fpga_id : array_16_type;
 signal link_sub_overflow : array_16_type;
 type ts_array_type is array (NLINKS - 1 downto 0) of std_logic_vector(47 downto 0);
 signal link_fpga_ts : ts_array_type;
-type data_array_type is array (31 downto 0) of std_logic_vector(37 downto 0);
 
+type first_layer_array is array (NLINKS/2 - 1 downto 0) of std_logic_vector(37 downto 0);
 signal first_layer_wren       : std_logic_vector(NFIRST - 1 downto 0);
-signal first_layer_data       : std_logic_vector(NFIRST * 38 - 1 downto 0);
+signal first_layer_data       : first_layer_array;
 signal first_layer_ren        : std_logic_vector(NFIRST - 1 downto 0);
-signal first_layer_data_out   : std_logic_vector(NFIRST * 38 - 1 downto 0);
+signal first_layer_data_out   : first_layer_array;
 signal first_layer_empty      : std_logic_vector(NFIRST - 1 downto 0);
 signal first_layer_full       : std_logic_vector(NFIRST - 1 downto 0);
 signal first_layer_almost_full: std_logic_vector(NFIRST - 1 downto 0);
@@ -98,7 +98,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
 		wrreq    		=> link_fifo_wren(i),
 		rdreq    		=> link_fifo_ren(i),
 		clock    		=> i_clk_250,
-		q    	 		=> link_fifo_data_out(35 + i * 36 downto i * 36),
+		q    	 		=> link_fifo_data_out(i),
 		full     		=> link_fifo_full(i),
 		empty    		=> link_fifo_empty(i),
 		almost_empty 	=> open,
@@ -111,8 +111,6 @@ END GENERATE link_fifos;
 
 -- write link data to first tree layer
 process(i_clk_250, i_reset_n)
-	variable temp_hit_ts : std_logic_vector (3 downto 0);  -- lower 4 bits of ts
-	variable var_hits    : data_array_type; -- new hit sice
 begin
 	if( i_reset_n = '0' ) then
 		-- state machine singals
@@ -125,7 +123,7 @@ begin
 		o_error				<= (others => '0');
 		saw_trailer			<= (others => '0');
 		-- first layer signals
-		first_layer_data 	<= (others => '0');
+		first_layer_data 	<= (others => (others => '0'));
 		first_layer_wren 	<= (others => '0');
 	elsif( rising_edge(i_clk_250) ) then
 
@@ -141,14 +139,14 @@ begin
 					first_layer_state <= read_out_ts_1;
 				else
 					FOR I IN 0 to NLINKS - 1 LOOP
-						if(	(link_fifo_data_out(35 + I * 36 downto I * 36 + 30) = "111010" )
+						if(	(link_fifo_data_out(I)(35 downto 30) = "111010" )
 							and 
-							(link_fifo_data_out(11 + I * 36 downto I * 36 + 4) = x"bc")
+							(link_fifo_data_out(I)(11 downto 4) = x"bc")
 							and
-							(link_fifo_data_out(3 + I * 36 downto I * 36) = "0001")
+							(link_fifo_data_out(I)(3 downto 0) = "0001")
 						) then
 							saw_preamble(I) 	<= '1';
-							link_fpga_id(I) 	<= link_fifo_data_out(I * 36 + 23 downto I * 36 + 4);
+							link_fpga_id(I) 	<= link_fifo_data_out(I)(27 downto 12);
 							link_fifo_ren(I) 	<= '0';
 						else
 							link_fifo_ren(I) <= '1';
@@ -158,13 +156,13 @@ begin
 
 			when read_out_ts_1 =>
 				FOR I IN 0 to NLINKS - 1 LOOP
-					link_fpga_ts(I)(47 downto 16) <= link_fifo_data_out(35 + I * 36 downto I * 36 + 4);
+					link_fpga_ts(I)(47 downto 16) <= link_fifo_data_out(I)(35 downto 4);
 				END LOOP;
 				first_layer_state <= read_out_ts_2;
 
 			when read_out_ts_2 =>
 				FOR I IN 0 to NLINKS - 1 LOOP
-					link_fpga_ts(I)(15 downto 0) <= link_fifo_data_out(35 + I * 36 downto I * 36 + 20);
+					link_fpga_ts(I)(15 downto 0) <= link_fifo_data_out(I)(35 downto 20);
 				END LOOP;
 				first_layer_state <= read_out_sub_header;
 
@@ -176,56 +174,79 @@ begin
 					if ( link_fpga_ts(0) /= link_fpga_ts(I) ) then
 						first_layer_state <= ts_error;
 					end if;
+				END LOOP;
+
+				FOR I IN 1 to NFIRST - 1 LOOP
 					-- here we just send the same sheader 
 					first_layer_data(I) <= (others => '1');
 					first_layer_wren(I) <= '1';
 				END LOOP;
 
-
 			when algin_first_layer =>
+				link_fifo_ren <= (others => '0');
 				-- TODO: timeout?
 				if ( saw_trailer = all_ones ) then
 					first_layer_state <= trailer;
 				elsif ( saw_sheader = all_ones ) then
 					link_fifo_ren <= (others => '1');
 					first_layer_state <= read_out_sub_header;
-				else
-					FOR I IN 0 to NLINKS - 1 LOOP
-						if(	(link_fifo_data_out(31 + I * 36 downto I * 36 + 26) = "111111" )
-							and 
-							(link_fifo_data_out(11 + I * 36 downto I * 36 + 4) = x"bc")
-							and
-							(link_fifo_data_out(3 + I * 36 downto I * 36) = "0001")
-						) then
-							saw_sheader(I) 		<= '1';
-							link_fifo_ren(I) 	<= '0';
-						elsif( (link_fifo_data_out(11 + I * 36 downto I * 36 + 4) = x"9c")
-							   and
-							   (link_fifo_data_out(3 + I * 36 downto I * 36) = "0001")
-						) then
-							saw_trailer(I)   <= '1';
-							link_fifo_ren(I) <= '0';
-						end if;
-					END LOOP;
 				end if;
+
 				-- start with alignment here
 				-- align 0-31 links
-				FOR K in 0 TO 31 LOOP
-					-- TODO: add FPGA ID right
-					var_hits(K) := link_fifo_data_out((K + 1) * 36 - 1 downto K * 36 + 4) & "000000";
-				END LOOP;
-				FOR J IN 0 TO 31 LOOP
-	                FOR I IN 0 TO 31 - J LOOP
-	                    if unsigned(var_array(I) > unsigned(var_array(I + 1) then
-	                        temp_hit_ts 	:= var_array(I);
-	                        var_hits(I) 	:= var_array(I + 1);
-	                        var_hits(I + 1) := temp;
-	                    end if;
-	                END LOOP;
+				FOR I IN 0 TO NLINKS/2 - 1 LOOP
+					if(	(link_fifo_data_out(I*2)(31 downto 26) = "111111" ) ) then
+						saw_sheader(I*2) <= '1';
+						if(	link_fifo_data_out(I*2 + 1)(31 downto 26) = "111111" ) then
+							saw_sheader(I*2 + 1) <= '1';
+						else
+							-- TODO add correct FPGA ID
+							first_layer_data(I) <= link_fifo_data_out(I*2 + 1)(35 downto 4) & "000000";
+							link_fifo_ren(I*2 + 1) <= '1';
+						end if;
+
+					elsif( link_fifo_data_out(I*2 + 1)(31 downto 26) = "111111" ) then
+						saw_sheader(I*2 + 1) <= '1';
+						-- TODO add correct FPGA ID
+						first_layer_data(I) <= link_fifo_data_out(I*2)(35 downto 4) & "000000";
+						link_fifo_ren(I*2) <= '1';
+
+					elsif( (link_fifo_data_out(I*2)(11 downto 4) = x"9c" ) 
+							and (link_fifo_data_out(I*2)(3 downto 0) = "0001") ) then
+						saw_trailer(I*2) <= '1';
+						if(	(link_fifo_data_out(I*2 + 1)(11 downto 4) = x"9c" )
+							and (link_fifo_data_out(I*2 + 1)(3 downto 0) = "0001") ) then
+							saw_trailer(I*2 + 1) <= '1';
+						else
+							-- TODO add correct FPGA ID
+							first_layer_data(I) <= link_fifo_data_out(I*2 + 1)(35 downto 4) & "000000";
+							link_fifo_ren(I*2 + 1) <= '1';
+						end if;
+
+					elsif( (link_fifo_data_out(I*2 + 1)(11 downto 4) = x"9c" )
+							and (link_fifo_data_out(I*2 + 1)(3 downto 0) = "0001") ) then
+						saw_trailer(I*2 + 1) <= '1';
+						-- TODO add correct FPGA ID
+						first_layer_data(I) <= link_fifo_data_out(I*2)(35 downto 4) & "000000";
+						link_fifo_ren(I*2) <= '1';
+					else
+						if ( link_fifo_data_out(I*2)(35 downto 33) <= link_fifo_data_out(I*2 + 1)(35 downto 33) ) then
+							-- TODO add correct FPGA ID
+							first_layer_data(I) <= link_fifo_data_out(I*2)(35 downto 4) & "000000";
+							link_fifo_ren(I*2) <= '1';
+						else
+							-- TODO add correct FPGA ID
+							first_layer_data(I) <= link_fifo_data_out(I*2 + 1)(35 downto 4) & "000000";
+							link_fifo_ren(I*2 + 1) <= '1';
+						end if;
+					end if;
             	END LOOP;
 
             when trailer =>
             	first_layer_state <= wait_for_preamble;
+            	saw_sheader <= (others => '0');
+            	saw_preamble <= (others => '0');
+            	saw_trailer <= (others => '0');
 
 			when ts_error =>
 				o_error <= x"1";

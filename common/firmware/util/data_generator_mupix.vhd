@@ -3,7 +3,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
-use work.protocol.all;
 
 
 entity data_generator_mupix is
@@ -12,7 +11,7 @@ entity data_generator_mupix is
 		i_reset_n:          in  std_logic;
 		i_enable_pix:       in  std_logic;
         i_dma_half_full:    in  std_logic;
-		i_skip_hits:		in  std_logic_vector(15 downto 0);
+		i_skip_hits:		in  std_logic_vector(3 downto 0);
 		i_fpga_id:			in  std_logic_vector(15 downto 0);
 		i_slow_down:		in  std_logic_vector(31 downto 0);
 		o_data:  			out std_logic_vector(31 downto 0);
@@ -46,7 +45,7 @@ begin
 		waiting 			<= '0';
 		wait_counter		<= (others => '0');
 	elsif(rising_edge(i_clk)) then
-		if(wait_counter >= slow_down) then
+		if(wait_counter >= i_slow_down) then
 			wait_counter 	<= (others => '0');
 			waiting 		<= '0';
 		else
@@ -99,11 +98,17 @@ begin
 						data_header_state 		<= hit;
 					
 					when hit =>
+						
 						global_time				<= global_time + '1';
 						o_data(31 downto 28) 	<= global_time(3 downto 0);
 						-- TODO better chip id, row, col and tot
 						o_data(27 downto 0) 	<= (others => '0');
 						o_datak              	<= "0000";
+						
+						if ( global_time(3 downto 0) + '1' = i_skip_hits ) then
+							global_time			<= global_time + "10";
+						end if;
+
 						if (global_time(9 downto 0) = "1111111111") then
 							data_header_state	<= trailer;
 						elsif (global_time(3 downto 0) = "1111") then
