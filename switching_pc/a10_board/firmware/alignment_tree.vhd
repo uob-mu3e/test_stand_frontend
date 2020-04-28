@@ -87,24 +87,26 @@ end process;
 link_fifos:
 FOR i in 0 to NLINKS - 1 GENERATE
 	
-    e_link_fifo : entity work.ip_scfifo
+    e_link_fifo : entity work.ip_dcfifo_mixed_widths
     generic map(
-        ADDR_WIDTH 	=> LINK_FIFO_ADDR_WIDTH,
-        DATA_WIDTH 	=> 36,
-        DEVICE 		=> "Arria 10"--,
+        ADDR_WIDTH_w => LINK_FIFO_ADDR_WIDTH,
+        DATA_WIDTH_w => 36,
+        ADDR_WIDTH_r => LINK_FIFO_ADDR_WIDTH,
+        DATA_WIDTH_r => 36,
+        DEVICE 		 => "Arria 10"--,
 	)
 	port map (
-		data     		=> link_fifo_data(35 + i * 36 downto i * 36),
-		wrreq    		=> link_fifo_wren(i),
-		rdreq    		=> link_fifo_ren(i),
-		clock    		=> i_clk_250,
-		q    	 		=> link_fifo_data_out(i),
-		full     		=> link_fifo_full(i),
-		empty    		=> link_fifo_empty(i),
-		almost_empty 	=> open,
-		almost_full 	=> link_fifo_almost_full(i),
-		usedw 			=> open,
-		sclr     		=> reset--,
+		aclr 	=> reset,
+		data 	=> link_fifo_data(35 + i * 36 downto i * 36),
+		rdclk 	=> i_clk_250,
+		rdreq 	=> link_fifo_ren(i),
+		wrclk 	=> i_clk_250,
+		wrreq 	=> link_fifo_wren(i),
+		q 		=> link_fifo_data_out(i),
+		rdempty => link_fifo_empty(i),
+		rdusedw => open,
+		wrfull 	=> link_fifo_full(i),
+		wrusedw => open--,
 	);
 
 END GENERATE link_fifos;
