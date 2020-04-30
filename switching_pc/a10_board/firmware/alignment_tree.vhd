@@ -38,7 +38,7 @@ signal link_fifo_full       : std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_almost_full: std_logic_vector(NLINKS - 1 downto 0);
 
 -- first layer fifos
-type first_layer_type is (wait_for_preamble, read_out_ts_1, read_out_ts_2, read_out_sub_header, ts_error, algin_first_layer, trailer);
+type first_layer_type is (wait_for_preamble, wait_one_cs, read_out_ts_1, read_out_ts_2, read_out_sub_header, ts_error, algin_first_layer, trailer);
 signal first_layer_state : first_layer_type;
 type array_16_type is array (NLINKS - 1 downto 0) of std_logic_vector(15 downto 0);
 signal link_fpga_id : array_16_type;
@@ -58,12 +58,15 @@ signal saw_preamble			  : std_logic_vector(NLINKS - 1 downto 0);
 signal saw_sheader			  : std_logic_vector(NLINKS - 1 downto 0);
 signal saw_trailer			  : std_logic_vector(NLINKS - 1 downto 0);
 constant all_ones 			  : std_logic_vector(NLINKS - 1 downto 0) := (others => '1');
+constant all_zero 			  : std_logic_vector(NLINKS - 1 downto 0) := (others => '0');
 
 begin
 
 reset <= not i_reset_n;
 
 -- write to link fifos
+-- TODO: check https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/ug/archives/ug-fifo-15.1.pdf
+-- TODO: do not write if fifo is full --> error, throw package away
 process(i_clk_250, i_reset_n)
 begin
 	if(i_reset_n = '0') then
@@ -137,8 +140,12 @@ begin
 			when wait_for_preamble =>
 			-- TODO: timeout?
 				if ( saw_preamble = all_ones ) then
-					link_fifo_ren <= (others => '1');
-					first_layer_state <= read_out_ts_1;
+					FOR I IN 0 to NLINKS - 1 LOOP
+						if ( link_fifo_empty(I) = '0' ) then
+							link_fifo_ren(I) <= '1';
+						end if;
+					END LOOP;
+					first_layer_state <= wait_one_cs;
 				else
 					FOR I IN 0 to NLINKS - 1 LOOP
 						if(	(link_fifo_data_out(I)(35 downto 30) = "111010" )
@@ -151,9 +158,21 @@ begin
 							link_fpga_id(I) 	<= link_fifo_data_out(I)(27 downto 12);
 							link_fifo_ren(I) 	<= '0';
 						else
-							link_fifo_ren(I) <= '1';
+							if ( link_fifo_empty(I) = '0' ) then
+								link_fifo_ren(I) <= '1';
+							end if;
 						end if;
 					END LOOP;
+				end if;
+
+			when wait_one_cs =>
+				FOR I IN 0 to NLINKS - 1 LOOP
+					if ( link_fifo_empty(I) = '0' ) then
+						link_fifo_ren(I) <= '1';
+					end if;
+				END LOOP;
+				if ( link_fifo_empty = all_zero ) then
+					first_layer_state <= read_out_ts_1;
 				end if;
 
 			when read_out_ts_1 =>
