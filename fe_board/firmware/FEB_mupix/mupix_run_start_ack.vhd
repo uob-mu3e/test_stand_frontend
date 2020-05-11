@@ -1,0 +1,67 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.std_logic_misc.all;
+use work.daq_constants.all;
+use work.mupix_constants.all;
+
+entity mupix_run_start_ack is
+generic(
+    NLVDS                   : integer := 32--;
+);
+port (
+    i_clk                       : in  std_logic;
+    i_reset                     : in  std_logic;
+    i_disable                   : in  std_logic;
+    i_stable_required           : in  unsigned(15 downto 0);
+    i_lvds_err_counter          : in  reg32array_t(NLVDS-1 downto 0);
+    i_sc_busy                   : in  std_logic;
+    i_run_state_125             : in  run_state_t;
+    o_ack_run_prep_permission   : out std_logic--;
+);
+end entity;
+
+architecture arch of mupix_run_start_ack is
+
+    --signal lvds_stable_count
+    signal stable_counter   : unsigned(15 downto 0) := (others => '0');
+    signal lvds_stable      : std_logic_vector(NLVDS-1 downto 0) := (others => '0');
+    signal prev_err_counter : std_logic_vector(NLVDS*4-1 downto 0);
+
+begin
+
+    process (i_clk, i_reset)
+    begin
+        if(i_reset = '1') then
+            o_ack_run_prep_permission   <= '0';
+            stable_counter              <= (others => '0');
+            lvds_stable                 <= (others => '0');
+            prev_err_counter            <= (others => '0');
+
+        elsif (rising_edge(i_clk)) then
+            if(i_disable = '1') then
+                o_ack_run_prep_permission   <= '1';
+            elsif(i_run_state_125 = RUN_STATE_PREP and i_sc_busy='0' and stable_counter = i_stable_required) then
+                o_ack_run_prep_permission   <= '1';
+            else
+                o_ack_run_prep_permission   <= '0';
+            end if;
+
+            for I in NLVDS-1 downto 0 loop
+                if(prev_err_counter((I+1)*4-1 downto I*4) = i_lvds_err_counter(I)(3 downto 0)) then
+                    lvds_stable(I)          <= '1';
+                else
+                    lvds_stable(I)          <= '0';
+                end if;
+                prev_err_counter((I+1)*4-1 downto I*4)  <= i_lvds_err_counter(I)(3 downto 0);
+            end loop;
+
+            if (and_reduce(lvds_stable)='0') then
+                stable_counter              <= (others => '0');
+            elsif (stable_counter /= i_stable_required) then
+                stable_counter              <= stable_counter+1;
+            end if;
+        end if;
+    end process;
+
+end architecture;

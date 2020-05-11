@@ -43,7 +43,8 @@ port (
     i_pod_rx        : in    std_logic_vector(3 downto 0);
     o_pod_tx        : out   std_logic_vector(3 downto 0);
 
-    i_can_terminate : in std_logic:='0';
+    i_can_terminate           : in std_logic:='0';
+    i_ack_run_prep_permission : in std_logic:='1';
 
     --main fiber data fifo
     i_fifo_write    : in    std_logic_vector(N_LINKS-1 downto 0);
@@ -453,37 +454,38 @@ begin
 
     e_merger : entity work.data_merger
     generic map(
-        N_LINKS                 => N_LINKS,
-        feb_mapping             => feb_mapping--,
+        N_LINKS                    => N_LINKS,
+        feb_mapping                => feb_mapping--, 
     )
     port map (
-        fpga_ID_in              => i_fpga_id_reg,
-        FEB_type_in             => i_fpga_type,
-        run_state               => run_state_156,
-        run_number              => run_number,
+        fpga_ID_in                 => i_fpga_id_reg,
+        FEB_type_in                => i_fpga_type,
+        run_state                  => run_state_156,
+        run_number                 => run_number,
 
-        o_data_out              => qsfp_tx_data,
-        o_data_is_k             => qsfp_tx_datak,
+        o_data_out                 => qsfp_tx_data,
+        o_data_is_k                => qsfp_tx_datak,
 
-        slowcontrol_write_req   => sc_fifo_write,
-        i_data_in_slowcontrol   => sc_fifo_wdata,
+        slowcontrol_write_req      => sc_fifo_write,
+        i_data_in_slowcontrol      => sc_fifo_wdata,
 
-        data_write_req          => i_fifo_write,
-        i_data_in               => i_fifo_wdata,
-        o_fifos_almost_full     => o_fifos_almost_full,
+        data_write_req             => i_fifo_write,
+        i_data_in                  => i_fifo_wdata,
+        o_fifos_almost_full        => o_fifos_almost_full,
 
-        override_data_in        => linktest_data,
-        override_data_is_k_in   => linktest_datak,
-        override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
-        override_granted        => linktest_granted,
+        override_data_in           => linktest_data,
+        override_data_is_k_in      => linktest_datak,
+        override_req               => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
+        override_granted           => linktest_granted,
 
-        can_terminate           => i_can_terminate,
-        o_terminated            => terminated,
-        data_priority           => '0',
-        o_rate_count            => merger_rate_count,
+        can_terminate              => i_can_terminate,
+        o_terminated               => terminated,
+        i_ack_run_prep_permission  => i_ack_run_prep_permission,
+        data_priority              => '0',
+        o_rate_count               => merger_rate_count,
 
-        reset                   => not reset_156_n,
-        clk                     => i_clk_156--,
+        reset                      => not reset_156_n,
+        clk                        => i_clk_156--,
     );
 
 

@@ -4,6 +4,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
 use work.daq_constants.all;
 use work.mupix_constants.all;
 
@@ -33,7 +34,8 @@ port (
     o_SPI_LD_TEMP_DAC_A     : out std_logic;
     o_SPI_LD_DAC_A          : out std_logic;  
 
-    i_run_state_125         : in    run_state_t;
+    i_run_state_125           : in  run_state_t;
+    o_ack_run_prep_permission : out std_logic;
 
     -- mupix dac regs
     i_reg_add               : in std_logic_vector(7 downto 0);
@@ -128,8 +130,23 @@ signal reset_n : std_logic;
     signal lvds_data_in : std_logic_vector(NLVDS-1 downto 0);
 
 begin
-
     reset_n <= not i_reset;
+
+
+    e_mupix_run_start_ack : work.mupix_run_start_ack
+    generic map (
+        NLVDS                       => NLVDS--,
+    )
+    port map (
+        i_clk                       => i_clk,
+        i_reset                     => i_reset,
+        i_disable                   => '0', -- TODO: connect to sc
+        i_stable_required           => x"00A0", -- TODO: connect to sc
+        i_lvds_err_counter          => read_regs_mupix(LVDS_ERRCOUNTER_REGISTER_R + NLVDS - 1 downto LVDS_ERRCOUNTER_REGISTER_R),
+        i_sc_busy                   => or_reduce(mp8_wren & (not chip_dac_fifo_empty)),
+        i_run_state_125             => i_run_state_125,
+        o_ack_run_prep_permission   => o_ack_run_prep_permission--,
+    );
 
     chip_dac_fifo_write : work.ip_scfifo
     generic map (
