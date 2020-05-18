@@ -27,6 +27,7 @@ odbedit -d Custom -c 'create STRING MuPix'
 odbedit -c 'set Custom/MuPix MuPixTB.html'
 
 #set mhttpd to run http
+odbedit -d Experiment -c 'create BOOL "http redirect to https"'
 odbedit -c 'set "Experiment/http redirect to https" "n"'
 
 xterm -hold -e "mhttpd" &
