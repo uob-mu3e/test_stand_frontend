@@ -30,6 +30,11 @@ odbedit -c 'set Custom/MuPix MuPixTB.html'
 odbedit -d Experiment -c 'create BOOL "http redirect to https"'
 odbedit -c 'set "Experiment/http redirect to https" "n"'
 
+if [ "$1" = "CRFE_BYPASS" ]; then
+    odbedit -c 'create STRING "Equipment/Clock Reset/Settings/IP"'
+    odbedit -c 'set "Equipment/Clock Reset/Settings/IP" "0.0.0.0"'
+fi
+
 xterm -hold -e "mhttpd" &
 sleep 0.2
 xterm -hold -e "mserver" &
