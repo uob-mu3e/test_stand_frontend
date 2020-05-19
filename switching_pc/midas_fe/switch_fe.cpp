@@ -93,9 +93,6 @@ int switch_id = 0; // TODO to be loaded from outside
 /* DMA Buffer and related */
 mudaq::DmaMudaqDevice * mup;
 
-/* Use CRFE bypass during run-start transitions, directly send command to FEB*/
-//#define CRFE_BYPASS
-
 /*-- Function declarations -----------------------------------------*/
 
 INT read_sc_event(char *pevent, INT off);
@@ -262,6 +259,7 @@ INT frontend_init()
    }
 
    HNDLE hKey;
+
    // watch if this switching board is enabled
    db_find_key(hDB, 0, "/Equipment/Links/Settings/SwitchingBoardMask", &hKey);
    assert(hKey);
@@ -424,25 +422,35 @@ try{
    //last preparations
    SciFiFEB::Instance()->ResetAllCounters();
 
+   HNDLE hKey;
+   char ip[256];
+   int size = 256;
+   if(db_find_key(hDB, 0, "/Equipment/Clock Reset", &hKey) != DB_SUCCESS){
+       cm_msg(MERROR,"switch_fe","could not find CRFE, is CRFE running ?", run_number);
+       return CM_TRANSITION_CANCELED;
+   }else if(db_get_value(hDB, hKey, "Settings/IP", ip, &size, TID_STRING, false)!= DB_SUCCESS) {
+       cm_msg(MERROR,"switch_fe","could not find CRFE IP, is CRFE running ?", run_number);
+       return CM_TRANSITION_CANCELED;
+   }
 
-#ifndef CRFE_BYPASS
-   /* send run prepare signal via CR system */
-   INT value = 1;
-   cm_msg(MINFO,"switch_fe","Using CRFE for run transition");
-   db_set_value_index(hDB,0,"Equipment/Clock Reset/Run Transitions/Request Run Prepare",
-                      &value, sizeof(value), switch_id, TID_INT, false);
-#else
-   /* direct sending of run prepare, CRFE bypass frontend is not working during run transitions*/
-   cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
-   DWORD value = run_number;
-   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff5,true); //run number
-   value= (1<<8) | 0x10;
-   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,true); //run prep command
-   value= 0xbcbcbcbc;
-   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff5,true); //reset payload
-   value= 0;//(1<<8) | 0x00;
-   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,true); //reset command
-#endif
+   if(std::string(ip)=="0.0.0.0"){
+       /* send run prepare signal from here */
+       cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
+       DWORD valueRB = run_number;
+       mup->FEBsc_write(mup->FEBsc_broadcast_ID, &valueRB,1,0xfff5,true); //run number
+       valueRB= (1<<8) | 0x10;
+       mup->FEBsc_write(mup->FEBsc_broadcast_ID, &valueRB,1,0xfff4,true); //run prep command
+       valueRB= 0xbcbcbcbc;
+       mup->FEBsc_write(mup->FEBsc_broadcast_ID, &valueRB,1,0xfff5,true); //reset payload
+       valueRB= 0;//(1<<8) | 0x00;
+       mup->FEBsc_write(mup->FEBsc_broadcast_ID, &valueRB,1,0xfff4,true); //reset command
+   }else{
+       /* send run prepare signal via CR system */
+       INT value = 1;
+       cm_msg(MINFO,"switch_fe","Using CRFE for run transition");
+       db_set_value_index(hDB,0,"Equipment/Clock Reset/Run Transitions/Request Run Prepare",
+                          &value, sizeof(value), switch_id, TID_INT, false);
+   }
 
    uint16_t timeout_cnt=300;
    uint64_t link_active_from_register;
