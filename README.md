@@ -4,6 +4,11 @@
 - preliminary User Manual: https://www.overleaf.com/read/ctkmgfsjqchy (Read only link, no login required)
 - Edit User Manual here: https://www.overleaf.com/8596488843pnpknzfsvkfg (login with google account)
 
+## Current "fixes" with MIDAS tag ced039e
+
+- cmake include funtion in examples/experiment/CMakeLists.txt:99 -> comment out
+- in progs/msysmon.cxx not all cases are in all cuda / nvidia versions -> comment out 
+
 ## Structure
 
 - `backend_pc` - _TODO_
