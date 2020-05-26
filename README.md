@@ -4,10 +4,11 @@
 - preliminary User Manual: https://www.overleaf.com/read/ctkmgfsjqchy (Read only link, no login required)
 - Edit User Manual here: https://www.overleaf.com/8596488843pnpknzfsvkfg (login with google account)
 
-## Current "fixes" with MIDAS tag ced039e
+## Current "fixes" with MIDAS tag ced039e and cuda 10
 
 - cmake include funtion in examples/experiment/CMakeLists.txt:99 -> comment out
 - in progs/msysmon.cxx not all cases are in all cuda / nvidia versions -> comment out 
+- do cmake .. -DCUDA_HOST_COMPILER='/usr/bin/gcc-7' to link a different compiler to nvcc
 
 ## Structure
 
