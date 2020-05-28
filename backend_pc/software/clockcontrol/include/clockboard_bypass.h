@@ -7,7 +7,7 @@
 class clockboard_bypass:public clockboard
 {
 public:
-    clockboard_bypass(const char * addr, int port):clockboard(addr,port){}
+    clockboard_bypass(std::string addr, int port):clockboard(addr,port){}
     bool isConnected(){return true;}
 
     int init_clockboard(uint16_t clkinvert = 0x0A00, uint16_t rstinvert= 0x0008, uint16_t clkdisable = 0x0AA, uint16_t rstdisable = 0xAA0){return 1;}

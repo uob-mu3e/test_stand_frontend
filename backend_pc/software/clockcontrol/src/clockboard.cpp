@@ -10,7 +10,7 @@ using std::cout;
 using std::endl;
 using std::hex;
 
-clockboard::clockboard(const char *addr, int port):bus(addr, port)
+clockboard::clockboard(std::string addr, int port):bus(addr, port)
 {
     if(!bus.isConnected())
         cout << "Connection failed" << endl;
@@ -83,7 +83,7 @@ int clockboard::write_command(uint8_t command, uint32_t payload, bool has_payloa
     return 0;
 }
 
-int clockboard::write_command(const char *name, uint32_t payload, uint16_t address)
+int clockboard::write_command(std::string name, uint32_t payload, uint16_t address)
 {
 
     auto it = reset_protocol.commands.find(name);
@@ -481,7 +481,7 @@ vector<uint8_t> clockboard::read_rx_emphasis()
 vector<uint8_t> clockboard::read_rx_amplitude(){
 	//KB: Unused function, implementation added to link properly
 	return vector<uint8_t>();
-};
+}
 
 float clockboard::read_rx_firefly_temp()
 {

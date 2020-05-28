@@ -7,7 +7,11 @@
 class clockboard
 {
 public:
-    clockboard(const char * addr, int port);
+    static const int MAXNDAUGHTER = 8;
+    static const int MAXFIREFLYPERDAUGTHER = 3;
+    static const int MAXFIREFLY = MAXNDAUGHTER * MAXFIREFLYPERDAUGTHER;
+
+    clockboard(std::string addr, int port);
     virtual bool isConnected(){return bus.isConnected();}
 
     virtual int init_clockboard(uint16_t clkinvert = 0x0A00, uint16_t rstinvert= 0x0008, uint16_t clkdisable = 0x0AA, uint16_t rstdisable = 0xAA0);
@@ -15,7 +19,7 @@ public:
 
     // Write "reset" commands
     virtual int write_command(uint8_t command, uint32_t payload =0, bool has_payload = false);
-    virtual int write_command(const char * name, uint32_t payload =0, uint16_t address =0);
+    virtual int write_command(std::string name, uint32_t payload =0, uint16_t address =0);
 
     // I2C interface
     virtual int init_i2c();

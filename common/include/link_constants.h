@@ -1,7 +1,7 @@
 #ifndef LINK_CONSTANTS_H
 #define LINK_CONSTANTS_H
 
-/* Maximum number of  swiutching boards */
+/* Maximum number of  switching boards */
 const int MAX_N_SWITCHINGBOARDS = 4;
 
 /* Maximum number of links per switching board */
