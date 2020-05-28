@@ -22,7 +22,7 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 #)
 #message(STATUS "MU3E_ONLINE_GIT_REF: ${MU3E_ONLINE_GIT_REF}")
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -52,6 +52,14 @@ endif()
 find_package(CUDA)
 
 if (CUDA_FOUND)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7)
+        if(EXISTS "/usr/bin/gcc-7")
+            set(CUDA_HOST_COMPILER "/usr/bin/gcc-7")
+            message("-- Set CUDA_HOST_COMPILER to /usr/bin/gcc-7")
+        else()
+            message([WARNING] "-- gcc is greater then 7 and no /usr/bin/gcc-7 is set to CUDA_HOST_COMPILER")
+        endif()
+    endif()
     message("-- CUDA ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} was found at ${CUDA_TOOLKIT_ROOT_DIR}")
     list(APPEND CUDA_NVCC_FLAGS "-arch=compute_30;-DVERBOSE;-g")
     include_directories(${CUDA_TOOLKIT_ROOT_DIR}/include)
@@ -75,18 +83,18 @@ set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mxml)
 set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mscb)
 
 # requires rootana
-message(STATUS "Using ROOTANA")
-set(MIDASSYS ${CMAKE_CURRENT_LIST_DIR}/modules/midas)
-set(ROOTANASYS ${CMAKE_CURRENT_LIST_DIR}/modules/rootana)
-set(ROOTANA_LIBRARY_DIRS ${ROOTANASYS}/lib)
-set(ROOTANA_LIBRARIES ${ROOTANA_LIBRARY_DIRS}/librootana.a)
-set(ROOTANA_INCLUDE_DIRS ${ROOTANASYS}/include)
-add_custom_target(
-    rootana
-    ALL
-    COMMAND export MIDASSYS=${MIDASSYS} && make
-    WORKING_DIRECTORY ${ROOTANASYS}
-)
+#message(STATUS "Using ROOTANA")
+#set(MIDASSYS ${CMAKE_CURRENT_LIST_DIR}/modules/midas)
+#set(ROOTANASYS ${CMAKE_CURRENT_LIST_DIR}/modules/rootana)
+#set(ROOTANA_LIBRARY_DIRS ${ROOTANASYS}/lib)
+#set(ROOTANA_LIBRARIES ${ROOTANA_LIBRARY_DIRS}/librootana.a)
+#set(ROOTANA_INCLUDE_DIRS ${ROOTANASYS}/include)
+#add_custom_target(
+#    rootana
+#    ALL
+#    COMMAND export MIDASSYS=${MIDASSYS} && make
+#    WORKING_DIRECTORY ${ROOTANASYS}
+#)
 
 add_subdirectory(backend_pc)
 add_subdirectory(common/libmudaq)
@@ -99,8 +107,8 @@ add_subdirectory(switching_pc/midas_fe_scifi)
 add_subdirectory(switching_pc/midas_fe_Tile)
 add_subdirectory(switching_pc/midas_fe_pixels)
 if (CUDA_FOUND)
-add_subdirectory(farm_pc/midas_fe)
-add_subdirectory(farm_pc/tools)
+    add_subdirectory(farm_pc/midas_fe)
+    add_subdirectory(farm_pc/tools)
 endif(CUDA_FOUND)
 
 
