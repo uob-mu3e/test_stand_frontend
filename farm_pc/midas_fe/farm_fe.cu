@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "midas.h"
+#include "odbxx.h"
 #include "msystem.h"
 #include "mcstd.h"
 #include "experim.h"
@@ -74,10 +75,12 @@ INT frontend_loop();
 
 INT read_stream_event(char *pevent, INT off);
 INT read_stream_thread(void *param);
+INT db_watch_datagen_thread(void *param);
 
 INT poll_event(INT source, INT count, BOOL test);
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
 
+//void datagen_settings_changed(midas::odb);
 void datagen_settings_changed(HNDLE, HNDLE, int, void *);
 void link_active_settings_changed(HNDLE, HNDLE, int, void *);
 /*-- Equipment list ------------------------------------------------*/
@@ -107,81 +110,97 @@ EQUIPMENT equipment[] = {
 
 INT frontend_init()
 {
-   cout<<"DMA_BUF_LENGTH: "<<dma_buf_size<<"  dma_buf_nwords: "<<dma_buf_nwords<<endl; 
-   HNDLE hDB, hStreamSettings;
-   
-   set_equipment_status(equipment[0].name, "Initializing...", "var(--myellow)");
-   
-   // Get database
-   cm_get_experiment_database(&hDB, NULL);
-   
-   // Map /equipment/Stream/Settings (structure defined in experim.h)
-   char set_str[255];
-   STREAM_SETTINGS_STR(stream_settings_str);
+    // TODO: for debuging
+    midas::odb::set_debug(true);
 
-   sprintf(set_str, "/Equipment/Stream/Settings");
-   int status = db_create_record(hDB, 0, set_str, strcomb(stream_settings_str));
-   status = db_find_key (hDB, 0, set_str, &hStreamSettings);
-   if (status != DB_SUCCESS){
-      cm_msg(MINFO,"frontend_init","Key %s not found", set_str);
-      return status;
-   }
-   cm_set_transition_sequence(TR_START,300);
-   cm_set_transition_sequence(TR_STOP,700);
-   // add custom page to ODB
-   db_create_key(hDB, 0, "Custom/Farm&", TID_STRING);
-   const char * name = "farm.html";
-   db_set_value(hDB,0,"Custom/Farm&",name, sizeof(name), 1,TID_STRING);
+    cout<<"DMA_BUF_LENGTH: "<<dma_buf_size<<"  dma_buf_nwords: "<<dma_buf_nwords<<endl;
+    HNDLE hDB, hStreamSettings;
 
-   HNDLE hKey;
+    set_equipment_status(equipment[0].name, "Initializing...", "var(--myellow)");
 
-   // create Settings structure in ODB
-   db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator", &hKey);
-   assert(hKey);
-   db_watch(hDB, hKey, datagen_settings_changed, nullptr);
-  
-   //link mask changed settings - init & connect to ODB
-   db_find_key(hDB, 0, "/Equipment/Links/Settings/LinkMask", &hKey);
-   assert(hKey);
-   db_watch(hDB, hKey, link_active_settings_changed, nullptr);
+    // Get database
+    cm_get_experiment_database(&hDB, NULL);
 
-   // Allocate memory for the DMA buffer - this can fail!
-   if(cudaMallocHost( (void**)&dma_buf, dma_buf_size ) != cudaSuccess){
+    // Map /equipment/Stream/Settings
+    // TODO: why is this not true in the odb?
+    midas::odb stream_settings = {
+           {"Datagenerator", {
+                                     {"Divider", 1000},     // int
+                                     {"Enable", false},     // bool
+                             }},
+    };
+    stream_settings.connect("/Equipment/Stream/Settings", true);
+    // create whatch thread
+    // TODO: make this maybe nicer?
+//    ss_thread_create(db_watch_datagen_thread, NULL);
+    midas::odb datagen("/Equipment/Stream/Settings/Datagenerator");
+    datagen.watch([](midas::odb &o) {
+        std::cout << "Value of key \"" + o.get_full_path() + "\" changed to " << o << std::endl;
+
+//        if (o.get_full_path() == "Enable") {
+//            //this is set once we start the run
+//        }
+//
+//        if (o.get_full_path() == "Divider") {
+//            mup->write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, o, 100);
+//        }
+    });
+
+    HNDLE hKey;
+    // watch odb
+    db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator", &hKey);
+    assert(hKey);
+    db_watch(hDB, hKey, datagen_settings_changed, nullptr);
+
+    cm_set_transition_sequence(TR_START,300);
+    cm_set_transition_sequence(TR_STOP,700);
+    // add custom page to ODB
+    midas::odb custom("/Custom");
+    custom["Farm&"] = "farm.html";
+
+
+    //link mask changed settings - init & connect to ODB
+    db_find_key(hDB, 0, "/Equipment/Links/Settings/LinkMask", &hKey);
+    assert(hKey);
+    db_watch(hDB, hKey, link_active_settings_changed, nullptr);
+
+    // Allocate memory for the DMA buffer - this can fail!
+    if(cudaMallocHost( (void**)&dma_buf, dma_buf_size ) != cudaSuccess){
       cout << "Allocation failed, aborting!" << endl;
       cm_msg(MERROR, "frontend_init" , "Allocation failed, aborting!");
       return FE_ERR_DRIVER;
-   }
-   
-   // initialize to zero
-   for (int i = 0; i < dma_buf_nwords ; i++) {
+    }
+
+    // initialize to zero
+    for (int i = 0; i < dma_buf_nwords ; i++) {
       (dma_buf)[i] = 0;
-   }
-   
-   mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
-   if ( !mup->open() ) {
+    }
+
+    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
+    if ( !mup->open() ) {
       cout << "Could not open device " << endl;
       cm_msg(MERROR, "frontend_init" , "Could not open device");
       return FE_ERR_DRIVER;
-   }
-   
-   if ( !mup->is_ok() )
-      return FE_ERR_DRIVER;
-   
-   cm_msg(MINFO, "frontend_init" , "Mudaq device is ok");
-   cout << "Mudaq device is ok " << endl;
-   
-   // set fpga write pointers
-   lastlastWritten = 0;
-   lastRunWritten = mup->last_written_addr();
+    }
 
-   struct mesg user_message;
-   user_message.address = dma_buf;
-   user_message.size = dma_buf_size;
-   
-   // map memory to bus addresses for FPGA
-   int ret_val = mup->map_pinned_dma_mem( user_message );
-   
-   if (ret_val < 0) {
+    if ( !mup->is_ok() )
+      return FE_ERR_DRIVER;
+
+    cm_msg(MINFO, "frontend_init" , "Mudaq device is ok");
+    cout << "Mudaq device is ok " << endl;
+
+    // set fpga write pointers
+    lastlastWritten = 0;
+    lastRunWritten = mup->last_written_addr();
+
+    struct mesg user_message;
+    user_message.address = dma_buf;
+    user_message.size = dma_buf_size;
+
+    // map memory to bus addresses for FPGA
+    int ret_val = mup->map_pinned_dma_mem( user_message );
+
+    if (ret_val < 0) {
       cout << "Mapping failed " << endl;
       cm_msg(MERROR, "frontend_init" , "Mapping failed");
       mup->disable();
@@ -189,35 +208,59 @@ INT frontend_init()
       free( (void *)dma_buf );
       delete mup;
       return FE_ERR_DRIVER;
-   }
-   
-   // switch off and reset DMA for now
-   mup->disable();
-   
-   //update data generator from ODB
-   db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator/Divider", &hKey);
-   datagen_settings_changed(hDB,hKey,0,NULL);
+    }
 
-   // switch off the data generator (just in case..)
-   mup->write_register(DATAGENERATOR_REGISTER_W, 0x0);
-   usleep(2000);
-   // DMA_CONTROL_W
-   mup->write_register(0x5,0x0);
+    // switch off and reset DMA for now
+    mup->disable();
 
-   //set data link enable
-   link_active_settings_changed(hDB,hKey,0,NULL);
+//    //update data generator from ODB
+//    db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator/Divider", &hKey);
+//    datagen_settings_changed(hDB,hKey,0,NULL);
 
-   usleep(5000);
-   
-   // create ring buffer for readout thread
-   create_event_rb(0);
-   
-   // create readout thread
-   ss_thread_create(read_stream_thread, NULL);
-      
-   set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
-   
-   return SUCCESS;
+    // switch off the data generator (just in case..)
+    mup->write_register(DATAGENERATOR_REGISTER_W, 0x0);
+    usleep(2000);
+    // DMA_CONTROL_W
+    mup->write_register(0x5,0x0);
+
+    //set data link enable
+    link_active_settings_changed(hDB,hKey,0,NULL);
+
+    usleep(5000);
+
+    // create ring buffer for readout thread
+    create_event_rb(0);
+
+    // create readout thread
+    ss_thread_create(read_stream_thread, NULL);
+
+    set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
+
+    return SUCCESS;
+}
+
+INT db_watch_datagen_thread(void *param){
+
+    midas::odb datagen("/Equipment/Stream/Settings/Datagenerator");
+    datagen.watch([](midas::odb &o) {
+        std::cout << "Value of key \"" + o.get_full_path() + "\" changed to " << o << std::endl;
+
+        if (o.get_full_path() == "Enable") {
+            //this is set once we start the run
+        }
+
+        if (o.get_full_path() == "Divider") {
+            mup->write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, o, 100);
+        }
+    });
+
+    do {
+        int status = cm_yield(100);
+        if (status == SS_ABORT || status == RPC_SHUTDOWN)
+            break;
+    } while (!ss_kbhit());
+
+    return 1;
 }
 
 /*-- Frontend Exit -------------------------------------------------*/
@@ -237,22 +280,24 @@ INT frontend_exit()
    return SUCCESS;
 }
 
-void datagen_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
-{
+//void datagen_settings_changed(midas::odb o)
+//{
+//
+//    cm_msg(MINFO, "datagen_settings_changed", "Value of key %s changed to %s", o.get_full_path(), o);
+//
+//    if (o.get_full_path() == "Enable") {
+//       //this is set once we start the run
+//    }
+//
+//    if (o.get_full_path() == "Divider") {
+//       mup->write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, o, 100);
+//    }
+//}
+
+void datagen_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
     KEY key;
     db_get_key(hDB, hKey, &key);
     cm_msg(MINFO, "datagen_settings_changed", "Set Farm: %s", key.name);
-
-    if (std::string(key.name) == "Enable") {
-       //this is set once we start the run
-    }
-
-    if (std::string(key.name) == "Divider") {
-       int value;
-       int size = sizeof(value);
-       db_get_data(hDB, hKey, &value, &size, TID_INT);
-       mup->write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W,value,100);
-    }
 }
 
 uint64_t get_link_active_from_odb(){
