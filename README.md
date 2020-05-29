@@ -4,11 +4,17 @@
 - preliminary User Manual: https://www.overleaf.com/read/ctkmgfsjqchy (Read only link, no login required)
 - Edit User Manual here: https://www.overleaf.com/8596488843pnpknzfsvkfg (login with google account)
 
-## Current "fixes" with MIDAS tag ced039e and cuda 10
+## Current "fixes" with MIDAS tag ced039e, cuda 10 or cuda 8
 
 - cmake include funtion in examples/experiment/CMakeLists.txt:99 -> comment out
 - in progs/msysmon.cxx not all cases are in all cuda / nvidia versions -> comment out 
 - do cmake .. -DCUDA_HOST_COMPILER='/usr/bin/gcc-7' to link a different compiler to nvcc
+- if cuda 8 and glibc 2.26: vim floatn.h --> define __HAVE_FLOAT128 0
+- install cuda under tumbleweed https://www.tobiasbartsch.com/installing-cuda-and-cudnn-on-opensuse-tumbleweed/
+
+## Raspberry Pi USB Server
+
+- Follow the setup in https://wiki.ubuntuusers.de/USBIP/
 
 ## Structure
 
