@@ -23,7 +23,6 @@ public:
 
     // I2C interface
     virtual int init_i2c();
-    virtual int read_i2c(uint8_t dev_addr, uint8_t &data);
     virtual int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data);
     virtual int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
 

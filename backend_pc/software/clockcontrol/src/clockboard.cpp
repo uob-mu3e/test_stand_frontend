@@ -124,26 +124,6 @@ int clockboard::init_i2c()
     return 0;
 }
 
-int clockboard::read_i2c(uint8_t dev_addr, uint8_t & data)
-{
-
-    if(!setSlave(dev_addr,true))
-        return 0;
-
-    bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_READPLUSNACK);  // Read command plus ACK
-
-    checkTIP();
-
-    uint32_t reg = bus.read(ADDR_I2C_DATA);
-    data = reg;
-
-    bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_STOP); // Stop command
-
-    checkBUSY();
-
-    return 1;
-}
-
 int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data)
 {
     if(!setSlave(dev_addr, false)){
