@@ -56,7 +56,7 @@ architecture rtl of sc_master is
 	
 	signal mem_datak : std_logic_vector(3 downto 0); 
 
-	signal fpga_id : std_logic_vector(15 downto 0); 
+	signal mask_addr : std_logic_vector(15 downto 0); 
 	
 begin
 
@@ -122,7 +122,7 @@ begin
 						state		<= starting;
 						addr_reg	<= addr_reg + '1';
 						mem_datak <= "0001";
-						fpga_id <= mem_data_in(23 downto 8); -- get fpga id if x"FFFF" write to all links, if 1 first link and so on
+						mask_addr <= mem_data_in(23 downto 8); -- get fpga id if x"FFFF" write to all links, if 1 first link and so on
 						if(mem_data_in(23 downto 8) = x"FFFF") then
 							wren_reg <= (others => '1');
 						else
@@ -133,10 +133,10 @@ begin
 				when starting =>
 					stateout(3 downto 0) <= x"3";
 					if(wait_cnt = '0')then
-						if(fpga_id(15 downto 0) = x"FFFF") then
+						if(mask_addr(15 downto 0) = x"FFFF") then
 							wren_reg <= (others => '1');
 						else
-							wren_reg <= fpga_id(15 downto 0);
+							wren_reg <= mask_addr(15 downto 0);
 						end if;
 						if (mem_data_in = CODE_STOP) then
 							mem_datak <= "0001";
