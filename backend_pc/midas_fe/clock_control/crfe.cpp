@@ -385,7 +385,7 @@ void cr_settings_changed(odb o)
    if(it != cb->reset_protocol.commands.end()){
 
        odb settings;
-       settings.connect("Equipment/Clock Reset/Settings/");
+       settings.connect("/Equipment/Clock Reset/Settings");
        addressed = settings["Addressed"];
        int address =0;
        if(addressed){
@@ -503,11 +503,11 @@ void prepare_run_on_request(odb o){
 
 // ODB Setup //////////////////////////////
 void setup_odb(){
-
+    //midas::odb::set_debug(true);
     odb settings = {
         {"Active" , true},
-        {"IP", "192.168.0.220"},
-        {"PORT", 50001},
+        {"IP", "0.0.0.0"},  //192.168.0.220"},
+        {"Port", 50001},
         {"N_READBACK", 4},
         {"TX_CLK_MASK", 0x0AA},
         {"TX_RST_MASK",  0xAA0},
@@ -573,15 +573,14 @@ void setup_odb(){
              settings["Names CRT1"][daughterstartindex + i*ndaughtervariables +  2 + j*nffvariables +2] = s;
          }
      }
-
     settings.connect("/Equipment/Clock Reset/Settings");
 
     odb variables = {
          {"Daughters Present", 0},
          {"Fireflys Present", std::array<int,clockboard::MAXFIREFLY>{}},
-         {"CRT1", std::array<float,CRT1SIZE>{}},
+         {"CRT1", std::array<float,CRT1SIZE>{}}
     };
-    variables.connect("Equipment/Clock Reset/Variables");
+    variables.connect("/Equipment/Clock Reset/Variables");
 
     odb linksettings = {
         {"SwitchingBoardMask", std::array<int,MAX_N_SWITCHINGBOARDS>{}},
@@ -590,33 +589,34 @@ void setup_odb(){
         {"FrontEndBoardType", std::array<int,MAX_N_FRONTENDBOARDS>{}},
         {"FrontEndBoardNames", std::array<std::string,MAX_N_FRONTENDBOARDS>{}}
     };
-    linksettings.connect("Equipment/Links/Settings");
+    linksettings.connect("/Equipment/Links/Settings");
 
     odb linkvariables = {
        {"SwitchingBoardStatus", std::array<int,MAX_N_SWITCHINGBOARDS>{}},
        {"RXLinkStatus", std::array<int,MAX_N_FRONTENDBOARDS>{}},
        {"TXLinkStatus", std::array<int,MAX_N_FRONTENDBOARDS>{}}
     };
-    linkvariables.connect("Equipment/Links/Variables");
+    linkvariables.connect("/Equipment/Links/Variables");
 
     odb runtransitions;
     runtransitions.connect("/Equipment/Clock Reset/Run Transitions");
     runtransitions["Request Run Prepare"] = std::array<int, MAX_N_SWITCHINGBOARDS>{};
 
-    odb custom("Custom");
-    custom["Clock and Reset&"] = "cr.html";
-    custom["Links&"] = "links.html";
+    odb custom;
+    custom.connect("/Custom");
+    custom["Clock and Reset"] = "cr.html";
+    custom["Links"] = "links.html";
 }
 
 void setup_watches(){
-    odb crodb("Equipment/Clock Reset");
-    crodb.watch(cr_settings_changed);
+    odb * crodb = new odb("/Equipment/Clock Reset");
+    crodb->watch(cr_settings_changed);
 
-    odb linkodb("/Equipment/Links");
-    linkodb.watch(link_settings_changed);
+    odb * linkodb = new odb("/Equipment/Links");
+    linkodb->watch(link_settings_changed);
 
-    odb rrp("/Equipment/Clock Reset/Run Transitions/Request Run Prepare");
-    rrp.watch(prepare_run_on_request);
+    odb * rrp = new odb("/Equipment/Clock Reset/Run Transitions/Request Run Prepare");
+    rrp->watch(prepare_run_on_request);
 }
 
 void setup_history(){
