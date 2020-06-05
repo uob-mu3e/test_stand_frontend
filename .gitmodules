@@ -1,3 +1,6 @@
 [submodule "modules/midas"]
 	path = modules/midas
-	url = https://bitbucket.org/tmidas/midas
+    url = https://bitbucket.org/tmidas/midas
+[submodule "modules/rootana"]
+    path = modules/rootana
+    url = https://bitbucket.org/tmidas/rootana
