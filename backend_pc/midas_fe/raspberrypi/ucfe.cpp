@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include "midas.h"
+#include "mfe.h"
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -47,14 +48,20 @@ INT event_buffer_size = 10 * 10000;
 
 /*-- Function declarations -----------------------------------------*/
 INT read_sc_event(char *pevent, INT off);
-
+INT frontend_init();
+INT frontend_exit();
+INT frontend_loop();
+INT begin_of_run(INT run_number, char *error);
+INT end_of_run(INT run_number, char *error);
+INT pause_run(INT run_number, char *error);
+INT resume_run(INT run_number, char *error);
 
 /*-- Equipment list ------------------------------------------------*/
 EQUIPMENT equipment[] = {
    {"RaspberryPi",              /* equipment name */
     {4, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
-     EQ_PERIODIC,                   /* equipment type */
+     EQ_SLOW,                   /* equipment type */
      0,                         /* event source */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
@@ -65,25 +72,26 @@ EQUIPMENT equipment[] = {
      1,                         /* log history every event */
      "", "", ""},
     read_sc_event,              /* readout routine */
+    NULL,                       /* init string */
     },
 
    {""}
 };
 
-
 /*-- Dummy routines ------------------------------------------------*/
 
-INT poll_event(char *pevent, INT off)
+INT poll_event(INT source, INT count, BOOL test)
 {
    return 1;
-};
-INT interrupt_configure(INT cmd, INT source[], POINTER_T adr)
+}
+
+INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 {
    return 1;
-};
+}
 
 /*-- Readout routines ------------------------------------------------*/
-INT read_sc_event(INT idx)
+INT read_sc_event(char *pevent, INT off)
 {
     return 0;
 }
