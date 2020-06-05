@@ -1,34 +1,14 @@
 /********************************************************************\
 
-  Name:         scfe.c
-  Created by:   Stefan Ritt Jan. 2018
+  Name:         ucfe.cpp
+  Created by:   Marius Koeppel June 2018
 
-  Contents:     Example slow control front-end for Raspberry Pi 
-                computer with sense hat shield. 
-
-                https://www.raspberrypi.org/products/sense-hat/
-
-                This front-end defines a "RaspberryPi" slow control
-                equipment with two device drivers rpi_temp and
-                rpi_led which read out the temperature sensor
-                on the sense hat and control the 64 LEDs.
-
-                The temperature will show up under
-                /Equipment/RaspberryPi/Variables/Input
-
-                The LEDs can be controlled via
-                /Equipment/RaspberryPi/Variables/Output[64]
-
-                where each value in the array contains the
-                RGB value for that one LED. Each R,G,B value
-                has a range 0...255 and gets bitwise or'ed 
-                and shifted. Writing 0x0000FF (255) to a value
-                turns the corresponding LED blue, writing
-                0xFFFFFF (16777215) turns the LED white.
+  Contents:     Slow control front-end for Raspberry Pi 
+                computer for usb server and clock configuration. 
 
                 The custom page rpi.html can be used to control
-                the LEDs from a web page. To do so, put following
-                into the ODB:
+                configure the usb server and to program the clock 
+                configuration.
 
                 /Custom/Path = /<path to rpi.html>
                 /Custom/RPi = rpi.html
@@ -42,9 +22,6 @@
 
 #include <stdio.h>
 #include "midas.h"
-#include "class/multi.h"
-#include "rpi_temp.h"
-#include "rpi_led.h"
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -68,33 +45,26 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
 
+/*-- Function declarations -----------------------------------------*/
+INT read_sc_event(char *pevent, INT off);
+
+
 /*-- Equipment list ------------------------------------------------*/
-
-/* device driver list */
-DEVICE_DRIVER multi_driver[] = {
-   {"Temperature",  rpi_temp,  1, NULL, DF_INPUT  }, // one input channel
-   {"LED",          rpi_led,  64, NULL, DF_OUTPUT }, // 64 output channels
-   {""}
-};
-
 EQUIPMENT equipment[] = {
    {"RaspberryPi",              /* equipment name */
     {4, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
-     EQ_SLOW,                   /* equipment type */
+     EQ_PERIODIC,                   /* equipment type */
      0,                         /* event source */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
-     RO_RUNNING | RO_TRANSITIONS,        /* read when running and on transitions */
-     60000,                     /* read every 60 sec */
+     RO_ALWAYS | RO_ODB,        /* read when running and on transitions */
+     1000,                     /* read every 1 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
      1,                         /* log history every event */
-     "", "", ""} ,
-    cd_multi_read,              /* readout routine */
-    cd_multi,                   /* class driver main routine */
-    multi_driver,               /* device driver list */
-    NULL,                       /* init string */
+     "", "", ""},
+    read_sc_event,              /* readout routine */
     },
 
    {""}
@@ -103,7 +73,7 @@ EQUIPMENT equipment[] = {
 
 /*-- Dummy routines ------------------------------------------------*/
 
-INT poll_event(INT source[], INT count, BOOL test)
+INT poll_event(char *pevent, INT off)
 {
    return 1;
 };
@@ -111,6 +81,12 @@ INT interrupt_configure(INT cmd, INT source[], POINTER_T adr)
 {
    return 1;
 };
+
+/*-- Readout routines ------------------------------------------------*/
+INT read_sc_event(INT idx)
+{
+    return 0;
+}
 
 /*-- Frontend Init -------------------------------------------------*/
 

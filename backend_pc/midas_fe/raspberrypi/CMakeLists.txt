@@ -1,8 +1,17 @@
-cmake_minimum_required(VERSION 3.0)
-set_source_files_properties(rpi_temp.cpp rpi_led.cpp scfe.cpp PROPERTIES LANGUAGE CXX )
+cmake_minimum_required(VERSION 3.1)
 
-add_executable(scfe scfe.cpp)
-target_include_directories(scfe PRIVATE ${MIDAS_DIR}/include)
-target_link_libraries(scfe.cpp midas)
+project(mu3e_pi VERSION 0.1 LANGUAGES CXX)
 
-add_library(scfe STATIC rpi_temp.cpp rpi_led.cpp)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# include midas
+add_subdirectory(../../../modules midas)
+set(MIDAS_DIR ${PROJECT_SOURCE_DIR}/../../../modules/midas)
+
+set_source_files_properties(ucfe.cpp PROPERTIES LANGUAGE CXX )
+add_executable(usb_clock_pi ucfe.cpp)
+target_include_directories(usb_clock_pi PRIVATE ${MIDAS_DIR}/include)
+target_link_libraries(usb_clock_pi midas)
+
