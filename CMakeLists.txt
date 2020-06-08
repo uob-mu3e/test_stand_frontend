@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(mu3e_online VERSION 0.1)
+project(mu3e_online VERSION 0.1 LANGUAGES CXX)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "" FORCE)
@@ -22,7 +22,7 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 #)
 #message(STATUS "MU3E_ONLINE_GIT_REF: ${MU3E_ONLINE_GIT_REF}")
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -38,7 +38,12 @@ add_compile_options(
 find_package(Boost 1.49 REQUIRED COMPONENTS thread system program_options)
 find_package(Git 1.8 REQUIRED)
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
-find_package(ROOT 5.34 REQUIRED)
+# check if we compile for raspberry pi
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
+    message("Compile for Raspberry Pi")
+else()
+    find_package(ROOT 5.34 REQUIRED)
+endif()
 # optional packages
 find_package(Doxygen 1.8)
 message("here we set GLVND to default (https://cmake.org/cmake/help/git-stage/policy/CMP0072.html)")
@@ -52,14 +57,6 @@ endif()
 find_package(CUDA)
 
 if (CUDA_FOUND)
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7)
-        if(EXISTS "/usr/bin/gcc-7")
-            set(CUDA_HOST_COMPILER "/usr/bin/gcc-7")
-            message("-- Set CUDA_HOST_COMPILER to /usr/bin/gcc-7")
-        else()
-            message([WARNING] "-- gcc is greater then 7 and no /usr/bin/gcc-7 is set to CUDA_HOST_COMPILER")
-        endif()
-    endif()
     message("-- CUDA ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} was found at ${CUDA_TOOLKIT_ROOT_DIR}")
     list(APPEND CUDA_NVCC_FLAGS "-arch=compute_30;-DVERBOSE;-g")
     include_directories(${CUDA_TOOLKIT_ROOT_DIR}/include)
@@ -84,7 +81,6 @@ set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mscb)
 
 # requires rootana
 #message(STATUS "Using ROOTANA")
-#set(MIDASSYS ${CMAKE_CURRENT_LIST_DIR}/modules/midas)
 #set(ROOTANASYS ${CMAKE_CURRENT_LIST_DIR}/modules/rootana)
 #set(ROOTANA_LIBRARY_DIRS ${ROOTANASYS}/lib)
 #set(ROOTANA_LIBRARIES ${ROOTANA_LIBRARY_DIRS}/librootana.a)
@@ -92,7 +88,8 @@ set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mscb)
 #add_custom_target(
 #    rootana
 #    ALL
-#    COMMAND export MIDASSYS=${MIDASSYS} && make
+#    #COMMAND export MIDASSYS=${MIDAS_DIR} && make
+#    COMMAND make
 #    WORKING_DIRECTORY ${ROOTANASYS}
 #)
 
@@ -107,8 +104,8 @@ add_subdirectory(switching_pc/midas_fe_scifi)
 add_subdirectory(switching_pc/midas_fe_Tile)
 add_subdirectory(switching_pc/midas_fe_pixels)
 if (CUDA_FOUND)
-    add_subdirectory(farm_pc/midas_fe)
-    add_subdirectory(farm_pc/tools)
+add_subdirectory(farm_pc/midas_fe)
+add_subdirectory(farm_pc/tools)
 endif(CUDA_FOUND)
 
 
