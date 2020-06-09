@@ -8,7 +8,7 @@
 #ifndef MUDAQ_H
 #define MUDAQ_H
 
-#include <linux/ioctl.h>
+#include <sys/ioctl.h>
 
 //#define MUDAQ_DMABUF_DATA_LEN 4
 
