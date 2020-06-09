@@ -22,16 +22,14 @@ class MuFEB {
       const char* m_equipment_name;
       uint8_t m_SB_number;
 
-      HNDLE m_hDB;
    public:
       MuFEB(const MuFEB&)=delete;
-      MuFEB(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix):
+      MuFEB(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix):
 	      m_mu(mu),
 	      m_ask_sc_reply(true),
 	      m_odb_prefix(odb_prefix),
 	      m_equipment_name(equipment_name),
-	      m_SB_number(0xff),
-	      m_hDB(hDB)
+	      m_SB_number(0xff)
 	{};
       void SetSBnumber(uint8_t n){m_SB_number=n;}
       const char* GetName(){return m_equipment_name;}

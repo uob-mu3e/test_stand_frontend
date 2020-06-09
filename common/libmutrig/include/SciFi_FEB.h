@@ -11,20 +11,30 @@ Contents:       Class to alter settings on a SciFi-FE-FPGA. Derives from MutrigF
 #define SCIFI_FEB_ACCESS_H
 
 #include "midas.h"
+#include "odbxx.h"
 #include "mudaq_device_scifi.h"
 #include "Mutrig_FEB.h"
+
+using midas::odb;
+
 class SciFiFEB : public MutrigFEB{
    private:
       static SciFiFEB* m_instance; //signleton instance pointer: only one instance of SciFiFEB
       SciFiFEB(const SciFiFEB&)=delete;
-      SciFiFEB(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix)
+      SciFiFEB(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix)
 	:
-	MutrigFEB(mu,hDB,equipment_name,odb_prefix)
+	MutrigFEB(mu, equipment_name, odb_prefix)
         {
 		RebuildFEBsMap();
         };
    public:
-      static SciFiFEB* Create(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix){printf("SciFiFEB::Create(%s) as %s\n",odb_prefix,equipment_name);if(!m_instance) m_instance=new SciFiFEB(mu,hDB,equipment_name,odb_prefix); return m_instance;};
+      static SciFiFEB* Create(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix)
+      {
+          printf("SciFiFEB::Create(%s) as %s\n", odb_prefix, equipment_name);
+          if(!m_instance)
+              m_instance=new SciFiFEB(mu, equipment_name, odb_prefix);
+          return m_instance;
+      };
       static SciFiFEB* Instance(){return m_instance;};
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
@@ -36,8 +46,6 @@ class SciFiFEB : public MutrigFEB{
       virtual FEBTYPE  GetTypeID(){return FEBTYPE::Fibre;}
       virtual bool IsSecondary(int t){return t==FEBTYPE::FibreSecondary;}
 
-      //MIDAS callback for all ___ SciFi specific ___ setters. Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
-      static void on_scifi_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *);
 
 };//class SciFiFEB
 

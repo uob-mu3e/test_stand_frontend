@@ -10,6 +10,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 
 #include "Mutrig_FEB.h"
 #include "midas.h"
+#include "odbxx.h"
 #include "mfe.h" //for set_equipment_status
 
 #include "mudaq_device_scifi.h"
@@ -18,6 +19,8 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include <thread>
 #include <chrono>
 #include "reset_protocol.h"
+
+using midas::odb;
 
 //offset for registers on nios SC memory
 /*
@@ -66,52 +69,14 @@ int MutrigFEB::WriteAll(){
 
     //as a starting point, set all mask bits to 1. in the shadow register and override after.
     //This will ensure any asics that are not part of the detector configuration but exist in firmware are masked.
-    for(size_t i=0;i<m_FPGAs.size();i++) m_reg_shadow[i][FE_DPCTRL_REG]=0x1FFFFFFF;
+    for (size_t i=0;i<m_FPGAs.size();i++) {
+        m_reg_shadow[i][FE_DPCTRL_REG]=0x1FFFFFFF;
+    }
 
-    sprintf(set_str, "%s/Settings/Daq/dummy_config", m_odb_prefix);
-    db_find_key(m_hDB, 0, set_str, &hTmp);
-    assert(hTmp);
-    on_settings_changed(m_hDB,hTmp,0,this);
-    
-    sprintf(set_str, "%s/Settings/Daq/dummy_data", m_odb_prefix);
-    db_find_key(m_hDB, 0, set_str, &hTmp);
-    assert(hTmp);
-    on_settings_changed(m_hDB,hTmp,0,this);
-    
-    sprintf(set_str, "%s/Settings/daq/dummy_data_fast", m_odb_prefix);
-    db_find_key(m_hDB, 0, set_str, &hTmp);
-    assert(hTmp);
-    on_settings_changed(m_hDB,hTmp,0,this);
-    
-    sprintf(set_str, "%s/Settings/Daq/dummy_data_n", m_odb_prefix);
-    db_find_key(m_hDB, 0, set_str, &hTmp);
-    assert(hTmp);
-    on_settings_changed(m_hDB,hTmp,0,this);
-    
-    sprintf(set_str, "%s/Settings/Daq/prbs_decode_disable", m_odb_prefix);
-    db_find_key(m_hDB, 0, set_str, &hTmp);
-    assert(hTmp);
-    on_settings_changed(m_hDB,hTmp,0,this);
-    
-    sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall", m_odb_prefix);
-    db_find_key(m_hDB, 0, set_str, &hTmp);
-    assert(hTmp);
-    on_settings_changed(m_hDB,hTmp,0,this);
-    
-    sprintf(set_str, "%s/Settings/Daq/LVDS_waitforall_sticky", m_odb_prefix);
-    db_find_key(m_hDB, 0, set_str, &hTmp);
-    assert(hTmp);
-    on_settings_changed(m_hDB,hTmp,0,this);
-    
-    sprintf(set_str, "%s/Settings/Daq/mask", m_odb_prefix);
-    db_find_key(m_hDB, 0, set_str, &hTmp);
-    assert(hTmp);
-    on_settings_changed(m_hDB,hTmp,0,this);
-    
-    sprintf(set_str, "%s/Settings/Daq/resetskew_cphase", m_odb_prefix);
-    db_find_key(m_hDB, 0, set_str, &hTmp);
-    assert(hTmp);
-    on_settings_changed(m_hDB,hTmp,0,this);
+    sprintf(set_str, "%s/Settings/Daq", m_odb_prefix);
+    odb odb_set_str(set_str);
+    odb_set_str.watch(on_settings_changed);
+
     return 0;
 }
 
@@ -122,7 +87,7 @@ int MutrigFEB::MapForEach(std::function<int(mutrig::MutrigConfig* /*mutrig confi
     //Iterate over ASICs
     for(unsigned int asic = 0; asic < GetNumASICs(); ++asic) {
         //ddprintf("mutrig_midasodb: Mapping %s, asic %d\n",prefix, asic);
-        mutrig::MutrigConfig config(mutrig::midasODB::MapConfigFromDB(m_hDB,m_odb_prefix,asic));
+        mutrig::MutrigConfig config(mutrig::midasODB::MapConfigFromDB(m_odb_prefix,asic));
         //note: this needs to be passed as pointer, otherwise there is a memory corruption after exiting the lambda
         status=func(&config,asic);
         if (status != SUCCESS) break;
@@ -321,160 +286,149 @@ int MutrigFEB::ReadBackDatapathStatus(uint16_t FPGA_ID){
 
 
 
-//MIDAS callback function for FEB register Setter functions
-void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
+// MIDAS callback function for FEB register Setter functions
+void MutrigFEB::on_settings_changed(odb o)
 {
-   MutrigFEB* _this=static_cast<MutrigFEB*>(userdata);
-   KEY key;
-   db_get_key(hDB, hKey, &key);
-   printf("MutrigFEB::on_settings_changed(%s)\n",key.name);
-   INT ival;
-   BOOL bval;
-   INT bsize=sizeof(bval);
-   INT isize=sizeof(ival);
+    std::string name = odb_set_str.get_name();
 
+    cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
 
-   if (std::string(key.name) == "dummy_config") {
-        db_get_data(hDB,hKey,&bval,&bsize,TID_BOOL);
-        for(auto FEB: _this->m_FPGAs){
-        if(!FEB.IsScEnabled()) continue; //skip disabled
-        if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-        _this->setDummyConfig(FEB.SB_Port(),bval);
-    }
-   }
-   if (std::string(key.name) == "dummy_data") {
-        db_get_data(hDB,hKey,&bval,&bsize,TID_BOOL);
-        for(auto FEB: _this->m_FPGAs){
-        if(!FEB.IsScEnabled()) continue; //skip disabled
-        if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-        _this->setDummyData_Enable(FEB.SB_Port(),bval);
-    }
+    MutrigFEB* _this=static_cast<MutrigFEB*>(this);
 
-   }
+    INT ival;
+    BOOL bval;
 
-   if (std::string(key.name) == "dummy_data_fast") {
-        db_get_data(hDB,hKey,&bval,&bsize,TID_BOOL);
-        for(auto FEB: _this->m_FPGAs){
-        if(!FEB.IsScEnabled()) continue; //skip disabled
-        if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-        _this->setDummyData_Fast(FEB.SB_Port(),bval);
-    }
-   }
-
-   if (std::string(key.name) == "dummy_data_n") {
-        db_get_data(hDB,hKey,&ival,&isize,TID_INT);
-    for(auto FEB: _this->m_FPGAs){
-        if(!FEB.IsScEnabled()) continue; //skip disabled
-        if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-        _this->setDummyData_Count(FEB.SB_Port(),ival);
-    }
-   }
-
-   if (std::string(key.name) == "prbs_decode_disable") {
-        db_get_data(hDB,hKey,&bval,&bsize,TID_BOOL);
-    for(auto FEB: _this->m_FPGAs){
-        if(!FEB.IsScEnabled()) continue; //skip disabled
-        if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-        _this->setPRBSDecoderDisable(FEB.SB_Port(),bval);
-    }
-   }
-
-   if (std::string(key.name) == "LVDS_waitforall") {
-        db_get_data(hDB,hKey,&bval,&bsize,TID_BOOL);
-    for(auto FEB: _this->m_FPGAs){
-        if(!FEB.IsScEnabled()) continue; //skip disabled
-        if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-        _this->setWaitForAll(FEB.SB_Port(),bval);
-    }
-   }
-
-   if (std::string(key.name) == "LVDS_waitforall_sticky") {
-        db_get_data(hDB,hKey,&bval,&bsize,TID_BOOL);
-	for(auto FEB: _this->m_FPGAs){
-		if(!FEB.IsScEnabled()) continue; //skip disabled
-		if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-		_this->setWaitForAllSticky(FEB.SB_Port(),bval);
-	}
-   }
-
-   if (std::string(key.name) == "mask") {
-      BOOL* barray=new BOOL[_this->GetNumASICs()];
-      INT  barraysize=sizeof(BOOL)*_this->GetNumASICs();
-      db_get_data(hDB,hKey,barray,&barraysize,TID_BOOL);
-      
-      for(int i=0;i<_this->GetNumASICs();i++){
-         _this->setMask(i,barray[i]);
-      }
-      delete[] barray;
-   }
-
-   if (std::string(key.name) == "reset_datapath") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if(value){
-    for(auto FEB: _this->m_FPGAs){
-        if(!FEB.IsScEnabled()) continue; //skip disabled
-        if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-            _this->DataPathReset(FEB.SB_Port());
-    }
-        value = FALSE; // reset flag in ODB
-        db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-      }
-   }
-   if (std::string(key.name) == "reset_asics") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if(value){
-    for(auto FEB: _this->m_FPGAs){
-        if(!FEB.IsScEnabled()) continue; //skip disabled
-        if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-            _this->chipReset(FEB.SB_Port());
-    }
-        value = FALSE; // reset flag in ODB
-        db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-      }
-   }
-   if (std::string(key.name) == "reset_lvds") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if(value){
-         for(auto FEB: _this->m_FPGAs){
+    if (name == "dummy_config") {
+        bval = odb_set_str;
+        for(auto FEB : _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-            _this->LVDS_RX_Reset(FEB.SB_Port());
-         }
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-      }
-   }
+            _this->setDummyConfig(FEB.SB_Port(), bval);
+        }
+    }
 
-   //reset skew settings
-   if ((std::string(key.name) == "resetskew_cphase")||
-       (std::string(key.name) == "resetskew_cdelay")||
-       (std::string(key.name) == "resetskew_phases")){
+    if (name == "dummy_data") {
+        bval = odb_set_str;
+        for(auto FEB: _this->m_FPGAs){
+            if(!FEB.IsScEnabled()) continue; //skip disabled
+            if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+            _this->setDummyData_Enable(FEB.SB_Port(),bval);
+        }
+    }
+
+    if (name == "dummy_data_fast") {
+        bval = odb_set_str;
+        for(auto FEB: _this->m_FPGAs){
+            if(!FEB.IsScEnabled()) continue; //skip disabled
+            if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+            _this->setDummyData_Fast(FEB.SB_Port(),bval);
+        }
+    }
+
+    if (name == "dummy_data_n") {
+        ival = odb_set_str;
+        for(auto FEB: _this->m_FPGAs){
+            if(!FEB.IsScEnabled()) continue; //skip disabled
+            if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+            _this->setDummyData_Count(FEB.SB_Port(),ival);
+        }
+    }
+
+    if (name == "prbs_decode_disable") {
+        bval = odb_set_str;
+        for(auto FEB: _this->m_FPGAs){
+            if(!FEB.IsScEnabled()) continue; //skip disabled
+            if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+            _this->setPRBSDecoderDisable(FEB.SB_Port(),bval);
+        }
+    }
+
+    if (name == "LVDS_waitforall") {
+        bval = odb_set_str;
+        for(auto FEB: _this->m_FPGAs){
+            if(!FEB.IsScEnabled()) continue; //skip disabled
+            if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+            _this->setWaitForAll(FEB.SB_Port(),bval);
+        }
+    }
+
+    if (name == "LVDS_waitforall_sticky") {
+        bval = odb_set_str;
+        for(auto FEB: _this->m_FPGAs){
+            if(!FEB.IsScEnabled()) continue; //skip disabled
+            if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+            _this->setWaitForAllSticky(FEB.SB_Port(),bval);
+        }
+    }
+
+    if (name == "mask") {
+        //BOOL * barray=new BOOL[_this->GetNumASICs()];
+        //barray = odb_set_str;
+        for(int i=0;i<_this->GetNumASICs();i++){
+            _this->setMask(i, odb_set_str[i]);
+        }
+    }
+
+    if (name == "reset_datapath") {
+        bval = odb_set_str;
+        if(bval){
+            for(auto FEB : _this->m_FPGAs);
+            if(!FEB.IsScEnabled()) continue; //skip disabled
+            if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+            _this->DataPathReset(FEB.SB_Port());
+        }
+        value = FALSE; // reset flag in ODB
+        db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+    }
+
+    if (name == "reset_asics") {
+        bval = odb_set_str;
+        if(bval){
+            for(auto FEB: _this->m_FPGAs){
+                if(!FEB.IsScEnabled()) continue; //skip disabled
+                if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+                _this->chipReset(FEB.SB_Port());
+            }
+            value = FALSE; // reset flag in ODB
+            db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+        }
+    }
+
+    if (name == "reset_lvds") {
+        bval = odb_set_str;
+        if(bval){
+            for(auto FEB: _this->m_FPGAs){
+                if(!FEB.IsScEnabled()) continue; //skip disabled
+                if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
+                _this->LVDS_RX_Reset(FEB.SB_Port());
+            }
+            value = FALSE; // reset flag in ODB
+            db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+        }
+    }
+
+    //reset skew settings
+    if ((name == "resetskew_cphase")||
+        (name == "resetskew_cdelay")||
+        (name == "resetskew_phases")){
+
         char set_str[255];
         BOOL* cphase=new BOOL[_this->m_FPGAs.size()*_this->nModulesPerFEB()];
         BOOL* cdelay=new BOOL[_this->m_FPGAs.size()*_this->nModulesPerFEB()];
-        INT  barraysize=sizeof(BOOL)*_this->m_FPGAs.size()*_this->nModulesPerFEB();
         INT*  phases=new INT[_this->m_FPGAs.size()*_this->nModulesPerFEB()];
-        INT  iarraysize=sizeof(INT)*_this->m_FPGAs.size()*_this->nModulesPerFEB();
-    
+
         sprintf(set_str, "%s/Settings/Daq/resetskew_cphase", _this->m_odb_prefix);
-        db_find_key(hDB, 0, set_str, &hKey);
-        assert(hKey);
-        db_get_data(hDB,hKey,cphase,&barraysize,TID_BOOL);
+        odb odb_resetskew_cphase(set_str);
+        cphase = odb_resetskew_cphase;
+
         sprintf(set_str, "%s/Settings/Daq/resetskew_cdelay", _this->m_odb_prefix);
-        db_find_key(hDB, 0, set_str, &hKey);
-        assert(hKey);
-        db_get_data(hDB,hKey,cdelay,&barraysize,TID_BOOL);
+        odb odb_resetskew_cdelay(set_str);
+        cdelay = odb_resetskew_cdelay;
+
         sprintf(set_str, "%s/Settings/Daq/resetskew_phases", _this->m_odb_prefix);
-        db_find_key(hDB, 0, set_str, &hKey);
-        assert(hKey);
-        db_get_data(hDB,hKey,phases,&iarraysize,TID_INT);
-    
+        odb odb_resetskew_phases(set_str);
+        phases = odb_resetskew_phases;
+
         for(size_t i=0;i<_this->m_FPGAs.size();i++){
             if(_this->m_FPGAs[i].IsScEnabled()==false) continue; //skip disabled
             if(_this->m_FPGAs[i].SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
@@ -483,24 +437,22 @@ void MutrigFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
             _this->setResetSkewCphase(_this->m_FPGAs[i].SB_Port(),vals);
             vals[0]=cdelay[i]; vals[1]=cdelay[i+1];
             _this->setResetSkewCdelay(_this->m_FPGAs[i].SB_Port(),vals);
-	    delete [] vals;
+            delete [] vals;
             INT* ivals=new INT[_this->nModulesPerFEB()];
             ivals[0]=phases[i]; ivals[1]=phases[i+1];
             _this->setResetSkewPhases(_this->m_FPGAs[i].SB_Port(),ivals);
-	    delete [] ivals;
+            delete [] ivals;
         }
     }
-   if (std::string(key.name) == "reset_counters") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if(value){
-	 _this->ResetAllCounters();
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
-      }
-   }
 
+    if (name == "reset_counters") {
+        bval = odb_set_str;
+        if(bval){
+            _this->ResetAllCounters();
+            value = FALSE; // reset flag in ODB
+            db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+        }
+    }
 }
 
 //MutrigFEB registers and functions

@@ -30,8 +30,17 @@ add_library(libmudaq_scifi STATIC
     MuFEB.cpp MuFEB.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h
     )
-
 target_link_libraries(libmudaq_scifi  midas ${Boost_LIBRARIES})
+
+add_library(libmudaq_test STATIC
+		mudaq_dummy.cpp mudaq_dummy.h utils.hpp
+		mudaq_device.cpp mudaq_device.h
+		mudaq_circular_buffer.hpp
+		asic_config_base.h
+		asic_config_base.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h
+		)
+target_link_libraries(libmudaq_test midas ${Boost_LIBRARIES})
 
 
 target_include_directories(libmudaq_scifi

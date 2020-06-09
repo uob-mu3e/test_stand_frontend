@@ -188,7 +188,7 @@ void datagen_settings_changed(odb o)
 {
     std::string name = o.get_name();
 
-    std::cout << name << std::endl;
+    cm_msg(MINFO, "datagen_settings_changed", "Datagenerator stettings changed");
 
     if (name == "Divider") {
         bool value = o;
@@ -300,7 +300,7 @@ INT init_mudaq(){
 
 INT db_watch_datagen_thread(void *param){
 
-    midas::odb datagen("/Equipment/Stream/Settings/Datagenerator");
+    odb datagen("/Equipment/Stream/Settings/Datagenerator");
     datagen.watch([](midas::odb &o) {
         std::cout << "Value of key \"" + o.get_full_path() + "\" changed to " << o << std::endl;
 

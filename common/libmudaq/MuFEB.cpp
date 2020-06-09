@@ -32,8 +32,9 @@ void MuFEB::on_mapping_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 }
 
 void MuFEB::RebuildFEBsMap(){
-   HNDLE hKey;
-   int size;
+    HNDLE hKey;
+    HNDLE m_hDB;
+    int size;
 
    //clear map, we will rebuild it now
    m_FPGAs.clear();

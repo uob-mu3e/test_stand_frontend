@@ -54,9 +54,14 @@
 #include <switching_constants.h>
 #include <history.h>
 #include "midas.h"
+#include "odbxx.h"
 #include "mfe.h"
 #include "string.h"
 #include "mudaq_device_scifi.h"
+#include "mudaq_dummy.h"
+
+using namespace std;
+using midas::odb;
 
 //Slow control for mutrig/scifi ; mupix
 #include "mutrig_midasodb.h"
@@ -90,8 +95,16 @@ INT event_buffer_size = 10 * 10000;
 
 int switch_id = 0; // TODO to be loaded from outside
 
+INT status;
+
 /* DMA Buffer and related */
-mudaq::DmaMudaqDevice * mup;
+#define DEBUG
+#ifdef DEBUG
+    dummy_mudaq::DummyDmaMudaqDevice * mup;
+#else
+    mudaq::DmaMudaqDevice * mup;
+#endif
+
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -101,47 +114,25 @@ INT read_scifi_sc_event(char *pevent, INT off);
 INT read_scitiles_sc_event(char *pevent, INT off);
 INT read_mupix_sc_event(char *pevent, INT off);
 void sc_settings_changed(HNDLE, HNDLE, int, void *);
-void switching_board_mask_changed(HNDLE, HNDLE, int, void *);
-void frontend_board_mask_changed(HNDLE, HNDLE, int, void *);
+void switching_board_mask_changed(odb o);
+void frontend_board_mask_changed(odb o);
 
-uint64_t get_link_active_from_odb(); //throws
+uint64_t get_link_active_from_odb(odb o); //throws
 void set_feb_enable(uint64_t enablebits);
 uint64_t get_runstart_ack();
 uint64_t get_runend_ack();
 void print_ack_state();
 
-/*-- Equipment list ------------------------------------------------*/
+void setup_odb();
+void setup_watches();
 
-/* Default values for /Equipment/Switching SC/Settings */
-const char *sc_settings_str[] = {
-"Active = BOOL : 1",
-"Delay = INT : 0",
-"Write = BOOL : 0",
-"Single Write = BOOL : 0",
-"Read = BOOL : 0",
-"Read WM = BOOL : 0",
-"Read RM = BOOL : 0",
-"Reset SC Master = BOOL : 0",
-"Reset SC Slave = BOOL : 0",
-"Clear WM = BOOL : 0",
-"Last RM ADD = BOOL : 0",
-"MupixConfig = BOOL : 0",
-"MupixBoard = BOOL : 0",
-"SciFiConfig = BOOL : 0",
-"SciTilesConfig = BOOL : 0",
-"Reset Bypass Payload = DWORD : 0",
-"Reset Bypass Command = DWORD : 0",
-"[32] Temp0",
-"[32] Temp1",
-"[32] Temp2",
-"[32] Temp3",
-nullptr
-};
+INT init_mudaq();
+INT init_scifi();
 
 enum EQUIPMENT_ID {Switching=0,SciFi,SciTiles,Mupix};
 EQUIPMENT equipment[] = {
 
-   {"Switching",                /* equipment name */
+    {"Switching",                /* equipment name */
     {2, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
@@ -155,8 +146,8 @@ EQUIPMENT equipment[] = {
      1,                         /* log history every event */
      "", "", ""} ,
      read_sc_event,             /* readout routine */
-   },
-   {"SciFi",                    /* equipment name */
+    },
+    {"SciFi",                    /* equipment name */
     {3, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
@@ -171,7 +162,7 @@ EQUIPMENT equipment[] = {
      "", "", "",},
      read_scifi_sc_event,          /* readout routine */
     },
-   {"SciTiles",                    /* equipment name */
+    {"SciTiles",                    /* equipment name */
     {4, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
@@ -209,105 +200,49 @@ EQUIPMENT equipment[] = {
 
 INT poll_event(INT source, INT count, BOOL test)
 {
-   return 1;
+    return 1;
 }
 
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 {
-   return 1;
+    return 1;
 }
 
 /*-- Frontend Init -------------------------------------------------*/
 
 INT frontend_init()
 {
-   HNDLE hKeySC;
-   int status;
 
-   // create Settings structure in ODB
-   db_create_record(hDB, 0, "Equipment/Switching/Settings", strcomb(sc_settings_str));
-   db_find_key(hDB, 0, "/Equipment/Switching", &hKeySC);
-   assert(hKeySC);
+    // TODO: for debuging
+    odb::set_debug(true);
 
-   db_watch(hDB, hKeySC, sc_settings_changed, nullptr);
+    HNDLE hKeySC;
 
-   // create keys for switching board status variables
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/FPGA_ID_READ", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/START_ADD_READ", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/LENGTH_READ", TID_INT);
+    // create Settings structure in ODB
+    setup_odb();
+    setup_watches();
+    status = init_mudaq();
+    if (status != SUCCESS)
+        return FE_ERR_DRIVER;
 
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/FPGA_ID_WRITE", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/DATA_WRITE", TID_INT); // TODO: why is it possible to address this as an array in js?
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/DATA_WRITE_SIZE", TID_INT);
+    //set link enables so slow control can pass
+    odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
+    try{ set_feb_enable(get_link_active_from_odb(cur_links_odb)); }
+    catch(...){ return FE_ERR_ODB;}
 
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/START_ADD_WRITE", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/SINGLE_DATA_WRITE", TID_INT);
-
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/RM_START_ADD", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/RM_LENGTH", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/RM_DATA", TID_INT);
-
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_START_ADD", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_LENGTH", TID_INT);
-   db_create_key(hDB, 0, "Equipment/Switching/Variables/WM_DATA", TID_INT);
-
-    // add custom page to ODB
-   {
-   db_create_key(hDB, 0, "Custom/Switching&", TID_STRING);
-   const char * name = "sc.html";
-   db_set_value(hDB,0,"Custom/Switching&", name, sizeof(name), 1, TID_STRING);
-   }
+    status = init_scifi();
+    if (status != SUCCESS)
+        return FE_ERR_DRIVER;
 
    HNDLE hKey;
-
-   // watch if this switching board is enabled
-   db_find_key(hDB, 0, "/Equipment/Links/Settings/SwitchingBoardMask", &hKey);
-   assert(hKey);
-   db_watch(hDB, hKey, switching_board_mask_changed, nullptr);
-
-   // watch if this frontend board is enabled
-   db_find_key(hDB, 0, "/Equipment/Links/Settings/LinkMask", &hKey);
-   assert(hKey);
-   db_watch(hDB, hKey, frontend_board_mask_changed, nullptr);
 
    // Define history panels
    // --- SciFi panels created in mutrig::midasODB::setup_db, below
 
-   // open mudaq
-   mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
-   if ( !mup->open() ) {
-       cm_msg(MERROR, "frontend_init" , "Could not open device");
-       return FE_ERR_DRIVER;
-   }
 
-   if ( !mup->is_ok() ) {
-       cm_msg(MERROR, "frontend_init", "Mudaq is not ok");
-       return FE_ERR_DRIVER;
-   }
-   mup->FEBsc_resetMaster();
-   mup->FEBsc_resetSlave();
-   //set link enables so slow control can pass 
-   try{ set_feb_enable(get_link_active_from_odb()); }
-   catch(...){ return FE_ERR_ODB;}
 
-   //SciFi setup part
-   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
-   SciFiFEB::Create(*mup,hDB,equipment[EQUIPMENT_ID::SciFi].name,"/Equipment/SciFi"); //create FEB interface signleton for scifi
-   SciFiFEB::Instance()->SetSBnumber(switch_id);
-   status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance());
-   if(status != SUCCESS){
-      set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
-      return status;
-   }
-    //init all values on FEB
-   SciFiFEB::Instance()->WriteAll();
-   SciFiFEB::Instance()->WriteFEBID();
 
-   set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
-   {
-   db_create_key(hDB, 0, "Custom/SciFi-ASICs&", TID_STRING);
-   db_set_value(hDB,0,"Custom/SciFi-ASICs&", "mutrigTdc.html", sizeof("mutrigTdc.html"), 1, TID_STRING);
-   }
+
 
    //end of SciFi setup part
    //SciTiles setup part
@@ -362,6 +297,159 @@ INT frontend_init()
    return CM_SUCCESS;
 }
 
+// ODB Setup //////////////////////////////
+void setup_odb(){
+
+    /* Default values for /Equipment/Switching/Settings */
+    odb sc_settings = {
+            {"Active", true},
+            {"Delay", false},
+            {"Write", false},
+            {"Single Write", false},
+            {"Read", false},
+            {"Read WM", false},
+            {"Read RM", false},
+            {"Reset SC Slave", false},
+            {"Clear WM", false},
+            {"Last RM ADD", false},
+            {"MupixConfig", false},
+            {"MupixBoard", false},
+            {"SciFiConfig", false},
+            {"SciTilesConfig", false},
+            {"Reset Bypass Payload", 0},
+            {"Reset Bypass Command", 0},
+    };
+
+    sc_settings.connect("/Equipment/Switching/Settings", true);
+
+    /* Default values for /Equipment/Switching/Variables */
+    odb sc_variables = {
+            {"FPGA_ID_READ", 0},
+            {"START_ADD_READ", 0},
+            {"LENGTH_READ", 0},
+
+            {"FPGA_ID_WRITE", 0},
+            {"DATA_WRITE", 0},
+            {"DATA_WRITE_SIZE", 0},
+
+            {"START_ADD_WRITE", 0},
+            {"SINGLE_DATA_WRITE", 0},
+
+            {"RM_START_ADD", 0},
+            {"RM_LENGTH", 0},
+            {"RM_DATA", 0},
+
+            {"WM_START_ADD", 0},
+            {"WM_LENGTH", 0},
+            {"WM_DATA", 0},
+    };
+
+    sc_variables.connect("/Equipment/Switching/Variables");
+
+    // add custom page to ODB
+    odb custom("/Custom");
+    custom["Switching&"] = "sc.html";
+
+}
+
+void setup_watches(){
+
+    // watch if this switching board is enabled
+    odb switch_mask("/Equipment/Links/Settings/SwitchingBoardMask");
+    switch_mask.watch(frontend_board_mask_changed);
+
+    // watch if this links are enabled
+    odb links_odb("/Equipment/Links/Settings/LinkMask");
+    links_odb.watch(switching_board_mask_changed);
+
+}
+
+void switching_board_mask_changed(odb o) {
+
+    string name = o.get_name();
+
+    cm_msg(MINFO, "switching_board_mask_changed", "Switching board masking changed");
+
+    cout << name << endl;
+    cout << o << endl;
+
+    INT switching_board_mask[MAX_N_SWITCHINGBOARDS];
+    int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
+
+    //db_get_data(hDB, hKey, &switching_board_mask, &size, TID_INT);
+
+    BOOL value = switching_board_mask[switch_id] > 0 ? true : false;
+
+    for(int i = 0; i < 2; i++) {
+        char str[128];
+        sprintf(str,"Equipment/%s/Common/Enabled", equipment[i].name);
+        db_set_value(hDB,0,str, &value, sizeof(value), 1, TID_BOOL);
+
+        cm_msg(MINFO, "switching_board_mask_changed", "Set Equipment %s enabled to %d", equipment[i].name, value);
+    }
+
+    SciFiFEB::Instance()->RebuildFEBsMap();
+    MupixFEB::Instance()->RebuildFEBsMap();
+
+}
+
+void frontend_board_mask_changed(odb o) {
+    try{
+        set_feb_enable(get_link_active_from_odb(o));
+        SciFiFEB::Instance()->RebuildFEBsMap();
+        MupixFEB::Instance()->RebuildFEBsMap();
+    }catch(...){}
+}
+
+INT init_mudaq() {
+
+    // open mudaq
+#ifdef DEBUG
+    mup = new dummy_mudaq::DummyDmaMudaqDevice("/dev/mudaq0");
+#else
+    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
+#endif
+
+    if ( !mup->open() ) {
+        cm_msg(MERROR, "frontend_init" , "Could not open device");
+        return FE_ERR_DRIVER;
+    }
+
+    if ( !mup->is_ok() ) {
+        cm_msg(MERROR, "frontend_init", "Mudaq is not ok");
+        return FE_ERR_DRIVER;
+    }
+
+    mup->FEBsc_resetMaster();
+    mup->FEBsc_resetSlave();
+
+    return SUCCESS;
+}
+
+INT init_scifi() {
+
+    // SciFi setup part
+    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
+    SciFiFEB::Create(*mup, equipment[EQUIPMENT_ID::SciFi].name, "/Equipment/SciFi"); //create FEB interface signleton for scifi
+    SciFiFEB::Instance()->SetSBnumber(switch_id);
+    status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance());
+    if(status != SUCCESS){
+        set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
+        return status;
+    }
+    //init all values on FEB
+    SciFiFEB::Instance()->WriteAll();
+    SciFiFEB::Instance()->WriteFEBID();
+
+    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
+    {
+        db_create_key(hDB, 0, "Custom/SciFi-ASICs&", TID_STRING);
+        db_set_value(hDB,0,"Custom/SciFi-ASICs&", "mutrigTdc.html", sizeof("mutrigTdc.html"), 1, TID_STRING);
+    }
+
+    return SUCCESS;
+}
+
 /*-- Frontend Exit -------------------------------------------------*/
 
 INT frontend_exit()
@@ -395,7 +483,8 @@ try{
    mup->write_register(RESET_REGISTER_W, 0x0);
 
    /* get link active from odb. */
-   uint64_t link_active_from_odb = get_link_active_from_odb();
+    odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
+    uint64_t link_active_from_odb = get_link_active_from_odb(cur_links_odb);
 
    //configure ASICs for SciFi
    status=SciFiFEB::Instance()->ConfigureASICs();
@@ -433,7 +522,7 @@ try{
        return CM_TRANSITION_CANCELED;
    }
 
-   if(std::string(ip)=="0.0.0.0"){
+   if(string(ip)=="0.0.0.0"){
        /* send run prepare signal from here */
        cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
        DWORD valueRB = run_number;
@@ -480,7 +569,8 @@ INT end_of_run(INT run_number, char *error)
 {
 try{
    /* get link active from odb */
-   uint64_t link_active_from_odb = get_link_active_from_odb();
+    odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
+    uint64_t link_active_from_odb = get_link_active_from_odb(cur_links_odb);
 
    printf("end_of_run: Waiting for stop signals from all FEBs\n");
    uint16_t timeout_cnt = 50;
@@ -621,9 +711,14 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
    db_get_key(hDB, hKey, &key);
 
-   mudaq::DmaMudaqDevice & mu = *mup;
+    #ifdef DEBUG
+        dummy_mudaq::DummyDmaMudaqDevice & mu = *mup;
+    #else
+        mudaq::DmaMudaqDevice & mu = *mup;
+    #endif
 
-   if (std::string(key.name) == "Active") {
+
+   if (string(key.name) == "Active") {
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
@@ -631,7 +726,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       // TODO: propagate to hardware
    }
 
-   if (std::string(key.name) == "Delay") {
+   if (string(key.name) == "Delay") {
       INT value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_INT);
@@ -639,17 +734,17 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       // TODO: propagate to hardware
    }
 
-   if (std::string(key.name) == "Reset SC Master" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+   if (string(key.name) == "Reset SC Master" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
        mu.FEBsc_resetMaster();
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
-   if (std::string(key.name) == "Reset SC Slave" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+   if (string(key.name) == "Reset SC Slave" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
        mu.FEBsc_resetSlave();
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
-   if (std::string(key.name) == "Write" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+   if (string(key.name) == "Write" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
        INT FPGA_ID=get_odb_value_by_string("Equipment/Switching/Variables/FPGA_ID_WRITE");
        INT START_ADD=get_odb_value_by_string("Equipment/Switching/Variables/START_ADD_WRITE");
        INT DATA_WRITE_SIZE=get_odb_value_by_string("Equipment/Switching/Variables/DATA_WRITE_SIZE");
@@ -673,7 +768,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
-   if (std::string(key.name) == "Read" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+   if (string(key.name) == "Read" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
        INT FPGA_ID=get_odb_value_by_string("Equipment/Switching/Variables/FPGA_ID_READ");
        INT LENGTH=get_odb_value_by_string("Equipment/Switching/Variables/LENGTH_READ");
        INT START_ADD=get_odb_value_by_string("Equipment/Switching/Variables/START_ADD_READ");
@@ -690,7 +785,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
-   if (std::string(key.name) == "Single Write" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+   if (string(key.name) == "Single Write" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
         INT FPGA_ID=get_odb_value_by_string("Equipment/Switching/Variables/FPGA_ID_WRITE");
         INT DATA=get_odb_value_by_string("Equipment/Switching/Variables/SINGLE_DATA_WRITE");
         INT START_ADD=get_odb_value_by_string("Equipment/Switching/Variables/START_ADD_WRITE");
@@ -703,7 +798,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
 
-    if (std::string(key.name) == "Read WM" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+    if (string(key.name) == "Read WM" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
         INT WM_START_ADD=get_odb_value_by_string("Equipment/Switching/Variables/WM_START_ADD");
         INT WM_LENGTH=get_odb_value_by_string("Equipment/Switching/Variables/WM_LENGTH");
         INT WM_DATA;
@@ -720,7 +815,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
 
-    if (std::string(key.name) == "Read RM" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+    if (string(key.name) == "Read RM" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
         cm_msg(MINFO, "sc_settings_changed", "Execute Read RM");
 
         INT RM_START_ADD=get_odb_value_by_string("Equipment/Switching/Variables/RM_START_ADD");
@@ -739,7 +834,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
 
-    if (std::string(key.name) == "Last RM ADD" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+    if (string(key.name) == "Last RM ADD" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
         INT LAST_RM_ADD, SIZE_LAST_RM_ADD;
         SIZE_LAST_RM_ADD = sizeof(LAST_RM_ADD);
         char STR_LAST_RM_ADD[128];
@@ -752,7 +847,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 	set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
 /*
-    if (std::string(key.name) == "Read MALIBU File" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+    if (string(key.name) == "Read MALIBU File" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
         INT FPGA_ID, SIZE_FPGA_ID;
         INT START_ADD, SIZE_START_ADD;
         INT PCIE_MEM_START, SIZE_PCIE_MEM_START;
@@ -806,35 +901,35 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 	set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
 */
-    if (std::string(key.name) == "SciFiConfig" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+    if (string(key.name) == "SciFiConfig" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
           int status=SciFiFEB::Instance()->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }
 	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
-    if (std::string(key.name) == "SciTilesConfig" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+    if (string(key.name) == "SciTilesConfig" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
           int status=TilesFEB::Instance()->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }
 	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
-    if (std::string(key.name) == "MupixConfig" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+    if (string(key.name) == "MupixConfig" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
           int status=MupixFEB::Instance()->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }
 	  set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
-    if (std::string(key.name) == "MupixBoard" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+    if (string(key.name) == "MupixBoard" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
           int status=MupixFEB::Instance()->ConfigureBoards();
           if(status!=SUCCESS){
             //TODO: what to do?
           }
       set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
-    if (std::string(key.name) == "Reset Bypass Command") {
+    if (string(key.name) == "Reset Bypass Command") {
           DWORD command, payload;
           int size = sizeof(DWORD);
           db_get_data(hDB, hKey, &command, &size, TID_DWORD);
@@ -863,7 +958,9 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 //--------------- Link related settings
 //
 
-uint64_t get_link_active_from_odb(){
+uint64_t get_link_active_from_odb(odb o){
+
+
    INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
    int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
    int status = db_get_value(hDB, 0, "/Equipment/Links/Settings/LinkMask", frontend_board_active_odb, &size, TID_INT, false);
@@ -913,30 +1010,4 @@ void print_ack_state(){
    }
 }
 
-void switching_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
-   printf("switching_board_mask_changed\n");
-   INT switching_board_mask[MAX_N_SWITCHINGBOARDS];
-   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
-   db_get_data(hDB, hKey, &switching_board_mask, &size, TID_INT);
-   BOOL value = switching_board_mask[switch_id] > 0 ? true : false;
 
-   for(int i = 0; i < 2; i++) {
-      char str[128];
-      sprintf(str,"Equipment/%s/Common/Enabled", equipment[i].name);
-      db_set_value(hDB,0,str, &value, sizeof(value), 1, TID_BOOL);
-
-      cm_msg(MINFO, "switching_board_mask_changed", "Set Equipment %s enabled to %d", equipment[i].name, value);
-   }
-
-   SciFiFEB::Instance()->RebuildFEBsMap();
-   MupixFEB::Instance()->RebuildFEBsMap();
-
-}
-
-void frontend_board_mask_changed(HNDLE hDB, HNDLE hKey, INT, void *) {
-   try{
-      set_feb_enable(get_link_active_from_odb());
-      SciFiFEB::Instance()->RebuildFEBsMap();
-      MupixFEB::Instance()->RebuildFEBsMap();
-   }catch(...){}
-}

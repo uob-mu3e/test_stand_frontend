@@ -3,6 +3,9 @@
 #include <iomanip>
 
 #include "MutrigConfig.h"
+#include "odbxx.h"
+
+using midas::odb;
 
 namespace mutrig {
 
@@ -126,93 +129,97 @@ MutrigConfig::~MutrigConfig() {
     delete[] bitpattern_w;
 }
 
-void MutrigConfig::Parse_GLOBAL_from_struct(MUTRIG_GLOBAL& mt_g){
+void MutrigConfig::setParameterODBpp(odb o, std::string paraName){
+    setParameter(paraName, o[paraName]);
+}
+
+void MutrigConfig::Parse_GLOBAL_from_struct(odb o){
     //hard coded in order to avoid macro magic
 //    setParameter("", mt_g.n_asics);
 //    setParameter("", mt_g.n_channels);
-    setParameter("ext_trig_mode", mt_g.ext_trig_mode);
-    setParameter("ext_trig_endtime_sign", mt_g.ext_trig_endtime_sign);
-    setParameter("ext_trig_offset", mt_g.ext_trig_offset);
-    setParameter("ext_trig_endtime", mt_g.ext_trig_endtime);
-    setParameter("gen_idle", mt_g.gen_idle);
-    setParameter("ms_debug", mt_g.ms_debug);
-    setParameter("prbs_debug", mt_g.prbs_debug);
-    setParameter("prbs_single", mt_g.prbs_single);
-    setParameter("recv_all", mt_g.recv_all);
-    setParameter("disable_coarse", mt_g.disable_coarse);
-    setParameter("pll_setcoarse", mt_g.pll_setcoarse);
-    setParameter("short_event_mode", mt_g.short_event_mode);
-    setParameter("pll_envomonitor", mt_g.pll_envomonitor);
+    MutrigConfig::setParameterODBpp("ext_trig_mode", o);
+    MutrigConfig::setParameterODBpp("ext_trig_endtime_sign", o);
+    MutrigConfig::setParameterODBpp("ext_trig_offset", o);
+    MutrigConfig::setParameterODBpp("ext_trig_endtime", o);
+    MutrigConfig::setParameterODBpp("gen_idle", o);
+    MutrigConfig::setParameterODBpp("ms_debug", o);
+    MutrigConfig::setParameterODBpp("prbs_debug", o);
+    MutrigConfig::setParameterODBpp("prbs_single", o);
+    MutrigConfig::setParameterODBpp("recv_all", o);
+    MutrigConfig::setParameterODBpp("disable_coarse", o);
+    MutrigConfig::setParameterODBpp("pll_setcoarse", o);
+    MutrigConfig::setParameterODBpp("short_event_mode", o);
+    MutrigConfig::setParameterODBpp("pll_envomonitor", o);
 }
 
-void MutrigConfig::Parse_TDC_from_struct(MUTRIG_TDC& mt_tdc){
-    setParameter("vnpfc", mt_tdc.vnpfc);
-    setParameter("vnpfc_offset", mt_tdc.vnpfc_offset);
-    setParameter("vnpfc_scale", mt_tdc.vnpfc_scale);
-    setParameter("vncnt", mt_tdc.vncnt);
-    setParameter("vncnt_offset", mt_tdc.vncnt_offset);
-    setParameter("vncnt_scale", mt_tdc.vncnt_scale);
-    setParameter("vnvcobuffer", mt_tdc.vnvcobuffer);
-    setParameter("vnvcobuffer_offset", mt_tdc.vnvcobuffer_offset);
-    setParameter("vnvcobuffer_scale", mt_tdc.vnvcobuffer_scale);
-    setParameter("vnd2c", mt_tdc.vnd2c);
-    setParameter("vnd2c_offset", mt_tdc.vnd2c_offset);
-    setParameter("vnd2c_scale", mt_tdc.vnd2c_scale);
-    setParameter("vnpcp", mt_tdc.vnpcp);
-    setParameter("vnpcp_offset", mt_tdc.vnpcp_offset);
-    setParameter("vnpcp_scale", mt_tdc.vnpcp_scale);
-    setParameter("vnhitlogic", mt_tdc.vnhitlogic);
-    setParameter("vnhitlogic_offset", mt_tdc.vnhitlogic_offset);
-    setParameter("vnhitlogic_scale", mt_tdc.vnhitlogic_scale);
-    setParameter("vncntbuffer", mt_tdc.vncntbuffer);
-    setParameter("vncntbuffer_offset", mt_tdc.vncntbuffer_offset);
-    setParameter("vncntbuffer_scale", mt_tdc.vncntbuffer_scale);
-    setParameter("vnvcodelay", mt_tdc.vnvcodelay);
-    setParameter("vnvcodelay_offset", mt_tdc.vnvcodelay_offset);
-    setParameter("vnvcodelay_scale", mt_tdc.vnvcodelay_scale);
-    setParameter("latchbias", mt_tdc.latchbias);
-    setParameter("ms_limits", mt_tdc.ms_limits);
-    setParameter("ms_switch_sel", mt_tdc.ms_switch_sel);
-    setParameter("amon_en", mt_tdc.amon_en);
-    setParameter("amon_dac", mt_tdc.amon_dac);
-    setParameter("dmon_1_en", mt_tdc.dmon_1_en);
-    setParameter("dmon_1_dac", mt_tdc.dmon_1_dac);
-    setParameter("dmon_2_en", mt_tdc.dmon_2_en);
-    setParameter("dmon_2_dac", mt_tdc.dmon_2_dac);
-    setParameter("lvds_tx_vcm", mt_tdc.lvds_tx_vcm);
-    setParameter("lvds_tx_bias", mt_tdc.lvds_tx_bias);
+void MutrigConfig::Parse_TDC_from_struct(odb o){
+    MutrigConfig::setParameterODBpp("vnpfc", o);
+    MutrigConfig::setParameterODBpp("vnpfc_offset", o);
+    MutrigConfig::setParameterODBpp("vnpfc_scale", o);
+    MutrigConfig::setParameterODBpp("vncnt", o);
+    MutrigConfig::setParameterODBpp("vncnt_offset", o);
+    MutrigConfig::setParameterODBpp("vncnt_scale", o);
+    MutrigConfig::setParameterODBpp("vnvcobuffer", o);
+    MutrigConfig::setParameterODBpp("vnvcobuffer_offset", o);
+    MutrigConfig::setParameterODBpp("vnvcobuffer_scale", o);
+    MutrigConfig::setParameterODBpp("vnd2c", o);
+    MutrigConfig::setParameterODBpp("vnd2c_offset", o);
+    MutrigConfig::setParameterODBpp("vnd2c_scale", o);
+    MutrigConfig::setParameterODBpp("vnpcp", o);
+    MutrigConfig::setParameterODBpp("vnpcp_offset", o);
+    MutrigConfig::setParameterODBpp("vnpcp_scale", o);
+    MutrigConfig::setParameterODBpp("vnhitlogic", o);
+    MutrigConfig::setParameterODBpp("vnhitlogic_offset", o);
+    MutrigConfig::setParameterODBpp("vnhitlogic_scale", o);
+    MutrigConfig::setParameterODBpp("vncntbuffer", o);
+    MutrigConfig::setParameterODBpp("vncntbuffer_offset", o);
+    MutrigConfig::setParameterODBpp("vncntbuffer_scale", o);
+    MutrigConfig::setParameterODBpp("vnvcodelay", o);
+    MutrigConfig::setParameterODBpp("vnvcodelay_offset", o);
+    MutrigConfig::setParameterODBpp("vnvcodelay_scale", o);
+    MutrigConfig::setParameterODBpp("latchbias", o);
+    MutrigConfig::setParameterODBpp("ms_limits", o);
+    MutrigConfig::setParameterODBpp("ms_switch_sel", o);
+    MutrigConfig::setParameterODBpp("amon_en", o);
+    MutrigConfig::setParameterODBpp("amon_dac", o);
+    MutrigConfig::setParameterODBpp("dmon_1_en", o);
+    MutrigConfig::setParameterODBpp("dmon_1_dac", o);
+    MutrigConfig::setParameterODBpp("dmon_2_en", o);
+    MutrigConfig::setParameterODBpp("dmon_2_dac", o);
+    MutrigConfig::setParameterODBpp("lvds_tx_vcm", o);
+    MutrigConfig::setParameterODBpp("lvds_tx_bias", o);
 }
 
 
-void MutrigConfig::Parse_CH_from_struct(MUTRIG_CH& mt_ch, int channel){
-    setParameter("mask_" + std::to_string(channel), mt_ch.mask);
-    setParameter("tthresh_" + std::to_string(channel), mt_ch.tthresh);
-    setParameter("tthresh_sc_" + std::to_string(channel), mt_ch.tthresh_sc);
-    setParameter("ethresh_" + std::to_string(channel), mt_ch.ethresh);
-    setParameter("sipm_" + std::to_string(channel), mt_ch.sipm);
-    setParameter("sipm_sc_" + std::to_string(channel), mt_ch.sipm_sc);
-    setParameter("inputbias_" + std::to_string(channel), mt_ch.inputbias);
-    setParameter("inputbias_sc_" + std::to_string(channel), mt_ch.inputbias_sc);
-    setParameter("pole_" + std::to_string(channel), mt_ch.pole);
-    setParameter("pole_sc_" + std::to_string(channel), mt_ch.pole_sc);
-    setParameter("ampcom_" + std::to_string(channel), mt_ch.ampcom);
-    setParameter("ampcom_sc_" + std::to_string(channel), mt_ch.ampcom_sc);
-    setParameter("cml_" + std::to_string(channel), mt_ch.cml);
-    setParameter("cml_sc_" + std::to_string(channel), mt_ch.cml_sc);
-    setParameter("amonctrl_" + std::to_string(channel), mt_ch.amonctrl);
-    setParameter("comp_spi_" + std::to_string(channel), mt_ch.comp_spi);
-    setParameter("tdctest_n_" + std::to_string(channel), mt_ch.tdctest_n);
-    setParameter("sswitch_" + std::to_string(channel), mt_ch.sswitch);
-    setParameter("delay_" + std::to_string(channel), mt_ch.delay);
-    setParameter("pole_en_n_" + std::to_string(channel), mt_ch.pole_en_n);
-    setParameter("energy_c_en_" + std::to_string(channel), mt_ch.energy_c_en);
-    setParameter("energy_r_en_" + std::to_string(channel), mt_ch.energy_r_en);
-    setParameter("cm_sensing_high_r_" + std::to_string(channel), mt_ch.cm_sensing_high_r);
-    setParameter("amon_en_n_" + std::to_string(channel), mt_ch.amon_en_n);
-    setParameter("edge_" + std::to_string(channel), mt_ch.edge);
-    setParameter("edge_cml_" + std::to_string(channel), mt_ch.edge_cml);
-    setParameter("dmon_en_" + std::to_string(channel), mt_ch.dmon_en);
-    setParameter("dmon_sw_" + std::to_string(channel), mt_ch.dmon_sw);
+void MutrigConfig::Parse_CH_from_struct(odb o, int channel){
+    MutrigConfig::setParameterODBpp("mask_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("tthresh_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("tthresh_sc_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("ethresh_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("sipm_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("sipm_sc_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("inputbias_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("inputbias_sc_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("pole_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("pole_sc_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("ampcom_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("ampcom_sc_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("cml_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("cml_sc_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("amonctrl_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("comp_spi_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("tdctest_n_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("sswitch_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("delay_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("pole_en_n_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("energy_c_en_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("energy_r_en_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("cm_sensing_high_r_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("amon_en_n_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("edge_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("edge_cml_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("dmon_en_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("dmon_sw_" + std::to_string(channel), o);
 }
 
 
