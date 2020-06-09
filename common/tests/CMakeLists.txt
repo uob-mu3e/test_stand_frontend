@@ -10,4 +10,9 @@ if(NOT APPLE)
     target_link_libraries(config_mupix_test libmudaq_scifi libmupix)
 
     install(TARGETS config_mutrig_test config_mupix_test DESTINATION unittests)
-endif(APPLE)
+endif(NOT APPLE)
+
+add_executable(test_odb test_odb.cpp ${INC_ALL})
+target_include_directories(test_odb PRIVATE PRIVATE ${INCMUDAQ_DIR})
+target_link_libraries(test_odb mfe midas)
+install(TARGETS test_odb DESTINATION unittests)
