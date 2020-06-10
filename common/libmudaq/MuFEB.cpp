@@ -9,6 +9,7 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 
 #include "MuFEB.h"
 #include "midas.h"
+#include "odbxx.h"
 #include "mfe.h" //for set_equipment_status
 
 #include "mudaq_device_scifi.h"
@@ -20,6 +21,7 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 #define FEB_REPLY_SUCCESS 0
 #define FEB_REPLY_ERROR   1
 
+using midas::odb;
 
 //handler function for update of switching board fiber mapping / status
 void MuFEB::on_mapping_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
@@ -167,10 +169,11 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
 
    BOOL bypass_enabled=true;
    if(((val[0])&0x1ff)==0x000) bypass_enabled=false;
-   sprintf(path, "%s/Variables/FEB Run State", m_odb_prefix);
     // set odb value_index index = FPGA_ID, value = bypass_enabled
-    odb bypass_enabled(path);
-    bypass_enabled["Bypass enabled&"][FPGA_ID] = bypass_enabled;
+    sprintf(path, "%s/Variables/FEB Run State", m_odb_prefix);
+    odb variables_feb_run_state(path);
+
+    variables_feb_run_state["Bypass enabled&"][FPGA_ID] = bypass_enabled;
 
 /*
 // string variables are not possible with mlogger, so use raw state
@@ -209,11 +212,9 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
    //printf("MuFEB::ReadBackRunState(): bypass=%s\n",bypass_enabled?"y":"n");
    //printf("MuFEB::ReadBackRunState(): current_state=%s\n",state_str);
 */
-   sprintf(path, "%s/Variables/FEB Run State", m_odb_prefix);
-   DWORD value=(val[0]>>16) & 0x3ff;
     // set odb value_index index = FPGA_ID, value = value
-    odb feb_run_state(path);
-    feb_run_state["Run state&"][FPGA_ID] = value;
+    DWORD value=(val[0]>>16) & 0x3ff;
+    variables_feb_run_state["Run state&"][FPGA_ID] = value;
 
    return SUCCESS;
 }

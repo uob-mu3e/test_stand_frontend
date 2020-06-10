@@ -48,7 +48,10 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     //TODO: if we have more than one FE-FPGA, there might be more than one DAQ class.
     MUTRIG_DAQ_STR(mutrig_daq);         // global settings for daq/fpga
     settings_daq[set_str] = strcomb(mutrig_daq);
-    settings_daq.watch(MutrigFEB::on_settings_changed);
+    // use lambda function for passing FEB_interface
+    auto on_settings_changed_partial =
+            [&FEB_interface](odb o) { return MutrigFEB::on_settings_changed(o, FEB_interface); };
+    settings_daq.watch(on_settings_changed_partial);
 
     //update length flags for DAQ section
     settings_daq["mask"] = nasics;

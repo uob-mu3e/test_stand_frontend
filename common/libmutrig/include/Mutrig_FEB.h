@@ -17,7 +17,6 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include "MutrigConfig.h"
 #include "MuFEB.h"
 
-
 using midas::odb;
 
 class MutrigFEB : public MuFEB{
@@ -26,7 +25,7 @@ class MutrigFEB : public MuFEB{
 
    public:
       MutrigFEB(const MutrigFEB&)=delete;
-      MutrigFEB(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix):
+      MutrigFEB(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix):
         MuFEB(mu,equipment_name,odb_prefix)
         {};
       void SetSBnumber(uint8_t n){m_SB_number=n;}
@@ -40,7 +39,7 @@ class MutrigFEB : public MuFEB{
 
       //MIDAS callback for all setters below (DAQ related, mapped to functions on FEB / settings from the DAQ subdirectory).
       //Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
-      static void on_settings_changed(odb o);
+      static void on_settings_changed(odb o, void * userdata);
 
       //Write all registers based on ODB values
       int WriteAll();

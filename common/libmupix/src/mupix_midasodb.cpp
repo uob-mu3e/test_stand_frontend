@@ -6,10 +6,13 @@
 //#include "experim.h"
 #include "mupix_MIDAS_config.h"
 #include "mupix_midasodb.h"
+#include "odbxx.h"
+using midas::odb;
+
 namespace mupix { namespace midasODB {
 
 
-int setup_db(HNDLE& hDB, const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
+int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
     /* Book Setting space */
 
     unsigned int nrow = 200;

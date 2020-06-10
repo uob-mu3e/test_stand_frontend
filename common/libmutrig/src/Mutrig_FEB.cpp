@@ -75,7 +75,10 @@ int MutrigFEB::WriteAll(){
 
     sprintf(set_str, "%s/Settings/Daq", m_odb_prefix);
     odb odb_set_str(set_str);
-    odb_set_str.watch(on_settings_changed);
+    // use lambda function for passing this
+    auto on_settings_changed_partial =
+            [this](odb o) { return MutrigFEB::on_settings_changed(o, this); };
+    odb_set_str.watch(on_settings_changed_partial);
 
     return 0;
 }
@@ -274,13 +277,13 @@ int MutrigFEB::ReadBackDatapathStatus(uint16_t FPGA_ID){
 
 
 // MIDAS callback function for FEB register Setter functions
-void MutrigFEB::on_settings_changed(odb o)
+void MutrigFEB::on_settings_changed(odb o, void * userdata)
 {
     std::string name = o.get_name();
 
     cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
 
-    MutrigFEB* _this=static_cast<MutrigFEB*>(this);
+    MutrigFEB* _this=static_cast<MutrigFEB*>(userdata);
 
     INT ival;
     BOOL bval;
@@ -296,7 +299,7 @@ void MutrigFEB::on_settings_changed(odb o)
 
     if (name == "dummy_data") {
         bval = o;
-        for(auto FEB: _this->m_FPGAs){
+        for(auto FEB : _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
             _this->setDummyData_Enable(FEB.SB_Port(),bval);
@@ -314,7 +317,7 @@ void MutrigFEB::on_settings_changed(odb o)
 
     if (name == "dummy_data_n") {
         ival = o;
-        for(auto FEB: _this->m_FPGAs){
+        for(auto FEB : _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
             _this->setDummyData_Count(FEB.SB_Port(),ival);
@@ -323,7 +326,7 @@ void MutrigFEB::on_settings_changed(odb o)
 
     if (name == "prbs_decode_disable") {
         bval = o;
-        for(auto FEB: _this->m_FPGAs){
+        for(auto FEB : _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
             _this->setPRBSDecoderDisable(FEB.SB_Port(),bval);
@@ -332,7 +335,7 @@ void MutrigFEB::on_settings_changed(odb o)
 
     if (name == "LVDS_waitforall") {
         bval = o;
-        for(auto FEB: _this->m_FPGAs){
+        for(auto FEB : _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
             _this->setWaitForAll(FEB.SB_Port(),bval);
@@ -341,7 +344,7 @@ void MutrigFEB::on_settings_changed(odb o)
 
     if (name == "LVDS_waitforall_sticky") {
         bval = o;
-        for(auto FEB: _this->m_FPGAs){
+        for(auto FEB : _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
             _this->setWaitForAllSticky(FEB.SB_Port(),bval);
@@ -358,14 +361,14 @@ void MutrigFEB::on_settings_changed(odb o)
 
     if (name == "reset_datapath") {
         bval = o;
-        if(bval){
-            for(auto FEB : _this->m_FPGAs);
-            if(!FEB.IsScEnabled()) continue; //skip disabled
-            if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
-            _this->DataPathReset(FEB.SB_Port());
+        if(bval) {
+            for (auto FEB : _this->m_FPGAs) {
+                if (!FEB.IsScEnabled()) continue; //skip disabled
+                if (FEB.SB_Number() != _this->m_SB_number) continue; //skip commands not for me
+                _this->DataPathReset(FEB.SB_Port());
+            }
+            o = FALSE; // reset flag in ODB
         }
-        value = FALSE; // reset flag in ODB
-        o = value;
     }
 
     if (name == "reset_asics") {
@@ -376,8 +379,7 @@ void MutrigFEB::on_settings_changed(odb o)
                 if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
                 _this->chipReset(FEB.SB_Port());
             }
-            value = FALSE; // reset flag in ODB
-            o = value;
+            o = FALSE; // reset flag in ODB
         }
     }
 
@@ -389,8 +391,7 @@ void MutrigFEB::on_settings_changed(odb o)
                 if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
                 _this->LVDS_RX_Reset(FEB.SB_Port());
             }
-            value = FALSE; // reset flag in ODB
-            o = value;
+            o = FALSE; // reset flag in ODB
         }
     }
 
@@ -400,21 +401,13 @@ void MutrigFEB::on_settings_changed(odb o)
         (name == "resetskew_phases")){
 
         char set_str[255];
-        BOOL* cphase=new BOOL[_this->m_FPGAs.size()*_this->nModulesPerFEB()];
-        BOOL* cdelay=new BOOL[_this->m_FPGAs.size()*_this->nModulesPerFEB()];
-        INT*  phases=new INT[_this->m_FPGAs.size()*_this->nModulesPerFEB()];
 
-        sprintf(set_str, "%s/Settings/Daq/resetskew_cphase", _this->m_odb_prefix);
-        odb odb_resetskew_cphase(set_str);
-        cphase = odb_resetskew_cphase;
+        sprintf(set_str, "%s/Settings/Daq", _this->m_odb_prefix);
+        odb settings_daq(set_str);
 
-        sprintf(set_str, "%s/Settings/Daq/resetskew_cdelay", _this->m_odb_prefix);
-        odb odb_resetskew_cdelay(set_str);
-        cdelay = odb_resetskew_cdelay;
-
-        sprintf(set_str, "%s/Settings/Daq/resetskew_phases", _this->m_odb_prefix);
-        odb odb_resetskew_phases(set_str);
-        phases = odb_resetskew_phases;
+        auto cphase = settings_daq["resetskew_cphase"];
+        auto cdelay = settings_daq["resetskew_cdelay"];
+        auto phases = settings_daq["resetskew_phases"];
 
         for(size_t i=0;i<_this->m_FPGAs.size();i++){
             if(_this->m_FPGAs[i].IsScEnabled()==false) continue; //skip disabled
@@ -433,11 +426,10 @@ void MutrigFEB::on_settings_changed(odb o)
     }
 
     if (name == "reset_counters") {
-        bval = odb_set_str;
+        bval = o;
         if(bval){
             _this->ResetAllCounters();
-            value = FALSE; // reset flag in ODB
-            db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+            o = FALSE; // reset flag in ODB
         }
     }
 }
