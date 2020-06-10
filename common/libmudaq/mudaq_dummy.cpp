@@ -56,6 +56,10 @@ namespace dummy_mudaq {
         cm_msg(MINFO, "Dummy MudaqDevice" , "Resetting slow control slave");
     }
 
+    int DummyMudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError){
+        return length;
+    }
+
     // DMA dummy mudaq
 
     dummy_mudaq::DummyDmaMudaqDevice::DummyDmaMudaqDevice(const std::string& path) :

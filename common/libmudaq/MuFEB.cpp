@@ -145,14 +145,21 @@ int MuFEB::WriteFEBID(){
 }
 
 int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
-   //map to SB fiber
-   auto FEB = m_FPGAs[FPGA_ID];
-   if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-   if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+    //map to SB fiber
+    auto FEB = m_FPGAs[FPGA_ID];
+
+    //skip disabled fibers
+    if(!FEB.IsScEnabled())
+        return SUCCESS;
+
+    //skip commands not for this SB
+    if(FEB.SB_Number()!=m_SB_number)
+        return SUCCESS;
 
    uint32_t val[2];
-   int status=m_mu.FEBsc_read(FEB.SB_Port(), val, 2, 0xfff4);
-   if(status!=2) return status;
+   int status = m_mu.FEBsc_read(FEB.SB_Port(), val, 2, 0xfff4);
+   if(status!=2)
+       return status;
    //printf("MuFEB::ReadBackRunState(): val[]={%8.8x,%8.8x} --> %x,%x\n",val[0],val[1],val[0]&0x1ff,(val[0]>>16)&0x3ff);
    //val[0] is reset_bypass register
    //val[1] is reset_bypass payload
@@ -160,8 +167,11 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
 
    BOOL bypass_enabled=true;
    if(((val[0])&0x1ff)==0x000) bypass_enabled=false;
-   sprintf(path, "%s/Variables/FEB Run State/Bypass enabled", m_odb_prefix);
-   if((status = db_set_value_index(m_hDB, 0, path, &bypass_enabled, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
+   sprintf(path, "%s/Variables/FEB Run State", m_odb_prefix);
+    // set odb value_index index = FPGA_ID, value = bypass_enabled
+    odb bypass_enabled(path);
+    bypass_enabled["Bypass enabled&"][FPGA_ID] = bypass_enabled;
+
 /*
 // string variables are not possible with mlogger, so use raw state
    char state_str[32];
@@ -199,11 +209,11 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
    //printf("MuFEB::ReadBackRunState(): bypass=%s\n",bypass_enabled?"y":"n");
    //printf("MuFEB::ReadBackRunState(): current_state=%s\n",state_str);
 */
-   sprintf(path, "%s/Variables/FEB Run State/Run state", m_odb_prefix);
+   sprintf(path, "%s/Variables/FEB Run State", m_odb_prefix);
    DWORD value=(val[0]>>16) & 0x3ff;
-   if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(DWORD),FPGA_ID, TID_DWORD,false))!=DB_SUCCESS) return status;
-
-
+    // set odb value_index index = FPGA_ID, value = value
+    odb feb_run_state(path);
+    feb_run_state["Run state&"][FPGA_ID] = value;
 
    return SUCCESS;
 }

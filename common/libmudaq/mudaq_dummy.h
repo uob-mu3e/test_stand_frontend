@@ -45,6 +45,7 @@ namespace dummy_mudaq {
 
             void FEBsc_resetMaster();
             void FEBsc_resetSlave();
+            int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError);
 
         protected:
             int _fd;

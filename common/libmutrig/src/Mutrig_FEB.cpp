@@ -174,68 +174,57 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
    uint32_t value;
    uint32_t odbval;
    for(int nASIC=0;nASIC<rpc_ret;nASIC++){
-       sprintf(path,"%s/Variables/Counters/nHits",m_odb_prefix);
+
+       // get midas odb object
+       sprintf(path,"%s/Variables/Counters",m_odb_prefix);
+       odb variables_counters(path);
+
+       // db_set_value_index
        value=val[nASIC*15+0];
        odbval=value-last_counters[nASIC][0];
-       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+0]);
+       variables_counters["nHits&"][nASIC] = odbval;
        last_counters[nASIC][0]=value;
 
-       sprintf(path,"%s/Variables/Counters/Time",m_odb_prefix);
        value=val[nASIC*15+2];
        odbval=value-last_counters[nASIC][1];
-       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+2]);
+       variables_counters["Time&"][nASIC] = odbval;
        last_counters[nASIC][1]=value;
 
-       sprintf(path,"%s/Variables/Counters/nBadFrames",m_odb_prefix);
        value=val[nASIC*15+3];
        odbval=value-last_counters[nASIC][2];
-       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+3]);
+       variables_counters["nBadFrames&"][nASIC] = odbval;
        last_counters[nASIC][2]=value;
 
-       sprintf(path,"%s/Variables/Counters/nFrames",m_odb_prefix);
        value=val[nASIC*15+5];
        odbval=value-last_counters[nASIC][3];
-       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+5]);
+       variables_counters["nFrames&"][nASIC] = odbval;
        last_counters[nASIC][3]=value;
 
-       sprintf(path,"%s/Variables/Counters/nErrorsPRBS",m_odb_prefix);
        value=val[nASIC*15+6];
        odbval=value-last_counters[nASIC][4];
-       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+6]);
+       variables_counters["nErrorsPRBS&"][nASIC] = odbval;
        last_counters[nASIC][4]=value;
 
-       sprintf(path,"%s/Variables/Counters/nWordsPRBS",m_odb_prefix);
        value=val[nASIC*15+8];
        odbval=value-last_counters[nASIC][5];
-       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+8]);
+       variables_counters["nWordsPRBS&"][nASIC] = odbval;
        last_counters[nASIC][5]=value;
 
-       sprintf(path,"%s/Variables/Counters/nErrorsLVDS",m_odb_prefix);
        value=val[nASIC*15+9];
        odbval=value-last_counters[nASIC][6];
-       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+9]);
+       variables_counters["nErrorsLVDS&"][nASIC] = odbval;
        last_counters[nASIC][6]=value;
 
-       sprintf(path,"%s/Variables/Counters/nWordsLVDS",m_odb_prefix);
        value=val[nASIC*15+11];
        odbval=value-last_counters[nASIC][7];
-       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+11]);
+       variables_counters["nWordsLVDS&"][nASIC] = odbval;
        last_counters[nASIC][7]=value;
 
-       sprintf(path,"%s/Variables/Counters/nDatasyncloss",m_odb_prefix);
        value=val[nASIC*15+12];
        odbval=value-last_counters[nASIC][8];
-       if((status=db_set_value_index(m_hDB, 0, path, &odbval, val_size, nASIC, TID_DWORD, FALSE))!=DB_SUCCESS) return status;
-//       printf("%s[%d]: %8.8x\n",path,nASIC,val[nASIC*15+14]);
+       variables_counters["nDatasyncloss&"][nASIC] = odbval;
        last_counters[nASIC][8]=value;
+
    }
 
    delete[] val;
@@ -253,30 +242,28 @@ int MutrigFEB::ReadBackDatapathStatus(uint16_t FPGA_ID){
    int status=m_mu.FEBsc_read(FEB.SB_Port(), val, 3, FE_DPMON_STATUS_REG);
    if(status!=3) return status;
 
-   //printf("MutrigFEB::ReadBackDatapathStatus(): val[]={%8.8x,%8.8x,%8.8x} --> ",val[0],val[1],val[2]);
-   char path[255];
+    // get odb object
+    char path[255];
+    sprintf(path, "%s/Variables/FEB datapath status", m_odb_prefix);
+    odb variables_feb_datapath_status(path);
 
-   value=val[0] & (1<<0);
-   sprintf(path, "%s/Variables/FEB datapath status/PLL locked", m_odb_prefix);
-   if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
+    // db_set_value_index
+    value=val[0] & (1<<0);
+    variables_feb_datapath_status["PLL locked&"][FPGA_ID] = value;
 
-   value=val[0] & (1<<8);
-   sprintf(path, "%s/Variables/FEB datapath status/Buffer full", m_odb_prefix);
-   if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
+    value=val[0] & (1<<8);
+    variables_feb_datapath_status["Buffer full&"][FPGA_ID] = value;
 
-   value=val[0] & (1<<4);
-   sprintf(path, "%s/Variables/FEB datapath status/Frame desync", m_odb_prefix);
-   if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),FPGA_ID, TID_BOOL,false))!=DB_SUCCESS) return status;
+    value=val[0] & (1<<4);
+    variables_feb_datapath_status["Frame desync&"][FPGA_ID] = value;
 
    for(int i=0; i < nModulesPerFEB()*nAsicsPerModule(); i++){
-      int a=FPGA_ID*nModulesPerFEB()*nAsicsPerModule()+i;
-      sprintf(path, "%s/Variables/FEB datapath status/DPA locked", m_odb_prefix);
-      value=(val[1]>>i) & 1;
-      if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),a, TID_BOOL,false))!=DB_SUCCESS) return status;
+       int a=FPGA_ID*nModulesPerFEB()*nAsicsPerModule()+i;
+       value=(val[1]>>i) & 1;
+       variables_feb_datapath_status["DPA locked&"][a] = value;
 
-      sprintf(path, "%s/Variables/FEB datapath status/RX ready", m_odb_prefix);
-      value=(val[2]>>i) & 1;
-      if((status = db_set_value_index(m_hDB, 0, path, &value, sizeof(BOOL),a, TID_BOOL,false))!=DB_SUCCESS) return status;
+       value=(val[2]>>i) & 1;
+       variables_feb_datapath_status["RX ready&"][a] = value;
    }
 
    return SUCCESS;
@@ -289,7 +276,7 @@ int MutrigFEB::ReadBackDatapathStatus(uint16_t FPGA_ID){
 // MIDAS callback function for FEB register Setter functions
 void MutrigFEB::on_settings_changed(odb o)
 {
-    std::string name = odb_set_str.get_name();
+    std::string name = o.get_name();
 
     cm_msg(MINFO, "MutrigFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
 
@@ -299,7 +286,7 @@ void MutrigFEB::on_settings_changed(odb o)
     BOOL bval;
 
     if (name == "dummy_config") {
-        bval = odb_set_str;
+        bval = o;
         for(auto FEB : _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
@@ -308,7 +295,7 @@ void MutrigFEB::on_settings_changed(odb o)
     }
 
     if (name == "dummy_data") {
-        bval = odb_set_str;
+        bval = o;
         for(auto FEB: _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
@@ -317,7 +304,7 @@ void MutrigFEB::on_settings_changed(odb o)
     }
 
     if (name == "dummy_data_fast") {
-        bval = odb_set_str;
+        bval = o;
         for(auto FEB: _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
@@ -326,7 +313,7 @@ void MutrigFEB::on_settings_changed(odb o)
     }
 
     if (name == "dummy_data_n") {
-        ival = odb_set_str;
+        ival = o;
         for(auto FEB: _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
@@ -335,7 +322,7 @@ void MutrigFEB::on_settings_changed(odb o)
     }
 
     if (name == "prbs_decode_disable") {
-        bval = odb_set_str;
+        bval = o;
         for(auto FEB: _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
@@ -344,7 +331,7 @@ void MutrigFEB::on_settings_changed(odb o)
     }
 
     if (name == "LVDS_waitforall") {
-        bval = odb_set_str;
+        bval = o;
         for(auto FEB: _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
@@ -353,7 +340,7 @@ void MutrigFEB::on_settings_changed(odb o)
     }
 
     if (name == "LVDS_waitforall_sticky") {
-        bval = odb_set_str;
+        bval = o;
         for(auto FEB: _this->m_FPGAs){
             if(!FEB.IsScEnabled()) continue; //skip disabled
             if(FEB.SB_Number()!=_this->m_SB_number) continue; //skip commands not for me
@@ -365,12 +352,12 @@ void MutrigFEB::on_settings_changed(odb o)
         //BOOL * barray=new BOOL[_this->GetNumASICs()];
         //barray = odb_set_str;
         for(int i=0;i<_this->GetNumASICs();i++){
-            _this->setMask(i, odb_set_str[i]);
+            _this->setMask(i, o[i]);
         }
     }
 
     if (name == "reset_datapath") {
-        bval = odb_set_str;
+        bval = o;
         if(bval){
             for(auto FEB : _this->m_FPGAs);
             if(!FEB.IsScEnabled()) continue; //skip disabled
@@ -378,11 +365,11 @@ void MutrigFEB::on_settings_changed(odb o)
             _this->DataPathReset(FEB.SB_Port());
         }
         value = FALSE; // reset flag in ODB
-        db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+        o = value;
     }
 
     if (name == "reset_asics") {
-        bval = odb_set_str;
+        bval = o;
         if(bval){
             for(auto FEB: _this->m_FPGAs){
                 if(!FEB.IsScEnabled()) continue; //skip disabled
@@ -390,12 +377,12 @@ void MutrigFEB::on_settings_changed(odb o)
                 _this->chipReset(FEB.SB_Port());
             }
             value = FALSE; // reset flag in ODB
-            db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+            o = value;
         }
     }
 
     if (name == "reset_lvds") {
-        bval = odb_set_str;
+        bval = o;
         if(bval){
             for(auto FEB: _this->m_FPGAs){
                 if(!FEB.IsScEnabled()) continue; //skip disabled
@@ -403,7 +390,7 @@ void MutrigFEB::on_settings_changed(odb o)
                 _this->LVDS_RX_Reset(FEB.SB_Port());
             }
             value = FALSE; // reset flag in ODB
-            db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+            o = value;
         }
     }
 
