@@ -609,14 +609,14 @@ void setup_odb(){
 }
 
 void setup_watches(){
-    odb * crodb = new odb("/Equipment/Clock Reset");
-    crodb->watch(cr_settings_changed);
+    odb crodb("/Equipment/Clock Reset");
+    crodb.watch(cr_settings_changed);
 
-    odb * linkodb = new odb("/Equipment/Links");
-    linkodb->watch(link_settings_changed);
+    odb linkodb("/Equipment/Links");
+    linkodb.watch(link_settings_changed);
 
-    odb * rrp = new odb("/Equipment/Clock Reset/Run Transitions/Request Run Prepare");
-    rrp->watch(prepare_run_on_request);
+    odb rrp("/Equipment/Clock Reset/Run Transitions/Request Run Prepare");
+    rrp.watch(prepare_run_on_request);
 }
 
 void setup_history(){
