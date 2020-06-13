@@ -10,7 +10,7 @@ using std::cout;
 using std::endl;
 using std::hex;
 
-clockboard::clockboard(std::string addr, int port):bus(addr, port)
+clockboard::clockboard(std::string addr, int port):bus(addr, port),recording(false)
 {
     if(!bus.isConnected())
         cout << "Connection failed" << endl;
@@ -124,7 +124,17 @@ int clockboard::init_i2c()
     return 0;
 }
 
-int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data)
+int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data){
+    if(recording)
+        ofile << "ReadReg " << std::hex<< (uint32_t)dev_addr << " " << (uint32_t)reg_addr << endl;
+
+    if(FASTI2C)
+        return read_i2c_reg_allbus(dev_addr, reg_addr, data);
+    else
+        return read_i2c_reg_fpga(dev_addr, reg_addr, data);
+}
+
+int clockboard::read_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data)
 {
     if(!setSlave(dev_addr, false)){
         return 0;
@@ -153,7 +163,24 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data)
     return 1;
 }
 
-int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[])
+int clockboard::read_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data)
+{
+    uint32_t addr = ADDR_I2C_FPGA + (dev_addr << 25) + (1<<24) + (reg_addr << 16);
+    data = bus.read(addr);
+    return 1;
+}
+
+int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]){
+    if(recording)
+        ofile << "ReadRegN " << std::hex<< (uint32_t)dev_addr << " " << (uint32_t)reg_addr << " " << (uint32_t)byte_num << endl;
+
+    if(FASTI2C)
+        return read_i2c_reg_allbus(dev_addr, reg_addr, byte_num, data);
+    else
+        return read_i2c_reg_fpga(dev_addr, reg_addr, byte_num, data);
+}
+
+int clockboard::read_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[])
 {
 
     if(!setSlave(dev_addr, false)){
@@ -192,7 +219,31 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_nu
 
 }
 
-int clockboard::write_i2c(uint8_t dev_addr, uint8_t data)
+int clockboard::read_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[])
+{
+    assert(byte_num <= 4 && byte_num > 0);
+    uint32_t addr = ADDR_I2C_FPGA + (dev_addr << 25) + (1<<24) + (reg_addr << 16) + ((byte_num-1)<< 14);
+    uint32_t alldata = bus.read(addr);
+    data[0] = alldata & 0xFF;
+    data[1] = (alldata & 0xFF00)>>8;
+    data[2] = (alldata & 0xFF0000)>>16;
+    data[3] = (alldata & 0xFF000000)>>24;
+    return 1;
+}
+
+int clockboard::write_i2c(uint8_t dev_addr, uint8_t data){
+    if(recording)
+        ofile << "Write " << std::hex<< (uint32_t)dev_addr << " " << (uint32_t)data << endl;
+
+
+    if(FASTI2C)
+        return write_i2c_allbus(dev_addr, data);
+    else
+        return write_i2c_fpga(dev_addr, data);
+}
+
+
+int clockboard::write_i2c_allbus(uint8_t dev_addr, uint8_t data)
 {
 
     if(!setSlave(dev_addr,false)){
@@ -211,7 +262,26 @@ int clockboard::write_i2c(uint8_t dev_addr, uint8_t data)
     return 1;
 }
 
-int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data)
+int clockboard::write_i2c_fpga(uint8_t dev_addr, uint8_t data)
+{
+    uint32_t addr = ADDR_I2C_FPGA + (dev_addr << 25) + (0<<24);
+    bus.write(addr, data);
+    return 1;
+}
+
+int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data){
+
+    if(recording)
+        ofile << "WriteReg " << std::hex<< (uint32_t)dev_addr << " " << (uint32_t)reg_addr << " "  << (uint32_t)data << endl;
+
+    if(FASTI2C)
+        return write_i2c_reg_allbus(dev_addr, reg_addr, data);
+    else
+        return write_i2c_reg_fpga(dev_addr, reg_addr, data);
+}
+
+
+int clockboard::write_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t data)
 {
     if(!setSlave(dev_addr,false)){
         return 0;
@@ -235,7 +305,26 @@ int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data)
 
 }
 
-int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[])
+int clockboard::write_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t data)
+{
+    uint32_t addr = ADDR_I2C_FPGA + (dev_addr << 25) + (1<<24) + (reg_addr<<16);
+    bus.write(addr, data);
+    return 1;
+}
+
+int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]){
+    if(recording)
+        ofile << "WriteRegN " << std::hex << (uint32_t)dev_addr << " " << (uint32_t)reg_addr
+              << " "  << (uint32_t)byte_num << " " << (uint32_t)data[3]<<(uint32_t)data[2]<<(uint32_t)data[1]<<(uint32_t)data[0] << endl;
+
+
+    //if(FASTI2C)
+        return write_i2c_reg_allbus(dev_addr, reg_addr, byte_num, data);
+    //else
+    //    return write_i2c_reg_fpga(dev_addr, reg_addr, byte_num, data);
+}
+
+int clockboard::write_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[])
 {
     if(!setSlave(dev_addr,false)){
         return 0;
@@ -783,6 +872,20 @@ int clockboard::configure_mother_current_monitor(uint16_t config)
                   I2C_CURRENT_MONITOR_CONFIG_REG_ADDR, 2, data);
     return 1;
 }
+
+void clockboard::start_recording()
+{
+    ofile.open("clocki2crecord.txt");
+    recording = true;
+}
+
+void clockboard::stop_recording()
+{
+    recording = false;
+    ofile.close();
+}
+
+
 
 
 uint32_t clockboard::checkTIP()

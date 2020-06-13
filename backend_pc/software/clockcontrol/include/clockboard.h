@@ -3,10 +3,13 @@
 
 #include "ipbus.h"
 #include "reset_protocol.h"
+#include <fstream>
 
 class clockboard
 {
 public:
+    static const bool FASTI2C = false;
+
     static const int MAXNDAUGHTER = 8;
     static const int MAXFIREFLYPERDAUGTHER = 3;
     static const int MAXFIREFLY = MAXNDAUGHTER * MAXFIREFLYPERDAUGTHER;
@@ -99,8 +102,31 @@ public:
 
     reset reset_protocol;
 
+    virtual void start_recording();
+    virtual void stop_recording();
+
 protected:
     ipbus bus;
+
+    std::ofstream ofile;
+    bool recording;
+
+    // I2C interface - all transactions via ipbus
+    virtual int read_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data);
+    virtual int read_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
+
+    virtual int write_i2c_allbus(uint8_t dev_addr, uint8_t data);
+    virtual int write_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t data);
+    virtual int write_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
+
+    // I2C interface - subtransatctions handled by FPGA
+    virtual int read_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data);
+    virtual int read_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
+
+    virtual int write_i2c_fpga(uint8_t dev_addr, uint8_t data);
+    virtual int write_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t data);
+    //virtual int write_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
+
 
     //I2C helpers
     uint32_t checkTIP();
@@ -130,6 +156,7 @@ protected:
     const uint32_t ADDR_I2C_CTRL            = 0xA;
     const uint32_t ADDR_I2C_DATA            = 0xB;
     const uint32_t ADDR_I2C_CMD_STAT        = 0xC;
+    const uint32_t ADDR_I2C_FPGA            = 0x10;
 
     const uint32_t I2C_BIT_READ             = 0x1;
     const uint32_t I2C_BIT_TIP              = 0x2;
