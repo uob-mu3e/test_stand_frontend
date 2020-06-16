@@ -251,9 +251,9 @@ INT frontend_init()
 
    //SciFi setup part
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
-   SciFiFEB::Create(*mup,hDB,equipment[EQUIPMENT_ID::SciFi].name,"/Equipment/SciFi"); //create FEB interface signleton for scifi
+   SciFiFEB::Create(*mup,equipment[EQUIPMENT_ID::SciFi].name,"/Equipment/SciFi"); //create FEB interface signleton for scifi
    SciFiFEB::Instance()->SetSBnumber(switch_id);
-   int status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance());
+   int status=mutrig::midasODB::setup_db("/Equipment/SciFi",SciFiFEB::Instance());
    if(status != SUCCESS){
       set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
       return status;

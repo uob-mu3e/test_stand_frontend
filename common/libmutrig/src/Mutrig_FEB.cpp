@@ -370,6 +370,7 @@ void MutrigFEB::on_settings_changed(odb o, void * userdata)
             o = FALSE; // reset flag in ODB
         }
     }
+    
 
     if (name == "reset_asics") {
         bval = o;

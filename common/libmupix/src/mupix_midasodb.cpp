@@ -17,33 +17,20 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
 
     unsigned int nrow = 200;
     unsigned int ncol = 128; //TODO: somewhere global?
-
-    HNDLE hTmp;
-    INT status = DB_SUCCESS;
     char set_str[255];
+    unsigned int nboards;
 
     /* Add [prefix]/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
     //TODO some globals should be per asic
     MUPIX_GLOBAL_STR(mupix_global);   // global mutrig settings
-    sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
-    //ddprintf("mutrig_midasodb: adding struct %s\n",set_str);
-    status = db_create_record(hDB, 0, set_str, strcomb(mupix_global));
-    //std::cout << "Created record for ";
-    //for (int i = 0; i < 100; ++i) std::cout << mupix_global[i];
-    //std::cout << std::endl;
-    status = db_find_key (hDB, 0, set_str, &hTmp);
-    if (status != DB_SUCCESS) {
-        cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
-        return status;
-    }
+    sprintf(set_str, "%s/Settings/ASICs", prefix);
+    odb settings_asics(set_str);
+    settings_asics["/Global"] = strcomb(mupix_global);
 
     //Set number of ASICs, derived from mapping
-    INT nasics=FEB_interface->GetNumASICs();
-    sprintf(set_str, "%s/Settings/ASICs/Global/Num asics", prefix);
-    if((status = db_set_value(hDB ,0,set_str, &nasics, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
-    //TODO: assume number of boards is same as number of asics. AFAIK this is currently a correct assumption
-    sprintf(set_str, "%s/Settings/ASICs/Global/Num boards", prefix);
-    if((status = db_set_value(hDB ,0,set_str, &nasics, sizeof(INT), 1, TID_INT))!=DB_SUCCESS) return status;
+    unsigned int nasics=FEB_interface->GetNumASICs();
+    settings_asics["/Num asics"] = nasics;
+    settings_asics["/Num boards"] = nasics;
 
     if(nasics==0){
         cm_msg(MINFO,"mutrig_midasodb::setup_db","Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
@@ -54,114 +41,77 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
     //TODO: if we have more than one FE-FPGA, there might be more than one DAQ class.
     MUPIX_DAQ_STR(mupix_daq);         // global settings for daq/fpga
     sprintf(set_str, "%s/Settings/Daq", prefix);
-    status = db_create_record(hDB, 0, set_str, strcomb(mupix_daq));
-    status = db_find_key (hDB, 0, set_str, &hTmp);
-    if (status != DB_SUCCESS) {
-        cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
-        return status;   
-    }
-    //open hot link
-    db_watch(hDB, hTmp, &MupixFEB::on_settings_changed, FEB_interface);
+    odb settings_daq(set_str);
+    settings_daq = strcomb(mupix_daq); 
+    // use lambda funciton for passing FEB_interface
+    auto on_settings_changed_partial = 
+        [&FEB_interface](odb o) { return MupixFEB::on_settings_changed(o, FEB_interface);
+        };
+
 
     //init all values on FEB
     if(init_FEB){
-        INT ival;
         BOOL bval;
-        INT bsize=sizeof(bval);
 
-        sprintf(set_str, "%s/Settings/Daq/dummy_config", prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
-        //FEB_interface->setDummyConfig(SciFiFEB::FPGA_broadcast_ID,bval);
+        // get odb instance
+        sprintf(set_str, "%s/Settings/Daq", prefix);
+        odb settings_daq(set_str);
 
-        sprintf(set_str, "%s/Settings/Daq/dummy_data", prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,&bval,&bsize,TID_BOOL);
+        bval = settings_daq["/dummy_config"];
+        // TODO: do something here
+        //FEB_interface->setDummyConfig(SciFiFEB::FPGA_broadcast_ID,bval); 
+        
+        bval = settings_daq["dummy_daq"];
+        // TODO: do something here
         //FEB_interface->setDummyData_Enable(SciFiFEB::FPGA_broadcast_ID,bval);
-
-        BOOL barray[16];
-        INT  barraysize=sizeof(barray);
-        sprintf(set_str, "%s/Settings/Daq/mask", prefix);
-        db_find_key(hDB, 0, set_str, &hTmp);
-        db_get_data(hDB,hTmp,barray,&barraysize,TID_BOOL);
-	//for(int i=0;i<16;i++)
-		//FEB_interface->setMask(i,barray[i]);
+        
+        // TODO: do something here
+        // for(int i=0;i<16;i++)
+        // FEB_interface->setMask(i,settings_daq["mask"]i]);
     }
-
-    unsigned int n;
-    int size = sizeof(n);
 
     /* Equipment/Pixel/Settings/Chipdacs (structure defined in mupix_MIDAS_config.h) */
-
     MUPIX_CHIPDACS_STR(mupix_chipdacs);
-    for(unsigned int i = 0; i < nasics; ++i) {
-        sprintf(set_str, "%s/Settings/Chipdacs/%u", prefix,i);
-        status = db_create_record(hDB, 0, set_str, strcomb(mupix_chipdacs));
-        status = db_find_key (hDB, 0, set_str, &hTmp);
-        if (status != DB_SUCCESS) {
-            cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
-            return status;
-        }
-    }
-
     MUPIX_DIGIROWDACS_STR(mupix_digirowdacs);
-    for(unsigned int i = 0; i < nasics; ++i) {
-        for (unsigned int row = 0; row < nrow; ++row) {
-            sprintf(set_str, "%s/Settings/DigitalRowdacs/%u/row_%u", prefix,i,row);
-            status = db_create_record(hDB, 0, set_str, strcomb(mupix_digirowdacs));
-            status = db_find_key (hDB, 0, set_str, &hTmp);
-            if (status != DB_SUCCESS) {
-                cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
-                return status;
-            }
-        }
-    }
-
     MUPIX_COLDACS_STR(mupix_coldacs);
-    for(unsigned int i = 0; i < nasics; ++i) {
-        for (unsigned int col = 0; col < ncol; ++col) {
-            sprintf(set_str, "%s/Settings/Coldacs/%u/col_%u", prefix,i,col);
-            status = db_create_record(hDB, 0, set_str, strcomb(mupix_coldacs));
-            status = db_find_key (hDB, 0, set_str, &hTmp);
-            if (status != DB_SUCCESS) {
-                cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
-                return status;
-            }
-        }
-    }
-
     MUPIX_ROWDACS_STR(mupix_rowdacs);
-    for(unsigned int i = 0; i < nasics; ++i) {
-        for (unsigned int row = 0; row < nrow; ++row) {
-            sprintf(set_str, "%s/Settings/Rowdacs/%u/row_%u", prefix,i,row);
-            status = db_create_record(hDB, 0, set_str, strcomb(mupix_rowdacs));
-            status = db_find_key (hDB, 0, set_str, &hTmp);
-            if (status != DB_SUCCESS) {
-                cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
-                return status;
-            }
-        }
-    }
-
     MUPIX_CHIPDACS2_STR(mupix_chipdacs2);
-    for(unsigned int i = 0; i < nasics; ++i) {
-        sprintf(set_str, "%s/Settings/Chipdacs2/%u", prefix,i);
-        status = db_create_record(hDB, 0, set_str, strcomb(mupix_chipdacs2));
-        status = db_find_key (hDB, 0, set_str, &hTmp);
-        if (status != DB_SUCCESS) {
-            cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
-            return status;
-        }
-    }
-
     MUPIX_VOLTAGEDACS_STR(mupix_voltagedacs);
+
+    // get odb instances
+    sprintf(set_str, "%s/Settings/Chipdacs", prefix);
+    odb settings_chipdacs(set_str);
+    
+    sprintf(set_str, "%s/Settings/DigitalRowdacs", prefix);
+    odb settings_digital_rowdacs(set_str);
+    
+    sprintf(set_str, "%s/Settings/Coldacs", prefix);
+    odb settings_coldacs(set_str);
+
+    sprintf(set_str, "%s/Settings/Rowdacs", prefix); 
+    odb settings_rowdacs(set_str);
+
+    sprintf(set_str, "%s/Settings/Chipdacs2", prefix);
+    odb settings_chipdacs2(set_str);
+
+    sprintf(set_str, "%s/Settings/Voltagedacs", prefix);
+    odb settings_voltagedacs(set_str);
+    
     for(unsigned int i = 0; i < nasics; ++i) {
-        sprintf(set_str, "%s/Settings/Voltagedacs/%u", prefix,i);
-        status = db_create_record(hDB, 0, set_str, strcomb(mupix_voltagedacs));
-        status = db_find_key (hDB, 0, set_str, &hTmp);
-        if (status != DB_SUCCESS) {
-            cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
-            return status;
+        sprintf(set_str, "/%u", i);
+        settings_chipdacs[set_str] = strcomb(mupix_chipdacs);
+        settings_chipdacs2[set_str] = strcomb(mupix_chipdacs2);
+        settings_voltagedacs[set_str] = strcomb(mupix_chipdacs2);
+
+        for (unsigned int row = 0; row < nrow; ++row) {
+            sprintf(set_str, "/%u/row_%u", i, row);
+            settings_digital_rowdacs[set_str] = strcomb(mupix_digirowdacs);
+            settings_rowdacs[set_str] = strcomb(mupix_rowdacs);
+        }
+
+        for (unsigned int col = 0; col < ncol; ++col) {
+            sprintf(set_str, "/%u/col_%u", i, col);
+            settings_coldacs[set_str] = strcomb(mupix_coldacs);
         }
     }
 
@@ -169,23 +119,21 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
 
     /* Equipment/Pixel/Settings/Boarddacs (structure defined in mupix_MIDAS_config.h) */
     //Get predefined number of boards from ODB
-    unsigned int nboards;
-    int bsize = sizeof(nboards);
-    sprintf(set_str, "%s/Settings/ASICs/Global/Num boards", prefix);
-    db_get_value(hDB, 0, set_str, &nboards, &bsize, TID_INT, 0);
-
     MUPIX_BOARDDACS_STR(mupix_boarddacs);
+
+    // get nboards from odb instance
+    sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
+    odb settings_asics_global(set_str);
+    nboards = settings_asics_global["/Num boards"];
+
+    sprintf(set_str, "%s/Settings/Boarddacs", prefix);
+    odb settings_boarddacs(set_str);
     for(unsigned int i = 0; i < nboards; ++i) {
-        sprintf(set_str, "%s/Settings/Boarddacs/%u", prefix, i);
-        status = db_create_record(hDB, 0, set_str, strcomb(mupix_boarddacs));
-        status = db_find_key (hDB, 0, set_str, &hTmp);
-        if (status != DB_SUCCESS) {
-            cm_msg(MINFO,"frontend_init", "Key %s not found", set_str);
-            return status;
-        }
+        sprintf(set_str, "/%u", i); 
+        settings_boarddacs[set_str] = strcomb(mupix_boarddacs);
     }
 
-    return status;
+    return DB_SUCCESS;
 }
 
 

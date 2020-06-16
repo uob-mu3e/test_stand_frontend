@@ -60,6 +60,10 @@ namespace dummy_mudaq {
         return length;
     }
 
+    int DummyMudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr){
+        return length;
+    }
+
     // DMA dummy mudaq
 
     dummy_mudaq::DummyDmaMudaqDevice::DummyDmaMudaqDevice(const std::string& path) :

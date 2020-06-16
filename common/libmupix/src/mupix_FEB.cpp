@@ -10,6 +10,7 @@ Contents:       Definition of functions to talk to a mupix-based FEB. Designed t
 
 #include "mupix_FEB.h"
 #include "midas.h"
+#include "odbxx.h"
 #include "mfe.h" //for set_equipment_status
 
 #include "mudaq_device_scifi.h"
@@ -17,6 +18,8 @@ Contents:       Definition of functions to talk to a mupix-based FEB. Designed t
 #include "mupix_midasodb.h"
 #include <thread>
 #include <chrono>
+
+using midas::odb;
 
 #include "default_config_mupix.h" //TODO avoid this, reproduce configure routine from chip dacs
 
@@ -246,41 +249,45 @@ int MupixFEB::ConfigureASICs(){
 }
 
 //MIDAS callback function for FEB register Setter functions
-void MupixFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
+void MupixFEB::on_settings_changed(odb o, void * userdata)
 {
-   MupixFEB* _this=static_cast<MupixFEB*>(userdata);
-   KEY key;
-   db_get_key(hDB, hKey, &key);
-   printf("MupixFEB::on_settings_changed(%s)\n",key.name);
-   if (std::string(key.name) == "dummy_config") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "MupixFEB::on_settings_changed", "Set dummy_config to %d", value);
- //     _this->setDummyConfig(MupixFEB::FPGA_broadcast_ID,value);
+    std::string name = o.get_name();
+
+    cm_msg(MINFO, "MupixFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
+
+    MupixFEB* _this=static_cast<MupixFEB*>(userdata);
+    
+    INT ival;
+    BOOL bval;
+
+    if (name == "dummy_config") {
+        bval = o;
+        
+        cm_msg(MINFO, "MupixFEB::on_settings_changed", "Set dummy_config %d", bval);
+        // TODO: do something here
+        //     _this->setDummyConfig(MupixFEB::FPGA_broadcast_ID,value);
    }
-   if (std::string(key.name) == "reset_asics") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if(value){
+
+   if (name == "reset_asics") {
+      bval = o;
+      if(bval){
          cm_msg(MINFO, "MupixFEB::on_settings_changed", "reset_asics");
+         // TODO: do something here
 //         _this->chipReset(MupixFEB::FPGA_broadcast_ID);
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+         o = FALSE; // reset flag in ODB
       }
    }
-   if (std::string(key.name) == "reset_boards") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if(value){
+   
+   if (name == "reset_boards") {
+      bval = o;
+      if(bval){
          cm_msg(MINFO, "MupixFEB::on_settings_changed", "reset_boards");
+         // TODO: do something here
 //         _this->chipReset(MupixFEB::FPGA_broadcast_ID);
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+        o = FALSE; // reset flag in ODB
       }
    }
+
 }
 
 unsigned char reverse(unsigned char b) {
