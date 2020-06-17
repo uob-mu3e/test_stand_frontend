@@ -247,9 +247,9 @@ INT frontend_init()
    //end of SciFi setup part
    //SciTiles setup part
    set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Initializing...", "var(--myellow)");
-   TilesFEB::Create(*mup,hDB,equipment[EQUIPMENT_ID::SciTiles].name,"/Equipment/SciTiles"); //create FEB interface signleton for scifi
+   TilesFEB::Create(*mup, equipment[EQUIPMENT_ID::SciTiles].name, "/Equipment/SciTiles"); //create FEB interface signleton for scifi
    TilesFEB::Instance()->SetSBnumber(switch_id);
-   status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciTiles", TilesFEB::Instance());
+   status=mutrig::midasODB::setup_db("/Equipment/SciTiles", TilesFEB::Instance());
    if(status != SUCCESS){
       set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Start up failed", "var(--mred)");
       return status;
@@ -269,9 +269,9 @@ INT frontend_init()
 
    //Mupix setup part
    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");
-   MupixFEB::Create(*mup,hDB,equipment[EQUIPMENT_ID::Mupix].name,"/Equipment/Mupix"); //create FEB interface signleton for scifi
+   MupixFEB::Create(*mup, equipment[EQUIPMENT_ID::Mupix].name, "/Equipment/Mupix"); //create FEB interface signleton for scifi
    MupixFEB::Instance()->SetSBnumber(switch_id);
-   status=mupix::midasODB::setup_db(hDB,"/Equipment/Mupix",MupixFEB::Instance(),true);
+   status=mupix::midasODB::setup_db("/Equipment/Mupix",MupixFEB::Instance(),true);
    if(status != SUCCESS){
       set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Start up failed", "var(--mred)");
       return status;
@@ -432,7 +432,7 @@ INT init_scifi() {
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
     SciFiFEB::Create(*mup, equipment[EQUIPMENT_ID::SciFi].name, "/Equipment/SciFi"); //create FEB interface signleton for scifi
     SciFiFEB::Instance()->SetSBnumber(switch_id);
-    status=mutrig::midasODB::setup_db(hDB,"/Equipment/SciFi",SciFiFEB::Instance());
+    status=mutrig::midasODB::setup_db("/Equipment/SciFi",SciFiFEB::Instance());
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
         return status;

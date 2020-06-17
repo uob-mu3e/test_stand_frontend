@@ -12,9 +12,9 @@ add_library(libmutrig STATIC
     include/Tiles_FEB.h
     src/Tiles_FEB.cpp
 )
-target_link_libraries(libmutrig  libmudaq ${Boost_LIBRARIES})
+target_link_libraries(libmutrig  libmudaq dl ${Boost_LIBRARIES})
 target_include_directories(libmutrig
-PUBLIC 
+PUBLIC
 	"include"
 PRIVATE
 	${MIDASINCLUDE_DIR}

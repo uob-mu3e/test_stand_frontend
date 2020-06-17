@@ -251,9 +251,9 @@ INT frontend_init()
 
    //Mupix setup part
    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");
-   MupixFEB::Create(*mup,hDB,equipment[EQUIPMENT_ID::Mupix].name,"/Equipment/Mupix"); //create FEB interface signleton for scifi
+   MupixFEB::Create(*mup,equipment[EQUIPMENT_ID::Mupix].name,"/Equipment/Mupix"); //create FEB interface signleton for scifi
    MupixFEB::Instance()->SetSBnumber(switch_id);
-   int status=mupix::midasODB::setup_db(hDB,"/Equipment/Mupix",MupixFEB::Instance(),true);
+   int status=mupix::midasODB::setup_db("/Equipment/Mupix",MupixFEB::Instance(),true);
    if(status != SUCCESS){
       set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Start up failed", "var(--mred)");
       return status;

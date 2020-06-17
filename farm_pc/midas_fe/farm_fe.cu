@@ -86,8 +86,8 @@ void setup_watches();
 
 INT init_mudaq();
 
-void link_active_settings_changed(odb);
-void datagen_settings_changed(odb);
+void link_active_settings_changed(odb &o);
+void datagen_settings_changed(odb &o);
 /*-- Equipment list ------------------------------------------------*/
 
 EQUIPMENT equipment[] = {
@@ -184,7 +184,7 @@ void setup_watches(){
 
 }
 
-void datagen_settings_changed(odb o)
+void datagen_settings_changed(odb &o)
 {
     std::string name = o.get_name();
 
@@ -205,7 +205,7 @@ void datagen_settings_changed(odb o)
 
 }
 
-void link_active_settings_changed(odb o){
+void link_active_settings_changed(odb &o){
 
     /* get link active from odb */
     uint64_t link_active_from_odb = 0;

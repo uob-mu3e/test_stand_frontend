@@ -27,7 +27,13 @@ class TilesFEB : public MutrigFEB{
 		RebuildFEBsMap();
         };
    public:
-      static TilesFEB* Create(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix){printf("TilesFEB::Create(%s) as %s\n",odb_prefix,equipment_name);if(!m_instance) m_instance=new TilesFEB(mu,equipment_name,odb_prefix); return m_instance;};
+      static TilesFEB* Create(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix)
+      {
+          printf("TilesFEB::Create(%s) as %s\n",odb_prefix,equipment_name);
+          if(!m_instance) 
+              m_instance=new TilesFEB(mu,equipment_name,odb_prefix); 
+          return m_instance;
+      };
       static TilesFEB* Instance(){return m_instance;};
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID

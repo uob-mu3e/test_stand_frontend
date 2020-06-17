@@ -27,7 +27,7 @@ namespace midasODB {
 // /Equipment/Mupix/Settings/ASICs/%d/Channels/%d/Conf
 //Relies on {prefix}/Settings/ASICs/Global/Num asics to build the tree of the right size
 //If init_FEB is set, the registers on the FEB-FPGA are initialized
-int setup_db(HNDLE& hDB, const char* prefix,MupixFEB* FEB_inteface,bool init_FEB);
+int setup_db(const char* prefix,MupixFEB* FEB_inteface,bool init_FEB);
 
 //Foreach loop over all boards/asics under this prefix. Call with a lambda function,
 //e.g. midasODB::MapForEach(hDB, "/Equipment/Mupix",[mudaqdev_ptr](Config c,int asic){mudaqdev_ptr->ConfigureAsic(c,asic);});
