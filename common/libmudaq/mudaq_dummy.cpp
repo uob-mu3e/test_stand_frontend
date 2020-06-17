@@ -36,32 +36,38 @@ namespace dummy_mudaq {
     }
 
     bool DummyMudaqDevice::is_ok() const {
-        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq is ok");
+        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: is_ok()");
         return true;
     }
 
     bool DummyMudaqDevice::open() {
-        cm_msg(MINFO, "Dummy MudaqDevice" , "Open dummy mudaq");
+        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: open()");
         return true;
     }
 
     void DummyMudaqDevice::close() {
-        cm_msg(MINFO, "Dummy MudaqDevice" , "Close dummy mudaq");
+        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: close()");
     }
 
     void DummyMudaqDevice::FEBsc_resetMaster(){
-        cm_msg(MINFO, "Dummy MudaqDevice" , "Resetting slow control master");
+        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: FEBsc_resetMaster()");
     }
     void DummyMudaqDevice::FEBsc_resetSlave(){
-        cm_msg(MINFO, "Dummy MudaqDevice" , "Resetting slow control slave");
+        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: FEBsc_resetSlave()");
     }
 
     int DummyMudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError){
+        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: FEBsc_read()");
         return length;
     }
 
     int DummyMudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr){
+        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: FEBsc_read()");
         return length;
+    }
+
+    void DummyMudaqDevice::write_register(unsigned idx, uint32_t value){
+        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: write_register()");
     }
 
     // DMA dummy mudaq

@@ -30,7 +30,8 @@ class SciFiFEB : public MutrigFEB{
    public:
       static SciFiFEB* Create(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix)
       {
-          printf("SciFiFEB::Create(%s) as %s\n", odb_prefix, equipment_name);
+          
+          cm_msg(MINFO, "SciFi_FEB", "SciFiFEB::Create(%s) as %s", odb_prefix, equipment_name);
           if(!m_instance)
               m_instance=new SciFiFEB(mu, equipment_name, odb_prefix);
           return m_instance;

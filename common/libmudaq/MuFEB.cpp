@@ -38,57 +38,42 @@ void MuFEB::RebuildFEBsMap(){
     HNDLE m_hDB;
     int size;
 
-   //clear map, we will rebuild it now
-   m_FPGAs.clear();
-/*
-const char *link_settings_str[] = {
-"SwitchingBoardMask = INT[4] :",
-"SwitchingBoardNames = STRING[4] :",
-"FrontEndBoardMask = INT[192] :",
-"FrontEndBoardType = INT[192] :",
-"FrontEndBoardNames = STRING[192] :",
-*/
+    //clear map, we will rebuild it now
+    m_FPGAs.clear();
+    /*
+        const char *link_settings_str[] = {
+            "SwitchingBoardMask = INT[4] :",
+            "SwitchingBoardNames = STRING[4] :",
+            "FrontEndBoardMask = INT[192] :",
+            "FrontEndBoardType = INT[192] :",
+            "FrontEndBoardNames = STRING[192] :",
+    */
+    //TODO: create struct and use db_get_record
 
-   //TODO: create struct and use db_get_record
+    //get FEB type -> find ours
+    
+    // get odb instance for links settings
+    odb links_settings("/Equipment/Links/Settings");
 
-   //get FEB type -> find ours
-   INT febtype[MAX_N_FRONTENDBOARDS];
-   size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
-   db_find_key(m_hDB, 0, "/Equipment/Links/Settings/FrontEndBoardType", &hKey);
-   assert(hKey);
-   db_get_data(m_hDB, hKey, &febtype, &size, TID_INT);
-   //get FEB mask -> set enable for our FEBs
-   INT linkmask[MAX_N_FRONTENDBOARDS];
-   size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
-   db_find_key(m_hDB, 0, "/Equipment/Links/Settings/LinkMask", &hKey);
-   assert(hKey);
-   db_get_data(m_hDB, hKey, &linkmask, &size, TID_INT);
-   //fields to assemble fiber-driven name
-   char sbnames[MAX_N_SWITCHINGBOARDS][32];
-   size = sizeof(char)*MAX_N_SWITCHINGBOARDS*32;
-   db_find_key(m_hDB, 0, "/Equipment/Links/Settings/SwitchingBoardNames", &hKey);
-   assert(hKey);
-   db_get_data(m_hDB, hKey, &sbnames, &size, TID_STRING);
-   char febnames[MAX_N_FRONTENDBOARDS][32];
-   size = sizeof(char)*MAX_N_FRONTENDBOARDS*32;
-   db_find_key(m_hDB, 0, "/Equipment/Links/Settings/FrontEndBoardNames", &hKey);
-   assert(hKey);
-   db_get_data(m_hDB, hKey, &febnames, &size, TID_STRING);
-
-   //fill our list. Currently only mapping primaries; secondary fibers for SciFi are implicitely mapped to the preceeding primary
-   int lastPrimary=-1;
-   int nSecondaries=0;
-   char reportStr[255];
-   for(uint16_t ID=0;ID<MAX_N_FRONTENDBOARDS;ID++){
-      std::string name_link;
-      name_link=sbnames[ID/MAX_LINKS_PER_SWITCHINGBOARD];
-      name_link+=":";
-      name_link+=febnames[ID];
-      if(febtype[ID]==this->GetTypeID()){
-         lastPrimary=m_FPGAs.size();
-         m_FPGAs.push_back({ID,linkmask[ID],name_link.c_str()});
-         sprintf(reportStr,"TX Fiber %d is mapped to Link %u \"%s\"                            --> SB=%u.%u %s",
-             ID,m_FPGAs[lastPrimary].GetLinkID(),m_FPGAs[lastPrimary].GetLinkName().c_str(),
+    //fields to assemble fiber-driven name
+    auto febtype = links_settings["/FrontEndBoardType"];
+    auto linkmask = links_settings["/LinkMask"];
+    auto sbnames = links_settings["/SwitchingBoardNames"];
+    auto febnames = links_settings["/FrontEndBoardNames"];
+    
+    //fill our list. Currently only mapping primaries; secondary fibers for SciFi are implicitely mapped to the preceeding primary
+    int lastPrimary=-1;
+    int nSecondaries=0;
+    char reportStr[255];
+    for(uint16_t ID=0;ID<MAX_N_FRONTENDBOARDS;ID++){
+        std::string name_link;
+        name_link= sbnames[ID/MAX_LINKS_PER_SWITCHINGBOARD];
+        name_link+=":";
+        name_link+= febnames[ID];
+        if((INT) febtype[ID]==this->GetTypeID()){
+            lastPrimary=m_FPGAs.size();
+            m_FPGAs.push_back({ID,linkmask[ID],name_link.c_str()});
+            sprintf(reportStr,"TX Fiber %d is mapped to Link %u \"%s\"                            --> SB=%u.%u %s", ID,m_FPGAs[lastPrimary].GetLinkID(),m_FPGAs[lastPrimary].GetLinkName().c_str(),
              m_FPGAs[lastPrimary].SB_Number(),m_FPGAs[lastPrimary].SB_Port(),
              !m_FPGAs[lastPrimary].IsScEnabled()?"\t[SC disabled]":"");
          cm_msg(MINFO,"MuFEB::RebuildFEBsMap",reportStr);

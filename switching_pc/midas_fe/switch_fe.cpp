@@ -229,7 +229,7 @@ INT frontend_init()
     odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
     try{ set_feb_enable(get_link_active_from_odb(cur_links_odb)); }
     catch(...){ return FE_ERR_ODB;}
-
+    
     status = init_scifi();
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
@@ -960,25 +960,17 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
 uint64_t get_link_active_from_odb(odb o){
 
-
-   INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
-   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
-   int status = db_get_value(hDB, 0, "/Equipment/Links/Settings/LinkMask", frontend_board_active_odb, &size, TID_INT, false);
-   if (status != SUCCESS){
-      cm_msg(MERROR,"switch_fe","Error getting record for /Equipment/Links/Settings");
-      throw;
-   }
-
    /* get link active from odb */
    uint64_t link_active_from_odb = 0;
    for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
-      int offset = MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
-      if((frontend_board_active_odb[offset + link] == FEBLINKMASK::ON) ||
-	(frontend_board_active_odb[offset + link] == FEBLINKMASK::DataOn))
-	 //a standard FEB link (SC and data) is considered enabled if RX and TX are. 
-	 //a secondary FEB link (only data) is enabled if RX is.
-	 //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
-         link_active_from_odb += (1 << link);
+      int offset = MAX_LINKS_PER_SWITCHINGBOARD * switch_id;
+      int cur_mask = o[offset + link];
+      if((cur_mask == FEBLINKMASK::ON) || (cur_mask == FEBLINKMASK::DataOn)){
+        //a standard FEB link (SC and data) is considered enabled if RX and TX are. 
+	    //a secondary FEB link (only data) is enabled if RX is.
+	    //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
+        link_active_from_odb += (1 << link);
+      }
    }
    return link_active_from_odb;
 }
