@@ -53,6 +53,16 @@ make terminal
 
 
 
+## Simulation
+
+```
+mkdir -d $HOME/.local/share/ghdl/vendors
+cd $HOME/.local/share/ghdl/vendors
+/usr/lib/ghdl/vendors/compile-altera.sh --altera --vhdl2008
+```
+
+
+
 ## Troubleshooting
 
 - Quartus 19.1 / Perl Getopt::Long
