@@ -506,7 +506,7 @@ void setup_odb(){
     //midas::odb::set_debug(true);
     odb settings = {
         {"Active" , true},
-        {"IP", "0.0.0.0"},  //192.168.0.220"},
+        {"IP", "192.168.0.220"},
         {"Port", 50001},
         {"N_READBACK", 4},
         {"TX_CLK_MASK", 0x0AA},
@@ -573,11 +573,13 @@ void setup_odb(){
              settings["Names CRT1"][daughterstartindex + i*ndaughtervariables +  2 + j*nffvariables +2] = s;
          }
      }
-    settings.connect("/Equipment/Clock Reset/Settings");
+    //cout << "Dump: " <<  settings.dump() << endl;
+
+    settings.connect("/Equipment/Clock Reset/Settings", true);
 
     odb variables = {
          {"Daughters Present", 0},
-         {"Fireflys Present", std::array<int,clockboard::MAXFIREFLY>{}},
+         {"Fireflys Present", std::array<int,clockboard::MAXNDAUGHTER>{}},
          {"CRT1", std::array<float,CRT1SIZE>{}}
     };
     variables.connect("/Equipment/Clock Reset/Variables");
@@ -609,7 +611,7 @@ void setup_odb(){
 }
 
 void setup_watches(){
-    odb crodb("/Equipment/Clock Reset");
+    odb crodb("/Equipment/Clock Reset/Settings");
     crodb.watch(cr_settings_changed);
 
     odb linkodb("/Equipment/Links");

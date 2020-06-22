@@ -7,13 +7,19 @@ using namespace std;
 int main()
 {
     cout << "Starting" << endl;
-    clockboard cb("10.32.113.218", 50001);
+    clockboard cb("192.168.0.220", 50001);
     if(!cb.isConnected()){
         cout << "No connection!" << endl;
         return -1;
     }
     cout << "Connected" << endl;
     cb.init_clockboard();
+
+    uint32_t dp = cb.daughters_present();
+    cout << std::hex << "Daughters: " << dp << endl;
+
+    float fancurrent = cb.read_fan_current();
+    cout << "Fan Current " << fancurrent << " mA" << endl;
 
     float current = cb.read_mother_board_current();
     cout << "MB Current " << current << " mA" << endl;

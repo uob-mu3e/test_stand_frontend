@@ -128,7 +128,7 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data){
     if(recording)
         ofile << "ReadReg " << std::hex<< (uint32_t)dev_addr << " " << (uint32_t)reg_addr << endl;
 
-    if(FASTI2C)
+    if(!FASTI2C)
         return read_i2c_reg_allbus(dev_addr, reg_addr, data);
     else
         return read_i2c_reg_fpga(dev_addr, reg_addr, data);
@@ -174,7 +174,7 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_nu
     if(recording)
         ofile << "ReadRegN " << std::hex<< (uint32_t)dev_addr << " " << (uint32_t)reg_addr << " " << (uint32_t)byte_num << endl;
 
-    if(FASTI2C)
+    if(!FASTI2C)
         return read_i2c_reg_allbus(dev_addr, reg_addr, byte_num, data);
     else
         return read_i2c_reg_fpga(dev_addr, reg_addr, byte_num, data);
@@ -236,7 +236,7 @@ int clockboard::write_i2c(uint8_t dev_addr, uint8_t data){
         ofile << "Write " << std::hex<< (uint32_t)dev_addr << " " << (uint32_t)data << endl;
 
 
-    if(FASTI2C)
+    if(!FASTI2C)
         return write_i2c_allbus(dev_addr, data);
     else
         return write_i2c_fpga(dev_addr, data);
@@ -274,7 +274,7 @@ int clockboard::write_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data){
     if(recording)
         ofile << "WriteReg " << std::hex<< (uint32_t)dev_addr << " " << (uint32_t)reg_addr << " "  << (uint32_t)data << endl;
 
-    if(FASTI2C)
+    if(!FASTI2C)
         return write_i2c_reg_allbus(dev_addr, reg_addr, data);
     else
         return write_i2c_reg_fpga(dev_addr, reg_addr, data);
@@ -772,6 +772,10 @@ bool clockboard::daughter_present(uint8_t daughter)
     if(!setSlave(DAUGHTERS[daughter],false)){
        return false;
      }
+
+    bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_STOP); // Stop command
+    checkBUSY();
+
     return true;
 }
 
