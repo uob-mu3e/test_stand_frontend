@@ -1,0 +1,87 @@
+<!-- 
+    Custom Page for MuPix Tune DACS 
+    Martin Mueller June 2020
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="midas.css">
+    <script src="controls.js"></script>
+    <script src="midas.js"></script>
+    <script src="mhttpd.js"></script>
+    <script src="obsolete.js"> </script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script>
+
+function createTable() {
+    var x,y,
+        o = [];
+    for (y = 0; y < 200; y++){
+        o.push("<tr>");
+        for(x = 0; x < 42;x++)//127; x++)
+            o.push("<td><div onClick=\"editDAC("+x+","+y+")\">0</div></td>");
+        o.push("</tr>");
+    }
+    $("#" + "MpTuneDacTable").html(o.join(""));
+    var rows = document.getElementById("MpTuneDacTable").rows,
+    numRows = rows.length,
+    numCols = rows[0].cells.length,
+    colors = ["green","yellow","orange","red"];
+
+    for(i=0;i<numRows;i++){
+        for(j=0;j<numCols;j++){
+            //$(rows[i].cells[j]).html(i).css("background-color", colors[i]);;
+        }
+    }
+}
+
+function editDAC(x,y) {
+    var row = document.getElementById("MpTuneDacTable").rows,
+    var value = prompt("new DAC Value for "+x+","+y+":", "0");
+    row[x].cells[y].html(newDAC);
+    
+}
+
+
+    </script>
+    
+    <title>MuPix Tune DACs</title>
+</head>
+<body class="mcss" onload="mhttpd_init('myPage');">
+
+<!-- header and side navigation will be filled in mhttpd_start -->
+<div id="mheader"></div>
+<div id="msidenav"></div>
+<div id="mmain">
+<div name="modb" data-odb-path="/Equipment/MuPix/Settings/Boarddacs/0" onchange="reloadMuPixSettings(this.value)"> </div >
+
+      <table class="mtable" width="100%" id="unknown">
+
+        <!-- MuPix 3                                         -->
+        <table class="mtable" width="100%" id="unknown">
+        <tr>
+            <td colspan="100" class="mtableheader"> MuPix Tune DACs </td>
+        </tr>
+        <tr>
+            <td> Select ChipID: </td>
+            <td><div name="modbvalue"
+                    data-odb-path="/Equipment/MuPix/Settings/TuneDACs/ChipID" id="chID"></div></td>
+            <td> 
+                <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/Switching/Settings/MupixConfig" data-odb-value="y"> Load most recent</button>
+                <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/Switching/Settings/MupixConfig" data-odb-value="y"> Load run Nr. </button>
+                <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/Switching/Settings/MupixConfig" data-odb-value="y"> Store & Enable </button>
+            </td>
+        </tr>
+        </table>
+      </table>
+      <td><input type="text" id="thlow0" value="560" oninput="createTable()">mV</td>
+    <font style="font-size:5pt;">
+    <table id="MpTuneDacTable">
+    </table>
+    </font>
+
+</div>
+</body>
+</html>
