@@ -119,6 +119,8 @@ architecture arch of fe_block is
     signal reg_cmdlen : std_logic_vector(31 downto 0);
     signal reg_offset : std_logic_vector(31 downto 0);
 
+    signal av_nios : work.util.avalon_t;
+
     signal linktest_data    : std_logic_vector(31 downto 0);
     signal linktest_datak   : std_logic_vector(3 downto 0);
     signal linktest_granted : std_logic_vector(N_LINKS-1 downto 0);
@@ -249,9 +251,20 @@ begin
         fe_reg.rdata when ( fe_reg.rvalid = '1' ) else
         X"CCCCCCCC";
 
-    process(i_clk_156)
+    process(i_clk_156, reset_156_n)
     begin
-    if rising_edge(i_clk_156) then
+    if ( reset_156_n = '0' ) then
+        malibu_reg.rvalid <= '0';
+        scifi_reg.rvalid <= '0';
+        mupix_reg.rvalid <= '0';
+        fe_reg.rvalid <= '0';
+
+        fe_reg.rdata <= X"CCCCCCCC";
+
+        av_nios.address <= (others => '0');
+        av_nios.read <= '0';
+        av_nios.write <= '0';
+    elsif rising_edge(i_clk_156) then
         malibu_reg.rvalid <= malibu_reg.re;
         scifi_reg.rvalid <= scifi_reg.re;
         mupix_reg.rvalid <= mupix_reg.re;
@@ -317,6 +330,39 @@ begin
         if ( fe_reg.addr(7 downto 0) = X"FC" and fe_reg.re = '1' ) then
             fe_reg.rdata <= (others => '0');
             fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
+        end if;
+
+        -- access to nios address space
+        if ( fe_reg.addr(7 downto 0) = X"F2" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= av_nios.address;
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"F2" and fe_reg.we = '1' ) then
+            -- set read/write address
+            av_nios.address <= fe_reg.rdata;
+            -- allow read/write requests if address is nonzero
+        end if;
+        -- av_nios.read request
+        if ( fe_reg.addr(7 downto 0) = X"F3" and fe_reg.re = '1' and av_nios.address /= X"00000000" ) then
+            av_nios.read <= '1';
+            -- delay rvalid and set it when av_nios.waitrequest is '0' (see below)
+            fe_reg.rvalid <= '0';
+        end if;
+        -- av_nios.write request
+        if ( fe_reg.addr(7 downto 0) = X"F3" and fe_reg.we = '1' and av_nios.address /= X"00000000" ) then
+            av_nios.write <= '1';
+        end if;
+
+        -- wait for av_nios.read completion
+        if ( av_nios.read = '1' and av_nios.waitrequest = '0' ) then
+            av_nios.address <= (others => '0');
+            av_nios.read <= '0';
+            fe_reg.rvalid <= '1';
+            fe_reg.rdata <= av_nios.readdata;
+        end if;
+        -- wait for av_nios.write completion
+        if ( av_nios.write = '1' and av_nios.waitrequest = '0' ) then
+            av_nios.address <= (others => '0');
+            av_nios.write <= '0';
         end if;
 
         --
