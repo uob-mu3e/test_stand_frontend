@@ -13,19 +13,15 @@ architecture arch of tb_sc_rx is
     signal link_data : std_logic_vector(31 downto 0);
     signal link_datak : std_logic_vector(3 downto 0);
 
-    signal fifo_rempty : std_logic;
-    signal fifo_rdata : std_logic_vector(35 downto 0);
-    signal fifo_rack : std_logic;
+    signal fifo_rdata, fifo_wdata : std_logic_vector(35 downto 0);
+    signal fifo_rack, fifo_rempty, fifo_we, fifo_wfull : std_logic;
 
     type ram_t is array (natural range <>) of std_logic_vector(31 downto 0);
     signal ram : ram_t(0 to 15);
 
     signal ram_addr : std_logic_vector(31 downto 0);
-    signal ram_re : std_logic;
-    signal ram_rvalid : std_logic;
-    signal ram_rdata : std_logic_vector(31 downto 0);
-    signal ram_we : std_logic;
-    signal ram_wdata : std_logic_vector(31 downto 0);
+    signal ram_rdata, ram_wdata : std_logic_vector(31 downto 0);
+    signal ram_re, ram_rvalid, ram_we : std_logic;
 
     signal DONE : unsigned(2 downto 0) := (others => '0');
 
@@ -34,24 +30,41 @@ begin
     clk <= not clk after (0.5 us / CLK_MHZ);
     reset_n <= '0', '1' after (1.0 us / CLK_MHZ);
 
+    e_fifo : entity work.fifo_sc
+    generic map (
+        DATA_WIDTH_g => 36,
+        ADDR_WIDTH_g => 4--,
+    )
+    port map (
+        o_rdata     => fifo_rdata,
+        i_rack      => fifo_rack,
+        o_rempty    => fifo_rempty,
+
+        i_wdata     => fifo_wdata,
+        i_we        => fifo_we,
+        o_wfull     => fifo_wfull,
+
+        i_reset_n   => reset_n,
+        i_clk       => clk--,
+    );
+
     e_sc : entity work.sc_rx
     port map (
-        i_link_data => link_data,
-        i_link_datak => link_datak,
+        i_link_data     => link_data,
+        i_link_datak    => link_datak,
 
-        o_fifo_rempty => fifo_rempty,
-        o_fifo_rdata => fifo_rdata,
-        i_fifo_rack => fifo_rack,
+        o_fifo_wdata    => fifo_wdata,
+        o_fifo_we       => fifo_we,
 
-        o_ram_addr => ram_addr,
-        o_ram_re => ram_re,
-        i_ram_rvalid => ram_rvalid,
-        i_ram_rdata => ram_rdata,
-        o_ram_we => ram_we,
-        o_ram_wdata => ram_wdata,
+        o_ram_addr      => ram_addr,
+        o_ram_re        => ram_re,
+        i_ram_rvalid    => ram_rvalid,
+        i_ram_rdata     => ram_rdata,
+        o_ram_we        => ram_we,
+        o_ram_wdata     => ram_wdata,
 
-        i_reset_n => reset_n,
-        i_clk => clk--,
+        i_reset_n       => reset_n,
+        i_clk           => clk--,
     );
     fifo_rack <= not fifo_rempty;
 
@@ -314,7 +327,8 @@ begin
     process
     begin
         wait for 1000 ns;
-        assert ( DONE = (DONE'range => '1') ) severity failure;
+        assert ( DONE = (DONE'range => '1') )
+            severity error;
         wait;
     end process;
 

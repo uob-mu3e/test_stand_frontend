@@ -46,7 +46,7 @@ port (
     i_can_terminate : in std_logic:='0';
 
     --main fiber data fifo
-    i_fifo_write    : in    std_logic_vector(N_LINKS-1 downto 0);
+    i_fifo_we       : in    std_logic_vector(N_LINKS-1 downto 0);
     i_fifo_wdata    : in    std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
     o_fifos_almost_full         : out   std_logic_vector(N_LINKS-1 downto 0);
@@ -109,7 +109,7 @@ architecture arch of fe_block is
 
     signal av_sc : work.util.avalon_t;
 
-    signal sc_fifo_write : std_logic;
+    signal sc_fifo_we : std_logic;
     signal sc_fifo_wdata : std_logic_vector(35 downto 0);
 
     signal sc_ram, sc_reg : work.util.rw_t;
@@ -432,7 +432,7 @@ begin
         i_link_data     => qsfp_rx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
         i_link_datak    => qsfp_rx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
-        o_fifo_write    => sc_fifo_write,
+        o_fifo_we       => sc_fifo_we,
         o_fifo_wdata    => sc_fifo_wdata,
 
         o_ram_addr      => sc_ram.addr,
@@ -460,10 +460,10 @@ begin
         o_data_out              => qsfp_tx_data,
         o_data_is_k             => qsfp_tx_datak,
 
-        slowcontrol_write_req   => sc_fifo_write,
+        slowcontrol_write_req   => sc_fifo_we,
         i_data_in_slowcontrol   => sc_fifo_wdata,
 
-        data_write_req          => i_fifo_write,
+        data_write_req          => i_fifo_we,
         i_data_in               => i_fifo_wdata,
         o_fifos_almost_full     => o_fifos_almost_full,
 

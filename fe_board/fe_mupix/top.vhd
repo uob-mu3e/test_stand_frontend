@@ -425,7 +425,7 @@ begin
         i_pod_rx        => pod_rx,
         o_pod_tx        => pod_tx,
 
-        i_fifo_write    => fifo_write,
+        i_fifo_we       => fifo_write,
         i_fifo_wdata    => fifo_wdata,
 
         i_mscb_data     => mscb_data_in,

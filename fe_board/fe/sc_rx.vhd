@@ -18,7 +18,7 @@ port (
     i_link_data     : in    std_logic_vector(31 downto 0);
     i_link_datak    : in    std_logic_vector(3 downto 0);
 
-    o_fifo_write    : out    std_logic;
+    o_fifo_we       : out   std_logic;
     o_fifo_wdata    : out   std_logic_vector(35 downto 0);
 
     o_ram_addr      : out   std_logic_vector(31 downto 0);
@@ -47,9 +47,6 @@ architecture arch of sc_rx is
     signal idle_counter : unsigned(15 downto 0);
     signal sc_type : std_logic_vector(1 downto 0);
 
-    signal fifo_we : std_logic;
-    signal fifo_wdata : std_logic_vector(35 downto 0);
-
 begin
 
     process(i_clk, i_reset_n)
@@ -57,7 +54,7 @@ begin
     if ( i_reset_n = '0' ) then
         state <= S_IDLE;
 
-        fifo_we <= '0';
+        o_fifo_we <= '0';
         o_ram_re <= '0';
         o_ram_we <= '0';
 
@@ -65,7 +62,7 @@ begin
         idle_counter <= (others => '0');
         --
     elsif rising_edge(i_clk) then
-        fifo_we <= '0';
+        o_fifo_we <= '0';
         o_ram_re <= '0';
         o_ram_we <= '0';
 
@@ -79,8 +76,8 @@ begin
             --
         elsif ( state = S_ADDR and i_link_datak = "0000" ) then
             -- ack addr
-            fifo_we <= '1';
-            fifo_wdata <= sc_type & "10" & i_link_data;
+            o_fifo_we <= '1';
+            o_fifo_wdata <= sc_type & "10" & i_link_data;
 
             ram_addr <= unsigned(i_link_data);
 
@@ -88,8 +85,8 @@ begin
             --
         elsif ( state = S_LENGTH and i_link_datak = "0000" ) then
             -- ack length
-            fifo_we <= '1';
-            fifo_wdata <= "0000" & X"0001" & i_link_data(15 downto 0);
+            o_fifo_we <= '1';
+            o_fifo_wdata <= "0000" & X"0001" & i_link_data(15 downto 0);
 
             ram_addr_end <= ram_addr + unsigned(i_link_data(15 downto 0));
 
@@ -112,8 +109,8 @@ begin
 
             if ( ram_addr = ram_addr_end ) then
                 -- write end of packet
-                fifo_we <= '1';
-                fifo_wdata <= "0011" & X"00000000";
+                o_fifo_we <= '1';
+                o_fifo_wdata <= "0011" & X"00000000";
                 state <= S_IDLE;
             end if;
             --
@@ -128,8 +125,8 @@ begin
 
             if ( ram_read_nreq /= 0 and i_ram_rvalid = '1' ) then
                 -- write to fifo
-                fifo_we <= '1';
-                fifo_wdata <= "0000" & i_ram_rdata;
+                o_fifo_we <= '1';
+                o_fifo_wdata <= "0000" & i_ram_rdata;
                 if ( ram_addr /= ram_addr_end and ram_read_nreq /= (ram_read_nreq'range => '1') ) then
                     ram_read_nreq <= ram_read_nreq;
                 else
@@ -139,8 +136,8 @@ begin
 
             if ( ram_addr = ram_addr_end and ram_read_nreq = 0 ) then
                 -- write end of packet
-                fifo_we <= '1';
-                fifo_wdata <= "0011" & X"00000000";
+                o_fifo_we <= '1';
+                o_fifo_wdata <= "0011" & X"00000000";
                 state <= S_IDLE;
             end if;
             --
@@ -149,8 +146,8 @@ begin
         ) then
             -- trailer
             -- write end of packet
-            fifo_we <= '1';
-            fifo_wdata <= "0011" & X"00000000";
+            o_fifo_we <= '1';
+            o_fifo_wdata <= "0011" & X"00000000";
             state <= S_IDLE;
             --
         elsif ( state = S_TIMEOUT ) then
@@ -181,8 +178,5 @@ begin
         --
     end if;
     end process;
-    
-    o_fifo_write        <= fifo_we;
-    o_fifo_wdata        <= fifo_wdata;
 
 end architecture;
