@@ -283,14 +283,6 @@ begin
         if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.we = '1' ) then
             reg_reset_bypass(15 downto 0) <= fe_reg.wdata(15 downto 0); -- upper bits are read-only status
         end if;
-        
-        -- reset payload
-        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_reset_bypass_payload;
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.we = '1' ) then
-            reg_reset_bypass_payload <= fe_reg.wdata;
-        end if;
 
         -- reset bypass payload
         if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.re = '1' ) then
