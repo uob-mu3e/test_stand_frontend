@@ -31,13 +31,15 @@ namespace dummy_mudaq {
 
     class DummyMudaqDevice : public mudaq::MudaqDevice {
         public:
-            bool is_ok() const;
+            virtual bool is_ok();
             virtual bool open();
             virtual void close();
 
             // a device can exist only once. forbid copying and assignment
             DummyMudaqDevice() = delete;
             DummyMudaqDevice(const DummyMudaqDevice &) = delete;
+            DummyMudaqDevice(const MudaqDevice &) = delete;
+            DummyMudaqDevice & operator=(const MudaqDevice &) = delete;
             DummyMudaqDevice & operator=(const DummyMudaqDevice &) = delete;
 
             DummyMudaqDevice(const std::string& path);
@@ -45,6 +47,9 @@ namespace dummy_mudaq {
 
             void FEBsc_resetMaster();
             void FEBsc_resetSlave();
+            int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError);
+            int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply);
+            int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
             int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError);
             int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
             void write_register(unsigned idx, uint32_t value);

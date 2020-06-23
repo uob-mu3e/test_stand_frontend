@@ -9,14 +9,14 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 
 #ifndef MUFEB_H
 #define MUFEB_H
-
 #include "midas.h"
 #include "mudaq_device_scifi.h"
+#include "mudaq_dummy.h"
 #include "link_constants.h"
 //#include "asic_config_base.h"
 class MuFEB {
-   protected:
-      mudaq::MudaqDevice& m_mu;
+    protected:
+      mudaq::MudaqDevice & m_mu;
       bool m_ask_sc_reply;
       const char* m_odb_prefix;
       const char* m_equipment_name;

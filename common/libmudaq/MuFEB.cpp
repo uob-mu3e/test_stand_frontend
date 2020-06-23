@@ -34,9 +34,6 @@ void MuFEB::on_mapping_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
 }
 
 void MuFEB::RebuildFEBsMap(){
-    HNDLE hKey;
-    HNDLE m_hDB;
-    int size;
 
     //clear map, we will rebuild it now
     m_FPGAs.clear();
@@ -56,10 +53,10 @@ void MuFEB::RebuildFEBsMap(){
     odb links_settings("/Equipment/Links/Settings");
 
     //fields to assemble fiber-driven name
-    auto febtype = links_settings["/FrontEndBoardType"];
-    auto linkmask = links_settings["/LinkMask"];
-    auto sbnames = links_settings["/SwitchingBoardNames"];
-    auto febnames = links_settings["/FrontEndBoardNames"];
+    auto febtype = links_settings["FrontEndBoardType"];
+    auto linkmask = links_settings["LinkMask"];
+    auto sbnames = links_settings["SwitchingBoardNames"];
+    auto febnames = links_settings["FrontEndBoardNames"];
     
     //fill our list. Currently only mapping primaries; secondary fibers for SciFi are implicitely mapped to the preceeding primary
     int lastPrimary=-1;
@@ -67,9 +64,11 @@ void MuFEB::RebuildFEBsMap(){
     char reportStr[255];
     for(uint16_t ID=0;ID<MAX_N_FRONTENDBOARDS;ID++){
         std::string name_link;
-        name_link= sbnames[ID/MAX_LINKS_PER_SWITCHINGBOARD];
+        std::string febnamesID;
+        sbnames[ID/MAX_LINKS_PER_SWITCHINGBOARD].get(name_link);
+        febnames[ID].get(febnamesID);
         name_link+=":";
-        name_link+= febnames[ID];
+        name_link+= febnamesID;
         if((INT) febtype[ID]==this->GetTypeID()){
             lastPrimary=m_FPGAs.size();
             m_FPGAs.push_back({ID,linkmask[ID],name_link.c_str()});

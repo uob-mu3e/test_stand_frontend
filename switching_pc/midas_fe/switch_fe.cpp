@@ -100,9 +100,9 @@ INT status;
 /* DMA Buffer and related */
 #define DEBUG
 #ifdef DEBUG
-    dummy_mudaq::DummyDmaMudaqDevice * mup;
+    dummy_mudaq::DummyMudaqDevice * mup;
 #else
-    mudaq::DmaMudaqDevice * mup;
+    mudaq::MudaqDevice * mup;
 #endif
 
 
@@ -126,8 +126,10 @@ void print_ack_state();
 void setup_odb();
 void setup_watches();
 
-INT init_mudaq();
-INT init_scifi();
+INT init_mudaq(auto & mu);
+INT init_scifi(auto & mu);
+INT init_scitiles(auto & mu);
+INT init_mupix(auto & mu);
 
 enum EQUIPMENT_ID {Switching=0,SciFi,SciTiles,Mupix};
 EQUIPMENT equipment[] = {
@@ -221,7 +223,14 @@ INT frontend_init()
     // create Settings structure in ODB
     setup_odb();
     setup_watches();
-    status = init_mudaq();
+    
+    // open mudaq
+    #ifdef DEBUG
+        mup = new dummy_mudaq::DummyMudaqDevice("/dev/mudaq0");
+    #else
+        mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
+    #endif
+    status = init_mudaq(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
 
@@ -230,71 +239,33 @@ INT frontend_init()
     try{ set_feb_enable(get_link_active_from_odb(cur_links_odb)); }
     catch(...){ return FE_ERR_ODB;}
     
-    status = init_scifi();
+    //init scifi
+    status = init_scifi(*mup);
+    if (status != SUCCESS)
+        return FE_ERR_DRIVER;
+    
+    //init scitiles
+    status = init_scitiles(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
 
-   HNDLE hKey;
+    //init mupix
+    status = init_mupix(*mup);
+    if (status != SUCCESS)
+        return FE_ERR_DRIVER;
 
-   // Define history panels
-   // --- SciFi panels created in mutrig::midasODB::setup_db, below
+    // TODO: Define history panels
+    // --- SciFi panels created in mutrig::midasODB::setup_db, below
+    
+    // Set our transition sequence. The default is 500. Setting it
+    // to 400 means we are called BEFORE most other clients.
+    cm_set_transition_sequence(TR_START, 400);
 
-
-
-
-
-
-   //end of SciFi setup part
-   //SciTiles setup part
-   set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Initializing...", "var(--myellow)");
-   TilesFEB::Create(*mup, equipment[EQUIPMENT_ID::SciTiles].name, "/Equipment/SciTiles"); //create FEB interface signleton for scifi
-   TilesFEB::Instance()->SetSBnumber(switch_id);
-   status=mutrig::midasODB::setup_db("/Equipment/SciTiles", TilesFEB::Instance());
-   if(status != SUCCESS){
-      set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Start up failed", "var(--mred)");
-      return status;
-   }
-    //init all values on FEB
-   TilesFEB::Instance()->WriteAll();
-   TilesFEB::Instance()->WriteFEBID();
-
-   set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Ok", "var(--mgreen)");
-
-   {
-   db_create_key(hDB, 0, "Custom/SciTiles-ASICs&", TID_STRING);
-   db_set_value(hDB,0,"Custom/SciTiles-ASICs&", "tile_custompage.html", sizeof("tile_custompage.html"), 1, TID_STRING);
-   }
-
-   //end of SciTiles setup part
-
-   //Mupix setup part
-   set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");
-   MupixFEB::Create(*mup, equipment[EQUIPMENT_ID::Mupix].name, "/Equipment/Mupix"); //create FEB interface signleton for scifi
-   MupixFEB::Instance()->SetSBnumber(switch_id);
-   status=mupix::midasODB::setup_db("/Equipment/Mupix",MupixFEB::Instance(),true);
-   if(status != SUCCESS){
-      set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Start up failed", "var(--mred)");
-      return status;
-   }
-   set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
-   MupixFEB::Instance()->WriteFEBID();
-   //end of Mupix setup part
-
-   /*
-    * Set our transition sequence. The default is 500. Setting it
-    * to 400 means we are called BEFORE most other clients.
-    */
-   cm_set_transition_sequence(TR_START, 400);
-
-   /*
-    * Set our transition sequence. The default is 500. Setting it
-    * to 600 means we are called AFTER most other clients.
-    */
+    // Set our transition sequence. The default is 500. Setting it
+    // to 600 means we are called AFTER most other clients.
     cm_set_transition_sequence(TR_STOP, 600);
 
-
-
-   return CM_SUCCESS;
+    return CM_SUCCESS;
 }
 
 // ODB Setup //////////////////////////////
@@ -401,36 +372,30 @@ void frontend_board_mask_changed(odb o) {
     }catch(...){}
 }
 
-INT init_mudaq() {
+INT init_mudaq(auto & mu) {
 
-    // open mudaq
-#ifdef DEBUG
-    mup = new dummy_mudaq::DummyDmaMudaqDevice("/dev/mudaq0");
-#else
-    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
-#endif
-
-    if ( !mup->open() ) {
+    
+    if ( !mu.open() ) {
         cm_msg(MERROR, "frontend_init" , "Could not open device");
         return FE_ERR_DRIVER;
     }
 
-    if ( !mup->is_ok() ) {
+    if ( !mu.is_ok() ) {
         cm_msg(MERROR, "frontend_init", "Mudaq is not ok");
         return FE_ERR_DRIVER;
     }
 
-    mup->FEBsc_resetMaster();
-    mup->FEBsc_resetSlave();
+    mu.FEBsc_resetMaster();
+    mu.FEBsc_resetSlave();
 
     return SUCCESS;
 }
 
-INT init_scifi() {
+INT init_scifi(auto & mu) {
 
     // SciFi setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
-    SciFiFEB::Create(*mup, equipment[EQUIPMENT_ID::SciFi].name, "/Equipment/SciFi"); //create FEB interface signleton for scifi
+    SciFiFEB::Create(mu, equipment[EQUIPMENT_ID::SciFi].name, "/Equipment/SciFi"); //create FEB interface signleton for scifi
     SciFiFEB::Instance()->SetSBnumber(switch_id);
     status=mutrig::midasODB::setup_db("/Equipment/SciFi",SciFiFEB::Instance());
     if(status != SUCCESS){
@@ -442,10 +407,56 @@ INT init_scifi() {
     SciFiFEB::Instance()->WriteFEBID();
 
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
-    {
-        db_create_key(hDB, 0, "Custom/SciFi-ASICs&", TID_STRING);
-        db_set_value(hDB,0,"Custom/SciFi-ASICs&", "mutrigTdc.html", sizeof("mutrigTdc.html"), 1, TID_STRING);
+    
+    //set custom page
+    odb custom("/Custom");
+    custom["SciFi-ASICs&"] = "mutrigTdc.html";
+
+    return SUCCESS;
+}
+
+INT init_scitiles(auto & mu) {
+    
+    //SciTiles setup part
+    set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Initializing...", "var(--myellow)");
+    TilesFEB::Create(mu, equipment[EQUIPMENT_ID::SciTiles].name, "/Equipment/SciTiles"); //create FEB interface signleton for scitiles
+    status=mutrig::midasODB::setup_db("/Equipment/SciTiles", TilesFEB::Instance());
+    if(status != SUCCESS){
+        set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Start up failed", "var(--mred)");
+        return status;
     }
+    //init all values on FEB
+    TilesFEB::Instance()->WriteAll();
+    TilesFEB::Instance()->WriteFEBID();
+
+    set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Ok", "var(--mgreen)");
+
+    //set custom page
+    odb custom("/Custom");
+    custom["SciTiles-ASICs&"] = "tile_custompage.html";
+    
+    return SUCCESS;
+}
+
+INT init_mupix(auto & mu) {
+
+    //Mupix setup part
+    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");
+    MupixFEB::Create(mu, equipment[EQUIPMENT_ID::Mupix].name, "/Equipment/Mupix"); //create FEB interface signleton for mupix
+    MupixFEB::Instance()->SetSBnumber(switch_id);
+    status=mupix::midasODB::setup_db("/Equipment/Mupix", MupixFEB::Instance(), true);
+    if(status != SUCCESS){
+        set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Start up failed", "var(--mred)");
+        return status;
+    }
+    //init all values on FEB
+    MupixFEB::Instance()->WriteFEBID();
+    
+    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
+    
+    //TODO: set custom page
+    //odb custom("/Custom");
+    //custom["Mupix&"] = "mupix_custompage.html";
 
     return SUCCESS;
 }
@@ -712,7 +723,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
    db_get_key(hDB, hKey, &key);
 
     #ifdef DEBUG
-        dummy_mudaq::DummyDmaMudaqDevice & mu = *mup;
+        dummy_mudaq::DummyMudaqDevice & mu = *mup;
     #else
         mudaq::DmaMudaqDevice & mu = *mup;
     #endif
