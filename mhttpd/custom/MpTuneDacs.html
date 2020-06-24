@@ -5,6 +5,32 @@
 
 <!DOCTYPE html>
 <html lang="en">
+<style>
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  font-size:20pt;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 1;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+</style>
+
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="midas.css">
@@ -15,41 +41,43 @@
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script>
 
-function createTable() {
-    var x,y,
-        o = [];
-    for (y = 0; y < 200; y++){
-        o.push("<tr>");
-        for(x = 0; x < 42;x++)//127; x++)
-            o.push("<td><div onClick=\"editDAC("+x+","+y+")\">0</div></td>");
-        o.push("</tr>");
-    }
-    $("#" + "MpTuneDacTable").html(o.join(""));
-    var rows = document.getElementById("MpTuneDacTable").rows,
-    numRows = rows.length,
-    numCols = rows[0].cells.length,
-    colors = ["green","yellow","orange","red"];
-
-    for(i=0;i<numRows;i++){
-        for(j=0;j<numCols;j++){
-            //$(rows[i].cells[j]).html(i).css("background-color", colors[i]);;
+    function createTable() {
+        var x,y,
+            o = [];
+        for (y = 0; y < 200; y++){
+            o.push("<tr>");
+            for(x = 0; x < 42;x++)//127; x++)
+                o.push("<td><div onClick=\"userEditDAC("+x+","+y+")\" class=\"tooltip\">0<span class=\"tooltiptext\">"+x+","+y+"</span></div></td>");
+            o.push("</tr>");
         }
+        $("#" + "MpTuneDacTable").html(o.join(""));
+        var rows = document.getElementById("MpTuneDacTable").rows,
+        numRows = rows.length,
+        numCols = rows[0].cells.length,
+        colors = ["green","yellow","orange","red"];
     }
-}
 
-function editDAC(x,y) {
-    var row = document.getElementById("MpTuneDacTable").rows,
-    var value = prompt("new DAC Value for "+x+","+y+":", "0");
-    row[x].cells[y].html(newDAC);
-    
-}
+    function userEditDAC(x,y) {
+        var row = document.getElementById("MpTuneDacTable").rows;
+        var newDAC =parseInt(prompt("new DAC Value for "+x+","+y+":", "0"),10);
+        if(newDAC<=16 && newDAC >=0)
+            $(row[y].cells[x]).html(newDAC).css("background-color", getColor(newDAC));
+        else
+            alert("Only integer numbers from 0-16. 16 is off !!!");
+    }
 
-
+    function getColor(tDAC){
+        if(tDAC<16)
+            return "rgb(255,"+(255-tDAC*15)+","+(255-tDAC*15)+")";
+        else
+            return "black";
+    }
     </script>
+
     
-    <title>MuPix Tune DACs</title>
+<title>MuPix Tune DACs</title>
 </head>
-<body class="mcss" onload="mhttpd_init('myPage');">
+<body class="mcss" onload="mhttpd_init('myPage'); createTable();">
 
 <!-- header and side navigation will be filled in mhttpd_start -->
 <div id="mheader"></div>
@@ -76,7 +104,6 @@ function editDAC(x,y) {
         </tr>
         </table>
       </table>
-      <td><input type="text" id="thlow0" value="560" oninput="createTable()">mV</td>
     <font style="font-size:5pt;">
     <table id="MpTuneDacTable">
     </table>
