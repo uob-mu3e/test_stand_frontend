@@ -59,7 +59,7 @@ architecture rtl of ipbus_i2c_master is
     subtype addr_t is std_logic_vector(7 downto 0);
     subtype daughterdevaddr_t is std_logic_vector(6 downto 0);
     type daughteraddrs is array (7 downto 0) of daughterdevaddr_t;
-    constant DAUGHTERDEVADDRS : daughteraddrs := (X"70",X"74",X"71",X"75",X"72",X"76",X"73",X"77");
+    constant DAUGHTERDEVADDRS : daughteraddrs := ("1110000","1110100","1110001","1110101","1110010","1110110","1110011","1110111");
     subtype DEVRANGE is natural range 30 downto 28;
 
     constant TIPBIT : integer := 1;
