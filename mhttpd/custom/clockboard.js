@@ -266,7 +266,7 @@ var fireflys = [];
 
 function init(){
 
-    console.log("Init!");
+    //console.log("Init!");
 
 	for(var i=0; i < 8; i++){
 		var xpos = 25+i%4*180;
@@ -293,7 +293,7 @@ function init(){
 var selindex = -1;
 
 function draw(selindex){
-    console.log("Drawing!");
+    //console.log("Drawing!");
 	c.fillStyle = "Silver";
 	c.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -358,7 +358,7 @@ window.addEventListener('click', function(event) {
 
 function update_boarddrawing(value) {
 
-    console.log("Update BD!");
+    //console.log("Update BD!");
 
 
     var doffset = 12;
@@ -428,7 +428,7 @@ function update_boarddrawing(value) {
 }
 
 function update_masks(value) {
-    console.log("Update M!");
+    //console.log("Update M!");
 
     var rxmask = value["rx_mask"];
     for(var i=0; i < 12; i++){
