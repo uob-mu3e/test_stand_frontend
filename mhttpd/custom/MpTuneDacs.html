@@ -51,18 +51,16 @@
             o.push("</tr>");
         }
         $("#" + "MpTuneDacTable").html(o.join(""));
-        var rows = document.getElementById("MpTuneDacTable").rows,
-        numRows = rows.length,
-        numCols = rows[0].cells.length,
-        colors = ["green","yellow","orange","red"];
     }
 
     function userEditDAC(x,y) {
         var row = document.getElementById("MpTuneDacTable").rows;
         var newDAC =parseInt(prompt("new DAC Value for "+x+","+y+":", "0"),10);
-        if(newDAC<=16 && newDAC >=0)
-            $(row[y].cells[x]).html(newDAC).css("background-color", getColor(newDAC));
-        else
+        if(newDAC<=16 && newDAC >=0){
+            $(row[y].cells[x]).html(("<td><div onClick=\"userEditDAC("+x+","+y+")\" class=\"tooltip\">"+newDAC
+            +"<span class=\"tooltiptext\">"+x+","+y+"</span></div></td>")).css("background-color", getColor(newDAC));
+            modbset("/Equipment/MuPix/tDACs/col"+x+"["+y+"]", newDAC);
+        }else
             alert("Only integer numbers from 0-16. 16 is off !!!");
     }
 
@@ -72,6 +70,17 @@
         else
             return "black";
     }
+    
+    function reloadMuPixSettings(jsonData){
+        var row = document.getElementById("MpTuneDacTable").rows;
+        for(x=0;x<42;x++){
+            var rowTDACs=(jsonData["col"+x]+'').split(',');
+            for(y=0;y<200;y++){
+                $(row[y].cells[x]).html("<td><div onClick=\"userEditDAC("+x+","+y+")\" class=\"tooltip\">"
+                +rowTDACs[y]+"<span class=\"tooltiptext\">"+x+","+y+"</span></div></td>").css("background-color",getColor(rowTDACs[y]));
+            }
+        }
+    };
     </script>
 
     
@@ -83,7 +92,8 @@
 <div id="mheader"></div>
 <div id="msidenav"></div>
 <div id="mmain">
-<div name="modb" data-odb-path="/Equipment/MuPix/Settings/Boarddacs/0" onchange="reloadMuPixSettings(this.value)"> </div >
+<div name="modb" data-odb-path="/Equipment/MuPix/tDACs" onchange="" id="tdacs"> </div >
+<div name="modb" data-odb-path="/Equipment/MuPix/tDACs/chipIDactual" onchange="reloadMuPixSettings(tdacs.value)"> </div >
 
       <table class="mtable" width="100%" id="unknown">
 
@@ -93,14 +103,28 @@
             <td colspan="100" class="mtableheader"> MuPix Tune DACs </td>
         </tr>
         <tr>
-            <td> Select ChipID: </td>
-            <td><div name="modbvalue"
-                    data-odb-path="/Equipment/MuPix/Settings/TuneDACs/ChipID" id="chID"></div></td>
+            <td>
+                Select ChipID:
+                <div name="modbvalue"
+                        data-odb-path="/Equipment/MuPix/tDACs/chipIDreq" data-odb-editable="1" id="chID"></div>
+                </td>
             <td> 
-                <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/Switching/Settings/MupixConfig" data-odb-value="y"> Load most recent</button>
-                <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/Switching/Settings/MupixConfig" data-odb-value="y"> Load run Nr. </button>
-                <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/Switching/Settings/MupixConfig" data-odb-value="y"> Store & Enable </button>
+                loaded ChipID:
+                <div name="modbvalue"
+                        data-odb-path="/Equipment/MuPix/tDACs/chipIDactual" id="chIDactual"></div>
             </td>
+        </tr>
+        <tr>
+            <td>
+                <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/MuPix/tDACs/loadrecent" data-odb-value="1"> Load most recent</button>
+                <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/MuPix/tDACs/store" data-odb-value="1"> Store & Enable </button>
+                <button class="mbutton" onClick="reloadMuPixSettings(tdacs.value)"> reload from odb </button>
+            </td>
+            <td>
+                <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/MuPix/tDACs/loadnumber" data-odb-value="1"> Load run Nr. </button>
+                <div name="modbvalue" data-odb-path="/Equipment/MuPix/tDACs/runnumber" data-odb-editable="1" id="runnumber"></div>
+            </td>
+            
         </tr>
         </table>
       </table>
