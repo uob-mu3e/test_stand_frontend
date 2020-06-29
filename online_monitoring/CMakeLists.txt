@@ -8,7 +8,7 @@ target_include_directories(ana PRIVATE
     ${ROOT_INCLUDE_DIRS}
     ${CMAKE_CURRENT_LIST_DIR}/include
 )
-target_link_libraries(ana midas rt pthread ${ROOTANASYS})
+target_link_libraries(ana midas rt pthread ${ROOTANASYS} ${ROOT_INCLUDE_DIRS})
 
 
 
