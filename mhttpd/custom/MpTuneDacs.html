@@ -80,7 +80,18 @@
                 +rowTDACs[y]+"<span class=\"tooltiptext\">"+x+","+y+"</span></div></td>").css("background-color",getColor(rowTDACs[y]));
             }
         }
-    };
+    }
+    
+    function loadDate(date){
+        var result = Date.parse(date)/1000;
+        alert(result);
+        mjsonrpc_db_paste(["/Equipment/MuPix/tDACs/loaddatereq","/Equipment/MuPix/tDACs/date"], [1,result]).then(function(rpc) {
+
+            }).catch(function(error) {
+                mjsonrpc_error_alert(error);
+        });
+      
+    }
     </script>
 
     
@@ -121,8 +132,8 @@
                 <button class="mbutton" onClick="reloadMuPixSettings(tdacs.value)"> reload from odb </button>
             </td>
             <td>
-                <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/MuPix/tDACs/loadnumber" data-odb-value="1"> Load run Nr. </button>
-                <div name="modbvalue" data-odb-path="/Equipment/MuPix/tDACs/runnumber" data-odb-editable="1" id="runnumber"></div>
+                <button class="mbutton" data-odb-path="/Equipment/MuPix/tDACs/loadnumber" onClick="loadDate(loaddate.value)"> Load date: </button>
+                <input type="date" id=loaddate></input>
             </td>
             
         </tr>
