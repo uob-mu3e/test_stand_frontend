@@ -4,3 +4,6 @@
 [submodule "modules/rootana"]
     path = modules/rootana
     url = https://bitbucket.org/tmidas/rootana
+[submodule "modules/mutrigana-base"]
+    path = modules/mutrigana-base
+    url = https://bitbucket.org/mu3e/mutrigana-base

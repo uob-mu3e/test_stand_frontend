@@ -79,23 +79,6 @@ set(INCMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/include)
 set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mxml)
 set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mscb)
 
-# requires rootana
-message(STATUS "Using ROOTANA")
-set(LIBMIDAS_DIR ${PROJECT_SOURCE_DIR}/install)
-set(ROOTANASYS ${CMAKE_CURRENT_LIST_DIR}/modules/rootana)
-set(ROOTANA_LIBRARY_DIRS ${ROOTANASYS}/lib)
-set(ROOTANA_LIBRARIES ${ROOTANA_LIBRARY_DIRS}/librootana.a)
-set(ROOTANA_INCLUDE_DIRS ${ROOTANASYS}/include)
-add_custom_target(
-    rootana
-    ALL
-    COMMAND ${CMAKE_COMMAND} -E create_symlink ${LIBMIDAS_DIR}/lib ${MIDAS_DIR}/lib
-    COMMAND export MIDASSYS=${MIDAS_DIR} && make
-    COMMAND make
-    WORKING_DIRECTORY ${ROOTANASYS}
-)
-
-add_subdirectory(online_monitoring)
 add_subdirectory(backend_pc)
 add_subdirectory(common/libmudaq)
 add_subdirectory(common/libmupix)
