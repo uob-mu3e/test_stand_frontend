@@ -22,7 +22,7 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 #)
 #message(STATUS "MU3E_ONLINE_GIT_REF: ${MU3E_ONLINE_GIT_REF}")
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -42,7 +42,7 @@ list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
     message("Compile for Raspberry Pi")
 else()
-    find_package(ROOT 5.34 REQUIRED)
+    find_package(ROOT 5.34 REQUIRED COMPONENTS RIO Hist Tree Net xml)
 endif()
 # optional packages
 find_package(Doxygen 1.8)
