@@ -11,11 +11,33 @@
 #include <iostream>
 #include <array>
 #include <functional>
+#include <ctime>
 
 #include "midas.h"
 #include "odbxx.h"
 
 /*------------------------------------------------------------------*/
+void loadTDACs(bool loadOld){
+    midas::odb chipID("/Equipment/Mupix/TDACs/chipIDreq");
+    midas::odb mloadtime("/Equipment/Mupix/TDACs/date");
+    int loadtime=0;
+    if(loadOld){
+        loadtime=mloadtime;
+    }else
+        loadtime= (int) std::time(nullptr);
+    std::cout<<"load TDACS ID:"<<chipID<<" time:"<<loadtime<<std::endl;
+
+    //TODO
+}
+
+void storeTDACs(midas::odb &arg){
+    midas::odb chipID("/Equipment/Mupix/TDACs/chipIDreq");
+    int storetime=(int) std::time(nullptr);
+    if(arg==true)
+    std::cout<<"store TDACS ID:"<<chipID<<" time:"<<storetime<<std::endl;
+
+    //TODO
+}
 
 int main() {
 
@@ -28,8 +50,8 @@ int main() {
         {"chipIDactual", 0},
         {"store",false},
         {"loadrecent",false},
-        {"loadnumber",false},
-        {"runnumber",0},
+        {"loaddatereq",false},
+        {"date",0},
         {"col0", std::array<short, 200>{} },
         {"col1", std::array<short, 200>{}},
         {"col2", std::array<short, 200>{}},
@@ -163,9 +185,21 @@ int main() {
     o.connect("/Equipment/MuPix/TDACs");
 
     // watch ODB key for any change with lambda function
-    midas::odb ow("/Equipment/Mupix/TDACs");
-    ow.watch([](midas::odb &o) {
-        std::cout << "Value of key \"" + o.get_full_path() + "\" changed to " << o << std::endl;
+    midas::odb chipIDreq("/Equipment/Mupix/TDACs/chipIDreq");
+    midas::odb tDACstore("/Equipment/Mupix/TDACs/store");
+    midas::odb tDACloadrecent("/Equipment/Mupix/TDACs/loadrecent");
+    midas::odb tDACloaddatereq("/Equipment/Mupix/TDACs/loaddatereq");
+
+    chipIDreq.watch([](midas::odb &chipIDreq) {
+        loadTDACs(false);
+    });
+    tDACstore.watch(storeTDACs);
+    tDACloadrecent.watch([](midas::odb &tDACloadrecent){
+        loadTDACs(false);
+    });
+    tDACloaddatereq.watch([](midas::odb &tDACloaddatereq){
+        if(tDACloaddatereq==true)
+            loadTDACs(true);
     });
 
     do {
