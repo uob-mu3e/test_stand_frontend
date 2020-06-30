@@ -12,6 +12,8 @@
 #include <array>
 #include <functional>
 #include <ctime>
+#include <fstream>
+#include <vector>
 
 #include "midas.h"
 #include "odbxx.h"
@@ -20,23 +22,49 @@
 void loadTDACs(bool loadOld){
     midas::odb chipID("/Equipment/Mupix/TDACs/chipIDreq");
     midas::odb mloadtime("/Equipment/Mupix/TDACs/date");
+    midas::odb tDACs("/Equipment/Mupix/TDACs");
+    //unsigned char buffer=tDACs;
     int loadtime=0;
+    int id=chipID;
     if(loadOld){
         loadtime=mloadtime;
     }else
         loadtime= (int) std::time(nullptr);
-    std::cout<<"load TDACS ID:"<<chipID<<" time:"<<loadtime<<std::endl;
 
-    //TODO
+    std::ifstream infile(std::to_string(id)+".tdac");
+    if(infile.is_open()){
+        int tDAC;
+        int col=0;
+        int row=0;
+
+        while(infile>>tDAC){
+            tDACs[("col"+std::to_string(col)).c_str()][row]=tDAC;
+            if(row==199){
+                row=0;
+                col++;
+            }else {
+                row++;
+            }
+        }
+        tDACs["chipIDactual"]=id;
+    }
 }
 
 void storeTDACs(midas::odb &arg){
     midas::odb chipID("/Equipment/Mupix/TDACs/chipIDreq");
+    midas::odb tDACs("/Equipment/Mupix/TDACs");
     int storetime=(int) std::time(nullptr);
-    if(arg==true)
-    std::cout<<"store TDACS ID:"<<chipID<<" time:"<<storetime<<std::endl;
+    int id=chipID;
 
-    //TODO
+    std::ofstream fout(std::to_string(id)+".tdac",std::ios::out | std::ios::binary);
+    for (midas::odb& oit : tDACs){
+        if(oit.get_num_values()>10){
+            for (int e : tDACs[(oit.get_name()).c_str()]){
+                fout<<e<<"\n";
+            }
+        }
+    }
+    fout.close();
 }
 
 int main() {
