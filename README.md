@@ -12,6 +12,15 @@
 - if cuda 8 and glibc 2.26: vim floatn.h --> define __HAVE_FLOAT128 0
 - install cuda under tumbleweed https://www.tobiasbartsch.com/installing-cuda-and-cudnn-on-opensuse-tumbleweed/
 
+## Current "fixes" with ROOT not compiled with c++-XX
+
+- online/CMakeLists.txt -> replace CXX_STANDARD XX
+- online/modules/midas/CMakeLists.txt -> replace CXX_STANDARD xx
+- online/modules/mutrigana-base/CMakeLists.txt -> replace CXX_STANDARD xx
+- online/modules/mutrigana-base/calibration/CMakeLists.txt -> replace CXX_STANDARD xx
+- online/modules/mutrigana-base/online/CMakeLists.txt -> replace CXX_STANDARD xx
+
+
 ## Raspberry Pi USB Server
 
 - Follow the setup in https://wiki.ubuntuusers.de/USBIP/
