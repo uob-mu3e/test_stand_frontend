@@ -5,7 +5,7 @@ source ../install/set_env.sh
 
 ./scifi/setup_odb.sh
 
-if ["$1" = "CRFE_BYPASS"]; then
+if [ "$1" = "CRFE_BYPASS" ]; then
     odbedit -c 'create STRING "Equipment/Clock Reset/Settings/IP"'
     odbedit -c 'set "Equipment/Clock Reset/Settings/IP" "0.0.0.0"'
 fi
