@@ -20,8 +20,9 @@ architecture arch of tb_sc_rx is
     signal ram : ram_t(0 to 15);
 
     signal ram_addr : std_logic_vector(31 downto 0);
+    signal ram_re, ram_we : std_logic;
     signal ram_rdata, ram_wdata : std_logic_vector(31 downto 0);
-    signal ram_re, ram_rvalid, ram_we : std_logic;
+    signal ram_rvalid : std_logic;
 
     signal DONE : unsigned(2 downto 0) := (others => '0');
 
@@ -68,10 +69,13 @@ begin
     );
     fifo_rack <= not fifo_rempty;
 
-    process(clk)
+    process(clk, reset_n)
         variable i : integer;
     begin
-    if rising_edge(clk) then
+    if ( reset_n = '0' ) then
+        --
+    elsif rising_edge(clk) then
+
         if ( is_x(ram_addr) ) then
             i := 0;
         else
@@ -328,7 +332,11 @@ begin
     begin
         wait for 1000 ns;
         assert ( DONE = (DONE'range => '1') )
+            report "NOT DONE"
             severity error;
+        if ( DONE = (DONE'range => '1') ) then
+            report "DONE";
+        end if;
         wait;
     end process;
 
