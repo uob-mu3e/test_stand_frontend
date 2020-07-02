@@ -130,7 +130,7 @@ signal reset_n : std_logic;
     signal lvds_data_in : std_logic_vector(NLVDS-1 downto 0);
 
 begin
-    reset_n <= not i_reset;
+    reset_n <= '0' when (i_reset='1' or i_run_state_125=RUN_STATE_SYNC) else '1';
 
 
     e_mupix_run_start_ack : work.mupix_run_start_ack
