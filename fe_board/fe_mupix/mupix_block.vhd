@@ -141,7 +141,7 @@ begin
         i_clk                       => i_clk,
         i_reset                     => i_reset,
         i_disable                   => '0', -- TODO: connect to sc
-        i_stable_required           => x"00A0", -- TODO: connect to sc
+        i_stable_required           => x"F000", -- TODO: connect to sc
         i_lvds_err_counter          => read_regs_mupix(LVDS_ERRCOUNTER_REGISTER_R + NLVDS - 1 downto LVDS_ERRCOUNTER_REGISTER_R),
         i_sc_busy                   => or_reduce(mp8_wren & (not chip_dac_fifo_empty)),
         i_run_state_125             => i_run_state_125,
