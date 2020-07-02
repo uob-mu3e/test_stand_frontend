@@ -27,7 +27,8 @@ struct mupix_t {
             //printf("0x%08x\n",bitpattern[i]);
         }
         sc->ram->data[0xFF8E] = 0x00100001;
-        sc->ram->data[0xFF95] = 0;
+        sc->ram->data[0xFF95] = 0; //TODO: check if we really want to do this here (reset of chip dac fifo, why do we need this, is the fifo content already written to the chip here ???)
+        sc->ram->data[0xFF96] = 0xFEFEFEFE; //TODO: do not hardcode this !!
 
         return FEB_REPLY_SUCCESS;
     }
@@ -61,7 +62,8 @@ struct mupix_t {
             printf("  [1] => set default chip B DACs\n");
             printf("  [2] => set default chip C DACs\n");
             printf("  [3] => set default chip E DACs\n");
-	    printf("  [4] => lvds links\n");
+            printf("  [4] => lvds links\n");
+            printf("  [5] => print link mask\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -81,6 +83,9 @@ struct mupix_t {
                 break;
             case '4':
 	        menu_lvds(sc->ram);		
+                break;
+            case '5':
+                printf("lvds mask: 0x%08x\n",sc->ram->data[0xFF96]);
                 break;
             case 'b':
                 set_board_dacs(0, default_board_dacs);

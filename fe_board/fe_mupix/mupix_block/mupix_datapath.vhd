@@ -32,8 +32,9 @@ port (
 	write_sc_regs:		in reg32array_t(NREGISTERS_MUPIX_WR-1 downto 0);
 	read_sc_regs: 		out reg32array_t(NREGISTERS_MUPIX_RD-1 downto 0);
 
-	o_fifo_wdata    : out std_logic_vector(35 downto 0);
-	o_fifo_write    : out std_logic;
+	o_fifo_wdata      : out std_logic_vector(35 downto 0);
+	o_fifo_write      : out std_logic;
+	o_lvds_data_valid : out std_logic_vector(NLVDS-1 downto 0);
 	
 	i_sync_reset_cnt: in std_logic;
     
@@ -100,10 +101,11 @@ signal link_enable			: std_logic_vector(NLVDS-1 downto 0);
 
 begin
 
-    reset           <= not i_reset_n;
+    reset               <= not i_reset_n;
     -- to common merger FiFo:
-    o_fifo_wdata    <= s_buf_data;
-    o_fifo_write    <= not sync_fifo_empty;
+    o_fifo_wdata        <= s_buf_data;
+    o_fifo_write        <= not sync_fifo_empty;
+    o_lvds_data_valid   <= data_valid;
 
 	e_two_clk_sync_fifo : work.two_clk_sync_fifo
 	port map

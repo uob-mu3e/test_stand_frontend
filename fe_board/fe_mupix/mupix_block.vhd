@@ -127,6 +127,7 @@ signal reset_n : std_logic;
     signal ro_prescaler : std_logic_vector(31 downto 0);
     signal read_regs_mupix_mux : std_logic_vector(31 downto 0);
 
+    signal lvds_data_valid : std_logic_vector(NLVDS-1 downto 0);
     signal lvds_data_in : std_logic_vector(NLVDS-1 downto 0);
 
 begin
@@ -143,6 +144,8 @@ begin
         i_disable                   => '0', -- TODO: connect to sc
         i_stable_required           => x"F000", -- TODO: connect to sc
         i_lvds_err_counter          => read_regs_mupix(LVDS_ERRCOUNTER_REGISTER_R + NLVDS - 1 downto LVDS_ERRCOUNTER_REGISTER_R),
+        i_lvds_data_valid           => lvds_data_valid,
+        i_lvds_mask                 => write_regs_mupix(LINK_MASK_REGISTER_W)(NLVDS-1 downto 0),
         i_sc_busy                   => or_reduce(mp8_wren & (not chip_dac_fifo_empty)),
         i_run_state_125             => i_run_state_125,
         o_ack_run_prep_permission   => o_ack_run_prep_permission--,
@@ -321,10 +324,6 @@ begin
                 ckdiv               <= i_reg_wdata(31 downto 16);
             end if;
             
-            if ( i_reg_add = x"95" and i_reg_re = '1' ) then
-                reset_chip_dac_fifo <= i_reg_wdata(1);
-            end if;
-
             if ( i_reg_add = x"8F" and i_reg_we = '1' ) then
                 reset_n_lvds    <= i_reg_wdata(0);
             else
@@ -350,10 +349,19 @@ begin
             if ( i_reg_add = x"94" and i_reg_re = '1' ) then
                 o_reg_rdata            <= read_regs_mupix_mux;
             end if;
-                
+            
             if ( i_reg_add = x"95" and i_reg_we = '1' ) then
-                link_mask              <= i_reg_wdata;
+                reset_chip_dac_fifo    <= i_reg_wdata(0);
             end if;
+            
+            if ( i_reg_add = x"96") then
+                if(i_reg_we = '1' ) then
+                    link_mask          <= i_reg_wdata;
+                elsif( i_reg_re = '1') then
+                    o_reg_rdata        <= link_mask;
+                end if;
+            end if;
+            
         end if;
     end process board_dac_regs;
 
@@ -410,6 +418,8 @@ begin
         
         o_fifo_wdata        => o_fifo_wdata,
         o_fifo_write        => o_fifo_write,
+        o_lvds_data_valid   => lvds_data_valid,
+        
         i_sync_reset_cnt    => i_sync_reset_cnt,
         i_run_state_125     => i_run_state_125--,
     );

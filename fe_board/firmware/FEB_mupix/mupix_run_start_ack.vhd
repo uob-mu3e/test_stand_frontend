@@ -15,6 +15,8 @@ port (
     i_disable                   : in  std_logic;
     i_stable_required           : in  unsigned(15 downto 0);
     i_lvds_err_counter          : in  reg32array_t(NLVDS-1 downto 0);
+    i_lvds_data_valid           : in  std_logic_vector(NLVDS-1 downto 0);
+    i_lvds_mask                 : in  std_logic_vector(NLVDS-1 downto 0);
     i_sc_busy                   : in  std_logic;
     i_run_state_125             : in  run_state_t;
     o_ack_run_prep_permission   : out std_logic--;
@@ -27,8 +29,16 @@ architecture arch of mupix_run_start_ack is
     signal stable_counter   : unsigned(15 downto 0) := (others => '0');
     signal lvds_stable      : std_logic_vector(NLVDS-1 downto 0) := (others => '0');
     signal prev_err_counter : std_logic_vector(NLVDS*4-1 downto 0);
+    signal lvds_mask        : std_logic_vector(NLVDS-1 downto 0);
 
 begin
+
+    process(i_clk)
+    begin
+        if(rising_edge(i_clk))then
+            lvds_mask       <= i_lvds_mask;
+        end if;
+    end process;
 
     process (i_clk, i_reset)
     begin
@@ -41,7 +51,7 @@ begin
         elsif (rising_edge(i_clk)) then
             if(i_disable = '1') then
                 o_ack_run_prep_permission   <= '1';
-            elsif(i_run_state_125 = RUN_STATE_PREP and i_sc_busy='0' and stable_counter = i_stable_required) then
+            elsif(i_run_state_125 = RUN_STATE_PREP and i_sc_busy='0' and stable_counter = i_stable_required and and_reduce(i_lvds_data_valid or lvds_mask)='1') then
                 o_ack_run_prep_permission   <= '1';
             else
                 o_ack_run_prep_permission   <= '0';
