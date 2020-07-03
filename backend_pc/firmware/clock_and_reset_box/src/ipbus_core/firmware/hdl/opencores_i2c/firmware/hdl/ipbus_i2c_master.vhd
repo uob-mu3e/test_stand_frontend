@@ -30,6 +30,7 @@ end ipbus_i2c_master;
 
 architecture rtl of ipbus_i2c_master is
 
+
 	signal stb, stb_x, ack, ack_last, sda_enb: std_logic;
 	
 	signal addr:       std_logic_vector(2 downto 0);
@@ -74,6 +75,7 @@ architecture rtl of ipbus_i2c_master is
 
 begin
 
+
     stb <= stb_x and not ack;
 
     process(clk, rst)
@@ -84,9 +86,17 @@ begin
         we   <= '0';
         ack_last    <= '0';
         ackseen     <= '0';
+        ipbus_out.ipb_ack <= '0';
+        ipbus_out_fast.ipb_ack <= '0';
+        ipbus_out_mem.ipb_ack <= '0'; 
     elsif(rising_edge(clk)) then
         ack_last <= ack;
         stb_x  <= '0';
+        ipbus_out.ipb_ack <= '0';
+        ipbus_out_fast.ipb_ack <= '0';
+        ipbus_out_mem.ipb_ack <= '0'; 
+        
+        
         case state is
             when idle =>
                 if(ipbus_in.ipb_strobe = '1')then

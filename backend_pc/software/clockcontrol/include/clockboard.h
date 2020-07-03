@@ -8,7 +8,7 @@
 class clockboard
 {
 public:
-    static const bool FASTI2C = false;
+    static const bool FASTI2C = true;
 
     static const int MAXNDAUGHTER = 8;
     static const int MAXFIREFLYPERDAUGTHER = 3;

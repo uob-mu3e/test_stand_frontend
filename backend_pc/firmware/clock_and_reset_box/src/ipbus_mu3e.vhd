@@ -233,6 +233,28 @@ begin
 			);
 			
 			
+			ila1: entity work.ila_0
+        port map( 
+    clk  => ipb_clk,--: in STD_LOGIC;
+    probe0(0) => ipbw(N_SLV_I2C).ipb_strobe,
+    probe1(0) => ipbw(N_SLV_I2C).ipb_write,
+    probe2    => ipbw(N_SLV_I2C).ipb_addr,
+    probe3(0) => ipbw(N_SLV_I2C_FAST).ipb_strobe,
+    probe4(0) => ipbw(N_SLV_I2C_FAST).ipb_write,
+    probe5    => ipbw(N_SLV_I2C_FAST).ipb_addr,
+    probe6(0) => ipbr(N_SLV_I2C).ipb_ack,
+    probe7(0) => ipbr(N_SLV_I2C).ipb_err,
+    probe8    => ipbr(N_SLV_I2C).ipb_rdata,
+    probe9(0) => ipbr(N_SLV_I2C_FAST).ipb_ack,
+    probe10(0) => ipbr(N_SLV_I2C_FAST).ipb_err,
+    probe11    => ipbr(N_SLV_I2C_FAST).ipb_rdata,
+    probe12(0) => iscl_o,
+    probe13(0) => iscl_i,
+    probe14(0) => isda_o,
+    probe15(0) => isda_i 
+ );
+			
+			
 		   delay1 : FDCE
 		   generic map (
 		      INIT => '0') -- Initial value of register ('0' or '1')  

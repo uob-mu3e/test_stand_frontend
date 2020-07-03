@@ -224,6 +224,7 @@ int clockboard::read_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t by
     assert(byte_num <= 4 && byte_num > 0);
     uint32_t addr = ADDR_I2C_FPGA + (dev_addr << 25) + (1<<24) + (reg_addr << 16) + ((byte_num-1)<< 14);
     uint32_t alldata = bus.read(addr);
+    cout << alldata << endl;
     data[0] = alldata & 0xFF;
     data[1] = (alldata & 0xFF00)>>8;
     data[2] = (alldata & 0xFF0000)>>16;
