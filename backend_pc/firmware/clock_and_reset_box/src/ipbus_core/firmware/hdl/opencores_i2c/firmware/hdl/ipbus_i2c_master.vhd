@@ -31,7 +31,7 @@ end ipbus_i2c_master;
 architecture rtl of ipbus_i2c_master is
 
 
-	signal stb, stb_x, ack, ack_last: std_logic;
+	signal stb, stb_x, ack, ack_last, sda_enb: std_logic;
 	
 	signal addr:       std_logic_vector(2 downto 0);
 	signal data_in:    std_logic_vector(7 downto 0);
@@ -39,7 +39,7 @@ architecture rtl of ipbus_i2c_master is
 	signal we:         std_logic;
 	signal sr:         std_logic_vector(7 downto 0);
 	
-	type state_type is (idle, simple, write1, write2, write3, write4, write5, write6, write7, write8, write9, read1, read2, read3, read4);
+	type state_type is (idle, simple, write1, write2, write3, write4, write5, write6, write7, read1, read2, read3, read4);
 	signal state : state_type;
 	signal statenext : state_type;
 	
@@ -49,7 +49,7 @@ architecture rtl of ipbus_i2c_master is
 	constant ADDR_I2C_DATA: std_logic_vector(2 downto 0) := "011";
 	constant ADDR_I2C_CMD_STAT: std_logic_vector(2 downto 0) := "100";
 	
-	constant I2C_START: std_logic_vector(7 downto 0) := X"80";
+	constant I2C_START: std_logic_vector(7 downto 0) := X"90";
 	constant I2C_READ: std_logic_vector(7 downto 0) := X"20";
 	constant I2C_READPLUSNACK: std_logic_vector(7 downto 0) := X"28";
 	constant I2C_STOP: std_logic_vector(7 downto 0) := X"40";
@@ -70,11 +70,32 @@ architecture rtl of ipbus_i2c_master is
     signal devaddr : addr_t;
     signal busaddr : addr_t;
     signal ackseen: std_logic;
-    signal tipseen: std_logic;
     
     signal bytecount : natural range 4 downto 0;
 
 begin
+
+    ila1: entity work.ila_0
+        port map( 
+    clk  => clk,--: in STD_LOGIC;
+    probe0(0) => ipbus_in_fast.ipb_strobe,
+    probe1(0) => ipbus_in_fast.ipb_write,
+    probe2    => ipbus_in_fast.ipb_addr,
+    probe3(0) => stb,
+    probe4(0) => ack,
+    probe5    => data_in & X"0000" & data_out & X"0000",
+    probe6(0) => ipbus_out_fast.ipb_ack,
+    probe7(0) => ipbus_out_fast.ipb_err,
+    probe8    => ipbus_out_fast.ipb_rdata,
+    probe9(0) => ackseen,
+    probe10(0) => tipseen,
+    probe11    => X"000000000000" & sr,
+    probe12(0) => scl_o,
+    probe13(0) => scl_i,
+    probe14(0) => sda_o,
+    probe15(0) => sda_i 
+ );
+
 
 
     stb <= stb_x and not ack;
@@ -87,14 +108,12 @@ begin
         we   <= '0';
         ack_last    <= '0';
         ackseen     <= '0';
-        tipseen     <= '0';
         ipbus_out.ipb_ack <= '0';
         ipbus_out_fast.ipb_ack <= '0';
         ipbus_out_mem.ipb_ack <= '0'; 
     elsif(rising_edge(clk)) then
         ack_last <= ack;
         stb_x  <= '0';
-        we     <= '0';
         ipbus_out.ipb_ack <= '0';
         ipbus_out_fast.ipb_ack <= '0';
         ipbus_out_mem.ipb_ack <= '0'; 
@@ -111,7 +130,7 @@ begin
                 elsif(ipbus_in_fast.ipb_strobe = '1') then 
                     state   <= write1;
                     addr    <= ADDR_I2C_DATA;
-                    data_in <= ipbus_in_fast.ipb_addr(31 downto 25) & "0";
+                    data_in <= ipbus_in.ipb_addr(31 downto 25) & "0";
                     we      <= '1';
                     stb_x   <= '1';
                    ipbus_out.ipb_rdata(31 downto 0) <= (others => '0');
@@ -129,91 +148,87 @@ begin
                 if(ack = '1') then
                     state <= write2;
                     addr    <= ADDR_I2C_CMD_STAT;
-                    data_in <= I2C_START;
+                    data_in <= I2C_WRITE;
                     we      <= '1';
                     stb_x   <= '1';
                     ackseen <= '0';
                 end if;
             when write2 =>
                 if(ack = '1') then
-                    state <= write3;
-                    addr    <= ADDR_I2C_CMD_STAT;
-                    data_in <= I2C_WRITE;
-                    we      <= '1';
-                    stb_x   <= '1';
-                    ackseen <= '0';
-                end if;
-            when write3 =>
-                if(ack = '1') then
                     ackseen <= '1';
                     stb_x   <= '0';
                 end if;
-                if(sr(TIPBIT) = '1')then
-                    tipseen <= '1';
-                end if;    
-                if(sr(TIPBIT) = '0' and tipseen = '1' and (ack = '1' or ackseen = '1')) then
-                    tipseen <= '0';
-                    if(ipbus_in_fast.ipb_wdata(24) = '1') then
-                        state   <= write4;
+                if(sr(TIPBIT) = '0' and (ack = '1' or ackseen = '1')) then
+                    if(ipbus_in.ipb_wdata(24) = '1') then
+                        state   <= write3;
                         addr    <= ADDR_I2C_DATA;
-                        data_in <= ipbus_in_fast.ipb_addr(23 downto 16);
+                        data_in <= ipbus_in.ipb_addr(23 downto 16);
                         we      <= '1';
                         stb_x   <= '1';
                     else 
-                        if( ipbus_in_fast.ipb_write = '1') then
-                            state   <= write6;
+                        if( ipbus_in.ipb_write = '1') then
+                            state   <= write5;
                             addr    <= ADDR_I2C_DATA;
-                            data_in <= ipbus_in_fast.ipb_wdata(7 downto 0);
+                            data_in <= ipbus_in.ipb_wdata(7 downto 0);
                             we      <= '1';
                             stb_x   <= '1';
                          else
                             state   <= read1;
                             addr    <= ADDR_I2C_DATA;
-                            data_in <= ipbus_in_fast.ipb_addr(31 downto 25) & "0";
+                            data_in <= ipbus_in.ipb_addr(31 downto 25) & "0";
                             we      <= '1';
                             stb_x   <= '1';
-                            bytecount   <= conv_integer(ipbus_in_fast.ipb_addr(15 downto 14)) + 1;
+                            bytecount   <= conv_integer(ipbus_in.ipb_addr(15 downto 14)) + 1;
                          end if;
                     end if;
                     ackseen <= '0'; 
                     if(sr(NOACKBIT) = '1') then
-                        ipbus_out_fast.ipb_rdata(7 downto 0)  <= (others => '0');
-                        ipbus_out_fast.ipb_rdata(31 downto 8) <= (others => '1');
-                        ipbus_out_fast.ipb_err <= '0';
-                        ipbus_out_fast.ipb_ack <= ack;
+                        ipbus_out.ipb_rdata(7 downto 0)  <= (others => '0');
+                        ipbus_out.ipb_rdata(31 downto 8) <= (others => '1');
+                        ipbus_out.ipb_err <= '0';
+                        ipbus_out.ipb_ack <= ack;
                         state   <= idle;
                     end if;
                 end if;
-             when write4 =>
+             when write3 =>
                 if(ack = '1') then
-                    state <= write5;
+                    state <= write4;
                     addr    <= ADDR_I2C_CMD_STAT;
                     data_in <= I2C_WRITE;
                     we      <= '1';
                     stb_x   <= '1';
                     ackseen <= '0';
                 end if;
-             when write5 =>
+             when write4 =>
                 if(ack = '1') then
                     ackseen <= '1';
                     stb_x   <= '0';
                 end if;
-                if(sr(TIPBIT) = '1')then
-                    tipseen <= '1';
-                end if; 
-                if(sr(TIPBIT) = '0' and tipseen = '1' and (ack = '1' or ackseen = '1')) then
-                    tipseen <= '0';
-                    state   <= write6;
+                if(sr(TIPBIT) = '0' and (ack = '1' or ackseen = '1')) then
+                    state   <= write5;
                     addr    <= ADDR_I2C_DATA;
-                    data_in <= ipbus_in_fast.ipb_wdata(7 downto 0);
+                    data_in <= ipbus_in.ipb_wdata(7 downto 0);
                     we      <= '1';
                     stb_x   <= '1';
                 end if;
-             when write6 =>
+             when write5 =>
                  if(ack = '1') then
-                    state <= write7;
+                    state <= write6;
                     addr    <= ADDR_I2C_CMD_STAT;
                     data_in <= I2C_WRITE;
+                    we      <= '1';
+                    stb_x   <= '1';
+                    ackseen <= '0';
+                end if;
+            when write6 =>
+                if(ack = '1') then
+                    ackseen <= '1';
+                    stb_x   <= '0';
+                end if;
+                if(sr(TIPBIT) = '0' and (ack = '1' or ackseen = '1')) then
+                    state <= write7;
+                    addr    <= ADDR_I2C_CMD_STAT;
+                    data_in <= I2C_STOP;
                     we      <= '1';
                     stb_x   <= '1';
                     ackseen <= '0';
@@ -223,43 +238,13 @@ begin
                     ackseen <= '1';
                     stb_x   <= '0';
                 end if;
-                if(sr(TIPBIT) = '1')then
-                    tipseen <= '1';
-                end if; 
-                if(sr(TIPBIT) = '0' and tipseen = '1' and (ack = '1' or ackseen = '1')) then
-                    tipseen <= '0';
-                    state <= write8;
-                    addr    <= ADDR_I2C_CMD_STAT;
-                    data_in <= I2C_STOP;
-                    we      <= '1';
-                    stb_x   <= '1';
-                    ackseen <= '0';
-                end if;
-            when write8 =>
-                if(ack = '1') then
-                    ackseen <= '1';
-                    stb_x   <= '0';
-                end if;
-                if((ack = '1' or ackseen = '1')) then
-                    state   <= write9;
-                    addr    <= ADDR_I2C_CMD_STAT;
-                    data_in <= I2C_WRITE;
-                    we      <= '1';
-                    stb_x   <= '1';
-                    ackseen <= '0';
-                end if;
-            when write9 =>
-                if(ack = '1') then
-                    ackseen <= '1';
-                    stb_x   <= '0';
-                end if;
                 if(sr(BUSYBIT) = '0' and (ack = '1' or ackseen = '1')) then
                     state   <= idle;
                     we      <= '0';
                     stb_x   <= '0';
                     ackseen <= '0';
-                    ipbus_out_fast.ipb_err <= '0';
-                    ipbus_out_fast.ipb_ack <= ack;                    
+                    ipbus_out.ipb_err <= '0';
+                    ipbus_out.ipb_ack <= ack;                    
                 end if;
             when read1 =>
                 if(ack = '1') then
@@ -275,11 +260,7 @@ begin
                     ackseen <= '1';
                     stb_x   <= '0';
                 end if;
-                if(sr(TIPBIT) = '1')then
-                    tipseen <= '1';
-                end if; 
-                if(sr(TIPBIT) = '0' and tipseen = '1' and (ack = '1' or ackseen = '1')) then
-                    tipseen <= '0';
+                if(sr(TIPBIT) = '0' and (ack = '1' or ackseen = '1')) then
                     state   <= read3;
                     addr    <= ADDR_I2C_CMD_STAT;
                     if(bytecount = 1) then
@@ -296,11 +277,7 @@ begin
                     ackseen <= '1';
                     stb_x   <= '0';
                 end if;
-                if(sr(TIPBIT) = '1')then
-                    tipseen <= '1';
-                end if; 
-                if(sr(TIPBIT) = '0' and tipseen = '1' and (ack = '1' or ackseen = '1')) then
-                    tipseen <= '0';
+                if(sr(TIPBIT) = '0' and (ack = '1' or ackseen = '1')) then
                     state   <= read4;
                     addr    <= ADDR_I2C_DATA;
                     we      <= '0';
@@ -308,7 +285,7 @@ begin
                 end if;
            when read4 =>
                 if(ack = '1') then
-                    ipbus_out_fast.ipb_rdata(8*bytecount+7 downto 8*bytecount)  <= data_out;
+                    ipbus_out.ipb_rdata(8*bytecount+7 downto 8*bytecount)  <= data_out;
                     if(bytecount = 0) then
                         state   <= write7;
                         addr    <= ADDR_I2C_CMD_STAT;
