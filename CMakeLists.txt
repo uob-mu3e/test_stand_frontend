@@ -26,9 +26,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# on some older boxes, wpedantic and MIDAS do not mix
-add_subdirectory(modules)
-
 add_compile_options(
     "-Wpedantic" "-Wall" "-Wextra"
     "-Wformat=2"
@@ -71,6 +68,8 @@ set(MIDASLIB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/linux/lib)
 set(MIDASLIB ${MIDASLIB_DIR}/libmidas.a)
 set(MIDASDRIVERDIR ${PROJECT_SOURCE_DIR}/modules/midas/drivers/class)
 set(MIDASINCLUDE_DIR ${PROJECT_SOURCE_DIR}/modules/midas/include)
+set(ENV{MIDASSYS} ${PROJECT_SOURCE_DIR}/build/modules/midas)
+set(ENV{MIDASSRC} ${PROJECT_SOURCE_DIR}/modules/midas)
 set(LIBMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/libmudaq)
 set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmupix)
 set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmutrig)
@@ -79,6 +78,8 @@ set(INCMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/include)
 set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mxml)
 set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mscb)
 
+# on some older boxes, wpedantic and MIDAS do not mix
+add_subdirectory(modules)
 add_subdirectory(backend_pc)
 add_subdirectory(common/libmudaq)
 add_subdirectory(common/libmupix)
