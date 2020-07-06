@@ -362,6 +362,10 @@ begin
                 end if;
             end if;
             
+            if ( i_reg_add = x"97" and i_reg_re = '1' ) then
+                o_reg_rdata            <= lvds_data_valid;
+            end if;
+            
         end if;
     end process board_dac_regs;
 

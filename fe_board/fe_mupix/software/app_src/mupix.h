@@ -56,6 +56,9 @@ struct mupix_t {
 
     void menu() {
         auto& regs = sc->ram->regs.scifi;
+        alt_u32 lvdsMask = 0x0;
+        char str[2] = {0};
+        
         while(1) {
             printf("  [b] => set default board DACs (All)\n");
             printf("  [0] => set default chip A DACs\n");
@@ -63,7 +66,9 @@ struct mupix_t {
             printf("  [2] => set default chip C DACs\n");
             printf("  [3] => set default chip E DACs\n");
             printf("  [4] => lvds links\n");
-            printf("  [5] => print link mask\n");
+            printf("  [5] => print lvds mask\n");
+            printf("  [6] => write lvds mask\n");
+            printf("  [7] => print lvds dvalid\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -86,6 +91,22 @@ struct mupix_t {
                 break;
             case '5':
                 printf("lvds mask: 0x%08x\n",sc->ram->data[0xFF96]);
+                break;
+            case '6':
+                lvdsMask = 0x0;
+                printf("Enter lvdsMask in hex: ");
+
+                for(int i = 0; i<8; i++){
+                    printf("mask: 0x%08x\n", lvdsMask);
+                    str[0] = wait_key();
+                    lvdsMask = lvdsMask*16+strtol(str,NULL,16);
+                }
+
+                printf("setting mask to 0x%08x\n", lvdsMask);
+                sc->ram->data[0xFF96] = lvdsMask;
+                break;
+            case '7':
+                printf("lvds dvalid: 0x%08x\n",sc->ram->data[0xFF97]);
                 break;
             case 'b':
                 set_board_dacs(0, default_board_dacs);
