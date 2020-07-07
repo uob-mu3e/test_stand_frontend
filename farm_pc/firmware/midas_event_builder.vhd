@@ -8,11 +8,11 @@ use ieee.std_logic_unsigned.all;
 
 
 entity midas_event_builder is
-    generic (
+generic (
         NLINKS: integer := 4;
         LINK_FIFO_ADDR_WIDTH : integer := 10 --;
-    );
-    port(
+);
+port(
         i_clk_data:         in  std_logic;
         i_clk_dma:          in  std_logic;
         i_reset_data_n:     in  std_logic;
@@ -32,7 +32,7 @@ entity midas_event_builder is
         o_state_out:        out std_logic_vector(3 downto 0);
         o_fifo_almost_full: out std_logic_vector(NLINKS - 1 downto 0)--;
 );
-end entity midas_event_builder;
+end entity;
 
 architecture rtl of midas_event_builder is
 
@@ -57,17 +57,18 @@ signal r_ram_data : std_logic_vector(255 downto 0);
 signal r_ram_add  : std_logic_vector(8 downto 0);
 
 -- tagging fifo
-type event_tagging_state_type is (event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, trailer_name, trailer_type, trailer_length, trailer_data, trailer_set_length, event_set_size, bank_set_size, write_tagging_fifo, set_algin_word);
+    type event_tagging_state_type is (
+        event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, trailer_name, trailer_type, trailer_length, trailer_data, trailer_set_length, event_set_size, bank_set_size, write_tagging_fifo, set_algin_word,
+        EVENT_IDLE--,
+    );
+
 signal event_tagging_state : event_tagging_state_type;
-signal current_link 			: integer;
 signal data_flag 				: std_logic;
 signal cur_size_add 			: std_logic_vector(11 downto 0);
 signal cur_bank_size_add 	: std_logic_vector(11 downto 0);
-signal cur_bank_length_add : std_logic_vector(NLINKS * 12 - 1 downto 0);
+signal cur_bank_length_add : std_logic_vector(12 - 1 downto 0);
 
 signal w_ram_add_reg 	: std_logic_vector(11 downto 0);
-signal last_event_add 	: std_logic_vector(11 downto 0);
-signal align_event_size : std_logic_vector(11 downto 0);
 signal w_fifo_data      : std_logic_vector(11 downto 0);
 signal w_fifo_en        : std_logic;
 signal r_fifo_data      : std_logic_vector(11 downto 0);
@@ -89,6 +90,17 @@ type event_counter_state_type is (waiting, get_data, runing, skip_event);
 signal event_counter_state : event_counter_state_type;
 signal event_last_ram_add : std_logic_vector(8 downto 0);
 signal word_counter : std_logic_vector(31 downto 0);
+
+
+    -- current link data/datak/empty
+    signal link_fifo_sop : std_logic_vector(NLINKS-1 downto 0);
+    signal link_fifo_eop : std_logic_vector(NLINKS-1 downto 0);
+    signal stream_in_rempty : std_logic_vector(NLINKS-1 downto 0);
+    signal stream_wdata, stream_rdata : std_logic_vector(35 downto 0);
+    signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
+    signal link_data : std_logic_vector(31 downto 0);
+    signal link_datak : std_logic_vector(3 downto 0);
+    signal link_header, link_trailer : std_logic;
 
 ----------------begin event_counter------------------------
 begin
@@ -144,6 +156,9 @@ FOR i in 0 to NLINKS - 1 GENERATE
         aclr        => reset_data--,
     );
 
+    link_fifo_sop(i) <= '1' when ( link_fifo_data_out(3 downto 0) = "0001" and link_fifo_data_out(11 downto 4) = x"BC" ) else '0';
+    link_fifo_eop(i) <= '1' when ( link_fifo_data_out(3 downto 0) = "0001" and link_fifo_data_out(11 downto 4) = x"9C" ) else '0';
+
 --    process(i_clk_data, i_reset_data_n)
 --    begin
 --        if(i_reset_data_n = '0') then
@@ -159,15 +174,15 @@ FOR i in 0 to NLINKS - 1 GENERATE
 
 END GENERATE buffer_link_fifos;
 
-e_ram_32_256 : entity work.ip_ram
-generic map (
+    e_ram_32_256 : entity work.ip_ram
+    generic map (
 	ADDR_WIDTH_A 	=> 12,
     ADDR_WIDTH_B 	=> 9,
     DATA_WIDTH_A 	=> 32,
     DATA_WIDTH_B 	=> 256,
     DEVICE 			=> "Arria 10"--,
-)
-   port map (
+    )
+    port map (
 		address_a 	=> w_ram_add,
 		address_b 	=> r_ram_add,
 		clock_a 		=> i_clk_dma,
@@ -178,15 +193,15 @@ generic map (
 		wren_b 		=> '0',
 		q_a 			=> open,
 		q_b 			=> r_ram_data--,
-);
+    );
 
-e_tagging_fifo_event : entity work.ip_scfifo
-    generic map(
+    e_tagging_fifo_event : entity work.ip_scfifo
+    generic map (
         ADDR_WIDTH 	=> 12,
         DATA_WIDTH 	=> 12,
         DEVICE 		=> "Arria 10"--,
-	)
-	port map (
+    )
+    port map (
 		data     		=> w_fifo_data,
 		wrreq    		=> w_fifo_en,
 		rdreq    		=> r_fifo_en,
@@ -198,23 +213,70 @@ e_tagging_fifo_event : entity work.ip_scfifo
 		almost_full 	=> open,
 		usedw 			=> open,
 		sclr     		=> reset_dma--,
-);
+    );
 
--- write link data to event ram
-process(i_clk_dma, i_reset_dma_n)
-begin
-	if( i_reset_dma_n = '0' ) then
+    stream_in_rempty <= link_fifo_empty or not i_link_mask_n;
+
+    e_stream : entity work.stream_merger
+    generic map (
+        W => 36,
+        N => NLINKS--,
+    )
+    port map (
+        i_rdata     => link_fifo_data_out,
+        i_rsop      => link_fifo_sop,
+        i_reop      => link_fifo_eop,
+        i_rempty    => stream_in_rempty,
+        o_rack      => link_fifo_ren,
+
+        o_wdata     => stream_wdata,
+        i_wfull     => stream_wfull,
+        o_we        => stream_we,
+
+        i_reset_n   => i_reset_dma_n,
+        i_clk       => i_clk_dma--,
+    );
+
+    e_stream_fifo : entity work.ip_scfifo
+    generic map (
+        ADDR_WIDTH => 8,
+        DATA_WIDTH => 36,
+        DEVICE => "Arria 10"--,
+    )
+    port map (
+        q               => stream_rdata,
+        empty           => stream_rempty,
+        rdreq           => stream_rack,
+        data            => stream_wdata,
+        full            => stream_wfull,
+        wrreq           => stream_we,
+        sclr            => reset_dma,
+        clock           => i_clk_dma--,
+    );
+
+    link_data <= stream_rdata(35 downto 4);
+    link_datak <= stream_rdata(3 downto 0);
+    link_header <=
+        '1' when link_datak = "0001" and link_data(7 downto 0) = x"BC"
+        and ( link_data(31 downto 26) = "111010" or link_data(31 downto 26) = "111000" )
+        else '0';
+    link_trailer <=
+        '1' when link_datak = "0001" and link_data(7 downto 0) = x"9C"
+        else '0';
+
+    -- write link data to event ram
+    process(i_clk_dma, i_reset_dma_n)
+    begin
+    if ( i_reset_dma_n = '0' ) then
+        stream_rack <= '0';
+
 		-- state machine singals
-		event_tagging_state	<= event_head;
-		current_link 			<= 0;
+        event_tagging_state <= EVENT_IDLE;
 		data_flag 				<= '0';
 		cur_size_add 			<= (others => '0');
 		cur_bank_size_add 	<= (others => '0');
 		cur_bank_length_add 	<= (others => '0');
-		link_fifo_ren 			<= (others => '0');
 		w_ram_add_reg 			<= (others => '0');
-		last_event_add 		<= (others => '0');
-		align_event_size 		<= (others => '0');
 
 		-- ram and tagging fifo write signals
 		w_ram_en            	<= '0';
@@ -235,8 +297,8 @@ begin
       bank_size_cnt		<= (others => '0');
       event_size_cnt		<= (others => '0');
 
-	elsif( rising_edge(i_clk_dma) ) then
-	
+    --
+    elsif rising_edge(i_clk_dma) then
 		flags				<= x"00000011";
 		trigger_mask	<= (others => '0');
 		event_id     	<= x"0001";
@@ -244,43 +306,44 @@ begin
 		w_ram_en  		<= '0';
 		w_fifo_en 		<= '0';
 
-		-- Note: we only do something if there is data in all fifos
-		-- KB: if( link_fifo_not_empty = '1' ) then
-		-- KB: change to do something once there is data from at least one enabled link
-		if( unsigned( (not link_fifo_empty) and i_link_mask_n) /= 0 ) then
+        if ( event_tagging_state /= EVENT_IDLE ) then
+            -- count time for midas event header
+            time_tmp <= time_tmp + '1';
+        end if;
 
-			-- count time for midas event header
-			time_tmp <= time_tmp + '1';
+        case event_tagging_state is
+        when EVENT_IDLE =>
+            -- start if at least one not masked link has data
+            if ( stream_rempty = '0' ) then
+                event_tagging_state <= event_head;
+            end if;
 
-			case event_tagging_state is
-
-				when event_head =>
+        when event_head =>
 					w_ram_en					<= '1';
 					w_ram_add   			<= w_ram_add + 1;
 					w_ram_data  			<= trigger_mask & event_id;
-					last_event_add 		<= w_ram_add + 1;
 					event_tagging_state 	<= event_num;
 
-				when event_num =>
+        when event_num =>
 					w_ram_en					<= '1';
 					w_ram_add   			<= w_ram_add + 1;
 					w_ram_data  			<= serial_number;
 					event_tagging_state 	<= event_tmp;
 
-				when event_tmp =>
+        when event_tmp =>
 					w_ram_en					<= '1';
 					w_ram_add   			<= w_ram_add + 1;
 					w_ram_data  			<= time_tmp;
 					event_tagging_state 	<= event_size;
 
-				when event_size =>
+        when event_size =>
 					w_ram_en					<= '1';
 					w_ram_add   			<= w_ram_add + 1;
 					w_ram_data  			<= (others => '0');
 					cur_size_add 			<= w_ram_add + 1;
 					event_tagging_state 	<= bank_size;
 
-				when bank_size =>
+        when bank_size =>
 					w_ram_en					<= '1';
 					w_ram_add   			<= w_ram_add + 1;
 					w_ram_data  			<= (others => '0');
@@ -288,7 +351,7 @@ begin
 					event_size_cnt      	<= event_size_cnt + 4;
 					event_tagging_state 	<= bank_flags;
 
-				when bank_flags =>
+        when bank_flags =>
 					w_ram_en					<= '1';
 					event_size_cnt      	<= event_size_cnt + 4;
 					w_ram_add   			<= w_ram_add + 1;
@@ -296,29 +359,13 @@ begin
 					w_ram_data				<= flags;
 					event_tagging_state 	<= bank_name;
 
-				when bank_name =>
-               link_fifo_ren(current_link) <= '0';
+        when bank_name =>
+
+            stream_rack <= '0';
 					--here we check if the link is masked and if the current fifo is empty
-					if ( i_link_mask_n(current_link) = '0' or link_fifo_empty(current_link) = '1' ) then
-						--skip this link
-						current_link <= current_link + 1;
-						--last link, go to trailer bank
-						if ( current_link + 1 = NLINKS ) then
-                     if ( data_flag = '0' ) then
-                        current_link <= 0;
-                     else
-                        event_tagging_state <= trailer_name;
-                     end if;
-						end if;
-					else
+            if ( stream_rempty = '0' ) then
 						--check for mupix or mutrig data header
-						if(	
-							(link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 30) = "111010" or link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 30) = "111000")
-							and
-							(link_fifo_data_out(11 + current_link * 36 downto current_link * 36 + 4) = x"bc")
-							and
-							(link_fifo_data_out(3 + current_link * 36 downto current_link * 36) = "0001")
-						) then
+                if( link_header = '1' ) then
                      data_flag	<= '1';
 							w_ram_en		<= '1';
 							w_ram_add   <= w_ram_add_reg + 1;
@@ -327,59 +374,55 @@ begin
                                             work.util.hex_to_ascii(link_fifo_data_out(19 + current_link * 36 downto current_link * 36 + 16)) &
                                             work.util.hex_to_ascii(link_fifo_data_out(23 + current_link * 36 downto current_link * 36 + 20)) &
                                             work.util.hex_to_ascii(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 24));
-
 							event_size_cnt      	<= event_size_cnt + 4;
 							event_tagging_state 	<= bank_type;
 						--throw data away until a header
-						else
-						   link_fifo_ren(current_link) <= '1';
-						end if;
-					end if;
+                else
+                    stream_rack <= '1';
+                end if;
+            end if;
 
-				when bank_type =>
+        when bank_type =>
 					w_ram_en					<= '1';
 					w_ram_add   			<= w_ram_add + 1;
 					w_ram_data				<= type_bank;
 					event_size_cnt    	<= event_size_cnt + 4;
 					event_tagging_state 	<= bank_length;
 
-				when bank_length =>
+        when bank_length =>
 					w_ram_en								<= '1';
 					w_ram_add   						<= w_ram_add + 1;
 					w_ram_data  						<= (others => '0');
 					event_size_cnt      				<= event_size_cnt + 4;
-					cur_bank_length_add(11 + current_link * 12 downto current_link * 12) <= w_ram_add + 1;
-					link_fifo_ren(current_link) 	<= '1';
+					cur_bank_length_add <= w_ram_add + 1;
+            stream_rack <= '1';
 					event_tagging_state 				<= bank_data;
 
-				when bank_data =>
+        when bank_data =>
+
 					-- check again if the fifo is empty
-					if ( link_fifo_empty(current_link) = '0' ) then
+            if ( stream_rempty = '0' ) then
 						w_ram_en				<= '1';
 						w_ram_add   		<= w_ram_add + 1;
-						w_ram_data  		<= link_fifo_data_out(35 + current_link * 36 downto current_link * 36 + 4);
+						w_ram_data  		<= link_data;
 						event_size_cnt 	<= event_size_cnt + 4;
  					   bank_size_cnt 		<= bank_size_cnt + 4;
-						if(  
-							(link_fifo_data_out(11 + current_link * 36 downto current_link * 36 + 4) = x"9c")
-							and 
-							(link_fifo_data_out(3 + current_link * 36 downto current_link * 36) = "0001")
-						) then
+                if ( link_trailer = '1' ) then
 							-- check if the size of the bank data is in 64 bit if not add a word
 							-- this word is not counted to the bank size
-							if ( bank_size_cnt(2 downto 0) = "000" ) then
+                    if ( bank_size_cnt(2 downto 0) = "000" ) then
 								event_tagging_state 	<= set_algin_word;
-							else
+                    else
 								event_tagging_state 	<= bank_set_length;
 								w_ram_add_reg 			<= w_ram_add + 1;
-							end if;
-							link_fifo_ren(current_link) <= '0';
-						else
-							link_fifo_ren(current_link) <= '1';
-						end if;
-					end if;
-					
-				when set_algin_word =>
+                    end if;
+                    stream_rack <= '0';
+                else
+                    stream_rack <= '1';
+                end if;
+            end if;
+
+        when set_algin_word =>
 					w_ram_en					<= '1';
 					w_ram_add   			<= w_ram_add + 1;
 					w_ram_data 				<= x"AFFEAFFE";
@@ -387,35 +430,33 @@ begin
 					event_size_cnt      	<= event_size_cnt + 4;
 					event_tagging_state 	<= bank_set_length;
 
-				when bank_set_length =>
+        when bank_set_length =>
                w_ram_en						<= '1';
-					w_ram_add   				<= cur_bank_length_add(11 + current_link * 12 downto current_link * 12);
+					w_ram_add   				<= cur_bank_length_add;
 					w_ram_data 					<= bank_size_cnt;
 					bank_size_cnt 				<= (others => '0');
-					if ( current_link + 1 = NLINKS ) then
+            if ( stream_rempty = '1' ) then
 						event_tagging_state 	<= trailer_name;
-					else
-						current_link <= current_link + 1;
+            else
 						event_tagging_state 	<= bank_name;
-					end if;
+            end if;
 
-				when trailer_name =>
+        when trailer_name =>
 					w_ram_en					<= '1';
 	            w_ram_add   			<= w_ram_add_reg + 1;
 					w_ram_data  			<= x"454b4146"; -- FAKE in ascii
 					data_flag      		<= '0';
-					current_link   		<= 0;
 	            event_size_cnt 		<= event_size_cnt + 4;
 	            event_tagging_state 	<= trailer_type;
-	                
-				when trailer_type =>
+
+        when trailer_type =>
 					w_ram_en					<= '1';
 					w_ram_add   			<= w_ram_add + 1;
 					w_ram_data  			<= type_bank;
 					event_size_cnt      	<= event_size_cnt + 4;
 					event_tagging_state 	<= trailer_length;
 
-				when trailer_length =>
+        when trailer_length =>
 					w_ram_en					<= '1';
 					w_ram_add   			<= w_ram_add + 1;
 					w_ram_data  			<= (others => '0');
@@ -423,67 +464,65 @@ begin
 					w_ram_add_reg 			<= w_ram_add + 1;
 					event_size_cnt      	<= event_size_cnt + 4;
 					-- write at least one AFFEAFFE
-					align_event_size		<= w_ram_add + 1 - last_event_add;
 					event_tagging_state 	<= trailer_data;
 
-				when trailer_data =>
+        when trailer_data =>
+            w_ram_add_reg <= w_ram_add;
 					w_ram_en						<= '1';
 					w_ram_add   				<= w_ram_add + 1;
 					w_ram_data					<= x"AFFEAFFE";
-					align_event_size 			<= align_event_size + 1;
-					if ( align_event_size(2 downto 0) + '1' = "000" ) then
+            -- align to DMA word (32 bytes) boundary
+            if ( event_size_cnt(4 downto 0) /= "00000" ) then
 						event_tagging_state 	<= trailer_set_length;
-					else
+            else
 						bank_size_cnt 			<= bank_size_cnt + 4;
 						event_size_cnt 		<= event_size_cnt + 4;
-					end if;
+            end if;
 
-				when trailer_set_length =>
+        when trailer_set_length =>
 					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add_reg;
+					
 					-- bank length: size in bytes of the following data
 					w_ram_data 				<= bank_size_cnt;
-					w_ram_add_reg 			<= w_ram_add;
 					bank_size_cnt 			<= (others => '0');
 					event_tagging_state 	<= event_set_size;
 
-				when event_set_size =>
+        when event_set_size =>
 					w_ram_en  				<= '1';
 					w_ram_add 				<= cur_size_add;
 					-- Event Data Size: The event data size contains the size of the event in bytes excluding the event header
 					w_ram_data 				<= event_size_cnt;
 					event_tagging_state 	<= bank_set_size;
 
-				when bank_set_size =>
+        when bank_set_size =>
 					w_ram_en 					<= '1';
 					w_ram_add 					<= cur_bank_size_add;
-					-- All Bank Size: Size in bytes of the following data plus the size of the bank header
+        -- All Bank Size : Size in bytes of the following data banks including their bank names
 					w_ram_data 					<= event_size_cnt - 8;
 					event_size_cnt 			<= (others => '0');
 					event_tagging_state 		<= write_tagging_fifo;
 
-				when write_tagging_fifo =>
+        when write_tagging_fifo =>
 					w_fifo_en 					<= '1';
-					w_fifo_data 				<= w_ram_add_reg;
-					last_event_add				<= w_ram_add_reg;
-					w_ram_add 					<= w_ram_add_reg - 1;
-					event_tagging_state 		<= event_head;
+					w_fifo_data 				<= w_ram_add_reg + 1;
+					w_ram_add 					<= w_ram_add_reg;
+					event_tagging_state 		<= EVENT_IDLE;
 					cur_bank_length_add 		<= (others => '0');
 					serial_number 				<= serial_number + '1';
 
-				when others =>
-					event_tagging_state <= event_head;
+        when others =>
+            event_tagging_state <= EVENT_IDLE;
 
-			end case;
-		end if;
-	end if;
-end process;
+        end case;
+
+    end if;
+    end process;
 
 
 -- dma end of events, count events and write control
-process(i_clk_dma, i_reset_dma_n)
-begin
-	if(i_reset_dma_n = '0') then
+    process(i_clk_dma, i_reset_dma_n)
+    begin
+    if ( i_reset_dma_n = '0' ) then
 		o_event_wren				<= '0';
 		o_endofevent				<= '0';
 		o_state_out             <= x"0";
@@ -493,8 +532,9 @@ begin
 		event_last_ram_add		<= (others => '0');
 		event_counter_state 		<= waiting;	
       word_counter <= (others => '0');
-	elsif(rising_edge(i_clk_dma)) then
-		
+        --
+    elsif rising_edge(i_clk_dma) then
+
 		o_done 			<= '0';
 		r_fifo_en		<= '0';
 		o_event_wren	<= '0';
@@ -507,10 +547,9 @@ begin
 		if ( i_wen_reg = '1' and word_counter >= i_get_n_words ) then
 			o_done <= '1';
 		end if;
-			
-      case event_counter_state is
-		
-			when waiting =>
+
+        case event_counter_state is
+        when waiting =>
 				o_state_out					<= x"A";
 				if (tag_fifo_empty = '0') then
 					r_fifo_en    		  	<= '1';
@@ -518,8 +557,8 @@ begin
 					r_ram_add			  	<= r_ram_add + '1';
 					event_counter_state		<= get_data;
 				end if;
-				
-			when get_data =>
+
+        when get_data =>
 				o_state_out 		<= x"B";
 				if ( i_dmamemhalffull = '1' or ( i_get_n_words /= (i_get_n_words'range => '0') and word_counter >= i_get_n_words ) ) then
 					event_counter_state <= skip_event;
@@ -530,8 +569,8 @@ begin
 					event_counter_state	<= runing;
 				end if;
 				r_ram_add			<= r_ram_add + '1';
-				
-			when runing =>
+
+        when runing =>
 				o_state_out 	<= x"C";
 				o_event_wren <= i_wen_reg;
 				word_counter <= word_counter + '1';
@@ -540,23 +579,22 @@ begin
 				else
 					r_ram_add <= r_ram_add + '1';
 				end if;
-				
-			when skip_event =>
+
+        when skip_event =>
 				o_state_out 	<= x"E";
 				if(r_ram_add = event_last_ram_add - '1') then
 					event_counter_state	<= waiting;
 				else
 					r_ram_add <= r_ram_add + '1';
 				end if;
-				
-			
-			when others =>
+
+        when others =>
 				o_state_out 		<= x"D";
 				event_counter_state	<= waiting;
 				
-		end case;
-			
-	end if;
-end process;
+        end case;
 
-end rtl;
+    end if;
+    end process;
+
+end architecture;
