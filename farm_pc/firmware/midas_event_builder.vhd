@@ -370,10 +370,10 @@ END GENERATE buffer_link_fifos;
 							w_ram_en		<= '1';
 							w_ram_add   <= w_ram_add_reg + 1;
                             -- MIDAS expects bank names in ascii:
-                            w_ram_data <=   work.util.hex_to_ascii(link_fifo_data_out(15 + current_link * 36 downto current_link * 36 + 12)) &
-                                            work.util.hex_to_ascii(link_fifo_data_out(19 + current_link * 36 downto current_link * 36 + 16)) &
-                                            work.util.hex_to_ascii(link_fifo_data_out(23 + current_link * 36 downto current_link * 36 + 20)) &
-                                            work.util.hex_to_ascii(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 24));
+                            w_ram_data <=   work.util.hex_to_ascii(link_data(11 downto 8)) &
+                                            work.util.hex_to_ascii(link_data(15 downto 12)) &
+                                            work.util.hex_to_ascii(link_data(19 downto 16)) &
+                                            work.util.hex_to_ascii(link_data(23 downto 20));
 							event_size_cnt      	<= event_size_cnt + 4;
 							event_tagging_state 	<= bank_type;
 						--throw data away until a header
@@ -435,11 +435,11 @@ END GENERATE buffer_link_fifos;
 					w_ram_add   				<= cur_bank_length_add;
 					w_ram_data 					<= bank_size_cnt;
 					bank_size_cnt 				<= (others => '0');
-            if ( stream_rempty = '1' ) then
+            --if ( stream_rempty = '1' ) then
 						event_tagging_state 	<= trailer_name;
-            else
-						event_tagging_state 	<= bank_name;
-            end if;
+            --else
+			--			event_tagging_state 	<= bank_name;
+            --end if;
 
         when trailer_name =>
 					w_ram_en					<= '1';
