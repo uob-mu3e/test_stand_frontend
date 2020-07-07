@@ -435,11 +435,11 @@ END GENERATE buffer_link_fifos;
 					w_ram_add   				<= cur_bank_length_add;
 					w_ram_data 					<= bank_size_cnt;
 					bank_size_cnt 				<= (others => '0');
-            --if ( stream_rempty = '1' ) then
+            if ( stream_rempty = '1' ) then
 						event_tagging_state 	<= trailer_name;
-            --else
-			--			event_tagging_state 	<= bank_name;
-            --end if;
+            else
+						event_tagging_state 	<= bank_name;
+            end if;
 
         when trailer_name =>
 					w_ram_en					<= '1';
