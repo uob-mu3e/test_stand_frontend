@@ -1,15 +1,15 @@
 [*]
-[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Tue Jan  7 18:03:30 2020
+[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
+[*] Wed Jul  8 09:42:38 2020
 [*]
 [dumpfile] "/home/makoeppe/mu3e/online/farm_pc/firmware/tb/readout/.cache/readout_tb.ghw"
-[dumpfile_mtime] "Tue Jan  7 17:59:36 2020"
-[dumpfile_size] 984463
+[dumpfile_mtime] "Wed Jul  8 09:41:27 2020"
+[dumpfile_size] 2223643
 [savefile] "/home/makoeppe/mu3e/online/farm_pc/firmware/tb/readout/signal_view.sav"
-[timestart] 1244570000
-[size] 2560 1376
-[pos] -89 -89
-*-24.000000 1294140000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 709880000
+[size] 2560 1440
+[pos] -1043 -47
+*-22.000000 733310000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.readout_tb.
 [treeopen] top.readout_tb.e_midas_event_builder.
@@ -23,10 +23,12 @@
 [treeopen] top.readout_tb.e_midas_event_builder.buffer_link_fifos[3].e_fifo.
 [treeopen] top.readout_tb.e_midas_event_builder.buffer_link_fifos[4].
 [treeopen] top.readout_tb.e_midas_event_builder.buffer_link_fifos[4].e_fifo.
+[treeopen] top.readout_tb.e_midas_event_builder.e_stream.
+[treeopen] top.readout_tb.e_midas_event_builder.e_stream_fifo.
 [sst_width] 287
 [signals_width] 268
 [sst_expanded] 1
-[sst_vpaned_height] 862
+[sst_vpaned_height] 934
 @28
 top.readout_tb.clk_half
 top.readout_tb.clk
@@ -48,9 +50,11 @@ top.readout_tb.e_midas_event_builder.event_tagging_state
 @22
 #{top.readout_tb.e_midas_event_builder.w_ram_data[31:0]} top.readout_tb.e_midas_event_builder.w_ram_data[31] top.readout_tb.e_midas_event_builder.w_ram_data[30] top.readout_tb.e_midas_event_builder.w_ram_data[29] top.readout_tb.e_midas_event_builder.w_ram_data[28] top.readout_tb.e_midas_event_builder.w_ram_data[27] top.readout_tb.e_midas_event_builder.w_ram_data[26] top.readout_tb.e_midas_event_builder.w_ram_data[25] top.readout_tb.e_midas_event_builder.w_ram_data[24] top.readout_tb.e_midas_event_builder.w_ram_data[23] top.readout_tb.e_midas_event_builder.w_ram_data[22] top.readout_tb.e_midas_event_builder.w_ram_data[21] top.readout_tb.e_midas_event_builder.w_ram_data[20] top.readout_tb.e_midas_event_builder.w_ram_data[19] top.readout_tb.e_midas_event_builder.w_ram_data[18] top.readout_tb.e_midas_event_builder.w_ram_data[17] top.readout_tb.e_midas_event_builder.w_ram_data[16] top.readout_tb.e_midas_event_builder.w_ram_data[15] top.readout_tb.e_midas_event_builder.w_ram_data[14] top.readout_tb.e_midas_event_builder.w_ram_data[13] top.readout_tb.e_midas_event_builder.w_ram_data[12] top.readout_tb.e_midas_event_builder.w_ram_data[11] top.readout_tb.e_midas_event_builder.w_ram_data[10] top.readout_tb.e_midas_event_builder.w_ram_data[9] top.readout_tb.e_midas_event_builder.w_ram_data[8] top.readout_tb.e_midas_event_builder.w_ram_data[7] top.readout_tb.e_midas_event_builder.w_ram_data[6] top.readout_tb.e_midas_event_builder.w_ram_data[5] top.readout_tb.e_midas_event_builder.w_ram_data[4] top.readout_tb.e_midas_event_builder.w_ram_data[3] top.readout_tb.e_midas_event_builder.w_ram_data[2] top.readout_tb.e_midas_event_builder.w_ram_data[1] top.readout_tb.e_midas_event_builder.w_ram_data[0]
 #{top.readout_tb.e_midas_event_builder.w_ram_add[11:0]} top.readout_tb.e_midas_event_builder.w_ram_add[11] top.readout_tb.e_midas_event_builder.w_ram_add[10] top.readout_tb.e_midas_event_builder.w_ram_add[9] top.readout_tb.e_midas_event_builder.w_ram_add[8] top.readout_tb.e_midas_event_builder.w_ram_add[7] top.readout_tb.e_midas_event_builder.w_ram_add[6] top.readout_tb.e_midas_event_builder.w_ram_add[5] top.readout_tb.e_midas_event_builder.w_ram_add[4] top.readout_tb.e_midas_event_builder.w_ram_add[3] top.readout_tb.e_midas_event_builder.w_ram_add[2] top.readout_tb.e_midas_event_builder.w_ram_add[1] top.readout_tb.e_midas_event_builder.w_ram_add[0]
+@23
+#{top.readout_tb.e_midas_event_builder.event_size_cnt[31:0]} top.readout_tb.e_midas_event_builder.event_size_cnt[31] top.readout_tb.e_midas_event_builder.event_size_cnt[30] top.readout_tb.e_midas_event_builder.event_size_cnt[29] top.readout_tb.e_midas_event_builder.event_size_cnt[28] top.readout_tb.e_midas_event_builder.event_size_cnt[27] top.readout_tb.e_midas_event_builder.event_size_cnt[26] top.readout_tb.e_midas_event_builder.event_size_cnt[25] top.readout_tb.e_midas_event_builder.event_size_cnt[24] top.readout_tb.e_midas_event_builder.event_size_cnt[23] top.readout_tb.e_midas_event_builder.event_size_cnt[22] top.readout_tb.e_midas_event_builder.event_size_cnt[21] top.readout_tb.e_midas_event_builder.event_size_cnt[20] top.readout_tb.e_midas_event_builder.event_size_cnt[19] top.readout_tb.e_midas_event_builder.event_size_cnt[18] top.readout_tb.e_midas_event_builder.event_size_cnt[17] top.readout_tb.e_midas_event_builder.event_size_cnt[16] top.readout_tb.e_midas_event_builder.event_size_cnt[15] top.readout_tb.e_midas_event_builder.event_size_cnt[14] top.readout_tb.e_midas_event_builder.event_size_cnt[13] top.readout_tb.e_midas_event_builder.event_size_cnt[12] top.readout_tb.e_midas_event_builder.event_size_cnt[11] top.readout_tb.e_midas_event_builder.event_size_cnt[10] top.readout_tb.e_midas_event_builder.event_size_cnt[9] top.readout_tb.e_midas_event_builder.event_size_cnt[8] top.readout_tb.e_midas_event_builder.event_size_cnt[7] top.readout_tb.e_midas_event_builder.event_size_cnt[6] top.readout_tb.e_midas_event_builder.event_size_cnt[5] top.readout_tb.e_midas_event_builder.event_size_cnt[4] top.readout_tb.e_midas_event_builder.event_size_cnt[3] top.readout_tb.e_midas_event_builder.event_size_cnt[2] top.readout_tb.e_midas_event_builder.event_size_cnt[1] top.readout_tb.e_midas_event_builder.event_size_cnt[0]
 @28
 top.readout_tb.e_midas_event_builder.w_ram_en
-@23
+@22
 #{top.readout_tb.e_midas_event_builder.o_state_out[3:0]} top.readout_tb.e_midas_event_builder.o_state_out[3] top.readout_tb.e_midas_event_builder.o_state_out[2] top.readout_tb.e_midas_event_builder.o_state_out[1] top.readout_tb.e_midas_event_builder.o_state_out[0]
 @28
 top.readout_tb.e_midas_event_builder.tag_fifo_empty
@@ -64,7 +68,6 @@ top.readout_tb.e_midas_event_builder.tag_fifo_empty
 top.readout_tb.e_midas_event_builder.event_tagging_state
 @28
 top.readout_tb.e_midas_event_builder.tag_fifo_empty
-top.readout_tb.e_midas_event_builder.link_fifo_not_empty
 @22
 #{top.readout_tb.e_midas_event_builder.link_fifo_empty[5:0]} top.readout_tb.e_midas_event_builder.link_fifo_empty[4] top.readout_tb.e_midas_event_builder.link_fifo_empty[3] top.readout_tb.e_midas_event_builder.link_fifo_empty[2] top.readout_tb.e_midas_event_builder.link_fifo_empty[1] top.readout_tb.e_midas_event_builder.link_fifo_empty[0]
 @28
@@ -76,5 +79,17 @@ top.readout_tb.e_midas_event_builder.buffer_link_fifos[0].e_fifo.dcfifo_componen
 @22
 #{top.readout_tb.e_midas_event_builder.r_ram_add[8:0]} top.readout_tb.e_midas_event_builder.r_ram_add[8] top.readout_tb.e_midas_event_builder.r_ram_add[7] top.readout_tb.e_midas_event_builder.r_ram_add[6] top.readout_tb.e_midas_event_builder.r_ram_add[5] top.readout_tb.e_midas_event_builder.r_ram_add[4] top.readout_tb.e_midas_event_builder.r_ram_add[3] top.readout_tb.e_midas_event_builder.r_ram_add[2] top.readout_tb.e_midas_event_builder.r_ram_add[1] top.readout_tb.e_midas_event_builder.r_ram_add[0]
 #{top.readout_tb.e_midas_event_builder.event_last_ram_add[8:0]} top.readout_tb.e_midas_event_builder.event_last_ram_add[8] top.readout_tb.e_midas_event_builder.event_last_ram_add[7] top.readout_tb.e_midas_event_builder.event_last_ram_add[6] top.readout_tb.e_midas_event_builder.event_last_ram_add[5] top.readout_tb.e_midas_event_builder.event_last_ram_add[4] top.readout_tb.e_midas_event_builder.event_last_ram_add[3] top.readout_tb.e_midas_event_builder.event_last_ram_add[2] top.readout_tb.e_midas_event_builder.event_last_ram_add[1] top.readout_tb.e_midas_event_builder.event_last_ram_add[0]
+#{top.readout_tb.e_midas_event_builder.e_stream_fifo.data[35:0]} top.readout_tb.e_midas_event_builder.e_stream_fifo.data[35] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[34] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[33] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[32] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[31] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[30] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[29] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[28] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[27] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[26] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[25] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[24] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[23] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[22] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[21] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[20] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[19] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[18] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[17] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[16] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[15] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[14] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[13] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[12] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[11] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[10] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[9] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[8] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[7] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[6] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[5] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[4] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[3] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[2] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[1] top.readout_tb.e_midas_event_builder.e_stream_fifo.data[0]
+#{top.readout_tb.e_midas_event_builder.e_stream.o_wdata[35:0]} top.readout_tb.e_midas_event_builder.e_stream.o_wdata[35] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[34] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[33] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[32] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[31] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[30] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[29] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[28] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[27] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[26] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[25] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[24] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[23] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[22] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[21] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[20] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[19] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[18] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[17] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[16] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[15] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[14] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[13] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[12] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[11] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[10] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[9] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[8] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[7] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[6] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[5] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[4] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[3] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[2] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[1] top.readout_tb.e_midas_event_builder.e_stream.o_wdata[0]
+@420
+top.readout_tb.e_midas_event_builder.e_stream.index
+@28
+top.readout_tb.e_midas_event_builder.e_stream.busy
+@22
+#{top.readout_tb.e_midas_event_builder.e_stream.i_rempty[4:0]} top.readout_tb.e_midas_event_builder.e_stream.i_rempty[4] top.readout_tb.e_midas_event_builder.e_stream.i_rempty[3] top.readout_tb.e_midas_event_builder.e_stream.i_rempty[2] top.readout_tb.e_midas_event_builder.e_stream.i_rempty[1] top.readout_tb.e_midas_event_builder.e_stream.i_rempty[0]
+#{top.readout_tb.e_midas_event_builder.e_stream.i_reop[4:0]} top.readout_tb.e_midas_event_builder.e_stream.i_reop[4] top.readout_tb.e_midas_event_builder.e_stream.i_reop[3] top.readout_tb.e_midas_event_builder.e_stream.i_reop[2] top.readout_tb.e_midas_event_builder.e_stream.i_reop[1] top.readout_tb.e_midas_event_builder.e_stream.i_reop[0]
+#{top.readout_tb.e_midas_event_builder.e_stream.i_rsop[4:0]} top.readout_tb.e_midas_event_builder.e_stream.i_rsop[4] top.readout_tb.e_midas_event_builder.e_stream.i_rsop[3] top.readout_tb.e_midas_event_builder.e_stream.i_rsop[2] top.readout_tb.e_midas_event_builder.e_stream.i_rsop[1] top.readout_tb.e_midas_event_builder.e_stream.i_rsop[0]
+#{top.readout_tb.e_midas_event_builder.link_fifo_eop[4:0]} top.readout_tb.e_midas_event_builder.link_fifo_eop[4] top.readout_tb.e_midas_event_builder.link_fifo_eop[3] top.readout_tb.e_midas_event_builder.link_fifo_eop[2] top.readout_tb.e_midas_event_builder.link_fifo_eop[1] top.readout_tb.e_midas_event_builder.link_fifo_eop[0]
+#{top.readout_tb.e_midas_event_builder.link_fifo_sop[4:0]} top.readout_tb.e_midas_event_builder.link_fifo_sop[4] top.readout_tb.e_midas_event_builder.link_fifo_sop[3] top.readout_tb.e_midas_event_builder.link_fifo_sop[2] top.readout_tb.e_midas_event_builder.link_fifo_sop[1] top.readout_tb.e_midas_event_builder.link_fifo_sop[0]
 [pattern_trace] 1
 [pattern_trace] 0

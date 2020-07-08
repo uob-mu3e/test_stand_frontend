@@ -156,8 +156,8 @@ FOR i in 0 to NLINKS - 1 GENERATE
         aclr        => reset_data--,
     );
 
-    link_fifo_sop(i) <= '1' when ( link_fifo_data_out(3 downto 0) = "0001" and link_fifo_data_out(11 downto 4) = x"BC" ) else '0';
-    link_fifo_eop(i) <= '1' when ( link_fifo_data_out(3 downto 0) = "0001" and link_fifo_data_out(11 downto 4) = x"9C" ) else '0';
+    link_fifo_sop(i) <= '1' when (link_fifo_data_out(3 + i * 36 downto i * 36) = "0001" and link_fifo_data_out(11 + i * 36 downto i * 36 + 4) = x"BC" ) else '0';
+    link_fifo_eop(i) <= '1' when (link_fifo_data_out(3 + i * 36 downto i * 36) = "0001" and link_fifo_data_out(11 + i * 36 downto i * 36 + 4) = x"9C" ) else '0';
 
 --    process(i_clk_data, i_reset_data_n)
 --    begin
@@ -370,10 +370,21 @@ END GENERATE buffer_link_fifos;
 							w_ram_en		<= '1';
 							w_ram_add   <= w_ram_add_reg + 1;
                             -- MIDAS expects bank names in ascii:
-                            w_ram_data <=   work.util.hex_to_ascii(link_data(11 downto 8)) &
-                                            work.util.hex_to_ascii(link_data(15 downto 12)) &
-                                            work.util.hex_to_ascii(link_data(19 downto 16)) &
-                                            work.util.hex_to_ascii(link_data(23 downto 20));
+                            --w_ram_data <=   work.util.hex_to_ascii(link_data(11 downto 8)) &
+                            --                work.util.hex_to_ascii(link_data(15 downto 12)) &
+                            --                work.util.hex_to_ascii(link_data(19 downto 16)) &
+                            --                work.util.hex_to_ascii(link_data(23 downto 20));
+                            if(link_data(23 downto 8) = x"FEB0") then
+                                w_ram_data <= x"30424546";
+                            elsif(link_data(23 downto 8) = x"FEB1") then
+                                w_ram_data <= x"31424546";
+                            elsif(link_data(23 downto 8) = x"FEB2") then
+                                w_ram_data <= x"32424546";
+                            elsif(link_data(23 downto 8) = x"FEB3") then
+                                w_ram_data <= x"33424546";
+                            else
+                                w_ram_data <= x"34424546";
+                            end if;
 							event_size_cnt      	<= event_size_cnt + 4;
 							event_tagging_state 	<= bank_type;
 						--throw data away until a header
@@ -435,11 +446,11 @@ END GENERATE buffer_link_fifos;
 					w_ram_add   				<= cur_bank_length_add;
 					w_ram_data 					<= bank_size_cnt;
 					bank_size_cnt 				<= (others => '0');
-            if ( stream_rempty = '1' ) then
+            --if ( stream_rempty = '1' ) then
 						event_tagging_state 	<= trailer_name;
-            else
-						event_tagging_state 	<= bank_name;
-            end if;
+            --else
+			--			event_tagging_state 	<= bank_name;
+            --end if;
 
         when trailer_name =>
 					w_ram_en					<= '1';
