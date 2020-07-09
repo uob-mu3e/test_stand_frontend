@@ -110,7 +110,13 @@ package mudaq_registers is
       constant BUFFER_STATUS_REGISTER_R               : integer := 16#1B#;
 		constant EVENT_BUILD_STATUS_REGISTER_R          : integer := 16#1C#;
 		constant EVENT_BUILD_DONE								: integer:= 0;
-		
+        constant CNT_FIFO_ALMOST_FULL_R : integer := 16#1D#;
+        constant CNT_TAG_FIFO_FULL_R : integer := 16#1E#;
+        constant CNT_RAM_FULL_R : integer := 16#1F#;
+        constant CNT_STREAM_FIFO_FULL_R : integer := 16#20#;
+		constant CNT_DMA_HALFFULL : integer := 16#21#;
+        constant CNT_DC_LINK_FIFO_FULL_R : integer := 16#22#;
+
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;
 		constant DMA_DATA_ADDR_LOW_REGISTER_R				: integer := 16#39#;
