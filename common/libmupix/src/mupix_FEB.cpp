@@ -11,6 +11,7 @@ Contents:       Definition of functions to talk to a mupix-based FEB. Designed t
 #include "mupix_FEB.h"
 #include "midas.h"
 #include "mfe.h" //for set_equipment_status
+#include "odbxx.h"
 
 #include "mudaq_device_scifi.h"
 #include "mupix_config.h"
@@ -148,6 +149,9 @@ int MupixFEB::ConfigureASICs(){
    cm_msg(MINFO, "MupixFEB" , "Configuring sensors under prefix %s/Settings/ASICs/", m_odb_prefix);
    int status = mupix::midasODB::MapForEachASIC(hDB,m_odb_prefix,[this](mupix::MupixConfig* config, int asic){
       uint32_t rpc_status;
+      bool TDACsNotFound = false;
+      int useTDACs = 0;
+      short tDAC=0;
       //mapping
       uint16_t SB_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Number();
       uint16_t SP_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Port();
@@ -191,29 +195,95 @@ int MupixFEB::ConfigureASICs(){
          return FE_ERR_HW;//note: return of lambda function
       }
 
-//      for (int rrow = 0; rrow < 200; ++rrow) {
-//          try {
-//             uint32_t * datastream = (uint32_t*)(default_config_mupix[rrow]);
+      midas::odb mpTDACs("/Equipment/MuPix/TDACs");
+      midas::odb mpColDACs("/Equipment/MuPix/Settings/Coldacs");
+      //midas::odb mpRowDACs("/Equipment/MuPix/Settings/DigitalRowdacs");
+      midas::odb mpRowDACs("/Equipment/MuPix/Settings/DigitalRowdacs");
+      useTDACs=mpTDACs["useTDACs"];
 
-//             for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
-//                 uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
-//                 datastream[nbit] = tmp;
-//             }
-//             rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
+      if(useTDACs==1){
+         // use TDAC config files
+         mpTDACs["chipIDreq"]=asic;  // request load of TDACs of this chip ID
+         for(int i=0; i<5;i++){
+            sleep(1);
+            if(mpTDACs["chipIDactual"]==asic){
+                cm_msg(MINFO, "setup_mupix", "loading TDACs for ASIC %i", asic);
+
+                for (int rrow = 0; rrow < 200; ++rrow) {
+                    try {
+                       std::cout<<(std::to_string(asic)+"/row_"+std::to_string(rrow))<<std::endl;
+                       mpRowDACs[(std::to_string(asic)+"/row_"+std::to_string(rrow)+"/digiWrite").c_str()]=1;
+                    std::cout<<(std::to_string(asic)+"/row_"+std::to_string(rrow))<<std::endl;
+
+                       for(int col=0;col<127;col++){
+                           tDAC=mpTDACs[("col"+std::to_string(col)).c_str()][rrow];
+                           mpColDACs[(std::to_string(asic)+"/col_"+std::to_string(col)+"/RAM").c_str()]=tDAC;
+                       }
+
+                       uint8_t bitpatterna[config->length +1];
+                       for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
+                           bitpatterna[nbit+1] = config->bitpattern_w[nbit];
+                       }
+                       uint32_t * datastream = (uint32_t*)(bitpatterna);
+
+                       mpRowDACs[(std::to_string(asic)+"/row_"+std::to_string(rrow)+"/digiWrite").c_str()]=0;
+
+                       for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
+                           uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
+                           datastream[nbit] = tmp;
+                       }
+                       rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
 
 
-//          } catch(std::exception& e) {
-//              cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-//              set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
-//              return FE_ERR_HW; //note: return of lambda function
-//          }
-//          if(rpc_status!=FEB_REPLY_SUCCESS){
-//             //configuration mismatch, report and break foreach-loop
-//             set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
-//             cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
-//             return FE_ERR_HW;//note: return of lambda function
-//          }
-//      }
+                    } catch(std::exception& e) {
+                        cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
+                        set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
+                        return FE_ERR_HW; //note: return of lambda function
+                    }
+                    if(rpc_status!=FEB_REPLY_SUCCESS){
+                       //configuration mismatch, report and break foreach-loop
+                       set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
+                       cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
+                       return FE_ERR_HW;//note: return of lambda function
+                    }
+                }
+
+                break;
+            }
+            if(i==4) {
+                TDACsNotFound=true;
+                cm_msg(MERROR, "setup_mupix", "failed to load TDACs for ASIC %i, continue with defaults ", asic);
+                printf("not using TDACS");
+            }
+         }
+      }
+
+      if(useTDACs==0 || TDACsNotFound){
+          // write 0's for all TDACs
+          for (int rrow = 0; rrow < 200; ++rrow) {
+              try {
+                 uint32_t * datastream = (uint32_t*)(default_config_mupix[rrow]);
+
+                 for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
+                     uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
+                     datastream[nbit] = tmp;
+                 }
+                 rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
+
+
+              } catch(std::exception& e) {
+                  cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
+                  set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
+                  return FE_ERR_HW; //note: return of lambda function
+              }
+              if(rpc_status!=FEB_REPLY_SUCCESS){
+                 //configuration mismatch, report and break foreach-loop
+                 set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
+                 cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
+                 return FE_ERR_HW;//note: return of lambda function
+              }
+          }
+      }
 
       try {
          uint8_t bitpatterna[config->length +1];
@@ -225,7 +295,6 @@ int MupixFEB::ConfigureASICs(){
          for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
              uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
              datastream[nbit] = tmp;
-             printf("0x%08x\n",tmp);
          }
          rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
 

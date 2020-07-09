@@ -74,6 +74,7 @@ int main() {
 
    // create ODB structure...
     midas::odb o = {
+        {"useTDACs", 0},
         {"chipIDreq", 0},
         {"chipIDactual", 0},
         {"store",false},
