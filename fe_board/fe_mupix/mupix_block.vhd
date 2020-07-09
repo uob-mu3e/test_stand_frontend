@@ -129,6 +129,7 @@ signal reset_n : std_logic;
 
     signal lvds_data_valid : std_logic_vector(NLVDS-1 downto 0);
     signal lvds_data_in : std_logic_vector(NLVDS-1 downto 0);
+    signal disable_conditions_for_run_ack : std_logic;
 
 begin
     reset_n <= '0' when (i_reset='1' or i_run_state_125=RUN_STATE_SYNC) else '1';
@@ -141,7 +142,7 @@ begin
     port map (
         i_clk                       => i_clk,
         i_reset                     => i_reset,
-        i_disable                   => '0', -- TODO: connect to sc
+        i_disable                   => disable_conditions_for_run_ack, -- TODO: connect to sc
         i_stable_required           => x"F000", -- TODO: connect to sc
         i_lvds_err_counter          => read_regs_mupix(LVDS_ERRCOUNTER_REGISTER_R + NLVDS - 1 downto LVDS_ERRCOUNTER_REGISTER_R),
         i_lvds_data_valid           => lvds_data_valid,
@@ -364,6 +365,15 @@ begin
             
             if ( i_reg_add = x"97" and i_reg_re = '1' ) then
                 o_reg_rdata            <= lvds_data_valid;
+            end if;
+            
+            if ( i_reg_add = x"98") then
+                if(i_reg_we = '1' ) then
+                    disable_conditions_for_run_ack  <= i_reg_wdata(0);
+                elsif( i_reg_re = '1') then
+                    o_reg_rdata(0)                  <= disable_conditions_for_run_ack;
+                    o_reg_rdata(31 downto 1)        <= (others => '0');
+                end if;
             end if;
             
         end if;

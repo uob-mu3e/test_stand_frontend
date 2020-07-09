@@ -34,10 +34,10 @@ Contents:       Definition of functions to talk to a mupix-based FEB. Designed t
 MupixFEB* MupixFEB::m_instance=NULL;
 
 //Mapping to physical ports of switching board.
-uint16_t MupixFEB::FPGAid_from_ID(int asic){return asic/4;}
-uint16_t MupixFEB::ASICid_from_ID(int asic){return asic%4;}
+uint16_t MupixFEB::FPGAid_from_ID(int asic){return asic/2;}
+uint16_t MupixFEB::ASICid_from_ID(int asic){return asic%2;}
 
-uint16_t MupixFEB::GetNumASICs(){return m_FPGAs.size()*4;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
+uint16_t MupixFEB::GetNumASICs(){return m_FPGAs.size()*2;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
 
 uint32_t default_mupix_dacs[94] =
 {
@@ -191,32 +191,31 @@ int MupixFEB::ConfigureASICs(){
          return FE_ERR_HW;//note: return of lambda function
       }
 
-      for (int rrow = 0; rrow < 200; ++rrow) {
-          try {
-             uint32_t * datastream = (uint32_t*)(default_config_mupix[rrow]);
+//      for (int rrow = 0; rrow < 200; ++rrow) {
+//          try {
+//             uint32_t * datastream = (uint32_t*)(default_config_mupix[rrow]);
 
-             for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
-                 uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
-                 datastream[nbit] = tmp;
-             }
-             rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
+//             for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
+//                 uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
+//                 datastream[nbit] = tmp;
+//             }
+//             rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
 
 
-          } catch(std::exception& e) {
-              cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-              set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
-              return FE_ERR_HW; //note: return of lambda function
-          }
-          if(rpc_status!=FEB_REPLY_SUCCESS){
-             //configuration mismatch, report and break foreach-loop
-             set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
-             cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
-             return FE_ERR_HW;//note: return of lambda function
-          }
-      }
+//          } catch(std::exception& e) {
+//              cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
+//              set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
+//              return FE_ERR_HW; //note: return of lambda function
+//          }
+//          if(rpc_status!=FEB_REPLY_SUCCESS){
+//             //configuration mismatch, report and break foreach-loop
+//             set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
+//             cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
+//             return FE_ERR_HW;//note: return of lambda function
+//          }
+//      }
 
       try {
-
          uint8_t bitpatterna[config->length +1];
          for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
              bitpatterna[nbit+1] = config->bitpattern_w[nbit];
@@ -226,6 +225,7 @@ int MupixFEB::ConfigureASICs(){
          for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
              uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
              datastream[nbit] = tmp;
+             printf("0x%08x\n",tmp);
          }
          rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
 

@@ -28,7 +28,6 @@ struct mupix_t {
         }
         sc->ram->data[0xFF8E] = 0x00100001;
         sc->ram->data[0xFF95] = 0; //TODO: check if we really want to do this here (reset of chip dac fifo, why do we need this, is the fifo content already written to the chip here ???)
-        sc->ram->data[0xFF96] = 0xFEFEFEFE; //TODO: do not hardcode this !!
 
         return FEB_REPLY_SUCCESS;
     }
@@ -69,6 +68,7 @@ struct mupix_t {
             printf("  [5] => print lvds mask\n");
             printf("  [6] => write lvds mask\n");
             printf("  [7] => print lvds dvalid\n");
+            printf("  [8] => disable/enable run prep ack\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -107,6 +107,10 @@ struct mupix_t {
                 break;
             case '7':
                 printf("lvds dvalid: 0x%08x\n",sc->ram->data[0xFF97]);
+                break;
+            case '8':
+                sc->ram->data[0xFF98]=(sc->ram->data[0xFF98]+1)%2;
+                printf("run prep ack (1=always ack): 0x%08x\n",sc->ram->data[0xFF98]);
                 break;
             case 'b':
                 set_board_dacs(0, default_board_dacs);
