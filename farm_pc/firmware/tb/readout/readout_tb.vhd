@@ -172,7 +172,8 @@ rx_datak <= datak_pix_generated & datak_scifi_generated & datak_tile_generated &
 
 e_midas_event_builder : entity work.midas_event_builder
   generic map (
-    NLINKS => 5--;
+    NLINKS => 5,
+    LINK_FIFO_ADDR_WIDTH => 8--;
   )
   port map(
     i_clk_data => clk,

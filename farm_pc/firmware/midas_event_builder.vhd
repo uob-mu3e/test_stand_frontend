@@ -30,8 +30,14 @@ port(
         o_endofevent:       out std_logic; 
         o_event_data:       out std_logic_vector (255 downto 0);
         o_state_out:        out std_logic_vector(3 downto 0);
-        o_fifo_almost_full: out std_logic_vector(NLINKS - 1 downto 0)--;
-);
+        -- error cnt signals
+        o_fifo_almost_full:     out std_logic_vector(NLINKS - 1 downto 0);
+        o_cnt_tag_fifo_full:    out std_logic_vector(31 downto 0);
+        o_cnt_ram_full:         out std_logic_vector(31 downto 0);
+        o_cnt_stream_fifo_full: out std_logic_vector(31 downto 0);
+        o_cnt_dma_halffull:     out std_logic_vector(31 downto 0);
+        o_cnt_dc_link_fifo_full:out std_logic_vector(31 downto 0)--;
+    );
 end entity;
 
 architecture rtl of midas_event_builder is
@@ -48,6 +54,8 @@ signal link_fifo_data_out   : std_logic_vector(NLINKS * 36 - 1 downto 0);
 signal link_fifo_empty      : std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_full       : std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_usedw      : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS - 1 downto 0);
+signal link_fifo_almost_full: std_logic_vector(NLINKS - 1 downto 0);
+
 
 -- event ram
 signal w_ram_data : std_logic_vector(31 downto 0);
@@ -74,6 +82,7 @@ signal w_fifo_en        : std_logic;
 signal r_fifo_data      : std_logic_vector(11 downto 0);
 signal r_fifo_en        : std_logic;
 signal tag_fifo_empty   : std_logic;
+signal tag_fifo_full    : std_logic;
 
 -- midas event 
 signal event_id 		: std_logic_vector(15 downto 0);
@@ -92,49 +101,134 @@ signal event_last_ram_add : std_logic_vector(8 downto 0);
 signal word_counter : std_logic_vector(31 downto 0);
 
 
-    -- current link data/datak/empty
-    signal link_fifo_sop : std_logic_vector(NLINKS-1 downto 0);
-    signal link_fifo_eop : std_logic_vector(NLINKS-1 downto 0);
-    signal stream_in_rempty : std_logic_vector(NLINKS-1 downto 0);
-    signal stream_wdata, stream_rdata : std_logic_vector(35 downto 0);
-    signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
-    signal link_data : std_logic_vector(31 downto 0);
-    signal link_datak : std_logic_vector(3 downto 0);
-    signal link_header, link_trailer : std_logic;
+-- current link data/datak/empty
+signal link_fifo_sop : std_logic_vector(NLINKS-1 downto 0);
+signal link_fifo_eop : std_logic_vector(NLINKS-1 downto 0);
+signal stream_in_rempty : std_logic_vector(NLINKS-1 downto 0);
+signal stream_wdata, stream_rdata : std_logic_vector(35 downto 0);
+signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
+signal link_data : std_logic_vector(31 downto 0);
+signal link_datak : std_logic_vector(3 downto 0);
+signal link_header, link_trailer : std_logic;
+
+-- error cnt
+constant all_zero : std_logic_vector(NLINKS - 1 downto 0) := (others => '0');
+signal fifos_full : std_logic_vector(NLINKS - 1 downto 0);
+signal cnt_tag_fifo_full : std_logic_vector(31 downto 0);
+signal cnt_ram_full : std_logic_vector(31 downto 0);
+signal cnt_stream_fifo_full : std_logic_vector(31 downto 0);
+signal cnt_dma_halffull : std_logic_vector(31 downto 0);
+signal cnt_dc_link_fifo_full : std_logic_vector(31 downto 0);
 
 ----------------begin event_counter------------------------
 begin
 
-reset_data 							<= not i_reset_data_n;
-reset_dma 							<= not i_reset_dma_n;
-o_event_data 						<= r_ram_data;
-o_all_done(0) 						<= tag_fifo_empty;
-o_all_done(NLINKS downto 1) 	<= link_fifo_empty;
-o_fifos_full(NLINKS) 			<= i_dmamemhalffull;
+reset_data 						    <= not i_reset_data_n;
+reset_dma 						    <= not i_reset_dma_n;
+o_event_data 					    <= r_ram_data;
+o_all_done(0) 					    <= tag_fifo_empty;
+o_all_done(NLINKS downto 1) 	    <= link_fifo_empty;
+o_fifos_full(NLINKS - 1 downto 0)   <= fifos_full;
+o_fifos_full(NLINKS)                <= i_dmamemhalffull;
+o_fifo_almost_full                  <= link_fifo_almost_full;
 
--- write to link fifos
+o_cnt_tag_fifo_full <= cnt_tag_fifo_full; 
+o_cnt_ram_full <= cnt_ram_full;
+o_cnt_stream_fifo_full <= cnt_stream_fifo_full;
+o_cnt_dma_halffull <= cnt_dma_halffull;
+o_cnt_dc_link_fifo_full <= cnt_dc_link_fifo_full;
+
+-- count dma overflow signals
+process(i_clk_dma, i_reset_dma_n)
+    -- read add size of ram
+    variable diff : std_logic_vector(9 - 1 downto 0);    
+begin
+    if( i_reset_dma_n = '0' ) then
+        cnt_tag_fifo_full <= (others => '0');
+        cnt_ram_full <= (others => '0');
+        cnt_stream_fifo_full <= (others => '0');
+        cnt_dma_halffull <= (others => '0');
+    elsif(rising_edge(i_clk_dma)) then
+        if ( tag_fifo_full = '1' ) then
+            cnt_tag_fifo_full <= cnt_tag_fifo_full + '1';
+        end if;
+        
+        -- TODO fix me
+        --if ( w_ram_add >= r_ram_add ) then
+        --    diff := w_ram_add - r_ram_add;
+        -- else
+        --    diff := r_ram_add - w_ram_add;
+        --end if;
+
+        --if ( diff(9 - 1) = '1' ) then
+        --    cnt_ram_full <= cnt_ram_full + '1';
+        -- end if;
+
+        if ( stream_wfull = '1' ) then
+            cnt_stream_fifo_full <= cnt_stream_fifo_full + '1';
+        end if;
+
+        if ( i_dmamemhalffull = '1' ) then
+            cnt_dma_halffull <= cnt_dma_halffull + '1';
+        end if;
+    end if;
+end process;
+
+-- count data overflow signal
 process(i_clk_data, i_reset_data_n)
 begin
-	if(i_reset_data_n = '0') then
-		link_fifo_wren <= (others => '0');
-		link_fifo_data <= (others => '0');
-	elsif(rising_edge(i_clk_data)) then
-		set_link_data : FOR i in 0 to NLINKS - 1 LOOP
-			link_fifo_data(35 + i * 36 downto i * 36) <= i_rx_data(31 + i * 32 downto i * 32) & i_rx_datak(3 + i * 4 downto i * 4);
-			if ( ( i_rx_data(31 + i * 32 downto i * 32) = x"000000BC" and i_rx_datak(3 + i * 4 downto i * 4) = "0001" ) or 
-                 ( i_rx_data(31 + i * 32 downto i * 32) = x"00000000" and i_rx_datak(3 + i * 4 downto i * 4) = "1111" )                 
-            ) then
-	         link_fifo_wren(i) <= '0';
-        	else
-				link_fifo_wren(i) <= '1';
-      		end if;
-		END LOOP set_link_data;
-	end if;
+    if( i_reset_data_n = '0' ) then
+        cnt_dc_link_fifo_full <= (others => '0');
+    elsif(rising_edge(i_clk_data)) then
+--        link_fifo_full : FOR i in 0 to NLINKS - 1 LOOP
+            if ( fifos_full(NLINKS - 1 downto 0) /= all_zero ) then
+                -- for now we only count if one is full
+                cnt_dc_link_fifo_full <= cnt_dc_link_fifo_full + '1';
+            end if;
+  --      END LOOP link_fifo_full;
+    end if;
 end process;
+
+                    
+
+
+-- write to link fifos
+--process(i_clk_data, i_reset_data_n)
+--begin
+--	if(i_reset_data_n = '0') then
+--		link_fifo_wren <= (others => '0');
+--		link_fifo_data <= (others => '0');
+--	elsif(rising_edge(i_clk_data)) then
+--		set_link_data : FOR i in 0 to NLINKS - 1 LOOP
+--			link_fifo_data(35 + i * 36 downto i * 36) <= i_rx_data(31 + i * 32 downto i * 32) & i_rx_datak(3 + i * 4 downto i * 4);
+--			if ( ( i_rx_data(31 + i * 32 downto i * 32) = x"000000BC" and i_rx_datak(3 + i * 4 downto i * 4) = "0001" ) or 
+--                 ( i_rx_data(31 + i * 32 downto i * 32) = x"00000000" and i_rx_datak(3 + i * 4 downto i * 4) = "1111" )                 
+--            ) then
+--	         link_fifo_wren(i) <= '0';
+--        	else
+--				link_fifo_wren(i) <= '1';
+--      		end if;
+--		END LOOP set_link_data;
+--	end if;
+--end process;
 
 -- generate fifos per link
 buffer_link_fifos:
 FOR i in 0 to NLINKS - 1 GENERATE
+
+    e_link_to_fifo : entity work.link_to_fifo
+    generic map(
+        W => 32--,
+    )
+    port map(
+        i_link_data         => i_rx_data(31 + i * 32 downto i * 32),
+        i_link_datak        => i_rx_datak(3 + i * 4 downto i * 4),
+        i_fifo_almost_full  => link_fifo_almost_full(i),
+        o_fifo_data         => link_fifo_data(35 + i * 36 downto i * 36),
+        o_fifo_wr           => link_fifo_wren(i),
+        i_reset_n           => i_reset_data_n,
+        i_clk               => i_clk_data--,
+    );
 	
 	e_fifo : entity work.ip_dcfifo
     generic map(
@@ -151,7 +245,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
         q           => link_fifo_data_out(35 + i * 36 downto i * 36),
         rdempty     => link_fifo_empty(i),
         rdusedw     => open,
-        wrfull      => o_fifos_full(i),
+        wrfull      => fifos_full(i),
         wrusedw     => link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1 downto i * LINK_FIFO_ADDR_WIDTH),
         aclr        => reset_data--,
     );
@@ -159,18 +253,18 @@ FOR i in 0 to NLINKS - 1 GENERATE
     link_fifo_sop(i) <= '1' when (link_fifo_data_out(3 + i * 36 downto i * 36) = "0001" and link_fifo_data_out(11 + i * 36 downto i * 36 + 4) = x"BC" ) else '0';
     link_fifo_eop(i) <= '1' when (link_fifo_data_out(3 + i * 36 downto i * 36) = "0001" and link_fifo_data_out(11 + i * 36 downto i * 36 + 4) = x"9C" ) else '0';
 
---    process(i_clk_data, i_reset_data_n)
---    begin
---        if(i_reset_data_n = '0') then
---            o_fifo_almost_full(i)       <= '0';
---        elsif(rising_edge(i_clk_data)) then
---            if(link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1) = '1') then
---                o_fifo_almost_full(i)   <= '1';
---            else 
---                o_fifo_almost_full(i)   <= '0';
---            end if;
---        end if;
---    end process;
+    process(i_clk_data, i_reset_data_n)
+    begin
+        if(i_reset_data_n = '0') then
+            link_fifo_almost_full(i)       <= '0';
+        elsif(rising_edge(i_clk_data)) then
+            if(link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1) = '1') then
+                link_fifo_almost_full(i)   <= '1';
+            else 
+                link_fifo_almost_full(i)   <= '0';
+            end if;
+        end if;
+    end process;
 
 END GENERATE buffer_link_fifos;
 
@@ -207,7 +301,7 @@ END GENERATE buffer_link_fifos;
 		rdreq    		=> r_fifo_en,
 		clock    		=> i_clk_dma,
 		q    	 			=> r_fifo_data,
-		full     		=> open,
+		full     		=> tag_fifo_full,
 		empty    		=> tag_fifo_empty,
 		almost_empty 	=> open,
 		almost_full 	=> open,
