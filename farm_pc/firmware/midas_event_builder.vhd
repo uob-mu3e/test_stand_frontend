@@ -48,6 +48,8 @@ signal link_fifo_data_out   : std_logic_vector(NLINKS * 36 - 1 downto 0);
 signal link_fifo_empty      : std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_full       : std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_usedw      : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS - 1 downto 0);
+signal link_fifo_almost_full: std_logic_vector(NLINKS - 1 downto 0);
+
 
 -- event ram
 signal w_ram_data : std_logic_vector(31 downto 0);
@@ -105,36 +107,52 @@ signal word_counter : std_logic_vector(31 downto 0);
 ----------------begin event_counter------------------------
 begin
 
-reset_data 							<= not i_reset_data_n;
-reset_dma 							<= not i_reset_dma_n;
-o_event_data 						<= r_ram_data;
-o_all_done(0) 						<= tag_fifo_empty;
+reset_data 						<= not i_reset_data_n;
+reset_dma 						<= not i_reset_dma_n;
+o_event_data 					<= r_ram_data;
+o_all_done(0) 					<= tag_fifo_empty;
 o_all_done(NLINKS downto 1) 	<= link_fifo_empty;
 o_fifos_full(NLINKS) 			<= i_dmamemhalffull;
+o_fifo_almost_full              <= link_fifo_almost_full;
+
 
 -- write to link fifos
-process(i_clk_data, i_reset_data_n)
-begin
-	if(i_reset_data_n = '0') then
-		link_fifo_wren <= (others => '0');
-		link_fifo_data <= (others => '0');
-	elsif(rising_edge(i_clk_data)) then
-		set_link_data : FOR i in 0 to NLINKS - 1 LOOP
-			link_fifo_data(35 + i * 36 downto i * 36) <= i_rx_data(31 + i * 32 downto i * 32) & i_rx_datak(3 + i * 4 downto i * 4);
-			if ( ( i_rx_data(31 + i * 32 downto i * 32) = x"000000BC" and i_rx_datak(3 + i * 4 downto i * 4) = "0001" ) or 
-                 ( i_rx_data(31 + i * 32 downto i * 32) = x"00000000" and i_rx_datak(3 + i * 4 downto i * 4) = "1111" )                 
-            ) then
-	         link_fifo_wren(i) <= '0';
-        	else
-				link_fifo_wren(i) <= '1';
-      		end if;
-		END LOOP set_link_data;
-	end if;
-end process;
+--process(i_clk_data, i_reset_data_n)
+--begin
+--	if(i_reset_data_n = '0') then
+--		link_fifo_wren <= (others => '0');
+--		link_fifo_data <= (others => '0');
+--	elsif(rising_edge(i_clk_data)) then
+--		set_link_data : FOR i in 0 to NLINKS - 1 LOOP
+--			link_fifo_data(35 + i * 36 downto i * 36) <= i_rx_data(31 + i * 32 downto i * 32) & i_rx_datak(3 + i * 4 downto i * 4);
+--			if ( ( i_rx_data(31 + i * 32 downto i * 32) = x"000000BC" and i_rx_datak(3 + i * 4 downto i * 4) = "0001" ) or 
+--                 ( i_rx_data(31 + i * 32 downto i * 32) = x"00000000" and i_rx_datak(3 + i * 4 downto i * 4) = "1111" )                 
+--            ) then
+--	         link_fifo_wren(i) <= '0';
+--        	else
+--				link_fifo_wren(i) <= '1';
+--      		end if;
+--		END LOOP set_link_data;
+--	end if;
+--end process;
 
 -- generate fifos per link
 buffer_link_fifos:
 FOR i in 0 to NLINKS - 1 GENERATE
+
+    e_link_to_fifo : entity work.link_to_fifo
+    generic map(
+        W => 32--,
+    )
+    port map(
+        i_link_data         => i_rx_data(31 + i * 32 downto i * 32),
+        i_link_datak        => i_rx_datak(3 + i * 4 downto i * 4),
+        i_fifo_almost_full  => link_fifo_almost_full(i),
+        o_fifo_data         => link_fifo_data(35 + i * 36 downto i * 36),
+        o_fifo_wr           => link_fifo_wren(i),
+        i_reset_n           => i_reset_data_n,
+        i_clk               => i_clk_data--,
+    );
 	
 	e_fifo : entity work.ip_dcfifo
     generic map(
@@ -159,18 +177,18 @@ FOR i in 0 to NLINKS - 1 GENERATE
     link_fifo_sop(i) <= '1' when (link_fifo_data_out(3 + i * 36 downto i * 36) = "0001" and link_fifo_data_out(11 + i * 36 downto i * 36 + 4) = x"BC" ) else '0';
     link_fifo_eop(i) <= '1' when (link_fifo_data_out(3 + i * 36 downto i * 36) = "0001" and link_fifo_data_out(11 + i * 36 downto i * 36 + 4) = x"9C" ) else '0';
 
---    process(i_clk_data, i_reset_data_n)
---    begin
---        if(i_reset_data_n = '0') then
---            o_fifo_almost_full(i)       <= '0';
---        elsif(rising_edge(i_clk_data)) then
---            if(link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1) = '1') then
---                o_fifo_almost_full(i)   <= '1';
---            else 
---                o_fifo_almost_full(i)   <= '0';
---            end if;
---        end if;
---    end process;
+    process(i_clk_data, i_reset_data_n)
+    begin
+        if(i_reset_data_n = '0') then
+            link_fifo_almost_full(i)       <= '0';
+        elsif(rising_edge(i_clk_data)) then
+            if(link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1) = '1') then
+                link_fifo_almost_full(i)   <= '1';
+            else 
+                link_fifo_almost_full(i)   <= '0';
+            end if;
+        end if;
+    end process;
 
 END GENERATE buffer_link_fifos;
 
