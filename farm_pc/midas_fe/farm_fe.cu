@@ -156,19 +156,30 @@ void setup_odb(){
         {"Divider", 1000},     // int
         {"Enable", false},     // bool
     };
-
     datagen_settings.connect("/Equipment/Stream/Settings/Datagenerator", true);
 
     odb dma_settings = {
             {"dma_buf_nwords", int(dma_buf_nwords)},
             {"dma_buf_size", int(dma_buf_size)},
     };
-
     dma_settings.connect("/Equipment/Stream/Settings/DMA_Settings", true);
 
     // add custom page to ODB
     odb custom("/Custom");
     custom["Farm&"] = "farm.html";
+
+    // add error cnts to ODB
+    odb error_settings = {
+        {"DC FIFO ALMOST FUll", 0},
+        {"DC LINK FIFO FULL", 0},
+        {"TAG FIFO FULL", 0},
+        {"MIDAS EVENT RAM FULL", 0},
+        {"STREAM FIFO FULL", 0},
+        {"DMA HALFFULL", 0},
+        {"SKIP EVENT LINK FIFO", 0},
+        {"SKIP EVENT DMA RAM", 0},
+    };
+    error_settings.connect("/Equipment/Stream/Settings/ERRORCNT", true);
 
 }
 
@@ -664,6 +675,9 @@ INT read_stream_thread(void *param) {
     // get mudaq
     mudaq::DmaMudaqDevice & mu = *mup;
 
+    // get odb for errors
+    odb error_cnt("/Equipment/Stream/Settings/ERRORCNT");
+
     int cur_status = -1;
 
     // tell framework that we are alive
@@ -675,6 +689,13 @@ INT read_stream_thread(void *param) {
     uint32_t max_requested_words = dma_buf_nwords/2;
     // request to read dma_buffer_size/2 (count in blocks of 256 bits)
     mu.write_register_wait(0xC, max_requested_words / (256/32), 100);
+
+
+    // make dma faster
+    // write zero to get event register to only skip if dma ram is half full
+//    mu.write_register_wait(0xC, 0x0, 100);
+    // start dma
+  //  mu.enable_continous_readout(0);
 
     while (is_readout_thread_enabled()) {
         // don't readout events if we are not running
@@ -688,13 +709,24 @@ INT read_stream_thread(void *param) {
         set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
 
         // start dma
-        mu.enable_continous_readout(0);
+       mu.enable_continous_readout(0);
 
         // wait for requested data
-        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
+       while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
 
         // disable dma
-        mu.disable();
+       mu.disable();
+        
+        // check error regs
+        error_cnt["DC FIFO ALMOST FUll"] = mu.read_register_ro(0x1D);
+        error_cnt["TAG FIFO FULL"] =  mu.read_register_ro(0x1E);
+        error_cnt["MIDAS EVENT RAM FULL"] = mu.read_register_ro(0x1F);
+        error_cnt["STREAM FIFO FULL"] = mu.read_register_ro(0x20);
+        error_cnt["DMA HALFFULL"] = mu.read_register_ro(0x21);
+        error_cnt["DC LINK FIFO FULL"] = mu.read_register_ro(0x22);
+        error_cnt["SKIP EVENT LINK FIFO"] = mu.read_register_ro(0x23);
+        error_cnt["SKIP EVENT DMA RAM"] =  mu.read_register_ro(0x24);
+
         // and get lastWritten
         lastlastWritten = 0;
         uint32_t lastWritten = mu.last_written_addr();
@@ -722,7 +754,7 @@ INT read_stream_thread(void *param) {
             // check enough space for data
             if(offset + eventLength / 4 > lastWritten) break;
 	    if(check_event(dma_buf, offset) < 0) {
-                printf("ERROR: bad event\n");
+                printf("ERROR: bad event");
                 break;
             }
             offset += eventLength / 4;

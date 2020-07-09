@@ -32,11 +32,14 @@ port(
         o_state_out:        out std_logic_vector(3 downto 0);
         -- error cnt signals
         o_fifo_almost_full:     out std_logic_vector(NLINKS - 1 downto 0);
+        o_cnt_link_fifo_almost_full: out std_logic_vector(31 downto 0);
         o_cnt_tag_fifo_full:    out std_logic_vector(31 downto 0);
         o_cnt_ram_full:         out std_logic_vector(31 downto 0);
         o_cnt_stream_fifo_full: out std_logic_vector(31 downto 0);
         o_cnt_dma_halffull:     out std_logic_vector(31 downto 0);
-        o_cnt_dc_link_fifo_full:out std_logic_vector(31 downto 0)--;
+        o_cnt_dc_link_fifo_full:out std_logic_vector(31 downto 0);
+        o_cnt_skip_link_data:   out std_logic_vector(31 downto 0);
+        o_cnt_skip_event_dma:   out std_logic_vector(31 downto 0)--;
     );
 end entity;
 
@@ -114,11 +117,13 @@ signal link_header, link_trailer : std_logic;
 -- error cnt
 constant all_zero : std_logic_vector(NLINKS - 1 downto 0) := (others => '0');
 signal fifos_full : std_logic_vector(NLINKS - 1 downto 0);
+signal cnt_link_fifo_almost_full : std_logic_vector(31 downto 0);
 signal cnt_tag_fifo_full : std_logic_vector(31 downto 0);
 signal cnt_ram_full : std_logic_vector(31 downto 0);
 signal cnt_stream_fifo_full : std_logic_vector(31 downto 0);
 signal cnt_dma_halffull : std_logic_vector(31 downto 0);
 signal cnt_dc_link_fifo_full : std_logic_vector(31 downto 0);
+signal cnt_skip_event_dma : std_logic_vector(31 downto 0);
 
 ----------------begin event_counter------------------------
 begin
@@ -133,10 +138,12 @@ o_fifos_full(NLINKS)                <= i_dmamemhalffull;
 o_fifo_almost_full                  <= link_fifo_almost_full;
 
 o_cnt_tag_fifo_full <= cnt_tag_fifo_full; 
+o_cnt_link_fifo_almost_full <= cnt_link_fifo_almost_full;
 o_cnt_ram_full <= cnt_ram_full;
 o_cnt_stream_fifo_full <= cnt_stream_fifo_full;
 o_cnt_dma_halffull <= cnt_dma_halffull;
 o_cnt_dc_link_fifo_full <= cnt_dc_link_fifo_full;
+o_cnt_skip_event_dma <= cnt_skip_event_dma;
 
 -- count dma overflow signals
 process(i_clk_dma, i_reset_dma_n)
@@ -179,6 +186,7 @@ process(i_clk_data, i_reset_data_n)
 begin
     if( i_reset_data_n = '0' ) then
         cnt_dc_link_fifo_full <= (others => '0');
+        cnt_link_fifo_almost_full <= (others => '0');
     elsif(rising_edge(i_clk_data)) then
 --        link_fifo_full : FOR i in 0 to NLINKS - 1 LOOP
             if ( fifos_full(NLINKS - 1 downto 0) /= all_zero ) then
@@ -186,6 +194,10 @@ begin
                 cnt_dc_link_fifo_full <= cnt_dc_link_fifo_full + '1';
             end if;
   --      END LOOP link_fifo_full;
+  -- TODO: only for all at the moment
+            if ( link_fifo_almost_full(NLINKS - 1 downto 0) /= all_zero ) then
+                cnt_link_fifo_almost_full <= cnt_link_fifo_almost_full;
+            end if;
     end if;
 end process;
 
@@ -226,6 +238,7 @@ FOR i in 0 to NLINKS - 1 GENERATE
         i_fifo_almost_full  => link_fifo_almost_full(i),
         o_fifo_data         => link_fifo_data(35 + i * 36 downto i * 36),
         o_fifo_wr           => link_fifo_wren(i),
+        o_cnt_skip_data     => o_cnt_skip_link_data,
         i_reset_n           => i_reset_data_n,
         i_clk               => i_clk_data--,
     );
@@ -631,6 +644,7 @@ END GENERATE buffer_link_fifos;
 		o_event_wren				<= '0';
 		o_endofevent				<= '0';
 		o_state_out             <= x"0";
+        cnt_skip_event_dma      <= (others => '0');
 		o_done 						<= '0';
 		r_fifo_en					<= '0';
 		r_ram_add					<= (others => '1');
@@ -667,6 +681,7 @@ END GENERATE buffer_link_fifos;
 				o_state_out 		<= x"B";
 				if ( i_dmamemhalffull = '1' or ( i_get_n_words /= (i_get_n_words'range => '0') and word_counter >= i_get_n_words ) ) then
 					event_counter_state <= skip_event;
+                    cnt_skip_event_dma <= cnt_skip_event_dma + '1';
 				else
 					o_event_wren <= i_wen_reg;
 					o_endofevent <= '1'; -- begin of event
@@ -686,7 +701,7 @@ END GENERATE buffer_link_fifos;
 				end if;
 
         when skip_event =>
-				o_state_out 	<= x"E";
+   				o_state_out 	<= x"E";
 				if(r_ram_add = event_last_ram_add - '1') then
 					event_counter_state	<= waiting;
 				else

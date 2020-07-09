@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
 
 entity link_to_fifo is
 generic (
@@ -15,6 +16,8 @@ port (
     o_fifo_data  : out std_logic_vector(W + 3 downto 0);
     o_fifo_wr    : out std_logic;
 
+    o_cnt_skip_data : out std_logic_vector(31 downto 0);
+
     i_reset_n : in std_logic;
     i_clk     : in std_logic--;
 );
@@ -24,14 +27,18 @@ architecture arch of link_to_fifo is
    
     type link_to_fifo_type is (idle, write_data, skip_data);
     signal link_to_fifo_state : link_to_fifo_type;
+    signal cnt_skip_data : std_logic_vector(31 downto 0);
 
 begin
+    
+    o_cnt_skip_data <= cnt_skip_data;
 
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
         o_fifo_data <= (others => '0');
         o_fifo_wr <= '0';
+        cnt_skip_data <= (others => '0');
         link_to_fifo_state <= idle;
         --
     elsif rising_edge(i_clk) then
@@ -47,6 +54,7 @@ begin
             elsif ( i_link_data(7 downto 0) = x"BC" and i_link_datak = "0001" ) then
                 if ( i_fifo_almost_full = '1' ) then
                     link_to_fifo_state <= skip_data;
+                    cnt_skip_data <= cnt_skip_data + '1';
                 else
                     link_to_fifo_state <= write_data;
                     o_fifo_wr <= '1';
