@@ -156,19 +156,30 @@ void setup_odb(){
         {"Divider", 1000},     // int
         {"Enable", false},     // bool
     };
-
     datagen_settings.connect("/Equipment/Stream/Settings/Datagenerator", true);
 
     odb dma_settings = {
             {"dma_buf_nwords", int(dma_buf_nwords)},
             {"dma_buf_size", int(dma_buf_size)},
     };
-
     dma_settings.connect("/Equipment/Stream/Settings/DMA_Settings", true);
 
     // add custom page to ODB
     odb custom("/Custom");
     custom["Farm&"] = "farm.html";
+
+    // add error cnts to ODB
+    odb error_settings = {
+        {"DC FIFO ALMOST FUll", 0},
+        {"DC LINK FIFO FULL", 0},
+        {"TAG FIFO FULL", 0},
+        {"MIDAS EVENT RAM FULL", 0},
+        {"STREAM FIFO FULL", 0},
+        {"DMA HALFFULL", 0},
+        {"SKIP EVENT LINK FIFO", 0},
+        {"SKIP EVENT DMA RAM", 0},
+    };
+    error_settings.connect("/Equipment/Stream/Settings/ERRORCNT", true);
 
 }
 
@@ -607,7 +618,7 @@ INT check_event(T* buffer, uint32_t idx) {
 
 int copy_event(uint32_t* dst, volatile uint32_t* src) {
     // copy event header and global bank header to destination
-    std::copy_n(src, sizeof(EVENT_HEADER) / 4 + sizeof(BANK_HEADER) / 4, dst);
+    copy_n(src, sizeof(EVENT_HEADER) / 4 + sizeof(BANK_HEADER) / 4, dst);
     // get header for future asjustment
     EVENT_HEADER* eh = (EVENT_HEADER*)(dst);
     BANK_HEADER* bh = (BANK_HEADER*)(eh + 1);
@@ -619,11 +630,11 @@ int copy_event(uint32_t* dst, volatile uint32_t* src) {
         // get bank
         BANK32* bank = (BANK32*)(src + src_i);
         // copy bank to dst
-        std::copy_n((uint32_t*)bank, sizeof(BANK32) / 4 + bank->data_size / 4, dst + dst_i);
+        copy_n((uint32_t*)bank, sizeof(BANK32) / 4 + bank->data_size / 4, dst + dst_i);
         // go to next bank
         src_i += sizeof(BANK32) / 4 + bank->data_size / 4;
         // TODO: uncomment for new bank format from firmware
-//        src_i += b->data_size % 8;
+    //    src_i += bank->data_size % 8;
         // insert empty word if needed in dst
         dst_i += sizeof(BANK32) / 4 + bank->data_size / 4;
         if(src_i >= sizeof(EVENT_HEADER) / 4 + eh->data_size / 4) break;
@@ -664,6 +675,9 @@ INT read_stream_thread(void *param) {
     // get mudaq
     mudaq::DmaMudaqDevice & mu = *mup;
 
+    // get odb for errors
+    odb error_cnt("/Equipment/Stream/Settings/ERRORCNT");
+
     int cur_status = -1;
 
     // tell framework that we are alive
@@ -674,7 +688,14 @@ INT read_stream_thread(void *param) {
 
     uint32_t max_requested_words = dma_buf_nwords/2;
     // request to read dma_buffer_size/2 (count in blocks of 256 bits)
-    mu.write_register_wait(0xC, max_requested_words / (256/32), 100);
+    //mu.write_register_wait(0xC, max_requested_words / (256/32), 100);
+
+
+    // make dma faster
+    // write zero to get event register to only skip if dma ram is half full
+    mu.write_register_wait(0xC, 0x0, 100);
+    // start dma
+    mu.enable_continous_readout(0);
 
     while (is_readout_thread_enabled()) {
         // don't readout events if we are not running
@@ -688,28 +709,73 @@ INT read_stream_thread(void *param) {
         set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
 
         // start dma
-        mu.enable_continous_readout(0);
+       //mu.enable_continous_readout(0);
 
         // wait for requested data
-        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
+       //while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
 
         // disable dma
-        mu.disable();
+       //mu.disable();
+        
+        // check error regs
+        error_cnt["DC FIFO ALMOST FUll"] = mu.read_register_ro(0x1D);
+        error_cnt["TAG FIFO FULL"] =  mu.read_register_ro(0x1E);
+        error_cnt["MIDAS EVENT RAM FULL"] = mu.read_register_ro(0x1F);
+        error_cnt["STREAM FIFO FULL"] = mu.read_register_ro(0x20);
+        error_cnt["DMA HALFFULL"] = mu.read_register_ro(0x21);
+        error_cnt["DC LINK FIFO FULL"] = mu.read_register_ro(0x22);
+        error_cnt["SKIP EVENT LINK FIFO"] = mu.read_register_ro(0x23);
+        error_cnt["SKIP EVENT DMA RAM"] =  mu.read_register_ro(0x24);
+
         // and get lastWritten
-        lastlastWritten = 0;
+        //lastlastWritten = 0;
         uint32_t lastWritten = mu.last_written_addr();
 //        printf("lastWritten = 0x%08X\n", lastWritten);
 
-        // print dma_buf content
-//        for ( int i = lastWritten - 0x100; i < lastWritten + 0x100; i++) {
-//            if(i % 8 == 0) printf("[0x%08X]", i);
-//            printf("  %08X", dma_buf[i]);
-//            if(i % 8 == 7) printf("\n");
-//        } printf("\n");
 
         // walk events to find end of last event
         if(lastWritten < lastlastWritten) lastWritten += dma_buf_nwords;
+        //uint32_t offset = lastlastWritten;
+
+        // find first event TODO only for MuPix now
+        while(true) {
+            if ((dma_buf[lastlastWritten % dma_buf_nwords] == 0xE8FEB1BC) or (dma_buf[lastlastWritten % dma_buf_nwords] == 0xE8FEB0BC)) break;
+            lastlastWritten += 1;
+        }
+        lastlastWritten -= 9;
+        lastlastWritten = lastlastWritten % dma_buf_nwords;
         uint32_t offset = lastlastWritten;
+
+        // find last event 
+        while(true) {
+            if ((dma_buf[lastWritten % dma_buf_nwords] == 0xE8FEB1BC) or (dma_buf[lastWritten % dma_buf_nwords] == 0xE8FEB0BC)) break;
+            lastWritten -= 1;
+        }
+        lastWritten -= 10;
+        lastWritten = lastWritten % dma_buf_nwords;
+
+        //printf("E8: 0x%08X", dma_buf[lastlastWritten]);
+        //printf("00: 0x%08X", dma_buf[lastWritten]);
+        //printf("lastlastWritten = 0x%08X, offset = 0x%08X, lastWritten = 0x%08X\n", lastlastWritten, offset, lastWritten);
+
+        // print dma_buf content
+        for ( int i = lastWritten - 0x100; i < lastWritten + 0x100; i++) {
+            if ( i >= 0x800000 ) continue;
+            if(i % 8 == 0) printf("[0x%08X]", i);
+            printf("  %08X", dma_buf[i]);
+            if(i % 8 == 7) printf("\n");
+        } printf("\n");
+
+        cout << "_______________" << endl; 
+
+        for ( int i = lastlastWritten; i < lastlastWritten + 0x100; i++) {
+            if ( i >= 0x800000 ) continue;
+            if(i % 8 == 0) printf("[0x%08X]", i);
+            printf("  %08X", dma_buf[i]);
+            if(i % 8 == 7) printf("\n");
+        } printf("\n");
+
+
         while(true) {
             // check enough space for header
             if(offset + 4 > lastWritten) break;
@@ -721,13 +787,13 @@ INT read_stream_thread(void *param) {
             }
             // check enough space for data
             if(offset + eventLength / 4 > lastWritten) break;
-	    if(check_event(dma_buf, offset) < 0) {
-                printf("ERROR: bad event\n");
+	        if(check_event(dma_buf, offset) < 0) {
+                printf("ERROR: bad event");
                 break;
             }
             offset += eventLength / 4;
         }
-//        printf("lastlastWritten = 0x%08X, offset = 0x%08X, lastWritten = 0x%08X\n", lastlastWritten, offset, lastWritten);
+        printf("lastlastWritten = 0x%08X, offset = 0x%08X, lastWritten = 0x%08X\n", lastlastWritten, offset, lastWritten);
         if(offset > dma_buf_nwords) offset -= dma_buf_nwords;
         lastWritten = offset;
 
@@ -744,13 +810,13 @@ INT read_stream_thread(void *param) {
         uint32_t wlen = 0;
 
         // copy midas buffer and adjust bank data_size to multiple of 8 bytes
-        for(int src_i = 0, dst_i = 0; src_i < lastWritten;) {
-            int nwords = copy_event(pdata + dst_i, dma_buf + src_i);
-            src_i += 4 + dma_buf[src_i + 3] / 4;
-            dst_i += nwords;
-            wlen = dst_i;
-        }
-        lastlastWritten = lastWritten;
+        //for(int src_i = 0, dst_i = 0; src_i < lastWritten;) {
+        //    int nwords = copy_event(pdata + dst_i, dma_buf + src_i);
+        //    src_i += 4 + dma_buf[src_i + 3] / 4;
+        //    dst_i += nwords;
+        //    wlen = dst_i;
+        //}
+        //lastlastWritten = lastWritten;
 
         // copy data to midas and increment wp of the midas buffer
         if(lastWritten < lastlastWritten) {

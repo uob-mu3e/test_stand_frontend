@@ -671,23 +671,32 @@ begin
         NLINKS => NLINKS_TOTL--;
     )
     port map (
-			i_clk_data          => clk_156,
-			i_clk_dma           => pcie_fastclk_out,
-			i_reset_data_n      => resets_n(RESET_BIT_EVENT_COUNTER),
-			i_reset_dma_n       => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-			i_rx_data           => data_counter,
-			i_rx_datak          => datak_counter,
-			i_wen_reg           => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-			i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
-			i_get_n_words       => writeregs(GET_N_DMA_WORDS_REGISTER_W),
-			i_dmamemhalffull    => dmamemhalffull,
-			o_fifos_full	    => open,--readregs(EVENT_BUILD_STATUS_REGISTER_R)(31 downto NLINKS_TOTL - 1),
-			o_done              => readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
-			o_event_wren        => dma_wren_cnt,
-			o_endofevent        => dma_end_event_cnt,
-			o_event_data        => dma_event_data,
-			o_state_out         => state_out_eventcounter,
-			o_fifo_almost_full  => open--link_fifo_almost_full--,
+            i_clk_data          => clk_156,
+            i_clk_dma           => pcie_fastclk_out,
+            i_reset_data_n      => resets_n(RESET_BIT_EVENT_COUNTER),
+            i_reset_dma_n       => resets_n_fast(RESET_BIT_EVENT_COUNTER),
+            i_rx_data           => data_counter,
+            i_rx_datak          => datak_counter,
+            i_wen_reg           => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+            i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
+            i_get_n_words       => writeregs(GET_N_DMA_WORDS_REGISTER_W),
+            i_dmamemhalffull    => dmamemhalffull,
+            o_fifos_full	    => open,--readregs(EVENT_BUILD_STATUS_REGISTER_R)(31 downto NLINKS_TOTL - 1),
+            o_done              => readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
+            o_event_wren        => dma_wren_cnt,
+            o_endofevent        => dma_end_event_cnt,
+            o_event_data        => dma_event_data,
+            o_state_out         => state_out_eventcounter,
+            -- error cnt signals
+            o_fifo_almost_full          => open,
+            o_cnt_link_fifo_almost_full => readregs_slow(CNT_FIFO_ALMOST_FULL_R),
+            o_cnt_tag_fifo_full         => readregs(CNT_TAG_FIFO_FULL_R),
+            o_cnt_ram_full              => readregs(CNT_RAM_FULL_R),
+            o_cnt_stream_fifo_full      => readregs(CNT_STREAM_FIFO_FULL_R),
+            o_cnt_dma_halffull          => readregs(CNT_DMA_HALFFULL_R),
+            o_cnt_dc_link_fifo_full     => readregs_slow(CNT_DC_LINK_FIFO_FULL_R),
+            o_cnt_skip_link_data        => readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R),
+            o_cnt_skip_event_dma        => readregs(CNT_SKIP_EVENT_DMA_RAM_R)--,
     );
     
     dma_data <= dma_event_data;
