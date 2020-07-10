@@ -169,6 +169,19 @@ void setup_odb(){
     // add custom page to ODB
     odb custom("/Custom");
     custom["Farm&"] = "farm.html";
+    
+    // add error cnts to ODB
+    odb error_settings = {
+        {"DC FIFO ALMOST FUll", 0},
+        {"DC LINK FIFO FULL", 0},
+        {"TAG FIFO FULL", 0},
+        {"MIDAS EVENT RAM FULL", 0},
+        {"STREAM FIFO FULL", 0},
+        {"DMA HALFFULL", 0},
+        {"SKIP EVENT LINK FIFO", 0},
+        {"SKIP EVENT DMA RAM", 0},
+    };
+    error_settings.connect("/Equipment/Stream/Settings/ERRORCNT", true);
 
 }
 
@@ -663,6 +676,9 @@ INT update_equipment_status(int status, int cur_status, EQUIPMENT *eq)
 INT read_stream_thread(void *param) {
     // get mudaq
     mudaq::DmaMudaqDevice & mu = *mup;
+    
+    // get odb for errors
+    odb error_cnt("/Equipment/Stream/Settings/ERRORCNT");
 
     int cur_status = -1;
 
@@ -695,6 +711,17 @@ INT read_stream_thread(void *param) {
 
         // disable dma
         mu.disable();
+        
+        // check error regs
+        error_cnt["DC FIFO ALMOST FUll"] = mu.read_register_ro(0x1D);
+        error_cnt["TAG FIFO FULL"] =  mu.read_register_ro(0x1E);
+        error_cnt["MIDAS EVENT RAM FULL"] = mu.read_register_ro(0x1F);
+        error_cnt["STREAM FIFO FULL"] = mu.read_register_ro(0x20);
+        error_cnt["DMA HALFFULL"] = mu.read_register_ro(0x21);
+        error_cnt["DC LINK FIFO FULL"] = mu.read_register_ro(0x22);
+        error_cnt["SKIP EVENT LINK FIFO"] = mu.read_register_ro(0x23);
+        error_cnt["SKIP EVENT DMA RAM"] =  mu.read_register_ro(0x24);
+        
         // and get lastWritten
         lastlastWritten = 0;
         uint32_t lastWritten = mu.last_written_addr();

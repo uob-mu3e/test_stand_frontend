@@ -687,7 +687,17 @@ begin
 			o_endofevent        => dma_end_event_cnt,
 			o_event_data        => dma_event_data,
 			o_state_out         => state_out_eventcounter,
-			o_fifo_almost_full  => open--link_fifo_almost_full--,
+            -- error cnt signals
+			o_fifo_almost_full  => open,--link_fifo_almost_full,
+            o_fifo_almost_full          => open,
+            o_cnt_link_fifo_almost_full => readregs_slow(CNT_FIFO_ALMOST_FULL_R),
+            o_cnt_tag_fifo_full         => readregs(CNT_TAG_FIFO_FULL_R),
+            o_cnt_ram_full              => readregs(CNT_RAM_FULL_R),
+            o_cnt_stream_fifo_full      => readregs(CNT_STREAM_FIFO_FULL_R),
+            o_cnt_dma_halffull          => readregs(CNT_DMA_HALFFULL_R),
+            o_cnt_dc_link_fifo_full     => readregs_slow(CNT_DC_LINK_FIFO_FULL_R),
+            o_cnt_skip_link_data        => readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R),
+            o_cnt_skip_event_dma        => readregs(CNT_SKIP_EVENT_DMA_RAM_R)--,
     );
     
     dma_data <= dma_event_data;

@@ -30,7 +30,16 @@ entity midas_event_builder is
         o_endofevent:       out std_logic; 
         o_event_data:       out std_logic_vector (255 downto 0);
         o_state_out:        out std_logic_vector(3 downto 0);
-        o_fifo_almost_full: out std_logic_vector(NLINKS - 1 downto 0)--;
+        -- error cnt signals
+        o_fifo_almost_full:     out std_logic_vector(NLINKS - 1 downto 0);
+        o_cnt_link_fifo_almost_full: out std_logic_vector(31 downto 0);
+        o_cnt_tag_fifo_full:    out std_logic_vector(31 downto 0);
+        o_cnt_ram_full:         out std_logic_vector(31 downto 0);
+        o_cnt_stream_fifo_full: out std_logic_vector(31 downto 0);
+        o_cnt_dma_halffull:     out std_logic_vector(31 downto 0);
+        o_cnt_dc_link_fifo_full:out std_logic_vector(31 downto 0);
+        o_cnt_skip_link_data:   out std_logic_vector(31 downto 0);
+        o_cnt_skip_event_dma:   out std_logic_vector(31 downto 0)--;
 );
 end entity midas_event_builder;
 
@@ -48,6 +57,7 @@ signal link_fifo_data_out   : std_logic_vector(NLINKS * 36 - 1 downto 0);
 signal link_fifo_empty      : std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_full       : std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_usedw      : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS - 1 downto 0);
+signal link_fifo_almost_full: std_logic_vector(NLINKS - 1 downto 0);
 
 -- event ram
 signal w_ram_data : std_logic_vector(31 downto 0);
@@ -73,6 +83,7 @@ signal w_fifo_en        : std_logic;
 signal r_fifo_data      : std_logic_vector(11 downto 0);
 signal r_fifo_en        : std_logic;
 signal tag_fifo_empty   : std_logic;
+signal tag_fifo_full    : std_logic;
 
 -- midas event 
 signal event_id 		: std_logic_vector(15 downto 0);
@@ -90,6 +101,18 @@ signal event_counter_state : event_counter_state_type;
 signal event_last_ram_add : std_logic_vector(8 downto 0);
 signal word_counter : std_logic_vector(31 downto 0);
 
+-- error cnt
+constant all_zero : std_logic_vector(NLINKS - 1 downto 0) := (others => '0');
+signal fifos_full : std_logic_vector(NLINKS - 1 downto 0);
+signal cnt_link_fifo_almost_full : std_logic_vector(31 downto 0);
+signal cnt_tag_fifo_full : std_logic_vector(31 downto 0);
+signal cnt_ram_full : std_logic_vector(31 downto 0);
+signal cnt_stream_fifo_full : std_logic_vector(31 downto 0);
+signal cnt_dma_halffull : std_logic_vector(31 downto 0);
+signal cnt_dc_link_fifo_full : std_logic_vector(31 downto 0);
+signal cnt_skip_event_dma : std_logic_vector(31 downto 0);
+
+
 ----------------begin event_counter------------------------
 begin
 
@@ -99,30 +122,110 @@ o_event_data 						<= r_ram_data;
 o_all_done(0) 						<= tag_fifo_empty;
 o_all_done(NLINKS downto 1) 	<= link_fifo_empty;
 o_fifos_full(NLINKS) 			<= i_dmamemhalffull;
+o_fifo_almost_full                  <= link_fifo_almost_full;
 
--- write to link fifos
+o_cnt_tag_fifo_full <= cnt_tag_fifo_full; 
+o_cnt_link_fifo_almost_full <= cnt_link_fifo_almost_full;
+o_cnt_ram_full <= cnt_ram_full;
+o_cnt_stream_fifo_full <= cnt_stream_fifo_full;
+o_cnt_dma_halffull <= cnt_dma_halffull;
+o_cnt_dc_link_fifo_full <= cnt_dc_link_fifo_full;
+o_cnt_skip_event_dma <= cnt_skip_event_dma;
+
+-- count dma overflow signals
+process(i_clk_dma, i_reset_dma_n)
+    -- read add size of ram
+    variable diff : std_logic_vector(9 - 1 downto 0);    
+begin
+    if( i_reset_dma_n = '0' ) then
+        cnt_tag_fifo_full <= (others => '0');
+        cnt_ram_full <= (others => '0');
+        cnt_stream_fifo_full <= (others => '0');
+        cnt_dma_halffull <= (others => '0');
+    elsif(rising_edge(i_clk_dma)) then
+        if ( tag_fifo_full = '1' ) then
+            cnt_tag_fifo_full <= cnt_tag_fifo_full + '1';
+        end if;
+        
+        -- TODO fix me
+        --if ( w_ram_add >= r_ram_add ) then
+        --    diff := w_ram_add - r_ram_add;
+        -- else
+        --    diff := r_ram_add - w_ram_add;
+        --end if;
+
+        --if ( diff(9 - 1) = '1' ) then
+        --    cnt_ram_full <= cnt_ram_full + '1';
+        -- end if;
+
+--        if ( stream_wfull = '1' ) then
+--            cnt_stream_fifo_full <= cnt_stream_fifo_full + '1';
+--        end if;
+
+        if ( i_dmamemhalffull = '1' ) then
+            cnt_dma_halffull <= cnt_dma_halffull + '1';
+        end if;
+    end if;
+end process;
+
+-- count data overflow signal
 process(i_clk_data, i_reset_data_n)
 begin
-	if(i_reset_data_n = '0') then
-		link_fifo_wren <= (others => '0');
-		link_fifo_data <= (others => '0');
-	elsif(rising_edge(i_clk_data)) then
-		set_link_data : FOR i in 0 to NLINKS - 1 LOOP
-			link_fifo_data(35 + i * 36 downto i * 36) <= i_rx_data(31 + i * 32 downto i * 32) & i_rx_datak(3 + i * 4 downto i * 4);
-			if ( ( i_rx_data(31 + i * 32 downto i * 32) = x"000000BC" and i_rx_datak(3 + i * 4 downto i * 4) = "0001" ) or 
-                 ( i_rx_data(31 + i * 32 downto i * 32) = x"00000000" and i_rx_datak(3 + i * 4 downto i * 4) = "1111" )                 
-            ) then
-	         link_fifo_wren(i) <= '0';
-        	else
-				link_fifo_wren(i) <= '1';
-      		end if;
-		END LOOP set_link_data;
-	end if;
+    if( i_reset_data_n = '0' ) then
+        cnt_dc_link_fifo_full <= (others => '0');
+        cnt_link_fifo_almost_full <= (others => '0');
+    elsif(rising_edge(i_clk_data)) then
+--        link_fifo_full : FOR i in 0 to NLINKS - 1 LOOP
+            if ( fifos_full(NLINKS - 1 downto 0) /= all_zero ) then
+                -- for now we only count if one is full
+                cnt_dc_link_fifo_full <= cnt_dc_link_fifo_full + '1';
+            end if;
+  --      END LOOP link_fifo_full;
+  -- TODO: only for all at the moment
+            if ( link_fifo_almost_full(NLINKS - 1 downto 0) /= all_zero ) then
+                cnt_link_fifo_almost_full <= cnt_link_fifo_almost_full;
+            end if;
+    end if;
 end process;
+
+---- write to link fifos
+--process(i_clk_data, i_reset_data_n)
+--begin
+--	if(i_reset_data_n = '0') then
+--		link_fifo_wren <= (others => '0');
+--		link_fifo_data <= (others => '0');
+--	elsif(rising_edge(i_clk_data)) then
+--		set_link_data : FOR i in 0 to NLINKS - 1 LOOP
+--			link_fifo_data(35 + i * 36 downto i * 36) <= i_rx_data(31 + i * 32 downto i * 32) & i_rx_datak(3 + i * 4 downto i * 4);
+--			if ( ( i_rx_data(31 + i * 32 downto i * 32) = x"000000BC" and i_rx_datak(3 + i * 4 downto i * 4) = "0001" ) or 
+--                 ( i_rx_data(31 + i * 32 downto i * 32) = x"00000000" and i_rx_datak(3 + i * 4 downto i * 4) = "1111" )                 
+--            ) then
+--	         link_fifo_wren(i) <= '0';
+--        	else
+--				link_fifo_wren(i) <= '1';
+--      		end if;
+--		END LOOP set_link_data;
+--	end if;
+--end process;
 
 -- generate fifos per link
 buffer_link_fifos:
 FOR i in 0 to NLINKS - 1 GENERATE
+
+    e_link_to_fifo : entity work.link_to_fifo
+    generic map(
+        W => 32--,
+    )
+    port map(
+        i_link_data         => i_rx_data(31 + i * 32 downto i * 32),
+        i_link_datak        => i_rx_datak(3 + i * 4 downto i * 4),
+        i_fifo_almost_full  => link_fifo_almost_full(i),
+        o_fifo_data         => link_fifo_data(35 + i * 36 downto i * 36),
+        o_fifo_wr           => link_fifo_wren(i),
+        o_cnt_skip_data     => o_cnt_skip_link_data,
+        i_reset_n           => i_reset_data_n,
+        i_clk               => i_clk_data--,
+    );
 	
 	e_fifo : entity work.ip_dcfifo
     generic map(
@@ -144,18 +247,18 @@ FOR i in 0 to NLINKS - 1 GENERATE
         aclr        => reset_data--,
     );
 
---    process(i_clk_data, i_reset_data_n)
---    begin
---        if(i_reset_data_n = '0') then
---            o_fifo_almost_full(i)       <= '0';
---        elsif(rising_edge(i_clk_data)) then
---            if(link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1) = '1') then
---                o_fifo_almost_full(i)   <= '1';
---            else 
---                o_fifo_almost_full(i)   <= '0';
---            end if;
---        end if;
---    end process;
+    process(i_clk_data, i_reset_data_n)
+    begin
+        if(i_reset_data_n = '0') then
+            link_fifo_almost_full(i)       <= '0';
+        elsif(rising_edge(i_clk_data)) then
+            if(link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1) = '1') then
+                link_fifo_almost_full(i)   <= '1';
+            else 
+                link_fifo_almost_full(i)   <= '0';
+            end if;
+        end if;
+    end process;
 
 END GENERATE buffer_link_fifos;
 
@@ -322,12 +425,18 @@ begin
                      data_flag	<= '1';
 							w_ram_en		<= '1';
 							w_ram_add   <= w_ram_add_reg + 1;
-                            -- MIDAS expects bank names in ascii:
-                            w_ram_data <=   work.util.hex_to_ascii(link_fifo_data_out(15 + current_link * 36 downto current_link * 36 + 12)) &
-                                            work.util.hex_to_ascii(link_fifo_data_out(19 + current_link * 36 downto current_link * 36 + 16)) &
-                                            work.util.hex_to_ascii(link_fifo_data_out(23 + current_link * 36 downto current_link * 36 + 20)) &
-                                            work.util.hex_to_ascii(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 24));
-
+                            -- toDo: proper conversion into ASCII for the midas banks here !! 
+							if(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB0") then
+								w_ram_data  		<= x"30424546";
+							elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB1") then
+								w_ram_data  		<= x"31424546";
+							elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB2") then
+								w_ram_data  		<= x"32424546";
+							elsif(link_fifo_data_out(27 + current_link * 36 downto current_link * 36 + 12) = x"FEB3") then
+								w_ram_data  		<= x"33424546";
+							else
+								w_ram_data  		<= x"34424546"; -- We should not see this !! (FEB4)
+							end if;
 							event_size_cnt      	<= event_size_cnt + 4;
 							event_tagging_state 	<= bank_type;
 						--throw data away until a header
@@ -487,6 +596,7 @@ begin
 		o_event_wren				<= '0';
 		o_endofevent				<= '0';
 		o_state_out             <= x"0";
+        cnt_skip_event_dma      <= (others => '0');
 		o_done 						<= '0';
 		r_fifo_en					<= '0';
 		r_ram_add					<= (others => '1');
@@ -523,6 +633,7 @@ begin
 				o_state_out 		<= x"B";
 				if ( i_dmamemhalffull = '1' or ( i_get_n_words /= (i_get_n_words'range => '0') and word_counter >= i_get_n_words ) ) then
 					event_counter_state <= skip_event;
+                    cnt_skip_event_dma <= cnt_skip_event_dma + '1';
 				else
 					o_event_wren <= i_wen_reg;
 					o_endofevent <= '1'; -- begin of event
