@@ -142,6 +142,32 @@ void invert_datastream(uint32_t * datastream) {
 
 }
 
+u_int32_t transform_row_dac(u_int32_t row)    //physical row to ram address (For dac WRITE ONLY, read transformation is different again !!)
+{
+    u_int32_t newrow;
+
+    if(row<85)
+        newrow = 199-row;
+    else if(row>99)
+        newrow = 215-row;
+    else
+        newrow = 99-row;
+
+    return newrow;
+}
+
+short transform_tdac(short tDAC){
+    // this is a mess ..
+    // bit(0)=1 is mask pixel
+    // bit(1::2): comparator 1, bit(3::5) comparator 2, 6 inject, 7 hitbus seems NOT to work !!! (to be tested again)
+    // TODO: figure out the correct bit order
+
+    // for now we just turn the pixel off if there is something
+    if(tDAC!=0)
+        return 1;
+    return 0;
+}
+
 //ASIC configuration:
 //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
 int MupixFEB::ConfigureASICs(){
@@ -152,6 +178,8 @@ int MupixFEB::ConfigureASICs(){
       bool TDACsNotFound = false;
       int useTDACs = 0;
       short tDAC=0;
+      u_int32_t rowRAM_addr=0;
+
       //mapping
       uint16_t SB_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Number();
       uint16_t SP_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Port();
@@ -205,18 +233,21 @@ int MupixFEB::ConfigureASICs(){
          // use TDAC config files
          mpTDACs["chipIDreq"]=asic;  // request load of TDACs of this chip ID
          for(int i=0; i<5;i++){
-            sleep(1);
+            sleep(1);               // TODO: preload TDACs and save locally to avoid this (We are waiting for the TDAC loading from (remote) disk into odb here)
             if(mpTDACs["chipIDactual"]==asic){
                 cm_msg(MINFO, "setup_mupix", "loading TDACs for ASIC %i", asic);
 
-                for (int rrow = 0; rrow < 200; ++rrow) {
+                for (int rrow = 0; rrow < 200; rrow++) {
+                    // rrow: this is the real row of the mupix
+                    // rowRAM_addr : address of this row (For dac WRITE ONLY, read transformation is different again !!)
+                    rowRAM_addr=transform_row_dac((u_int32_t) rrow);
+
                     try {
-                       std::cout<<(std::to_string(asic)+"/row_"+std::to_string(rrow))<<std::endl;
-                       mpRowDACs[(std::to_string(asic)+"/row_"+std::to_string(rrow)+"/digiWrite").c_str()]=1;
-                    std::cout<<(std::to_string(asic)+"/row_"+std::to_string(rrow))<<std::endl;
+                       mpRowDACs[(std::to_string(asic)+"/row_"+std::to_string(rowRAM_addr)+"/digiWrite").c_str()]=1;
 
                        for(int col=0;col<127;col++){
                            tDAC=mpTDACs[("col"+std::to_string(col)).c_str()][rrow];
+                           tDAC=transform_tdac(tDAC);
                            mpColDACs[(std::to_string(asic)+"/col_"+std::to_string(col)+"/RAM").c_str()]=tDAC;
                        }
 
@@ -226,7 +257,7 @@ int MupixFEB::ConfigureASICs(){
                        }
                        uint32_t * datastream = (uint32_t*)(bitpatterna);
 
-                       mpRowDACs[(std::to_string(asic)+"/row_"+std::to_string(rrow)+"/digiWrite").c_str()]=0;
+                       mpRowDACs[(std::to_string(asic)+"/row_"+std::to_string(rowRAM_addr)+"/digiWrite").c_str()]=0;
 
                        for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
                            uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
