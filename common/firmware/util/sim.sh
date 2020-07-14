@@ -19,6 +19,7 @@ OPTS=(
     --ieee=synopsys -fexplicit
     -fpsl
     --mb-comments
+    --std=08
 )
 
 [ -d "$HOME/.cache/altera-quartus" ] && OPTS+=(-P"$HOME/.cache/altera-quartus")

@@ -51,9 +51,9 @@ signal reset_dma : std_logic;
 
 -- link fifos
 signal link_fifo_wren       : std_logic_vector(NLINKS - 1 downto 0);
-signal link_fifo_data       : std_logic_vector(NLINKS * 36 - 1 downto 0);
+signal link_fifo_data       : std_logic_vector(NLINKS * 38 - 1 downto 0);
 signal link_fifo_ren        : std_logic_vector(NLINKS - 1 downto 0);
-signal link_fifo_data_out   : std_logic_vector(NLINKS * 36 - 1 downto 0);
+signal link_fifo_data_out   : std_logic_vector(NLINKS * 38 - 1 downto 0);
 signal link_fifo_empty      : std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_full       : std_logic_vector(NLINKS - 1 downto 0);
 signal link_fifo_usedw      : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS - 1 downto 0);
@@ -236,26 +236,31 @@ FOR i in 0 to NLINKS - 1 GENERATE
         i_link_data         => i_rx_data(31 + i * 32 downto i * 32),
         i_link_datak        => i_rx_datak(3 + i * 4 downto i * 4),
         i_fifo_almost_full  => link_fifo_almost_full(i),
-        o_fifo_data         => link_fifo_data(35 + i * 36 downto i * 36),
+        o_fifo_data         => link_fifo_data(35 + i * 38 downto i * 38),
         o_fifo_wr           => link_fifo_wren(i),
         o_cnt_skip_data     => o_cnt_skip_link_data,
         i_reset_n           => i_reset_data_n,
         i_clk               => i_clk_data--,
     );
 	
+	-- sop
+	link_fifo_data(36 + i * 38) <= '1' when ( link_fifo_data(3 + i * 38 downto i * 38 + 4) = "0001" and link_fifo_data(11 + i * 38 downto i * 38 + 4) = x"BC" ) else '0';
+	-- eop
+	link_fifo_data(37 + i * 38) <= '1' when ( link_fifo_data(3 + i * 38 downto i * 38 + 4) = "0001" and link_fifo_data(11 + i * 38 downto i * 38 + 4) = x"9C" ) else '0';
+	
 	e_fifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH 	=> LINK_FIFO_ADDR_WIDTH,
-        DATA_WIDTH 	=> 36,
+        DATA_WIDTH 	=> 38,
         DEVICE 		=> "Arria 10"--,
     )
     port map (
-        data        => link_fifo_data(35 + i * 36 downto i * 36),
+        data        => link_fifo_data(37 + i * 38 downto 0 + i * 38),
         wrreq       => link_fifo_wren(i),
         rdreq       => link_fifo_ren(i),
         wrclk       => i_clk_data,
         rdclk       => i_clk_dma,
-        q           => link_fifo_data_out(35 + i * 36 downto i * 36),
+        q           => link_fifo_data_out(37 + i * 38 downto 0 + i * 38),
         rdempty     => link_fifo_empty(i),
         rdusedw     => open,
         wrfull      => fifos_full(i),
@@ -263,8 +268,8 @@ FOR i in 0 to NLINKS - 1 GENERATE
         aclr        => reset_data--,
     );
 
-    link_fifo_sop(i) <= '1' when (link_fifo_data_out(3 + i * 36 downto i * 36) = "0001" and link_fifo_data_out(11 + i * 36 downto i * 36 + 4) = x"BC" ) else '0';
-    link_fifo_eop(i) <= '1' when (link_fifo_data_out(3 + i * 36 downto i * 36) = "0001" and link_fifo_data_out(11 + i * 36 downto i * 36 + 4) = x"9C" ) else '0';
+    link_fifo_sop(i) <= link_fifo_data_out(36 + i * 38);
+    link_fifo_eop(i) <= link_fifo_data_out(37 + i * 38);
 
     process(i_clk_data, i_reset_data_n)
     begin
@@ -283,7 +288,7 @@ END GENERATE buffer_link_fifos;
 
     e_ram_32_256 : entity work.ip_ram
     generic map (
-	ADDR_WIDTH_A 	=> 12,
+    ADDR_WIDTH_A 	=> 12,
     ADDR_WIDTH_B 	=> 9,
     DATA_WIDTH_A 	=> 32,
     DATA_WIDTH_B 	=> 256,
@@ -326,7 +331,7 @@ END GENERATE buffer_link_fifos;
 
     e_stream : entity work.stream_merger
     generic map (
-        W => 36,
+        W => 38,
         N => NLINKS--,
     )
     port map (
@@ -336,7 +341,7 @@ END GENERATE buffer_link_fifos;
         i_rempty    => stream_in_rempty,
         o_rack      => link_fifo_ren,
 
-        o_wdata     => stream_wdata,
+        o_wdata(35 downto 0)  => stream_wdata,
         i_wfull     => stream_wfull,
         o_we        => stream_we,
 

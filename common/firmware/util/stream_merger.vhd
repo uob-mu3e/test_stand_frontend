@@ -44,6 +44,9 @@ architecture arch of stream_merger is
         return i;
     end function;
 
+    type data_array_t is array (natural range <>) of std_logic_vector(W-1 downto 0);
+    signal rdata : data_array_t(N-1 downto 0);
+
     -- current index
     signal index : integer range 0 to N-1 := 0;
 
@@ -51,6 +54,10 @@ architecture arch of stream_merger is
     signal busy : std_logic;
 
 begin
+
+    generate_rdata : for i in 0 to N-1 generate
+        rdata(i) <= i_rdata(W-1 + i*W downto i*W);
+    end generate;
 
     -- set rack for current not empty input (and not full and not reset)
     process(index, i_rempty, i_reset_n)
@@ -73,7 +80,7 @@ begin
         busy <= '0';
         --
     elsif rising_edge(i_clk) then
-        o_wdata <= i_rdata(W-1 + W*index downto 0 + W*index);
+        o_wdata <= rdata(index);
         o_wsop <= i_rsop(index);
         o_weop <= i_reop(index);
         o_we <= '0';
