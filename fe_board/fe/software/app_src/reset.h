@@ -2,6 +2,7 @@
 
 void menu_print_rate() {
     auto& rate = sc.ram->regs.fe.merger_rate_count;
+    auto& hits_ena = sc.ram->data[0xFF9A];
     while (1) {
             char cmd;
             if(read(uart, &cmd, 1) > 0) switch(cmd) {
@@ -11,7 +12,8 @@ void menu_print_rate() {
                 printf("invalid command: '%c'\n", cmd);
             }
 
-            printf("merger rate:  0x%08x\n",rate);
+            printf("merger rate:  0x%08x\n", rate);
+            printf("hits ena: 0x%08x\n", 0x7735940 - hits_ena);
 
             usleep(200000);
         }
