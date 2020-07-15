@@ -111,6 +111,7 @@ signal reset_n : std_logic;
     signal chip_dac_ren : std_logic;
     signal chip_dac_fifo_empty : std_logic;
     signal chip_dac_ready : std_logic;
+	 signal chip_dac_usedw : std_logic_vector(6 downto 0);
     signal reset_chip_dac_fifo : std_logic;
     signal ckdiv         : std_logic_vector(15 downto 0);
      
@@ -130,6 +131,8 @@ signal reset_n : std_logic;
     signal lvds_data_valid : std_logic_vector(NLVDS-1 downto 0);
     signal lvds_data_in : std_logic_vector(NLVDS-1 downto 0);
     signal disable_conditions_for_run_ack : std_logic;
+	 
+	 signal reg_hits_ena_count : std_logic_vector(31 downto 0);
 
 begin
     reset_n <= '0' when (i_reset='1' or i_run_state_125=RUN_STATE_SYNC) else '1';
@@ -164,7 +167,7 @@ begin
 
         almost_empty    => open,
         almost_full     => open,
-        usedw           => open,
+        usedw           => chip_dac_usedw,
 
         full            => open,
         wrreq           => chip_dac_we,
@@ -375,7 +378,15 @@ begin
                     o_reg_rdata(31 downto 1)        <= (others => '0');
                 end if;
             end if;
+				
+				if ( i_reg_add = x"99" and i_reg_re = '1' ) then
+                o_reg_rdata <= std_logic_vector(to_unsigned(2**chip_dac_usedw'length - to_integer(unsigned(chip_dac_usedw)), 32));
+            end if;
             
+				if ( i_reg_add = x"9A" and i_reg_re = '1' ) then
+					o_reg_rdata <= reg_hits_ena_count;
+				end if;
+				
         end if;
     end process board_dac_regs;
 
@@ -433,6 +444,7 @@ begin
         o_fifo_wdata        => o_fifo_wdata,
         o_fifo_write        => o_fifo_write,
         o_lvds_data_valid   => lvds_data_valid,
+		  o_hits_ena_count	 => reg_hits_ena_count,
         
         i_sync_reset_cnt    => i_sync_reset_cnt,
         i_run_state_125     => i_run_state_125--,
