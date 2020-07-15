@@ -250,9 +250,9 @@ FOR i in 0 to NLINKS - 1 GENERATE
 
     e_fifo : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH 	=> LINK_FIFO_ADDR_WIDTH,
-        DATA_WIDTH 	=> 38,
-        DEVICE 		=> "Arria 10"--,
+        ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
+        DATA_WIDTH  => 38,
+        DEVICE      => "Arria 10"--,
     )
     port map (
         data        => link_fifo_data(37 + i * 38 downto 0 + i * 38),
@@ -288,43 +288,43 @@ END GENERATE buffer_link_fifos;
 
     e_ram_32_256 : entity work.ip_ram
     generic map (
-    ADDR_WIDTH_A 	=> 12,
-    ADDR_WIDTH_B 	=> 9,
-    DATA_WIDTH_A 	=> 32,
-    DATA_WIDTH_B 	=> 256,
-    DEVICE 			=> "Arria 10"--,
+        ADDR_WIDTH_A    => 12,
+        ADDR_WIDTH_B    => 9,
+        DATA_WIDTH_A    => 32,
+        DATA_WIDTH_B    => 256,
+        DEVICE          => "Arria 10"--,
     )
     port map (
-		address_a 	=> w_ram_add,
-		address_b 	=> r_ram_add,
-		clock_a 		=> i_clk_dma,
-		clock_b 		=> i_clk_dma,
-		data_a 		=> w_ram_data,
-		data_b 		=> (others => '0'),
-		wren_a 		=> w_ram_en,
-		wren_b 		=> '0',
-		q_a 			=> open,
-		q_b 			=> r_ram_data--,
+        address_a       => w_ram_add,
+        address_b       => r_ram_add,
+        clock_a         => i_clk_dma,
+        clock_b         => i_clk_dma,
+        data_a          => w_ram_data,
+        data_b          => (others => '0'),
+        wren_a          => w_ram_en,
+        wren_b          => '0',
+        q_a             => open,
+        q_b             => r_ram_data--,
     );
 
     e_tagging_fifo_event : entity work.ip_scfifo
     generic map (
-        ADDR_WIDTH 	=> 12,
-        DATA_WIDTH 	=> 12,
-        DEVICE 		=> "Arria 10"--,
+        ADDR_WIDTH      => 12,
+        DATA_WIDTH      => 12,
+        DEVICE          => "Arria 10"--,
     )
     port map (
-		data     		=> w_fifo_data,
-		wrreq    		=> w_fifo_en,
-		rdreq    		=> r_fifo_en,
-		clock    		=> i_clk_dma,
-		q    	 			=> r_fifo_data,
-		full     		=> tag_fifo_full,
-		empty    		=> tag_fifo_empty,
-		almost_empty 	=> open,
-		almost_full 	=> open,
-		usedw 			=> open,
-		sclr     		=> reset_dma--,
+        data            => w_fifo_data,
+        wrreq           => w_fifo_en,
+        rdreq           => r_fifo_en,
+        clock           => i_clk_dma,
+        q               => r_fifo_data,
+        full            => tag_fifo_full,
+        empty           => tag_fifo_empty,
+        almost_empty    => open,
+        almost_full     => open,
+        usedw           => open,
+        sclr            => reset_dma--,
     );
 
     stream_in_rempty <= link_fifo_empty or not i_link_mask_n;
@@ -335,18 +335,18 @@ END GENERATE buffer_link_fifos;
         N => NLINKS--,
     )
     port map (
-        i_rdata     => link_fifo_data_out,
-        i_rsop      => link_fifo_sop,
-        i_reop      => link_fifo_eop,
-        i_rempty    => stream_in_rempty,
-        o_rack      => link_fifo_ren,
+        i_rdata                 => link_fifo_data_out,
+        i_rsop                  => link_fifo_sop,
+        i_reop                  => link_fifo_eop,
+        i_rempty                => stream_in_rempty,
+        o_rack                  => link_fifo_ren,
 
-        o_wdata(35 downto 0)  => stream_wdata,
-        i_wfull     => stream_wfull,
-        o_we        => stream_we,
+        o_wdata(35 downto 0)    => stream_wdata,
+        i_wfull                 => stream_wfull,
+        o_we                    => stream_we,
 
-        i_reset_n   => i_reset_dma_n,
-        i_clk       => i_clk_dma--,
+        i_reset_n               => i_reset_dma_n,
+        i_clk                   => i_clk_dma--,
     );
 
     e_stream_fifo : entity work.ip_scfifo
@@ -358,7 +358,7 @@ END GENERATE buffer_link_fifos;
     port map (
         q               => stream_rdata,
         empty           => stream_rempty,
-        rdreq           => stream_rack,
+        rdreq           => stream_rack and not stream_rempty,
         data            => stream_wdata,
         full            => stream_wfull,
         wrreq           => stream_we,
@@ -380,43 +380,43 @@ END GENERATE buffer_link_fifos;
     process(i_clk_dma, i_reset_dma_n)
     begin
     if ( i_reset_dma_n = '0' ) then
-        stream_rack <= '0';
+        data_flag           <= '0';
+        cur_size_add        <= (others => '0');
+        cur_bank_size_add   <= (others => '0');
+        cur_bank_length_add <= (others => '0');
+        w_ram_add_reg       <= (others => '0');
 
-		-- state machine singals
-        event_tagging_state <= EVENT_IDLE;
-		data_flag 				<= '0';
-		cur_size_add 			<= (others => '0');
-		cur_bank_size_add 	<= (others => '0');
-		cur_bank_length_add 	<= (others => '0');
-		w_ram_add_reg 			<= (others => '0');
+        -- ram and tagging fifo write signals
+        w_ram_en            <= '0';
+        w_ram_data          <= (others => '0');
+        w_ram_add           <= (others => '1');
+        w_fifo_en           <= '0';
+        w_fifo_data         <= (others => '0');
 
-		-- ram and tagging fifo write signals
-		w_ram_en            	<= '0';
-		w_ram_data				<= (others => '0');
-		w_ram_add				<= (others => '1');
-		w_fifo_en           	<= '0';
-		w_fifo_data				<= (others => '0');
-
-		-- midas signals
-		event_id 				<= x"0001";
-		trigger_mask			<= (others => '0');
-		serial_number 			<= x"00000001";
-		time_tmp					<= (others => '0');
-		flags						<= x"00000001";
-		type_bank				<= x"00000006"; -- MIDAS Bank Type TID_DWORD
+        -- midas signals
+        event_id            <= x"0001";
+        trigger_mask        <= (others => '0');
+        serial_number       <= x"00000001";
+        time_tmp            <= (others => '0');
+        flags               <= x"00000001";
+        type_bank           <= x"00000006"; -- MIDAS Bank Type TID_DWORD
       
-		-- for size counting in bytes
-      bank_size_cnt		<= (others => '0');
-      event_size_cnt		<= (others => '0');
+        -- for size counting in bytes
+        bank_size_cnt       <= (others => '0');
+        event_size_cnt      <= (others => '0');
+
+        -- state machine singals
+        event_tagging_state <= EVENT_IDLE;
+        stream_rack         <= '0';
 
     --
     elsif rising_edge(i_clk_dma) then
-		flags				<= x"00000011";
-		trigger_mask	<= (others => '0');
-		event_id     	<= x"0001";
-		type_bank		<= x"00000006";
-		w_ram_en  		<= '0';
-		w_fifo_en 		<= '0';
+        flags           <= x"00000011";
+        trigger_mask    <= (others => '0');
+        event_id        <= x"0001";
+        type_bank       <= x"00000006";
+        w_ram_en        <= '0';
+        w_fifo_en       <= '0';
 
         if ( event_tagging_state /= EVENT_IDLE ) then
             -- count time for midas event header
@@ -431,207 +431,202 @@ END GENERATE buffer_link_fifos;
             end if;
 
         when event_head =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= trigger_mask & event_id;
-					event_tagging_state 	<= event_num;
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_data          <= trigger_mask & event_id;
+            event_tagging_state <= event_num;
 
         when event_num =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= serial_number;
-					event_tagging_state 	<= event_tmp;
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_data          <= serial_number;
+            event_tagging_state <= event_tmp;
 
         when event_tmp =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= time_tmp;
-					event_tagging_state 	<= event_size;
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_data          <= time_tmp;
+            event_tagging_state <= event_size;
 
         when event_size =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= (others => '0');
-					cur_size_add 			<= w_ram_add + 1;
-					event_tagging_state 	<= bank_size;
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_data          <= (others => '0');
+            event_tagging_state <= bank_size;
+            cur_size_add        <= w_ram_add + 1;
 
         when bank_size =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= (others => '0');
-					cur_bank_size_add 	<= w_ram_add + 1;
-					event_size_cnt      	<= event_size_cnt + 4;
-					event_tagging_state 	<= bank_flags;
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_data          <= (others => '0');
+            event_size_cnt      <= event_size_cnt + 4;
+            cur_bank_size_add   <= w_ram_add + 1;
+            event_tagging_state <= bank_flags;
 
         when bank_flags =>
-					w_ram_en					<= '1';
-					event_size_cnt      	<= event_size_cnt + 4;
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_add_reg 			<= w_ram_add + 1;
-					w_ram_data				<= flags;
-					event_tagging_state 	<= bank_name;
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_add_reg       <= w_ram_add + 1;
+            w_ram_data          <= flags;
+            event_size_cnt      <= event_size_cnt + 4;
+            event_tagging_state <= bank_name;
+            stream_rack         <= '1';
 
         when bank_name =>
 
-            stream_rack <= '0';
-					--here we check if the link is masked and if the current fifo is empty
-            if ( stream_rempty = '0' ) then
-						--check for mupix or mutrig data header
-                if( link_header = '1' ) then
-                     data_flag	<= '1';
-							w_ram_en		<= '1';
-							w_ram_add   <= w_ram_add_reg + 1;
-                            -- MIDAS expects bank names in ascii:
-                            --w_ram_data <=   work.util.hex_to_ascii(link_data(11 downto 8)) &
-                            --                work.util.hex_to_ascii(link_data(15 downto 12)) &
-                            --                work.util.hex_to_ascii(link_data(19 downto 16)) &
-                            --                work.util.hex_to_ascii(link_data(23 downto 20));
-                            if(link_data(23 downto 8) = x"FEB0") then
-                                w_ram_data <= x"30424546";
-                            elsif(link_data(23 downto 8) = x"FEB1") then
-                                w_ram_data <= x"31424546";
-                            elsif(link_data(23 downto 8) = x"FEB2") then
-                                w_ram_data <= x"32424546";
-                            elsif(link_data(23 downto 8) = x"FEB3") then
-                                w_ram_data <= x"33424546";
-                            else
-                                w_ram_data <= x"34424546";
-                            end if;
-							event_size_cnt      	<= event_size_cnt + 4;
-							event_tagging_state 	<= bank_type;
-						--throw data away until a header
+            -- here we check if the link is masked and if the current fifo is empty
+            -- check for mupix or mutrig data header
+            if ( stream_rempty = '0' and link_header = '1' ) then
+                data_flag <= '1';
+                w_ram_en    <= '1';
+                w_ram_add   <= w_ram_add_reg + 1;
+                -- MIDAS expects bank names in ascii:
+                --w_ram_data <=   work.util.hex_to_ascii(link_data(11 downto 8)) &
+                --                work.util.hex_to_ascii(link_data(15 downto 12)) &
+                --                work.util.hex_to_ascii(link_data(19 downto 16)) &
+                --                work.util.hex_to_ascii(link_data(23 downto 20));
+                if(link_data(23 downto 8) = x"FEB0") then
+                    w_ram_data <= x"30424546";
+                elsif(link_data(23 downto 8) = x"FEB1") then
+                    w_ram_data <= x"31424546";
+                elsif(link_data(23 downto 8) = x"FEB2") then
+                    w_ram_data <= x"32424546";
+                elsif(link_data(23 downto 8) = x"FEB3") then
+                    w_ram_data <= x"33424546";
                 else
-                    stream_rack <= '1';
+                    w_ram_data <= x"34424546";
                 end if;
+                event_size_cnt      <= event_size_cnt + 4;
+
+                event_tagging_state <= bank_type;
+                stream_rack <= '0';
             end if;
 
         when bank_type =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data				<= type_bank;
-					event_size_cnt    	<= event_size_cnt + 4;
-					event_tagging_state 	<= bank_length;
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_data          <= type_bank;
+            event_size_cnt      <= event_size_cnt + 4;
+            event_tagging_state <= bank_length;
 
         when bank_length =>
-					w_ram_en								<= '1';
-					w_ram_add   						<= w_ram_add + 1;
-					w_ram_data  						<= (others => '0');
-					event_size_cnt      				<= event_size_cnt + 4;
-					cur_bank_length_add <= w_ram_add + 1;
-            stream_rack <= '1';
-					event_tagging_state 				<= bank_data;
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_data          <= (others => '0');
+            event_size_cnt      <= event_size_cnt + 4;
+            cur_bank_length_add <= w_ram_add + 1;
+            event_tagging_state <= bank_data;
+            stream_rack         <= '1';
 
         when bank_data =>
-
-					-- check again if the fifo is empty
+            -- check again if the fifo is empty
             if ( stream_rempty = '0' ) then
-						w_ram_en				<= '1';
-						w_ram_add   		<= w_ram_add + 1;
-						w_ram_data  		<= link_data;
-						event_size_cnt 	<= event_size_cnt + 4;
- 					   bank_size_cnt 		<= bank_size_cnt + 4;
+                w_ram_en            <= '1';
+                w_ram_add           <= w_ram_add + 1;
+                w_ram_data          <= link_data;
+                event_size_cnt      <= event_size_cnt + 4;
+                bank_size_cnt       <= bank_size_cnt + 4;
                 if ( link_trailer = '1' ) then
-							-- check if the size of the bank data is in 64 bit if not add a word
-							-- this word is not counted to the bank size
+                    -- check if the size of the bank data is in 64 bit if not add a word
+                    -- this word is not counted to the bank size
                     if ( bank_size_cnt(2 downto 0) = "000" ) then
-								event_tagging_state 	<= set_algin_word;
+                        event_tagging_state <= set_algin_word;
                     else
-								event_tagging_state 	<= bank_set_length;
-								w_ram_add_reg 			<= w_ram_add + 1;
+                        event_tagging_state <= bank_set_length;
+                        w_ram_add_reg       <= w_ram_add + 1;
                     end if;
+
                     stream_rack <= '0';
-                else
-                    stream_rack <= '1';
                 end if;
             end if;
 
         when set_algin_word =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data 				<= x"AFFEAFFE";
-					w_ram_add_reg 			<= w_ram_add + 1;
-					event_size_cnt      	<= event_size_cnt + 4;
-					event_tagging_state 	<= bank_set_length;
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_add_reg       <= w_ram_add + 1;
+            w_ram_data          <= x"AFFEAFFE";
+            event_size_cnt      <= event_size_cnt + 4;
+            event_tagging_state <= bank_set_length;
 
         when bank_set_length =>
-               w_ram_en						<= '1';
-					w_ram_add   				<= cur_bank_length_add;
-					w_ram_data 					<= bank_size_cnt;
-					bank_size_cnt 				<= (others => '0');
-            --if ( stream_rempty = '1' ) then
-						event_tagging_state 	<= trailer_name;
-            --else
-			--			event_tagging_state 	<= bank_name;
-            --end if;
+            w_ram_en            <= '1';
+            w_ram_add           <= cur_bank_length_add;
+            w_ram_data          <= bank_size_cnt;
+            bank_size_cnt       <= (others => '0');
+--            if ( stream_rempty = '1' ) then
+            event_tagging_state <= trailer_name;
+--            else
+--                event_tagging_state <= bank_name;
+--            end if;
 
         when trailer_name =>
-					w_ram_en					<= '1';
-	            w_ram_add   			<= w_ram_add_reg + 1;
-					w_ram_data  			<= x"454b4146"; -- FAKE in ascii
-					data_flag      		<= '0';
-	            event_size_cnt 		<= event_size_cnt + 4;
-	            event_tagging_state 	<= trailer_type;
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add_reg + 1;
+            w_ram_data          <= x"454b4146"; -- FAKE in ascii
+            data_flag           <= '0';
+            event_size_cnt      <= event_size_cnt + 4;
+            event_tagging_state <= trailer_type;
 
         when trailer_type =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= type_bank;
-					event_size_cnt      	<= event_size_cnt + 4;
-					event_tagging_state 	<= trailer_length;
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_data          <= type_bank;
+            event_size_cnt      <= event_size_cnt + 4;
+            event_tagging_state <= trailer_length;
 
         when trailer_length =>
-					w_ram_en					<= '1';
-					w_ram_add   			<= w_ram_add + 1;
-					w_ram_data  			<= (others => '0');
-					-- reg trailer length add
-					w_ram_add_reg 			<= w_ram_add + 1;
-					event_size_cnt      	<= event_size_cnt + 4;
-					-- write at least one AFFEAFFE
-					event_tagging_state 	<= trailer_data;
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_add_reg       <= w_ram_add + 1;
+            w_ram_data          <= (others => '0');
+            -- reg trailer length add
+            event_size_cnt      <= event_size_cnt + 4;
+            -- write at least one AFFEAFFE
+            event_tagging_state <= trailer_data;
 
         when trailer_data =>
-            w_ram_add_reg <= w_ram_add;
-					w_ram_en						<= '1';
-					w_ram_add   				<= w_ram_add + 1;
-					w_ram_data					<= x"AFFEAFFE";
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_add_reg       <= w_ram_add;
+            w_ram_data          <= x"AFFEAFFE";
             -- align to DMA word (32 bytes) boundary
             if ( event_size_cnt(4 downto 0) /= "00000" ) then
-						event_tagging_state 	<= trailer_set_length;
+                event_tagging_state <= trailer_set_length;
             else
-						bank_size_cnt 			<= bank_size_cnt + 4;
-						event_size_cnt 		<= event_size_cnt + 4;
+                bank_size_cnt   <= bank_size_cnt + 4;
+                event_size_cnt  <= event_size_cnt + 4;
             end if;
 
         when trailer_set_length =>
-					w_ram_en					<= '1';
-					
-					-- bank length: size in bytes of the following data
-					w_ram_data 				<= bank_size_cnt;
-					bank_size_cnt 			<= (others => '0');
-					event_tagging_state 	<= event_set_size;
+            w_ram_en            <= '1';
+
+            -- bank length: size in bytes of the following data
+            w_ram_data          <= bank_size_cnt;
+            bank_size_cnt       <= (others => '0');
+            event_tagging_state <= event_set_size;
 
         when event_set_size =>
-					w_ram_en  				<= '1';
-					w_ram_add 				<= cur_size_add;
-					-- Event Data Size: The event data size contains the size of the event in bytes excluding the event header
-					w_ram_data 				<= event_size_cnt;
-					event_tagging_state 	<= bank_set_size;
+            w_ram_en            <= '1';
+            w_ram_add           <= cur_size_add;
+            -- Event Data Size: The event data size contains the size of the event in bytes excluding the event header
+            w_ram_data          <= event_size_cnt;
+            event_tagging_state <= bank_set_size;
 
         when bank_set_size =>
-					w_ram_en 					<= '1';
-					w_ram_add 					<= cur_bank_size_add;
-        -- All Bank Size : Size in bytes of the following data banks including their bank names
-					w_ram_data 					<= event_size_cnt - 8;
-					event_size_cnt 			<= (others => '0');
-					event_tagging_state 		<= write_tagging_fifo;
+            w_ram_en            <= '1';
+            w_ram_add           <= cur_bank_size_add;
+            -- All Bank Size : Size in bytes of the following data banks including their bank names
+            w_ram_data          <= event_size_cnt - 8;
+            event_size_cnt      <= (others => '0');
+            event_tagging_state <= write_tagging_fifo;
 
         when write_tagging_fifo =>
-					w_fifo_en 					<= '1';
-					w_fifo_data 				<= w_ram_add_reg + 1;
-					w_ram_add 					<= w_ram_add_reg;
-					event_tagging_state 		<= EVENT_IDLE;
-					cur_bank_length_add 		<= (others => '0');
-					serial_number 				<= serial_number + '1';
+            w_fifo_en           <= '1';
+            w_fifo_data         <= w_ram_add_reg + 1;
+            w_ram_add           <= w_ram_add_reg;
+            event_tagging_state <= EVENT_IDLE;
+            cur_bank_length_add <= (others => '0');
+            serial_number       <= serial_number + '1';
 
         when others =>
             event_tagging_state <= EVENT_IDLE;
