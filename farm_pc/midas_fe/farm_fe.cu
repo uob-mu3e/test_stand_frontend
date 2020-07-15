@@ -100,12 +100,27 @@ EQUIPMENT equipment[] = {
      "MIDAS",                /* format */
      TRUE,                   /* enabled */
      RO_RUNNING  | RO_STOPPED | RO_ODB,             /* read only when running */
-     100,                    /* poll for 100ms */
+     1000,                    /* poll for 1s */
      0,                      /* stop run after this event limit */
      0,                      /* number of sub events */
      0,                      /* don't log history */
      "", "", "",},
      NULL,                    /* readout routine */
+    },
+    {"Stream Logger",                /* equipment name */
+    {11, 0,                   /* event ID, trigger mask */
+     "SYSTEM",               /* event buffer */
+     EQ_PERIODIC,                /* equipment type */
+     0,                      /* event source crate 0, all stations */
+     "MIDAS",                /* format */
+     TRUE,                   /* enabled */
+     RO_ALWAYS  | RO_ODB,             /* read only when running */
+     1000,                    /* poll for 1s */
+     0,                      /* stop run after this event limit */
+     0,                      /* number of sub events */
+     1,                      /* don't log history */
+     "", "", "",},
+     read_stream_event,                    /* readout routine */
     },
 
    {""}
@@ -180,6 +195,7 @@ void setup_odb(){
         {"DMA HALFFULL", 0},
         {"SKIP EVENT LINK FIFO", 0},
         {"SKIP EVENT DMA RAM", 0},
+        {"IDLE NOT EVENT HEADER", 0},
     };
     error_settings.connect("/Equipment/Stream/Settings/ERRORCNT", true);
 
@@ -555,29 +571,43 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 
 INT read_stream_event(char *pevent, INT off)
 {
-   /*
+    
+   // get mudaq 
+   mudaq::DmaMudaqDevice & mu = *mup;
+ 
+   // get odb for errors
+   odb error_cnt("/Equipment/Stream/Settings/ERRORCNT");
+
+   // create bank, pdata, stream buffer is name
    bk_init(pevent);
-   
    DWORD *pdata;
-   uint32_t read = 0;
-   bk_create(pevent, "HEAD", TID_DWORD, (void **)&pdata);
-   
-   for (int i =0; i < 8; i ++) {
-      *pdata++ = dma_buf[(++readindex)%dma_buf_nwords];
-      read++;
-   }
-   
+   bk_create(pevent, "STBU", TID_DWORD, (void **)&pdata);
+
+   // get error regs and write to odb
+   error_cnt["DC FIFO ALMOST FUll"] = mu.read_register_ro(0x1D);
+   error_cnt["TAG FIFO FULL"] =  mu.read_register_ro(0x1E);
+   error_cnt["MIDAS EVENT RAM FULL"] = mu.read_register_ro(0x1F);
+   error_cnt["STREAM FIFO FULL"] = mu.read_register_ro(0x20);
+   error_cnt["DMA HALFFULL"] = mu.read_register_ro(0x21);
+   error_cnt["DC LINK FIFO FULL"] = mu.read_register_ro(0x22);
+   error_cnt["SKIP EVENT LINK FIFO"] = mu.read_register_ro(0x23);
+   error_cnt["SKIP EVENT DMA RAM"] =  mu.read_register_ro(0x24);
+   error_cnt["IDLE NOT EVENT HEADER"] =  mu.read_register_ro(0x25);
+
+   *pdata++ = mu.read_register_ro(0x1D);
+   *pdata++ = mu.read_register_ro(0x1E);
+   *pdata++ = mu.read_register_ro(0x1F);
+   *pdata++ = mu.read_register_ro(0x20);
+   *pdata++ = mu.read_register_ro(0x21);
+   *pdata++ = mu.read_register_ro(0x22);
+   *pdata++ = mu.read_register_ro(0x23);
+   *pdata++ = mu.read_register_ro(0x24);
+   *pdata++ = mu.read_register_ro(0x25);
+
    bk_close(pevent, pdata);
-   newdata -= read;
-   
-   if (read < newdata && newdata < 0x10000)
-      moreevents = true;
-   else
-      moreevents = false;
-   
+ 
    return bk_size(pevent);
-   */
-   return 0;
+  
 }
 
 // check if the event is good
@@ -677,9 +707,6 @@ INT read_stream_thread(void *param) {
     // get mudaq
     mudaq::DmaMudaqDevice & mu = *mup;
     
-    // get odb for errors
-    odb error_cnt("/Equipment/Stream/Settings/ERRORCNT");
-
     int cur_status = -1;
 
     // tell framework that we are alive
@@ -712,15 +739,7 @@ INT read_stream_thread(void *param) {
         // disable dma
         mu.disable();
         
-        // check error regs
-        error_cnt["DC FIFO ALMOST FUll"] = mu.read_register_ro(0x1D);
-        error_cnt["TAG FIFO FULL"] =  mu.read_register_ro(0x1E);
-        error_cnt["MIDAS EVENT RAM FULL"] = mu.read_register_ro(0x1F);
-        error_cnt["STREAM FIFO FULL"] = mu.read_register_ro(0x20);
-        error_cnt["DMA HALFFULL"] = mu.read_register_ro(0x21);
-        error_cnt["DC LINK FIFO FULL"] = mu.read_register_ro(0x22);
-        error_cnt["SKIP EVENT LINK FIFO"] = mu.read_register_ro(0x23);
-        error_cnt["SKIP EVENT DMA RAM"] =  mu.read_register_ro(0x24);
+        
         
         // and get lastWritten
         lastlastWritten = 0;
