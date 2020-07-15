@@ -39,7 +39,8 @@ port(
         o_cnt_dma_halffull:     out std_logic_vector(31 downto 0);
         o_cnt_dc_link_fifo_full:out std_logic_vector(31 downto 0);
         o_cnt_skip_link_data:   out std_logic_vector(31 downto 0);
-        o_cnt_skip_event_dma:   out std_logic_vector(31 downto 0)--;
+        o_cnt_skip_event_dma:   out std_logic_vector(31 downto 0);
+        o_cnt_idle_not_header:  out std_logic_vector(31 downto 0)--;
     );
 end entity;
 
@@ -86,6 +87,8 @@ signal r_fifo_data      : std_logic_vector(11 downto 0);
 signal r_fifo_en        : std_logic;
 signal tag_fifo_empty   : std_logic;
 signal tag_fifo_full    : std_logic;
+signal last_event_add 	: std_logic_vector(11 downto 0);
+signal align_event_size : std_logic_vector(11 downto 0);
 
 -- midas event 
 signal event_id 		: std_logic_vector(15 downto 0);
@@ -124,6 +127,7 @@ signal cnt_stream_fifo_full : std_logic_vector(31 downto 0);
 signal cnt_dma_halffull : std_logic_vector(31 downto 0);
 signal cnt_dc_link_fifo_full : std_logic_vector(31 downto 0);
 signal cnt_skip_event_dma : std_logic_vector(31 downto 0);
+signal cnt_idle_not_header : std_logic_vector(31 downto 0);
 
 ----------------begin event_counter------------------------
 begin
@@ -144,6 +148,7 @@ o_cnt_stream_fifo_full <= cnt_stream_fifo_full;
 o_cnt_dma_halffull <= cnt_dma_halffull;
 o_cnt_dc_link_fifo_full <= cnt_dc_link_fifo_full;
 o_cnt_skip_event_dma <= cnt_skip_event_dma;
+o_cnt_idle_not_header <= cnt_idle_not_header;
 
 -- count dma overflow signals
 process(i_clk_dma, i_reset_dma_n)
@@ -358,7 +363,7 @@ END GENERATE buffer_link_fifos;
     port map (
         q               => stream_rdata,
         empty           => stream_rempty,
-        rdreq           => stream_rack and not stream_rempty,
+        rdreq           => stream_rack,
         data            => stream_wdata,
         full            => stream_wfull,
         wrreq           => stream_we,
@@ -370,11 +375,15 @@ END GENERATE buffer_link_fifos;
     link_datak <= stream_rdata(3 downto 0);
     link_header <=
         '1' when link_datak = "0001" and link_data(7 downto 0) = x"BC"
-        and ( link_data(31 downto 26) = "111010" or link_data(31 downto 26) = "111000" )
         else '0';
     link_trailer <=
         '1' when link_datak = "0001" and link_data(7 downto 0) = x"9C"
         else '0';
+
+    stream_rack <=
+        '1' when ( event_tagging_state = bank_data and stream_rempty = '0' ) else
+        '1' when ( event_tagging_state = EVENT_IDLE and stream_rempty = '0' and link_header = '0' ) else
+        '0';
 
     -- write link data to event ram
     process(i_clk_dma, i_reset_dma_n)
@@ -385,6 +394,8 @@ END GENERATE buffer_link_fifos;
         cur_bank_size_add   <= (others => '0');
         cur_bank_length_add <= (others => '0');
         w_ram_add_reg       <= (others => '0');
+        last_event_add      <= (others => '0');
+        align_event_size    <= (others => '0');
 
         -- ram and tagging fifo write signals
         w_ram_en            <= '0';
@@ -404,10 +415,10 @@ END GENERATE buffer_link_fifos;
         -- for size counting in bytes
         bank_size_cnt       <= (others => '0');
         event_size_cnt      <= (others => '0');
+        cnt_idle_not_header <= (others => '0');
 
         -- state machine singals
         event_tagging_state <= EVENT_IDLE;
-        stream_rack         <= '0';
 
     --
     elsif rising_edge(i_clk_dma) then
@@ -426,14 +437,17 @@ END GENERATE buffer_link_fifos;
         case event_tagging_state is
         when EVENT_IDLE =>
             -- start if at least one not masked link has data
-            if ( stream_rempty = '0' ) then
+            if ( stream_rempty = '0' and link_header = '1' ) then
                 event_tagging_state <= event_head;
+            elsif ( stream_rempty = '0' and link_header = '0' ) then
+                cnt_idle_not_header <= cnt_idle_not_header + 1;
             end if;
 
         when event_head =>
             w_ram_en            <= '1';
             w_ram_add           <= w_ram_add + 1;
             w_ram_data          <= trigger_mask & event_id;
+            last_event_add      <= w_ram_add + 1;
             event_tagging_state <= event_num;
 
         when event_num =>
@@ -470,7 +484,6 @@ END GENERATE buffer_link_fifos;
             w_ram_data          <= flags;
             event_size_cnt      <= event_size_cnt + 4;
             event_tagging_state <= bank_name;
-            stream_rack         <= '1';
 
         when bank_name =>
 
@@ -499,7 +512,6 @@ END GENERATE buffer_link_fifos;
                 event_size_cnt      <= event_size_cnt + 4;
 
                 event_tagging_state <= bank_type;
-                stream_rack <= '0';
             end if;
 
         when bank_type =>
@@ -516,7 +528,6 @@ END GENERATE buffer_link_fifos;
             event_size_cnt      <= event_size_cnt + 4;
             cur_bank_length_add <= w_ram_add + 1;
             event_tagging_state <= bank_data;
-            stream_rack         <= '1';
 
         when bank_data =>
             -- check again if the fifo is empty
@@ -535,8 +546,6 @@ END GENERATE buffer_link_fifos;
                         event_tagging_state <= bank_set_length;
                         w_ram_add_reg       <= w_ram_add + 1;
                     end if;
-
-                    stream_rack <= '0';
                 end if;
             end if;
 
@@ -582,15 +591,16 @@ END GENERATE buffer_link_fifos;
             -- reg trailer length add
             event_size_cnt      <= event_size_cnt + 4;
             -- write at least one AFFEAFFE
+            align_event_size    <= w_ram_add + 1 - last_event_add;
             event_tagging_state <= trailer_data;
 
         when trailer_data =>
             w_ram_en            <= '1';
             w_ram_add           <= w_ram_add + 1;
-            w_ram_add_reg       <= w_ram_add;
             w_ram_data          <= x"AFFEAFFE";
+            align_event_size    <= align_event_size + 1;
             -- align to DMA word (32 bytes) boundary
-            if ( event_size_cnt(4 downto 0) /= "00000" ) then
+            if ( align_event_size(2 downto 0) + '1' = "000" ) then
                 event_tagging_state <= trailer_set_length;
             else
                 bank_size_cnt   <= bank_size_cnt + 4;
@@ -599,7 +609,8 @@ END GENERATE buffer_link_fifos;
 
         when trailer_set_length =>
             w_ram_en            <= '1';
-
+            w_ram_add           <= w_ram_add_reg;
+            w_ram_add_reg       <= w_ram_add;
             -- bank length: size in bytes of the following data
             w_ram_data          <= bank_size_cnt;
             bank_size_cnt       <= (others => '0');
@@ -622,8 +633,9 @@ END GENERATE buffer_link_fifos;
 
         when write_tagging_fifo =>
             w_fifo_en           <= '1';
-            w_fifo_data         <= w_ram_add_reg + 1;
-            w_ram_add           <= w_ram_add_reg;
+            w_fifo_data         <= w_ram_add_reg;
+            last_event_add      <= w_ram_add_reg;
+            w_ram_add           <= w_ram_add_reg - 1;
             event_tagging_state <= EVENT_IDLE;
             cur_bank_length_add <= (others => '0');
             serial_number       <= serial_number + '1';

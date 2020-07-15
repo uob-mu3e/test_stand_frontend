@@ -696,7 +696,8 @@ begin
             o_cnt_dma_halffull          => readregs(CNT_DMA_HALFFULL_R),
             o_cnt_dc_link_fifo_full     => readregs_slow(CNT_DC_LINK_FIFO_FULL_R),
             o_cnt_skip_link_data        => readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R),
-            o_cnt_skip_event_dma        => readregs(CNT_SKIP_EVENT_DMA_RAM_R)--,
+            o_cnt_skip_event_dma        => readregs(CNT_SKIP_EVENT_DMA_RAM_R),
+            o_cnt_idle_not_header       => readregs(CNT_IDLE_NOT_HEADER_R)--,
     );
     
     dma_data <= dma_event_data;

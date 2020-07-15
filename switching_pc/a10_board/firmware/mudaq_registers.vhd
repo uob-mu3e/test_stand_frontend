@@ -118,6 +118,7 @@ package mudaq_registers is
         constant CNT_DC_LINK_FIFO_FULL_R : integer := 16#22#;
         constant CNT_SKIP_EVENT_LINK_FIFO_R : integer := 16#23#;
         constant CNT_SKIP_EVENT_DMA_RAM_R : integer := 16#24#;
+        constant CNT_IDLE_NOT_HEADER_R : integer := 16#25#;
 
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;
