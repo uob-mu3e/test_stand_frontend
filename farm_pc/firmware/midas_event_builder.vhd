@@ -242,13 +242,13 @@ FOR i in 0 to NLINKS - 1 GENERATE
         i_reset_n           => i_reset_data_n,
         i_clk               => i_clk_data--,
     );
-	
-	-- sop
-	link_fifo_data(36 + i * 38) <= '1' when ( link_fifo_data(3 + i * 38 downto i * 38 + 4) = "0001" and link_fifo_data(11 + i * 38 downto i * 38 + 4) = x"BC" ) else '0';
-	-- eop
-	link_fifo_data(37 + i * 38) <= '1' when ( link_fifo_data(3 + i * 38 downto i * 38 + 4) = "0001" and link_fifo_data(11 + i * 38 downto i * 38 + 4) = x"9C" ) else '0';
-	
-	e_fifo : entity work.ip_dcfifo
+
+    -- sop
+    link_fifo_data(36 + i * 38) <= '1' when ( link_fifo_data(3 + i * 38 downto i * 38) = "0001" and link_fifo_data(11 + i * 38 downto i * 38 + 4) = x"BC" ) else '0';
+    -- eop
+    link_fifo_data(37 + i * 38) <= '1' when ( link_fifo_data(3 + i * 38 downto i * 38) = "0001" and link_fifo_data(11 + i * 38 downto i * 38 + 4) = x"9C" ) else '0';
+
+    e_fifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH 	=> LINK_FIFO_ADDR_WIDTH,
         DATA_WIDTH 	=> 38,
