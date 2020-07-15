@@ -390,6 +390,28 @@ unsigned char reverse(unsigned char b) {
    return b;
 }
 
+int MupixFEB::ReadBackCounters(uint16_t FPGA_ID){
+   //map to SB fiber
+   auto FEB = m_FPGAs[FPGA_ID];
+   if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+   if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+
+   auto rpc_ret=m_mu.FEBsc_NiosRPC(FEB.SB_Port(),0x0105,{});
+   //retrieve results
+   uint32_t* val;
+   INT val_size = sizeof(DWORD);
+   //int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError) {
+   m_mu.FEBsc_read(FEB.SB_Port(), val, 1 , (uint32_t) 0xFF9A, true , false);
+
+   printf("sc read back: 0x%08x\n",val);
+
+   //store in midas
+   //TODO
+
+
+   delete[] val;
+   return SUCCESS;
+}
 
 int MupixFEB::ConfigureBoards(){
    cm_msg(MINFO, "MupixFEB" , "Configuring boards under prefix %s/Settings/Boards/", m_odb_prefix);

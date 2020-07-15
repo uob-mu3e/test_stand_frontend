@@ -52,6 +52,10 @@ struct mupix_t {
     void powerdown() {
         printf("[scifi] powerdown: not implemented\n");
     }
+    
+    void read_counters() {
+        printf("[mupix] trigger read counters\n");
+    }
 
     void menu() {
         auto& regs = sc->ram->regs.scifi;
@@ -130,6 +134,9 @@ struct mupix_t {
         case 0x0101: //power up (not implemented in current FEB)
             break;
         case 0x0102: //power down (not implemented in current FEB)
+            break;
+        case 0x0105: //read counters
+            read_counters();
             break;
         case 0xfffe:
             printf("-ping-\n");

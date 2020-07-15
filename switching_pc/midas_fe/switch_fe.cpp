@@ -587,6 +587,7 @@ INT read_mupix_sc_event(char *pevent, INT off){
 	static int i=0;
     printf("Reading Scifi FEB status data from all FEBs %d\n",i++);
     MupixFEB::Instance()->ReadBackAllRunState();
+    MupixFEB::Instance()->ReadBackAllCounters();
     return 0;
 }
 
