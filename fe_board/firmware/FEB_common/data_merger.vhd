@@ -97,7 +97,8 @@ end generate;
                 time_counter    <= (others => '0');
                 rate_counter    <= (others => '0');
             else
-                rate_counter    <= rate_counter + work.util.count_bits(data_is_k);
+					 -- overflow can not happen here
+                rate_counter    <= rate_counter + to_unsigned(work.util.count_bits(data_is_k), 32);
                 time_counter    <= time_counter + 1;
             end if;
         end if;
