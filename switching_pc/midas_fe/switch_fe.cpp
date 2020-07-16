@@ -362,7 +362,7 @@ INT frontend_init()
         rate_counters[set_str] = 0;
     }
     //end of Mupix setup part
-
+    
     // Define history panels for each FEB Mupix
     for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
         sprintf(set_str, "FEB%d", i);
@@ -370,6 +370,11 @@ INT frontend_init()
                                            "Mupix:hit ena rate " + string(set_str)
                                            });
     }
+    
+    // setup odb for switching board
+    odb swb_varibles("/Equipment/Switching/Variables");
+    swb_varibles["Merger Timeout All FEBs"] = 0;
+
     // TODO: not sure at the moment we have a midas frontend for three feb types but 
     // we need to have different swb at the final experiment so maybe one needs to take
     // things apart later. For now we put this "common" FEB variables into the generic
@@ -585,7 +590,7 @@ INT read_sc_event(char *pevent, INT off)
     // get odb
     // TODO: at the moment the timeout is a counter for all FEBs
     odb merger_timeout_cnt("/Equipment/Switching/Variables");
-    uint32_t merger_timeout_all = mu.read_register_ro(0x26);
+    auto merger_timeout_all = mu.read_register_ro(0x26);
     merger_timeout_cnt["Merger Timeout All FEBs"] = merger_timeout_all;
     
     // create bank, pdata
