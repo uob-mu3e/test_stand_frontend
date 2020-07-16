@@ -45,8 +45,16 @@ class MupixFEB  : public MuFEB{
       int ConfigureBoards();
 
       //FEB registers and functions
-      int ReadBackCounters(uint16_t FPGA_ID);
-      void ReadBackAllCounters(){for(size_t i=0;i<m_FPGAs.size();i++) ReadBackCounters(i);};
+      uint32_t ReadBackCounters(uint16_t FPGA_ID);
+      uint32_t getNFPGAs(){
+          return m_FPGAs.size();
+      }
+      void ReadBackAllCounters(DWORD** pdata){
+          for(size_t i=0;i<m_FPGAs.size();i++){
+              (*pdata)++;
+              **pdata = (DWORD)ReadBackCounters(i);
+          };
+      }
 
 
       //MIDAS callback for all setters below. Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks

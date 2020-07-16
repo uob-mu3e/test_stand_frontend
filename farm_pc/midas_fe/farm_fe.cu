@@ -118,7 +118,7 @@ EQUIPMENT equipment[] = {
      1000,                    /* poll for 1s */
      0,                      /* stop run after this event limit */
      0,                      /* number of sub events */
-     1,                      /* don't log history */
+     1,                      /* log history every event */
      "", "", "",},
      read_stream_event,                    /* readout routine */
     },

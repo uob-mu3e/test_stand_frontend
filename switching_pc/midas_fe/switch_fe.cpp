@@ -187,13 +187,13 @@ EQUIPMENT equipment[] = {
      read_scitiles_sc_event,          /* readout routine */
     },
     {"Mupix",                    /* equipment name */
-    {2, 0,                      /* event ID, trigger mask */
+    {13, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
-     RO_TRANSITIONS | RO_ODB,   /* read during run transitions and update ODB */
+     RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
      1000,                      /* read every 1 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
@@ -584,11 +584,21 @@ INT read_scitiles_sc_event(char *pevent, INT off){
 /*--- Read Slow Control Event from Mupix to be put into data stream --------*/
 
 INT read_mupix_sc_event(char *pevent, INT off){
+    bk_init(pevent);
+    DWORD *pdata;
+    bk_create(pevent,"FECN",TID_WORD,(void **) &pdata);
 	static int i=0;
-    printf("Reading Scifi FEB status data from all FEBs %d\n",i++);
+    printf("Reading MuPix FEB status data from all FEBs %d\n",i++);
     MupixFEB::Instance()->ReadBackAllRunState();
-    MupixFEB::Instance()->ReadBackAllCounters();
-    return 0;
+    //MupixFEB::Instance()->ReadBackAllCounters(&pdata);
+    for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+        *pdata++ = MupixFEB::Instance()->ReadBackCounters(i);
+    }
+//    *pdata++ = MupixFEB::Instance()->ReadBackCounters(0);
+//    *pdata++ = MupixFEB::Instance()->ReadBackCounters(1);
+
+    bk_close(pevent,pdata);
+    return bk_size(pevent);
 }
 
 /*--- helper functions ------------------------*/
