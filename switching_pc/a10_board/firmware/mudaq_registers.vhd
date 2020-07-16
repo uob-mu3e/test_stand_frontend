@@ -110,15 +110,16 @@ package mudaq_registers is
       constant BUFFER_STATUS_REGISTER_R               : integer := 16#1B#;
 		constant EVENT_BUILD_STATUS_REGISTER_R          : integer := 16#1C#;
 		constant EVENT_BUILD_DONE								: integer:= 0;
-        constant CNT_FIFO_ALMOST_FULL_R : integer := 16#1D#;
-        constant CNT_TAG_FIFO_FULL_R : integer := 16#1E#;
-        constant CNT_RAM_FULL_R : integer := 16#1F#;
-        constant CNT_STREAM_FIFO_FULL_R : integer := 16#20#;
-		constant CNT_DMA_HALFFULL_R : integer := 16#21#;
-        constant CNT_DC_LINK_FIFO_FULL_R : integer := 16#22#;
-        constant CNT_SKIP_EVENT_LINK_FIFO_R : integer := 16#23#;
-        constant CNT_SKIP_EVENT_DMA_RAM_R : integer := 16#24#;
-        constant CNT_IDLE_NOT_HEADER_R : integer := 16#25#;
+      constant CNT_FIFO_ALMOST_FULL_R               : integer := 16#1D#;
+      constant CNT_TAG_FIFO_FULL_R                  : integer := 16#1E#;
+      constant CNT_RAM_FULL_R                       : integer := 16#1F#;
+      constant CNT_STREAM_FIFO_FULL_R               : integer := 16#20#;
+      constant CNT_DMA_HALFFULL_R                     : integer := 16#21#;
+      constant CNT_DC_LINK_FIFO_FULL_R                : integer := 16#22#;
+      constant CNT_SKIP_EVENT_LINK_FIFO_R             : integer := 16#23#;
+      constant CNT_SKIP_EVENT_DMA_RAM_R               : integer := 16#24#;
+      constant CNT_IDLE_NOT_HEADER_R                  : integer := 16#25#;
+      constant CNT_FEB_MERGE_TIMEOUT_R                : integer := 16#26#;
 
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;

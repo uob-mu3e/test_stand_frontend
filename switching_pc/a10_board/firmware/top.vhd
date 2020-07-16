@@ -2,6 +2,7 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
 
 use work.pcie_components.all;
 use work.mudaq_registers.all;
@@ -298,6 +299,7 @@ architecture rtl of top is
         signal dma_end_event_test : std_logic;
         signal data_counter : std_logic_vector(32*NLINKS_TOTL-1 downto 0);
         signal datak_counter : std_logic_vector(4*NLINKS_TOTL-1 downto 0);
+        signal feb_merger_timeouts : std_logic_vector(NLINKS_TOTL-1 downto 0);
 
 begin
 
@@ -593,7 +595,7 @@ begin
             o_fpga_id           => open--,
         );
     end generate;
-
+    
 
     -------- MIDAS RUN control --------
 
@@ -605,6 +607,7 @@ begin
         i_reset_ack_seen_n                  => resets_n(RESET_BIT_RUN_START_ACK),
         i_reset_run_end_n                   => resets_n(RESET_BIT_RUN_END_ACK),
         i_buffers_empty                     => (others => '1'), -- TODO: connect buffers emtpy from dma here
+        o_feb_merger_timeout                => readregs_slow(CNT_FEB_MERGE_TIMEOUT_R),
         i_aligned                           => (others => '1'),
         i_data                              => rx_rc_v,
         i_datak                             => rx_rck_v,
@@ -815,6 +818,7 @@ begin
             readregs(RUN_NR_REGISTER_R)             <= readregs_slow(RUN_NR_REGISTER_R);
             readregs(RUN_NR_ACK_REGISTER_R)         <= readregs_slow(RUN_NR_ACK_REGISTER_R);
             readregs(RUN_STOP_ACK_REGISTER_R)       <= readregs_slow(RUN_STOP_ACK_REGISTER_R);
+            readregs(CNT_FEB_MERGE_TIMEOUT_R)       <= readregs_slow(CNT_FEB_MERGE_TIMEOUT_R);
             readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= (others => '0');
             readregs(MEM_WRITEADDR_LOW_REGISTER_R)  <= (X"0000" & readmem_writeaddr_finished);
         end if;

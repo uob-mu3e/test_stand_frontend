@@ -26,15 +26,20 @@ port (
         o_run_number:                       out std_logic_vector(31 downto 0);
         o_runNr_ack:                        out std_logic_vector(31 downto 0);
         o_run_stop_ack:                     out std_logic_vector(31 downto 0);
-        o_buffers_empty:                    out std_logic_vector(31 downto 0)--;
+        o_buffers_empty:                    out std_logic_vector(31 downto 0);
+        o_feb_merger_timeout:               out std_logic_vector(31 downto 0)--;
 );
 end entity;
 
 architecture rtl of run_control is
 
 signal FEB_status :                             std_logic_vector(26*N_LINKS_g-1 downto 0);
+signal feb_merger_timeouts :                    std_logic_vector(N_LINKS_g-1 downto 0);
+signal CNT_feb_merger_timeouts :                unsigned(31 downto 0);
 
 BEGIN
+   o_feb_merger_timeout <= std_logic_vector(CNT_feb_merger_timeouts);
+
     g_link_listener : for i in N_LINKS_g-1 downto 0 generate
         begin
             e_link_listener : entity work.run_control_link_listener
@@ -45,9 +50,21 @@ BEGIN
                 i_aligned               => i_aligned(i),
                 i_data                  => i_data(31+32*i downto 32*i),
                 i_datak                 => i_datak(3+4*i downto 4*i),
+                o_merger_timeout        => feb_merger_timeouts(i),
                 o_FEB_status            => FEB_status(25+26*i downto 26*i)--,
             );
     end generate;
+    
+    feb_merger_timeout : process(i_clk, i_reset_ack_seen_n, i_reset_run_end_n)
+    begin
+    if ( i_reset_ack_seen_n = '0' ) then
+        CNT_feb_merger_timeouts  <= (others => '0');
+    elsif rising_edge(i_clk) then
+      if(or_reduce(feb_merger_timeouts)='1') then
+         CNT_feb_merger_timeouts <= CNT_feb_merger_timeouts + 1;
+      end if;
+    end if;
+    end process;
 
     process (i_clk, i_reset_ack_seen_n, i_reset_run_end_n)
     begin
@@ -75,6 +92,8 @@ BEGIN
                 
                 o_run_number                <= "000000" & FEB_status(25+to_integer(unsigned(i_addr))*26 downto to_integer(unsigned(i_addr))*26);
         end if;
+        
+        
     end process;
 
 end architecture;
