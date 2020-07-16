@@ -412,11 +412,11 @@ try{
    }
 
    //configure Pixel sensors
-   status=MupixFEB::Instance()->ConfigureASICs();
-   if(status!=SUCCESS){
-      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
-      return CM_TRANSITION_CANCELED;
-   }
+   //status=MupixFEB::Instance()->ConfigureASICs();
+   //if(status!=SUCCESS){
+   //   cm_msg(MERROR,"switch_fe","ASIC configuration failed");
+   //   return CM_TRANSITION_CANCELED;
+   //}
 
 
    //last preparations
