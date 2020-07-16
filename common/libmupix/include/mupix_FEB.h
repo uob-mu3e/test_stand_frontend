@@ -46,6 +46,8 @@ class MupixFEB  : public MuFEB{
 
       //FEB registers and functions
       uint32_t ReadBackCounters(uint16_t FPGA_ID);
+      uint32_t ReadBackHitsEnaRate(uint16_t FPGA_ID);
+      uint32_t ReadBackMergerRate(uint16_t FPGA_ID);
       uint32_t getNFPGAs(){
           return m_FPGAs.size();
       }

@@ -57,6 +57,7 @@
 #include "mfe.h"
 #include "string.h"
 #include "mudaq_device_scifi.h"
+#include "odbxx.h"
 
 //Slow control for mutrig/scifi ; mupix
 #include "mutrig_midasodb.h"
@@ -65,6 +66,10 @@
 #include "SciFi_FEB.h"
 #include "Tiles_FEB.h"
 #include "mupix_FEB.h"
+
+using namespace std;
+using midas::odb;
+
 /*-- Globals -------------------------------------------------------*/
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
@@ -224,6 +229,9 @@ INT frontend_init()
    HNDLE hKeySC;
    int status;
 
+   // TODO: for debuging
+    odb::set_debug(true);
+
    // create Settings structure in ODB
    db_create_record(hDB, 0, "Equipment/Switching/Settings", strcomb(sc_settings_str));
    db_find_key(hDB, 0, "/Equipment/Switching", &hKeySC);
@@ -343,7 +351,25 @@ INT frontend_init()
    }
    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
    MupixFEB::Instance()->WriteFEBID();
-   //end of Mupix setup part
+   
+    // setup odb rate counters for each feb
+    char set_str[255];
+    odb rate_counters("/Equipment/Mupix/Variables");
+    for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+        sprintf(set_str, "merger rate FEB%d", i);
+        rate_counters[set_str] = 0;
+        sprintf(set_str, "hit ena rate FEB%d", i);
+        rate_counters[set_str] = 0;
+    }
+    //end of Mupix setup part
+
+    // Define history panels for each FEB Mupix
+    for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+        sprintf(set_str, "FEB%d", i);
+        hs_define_panel("Mupix", set_str, {"Mupix:merger rate " + string(set_str),
+                                           "Mupix:hit ena rate " + string(set_str)
+                                           });
+    }
 
    /*
     * Set our transition sequence. The default is 500. Setting it
@@ -584,19 +610,32 @@ INT read_scitiles_sc_event(char *pevent, INT off){
 /*--- Read Slow Control Event from Mupix to be put into data stream --------*/
 
 INT read_mupix_sc_event(char *pevent, INT off){
+    // get odb
+    odb rate_cnt("/Equipment/Mupix/Variables");
+    uint32_t HitsEnaRate;
+    uint32_t MergerRate;
+    char set_str[255];
+    static int i = 0;
+ 
     bk_init(pevent);
     DWORD *pdata;
-    bk_create(pevent,"FECN",TID_WORD,(void **) &pdata);
-	static int i=0;
-    printf("Reading MuPix FEB status data from all FEBs %d\n",i++);
+    bk_create(pevent, "FECN", TID_WORD, (void **) &pdata);
+    printf("Reading MuPix FEB status data from all FEBs %d\n", i++);
     MupixFEB::Instance()->ReadBackAllRunState();
-    //MupixFEB::Instance()->ReadBackAllCounters(&pdata);
     for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
-        *pdata++ = MupixFEB::Instance()->ReadBackCounters(i);
-    }
-//    *pdata++ = MupixFEB::Instance()->ReadBackCounters(0);
-//    *pdata++ = MupixFEB::Instance()->ReadBackCounters(1);
+        HitsEnaRate = MupixFEB::Instance()->ReadBackHitsEnaRate(i);
+        MergerRate = MupixFEB::Instance()->ReadBackMergerRate(i);
 
+        sprintf(set_str, "hit ena rate FEB%d", i);
+        rate_cnt[set_str] = 0x7735940 - HitsEnaRate;
+        
+        sprintf(set_str, "merger rate FEB%d", i);
+        rate_cnt[set_str] = MergerRate;
+
+        *pdata++ = HitsEnaRate;
+        *pdata++ = MergerRate;
+    }
+    
     bk_close(pevent,pdata);
     return bk_size(pevent);
 }

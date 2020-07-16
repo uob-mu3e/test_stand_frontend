@@ -20,6 +20,7 @@
 
 #include "mudaq_device.h"
 #include "mfe.h"
+#include "history.h"
 
 using namespace std;
 using midas::odb;
@@ -197,8 +198,18 @@ void setup_odb(){
         {"SKIP EVENT DMA RAM", 0},
         {"IDLE NOT EVENT HEADER", 0},
     };
-    error_settings.connect("/Equipment/Stream/Settings/ERRORCNT", true);
-
+    error_settings.connect("/Equipment/Stream Logger/Variables", true);
+    
+    // Define history panels
+    hs_define_panel("Stream Logger", "MIDAS Bank Builder", {"Stream Logger:DC FIFO ALMOST FUll",
+                                                            "Stream Logger:DC LINK FIFO FULL",
+                                                            "Stream Logger:TAG FIFO FULL",
+                                                            "Stream Logger:MIDAS EVENT RAM FULL",
+                                                            "Stream Logger:STREAM FIFO FULL",
+                                                            "Stream Logger:DMA HALFFULL",
+                                                            "Stream Logger:SKIP EVENT LINK FIFO",
+                                                            "Stream Logger:SKIP EVENT DMA RAM",
+                                                            "Stream Logger:IDLE NOT EVENT HEADER"});
 }
 
 void setup_watches(){
@@ -576,7 +587,7 @@ INT read_stream_event(char *pevent, INT off)
    mudaq::DmaMudaqDevice & mu = *mup;
  
    // get odb for errors
-   odb error_cnt("/Equipment/Stream/Settings/ERRORCNT");
+   odb error_cnt("/Equipment/Stream Logger/Variables");
 
    // create bank, pdata, stream buffer is name
    bk_init(pevent);

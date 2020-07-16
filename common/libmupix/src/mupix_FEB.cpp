@@ -401,6 +401,28 @@ uint32_t MupixFEB::ReadBackCounters(uint16_t FPGA_ID){
    return hitsEna[0];
 }
 
+uint32_t MupixFEB::ReadBackHitsEnaRate(uint16_t FPGA_ID){
+    auto FEB = m_FPGAs[FPGA_ID];
+    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+    
+    uint32_t hitsEna;
+    int status=m_mu.FEBsc_read(FEB.SB_Port(), &hitsEna, 1, 0xff9a);
+    return hitsEna;
+}
+
+uint32_t MupixFEB::ReadBackMergerRate(uint16_t FPGA_ID){
+    auto FEB = m_FPGAs[FPGA_ID];
+    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+    
+    uint32_t mergerRate;
+    int status=m_mu.FEBsc_read(FEB.SB_Port(), &mergerRate, 1, 0xfff6);
+    return mergerRate;
+}
+
+
+
 int MupixFEB::ConfigureBoards(){
    cm_msg(MINFO, "MupixFEB" , "Configuring boards under prefix %s/Settings/Boards/", m_odb_prefix);
    int status = mupix::midasODB::MapForEachBOARD(hDB,m_odb_prefix,[this](mupix::MupixBoardConfig* config, int board){
