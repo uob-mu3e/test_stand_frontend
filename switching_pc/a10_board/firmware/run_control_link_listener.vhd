@@ -15,6 +15,7 @@ port (
         i_aligned:                          in  std_logic; -- word alignment achieved
         i_data:                             in  std_logic_vector(31 downto 0); -- optical from frontend board
         i_datak:                            in  std_logic_vector(3  downto 0);
+        o_merger_timeout:                   out std_logic;
         o_FEB_status:                       out std_logic_vector(25 downto 0)--;
 );
 end entity;
@@ -29,6 +30,12 @@ BEGIN
 
     process (i_clk, i_reset_run_end_n, i_reset_ack_seen_n, i_aligned)
     begin
+        if(i_data = MERGER_TIMEOUT)then
+            o_merger_timeout <= '1';
+        else
+            o_merger_timeout <= '0';
+        end if;
+    
         if (i_reset_ack_seen_n = '0' or i_aligned = '0') then 
             run_prep_acknowledge_received    <= '0';
             run_number                       <= (others => '0');
