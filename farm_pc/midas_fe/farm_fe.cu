@@ -593,7 +593,8 @@ INT read_stream_event(char *pevent, INT off)
    bk_init(pevent);
    DWORD *pdata;
    bk_create(pevent, "STBU", TID_DWORD, (void **)&pdata);
-
+    
+   // TODO: save value to variable before and dont call function all the time
    // get error regs and write to odb
    error_cnt["DC FIFO ALMOST FUll"] = mu.read_register_ro(0x1D);
    error_cnt["TAG FIFO FULL"] =  mu.read_register_ro(0x1E);

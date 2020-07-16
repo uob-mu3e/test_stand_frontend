@@ -370,6 +370,11 @@ INT frontend_init()
                                            "Mupix:hit ena rate " + string(set_str)
                                            });
     }
+    // TODO: not sure at the moment we have a midas frontend for three feb types but 
+    // we need to have different swb at the final experiment so maybe one needs to take
+    // things apart later. For now we put this "common" FEB variables into the generic
+    // switching path
+    hs_define_panel("Switching", "All FEBs", {"Switching:Merger Timeout All FEBs"});
 
    /*
     * Set our transition sequence. The default is 500. Setting it
@@ -574,10 +579,30 @@ INT resume_run(INT run_number, char *error)
 
 INT read_sc_event(char *pevent, INT off)
 {
+    // get mudaq
+    mudaq::DmaMudaqDevice & mu = *mup;
+
+    // get odb
+    // TODO: at the moment the timeout is a counter for all FEBs
+    odb merger_timeout_cnt("/Equipment/Switching/Variables");
+    uint32_t merger_timeout_all = mu.read_register_ro(0x26);
+    merger_timeout_cnt["Merger Timeout All FEBs"] = merger_timeout_all;
+    
+    // create bank, pdata
+    bk_init(pevent);
+    DWORD *pdata;
+    bk_create(pevent, "SWB0", TID_DWORD, (void **)&pdata);
+    
+    *pdata++ = merger_timeout_all;
+    
+    bk_close(pevent,pdata);
+    return bk_size(pevent);
+
+    // TODO why do we do this?
     while(mup->FEBsc_get_packet()){};
     //TODO: make this a switch
     mup->FEBsc_dump_packets();
-    return 0;
+    //return 0;
     //return mup->FEBsc_write_bank(pevent,off);
 }
 
@@ -627,6 +652,7 @@ INT read_mupix_sc_event(char *pevent, INT off){
         MergerRate = MupixFEB::Instance()->ReadBackMergerRate(i);
 
         sprintf(set_str, "hit ena rate FEB%d", i);
+        // TODO: change hex value
         rate_cnt[set_str] = 0x7735940 - HitsEnaRate;
         
         sprintf(set_str, "merger rate FEB%d", i);
