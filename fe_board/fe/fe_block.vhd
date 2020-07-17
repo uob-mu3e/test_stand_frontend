@@ -7,6 +7,7 @@ use work.daq_constants.all;
 entity fe_block is
 generic (
     feb_mapping : natural_array_t(3 downto 0) := 3&2&1&0;
+    PHASE_WIDTH_g : positive := 16;
     NIOS_CLK_MHZ_g : real;
     N_LINKS : positive := 1--;
 );
@@ -98,6 +99,10 @@ end entity;
 architecture arch of fe_block is
 
     signal nios_reset_n, reset_156_n, reset_125_n : std_logic;
+    
+    signal reset_pod : std_logic := '0'; -- not in reset for default
+    signal reset_pod_125_n : std_logic := '1';
+    signal reset_qsfp : std_logic := '0'; -- not in reset for default
 
     signal nios_pio : std_logic_vector(31 downto 0);
     signal nios_irq : std_logic_vector(3 downto 0) := (others => '0');
@@ -129,6 +134,7 @@ architecture arch of fe_block is
     signal run_state_125 : run_state_t;
     signal run_state_156 : run_state_t;
     signal terminated : std_logic;
+    signal reset_phase : std_logic_vector(PHASE_WIDTH_g - 1 downto 0);
 
     signal run_number : std_logic_vector(31 downto 0);
     signal merger_rate_count : std_logic_vector(31 downto 0);
@@ -180,6 +186,9 @@ begin
 
     e_reset_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_n, i_reset_n => i_areset_n, i_clk => i_clk_125 );
+    
+    e_reset_pod_125_n : entity work.reset_sync
+    port map ( o_reset_n => reset_pod_125_n, i_reset_n => not reset_pod, i_clk => i_clk_125 );
 
 
 
@@ -256,6 +265,10 @@ begin
         fe_reg.rvalid <= fe_reg.re;
 
         fe_reg.rdata <= X"CCCCCCCC";
+        
+        -- only valid for one cycle
+        reset_qsfp <= '0';
+        reset_pod <= '0';
 
         -- cmdlen
         if ( fe_reg.addr(7 downto 0) = X"F0" and fe_reg.re = '1' ) then
@@ -290,19 +303,26 @@ begin
             reg_reset_bypass_payload <= fe_reg.wdata;
         end if;
 
-        -- reset bypass payload
-        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_reset_bypass_payload;
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.we = '1' ) then
-            reg_reset_bypass_payload <= fe_reg.wdata;
-        end if;
-
         -- rate measurement
         if ( fe_reg.addr(7 downto 0) = X"F6" and fe_reg.re = '1' ) then
             fe_reg.rdata <= merger_rate_count;
         end if;
-
+        
+        -- reset phase
+        if ( fe_reg.addr(7 downto 0) = X"F7" and fe_reg.re = '1' ) then
+            fe_reg.rdata(PHASE_WIDTH_g - 1 downto 0) <= reset_phase;
+        end if;
+        
+        -- reset qsfp / pod
+        if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.re = '1' ) then
+            fe_reg.rdata(0) <= reset_pod;
+            fe_reg.rdata(1) <= reset_qsfp;
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.we = '1' ) then
+            reset_pod <= fe_reg.wdata(0);
+            reset_qsfp <= fe_reg.wdata(1);
+        end if;
+        
         -- mscb
 
         -- git head hash
@@ -508,6 +528,9 @@ begin
 
 
     e_reset_system : entity work.resetsys
+    generic map (
+         PHASE_WIDTH_g => PHASE_WIDTH_g--,
+    )
     port map (
         i_data_125_rx           => pod_rx_data(7 downto 0),
         i_reset_125_rx_n        => pod_rx_reset_n(0),
@@ -529,7 +552,7 @@ begin
         terminated              => terminated, --TODO: test with two datamergers
         testout                 => open,
 
-        o_phase                 => open,
+        o_phase                 => reset_phase,
         i_reset_n               => nios_reset_n,
         i_clk                   => i_nios_clk--,
     );
@@ -620,7 +643,7 @@ begin
 
         i_reconfig_clk  => reconfig_clk,
 
-        i_reset     => not reset_156_n,
+        i_reset     => not reset_156_n or reset_qsfp,
         i_clk       => i_clk_156--,
     );
 
@@ -667,7 +690,7 @@ begin
 
         i_reconfig_clk  => reconfig_clk,
 
-        i_reset     => not reset_125_n,
+        i_reset     => (not reset_125_n) or (not reset_pod_125_n),
         i_clk       => i_clk_125--,
     );
 
