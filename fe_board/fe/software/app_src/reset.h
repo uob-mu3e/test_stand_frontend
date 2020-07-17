@@ -117,6 +117,7 @@ void menu_reset() {
             break;
         case 'a':
             printf("Reset phase: 0x%08x\n", reset_phase);
+            printf("Reset TX/Pod: 0x%08x\n", sc.ram->data[0xFFF8]);
             break;
         case 'b':
             printf("Reset reset pod\n");
