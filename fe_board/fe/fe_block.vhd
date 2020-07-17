@@ -268,7 +268,7 @@ begin
         
         -- only valid for one cycle
         reset_qsfp <= '0';
-        reset_pod <= '0';
+        --reset_pod <= '0';
 
         -- cmdlen
         if ( fe_reg.addr(7 downto 0) = X"F0" and fe_reg.re = '1' ) then
