@@ -132,7 +132,7 @@ EQUIPMENT equipment[] = {
 INT frontend_init()
 {
     // TODO: for debuging
-    odb::set_debug(true);
+//    odb::set_debug(true);
 
     set_equipment_status(equipment[0].name, "Initializing...", "var(--myellow)");
 
@@ -456,24 +456,26 @@ INT end_of_run(INT run_number, char *error)
       printf("Buffers all empty\n");
    }
 
-   // TODO: Find a better way to see when DMA is finished.
-
-   printf("Waiting for DMA to finish\n");
+   // Finish DMA while waiting for last requested data to be finished
+   cm_msg(MINFO, "farm_fe", "Waiting for DMA to finish");
    usleep(1000); // Wait for DMA to finish
    timeout_cnt = 0;
-   while(mu.last_written_addr() != lastlastWritten && //(readindex % dma_buf_nwords) &&
-         timeout_cnt++ < 50) {
-      printf("Waiting for DMA to finish %d/50\n", timeout_cnt);
-      timeout_cnt++;
-      usleep(1000);
+   
+   // wait for requested data
+   // TODO: in readout th poll on run end reg from febs
+   // write variable and check this one here and then disable readout th
+   // also check if readout th is disabled by midas at run end
+   while ( (mu.read_register_ro(0x1C) & 1) == 0 && timeout_cnt < 100 ) {
+       timeout_cnt++;
+       usleep(1000);
    };
-
-   if(timeout_cnt>=50) {
-      cm_msg(MERROR,"farm_fe","DMA did not finish");
+        
+   if(timeout_cnt>=100) {
+      cm_msg(MERROR, "farm_fe", "DMA did not finish");
       set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
 //      return CM_TRANSITION_CANCELED;
    }else{
-      printf("DMA is finished\n");
+      cm_msg(MINFO, "farm_fe", "DMA is finished\n");
    }
 
     // stop generator

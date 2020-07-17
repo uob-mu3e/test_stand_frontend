@@ -230,7 +230,7 @@ INT frontend_init()
    int status;
 
    // TODO: for debuging
-    odb::set_debug(true);
+//    odb::set_debug(true);
 
    // create Settings structure in ODB
    db_create_record(hDB, 0, "Equipment/Switching/Settings", strcomb(sc_settings_str));
@@ -360,6 +360,10 @@ INT frontend_init()
         rate_counters[set_str] = 0;
         sprintf(set_str, "hit ena rate FEB%d", i);
         rate_counters[set_str] = 0;
+        sprintf(set_str, "reset phase FEB%d", i);
+        rate_counters[set_str] = 0;
+        sprintf(set_str, "TX reset%d", i);
+        rate_counters[set_str] = 0;
     }
     //end of Mupix setup part
     
@@ -367,7 +371,9 @@ INT frontend_init()
     for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
         sprintf(set_str, "FEB%d", i);
         hs_define_panel("Mupix", set_str, {"Mupix:merger rate " + string(set_str),
-                                           "Mupix:hit ena rate " + string(set_str)
+                                           "Mupix:hit ena rate " + string(set_str),
+                                           "Mupix:reset phase " + string(set_str),
+                                           "Mupix:TX reset " + string(set_str),
                                            });
     }
     
@@ -644,6 +650,8 @@ INT read_mupix_sc_event(char *pevent, INT off){
     odb rate_cnt("/Equipment/Mupix/Variables");
     uint32_t HitsEnaRate;
     uint32_t MergerRate;
+    uint32_t ResetPhase;
+    uint32_t TXReset;
     char set_str[255];
     static int i = 0;
  
@@ -655,6 +663,9 @@ INT read_mupix_sc_event(char *pevent, INT off){
     for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
         HitsEnaRate = MupixFEB::Instance()->ReadBackHitsEnaRate(i);
         MergerRate = MupixFEB::Instance()->ReadBackMergerRate(i);
+        ResetPhase = MupixFEB::Instance()->ReadBackResetPhase(i);
+        TXReset = MupixFEB::Instance()->ReadBackTXReset(i);
+
 
         sprintf(set_str, "hit ena rate FEB%d", i);
         // TODO: change hex value
@@ -663,8 +674,16 @@ INT read_mupix_sc_event(char *pevent, INT off){
         sprintf(set_str, "merger rate FEB%d", i);
         rate_cnt[set_str] = MergerRate;
 
+        sprintf(set_str, "reset phase FEB%d", i);
+        rate_cnt[set_str] = ResetPhase;
+
+        sprintf(set_str, "TX reset FEB%d", i);
+        rate_cnt[set_str] = TXReset;
+
         *pdata++ = HitsEnaRate;
         *pdata++ = MergerRate;
+        *pdata++ = ResetPhase; 
+        *pdata++ = TXReset;
     }
     
     bk_close(pevent,pdata);
