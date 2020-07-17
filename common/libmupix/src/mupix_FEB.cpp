@@ -428,7 +428,7 @@ uint32_t MupixFEB::ReadBackResetPhase(uint16_t FPGA_ID){
     
     uint32_t resetPhase;
     int status=m_mu.FEBsc_read(FEB.SB_Port(), &resetPhase, 1, 0xfff7);
-    return resetPhase;
+    return resetPhase & 0xFFFF;
 }
 
 uint32_t MupixFEB::ReadBackTXReset(uint16_t FPGA_ID){
@@ -438,7 +438,7 @@ uint32_t MupixFEB::ReadBackTXReset(uint16_t FPGA_ID){
     
     uint32_t TXReset;
     int status=m_mu.FEBsc_read(FEB.SB_Port(), &TXReset, 1, 0xfff8);
-    return TXReset;
+    return TXReset & 0xFFFFFFFC;
 }
 
 int MupixFEB::ConfigureBoards(){
