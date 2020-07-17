@@ -373,7 +373,7 @@ INT frontend_init()
         hs_define_panel("Mupix", set_str, {"Mupix:merger rate " + string(set_str),
                                            "Mupix:hit ena rate " + string(set_str),
                                            "Mupix:reset phase " + string(set_str),
-                                           "Mupix:TX reset " + string(set_str),
+              //                             "Mupix:TX reset " + string(set_str),
                                            });
     }
     

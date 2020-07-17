@@ -13,7 +13,7 @@ void menu_print_rate() {
             }
 
             printf("merger rate:  0x%08x\n", rate);
-            printf("hits ena: 0x%08x\n", 0x7735940 - hits_ena);
+            printf("hits ena: 0x%08x\n", hits_ena);
 
             usleep(200000);
         }
