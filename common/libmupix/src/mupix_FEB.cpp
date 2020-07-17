@@ -421,7 +421,25 @@ uint32_t MupixFEB::ReadBackMergerRate(uint16_t FPGA_ID){
     return mergerRate;
 }
 
+uint32_t MupixFEB::ReadBackResetPhase(uint16_t FPGA_ID){
+    auto FEB = m_FPGAs[FPGA_ID];
+    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+    
+    uint32_t resetPhase;
+    int status=m_mu.FEBsc_read(FEB.SB_Port(), &resetPhase, 1, 0xfff7);
+    return resetPhase & 0xFFFF;
+}
 
+uint32_t MupixFEB::ReadBackTXReset(uint16_t FPGA_ID){
+    auto FEB = m_FPGAs[FPGA_ID];
+    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+    
+    uint32_t TXReset;
+    int status=m_mu.FEBsc_read(FEB.SB_Port(), &TXReset, 1, 0xfff8);
+    return TXReset & 0xFFFFFFFC;
+}
 
 int MupixFEB::ConfigureBoards(){
    cm_msg(MINFO, "MupixFEB" , "Configuring boards under prefix %s/Settings/Boards/", m_odb_prefix);
