@@ -1,3 +1,4 @@
+
 GHDL=ghdl
 WORK=work
 GHDLFLAGS=--ieee=synopsys -fexplicit

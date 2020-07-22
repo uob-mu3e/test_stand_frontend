@@ -23,6 +23,8 @@ package mudaq_registers is
 		constant RESET_BIT_EVENT_COUNTER						:  integer := 13;
 		constant RESET_BIT_DMA_EVAL							:  integer := 14;
 		constant RESET_BIT_LINK_TEST							:  integer := 15;
+        constant RESET_BIT_RUN_START_ACK                        :  integer := 16;
+        constant RESET_BIT_RUN_END_ACK                          :  integer := 17;
 		constant RESET_BIT_PCIE									:  integer := 31;
 
 		constant DATAGENERATOR_REGISTER_W					: integer := 16#02#;
@@ -48,6 +50,12 @@ package mudaq_registers is
 		
 		constant LINK_TEST_REGISTER_W							: integer := 16#07#;
 		constant LINK_TEST_BIT_ENABLE							: integer := 0;
+        
+		constant RUN_NR_REGISTER_W							: integer := 16#08#;
+		constant RUN_NR_ADDR_REGISTER_W							: integer := 16#09#;
+		constant FEB_ENABLE_REGISTER_W							: integer := 16#0A#;
+		constant DATA_LINK_MASK_REGISTER_W                  : integer := 16#0B#;
+		constant GET_N_DMA_WORDS_REGISTER_W                  : integer := 16#0C#;
 
 		-- Registers above 0x36 are in use for the PCIe controller/DMA
 		constant DMA2_CTRL_ADDR_LOW_REGISTER_W				: integer := 16#36#;
@@ -96,8 +104,13 @@ package mudaq_registers is
 		constant DMA_NOTHALFFUL_REGISTER_R					: integer := 16#15#;
 		constant DMA_ENDEVENT_REGISTER_R						: integer := 16#16#;
 		constant DMA_NOTENDEVENT_REGISTER_R					: integer := 16#17#;
-        constant FEBSTATUS_REGISTER_R                       : integer := 16#18#;
-
+      constant RUN_NR_ACK_REGISTER_R                  : integer := 16#18#;
+      constant RUN_NR_REGISTER_R                      : integer := 16#19#;
+      constant RUN_STOP_ACK_REGISTER_R                : integer := 16#1A#;
+      constant BUFFER_STATUS_REGISTER_R               : integer := 16#1B#;
+		constant EVENT_BUILD_STATUS_REGISTER_R          : integer := 16#1C#;
+		constant EVENT_BUILD_DONE								: integer:= 0;
+		
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						: integer := 16#38#;
 		constant DMA_DATA_ADDR_LOW_REGISTER_R				: integer := 16#39#;
@@ -108,4 +121,4 @@ package mudaq_registers is
 		constant DMA2_DATA_ADDR_HI_REGISTER_R				: integer := 16#3E#;
 		constant DMA2_NUM_PAGES_REGISTER_R					: integer := 16#3F#;
 		
-end package mudaq_registers;
+end package;

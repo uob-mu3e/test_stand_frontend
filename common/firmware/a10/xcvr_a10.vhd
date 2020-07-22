@@ -18,42 +18,41 @@ generic (
     CLK_MHZ_g : positive := 50--;
 );
 port (
-    i_tx_data       : in    std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
-    i_tx_datak      : in    std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
-    o_rx_data       : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
-    o_rx_datak      : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
+    i_rx_serial         : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    o_tx_serial         : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
-    o_tx_clkout     : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    i_tx_clkin      : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    o_rx_clkout     : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    i_rx_clkin      : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    i_pll_clk           : in    std_logic;
+    i_cdr_clk           : in    std_logic;
 
---    o_tx_ready      : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
---    o_rx_ready      : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    o_rx_data           : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
+    o_rx_datak          : out   std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
+    i_tx_data           : in    std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g-1 downto 0);
+    i_tx_datak          : in    std_logic_vector(NUMBER_OF_CHANNELS_g*CHANNEL_WIDTH_g/8-1 downto 0);
 
-    o_tx_serial     : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-    i_rx_serial     : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
-
-    i_pll_clk       : in    std_logic;
-    i_cdr_clk       : in    std_logic;
+    o_rx_clkout         : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    i_rx_clkin          : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    o_tx_clkout         : out   std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
+    i_tx_clkin          : in    std_logic_vector(NUMBER_OF_CHANNELS_g-1 downto 0);
 
     -- avalon slave interface
-    -- * 16 bit address space
-    i_avs_address       : in    std_logic_vector(13 downto 0);
-    i_avs_read          : in    std_logic;
+    -- # address units words
+    -- # read latency 0
+    i_avs_address       : in    std_logic_vector(13 downto 0) := (others => '0');
+    i_avs_read          : in    std_logic := '0';
     o_avs_readdata      : out   std_logic_vector(31 downto 0);
-    i_avs_write         : in    std_logic;
-    i_avs_writedata     : in    std_logic_vector(31 downto 0);
+    i_avs_write         : in    std_logic := '0';
+    i_avs_writedata     : in    std_logic_vector(31 downto 0) := (others => '0');
     o_avs_waitrequest   : out   std_logic;
 
-    i_reset         : in    std_logic;
-    i_clk           : in    std_logic--;
+    -- TODO: rename to i_reset_n
+    i_reset             : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 
 architecture arch of xcvr_a10 is
 
-    signal reset_n : std_logic;
+    signal reset, reset_n : std_logic;
 
     signal ch : integer range 0 to NUMBER_OF_CHANNELS_g-1 := 0;
 
@@ -120,6 +119,7 @@ architecture arch of xcvr_a10 is
 
 begin
 
+    reset <= i_reset;
     reset_n <= not i_reset;
 
     gen_rx_data : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
@@ -135,7 +135,7 @@ begin
     g_rx_align : for i in NUMBER_OF_CHANNELS_g-1 downto 0 generate
     begin
         e_rx_rst_n : entity work.reset_sync
-        port map ( o_reset_n => rx(i).rst_n, i_reset_n => rx_ready(i), i_clk => i_rx_clkin(i) );
+        port map ( o_reset_n => rx(i).rst_n, i_reset_n => reset_n and rx_rst_n(i), i_clk => i_rx_clkin(i) );
 
         e_rx_align : entity work.rx_align
         generic map (
@@ -183,7 +183,7 @@ begin
         generic map ( W => rx(i).err_cnt'length )
         port map (
             o_cnt => rx(i).err_cnt,
-            i_ena => work.util.to_std_logic( rx(i).errdetect /= 0 or rx(i).disperr /= 0 ),
+            i_ena => rx(i).locked and work.util.to_std_logic( rx(i).errdetect /= 0 or rx(i).disperr /= 0 ),
             i_reset_n => rx(i).rst_n, i_clk => i_rx_clkin(i)
         );
     end generate;
@@ -195,8 +195,8 @@ begin
         av_ctrl.waitrequest <= '1';
         ch <= 0;
         rx_seriallpbken <= (others => '0');
-        tx_rst_n <= (others => '1');
-        rx_rst_n <= (others => '1');
+        tx_rst_n <= (others => '0');
+        rx_rst_n <= (others => '0');
         --
     elsif rising_edge(i_clk) then
         av_ctrl.waitrequest <= '1';
@@ -284,7 +284,7 @@ begin
     b_avs : block
         signal av_ctrl_cs : std_logic;
         signal av_phy_cs, av_pll_cs : std_logic;
-        signal avs_waitrequest_i : std_logic;
+        signal avs_waitrequest : std_logic;
     begin
         av_ctrl_cs <= '1' when ( i_avs_address(i_avs_address'left downto 8) = "000000" ) else '0';
         av_ctrl.address(i_avs_address'range) <= i_avs_address;
@@ -300,12 +300,12 @@ begin
         av_pll.address(i_avs_address'range) <= i_avs_address;
         av_pll.writedata <= i_avs_writedata;
 
-        o_avs_waitrequest <= avs_waitrequest_i;
+        o_avs_waitrequest <= avs_waitrequest;
 
         process(i_clk, reset_n)
         begin
         if ( reset_n = '0' ) then
-            avs_waitrequest_i <= '1';
+            avs_waitrequest <= '1';
             av_ctrl.read <= '0';
             av_ctrl.write <= '0';
             av_phy.read <= '0';
@@ -314,16 +314,16 @@ begin
             av_pll.write <= '0';
             --
         elsif rising_edge(i_clk) then
-            avs_waitrequest_i <= '1';
+            avs_waitrequest <= '1';
 
-            if ( i_avs_read /= i_avs_write and avs_waitrequest_i = '1' ) then
+            if ( i_avs_read /= i_avs_write and avs_waitrequest = '1' ) then
                 if ( av_ctrl_cs = '1' ) then
                     if ( av_ctrl.read = av_ctrl.write ) then
                         av_ctrl.read <= i_avs_read;
                         av_ctrl.write <= i_avs_write;
                     elsif ( av_ctrl.waitrequest = '0' ) then
                         o_avs_readdata <= av_ctrl.readdata;
-                        avs_waitrequest_i <= '0';
+                        avs_waitrequest <= '0';
                         av_ctrl.read <= '0';
                         av_ctrl.write <= '0';
                     end if;
@@ -333,7 +333,7 @@ begin
                         av_phy.write <= i_avs_write;
                     elsif ( av_phy.waitrequest = '0' ) then
                         o_avs_readdata <= av_phy.readdata;
-                        avs_waitrequest_i <= '0';
+                        avs_waitrequest <= '0';
                         av_phy.read <= '0';
                         av_phy.write <= '0';
                     end if;
@@ -343,13 +343,13 @@ begin
                         av_pll.write <= i_avs_write;
                     elsif ( av_pll.waitrequest = '0' ) then
                         o_avs_readdata <= av_pll.readdata;
-                        avs_waitrequest_i <= '0';
+                        avs_waitrequest <= '0';
                         av_pll.read <= '0';
                         av_pll.write <= '0';
                     end if;
                 else
                     o_avs_readdata <= X"CCCCCCCC";
-                    avs_waitrequest_i <= '0';
+                    avs_waitrequest <= '0';
                 end if;
             end if;
             --
@@ -357,7 +357,7 @@ begin
         end process;
     end block;
 
-    e_phy : entity work.ip_xcvr_phy
+    e_phy : component work.cmp.ip_xcvr_phy
     port map (
         tx_serial_data  => o_tx_serial,
         rx_serial_data  => i_rx_serial,
@@ -409,11 +409,11 @@ begin
         reconfig_write(0)       => av_phy.write,
         reconfig_writedata      => av_phy.writedata,
         reconfig_waitrequest(0) => av_phy.waitrequest,
-        reconfig_reset(0)       => i_reset,
+        reconfig_reset(0)       => reset,
         reconfig_clk(0)         => i_clk--,
     );
 
-    e_fpll : entity work.ip_xcvr_fpll
+    e_fpll : component work.cmp.ip_xcvr_fpll
     port map (
         pll_refclk0     => i_pll_clk,
         pll_powerdown   => pll_powerdown(0),
@@ -427,14 +427,14 @@ begin
         reconfig_write0         => av_pll.write,
         reconfig_writedata0     => av_pll.writedata,
         reconfig_waitrequest0   => av_pll.waitrequest,
-        reconfig_reset0         => i_reset,
+        reconfig_reset0         => reset,
         reconfig_clk0           => i_clk--,
     );
 
     --
     --
     --
-    e_reset : entity work.ip_xcvr_reset
+    e_reset : component work.cmp.ip_xcvr_reset
     port map (
         tx_analogreset => tx_analogreset,
         tx_digitalreset => tx_digitalreset,
@@ -455,7 +455,7 @@ begin
 
         pll_select => (others => '0'),
 
-        reset => i_reset,
+        reset => reset,
         clock => i_clk--,
     );
 

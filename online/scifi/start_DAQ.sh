@@ -5,10 +5,15 @@ source ../install/set_env.sh
 
 ./scifi/setup_odb.sh
 
+if [ "$1" = "CRFE_BYPASS" ]; then
+    odbedit -c 'create STRING "Equipment/Clock Reset/Settings/IP"'
+    odbedit -c 'set "Equipment/Clock Reset/Settings/IP" "0.0.0.0"'
+fi
+
 tmux new-session -s "DAQ" -d 'bash -i'
 
 
-tmux rename-window 'Midas' 
+tmux rename-window 'Midas'
 
 tmux split-window -v 'source ../install/set_env.sh; echo "---- MHTTPD ----" ; mhttpd; bash -i'
 sleep 1
@@ -20,9 +25,6 @@ tmux select-layout tiled
 tmux split-window -v 'source ../install/set_env.sh; echo " bash -i'
 
 tmux select-layout tiled
-
-tmux new-window
-tmux rename-window 'Frontends' 
 
 tmux split-window -v 'source ../install/set_env.sh; echo "---- CRFE ----" ; crfe; bash -i'
 sleep 1

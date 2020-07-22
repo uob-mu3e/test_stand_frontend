@@ -7,6 +7,7 @@ use work.daq_constants.all;
 entity fe_block is
 generic (
     feb_mapping : natural_array_t(3 downto 0) := 3&2&1&0;
+    PHASE_WIDTH_g : positive := 16;
     NIOS_CLK_MHZ_g : real;
     N_LINKS : positive := 1--;
 );
@@ -43,7 +44,8 @@ port (
     i_pod_rx        : in    std_logic_vector(3 downto 0);
     o_pod_tx        : out   std_logic_vector(3 downto 0);
 
-    i_can_terminate : in std_logic:='0';
+    i_can_terminate           : in std_logic:='0';
+    i_ack_run_prep_permission : in std_logic:='1';
 
     --main fiber data fifo
     i_fifo_write    : in    std_logic_vector(N_LINKS-1 downto 0);
@@ -61,16 +63,19 @@ port (
     o_mscb_oe       : out   std_logic;
 
     -- slow control registers
+    -- malibu regs : 0x40-0x5F
     o_malibu_reg_addr   : out   std_logic_vector(7 downto 0);
     o_malibu_reg_re     : out   std_logic;
     i_malibu_reg_rdata  : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
     o_malibu_reg_we     : out   std_logic;
     o_malibu_reg_wdata  : out   std_logic_vector(31 downto 0);
+    -- scifi regs : 0x60-0x7F
     o_scifi_reg_addr    : out   std_logic_vector(7 downto 0);
     o_scifi_reg_re      : out   std_logic;
     i_scifi_reg_rdata   : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
     o_scifi_reg_we      : out   std_logic;
     o_scifi_reg_wdata   : out   std_logic_vector(31 downto 0);
+    -- mupix regs : 0x80-0x9F
     o_mupix_reg_addr    : out   std_logic_vector(7 downto 0);
     o_mupix_reg_re      : out   std_logic;
     i_mupix_reg_rdata   : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
@@ -97,6 +102,10 @@ end entity;
 architecture arch of fe_block is
 
     signal nios_reset_n, reset_156_n, reset_125_n : std_logic;
+    
+    signal reset_pod : std_logic := '0'; -- not in reset for default
+    signal reset_pod_125_n : std_logic := '1';
+    signal reset_qsfp : std_logic := '0'; -- not in reset for default
 
     signal nios_pio : std_logic_vector(31 downto 0);
     signal nios_irq : std_logic_vector(3 downto 0) := (others => '0');
@@ -128,6 +137,7 @@ architecture arch of fe_block is
     signal run_state_125 : run_state_t;
     signal run_state_156 : run_state_t;
     signal terminated : std_logic;
+    signal reset_phase : std_logic_vector(PHASE_WIDTH_g - 1 downto 0);
 
     signal run_number : std_logic_vector(31 downto 0);
     signal merger_rate_count : std_logic_vector(31 downto 0);
@@ -179,6 +189,9 @@ begin
 
     e_reset_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_n, i_reset_n => i_areset_n, i_clk => i_clk_125 );
+    
+    e_reset_pod_125_n : entity work.reset_sync
+    port map ( o_reset_n => reset_pod_125_n, i_reset_n => not reset_pod, i_clk => i_clk_125 );
 
 
 
@@ -255,6 +268,10 @@ begin
         fe_reg.rvalid <= fe_reg.re;
 
         fe_reg.rdata <= X"CCCCCCCC";
+        
+        -- only valid for one cycle
+        reset_qsfp <= '0';
+        --reset_pod <= '0';
 
         -- cmdlen
         if ( fe_reg.addr(7 downto 0) = X"F0" and fe_reg.re = '1' ) then
@@ -289,19 +306,26 @@ begin
             reg_reset_bypass_payload <= fe_reg.wdata;
         end if;
 
-        -- reset bypass payload
-        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_reset_bypass_payload;
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.we = '1' ) then
-            reg_reset_bypass_payload <= fe_reg.wdata;
-        end if;
-
         -- rate measurement
         if ( fe_reg.addr(7 downto 0) = X"F6" and fe_reg.re = '1' ) then
             fe_reg.rdata <= merger_rate_count;
         end if;
-
+        
+        -- reset phase
+        if ( fe_reg.addr(7 downto 0) = X"F7" and fe_reg.re = '1' ) then
+            fe_reg.rdata(PHASE_WIDTH_g - 1 downto 0) <= reset_phase;
+        end if;
+        
+        -- reset qsfp / pod
+        if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.re = '1' ) then
+            fe_reg.rdata(0) <= reset_pod;
+            fe_reg.rdata(1) <= reset_qsfp;
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.we = '1' ) then
+            reset_pod <= fe_reg.wdata(0);
+            reset_qsfp <= fe_reg.wdata(1);
+        end if;
+        
         -- mscb
 
         -- git head hash
@@ -453,37 +477,38 @@ begin
 
     e_merger : entity work.data_merger
     generic map(
-        N_LINKS                 => N_LINKS,
-        feb_mapping             => feb_mapping--,
+        N_LINKS                    => N_LINKS,
+        feb_mapping                => feb_mapping--, 
     )
     port map (
-        fpga_ID_in              => i_fpga_id_reg,
-        FEB_type_in             => i_fpga_type,
-        run_state               => run_state_156,
-        run_number              => run_number,
+        fpga_ID_in                 => i_fpga_id_reg,
+        FEB_type_in                => i_fpga_type,
+        run_state                  => run_state_156,
+        run_number                 => run_number,
 
-        o_data_out              => qsfp_tx_data,
-        o_data_is_k             => qsfp_tx_datak,
+        o_data_out                 => qsfp_tx_data,
+        o_data_is_k                => qsfp_tx_datak,
 
-        slowcontrol_write_req   => sc_fifo_write,
-        i_data_in_slowcontrol   => sc_fifo_wdata,
+        slowcontrol_write_req      => sc_fifo_write,
+        i_data_in_slowcontrol      => sc_fifo_wdata,
 
-        data_write_req          => i_fifo_write,
-        i_data_in               => i_fifo_wdata,
-        o_fifos_almost_full     => o_fifos_almost_full,
+        data_write_req             => i_fifo_write,
+        i_data_in                  => i_fifo_wdata,
+        o_fifos_almost_full        => o_fifos_almost_full,
 
-        override_data_in        => linktest_data,
-        override_data_is_k_in   => linktest_datak,
-        override_req            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
-        override_granted        => linktest_granted,
+        override_data_in           => linktest_data,
+        override_data_is_k_in      => linktest_datak,
+        override_req               => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
+        override_granted           => linktest_granted,
 
-        can_terminate           => i_can_terminate,
-        o_terminated            => terminated,
-        data_priority           => '0',
-        o_rate_count            => merger_rate_count,
+        can_terminate              => i_can_terminate,
+        o_terminated               => terminated,
+        i_ack_run_prep_permission  => i_ack_run_prep_permission,
+        data_priority              => '0',
+        o_rate_count               => merger_rate_count,
 
-        reset                   => not reset_156_n,
-        clk                     => i_clk_156--,
+        reset                      => not reset_156_n,
+        clk                        => i_clk_156--,
     );
 
 
@@ -506,6 +531,9 @@ begin
 
 
     e_reset_system : entity work.resetsys
+    generic map (
+         PHASE_WIDTH_g => PHASE_WIDTH_g--,
+    )
     port map (
         i_data_125_rx           => pod_rx_data(7 downto 0),
         i_reset_125_rx_n        => pod_rx_reset_n(0),
@@ -527,7 +555,7 @@ begin
         terminated              => terminated, --TODO: test with two datamergers
         testout                 => open,
 
-        o_phase                 => open,
+        o_phase                 => reset_phase,
         i_reset_n               => nios_reset_n,
         i_clk                   => i_nios_clk--,
     );
@@ -616,9 +644,9 @@ begin
         i_avs_writedata     => av_qsfp.writedata,
         o_avs_waitrequest   => av_qsfp.waitrequest,
 
-        i_reconfig_clk  => reconfig_clk,
+        i_reconfig_clk  => reconfig_clk, -- 37.5 to 50 MHz
 
-        i_reset     => not reset_156_n,
+        i_reset     => not reset_156_n or reset_qsfp,
         i_clk       => i_clk_156--,
     );
 
@@ -665,7 +693,7 @@ begin
 
         i_reconfig_clk  => reconfig_clk,
 
-        i_reset     => not reset_125_n,
+        i_reset     => (not reset_125_n) or (not reset_pod_125_n),
         i_clk       => i_clk_125--,
     );
 

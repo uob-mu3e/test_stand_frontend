@@ -33,7 +33,7 @@
 puts "Set GBT Links \[47..0\]"
 
 for { set i 0 } { $i < 48 } { incr i 6 } {
-    if { $i >= 6 } {
+    if { $i >= 48 } {
         set_instance_assignment -name VIRTUAL_PIN ON -to rx_gbt[[expr $i + 0]]
         set_instance_assignment -name VIRTUAL_PIN ON -to rx_gbt[[expr $i + 1]]
         set_instance_assignment -name VIRTUAL_PIN ON -to rx_gbt[[expr $i + 2]]

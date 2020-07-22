@@ -12,6 +12,15 @@ use ieee.std_logic_textio.all;
 
 package util is
 
+    subtype slv4_t is std_logic_vector(3 downto 0);
+    type slv4_array_t is array ( natural range <> ) of slv4_t;
+    subtype slv8_t is std_logic_vector(7 downto 0);
+    type slv8_array_t is array ( natural range <> ) of slv8_t;
+    subtype slv16_t is std_logic_vector(15 downto 0);
+    type slv16_array_t is array ( natural range <> ) of slv16_t;
+    subtype slv32_t is std_logic_vector(31 downto 0);
+    type slv32_array_t is array ( natural range <> ) of slv32_t;
+
     constant D16_2 : std_logic_vector(7 downto 0) := X"50";
     constant D21_4 : std_logic_vector(7 downto 0) := x"95";
     constant D02_5 : std_logic_vector(7 downto 0) := X"A2";
@@ -34,6 +43,20 @@ package util is
     end record;
   
     type avalon_array_t is array(natural range <>) of avalon_t;
+
+
+
+    -- avalon memory mapped interface
+    type avmm_t is record
+        address         :   std_logic_vector(31 downto 0);
+        read            :   std_logic;
+        readdata        :   std_logic_vector(31 downto 0);
+        write           :   std_logic;
+        writedata       :   std_logic_vector(31 downto 0);
+        waitrequest     :   std_logic;
+        readdatavalid   :   std_logic;
+    end record;
+    type avmm_array_t is array(natural range <>) of avmm_t;
 
     type rw_t is record
         addr            :   std_logic_vector(31 downto 0);
@@ -123,6 +146,10 @@ package util is
         value : out std_logic_vector;
         good : out boolean--;
     );
+
+    function hex_to_ascii (
+        h : in std_logic_vector--;
+    ) return std_logic_vector;
 
 
 
@@ -364,6 +391,34 @@ package body util is
            v := "XXXX";
         end case;
     end procedure;
+
+    function hex_to_ascii (
+        h : in  std_logic_vector--;
+    ) return std_logic_vector is
+    
+    begin
+        case h is
+        when x"0" => return X"30";
+        when x"1" => return X"31";
+        when x"2" => return X"32";
+        when x"3" => return X"33";
+        when x"4" => return X"34";
+        when x"5" => return X"35";
+        when x"6" => return X"36";
+        when x"7" => return X"37";
+        when x"8" => return X"38";
+        when x"9" => return X"39";
+        when x"A" => return X"41";
+        when x"B" => return X"42";
+        when x"C" => return X"43";
+        when x"D" => return X"44";
+        when x"E" => return X"45";
+        when x"F" => return X"46";
+
+        when others =>
+            return x"3F";
+        end case;
+    end function;
 
     procedure string_to_hex (
         s : in string;

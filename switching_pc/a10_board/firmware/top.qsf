@@ -26,7 +26,6 @@ set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_scfifo.vhd
 set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_ram.vhd
 set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_dcfifo.vhd
 set_global_assignment -name VHDL_FILE ../../../farm_pc/firmware/midas_event_builder.vhd
-set_global_assignment -name VHDL_FILE ../../../farm_pc/firmware/midas_bank_builder.vhd
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name VHDL_FILE top.vhd
