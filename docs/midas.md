@@ -14,6 +14,12 @@ $ make install
 $ source set_env.sh
 $ start_daq.sh
 ```
+If you are not using the full clock system, you should replace the last line with
+
+```console
+$ start_daq.sh CRFE_BYPASS
+```
+
 If you do it the first time you also need to generate a SSL certificate and a password. This you need to do after source set_env.sh.
 ```console
 $ openssl req -new -nodes -newkey rsa:2048 -sha256 -out ssl_cert.csr -keyout ssl_cert.key

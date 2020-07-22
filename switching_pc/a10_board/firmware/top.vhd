@@ -2,6 +2,7 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
 
 use work.pcie_components.all;
 use work.mudaq_registers.all;
@@ -298,6 +299,7 @@ architecture rtl of top is
         signal dma_end_event_test : std_logic;
         signal data_counter : std_logic_vector(32*NLINKS_TOTL-1 downto 0);
         signal datak_counter : std_logic_vector(4*NLINKS_TOTL-1 downto 0);
+        signal feb_merger_timeouts : std_logic_vector(NLINKS_TOTL-1 downto 0);
 
 begin
 
@@ -593,7 +595,7 @@ begin
             o_fpga_id           => open--,
         );
     end generate;
-
+    
 
     -------- MIDAS RUN control --------
 
@@ -605,6 +607,7 @@ begin
         i_reset_ack_seen_n                  => resets_n(RESET_BIT_RUN_START_ACK),
         i_reset_run_end_n                   => resets_n(RESET_BIT_RUN_END_ACK),
         i_buffers_empty                     => (others => '1'), -- TODO: connect buffers emtpy from dma here
+        o_feb_merger_timeout                => readregs_slow(CNT_FEB_MERGE_TIMEOUT_R),
         i_aligned                           => (others => '1'),
         i_data                              => rx_rc_v,
         i_datak                             => rx_rck_v,
@@ -687,7 +690,18 @@ begin
 			o_endofevent        => dma_end_event_cnt,
 			o_event_data        => dma_event_data,
 			o_state_out         => state_out_eventcounter,
-			o_fifo_almost_full  => open--link_fifo_almost_full--,
+            -- error cnt signals
+			o_fifo_almost_full  => open,--link_fifo_almost_full,
+            o_fifo_almost_full          => open,
+            o_cnt_link_fifo_almost_full => readregs_slow(CNT_FIFO_ALMOST_FULL_R),
+            o_cnt_tag_fifo_full         => readregs(CNT_TAG_FIFO_FULL_R),
+            o_cnt_ram_full              => readregs(CNT_RAM_FULL_R),
+            o_cnt_stream_fifo_full      => readregs(CNT_STREAM_FIFO_FULL_R),
+            o_cnt_dma_halffull          => readregs(CNT_DMA_HALFFULL_R),
+            o_cnt_dc_link_fifo_full     => readregs_slow(CNT_DC_LINK_FIFO_FULL_R),
+            o_cnt_skip_link_data        => readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R),
+            o_cnt_skip_event_dma        => readregs(CNT_SKIP_EVENT_DMA_RAM_R),
+            o_cnt_idle_not_header       => readregs(CNT_IDLE_NOT_HEADER_R)--,
     );
     
     dma_data <= dma_event_data;
@@ -805,6 +819,7 @@ begin
             readregs(RUN_NR_REGISTER_R)             <= readregs_slow(RUN_NR_REGISTER_R);
             readregs(RUN_NR_ACK_REGISTER_R)         <= readregs_slow(RUN_NR_ACK_REGISTER_R);
             readregs(RUN_STOP_ACK_REGISTER_R)       <= readregs_slow(RUN_STOP_ACK_REGISTER_R);
+            readregs(CNT_FEB_MERGE_TIMEOUT_R)       <= readregs_slow(CNT_FEB_MERGE_TIMEOUT_R);
             readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= (others => '0');
             readregs(MEM_WRITEADDR_LOW_REGISTER_R)  <= (X"0000" & readmem_writeaddr_finished);
         end if;

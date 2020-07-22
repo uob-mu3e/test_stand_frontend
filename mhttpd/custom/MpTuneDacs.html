@@ -1,0 +1,149 @@
+<!-- 
+    Custom Page for MuPix Tune DACS 
+    Martin Mueller June 2020
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<style>
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  font-size:20pt;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 1;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+</style>
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="midas.css">
+    <script src="controls.js"></script>
+    <script src="midas.js"></script>
+    <script src="mhttpd.js"></script>
+    <script src="obsolete.js"> </script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script>
+
+    function createTable() {
+        var x,y,
+            o = [];
+        for (y = 0; y < 200; y++){
+            o.push("<tr>");
+            for(x = 0; x < 42;x++)//127; x++)
+                o.push("<td><div onClick=\"userEditDAC("+x+","+y+")\" class=\"tooltip\">0<span class=\"tooltiptext\">"+x+","+y+"</span></div></td>");
+            o.push("</tr>");
+        }
+        $("#" + "MpTuneDacTable").html(o.join(""));
+    }
+
+    function userEditDAC(x,y) {
+        var row = document.getElementById("MpTuneDacTable").rows;
+        var newDAC =parseInt(prompt("new DAC Value for "+x+","+y+":", "0"),10);
+        if(newDAC<=16 && newDAC >=0){
+            $(row[y].cells[x]).html(("<td><div onClick=\"userEditDAC("+x+","+y+")\" class=\"tooltip\">"+newDAC
+            +"<span class=\"tooltiptext\">"+x+","+y+"</span></div></td>")).css("background-color", getColor(newDAC));
+            modbset("/Equipment/MuPix/tDACs/col"+x+"["+y+"]", newDAC);
+        }else
+            alert("Only integer numbers from 0-16. 16 is off !!!");
+    }
+
+    function getColor(tDAC){
+        if(tDAC<16)
+            return "rgb(255,"+(255-tDAC*15)+","+(255-tDAC*15)+")";
+        else
+            return "black";
+    }
+    
+    function reloadMuPixSettings(jsonData){
+        var row = document.getElementById("MpTuneDacTable").rows;
+        for(x=0;x<42;x++){
+            var rowTDACs=(jsonData["col"+x]+'').split(',');
+            for(y=0;y<200;y++){
+                $(row[y].cells[x]).html("<td><div onClick=\"userEditDAC("+x+","+y+")\" class=\"tooltip\">"
+                +rowTDACs[y]+"<span class=\"tooltiptext\">"+x+","+y+"</span></div></td>").css("background-color",getColor(rowTDACs[y]));
+            }
+        }
+    }
+    
+    function loadDate(date){
+        var result = Date.parse(date)/1000;
+        alert(result);
+        mjsonrpc_db_paste(["/Equipment/MuPix/tDACs/loaddatereq","/Equipment/MuPix/tDACs/date"], [1,result]).then(function(rpc) {
+
+            }).catch(function(error) {
+                mjsonrpc_error_alert(error);
+        });
+      
+    }
+    </script>
+
+    
+<title>MuPix Tune DACs</title>
+</head>
+<body class="mcss" onload="mhttpd_init('myPage'); createTable();">
+
+<!-- header and side navigation will be filled in mhttpd_start -->
+<div id="mheader"></div>
+<div id="msidenav"></div>
+<div id="mmain">
+<div name="modb" data-odb-path="/Equipment/MuPix/tDACs" onchange="" id="tdacs"> </div >
+<div name="modb" data-odb-path="/Equipment/MuPix/tDACs/chipIDactual" onchange="reloadMuPixSettings(tdacs.value)"> </div >
+
+      <table class="mtable" width="100%" id="unknown">
+
+        <!-- MuPix 3                                         -->
+        <table class="mtable" width="100%" id="unknown">
+        <tr>
+            <td colspan="100" class="mtableheader"> MuPix Tune DACs </td>
+        </tr>
+        <tr>
+            <td>
+                Select ChipID:
+                <div name="modbvalue"
+                        data-odb-path="/Equipment/MuPix/tDACs/chipIDreq" data-odb-editable="1" id="chID"></div>
+                </td>
+            <td> 
+                loaded ChipID:
+                <div name="modbvalue"
+                        data-odb-path="/Equipment/MuPix/tDACs/chipIDactual" id="chIDactual"></div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/MuPix/tDACs/loadrecent" data-odb-value="1"> Load most recent</button>
+                <button name="modbbutton" class="mbutton" data-odb-path="/Equipment/MuPix/tDACs/store" data-odb-value="1"> Store & Enable </button>
+                <button class="mbutton" onClick="reloadMuPixSettings(tdacs.value)"> reload from odb </button>
+            </td>
+            <td>
+                <button class="mbutton" data-odb-path="/Equipment/MuPix/tDACs/loadnumber" onClick="loadDate(loaddate.value)"> Load date: </button>
+                <input type="date" id=loaddate></input>
+            </td>
+            
+        </tr>
+        </table>
+      </table>
+    <font style="font-size:5pt;">
+    <table id="MpTuneDacTable">
+    </table>
+    </font>
+
+</div>
+</body>
+</html>

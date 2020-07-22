@@ -183,8 +183,8 @@ architecture arch of top is
 
     signal led              : std_logic_vector(led_n'range) := (others => '0');
 
-    signal fifo_write: std_logic_vector(N_LINKS-1 downto 0);
-    signal fifo_wdata : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
+    signal fifo_write       : std_logic_vector(N_LINKS-1 downto 0);
+    signal fifo_wdata       : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
 
     signal malibu_reg, scifi_reg, mupix_reg : work.util.rw_t;
 
@@ -199,7 +199,8 @@ architecture arch of top is
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n         : std_logic_vector(15 downto 0);
 
-    signal run_state_125    : run_state_t;
+    signal run_state_125           : run_state_t;
+    signal ack_run_prep_permission : std_logic;
 
     signal sync_reset_cnt   : std_logic;
     signal nios_clock       : std_logic;
@@ -317,7 +318,8 @@ begin
         o_fifo_wdata            => fifo_wdata,
         o_fifo_write            => fifo_write(0),
 
-        i_run_state_125         => run_state_125,
+        i_run_state_125           => run_state_125,
+        o_ack_run_prep_permission => ack_run_prep_permission,
 
         i_data_in_A_0           => data_in_A_0,
         i_data_in_A_1           => data_in_A_1,
@@ -439,7 +441,8 @@ begin
         o_mupix_reg_wdata   => mupix_reg.wdata,
 
         -- reset system
-        o_run_state_125 => run_state_125,
+        o_run_state_125           => run_state_125,
+        i_ack_run_prep_permission => ack_run_prep_permission,
 
         -- clocks
         i_nios_clk      => si42_clk_50,
