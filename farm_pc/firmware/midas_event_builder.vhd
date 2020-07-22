@@ -41,7 +41,7 @@ port(
         o_cnt_skip_link_data:   out std_logic_vector(31 downto 0);
         o_cnt_skip_event_dma:   out std_logic_vector(31 downto 0);
         o_cnt_idle_not_header:  out std_logic_vector(31 downto 0)--;
-    );
+);
 end entity;
 
 architecture rtl of midas_event_builder is

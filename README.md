@@ -1,6 +1,7 @@
 # Mu3e online repository
 
 - current development branch is `v0.8_dev`
+
 - preliminary User Manual: https://www.overleaf.com/read/ctkmgfsjqchy (Read only link, no login required)
 - Edit User Manual here: https://www.overleaf.com/8596488843pnpknzfsvkfg (login with google account)
 
@@ -27,7 +28,7 @@
 
 ## Structure
 
-- `backend_pc` - _TODO_
+- `backend_pc` - software for the backend pc, plus timing and reset system firmware
 - `common` - common firmware and software
 - `farm_px` - _TODO_
 - `fe_board` - front-end board firmware (si, fb and tl readout)

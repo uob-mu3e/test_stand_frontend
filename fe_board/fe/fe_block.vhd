@@ -63,16 +63,19 @@ port (
     o_mscb_oe       : out   std_logic;
 
     -- slow control registers
+    -- malibu regs : 0x40-0x5F
     o_malibu_reg_addr   : out   std_logic_vector(7 downto 0);
     o_malibu_reg_re     : out   std_logic;
     i_malibu_reg_rdata  : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
     o_malibu_reg_we     : out   std_logic;
     o_malibu_reg_wdata  : out   std_logic_vector(31 downto 0);
+    -- scifi regs : 0x60-0x7F
     o_scifi_reg_addr    : out   std_logic_vector(7 downto 0);
     o_scifi_reg_re      : out   std_logic;
     i_scifi_reg_rdata   : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
     o_scifi_reg_we      : out   std_logic;
     o_scifi_reg_wdata   : out   std_logic_vector(31 downto 0);
+    -- mupix regs : 0x80-0x9F
     o_mupix_reg_addr    : out   std_logic_vector(7 downto 0);
     o_mupix_reg_re      : out   std_logic;
     i_mupix_reg_rdata   : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
@@ -641,7 +644,7 @@ begin
         i_avs_writedata     => av_qsfp.writedata,
         o_avs_waitrequest   => av_qsfp.waitrequest,
 
-        i_reconfig_clk  => reconfig_clk,
+        i_reconfig_clk  => reconfig_clk, -- 37.5 to 50 MHz
 
         i_reset     => not reset_156_n or reset_qsfp,
         i_clk       => i_clk_156--,

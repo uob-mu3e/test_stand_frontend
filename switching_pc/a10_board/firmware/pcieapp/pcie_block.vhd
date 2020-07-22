@@ -314,7 +314,7 @@ begin
   pcie_led_x8 	<= lane_act(3);
 
 
-pcie_if: pcie
+    e_pcie : component work.cmp.pcie
 	port map(
 		clr_st              => open,  
 		hpg_ctrler          => (others => '0'), -- only needed for root ports
@@ -624,7 +624,7 @@ pcie_if: pcie
 
 
 -- Configuration bus decode
-cfgbus: pcie_cfgbus 
+    e_pcie_cfgbus : entity work.pcie_cfgbus
     port map(
 		reset_n			=> pcie_perstn,
 		pld_clk			=> pld_clk,
@@ -649,7 +649,7 @@ cfgbus: pcie_cfgbus
 
 	 application_reset_n <= '0' when local_rstn = '0' or appl_rstn = '0' else '1';
 	 
-	 pcie_app: pcie_application
+    e_pcie_application : entity work.pcie_application
 	 	generic map(
 			DMAMEMWRITEADDRSIZE => DMAMEMWRITEADDRSIZE,
 			DMAMEMREADADDRSIZE  => DMAMEMREADADDRSIZE,
