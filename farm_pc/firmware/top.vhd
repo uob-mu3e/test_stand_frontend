@@ -180,12 +180,16 @@ architecture rtl of top is
     
     signal resets_fast : std_logic_vector(31 downto 0);
     signal resets_n_fast: std_logic_vector(31 downto 0);
+	 
+	 signal resets_ddr3 : std_logic_vector(31 downto 0);
+    signal resets_n_ddr3: std_logic_vector(31 downto 0);
 
     ------------------ Signal declaration ------------------------
     
     -- pcie read / write regs
     signal writeregs				: reg32array;
     signal writeregs_slow		: reg32array;
+	 signal writeregs_ddr3		: reg32array;
     signal regwritten				: std_logic_vector(63 downto 0);
     signal regwritten_fast		: std_logic_vector(63 downto 0);
     signal regwritten_del1		: std_logic_vector(63 downto 0);
@@ -196,6 +200,7 @@ architecture rtl of top is
     
     signal readregs				: reg32array;
     signal readregs_slow			: reg32array;
+	 signal readregs_ddr3			: reg32array;
     
     -- pcie read / write memory
     signal readmem_writedata 	: std_logic_vector(31 downto 0);
@@ -235,7 +240,10 @@ architecture rtl of top is
     -- Clocksync stuff
     signal clk_sync : std_logic;
     signal clk_last : std_logic;
-    
+	 
+	 signal clk_sync_ddr3 : std_logic;
+    signal clk_last_ddr3 : std_logic;
+	 
     -- debouncer
     signal push_button0_db : std_logic;
     signal push_button1_db : std_logic;
@@ -950,6 +958,15 @@ begin
         resets_n                => resets_n_fast,
         clk                     => pcie_fastclk_out--,
     );
+	 
+    e_reset_logic_ddr3 : entity work.reset_logic
+    port map (
+        rst_n                   => push_button0_db,
+        reset_register          => writeregs_ddr3(RESET_REGISTER_W),
+        resets                  => resets_ddr3,
+        resets_n                => resets_n_ddr3,
+        clk                     => A_ddr3clk--,
+    );
 
     e_version_reg : entity work.version_reg
     port map (
@@ -962,6 +979,9 @@ begin
     if rising_edge(pcie_fastclk_out) then
         clk_sync <= clk_156;
         clk_last <= clk_sync;
+		  
+		  clk_sync_ddr3 <= A_ddr3clk;
+		  clk_last_ddr3 <= clk_sync_ddr3;
         
         if(clk_sync = '1' and clk_last = '0') then
             readregs(PLL_REGISTER_R)                <= readregs_slow(PLL_REGISTER_R);
@@ -973,6 +993,11 @@ begin
             readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= (others => '0');
             readregs(MEM_WRITEADDR_LOW_REGISTER_R)  <= (X"0000" & readmem_writeaddr_finished);
         end if;
+		  
+		  if(clk_sync_ddr3 = '1' and clk_last_ddr3 = '0') then
+				readregs(DDR3_STATUS_R) <= readregs_ddr3(DDR3_STATUS_R);
+				readregs(DDR3_ERR_R) <= readregs_ddr3(DDR3_ERR_R);
+		  end if;
         
         readregs(DMA_STATUS_R)(DMA_DATA_WEN)        <= dma_data_wren;
         readregs(DMA_HALFFUL_REGISTER_R)            <= dmamemhalffull_counter;
@@ -1025,6 +1050,17 @@ begin
         for I in 63 downto 0 loop
             if(regwritten(I) = '1') then
                 writeregs_slow(I) <= writeregs(I);
+            end if;
+        end loop;
+    end if;
+    end process;
+	 
+	 process(A_ddr3clk)
+    begin
+    if rising_edge(A_ddr3clk) then
+        for I in 63 downto 0 loop
+            if(regwritten(I) = '1') then
+                writeregs_ddr3(I) <= writeregs(I);
             end if;
         end loop;
     end if;
@@ -1117,11 +1153,11 @@ begin
     
     ddr3_b : entity work.ddr3_block 
     port map(
-            reset_n             => resets_n(RESET_BIT_DDR3),
+            reset_n             => resets_ddr3(RESET_BIT_DDR3),
             
             -- Control and status registers
-            ddr3control         => writeregs(DDR3_CONTROL_W),
-            ddr3status          => readregs(DDR3_STATUS_R),
+            ddr3control         => writeregs_ddr3(DDR3_CONTROL_W),
+            ddr3status          => readregs_ddr3(DDR3_STATUS_R),
 
             -- A interface
             A_ddr3clk           => A_ddr3clk,
@@ -1146,7 +1182,7 @@ begin
             B_ddr3_read_valid   => B_ddr3_read_valid,
             
             -- Error counters
-            errout              => readregs(DDR3_ERR_R),
+            errout              => readregs_ddr3(DDR3_ERR_R),
 
             -- Interface to memory bank A
             A_mem_ck            => DDR3A_CK,
@@ -1192,21 +1228,21 @@ begin
   
     dataflow : entity work.data_flow 
     port map(
-        reset_n                 => resets_n(RESET_BIT_DDR3),
+        reset_n                 => resets_n_fast(RESET_BIT_DDR3),
 
         -- Input from merging (first board) or links (subsequent boards)
         dataclk                 => pcie_fastclk_out,
         data_en                 => link_fifo_ren,
         -- 31 downto 0 -> data, 35 downto 32 -> datak, 37 downto 36 -> sop/eop
         data_in                 => 
-		  link_fifo_data_out(31 + 7 * 38 downto 7 * 38) &
-		  link_fifo_data_out(31 + 6 * 38 downto 6 * 38) &
-		  link_fifo_data_out(31 + 5 * 38 downto 5 * 38) &
-		  link_fifo_data_out(31 + 4 * 38 downto 4 * 38) &
-		  link_fifo_data_out(31 + 3 * 38 downto 3 * 38) &
-		  link_fifo_data_out(31 + 2 * 38 downto 2 * 38) &
-		  link_fifo_data_out(31 + 1 * 38 downto 1 * 38) &
-		  link_fifo_data_out(31 + 0 * 38 downto 0 * 38),
+			  link_fifo_data_out(31 + 7 * 38 downto 7 * 38) &
+			  link_fifo_data_out(31 + 6 * 38 downto 6 * 38) &
+			  link_fifo_data_out(31 + 5 * 38 downto 5 * 38) &
+			  link_fifo_data_out(31 + 4 * 38 downto 4 * 38) &
+			  link_fifo_data_out(31 + 3 * 38 downto 3 * 38) &
+			  link_fifo_data_out(31 + 2 * 38 downto 2 * 38) &
+			  link_fifo_data_out(31 + 1 * 38 downto 1 * 38) &
+			  link_fifo_data_out(31 + 0 * 38 downto 0 * 38),
         ts_in                   => counter_256(31 downto 0),
 
         -- Input from PCIe demanding events
