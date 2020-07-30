@@ -1229,6 +1229,7 @@ begin
     dataflow : entity work.data_flow 
     port map(
         reset_n                 => resets_n_fast(RESET_BIT_DDR3),
+		  reset_n_ddr3            => resets_n_ddr3(RESET_BIT_DDR3),
 
         -- Input from merging (first board) or links (subsequent boards)
         dataclk                 => pcie_fastclk_out,
@@ -1252,7 +1253,7 @@ begin
         ts_req_B                => writeregs(DATA_REQ_B_W),
         req_en_B                => regwritten_fast(DATA_REQ_A_W),
         tsblock_done            => writeregs(DATA_TSBLOCK_DONE_W)(15 downto 0),
-        tsblocks                => readregs_slow(DATA_TSBLOCKS_R),
+        tsblocks                => readregs(DATA_TSBLOCKS_R),
 
         -- Output to DMA
         dma_data_out            => dma_data,

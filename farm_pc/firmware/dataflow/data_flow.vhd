@@ -16,6 +16,7 @@ use work.dataflow_components.all;
 entity data_flow is 
 	port (
 			reset_n		: 		in std_logic;
+			reset_n_ddr3: 		in std_logic;
 			
 			-- Input from merging (first board) or links (subsequent boards)
 			dataclk		: 		in std_logic;
@@ -70,6 +71,7 @@ entity data_flow is
 	architecture RTL of data_flow is
 
 		signal reset: std_logic;
+		signal reset_ddr3: std_logic;
 	
 		type mem_mode_type is (disabled, ready, writing, reading);
 		signal mem_mode_A : 	mem_mode_type;
@@ -184,6 +186,7 @@ entity data_flow is
 		tsblocks <= B_tsrange & A_tsrange;
 	
 		reset <= not reset_n;
+		reset_ddr3 <= not reset_n_ddr3;
 
 		process(reset_n, dataclk)
 		variable tsupperchange : boolean;
@@ -339,9 +342,9 @@ entity data_flow is
 		B_mem_data		<= qfifo_B(255 downto 0);
 
 -- Process for writing the A memory
-		process(reset_n, A_mem_clk)
+		process(reset_n_ddr3, A_mem_clk)
 		begin
-		if(reset_n = '0') then
+		if(reset_n_ddr3 = '0') then
 			ddr3if_state_A	<= disabled;
 			A_tagram_write	<= '0';
 			readfifo_A	<= '0';
@@ -502,9 +505,9 @@ entity data_flow is
 				
 				
 -- Process for writing the B memory
-		process(reset_n, B_mem_clk)
+		process(reset_n_ddr3, B_mem_clk)
 		begin
-		if(reset_n = '0') then
+		if(reset_n_ddr3 = '0') then
 			ddr3if_state_B	<= disabled;
 			B_tagram_write	<= '0';
 			readfifo_B	<= '0';
@@ -832,7 +835,7 @@ entity data_flow is
                 rdusedw     => open,
                 wrfull      => open,
                 wrusedw     => open,
-                aclr        => reset--,
+                aclr        => reset_ddr3--,
             );
             
             B_mreadfifo : entity work.ip_dcfifo
@@ -852,7 +855,7 @@ entity data_flow is
                 rdusedw     => open,
                 wrfull      => open,
                 wrusedw     => open,
-                aclr        => reset--,
+                aclr        => reset_ddr3--,
             );
             
             A_mdatafdfifo : entity work.ip_dcfifo
@@ -872,7 +875,7 @@ entity data_flow is
                 rdusedw     => open,
                 wrfull      => open,
                 wrusedw     => open,
-                aclr        => reset--,
+                aclr        => reset_ddr3--,
             );
             
             B_mdatafdfifo : entity work.ip_dcfifo
@@ -892,7 +895,7 @@ entity data_flow is
                 rdusedw     => open,
                 wrfull      => open,
                 wrusedw     => open,
-                aclr        => reset--,
+                aclr        => reset_ddr3--,
             );
 
     end architecture RTL;
