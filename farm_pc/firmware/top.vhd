@@ -6,7 +6,6 @@ use ieee.std_logic_misc.all;
 
 use work.pcie_components.all;
 use work.mudaq_registers.all;
-use work.ddr3_components.all;
 use work.dataflow_components.all;
 
 entity top is
@@ -293,7 +292,6 @@ architecture rtl of top is
     signal rx_mapped_data_v:        std_logic_vector(NLINKS_DATA*32-1 downto 0);
     signal rx_mapped_datak_v:       std_logic_vector(NLINKS_DATA*4-1 downto 0);
     signal rx_mapped_linkmask:      std_logic_vector(NLINKS_DATA-1  downto 0); --writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_-1 downto 0),
-    signal link_fifo_almost_full:   std_logic_vector(NLINKS_TOTL-1 downto 0);
         
     -- Slow Control
     signal mem_data_out : std_logic_vector(63 downto 0);
@@ -311,11 +309,12 @@ architecture rtl of top is
     signal fifos_full : std_logic_vector(NLINKS_TOTL - 1 downto 0);
     signal cnt_link_fifo_almost_full : std_logic_vector(31 downto 0);
     signal cnt_dc_link_fifo_full : std_logic_vector(31 downto 0);
+	 signal cnt_skip_link_data : std_logic_vector(31 downto 0);
     
     -- link fifos
     signal link_fifo_wren       : std_logic_vector(NLINKS_TOTL - 1 downto 0);
     signal link_fifo_data       : std_logic_vector(NLINKS_TOTL * 38 - 1 downto 0);
-    signal link_fifo_ren        : std_logic_vector(NLINKS_TOTL - 1 downto 0);
+    signal link_fifo_ren        : std_logic;
     signal link_fifo_data_out   : std_logic_vector(NLINKS_TOTL * 38 - 1 downto 0);
     signal link_fifo_empty      : std_logic_vector(NLINKS_TOTL - 1 downto 0);
     signal link_fifo_full       : std_logic_vector(NLINKS_TOTL - 1 downto 0);
@@ -738,26 +737,26 @@ begin
     readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R) <= cnt_skip_link_data;
         
     process(clk_156, resets_n(RESET_BIT_EVENT_COUNTER))
-    constant all_zero : std_logic_vector(NLINKS - 1 downto 0) := (others => '0');
+    constant all_zero : std_logic_vector(NLINKS_TOTL - 1 downto 0) := (others => '0');
     begin
         if( resets_n(RESET_BIT_EVENT_COUNTER) = '0' ) then
             cnt_dc_link_fifo_full <= (others => '0');
             cnt_link_fifo_almost_full <= (others => '0');
         elsif(rising_edge(clk_156)) then
-    --        link_fifo_full : FOR i in 0 to NLINKS - 1 LOOP
-                if ( fifos_full(NLINKS - 1 downto 0) /= all_zero ) then
+    --        link_fifo_full : FOR i in 0 to NLINKS_TOTL - 1 LOOP
+                if ( fifos_full(NLINKS_TOTL - 1 downto 0) /= all_zero ) then
                     -- for now we only count if one is full
                     cnt_dc_link_fifo_full <= cnt_dc_link_fifo_full + '1';
                 end if;
     --      END LOOP link_fifo_full;
     -- TODO: only for all at the moment
-                if ( link_fifo_almost_full(NLINKS - 1 downto 0) /= all_zero ) then
+                if ( link_fifo_almost_full(NLINKS_TOTL - 1 downto 0) /= all_zero ) then
                     cnt_link_fifo_almost_full <= cnt_link_fifo_almost_full + '1';
                 end if;
         end if;
     end process;
     
-    link_fifo_ren <= '1' when (link_fifo_empty = link_fifo_empty'range => '0') else '0';
+    link_fifo_ren <= '1' when ( link_fifo_empty = (link_fifo_empty'range => '0') ) else '0';
     
     buffer_link_fifos:
     FOR i in 0 to NLINKS_TOTL - 1 GENERATE
@@ -776,6 +775,11 @@ begin
         i_reset_n           => resets_n(RESET_BIT_EVENT_COUNTER),
         i_clk               => clk_156--,
     );
+    
+    -- sop
+    link_fifo_data(36 + i * 38) <= '1' when ( link_fifo_data(3 + i * 38 downto i * 38) = "0001" and link_fifo_data(11 + i * 38 downto i * 38 + 4) = x"BC" ) else '0';
+    -- eop
+    link_fifo_data(37 + i * 38) <= '1' when ( link_fifo_data(3 + i * 38 downto i * 38) = "0001" and link_fifo_data(11 + i * 38 downto i * 38 + 4) = x"9C" ) else '0';
 
     e_fifo : entity work.ip_dcfifo
     generic map(
@@ -1028,22 +1032,24 @@ begin
 
     readmem_writeaddr_lowbits   <= readmem_writeaddr(15 downto 0);
     pb_in                       <= push_button0_db & push_button1_db & push_button2_db;
-    
-    
+        
     counter256 : entity work.counter
+	 generic map (
+		W => 32--,
+	 )
     port map (
-        clk         => pcie_fastclk_out,
-        reset_n     => resets_n(RESET_BIT_DATAGEN),
-        enable      => '1',
-        data_en     => readmem_wren,
-        time_counter=> counter_256--,
-    );
+		o_cnt			=> counter_256,
+		i_ena      	=> '1',
+		
+		i_clk       => pcie_fastclk_out,
+		i_reset_n   => resets_n(RESET_BIT_DATAGEN)--,
+	 );
 
     e_pcie_block : entity work.pcie_block
     generic map (
         DMAMEMWRITEADDRSIZE     => 11,
         DMAMEMREADADDRSIZE      => 11,
-        DMAMEMWRITEWIDTH        => 256
+        DMAMEMWRITEWIDTH        => 256--,
     )
     port map (
         local_rstn              => '1',
@@ -1191,10 +1197,16 @@ begin
         -- Input from merging (first board) or links (subsequent boards)
         dataclk                 => pcie_fastclk_out,
         data_en                 => link_fifo_ren,
-        data_in                 => link_fifo_data_out
-        
-        
-        data_counter(7), data_counter(6), data_counter(5), data_counter(4), data_counter(3), data_counter(2), data_counter(1), data_counter(0),
+        -- 31 downto 0 -> data, 35 downto 32 -> datak, 37 downto 36 -> sop/eop
+        data_in                 => 
+		  link_fifo_data_out(31 + 7 * 38 downto 7 * 38) &
+		  link_fifo_data_out(31 + 6 * 38 downto 6 * 38) &
+		  link_fifo_data_out(31 + 5 * 38 downto 5 * 38) &
+		  link_fifo_data_out(31 + 4 * 38 downto 4 * 38) &
+		  link_fifo_data_out(31 + 3 * 38 downto 3 * 38) &
+		  link_fifo_data_out(31 + 2 * 38 downto 2 * 38) &
+		  link_fifo_data_out(31 + 1 * 38 downto 1 * 38) &
+		  link_fifo_data_out(31 + 0 * 38 downto 0 * 38),
         ts_in                   => counter_256(31 downto 0),
 
         -- Input from PCIe demanding events

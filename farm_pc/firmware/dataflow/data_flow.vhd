@@ -745,7 +745,7 @@ entity data_flow is
 	
             tagram_A : entity work.ip_ram_1_port
             generic map (
-                ADDR_WIDTH    => 4,
+                ADDR_WIDTH    => 16,
                 DATA_WIDTH    => 32,
                 DEVICE        => "Arria 10"--,
             )
@@ -759,7 +759,7 @@ entity data_flow is
             
             tagram_B : entity work.ip_ram_1_port
             generic map (
-                ADDR_WIDTH    => 4,
+                ADDR_WIDTH    => 16,
                 DATA_WIDTH    => 32,
                 DEVICE        => "Arria 10"--,
             )
@@ -771,11 +771,13 @@ entity data_flow is
                 q       => B_tagram_q--,
             );
             
-            A_reqfifo : entity work.ip_dcfifo
+            A_reqfifo : entity work.ip_dcfifo_mixed_widths
             generic map(
-                ADDR_WIDTH  => 8,
-                DATA_WIDTH  => 32,
-                DEVICE      => "Arria 10"--,
+                ADDR_WIDTH_w    => 8,
+                DATA_WIDTH_w    => 32,
+                ADDR_WIDTH_r    => 7,
+                DATA_WIDTH_r    => 16,
+                DEVICE          => "Arria 10"--,
             )
             port map (
                 data        => ts_req_A,
@@ -791,11 +793,13 @@ entity data_flow is
                 aclr        => reset--,
             );
             
-            B_reqfifo : entity work.ip_dcfifo
+            B_reqfifo : entity work.ip_dcfifo_mixed_widths
             generic map(
-                ADDR_WIDTH  => 8,
-                DATA_WIDTH  => 32,
-                DEVICE      => "Arria 10"--,
+                ADDR_WIDTH_w    => 8,
+                DATA_WIDTH_w    => 32,
+                ADDR_WIDTH_r    => 7,
+                DATA_WIDTH_r    => 16,
+                DEVICE          => "Arria 10"--,
             )
             port map (
                 data        => ts_req_B,
