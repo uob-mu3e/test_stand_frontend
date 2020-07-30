@@ -201,7 +201,7 @@ begin
   --      END LOOP link_fifo_full;
   -- TODO: only for all at the moment
             if ( link_fifo_almost_full(NLINKS - 1 downto 0) /= all_zero ) then
-                cnt_link_fifo_almost_full <= cnt_link_fifo_almost_full;
+                cnt_link_fifo_almost_full <= cnt_link_fifo_almost_full + '1';
             end if;
     end if;
 end process;

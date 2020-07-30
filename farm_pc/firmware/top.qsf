@@ -15,11 +15,6 @@ set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 set_global_assignment -name TOP_LEVEL_ENTITY top
 
 
-
-
-
-
-
 set_global_assignment -name VHDL_FILE midas_event_builder.vhd
 set_global_assignment -name VHDL_FILE midas_bank_builder.vhd
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
@@ -28,6 +23,8 @@ set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 set_global_assignment -name QIP_FILE ip/include.qip
 set_global_assignment -name QIP_FILE pcieapp/include.qip
+set_global_assignment -name QIP_FILE ddr3/include.qip
+set_global_assignment -name QIP_FILE dataflow/include.qip
 set_global_assignment -name VHDL_FILE ../../../fe_board/firmware/FEB_common/daq_constants.vhd
 set_global_assignment -name VHDL_FILE link_observer.vhd
 set_global_assignment -name VHDL_FILE dma_counter.vhd
@@ -47,6 +44,7 @@ set_global_assignment -name VHDL_FILE ../../../fe_board/fe_mupix/mupix_block/com
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_scfifo.vhd
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram.vhd
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_dcfifo.vhd
+set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram_1_port.vhd
 
 
 
