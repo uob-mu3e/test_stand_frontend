@@ -16,7 +16,12 @@ use work.pcie_components.all;
 entity pcie_writeable_registers is
 port (
     o_writeregs_B               : out   reg32array;
+	 o_regwritten_B :			out   std_logic_vector(63 downto 0);
     i_clk_B                     : in    std_logic := '0';
+	 
+	 o_writeregs_C               : out   reg32array;
+	 o_regwritten_C :			out   std_logic_vector(63 downto 0);
+    i_clk_C                     : in    std_logic := '0';
 
 		local_rstn:				in		std_logic;
 		refclk:					in		std_logic;
@@ -86,9 +91,16 @@ architecture RTL of pcie_writeable_registers is
 	constant zero32	:  std_logic_vector(31 downto 0) := "00000000000000000000000000000000";
 
     signal writeregs_B : reg32array;
+	 signal regwritten_B : std_logic_vector(63 downto 0);
     signal writeregs_B_reset_n : std_logic;
     signal writeregs_B_fifo_wdata, writeregs_B_fifo_rdata : std_logic_vector(37 downto 0);
     signal writeregs_B_fifo_rempty : std_logic;
+	 
+	 signal writeregs_C : reg32array;
+	 signal regwritten_C : std_logic_vector(63 downto 0);
+    signal writeregs_C_reset_n : std_logic;
+    signal writeregs_C_fifo_wdata, writeregs_C_fifo_rdata : std_logic_vector(37 downto 0);
+    signal writeregs_C_fifo_rempty : std_logic;
 
 begin
 
@@ -198,6 +210,7 @@ begin
 
 
     o_writeregs_B <= writeregs_B;
+	 o_regwritten_B <= regwritten_B;
     writeregs_B_fifo_wdata <=
         ( addr3 & word3 ) when ( be3 = '1' ) else
         ( addr4 & word4 ) when ( be4 = '1' ) else
@@ -239,6 +252,58 @@ begin
     elsif rising_edge(i_clk_B) then
         if ( writeregs_B_fifo_rempty = '0' ) then
             writeregs_B(to_integer(unsigned(writeregs_B_fifo_rdata(37 downto 32)))) <= writeregs_B_fifo_rdata(31 downto 0);
+				regwritten_B(to_integer(unsigned(writeregs_B_fifo_rdata(37 downto 32)))) <= '1';
+        end if;
+        --
+    end if;
+    end process;
+	 
+	 
+	 
+	 o_writeregs_C <= writeregs_C;
+	 o_regwritten_C <= regwritten_C;
+    writeregs_C_fifo_wdata <=
+        ( addr3 & word3 ) when ( be3 = '1' ) else
+        ( addr4 & word4 ) when ( be4 = '1' ) else
+        (others => '0');
+
+    -- sync writeregs writes to i_clk_C clock domain
+    e_writeregs_C_fifo : entity work.ip_dcfifo
+    generic map (
+        ADDR_WIDTH => 4,
+        DATA_WIDTH => writeregs_C_fifo_wdata'length,
+        DEVICE => "Arria 10"--,
+    )
+    port map (
+        data        => writeregs_C_fifo_wdata,
+        wrreq       => be3 or be4,
+        wrfull      => open,
+        wrclk       => refclk,
+
+        q           => writeregs_C_fifo_rdata,
+        rdreq       => not writeregs_C_fifo_rempty,
+        rdempty     => writeregs_C_fifo_rempty,
+        rdclk       => i_clk_C,
+
+        aclr        => local_rstn--,
+    );
+
+    -- writeregs_C_reset_n is several clock cycles longer than local_rstn,
+    e_writeregs_C_reset_n : entity work.reset_sync
+    port map ( o_reset_n => writeregs_C_reset_n, i_reset_n => local_rstn, i_clk => i_clk_C );
+
+    process(i_clk_C, writeregs_C_reset_n)
+    begin
+    if ( writeregs_C_reset_n = '0' ) then
+        -- note that e_writeregs_C_fifo is driven by local_rstn,
+        -- so during writeregs_C_reset_n the write requests are buffered
+        -- and the writes are delayed (but not lost)
+        writeregs_C <= (others => (others => '0'));
+        --
+    elsif rising_edge(i_clk_C) then
+        if ( writeregs_C_fifo_rempty = '0' ) then
+            writeregs_C(to_integer(unsigned(writeregs_C_fifo_rdata(37 downto 32)))) <= writeregs_C_fifo_rdata(31 downto 0);
+				regwritten_C(to_integer(unsigned(writeregs_C_fifo_rdata(37 downto 32)))) <= '1';
         end if;
         --
     end if;

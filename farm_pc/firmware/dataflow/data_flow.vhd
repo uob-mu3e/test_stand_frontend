@@ -188,10 +188,10 @@ entity data_flow is
 		reset <= not reset_n;
 		reset_ddr3 <= not reset_n_ddr3;
 
-		process(reset_n, dataclk)
+		process(reset_n_ddr3, dataclk)
 		variable tsupperchange : boolean;
 		begin
-		if(reset_n = '0') then
+		if(reset_n_ddr3 = '0') then
 			mem_mode_A	<= disabled;
 			mem_mode_B	<= disabled;
 			tsupper_last	<= (others => '1');
@@ -778,7 +778,7 @@ entity data_flow is
             generic map(
                 ADDR_WIDTH_w    => 8,
                 DATA_WIDTH_w    => 32,
-                ADDR_WIDTH_r    => 7,
+                ADDR_WIDTH_r    => 9,
                 DATA_WIDTH_r    => 16,
                 DEVICE          => "Arria 10"--,
             )
@@ -786,7 +786,7 @@ entity data_flow is
                 data        => ts_req_A,
                 wrreq       => req_en_A,
                 rdreq       => A_readreqfifo,
-                wrclk       => pcieclk,
+                wrclk       => A_mem_clk,
                 rdclk       => A_mem_clk,
                 q           => A_reqfifoq,
                 rdempty     => A_reqfifo_empty,
@@ -800,7 +800,7 @@ entity data_flow is
             generic map(
                 ADDR_WIDTH_w    => 8,
                 DATA_WIDTH_w    => 32,
-                ADDR_WIDTH_r    => 7,
+                ADDR_WIDTH_r    => 9,
                 DATA_WIDTH_r    => 16,
                 DEVICE          => "Arria 10"--,
             )
@@ -808,7 +808,7 @@ entity data_flow is
                 data        => ts_req_B,
                 wrreq       => req_en_B,
                 rdreq       => B_readreqfifo,
-                wrclk       => pcieclk,
+                wrclk       => B_mem_clk,
                 rdclk       => B_mem_clk,
                 q           => B_reqfifoq,
                 rdempty     => B_reqfifo_empty,

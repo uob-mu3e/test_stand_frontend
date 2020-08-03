@@ -190,13 +190,10 @@ architecture rtl of top is
     signal writeregs				: reg32array;
     signal writeregs_slow		: reg32array;
 	 signal writeregs_ddr3		: reg32array;
-    signal regwritten				: std_logic_vector(63 downto 0);
-    signal regwritten_fast		: std_logic_vector(63 downto 0);
-    signal regwritten_del1		: std_logic_vector(63 downto 0);
-    signal regwritten_del2		: std_logic_vector(63 downto 0);
-    signal regwritten_del3		: std_logic_vector(63 downto 0);
-    signal regwritten_del4		: std_logic_vector(63 downto 0);
-    signal pb_in : std_logic_vector(2 downto 0);
+	 signal regwritten				: std_logic_vector(63 downto 0);
+	 signal regwritten_B				: std_logic_vector(63 downto 0);
+	 signal regwritten_C				: std_logic_vector(63 downto 0);
+	 signal pb_in : std_logic_vector(2 downto 0);
     
     signal readregs				: reg32array;
     signal readregs_slow			: reg32array;
@@ -236,6 +233,7 @@ architecture rtl of top is
     -- //pcie debug signals
     signal pcie_testout         : std_logic_vector(127 downto 0);
     signal counter_256          : std_logic_vector(31 downto 0);
+	 signal counter_ddr3          : std_logic_vector(31 downto 0);
     
     -- Clocksync stuff
     signal clk_sync : std_logic;
@@ -800,7 +798,7 @@ begin
         wrreq       => link_fifo_wren(i),
         rdreq       => link_fifo_ren,
         wrclk       => clk_156,
-        rdclk       => pcie_fastclk_out,
+        rdclk       => A_ddr3clk,--pcie_fastclk_out,
         q           => link_fifo_data_out(37 + i * 38 downto 0 + i * 38),
         rdempty     => link_fifo_empty(i),
         rdusedw     => open,
@@ -1020,52 +1018,6 @@ begin
         clk                     => pcie_fastclk_out--,
     );
        
-    -- Prolong regwritten signals for 156.25 MHz clock
-    -- we just delay the fast signal so the slow clock will see it
-    process(pcie_fastclk_out)
-    begin
-    if rising_edge(pcie_fastclk_out) then
-        regwritten_del1 <= regwritten_fast;
-        regwritten_del2 <= regwritten_del1;
-        regwritten_del3 <= regwritten_del2;
-        regwritten_del4 <= regwritten_del3;
-        for I in 63 downto 0 loop
-            if(regwritten_fast(I) = '1' or
-                regwritten_del1(I) = '1' or
-                regwritten_del2(I) = '1' or
-                regwritten_del3(I) = '1' or
-                regwritten_del4(I) = '1')
-                then
-                regwritten(I)   <= '1';
-            else
-            regwritten(I)       <= '0';
-            end if;
-        end loop;
-    end if;
-    end process;
-
-    process(clk_156)
-    begin
-    if rising_edge(clk_156) then
-        for I in 63 downto 0 loop
-            if(regwritten(I) = '1') then
-                writeregs_slow(I) <= writeregs(I);
-            end if;
-        end loop;
-    end if;
-    end process;
-	 
-	 process(A_ddr3clk)
-    begin
-    if rising_edge(A_ddr3clk) then
-        for I in 63 downto 0 loop
-            if(regwritten(I) = '1') then
-                writeregs_ddr3(I) <= writeregs(I);
-            end if;
-        end loop;
-    end if;
-    end process;
-
     readmem_writeaddr_lowbits   <= readmem_writeaddr(15 downto 0);
     pb_in                       <= push_button0_db & push_button1_db & push_button2_db;
         
@@ -1079,6 +1031,18 @@ begin
 		
 		i_clk       => pcie_fastclk_out,
 		i_reset_n   => resets_n(RESET_BIT_DATAGEN)--,
+	 );
+	 
+	 counterddr3 : entity work.counter
+	 generic map (
+		W => 32--,
+	 )
+    port map (
+		o_cnt			=> counter_ddr3,
+		i_ena      	=> '1',
+		
+		i_clk       => A_ddr3clk,
+		i_reset_n   => resets_n_ddr3(RESET_BIT_DATAGEN)--,
 	 );
 
     e_pcie_block : entity work.pcie_block
@@ -1113,7 +1077,15 @@ begin
         
         -- pcie registers (write / read register, readonly, read write, in tools/dmatest/rw) -Sync read regs
         writeregs               => writeregs,
-        regwritten              => regwritten_fast,
+		  o_writeregs_B			  => writeregs_slow,
+		  o_writeregs_C			  => writeregs_ddr3,
+		  
+		  regwritten				  => regwritten,
+		  o_regwritten_B			  => regwritten_B,
+		  o_regwritten_C			  => regwritten_C,
+		  
+		  i_clk_B					  => clk_156,
+		  i_clk_C					  => A_ddr3clk,
         readregs                => readregs,
 
         -- pcie writeable memory
@@ -1232,7 +1204,7 @@ begin
 		  reset_n_ddr3            => resets_n_ddr3(RESET_BIT_DDR3),
 
         -- Input from merging (first board) or links (subsequent boards)
-        dataclk                 => pcie_fastclk_out,
+        dataclk                 => A_ddr3clk,--pcie_fastclk_out,
         data_en                 => link_fifo_ren,
         -- 31 downto 0 -> data, 35 downto 32 -> datak, 37 downto 36 -> sop/eop
         data_in                 => 
@@ -1244,16 +1216,16 @@ begin
 			  link_fifo_data_out(31 + 2 * 38 downto 2 * 38) &
 			  link_fifo_data_out(31 + 1 * 38 downto 1 * 38) &
 			  link_fifo_data_out(31 + 0 * 38 downto 0 * 38),
-        ts_in                   => counter_256(31 downto 0),
+        ts_in                   => counter_ddr3,--counter_256(31 downto 0),
 
         -- Input from PCIe demanding events
         pcieclk                 => pcie_fastclk_out,
-        ts_req_A                => writeregs(DATA_REQ_A_W),
-        req_en_A                => regwritten_fast(DATA_REQ_A_W),
-        ts_req_B                => writeregs(DATA_REQ_B_W),
-        req_en_B                => regwritten_fast(DATA_REQ_A_W),
-        tsblock_done            => writeregs(DATA_TSBLOCK_DONE_W)(15 downto 0),
-        tsblocks                => readregs(DATA_TSBLOCKS_R),
+        ts_req_A                => writeregs_ddr3(DATA_REQ_A_W),
+        req_en_A                => regwritten_C(DATA_REQ_A_W),
+        ts_req_B                => writeregs_ddr3(DATA_REQ_B_W),
+        req_en_B                => regwritten_C(DATA_REQ_A_W),
+        tsblock_done            => writeregs_ddr3(DATA_TSBLOCK_DONE_W)(15 downto 0),
+        tsblocks                => readregs_ddr3(DATA_TSBLOCKS_R),
 
         -- Output to DMA
         dma_data_out            => dma_data,
