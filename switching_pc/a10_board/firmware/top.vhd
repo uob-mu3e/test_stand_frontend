@@ -844,6 +844,9 @@ begin
     port map (
         o_writeregs_B           => writeregs_slow,
         i_clk_B                 => clk_156,
+		  
+		  o_writeregs_C           => open,
+        i_clk_C                 => clk_156,
 
         local_rstn              => '1',
         appl_rstn               => '1',

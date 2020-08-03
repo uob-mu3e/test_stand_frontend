@@ -13,7 +13,7 @@ use work.dataflow_components.all;
 
 
 
-entity data_flow is 
+entity data_flow is
 	port (
 			reset_n		: 		in std_logic;
 			reset_n_ddr3: 		in std_logic;
@@ -85,8 +85,8 @@ entity data_flow is
 		signal B_tsrange	:	tsrange_type;
 		signal tsupper_last	: tsrange_type;
 	
-		signal A_memready	: std_logic;
-		signal B_memready	: std_logic;
+		--signal A_memready	: std_logic;
+		--signal B_memready	: std_logic;
 		
 		signal A_writestate:	std_logic;
 		signal B_writestate: std_logic;
@@ -96,7 +96,6 @@ entity data_flow is
 
 		signal A_done:	     std_logic;
 		signal B_done:	     std_logic;
-		
 		
 		signal tofifo_A	: dataplusts_type;
 		signal tofifo_B	: dataplusts_type;
@@ -179,60 +178,71 @@ entity data_flow is
 		type output_write_type is (waiting, eventA, eventB);
 		signal output_write_state : output_write_type;
 		signal nummemwords : std_logic_vector(5 downto 0);
+		signal tagmemwait_3_state : std_logic_vector(3 downto 0);
+		
+		signal ts_in_upper : std_logic_vector(15 downto 0);
+		signal ts_in_lower : std_logic_vector(15 downto 0);
 
 		
 	begin
 	
 		tsblocks <= B_tsrange & A_tsrange;
+		
+		-- TODO: make this dynamic
+		ts_in_upper <= x"00" & ts_in(tsupper);
+		ts_in_lower <= x"00" & ts_in(tslower);
 	
 		reset <= not reset_n;
 		reset_ddr3 <= not reset_n_ddr3;
 
-		process(reset_n, dataclk)
-		variable tsupperchange : boolean;
+		process(reset_n_ddr3, dataclk)
+            variable tsupperchange : boolean;
 		begin
-		if(reset_n = '0') then
-			mem_mode_A	<= disabled;
-			mem_mode_B	<= disabled;
-			tsupper_last	<= (others => '1');
+		if(reset_n_ddr3 = '0') then
 			
-			writefifo_A	<= '0';
-			writefifo_B	<= '0';
+			mem_mode_A   <= disabled;
+			mem_mode_B   <= disabled;
 			
-			A_readstate	<= '0';
-			B_readstate <= '0';
+			writefifo_A  <= '0';
+			writefifo_B  <= '0';
+			
+			A_readstate  <= '0';
+			B_readstate  <= '0';
+			
 			A_writestate <= '0';
 			B_writestate <= '0';
 
-			link_data_en	<= '0';
+			link_data_en <= '0';
+			tsupper_last <= (others => '1');
 			
 		elsif(dataclk'event and dataclk = '1') then
-
 
 			link_data_out	<= data_in;
 			link_ts_out		<= ts_in;
 		
+            -- send data to next FPGA if mem is not writing
 			link_data_en  <= '0';
 			if(mem_mode_A /= writing and mem_mode_B /= writing) then
 				link_data_en <= data_en;
 			end if;
-
 		
-			tofifo_A <= ts_in(tslower) & data_in;
-			tofifo_B	<= ts_in(tslower) & data_in;
+            -- keep lower time and data
+			tofifo_A <= ts_in_lower & data_in;
+			tofifo_B <= ts_in_lower & data_in;
 			
 			writefifo_A	<= '0';
 			writefifo_B	<= '0';
 			
 			A_readstate	<= '0';
 			B_readstate <= '0';
+			
 			A_writestate <= '0';
 			B_writestate <= '0';
 			
 			tsupperchange := false;
 			if(data_en = '1') then
-				tsupper_last <= ts_in(tsupper);
-				if(ts_in(tsupper) /=  tsupper_last) then
+				tsupper_last <= ts_in_upper;
+				if(ts_in_upper /=  tsupper_last) then
 					tsupperchange := true;
 				end if;
 			end if;
@@ -242,13 +252,15 @@ entity data_flow is
 					if(A_mem_calibrated = '1')then
 						mem_mode_A <= ready;
 					end if;
+					
 				when ready 	=>
 					if(tsupperchange and A_done = '1') then
-						mem_mode_A	<= writing;
-						A_tsrange	<= ts_in(tsupper);
-						writefifo_A	<= '1';
-						link_data_en 	<= '0';
+						mem_mode_A    <= writing;
+						A_tsrange     <= ts_in_upper;
+						writefifo_A   <= '1';
+						link_data_en  <= '0';
 					end if;
+					
 				when writing =>
 					A_writestate <= '1';
 				
@@ -257,6 +269,7 @@ entity data_flow is
 						mem_mode_A	<= reading;
 						writefifo_A	<= '0';
 					end if;
+					
 				when reading =>
 					A_readstate	<= '1';
 				
@@ -270,30 +283,31 @@ entity data_flow is
 					if(B_mem_calibrated = '1')then
 						mem_mode_B <= ready;
 					end if;
+					
 				when ready 	=>
 					if(tsupperchange and (mem_mode_A /= ready or (mem_mode_A = ready and A_done = '0')) and B_done ='1') then
 						mem_mode_B	<= writing;
-						B_tsrange	<= ts_in(tsupper);
+						B_tsrange	<= ts_in_upper;
 						writefifo_B	<= '1';
 						link_data_en 	<= '0';
 					end if;
+					
 				when writing =>
-					A_writestate <= '1';
+					B_writestate <= '1';
 				
 					writefifo_B		<= data_en;
 					if(tsupperchange) then
 						mem_mode_B	<= reading;
 						writefifo_B	<= '0';
 					end if;
+					
 				when reading =>
-					A_readstate	<= '1';
+					B_readstate	<= '1';
 				
 					if(tsblock_done = B_tsrange) then
 						mem_mode_B <= ready;
 					end if;
 			end case;
-		
-
 		end if;
 		end process;
 		
@@ -371,8 +385,9 @@ entity data_flow is
 -- synthesis translate_off
 						ddr3if_state_A	<= ready;
 						A_done		<= '1';
--- synthesis translate on
+-- synthesis translate_on
 					end if;
+					
 				when ready =>
 					if(A_writestate = '1')then
 						ddr3if_state_A	<= writing;
@@ -382,8 +397,8 @@ entity data_flow is
 						A_numwords			<= "000001";
 						A_done 				<= '0';
 					end if;
-				when writing =>
 					
+				when writing =>
 					if(A_readstate = '1' and A_fifo_empty = '1') then
 						ddr3if_state_A	<= reading;
 						A_readsubstate <= fifowait;
@@ -400,7 +415,7 @@ entity data_flow is
 						A_mem_addr_reg		<= A_mem_addr_reg + '1';
 						A_tagts_last		<= qfifo_A(271 downto 256);
 												
-						if(A_tagts_last /= qfifo_A(271 downto 256)  or A_wstarted_last ='1') then
+						if(A_tagts_last /= qfifo_A(271 downto 256) or A_wstarted_last = '1') then
 							if(A_wstarted = '1') then
 								A_tagram_write		<= '0';
 							else	
@@ -446,21 +461,24 @@ entity data_flow is
 							A_readsubstate <= tagmemwait_3;	
 						when tagmemwait_3 =>
 							if( A_tagram_q(31 downto 26) = "000000") then
+                                tagmemwait_3_state <= x"A";
 								A_readsubstate <= fifowait;
 								A_memreadfifo_data <= "000000" & A_tsrange & A_tagram_address;
 								A_memreadfifo_write <= '1';
 -- synthesis translate_off
 							elsif(Is_X(A_tagram_q(31 downto 26))) then
+                                tagmemwait_3_state <= x"B";
 								A_readsubstate <= fifowait;	
 								A_memreadfifo_data <= "000000" & A_tsrange & A_tagram_address;
 								A_memreadfifo_write <= '1';
--- synthesis translate on					
+-- synthesis translate_on					
 							else
+                                tagmemwait_3_state <= x"C";
 								A_mem_addr	<= A_tagram_q(25 downto 0);
 								A_readwords	<= A_tagram_q(31 downto 26)-'1';
 								if(A_mem_ready = '1') then
 									A_mem_read		<= '1';
-									if(A_tagram_q(31 downto 26) > "00001") then
+									if(A_tagram_q(31 downto 26) > "00001") then--"00001") then
 										A_readsubstate	<= reading;
 										A_mem_addr_reg  <= A_tagram_q(25 downto 0) + '1';
 									else
@@ -469,7 +487,7 @@ entity data_flow is
 									A_memreadfifo_data <= A_tagram_q(31 downto 26) & A_tsrange & A_tagram_address;
 									A_memreadfifo_write <= '1';
 								end if;
-							end if;	
+							end if;
 						when reading =>
 							if(A_mem_ready = '1')then
 								A_mem_addr	<= A_mem_addr_reg ;
@@ -778,7 +796,7 @@ entity data_flow is
             generic map(
                 ADDR_WIDTH_w    => 8,
                 DATA_WIDTH_w    => 32,
-                ADDR_WIDTH_r    => 7,
+                ADDR_WIDTH_r    => 9,
                 DATA_WIDTH_r    => 16,
                 DEVICE          => "Arria 10"--,
             )
@@ -786,7 +804,7 @@ entity data_flow is
                 data        => ts_req_A,
                 wrreq       => req_en_A,
                 rdreq       => A_readreqfifo,
-                wrclk       => pcieclk,
+                wrclk       => A_mem_clk,
                 rdclk       => A_mem_clk,
                 q           => A_reqfifoq,
                 rdempty     => A_reqfifo_empty,
@@ -800,7 +818,7 @@ entity data_flow is
             generic map(
                 ADDR_WIDTH_w    => 8,
                 DATA_WIDTH_w    => 32,
-                ADDR_WIDTH_r    => 7,
+                ADDR_WIDTH_r    => 9,
                 DATA_WIDTH_r    => 16,
                 DEVICE          => "Arria 10"--,
             )
@@ -808,7 +826,7 @@ entity data_flow is
                 data        => ts_req_B,
                 wrreq       => req_en_B,
                 rdreq       => B_readreqfifo,
-                wrclk       => pcieclk,
+                wrclk       => B_mem_clk,
                 rdclk       => B_mem_clk,
                 q           => B_reqfifoq,
                 rdempty     => B_reqfifo_empty,
