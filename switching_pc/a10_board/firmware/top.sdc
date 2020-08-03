@@ -20,12 +20,3 @@ set_max_delay -to {xcvr_a10:*|av_ctrl.readdata[*]} 100
 
 set_min_delay -to {readregs[*]} -100
 set_max_delay -to {readregs[*]} 100
-
-set_min_delay -to {writeregs_slow[*]} -100
-set_max_delay -to {writeregs_slow[*]} 100
-
-set_min_delay -from {writeregs_slow[10][*]} -100
-set_max_delay -from {writeregs_slow[10][*]} 100
-
-set_min_delay -from {regwritten[*]} -100
-set_max_delay -from {regwritten[*]} 100

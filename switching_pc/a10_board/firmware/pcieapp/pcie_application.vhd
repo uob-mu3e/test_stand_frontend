@@ -22,6 +22,9 @@ entity pcie_application is
 			DMAMEMWRITEWIDTH	  : integer := 32
 		);
 	port (
+    o_writeregs_B               : out   reg32array;
+    i_clk_B                     : in    std_logic := '0';
+
 		local_rstn:				in		std_logic;
 		refclk:					in		std_logic;
 	
@@ -215,6 +218,9 @@ architecture RTL of pcie_application is
 
     e_pcie_writeable_registers : entity work.pcie_writeable_registers
 		port map(
+        o_writeregs_B           => o_writeregs_B,
+        i_clk_B                 => i_clk_B,
+
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
 	

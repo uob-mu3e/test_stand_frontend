@@ -143,12 +143,6 @@ architecture rtl of top is
         -- pcie read / write regs
         signal writeregs				: reg32array;
         signal writeregs_slow		: reg32array;
-        signal regwritten				: std_logic_vector(63 downto 0);
-        signal regwritten_fast		: std_logic_vector(63 downto 0);
-        signal regwritten_del1		: std_logic_vector(63 downto 0);
-        signal regwritten_del2		: std_logic_vector(63 downto 0);
-        signal regwritten_del3		: std_logic_vector(63 downto 0);
-        signal regwritten_del4		: std_logic_vector(63 downto 0);
         signal pb_in : std_logic_vector(2 downto 0);
         
         signal readregs				: reg32array;
@@ -837,41 +831,6 @@ begin
         notendofevent_counter	=> notendofevent_counter,
         clk                     => pcie_fastclk_out--,
     );
-       
-    -- Prolong regwritten signals for 156.25 MHz clock
-    -- we just delay the fast signal so the slow clock will see it
-    process(pcie_fastclk_out)
-    begin
-    if rising_edge(pcie_fastclk_out) then
-        regwritten_del1 <= regwritten_fast;
-        regwritten_del2 <= regwritten_del1;
-        regwritten_del3 <= regwritten_del2;
-        regwritten_del4 <= regwritten_del3;
-        for I in 63 downto 0 loop
-            if(regwritten_fast(I) = '1' or
-                regwritten_del1(I) = '1' or
-                regwritten_del2(I) = '1' or
-                regwritten_del3(I) = '1' or
-                regwritten_del4(I) = '1')
-                then
-                regwritten(I)   <= '1';
-            else
-            regwritten(I)       <= '0';
-            end if;
-        end loop;
-    end if;
-    end process;
-
-    process(clk_156)
-    begin
-    if rising_edge(clk_156) then
-        for I in 63 downto 0 loop
-            if(regwritten(I) = '1') then
-                writeregs_slow(I) <= writeregs(I);
-            end if;
-        end loop;
-    end if;
-    end process;
 
     readmem_writeaddr_lowbits   <= readmem_writeaddr(15 downto 0);
     pb_in                       <= push_button0_db & push_button1_db & push_button2_db;
@@ -883,6 +842,9 @@ begin
         DMAMEMWRITEWIDTH        => 256
     )
     port map (
+        o_writeregs_B           => writeregs_slow,
+        i_clk_B                 => clk_156,
+
         local_rstn              => '1',
         appl_rstn               => '1',
         refclk                  => PCIE_REFCLK_p,
@@ -908,7 +870,6 @@ begin
         
         -- pcie registers (write / read register, readonly, read write, in tools/dmatest/rw) -Sync read regs
         writeregs               => writeregs,
-        regwritten              => regwritten_fast,
         readregs                => readregs,
 
         -- pcie writeable memory
