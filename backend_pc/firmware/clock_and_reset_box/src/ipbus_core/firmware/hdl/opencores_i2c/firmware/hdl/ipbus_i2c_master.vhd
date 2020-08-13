@@ -76,6 +76,28 @@ architecture rtl of ipbus_i2c_master is
 
 begin
 
+    ila1: entity work.ila_0
+        port map( 
+    clk  => clk,--: in STD_LOGIC;
+    probe0(0) => ipbus_in_fast.ipb_strobe,
+    probe1(0) => ipbus_in_fast.ipb_write,
+    probe2    => ipbus_in_fast.ipb_addr,
+    probe3(0) => stb,
+    probe4(0) => ack,
+    probe5    => data_in & X"0000" & data_out & X"0000",
+    probe6(0) => ipbus_out_fast.ipb_ack,
+    probe7(0) => ipbus_out_fast.ipb_err,
+    probe8    => ipbus_out_fast.ipb_rdata,
+    probe9(0) => ackseen,
+    probe10(0) => tipseen,
+    probe11    => X"000000000000" & sr,
+    probe12(0) => scl_o,
+    probe13(0) => scl_i,
+    probe14(0) => sda_o,
+    probe15(0) => sda_i 
+ );
+
+
 
    ila1: entity work.ila_0
         port map( 

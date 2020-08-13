@@ -231,8 +231,8 @@ begin
 				sda_o => isda_o,
 				sda_i => isda_i
 			);
-						
-			
+
+									
 		   delay1 : FDCE
 		   generic map (
 		      INIT => '0') -- Initial value of register ('0' or '1')  
