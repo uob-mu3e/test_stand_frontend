@@ -174,10 +174,14 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_nu
     if(recording)
         ofile << "ReadRegN " << std::hex<< (uint32_t)dev_addr << " " << (uint32_t)reg_addr << " " << (uint32_t)byte_num << endl;
 
-    if(!FASTI2C)
-        return read_i2c_reg_allbus(dev_addr, reg_addr, byte_num, data);
-    else
-        return read_i2c_reg_fpga(dev_addr, reg_addr, byte_num, data);
+    //if(!FASTI2C)
+ //   int y = read_i2c_reg_allbus(dev_addr, reg_addr, byte_num, data);
+ //   cout << hex << "slow " << (int)data[0] << " " << (int)data[1] << endl;
+    //else
+        //return
+    int x = read_i2c_reg_fpga(dev_addr, reg_addr, byte_num, data);
+    cout << hex << "fast " << (int)data[0] << " " << (int)data[1] << endl;
+    return x;
 }
 
 int clockboard::read_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[])
