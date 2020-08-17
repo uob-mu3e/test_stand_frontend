@@ -24,8 +24,6 @@ int main()
     float current = cb.read_mother_board_current();
     cout << "MB Current " << current << " mA" << endl;
 
-    return 1;
-
     float voltage = cb.read_mother_board_voltage();
     cout << "MB Voltage " << voltage << " mV" << endl;
 

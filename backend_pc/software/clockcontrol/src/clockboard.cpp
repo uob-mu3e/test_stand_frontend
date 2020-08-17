@@ -174,13 +174,14 @@ int clockboard::read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_nu
     if(recording)
         ofile << "ReadRegN " << std::hex<< (uint32_t)dev_addr << " " << (uint32_t)reg_addr << " " << (uint32_t)byte_num << endl;
 
+    //cout << "ReadRegN " << std::hex<< (uint32_t)dev_addr << " " << (uint32_t)reg_addr << " " << (uint32_t)byte_num << endl;
     //if(!FASTI2C)
  //   int y = read_i2c_reg_allbus(dev_addr, reg_addr, byte_num, data);
  //   cout << hex << "slow " << (int)data[0] << " " << (int)data[1] << endl;
     //else
         //return
     int x = read_i2c_reg_fpga(dev_addr, reg_addr, byte_num, data);
-    cout << hex << "fast " << (int)data[0] << " " << (int)data[1] << endl;
+    //cout << hex << "fast " << (int)data[0] << " " << (int)data[1] << endl;
     return x;
 }
 
@@ -204,7 +205,7 @@ int clockboard::read_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t 
 
     uint32_t reg;
 
-    for(uint8_t byte_count =0; byte_count < byte_num -1; byte_count++){
+    for(uint8_t byte_count =byte_num -1; byte_count >= 0 ; byte_count--){
         bus.write(ADDR_I2C_CMD_STAT, I2C_CMD_READ);
         checkTIP();
         reg = bus.read(ADDR_I2C_DATA);
@@ -227,8 +228,9 @@ int clockboard::read_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t by
 {
     assert(byte_num <= 4 && byte_num > 0);
     uint32_t addr = ADDR_I2C_FPGA + (dev_addr << 25) + (1<<24) + (reg_addr << 16) + ((byte_num-1)<< 14);
+    //cout <<"Addr: " << hex << addr << endl;
     uint32_t alldata = bus.read(addr);
-    cout << alldata << endl;
+    //cout << alldata << endl;
     data[0] = alldata & 0xFF;
     data[1] = (alldata & 0xFF00)>>8;
     data[2] = (alldata & 0xFF0000)>>16;
@@ -811,7 +813,7 @@ float clockboard::read_daughter_board_current(uint8_t daughter)
         return -1;
     //The factor of 2 comes from the 5mOhm shunt resistor
     // Current is now in mA
-    float current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*2.0;
+    float current = (((data[1] << 8)&0xFF00)|(data[0]&0xFF))*2.0;
     disable_daughter_12c(DAUGHTERS[daughter]);
     return current;
 }
@@ -823,7 +825,7 @@ float clockboard::read_mother_board_current()
         return -1;
     //The factor of 2 comes from the 5mOhm shunt resistor
     // Current is now in mA
-    float current = (((data[0] << 8)&0xFF00)|(data[1]&0xFF))*2.0;
+    float current = (((data[1] << 8)&0xFF00)|(data[0]&0xFF))*2.0;
     return current;
 }
 
@@ -834,7 +836,7 @@ float clockboard::read_daughter_board_voltage(uint8_t daughter)
     if(!read_i2c_reg(I2C_DAUGHTER_CURRENT_ADDR,I2C_BUS_VOLTAGE_REG_ADDR,2,data))
         return -1;
     // 1 = 4mV - *4 gives voltage in mV
-    float current = ((data[0] << 5)|(data[1]>>3))*4.0;
+    float current = ((data[1] << 5)|(data[0]>>3))*4.0;
     disable_daughter_12c(DAUGHTERS[daughter]);
     return current;
 }
@@ -845,7 +847,7 @@ float clockboard::read_mother_board_voltage()
     if(!read_i2c_reg(I2C_MOTHER_CURRENT_ADDR,I2C_BUS_VOLTAGE_REG_ADDR,2,data))
         return -1;
     // 1 = 4mV - *4 gives voltage in mV
-    float current = ((data[0] << 5)|(data[1]>>3))*4.0;
+    float current = ((data[1] << 5)|(data[0]>>3))*4.0;
     return current;
 }
 

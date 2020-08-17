@@ -72,6 +72,8 @@ architecture rtl of ipbus_i2c_master is
     signal busaddr : addr_t;
     signal ackseen: std_logic;
     signal tipseen: std_logic;
+    signal strobe_last: std_logic;
+    
     
     signal bytecount : natural range 4 downto 0;
 
@@ -130,6 +132,8 @@ begin
         we   <= '0';
         ack_last    <= '0';
         ackseen     <= '0';
+        tipseen     <= '0';
+        strobe_last <= '0';
         ipbus_out.ipb_ack <= '0';
         ipbus_out_fast.ipb_ack <= '0';
         ipbus_out_mem.ipb_ack <= '0'; 
@@ -148,6 +152,7 @@ begin
         ipbus_out_fast.ipb_err <= '0';
         ipbus_out_mem.ipb_err <= '0'; 
         
+        strobe_last <= ipbus_in_fast.ipb_strobe;
         
         case state is
             when idle =>
@@ -157,7 +162,8 @@ begin
                     data_in <=  ipbus_in.ipb_wdata(7 downto 0);
                     we      <=  ipbus_in.ipb_write;
                     stb_x   <= '1';
-                elsif(ipbus_in_fast.ipb_strobe = '1') then 
+                elsif(ipbus_in_fast.ipb_strobe = '1' and strobe_last = '0') then 
+                    -- Put the device address in the data register
                     state   <= write1;
                     addr    <= ADDR_I2C_DATA;
                     data_in <= ipbus_in_fast.ipb_addr(31 downto 25) & "0";
@@ -176,20 +182,28 @@ begin
                  end if;
             when write1 =>
                 if(ack = '1') then
+                    -- Start I2C with sending the device address
                     state <= write2;
                     addr    <= ADDR_I2C_CMD_STAT;
-                    data_in <= I2C_WRITE;
+                    data_in <= I2C_START;
                     we      <= '1';
                     stb_x   <= '1';
                     ackseen <= '0';
+                    tipseen <= '0';
                 end if;
             when write2 =>
                 if(ack = '1') then
                     ackseen <= '1';
                     stb_x   <= '0';
                 end if;
-                if(sr(TIPBIT) = '0' and (ack = '1' or ackseen = '1')) then
+                if(sr(TIPBIT) = '1') then
+                    tipseen <= '1';
+                end if;
+                if(sr(TIPBIT) = '0' and tipseen = '1' and (ack = '1' or ackseen = '1')) then
+                    ackseen <= '0';
+                    tipseen <= '0';
                     if(ipbus_in_fast.ipb_addr(24) = '1') then
+                        -- Put the register address in the data regfister
                         state   <= write3;
                         addr    <= ADDR_I2C_DATA;
                         data_in <= ipbus_in_fast.ipb_addr(23 downto 16);
@@ -197,6 +211,7 @@ begin
                         stb_x   <= '1';
                     else 
                         if( ipbus_in_fast.ipb_write = '1') then
+                            -- Put the write data in the data register
                             state   <= write5;
                             addr    <= ADDR_I2C_DATA;
                             data_in <= ipbus_in_fast.ipb_wdata(7 downto 0);
@@ -213,6 +228,7 @@ begin
                     end if;
                     ackseen <= '0'; 
                     if(sr(NOACKBIT) = '1') then
+                        -- There was no acknowledge from the device (maybe better error handling?)
                         ipbus_out_fast.ipb_rdata(7 downto 0)  <= (others => '0');
                         ipbus_out_fast.ipb_rdata(31 downto 8) <= (others => '1');
                         ipbus_out_fast.ipb_err <= '0';
@@ -222,6 +238,7 @@ begin
                 end if;
              when write3 =>
                 if(ack = '1') then
+                    -- Write the register address
                     state <= write4;
                     addr    <= ADDR_I2C_CMD_STAT;
                     data_in <= I2C_WRITE;
@@ -240,6 +257,7 @@ begin
                 end if;
                 if(sr(TIPBIT) = '0' and tipseen = '1' and (ack = '1' or ackseen = '1')) then
                     if( ipbus_in_fast.ipb_write = '1') then
+                        -- write the data to be written
                         state   <= write5;
                         addr    <= ADDR_I2C_DATA;
                         data_in <= ipbus_in_fast.ipb_wdata(7 downto 0);
@@ -248,9 +266,10 @@ begin
                         ackseen <= '0';
                         tipseen <= '0';
                     else
+                        -- set device address again, this time for read
                         state   <= read1;
                         addr    <= ADDR_I2C_DATA;
-                        data_in <= ipbus_in_fast.ipb_addr(31 downto 25) & "0";
+                        data_in <= ipbus_in_fast.ipb_addr(31 downto 25) & "1";
                         we      <= '1';
                         stb_x   <= '1';
                         bytecount   <= conv_integer(ipbus_in_fast.ipb_addr(15 downto 14)) + 1;
@@ -300,9 +319,10 @@ begin
                 end if;
             when read1 =>
                 if(ack = '1') then
+                    -- clock out the register address to be read
                     state <=read2;
                     addr    <= ADDR_I2C_CMD_STAT;
-                    data_in <= I2C_WRITE;
+                    data_in <= I2C_START;
                     we      <= '1';
                     stb_x   <= '1';
                     ackseen <= '0';
@@ -312,7 +332,11 @@ begin
                     ackseen <= '1';
                     stb_x   <= '0';
                 end if;
-                if(sr(TIPBIT) = '0' and (ack = '1' or ackseen = '1')) then
+                if(sr(TIPBIT) = '1') then
+                    tipseen <= '1';
+                end if;
+                if(sr(TIPBIT) = '0' and tipseen = '1' and (ack = '1' or ackseen = '1')) then
+                    -- Read from I2C
                     state   <= read3;
                     tipseen <= '0';
                     addr    <= ADDR_I2C_CMD_STAT;
@@ -334,6 +358,7 @@ begin
                     tipseen <= '1';
                 end if;
                 if(sr(TIPBIT) = '0' and tipseen = '1' and (ack = '1' or ackseen = '1')) then
+                    -- set address to data
                     state   <= read4;
                     addr    <= ADDR_I2C_DATA;
                     we      <= '0';
@@ -343,6 +368,7 @@ begin
                 end if;
            when read4 =>
                 if(ack = '1') then
+                    -- capture data, the stop or read another byte
                     ipbus_out_fast.ipb_rdata(8*bytecount+7 downto 8*bytecount)  <= data_out;
                     if(bytecount = 0) then
                         state   <= write7;
