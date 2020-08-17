@@ -196,11 +196,11 @@ entity data_flow is
 		reset_ddr3 <= not reset_n_ddr3;
 
 		process(reset_n_ddr3, dataclk)
-            variable tsupperchange : boolean;
+		variable tsupperchange : boolean;
 		begin
 		if(reset_n_ddr3 = '0') then
-			
-			mem_mode_A   <= disabled;
+
+            mem_mode_A   <= disabled;
 			mem_mode_B   <= disabled;
 			
 			writefifo_A  <= '0';
