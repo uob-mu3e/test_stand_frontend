@@ -40,6 +40,12 @@ int main()
 
     cout << cb.read_rx_firefly_temp() << endl;
 
+    cout << hex << cb.read_disabled_rx_channels() << endl;
+    cb.disable_rx_channels(0xcc);
+    cout << hex << cb.read_disabled_rx_channels() << endl;
+    cb.disable_rx_channels(0x33);
+    cout << hex << cb.read_disabled_rx_channels() << endl;
+
     return 1;
 
 }
