@@ -48,27 +48,78 @@ architecture arch of time_merger is
     constant check_ones : std_logic_vector(N - 1 downto 0) := (others => '1');
 
     signal min_index_reg, length : integer;
-    signal rdata : data_array_t;
     signal error_gtime1, error_gtime2, error_shtime : std_logic;
     signal merge_state : merge_state_type;
-    signal check_pre, check_sh, check_time1, check_time2, error_pre, error_sh, cnt_sh_header, cnt_pre_header, cnt_trailer, rack_to_be_written : std_logic_vector(N - 1 downto 0);
+    signal rack, check_pre, check_sh, check_time1, check_time2, error_pre, error_sh, cnt_sh_header, cnt_pre_header, cnt_trailer, rack_to_be_written : std_logic_vector(N - 1 downto 0);
     signal gtime1, gtime2 : std_logic_vector(31 downto 0);
     signal shtime : std_logic_vector(5 downto 0);
     signal sheader_time : sheader_time_array_t;
     signal fpga_id, wait_cnt_pre, wait_cnt_sh : fpga_id_array_t;
+    
+    -- ram signals
+    type ram_add_t is array (N - 1 downto 0) of std_logic_vector(7 downto 0);
+    signal w_ram_add, r_ram_add : ram_add_t;
+    signal w_ram_data, r_ram_data : data_array_t;
+    signal w_ram_en, ram_rack : std_logic_vector(N - 1 downto 0);
 
 begin
 
     generate_rdata : for i in N - 1 downto 0 generate
-        rdata(i) <= i_rdata(i);
+        
+        e_ram : entity work.ip_ram
+        generic map (
+            ADDR_WIDTH_A    => 8,
+            ADDR_WIDTH_B    => 8,
+            DATA_WIDTH_A    => 38,
+            DATA_WIDTH_B    => 38,
+            DEVICE          => "Arria 10"--,
+        )
+        port map (
+            address_a       => w_ram_add(i),
+            address_b       => r_ram_add(i),
+            clock_a         => i_clk,
+            clock_b         => i_clk,
+            data_a          => w_ram_data(i),
+            data_b          => (others => '0'),
+            wren_a          => w_ram_en(i),
+            wren_b          => '0',
+            q_a             => open,
+            q_b             => r_ram_data(i)--,
+        );
+        
+        o_rack(i) <= rack(i) or ram_rack(i);
+        
     end generate;
+    
+    process(i_clk, i_reset_n)
+    begin
+    if ( i_reset_n /= '1' ) then
+        w_ram_add <= (others => (others => '1'));
+        w_ram_data <= (others => (others => '0'));
+        w_ram_en <= (others => '0');
+        ram_rack <= (others => '0');
+    elsif rising_edge(i_clk) then
+        w_ram_en <= (others => '0');
+        ram_rack <= (others => '0');
+        if ( merge_state = merge_hits) then
+            FOR I in N - 1 downto 0 LOOP
+                if ( i_rdata(I)(37 downto 36) /= "00" or i_rdata(I)(31 downto 26) /= "111111" ) then
+                    w_ram_add(I) <= w_ram_add(I) + '1';
+                    w_ram_data(I) <= i_rdata(I);
+                    w_ram_en(I) <= '1';
+                    ram_rack(I) <= '1';
+                end if;
+            END LOOP;
+        end if;
+    end if;
+    end process;
     
     o_error_gtime(0) <= error_gtime1;
     o_error_gtime(1) <= error_gtime2;
     o_error_shtime <= error_shtime;
     o_error_pre <= error_pre;
     o_error_sh <= error_sh;
-
+    
     process(i_clk, i_reset_n)
         variable min_index : integer;
         variable min_value : std_logic_vector(3 downto 0);
@@ -103,14 +154,14 @@ begin
         min_index_reg <= 999;
         
         o_wdata <= (others => '0');
-        o_rack <= (others => '0');
+        rack <= (others => '0');
         o_wsop <= '0';
         o_weop <= '0';
         o_we <= '0';
         --
     elsif rising_edge(i_clk) then
         
-        o_rack <= (others => '0');
+        rack <= (others => '0');
         rack_to_be_written <= (others => '0');
         o_we <= '0';
         o_wsop <= '0';
@@ -132,11 +183,11 @@ begin
                         elsif ( i_rempty(I) = '0' and i_rdata(I)(35 downto 30) = "111010" and i_rdata(I)(37 downto 36) = "01" and check_pre(I) = '1' ) then
                             check_pre(I) <= '0';
                             fpga_id(I) <= i_rdata(I)(27 downto 12);
-                            o_rack(I) <= '1';
+                            rack(I) <= '1';
                         elsif ( check_pre(I) = '1' ) then
                             wait_cnt_pre(I) <= wait_cnt_pre(I) + '1';
                             if ( i_rempty(I) = '0' ) then
-                                o_rack(I) <= '1';
+                                rack(I) <= '1';
                             end if;
                         end if;
                     END LOOP;
@@ -180,7 +231,7 @@ begin
                             elsif ( check_time1(I) = '1' ) then
                                 -- check gtime
                                 check_time1(I) <= '0';
-                                o_rack(I) <= '1';
+                                rack(I) <= '1';
                             end if;
                         end if;
                     END LOOP;
@@ -223,7 +274,7 @@ begin
                             elsif ( check_time2(I) = '1' ) then
                                 -- send gtime
                                 check_time2(I) <= '0';
-                                o_rack(I) <= '1';
+                                rack(I) <= '1';
                             end if;
                         end if;
                     END LOOP;
@@ -258,11 +309,11 @@ begin
                             check_sh(I) <= '0';
                             sheader_time(I) <= i_rdata(I)(25 downto 20);
                             shtime <= i_rdata(I)(25 downto 20);
-                            o_rack(I) <= '1';
+                            rack(I) <= '1';
                         elsif ( check_sh(I) = '1' ) then
                             wait_cnt_sh(I) <= wait_cnt_sh(I) + '1';
                             if ( i_rempty(I) = '0' ) then
-                                o_rack(I) <= '1';
+                                rack(I) <= '1';
                             end if;
                         end if;
                     END LOOP;
@@ -300,27 +351,27 @@ begin
                 end if;
                 
                 if ( rack_to_be_written = check_zeros and i_rempty = check_zeros ) then
-                    min_value := rdata(min_index)(35 downto 32);
-                    min_hit := rdata(min_index);
+                    min_value := i_rdata(min_index)(35 downto 32);
+                    min_hit := i_rdata(min_index);
                     min_index_reg <= min_index;
                     FOR I in N - 1 downto 0 LOOP
                         if ( i_rempty(I) = '0' or i_mask_n(I) = '1' ) then
-                            if ( rdata(I)(31 downto 26) = "111111" ) then
+                            if ( i_rdata(I)(31 downto 26) = "111111" ) then
                                 if ( cnt_sh_header(I) = '1' ) then
                                     cnt_sh_header(I) <= '0';
                                 end if;
-                            elsif ( rdata(I)(37 downto 36) = "01" ) then
+                            elsif ( i_rdata(I)(37 downto 36) = "01" ) then
                                 if ( cnt_pre_header(I) = '1' ) then
                                     cnt_pre_header(I) <= '0';
                                 end if;
-                            elsif ( rdata(I)(37 downto 36) = "10" ) then
+                            elsif ( i_rdata(I)(37 downto 36) = "10" ) then
                                 if ( cnt_trailer(I) = '1' ) then
                                     cnt_trailer(I) <= '0';
                                 end if;
                             elsif ( cnt_sh_header(I) = '0' or cnt_pre_header(I) = '0' or cnt_trailer(I) = '0' ) then
                                 --
-                            elsif ( rdata(I)(35 downto 32) < min_value ) then
-                                min_value := rdata(I)(35 downto 32);
+                            elsif ( i_rdata(I)(35 downto 32) < min_value ) then
+                                min_value := i_rdata(I)(35 downto 32);
                                 min_index := I;
                             end if;
                         end if;
@@ -330,7 +381,7 @@ begin
                     if ( i_wfull = '0' ) then
                         o_wdata <= min_hit;
                         o_we <= '1';
-                        o_rack(min_index) <= '1';
+                        rack(min_index) <= '1';
                         rack_to_be_written(min_index) <= '1';
                     end if;
                 end if;
@@ -355,7 +406,7 @@ begin
                 o_wdata(11 downto 4) <= x"9C";
                 o_wdata(3 downto 0) <= "0000";
                 o_we <= '1';
-                o_rack <= (others => '1');
+                rack <= (others => '1');
                 merge_state <= wait_for_pre;
                                 
             when error_state =>
