@@ -198,6 +198,7 @@ begin
 					when part2 =>
 						state_out <= x"B";
 						data_pix_generated(31 downto 0) 	<= global_time(47 downto 16);
+						global_time <= global_time + '1';
 						datak_pix_generated              <= "0000";
 						data_header_state 					<= part3;
 					

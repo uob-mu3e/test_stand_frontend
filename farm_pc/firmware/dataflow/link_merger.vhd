@@ -75,6 +75,7 @@ entity link_merger is
     generic map(
         ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
         DATA_WIDTH  => 38,
+        SHOWAHEAD   => "ON",
         DEVICE      => "Arria 10"--,
     )
     port map (
