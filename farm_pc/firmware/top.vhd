@@ -310,23 +310,7 @@ architecture rtl of top is
     signal mem_add_link_test : std_logic_vector(2 downto 0);
     signal mem_data_link_test : std_logic_vector(31 downto 0);
     signal mem_wen_link_test : std_logic;
-    
-    -- error cnt
-    signal fifos_full : std_logic_vector(NLINKS_TOTL - 1 downto 0);
-    signal cnt_link_fifo_almost_full : std_logic_vector(31 downto 0);
-    signal cnt_dc_link_fifo_full : std_logic_vector(31 downto 0);
-	 signal cnt_skip_link_data : std_logic_vector(31 downto 0);
-    
-    -- link fifos
-    signal link_fifo_wren       : std_logic_vector(NLINKS_TOTL - 1 downto 0);
-    signal link_fifo_data       : std_logic_vector(NLINKS_TOTL * 38 - 1 downto 0);
-    signal link_fifo_ren        : std_logic;
-    signal link_fifo_data_out   : std_logic_vector(NLINKS_TOTL * 38 - 1 downto 0);
-    signal link_fifo_empty      : std_logic_vector(NLINKS_TOTL - 1 downto 0);
-    signal link_fifo_full       : std_logic_vector(NLINKS_TOTL - 1 downto 0);
-    signal link_fifo_usedw      : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS_TOTL - 1 downto 0);
-    signal link_fifo_almost_full: std_logic_vector(NLINKS_TOTL - 1 downto 0);
-    
+        
     -- event counter
     signal state_out_eventcounter : std_logic_vector(3 downto 0);
     signal state_out_datagen : std_logic_vector(3 downto 0);
@@ -736,93 +720,23 @@ begin
     end if;
     end process;
     
-    -- generate fifos per link
-    -- count data overflow signal
-    readregs_slow(CNT_FIFO_ALMOST_FULL_R) <= cnt_link_fifo_almost_full;
-    readregs_slow(CNT_DC_LINK_FIFO_FULL_R) <= cnt_dc_link_fifo_full;
-    readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R) <= cnt_skip_link_data;
-        
-    process(clk_156, resets_n(RESET_BIT_EVENT_COUNTER))
-    constant all_zero : std_logic_vector(NLINKS_TOTL - 1 downto 0) := (others => '0');
-    begin
-        if( resets_n(RESET_BIT_EVENT_COUNTER) = '0' ) then
-            cnt_dc_link_fifo_full <= (others => '0');
-            cnt_link_fifo_almost_full <= (others => '0');
-        elsif(rising_edge(clk_156)) then
-    --        link_fifo_full : FOR i in 0 to NLINKS_TOTL - 1 LOOP
-                if ( fifos_full(NLINKS_TOTL - 1 downto 0) /= all_zero ) then
-                    -- for now we only count if one is full
-                    cnt_dc_link_fifo_full <= cnt_dc_link_fifo_full + '1';
-                end if;
-    --      END LOOP link_fifo_full;
-    -- TODO: only for all at the moment
-                if ( link_fifo_almost_full(NLINKS_TOTL - 1 downto 0) /= all_zero ) then
-                    cnt_link_fifo_almost_full <= cnt_link_fifo_almost_full + '1';
-                end if;
-        end if;
-    end process;
-    
-    link_fifo_ren <= '1' when ( link_fifo_empty = (link_fifo_empty'range => '0') ) else '0';
-    
-    buffer_link_fifos:
-    FOR i in 0 to NLINKS_TOTL - 1 GENERATE
-
-    e_link_to_fifo : entity work.link_to_fifo
+    e_link_merger : entity work.link_merger
     generic map(
-        W => 32--,
+        NLINKS_TOTL => NLINKS_TOTL,
+        LINK_FIFO_ADDR_WIDTH => 8--,
     )
     port map(
-        i_link_data         => data_counter(31 + i * 32 downto i * 32),
-        i_link_datak        => datak_counter(3 + i * 4 downto i * 4),
-        i_fifo_almost_full  => link_fifo_almost_full(i),
-        o_fifo_data         => link_fifo_data(35 + i * 38 downto i * 38),
-        o_fifo_wr           => link_fifo_wren(i),
-        o_cnt_skip_data     => cnt_skip_link_data,
-        i_reset_n           => resets_n(RESET_BIT_EVENT_COUNTER),
-        i_clk               => clk_156--,
+        i_reset_data_n => reset_156_n,
+        i_reset_mem_n => reset_156_n,
+        i_dataclk => clk_156,
+        i_memclk => clk_156,
+
+        i_link_data => data_counter,
+        i_link_datak => datak_counter,
+        i_link_mask_n => (others => '1'),--writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
+
+        o_stream_data(0) => LED_BRACKET(0)--,
     );
-    
-    -- sop
-    link_fifo_data(36 + i * 38) <= '1' when ( link_fifo_data(3 + i * 38 downto i * 38) = "0001" and link_fifo_data(11 + i * 38 downto i * 38 + 4) = x"BC" ) else '0';
-    -- eop
-    link_fifo_data(37 + i * 38) <= '1' when ( link_fifo_data(3 + i * 38 downto i * 38) = "0001" and link_fifo_data(11 + i * 38 downto i * 38 + 4) = x"9C" ) else '0';
-
-    e_fifo : entity work.ip_dcfifo
-    generic map(
-        ADDR_WIDTH  => LINK_FIFO_ADDR_WIDTH,
-        DATA_WIDTH  => 38,
-        DEVICE      => "Arria 10"--,
-    )
-    port map (
-        data        => link_fifo_data(37 + i * 38 downto 0 + i * 38),
-        wrreq       => link_fifo_wren(i),
-        rdreq       => link_fifo_ren,
-        wrclk       => clk_156,
-        rdclk       => A_ddr3clk,--pcie_fastclk_out,
-        q           => link_fifo_data_out(37 + i * 38 downto 0 + i * 38),
-        rdempty     => link_fifo_empty(i),
-        rdusedw     => open,
-        wrfull      => fifos_full(i),
-        wrusedw     => link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1 downto i * LINK_FIFO_ADDR_WIDTH),
-        aclr        => not resets_n(RESET_BIT_EVENT_COUNTER)--,
-    );
-
-    process(clk_156, resets_n(RESET_BIT_EVENT_COUNTER))
-    begin
-        if(resets_n(RESET_BIT_EVENT_COUNTER) = '0') then
-            link_fifo_almost_full(i)       <= '0';
-        elsif(rising_edge(clk_156)) then
-            if(link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1) = '1') then
-                link_fifo_almost_full(i)   <= '1';
-            else 
-                link_fifo_almost_full(i)   <= '0';
-            end if;
-        end if;
-    end process;
-
-    END GENERATE buffer_link_fifos;
-    
-    
     
     
 --     e_midas_event_builder : entity work.midas_event_builder
@@ -895,7 +809,7 @@ begin
         mem_addr_finished_out   => readmem_writeaddr_finished,
         mem_data_out            => mem_data_sc,
         mem_wren                => mem_wen_sc,
-        stateout                => LED_BRACKET,
+        stateout                => open,--LED_BRACKET,
         clk                     => clk_156--,
     );
     
@@ -1123,142 +1037,134 @@ begin
     );
     
     
-    ddr3_b : entity work.ddr3_block 
-    port map(
-            reset_n             => resets_ddr3(RESET_BIT_DDR3),
-            
-            -- Control and status registers
-            ddr3control         => writeregs_ddr3(DDR3_CONTROL_W),
-            ddr3status          => readregs_ddr3(DDR3_STATUS_R),
-
-            -- A interface
-            A_ddr3clk           => A_ddr3clk,
-            A_ddr3calibrated    => A_ddr3calibrated,
-            A_ddr3ready         => A_ddr3ready,
-            A_ddr3addr          => A_ddr3addr,
-            A_ddr3datain        => A_ddr3datain,
-            A_ddr3dataout       => A_ddr3dataout,
-            A_ddr3_write        => A_ddr3_write,
-            A_ddr3_read         => A_ddr3_read,
-            A_ddr3_read_valid   => A_ddr3_read_valid,
-            
-            -- B interface
-            B_ddr3clk           => B_ddr3clk,
-            B_ddr3calibrated    => B_ddr3calibrated,
-            B_ddr3ready         => B_ddr3ready,
-            B_ddr3addr          => B_ddr3addr,
-            B_ddr3datain        => B_ddr3datain,
-            B_ddr3dataout       => B_ddr3dataout,
-            B_ddr3_write        => B_ddr3_write,
-            B_ddr3_read         => B_ddr3_read,
-            B_ddr3_read_valid   => B_ddr3_read_valid,
-            
-            -- Error counters
-            errout              => readregs_ddr3(DDR3_ERR_R),
-
-            -- Interface to memory bank A
-            A_mem_ck            => DDR3A_CK,
-            A_mem_ck_n          => DDR3A_CK_n,
-            A_mem_a             => DDR3A_A,
-            A_mem_ba            => DDR3A_BA,
-            A_mem_cke           => DDR3A_CKE,
-            A_mem_cs_n          => DDR3A_CS_n,
-            A_mem_odt           => DDR3A_ODT,
-            A_mem_reset_n(0)    => DDR3A_RESET_n,      
-            A_mem_we_n(0)       => DDR3A_WE_n,
-            A_mem_ras_n(0)      => DDR3A_RAS_n,
-            A_mem_cas_n(0)      => DDR3A_CAS_n,
-            A_mem_dqs           => DDR3A_DQS,
-            A_mem_dqs_n         => DDR3A_DQS_n,
-            A_mem_dq            => DDR3A_DQ,
-            A_mem_dm            => DDR3A_DM,
-            A_oct_rzqin         => RZQ_DDR3_A,
-            A_pll_ref_clk       => DDR3A_REFCLK_p,
-            
-            -- Interface to memory bank B
-            B_mem_ck            => DDR3B_CK,
-            B_mem_ck_n          => DDR3B_CK_n,
-            B_mem_a             => DDR3B_A,
-            B_mem_ba            => DDR3B_BA,
-            B_mem_cke           => DDR3B_CKE,
-            B_mem_cs_n          => DDR3B_CS_n,
-            B_mem_odt           => DDR3B_ODT,
-            B_mem_reset_n(0)    => DDR3B_RESET_n,      
-            B_mem_we_n(0)       => DDR3B_WE_n,
-            B_mem_ras_n(0)      => DDR3B_RAS_n,
-            B_mem_cas_n(0)      => DDR3B_CAS_n,
-            B_mem_dqs           => DDR3B_DQS,
-            B_mem_dqs_n         => DDR3B_DQS_n,
-            B_mem_dq            => DDR3B_DQ,
-            B_mem_dm            => DDR3B_DM,
-            B_oct_rzqin         => RZQ_DDR3_B,
-            B_pll_ref_clk       => DDR3B_REFCLK_p--,
-    );
-
-    DDR3A_SDA   <= 'Z';
-    DDR3B_SDA   <= 'Z';
-  
-    dataflow : entity work.data_flow 
-    port map(
-        reset_n                 => resets_n_fast(RESET_BIT_DDR3),
-		  reset_n_ddr3            => resets_n_ddr3(RESET_BIT_DDR3),
-
-        -- Input from merging (first board) or links (subsequent boards)
-        dataclk                 => A_ddr3clk,--pcie_fastclk_out,
-        data_en                 => link_fifo_ren,
-        -- 31 downto 0 -> data, 35 downto 32 -> datak, 37 downto 36 -> sop/eop
-        data_in                 => 
-			  link_fifo_data_out(31 + 7 * 38 downto 7 * 38) &
-			  link_fifo_data_out(31 + 6 * 38 downto 6 * 38) &
-			  link_fifo_data_out(31 + 5 * 38 downto 5 * 38) &
-			  link_fifo_data_out(31 + 4 * 38 downto 4 * 38) &
-			  link_fifo_data_out(31 + 3 * 38 downto 3 * 38) &
-			  link_fifo_data_out(31 + 2 * 38 downto 2 * 38) &
-			  link_fifo_data_out(31 + 1 * 38 downto 1 * 38) &
-			  link_fifo_data_out(31 + 0 * 38 downto 0 * 38),
-        ts_in                   => counter_ddr3,--counter_256(31 downto 0),
-
-        -- Input from PCIe demanding events
-        pcieclk                 => pcie_fastclk_out,
-        ts_req_A                => writeregs_ddr3(DATA_REQ_A_W),
-        req_en_A                => regwritten_C(DATA_REQ_A_W),
-        ts_req_B                => writeregs_ddr3(DATA_REQ_B_W),
-        req_en_B                => regwritten_C(DATA_REQ_A_W),
-        tsblock_done            => writeregs_ddr3(DATA_TSBLOCK_DONE_W)(15 downto 0),
-        tsblocks                => readregs_ddr3(DATA_TSBLOCKS_R),
-
-        -- Output to DMA
-        dma_data_out            => dma_data,
-        dma_data_en             => dma_data_wren,
-        dma_eoe                 => dmamem_endofevent,
-
-        -- Output to links -- with dataclk
-        link_data_out           => open,
-        link_ts_out             => open,
-        link_data_en            => open,
-
-        -- Interface to memory bank A
-        A_mem_clk               => A_ddr3clk,
-        A_mem_ready             => A_ddr3ready,
-        A_mem_calibrated        => A_ddr3calibrated,
-        A_mem_addr              => A_ddr3addr,
-        A_mem_data              => A_ddr3datain(255 downto 0),
-        A_mem_write             => A_ddr3_write,
-        A_mem_read              => A_ddr3_read,
-        A_mem_q                 => A_ddr3dataout(255 downto 0),
-        A_mem_q_valid           => A_ddr3_read_valid,
-
-        -- Interface to memory bank B
-        B_mem_clk               => B_ddr3clk,
-        B_mem_ready             => B_ddr3ready,
-        B_mem_calibrated        => B_ddr3calibrated,
-        B_mem_addr              => B_ddr3addr,
-        B_mem_data              => B_ddr3datain(255 downto 0),
-        B_mem_write             => B_ddr3_write,
-        B_mem_read              => B_ddr3_read,
-        B_mem_q                 => B_ddr3dataout(255 downto 0),
-        B_mem_q_valid           => B_ddr3_read_valid--,
-        
-    );
+     ddr3_b : entity work.ddr3_block 
+     port map(
+             reset_n             => resets_ddr3(RESET_BIT_DDR3),
+             
+--             Control and status registers
+             ddr3control         => writeregs_ddr3(DDR3_CONTROL_W),
+             ddr3status          => readregs_ddr3(DDR3_STATUS_R),
+ 
+--             A interface
+             A_ddr3clk           => A_ddr3clk,
+             A_ddr3calibrated    => A_ddr3calibrated,
+             A_ddr3ready         => A_ddr3ready,
+             A_ddr3addr          => A_ddr3addr,
+             A_ddr3datain        => A_ddr3datain,
+             A_ddr3dataout       => A_ddr3dataout,
+             A_ddr3_write        => A_ddr3_write,
+             A_ddr3_read         => A_ddr3_read,
+             A_ddr3_read_valid   => A_ddr3_read_valid,
+             
+--             B interface
+             B_ddr3clk           => B_ddr3clk,
+             B_ddr3calibrated    => B_ddr3calibrated,
+             B_ddr3ready         => B_ddr3ready,
+             B_ddr3addr          => B_ddr3addr,
+             B_ddr3datain        => B_ddr3datain,
+             B_ddr3dataout       => B_ddr3dataout,
+             B_ddr3_write        => B_ddr3_write,
+             B_ddr3_read         => B_ddr3_read,
+             B_ddr3_read_valid   => B_ddr3_read_valid,
+             
+--             Error counters
+             errout              => readregs_ddr3(DDR3_ERR_R),
+ 
+--             Interface to memory bank A
+             A_mem_ck            => DDR3A_CK,
+             A_mem_ck_n          => DDR3A_CK_n,
+             A_mem_a             => DDR3A_A,
+             A_mem_ba            => DDR3A_BA,
+             A_mem_cke           => DDR3A_CKE,
+             A_mem_cs_n          => DDR3A_CS_n,
+             A_mem_odt           => DDR3A_ODT,
+             A_mem_reset_n(0)    => DDR3A_RESET_n,      
+             A_mem_we_n(0)       => DDR3A_WE_n,
+             A_mem_ras_n(0)      => DDR3A_RAS_n,
+             A_mem_cas_n(0)      => DDR3A_CAS_n,
+             A_mem_dqs           => DDR3A_DQS,
+             A_mem_dqs_n         => DDR3A_DQS_n,
+             A_mem_dq            => DDR3A_DQ,
+             A_mem_dm            => DDR3A_DM,
+             A_oct_rzqin         => RZQ_DDR3_A,
+             A_pll_ref_clk       => DDR3A_REFCLK_p,
+             
+--             Interface to memory bank B
+             B_mem_ck            => DDR3B_CK,
+             B_mem_ck_n          => DDR3B_CK_n,
+             B_mem_a             => DDR3B_A,
+             B_mem_ba            => DDR3B_BA,
+             B_mem_cke           => DDR3B_CKE,
+             B_mem_cs_n          => DDR3B_CS_n,
+             B_mem_odt           => DDR3B_ODT,
+             B_mem_reset_n(0)    => DDR3B_RESET_n,      
+             B_mem_we_n(0)       => DDR3B_WE_n,
+             B_mem_ras_n(0)      => DDR3B_RAS_n,
+             B_mem_cas_n(0)      => DDR3B_CAS_n,
+             B_mem_dqs           => DDR3B_DQS,
+             B_mem_dqs_n         => DDR3B_DQS_n,
+             B_mem_dq            => DDR3B_DQ,
+             B_mem_dm            => DDR3B_DM,
+             B_oct_rzqin         => RZQ_DDR3_B,
+             B_pll_ref_clk       => DDR3B_REFCLK_p--,
+     );
+ 
+     DDR3A_SDA   <= 'Z';
+     DDR3B_SDA   <= 'Z';
+   
+     dataflow : entity work.data_flow 
+     port map(
+         reset_n                 => resets_n_fast(RESET_BIT_DDR3),
+         reset_n_ddr3            => resets_n_ddr3(RESET_BIT_DDR3),
+ 
+--         Input from merging (first board) or links (subsequent boards)
+         dataclk                 => A_ddr3clk,--pcie_fastclk_out,
+         data_en                 => '1',--link_fifo_ren,
+--         31 downto 0 -> data, 35 downto 32 -> datak, 37 downto 36 -> sop/eop
+         data_in                 => (others => '0'),
+         ts_in                   => counter_ddr3,--counter_256(31 downto 0),
+ 
+--         Input from PCIe demanding events
+         pcieclk                 => pcie_fastclk_out,
+         ts_req_A                => writeregs_ddr3(DATA_REQ_A_W),
+         req_en_A                => regwritten_C(DATA_REQ_A_W),
+         ts_req_B                => writeregs_ddr3(DATA_REQ_B_W),
+         req_en_B                => regwritten_C(DATA_REQ_A_W),
+         tsblock_done            => writeregs_ddr3(DATA_TSBLOCK_DONE_W)(15 downto 0),
+         tsblocks                => readregs_ddr3(DATA_TSBLOCKS_R),
+ 
+--         Output to DMA
+         dma_data_out            => open,--dma_data,
+         dma_data_en             => open,--dma_data_wren,
+         dma_eoe                 => open,--dmamem_endofevent,
+ 
+--         Output to links -- with dataclk
+         link_data_out           => open,
+         link_ts_out             => open,
+         link_data_en            => open,
+ 
+--         Interface to memory bank A
+         A_mem_clk               => A_ddr3clk,
+         A_mem_ready             => A_ddr3ready,
+         A_mem_calibrated        => A_ddr3calibrated,
+         A_mem_addr              => A_ddr3addr,
+         A_mem_data              => A_ddr3datain(255 downto 0),
+         A_mem_write             => A_ddr3_write,
+         A_mem_read              => A_ddr3_read,
+         A_mem_q                 => A_ddr3dataout(255 downto 0),
+         A_mem_q_valid           => A_ddr3_read_valid,
+ 
+--         Interface to memory bank B
+         B_mem_clk               => B_ddr3clk,
+         B_mem_ready             => B_ddr3ready,
+         B_mem_calibrated        => B_ddr3calibrated,
+         B_mem_addr              => B_ddr3addr,
+         B_mem_data              => B_ddr3datain(255 downto 0),
+         B_mem_write             => B_ddr3_write,
+         B_mem_read              => B_ddr3_read,
+         B_mem_q                 => B_ddr3dataout(255 downto 0),
+         B_mem_q_valid           => B_ddr3_read_valid--,
+         
+     );
 
 end architecture;

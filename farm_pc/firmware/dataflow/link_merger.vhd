@@ -18,20 +18,22 @@ entity link_merger is
         NLINKS_TOTL : integer := 3;
         LINK_FIFO_ADDR_WIDTH : integer := 10--;
     );
-	port (
+    port (
         i_reset_data_n : in std_logic;
         i_reset_mem_n : in std_logic;
         i_dataclk : in std_logic;
         i_memclk : in std_logic;
-	
-		i_link_data : in std_logic_vector(NLINKS_TOTL * 32 - 1 downto 0);
-		i_link_datak : in std_logic_vector(NLINKS_TOTL * 4 - 1 downto 0);
-		i_link_mask_n : in  std_logic_vector (NLINKS_TOTL - 1 downto 0)--;
-		
-	);
-	end entity link_merger;
-	
-	architecture RTL of link_merger is
+
+        i_link_data : in std_logic_vector(NLINKS_TOTL * 32 - 1 downto 0);
+        i_link_datak : in std_logic_vector(NLINKS_TOTL * 4 - 1 downto 0);
+        i_link_mask_n : in std_logic_vector(NLINKS_TOTL - 1 downto 0);
+
+        o_stream_data : out std_logic_vector(35 downto 0)--;
+
+    );
+    end entity link_merger;
+
+    architecture RTL of link_merger is
              
         signal reset_data, reset_mem : std_logic;
         
@@ -132,6 +134,8 @@ entity link_merger is
         i_reset_n               => i_reset_mem_n,
         i_clk                   => i_memclk--,
     );
+    
+    o_stream_data <= stream_wdata;
     
     e_stream_fifo : entity work.ip_scfifo
     generic map (
