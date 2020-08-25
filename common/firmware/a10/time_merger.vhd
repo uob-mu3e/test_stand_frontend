@@ -40,11 +40,10 @@ end entity;
 
 architecture arch of time_merger is
 
-    type data_array_t is array (N - 1 downto 0) of std_logic_vector(W - 1 downto 0);
     type fpga_id_array_t is array (N - 1 downto 0) of std_logic_vector(15 downto 0);
     type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(5 downto 0);
     type ram_add_t is array (N - 1 downto 0) of std_logic_vector(7 downto 0);
-    type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, merge_hits_wait, get_time1, get_time2, trailer);
+    type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer);
     
     constant check_zeros : std_logic_vector(N - 1 downto 0) := (others => '0');
     constant check_ones : std_logic_vector(N - 1 downto 0) := (others => '1');
@@ -58,11 +57,6 @@ architecture arch of time_merger is
     signal sheader_time : sheader_time_array_t;
     signal fpga_id, wait_cnt_pre, wait_cnt_sh, wait_cnt_tr : fpga_id_array_t;
     
-    -- ram signals
-    signal w_ram_add, w_ram_add_reg, r_ram_add : ram_add_t;
-    signal w_ram_data, r_ram_data : data_array_t;
-    signal w_ram_wren, ram_rack, cnt_ram_wren, r_w_add_equal : std_logic_vector(N - 1 downto 0);
-    
     -- merge signals
     signal min_hit : std_logic_vector(37 downto 0);
     signal min_value_s : std_logic_vector(4 downto 0);
@@ -70,73 +64,7 @@ architecture arch of time_merger is
 
 begin
 
-    generate_rdata : for i in N - 1 downto 0 generate
-        
-        e_ram : entity work.ip_ram
-        generic map (
-            ADDR_WIDTH_A    => 8,
-            ADDR_WIDTH_B    => 8,
-            DATA_WIDTH_A    => 38,
-            DATA_WIDTH_B    => 38,
-            DEVICE          => "Arria 10"--,
-        )
-        port map (
-            address_a       => w_ram_add(i),
-            address_b       => r_ram_add(i),
-            clock_a         => i_clk,
-            clock_b         => i_clk,
-            data_a          => w_ram_data(i),
-            data_b          => (others => '0'),
-            wren_a          => w_ram_wren(i),
-            wren_b          => '0',
-            q_a             => open,
-            q_b             => r_ram_data(i)--,
-        );
-        
-        o_rack(i) <= rack(i) or ram_rack(i);
-        
-    end generate;
-    
-    process(i_clk, i_reset_n)
-    begin
-    if ( i_reset_n /= '1' ) then
-        w_ram_add <= (others => (others => '0'));
-        w_ram_add_reg <= (others => (others => '0'));
-        w_ram_data <= (others => (others => '0'));
-        w_ram_wren <= (others => '0');
-        ram_rack <= (others => '0');
-    elsif rising_edge(i_clk) then
-        w_ram_wren <= (others => '0');
-        ram_rack <= (others => '0');
-        if ( merge_state = merge_hits or merge_state = merge_hits_wait ) then
-            FOR I in N - 1 downto 0 LOOP
-                -- not empty and not masked, write until marker (header, trailer or sub header)
-                if ( i_rempty(I) = '0' and i_mask_n(I) = '1' ) then
-                    w_ram_data(I) <= i_rdata(I);
-                    -- dont write if w_ram_wren was high before
-                    if ( (i_rdata(I)(37 downto 36) /= "00" or i_rdata(I)(31 downto 26) = "111111") and w_ram_wren(I) = '0' ) then
-                        w_ram_add(I) <= w_ram_add_reg(I) + '1';
-                        w_ram_wren(I) <= '1';
-                    -- wait one cycle bcz of fifo
-                    elsif ( ram_rack(I) = '0' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" ) then
-                        ram_rack(I) <= '1';
-                        w_ram_wren(I) <= '1';
-                        w_ram_add(I) <= w_ram_add(I) + '1';
-                        w_ram_add_reg(I) <= w_ram_add(I) + '1';
-                    end if;
-                end if;
-            END LOOP;
-        elsif ( merge_state = wait_for_sh ) then
-            FOR I in N - 1 downto 0 LOOP
-                w_ram_add(I) <= (others => '0');
-                w_ram_data(I)(37 downto 36) <= "11";
-                w_ram_data(I)(35 downto 0) <= (others => '0');
-                w_ram_wren(I) <= '1';
-            END LOOP;
-        end if;
-    end if;
-    end process;
-    
+    o_rack <= rack;
     o_error_gtime(0) <= error_gtime1;
     o_error_gtime(1) <= error_gtime2;
     o_error_shtime <= error_shtime;
@@ -181,8 +109,6 @@ begin
         cnt_ram_start <= (others => '1');
         
         o_wdata <= (others => '0');
-        r_ram_add <= (others => (others => '0'));
-        r_w_add_equal <= (others => '0');
         rack <= (others => '0');
         o_wsop <= '0';
         o_weop <= '0';
@@ -349,7 +275,7 @@ begin
                 
                 -- check if fifo is not full and all links have subheader
                 if( check_sh = check_zeros and i_wfull = '0' ) then
-                    merge_state <= merge_hits_wait;
+                    merge_state <= merge_hits;
                     -- reset signals
                     wait_cnt_sh <= (others => (others => '0'));
                     check_sh <= (others => '1');
@@ -364,65 +290,48 @@ begin
                     o_we <= '1';
                 end if;
                 
-            when merge_hits_wait =>
-                FOR I in N - 1 downto 0 LOOP
-                    if ( r_ram_data(I)(37 downto 36) = "11" and cnt_ram_start(I) = '1' ) then
-                        r_ram_add(I) <= r_ram_add(I) + '1';
-                        cnt_ram_start(I) <= '0';
-                    end if;
-                    -- check if sheader time is equal
-                    if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and sheader_time(I) /= shtime ) then
-                        error_shtime <= '1';
-                    end if;
-                END LOOP;
-                
-                if ( cnt_ram_start = check_zeros ) then
-                    cnt_ram_start <= (others => '1');
-                    merge_state <= merge_hits;
-                end if;
-                
             when merge_hits =>
                 if ( error_shtime = '1' ) then
                     merge_state <= error_state;
                 end if;
-                
                 min_value := "11111";
                 FOR I in N - 1 downto 0 LOOP
                     -- check package start stop
-                    if ( r_ram_data(I)(37 downto 36) = "01" or cnt_pre_header(I) = '0' ) then
+                    if ( i_rdata(I)(37 downto 36) = "01" or cnt_pre_header(I) = '0' ) then
                         cnt_pre_header(I) <= '0';
                     end if;
                     
-                    if ( r_ram_data(I)(37 downto 36) = "10" or cnt_trailer(I) = '0' ) then
+                    if ( i_rdata(I)(37 downto 36) = "10" or cnt_trailer(I) = '0' ) then
                         cnt_trailer(I) <= '0';
                     end if;
                     
-                    if ( r_ram_data(I)(31 downto 26) = "111111" or cnt_sh_header(I) = '0' ) then
+                    if ( i_rdata(I)(31 downto 26) = "111111" or cnt_sh_header(I) = '0' ) then
                         cnt_sh_header(I) <= '0';
                     end if;
                     
                     -- find min value
                     if ( 
-                        r_ram_data(I)(37 downto 36) = "00" and 
-                        r_ram_data(I)(31 downto 26) /= "111111" and 
-                        r_ram_data(I) /=  x"00000000" & "000000" and
-                        not is_x(r_ram_data(I)) and
-                        r_ram_data(I)(35 downto 32) < min_value and
+                        i_rdata(I)(37 downto 36) = "00" and 
+                        i_rdata(I)(31 downto 26) /= "111111" and 
+                        i_rdata(I) /=  x"00000000" & "000000" and
+                        i_rdata(I)(35 downto 32) < min_value and
                         i_wfull = '0' and
+                        i_rempty(I) = '0' and
+                        i_mask_n(I) = '1' and
                         w_ack = '0'
                     ) then
-                        min_value(3 downto 0) := r_ram_data(I)(35 downto 32);
+                        min_value(3 downto 0) := i_rdata(I)(35 downto 32);
                         min_value(4) := '0';
+                        min_hit <= i_rdata(I);
                         min_index := I;
-                    end if;               
+                    end if;
                 END LOOP;
                 
-                -- reg min hit
+                -- wait one cycle bcz of fifo
                 w_ack <= '0';
                 if ( min_value /= "11111" ) then
                     w_ack <= '1';
-                    r_ram_add(min_index) <= r_ram_add(min_index) + '1';
-                    min_hit <= r_ram_data(min_index);
+                    rack(min_index) <= '1';
                 end if;
                 
                 if ( w_ack = '1' ) then
@@ -432,22 +341,16 @@ begin
                 
                 if ( cnt_sh_header = check_zeros ) then
                     merge_state <= wait_for_sh;
-                    r_w_add_equal <= (others => '0');
-                    r_ram_add <= (others => (others => '0'));
                     cnt_sh_header <= (others => '1');
                 end if;
                 
                 if ( cnt_pre_header = check_zeros ) then
                     merge_state <= wait_for_pre;
-                    r_w_add_equal <= (others => '0');
-                    r_ram_add <= (others => (others => '0'));
                     cnt_pre_header <= (others => '1');
                 end if;
                 
                 if ( cnt_trailer = check_zeros ) then
                     merge_state <= trailer;
-                    r_w_add_equal <= (others => '0');
-                    r_ram_add <= (others => (others => '0'));
                     cnt_trailer <= (others => '1');
                 end if;
                 
