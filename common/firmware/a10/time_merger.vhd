@@ -57,7 +57,6 @@ architecture arch of time_merger is
     signal shtime : std_logic_vector(5 downto 0);
     signal sheader_time : sheader_time_array_t;
     signal fpga_id, wait_cnt_pre, wait_cnt_sh, wait_cnt_tr : fpga_id_array_t;
-    signal min_index_reg : integer;
     
     -- ram signals
     signal w_ram_add, w_ram_add_reg, r_ram_add : ram_add_t;
@@ -171,7 +170,6 @@ begin
         error_gtime1 <= '0';
         error_gtime2 <= '0';
         error_shtime <= '0';
-        min_index_reg <= 0;
         min_index := 0;
         w_ack <= '0';
         min_value := (others => '0');
@@ -203,26 +201,26 @@ begin
             -- readout until all fifos have preamble
             when wait_for_pre =>
                 
-                if ( check_pre /= check_zeros ) then
-                    FOR I in N - 1 downto 0 LOOP
-                        if ( wait_cnt_pre(I) = TIMEOUT ) then
-                            error_pre(I) <= '1';
-                        end if;
-                        
-                        if ( i_mask_n(I) = '0' ) then
-                            check_pre(I) <= '0';
-                        elsif ( i_rempty(I) = '0' and i_rdata(I)(35 downto 30) = "111010" and i_rdata(I)(37 downto 36) = "01" and check_pre(I) = '1' ) then
-                            check_pre(I) <= '0';
-                            fpga_id(I) <= i_rdata(I)(27 downto 12);
-                            rack(I) <= '1';
-                        elsif ( check_pre(I) = '1' ) then
-                            wait_cnt_pre(I) <= wait_cnt_pre(I) + '1';
-                            if ( i_rempty(I) = '0' ) then
-                                rack(I) <= '1';
-                            end if;
-                        end if;
-                    END LOOP;
-                end if;
+                FOR I in N - 1 downto 0 LOOP
+                    if ( i_mask_n(I) = '0' ) then
+                        check_pre(I) <= '0';
+                    end if;
+                    
+                    if ( wait_cnt_pre(I) = TIMEOUT ) then
+                        error_pre(I) <= '1';
+                    end if;
+                    
+                    if ( i_rdata(I)(35 downto 30) = "111010" and i_rdata(I)(37 downto 36) = "01" and check_pre(I) = '1' ) then
+                        check_pre(I) <= i_rempty(I);
+                        fpga_id(I) <= i_rdata(I)(27 downto 12);
+                        rack(I) <= not i_rempty(I);
+                    end if;
+                    
+                    if ( check_pre(I) = '1' ) then
+                        wait_cnt_pre(I) <= wait_cnt_pre(I) + '1';
+                        rack(I) <= not i_rempty(I);
+                    end if;
+                END LOOP;
                 
                 -- check if fifo is not full and all links have preamble
                 if( check_pre = check_zeros and i_wfull = '0' ) then
@@ -244,8 +242,6 @@ begin
                     if ( i_rempty(I) = '0' and i_mask_n(I) = '1' ) then
                         merge_state <= compare_time1;
                         gtime1 <= i_rdata(I)(35 downto 4);
-                        -- take one for hit merge later
-                        min_index_reg <= I;
                         exit;
                     end if;
                 END LOOP;
@@ -254,20 +250,21 @@ begin
                 if ( error_pre /= check_zeros ) then
                     merge_state <= error_state;
                 end if;
-                if ( check_time1 /= check_zeros ) then
-                    FOR I in N - 1 downto 0 LOOP
-                        if ( i_rempty(I) = '0' and i_mask_n(I) = '1' ) then
-                            if ( i_rdata(I)(35 downto 4) /= gtime1 ) then
-                                error_gtime1 <= '1';
-                            elsif ( check_time1(I) = '1' ) then
-                                -- check gtime
-                                check_time1(I) <= '0';
-                                rack(I) <= '1';
-                            end if;
-                        end if;
-                    END LOOP;
-                end if;
                 
+                FOR I in N - 1 downto 0 LOOP
+                    if ( i_mask_n(I) = '0' ) then
+                        check_time1(I) <= '0';
+                    end if;
+                    
+                    if ( i_rdata(I)(35 downto 4) /= gtime1 ) then
+                        error_gtime1 <= '1';
+                    elsif ( check_time1(I) = '1' ) then
+                        -- check gtime
+                        check_time1(I) <= i_rempty(I);
+                        rack(I) <= not i_rempty(I);
+                    end if;
+                END LOOP;
+                 
                  -- check if fifo is not full and all links have same time
                 if ( check_time1 = check_zeros and i_wfull = '0' ) then
                     merge_state <= get_time2;
@@ -294,23 +291,21 @@ begin
                 if ( error_gtime1 = '1' ) then
                     merge_state <= error_state;
                 end if;
-                if ( error_gtime2 = '1' ) then
-                    merge_state <= error_state;
-                end if;
-                if ( check_time2 /= check_zeros ) then
-                    FOR I in N - 1 downto 0 LOOP
-                        if ( i_rempty(I) = '0' and i_mask_n(I) = '1' ) then
-                            if ( i_rdata(I)(35 downto 4) /= gtime2 ) then
-                                error_gtime2 <= '1';
-                            elsif ( check_time2(I) = '1' ) then
-                                -- send gtime
-                                check_time2(I) <= '0';
-                                rack(I) <= '1';
-                            end if;
-                        end if;
-                    END LOOP;
-                end if;
-                
+
+                FOR I in N - 1 downto 0 LOOP
+                    if ( i_mask_n(I) = '0' ) then
+                        check_time1(I) <= '0';
+                    end if;
+                    
+                    if ( i_rdata(I)(35 downto 4) /= gtime2 ) then
+                        error_gtime2 <= '1';
+                    elsif ( check_time2(I) = '1' ) then
+                        -- send gtime
+                        check_time2(I) <= i_rempty(I);
+                        rack(I) <= not i_rempty(I);
+                    end if;
+                END LOOP;
+
                 -- check if fifo is not full and all links have same time
                 if ( check_time2 = check_zeros and i_wfull = '0' ) then
                     merge_state <= wait_for_sh;
@@ -327,28 +322,30 @@ begin
             when wait_for_sh =>
                 if ( error_gtime2 = '1' ) then
                     merge_state <= error_state;
-                elsif ( check_sh /= check_zeros ) then
-                    -- check for sub header
-                    FOR I in N - 1 downto 0 LOOP
-                        if ( wait_cnt_sh(I) = TIMEOUT ) then
-                            error_sh(I) <= '1';
-                        end if;
-                        
-                        if ( i_mask_n(I) = '0' ) then
-                            check_sh(I) <= '0';
-                        elsif ( i_rempty(I) = '0' and i_rdata(I)(31 downto 26) = "111111" and check_sh(I) = '1' ) then
-                            check_sh(I) <= '0';
-                            sheader_time(I) <= i_rdata(I)(25 downto 20);
-                            shtime <= i_rdata(I)(25 downto 20);
-                            rack(I) <= '1';
-                        elsif ( check_sh(I) = '1' ) then
-                            wait_cnt_sh(I) <= wait_cnt_sh(I) + '1';
-                            if ( i_rempty(I) = '0' ) then
-                                rack(I) <= '1';
-                            end if;
-                        end if;
-                    END LOOP;
                 end if;
+                
+                -- check for sub header
+                FOR I in N - 1 downto 0 LOOP
+                    if ( i_mask_n(I) = '0' ) then
+                        check_sh(I) <= '0';
+                    end if;
+                    
+                    if ( wait_cnt_sh(I) = TIMEOUT ) then
+                        error_sh(I) <= '1';
+                    end if;
+                    
+                    if ( i_rdata(I)(31 downto 26) = "111111" and i_rdata(I)(37 downto 36) = "00"  and check_sh(I) = '1' ) then
+                        check_sh(I) <= i_rempty(I);
+                        sheader_time(I) <= i_rdata(I)(25 downto 20);
+                        shtime <= i_rdata(I)(25 downto 20);
+                        rack(I) <= not i_rempty(I);
+                    end if;
+                    
+                    if ( check_sh(I) = '1' ) then
+                        wait_cnt_sh(I) <= wait_cnt_sh(I) + '1';
+                        rack(I) <= not i_rempty(I);
+                    end if;
+                END LOOP;
                 
                 -- check if fifo is not full and all links have subheader
                 if( check_sh = check_zeros and i_wfull = '0' ) then
@@ -362,29 +359,20 @@ begin
                     o_wdata(35 downto 32) <= "0000";
                     o_wdata(31 downto 26) <= "111111";
                     o_wdata(3 downto 0) <= "0001";
+                    -- send sub header time -- check later if equal
+                    o_wdata(25 downto 20) <= shtime;
                     o_we <= '1';
-                    -- check if sheader time is equal
-                    FOR I in N - 1 downto 0 LOOP
-                        if ( i_rempty(I) = '0' and i_mask_n(I) = '1' ) then
-                            if ( sheader_time(I) /= shtime ) then
-                                error_shtime <= '1';
-                            else
-                                -- send sub header time
-                                o_wdata(25 downto 20) <= sheader_time(I);
-                            end if;
-                        end if;
-                    END LOOP;
                 end if;
                 
             when merge_hits_wait =>
-                if ( error_shtime = '1' ) then
-                    merge_state <= error_state;
-                end if;
-                
                 FOR I in N - 1 downto 0 LOOP
                     if ( r_ram_data(I)(37 downto 36) = "11" and cnt_ram_start(I) = '1' ) then
                         r_ram_add(I) <= r_ram_add(I) + '1';
                         cnt_ram_start(I) <= '0';
+                    end if;
+                    -- check if sheader time is equal
+                    if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and sheader_time(I) /= shtime ) then
+                        error_shtime <= '1';
                     end if;
                 END LOOP;
                 
@@ -394,35 +382,40 @@ begin
                 end if;
                 
             when merge_hits =>
+                if ( error_shtime = '1' ) then
+                    merge_state <= error_state;
+                end if;
                 
-                -- check package start stop
+                min_value := "11111";
                 FOR I in N - 1 downto 0 LOOP
+                    -- check package start stop
                     if ( r_ram_data(I)(37 downto 36) = "01" or cnt_pre_header(I) = '0' ) then
                         cnt_pre_header(I) <= '0';
-                    elsif ( r_ram_data(I)(37 downto 36) = "10" or cnt_trailer(I) = '0' ) then
+                    end if;
+                    
+                    if ( r_ram_data(I)(37 downto 36) = "10" or cnt_trailer(I) = '0' ) then
                         cnt_trailer(I) <= '0';
-                    elsif ( r_ram_data(I)(31 downto 26) = "111111" or cnt_sh_header(I) = '0' ) then
+                    end if;
+                    
+                    if ( r_ram_data(I)(31 downto 26) = "111111" or cnt_sh_header(I) = '0' ) then
                         cnt_sh_header(I) <= '0';
                     end if;
-                END LOOP;
-                
-                -- find min value
-                min_value := "11111";
-                if ( i_wfull = '0' and w_ack = '0' ) then
-                    FOR I in N - 1 downto 0 LOOP
-                        if ( 
+                    
+                    -- find min value
+                    if ( 
                         r_ram_data(I)(37 downto 36) = "00" and 
                         r_ram_data(I)(31 downto 26) /= "111111" and 
                         r_ram_data(I) /=  x"00000000" & "000000" and
                         not is_x(r_ram_data(I)) and
-                        r_ram_data(I)(35 downto 32) < min_value 
-                        ) then
-                            min_value(3 downto 0) := r_ram_data(I)(35 downto 32);
-                            min_value(4) := '0';
-                            min_index := I;
-                        end if;
-                    END LOOP;
-                end if;
+                        r_ram_data(I)(35 downto 32) < min_value and
+                        i_wfull = '0' and
+                        w_ack = '0'
+                    ) then
+                        min_value(3 downto 0) := r_ram_data(I)(35 downto 32);
+                        min_value(4) := '0';
+                        min_index := I;
+                    end if;               
+                END LOOP;
                 
                 -- reg min hit
                 w_ack <= '0';
@@ -430,7 +423,6 @@ begin
                     w_ack <= '1';
                     r_ram_add(min_index) <= r_ram_add(min_index) + '1';
                     min_hit <= r_ram_data(min_index);
-                    min_index_reg <= min_index;
                 end if;
                 
                 if ( w_ack = '1' ) then
@@ -460,26 +452,26 @@ begin
                 end if;
                 
             when trailer =>
-                if ( check_tr /= check_zeros ) then
-                    -- check for trailer
-                    FOR I in N - 1 downto 0 LOOP
-                        if ( wait_cnt_tr(I) = TIMEOUT ) then
-                            error_tr(I) <= '1';
-                        end if;
-                        
-                        if ( i_mask_n(I) = '0' ) then
-                            check_tr(I) <= '0';
-                        elsif ( i_rempty(I) = '0' and i_rdata(I)(37 downto 36) = "10" and check_tr(I) = '1' ) then
-                            check_tr(I) <= '0';
-                            rack(I) <= '1';
-                        elsif ( check_tr(I) = '1' ) then
-                            wait_cnt_tr(I) <= wait_cnt_tr(I) + '1';
-                            if ( i_rempty(I) = '0' ) then
-                                rack(I) <= '1';
-                            end if;
-                        end if;
-                    END LOOP;
-                end if;
+                -- check for trailer
+                FOR I in N - 1 downto 0 LOOP
+                    if ( i_mask_n(I) = '0' ) then
+                        check_tr(I) <= '0';
+                    end if;
+                
+                    if ( wait_cnt_tr(I) = TIMEOUT ) then
+                        error_tr(I) <= '1';
+                    end if;
+                    
+                    if ( i_rempty(I) = '0' and i_rdata(I)(37 downto 36) = "10" and check_tr(I) = '1' ) then
+                        check_tr(I) <= i_rempty(I); 
+                        rack(I) <= not i_rempty(I); 
+                    end if;
+                    
+                    if ( check_tr(I) = '1' ) then
+                        wait_cnt_tr(I) <= wait_cnt_tr(I) + '1';
+                        rack(I) <= not i_rempty(I); 
+                    end if;
+                END LOOP;
                 
                 -- check if fifo is not full and all links have subheader
                 if( check_tr = check_zeros and i_wfull = '0' ) then
