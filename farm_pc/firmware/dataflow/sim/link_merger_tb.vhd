@@ -19,7 +19,7 @@ architecture TB of link_merger_tb is
     signal dataclk		: 		 std_logic;
     
     -- links and datageneration
-    constant NLINKS_TOTL : integer := 3;
+    constant NLINKS_TOTL : integer := 4;
     constant LINK_FIFO_ADDR_WIDTH : integer := 10;
     
     signal link_data : std_logic_vector(NLINKS_TOTL * 32 - 1 downto 0);
@@ -86,12 +86,12 @@ begin
         state_out => open--,
     );
     
-    link_data <= data_pix_generated & data_scifi_generated & data_tiles_generated;
-    link_datak <= datak_pix_generated & datak_scifi_generated & datak_tiles_generated;
+    link_data <= data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated;
+    link_datak <= datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated;
     
     e_link_merger : entity work.link_merger
     generic map(
-        NLINKS_TOTL => 3,
+        NLINKS_TOTL => NLINKS_TOTL,
         LINK_FIFO_ADDR_WIDTH => 8--,
     )
     port map(
@@ -102,7 +102,7 @@ begin
 	
 		i_link_data => link_data,
 		i_link_datak => link_datak,
-		i_link_mask_n => "111",
+		i_link_mask_n => "1101",
 		
 		o_stream_data => open--,
     );
