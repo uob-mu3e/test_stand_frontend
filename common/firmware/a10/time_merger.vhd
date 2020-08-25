@@ -350,162 +350,6 @@ begin
                     merge_state <= error_state;
                 end if;
                 
---                 compare 1/4
---                 min_value1 := "11111";
---                 FOR I in N/4 - 1 downto 0 LOOP
---                     check masking
---                     if ( i_mask_n(I) = '0' ) then
---                         cnt_pre_header(I) <= '0';
---                         cnt_trailer(I) <= '0';
---                         cnt_sh_header(I) <= '0';
---                     end if;
---                     
---                     check package start stop
---                     if ( i_rdata(I)(37 downto 36) = "01" or cnt_pre_header(I) = '0' ) then
---                         cnt_pre_header(I) <= '0';
---                     end if;
---                     
---                     if ( i_rdata(I)(37 downto 36) = "10" or cnt_trailer(I) = '0' ) then
---                         cnt_trailer(I) <= '0';
---                     end if;
---                                         
---                     if ( i_rdata(I)(31 downto 26) = "111111" or cnt_sh_header(I) = '0' ) then
---                         cnt_sh_header(I) <= '0';
---                     end if;
---                     
---                     find min value
---                     if ( 
---                         i_rdata(I)(37 downto 36) = "00" and 
---                         i_rdata(I)(31 downto 26) /= "111111" and 
---                         i_rempty(I) = '0' and
---                         i_mask_n(I) = '1' and
---                         i_wfull = '0' and
---                         w_ack = '0' and
---                         i_rdata(I)(35 downto 32) < min_value1
---                     ) then
---                         min_value1(3 downto 0) := i_rdata(I)(35 downto 32);
---                         min_value1(4) := '0';
---                         min_index1 := I;
---                     end if;
---                 END LOOP;
---                 
---                 compare 2/4
---                 min_value2 := "11111";
---                 FOR I in N/2 - 1 downto N/4 LOOP
---                     check masking
---                     if ( i_mask_n(I) = '0' ) then
---                         cnt_pre_header(I) <= '0';
---                         cnt_trailer(I) <= '0';
---                         cnt_sh_header(I) <= '0';
---                     end if;
---                     
---                     check package start stop
---                     if ( i_rdata(I)(37 downto 36) = "01" or cnt_pre_header(I) = '0' ) then
---                         cnt_pre_header(I) <= '0';
---                     end if;
---                     
---                     if ( i_rdata(I)(37 downto 36) = "10" or cnt_trailer(I) = '0' ) then
---                         cnt_trailer(I) <= '0';
---                     end if;
---                                         
---                     if ( i_rdata(I)(31 downto 26) = "111111" or cnt_sh_header(I) = '0' ) then
---                         cnt_sh_header(I) <= '0';
---                     end if;
---                     
---                     find min value
---                     if ( 
---                         i_rdata(I)(37 downto 36) = "00" and 
---                         i_rdata(I)(31 downto 26) /= "111111" and 
---                         i_rempty(I) = '0' and
---                         i_mask_n(I) = '1' and
---                         i_wfull = '0' and
---                         w_ack = '0' and
---                         i_rdata(I)(35 downto 32) < min_value2
---                     ) then
---                         min_value2(3 downto 0) := i_rdata(I)(35 downto 32);
---                         min_value2(4) := '0';
---                         min_index2 := I;
---                     end if;
---                 END LOOP;
---                 
---                 compare 3/4
---                 min_value3 := "11111";
---                 FOR I in N*3/4 - 1 downto N/2 LOOP
---                     check masking
---                     if ( i_mask_n(I) = '0' ) then
---                         cnt_pre_header(I) <= '0';
---                         cnt_trailer(I) <= '0';
---                         cnt_sh_header(I) <= '0';
---                     end if;
---                     
---                     check package start stop
---                     if ( i_rdata(I)(37 downto 36) = "01" or cnt_pre_header(I) = '0' ) then
---                         cnt_pre_header(I) <= '0';
---                     end if;
---                     
---                     if ( i_rdata(I)(37 downto 36) = "10" or cnt_trailer(I) = '0' ) then
---                         cnt_trailer(I) <= '0';
---                     end if;
---                                         
---                     if ( i_rdata(I)(31 downto 26) = "111111" or cnt_sh_header(I) = '0' ) then
---                         cnt_sh_header(I) <= '0';
---                     end if;
---                     
---                     find min value
---                     if ( 
---                         i_rdata(I)(37 downto 36) = "00" and 
---                         i_rdata(I)(31 downto 26) /= "111111" and 
---                         i_rempty(I) = '0' and
---                         i_mask_n(I) = '1' and
---                         i_wfull = '0' and
---                         w_ack = '0' and
---                         i_rdata(I)(35 downto 32) < min_value3
---                     ) then
---                         min_value3(3 downto 0) := i_rdata(I)(35 downto 32);
---                         min_value3(4) := '0';
---                         min_index3 := I;
---                     end if;
---                 END LOOP;
---                 
---                 compare 4/4
---                 min_value4 := "11111";
---                 FOR I in N - 1 downto N*3/4 LOOP
---                     check masking
---                     if ( i_mask_n(I) = '0' ) then
---                         cnt_pre_header(I) <= '0';
---                         cnt_trailer(I) <= '0';
---                         cnt_sh_header(I) <= '0';
---                     end if;
---                     
---                     check package start stop
---                     if ( i_rdata(I)(37 downto 36) = "01" or cnt_pre_header(I) = '0' ) then
---                         cnt_pre_header(I) <= '0';
---                     end if;
---                     
---                     if ( i_rdata(I)(37 downto 36) = "10" or cnt_trailer(I) = '0' ) then
---                         cnt_trailer(I) <= '0';
---                     end if;
---                                         
---                     if ( i_rdata(I)(31 downto 26) = "111111" or cnt_sh_header(I) = '0' ) then
---                         cnt_sh_header(I) <= '0';
---                     end if;
---                     
---                     find min value
---                     if ( 
---                         i_rdata(I)(37 downto 36) = "00" and 
---                         i_rdata(I)(31 downto 26) /= "111111" and 
---                         i_rempty(I) = '0' and
---                         i_mask_n(I) = '1' and
---                         i_wfull = '0' and
---                         w_ack = '0' and
---                         i_rdata(I)(35 downto 32) < min_value4
---                     ) then
---                         min_value4(3 downto 0) := i_rdata(I)(35 downto 32);
---                         min_value4(4) := '0';
---                         min_index4 := I;
---                     end if;
---                 END LOOP;
-
                 FOR I in N - 1 downto 0 LOOP
                     -- check masking
                     if ( i_mask_n(I) = '0' ) then
@@ -556,34 +400,6 @@ begin
                         rack(min_index4) <= '1';
                     end if;
                 end if;
-                
---         N : integer;
---         Npart : integer;
---         empty : std_logic_vector;
---         minval : std_logic_vector;
---         wfull : std_logic;
---         wack : std_logic;
---         mask_n : std_logic_vector;
---         data : data_array(N - 1 downto 0)--;
-                
-                -- wait one cycle bcz of fifo
---                 w_ack <= '0';
---                 if ( min_value1 /= "11111" or min_value2 /= "11111" or min_value3 /= "11111" or min_value4 /= "11111" ) then
---                     w_ack <= '1';
---                     if ( min_value1 <= min_value2 and min_value1 <= min_value3 and min_value1 <= min_value4 ) then
---                         min_hit <= i_rdata(min_index1);
---                         rack(min_index1) <= '1';
---                     elsif ( min_value2 <= min_value1 and min_value2 <= min_value3 and min_value2 <= min_value4 ) then
---                         min_hit <= i_rdata(min_index2);
---                         rack(min_index2) <= '1';
---                     elsif ( min_value3 <= min_value1 and min_value3 <= min_value2 and min_value3 <= min_value4 ) then
---                         min_hit <= i_rdata(min_index3);
---                         rack(min_index3) <= '1';
---                     elsif ( min_value4 <= min_value1 and min_value4 <= min_value3 and min_value4 <= min_value3 ) then
---                         min_hit <= i_rdata(min_index4);
---                         rack(min_index4) <= '1';
---                     end if;
---                 end if;
                 
                 if ( w_ack = '1' ) then
                     o_wdata <= min_hit;
@@ -652,7 +468,9 @@ begin
                 o_wdata(12) <= error_gtime1;
                 o_wdata(13) <= error_gtime2;
                 o_wdata(14) <= error_shtime;
-                o_wdata(N + 14 downto 15) <= error_pre;
+                if ( error_pre /= check_zeros ) then
+                    o_wdata(15) <= '1';
+                end if;
                 o_weop <= '1';
                 o_we <= '1';
                 
