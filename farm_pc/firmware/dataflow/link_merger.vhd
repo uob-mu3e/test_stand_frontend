@@ -28,7 +28,8 @@ entity link_merger is
         i_link_datak : in std_logic_vector(NLINKS_TOTL * 4 - 1 downto 0);
         i_link_mask_n : in std_logic_vector(NLINKS_TOTL - 1 downto 0);
 
-        o_stream_data : out std_logic_vector(35 downto 0)--;
+        o_stream_data : out std_logic_vector(35 downto 0);
+        o_stream_we : out std_logic--;
 
     );
     end entity link_merger;
@@ -136,6 +137,7 @@ entity link_merger is
     );
     
     o_stream_data <= stream_wdata;
+    o_stream_we <= stream_we;
     
     e_stream_fifo : entity work.ip_scfifo
     generic map (

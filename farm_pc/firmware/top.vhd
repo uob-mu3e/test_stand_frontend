@@ -722,7 +722,7 @@ begin
     
     e_link_merger : entity work.link_merger
     generic map(
-        NLINKS_TOTL => 48,--NLINKS_TOTL,
+        NLINKS_TOTL => 36,--NLINKS_TOTL,
         LINK_FIFO_ADDR_WIDTH => 8--,
     )
     port map(
@@ -731,11 +731,12 @@ begin
         i_dataclk => clk_156,
         i_memclk => clk_156,
 
-        i_link_data => data_counter & data_counter & data_counter,
-        i_link_datak => datak_counter & datak_counter & datak_counter,
-        i_link_mask_n => (others => '1'),--writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
+        i_link_data => data_counter & data_counter & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated,
+        i_link_datak => datak_counter & datak_counter & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated,
+        i_link_mask_n => "111111111111111111111111111111111100",--(others => '1'),--writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
 
-        o_stream_data(0) => LED_BRACKET(0)--,
+        o_stream_data(0) => LED_BRACKET(0),
+        o_stream_we => open--,
     );
     
     
