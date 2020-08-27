@@ -141,7 +141,7 @@ entity link_merger is
     
     e_stream_fifo : entity work.ip_scfifo
     generic map (
-        ADDR_WIDTH => 8,
+        ADDR_WIDTH => 10,
         DATA_WIDTH => 36,
         DEVICE => "Arria 10"--,
     )
