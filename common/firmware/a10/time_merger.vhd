@@ -52,7 +52,7 @@ architecture arch of time_merger is
 
     signal error_gtime1, error_gtime2, error_shtime, w_ack : std_logic;
     signal merge_state : merge_state_type;
-    signal rack, check_pre, check_sh, check_tr, check_time1, check_time2, error_pre, error_sh, error_tr, cnt_sh_header, cnt_pre_header, cnt_trailer, cnt_ram_start : std_logic_vector(N - 1 downto 0);
+    signal rack, rack_hit, check_pre, check_sh, check_tr, check_time1, check_time2, error_pre, error_sh, error_tr, cnt_sh_header, cnt_pre_header, cnt_trailer, cnt_ram_start : std_logic_vector(N - 1 downto 0);
     signal gtime1, gtime2 : std_logic_vector(31 downto 0);
     signal shtime : std_logic_vector(5 downto 0);
     signal sheader_time : sheader_time_array_t;
@@ -67,15 +67,21 @@ architecture arch of time_merger is
         msb : integer;
         lsb : integer;
         good : std_logic_vector;
+        ack : std_logic_vector;
         minval : std_logic_vector;
         data : data_array--;
     ) return integer is
         variable index : index_int := 36;
         variable min_value : std_logic_vector(4 downto 0);
     begin
-        min_value := minval;
+        if ( ack /= check_zeros ) then
+            min_value(3 downto 0) := minval;
+            min_value(4) := '0';
+        else
+            min_value := "11111";
+        end if;
         FOR I in msb - 1 downto lsb LOOP
-            if ( good(I) = '1' and data(I)(35 downto 32) < min_value ) then
+            if ( good(I) = '1' and data(I)(35 downto 32) <= min_value ) then
                 min_value(3 downto 0) := data(I)(35 downto 32);
                 min_value(4) := '0';
                 index := I;
@@ -102,7 +108,6 @@ architecture arch of time_merger is
     
 begin
 
-    o_rack <= rack;
     o_error_gtime(0) <= error_gtime1;
     o_error_gtime(1) <= error_gtime2;
     o_error_shtime <= error_shtime;
@@ -111,8 +116,10 @@ begin
     
     -- link is good ('1') if link is not empty, wfull not full, not masked, w_ack is zero, i_rdata has hit data else '0'
     generate_link_good : FOR I in N-1 downto 0 GENERATE
-        link_good(I) <= '1' when i_rempty(I) = '0' and i_wfull = '0' and i_mask_n(I) = '1' and w_ack = '0' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" else '0';
+        link_good(I) <= '1' when i_rempty(I) = '0' and i_wfull = '0' and i_mask_n(I) = '1' and rack_hit(I) = '0' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" else '0';
+        o_rack(I) <= rack(I) or rack_hit(I);
     END GENERATE;
+    
     
     process(i_clk, i_reset_n)
         -- min value has one more bit than hit time
@@ -139,7 +146,70 @@ begin
         variable min_value11 : std_logic_vector(4 downto 0);
         variable min_index11 : integer;
         variable min_value12 : std_logic_vector(4 downto 0);
-        variable min_index12 : integer;  
+        variable min_index12 : integer; 
+    begin
+    if ( i_reset_n /= '1' ) then
+        w_ack <= '0';
+        min_hit <= (others => '1');
+        rack_hit <= (others => '0');
+        
+    elsif rising_edge(i_clk) then
+        rack_hit <= (others => '0');
+        
+        -- merge hits
+        if ( merge_state = merge_hits ) then
+            min_index1 := get_min_index(N/8, 0, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
+            min_index2 := get_min_index(N/4, N/8, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
+            min_index3 := get_min_index(N*3/8, N/4, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
+            min_index4 := get_min_index(N/2, N*3/8, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
+            min_index5 := get_min_index(N*5/8, N/2, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
+            min_index6 := get_min_index(N*3/4, N*5/8, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
+            min_index7 := get_min_index(N*7/8, N*3/4, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
+            min_index8 := get_min_index(N, N*7/8, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
+            
+            min_value1 := get_hit_time(min_index1, i_rdata);
+            min_value2 := get_hit_time(min_index2, i_rdata);
+            min_value3 := get_hit_time(min_index3, i_rdata);
+            min_value4 := get_hit_time(min_index4, i_rdata);
+            min_value5 := get_hit_time(min_index5, i_rdata);
+            min_value6 := get_hit_time(min_index6, i_rdata);
+            min_value7 := get_hit_time(min_index7, i_rdata);
+            min_value8 := get_hit_time(min_index8, i_rdata);
+            
+            if ( min_value1 <= min_value2 ) then min_index9 := min_index1; else min_index9 := min_index2; end if;
+            if ( min_value3 <= min_value4 ) then min_index10 := min_index3; else min_index10 := min_index4; end if;
+            if ( min_value5 <= min_value6 ) then min_index11 := min_index5; else min_index11 := min_index6; end if;
+            if ( min_value7 <= min_value8 ) then min_index12 := min_index7; else min_index12 := min_index8; end if;
+            
+            min_value9 := get_hit_time(min_index9, i_rdata);
+            min_value10 := get_hit_time(min_index10, i_rdata);
+            min_value11 := get_hit_time(min_index11, i_rdata);
+            min_value12 := get_hit_time(min_index12, i_rdata);
+            
+            w_ack <= '0';
+            if ( min_value9 /= "11111" or min_value10 /= "11111" or min_value11 /= "11111" or min_value12 /= "11111" ) then
+                w_ack <= '1';
+                if ( min_value9 <= min_value10 and min_value9 <= min_value11 and min_value9 <= min_value12 ) then
+                    min_hit <= i_rdata(min_index9);
+                    rack_hit(min_index9) <= '1';
+                elsif ( min_value10 <= min_value9 and min_value10 <= min_value11 and min_value10 <= min_value12 ) then
+                    min_hit <= i_rdata(min_index10);
+                    rack_hit(min_index10) <= '1';
+                elsif ( min_value11 <= min_value9 and min_value11 <= min_value10 and min_value11 <= min_value12 ) then
+                    min_hit <= i_rdata(min_index11);
+                    rack_hit(min_index11) <= '1';
+                elsif ( min_value12 <= min_value9 and min_value12 <= min_value10 and min_value12 <= min_value11 ) then
+                    min_hit <= i_rdata(min_index12);
+                    rack_hit(min_index12    ) <= '1';
+                end if;
+            end if;
+        else
+            min_hit <= (others => '1');
+        end if;
+    end if;
+    end process;
+    
+    process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
         merge_state <= wait_for_pre;
@@ -162,16 +232,6 @@ begin
         error_gtime1 <= '0';
         error_gtime2 <= '0';
         error_shtime <= '0';
-        w_ack <= '0';
-        min_value1 := (others => '0');
-        min_value2 := (others => '0');
-        min_value3 := (others => '0');
-        min_value4 := (others => '0');
-        min_index1 := 0;
-        min_index2 := 0;
-        min_index3 := 0;
-        min_index4 := 0;
-        min_hit <= (others => '0');
         cnt_sh_header <= (others => '1');
         cnt_pre_header <= (others => '1');
         cnt_trailer <= (others => '1');
@@ -390,52 +450,6 @@ begin
                         cnt_sh_header(I) <= '0';
                     end if;
                 END LOOP;
-                    
-                min_index1 := get_min_index(N/8, 0, link_good, "11111", i_rdata);
-                min_index2 := get_min_index(N/4, N/8, link_good, "11111", i_rdata);
-                min_index3 := get_min_index(N*3/8, N/4, link_good, "11111", i_rdata);
-                min_index4 := get_min_index(N/2, N*3/8, link_good, "11111", i_rdata);
-                min_index5 := get_min_index(N*5/8, N/2, link_good, "11111", i_rdata);
-                min_index6 := get_min_index(N*3/4, N*5/8, link_good, "11111", i_rdata);
-                min_index7 := get_min_index(N*7/8, N*3/4, link_good, "11111", i_rdata);
-                min_index8 := get_min_index(N, N*7/8, link_good, "11111", i_rdata);
-                
-                min_value1 := get_hit_time(min_index1, i_rdata);
-                min_value2 := get_hit_time(min_index2, i_rdata);
-                min_value3 := get_hit_time(min_index3, i_rdata);
-                min_value4 := get_hit_time(min_index4, i_rdata);
-                min_value5 := get_hit_time(min_index5, i_rdata);
-                min_value6 := get_hit_time(min_index6, i_rdata);
-                min_value7 := get_hit_time(min_index7, i_rdata);
-                min_value8 := get_hit_time(min_index8, i_rdata);
-                
-                if ( min_value1 <= min_value2 ) then min_index9 := min_index1; else min_index9 := min_index2; end if;
-                if ( min_value3 <= min_value4 ) then min_index10 := min_index3; else min_index10 := min_index4; end if;
-                if ( min_value5 <= min_value6 ) then min_index11 := min_index5; else min_index11 := min_index6; end if;
-                if ( min_value7 <= min_value8 ) then min_index12 := min_index7; else min_index12 := min_index8; end if;
-                
-                min_value9 := get_hit_time(min_index9, i_rdata);
-                min_value10 := get_hit_time(min_index10, i_rdata);
-                min_value11 := get_hit_time(min_index11, i_rdata);
-                min_value12 := get_hit_time(min_index12, i_rdata);
-                
-                w_ack <= '0';
-                if ( min_value9 /= "11111" or min_value10 /= "11111" or min_value11 /= "11111" or min_value12 /= "11111" ) then
-                    w_ack <= '1';
-                    if ( min_value9 <= min_value10 and min_value9 <= min_value11 and min_value9 <= min_value12 ) then
-                        min_hit <= i_rdata(min_index9);
-                        rack(min_index9) <= '1';
-                    elsif ( min_value10 <= min_value9 and min_value10 <= min_value11 and min_value10 <= min_value12 ) then
-                        min_hit <= i_rdata(min_index10);
-                        rack(min_index10) <= '1';
-                    elsif ( min_value11 <= min_value9 and min_value11 <= min_value10 and min_value11 <= min_value12 ) then
-                        min_hit <= i_rdata(min_index11);
-                        rack(min_index11) <= '1';
-                    elsif ( min_value12 <= min_value9 and min_value12 <= min_value10 and min_value12 <= min_value11 ) then
-                        min_hit <= i_rdata(min_index12);
-                        rack(min_index12    ) <= '1';
-                    end if;
-                end if;
                 
                 if ( w_ack = '1' ) then
                     o_wdata <= min_hit;
@@ -487,8 +501,9 @@ begin
                     check_tr <= (others => '1');
                     -- send trailer
                     o_wdata(37 downto 36) <= "10";
+                    o_wdata(35 downto 12) <= (others => '0');
                     o_wdata(11 downto 4) <= x"9C";
-                    o_wdata(3 downto 0) <= "0000";
+                    o_wdata(3 downto 0) <= "0001";
                     o_weop <= '1';
                     o_we <= '1';
                 end if;
