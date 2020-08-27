@@ -155,7 +155,6 @@ begin
         
     elsif rising_edge(i_clk) then
         rack_hit <= (others => '0');
-        
         -- merge hits
         if ( merge_state = merge_hits ) then
             min_index1 := get_min_index(N/8, 0, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
