@@ -726,10 +726,10 @@ begin
         LINK_FIFO_ADDR_WIDTH => 8--,
     )
     port map(
-        i_reset_data_n => reset_156_n,
-        i_reset_mem_n => reset_156_n,
+        i_reset_data_n => resets_n(RESET_BIT_LINK_MERGER),
+        i_reset_mem_n => resets_n_ddr3(RESET_BIT_LINK_MERGER),
         i_dataclk => clk_156,
-        i_memclk => clk_156,
+        i_memclk => A_ddr3clk,--clk_156,
 
         i_link_data => data_counter & data_counter & data_pix_generated & data_pix_generated,
         i_link_datak => datak_counter & datak_counter & datak_pix_generated & datak_pix_generated,
