@@ -60,6 +60,7 @@ architecture arch of time_merger is
     signal overflow : std_logic_vector(15 downto 0);
     signal sheader_time : sheader_time_array_t;
     signal fpga_id, wait_cnt_pre, wait_cnt_sh, wait_cnt_tr : fpga_id_array_t;
+    signal link_index : index_int;
     
     -- merge signals
     signal min_hit : std_logic_vector(37 downto 0);
@@ -360,6 +361,7 @@ begin
         o_wsop <= '0';
         o_weop <= '0';
         o_we <= '0';
+        link_index <= 0;
         --
     elsif rising_edge(i_clk) then
         
@@ -414,6 +416,7 @@ begin
                     if ( i_rempty(I) = '0' and i_mask_n(I) = '1' ) then
                         merge_state <= compare_time1;
                         gtime1 <= i_rdata(I)(35 downto 4);
+                        link_index <= I;
                         exit;
                     end if;
                 END LOOP;
@@ -431,6 +434,7 @@ begin
                     
                     if ( i_rdata(I)(35 downto 4) /= gtime1 and i_mask_n(I) = '1' ) then
                         error_gtime1 <= '1';
+                        exit;
                     elsif ( check_time1(I) = '1' ) then
                         -- check gtime
                         check_time1(I) <= i_rempty(I);
@@ -474,6 +478,7 @@ begin
                     
                     if ( i_rdata(I)(35 downto 4) /= gtime2 and i_mask_n(I) = '1' ) then
                         error_gtime2 <= '1';
+                        exit;
                     elsif ( check_time2(I) = '1' ) then
                         -- send gtime
                         check_time2(I) <= i_rempty(I);
@@ -512,7 +517,6 @@ begin
                     if ( i_rdata(I)(31 downto 26) = "111111" and i_rdata(I)(37 downto 36) = "00"  and check_sh(I) = '1' ) then
                         check_sh(I) <= i_rempty(I);
                         sheader_time(I) <= i_rdata(I)(25 downto 20);
-                        shtime <= i_rdata(I)(25 downto 20);
                         rack(I) <= not i_rempty(I);
                         -- merge overflow
                         if ( i_rempty(I) = '0' ) then
@@ -544,6 +548,7 @@ begin
                     o_wdata(3 downto 0) <= "0001";
                     -- send sub header time -- check later if equal
                     o_wdata(25 downto 20) <= shtime;
+                    shtime <= sheader_time(link_index);
                     o_we <= '1';
                 end if;
                 
@@ -556,6 +561,7 @@ begin
                 FOR I in N - 1 downto 0 LOOP
                     if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and sheader_time(I) /= shtime ) then
                         error_shtime <= '1';
+                        exit;
                     end if;
                 END LOOP;
                 
