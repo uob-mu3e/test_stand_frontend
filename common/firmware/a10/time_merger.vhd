@@ -52,7 +52,7 @@ architecture arch of time_merger is
     constant check_zeros_t_3 : std_logic_vector(4 downto 0) := (others => '0');
     constant check_ones_t_3 : std_logic_vector(4 downto 0) := (others => '1');
 
-    signal error_gtime1, error_gtime2, error_shtime, w_ack, error_merger : std_logic;
+    signal error_gtime1, error_gtime2, error_shtime, w_ack, error_merger, check_overflow : std_logic;
     signal merge_state : merge_state_type;
     signal rack, rack_hit, error_pre, error_sh, error_tr, sh_state, pre_state, tr_state : std_logic_vector(N - 1 downto 0);
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
@@ -64,7 +64,7 @@ architecture arch of time_merger is
     
     -- merge signals
     signal min_hit : std_logic_vector(37 downto 0);
-    signal link_good, sop_wait, sop_read, shop_wait, shop_read, time_wait, rack_link : std_logic_vector(N - 1 downto 0);
+    signal link_good, sop_wait, shop_wait, time_wait, rack_link : std_logic_vector(N - 1 downto 0);
     
     -- layer zero signals
     type hit_t_0_array_t is array (N - 1 downto 0) of std_logic_vector(37 downto 0);
@@ -96,39 +96,22 @@ begin
     o_error_sh <= error_sh;
     
     generate_rack : FOR I in N-1 downto 0 GENERATE
---         link is good ('1') if link is not empty, wfull not full, not masked, w_ack is zero, i_rdata has hit data else '0'
---         link_good(I) <= '1' when i_rempty(I) = '0' and i_wfull = '0' and i_mask_n(I) = '1' and rack_hit(I) = '0' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" else '0';
---         read out fifo if not empty, not start of package and not masked
---         sop_wait(I) <= '0' when i_mask_n(I) = '0' else
---                        '0' when i_rempty(I) = '0' and i_rsop(I) = '1' else
---                        '1';
---         sop_read(I) <= '0' when i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '1' else '1';
---         read out fifo if not empty, not sub header of package and not masked
---         shop_wait(I) <= '0' when i_mask_n(I) = '0' else
---                         '0' when i_rempty(I) = '0' and i_rshop(I) = '1' else
---                         '1';
---         shop_read(I) <= '0' when i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '1' else '1';
---         check for state change in merge_hits state
---         sh_state(I) <= '0' when i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and empty_t_3 = check_ones_t_3 else '1';
---         pre_state(I) <= '0' when i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and empty_t_3 = check_ones_t_3 else '1';
---         tr_state(I) <= '0' when i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and empty_t_3 = check_ones_t_3 else '1';
---         or rack signals
         o_rack(I) <= rack(I) or rack_hit(I) or rack_link(I);
     END GENERATE;
     
+    -- readout fifo
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
         rack_link <= (others => '0');
         link_good <= (others => '0');
         sop_wait <= (others => '1');
-        sop_read <= (others => '0');
         shop_wait <= (others => '1');
-        shop_read <= (others => '0');
         time_wait <= (others => '1');
         sh_state <= (others => '1');
         pre_state <= (others => '1');
         tr_state <= (others => '1');
+        --
     elsif rising_edge(i_clk) then
     
         rack_link <= (others => '0');
@@ -151,27 +134,16 @@ begin
                 rack_link(I) <= '1';
             end if;
             
-            if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '1' ) then
-                sop_read(I) <= '0';
-            else
-                sop_read(I) <= '1';
-            end if;
-            
             -- read out fifo if not empty, not sub header of package and not masked
             if ( i_mask_n(I) = '0' ) then
                 shop_wait(I) <= '0';
             elsif ( i_rempty(I) = '0' and i_rshop(I) = '1' ) then
                 shop_wait(I) <= '0';
-            else
+            elsif ( merge_state = wait_for_sh and rack_link(I) = '0' and i_rempty(I) = '0' ) then
                 shop_wait(I) <= '1';
+                rack_link(I) <= '1';
             end if;
-            
-            if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '1' ) then
-                shop_read(I) <= '0';
-            else
-                shop_read(I) <= '1';
-            end if;
-            
+
             -- check for time wait
             if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and rack(I) = '0' and ( merge_state = get_time1 or merge_state = get_time2 ) ) then
                 time_wait(I) <= '0';
@@ -201,6 +173,7 @@ begin
     end if;
     end process;
     
+    -- merge hits
     process(i_clk, i_reset_n)
         variable min_value : std_logic_vector(3 downto 0);
         variable min_index : index_int;
@@ -336,6 +309,7 @@ begin
     end if;
     end process;
     
+    -- write data
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
@@ -361,6 +335,7 @@ begin
         o_wsop <= '0';
         o_weop <= '0';
         o_we <= '0';
+        check_overflow <= '0';
         --
     elsif rising_edge(i_clk) then
         
@@ -459,8 +434,17 @@ begin
             
                 -- readout until all fifos have sub header
                 if ( shop_wait /= check_zeros ) then
-                    rack <= shop_read;
                     wait_cnt_sh <= wait_cnt_sh + '1';
+                -- TODO handle overflow
+--                 elsif ( check_overflow = '1' ) then    
+--                     check_overflow <= '0';
+--                     FOR I in 15 downto 0 LOOP
+--                         if ( i_rdata(N-1 downto 0)(I + 4) = 0 ) then
+--                             overflow(I) <= '0';
+--                         else
+--                             overflow(I) <= '1';
+--                         end if;
+--                     END LOOP;
                 elsif ( i_wfull = '0' ) then
                     merge_state <= merge_hits;
                     rack <= (others => '1');
@@ -473,12 +457,6 @@ begin
                     o_wdata(37 downto 36) <= "00";
                     o_wdata(35 downto 32) <= "0000";
                     o_wdata(31 downto 26) <= "111111";
-                    -- TODO handle overflow
---                     if ( i_rempty(I) = '0' ) then
---                         FOR J in 15 downto 0 LOOP
---                             overflow(J) <= overflow(J) or i_rdata(I)(J + 4);
---                         END LOOP;
---                     end if;
                     o_wdata(19 downto 4) <= overflow;
                     o_wdata(3 downto 0) <= "0001";
                     -- send sub header time -- check later if equal
