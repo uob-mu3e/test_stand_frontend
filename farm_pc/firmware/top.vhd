@@ -727,12 +727,13 @@ begin
     )
     port map(
         i_reset_data_n => resets_n(RESET_BIT_LINK_MERGER),
-        i_reset_mem_n => resets_n_ddr3(RESET_BIT_LINK_MERGER),
+        i_reset_mem_n => resets_n_fast(RESET_BIT_LINK_MERGER),--resets_n_ddr3(RESET_BIT_LINK_MERGER),
         i_dataclk => clk_156,
-        i_memclk => A_ddr3clk,--clk_156,
+        i_memclk => pcie_fastclk_out,--A_ddr3clk,--clk_156,
 
         i_link_data => data_counter & data_counter & data_pix_generated & data_pix_generated,
         i_link_datak => datak_counter & datak_counter & datak_pix_generated & datak_pix_generated,
+		  i_link_valid => 1,
         i_link_mask_n => (others => '1'),--writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
         o_stream_data(0) => LED_BRACKET(0),
         o_stream_we => open--,

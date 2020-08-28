@@ -26,6 +26,7 @@ entity link_merger is
 
         i_link_data : in std_logic_vector(NLINKS_TOTL * 32 - 1 downto 0);
         i_link_datak : in std_logic_vector(NLINKS_TOTL * 4 - 1 downto 0);
+        i_link_valid : in integer;
         i_link_mask_n : in std_logic_vector(NLINKS_TOTL - 1 downto 0);
 
         o_stream_data : out std_logic_vector(35 downto 0);
@@ -39,10 +40,9 @@ entity link_merger is
         signal reset_data, reset_mem : std_logic;
         
         signal link_data, link_dataq : data_array(NLINKS_TOTL - 1 downto 0);
-        signal link_empty, link_wren, link_full, link_afull, link_wrfull, sop, eop, link_ren : std_logic_vector(NLINKS_TOTL - 1 downto 0);
+        signal link_empty, link_wren, link_full, link_afull, link_wrfull, sop, eop, shop, link_ren : std_logic_vector(NLINKS_TOTL - 1 downto 0);
         signal link_usedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS_TOTL - 1 downto 0);
         
-        signal stream_in_rempty : std_logic_vector(NLINKS_TOTL-1 downto 0);
         signal stream_wdata, stream_rdata : std_logic_vector(35 downto 0);
         signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
         
@@ -109,11 +109,10 @@ entity link_merger is
     end process;
     
     sop(i) <= link_dataq(i)(36);
-    eop(i) <= link_dataq(i)(37); 
+    shop(i) <= '1' when link_dataq(i)(37 downto 36) = "00" and link_dataq(I)(31 downto 26) = "111111" else '0';
+    eop(i) <= link_dataq(i)(37);
 
     END GENERATE buffer_link_fifos;
-    
-    stream_in_rempty <= link_empty;
     
     e_time_merger : entity work.time_merger
         generic map (
@@ -124,7 +123,9 @@ entity link_merger is
         i_rdata                 => link_dataq,
         i_rsop                  => sop,
         i_reop                  => eop,
-        i_rempty                => stream_in_rempty,
+        i_rshop                 => shop,
+        i_rempty                => link_empty,
+        i_link                  => i_link_valid,
         i_mask_n                => i_link_mask_n,
         o_rack                  => link_ren,
 

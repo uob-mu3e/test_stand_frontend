@@ -134,6 +134,7 @@ begin
 	
 		i_link_data => link_data,
 		i_link_datak => link_datak,
+		i_link_valid => 1,
 		i_link_mask_n => link_mask_n,
 		
 		o_stream_data => open,

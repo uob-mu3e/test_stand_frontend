@@ -8,7 +8,7 @@ use work.dataflow_components.all;
 entity time_merger is
 generic (
     W : positive := 32;
-    TIMEOUT : std_logic_vector(15 downto 0) := x"FFFF";
+    TIMEOUT : std_logic_vector(31 downto 0) := x"FFFFFFFF";
     N : positive := 34--;
 );
 port (
@@ -16,8 +16,10 @@ port (
     i_rdata     : in    data_array(N - 1 downto 0);
     i_rsop      : in    std_logic_vector(N-1 downto 0); -- start of packet (SOP)
     i_reop      : in    std_logic_vector(N-1 downto 0); -- end of packet (EOP)
+    i_rshop     : in    std_logic_vector(N-1 downto 0); -- sub header of packet (SHOP)
     i_rempty    : in    std_logic_vector(N-1 downto 0);
     i_mask_n    : in    std_logic_vector(N-1 downto 0);
+    i_link      : in    integer;
     o_rack      : out   std_logic_vector(N-1 downto 0); -- read ACK
 
     -- output stream
@@ -42,29 +44,32 @@ architecture arch of time_merger is
  
     type fpga_id_array_t is array (N - 1 downto 0) of std_logic_vector(15 downto 0);
     type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(5 downto 0);
-    type ram_add_t is array (N - 1 downto 0) of std_logic_vector(7 downto 0);
     type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer);
     subtype index_int is natural range 0 to 36; -- since we have a maximum number of 36 links, default is 36
     
     constant check_zeros : std_logic_vector(N - 1 downto 0) := (others => '0');
+    constant check_ones : std_logic_vector(N - 1 downto 0) := (others => '1');
     constant check_zeros_t_3 : std_logic_vector(4 downto 0) := (others => '0');
     constant check_ones_t_3 : std_logic_vector(4 downto 0) := (others => '1');
-    constant check_ones : std_logic_vector(N - 1 downto 0) := (others => '1');
-    constant all_zeros : ram_add_t := (others => (others => '0'));
 
-    signal error_gtime1, error_gtime2, error_shtime, w_ack, reset : std_logic;
+    signal error_gtime1, error_gtime2, error_shtime, w_ack, error_merger : std_logic;
     signal merge_state : merge_state_type;
-    signal rack, rack_hit, check_pre, check_sh, check_tr, check_time1, check_time2, error_pre, error_sh, error_tr, cnt_sh_header, cnt_pre_header, cnt_trailer, cnt_ram_start : std_logic_vector(N - 1 downto 0);
-    signal gtime1, gtime2 : std_logic_vector(31 downto 0);
+    signal rack, rack_hit, error_pre, error_sh, error_tr, sh_state, pre_state, tr_state : std_logic_vector(N - 1 downto 0);
+    signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
+    signal gtime1, gtime2 : data_array(N - 1 downto 0);
     signal shtime : std_logic_vector(5 downto 0);
     signal overflow : std_logic_vector(15 downto 0);
     signal sheader_time : sheader_time_array_t;
-    signal fpga_id, wait_cnt_pre, wait_cnt_sh, wait_cnt_tr : fpga_id_array_t;
-    signal link_index : index_int;
+    signal fpga_id : fpga_id_array_t;
     
     -- merge signals
     signal min_hit : std_logic_vector(37 downto 0);
-    signal link_good : std_logic_vector(N - 1 downto 0);
+    signal link_good, sop_wait, sop_read, shop_wait, shop_read, time_wait, rack_link : std_logic_vector(N - 1 downto 0);
+    
+    -- layer zero signals
+    type hit_t_0_array_t is array (N - 1 downto 0) of std_logic_vector(37 downto 0);
+    signal data_t_0 : hit_t_0_array_t;
+    signal full_t_0, empty_t_0 : std_logic_vector(N - 1 downto 0);
     
     -- layer one signals
     type hit_t_1_array_t is array (16 downto 0) of std_logic_vector(37 downto 0);
@@ -80,86 +85,123 @@ architecture arch of time_merger is
     type hit_t_3_array_t is array (4 downto 0) of std_logic_vector(37 downto 0);
     signal data_t_3 : hit_t_3_array_t;
     signal full_t_3, empty_t_3 : std_logic_vector(4 downto 0);
-    
-    -- find min index
-    function get_min_index (
-        msb : integer;
-        lsb : integer;
-        good : std_logic_vector;
-        ack : std_logic_vector;
-        minval : std_logic_vector;
-        data : data_array--;
-    ) return integer is
-        variable index : index_int := 36;
-        variable min_value : std_logic_vector(3 downto 0) := "1111";
-    begin
-        if ( ack /= check_zeros ) then
-            min_value := minval;
-        end if;
-        FOR I in msb - 1 downto lsb LOOP
-            if ( good(I) = '1' and data(I)(35 downto 32) <= min_value ) then
-                min_value := data(I)(35 downto 32);
-                index := I;
-            end if;
-        END LOOP;
-        return index;
-    end function;
-    
-    -- get hit time
-    function get_hit_time (
-        index : integer;
-        data : data_array--;
-    ) return std_logic_vector is
-        variable min_value : std_logic_vector(3 downto 0) := "1111";
-    begin
-        if ( index /= 36 ) then
-            min_value := data(index)(35 downto 32);
-        end if;
-        return min_value;
-    end function;
-    
+        
 begin
 
+    -- error signals
     o_error_gtime(0) <= error_gtime1;
     o_error_gtime(1) <= error_gtime2;
     o_error_shtime <= error_shtime;
     o_error_pre <= error_pre;
     o_error_sh <= error_sh;
-    reset <= not i_reset_n;
     
-    -- link is good ('1') if link is not empty, wfull not full, not masked, w_ack is zero, i_rdata has hit data else '0'
-    generate_link_good : FOR I in N-1 downto 0 GENERATE
-        link_good(I) <= '1' when i_rempty(I) = '0' and i_wfull = '0' and i_mask_n(I) = '1' and rack_hit(I) = '0' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" else '0';
-        o_rack(I) <= rack(I) or rack_hit(I);
+    generate_rack : FOR I in N-1 downto 0 GENERATE
+--         link is good ('1') if link is not empty, wfull not full, not masked, w_ack is zero, i_rdata has hit data else '0'
+--         link_good(I) <= '1' when i_rempty(I) = '0' and i_wfull = '0' and i_mask_n(I) = '1' and rack_hit(I) = '0' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" else '0';
+--         read out fifo if not empty, not start of package and not masked
+--         sop_wait(I) <= '0' when i_mask_n(I) = '0' else
+--                        '0' when i_rempty(I) = '0' and i_rsop(I) = '1' else
+--                        '1';
+--         sop_read(I) <= '0' when i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '1' else '1';
+--         read out fifo if not empty, not sub header of package and not masked
+--         shop_wait(I) <= '0' when i_mask_n(I) = '0' else
+--                         '0' when i_rempty(I) = '0' and i_rshop(I) = '1' else
+--                         '1';
+--         shop_read(I) <= '0' when i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '1' else '1';
+--         check for state change in merge_hits state
+--         sh_state(I) <= '0' when i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and empty_t_3 = check_ones_t_3 else '1';
+--         pre_state(I) <= '0' when i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and empty_t_3 = check_ones_t_3 else '1';
+--         tr_state(I) <= '0' when i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and empty_t_3 = check_ones_t_3 else '1';
+--         or rack signals
+        o_rack(I) <= rack(I) or rack_hit(I) or rack_link(I);
     END GENERATE;
     
     process(i_clk, i_reset_n)
--- works for up to 16 LINKS
---         variable min_value1 : std_logic_vector(3 downto 0);
---         variable min_index1 : integer;
---         variable min_value2 : std_logic_vector(3 downto 0);
---         variable min_index2 : integer;
---         variable min_value3 : std_logic_vector(3 downto 0);
---         variable min_index3 : integer;
---         variable min_value4 : std_logic_vector(3 downto 0);
---         variable min_index4 : integer;
---         variable min_value5 : std_logic_vector(3 downto 0);
---         variable min_index5 : integer;
---         variable min_value6 : std_logic_vector(3 downto 0);
---         variable min_index6 : integer;
---         variable min_value7 : std_logic_vector(3 downto 0);
---         variable min_index7 : integer;
---         variable min_value8 : std_logic_vector(3 downto 0);
---         variable min_index8 : integer;
---         variable min_value9 : std_logic_vector(3 downto 0);
---         variable min_index9 : integer;
---         variable min_value10 : std_logic_vector(3 downto 0);
---         variable min_index10 : integer;
---         variable min_value11 : std_logic_vector(3 downto 0);
---         variable min_index11 : integer;
---         variable min_value12 : std_logic_vector(3 downto 0);
---         variable min_index12 : integer;
--- works for up to 16 LINKS
+    begin
+    if ( i_reset_n /= '1' ) then
+        rack_link <= (others => '0');
+        link_good <= (others => '0');
+        sop_wait <= (others => '1');
+        sop_read <= (others => '0');
+        shop_wait <= (others => '1');
+        shop_read <= (others => '0');
+        time_wait <= (others => '1');
+        sh_state <= (others => '1');
+        pre_state <= (others => '1');
+        tr_state <= (others => '1');
+    elsif rising_edge(i_clk) then
+    
+        rack_link <= (others => '0');
+    
+        FOR I in N - 1 downto 0 LOOP
+            -- link is good ('1') if link is not empty, wfull not full, not masked, w_ack is zero, i_rdata has hit data else '0'
+            if ( i_rempty(I) = '0' and i_wfull = '0' and i_mask_n(I) = '1' and rack_hit(I) = '0' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" ) then
+                link_good(I) <= '1';
+            else
+                link_good(I) <= '0';
+            end if;
+            
+            -- read out fifo if not empty, not start of package and not masked
+            if ( i_mask_n(I) = '0' ) then
+                sop_wait(I) <= '0';
+            elsif ( i_rempty(I) = '0' and i_rsop(I) = '1' ) then
+                sop_wait(I) <= '0';
+            elsif ( merge_state = wait_for_pre and rack_link(I) = '0' and i_rempty(I) = '0' ) then
+                sop_wait(I) <= '1';
+                rack_link(I) <= '1';
+            end if;
+            
+            if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '1' ) then
+                sop_read(I) <= '0';
+            else
+                sop_read(I) <= '1';
+            end if;
+            
+            -- read out fifo if not empty, not sub header of package and not masked
+            if ( i_mask_n(I) = '0' ) then
+                shop_wait(I) <= '0';
+            elsif ( i_rempty(I) = '0' and i_rshop(I) = '1' ) then
+                shop_wait(I) <= '0';
+            else
+                shop_wait(I) <= '1';
+            end if;
+            
+            if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '1' ) then
+                shop_read(I) <= '0';
+            else
+                shop_read(I) <= '1';
+            end if;
+            
+            -- check for time wait
+            if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and rack(I) = '0' and ( merge_state = get_time1 or merge_state = get_time2 ) ) then
+                time_wait(I) <= '0';
+            else
+                time_wait(I) <= '1';
+            end if;
+            
+            -- check for state change in merge_hits state
+            if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and empty_t_3 = check_ones_t_3 and merge_state =  merge_hits ) then
+                sh_state(I) <= '0';
+            else
+                sh_state(I) <= '1';
+            end if;
+            
+            if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and empty_t_3 = check_ones_t_3 and merge_state =  merge_hits ) then
+                pre_state(I) <= '0';
+            else
+                pre_state(I) <= '1';
+            end if;
+            
+            if ( i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and empty_t_3 = check_ones_t_3 and merge_state =  merge_hits ) then
+                tr_state(I) <= '0';
+            else
+                tr_state(I) <= '1';
+            end if;
+        END LOOP;
+    end if;
+    end process;
+    
+    process(i_clk, i_reset_n)
         variable min_value : std_logic_vector(3 downto 0);
         variable min_index : index_int;
         --
@@ -168,6 +210,10 @@ begin
         w_ack <= '0';
         min_hit <= (others => '1');
         rack_hit <= (others => '0');
+        
+        data_t_0 <= (others => (others => '0'));
+        full_t_0 <= (others => '0');
+        empty_t_0 <= (others => '1');
         
         data_t_1 <= (others => (others => '0'));
         full_t_1 <= (others => '0');
@@ -180,29 +226,40 @@ begin
         data_t_3 <= (others => (others => '0'));
         full_t_3 <= (others => '0'); 
         empty_t_3 <= (others => '1');
-    
         --
     elsif rising_edge(i_clk) then
         rack_hit <= (others => '0');
         -- merge hits
         if ( merge_state = merge_hits ) then
-
-            -- write to layer one fifo
-            FOR I in 16 downto 0 LOOP
-                if ( link_good(I) = '1' and empty_t_1(I) = '1' and full_t_1(I) = '0' and i_rdata(I)(35 downto 32) <= i_rdata(I+17)(35 downto 32) ) then
-                    data_t_1(I) <= i_rdata(I);
+        
+            -- write to layer zero
+            FOR I in N - 1 downto 0 LOOP
+                if ( link_good(I) = '1' and empty_t_0(I) = '1' and full_t_0(I) = '0' ) then
+                    data_t_0(I) <= i_rdata(I);
                     rack_hit(I) <= '1';
+                    full_t_0(I) <= '1';
+                    empty_t_0(I) <= '0';
+                end if;
+            END LOOP;
+
+            -- write to layer one
+            FOR I in 16 downto 0 LOOP
+                if ( empty_t_0(I) = '0' and empty_t_1(I) = '1' and full_t_1(I) = '0' and data_t_0(I)(35 downto 32) <= data_t_0(I+17)(35 downto 32) ) then
+                    data_t_1(I) <= data_t_0(I);
                     full_t_1(I) <= '1';
+                    full_t_0(I) <= '0';
+                    empty_t_0(I) <= '1';
                     empty_t_1(I) <= '0';
-                elsif ( link_good(I+17) = '1' and empty_t_1(I) = '1' and full_t_1(I) = '0' ) then
-                    data_t_1(I) <= i_rdata(I+17);
-                    rack_hit(I+17) <= '1';
+                elsif ( empty_t_0(I+17) = '0' and empty_t_1(I) = '1' and full_t_1(I) = '0' ) then
+                    data_t_1(I) <= data_t_0(I+17);
                     full_t_1(I) <= '1';
+                    full_t_0(I+17) <= '0';
+                    empty_t_0(I+17) <= '1';
                     empty_t_1(I) <= '0';
                 end if;
             END LOOP;
             
-            -- write to layer two fifo
+            -- write to layer two
             FOR I in 8 downto 0 LOOP
                 if ( I = 0 ) then
                     if ( empty_t_1(I) = '0' and empty_t_2(I) = '1' and full_t_2(I) = '0' ) then
@@ -227,7 +284,7 @@ begin
                 end if;
             END LOOP;
             
-            -- write to layer three fifo
+            -- write to layer three
             FOR I in 4 downto 0 LOOP
                 if ( I = 0 ) then
                     if ( empty_t_2(I) = '0' and empty_t_3(I) = '1' and full_t_3(I) = '0' ) then
@@ -273,55 +330,6 @@ begin
                 full_t_3(min_index) <= '0';
                 empty_t_3(min_index) <= '1';
             end if;
-
--- works for up to 16 LINKS
---             min_index1 := get_min_index(N/8, 0, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
---             min_index2 := get_min_index(N/4, N/8, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
---             min_index3 := get_min_index(N*3/8, N/4, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
---             min_index4 := get_min_index(N/2, N*3/8, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
---             min_index5 := get_min_index(N*5/8, N/2, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
---             min_index6 := get_min_index(N*3/4, N*5/8, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
---             min_index7 := get_min_index(N*7/8, N*3/4, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
---             min_index8 := get_min_index(N, N*7/8, link_good, rack_hit, min_hit(35 downto 32), i_rdata);
---             
---             min_value1 := get_hit_time(min_index1, i_rdata);
---             min_value2 := get_hit_time(min_index2, i_rdata);
---             min_value3 := get_hit_time(min_index3, i_rdata);
---             min_value4 := get_hit_time(min_index4, i_rdata);
---             min_value5 := get_hit_time(min_index5, i_rdata);
---             min_value6 := get_hit_time(min_index6, i_rdata);
---             min_value7 := get_hit_time(min_index7, i_rdata);
---             min_value8 := get_hit_time(min_index8, i_rdata);
---             
---             if ( min_value1 <= min_value2 ) then min_index9 := min_index1; else min_index9 := min_index2; end if;
---             if ( min_value3 <= min_value4 ) then min_index10 := min_index3; else min_index10 := min_index4; end if;
---             if ( min_value5 <= min_value6 ) then min_index11 := min_index5; else min_index11 := min_index6; end if;
---             if ( min_value7 <= min_value8 ) then min_index12 := min_index7; else min_index12 := min_index8; end if;
---             
---             min_value9 := get_hit_time(min_index9, i_rdata);
---             min_value10 := get_hit_time(min_index10, i_rdata);
---             min_value11 := get_hit_time(min_index11, i_rdata);
---             min_value12 := get_hit_time(min_index12, i_rdata);
---             
---             w_ack <= '0';
---             if ( min_index9 /= 36 or min_index10 /= 36 or min_index11 /= 36 or min_index12 /= 36 ) then
---                 w_ack <= '1';
---                 if ( min_value9 <= min_value10 and min_value9 <= min_value11 and min_value9 <= min_value12 ) then
---                     min_hit <= i_rdata(min_index9);
---                     rack_hit(min_index9) <= '1';
---                 elsif ( min_value10 <= min_value9 and min_value10 <= min_value11 and min_value10 <= min_value12 ) then
---                     min_hit <= i_rdata(min_index10);
---                     rack_hit(min_index10) <= '1';
---                 elsif ( min_value11 <= min_value9 and min_value11 <= min_value10 and min_value11 <= min_value12 ) then
---                     min_hit <= i_rdata(min_index11);
---                     rack_hit(min_index11) <= '1';
---                 elsif ( min_value12 <= min_value9 and min_value12 <= min_value10 and min_value12 <= min_value11 ) then
---                     min_hit <= i_rdata(min_index12);
---                     rack_hit(min_index12    ) <= '1';
---                 end if;
---             end if;
--- works for up to 16 LINKS
-
         else
             min_hit <= (others => '1');
         end if;
@@ -332,36 +340,27 @@ begin
     begin
     if ( i_reset_n /= '1' ) then
         merge_state <= wait_for_pre;
-        check_pre <= (others => '1');
-        check_sh <= (others => '1');
-        check_tr <= (others => '1');
-        check_time1 <= (others => '1');
-        check_time2 <= (others => '1');
         error_pre <= (others => '0');
         error_sh <= (others => '0');
         error_tr <= (others => '0');
-        wait_cnt_pre <= (others => (others => '0'));
-        wait_cnt_sh <= (others => (others => '0'));
-        wait_cnt_tr <= (others => (others => '0'));
+        wait_cnt_pre <= (others => '0');
+        wait_cnt_sh <= (others => '0');
+        wait_cnt_merger <= (others => '0');
         fpga_id <= (others => (others => '0'));
-        gtime1 <= (others => '1');
-        gtime2 <= (others => '1');
+        gtime1 <= (others => (others => '0'));
+        gtime2 <= (others => (others => '0'));
         shtime <= (others => '1');
         sheader_time <= (others => (others => '0'));
         error_gtime1 <= '0';
         error_gtime2 <= '0';
         error_shtime <= '0';
-        cnt_sh_header <= (others => '1');
-        cnt_pre_header <= (others => '1');
-        cnt_trailer <= (others => '1');
-        cnt_ram_start <= (others => '1');
+        error_merger <= '0';
         o_wdata <= (others => '0');
         overflow <= (others => '0');
         rack <= (others => '0');
         o_wsop <= '0';
         o_weop <= '0';
         o_we <= '0';
-        link_index <= 0;
         --
     elsif rising_edge(i_clk) then
         
@@ -373,33 +372,13 @@ begin
         case merge_state is
             when wait_for_pre =>
                 -- readout until all fifos have preamble
-                FOR I in N - 1 downto 0 LOOP
-                    if ( i_mask_n(I) = '0' ) then
-                        check_pre(I) <= '0';
-                    end if;
-                    
-                    if ( wait_cnt_pre(I) = TIMEOUT ) then
-                        error_pre(I) <= '1';
-                    end if;
-                    
-                    if ( i_rdata(I)(35 downto 30) = "111010" and i_rdata(I)(37 downto 36) = "01" and check_pre(I) = '1' ) then
-                        check_pre(I) <= i_rempty(I);
-                        fpga_id(I) <= i_rdata(I)(27 downto 12);
-                        rack(I) <= not i_rempty(I);
-                    end if;
-                    
-                    if ( check_pre(I) = '1' ) then
-                        wait_cnt_pre(I) <= wait_cnt_pre(I) + '1';
-                        rack(I) <= not i_rempty(I);
-                    end if;
-                END LOOP;
-                
-                -- check if fifo is not full and all links have preamble
-                if( check_pre = check_zeros and i_wfull = '0' ) then
+                if ( sop_wait /= check_zeros ) then
+                    wait_cnt_pre <= wait_cnt_pre + '1';
+                elsif ( i_wfull = '0' ) then
                     merge_state <= get_time1;
+                    rack <= (others => '1');
                     -- reset signals
-                    wait_cnt_pre <= (others => (others => '0'));
-                    check_pre <= (others => '1');
+                    wait_cnt_pre <= (others => '0');
                     -- send merged data preamble
                     -- sop & preamble & zeros & datak
                     o_wdata(37 downto 36) <= "01";
@@ -410,91 +389,65 @@ begin
                     o_we <= '1';
                 end if;
                 
-            when get_time1 =>
-                -- get MSB from FPGA time
-                FOR I in N - 1 downto 0 LOOP
-                    if ( i_rempty(I) = '0' and i_mask_n(I) = '1' ) then
-                        merge_state <= compare_time1;
-                        gtime1 <= i_rdata(I)(35 downto 4);
-                        link_index <= I;
-                        exit;
-                    end if;
-                END LOOP;
-                
-            when compare_time1 =>
-                -- compare MSB from FPGA time
-                if ( error_pre /= check_zeros or error_gtime1 = '1' ) then
+                -- if wait for pre gets timeout
+                if ( wait_cnt_pre = TIMEOUT ) then
+                    error_pre <= sop_wait;
                     merge_state <= error_state;
                 end if;
                 
+            when get_time1 =>
+                -- get MSB from FPGA time
+                if ( time_wait = check_zeros ) then
+                    merge_state <= compare_time1;
+                    gtime1 <= i_rdata;
+                end if;
+                
+            when compare_time1 =>
+                -- compare MSB from FPGA time
                 FOR I in N - 1 downto 0 LOOP
-                    if ( i_mask_n(I) = '0' ) then
-                        check_time1(I) <= '0';
-                    end if;
-                    
-                    if ( i_rdata(I)(35 downto 4) /= gtime1 and i_mask_n(I) = '1' ) then
+                    if ( gtime1(I) /= gtime1(i_link) and i_mask_n(I) = '1' ) then
                         error_gtime1 <= '1';
-                        exit;
-                    elsif ( check_time1(I) = '1' ) then
-                        -- check gtime
-                        check_time1(I) <= i_rempty(I);
-                        rack(I) <= not i_rempty(I);
                     end if;
                 END LOOP;
-                 
-                 -- check if fifo is not full and all links have same time
-                if ( check_time1 = check_zeros and i_wfull = '0' ) then
+                
+                -- check if fifo is not full and all links have same time              
+                if ( error_gtime1 = '0' and i_wfull = '0' ) then
                     merge_state <= get_time2;
+                    rack <= (others => '1');
                     -- reset signals
-                    check_time1 <= (others => '1');
-                    gtime1 <= (others => '0');
+                    gtime1 <= (others => (others => '0'));
                     -- send gtime1
                     o_wdata(37 downto 36) <= "00";
-                    o_wdata(35 downto 4) <= gtime1;
+                    o_wdata(35 downto 4) <= gtime1(i_link)(35 downto 4);
                     o_wdata(3 downto 0) <= "0000";
                     o_we <= '1';
                 end if;
                 
             when get_time2 =>
                 -- get LSB from FPGA time
-                FOR I in N - 1 downto 0 LOOP
-                    if ( i_rempty(I) = '0' and i_mask_n(I) = '1' ) then
-                        merge_state <= compare_time2;
-                        gtime2 <= i_rdata(I)(35 downto 4);
-                        exit;
-                    end if;
-                END LOOP;
+                if ( error_gtime1 = '1' ) then
+                    merge_state <= error_state;
+                elsif ( time_wait = check_zeros ) then
+                    merge_state <= compare_time2;
+                    gtime2 <= i_rdata;
+                end if;
                 
             when compare_time2 =>
                 -- compare LSB from FPGA time
-                if ( error_gtime1 = '1' or error_gtime2 = '1' ) then
-                    merge_state <= error_state;
-                end if;
-
                 FOR I in N - 1 downto 0 LOOP
-                    if ( i_mask_n(I) = '0' ) then
-                        check_time1(I) <= '0';
-                    end if;
-                    
-                    if ( i_rdata(I)(35 downto 4) /= gtime2 and i_mask_n(I) = '1' ) then
+                    if ( gtime2(I) /= gtime2(i_link) and i_mask_n(I) = '1' ) then
                         error_gtime2 <= '1';
-                        exit;
-                    elsif ( check_time2(I) = '1' ) then
-                        -- send gtime
-                        check_time2(I) <= i_rempty(I);
-                        rack(I) <= not i_rempty(I);
                     end if;
                 END LOOP;
-
+                
                 -- check if fifo is not full and all links have same time
-                if ( check_time2 = check_zeros and i_wfull = '0' ) then
+                if ( error_gtime2 = '0' and i_wfull = '0' ) then
                     merge_state <= wait_for_sh;
                     -- reset signals
-                    check_time2 <= (others => '1');
-                    gtime2 <= (others => '0');
+                    gtime2 <= (others => (others => '0'));
                     -- send gtime2
                     o_wdata(37 downto 36) <= "00";
-                    o_wdata(35 downto 4) <= gtime2;
+                    o_wdata(35 downto 4) <= gtime2(i_link)(35 downto 4);
                     o_wdata(3 downto 0) <= "0000";
                     o_we <= '1';
                 end if;
@@ -503,53 +456,46 @@ begin
                 if ( error_gtime2 = '1' ) then
                     merge_state <= error_state;
                 end if;
-                
-                -- check for sub header
-                FOR I in N - 1 downto 0 LOOP
-                    if ( i_mask_n(I) = '0' ) then
-                        check_sh(I) <= '0';
-                    end if;
-                    
-                    if ( wait_cnt_sh(I) = TIMEOUT ) then
-                        error_sh(I) <= '1';
-                    end if;
-                    
-                    if ( i_rdata(I)(31 downto 26) = "111111" and i_rdata(I)(37 downto 36) = "00"  and check_sh(I) = '1' ) then
-                        check_sh(I) <= i_rempty(I);
-                        sheader_time(I) <= i_rdata(I)(25 downto 20);
-                        rack(I) <= not i_rempty(I);
-                        -- merge overflow
-                        if ( i_rempty(I) = '0' ) then
-                            FOR J in 15 downto 0 LOOP
-                                overflow(J) <= overflow(J) or i_rdata(I)(J + 4);
-                            END LOOP;
-                        end if;
-                    end if;
-                    
-                    if ( check_sh(I) = '1' ) then
-                        wait_cnt_sh(I) <= wait_cnt_sh(I) + '1';
-                        rack(I) <= not i_rempty(I);
-                    end if;
-                END LOOP;
-                
-                -- check if fifo is not full and all links have subheader
-                if( check_sh = check_zeros and i_wfull = '0' ) then
+            
+                -- readout until all fifos have sub header
+                if ( shop_wait /= check_zeros ) then
+                    rack <= shop_read;
+                    wait_cnt_sh <= wait_cnt_sh + '1';
+                elsif ( i_wfull = '0' ) then
                     merge_state <= merge_hits;
+                    rack <= (others => '1');
                     -- reset signals
-                    wait_cnt_sh <= (others => (others => '0'));
-                    check_sh <= (others => '1');
+                    wait_cnt_sh <= (others => '0');
+                    wait_cnt_merger <= (others => '0');
                     overflow <= (others => '0');
                     -- send merged data sub header
                     -- zeros & sub header & zeros & datak
                     o_wdata(37 downto 36) <= "00";
                     o_wdata(35 downto 32) <= "0000";
                     o_wdata(31 downto 26) <= "111111";
+                    -- TODO handle overflow
+--                     if ( i_rempty(I) = '0' ) then
+--                         FOR J in 15 downto 0 LOOP
+--                             overflow(J) <= overflow(J) or i_rdata(I)(J + 4);
+--                         END LOOP;
+--                     end if;
                     o_wdata(19 downto 4) <= overflow;
                     o_wdata(3 downto 0) <= "0001";
                     -- send sub header time -- check later if equal
-                    o_wdata(25 downto 20) <= shtime;
-                    shtime <= sheader_time(link_index);
+                    o_wdata(25 downto 20) <= i_rdata(i_link)(25 downto 20);
+                    shtime <= i_rdata(i_link)(25 downto 20);
+                    FOR I in N - 1 downto 0 LOOP
+                        if ( i_mask_n(I) = '1' ) then
+                            sheader_time(I) <= i_rdata(I)(25 downto 20);
+                        end if;
+                    END LOOP;
                     o_we <= '1';
+                end if;
+                
+                -- if wait for pre gets timeout
+                if ( wait_cnt_sh = TIMEOUT ) then
+                    error_sh <= shop_wait;
+                    merge_state <= error_state;
                 end if;
                 
             when merge_hits =>
@@ -561,80 +507,42 @@ begin
                 FOR I in N - 1 downto 0 LOOP
                     if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and sheader_time(I) /= shtime ) then
                         error_shtime <= '1';
-                        exit;
                     end if;
                 END LOOP;
                 
-                FOR I in N - 1 downto 0 LOOP
-                    -- check masking
-                    if ( i_mask_n(I) = '0' ) then
-                        cnt_pre_header(I) <= '0';
-                        cnt_trailer(I) <= '0';
-                        cnt_sh_header(I) <= '0';
-                    end if;
-                    
-                    -- check package start stop
-                    if ( i_rdata(I)(37 downto 36) = "01" or cnt_pre_header(I) = '0' ) then
-                        cnt_pre_header(I) <= '0';
-                    end if;
-                    
-                    if ( i_rdata(I)(37 downto 36) = "10" or cnt_trailer(I) = '0' ) then
-                        cnt_trailer(I) <= '0';
-                    end if;
-                                        
-                    if ( i_rdata(I)(31 downto 26) = "111111" or cnt_sh_header(I) = '0' ) then
-                        cnt_sh_header(I) <= '0';
-                    end if;
-                END LOOP;
+                -- TODO use generatic timeout for the moment
+                wait_cnt_merger <= wait_cnt_merger + '1';
+                if ( wait_cnt_merger = TIMEOUT ) then
+                    merge_state <= error_state;
+                    error_merger <= '1';
+                end if;
                 
+                -- change state
+                -- TODO error if sh is not there
+                if ( sh_state = check_zeros ) then
+                    merge_state <= wait_for_sh;
+                end if;
+                
+                -- TODO error if pre is not there
+                if ( pre_state = check_zeros ) then
+                    merge_state <= wait_for_pre;
+                end if;
+                
+                -- TODO error if trailer is not there
+                if ( tr_state = check_zeros ) then
+                    merge_state <= trailer;
+                end if;
+                
+                -- write out data
                 if ( w_ack = '1' ) then
                     o_wdata <= min_hit;
                     o_we <= '1';
                 end if;
                 
-                if ( cnt_sh_header = check_zeros and empty_t_3 = check_ones_t_3 ) then
-                    merge_state <= wait_for_sh;
-                    cnt_sh_header <= (others => '1');
-                end if;
-                
-                if ( cnt_pre_header = check_zeros and empty_t_3 = check_ones_t_3 ) then
-                    merge_state <= wait_for_pre;
-                    cnt_pre_header <= (others => '1');
-                end if;
-                
-                if ( cnt_trailer = check_zeros and empty_t_3 = check_ones_t_3 ) then
-                    merge_state <= trailer;
-                    cnt_trailer <= (others => '1');
-                end if;
-                
             when trailer =>
-                -- check for trailer
-                FOR I in N - 1 downto 0 LOOP
-                    if ( i_mask_n(I) = '0' ) then
-                        check_tr(I) <= '0';
-                    end if;
-                
-                    if ( wait_cnt_tr(I) = TIMEOUT ) then
-                        error_tr(I) <= '1';
-                    end if;
-                    
-                    if ( i_rempty(I) = '0' and i_rdata(I)(37 downto 36) = "10" and check_tr(I) = '1' ) then
-                        check_tr(I) <= i_rempty(I); 
-                        rack(I) <= not i_rempty(I); 
-                    end if;
-                    
-                    if ( check_tr(I) = '1' ) then
-                        wait_cnt_tr(I) <= wait_cnt_tr(I) + '1';
-                        rack(I) <= not i_rempty(I); 
-                    end if;
-                END LOOP;
-                
-                -- check if fifo is not full and all links have subheader
-                if( check_tr = check_zeros and i_wfull = '0' ) then
+                -- send trailer
+                if( i_wfull = '0' ) then
                     merge_state <= wait_for_pre;
-                    -- reset signals
-                    wait_cnt_tr <= (others => (others => '0'));
-                    check_tr <= (others => '1');
                     -- send trailer
                     o_wdata(37 downto 36) <= "10";
                     o_wdata(35 downto 12) <= (others => '0');
@@ -655,8 +563,12 @@ begin
                 o_wdata(12) <= error_gtime1;
                 o_wdata(13) <= error_gtime2;
                 o_wdata(14) <= error_shtime;
+                o_wdata(15) <= error_merger;
                 if ( error_pre /= check_zeros ) then
-                    o_wdata(15) <= '1';
+                    o_wdata(16) <= '1';
+                end if;
+                if ( error_sh /= check_zeros ) then
+                    o_wdata(17) <= '1';
                 end if;
                 o_weop <= '1';
                 o_we <= '1';
