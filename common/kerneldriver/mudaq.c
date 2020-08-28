@@ -34,9 +34,7 @@
 #include <linux/sched.h>
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(4, 10, 17)
-
 #include <linux/sched/signal.h>
-
 #endif
 
 #include <linux/pagemap.h>
@@ -51,13 +49,6 @@
 #define INFO(fmt, args...)  printk(KERN_INFO  "mudaq: " fmt, ## args)
 #define DEBUG(fmt, args...) printk(KERN_DEBUG "mudaq: " fmt, ## args)
 
-/* macros were removed in 3.9; allow compilation on newer kernels */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
-#define __devinit
-#define __devexit
-#define __devexit_p(arg) arg
-#endif
-
 /**
  * module-wide global variables
  */
@@ -68,8 +59,9 @@ static DEFINE_IDR(minor_idr);
 static DEFINE_MUTEX(minor_lock);
 
 static const struct pci_device_id PCI_DEVICE_IDS[] = {
-        {PCI_DEVICE(0x1172, 0x0004),},
-        {0,}};
+    { PCI_DEVICE(0x1172, 0x0004), },
+    { 0, },
+};
 
 /**
  * helper functions
@@ -88,9 +80,11 @@ int wrap_ring(int int1, int int2, int wrap, int divisor) {
     int result = 0;
     if ((int1 - int2) > 0) {
         result = (int1 - int2) / divisor;
-    } else if ((int1 - int2) < 0) {
+    }
+    else if ((int1 - int2) < 0) {
         result = wrap + (int1 - int2) / divisor;
-    } else if ((int1 - int2) == 0) {
+    }
+    else if ((int1 - int2) == 0) {
         result = 0;
     }
     return result;
@@ -178,13 +172,13 @@ static int mudaq_alloc(struct mudaq **mu) {
     *mu = tmp;
     return 0;
 
-    fail_dma:
+fail_dma:
     kfree(tmp_mem);
     tmp_dma = NULL;
-    fail_mem:
+fail_mem:
     kfree(tmp);
     tmp_mem = NULL;
-    fail:
+fail:
     *mu = NULL;
     return retval;
 }
@@ -375,7 +369,7 @@ static void mudaq_set_dma_n_buffers(struct mudaq *mu,
 /**
  * mudaq device file operatations
  */
-
+static
 ssize_t mudaq_fops_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos) {
     struct mudaq *mu = (struct mudaq *) filp->private_data;
     DECLARE_WAITQUEUE(wait, current);
@@ -436,6 +430,7 @@ ssize_t mudaq_fops_read(struct file *filp, char __user *buf, size_t count, loff_
 
 }
 
+static
 ssize_t mudaq_fops_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos) {
     struct mudaq *mu = (struct mudaq *) filp->private_data;
     s32 irq_on;
@@ -451,6 +446,7 @@ ssize_t mudaq_fops_write(struct file *filp, const char __user *buf, size_t count
     return sizeof(s32);
 }
 
+static
 int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
     struct mudaq *mu = (struct mudaq *) filp->private_data;
     int index = (int) vma->vm_pgoff;
@@ -531,11 +527,12 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
     ERROR("something went horribly wrong. run for your lives");
     rv = -EINVAL;
 
-    out:
+out:
     return rv;
 }
 
-static int mudaq_setup_mmio(struct pci_dev *pdev, struct mudaq *mu) {
+static
+int mudaq_setup_mmio(struct pci_dev *pdev, struct mudaq *mu) {
 
     int i, j;
     const int bars[] = {0, 1, 2, 3};
@@ -564,21 +561,20 @@ static int mudaq_setup_mmio(struct pci_dev *pdev, struct mudaq *mu) {
     }
     return 0;
 
-    fail_unmap:
+fail_unmap:
     for (j = i; j > 0; --j) pci_iounmap(pdev, mu->mem->internal_addr[i]);
     pci_release_regions(pdev);
-    out:
+out:
     return rv;
 }
 
-static void mudaq_clear_mmio(struct pci_dev *dev, struct mudaq *mu) {
-
+static
+void mudaq_clear_mmio(struct pci_dev *dev, struct mudaq *mu) {
     pci_iounmap(dev, mu->mem->internal_addr[0]);
     pci_iounmap(dev, mu->mem->internal_addr[1]);
     pci_iounmap(dev, mu->mem->internal_addr[2]);
     pci_iounmap(dev, mu->mem->internal_addr[3]);
     pci_release_regions(dev);
-
 }
 
 /** setup coherent dma
@@ -588,7 +584,8 @@ static void mudaq_clear_mmio(struct pci_dev *dev, struct mudaq *mu) {
  * WARNING
  * assumes that the read/write registers are already mapped
  */
-static int mudaq_setup_dma(struct pci_dev *pdev, struct mudaq *mu) {
+static
+int mudaq_setup_dma(struct pci_dev *pdev, struct mudaq *mu) {
     int rv;
     dma_addr_t ctrl_addr;
     void *ctrl_internal;
@@ -624,12 +621,12 @@ static int mudaq_setup_dma(struct pci_dev *pdev, struct mudaq *mu) {
     mudaq_set_dma_ctrl_addr(mu, ctrl_addr);
     return 0;
 
-    out:
+out:
     return rv;
 }
 
-static void mudaq_clear_dma(struct pci_dev *pdev, struct mudaq *mu) {
-
+static
+void mudaq_clear_dma(struct pci_dev *pdev, struct mudaq *mu) {
     /* deactivate any readout activity before removing the dma memory */
     mudaq_deactivate(mu);
     mudaq_set_dma_ctrl_addr(mu, 0x0);
@@ -637,8 +634,8 @@ static void mudaq_clear_dma(struct pci_dev *pdev, struct mudaq *mu) {
     dma_free_coherent(&pdev->dev, mu->mem->phys_size[4], mu->mem->internal_addr[4], mu->mem->bus_addr_ctrl);
 }
 
-static int mudaq_setup_msi(struct mudaq *mu) {
-
+static
+int mudaq_setup_msi(struct mudaq *mu) {
     int rv;
     pci_set_master(mu->pci_dev);
 
@@ -660,15 +657,15 @@ static int mudaq_setup_msi(struct mudaq *mu) {
 
     return 0;
 
-    out_clear_msi:
+out_clear_msi:
     pci_disable_msi(mu->pci_dev);
-    out_clear_mwi:
+out_clear_mwi:
     pci_clear_mwi(mu->pci_dev);
     return rv;
 }
 
-static void mudaq_clear_msi(struct mudaq *mu) {
-
+static
+void mudaq_clear_msi(struct mudaq *mu) {
     /* release irq */
     devm_free_irq(mu->dev, mu->irq, mu);
     DEBUG("Freed irq");
@@ -676,10 +673,10 @@ static void mudaq_clear_msi(struct mudaq *mu) {
     /* disable MSI */
     pci_disable_msi(mu->pci_dev);
     pci_clear_mwi(mu->pci_dev);
-
 }
 
-static void mudaq_free_dma(struct mudaq *mu) {
+static
+void mudaq_free_dma(struct mudaq *mu) {
     int i_list, i_page;
     struct scatterlist *sg;
 
@@ -707,7 +704,8 @@ static void mudaq_free_dma(struct mudaq *mu) {
 }
 
 /* release function is called when a process closes the device file */
-static int mudaq_fops_release(struct inode *inode, struct file *filp) {
+static
+int mudaq_fops_release(struct inode *inode, struct file *filp) {
     struct mudaq *mu = (struct mudaq *) filp->private_data;
     if (mu->dma->flag == true)
         mudaq_free_dma(mu);
@@ -715,15 +713,16 @@ static int mudaq_fops_release(struct inode *inode, struct file *filp) {
     return 0;
 }
 
-static int mudaq_fops_open(struct inode *inode, struct file *filp) {
+static
+int mudaq_fops_open(struct inode *inode, struct file *filp) {
     struct mudaq *mu = minor_find_data(iminor(inode));
     if (mu == NULL) return -ENODEV;
     filp->private_data = mu;
 
     return 0;
-
 }
 
+static
 long mudaq_fops_ioctl(struct file *filp,
                       unsigned int cmd,    /* magic and sequential number for ioctl */
                       unsigned long ioctl_param) {
@@ -900,7 +899,8 @@ long mudaq_fops_ioctl(struct file *filp,
                 ERROR("Error %d while getting user pages \n", retval);
                 mu->dma->npages = 0;
                 goto free_sgt;
-            } else {
+            }
+            else {
                 DEBUG("Number of pages received: %d", retval);
                 mu->dma->npages = retval;
             }
@@ -973,33 +973,33 @@ long mudaq_fops_ioctl(struct file *filp,
     }
     return 0;
 
-    unmap:
+unmap:
     for_each_sg(mu->dma->sgt->sgl, sg, n_mapped, i_list) {
         dma_unmap_sg(mu->dev, sg, 1, DMA_FROM_DEVICE);
     }
-    release:
+release:
     for (i_page = 0; i_page < mu->dma->npages; i_page++) {
         if (!PageReserved(mu->dma->pages[i_page]))
             SetPageDirty(mu->dma->pages[i_page]);
         //page_cache_release( mu->dma->pages[i_page] );
         put_page(mu->dma->pages[i_page]);
     }
-    free_sgt:
+free_sgt:
     kfree(mu->dma->sgt);
-    free_table:
+free_table:
     kfree(mu->dma->pages);
-    fail:
+fail:
     return retval;
 }
 
 static const struct file_operations mudaq_fops = {
-        .owner          = THIS_MODULE,
-        .read           = mudaq_fops_read,
-        .write          = mudaq_fops_write,
-        .mmap           = mudaq_fops_mmap,
-        .open           = mudaq_fops_open,
-        .unlocked_ioctl = mudaq_fops_ioctl,
-        .release        = mudaq_fops_release,
+    .owner          = THIS_MODULE,
+    .read           = mudaq_fops_read,
+    .write          = mudaq_fops_write,
+    .mmap           = mudaq_fops_mmap,
+    .open           = mudaq_fops_open,
+    .unlocked_ioctl = mudaq_fops_ioctl,
+    .release        = mudaq_fops_release,
 };
 
 
@@ -1008,7 +1008,8 @@ static const struct file_operations mudaq_fops = {
  */
 
 /** register the mudaq device. device is live after succesful call. */
-static int mudaq_register(struct mudaq *mu) {
+static
+int mudaq_register(struct mudaq *mu) {
     int retval;
     dev_t devno;
 
@@ -1042,16 +1043,17 @@ static int mudaq_register(struct mudaq *mu) {
 
     return 0;
 
-    fail_device:
+fail_device:
     cdev_del(&mu->char_dev);
-    fail_cdev:
+fail_cdev:
     minor_release(MINOR(devno));
-    fail_minor:
+fail_minor:
     return retval;
 }
 
 /** unregister the mudaq device */
-static void mudaq_unregister(struct mudaq *mu) {
+static
+void mudaq_unregister(struct mudaq *mu) {
     INFO("unregister '%s' cdev(%d, %d)\n", dev_name(mu->dev),
          MAJOR(mu->char_dev.dev),
          MINOR(mu->char_dev.dev));
@@ -1068,8 +1070,8 @@ static void mudaq_unregister(struct mudaq *mu) {
 /**
  * mudaq pci device handling
  */
-
-static int __devinit mudaq_pci_probe(struct pci_dev *pdev, const struct pci_device_id *pid) {
+static
+int mudaq_pci_probe(struct pci_dev *pdev, const struct pci_device_id *pid) {
     int rv;
     struct mudaq *mu;
 
@@ -1094,21 +1096,22 @@ static int __devinit mudaq_pci_probe(struct pci_dev *pdev, const struct pci_devi
 
     return 0;
 
-    out_unregister:
+out_unregister:
     mudaq_unregister(mu);
-    out_dma:
+out_dma:
     mudaq_clear_dma(pdev, mu);
-    out_mmio:
+out_mmio:
     mudaq_clear_mmio(pdev, mu);
-    out_disable:
+out_disable:
     pci_disable_device(pdev);
-    out_free:
+out_free:
     mudaq_free(mu);
-    fail:
+fail:
     return rv;
 }
 
-static void __devexit mudaq_pci_remove(struct pci_dev *pdev) {
+static
+void mudaq_pci_remove(struct pci_dev *pdev) {
     struct mudaq *mu = (struct mudaq *) pci_get_drvdata(pdev);
 
     if (mu->dma->flag == true)
@@ -1123,11 +1126,12 @@ static void __devexit mudaq_pci_remove(struct pci_dev *pdev) {
     INFO("Device removed");
 }
 
-static struct pci_driver mudaq_pci_driver = {
+static
+struct pci_driver mudaq_pci_driver = {
         .name =     DRIVER_NAME,
         .id_table = PCI_DEVICE_IDS,
         .probe =    mudaq_pci_probe,
-        .remove =   __devexit_p(mudaq_pci_remove),
+        .remove =   mudaq_pci_remove,
 };
 
 MODULE_DEVICE_TABLE(pci, PCI_DEVICE_IDS);
@@ -1136,8 +1140,8 @@ MODULE_DEVICE_TABLE(pci, PCI_DEVICE_IDS);
 /**
  * module init and exit
  */
-
-static int __init mudaq_init(void) {
+static
+int __init mudaq_init(void) {
     int rv;
     dev_t first;
 
@@ -1168,15 +1172,16 @@ static int __init mudaq_init(void) {
     DEBUG("module initialized\n");
     return 0;
 
-    fail_pci:
+fail_pci:
     unregister_chrdev_region(first, MAX_NUM_DEVICES);
-    fail_chrdev:
+fail_chrdev:
     class_destroy(mudaq_class);
-    fail:
+fail:
     return rv;
 }
 
-static void __exit mudaq_exit(void) {
+static
+void __exit mudaq_exit(void) {
     pci_unregister_driver(&mudaq_pci_driver);
     unregister_chrdev_region(MKDEV(major, 0), MAX_NUM_DEVICES);
     class_destroy(mudaq_class);
@@ -1185,7 +1190,6 @@ static void __exit mudaq_exit(void) {
 }
 
 module_init(mudaq_init);
-
 module_exit(mudaq_exit);
 
 MODULE_DESCRIPTION("mu3e pcie readout board driver");
