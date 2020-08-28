@@ -66,7 +66,7 @@ BEGIN
     end if;
     end process;
 
-    process (i_clk, i_reset_ack_seen_n, i_reset_run_end_n)
+    process (i_clk)
     begin
         if (rising_edge(i_clk)) then
             if (i_reset_ack_seen_n = '0') then 
