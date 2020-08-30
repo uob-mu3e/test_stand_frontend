@@ -6,4 +6,4 @@
     url = git@bitbucket.org:mu3e/mutrigana-base
 [submodule "common/kerneldriver/dmabuf"]
 	path = common/kerneldriver/dmabuf
-	url = https://github.com/akozlins/dmabuf
+	url = git@github.com:akozlins/dmabuf

@@ -1,4 +1,4 @@
-/**
+/*
  * a driver for the mu3e pcie readout board
  *
  * @author  Moritz Kiehn <kiehn@physi.uni-heidelberg.de>
@@ -49,9 +49,9 @@
 #define INFO(fmt, args...)  printk(KERN_INFO  "mudaq: " fmt, ## args)
 #define DEBUG(fmt, args...) printk(KERN_DEBUG "mudaq: " fmt, ## args)
 
-/**
- * module-wide global variables
- */
+//
+// module-wide global variables
+//
 
 static struct class *mudaq_class = NULL;
 static int major = 0;
@@ -63,6 +63,7 @@ static const struct pci_device_id PCI_DEVICE_IDS[] = {
     { 0, },
 };
 
+static
 int wrap_ring(int int1, int int2, int wrap, int divisor) {
     int result = 0;
     if ((int1 - int2) > 0) {
@@ -77,19 +78,21 @@ int wrap_ring(int int1, int int2, int wrap, int divisor) {
     return result;
 }
 
+static
 int is_page_aligned(void *pointer) {
     DEBUG("diff to page: %lu", ((uintptr_t) (const void *) (pointer)) % PAGE_SIZE);
     return !(((uintptr_t) (const void *) (pointer)) % PAGE_SIZE == 0);
 }
 
+static
 void *align_page(void *pointer) {
     void *aligned_pointer = (void *) (pointer + PAGE_SIZE - ((uintptr_t) (const void *) (pointer)) % PAGE_SIZE);
     return aligned_pointer;
 }
 
-/**
- * mudaq structures and related functions
- */
+//
+// mudaq structures and related functions
+//
 
 struct mudaq {
     struct device *dev;
@@ -104,11 +107,11 @@ struct mudaq {
     struct mudaq_dma *dma;
 };
 
-/**
+/*
    First four entries of internal_addr, phys_size and phys_addr are for
    the four PCIe BAR regions
    fifth entry is for the DMA control buffer
- */
+*/
 struct mudaq_mem {
     __iomem u32 *internal_addr[5];
     u32 phys_size[5];
@@ -178,11 +181,12 @@ static void mudaq_free(struct mudaq *mu) {
 }
 
 
-/**
- * minor number handling
- */
+//
+// minor number handling
+//
 
 /** aquire a new minor number and associate it with the given data */
+static
 int minor_aquire(void *data) {
     int retval;
 
@@ -211,7 +215,8 @@ int minor_aquire(void *data) {
     return retval;
 }
 
-/** find the data associated with the given minor number */
+/* find the data associated with the given minor number */
+static
 void *minor_find_data(int minor) {
     void *data;
 
@@ -222,33 +227,38 @@ void *minor_find_data(int minor) {
     return data;
 }
 
-/** aquire a new minor number and associate it with the given device */
+/* aquire a new minor number and associate it with the given device */
+static
 void minor_release(int minor) {
     mutex_lock(&minor_lock);
     idr_remove(&minor_idr, minor);
     mutex_unlock(&minor_lock);
 }
 
-static int mudaq_interrupt_control(struct mudaq *info, s32 irq_on) {
+static
+int mudaq_interrupt_control(struct mudaq *info, s32 irq_on) {
     /* no need to do anything. interrupts are activated from userspace */
     DEBUG("Called interrupt control w/ %#x", irq_on);
     return 0;
 }
 
-static irqreturn_t mudaq_interrupt_handler(int irq, struct mudaq *mu) {
+static
+irqreturn_t mudaq_interrupt_handler(int irq, struct mudaq *mu) {
     /* no need to do anything. just acknowledge that something happened. */
     DEBUG("Received interrupt");
     return IRQ_HANDLED;
 }
 
 /* Trigger an interrupt event */
+static
 void mudaq_event_notify(struct mudaq *mu) {
     atomic_inc(&mu->event); // interrupt counter
     wake_up_interruptible(&mu->wait); // wake up read function
 }
 
 /* Hardware interrupt handler */
-static irqreturn_t mudaq_interrupt(int irq, void *dev_id) {
+static
+irqreturn_t mudaq_interrupt(int irq, void *dev_id) {
     struct mudaq *mu = (struct mudaq *) dev_id;
     irqreturn_t ret = mudaq_interrupt_handler(irq, mu);
 
@@ -258,7 +268,7 @@ static irqreturn_t mudaq_interrupt(int irq, void *dev_id) {
     return ret;
 }
 
-/* Access registers  */
+/* Access registers */
 inline __iomem u32 *mudaq_register_rw(struct mudaq *mu, unsigned index) {
     __iomem u32 *base = mu->mem->internal_addr[0];
     return base + index;
@@ -353,9 +363,10 @@ static void mudaq_set_dma_n_buffers(struct mudaq *mu,
         ERROR("number of buffers. wrote %u, read %u", n_buffers, test);
 }
 
-/**
- * mudaq device file operations
- */
+//
+// mudaq device file operations
+//
+
 static
 ssize_t mudaq_fops_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos) {
     struct mudaq *mu = (struct mudaq *) filp->private_data;
@@ -429,6 +440,9 @@ ssize_t mudaq_fops_write(struct file *filp, const char __user *buf, size_t count
     if (copy_from_user(&irq_on, buf, count) != 0) return -EFAULT;
 
     retval = mudaq_interrupt_control(mu, irq_on);
+    if(retval != 0) {
+        return -EIO;
+    }
 
     return sizeof(s32);
 }
@@ -745,18 +759,20 @@ long mudaq_fops_ioctl(struct file *filp,
      * https://github.com/zfsonlinux/zfs/issues/8261 --> kernel > 5.0
      */
 
-    if (_IOC_DIR(cmd) & _IOC_READ)
+    if (_IOC_DIR(cmd) & _IOC_READ) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
         err = !access_ok((void __user *)ioctl_param, _IOC_SIZE(cmd));
 #else
         err = !access_ok(VERIFY_WRITE, (void __user *)ioctl_param, _IOC_SIZE(cmd));
 #endif
-    else if (_IOC_DIR(cmd) & _IOC_WRITE)
+    }
+    else if (_IOC_DIR(cmd) & _IOC_WRITE) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
         err = !access_ok((void __user *)ioctl_param, _IOC_SIZE(cmd));
 #else
-    err = !access_ok(VERIFY_READ, (void __user *)ioctl_param, _IOC_SIZE(cmd));
+        err = !access_ok(VERIFY_READ, (void __user *)ioctl_param, _IOC_SIZE(cmd));
 #endif
+    }
     if (err) {
         retval = -EFAULT;
         goto fail;
@@ -973,11 +989,11 @@ static const struct file_operations mudaq_fops = {
 };
 
 
-/**
- * register / unregister mudaq device with the kernel
- */
+//
+// register / unregister mudaq device with the kernel
+//
 
-/** register the mudaq device. device is live after succesful call. */
+/* register the mudaq device. device is live after succesful call. */
 static
 int mudaq_register(struct mudaq *mu) {
     int retval;
@@ -1038,9 +1054,10 @@ void mudaq_unregister(struct mudaq *mu) {
 }
 
 
-/**
- * mudaq pci device handling
- */
+//
+// mudaq pci device handling
+//
+
 static
 int mudaq_pci_probe(struct pci_dev *pdev, const struct pci_device_id *pid) {
     int rv;
