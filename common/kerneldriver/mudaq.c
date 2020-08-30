@@ -793,6 +793,7 @@ long mudaq_fops_ioctl(struct file *filp,
                 ERROR("copy_to_user failed with error %d \n", retval);
                 goto fail;
             }
+            break;
         case MAP_DMA: /* Receive a pointer to a virtual address in user space */
             retval = copy_from_user(&(mu->msg), (char __user *) ioctl_param, sizeof(mu->msg));
             if (retval > 0) {
