@@ -58,7 +58,8 @@ static int major = 0;
 static DEFINE_IDR(minor_idr);
 static DEFINE_MUTEX(minor_lock);
 
-static const struct pci_device_id PCI_DEVICE_IDS[] = {
+static
+const struct pci_device_id PCI_DEVICE_IDS[] = {
     { PCI_DEVICE(0x1172, 0x0004), },
     { 0, },
 };
@@ -117,7 +118,8 @@ struct mudaq_dma {
 };
 
 /** allocate a new mudaq struct and initialize its state */
-static int mudaq_alloc(struct mudaq **mu) {
+static
+int mudaq_alloc(struct mudaq **mu) {
     int retval;
     struct mudaq *tmp;
     struct mudaq_mem *tmp_mem;
@@ -162,7 +164,8 @@ fail:
 }
 
 /** free the given mudaq struct and all associated memory */
-static void mudaq_free(struct mudaq *mu) {
+static
+void mudaq_free(struct mudaq *mu) {
     kfree(mu->dma);
     kfree(mu->mem);
     kfree(mu);
@@ -267,7 +270,8 @@ inline __iomem u32 *mudaq_register_ro(struct mudaq *mu, unsigned index) {
     return base + index;
 }
 
-static void mudaq_deactivate(struct mudaq *mu) {
+static
+void mudaq_deactivate(struct mudaq *mu) {
 
     u32 test;
 
@@ -282,7 +286,8 @@ static void mudaq_deactivate(struct mudaq *mu) {
 }
 
 /* Copy dma bus addresses to device registers */
-static void mudaq_set_dma_ctrl_addr(struct mudaq *mu,
+static
+void mudaq_set_dma_ctrl_addr(struct mudaq *mu,
                                     dma_addr_t ctrl_handle) {
     dma_addr_t test;
 
@@ -295,7 +300,8 @@ static void mudaq_set_dma_ctrl_addr(struct mudaq *mu,
         ERROR("dma control buffer. wrote %#zx read %#zx", (size_t) ctrl_handle, (size_t) test);
 }
 
-static void mudaq_read_dma_data_addr(struct mudaq *mu,
+static
+void mudaq_read_dma_data_addr(struct mudaq *mu,
                                      u32 mem_location) {
     dma_addr_t test;
     u32 n_pages;
@@ -317,7 +323,8 @@ static void mudaq_read_dma_data_addr(struct mudaq *mu,
         ERROR("# of pages is %x, should be %x", n_pages, mu->dma->n_pages[mem_location]);
 }
 
-static void mudaq_set_dma_data_addr(struct mudaq *mu,
+static
+void mudaq_set_dma_data_addr(struct mudaq *mu,
                                     dma_addr_t data_handle,
                                     u32 mem_location,
                                     u32 n_pages) {
@@ -342,7 +349,8 @@ static void mudaq_set_dma_data_addr(struct mudaq *mu,
     }
 }
 
-static void mudaq_set_dma_n_buffers(struct mudaq *mu,
+static
+void mudaq_set_dma_n_buffers(struct mudaq *mu,
                                     u32 n_buffers) {
     u32 test;
     iowrite32(n_buffers, mudaq_register_rw(mu, DMA_NUM_ADDRESSES_REGISTER_W));
@@ -483,25 +491,28 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
     vma->vm_pgoff = 0;
 
     switch (index) {
-        case 0: // rw registers
-        case 2: // rw memory
-            vma->vm_flags |= VM_WRITE;
-            fallthrough;
-        case 1: // ro registers
-        case 3: // ro memory
-            vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-            return io_remap_pfn_range(
-                    vma,
-                    vma->vm_start,
-                    PHYS_PFN(mu->mem->phys_addr[index]),
-                    vma->vm_end - vma->vm_start,
-                    vma->vm_page_prot);
-        case 4: // dma control buffer
-            return dma_mmap_coherent(mu->dev,
-                                     vma,
-                                     mu->mem->internal_addr[index],
-                                     mu->mem->bus_addr_ctrl,
-                                     mu->mem->phys_size[index]);
+    case 0: // rw registers
+    case 2: // rw memory
+        vma->vm_flags |= VM_WRITE;
+        fallthrough;
+    case 1: // ro registers
+    case 3: // ro memory
+        vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+        return io_remap_pfn_range(
+            vma,
+            vma->vm_start,
+            PHYS_PFN(mu->mem->phys_addr[index]),
+            vma->vm_end - vma->vm_start,
+            vma->vm_page_prot
+        );
+    case 4: // dma control buffer
+        return dma_mmap_coherent(
+            mu->dev,
+            vma,
+            mu->mem->internal_addr[index],
+            mu->mem->bus_addr_ctrl,
+            mu->mem->phys_size[index]
+        );
     }
 
     /* this should NEVER happen */
@@ -768,174 +779,174 @@ long mudaq_fops_ioctl(struct file *filp,
      * Switch according to the ioctl called
      */
     switch (cmd) {
-        case REQUEST_INTERRUPT_COUNTER: /* Send current interrupt counter to user space */
-            new_event_count = atomic_read(&mu->event);
-            retval = copy_to_user((char __user *) ioctl_param, &new_event_count, sizeof(new_event_count));
-            if (retval > 0) {
-                ERROR("copy_to_user failed with error %d \n", retval);
-                goto fail;
-            }
-            break;
-        case MAP_DMA: /* Receive a pointer to a virtual address in user space */
-            retval = copy_from_user(&(mu->msg), (char __user *) ioctl_param, sizeof(mu->msg));
-            if (retval > 0) {
-                ERROR("copy_from_user failed with error %d \n", retval);
-                goto fail;
-            }
-            INFO("Recieved following virtual address: 0x%0llx \n", (u64) (mu->msg).address);
-            INFO("Size of allocated memory: %zu bytes\n", mu->msg.size);
+    case REQUEST_INTERRUPT_COUNTER: /* Send current interrupt counter to user space */
+        new_event_count = atomic_read(&mu->event);
+        retval = copy_to_user((char __user *) ioctl_param, &new_event_count, sizeof(new_event_count));
+        if (retval > 0) {
+            ERROR("copy_to_user failed with error %d \n", retval);
+            goto fail;
+        }
+        break;
+    case MAP_DMA: /* Receive a pointer to a virtual address in user space */
+        retval = copy_from_user(&(mu->msg), (char __user *) ioctl_param, sizeof(mu->msg));
+        if (retval > 0) {
+            ERROR("copy_from_user failed with error %d \n", retval);
+            goto fail;
+        }
+        INFO("Recieved following virtual address: 0x%0llx \n", (u64) (mu->msg).address);
+        INFO("Size of allocated memory: %zu bytes\n", mu->msg.size);
 
-            /* allocte memory for page pointers */
-            if ((pages_tmp = kzalloc(sizeof(long unsigned) * N_PAGES, GFP_KERNEL)) == NULL) {
-                DEBUG("Error allocating memory for page table");
-                retval = -ENOMEM;
-                goto fail;
-            }
-            mu->dma->pages = pages_tmp;
+        /* allocte memory for page pointers */
+        if ((pages_tmp = kzalloc(sizeof(long unsigned) * N_PAGES, GFP_KERNEL)) == NULL) {
+            DEBUG("Error allocating memory for page table");
+            retval = -ENOMEM;
+            goto fail;
+        }
+        mu->dma->pages = pages_tmp;
 
-            /* allocate memory for scatter gather table containing scatter gather lists chained to each other */
-            if ((sgt_tmp = kzalloc(sizeof(struct sg_table), GFP_KERNEL)) == NULL) {
-                DEBUG("Error allocating memory for scatter gather table");
-                retval = -ENOMEM;
-                goto free_table;
-            }
-            mu->dma->sgt = sgt_tmp;
+        /* allocate memory for scatter gather table containing scatter gather lists chained to each other */
+        if ((sgt_tmp = kzalloc(sizeof(struct sg_table), GFP_KERNEL)) == NULL) {
+            DEBUG("Error allocating memory for scatter gather table");
+            retval = -ENOMEM;
+            goto free_table;
+        }
+        mu->dma->sgt = sgt_tmp;
 
-            DEBUG("Allocated memory");
+        DEBUG("Allocated memory");
 
-            /* check page alignment of virtual address
-             * (should not be necessary since pinned memory SHOULD be page aligned)
-             * required for DMA to malloced memory
-             */
-            if(!PAGE_ALIGNED(mu->msg.address)) {
-                mu->msg.address = PTR_ALIGN(mu->msg.address, PAGE_SIZE);
-            }
+        /* check page alignment of virtual address
+         * (should not be necessary since pinned memory SHOULD be page aligned)
+         * required for DMA to malloced memory
+         */
+        if(!PAGE_ALIGNED(mu->msg.address)) {
+            mu->msg.address = PTR_ALIGN(mu->msg.address, PAGE_SIZE);
+        }
 
-            /* get pages in kernel space from user space address */
-            down_read(&current->mm->mmap_sem); //lock the memory management structure for our process
+        /* get pages in kernel space from user space address */
+        down_read(&current->mm->mmap_sem); //lock the memory management structure for our process
 
-            // check kernel version as there was a change from 4.4.92.xx (??) on
-            INFO("Found Kernel %d\n", LINUX_VERSION_CODE);
+        // check kernel version as there was a change from 4.4.92.xx (??) on
+        INFO("Found Kernel %d\n", LINUX_VERSION_CODE);
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 4, 104)
-            retval = get_user_pages(
-                               current,
-                               current->mm,
-                               (unsigned long)(mu->msg).address,
-                               N_PAGES,
-                               1,  // write
-                               0,  // do not force overriding of permissions
-                               mu->dma->pages,
-                               NULL
-                               );
+        retval = get_user_pages(
+            current,
+            current->mm,
+            (unsigned long)(mu->msg).address,
+            N_PAGES,
+            1,  // write
+            0,  // do not force overriding of permissions
+            mu->dma->pages,
+            NULL
+        );
 #elif LINUX_VERSION_CODE <= KERNEL_VERSION(4, 8, 17)
-            retval = get_user_pages_remote(
-                             current,
-                             current->mm,
-                             (unsigned long)(mu->msg).address,
-                             N_PAGES,
-                             1,  // write
-                             0,  // do not force overriding of permissions
-                             mu->dma->pages,
-                             NULL
-                             );
+        retval = get_user_pages_remote(
+            current,
+            current->mm,
+            (unsigned long)(mu->msg).address,
+            N_PAGES,
+            1,  // write
+            0,  // do not force overriding of permissions
+            mu->dma->pages,
+            NULL
+        );
 #elif LINUX_VERSION_CODE <= KERNEL_VERSION(4, 9, 112)
-            retval = get_user_pages_remote(
-                         current,
-                         current->mm,
-                         (unsigned long)(mu->msg).address,
-                         N_PAGES,
-                         FOLL_WRITE, // write
-                         mu->dma->pages,
-                         NULL
-                         );
+        retval = get_user_pages_remote(
+            current,
+            current->mm,
+            (unsigned long)(mu->msg).address,
+            N_PAGES,
+            FOLL_WRITE, // write
+            mu->dma->pages,
+            NULL
+        );
 #else
-            retval = get_user_pages_remote(
-                    current,
-                    current->mm,
-                    (unsigned long) (mu->msg).address,
-                    N_PAGES,
-                    FOLL_WRITE, // write
-                    mu->dma->pages,
-                    NULL, NULL
-            );
+        retval = get_user_pages_remote(
+            current,
+            current->mm,
+            (unsigned long) (mu->msg).address,
+            N_PAGES,
+            FOLL_WRITE, // write
+            mu->dma->pages,
+            NULL, NULL
+        );
 #endif
 
-            up_read(&current->mm->mmap_sem);  // unlock
-            if (retval < 1) {
-                ERROR("Error %d while getting user pages \n", retval);
-                mu->dma->npages = 0;
-                goto free_sgt;
+        up_read(&current->mm->mmap_sem);  // unlock
+        if (retval < 1) {
+            ERROR("Error %d while getting user pages \n", retval);
+            mu->dma->npages = 0;
+            goto free_sgt;
+        }
+        else {
+            DEBUG("Number of pages received: %d", retval);
+            mu->dma->npages = retval;
+        }
+
+        if ((retval = pci_set_dma_mask(mu->pci_dev, DMA_BIT_MASK(64))) < 0) goto release;
+        if ((retval = pci_set_consistent_dma_mask(mu->pci_dev, DMA_BIT_MASK(64))) < 0) goto release;
+
+        /* allocate scatter gather table */
+        retval = sg_alloc_table_from_pages(mu->dma->sgt, mu->dma->pages, mu->dma->npages, 0,
+                                           PAGE_SIZE * mu->dma->npages, GFP_KERNEL);
+        if (retval < 0) {
+            ERROR("Could not set scatter gather table");
+            goto release;
+        }
+
+        /* FPGA can only take 4096 addresses
+         * => check for this limit
+         */
+        if (mu->dma->sgt->nents > 4096) {
+            ERROR("Number of DMA addresses: %d > 4096! Too much for FPGA", mu->dma->sgt->nents);
+            retval = -ENOMEM;
+            goto release;
+        }
+
+        mudaq_deactivate(mu); // deactivate readout before setting dma addresses
+
+        /** Map scatter gather lists to DMA addresses
+         * calculate number of pages per list
+         * pass address and number of pages to FPGA
+         */
+        for_each_sg(mu->dma->sgt->sgl, sg, mu->dma->sgt->nents, i_list) {
+            count = dma_map_sg(&mu->pci_dev->dev, sg, 1, DMA_FROM_DEVICE);
+            if (count == 0) {
+                ERROR("Could not map list %d", i_list);
+                retval = -EFAULT;
+                n_mapped = i_list;
+                goto unmap;
             }
-            else {
-                DEBUG("Number of pages received: %d", retval);
-                mu->dma->npages = retval;
+            if (dma_mapping_error(&mu->pci_dev->dev, sg_dma_address(sg))) {
+                ERROR("Error during mapping");
+                retval = -EADDRNOTAVAIL;
+                n_mapped = i_list;
+                goto unmap;
             }
-
-            if ((retval = pci_set_dma_mask(mu->pci_dev, DMA_BIT_MASK(64))) < 0) goto release;
-            if ((retval = pci_set_consistent_dma_mask(mu->pci_dev, DMA_BIT_MASK(64))) < 0) goto release;
-
-            /* allocate scatter gather table */
-            retval = sg_alloc_table_from_pages(mu->dma->sgt, mu->dma->pages, mu->dma->npages, 0,
-                                               PAGE_SIZE * mu->dma->npages, GFP_KERNEL);
-            if (retval < 0) {
-                ERROR("Could not set scatter gather table");
-                goto release;
+            DEBUG("At %d: address %lx, length in pages: %lx", i_list, (long unsigned) sg_dma_address(sg),
+                  sg->length / PAGE_SIZE);
+            if (sg->length > MUDAQ_DMABUF_DATA_LEN) {
+                ERROR("Length of scatter gather list larger than ring buffer");
+                retval = -EFAULT;
+                n_mapped = i_list;
+                goto unmap;
             }
+            mudaq_set_dma_data_addr(mu, sg_dma_address(sg), i_list, sg->length / PAGE_SIZE);
+            mu->dma->bus_addrs[i_list] = sg_dma_address(sg);
+            mu->dma->n_pages[i_list] = sg->length / PAGE_SIZE;
+        }
+        mudaq_set_dma_n_buffers(mu, mu->dma->sgt->nents);
+        DEBUG("Found %d discontinuous pieces in memory buffer", mu->dma->sgt->nents);
 
-            /* FPGA can only take 4096 addresses
-             * => check for this limit
-             */
-            if (mu->dma->sgt->nents > 4096) {
-                ERROR("Number of DMA addresses: %d > 4096! Too much for FPGA", mu->dma->sgt->nents);
-                retval = -ENOMEM;
-                goto release;
-            }
+        for (i_list = 0; i_list < mu->dma->sgt->nents; i_list++) {
+            mudaq_read_dma_data_addr(mu, i_list);
+        }
 
-            mudaq_deactivate(mu); // deactivate readout before setting dma addresses
+        INFO("Setup mapping for pinned DMA data buffer");
 
-            /** Map scatter gather lists to DMA addresses
-             * calculate number of pages per list
-             * pass address and number of pages to FPGA
-             */
-            for_each_sg(mu->dma->sgt->sgl, sg, mu->dma->sgt->nents, i_list) {
-                count = dma_map_sg(&mu->pci_dev->dev, sg, 1, DMA_FROM_DEVICE);
-                if (count == 0) {
-                    ERROR("Could not map list %d", i_list);
-                    retval = -EFAULT;
-                    n_mapped = i_list;
-                    goto unmap;
-                }
-                if (dma_mapping_error(&mu->pci_dev->dev, sg_dma_address(sg))) {
-                    ERROR("Error during mapping");
-                    retval = -EADDRNOTAVAIL;
-                    n_mapped = i_list;
-                    goto unmap;
-                }
-                DEBUG("At %d: address %lx, length in pages: %lx", i_list, (long unsigned) sg_dma_address(sg),
-                      sg->length / PAGE_SIZE);
-                if (sg->length > MUDAQ_DMABUF_DATA_LEN) {
-                    ERROR("Length of scatter gather list larger than ring buffer");
-                    retval = -EFAULT;
-                    n_mapped = i_list;
-                    goto unmap;
-                }
-                mudaq_set_dma_data_addr(mu, sg_dma_address(sg), i_list, sg->length / PAGE_SIZE);
-                mu->dma->bus_addrs[i_list] = sg_dma_address(sg);
-                mu->dma->n_pages[i_list] = sg->length / PAGE_SIZE;
-            }
-            mudaq_set_dma_n_buffers(mu, mu->dma->sgt->nents);
-            DEBUG("Found %d discontinuous pieces in memory buffer", mu->dma->sgt->nents);
+        mu->to_user[1] = 0;      // reset offset in ring buffer
+        mu->dma->flag = true;  // flag to release pages and free memory when removing device
 
-            for (i_list = 0; i_list < mu->dma->sgt->nents; i_list++) {
-                mudaq_read_dma_data_addr(mu, i_list);
-            }
-
-            INFO("Setup mapping for pinned DMA data buffer");
-
-            mu->to_user[1] = 0;      // reset offset in ring buffer
-            mu->dma->flag = true;  // flag to release pages and free memory when removing device
-
-            break;
+        break;
     }
     return 0;
 
@@ -958,7 +969,8 @@ fail:
     return retval;
 }
 
-static const struct file_operations mudaq_fops = {
+static
+const struct file_operations mudaq_fops = {
     .owner          = THIS_MODULE,
     .read           = mudaq_fops_read,
     .write          = mudaq_fops_write,
