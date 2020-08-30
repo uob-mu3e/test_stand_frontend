@@ -33,7 +33,7 @@
 #include <linux/wait.h>
 #include <linux/sched.h>
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 10, 17)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) // add `signal.h` file
 #include <linux/sched/signal.h>
 #endif
 
@@ -181,7 +181,7 @@ static
 int minor_aquire(void *data) {
     int retval;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0) // add `idr_alloc` function
     mutex_lock(&minor_lock);
     retval = idr_alloc(&minor_idr, data, 0, MAX_NUM_DEVICES, GFP_KERNEL);
     mutex_unlock(&minor_lock);
@@ -587,8 +587,7 @@ int mudaq_setup_dma(struct pci_dev *pdev, struct mudaq *mu) {
     if ((rv = pci_set_dma_mask(pdev, DMA_BIT_MASK(64))) < 0) return rv;
     if ((rv = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64))) < 0) return rv;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
-    // https://lkml.org/lkml/2019/1/8/391 --> kernel > 5.0
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0) // remove `dma_zalloc_coherent` function
     ctrl_internal = dma_alloc_coherent(&pdev->dev, ctrl_size, &ctrl_addr, GFP_KERNEL);
 #else
     ctrl_internal = dma_zalloc_coherent(&pdev->dev, ctrl_size, &ctrl_addr, GFP_KERNEL);
@@ -756,20 +755,17 @@ long mudaq_fops_ioctl(struct file *filp,
      * https://github.com/zfsonlinux/zfs/issues/8261 --> kernel > 5.0
      */
 
-    if (_IOC_DIR(cmd) & _IOC_READ) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
-        err = !access_ok((void __user *)ioctl_param, _IOC_SIZE(cmd));
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0) // remove `type` argument
+    err = !access_ok((void __user *)ioctl_param, _IOC_SIZE(cmd));
 #else
+    if (_IOC_DIR(cmd) & _IOC_READ) {
         err = !access_ok(VERIFY_WRITE, (void __user *)ioctl_param, _IOC_SIZE(cmd));
-#endif
     }
     else if (_IOC_DIR(cmd) & _IOC_WRITE) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
-        err = !access_ok((void __user *)ioctl_param, _IOC_SIZE(cmd));
-#else
         err = !access_ok(VERIFY_READ, (void __user *)ioctl_param, _IOC_SIZE(cmd));
-#endif
     }
+#endif
+
     if (err) {
         retval = -EFAULT;
         goto fail;
@@ -827,49 +823,27 @@ long mudaq_fops_ioctl(struct file *filp,
 
         // check kernel version as there was a change from 4.4.92.xx (??) on
         INFO("Found Kernel %d\n", LINUX_VERSION_CODE);
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 4, 104)
-        retval = get_user_pages(
-            current,
-            current->mm,
-            (unsigned long)(mu->msg).address,
-            N_PAGES,
-            1,  // write
-            0,  // do not force overriding of permissions
-            mu->dma->pages,
-            NULL
-        );
-#elif LINUX_VERSION_CODE <= KERNEL_VERSION(4, 8, 17)
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0) // add `get_user_pages_remote` function
         retval = get_user_pages_remote(
-            current,
-            current->mm,
-            (unsigned long)(mu->msg).address,
-            N_PAGES,
-            1,  // write
-            0,  // do not force overriding of permissions
-            mu->dma->pages,
-            NULL
-        );
-#elif LINUX_VERSION_CODE <= KERNEL_VERSION(4, 9, 112)
-        retval = get_user_pages_remote(
-            current,
-            current->mm,
-            (unsigned long)(mu->msg).address,
-            N_PAGES,
-            FOLL_WRITE, // write
-            mu->dma->pages,
-            NULL
-        );
 #else
-        retval = get_user_pages_remote(
+        retval = get_user_pages(
+#endif
             current,
             current->mm,
-            (unsigned long) (mu->msg).address,
+            (unsigned long)(mu->msg).address,
             N_PAGES,
             FOLL_WRITE, // write
-            mu->dma->pages,
-            NULL, NULL
-        );
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0) // remove `force` flag
+            0, // do not force access
 #endif
+            mu->dma->pages,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0) // add `locked` flag
+            NULL, NULL
+#else
+            NULL
+#endif
+        );
 
         up_read(&current->mm->mmap_sem);  // unlock
         if (retval < 1) {
