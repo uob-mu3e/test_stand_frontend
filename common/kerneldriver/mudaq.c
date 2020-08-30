@@ -63,19 +63,6 @@ static const struct pci_device_id PCI_DEVICE_IDS[] = {
     { 0, },
 };
 
-/**
- * helper functions
- */
-int rest(int int1, int int2, int wrap) {
-    int result;
-    if ((int1 + int2) < wrap) {
-        result = int1 + int2;
-    } else if ((int1 + int2) >= wrap) {
-        result = (int1 + int2) % wrap;
-    }
-    return result;
-}
-
 int wrap_ring(int int1, int int2, int wrap, int divisor) {
     int result = 0;
     if ((int1 - int2) > 0) {
@@ -243,7 +230,7 @@ void minor_release(int minor) {
 }
 
 static int mudaq_interrupt_control(struct mudaq *info, s32 irq_on) {
-    /* no need to do anything. interupts are activated from userspace */
+    /* no need to do anything. interrupts are activated from userspace */
     DEBUG("Called interrupt control w/ %#x", irq_on);
     return 0;
 }
@@ -367,7 +354,7 @@ static void mudaq_set_dma_n_buffers(struct mudaq *mu,
 }
 
 /**
- * mudaq device file operatations
+ * mudaq device file operations
  */
 static
 ssize_t mudaq_fops_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos) {
@@ -1039,7 +1026,8 @@ static
 void mudaq_unregister(struct mudaq *mu) {
     INFO("unregister '%s' cdev(%d, %d)\n", dev_name(mu->dev),
          MAJOR(mu->char_dev.dev),
-         MINOR(mu->char_dev.dev));
+         MINOR(mu->char_dev.dev)
+     );
 
     device_destroy(mudaq_class, mu->char_dev.dev);
     DEBUG("Destroyed device");
@@ -1111,10 +1099,10 @@ void mudaq_pci_remove(struct pci_dev *pdev) {
 
 static
 struct pci_driver mudaq_pci_driver = {
-        .name =     DRIVER_NAME,
-        .id_table = PCI_DEVICE_IDS,
-        .probe =    mudaq_pci_probe,
-        .remove =   mudaq_pci_remove,
+    .name =     DRIVER_NAME,
+    .id_table = PCI_DEVICE_IDS,
+    .probe =    mudaq_pci_probe,
+    .remove =   mudaq_pci_remove,
 };
 
 MODULE_DEVICE_TABLE(pci, PCI_DEVICE_IDS);
