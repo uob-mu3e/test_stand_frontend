@@ -496,17 +496,9 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
 
     switch (index) {
         case 0: // rw registers
-            vma->vm_flags |= VM_WRITE;
         case 1: // ro registers
         case 2: // rw memory
             vma->vm_flags |= VM_WRITE;
-            vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-            return io_remap_pfn_range(
-                    vma,
-                    vma->vm_start,
-                    mu->mem->phys_addr[index] >> PAGE_SHIFT,
-                    vma->vm_end - vma->vm_start,
-                    vma->vm_page_prot);
         case 3: // ro memory
             vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
             return io_remap_pfn_range(
@@ -841,17 +833,6 @@ long mudaq_fops_ioctl(struct file *filp,
             // check kernel version as there was a change from 4.4.92.xx (??) on
             INFO("Found Kernel %d\n", LINUX_VERSION_CODE);
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 4, 104)
-            retval = get_user_pages(
-                               current,
-                               current->mm,
-                               (unsigned long)(mu->msg).address,
-                               N_PAGES,
-                               1,  // write
-                               0,  // do not force overriding of permissions
-                               mu->dma->pages,
-                               NULL
-                               );
-#elif LINUX_VERSION_CODE <= KERNEL_VERSION(4, 4, 104)
             retval = get_user_pages(
                                current,
                                current->mm,
