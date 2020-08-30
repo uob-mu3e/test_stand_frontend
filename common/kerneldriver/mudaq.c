@@ -78,18 +78,6 @@ int wrap_ring(int int1, int int2, int wrap, int divisor) {
     return result;
 }
 
-static
-int is_page_aligned(void *pointer) {
-    DEBUG("diff to page: %lu", ((uintptr_t) (const void *) (pointer)) % PAGE_SIZE);
-    return !(((uintptr_t) (const void *) (pointer)) % PAGE_SIZE == 0);
-}
-
-static
-void *align_page(void *pointer) {
-    void *aligned_pointer = (void *) (pointer + PAGE_SIZE - ((uintptr_t) (const void *) (pointer)) % PAGE_SIZE);
-    return aligned_pointer;
-}
-
 //
 // mudaq structures and related functions
 //
@@ -469,8 +457,7 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
        WARNING actual size must not be page-aligned
        But minimum virtual address space of vma
        is one page */
-    actual_pages = mu->mem->phys_size[index] / PAGE_SIZE;
-    actual_pages += ((mu->mem->phys_size[index] % PAGE_SIZE) == 0) ? 0 : 1;
+    actual_pages = PAGE_ALIGN(mu->mem->phys_size[index]) >> PAGE_SHIFT;
     requested_pages = (vma->vm_end - vma->vm_start) >> PAGE_SHIFT;
 
     if (requested_pages != actual_pages) {
@@ -506,7 +493,7 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
             return io_remap_pfn_range(
                     vma,
                     vma->vm_start,
-                    mu->mem->phys_addr[index] >> PAGE_SHIFT,
+                    PHYS_PFN(mu->mem->phys_addr[index]),
                     vma->vm_end - vma->vm_start,
                     vma->vm_page_prot);
         case 4: // dma control buffer
@@ -725,7 +712,6 @@ long mudaq_fops_ioctl(struct file *filp,
     int err = 0;
     int i_page = 0, i_list = 0, n_mapped = 0, count = 0;
     struct page **pages_tmp;
-    void *aligned_pointer;
     struct scatterlist *sg;
     struct sg_table *sgt_tmp;
     u32 new_event_count;
@@ -821,14 +807,8 @@ long mudaq_fops_ioctl(struct file *filp,
              * (should not be necessary since pinned memory SHOULD be page aligned)
              * required for DMA to malloced memory
              */
-            retval = is_page_aligned((void *) (mu->msg).address);
-            if (retval != 0) {
-                ERROR("Memory buffer is not page aligned");
-                aligned_pointer = align_page((void *) (mu->msg).address);
-                retval = is_page_aligned(aligned_pointer);
-                if (retval != 0)
-                    goto free_sgt;
-                (mu->msg).address = aligned_pointer;
+            if(!PAGE_ALIGNED(mu->msg.address)) {
+                mu->msg.address = PTR_ALIGN(mu->msg.address, PAGE_SIZE);
             }
 
             /* get pages in kernel space from user space address */
