@@ -496,9 +496,10 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
 
     switch (index) {
         case 0: // rw registers
-        case 1: // ro registers
         case 2: // rw memory
             vma->vm_flags |= VM_WRITE;
+            fallthrough;
+        case 1: // ro registers
         case 3: // ro memory
             vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
             return io_remap_pfn_range(
