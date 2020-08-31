@@ -5,45 +5,25 @@
  * @date    2013-10-28
  *
  * modified to work with streaming DMA and not using the uio functions anymore by
- * @auther Dorothea vom Bruch <vombruch@physi.uni-heidelberg.de>
+ * @author Dorothea vom Bruch <vombruch@physi.uni-heidelberg.de>
  * @date   2015-08-05
  * Some code is based on uio driver (drivers/uio/uio.c), partially exactly the same code
  */
 
-#include <linux/init.h>
 #include <linux/module.h>
-#include <linux/version.h>
-
-#include <linux/cdev.h>
-#include <linux/device.h>
-#include <linux/fs.h>
-
-#include <linux/pci.h>
-
-#include <linux/atomic.h>
-#include <linux/err.h>
-#include <linux/errno.h>
-#include <linux/idr.h>
-#include <linux/kfifo.h>
-#include <linux/mm.h>
-#include <linux/mutex.h>
-#include <linux/string.h>
-#include <linux/types.h>
-#include <linux/interrupt.h>
-#include <linux/wait.h>
-#include <linux/sched.h>
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) // add `signal.h` file
-#include <linux/sched/signal.h>
-#endif
-
-#include <linux/pagemap.h>
-
-#include <asm/uaccess.h>
 
 #include "mudaq.h"
 #include "../include/mudaq_device_constants.h"
 #include "../include/mudaq_registers.h"
+
+#include <linux/version.h>
+
+#include <linux/cdev.h>
+#include <linux/pci.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) // add `signal.h` file
+#include <linux/sched/signal.h>
+#endif
 
 #define ERROR(fmt, ...) \
     printk(KERN_ERR   "mudaq: " pr_fmt(fmt), ##__VA_ARGS__)
@@ -263,19 +243,20 @@ irqreturn_t mudaq_interrupt(int irq, void *dev_id) {
 }
 
 /* Access registers */
-inline __iomem u32 *mudaq_register_rw(struct mudaq *mu, unsigned index) {
+inline
+__iomem u32 *mudaq_register_rw(struct mudaq *mu, unsigned index) {
     __iomem u32 *base = mu->mem->internal_addr[0];
     return base + index;
 }
 
-inline __iomem u32 *mudaq_register_ro(struct mudaq *mu, unsigned index) {
+inline
+__iomem u32 *mudaq_register_ro(struct mudaq *mu, unsigned index) {
     __iomem u32 *base = mu->mem->internal_addr[1];
     return base + index;
 }
 
 static
 void mudaq_deactivate(struct mudaq *mu) {
-
     u32 test;
 
     iowrite32(0x0, mudaq_register_rw(mu, DATAGENERATOR_REGISTER_W));
@@ -448,7 +429,7 @@ ssize_t mudaq_fops_write(struct file *filp, const char __user *buf, size_t count
 
 static
 int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
-    struct mudaq *mu = (struct mudaq *) filp->private_data;
+    struct mudaq *mu = filp->private_data;
     int index = (int) vma->vm_pgoff;
     unsigned long requested_pages = 0, actual_pages;
     int rv = 0;
@@ -528,7 +509,6 @@ out:
 
 static
 int mudaq_setup_mmio(struct pci_dev *pdev, struct mudaq *mu) {
-
     int i, j;
     const int bars[] = {0, 1, 2, 3};
     const char *names[] = {"registers_rw", "registers_ro", "memory_rw", "memory_ro"};
@@ -595,6 +575,7 @@ int mudaq_setup_dma(struct pci_dev *pdev, struct mudaq *mu) {
 #else
     ctrl_internal = dma_zalloc_coherent(&pdev->dev, ctrl_size, &ctrl_addr, GFP_KERNEL);
 #endif
+
     if (ctrl_internal == NULL) {
         ERROR("could not allocate dma control buffer");
         rv = -ENOMEM;
@@ -728,6 +709,7 @@ long mudaq_fops_ioctl(struct file *filp,
     struct scatterlist *sg;
     struct sg_table *sgt_tmp;
     u32 new_event_count;
+    void __user* user_buffer = (void __user*)ioctl_param;
 
     mu->dma->flag = false; // in case something goes wrong
 
@@ -750,7 +732,7 @@ long mudaq_fops_ioctl(struct file *filp,
      * Verify that address of parameter does not point to kernel space memory
      * access_ok checks for this
      *    returns 1 for access ok
-     *            0 for acces not ok
+     *            0 for access not ok
      * VERIFY_READ  = read user space memory
      * VERIFY_WRITE = write to user space memory
      * _IOC_READ    = read kernel space memory
@@ -759,13 +741,13 @@ long mudaq_fops_ioctl(struct file *filp,
      */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0) // remove `type` argument
-    err = !access_ok((void __user *)ioctl_param, _IOC_SIZE(cmd));
+    err = !access_ok(user_buffer, _IOC_SIZE(cmd));
 #else
     if (_IOC_DIR(cmd) & _IOC_READ) {
-        err = !access_ok(VERIFY_WRITE, (void __user *)ioctl_param, _IOC_SIZE(cmd));
+        err = !access_ok(VERIFY_WRITE, user_buffer, _IOC_SIZE(cmd));
     }
     else if (_IOC_DIR(cmd) & _IOC_WRITE) {
-        err = !access_ok(VERIFY_READ, (void __user *)ioctl_param, _IOC_SIZE(cmd));
+        err = !access_ok(VERIFY_READ, user_buffer, _IOC_SIZE(cmd));
     }
 #endif
 
@@ -780,19 +762,19 @@ long mudaq_fops_ioctl(struct file *filp,
     switch (cmd) {
     case REQUEST_INTERRUPT_COUNTER: /* Send current interrupt counter to user space */
         new_event_count = atomic_read(&mu->event);
-        retval = copy_to_user((char __user *) ioctl_param, &new_event_count, sizeof(new_event_count));
+        retval = copy_to_user(user_buffer, &new_event_count, sizeof(new_event_count));
         if (retval > 0) {
             ERROR("copy_to_user failed with error %d \n", retval);
             goto fail;
         }
         break;
     case MAP_DMA: /* Receive a pointer to a virtual address in user space */
-        retval = copy_from_user(&(mu->msg), (char __user *) ioctl_param, sizeof(mu->msg));
+        retval = copy_from_user(&(mu->msg), user_buffer, sizeof(mu->msg));
         if (retval > 0) {
             ERROR("copy_from_user failed with error %d \n", retval);
             goto fail;
         }
-        INFO("Recieved following virtual address: 0x%0llx \n", (u64) (mu->msg).address);
+        INFO("Received following virtual address: 0x%0llx \n", (u64) (mu->msg).address);
         INFO("Size of allocated memory: %zu bytes\n", mu->msg.size);
 
         /* allocte memory for page pointers */
@@ -924,7 +906,11 @@ long mudaq_fops_ioctl(struct file *filp,
         mu->dma->flag = true;  // flag to release pages and free memory when removing device
 
         break;
+
+    default:
+        return -EINVAL;
     }
+
     return 0;
 
 unmap:
@@ -962,7 +948,7 @@ const struct file_operations mudaq_fops = {
 // register / unregister mudaq device with the kernel
 //
 
-/* register the mudaq device. device is live after succesful call. */
+/* register the mudaq device. device is live after successful call. */
 static
 int mudaq_register(struct mudaq *mu) {
     int retval;

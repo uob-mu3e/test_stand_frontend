@@ -9,6 +9,7 @@
 #define MUDAQ_H
 
 #include <linux/ioctl.h>
+#include <linux/types.h>
 
 //#define MUDAQ_DMABUF_DATA_LEN 4
 
@@ -21,7 +22,7 @@
 #define                             DRIVER_NAME "mudaq"
 static const char *                 CLASS_NAME = "mudaq";
 static const char *                 DEVICE_NAME_TEMPLATE = "mudaq%d";
-static const unsigned               MAX_NUM_DEVICES = 8;
+static const int                    MAX_NUM_DEVICES = 8;
 
 /* Declare IOC functions */
 
