@@ -74,7 +74,6 @@ struct mudaq {
     long irq;
     atomic_t event;
     wait_queue_head_t wait;
-    struct mesg msg;
     struct mudaq_mem *mem;
     struct mudaq_dma *dma;
 };
@@ -450,7 +449,7 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
        But minimum virtual address space of vma
        is one page */
     actual_pages = PAGE_ALIGN(mu->mem->phys_size[index]) >> PAGE_SHIFT;
-    requested_pages = (vma->vm_end - vma->vm_start) >> PAGE_SHIFT;
+    requested_pages = vma_pages(vma);
 
     if (requested_pages != actual_pages) {
         ERROR("invalid mmap pages requested. requested %lu actual %lu",
@@ -497,6 +496,8 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
             mu->mem->bus_addr_ctrl,
             mu->mem->phys_size[index]
         );
+
+    default:
     }
 
     /* this should NEVER happen */
@@ -719,11 +720,11 @@ long mudaq_fops_ioctl(struct file *filp,
      * type = magic, number = sequential number
      */
 
-    if (_IOC_TYPE(cmd) != MAGIC_NR) {
+    if (_IOC_TYPE(cmd) != MUDAQ_IOC_TYPE) {
         retval = -ENOTTY;
         goto fail;
     }
-    if (_IOC_NR(cmd) > IOC_MAXNR) {
+    if (_IOC_NR(cmd) > MUDAQ_IOC_NR) {
         retval = -ENOTTY;
         goto fail;
     }
@@ -768,16 +769,20 @@ long mudaq_fops_ioctl(struct file *filp,
             goto fail;
         }
         break;
-    case MAP_DMA: /* Receive a pointer to a virtual address in user space */
-        retval = copy_from_user(&(mu->msg), user_buffer, sizeof(mu->msg));
+    case MAP_DMA : { // receive a pointer to a virtual address in user space
+        struct mesg msg;
+        retval = copy_from_user(&msg, user_buffer, sizeof(msg));
         if (retval > 0) {
             ERROR("copy_from_user failed with error %d \n", retval);
             goto fail;
         }
-        INFO("Received following virtual address: 0x%0llx \n", (u64) (mu->msg).address);
-        INFO("Size of allocated memory: %zu bytes\n", mu->msg.size);
+        INFO("Received following virtual address: 0x%0llx \n", (u64) msg.address);
+        INFO("Size of allocated memory: %zu bytes\n", msg.size);
+        if(!PAGE_ALIGNED(msg.address)) {
+            return -EINVAL;
+        }
 
-        /* allocte memory for page pointers */
+        /* allocate memory for page pointers */
         if ((pages_tmp = kzalloc(sizeof(long unsigned) * N_PAGES, GFP_KERNEL)) == NULL) {
             DEBUG("Error allocating memory for page table");
             retval = -ENOMEM;
@@ -795,14 +800,6 @@ long mudaq_fops_ioctl(struct file *filp,
 
         DEBUG("Allocated memory");
 
-        /* check page alignment of virtual address
-         * (should not be necessary since pinned memory SHOULD be page aligned)
-         * required for DMA to malloced memory
-         */
-        if(!PAGE_ALIGNED(mu->msg.address)) {
-            mu->msg.address = PTR_ALIGN(mu->msg.address, PAGE_SIZE);
-        }
-
         /* get pages in kernel space from user space address */
         down_read(&current->mm->mmap_sem); //lock the memory management structure for our process
 
@@ -816,7 +813,7 @@ long mudaq_fops_ioctl(struct file *filp,
 #endif
             current,
             current->mm,
-            (unsigned long)(mu->msg).address,
+            (unsigned long)msg.address,
             N_PAGES,
             FOLL_WRITE, // write
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0) // remove `force` flag
@@ -840,9 +837,6 @@ long mudaq_fops_ioctl(struct file *filp,
             DEBUG("Number of pages received: %d", retval);
             mu->dma->npages = retval;
         }
-
-        if ((retval = pci_set_dma_mask(mu->pci_dev, DMA_BIT_MASK(64))) < 0) goto release;
-        if ((retval = pci_set_consistent_dma_mask(mu->pci_dev, DMA_BIT_MASK(64))) < 0) goto release;
 
         /* allocate scatter gather table */
         retval = sg_alloc_table_from_pages(mu->dma->sgt, mu->dma->pages, mu->dma->npages, 0,
@@ -889,9 +883,9 @@ long mudaq_fops_ioctl(struct file *filp,
                 n_mapped = i_list;
                 goto unmap;
             }
-            mudaq_set_dma_data_addr(mu, sg_dma_address(sg), i_list, sg->length / PAGE_SIZE);
             mu->dma->bus_addrs[i_list] = sg_dma_address(sg);
-            mu->dma->n_pages[i_list] = sg->length / PAGE_SIZE;
+            mu->dma->n_pages[i_list] = sg_dma_len(sg) >> PAGE_SHIFT;
+            mudaq_set_dma_data_addr(mu, mu->dma->bus_addrs[i_list], i_list, mu->dma->n_pages[i_list]);
         }
         mudaq_set_dma_n_buffers(mu, mu->dma->sgt->nents);
         DEBUG("Found %d discontinuous pieces in memory buffer", mu->dma->sgt->nents);
