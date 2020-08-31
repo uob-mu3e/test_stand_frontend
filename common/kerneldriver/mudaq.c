@@ -215,14 +215,14 @@ void minor_release(int minor) {
 static
 int mudaq_interrupt_control(struct mudaq *info, s32 irq_on) {
     /* no need to do anything. interrupts are activated from userspace */
-    DEBUG("Called interrupt control w/ %#x", irq_on);
+    DEBUG("Called interrupt control w/ %#x\n", irq_on);
     return 0;
 }
 
 static
 irqreturn_t mudaq_interrupt_handler(int irq, struct mudaq *mu) {
     /* no need to do anything. just acknowledge that something happened. */
-    DEBUG("Received interrupt");
+    DEBUG("Received interrupt\n");
     return IRQ_HANDLED;
 }
 
@@ -265,11 +265,11 @@ void mudaq_deactivate(struct mudaq *mu) {
     iowrite32(0x0, mudaq_register_rw(mu, DATAGENERATOR_REGISTER_W));
     test = ioread32(mudaq_register_rw(mu, DATAGENERATOR_REGISTER_W));
     if (test != 0)
-        ERROR("read back %u instead of 0", test);
+        ERROR("read back %u instead of 0\n", test);
     iowrite32(0x0, mudaq_register_rw(mu, DMA_REGISTER_W));
     test = ioread32(mudaq_register_rw(mu, DMA_REGISTER_W));
     if (test != 0)
-        ERROR("read back %u instead of 0", test);
+        ERROR("read back %u instead of 0\n", test);
 }
 
 /* Copy dma bus addresses to device registers */
@@ -284,7 +284,7 @@ void mudaq_set_dma_ctrl_addr(struct mudaq *mu,
     test = (dma_addr_t) ioread32(mudaq_register_rw(mu, DMA_CTRL_ADDR_LOW_REGISTER_W)) |
            (dma_addr_t) ioread32(mudaq_register_rw(mu, DMA_CTRL_ADDR_HI_REGISTER_W)) << 32;
     if ((size_t) ctrl_handle != (size_t) test)
-        ERROR("dma control buffer. wrote %#zx read %#zx", (size_t) ctrl_handle, (size_t) test);
+        ERROR("dma control buffer. wrote %#zx read %#zx\n", (size_t) ctrl_handle, (size_t) test);
 }
 
 static
@@ -299,15 +299,15 @@ void mudaq_read_dma_data_addr(struct mudaq *mu,
               mudaq_register_rw(mu, DMA_RAM_LOCATION_NUM_PAGES_REGISTER_W));
     test = (dma_addr_t) ioread32(mudaq_register_ro(mu, DMA_DATA_ADDR_LOW_REGISTER_R)) |
            (dma_addr_t) ioread32(mudaq_register_ro(mu, DMA_DATA_ADDR_HI_REGISTER_R)) << 32;
-    //DEBUG("At %u: address = %lx", mem_location, (long unsigned)test);
+//    DEBUG("At %u: address = %lx\n", mem_location, (long unsigned)test);
     if (test != mu->dma->bus_addrs[mem_location])
         ERROR("Bus address is %lx, should be %lx", (long unsigned) test,
               (long unsigned) mu->dma->bus_addrs[mem_location]);
 
     n_pages = (u32) ioread32(mudaq_register_ro(mu, DMA_NUM_PAGES_REGISTER_R));
-    //DEBUG("# of pages per address: %u", n_pages);
+//    DEBUG("# of pages per address: %u\n", n_pages);
     if (n_pages != mu->dma->n_pages[mem_location])
-        ERROR("# of pages is %x, should be %x", n_pages, mu->dma->n_pages[mem_location]);
+        ERROR("# of pages is %x, should be %x\n", n_pages, mu->dma->n_pages[mem_location]);
 }
 
 static
@@ -328,11 +328,11 @@ void mudaq_set_dma_data_addr(struct mudaq *mu,
     test = (dma_addr_t) ioread32(mudaq_register_ro(mu, DMA_DATA_ADDR_LOW_REGISTER_R)) |
            (dma_addr_t) ioread32(mudaq_register_ro(mu, DMA_DATA_ADDR_HI_REGISTER_R)) << 32;
     if ((size_t) data_handle != (size_t) test)
-        ERROR("dma data buffer. wrote %#zx read %#zx", (size_t) data_handle, (size_t) test);
+        ERROR("dma data buffer. wrote %#zx read %#zx\n", (size_t) data_handle, (size_t) test);
 
     test_n_pages = (u32) ioread32(mudaq_register_ro(mu, DMA_NUM_PAGES_REGISTER_R));
     if (test_n_pages != n_pages) {
-        ERROR("number of pages. wrote %u read %u", n_pages, test_n_pages);
+        ERROR("number of pages. wrote %u read %u\n", n_pages, test_n_pages);
     }
 }
 
@@ -343,7 +343,7 @@ void mudaq_set_dma_n_buffers(struct mudaq *mu,
     iowrite32(n_buffers, mudaq_register_rw(mu, DMA_NUM_ADDRESSES_REGISTER_W));
     test = (u32) ioread32(mudaq_register_rw(mu, DMA_NUM_ADDRESSES_REGISTER_W));
     if (test != n_buffers)
-        ERROR("number of buffers. wrote %u, read %u", n_buffers, test);
+        ERROR("number of buffers. wrote %u, read %u\n", n_buffers, test);
 }
 
 //
@@ -374,12 +374,12 @@ ssize_t mudaq_fops_read(struct file *filp, char __user *buf, size_t count, loff_
             /* How many DMA blocks were transfered (in units of interrupts (64 blocks) )?
              * Offset in ring buffer comes in bytes from FPGA, transform to uint32_t words here
              */
-            DEBUG("interrupt number: %d, address: %x%x", new_event_count, (int) dma_buf_ctrl[1], (int) dma_buf_ctrl[0]);
+            DEBUG("interrupt number: %d, address: %x%x\n", new_event_count, (int) dma_buf_ctrl[1], (int) dma_buf_ctrl[0]);
             n_interrupts = wrap_ring((int) dma_buf_ctrl[3] >> 2, (int) mu->to_user[1], N_BUFFERS,
                                      PAGES_PER_INTERRUPT * PAGE_SIZE / 4);
             if (n_interrupts != 1) {
-                DEBUG("ctrl buffer: %x, previous: %x", (int) dma_buf_ctrl[3] >> 2, (int) mu->to_user[1]);
-                INFO("Missed %d interrupt(s)", n_interrupts);
+                DEBUG("ctrl buffer: %x, previous: %x\n", (int) dma_buf_ctrl[3] >> 2, (int) mu->to_user[1]);
+                INFO("Missed %d interrupt(s)\n", n_interrupts);
             }
 
             mu->to_user[1] = (u32) dma_buf_ctrl[3] >> 2;  // position in ring buffer last written to + 1 (in words)
@@ -437,14 +437,14 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
     unsigned long requested_pages = 0, actual_pages;
     int rv = 0;
 
-    DEBUG("Mapping for index %d", index);
+    DEBUG("Mapping for index %d\n", index);
 
     /* use the requested page offset as an index to select the pci region that
        should be mapped. readout board has 4 accessible memory regions
        registers rw, registers ro, memory rw and memory ro
        in addition, we have one dma ctrl buffer */
     if ((index < 0) || (index > 4)) {
-        DEBUG("invalid mmap memory index %d", index);
+        DEBUG("invalid mmap memory index %d\n", index);
         return -EINVAL;
     }
 
@@ -456,13 +456,13 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
     requested_pages = vma_pages(vma);
 
     if (requested_pages != actual_pages) {
-        ERROR("invalid mmap pages requested. requested %lu actual %lu",
+        ERROR("invalid mmap pages requested. requested %lu actual %lu\n",
               requested_pages, actual_pages);
         rv = -EINVAL;
         goto out;
     }
     if (mu->mem->phys_addr[index] + mu->mem->phys_size[index] < mu->mem->phys_addr[index]) {
-        ERROR("invalid memory settings. phys_addr %d size %d",
+        ERROR("invalid memory settings. phys_addr %d size %d\n",
               mu->mem->phys_addr[index], mu->mem->phys_size[index]);
         rv = -EINVAL;
         goto out;
@@ -505,7 +505,7 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
     }
 
     /* this should NEVER happen */
-    ERROR("something went horribly wrong. run for your lives");
+    ERROR("something went horribly wrong. run for your lives\n");
     rv = -EINVAL;
 
 out:
@@ -532,11 +532,11 @@ int mudaq_setup_mmio(struct pci_dev *pdev, struct mudaq *mu) {
         mu->mem->phys_size[i] = pci_resource_len(pdev, bars[i]);
         mu->mem->internal_addr[i] = (__iomem u32 *) pci_iomap(pdev, bars[i], mu->mem->phys_size[i]);
         if (mu->mem->internal_addr[i] == NULL) {
-            ERROR("pci_iomap failed for '%s'", names[i]);
+            ERROR("pci_iomap failed for '%s'\n", names[i]);
             rv = -ENODEV;
             goto fail_unmap;
         }
-        DEBUG("Bar %d: at %x with size %d at internal address %lx", bars[i], mu->mem->phys_addr[i],
+        DEBUG("Bar %d: at %x with size %d at internal address %lx\n", bars[i], mu->mem->phys_addr[i],
               mu->mem->phys_size[i], (long unsigned) mu->mem->internal_addr[i]);
     }
     return 0;
@@ -582,7 +582,7 @@ int mudaq_setup_dma(struct pci_dev *pdev, struct mudaq *mu) {
 #endif
 
     if (ctrl_internal == NULL) {
-        ERROR("could not allocate dma control buffer");
+        ERROR("could not allocate dma control buffer\n");
         rv = -ENOMEM;
         goto out;
     }
@@ -591,8 +591,8 @@ int mudaq_setup_dma(struct pci_dev *pdev, struct mudaq *mu) {
     mu->mem->phys_size[4] = ctrl_size;
     mu->mem->internal_addr[4] = ctrl_internal;
 
-    //DEBUG("Addr: %d , Size: %d, Internal Add %d",int(ctrl_addr) int(ctrl_size) int(ctrl_internal));
-    DEBUG("setup dma for '%s' dma_addr %#zx size %d bytes",
+//    DEBUG("Addr: %d , Size: %d, Internal Add %d\n",int(ctrl_addr) int(ctrl_size) int(ctrl_internal));
+    DEBUG("setup dma for '%s' dma_addr %#zx size %d bytes\n",
           name, (size_t) mu->mem->bus_addr_ctrl, mu->mem->phys_size[4]);
 
     /* deactivate any readout activity to always start in a consistent state
@@ -631,7 +631,7 @@ int mudaq_setup_msi(struct mudaq *mu) {
     atomic_set(&mu->event, 0);
     rv = devm_request_irq(mu->dev, mu->irq, mudaq_interrupt, 0, DRIVER_NAME, mu);
     if (rv) {
-        DEBUG("Failed to initialize irq, error: %d", rv);
+        DEBUG("Failed to initialize irq, error: %d\n", rv);
         goto out_clear_msi;
     }
 
@@ -648,7 +648,7 @@ static
 void mudaq_clear_msi(struct mudaq *mu) {
     /* release irq */
     devm_free_irq(mu->dev, mu->irq, mu);
-    DEBUG("Freed irq");
+    DEBUG("Freed irq\n");
 
     /* disable MSI */
     pci_disable_msi(mu->pci_dev);
@@ -668,7 +668,7 @@ void mudaq_free_dma(struct mudaq *mu) {
 
     for (i_page = 0; i_page < mu->dma->npages; i_page++) {
         if (PageReserved(mu->dma->pages[i_page]))
-            INFO("Page %d is in reserved space", i_page);
+            INFO("Page %d is in reserved space\n", i_page);
         if (!PageReserved(mu->dma->pages[i_page]))
             SetPageDirty(mu->dma->pages[i_page]);
         //page_cache_release( mu->dma->pages[i_page] );
@@ -677,7 +677,7 @@ void mudaq_free_dma(struct mudaq *mu) {
 
     kfree(mu->dma->sgt);
     kfree(mu->dma->pages);
-    INFO("Freed pinned DMA buffer in kernel space");
+    INFO("Freed pinned DMA buffer in kernel space\n");
 
     mu->dma->flag = false;
 
@@ -788,7 +788,7 @@ long mudaq_fops_ioctl(struct file *filp,
 
         /* allocate memory for page pointers */
         if ((pages_tmp = kzalloc(sizeof(long unsigned) * N_PAGES, GFP_KERNEL)) == NULL) {
-            DEBUG("Error allocating memory for page table");
+            DEBUG("Error allocating memory for page table\n");
             retval = -ENOMEM;
             goto fail;
         }
@@ -796,13 +796,13 @@ long mudaq_fops_ioctl(struct file *filp,
 
         /* allocate memory for scatter gather table containing scatter gather lists chained to each other */
         if ((sgt_tmp = kzalloc(sizeof(struct sg_table), GFP_KERNEL)) == NULL) {
-            DEBUG("Error allocating memory for scatter gather table");
+            DEBUG("Error allocating memory for scatter gather table\n");
             retval = -ENOMEM;
             goto free_table;
         }
         mu->dma->sgt = sgt_tmp;
 
-        DEBUG("Allocated memory");
+        DEBUG("Allocated memory\n");
 
         /* get pages in kernel space from user space address */
         down_read(&current->mm->mmap_sem); //lock the memory management structure for our process
@@ -838,7 +838,7 @@ long mudaq_fops_ioctl(struct file *filp,
             goto free_sgt;
         }
         else {
-            DEBUG("Number of pages received: %d", retval);
+            DEBUG("Number of pages received: %d\n", retval);
             mu->dma->npages = retval;
         }
 
@@ -846,7 +846,7 @@ long mudaq_fops_ioctl(struct file *filp,
         retval = sg_alloc_table_from_pages(mu->dma->sgt, mu->dma->pages, mu->dma->npages, 0,
                                            PAGE_SIZE * mu->dma->npages, GFP_KERNEL);
         if (retval < 0) {
-            ERROR("Could not set scatter gather table");
+            ERROR("Could not set scatter gather table\n");
             goto release;
         }
 
@@ -854,7 +854,7 @@ long mudaq_fops_ioctl(struct file *filp,
          * => check for this limit
          */
         if (mu->dma->sgt->nents > 4096) {
-            ERROR("Number of DMA addresses: %d > 4096! Too much for FPGA", mu->dma->sgt->nents);
+            ERROR("Number of DMA addresses: %d > 4096! Too much for FPGA\n", mu->dma->sgt->nents);
             retval = -ENOMEM;
             goto release;
         }
@@ -868,21 +868,21 @@ long mudaq_fops_ioctl(struct file *filp,
         for_each_sg(mu->dma->sgt->sgl, sg, mu->dma->sgt->nents, i_list) {
             count = dma_map_sg(&mu->pci_dev->dev, sg, 1, DMA_FROM_DEVICE);
             if (count == 0) {
-                ERROR("Could not map list %d", i_list);
+                ERROR("Could not map list %d\n", i_list);
                 retval = -EFAULT;
                 n_mapped = i_list;
                 goto unmap;
             }
             if (dma_mapping_error(&mu->pci_dev->dev, sg_dma_address(sg))) {
-                ERROR("Error during mapping");
+                ERROR("Error during mapping\n");
                 retval = -EADDRNOTAVAIL;
                 n_mapped = i_list;
                 goto unmap;
             }
-            DEBUG("At %d: address %lx, length in pages: %lx", i_list, (long unsigned) sg_dma_address(sg),
+            DEBUG("At %d: address %lx, length in pages: %lx\n", i_list, (long unsigned) sg_dma_address(sg),
                   sg->length / PAGE_SIZE);
             if (sg->length > MUDAQ_DMABUF_DATA_LEN) {
-                ERROR("Length of scatter gather list larger than ring buffer");
+                ERROR("Length of scatter gather list larger than ring buffer\n");
                 retval = -EFAULT;
                 n_mapped = i_list;
                 goto unmap;
@@ -892,13 +892,13 @@ long mudaq_fops_ioctl(struct file *filp,
             mudaq_set_dma_data_addr(mu, mu->dma->bus_addrs[i_list], i_list, mu->dma->n_pages[i_list]);
         }
         mudaq_set_dma_n_buffers(mu, mu->dma->sgt->nents);
-        DEBUG("Found %d discontinuous pieces in memory buffer", mu->dma->sgt->nents);
+        DEBUG("Found %d discontinuous pieces in memory buffer\n", mu->dma->sgt->nents);
 
         for (i_list = 0; i_list < mu->dma->sgt->nents; i_list++) {
             mudaq_read_dma_data_addr(mu, i_list);
         }
 
-        INFO("Setup mapping for pinned DMA data buffer");
+        INFO("Setup mapping for pinned DMA data buffer\n");
 
         mu->to_user[1] = 0;      // reset offset in ring buffer
         mu->dma->flag = true;  // flag to release pages and free memory when removing device
@@ -1010,11 +1010,11 @@ void mudaq_unregister(struct mudaq *mu) {
      );
 
     device_destroy(mudaq_class, mu->char_dev.dev);
-    DEBUG("Destroyed device");
+    DEBUG("Destroyed device\n");
     minor_release(MINOR(mu->char_dev.dev));
-    DEBUG("Released minor number");
+    DEBUG("Released minor number\n");
     cdev_del(&mu->char_dev);
-    DEBUG("Deleted character device");
+    DEBUG("Deleted character device\n");
 
     dmabuf_free(chrdev->devices[MINOR(mu->char_dev.dev)].private_data);
     chrdev_device_del(chrdev, MINOR(mu->char_dev.dev));
@@ -1031,21 +1031,21 @@ int mudaq_pci_probe(struct pci_dev *pdev, const struct pci_device_id *pid) {
     struct mudaq *mu;
 
     if ((rv = mudaq_alloc(&mu)) < 0) goto fail;
-    DEBUG("Allocated mudaq");
+    DEBUG("Allocated mudaq\n");
     mu->pci_dev = pdev;
     if ((rv = pci_enable_device(pdev)) < 0) goto out_free;
-    DEBUG("Enabled device");
+    DEBUG("Enabled device\n");
     if ((rv = mudaq_setup_mmio(pdev, mu)) < 0) goto out_disable;
-    DEBUG("Setup mmio");
+    DEBUG("Setup mmio\n");
     if ((rv = mudaq_setup_dma(pdev, mu)) < 0) goto out_mmio;
-    DEBUG("Setup dma");
+    DEBUG("Setup dma\n");
     if ((rv = mudaq_register(mu)) < 0) goto out_dma;
-    DEBUG("Registered mudaq");
+    DEBUG("Registered mudaq\n");
     pci_set_drvdata(pdev, mu);
     if ((rv = mudaq_setup_msi(mu)) < 0) goto out_unregister;
-    DEBUG("Setup MSI interrupts");
+    DEBUG("Setup MSI interrupts\n");
 
-    INFO("Device setup finished");
+    INFO("Device setup finished\n");
 
     mu->dma->flag = false; // initially no dma mapping from ioctl present
 
@@ -1078,7 +1078,7 @@ void mudaq_pci_remove(struct pci_dev *pdev) {
     pci_disable_device(pdev);
     mudaq_free(mu);
 
-    INFO("Device removed");
+    INFO("Device removed\n");
 }
 
 static
@@ -1100,7 +1100,7 @@ int __init mudaq_init(void) {
     int rv;
     dev_t first;
 
-    chrdev = chrdev_alloc("mudaq_dmabuf", MAX_NUM_DEVICES, &dmabuf_chrdev_fops);
+    chrdev = chrdev_alloc("mudaq_dmabuf\n", MAX_NUM_DEVICES, &dmabuf_chrdev_fops);
     if(IS_ERR_OR_NULL(chrdev)) {
         return PTR_ERR(chrdev);
     }
