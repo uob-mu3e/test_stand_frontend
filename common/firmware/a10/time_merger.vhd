@@ -127,7 +127,9 @@ begin
             end if;
             
             -- read out fifo if not empty, not start of package and not masked
-            if ( i_mask_n(I) = '0' ) then
+            if ( merge_state /= wait_for_pre ) then
+                sop_wait(I) <= '1';
+            elsif ( i_mask_n(I) = '0' ) then
                 sop_wait(I) <= '0';
             elsif ( i_rempty(I) = '0' and i_rsop(I) = '1' ) then
                 sop_wait(I) <= '0';
@@ -138,7 +140,9 @@ begin
             end if;
             
             -- read out fifo if not empty, not sub header of package and not masked
-            if ( i_mask_n(I) = '0' ) then
+            if ( merge_state /= wait_for_sh ) then
+                shop_wait(I) <= '1';
+            elsif ( i_mask_n(I) = '0' ) then
                 shop_wait(I) <= '0';
             elsif ( i_rempty(I) = '0' and i_rshop(I) = '1' ) then
                 shop_wait(I) <= '0';
@@ -155,19 +159,19 @@ begin
             end if;
             
             -- check for state change in merge_hits state
-            if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and empty_t_3 = check_ones_t_3 and merge_state =  merge_hits ) then
+            if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and w_ack = '0' and empty_t_3 = check_ones_t_3 and merge_state =  merge_hits ) then
                 sh_state(I) <= '0';
             else
                 sh_state(I) <= '1';
             end if;
             
-            if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and empty_t_3 = check_ones_t_3 and merge_state =  merge_hits ) then
+            if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and w_ack = '0' and empty_t_3 = check_ones_t_3 and merge_state =  merge_hits ) then
                 pre_state(I) <= '0';
             else
                 pre_state(I) <= '1';
             end if;
             
-            if ( i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and empty_t_3 = check_ones_t_3 and merge_state =  merge_hits ) then
+            if ( i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and w_ack = '0' and empty_t_3 = check_ones_t_3 and merge_state =  merge_hits ) then
                 tr_state(I) <= '0';
             else
                 tr_state(I) <= '1';

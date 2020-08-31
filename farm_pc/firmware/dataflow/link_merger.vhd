@@ -44,7 +44,7 @@ entity link_merger is
         signal link_usedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS_TOTL - 1 downto 0);
         
         signal stream_wdata, stream_rdata : std_logic_vector(67 downto 0);
-        signal we_counter : std_logic_vector(64 downto 0);
+        signal we_counter : std_logic_vector(63 downto 0);
         signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
         
 	begin
