@@ -16,6 +16,8 @@
 #include "../include/mudaq_device_constants.h"
 #include "../include/mudaq_registers.h"
 
+#include "dmabuf/dmabuf_chrdev.h"
+
 #include <linux/version.h>
 
 #include <linux/cdev.h>
@@ -35,6 +37,8 @@
 //
 // module-wide global variables
 //
+
+static struct chrdev* chrdev;
 
 static struct class *mudaq_class = NULL;
 static int major = 0;
@@ -954,6 +958,15 @@ int mudaq_register(struct mudaq *mu) {
     devno = MKDEV(major, retval);
     DEBUG("allocated device(%d, %d)\n", MAJOR(devno), MINOR(devno));
 
+    retval = chrdev_device_add(chrdev, MINOR(devno));
+    if(retval) {
+        goto fail_cdev;
+    }
+    chrdev->devices[MINOR(devno)].private_data = dmabuf_alloc(&mu->pci_dev->dev, 64);
+    if(IS_ERR_OR_NULL(chrdev->devices[MINOR(devno)].private_data)) {
+        goto fail_cdev;
+    }
+
     /* register the char device */
     cdev_init(&mu->char_dev, &mudaq_fops);
     mu->char_dev.owner = THIS_MODULE;
@@ -981,6 +994,8 @@ int mudaq_register(struct mudaq *mu) {
 fail_device:
     cdev_del(&mu->char_dev);
 fail_cdev:
+    dmabuf_free(chrdev->devices[MINOR(devno)].private_data);
+    chrdev_device_del(chrdev, MINOR(devno));
     minor_release(MINOR(devno));
 fail_minor:
     return retval;
@@ -1000,6 +1015,9 @@ void mudaq_unregister(struct mudaq *mu) {
     DEBUG("Released minor number");
     cdev_del(&mu->char_dev);
     DEBUG("Deleted character device");
+
+    dmabuf_free(chrdev->devices[MINOR(mu->char_dev.dev)].private_data);
+    chrdev_device_del(chrdev, MINOR(mu->char_dev.dev));
 }
 
 
@@ -1082,6 +1100,11 @@ int __init mudaq_init(void) {
     int rv;
     dev_t first;
 
+    chrdev = chrdev_alloc("mudaq_dmabuf", MAX_NUM_DEVICES, &dmabuf_chrdev_fops);
+    if(IS_ERR_OR_NULL(chrdev)) {
+        return PTR_ERR(chrdev);
+    }
+
     /* create the device class */
     mudaq_class = class_create(THIS_MODULE, CLASS_NAME);
     if (IS_ERR(mudaq_class)) {
@@ -1122,6 +1145,8 @@ void __exit mudaq_exit(void) {
     pci_unregister_driver(&mudaq_pci_driver);
     unregister_chrdev_region(MKDEV(major, 0), MAX_NUM_DEVICES);
     class_destroy(mudaq_class);
+
+    chrdev_free(chrdev);
 
     DEBUG("module removed\n");
 }
