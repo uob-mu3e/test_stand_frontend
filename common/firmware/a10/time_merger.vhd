@@ -526,10 +526,8 @@ begin
                 if( i_wfull = '0' ) then
                     merge_state <= wait_for_pre;
                     -- send trailer
-                    o_wdata(37 downto 36) <= "10";
-                    o_wdata(35 downto 12) <= (others => '0');
-                    o_wdata(11 downto 4) <= x"9C";
-                    o_wdata(3 downto 0) <= "0001";
+                    o_wdata(33 downto 32) <= "10";
+                    o_wdata(7 downto 0) <= x"9C";
                     o_weop <= '1';
                     o_we <= '1';
                 end if;
