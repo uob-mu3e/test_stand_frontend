@@ -45,9 +45,12 @@
 #include "../include/mudaq_device_constants.h"
 #include "../include/mudaq_registers.h"
 
-#define ERROR(fmt, args...) printk(KERN_ERR   "mudaq: " fmt, ## args)
-#define INFO(fmt, args...)  printk(KERN_INFO  "mudaq: " fmt, ## args)
-#define DEBUG(fmt, args...) printk(KERN_DEBUG "mudaq: " fmt, ## args)
+#define ERROR(fmt, ...) \
+    printk(KERN_ERR   "mudaq: " pr_fmt(fmt), ##__VA_ARGS__)
+#define INFO(fmt, ...) \
+    printk(KERN_INFO  "mudaq: " pr_fmt(fmt), ##__VA_ARGS__)
+#define DEBUG(fmt, ...) \
+    printk(KERN_DEBUG "mudaq: " pr_fmt(fmt), ##__VA_ARGS__)
 
 //
 // module-wide global variables
