@@ -12,7 +12,6 @@ use ieee.std_logic_unsigned.all;
 use work.dataflow_components.all;
 
 
-
 entity link_merger is
     generic(
         NLINKS_TOTL : integer := 3;
@@ -29,8 +28,9 @@ entity link_merger is
         i_link_valid : in integer;
         i_link_mask_n : in std_logic_vector(NLINKS_TOTL - 1 downto 0);
 
-        o_stream_data : out std_logic_vector(35 downto 0);
-        o_stream_we : out std_logic--;
+        o_stream_rdata : out std_logic_vector(67 downto 0); -- "11" = shop, "10" = eop, "01" = sop, "00" = data
+        o_stream_rempty : out std_logic;
+        i_stream_rack : in std_logic--;
 
     );
     end entity link_merger;
@@ -43,7 +43,8 @@ entity link_merger is
         signal link_empty, link_wren, link_full, link_afull, link_wrfull, sop, eop, shop, link_ren : std_logic_vector(NLINKS_TOTL - 1 downto 0);
         signal link_usedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS_TOTL - 1 downto 0);
         
-        signal stream_wdata, stream_rdata : std_logic_vector(35 downto 0);
+        signal stream_wdata, stream_rdata : std_logic_vector(67 downto 0);
+        signal we_counter : std_logic_vector(64 downto 0);
         signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
         
 	begin
@@ -116,7 +117,7 @@ entity link_merger is
     
     e_time_merger : entity work.time_merger
         generic map (
-        W => 38,
+        W => 68,
         N => NLINKS_TOTL--,
     )
     port map (
@@ -129,7 +130,9 @@ entity link_merger is
         i_mask_n                => i_link_mask_n,
         o_rack                  => link_ren,
 
-        o_wdata(35 downto 0)    => stream_wdata,
+        o_wdata                 => stream_wdata,
+        o_wsop                  => open,
+        o_weop                  => open,
         i_wfull                 => stream_wfull,
         o_we                    => stream_we,
 
@@ -137,13 +140,21 @@ entity link_merger is
         i_clk                   => i_memclk--,
     );
     
-    o_stream_data <= stream_wdata;
-    o_stream_we <= stream_we;
+    process(i_memclk, i_reset_mem_n)
+    begin   
+        if ( i_reset_mem_n /= '1' ) then
+            we_counter <= (others => '0');
+        elsif rising_edge(i_memclk) then
+            if ( stream_we = '1' ) then
+                we_counter <= we_counter + '1';
+            end if;
+        end if;
+    end process;
     
     e_stream_fifo : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH => 10,
-        DATA_WIDTH => 36,
+        DATA_WIDTH => 68,
         DEVICE => "Arria 10"--,
     )
     port map (
@@ -156,5 +167,9 @@ entity link_merger is
         sclr            => reset_mem,
         clock           => i_memclk--,
     );
+        
+    o_stream_rdata <= stream_rdata;
+    o_stream_rempty <= stream_rempty;
+    stream_rack <= i_stream_rack;
 
     end architecture RTL;

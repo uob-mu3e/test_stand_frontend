@@ -137,21 +137,11 @@ begin
 		i_link_valid => 1,
 		i_link_mask_n => link_mask_n,
 		
-		o_stream_data => open,
-		o_stream_we => stream_we--,
+		o_stream_rdata => open,
+		o_stream_rempty => open,
+		i_stream_rack => '1'--,
     );
-    
-    process(dataclk, reset_n)
-    begin   
-        if ( reset_n /= '1' ) then
-            we_counter <= (others => '0');
-        elsif rising_edge(dataclk) then
-            if ( stream_we = '1' ) then
-                we_counter <= we_counter + '1';
-            end if;
-        end if;
-    end process;
-    
+
 	--dataclk
 	process begin
 		dataclk <= '0';

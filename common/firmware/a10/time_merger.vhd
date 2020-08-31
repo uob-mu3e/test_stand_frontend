@@ -64,6 +64,7 @@ architecture arch of time_merger is
     
     -- merge signals
     signal min_hit : std_logic_vector(37 downto 0);
+    signal min_fpga_id : std_logic_vector(15 downto 0);
     signal link_good, sop_wait, shop_wait, time_wait, rack_link : std_logic_vector(N - 1 downto 0);
     
     -- layer zero signals
@@ -111,6 +112,7 @@ begin
         sh_state <= (others => '1');
         pre_state <= (others => '1');
         tr_state <= (others => '1');
+        fpga_id <= (others => (others => '0'));
         --
     elsif rising_edge(i_clk) then
     
@@ -129,6 +131,7 @@ begin
                 sop_wait(I) <= '0';
             elsif ( i_rempty(I) = '0' and i_rsop(I) = '1' ) then
                 sop_wait(I) <= '0';
+                fpga_id(I) <= i_rdata(I)(27 downto 12);
             elsif ( merge_state = wait_for_pre and rack_link(I) = '0' and i_rempty(I) = '0' ) then
                 sop_wait(I) <= '1';
                 rack_link(I) <= '1';
@@ -182,6 +185,7 @@ begin
     if ( i_reset_n /= '1' ) then
         w_ack <= '0';
         min_hit <= (others => '1');
+        min_fpga_id <= (others => '0');
         rack_hit <= (others => '0');
         
         data_t_0 <= (others => (others => '0'));
@@ -300,6 +304,7 @@ begin
             if ( min_index /= 36 ) then
                 w_ack <= '1';
                 min_hit <= data_t_3(min_index);
+                min_fpga_id <= fpga_id(min_index);
                 full_t_3(min_index) <= '0';
                 empty_t_3(min_index) <= '1';
             end if;
@@ -320,7 +325,6 @@ begin
         wait_cnt_pre <= (others => '0');
         wait_cnt_sh <= (others => '0');
         wait_cnt_merger <= (others => '0');
-        fpga_id <= (others => (others => '0'));
         gtime1 <= (others => (others => '0'));
         gtime2 <= (others => (others => '0'));
         shtime <= (others => '1');
@@ -356,12 +360,11 @@ begin
                     wait_cnt_pre <= (others => '0');
                     -- send merged data preamble
                     -- sop & preamble & zeros & datak
-                    o_wdata(37 downto 36) <= "01";
-                    o_wdata(35 downto 30) <= "111010";
-                    o_wdata(11 downto 4) <= x"BC";
-                    o_wdata(3 downto 0) <= "0001";
-                    o_wsop <= '1';
+                    o_wdata(33 downto 32) <= "01";
+                    o_wdata(31 downto 26) <= "111010";
+                    o_wdata(7 downto 0) <= x"BC";
                     o_we <= '1';
+                    o_wsop <= '1';
                 end if;
                 
                 -- if wait for pre gets timeout
@@ -392,10 +395,8 @@ begin
                     -- reset signals
                     gtime1 <= (others => (others => '0'));
                     -- send gtime1
-                    o_wdata(37 downto 36) <= "00";
-                    o_wdata(35 downto 4) <= gtime1(i_link)(35 downto 4);
-                    o_wdata(3 downto 0) <= "0000";
-                    o_we <= '1';
+                    o_wdata(67 downto 66) <= "00";
+                    o_wdata(65 downto 34) <= gtime1(i_link)(35 downto 4);
                 end if;
                 
             when get_time2 =>
@@ -421,9 +422,8 @@ begin
                     -- reset signals
                     gtime2 <= (others => (others => '0'));
                     -- send gtime2
-                    o_wdata(37 downto 36) <= "00";
-                    o_wdata(35 downto 4) <= gtime2(i_link)(35 downto 4);
-                    o_wdata(3 downto 0) <= "0000";
+                    o_wdata(33 downto 32) <= "00";
+                    o_wdata(31 downto 0) <= gtime2(i_link)(35 downto 4);
                     o_we <= '1';
                 end if;
                 
@@ -454,19 +454,18 @@ begin
                     overflow <= (others => '0');
                     -- send merged data sub header
                     -- zeros & sub header & zeros & datak
-                    o_wdata(37 downto 36) <= "00";
-                    o_wdata(35 downto 32) <= "0000";
-                    o_wdata(31 downto 26) <= "111111";
-                    o_wdata(19 downto 4) <= overflow;
-                    o_wdata(3 downto 0) <= "0001";
+                    o_wdata(33 downto 32) <= "11";
+                    o_wdata(31 downto 28) <= "0000";
+                    o_wdata(27 downto 22) <= "111111";
                     -- send sub header time -- check later if equal
-                    o_wdata(25 downto 20) <= i_rdata(i_link)(25 downto 20);
+                    o_wdata(21 downto 16) <= i_rdata(i_link)(25 downto 20);
                     shtime <= i_rdata(i_link)(25 downto 20);
                     FOR I in N - 1 downto 0 LOOP
                         if ( i_mask_n(I) = '1' ) then
                             sheader_time(I) <= i_rdata(I)(25 downto 20);
                         end if;
                     END LOOP;
+                    o_wdata(15 downto 0) <= overflow;
                     o_we <= '1';
                 end if;
                 
@@ -513,7 +512,8 @@ begin
                 
                 -- write out data
                 if ( w_ack = '1' ) then
-                    o_wdata <= min_hit;
+                    o_wdata(49 downto 34) <= min_fpga_id;
+                    o_wdata(33 downto 0) <= min_hit(37 downto 4);
                     o_we <= '1';
                 end if;
                 
