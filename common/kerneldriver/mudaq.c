@@ -657,16 +657,11 @@ void mudaq_clear_msi(struct mudaq *mu) {
 
 static
 void mudaq_free_dma(struct mudaq *mu) {
-    int i_list, i_page;
-    struct scatterlist *sg;
-
     mudaq_deactivate(mu);
 
-    for_each_sg(mu->dma->sgt->sgl, sg, mu->dma->sgt->nents, i_list) {
-        dma_unmap_sg(mu->dev, sg, 1, DMA_FROM_DEVICE);
-    }
+    dma_unmap_sg(&mu->pci_dev->dev, mu->dma->sgt->sgl, mu->dma->sgt->nents, DMA_FROM_DEVICE);
 
-    for (i_page = 0; i_page < mu->dma->npages; i_page++) {
+    for (int i_page = 0; i_page < mu->dma->npages; i_page++) {
         if (PageReserved(mu->dma->pages[i_page]))
             INFO("Page %d is in reserved space\n", i_page);
         if (!PageReserved(mu->dma->pages[i_page]))
@@ -709,7 +704,7 @@ long mudaq_fops_ioctl(struct file *filp,
     int retval = 0;
     struct mudaq *mu = (struct mudaq *) filp->private_data;
     int err = 0;
-    int i_page = 0, i_list = 0, n_mapped = 0, count = 0;
+    int i_page = 0, i_list = 0;
     struct page **pages_tmp;
     struct scatterlist *sg;
     struct sg_table *sgt_tmp;
@@ -865,26 +860,19 @@ long mudaq_fops_ioctl(struct file *filp,
          * calculate number of pages per list
          * pass address and number of pages to FPGA
          */
+        retval = dma_map_sg(&mu->pci_dev->dev, mu->dma->sgt->sgl, mu->dma->sgt->nents, DMA_FROM_DEVICE);
+        if(retval == 0) {
+            ERROR("Could not map sg list\n");
+            retval = -EFAULT;
+            goto release;
+        }
+
         for_each_sg(mu->dma->sgt->sgl, sg, mu->dma->sgt->nents, i_list) {
-            count = dma_map_sg(&mu->pci_dev->dev, sg, 1, DMA_FROM_DEVICE);
-            if (count == 0) {
-                ERROR("Could not map list %d\n", i_list);
-                retval = -EFAULT;
-                n_mapped = i_list;
-                goto unmap;
-            }
-            if (dma_mapping_error(&mu->pci_dev->dev, sg_dma_address(sg))) {
-                ERROR("Error during mapping\n");
-                retval = -EADDRNOTAVAIL;
-                n_mapped = i_list;
-                goto unmap;
-            }
             DEBUG("At %d: address %lx, length in pages: %lx\n", i_list, (long unsigned) sg_dma_address(sg),
                   sg->length / PAGE_SIZE);
             if (sg->length > MUDAQ_DMABUF_DATA_LEN) {
                 ERROR("Length of scatter gather list larger than ring buffer\n");
                 retval = -EFAULT;
-                n_mapped = i_list;
                 goto unmap;
             }
             mu->dma->bus_addrs[i_list] = sg_dma_address(sg);
@@ -912,11 +900,9 @@ long mudaq_fops_ioctl(struct file *filp,
     return 0;
 
 unmap:
-    for_each_sg(mu->dma->sgt->sgl, sg, n_mapped, i_list) {
-        dma_unmap_sg(mu->dev, sg, 1, DMA_FROM_DEVICE);
-    }
+    dma_unmap_sg(&mu->pci_dev->dev, mu->dma->sgt->sgl, mu->dma->sgt->nents, DMA_FROM_DEVICE);
 release:
-    for (i_page = 0; i_page < mu->dma->npages; i_page++) {
+    for (int i_page = 0; i_page < mu->dma->npages; i_page++) {
         if (!PageReserved(mu->dma->pages[i_page]))
             SetPageDirty(mu->dma->pages[i_page]);
         //page_cache_release( mu->dma->pages[i_page] );
