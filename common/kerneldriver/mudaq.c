@@ -103,6 +103,14 @@ struct mudaq_dma {
     struct sg_table *sgt;
 };
 
+/** free the given mudaq struct and all associated memory */
+static
+void mudaq_free(struct mudaq *mu) {
+    kfree(mu->mem);
+    kfree(mu->dma);
+    kfree(mu);
+}
+
 /** allocate a new mudaq struct and initialize its state */
 static
 int mudaq_alloc(struct mudaq **mu) {
@@ -147,14 +155,6 @@ fail_mem:
 fail:
     *mu = NULL;
     return retval;
-}
-
-/** free the given mudaq struct and all associated memory */
-static
-void mudaq_free(struct mudaq *mu) {
-    kfree(mu->dma);
-    kfree(mu->mem);
-    kfree(mu);
 }
 
 
@@ -513,6 +513,15 @@ out:
 }
 
 static
+void mudaq_clear_mmio(struct pci_dev *dev, struct mudaq *mu) {
+    pci_iounmap(dev, mu->mem->internal_addr[0]);
+    pci_iounmap(dev, mu->mem->internal_addr[1]);
+    pci_iounmap(dev, mu->mem->internal_addr[2]);
+    pci_iounmap(dev, mu->mem->internal_addr[3]);
+    pci_release_regions(dev);
+}
+
+static
 int mudaq_setup_mmio(struct pci_dev *pdev, struct mudaq *mu) {
     int i, j;
     const int bars[] = {0, 1, 2, 3};
@@ -549,12 +558,12 @@ out:
 }
 
 static
-void mudaq_clear_mmio(struct pci_dev *dev, struct mudaq *mu) {
-    pci_iounmap(dev, mu->mem->internal_addr[0]);
-    pci_iounmap(dev, mu->mem->internal_addr[1]);
-    pci_iounmap(dev, mu->mem->internal_addr[2]);
-    pci_iounmap(dev, mu->mem->internal_addr[3]);
-    pci_release_regions(dev);
+void mudaq_clear_dma(struct pci_dev *pdev, struct mudaq *mu) {
+    /* deactivate any readout activity before removing the dma memory */
+    mudaq_deactivate(mu);
+    mudaq_set_dma_ctrl_addr(mu, 0x0);
+
+    dma_free_coherent(&pdev->dev, mu->mem->phys_size[4], mu->mem->internal_addr[4], mu->mem->bus_addr_ctrl);
 }
 
 /** setup coherent dma
@@ -606,12 +615,14 @@ out:
 }
 
 static
-void mudaq_clear_dma(struct pci_dev *pdev, struct mudaq *mu) {
-    /* deactivate any readout activity before removing the dma memory */
-    mudaq_deactivate(mu);
-    mudaq_set_dma_ctrl_addr(mu, 0x0);
+void mudaq_clear_msi(struct mudaq *mu) {
+    /* release irq */
+    devm_free_irq(mu->dev, mu->irq, mu);
+    DEBUG("Freed irq\n");
 
-    dma_free_coherent(&pdev->dev, mu->mem->phys_size[4], mu->mem->internal_addr[4], mu->mem->bus_addr_ctrl);
+    /* disable MSI */
+    pci_disable_msi(mu->pci_dev);
+    pci_clear_mwi(mu->pci_dev);
 }
 
 static
@@ -642,17 +653,6 @@ out_clear_msi:
 out_clear_mwi:
     pci_clear_mwi(mu->pci_dev);
     return rv;
-}
-
-static
-void mudaq_clear_msi(struct mudaq *mu) {
-    /* release irq */
-    devm_free_irq(mu->dev, mu->irq, mu);
-    DEBUG("Freed irq\n");
-
-    /* disable MSI */
-    pci_disable_msi(mu->pci_dev);
-    pci_clear_mwi(mu->pci_dev);
 }
 
 static
@@ -947,6 +947,25 @@ const struct file_operations mudaq_fops = {
 // register / unregister mudaq device with the kernel
 //
 
+/** unregister the mudaq device */
+static
+void mudaq_unregister(struct mudaq *mu) {
+    INFO("unregister '%s' cdev(%d, %d)\n", dev_name(mu->dev),
+         MAJOR(mu->char_dev.dev),
+         MINOR(mu->char_dev.dev)
+    );
+
+    device_destroy(mudaq_class, mu->char_dev.dev);
+    DEBUG("Destroyed device\n");
+    minor_release(MINOR(mu->char_dev.dev));
+    DEBUG("Released minor number\n");
+    cdev_del(&mu->char_dev);
+    DEBUG("Deleted character device\n");
+
+    dmabuf_free(chrdev->devices[MINOR(mu->char_dev.dev)].private_data);
+    chrdev_device_del(chrdev, MINOR(mu->char_dev.dev));
+}
+
 /* register the mudaq device. device is live after successful call. */
 static
 int mudaq_register(struct mudaq *mu) {
@@ -1002,23 +1021,20 @@ fail_minor:
     return retval;
 }
 
-/** unregister the mudaq device */
 static
-void mudaq_unregister(struct mudaq *mu) {
-    INFO("unregister '%s' cdev(%d, %d)\n", dev_name(mu->dev),
-         MAJOR(mu->char_dev.dev),
-         MINOR(mu->char_dev.dev)
-     );
+void mudaq_pci_remove(struct pci_dev *pdev) {
+    struct mudaq *mu = (struct mudaq *) pci_get_drvdata(pdev);
 
-    device_destroy(mudaq_class, mu->char_dev.dev);
-    DEBUG("Destroyed device\n");
-    minor_release(MINOR(mu->char_dev.dev));
-    DEBUG("Released minor number\n");
-    cdev_del(&mu->char_dev);
-    DEBUG("Deleted character device\n");
+    if (mu->dma->flag == true)
+        mudaq_free_dma(mu);
+    mudaq_clear_msi(mu);
+    mudaq_unregister(mu);
+    mudaq_clear_dma(pdev, mu);
+    mudaq_clear_mmio(pdev, mu);
+    pci_disable_device(pdev);
+    mudaq_free(mu);
 
-    dmabuf_free(chrdev->devices[MINOR(mu->char_dev.dev)].private_data);
-    chrdev_device_del(chrdev, MINOR(mu->char_dev.dev));
+    INFO("Device removed\n");
 }
 
 
@@ -1067,22 +1083,6 @@ fail:
 }
 
 static
-void mudaq_pci_remove(struct pci_dev *pdev) {
-    struct mudaq *mu = (struct mudaq *) pci_get_drvdata(pdev);
-
-    if (mu->dma->flag == true)
-        mudaq_free_dma(mu);
-    mudaq_clear_msi(mu);
-    mudaq_unregister(mu);
-    mudaq_clear_dma(pdev, mu);
-    mudaq_clear_mmio(pdev, mu);
-    pci_disable_device(pdev);
-    mudaq_free(mu);
-
-    INFO("Device removed\n");
-}
-
-static
 struct pci_driver mudaq_pci_driver = {
     .name =     DRIVER_NAME,
     .id_table = PCI_DEVICE_IDS,
@@ -1092,10 +1092,21 @@ struct pci_driver mudaq_pci_driver = {
 
 MODULE_DEVICE_TABLE(pci, PCI_DEVICE_IDS);
 
-
 /**
  * module init and exit
  */
+
+static
+void __exit mudaq_exit(void) {
+    pci_unregister_driver(&mudaq_pci_driver);
+    unregister_chrdev_region(MKDEV(major, 0), MAX_NUM_DEVICES);
+    class_destroy(mudaq_class);
+
+    chrdev_free(chrdev);
+
+    DEBUG("module removed\n");
+}
+
 static
 int __init mudaq_init(void) {
     int rv;
@@ -1139,17 +1150,6 @@ fail_chrdev:
     class_destroy(mudaq_class);
 fail:
     return rv;
-}
-
-static
-void __exit mudaq_exit(void) {
-    pci_unregister_driver(&mudaq_pci_driver);
-    unregister_chrdev_region(MKDEV(major, 0), MAX_NUM_DEVICES);
-    class_destroy(mudaq_class);
-
-    chrdev_free(chrdev);
-
-    DEBUG("module removed\n");
 }
 
 module_init(mudaq_init);
