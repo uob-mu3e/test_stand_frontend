@@ -670,18 +670,24 @@ void mudaq_free_dma(struct mudaq *mu) {
         put_page(mu->dma->pages[i_page]);
     }
 
-    kfree(mu->dma->sgt);
-    kfree(mu->dma->pages);
+    if(mu->dma->sgt != NULL) {
+        kfree(mu->dma->sgt);
+        mu->dma->sgt = NULL;
+    }
+    if(mu->dma->pages != NULL) {
+        kfree(mu->dma->pages);
+        mu->dma->pages = NULL;
+    }
+
     INFO("Freed pinned DMA buffer in kernel space\n");
 
     mu->dma->flag = false;
-
 }
 
 /* release function is called when a process closes the device file */
 static
 int mudaq_fops_release(struct inode *inode, struct file *filp) {
-    struct mudaq *mu = (struct mudaq *) filp->private_data;
+    struct mudaq *mu = filp->private_data;
     if (mu->dma->flag == true)
         mudaq_free_dma(mu);
 
@@ -705,9 +711,7 @@ long mudaq_fops_ioctl(struct file *filp,
     struct mudaq *mu = (struct mudaq *) filp->private_data;
     int err = 0;
     int i_page = 0, i_list = 0;
-    struct page **pages_tmp;
     struct scatterlist *sg;
-    struct sg_table *sgt_tmp;
     u32 new_event_count;
     void __user* user_buffer = (void __user*)ioctl_param;
 
@@ -776,34 +780,36 @@ long mudaq_fops_ioctl(struct file *filp,
             goto fail;
         }
         INFO("Received following virtual address: 0x%0llx \n", (u64) msg.address);
-        INFO("Size of allocated memory: %zu bytes\n", msg.size);
         if(!PAGE_ALIGNED(msg.address)) {
+            pr_err("address is not page aligned\n");
+            return -EINVAL;
+        }
+        INFO("Size of allocated memory: %zu bytes\n", msg.size);
+        if(msg.size != MUDAQ_DMABUF_DATA_LEN) {
+            pr_err("invalid size\n");
             return -EINVAL;
         }
 
         /* allocate memory for page pointers */
-        if ((pages_tmp = kzalloc(sizeof(long unsigned) * N_PAGES, GFP_KERNEL)) == NULL) {
+        mu->dma->pages = kzalloc(sizeof(long unsigned) * N_PAGES, GFP_KERNEL);
+        if(mu->dma->pages == NULL) {
             DEBUG("Error allocating memory for page table\n");
             retval = -ENOMEM;
             goto fail;
         }
-        mu->dma->pages = pages_tmp;
 
         /* allocate memory for scatter gather table containing scatter gather lists chained to each other */
-        if ((sgt_tmp = kzalloc(sizeof(struct sg_table), GFP_KERNEL)) == NULL) {
+        mu->dma->sgt = kzalloc(sizeof(struct sg_table), GFP_KERNEL);
+        if(mu->dma->sgt == NULL) {
             DEBUG("Error allocating memory for scatter gather table\n");
             retval = -ENOMEM;
-            goto free_table;
+            goto fail;
         }
-        mu->dma->sgt = sgt_tmp;
 
         DEBUG("Allocated memory\n");
 
         /* get pages in kernel space from user space address */
         down_read(&current->mm->mmap_sem); //lock the memory management structure for our process
-
-        // check kernel version as there was a change from 4.4.92.xx (??) on
-        INFO("Found Kernel %d\n", LINUX_VERSION_CODE);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0) // add `get_user_pages_remote` function
         retval = get_user_pages_remote(
@@ -827,14 +833,17 @@ long mudaq_fops_ioctl(struct file *filp,
         );
 
         up_read(&current->mm->mmap_sem);  // unlock
-        if (retval < 1) {
+
+        if(retval < 0) {
             ERROR("Error %d while getting user pages \n", retval);
             mu->dma->npages = 0;
-            goto free_sgt;
+            goto fail;
         }
-        else {
-            DEBUG("Number of pages received: %d\n", retval);
-            mu->dma->npages = retval;
+        DEBUG("Number of pages received: %d\n", retval);
+        mu->dma->npages = retval;
+        if(mu->dma->npages != N_PAGES) {
+            pr_err("get_user_pages != N_PAGES\n");
+            goto release;
         }
 
         /* allocate scatter gather table */
@@ -844,6 +853,8 @@ long mudaq_fops_ioctl(struct file *filp,
             ERROR("Could not set scatter gather table\n");
             goto release;
         }
+
+        DEBUG("Found %d discontinuous pieces in memory buffer\n", mu->dma->sgt->nents);
 
         /* FPGA can only take 4096 addresses
          * => check for this limit
@@ -868,19 +879,19 @@ long mudaq_fops_ioctl(struct file *filp,
         }
 
         for_each_sg(mu->dma->sgt->sgl, sg, mu->dma->sgt->nents, i_list) {
-            DEBUG("At %d: address %lx, length in pages: %lx\n", i_list, (long unsigned) sg_dma_address(sg),
-                  sg->length / PAGE_SIZE);
+            dma_addr_t dma_addr = sg_dma_address(sg);
+            int dma_pages = sg_dma_len(sg) >> PAGE_SHIFT;
+            DEBUG("At %d: address %llx, length in pages: %d\n", i_list, dma_addr, dma_pages);
             if (sg->length > MUDAQ_DMABUF_DATA_LEN) {
                 ERROR("Length of scatter gather list larger than ring buffer\n");
                 retval = -EFAULT;
                 goto unmap;
             }
-            mu->dma->bus_addrs[i_list] = sg_dma_address(sg);
-            mu->dma->n_pages[i_list] = sg_dma_len(sg) >> PAGE_SHIFT;
-            mudaq_set_dma_data_addr(mu, mu->dma->bus_addrs[i_list], i_list, mu->dma->n_pages[i_list]);
+            mu->dma->bus_addrs[i_list] = dma_addr;
+            mu->dma->n_pages[i_list] = dma_pages;
+            mudaq_set_dma_data_addr(mu, dma_addr, i_list, dma_pages);
         }
         mudaq_set_dma_n_buffers(mu, mu->dma->sgt->nents);
-        DEBUG("Found %d discontinuous pieces in memory buffer\n", mu->dma->sgt->nents);
 
         for (i_list = 0; i_list < mu->dma->sgt->nents; i_list++) {
             mudaq_read_dma_data_addr(mu, i_list);
@@ -905,14 +916,18 @@ release:
     for (int i_page = 0; i_page < mu->dma->npages; i_page++) {
         if (!PageReserved(mu->dma->pages[i_page]))
             SetPageDirty(mu->dma->pages[i_page]);
-        //page_cache_release( mu->dma->pages[i_page] );
+//            page_cache_release( mu->dma->pages[i_page] );
         put_page(mu->dma->pages[i_page]);
     }
-free_sgt:
-    kfree(mu->dma->sgt);
-free_table:
-    kfree(mu->dma->pages);
 fail:
+    if(mu->dma->sgt != NULL) {
+        kfree(mu->dma->sgt);
+        mu->dma->sgt = NULL;
+    }
+    if(mu->dma->pages != NULL) {
+        kfree(mu->dma->pages);
+        mu->dma->pages = NULL;
+    }
     return retval;
 }
 
