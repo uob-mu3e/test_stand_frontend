@@ -671,6 +671,7 @@ void mudaq_free_dma(struct mudaq *mu) {
     }
 
     if(mu->dma->sgt != NULL) {
+        sg_free_table(mu->dma->sgt);
         kfree(mu->dma->sgt);
         mu->dma->sgt = NULL;
     }
