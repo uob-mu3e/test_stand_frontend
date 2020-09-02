@@ -13,5 +13,6 @@ package dataflow_components is
 	subtype dataplusts_type is std_logic_vector(271 downto 0);
 	
 	type data_array is array (natural range <>) of std_logic_vector(37 downto 0);
+	type hit_array_t is array (7 downto 0) of std_logic_vector(31 downto 0);
 	
 end package dataflow_components;

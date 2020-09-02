@@ -29,6 +29,7 @@ entity link_merger is
         i_link_mask_n : in std_logic_vector(NLINKS_TOTL - 1 downto 0);
 
         o_stream_rdata : out std_logic_vector(67 downto 0); -- "11" = shop, "10" = eop, "01" = sop, "00" = data
+        o_hit : out std_logic_vector(255 downto 0);
         o_stream_rempty : out std_logic;
         i_stream_rack : in std_logic--;
 
@@ -46,14 +47,14 @@ entity link_merger is
         signal stream_wdata, stream_rdata : std_logic_vector(67 downto 0);
         signal we_counter : std_logic_vector(63 downto 0);
         signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
+        signal hit_a : hit_array_t;
         
 	begin
 	
     reset_data <= not i_reset_data_n;
     reset_mem <= not i_reset_mem_n;
     
-    buffer_link_fifos:
-    FOR i in 0 to NLINKS_TOTL - 1 GENERATE
+    buffer_link_fifos: FOR i in 0 to NLINKS_TOTL - 1 GENERATE
 
     e_link_to_fifo : entity work.link_to_fifo
     generic map(
@@ -131,6 +132,7 @@ entity link_merger is
         o_rack                  => link_ren,
 
         o_wdata                 => stream_wdata,
+        o_hit_out               => hit_a,
         o_wsop                  => open,
         o_weop                  => open,
         i_wfull                 => stream_wfull,
@@ -139,6 +141,10 @@ entity link_merger is
         i_reset_n               => i_reset_mem_n,
         i_clk                   => i_memclk--,
     );
+    
+    gen_o_hit : FOR I in 7 downto 0 GENERATE
+        o_hit(I * 32 + 31 downto I * 32) <= hit_a(I);
+    END GENERATE;
     
     process(i_memclk, i_reset_mem_n)
     begin   

@@ -737,10 +737,11 @@ begin
         i_link_mask_n => (others => '1'),--writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
         
 		  o_stream_rdata(0) => LED_BRACKET(0),
+          o_hit => dma_data,
 		  o_stream_rempty => open,
 		  i_stream_rack => '1'--,
     );
-    
+    dma_data_wren <= '1';
     
 --     e_midas_event_builder : entity work.midas_event_builder
 --     generic map (
