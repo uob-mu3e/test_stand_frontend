@@ -106,57 +106,44 @@ struct mudaq_dma {
 /** free the given mudaq struct and all associated memory */
 static
 void mudaq_free(struct mudaq *mu) {
-    kfree(mu->mem);
-    kfree(mu->dma);
-    kfree(mu);
+    if(mu != NULL && mu->mem) { kfree(mu->mem); mu->mem = NULL; }
+    if(mu != NULL && mu->dma) { kfree(mu->dma); mu->dma = NULL; }
+    if(mu != NULL) kfree(mu);
 }
 
 /** allocate a new mudaq struct and initialize its state */
 static
-int mudaq_alloc(struct mudaq **mu) {
+struct mudaq* mudaq_alloc(void) {
     int retval;
-    struct mudaq *tmp;
-    struct mudaq_mem *tmp_mem;
-    struct mudaq_dma *tmp_dma;
 
     /* allocate memory for the device structure */
-    tmp = kzalloc(sizeof(struct mudaq), GFP_KERNEL);
-    if (tmp == NULL) {
+    struct mudaq* mu = kzalloc(sizeof(struct mudaq), GFP_KERNEL);
+    if(mu == NULL) {
         ERROR("could not allocate memory for 'struct mudaq'\n");
         retval = -ENOMEM;
         goto fail;
     }
 
-    tmp_mem = kzalloc(sizeof(struct mudaq_mem), GFP_KERNEL);
-    if (tmp_mem == NULL) {
+    mu->mem = kzalloc(sizeof(struct mudaq_mem), GFP_KERNEL);
+    if(mu->mem == NULL) {
         ERROR("could not allocate memory for 'struct mudaq_mem'\n");
         retval = -ENOMEM;
-        goto fail_mem;
+        goto fail;
     }
-    tmp->mem = tmp_mem;
 
-    tmp_dma = kzalloc(sizeof(struct mudaq_dma), GFP_KERNEL);
-    if (tmp_dma == NULL) {
+    mu->dma = kzalloc(sizeof(struct mudaq_dma), GFP_KERNEL);
+    if(mu->dma == NULL) {
         ERROR("could not allocate memory for 'struct mudaq_dma'\n");
         retval = -ENOMEM;
-        goto fail_dma;
+        goto fail;
     }
-    tmp->dma = tmp_dma;
 
-    *mu = tmp;
-    return 0;
+    return mu;
 
-fail_dma:
-    kfree(tmp_mem);
-    tmp_dma = NULL;
-fail_mem:
-    kfree(tmp);
-    tmp_mem = NULL;
 fail:
-    *mu = NULL;
-    return retval;
+    mudaq_free(mu);
+    return ERR_PTR(retval);
 }
-
 
 //
 // minor number handling
@@ -1023,7 +1010,6 @@ void mudaq_pci_remove(struct pci_dev *pdev) {
     INFO("Device removed\n");
 }
 
-
 //
 // mudaq pci device handling
 //
@@ -1031,10 +1017,15 @@ void mudaq_pci_remove(struct pci_dev *pdev) {
 static
 int mudaq_pci_probe(struct pci_dev *pdev, const struct pci_device_id *pid) {
     int rv;
-    struct mudaq *mu;
 
-    if ((rv = mudaq_alloc(&mu)) < 0) goto fail;
+    struct mudaq* mu = mudaq_alloc();
+    if(IS_ERR_OR_NULL(mu)) {
+        rv = PTR_ERR(mu);
+        mu = NULL;
+        goto fail;
+    }
     DEBUG("Allocated mudaq\n");
+
     mu->pci_dev = pdev;
     if ((rv = pci_enable_device(pdev)) < 0) goto out_free;
     DEBUG("Enabled device\n");
