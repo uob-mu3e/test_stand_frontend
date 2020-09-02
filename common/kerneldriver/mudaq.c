@@ -474,6 +474,7 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
         );
 
     default:
+        break;
     }
 
     /* this should NEVER happen */
@@ -486,10 +487,10 @@ out:
 
 static
 void mudaq_clear_mmio(struct pci_dev *dev, struct mudaq *mu) {
-    pci_iounmap(dev, mu->mem->internal_addr[0]);
-    pci_iounmap(dev, mu->mem->internal_addr[1]);
-    pci_iounmap(dev, mu->mem->internal_addr[2]);
-    pci_iounmap(dev, mu->mem->internal_addr[3]);
+    for(int i = 0; i < 4; i++) {
+        pci_iounmap(dev, mu->mem->internal_addr[i]);
+    }
+
     pci_release_regions(dev);
 }
 
@@ -511,7 +512,7 @@ int mudaq_setup_mmio(struct pci_dev *pdev, struct mudaq *mu) {
     for (i = 0; i < 4; i++) {
         mu->mem->phys_addr[i] = pci_resource_start(pdev, bars[i]);
         mu->mem->phys_size[i] = pci_resource_len(pdev, bars[i]);
-        mu->mem->internal_addr[i] = (__iomem u32 *) pci_iomap(pdev, bars[i], mu->mem->phys_size[i]);
+        mu->mem->internal_addr[i] = pci_iomap(pdev, bars[i], mu->mem->phys_size[i]);
         if (mu->mem->internal_addr[i] == NULL) {
             ERROR("pci_iomap failed for '%s'\n", names[i]);
             rv = -ENODEV;
@@ -520,6 +521,7 @@ int mudaq_setup_mmio(struct pci_dev *pdev, struct mudaq *mu) {
         DEBUG("Bar %d: at %x with size %d at internal address %lx\n", bars[i], mu->mem->phys_addr[i],
               mu->mem->phys_size[i], (long unsigned) mu->mem->internal_addr[i]);
     }
+
     return 0;
 
 fail_unmap:
@@ -633,13 +635,13 @@ void mudaq_free_dma(struct mudaq *mu) {
 
     dma_unmap_sg(&mu->pci_dev->dev, mu->dma->sgt->sgl, mu->dma->sgt->nents, DMA_FROM_DEVICE);
 
-    for (int i_page = 0; i_page < mu->dma->npages; i_page++) {
-        if (PageReserved(mu->dma->pages[i_page]))
-            INFO("Page %d is in reserved space\n", i_page);
-        if (!PageReserved(mu->dma->pages[i_page]))
-            SetPageDirty(mu->dma->pages[i_page]);
-        //page_cache_release( mu->dma->pages[i_page] );
-        put_page(mu->dma->pages[i_page]);
+    for(int i = 0; i < mu->dma->npages; i++) {
+        if (PageReserved(mu->dma->pages[i]))
+            INFO("Page %d is in reserved space\n", i);
+        if (!PageReserved(mu->dma->pages[i]))
+            SetPageDirty(mu->dma->pages[i]);
+//        page_cache_release( mu->dma->pages[i] );
+        put_page(mu->dma->pages[i]);
     }
 
     if(mu->dma->sgt != NULL) {
@@ -681,7 +683,7 @@ long mudaq_fops_ioctl(struct file *filp,
                       unsigned int cmd,    /* magic and sequential number for ioctl */
                       unsigned long ioctl_param) {
     int retval = 0;
-    struct mudaq *mu = (struct mudaq *) filp->private_data;
+    struct mudaq* mu = filp->private_data;
     int err = 0;
     int i_page = 0, i_list = 0;
     struct scatterlist *sg;
@@ -848,18 +850,13 @@ long mudaq_fops_ioctl(struct file *filp,
         if(retval == 0) {
             ERROR("Could not map sg list\n");
             retval = -EFAULT;
-            goto release;
+            goto fail;
         }
 
         for_each_sg(mu->dma->sgt->sgl, sg, mu->dma->sgt->nents, i_list) {
             dma_addr_t dma_addr = sg_dma_address(sg);
             int dma_pages = sg_dma_len(sg) >> PAGE_SHIFT;
             DEBUG("At %d: address %llx, length in pages: %d\n", i_list, dma_addr, dma_pages);
-            if (sg->length > MUDAQ_DMABUF_DATA_LEN) {
-                ERROR("Length of scatter gather list larger than ring buffer\n");
-                retval = -EFAULT;
-                goto unmap;
-            }
             mu->dma->bus_addrs[i_list] = dma_addr;
             mu->dma->n_pages[i_list] = dma_pages;
             mudaq_set_dma_data_addr(mu, dma_addr, i_list, dma_pages);
@@ -876,6 +873,7 @@ long mudaq_fops_ioctl(struct file *filp,
         mu->dma->flag = true;  // flag to release pages and free memory when removing device
 
         break;
+    }
 
     default:
         return -EINVAL;
@@ -904,8 +902,8 @@ fail:
     return retval;
 }
 
-static
-const struct file_operations mudaq_fops = {
+static const
+struct file_operations mudaq_fops = {
     .owner          = THIS_MODULE,
     .read           = mudaq_fops_read,
     .write          = mudaq_fops_write,
@@ -914,7 +912,6 @@ const struct file_operations mudaq_fops = {
     .unlocked_ioctl = mudaq_fops_ioctl,
     .release        = mudaq_fops_release,
 };
-
 
 //
 // register / unregister mudaq device with the kernel
@@ -994,6 +991,10 @@ fail_minor:
     return retval;
 }
 
+//
+// mudaq pci device handling
+//
+
 static
 void mudaq_pci_remove(struct pci_dev *pdev) {
     struct mudaq *mu = (struct mudaq *) pci_get_drvdata(pdev);
@@ -1009,10 +1010,6 @@ void mudaq_pci_remove(struct pci_dev *pdev) {
 
     INFO("Device removed\n");
 }
-
-//
-// mudaq pci device handling
-//
 
 static
 int mudaq_pci_probe(struct pci_dev *pdev, const struct pci_device_id *pid) {
@@ -1069,9 +1066,9 @@ struct pci_driver mudaq_pci_driver = {
 
 MODULE_DEVICE_TABLE(pci, PCI_DEVICE_IDS);
 
-/**
- * module init and exit
- */
+//
+// module init and exit
+//
 
 static
 void __exit mudaq_exit(void) {
@@ -1119,6 +1116,7 @@ int __init mudaq_init(void) {
     }
 
     DEBUG("module initialized\n");
+
     return 0;
 
 fail_pci:
@@ -1129,8 +1127,8 @@ fail:
     return rv;
 }
 
-module_init(mudaq_init);
 module_exit(mudaq_exit);
+module_init(mudaq_init);
 
 MODULE_DESCRIPTION("mu3e pcie readout board driver");
 MODULE_AUTHOR("Moritz Kiehn <kiehn@physi.uni-heidelberg.de>");
