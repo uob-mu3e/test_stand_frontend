@@ -167,24 +167,9 @@ static
 int minor_aquire(void *data) {
     int retval;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0) // add `idr_alloc` function
     mutex_lock(&minor_lock);
     retval = idr_alloc(&minor_idr, data, 0, MAX_NUM_DEVICES, GFP_KERNEL);
     mutex_unlock(&minor_lock);
-#else
-    do {
-        if (idr_pre_get(&minor_idr, GFP_KERNEL) == 0) {
-            ERROR("no memory for idr_pre_get\n");
-            return -ENOMEM;
-        }
-
-        mutex_lock(&minor_lock);
-        retval = idr_get_new_above(&minor_idr, data, 0, &minor);
-        mutex_unlock(&minor_lock);
-
-    } while (retval == -EAGAIN );
-    retval = minor;
-#endif
 
     if (retval < 0)
         ERROR("could not allocate a minor number\n");
