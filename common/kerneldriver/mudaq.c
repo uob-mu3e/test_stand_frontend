@@ -104,35 +104,37 @@ struct mudaq_dma {
 /** free the given mudaq struct and all associated memory */
 static
 void mudaq_free(struct mudaq *mu) {
-    if(mu != NULL && mu->mem) { kfree(mu->mem); mu->mem = NULL; }
-    if(mu != NULL && mu->dma) { kfree(mu->dma); mu->dma = NULL; }
-    if(mu != NULL) kfree(mu);
+    if(mu == NULL) return;
+
+    if(mu->mem) { kfree(mu->mem); mu->mem = NULL; }
+    if(mu->dma) { kfree(mu->dma); mu->dma = NULL; }
+    kfree(mu);
 }
 
 /** allocate a new mudaq struct and initialize its state */
 static
 struct mudaq* mudaq_alloc(void) {
-    int retval;
+    int error;
 
     /* allocate memory for the device structure */
     struct mudaq* mu = kzalloc(sizeof(struct mudaq), GFP_KERNEL);
     if(mu == NULL) {
         ERROR("could not allocate memory for 'struct mudaq'\n");
-        retval = -ENOMEM;
+        error = -ENOMEM;
         goto fail;
     }
 
     mu->mem = kzalloc(sizeof(struct mudaq_mem), GFP_KERNEL);
     if(mu->mem == NULL) {
         ERROR("could not allocate memory for 'struct mudaq_mem'\n");
-        retval = -ENOMEM;
+        error = -ENOMEM;
         goto fail;
     }
 
     mu->dma = kzalloc(sizeof(struct mudaq_dma), GFP_KERNEL);
     if(mu->dma == NULL) {
         ERROR("could not allocate memory for 'struct mudaq_dma'\n");
-        retval = -ENOMEM;
+        error = -ENOMEM;
         goto fail;
     }
 
@@ -140,7 +142,7 @@ struct mudaq* mudaq_alloc(void) {
 
 fail:
     mudaq_free(mu);
-    return ERR_PTR(retval);
+    return ERR_PTR(error);
 }
 
 //
@@ -150,16 +152,17 @@ fail:
 /** aquire a new minor number and associate it with the given data */
 static
 int minor_aquire(void *data) {
-    int retval;
+    int minor;
 
     mutex_lock(&minor_lock);
-    retval = idr_alloc(&minor_idr, data, 0, MAX_NUM_DEVICES, GFP_KERNEL);
+    minor = idr_alloc(&minor_idr, data, 0, MAX_NUM_DEVICES, GFP_KERNEL);
     mutex_unlock(&minor_lock);
 
-    if (retval < 0)
+    if (minor < 0) {
         ERROR("could not allocate a minor number\n");
+    }
 
-    return retval;
+    return minor;
 }
 
 /* aquire a new minor number and associate it with the given device */
@@ -194,7 +197,7 @@ void mudaq_event_notify(struct mudaq *mu) {
 /* Hardware interrupt handler */
 static
 irqreturn_t mudaq_interrupt(int irq, void *dev_id) {
-    struct mudaq *mu = (struct mudaq *) dev_id;
+    struct mudaq* mu = dev_id;
     irqreturn_t ret = mudaq_interrupt_handler(irq, mu);
 
     if (ret == IRQ_HANDLED)
@@ -310,7 +313,7 @@ void mudaq_set_dma_n_buffers(struct mudaq *mu,
 
 static
 ssize_t mudaq_fops_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos) {
-    struct mudaq *mu = (struct mudaq *) filp->private_data;
+    struct mudaq* mu = filp->private_data;
     DECLARE_WAITQUEUE(wait, current);
     size_t retval;
     u32 new_event_count;
@@ -371,7 +374,7 @@ ssize_t mudaq_fops_read(struct file *filp, char __user *buf, size_t count, loff_
 
 static
 ssize_t mudaq_fops_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos) {
-    struct mudaq *mu = (struct mudaq *) filp->private_data;
+    struct mudaq* mu = filp->private_data;
     s32 irq_on;
     ssize_t retval;
 
@@ -390,7 +393,7 @@ ssize_t mudaq_fops_write(struct file *filp, const char __user *buf, size_t count
 
 static
 int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
-    struct mudaq *mu = filp->private_data;
+    struct mudaq* mu = filp->private_data;
     int index = (int) vma->vm_pgoff;
     unsigned long requested_pages = 0, actual_pages;
     int rv = 0;
@@ -622,11 +625,18 @@ void mudaq_free_dma(struct mudaq *mu) {
     if(mu == NULL) return;
 
     mudaq_deactivate(mu);
+    mudaq_set_dma_n_buffers(mu, 0);
+    for(int i = 0; i < 4096; i++) {
+        mudaq_set_dma_data_addr(mu, 0, i, 0);
+    }
 
     if(mu->dma == NULL) return;
 
     if(mu->dma->sgt != NULL) {
         dma_unmap_sg(&mu->pci_dev->dev, mu->dma->sgt->sgl, mu->dma->sgt->nents, DMA_FROM_DEVICE);
+        sg_free_table(mu->dma->sgt);
+        kfree(mu->dma->sgt);
+        mu->dma->sgt = NULL;
     }
 
     for(int i = 0; i < mu->dma->npages; i++) {
@@ -639,11 +649,6 @@ void mudaq_free_dma(struct mudaq *mu) {
     }
     mu->dma->npages = 0;
 
-    if(mu->dma->sgt != NULL) {
-        sg_free_table(mu->dma->sgt);
-        kfree(mu->dma->sgt);
-        mu->dma->sgt = NULL;
-    }
     if(mu->dma->pages != NULL) {
         kfree(mu->dma->pages);
         mu->dma->pages = NULL;
@@ -680,7 +685,7 @@ long mudaq_fops_ioctl(struct file *filp,
     int retval = 0;
     struct mudaq* mu = filp->private_data;
     int err = 0;
-    int i_page = 0, i_list = 0;
+    int i_list;
     struct scatterlist *sg;
     u32 new_event_count;
     void __user* user_buffer = (void __user*)ioctl_param;
@@ -835,8 +840,6 @@ long mudaq_fops_ioctl(struct file *filp,
             goto fail;
         }
 
-        mudaq_deactivate(mu); // deactivate readout before setting dma addresses
-
         /** Map scatter gather lists to DMA addresses
          * calculate number of pages per list
          * pass address and number of pages to FPGA
@@ -848,6 +851,8 @@ long mudaq_fops_ioctl(struct file *filp,
             goto fail;
         }
 
+        mudaq_deactivate(mu); // deactivate readout before setting dma addresses
+
         for_each_sg(mu->dma->sgt->sgl, sg, mu->dma->sgt->nents, i_list) {
             dma_addr_t dma_addr = sg_dma_address(sg);
             int dma_pages = sg_dma_len(sg) >> PAGE_SHIFT;
@@ -857,10 +862,6 @@ long mudaq_fops_ioctl(struct file *filp,
             mudaq_set_dma_data_addr(mu, dma_addr, i_list, dma_pages);
         }
         mudaq_set_dma_n_buffers(mu, mu->dma->sgt->nents);
-
-        for (i_list = 0; i_list < mu->dma->sgt->nents; i_list++) {
-            mudaq_read_dma_data_addr(mu, i_list);
-        }
 
         INFO("Setup mapping for pinned DMA data buffer\n");
 
@@ -900,6 +901,12 @@ struct file_operations mudaq_fops = {
 static
 void mudaq_unregister(struct mudaq *mu) {
     if(mu == NULL || mu->minor < 0) return;
+
+    mudaq_deactivate(mu);
+    mudaq_set_dma_n_buffers(mu, 0);
+    for(int i = 0; i < 4096; i++) {
+        mudaq_set_dma_data_addr(mu, 0, i, 0);
+    }
 
     dmabuf_free(chrdev_dmabuf->devices[mu->minor].private_data);
     chrdev_dmabuf->devices[mu->minor].private_data = NULL;
@@ -941,6 +948,14 @@ int mudaq_register(struct mudaq *mu) {
     }
     chrdev_dmabuf->devices[minor].private_data = dmabuf;
 
+    mudaq_deactivate(mu);
+    for(int i = 0; dmabuf[i].cpu_addr != NULL; i++) {
+        pr_info("set dma entry %d: dma_addr = %llx, dma_pages = %lu\n", i, dmabuf[i].dma_addr, dmabuf[i].size >> PAGE_SHIFT);
+        mudaq_set_dma_data_addr(mu, dmabuf[i].dma_addr, i, dmabuf[i].size >> PAGE_SHIFT);
+        mudaq_set_dma_n_buffers(mu, i + 1);
+    }
+    mu->to_user[1] = 0;
+
     return 0;
 
 err_out:
@@ -954,7 +969,7 @@ err_out:
 
 static
 void mudaq_pci_remove(struct pci_dev *pdev) {
-    struct mudaq *mu = (struct mudaq *) pci_get_drvdata(pdev);
+    struct mudaq* mu = pci_get_drvdata(pdev);
 
     if (mu->dma->flag == true)
         mudaq_free_dma(mu);
