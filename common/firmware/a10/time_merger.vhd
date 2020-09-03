@@ -193,7 +193,7 @@ begin
                 -- LOOP over output
                 -- read out from link 0-7, 8-15, 16-23, 24-31, 32-33
                 FOR I in 0 to 7 LOOP
-                    if ( link_good(cur_link + I) = '1' ) then-- and rack_hit(cur_link + I) = '0' ) then
+                    if ( link_good(cur_link + I) = '1' and rack_hit(cur_link + I) = '0' ) then
                         if ( i_rdata(cur_link + I)(35 downto 32) = cur_time ) then
                             hit_out(I) <= i_rdata(cur_link + I)(35 downto 4);
                             hit_out_en(I) <= '1';
