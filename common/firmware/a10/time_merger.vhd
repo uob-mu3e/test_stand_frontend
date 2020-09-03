@@ -55,7 +55,7 @@ architecture arch of time_merger is
 
     signal error_gtime1, error_gtime2, error_shtime, w_ack, error_merger, check_overflow : std_logic;
     signal merge_state : merge_state_type;
-    signal rack, rack_hit, error_pre, error_sh, error_tr, sh_state, pre_state, tr_state, sh_state_reg, pre_state_reg, tr_state_reg : std_logic_vector(N - 1 downto 0);
+    signal rack, rack_hit, error_pre, error_sh, error_tr, sh_state, pre_state, tr_state : std_logic_vector(N - 1 downto 0);
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
     signal gtime1, gtime2 : data_array(N - 1 downto 0);
     signal shtime : std_logic_vector(5 downto 0);
@@ -65,60 +65,29 @@ architecture arch of time_merger is
     
     -- merge signals
     signal min_fpga_id : std_logic_vector(15 downto 0);
-    signal link_good, sop_wait, shop_wait, time_wait, rack_link, check_time : std_logic_vector(N - 1 downto 0);
-    
-    -- layer zero signals
-    type hit_t_0_array_t is array (N - 1 downto 0) of std_logic_vector(37 downto 0);
-    signal data_t_0 : hit_t_0_array_t;
-    signal full_t_0, empty_t_0 : std_logic_vector(N - 1 downto 0);
-    
-    -- layer one signals
-    type hit_t_1_array_t is array (16 downto 0) of std_logic_vector(37 downto 0);
-    signal data_t_1 : hit_t_1_array_t;
-    signal full_t_1, empty_t_1 : std_logic_vector(16 downto 0);
-    
-    -- layer two signals
-    type hit_t_2_array_t is array (8 downto 0) of std_logic_vector(37 downto 0);
-    signal data_t_2 : hit_t_2_array_t;
-    signal full_t_2, empty_t_2 : std_logic_vector(8 downto 0);
-    
-    -- layer three signals
-    type hit_t_3_array_t is array (4 downto 0) of std_logic_vector(37 downto 0);
-    signal data_t_3 : hit_t_3_array_t;
-    signal full_t_3, empty_t_3 : std_logic_vector(4 downto 0);
-    
-    -- ram merging
-    -- link ram
-    type link_array_t is array (N - 1 downto 0) of std_logic_vector(31 downto 0);
-    type link_add_array_t is array (N - 1 downto 0) of std_logic_vector(11 downto 0);
-    signal w_link_add : link_add_array_t;
-    signal r_link_add : link_add_array_t;
-    signal w_link_data : link_array_t;
-    signal w_link_en : std_logic_vector(N - 1 downto 0);
-    signal r_link_data : link_array_t;
-    -- link time counter
-    type cnt_array_t is array (15 downto 0) of std_logic_vector(11 downto 0);
-    type link_time_array_t is array (N - 1 downto 0) of cnt_array_t;
-    signal link_time_cnt, link_time_cnt_reg : link_time_array_t;
+    signal sop_wait, shop_wait, time_wait, rack_link : std_logic_vector(N - 1 downto 0);
+    signal link_good : std_logic_vector(63 downto 0);
     
     -- 8 links with 32 bit x 250 MHz 8b/10b
     signal hit_out : hit_array_t := (others => (others => '0'));
-    signal hit_out_en, done : std_logic := '0';
+    signal hit_out_en : std_logic_vector(N - 1 downto 0);
+    signal check_time : std_logic_vector(7 downto 0);
     signal cur_time, cur_link : integer;
     
 begin
 
-    -- error signals
+    -- ports out
     o_error_gtime(0) <= error_gtime1;
     o_error_gtime(1) <= error_gtime2;
     o_error_shtime <= error_shtime;
     o_error_pre <= error_pre;
     o_error_sh <= error_sh;
-    
     o_hit_out <= hit_out;
+
     
     generate_rack : FOR I in N-1 downto 0 GENERATE
         o_rack(I) <= rack(I) or rack_hit(I) or rack_link(I);
+--         link_good(I) <= '1' when i_rempty(I) = '0' and i_mask_n(I) = '1' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" and rack_hit(I) = '0' else '0';
     END GENERATE;
     
     -- readout fifo
@@ -141,7 +110,7 @@ begin
     
         FOR I in N - 1 downto 0 LOOP
             -- link is good ('1') if link is not empty, wfull not full, not masked, w_ack is zero, i_rdata has hit data else '0'
-            if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and rack_hit(I) <= '0' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" ) then
+            if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" ) then
                 link_good(I) <= '1';
             else
                 link_good(I) <= '0';
@@ -201,155 +170,58 @@ begin
     end if;
     end process;
     
-    
-    generate_write_link_mem : FOR I in N - 1 downto 0 GENERATE
-        
-        e_ram_link : entity work.ip_ram
-        generic map (
-            ADDR_WIDTH_A    => 12,
-            ADDR_WIDTH_B    => 12,
-            DATA_WIDTH_A    => 32,
-            DATA_WIDTH_B    => 32,
-            DEVICE          => "Arria 10"--,
-        )
-        port map (
-            address_a       => w_link_add(I),
-            address_b       => r_link_add(I),
-            clock_a         => i_clk,
-            clock_b         => i_clk,
-            data_a          => w_link_data(I),
-            data_b          => (others => '0'),
-            wren_a          => w_link_en(I),
-            wren_b          => '0',
-            q_a             => open,
-            q_b             => r_link_data(I)--,
-        );
-        
---         generate_time_mem : FOR K in 15 downto 0 GENERATE
---         
---             e_ram_time : entity work.ip_ram
---             generic map (
---                 ADDR_WIDTH_A    => 8,
---                 ADDR_WIDTH_B    => 8,
---                 DATA_WIDTH_A    => 8,
---                 DATA_WIDTH_B    => 8,
---                 DEVICE          => "Arria 10"--,
---             )
---             port map (
---                 address_a       => w_time_add(I)(K),
---                 address_b       => r_time_add(I)(K),
---                 clock_a         => i_clk,
---                 clock_b         => i_clk,
---                 data_a          => w_time_data(I)(K),
---                 data_b          => (others => '0'),
---                 wren_a          => w_time_en(I)(K),
---                 wren_b          => '0',
---                 q_a             => open,
---                 q_b             => r_time_data(I)(K)--,
---             );
---             
---         END GENERATE;
-        
-        -- merge hits per link
-        process(i_clk, i_reset_n)
-        begin
-        if ( i_reset_n /= '1' ) then
-            rack_hit(I) <= '0';
-            
-            w_link_add(I) <= (others => '1');
-            w_link_en(I) <= '0';
-            link_time_cnt(I) <= (others => (others => '0'));
-            --
-        elsif rising_edge(i_clk) then
-            rack_hit(I) <= '0';
-            -- merge hits
-            if ( merge_state = merge_hits ) then
-            
-                -- loop over ts
-                FOR T in 15 downto 0 LOOP
-                    if ( link_good(I) = '1' and rack_hit(I) <= '0' ) then
-                        if ( T = i_rdata(I)(35 downto 32) ) then
-                            w_link_data(I) <= i_rdata(I)(35 downto 4);
-                            w_link_add(I) <= w_link_add(I) + '1';
-                            w_link_en(I) <= '1';
-                            link_time_cnt(I)(T) <= link_time_cnt(I)(T) + '1';
-                            rack_hit(I) <= '1';
-                            exit;
-                        end if;
-                    end if;
-                END LOOP;
-            elsif ( merge_state = wait_for_sh ) then
-                link_time_cnt(I) <= (others => (others => '0'));
-            end if;
-        end if;
-        end process;
-        
-    END GENERATE;
-    
-    -- readout hits
+    -- merge hits per link
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
-        done <= '0';
+        rack_hit <= (others => '0');
         hit_out <= (others => (others => '0'));
+        hit_out_en <= (others => '0');
         check_time <= (others => '0');
-        link_time_cnt_reg  <= (others => (others => (others => '0')));
-        r_link_add <= (others => (others => '1'));
-        hit_out_en <= '0';
         cur_time <= 0;
         cur_link <= 0;
         --
     elsif rising_edge(i_clk) then
+    
+        rack_hit <= (others => '0');
+        hit_out <= (others => (others => '0'));
+        hit_out_en <= (others => '0');
+        
+        -- merge hits
         if ( merge_state = merge_hits ) then
-            link_time_cnt_reg <= link_time_cnt;   
-            cur_time <= 0;
-            cur_link <= 0;
-            done <= '0';
-        elsif ( merge_state = read_hits ) then
-            hit_out <= (others => (others => '0'));
-            hit_out_en <= '0';
             if ( cur_time /= 16 ) then
                 -- LOOP over output
                 -- read out from link 0-7, 8-15, 16-23, 24-31, 32-33
-                if ( cur_link = 32 ) then
-                    -- link 32
-                    hit_out(0) <= r_link_data(32);
-                    r_link_add(32) <= r_link_add(32) + '1';
-                    if ( link_time_cnt_reg(32)(cur_time) - '1' /= 0 ) then
-                        check_time(32) <= '1';  
+                FOR I in 0 to 7 LOOP
+                    if ( link_good(cur_link + I) = '1' ) then-- and rack_hit(cur_link + I) = '0' ) then
+                        if ( i_rdata(cur_link + I)(35 downto 32) = cur_time ) then
+                            hit_out(I) <= i_rdata(cur_link + I)(35 downto 4);
+                            hit_out_en(I) <= '1';
+                            rack_hit(cur_link + I) <= '1';
+                        else
+                            check_time(I) <= '1';
+                        end if;
+                    elsif ( cur_link + I > N - 1 ) then
+                        check_time(I) <= '1';
+                    elsif ( i_rdata(cur_link + I)(37 downto 36) /= "00" or i_rdata(cur_link + I)(31 downto 26) = "111111" ) then
+                        check_time(I) <= '1';
                     end if;
-                    link_time_cnt_reg(32)(cur_time) <= link_time_cnt_reg(32)(cur_time) - '1';
-                    -- link 33
-                    hit_out(1) <= r_link_data(33);
-                    r_link_add(33) <= r_link_add(33) + '1';
-                    if ( link_time_cnt_reg(33)(cur_time) - '1' /= 0 ) then
-                        check_time(33) <= '1';  
-                    end if;
-                    link_time_cnt_reg(33)(cur_time) <= link_time_cnt_reg(33)(cur_time) - '1';
-                else
-                    if ( check_time(cur_link + 7 downto cur_link) = "11111111" ) then
+                END LOOP;
+                
+                if ( check_time = "11111111" ) then
+                    if ( cur_link + 8 = 40 ) then
+                        cur_link <= 0;
+                        cur_time <= cur_time + 1;
+                    else
                         cur_link <= cur_link + 8;
                     end if;
-                
-                    FOR I in 0 to 7 LOOP
-                        hit_out(I) <= r_link_data(cur_link + I);
-                        r_link_add(cur_link + I) <= r_link_add(cur_link + I) + '1';
-                        if ( link_time_cnt_reg(cur_link + I)(cur_time) - '1' /= 0 ) then
-                            check_time(cur_link + I) <= '1';  
-                        end if;
-                        link_time_cnt_reg(cur_link + I)(cur_time) <= link_time_cnt_reg(cur_link + I)(cur_time) - '1';
-                    END LOOP;
-                end if;
-
-                if ( check_time = check_ones ) then
                     check_time <= (others => '0');
-                    cur_time <= cur_time + 1;
-                    cur_link <= 0;
                 end if;
-            else
-                link_time_cnt_reg  <= (others => (others => (others => '0')));
-                done <= '1';
             end if;
+        elsif ( merge_state = wait_for_sh ) then
+            cur_time <= 0;
+            cur_link <= 0;
+            check_time <= (others => '0');
         end if;
     end if;
     end process;
@@ -380,9 +252,6 @@ begin
         o_weop <= '0';
         o_we <= '0';
         check_overflow <= '0';
-        sh_state_reg <= (others => '1');
-        pre_state_reg <= (others => '1');
-        tr_state_reg <= (others => '1');
         --
     elsif rising_edge(i_clk) then
         
@@ -539,37 +408,17 @@ begin
                 
                 -- change state
                 -- TODO error if sh is not there
-                if ( sh_state = check_zeros or pre_state = check_zeros or tr_state = check_zeros ) then
-                    merge_state <= read_hits;
-                    sh_state_reg <= sh_state;
-                    pre_state_reg <= pre_state;
-                    tr_state_reg <= tr_state;
-                else
-                    -- reset regs
-                    sh_state_reg <= (others => '1');
-                    pre_state_reg <= (others => '1');
-                    tr_state_reg <= (others => '1'); 
-                end if;
-                
-                -- write out data
---                 if ( w_ack = '1' ) then
---                     o_wdata(49 downto 34) <= min_fpga_id;
---                     o_wdata(33 downto 0) <= min_hit(37 downto 4);
---                     o_we <= '1';
---                 end if;
-                
-            when read_hits =>
-                if ( sh_state_reg = check_zeros and done = '1' ) then
-                   merge_state <= wait_for_sh;
+                if ( sh_state = check_zeros and cur_time = 16 ) then
+                    merge_state <= wait_for_sh;
                 end if;
                 
                 -- TODO error if pre is not there
-                if ( pre_state_reg = check_zeros and done = '1' ) then
+                if ( pre_state = check_zeros and cur_time = 16 ) then
                     merge_state <= wait_for_pre;
                 end if;
                 
                 -- TODO error if trailer is not there
-                if ( tr_state_reg = check_zeros and done = '1' ) then
+                if ( tr_state = check_zeros and cur_time = 16 ) then
                     merge_state <= trailer;
                 end if;
                 
