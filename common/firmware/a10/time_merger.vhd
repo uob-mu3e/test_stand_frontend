@@ -70,9 +70,10 @@ architecture arch of time_merger is
     
     -- 8 links with 32 bit x 250 MHz 8b/10b
     signal hit_out : hit_array_t := (others => (others => '0'));
-    signal hit_out_en : std_logic_vector(N - 1 downto 0);
-    signal check_time : std_logic_vector(7 downto 0);
-    signal cur_time, cur_link : integer;
+    signal hit_out_en, check_time : std_logic_vector(N - 1 downto 0);
+    signal cur_time : integer;
+    type cur_link_array_t is array (7 downto 0) of integer;
+    signal cur_link : cur_link_array_t;
     
 begin
 
@@ -179,7 +180,7 @@ begin
         hit_out_en <= (others => '0');
         check_time <= (others => '0');
         cur_time <= 0;
-        cur_link <= 0;
+        cur_link <= (7,6,5,4,3,2,1,0);
         --
     elsif rising_edge(i_clk) then
     
@@ -193,34 +194,32 @@ begin
                 -- LOOP over output
                 -- read out from link 0-7, 8-15, 16-23, 24-31, 32-33
                 FOR I in 0 to 7 LOOP
-                    if ( link_good(cur_link + I) = '1' and rack_hit(cur_link + I) = '0' ) then
-                        if ( i_rdata(cur_link + I)(35 downto 32) = cur_time ) then
-                            hit_out(I) <= i_rdata(cur_link + I)(35 downto 4);
+                    if ( cur_link(I) >= N ) then
+                        --
+                    elsif ( link_good(cur_link(I)) = '1' and rack_hit(cur_link(I)) = '0' ) then
+                        if ( i_rdata(cur_link(I))(35 downto 32) = cur_time ) then
+                            hit_out(I) <= i_rdata(cur_link(I))(35 downto 4);
                             hit_out_en(I) <= '1';
-                            rack_hit(cur_link + I) <= '1';
+                            rack_hit(cur_link(I)) <= '1';
                         else
-                            check_time(I) <= '1';
+                            cur_link(I) <= cur_link(I) + 8;
+                            check_time(cur_link(I)) <= '1';
                         end if;
-                    elsif ( cur_link + I > N - 1 ) then
-                        check_time(I) <= '1';
-                    elsif ( i_rdata(cur_link + I)(37 downto 36) /= "00" or i_rdata(cur_link + I)(31 downto 26) = "111111" ) then
-                        check_time(I) <= '1';
+                    elsif ( i_rdata(cur_link(I))(37 downto 36) /= "00" or i_rdata(cur_link(I))(31 downto 26) = "111111" ) then
+                        check_time(cur_link(I)) <= '1';
+                        cur_link(I) <= cur_link(I) + 8;
                     end if;
                 END LOOP;
                 
-                if ( check_time = "11111111" ) then
-                    if ( cur_link + 8 = 40 ) then
-                        cur_link <= 0;
-                        cur_time <= cur_time + 1;
-                    else
-                        cur_link <= cur_link + 8;
-                    end if;
+                if ( check_time = check_ones ) then
+                    cur_link <= (7,6,5,4,3,2,1,0);
+                    cur_time <= cur_time + 1;
                     check_time <= (others => '0');
                 end if;
             end if;
         elsif ( merge_state = wait_for_sh ) then
             cur_time <= 0;
-            cur_link <= 0;
+            cur_link <= (7,6,5,4,3,2,1,0);
             check_time <= (others => '0');
         end if;
     end if;
