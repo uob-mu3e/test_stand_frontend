@@ -13,6 +13,7 @@ add_kmodule(${PROJECT_NAME} ${MODULE_SOURCES})
 
 add_custom_target(insmod
     COMMAND sudo chmod a+rw /dev/mudaq0
+    COMMAND sudo chmod a+rw /dev/mudaq_dmabuf0
     VERBATIM
     DEPENDS mudaq-insmod
 )

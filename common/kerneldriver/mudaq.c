@@ -20,7 +20,6 @@
 
 #include <linux/version.h>
 
-#include <linux/cdev.h>
 #include <linux/pci.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) // add `signal.h` file
@@ -38,10 +37,9 @@
 // module-wide global variables
 //
 
-static struct chrdev* chrdev;
+static struct chrdev* chrdev_mudaq;
+static struct chrdev* chrdev_dmabuf;
 
-static struct class *mudaq_class = NULL;
-static int major = 0;
 static DEFINE_IDR(minor_idr);
 static DEFINE_MUTEX(minor_lock);
 
@@ -73,7 +71,7 @@ int wrap_ring(int int1, int int2, int wrap, int divisor) {
 struct mudaq {
     struct device *dev;
     struct pci_dev *pci_dev;
-    struct cdev char_dev;
+    int minor;
     u32 to_user[2];
     long irq;
     atomic_t event;
@@ -162,18 +160,6 @@ int minor_aquire(void *data) {
         ERROR("could not allocate a minor number\n");
 
     return retval;
-}
-
-/* find the data associated with the given minor number */
-static
-void *minor_find_data(int minor) {
-    void *data;
-
-    mutex_lock(&minor_lock);
-    data = idr_find(&minor_idr, minor);
-    mutex_unlock(&minor_lock);
-
-    return data;
 }
 
 /* aquire a new minor number and associate it with the given device */
@@ -616,7 +602,7 @@ int mudaq_setup_msi(struct mudaq *mu) {
     /* request irq */
     init_waitqueue_head(&mu->wait);
     atomic_set(&mu->event, 0);
-    rv = devm_request_irq(mu->dev, mu->irq, mudaq_interrupt, 0, DRIVER_NAME, mu);
+    rv = devm_request_irq(mu->dev, mu->irq, mudaq_interrupt, 0, THIS_MODULE->name, mu);
     if (rv) {
         DEBUG("Failed to initialize irq, error: %d\n", rv);
         goto out_clear_msi;
@@ -680,7 +666,7 @@ int mudaq_fops_release(struct inode *inode, struct file *filp) {
 
 static
 int mudaq_fops_open(struct inode *inode, struct file *filp) {
-    struct mudaq *mu = minor_find_data(iminor(inode));
+    struct mudaq* mu = container_of(inode->i_cdev, struct chrdev_device, cdev)->private_data;
     if (mu == NULL) return -ENODEV;
     filp->private_data = mu;
 
@@ -913,75 +899,53 @@ struct file_operations mudaq_fops = {
 /** unregister the mudaq device */
 static
 void mudaq_unregister(struct mudaq *mu) {
-    INFO("unregister '%s' cdev(%d, %d)\n", dev_name(mu->dev),
-         MAJOR(mu->char_dev.dev),
-         MINOR(mu->char_dev.dev)
-    );
+    if(mu == NULL || mu->minor < 0) return;
 
-    device_destroy(mudaq_class, mu->char_dev.dev);
-    DEBUG("Destroyed device\n");
-    minor_release(MINOR(mu->char_dev.dev));
+    dmabuf_free(chrdev_dmabuf->devices[mu->minor].private_data);
+    chrdev_dmabuf->devices[mu->minor].private_data = NULL;
+    chrdev_device_del(chrdev_dmabuf, mu->minor);
+
+    chrdev_mudaq->devices[mu->minor].private_data = NULL;
+    chrdev_device_del(chrdev_mudaq, mu->minor);
+
+    minor_release(mu->minor);
     DEBUG("Released minor number\n");
-    cdev_del(&mu->char_dev);
-    DEBUG("Deleted character device\n");
-
-    dmabuf_free(chrdev->devices[MINOR(mu->char_dev.dev)].private_data);
-    chrdev_device_del(chrdev, MINOR(mu->char_dev.dev));
 }
 
 /* register the mudaq device. device is live after successful call. */
 static
 int mudaq_register(struct mudaq *mu) {
-    int retval;
-    dev_t devno;
+    int error = 0;
+    int minor;
+    struct dmabuf* dmabuf;
 
-    retval = minor_aquire(mu);
-    if (retval < 0) goto fail_minor;
+    minor = minor_aquire(mu);
+    if(minor < 0) goto err_out;
 
-    devno = MKDEV(major, retval);
-    DEBUG("allocated device(%d, %d)\n", MAJOR(devno), MINOR(devno));
-
-    retval = chrdev_device_add(chrdev, MINOR(devno));
-    if(retval) {
-        goto fail_cdev;
+    error = chrdev_device_add(chrdev_mudaq, minor, &mu->pci_dev->dev);
+    if(error) {
+        goto err_out;
     }
-    chrdev->devices[MINOR(devno)].private_data = dmabuf_alloc(&mu->pci_dev->dev, 64);
-    if(IS_ERR_OR_NULL(chrdev->devices[MINOR(devno)].private_data)) {
-        goto fail_cdev;
-    }
+    chrdev_mudaq->devices[minor].private_data = mu;
 
-    /* register the char device */
-    cdev_init(&mu->char_dev, &mudaq_fops);
-    mu->char_dev.owner = THIS_MODULE;
-    retval = cdev_add(&mu->char_dev, devno, 1);
-    if (retval < 0) {
-        ERROR("could not add cdev(%d, %d)\n", MAJOR(devno), MINOR(devno));
-        goto fail_cdev;
-    }
-    DEBUG("added cdev(%d, %d)\n", MAJOR(devno), MINOR(devno));
+    mu->dev = chrdev_mudaq->devices[minor].device;
 
-    /* register the sysfs device / kernel object */
-    mu->dev = device_create(mudaq_class, &mu->pci_dev->dev, devno, mu,
-                            DEVICE_NAME_TEMPLATE, MINOR(devno));
-    if (IS_ERR(mu->dev)) {
-        ERROR("could not create sys device\n");
-        retval = PTR_ERR(mu->dev);
-        goto fail_device;
+    error = chrdev_device_add(chrdev_dmabuf, minor, &mu->pci_dev->dev);
+    if(error) {
+        goto err_out;
     }
-
-    INFO("registered '%s' cdev(%d, %d)\n", dev_name(mu->dev),
-         MAJOR(devno), MINOR(devno));
+    dmabuf = dmabuf_alloc(&mu->pci_dev->dev, MUDAQ_DMABUF_DATA_LEN >> (PAGE_SHIFT + 10));
+    if(IS_ERR_OR_NULL(dmabuf)) {
+        error = PTR_ERR(dmabuf);
+        goto err_out;
+    }
+    chrdev_dmabuf->devices[minor].private_data = dmabuf;
 
     return 0;
 
-fail_device:
-    cdev_del(&mu->char_dev);
-fail_cdev:
-    dmabuf_free(chrdev->devices[MINOR(devno)].private_data);
-    chrdev_device_del(chrdev, MINOR(devno));
-    minor_release(MINOR(devno));
-fail_minor:
-    return retval;
+err_out:
+    mudaq_unregister(mu);
+    return error;
 }
 
 //
@@ -1051,7 +1015,7 @@ fail:
 
 static
 struct pci_driver mudaq_pci_driver = {
-    .name =     DRIVER_NAME,
+    .name =     THIS_MODULE->name,
     .id_table = PCI_DEVICE_IDS,
     .probe =    mudaq_pci_probe,
     .remove =   mudaq_pci_remove,
@@ -1066,58 +1030,43 @@ MODULE_DEVICE_TABLE(pci, PCI_DEVICE_IDS);
 static
 void __exit mudaq_exit(void) {
     pci_unregister_driver(&mudaq_pci_driver);
-    unregister_chrdev_region(MKDEV(major, 0), MAX_NUM_DEVICES);
-    class_destroy(mudaq_class);
 
-    chrdev_free(chrdev);
+    chrdev_free(chrdev_dmabuf);
+    chrdev_free(chrdev_mudaq);
 
     DEBUG("module removed\n");
 }
 
 static
 int __init mudaq_init(void) {
-    int rv;
-    dev_t first;
+    int error;
 
-    chrdev = chrdev_alloc("mudaq_dmabuf\n", MAX_NUM_DEVICES, &dmabuf_chrdev_fops);
-    if(IS_ERR_OR_NULL(chrdev)) {
-        return PTR_ERR(chrdev);
+    chrdev_mudaq = chrdev_alloc("mudaq", MAX_NUM_DEVICES, &mudaq_fops);
+    if(IS_ERR_OR_NULL(chrdev_mudaq)) {
+        error = PTR_ERR(chrdev_mudaq);
+        goto err_out;
     }
-
-    /* create the device class */
-    mudaq_class = class_create(THIS_MODULE, CLASS_NAME);
-    if (IS_ERR(mudaq_class)) {
-        ERROR("could not create device class\n");
-        rv = PTR_ERR(mudaq_class);
-        goto fail;
+    chrdev_dmabuf = chrdev_alloc("mudaq_dmabuf", MAX_NUM_DEVICES, &dmabuf_chrdev_fops);
+    if(IS_ERR_OR_NULL(chrdev_dmabuf)) {
+        error = PTR_ERR(chrdev_dmabuf);
+        goto err_out;
     }
-
-    /* allocate a major number and some minor numbers */
-    rv = alloc_chrdev_region(&first, 0, MAX_NUM_DEVICES, DRIVER_NAME);
-    if (rv < 0) {
-        ERROR("could not allocate major number\n");
-        goto fail_chrdev;
-    }
-    major = MAJOR(first);
-    DEBUG("allocated major number %d\n", major);
 
     /* register the pci driver */
-    rv = pci_register_driver(&mudaq_pci_driver);
-    if (rv < 0) {
+    error = pci_register_driver(&mudaq_pci_driver);
+    if(error) {
         ERROR("could not register pci driver\n");
-        goto fail_pci;
+        goto err_out;
     }
 
     DEBUG("module initialized\n");
 
     return 0;
 
-fail_pci:
-    unregister_chrdev_region(first, MAX_NUM_DEVICES);
-fail_chrdev:
-    class_destroy(mudaq_class);
-fail:
-    return rv;
+err_out:
+    chrdev_free(chrdev_dmabuf);
+    chrdev_free(chrdev_mudaq);
+    return error;
 }
 
 module_exit(mudaq_exit);

@@ -16,9 +16,6 @@
 /**
  * configuration
  */
-#define                             DRIVER_NAME "mudaq"
-static const char *                 CLASS_NAME = "mudaq";
-static const char *                 DEVICE_NAME_TEMPLATE = "mudaq%d";
 static const int                    MAX_NUM_DEVICES = 8;
 
 struct mesg {
