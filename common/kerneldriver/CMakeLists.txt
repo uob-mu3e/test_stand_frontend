@@ -10,3 +10,9 @@ file(GLOB MODULE_SOURCES
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dmabuf/cmake")
 find_package(kmodule REQUIRED)
 add_kmodule(${PROJECT_NAME} ${MODULE_SOURCES})
+
+add_custom_target(insmod
+    COMMAND sudo chmod a+rw /dev/mudaq0
+    VERBATIM
+    DEPENDS mudaq-insmod
+)
