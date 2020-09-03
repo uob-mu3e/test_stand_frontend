@@ -633,9 +633,15 @@ out_clear_mwi:
 
 static
 void mudaq_free_dma(struct mudaq *mu) {
+    if(mu == NULL) return;
+
     mudaq_deactivate(mu);
 
-    dma_unmap_sg(&mu->pci_dev->dev, mu->dma->sgt->sgl, mu->dma->sgt->nents, DMA_FROM_DEVICE);
+    if(mu->dma == NULL) return;
+
+    if(mu->dma->sgt != NULL) {
+        dma_unmap_sg(&mu->pci_dev->dev, mu->dma->sgt->sgl, mu->dma->sgt->nents, DMA_FROM_DEVICE);
+    }
 
     for(int i = 0; i < mu->dma->npages; i++) {
         if (PageReserved(mu->dma->pages[i]))
@@ -645,6 +651,7 @@ void mudaq_free_dma(struct mudaq *mu) {
 //        page_cache_release( mu->dma->pages[i] );
         put_page(mu->dma->pages[i]);
     }
+    mu->dma->npages = 0;
 
     if(mu->dma->sgt != NULL) {
         sg_free_table(mu->dma->sgt);
@@ -820,7 +827,7 @@ long mudaq_fops_ioctl(struct file *filp,
         mu->dma->npages = retval;
         if(mu->dma->npages != N_PAGES) {
             pr_err("get_user_pages != N_PAGES\n");
-            goto release;
+            goto fail;
         }
 
         /* allocate scatter gather table */
@@ -828,7 +835,7 @@ long mudaq_fops_ioctl(struct file *filp,
                                            PAGE_SIZE * mu->dma->npages, GFP_KERNEL);
         if (retval < 0) {
             ERROR("Could not set scatter gather table\n");
-            goto release;
+            goto fail;
         }
 
         DEBUG("Found %d discontinuous pieces in memory buffer\n", mu->dma->sgt->nents);
@@ -839,7 +846,7 @@ long mudaq_fops_ioctl(struct file *filp,
         if (mu->dma->sgt->nents > 4096) {
             ERROR("Number of DMA addresses: %d > 4096! Too much for FPGA\n", mu->dma->sgt->nents);
             retval = -ENOMEM;
-            goto release;
+            goto fail;
         }
 
         mudaq_deactivate(mu); // deactivate readout before setting dma addresses
@@ -883,24 +890,8 @@ long mudaq_fops_ioctl(struct file *filp,
 
     return 0;
 
-unmap:
-    dma_unmap_sg(&mu->pci_dev->dev, mu->dma->sgt->sgl, mu->dma->sgt->nents, DMA_FROM_DEVICE);
-release:
-    for (int i_page = 0; i_page < mu->dma->npages; i_page++) {
-        if (!PageReserved(mu->dma->pages[i_page]))
-            SetPageDirty(mu->dma->pages[i_page]);
-//            page_cache_release( mu->dma->pages[i_page] );
-        put_page(mu->dma->pages[i_page]);
-    }
 fail:
-    if(mu->dma->sgt != NULL) {
-        kfree(mu->dma->sgt);
-        mu->dma->sgt = NULL;
-    }
-    if(mu->dma->pages != NULL) {
-        kfree(mu->dma->pages);
-        mu->dma->pages = NULL;
-    }
+    mudaq_free_dma(mu);
     return retval;
 }
 
