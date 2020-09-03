@@ -487,8 +487,12 @@ out:
 
 static
 void mudaq_clear_mmio(struct pci_dev *dev, struct mudaq *mu) {
+    if(mu == NULL || mu->mem == NULL) return;
+
     for(int i = 0; i < 4; i++) {
+        if(mu->mem->internal_addr[i] == NULL) continue;
         pci_iounmap(dev, mu->mem->internal_addr[i]);
+        mu->mem->internal_addr[i] = NULL;
     }
 
     pci_release_regions(dev);
@@ -496,20 +500,19 @@ void mudaq_clear_mmio(struct pci_dev *dev, struct mudaq *mu) {
 
 static
 int mudaq_setup_mmio(struct pci_dev *pdev, struct mudaq *mu) {
-    int i, j;
     const int bars[] = {0, 1, 2, 3};
     const char *names[] = {"registers_rw", "registers_ro", "memory_rw", "memory_ro"};
     int rv = 0;
 
     /* request access to pci BARs */
-    rv = pci_request_regions(pdev, DRIVER_NAME);
+    rv = pci_request_regions(pdev, THIS_MODULE->name);
     if (rv < 0) {
         ERROR("could not request memory regions\n");
         goto out;
     }
 
     /* Map PCI bar regions to __iomem addresses (addressable from kernel)  */
-    for (i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++) {
         mu->mem->phys_addr[i] = pci_resource_start(pdev, bars[i]);
         mu->mem->phys_size[i] = pci_resource_len(pdev, bars[i]);
         mu->mem->internal_addr[i] = pci_iomap(pdev, bars[i], mu->mem->phys_size[i]);
@@ -525,8 +528,7 @@ int mudaq_setup_mmio(struct pci_dev *pdev, struct mudaq *mu) {
     return 0;
 
 fail_unmap:
-    for (j = i; j > 0; --j) pci_iounmap(pdev, mu->mem->internal_addr[i]);
-    pci_release_regions(pdev);
+    mudaq_clear_mmio(pdev, mu);
 out:
     return rv;
 }
