@@ -40,8 +40,7 @@
 static struct chrdev* chrdev_mudaq;
 static struct chrdev* chrdev_dmabuf;
 
-static DEFINE_IDR(minor_idr);
-static DEFINE_MUTEX(minor_lock);
+static DEFINE_IDA(minor_ida);
 
 static
 const struct pci_device_id PCI_DEVICE_IDS[] = {
@@ -143,34 +142,6 @@ struct mudaq* mudaq_alloc(void) {
 fail:
     mudaq_free(mu);
     return ERR_PTR(error);
-}
-
-//
-// minor number handling
-//
-
-/** aquire a new minor number and associate it with the given data */
-static
-int minor_aquire(void *data) {
-    int minor;
-
-    mutex_lock(&minor_lock);
-    minor = idr_alloc(&minor_idr, data, 0, MAX_NUM_DEVICES, GFP_KERNEL);
-    mutex_unlock(&minor_lock);
-
-    if (minor < 0) {
-        ERROR("could not allocate a minor number\n");
-    }
-
-    return minor;
-}
-
-/* aquire a new minor number and associate it with the given device */
-static
-void minor_release(int minor) {
-    mutex_lock(&minor_lock);
-    idr_remove(&minor_idr, minor);
-    mutex_unlock(&minor_lock);
 }
 
 static
@@ -915,7 +886,7 @@ void mudaq_unregister(struct mudaq *mu) {
     chrdev_mudaq->devices[mu->minor].private_data = NULL;
     chrdev_device_del(chrdev_mudaq, mu->minor);
 
-    minor_release(mu->minor);
+    ida_free(&minor_ida, mu->minor);
     DEBUG("Released minor number\n");
 }
 
@@ -926,7 +897,7 @@ int mudaq_register(struct mudaq *mu) {
     int minor;
     struct dmabuf* dmabuf;
 
-    minor = minor_aquire(mu);
+    minor = ida_alloc_range(&minor_ida, 0, MAX_NUM_DEVICES - 1, GFP_KERNEL);
     if(minor < 0) goto err_out;
 
     error = chrdev_device_add(chrdev_mudaq, minor, &mu->pci_dev->dev);
