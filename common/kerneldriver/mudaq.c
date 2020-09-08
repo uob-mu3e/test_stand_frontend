@@ -13,6 +13,7 @@
 #include <linux/module.h>
 
 #include "mudaq.h"
+
 #include "../include/mudaq_device_constants.h"
 #include "../include/mudaq_registers.h"
 
@@ -217,29 +218,6 @@ void mudaq_set_dma_ctrl_addr(struct mudaq *mu,
            (dma_addr_t) ioread32(mudaq_register_rw(mu, DMA_CTRL_ADDR_HI_REGISTER_W)) << 32;
     if ((size_t) ctrl_handle != (size_t) test)
         ERROR("dma control buffer. wrote %#zx read %#zx\n", (size_t) ctrl_handle, (size_t) test);
-}
-
-static
-void mudaq_read_dma_data_addr(struct mudaq *mu,
-                                     u32 mem_location) {
-    dma_addr_t test;
-    u32 n_pages;
-    u32 oldreg;
-
-    oldreg = (u32) ioread32(mudaq_register_rw(mu, DMA_RAM_LOCATION_NUM_PAGES_REGISTER_W));
-    iowrite32(SET_DMA_RAM_LOCATION_RANGE(oldreg, mem_location),
-              mudaq_register_rw(mu, DMA_RAM_LOCATION_NUM_PAGES_REGISTER_W));
-    test = (dma_addr_t) ioread32(mudaq_register_ro(mu, DMA_DATA_ADDR_LOW_REGISTER_R)) |
-           (dma_addr_t) ioread32(mudaq_register_ro(mu, DMA_DATA_ADDR_HI_REGISTER_R)) << 32;
-//    DEBUG("At %u: address = %lx\n", mem_location, (long unsigned)test);
-    if (test != mu->dma->bus_addrs[mem_location])
-        ERROR("Bus address is %lx, should be %lx", (long unsigned) test,
-              (long unsigned) mu->dma->bus_addrs[mem_location]);
-
-    n_pages = (u32) ioread32(mudaq_register_ro(mu, DMA_NUM_PAGES_REGISTER_R));
-//    DEBUG("# of pages per address: %u\n", n_pages);
-    if (n_pages != mu->dma->n_pages[mem_location])
-        ERROR("# of pages is %x, should be %x\n", n_pages, mu->dma->n_pages[mem_location]);
 }
 
 static
@@ -871,7 +849,14 @@ struct file_operations mudaq_fops = {
 /** unregister the mudaq device */
 static
 void mudaq_unregister(struct mudaq *mu) {
+    struct chrdev_device* chrdev_device;
+    struct dmabuf* dmabuf;
+
     if(mu == NULL || mu->minor < 0) return;
+
+    chrdev_device = &chrdev_dmabuf->devices[mu->minor];
+    dmabuf = chrdev_device->private_data;
+    chrdev_device_del(chrdev_device);
 
     mudaq_deactivate(mu);
     mudaq_set_dma_n_buffers(mu, 0);
@@ -879,12 +864,9 @@ void mudaq_unregister(struct mudaq *mu) {
         mudaq_set_dma_data_addr(mu, 0, i, 0);
     }
 
-    dmabuf_free(chrdev_dmabuf->devices[mu->minor].private_data);
-    chrdev_dmabuf->devices[mu->minor].private_data = NULL;
-    chrdev_device_del(chrdev_dmabuf, mu->minor);
+    dmabuf_free(dmabuf);
 
-    chrdev_mudaq->devices[mu->minor].private_data = NULL;
-    chrdev_device_del(chrdev_mudaq, mu->minor);
+    chrdev_device_del(&chrdev_mudaq->devices[mu->minor]);
 
     ida_free(&minor_ida, mu->minor);
     DEBUG("Released minor number\n");
@@ -895,34 +877,42 @@ static
 int mudaq_register(struct mudaq *mu) {
     int error = 0;
     int minor;
+    struct chrdev_device* chrdev_device;
     struct dmabuf* dmabuf;
 
     minor = ida_alloc_range(&minor_ida, 0, MAX_NUM_DEVICES - 1, GFP_KERNEL);
     if(minor < 0) goto err_out;
 
-    error = chrdev_device_add(chrdev_mudaq, minor, &mu->pci_dev->dev);
-    if(error) {
+    chrdev_device = chrdev_device_add(chrdev_mudaq, minor, &mudaq_fops, &mu->pci_dev->dev, mu);
+    if(IS_ERR_OR_NULL(chrdev_device)) {
+        error = PTR_ERR(chrdev_device);
         goto err_out;
     }
-    chrdev_mudaq->devices[minor].private_data = mu;
+    mu->dev = chrdev_device->device;
 
-    mu->dev = chrdev_mudaq->devices[minor].device;
-
-    error = chrdev_device_add(chrdev_dmabuf, minor, &mu->pci_dev->dev);
-    if(error) {
-        goto err_out;
-    }
-    dmabuf = dmabuf_alloc(&mu->pci_dev->dev, MUDAQ_DMABUF_DATA_LEN >> (PAGE_SHIFT + 10));
+    dmabuf = dmabuf_alloc(&mu->pci_dev->dev, MUDAQ_DMABUF_DATA_LEN);
     if(IS_ERR_OR_NULL(dmabuf)) {
         error = PTR_ERR(dmabuf);
         goto err_out;
     }
-    chrdev_dmabuf->devices[minor].private_data = dmabuf;
+
+    chrdev_device = chrdev_device_add(chrdev_dmabuf, minor, &dmabuf_chrdev_fops, &mu->pci_dev->dev, dmabuf);
+    if(IS_ERR_OR_NULL(chrdev_device)) {
+        error = PTR_ERR(chrdev_device);
+        goto err_out;
+    }
 
     mudaq_deactivate(mu);
-    for(int i = 0; dmabuf[i].cpu_addr != NULL; i++) {
-        pr_info("set dma entry %d: dma_addr = %llx, dma_pages = %lu\n", i, dmabuf[i].dma_addr, dmabuf[i].size >> PAGE_SHIFT);
-        mudaq_set_dma_data_addr(mu, dmabuf[i].dma_addr, i, dmabuf[i].size >> PAGE_SHIFT);
+
+    // setup device DMA tables using dmabuf entries
+    {
+        int i = 0;
+        struct dmabuf_entry* entry;
+        list_for_each_entry(entry, &dmabuf->entries, list_head) {
+            M_INFO("set dma entry %d: dma_addr = %llx, dma_pages = %lu\n", i, entry->dma_handle, entry->size >> PAGE_SHIFT);
+            mudaq_set_dma_data_addr(mu, entry->dma_handle, i, entry->size >> PAGE_SHIFT);
+            i++;
+        }
         mudaq_set_dma_n_buffers(mu, i + 1);
     }
     mu->to_user[1] = 0;
@@ -1027,12 +1017,12 @@ static
 int __init mudaq_init(void) {
     int error;
 
-    chrdev_mudaq = chrdev_alloc("mudaq", MAX_NUM_DEVICES, &mudaq_fops);
+    chrdev_mudaq = chrdev_alloc("mudaq", MAX_NUM_DEVICES);
     if(IS_ERR_OR_NULL(chrdev_mudaq)) {
         error = PTR_ERR(chrdev_mudaq);
         goto err_out;
     }
-    chrdev_dmabuf = chrdev_alloc("mudaq_dmabuf", MAX_NUM_DEVICES, &dmabuf_chrdev_fops);
+    chrdev_dmabuf = chrdev_alloc("mudaq_dmabuf", MAX_NUM_DEVICES);
     if(IS_ERR_OR_NULL(chrdev_dmabuf)) {
         error = PTR_ERR(chrdev_dmabuf);
         goto err_out;
