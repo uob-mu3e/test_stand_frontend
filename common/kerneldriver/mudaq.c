@@ -191,69 +191,49 @@ __iomem u32 *mudaq_register_ro(struct mudaq *mu, unsigned index) {
     return base + index;
 }
 
+#define mudaq_write32_test(mu, value, index) ({ \
+    void __iomem* addr = mudaq_register_rw((mu), index); \
+    u32 a = (value), b; \
+    iowrite32(a, addr); \
+    b = ioread32(addr); \
+    if(a != b) { \
+        ERROR("write '%u' at '%s', but read back is '%u'\n", a, #index, b); \
+    } \
+})
+
 static
 void mudaq_deactivate(struct mudaq *mu) {
-    u32 test;
-
-    iowrite32(0x0, mudaq_register_rw(mu, DATAGENERATOR_REGISTER_W));
-    test = ioread32(mudaq_register_rw(mu, DATAGENERATOR_REGISTER_W));
-    if (test != 0)
-        ERROR("read back %u instead of 0\n", test);
-    iowrite32(0x0, mudaq_register_rw(mu, DMA_REGISTER_W));
-    test = ioread32(mudaq_register_rw(mu, DMA_REGISTER_W));
-    if (test != 0)
-        ERROR("read back %u instead of 0\n", test);
+    mudaq_write32_test(mu, 0, DATAGENERATOR_REGISTER_W);
+    mudaq_write32_test(mu, 0, DMA_REGISTER_W);
 }
 
 /* Copy dma bus addresses to device registers */
 static
-void mudaq_set_dma_ctrl_addr(struct mudaq *mu,
-                                    dma_addr_t ctrl_handle) {
-    dma_addr_t test;
-
-    iowrite32((ctrl_handle & 0xFFFFFFFF), mudaq_register_rw(mu, DMA_CTRL_ADDR_LOW_REGISTER_W));
-    iowrite32((ctrl_handle >> 32), mudaq_register_rw(mu, DMA_CTRL_ADDR_HI_REGISTER_W));
-
-    test = (dma_addr_t) ioread32(mudaq_register_rw(mu, DMA_CTRL_ADDR_LOW_REGISTER_W)) |
-           (dma_addr_t) ioread32(mudaq_register_rw(mu, DMA_CTRL_ADDR_HI_REGISTER_W)) << 32;
-    if ((size_t) ctrl_handle != (size_t) test)
-        ERROR("dma control buffer. wrote %#zx read %#zx\n", (size_t) ctrl_handle, (size_t) test);
+void mudaq_set_dma_ctrl_addr(struct mudaq *mu, dma_addr_t ctrl_handle) {
+    mudaq_write32_test(mu, ctrl_handle & 0xFFFFFFFF, DMA_CTRL_ADDR_LOW_REGISTER_W);
+    mudaq_write32_test(mu, ctrl_handle >> 32, DMA_CTRL_ADDR_HI_REGISTER_W);
 }
 
 static
-void mudaq_set_dma_data_addr(struct mudaq *mu,
+int mudaq_set_dma_data_addr(struct mudaq* mu,
                                     dma_addr_t data_handle,
                                     u32 mem_location,
                                     u32 n_pages) {
-    dma_addr_t test;
-    u32 test_n_pages;
     u32 regcontent;
     regcontent = SET_DMA_NUM_PAGES_RANGE(0x0, n_pages);
     regcontent = SET_DMA_RAM_LOCATION_RANGE(regcontent, mem_location);
 
-    iowrite32(regcontent, mudaq_register_rw(mu, DMA_RAM_LOCATION_NUM_PAGES_REGISTER_W));
-    iowrite32((data_handle >> 32), mudaq_register_rw(mu, DMA_DATA_ADDR_HI_REGISTER_W));
-    iowrite32((data_handle & 0xFFFFFFFF), mudaq_register_rw(mu, DMA_DATA_ADDR_LOW_REGISTER_W));
+    mudaq_write32_test(mu, regcontent, DMA_RAM_LOCATION_NUM_PAGES_REGISTER_W);
+    // DMA address in firmware is updated only during write to LOW address
+    mudaq_write32_test(mu, data_handle >> 32, DMA_DATA_ADDR_HI_REGISTER_W);
+    mudaq_write32_test(mu, data_handle & 0xFFFFFFFF, DMA_DATA_ADDR_LOW_REGISTER_W);
 
-    test = (dma_addr_t) ioread32(mudaq_register_ro(mu, DMA_DATA_ADDR_LOW_REGISTER_R)) |
-           (dma_addr_t) ioread32(mudaq_register_ro(mu, DMA_DATA_ADDR_HI_REGISTER_R)) << 32;
-    if ((size_t) data_handle != (size_t) test)
-        ERROR("dma data buffer. wrote %#zx read %#zx\n", (size_t) data_handle, (size_t) test);
-
-    test_n_pages = (u32) ioread32(mudaq_register_ro(mu, DMA_NUM_PAGES_REGISTER_R));
-    if (test_n_pages != n_pages) {
-        ERROR("number of pages. wrote %u read %u\n", n_pages, test_n_pages);
-    }
+    return 0;
 }
 
 static
-void mudaq_set_dma_n_buffers(struct mudaq *mu,
-                                    u32 n_buffers) {
-    u32 test;
-    iowrite32(n_buffers, mudaq_register_rw(mu, DMA_NUM_ADDRESSES_REGISTER_W));
-    test = (u32) ioread32(mudaq_register_rw(mu, DMA_NUM_ADDRESSES_REGISTER_W));
-    if (test != n_buffers)
-        ERROR("number of buffers. wrote %u, read %u\n", n_buffers, test);
+void mudaq_set_dma_n_buffers(struct mudaq* mu, u32 n_buffers) {
+    mudaq_write32_test(mu, n_buffers, DMA_NUM_ADDRESSES_REGISTER_W);
 }
 
 //
