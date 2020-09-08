@@ -28,11 +28,11 @@
 #endif
 
 #define ERROR(fmt, ...) \
-    printk(KERN_ERR   "mudaq: " pr_fmt(fmt), ##__VA_ARGS__)
+    printk(KERN_ERR   "[%s/%s] " pr_fmt(fmt), THIS_MODULE->name, __FUNCTION__, ##__VA_ARGS__)
 #define INFO(fmt, ...) \
-    printk(KERN_INFO  "mudaq: " pr_fmt(fmt), ##__VA_ARGS__)
+    printk(KERN_INFO  "[%s/%s] " pr_fmt(fmt), THIS_MODULE->name, __FUNCTION__, ##__VA_ARGS__)
 #define DEBUG(fmt, ...) \
-    printk(KERN_DEBUG "mudaq: " pr_fmt(fmt), ##__VA_ARGS__)
+    printk(KERN_DEBUG "[%s/%s] " pr_fmt(fmt), THIS_MODULE->name, __FUNCTION__, ##__VA_ARGS__)
 
 //
 // module-wide global variables
