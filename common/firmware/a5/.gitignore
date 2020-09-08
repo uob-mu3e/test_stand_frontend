@@ -1,0 +1,3 @@
+ip_alt_xcvr_reconfig.vhd
+ip_altera_xcvr_reset_control.vhd
+ip_altera_xcvr_native_av.vhd
