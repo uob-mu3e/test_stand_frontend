@@ -1,9 +1,15 @@
+----------------------------------------
+-- Dummy version of the Frontend Board 
+-- Common Firmware only, no detector-specific parts
+-- Martin Mueller, September 2020
+----------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.board_components.all;
-use work.transceiver_components.all;
+use work.daq_constants.all;
+use work.cmp.all;
 
 entity top is 
 	port (
@@ -133,30 +139,33 @@ architecture rtl of top is
     signal spi_si_MISO          : std_logic;
     signal spi_si_MOSI          : std_logic;
     signal spi_si_SCLK          : std_logic;
-    
+    signal spi_si_SS_n          : std_logic_vector(1 downto 0);
 
 begin
 
     firefly1_tx_data            <= o_firefly1_tx_data;
     firefly2_tx_data            <= o_firefly2_tx_data;
+    si45_spi_cs_n               <= spi_si_SS_n;
 
 --v_reg: version_reg 
 --    PORT MAP(
 --        data_out    => version_out(27 downto 0)
 --    );
 
-    db2: debouncer
+    db1: entity work.debouncer
     port map(
-        clk     => spare_clk_osc,
-        din     => PushButton(0),
-        dout    => pb_db(0)
+        i_clk       => spare_clk_osc,
+        i_reset_n   => '1',
+        i_d(0)      => PushButton(0),
+        o_q(0)      => pb_db(0)--,
     );
 
-    db3: debouncer
+    db2: entity work.debouncer
     port map(
-        clk     => spare_clk_osc,
-        din     => PushButton(1),
-        dout    => pb_db(1)
+        i_clk       => spare_clk_osc,
+        i_reset_n   => '1',
+        i_d(0)      => PushButton(1),
+        o_q(0)      => pb_db(1)--,
     );
 
 -- Switch off mscb
@@ -244,7 +253,7 @@ lcd_data(7)				<= Firefly_ModPrs_n(0);
         o_testout                       => lcd_data(1)--,
     );
 
-   e_nios: entity work.nios
+   e_nios: nios
    port map(
       clk_clk                 => spare_clk_osc,
       clk_125_clock_clk       => spare_clk_osc,
@@ -265,17 +274,17 @@ lcd_data(7)				<= Firefly_ModPrs_n(0);
       spi_si_MISO             => spi_si_MISO,
       spi_si_MOSI             => spi_si_MOSI,
       spi_si_SCLK             => spi_si_SCLK,
-      spi_si_SS_n             => si45_spi_cs_n--,
+      spi_si_SS_n             => spi_si_SS_n--,
    );
 
-spi_si_MISO <= si45_spi_out(1) when si45_spi_cs_n(1)='0' else
-               si45_spi_out(0) when si45_spi_cs_n(0)='0' else '0';
+spi_si_MISO <= si45_spi_out(1) when spi_si_SS_n(1)='0' else
+               si45_spi_out(0) when spi_si_SS_n(0)='0' else '0';
 
-si45_spi_in(1) <= spi_si_MOSI when si45_spi_cs_n(1)='0' else '0';
-si45_spi_in(0) <= spi_si_MOSI when si45_spi_cs_n(0)='0' else '0';
+si45_spi_in(1) <= spi_si_MOSI when spi_si_SS_n(1)='0' else '0';
+si45_spi_in(0) <= spi_si_MOSI when spi_si_SS_n(0)='0' else '0';
 
-si45_spi_sclk(1) <= spi_si_SCLK when si45_spi_cs_n(1)='0' else '0';
-si45_spi_sclk(0) <= spi_si_SCLK when si45_spi_cs_n(0)='0' else '0';
+si45_spi_sclk(1) <= spi_si_SCLK when spi_si_SS_n(1)='0' else '0';
+si45_spi_sclk(0) <= spi_si_SCLK when spi_si_SS_n(0)='0' else '0';
 
 si45_rst_n <= (others => '1');
 si45_oe_n <= (others => '0');
@@ -283,11 +292,11 @@ si45_fdec <= (others => '0');
 si45_finc <= (others => '0');
 --lcd_data(5 downto 4) <= si45_lol_n;
 
-FPGA_Test(0) <= Firefly_ModSel_n(0);
-FPGA_Test(1) <= Firefly_Rst_n(0);
-FPGA_Test(2) <= Firefly_Scl;
-FPGA_Test(3) <= Firefly_Sda;
-FPGA_Test(4) <= Firefly_Int_n(0);
+--FPGA_Test(0) <= Firefly_ModSel_n(0);
+--FPGA_Test(1) <= Firefly_Rst_n(0);
+--FPGA_Test(2) <= Firefly_Scl;
+--FPGA_Test(3) <= Firefly_Sda;
+--FPGA_Test(4) <= Firefly_Int_n(0);
 --FPGA_Test(5) <= Firefly_ModPrs_n(0);
 FPGA_Test(6) <= transceiver_pll_clock(2);
 FPGA_Test(7) <= lvds_firefly_clk;

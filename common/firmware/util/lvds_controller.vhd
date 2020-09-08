@@ -127,6 +127,7 @@ begin
 
                 when x"8" =>
                     o_ready             <= '1';
+                    -- TODO: fix realign conditions
                     if( i_data /= i_align_pattern) then
                         stable_counter      <= stable_counter + '1';
                     elsif (stable_counter = i_loss_lock_words) then

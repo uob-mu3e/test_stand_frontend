@@ -3,7 +3,7 @@
 package require qsys
 
 create_system {nios}
-source {../fe/device.tcl}
+source {../fe/device_FEB_v2.tcl}
 
 source {util/nios_base.tcl}
 set_instance_parameter_value spi numberOfSlaves 16
