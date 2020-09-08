@@ -15,9 +15,12 @@ add_kmodule(${PROJECT_NAME}
 )
 add_dependencies(${PROJECT_NAME}-insmod ${PROJECT_NAME}-rmmod)
 
-add_custom_target(insmod
-    COMMAND sudo chmod a+rw /dev/mudaq0
-    COMMAND sudo chmod a+rw /dev/mudaq_dmabuf0
-    VERBATIM
-    DEPENDS ${PROJECT_NAME}-insmod
-)
+get_directory_property(parent_dir PARENT_DIRECTORY)
+if(NOT parent_dir)
+    add_custom_target(insmod
+        COMMAND sudo chmod a+rw /dev/mudaq0
+        COMMAND sudo chmod a+rw /dev/mudaq_dmabuf0
+        VERBATIM
+        DEPENDS ${PROJECT_NAME}-insmod
+    )
+endif()
