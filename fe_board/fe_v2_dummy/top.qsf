@@ -6,7 +6,7 @@ set_global_assignment -name PROJECT_IP_REGENERATION_POLICY SKIP_REGENERATING_IP_
 
 
 
-set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
+set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow_a5.tcl"
 
 set_global_assignment -name QIP_FILE ../fe/top_FEB_v2.qip
 
