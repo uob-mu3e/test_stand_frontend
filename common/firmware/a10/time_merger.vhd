@@ -23,6 +23,7 @@ port (
     o_rack      : out   std_logic_vector(N-1 downto 0); -- read ACK
 
     -- output stream
+    o_hit_out   : out   hit_array_t;
     o_wdata     : out   std_logic_vector(W-1 downto 0);
     o_wsop      : out   std_logic; -- SOP
     o_weop      : out   std_logic; -- EOP
@@ -44,7 +45,7 @@ architecture arch of time_merger is
  
     type fpga_id_array_t is array (N - 1 downto 0) of std_logic_vector(15 downto 0);
     type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(5 downto 0);
-    type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer);
+    type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer, read_hits);
     subtype index_int is natural range 0 to 36; -- since we have a maximum number of 36 links, default is 36
     
     constant check_zeros : std_logic_vector(N - 1 downto 0) := (others => '0');
@@ -63,41 +64,31 @@ architecture arch of time_merger is
     signal fpga_id : fpga_id_array_t;
     
     -- merge signals
-    signal min_hit : std_logic_vector(37 downto 0);
     signal min_fpga_id : std_logic_vector(15 downto 0);
-    signal link_good, sop_wait, shop_wait, time_wait, rack_link : std_logic_vector(N - 1 downto 0);
+    signal sop_wait, shop_wait, time_wait, rack_link : std_logic_vector(N - 1 downto 0);
+    signal link_good : std_logic_vector(63 downto 0);
     
-    -- layer zero signals
-    type hit_t_0_array_t is array (N - 1 downto 0) of std_logic_vector(37 downto 0);
-    signal data_t_0 : hit_t_0_array_t;
-    signal full_t_0, empty_t_0 : std_logic_vector(N - 1 downto 0);
+    -- 8 links with 32 bit x 250 MHz 8b/10b
+    signal hit_out : hit_array_t := (others => (others => '0'));
+    signal hit_out_en, check_time : std_logic_vector(N - 1 downto 0);
+    signal cur_time : integer;
+    type cur_link_array_t is array (7 downto 0) of integer;
+    signal cur_link : cur_link_array_t;
     
-    -- layer one signals
-    type hit_t_1_array_t is array (16 downto 0) of std_logic_vector(37 downto 0);
-    signal data_t_1 : hit_t_1_array_t;
-    signal full_t_1, empty_t_1 : std_logic_vector(16 downto 0);
-    
-    -- layer two signals
-    type hit_t_2_array_t is array (8 downto 0) of std_logic_vector(37 downto 0);
-    signal data_t_2 : hit_t_2_array_t;
-    signal full_t_2, empty_t_2 : std_logic_vector(8 downto 0);
-    
-    -- layer three signals
-    type hit_t_3_array_t is array (4 downto 0) of std_logic_vector(37 downto 0);
-    signal data_t_3 : hit_t_3_array_t;
-    signal full_t_3, empty_t_3 : std_logic_vector(4 downto 0);
-        
 begin
 
-    -- error signals
+    -- ports out
     o_error_gtime(0) <= error_gtime1;
     o_error_gtime(1) <= error_gtime2;
     o_error_shtime <= error_shtime;
     o_error_pre <= error_pre;
     o_error_sh <= error_sh;
+    o_hit_out <= hit_out;
+
     
     generate_rack : FOR I in N-1 downto 0 GENERATE
         o_rack(I) <= rack(I) or rack_hit(I) or rack_link(I);
+--         link_good(I) <= '1' when i_rempty(I) = '0' and i_mask_n(I) = '1' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" and rack_hit(I) = '0' else '0';
     END GENERATE;
     
     -- readout fifo
@@ -120,7 +111,7 @@ begin
     
         FOR I in N - 1 downto 0 LOOP
             -- link is good ('1') if link is not empty, wfull not full, not masked, w_ack is zero, i_rdata has hit data else '0'
-            if ( i_rempty(I) = '0' and i_wfull = '0' and i_mask_n(I) = '1' and rack_hit(I) = '0' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" ) then
+            if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" ) then
                 link_good(I) <= '1';
             else
                 link_good(I) <= '0';
@@ -159,19 +150,19 @@ begin
             end if;
             
             -- check for state change in merge_hits state
-            if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and w_ack = '0' and empty_t_3 = check_ones_t_3 and merge_state =  merge_hits ) then
+            if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state =  merge_hits ) then
                 sh_state(I) <= '0';
             else
                 sh_state(I) <= '1';
             end if;
             
-            if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and w_ack = '0' and empty_t_3 = check_ones_t_3 and merge_state =  merge_hits ) then
+            if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state =  merge_hits ) then
                 pre_state(I) <= '0';
             else
                 pre_state(I) <= '1';
             end if;
             
-            if ( i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and w_ack = '0' and empty_t_3 = check_ones_t_3 and merge_state =  merge_hits ) then
+            if ( i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state =  merge_hits ) then
                 tr_state(I) <= '0';
             else
                 tr_state(I) <= '1';
@@ -180,144 +171,60 @@ begin
     end if;
     end process;
     
-    -- merge hits
+    -- merge hits per link
     process(i_clk, i_reset_n)
-        variable min_value : std_logic_vector(3 downto 0);
-        variable min_index : index_int;
-        --
     begin
     if ( i_reset_n /= '1' ) then
-        w_ack <= '0';
-        min_hit <= (others => '1');
-        min_fpga_id <= (others => '0');
         rack_hit <= (others => '0');
-        
-        data_t_0 <= (others => (others => '0'));
-        full_t_0 <= (others => '0');
-        empty_t_0 <= (others => '1');
-        
-        data_t_1 <= (others => (others => '0'));
-        full_t_1 <= (others => '0');
-        empty_t_1 <= (others => '1');
-        
-        data_t_2 <= (others => (others => '0'));
-        full_t_2 <= (others => '0');
-        empty_t_2 <= (others => '1');
-        
-        data_t_3 <= (others => (others => '0'));
-        full_t_3 <= (others => '0'); 
-        empty_t_3 <= (others => '1');
+        hit_out <= (others => (others => '0'));
+        hit_out_en <= (others => '0');
+        check_time <= (others => '0');
+        cur_time <= 0;
+        cur_link <= (7,6,5,4,3,2,1,0);
         --
     elsif rising_edge(i_clk) then
+    
         rack_hit <= (others => '0');
+        hit_out <= (others => (others => '0'));
+        hit_out_en <= (others => '0');
+        
         -- merge hits
         if ( merge_state = merge_hits ) then
-        
-            -- write to layer zero
-            FOR I in N - 1 downto 0 LOOP
-                if ( link_good(I) = '1' and empty_t_0(I) = '1' and full_t_0(I) = '0' ) then
-                    data_t_0(I) <= i_rdata(I);
-                    rack_hit(I) <= '1';
-                    full_t_0(I) <= '1';
-                    empty_t_0(I) <= '0';
-                end if;
-            END LOOP;
-
-            -- write to layer one
-            FOR I in 16 downto 0 LOOP
-                if ( empty_t_0(I) = '0' and empty_t_1(I) = '1' and full_t_1(I) = '0' and data_t_0(I)(35 downto 32) <= data_t_0(I+17)(35 downto 32) ) then
-                    data_t_1(I) <= data_t_0(I);
-                    full_t_1(I) <= '1';
-                    full_t_0(I) <= '0';
-                    empty_t_0(I) <= '1';
-                    empty_t_1(I) <= '0';
-                elsif ( empty_t_0(I+17) = '0' and empty_t_1(I) = '1' and full_t_1(I) = '0' ) then
-                    data_t_1(I) <= data_t_0(I+17);
-                    full_t_1(I) <= '1';
-                    full_t_0(I+17) <= '0';
-                    empty_t_0(I+17) <= '1';
-                    empty_t_1(I) <= '0';
-                end if;
-            END LOOP;
-            
-            -- write to layer two
-            FOR I in 8 downto 0 LOOP
-                if ( I = 0 ) then
-                    if ( empty_t_1(I) = '0' and empty_t_2(I) = '1' and full_t_2(I) = '0' ) then
-                        data_t_2(I) <= data_t_1(I);
-                        full_t_2(I) <= '1';
-                        full_t_1(I) <= '0';
-                        empty_t_1(I) <= '1';
-                        empty_t_2(I) <= '0';
+            if ( cur_time /= 16 ) then
+                -- LOOP over output
+                -- read out from link 0-7, 8-15, 16-23, 24-31, 32-33
+                FOR I in 0 to 7 LOOP
+                    if ( cur_link(I) >= N ) then
+                        --
+                    elsif ( link_good(cur_link(I)) = '1' and rack_hit(cur_link(I)) = '0' ) then
+                        if ( i_rdata(cur_link(I))(35 downto 32) = cur_time ) then
+                            hit_out(I) <= i_rdata(cur_link(I))(35 downto 4);
+                            hit_out_en(I) <= '1';
+                            rack_hit(cur_link(I)) <= '1';
+                        else
+                            cur_link(I) <= cur_link(I) + 8;
+                            check_time(cur_link(I)) <= '1';
+                        end if;
+                    elsif ( i_rdata(cur_link(I))(37 downto 36) /= "00" or i_rdata(cur_link(I))(31 downto 26) = "111111" ) then
+                        check_time(cur_link(I)) <= '1';
+                        cur_link(I) <= cur_link(I) + 8;
                     end if;
-                elsif ( empty_t_1(I) = '0' and empty_t_2(I) = '1' and full_t_2(I) = '0' and data_t_1(I)(35 downto 32) <= data_t_1(I+8)(35 downto 32) ) then
-                    data_t_2(I) <= data_t_1(I);
-                    full_t_2(I) <= '1';
-                    full_t_1(I) <= '0';
-                    empty_t_1(I) <= '1';
-                    empty_t_2(I) <= '0';
-                elsif ( empty_t_1(I+8) = '0' and empty_t_2(I) = '1' and full_t_2(I) = '0' ) then
-                    data_t_2(I) <= data_t_1(I+8);
-                    full_t_2(I) <= '1';
-                    full_t_1(I+8) <= '0';
-                    empty_t_1(I+8) <= '1';
-                    empty_t_2(I) <= '0';
+                END LOOP;
+                
+                if ( check_time = check_ones ) then
+                    cur_link <= (7,6,5,4,3,2,1,0);
+                    cur_time <= cur_time + 1;
+                    check_time <= (others => '0');
                 end if;
-            END LOOP;
-            
-            -- write to layer three
-            FOR I in 4 downto 0 LOOP
-                if ( I = 0 ) then
-                    if ( empty_t_2(I) = '0' and empty_t_3(I) = '1' and full_t_3(I) = '0' ) then
-                        data_t_3(I) <= data_t_2(I);
-                        full_t_3(I) <= '1';
-                        full_t_2(I) <= '0';
-                        empty_t_2(I) <= '1';
-                        empty_t_3(I) <= '0';
-                    end if;
-                elsif ( empty_t_2(I) = '0' and empty_t_3(I) = '1' and full_t_3(I) = '0' and data_t_2(I)(35 downto 32) <= data_t_2(I+4)(35 downto 32) ) then
-                    data_t_3(I) <= data_t_2(I);
-                    full_t_3(I) <= '1';
-                    full_t_2(I) <= '0';
-                    empty_t_2(I) <= '1';
-                    empty_t_3(I) <= '0';
-                elsif ( empty_t_2(I+4) = '0' and empty_t_3(I) = '1' and full_t_3(I) = '0' ) then
-                    data_t_3(I) <= data_t_2(I+4);
-                    full_t_3(I) <= '1';
-                    full_t_2(I+4) <= '0';
-                    empty_t_2(I+4) <= '1';
-                    empty_t_3(I) <= '0';
-                end if;
-            END LOOP;
-            
-            -- read out last layer
-            if ( empty_t_3 /= check_zeros_t_3 ) then
-                min_value := min_hit(35 downto 32);
-            else
-                min_value := "1111";
             end if;
-            min_index := 36;
-            FOR I in 4 downto 0 LOOP
-                if ( empty_t_3(I) = '0' and i_wfull = '0' and data_t_3(I)(35 downto 32) <= min_value ) then
-                    min_value := data_t_3(I)(35 downto 32);
-                    min_index := I;
-                end if;
-            END LOOP;
-            
-            w_ack <= '0';
-            if ( min_index /= 36 ) then
-                w_ack <= '1';
-                min_hit <= data_t_3(min_index);
-                min_fpga_id <= fpga_id(min_index);
-                full_t_3(min_index) <= '0';
-                empty_t_3(min_index) <= '1';
-            end if;
-        else
-            min_hit <= (others => '1');
+        elsif ( merge_state = wait_for_sh ) then
+            cur_time <= 0;
+            cur_link <= (7,6,5,4,3,2,1,0);
+            check_time <= (others => '0');
         end if;
     end if;
     end process;
-    
+   
     -- write data
     process(i_clk, i_reset_n)
     begin
@@ -500,25 +407,18 @@ begin
                 
                 -- change state
                 -- TODO error if sh is not there
-                if ( sh_state = check_zeros ) then
+                if ( sh_state = check_zeros and cur_time = 16 ) then
                     merge_state <= wait_for_sh;
                 end if;
                 
                 -- TODO error if pre is not there
-                if ( pre_state = check_zeros ) then
+                if ( pre_state = check_zeros and cur_time = 16 ) then
                     merge_state <= wait_for_pre;
                 end if;
                 
                 -- TODO error if trailer is not there
-                if ( tr_state = check_zeros ) then
+                if ( tr_state = check_zeros and cur_time = 16 ) then
                     merge_state <= trailer;
-                end if;
-                
-                -- write out data
-                if ( w_ack = '1' ) then
-                    o_wdata(49 downto 34) <= min_fpga_id;
-                    o_wdata(33 downto 0) <= min_hit(37 downto 4);
-                    o_we <= '1';
                 end if;
                 
             when trailer =>
