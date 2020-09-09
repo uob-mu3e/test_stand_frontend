@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    int fd = open("/dev/mudaq_dmabuf0", O_RDWR);
+    int fd = open("/dev/mudaq0_dmabuf", O_RDWR);
     if(fd < 0) {
         printf("fd = %d\n", fd);
         return EXIT_FAILURE;

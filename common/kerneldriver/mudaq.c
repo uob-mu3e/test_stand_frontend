@@ -17,8 +17,6 @@
 #include "../include/mudaq_device_constants.h"
 #include "../include/mudaq_registers.h"
 
-#include "dmabuf/dmabuf_chrdev.h"
-
 #include <linux/version.h>
 
 #include <linux/pci.h>
@@ -37,11 +35,6 @@
 //
 // module-wide global variables
 //
-
-static struct chrdev* chrdev_mudaq;
-static struct chrdev* chrdev_dmabuf;
-
-static DEFINE_IDA(minor_ida);
 
 static
 const struct pci_device_id PCI_DEVICE_IDS[] = {
@@ -64,21 +57,39 @@ int wrap_ring(int int1, int int2, int wrap, int divisor) {
     return result;
 }
 
+#include <linux/miscdevice.h>
+
+static DEFINE_IDA(mudaq_ida);
+
 //
 // mudaq structures and related functions
 //
 
 struct mudaq {
-    struct device *dev;
     struct pci_dev *pci_dev;
-    int minor;
     u32 to_user[2];
     long irq;
     atomic_t event;
     wait_queue_head_t wait;
     struct mudaq_mem *mem;
     struct mudaq_dma *dma;
+
+    struct dmabuf* dmabuf;
+    int minor;
+    char misc_mudaq_name[16];
+    struct miscdevice misc_mudaq;
+    char misc_dmabuf_name[16];
+    struct miscdevice misc_dmabuf;
 };
+
+static
+int dmabuf_fops_open(struct inode* inode, struct file* file) {
+    struct mudaq* mudaq = container_of(file->private_data, struct mudaq, misc_dmabuf);
+    file->private_data = mudaq->dmabuf;
+    return 0;
+}
+
+#include "dmabuf/dmabuf_fops.h"
 
 /*
    First four entries of internal_addr, phys_size and phys_addr are for
@@ -384,7 +395,7 @@ int mudaq_fops_mmap(struct file *filp, struct vm_area_struct *vma) {
         );
     case 4: // dma control buffer
         return dma_mmap_coherent(
-            mu->dev,
+            mu->misc_mudaq.this_device,
             vma,
             mu->mem->internal_addr[index],
             mu->mem->bus_addr_ctrl,
@@ -511,7 +522,7 @@ out:
 static
 void mudaq_clear_msi(struct mudaq *mu) {
     /* release irq */
-    devm_free_irq(mu->dev, mu->irq, mu);
+    devm_free_irq(mu->misc_mudaq.this_device, mu->irq, mu);
     DEBUG("Freed irq\n");
 
     /* disable MSI */
@@ -534,7 +545,7 @@ int mudaq_setup_msi(struct mudaq *mu) {
     /* request irq */
     init_waitqueue_head(&mu->wait);
     atomic_set(&mu->event, 0);
-    rv = devm_request_irq(mu->dev, mu->irq, mudaq_interrupt, 0, THIS_MODULE->name, mu);
+    rv = devm_request_irq(mu->misc_mudaq.this_device, mu->irq, mudaq_interrupt, 0, THIS_MODULE->name, mu);
     if (rv) {
         DEBUG("Failed to initialize irq, error: %d\n", rv);
         goto out_clear_msi;
@@ -599,11 +610,11 @@ int mudaq_fops_release(struct inode *inode, struct file *filp) {
 }
 
 static
-int mudaq_fops_open(struct inode *inode, struct file *filp) {
-    struct mudaq* mu = container_of(inode->i_cdev, struct chrdev_device, cdev)->private_data;
-    if (mu == NULL) return -ENODEV;
-    filp->private_data = mu;
-
+int mudaq_fops_open(struct inode* inode, struct file* file) {
+    struct mudaq* mudaq;
+    if(file->private_data == NULL) return -EFAULT;
+    mudaq = container_of(file->private_data, struct mudaq, misc_mudaq);
+    file->private_data = mudaq;
     return 0;
 }
 
@@ -829,14 +840,7 @@ struct file_operations mudaq_fops = {
 /** unregister the mudaq device */
 static
 void mudaq_unregister(struct mudaq *mu) {
-    struct chrdev_device* chrdev_device;
-    struct dmabuf* dmabuf;
-
     if(mu == NULL || mu->minor < 0) return;
-
-    chrdev_device = &chrdev_dmabuf->devices[mu->minor];
-    dmabuf = chrdev_device->private_data;
-    chrdev_device_del(chrdev_device);
 
     mudaq_deactivate(mu);
     mudaq_set_dma_n_buffers(mu, 0);
@@ -844,11 +848,12 @@ void mudaq_unregister(struct mudaq *mu) {
         mudaq_set_dma_data_addr(mu, 0, i, 0);
     }
 
-    dmabuf_free(dmabuf);
+    if(mu->misc_mudaq.minor != MISC_DYNAMIC_MINOR) misc_deregister(&mu->misc_mudaq);
+    if(mu->misc_dmabuf.minor != MISC_DYNAMIC_MINOR) misc_deregister(&mu->misc_dmabuf);
 
-    chrdev_device_del(&chrdev_mudaq->devices[mu->minor]);
+    dmabuf_free(mu->dmabuf);
 
-    ida_free(&minor_ida, mu->minor);
+    ida_free(&mudaq_ida, mu->minor);
     DEBUG("Released minor number\n");
 }
 
@@ -856,29 +861,33 @@ void mudaq_unregister(struct mudaq *mu) {
 static
 int mudaq_register(struct mudaq *mu) {
     int error = 0;
-    int minor;
-    struct chrdev_device* chrdev_device;
-    struct dmabuf* dmabuf;
 
-    minor = ida_alloc_range(&minor_ida, 0, MAX_NUM_DEVICES - 1, GFP_KERNEL);
-    if(minor < 0) goto err_out;
-
-    chrdev_device = chrdev_device_add(chrdev_mudaq, minor, &mudaq_fops, &mu->pci_dev->dev, mu);
-    if(IS_ERR_OR_NULL(chrdev_device)) {
-        error = PTR_ERR(chrdev_device);
-        goto err_out;
-    }
-    mu->dev = chrdev_device->device;
-
-    dmabuf = dmabuf_alloc(&mu->pci_dev->dev, MUDAQ_DMABUF_DATA_LEN);
-    if(IS_ERR_OR_NULL(dmabuf)) {
-        error = PTR_ERR(dmabuf);
+    mu->dmabuf = dmabuf_alloc(&mu->pci_dev->dev, MUDAQ_DMABUF_DATA_LEN);
+    if(IS_ERR_OR_NULL(mu->dmabuf)) {
+        error = PTR_ERR(mu->dmabuf);
         goto err_out;
     }
 
-    chrdev_device = chrdev_device_add(chrdev_dmabuf, minor, &dmabuf_chrdev_fops, &mu->pci_dev->dev, dmabuf);
-    if(IS_ERR_OR_NULL(chrdev_device)) {
-        error = PTR_ERR(chrdev_device);
+    mu->minor = ida_alloc_range(&mudaq_ida, 0, MAX_NUM_DEVICES - 1, GFP_KERNEL);
+    if(mu->minor < 0) goto err_out;
+
+    scnprintf(mu->misc_mudaq_name, sizeof(mu->misc_mudaq_name), "%s%d", THIS_MODULE->name, mu->minor);
+    mu->misc_mudaq.minor = MISC_DYNAMIC_MINOR;
+    mu->misc_mudaq.name = mu->misc_mudaq_name;
+    mu->misc_mudaq.fops = &mudaq_fops;
+    error = misc_register(&mu->misc_mudaq);
+    if(error != 0) {
+        mu->misc_mudaq.minor = MISC_DYNAMIC_MINOR;
+        goto err_out;
+    }
+
+    scnprintf(mu->misc_dmabuf_name, sizeof(mu->misc_dmabuf_name), "%s%d_dmabuf", THIS_MODULE->name, mu->minor);
+    mu->misc_dmabuf.minor = MISC_DYNAMIC_MINOR;
+    mu->misc_dmabuf.name = mu->misc_dmabuf_name;
+    mu->misc_dmabuf.fops = &dmabuf_fops;
+    error = misc_register(&mu->misc_dmabuf);
+    if(error != 0) {
+        mu->misc_dmabuf.minor = MISC_DYNAMIC_MINOR;
         goto err_out;
     }
 
@@ -888,7 +897,7 @@ int mudaq_register(struct mudaq *mu) {
     {
         int i = 0;
         struct dmabuf_entry* entry;
-        list_for_each_entry(entry, &dmabuf->entries, list_head) {
+        list_for_each_entry(entry, &mu->dmabuf->entries, list_head) {
             M_INFO("set dma entry %d: dma_addr = %llx, dma_pages = %lu\n", i, entry->dma_handle, entry->size >> PAGE_SHIFT);
             mudaq_set_dma_data_addr(mu, entry->dma_handle, i, entry->size >> PAGE_SHIFT);
             i++;
@@ -987,26 +996,12 @@ static
 void __exit mudaq_exit(void) {
     pci_unregister_driver(&mudaq_pci_driver);
 
-    chrdev_free(chrdev_dmabuf);
-    chrdev_free(chrdev_mudaq);
-
     DEBUG("module removed\n");
 }
 
 static
 int __init mudaq_init(void) {
     int error;
-
-    chrdev_mudaq = chrdev_alloc("mudaq", MAX_NUM_DEVICES);
-    if(IS_ERR_OR_NULL(chrdev_mudaq)) {
-        error = PTR_ERR(chrdev_mudaq);
-        goto err_out;
-    }
-    chrdev_dmabuf = chrdev_alloc("mudaq_dmabuf", MAX_NUM_DEVICES);
-    if(IS_ERR_OR_NULL(chrdev_dmabuf)) {
-        error = PTR_ERR(chrdev_dmabuf);
-        goto err_out;
-    }
 
     /* register the pci driver */
     error = pci_register_driver(&mudaq_pci_driver);
@@ -1020,8 +1015,6 @@ int __init mudaq_init(void) {
     return 0;
 
 err_out:
-    chrdev_free(chrdev_dmabuf);
-    chrdev_free(chrdev_mudaq);
     return error;
 }
 
