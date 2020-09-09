@@ -137,7 +137,7 @@ signal lvds_8b10b_out_in_clk125_global  : std_logic_vector(7 downto 0);
 begin
 
     o_Rst_n     <= (others => '1');--DO NOT DO THIS: (others => i_reset_n); !!! Phase will be not fixed
-    o_testclkout<= lvds_rx_clk;
+    o_clk_reco  <= lvds_rx_clk;
 
 --------------------------------------------------
 -- transceiver (2)
