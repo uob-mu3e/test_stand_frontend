@@ -2,7 +2,9 @@
 
 create_clock -period "125 MHz" [ get_ports LVDS_clk_si1_fpga_A ]
 create_clock -period "125 MHz" [ get_ports LVDS_clk_si1_fpga_B ]
-create_clock -period "125 MHz" [ get_ports transceiver_pll_clock ]
+create_clock -period "156.25 MHz" [ get_ports transceiver_pll_clock[0] ]
+create_clock -period "156.25 MHz" [ get_ports transceiver_pll_clock[1] ]
+create_clock -period "156.25 MHz" [ get_ports transceiver_pll_clock[2] ]
 create_clock -period "125 MHz" [ get_ports lvds_firefly_clk ]
 create_clock -period "50 MHz" [ get_ports systemclock ]
 create_clock -period "50 MHz" [ get_ports systemclock_bottom ]

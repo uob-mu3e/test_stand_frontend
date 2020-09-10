@@ -51,7 +51,7 @@
 -- Retrieval info: 	<generic name="cdr_reconfig_enable" value="0" />
 -- Retrieval info: 	<generic name="cdr_refclk_cnt" value="1" />
 -- Retrieval info: 	<generic name="cdr_refclk_select" value="0" />
--- Retrieval info: 	<generic name="set_cdr_refclk_freq" value="125.0 MHz" />
+-- Retrieval info: 	<generic name="set_cdr_refclk_freq" value="156.25 MHz" />
 -- Retrieval info: 	<generic name="rx_ppm_detect_threshold" value="1000" />
 -- Retrieval info: 	<generic name="enable_port_rx_pma_clkout" value="0" />
 -- Retrieval info: 	<generic name="enable_port_rx_is_lockedtodata" value="1" />
@@ -115,7 +115,7 @@
 -- Retrieval info: 	<generic name="enable_port_rx_std_prbs_status" value="0" />
 -- Retrieval info: 	<generic name="gui_pll_reconfig_pll0_pll_type" value="CMU" />
 -- Retrieval info: 	<generic name="gui_pll_reconfig_pll0_data_rate" value="1250 Mbps" />
--- Retrieval info: 	<generic name="gui_pll_reconfig_pll0_refclk_freq" value="125.0 MHz" />
+-- Retrieval info: 	<generic name="gui_pll_reconfig_pll0_refclk_freq" value="156.25 MHz" />
 -- Retrieval info: 	<generic name="gui_pll_reconfig_pll0_refclk_sel" value="0" />
 -- Retrieval info: 	<generic name="gui_pll_reconfig_pll0_clk_network" value="xN" />
 -- Retrieval info: 	<generic name="gui_pll_reconfig_pll1_pll_type" value="CMU" />
