@@ -32,6 +32,8 @@ entity firefly is
         o_clk_reco              : out   std_logic;
         i_clk_lvds              : in    std_logic;
         i_reset_n               : in    std_logic;
+        i_reset_156_n           : in    std_logic;
+        i_reset_125_rx_n        : in    std_logic;
         i_lvds_align_reset_n    : in    std_logic;
         
         --rx
@@ -247,7 +249,7 @@ begin
             i_errdetect             => errdetect(3+I*4 downto I*4),
             i_disperr               => disperr(3+I*4 downto I*4),
 
-            i_reset_n               => i_reset_n,
+            i_reset_n               => i_reset_156_n,
             i_clk                   => rx_clk(I)--,
         );
     end generate g_rx_align;
@@ -331,7 +333,7 @@ begin
     e_lvds_controller : entity work.lvds_controller 
     port map(
         i_clk               => i_clk_lvds,                      -- controller MUST run on 125 Global. DO NOT CHANGE TO lvds_rx_clk !!!
-        i_reset_n           => i_lvds_align_reset_n,--i_reset_n,
+        i_reset_n           => i_lvds_align_reset_n,
         i_data              => lvds_8b10b_out_in_clk125_global, -- feed alignment with 8b10b decoded data in global clk domain
         i_cda_max           => lvds_cda_max,
         i_dpa_locked        => lvds_dpa_locked,
@@ -355,7 +357,7 @@ begin
 
     udec_8b10b : entity work.dec_8b10b 
     port map(
-        RESET => not i_reset_n,
+        RESET => not i_reset_125_rx_n,
         RBYTECLK => lvds_rx_clk,
         AI => lvds_8b10b_in(9),
         BI => lvds_8b10b_in(8),
@@ -396,7 +398,9 @@ begin
         q       => lvds_8b10b_out_in_clk125_global
     );
 
-    o_data_lvds_parallel(7 downto 0)    <= lvds_8b10b_out_in_clk125_global;
+    -- sync 8b10b_out properly into i_clk_lvds for alignment in lvds_controller (e_fifo8b above)
+    -- forward the "not-synced" signal to state controller (running on reconstructed clock lvds_rx_clk)
+    o_data_lvds_parallel(7 downto 0)    <= lvds_8b10b_out;
 
 --------------------------------------------------
 -- I2C reading
