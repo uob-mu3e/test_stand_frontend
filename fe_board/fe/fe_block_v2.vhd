@@ -586,6 +586,14 @@ begin
         i_int_n                         => i_ffly_Int_n,
         i_modPrs_n                      => i_ffly_ModPrs_n,
 
+        --Avalon
+        i_avs_address                   => av_ffly.address(13 downto 0),
+        i_avs_read                      => av_ffly.read,
+        o_avs_readdata                  => av_ffly.readdata,
+        i_avs_write                     => av_ffly.write,
+        i_avs_writedata                 => av_ffly.writedata,
+        o_avs_waitrequest               => av_ffly.waitrequest,
+
         o_testclkout                    => open,
         o_testout                       => open--,
     );

@@ -3,6 +3,7 @@
 -- opt. data 8TX, 4RX + alignment
 -- LVDS data 2RX + alignment + 8b10b decoder
 -- I2C reading of firefly regs
+-- Avalon interface
 --
 -- Martin Mueller muellem@uni-mainz.de
 --
@@ -10,6 +11,16 @@
 -- one 4-channel TX-only (all ffly2_tx)
 -- one 4-channel RX/TX (ffly1_rx0/tx0, ffly2rx0/ffly1tx1, ffly2rx1/ffly1tx2, ffly2rx2/ffly1tx3)
 -- one 2-channel LVDS-RX
+--
+-- Avalon channel map:
+-- ch0 : ffly_1_tx_data_0 -- ffly_1_rx_data_0
+-- ch1 : ffly_1_tx_data_1 -- RX_CLK_1
+-- ch2 : ffly_1_tx_data_2 -- RX_CLK_2
+-- ch3 : ffly_1_tx_data_3 -- ffly_1_lvds_in
+-- ch4 : ffly_2_tx_data_0 -- ffly_2_lvds_in
+-- ch5 : ffly_2_tx_data_1 -- ffly_2_rx_data_0
+-- ch6 : ffly_2_tx_data_2 -- ffly_2_rx_data_1
+-- ch7 : ffly_2_tx_data_3 -- ffly_2_rx_data_2 
 -----------------------------------------------------------------------------
 
 library ieee;
@@ -57,6 +68,15 @@ entity firefly is
         i_int_n                 : in    std_logic_vector(1 downto 0);
         i_modPrs_n              : in    std_logic_vector(1 downto 0);
         
+        -- avalon slave interface
+        -- * 16 bit address space
+        i_avs_address           : in    std_logic_vector(13 downto 0);
+        i_avs_read              : in    std_logic;
+        o_avs_readdata          : out   std_logic_vector(31 downto 0);
+        i_avs_write             : in    std_logic;
+        i_avs_writedata         : in    std_logic_vector(31 downto 0);
+        o_avs_waitrequest       : out   std_logic;
+        
         o_testclkout            : out   std_logic;
         o_testout               : out   std_logic--;
     );
@@ -78,8 +98,8 @@ signal patterndetect    : std_logic_vector(15 downto 0);
 signal errdetect        : std_logic_vector(15 downto 0);
 signal disperr          : std_logic_vector(15 downto 0);
 
-signal tx_analogreset   : std_logic_vector(3 downto 0):= (others => '0');
-signal tx_digitalreset  : std_logic_vector(3 downto 0):= (others => '0');
+signal tx_analogreset1  : std_logic_vector(3 downto 0):= (others => '0');
+signal tx_digitalreset1 : std_logic_vector(3 downto 0):= (others => '0');
 signal rx_analogreset   : std_logic_vector(3 downto 0):= (others => '0');
 signal rx_digitalreset  : std_logic_vector(3 downto 0):= (others => '0');
 
@@ -134,10 +154,24 @@ signal lvds_8b10b_out                   : std_logic_vector(7 downto 0);
 signal lvds_rx_clk                      : std_logic;
 signal lvds_8b10b_out_in_clk125_global  : std_logic_vector(7 downto 0);
 
+-- avalon interface
+signal av_ctrl              : work.util.avalon_t;
+signal ch                   : integer range 0 to 7 := 0;
+signal rx_seriallpbken      : std_logic_vector(7 downto 0);
+signal tx_rst_n             : std_logic_vector(7 downto 0);
+signal rx_rst_n             : std_logic_vector(7 downto 0);
+signal tx_analogreset       : std_logic_vector(7 downto 0);
+signal tx_digitalreset      : std_logic_vector(7 downto 0);
+signal tx_ready             : std_logic_vector(7 downto 0);
+signal rx_ready             : std_logic_vector(7 downto 0);
+
 begin
 
-    o_Rst_n     <= (others => '1');--DO NOT DO THIS: (others => i_reset_n); !!! Phase will be not fixed
-    o_clk_reco  <= lvds_rx_clk;
+    o_Rst_n         <= (others => '1');--DO NOT DO THIS: (others => i_reset_n); !!! Phase will be not fixed
+    o_clk_reco      <= lvds_rx_clk;
+
+    tx_analogreset  <= tx_analogreset2 & tx_analogreset1;
+    tx_digitalreset <= tx_digitalreset2 & tx_digitalreset1;
 
 --------------------------------------------------
 -- transceiver (2)
@@ -155,8 +189,8 @@ begin
         rx_std_clkout           => rx_clk,
         
         --resets
-        tx_analogreset          => tx_analogreset,
-        tx_digitalreset         => tx_digitalreset,
+        tx_analogreset          => tx_analogreset1,
+        tx_digitalreset         => tx_digitalreset1,
         rx_analogreset          => rx_analogreset,
         rx_digitalreset         => rx_digitalreset,
         
@@ -184,7 +218,7 @@ begin
         
         -- control inputs
         pll_powerdown           => pll_powerdown,
-        rx_seriallpbken         => (others => '0'),
+        rx_seriallpbken         => rx_seriallpbken(3 downto 0),
         rx_std_wa_patternalign  => enapatternalign,
         
         -- reconfig
@@ -250,6 +284,7 @@ begin
             i_reset_n               => i_reset_n,
             i_clk                   => rx_clk(I)--,
         );
+
     end generate g_rx_align;
 
 --------------------------------------------------
@@ -261,15 +296,15 @@ begin
         clock                   => i_sysclk,
         reset                   => not i_reset_n,
         pll_powerdown           => pll_powerdown,
-        tx_analogreset          => tx_analogreset,
-        tx_digitalreset         => tx_digitalreset,
-        tx_ready                => open,
+        tx_analogreset          => tx_analogreset1,
+        tx_digitalreset         => tx_digitalreset1,
+        tx_ready                => tx_ready(3 downto 0),
         pll_locked              => pll_locked,
         pll_select              => (others => '0'),
         tx_cal_busy             => tx_cal_busy,
         rx_analogreset          => rx_analogreset,
         rx_digitalreset         => rx_digitalreset,
-        rx_ready                => open,
+        rx_ready                => rx_ready(3 downto 0),
         rx_is_lockedtodata      => rx_is_lockedtodata,
         rx_cal_busy             => rx_cal_busy--,
     );
@@ -281,7 +316,7 @@ begin
         pll_powerdown           => pll_powerdown2,
         tx_analogreset          => tx_analogreset2,
         tx_digitalreset         => tx_digitalreset2,
-        tx_ready                => open,
+        tx_ready                => tx_ready(7 downto 4),
         pll_locked              => pll_locked2,
         pll_select              => (others => '0'),
         tx_cal_busy             => tx_cal_busy2--,
@@ -521,5 +556,162 @@ begin
         i_doNotCompileAway  => i2c_data & lvds_8b10b_out_in_clk125_global,
         o_led               => o_testout--,
     );
+
+--------------------------------------------------
+-- Avalon
+--------------------------------------------------
+
+    -- av_ctrl process, avalon iface
+    process(i_clk, i_reset_n)
+    begin
+    if ( i_reset_n = '0' ) then
+        av_ctrl.waitrequest <= '1';
+        ch <= 0;
+        rx_seriallpbken <= (others => '0');
+        tx_rst_n <= (others => '1');
+        rx_rst_n <= (others => '1');
+
+    elsif rising_edge(i_clk) then
+        av_ctrl.waitrequest <= '1';
+
+        tx_rst_n <= (others => '1');
+        rx_rst_n <= (others => '1');
+
+        if ( av_ctrl.read /= av_ctrl.write and av_ctrl.waitrequest = '1' ) then
+            av_ctrl.waitrequest <= '0';
+
+            av_ctrl.readdata <= (others => '0');
+            case av_ctrl.address(7 downto 0) is
+            when X"00" =>
+                -- channel select
+                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(ch, 8));
+                if ( av_ctrl.write = '1' and av_ctrl.writedata(7 downto 0) < 8 ) then
+                    ch <= to_integer(unsigned(av_ctrl.writedata(7 downto 0)));
+                end if;
+                --
+            when X"01" =>
+                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(8, 8));
+            when X"02" =>
+                av_ctrl.readdata(7 downto 0) <= std_logic_vector(to_unsigned(32, 8));
+            when X"10" =>
+                -- tx reset
+                av_ctrl.readdata(0) <= tx_analogreset(ch);
+                av_ctrl.readdata(4) <= tx_digitalreset(ch);
+                if ( av_ctrl.write = '1' ) then tx_rst_n(ch) <= not av_ctrl.writedata(0); end if;
+                --
+            when X"11" =>
+                -- tx status
+                av_ctrl.readdata(0) <= tx_ready(ch);
+                --
+            when X"12" =>
+                -- tx errors
+                av_ctrl.readdata(8) <= '0';--tx_fifo_error(ch);
+                --
+            when X"20" =>
+                -- rx reset
+                if(ch < 4) then
+                    av_ctrl.readdata(0) <= rx_analogreset(ch);
+                    av_ctrl.readdata(4) <= rx_digitalreset(ch);
+                else
+                    av_ctrl.readdata(0) <= '0';
+                    av_ctrl.readdata(4) <= '0';
+                end if;
+                if ( av_ctrl.write = '1' ) then rx_rst_n(ch) <= not av_ctrl.writedata(0); end if;
+                --
+            when X"21" =>
+                if(ch < 4) then 
+                    -- rx status
+                    av_ctrl.readdata(0) <= rx_ready(ch);
+                    av_ctrl.readdata(1) <= rx_is_lockedtoref(ch);
+                    av_ctrl.readdata(2) <= rx_is_lockedtodata(ch);
+                    -- av_ctrl.readdata(11 downto 8) <= (others => '1');
+                    av_ctrl.readdata(32/8-1 + 8 downto 8) <= rx(ch).syncstatus;
+                    av_ctrl.readdata(12) <= rx(ch).locked;
+                else
+                    av_ctrl.readdata(0) <= '0';
+                    av_ctrl.readdata(1) <= '0';
+                    av_ctrl.readdata(2) <= '0';
+                    -- av_ctrl.readdata(11 downto 8) <= (others => '1');
+                    av_ctrl.readdata(32/8-1 + 8 downto 8) <= (others => '0');
+                    av_ctrl.readdata(12) <= '0';
+                end if;
+                --
+            when X"22" =>
+                -- rx errors
+                if(ch < 4) then 
+                    av_ctrl.readdata(3 downto 0) <= errdetect(4*ch+3 downto 4*ch);
+                    av_ctrl.readdata(7 downto 4) <= disperr(4*ch+3 downto 4*ch);
+                else
+                    av_ctrl.readdata(3 downto 0) <= (others => '0');
+                    av_ctrl.readdata(7 downto 4) <= (others => '0');
+                end if;
+                av_ctrl.readdata(8) <= (others => '0');--rx_fifo_error(ch);
+                --
+            when X"23" =>
+                av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).LoL_cnt;
+            when X"24" =>
+                av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).err_cnt;
+                --
+            when X"2A" =>
+                av_ctrl.readdata(31 downto 0) <= (others => '0'); --rx(ch).data;
+            when X"2B" =>
+                av_ctrl.readdata(31 downto 0) <= (others => '0'); --rx(ch).datak;
+            when X"2C" =>
+                av_ctrl.readdata(31 downto 0) <= (others => '0'); --rx(ch).Gbit;
+                --
+            when X"2F" =>
+                av_ctrl.readdata(0) <= rx_seriallpbken(ch);
+                if ( av_ctrl.write = '1' ) then rx_seriallpbken(ch) <= av_ctrl.writedata(0); end if;
+                --
+            when others =>
+                av_ctrl.readdata <= X"CCCCCCCC";
+                --
+            end case;
+        end if;
+
+    end if; -- rising_edge
+    end process;
+
+    -- avalon control block
+    b_avs : block
+        signal av_ctrl_cs : std_logic;
+        signal avs_waitrequest_i : std_logic;
+    begin
+        av_ctrl_cs <= '1' when ( i_avs_address(i_avs_address'left downto 8) = "000000" ) else '0';
+        av_ctrl.address(i_avs_address'range) <= i_avs_address;
+        av_ctrl.writedata <= i_avs_writedata;
+
+        o_avs_waitrequest <= avs_waitrequest_i;
+
+        process(i_clk, i_reset_n)
+        begin
+        if ( i_reset_n = '0' ) then
+            avs_waitrequest_i <= '1';
+            av_ctrl.read <= '0';
+            av_ctrl.write <= '0';
+            --
+        elsif rising_edge(i_clk) then
+            avs_waitrequest_i <= '1';
+
+            if ( i_avs_read /= i_avs_write and avs_waitrequest_i = '1' ) then
+                if ( av_ctrl_cs = '1' ) then
+                    if ( av_ctrl.read = av_ctrl.write ) then
+                        av_ctrl.read <= i_avs_read;
+                        av_ctrl.write <= i_avs_write;
+                    elsif ( av_ctrl.waitrequest = '0' ) then
+                        o_avs_readdata <= av_ctrl.readdata;
+                        avs_waitrequest_i <= '0';
+                        av_ctrl.read <= '0';
+                        av_ctrl.write <= '0';
+                    end if;
+                else
+                    o_avs_readdata <= X"CCCCCCCC";
+                    avs_waitrequest_i <= '0';
+                end if;
+            end if;
+            --
+        end if;
+        end process;
+    end block;
 
 end rtl;
