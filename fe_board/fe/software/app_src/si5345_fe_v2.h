@@ -4,8 +4,9 @@
 #include "../include/si534x.h"
 
 //#include "si5345_revb_registers.h"
-//#include "Si5345-v5-Registers_si1.h"
+#include "Si5345-v5-Registers_si2.h"
 #include "Si5345-v5-Registers_si1.h"
+
 
 struct si5345_t : si534x_t {
 
@@ -22,7 +23,10 @@ struct si5345_t : si534x_t {
         for(int i = 0; i < 8; i++) id[i] = (char)read(0x026B + i);
         if(force == 0 && strcmp(id, DESIGN_ID) == 0) return;
 
-        si_t::init(si5345_revd_registers, sizeof(si5345_revd_registers) / sizeof(si5345_revd_registers[0]));
+        if(spi_slave==0)
+            si_t::init(si5345_revd_registers1, sizeof(si5345_revd_registers1) / sizeof(si5345_revd_registers1[0]));
+        if(spi_slave==1)
+        si_t::init(si5345_revd_registers2, sizeof(si5345_revd_registers2) / sizeof(si5345_revd_registers2[0]));
 //        for(int i = 0; i < 8; i++) write(0x026B + i, DESIGN_ID[i]);
 
         wait_sysincal();
