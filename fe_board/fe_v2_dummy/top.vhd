@@ -245,4 +245,8 @@ begin
         i_testin            => pb_db(1)--,
     );
 
+
+    FPGA_Test(0) <= transceiver_pll_clock(2);
+    FPGA_Test(1) <= lvds_firefly_clk;
+    FPGA_Test(2) <= clk_125_top;
 end rtl;

@@ -3,7 +3,8 @@
 #include "../include/xcvr.h"
 
 #include "../../../fe/software/app_src/si5345.h"
-si5345_t si5345 { SPI_SI_BASE, 0 };
+si5345_t si5345_1 { SPI_SI_BASE, 0 };
+si5345_t si5345_2 { SPI_SI_BASE, 1 };
 
 #include "../../../fe/software/app_src/sc.h"
 #include "../../../fe/software/app_src/sc_ram.h"
@@ -25,7 +26,9 @@ alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 int main() {
     base_init();
 
-    si5345.init();
+    si5345_2.init();
+    usleep(10000000); // maybe a bit much, but we definitely need a sleep > 3s here. Do not configure si1 before si2 phase is stable !!!
+    si5345_1.init();
     //mscb.init();
     sc.init();
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
@@ -40,9 +43,10 @@ int main() {
         printf("  [2] => mupix\n");
         printf("  [3] => sc\n");
         printf("  [4] => xcvr pod\n");
-        printf("  [5] => si5345\n");
-        printf("  [6] => mscb\n");
-        printf("  [7] => reset system\n");
+        printf("  [5] => si5345_1\n");
+        printf("  [6] => si5345_2\n");        
+        printf("  [7] => mscb\n");
+        printf("  [8] => reset system\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -60,12 +64,15 @@ int main() {
             menu_xcvr((alt_u32*)(AVM_POD_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '5':
-            si5345.menu();
+            si5345_1.menu();
             break;
         case '6':
-            mscb_main();
+            si5345_2.menu();
             break;
         case '7':
+            mscb_main();
+            break;
+        case '8':
             menu_reset();
             break;
         default:
