@@ -2,9 +2,9 @@
 #include "../include/base.h"
 #include "../include/xcvr.h"
 
-#include "../../../fe/software/app_src/si5345.h"
-si5345_t si5345_1 { SPI_SI_BASE, 0 };
-si5345_t si5345_2 { SPI_SI_BASE, 1 };
+#include "../../../fe/software/app_src/si5345_fe_v2.h"
+si5345_t si5345 { SPI_SI_BASE, 0 };
+//si5345_t si5345 { SPI_SI_BASE, 0 };
 
 #include "../../../fe/software/app_src/sc.h"
 #include "../../../fe/software/app_src/sc_ram.h"
@@ -26,9 +26,7 @@ alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 int main() {
     base_init();
 
-    si5345_2.init();
-    usleep(10000000); // maybe a bit much, but we definitely need a sleep > 3s here. Do not configure si1 before si2 phase is stable !!!
-    si5345_1.init();
+    si5345.init();
     //mscb.init();
     sc.init();
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
@@ -64,10 +62,10 @@ int main() {
             menu_xcvr((alt_u32*)(AVM_POD_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '5':
-            si5345_1.menu();
+            si5345.menu();
             break;
         case '6':
-            si5345_2.menu();
+            //si5345_2.menu();
             break;
         case '7':
             mscb_main();
