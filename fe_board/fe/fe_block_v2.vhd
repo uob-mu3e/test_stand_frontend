@@ -559,6 +559,8 @@ begin
         o_clk_reco                      => reset_link_rx_clk,
         i_clk_lvds                      => i_clk_125,
         i_reset_n                       => nios_reset_n,
+        i_reset_156_n                   => reset_156_n,
+        i_reset_125_rx_n                => reset_125_RRX_n,
         i_lvds_align_reset_n            => i_testin,
 
         --rx

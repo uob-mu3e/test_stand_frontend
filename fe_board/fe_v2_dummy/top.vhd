@@ -17,7 +17,7 @@ entity top is
 
         LVDS_clk_si1_fpga_A         : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right // SI5345
         LVDS_clk_si1_fpga_B         : in    std_logic; -- 125 MHz base clock for LVDS PLLs - left // SI5345
-        transceiver_pll_clock       : in    std_logic_vector(2 downto 2); --_vector(1 downto 0); -- 125 MHz base clock for transceiver PLLs // SI5345 -- change to 156 ?
+        transceiver_pll_clock       : in    std_logic_vector(0 downto 0); --_vector(1 downto 0); -- 156.25 MHz  clock for transceiver PLL-- Using 1 or 2 with 156 Mhz gives warings about coupling in clock builder
       --extra_transceiver_pll_clocks: in    std_logic_vector(1 downto 0); -- 125 MHz base clock for transceiver PLLs // SI5345
 
         lvds_firefly_clk            : in    std_logic; -- 125 MHz base clock
@@ -235,7 +235,7 @@ begin
         -- clocks
         i_nios_clk          => spare_clk_osc,
         o_nios_clk_mon      => lcd_data(0),
-        i_clk_156           => transceiver_pll_clock(2),
+        i_clk_156           => transceiver_pll_clock(0),
         o_clk_156_mon       => lcd_data(1),
         i_clk_125           => lvds_firefly_clk,
         o_clk_125_mon       => lcd_data(2),
@@ -245,4 +245,8 @@ begin
         i_testin            => pb_db(1)--,
     );
 
+
+    FPGA_Test(0) <= transceiver_pll_clock(0);
+    FPGA_Test(1) <= lvds_firefly_clk;
+    FPGA_Test(2) <= clk_125_top;
 end rtl;
