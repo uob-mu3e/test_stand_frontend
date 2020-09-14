@@ -32,8 +32,10 @@ port (
 	write_sc_regs:		in reg32array_t(NREGISTERS_MUPIX_WR-1 downto 0);
 	read_sc_regs: 		out reg32array_t(NREGISTERS_MUPIX_RD-1 downto 0);
 
-	o_fifo_wdata    : out std_logic_vector(35 downto 0);
-	o_fifo_write    : out std_logic;
+	o_fifo_wdata      : out std_logic_vector(35 downto 0);
+	o_fifo_write      : out std_logic;
+	o_lvds_data_valid : out std_logic_vector(NLVDS-1 downto 0);
+	o_hits_ena_count : out std_logic_vector(31 downto 0);
 	
 	i_sync_reset_cnt: in std_logic;
     
@@ -98,12 +100,18 @@ signal multichip_ro_overflow : std_logic_vector(31 downto 0);
 
 signal link_enable			: std_logic_vector(NLVDS-1 downto 0);
 
+-- count hits ena
+signal hits_ena_count : std_logic_vector(31 downto 0);
+signal time_counter	: unsigned(31 downto 0);
+signal rate_counter  : unsigned(31 downto 0);
+
 begin
 
-    reset           <= not i_reset_n;
+    reset               <= not i_reset_n;
     -- to common merger FiFo:
-    o_fifo_wdata    <= s_buf_data;
-    o_fifo_write    <= not sync_fifo_empty;
+    o_fifo_wdata        <= s_buf_data;
+    o_fifo_write        <= not sync_fifo_empty;
+    o_lvds_data_valid   <= data_valid;
 
 	e_two_clk_sync_fifo : work.two_clk_sync_fifo
 	port map
@@ -220,6 +228,23 @@ begin
 		);
 
 	END GENERATE genunpack;
+	
+	-- count hits_ena
+	o_hits_ena_count <= hits_ena_count;
+	process(i_clk125)
+   begin
+		if rising_edge(i_clk125) then
+			if (time_counter > x"7735940") then
+				hits_ena_count		<= std_logic_vector(rate_counter)(31 downto 0);
+            time_counter    	<= (others => '0');
+            rate_counter    	<= (others => '0');
+         else
+				-- overflow can not happen here
+            rate_counter    <= rate_counter + to_unsigned(work.util.count_bits(hits_ena), 32);
+            time_counter    <= time_counter + 1;
+         end if;
+       end if;
+	end process;
 	
 	-- delay cc by one cycle to be in line with hit
 	-- Seb: new degray - back to one

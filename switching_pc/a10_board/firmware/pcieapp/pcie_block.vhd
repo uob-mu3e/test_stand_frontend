@@ -24,6 +24,14 @@ entity pcie_block is
 			DMAMEMWRITEWIDTH	  : integer := 32
 		);
 	port (
+    o_writeregs_B               : out   reg32array;
+	 o_regwritten_B:				out		std_logic_vector(63 downto 0);
+    i_clk_B                     : in    std_logic := '0';
+	 
+	 o_writeregs_C               : out   reg32array;
+	 o_regwritten_C:				out		std_logic_vector(63 downto 0);
+    i_clk_C                     : in    std_logic := '0';
+
 		local_rstn:				in		std_logic;
 		appl_rstn:				in    std_logic;
 		refclk:					in		std_logic;
@@ -314,7 +322,7 @@ begin
   pcie_led_x8 	<= lane_act(3);
 
 
-pcie_if: pcie
+    e_pcie : component work.cmp.pcie
 	port map(
 		clr_st              => open,  
 		hpg_ctrler          => (others => '0'), -- only needed for root ports
@@ -624,7 +632,7 @@ pcie_if: pcie
 
 
 -- Configuration bus decode
-cfgbus: pcie_cfgbus 
+    e_pcie_cfgbus : entity work.pcie_cfgbus
     port map(
 		reset_n			=> pcie_perstn,
 		pld_clk			=> pld_clk,
@@ -649,13 +657,21 @@ cfgbus: pcie_cfgbus
 
 	 application_reset_n <= '0' when local_rstn = '0' or appl_rstn = '0' else '1';
 	 
-	 pcie_app: pcie_application
+    e_pcie_application : entity work.pcie_application
 	 	generic map(
 			DMAMEMWRITEADDRSIZE => DMAMEMWRITEADDRSIZE,
 			DMAMEMREADADDRSIZE  => DMAMEMREADADDRSIZE,
 			DMAMEMWRITEWIDTH	  => DMAMEMWRITEWIDTH
 	)
 	port map(
+        o_writeregs_B           => o_writeregs_B,
+		  o_regwritten_B			  => o_regwritten_B,
+        i_clk_B                 => i_clk_B,
+		  
+		  o_writeregs_C           => o_writeregs_C,
+		  o_regwritten_C			  => o_regwritten_C,
+        i_clk_C                 => i_clk_C,
+
 		local_rstn			=> application_reset_n,
 		refclk				=> pld_clk,
 	

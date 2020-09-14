@@ -14,6 +14,10 @@ package protocol is
     constant RUN_TAIL_HEADER_ID:    std_logic_vector(5 downto 0) := "111110";
     constant TIMING_MEAS_HEADER_ID:    std_logic_vector(5 downto 0) := "111100";
     constant SC_HEADER_ID:    std_logic_vector(5 downto 0) := "111011";
+    constant chip_id: std_logic_vector(5 downto 0) := "000000";
+    constant row: std_logic_vector(7 downto 0) := x"AB";
+    constant col: std_logic_vector(7 downto 0) := x"CD";
+    constant tot: std_logic_vector(5 downto 0) := "111111";
 
 end package protocol;
 
@@ -53,6 +57,7 @@ architecture rtl of data_generator_a10 is
 
 ----------------signals---------------------
 	signal global_time:			  std_logic_vector(47 downto 0);
+	signal overflow_time:			  std_logic_vector(3 downto 0);
 	signal reset_n:				  std_logic;
 	-- state_types
 	type data_header_states is (part1, part2, part3, part4, part5, trailer, overflow);
@@ -184,8 +189,7 @@ begin
 				case data_header_state is
 					when part1 =>
 						state_out <= x"A";
-						global_time <= global_time + '1';
-						data_pix_generated(31 downto 26) <= "111010";
+						data_pix_generated(31 downto 26) <= DATA_HEADER_ID;
 						data_pix_generated(25 downto 8) 	<= (others => '0');
 						data_pix_generated(7 downto 0) 	<= x"bc";
 						datak_pix_generated              <= "0001";
@@ -193,22 +197,21 @@ begin
 				
 					when part2 =>
 						state_out <= x"B";
+						data_pix_generated(31 downto 0) 	<= global_time(47 downto 16);
 						global_time <= global_time + '1';
-						data_pix_generated(31 downto 0) 	<= global_time(23 downto 0) & x"00";
 						datak_pix_generated              <= "0000";
 						data_header_state 					<= part3;
 					
 					when part3 =>
 						state_out <= x"C";
-						global_time <= global_time + '1';
-						data_pix_generated					<= global_time(23 downto 0) & x"00";
+						data_pix_generated					<= global_time(15 downto 0) & x"0000";
 						datak_pix_generated              <= "0000";
 						data_header_state 					<= part4;
 						
 					when part4 =>
 						state_out <= x"D";
 						global_time <= global_time + '1';
-						data_pix_generated 					<= "0000" & DATA_SUB_HEADER_ID & global_time(13 downto 0) & x"00";
+						data_pix_generated 					<= "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
 						datak_pix_generated              <= "0000";
 						overflow_idx 							:= 0;
 						current_overflow						:= lsfr_overflow;
@@ -217,7 +220,8 @@ begin
 					when part5 =>
 						state_out <= x"E";
 						global_time <= global_time + '1';
-						data_pix_generated					<= global_time(23 downto 0) & x"00";
+						data_pix_generated					<= global_time(3 downto 0) & chip_id & row & col & tot;
+						overflow_time <= global_time(3 downto 0);
 						datak_pix_generated              <= "0000";
 						if (global_time(3 downto 0) = "1111") then
 							data_header_state					<= trailer;
@@ -232,13 +236,12 @@ begin
 							
 					when overflow =>
 						state_out <= x"9";
-						data_pix_generated					<= global_time(23 downto 0) & x"00";
+						data_pix_generated					<= overflow_time & chip_id & row & col & tot;
 						datak_pix_generated              <= "0000";
 						data_header_state						<= part5;
 					
 					when trailer =>
 						state_out <= x"8";
-						global_time <= global_time + '1';
 						data_pix_generated(31 downto 8)	<= (others => '0');
 						data_pix_generated(7 downto 0)	<= x"9c";
 						datak_pix_generated              <= "0001";

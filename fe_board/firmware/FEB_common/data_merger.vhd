@@ -49,6 +49,7 @@ PORT (
     o_fifos_almost_full         : out   std_logic_vector(N_LINKS-1 downto 0);
     can_terminate               : in    std_logic :='0'; -- during state terminating, wait for this signal to go high or the data stream to send a run end marker before finally terminating the run.
     o_terminated                : out   std_logic; -- to state controller (when stop run acknowledge was transmitted the state controller can go from terminating into idle, this is the signal to tell him that)
+    i_ack_run_prep_permission   : in    std_logic := '1'; -- permission to send the run start ack
     override_data_in            : in    std_logic_vector(31 downto 0); -- data input for states link_test and sync_test;
     override_data_is_k_in       : in    std_logic_vector(3 downto 0);
     override_req                : in    std_logic;
@@ -80,7 +81,6 @@ BEGIN
 
 o_terminated    <= and_reduce(terminated);
 
-
 -- TODO: make SC Link selectable / is SC part synthesised away if no sc_rx connected ??
 feb_map: for j in N_LINKS-1 downto 0 generate
 begin
@@ -97,7 +97,8 @@ end generate;
                 time_counter    <= (others => '0');
                 rate_counter    <= (others => '0');
             else
-                rate_counter    <= rate_counter + work.util.count_bits(data_is_k);
+					 -- overflow can not happen here
+                rate_counter    <= rate_counter + to_unsigned(work.util.count_bits(data_is_k), 32);
                 time_counter    <= time_counter + 1;
             end if;
         end if;
@@ -363,7 +364,7 @@ begin
             terminated(i) <= '0';
             case merger_state is
             when idle =>
-                if ( run_prep_acknowledge_send = '0' ) then -- send run_prep_acknowledge
+                if ( run_prep_acknowledge_send = '0' and i_ack_run_prep_permission='1') then -- send run_prep_acknowledge
                     run_prep_acknowledge_send       <='1';
                     data_out(32*i+31 downto 32*i)   <= run_number(23 downto 0) & run_prep_acknowledge(7 downto 0);
                     data_is_k(4*i+3 downto 4*i)     <= run_prep_acknowledge_datak;
