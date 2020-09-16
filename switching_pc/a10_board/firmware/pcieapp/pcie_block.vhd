@@ -16,74 +16,73 @@ use altera.altera_europa_support_lib.all;
 
 
 
-
 entity pcie_block is 
 generic (
-			DMAMEMWRITEADDRSIZE : integer := 14;
-			DMAMEMREADADDRSIZE  : integer := 12;
-			DMAMEMWRITEWIDTH	  : integer := 32
+    DMAMEMWRITEADDRSIZE : integer := 14;
+    DMAMEMREADADDRSIZE  : integer := 12;
+    DMAMEMWRITEWIDTH    : integer := 32
 );
 port (
-		local_rstn:				in		std_logic;
-		appl_rstn:				in    std_logic;
-		refclk:					in		std_logic;
-		pcie_fastclk_out:		out	std_logic; -- 250 MHz clock
-		
-		--//PCI-Express--------------------------//25 pins //--------------------------
-		pcie_rx_p: 				in 		std_logic_vector(7 downto 0);           --//PCIe Receive Data-req's OCT
-		pcie_tx_p: 				out		std_logic_vector(7 downto 0);           --//PCIe Transmit Data
-		pcie_refclk_p:			in 		std_logic;       						--//PCIe Clock- Terminate on MB
-		pcie_led_g2: 			out 	std_logic;         						--//User LED - Labeled Gen2
-		pcie_led_x1: 			out 	std_logic;         						--//User LED - Labeled x1
-		pcie_led_x4: 			out 	std_logic;         						--//User LED - Labeled x4
-		pcie_led_x8: 			out 	std_logic;         						--//User LED - Labeled x8
-		pcie_perstn: 			in 		std_logic;         						--//PCIe Reset 
-		pcie_smbclk: 			in 		std_logic;         						--//SMBus Clock (TR=0)
-		pcie_smbdat:			inout 	std_logic;         						--//SMBus Data (TR=0)
-		pcie_waken: 			out 	std_logic;         						--//PCIe Wake-Up (TR=0)	
-	
-		-- LEDs
-		alive_led:				out		std_logic;
-		comp_led:				out		std_logic;
-		L0_led:					out		std_logic;
-		
-		-- pcie registers
-		writeregs:				out		reg32array;
-		regwritten:				out		std_logic_vector(63 downto 0);
-		readregs:				in			reg32array;
-		
-		-- pcie writeable memory
-		writememclk		  :   in std_logic;
-		writememreadaddr :	in std_logic_vector(15 downto 0);
-		writememreaddata :	out STD_LOGIC_VECTOR (31 DOWNTO 0);
-		
-		-- pcie readable memory
-		readmem_data 		: 	in std_logic_vector(31 downto 0);
-		readmem_addr 		: 	in std_logic_vector(15 downto 0);
-		readmemclk			:	in std_logic;
-		readmem_wren		:  in std_logic;
-		readmem_endofevent:  in std_logic;
-		
-		-- dma memory
-		dma_data 			: 	in std_logic_vector(DMAMEMWRITEWIDTH-1 downto 0);
-		dmamemclk			:	in std_logic;
-		dmamem_wren			:  in std_logic;
-		dmamem_endofevent	:  in std_logic;
-		dmamemhalffull		:  out std_logic;
-		
-		-- second dma memory
-		dma2_data 			: 	in std_logic_vector(DMAMEMWRITEWIDTH-1 downto 0);
-		dma2memclk			:	in std_logic;
-		dma2mem_wren		:  in std_logic;
-		dma2mem_endofevent:  in std_logic;
-		dma2memhalffull	:  out std_logic;
-		
-		-- test ports  
-		testout				: out STD_LOGIC_VECTOR (127 DOWNTO 0);
-		testout_ena			: out std_logic;
-		pb_in					: in std_logic_vector(2 downto 0);
-		inaddr32_r			: out STD_LOGIC_VECTOR (31 DOWNTO 0);
-		inaddr32_w			: out STD_LOGIC_VECTOR (31 DOWNTO 0)
+    local_rstn          : in    std_logic;
+    appl_rstn           : in    std_logic;
+    refclk              : in    std_logic;
+    pcie_fastclk_out    : out   std_logic; -- 250 MHz clock
+
+    -- PCI-Express (25 pins)
+    pcie_rx_p           : in    std_logic_vector(7 downto 0); --//PCIe Receive Data-req's OCT
+    pcie_tx_p           : out   std_logic_vector(7 downto 0); --//PCIe Transmit Data
+    pcie_refclk_p       : in    std_logic; --//PCIe Clock- Terminate on MB
+    pcie_led_g2         : out   std_logic; --//User LED - Labeled Gen2
+    pcie_led_x1         : out   std_logic; --//User LED - Labeled x1
+    pcie_led_x4         : out   std_logic; --//User LED - Labeled x4
+    pcie_led_x8         : out   std_logic; --//User LED - Labeled x8
+    pcie_perstn         : in    std_logic; --//PCIe Reset
+    pcie_smbclk         : in    std_logic; --//SMBus Clock (TR=0)
+    pcie_smbdat         : inout std_logic; --//SMBus Data (TR=0)
+    pcie_waken          : out   std_logic; --//PCIe Wake-Up (TR=0)
+
+    -- LEDs
+    alive_led           : out   std_logic;
+    comp_led            : out   std_logic;
+    L0_led              : out   std_logic;
+
+    -- pcie registers
+    writeregs           : out   reg32array;
+    regwritten          : out   std_logic_vector(63 downto 0);
+    readregs            : in    reg32array;
+
+    -- pcie writeable memory
+    writememclk         : in    std_logic;
+    writememreadaddr    : in    std_logic_vector(15 downto 0);
+    writememreaddata    : out   std_logic_vector(31 DOWNTO 0);
+
+    -- pcie readable memory
+    readmem_data        : in    std_logic_vector(31 downto 0);
+    readmem_addr        : in    std_logic_vector(15 downto 0);
+    readmemclk          : in    std_logic;
+    readmem_wren        : in    std_logic;
+    readmem_endofevent  : in    std_logic;
+
+    -- dma memory
+    dma_data            : in    std_logic_vector(DMAMEMWRITEWIDTH-1 downto 0);
+    dmamemclk           : in    std_logic;
+    dmamem_wren         : in    std_logic;
+    dmamem_endofevent   : in    std_logic;
+    dmamemhalffull      : out   std_logic;
+
+    -- second dma memory
+    dma2_data           : in    std_logic_vector(DMAMEMWRITEWIDTH-1 downto 0);
+    dma2memclk          : in    std_logic;
+    dma2mem_wren        : in    std_logic;
+    dma2mem_endofevent  : in    std_logic;
+    dma2memhalffull     : out   std_logic;
+
+    -- test ports
+    testout             : out   std_logic_vector(127 DOWNTO 0);
+    testout_ena         : out   std_logic;
+    pb_in               : in    std_logic_vector(2 downto 0);
+    inaddr32_r          : out   std_logic_vector(31 DOWNTO 0);
+    inaddr32_w          : out   std_logic_vector(31 DOWNTO 0)
 );
 end entity;
 
