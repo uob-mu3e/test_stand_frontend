@@ -549,9 +549,6 @@ begin
     );
 
     firefly: entity work.firefly
-    generic map(
-        STARTADDR_g                     => 1--,
-    )
     port map(
         i_clk                           => i_clk_156,
         i_sysclk                        => i_nios_clk,

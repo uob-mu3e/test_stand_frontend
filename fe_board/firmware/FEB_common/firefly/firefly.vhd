@@ -14,13 +14,13 @@
 --
 -- Avalon channel map:
 -- ch0 : ffly_1_tx_data_0 -- ffly_1_rx_data_0
--- ch1 : ffly_1_tx_data_1 -- RX_CLK_1
--- ch2 : ffly_1_tx_data_2 -- RX_CLK_2
--- ch3 : ffly_1_tx_data_3 -- ffly_1_lvds_in
--- ch4 : ffly_2_tx_data_0 -- ffly_2_lvds_in
--- ch5 : ffly_2_tx_data_1 -- ffly_2_rx_data_0
--- ch6 : ffly_2_tx_data_2 -- ffly_2_rx_data_1
--- ch7 : ffly_2_tx_data_3 -- ffly_2_rx_data_2 
+-- ch1 : ffly_1_tx_data_1 -- ffly_2_rx_data_0
+-- ch2 : ffly_1_tx_data_2 -- ffly_2_rx_data_1
+-- ch3 : ffly_1_tx_data_3 -- ffly_2_rx_data_2
+-- ch4 : ffly_2_tx_data_0 -- RX_CLK_1
+-- ch5 : ffly_2_tx_data_1 -- RX_CLK_2
+-- ch6 : ffly_2_tx_data_2 -- ffly_1_lvds_in
+-- ch7 : ffly_2_tx_data_3 -- ffly_2_lvds_in
 -----------------------------------------------------------------------------
 
 library ieee;
@@ -28,12 +28,10 @@ use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use work.transceiver_components.all;
-use work.firefly_constants.all;
 use work.daq_constants.all;
 
 entity firefly is
     generic(
-        STARTADDR_g             : positive := 1;
         I2C_DELAY_g             : positive := 50000000--;
     );
     port(
@@ -92,6 +90,9 @@ signal tx_clk           : std_logic_vector(3 downto 0):= (others => '0');
 signal rx_clk           : std_logic_vector(3 downto 0):= (others => '0');
 signal tx_clk2          : std_logic_vector(3 downto 0);
 
+signal rx_data_parallel : std_logic_vector(32*3+31 downto 0);
+signal rx_datak         : std_logic_vector(15 downto 0);
+
 signal datak_not_aligned: std_logic_vector(15 downto 0);
 signal data_not_aligned : std_logic_vector(127 downto 0);
 signal enapatternalign  : std_logic_vector(3 downto 0);
@@ -123,20 +124,8 @@ signal reconfig_from_xcvr_r : std_logic_vector(367 downto 0):= (others => '0');
 signal reconfig_to_xcvr_r2  : std_logic_vector(559 downto 0);
 signal reconfig_from_xcvr_r2: std_logic_vector(367 downto 0);
 
-signal rx_is_lockedtodata   : std_logic_vector(  3 downto 0):= (others => '0');
-
--- i2c signals --------------------------------------------
-signal i2c_rw               : std_logic;
-signal i2c_ena              : std_logic;
-signal i2c_busy             : std_logic;
-signal i2c_busy_prev        : std_logic;
-signal i2c_addr             : std_logic_vector(6 downto 0);
-signal i2c_data_rd          : std_logic_vector(7 downto 0);
-signal i2c_data_wr          : std_logic_vector(7 downto 0);
-type   i2c_state_type         is (idle, waiting1, i2cffly1, waiting2, i2cffly2);
-signal i2c_state            : i2c_state_type;
-signal i2c_data             : std_logic_vector(23 downto 0);
-signal i2c_counter          : unsigned(31 downto 0);
+signal rx_is_lockedtodata   : std_logic_vector(  7 downto 0):= (others => '0');
+signal rx_is_lockedtoref    : std_logic_vector(  7 downto 0):= (others => '0');
 
 -- lvds receiver control signals
 signal lvds_pll_areset      : std_logic;
@@ -166,15 +155,17 @@ signal tx_analogreset       : std_logic_vector(7 downto 0);
 signal tx_digitalreset      : std_logic_vector(7 downto 0);
 signal tx_ready             : std_logic_vector(7 downto 0);
 signal rx_ready             : std_logic_vector(7 downto 0);
+signal locked               : std_logic_vector(7 downto 0);
 
 begin
 
     o_Rst_n         <= (others => '1');--DO NOT DO THIS: (others => i_reset_n); !!! Phase will be not fixed
     o_clk_reco      <= lvds_rx_clk;
 
-    tx_analogreset  <= tx_analogreset2 & tx_analogreset1;
-    tx_digitalreset <= tx_digitalreset2 & tx_digitalreset1;
-
+    tx_analogreset          <= tx_analogreset2 & tx_analogreset1;
+    tx_digitalreset         <= tx_digitalreset2 & tx_digitalreset1;
+    o_data_fast_parallel    <= rx_data_parallel;
+    o_datak                 <= rx_datak;
 --------------------------------------------------
 -- transceiver (2)
 --------------------------------------------------
@@ -207,8 +198,8 @@ begin
         rx_datak                => datak_not_aligned,
         
         -- control outputs
-        rx_is_lockedtoref       => open,
-        rx_is_lockedtodata      => rx_is_lockedtodata,
+        rx_is_lockedtoref       => rx_is_lockedtoref(3 downto 0),
+        rx_is_lockedtodata      => rx_is_lockedtodata(3 downto 0),
         pll_locked              => pll_locked,
         tx_cal_busy             => tx_cal_busy,
         rx_cal_busy             => rx_cal_busy,
@@ -268,10 +259,10 @@ begin
     g_rx_align: for I in 0 to 3 generate
         e_rx_align: entity work.rx_align
         port map(
-            o_data                  => o_data_fast_parallel(31+I*32 downto I*32),
-            o_datak                 => o_datak(3+I*4 downto I*4),
+            o_data                  => rx_data_parallel(31+I*32 downto I*32),
+            o_datak                 => rx_datak(3+I*4 downto I*4),
 
-            o_locked                => open,
+            o_locked                => locked(I),
 
             i_data                  => data_not_aligned(31+I*32 downto I*32),
             i_datak                 => datak_not_aligned(3+I*4 downto I*4),
@@ -307,7 +298,7 @@ begin
         rx_analogreset          => rx_analogreset,
         rx_digitalreset         => rx_digitalreset,
         rx_ready                => rx_ready(3 downto 0),
-        rx_is_lockedtodata      => rx_is_lockedtodata,
+        rx_is_lockedtodata      => rx_is_lockedtodata(3 downto 0),
         rx_cal_busy             => rx_cal_busy--,
     );
     
@@ -373,7 +364,7 @@ begin
         i_cda_max           => lvds_cda_max,
         i_dpa_locked        => lvds_dpa_locked,
         i_rx_locked         => lvds_rx_locked,
-        o_ready             => open,
+        o_ready             => locked(6),
         o_data_align        => lvds_data_align,
         o_pll_areset        => lvds_pll_areset,
         o_dpa_lock_reset    => lvds_dpa_lock_reset,
@@ -441,125 +432,31 @@ begin
 -- I2C reading
 --------------------------------------------------
 
-    firefly_i2c: entity work.i2c_master
+    firefly_i2c: entity work.firefly_i2c
     generic map(
-        input_clk   => 50_000_000,  --input clock speed from user logic in Hz
-        bus_clk     => 400_000--,   --speed the i2c bus (scl) will run at in Hz
+        I2C_DELAY_g     => I2C_DELAY_g--,
     )
     port map(
-        clk         => i_clk_i2c,
-        reset_n     => i_reset_n,
-        ena         => i2c_ena,
-        addr        => i2c_addr,
-        rw          => i2c_rw,
-        data_wr     => i2c_data_wr,
-        busy        => i2c_busy,
-        data_rd     => i2c_data_rd,
-        ack_error   => open,
-        sda         => io_sda,
-        scl         => io_scl--,
+        i_clk           => i_clk_i2c,
+        i_reset_n       => i_reset_n,
+        i_i2c_enable    => i_i2c_enable,
+        o_Mod_Sel_n     => o_Mod_Sel_n,
+        io_scl          => io_scl,
+        io_sda          => io_sda,
+        i_int_n         => i_int_n,
+        i_modPrs_n      => i_modPrs_n--,
     );
 
-    process(i_clk_i2c, i_reset_n)
-    variable busy_cnt           : integer := 0;
-    begin
-        if(i_reset_n = '0') then
-            i2c_state       <= idle;
-            i2c_ena         <= '0';
-            o_Mod_Sel_n     <= "11";
-            i2c_rw          <= '1';
-            i2c_busy_prev   <= '0';
-            i2c_counter     <= (others => '0');
-            
-        elsif(rising_edge(i_clk_i2c)) then
-            case i2c_state is
-                when idle =>
-                    o_Mod_Sel_n     <= "11";
-                    i2c_counter     <= (others => '0');
-                    if(i_i2c_enable = '1') then 
-                        i2c_state       <= waiting1;
-                    end if;
-                when waiting1 =>
-                    o_Mod_Sel_n(0)  <= '0'; -- want to talk to firefly 1 (active low)
-                    o_Mod_Sel_n(1)  <= '1';
-                    i2c_counter     <= i2c_counter + 1;
-                    
-                    if(i2c_counter = I2C_DELAY_g) then -- wait for assert time of mod_sel (a few hundred ms)
-                        i2c_state       <= i2cffly1;
-                    end if;
-                    
-                when i2cffly1 => -- i2c transaction with firefly 1
-                    i2c_busy_prev   <= i2c_busy;
-                    i2c_counter     <= (others => '0');
-                    if(i2c_busy_prev = '0' AND i2c_busy = '1') then
-                        busy_cnt := busy_cnt + 1;
-                    end if;
-                    
-                    case busy_cnt is
-                        when 0 =>
-                            i2c_ena     <= '1';
-                            i2c_addr    <= FFLY_DEV_ADDR_7;
-                            i2c_rw      <= '0'; -- 0: write, 1: read
-                            i2c_data_wr <= ADDR_TEMPERATURE;
-                        when 1 =>
-                            i2c_rw      <= '1';
-                        when 2 =>
-                            i2c_rw      <= '0';
-                            i2c_data_wr <= RX1_PWR_1;
-                            if(i2c_busy = '0') then
-                                i2c_data(7 downto 0) <= i2c_data_rd; -- read data from busy_cnt = 1
-                            end if;
-                        when 3 =>
-                            i2c_rw      <= '1';
-                        when 4 =>
-                            i2c_rw      <= '0';
-                            i2c_data_wr <= RX1_PWR_2;
-                            if(i2c_busy = '0') then
-                                i2c_data(15 downto 8) <= i2c_data_rd; -- read data from busy_cnt = 1
-                            end if;
-                        when 5 =>
-                            i2c_rw      <= '1';
-                        when 6 =>
-                            i2c_ena     <= '0';
-                            if(i2c_busy = '0') then
-                                i2c_data(23 downto 16)  <= i2c_data_rd;
-                                busy_cnt                := 0;
-                                i2c_state               <= waiting2;
-                            end if;
-                        when others => null;
-                    end case;
-                    
-                when waiting2 =>
-                    o_Mod_Sel_n(1)  <= '0';
-                    o_Mod_Sel_n(0)  <= '1';
-                    i2c_state       <= i2cffly2;
-                    i2c_counter     <= i2c_counter + 1;
-                    
-                    if(i2c_counter = I2C_DELAY_g) then -- wait for assert time of mod_sel (a few hundred ms)
-                        i2c_state       <= i2cffly1;
-                    end if;
-                when i2cffly2 => -- i2c transaction with firefly 2
-                --todo: insert same thing when ffly1 is working
-                    i2c_state       <= idle;
-                    i2c_counter     <= (others => '0');
-                    
-                when others =>
-                    i2c_state       <= idle;
-            end case;
-        end if;
-    end process;
-
-
-    dnca: entity work.doNotCompileAwayMux
-    generic map(
-        WIDTH_g   => 31--,
-    )
-    port map(
-        i_clk               => i_clk_i2c,
-        i_reset_n           => i_reset_n,
-        i_doNotCompileAway  => i2c_data & lvds_8b10b_out_in_clk125_global,
-        o_led               => o_testout--,
-    );
+--    dnca: entity work.doNotCompileAwayMux
+--    generic map(
+--        WIDTH_g   => 31--,
+--    )
+--    port map(
+--        i_clk               => i_clk_i2c,
+--        i_reset_n           => i_reset_n,
+--        i_doNotCompileAway  => i2c_data & lvds_8b10b_out_in_clk125_global,
+--        o_led               => o_testout--,
+--    );
 
 --------------------------------------------------
 -- Avalon
@@ -623,22 +520,13 @@ begin
                 if ( av_ctrl.write = '1' ) then rx_rst_n(ch) <= not av_ctrl.writedata(0); end if;
                 --
             when X"21" =>
-                if(ch < 4) then 
-                    -- rx status
-                    av_ctrl.readdata(0) <= rx_ready(ch);
-                    av_ctrl.readdata(1) <= rx_is_lockedtoref(ch);
-                    av_ctrl.readdata(2) <= rx_is_lockedtodata(ch);
-                    -- av_ctrl.readdata(11 downto 8) <= (others => '1');
-                    av_ctrl.readdata(32/8-1 + 8 downto 8) <= rx(ch).syncstatus;
-                    av_ctrl.readdata(12) <= rx(ch).locked;
-                else
-                    av_ctrl.readdata(0) <= '0';
-                    av_ctrl.readdata(1) <= '0';
-                    av_ctrl.readdata(2) <= '0';
-                    -- av_ctrl.readdata(11 downto 8) <= (others => '1');
-                    av_ctrl.readdata(32/8-1 + 8 downto 8) <= (others => '0');
-                    av_ctrl.readdata(12) <= '0';
-                end if;
+                -- rx status
+                av_ctrl.readdata(0) <= rx_ready(ch);
+                av_ctrl.readdata(1) <= rx_is_lockedtoref(ch);
+                av_ctrl.readdata(2) <= rx_is_lockedtodata(ch);
+                -- av_ctrl.readdata(11 downto 8) <= (others => '1');
+                av_ctrl.readdata(32/8-1 + 8 downto 8) <= syncstatus(ch*4+3 downto ch*4);
+                av_ctrl.readdata(12) <= locked(ch);
                 --
             when X"22" =>
                 -- rx errors
@@ -649,7 +537,7 @@ begin
                     av_ctrl.readdata(3 downto 0) <= (others => '0');
                     av_ctrl.readdata(7 downto 4) <= (others => '0');
                 end if;
-                av_ctrl.readdata(8) <= (others => '0');--rx_fifo_error(ch);
+                av_ctrl.readdata(8) <= '0';--rx_fifo_error(ch);
                 --
             when X"23" =>
                 av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).LoL_cnt;
@@ -657,9 +545,19 @@ begin
                 av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).err_cnt;
                 --
             when X"2A" =>
-                av_ctrl.readdata(31 downto 0) <= (others => '0'); --rx(ch).data;
+                if(ch < 4) then
+                    av_ctrl.readdata(31 downto 0) <= rx_data_parallel(32*ch+31 downto 32*ch);
+                elsif(ch = 6) then
+                    av_ctrl.readdata(31 downto 0) <= x"000000" & lvds_8b10b_out;
+                else
+                    av_ctrl.readdata(31 downto 0) <= (others => '0');
+                end if;
             when X"2B" =>
-                av_ctrl.readdata(31 downto 0) <= (others => '0'); --rx(ch).datak;
+                if(ch<4) then
+                    av_ctrl.readdata(31 downto 0) <= x"0000000" & rx_datak(4*ch+3 downto ch*4);
+                else
+                    av_ctrl.readdata(31 downto 0) <= (others => '0');
+                end if;
             when X"2C" =>
                 av_ctrl.readdata(31 downto 0) <= (others => '0'); --rx(ch).Gbit;
                 --
