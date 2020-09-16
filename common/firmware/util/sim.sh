@@ -16,10 +16,10 @@ mkdir -p .cache
 cd .cache || exit 1
 
 OPTS=(
-    --ieee=synopsys -fexplicit
-    -fpsl
-    --mb-comments
     --std=08
+    --ieee=synopsys -fexplicit
+    --mb-comments
+    -fpsl
 )
 
 [ -d "$HOME/.local/share/ghdl/vendors/altera" ] && OPTS+=(-P"$HOME/.local/share/ghdl/vendors/altera")

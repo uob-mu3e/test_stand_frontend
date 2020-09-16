@@ -8,10 +8,10 @@ port (
     MSCB_OUT        : out   std_logic;
     MSCB_OE         : out   std_logic;
 
-    Arduino_IO13    : in   std_logic;
-    Arduino_IO12    : out  std_logic;
-    Arduino_IO11    : out  std_logic;
-    Arduino_IO10    : out  std_logic;
+    Arduino_IO13    : in    std_logic;
+    Arduino_IO12    : out   std_logic;
+    Arduino_IO11    : out   std_logic;
+    Arduino_IO10    : out   std_logic;
 
     SWITCH1         : in    std_logic;
     SWITCH2         : in    std_logic;

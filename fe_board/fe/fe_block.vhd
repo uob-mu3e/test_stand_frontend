@@ -35,6 +35,8 @@ port (
     o_spi_sclk      : out   std_logic;
     o_spi_ss_n      : out   std_logic_vector(15 downto 0);
 
+
+
     -- QSFP links
     i_qsfp_rx       : in    std_logic_vector(3 downto 0);
     o_qsfp_tx       : out   std_logic_vector(3 downto 0);
@@ -42,6 +44,8 @@ port (
     -- POD links (reset system)
     i_pod_rx        : in    std_logic_vector(3 downto 0);
     o_pod_tx        : out   std_logic_vector(3 downto 0);
+
+
 
     i_can_terminate : in std_logic:='0';
 
@@ -80,8 +84,12 @@ port (
     o_mupix_reg_we      : out   std_logic;
     o_mupix_reg_wdata   : out   std_logic_vector(31 downto 0);
 
+
+
     -- reset system
     o_run_state_125 : out   run_state_t;
+
+
 
     -- nios clock (async)
     i_nios_clk      : in    std_logic;
@@ -121,11 +129,15 @@ architecture arch of fe_block is
 
     signal av_nios : work.util.avalon_t;
 
+
+
     signal linktest_data    : std_logic_vector(31 downto 0);
     signal linktest_datak   : std_logic_vector(3 downto 0);
     signal linktest_granted : std_logic_vector(N_LINKS-1 downto 0);
 
     signal av_mscb : work.util.avalon_t;
+
+
 
     signal reg_reset_bypass : std_logic_vector(31 downto 0);
     signal reg_reset_bypass_payload : std_logic_vector(31 downto 0);
@@ -500,6 +512,8 @@ begin
         i_clk           => i_clk_156--,
     );
 
+
+
     e_merger : entity work.data_merger
     generic map(
         N_LINKS                 => N_LINKS,
@@ -508,6 +522,7 @@ begin
     port map (
         fpga_ID_in              => i_fpga_id_reg,
         FEB_type_in             => i_fpga_type,
+
         run_state               => run_state_156,
         run_number              => run_number,
 

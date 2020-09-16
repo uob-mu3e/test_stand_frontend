@@ -64,7 +64,7 @@ struct mupix_t {
             printf("  [1] => set default chip B DACs\n");
             printf("  [2] => set default chip C DACs\n");
             printf("  [3] => set default chip E DACs\n");
-	    printf("  [4] => lvds links\n");
+            printf("  [4] => lvds links\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -83,7 +83,7 @@ struct mupix_t {
                 set_chip_dacs(3, default_mupix_dacs);
                 break;
             case '4':
-	        menu_lvds(sc->ram);		
+                menu_lvds(sc->ram);
                 break;
             case 'b':
                 set_board_dacs(0, default_board_dacs);
@@ -109,14 +109,12 @@ struct mupix_t {
         case CMD_MUPIX_BOARD_CFG:
             status=set_board_dacs(data[0], &(data[1]));
 
-/*
-        if(sc->ram->regs.scifi.ctrl.dummy&1){
-              //when configured as dummy do the spi transaction,
-              //but always return success to switching board
-	      if(status!=FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
-              status=FEB_REPLY_SUCCESS;
-
-           }*/
+/*            if(sc->ram->regs.scifi.ctrl.dummy&1) {
+                // when configured as dummy do the spi transaction,
+                // but always return success to switching board
+                if(status != FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
+                status = FEB_REPLY_SUCCESS;
+            }*/
             return status;
         default:
             return FEB_REPLY_ERROR;

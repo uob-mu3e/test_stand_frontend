@@ -12,7 +12,7 @@ generic (
         NLINKS: integer := 4;
         LINK_FIFO_ADDR_WIDTH : integer := 10 --;
 );
-port(
+port (
         i_clk_data:         in  std_logic;
         i_clk_dma:          in  std_logic;
         i_reset_data_n:     in  std_logic;

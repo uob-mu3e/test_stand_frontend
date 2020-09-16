@@ -18,12 +18,12 @@ use altera.altera_europa_support_lib.all;
 
 
 entity pcie_block is 
-	generic (
+generic (
 			DMAMEMWRITEADDRSIZE : integer := 14;
 			DMAMEMREADADDRSIZE  : integer := 12;
 			DMAMEMWRITEWIDTH	  : integer := 32
-		);
-	port (
+);
+port (
 		local_rstn:				in		std_logic;
 		appl_rstn:				in    std_logic;
 		refclk:					in		std_logic;
@@ -84,7 +84,7 @@ entity pcie_block is
 		pb_in					: in std_logic_vector(2 downto 0);
 		inaddr32_r			: out STD_LOGIC_VECTOR (31 DOWNTO 0);
 		inaddr32_w			: out STD_LOGIC_VECTOR (31 DOWNTO 0)
-	);
+);
 end entity;
 
 
@@ -650,12 +650,12 @@ begin
 	 application_reset_n <= '0' when local_rstn = '0' or appl_rstn = '0' else '1';
 	 
     e_pcie_application : entity work.pcie_application
-	 	generic map(
+    generic map(
 			DMAMEMWRITEADDRSIZE => DMAMEMWRITEADDRSIZE,
 			DMAMEMREADADDRSIZE  => DMAMEMREADADDRSIZE,
 			DMAMEMWRITEWIDTH	  => DMAMEMWRITEWIDTH
-	)
-	port map(
+    )
+    port map (
 		local_rstn			=> application_reset_n,
 		refclk				=> pld_clk,
 	
