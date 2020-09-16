@@ -29,6 +29,28 @@ port (
     A10_REFCLK_GBT_P_6                  : IN    STD_LOGIC;
     A10_REFCLK_GBT_P_7                  : IN    STD_LOGIC;
 
+    -- PCIe
+    A10_PCIE_RX_P_7                     : in    std_logic;
+    A10_PCIE_RX_P_6                     : in    std_logic;
+    A10_PCIE_RX_P_5                     : in    std_logic;
+    A10_PCIE_RX_P_4                     : in    std_logic;
+    A10_PCIE_RX_P_3                     : in    std_logic;
+    A10_PCIE_RX_P_2                     : in    std_logic;
+    A10_PCIE_RX_P_1                     : in    std_logic;
+    A10_PCIE_RX_P_0                     : in    std_logic;
+    A10_PCIE_TX_P_7                     : out   std_logic;
+    A10_PCIE_TX_P_6                     : out   std_logic;
+    A10_PCIE_TX_P_5                     : out   std_logic;
+    A10_PCIE_TX_P_4                     : out   std_logic;
+    A10_PCIE_TX_P_3                     : out   std_logic;
+    A10_PCIE_TX_P_2                     : out   std_logic;
+    A10_PCIE_TX_P_1                     : out   std_logic;
+    A10_PCIE_TX_P_0                     : out   std_logic;
+    LVT_A10_PERST_N                     : in    std_logic;
+    A10_CLK_PCIE_P_0                    : in    std_logic;
+
+
+
     -- SI5345_1
     A10_SI5345_1_SMB_SCL                : inout std_logic;
     A10_SI5345_1_SMB_SDA                : inout std_logic;
@@ -84,6 +106,8 @@ architecture arch of top is
     );
 
 
+
+    signal pcie_rx, pcie_tx : std_logic_vector(7 downto 0);
 
 begin
 
@@ -184,6 +208,11 @@ begin
         i_reset_n   => nios_reset_n,
         i_clk       => nios_clk--,
     );
+
+
+
+    pcie_rx <= A10_PCIE_RX_P_7 & A10_PCIE_RX_P_6 & A10_PCIE_RX_P_5 & A10_PCIE_RX_P_4 & A10_PCIE_RX_P_3 & A10_PCIE_RX_P_2 & A10_PCIE_RX_P_1 & A10_PCIE_RX_P_0;
+    A10_PCIE_TX_P_7 <= pcie_tx(7); A10_PCIE_TX_P_6 <= pcie_tx(6); A10_PCIE_TX_P_5 <= pcie_tx(5); A10_PCIE_TX_P_4 <= pcie_tx(4); A10_PCIE_TX_P_3 <= pcie_tx(3); A10_PCIE_TX_P_2 <= pcie_tx(2); A10_PCIE_TX_P_1 <= pcie_tx(1); A10_PCIE_TX_P_0 <= pcie_tx(0);
 
 
 
