@@ -17,12 +17,16 @@
 #include "../include/mudaq_device_constants.h"
 #include "../include/mudaq_registers.h"
 
-#include <linux/version.h>
-
 #include <linux/pci.h>
+#include <linux/uaccess.h>
+#include <linux/version.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) // add `signal.h` file
 #include <linux/sched/signal.h>
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
+#define fallthrough do {} while (0)
 #endif
 
 #define ERROR(fmt, ...) \
