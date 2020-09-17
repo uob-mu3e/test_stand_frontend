@@ -137,6 +137,7 @@ signal lvds_cda_max         : std_logic;
 signal lvds_dpa_locked      : std_logic;
 signal lvds_rx_locked       : std_logic;
 signal lvds_align_clicks    : std_logic_vector(7 downto 0);
+signal lvds_o_ready         : std_logic;
 
 -- lvds data signals
 signal lvds_in_10b                      : std_logic_vector(9 downto 0);
@@ -157,6 +158,14 @@ signal tx_ready             : std_logic_vector(7 downto 0);
 signal rx_ready             : std_logic_vector(7 downto 0);
 signal locked               : std_logic_vector(7 downto 0);
 
+signal av_rx_data_parallel  : std_logic_vector(127 downto 0);
+signal av_rx_datak          : std_logic_vector(15 downto 0);
+signal av_rx_analogreset    : std_logic_vector(3 downto 0);
+signal av_rx_digitalreset   : std_logic_vector(3 downto 0);
+signal av_tx_ready          : std_logic_vector(7 downto 0);
+signal av_opt_rx_power      : std_logic_vector(127 downto 0);
+signal av_temperature       : std_logic_vector(15 downto 0);
+
 -- Firefly status
 signal temperature          : std_logic_vector(15 downto 0);
 signal opt_rx_power         : std_logic_vector(127 downto 0);
@@ -166,10 +175,8 @@ begin
     o_Rst_n         <= (others => '1');--DO NOT DO THIS: (others => i_reset_n); !!! Phase will be not fixed
     o_clk_reco      <= lvds_rx_clk;
 
-    tx_analogreset          <= tx_analogreset2 & tx_analogreset1;
-    tx_digitalreset         <= tx_digitalreset2 & tx_digitalreset1;
-    o_data_fast_parallel    <= rx_data_parallel;
-    o_datak                 <= rx_datak;
+    o_data_fast_parallel    <= av_rx_data_parallel;
+    o_datak                 <= av_rx_datak;
 --------------------------------------------------
 -- transceiver (2)
 --------------------------------------------------
@@ -368,7 +375,7 @@ begin
         i_cda_max           => lvds_cda_max,
         i_dpa_locked        => lvds_dpa_locked,
         i_rx_locked         => lvds_rx_locked,
-        o_ready             => locked(6),
+        o_ready             => lvds_o_ready,
         o_data_align        => lvds_data_align,
         o_pll_areset        => lvds_pll_areset,
         o_dpa_lock_reset    => lvds_dpa_lock_reset,
@@ -410,25 +417,7 @@ begin
         AO => lvds_8b10b_out(0)
     );
 
-    e_fifo8b : entity work.ip_dcfifo
-    generic map(
-        ADDR_WIDTH  => 2,
-        DATA_WIDTH  => 8,
-        SHOWAHEAD   => "OFF",
-        OVERFLOW    => "ON",
-        DEVICE      => "Arria V"--,
-    )
-    port map(
-        aclr    => lvds_fifo_reset,
-        data    => lvds_8b10b_out,
-        rdclk   => i_clk_lvds,
-        rdreq   => '1',
-        wrclk   => lvds_rx_clk,
-        wrreq   => '1',
-        q       => lvds_8b10b_out_in_clk125_global
-    );
-
-    -- sync 8b10b_out properly into i_clk_lvds for alignment in lvds_controller (e_fifo8b above)
+    -- sync 8b10b_out properly into i_clk_lvds for alignment in lvds_controller (e_fifo8b)
     -- forward the "not-synced" signal to state controller (running on reconstructed clock lvds_rx_clk)
     o_data_lvds_parallel(7 downto 0)    <= lvds_8b10b_out;
 
@@ -470,9 +459,9 @@ begin
 --------------------------------------------------
 
     -- av_ctrl process, avalon iface
-    process(i_clk, i_reset_n)
+    process(i_clk, i_reset_156_n)
     begin
-    if ( i_reset_n = '0' ) then
+    if ( i_reset_156_n = '0' ) then
         av_ctrl.waitrequest <= '1';
         ch <= 0;
         rx_seriallpbken <= (others => '0');
@@ -509,7 +498,7 @@ begin
                 --
             when X"11" =>
                 -- tx status
-                av_ctrl.readdata(0) <= tx_ready(ch);
+                av_ctrl.readdata(0) <= av_tx_ready(ch);
                 --
             when X"12" =>
                 -- tx errors
@@ -518,8 +507,8 @@ begin
             when X"20" =>
                 -- rx reset
                 if(ch < 4) then
-                    av_ctrl.readdata(0) <= rx_analogreset(ch);
-                    av_ctrl.readdata(4) <= rx_digitalreset(ch);
+                    av_ctrl.readdata(0) <= av_rx_analogreset(ch);
+                    av_ctrl.readdata(4) <= av_rx_digitalreset(ch);
                 else
                     av_ctrl.readdata(0) <= '0';
                     av_ctrl.readdata(4) <= '0';
@@ -552,11 +541,11 @@ begin
                 av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).err_cnt;
                 --
             when X"25" =>
-                av_ctrl.readdata(31 downto 0) <= x"0000" & opt_rx_power(16*ch+15 downto 16*ch);-- RX optical power
+                av_ctrl.readdata(31 downto 0) <= x"0000" & av_opt_rx_power(16*ch+15 downto 16*ch);-- RX optical power
                 --
             when X"2A" =>
                 if(ch < 4) then
-                    av_ctrl.readdata(31 downto 0) <= rx_data_parallel(32*ch+31 downto 32*ch);
+                    av_ctrl.readdata(31 downto 0) <= av_rx_data_parallel(32*ch+31 downto 32*ch);
                 elsif(ch = 6) then
                     av_ctrl.readdata(31 downto 0) <= x"000000" & lvds_8b10b_out;
                 else
@@ -564,7 +553,7 @@ begin
                 end if;
             when X"2B" =>
                 if(ch<4) then
-                    av_ctrl.readdata(31 downto 0) <= x"0000000" & rx_datak(4*ch+3 downto ch*4);
+                    av_ctrl.readdata(31 downto 0) <= x"0000000" & av_rx_datak(4*ch+3 downto ch*4);
                 else
                     av_ctrl.readdata(31 downto 0) <= (others => '0');
                 end if;
@@ -626,4 +615,88 @@ begin
         end process;
     end block;
 
+--------------------------------------------------
+-- Sync FIFO's
+--------------------------------------------------
+    sync_fifo1 : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 2,
+        DATA_WIDTH  => 8,
+        SHOWAHEAD   => "OFF",
+        OVERFLOW    => "ON",
+        DEVICE      => "Arria V"--,
+    )
+    port map(
+        aclr    => lvds_fifo_reset,
+        data    => lvds_8b10b_out,
+        rdclk   => i_clk_lvds,
+        rdreq   => '1',
+        wrclk   => lvds_rx_clk,
+        wrreq   => '1',
+        q       => lvds_8b10b_out_in_clk125_global
+    );
+
+    sync_fifo2 : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 2,
+        DATA_WIDTH  => 152,
+        SHOWAHEAD   => "OFF",
+        OVERFLOW    => "ON",
+        DEVICE      => "Arria V"--,
+    )
+    port map(
+        aclr            => '0',
+        data            => av_tx_ready & rx_data_parallel & rx_datak,
+        rdclk           => i_clk,
+        rdreq           => '1',
+        wrclk           => rx_clk(0),
+        wrreq           => '1',
+        q(15 downto 0)      => av_rx_datak,
+        q(143 downto 16)    => av_rx_data_parallel,
+        q(151 downto 144)   => av_tx_ready--,
+    );
+
+    sync_fifo3 : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 2,
+        DATA_WIDTH  => 168,
+        SHOWAHEAD   => "OFF",
+        OVERFLOW    => "ON",
+        DEVICE      => "Arria V"--,
+    )
+    port map(
+        aclr            => '0',
+        data            =>  opt_rx_power & temperature
+                            & rx_analogreset & rx_digitalreset 
+                            & tx_analogreset2 & tx_analogreset1 
+                            & tx_digitalreset2 & tx_digitalreset1,
+        rdclk           => i_clk,
+        rdreq           => '1',
+        wrclk           => i_sysclk,
+        wrreq           => '1',
+        q(7 downto 0)   => tx_digitalreset,
+        q(15 downto 8)  => tx_analogreset,
+        q(19 downto 16) => av_rx_digitalreset,
+        q(23 downto 20) => av_rx_analogreset,
+        q(39 downto 24) => av_temperature,
+        q(167 downto 40)=> av_opt_rx_power--,
+    );
+
+    sync_fifo4 : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 2,
+        DATA_WIDTH  => 1,
+        SHOWAHEAD   => "OFF",
+        OVERFLOW    => "ON",
+        DEVICE      => "Arria V"--,
+    )
+    port map(
+        aclr            => '0',
+        data(0)         => lvds_o_ready,
+        rdclk           => i_clk,
+        rdreq           => '1',
+        wrclk           => i_clk_lvds,
+        wrreq           => '1',
+        q(0)            => locked(6)--,
+    );
 end rtl;
