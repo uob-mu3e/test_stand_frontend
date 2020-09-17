@@ -53,34 +53,34 @@ port (
 
     -- pcie writeable memory
     writememclk         : in    std_logic;
-    writememreadaddr    : in    std_logic_vector(15 downto 0);
+    writememreadaddr    : in    std_logic_vector(15 downto 0) := (others => '0');
     writememreaddata    : out   std_logic_vector(31 DOWNTO 0);
 
     -- pcie readable memory
-    readmem_data        : in    std_logic_vector(31 downto 0);
-    readmem_addr        : in    std_logic_vector(15 downto 0);
+    readmem_data        : in    std_logic_vector(31 downto 0) := (others => '0');
+    readmem_addr        : in    std_logic_vector(15 downto 0) := (others => '0');
     readmemclk          : in    std_logic;
-    readmem_wren        : in    std_logic;
-    readmem_endofevent  : in    std_logic;
+    readmem_wren        : in    std_logic := '0';
+    readmem_endofevent  : in    std_logic := '0';
 
     -- dma memory
-    dma_data            : in    std_logic_vector(DMAMEMWRITEWIDTH-1 downto 0);
+    dma_data            : in    std_logic_vector(DMAMEMWRITEWIDTH-1 downto 0) := (others => '0');
     dmamemclk           : in    std_logic;
-    dmamem_wren         : in    std_logic;
-    dmamem_endofevent   : in    std_logic;
+    dmamem_wren         : in    std_logic := '0';
+    dmamem_endofevent   : in    std_logic := '0';
     dmamemhalffull      : out   std_logic;
 
     -- second dma memory
-    dma2_data           : in    std_logic_vector(DMAMEMWRITEWIDTH-1 downto 0);
+    dma2_data           : in    std_logic_vector(DMAMEMWRITEWIDTH-1 downto 0) := (others => '0');
     dma2memclk          : in    std_logic;
-    dma2mem_wren        : in    std_logic;
-    dma2mem_endofevent  : in    std_logic;
+    dma2mem_wren        : in    std_logic := '0';
+    dma2mem_endofevent  : in    std_logic := '0';
     dma2memhalffull     : out   std_logic;
 
     -- test ports
     testout             : out   std_logic_vector(127 DOWNTO 0);
     testout_ena         : out   std_logic;
-    pb_in               : in    std_logic_vector(2 downto 0);
+    pb_in               : in    std_logic_vector(2 downto 0) := (others => '0');
     inaddr32_r          : out   std_logic_vector(31 DOWNTO 0);
     inaddr32_w          : out   std_logic_vector(31 DOWNTO 0)
 );

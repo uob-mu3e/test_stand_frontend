@@ -7,6 +7,7 @@ APP_DIR=software/app
 
 IPs := \
     $(patsubst %.tcl,%.sopcinfo,$(wildcard ip/*.tcl)) \
+    $(patsubst %.tcl,%.sopcinfo,$(wildcard pcieapp/*.tcl)) \
     nios.sopcinfo
 
 include util/makefile.mk
