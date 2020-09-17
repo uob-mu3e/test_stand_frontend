@@ -137,7 +137,7 @@ begin
                             i2c_rw      <= '0';
                             i2c_data_wr <= ADDR_RX_PWR(i2c_ch);--RX1_PWR2;
                             if(i2c_busy = '0') then
-                                o_pwr((i2c_modSel-1)*64+8*i2c_ch+7 downto (i2c_modSel-1)*64+8*i2c_ch) <= i2c_data_rd; -- read data from busy_cnt = 1
+                                o_pwr((i2c_modSel-1)*64+8*(i2c_ch-1)+7 downto (i2c_modSel-1)*64+8*(i2c_ch-1)) <= i2c_data_rd; -- read data from busy_cnt = 1
                                 if(i2c_ch < 7) then
                                     busy_cnt <= 3;
                                 end if;
