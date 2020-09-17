@@ -22,7 +22,10 @@ ENTITY firefly_i2c is
         io_scl                  : inout std_logic;
         io_sda                  : inout std_logic;
         i_int_n                 : in    std_logic_vector(1 downto 0);
-        i_modPrs_n              : in    std_logic_vector(1 downto 0)--;
+        i_modPrs_n              : in    std_logic_vector(1 downto 0);
+
+        o_pwr                   : out   std_logic_vector(127 downto 0); -- RX optical power
+        o_temp                  : out   std_logic_vector(15 downto 0)--; -- temperature in °C
     );
 END ENTITY;
 
@@ -36,10 +39,12 @@ architecture rtl of firefly_i2c is
     signal i2c_addr             : std_logic_vector(6 downto 0);
     signal i2c_data_rd          : std_logic_vector(7 downto 0);
     signal i2c_data_wr          : std_logic_vector(7 downto 0);
-    type   i2c_state_type         is (idle, waiting1, i2cffly1, waiting2, i2cffly2);
+    type   i2c_state_type         is (idle, waiting1, i2cffly1);
     signal i2c_state            : i2c_state_type;
-    signal i2c_data             : std_logic_vector(23 downto 0);
     signal i2c_counter          : unsigned(31 downto 0);
+    signal i2c_modSel           : integer range 0 to 2;
+    signal i2c_ch               : integer range 0 to 4;
+    signal busy_cnt             : integer := 0;
 
 begin
 
@@ -63,27 +68,41 @@ begin
     );
 
     process(i_clk, i_reset_n)
-    variable busy_cnt           : integer := 0;
     begin
         if(i_reset_n = '0') then
             i2c_state       <= idle;
             i2c_ena         <= '0';
-            o_Mod_Sel_n     <= "11";
+            i2c_modSel      <=  0;
             i2c_rw          <= '1';
             i2c_busy_prev   <= '0';
             i2c_counter     <= (others => '0');
+            i2c_ch          <=  0;
+            busy_cnt        <=  0;
             
         elsif(rising_edge(i_clk)) then
+            if i2c_modSel = 1 then
+                o_Mod_Sel_n <= "10";
+            elsif i2c_modSel = 2 then 
+                o_Mod_Sel_n <= "01";
+            else 
+                o_Mod_Sel_n <= "11";
+            end if;
+            
             case i2c_state is
                 when idle =>
-                    o_Mod_Sel_n     <= "11";
                     i2c_counter     <= (others => '0');
                     if(i_i2c_enable = '1') then 
                         i2c_state       <= waiting1;
+                        if i2c_modSel = 1 then
+                            i2c_modSel <= 2;
+                        elsif i2c_modSel = 2 then 
+                            i2c_modSel <= 1;
+                        else 
+                            i2c_modSel <= 1;
+                        end if;
                     end if;
                 when waiting1 =>
-                    o_Mod_Sel_n(0)  <= '0'; -- want to talk to firefly 1 (active low)
-                    o_Mod_Sel_n(1)  <= '1';
+                    i2c_ch          <= 0;
                     i2c_counter     <= i2c_counter + 1;
                     
                     if(i2c_counter = I2C_DELAY_g) then -- wait for assert time of mod_sel (a few hundred ms)
@@ -94,7 +113,7 @@ begin
                     i2c_busy_prev   <= i2c_busy;
                     i2c_counter     <= (others => '0');
                     if(i2c_busy_prev = '0' AND i2c_busy = '1') then
-                        busy_cnt := busy_cnt + 1;
+                        busy_cnt    <= busy_cnt + 1;
                     end if;
                     
                     case busy_cnt is
@@ -107,44 +126,36 @@ begin
                             i2c_rw      <= '1';
                         when 2 =>
                             i2c_rw      <= '0';
-                            i2c_data_wr <= RX1_PWR_1;
+                            i2c_data_wr <= ADDR_RX_PWR(0);--RX1_PWR1;
                             if(i2c_busy = '0') then
-                                i2c_data(7 downto 0) <= i2c_data_rd; -- read data from busy_cnt = 1
+                                o_temp((i2c_modSel-1)*8+7 downto (i2c_modSel-1)*8) <= i2c_data_rd; -- read data from busy_cnt = 1
                             end if;
                         when 3 =>
                             i2c_rw      <= '1';
+                            --i2c_ch    <= i2c_ch + 1;
                         when 4 =>
                             i2c_rw      <= '0';
-                            i2c_data_wr <= RX1_PWR_2;
+                            i2c_data_wr <= ADDR_RX_PWR(i2c_ch);--RX1_PWR2;
                             if(i2c_busy = '0') then
-                                i2c_data(15 downto 8) <= i2c_data_rd; -- read data from busy_cnt = 1
+                                o_pwr((i2c_modSel-1)*64+8*i2c_ch+7 downto (i2c_modSel-1)*64+8*i2c_ch) <= i2c_data_rd; -- read data from busy_cnt = 1
+                                if(i2c_ch < 7) then
+                                    busy_cnt <= 3;
+                                end if;
                             end if;
                         when 5 =>
                             i2c_rw      <= '1';
                         when 6 =>
                             i2c_ena     <= '0';
                             if(i2c_busy = '0') then
-                                i2c_data(23 downto 16)  <= i2c_data_rd;
-                                busy_cnt                := 0;
-                                i2c_state               <= waiting2;
+                                o_pwr((i2c_modSel-1)*64+8*i2c_ch+7 downto (i2c_modSel-1)*64+8*i2c_ch)  <= i2c_data_rd;
+                                busy_cnt                <= 0;
+                                i2c_state               <= idle;
+                                i2c_ch                  <= 0;
                             end if;
-                        when others => null;
+                        when others => 
+                            busy_cnt <= 0;
                     end case;
-                    
-                when waiting2 =>
-                    o_Mod_Sel_n(1)  <= '0';
-                    o_Mod_Sel_n(0)  <= '1';
-                    i2c_state       <= i2cffly2;
-                    i2c_counter     <= i2c_counter + 1;
-                    
-                    if(i2c_counter = I2C_DELAY_g) then -- wait for assert time of mod_sel (a few hundred ms)
-                        i2c_state       <= i2cffly1;
-                    end if;
-                when i2cffly2 => -- i2c transaction with firefly 2
-                --todo: insert same thing when ffly1 is working
-                    i2c_state       <= idle;
-                    i2c_counter     <= (others => '0');
-                    
+
                 when others =>
                     i2c_state       <= idle;
             end case;

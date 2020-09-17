@@ -157,6 +157,10 @@ signal tx_ready             : std_logic_vector(7 downto 0);
 signal rx_ready             : std_logic_vector(7 downto 0);
 signal locked               : std_logic_vector(7 downto 0);
 
+-- Firefly status
+signal temperature          : std_logic_vector(15 downto 0);
+signal opt_rx_power         : std_logic_vector(127 downto 0);
+
 begin
 
     o_Rst_n         <= (others => '1');--DO NOT DO THIS: (others => i_reset_n); !!! Phase will be not fixed
@@ -444,7 +448,10 @@ begin
         io_scl          => io_scl,
         io_sda          => io_sda,
         i_int_n         => i_int_n,
-        i_modPrs_n      => i_modPrs_n--,
+        i_modPrs_n      => i_modPrs_n,
+
+        o_pwr           => opt_rx_power,
+        o_temp          => temperature--,
     );
 
 --    dnca: entity work.doNotCompileAwayMux
@@ -543,6 +550,9 @@ begin
                 av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).LoL_cnt;
             when X"24" =>
                 av_ctrl.readdata(31 downto 0) <= (others => '0');--rx(ch).err_cnt;
+                --
+            when X"25" =>
+                av_ctrl.readdata(31 downto 0) <= x"0000" & opt_rx_power(16*ch+15 downto 16*ch);-- RX optical power
                 --
             when X"2A" =>
                 if(ch < 4) then
