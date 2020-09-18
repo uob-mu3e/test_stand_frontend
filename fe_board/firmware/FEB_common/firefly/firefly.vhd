@@ -175,8 +175,8 @@ begin
     o_Rst_n         <= (others => '1');--DO NOT DO THIS: (others => i_reset_n); !!! Phase will be not fixed
     o_clk_reco      <= lvds_rx_clk;
 
-    o_data_fast_parallel    <= av_rx_data_parallel;
-    o_datak                 <= av_rx_datak;
+    o_data_fast_parallel    <= rx_data_parallel;
+    o_datak                 <= rx_datak;
 --------------------------------------------------
 -- transceiver (2)
 --------------------------------------------------
@@ -459,16 +459,16 @@ begin
 --------------------------------------------------
 
     -- av_ctrl process, avalon iface
-    process(i_clk, i_reset_156_n)
+    process(i_sysclk, i_reset_n)
     begin
-    if ( i_reset_156_n = '0' ) then
+    if ( i_reset_n = '0' ) then
         av_ctrl.waitrequest <= '1';
         ch <= 0;
         rx_seriallpbken <= (others => '0');
         tx_rst_n <= (others => '1');
         rx_rst_n <= (others => '1');
 
-    elsif rising_edge(i_clk) then
+    elsif rising_edge(i_sysclk) then
         av_ctrl.waitrequest <= '1';
 
         tx_rst_n <= (others => '1');
@@ -584,14 +584,14 @@ begin
 
         o_avs_waitrequest <= avs_waitrequest_i;
 
-        process(i_clk, i_reset_n)
+        process(i_sysclk, i_reset_n)
         begin
         if ( i_reset_n = '0' ) then
             avs_waitrequest_i <= '1';
             av_ctrl.read <= '0';
             av_ctrl.write <= '0';
             --
-        elsif rising_edge(i_clk) then
+        elsif rising_edge(i_sysclk) then
             avs_waitrequest_i <= '1';
 
             if ( i_avs_read /= i_avs_write and avs_waitrequest_i = '1' ) then
@@ -647,7 +647,7 @@ begin
     port map(
         aclr            => '0',
         data            => av_tx_ready & rx_data_parallel & rx_datak,
-        rdclk           => i_clk,
+        rdclk           => i_sysclk,--i_clk,
         rdreq           => '1',
         wrclk           => rx_clk(0),
         wrreq           => '1',
@@ -670,7 +670,7 @@ begin
                             & rx_analogreset & rx_digitalreset 
                             & tx_analogreset2 & tx_analogreset1 
                             & tx_digitalreset2 & tx_digitalreset1,
-        rdclk           => i_clk,
+        rdclk           => i_sysclk,
         rdreq           => '1',
         wrclk           => i_sysclk,
         wrreq           => '1',
@@ -693,7 +693,7 @@ begin
     port map(
         aclr            => '0',
         data(0)         => lvds_o_ready,
-        rdclk           => i_clk,
+        rdclk           => i_sysclk,
         rdreq           => '1',
         wrclk           => i_clk_lvds,
         wrreq           => '1',
