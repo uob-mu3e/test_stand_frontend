@@ -165,6 +165,14 @@ signal av_rx_digitalreset   : std_logic_vector(3 downto 0);
 signal av_tx_ready          : std_logic_vector(7 downto 0);
 signal av_opt_rx_power      : std_logic_vector(127 downto 0);
 signal av_temperature       : std_logic_vector(15 downto 0);
+signal av_rx_ready          : std_logic_vector(7 downto 0);
+signal av_lvds_data         : std_logic_vector(7 downto 0);
+signal av_locked            : std_logic_vector(7 downto 0);
+signal av_rx_is_lockedtoref     : std_logic_vector(7 downto 0);
+signal av_rx_is_lockedtodata    : std_logic_vector(7 downto 0);
+signal av_syncstatus        : std_logic_vector(15 downto 0);
+signal av_errdetect         : std_logic_vector(15 downto 0);
+signal av_disperr           : std_logic_vector(15 downto 0);
 
 -- Firefly status
 signal temperature          : std_logic_vector(15 downto 0);
@@ -175,8 +183,8 @@ begin
     o_Rst_n         <= (others => '1');--DO NOT DO THIS: (others => i_reset_n); !!! Phase will be not fixed
     o_clk_reco      <= lvds_rx_clk;
 
-    o_data_fast_parallel    <= rx_data_parallel;
-    o_datak                 <= rx_datak;
+    o_data_fast_parallel    <= av_rx_data_parallel;
+    o_datak                 <= av_rx_datak;
 --------------------------------------------------
 -- transceiver (2)
 --------------------------------------------------
@@ -459,16 +467,16 @@ begin
 --------------------------------------------------
 
     -- av_ctrl process, avalon iface
-    process(i_sysclk, i_reset_n)
+    process(i_clk, i_reset_156_n)
     begin
-    if ( i_reset_n = '0' ) then
+    if ( i_reset_156_n = '0' ) then
         av_ctrl.waitrequest <= '1';
         ch <= 0;
         rx_seriallpbken <= (others => '0');
         tx_rst_n <= (others => '1');
         rx_rst_n <= (others => '1');
 
-    elsif rising_edge(i_sysclk) then
+    elsif rising_edge(i_clk) then
         av_ctrl.waitrequest <= '1';
 
         tx_rst_n <= (others => '1');
@@ -517,18 +525,18 @@ begin
                 --
             when X"21" =>
                 -- rx status
-                av_ctrl.readdata(0) <= rx_ready(ch);
-                av_ctrl.readdata(1) <= rx_is_lockedtoref(ch);
-                av_ctrl.readdata(2) <= rx_is_lockedtodata(ch);
+                av_ctrl.readdata(0) <= av_rx_ready(ch);
+                av_ctrl.readdata(1) <= av_rx_is_lockedtoref(ch);
+                av_ctrl.readdata(2) <= av_rx_is_lockedtodata(ch);
                 -- av_ctrl.readdata(11 downto 8) <= (others => '1');
-                av_ctrl.readdata(32/8-1 + 8 downto 8) <= syncstatus(ch*4+3 downto ch*4);
-                av_ctrl.readdata(12) <= locked(ch);
+                av_ctrl.readdata(32/8-1 + 8 downto 8) <= av_syncstatus(ch*4+3 downto ch*4);
+                av_ctrl.readdata(12) <= av_locked(ch);
                 --
             when X"22" =>
                 -- rx errors
                 if(ch < 4) then 
-                    av_ctrl.readdata(3 downto 0) <= errdetect(4*ch+3 downto 4*ch);
-                    av_ctrl.readdata(7 downto 4) <= disperr(4*ch+3 downto 4*ch);
+                    av_ctrl.readdata(3 downto 0) <= av_errdetect(4*ch+3 downto 4*ch);
+                    av_ctrl.readdata(7 downto 4) <= av_disperr(4*ch+3 downto 4*ch);
                 else
                     av_ctrl.readdata(3 downto 0) <= (others => '0');
                     av_ctrl.readdata(7 downto 4) <= (others => '0');
@@ -542,12 +550,18 @@ begin
                 --
             when X"25" =>
                 av_ctrl.readdata(31 downto 0) <= x"0000" & av_opt_rx_power(16*ch+15 downto 16*ch);-- RX optical power
+            when X"26" =>
+                if(ch = 0 or ch = 4 or ch = 5 or ch = 6 ) then
+                    av_ctrl.readdata(31 downto 0) <= x"000000" & av_temperature(7 downto 0);-- Firefly temperature
+                else
+                    av_ctrl.readdata(31 downto 0) <= x"000000" & av_temperature(15 downto 8);
+                end if;
                 --
             when X"2A" =>
                 if(ch < 4) then
                     av_ctrl.readdata(31 downto 0) <= av_rx_data_parallel(32*ch+31 downto 32*ch);
                 elsif(ch = 6) then
-                    av_ctrl.readdata(31 downto 0) <= x"000000" & lvds_8b10b_out;
+                    av_ctrl.readdata(31 downto 0) <= x"000000" & av_lvds_data;
                 else
                     av_ctrl.readdata(31 downto 0) <= (others => '0');
                 end if;
@@ -584,14 +598,14 @@ begin
 
         o_avs_waitrequest <= avs_waitrequest_i;
 
-        process(i_sysclk, i_reset_n)
+        process(i_clk, i_reset_156_n)
         begin
-        if ( i_reset_n = '0' ) then
+        if ( i_reset_156_n = '0' ) then
             avs_waitrequest_i <= '1';
             av_ctrl.read <= '0';
             av_ctrl.write <= '0';
             --
-        elsif rising_edge(i_sysclk) then
+        elsif rising_edge(i_clk) then
             avs_waitrequest_i <= '1';
 
             if ( i_avs_read /= i_avs_write and avs_waitrequest_i = '1' ) then
@@ -633,70 +647,84 @@ begin
         rdreq   => '1',
         wrclk   => lvds_rx_clk,
         wrreq   => '1',
-        q       => lvds_8b10b_out_in_clk125_global
+        q       => lvds_8b10b_out_in_clk125_global--,
     );
 
     sync_fifo2 : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 2,
-        DATA_WIDTH  => 152,
+        DATA_WIDTH  => 220,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
         DEVICE      => "Arria V"--,
     )
     port map(
         aclr            => '0',
-        data            => av_tx_ready & rx_data_parallel & rx_datak,
-        rdclk           => i_sysclk,--i_clk,
+        data            =>  disperr
+                            & errdetect & syncstatus
+                            & rx_is_lockedtodata & rx_is_lockedtoref 
+                            & locked(3 downto 0) & x"00"--tx_ready 
+                            & rx_data_parallel & rx_datak,
+        rdclk           => i_clk,
         rdreq           => '1',
         wrclk           => rx_clk(0),
         wrreq           => '1',
         q(15 downto 0)      => av_rx_datak,
         q(143 downto 16)    => av_rx_data_parallel,
-        q(151 downto 144)   => av_tx_ready--,
+        q(151 downto 144)   => open,--av_tx_ready,
+        q(155 downto 152)   => av_locked(3 downto 0),
+        q(163 downto 156)   => av_rx_is_lockedtoref,
+        q(171 downto 164)   => av_rx_is_lockedtodata,
+        q(187 downto 172)   => av_syncstatus,
+        q(203 downto 188)   => av_errdetect,
+        q(219 downto 204)   => av_disperr--,
     );
 
     sync_fifo3 : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 2,
-        DATA_WIDTH  => 168,
+        DATA_WIDTH  => 184,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
         DEVICE      => "Arria V"--,
     )
     port map(
         aclr            => '0',
-        data            =>  opt_rx_power & temperature
+        data            =>  tx_ready & rx_ready
+                            & opt_rx_power & temperature
                             & rx_analogreset & rx_digitalreset 
                             & tx_analogreset2 & tx_analogreset1 
                             & tx_digitalreset2 & tx_digitalreset1,
-        rdclk           => i_sysclk,
+        rdclk           => i_clk,
         rdreq           => '1',
         wrclk           => i_sysclk,
         wrreq           => '1',
-        q(7 downto 0)   => tx_digitalreset,
-        q(15 downto 8)  => tx_analogreset,
-        q(19 downto 16) => av_rx_digitalreset,
-        q(23 downto 20) => av_rx_analogreset,
-        q(39 downto 24) => av_temperature,
-        q(167 downto 40)=> av_opt_rx_power--,
+        q(7 downto 0)       => tx_digitalreset,
+        q(15 downto 8)      => tx_analogreset,
+        q(19 downto 16)     => av_rx_digitalreset,
+        q(23 downto 20)     => av_rx_analogreset,
+        q(39 downto 24)     => av_temperature,
+        q(167 downto 40)    => av_opt_rx_power,
+        q(175 downto 168)   => av_rx_ready,
+        q(183 downto 176)   => av_tx_ready--,
     );
 
     sync_fifo4 : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 2,
-        DATA_WIDTH  => 1,
+        DATA_WIDTH  => 9,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
         DEVICE      => "Arria V"--,
     )
     port map(
         aclr            => '0',
-        data(0)         => lvds_o_ready,
-        rdclk           => i_sysclk,
+        data            => lvds_8b10b_out_in_clk125_global & lvds_o_ready,
+        rdclk           => i_clk,
         rdreq           => '1',
         wrclk           => i_clk_lvds,
         wrreq           => '1',
-        q(0)            => locked(6)--,
+        q(0)            => av_locked(6),
+        q(8 downto 1)   => av_lvds_data--,
     );
 end rtl;

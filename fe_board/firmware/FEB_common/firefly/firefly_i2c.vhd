@@ -132,7 +132,7 @@ begin
                             end if;
                         when 3 =>
                             i2c_rw      <= '1';
-                            --i2c_ch    <= i2c_ch + 1;
+                            i2c_ch    <= i2c_ch + 1;
                         when 4 =>
                             i2c_rw      <= '0';
                             i2c_data_wr <= ADDR_RX_PWR(i2c_ch);--RX1_PWR2;

@@ -40,14 +40,13 @@ int main() {
 	printf("ID: 0x%08x\n", ram->data[0xFFFB]);
 
         printf("\n");
-        printf("  [1] => xcvr qsfp\n");
+        printf("  [1] => Firefly channels\n");
         printf("  [2] => mupix\n");
         printf("  [3] => sc\n");
-        printf("  [4] => xcvr pod\n");
-        printf("  [5] => si5345_1\n");
-        printf("  [6] => si5345_2\n");        
-        printf("  [7] => mscb\n");
-        printf("  [8] => reset system\n");
+        printf("  [4] => si5345_1\n");
+        printf("  [5] => si5345_2\n");        
+        printf("  [6] => mscb\n");
+        printf("  [7] => reset system\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -62,18 +61,15 @@ int main() {
             sc.menu();
             break;
         case '4':
-            menu_xcvr((alt_u32*)(AVM_POD_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
-            break;
-        case '5':
             si5345_1.menu();
             break;
-        case '6':
+        case '5':
             si5345_2.menu();
             break;
-        case '7':
+        case '6':
             mscb_main();
             break;
-        case '8':
+        case '7':
             menu_reset();
             break;
         default:

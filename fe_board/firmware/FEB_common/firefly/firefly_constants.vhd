@@ -31,6 +31,7 @@ constant RX4_PWR1  : std_logic_vector(7 downto 0) := "00101000";
 constant RX4_PWR2  : std_logic_vector(7 downto 0) := "00101001";
 
 type RX_PWR_TYPE is array (0 to 7) OF std_logic_vector(7 downto 0);
-constant ADDR_RX_PWR        : RX_PWR_TYPE         := (RX1_PWR1,RX1_PWR2,RX2_PWR1,RX2_PWR2,RX3_PWR1,RX3_PWR2,RX4_PWR1,RX4_PWR2);
+-- is it possible to somehow use the constants from above here (like :=(RX1_PWR1,RX1_PWR2,...) )? Could not find a way to do that
+constant ADDR_RX_PWR        : RX_PWR_TYPE         := ("00100010","00100011","00100100","00100101","00100110","00100111","00101000","00101001");
 
 end package firefly_constants;
