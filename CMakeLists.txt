@@ -39,8 +39,10 @@ list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
     message("Compile for Raspberry Pi")
 else()
-    find_package(ROOT 5.34 REQUIRED COMPONENTS RIO Hist Tree Net)
+    find_package(ROOT REQUIRED COMPONENTS RIO Hist Tree Net)
+    set(ROOTSYS $ENV{ROOTSYS})
 endif()
+
 # optional packages
 find_package(Doxygen 1.8)
 message("here we set GLVND to default (https://cmake.org/cmake/help/git-stage/policy/CMP0072.html)")
