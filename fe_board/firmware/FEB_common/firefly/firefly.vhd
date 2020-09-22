@@ -127,6 +127,8 @@ signal reconfig_from_xcvr_r2: std_logic_vector(367 downto 0);
 signal rx_is_lockedtodata   : std_logic_vector(  7 downto 0):= (others => '0');
 signal rx_is_lockedtoref    : std_logic_vector(  7 downto 0):= (others => '0');
 
+signal rx_align_reset_n     : std_logic_vector(3 downto 0);
+
 -- lvds receiver control signals
 signal lvds_pll_areset      : std_logic;
 signal lvds_data_align      : std_logic;
@@ -185,6 +187,7 @@ begin
 
     o_data_fast_parallel    <= av_rx_data_parallel;
     o_datak                 <= av_rx_datak;
+
 --------------------------------------------------
 -- transceiver (2)
 --------------------------------------------------
@@ -293,9 +296,12 @@ begin
             i_errdetect             => errdetect(3+I*4 downto I*4),
             i_disperr               => disperr(3+I*4 downto I*4),
 
-            i_reset_n               => i_reset_156_n,
+            i_reset_n               => rx_align_reset_n(I),
             i_clk                   => rx_clk(I)--,
         );
+
+        e_sync_align_xcvr : entity work.reset_sync
+        port map ( o_reset_n => rx_align_reset_n(I), i_reset_n => i_reset_156_n, i_clk => rx_clk(I));
 
     end generate g_rx_align;
 
@@ -378,7 +384,7 @@ begin
     e_lvds_controller : entity work.lvds_controller 
     port map(
         i_clk               => i_clk_lvds,                      -- controller MUST run on 125 Global. DO NOT CHANGE TO lvds_rx_clk !!!
-        i_reset_n           => i_lvds_align_reset_n,
+        i_areset_n          => i_lvds_align_reset_n,
         i_data              => lvds_8b10b_out_in_clk125_global, -- feed alignment with 8b10b decoded data in global clk domain
         i_cda_max           => lvds_cda_max,
         i_dpa_locked        => lvds_dpa_locked,

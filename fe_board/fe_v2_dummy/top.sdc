@@ -30,11 +30,12 @@ create_clock -period "50.01 MHz" [ get_ports spare_clk_osc ]
 #create_clock -period "125 MHz" [ get_ports clk_125_bottom ]
 #create_clock -period "50 MHz" [ get_ports spare_clk_osc ]
 
-#set_clock_groups -asynchronous -group { LVDS_clk_si1_fpga_A LVDS_clk_si1_fpga_B lvds_firefly_clk clk_125_top clk_125_bottom}
-#set_clock_groups -asynchronous -group { transceiver_pll_clock[0] transceiver_pll_clock[1] transceiver_pll_clock[2] }
-#set_clock_groups -asynchronous -group { systemclock systemclock_bottom }
-#set_clock_groups -asynchronous -group { spare_clk_osc }
-
 # derive pll clocks from base clocks
 derive_pll_clocks -create_base_clocks
 derive_clock_uncertainty
+
+# false paths
+set_false_path -from {fe_block_v2:e_fe_block|data_merger:e_merger|terminated[0]} -to {fe_block_v2:e_fe_block|resetsys:e_reset_system|ff_sync:i_ff_sync|ff[0][0]}
+
+# this one is tricky, it's not really a false path but i think we also cannot sync to clk_reco (we can, but might screw up reset alignment)
+set_false_path -from {fe_block_v2:e_fe_block|firefly:firefly|lvds_controller:e_lvds_controller|o_dpa_lock_reset} -to {fe_block_v2:e_fe_block|firefly:firefly|lvds_rx:lvds_rx_inst0*}
