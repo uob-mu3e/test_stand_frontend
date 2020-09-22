@@ -34,12 +34,21 @@ add_compile_options(
 # required packages
 find_package(Boost 1.49 REQUIRED COMPONENTS thread system program_options)
 find_package(Git 1.8 REQUIRED)
-list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 # check if we compile for raspberry pi
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
     message("Compile for Raspberry Pi")
+elseif(NOT DEFINED $ENV{ROOTSYS})
+    # try to set ROOTSYS for openSuse yast installation
+    message(FATAL_ERROR "Try to set ROOTSYS via thisroot.sh before cmake")
+#     set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/modules/midas/)
+    find_package(ROOT MODULE REQUIRED COMPONENTS RIO Hist Tree Net)
+    message(STATUS "ROOTSYS: " $ENV{ROOTSYS})
+    message(STATUS "ROOT_VERSION: " ${ROOT_VERSION})
 else()
-    find_package(ROOT REQUIRED COMPONENTS RIO Hist Tree Net)
+    list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
+    find_package(ROOT CONFIG REQUIRED COMPONENTS RIO Hist Tree Net)
+    message(STATUS "ROOTSYS: " $ENV{ROOTSYS})
+    message(STATUS "ROOT_VERSION: " ${ROOT_VERSION})
     set(ROOTSYS $ENV{ROOTSYS})
 endif()
 
