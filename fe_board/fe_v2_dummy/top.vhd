@@ -118,7 +118,7 @@ entity top is
         -- MAX10 IF
         max10_spi_sclk              : out   std_logic;
         max10_spi_mosi              : out   std_logic;
-        max10_spi_miso              : inout std_logic;
+        max10_spi_miso              : in    std_logic;
         max10_spi_D1                : inout std_logic;
         max10_spi_D2                : inout std_logic;
         max10_spi_D3                : inout std_logic;
@@ -130,14 +130,14 @@ architecture rtl of top is
  
     -- Debouncers
     signal pb_db                : std_logic_vector(1 downto 0);
-    signal version_out          : std_logic_vector(31 downto 0);
 
 begin
 
---v_reg: version_reg 
---    PORT MAP(
---        data_out    => version_out(27 downto 0)
---    );
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+----INSERT SUB-DETECTOR FIRMWARE HERE ------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
 
     db1: entity work.debouncer
     port map(
@@ -155,27 +155,12 @@ begin
         o_q(0)      => pb_db(1)--,
     );
 
-    -- Quad SPI IF to MAX	
-    -- Tristate bidirectionals for a start
-    max10_spi_miso  <= 'Z';
-    max10_spi_D1    <= 'Z';
-    max10_spi_D2    <= 'Z';
-    max10_spi_D3    <= 'Z';
-
-    -- Chip select is high	
-    max10_spi_csn   <= '1';
-
-    si45_rst_n <= (others => '1');
-    si45_oe_n <= (others => '0');
-    si45_fdec <= (others => '0');
-    si45_finc <= (others => '0');
-
     e_fe_block : entity work.fe_block_v2
     generic map (
         NIOS_CLK_MHZ_g  => 50.0--,
     )
     port map (
-        i_fpga_id           => X"FEB0",
+        i_fpga_id           => ref_adr,
         i_fpga_type         => "111010", -- This is MuPix, TODO: Adjust midas frontends to add "Dummy - type"
 
         io_i2c_ffly_scl     => Firefly_Scl,
@@ -195,6 +180,13 @@ begin
         o_spi_si_sclk       => si45_spi_sclk,
         o_spi_si_ss_n       => si45_spi_cs_n,
 
+        o_si45_oe_n         => si45_oe_n,
+        i_si45_intr_n       => si45_intr_n,
+        i_si45_lol_n        => si45_lol_n,
+        o_si45_rst_n        => si45_rst_n,
+        o_si45_fdec         => si45_fdec,
+        o_si45_finc         => si45_finc,
+
         o_ffly1_tx          => firefly1_tx_data,
         o_ffly2_tx          => firefly2_tx_data,
         i_ffly1_rx          => firefly1_rx_data,
@@ -209,6 +201,14 @@ begin
         i_mscb_data         => mscb_fpga_in,
         o_mscb_data         => mscb_fpga_out,
         o_mscb_oe           => mscb_fpga_oe_n,
+
+        o_max10_spi_sclk    => max10_spi_sclk,
+        o_max10_spi_mosi    => max10_spi_mosi,
+        i_max10_spi_miso    => max10_spi_miso,
+        io_max10_spi_D1     => max10_spi_D1,
+        io_max10_spi_D2     => max10_spi_D2,
+        io_max10_spi_D3     => max10_spi_D3,
+        o_max10_spi_csn     => max10_spi_csn,
 
         o_mupix_reg_addr    => open, -- TODO in "Not-Dummy": connect to detector-block
         o_mupix_reg_re      => open,

@@ -12,7 +12,7 @@ generic (
     N_LINKS : positive := 1--;
 );
 port (
-    i_fpga_id       : in    std_logic_vector(N_LINKS*16 - 1 downto 0);
+    i_fpga_id       : in    std_logic_vector(7 downto 0);
     -- frontend board type
     -- - 111010 : mupix
     -- - 111000 : mutrig
@@ -27,11 +27,18 @@ port (
     i_ffly_Int_n        : in    std_logic_vector(1 downto 0);
     i_ffly_ModPrs_n     : in    std_logic_vector(1 downto 0);
 
-    -- spi interface to si chip
+    -- si chip
     i_spi_si_miso       : in    std_logic_vector(1 downto 0) := (others => '0');
     o_spi_si_mosi       : out   std_logic_vector(1 downto 0);
     o_spi_si_sclk       : out   std_logic_vector(1 downto 0);
     o_spi_si_ss_n       : out   std_logic_vector(1 downto 0);
+
+    o_si45_oe_n         : out   std_logic_vector(1 downto 0) := (others => '0');
+    i_si45_intr_n       : in    std_logic_vector(1 downto 0) := (others => '1');
+    i_si45_lol_n        : in    std_logic_vector(1 downto 0) := (others => '0');
+    o_si45_rst_n        : out   std_logic_vector(1 downto 0) := (others => '1');
+    o_si45_fdec         : out   std_logic_vector(1 downto 0) := (others => '0');
+    o_si45_finc         : out   std_logic_vector(1 downto 0) := (others => '0');
 
     -- spi interface to asics
     i_spi_miso          : in    std_logic;
@@ -53,19 +60,28 @@ port (
     i_ack_run_prep_permission : in std_logic:='1';
 
     --main fiber data fifo
-    i_fifo_write    : in    std_logic_vector(N_LINKS-1 downto 0);
-    i_fifo_wdata    : in    std_logic_vector(36*(N_LINKS-1)+35 downto 0);
+    i_fifo_write        : in    std_logic_vector(N_LINKS-1 downto 0);
+    i_fifo_wdata        : in    std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
-    o_fifos_almost_full         : out   std_logic_vector(N_LINKS-1 downto 0);
+    o_fifos_almost_full : out   std_logic_vector(N_LINKS-1 downto 0);
 
     -- slow control fifo
-    o_scfifo_write     : out   std_logic;
-    o_scfifo_wdata     : in    std_logic_vector(35 downto 0):=(others =>'-');
+    o_scfifo_write      : out   std_logic;
+    o_scfifo_wdata      : in    std_logic_vector(35 downto 0):=(others =>'-');
 
     -- MSCB interface
-    i_mscb_data     : in    std_logic;
-    o_mscb_data     : out   std_logic;
-    o_mscb_oe       : out   std_logic;
+    i_mscb_data         : in    std_logic;
+    o_mscb_data         : out   std_logic;
+    o_mscb_oe           : out   std_logic;
+
+    -- MAX10 IF
+    o_max10_spi_sclk    : out   std_logic;
+    o_max10_spi_mosi    : out   std_logic;
+    i_max10_spi_miso    : in    std_logic;
+    io_max10_spi_D1     : inout std_logic := 'Z';
+    io_max10_spi_D2     : inout std_logic := 'Z';
+    io_max10_spi_D3     : inout std_logic := 'Z';
+    o_max10_spi_csn     : out   std_logic := '1';
 
     -- slow control registers
     -- malibu regs : 0x40-0x5F
@@ -157,7 +173,7 @@ architecture arch of fe_block_v2 is
     signal ffly_rx_data             : std_logic_vector(127 downto 0);
     signal ffly_rx_datak            : std_logic_vector(15 downto 0);
 
-    signal i_fpga_id_reg            : std_logic_vector(N_LINKS*16-1 downto 0) := i_fpga_id;
+    signal i_fpga_id_reg            : std_logic_vector(N_LINKS*16-1 downto 0);
 
     signal ffly_tx_data             : std_logic_vector(127 downto 0) :=
                                           X"000000" & work.util.D28_5
@@ -174,6 +190,11 @@ architecture arch of fe_block_v2 is
     signal reset_link_rx_clk        : std_logic;
 
 begin
+
+    --v_reg: version_reg 
+    --    PORT MAP(
+    --        data_out    => version_out(27 downto 0)
+    --    );
 
     -- generate resets
 
