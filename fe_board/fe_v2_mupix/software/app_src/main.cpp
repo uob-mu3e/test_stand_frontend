@@ -15,6 +15,9 @@ sc_t sc;
 mscb_t mscb;
 #include "../../../fe/software/app_src/reset.h"
 
+#include "mupix.h"
+mupix_t mupix(&sc);
+
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     return mupix.callback(cmd,data,n);
@@ -33,12 +36,12 @@ int main() {
 
     while (1) {
         printf("\n");
-        printf("[fe_dummy] -------- menu --------\n");
+        printf("[fe_mupix] -------- menu --------\n");
 	printf("ID: 0x%08x\n", ram->data[0xFFFB]);
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
-        printf("  [2] => insert sub-detector menu here\n");
+        printf("  [2] => mupix\n");
         printf("  [3] => sc\n");
         printf("  [4] => si5345_1\n");
         printf("  [5] => si5345_2\n");        
@@ -52,7 +55,7 @@ int main() {
             menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '2':
-            //mupix.menu();
+            mupix.menu();
             break;
         case '3':
             sc.menu();
