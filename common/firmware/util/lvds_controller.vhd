@@ -17,7 +17,7 @@ ENTITY lvds_controller is
     );
     PORT(
         i_clk :             in  std_logic;
-        i_reset_n :         in  std_logic;
+        i_areset_n :        in  std_logic;
         i_data :            in  std_logic_vector(7 downto 0);
         i_cda_max :         in  std_logic;
         i_dpa_locked :      in  std_logic;
@@ -34,19 +34,24 @@ ENTITY lvds_controller is
 END ENTITY;
 
 architecture rtl of lvds_controller is
-    signal lvds_state :     std_logic_vector(3 downto 0);
-    signal stable_counter : std_logic_vector(15 downto 0);
-    signal data_align :     std_logic;
-    signal align_clicks :   std_logic_vector(7 downto 0);
-    signal align_delay  :   std_logic_vector(2 downto 0);
+    signal lvds_state       : std_logic_vector(3 downto 0);
+    signal stable_counter   : std_logic_vector(15 downto 0);
+    signal data_align       : std_logic;
+    signal align_clicks     : std_logic_vector(7 downto 0);
+    signal align_delay      : std_logic_vector(2 downto 0);
+    signal realign_lvds_n   : std_logic;
+
 begin
+
+    e_sync_realign_n : entity work.reset_sync
+    port map ( o_reset_n => realign_lvds_n, i_reset_n => i_areset_n, i_clk => i_clk );
 
     o_data_align            <= data_align;
     o_align_clicks          <= align_clicks;
 
-    process (i_clk, i_reset_n)
+    process (i_clk, realign_lvds_n)
     begin
-        if (rising_edge (i_clk) and i_reset_n = '0') then
+        if (rising_edge (i_clk) and realign_lvds_n = '0') then
             o_pll_areset    <= '1';
             o_rx_reset      <= '1';
             o_dpa_lock_reset<= '1';
@@ -127,6 +132,7 @@ begin
 
                 when x"8" =>
                     o_ready             <= '1';
+                    -- TODO: fix realign conditions
                     if( i_data /= i_align_pattern) then
                         stable_counter      <= stable_counter + '1';
                     elsif (stable_counter = i_loss_lock_words) then

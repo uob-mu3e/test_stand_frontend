@@ -1,0 +1,9 @@
+ip_alt_xcvr_reconfig.vhd
+ip_alt_xcvr_reconfig.xml
+ip_altera_xcvr_native_av.vhd
+ip_altera_xcvr_native_av.xml
+ip_altera_xcvr_reset_control.vhd
+ip_altera_xcvr_reset_control.xml
+a5_pin_model_dump.txt
+fastlink_small.xml
+native_reset_tx.xml
