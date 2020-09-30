@@ -33,17 +33,30 @@ class GenesysDriver
 		INT Init();
 		void Print();
 		bool ReadState(int,INT&);
-		//bool ReadVoltage(int)
-		bool SelectChannel(int);
-		void SetStateChanged();
+		float ReadVoltage(int,INT&);
+		float ReadSetVoltage(int,INT&);
+		float ReadCurrent(int,INT&);
+		float ReadCurrentLimit(int,INT&);
+
 
 	
 	private:
 	
+		//utility/communications functions
 		bool OPC();
 		bool SetActiveChannel(int);
 		void SetState(int,bool,INT&);
+		void SetVoltage(int,float,INT&);
+		void SetCurrentLimit(int,float,INT&);
 		bool AskPermissionToTurnOn(int);
+		bool SelectChannel(int);
+		void SetStateChanged();
+		void DemandVoltageChanged();
+		void CurrentLimitChanged();
+		void InitODBArray();
+		float Read(std::string,INT&);
+		bool Set(std::string,INT&);
+
 	
 		EQUIPMENT_INFO* info;
 		std::string name;				
@@ -51,10 +64,17 @@ class GenesysDriver
 		midas::odb variables;
 		TCPClient* client;
 		
-		//channel settings
+		//local copy of hardware settings
 		std::vector<int> supplyID;
 		std::vector<bool> state;
-		std::vector<bool> demandstate;
+		std::vector<float> voltage;
+		std::vector<float> demandvoltage;
+		std::vector<float> current;
+		std::vector<float> currentlimit;
+		
+		float relevantchange;
+		
+		
 
 };
 
