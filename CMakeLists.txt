@@ -92,6 +92,7 @@ set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mscb)
 # on some older boxes, wpedantic and MIDAS do not mix
 add_subdirectory(modules)
 add_subdirectory(backend_pc)
+add_subdirectory(common/kerneldriver)
 add_subdirectory(common/libmudaq)
 add_subdirectory(common/libmupix)
 add_subdirectory(common/libmutrig)
