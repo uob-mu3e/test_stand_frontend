@@ -5,6 +5,8 @@ project(mudaq-driver LANGUAGES C CXX)
 file(GLOB MODULE_SOURCES
     mudaq.c
     *.h
+    dmabuf/*.h
+    ../include/*.h
 )
 
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dmabuf/cmake")

@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
     }
     dma_buf = (uint32_t*)mmap(nullptr, MUDAQ_DMABUF_DATA_LEN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(dma_buf == MAP_FAILED) {
-        printf("dmabuf = %x\n", dma_buf);
+        printf("mmap failed: dmabuf = %x\n", dma_buf);
         return EXIT_FAILURE;
     }
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
         cout << hex << "0x" <<  dma_buf[i] << " ";
     cout << endl;
 
-    while(dma_buf[size/sizeof(uint32_t)-8] <= 0){
+    while(dma_buf[size/2/sizeof(uint32_t)-8] <= 0){
 
 //         if (mu.last_written_addr() == 0) {
 //             cout << "last_written" << endl;
@@ -207,6 +207,8 @@ int main(int argc, char *argv[])
 //        myfile << endofevent + i - 20 << "\t" << dma_buf_str << endl;
 //        }
     }
+    
+    cout << "start to write file" << endl;
 
 
 //        if (readindex > 1000000) break;
@@ -315,8 +317,9 @@ int main(int argc, char *argv[])
     reset_reg = SET_RESET_BIT_ALL(reset_reg);
     mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
 
+    char dma_buf_str[256];
     for (int j = 0 ; j < size/sizeof(uint32_t); j++){
-        char dma_buf_str[256];
+        if(j % (1024*1024) == 0) printf("j = %d\n", j);
         sprintf(dma_buf_str, "%08X", dma_buf[j]);
         myfile << j << "\t" << dma_buf_str << endl;
     }
