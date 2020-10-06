@@ -14,10 +14,6 @@ package protocol is
     constant RUN_TAIL_HEADER_ID:    std_logic_vector(5 downto 0) := "111110";
     constant TIMING_MEAS_HEADER_ID:    std_logic_vector(5 downto 0) := "111100";
     constant SC_HEADER_ID:    std_logic_vector(5 downto 0) := "111011";
-    constant chip_id: std_logic_vector(5 downto 0) := "000000";
-    constant row: std_logic_vector(7 downto 0) := x"AB";
-    constant col: std_logic_vector(7 downto 0) := x"CD";
-    constant tot: std_logic_vector(5 downto 0) := "111111";
 
 end package protocol;
 
@@ -38,6 +34,13 @@ use work.protocol.all;
 
 
 entity data_generator_a10 is
+    generic (
+        fpga_id: in std_logic_vector(15 downto 0) := x"FFFF";
+        max_row: std_logic_vector (7 downto 0) := (others => '0');
+        max_col: std_logic_vector (7 downto 0) := (others => '0');
+        go_to_sh: std_logic_vector (3 downto 0) := "1111";
+        go_to_trailer: std_logic_vector (9 downto 0) := "1111111111"
+    );
     port(
 		clk:                 	in  std_logic;
 		reset:               	in  std_logic;
@@ -66,8 +69,8 @@ architecture rtl of data_generator_a10 is
 	-- random signals
 	signal lsfr_chip_id:     	  std_logic_vector (5 downto 0);
 	signal lsfr_tot:     	  	  std_logic_vector (5 downto 0);
-	signal lsfr_row:     	  	  std_logic_vector (7 downto 0);
-	signal lsfr_col:     	     std_logic_vector (7 downto 0);
+	signal row:     	  	  std_logic_vector (7 downto 0);
+	signal col:     	     std_logic_vector (7 downto 0);
 	signal lsfr_overflow:        std_logic_vector (15 downto 0);
 	
 	-- slow down signals
@@ -105,34 +108,6 @@ begin
 		i_seed   		=> random_seed(15 downto 10),
 		i_en 				=> enable_pix,    
 		o_lsfr 			=> lsfr_tot
-	);
-	
-	pix_row_shift : entity work.linear_shift
-	generic map(
-		g_m 	   		=> 8,
-		g_poly 	   	=> "10111000"
-	)
-	port map(
-		i_clk    		=> clk,
-		reset_n   		=> reset_n,
-		i_sync_reset	=> reset,--sync_reset,
-		i_seed   		=> random_seed(7 downto 0),
-		i_en 				=> enable_pix,    
-		o_lsfr 			=> lsfr_row
-	);
-	
-	pix_col_shift : entity work.linear_shift
-	generic map(
-		g_m 	   		=> 8,
-		g_poly 	   	=> "10111000"
-	)
-	port map(
-		i_clk    		=> clk,
-		reset_n   		=> reset_n,
-		i_sync_reset	=> reset,--sync_reset,
-		i_seed   		=> random_seed(8 downto 1),
-		i_en 				=> enable_pix,    
-		o_lsfr 			=> lsfr_col
 	);
 	
 	overflow_shift : entity work.linear_shift
@@ -183,6 +158,8 @@ begin
 		overflow_idx				:= 0;
 		state_out					<= (others => '0');
 		datak_pix_generated		<= (others => '1');
+		row <= (others => '0');
+		col <= (others => '0');
 	elsif rising_edge(clk) then
 		if(enable_pix = '1' and waiting = '0' and i_dma_half_full = '0') then
 				data_pix_ready <= '1';
@@ -190,7 +167,8 @@ begin
 					when part1 =>
 						state_out <= x"A";
 						data_pix_generated(31 downto 26) <= DATA_HEADER_ID;
-						data_pix_generated(25 downto 8) 	<= (others => '0');
+						data_pix_generated(25 downto 24) <=  (others => '0');
+						data_pix_generated(23 downto 8) <= fpga_id;
 						data_pix_generated(7 downto 0) 	<= x"bc";
 						datak_pix_generated              <= "0001";
 						data_header_state 					<= part2;
@@ -220,13 +198,26 @@ begin
 					when part5 =>
 						state_out <= x"E";
 						global_time <= global_time + '1';
-						data_pix_generated					<= global_time(3 downto 0) & chip_id & row & col & tot;
+						
+						if (row = max_row) then
+                            row <= (others => '0');
+                        else
+                            row <= row + '1';
+                        end if;
+                        
+                        if (row = max_col) then
+                            col <= (others => '0');
+                        else
+                            col <= col + '1';
+                        end if;
+                        
+						data_pix_generated					<= global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
 						overflow_time <= global_time(3 downto 0);
 						datak_pix_generated              <= "0000";
-						if (global_time(3 downto 0) = "1111") then
-							data_header_state					<= trailer;
-						elsif (global_time(2 downto 0) = "111") then
+						if (global_time(3 downto 0) = go_to_sh) then
 							data_header_state					<= part4;
+						elsif (global_time(9 downto 0) = go_to_trailer) then
+							data_header_state					<= trailer;
 						elsif (current_overflow(overflow_idx) = '1') then
 							overflow_idx 						:= overflow_idx + 1;
 							data_header_state					<= overflow;
@@ -236,7 +227,7 @@ begin
 							
 					when overflow =>
 						state_out <= x"9";
-						data_pix_generated					<= overflow_time & chip_id & row & col & tot;
+						data_pix_generated					<= overflow_time & lsfr_chip_id & row & col & lsfr_tot;
 						datak_pix_generated              <= "0000";
 						data_header_state						<= part5;
 					
