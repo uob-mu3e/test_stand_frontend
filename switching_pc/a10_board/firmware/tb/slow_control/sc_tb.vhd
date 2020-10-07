@@ -29,6 +29,7 @@ architecture behav of sc_tb is
   		signal mem_datak_out_slave : std_logic_vector(3 downto 0);
   		signal mem_addr_out_slave : std_logic_vector(15 downto 0);
   		signal mem_wren_slave : std_logic;
+  		signal link_enable : std_logic_vector(NLINKS - 1 downto 0) := (others => '1');
 
   		constant ckTime: 		time	:= 10 ns;
   		
@@ -57,12 +58,13 @@ begin
 
   sc_slave_0 : entity work.sc_slave
     generic map (
-		NLINKS => NLINKS
+		NLINKS => NLINKS,
+		skip_init => '1'
 	)
 	port map(
 		clk					=> clk,
 		reset_n				=> reset_n,
-		enable				=> '1',
+		i_link_enable				=> link_enable,
 		link_data_in		=> mem_data_out,
 		link_data_in_k		=> mem_datak_out,
 		mem_data_out		=> mem_data_out_slave,

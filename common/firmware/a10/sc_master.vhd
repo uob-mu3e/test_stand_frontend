@@ -46,7 +46,7 @@ architecture rtl of sc_master is
 	signal addr_reg	: std_logic_vector(15 downto 0) := (others => '0');
 	signal wren_reg	: std_logic_vector(15 downto 0);--)(NLINKS-1 downto 0);
 	
-	type state_type is (waiting, start_wait, starting);
+	type state_type is (waiting, start_wait, starting, get_start_add, get_length);
 	signal state : state_type;
 	
 	constant CODE_START : std_logic_vector(11 downto 0) 	:= x"BAD";
@@ -57,6 +57,8 @@ architecture rtl of sc_master is
 	signal mem_datak : std_logic_vector(3 downto 0); 
 
 	signal mask_addr : std_logic_vector(15 downto 0); 
+	signal length : std_logic_vector(15 downto 0);
+	signal cur_length : std_logic_vector(15 downto 0);
 	
 begin
 
@@ -91,6 +93,8 @@ begin
 			stateout		<= (others => '0');
 			wait_cnt		<= '0';
 			mem_datak 		<= (others => '0');
+			length 			<= (others => '0');
+			cur_length		<= (others => '0');
 		elsif(rising_edge(clk))then
 			wait_cnt		<= not wait_cnt;
 			mem_datak 	<= (others => '0');
@@ -119,7 +123,7 @@ begin
 				when start_wait =>
 					stateout(3 downto 0) <= x"2";
 					if(wait_cnt = '0')then	
-						state		<= starting;
+						state		<= get_start_add;
 						addr_reg	<= addr_reg + '1';
 						mem_datak <= "0001";
 						mask_addr <= mem_data_in(23 downto 8); -- get fpga id if x"FFFF" write to all links, if 1 first link and so on
@@ -129,20 +133,50 @@ begin
                             wren_reg <= mem_data_in(23 downto 8); -- todo fix me to more the 16 addr one hot
 						end if;
 					end if;
-				
-				when starting =>
-					stateout(3 downto 0) <= x"3";
+					
+				when get_start_add =>
+					stateout(3 downto 0) <= x"4";
 					if(wait_cnt = '0')then
 						if(mask_addr(15 downto 0) = x"FFFF") then
 							wren_reg <= (others => '1');
 						else
 							wren_reg <= mask_addr(15 downto 0);
 						end if;
-						if (mem_data_in = CODE_STOP) then
+						addr_reg	<= addr_reg + '1';
+						state		<= get_length;
+					end if;
+					
+				when get_length =>
+					stateout(3 downto 0) <= x"4";
+					if(wait_cnt = '0')then
+						if(mask_addr(15 downto 0) = x"FFFF") then
+							wren_reg <= (others => '1');
+						else
+							wren_reg <= mask_addr(15 downto 0);
+						end if;
+						addr_reg	<= addr_reg + '1';
+						-- length is only for data words so trailer is not in
+						length 		<= mem_data_in(15 downto 0);
+						cur_length	<= x"0001";
+						state		<= starting;
+					end if;
+				
+				when starting =>
+					stateout(3 downto 0) <= x"5";
+					if(wait_cnt = '0')then
+						if(mask_addr(15 downto 0) = x"FFFF") then
+							wren_reg <= (others => '1');
+						else
+							wren_reg <= mask_addr(15 downto 0);
+						end if;
+						if (length + '1' = cur_length) then
 							mem_datak <= "0001";
 							state		<= waiting;
 							addr_reg	<= addr_reg + '1';
+							length	<= (others => '0');
+							cur_length	<= x"0001";
 						else
+							cur_length <= cur_length + '1';
 							addr_reg	<= addr_reg + '1';
 						end if;
 					end if;
@@ -151,6 +185,9 @@ begin
 					state		<= waiting;
 					addr_reg <= (others => '0');
 					wren_reg	<= (others => '0');
+					cur_length	<= (others => '0');
+					length	<= (others => '0');
+					cur_length	<= x"0001";
 			end case;
 			
 		end if;

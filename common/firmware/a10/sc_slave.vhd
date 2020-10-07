@@ -13,7 +13,8 @@ use ieee.std_logic_unsigned.all;
 
 entity sc_slave is
 generic (
-		NLINKS : integer :=4
+		NLINKS : integer := 4;
+		skip_init : std_logic := '0'
 );
 port (
 		clk:                in std_logic;
@@ -55,7 +56,11 @@ begin
 		stateout <= (others => '0');
 		mem_wren_o <= '0';
 		current_link <= 0;
-		state <= init;
+		if (skip_init = '0') then
+			state <= init;
+		else
+	  		state <= waiting;
+	  	end if;
 
 	elsif(rising_edge(clk))then
 		stateout <= (others => '0');
