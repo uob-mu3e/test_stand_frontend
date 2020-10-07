@@ -57,6 +57,7 @@
 #include "mfe.h"
 #include "string.h"
 #include "mudaq_device_scifi.h"
+#include "odbxx.h"
 
 //Slow control for mutrig/scifi ; mupix
 #include "mutrig_midasodb.h"
@@ -65,6 +66,10 @@
 #include "SciFi_FEB.h"
 #include "Tiles_FEB.h"
 #include "mupix_FEB.h"
+
+using namespace std;
+using midas::odb;
+
 /*-- Globals -------------------------------------------------------*/
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
@@ -92,9 +97,6 @@ int switch_id = 0; // TODO to be loaded from outside
 
 /* DMA Buffer and related */
 mudaq::DmaMudaqDevice * mup;
-
-/* Use CRFE bypass during run-start transitions, directly send command to FEB*/
-//#define CRFE_BYPASS
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -190,13 +192,13 @@ EQUIPMENT equipment[] = {
      read_scitiles_sc_event,          /* readout routine */
     },
     {"Mupix",                    /* equipment name */
-    {2, 0,                      /* event ID, trigger mask */
+    {13, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
-     RO_TRANSITIONS | RO_ODB,   /* read during run transitions and update ODB */
+     RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
      1000,                      /* read every 1 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
@@ -226,6 +228,9 @@ INT frontend_init()
 {
    HNDLE hKeySC;
    int status;
+
+   // TODO: for debuging
+//    odb::set_debug(true);
 
    // create Settings structure in ODB
    db_create_record(hDB, 0, "Equipment/Switching/Settings", strcomb(sc_settings_str));
@@ -262,6 +267,7 @@ INT frontend_init()
    }
 
    HNDLE hKey;
+
    // watch if this switching board is enabled
    db_find_key(hDB, 0, "/Equipment/Links/Settings/SwitchingBoardMask", &hKey);
    assert(hKey);
@@ -345,7 +351,41 @@ INT frontend_init()
    }
    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
    MupixFEB::Instance()->WriteFEBID();
-   //end of Mupix setup part
+   
+    // setup odb rate counters for each feb
+    char set_str[255];
+    odb rate_counters("/Equipment/Mupix/Variables");
+    for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+        sprintf(set_str, "merger rate FEB%d", i);
+        rate_counters[set_str] = 0;
+        sprintf(set_str, "hit ena rate FEB%d", i);
+        rate_counters[set_str] = 0;
+        sprintf(set_str, "reset phase FEB%d", i);
+        rate_counters[set_str] = 0;
+        sprintf(set_str, "TX reset%d", i);
+        rate_counters[set_str] = 0;
+    }
+    //end of Mupix setup part
+    
+    // Define history panels for each FEB Mupix
+    for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+        sprintf(set_str, "FEB%d", i);
+        hs_define_panel("Mupix", set_str, {"Mupix:merger rate " + string(set_str),
+                                           "Mupix:hit ena rate " + string(set_str),
+                                           "Mupix:reset phase " + string(set_str),
+              //                             "Mupix:TX reset " + string(set_str),
+                                           });
+    }
+    
+    // setup odb for switching board
+    odb swb_varibles("/Equipment/Switching/Variables");
+    swb_varibles["Merger Timeout All FEBs"] = 0;
+
+    // TODO: not sure at the moment we have a midas frontend for three feb types but 
+    // we need to have different swb at the final experiment so maybe one needs to take
+    // things apart later. For now we put this "common" FEB variables into the generic
+    // switching path
+    hs_define_panel("Switching", "All FEBs", {"Switching:Merger Timeout All FEBs"});
 
    /*
     * Set our transition sequence. The default is 500. Setting it
@@ -414,35 +454,45 @@ try{
    }
 
    //configure Pixel sensors
-   status=MupixFEB::Instance()->ConfigureASICs();
-   if(status!=SUCCESS){
-      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
-      return CM_TRANSITION_CANCELED;
-   }
+   //status=MupixFEB::Instance()->ConfigureASICs();
+   //if(status!=SUCCESS){
+   //   cm_msg(MERROR,"switch_fe","ASIC configuration failed");
+   //   return CM_TRANSITION_CANCELED;
+   //}
 
 
    //last preparations
    SciFiFEB::Instance()->ResetAllCounters();
 
+   HNDLE hKey;
+   char ip[256];
+   int size = 256;
+   if(db_find_key(hDB, 0, "/Equipment/Clock Reset", &hKey) != DB_SUCCESS){
+       cm_msg(MERROR,"switch_fe","could not find CRFE, is CRFE running ?", run_number);
+       return CM_TRANSITION_CANCELED;
+   }else if(db_get_value(hDB, hKey, "Settings/IP", ip, &size, TID_STRING, false)!= DB_SUCCESS) {
+       cm_msg(MERROR,"switch_fe","could not find CRFE IP, is CRFE running ?", run_number);
+       return CM_TRANSITION_CANCELED;
+   }
 
-#ifndef CRFE_BYPASS
-   /* send run prepare signal via CR system */
-   INT value = 1;
-   cm_msg(MINFO,"switch_fe","Using CRFE for run transition");
-   db_set_value_index(hDB,0,"Equipment/Clock Reset/Run Transitions/Request Run Prepare",
-                      &value, sizeof(value), switch_id, TID_INT, false);
-#else
-   /* direct sending of run prepare, CRFE bypass frontend is not working during run transitions*/
-   cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
-   DWORD value = run_number;
-   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff5,true); //run number
-   value= (1<<8) | 0x10;
-   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,true); //run prep command
-   value= 0xbcbcbcbc;
-   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff5,true); //reset payload
-   value= 0;//(1<<8) | 0x00;
-   mup->FEBsc_write(mup->FEBsc_broadcast_ID, &value,1,0xfff4,true); //reset command
-#endif
+   if(std::string(ip)=="0.0.0.0"){
+       /* send run prepare signal from here */
+       cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
+       DWORD valueRB = run_number;
+       mup->FEBsc_write(mup->FEBsc_broadcast_ID, &valueRB,1,0xfff5,true); //run number
+       valueRB= (1<<8) | 0x10;
+       mup->FEBsc_write(mup->FEBsc_broadcast_ID, &valueRB,1,0xfff4,true); //run prep command
+       valueRB= 0xbcbcbcbc;
+       mup->FEBsc_write(mup->FEBsc_broadcast_ID, &valueRB,1,0xfff5,true); //reset payload
+       valueRB= 0;//(1<<8) | 0x00;
+       mup->FEBsc_write(mup->FEBsc_broadcast_ID, &valueRB,1,0xfff4,true); //reset command
+   }else{
+       /* send run prepare signal via CR system */
+       INT value = 1;
+       cm_msg(MINFO,"switch_fe","Using CRFE for run transition");
+       db_set_value_index(hDB,0,"Equipment/Clock Reset/Run Transitions/Request Run Prepare",
+                          &value, sizeof(value), switch_id, TID_INT, false);
+   }
 
    uint16_t timeout_cnt=300;
    uint64_t link_active_from_register;
@@ -540,10 +590,30 @@ INT resume_run(INT run_number, char *error)
 
 INT read_sc_event(char *pevent, INT off)
 {
+    // get mudaq
+    mudaq::DmaMudaqDevice & mu = *mup;
+
+    // get odb
+    // TODO: at the moment the timeout is a counter for all FEBs
+    odb merger_timeout_cnt("/Equipment/Switching/Variables");
+    auto merger_timeout_all = mu.read_register_ro(0x26);
+    merger_timeout_cnt["Merger Timeout All FEBs"] = merger_timeout_all;
+    
+    // create bank, pdata
+    bk_init(pevent);
+    DWORD *pdata;
+    bk_create(pevent, "SWB0", TID_DWORD, (void **)&pdata);
+    
+    *pdata++ = merger_timeout_all;
+    
+    bk_close(pevent,pdata);
+    return bk_size(pevent);
+
+    // TODO why do we do this?
     while(mup->FEBsc_get_packet()){};
     //TODO: make this a switch
     mup->FEBsc_dump_packets();
-    return 0;
+    //return 0;
     //return mup->FEBsc_write_bank(pevent,off);
 }
 
@@ -576,10 +646,48 @@ INT read_scitiles_sc_event(char *pevent, INT off){
 /*--- Read Slow Control Event from Mupix to be put into data stream --------*/
 
 INT read_mupix_sc_event(char *pevent, INT off){
-	static int i=0;
-    printf("Reading Scifi FEB status data from all FEBs %d\n",i++);
+    // get odb
+    odb rate_cnt("/Equipment/Mupix/Variables");
+    uint32_t HitsEnaRate;
+    uint32_t MergerRate;
+    uint32_t ResetPhase;
+    uint32_t TXReset;
+    char set_str[255];
+    static int i = 0;
+ 
+    bk_init(pevent);
+    DWORD *pdata;
+    bk_create(pevent, "FECN", TID_WORD, (void **) &pdata);
+    printf("Reading MuPix FEB status data from all FEBs %d\n", i++);
     MupixFEB::Instance()->ReadBackAllRunState();
-    return 0;
+    for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+        HitsEnaRate = MupixFEB::Instance()->ReadBackHitsEnaRate(i);
+        MergerRate = MupixFEB::Instance()->ReadBackMergerRate(i);
+        ResetPhase = MupixFEB::Instance()->ReadBackResetPhase(i);
+        TXReset = MupixFEB::Instance()->ReadBackTXReset(i);
+
+
+        sprintf(set_str, "hit ena rate FEB%d", i);
+        // TODO: change hex value
+        rate_cnt[set_str] = 0x7735940 - HitsEnaRate;
+        
+        sprintf(set_str, "merger rate FEB%d", i);
+        rate_cnt[set_str] = MergerRate;
+
+        sprintf(set_str, "reset phase FEB%d", i);
+        rate_cnt[set_str] = ResetPhase;
+
+        sprintf(set_str, "TX reset FEB%d", i);
+        rate_cnt[set_str] = TXReset;
+
+        *pdata++ = HitsEnaRate;
+        *pdata++ = MergerRate;
+        *pdata++ = ResetPhase; 
+        *pdata++ = TXReset;
+    }
+    
+    bk_close(pevent,pdata);
+    return bk_size(pevent);
 }
 
 /*--- helper functions ------------------------*/

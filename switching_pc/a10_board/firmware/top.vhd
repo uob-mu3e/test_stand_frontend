@@ -2,6 +2,7 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
 
 use work.pcie_components.all;
 use work.mudaq_registers.all;
@@ -142,12 +143,6 @@ architecture rtl of top is
         -- pcie read / write regs
         signal writeregs				: reg32array;
         signal writeregs_slow		: reg32array;
-        signal regwritten				: std_logic_vector(63 downto 0);
-        signal regwritten_fast		: std_logic_vector(63 downto 0);
-        signal regwritten_del1		: std_logic_vector(63 downto 0);
-        signal regwritten_del2		: std_logic_vector(63 downto 0);
-        signal regwritten_del3		: std_logic_vector(63 downto 0);
-        signal regwritten_del4		: std_logic_vector(63 downto 0);
         signal pb_in : std_logic_vector(2 downto 0);
         
         signal readregs				: reg32array;
@@ -289,6 +284,7 @@ architecture rtl of top is
         signal dma_end_event_test : std_logic;
         signal data_counter : std_logic_vector(32*NLINKS_TOTL-1 downto 0);
         signal datak_counter : std_logic_vector(4*NLINKS_TOTL-1 downto 0);
+        signal feb_merger_timeouts : std_logic_vector(NLINKS_TOTL-1 downto 0);
 
 begin
 
@@ -584,7 +580,7 @@ begin
             o_fpga_id           => open--,
         );
     end generate;
-
+    
 
     -------- MIDAS RUN control --------
 
@@ -596,6 +592,7 @@ begin
         i_reset_ack_seen_n                  => resets_n(RESET_BIT_RUN_START_ACK),
         i_reset_run_end_n                   => resets_n(RESET_BIT_RUN_END_ACK),
         i_buffers_empty                     => (others => '1'), -- TODO: connect buffers emtpy from dma here
+        o_feb_merger_timeout                => readregs_slow(CNT_FEB_MERGE_TIMEOUT_R),
         i_aligned                           => (others => '1'),
         i_data                              => rx_rc_v,
         i_datak                             => rx_rck_v,
@@ -678,7 +675,18 @@ begin
 			o_endofevent        => dma_end_event_cnt,
 			o_event_data        => dma_event_data,
 			o_state_out         => state_out_eventcounter,
-			o_fifo_almost_full  => open--link_fifo_almost_full--,
+            -- error cnt signals
+			o_fifo_almost_full  => open,--link_fifo_almost_full,
+            o_fifo_almost_full          => open,
+            o_cnt_link_fifo_almost_full => readregs_slow(CNT_FIFO_ALMOST_FULL_R),
+            o_cnt_tag_fifo_full         => readregs(CNT_TAG_FIFO_FULL_R),
+            o_cnt_ram_full              => readregs(CNT_RAM_FULL_R),
+            o_cnt_stream_fifo_full      => readregs(CNT_STREAM_FIFO_FULL_R),
+            o_cnt_dma_halffull          => readregs(CNT_DMA_HALFFULL_R),
+            o_cnt_dc_link_fifo_full     => readregs_slow(CNT_DC_LINK_FIFO_FULL_R),
+            o_cnt_skip_link_data        => readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R),
+            o_cnt_skip_event_dma        => readregs(CNT_SKIP_EVENT_DMA_RAM_R),
+            o_cnt_idle_not_header       => readregs(CNT_IDLE_NOT_HEADER_R)--,
     );
     
     dma_data <= dma_event_data;
@@ -796,6 +804,7 @@ begin
             readregs(RUN_NR_REGISTER_R)             <= readregs_slow(RUN_NR_REGISTER_R);
             readregs(RUN_NR_ACK_REGISTER_R)         <= readregs_slow(RUN_NR_ACK_REGISTER_R);
             readregs(RUN_STOP_ACK_REGISTER_R)       <= readregs_slow(RUN_STOP_ACK_REGISTER_R);
+            readregs(CNT_FEB_MERGE_TIMEOUT_R)       <= readregs_slow(CNT_FEB_MERGE_TIMEOUT_R);
             readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= (others => '0');
             readregs(MEM_WRITEADDR_LOW_REGISTER_R)  <= (X"0000" & readmem_writeaddr_finished);
         end if;
@@ -820,41 +829,6 @@ begin
         notendofevent_counter	=> notendofevent_counter,
         clk                     => pcie_fastclk_out--,
     );
-       
-    -- Prolong regwritten signals for 156.25 MHz clock
-    -- we just delay the fast signal so the slow clock will see it
-    process(pcie_fastclk_out)
-    begin
-    if rising_edge(pcie_fastclk_out) then
-        regwritten_del1 <= regwritten_fast;
-        regwritten_del2 <= regwritten_del1;
-        regwritten_del3 <= regwritten_del2;
-        regwritten_del4 <= regwritten_del3;
-        for I in 63 downto 0 loop
-            if(regwritten_fast(I) = '1' or
-                regwritten_del1(I) = '1' or
-                regwritten_del2(I) = '1' or
-                regwritten_del3(I) = '1' or
-                regwritten_del4(I) = '1')
-                then
-                regwritten(I)   <= '1';
-            else
-            regwritten(I)       <= '0';
-            end if;
-        end loop;
-    end if;
-    end process;
-
-    process(clk_156)
-    begin
-    if rising_edge(clk_156) then
-        for I in 63 downto 0 loop
-            if(regwritten(I) = '1') then
-                writeregs_slow(I) <= writeregs(I);
-            end if;
-        end loop;
-    end if;
-    end process;
 
     readmem_writeaddr_lowbits   <= readmem_writeaddr(15 downto 0);
     pb_in                       <= push_button0_db & push_button1_db & push_button2_db;
@@ -866,6 +840,12 @@ begin
         DMAMEMWRITEWIDTH        => 256
     )
     port map (
+        o_writeregs_B           => writeregs_slow,
+        i_clk_B                 => clk_156,
+		  
+		  o_writeregs_C           => open,
+        i_clk_C                 => clk_156,
+
         local_rstn              => '1',
         appl_rstn               => '1',
         refclk                  => PCIE_REFCLK_p,
@@ -891,7 +871,6 @@ begin
         
         -- pcie registers (write / read register, readonly, read write, in tools/dmatest/rw) -Sync read regs
         writeregs               => writeregs,
-        regwritten              => regwritten_fast,
         readregs                => readregs,
 
         -- pcie writeable memory

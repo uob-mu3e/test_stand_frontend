@@ -22,6 +22,7 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
+#include <fcntl.h>
 
 #include "mudaq_device.h"
 
@@ -67,10 +68,10 @@ int main(int argc, char *argv[])
 
     myfile << "idx" << "\t" << "data" << endl;
 
-    system("echo machmalkeins | sudo -S ../../../common/kerneldriver/compactify.sh");
-    usleep(1000000);
-    system("echo machmalkeins | sudo -S ../../../common/kerneldriver/compactify.sh");
-    usleep(1000000);
+//    system("echo machmalkeins | sudo -S ../../../common/kerneldriver/compactify.sh");
+//    usleep(1000000);
+//    system("echo machmalkeins | sudo -S ../../../common/kerneldriver/compactify.sh");
+//    usleep(1000000);
 
     size_t dma_buf_size = MUDAQ_DMABUF_DATA_LEN;
     volatile uint32_t *dma_buf;
@@ -84,18 +85,21 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    int fd = open("/dev/mudaq0_dmabuf", O_RDWR);
+    if(fd < 0) {
+        printf("fd = %d\n", fd);
+        return EXIT_FAILURE;
+    }
+    dma_buf = (uint32_t*)mmap(nullptr, MUDAQ_DMABUF_DATA_LEN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if(dma_buf == MAP_FAILED) {
+        printf("mmap failed: dmabuf = %x\n", dma_buf);
+        return EXIT_FAILURE;
+    }
+
     // initialize to zero
     for (int i = 0; i <  size/sizeof(uint32_t) ; i++) {
       (dma_buf)[ i ] = 0;
     }
-
-    // Host memory
-    uint32_t * cpu_mem = (uint32_t *)malloc(size);
-    if(!cpu_mem){
-        cout << "CPU memory allocation failed" << endl;
-        return -1;
-    }
-
 
     /* Open mudaq device */
     mudaq::DmaMudaqDevice mu("/dev/mudaq0");
@@ -112,7 +116,7 @@ int main(int argc, char *argv[])
     user_message.size = size;
 
     /* map memory to bus addresses for FPGA */
-    int ret_val = mu.map_pinned_dma_mem( user_message );
+    int ret_val = 0;//mu.map_pinned_dma_mem( user_message );
 
     if ( ret_val < 0 ) {
         cout << "Mapping failed " << endl;
@@ -166,43 +170,45 @@ int main(int argc, char *argv[])
         cout << hex << "0x" <<  dma_buf[i] << " ";
     cout << endl;
 
-    while(dma_buf[size/sizeof(uint32_t)-8] <= 0){
+    while(dma_buf[size/2/sizeof(uint32_t)-8] <= 0){
 
-        if (mu.last_written_addr() == 0) {
-            //cout << "last_written" << endl;
-            continue;
-        }
-        if (mu.last_written_addr() == lastlastWritten) {
-            //cout << "lastlast_written" << endl;
-            continue;
-        }
-        lastlastWritten = lastWritten;
-        lastWritten = mu.last_written_addr();
-
+//         if (mu.last_written_addr() == 0) {
+//             cout << "last_written" << endl;
+//             continue;
+//         }
+//         if (mu.last_written_addr() == lastlastWritten) {
+//             cout << "lastlast_written" << endl;
+//             continue;
+//         }
+//         lastlastWritten = lastWritten;
+//         lastWritten = mu.last_written_addr();
+// 
 //        myfile << "lastWritten" << endl;
 //        for (int i = 0; i < 20; i++) {
 //        char dma_buf_str[256];
 //        sprintf(dma_buf_str, "%08X", dma_buf[lastWritten+i-20]);
 //        myfile << lastWritten + i - 20 << "\t" << dma_buf_str << endl;
 //        }
-
+// 
 //        myfile << "endofevent" << endl;
-        lastendofevent = endofevent;
-        endofevent = mu.last_endofevent_addr(); // now begin of event :)
-
-        if ((endofevent+1)*8 > lastlastWritten) {
-            //cout << "endofevent" << endl;
-            continue;
-        }
-        if ((dma_buf[(endofevent)*8-1] == 0xAFFEAFFE or dma_buf[(endofevent)*8-1] == 0x0000009c) && dma_buf[(endofevent)*8] == 0x1){
-            cout << hex << (endofevent+1)*8 << " " << lastWritten << " " << dma_buf[(endofevent+1)*8] << endl;
-        };
+//         lastendofevent = endofevent;
+//         endofevent = mu.last_endofevent_addr(); // now begin of event :)
+// 
+//         if ((endofevent+1)*8 > lastlastWritten) {
+//             cout << "endofevent" << endl;
+//             continue;
+//         }
+//         if ((dma_buf[(endofevent)*8-1] == 0xAFFEAFFE or dma_buf[(endofevent)*8-1] == 0x0000009c) && dma_buf[(endofevent)*8] == 0x1){
+//             cout << hex << (endofevent+1)*8 << " " << lastWritten << " " << dma_buf[(endofevent+1)*8] << endl;
+//         };
 //        for (int i = 0; i < 20; i++) {
 //        char dma_buf_str[256];
 //        sprintf(dma_buf_str, "%08X", dma_buf[endofevent+i-20]);
 //        myfile << endofevent + i - 20 << "\t" << dma_buf_str << endl;
 //        }
     }
+    
+    cout << "start to write file" << endl;
 
 
 //        if (readindex > 1000000) break;
@@ -311,8 +317,9 @@ int main(int argc, char *argv[])
     reset_reg = SET_RESET_BIT_ALL(reset_reg);
     mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
 
+    char dma_buf_str[256];
     for (int j = 0 ; j < size/sizeof(uint32_t); j++){
-        char dma_buf_str[256];
+        if(j % (1024*1024) == 0) printf("j = %d\n", j);
         sprintf(dma_buf_str, "%08X", dma_buf[j]);
         myfile << j << "\t" << dma_buf_str << endl;
     }
