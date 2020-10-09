@@ -26,19 +26,19 @@ proc pgm {} {
 
 
 
-proc check { l1 l2 } {
+proc lequal { l1 l2 } {
     if { [ llength $l1 ] != [ llength $l2 ] } {
-        return 0
+        return false
     }
 
     set n [ llength $l1 ]
     for { set i 0 } { $i < $n } { incr i } {
         if { [ lindex $l1 $i ] != [ lindex $l2 $i ] } {
-            return 0
+            return false
         }
     }
 
-    return 1
+    return true
 }
 
 proc pgm_srec { mm fname } {
@@ -89,14 +89,14 @@ proc pgm_srec { mm fname } {
     puts DONE
 
     puts -nonewline "check sector 1 ... "
-    if { [ check [ lrange $words 0x0000 0x0FFF ] [ master_read_32 $mm 0x0000 0x1000 ] ] } {
+    if { [ lequal [ lrange $words 0x0000 0x0FFF ] [ master_read_32 $mm 0x0000 0x1000 ] ] } {
         puts OK
     } \
     else {
         puts FAIL
     }
     puts -nonewline "check sector 2 ... "
-    if { [ check [ lrange $words 0x1000 0x1FFF ] [ master_read_32 $mm 0x4000 0x1000 ] ] } {
+    if { [ lequal [ lrange $words 0x1000 0x1FFF ] [ master_read_32 $mm 0x4000 0x1000 ] ] } {
         puts OK
     } \
     else {
