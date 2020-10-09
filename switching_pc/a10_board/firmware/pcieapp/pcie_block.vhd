@@ -631,7 +631,7 @@ begin
 
 
 -- Configuration bus decode
-cfgbus: pcie_cfgbus 
+    cfgbus: work.pcie_cfgbus
     port map(
 		reset_n			=> pcie_perstn,
 		pld_clk			=> pld_clk,
