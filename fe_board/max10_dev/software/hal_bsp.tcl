@@ -3,7 +3,7 @@
 set dir0 [ file dirname $argv0 ]
 source [ file join $dir0 "include/hal_bsp.tcl" ]
 
-if { 0 } {
+if { 1 } {
     update_section_mapping .text flash_data
 
     set_setting hal.linker.allow_code_at_reset true
