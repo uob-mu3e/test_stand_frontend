@@ -10,15 +10,18 @@ source [ file join $dir0 "srec.tcl" ]
 
 
 
-set proc_paths [ get_service_paths processor ]
-processor_stop [ lindex $proc_paths 0 ]
-processor_reset [ lindex $proc_paths 0 ]
+set device_pattern /devices/10M*/nios*
 
-mm_claim 0
+set proc_paths [ get_service_paths processor ]
+set proc_path [ lindex $proc_paths [ lsearch $proc_paths $device_pattern ] ]
+processor_stop $proc_path
+processor_reset $proc_path
+
+mm_claim $device_pattern
 
 proc pgm {} {
     pgm_srec $::mm [ file join $::dir0 "app/main.srec" ]
-    processor_run [ lindex $::proc_paths 0 ]
+    processor_run $::proc_path
 }
 
 
