@@ -9,16 +9,16 @@ si5345_t si5345_2 { SPI_SI_BASE, 1 };
 
 #include "../../../fe/software/app_src/sc.h"
 #include "../../../fe/software/app_src/sc_ram.h"
-#include "../../../fe/software/app_src/tmpDisplay.h"
 sc_t sc;
 
 #include "../../../fe/software/app_src/mscb_user.h"
 mscb_t mscb;
 #include "../../../fe/software/app_src/reset.h"
+#include "../../../fe/software/app_src/tmpDisplay.h"
 
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
-    return mupix.callback(cmd,data,n);
+    //return mupix.callback(cmd,data,n);
 }
 
 
