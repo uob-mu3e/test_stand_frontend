@@ -189,6 +189,8 @@ architecture arch of fe_block_v2 is
     signal reset_link_rx            : std_logic_vector(7 downto 0);
     signal reset_link_rx_clk        : std_logic;
 
+    signal ArriaV_temperature       : std_logic_vector(7 downto 0);
+
 begin
 
     --v_reg: version_reg 
@@ -323,6 +325,11 @@ begin
             fe_reg.rdata(PHASE_WIDTH_g - 1 downto 0) <= reset_phase;
         end if;
 
+        -- ArriaV temperature
+        if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.re = '1' ) then
+            fe_reg.rdata(ArriaV_temperature'range) <= ArriaV_temperature;
+        end if;
+
         -- mscb
 
         -- git head hash
@@ -393,20 +400,21 @@ begin
         --i2c_sda_in => i_i2c_sda,
         --i2c_sda_oe => o_i2c_sda_oe,
 
-        spi_miso => i_spi_miso,
-        spi_mosi => o_spi_mosi,
-        spi_sclk => o_spi_sclk,
-        spi_ss_n => o_spi_ss_n,
+        spi_miso        => i_spi_miso,
+        spi_mosi        => o_spi_mosi,
+        spi_sclk        => o_spi_sclk,
+        spi_ss_n        => o_spi_ss_n,
 
-        spi_si_miso => spi_si_miso,
-        spi_si_mosi => spi_si_mosi,
-        spi_si_sclk => spi_si_sclk,
-        spi_si_ss_n => spi_si_ss_n,
+        spi_si_miso     => spi_si_miso,
+        spi_si_mosi     => spi_si_mosi,
+        spi_si_sclk     => spi_si_sclk,
+        spi_si_ss_n     => spi_si_ss_n,
 
-        pio_export => nios_pio,
+        pio_export      => nios_pio,
+        temp_tsdcalo    => ArriaV_temperature,
 
-        rst_reset_n => nios_reset_n,
-        clk_clk => i_nios_clk--,
+        rst_reset_n     => nios_reset_n,
+        clk_clk         => i_nios_clk--,
     );
 
     e_sc_ram : entity work.sc_ram

@@ -9,6 +9,7 @@ si5345_t si5345_2 { SPI_SI_BASE, 1 };
 
 #include "../../../fe/software/app_src/sc.h"
 #include "../../../fe/software/app_src/sc_ram.h"
+#include "../../../fe/software/app_src/tmpDisplay.h"
 sc_t sc;
 
 #include "../../../fe/software/app_src/mscb_user.h"
@@ -44,6 +45,7 @@ int main() {
         printf("  [5] => si5345_2\n");        
         printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
+        printf("  [8] => temperature Display\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -68,6 +70,9 @@ int main() {
             break;
         case '7':
             menu_reset();
+            break;
+        case '8':
+            menu_tmpDisplay((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         default:
             printf("invalid command: '%c'\n", cmd);
