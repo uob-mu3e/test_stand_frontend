@@ -518,6 +518,7 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
     }
     if(count==1000){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Timeout occured waiting for reply");
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %d", FPGA_ID, startaddr, length);
 	//most common case of failure! retry after resetting the SC blocks
 	if(retryOnError){
 	    cm_msg(MINFO, "MudaqDevice::FEBsc_read" , "Retry after timeout");
@@ -537,6 +538,7 @@ int MudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, u
         return -1;
     }
     if(m_sc_packet_fifo.back().GetLength()!=length){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %d", FPGA_ID, startaddr, length);
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error");
         return -1;
     }

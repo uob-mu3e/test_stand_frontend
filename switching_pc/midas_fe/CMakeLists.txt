@@ -9,5 +9,4 @@ target_compile_options(switch_fe PRIVATE
 target_include_directories(switch_fe PRIVATE ${MIDAS_DIR}/include ${MXML_DIR} ${MIDASINCLUDE_DIR} ${LIBMUDAQ_DIR} ${INCMUDAQ_DIR})
 target_link_libraries(switch_fe mfe midas rt pthread util libmudaq_scifi libmutrig libmupix dl)
 
-
 install(TARGETS switch_fe DESTINATION bin)

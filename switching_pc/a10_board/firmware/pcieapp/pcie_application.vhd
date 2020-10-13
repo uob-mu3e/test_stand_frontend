@@ -22,6 +22,14 @@ entity pcie_application is
 			DMAMEMWRITEWIDTH	  : integer := 32
 		);
 	port (
+    o_writeregs_B               : out   reg32array;
+	 o_regwritten_B:			out   std_logic_vector(63 downto 0);
+    i_clk_B                     : in    std_logic := '0';
+	 
+    o_writeregs_C               : out   reg32array;
+	 o_regwritten_C:			out   std_logic_vector(63 downto 0);
+    i_clk_C                     : in    std_logic := '0';
+
 		local_rstn:				in		std_logic;
 		refclk:					in		std_logic;
 	
@@ -212,9 +220,17 @@ architecture RTL of pcie_application is
 		--rx_st_ready_rmem <= '1';
 		--rx_st_ready_wmem <= '1';
 		
-									
-		wregs: pcie_writeable_registers 
+
+    e_pcie_writeable_registers : entity work.pcie_writeable_registers
 		port map(
+        o_writeregs_B           => o_writeregs_B,
+		  o_regwritten_B			  => o_regwritten_B,
+        i_clk_B                 => i_clk_B,
+		  
+		  o_writeregs_C           => o_writeregs_C,
+		  o_regwritten_C			  => o_regwritten_C,
+        i_clk_C                 => i_clk_C,
+
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
 	
@@ -239,7 +255,6 @@ architecture RTL of pcie_application is
 			inaddr32_w		=> inaddr32_w
 		);
 		
-		
 		-- map to test port
 		--process(refclk, local_rstn)
 		--begin
@@ -263,7 +278,7 @@ architecture RTL of pcie_application is
 		
 		
 
-		rregs: pcie_readable_registers 
+    e_pcie_readable_registers : entity work.pcie_readable_registers
 		port map(
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
@@ -286,7 +301,7 @@ architecture RTL of pcie_application is
 		);
 
 
-		wmem: pcie_writeable_memory 
+    e_pcie_writeable_memory : entity work.pcie_writeable_memory
 		port map(
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
@@ -311,8 +326,8 @@ architecture RTL of pcie_application is
 			readen 			=> wmem_readen
 		);
 
-		
-		rmem: pcie_readable_memory 
+
+    e_pcie_readable_memory : entity work.pcie_readable_memory
 		port map(
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
@@ -335,7 +350,7 @@ architecture RTL of pcie_application is
 		
 
 
-		completer:pcie_completer
+    e_pcie_completer : entity work.pcie_completer
 		port map(
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
@@ -419,8 +434,8 @@ architecture RTL of pcie_application is
 	
 		writememaddr <= writememaddr_r when writememwren = '0' else	
 					writememaddr_w;
-					
-	wram: pcie_wram_narrow
+
+    e_pcie_wram_narrow : component work.cmp.pcie_wram_narrow
         PORT MAP
         (
                 address_a        => writememaddr,
@@ -438,7 +453,7 @@ architecture RTL of pcie_application is
 	  
 		  
 
-	rram: pcie_ram_narrow
+    e_pcie_ram_narrow : component work.cmp.pcie_ram_narrow
 	PORT MAP
 	(
 		data						=> readmem_data,
@@ -453,8 +468,8 @@ architecture RTL of pcie_application is
 	
 
 
-	
-	dmaengine:dma_engine 
+
+    e_dma_engine_1 : entity work.dma_engine
 	generic map(
 			MEMWRITEADDRSIZE => DMAMEMWRITEADDRSIZE,
 			MEMREADADDRSIZE  => DMAMEMREADADDRSIZE,
@@ -514,8 +529,8 @@ architecture RTL of pcie_application is
 		);
 		
 		
-		
-	dmaengine2:dma_engine 
+
+    e_dma_engine_2 : entity work.dma_engine
 	generic map(
 			MEMWRITEADDRSIZE => DMAMEMWRITEADDRSIZE,
 			MEMREADADDRSIZE  => DMAMEMREADADDRSIZE,

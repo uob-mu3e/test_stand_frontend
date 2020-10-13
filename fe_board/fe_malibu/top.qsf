@@ -26,7 +26,7 @@ set_global_assignment -name QSYS_FILE nios.qsys
 set_global_assignment -name QIP_FILE ../firmware/FEB_common/include.qip
 set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/include.qip
 set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/include.qip
-
+set_global_assignment -name VHDL_FILE ../fe_mupix/mupix_block/comp_type_const/mupix_constants.vhd
 
 
 # tail

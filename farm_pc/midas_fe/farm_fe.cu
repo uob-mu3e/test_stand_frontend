@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "midas.h"
+#include "odbxx.h"
 #include "msystem.h"
 #include "mcstd.h"
 #include "experim.h"
@@ -19,8 +20,10 @@
 
 #include "mudaq_device.h"
 #include "mfe.h"
+#include "history.h"
 
 using namespace std;
+using midas::odb;
 
 /*-- Globals -------------------------------------------------------*/
 
@@ -78,8 +81,14 @@ INT read_stream_thread(void *param);
 INT poll_event(INT source, INT count, BOOL test);
 INT interrupt_configure(INT cmd, INT source, POINTER_T adr);
 
-void datagen_settings_changed(HNDLE, HNDLE, int, void *);
-void link_active_settings_changed(HNDLE, HNDLE, int, void *);
+
+void setup_odb();
+void setup_watches();
+
+INT init_mudaq();
+
+void link_active_settings_changed(odb &o);
+void datagen_settings_changed(odb &o);
 /*-- Equipment list ------------------------------------------------*/
 
 EQUIPMENT equipment[] = {
@@ -91,13 +100,28 @@ EQUIPMENT equipment[] = {
      0,                      /* event source crate 0, all stations */
      "MIDAS",                /* format */
      TRUE,                   /* enabled */
-     RO_RUNNING,             /* read only when running */
-     100,                    /* poll for 100ms */
+     RO_RUNNING  | RO_STOPPED | RO_ODB,             /* read only when running */
+     1000,                    /* poll for 1s */
      0,                      /* stop run after this event limit */
      0,                      /* number of sub events */
      0,                      /* don't log history */
      "", "", "",},
-    NULL,                    /* readout routine */
+     NULL,                    /* readout routine */
+    },
+    {"Stream Logger",                /* equipment name */
+    {11, 0,                   /* event ID, trigger mask */
+     "SYSTEM",               /* event buffer */
+     EQ_PERIODIC,                /* equipment type */
+     0,                      /* event source crate 0, all stations */
+     "MIDAS",                /* format */
+     TRUE,                   /* enabled */
+     RO_ALWAYS  | RO_ODB,             /* read only when running */
+     1000,                    /* poll for 1s */
+     0,                      /* stop run after this event limit */
+     0,                      /* number of sub events */
+     1,                      /* log history every event */
+     "", "", "",},
+     read_stream_event,                    /* readout routine */
     },
 
    {""}
@@ -107,117 +131,235 @@ EQUIPMENT equipment[] = {
 
 INT frontend_init()
 {
-   cout<<"DMA_BUF_LENGTH: "<<dma_buf_size<<"  dma_buf_nwords: "<<dma_buf_nwords<<endl; 
-   HNDLE hDB, hStreamSettings;
-   
-   set_equipment_status(equipment[0].name, "Initializing...", "var(--myellow)");
-   
-   // Get database
-   cm_get_experiment_database(&hDB, NULL);
-   
-   // Map /equipment/Stream/Settings (structure defined in experim.h)
-   char set_str[255];
-   STREAM_SETTINGS_STR(stream_settings_str);
+    // TODO: for debuging
+//    odb::set_debug(true);
 
-   sprintf(set_str, "/Equipment/Stream/Settings");
-   int status = db_create_record(hDB, 0, set_str, strcomb(stream_settings_str));
-   status = db_find_key (hDB, 0, set_str, &hStreamSettings);
-   if (status != DB_SUCCESS){
-      cm_msg(MINFO,"frontend_init","Key %s not found", set_str);
-      return status;
-   }
-   cm_set_transition_sequence(TR_START,300);
-   cm_set_transition_sequence(TR_STOP,700);
-   // add custom page to ODB
-   db_create_key(hDB, 0, "Custom/Farm&", TID_STRING);
-   const char * name = "farm.html";
-   db_set_value(hDB,0,"Custom/Farm&",name, sizeof(name), 1,TID_STRING);
+    set_equipment_status(equipment[0].name, "Initializing...", "var(--myellow)");
 
-   HNDLE hKey;
+    // setup odb and watches
+    setup_odb();
+    setup_watches();
 
-   // create Settings structure in ODB
-   db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator", &hKey);
-   assert(hKey);
-   db_watch(hDB, hKey, datagen_settings_changed, nullptr);
-  
-   //link mask changed settings - init & connect to ODB
-   db_find_key(hDB, 0, "/Equipment/Links/Settings/LinkMask", &hKey);
-   assert(hKey);
-   db_watch(hDB, hKey, link_active_settings_changed, nullptr);
+    // init dma and mudaq device
+    INT status = init_mudaq();
+    if (status != SUCCESS) return FE_ERR_DRIVER;
 
-   // Allocate memory for the DMA buffer - this can fail!
-   if(cudaMallocHost( (void**)&dma_buf, dma_buf_size ) != cudaSuccess){
-      cout << "Allocation failed, aborting!" << endl;
-      cm_msg(MERROR, "frontend_init" , "Allocation failed, aborting!");
-      return FE_ERR_DRIVER;
-   }
-   
-   // initialize to zero
-   for (int i = 0; i < dma_buf_nwords ; i++) {
-      (dma_buf)[i] = 0;
-   }
-   
-   mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
-   if ( !mup->open() ) {
-      cout << "Could not open device " << endl;
-      cm_msg(MERROR, "frontend_init" , "Could not open device");
-      return FE_ERR_DRIVER;
-   }
-   
-   if ( !mup->is_ok() )
-      return FE_ERR_DRIVER;
-   
-   cm_msg(MINFO, "frontend_init" , "Mudaq device is ok");
-   cout << "Mudaq device is ok " << endl;
-   
-   // set fpga write pointers
-   lastlastWritten = 0;
-   lastRunWritten = mup->last_written_addr();
+    usleep(5000);
 
-   struct mesg user_message;
-   user_message.address = dma_buf;
-   user_message.size = dma_buf_size;
-   
-   // map memory to bus addresses for FPGA
-   int ret_val = mup->map_pinned_dma_mem( user_message );
-   
-   if (ret_val < 0) {
-      cout << "Mapping failed " << endl;
-      cm_msg(MERROR, "frontend_init" , "Mapping failed");
-      mup->disable();
-      mup->close();
-      free( (void *)dma_buf );
-      delete mup;
-      return FE_ERR_DRIVER;
-   }
-   
-   // switch off and reset DMA for now
-   mup->disable();
-   
-   //update data generator from ODB
-   db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator/Divider", &hKey);
-   datagen_settings_changed(hDB,hKey,0,NULL);
+    // create ring buffer for readout thread
+    create_event_rb(0);
 
-   // switch off the data generator (just in case..)
-   mup->write_register(DATAGENERATOR_REGISTER_W, 0x0);
-   usleep(2000);
-   // DMA_CONTROL_W
-   mup->write_register(0x5,0x0);
+    // create readout thread
+    ss_thread_create(read_stream_thread, NULL);
 
-   //set data link enable
-   link_active_settings_changed(hDB,hKey,0,NULL);
+    set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
 
-   usleep(5000);
-   
-   // create ring buffer for readout thread
-   create_event_rb(0);
-   
-   // create readout thread
-   ss_thread_create(read_stream_thread, NULL);
-      
-   set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
-   
-   return SUCCESS;
+    //Set our transition sequence. The default is 500.
+    cm_set_transition_sequence(TR_START,300);
+
+    //Set our transition sequence. The default is 500. Setting it
+    // to 700 means we are called AFTER most other clients.
+    cm_set_transition_sequence(TR_STOP,700);
+
+    return SUCCESS;
+}
+
+// ODB Setup //////////////////////////////
+void setup_odb(){
+
+    // Map /equipment/Stream/Settings
+    odb datagen_settings = {
+        {"Divider", 1000},     // int
+        {"Enable", false},     // bool
+    };
+
+    datagen_settings.connect("/Equipment/Stream/Settings/Datagenerator", true);
+
+    odb dma_settings = {
+            {"dma_buf_nwords", int(dma_buf_nwords)},
+            {"dma_buf_size", int(dma_buf_size)},
+    };
+
+    dma_settings.connect("/Equipment/Stream/Settings/DMA_Settings", true);
+
+    // add custom page to ODB
+    odb custom("/Custom");
+    custom["Farm&"] = "farm.html";
+    
+    // add error cnts to ODB
+    odb error_settings = {
+        {"DC FIFO ALMOST FUll", 0},
+        {"DC LINK FIFO FULL", 0},
+        {"TAG FIFO FULL", 0},
+        {"MIDAS EVENT RAM FULL", 0},
+        {"STREAM FIFO FULL", 0},
+        {"DMA HALFFULL", 0},
+        {"SKIP EVENT LINK FIFO", 0},
+        {"SKIP EVENT DMA RAM", 0},
+        {"IDLE NOT EVENT HEADER", 0},
+    };
+    error_settings.connect("/Equipment/Stream Logger/Variables", true);
+    
+    // Define history panels
+    hs_define_panel("Stream Logger", "MIDAS Bank Builder", {"Stream Logger:DC FIFO ALMOST FUll",
+                                                            "Stream Logger:DC LINK FIFO FULL",
+                                                            "Stream Logger:TAG FIFO FULL",
+                                                            "Stream Logger:MIDAS EVENT RAM FULL",
+                                                            "Stream Logger:STREAM FIFO FULL",
+                                                            "Stream Logger:DMA HALFFULL",
+                                                            "Stream Logger:SKIP EVENT LINK FIFO",
+                                                            "Stream Logger:SKIP EVENT DMA RAM",
+                                                            "Stream Logger:IDLE NOT EVENT HEADER"});
+}
+
+void setup_watches(){
+
+    // datagenerator changed settings
+    odb datagen("/Equipment/Stream/Settings/Datagenerator");
+    datagen.watch(datagen_settings_changed);
+
+    // link mask changed settings
+    odb links("/Equipment/Links/Settings/LinkMask");
+    links.watch(link_active_settings_changed);
+
+}
+
+void datagen_settings_changed(odb &o)
+{
+    std::string name = o.get_name();
+
+    cm_msg(MINFO, "datagen_settings_changed", "Datagenerator stettings changed");
+
+    if (name == "Divider") {
+        bool value = o;
+        cm_msg(MINFO, "datagen_settings_changed", "Set Divider to %d", value);
+        mup->write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, o, 100);
+        // TODO: test me
+    }
+
+    if (name == "Enable") {
+        bool value = o;
+        cm_msg(MINFO, "datagen_settings_changed", "Set Disable to %d", value);
+        //this is set once we start the run
+    }
+
+}
+
+void link_active_settings_changed(odb &o){
+
+    /* get link active from odb */
+    uint64_t link_active_from_odb = 0;
+    //printf("Data link active: 0x");
+    int idx=0;
+    for(int link : o) {
+        int offset = 0;//MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
+        if(link & FEBLINKMASK::DataOn)
+            //a standard FEB link (SC and data) is considered enabled if RX and TX are.
+            //a secondary FEB link (only data) is enabled if RX is.
+            //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
+            link_active_from_odb += (1 << idx);
+        //printf("%u",(frontend_board_active_odb[offset + link] & FEBLINKMASK::DataOn?1:0));
+        idx ++;
+    }
+    //printf("\n");
+    //mup->write_register(DATA_LINK_MASK_REGISTER_HIGH_W, enablebits >> 32); TODO make 64 bits
+    mup->write_register(DATA_LINK_MASK_REGISTER_W, link_active_from_odb & 0xFFFFFFFF);
+
+}
+
+// INIT MUDAQ //////////////////////////////
+INT init_mudaq(){
+
+    // Allocate memory for the DMA buffer - this can fail!
+    if(cudaMallocHost( (void**)&dma_buf, dma_buf_size ) != cudaSuccess){
+        cout << "Allocation failed, aborting!" << endl;
+        cm_msg(MERROR, "frontend_init" , "Allocation failed, aborting!");
+        return FE_ERR_DRIVER;
+    }
+
+    // initialize to zero
+    for (int i = 0; i < dma_buf_nwords ; i++) {
+        (dma_buf)[i] = 0;
+    }
+
+    // open mudaq
+    mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
+    if ( !mup->open() ) {
+        cout << "Could not open device " << endl;
+        cm_msg(MERROR, "frontend_init" , "Could not open device");
+        return FE_ERR_DRIVER;
+    }
+
+    // check mudaq
+    if ( !mup->is_ok() )
+        return FE_ERR_DRIVER;
+    else {
+        cm_msg(MINFO, "frontend_init" , "Mudaq device is ok");
+    }
+
+    // set fpga write pointers
+    lastlastWritten = 0;
+    lastRunWritten = mup->last_written_addr();
+
+    // map memory to bus addresses for FPGA
+    struct mesg user_message;
+    user_message.address = dma_buf;
+    user_message.size = dma_buf_size;
+
+    int ret_val = mup->map_pinned_dma_mem( user_message );
+    
+    if (ret_val < 0) {
+        cout << "Mapping failed " << endl;
+        cm_msg(MERROR, "frontend_init" , "Mapping failed");
+        mup->disable();
+        mup->close();
+        free( (void *)dma_buf );
+        delete mup;
+        return FE_ERR_DRIVER;
+    }
+
+    // switch off and reset DMA for now
+    mup->disable();
+    usleep(2000);
+
+    // switch off the data generator (just in case ..)
+    mup->write_register(DATAGENERATOR_REGISTER_W, 0x0);
+    usleep(2000);
+
+    // DMA_CONTROL_W
+    mup->write_register(0x5,0x0);
+
+    //set data link enable
+    odb link;
+    link.connect("/Equipment/Links/Settings/LinkMask");
+    link_active_settings_changed(link);
+
+    return SUCCESS;
+}
+
+
+INT db_watch_datagen_thread(void *param){
+
+    odb datagen("/Equipment/Stream/Settings/Datagenerator");
+    datagen.watch([](midas::odb &o) {
+        std::cout << "Value of key \"" + o.get_full_path() + "\" changed to " << o << std::endl;
+
+        if (o.get_full_path() == "Enable") {
+            //this is set once we start the run
+        }
+
+        if (o.get_full_path() == "Divider") {
+            mup->write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, o, 100);
+        }
+    });
+
+    do {
+        int status = cm_yield(100);
+        if (status == SS_ABORT || status == RPC_SHUTDOWN)
+            break;
+    } while (!ss_kbhit());
+
+    return 1;
 }
 
 /*-- Frontend Exit -------------------------------------------------*/
@@ -236,59 +378,6 @@ INT frontend_exit()
    
    return SUCCESS;
 }
-
-void datagen_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
-{
-    KEY key;
-    db_get_key(hDB, hKey, &key);
-    cm_msg(MINFO, "datagen_settings_changed", "Set Farm: %s", key.name);
-
-    if (std::string(key.name) == "Enable") {
-       //this is set once we start the run
-    }
-
-    if (std::string(key.name) == "Divider") {
-       int value;
-       int size = sizeof(value);
-       db_get_data(hDB, hKey, &value, &size, TID_INT);
-       mup->write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W,value,100);
-    }
-}
-
-uint64_t get_link_active_from_odb(){
-   INT frontend_board_active_odb[MAX_N_FRONTENDBOARDS];
-   int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
-   int status = db_get_value(hDB, 0, "/Equipment/Links/Settings/LinkMask", frontend_board_active_odb, &size, TID_INT, false);
-   if (status != SUCCESS){
-      cm_msg(MERROR,"switch_fe","Error getting record for /Equipment/Links/Settings");
-      throw;
-   }
-
-   /* get link active from odb */
-   uint64_t link_active_from_odb = 0;
-   //printf("Data link active: 0x");
-   for(int link = MAX_LINKS_PER_SWITCHINGBOARD-1 ; link>=0; link--) {
-      int offset = 0;//MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
-      if(frontend_board_active_odb[offset + link] & FEBLINKMASK::DataOn)
-	 //a standard FEB link (SC and data) is considered enabled if RX and TX are. 
-	 //a secondary FEB link (only data) is enabled if RX is.
-	 //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
-         link_active_from_odb += (1 << link);
-      //printf("%u",(frontend_board_active_odb[offset + link] & FEBLINKMASK::DataOn?1:0));
-   }
-   //printf("\n");
-   return link_active_from_odb;
-}
-
-void set_link_enable(uint64_t enablebits){
-   //mup->write_register(DATA_LINK_MASK_REGISTER_HIGH_W, enablebits >> 32); TODO make 64 bits
-   mup->write_register(DATA_LINK_MASK_REGISTER_W,  enablebits & 0xFFFFFFFF);
-}
-
-void link_active_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *){
-    set_link_enable(get_link_active_from_odb());
-}
-
 
 
 /*-- Begin of Run --------------------------------------------------*/
@@ -310,62 +399,34 @@ INT begin_of_run(INT run_number, char *error)
    uint32_t reset_reg = 0;
    reset_reg |= 1<<RESET_BIT_EVENT_COUNTER;
    reset_reg |= 1<<RESET_BIT_DATAGEN;
-
    mu.write_register_wait(RESET_REGISTER_W, reset_reg, 100);
-   // Enable register on FPGA for continous readout and enable dma
 
    // empty dma buffer
    for (int i = 0; i < dma_buf_nwords ; i++) {
       (dma_buf)[i] = 0;
    }
 
+   // Enable register on FPGA for continous readout and enable dma
    mu.enable_continous_readout(0);
    usleep(10);
    mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
 
    // Set up data generator: enable only if set in ODB
-   HNDLE hKey;
-   BOOL value;
-   INT size = sizeof(value);
-   db_find_key(hDB, 0, "/Equipment/Stream/Settings/Datagenerator/Enable", &hKey);
-   db_get_data(hDB, hKey, &value, &size, TID_BOOL);
    uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
-   
-   if(value) {
-       // TODO: make odb value for slowdown
-       mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x3E8, 100);
+   odb datagen_settings;
+   datagen_settings.connect("/Equipment/Stream/Settings/Datagenerator");
+   if(datagen_settings["Enable"]) {
+       // TODO: test me
+       mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, datagen_settings["Divider"], 100);
        reg = SET_DATAGENERATOR_BIT_ENABLE(reg);
    }
-   
    mu.write_register(DATAGENERATOR_REGISTER_W,reg);
 
+   // reset lastlastwritten
    lastlastWritten = 0;
    lastRunWritten = mu.last_written_addr();//lastWritten;
-   
-    //mu.enable_continous_readout(1);
-   // Note: link masks are already set during fe_init and via ODB callback
 
-   /*
-   // Get ODB settings for this equipment
-   HNDLE hDB, hStreamSettings;
-   INT status;
-   char set_str[256];
-   STREAM_SETTINGS settings;  // defined in experim.h
-   
-   cm_get_experiment_database(&hDB, NULL);
-   sprintf(set_str, "/Equipment/Stream/Settings");
-   status = db_find_key (hDB, 0, set_str, &hStreamSettings);
-   if (status != DB_SUCCESS) {
-      cm_msg(MERROR, "begin_of_run", "cannot find stream settings record from ODB");
-      return status;
-   }
-   size = sizeof(settings);
-   status = db_get_record(hDB, hStreamSettings, &settings, &size, 0);
-   if (status != DB_SUCCESS) {
-      cm_msg(MERROR, "begin_of_run", "cannot retrieve stream settings from ODB");
-      return status;
-   }
-   */
+   // Note: link masks are already set during fe_init and via ODB callback
 
    set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
    
@@ -395,24 +456,26 @@ INT end_of_run(INT run_number, char *error)
       printf("Buffers all empty\n");
    }
 
-   // TODO: Find a better way to see when DMA is finished.
-
-   printf("Waiting for DMA to finish\n");
+   // Finish DMA while waiting for last requested data to be finished
+   cm_msg(MINFO, "farm_fe", "Waiting for DMA to finish");
    usleep(1000); // Wait for DMA to finish
    timeout_cnt = 0;
-   while(mu.last_written_addr() != lastlastWritten && //(readindex % dma_buf_nwords) &&
-         timeout_cnt++ < 50) {
-      printf("Waiting for DMA to finish %d/50\n", timeout_cnt);
-      timeout_cnt++;
-      usleep(1000);
+   
+   // wait for requested data
+   // TODO: in readout th poll on run end reg from febs
+   // write variable and check this one here and then disable readout th
+   // also check if readout th is disabled by midas at run end
+   while ( (mu.read_register_ro(0x1C) & 1) == 0 && timeout_cnt < 100 ) {
+       timeout_cnt++;
+       usleep(1000);
    };
-
-   if(timeout_cnt>=50) {
-      cm_msg(MERROR,"farm_fe","DMA did not finish");
+        
+   if(timeout_cnt>=100) {
+      cm_msg(MERROR, "farm_fe", "DMA did not finish");
       set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
 //      return CM_TRANSITION_CANCELED;
    }else{
-      printf("DMA is finished\n");
+      cm_msg(MINFO, "farm_fe", "DMA is finished\n");
    }
 
     // stop generator
@@ -521,29 +584,44 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 
 INT read_stream_event(char *pevent, INT off)
 {
-   /*
+    
+   // get mudaq 
+   mudaq::DmaMudaqDevice & mu = *mup;
+ 
+   // get odb for errors
+   odb error_cnt("/Equipment/Stream Logger/Variables");
+
+   // create bank, pdata, stream buffer is name
    bk_init(pevent);
-   
    DWORD *pdata;
-   uint32_t read = 0;
-   bk_create(pevent, "HEAD", TID_DWORD, (void **)&pdata);
-   
-   for (int i =0; i < 8; i ++) {
-      *pdata++ = dma_buf[(++readindex)%dma_buf_nwords];
-      read++;
-   }
-   
+   bk_create(pevent, "STBU", TID_DWORD, (void **)&pdata);
+    
+   // TODO: save value to variable before and dont call function all the time
+   // get error regs and write to odb
+   error_cnt["DC FIFO ALMOST FUll"] = mu.read_register_ro(0x1D);
+   error_cnt["TAG FIFO FULL"] =  mu.read_register_ro(0x1E);
+   error_cnt["MIDAS EVENT RAM FULL"] = mu.read_register_ro(0x1F);
+   error_cnt["STREAM FIFO FULL"] = mu.read_register_ro(0x20);
+   error_cnt["DMA HALFFULL"] = mu.read_register_ro(0x21);
+   error_cnt["DC LINK FIFO FULL"] = mu.read_register_ro(0x22);
+   error_cnt["SKIP EVENT LINK FIFO"] = mu.read_register_ro(0x23);
+   error_cnt["SKIP EVENT DMA RAM"] =  mu.read_register_ro(0x24);
+   error_cnt["IDLE NOT EVENT HEADER"] =  mu.read_register_ro(0x25);
+
+   *pdata++ = mu.read_register_ro(0x1D);
+   *pdata++ = mu.read_register_ro(0x1E);
+   *pdata++ = mu.read_register_ro(0x1F);
+   *pdata++ = mu.read_register_ro(0x20);
+   *pdata++ = mu.read_register_ro(0x21);
+   *pdata++ = mu.read_register_ro(0x22);
+   *pdata++ = mu.read_register_ro(0x23);
+   *pdata++ = mu.read_register_ro(0x24);
+   *pdata++ = mu.read_register_ro(0x25);
+
    bk_close(pevent, pdata);
-   newdata -= read;
-   
-   if (read < newdata && newdata < 0x10000)
-      moreevents = true;
-   else
-      moreevents = false;
-   
+ 
    return bk_size(pevent);
-   */
-   return 0;
+  
 }
 
 // check if the event is good
@@ -642,7 +720,7 @@ INT update_equipment_status(int status, int cur_status, EQUIPMENT *eq)
 INT read_stream_thread(void *param) {
     // get mudaq
     mudaq::DmaMudaqDevice & mu = *mup;
-
+    
     int cur_status = -1;
 
     // tell framework that we are alive
@@ -674,6 +752,9 @@ INT read_stream_thread(void *param) {
 
         // disable dma
         mu.disable();
+        
+        
+        
         // and get lastWritten
         lastlastWritten = 0;
         uint32_t lastWritten = mu.last_written_addr();

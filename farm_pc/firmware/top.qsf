@@ -15,13 +15,12 @@ set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
 set_global_assignment -name TOP_LEVEL_ENTITY top
 
 
-
-
-
-
-
-set_global_assignment -name VHDL_FILE midas_event_builder.vhd
-set_global_assignment -name VHDL_FILE midas_bank_builder.vhd
+set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_scfifo.vhd
+set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_ram.vhd
+set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_dcfifo.vhd
+set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram_1_port.vhd
+set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_dcfifo_mixed_widths.vhd
+set_global_assignment -name VHDL_FILE a10/midas_event_builder.vhd
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name VHDL_FILE top.vhd
@@ -29,28 +28,36 @@ set_global_assignment -name SDC_FILE top.sdc
 set_global_assignment -name QIP_FILE ip/include.qip
 set_global_assignment -name QIP_FILE pcieapp/include.qip
 set_global_assignment -name VHDL_FILE ../../../fe_board/firmware/FEB_common/daq_constants.vhd
-set_global_assignment -name VHDL_FILE link_observer.vhd
-set_global_assignment -name VHDL_FILE dma_counter.vhd
-set_global_assignment -name VHDL_FILE dma_evaluation.vhd
-set_global_assignment -name VHDL_FILE linear_shift.vhd
+set_global_assignment -name VHDL_FILE a10/link_observer.vhd
+set_global_assignment -name VHDL_FILE a10/dma_evaluation.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
-set_global_assignment -name VHDL_FILE mudaq_components.vhd
-set_global_assignment -name VHDL_FILE mudaq_registers.vhd
+set_global_assignment -name VHDL_FILE assignments/mudaq_registers.vhd
 set_global_assignment -name QIP_FILE util/util.qip
 set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 set_global_assignment -name QIP_FILE a10/xcvr.qip
-set_global_assignment -name VHDL_FILE data_demerge.vhd
-set_global_assignment -name VHDL_FILE sw_algin_data.vhd
+set_global_assignment -name VHDL_FILE a10/data_demerge.vhd
+set_global_assignment -name VHDL_FILE a10/time_merger.vhd
+set_global_assignment -name VHDL_FILE a10/sc_master.vhd
+set_global_assignment -name VHDL_FILE a10/sc_slave.vhd
+set_global_assignment -name VHDL_FILE a10/linear_shift.vhd
 set_global_assignment -name VHDL_FILE a10/data_generator_a10.vhd
-set_global_assignment -name VHDL_FILE run_control.vhd
+set_global_assignment -name VHDL_FILE a10/run_control.vhd
+set_global_assignment -name VHDL_FILE a10/run_control_link_listener.vhd
 set_global_assignment -name VHDL_FILE ../../../fe_board/fe_mupix/mupix_block/comp_type_const/mupix_constants.vhd
-set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_scfifo.vhd
-set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram.vhd
-set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_dcfifo.vhd
+
+
+
+# Farm firmware
+set_global_assignment -name QIP_FILE ddr3/include.qip
+set_global_assignment -name QIP_FILE dataflow/include.qip
 
 
 
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
+
+
+
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

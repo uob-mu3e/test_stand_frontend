@@ -716,7 +716,7 @@ begin
     end if;
   end process;
 
-  dmaram:dma_ram
+    e_dma_ram : component work.cmp.dma_ram
     PORT MAP
     (
       data        	=> datain,
@@ -729,7 +729,7 @@ begin
       );
 
 
---fifo_dma: dma_fifo
+--    e_dma_fifo : component work.cmp.dma_fifo
 --	PORT MAP
 --	(
 --		aclr		=> aclr,
@@ -743,7 +743,7 @@ begin
 --		wrfull	=> full_fifo 
 --	);
 
-  dma_data_mem_addrs:data_addrs_ram
+    e_dma_data_mem_addrs : component work.cmp.data_addrs_ram
     PORT MAP
     (
       address_a	=> dma_data_mem_addr_reg,				-- address when reading / writing remotely
@@ -756,8 +756,8 @@ begin
       q_a			=> dma_data_address_out_reg, 			-- read back remotely
       q_b			=> dma_data_address_out_fpga			-- read address from FPGA
       );	
-  
-  dma_data_mem_pages:data_pages_ram
+
+    e_dma_data_mem_pages : component work.cmp.data_pages_ram
     PORT MAP
     (
       address_a  	=> dma_data_mem_addr_reg,		     -- number of pages pointed to by address stored in data_addrs_ram

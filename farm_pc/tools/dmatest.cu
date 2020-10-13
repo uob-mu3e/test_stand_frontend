@@ -168,35 +168,35 @@ int main(int argc, char *argv[])
 
     while(dma_buf[size/sizeof(uint32_t)-8] <= 0){
 
-        if (mu.last_written_addr() == 0) {
-            //cout << "last_written" << endl;
-            continue;
-        }
-        if (mu.last_written_addr() == lastlastWritten) {
-            //cout << "lastlast_written" << endl;
-            continue;
-        }
-        lastlastWritten = lastWritten;
-        lastWritten = mu.last_written_addr();
-
+//         if (mu.last_written_addr() == 0) {
+//             cout << "last_written" << endl;
+//             continue;
+//         }
+//         if (mu.last_written_addr() == lastlastWritten) {
+//             cout << "lastlast_written" << endl;
+//             continue;
+//         }
+//         lastlastWritten = lastWritten;
+//         lastWritten = mu.last_written_addr();
+// 
 //        myfile << "lastWritten" << endl;
 //        for (int i = 0; i < 20; i++) {
 //        char dma_buf_str[256];
 //        sprintf(dma_buf_str, "%08X", dma_buf[lastWritten+i-20]);
 //        myfile << lastWritten + i - 20 << "\t" << dma_buf_str << endl;
 //        }
-
+// 
 //        myfile << "endofevent" << endl;
-        lastendofevent = endofevent;
-        endofevent = mu.last_endofevent_addr(); // now begin of event :)
-
-        if ((endofevent+1)*8 > lastlastWritten) {
-            //cout << "endofevent" << endl;
-            continue;
-        }
-        if ((dma_buf[(endofevent)*8-1] == 0xAFFEAFFE or dma_buf[(endofevent)*8-1] == 0x0000009c) && dma_buf[(endofevent)*8] == 0x1){
-            cout << hex << (endofevent+1)*8 << " " << lastWritten << " " << dma_buf[(endofevent+1)*8] << endl;
-        };
+//         lastendofevent = endofevent;
+//         endofevent = mu.last_endofevent_addr(); // now begin of event :)
+// 
+//         if ((endofevent+1)*8 > lastlastWritten) {
+//             cout << "endofevent" << endl;
+//             continue;
+//         }
+//         if ((dma_buf[(endofevent)*8-1] == 0xAFFEAFFE or dma_buf[(endofevent)*8-1] == 0x0000009c) && dma_buf[(endofevent)*8] == 0x1){
+//             cout << hex << (endofevent+1)*8 << " " << lastWritten << " " << dma_buf[(endofevent+1)*8] << endl;
+//         };
 //        for (int i = 0; i < 20; i++) {
 //        char dma_buf_str[256];
 //        sprintf(dma_buf_str, "%08X", dma_buf[endofevent+i-20]);
