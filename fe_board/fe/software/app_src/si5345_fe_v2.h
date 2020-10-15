@@ -3,8 +3,9 @@
 
 #include "../include/si534x.h"
 
-//#include "si5345_revb_registers.h"
 #include "Si5345-v5-Registers_si2.h"
+// replace the last line with this line for a free running FEB: (no external clock)
+//#include "Si5345-v5-Registers_si2_free.h" 
 #include "Si5345-v5-Registers_si1.h"
 
 
