@@ -21,8 +21,11 @@ void menu_tmpDisplay(volatile alt_u32* xcvr, char ID = 'A') {
         printf("Firefly 1 [°C] :  %i\n", xcvr[0x26]);
         xcvr[0x00] = ('1' - '0') & 0xFF;
         printf("Firefly 2 [°C] :  %i\n", xcvr[0x26]);
-        printf("ArriaV     [?] :  %i\n", sc.ram->data[0xFFF8]);
         printf("\n");
+        sc.ram->data[0xFFF8] = 0x00000003;
+        sc.ram->data[0xFFF8] = 0x00000002;
+        usleep(2000000);
+        printf("ArriaV     [?] :  %i\n", sc.ram->data[0xFFF8]);
 
         usleep(200000);
     }
