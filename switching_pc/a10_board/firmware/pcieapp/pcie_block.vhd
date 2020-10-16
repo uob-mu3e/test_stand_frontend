@@ -20,7 +20,8 @@ entity pcie_block is
 generic (
     DMAMEMWRITEADDRSIZE : integer := 14;
     DMAMEMREADADDRSIZE  : integer := 12;
-    DMAMEMWRITEWIDTH    : integer := 32
+    DMAMEMWRITEWIDTH    : integer := 32;
+    PCIE_X_g : positive := 8--;
 );
 port (
     o_writeregs_B               : out   reg32array;
@@ -37,8 +38,8 @@ port (
     pcie_fastclk_out    : out   std_logic; -- 250 MHz clock
 
     -- PCI-Express (25 pins)
-    pcie_rx_p           : in    std_logic_vector(7 downto 0); --//PCIe Receive Data-req's OCT
-    pcie_tx_p           : out   std_logic_vector(7 downto 0); --//PCIe Transmit Data
+    pcie_rx_p           : in    std_logic_vector(PCIE_X_g-1 downto 0); --//PCIe Receive Data-req's OCT
+    pcie_tx_p           : out   std_logic_vector(PCIE_X_g-1 downto 0); --//PCIe Transmit Data
     pcie_refclk_p       : in    std_logic; --//PCIe Clock- Terminate on MB
     pcie_led_g2         : out   std_logic; --//User LED - Labeled Gen2
     pcie_led_x1         : out   std_logic; --//User LED - Labeled x1

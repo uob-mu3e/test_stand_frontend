@@ -29,25 +29,19 @@ port (
     A10_REFCLK_GBT_P_6                  : IN    STD_LOGIC;
     A10_REFCLK_GBT_P_7                  : IN    STD_LOGIC;
 
-    -- PCIe
-    A10_PCIE_RX_P_7                     : in    std_logic;
-    A10_PCIE_RX_P_6                     : in    std_logic;
-    A10_PCIE_RX_P_5                     : in    std_logic;
-    A10_PCIE_RX_P_4                     : in    std_logic;
-    A10_PCIE_RX_P_3                     : in    std_logic;
-    A10_PCIE_RX_P_2                     : in    std_logic;
-    A10_PCIE_RX_P_1                     : in    std_logic;
-    A10_PCIE_RX_P_0                     : in    std_logic;
-    A10_PCIE_TX_P_7                     : out   std_logic;
-    A10_PCIE_TX_P_6                     : out   std_logic;
-    A10_PCIE_TX_P_5                     : out   std_logic;
-    A10_PCIE_TX_P_4                     : out   std_logic;
-    A10_PCIE_TX_P_3                     : out   std_logic;
-    A10_PCIE_TX_P_2                     : out   std_logic;
-    A10_PCIE_TX_P_1                     : out   std_logic;
-    A10_PCIE_TX_P_0                     : out   std_logic;
-    LVT_A10_PERST_N                     : in    std_logic;
-    A10_CLK_PCIE_P_0                    : in    std_logic;
+
+
+    -- PCIe 0
+    i_pcie0_rx                          : in    std_logic_vector(3 downto 0);
+    o_pcie0_tx                          : out   std_logic_vector(3 downto 0);
+    i_pcie0_perst_n                     : in    std_logic;
+    i_pcie0_refclk                      : in    std_logic;
+
+    -- PCIe 1
+    i_pcie1_rx                          : in    std_logic_vector(3 downto 0);
+    o_pcie1_tx                          : out   std_logic_vector(3 downto 0);
+    i_pcie1_perst_n                     : in    std_logic;
+    i_pcie1_refclk                      : in    std_logic;
 
 
 
@@ -213,25 +207,23 @@ begin
 
 
 
-    pcie_rx <= A10_PCIE_RX_P_7 & A10_PCIE_RX_P_6 & A10_PCIE_RX_P_5 & A10_PCIE_RX_P_4 & A10_PCIE_RX_P_3 & A10_PCIE_RX_P_2 & A10_PCIE_RX_P_1 & A10_PCIE_RX_P_0;
-    A10_PCIE_TX_P_7 <= pcie_tx(7); A10_PCIE_TX_P_6 <= pcie_tx(6); A10_PCIE_TX_P_5 <= pcie_tx(5); A10_PCIE_TX_P_4 <= pcie_tx(4); A10_PCIE_TX_P_3 <= pcie_tx(3); A10_PCIE_TX_P_2 <= pcie_tx(2); A10_PCIE_TX_P_1 <= pcie_tx(1); A10_PCIE_TX_P_0 <= pcie_tx(0);
-
-    e_pcie_block : entity work.pcie_block
+    e_pcie_block_0 : entity work.pcie_block
     generic map (
         DMAMEMWRITEADDRSIZE     => 11,
         DMAMEMREADADDRSIZE      => 11,
-        DMAMEMWRITEWIDTH        => 256
+        DMAMEMWRITEWIDTH        => 256,
+        PCIE_X_g => 4--,
     )
     port map (
         local_rstn              => '1',
         appl_rstn               => '1',
-        refclk                  => A10_CLK_PCIE_P_0,
+        refclk                  => i_pcie0_refclk,
         pcie_fastclk_out        => open,
 
-        pcie_rx_p               => PCIE_RX,
-        pcie_tx_p               => PCIE_TX,
-        pcie_refclk_p           => A10_CLK_PCIE_P_0,
-        pcie_perstn             => LVT_A10_PERST_N,
+        pcie_rx_p               => i_pcie0_rx,
+        pcie_tx_p               => o_pcie0_tx,
+        pcie_refclk_p           => i_pcie0_refclk,
+        pcie_perstn             => i_pcie0_perst_n,
         pcie_smbclk             => '0',
         pcie_smbdat             => '0',
         pcie_waken              => open,
@@ -246,6 +238,36 @@ begin
         dma2memclk              => CLK_A10_100MHZ_P
     );
 
+    e_pcie_block_1 : entity work.pcie_block
+    generic map (
+        DMAMEMWRITEADDRSIZE     => 11,
+        DMAMEMREADADDRSIZE      => 11,
+        DMAMEMWRITEWIDTH        => 256,
+        PCIE_X_g => 4--,
+    )
+    port map (
+        local_rstn              => '1',
+        appl_rstn               => '1',
+        refclk                  => i_pcie1_refclk,
+        pcie_fastclk_out        => open,
+
+        pcie_rx_p               => i_pcie1_rx,
+        pcie_tx_p               => o_pcie1_tx,
+        pcie_refclk_p           => i_pcie1_refclk,
+        pcie_perstn             => i_pcie1_perst_n,
+        pcie_smbclk             => '0',
+        pcie_smbdat             => '0',
+        pcie_waken              => open,
+
+        writeregs               => pcie_wregs,
+        regwritten              => open,
+        readregs                => pcie_rregs,
+
+        writememclk             => CLK_A10_100MHZ_P,
+        readmemclk              => CLK_A10_100MHZ_P,
+        dmamemclk               => CLK_A10_100MHZ_P,
+        dma2memclk              => CLK_A10_100MHZ_P
+    );
 
 
     process(nios_clk)
