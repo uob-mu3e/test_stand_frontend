@@ -25,7 +25,7 @@ void menu_tmpDisplay(volatile alt_u32* xcvr, char ID = 'A') {
         sc.ram->data[0xFFF8] = 0x00000003;
         sc.ram->data[0xFFF8] = 0x00000002;
         usleep(2000000);
-        printf("ArriaV     [?] :  %i\n", sc.ram->data[0xFFF8]);
+        printf("ArriaV    [°C] :  %i\n", sc.ram->data[0xFFF8] - 0x80);
 
         usleep(200000);
     }
