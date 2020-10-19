@@ -28,36 +28,6 @@ entity top is
         clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
         spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-        -- Block A: Connections for three chips -- layer 0
-        clock_A                     : out   std_logic;
-        data_in_A                   : in    std_logic_vector(9 downto 1);
-        fast_reset_A                : out   std_logic;
-        SIN_A                       : out   std_logic;
-
-        -- Block B: Connections for three chips -- layer 0
-        clock_B                     : out   std_logic;
-        data_in_B                   : in    std_logic_vector(9 downto 1);
-        fast_reset_B                : out   std_logic;
-        SIN_B                       : out   std_logic;
-
-        -- Block C: Connections for three chips -- layer 1
-        clock_C                     : out   std_logic;
-        data_in_C                   : in    std_logic_vector(9 downto 1);
-        fast_reset_C                : out   std_logic;
-        SIN_C                       : out   std_logic;
-
-        -- Block D: Connections for three chips -- layer 1
-        clock_D                     : out   std_logic;
-        data_in_D                   : in    std_logic_vector(9 downto 1);
-        fast_reset_D                : out   std_logic;
-        SIN_D                       : out   std_logic;
-
-        -- Block E: Connections for three chips -- layer 1
-        clock_E                     : out   std_logic;
-        data_in_E                   : in    std_logic_vector(9 downto 1);
-        fast_reset_E                : out   std_logic;
-        SIN_E                       : out   std_logic;
-
         -- Extra signals
         clock_aux                   : out   std_logic;
         spare_out                   : out   std_logic_vector(3 downto 2);

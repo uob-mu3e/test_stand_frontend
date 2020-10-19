@@ -1,6 +1,5 @@
 ----------------------------------------
--- Dummy version of the Frontend Board 
--- Common Firmware only, no detector-specific parts
+-- Mupix version of the Frontend Board
 -- Martin Mueller, September 2020
 ----------------------------------------
 
