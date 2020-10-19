@@ -1,7 +1,5 @@
 ----------------------------------------
--- Dummy version of the Frontend Board 
--- Common Firmware only, no detector-specific parts
--- Martin Mueller, September 2020
+-- SciFi version of the Frontend Board 
 ----------------------------------------
 
 library ieee;
