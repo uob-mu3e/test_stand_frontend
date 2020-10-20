@@ -18,22 +18,22 @@ entity ps_programmer is
         start_address           : in std_logic_vector(23 downto 0) := X"000000";
 
         -- Interface to SPI flash
-        spi_strobe              : out std_logic;
-        spi_command             : out std_logic_vector(7 downto 0);
-        spi_addr                : out std_logic_vector(23 downto 0);
-        spi_continue            : out std_logic;
-        spi_byte_out            : in std_logic_vector(7 downto 0);
-        spi_byte_ready          : in std_logic;
+        spi_strobe              : out   std_logic;
+        spi_command             : out   std_logic_vector(7 downto 0);
+        spi_addr                : out   std_logic_vector(23 downto 0);
+        spi_continue            : out   std_logic;
+        spi_byte_out            : in    std_logic_vector(7 downto 0);
+        spi_byte_ready          : in    std_logic;
 
-        spi_flash_request       : out std_logic;
-        spi_flash_granted       : in std_logic;
+        spi_flash_request       : out   std_logic;
+        spi_flash_granted       : in    std_logic;
 
         -- Interface to FPGA
-        fpga_conf_done		    : in    std_logic;
-		fpga_nstatus			: in 	std_logic;
-		fpga_nconfig			: out   std_logic;
-		fpga_data				: out	std_logic_vector(7 downto 0);
-		fpga_clk				: out	std_logic
+        fpga_conf_done          : in    std_logic;
+        fpga_nstatus            : in    std_logic;
+        fpga_nconfig            : out   std_logic;
+        fpga_data               : out   std_logic_vector(7 downto 0);
+        fpga_clk                : out   std_logic--;
     );
 end ps_programmer;
 

@@ -3,71 +3,62 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity spi_secondary is
+    generic(
+        SS      : std_logic ; -- := '1' ;  -- Sensivität bei der der ss reagieren soll
+        Del     : integer := 0 ; -- Zeit zwischen gesendeter und empfangenden Daten
+        R       : std_logic ;--:= '1'; -- when (r/w = R) => read || when (r/w != R) => write
+        lanes   : integer --:= 4 --; -- verfügbare Lanes  nur 2 oder 4 möglich  -- BUG für 4 muss noch etwas manuell einbezogen werden State : Read
+        );
+    port(
+        --LED
+        --o_led		: out std_logic_vector(7 downto 0);
+        
+        --CLK , reset , next , command
+        --i_clk_50	: in  std_logic;
+        --i_reset_n	: in  std_logic;
+        --i_command	: in  std_logic_vector(15 downto 0); --[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
 
-generic(
-	SS		: std_logic ; -- := '1' ;  -- Sensivität bei der der ss reagieren soll
-	Del		: integer := 0 ; -- Zeit zwischen gesendeter und empfangenden Daten
-	R       : std_logic ;--:= '1'; -- when (r/w = R) => read || when (r/w != R) => write
-	lanes	: integer --:= 4 --; -- verfügbare Lanes  nur 2 oder 4 möglich  -- BUG für 4 muss noch etwas manuell einbezogen werden State : Read
-	); 	
+        ------ Max Data --register interface 
+        o_Max_rw    : out   std_logic;
+        o_Max_data  : out   std_logic_vector(31 downto 0);
+        o_Max_addr_o: out   std_logic_vector(6 downto 0);
+        o_b_addr    : out   std_logic_vector (7 downto 0); -- command adrr.
+        --o_Ar_done	: out std_logic;
+        i_Max_data  : in    std_logic_vector(31 downto 0);
 
-port(
-
-	--LED
-	--o_led		: out std_logic_vector(7 downto 0);
-	
-	--CLK , reset , next , command
-	--i_clk_50	: in  std_logic;
-	--i_reset_n	: in  std_logic;
-	--i_command	: in  std_logic_vector(15 downto 0); --[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
-	
-	------ Max Data --register interface 
-	o_Max_rw	: out std_logic;
-	o_Max_data	: out std_logic_vector(31 downto 0);
-	o_Max_addr_o: out std_logic_vector(6 downto 0);
-	o_b_addr	: out std_logic_vector (7 downto 0); -- command adrr.
-	--o_Ar_done	: out std_logic;
-	
-	i_Max_data	: in  std_logic_vector(31 downto 0);
-	------ SPI
-	i_SPI_cs	: in    std_logic;
-	i_SPI_clk	: in    std_logic;
-	io_SPI_mosi	: inout std_logic;
-	io_SPI_miso	: inout std_logic;
-	io_SPI_D1	: inout std_logic;
-	io_SPI_D2	: inout std_logic;
-	
-	io_SPI_D3	: inout std_logic--;
-	
-	
+        ------ SPI
+        i_SPI_cs    : in    std_logic;
+        i_SPI_clk   : in    std_logic;
+        io_SPI_mosi : inout std_logic;
+        io_SPI_miso : inout std_logic;
+        io_SPI_D1   : inout std_logic;
+        io_SPI_D2   : inout std_logic;
+        io_SPI_D3   : inout std_logic--;
 );
 end entity;
 
-architecture RTL of spi_secondary is
+architecture rtl of spi_secondary is
 
-	type State_type is (Idle, Adrr , W_Data , Deley , R_Data );
-	signal State : State_type;
-	
-	type s_regs is Array (0 to (lanes-1)) of std_logic_vector(((32/lanes)-1) downto 0);
-	signal s_r_reg_16	: s_regs ; --shift register read SPI Slave
-	signal s_reg_16		: s_regs ; --shift register write SPI Slave
-	
-	type s_addr_regs	is Array (0 to (lanes-1)) of std_logic_vector(((16/lanes)-1) downto 0);
-	signal s_addr_reg	:s_addr_regs; -- shift address register
-	
-	--imput signal -> vector for 2/4 lanes
-	signal io_SPI_D    : std_logic_vector(3 downto 0);
-	
-	
-	signal cnt_8		: integer range 0 to (16/lanes) ; -- addr  cnt
-	signal cnt_del		: integer range 0 to 64; -- delay cnt
-	signal cnt_16		: integer range 0 to (32/lanes)+1 := 0 ; -- read cnt --BUG muss warum kommt er über 16 mit dem cnt ?
-	signal cnt_words	: unsigned (6 downto 0):="0000000";
-	signal cnt_words_test : std_logic_vector(6 downto 0);
-	signal setup 		: std_logic := '1';
-	
+    type State_type is (Idle, Adrr , W_Data , Deley , R_Data );
+    signal State : State_type;
+
+    type s_regs is Array (0 to (lanes-1)) of std_logic_vector(((32/lanes)-1) downto 0);
+    signal s_r_reg_16	: s_regs ; --shift register read SPI Slave
+    signal s_reg_16		: s_regs ; --shift register write SPI Slave
+
+    type s_addr_regs	is Array (0 to (lanes-1)) of std_logic_vector(((16/lanes)-1) downto 0);
+    signal s_addr_reg	:s_addr_regs; -- shift address register
+
+    -- input signal -> vector for 2/4 lanes
+    signal io_SPI_D    : std_logic_vector(3 downto 0);
+    signal cnt_8		: integer range 0 to (16/lanes) ; -- addr  cnt
+    signal cnt_del		: integer range 0 to 64; -- delay cnt
+    signal cnt_16		: integer range 0 to (32/lanes)+1 := 0 ; -- read cnt --BUG muss warum kommt er über 16 mit dem cnt ?
+    signal cnt_words	: unsigned (6 downto 0):="0000000";
+    signal cnt_words_test : std_logic_vector(6 downto 0);
+    signal setup 		: std_logic := '1';
 	signal addr_offset	: unsigned(6 downto 0);
-	
+    
 	signal aktiv		: std_logic;
 	signal rw 			: std_logic := '0';
 	signal ss_del		: std_logic;
@@ -115,7 +106,7 @@ begin
 	io_SPI_D1		<= s_r_reg_16(1)((32/lanes)-1) when State = R_Data else 'Z';
 	quad : if lanes = 4 generate
 		io_SPI_D2	<= s_r_reg_16(2)((32/lanes)-1) when State = R_Data else 'Z';
-		io_SPI_miso	<= s_r_reg_16(3)((32/lanes)-1) when State = R_Data else 'Z';
+--    io_SPI_miso <= s_r_reg_16(3)((32/lanes)-1) when State = R_Data else 'Z';
 	end generate;
 	
 	
@@ -315,4 +306,4 @@ end process;
 ---- SPI TEST ----
 
 
-end RTL;
+end rtl;
