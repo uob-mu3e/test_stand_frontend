@@ -71,7 +71,7 @@ DEVICE_DRIVER hv_driver[] = {
 EQUIPMENT equipment[] = {
 
    {"LV",                       /* equipment name */
-    {30, 0,                       /* event ID, trigger mask */
+    {121, 0,                       /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_SLOW,                   /* equipment type */
      0,                         /* event source */
@@ -90,7 +90,7 @@ EQUIPMENT equipment[] = {
     },
     
     {"HV",                       /* equipment name */
-    {30, 0,                       /* event ID, trigger mask */
+    {122, 0,                       /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_SLOW,                   /* equipment type */
      0,                         /* event source */

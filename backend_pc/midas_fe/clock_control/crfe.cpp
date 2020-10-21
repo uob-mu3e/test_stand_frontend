@@ -96,6 +96,7 @@ clockboard * cb;
 /*-- Function declarations -----------------------------------------*/
 
 INT read_cr_event(char *pevent, INT off);
+INT read_link_event(char *pevent, INT off);
 void cr_settings_changed(odb);
 void link_settings_changed(odb);
 void prepare_run_on_request(odb);
@@ -109,7 +110,7 @@ void setup_alarms();
 EQUIPMENT equipment[] = {
 
    {"Clock Reset",              /* equipment name */
-    {10, 0,                     /* event ID, trigger mask */
+    {101, 0,                     /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
      0,                         /* event source */
@@ -123,6 +124,22 @@ EQUIPMENT equipment[] = {
      "", "", ""} ,
     read_cr_event,              /* readout routine */
    },
+
+    {"Links",              /* equipment name */
+     {103, 0,                     /* event ID, trigger mask */
+      "SYSTEM",                  /* event buffer */
+      EQ_PERIODIC,               /* equipment type */
+      0,                         /* event source */
+      "MIDAS",                   /* format */
+      TRUE,                      /* enabled */
+      RO_RUNNING | RO_STOPPED | RO_ODB,        /* read while running and stopped but not at transitions and update ODB */
+      10000,                     /* read every 10 sec */
+      0,                         /* stop run after this event limit */
+      0,                         /* number of sub events */
+      1,                         /* log history every event */
+      "", "", ""} ,
+     read_link_event,              /* readout routine */
+    },
 
    {""}
 };
@@ -254,7 +271,7 @@ INT resume_run(INT run_number, char *error)
 
 /*--- Read Clock and Reset Event to be put into data stream --------*/
 
-INT read_cr_event(char *pevent, INT off)
+INT read_cr_event(char *pevent, INT off [[maybe_unused]])
 {
     if(!cb->isConnected()){
         // terminate!
@@ -320,6 +337,14 @@ INT read_cr_event(char *pevent, INT off)
    bk_close(pevent, pdata);
 
    return bk_size(pevent);
+}
+
+/*--- Link status Event to be put into data stream --------*/
+
+INT read_link_event(char *pevent, INT off [[maybe_unused]])
+{
+    bk_init32a(pevent);
+    return bk_size(pevent);
 }
 
 /*--- Called whenever settings have changed ------------------------*/

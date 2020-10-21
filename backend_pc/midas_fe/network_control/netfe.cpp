@@ -94,7 +94,7 @@ nullptr
 EQUIPMENT equipment[] = {
 
    {"DHCP DNS",              /* equipment name */
-    {11, 0,                     /* event ID, trigger mask */
+    {102, 0,                     /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
      0,                         /* event source */

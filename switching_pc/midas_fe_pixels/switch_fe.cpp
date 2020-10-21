@@ -133,7 +133,7 @@ enum EQUIPMENT_ID {Switching=0,Mupix};
 EQUIPMENT equipment[] = {
 
    {"Switching",                /* equipment name */
-    {2, 0,                      /* event ID, trigger mask */
+    {110, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
      0,                         /* event source */
@@ -148,7 +148,7 @@ EQUIPMENT equipment[] = {
      read_sc_event,             /* readout routine */
    },
    {"Mupix",                    /* equipment name */
-    {2, 0,                      /* event ID, trigger mask */
+    {113, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
