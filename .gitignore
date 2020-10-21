@@ -1,6 +1,7 @@
 
 # cmake
 build/
+debugbuild/
 install/
 CMakeLists.txt.*
 
