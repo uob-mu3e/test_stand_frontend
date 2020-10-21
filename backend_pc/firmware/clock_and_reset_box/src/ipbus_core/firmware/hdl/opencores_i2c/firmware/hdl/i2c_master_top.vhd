@@ -102,7 +102,8 @@ entity i2c_master_top is
         scl_padoen_o: out std_logic;
         sda_pad_i: in std_logic;
         sda_pad_o: out std_logic;
-        sda_padoen_o: out std_logic
+        sda_padoen_o: out std_logic;
+         sr       : out std_logic_vector(7 downto 0)		-- status register
 --        scl      : inout std_logic;
 --        sda      : inout std_logic
         );
@@ -184,7 +185,7 @@ signal ctr : std_logic_vector(7 downto 0);
 signal txr : std_logic_vector(7 downto 0);
 signal rxr : std_logic_vector(7 downto 0);
 signal cr : std_logic_vector(7 downto 0);
-signal sr : std_logic_vector(7 downto 0);
+--signal sr : std_logic_vector(7 downto 0);
 
 signal done : std_logic;
 signal core_en : std_logic;
