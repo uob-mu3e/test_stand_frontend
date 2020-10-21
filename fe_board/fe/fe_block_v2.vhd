@@ -189,7 +189,9 @@ architecture arch of fe_block_v2 is
     signal reset_link_rx            : std_logic_vector(7 downto 0);
     signal reset_link_rx_clk        : std_logic;
 
-    signal ArriaV_temperature       : std_logic_vector(7 downto 0);
+    signal arriaV_temperature       : std_logic_vector(7 downto 0);
+    signal arriaV_temperature_clr   : std_logic;
+    signal arriaV_temperature_ce    : std_logic;
 
 begin
 
@@ -327,7 +329,11 @@ begin
 
         -- ArriaV temperature
         if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.re = '1' ) then
-            fe_reg.rdata(ArriaV_temperature'range) <= ArriaV_temperature;
+            fe_reg.rdata <= x"000000" & arriaV_temperature;
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.we = '1' ) then
+            arriaV_temperature_clr  <= fe_reg.wdata(0);
+            arriaV_temperature_ce   <= fe_reg.wdata(1);
         end if;
 
         -- mscb
@@ -411,7 +417,11 @@ begin
         spi_si_ss_n     => spi_si_ss_n,
 
         pio_export      => nios_pio,
-        temp_tsdcalo    => ArriaV_temperature,
+        
+        temp_tsdcalo            => arriaV_temperature,
+        temp_ce_ce              => arriaV_temperature_ce,
+        temp_clr_reset          => arriaV_temperature_clr,
+        temp_done_tsdcaldone    => open,
 
         rst_reset_n     => nios_reset_n,
         clk_clk         => i_nios_clk--,
