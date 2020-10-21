@@ -74,7 +74,6 @@ signal reset_n : std_logic;
     signal mp8_ctrl_clk2 : std_logic_vector(NCHIPS_SPI - 1 downto 0);
     signal mp8_ctrl_ld : std_logic_vector(NCHIPS_SPI - 1 downto 0);
     signal mp8_ctrl_rb : std_logic_vector(NCHIPS_SPI - 1 downto 0);
-    signal mp8_dataout : std_logic_vector(31 downto 0);
 
      -- board dacs
     type   state_spi is (waiting, starting, read_out_pix, write_pix, read_out_th, ending); -- to be used somewhere?
@@ -193,7 +192,7 @@ begin
 
     gen_slowc:
     for i in 0 to NCHIPS_SPI-1 generate
-    e_mp8_slowcontrol : work.mp8_slowcontrol
+    e_mp10_slowcontrol : work.mp10_slowcontrol
     port map(
         clk         => i_clk,
         reset_n     => reset_n,
@@ -209,7 +208,7 @@ begin
         ctrl_ld     => mp8_ctrl_ld(i),
         ctrl_rb     => mp8_ctrl_rb(i),
         busy_n      => mp8_busy_n(i),
-        dataout     => mp8_dataout--,
+        dataout     => open--,
     );
     end generate gen_slowc;
 

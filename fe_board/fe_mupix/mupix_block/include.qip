@@ -27,7 +27,7 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/spi_master.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/spi_if_write_bits.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mp8_slowcontrol.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mp10_slowcontrol.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mp8_sc_master.vhd"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mupix_datapath.vhd"]
