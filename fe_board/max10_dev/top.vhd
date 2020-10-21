@@ -132,8 +132,8 @@ architecture arch of top is
     signal adc_data_2                           : std_logic_vector(31 downto 0);
     signal adc_data_3                           : std_logic_vector(31 downto 0);
     signal adc_data_4                           : std_logic_vector(31 downto 0);
-   
-   
+    
+    
 
 begin
 
