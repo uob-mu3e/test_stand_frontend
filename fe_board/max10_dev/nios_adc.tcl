@@ -37,3 +37,9 @@ nios_base.connect adc clock reset_sink sequencer_csr 0x700F0380
 nios_base.connect adc ""    ""         sample_store_csr 0x700F0400
 
 nios_base.connect_irq adc.sample_store_irq 3
+
+nios_base.add_pio adc_d0 32 Output 0x700F0880
+nios_base.add_pio adc_d1 32 Output 0x700F0920
+nios_base.add_pio adc_d2 32 Output 0x700F0960
+nios_base.add_pio adc_d3 32 Output 0x700F0A00
+nios_base.add_pio adc_d4 32 Output 0x700F0A40

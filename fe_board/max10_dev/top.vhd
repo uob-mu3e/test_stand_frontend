@@ -69,8 +69,8 @@ architecture arch of top is
     signal clk50                                : std_logic;
     signal pll_locked                           : std_logic;
 
-    signal pio_out_0                            : std_logic_vector(31 downto 0);
-    signal pio_in_1                             : std_logic_vector(31 downto 0);
+    signal flash_ps_ctrl                        : std_logic_vector(31 downto 0);
+    signal flash_w_cnt                          : std_logic_vector(31 downto 0);
     signal reset_n                              : std_logic;
 
     -- SPI Flash
@@ -112,21 +112,22 @@ architecture arch of top is
     signal fifowriting                          : std_logic;
     signal fifo_read_pulse                      : std_logic;
     signal programmer_active                    : std_logic;
+    signal wcounter                             : std_logic_vector(15 downto 0);
 
-    -- SPI Arria Signals
+    -- spi arria
     signal SPI_Nios_com                         : std_logic_vector(7 downto 0);
     signal SPI_Aria_data                        : std_logic_vector(31 downto 0);
     signal SPI_Max10_data                       : std_logic_vector(31 downto 0);
     signal SPI_addr_o                           : std_logic_vector(6 downto 0);
     signal SPI_rw                               : std_logic;
 
-    -- SPI Arria ram
+    -- spi arria ram
     signal ram_SPI_data                         : std_logic_vector(31 downto 0);
     signal SPI_ram_data                         : std_logic_vector(31 downto 0);
     signal SPI_ram_addr                         : std_logic_vector(13 downto 0);
     signal SPI_ram_rw                           : std_logic;
 
-    -- ADC NIOS PIOs
+    -- adc nios
     signal adc_data_0                           : std_logic_vector(31 downto 0);
     signal adc_data_1                           : std_logic_vector(31 downto 0);
     signal adc_data_2                           : std_logic_vector(31 downto 0);
@@ -137,14 +138,24 @@ architecture arch of top is
 
 begin
 
-    -- signal defaults
-    fpga_reset	<= '0'; 
-    fpga_nconfig<= '1';
+    -- signal defaults, clk & resets
+    -----------------------
+    fpga_reset  <= '0';
     reset_n     <= '1';
     mscb_ena    <= '0';
     attention_n <= "ZZ";
-    
+
+    e_pll : entity work.pll
+    port map(
+        inclk0      => max10_osc_clk,
+        c0          => clk10,
+        c1          => clk100,
+        c2          => clk50,
+        locked      => pll_locked--,
+    );
+
     -- SPI Arria10 to MAX10
+    -----------------------
     e_spi_secondary : entity work.spi_secondary
     generic map (
         SS      => '1', -- signal des ChipSelects 
@@ -158,11 +169,10 @@ begin
         o_Max_addr_o    => SPI_addr_o,
         o_b_addr        => SPI_Nios_com, -- command adrr.
 
-        -- inputs
+        -- spi interface
         i_Max_data      => SPI_Max10_data,
         i_SPI_cs        => fpga_spi_csn,
         i_SPI_clk       => fpga_spi_D3, -- fpga_spi_clk, --max10_osc_clk, --
-
         io_SPI_mosi     => fpga_spi_mosi,
         io_SPI_D1       => fpga_spi_D1,
         io_SPI_D2       => fpga_spi_D2,
@@ -215,198 +225,185 @@ begin
         o_reg_rw        => open--,
     );
 
-    e_pll : entity work.pll
-    port map(
-        inclk0      => max10_osc_clk,
-        c0          => clk10,
-        c1          => clk100,
-        c2          => clk50,
-        locked      => pll_locked--,
-    );
-
+    -- NIOS
+    -----------------------
     e_nios : component work.cmp.nios
     port map(
-        clk_clk               => clk100,
-        clk_spi_clk           => clk100,
-        rst_reset_n           => reset_n,
-        rst_spi_reset_n       => '1' ,
-        
-        i_pio_export          => pio_in_1,
-        pio_export            => pio_out_0,
-        
-        adc_pll_clock_clk     => clk10,
-        adc_pll_locked_export => pll_locked,
-        
-        ava_mm_address        => SPI_ram_addr,
-        ava_mm_read           => SPI_ram_rw,
-        ava_mm_readdata       => ram_SPI_data,
-        ava_mm_write          => '0',
-        ava_mm_writedata      => SPI_ram_data,
-        
-        i2c_sda_in  => '1',
-        i2c_scl_in  => '1',
-        spi_MISO    => '1'--,
+        -- clk & reset
+        clk_clk                     => clk100,
+        clk_spi_clk                 => clk100,
+        clk_flash_fifo_clk          => clk100,
+        rst_reset_n                 => reset_n,
+        rst_spi_reset_n             => reset_n,
+        reset_flash_fifo_reset_n    => reset_n,
 
---            i2c_sda_in            : in  std_logic                     := 'X';             -- sda_in
---            i2c_scl_in            : in  std_logic                     := 'X';             -- scl_in
---            i2c_sda_oe            : out std_logic;                                        -- sda_oe
---            i2c_scl_oe            : out std_logic;                                        -- scl_oe
---            
---            spi_MISO              : in  std_logic                     := 'X';             -- MISO
---            spi_MOSI              : out std_logic;                                        -- MOSI
---            spi_SCLK              : out std_logic;                                        -- SCLK
---            spi_SS_n              : out std_logic                                         -- SS_n
+        -- generic pio
+        pio_export                  => open,
+
+        -- adc
+        adc_pll_clock_clk           => clk10,
+        adc_pll_locked_export       => pll_locked,
+        adc_d0_export               => adc_data_0,
+        adc_d1_export               => adc_data_1,
+        adc_d2_export               => adc_data_2,
+        adc_d3_export               => adc_data_3,
+        adc_d4_export               => adc_data_4,
+
+        -- arria spi
+        ava_mm_address              => SPI_ram_addr,
+        ava_mm_read                 => SPI_ram_rw,
+        ava_mm_readdata             => ram_SPI_data,
+        ava_mm_write                => '0',
+        ava_mm_writedata            => SPI_ram_data,
+
+        -- spi not used at the moment
+        spi_MISO                    => '1',
+        spi_MOSI                    => open,
+        spi_SCLK                    => open,
+        spi_SS_n                    => open,
+
+        -- i2c not used at the moment
+        i2c_sda_in                  => '1',
+        i2c_scl_in                  => '1',
+        i2c_sda_oe                  => open,
+        i2c_scl_oe                  => open,
+
+        -- flash spi
+        flash_ps_ctrl_export        => flash_ps_ctrl,
+        flash_w_cnt_export          => flash_w_cnt,
+        flash_cmd_addr_export       => spi_flash_cmdaddr_to_flash,
+        flash_ctrl_export           => spi_flash_ctrl,
+        flash_i_data_export         => spi_flash_data_to_flash_nios,
+        flash_o_data_export         => spi_flash_data_from_flash,
+        flash_status_export         => spi_flash_status,
+        out_flash_fifo_readdata     => spi_flash_fifodata_to_flash,
+        out_flash_fifo_read         => spi_flash_readfifo,
+        out_flash_fifo_waitrequest  => spi_flash_fifo_empty--,
     );
 
---    e_nios : entity work.nios
---        port map(
---            adc_data_0_export   => adc_data_0,-- adc_data_0.export
---            adc_data_1_export   => adc_data_1,-- adc_data_1.export
---            adc_data_2_export   => adc_data_2,-- adc_data_2.export
---            adc_data_3_export   => adc_data_3,-- adc_data_3.export
---            adc_data_4_export   => adc_data_4,-- adc_data_4.export
---
---            spi_flash_ctrl_external_connection_export => spi_flash_ctrl,
---            spi_flash_datain_external_connection_export  => spi_flash_data_to_flash_nios,
---            spi_flash_dataout_external_connection_export => spi_flash_data_from_flash,
---            spi_flash_out_external_connection_export     => spi_flash_cmdaddr_to_flash,
---            spi_flash_status_external_connection_export  => spi_flash_status,
---            spi_flash_writefifo_clk_out_clk              => clk100,
---            spi_flash_writefifo_out_readdata             => spi_flash_fifodata_to_flash,
---            spi_flash_writefifo_out_read                 => spi_flash_readfifo,
---            spi_flash_writefifo_out_waitrequest          => spi_flash_fifo_empty,               
---            spi_flash_writefifo_reset_out_reset_n        => reset_n
---    );
+    -- SPI to flash and programmer
+    -----------------------
+    process(reset_n, clk100)
+    begin
+    if ( reset_n = '0' ) then
+        writefromfifo       <= '0';
+        fifowrite_last      <= '0';
+        fiforead_last       <= '0';
+        fifowriting         <= '0';
+        fifo_read_pulse     <= '0';
+        programmer_active   <= '0';
+    elsif ( clk100'event and clk100 = '1' ) then
+        fifowrite_last      <= spi_flash_ctrl(7);
+        fiforead_last       <= spi_flash_status(1);
+        fifo_read_pulse     <= '0';
+        if ( spi_flash_ctrl(7) = '1' and 
+             fifowrite_last = '0' and 
+             programmer_active = '0' 
+             ) then
+            fifowriting     <= '1';
+            fifo_read_pulse <= '1';
+            wcounter        <= (others => '0');
+        end if;
+        if ( fifowriting <= '1' ) then
+            if ( spi_flash_fifo_empty = '1' ) then
+                fifowriting <= '0';
+            end if;
+        end if;
+        if ( spi_flash_readfifo = '1' ) then
+            wcounter        <= wcounter + 1;
+        end if;
+        if ( programmer_active = '0' 
+             and fifowriting = '0' 
+             and spi_busy = '0' 
+             and spi_flash_request_programmer = '1' 
+             ) then
+            spi_flash_granted_programmer    <= '1';
+            programmer_active               <= '1';
+        end if;
+        if ( programmer_active = '1' and spi_flash_request_programmer = '0' ) then
+            spi_flash_granted_programmer    <= '0';
+            programmer_active               <= '0';
+        end if;
+    end if;
+    end process;
 
--- 	process(reset_n, clk100)
--- 	begin
--- 	if(reset_n = '0')then
--- 		writefromfifo <= '0';
--- 		fifowrite_last	<= '0';
--- 		fiforead_last  <= '0';
--- 		fifowriting		<= '0';
--- 		fifo_read_pulse <= '0';
--- 		programmer_active <= '0';
--- 	elsif(clk100'event and clk100 = '1')then
--- 		fifowrite_last <= spi_flash_ctrl(7);
--- 		fiforead_last	<= spi_flash_status(1);
--- 		fifo_read_pulse <= '0';
--- 		
--- 		if(spi_flash_ctrl(7) = '1' and fifowrite_last = '0' and programmer_active = '0') then
--- 			fifowriting <= '1';
--- 			fifo_read_pulse <= '1';	
--- 			wcounter <= (others => '0');
--- 		end if;
--- 		
--- 		if(fifowriting <= '1')then
--- 			if(spi_flash_fifo_empty = '1')then
--- 				fifowriting <= '0';
--- 			end if;
--- 		end if;
--- 		
--- 		if(spi_flash_readfifo = '1')then
--- 			wcounter <= wcounter + 1;
--- 		end if;
--- 		
--- 		if(programmer_active = '0' and fifowriting = '0' and 	
--- 			spi_busy = '0' and spi_flash_request_programmer = '1') then
--- 			spi_flash_granted_programmer <= '1';
--- 			programmer_active <= '1';
--- 		end if;
--- 		
--- 		if(programmer_active = '1' and spi_flash_request_programmer = '0') then
--- 			spi_flash_granted_programmer <= '0';
--- 			programmer_active <= '0';	
--- 	    end if;		
--- 	end if;
--- 	end process;
--- 	
--- 	pio_in_1(31 downto 16) <= std_logic_vector(wcounter);
--- 	
--- 	spi_strobe_nios 	<= spi_flash_ctrl(0);
--- 	spi_command_nios	<= spi_flash_cmdaddr_to_flash(31 downto 24);
--- 	spi_addr_nios		<= spi_flash_cmdaddr_to_flash(23 downto 0);
--- 	
--- 	spi_flash_data_to_flash <= spi_flash_data_to_flash_nios when fifowriting = '0'
--- 										else spi_flash_fifodata_to_flash(7 downto 0);
--- 										
--- 	spi_continue <= 	spi_continue_programmer when spi_flash_granted_programmer = '1'
--- 							else not spi_flash_fifo_empty	when fifowriting = '1'
--- 							else spi_flash_ctrl(1);
--- 							
--- 	spi_strobe 	<= spi_strobe_programmer when spi_flash_granted_programmer = '1'
--- 						else spi_strobe_nios;
--- 	spi_command 	<= spi_command_programmer when spi_flash_granted_programmer = '1'
--- 						else spi_command_nios;
--- 	spi_addr 		<= spi_addr_programmer when spi_flash_granted_programmer = '1'
--- 						else spi_addr_nios;							
--- 										
--- 	spi_flash_readfifo		<= spi_flash_status(1) or fifo_read_pulse;
--- 	
--- 	
--- 	
--- 	spi_flash_status(0) <= spi_ack;
--- 	spi_flash_status(1) <= spi_next_byte;
--- 	spi_flash_status(2) <= spi_byte_ready;
--- 	spi_flash_status(3) <= spi_busy;
--- 	spi_flash_status(6)		<= spi_flash_fifo_empty;
--- 	spi_flash_status(7)		<= fifowriting;
--- 
--- 	
--- 	
--- 	flash_if:spiflash
---     port map(
---         reset_n		=> reset_n,
---         clk				=> clk100,
--- 
---         spi_strobe 	=> spi_strobe,
---         spi_ack 		=> spi_ack,
--- 		  spi_busy		=> spi_busy,
---         spi_command 	=> spi_command,
---         spi_addr 		=> spi_addr,
---         spi_data 	   => spi_flash_data_to_flash,
---         spi_next_byte => spi_next_byte,
---         spi_continue  => spi_continue, 
---         spi_byte_out  => spi_flash_data_from_flash,
---         spi_byte_ready => spi_byte_ready,
--- 
---         spi_sclk		=> flash_sck,
---         spi_csn		=> flash_csn,
---         spi_mosi		=> flash_io0,
---         spi_miso		=> flash_io1,
---         spi_D2			=> flash_io2,
---         spi_D3     	=> flash_io3
---     );
--- 
--- 
--- 	 
--- 	 
---      programming_if:ps_programmer
---      port map(
---          reset_n     		=> reset_n,
---          clk         		=> clk100,
---         start           => pio_out_0(31),
---         start_address   => pio_out_0(23 downto 0),
---
---         Interface to SPI flash
---         spi_strobe      => spi_strobe_programmer,
---         spi_command     => spi_command_programmer,
---         spi_addr        => spi_addr_programmer,
---         spi_continue    => spi_continue_programmer,
---         spi_byte_out    => spi_flash_data_from_flash,
---         spi_byte_ready  => spi_byte_ready,
---
---          spi_flash_request   => spi_flash_request_programmer,
---          spi_flash_granted   => spi_flash_granted_programmer,
---
---          Interface to FPGA
---          fpga_conf_done		 => fpga_conf_done,
---          fpga_nstatus		    => fpga_nstatus,
---          fpga_nconfig			 => fpga_nconfig,
---          fpga_data				 => fpga_data,
---          fpga_clk				 => fpga_clk
---     );
--- 
--- 
--- 
+    flash_w_cnt(31 downto 16)   <= std_logic_vector(wcounter);
+    spi_strobe_nios             <= spi_flash_ctrl(0);
+    spi_command_nios            <= spi_flash_cmdaddr_to_flash(31 downto 24);
+    spi_addr_nios               <= spi_flash_cmdaddr_to_flash(23 downto 0);
+    spi_flash_data_to_flash     <= spi_flash_data_to_flash_nios
+                                    when fifowriting = '0'
+                                    else spi_flash_fifodata_to_flash(7 downto 0);
+    spi_continue                <= spi_continue_programmer
+                                    when spi_flash_granted_programmer = '1'
+                                    else not spi_flash_fifo_empty 
+                                    when fifowriting = '1'
+                                    else spi_flash_ctrl(1);
+    spi_strobe                  <= spi_strobe_programmer
+                                    when spi_flash_granted_programmer = '1'
+                                    else spi_strobe_nios;
+    spi_command                 <= spi_command_programmer
+                                    when spi_flash_granted_programmer = '1'
+                                    else spi_command_nios;
+    spi_addr                    <= spi_addr_programmer
+                                    when spi_flash_granted_programmer = '1'
+                                    else spi_addr_nios;
+    spi_flash_readfifo          <= spi_flash_status(1) or fifo_read_pulse;
+    spi_flash_status(0)         <= spi_ack;
+    spi_flash_status(1)         <= spi_next_byte;
+    spi_flash_status(2)         <= spi_byte_ready;
+    spi_flash_status(3)         <= spi_busy;
+    spi_flash_status(6)         <= spi_flash_fifo_empty;
+    spi_flash_status(7)         <= fifowriting;
+
+    e_spiflash : entity work.spiflash
+    port map(
+        -- clk & reset
+        reset_n         => reset_n,
+        clk             => clk100,
+        -- spi ctrl
+        spi_strobe      => spi_strobe,
+        spi_ack         => spi_ack,
+        spi_busy        => spi_busy,
+        spi_command     => spi_command,
+        spi_addr        => spi_addr,
+        spi_data        => spi_flash_data_to_flash,
+        spi_next_byte   => spi_next_byte,
+        spi_continue    => spi_continue, 
+        spi_byte_out    => spi_flash_data_from_flash,
+        spi_byte_ready  => spi_byte_ready,
+        -- spi to flash
+        spi_sclk        => flash_sck,
+        spi_csn         => flash_csn,
+        spi_mosi        => flash_io0,
+        spi_miso        => flash_io1,
+        spi_D2          => flash_io2,
+        spi_D3          => flash_io3--,
+    );
+
+    programming_if : entity work.ps_programmer
+    port map(
+        -- clk & reset
+        reset_n             => reset_n,
+        clk                 => clk100,
+        -- spi addr
+        start               => flash_ps_ctrl(31),
+        start_address       => flash_ps_ctrl(23 downto 0),
+        --Interface to SPI flash
+        spi_strobe          => spi_strobe_programmer,
+        spi_command         => spi_command_programmer,
+        spi_addr            => spi_addr_programmer,
+        spi_continue        => spi_continue_programmer,
+        spi_byte_out        => spi_flash_data_from_flash,
+        spi_byte_ready      => spi_byte_ready,
+        spi_flash_request   => spi_flash_request_programmer,
+        spi_flash_granted   => spi_flash_granted_programmer,
+        --Interface to FPGA
+        fpga_conf_done      => fpga_conf_done,
+        fpga_nstatus        => fpga_nstatus,
+        fpga_nconfig        => fpga_nconfig,
+        fpga_data           => fpga_data,
+        fpga_clk            => fpga_clk--,
+    );
+
 end architecture arch;
