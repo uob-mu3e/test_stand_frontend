@@ -373,40 +373,6 @@ begin
             fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
         end if;
 
-        -- access to nios address space
-        if ( fe_reg.addr(7 downto 0) = X"F2" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= av_nios.address;
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"F2" and fe_reg.we = '1' ) then
-            -- set read/write address
-            av_nios.address <= fe_reg.wdata;
-            -- allow read/write requests if address is nonzero
-        end if;
-        -- av_nios.read request
-        if ( fe_reg.addr(7 downto 0) = X"F3" and fe_reg.re = '1' and av_nios.address /= X"00000000" ) then
-            av_nios.read <= '1';
-            -- delay rvalid and set it when av_nios.waitrequest is '0' (see below)
-            fe_reg.rvalid <= '0';
-        end if;
-        -- av_nios.write request
-        if ( fe_reg.addr(7 downto 0) = X"F3" and fe_reg.we = '1' and av_nios.address /= X"00000000" ) then
-            av_nios.write <= '1';
-            av_nios.writedata <= fe_reg.wdata;
-        end if;
-
-        -- wait for av_nios.read completion
-        if ( av_nios.read = '1' and av_nios.waitrequest = '0' ) then
-            av_nios.address <= (others => '0');
-            av_nios.read <= '0';
-            fe_reg.rdata <= av_nios.readdata;
-            fe_reg.rvalid <= '1';
-        end if;
-        -- wait for av_nios.write completion
-        if ( av_nios.write = '1' and av_nios.waitrequest = '0' ) then
-            av_nios.address <= (others => '0');
-            av_nios.write <= '0';
-        end if;
-
         --
     end if;
     end process;
@@ -458,13 +424,6 @@ begin
         avm_pod_write           => av_pod.write,
         avm_pod_writedata       => av_pod.writedata,
         avm_pod_waitrequest     => av_pod.waitrequest,
-
-        avs_nios_address        => av_nios.address,
-        avs_nios_read           => av_nios.read,
-        avs_nios_readdata       => av_nios.readdata,
-        avs_nios_write          => av_nios.write,
-        avs_nios_writedata      => av_nios.writedata,
-        avs_nios_waitrequest    => av_nios.waitrequest,
 
         --
         -- nios base
