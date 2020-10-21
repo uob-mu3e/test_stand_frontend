@@ -19,7 +19,7 @@ generic(
 );
 port (
     -- chip dacs
-    i_CTRL_SDO_A            : in std_logic; --TODO !!
+    i_CTRL_SDO_A            : in  std_logic; --TODO !!
     o_CTRL_SDI              : out std_logic_vector(NPORTS-1 downto 0);
     o_CTRL_SCK1             : out std_logic_vector(NPORTS-1 downto 0);
     o_CTRL_SCK2             : out std_logic_vector(NPORTS-1 downto 0);
@@ -27,7 +27,7 @@ port (
     o_CTRL_RB               : out std_logic_vector(NPORTS-1 downto 0);
 
     -- board dacs
-    i_SPI_DOUT_ADC_0_A      : in std_logic;
+    i_SPI_DOUT_ADC_0_A      : in  std_logic;
     o_SPI_DIN0_A            : out std_logic;
     o_SPI_CLK_A             : out std_logic;
     o_SPI_LD_ADC_A          : out std_logic;
@@ -38,30 +38,23 @@ port (
     o_ack_run_prep_permission : out std_logic;
 
     -- mupix dac regs
-    i_reg_add               : in std_logic_vector(7 downto 0);
-    i_reg_re                : in std_logic;
+    i_reg_add               : in  std_logic_vector(7 downto 0);
+    i_reg_re                : in  std_logic;
     o_reg_rdata             : out std_logic_vector(31 downto 0);
-    i_reg_we                : in std_logic;
-    i_reg_wdata             : in std_logic_vector(31 downto 0);
+    i_reg_we                : in  std_logic;
+    i_reg_wdata             : in  std_logic_vector(31 downto 0);
 
     -- data 
-    o_fifo_wdata     : out std_logic_vector(35 downto 0);
-    o_fifo_write     : out std_logic;
+    o_fifo_wdata            : out std_logic_vector(35 downto 0);
+    o_fifo_write            : out std_logic;
 
-    i_data_in_A_0    : in std_logic_vector(3 downto 0);
-    i_data_in_A_1    : in std_logic_vector(3 downto 0);
-    i_data_in_B_0    : in std_logic_vector(3 downto 0);
-    i_data_in_B_1    : in std_logic_vector(3 downto 0);
-    i_data_in_C_0    : in std_logic_vector(3 downto 0);
-    i_data_in_C_1    : in std_logic_vector(3 downto 0);
-    i_data_in_E_0    : in std_logic_vector(3 downto 0);
-    i_data_in_E_1    : in std_logic_vector(3 downto 0);
+    i_lvds_data_in          : in  std_logic_vector(NLVDS-1 downto 0);
 
-    i_reset         : in std_logic;
+    i_reset                 : in  std_logic;
     -- 156.25 MHz
-    i_clk           : in std_logic;
-    i_clk125        : in std_logic;
-    i_sync_reset_cnt: in std_logic--;
+    i_clk                   : in  std_logic;
+    i_clk125                : in  std_logic;
+    i_sync_reset_cnt        : in  std_logic--;
 );
 end entity;
 
@@ -111,7 +104,7 @@ signal reset_n : std_logic;
     signal chip_dac_ren : std_logic;
     signal chip_dac_fifo_empty : std_logic;
     signal chip_dac_ready : std_logic;
-	 signal chip_dac_usedw : std_logic_vector(6 downto 0);
+    signal chip_dac_usedw : std_logic_vector(6 downto 0);
     signal reset_chip_dac_fifo : std_logic;
     signal ckdiv         : std_logic_vector(15 downto 0);
      
@@ -129,10 +122,9 @@ signal reset_n : std_logic;
     signal read_regs_mupix_mux : std_logic_vector(31 downto 0);
 
     signal lvds_data_valid : std_logic_vector(NLVDS-1 downto 0);
-    signal lvds_data_in : std_logic_vector(NLVDS-1 downto 0);
     signal disable_conditions_for_run_ack : std_logic;
-	 
-	 signal reg_hits_ena_count : std_logic_vector(31 downto 0);
+
+    signal reg_hits_ena_count : std_logic_vector(31 downto 0);
 
 begin
     reset_n <= '0' when (i_reset='1' or i_run_state_125=RUN_STATE_SYNC) else '1';
@@ -149,7 +141,7 @@ begin
         i_stable_required           => x"F000", -- TODO: connect to sc
         i_lvds_err_counter          => read_regs_mupix(LVDS_ERRCOUNTER_REGISTER_R + NLVDS - 1 downto LVDS_ERRCOUNTER_REGISTER_R),
         i_lvds_data_valid           => lvds_data_valid,
-        i_lvds_mask                 => write_regs_mupix(LINK_MASK_REGISTER_W)(NLVDS-1 downto 0),
+        i_lvds_mask                 => write_regs_mupix(LINK_MASK_REGISTER_W + 1 downto LINK_MASK_REGISTER_W),
         i_sc_busy                   => or_reduce(mp8_wren & (not chip_dac_fifo_empty)),
         i_run_state_125             => i_run_state_125,
         o_ack_run_prep_permission   => o_ack_run_prep_permission--,
@@ -367,7 +359,21 @@ begin
             end if;
             
             if ( i_reg_add = x"97" and i_reg_re = '1' ) then
-                o_reg_rdata            <= lvds_data_valid;
+                if(NLVDS > 31) then
+                    o_reg_rdata            <= lvds_data_valid(31 downto 0);
+                else
+                    o_reg_rdata            <= lvds_data_valid(NLVDS-1 downto 0);
+                end if;
+            end if;
+            
+            if ( i_reg_add = x"9B" and i_reg_re = '1' ) then
+                if(NLVDS > 32) then
+                    for I in 0 to NLVDS-33 loop
+                        o_reg_rdata(I)     <= lvds_data_valid(32 + I);
+                    end loop;
+                else
+                    o_reg_rdata            <= (others => '0');
+                end if;
             end if;
             
             if ( i_reg_add = x"98") then
@@ -378,15 +384,15 @@ begin
                     o_reg_rdata(31 downto 1)        <= (others => '0');
                 end if;
             end if;
-				
-				if ( i_reg_add = x"99" and i_reg_re = '1' ) then
+            
+            if ( i_reg_add = x"99" and i_reg_re = '1' ) then
                 o_reg_rdata <= std_logic_vector(to_unsigned(2**chip_dac_usedw'length - to_integer(unsigned(chip_dac_usedw)), 32));
             end if;
             
-				if ( i_reg_add = x"9A" and i_reg_re = '1' ) then
-					o_reg_rdata <= reg_hits_ena_count;
-				end if;
-				
+            if ( i_reg_add = x"9A" and i_reg_re = '1' ) then
+                o_reg_rdata <= reg_hits_ena_count;
+            end if;
+            
         end if;
     end process board_dac_regs;
 
@@ -416,11 +422,6 @@ begin
         temp_adc_out        => board_temp_adc_out
     );
 
-    lvds_data_in    <= i_data_in_E_1 & i_data_in_E_0 &
-                       i_data_in_C_1 & i_data_in_C_0 &
-                       i_data_in_B_1 & i_data_in_B_0 &
-                       i_data_in_A_1 & i_data_in_A_0;
-
     e_mupix_datapath : work.mupix_datapath
     generic map (
         NCHIPS              => NCHIPS,
@@ -436,7 +437,7 @@ begin
         i_clk               => i_clk,
         i_clk125            => i_clk125,
         
-        lvds_data_in        => lvds_data_in,
+        lvds_data_in        => i_lvds_data_in,
         
         write_sc_regs       => write_regs_mupix,
         read_sc_regs        => read_regs_mupix,
@@ -444,7 +445,7 @@ begin
         o_fifo_wdata        => o_fifo_wdata,
         o_fifo_write        => o_fifo_write,
         o_lvds_data_valid   => lvds_data_valid,
-		  o_hits_ena_count	 => reg_hits_ena_count,
+        o_hits_ena_count    => reg_hits_ena_count,
         
         i_sync_reset_cnt    => i_sync_reset_cnt,
         i_run_state_125     => i_run_state_125--,

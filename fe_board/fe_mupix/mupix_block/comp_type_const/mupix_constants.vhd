@@ -7,17 +7,17 @@ use ieee.std_logic_1164.all;
 package mupix_constants is
 
 -- read register number
-constant NREGISTERS_MUPIX_RD:	integer := 68;
+constant NREGISTERS_MUPIX_RD                : integer := 94;
 -- read register map
-constant RX_STATE_RECEIVER_0_REGISTER_R		: integer := 16#00#;	-- dec 0
-constant RX_STATE_RECEIVER_1_REGISTER_R		: integer := 16#01#;	-- dec 1
-constant LVDS_PLL_LOCKED_REGISTER_R				: integer := 16#02#;	-- dec 2
-constant MULTICHIP_RO_OVERFLOW_REGISTER_R		: integer := 16#03#;	-- dec 3
-constant LVDS_RUNCOUNTER_REGISTER_R	 			: integer := 16#04#;	-- dec 4 (to 35)
-constant LVDS_ERRCOUNTER_REGISTER_R				: integer := 16#24#;	-- dec 36 (to 67)
+constant RX_STATE_RECEIVER_0_REGISTER_R     : integer := 16#00#;	-- dec 0
+constant RX_STATE_RECEIVER_1_REGISTER_R     : integer := 16#01#;	-- dec 1
+constant LVDS_PLL_LOCKED_REGISTER_R         : integer := 16#02#;	-- dec 2
+constant MULTICHIP_RO_OVERFLOW_REGISTER_R   : integer := 16#03#;	-- dec 3
+constant LVDS_RUNCOUNTER_REGISTER_R         : integer := 16#04#;	-- dec 4 (to 48)
+constant LVDS_ERRCOUNTER_REGISTER_R         : integer := 16#30#;	-- dec 49 (to 93)
 
 -- write register number
-constant NREGISTERS_MUPIX_WR:	integer := 4;
+constant NREGISTERS_MUPIX_WR:	integer := 5;
 -- read register map
 constant RO_PRESCALER_REGISTER_W							: integer := 16#00#;	-- dec 0
 constant DEBUG_CHIP_SELECT_REGISTER_W					: integer := 16#01#;

@@ -146,12 +146,13 @@ begin
 			end loop;
 		end if;
 	end process read_regs_clocking;
-	
-	read_regs(RX_STATE_RECEIVER_0_REGISTER_R)(NLVDS-1 downto 0)	<= rx_state(NLVDS-1 downto 0);
-	read_regs(RX_STATE_RECEIVER_1_REGISTER_R)(NLVDS-1 downto 0)	<= rx_state(NLVDS*2-1 downto NLVDS);
-	read_regs(LVDS_PLL_LOCKED_REGISTER_R)(1 downto 0)				<= lvds_pll_locked;
-	read_regs(MULTICHIP_RO_OVERFLOW_REGISTER_R)						<= multichip_ro_overflow;
-	
+
+    --TODO
+    --read_regs(RX_STATE_RECEIVER_0_REGISTER_R)(NLVDS-1 downto 0)   <= rx_state(NLVDS-1 downto 0);
+    --read_regs(RX_STATE_RECEIVER_1_REGISTER_R)(NLVDS-1 downto 0)   <= rx_state(NLVDS*2-1 downto NLVDS);
+    read_regs(LVDS_PLL_LOCKED_REGISTER_R)(1 downto 0)               <= lvds_pll_locked;
+    read_regs(MULTICHIP_RO_OVERFLOW_REGISTER_R)                     <= multichip_ro_overflow;
+
 	GEN_LVDS_REGS:
 	FOR I in 0 to NLVDS - 1 GENERATE
 		read_regs(LVDS_RUNCOUNTER_REGISTER_R + I) <= lvds_runcounter(I);
@@ -185,13 +186,21 @@ begin
 		nios_clock			=> i_clk	
 	);
 
-	-- use a link mask to disable channels from being used in the data processing
-	link_enable	<= data_valid and (not writeregs_reg(LINK_MASK_REGISTER_W)(NLVDS-1 downto 0));
+    -- use a link mask to disable channels from being used in the data processing
+    gen_link_enable : if NLVDS > 32 GENERATE
+        link_enable(31 downto 0)        <= data_valid(     31 downto  0) and (not writeregs_reg(LINK_MASK_REGISTER_W    )(      31 downto 0));
+        link_enable(NLVDS-1 downto 32)  <= data_valid(NLVDS-1 downto 32) and (not writeregs_reg(LINK_MASK_REGISTER_W + 1)(NLVDS-33 downto 0));
+    end generate gen_link_enable;
+
+    gen_link_enable2: if NLVDS < 33 GENERATE
+        link_enable                     <= data_valid                    and (not writeregs_reg(LINK_MASK_REGISTER_W    )(NLVDS- 1 downto 0));
+    end generate gen_link_enable2;
+
 --------------------------------------------------------------------------------------
 --------------------- Unpack the data ------------------------------------------------
-	genunpack:
-	FOR i in 0 to NCHIPS-1 GENERATE	
-	-- we currently only use link 0 of each chip (up to 8 possible)
+    genunpack:
+    FOR i in 0 to NCHIPS-1 GENERATE
+    -- we currently only use link 0 of each chip (up to 8 possible)
  
         unpacker_single : work.data_unpacker_new
         generic map(

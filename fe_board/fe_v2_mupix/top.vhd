@@ -32,30 +32,38 @@ entity top is
         data_in_A                   : in    std_logic_vector(9 downto 1);
         fast_reset_A                : out   std_logic;
         SIN_A                       : out   std_logic;
+        mosi_A                      : out   std_logic;
+        csn_A                       : out   std_logic_vector(2 downto 0);
 
         -- Block B: Connections for three chips -- layer 0
         clock_B                     : out   std_logic;
         data_in_B                   : in    std_logic_vector(9 downto 1);
         fast_reset_B                : out   std_logic;
         SIN_B                       : out   std_logic;
+        mosi_B                      : out   std_logic;
+        csn_B                       : out   std_logic_vector(2 downto 0);
 
         -- Block C: Connections for three chips -- layer 1
         clock_C                     : out   std_logic;
         data_in_C                   : in    std_logic_vector(9 downto 1);
         fast_reset_C                : out   std_logic;
         SIN_C                       : out   std_logic;
+        mosi_C                      : out   std_logic;
+        csn_C                       : out   std_logic_vector(2 downto 0);
 
         -- Block D: Connections for three chips -- layer 1
         clock_D                     : out   std_logic;
         data_in_D                   : in    std_logic_vector(9 downto 1);
         fast_reset_D                : out   std_logic;
         SIN_D                       : out   std_logic;
+        mosi_D                      : out   std_logic;
+        csn_D                       : out   std_logic_vector(2 downto 0);
 
         -- Block E: Connections for three chips -- layer 1
-        clock_E                     : out   std_logic;
-        data_in_E                   : in    std_logic_vector(9 downto 1);
-        fast_reset_E                : out   std_logic;
-        SIN_E                       : out   std_logic;
+        -- clock_E                     : out   std_logic;
+        -- data_in_E                   : in    std_logic_vector(9 downto 1);
+        -- fast_reset_E                : out   std_logic;
+        -- SIN_E                       : out   std_logic;
 
         -- Extra signals
         clock_aux                   : out   std_logic;
@@ -182,7 +190,7 @@ begin
         NCHIPS          => 4,
         NCHIPS_SPI      => 4,
         NPORTS          => NPORTS,
-        NLVDS           => 32,
+        NLVDS           => 36,
         NINPUTS_BANK_A  => 16,
         NINPUTS_BANK_B  => 16--,
     )
@@ -218,14 +226,7 @@ begin
         i_run_state_125           => run_state_125,
         o_ack_run_prep_permission => ack_run_prep_permission,
 
-        i_data_in_A_0           => (others => '0'),
-        i_data_in_A_1           => (others => '0'),
-        i_data_in_B_0           => (others => '0'),
-        i_data_in_B_1           => (others => '0'),
-        i_data_in_C_0           => (others => '0'),
-        i_data_in_C_1           => (others => '0'),
-        i_data_in_E_0           => (others => '0'),
-        i_data_in_E_1           => (others => '0'),
+        i_lvds_data_in          => data_in_A & data_in_B & data_in_C & data_in_D,
 
         i_reset                 => not pb_db(0),
         -- 156.25 MHz
@@ -242,14 +243,14 @@ begin
             fast_reset_B    <= '1';
             fast_reset_C    <= '1';
             fast_reset_D    <= '1';
-            fast_reset_E    <= '1';
+            --fast_reset_E    <= '1';
             sync_reset_cnt  <= '1';
         else
             fast_reset_A    <= '0';
             fast_reset_B    <= '0';
             fast_reset_C    <= '0';
             fast_reset_D    <= '0';
-            fast_reset_E    <= '0';
+            --fast_reset_E    <= '0';
             sync_reset_cnt  <= '0';
         end if;
     end if;

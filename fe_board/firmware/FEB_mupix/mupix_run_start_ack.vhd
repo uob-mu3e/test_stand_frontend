@@ -16,7 +16,7 @@ port (
     i_stable_required           : in  unsigned(15 downto 0);
     i_lvds_err_counter          : in  reg32array_t(NLVDS-1 downto 0);
     i_lvds_data_valid           : in  std_logic_vector(NLVDS-1 downto 0);
-    i_lvds_mask                 : in  std_logic_vector(NLVDS-1 downto 0);
+    i_lvds_mask                 : in  reg32array_t(1 downto 0);
     i_sc_busy                   : in  std_logic;
     i_run_state_125             : in  run_state_t;
     o_ack_run_prep_permission   : out std_logic--;
@@ -34,9 +34,11 @@ architecture arch of mupix_run_start_ack is
 begin
 
     process(i_clk)
+        variable lvds_mask_slv  : std_logic_vector(63 downto 0) := (others => '0');
     begin
         if(rising_edge(i_clk))then
-            lvds_mask       <= i_lvds_mask;
+            lvds_mask_slv       := i_lvds_mask(1) & i_lvds_mask(0);
+            lvds_mask           <= lvds_mask_slv(NLVDS-1 downto 0);
         end if;
     end process;
 
