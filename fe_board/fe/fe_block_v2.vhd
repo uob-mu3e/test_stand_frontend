@@ -189,9 +189,7 @@ architecture arch of fe_block_v2 is
     signal reset_link_rx            : std_logic_vector(7 downto 0);
     signal reset_link_rx_clk        : std_logic;
 
-    signal arriaV_temperature       : std_logic_vector(7 downto 0);
-    signal arriaV_temperature_clr   : std_logic;
-    signal arriaV_temperature_ce    : std_logic;
+    signal ArriaV_temperature       : std_logic_vector(7 downto 0);
 
 begin
 
@@ -329,11 +327,7 @@ begin
 
         -- ArriaV temperature
         if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= x"000000" & arriaV_temperature;
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.we = '1' ) then
-            arriaV_temperature_clr  <= fe_reg.wdata(0);
-            arriaV_temperature_ce   <= fe_reg.wdata(1);
+            fe_reg.rdata(ArriaV_temperature'range) <= ArriaV_temperature;
         end if;
 
         -- mscb
@@ -417,11 +411,7 @@ begin
         spi_si_ss_n     => spi_si_ss_n,
 
         pio_export      => nios_pio,
-
-        temp_tsdcalo        => arriaV_temperature,
-        temp_ce_ce          => arriaV_temperature_ce,
-        temp_clr_reset      => arriaV_temperature_clr,
-        temp_done_tsdcaldone=> open,
+        temp_tsdcalo    => ArriaV_temperature,
 
         rst_reset_n     => nios_reset_n,
         clk_clk         => i_nios_clk--,
@@ -636,4 +626,28 @@ begin
         o_testout                       => open--,
     );
 
+
+    e_max10_spi_main : entity work.max10_spi_main
+    generic map (
+        SS  =>  '1',
+        R   =>  '1',
+        lanes => 4--,
+    )
+    port map(
+        -- clk & reset
+        i_clk_50        => spare_clk_osc,
+        i_reset_n       => i_areset_n,
+        -- SPI
+        o_SPI_cs        => max10_spi_csn,
+        -- max10_spi_sclk lane defect on the first boards
+        o_SPI_clk       => max10_spi_D3,
+        io_SPI_mosi     => max10_spi_mosi,
+        io_SPI_miso     => max10_spi_miso,
+        io_SPI_D1       => max10_spi_D1,
+        io_SPI_D2       => max10_spi_D2,
+        io_SPI_D3       => open,
+        -- debug
+        o_led => open--,
+    );
+   
 end architecture;
