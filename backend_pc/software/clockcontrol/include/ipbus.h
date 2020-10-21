@@ -10,7 +10,7 @@ using boost::system::error_code;
 
 class ipbus{
 public:
-    ipbus(const char * addr, unsigned short port);
+    ipbus(std::string addr, unsigned short port);
     ~ipbus();
     bool isConnected(){return connected;}
 
@@ -38,7 +38,7 @@ protected:
 
     int Status(unsigned int timeout=20000);
 
-    const char * addr;
+    std::string addr;
     const unsigned short port;
     bool connected;
     boost::asio::io_service ios;

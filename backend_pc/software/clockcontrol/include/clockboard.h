@@ -3,11 +3,18 @@
 
 #include "ipbus.h"
 #include "reset_protocol.h"
+#include <fstream>
 
 class clockboard
 {
 public:
-    clockboard(const char * addr, int port);
+    static const bool FASTI2C = true;
+
+    static const int MAXNDAUGHTER = 8;
+    static const int MAXFIREFLYPERDAUGTHER = 3;
+    static const int MAXFIREFLY = MAXNDAUGHTER * MAXFIREFLYPERDAUGTHER;
+
+    clockboard(std::string addr, int port);
     virtual bool isConnected(){return bus.isConnected();}
 
     virtual int init_clockboard(uint16_t clkinvert = 0x0A00, uint16_t rstinvert= 0x0008, uint16_t clkdisable = 0x0AA, uint16_t rstdisable = 0xAA0);
@@ -15,11 +22,10 @@ public:
 
     // Write "reset" commands
     virtual int write_command(uint8_t command, uint32_t payload =0, bool has_payload = false);
-    virtual int write_command(const char * name, uint32_t payload =0, uint16_t address =0);
+    virtual int write_command(std::string name, uint32_t payload =0, uint16_t address =0);
 
     // I2C interface
     virtual int init_i2c();
-    virtual int read_i2c(uint8_t dev_addr, uint8_t &data);
     virtual int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data);
     virtual int read_i2c_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
 
@@ -80,8 +86,9 @@ public:
     virtual bool daughter_present(uint8_t daughter);
     virtual uint8_t daughters_present();
 
-    virtual int enable_daughter_12c(uint8_t dev_addr, uint8_t i2c_bus_num);
-    virtual int disable_daughter_12c(uint8_t dev_addr);
+    virtual int enable_daughter_12c(int daughter, uint8_t i2c_bus_num);
+    virtual int disable_daughter_12c(int daughter);
+    virtual int disable_all_daughter_12c();
 
     virtual float read_daughter_board_current(uint8_t daughter);
     virtual float read_mother_board_current();
@@ -96,8 +103,34 @@ public:
 
     reset reset_protocol;
 
+    virtual void start_recording();
+    virtual void stop_recording();
+
 protected:
     ipbus bus;
+
+    std::ofstream ofile;
+    bool recording;
+
+    int currentdaughter;
+    int currentbus;
+
+    // I2C interface - all transactions via ipbus
+    virtual int read_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data);
+    virtual int read_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
+
+    virtual int write_i2c_allbus(uint8_t dev_addr, uint8_t data);
+    virtual int write_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t data);
+    virtual int write_i2c_reg_allbus(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
+
+    // I2C interface - subtransatctions handled by FPGA
+    virtual int read_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t &data);
+    virtual int read_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
+
+    virtual int write_i2c_fpga(uint8_t dev_addr, uint8_t data);
+    virtual int write_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t data);
+    //virtual int write_i2c_reg_fpga(uint8_t dev_addr, uint8_t reg_addr, uint8_t byte_num, uint8_t data[]);
+
 
     //I2C helpers
     uint32_t checkTIP();
@@ -127,6 +160,7 @@ protected:
     const uint32_t ADDR_I2C_CTRL            = 0xA;
     const uint32_t ADDR_I2C_DATA            = 0xB;
     const uint32_t ADDR_I2C_CMD_STAT        = 0xC;
+    const uint32_t ADDR_I2C_FPGA            = 0x10;
 
     const uint32_t I2C_BIT_READ             = 0x1;
     const uint32_t I2C_BIT_TIP              = 0x2;

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-add_executable(switch_fe_mupix switch_fe.cpp ${MXML_DIR}/mxml ${INC_ALL})
+add_executable(switch_fe_mupix switch_fe.cpp ${INC_ALL})
 #KB: disable most annoying compiler warnings that will not go away
 target_compile_options(switch_fe_mupix PRIVATE 
 	-Wno-missing-field-initializers
