@@ -411,33 +411,36 @@ uint32_t MupixFEB::ReadBackHitsEnaRate(uint16_t FPGA_ID){
     return hitsEna;
 }
 
+// TODO: Move to Mu_FEB
 uint32_t MupixFEB::ReadBackMergerRate(uint16_t FPGA_ID){
     auto FEB = m_FPGAs[FPGA_ID];
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
     
     uint32_t mergerRate;
-    int status=m_mu.FEBsc_read(FEB.SB_Port(), &mergerRate, 1, 0xfff6);
+    int status=m_mu.FEBsc_read(FEB.SB_Port(), &mergerRate, 1, 0xFF00 | MERGER_RATE_REGISTER_R);
     return mergerRate;
 }
 
+// TODO: Move to Mu_FEB
 uint32_t MupixFEB::ReadBackResetPhase(uint16_t FPGA_ID){
     auto FEB = m_FPGAs[FPGA_ID];
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
     
     uint32_t resetPhase;
-    int status=m_mu.FEBsc_read(FEB.SB_Port(), &resetPhase, 1, 0xfff7);
+    int status=m_mu.FEBsc_read(FEB.SB_Port(), &resetPhase, 1, 0xFF00 | RESET_PHASE_REGISTER_R);
     return resetPhase & 0xFFFF;
 }
 
+// TODO: Move to Mu_FEB
 uint32_t MupixFEB::ReadBackTXReset(uint16_t FPGA_ID){
     auto FEB = m_FPGAs[FPGA_ID];
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
     
     uint32_t TXReset;
-    int status=m_mu.FEBsc_read(FEB.SB_Port(), &TXReset, 1, 0xfff8);
+    int status=m_mu.FEBsc_read(FEB.SB_Port(), &TXReset, 1, 0xFF00 | RESET_OPTICAL_LINKS_REGISTER_RW);
     return TXReset & 0xFFFFFFFC;
 }
 
@@ -495,6 +498,7 @@ int MupixFEB::ConfigureBoards(){
 
 
 //Helper functions
+// TODO: These should not be copied betwen the FEBs
 uint32_t reg_setBit  (uint32_t reg_in, uint8_t bit, bool value=true){
 	if(value)
 		return (reg_in | 1<<bit);
