@@ -1,2 +1,2 @@
 add_subdirectory(midas)
-add_subdirectory(mutrigana-base)
+#add_subdirectory(mutrigana-base)

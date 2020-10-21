@@ -8,8 +8,8 @@ target_include_directories(config_mutrig_test PRIVATE ${LIBMUDAQ_DIR} ${INCMUDAQ
 target_include_directories(config_mupix_test PRIVATE ${LIBMUDAQ_DIR} ${INCMUDAQ_DIR} ${INCMUPIX_DIR})
 target_include_directories(test_odb PRIVATE ${INCMUDAQ_DIR} ${MIDAS_DIR}/include ${MIDASINCLUDE_DIR})
 
-target_link_libraries(config_mutrig_test libmudaq_scifi libmutrig)
-target_link_libraries(config_mupix_test libmudaq_scifi libmupix)
-target_link_libraries(test_odb mfe midas rt pthread util dl)
+target_link_libraries(config_mutrig_test dl rt util midas libmudaq_scifi libmutrig)
+target_link_libraries(config_mupix_test dl rt util midas libmudaq_scifi libmupix)
+target_link_libraries(test_odb midas rt pthread util dl)
 
 install(TARGETS config_mutrig_test config_mupix_test test_odb DESTINATION unittests)

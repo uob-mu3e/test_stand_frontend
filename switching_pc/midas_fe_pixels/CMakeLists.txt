@@ -8,7 +8,7 @@ target_compile_options(switch_fe_mupix PRIVATE
 )
 message("${INCMUTRIG_DIR}")
 target_include_directories(switch_fe_mupix PRIVATE ${MIDAS_DIR}/include ${MXML_DIR} ${MIDASINCLUDE_DIR} ${LIBMUDAQ_DIR} ${INCMUDAQ_DIR} ${INCMUTRIG_DIR} ${LIBMUPIX_DIR}/include)
-target_link_libraries(switch_fe_mupix mfe midas rt pthread util libmudaq_scifi libmutrig libmupix dl)
+target_link_libraries(switch_fe_mupix mfe midas dl rt pthread util libmudaq_scifi libmutrig libmupix dl)
 
 
 install(TARGETS switch_fe_mupix DESTINATION bin)

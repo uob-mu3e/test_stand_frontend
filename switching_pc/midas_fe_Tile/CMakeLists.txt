@@ -5,7 +5,7 @@ FILE(GLOB_RECURSE INC_ALL "*.h")
 add_executable(malibu_fe malibu_fe.cpp ${MXML_DIR}/mxml ${INC_ALL})
 
 target_include_directories(malibu_fe PRIVATE ${MIDAS_DIR}/include ${MXML_DIR} ${MIDASINCLUDE_DIR} ${LIBMUDAQ_DIR} ${INCMUDAQ_DIR})
-target_link_libraries(malibu_fe mfe midas rt pthread util libmudaq libmalibu) #TODO: Here is the place to add STiC lib or malibu lib
+target_link_libraries(malibu_fe mfe midas dl rt pthread util libmudaq libmalibu) #TODO: Here is the place to add STiC lib or malibu lib
 
 install(TARGETS malibu_fe DESTINATION bin)
 
