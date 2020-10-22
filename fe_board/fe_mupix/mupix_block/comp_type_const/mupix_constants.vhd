@@ -49,9 +49,8 @@ subtype  TSRANGEplus1       is integer range 8 downto 1;
 subtype  TBLOCKRANGE        is integer range 7 downto 5;
 constant INVALID                            : STD_LOGIC_VECTOR(7 downto 0) := x"00";
 constant MHITSIZE                           : integer := 42;--26; -- Merge hits from four chips
-constant TIMESTAMPSIZE                      : integer := 8;
-constant TIMESTAMPSIZE_MPX8                 : integer := 10;
-constant CHARGESIZE                         : integer := 6;
+constant TIMESTAMPSIZE_MP10                 : integer := 11;
+constant CHARGESIZE_MP10                    : integer := 5;
 
 constant CHIPMARKERSIZE                     : integer := 8;
 constant CHIPRANGE                          : integer := 3;

@@ -17,7 +17,6 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
-use work.datapath_components.all;
 use work.detectorfpga_constants.all;
 use work.detectorfpga_types.all;
 
@@ -242,7 +241,7 @@ end process;
 
 -- Memory for the actual sorting
 genmem: for i in NCHIPS-1 downto 0 generate
-	hsmem:hitsortermem
+	hsmem: entity work.hitsortermem
 	PORT MAP
 	(
 		data				=> tomem(i),
@@ -257,7 +256,7 @@ genmem: for i in NCHIPS-1 downto 0 generate
 	-- In order to have enough ports also for clearing, we divide the memories for the counters
 	-- into NMEMS memories, one address holds an even and an odd TS 
 	gencmem: for k in NMEMS-1 downto 0 generate
-		cmem:countermemory
+		cmem:entity work.countermemory
 			PORT MAP
 			(
 				clock				=> writeclk,
@@ -788,7 +787,7 @@ end process;
 
 
 -- Here we generate the sequence of read commands etc.
-seq:sequencer 
+seq:entity work.sequencer 
 	port map(
 		reset_n							=> reset_n,
 		clk								=> writeclk,
@@ -869,7 +868,7 @@ elsif(writeclk'event and writeclk = '1') then
 end if;
 end process;
 
-sdm: sorter_diagnostic_mux
+sdm: entity work.sorter_diagnostic_mux
 	PORT MAP
  	(
 		aclr		=> reset,

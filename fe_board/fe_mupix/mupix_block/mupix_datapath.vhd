@@ -213,7 +213,6 @@ begin
             datain              => rx_data(8*i), 
             kin                 => rx_k(8*i), 
             readyin             => link_enable(8*i),
-            is_atlaspix         => '0',	-- we limit ourselves to MuPix8 here
             hit_out             => hits((i+1)*UNPACKER_HITSIZE-1 downto i*UNPACKER_HITSIZE),
             hit_ena             => hits_ena(i),
             coarsecounter       => coarsecounters((i+1)*COARSECOUNTERSIZE-1 downto i*COARSECOUNTERSIZE),
@@ -307,6 +306,22 @@ begin
 		errcounter_sel_in		=> writeregs_reg(DEBUG_CHIP_SELECT_REGISTER_W)(CHIPRANGE-1 downto 0),
         i_run_state_125         => i_run_state_125--,
 	);	
+
+    sorter: work.hitsorter_wide
+    port map(
+        reset_n         => '0',
+        writeclk        => i_clk125,
+        running         => '0',
+        currentts       => (others => '0'),
+        hit_in          => (others => (others => '0')),
+        hit_ena_in      => (others => '0'),
+        readclk         => i_clk125,
+        data_out        => open,
+        out_ena         => open,
+        out_type        => open,
+        diagnostic_sel  => (others => '0'),
+        diagnostic_out  => open--,
+    );
 
 
 end rtl;
