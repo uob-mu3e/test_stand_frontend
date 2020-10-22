@@ -1,4 +1,4 @@
--- last change: S. Dittmeier, 22.11.2019 (dittmeier@physi.uni-heidelberg.de)
+-- last change: M.Mueller, Oktober 2020 (muellem@uni-mainz.de)
 
 library ieee;
 use ieee.std_logic_1164.all;
