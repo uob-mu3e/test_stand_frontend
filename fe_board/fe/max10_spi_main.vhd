@@ -1,8 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.detectorfpga_components.all;
 
 entity max10_spi_main is
 
@@ -20,6 +18,7 @@ port(
 	
 	--CLK , reset , next , command
 	i_clk_50	: in  std_logic;
+	i_clk_100   : in  std_logic;
 	i_reset_n	: in  std_logic;
 	--i_command	: in  std_logic_vector(15 downto 0); --[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
 	
@@ -35,7 +34,7 @@ port(
 	o_SPI_cs	: out std_logic;
 	o_SPI_clk	: out std_logic;
 	
-   io_SPI_mosi	: inout std_logic;
+    io_SPI_mosi	: inout std_logic;
 	io_SPI_miso	: inout std_logic;
 	io_SPI_D1	: inout std_logic;
 	io_SPI_D2	: inout std_logic;
@@ -70,6 +69,7 @@ architecture rtl of max10_spi_main is
 	signal aktiv		: std_logic;
 	signal rw 			: std_logic;
 	signal ss_del		: std_logic;
+	signal clk100_del   : std_logic; -- read 100 clk delay
 	
 	------ Aria Register -----
 	
@@ -123,6 +123,15 @@ begin
 		io_SPI_miso	<= s_reg_16(3)((32/lanes)-1) when State = Adrr or State = W_Data else 'Z';
 	end generate;
 	
+process(i_clk_100, i_reset_n, i_clk_50)
+begin
+    
+    if(rising_edge(i_clk_100)) then --BUG sammelt immer ? 
+        for i in 0 to lanes-1 loop
+            s_r_reg_16(i)(0) <= io_SPI_D(i);
+        end loop;
+	end if;
+end process;	
 	
 process(i_clk_50 , i_reset_n)
 begin
@@ -197,21 +206,22 @@ begin
 					cnt_del <= cnt_del +1;
 				elsif (o_Ar_done ='1') then
                     State <= Idle;
+                    o_Ar_done <= '0';
 				else
 					State <= R_Data;
-					cnt_16 <= 1;
-                    for i in 0 to lanes-1 loop
-                        s_r_reg_16(i)(0) <= io_SPI_D(i);
-                    end loop;
+					cnt_16 <= 0;
+--                     for i in 0 to lanes-1 loop
+--                         s_r_reg_16(i)(0) <= io_SPI_D(i);
+--                     end loop;
 				end if;
 				
 			When R_Data =>
                 o_Ar_rw     <= R ;
 				cnt_16 <= cnt_16 +1;
 				--s_r_reg_16(0)(0) <= i_SPI_miso;
-				for i in 0 to lanes-1 loop
-                    s_r_reg_16(i)(0) <= io_SPI_D(i);
-				end loop;
+-- 				for i in 0 to lanes-1 loop
+--                     s_r_reg_16(i)(0) <= io_SPI_D(i);
+-- 				end loop;
 				
 				for i in  0 to (lanes -1) loop
 					for j in  1 to (32/lanes)-1 loop

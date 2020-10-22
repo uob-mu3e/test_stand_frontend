@@ -2,6 +2,7 @@
 #define __ADC_H__
 
 #include <altera_modular_adc_sequencer_regs.h>
+#include "altera_modular_adc.h"
 
 const
 alt_u8 ADC_LUT[383] = {
@@ -36,6 +37,7 @@ struct adc_t {
     void menu() {
         while (1) {
             printf("\n");
+            printf("  [t] => adc test\n");
             printf("  [1] => read temperature\n");
             printf("  [2] => read adc data\n");
             printf("  [3] => rolling avg\n");
@@ -44,6 +46,9 @@ struct adc_t {
             char cmd = wait_key();
 
             switch(cmd) {
+            case 't':
+                ADCTest();
+                break;
             case '1':
                 read_temp();
                 break;
@@ -59,6 +64,80 @@ struct adc_t {
                 printf("invalid command: '%c'\n", cmd);
             }
         }
+    }
+    
+    void ADCTest() {
+        static char ch;
+        int i;
+        alt_u32 adc_data[ADC_SAMPLE_STORE_CSR_CSD_LENGTH];
+        alt_u32	adc_comp_data[5];
+        alt_u32 data;
+        int *pnt_test =(int *) 0x3FEC;
+        int *pnt_test2 =(int *) 0x0DFF;
+        *pnt_test = 0x3FEC5F0F;
+        *pnt_test2 = 0x0DFF5F0F;
+        printf("%n\n" , pnt_test);
+        printf("%n\n" , *pnt_test);
+        printf("%n\n" , pnt_test2);
+        printf("%n\n" , *pnt_test2);
+
+        printf("....start ADC Test single sequenz....\n");
+        adc_interrupt_disable(ADC_SAMPLE_STORE_CSR_BASE);
+        adc_set_mode_run_once(ADC_SEQUENCER_CSR_BASE);
+        adc_start(ADC_SEQUENCER_CSR_BASE);
+        printf("....ADC start ....\n");
+        data = IORD_32DIRECT((ADC_SEQUENCER_CSR_BASE),0);
+        while(data & 0x1){
+            data = IORD_32DIRECT((ADC_SEQUENCER_CSR_BASE),0);
+            printf("Status reg %x\n", data);
+        }
+
+        alt_adc_word_read(ADC_SAMPLE_STORE_CSR_BASE,adc_data,ADC_SAMPLE_STORE_CSR_CSD_LENGTH);
+        for (int j = 0; j < ADC_SAMPLE_STORE_CSR_CSD_LENGTH ; j++){
+            printf("....Daten?...: %x\n", (int)adc_data[j]);
+            printf("Adrres 1 %x\n", adc_data);
+            printf("Adrres 2 %x\n", &adc_data);
+
+        }
+
+        // multi seq start
+
+        printf("....single Sequenz done....start multiple sequenz....\n");
+        adc_interrupt_disable(ADC_SAMPLE_STORE_CSR_BASE);
+        adc_set_mode_run_continuously(ADC_SEQUENCER_CSR_BASE);
+        adc_start(ADC_SEQUENCER_CSR_BASE);
+        printf("....ADC start ....\n");
+
+        for(int i = 0 ; i<3 ; i++){
+            usleep(1000000);
+            printf("....%x....\n",i);
+            alt_adc_word_read(ADC_SAMPLE_STORE_CSR_BASE,adc_data,ADC_SAMPLE_STORE_CSR_CSD_LENGTH);
+                for (int j = 0; j < ADC_SAMPLE_STORE_CSR_CSD_LENGTH ; j++){
+                    printf("....Daten?...: %x\n", (int)adc_data[j]);
+                    printf("Adrres 1 %x\n", adc_data[j]);
+                    printf("Adrres 2 %x\n", &adc_data[j]);
+                }
+                for (int k = 0; k<(ADC_SAMPLE_STORE_CSR_CSD_LENGTH+1)/2 ; k ++){
+                    adc_comp_data[k] = (adc_data[2*k] << 16 )+adc_data[2*k +1];
+                    printf("comprimiert %x\n",adc_comp_data[k]);
+                }
+
+                IOWR_ALTERA_AVALON_PIO_DATA(0xa1320,(adc_comp_data[0]));
+                IOWR_ALTERA_AVALON_PIO_DATA(0xa1310,(adc_comp_data[1]));
+                IOWR_ALTERA_AVALON_PIO_DATA(0xa1300,(adc_comp_data[2]));
+                IOWR_ALTERA_AVALON_PIO_DATA(0xa12f0,(adc_comp_data[3]));
+                IOWR_ALTERA_AVALON_PIO_DATA(0xa12e0,(adc_comp_data[4]));
+        }
+
+
+        adc_stop(ADC_SEQUENCER_CSR_BASE);
+        printf("Status reg %x\n", (int)IORD_32DIRECT((ADC_SEQUENCER_CSR_BASE),0));
+        printf("....multi sequenz done....");
+        printf(".....Exiting ADC Test. \n");
+        adc_data[0] = 0xF05FFA0F;
+        printf("....Daten?...: %x\n", (int)adc_data[0]);
+        printf("Adrres 1 %x\n", adc_data[0]);
+        printf("Adrres 2 %x\n", &adc_data[0]);
     }
 
     void start_adc_sequencer() {

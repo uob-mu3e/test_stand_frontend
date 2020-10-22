@@ -82,8 +82,8 @@ begin
     adc_adr             <= std_logic_vector(ADC_data_base + unsigned(i_SPI_addr_o));
 
     with command select
+        -- more infos in the manuel
         o_SPI_data <=   i_stat_data     when X"02",
---                       i_reset_reg      when X"03",
                         i_stat_data     when X"10",
                         i_reg_data      when x"11",
                         i_comm_data     when X"12",
@@ -92,38 +92,38 @@ begin
                         i_fifo_data     when x"15",
                         i_ram_data      when x"20",
                         i_ram_data      when x"21",
-                        adc_data_o      when X"22",
+                        adc_data_o      when x"22",
                         (others => '0') when others;
     with command select
-        o_comm_data <=  i_SPI_data      when X"12",
+        o_comm_data <=  i_SPI_data      when x"12",
                         (others => '0') when others;
     with command select
-        o_comm_rw   <=  i_SPI_rw        when X"12",
+        o_comm_rw   <=  i_SPI_rw        when x"12",
                         '0'             when others;
     with command select
-        o_fifo_data <=  i_SPI_data      when X"14",
+        o_fifo_data <=  i_SPI_data      when x"14",
                         (others => '0') when others;
     with command select
-        o_fifo_next <=  '1'             when (X"14" or X"15"),
+        o_fifo_next <=  '1'             when (x"14" or x"15"),
                         '0'             when others;
     with command select
-        o_fifo_rw   <=  rw_comm         when (x"14" or X"15"),
+        o_fifo_rw   <=  rw_comm         when (x"14" or x"15"),
                         '0'             when others;
     with command select
-        o_ram_addr  <=  adc_adr         when X"20",
-                        adc_adr         when X"21",
+        o_ram_addr  <=  adc_adr         when x"20",
+                        adc_adr         when x"21",
                         (others => '0') when others;
     with command select
-        o_ram_data  <=  i_SPI_data      when X"20",
-                        i_SPI_data      when X"21",
+        o_ram_data  <=  i_SPI_data      when x"20",
+                        i_SPI_data      when x"21",
                         (OTHERS => '0') when others;
     with command select
-        o_ram_rw    <=  i_SPI_rw        when X"21",
+        o_ram_rw    <=  i_SPI_rw        when x"21",
                         '1'             when others;
     with command select
         o_reg_addr  <=  (others => '0') when others;
     with command select
-        o_reg_data  <=  i_SPI_data      when X"00",
+        o_reg_data  <=  i_SPI_data      when x"00",
                         (others => '0') when others;
     with command select
         o_reg_rw    <=  i_SPI_rw        when x"00",

@@ -76,11 +76,11 @@ port (
 
     -- MAX10 IF
     o_max10_spi_sclk    : out   std_logic;
-    o_max10_spi_mosi    : out   std_logic;
-    i_max10_spi_miso    : in    std_logic;
+    io_max10_spi_mosi   : inout std_logic;
+    io_max10_spi_miso   : inout std_logic;
     io_max10_spi_D1     : inout std_logic := 'Z';
     io_max10_spi_D2     : inout std_logic := 'Z';
-    io_max10_spi_D3     : inout std_logic := 'Z';
+    o_max10_spi_D3      : out   std_logic := 'Z';
     o_max10_spi_csn     : out   std_logic := '1';
 
     -- slow control registers
@@ -192,6 +192,9 @@ architecture arch of fe_block_v2 is
     signal arriaV_temperature       : std_logic_vector(7 downto 0);
     signal arriaV_temperature_clr   : std_logic;
     signal arriaV_temperature_ce    : std_logic;
+    
+    signal clk_100                  : std_logic;
+    signal clk_100_locked           : std_logic;
 
 begin
 
@@ -230,6 +233,11 @@ begin
     e_clk_125_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( o_clk => o_clk_125_mon, i_reset_n => reset_125_n, i_clk => i_clk_125 );
+
+    -- 100 MHz Max10 SPI PLL
+    e_pll_100_hz : entity work.ip_altpll
+    generic map ( INCLK0_MHZ => 50.0, MUL => 2, DIV => 1 )
+    port map ( areset => i_areset_n, inclk0 => i_nios_clk, c0 => clk_100, locked => clk_100_locked );
 
     -- SPI
     spi_si_miso <= '1' when ( (i_spi_si_miso or spi_si_ss_n) = (spi_si_ss_n'range => '1') ) else '0';
@@ -396,6 +404,13 @@ begin
         avm_qsfp_write          => av_ffly.write,
         avm_qsfp_writedata      => av_ffly.writedata,
         avm_qsfp_waitrequest    => av_ffly.waitrequest,
+
+        -- max10 spi
+        adc_0_export            => (others => '0'),
+        adc_1_export            => (others => '0'),
+        adc_2_export            => (others => '0'),
+        adc_3_export            => (others => '0'),
+        adc_4_export            => (others => '0'),
 
         --
         -- nios base
@@ -636,7 +651,6 @@ begin
         o_testout                       => open--,
     );
 
-
     e_max10_spi_main : entity work.max10_spi_main
     generic map (
         SS  =>  '1',
@@ -645,16 +659,17 @@ begin
     )
     port map(
         -- clk & reset
-        i_clk_50        => spare_clk_osc,
+        i_clk_50        => i_nios_clk,
+        i_clk_100       => clk_100,
         i_reset_n       => i_areset_n,
         -- SPI
-        o_SPI_cs        => max10_spi_csn,
+        o_SPI_cs        => o_max10_spi_csn,
         -- max10_spi_sclk lane defect on the first boards
-        o_SPI_clk       => max10_spi_D3,
-        io_SPI_mosi     => max10_spi_mosi,
-        io_SPI_miso     => max10_spi_miso,
-        io_SPI_D1       => max10_spi_D1,
-        io_SPI_D2       => max10_spi_D2,
+        o_SPI_clk       => o_max10_spi_D3,
+        io_SPI_mosi     => io_max10_spi_mosi,
+        io_SPI_miso     => io_max10_spi_miso,
+        io_SPI_D1       => io_max10_spi_D1,
+        io_SPI_D2       => io_max10_spi_D2,
         io_SPI_D3       => open,
         -- debug
         o_led => open--,

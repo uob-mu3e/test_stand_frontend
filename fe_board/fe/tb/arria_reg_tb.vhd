@@ -1,6 +1,5 @@
 library ieee;
 use ieee.std_logic_1164.all;
---use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 entity arria_reg_tb is 
@@ -53,7 +52,7 @@ begin
         o_SPI_a <= reg(127)(31 downto 16);
         
         if inst = '1' then
-            reg(127) <= X"55" & "0101110" & '1' & X"00" & "000100" & '1' & '1';   
+            reg(127) <= X"55" & "0100010" & '1' & X"00" & "000100" & '1' & '1';   
             for i in 0 to 62 loop
                 reg(i*2)        <= X"F0570FF0" ;
                 --reg(i*2)        <= X"55555555" ;

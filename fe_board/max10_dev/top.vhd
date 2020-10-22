@@ -186,7 +186,7 @@ begin
         i_SPI_inst      => SPI_Nios_com,
         i_SPI_data      => SPI_Aria_data,
         i_SPI_addr_o    => SPI_addr_o,
-        i_SPI_rw        => SPI_rw,	
+        i_SPI_rw        => SPI_rw,
         o_SPI_data      => SPI_Max10_data,
 
         -- ram interface
