@@ -9,7 +9,6 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "data_unpa
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "multichip_ro/multichip_ro_zerosupressed.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "multichip_ro/singlechip_ro.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "multichip_ro/single_zs_fifo.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "multichip_ro/singlechip_ro_zerosupressed.vhd"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/datadecoder.vhd"]
