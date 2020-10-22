@@ -245,8 +245,8 @@ begin
     port map ( o_clk => o_clk_100_mon, i_reset_n => reset_100_n, i_clk => clk_100 );
 
     -- 100 MHz Max10 SPI PLL
-    e_ip_pll_100MHz : entity work.ip_pll_100MHz
-    port map ( rst => not i_areset_n, refclk => i_nios_clk, outclk_0 => clk_100, locked => open );
+--    e_ip_pll_100MHz : entity work.ip_pll_100MHz
+--    port map ( rst => not i_areset_n, refclk => i_nios_clk, outclk_0 => clk_100, locked => open );
     
     -- SPI
     spi_si_miso <= '1' when ( (i_spi_si_miso or spi_si_ss_n) = (spi_si_ss_n'range => '1') ) else '0';
@@ -669,7 +669,7 @@ begin
     port map(
         -- clk & reset
         i_clk_50        => i_nios_clk,
-        i_clk_100       => clk_100,
+        i_clk_100       => i_nios_clk,--clk_100,
         i_reset_n       => i_areset_n,
 --        i_command	    => SPI_command,--[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
 --        ------ Aria Data --register interface 
