@@ -481,20 +481,25 @@ end generate genmem;
 reset <= not reset_n;
 
 -- FIFO for passing counters to the sequencer
-cfifo: counterfifo
-	PORT MAP
-	(
-		aclr		=> reset,
-		clock		=> writeclk,
-		data		=> tofifo_counters,
-		rdreq		=> read_counterfifo,
-		sclr		=> '0',
-		wrreq		=> write_counterfifo,
-		almost_full	=> counterfifo_almostfull,
-		empty		=> counterfifo_empty,
-		q			=> fromfifo_counters
-	);
-	
+    cfifo: entity work.ip_scfifo
+    generic map(
+        ADDR_WIDTH      => 7,
+        DATA_WIDTH      => 254,
+        SHOWAHEAD       => "ON",
+        DEVICE          => "ARRIA V",
+        ALMOST_FULL     => 120--,
+    )
+    port map (
+        clock           => writeclk,
+        sclr            => reset,
+        data            => tofifo_counters,
+        wrreq           => write_counterfifo,
+        almost_full     => counterfifo_almostfull,
+        empty           => counterfifo_empty,
+        q               => fromfifo_counters,
+        rdreq           => read_counterfifo--,
+    );
+
 -- collect data for transmission to read side
 -- read one line in the countermemories per cycle, condense counters and push to fifo if nonempty
 process(reset_n, writeclk)

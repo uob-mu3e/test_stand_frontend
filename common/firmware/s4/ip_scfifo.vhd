@@ -41,10 +41,11 @@ USE altera_mf.all;
 
 ENTITY ip_scfifo IS
     generic (
-        ADDR_WIDTH : positive := 8;
-        DATA_WIDTH : positive := 8;
-        SHOWAHEAD : string := "ON";
-        DEVICE : string := "Stratix IV"--;
+        ADDR_WIDTH  : positive := 8;
+        DATA_WIDTH  : positive := 8;
+        SHOWAHEAD   : string   := "ON";
+        DEVICE      : string   := "Stratix IV";
+        ALMOST_FULL : positive := 1--;
     );
 	PORT
 	(
@@ -116,7 +117,7 @@ BEGIN
 	GENERIC MAP (
 		add_ram_output_register => "OFF",
 		almost_empty_value => 2**(ADDR_WIDTH/2),
-		almost_full_value => 2**ADDR_WIDTH - 2**(ADDR_WIDTH/2),
+		almost_full_value => 2**ADDR_WIDTH - 2**(ADDR_WIDTH/2) when ALMOST_FULL = 1 else ALMOST_FULL,
 		intended_device_family => DEVICE,
 		lpm_numwords => 2**ADDR_WIDTH,
 		lpm_showahead => SHOWAHEAD,
