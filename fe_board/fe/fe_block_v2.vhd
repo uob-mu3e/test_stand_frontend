@@ -115,6 +115,8 @@ port (
     -- 125 MHz (global clock)
     i_clk_125       : in    std_logic;
     o_clk_125_mon   : out   std_logic;
+    -- 100 MHz (max10 spi)
+    o_clk_100_mon   : out   std_logic;
 
     i_areset_n      : in    std_logic;
     
@@ -128,6 +130,7 @@ architecture arch of fe_block_v2 is
     signal reset_156_n              : std_logic;
     signal reset_125_n              : std_logic;
     signal reset_125_RRX_n          : std_logic;
+    signal reset_100_n              : std_logic;
 
     signal nios_pio                 : std_logic_vector(31 downto 0);
     signal nios_irq                 : std_logic_vector(3 downto 0) := (others => '0');
@@ -194,7 +197,6 @@ architecture arch of fe_block_v2 is
     signal arriaV_temperature_ce    : std_logic;
     
     signal clk_100                  : std_logic;
-    signal clk_100_locked           : std_logic;
 
 begin
 
@@ -213,6 +215,9 @@ begin
 
     e_reset_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_n, i_reset_n => i_areset_n, i_clk => i_clk_125 );
+    
+    e_reset_100_n : entity work.reset_sync
+    port map ( o_reset_n => reset_100_n, i_reset_n => i_areset_n, i_clk => clk_100 );
 
     e_reset_line_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_RRX_n, i_reset_n => i_areset_n, i_clk => reset_link_rx_clk);
@@ -233,12 +238,16 @@ begin
     e_clk_125_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( o_clk => o_clk_125_mon, i_reset_n => reset_125_n, i_clk => i_clk_125 );
+    
+    -- 100 MHz -> 1 Hz
+    e_clk_100_hz : entity work.clkdiv
+    generic map ( P => 100000000 )
+    port map ( o_clk => o_clk_100_mon, i_reset_n => reset_100_n, i_clk => clk_100 );
 
     -- 100 MHz Max10 SPI PLL
-    e_pll_100_hz : entity work.ip_altpll
-    generic map ( INCLK0_MHZ => 50.0, MUL => 2, DIV => 1 )
-    port map ( areset => i_areset_n, inclk0 => i_nios_clk, c0 => clk_100, locked => clk_100_locked );
-
+    e_ip_pll_100MHz : entity work.ip_pll_100MHz
+    port map ( rst => not i_areset_n, refclk => i_nios_clk, outclk_0 => clk_100, locked => open );
+    
     -- SPI
     spi_si_miso <= '1' when ( (i_spi_si_miso or spi_si_ss_n) = (spi_si_ss_n'range => '1') ) else '0';
     o_spi_si_mosi <= (o_spi_si_mosi'range => spi_si_mosi);
@@ -662,6 +671,15 @@ begin
         i_clk_50        => i_nios_clk,
         i_clk_100       => clk_100,
         i_reset_n       => i_areset_n,
+--        i_command	    => SPI_command,--[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
+--        ------ Aria Data --register interface 
+--        o_Ar_rw		    => SPI_rw, -- nios rw
+--        o_Ar_data	    => i_adc_data_0
+--        o_Ar_addr_o	    => SPI_addr_o, -- nioas adc addr,
+--        o_Ar_done	    => SPI_done,
+--
+--        i_Max_data	    =>   x"12345678",
+--        i_Max_addr	    =>   X"55" & "0100010" & '1',
         -- SPI
         o_SPI_cs        => o_max10_spi_csn,
         -- max10_spi_sclk lane defect on the first boards

@@ -122,11 +122,11 @@ struct adc_t {
                     printf("comprimiert %x\n",adc_comp_data[k]);
                 }
 
-                IOWR_ALTERA_AVALON_PIO_DATA(0xa1320,(adc_comp_data[0]));
-                IOWR_ALTERA_AVALON_PIO_DATA(0xa1310,(adc_comp_data[1]));
-                IOWR_ALTERA_AVALON_PIO_DATA(0xa1300,(adc_comp_data[2]));
-                IOWR_ALTERA_AVALON_PIO_DATA(0xa12f0,(adc_comp_data[3]));
-                IOWR_ALTERA_AVALON_PIO_DATA(0xa12e0,(adc_comp_data[4]));
+                IOWR_ALTERA_AVALON_PIO_DATA(ADC_D0_BASE,(adc_comp_data[0]));
+                IOWR_ALTERA_AVALON_PIO_DATA(ADC_D1_BASE,(adc_comp_data[1]));
+                IOWR_ALTERA_AVALON_PIO_DATA(ADC_D2_BASE,(adc_comp_data[2]));
+                IOWR_ALTERA_AVALON_PIO_DATA(ADC_D3_BASE,(adc_comp_data[3]));
+                IOWR_ALTERA_AVALON_PIO_DATA(ADC_D4_BASE,(adc_comp_data[4]));
         }
 
 

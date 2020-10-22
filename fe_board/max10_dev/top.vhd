@@ -115,7 +115,7 @@ architecture arch of top is
     signal wcounter                             : std_logic_vector(15 downto 0);
 
     -- spi arria
-    signal SPI_Nios_com                         : std_logic_vector(7 downto 0);
+    signal SPI_inst                         : std_logic_vector(7 downto 0);
     signal SPI_Aria_data                        : std_logic_vector(31 downto 0);
     signal SPI_Max10_data                       : std_logic_vector(31 downto 0);
     signal SPI_addr_o                           : std_logic_vector(6 downto 0);
@@ -167,7 +167,7 @@ begin
         o_Max_rw        => SPI_rw,
         o_Max_data      => SPI_Aria_data,
         o_Max_addr_o    => SPI_addr_o,
-        o_b_addr        => SPI_Nios_com, -- command adrr.
+        o_b_addr        => SPI_inst, -- command adrr.
 
         -- spi interface
         i_Max_data      => SPI_Max10_data,
@@ -183,7 +183,7 @@ begin
     e_spi_decoder : entity work.spi_decoder
     port map(
         -- SPI secondary
-        i_SPI_inst      => SPI_Nios_com,
+        i_SPI_inst      => SPI_inst,
         i_SPI_data      => SPI_Aria_data,
         i_SPI_addr_o    => SPI_addr_o,
         i_SPI_rw        => SPI_rw,

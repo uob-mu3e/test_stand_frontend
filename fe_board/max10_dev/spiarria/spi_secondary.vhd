@@ -45,7 +45,7 @@ architecture rtl of spi_secondary is
 
     -- input signal -> vector for 2/4 lanes
     signal io_SPI_D         : std_logic_vector(3 downto 0);
-    signal cnt_8            : integer range 0 to (16/lanes) ; -- addr  cnt
+    signal cnt_8            : integer range 0 to (16/lanes); -- addr  cnt
     signal cnt_del          : integer range 0 to 64; -- delay cnt
     -- read cnt needs until int 17 but cnts to 16 for 2 lines
     -- read cnt needs until int 9 but cnts to 8 for 4 lines
@@ -95,7 +95,13 @@ begin
     process(i_SPI_clk, i_SPI_cs)
     begin
     if ( i_SPI_cs = not SS ) then
-        State <= Idle;
+        State       <= Idle;
+        cnt_16      <= 1;
+        cnt_8       <= 2;
+        cnt_del     <= 0;
+        o_Max_data  <= X"00000000";
+        addr_offset <= "0000000";
+        o_Max_rw    <= R;
     elsif ( rising_edge(i_SPI_clk) ) then
         o_Max_addr_o <= std_logic_vector(addr_offset);
         case State is
@@ -141,15 +147,6 @@ begin
                     s_reg_16(i)(0) <= io_SPI_D(i);
                 end loop;
             end if;
-            if ( i_SPI_cs = not SS ) then
-                State       <= Idle;
-                cnt_16      <= 1;
-                cnt_8       <= 0;
-                cnt_del     <= 0;
-                o_Max_data  <= X"00000000";
-                addr_offset <= "0000000";
-                o_Max_rw    <= R;
-            end if;
 
         when W_Data =>
             cnt_16      <= cnt_16 +1;
@@ -171,15 +168,6 @@ begin
                     o_Max_data((31-32/lanes*i) downto (32-32/lanes*(i+1))) <= s_reg_16(i);
                 end loop;
             end if;
-            if ( i_SPI_cs = not SS ) then
-                State       <= Idle;
-                cnt_16      <= 1;
-                cnt_8       <= 0;
-                cnt_del     <= 0;
-                o_Max_data  <= X"00000000";
-                addr_offset <= "0000000";
-                o_Max_rw    <= R;
-            end if;
 
         when Deley =>
             if ( cnt_del /= Del ) then
@@ -190,15 +178,6 @@ begin
                     s_r_reg_16(i) <= i_Max_data((31-32/lanes*i) downto (32-32/lanes*(i+1))) ;
                 end loop;
                 addr_offset <= addr_offset +1;
-            end if;
-            if ( i_SPI_cs = not SS ) then
-                State       <= Idle;
-                cnt_16      <= 1;
-                cnt_8       <= 0;
-                cnt_del     <= 0;
-                o_Max_data  <= X"00000000";
-                addr_offset <= "0000000";
-                o_Max_rw    <= R;
             end if;
 
         when R_Data =>
@@ -215,19 +194,16 @@ begin
                 addr_offset <= addr_offset + 1 ;
                 cnt_16 <= 1;
             end if;
-            if ( i_SPI_cs = not SS ) then
-                State       <= Idle;
-                cnt_16      <= 1;
-                cnt_8       <= 0;
-                cnt_del     <= 0;
-                o_Max_data  <= X"00000000";
-                addr_offset <= "0000000";
-                o_Max_rw    <= R;
-            end if;
 
         when others =>
-            State <= Idle;
-            setup <= '1';
+            State       <= Idle;
+            setup       <= '1';
+            cnt_16      <= 1;
+            cnt_8       <= 2;
+            cnt_del     <= 0;
+            o_Max_data  <= X"00000000";
+            addr_offset <= "0000000";
+            o_Max_rw    <= R;
         end case;
     end if;
     end process;

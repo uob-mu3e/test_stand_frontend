@@ -13,6 +13,7 @@ create_clock -period "50.02 MHz" [ get_ports systemclock_bottom ]
 create_clock -period "125.001 MHz" [ get_ports clk_125_top ]
 create_clock -period "125.002 MHz" [ get_ports clk_125_bottom ]
 create_clock -period "50.01 MHz" [ get_ports spare_clk_osc ]
+create_clock -period "50.01 MHz" [ get_ports max10_spi_D3 ]
 
 
 # Do this when you are done with timing:
@@ -33,3 +34,17 @@ create_clock -period "50.01 MHz" [ get_ports spare_clk_osc ]
 # derive pll clocks from base clocks
 derive_pll_clocks -create_base_clocks
 derive_clock_uncertainty
+
+
+# SPI Input/Output delays max10 spi
+#set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_clk}]
+#set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_D3}]
+#set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_csn}]
+
+set_output_delay -clock { spare_clk_osc } 0.5 [get_ports {max10_spi_sclk}]
+set_output_delay -clock { spare_clk_osc } 0.5 [get_ports {max10_spi_mosi}]
+set_output_delay -clock { spare_clk_osc } 0.5 [get_ports {max10_spi_miso}]
+set_output_delay -clock { spare_clk_osc } 0.5 [get_ports {max10_spi_D1}]
+set_output_delay -clock { spare_clk_osc } 0.5 [get_ports {max10_spi_D2}]
+set_output_delay -clock { spare_clk_osc } 0.5 [get_ports {max10_spi_D3}]
+set_output_delay -clock { spare_clk_osc } 0.5 [get_ports {max10_spi_csn}]

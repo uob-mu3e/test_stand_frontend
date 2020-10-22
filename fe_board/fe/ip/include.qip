@@ -6,3 +6,5 @@ foreach f [ lsort [ glob -directory $::quartus(qip_path) \
 ] ] {
     set_global_assignment -name QSYS_FILE $f
 }
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "ip_pll_100MHz.vhd"]
