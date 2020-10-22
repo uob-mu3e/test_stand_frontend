@@ -483,11 +483,11 @@ reset <= not reset_n;
 -- FIFO for passing counters to the sequencer
     cfifo: entity work.ip_scfifo
     generic map(
-        ADDR_WIDTH      => 7,
-        DATA_WIDTH      => 254,
-        SHOWAHEAD       => "ON",
-        DEVICE          => "ARRIA V",
-        ALMOST_FULL     => 120--,
+        ADDR_WIDTH          => 7,
+        DATA_WIDTH          => 254,
+        SHOWAHEAD           => "ON",
+        DEVICE              => "ARRIA V",
+        ALMOST_FULL_LIMIT   => 120--,
     )
     port map (
         clock           => writeclk,

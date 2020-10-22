@@ -102,7 +102,6 @@ begin
             hit_ena             <= hit_reg or coarse_reg;
             coarsecounter_ena   <= coarse_reg;
             link_flag           <= link_flag_reg;
-            data_i_reg          <= data_i_reg;
 
             coarsecounter       <= data_i(7 downto 0) & data_i(31 downto 8); -- gray counter & binary counter
             if(coarse_reg = '1')then
