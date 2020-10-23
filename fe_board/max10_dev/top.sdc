@@ -41,7 +41,8 @@ set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 0.
 # Set False Path
 set_false_path -from [get_clocks {max10_si_clk}] -to [get_clocks {max10_osc_clk}]
 set_false_path -from [get_clocks {max10_osc_clk}] -to [get_clocks {max10_si_clk}]
-
+set_false_path -from [get_clocks {fpga_spi_D3}] -to [get_clocks {e_pll|altpll_component|auto_generated|pll1|clk[1]}];
+set_false_path -from [get_clocks {e_pll|altpll_component|auto_generated|pll1|clk[1]}] -to [get_clocks {fpga_spi_D3}];
 
 set_false_path -to [get_keepers {*altera_std_synchronizer:*|din_s1}]
 set_false_path -from [get_keepers {*fiftyfivenm_adcblock_primitive_wrapper:adcblock_instance|wire_from_adc_dout[0]}] -to [get_registers {*altera_modular_adc_control_fsm:u_control_fsm|dout_flp[0]}]

@@ -245,9 +245,10 @@ begin
     port map ( o_clk => o_clk_100_mon, i_reset_n => reset_100_n, i_clk => clk_100 );
 
     -- 100 MHz Max10 SPI PLL
---    e_ip_pll_100MHz : entity work.ip_pll_100MHz
---    port map ( rst => not i_areset_n, refclk => i_nios_clk, outclk_0 => clk_100, locked => open );
-    
+    e_ip_pll_100MHz : entity work.ip_altpll
+    generic map ( INCLK0_MHZ => 50.0, MUL => 2, DEVICE => "Arria V" )
+    port map ( areset => not i_areset_n, inclk0 => i_nios_clk, c0 => clk_100, locked => open );
+
     -- SPI
     spi_si_miso <= '1' when ( (i_spi_si_miso or spi_si_ss_n) = (spi_si_ss_n'range => '1') ) else '0';
     o_spi_si_mosi <= (o_spi_si_mosi'range => spi_si_mosi);

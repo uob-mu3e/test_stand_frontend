@@ -37,9 +37,10 @@ derive_clock_uncertainty
 
 
 # SPI Input/Output delays max10 spi
-#set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_clk}]
-#set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_D3}]
-#set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_csn}]
+set_input_delay -clock { spare_clk_osc } 2 [get_ports {max10_spi_mosi}]
+set_input_delay -clock { spare_clk_osc } 2 [get_ports {max10_spi_miso}]
+set_input_delay -clock { spare_clk_osc } 2 [get_ports {max10_spi_D1}]
+set_input_delay -clock { spare_clk_osc } 2 [get_ports {max10_spi_D2}]
 
 set_output_delay -clock { spare_clk_osc } 0.5 [get_ports {max10_spi_sclk}]
 set_output_delay -clock { spare_clk_osc } 0.5 [get_ports {max10_spi_mosi}]

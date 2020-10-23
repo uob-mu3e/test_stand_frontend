@@ -3,58 +3,50 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity max10_spi_main is
-
 generic(
-	SS		: std_logic ; -- := '1' ;  -- Sensivität bei der der ss reagieren soll
-	Del		: integer := 1 ; -- Zeit zwischen gesendeter und empfangenden Daten
-	R       : std_logic ;--:= '1'; -- when (r/w = R) => read || when (r/w != R) => write
-	lanes	: integer --:= 4 --; -- verfügbare Lanes  nur 2 oder 4 möglich  -- BUG für 4 muss noch etwas manuell einbezogen werden State : Read
-	); 	
-
+    SS      : std_logic; -- '1' is chip selected
+    Del     : integer := 1; -- time delay
+    R       : std_logic; -- when (r/w = R) => read || when (r/w != R) => write
+    lanes   : integer := 4--; --2 or 4 is possible
+);
 port(
+    -- LED
+    o_led       : out std_logic_vector(7 downto 0);
+    -- clk & reset
+    i_clk_50    : in  std_logic;
+    i_clk_100   : in  std_logic;
+    i_reset_n   : in  std_logic;
+    --i_command	: in  std_logic_vector(15 downto 0); --[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
+    ------ Arria Data --register interface 
+    --o_Ar_rw		: out std_logic;
+    --o_Ar_data	: out std_logic_vector(31 downto 0);
+    --o_Ar_addr_o	: out std_logic_vector(6 downto 0);
+    --o_Ar_done	: out std_logic;
+    --i_Max_data	: in  std_logic_vector(31 downto 0);
+    --i_Max_addr	: in  std_logic_vector(15 downto 0);
+    -- Max10 SPI
+    o_SPI_cs    : out std_logic;
+    o_SPI_clk   : out std_logic;
+    io_SPI_mosi : inout std_logic;
+    io_SPI_miso : inout std_logic;
+    io_SPI_D1   : inout std_logic;
+    io_SPI_D2   : inout std_logic;
+    io_SPI_D3   : inout std_logic--;
 
-	--LED
-	o_led		: out std_logic_vector(7 downto 0);
-	
-	--CLK , reset , next , command
-	i_clk_50	: in  std_logic;
-	i_clk_100   : in  std_logic;
-	i_reset_n	: in  std_logic;
-	--i_command	: in  std_logic_vector(15 downto 0); --[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
-	
-	------ Aria Data --register interface 
-	--o_Ar_rw		: out std_logic;
-	--o_Ar_data	: out std_logic_vector(31 downto 0);
-	--o_Ar_addr_o	: out std_logic_vector(6 downto 0);
-	--o_Ar_done	: out std_logic;
-	
-	--i_Max_data	: in  std_logic_vector(31 downto 0);
-	--i_Max_addr	: in  std_logic_vector(15 downto 0);
-	------ SPI
-	o_SPI_cs	: out std_logic;
-	o_SPI_clk	: out std_logic;
-	
-    io_SPI_mosi	: inout std_logic;
-	io_SPI_miso	: inout std_logic;
-	io_SPI_D1	: inout std_logic;
-	io_SPI_D2	: inout std_logic;
-	
-	io_SPI_D3	: inout std_logic--; --nicht verwendet
-	
-	
 );
 end entity;
 
 architecture rtl of max10_spi_main is
 
-	type State_type is (Idle, Adrr , W_Data , Deley , R_Data );
-	signal State : State_type;
-	
-	--imput signal -> vector for 2/4 lanes
+    type State_type is (Idle, Adrr , W_Data , Deley , R_Data );
+    type s_regs is Array (0 to (lanes-1)) of std_logic_vector(((32/lanes)-1) downto 0);
+    
+    signal State : State_type;
+    --imput signal -> vector for 2/4 lanes
 	signal io_SPI_D    : std_logic_vector(3 downto 0);
 	
 	--shift register
-	type s_regs is Array (0 to (lanes-1)) of std_logic_vector(((32/lanes)-1) downto 0);
+
 	signal s_r_reg_16	: s_regs ; -- read SPI Slave
 	signal s_reg_16		: s_regs ; -- write SPI Slave
 	
@@ -123,7 +115,7 @@ begin
 		io_SPI_miso	<= s_reg_16(3)((32/lanes)-1) when State = Adrr or State = W_Data else 'Z';
 	end generate;
 	
-process(i_clk_100, i_reset_n, i_clk_50)
+process(i_clk_100)
 begin
     
     if(rising_edge(i_clk_100)) then --BUG sammelt immer ? 
