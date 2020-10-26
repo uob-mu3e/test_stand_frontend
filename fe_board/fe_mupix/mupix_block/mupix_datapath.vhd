@@ -93,7 +93,7 @@ signal s_buf_wr_125			: std_logic;
 
 signal counter125 			: std_logic_vector(63 downto 0);
 
-signal rx_state				: std_logic_vector(NLVDS*2-1 downto 0);
+signal rx_state				: std_logic_vector(NLVDS*4-1 downto 0);
 
 signal multichip_ro_overflow : std_logic_vector(31 downto 0);
 
@@ -165,12 +165,12 @@ begin
     lvds_block : work.receiver_block_mupix
     port map(
         reset_n             => i_reset_n_lvds,
-        checker_rst_n       => (others => '1'), --TODO: What is this ? M.Mueller
+        checker_rst_n       => (others => '1'),--TODO: What is this ? M.Mueller
         rx_in               => lvds_data_in,
         rx_inclock_A        => i_clk125,
         rx_inclock_B        => i_clk125,
 
-        rx_state            => rx_state,
+        rx_state            => open, --rx_state, --TODO
         rx_ready            => data_valid,
         rx_data             => rx_data,
         rx_k                => rx_k,

@@ -59,7 +59,6 @@ set_instance_assignment -name IO_STANDARD LVDS -to testout
 set_location_assignment PIN_AK4 -to testout
 set_location_assignment PIN_AK5 -to "testout(n)"
 
-set_instance_assignment -name IO_STANDARD LVDS -to clock_aux
 set_location_assignment PIN_F19 -to FPGA_Test[0]
 set_location_assignment PIN_G20 -to FPGA_Test[1]
 set_location_assignment PIN_J19 -to FPGA_Test[2]
@@ -206,14 +205,8 @@ set_location_assignment PIN_U23 -to "transceiver_pll_clock[1](n)"
 set_instance_assignment -name IO_STANDARD LVDS -to transceiver_pll_clock[2]
 set_location_assignment PIN_R22 -to transceiver_pll_clock[2]
 set_location_assignment PIN_R23 -to "transceiver_pll_clock[2](n)"
-set_location_assignment PIN_AG6 -to clock_aux
-set_location_assignment PIN_AF7 -to "clock_aux(n)"
 set_location_assignment PIN_E4 -to PushButton[1]
 set_location_assignment PIN_E3 -to PushButton[0]
-set_location_assignment PIN_AC15 -to "spare_out[3](n)"
-set_location_assignment PIN_AD15 -to spare_out[3]
-set_location_assignment PIN_AG16 -to spare_out[2]
-set_location_assignment PIN_AF16 -to "spare_out[2](n)"
 set_location_assignment PIN_AG29 -to altera_reserved_tck
 set_location_assignment PIN_AF29 -to altera_reserved_tdi
 set_location_assignment PIN_AF30 -to altera_reserved_tdo

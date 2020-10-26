@@ -66,8 +66,9 @@ entity top is
         -- SIN_E                       : out   std_logic;
 
         -- Extra signals
-        clock_aux                   : out   std_logic;
-        spare_out                   : out   std_logic_vector(3 downto 2);
+        
+        --clock_aux                   : out   std_logic; -- Pin in use for csn_A[2] M.Mueller
+        --spare_out                   : out   std_logic_vector(3 downto 2); -- Pins in use for csn_* M.Mueller
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
