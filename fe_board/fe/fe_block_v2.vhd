@@ -197,6 +197,18 @@ architecture arch of fe_block_v2 is
     signal arriaV_temperature_ce    : std_logic;
     
     signal clk_100                  : std_logic;
+    -- Max 10 SPI 
+    type adc_reg_32 is Array (0 to 4) of std_logic_vector(31 downto 0);
+    signal adc_reg  : adc_reg_32;
+    signal i_adc_data_o : std_logic_vector(31 downto 0);
+    signal SPI_addr_o   : std_logic_vector(6 downto 0);
+    
+    signal SPI_command      : std_logic_vector (15 downto 0); -- [15-1] SPI inst [0] aktiv
+    signal SPI_aktiv        : std_logic := '0';
+    signal SPI_Adc_cnt      : unsigned(12 downto 0) := (others => '0');
+    signal SPI_inst         : std_logic_vector(14 downto 0) := X"00" & "000100" & '1'; --"[14-7] free [6-1] word cnt [0] R/W
+    signal SPI_done         : std_logic;
+    signal SPI_rw           : std_logic;
 
 begin
 
@@ -280,8 +292,8 @@ begin
 
     -- local regs : 0xF0-0xFF
     fe_reg.addr <= sc_reg.addr;
-    fe_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
-    fe_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
+    fe_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"F" or sc_reg.addr(7 downto 4) = X"C" ) else '0';
+    fe_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"F" or sc_reg.addr(7 downto 4) = X"C" ) else '0';
     fe_reg.wdata <= sc_reg.wdata;
 
     -- select valid rdata
@@ -375,6 +387,24 @@ begin
             fe_reg.rdata <= (others => '0');
             fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
         end if;
+        --max ADC data--
+        if ( fe_reg.addr(7 downto 0) = X"C0" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= adc_reg(0);
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"C1" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= adc_reg(1);
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"C2" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= adc_reg(2);
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"C3" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= adc_reg(3);
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"C4" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= adc_reg(4);
+        end if;
+        
+        
     end if;
     end process;
 
@@ -414,13 +444,6 @@ begin
         avm_qsfp_write          => av_ffly.write,
         avm_qsfp_writedata      => av_ffly.writedata,
         avm_qsfp_waitrequest    => av_ffly.waitrequest,
-
-        -- max10 spi
-        adc_0_export            => (others => '0'),
-        adc_1_export            => (others => '0'),
-        adc_2_export            => (others => '0'),
-        adc_3_export            => (others => '0'),
-        adc_4_export            => (others => '0'),
 
         --
         -- nios base
@@ -672,15 +695,15 @@ begin
         i_clk_50        => i_nios_clk,
         i_clk_100       => i_nios_clk,--clk_100,
         i_reset_n       => i_areset_n,
---        i_command	    => SPI_command,--[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
+        i_command	    => SPI_command,--[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
 --        ------ Aria Data --register interface 
---        o_Ar_rw		    => SPI_rw, -- nios rw
---        o_Ar_data	    => i_adc_data_0
---        o_Ar_addr_o	    => SPI_addr_o, -- nioas adc addr,
---        o_Ar_done	    => SPI_done,
+        o_Ar_rw		    => SPI_rw, -- nios rw
+        o_Ar_data	    => i_adc_data_o,
+        o_Ar_addr_o	    => SPI_addr_o, -- nioas adc addr,
+        o_Ar_done	    => SPI_done,
 --
---        i_Max_data	    =>   x"12345678",
---        i_Max_addr	    =>   X"55" & "0100010" & '1',
+        i_Max_data	    =>   x"12345678",
+        i_Max_addr	    =>   X"55" & "0100010" & '1',--[15-9] empty ,[8-1] addr , [0] rw
         -- SPI
         o_SPI_cs        => o_max10_spi_csn,
         -- max10_spi_sclk lane defect on the first boards
@@ -694,4 +717,35 @@ begin
         o_led => open--,
     );
    
+   --max 10 adc data reg for testing in He--
+process(i_nios_clk) 
+begin
+    if rising_edge(i_nios_clk) then
+        if(SPI_rw= '0') then
+           adc_reg(to_integer(unsigned(SPI_addr_o))) <= i_adc_data_o;
+        end if;
+    end if;
+end process;
+
+    -- get adc data --
+    
+SPI_command(15 downto 1)    <= SPI_inst;
+SPI_command(0)              <= SPI_aktiv;
+   
+process(i_nios_clk)
+begin
+    if rising_edge(i_nios_clk) then
+        if SPI_done = '1' then
+            SPI_aktiv <= '0';
+        end if;
+        if SPI_Adc_cnt < 2048 then
+            SPI_Adc_cnt <= SPI_Adc_cnt +1;
+        else
+            SPI_Adc_cnt <= (others => '0');
+            SPI_aktiv <= '1';
+        end if;
+    end if;
+
+end process;
+
 end architecture;
