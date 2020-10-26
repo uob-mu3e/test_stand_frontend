@@ -224,6 +224,8 @@ begin
 
 
     -- map slow control address space
+	 -- TODO: We only have one subdetector per FEB and the frimware is specific:
+	 -- All registers above 0x40 can be used for the specific subdetecto
 
     -- malibu regs : 0x40-0x5F
     o_malibu_reg_addr <= sc_reg.addr(7 downto 0);
@@ -248,8 +250,8 @@ begin
 
     -- local regs : 0xF0-0xFF
     fe_reg.addr <= sc_reg.addr;
-    fe_reg.re <= sc_reg.re; --when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
-    fe_reg.we <= sc_reg.we; --when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
+    fe_reg.re <= sc_reg.re when ( sc_reg.addr(REG_AREA_RANGE) = REG_AREA_GENERIC ) else '0';
+    fe_reg.we <= sc_reg.we when ( sc_reg.addr(REG_AREA_RANGE) = REG_AREA_GENERIC ) else '0';
     fe_reg.wdata <= sc_reg.wdata;
 
     -- select valid rdata

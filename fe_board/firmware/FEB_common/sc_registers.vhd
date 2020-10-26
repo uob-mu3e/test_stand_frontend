@@ -21,7 +21,7 @@ package feb_sc_registers is
         constant RESET_PHASE_REGISTER_R    :   integer := 16#09#;
         constant MERGER_RATE_REGISTER_R    :   integer := 16#0A#;
         
-        constant ARRIA_TEMP_REGISTER_R     :   integer := 16#10#;
+        constant ARRIA_TEMP_REGISTER_RW     :   integer := 16#10#;
         constant MAX10_ADC_0_1_REGISTER_R  :   integer := 16#11#;
         constant MAX10_ADC_2_3_REGISTER_R  :   integer := 16#12#;        
         constant MAX10_ADC_4_5_REGISTER_R  :   integer := 16#13#;
@@ -42,8 +42,11 @@ package feb_sc_registers is
         constant FIREFLY2_RX2_POW_REGISTER_R  :   integer := 16#20#;
         constant FIREFLY2_RX3_POW_REGISTER_R  :   integer := 16#21#;
         constant FIREFLY2_RX4_POW_REGISTER_R  :   integer := 16#22#;
-    -- Registers 0x23 to 0x3F are reserved for further generic use
+    -- Registers 0x23 to 0x3F are reserved for further generic use			
     -- Registers above 0x40 are for subdetector specific use
+	 
+		  subtype REG_AREA_RANGE is integer range 7 downto 6;
+		  constant REG_AREA_GENERIC : std_logic_vector(1 downto 0) := "00";
     
 
 end package;
