@@ -12,23 +12,12 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "multichip
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "multichip_ro/singlechip_ro.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "multichip_ro/singlechip_ro_zerosupressed.vhd"]
 
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/datadecoder.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/disparity_checker.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/add_1_bit.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/add_2_bits.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/add_3_bits.vhd"]
-
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/fifo_Nb.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/fifo_Nb_sync.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/lvdspll.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/lvds_receiver_small.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/rx_errcounter.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block/receiver_block_mupix.vhd"]
-
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/spi_master.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/spi_if_write_bits.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mp10_slowcontrol.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mp8_sc_master.vhd"]
+
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "receiver_block/receiver_block.qip"]
 
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "sorter/sorter.qip"]
 

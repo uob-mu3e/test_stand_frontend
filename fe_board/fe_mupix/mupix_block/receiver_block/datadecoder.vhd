@@ -23,7 +23,7 @@ use work.daq_constants.all;
 entity data_decoder is 
 	port (
 		reset_n				: in std_logic;
---		checker_rst_n		: in std_logic;
+		checker_rst_n		: in std_logic;
 		clk					: in std_logic;
 		rx_in					: IN STD_LOGIC_VECTOR (9 DOWNTO 0);
 		
@@ -128,7 +128,7 @@ elsif(clk'event and clk = '1') then
 --				rx_align <= '1';
 --			end if;
 --		end if;
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- begin Jens align -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 		align_ctr	<= align_ctr + 1;
 		if(rx_locked = '0') then
 			sync_state 	<= reset;

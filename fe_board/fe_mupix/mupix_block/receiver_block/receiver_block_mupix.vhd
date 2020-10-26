@@ -8,22 +8,20 @@
 --
 ----------------------------------
 
-
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.lvds_components.all;
-use work.datapath_components.all;
+--use work.lvds_components.all;
+--use work.datapath_components.all;
 use work.detectorfpga_types.all;
+use work.daq_constants.all;
 
-
-entity receiver_block is 
-	generic(
-		NINPUT: integer := 45;
-		NCHIPS: integer := 15
-	);
+entity receiver_block_mupix is 
+    generic(
+        NINPUT : integer := 45;
+        NCHIPS : integer := 15
+    );
 	port (
 		reset_n				: in std_logic;
 		checker_rst_n		: in std_logic_vector(NINPUT-1 downto 0);
@@ -33,16 +31,15 @@ entity receiver_block is
 		chip_reset			: out std_logic_vector(NCHIPS-1 downto 0);
 		rx_state				: out std_logic_vector(NINPUT*4-1 downto 0);
 		rx_ready				: out std_logic_vector(NINPUT-1 downto 0);
-		rx_data				: out inbyte_array;
+		rx_data				: out bytearray_t(NINPUT-1 downto 0);
 		rx_k					: out std_logic_vector(NINPUT-1 downto 0);
 		rx_clkout			: out std_logic_vector(2 downto 0);
 		rx_doubleclk		: out std_logic_vector(1 downto 0);
 		pll_locked			: out std_logic_vector(2 downto 0)
-		
-		);
-end receiver_block;		
-		
-architecture rtl of receiver_block is
+	);
+end receiver_block_mupix;
+
+architecture rtl of receiver_block_mupix is
 
 	signal rx_out : 			std_logic_vector(NINPUT*10-1 downto 0);
 	signal rx_out_temp : 	std_logic_vector(NINPUT*10-1 downto 0);	
@@ -94,13 +91,13 @@ begin
 
 	--rx_fifo_reset		<= rx_reset;
 
-ctrl_test: sync_clkctrl 
-	port map (
-		inclk  => rx_inclock_A,
-		outclk => rx_inclock_A_ctrl
-	);	
-	
-lpll_A:lvdspll
+ctrl_test: entity work.sync_clkctrl
+    port map (
+        inclk  => rx_inclock_A,
+        outclk => rx_inclock_A_ctrl
+    );
+
+lpll_A: entity work.lvdspll
 	PORT MAP
 	(
 		refclk   => rx_inclock_A_ctrl,
@@ -119,7 +116,7 @@ lpll_A:lvdspll
 ----			outclk => rx_clk(0)	   -- outclk
 ----		);
 --		
-lvds_rec_small:lvds_receiver
+lvds_rec_small: entity work.lvds_receiver
 	PORT MAP
 	(
 		pll_areset						=> not rx_locked(0),
@@ -137,7 +134,7 @@ lvds_rec_small:lvds_receiver
 	
 	
 
-lpll_B:lvdspll
+lpll_B: entity work.lvdspll
 	PORT MAP
 	(
 		refclk   => rx_inclock_B,
@@ -173,7 +170,7 @@ lpll_B:lvdspll
 --	);
 		
 	
-lvds_rec:lvds_receiver_small
+lvds_rec: entity work.lvds_receiver_small
 	PORT MAP
 	(
 		pll_areset					=> not rx_locked(1),
@@ -222,7 +219,7 @@ END GENERATE;
 gendec:
 FOR i in NINPUT-1 downto 0 generate	
 
-datadec: data_decoder 
+datadec: entity work.data_decoder 
 	port map(
 		reset_n				=> reset_n,
 		checker_rst_n		=> checker_rst_n(i),

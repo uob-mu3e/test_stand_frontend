@@ -1,0 +1,12 @@
+#
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "datadecoder.vhd"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "fifo_Nb.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "fifo_Nb_sync.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvdspll.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds_receiver_small.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds_receiver.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "rx_errcounter.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "receiver_block_mupix.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "sync_clkctrl.vhd"]

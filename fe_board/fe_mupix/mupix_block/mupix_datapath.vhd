@@ -162,29 +162,24 @@ begin
 
 ------------------------------------------------------------------------------------
 ---------------------- LVDS Receiver part ------------------------------------------
-	lvds_block : work.receiver_block_mupix
-	generic map(
-		NLVDS	=> NLVDS,
-		NINPUTS_BANK_A => NINPUTS_BANK_A,
-		NINPUTS_BANK_B => NINPUTS_BANK_B
-	)
-	port map(
-		reset_n				=> i_reset_n_lvds,
-		checker_rst_n		=> i_reset_n,
-		rx_in					=> lvds_data_in,
-		rx_inclock_A		=> i_clk125,
-		rx_inclock_B		=> i_clk125,
+    lvds_block : work.receiver_block_mupix
+    port map(
+        reset_n             => i_reset_n_lvds,
+        checker_rst_n       => (others => '1'), --TODO: What is this ? M.Mueller
+        rx_in               => lvds_data_in,
+        rx_inclock_A        => i_clk125,
+        rx_inclock_B        => i_clk125,
 
-		rx_state				=> rx_state,
-		rx_ready				=> data_valid,
-		rx_data				=> rx_data,
-		rx_k					=> rx_k,
-		pll_locked			=> lvds_pll_locked,	-- write to some register!
-	
-		rx_runcounter		=> lvds_runcounter,	-- read_sc_regs
-		rx_errorcounter	=> lvds_errcounter,	-- would be nice to add some error counter
-		nios_clock			=> i_clk	
-	);
+        rx_state            => rx_state,
+        rx_ready            => data_valid,
+        rx_data             => rx_data,
+        rx_k                => rx_k,
+        pll_locked          => lvds_pll_locked--, -- write to some register!
+
+        --rx_runcounter     => lvds_runcounter, -- read_sc_regs
+        --rx_errorcounter   => lvds_errcounter, -- would be nice to add some error counter
+        --nios_clock        => i_clk--,
+    );
 
     -- use a link mask to disable channels from being used in the data processing
     gen_link_enable : if NLVDS > 32 GENERATE
