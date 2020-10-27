@@ -39,7 +39,15 @@ entity receiver_block_mupix is
     );
 end receiver_block_mupix;
 
+
 architecture rtl of receiver_block_mupix is
+
+    component sync_clkctrl is
+        port (
+            inclk  : in  std_logic := 'X'; -- inclk
+            outclk : out std_logic         -- outclk
+        );
+    end component sync_clkctrl;
 
     signal rx_out               : std_logic_vector(NINPUT*10-1 downto 0);
     signal rx_out_temp          : std_logic_vector(NINPUT*10-1 downto 0);
@@ -91,17 +99,16 @@ begin
 
     --rx_fifo_reset		<= rx_reset;
 
-    --TODO: why would we need this here ?
-    --ctrl_test: entity work.sync_clkctrl
-    --port map (
-    --    inclk  => rx_inclock_A,
-    --    outclk => rx_inclock_A_ctrl
-    --);
+    ctrl_test: sync_clkctrl
+    port map (
+        inclk  => rx_inclock_A,
+        outclk => rx_inclock_A_ctrl
+    );
 
     lpll_A: entity work.lvdspll
     PORT MAP
     (
-        refclk   => rx_inclock_A,--rx_inclock_A_ctrl,
+        refclk   => rx_inclock_A_ctrl,
         rst      => '0',
         outclk_0 => rx_inclock_A_pll,
         outclk_1 => rx_enable_A,
@@ -110,12 +117,6 @@ begin
         outclk_4 => rx_doubleclk(0),
         locked   => rx_locked(0)
     );
-
-----syncclkctrl_A:sync_clkctrl 
-----	port map (
-----			inclk  => rx_synclock_A, -- inclk
-----			outclk => rx_clk(0)	   -- outclk
-----		);
 
     lvds_rec_small: entity work.lvds_receiver
     PORT MAP
