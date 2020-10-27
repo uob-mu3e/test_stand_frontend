@@ -227,12 +227,14 @@ begin
         i_run_state_125           => run_state_125,
         o_ack_run_prep_permission => ack_run_prep_permission,
 
-        i_lvds_data_in          => data_in_A & data_in_B & data_in_C & data_in_D,
+        i_lvds_data_in          => data_in_D & data_in_C & data_in_B & data_in_A,
 
         i_reset                 => not pb_db(0),
         -- 156.25 MHz
         i_clk                   => transceiver_pll_clock(0),
         i_clk125                => lvds_firefly_clk,
+        i_lvds_rx_inclock_A     => LVDS_clk_si1_fpga_A,
+        i_lvds_rx_inclock_B     => LVDS_clk_si1_fpga_B,
         i_sync_reset_cnt        => sync_reset_cnt--,
     );
 

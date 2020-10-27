@@ -54,6 +54,8 @@ port (
     -- 156.25 MHz
     i_clk                   : in  std_logic;
     i_clk125                : in  std_logic;
+    i_lvds_rx_inclock_A     : in  std_logic;
+    i_lvds_rx_inclock_B     : in  std_logic;
     i_sync_reset_cnt        : in  std_logic--;
 );
 end entity;
@@ -167,7 +169,7 @@ begin
         sclr            => reset_chip_dac_fifo,
         clock           => i_clk--,
     );
- 
+
     -- chip dacs slow_controll
     -- MK: since we have only one chip to configure at the moment
     -- we hard code this 
@@ -218,7 +220,7 @@ begin
             mp8_ctrl_dout(0)    <= i_CTRL_SDO_A;
         end if;
     end process;
-     
+
     process(i_clk)
     begin
         if(rising_edge(i_clk)) then	
@@ -235,7 +237,7 @@ begin
     o_SPI_LD_ADC_A          <= A_spi_ldn_front(2);
     o_SPI_LD_TEMP_DAC_A     <= A_spi_ldn_front(1);
     o_SPI_LD_DAC_A          <= A_spi_ldn_front(0);
-    
+
    -- regs reading
    board_dac_regs : process (i_clk, reset_n)
    begin 
@@ -391,7 +393,7 @@ begin
             if ( i_reg_add = x"9A" and i_reg_re = '1' ) then
                 o_reg_rdata <= reg_hits_ena_count;
             end if;
-            
+
         end if;
     end process board_dac_regs;
 
@@ -432,20 +434,23 @@ begin
     port map (
         i_reset_n           => reset_n,
         i_reset_n_lvds      => reset_n_lvds,
-        
+
         i_clk               => i_clk,
         i_clk125            => i_clk125,
-        
+
+        i_lvds_rx_inclock_A => i_lvds_rx_inclock_A,
+        i_lvds_rx_inclock_B => i_lvds_rx_inclock_B,
+
         lvds_data_in        => i_lvds_data_in,
-        
+
         write_sc_regs       => write_regs_mupix,
         read_sc_regs        => read_regs_mupix,
-        
+
         o_fifo_wdata        => o_fifo_wdata,
         o_fifo_write        => o_fifo_write,
         o_lvds_data_valid   => lvds_data_valid,
         o_hits_ena_count    => reg_hits_ena_count,
-        
+
         i_sync_reset_cnt    => i_sync_reset_cnt,
         i_run_state_125     => i_run_state_125--,
     );

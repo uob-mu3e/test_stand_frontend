@@ -26,9 +26,11 @@ port (
 	
 	i_clk:				in std_logic;
 	i_clk125:			in std_logic;
-	
-	lvds_data_in:		in std_logic_vector(NLVDS-1 downto 0);
-	
+
+    i_lvds_rx_inclock_A : in std_logic;
+    i_lvds_rx_inclock_B : in std_logic;
+    lvds_data_in:		in std_logic_vector(NLVDS-1 downto 0);
+
 	write_sc_regs:		in reg32array_t(NREGISTERS_MUPIX_WR-1 downto 0);
 	read_sc_regs: 		out reg32array_t(NREGISTERS_MUPIX_RD-1 downto 0);
 
@@ -167,8 +169,8 @@ begin
         reset_n             => i_reset_n_lvds,
         checker_rst_n       => (others => '1'),--TODO: What is this ? M.Mueller
         rx_in               => lvds_data_in,
-        rx_inclock_A        => i_clk125,
-        rx_inclock_B        => i_clk125,
+        rx_inclock_A        => i_lvds_rx_inclock_A,
+        rx_inclock_B        => i_lvds_rx_inclock_B,
 
         rx_state            => open, --rx_state, --TODO
         rx_ready            => data_valid,
