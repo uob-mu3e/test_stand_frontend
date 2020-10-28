@@ -1,6 +1,4 @@
 #
-set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) ../../../../../detectorfpga/db/ip/sync_clkctrl/sync_clkctrl.qip]
-
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "datadecoder.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "fifo_Nb.vhd"]

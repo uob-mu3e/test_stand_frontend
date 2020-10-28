@@ -42,13 +42,6 @@ end receiver_block_mupix;
 
 architecture rtl of receiver_block_mupix is
 
-    component sync_clkctrl is
-        port (
-            inclk  : in  std_logic := 'X'; -- inclk
-            outclk : out std_logic         -- outclk
-        );
-    end component sync_clkctrl;
-
     signal rx_out               : std_logic_vector(NINPUT*10-1 downto 0);
     signal rx_out_temp          : std_logic_vector(NINPUT*10-1 downto 0);
     signal rx_clk               : std_logic_vector(2 downto 0);
@@ -99,7 +92,8 @@ begin
 
     --rx_fifo_reset		<= rx_reset;
 
-    ctrl_test: sync_clkctrl
+    -- a little clk stunt to make the lvds transceiver work:
+    lvds_clk_ctrl : component work.cmp.clk_ctrl_single
     port map (
         inclk  => rx_inclock_A,
         outclk => rx_inclock_A_ctrl
