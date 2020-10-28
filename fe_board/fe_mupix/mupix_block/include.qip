@@ -1,16 +1,9 @@
 #
 
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/detectorfpga_constants.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_constants.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/detectorfpga_types.vhd"]
 
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "data_unpacker/data_unpacker_new.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "data_unpacker/gray_to_binary.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "data_unpacker/hit_ts_conversion.vhd"]
-
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "multichip_ro/multichip_ro_zerosupressed.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "multichip_ro/singlechip_ro.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "multichip_ro/singlechip_ro_zerosupressed.vhd"]
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "data_unpacker/data_unpacker.qip"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/spi_master.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/spi_if_write_bits.vhd"]

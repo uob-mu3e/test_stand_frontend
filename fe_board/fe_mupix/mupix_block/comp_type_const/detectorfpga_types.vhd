@@ -11,7 +11,7 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use work.detectorfpga_constants.all;
+use work.mupix_constants.all;
 
 package detectorfpga_types is
 
