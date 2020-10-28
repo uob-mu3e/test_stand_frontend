@@ -24,7 +24,7 @@ subtype TSRANGE is integer range TIMESTAMPSIZE-1 downto 0;
 constant MHITSIZE	: integer := HITSIZE+2;
 --constant MHITSIZE                           : integer := 42;--26; -- Merge hits from four chips
 
-constant COARSECOUNTERSIZE : integer := 24;
+constant COARSECOUNTERSIZE : integer := 32;
 --constant COARSECOUNTERSIZE                  : integer := 32;
 
 --subtype COLRANGE is integer range 31 downto 24;

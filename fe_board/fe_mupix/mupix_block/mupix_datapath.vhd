@@ -178,7 +178,7 @@ begin
     FOR i in 0 to NLVDS-1 GENERATE
     -- we currently only use link 0 of each chip (up to 8 possible)
  
-    unpacker_single : work.data_unpacker_new
+    unpacker_single : work.data_unpacker
     generic map(
         COARSECOUNTERSIZE   => COARSECOUNTERSIZE
     )
@@ -190,9 +190,9 @@ begin
         readyin             => link_enable(i),
         hit_out             => hits((i+1)*UNPACKER_HITSIZE-1 downto i*UNPACKER_HITSIZE),
         hit_ena             => hits_ena(i),
-        coarsecounter       => coarsecounters((i+1)*COARSECOUNTERSIZE-1 downto i*COARSECOUNTERSIZE),
-        coarsecounter_ena   => coarsecounters_ena(i),
-        link_flag           => link_flag(i),
+        coarsecounter       => open,--coarsecounters((i+1)*COARSECOUNTERSIZE-1 downto i*COARSECOUNTERSIZE),
+        coarsecounter_ena   => open,--coarsecounters_ena(i),
+        link_flag           => open,--link_flag(i),
         errorcounter        => unpack_errorcounter(i) -- could be useful!
     );
 
@@ -231,14 +231,16 @@ begin
 
     -- delay cc by one cycle to be in line with hit
     -- Seb: new degray - back to one
-    process(i_clk125)
-    begin
-        if(i_clk125'event and i_clk125 = '1') then
-            coarsecounters_del      <= coarsecounters;
-            coarsecounters_ena_del  <= coarsecounters_ena;
-            link_flag_del           <= link_flag;
-        end if;
-    end process;
+    
+    -- TODO: Should this be in use somewhere ?
+    --    process(i_clk125)
+    --    begin
+    --        if(i_clk125'event and i_clk125 = '1') then
+    --            coarsecounters_del      <= coarsecounters;
+    --            coarsecounters_ena_del  <= coarsecounters_ena;
+    --            link_flag_del           <= link_flag;
+    --        end if;
+    --    end process;
 
     process(i_clk125, i_reset_n)
     begin

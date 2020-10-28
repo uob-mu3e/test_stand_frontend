@@ -23,7 +23,7 @@ use work.daq_constants.all;
 
 
 
-entity data_unpacker_new is 
+entity data_unpacker is 
     generic (
         COARSECOUNTERSIZE   : integer   := 32
     );
@@ -40,9 +40,9 @@ entity data_unpacker_new is
         link_flag           : out std_logic;
         errorcounter        : out std_logic_vector(31 downto 0)
     );
-end data_unpacker_new;
+end data_unpacker;
 
-architecture RTL of data_unpacker_new is
+architecture RTL of data_unpacker is
 
     type state_type is (IDLE, ERROR, COUNTER, LINK, DATA);
     signal NS                   : state_type;

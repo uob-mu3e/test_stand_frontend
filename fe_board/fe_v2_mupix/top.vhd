@@ -188,7 +188,7 @@ begin
 
     e_mupix_block : entity work.mupix_block
     generic map (
-        NCHIPS          => 4,
+        NCHIPS          => 12,
         NCHIPS_SPI      => 4,
         NPORTS          => NPORTS,
         NLVDS           => 36,
