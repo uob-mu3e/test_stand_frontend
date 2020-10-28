@@ -7,6 +7,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use work.daq_constants.all;
 use work.mupix_constants.all;
+use work.detectorfpga_types.all;
 
 entity mupix_datapath is
 generic(
@@ -58,11 +59,11 @@ architecture rtl of mupix_datapath is
     signal hits_ena                 : std_logic_vector(NLVDS-1 downto 0);
 
     -- hits after gray-decoding
-    signal binhits                  : std_logic_vector(NLVDS*UNPACKER_HITSIZE-1 downto 0);
+    signal binhits                  : reg32array_t(NLVDS-1 downto 0);
     signal binhits_ena              : std_logic_vector(NLVDS-1 downto 0);
 
     -- hits afer 3-1 multiplexing
-    signal hits_sorter_in           : std_logic_vector(NCHIPS*UNPACKER_HITSIZE-1 downto 0);
+    signal hits_sorter_in           : hit_array;
     signal hits_sorter_in_ena       : std_logic_vector(NCHIPS-1 downto 0);
     signal running                  : std_logic;
     
@@ -179,8 +180,7 @@ begin
  
     unpacker_single : work.data_unpacker_new
     generic map(
-        COARSECOUNTERSIZE   => COARSECOUNTERSIZE,
-        UNPACKER_HITSIZE    => UNPACKER_HITSIZE
+        COARSECOUNTERSIZE   => COARSECOUNTERSIZE
     )
     port map(
         reset_n             => i_reset_n,
@@ -206,7 +206,7 @@ begin
         gray_TS2    => writeregs_reg(TIMESTAMP_GRAY_INVERT_REGISTER_W)(TS2_GRAY_BIT),
         hit_in      => hits(UNPACKER_HITSIZE*(i+1)-1 downto UNPACKER_HITSIZE*i),
         hit_ena_in  => hits_ena(i),
-        hit_out     => binhits(UNPACKER_HITSIZE*(i+1)-1 downto UNPACKER_HITSIZE*i),
+        hit_out     => binhits(i),--binhits(UNPACKER_HITSIZE*(i+1)-1 downto UNPACKER_HITSIZE*i),
         hit_ena_out => binhits_ena(i)
     );
 
@@ -266,8 +266,8 @@ begin
             hit_ena2    => binhits_ena(i*3+1),
             hit_in3     => binhits(i*3+2),
             hit_ena3    => binhits_ena(i*3+2),
-            hit_out     => hits_sorter_in,
-            hit_ena     => hits_sorter_in_ena--,
+            hit_out     => hits_sorter_in(i),
+            hit_ena     => hits_sorter_in_ena(i)--,
         );
     END GENERATE;
 

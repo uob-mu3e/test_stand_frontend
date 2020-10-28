@@ -69,7 +69,7 @@ constant NSORTERINPUTS                      : integer :=  1;    -- 8 does not fi
 constant NMATRIX                            : integer := 3; -- for pseudo data generator
 
 constant BINCOUNTERSIZE                     : integer := 24;
-constant UNPACKER_HITSIZE                   : integer := 40;
+constant UNPACKER_HITSIZE                   : integer := 32;
 subtype  BINCOUNTERRANGE    is integer range 23 downto 0;
 subtype  TBLOCKRANGEplus1   is integer range 8 downto 6;
 subtype  TSRANGEplus1       is integer range 8 downto 1;
