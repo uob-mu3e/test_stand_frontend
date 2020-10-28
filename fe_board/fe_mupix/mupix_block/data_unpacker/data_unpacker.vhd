@@ -1,18 +1,17 @@
------------------------------------
+-------------------------------------------------------------
 --
--- Data unpacker for MuPix8
--- Ann-Kathrin Perrevoort, April 2017
--- 
--- perrevoort@physi.uni-heidelberg.de
+-- This is the Data unpacker for MuPix10 in the online repo 
+-- THIS IS NOT IDENTICAL TO MUPIX8_DAQ Data_unpacker !!!
+-- THIS IS NOT THE DETECTORFPGA Data_unpacker !!!
 --
--- remove timerened dependence
--- Sebastian Dittmeier, September 2017
--- dittmeier@physi.uni-heidelberg.de
---
--- cleanup for use in online repo, mp10 only
 -- Martin Mueller, Oktober 2020
 -- muellem@uni-mainz.de
-----------------------------------
+-- 
+-- derived from mupix8_daq data_unpacker
+-- (mp10 only, single hit_out format without coarsecounters)
+-- Sebastian Dittmeier, September 2017
+-- Ann-Kathrin Perrevoort, April 2017
+--------------------------------------------------------------
 
 
 library ieee;
@@ -26,8 +25,7 @@ use work.daq_constants.all;
 
 entity data_unpacker_new is 
     generic (
-        COARSECOUNTERSIZE   : integer   := 32;
-        UNPACKER_HITSIZE    : integer   := 40
+        COARSECOUNTERSIZE   : integer   := 32
     );
     port (
         reset_n             : in  std_logic;
@@ -35,7 +33,7 @@ entity data_unpacker_new is
         datain              : in  std_logic_vector (7 downto 0);
         kin                 : in  std_logic;
         readyin             : in  std_logic;
-        hit_out             : out std_logic_vector (UNPACKER_HITSIZE-1 downto 0); -- Link[7:0] & Row[7:0] & Col[7:0] & Charge[5:0] & TS[9:0]
+        hit_out             : out std_logic_vector (31 downto 0); -- Link[7:0] & Row[7:0] & Col[7:0] & Charge[5:0] & TS[9:0]
         hit_ena             : out std_logic;
         coarsecounter       : out std_logic_vector (COARSECOUNTERSIZE-1 downto 0); -- Gray Counter[7:0] & Binary Counter [23:0]
         coarsecounter_ena   : out std_logic;
@@ -99,31 +97,23 @@ begin
             coarse_reg          <= '0';
             hit_reg             <= '0';
 
-            hit_ena             <= hit_reg or coarse_reg;
+            hit_ena             <= hit_reg;
             coarsecounter_ena   <= coarse_reg;
             link_flag           <= link_flag_reg;
 
             coarsecounter       <= data_i(7 downto 0) & data_i(31 downto 8); -- gray counter & binary counter
-            if(coarse_reg = '1')then
-                hit_out         <= data_i(31 downto 8) & link_i(3 downto 0) & x"3" & data_i(7 downto 0); -- binary counter & link & x"3" & gray counter    
-            elsif(hit_reg = '1')then
+            if(hit_reg = '1')then
                 -- The data arrives from MuPix10: TS2[4:0] TS1[10:0] Col[6:0] Row[8:0]
                     -- TS2 = data_i(31 downto 27)
                     -- TS1 = data_i(26 downto 16)
                     -- Col = data_i(15 downto 9)
                     -- Row = data_i(8 downto 0)
-                -- for MuPix8 it was: MuPix8: TS1[9:0] TS2[5:0] Col[7:0] Row[7:0]
-                    -- TS1 = data_i(31 downto 22)
-                    -- TS2 = data_i(21 downto 16)
-                    -- Col = data_i(15 downto 8)
-                    -- Row = data_i(7 downto 0)
-                -- We present to the outside following the MP8 scheme:
-                    -- hit_out(39 downto 32): link_i
+                -- We present to the outside:
                     -- hit_out(31 downto 24): row
                     -- hit_out(23 downto 16): col
                     -- hit_out(15 downto 10): ts2
                     -- hit_out(9 downto 0)    : ts1
-                hit_out         <= link_i & data_i(7 downto 0) & data_i(8) & data_i(15 downto 9) & -- Link(8b) & Row(7:0) & Row(8) & Col(7b)
+                hit_out         <= data_i(7 downto 0) & data_i(8) & data_i(15 downto 9) & -- Row(7:0) & Row(8) & Col(7b)
                                     data_i(26) & data_i(31 downto 27) & data_i(25 downto 16);         -- TS1(10)  & TS2(5b)  & TS1(9:0)
             end if;
 
