@@ -231,7 +231,7 @@ begin
 
         i_reset                 => not pb_db(0),
         -- 156.25 MHz
-        i_clk                   => transceiver_pll_clock(0),
+        i_clk156                => transceiver_pll_clock(0),
         i_clk125                => lvds_firefly_clk,
         i_lvds_rx_inclock_A     => LVDS_clk_si1_fpga_A,
         i_lvds_rx_inclock_B     => LVDS_clk_si1_fpga_B,

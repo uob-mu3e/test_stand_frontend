@@ -21,7 +21,7 @@ port (
     i_reset_n           : in  std_logic;
     i_reset_n_lvds      : in  std_logic;
 
-    i_clk               : in  std_logic;
+    i_clk156            : in  std_logic;
     i_clk125            : in  std_logic;
 
     i_lvds_rx_inclock_A : in  std_logic;
@@ -110,18 +110,18 @@ begin
 
 ------------------------------------------------------------------------------------
 ---------------------- registers ---------------------------------------------------
-    writregs_clocking : process(i_clk)
+    writregs_clocking : process(i_clk156)
     begin
-        if(rising_edge(i_clk))then
+        if(rising_edge(i_clk156))then
             for I in NREGISTERS_MUPIX_WR-1 downto 0 loop
                 writeregs_reg(I) <= write_sc_regs(I);
             end loop;
         end if;
     end process writregs_clocking;
 
-    read_regs_clocking : process(i_clk)
+    read_regs_clocking : process(i_clk156)
     begin
-        if(rising_edge(i_clk))then
+        if(rising_edge(i_clk156))then
             for I in NREGISTERS_MUPIX_RD-1 downto 0 loop
                 read_sc_regs(I) <= read_regs(I);
             end loop;
@@ -260,16 +260,17 @@ begin
         -- 3->1 multiplexer
         multiplexer: work.hit_multiplexer
         port map(
-            reset_n     => i_reset_n,
-            clk         => i_clk125,
-            hit_in1     => binhits(i*3),
-            hit_ena1    => binhits_ena(i*3),
-            hit_in2     => binhits(i*3+1),
-            hit_ena2    => binhits_ena(i*3+1),
-            hit_in3     => binhits(i*3+2),
-            hit_ena3    => binhits_ena(i*3+2),
-            hit_out     => hits_sorter_in(i),
-            hit_ena     => hits_sorter_in_ena(i)--,
+            i_reset_n   => i_reset_n,
+            i_clk125    => i_clk125,
+            i_clk156    => i_clk156,
+            i_hit_in1   => binhits(i*3),
+            i_hit_ena1  => binhits_ena(i*3),
+            i_hit_in2   => binhits(i*3+1),
+            i_hit_ena2  => binhits_ena(i*3+1),
+            i_hit_in3   => binhits(i*3+2),
+            i_hit_ena3  => binhits_ena(i*3+2),
+            o_hit_out   => hits_sorter_in(i),
+            o_hit_ena   => hits_sorter_in_ena(i)--,
         );
     END GENERATE;
 
@@ -278,12 +279,12 @@ begin
     sorter: work.hitsorter_wide
     port map(
         reset_n         => i_reset_n,
-        writeclk        => i_clk125,
+        writeclk        => i_clk156,
         running         => running,
         currentts       => counter125(SLOWTIMESTAMPSIZE-1 downto 0),
         hit_in          => hits_sorter_in,--(others => (others => '0')),
         hit_ena_in      => hits_sorter_in_ena,--(others => '0'),
-        readclk         => i_clk, --156.25 MHz
+        readclk         => i_clk156, --156.25 MHz
         data_out        => o_fifo_wdata(31 downto 0),
         out_ena         => o_fifo_write,
         out_type        => o_fifo_wdata(35 downto 32),

@@ -52,7 +52,7 @@ port (
 
     i_reset                 : in  std_logic;
     -- 156.25 MHz
-    i_clk                   : in  std_logic;
+    i_clk156                   : in  std_logic;
     i_clk125                : in  std_logic;
     i_lvds_rx_inclock_A     : in  std_logic;
     i_lvds_rx_inclock_B     : in  std_logic;
@@ -136,7 +136,8 @@ begin
         NLVDS                       => NLVDS--,
     )
     port map (
-        i_clk                       => i_clk,
+        i_clk125                    => i_clk125,
+        i_clk156                    => i_clk156,
         i_reset                     => i_reset,
         i_disable                   => disable_conditions_for_run_ack, -- TODO: connect to sc
         i_stable_required           => x"F000", -- TODO: connect to sc
@@ -167,7 +168,7 @@ begin
         data            => chip_dac_data_we,
 
         sclr            => reset_chip_dac_fifo,
-        clock           => i_clk--,
+        clock           => i_clk156--,
     );
 
     -- chip dacs slow_controll
@@ -176,7 +177,7 @@ begin
     e_mp8_sc_master : work.mp8_sc_master
     generic map(NCHIPS => NCHIPS_SPI)
     port map (
-        clk             => i_clk,
+        clk             => i_clk156,
         reset_n         => reset_n,
         mem_data_in     => chip_dac_data,
         busy_n          => mp8_busy_n,--busy_n => mp8_busy_n,
@@ -196,7 +197,7 @@ begin
     for i in 0 to NCHIPS_SPI-1 generate
     e_mp10_slowcontrol : work.mp10_slowcontrol
     port map(
-        clk         => i_clk,
+        clk         => i_clk156,
         reset_n     => reset_n,
         ckdiv       => ckdiv, -- this need to be set to a register at the moment 0
         mem_data    => mp8_mem_data_out,
@@ -214,16 +215,16 @@ begin
     );
     end generate gen_slowc;
 
-    process(i_clk)
+    process(i_clk156)
     begin
-        if(rising_edge(i_clk)) then	
+        if(rising_edge(i_clk156)) then	
             mp8_ctrl_dout(0)    <= i_CTRL_SDO_A;
         end if;
     end process;
 
-    process(i_clk)
+    process(i_clk156)
     begin
-        if(rising_edge(i_clk)) then	
+        if(rising_edge(i_clk156)) then	
             o_CTRL_SDI      <= mp8_ctrl_din;
             o_CTRL_SCK1     <= mp8_ctrl_clk1;
             o_CTRL_SCK2     <= mp8_ctrl_clk2;
@@ -239,7 +240,7 @@ begin
     o_SPI_LD_DAC_A          <= A_spi_ldn_front(0);
 
    -- regs reading
-   board_dac_regs : process (i_clk, reset_n)
+   board_dac_regs : process (i_clk156, reset_n)
    begin 
        if (reset_n = '0') then 
             board_th_low        <= (others => '0');
@@ -259,7 +260,7 @@ begin
             chip_dac_ready      <= '0';
             reset_n_lvds        <= '0';
             mux_read_regs_nios  <= (others => '0');
-        elsif rising_edge(i_clk) then 
+        elsif rising_edge(i_clk156) then 
             
             chip_dac_we         <= '0';
             chip_dac_ready      <= '0';
@@ -399,7 +400,7 @@ begin
 
     e_spi_master : work.spi_master 
     port map(
-        clk                 => i_clk,
+        clk                 => i_clk156,
         reset_n             => reset_n,
         injection1_reg      => board_injection,
         threshold_pix_reg   => board_th_pix,
@@ -435,7 +436,7 @@ begin
         i_reset_n           => reset_n,
         i_reset_n_lvds      => reset_n_lvds,
 
-        i_clk               => i_clk,
+        i_clk156            => i_clk156,
         i_clk125            => i_clk125,
 
         i_lvds_rx_inclock_A => i_lvds_rx_inclock_A,
@@ -460,11 +461,11 @@ begin
     write_regs_mupix(TIMESTAMP_GRAY_INVERT_REGISTER_W)      <= timestamp_gray_invert;
     write_regs_mupix(LINK_MASK_REGISTER_W)                  <= link_mask;
 
-    mux_read_regs : process (i_clk, reset_n)
+    mux_read_regs : process (i_clk156, reset_n)
     begin 
         if (reset_n = '0') then 
             read_regs_mupix_mux <= (others => '0');
-        elsif rising_edge(i_clk) then 
+        elsif rising_edge(i_clk156) then 
         -- make sure we cannot access signals that are not there
             if(mux_read_regs_nios < NREGISTERS_MUPIX_RD)then
                 read_regs_mupix_mux <= read_regs_mupix(conv_integer(mux_read_regs_nios));
