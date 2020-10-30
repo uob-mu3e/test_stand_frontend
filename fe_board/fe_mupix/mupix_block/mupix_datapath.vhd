@@ -93,6 +93,7 @@ architecture rtl of mupix_datapath is
     signal sync_fifo_empty          : std_logic;
 
     signal counter125               : std_logic_vector(63 downto 0);
+    signal counter125_hitsorter     : std_logic_vector(SLOWTIMESTAMPSIZE-1 downto 0);
 
     signal rx_state                 : std_logic_vector(NLVDS*4-1 downto 0);
 
@@ -215,7 +216,6 @@ begin
     END GENERATE genunpack;
 
     -- count hits_ena
-    o_hits_ena_count <= hits_ena_count;
     process(i_clk125)
     begin
         if rising_edge(i_clk125) then
@@ -284,7 +284,7 @@ begin
         reset_n         => sorter_reset_n,
         writeclk        => i_clk156,
         running         => running,
-        currentts       => counter125(SLOWTIMESTAMPSIZE-1 downto 0),
+        currentts       => counter125_hitsorter,
         hit_in          => hits_sorter_in,--(others => (others => '0')),
         hit_ena_in      => hits_sorter_in_ena,--(others => '0'),
         readclk         => i_clk156, --156.25 MHz
@@ -293,6 +293,26 @@ begin
         out_type        => o_fifo_wdata(35 downto 32),
         diagnostic_sel  => (others => '0'),
         diagnostic_out  => open--,
+    );
+
+    -- sync some things ..
+    sync_fifo_cnt : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 2,
+        DATA_WIDTH  => SLOWTIMESTAMPSIZE + 32,
+        SHOWAHEAD   => "OFF",
+        OVERFLOW    => "ON",
+        DEVICE      => "Arria V"--,
+    )
+    port map(
+        aclr            => '0',
+        data            => counter125(SLOWTIMESTAMPSIZE-1 downto 0) & hits_ena_count,
+        rdclk           => i_clk156,
+        rdreq           => '1',
+        wrclk           => i_clk125,
+        wrreq           => '1',
+        q(31 downto 0)  => o_hits_ena_count,
+        q(SLOWTIMESTAMPSIZE+31 downto 32) => counter125_hitsorter--,
     );
 
 end rtl;

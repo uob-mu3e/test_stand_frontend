@@ -261,6 +261,7 @@ begin
             chip_dac_ready      <= '0';
             reset_n_lvds        <= '0';
             mux_read_regs_nios  <= (others => '0');
+            disable_conditions_for_run_ack <= '0';
         elsif rising_edge(i_clk156) then 
             
             chip_dac_we         <= '0';
