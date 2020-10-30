@@ -271,6 +271,11 @@ begin
             ckdiv               <= ckdiv;
             
             -- here we have to apply a register map with constants!
+            
+            -- DO NOT PUT ELSIF FOR R&W REGS HERE !! 
+            -- Quartus does not know that i_req_we and i_req_re cannot be 1 at the same time
+            -- Makes timing closure more difficult if elsif is used
+            
             if ( i_reg_add = x"83" and i_reg_we = '1' ) then
                 board_th_low    <= i_reg_wdata(15 downto 0);
                 board_th_high   <= i_reg_wdata(31 downto 16);
@@ -354,12 +359,12 @@ begin
                 reset_chip_dac_fifo    <= i_reg_wdata(0);
             end if;
             
-            if ( i_reg_add = x"96") then
-                if(i_reg_we = '1' ) then
-                    link_mask          <= i_reg_wdata;
-                elsif( i_reg_re = '1') then
-                    o_reg_rdata        <= link_mask;
-                end if;
+            if ( i_reg_add = x"96" and i_reg_we = '1') then
+                link_mask          <= i_reg_wdata;
+            end if;-- NO ELSIF HERE!!
+            
+            if ( i_reg_add = x"96" and i_reg_re = '1') then
+                o_reg_rdata        <= link_mask;
             end if;
             
             if ( i_reg_add = x"97" and i_reg_re = '1' ) then
@@ -380,13 +385,13 @@ begin
                 end if;
             end if;
             
-            if ( i_reg_add = x"98") then
-                if(i_reg_we = '1' ) then
-                    disable_conditions_for_run_ack  <= i_reg_wdata(0);
-                elsif( i_reg_re = '1') then
-                    o_reg_rdata(0)                  <= disable_conditions_for_run_ack;
-                    o_reg_rdata(31 downto 1)        <= (others => '0');
-                end if;
+            if ( i_reg_add = x"98" and i_reg_we = '1' ) then
+                disable_conditions_for_run_ack  <= i_reg_wdata(0);
+            end if;-- NO ELSIF HERE!!
+            
+            if( i_reg_add = x"98" and i_reg_re = '1') then
+                o_reg_rdata(0)                  <= disable_conditions_for_run_ack;
+                o_reg_rdata(31 downto 1)        <= (others => '0');
             end if;
             
             if ( i_reg_add = x"99" and i_reg_re = '1' ) then
