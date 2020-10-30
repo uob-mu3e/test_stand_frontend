@@ -231,7 +231,7 @@ begin
 
         i_lvds_data_in          => data_in_D & data_in_C & data_in_B & data_in_A,
 
-        i_reset                 => not pb_db(0),
+        i_reset                 => '0',--not pb_db(0),
         -- 156.25 MHz
         i_clk156                => transceiver_pll_clock(0),
         i_clk125                => lvds_firefly_clk,
