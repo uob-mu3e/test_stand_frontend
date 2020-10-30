@@ -1,5 +1,6 @@
 add_subdirectory(clock_control)
 add_subdirectory(network_control)
 add_subdirectory(lab_power_control)
+add_subdirectory(power_control)
 add_subdirectory(raspberrypi)
 add_subdirectory(MpTuneDACs)

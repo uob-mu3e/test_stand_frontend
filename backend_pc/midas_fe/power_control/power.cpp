@@ -135,10 +135,29 @@ INT frontend_exit()
 
 INT read_power(char *pevent, INT off)
 {
-	std::cout << " read power called, off =  " << off << std::endl;
-	pevent = NULL;
-  return 0;
-
+	std::cout << " read power called" << std::endl;
+	INT error;
+	
+	/* init bank structure */
+  bk_init32(pevent);
+  float *pdata;
+  
+	if(gendriver->ReadAll() == FE_SUCCESS)
+	{	
+		std::vector<float> voltage = gendriver->GetVoltage();
+		std::vector<float> current = gendriver->GetCurrent();
+		bk_create(pevent, "LV_GEN", TID_FLOAT, (void **)&pdata);
+		for(auto const &v : voltage)	*pdata++ = v;
+		for(auto const &v : current)	*pdata++ = v; 		
+  } 
+  else {
+    cm_msg(MERROR, "power read", "Error in read: %d",error);
+  	return 0;  	
+  }
+	
+  bk_close(pevent, pdata);
+  
+  return bk_size(pevent);
 }
 
 INT frontend_loop()

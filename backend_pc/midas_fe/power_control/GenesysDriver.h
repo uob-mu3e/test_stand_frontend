@@ -37,6 +37,12 @@ class GenesysDriver
 		float ReadSetVoltage(int,INT&);
 		float ReadCurrent(int,INT&);
 		float ReadCurrentLimit(int,INT&);
+		std::string ReadIDCode(int,INT&);
+		INT ReadAll();
+		
+		std::vector<bool> GetState() { return state; }
+		std::vector<float> GetVoltage() { return voltage; }
+		std::vector<float> GetCurrent() { return current; }
 
 
 	
@@ -53,6 +59,7 @@ class GenesysDriver
 		void SetStateChanged();
 		void DemandVoltageChanged();
 		void CurrentLimitChanged();
+		void BlinkChanged();
 		void InitODBArray();
 		float Read(std::string,INT&);
 		bool Set(std::string,INT&);
@@ -71,6 +78,7 @@ class GenesysDriver
 		std::vector<float> demandvoltage;
 		std::vector<float> current;
 		std::vector<float> currentlimit;
+		std::vector<std::string> idCode;
 		
 		float relevantchange;
 		
