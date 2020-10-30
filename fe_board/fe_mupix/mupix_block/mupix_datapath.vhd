@@ -38,7 +38,8 @@ port (
 
     i_sync_reset_cnt    : in  std_logic;
     
-    i_run_state_125     : in  run_state_t--;
+    i_run_state_125     : in  run_state_t;
+    i_run_state_156     : in  run_state_t--;
 );
 end mupix_datapath;
 
@@ -66,6 +67,7 @@ architecture rtl of mupix_datapath is
     signal hits_sorter_in           : hit_array;
     signal hits_sorter_in_ena       : std_logic_vector(NCHIPS-1 downto 0);
     signal running                  : std_logic;
+    signal sorter_reset_n           : std_logic;
     
     -- flag to indicate link, after unpacker
     signal link_flag                : std_logic_vector(NCHIPS-1 downto 0);
@@ -260,7 +262,7 @@ begin
         -- 3->1 multiplexer
         multiplexer: work.hit_multiplexer
         port map(
-            i_reset_n   => i_reset_n,
+            i_reset_n   => sorter_reset_n,
             i_clk125    => i_clk125,
             i_clk156    => i_clk156,
             i_hit_in1   => binhits(i*3),
@@ -274,11 +276,12 @@ begin
         );
     END GENERATE;
 
-    running <= '1' when i_run_state_125 = RUN_STATE_RUNNING else '0';
+    running         <= '1' when i_run_state_156 = RUN_STATE_RUNNING else '0';
+    sorter_reset_n  <= '0' when i_run_state_156 = RUN_STATE_IDLE else '1';
 
     sorter: work.hitsorter_wide
     port map(
-        reset_n         => i_reset_n,
+        reset_n         => sorter_reset_n,
         writeclk        => i_clk156,
         running         => running,
         currentts       => counter125(SLOWTIMESTAMPSIZE-1 downto 0),

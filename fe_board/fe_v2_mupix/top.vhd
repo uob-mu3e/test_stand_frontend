@@ -159,6 +159,7 @@ architecture rtl of top is
     signal spi_ss_n                 : std_logic_vector(15 downto 0);
 
     signal run_state_125            : run_state_t;
+    signal run_state_156            : run_state_t;
     signal ack_run_prep_permission  : std_logic;
 
     signal sync_reset_cnt           : std_logic;
@@ -225,6 +226,7 @@ begin
         o_fifo_write            => fifo_write(0),
 
         i_run_state_125           => run_state_125,
+        i_run_state_156           => run_state_156,
         o_ack_run_prep_permission => ack_run_prep_permission,
 
         i_lvds_data_in          => data_in_D & data_in_C & data_in_B & data_in_A,
@@ -344,6 +346,7 @@ begin
 
         -- reset system
         o_run_state_125     => run_state_125,
+        o_run_state_156     => run_state_156,
         i_ack_run_prep_permission => ack_run_prep_permission,
 
         -- clocks

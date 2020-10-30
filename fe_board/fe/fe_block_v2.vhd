@@ -105,6 +105,7 @@ port (
 
     -- reset system
     o_run_state_125 : out   run_state_t;
+    o_run_state_156 : out   run_state_t;
 
     -- nios clock (async)
     i_nios_clk      : in    std_logic;
@@ -197,6 +198,8 @@ begin
     --    );
 
     -- generate resets
+
+    o_run_state_156 <= run_state_156;
 
     e_nios_reset_n : entity work.reset_sync
     port map ( o_reset_n => nios_reset_n, i_reset_n => i_areset_n, i_clk => i_nios_clk );

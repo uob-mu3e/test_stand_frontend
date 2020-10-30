@@ -35,6 +35,7 @@ port (
     o_SPI_LD_DAC_A          : out std_logic;  
 
     i_run_state_125           : in  run_state_t;
+    i_run_state_156           : in  run_state_t;
     o_ack_run_prep_permission : out std_logic;
 
     -- mupix dac regs
@@ -453,7 +454,8 @@ begin
         o_hits_ena_count    => reg_hits_ena_count,
 
         i_sync_reset_cnt    => i_sync_reset_cnt,
-        i_run_state_125     => i_run_state_125--,
+        i_run_state_125     => i_run_state_125,
+        i_run_state_156     => i_run_state_156--,
     );
 
     write_regs_mupix(RO_PRESCALER_REGISTER_W)               <= ro_prescaler;
