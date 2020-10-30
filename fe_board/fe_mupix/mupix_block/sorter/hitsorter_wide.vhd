@@ -20,6 +20,10 @@ use ieee.std_logic_misc.all;
 use work.mupix_constants.all;
 use work.detectorfpga_types.all;
 
+LIBRARY altera_mf;
+USE altera_mf.all;
+
+
 entity hitsorter_wide is 
 	port (
 		reset_n							: in std_logic;										-- async reset
@@ -173,6 +177,37 @@ constant TSONE : slowts_t := "0000000001";
 constant TSZERO : slowts_t := "0000000000";
 constant DELAY : slowts_t := "0110000000";
 constant WINDOWSIZE : slowts_t := "1100000000";
+
+
+        COMPONENT scfifo
+        GENERIC (
+                add_ram_output_register         : STRING;
+                almost_full_value               : NATURAL;
+                intended_device_family          : STRING;
+                lpm_numwords            : NATURAL;
+                lpm_showahead           : STRING;
+                lpm_type                : STRING;
+                lpm_width               : NATURAL;
+                lpm_widthu              : NATURAL;
+                overflow_checking               : STRING;
+                underflow_checking              : STRING;
+                use_eab         : STRING
+        );
+        PORT (
+                        aclr    : IN STD_LOGIC ;
+                        clock   : IN STD_LOGIC ;
+                        data    : IN STD_LOGIC_VECTOR (253 DOWNTO 0);
+                        rdreq   : IN STD_LOGIC ;
+                        sclr    : IN STD_LOGIC ;
+                        wrreq   : IN STD_LOGIC ;
+                        almost_full     : OUT STD_LOGIC ;
+                        empty   : OUT STD_LOGIC ;
+                        q       : OUT STD_LOGIC_VECTOR (253 DOWNTO 0)
+        );
+        END COMPONENT;
+
+
+
 
 begin
 
@@ -479,25 +514,33 @@ end generate genmem;
 
 reset <= not reset_n;
 
--- FIFO for passing counters to the sequencer
-    cfifo: entity work.ip_scfifo
-    generic map(
-        ADDR_WIDTH          => 7,
-        DATA_WIDTH          => 254,
-        SHOWAHEAD           => "ON",
-        DEVICE              => "ARRIA V",
-        ALMOST_FULL_LIMIT   => 120--,
-    )
-    port map (
-        clock           => writeclk,
-        sclr            => reset,
-        data            => tofifo_counters,
-        wrreq           => write_counterfifo,
-        almost_full     => counterfifo_almostfull,
-        empty           => counterfifo_empty,
-        q               => fromfifo_counters,
-        rdreq           => read_counterfifo--,
-    );
+scfifo_component : scfifo
+        GENERIC MAP (
+                add_ram_output_register => "ON",
+                almost_full_value => 120,
+                intended_device_family => "Arria V",
+                lpm_numwords => 128,
+                lpm_showahead => "ON",
+                lpm_type => "scfifo",
+                lpm_width => 254,
+                lpm_widthu => 7,
+                overflow_checking => "ON",
+                underflow_checking => "ON",
+                use_eab => "ON"
+        )
+        PORT MAP (
+                aclr => '0',
+                clock => writeclk,
+                data => tofifo_counters,
+                rdreq => read_counterfifo,
+                sclr => reset,
+                wrreq => write_counterfifo,
+                almost_full => counterfifo_almostfull,
+                empty => counterfifo_empty,
+                q => fromfifo_counters
+        );
+
+
 
 -- collect data for transmission to read side
 -- read one line in the countermemories per cycle, condense counters and push to fifo if nonempty
