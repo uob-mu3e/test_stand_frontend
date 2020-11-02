@@ -2,7 +2,6 @@
 #define __ADC_H__
 
 #include <altera_modular_adc_sequencer_regs.h>
-#include "altera_modular_adc.h"
 
 const
 alt_u8 ADC_LUT[383] = {
@@ -37,18 +36,22 @@ struct adc_t {
     void menu() {
         while (1) {
             printf("\n");
-            printf("  [1] => adc readout while\n");
-            printf("  [2] => read one time adc data\n");
-            
+            printf("  [1] => read temperature\n");
+            printf("  [2] => read adc data\n");
+            printf("  [3] => rolling avg\n");
+
             printf("Select entry ...\n");
             char cmd = wait_key();
 
             switch(cmd) {
             case '1':
-                adc_readout(true);
+                read_temp();
                 break;
             case '2':
-                adc_readout(false);
+                data_writeout();
+                break;
+            case '3':
+                wait_writeout();
                 break;
             case 'q':
                 return;
@@ -57,11 +60,25 @@ struct adc_t {
             }
         }
     }
-    
-    void adc_readout(bool loop) {
-        
+
+    void start_adc_sequencer() {
+        IOWR(ADC_SEQUENCER_CSR_BASE, 0, 0);
+        usleep(1000);
+        IOWR(ADC_SAMPLE_STORE_CSR_BASE, 64, 0);
+        IOWR(ADC_SEQUENCER_CSR_BASE, 0, 1);
+    }
+
+    void read_temp() {
+        printf(
+            "******** PIO and On-Die Temp Sensor example ********\n"
+            "The value of ADC Channel connected to Temperature Sensing Diode\n"
+            "is collected and averaged over 64 Samples\n"
+            "----------------------------------------------------------------\n"
+        );
+
         start_adc_sequencer();
-        
+
+        // event loop never exits
         while(1) {
             char cmd;
             if(read(uart, &cmd, 1) > 0) switch(cmd) {
@@ -70,50 +87,82 @@ struct adc_t {
             default:
                 printf("invalid command: '%c'\n", cmd);
             }
-            
-            alt_u32 adc_data[ADC_SAMPLE_STORE_CSR_CSD_LENGTH];
-            alt_u32	adc_comp_data[5] = {0};
-            
-            // get mean of 64 adc reads
-            alt_u32 adc_data_avg[ADC_SAMPLE_STORE_CSR_CSD_LENGTH] = {0};
-            for(int i = 0 ; i<64 ; i++){
-                
-                alt_adc_word_read(ADC_SAMPLE_STORE_CSR_BASE, adc_data, ADC_SAMPLE_STORE_CSR_CSD_LENGTH);
-                for (int j = 0; j < ADC_SAMPLE_STORE_CSR_CSD_LENGTH ; j++){
-                    adc_data_avg[j] += adc_data[j];
-                }
+
+            int adc_avg = 0;
+            // get average of 64 samples
+            for(int i = 0; i < 64; i++) {
+                int adc_value = IORD(ADC_SAMPLE_STORE_CSR_BASE, 0);
+                adc_avg += adc_value;
             }
-            
-            for (int j = 0; j < ADC_SAMPLE_STORE_CSR_CSD_LENGTH ; j++){
-                adc_data_avg[j] = adc_data_avg[j]/64;
-            }
-            
-            printf("On-die temperature = %d\n", celsius_lookup(adc_data_avg[9] - 3417) - 40);
-            
-            for (int k = 0; k<(ADC_SAMPLE_STORE_CSR_CSD_LENGTH+1)/2; k++){
-                adc_comp_data[k] = (adc_data[2*k] << 16)+adc_data[2*k +1];
-                if (loop == false) printf("adc_comp_data%i: %x\n", k, adc_comp_data[k]);
-            }
-            
-            IOWR_ALTERA_AVALON_PIO_DATA(ADC_D0_BASE,(adc_comp_data[0]));
-            IOWR_ALTERA_AVALON_PIO_DATA(ADC_D1_BASE,(adc_comp_data[1]));
-            IOWR_ALTERA_AVALON_PIO_DATA(ADC_D2_BASE,(adc_comp_data[2]));
-            IOWR_ALTERA_AVALON_PIO_DATA(ADC_D3_BASE,(adc_comp_data[3]));
-            IOWR_ALTERA_AVALON_PIO_DATA(ADC_D4_BASE,(adc_comp_data[4]));
-            
-            if (loop == false) return;
+            adc_avg /= 64;
+            printf("On-die temperature = %d\n", celsius_lookup(adc_avg - 3417) - 40);
+
             usleep(200000);
         }
     }
 
-    
-    void start_adc_sequencer() {
-        adc_interrupt_disable(ADC_SAMPLE_STORE_CSR_BASE);
-        adc_set_mode_run_continuously(ADC_SEQUENCER_CSR_BASE);
-        adc_start(ADC_SEQUENCER_CSR_BASE);
-    }
-    
+    void wait_writeout() {
+        printf("start in 10 xeconds ... disconnect JTAG\n");
+        usleep(10000000); // 10 sec
 
+        start_adc_sequencer();
+
+        const int count = 400;
+        unsigned int e_x_store[count];
+        unsigned int e_x2_store[count];
+        unsigned int n = 250;
+
+        for(int j = 0; j < count; j++) {
+            unsigned int x = 0;
+            unsigned int e_x2 = 0;
+            unsigned int e_x = 0;
+            for(int i = 0; i < n; i++) {
+                x = IORD(ADC_SAMPLE_STORE_CSR_BASE, 1);
+                e_x2 += x*x;
+                e_x += x;
+//                printf("%d, %d, %d\n", x, e_x2, e_x);
+//                usleep(100);
+            }
+            e_x_store[j] = e_x;
+            e_x2_store[j]= e_x2;
+        }
+
+        usleep(10000000); // 10 sec for plugging back in
+        printf("DONE\n");
+        printf("n = %d\n", n);
+        for(int j = 0; j < count; j++) {
+            printf("%u, %u\n", e_x_store[j], e_x2_store[j]);
+        }
+    }
+
+    void data_writeout() {
+        printf(
+            "******* Write out of Data in Adc storage ********\n"
+            "The value of ADC Channel connected to Arduino J4-1"
+            "is collected and printed onto the board\n"
+            "----------------------------------------------------------------\n"
+        );
+
+        start_adc_sequencer();
+
+        int channel = 1;
+
+        for(int j =0; j <1000; j++) {
+//            usleep(100000);
+            int adc_avg = 0;
+            for(int i = 0; i <1000; i++) {
+//                    IOWR(ADC_SEQUENCER_CSR_BASE, 7, 1);
+                    adc_avg = IORD(ADC_SAMPLE_STORE_CSR_BASE, 7);
+                    printf("%d\n", adc_avg);
+//                    printf("%d.%d, %d\n", time, time.tv_usec, adc_avg);
+//                    usleep(100000);
+            }
+//            adc_avg = adc_avg / 1024;
+//            gettimeofday(&time, NULL);
+//            printf("%d\n", adc_avg);
+//            printf("%u, %d.%d\n", adc_avg, time, time.tv_usec);
+        }
+    }
 };
 
 #endif // __ADC_H__

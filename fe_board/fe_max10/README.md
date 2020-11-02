@@ -1,4 +1,4 @@
-# Max10-DEV Board FPGA
+# Max10 FE-BOARD FPGA
 
 
 

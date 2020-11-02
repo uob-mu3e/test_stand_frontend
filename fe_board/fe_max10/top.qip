@@ -1,14 +1,18 @@
 #
 
-set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "assignments/max10_dev.tcl"
-set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "assignments.tcl"
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "assignments/fe_max10.tcl"
 
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 
 set_global_assignment -name QIP_FILE "util/include.qip"
+set_global_assignment -name QIP_FILE "spiflash/include.qip"
+set_global_assignment -name QIP_FILE "spiarria/include.qip"
+
+set_global_assignment -name QSYS_FILE nios.qsys
 
 set_global_assignment -name VHDL_FILE "ip/ip_altpll.vhd"
+
 set_global_assignment -name QSYS_FILE "nios.qsys"
 set_global_assignment -name VHDL_FILE "cmp_pkg.vhd"
 
