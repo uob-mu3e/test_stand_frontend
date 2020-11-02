@@ -8,12 +8,9 @@
 #ifndef GENESYSDRIVER_H
 #define GENESYSDRIVER_H
 
-#include <iostream>
-#include "midas.h"
-#include "odbxx.h"
-#include "TCPClient.h"
+#include "PowerDriver.h"
 
-/*SCPI Protocol
+/*SCPI Protocol for TDK
 Recommended time delay between commands: 5mSec minimum. Some commands might require
 longer time. In such cases, refer to NOTE following command description.
 */
@@ -21,7 +18,7 @@ longer time. In such cases, refer to NOTE following command description.
 //void my_settings_changed(midas::odb);
 
 
-class GenesysDriver
+class GenesysDriver : public PowerDriver
 {
 	public:
 	
@@ -54,6 +51,7 @@ class GenesysDriver
 		void SetState(int,bool,INT&);
 		void SetVoltage(int,float,INT&);
 		void SetCurrentLimit(int,float,INT&);
+		void SetBlink(int,bool,INT&);
 		bool AskPermissionToTurnOn(int);
 		bool SelectChannel(int);
 		void SetStateChanged();
@@ -63,12 +61,8 @@ class GenesysDriver
 		void InitODBArray();
 		float Read(std::string,INT&);
 		bool Set(std::string,INT&);
-
 	
-		EQUIPMENT_INFO* info;
-		std::string name;				
-		midas::odb settings;
-		midas::odb variables;
+
 		TCPClient* client;
 		
 		//local copy of hardware settings

@@ -14,11 +14,9 @@
 // From manual:
 // * Recommended time delay between commands: 5mSec minimum. Some commands might require longer time. In such cases, refer to NOTE following command description.
 // 
-GenesysDriver::GenesysDriver(std::string n, EQUIPMENT_INFO* inf)
+GenesysDriver::GenesysDriver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf)
 {
 	std::cout << " GenesysDriver instantiated " << std::endl;
-	info = inf;
-	name = n;
 }
 
 
@@ -167,7 +165,7 @@ INT GenesysDriver::Init()
 	variables["Demand Voltage"].watch(  [&](midas::odb &arg) { this->DemandVoltageChanged(); }  );
 	variables["Current Limit"].watch(  [&](midas::odb &arg) { this->CurrentLimitChanged(); }  );
 	
-	variables["Blink"].watch(  [&](midas::odb &arg) { this->BlinkChanged(); }  );
+	settings["Blink"].watch(  [&](midas::odb &arg) { this->BlinkChanged(); }  );
  
 
 
@@ -304,6 +302,16 @@ void GenesysDriver::CurrentLimitChanged()
 
 void GenesysDriver::BlinkChanged()
 {
+	INT err;
+	int nChannelsChanged = 0;
+	
+	for(unsigned int i=0; i< supplyID.size(); i++)
+	{
+		bool value = settings["Blink"][i];		
+		SetBlink(i,value,err);
+		if(err!=FE_SUCCESS ) cm_msg(MERROR, "Genesys supply ... ", "changing flashing of channel %d to %d failed, error %d", i,value,err);
+	}
+	
 }
 
 
@@ -398,6 +406,23 @@ void GenesysDriver::SetState(int channel, bool value,INT& error)
   	if(!success) error=FE_ERR_DRIVER;  	  		
   }
   else error=FE_ERR_DRIVER;
+}
+
+void GenesysDriver::SetBlink(int channel, bool value,INT& error)
+{
+	std::string cmd;
+	bool success;
+  error = FE_SUCCESS;
+  
+  if( SelectChannel(channel) )
+  {
+ 		if(value==true) { cmd="DISP:WIND:FLAS 1\n"; }
+		else { cmd = "DISP:WIND:FLAS 0\n"; }
+		client->Write(cmd);
+		std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
+  	success = OPC();
+  	if(!success) error=FE_ERR_DRIVER;
+  }	
 }
 
 

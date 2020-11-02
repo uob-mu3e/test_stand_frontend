@@ -4,7 +4,11 @@
   Created by:   Frederik Wauters
 
   Contents:     frontend to control to main Genesys power supplies 
-                lab supplies could also be added
+                lab supplies are also be added
+                One daisy chain of Genesys supplies is one "equipment" as it has a single IP address and "channels" to select
+                A single HAMEG is one equipment to follow the same structure
+                This Midas frontend instantiates custum C++ drivers which also take care of the ODB 
+                The type of driver is derived from the equipment name 
 
   $Id$
 
@@ -40,9 +44,7 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
 
-GenesysDriver* gendriver;
-
-
+std::vector<std::unique_ptr<PowerDriver>> drivers;
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -79,7 +81,24 @@ EQUIPMENT equipment[] = {
     NULL,                       /* init string */
     },
     
-    {""}
+    //{"HAMEG1",                       /* equipment name */
+    //	{33, 0,                       /* event ID, trigger mask */
+    // 	"SYSTEM",                  /* event buffer */
+    // 	EQ_PERIODIC,                   /* equipment type */
+    // 	0,                         /* event source */
+    // 	"MIDAS",                   /* format */
+    // 	TRUE,                      /* enabled */
+    // 	RO_ALWAYS,        /* read when running and on transitions */
+    // 	10000,                     /* read every 10 sec */
+    // 	0,                         /* stop run after this event limit */
+     //	0,                         /* number of sub events */
+     //	1,                         /* log history every event */
+     //	"", "", ""} ,                  /* device driver list */
+     //	read_power,
+    //	NULL,                       /* init string */
+    //},
+    
+    {""} //why is there actually this empty one here? FW
     
 };
 
@@ -89,32 +108,58 @@ EQUIPMENT equipment[] = {
 
 INT frontend_init()
 {  
-	//get N equipments 
+	// Get N equipments
 	int nEq = sizeof(equipment)/sizeof(equipment[0]);
 	if(nEq<2) {cm_msg(MINFO,"power_fe","No Equipment defined"); return FE_ERR_DISABLED; }
   for(unsigned int i = 0; i<nEq-1; i++) cm_msg(MINFO,"power_fe","Init 'Equipment' nr %d name = %s, event ID = %d",i,equipment[i].name,equipment[i].info.event_id);
   
-  //Init Genesys supplies
-  int eqID=0;
-  set_equipment_status(equipment[eqID].name, "Initializing...", "yellowLight");
-  gendriver = new GenesysDriver(equipment[eqID].name,&equipment[eqID].info);
+  //  allow equipment name starts to recognize supply type 
+  std::vector<std::string> genysis_names = {"Gen","gen","tdk","TDK"};
+  std::vector<std::string> hameg_names = {"HMP","hmp","ham","HAM","Lab","lab"};
   
-  equipment[eqID].status = gendriver->ConnectODB();
-  if(equipment[eqID].status == FE_ERR_ODB) 
-  {
-		set_equipment_status(equipment[eqID].name, "ODB Error", "redLight");
-		cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "ODB ERROR");
-	}
-	
-	equipment[eqID].status = gendriver->Connect();
-	equipment[eqID].status = gendriver->Init();
-
-	gendriver->Print();
-	
-  ss_sleep(10000);
+  for(unsigned int eqID = 0; eqID<nEq-1; eqID++)
+  {   
+  	std::cout << "start init Equipment id " << eqID << std::endl;
+  	
+  	std::string name(equipment[eqID].name); 
+  	std::string shortname = name.substr(0, 3);
+  	
+  	//identify type and instatiate driver
+  	if( std::find( genysis_names.begin(), genysis_names.end(), shortname ) != genysis_names.end() ) 	{
+  			drivers.emplace_back(std::make_unique<GenesysDriver>(equipment[eqID].name,&equipment[eqID].info));
+  	}
+  	else if( std::find( hameg_names.begin(), hameg_names.end(), shortname ) != hameg_names.end() )  	{ int a = 2; 	}
+  	else	{
+  		cm_msg(MINFO,"power_fe","Init 'Equipment' nr %d name = %s not recognizd",eqID,equipment[eqID].name);
+  		continue;
+  	}
+  	
+  	//initialize 
+		set_equipment_status(equipment[eqID].name, "Initializing...", "yellowLight");  		
+  	
+  	equipment[eqID].status = drivers.at(eqID)->ConnectODB();  	
+  	if(equipment[eqID].status == FE_ERR_ODB) 	{
+			set_equipment_status(equipment[eqID].name, "ODB Error", "redLight");
+			cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "ODB ERROR");
+		}	
+		
+		equipment[eqID].status = drivers.at(eqID)->Connect();
+		equipment[eqID].status = drivers.at(eqID)->Init();
+		if(equipment[eqID].status != FE_SUCCESS) 	{
+			set_equipment_status(equipment[eqID].name, "ODB Error", "redLight");
+			cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "ODB ERROR");
+		}
+		
+		drivers.at(eqID)->Print();
+		
+	  set_equipment_status(equipment[eqID].name, "Ok", "greenLight");
+		
+  }
+  
+  ss_sleep(5000);
   
   //Equipment ready
-  set_equipment_status(equipment[eqID].name, "Ok", "greenLight");
+
   
 	return CM_SUCCESS;   
 }
@@ -127,9 +172,8 @@ INT frontend_init()
 
 INT frontend_exit()
 {  
-  gendriver->Print();
+  //gendriver->Print();
   ss_sleep(1000);
-	delete gendriver; //not sure if needed, FW
 	return CM_SUCCESS;
 }
 
@@ -139,20 +183,24 @@ INT read_power(char *pevent, INT off)
 	INT error;
 	
 	/* init bank structure */
+  
   bk_init32(pevent);
   float *pdata;
   
-	if(gendriver->ReadAll() == FE_SUCCESS)
-	{	
-		std::vector<float> voltage = gendriver->GetVoltage();
-		std::vector<float> current = gendriver->GetCurrent();
-		bk_create(pevent, "LV_GEN", TID_FLOAT, (void **)&pdata);
-		for(auto const &v : voltage)	*pdata++ = v;
-		for(auto const &v : current)	*pdata++ = v; 		
-  } 
-  else {
+  for(const auto& d: drivers)
+  {
+ 		if(d->ReadAll() == FE_SUCCESS)
+ 		{
+ 			std::vector<float> voltage = d->GetVoltage();
+			std::vector<float> current = d->GetCurrent();
+			bk_create(pevent, "LV_GEN", TID_FLOAT, (void **)&pdata);
+			for(auto const &v : voltage)	*pdata++ = v;
+			for(auto const &v : current)	*pdata++ = v; 
+ 		}
+ 		else {
     cm_msg(MERROR, "power read", "Error in read: %d",error);
-  	return 0;  	
+  	return 0;
+  	} 	
   }
 	
   bk_close(pevent, pdata);
