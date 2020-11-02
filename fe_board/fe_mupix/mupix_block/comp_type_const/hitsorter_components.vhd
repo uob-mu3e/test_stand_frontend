@@ -18,8 +18,6 @@ constant DUMMY	: std_logic_vector(31 downto 0)	:= x"DEADDA7A";
 -- TYPES
 subtype hit_t is std_logic_vector(MEMHITSIZE-1 downto 0);
 type hit_array_t is array (NINPUT-1 downto 0) of hit_t;
-subtype counter_t is std_logic_vector(BINCOUNTERSIZE+4-1 downto 0);
-type counter_array_t is array (NINPUT-1 downto 0) of counter_t;
 
 --subtype TSRANGE is integer range 9 downto 0; -- already in mupix_constants
 
