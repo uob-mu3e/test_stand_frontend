@@ -4,7 +4,7 @@
 -- MODULE: altpll 
 
 -- ============================================================
--- File Name: pll.vhd
+-- File Name: ip_altpll.vhd
 -- Megafunction Name(s):
 -- 			altpll
 --
@@ -39,7 +39,7 @@ USE ieee.std_logic_1164.all;
 LIBRARY altera_mf;
 USE altera_mf.all;
 
-ENTITY pll IS
+ENTITY ip_altpll IS
 	PORT
 	(
 		inclk0		: IN STD_LOGIC  := '0';
@@ -48,10 +48,10 @@ ENTITY pll IS
 		c2		: OUT STD_LOGIC ;
 		locked		: OUT STD_LOGIC 
 	);
-END pll;
+END ip_altpll;
 
 
-ARCHITECTURE SYN OF pll IS
+ARCHITECTURE SYN OF ip_altpll IS
 
 	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (4 DOWNTO 0);
 	SIGNAL sub_wire1	: STD_LOGIC ;
@@ -313,7 +313,7 @@ END SYN;
 -- Retrieval info: PRIVATE: PLL_PFDENA_CHECK STRING "0"
 -- Retrieval info: PRIVATE: PLL_TARGET_HARCOPY_CHECK NUMERIC "0"
 -- Retrieval info: PRIVATE: PRIMARY_CLK_COMBO STRING "inclk0"
--- Retrieval info: PRIVATE: RECONFIG_FILE STRING "pll.mif"
+-- Retrieval info: PRIVATE: RECONFIG_FILE STRING "ip_altpll.mif"
 -- Retrieval info: PRIVATE: SACN_INPUTS_CHECK STRING "0"
 -- Retrieval info: PRIVATE: SCAN_FEATURE_ENABLED STRING "1"
 -- Retrieval info: PRIVATE: SELF_RESET_LOCK_LOSS STRING "0"
@@ -416,11 +416,11 @@ END SYN;
 -- Retrieval info: CONNECT: c1 0 0 0 0 @clk 0 0 1 1
 -- Retrieval info: CONNECT: c2 0 0 0 0 @clk 0 0 1 2
 -- Retrieval info: CONNECT: locked 0 0 0 0 @locked 0 0 0 0
--- Retrieval info: GEN_FILE: TYPE_NORMAL pll.vhd TRUE
--- Retrieval info: GEN_FILE: TYPE_NORMAL pll.ppf TRUE
--- Retrieval info: GEN_FILE: TYPE_NORMAL pll.inc FALSE
--- Retrieval info: GEN_FILE: TYPE_NORMAL pll.cmp TRUE
--- Retrieval info: GEN_FILE: TYPE_NORMAL pll.bsf FALSE
--- Retrieval info: GEN_FILE: TYPE_NORMAL pll_inst.vhd FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL ip_altpll.vhd TRUE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL ip_altpll.ppf TRUE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL ip_altpll.inc FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL ip_altpll.cmp TRUE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL ip_altpll.bsf FALSE
+-- Retrieval info: GEN_FILE: TYPE_NORMAL ip_altpll_inst.vhd FALSE
 -- Retrieval info: LIB_FILE: altera_mf
 -- Retrieval info: CBX_MODULE_PREFIX: ON

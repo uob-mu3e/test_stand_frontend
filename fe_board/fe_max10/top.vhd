@@ -145,7 +145,7 @@ begin
     mscb_ena    <= '0';
     attention_n <= "ZZ";
 
-    e_pll : entity work.pll
+    e_pll : entity work.ip_altpll
     port map(
         inclk0      => max10_osc_clk,
         c0          => clk10,
