@@ -109,7 +109,6 @@ architecture rtl of mupix_datapath is
 begin
 
     reset               <= not i_reset_n;
-    o_lvds_data_valid   <= data_valid;
 
 ------------------------------------------------------------------------------------
 ---------------------- registers ---------------------------------------------------
@@ -149,13 +148,15 @@ begin
     lvds_block : work.receiver_block_mupix
     port map(
         reset_n             => i_reset_n_lvds,
+        i_nios_clk          => i_clk156,
         checker_rst_n       => (others => '1'),--TODO: What is this ? M.Mueller
         rx_in               => lvds_data_in,
         rx_inclock_A        => i_lvds_rx_inclock_A,
         rx_inclock_B        => i_lvds_rx_inclock_B,
 
         rx_state            => open, --rx_state, --TODO
-        rx_ready            => data_valid,
+        o_rx_ready          => data_valid,
+        o_rx_ready_nios     => o_lvds_data_valid,
         rx_data             => rx_data,
         rx_k                => rx_k,
         pll_locked          => lvds_pll_locked--, -- write to some register!

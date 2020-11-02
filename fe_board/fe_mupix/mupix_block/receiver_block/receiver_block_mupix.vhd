@@ -22,13 +22,15 @@ entity receiver_block_mupix is
     );
     port (
         reset_n         : in  std_logic;
+        i_nios_clk      : in  std_logic;
         checker_rst_n   : in  std_logic_vector(NINPUT-1 downto 0);
         rx_in           : in  std_logic_vector(NINPUT-1 DOWNTO 0);
         rx_inclock_A    : in  std_logic;
         rx_inclock_B    : in  std_logic;
         --chip_reset    : out std_logic_vector(NCHIPS-1 downto 0);
         rx_state        : out std_logic_vector(NINPUT*4-1 downto 0);
-        rx_ready        : out std_logic_vector(NINPUT-1 downto 0);
+        o_rx_ready      : out std_logic_vector(NINPUT-1 downto 0);
+        o_rx_ready_nios : out std_logic_vector(NINPUT-1 downto 0);
         rx_data         : out bytearray_t(NINPUT-1 downto 0);
         rx_k            : out std_logic_vector(NINPUT-1 downto 0);
         rx_clkout       : out std_logic_vector(2 downto 0);
@@ -76,7 +78,7 @@ architecture rtl of receiver_block_mupix is
     signal rx_k_FF              : std_logic_vector(1 downto 0);
     signal rx_state_FF          : std_logic_vector(7 downto 0);
     signal rx_out_FF            : std_logic_vector(19 downto 0);
-
+    signal rx_ready             : std_logic_vector(NINPUT-1 downto 0);
 
     signal decoder_ena          : std_logic_vector(NINPUT-1 downto 0);
 
@@ -139,28 +141,6 @@ begin
         locked   => rx_locked(1)
     );
 
---syncclkctrl_B:sync_clkctrl 
---	port map (
---			inclk  => rx_synclock_B, -- inclk
---			outclk => rx_clk(1)  -- outclk
---		);
-
---lvds_rec:lvds_receiver
---	PORT MAP
---	(
---		pll_areset					=> not rx_locked(1),
---		rx_channel_data_align 	=> rx_align(44 downto 18),
---		rx_enable					=> rx_enable_B,
---		rx_fifo_reset				=> rx_fifo_reset(44 downto 18),
---		rx_in							=> rx_in(44 downto 18),
---		rx_inclock		   		=> rx_inclock_B_pll,
---		rx_reset						=> rx_reset(44 downto 18),
---		rx_syncclock				=> rx_synclock_B,
---		rx_dpa_locked				=> rx_dpa_locked(44 downto 18),
---		rx_out						=> rx_out(449 downto 180)
---	);
-
-
     lvds_rec: entity work.lvds_receiver_small
     PORT MAP
     (
@@ -180,14 +160,6 @@ begin
     -- Input D9 is inverted...
     rx_out(359 downto 350) <= not rx_out_temp(359 downto 350);
     rx_out(349 downto 270) <= rx_out_temp(349 downto 270);
-
---resgen:
---FOR i in NCHIPS-1 downto 0 generate
---  chip_reset(i) <= '1' when rx_reset(3*i) = '1' or 
---                   rx_reset(3*i+1) = '1' or 
---                   rx_reset(3*i+2) = '1'
---                   else '0';
---END GENERATE;
 
     gendec:
     FOR i in NINPUT-1 downto 0 generate	
@@ -209,6 +181,27 @@ begin
                 k               => rx_k(i),
                 state_out       => open --TODO: rx_state(i*4+3 downto i*4)
             );
+
+        o_rx_ready <= rx_ready;
+
+        sync_fifo_cnt : entity work.ip_dcfifo
+        generic map(
+            ADDR_WIDTH  => 2,
+            DATA_WIDTH  => 1,
+            SHOWAHEAD   => "OFF",
+            OVERFLOW    => "ON",
+            DEVICE      => "Arria V"--,
+        )
+        port map(
+            aclr            => '0',
+            data(0)         => rx_ready(i),
+            rdclk           => i_nios_clk,
+            rdreq           => '1',
+            wrclk           => rx_clk(i/27),
+            wrreq           => '1',
+            q               => o_rx_ready_nios(i downto i)--,
+        );
+
     end generate;
 
 end rtl;
