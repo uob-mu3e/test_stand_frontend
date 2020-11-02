@@ -10,6 +10,7 @@ package mupix_constants is
 -----------------------------------------------------------------
 constant NINPUTS                :  integer := 36;
 constant NSORTERINPUTS          :  integer :=  1;
+constant NCHIPS                 :  integer := 12;
 -----------------------------------------------------------------
 -- Things to move to reg map / remove if unused
 -----------------------------------------------------------------
@@ -30,54 +31,32 @@ constant MULTICHIP_RO_OVERFLOW_REGISTER_R   : integer := 16#03#;    -- dec 3
 constant LVDS_RUNCOUNTER_REGISTER_R         : integer := 16#04#;    -- dec 4 (to 48)
 constant LVDS_ERRCOUNTER_REGISTER_R         : integer := 16#30#;    -- dec 49 (to 93)
 -----------------------------------------------------------------
--- conflicts between detectorfpga_constants and mupix_constants
+-- conflicts between detectorfpga_constants and mupix_constants (to be checked & tested)
 -----------------------------------------------------------------
 
---constant NCHIPS                             : integer :=  8;
-constant NCHIPS                 :  integer := 12;
-
--- constant HITSIZE                            : integer := 24;
 constant HITSIZE                :  integer := 32;
 
 constant TIMESTAMPSIZE_MP10     :  integer := 11;
 constant TIMESTAMPSIZE          :  integer := 11;
 
 subtype TSRANGE                 is integer range TIMESTAMPSIZE-1 downto 0;
---subtype  TSRANGE            is integer range 9 downto 0;
 
 constant MHITSIZE               :  integer := HITSIZE+2;
---constant MHITSIZE                           : integer := 42;--26; -- Merge hits from four chips
 
 constant COARSECOUNTERSIZE      :  integer := 32;
---constant COARSECOUNTERSIZE                  : integer := 32;
 
---subtype COLRANGE is integer range 31 downto 24;
---subtype ROWRANGE is integer range 23 downto 16;
 subtype  COLRANGE               is integer range 23 downto 16;
 subtype  ROWRANGE               is integer range 15 downto 8;
 
---constant CHIPRANGE			: integer := 2;
 constant CHIPRANGE              :  integer := 3;
 
 -----------------------------------------------------------
--- stuff from old mupix_constants (to be cleaned up)
 -----------------------------------------------------------
-
---constant NMATRIX                            : integer := 3; -- for pseudo data generator
 
 constant BINCOUNTERSIZE         :  integer := 24;
 constant UNPACKER_HITSIZE       :  integer := 32;
---constant INVALID                        : STD_LOGIC_VECTOR(7 downto 0) := x"00";
 constant CHARGESIZE_MP10        :  integer := 5;
-
---constant ENDOFEVENT                         : std_logic_vector(31 downto 0) := x"BEEFBEEF";
-
------------------------------------------------------------
--- stuff from detectorfpga_constants (to be cleaned up)
------------------------------------------------------------
-
 constant SLOWTIMESTAMPSIZE      :  integer := 10;
---constant NTIMESTAMPS	: integer := 2**TIMESTAMPSIZE;
 
 constant NOTSHITSIZE            :  integer := HITSIZE -TIMESTAMPSIZE-1;
 subtype SLOWTSRANGE             is integer range TIMESTAMPSIZE-1 downto 1;

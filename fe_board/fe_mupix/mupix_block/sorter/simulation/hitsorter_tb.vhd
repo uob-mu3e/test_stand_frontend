@@ -10,7 +10,7 @@ use ieee.std_logic_arith.all;
 use ieee.numeric_std.all;
 use work.hitsorter_components.all;
 use work.mupix_constants.all;
-use work.detectorfpga_types.all;
+use work.mupix_types.all;
 
 entity hitsorter_tb is
 end hitsorter_tb;

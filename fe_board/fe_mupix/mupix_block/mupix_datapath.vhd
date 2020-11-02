@@ -7,7 +7,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use work.daq_constants.all;
 use work.mupix_constants.all;
-use work.detectorfpga_types.all;
+use work.mupix_types.all;
 
 entity mupix_datapath is
 generic(

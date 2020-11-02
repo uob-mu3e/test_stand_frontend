@@ -11,7 +11,7 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use work.detectorfpga_types.all;
+use work.mupix_types.all;
 
 package lvds_components is
 

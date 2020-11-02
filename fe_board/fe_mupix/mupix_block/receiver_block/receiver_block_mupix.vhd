@@ -14,7 +14,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 --use work.lvds_components.all;
 --use work.datapath_components.all;
-use work.detectorfpga_types.all;
+use work.mupix_types.all;
 use work.daq_constants.all;
 
 entity receiver_block_mupix is 

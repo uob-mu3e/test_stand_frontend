@@ -18,7 +18,7 @@ use ieee.std_logic_arith.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
 use work.mupix_constants.all;
-use work.detectorfpga_types.all;
+use work.mupix_types.all;
 
 LIBRARY altera_mf;
 USE altera_mf.all;
