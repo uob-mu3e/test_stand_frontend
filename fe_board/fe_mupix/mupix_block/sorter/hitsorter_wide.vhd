@@ -19,6 +19,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
 use work.mupix_constants.all;
 use work.mupix_types.all;
+use work.daq_constants.all;
 
 LIBRARY altera_mf;
 USE altera_mf.all;

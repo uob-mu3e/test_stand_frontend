@@ -17,6 +17,7 @@ use ieee.std_logic_arith.all;
 use ieee.numeric_std.all;
 use work.mupix_constants.all;
 use work.mupix_types.all;
+use work.daq_constants.all;
 
 entity sequencer is 
 	port (

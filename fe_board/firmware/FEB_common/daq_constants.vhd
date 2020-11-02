@@ -1,6 +1,6 @@
 -- Basic constants for DAQ communication
 -- K. Briggl, April 2019 : stripped from mupix8_daq repository / mupix_constants.vhd
--- last change: M. Mueller, 12.12.2019
+-- last change: M. Mueller, 02.11.2020
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -8,30 +8,40 @@ use ieee.std_logic_1164.all;
 package daq_constants is
 
 -- multi-purpose types
-subtype reg32 is std_logic_vector(31 downto 0);
-subtype reg16 is std_logic_vector(15 downto 0);
-constant NREGISTERS : integer := 64;
-type reg32array is array (NREGISTERS-1 downto 0) of reg32;
-type reg32array_t is array (natural range <>) of reg32;
-type reg16array_t is array (natural range <>) of reg16;
+subtype reg32                   is std_logic_vector(31 downto 0);
+subtype reg16                   is std_logic_vector(15 downto 0);
+subtype reg64                   is std_logic_vector(63 downto 0);
+constant NREGISTERS             :  integer := 64;
+type reg32array                 is array (NREGISTERS-1 downto 0) of reg32;
+type reg32array_t               is array (natural range <>) of reg32;
+type reg16array_t               is array (natural range <>) of reg16;
+type reg32array_128             is array (128-1 downto 0) of reg32;
 
-subtype byte_t is std_logic_vector(7 downto 0);
-type bytearray_t is array (natural range <>)  of byte_t;
+subtype byte_t                  is std_logic_vector(7 downto 0);
+type bytearray_t                is array (natural range <>)  of byte_t;
 
-subtype reg64 is std_logic_vector(63 downto 0);
-type reg64array_t is array (natural range <>) of std_logic_vector(63 downto 0);
+subtype reg64                   is std_logic_vector(63 downto 0);
+type reg64array_t               is array (natural range <>) of std_logic_vector(63 downto 0);
 
-subtype REG64_TOP_RANGE is integer range 63 downto 32;
-subtype REG64_BOTTOM_RANGE is integer range 31 downto 0;
+subtype REG64_TOP_RANGE         is integer range 63 downto 32;
+subtype REG64_BOTTOM_RANGE      is integer range 31 downto 0;
 
-type natural_array_t is array(integer range<>) of natural;
+type natural_array_t            is array(integer range<>) of natural;
+
+type chips_reg32                is array (3 downto 0) of reg32;
+subtype REG64_TOP_RANGE         is integer range 63 downto 32;
+subtype REG64_BOTTOM_RANGE      is integer range 31 downto 0;
+subtype REG62_TOP_RANGE         is integer range 61 downto 31;
+subtype REG62_BOTTOM_RANGE      is integer range 30 downto 0;
+type output_reg32               is array (14 downto 0) of reg32;
+
 
 -- general FEB constants
-constant NLVDS				: integer := 32;	-- number of total links available
-constant NINPUTS_BANK_A	: integer := 16;	-- number of links available on bank A (dividing LVDS banks into physical regions)
-constant NINPUTS_BANK_B	: integer := 16;	-- number of links available on bank B (dividing LVDS banks into physical regions)
+constant NLVDS                  :  integer := 32;	-- number of total links available
+constant NINPUTS_BANK_A         :  integer := 16;	-- number of links available on bank A (dividing LVDS banks into physical regions)
+constant NINPUTS_BANK_B         :  integer := 16;	-- number of links available on bank B (dividing LVDS banks into physical regions)
 -- this should be equal to log2(NLVDS)
-constant NLVDSLOG			: integer := 5;
+constant NLVDSLOG               :  integer := 5;
 
 -- type for run state
 subtype run_state_t is std_logic_vector(9 downto 0);

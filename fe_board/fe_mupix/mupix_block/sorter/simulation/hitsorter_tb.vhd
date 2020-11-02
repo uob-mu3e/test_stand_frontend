@@ -8,9 +8,9 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 use ieee.numeric_std.all;
-use work.hitsorter_components.all;
 use work.mupix_constants.all;
 use work.mupix_types.all;
+use work.daq_constants.all;
 
 entity hitsorter_tb is
 end hitsorter_tb;
@@ -55,7 +55,7 @@ signal		diagnostic_out					: reg32;
 begin
 
 
-dut:hitsorter_wide 
+dut: work.hitsorter_wide 
 	port map(
 		reset_n							=> reset_n,
 		writeclk						=> writeclk,

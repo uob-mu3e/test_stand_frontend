@@ -64,23 +64,6 @@ type allcounteraddr_array       is array (NCHIPS-1 downto 0) of counteraddr_arra
 type counterwren_array          is array (NMEMS-1 downto 0) of std_logic;
 type allcounterwren_array       is array (NCHIPS-1 downto 0) of counterwren_array;
 subtype countermemsel_t         is std_logic_vector(COUNTERMEMADDRRANGE);
-
--- remove ?
-subtype readmemaddrtype         is std_logic_vector(15 downto 0);
-subtype chipmarkertype          is std_logic_vector(7 downto 0);
-type NumCOL_array               is array (2 downto 0) of integer range 0 to 200;
-type MatrixSEL_array            is array (2 downto 0) of std_logic_vector(1 downto 0);
-
--- move to daq_contants
-subtype reg32                   is std_logic_vector(31 downto 0);
 type reg_array                  is array (NCHIPS-1 downto 0) of reg32;
-type reg32array_128             is array (128-1 downto 0) of reg32;
-subtype reg64                   is std_logic_vector(63 downto 0);
-type chips_reg32                is array (3 downto 0) of reg32;
-subtype REG64_TOP_RANGE         is integer range 63 downto 32;
-subtype REG64_BOTTOM_RANGE      is integer range 31 downto 0;
-subtype REG62_TOP_RANGE         is integer range 61 downto 31;
-subtype REG62_BOTTOM_RANGE      is integer range 30 downto 0;
-type output_reg32               is array (14 downto 0) of reg32;
 
 end package mupix_types;
