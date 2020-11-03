@@ -35,8 +35,8 @@ set_global_assignment -name QIP_FILE util/util.qip
 set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 set_global_assignment -name QIP_FILE a10/xcvr.qip
 set_global_assignment -name VHDL_FILE a10/data_demerge.vhd
-set_global_assignment -name VHDL_FILE a10/sc_master.vhd
-set_global_assignment -name VHDL_FILE a10/sc_slave.vhd
+set_global_assignment -name VHDL_FILE a10/sc_main.vhd
+set_global_assignment -name VHDL_FILE a10/sc_secondary.vhd
 set_global_assignment -name VHDL_FILE a10/linear_shift.vhd
 set_global_assignment -name VHDL_FILE a10/data_generator_a10.vhd
 set_global_assignment -name VHDL_FILE a10/run_control.vhd
