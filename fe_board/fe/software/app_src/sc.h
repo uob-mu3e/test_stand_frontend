@@ -83,8 +83,8 @@ struct sc_t {
             printf("  [r] => read data and regs\n");
             printf("  [w] => write [i] = i for i < 16\n");
             printf("  [t] => read fpga id\n");
-	    printf("  [f] => write fpga id\n");
-	    printf("  [i] => test cmdlen irq\n");
+            printf("  [f] => write fpga id\n");
+            printf("  [i] => test cmdlen irq\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");

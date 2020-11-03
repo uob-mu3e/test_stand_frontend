@@ -76,11 +76,11 @@ port (
 
     -- MAX10 IF
     o_max10_spi_sclk    : out   std_logic;
-    o_max10_spi_mosi    : out   std_logic;
-    i_max10_spi_miso    : in    std_logic;
+    io_max10_spi_mosi   : inout std_logic;
+    io_max10_spi_miso   : inout std_logic;
     io_max10_spi_D1     : inout std_logic := 'Z';
     io_max10_spi_D2     : inout std_logic := 'Z';
-    io_max10_spi_D3     : inout std_logic := 'Z';
+    o_max10_spi_D3      : out   std_logic := 'Z';
     o_max10_spi_csn     : out   std_logic := '1';
 
     -- slow control registers
@@ -115,6 +115,8 @@ port (
     -- 125 MHz (global clock)
     i_clk_125       : in    std_logic;
     o_clk_125_mon   : out   std_logic;
+    -- 100 MHz (max10 spi)
+    o_clk_100_mon   : out   std_logic;
 
     i_areset_n      : in    std_logic;
     
@@ -128,6 +130,7 @@ architecture arch of fe_block_v2 is
     signal reset_156_n              : std_logic;
     signal reset_125_n              : std_logic;
     signal reset_125_RRX_n          : std_logic;
+    signal reset_100_n              : std_logic;
 
     signal nios_pio                 : std_logic_vector(31 downto 0);
     signal nios_irq                 : std_logic_vector(3 downto 0) := (others => '0');
@@ -192,6 +195,20 @@ architecture arch of fe_block_v2 is
     signal arriaV_temperature       : std_logic_vector(7 downto 0);
     signal arriaV_temperature_clr   : std_logic;
     signal arriaV_temperature_ce    : std_logic;
+    
+    signal clk_100                  : std_logic;
+    -- Max 10 SPI 
+    type adc_reg_32 is Array (0 to 4) of std_logic_vector(31 downto 0);
+    signal adc_reg  : adc_reg_32;
+    signal i_adc_data_o : std_logic_vector(31 downto 0);
+    signal SPI_addr_o   : std_logic_vector(6 downto 0);
+    
+    signal SPI_command      : std_logic_vector (15 downto 0); -- [15-1] SPI inst [0] aktiv
+    signal SPI_aktiv        : std_logic := '0';
+    signal SPI_Adc_cnt      : unsigned(12 downto 0) := (others => '0');
+    signal SPI_inst         : std_logic_vector(14 downto 0) := X"00" & "000100" & '1'; --"[14-7] free [6-1] word cnt [0] R/W
+    signal SPI_done         : std_logic;
+    signal SPI_rw           : std_logic;
 
 begin
 
@@ -210,6 +227,9 @@ begin
 
     e_reset_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_n, i_reset_n => i_areset_n, i_clk => i_clk_125 );
+    
+    e_reset_100_n : entity work.reset_sync
+    port map ( o_reset_n => reset_100_n, i_reset_n => i_areset_n, i_clk => clk_100 );
 
     e_reset_line_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_RRX_n, i_reset_n => i_areset_n, i_clk => reset_link_rx_clk);
@@ -230,6 +250,16 @@ begin
     e_clk_125_hz : entity work.clkdiv
     generic map ( P => 125000000 )
     port map ( o_clk => o_clk_125_mon, i_reset_n => reset_125_n, i_clk => i_clk_125 );
+    
+    -- 100 MHz -> 1 Hz
+    e_clk_100_hz : entity work.clkdiv
+    generic map ( P => 100000000 )
+    port map ( o_clk => o_clk_100_mon, i_reset_n => reset_100_n, i_clk => clk_100 );
+
+    -- 100 MHz Max10 SPI PLL
+    e_ip_pll_100MHz : entity work.ip_altpll
+    generic map ( INCLK0_MHZ => 50.0, MUL => 2, DEVICE => "Arria V" )
+    port map ( areset => not i_areset_n, inclk0 => i_nios_clk, c0 => clk_100, locked => open );
 
     -- SPI
     spi_si_miso <= '1' when ( (i_spi_si_miso or spi_si_ss_n) = (spi_si_ss_n'range => '1') ) else '0';
@@ -262,8 +292,8 @@ begin
 
     -- local regs : 0xF0-0xFF
     fe_reg.addr <= sc_reg.addr;
-    fe_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
-    fe_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
+    fe_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"F" or sc_reg.addr(7 downto 4) = X"C" ) else '0';
+    fe_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"F" or sc_reg.addr(7 downto 4) = X"C" ) else '0';
     fe_reg.wdata <= sc_reg.wdata;
 
     -- select valid rdata
@@ -357,6 +387,24 @@ begin
             fe_reg.rdata <= (others => '0');
             fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
         end if;
+        --max ADC data--
+        if ( fe_reg.addr(7 downto 0) = X"C0" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= adc_reg(0);
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"C1" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= adc_reg(1);
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"C2" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= adc_reg(2);
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"C3" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= adc_reg(3);
+        end if;
+        if ( fe_reg.addr(7 downto 0) = X"C4" and fe_reg.re = '1' ) then
+            fe_reg.rdata <= adc_reg(4);
+        end if;
+        
+        
     end if;
     end process;
 
@@ -417,11 +465,11 @@ begin
         spi_si_ss_n     => spi_si_ss_n,
 
         pio_export      => nios_pio,
-
-        temp_tsdcalo        => arriaV_temperature,
-        temp_ce_ce          => arriaV_temperature_ce,
-        temp_clr_reset      => arriaV_temperature_clr,
-        temp_done_tsdcaldone=> open,
+        
+        temp_tsdcalo            => arriaV_temperature,
+        temp_ce_ce              => arriaV_temperature_ce,
+        temp_clr_reset          => arriaV_temperature_clr,
+        temp_done_tsdcaldone    => open,
 
         rst_reset_n     => nios_reset_n,
         clk_clk         => i_nios_clk--,
@@ -635,5 +683,69 @@ begin
         o_testclkout                    => open,
         o_testout                       => open--,
     );
+
+    e_max10_spi_main : entity work.max10_spi_main
+    generic map (
+        SS  =>  '1',
+        R   =>  '1',
+        lanes => 4--,
+    )
+    port map(
+        -- clk & reset
+        i_clk_50        => i_nios_clk,
+        i_clk_100       => i_nios_clk,--clk_100,
+        i_reset_n       => i_areset_n,
+        i_command	    => SPI_command,--[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
+--        ------ Aria Data --register interface 
+        o_Ar_rw		    => SPI_rw, -- nios rw
+        o_Ar_data	    => i_adc_data_o,
+        o_Ar_addr_o	    => SPI_addr_o, -- nioas adc addr,
+        o_Ar_done	    => SPI_done,
+--
+        i_Max_data	    =>   x"12345678",
+        i_Max_addr	    =>   X"55" & "0100010" & '1',--[15-9] empty ,[8-1] addr , [0] rw
+        -- SPI
+        o_SPI_cs        => o_max10_spi_csn,
+        -- max10_spi_sclk lane defect on the first boards
+        o_SPI_clk       => o_max10_spi_D3,
+        io_SPI_mosi     => io_max10_spi_mosi,
+        io_SPI_miso     => io_max10_spi_miso,
+        io_SPI_D1       => io_max10_spi_D1,
+        io_SPI_D2       => io_max10_spi_D2,
+        io_SPI_D3       => open,
+        -- debug
+        o_led => open--,
+    );
+   
+   --max 10 adc data reg for testing in He--
+process(i_nios_clk) 
+begin
+    if rising_edge(i_nios_clk) then
+        if(SPI_rw= '0') then
+           adc_reg(to_integer(unsigned(SPI_addr_o))) <= i_adc_data_o;
+        end if;
+    end if;
+end process;
+
+    -- get adc data --
+    
+SPI_command(15 downto 1)    <= SPI_inst;
+SPI_command(0)              <= SPI_aktiv;
+   
+process(i_nios_clk)
+begin
+    if rising_edge(i_nios_clk) then
+        if SPI_done = '1' then
+            SPI_aktiv <= '0';
+        end if;
+        if SPI_Adc_cnt < 2048 then
+            SPI_Adc_cnt <= SPI_Adc_cnt +1;
+        else
+            SPI_Adc_cnt <= (others => '0');
+            SPI_aktiv <= '1';
+        end if;
+    end if;
+
+end process;
 
 end architecture;

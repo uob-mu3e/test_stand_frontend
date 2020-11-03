@@ -18,3 +18,4 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "sc_rx.vhd
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "sc_ram.vhd"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "fe_block_v2.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "tb/arria_reg_tb.vhd"]
