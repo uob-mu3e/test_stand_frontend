@@ -3,7 +3,9 @@
 set mm_paths [ get_service_paths master ]
 set mm_index -1
 
-proc mm_claim { { index -1 } } {
+proc mm_claim { pattern } {
+    set index [ lsearch $::mm_paths $pattern ]
+
     if { $index == $::mm_index } {
         return
     }

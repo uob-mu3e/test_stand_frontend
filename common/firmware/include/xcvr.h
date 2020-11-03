@@ -4,11 +4,15 @@
  */
 
 void menu_xcvr(volatile alt_u32* xcvr, char ID = 'A') {
-    
     while (1) {
         char cmd;
         if(read(uart, &cmd, 1) > 0) switch(cmd) {
-        case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': // select channel
+        case '[':
+            break;
+        case ']':
+            break;
+        case '0': case '1': case '2': case '3': // select channel
+        case '4': case '5': case '6': case '7':
             xcvr[0x00] = (cmd - '0') & 0xFF;
             break;
         case 'r': // reset

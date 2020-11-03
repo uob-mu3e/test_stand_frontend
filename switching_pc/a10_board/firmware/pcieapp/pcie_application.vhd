@@ -16,12 +16,12 @@ use work.pcie_components.all;
 use work.mudaq_registers.all;
 
 entity pcie_application is
-	generic (
+generic (
 			DMAMEMWRITEADDRSIZE : integer := 14;
 			DMAMEMREADADDRSIZE  : integer := 12;
 			DMAMEMWRITEWIDTH	  : integer := 32
-		);
-	port (
+);
+port (
     o_writeregs_B               : out   reg32array;
 	 o_regwritten_B:			out   std_logic_vector(63 downto 0);
     i_clk_B                     : in    std_logic := '0';
@@ -32,7 +32,7 @@ entity pcie_application is
 
 		local_rstn:				in		std_logic;
 		refclk:					in		std_logic;
-	
+
 		-- to IF
 		tx_st_data0 :  		out 	STD_LOGIC_VECTOR (255 DOWNTO 0);
 		tx_st_eop0 :  			out		STD_LOGIC;
@@ -40,10 +40,10 @@ entity pcie_application is
 		tx_st_ready0 :			in 	STD_LOGIC;
 		tx_st_valid0 :			out 	STD_LOGIC;
 		tx_st_empty0 :			out 	STD_LOGIC_VECTOR(1 downto 0);
-		
+
 		-- from Config
 		completer_id :			in	STD_LOGIC_VECTOR(12 downto 0);
-		
+
 		-- from IF
 		rx_st_data0 :  		in 	STD_LOGIC_VECTOR (255 DOWNTO 0);
 		rx_st_eop0 :  			in		STD_LOGIC;
@@ -51,44 +51,44 @@ entity pcie_application is
 		rx_st_ready0 :			out 	STD_LOGIC;
 		rx_st_valid0 :			in 	STD_LOGIC;
 		rx_bar0 :				in 	STD_LOGIC_VECTOR (7 downto 0);
-		
+
 		-- Interrupt stuff
 		app_msi_req:			out	std_logic;
 		app_msi_tc:				out 	std_logic_vector(2 downto 0);
 		app_msi_num:			out	std_logic_vector(4 downto 0);
 		app_msi_ack:			in		std_logic;
-		
+
 		-- registers
 		writeregs :				out	reg32array;
 		regwritten :			out   std_logic_vector(63 downto 0);
 		readregs :				in 	reg32array;
-		
+
 		-- pcie writeable memory
 		writememclk		  :   in std_logic;
 		writememreadaddr :	in std_logic_vector(15 downto 0);
 		writememreaddata :	out STD_LOGIC_VECTOR (31 DOWNTO 0);
-		
+
 		-- pcie readable memory
 		readmem_data 		: 	in std_logic_vector(31 downto 0);
 		readmem_addr 		: 	in std_logic_vector(15 downto 0);
 		readmemclk			:	in std_logic;
 		readmem_wren		:  in std_logic;
 		readmem_endofevent:  in std_logic;
-		
+
 		-- dma memory
 		dma_data 			: 	in std_logic_vector(DMAMEMWRITEWIDTH-1 downto 0);
 		dmamemclk			:	in std_logic;
 		dmamem_wren			:  in std_logic;
 		dmamem_endofevent	:  in std_logic;
 		dmamemhalffull		:  out std_logic;
-		
+
 		-- second dma memory
 		dma2_data 			: 	in std_logic_vector(DMAMEMWRITEWIDTH-1 downto 0);
 		dma2memclk			:	in std_logic;
 		dma2mem_wren		:  in std_logic;
 		dma2mem_endofevent:  in std_logic;
 		dma2memhalffull	:  out std_logic;
-		
+
 		-- test ports  
 		testout				: out STD_LOGIC_VECTOR (127 DOWNTO 0);
 		testin				: in  STD_LOGIC_VECTOR (127 DOWNTO 0);
@@ -97,7 +97,7 @@ entity pcie_application is
 		inaddr32_r			: out STD_LOGIC_VECTOR (31 DOWNTO 0);
 		inaddr32_w			: out STD_LOGIC_VECTOR (31 DOWNTO 0)
 		
-	);
+);
 end entity;
 
 
@@ -222,7 +222,7 @@ architecture RTL of pcie_application is
 		
 
     e_pcie_writeable_registers : entity work.pcie_writeable_registers
-		port map(
+    port map (
         o_writeregs_B           => o_writeregs_B,
 		  o_regwritten_B			  => o_regwritten_B,
         i_clk_B                 => i_clk_B,
@@ -233,7 +233,7 @@ architecture RTL of pcie_application is
 
 			local_rstn		=> local_rstn,
 			refclk			=> refclk,
-	
+
 			-- from IF
 			rx_st_data0 	=> rx_st_data0,
 			rx_st_eop0   	=> rx_st_eop0,

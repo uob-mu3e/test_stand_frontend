@@ -41,7 +41,6 @@ package util is
         waitrequest     :   std_logic;
         readdatavalid   :   std_logic;
     end record;
-  
     type avalon_array_t is array(natural range <>) of avalon_t;
 
 
@@ -60,10 +59,10 @@ package util is
 
     type rw_t is record
         addr            :   std_logic_vector(31 downto 0);
-        re              :   std_logic;
-        rvalid          :   std_logic;
+        re              :   std_logic; -- read enable
+        rvalid          :   std_logic; -- read valid
         rdata           :   std_logic_vector(31 downto 0);
-        we              :   std_logic;
+        we              :   std_logic; -- write enable
         wdata           :   std_logic_vector(31 downto 0);
     end record;
 
@@ -210,6 +209,11 @@ package util is
 
     function to_hstring (
         v : unsigned--;
+    ) return string;
+
+    -- Select Graphic Rendition
+    function sgr (
+        n : natural--;
     ) return string;
 
 end package;
@@ -495,7 +499,7 @@ package body util is
         variable s : string(1 to W/4);
         variable ok : boolean;
     begin
-        if fname = "" then
+        if fname'length = 0 then
             return data;
         end if;
 
@@ -676,6 +680,13 @@ package body util is
     ) return string is
     begin
         return to_hstring(std_logic_vector(v));
+    end function;
+
+    function sgr (
+        n : natural--;
+    ) return string is
+    begin
+        return ESC & "[" & natural'image(n) & "m";
     end function;
 
 end package body;

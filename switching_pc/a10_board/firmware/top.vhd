@@ -197,10 +197,8 @@ architecture rtl of top is
         signal i2c_scl_oe   : std_logic;
         signal i2c_sda_in   : std_logic;
         signal i2c_sda_oe   : std_logic;
-        signal flash_tcm_address_out : std_logic_vector(27 downto 0);
-        signal wd_rst_n     : std_logic;
         signal cpu_pio_i : std_logic_vector(31 downto 0);
-        signal debug_nios : std_logic_vector(31 downto 0);
+
         signal av_qsfp : work.util.avalon_array_t(3 downto 0);
 
         -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
@@ -380,6 +378,23 @@ begin
 
     nios_clk <= clk_50;
 
+    -- generate reset sequence for flash and nios
+    e_nios_reset_n : entity work.debouncer
+    generic map (
+        W => 2,
+        N => integer(50e6 * 0.200) -- 200ms
+    )
+    port map (
+        i_d(0) => '1',
+        o_q(0) => flash_rst_n,
+
+        i_d(1) => flash_rst_n,
+        o_q(1) => nios_reset_n,
+
+        i_reset_n => reset_50_n,
+        i_clk => clk_50--,
+    );
+
     e_nios : work.cmp.nios
     port map (
         avm_reset_reset_n               => reset_125_n,
@@ -413,11 +428,11 @@ begin
         avm_qsfpD_writedata             => av_qsfp(3).writedata,
         avm_qsfpD_waitrequest           => av_qsfp(3).waitrequest,
 
-        flash_tcm_address_out           => flash_tcm_address_out,
-        flash_tcm_data_out              => FLASH_D,
-        flash_tcm_read_n_out(0)         => FLASH_OE_n,
-        flash_tcm_write_n_out(0)        => FLASH_WE_n,
-        flash_tcm_chipselect_n_out(0)   => flash_ce_n_i,
+        flash_tcm_address_out(27 downto 2)  => FLASH_A,
+        flash_tcm_data_out                  => FLASH_D,
+        flash_tcm_read_n_out(0)             => FLASH_OE_n,
+        flash_tcm_write_n_out(0)            => FLASH_WE_n,
+        flash_tcm_chipselect_n_out(0)       => flash_ce_n_i,
 
         i2c_sda_in                      => i2c_sda_in,
         i2c_scl_in                      => i2c_scl_in,
@@ -435,42 +450,25 @@ begin
         clk_clk                         => nios_clk--,
     );
 
-    FLASH_A <= flash_tcm_address_out(27 downto 2);
     FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
     FLASH_ADV_n <= '0';
     FLASH_CLK <= '0';
     FLASH_RESET_n <= flash_rst_n;
 
-    -- generate reset sequence for flash and nios
-    e_reset_ctrl : entity work.reset_ctrl
-    generic map (
-        W => 2,
-        N => 125 * 10**5 -- 100ms
-    )
-    port map (
-        rstout_n(1) => flash_rst_n,
-        rstout_n(0) => nios_reset_n,
-        rst_n => reset_50_n,
-        clk => clk_50--,
-    );
 
-    watchdog_i : entity work.watchdog
-    generic map (
-        W => 4,
-        N => 125 * 10**6 -- 1s
-    )
-    port map (
-        d           => cpu_pio_i(3 downto 0),
-        rstout_n    => wd_rst_n,
-        rst_n       => reset_50_n,
-        clk         => clk_50--,
-    );
 
     -- monitor nios
     LED(0) <= not cpu_pio_i(7);
-    LED(1) <= not nios_reset_n;
-    LED(2) <= not flash_rst_n;
-    LED(3) <= '0';
+
+    LED(1) <= not flash_rst_n;
+    LED(2) <= not nios_reset_n;
+
+    -- 100 MHz
+    e_pcie_clk_hz : entity work.clkdiv
+    generic map ( P => 100000000 )
+    port map ( o_clk => LED(3), i_reset_n => CPU_RESET_n, i_clk => PCIE_REFCLK_p );
+
+
 
     i2c_scl_in <= not i2c_scl_oe;
     FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';

@@ -29,6 +29,22 @@ port (
     A10_REFCLK_GBT_P_6                  : IN    STD_LOGIC;
     A10_REFCLK_GBT_P_7                  : IN    STD_LOGIC;
 
+
+
+    -- PCIe 0
+    i_pcie0_rx                          : in    std_logic_vector(3 downto 0);
+    o_pcie0_tx                          : out   std_logic_vector(3 downto 0);
+    i_pcie0_perst_n                     : in    std_logic;
+    i_pcie0_refclk                      : in    std_logic;
+
+    -- PCIe 1
+    i_pcie1_rx                          : in    std_logic_vector(3 downto 0);
+    o_pcie1_tx                          : out   std_logic_vector(3 downto 0);
+    i_pcie1_perst_n                     : in    std_logic;
+    i_pcie1_refclk                      : in    std_logic;
+
+
+
     -- SI5345_1
     A10_SI5345_1_SMB_SCL                : inout std_logic;
     A10_SI5345_1_SMB_SDA                : inout std_logic;
@@ -84,6 +100,10 @@ architecture arch of top is
     );
 
 
+
+    signal pcie_rx, pcie_tx : std_logic_vector(7 downto 0);
+
+    signal pcie_wregs, pcie_rregs : work.pcie_components.reg32array;
 
 begin
 
@@ -185,6 +205,69 @@ begin
         i_clk       => nios_clk--,
     );
 
+
+
+    e_pcie_block_0 : entity work.pcie_block
+    generic map (
+        DMAMEMWRITEADDRSIZE     => 11,
+        DMAMEMREADADDRSIZE      => 11,
+        DMAMEMWRITEWIDTH        => 256,
+        PCIE_X_g => 4--,
+    )
+    port map (
+        local_rstn              => '1',
+        appl_rstn               => '1',
+        refclk                  => i_pcie0_refclk,
+        pcie_fastclk_out        => open,
+
+        pcie_rx_p               => i_pcie0_rx,
+        pcie_tx_p               => o_pcie0_tx,
+        pcie_refclk_p           => i_pcie0_refclk,
+        pcie_perstn             => i_pcie0_perst_n,
+        pcie_smbclk             => '0',
+        pcie_smbdat             => '0',
+        pcie_waken              => open,
+
+        writeregs               => pcie_wregs,
+        regwritten              => open,
+        readregs                => pcie_rregs,
+
+        writememclk             => CLK_A10_100MHZ_P,
+        readmemclk              => CLK_A10_100MHZ_P,
+        dmamemclk               => CLK_A10_100MHZ_P,
+        dma2memclk              => CLK_A10_100MHZ_P
+    );
+
+    e_pcie_block_1 : entity work.pcie_block
+    generic map (
+        DMAMEMWRITEADDRSIZE     => 11,
+        DMAMEMREADADDRSIZE      => 11,
+        DMAMEMWRITEWIDTH        => 256,
+        PCIE_X_g => 4--,
+    )
+    port map (
+        local_rstn              => '1',
+        appl_rstn               => '1',
+        refclk                  => i_pcie1_refclk,
+        pcie_fastclk_out        => open,
+
+        pcie_rx_p               => i_pcie1_rx,
+        pcie_tx_p               => o_pcie1_tx,
+        pcie_refclk_p           => i_pcie1_refclk,
+        pcie_perstn             => i_pcie1_perst_n,
+        pcie_smbclk             => '0',
+        pcie_smbdat             => '0',
+        pcie_waken              => open,
+
+        writeregs               => pcie_wregs,
+        regwritten              => open,
+        readregs                => pcie_rregs,
+
+        writememclk             => CLK_A10_100MHZ_P,
+        readmemclk              => CLK_A10_100MHZ_P,
+        dmamemclk               => CLK_A10_100MHZ_P,
+        dma2memclk              => CLK_A10_100MHZ_P
+    );
 
 
     process(nios_clk)

@@ -38,7 +38,7 @@ struct sc_t {
         // data offset
         alt_u32 offset = ram->regs.fe.offset & 0xFFFF;
 
-        alt_u16 status = 0;
+        alt_u16 status = FEB_REPLY_ERROR;
         if(!(offset >= 0 && offset + n <= sizeof(sc_ram_t::data) / sizeof(sc_ram_t::data[0]))) {
             printf("[sc::callback] ERROR: ...\n");
         }
@@ -73,8 +73,8 @@ struct sc_t {
     }
 
     void menu() {
-	alt_u32 feb_id = 0x0;
-	char str[2] = {0};
+        alt_u32 feb_id = 0x0;
+        char str[2] = {0};
         while(1) {
             printf("\n");
             printf("[sc] -------- menu --------\n");
@@ -103,11 +103,11 @@ struct sc_t {
                     ram->data[i] = i;
                 }
                 break;
-	    case 't':
-		printf("FPGA ID: 0x%08X\n", ram->data[0xFFFB]);
+            case 't':
+                printf("FPGA ID: 0x%08X\n", ram->data[0xFFFB]);
                 break;
             case 'f':
-		feb_id = 0x0;
+                feb_id = 0x0;
                 printf("Enter feb id in hex: ");
 
                 for(int i = 0; i<8; i++){

@@ -12,6 +12,9 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 #include "midas.h"
 #include "mfe.h" //for set_equipment_status
 
+#include "../include/feb.h"
+using namespace mu3e::daq;
+
 #include "mudaq_device_scifi.h"
 #include "MutrigConfig.h"
 #include "mutrig_midasodb.h"
@@ -157,8 +160,8 @@ int MutrigFEB::ConfigureASICs(){
 
       try {
          //Write ASIC number & Configuraton
-     //rpc_status=m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic),0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
-     rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
+//        rpc_status = m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic), feb::CMD_MUTRIG_ASIC_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
+        rpc_status = m_mu.FEBsc_NiosRPC(SP_ID, feb::CMD_MUTRIG_ASIC_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
           set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
@@ -181,7 +184,7 @@ int MutrigFEB::ResetCounters(uint16_t FPGA_ID){
    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
 
-   auto rpc_ret=m_mu.FEBsc_NiosRPC(FEB.SB_Port(),0x0106,{});
+    auto rpc_ret = m_mu.FEBsc_NiosRPC(FEB.SB_Port(), feb::CMD_MUTRIG_CNT_RESET, {});
    return rpc_ret;
 }
 
@@ -191,7 +194,7 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
 
-   auto rpc_ret=m_mu.FEBsc_NiosRPC(FEB.SB_Port(),0x0105,{});
+    auto rpc_ret = m_mu.FEBsc_NiosRPC(FEB.SB_Port(), feb::CMD_MUTRIG_CNT_READ, {});
    //retrieve results
    uint32_t* val=new uint32_t[rpc_ret*5*3]; //nASICs * 5 counterbanks * 3 words
    INT val_size = sizeof(DWORD);
@@ -712,5 +715,5 @@ void MutrigFEB::setResetSkewPhases(uint16_t FPGA_ID, INT phases[]){
     for(int i=0;i<nModulesPerFEB();i++){
         val[i]=phases[i];
     }
-    m_mu.FEBsc_NiosRPC(FPGA_ID, 0x0104, {{val,nModulesPerFEB()}});
+    m_mu.FEBsc_NiosRPC(FPGA_ID, feb::CMD_MUTRIG_SKEW_RESET, {{val,nModulesPerFEB()}});
 }

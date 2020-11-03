@@ -10,32 +10,35 @@ source [ file join $dir0 "srec.tcl" ]
 
 
 
-set proc_paths [ get_service_paths processor ]
-processor_stop [ lindex $proc_paths 0 ]
-processor_reset [ lindex $proc_paths 0 ]
+set device_pattern /devices/10M*/nios*
 
-mm_claim 0
+set proc_paths [ get_service_paths processor ]
+set proc_path [ lindex $proc_paths [ lsearch $proc_paths $device_pattern ] ]
+processor_stop $proc_path
+processor_reset $proc_path
+
+mm_claim $device_pattern
 
 proc pgm {} {
     pgm_srec $::mm [ file join $::dir0 "app/main.srec" ]
-    processor_run [ lindex $::proc_paths 0 ]
+    processor_run $::proc_path
 }
 
 
 
-proc check { l1 l2 } {
+proc lequal { l1 l2 } {
     if { [ llength $l1 ] != [ llength $l2 ] } {
-        return 0
+        return false
     }
 
     set n [ llength $l1 ]
     for { set i 0 } { $i < $n } { incr i } {
         if { [ lindex $l1 $i ] != [ lindex $l2 $i ] } {
-            return 0
+            return false
         }
     }
 
-    return 1
+    return true
 }
 
 proc pgm_srec { mm fname } {
@@ -86,14 +89,14 @@ proc pgm_srec { mm fname } {
     puts DONE
 
     puts -nonewline "check sector 1 ... "
-    if { [ check [ lrange $words 0x0000 0x0FFF ] [ master_read_32 $mm 0x0000 0x1000 ] ] } {
+    if { [ lequal [ lrange $words 0x0000 0x0FFF ] [ master_read_32 $mm 0x0000 0x1000 ] ] } {
         puts OK
     } \
     else {
         puts FAIL
     }
     puts -nonewline "check sector 2 ... "
-    if { [ check [ lrange $words 0x1000 0x1FFF ] [ master_read_32 $mm 0x4000 0x1000 ] ] } {
+    if { [ lequal [ lrange $words 0x1000 0x1FFF ] [ master_read_32 $mm 0x4000 0x1000 ] ] } {
         puts OK
     } \
     else {

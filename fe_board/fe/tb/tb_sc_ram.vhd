@@ -31,7 +31,7 @@ architecture arch of tb_sc_ram is
     signal reg_we : std_logic;
     signal reg_wdata : std_logic_vector(31 downto 0);
 
-    signal DONE : unsigned(2 downto 0) := (others => '0');
+    signal DONE : unsigned(5 downto 0) := (others => '0');
 
 begin
 
@@ -67,15 +67,21 @@ begin
         i_clk => clk--,
     );
 
-    process(clk)
+    -- registers
+    process(clk, reset_n)
     begin
     if ( reset_n = '0' ) then
         --
     elsif rising_edge(clk) then
         reg_rdata <= X"EEEE0000" + reg_addr;
+    end if;
+    end process;
 
-        assert ( ram_re = '0' or ram_we = '0' ) severity failure;
-        assert ( avs_read = '0' or avs_write = '0' ) severity failure;
+    process(clk)
+    begin
+    if rising_edge(clk) then
+        assert not ( ram_re = '1' and ram_we = '1' ) severity failure;
+        assert not ( avs_read = '1' and avs_write = '1' ) severity failure;
 
         if ( ram_re /= ram_we and ram_addr >= X"FF00" ) then
             assert ( reg_addr = ram_addr(7 downto 0) ) severity error;
@@ -86,7 +92,7 @@ begin
             assert ( reg_re = '0' and reg_we = '0' ) severity error;
         end if;
 
-        if ( ram_re /= ram_we ) then
+        if ( ram_re = '1' or ram_we = '1' ) then
             assert ( avs_waitrequest = '1' ) severity error;
         end if;
 
@@ -102,6 +108,8 @@ begin
     end if;
     end process;
 
+
+
     process
     begin
         ram_re <= '0';
@@ -113,7 +121,7 @@ begin
 
 
 
-        -- write to ram (ram port)
+        -- write to IRAM via RAM port
         for i in 0 to 15 loop
             wait until rising_edge(clk);
             ram_addr <= X"0000" + i;
@@ -123,8 +131,9 @@ begin
             wait until rising_edge(clk);
             ram_we <= '0';
         end loop;
+        DONE(0) <= '1';
 
-        -- read from ram (ram port)
+        -- read from IRAM via RAM port
         for i in 0 to 15 loop
             wait until rising_edge(clk);
             ram_addr <= X"0000" + i;
@@ -136,8 +145,9 @@ begin
             wait until rising_edge(clk);
             assert ( ram_rvalid = '1' and ram_rdata = X"DDDD0000" + i ) severity error;
         end loop;
+        DONE(1) <= '1';
 
-        -- read from reg (ram port)
+        -- read REG via RAM port
         for i in 0 to 15 loop
             wait until rising_edge(clk);
             ram_addr <= X"FF00" + i;
@@ -149,8 +159,7 @@ begin
             wait until rising_edge(clk);
             assert ( ram_rvalid = '1' and ram_rdata = X"EEEE0000" + i ) severity error;
         end loop;
-
-
+        DONE(2) <= '1';
 
         -- write to ram (avalon port)
         for i in 0 to 15 loop
@@ -162,6 +171,7 @@ begin
             wait until rising_edge(clk);
             avs_write <= '0';
         end loop;
+        DONE(3) <= '1';
 
         -- read from ram (avalon port)
         for i in 0 to 15 loop
@@ -175,6 +185,7 @@ begin
             wait until rising_edge(clk);
             assert ( avs_waitrequest = '0' and avs_readdata = X"DDDD0010" + i ) severity error;
         end loop;
+        DONE(4) <= '1';
 
         -- read from reg (avalon port)
         for i in 0 to 15 loop
@@ -209,6 +220,7 @@ begin
             assert ( avs_waitrequest = '0' ) severity error;
             avs_write <= '0';
         end loop;
+        DONE(5) <= '1';
 
         -- read from ram (ram and avalon ports)
         for i in 0 to 15 loop
@@ -230,9 +242,19 @@ begin
             wait until rising_edge(clk);
             assert ( avs_waitrequest = '0' and avs_readdata = X"DDDD0030" + i ) severity error;
         end loop;
+    end process;
 
 
 
+    process
+    begin
+        wait for 1000 ns;
+        assert ( DONE = (DONE'range => '1') )
+            report "NOT DONE"
+            severity error;
+        if ( DONE = (DONE'range => '1') ) then
+            report "DONE";
+        end if;
         wait;
     end process;
 

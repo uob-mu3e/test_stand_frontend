@@ -13,6 +13,9 @@ Contents:       Definition of functions to talk to a mupix-based FEB. Designed t
 #include "mfe.h" //for set_equipment_status
 #include "odbxx.h"
 
+#include "../include/feb.h"
+using namespace mu3e::daq;
+
 #include "mudaq_device_scifi.h"
 #include "mupix_config.h"
 #include "mupix_midasodb.h"
@@ -209,7 +212,7 @@ int MupixFEB::ConfigureASICs(){
              uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
              datastream[nbit] = tmp;
          }
-         rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
+         rpc_status = m_mu.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_CHIP_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
 
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -475,7 +478,7 @@ int MupixFEB::ConfigureBoards(){
            datastream[nbit] = tmp;
        }
        try {
-           rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0120,{{reinterpret_cast<uint32_t*>(&board),1},{reinterpret_cast<uint32_t*> (datastream), config->length_32bits}});
+           rpc_status = m_mu.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_BOARD_CFG, {{reinterpret_cast<uint32_t*>(&board),1},{reinterpret_cast<uint32_t*> (datastream), config->length_32bits}});
 
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", board, e.what());
