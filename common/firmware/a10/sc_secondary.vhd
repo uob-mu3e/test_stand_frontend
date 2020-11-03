@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------
--- Slow Control Slave Unit for Switching Board
+-- Slow Control Secondary Unit for Switching Board
 -- Marius Koeppel, Mainz University
 -- makoeppe@students.uni-mainz.de
 --
@@ -11,7 +11,7 @@ use ieee.std_logic_1164.all;
 --use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-entity sc_slave is
+entity sc_secondary is
 generic (
 		NLINKS : integer := 4;
 		skip_init : std_logic := '0'
@@ -30,7 +30,7 @@ port (
 );
 end entity;
 
-architecture RTL of sc_slave is
+architecture RTL of sc_secondary is
 
 	signal mem_data_o : std_logic_vector(31 downto 0);
 	signal mem_addr_o : std_logic_vector(15 downto 0);

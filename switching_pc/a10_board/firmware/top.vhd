@@ -695,28 +695,29 @@ begin
     
     -------- Slow Control --------
     
-    e_master : work.sc_master
+    e_sc_main : work.sc_main
     generic map (
         NLINKS => NLINKS_TOTL
     )
     port map (
-        reset_n         => resets_n(RESET_BIT_SC_MASTER),
-        enable          => '1',
-        mem_data_in     => writememreaddata,
-        mem_addr        => writememreadaddr,
-        mem_data_out    => tx_data_v,
-        mem_data_out_k  => tx_datak_v,
-        done            => open,
-        stateout        => open,
-        clk             => clk_156--,
+        i_clk			=> clk_156,
+		i_reset_n		=> resets_n(RESET_BIT_SC_MAIN),
+        i_length_we		=> writeregs_slow(SC_MAIN_ENABLE_REGISTER_W)(0),
+		i_length		=> writeregs_slow(SC_MAIN_LENGTH_REGISTER_W)(15 downto 0),
+		i_mem_data		=> writememreaddata,
+		o_mem_addr	    => writememreadaddr,
+		o_mem_data		=> tx_data_v,
+		o_mem_datak		=> tx_datak_v,
+		o_done			=> readregs_slow(SC_MAIN_STATUS_REGISTER_R)(SC_MAIN_DONE),
+		o_state			=> open--,
     );
     
-    e_slave : work.sc_slave
+    e_sc_secondary : work.sc_secondary
     generic map (
         NLINKS => NLINKS_TOTL
     )
     port map (
-        reset_n                 => resets_n(RESET_BIT_SC_SLAVE),
+        reset_n                 => resets_n(RESET_BIT_SC_SECONDARY),
         i_link_enable           => writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_TOTL-1 downto 0),
         link_data_in            => rx_sc_v,
         link_data_in_k          => rx_sck_v,

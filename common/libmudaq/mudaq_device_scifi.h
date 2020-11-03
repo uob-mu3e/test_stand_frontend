@@ -78,8 +78,8 @@ namespace mudaq {
     uint32_t read_memory_rw(unsigned idx) const;
     void write_memory_rw(unsigned idx, uint32_t value); // added by DvB for rw mem
 
-    void FEBsc_resetMaster();
-    void FEBsc_resetSlave();
+    void FEBsc_resetMain();
+    void FEBsc_resetSecondary();
 
 
     static const uint16_t FEBsc_broadcast_ID;
