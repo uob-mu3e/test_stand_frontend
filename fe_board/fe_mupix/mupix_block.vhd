@@ -129,15 +129,16 @@ signal reset_n : std_logic;
     signal reg_hits_ena_count : std_logic_vector(31 downto 0);
 
 begin
-    reset_n <= '0' when (i_reset='1' or i_run_state_125=RUN_STATE_SYNC) else '1';
-
+    
+    reset_n <= '0' when (i_reset='1' or i_run_state_156=RUN_STATE_SYNC) else '1';
+-- @ future-ME : split resets here:
+    --reset_n <= '0' when (i_reset='1' or i_run_state_125=RUN_STATE_SYNC) else '1';
 
     e_mupix_run_start_ack : work.mupix_run_start_ack
     generic map (
         NLVDS                       => NLVDS--,
     )
     port map (
-        i_clk125                    => i_clk125,
         i_clk156                    => i_clk156,
         i_reset                     => i_reset,
         i_disable                   => disable_conditions_for_run_ack, -- TODO: connect to sc
@@ -146,7 +147,7 @@ begin
         i_lvds_data_valid           => lvds_data_valid,
         i_lvds_mask                 => write_regs_mupix(LINK_MASK_REGISTER_W + 1 downto LINK_MASK_REGISTER_W),
         i_sc_busy                   => or_reduce(mp8_wren & (not chip_dac_fifo_empty)),
-        i_run_state_125             => i_run_state_125,
+        i_run_state_156             => i_run_state_156,
         o_ack_run_prep_permission   => o_ack_run_prep_permission--,
     );
 
