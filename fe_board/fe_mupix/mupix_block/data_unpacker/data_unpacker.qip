@@ -1,0 +1,6 @@
+#
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "data_unpacker.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "gray_to_binary.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "hit_ts_conversion.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "hit_multiplexer.vhd"]
