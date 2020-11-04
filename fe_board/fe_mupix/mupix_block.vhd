@@ -131,7 +131,6 @@ signal reset_n : std_logic;
 begin
     
     reset_n <= '0' when (i_reset='1' or i_run_state_156=RUN_STATE_SYNC) else '1';
--- @ future-ME : split resets here:
     --reset_n <= '0' when (i_reset='1' or i_run_state_125=RUN_STATE_SYNC) else '1';
 
     e_mupix_run_start_ack : work.mupix_run_start_ack

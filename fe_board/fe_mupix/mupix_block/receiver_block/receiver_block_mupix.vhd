@@ -21,7 +21,7 @@ entity receiver_block_mupix is
         NCHIPS : integer := 15
     );
     port (
-        reset_n         : in  std_logic;
+        i_reset_n       : in  std_logic;
         i_nios_clk      : in  std_logic;
         checker_rst_n   : in  std_logic_vector(NINPUT-1 downto 0);
         rx_in           : in  std_logic_vector(NINPUT-1 DOWNTO 0);
@@ -41,6 +41,8 @@ end receiver_block_mupix;
 
 
 architecture rtl of receiver_block_mupix is
+
+    signal reset_n              : std_logic_vector(NINPUT-1 DOWNTO 0);
 
     signal rx_out               : std_logic_vector(NINPUT*10-1 downto 0);
     signal rx_out_temp          : std_logic_vector(NINPUT*10-1 downto 0);
@@ -165,7 +167,7 @@ begin
     FOR i in NINPUT-1 downto 0 generate	
         datadec: entity work.data_decoder 
             port map(
-                reset_n         => reset_n,
+                reset_n         => reset_n(i),
                 checker_rst_n   => checker_rst_n(i),
                 clk             => rx_clk(i/27),
                 rx_in           => rx_out(i*10+9 downto i*10),
@@ -200,6 +202,24 @@ begin
             wrclk           => rx_clk(i/27),
             wrreq           => '1',
             q               => o_rx_ready_nios(i downto i)--,
+        );
+
+        sync_fifo_rst : entity work.ip_dcfifo
+        generic map(
+            ADDR_WIDTH  => 2,
+            DATA_WIDTH  => 1,
+            SHOWAHEAD   => "OFF",
+            OVERFLOW    => "ON",
+            DEVICE      => "Arria V"--,
+        )
+        port map(
+            aclr            => '0',
+            data(0)         => i_reset_n,
+            rdclk           => rx_clk(i/27), -- TODO: go with only 2 instead of NLVDS syncs here 
+            rdreq           => '1',
+            wrclk           => i_nios_clk,
+            wrreq           => '1',
+            q               => reset_n(i downto i)--,
         );
 
     end generate;
