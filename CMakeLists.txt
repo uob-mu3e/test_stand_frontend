@@ -101,7 +101,6 @@ add_subdirectory(switching_pc/midas_fe)
 add_subdirectory(switching_pc/midas_fe_scifi)
 add_subdirectory(switching_pc/midas_fe_Tile)
 add_subdirectory(switching_pc/midas_fe_pixels)
-add_subdirectory(common/tests)
 
 if(APPLE)
     message("Compile for Apple")
@@ -144,6 +143,12 @@ if (CUDA_FOUND)
     add_subdirectory(farm_pc/midas_fe)
     add_subdirectory(farm_pc/tools)
 endif(CUDA_FOUND)
+
+if(CMAKE_PROJECT_NAME STREQUAL mu3e_online)
+    enable_testing()
+    include(GoogleTest)
+    add_subdirectory(common/tests)
+endif()
 
 
 configure_file(set_env.sh.in set_env.sh @ONLY)

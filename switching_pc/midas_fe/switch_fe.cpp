@@ -232,12 +232,7 @@ INT frontend_init()
         mup = new dummy_mudaq::DummyMudaqDevice("/dev/mudaq0");
     #else
         mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
-    #endif
-        
-    #ifdef MY_DEBUG
-        cout << "AAAAAA" << endl;
-    #endif    
-        
+    #endif       
         
     status = init_mudaq(*mup);
     if (status != SUCCESS)

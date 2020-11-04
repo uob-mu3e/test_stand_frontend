@@ -30,14 +30,21 @@ using namespace std;
 namespace dummy_mudaq {
 
     dummy_mudaq::DummyMudaqDevice::DummyMudaqDevice(const std::string& path) :
-            MudaqDevice(path)
+        MudaqDevice(path)
     {
-        //
+        _last_read_address = 0;
     }
 
     bool DummyMudaqDevice::is_ok() {
         cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: is_ok()");
         return true;
+    }
+    
+    bool DummyMudaqDevice::operator!() const {
+        return (_fd < 0)    || (_regs_rw == nullptr)
+                            || (_regs_ro == nullptr)
+                            || (_mem_ro == nullptr)
+                            || (_mem_rw == nullptr);  // added by DvB for rw mem
     }
 
     bool DummyMudaqDevice::open() {
@@ -89,6 +96,14 @@ namespace dummy_mudaq {
             exit (EXIT_FAILURE);
         }
         _regs_rw[idx] = value;
+    }
+    
+    uint32_t DummyMudaqDevice::read_register_rw(unsigned idx) const {
+       if(idx > 63){
+           cout << "Invalid register address " << idx << endl;
+           exit (EXIT_FAILURE);
+       }
+       return _regs_rw[idx];
     }
     
     uint32_t DummyMudaqDevice::read_register_ro(unsigned idx) const {

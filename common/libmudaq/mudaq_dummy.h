@@ -26,7 +26,6 @@
 #include "mudaq_device.h"
 
 using namespace std;
-
 namespace dummy_mudaq {
 
     class DummyMudaqDevice : public mudaq::MudaqDevice {
@@ -34,12 +33,11 @@ namespace dummy_mudaq {
             virtual bool is_ok();
             virtual bool open();
             virtual void close();
+            virtual bool operator!() const;
 
             // a device can exist only once. forbid copying and assignment
             DummyMudaqDevice() = delete;
             DummyMudaqDevice(const DummyMudaqDevice &) = delete;
-            DummyMudaqDevice(const MudaqDevice &) = delete;
-            DummyMudaqDevice & operator=(const MudaqDevice &) = delete;
             DummyMudaqDevice & operator=(const DummyMudaqDevice &) = delete;
 
             DummyMudaqDevice(const std::string& path);
@@ -52,22 +50,29 @@ namespace dummy_mudaq {
             int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
             int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError);
             int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
+            
             void write_register(unsigned idx, uint32_t value);
+            
+            uint32_t read_register_rw(unsigned idx) const;
             uint32_t read_register_ro(unsigned idx) const;
             uint32_t read_memory_ro(unsigned idx) const;
+            
         protected:
             int _fd;
-
+            
         private:
-            const std::string       _path;
+            const std::string _path;
             uint32_t _regs_rw[64] = {};
             uint32_t _regs_ro[64] = {};
             uint32_t _mem_ro[64*1024] = {};
             uint32_t _mem_rw[64*1024] = {};
 
-            uint16_t                _last_read_address; // for reading command of slow control
 
+            uint16_t  _last_read_address; // for reading command of slow control
+            
+            friend std::ostream& operator<<(std::ostream&, const DummyMudaqDevice&);
     };
+
 
     class DummyDmaMudaqDevice : public DummyMudaqDevice {
         public:
