@@ -898,7 +898,7 @@ elsif(writeclk'event and writeclk = '1') then
 	case readcommand_last4(COMMANDBITS-1 downto COMMANDBITS-4) is
 	when COMMAND_HEADER1(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out		<= tscounter(46 downto 15);
-		out_type		<= "0010";
+		out_type		<= MERGER_FIFO_PAKET_START_MARKER;
 	when COMMAND_HEADER2(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out		<= tscounter(14 downto 0) & '0' & X"0000";
 		out_type		<= "0000";
@@ -907,7 +907,7 @@ elsif(writeclk'event and writeclk = '1') then
 		out_type		<= "0000";
 	when COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out 		<= (others => '0');
-		out_type		<= "0011";
+		out_type		<= MERGER_FIFO_PAKET_END_MARKER;
 		if(runshutdown = '1')then
 			terminate_output <= '1';
 		end if;	
@@ -920,7 +920,7 @@ elsif(writeclk'event and writeclk = '1') then
 	end case;
 	if(terminate_output = '1') then
 		data_out 		<= (others => '0');
-		out_type		<= "0100";
+		out_type		<= MERGER_FIFO_RUN_END_MARKER;
 		out_ena			<= '1';
 		terminate_output    <= '0';
 		terminated_output	<= '1';
