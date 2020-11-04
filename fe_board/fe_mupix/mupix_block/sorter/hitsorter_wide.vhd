@@ -168,6 +168,10 @@ signal overflow_last4:	std_logic_vector(15 downto 0);
 signal memmultiplex: nots_t;
 signal tscounter: std_logic_vector(46 downto 0); --47 bit, LSB would run at double frequency, but not needed
 
+-- end of run sequence on output side
+signal terminate_output : std_logic;
+signal terminated_output : std_logic;
+
 -- diagnostics
 signal noutoftime : reg_array;
 signal noverflow  : reg_array;
@@ -234,7 +238,6 @@ elsif (writeclk'event and writeclk = '1') then
 
 	if(running = '0') then
 		runstartup		<= '0';
-		runshutdown		<= '0';
 	end if;
 	
 	if(running = '1' and running_last = '0') then
@@ -843,7 +846,8 @@ seq:entity work.sequencer
 		outoverflow						=> outoverflow
 		);
 -- The ouput command has the TS in the LSBs, followed by four bits hit address
--- four bits channel/chip ID and the MSB inciating command (1) or hit (0)					
+-- four bits channel/chip ID and the MSB inciating command (1) or hit (0)	
+				
 -- And the reading (use writeclk for the moment, FIFO comes after)
 process(writeclk, reset_n)
 begin
@@ -857,6 +861,8 @@ if(reset_n = '0') then
 	readcommand_ena_last4			<= '0';		
 	tscounter						<= (others => '0');
 	nout							<= (others => '0');
+	terminate_output				<= '0';
+	terminated_output				<= '0';
 elsif(writeclk'event and writeclk = '1') then
 	out_ena							<= '0';
 	for i in NCHIPS-1 downto 0 loop
@@ -881,7 +887,7 @@ elsif(writeclk'event and writeclk = '1') then
 
 	out_ena							<= readcommand_ena_last4;
 	
-	if(conv_integer(readcommand_last3(COMMANDBITS-6 downto TIMESTAMPSIZE)) < NCHIPS) then
+	if(conv_integer(readcommand_last3(COMMANDBITS-2 downto TIMESTAMPSIZE+4)) < NCHIPS) then
 		memmultiplex						<= frommem(conv_integer(readcommand_last3(COMMANDBITS-2 downto TIMESTAMPSIZE+4)));
 	end if;
 	
@@ -902,6 +908,9 @@ elsif(writeclk'event and writeclk = '1') then
 	when COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out 		<= (others => '0');
 		out_type		<= "0011";
+		if(runshutdown = '1')then
+			terminate_output <= '1';
+		end if;	
 	when others =>
 		data_out		<= readcommand_last4(3 downto 0) & "000" & readcommand_last4(COMMANDBITS-6 downto TIMESTAMPSIZE) & memmultiplex & '0';
 		out_type		<= "0000";
@@ -909,6 +918,16 @@ elsif(writeclk'event and writeclk = '1') then
 			nout <= nout + '1';
 		end if;
 	end case;
+	if(terminate_output = '1') then
+		data_out 		<= (others => '0');
+		out_type		<= "0100";
+		out_ena			<= '1';
+		terminate_output    <= '0';
+		terminated_output	<= '1';
+	end if;
+	if(terminated_output = '1') then
+		out_ena			<= '0';
+	end if;	
 end if;
 end process;
 
