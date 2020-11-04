@@ -98,9 +98,8 @@ int switch_id = 0; // TODO to be loaded from outside
 
 INT status;
 
-/* DMA Buffer and related */
-#define DEBUG
-#ifdef DEBUG
+/* DMA Buffer and related */ 
+#ifdef MY_DEBUG
     dummy_mudaq::DummyMudaqDevice * mup;
 #else
     mudaq::MudaqDevice * mup;
@@ -218,8 +217,7 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 INT frontend_init()
 {
 
-    // TODO: for debuging
-    #ifdef DEBUG
+    #ifdef MY_DEBUG
         odb::set_debug(true);
     #endif
 
@@ -230,11 +228,17 @@ INT frontend_init()
     setup_watches();
     
     // open mudaq
-    #ifdef DEBUG
+    #ifdef MY_DEBUG
         mup = new dummy_mudaq::DummyMudaqDevice("/dev/mudaq0");
     #else
         mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
     #endif
+        
+    #ifdef MY_DEBUG
+        cout << "AAAAAA" << endl;
+    #endif    
+        
+        
     status = init_mudaq(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
@@ -690,10 +694,10 @@ INT resume_run(INT run_number, char *error)
 INT read_sc_event(char *pevent, INT off)
 {
     // get mudaq
-    #ifdef DEBUG
+    #ifdef MY_DEBUG
         dummy_mudaq::DummyMudaqDevice & mu = *mup;
     #else
-        mudaq::DmaMudaqDevice & mu = *mup;
+        mudaq::MudaqDevice & mu = *mup;
     #endif
         
     // get odb
@@ -824,10 +828,10 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
    db_get_key(hDB, hKey, &key);
 
-    #ifdef DEBUG
+    #ifdef MY_DEBUG
         dummy_mudaq::DummyMudaqDevice & mu = *mup;
     #else
-        mudaq::DmaMudaqDevice & mu = *mup;
+        mudaq::MudaqDevice & mu = *mup;
     #endif
 
 
