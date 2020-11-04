@@ -512,7 +512,7 @@ begin
         i_link_data     => ffly_rx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
         i_link_datak    => ffly_rx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
-        o_fifo_write    => sc_fifo_write,
+        o_fifo_we       => sc_fifo_write,
         o_fifo_wdata    => sc_fifo_wdata,
 
         o_ram_addr      => sc_ram.addr,
