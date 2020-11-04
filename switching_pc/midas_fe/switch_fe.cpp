@@ -60,9 +60,6 @@
 #include "mudaq_device_scifi.h"
 #include "mudaq_dummy.h"
 
-using namespace std;
-using midas::odb;
-
 //Slow control for mutrig/scifi ; mupix
 #include "mutrig_midasodb.h"
 #include "mupix_midasodb.h"
@@ -70,6 +67,10 @@ using midas::odb;
 #include "SciFi_FEB.h"
 #include "Tiles_FEB.h"
 #include "mupix_FEB.h"
+
+using namespace std;
+using midas::odb;
+
 /*-- Globals -------------------------------------------------------*/
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
@@ -131,11 +132,13 @@ INT init_scifi(auto & mu);
 INT init_scitiles(auto & mu);
 INT init_mupix(auto & mu);
 
+
+/*-- Equipment list ------------------------------------------------*/
 enum EQUIPMENT_ID {Switching=0,SciFi,SciTiles,Mupix};
 EQUIPMENT equipment[] = {
 
-    {"Switching",                /* equipment name */
-    {2, 0,                      /* event ID, trigger mask */
+   {"Switching",                /* equipment name */
+    {110, 0,                    /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
      0,                         /* event source */
@@ -148,9 +151,9 @@ EQUIPMENT equipment[] = {
      1,                         /* log history every event */
      "", "", ""} ,
      read_sc_event,             /* readout routine */
-    },
-    {"SciFi",                    /* equipment name */
-    {3, 0,                      /* event ID, trigger mask */
+   },
+   {"SciFi",                    /* equipment name */
+    {111, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
@@ -164,8 +167,8 @@ EQUIPMENT equipment[] = {
      "", "", "",},
      read_scifi_sc_event,          /* readout routine */
     },
-    {"SciTiles",                    /* equipment name */
-    {4, 0,                      /* event ID, trigger mask */
+   {"SciTiles",                    /* equipment name */
+    {112, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
@@ -180,13 +183,13 @@ EQUIPMENT equipment[] = {
      read_scitiles_sc_event,          /* readout routine */
     },
     {"Mupix",                    /* equipment name */
-    {2, 0,                      /* event ID, trigger mask */
+    {113, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
-     RO_TRANSITIONS | RO_ODB,   /* read during run transitions and update ODB */
+     RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
      1000,                      /* read every 1 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
@@ -280,7 +283,8 @@ void setup_odb(){
             {"Read", false},
             {"Read WM", false},
             {"Read RM", false},
-            {"Reset SC Slave", false},
+            {"Reset SC Main", false},
+            {"Reset SC Secondary", false},
             {"Clear WM", false},
             {"Last RM ADD", false},
             {"MupixConfig", false},
@@ -320,6 +324,16 @@ void setup_odb(){
     // add custom page to ODB
     odb custom("/Custom");
     custom["Switching&"] = "sc.html";
+    
+    // setup odb for switching board
+    odb swb_varibles("/Equipment/Switching/Variables");
+    swb_varibles["Merger Timeout All FEBs"] = 0;
+
+    // TODO: not sure at the moment we have a midas frontend for three feb types but 
+    // we need to have different swb at the final experiment so maybe one needs to take
+    // things apart later. For now we put this "common" FEB variables into the generic
+    // switching path
+    hs_define_panel("Switching", "All FEBs", {"Switching:Merger Timeout All FEBs"});
 
 }
 
@@ -340,9 +354,7 @@ void switching_board_mask_changed(odb o) {
     string name = o.get_name();
 
     cm_msg(MINFO, "switching_board_mask_changed", "Switching board masking changed");
-
-    cout << name << endl;
-    cout << o << endl;
+    cm_msg(MINFO, "switching_board_mask_changed", "With name %s and odb %s", name, o);
 
     INT switching_board_mask[MAX_N_SWITCHINGBOARDS];
     int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
@@ -385,8 +397,8 @@ INT init_mudaq(auto & mu) {
         return FE_ERR_DRIVER;
     }
 
-    mu.FEBsc_resetMaster();
-    mu.FEBsc_resetSlave();
+    mu.FEBsc_resetMain();
+    mu.FEBsc_resetSecondary();
 
     return SUCCESS;
 }
@@ -453,6 +465,32 @@ INT init_mupix(auto & mu) {
     MupixFEB::Instance()->WriteFEBID();
     
     set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
+   
+    // setup odb rate counters for each feb
+    char set_str[255];
+    odb rate_counters("/Equipment/Mupix/Variables");
+    for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+        sprintf(set_str, "merger rate FEB%d", i);
+        rate_counters[set_str] = 0;
+        sprintf(set_str, "hit ena rate FEB%d", i);
+        rate_counters[set_str] = 0;
+        sprintf(set_str, "reset phase FEB%d", i);
+        rate_counters[set_str] = 0;
+        sprintf(set_str, "TX reset%d", i);
+        rate_counters[set_str] = 0;
+    }
+    //end of Mupix setup part
+    
+    // Define history panels for each FEB Mupix
+    for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+        sprintf(set_str, "FEB%d", i);
+        hs_define_panel("Mupix", set_str, {"Mupix:merger rate " + string(set_str),
+                                           "Mupix:hit ena rate " + string(set_str),
+                                           "Mupix:reset phase " + string(set_str),
+              //                             "Mupix:TX reset " + string(set_str),
+                                           });
+    }
+    
     
     //TODO: set custom page
     //odb custom("/Custom");
@@ -512,11 +550,11 @@ try{
    }
 
    //configure Pixel sensors
-   status=MupixFEB::Instance()->ConfigureASICs();
-   if(status!=SUCCESS){
-      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
-      return CM_TRANSITION_CANCELED;
-   }
+   //status=MupixFEB::Instance()->ConfigureASICs();
+   //if(status!=SUCCESS){
+   //   cm_msg(MERROR,"switch_fe","ASIC configuration failed");
+   //   return CM_TRANSITION_CANCELED;
+   //}
 
 
    //last preparations
@@ -649,10 +687,34 @@ INT resume_run(INT run_number, char *error)
 
 INT read_sc_event(char *pevent, INT off)
 {
+    // get mudaq
+    #ifdef DEBUG
+        dummy_mudaq::DummyMudaqDevice & mu = *mup;
+    #else
+        mudaq::DmaMudaqDevice & mu = *mup;
+    #endif
+        
+    // get odb
+    // TODO: at the moment the timeout is a counter for all FEBs
+    odb merger_timeout_cnt("/Equipment/Switching/Variables");
+    auto merger_timeout_all = mu.read_register_ro(0x26);
+    merger_timeout_cnt["Merger Timeout All FEBs"] = merger_timeout_all;
+    
+    // create bank, pdata
+    bk_init(pevent);
+    DWORD *pdata;
+    bk_create(pevent, "SWB0", TID_DWORD, (void **)&pdata);
+    
+    *pdata++ = merger_timeout_all;
+    
+    bk_close(pevent,pdata);
+    return bk_size(pevent);
+
+    // TODO why do we do this?
     while(mup->FEBsc_get_packet()){};
     //TODO: make this a switch
     mup->FEBsc_dump_packets();
-    return 0;
+    //return 0;
     //return mup->FEBsc_write_bank(pevent,off);
 }
 
@@ -685,10 +747,48 @@ INT read_scitiles_sc_event(char *pevent, INT off){
 /*--- Read Slow Control Event from Mupix to be put into data stream --------*/
 
 INT read_mupix_sc_event(char *pevent, INT off){
-	static int i=0;
-    printf("Reading Scifi FEB status data from all FEBs %d\n",i++);
+    // get odb
+    odb rate_cnt("/Equipment/Mupix/Variables");
+    uint32_t HitsEnaRate;
+    uint32_t MergerRate;
+    uint32_t ResetPhase;
+    uint32_t TXReset;
+    char set_str[255];
+    static int i = 0;
+ 
+    bk_init(pevent);
+    DWORD *pdata;
+    bk_create(pevent, "FECN", TID_WORD, (void **) &pdata);
+    printf("Reading MuPix FEB status data from all FEBs %d\n", i++);
     MupixFEB::Instance()->ReadBackAllRunState();
-    return 0;
+    for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+        HitsEnaRate = MupixFEB::Instance()->ReadBackHitsEnaRate(i);
+        MergerRate = MupixFEB::Instance()->ReadBackMergerRate(i);
+        ResetPhase = MupixFEB::Instance()->ReadBackResetPhase(i);
+        TXReset = MupixFEB::Instance()->ReadBackTXReset(i);
+
+
+        sprintf(set_str, "hit ena rate FEB%d", i);
+        // TODO: change hex value
+        rate_cnt[set_str] = 0x7735940 - HitsEnaRate;
+        
+        sprintf(set_str, "merger rate FEB%d", i);
+        rate_cnt[set_str] = MergerRate;
+
+        sprintf(set_str, "reset phase FEB%d", i);
+        rate_cnt[set_str] = ResetPhase;
+
+        sprintf(set_str, "TX reset FEB%d", i);
+        rate_cnt[set_str] = TXReset;
+
+        *pdata++ = HitsEnaRate;
+        *pdata++ = MergerRate;
+        *pdata++ = ResetPhase; 
+        *pdata++ = TXReset;
+    }
+    
+    bk_close(pevent,pdata);
+    return bk_size(pevent);
 }
 
 /*--- helper functions ------------------------*/
@@ -745,13 +845,13 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       // TODO: propagate to hardware
    }
 
-   if (string(key.name) == "Reset SC Master" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-       mu.FEBsc_resetMaster();
+   if (string(key.name) == "Reset SC Main" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+       mu.FEBsc_resetMain();
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
-   if (string(key.name) == "Reset SC Slave" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-       mu.FEBsc_resetSlave();
+   if (string(key.name) == "Reset SC Secondary" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+       mu.FEBsc_resetSecondary();
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
@@ -776,6 +876,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       }
       if(count==3) 
 	      cm_msg(MERROR,"switch_fe","Tried 4 times to send a slow control write packet but did not succeed");
+      
       set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
@@ -791,7 +892,8 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
                 break;
            count++;
        }
-       if(count==3) cm_msg(MERROR,"switch_fe","Tried 4 times to get a slow control read response but did not succeed");
+       if(count==3) 
+           cm_msg(MERROR,"switch_fe","Tried 4 times to get a slow control read response but did not succeed");
 
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
@@ -801,7 +903,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         INT DATA=get_odb_value_by_string("Equipment/Switching/Variables/SINGLE_DATA_WRITE");
         INT START_ADD=get_odb_value_by_string("Equipment/Switching/Variables/START_ADD_WRITE");
 
-	uint32_t data_arr[1] = {0};
+        uint32_t data_arr[1] = {0};
         data_arr[0] = (uint32_t) DATA;
         uint32_t *data = data_arr;
         mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD);
@@ -854,8 +956,8 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         INT SIZE_NEW_LAST_RM_ADD;
         SIZE_NEW_LAST_RM_ADD = sizeof(NEW_LAST_RM_ADD);
         db_set_value(hDB, 0, STR_LAST_RM_ADD, &NEW_LAST_RM_ADD, SIZE_NEW_LAST_RM_ADD, 1, TID_INT);
-
-	set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
+        
+        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
     }
 /*
     if (string(key.name) == "Read MALIBU File" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {

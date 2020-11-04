@@ -12,6 +12,15 @@ use ieee.std_logic_textio.all;
 
 package util is
 
+    subtype slv4_t is std_logic_vector(3 downto 0);
+    type slv4_array_t is array ( natural range <> ) of slv4_t;
+    subtype slv8_t is std_logic_vector(7 downto 0);
+    type slv8_array_t is array ( natural range <> ) of slv8_t;
+    subtype slv16_t is std_logic_vector(15 downto 0);
+    type slv16_array_t is array ( natural range <> ) of slv16_t;
+    subtype slv32_t is std_logic_vector(31 downto 0);
+    type slv32_array_t is array ( natural range <> ) of slv32_t;
+
     constant D16_2 : std_logic_vector(7 downto 0) := X"50";
     constant D21_4 : std_logic_vector(7 downto 0) := x"95";
     constant D02_5 : std_logic_vector(7 downto 0) := X"A2";
@@ -32,15 +41,28 @@ package util is
         waitrequest     :   std_logic;
         readdatavalid   :   std_logic;
     end record;
-  
     type avalon_array_t is array(natural range <>) of avalon_t;
+
+
+
+    -- avalon memory mapped interface
+    type avmm_t is record
+        address         :   std_logic_vector(31 downto 0);
+        read            :   std_logic;
+        readdata        :   std_logic_vector(31 downto 0);
+        write           :   std_logic;
+        writedata       :   std_logic_vector(31 downto 0);
+        waitrequest     :   std_logic;
+        readdatavalid   :   std_logic;
+    end record;
+    type avmm_array_t is array(natural range <>) of avmm_t;
 
     type rw_t is record
         addr            :   std_logic_vector(31 downto 0);
-        re              :   std_logic;
-        rvalid          :   std_logic;
+        re              :   std_logic; -- read enable
+        rvalid          :   std_logic; -- read valid
         rdata           :   std_logic_vector(31 downto 0);
-        we              :   std_logic;
+        we              :   std_logic; -- write enable
         wdata           :   std_logic_vector(31 downto 0);
     end record;
 
@@ -187,6 +209,11 @@ package util is
 
     function to_hstring (
         v : unsigned--;
+    ) return string;
+
+    -- Select Graphic Rendition
+    function sgr (
+        n : natural--;
     ) return string;
 
 end package;
@@ -472,7 +499,7 @@ package body util is
         variable s : string(1 to W/4);
         variable ok : boolean;
     begin
-        if fname = "" then
+        if fname'length = 0 then
             return data;
         end if;
 
@@ -653,6 +680,13 @@ package body util is
     ) return string is
     begin
         return to_hstring(std_logic_vector(v));
+    end function;
+
+    function sgr (
+        n : natural--;
+    ) return string is
+    begin
+        return ESC & "[" & natural'image(n) & "m";
     end function;
 
 end package body;

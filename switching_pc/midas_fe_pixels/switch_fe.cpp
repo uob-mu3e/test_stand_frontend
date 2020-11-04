@@ -116,8 +116,8 @@ const char *sc_settings_str[] = {
 "Read = BOOL : 0",
 "Read WM = BOOL : 0",
 "Read RM = BOOL : 0",
-"Reset SC Master = BOOL : 0",
-"Reset SC Slave = BOOL : 0",
+"Reset SC Main = BOOL : 0",
+"Reset SC Secondary = BOOL : 0",
 "Clear WM = BOOL : 0",
 "Last RM ADD = BOOL : 0",
 "MupixConfig = BOOL : 0",
@@ -133,7 +133,7 @@ enum EQUIPMENT_ID {Switching=0,Mupix};
 EQUIPMENT equipment[] = {
 
    {"Switching",                /* equipment name */
-    {2, 0,                      /* event ID, trigger mask */
+    {110, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
      0,                         /* event source */
@@ -148,7 +148,7 @@ EQUIPMENT equipment[] = {
      read_sc_event,             /* readout routine */
    },
    {"Mupix",                    /* equipment name */
-    {2, 0,                      /* event ID, trigger mask */
+    {113, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
@@ -241,8 +241,8 @@ INT frontend_init()
        cm_msg(MERROR, "frontend_init", "Mudaq is not ok");
        return FE_ERR_DRIVER;
    }
-   mup->FEBsc_resetMaster();
-   mup->FEBsc_resetSlave();
+   mup->FEBsc_resetMain();
+   mup->FEBsc_resetSecondary();
 
    //set link enables so slow control can pass 
    try{ set_feb_enable(get_link_active_from_odb()); }
@@ -308,8 +308,8 @@ try{
    mup->write_register_wait(RESET_REGISTER_W, start_setup, 1000);
    mup->write_register(RESET_REGISTER_W, 0x0);
 
-//   mup->FEBsc_resetMaster(); //KB: needed?
-//   mup->FEBsc_resetSlave(); //KB: needed?
+//   mup->FEBsc_resetMain(); //KB: needed?
+//   mup->FEBsc_resetSecondary(); //KB: needed?
 
    /* get link active from odb. */
    uint64_t link_active_from_odb = get_link_active_from_odb();
@@ -497,13 +497,13 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       // TODO: propagate to hardware
    }
 
-   if (std::string(key.name) == "Reset SC Master" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-       mu.FEBsc_resetMaster();
+   if (std::string(key.name) == "Reset SC Main" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+       mu.FEBsc_resetMain();
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
-   if (std::string(key.name) == "Reset SC Slave" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-       mu.FEBsc_resetSlave();
+   if (std::string(key.name) == "Reset SC Secondary" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
+       mu.FEBsc_resetSecondary();
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 

@@ -222,13 +222,17 @@ begin
 				rst => ipb_rst,
 				ipbus_in => ipbw(N_SLV_I2C),
 				ipbus_out => ipbr(N_SLV_I2C),
+			    ipbus_in_fast => ipbw(N_SLV_I2C_FAST),
+                ipbus_out_fast => ipbr(N_SLV_I2C_FAST),
+                ipbus_in_mem => ipbw(N_SLV_I2C_MEM),
+                ipbus_out_mem => ipbr(N_SLV_I2C_MEM),
 				scl_o => iscl_o,
 				scl_i => iscl_i,
 				sda_o => isda_o,
 				sda_i => isda_i
 			);
-			
-			
+
+									
 		   delay1 : FDCE
 		   generic map (
 		      INIT => '0') -- Initial value of register ('0' or '1')  

@@ -3,11 +3,25 @@ The backend PC will also be connected with the network going to the storage node
 Either the backend PC or anothe box will serve as a gateway to the wider network.
 
 If the gateway runs OpenSuse, configure both network interfaces properly, enable IPv4 forwarding
-and configure IPTABLES as follows:
+and configure IPTABLES as follows (assuming eth0 is internal Lan and eth1 extern):
 ~~~~
-# iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-# iptables -A FORWARD -i eth0 -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT
-# iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT
+# iptables -F
+# iptables -A INPUT -i lo -j ACCEPT
+# iptables -A INPUT -s 192.168.0.0/24 -i eth0 -j ACCEPT
+# iptables -t  nat  -A POSTROUTING -s 192.168.0.0/24 -o eth1 -j MASQUERADE
+# echo 1 > /proc/sys/net/ipv4/ip_forward
+~~~~
+
+Start dhcp and nameserver with 
+~~~~
+# sudo rcnamed restart
+# sudo rcdhcpd restart
+~~~~
+
+Status can be checked with
+~~~~
+# systemctl status named.service
+# systemctl status dhcpd.service
 ~~~~
 
 A ip address can be reserved for a specific device by adding a entry of the following form

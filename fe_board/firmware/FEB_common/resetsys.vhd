@@ -46,7 +46,10 @@ architecture rtl of resetsys is
     signal reset_bypass_payload_125_rx  : std_logic_vector(31 downto 0);
     signal reset_bypass_request         : std_logic;
     signal reset_bypass_state           : std_logic_vector(2 downto 0);
-    
+    signal phase_50                     : std_logic_vector(PHASE_WIDTH_g-1 downto 0);
+    signal run_number_125_rx            : std_logic_vector(31 downto 0);
+    signal fpga_id_125_rx               : std_logic_vector(15 downto 0);
+
 ----------------begin resetsys------------------------
 BEGIN
 
@@ -105,8 +108,8 @@ BEGIN
     i_state_controller : entity work.state_controller
     PORT MAP (
         reset_link_8bData       => state_controller_in,
-        fpga_addr               => fpga_id,
-        runnumber               => run_number_out,
+        fpga_addr               => fpga_id_125_rx,
+        runnumber               => run_number_125_rx,
         reset_mask              => resets_out,
         link_test_payload       => open,
         sync_test_payload       => open,
@@ -132,23 +135,30 @@ BEGIN
         i_reset_125_n       => i_reset_125_n,
         i_clk_125           => i_clk_125,
 
-        o_phase             => o_phase,
+        o_phase             => phase_50,
         i_reset_n           => i_reset_n,
         i_clk               => i_clk--,
     );
 
-    -- sync state from clk_125_rx to clk_156
+------------------------------------------
+-- Sync fifo's
+------------------------------------------
+-- M.Mueller:   connecting a reset signal to some of the sync-fifos leads to timing violations from o_rdata
+--              maybe we should switch them to non-Showahead Fifos
+--              i se no reason to reset them here. 
+--              using reset_n=1 for now ...
+
     e_fifo_sync : entity work.fifo_sync
     generic map (
         RDATA_RESET_g => RUN_STATE_IDLE--,
     )
     port map (
         o_rdata     => o_state_156,
-        i_rreset_n  => i_reset_156_n,
+        i_rreset_n  => '1',
         i_rclk      => i_clk_156,
 
         i_wdata     => state_125_rx,
-        i_wreset_n  => i_reset_125_n,
+        i_wreset_n  => '1',
         i_wclk      => i_clk_125_rx--,
     );
 
@@ -158,11 +168,11 @@ BEGIN
     )
     port map (
         o_rdata     => reset_bypass_125_rx,
-        i_rreset_n  => i_reset_125_rx_n,
+        i_rreset_n  => '1',
         i_rclk      => i_clk_125_rx,
 
         i_wdata     => reset_bypass,
-        i_wreset_n  => i_reset_156_n,
+        i_wreset_n  => '1',
         i_wclk      => i_clk_156--,
     );
 
@@ -172,11 +182,53 @@ BEGIN
     )
     port map (
         o_rdata     => reset_bypass_payload_125_rx,
-        i_rreset_n  => i_reset_125_rx_n,
+        i_rreset_n  => '1',
         i_rclk      => i_clk_125_rx,
 
         i_wdata     => reset_bypass_payload,
-        i_wreset_n  => i_reset_156_n,
+        i_wreset_n  => '1',
+        i_wclk      => i_clk_156--,
+    );
+
+    e_fifo_sync4 : entity work.fifo_sync
+    generic map (
+        RDATA_RESET_g => (phase_50'range => '0')--,
+    )
+    port map (
+        o_rdata     => o_phase,
+        i_rreset_n  => '1',
+        i_rclk      => i_clk_156,
+
+        i_wdata     => phase_50,
+        i_wreset_n  => '1',
+        i_wclk      => i_clk--,
+    );
+
+    e_fifo_sync5 : entity work.fifo_sync
+    generic map (
+        RDATA_RESET_g => (run_number_125_rx'range => '0')--,
+    )
+    port map (
+        o_rdata     => run_number_out,
+        i_rreset_n  => '1',
+        i_rclk      => i_clk_156,
+
+        i_wdata     => run_number_125_rx,
+        i_wreset_n  => '1',
+        i_wclk      => i_clk_125_rx--,
+    );
+
+    e_fifo_sync6 : entity work.fifo_sync
+    generic map (
+        RDATA_RESET_g => (fpga_id'range => '0')--,
+    )
+    port map (
+        o_rdata     => fpga_id_125_rx,
+        i_rreset_n  => '1',
+        i_rclk      => i_clk_125_rx,
+
+        i_wdata     => fpga_id,
+        i_wreset_n  => '1',
         i_wclk      => i_clk_156--,
     );
 

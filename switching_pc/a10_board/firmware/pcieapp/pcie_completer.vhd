@@ -264,8 +264,8 @@ architecture RTL of pcie_completer is
 	aclr <= not local_rstn;
 	
 	datain_rreg_fifo <= rreg_readaddr & rreg_readlength & rreg_header2;
-	
-	rreg_fifo : completer_fifo
+
+    e_rreg_fifo : component work.cmp.completer_fifo
 	PORT MAP
 	(
 		aclr		=> aclr,
@@ -279,7 +279,7 @@ architecture RTL of pcie_completer is
 		usedw		=> open
 	);
 
-	rreg_bytecounter : pcie_completion_bytecount 
+    e_rreg_bytecounter : entity work.pcie_completion_bytecount
 	port map(
 		fdw_be	=> data_rreg_fifo(3 downto 0),
 		ldw_be	=> data_rreg_fifo(7 downto 4),
@@ -289,8 +289,8 @@ architecture RTL of pcie_completer is
 	);
 
 	datain_wreg_fifo <= wreg_readaddr & wreg_readlength & wreg_header2;
-	
-	wreg_fifo : completer_fifo
+
+    e_wreg_fifo : component work.cmp.completer_fifo
 	PORT MAP
 	(
 		aclr		=> aclr,
@@ -303,8 +303,8 @@ architecture RTL of pcie_completer is
 		q			=> data_wreg_fifo,
 		usedw		=> open
 	);
-	
-	wreg_bytecounter : pcie_completion_bytecount 
+
+    e_wreg_bytecounter : entity work.pcie_completion_bytecount
 	port map(
 		fdw_be	=> data_wreg_fifo(3 downto 0),
 		ldw_be	=> data_wreg_fifo(7 downto 4),
@@ -314,8 +314,8 @@ architecture RTL of pcie_completer is
 	);
 
 	datain_rmem_fifo <= "000000" & rmem_readaddr & rmem_readlength & rmem_header2;
-	
-	rmem_fifo : completer_wide_fifo
+
+    e_rmem_fifo : component work.cmp.completer_wide_fifo
 	PORT MAP
 	(
 		aclr		=> aclr,
@@ -328,8 +328,8 @@ architecture RTL of pcie_completer is
 		q			=> data_rmem_fifo,
 		usedw		=> open
 	);
-	
-	rmem_bytecounter : pcie_completion_bytecount 
+
+    e_rmem_bytecounter : entity work.pcie_completion_bytecount
 	port map(
 		fdw_be	=> data_rmem_fifo(3 downto 0),
 		ldw_be	=> data_rmem_fifo(7 downto 4),
@@ -339,8 +339,8 @@ architecture RTL of pcie_completer is
 	);
 	
 	datain_wmem_fifo <=  "000000" & wmem_readaddr & wmem_readlength & wmem_header2;
-	
-	wmem_fifo : completer_wide_fifo
+
+    e_wmem_fifo : component work.cmp.completer_wide_fifo
 	PORT MAP
 	(
 		aclr		=> aclr,
@@ -353,8 +353,8 @@ architecture RTL of pcie_completer is
 		q			=> data_wmem_fifo,
 		usedw		=> open
 	);
-	
-	wmem_bytecounter : pcie_completion_bytecount 
+
+    e_wmem_bytecounter : entity work.pcie_completion_bytecount
 	port map(
 		fdw_be	=> data_wmem_fifo(3 downto 0),
 		ldw_be	=> data_wmem_fifo(7 downto 4),

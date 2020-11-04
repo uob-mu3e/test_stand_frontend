@@ -20,6 +20,7 @@
 
 #include "mudaq_device.h"
 #include "mfe.h"
+#include "history.h"
 
 using namespace std;
 using midas::odb;
@@ -100,12 +101,27 @@ EQUIPMENT equipment[] = {
      "MIDAS",                /* format */
      TRUE,                   /* enabled */
      RO_RUNNING  | RO_STOPPED | RO_ODB,             /* read only when running */
-     100,                    /* poll for 100ms */
+     1000,                    /* poll for 1s */
      0,                      /* stop run after this event limit */
      0,                      /* number of sub events */
      0,                      /* don't log history */
      "", "", "",},
      NULL,                    /* readout routine */
+    },
+    {"Stream Logger",                /* equipment name */
+    {11, 0,                   /* event ID, trigger mask */
+     "SYSTEM",               /* event buffer */
+     EQ_PERIODIC,                /* equipment type */
+     0,                      /* event source crate 0, all stations */
+     "MIDAS",                /* format */
+     TRUE,                   /* enabled */
+     RO_ALWAYS  | RO_ODB,             /* read only when running */
+     1000,                    /* poll for 1s */
+     0,                      /* stop run after this event limit */
+     0,                      /* number of sub events */
+     1,                      /* log history every event */
+     "", "", "",},
+     read_stream_event,                    /* readout routine */
     },
 
    {""}
@@ -169,7 +185,31 @@ void setup_odb(){
     // add custom page to ODB
     odb custom("/Custom");
     custom["Farm&"] = "farm.html";
-
+    
+    // add error cnts to ODB
+    odb error_settings = {
+        {"DC FIFO ALMOST FUll", 0},
+        {"DC LINK FIFO FULL", 0},
+        {"TAG FIFO FULL", 0},
+        {"MIDAS EVENT RAM FULL", 0},
+        {"STREAM FIFO FULL", 0},
+        {"DMA HALFFULL", 0},
+        {"SKIP EVENT LINK FIFO", 0},
+        {"SKIP EVENT DMA RAM", 0},
+        {"IDLE NOT EVENT HEADER", 0},
+    };
+    error_settings.connect("/Equipment/Stream Logger/Variables", true);
+    
+    // Define history panels
+    hs_define_panel("Stream Logger", "MIDAS Bank Builder", {"Stream Logger:DC FIFO ALMOST FUll",
+                                                            "Stream Logger:DC LINK FIFO FULL",
+                                                            "Stream Logger:TAG FIFO FULL",
+                                                            "Stream Logger:MIDAS EVENT RAM FULL",
+                                                            "Stream Logger:STREAM FIFO FULL",
+                                                            "Stream Logger:DMA HALFFULL",
+                                                            "Stream Logger:SKIP EVENT LINK FIFO",
+                                                            "Stream Logger:SKIP EVENT DMA RAM",
+                                                            "Stream Logger:IDLE NOT EVENT HEADER"});
 }
 
 void setup_watches(){
@@ -416,24 +456,26 @@ INT end_of_run(INT run_number, char *error)
       printf("Buffers all empty\n");
    }
 
-   // TODO: Find a better way to see when DMA is finished.
-
-   printf("Waiting for DMA to finish\n");
+   // Finish DMA while waiting for last requested data to be finished
+   cm_msg(MINFO, "farm_fe", "Waiting for DMA to finish");
    usleep(1000); // Wait for DMA to finish
    timeout_cnt = 0;
-   while(mu.last_written_addr() != lastlastWritten && //(readindex % dma_buf_nwords) &&
-         timeout_cnt++ < 50) {
-      printf("Waiting for DMA to finish %d/50\n", timeout_cnt);
-      timeout_cnt++;
-      usleep(1000);
+   
+   // wait for requested data
+   // TODO: in readout th poll on run end reg from febs
+   // write variable and check this one here and then disable readout th
+   // also check if readout th is disabled by midas at run end
+   while ( (mu.read_register_ro(0x1C) & 1) == 0 && timeout_cnt < 100 ) {
+       timeout_cnt++;
+       usleep(1000);
    };
-
-   if(timeout_cnt>=50) {
-      cm_msg(MERROR,"farm_fe","DMA did not finish");
+        
+   if(timeout_cnt>=100) {
+      cm_msg(MERROR, "farm_fe", "DMA did not finish");
       set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
 //      return CM_TRANSITION_CANCELED;
    }else{
-      printf("DMA is finished\n");
+      cm_msg(MINFO, "farm_fe", "DMA is finished\n");
    }
 
     // stop generator
@@ -542,29 +584,44 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 
 INT read_stream_event(char *pevent, INT off)
 {
-   /*
+    
+   // get mudaq 
+   mudaq::DmaMudaqDevice & mu = *mup;
+ 
+   // get odb for errors
+   odb error_cnt("/Equipment/Stream Logger/Variables");
+
+   // create bank, pdata, stream buffer is name
    bk_init(pevent);
-   
    DWORD *pdata;
-   uint32_t read = 0;
-   bk_create(pevent, "HEAD", TID_DWORD, (void **)&pdata);
-   
-   for (int i =0; i < 8; i ++) {
-      *pdata++ = dma_buf[(++readindex)%dma_buf_nwords];
-      read++;
-   }
-   
+   bk_create(pevent, "STBU", TID_DWORD, (void **)&pdata);
+    
+   // TODO: save value to variable before and dont call function all the time
+   // get error regs and write to odb
+   error_cnt["DC FIFO ALMOST FUll"] = mu.read_register_ro(0x1D);
+   error_cnt["TAG FIFO FULL"] =  mu.read_register_ro(0x1E);
+   error_cnt["MIDAS EVENT RAM FULL"] = mu.read_register_ro(0x1F);
+   error_cnt["STREAM FIFO FULL"] = mu.read_register_ro(0x20);
+   error_cnt["DMA HALFFULL"] = mu.read_register_ro(0x21);
+   error_cnt["DC LINK FIFO FULL"] = mu.read_register_ro(0x22);
+   error_cnt["SKIP EVENT LINK FIFO"] = mu.read_register_ro(0x23);
+   error_cnt["SKIP EVENT DMA RAM"] =  mu.read_register_ro(0x24);
+   error_cnt["IDLE NOT EVENT HEADER"] =  mu.read_register_ro(0x25);
+
+   *pdata++ = mu.read_register_ro(0x1D);
+   *pdata++ = mu.read_register_ro(0x1E);
+   *pdata++ = mu.read_register_ro(0x1F);
+   *pdata++ = mu.read_register_ro(0x20);
+   *pdata++ = mu.read_register_ro(0x21);
+   *pdata++ = mu.read_register_ro(0x22);
+   *pdata++ = mu.read_register_ro(0x23);
+   *pdata++ = mu.read_register_ro(0x24);
+   *pdata++ = mu.read_register_ro(0x25);
+
    bk_close(pevent, pdata);
-   newdata -= read;
-   
-   if (read < newdata && newdata < 0x10000)
-      moreevents = true;
-   else
-      moreevents = false;
-   
+ 
    return bk_size(pevent);
-   */
-   return 0;
+  
 }
 
 // check if the event is good
@@ -663,7 +720,7 @@ INT update_equipment_status(int status, int cur_status, EQUIPMENT *eq)
 INT read_stream_thread(void *param) {
     // get mudaq
     mudaq::DmaMudaqDevice & mu = *mup;
-
+    
     int cur_status = -1;
 
     // tell framework that we are alive
@@ -695,6 +752,9 @@ INT read_stream_thread(void *param) {
 
         // disable dma
         mu.disable();
+        
+        
+        
         // and get lastWritten
         lastlastWritten = 0;
         uint32_t lastWritten = mu.last_written_addr();

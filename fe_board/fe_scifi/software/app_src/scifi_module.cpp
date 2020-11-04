@@ -14,6 +14,9 @@ char wait_key(useconds_t us = 100000);
 #include <ctype.h>
 extern sc_t sc;
 
+#include "../../../../common/include/feb.h"
+using namespace mu3e::daq::feb;
+
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
 int scifi_module_t::spi_write_pattern(alt_u32 asic, const alt_u8* bitpattern) {
 	int status=0;
@@ -426,35 +429,29 @@ alt_u16 scifi_module_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n)
 //    auto& regs = ram->regs.scifi;
     alt_u16 status=FEB_REPLY_SUCCESS; 
     switch(cmd){
-    case 0x0101: //power up (not implemented in current FEB)
-        break;
-    case 0x0102: //power down (not implemented in current FEB)
-        break;
-    case 0x0103: //configure all off
+    case CMD_MUTRIG_ASIC_OFF: //configure all off
 	//printf("[scifi] configuring all off\n");
         for(int i=0;i<n_MODULES*4;i++)
            if(configure_asic(i,mutrig_config_ALL_OFF)==FEB_REPLY_ERROR)
               status=FEB_REPLY_ERROR;
 	return status;
         break;
-    case 0x0104: //configure reset skew phases
+    case CMD_MUTRIG_SKEW_RESET: //configure reset skew phases
 	//data[0..3]=phases
 	//printf("[scifi] configuring reset skews\n");
         for(int i=0;i<4;i++)
 	    RSTSKWctrl_Set(i,data[i]);
 	return 0;
-    case 0x0105: //read back counters. Write as continuous field to memory pointed to by data.
+    case CMD_MUTRIG_CNT_READ: //read back counters. Write as continuous field to memory pointed to by data.
 	//printf("[scifi] reporting back counters\n");
 	return store_counters(data);
-    case 0x0106: //reset counters.
+    case CMD_MUTRIG_CNT_RESET: //reset counters.
 	//printf("[scifi] resetting counters\n");
 	return reset_counters();
-    case 0xfffe:
+    case CMD_PING:
 	printf("-ping-\n");
         break;
-    case 0xffff:
-        break;
-    case 0x0110:
+    case CMD_MUTRIG_ASIC_CFG:
         //configure ASIC
         status=configure_asic(data[0],(alt_u8*) &(data[1]));
         if(sc->ram->regs.scifi.ctrl.dummy&1){

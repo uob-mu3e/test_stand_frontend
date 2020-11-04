@@ -1,13 +1,13 @@
 ADD_CUSTOM_COMMAND(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h
-  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../../switching_pc/a10_board/firmware/mudaq_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../switching_pc/a10_board/firmware/mudaq_registers.vhd
+  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../firmware/assignments/mudaq_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../firmware/assignments/mudaq_registers.vhd
 )
 
 ADD_CUSTOM_COMMAND(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../include/farm_constants.h
-  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../ ../farm_pc/firmware/mudaq_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../include/farm_constants.h
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../farm_pc/firmware/mudaq_registers.vhd
+  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../firmware/assignments/mudaq_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../include/farm_constants.h
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../firmware/assignments/mudaq_registers.vhd
 )
 
 

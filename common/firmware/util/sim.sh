@@ -16,12 +16,13 @@ mkdir -p .cache
 cd .cache || exit 1
 
 OPTS=(
+    --std=08
     --ieee=synopsys -fexplicit
-    -fpsl
     --mb-comments
+    -fpsl
 )
 
-[ -d "$HOME/.cache/altera-quartus" ] && OPTS+=(-P"$HOME/.cache/altera-quartus")
+[ -d "$HOME/.local/share/ghdl/vendors/altera" ] && OPTS+=(-P"$HOME/.local/share/ghdl/vendors/altera")
 [ -d "/usr/local/lib/ghdl/vendors/altera" ] && OPTS+=(-P"/usr/local/lib/ghdl/vendors/altera")
 
 #ghdl -s "${OPTS[@]}" "${SRC[@]}"

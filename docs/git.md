@@ -13,3 +13,5 @@
 - if you want to close branch `${branch_name}`,
   tag it as `archive/${yyyyMMdd}_${branch_name}`,
   where `${yyyyMMdd}` is the date of last commit on this branch
+
+- avoid self merges, i.e. "merge 'origin/branch' into 'branch'"

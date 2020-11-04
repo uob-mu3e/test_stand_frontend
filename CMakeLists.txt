@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(mu3e_online VERSION 0.1 LANGUAGES CXX)
+project(mu3e_online VERSION 0.9 LANGUAGES CXX)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "" FORCE)
@@ -22,12 +22,9 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 #)
 #message(STATUS "MU3E_ONLINE_GIT_REF: ${MU3E_ONLINE_GIT_REF}")
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-# on some older boxes, wpedantic and MIDAS do not mix
-add_subdirectory(modules)
 
 add_compile_options(
     "-Wpedantic" "-Wall" "-Wextra"
@@ -37,13 +34,24 @@ add_compile_options(
 # required packages
 find_package(Boost 1.49 REQUIRED COMPONENTS thread system program_options)
 find_package(Git 1.8 REQUIRED)
-list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 # check if we compile for raspberry pi
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
     message("Compile for Raspberry Pi")
+elseif(EXISTS $ENV{ROOTSYS})
+    list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
+    find_package(ROOT CONFIG REQUIRED COMPONENTS RIO Hist Tree Net)
+    message(STATUS "ROOTSYS: " $ENV{ROOTSYS})
+    message(STATUS "ROOT_VERSION: " ${ROOT_VERSION})
+    set(ROOTSYS $ENV{ROOTSYS})
 else()
-    find_package(ROOT 5.34 REQUIRED)
+    # try to set ROOTSYS for openSuse yast installation
+    message(FATAL_ERROR "Try to set ROOTSYS via thisroot.sh before cmake")
+#     set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/modules/midas/)
+    find_package(ROOT MODULE REQUIRED COMPONENTS RIO Hist Tree Net)
+    message(STATUS "ROOTSYS: " $ENV{ROOTSYS})
+    message(STATUS "ROOT_VERSION: " ${ROOT_VERSION})
 endif()
+
 # optional packages
 find_package(Doxygen 1.8)
 message("here we set GLVND to default (https://cmake.org/cmake/help/git-stage/policy/CMP0072.html)")
@@ -71,6 +79,8 @@ set(MIDASLIB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/linux/lib)
 set(MIDASLIB ${MIDASLIB_DIR}/libmidas.a)
 set(MIDASDRIVERDIR ${PROJECT_SOURCE_DIR}/modules/midas/drivers/class)
 set(MIDASINCLUDE_DIR ${PROJECT_SOURCE_DIR}/modules/midas/include)
+set(ENV{MIDASSYS} ${PROJECT_SOURCE_DIR}/build/modules/midas)
+set(ENV{MIDASSRC} ${PROJECT_SOURCE_DIR}/modules/midas)
 set(LIBMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/libmudaq)
 set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmupix)
 set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmutrig)
@@ -79,21 +89,10 @@ set(INCMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/include)
 set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mxml)
 set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mscb)
 
-# requires rootana
-#message(STATUS "Using ROOTANA")
-#set(ROOTANASYS ${CMAKE_CURRENT_LIST_DIR}/modules/rootana)
-#set(ROOTANA_LIBRARY_DIRS ${ROOTANASYS}/lib)
-#set(ROOTANA_LIBRARIES ${ROOTANA_LIBRARY_DIRS}/librootana.a)
-#set(ROOTANA_INCLUDE_DIRS ${ROOTANASYS}/include)
-#add_custom_target(
-#    rootana
-#    ALL
-#    #COMMAND export MIDASSYS=${MIDAS_DIR} && make
-#    COMMAND make
-#    WORKING_DIRECTORY ${ROOTANASYS}
-#)
-
+# on some older boxes, wpedantic and MIDAS do not mix
+add_subdirectory(modules)
 add_subdirectory(backend_pc)
+add_subdirectory(common/kerneldriver)
 add_subdirectory(common/libmudaq)
 add_subdirectory(common/libmupix)
 add_subdirectory(common/libmutrig)

@@ -4,11 +4,15 @@
  */
 
 void menu_xcvr(volatile alt_u32* xcvr, char ID = 'A') {
-    
     while (1) {
         char cmd;
         if(read(uart, &cmd, 1) > 0) switch(cmd) {
+        case '[':
+            break;
+        case ']':
+            break;
         case '0': case '1': case '2': case '3': // select channel
+        case '4': case '5': case '6': case '7':
             xcvr[0x00] = (cmd - '0') & 0xFF;
             break;
         case 'r': // reset
@@ -40,6 +44,7 @@ void menu_xcvr(volatile alt_u32* xcvr, char ID = 'A') {
             xcvr[0x20], xcvr[0x21], xcvr[0x22]
         );
         printf("        :   LoL_cnt = %d, err_cnt = %d\n", xcvr[0x23], xcvr[0x24]);
+        printf("  mW/°C :   %i / %i\n", xcvr[0x25], xcvr[0x26]/10000);
         printf("  data  :   0x%08X / 0x%01X\n", xcvr[0x2A], xcvr[0x2B]);
         printf("\n");
 
