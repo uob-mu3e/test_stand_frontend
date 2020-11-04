@@ -49,11 +49,12 @@ namespace dummy_mudaq {
         cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: close()");
     }
 
-    void DummyMudaqDevice::FEBsc_resetMaster(){
-        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: FEBsc_resetMaster()");
+    void DummyMudaqDevice::FEBsc_resetMain(){
+        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: FEBsc_resetMain()");
     }
-    void DummyMudaqDevice::FEBsc_resetSlave(){
-        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: FEBsc_resetSlave()");
+    
+    void DummyMudaqDevice::FEBsc_resetSecondary(){
+        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: FEBsc_resetSecondary()");
     }
 
     int DummyMudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError){
@@ -83,8 +84,29 @@ namespace dummy_mudaq {
 
     void DummyMudaqDevice::write_register(unsigned idx, uint32_t value){
         cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: write_register()");
+        if(idx > 63){
+            cout << "Invalid register address " << idx << endl;
+            exit (EXIT_FAILURE);
+        }
+        _regs_rw[idx] = value;
     }
-
+    
+    uint32_t DummyMudaqDevice::read_register_ro(unsigned idx) const {
+       if(idx > 63){
+           cout << "Invalid register address " << idx << endl;
+           exit (EXIT_FAILURE);
+       }
+       return _regs_ro[idx];
+    }
+    
+    uint32_t DummyMudaqDevice::read_memory_ro(unsigned idx) const {
+        if(idx > 64*1024){
+           cout << "Invalid memory address " << idx << endl;
+           exit (EXIT_FAILURE);
+       }
+       return _mem_ro[idx & MUDAQ_MEM_RO_MASK];
+    }
+    
     // DMA dummy mudaq
 
     dummy_mudaq::DummyDmaMudaqDevice::DummyDmaMudaqDevice(const std::string& path) :

@@ -14,54 +14,53 @@ namespace mupix { namespace midasODB {
 
 int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
     /* Book Setting space */
-
-    unsigned int nrow = 200;
-    unsigned int ncol = 128; //TODO: somewhere global?
+    
+    cm_msg(MINFO, "mupix_midasodb::setup_db", "Setting up odb");
+    
     char set_str[255];
-    unsigned int nboards;
 
     /* Add [prefix]/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
     //TODO some globals should be per asic
-    MUPIX_GLOBAL_STR(mupix_global);   // global mutrig settings
-    sprintf(set_str, "%s/Settings/ASICs", prefix);
-    odb settings_asics(set_str);
-    settings_asics["/Global"] = strcomb(mupix_global);
+    sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
+    auto settings_asics_global = MUPIX_GLOBAL_SETTINGS;
+    // global mupix settings from mupix_MIDAS_config.h
+    settings_asics_global.connect(set_str, true); 
 
     //Set number of ASICs, derived from mapping
-    unsigned int nasics=FEB_interface->GetNumASICs();
-    settings_asics["/Num asics"] = nasics;
-    settings_asics["/Num boards"] = nasics;
+    unsigned int nasics = FEB_interface->GetNumASICs();
+    settings_asics_global["Num asics"] = nasics;
+    // TODO why is this the same?
+    settings_asics_global["Num boards"] = nasics;
 
     if(nasics==0){
-        cm_msg(MINFO,"mutrig_midasodb::setup_db","Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
+        cm_msg(MINFO,"mupix_midasodb::setup_db","Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s",prefix);
     return DB_SUCCESS;
     }
 
     /* Add [prefix]/Daq (structure defined in mupix_MIDAS_config.h) */
     //TODO: if we have more than one FE-FPGA, there might be more than one DAQ class.
-    MUPIX_DAQ_STR(mupix_daq);         // global settings for daq/fpga
     sprintf(set_str, "%s/Settings/Daq", prefix);
-    odb settings_daq(set_str);
-    settings_daq = strcomb(mupix_daq); 
+    auto settings_daq = MUPIX_DAQ_SETTINGS;
+    settings_daq.connect(set_str, true);
+    
     // use lambda funciton for passing FEB_interface
     auto on_settings_changed_partial = 
-        [&FEB_interface](odb o) { return MupixFEB::on_settings_changed(o, FEB_interface);
+        [&FEB_interface](odb o) { 
+            return MupixFEB::on_settings_changed(
+                o, FEB_interface
+            );
         };
-
+    settings_daq.watch(on_settings_changed_partial);
 
     //init all values on FEB
     if(init_FEB){
         BOOL bval;
 
-        // get odb instance
-        sprintf(set_str, "%s/Settings/Daq", prefix);
-        odb settings_daq(set_str);
-
-        bval = settings_daq["/dummy_config"];
+        bval = settings_daq["dummy_config"];
         // TODO: do something here
         //FEB_interface->setDummyConfig(SciFiFEB::FPGA_broadcast_ID,bval); 
         
-        bval = settings_daq["dummy_daq"];
+        bval = settings_daq["dummy_data"];
         // TODO: do something here
         //FEB_interface->setDummyData_Enable(SciFiFEB::FPGA_broadcast_ID,bval);
         
@@ -71,66 +70,57 @@ int setup_db(const char* prefix, MupixFEB* FEB_interface, bool init_FEB){
     }
 
     /* Equipment/Pixel/Settings/Chipdacs (structure defined in mupix_MIDAS_config.h) */
-    MUPIX_CHIPDACS_STR(mupix_chipdacs);
-    MUPIX_DIGIROWDACS_STR(mupix_digirowdacs);
-    MUPIX_COLDACS_STR(mupix_coldacs);
-    MUPIX_ROWDACS_STR(mupix_rowdacs);
-    MUPIX_CHIPDACS2_STR(mupix_chipdacs2);
-    MUPIX_VOLTAGEDACS_STR(mupix_voltagedacs);
-
-    // get odb instances
-    sprintf(set_str, "%s/Settings/Chipdacs", prefix);
-    odb settings_chipdacs(set_str);
     
-    sprintf(set_str, "%s/Settings/DigitalRowdacs", prefix);
-    odb settings_digital_rowdacs(set_str);
+    // # nasics 
+    auto settings_chipdacs = MUPIX_CHIPDACS_SETTINGS;
+    auto settings_chipdacs2 = MUPIX_CHIPDACS2_SETTINGS;
+    auto settings_voltagedacs = MUPIX_VOLTAGEDACS_SETTINGS;
     
-    sprintf(set_str, "%s/Settings/Coldacs", prefix);
-    odb settings_coldacs(set_str);
-
-    sprintf(set_str, "%s/Settings/Rowdacs", prefix); 
-    odb settings_rowdacs(set_str);
-
-    sprintf(set_str, "%s/Settings/Chipdacs2", prefix);
-    odb settings_chipdacs2(set_str);
-
-    sprintf(set_str, "%s/Settings/Voltagedacs", prefix);
-    odb settings_voltagedacs(set_str);
+    // # nasics * nrows
+    auto settings_digital_rowdacs = MUPIX_DIGIROWDACS_SETTINGS;
+    auto settings_rowdacs = MUPIX_ROWDACS_SETTINGS;
     
+    // # nasics * ncols
+    auto settings_coldacs = MUPIX_COLDACS_SETTINGS;
+    
+    // # boards
+    auto settings_boarddacs = MUPIX_BOARDDACS_SETTINGS;
+
+    // get values from global odb instance
+    nasics = settings_asics_global["Num asics"];
+    unsigned int nboards = settings_asics_global["Num boards"];
+    unsigned int nrows = settings_asics_global["Num rows"];
+    unsigned int ncols = settings_asics_global["Num cols"];
+        
     for(unsigned int i = 0; i < nasics; ++i) {
-        sprintf(set_str, "/%u", i);
-        settings_chipdacs[set_str] = strcomb(mupix_chipdacs);
-        settings_chipdacs2[set_str] = strcomb(mupix_chipdacs2);
-        settings_voltagedacs[set_str] = strcomb(mupix_chipdacs2);
+        sprintf(set_str, "%s/Settings/Chipdacs/%u", prefix, i);
+        settings_chipdacs.connect(set_str, true);
+        
+        sprintf(set_str, "%s/Settings/Chipdacs2/%u", prefix, i);
+        settings_chipdacs2.connect(set_str, true);
+        
+        sprintf(set_str, "%s/Settings/Voltagedacs/%u", prefix, i);
+        settings_voltagedacs.connect(set_str, true);
 
-        for (unsigned int row = 0; row < nrow; ++row) {
-            sprintf(set_str, "/%u/row_%u", i, row);
-            settings_digital_rowdacs[set_str] = strcomb(mupix_digirowdacs);
-            settings_rowdacs[set_str] = strcomb(mupix_rowdacs);
+        for (unsigned int row = 0; row < nrows; ++row) {
+            sprintf(set_str, "%s/Settings/DigitalRowdacs/%u/row_%u", prefix, i, row);
+            settings_digital_rowdacs.connect(set_str, true);
+            
+            sprintf(set_str, "%s/Settings/Rowdacs/%u/row_%u", prefix, i, row);
+            settings_rowdacs.connect(set_str, true);
         }
 
-        for (unsigned int col = 0; col < ncol; ++col) {
-            sprintf(set_str, "/%u/col_%u", i, col);
-            settings_coldacs[set_str] = strcomb(mupix_coldacs);
+        for (unsigned int col = 0; col < ncols; ++col) {
+            sprintf(set_str, "%s/Settings/Coldacs/%u/col_%u", prefix, i, col);
+            settings_coldacs.connect(set_str, true);
         }
     }
 
     //TODO: mask bits here?
 
-    /* Equipment/Pixel/Settings/Boarddacs (structure defined in mupix_MIDAS_config.h) */
-    //Get predefined number of boards from ODB
-    MUPIX_BOARDDACS_STR(mupix_boarddacs);
-
-    // get nboards from odb instance
-    sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
-    odb settings_asics_global(set_str);
-    nboards = settings_asics_global["/Num boards"];
-
-    sprintf(set_str, "%s/Settings/Boarddacs", prefix);
-    odb settings_boarddacs(set_str);
     for(unsigned int i = 0; i < nboards; ++i) {
-        sprintf(set_str, "/%u", i); 
-        settings_boarddacs[set_str] = strcomb(mupix_boarddacs);
+        sprintf(set_str, "%s/Settings/Boarddacs/%u", prefix, i);
+        settings_boarddacs.connect(set_str, true);
     }
 
     return DB_SUCCESS;

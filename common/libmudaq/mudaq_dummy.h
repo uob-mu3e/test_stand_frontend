@@ -45,23 +45,25 @@ namespace dummy_mudaq {
             DummyMudaqDevice(const std::string& path);
             virtual ~DummyMudaqDevice() { close(); }
 
-            void FEBsc_resetMaster();
-            void FEBsc_resetSlave();
+            void FEBsc_resetMain();
+            void FEBsc_resetSecondary();
             int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError);
             int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply);
             int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
             int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError);
             int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
             void write_register(unsigned idx, uint32_t value);
+            uint32_t read_register_ro(unsigned idx) const;
+            uint32_t read_memory_ro(unsigned idx) const;
         protected:
             int _fd;
 
         private:
             const std::string       _path;
-            volatile uint32_t*      _regs_rw;
-            volatile uint32_t*      _regs_ro;
-            volatile uint32_t*      _mem_ro;
-            volatile uint32_t*      _mem_rw;  // added by DvB for rw mem
+            uint32_t _regs_rw[64] = {};
+            uint32_t _regs_ro[64] = {};
+            uint32_t _mem_ro[64*1024] = {};
+            uint32_t _mem_rw[64*1024] = {};
 
             uint16_t                _last_read_address; // for reading command of slow control
 

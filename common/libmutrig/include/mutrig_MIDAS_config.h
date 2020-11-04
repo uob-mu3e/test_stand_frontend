@@ -28,39 +28,38 @@ typedef int INT;
 
 #ifndef MUTRIG_DAQ_DEFINED
 #define MUTRIG_DAQ_DEFINED
-/*
+
 typedef struct {
-  BOOL dummy_config;
-  BOOL dummy_data;
-  INT  dummy_data_n;
-  BOOL dummy_data_fast;
-  BOOL prbs_decode_disable;
-  BOOL reset_datapath;
-  BOOL reset_asics;
+    BOOL dummy_config;
+    BOOL dummy_data;
+    INT  dummy_data_n;
+    BOOL dummy_data_fast;
+    BOOL prbs_decode_disable;
+    BOOL reset_datapath;
+    BOOL reset_asics;
 } MUTRIG_DAQ;
-*/
 
 static odb MUTRIG_DAQ_SETTINGS = {
-        {"dummy_config", false},
-        {"dummy_data", false},
-        {"dummy_data_n", 200},
-        {"dummy_data_fast", false},
-        {"prbs_decode_disable", false},
-        {"reset_datapath", false},
-        {"reset_asics", false},
-        {"reset_lvds", false},
-        {"reset_counters", false},
-        {"LVDS_waitforall", false},
-        {"LVDS_waitforall_sticky", false},
-        {"num_asics", 16},
-        {"mask", { false, false, false, false,
-                   false, false, false, false,
-                   false, false, false, false,
-                   false, false, false, false
-                 }},
-        {"resetskew_cphase", {false, false, false, false}},
-        {"resetskew_cdelay", {false, false, false, false}},
-        {"resetskew_phases", {false, false, false, false}},
+    {"dummy_config", false},
+    {"dummy_data", false},
+    {"dummy_data_n", 200},
+    {"dummy_data_fast", false},
+    {"prbs_decode_disable", false},
+    {"reset_datapath", false},
+    {"reset_asics", false},
+    {"reset_lvds", false},
+    {"reset_counters", false},
+    {"LVDS_waitforall", false},
+    {"LVDS_waitforall_sticky", false},
+    {"num_asics", 16},
+    {"mask", { false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false
+                }},
+    {"resetskew_cphase", {false, false, false, false}},
+    {"resetskew_cdelay", {false, false, false, false}},
+    {"resetskew_phases", {false, false, false, false}},
 };
 
 #endif

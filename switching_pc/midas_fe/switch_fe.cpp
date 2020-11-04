@@ -219,7 +219,9 @@ INT frontend_init()
 {
 
     // TODO: for debuging
-    odb::set_debug(true);
+    #ifdef DEBUG
+        odb::set_debug(true);
+    #endif
 
     HNDLE hKeySC;
 

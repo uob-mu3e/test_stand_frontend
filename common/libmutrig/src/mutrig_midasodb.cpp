@@ -31,7 +31,8 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     //TODO some globals should be per asic
     sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
     auto settings_asics = MUTRIG_GLOBAL_SETTINGS;
-    settings_asics.connect(set_str, true); // global mutrig setting are from mutrig_MIDAS_config.h
+     // global mutrig setting are from mutrig_MIDAS_config.h
+    settings_asics.connect(set_str, true);
  
     //Set number of ASICs, derived from mapping
     unsigned int nasics = FEB_interface->GetNumASICs();
@@ -50,7 +51,11 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
 
     // use lambda function for passing FEB_interface
     auto on_settings_changed_partial =
-            [&FEB_interface](odb o) { return MutrigFEB::on_settings_changed(o, FEB_interface); };
+            [&FEB_interface](odb o) { 
+                return MutrigFEB::on_settings_changed(
+                    o, FEB_interface
+                );
+            };
     settings_daq.watch(on_settings_changed_partial);
 
     //update length flags for DAQ section
