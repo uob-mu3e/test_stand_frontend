@@ -6,7 +6,7 @@ add_executable(test_odb test_odb.cpp ${INC_ALL})
 
 target_include_directories(config_mutrig_test PRIVATE ${LIBMUDAQ_DIR} ${INCMUDAQ_DIR} ${INCMUTRIG_DIR})
 target_include_directories(config_mupix_test PRIVATE ${LIBMUDAQ_DIR} ${INCMUDAQ_DIR} ${INCMUPIX_DIR})
-target_include_directories(test_odb PRIVATE ${INCMUDAQ_DIR} ${MIDAS_DIR}/include ${MIDASINCLUDE_DIR})
+target_include_directories(test_odb PRIVATE ${INCMUDAQ_DIR})
 
 target_link_libraries(config_mutrig_test dl rt util midas libmudaq_scifi libmutrig)
 target_link_libraries(config_mupix_test dl rt util midas libmudaq_scifi libmupix)

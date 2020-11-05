@@ -17,7 +17,6 @@ target_include_directories(libmutrig
 PUBLIC 
 	"include"
 PRIVATE
-	${MIDASINCLUDE_DIR}
 	${LIBMUDAQ_DIR}
 	${INCMUDAQ_DIR}
 )
