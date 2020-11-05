@@ -718,7 +718,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
             mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) n, (uint32_t) START_ADD);
 
-            uint32_t data_arr[1] = {START_ADD};
+            uint32_t data_arr[1] = {static_cast<uint32_t>(START_ADD)};
 
             mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF1);
 

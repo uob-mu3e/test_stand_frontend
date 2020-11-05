@@ -8,7 +8,10 @@
 #include <sstream>
 #include "asic_config_base.h"
 #include "mutrig_MIDAS_config.h"
+#include "odbxx.h"
 #include "midas.h"  //for return types
+
+using midas::odb;
 
 namespace mutrig {
 
@@ -20,9 +23,10 @@ public:
     /**
      * Functions to parse MIDAS structs to MuTRiG patterns
      */
-    void Parse_GLOBAL_from_struct(MUTRIG_GLOBAL&);
-    void Parse_TDC_from_struct(MUTRIG_TDC&);
-    void Parse_CH_from_struct(MUTRIG_CH&, int channel);
+    void Parse_GLOBAL_from_struct(odb o);
+    void Parse_TDC_from_struct(odb o);
+    void Parse_CH_from_struct(odb o, int channel);
+    void setParameterODBpp(odb o, std::string paraName);
 
 private:
     static paras_t parameters_ch;                             ///< static which stores the parameters for each channel (name, nbits, endian)
