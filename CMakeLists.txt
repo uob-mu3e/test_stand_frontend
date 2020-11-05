@@ -62,7 +62,7 @@ else(CUDA_FOUND)
 endif(CUDA_FOUND)
 
 set(LIBMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/libmudaq)
-set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmupix)
+set(LIBMUPIX_DIR ${PROJECT_SOURCE_DIR}/common/libmupix)
 set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmutrig)
 set(LIBMALIBU_DIR ${PROJECT_SOURCE_DIR}/common/libMALIBU)
 set(INCMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/include)
