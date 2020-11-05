@@ -135,7 +135,8 @@ int MuFEB::WriteFEBID(){
              FEB.GetLinkName().c_str(),FEB.GetLinkID(),
              FEB.SB_Number(),FEB.SB_Port(),(val>>16)&0xffff,val&0xffff);
        cm_msg(MINFO,"MuFEB::WriteFEBID",reportStr);
-       m_mu.FEBsc_write(FEB.SB_Port(), &val, 1 , (uint32_t) 0xFFFB, m_ask_sc_reply);
+       // ist the FF needed here? NB
+       m_mu.FEBsc_write(FEB.SB_Port(), &val, 1 , (uint32_t) 0xFF00 | FPGA_ID_REGISTER_RW, m_ask_sc_reply);
 
     }
 
@@ -150,7 +151,7 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
 
    uint32_t val[2];
-   int status=m_mu.FEBsc_read(FEB.SB_Port(), val, 2, 0xfff4);
+   int status=m_mu.FEBsc_read(FEB.SB_Port(), val, 2,0xFF00 | RUN_STATE_RESET_BYPASS_REGISTER_RW);
    if(status!=2) return status;
    //printf("MuFEB::ReadBackRunState(): val[]={%8.8x,%8.8x} --> %x,%x\n",val[0],val[1],val[0]&0x1ff,(val[0]>>16)&0x3ff);
    //val[0] is reset_bypass register

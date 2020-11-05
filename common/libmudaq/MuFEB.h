@@ -13,6 +13,7 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 #include "midas.h"
 #include "mudaq_device_scifi.h"
 #include "link_constants.h"
+#include "feb_constants.h"
 //#include "asic_config_base.h"
 class MuFEB {
    protected:
