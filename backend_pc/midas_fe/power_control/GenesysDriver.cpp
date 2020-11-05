@@ -20,58 +20,27 @@ GenesysDriver::GenesysDriver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n
 }
 
 
-
 GenesysDriver::~GenesysDriver()
 {
 
 }
 
 
-
 INT GenesysDriver::ConnectODB()
 {
-  //general settings
-  settings.connect("/Equipment/"+name+"/Settings");
-  settings["IP"]("10.10.10.10");
-  settings["port"](8003);
-  settings["NChannels"](2);
-  settings["Global Reset On FE Start"](true);
-  
-  //variables
-  variables.connect("/Equipment/"+name+"/Variables");
-  
-  relevantchange=0.005; //only take action when values change more than this value
-
-  InitODBArray();
-   
-  if(false) return FE_ERR_ODB;
-  
-  return FE_SUCCESS;  
+	InitODBArray();
+	INT status = PowerDriver::ConnectODB();
+	settings["port"](8003);
+	if(false) return FE_ERR_ODB;  
+	return FE_SUCCESS;  
 }
+
 
 //didn't find a cleaner way to init the array entries, have a prior initialized 'variables', and not overwrite Set values
 void GenesysDriver::InitODBArray()
 {
-	midas::odb settings_array = { {"Names",std::array<std::string,16>()} , {"Blink",std::array<bool,16>() } };
-  settings_array.connect("/Equipment/"+name+"/Settings");
-}
-
-
-
-INT GenesysDriver::Connect()
-{
-	client = new TCPClient(settings["IP"],settings["port"]);
-	ss_sleep(100);
-	std::string ip = settings["IP"];
-	
-	if(!client->Connect())
-	{
-		cm_msg(MERROR, "Connect to genesys supply ... ", "could not connect to %s", ip.c_str()); 
-		return FE_ERR_HW;
-	}		
-	else cm_msg(MINFO,"power_fe","Init Connection to %s alive",ip.c_str());
-	
-  return FE_SUCCESS;
+	midas::odb settings_array = { {"Names",std::array<std::string,16>()} , {"Blink",std::array<bool,16>()} };
+	settings_array.connect("/Equipment/"+name+"/Settings");
 }
 
 
@@ -94,7 +63,7 @@ INT GenesysDriver::Init()
   std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
   
   //clear error an status registers
-  cmd = "GLOB:*RST\n";
+  cmd = "GLOB:*CLS\n";
   if( !client->Write(cmd) ) cm_msg(MERROR, "Init genesys supply ... ", "could perform global clear %s", ip.c_str());
   else cm_msg(MINFO,"power_fe","Global CLS of %s",ip.c_str());
   std::this_thread::sleep_for(std::chrono::milliseconds(20));
@@ -183,41 +152,11 @@ void GenesysDriver::Print()
 
 
 
-bool GenesysDriver::OPC()
-{
-	client->Write("*OPC?");
-	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
-	std::string reply;
-	bool status = client->ReadReply(&reply,3,50);
-	return status;
-}
-
-
-
 bool GenesysDriver::AskPermissionToTurnOn(int channel) //extra check whether it is safe to tunr on supply;
 {
 	return true;
 }
 
-
-
-bool GenesysDriver::SelectChannel(int ch)
-{
-	std::string cmd;
-  bool success;
-  std::string reply;
-  
-	cmd = "INST:NSEL " + std::to_string(supplyID[ch])+ "\n";
-	client->Write(cmd);
-  std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
-  success = OPC();
-  if(!success)
-  {
-		cm_msg(MERROR,"power_fe","Not able to select Supply %d ",supplyID[ch]);
-  	return false;
-  } 
-  return true;
-}
 
 
 // ************ watch functions ************* //
@@ -528,7 +467,7 @@ std::string GenesysDriver::ReadIDCode(int channel, INT& error)
 
   SelectChannel(channel);
 
-  cmd = "*IDN?\n";
+	cmd = "*IDN?\n";
 	client->Write(cmd);
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));	
 	success = client->ReadReply(&reply,3,50);

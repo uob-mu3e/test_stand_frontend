@@ -22,8 +22,8 @@ class PowerDriver{
 		PowerDriver();
 		PowerDriver(std::string, EQUIPMENT_INFO*);
 		
-		virtual INT ConnectODB(){return FE_ERR_DRIVER;};
-		virtual INT Connect(){return FE_ERR_DRIVER;};
+		virtual INT ConnectODB();
+		INT Connect();
 		virtual INT Init(){return FE_ERR_DRIVER;};
 		virtual INT ReadAll(){return FE_ERR_DRIVER;}
 		virtual std::vector<bool> GetState() { return {}; }
@@ -31,11 +31,33 @@ class PowerDriver{
 		virtual std::vector<float> GetCurrent() { return {}; }
 		virtual	void Print(){};
 		
+		bool Initialized() { return initialized; }
+		bool Enabled();
+		void SetInitialized() { initialized = true; }
+		
 	protected:
+	
+		bool SelectChannel(int);
+		bool OPC();
+		
 		EQUIPMENT_INFO* info;
 		std::string name;
 		midas::odb settings;
 		midas::odb variables;
+		
+		TCPClient* client;
+		
+		float relevantchange;
+		
+		//local copies of hardware state
+		std::vector<bool> state;
+		std::vector<float> voltage;
+		std::vector<float> demandvoltage;
+		std::vector<float> current;
+		std::vector<float> currentlimit;
+		
+	private:
+		bool initialized;
 };
 
 #endif

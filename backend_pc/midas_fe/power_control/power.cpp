@@ -19,6 +19,7 @@
 #include "midas.h"
 #include "mfe.h"
 #include "GenesysDriver.h"
+#include "HMP4040Driver.h"
 
 
 
@@ -81,22 +82,22 @@ EQUIPMENT equipment[] = {
     NULL,                       /* init string */
     },
     
-    //{"HAMEG1",                       /* equipment name */
-    //	{33, 0,                       /* event ID, trigger mask */
-    // 	"SYSTEM",                  /* event buffer */
-    // 	EQ_PERIODIC,                   /* equipment type */
-    // 	0,                         /* event source */
-    // 	"MIDAS",                   /* format */
-    // 	TRUE,                      /* enabled */
-    // 	RO_ALWAYS,        /* read when running and on transitions */
-    // 	10000,                     /* read every 10 sec */
-    // 	0,                         /* stop run after this event limit */
-     //	0,                         /* number of sub events */
-     //	1,                         /* log history every event */
-     //	"", "", ""} ,                  /* device driver list */
-     //	read_power,
-    //	NULL,                       /* init string */
-    //},
+    {"HAMEG1",                       /* equipment name */
+    	{33, 0,                       /* event ID, trigger mask */
+     	"SYSTEM",                  /* event buffer */
+     	EQ_PERIODIC,                   /* equipment type */
+     	0,                         /* event source */
+     	"MIDAS",                   /* format */
+     	TRUE,                      /* enabled */
+     	RO_ALWAYS,        /* read when running and on transitions */
+     	10000,                     /* read every 10 sec */
+     	0,                         /* stop run after this event limit */
+    	0,                         /* number of sub events */
+     	1,                         /* log history every event */
+     	"", "", ""} ,                  /* device driver list */
+     	read_power,
+    	NULL,                       /* init string */
+    },
     
     {""} //why is there actually this empty one here? FW
     
@@ -125,34 +126,57 @@ INT frontend_init()
   	std::string shortname = name.substr(0, 3);
   	
   	//identify type and instatiate driver
-  	if( std::find( genysis_names.begin(), genysis_names.end(), shortname ) != genysis_names.end() ) 	{
-  			drivers.emplace_back(std::make_unique<GenesysDriver>(equipment[eqID].name,&equipment[eqID].info));
+  	if( std::find( genysis_names.begin(), genysis_names.end(), shortname ) != genysis_names.end() )
+  	{
+		drivers.emplace_back(std::make_unique<GenesysDriver>(equipment[eqID].name,&equipment[eqID].info));
   	}
-  	else if( std::find( hameg_names.begin(), hameg_names.end(), shortname ) != hameg_names.end() )  	{ int a = 2; 	}
-  	else	{
+  	else if( std::find( hameg_names.begin(), hameg_names.end(), shortname ) != hameg_names.end() )
+  	{
+		drivers.emplace_back(std::make_unique<HMP4040Driver>(equipment[eqID].name,&equipment[eqID].info));
+	}
+  	else
+  	{
   		cm_msg(MINFO,"power_fe","Init 'Equipment' nr %d name = %s not recognizd",eqID,equipment[eqID].name);
   		continue;
   	}
   	
   	//initialize 
-		set_equipment_status(equipment[eqID].name, "Initializing...", "yellowLight");  		
+	set_equipment_status(equipment[eqID].name, "Initializing...", "yellowLight");  		
   	
-  	equipment[eqID].status = drivers.at(eqID)->ConnectODB();  	
-  	if(equipment[eqID].status == FE_ERR_ODB) 	{
-			set_equipment_status(equipment[eqID].name, "ODB Error", "redLight");
-			cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "ODB ERROR");
-		}	
+  	equipment[eqID].status = drivers.at(eqID)->ConnectODB();
+  	if(equipment[eqID].status == FE_ERR_ODB) 	
+  	{
+		set_equipment_status(equipment[eqID].name, "ODB Error", "redLight");
+		cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "ODB ERROR");
+		continue;
+	}
+	if(!drivers.at(eqID)->Enabled()) //cross check before doing something
+  	{
+		set_equipment_status(equipment[eqID].name, "Disabled", "redLight");
+		continue;
+	}
 		
-		equipment[eqID].status = drivers.at(eqID)->Connect();
-		equipment[eqID].status = drivers.at(eqID)->Init();
-		if(equipment[eqID].status != FE_SUCCESS) 	{
-			set_equipment_status(equipment[eqID].name, "ODB Error", "redLight");
-			cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "ODB ERROR");
-		}
-		
+	equipment[eqID].status = drivers.at(eqID)->Connect();
+	if(equipment[eqID].status != FE_SUCCESS) 	
+  	{
+		set_equipment_status(equipment[eqID].name, "Connection Error", "redLight");
+		cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "CONNECTION ERROR");
+		continue;
+	}
+	
+	equipment[eqID].status = drivers.at(eqID)->Init();
+	if(equipment[eqID].status != FE_SUCCESS)
+	{
+		set_equipment_status(equipment[eqID].name, "DRIVER Error", "redLight");
+		cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "DRIVER ERROR");
+		continue;
+	}
+	else
+	{
+		drivers.at(eqID)->SetInitialized();
 		drivers.at(eqID)->Print();
-		
-	  set_equipment_status(equipment[eqID].name, "Ok", "greenLight");
+		set_equipment_status(equipment[eqID].name, "Ok", "greenLight");
+	}
 		
   }
   
@@ -187,20 +211,23 @@ INT read_power(char *pevent, INT off)
   bk_init32(pevent);
   float *pdata;
   
+  bk_create(pevent, "LV", TID_FLOAT, (void **)&pdata);
+  
   for(const auto& d: drivers)
   {
- 		if(d->ReadAll() == FE_SUCCESS)
- 		{
- 			std::vector<float> voltage = d->GetVoltage();
-			std::vector<float> current = d->GetCurrent();
-			bk_create(pevent, "LV_GEN", TID_FLOAT, (void **)&pdata);
-			for(auto const &v : voltage)	*pdata++ = v;
-			for(auto const &v : current)	*pdata++ = v; 
- 		}
- 		else {
-    cm_msg(MERROR, "power read", "Error in read: %d",error);
-  	return 0;
-  	} 	
+	if( !d->Initialized() ) continue;
+	if(d->ReadAll() == FE_SUCCESS)
+ 	{
+		std::vector<float> voltage = d->GetVoltage();
+		std::vector<float> current = d->GetCurrent();
+		for(auto const &v : voltage)	*pdata++ = v;
+		for(auto const &v : current)	*pdata++ = v; 
+ 	}
+ 	else 
+ 	{
+		cm_msg(MERROR, "power read", "Error in read: %d",error);
+		return 0;
+  	}
   }
 	
   bk_close(pevent, pdata);

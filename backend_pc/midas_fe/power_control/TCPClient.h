@@ -18,6 +18,7 @@ class TCPClient{
 		bool ReadReply(std::string *str,int = 3,int = 100);
 		bool FlushQueu();
 		int GetWaitTime() { return default_wait; }
+		void SetDefaultWaitTime(int value){ default_wait = value; }
 		
 	private:
 	  boost::asio::io_service io_service;

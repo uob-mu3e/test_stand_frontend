@@ -26,7 +26,6 @@ class GenesysDriver : public PowerDriver
 		~GenesysDriver();
 		
 		INT ConnectODB();
-		INT Connect();
 		INT Init();
 		void Print();
 		bool ReadState(int,INT&);
@@ -46,14 +45,12 @@ class GenesysDriver : public PowerDriver
 	private:
 	
 		//utility/communications functions
-		bool OPC();
 		bool SetActiveChannel(int);
 		void SetState(int,bool,INT&);
 		void SetVoltage(int,float,INT&);
 		void SetCurrentLimit(int,float,INT&);
 		void SetBlink(int,bool,INT&);
 		bool AskPermissionToTurnOn(int);
-		bool SelectChannel(int);
 		void SetStateChanged();
 		void DemandVoltageChanged();
 		void CurrentLimitChanged();
@@ -63,19 +60,11 @@ class GenesysDriver : public PowerDriver
 		bool Set(std::string,INT&);
 	
 
-		TCPClient* client;
+
 		
 		//local copy of hardware settings
 		std::vector<int> supplyID;
-		std::vector<bool> state;
-		std::vector<float> voltage;
-		std::vector<float> demandvoltage;
-		std::vector<float> current;
-		std::vector<float> currentlimit;
 		std::vector<std::string> idCode;
-		
-		float relevantchange;
-		
 		
 
 };

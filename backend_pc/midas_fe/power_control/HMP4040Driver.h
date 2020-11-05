@@ -15,9 +15,19 @@ class HMP4040Driver : public PowerDriver {
 	public:
 	
 		HMP4040Driver();
+		HMP4040Driver(std::string n, EQUIPMENT_INFO* inf);
 		~HMP4040Driver();
+		
+		INT ConnectODB();
+		INT Init();
+		std::string ReadIDCode(INT&);
 	
 	private:
+	
+		void InitODBArray();
+		int nChannels;
+		std::string idCode;
+		std::string ip;
 	
 };
 
