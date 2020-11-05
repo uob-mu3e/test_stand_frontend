@@ -55,7 +55,7 @@ signal		diagnostic_out					: reg32;
 begin
 
 
-dut: work.hitsorter_wide 
+dut:hitsorter_wide 
 	port map(
 		reset_n							=> reset_n,
 		writeclk						=> writeclk,
