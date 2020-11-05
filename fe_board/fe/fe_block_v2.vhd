@@ -697,6 +697,7 @@ begin
         -- clk & reset
         i_clk_50        => i_nios_clk,
         i_clk_100       => i_nios_clk,--clk_100,
+        i_clk_156       => i_clk_156, -- sc regs are running on 156 --> sync outputs
         i_reset_n       => i_areset_n,
         i_command	    => SPI_command,--[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
 --        ------ Aria Data --register interface 

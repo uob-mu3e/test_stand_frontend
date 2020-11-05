@@ -15,6 +15,7 @@ port(
     -- clk & reset
     i_clk_50    : in  std_logic;
     i_clk_100   : in  std_logic;
+    i_clk_156   : in  std_logic;
     i_reset_n   : in  std_logic;
     i_command	: in  std_logic_vector(15 downto 0); --[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
     ------ Arria Data --register interface 
@@ -37,6 +38,11 @@ port(
 end entity;
 
 architecture rtl of max10_spi_main is
+
+    signal Ar_rw        : std_logic;
+    signal Ar_data      : std_logic_vector(31 downto 0);
+    signal Ar_addr_o    : std_logic_vector(6 downto 0);
+    signal Ar_done      : std_logic;
 
     type State_type is (Idle, Adrr , W_Data , Deley , R_Data );
     type s_regs is Array (0 to (lanes-1)) of std_logic_vector(((32/lanes)-1) downto 0);
@@ -86,7 +92,7 @@ architecture rtl of max10_spi_main is
 	--signal io_SPI_D3   : std_logic;
 
 begin
-	o_Ar_done <= o_Ar_done_s;
+	Ar_done <= o_Ar_done_s;
     
 	-- 2/4 lane Imput
 	io_SPI_D(0) <= io_SPI_mosi;
@@ -134,7 +140,7 @@ begin
     
     elsif(rising_edge(i_clk_50)) then
     
-    o_Ar_addr_o <= std_logic_vector(addr_offset);
+    Ar_addr_o <= std_logic_vector(addr_offset);
     
         if ( aktiv = '0' and State /= Idle ) then
             State <= Idle;
@@ -143,7 +149,7 @@ begin
                 
                 When Idle =>
                     o_Ar_done_s   <= '0';
-                    o_Ar_rw     <= R ; 
+                    Ar_rw     <= R ; 
                     o_SPI_cs    <= not SS;
                     addr_offset <= "0000000" ;
                     
@@ -177,7 +183,7 @@ begin
                     end if;	
                     
                 When W_Data =>
-                    o_Ar_rw     <= R ;
+                    Ar_rw     <= R ;
                     cnt_16 <= cnt_16 +1;
                     for i in  0 to (lanes -1) loop
                         for j in  1 to (32/lanes)-1 loop
@@ -212,7 +218,7 @@ begin
                     end if;
                     
                 When R_Data =>
-                    o_Ar_rw     <= R ;
+                    Ar_rw     <= R ;
                     cnt_16 <= cnt_16 +1;
                     --s_r_reg_16(0)(0) <= i_SPI_miso;
     -- 				for i in 0 to lanes-1 loop
@@ -227,10 +233,10 @@ begin
                     
                     
                     if cnt_16 = (32/lanes) then
-                        o_Ar_rw     <= not R ;
+                        Ar_rw     <= not R ;
                         cnt_words <= cnt_words -1;
                         for i in  0 to (lanes -1) loop
-                            o_Ar_data((31-32/lanes*i) downto (32-32/lanes*(i+1))) <= s_r_reg_16(i);
+                            Ar_data((31-32/lanes*i) downto (32-32/lanes*(i+1))) <= s_r_reg_16(i);
                         end loop;
 
                         addr_offset <= addr_offset + 1 ;
@@ -248,9 +254,33 @@ begin
                     
             end CASE;
         end if;
-	end if;
+    end if;
 end process;
 
+    sync_fifo : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 2,
+        DATA_WIDTH  => 41,
+        SHOWAHEAD   => "OFF",
+        OVERFLOW    => "ON",
+        DEVICE      => "Arria V"--,
+    )
+    port map(
+        aclr    => '0',
+        data    => Ar_rw &
+                    Ar_data &
+                    Ar_addr_o &
+                    Ar_done,
+                    
+        rdclk   => i_clk_156,
+        rdreq   => '1',
+        wrclk   => i_clk_50,
+        wrreq   => '1',
+        q(40)           => o_Ar_rw,
+        q(39 downto 8)  => o_Ar_data,
+        q( 7 downto 1)  => o_Ar_addr_o,
+        q(0)            => o_Ar_done--,
+    );
 
 ---- SPI TEST ----
 
