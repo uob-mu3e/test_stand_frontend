@@ -67,6 +67,12 @@ set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmutrig)
 set(LIBMALIBU_DIR ${PROJECT_SOURCE_DIR}/common/libMALIBU)
 set(INCMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/include)
 
+# hack to compile rootana after source set_env.sh
+set(ENV{MIDAS_DIR} "")
+set(ENV{MIDAS_EXPTAB} "")
+set(ENV{MIDASSYS} "")
+set(ENV{MIDAS_EXP_NAME} "")
+
 # on some older boxes, wpedantic and MIDAS do not mix
 add_subdirectory(modules)
 add_subdirectory(backend_pc)
