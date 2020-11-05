@@ -32,9 +32,17 @@ macro(package_add_test TESTNAME)
     set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
 endmacro()
 
+macro(add_vhdl_test TESTNAME)
+    configure_file(${PROJECT_SOURCE_DIR}/common/tests/vhdl_tests/${TESTNAME}/run_${TESTNAME}.sh vhdl_tests/${TESTNAME}/run_${TESTNAME}.sh @ONLY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/vhdl_tests/${TESTNAME}/run_${TESTNAME}.sh DESTINATION bin
+        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+endmacro()
+
 package_add_test(config_mutrig_test config_mutrig.cpp)
 package_add_test(config_mupix_test config_mupix.cpp)
 package_add_test(test_odb test_odb.cpp)
 package_add_test(test_mudaq_device test_mudaq_device.cpp)
+
+add_vhdl_test(example_test)
 
 install(TARGETS config_mutrig_test config_mupix_test test_odb test_mudaq_device DESTINATION bin)
