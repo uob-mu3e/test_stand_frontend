@@ -45,7 +45,7 @@ begin
         while test_suite loop
             reset_checker_stat;
             if run("test_counter_zero_at_start") then
-                wait until valid = '1' for 10 ns;
+                wait until valid = '1' for 100 ns;
                 check_equal(valid, '0');
             elsif run("test_counter_values") then
                 wait until rising_edge(clk);
