@@ -6,12 +6,13 @@
 
 using boost::asio::ip::tcp;
 
-TCPClient::TCPClient(std::string IP,int P)
+TCPClient::TCPClient(std::string IP,int P, int to)
 {
 	socket = new ip::tcp::socket(io_service);
 	ip = IP;
 	port = P;
-	default_wait = 6;
+	default_wait = 7;
+	read_time_out = to;
 	read_stop = "\n";
 }
 
@@ -21,10 +22,11 @@ bool TCPClient::Connect()
 	socket->connect( tcp::endpoint( boost::asio::ip::address::from_string(ip), port ) , ec);
 	if (ec)
 	{
-	  std::cout << " socket->connect failed with " << ec << std::endl;
+	  std::cout << " socket->connect failed with err:" << ec << std::endl;
 	  return false;
 	}
 	socket->non_blocking(true);
+	FlushQueu();
 	return true;
 }
 
@@ -69,7 +71,7 @@ bool TCPClient::FlushQueu()
 	
 }
 
-bool TCPClient::ReadReply(std::string *str,int min_size,int timeout) 
+bool TCPClient::ReadReply(std::string *str,int min_size) 
 { 
 	std::size_t data_size;
 	auto start = std::chrono::system_clock::now();
@@ -77,7 +79,7 @@ bool TCPClient::ReadReply(std::string *str,int min_size,int timeout)
 	boost::system::error_code error;
 	
 	// wait for at least 3 characters (minimum reply for  is "*\n")
-	while( time_elapsed < timeout && data_size < min_size) 
+	while( time_elapsed < read_time_out && data_size < min_size) 
 	{	
 		data_size = socket->available(error);
 		if(error) std::cout << " size request failed " << std::endl;
@@ -87,24 +89,25 @@ bool TCPClient::ReadReply(std::string *str,int min_size,int timeout)
 	}	
 	
 	//std::cout << " data of size " << data_size << " waiting after " << time_elapsed << " ms " << std::endl;
-	
 	//waiting for valid data failed
-	if(data_size < min_size  || time_elapsed > timeout)
+	if(data_size < min_size  || time_elapsed > read_time_out)
 	{
+		*str="";
 		return false;
-	*str="";
 	}
 	
-	//read
+  //read
   streambuf buf; 
   read_until(*socket, buf, read_stop); 
-  std::string data = buffer_cast<const char*>(buf.data()); 
+  std::string data = buffer_cast<const char*>(buf.data());
+  //std::cout << "data : " << data << std::endl; 
   //std::size_t found = data.find('\r');
 	//if (found!=std::string::npos)  std::cout << "first 'needle' found at: " << found << '\n';
   //remove newline
   data.erase(std::remove(data.begin(), data.end(), '\n'), data.end());
   data.erase(std::remove(data.begin(), data.end(), '\r'), data.end()); //don`t get why there is a /r in the reply string FW
   *str=data;
+  //std::cout << " --- data read : " << *str << std::endl;
   return true;
  
 } 

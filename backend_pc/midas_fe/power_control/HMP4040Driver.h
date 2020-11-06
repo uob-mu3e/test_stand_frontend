@@ -20,7 +20,6 @@ class HMP4040Driver : public PowerDriver {
 		
 		INT ConnectODB();
 		INT Init();
-		std::string ReadIDCode(INT&);
 	
 	private:
 	
@@ -28,6 +27,7 @@ class HMP4040Driver : public PowerDriver {
 		int nChannels;
 		std::string idCode;
 		std::string ip;
+		std::vector<int> channelID;
 	
 };
 

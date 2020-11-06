@@ -27,13 +27,6 @@ class GenesysDriver : public PowerDriver
 		
 		INT ConnectODB();
 		INT Init();
-		void Print();
-		bool ReadState(int,INT&);
-		float ReadVoltage(int,INT&);
-		float ReadSetVoltage(int,INT&);
-		float ReadCurrent(int,INT&);
-		float ReadCurrentLimit(int,INT&);
-		std::string ReadIDCode(int,INT&);
 		INT ReadAll();
 		
 		std::vector<bool> GetState() { return state; }
@@ -56,10 +49,9 @@ class GenesysDriver : public PowerDriver
 		void CurrentLimitChanged();
 		void BlinkChanged();
 		void InitODBArray();
-		float Read(std::string,INT&);
-		bool Set(std::string,INT&);
-	
 
+	
+		int reply_time_out;
 
 		
 		//local copy of hardware settings

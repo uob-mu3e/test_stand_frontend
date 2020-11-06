@@ -17,6 +17,8 @@
 GenesysDriver::GenesysDriver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf)
 {
 	std::cout << " GenesysDriver instantiated " << std::endl;
+	
+	//device specific constants
 }
 
 
@@ -31,6 +33,8 @@ INT GenesysDriver::ConnectODB()
 	InitODBArray();
 	INT status = PowerDriver::ConnectODB();
 	settings["port"](8003);
+	settings["reply timout"](50);
+	settings["min reply"](3); //minimum reply , a char + "\n"
 	if(false) return FE_ERR_ODB;  
 	return FE_SUCCESS;  
 }
@@ -88,35 +92,35 @@ INT GenesysDriver::Init()
   if(nChannels != settings["NChannels"]) cm_msg(MINFO,"power_fe"," Different as the set ODB value of %d, updating",int(settings["NChannels"]));
   settings["NChannels"] = supplyID.size();
 
-  // ***** channel by channel settings ***** //
+	// ***** channel by channel settings ***** //
   
-  settings["Address"] = supplyID;
-  state.resize(nChannels);
-  voltage.resize(nChannels);
-  demandvoltage.resize(nChannels);
-  current.resize(nChannels);
-  currentlimit.resize(nChannels);
-  idCode.resize(nChannels);
+	settings["Address"] = supplyID;
+	state.resize(nChannels);
+	voltage.resize(nChannels);
+	demandvoltage.resize(nChannels);
+	current.resize(nChannels);
+	currentlimit.resize(nChannels);
+	idCode.resize(nChannels);
   
-  for(int i = 0; i<nChannels; i++ ) 
-  {
-  	idCode[i]=ReadIDCode(i,err);	
+	for(int i = 0; i<nChannels; i++ ) 
+	{
+		idCode[i]=ReadIDCode(supplyID[i],err);	
   	
-    state[i]=ReadState(i,err);
+		state[i]=ReadState(supplyID[i],err);
  	
-  	voltage[i]=ReadVoltage(i,err);
-  	demandvoltage[i]=ReadSetVoltage(i,err);
+		voltage[i]=ReadVoltage(supplyID[i],err);
+		demandvoltage[i]=ReadSetVoltage(supplyID[i],err);
 
-  	current[i]=ReadCurrent(i,err);
-  	currentlimit[i]=ReadCurrentLimit(i,err);
+		current[i]=ReadCurrent(supplyID[i],err);
+		currentlimit[i]=ReadCurrentLimit(supplyID[i],err);
   	
-	 	if(err!=FE_SUCCESS) return err;  	
-  }
+		if(err!=FE_SUCCESS) return err;  	
+	}
   
-  settings["Identification Code"]=idCode;
+	settings["Identification Code"]=idCode;
   
-  variables["State"]=state; //push to odb
-  variables["Set State"]=state; //the init function can not change the on/off state of the supply
+	variables["State"]=state; //push to odb
+	variables["Set State"]=state; //the init function can not change the on/off state of the supply
   
  	variables["Voltage"]=voltage;
  	variables["Demand Voltage"]=demandvoltage;
@@ -143,12 +147,6 @@ INT GenesysDriver::Init()
 }
 
 
-
-void GenesysDriver::Print()
-{
-	std::cout << "ODB settings: " << std::endl << settings.print() << std::endl;
-	std::cout << "ODB variables: " << std::endl << variables.print() << std::endl;
-}
 
 
 
@@ -258,41 +256,7 @@ void GenesysDriver::BlinkChanged()
 
 // **************  Set Functions ************** //
 
-bool GenesysDriver::Set(std::string cmd, INT& error)
-{
-	bool success;
-	client->Write(cmd);
-	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
-  success = OPC();
-  if(!success) { error=FE_ERR_DRIVER; cm_msg(MERROR, "Genesys supply ... ", "command %s not succesful", cmd.c_str() ); }
-  return success;
-}
 
-void GenesysDriver::SetVoltage(int channel, float value,INT& error)
-{
-  error = FE_SUCCESS;
-  if(value<-0.1 || value > 25.) //check valid range 
-  {
-  	cm_msg(MERROR, "Genesys supply ... ", "voltage of %f not allowed",value );
-  	variables["Demand Voltage"][channel]=demandvoltage[channel]; //disable request
-  	error=FE_ERR_DRIVER;
-  	return;  	
-  }
-  
-  if( SelectChannel(channel) )
-  {
-	  bool success = Set("VOLT "+std::to_string(value)+"\n",error);
-  	if(!success) error=FE_ERR_DRIVER;
-  	else // read changes
-  	{
-	  	voltage[channel]=ReadVoltage(channel,error);
-	  	variables["Voltage"][channel]=voltage[channel];
-	  	current[channel]=ReadCurrent(channel,error);
-	  	variables["Current"][channel]=current[channel];
-  	}		
-  }
-  else error=FE_ERR_DRIVER;
-}
 
 void GenesysDriver::SetCurrentLimit(int channel, float value,INT& error)
 {
@@ -305,7 +269,7 @@ void GenesysDriver::SetCurrentLimit(int channel, float value,INT& error)
   	return;  	
   }
   
-  if( SelectChannel(channel) )
+  if( SelectChannel(supplyID[channel]) )
   {
 	  bool success = Set("CURR "+std::to_string(value)+"\n",error);
   	if(!success) error=FE_ERR_DRIVER;
@@ -317,6 +281,7 @@ void GenesysDriver::SetCurrentLimit(int channel, float value,INT& error)
   }
   else error=FE_ERR_DRIVER;
 }
+
 
 void GenesysDriver::SetState(int channel, bool value,INT& error)
 {
@@ -335,7 +300,7 @@ void GenesysDriver::SetState(int channel, bool value,INT& error)
   	}
   }
   
-  if( SelectChannel(channel) )
+  if( SelectChannel(supplyID[channel]) )
   {
 		if(value==true) { cmd="OUTP:STAT 1\n"; }
 		else { cmd = "OUTP:STAT 0\n"; }
@@ -353,7 +318,7 @@ void GenesysDriver::SetBlink(int channel, bool value,INT& error)
 	bool success;
   error = FE_SUCCESS;
   
-  if( SelectChannel(channel) )
+  if( SelectChannel(supplyID[channel]) )
   {
  		if(value==true) { cmd="DISP:WIND:FLAS 1\n"; }
 		else { cmd = "DISP:WIND:FLAS 0\n"; }
@@ -368,118 +333,7 @@ void GenesysDriver::SetBlink(int channel, bool value,INT& error)
 
 // **************  Read Functions ************** //
 
-float GenesysDriver::Read(std::string cmd, INT& error)
-{
-  error = FE_SUCCESS;
-  bool success;
-  std::string reply;
-	client->Write(cmd);
-	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
-  success = client->ReadReply(&reply,3,50);
-  if(!success)
-  {
-		cm_msg(MERROR, "Genesys supply read ... ", "could not read after command %s", cmd.c_str());
-		error = FE_ERR_DRIVER;		
-	}
-	float value = std::stof(reply);
-	return value;
-}
 
-
-float GenesysDriver::ReadSetVoltage(int channel,INT& error)
-{
-  error = FE_SUCCESS;
-	float value = 0.0;
-  if(SelectChannel(channel))  {	  value = Read("VOLT?\n",error);	}
-	else error = FE_ERR_DRIVER;
-  return value; 
-}
-
-
-float GenesysDriver::ReadVoltage(int channel,INT& error)
-{
-  error = FE_SUCCESS;
-	float value = 0.0;
-  if(SelectChannel(channel))  {	  value = Read("MEAS:VOLT?\n",error);	}
-	else error = FE_ERR_DRIVER;
-  return value; 
-}
-
-
-float GenesysDriver::ReadCurrent(int channel,INT& error)
-{
-  error = FE_SUCCESS;
-	float value = 0.0;
-  if(SelectChannel(channel))  {	  value = Read("MEAS:CURR?\n",error);	}
-	else error = FE_ERR_DRIVER;
-  return value; 
-}
-
-
-float GenesysDriver::ReadCurrentLimit(int channel,INT& error)
-{
-  error = FE_SUCCESS;
-	float value = 0.0;
-  if(SelectChannel(channel))  {	  value = Read("CURR?\n",error);	}
-	else error = FE_ERR_DRIVER;
-  return value; 
-}
-
-
-
-bool GenesysDriver::ReadState(int channel,INT& error)
-{
-  std::string cmd;
-  bool success;
-  std::string reply;
-  error=FE_SUCCESS;
-  bool value;
-  
-  SelectChannel(channel);
-  
-  cmd = "OUTP:STAT?\n";
-	client->Write(cmd);
-	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
-  success = client->ReadReply(&reply,3,50);
-  if(!success)
-  {
-		cm_msg(MERROR, "Genesys supply read ... ", "could not read state supply with address %d", int(supplyID[channel]));
-		error = FE_ERR_DRIVER;
-	}
-
-  if(reply=="0") value=false;
-  else if(reply=="1") value=true;
-  else
-  { 
-  	cm_msg(MERROR, "Genesys supply read ... ", "could not read state of supply with address %d", int(supplyID[channel]));
-	  std::cout << "reply on state request = "<< reply << "." <<std::endl; 
-		error = FE_ERR_DRIVER;
-	}
-  return value; 
-}
-
-std::string GenesysDriver::ReadIDCode(int channel, INT& error)
-{
-  std::string cmd;
-  bool success;
-  std::string reply="";
-  error=FE_SUCCESS;
-
-  SelectChannel(channel);
-
-	cmd = "*IDN?\n";
-	client->Write(cmd);
-	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));	
-	success = client->ReadReply(&reply,3,50);
-  if(!success)
-  {
-		cm_msg(MERROR, "Genesys supply read ... ", "could not read id supply with address %d", int(supplyID[channel]));
-		error = FE_ERR_DRIVER;
-	}
-	
-	return reply;
-	
-}
 
 INT GenesysDriver::ReadAll()
 {
@@ -514,3 +368,29 @@ INT GenesysDriver::ReadAll()
 	return FE_SUCCESS;
 }
 
+
+void GenesysDriver::SetVoltage(int channel, float value,INT& error)
+{
+  error = FE_SUCCESS;
+  if(value<-0.1 || value > 25.) //check valid range 
+  {
+  	cm_msg(MERROR, "Genesys supply ... ", "voltage of %f not allowed",value );
+  	variables["Demand Voltage"][channel]=demandvoltage[channel]; //disable request
+  	error=FE_ERR_DRIVER;
+  	return;  	
+  }
+  
+  if( SelectChannel(supplyID[channel]) ) //use Gensysis module address in the daisy chain to select channel
+  {
+	  bool success = Set("VOLT "+std::to_string(value)+"\n",error);
+  	if(!success) error=FE_ERR_DRIVER;
+  	else // read changes
+  	{
+	  	voltage[channel]=ReadVoltage(channel,error);
+	  	variables["Voltage"][channel]=voltage[channel];
+	  	current[channel]=ReadCurrent(channel,error);
+	  	variables["Current"][channel]=current[channel];
+  	}		
+  }
+  else error=FE_ERR_DRIVER;
+}

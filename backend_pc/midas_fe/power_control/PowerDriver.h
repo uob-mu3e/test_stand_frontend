@@ -29,16 +29,25 @@ class PowerDriver{
 		virtual std::vector<bool> GetState() { return {}; }
 		virtual std::vector<float> GetVoltage() { return {}; }
 		virtual std::vector<float> GetCurrent() { return {}; }
-		virtual	void Print(){};
+		void Print();
 		
 		bool Initialized() { return initialized; }
 		bool Enabled();
 		void SetInitialized() { initialized = true; }
+		std::string ReadIDCode(int,INT&);
+		
+		bool ReadState(int,INT&);
+		float ReadVoltage(int,INT&);
+		float ReadCurrent(int,INT&);
 		
 	protected:
 	
 		bool SelectChannel(int);
 		bool OPC();
+		float Read(std::string,INT&);
+		float ReadSetVoltage(int,INT&);
+		float ReadCurrentLimit(int,INT&);
+		bool Set(std::string,INT&);
 		
 		EQUIPMENT_INFO* info;
 		std::string name;
@@ -56,8 +65,11 @@ class PowerDriver{
 		std::vector<float> current;
 		std::vector<float> currentlimit;
 		
+		
+		
 	private:
 		bool initialized;
+		int min_reply_length;
 };
 
 #endif

@@ -13,6 +13,8 @@ HMP4040Driver::~HMP4040Driver()
 HMP4040Driver::HMP4040Driver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf)
 {
 	std::cout << " HMP4040 HAMEG driver instantiated " << std::endl;
+	
+	//device specific constants
 	nChannels=4;
 }
 
@@ -22,6 +24,8 @@ INT HMP4040Driver::ConnectODB()
 	InitODBArray();
 	INT status = PowerDriver::ConnectODB();
 	settings["port"](5025);
+	settings["reply timout"](300);
+	settings["min reply"](2); //minimum reply , 2 chars , not 3 (not fully figured out why)
 	if(false) return FE_ERR_ODB;
 }
 
@@ -62,60 +66,101 @@ INT HMP4040Driver::Init()
 	//HAMEG has fixed 4 channels
 	settings["NChannels"] = nChannels;
 	
-	state.resize(nChannels);
 	voltage.resize(nChannels);
 	demandvoltage.resize(nChannels);
 	current.resize(nChannels);
 	currentlimit.resize(nChannels);
+	state.resize(nChannels);
+	channelID = {1,2,3,4}; // The HMP4040 supply has 4 channel numbered 1,2,3, and 4.
 	
-	idCode=ReadIDCode(err);	
+	idCode=ReadIDCode(-1,err); 	//channel selection not relevant for HAMEG supply to read ID
+								// "-1" is a trick not to select a channel before the query
+								
+	std::cout << "ID code: " << idCode << std::endl;
+								
+	//client->FlushQueu();
+		
 	//read channels
-	/*for(int i = 0; i<nChannels; i++ ) 
-	{
+	for(int i = 0; i<nChannels; i++ ) 
+	{ 	
+		state[i]=ReadState(channelID[i],err);
+		
+		voltage[i]=ReadVoltage(channelID[i],err);
+		demandvoltage[i]=ReadSetVoltage(channelID[i],err);
 
-  	
-		state[i]=ReadState(i,err);
- 	
-		voltage[i]=ReadVoltage(i,err);
-		demandvoltage[i]=ReadSetVoltage(i,err);
-
-		current[i]=ReadCurrent(i,err);
-		currentlimit[i]=ReadCurrentLimit(i,err);
+		current[i]=ReadCurrent(channelID[i],err);
+		currentlimit[i]=ReadCurrentLimit(channelID[i],err);
   	
 	 	if(err!=FE_SUCCESS) return err;  	
-	}*/
+	}
 	
+	settings["Identification Code"]=idCode;
+	
+	variables["State"]=state; //push to odb
+	variables["Set State"]=state; //the init function can not change the on/off state of the supply
+  
+ 	variables["Voltage"]=voltage;
+ 	variables["Demand Voltage"]=demandvoltage;
+ 	
+ 	variables["Current"]=current;
+ 	variables["Current Limit"]=currentlimit;
+ 	
 	return FE_SUCCESS;
 }
 
 
-std::string HMP4040Driver::ReadIDCode(INT& error)
-{
-	std::string cmd;
-	bool success;
-	std::string reply="";
-	error=FE_SUCCESS;
+//************************************************************************************
+//** the STATE and SELECT OUTPUT on of is a bit confusion: from the manual
 
-	cmd = "*IDN?\n";
-	client->Write(cmd);
-	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));	
-	success = client->ReadReply(&reply,3,50);
-	if(!success)
-	{
-		cm_msg(MERROR, "Genesys supply read ... ", "could not read id supply with ip %s", ip);
-		error = FE_ERR_DRIVER;
-	}
-	
-	return reply;	
-}
+/*
+ 
+OUTPut:SELect {OFF | ON | 0 | 1}
+Activates or deactivates the previous selected channel. If the channel is activated the channel
+LED lights up green in CV (constant voltage) mode or red in CC (constant current) mode.
+Parameters:		
+ON | 1 Channel will be activated
+			 OFF | 0 Channel will be deactivated
+			 *RST: OFF | 0
+OUTPut[:STATe] {OFF | ON | 0 | 1}
+Activates or deactivates the previous selected channel and turning on the output. The selected
+channel LED lights up green. If the output will be turned of with OUTP OFF only the previous
+selected channel will be deactivated. After sending OUTP OFF command the output button is
+still activated.
+Parameters:		
+ON | 1 Channel and output will be activated
+			 OFF | 0 Channel will be deactivated
+			 *RST: OFF | 0
+Example:
+INST OUT1
+OUTP ON (= channel 1 and output will be activated; channel and output LED will light up)
+OUTPut[:STATe]?
+Queries the output state.
+Return values:		
+1
+			 0
+ON - output is activated
+OFF - output is deactivated
+26SCPI Commands HMP series
+Remote Control
+Command Reference
+OUTPut:GENeral {OFF | ON | 0 | 1}
+Turning on / off all previous selcted channels simultaneously.
+Parameters:		
+ON | 1 Channels and output will be activated
+			 OFF | 0 Channels will be deactivated
+Example:
+INST OUT1
+Volt 12
+Curr 0.1
+OUTP:SEL ON		 CH1 LED lights up green
+INST OUT2
+Volt 12
+Curr 0.2
+OUTP:SEL ON		 CH2 LED lights up green
+OUTP:GEN ON		 Channels will be activated simultaneously
+
+*/
 
 
-bool HMP4040Driver::OPC()
-{
-	client->Write("*OPC?");
-	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
-	std::string reply;
-	bool status = client->ReadReply(&reply,3,50);
-	return status;
-}
+
 

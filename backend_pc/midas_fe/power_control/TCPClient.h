@@ -11,11 +11,11 @@ class TCPClient{
 
 	public:
 	
-		TCPClient(std::string IP,int port);
+		TCPClient(std::string IP,int port,int=2000);
 		~TCPClient();
 		bool Connect();
 		bool Write(std::string str);
-		bool ReadReply(std::string *str,int = 3,int = 100);
+		bool ReadReply(std::string *str,int = 3);
 		bool FlushQueu();
 		int GetWaitTime() { return default_wait; }
 		void SetDefaultWaitTime(int value){ default_wait = value; }
@@ -27,6 +27,8 @@ class TCPClient{
     int port;
     int default_wait;
     std::string read_stop;
+    
+    int read_time_out;
 };
 
 #endif
