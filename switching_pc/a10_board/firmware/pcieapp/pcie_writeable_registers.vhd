@@ -234,7 +234,7 @@ begin
         rdempty     => writeregs_B_fifo_rempty,
         rdclk       => i_clk_B,
 
-        aclr        => local_rstn--,
+        aclr        => not local_rstn--,
     );
 
     -- writeregs_B_reset_n is several clock cycles longer than local_rstn,
@@ -285,7 +285,7 @@ begin
         rdempty     => writeregs_C_fifo_rempty,
         rdclk       => i_clk_C,
 
-        aclr        => local_rstn--,
+        aclr        => not local_rstn--,
     );
 
     -- writeregs_C_reset_n is several clock cycles longer than local_rstn,
