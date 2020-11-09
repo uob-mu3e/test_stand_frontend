@@ -32,6 +32,7 @@ macro(package_add_test TESTNAME)
     )
     target_include_directories(${TESTNAME} PRIVATE ${LIBMUDAQ_DIR} ${INCMUDAQ_DIR} ${INCMUTRIG_DIR})
     set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
+    add_dependencies(build_and_test ${TESTNAME})
 endmacro()
 
 macro(add_vhdl_test TESTNAME)

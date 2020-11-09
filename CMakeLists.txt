@@ -131,9 +131,9 @@ endif(CUDA_FOUND)
 if(CMAKE_PROJECT_NAME STREQUAL mu3e_online)
     enable_testing()
     include(GoogleTest)
-    add_subdirectory(common/tests)
+    add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} -V)
+    add_subdirectory(common/tests EXCLUDE_FROM_ALL)
 endif()
-
 
 configure_file(set_env.sh.in set_env.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/set_env.sh DESTINATION ./)
