@@ -78,6 +78,8 @@ architecture RTL of pcie_writeable_registers is
 	signal be3	 : std_logic;
 	signal be4	 : std_logic;
 
+    signal be3_prev : std_logic;
+    signal be4_prev : std_logic;
 	
 	
 	signal addr3: 	 std_logic_vector(5 downto 0);
@@ -91,13 +93,13 @@ architecture RTL of pcie_writeable_registers is
 	constant zero32	:  std_logic_vector(31 downto 0) := "00000000000000000000000000000000";
 
     signal writeregs_B : reg32array;
-	 signal regwritten_B : std_logic_vector(63 downto 0);
+    signal regwritten_B : std_logic_vector(63 downto 0);
     signal writeregs_B_reset_n : std_logic;
     signal writeregs_B_fifo_wdata, writeregs_B_fifo_rdata : std_logic_vector(37 downto 0);
     signal writeregs_B_fifo_rempty : std_logic;
-	 
-	 signal writeregs_C : reg32array;
-	 signal regwritten_C : std_logic_vector(63 downto 0);
+
+    signal writeregs_C : reg32array;
+    signal regwritten_C : std_logic_vector(63 downto 0);
     signal writeregs_C_reset_n : std_logic;
     signal writeregs_C_fifo_wdata, writeregs_C_fifo_rdata : std_logic_vector(37 downto 0);
     signal writeregs_C_fifo_rempty : std_logic;
@@ -210,10 +212,19 @@ begin
 
 
     o_writeregs_B <= writeregs_B;
-	 o_regwritten_B <= regwritten_B;
+    o_regwritten_B <= regwritten_B;
+
+    process(refclk)
+    begin
+        if(rising_edge(refclk)) then
+            be3_prev    <= be3;
+            be4_prev    <= be4;
+        end if;
+    end process;
+
     writeregs_B_fifo_wdata <=
-        ( addr3 & word3 ) when ( be3 = '1' ) else
-        ( addr4 & word4 ) when ( be4 = '1' ) else
+        ( addr3 & word3 ) when ( be3_prev = '1' ) else
+        ( addr4 & word4 ) when ( be4_prev = '1' ) else
         (others => '0');
 
     -- sync writeregs writes to i_clk_B clock domain
@@ -225,7 +236,7 @@ begin
     )
     port map (
         data        => writeregs_B_fifo_wdata,
-        wrreq       => be3 or be4,
+        wrreq       => be3_prev or be4_prev,
         wrfull      => open,
         wrclk       => refclk,
 
@@ -262,9 +273,10 @@ begin
 	 
 	 o_writeregs_C <= writeregs_C;
 	 o_regwritten_C <= regwritten_C;
+
     writeregs_C_fifo_wdata <=
-        ( addr3 & word3 ) when ( be3 = '1' ) else
-        ( addr4 & word4 ) when ( be4 = '1' ) else
+        ( addr3 & word3 ) when ( be3_prev = '1' ) else
+        ( addr4 & word4 ) when ( be4_prev = '1' ) else
         (others => '0');
 
     -- sync writeregs writes to i_clk_C clock domain
@@ -276,7 +288,7 @@ begin
     )
     port map (
         data        => writeregs_C_fifo_wdata,
-        wrreq       => be3 or be4,
+        wrreq       => be3_prev or be4_prev,
         wrfull      => open,
         wrclk       => refclk,
 
