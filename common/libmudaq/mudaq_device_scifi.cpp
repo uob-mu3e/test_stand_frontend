@@ -469,7 +469,7 @@ int MudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, 
     write_memory_rw(3 + length, 0x0000009c);
     
     // SC_MAIN_LENGTH_REGISTER_W starts from 1
-    write_register_wait(SC_MAIN_LENGTH_REGISTER_W, 4 + length, 100);
+    write_register_wait(SC_MAIN_LENGTH_REGISTER_W, 2 + length, 100);
     write_register_wait(SC_MAIN_ENABLE_REGISTER_W, 0x1, 100);
     // firmware regs SC_MAIN_ENABLE_REGISTER_W so that it only starts on a 0->1 transition
     write_register_wait(SC_MAIN_ENABLE_REGISTER_W, 0x0, 100);
