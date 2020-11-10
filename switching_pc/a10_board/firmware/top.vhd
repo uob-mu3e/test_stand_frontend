@@ -725,7 +725,7 @@ begin
         mem_addr_finished_out   => readmem_writeaddr_finished,
         mem_data_out            => mem_data_sc,
         mem_wren                => mem_wen_sc,
-        stateout                => LED_BRACKET,
+        stateout                => open,--LED_BRACKET,
         clk                     => clk_156--,
     );
     
@@ -806,6 +806,10 @@ begin
             readregs(RUN_NR_ACK_REGISTER_R)         <= readregs_slow(RUN_NR_ACK_REGISTER_R);
             readregs(RUN_STOP_ACK_REGISTER_R)       <= readregs_slow(RUN_STOP_ACK_REGISTER_R);
             readregs(CNT_FEB_MERGE_TIMEOUT_R)       <= readregs_slow(CNT_FEB_MERGE_TIMEOUT_R);
+            readregs(CNT_FIFO_ALMOST_FULL_R)        <= readregs_slow(CNT_FIFO_ALMOST_FULL_R);
+            readregs(CNT_DC_LINK_FIFO_FULL_R)       <= readregs_slow(CNT_DC_LINK_FIFO_FULL_R);
+            readregs(CNT_SKIP_EVENT_LINK_FIFO_R)    <= readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R);
+            readregs(SC_MAIN_STATUS_REGISTER_R)     <= readregs_slow(SC_MAIN_STATUS_REGISTER_R);
             readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= (others => '0');
             readregs(MEM_WRITEADDR_LOW_REGISTER_R)  <= (X"0000" & readmem_writeaddr_finished);
         end if;
