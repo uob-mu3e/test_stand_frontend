@@ -4,12 +4,21 @@ from json2html import *
 
 json_file = sys.argv[1]
 test_folder = sys.argv[2]
+check_pass = sys.argv[3]
+
 html_file = "{}/{}.html".format(test_folder, json_file.split(".")[0])
 json_file_path = "{}/{}".format(test_folder, json_file)
 
-html_page = "\
-<button onclick=\"{}Function()\">Open {}</button>\
-".format(json_file.split(".")[0], json_file.split(".")[0])
+html_page = "<link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">"
+
+if check_pass == '0':
+    html_page += "\
+    <button onclick=\"{}Function()\", style=\"background-color:#4CAF50;color:white;\">Open {}</button>\
+    ".format(json_file.split(".")[0], json_file.split(".")[0])
+else:
+    html_page += "\
+    <button onclick=\"{}Function()\", style=\"background-color:#f44336;color:white;\">Open {}</button>\
+    ".format(json_file.split(".")[0], json_file.split(".")[0])
 
 with open(json_file_path) as file:
     json_dict = json.load(file)

@@ -8,6 +8,7 @@ cd ../example_test2
 
 # at the last test combine all html pages
 cd ..
+rm vhdl_tests.html
 for d in */*.html ; do
     cat "$d" >> vhdl_tests.html
 done
