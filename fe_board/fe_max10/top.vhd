@@ -69,7 +69,7 @@ architecture arch of top is
     signal clk50                                : std_logic;
     signal pll_locked                           : std_logic;
 
-    signal flash_ps_ctrl                        : std_logic_vector(31 downto 0);
+    signal flash_programming_ctrl                        : std_logic_vector(31 downto 0);
     signal flash_w_cnt                          : std_logic_vector(31 downto 0);
     signal reset_n                              : std_logic;
 
@@ -100,18 +100,16 @@ architecture arch of top is
     signal spi_flash_status                     : std_logic_vector(7 downto 0); 
     signal spi_flash_data_from_flash            : std_logic_vector(7 downto 0);
     signal spi_flash_data_to_flash              : std_logic_vector(7 downto 0);
+    signal spi_flash_data_to_flash_nios         : std_logic_vector(7 downto 0);	
     signal spi_flash_cmdaddr_to_flash           : std_logic_vector(31 downto 0); 
     signal spi_flash_fifodata_to_flash          : std_logic_vector(31 downto 0);
     signal spi_flash_readfifo                   : std_logic;
     signal spi_flash_fifo_empty                 : std_logic;
 
-    signal spi_flash_data_to_flash_nios         : std_logic_vector(7 downto 0);	
-    signal writefromfifo                        : std_logic;
-    signal fifowrite_last                       : std_logic;
-    signal fiforead_last                        : std_logic;
-    signal fifowriting                          : std_logic;
+    type spiflashstate_type is (idle, fifowriting, programming);
+    signal spiflashstate : spiflashstate_type;
+    signal fifo_req_last                        : std_logic;
     signal fifo_read_pulse                      : std_logic;
-    signal programmer_active                    : std_logic;
     signal wcounter                             : std_logic_vector(15 downto 0);
 
     -- spi arria
@@ -269,7 +267,7 @@ begin
         i2c_scl_oe                  => open,
 
         -- flash spi
-        flash_ps_ctrl_export        => flash_ps_ctrl,
+        flash_ps_ctrl_export        => flash_programming_ctrl,
         flash_w_cnt_export          => flash_w_cnt,
         flash_cmd_addr_export       => spi_flash_cmdaddr_to_flash,
         flash_ctrl_export           => spi_flash_ctrl,
@@ -281,80 +279,75 @@ begin
         out_flash_fifo_waitrequest  => spi_flash_fifo_empty--,
     );
 
-    -- SPI to flash and programmer
-    -----------------------
     process(reset_n, clk100)
     begin
     if ( reset_n = '0' ) then
-        writefromfifo       <= '0';
-        fifowrite_last      <= '0';
-        fiforead_last       <= '0';
-        fifowriting         <= '0';
-        fifo_read_pulse     <= '0';
-        programmer_active   <= '0';
+        spiflashstate                   <= idle;
+        spi_flash_granted_programmer    <= '0';
+        fifo_read_pulse                 <= '0';
+        fifo_req_last                   <= '0';
     elsif ( clk100'event and clk100 = '1' ) then
-        fifowrite_last      <= spi_flash_ctrl(7);
-        fiforead_last       <= spi_flash_status(1);
-        fifo_read_pulse     <= '0';
-        if ( spi_flash_ctrl(7) = '1' and 
-             fifowrite_last = '0' and 
-             programmer_active = '0' 
-             ) then
-            fifowriting     <= '1';
-            fifo_read_pulse <= '1';
-            wcounter        <= (others => '0');
-        end if;
-        if ( fifowriting <= '1' ) then
-            if ( spi_flash_fifo_empty = '1' ) then
-                fifowriting <= '0';
+
+        fifo_read_pulse                 <= '0';
+        fifo_req_last                   <= spi_flash_ctrl(7);
+
+        case spiflashstate is
+        when idle =>
+            if (spi_busy = '0' and spi_flash_request_programmer = '1' ) then
+                spiflashstate <= programming;
             end if;
-        end if;
-        if ( spi_flash_readfifo = '1' ) then
-            wcounter        <= wcounter + 1;
-        end if;
-        if ( programmer_active = '0' 
-             and fifowriting = '0' 
-             and spi_busy = '0' 
-             and spi_flash_request_programmer = '1' 
-             ) then
+
+            if ( spi_flash_ctrl(7) = '1' and  fifo_req_last = '0') then
+                spiflashstate   <= fifowriting;
+                fifo_read_pulse <= '1';
+                wcounter        <= (others => '0');
+            end if;
+        when fifowriting =>
+            wcounter                        <= wcounter + 1;
+            if ( spi_flash_fifo_empty = '1' ) then
+                spiflashstate <= idle;
+            end if;    
+        when programming =>
             spi_flash_granted_programmer    <= '1';
-            programmer_active               <= '1';
-        end if;
-        if ( programmer_active = '1' and spi_flash_request_programmer = '0' ) then
-            spi_flash_granted_programmer    <= '0';
-            programmer_active               <= '0';
-        end if;
+            if(spi_flash_request_programmer = '0') then
+                spiflashstate <= idle;
+            end if;
+        when others =>
+            spiflashstate <= idle;
+        end case;
     end if;
     end process;
 
     flash_w_cnt(31 downto 16)   <= std_logic_vector(wcounter);
+    
     spi_strobe_nios             <= spi_flash_ctrl(0);
     spi_command_nios            <= spi_flash_cmdaddr_to_flash(31 downto 24);
     spi_addr_nios               <= spi_flash_cmdaddr_to_flash(23 downto 0);
-    spi_flash_data_to_flash     <= spi_flash_data_to_flash_nios
-                                    when fifowriting = '0'
-                                    else spi_flash_fifodata_to_flash(7 downto 0);
-    spi_continue                <= spi_continue_programmer
-                                    when spi_flash_granted_programmer = '1'
-                                    else not spi_flash_fifo_empty 
-                                    when fifowriting = '1'
-                                    else spi_flash_ctrl(1);
-    spi_strobe                  <= spi_strobe_programmer
-                                    when spi_flash_granted_programmer = '1'
-                                    else spi_strobe_nios;
-    spi_command                 <= spi_command_programmer
-                                    when spi_flash_granted_programmer = '1'
-                                    else spi_command_nios;
-    spi_addr                    <= spi_addr_programmer
-                                    when spi_flash_granted_programmer = '1'
-                                    else spi_addr_nios;
-    spi_flash_readfifo          <= spi_flash_status(1) or fifo_read_pulse;
+    
+    spi_flash_readfifo          <= spi_next_byte or fifo_read_pulse;
+
+    spi_flash_data_to_flash     <= spi_flash_fifodata_to_flash(7 downto 0) when spiflashstate = fifowriting
+                                  else  spi_flash_data_to_flash_nios;
+
+    spi_continue                <= spi_continue_programmer  when spiflashstate = programming
+                                else not spi_flash_fifo_empty when spiflashstate = fifowriting
+                                else spi_flash_ctrl(1);
+
+    spi_strobe                  <= spi_strobe_programmer when spiflashstate = programming
+                                   else spi_strobe_nios;
+    spi_command                 <= spi_command_programmer when spiflashstate = programming
+                                   else spi_command_nios;
+    spi_addr                    <= spi_addr_programmer when spiflashstate = programming
+                                   else spi_addr_nios;
+
     spi_flash_status(0)         <= spi_ack;
     spi_flash_status(1)         <= spi_next_byte;
     spi_flash_status(2)         <= spi_byte_ready;
     spi_flash_status(3)         <= spi_busy;
     spi_flash_status(6)         <= spi_flash_fifo_empty;
-    spi_flash_status(7)         <= fifowriting;
+    spi_flash_status(7)         <= '1' when spiflashstate = fifowriting
+                                    else '0';
+
 
     e_spiflash : entity work.spiflash
     port map(
@@ -381,14 +374,14 @@ begin
         spi_D3          => flash_io3--,
     );
 
-    programming_if : entity work.ps_programmer
+    programming_if : entity work.fpp_programmer
     port map(
         -- clk & reset
         reset_n             => reset_n,
         clk                 => clk100,
         -- spi addr
-        start               => flash_ps_ctrl(31),
-        start_address       => flash_ps_ctrl(23 downto 0),
+        start               => flash_programming_ctrl(31),
+        start_address       => flash_programming_ctrl(23 downto 0),
         --Interface to SPI flash
         spi_strobe          => spi_strobe_programmer,
         spi_command         => spi_command_programmer,
