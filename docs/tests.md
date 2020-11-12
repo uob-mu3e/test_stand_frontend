@@ -6,7 +6,7 @@ All tests should be located in `common/tests/vhdl_tests`. An example test is pla
 The needed software is [GHLD](https://github.com/ghdl/ghdl) and [VUnit](https://vunit.github.io/).
 
 For using the tests on the build server bash scripts are used. Therefor each tests needs a run_TESTNAME.sh file like the example_test.
-Also the test needs to be added to the [run_tests.sh](common/tests/vhdl_tests/run_tests.sh) file. To test the automatic testing one needs to do
+Also the test needs to be added to the [run_tests.sh](../../common/tests/vhdl_tests/run_tests.sh) file. To test the automatic testing one needs to do
 
 ```
 mkdir build
