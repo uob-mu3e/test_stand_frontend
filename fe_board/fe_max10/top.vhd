@@ -3,6 +3,9 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
+LIBRARY altera_mf;
+USE altera_mf.all;
+
 
 entity top is 
     port (
@@ -132,7 +135,32 @@ architecture arch of top is
     signal adc_data_3                           : std_logic_vector(31 downto 0);
     signal adc_data_4                           : std_logic_vector(31 downto 0);
     
-    
+    COMPONENT scfifo
+    GENERIC (
+            add_ram_output_register         : STRING;
+            almost_full_value               : NATURAL;
+            intended_device_family          : STRING;
+            lpm_numwords            : NATURAL;
+            lpm_showahead           : STRING;
+            lpm_type                : STRING;
+            lpm_width               : NATURAL;
+            lpm_widthu              : NATURAL;
+            overflow_checking               : STRING;
+            underflow_checking              : STRING;
+            use_eab         : STRING
+    );
+    PORT (
+                    aclr    : IN STD_LOGIC ;
+                    clock   : IN STD_LOGIC ;
+                    data    : IN STD_LOGIC_VECTOR (253 DOWNTO 0);
+                    rdreq   : IN STD_LOGIC ;
+                    sclr    : IN STD_LOGIC ;
+                    wrreq   : IN STD_LOGIC ;
+                    almost_full     : OUT STD_LOGIC ;
+                    empty   : OUT STD_LOGIC ;
+                    q       : OUT STD_LOGIC_VECTOR (253 DOWNTO 0)
+    );
+    END COMPONENT;
 
 begin
 
@@ -398,5 +426,37 @@ begin
         fpga_data           => fpga_data,
         fpga_clk            => fpga_clk--,
     );
+
+    scfifo_component : scfifo
+        GENERIC MAP (
+                add_ram_output_register => "ON",
+                intended_device_family => "Max 10",
+                lpm_numwords => 256,
+                lpm_showahead => "OFF",
+                lpm_type => "scfifo",
+                lpm_width => 8,
+                lpm_widthu => 8,
+                overflow_checking => "ON",
+                underflow_checking => "ON",
+                use_eab => "ON"
+        )
+        PORT MAP (
+                aclr => '0',
+                clock => clk100,
+                data => arria_to_fifo_data,
+                rdreq => read_arriafifo,
+                sclr => not reset_n,
+                wrreq => arria_to_fifo_we,
+                empty => arriafifo_empty,
+                full  => arriafifo_full,
+                q => arriafifo_data
+        );
+
+        signal arria_to_fifo_data:  std_logic_vector(7 downto 0);
+        signal arria_to_fifo_we:    std_logic;  
+        signal read_arriafifo:      std_logic;
+        signal arriafifo_empty:     std_logic;
+        signal arriafifo_full:      std_logic;  
+        signal arriafifo_data:      std_logic_vector(7 downto 0);                          
 
 end architecture arch;
