@@ -61,16 +61,24 @@ architecture rtl of mupix_datapath is
     signal lvds_data_valid          : std_logic_vector(NLVDS-1 downto 0);
 
     -- hits + flag to indicate a word as a hit, after unpacker
-    signal hits                     : std_logic_vector(NLVDS*UNPACKER_HITSIZE-1 downto 0);
     signal hits_ena                 : std_logic_vector(NLVDS-1 downto 0);
-
-    -- hits after gray-decoding
-    signal binhits                  : reg32array_t(NLVDS-1 downto 0);
-    signal binhits_ena              : std_logic_vector(NLVDS-1 downto 0);
+    signal ts                       : ts_array_t(NLVDS-1 downto 0);
+    signal row                      : row_array_t(NLVDS-1 downto 0);
+    signal col                      : col_array_t(NLVDS-1 downto 0);
+    signal tot                      : tot_array_t(NLVDS-1 downto 0);
+    signal chip_ID                  : ch_ID_array_t(NLVDS-1 downto 0);
 
     -- hits afer 3-1 multiplexing
+    signal hits_ena_hs              : std_logic_vector(NLVDS-1 downto 0);
+    signal ts_hs                    : ts_array_t(NLVDS-1 downto 0);
+    signal row_hs                   : row_array_t(NLVDS-1 downto 0);
+    signal col_hs                   : col_array_t(NLVDS-1 downto 0);
+    signal tot_hs                   : tot_array_t(NLVDS-1 downto 0);
+    signal chip_ID_hs               : ch_ID_array_t(NLVDS-1 downto 0);
     signal hits_sorter_in           : hit_array;
     signal hits_sorter_in_ena       : std_logic_vector(NCHIPS-1 downto 0);
+
+
     signal running                  : std_logic;
 
     -- flag to indicate link, after unpacker
@@ -198,7 +206,7 @@ begin
  
     unpacker_single : work.data_unpacker
     generic map(
-        COARSECOUNTERSIZE   => COARSECOUNTERSIZE;
+        COARSECOUNTERSIZE   => COARSECOUNTERSIZE,
         LVDS_ID             => i
     )
     port map(
@@ -207,27 +215,18 @@ begin
         datain              => rx_data(i), 
         kin                 => rx_k(i), 
         readyin             => link_enable_125(i),
-        hit_out             => hits((i+1)*UNPACKER_HITSIZE-1 downto i*UNPACKER_HITSIZE),
-        hit_ena             => hits_ena(i),
+        i_mp_readout_mode   => (others => '0'),
+        o_ts                => ts(i),
+        o_chip_ID           => chip_ID(i),
+        o_row               => row(i),
+        o_col               => col(i),
+        o_tot               => tot(i),
+        o_hit_ena           => hits_ena(i),
         coarsecounter       => open,--coarsecounters((i+1)*COARSECOUNTERSIZE-1 downto i*COARSECOUNTERSIZE),
         coarsecounter_ena   => open,--coarsecounters_ena(i),
         link_flag           => open,--link_flag(i),
         errorcounter        => unpack_errorcounter(i) -- could be useful!
     );
-
---    degray_single : work.hit_ts_conversion 
---    port map(
---        reset_n     => reset_125_n,
---        clk         => i_clk125, 
---        invert_TS   => invert_TS,
---        invert_TS2  => invert_TS2,
---        gray_TS     => gray_TS,
---        gray_TS2    => gray_TS2,
---        hit_in      => hits(UNPACKER_HITSIZE*(i+1)-1 downto UNPACKER_HITSIZE*i),
---        hit_ena_in  => hits_ena(i),
---        hit_out     => binhits(i),--binhits(UNPACKER_HITSIZE*(i+1)-1 downto UNPACKER_HITSIZE*i),
---        hit_ena_out => binhits_ena(i)
---    );
 
     END GENERATE genunpack;
 
@@ -280,15 +279,32 @@ begin
         port map(
             reset_n     => sorter_reset_n,
             clk         => i_clk125,
-            hit_in1     => binhits(i*3),
-            hit_ena1    => binhits_ena(i*3),
-            hit_in2     => binhits(i*3+1),
-            hit_ena2    => binhits_ena(i*3+1),
-            hit_in3     => binhits(i*3+2),
-            hit_ena3    => binhits_ena(i*3+2),
-            hit_out     => hits_sorter_in(i),
-            hit_ena     => hits_sorter_in_ena(i)--,
+
+            i_ts(0)             => ts(i*3),
+            i_ts(1)             => ts(i*3+1),
+            i_ts(2)             => ts(i*3+2),
+            i_chip_ID(0)        => chip_ID(i*3),
+            i_chip_ID(1)        => chip_ID(i*3+1),
+            i_chip_ID(2)        => chip_ID(i*3+2),
+            i_row(0)            => row(i*3),
+            i_row(1)            => row(i*3+1),
+            i_row(2)            => row(i*3+2),
+            i_col(0)            => col(i*3),
+            i_col(1)            => col(i*3+1),
+            i_col(2)            => col(i*3+2),
+            i_tot(0)            => tot(i*3),
+            i_tot(1)            => tot(i*3+1),
+            i_tot(2)            => tot(i*3+2),
+            i_hit_ena           => hits_ena(i*3+2) & hits_ena(i*3+1) & hits_ena(i*3),
+
+            o_ts(0)             => ts_hs(i),
+            o_chip_ID(0)        => chip_ID_hs(i),
+            o_row(0)            => row_hs(i),
+            o_col(0)            => col_hs(i),
+            o_tot(0)            => tot_hs(i),
+            o_hit_ena           => hits_sorter_in_ena(i)--,
         );
+        hits_sorter_in(i)       <= ts_hs(i) & chip_ID_hs(i) & row_hs(i) & col_hs(i) & tot_hs(i);
     END GENERATE;
 
     running         <= '1' when i_run_state_125 = RUN_STATE_RUNNING else '0';

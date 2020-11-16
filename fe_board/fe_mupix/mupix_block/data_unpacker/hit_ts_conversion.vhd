@@ -12,19 +12,29 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use work.mupix_constants.all;
+use work.mupix_types.all;
 
 entity hit_ts_conversion is 
     port (
-        reset_n                 : in  std_logic;
-        clk                     : in  std_logic;
-        invert_TS               : in  std_logic;
-        invert_TS2              : in  std_logic;
-        gray_TS                 : in  std_logic;
-        gray_TS2                : in  std_logic;
-        hit_in                  : in  std_logic_vector(UNPACKER_HITSIZE-1 DOWNTO 0);
-        hit_ena_in              : in  std_logic;
-        hit_out                 : out std_logic_vector(UNPACKER_HITSIZE-1 DOWNTO 0);
-        hit_ena_out             : out std_logic
+        reset_n     : in  std_logic;
+        clk         : in  std_logic;
+        invert_TS   : in  std_logic;
+        invert_TS2  : in  std_logic;
+        gray_TS     : in  std_logic;
+        gray_TS2    : in  std_logic;
+
+        o_ts        : out std_logic_vector(10 downto 0);
+        o_row       : out std_logic_vector(7 downto 0);
+        o_col       : out std_logic_vector(7 downto 0);
+        o_ts2       : out std_logic_vector(4 downto 0);
+        o_hit_ena   : out std_logic;
+        
+        i_ts        : in  std_logic_vector(10 downto 0);
+        i_row       : in  std_logic_vector(7 downto 0);
+        i_col       : in  std_logic_vector(7 downto 0);
+        i_ts2       : in  std_logic_vector(4 downto 0);
+        i_hit_ena   : in  std_logic--;
+        
     );
 end hit_ts_conversion;
 
@@ -37,9 +47,12 @@ signal hit_in_TS2       : std_logic_vector(MAX_SIZE-1 downto 0);
 signal hit_out_TS       : std_logic_vector(MAX_SIZE-1 downto 0);
 signal hit_out_TS2      : std_logic_vector(MAX_SIZE-1 downto 0);
 
-signal hit_in_r1        : std_logic_vector(UNPACKER_HITSIZE-1 DOWNTO 0);
+signal row_r1           : std_logic_vector(7 downto 0);
+signal row_r2           : std_logic_vector(7 downto 0);
+signal col_r1           : std_logic_vector(7 downto 0);
+signal col_r2           : std_logic_vector(7 downto 0);
+
 signal hit_ena_in_r1    : std_logic;
-signal hit_in_r2        : std_logic_vector(UNPACKER_HITSIZE-1 DOWNTO 0);
 signal hit_ena_in_r2    : std_logic;
 signal hit_in_TS_reg    : std_logic_vector(MAX_SIZE-1 downto 0);
 signal hit_in_TS2_reg   : std_logic_vector(MAX_SIZE-1 downto 0);
@@ -66,8 +79,8 @@ begin
             TS2_SIZE    <= CHARGESIZE_MP10;
             ts_temp     <= (others => '0');
             ts2_temp    <= (others => '0');
-            ts_temp(TIMESTAMPSIZE_MP10-1 downto 0)  <= hit_in(15) & hit_in(9 downto 0); -- just reverting from unpacker
-            ts2_temp(CHARGESIZE_MP10-1 downto 0)    <= hit_in(14 downto 10);
+            ts_temp(TIMESTAMPSIZE_MP10-1 downto 0)  <= i_ts;
+            ts2_temp(CHARGESIZE_MP10-1 downto 0)    <= i_ts2;
         end if;
     end process;
 
@@ -109,17 +122,21 @@ begin
     begin
         if(reset_n = '0')then
             hit_ena_in_r1   <= '0';
-            hit_in_r1       <= (others => '0');
             hit_ena_in_r2   <= '0';
-            hit_in_r2       <= (others => '0');
-
+            col_r1          <= (others => '0');
+            col_r2          <= (others => '0');
+            row_r1          <= (others => '0');
+            row_r2          <= (others => '0');
+            
             hit_in_TS_reg   <= (others => '0');
             hit_in_TS2_reg  <= (others => '0');
         elsif(rising_edge(clk))then
-            hit_in_r1       <= hit_in;
-            hit_ena_in_r1   <= hit_ena_in;
-            hit_in_r2       <= hit_in_r1;
+            hit_ena_in_r1   <= i_hit_ena;
             hit_ena_in_r2   <= hit_ena_in_r1;
+            col_r1          <= i_col;
+            col_r2          <= col_r1;
+            row_r1          <= i_row;
+            row_r2          <= row_r1;
 
             -- if gray decoding is not used, here we register the encoded, but optinally inverted timestamps
             hit_in_TS_reg   <= hit_in_TS;
@@ -132,24 +149,26 @@ begin
     output_sel: process(reset_n, clk)
     begin
         if(reset_n = '0')then
-            hit_out         <= (others => '0');
-            hit_ena_out     <= '0';
+            o_hit_ena       <= '0';
+            o_col           <= (others => '0');
+            o_row           <= (others => '0');
+            o_ts            <= (others => '0');
+            o_ts2           <= (others => '0');
         elsif(rising_edge(clk))then
-            hit_ena_out     <= hit_ena_in_r2;
-            hit_out         <= hit_in_r2;
+            o_hit_ena       <= hit_ena_in_r2;
+            o_col           <= col_r2;
+            o_row           <= row_r2;
 
             if(gray_TS = '1')then
-                hit_out(15)             <= hit_out_TS(TIMESTAMPSIZE_MP10-1);
-                hit_out(9 downto 0)     <= hit_out_TS(TIMESTAMPSIZE_MP10-2 downto 0);
+                o_ts        <= hit_out_TS(TIMESTAMPSIZE_MP10-1 downto 0);
             else
-                hit_out(15)             <= hit_in_TS_reg(TIMESTAMPSIZE_MP10-1);
-                hit_out(9 downto 0)     <= hit_in_TS_reg(TIMESTAMPSIZE_MP10-2 downto 0);
+                o_ts        <= hit_in_TS_reg(TIMESTAMPSIZE_MP10-1 downto 0);
             end if;
 
             if(gray_TS2 = '1')then
-                hit_out(14 downto 10)   <= hit_out_TS2(CHARGESIZE_MP10-1 downto 0);
+                o_ts2       <= hit_out_TS2(CHARGESIZE_MP10-1 downto 0);
             else
-                hit_out(14 downto 10)   <= hit_in_TS2_reg(CHARGESIZE_MP10-1 downto 0);
+                o_ts2       <= hit_in_TS2_reg(CHARGESIZE_MP10-1 downto 0);
             end if;
         end if;
     end process;

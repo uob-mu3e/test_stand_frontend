@@ -26,7 +26,7 @@ use work.mupix_registers.all;
 entity data_unpacker is 
     generic (
         COARSECOUNTERSIZE   : integer   := 32;
-        LVDS_ID             : integer   := 0;
+        LVDS_ID             : integer   := 0--;
     );
     port (
         reset_n             : in  std_logic;
@@ -69,7 +69,10 @@ architecture RTL of data_unpacker is
     signal hit_reg              : std_logic;
     signal link_flag_reg        : std_logic;
 
-    signal ts                   : std_logic_vector(3 downto 0);
+    signal ts                   : std_logic_vector(10 downto 0);
+    signal ts2                  : std_logic_vector(4 downto 0);
+    signal ts_buf               : std_logic_vector(10 downto 0);
+    signal ts2_buf              : std_logic_vector(4 downto 0);
     signal row                  : std_logic_vector(7 downto 0);
     signal col                  : std_logic_vector(7 downto 0);
     signal tot                  : std_logic_vector(5 downto 0);
@@ -88,7 +91,8 @@ architecture RTL of data_unpacker is
     ) return std_logic_vector is 
         variable chip_id : std_logic_vector(5 downto 0);
     begin
-    
+        -- TODO: correct numbering for different feb positions (chip_id_mode's)
+        chip_id := std_logic_vector(to_unsigned(lvds_ID, 6));
         return chip_id;
     end;
 
@@ -116,7 +120,7 @@ architecture RTL of data_unpacker is
 
     function calc_tot (
         ts2       : std_logic_vector( 4 downto 0);
-        ts        : std_logic_vector(12 downto 0);
+        ts        : std_logic_vector(10 downto 0);
         tot_mode  : std_logic_vector( 2 downto 0)--;
     ) return std_logic_vector is 
         variable tot : std_logic_vector(5 downto 0);
@@ -127,6 +131,9 @@ architecture RTL of data_unpacker is
     end;
 
 begin
+
+    o_ts    <= ts_buf(3 downto 0);  -- cut away upper bits
+    o_tot   <= calc_tot(ts2_buf,ts_buf,tot_mode);
 
     chip_ID_mode    <= i_mp_readout_mode(CHIP_ID_MODE_RANGE);
     tot_mode        <= i_mp_readout_mode(TOT_MODE_RANGE);
@@ -178,11 +185,11 @@ begin
                     -- Col = data_i(15 downto 9)
                     -- Row = data_i(8 downto 0)
                 -- We present to the outside:
-                ts              <= data_i(19 downto 16);
-                o_chip_ID       <= convert_lvds_to_chip_id(LVDS_ID,i_chip_ID_mode);
+                ts              <= data_i(26 downto 16);
+                o_chip_ID       <= convert_lvds_to_chip_id(LVDS_ID,chip_ID_mode);
                 row             <= convert_row(data_i(15 downto 9),data_i(8 downto 0)); -- convert_row(col, row)
                 col             <= convert_col(data_i(15 downto 9),data_i(8 downto 0));
-                tot             <= calc_tot(data_i(31 downto 27), data_i(26 downto 16), i_tot_mode);
+                ts2             <= data_i(31 downto 27);
             end if;
 
             if(readyin = '0')then
@@ -288,17 +295,17 @@ begin
         gray_TS     => gray_TS,
         gray_TS2    => gray_TS2,
         
-        o_ts        => o_ts,
+        o_ts        => ts_buf,
         o_row       => o_row,
         o_col       => o_col,
-        o_tot       => o_tot,
+        o_ts2       => ts2_buf,
         o_hit_ena   => o_hit_ena,
         
         i_ts        => ts,
         i_row       => row,
         i_col       => col,
-        i_tot       => tot,
-        i_hit_ena   => hit_ena,
+        i_ts2       => ts2,
+        i_hit_ena   => hit_ena--,
     );
 
 end RTL;

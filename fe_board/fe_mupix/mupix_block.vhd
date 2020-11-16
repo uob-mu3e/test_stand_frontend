@@ -111,8 +111,8 @@ signal reset_n : std_logic;
     signal reset_chip_dac_fifo : std_logic;
     signal ckdiv         : std_logic_vector(15 downto 0);
      
-    signal write_regs_mupix : reg32array_t(NREGISTERS_MUPIX_WR-1 downto 0);
-    signal read_regs_mupix : reg32array_t(NREGISTERS_MUPIX_RD-1 downto 0);
+    signal write_regs_mupix : reg32array_t(NREGISTERS_MUPIX_WR-1+64 downto 64);
+    signal read_regs_mupix : reg32array_t(NREGISTERS_MUPIX_RD-1+64 downto 64);
 
     signal reset_n_lvds : std_logic;
 

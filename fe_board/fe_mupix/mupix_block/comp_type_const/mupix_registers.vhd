@@ -11,6 +11,9 @@ use work.mupix_constants.all;
 
 package mupix_registers is
 
+constant NREGISTERS_MUPIX_WR                : integer := 150;
+constant NREGISTERS_MUPIX_RD                : integer := 200; --TODO: do this in a different way
+
 --////////////////////////////////////////////--
 --/////////////WRITE REGISTER MAP/////////////--
 --////////////////////////////////////////////--
@@ -29,7 +32,6 @@ package mupix_registers is
 -- TODO when datapath done: remove if unused
 -----------------------------------------------------------------
 constant LINK_MASK_REGISTER_W               : integer := 16#53#;
-constant NREGISTERS_MUPIX_WR                : integer := 5;
 constant RO_PRESCALER_REGISTER_W            : integer := 16#50#;    -- dec 0
 constant DEBUG_CHIP_SELECT_REGISTER_W       : integer := 16#51#;
 constant TIMESTAMP_GRAY_INVERT_REGISTER_W   : integer := 16#52#;
@@ -37,7 +39,6 @@ constant TS_INVERT_BIT                      : integer := 0;
 constant TS2_INVERT_BIT                     : integer := 1;
 constant TS_GRAY_BIT                        : integer := 2;
 constant TS2_GRAY_BIT                       : integer := 3;
-constant NREGISTERS_MUPIX_RD                : integer := 94;
 constant RX_STATE_RECEIVER_0_REGISTER_R     : integer := 16#50#;    -- dec 0
 constant RX_STATE_RECEIVER_1_REGISTER_R     : integer := 16#51#;    -- dec 1
 constant LVDS_PLL_LOCKED_REGISTER_R         : integer := 16#52#;    -- dec 2
