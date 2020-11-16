@@ -20,7 +20,7 @@ architecture TB of link_merger_tb is
     
     -- links and datageneration
     -- use 38 links but mask last 2 since only 34 are in use
-    constant NLINKS_TOTL : integer := 34;
+    constant NLINKS_TOTL : integer := 32;
     constant LINK_FIFO_ADDR_WIDTH : integer := 10;
     
     signal link_data : std_logic_vector(NLINKS_TOTL * 32 - 1 downto 0);
@@ -115,8 +115,8 @@ begin
                   datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated;
                   
 --     link_mask_n <= "1101110111011101110111011101110111";
---     link_mask_n <= "1111111111111111111111111111111111";
-        link_mask_n <= "1111111111111111111111111111111111";
+    link_mask_n <= "11111111111111111111111111111111";
+        --link_mask_n <= "1111111111111111111111111111111111";
 --     link_mask_n <= "1111111111111111";
 --     link_mask_n <= "11011101";
 --     link_mask_n <= "11111111";

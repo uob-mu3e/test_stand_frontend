@@ -68,6 +68,55 @@ architecture arch of time_merger is
     signal sop_wait, shop_wait, time_wait, rack_link : std_logic_vector(N - 1 downto 0);
     signal link_good : std_logic_vector(63 downto 0);
     
+    -- merger tree (at the moment for 32 links)
+    type fifo_width_t is array (4 downto 0) of integer;
+    constant read_width : fifo_width_t := (1024, 512, 256, 128, 64);
+    constant write_width : fifo_width_t := (512, 256, 128, 64, 32);
+    constant generate_fifos : fifo_width_t := (2, 4, 8, 16, 32);
+    type fifo_data_0_t is array (generate_fifos(0) - 1 downto 0) of std_logic_vector(write_width(0) - 1 downto 0);
+    type fifo_data_1_t is array (generate_fifos(1) - 1 downto 0) of std_logic_vector(write_width(1) - 1 downto 0);
+    type fifo_data_2_t is array (generate_fifos(2) - 1 downto 0) of std_logic_vector(write_width(2) - 1 downto 0);
+    type fifo_data_3_t is array (generate_fifos(3) - 1 downto 0) of std_logic_vector(write_width(3) - 1 downto 0);
+    type fifo_data_4_t is array (generate_fifos(4) - 1 downto 0) of std_logic_vector(write_width(4) - 1 downto 0);
+    signal fifo_data_0 : fifo_data_0_t;
+    signal fifo_data_1 : fifo_data_1_t;
+    signal fifo_data_2 : fifo_data_2_t;
+    signal fifo_data_3 : fifo_data_3_t;
+    signal fifo_data_4 : fifo_data_4_t;
+    type fifo_q_0_t is array (generate_fifos(0) - 1 downto 0) of std_logic_vector(read_width(0) - 1 downto 0);
+    type fifo_q_1_t is array (generate_fifos(1) - 1 downto 0) of std_logic_vector(read_width(1) - 1 downto 0);
+    type fifo_q_2_t is array (generate_fifos(2) - 1 downto 0) of std_logic_vector(read_width(2) - 1 downto 0);
+    type fifo_q_3_t is array (generate_fifos(3) - 1 downto 0) of std_logic_vector(read_width(3) - 1 downto 0);
+    type fifo_q_4_t is array (generate_fifos(4) - 1 downto 0) of std_logic_vector(read_width(4) - 1 downto 0);
+    signal fifo_q_0 : fifo_q_0_t;
+    signal fifo_q_1 : fifo_q_1_t;
+    signal fifo_q_2 : fifo_q_2_t;
+    signal fifo_q_3 : fifo_q_3_t;
+    signal fifo_q_4 : fifo_q_4_t;
+    signal fifo_ren_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal fifo_wen_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal fifo_full_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal fifo_empty_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal fifo_ren_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+    signal fifo_wen_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+    signal fifo_full_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+    signal fifo_empty_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+    signal fifo_ren_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
+    signal fifo_wen_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
+    signal fifo_full_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
+    signal fifo_empty_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
+    signal fifo_ren_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
+    signal fifo_wen_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
+    signal fifo_full_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
+    signal fifo_empty_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
+    signal fifo_ren_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    signal fifo_wen_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    signal fifo_full_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    signal fifo_empty_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    type cur_time_0_t is array(generate_fifos(0) - 1 downto 0) of std_logic_vector(3 downto 0);
+    signal cur_time_0 : cur_time_0_t;
+    signal fifo_64_written_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+        
     -- 8 links with 32 bit x 250 MHz 8b/10b
     signal hit_out : hit_array_t := (others => (others => '0'));
     signal hit_out_en, check_time : std_logic_vector(N - 1 downto 0);
@@ -90,6 +139,133 @@ begin
         o_rack(I) <= rack(I) or rack_hit(I) or rack_link(I);
 --         link_good(I) <= '1' when i_rempty(I) = '0' and i_mask_n(I) = '1' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" and rack_hit(I) = '0' else '0';
     END GENERATE;
+    
+     -- generate tree fifos
+    -- fix this now for 32 links
+    fifos_0:
+    FOR j in 0 to generate_fifos(0)-1 GENERATE
+        e_link_fifo : entity work.ip_dcfifo_mixed_widths
+        generic map(
+            ADDR_WIDTH_w => 4,
+            DATA_WIDTH_w => write_width(0),
+            ADDR_WIDTH_r => 4,
+            DATA_WIDTH_r => read_width(0),
+            DEVICE 		 => "Arria 10"--,
+        )
+        port map (
+            aclr 	=> not i_reset_n,
+            data 	=> fifo_data_0(j),
+            rdclk 	=> i_clk,
+            rdreq 	=> fifo_ren_0(j),
+            wrclk 	=> i_clk,
+            wrreq 	=> fifo_wen_0(j),
+            q 		=> fifo_q_0(j),
+            rdempty => fifo_empty_0(j),
+            rdusedw => open,
+            wrfull 	=> fifo_full_0(j),
+            wrusedw => open--,
+        );
+    END GENERATE fifos_0;
+    
+    fifos_1:
+    FOR j in 0 to generate_fifos(1)-1 GENERATE
+        e_link_fifo : entity work.ip_dcfifo_mixed_widths
+        generic map(
+            ADDR_WIDTH_w => 4,
+            DATA_WIDTH_w => write_width(1),
+            ADDR_WIDTH_r => 4,
+            DATA_WIDTH_r => read_width(1),
+            DEVICE 		 => "Arria 10"--,
+        )
+        port map (
+            aclr 	=> not i_reset_n,
+            data 	=> fifo_data_1(j),
+            rdclk 	=> i_clk,
+            rdreq 	=> fifo_ren_1(j),
+            wrclk 	=> i_clk,
+            wrreq 	=> fifo_wen_1(j),
+            q 		=> fifo_q_1(j),
+            rdempty => fifo_empty_1(j),
+            rdusedw => open,
+            wrfull 	=> fifo_full_1(j),
+            wrusedw => open--,
+        );
+    END GENERATE fifos_1;
+    
+    fifos_2:
+    FOR j in 0 to generate_fifos(2)-1 GENERATE
+        e_link_fifo : entity work.ip_dcfifo_mixed_widths
+        generic map(
+            ADDR_WIDTH_w => 4,
+            DATA_WIDTH_w => write_width(2),
+            ADDR_WIDTH_r => 4,
+            DATA_WIDTH_r => read_width(2),
+            DEVICE 		 => "Arria 10"--,
+        )
+        port map (
+            aclr 	=> not i_reset_n,
+            data 	=> fifo_data_2(j),
+            rdclk 	=> i_clk,
+            rdreq 	=> fifo_ren_2(j),
+            wrclk 	=> i_clk,
+            wrreq 	=> fifo_wen_2(j),
+            q 		=> fifo_q_2(j),
+            rdempty => fifo_empty_2(j),
+            rdusedw => open,
+            wrfull 	=> fifo_full_2(j),
+            wrusedw => open--,
+        );
+    END GENERATE fifos_2;
+    
+    fifos_3:
+    FOR j in 0 to generate_fifos(3)-1 GENERATE
+        e_link_fifo : entity work.ip_dcfifo_mixed_widths
+        generic map(
+            ADDR_WIDTH_w => 4,
+            DATA_WIDTH_w => write_width(3),
+            ADDR_WIDTH_r => 4,
+            DATA_WIDTH_r => read_width(3),
+            DEVICE 		 => "Arria 10"--,
+        )
+        port map (
+            aclr 	=> not i_reset_n,
+            data 	=> fifo_data_3(j),
+            rdclk 	=> i_clk,
+            rdreq 	=> fifo_ren_3(j),
+            wrclk 	=> i_clk,
+            wrreq 	=> fifo_wen_3(j),
+            q 		=> fifo_q_3(j),
+            rdempty => fifo_empty_3(j),
+            rdusedw => open,
+            wrfull 	=> fifo_full_3(j),
+            wrusedw => open--,
+        );
+    END GENERATE fifos_3;
+    
+    fifos_4:
+    FOR j in 0 to generate_fifos(4)-1 GENERATE
+        e_link_fifo : entity work.ip_dcfifo_mixed_widths
+        generic map(
+            ADDR_WIDTH_w => 4,
+            DATA_WIDTH_w => write_width(4),
+            ADDR_WIDTH_r => 4,
+            DATA_WIDTH_r => read_width(4),
+            DEVICE 		 => "Arria 10"--,
+        )
+        port map (
+            aclr 	=> not i_reset_n,
+            data 	=> fifo_data_4(j),
+            rdclk 	=> i_clk,
+            rdreq 	=> fifo_ren_4(j),
+            wrclk 	=> i_clk,
+            wrreq 	=> fifo_wen_4(j),
+            q 		=> fifo_q_4(j),
+            rdempty => fifo_empty_4(j),
+            rdusedw => open,
+            wrfull 	=> fifo_full_4(j),
+            wrusedw => open--,
+        );
+    END GENERATE fifos_4;
     
     -- readout fifo
     process(i_clk, i_reset_n)
@@ -171,59 +347,209 @@ begin
     end if;
     end process;
     
-    -- merge hits per link
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
-        rack_hit <= (others => '0');
-        hit_out <= (others => (others => '0'));
-        hit_out_en <= (others => '0');
-        check_time <= (others => '0');
-        cur_time <= 0;
-        cur_link <= (7,6,5,4,3,2,1,0);
-        --
+            fifo_data_0 <= (others => (others => '0'));
+            fifo_data_1 <= (others => (others => '0'));
+            fifo_data_2 <= (others => (others => '0'));
+            fifo_data_3 <= (others => (others => '0'));
+            fifo_data_4 <= (others => (others => '0'));
+            cur_time_0 <= (others => (others => '0'));
+            fifo_64_written_1 <= (others => '0');
+            --
     elsif rising_edge(i_clk) then
-    
-        rack_hit <= (others => '0');
-        hit_out <= (others => (others => '0'));
-        hit_out_en <= (others => '0');
-        
-        -- merge hits
-        if ( merge_state = merge_hits ) then
-            if ( cur_time /= 16 ) then
-                -- LOOP over output
-                -- read out from link 0-7, 8-15, 16-23, 24-31, 32-33
-                FOR I in 0 to 7 LOOP
-                    if ( cur_link(I) >= N ) then
-                        --
-                    elsif ( link_good(cur_link(I)) = '1' and rack_hit(cur_link(I)) = '0' ) then
-                        if ( i_rdata(cur_link(I))(35 downto 32) = cur_time ) then
-                            hit_out(I) <= i_rdata(cur_link(I))(35 downto 4);
-                            hit_out_en(I) <= '1';
-                            rack_hit(cur_link(I)) <= '1';
-                        else
-                            cur_link(I) <= cur_link(I) + 8;
-                            check_time(cur_link(I)) <= '1';
-                        end if;
-                    elsif ( i_rdata(cur_link(I))(37 downto 36) /= "00" or i_rdata(cur_link(I))(31 downto 26) = "111111" ) then
-                        check_time(cur_link(I)) <= '1';
-                        cur_link(I) <= cur_link(I) + 8;
+            fifo_wen_0 <= (others => '0');
+            fifo_wen_1 <= (others => '0');
+            
+            fifo_ren_0 <= (others => '0');
+            fifo_ren_1 <= (others => '0');
+            
+            rack_hit <= (others => '0');
+            
+            if ( merge_state = merge_hits ) then
+                FOR I in 0 to generate_fifos(0) - 1 LOOP
+                    if ( fifo_full_0(I) = '0' and link_good(I) = '1' and rack_hit(I) = '0' ) then
+                        fifo_data_0(I) <= i_rdata(I)(35 downto 4);
+                        fifo_wen_0(I) <= '1';
+                        rack_hit(I) <= '1';
                     end if;
                 END LOOP;
                 
-                if ( check_time = check_ones ) then
-                    cur_link <= (7,6,5,4,3,2,1,0);
-                    cur_time <= cur_time + 1;
-                    check_time <= (others => '0');
-                end if;
+                FOR I in 0 to generate_fifos(1) - 1 LOOP
+                
+                    if ( fifo_empty_0(I) = '0' and fifo_empty_0(I + generate_fifos(0)/2) = '0' and fifo_ren_0(I) = '0' and fifo_ren_0(I + generate_fifos(0)/2) = '0' ) then
+                        --compare which FIFO to read
+                        if ( fifo_q_0(I)(31 downto 28) <= cur_time_0(I) ) then
+                            fifo_data_1(I)(31 downto 0) <= fifo_q_0(I)(31 downto 0);
+                            if ( fifo_q_0(I)(63 downto 60) <= cur_time_0(I) ) then
+                                fifo_data_1(I)(63 downto 32) <= fifo_q_0(I)(63 downto 32);
+                                fifo_wen_1(I) <= '1';
+                                fifo_ren_0(I) <= '1';
+                                fifo_64_written_1(I) <= '1';
+                            elsif ( fifo_q_0(I + generate_fifos(0)/2)(31 downto 28) <= cur_time_0(I) ) then
+                                fifo_data_1(I)(63 downto 32) <= fifo_q_0(I + generate_fifos(0)/2)(31 downto 0);
+                                fifo_wen_1(I) <= '1';
+                                fifo_64_written_1(I) <= '1';
+                            else
+                                fifo_64_written_1(I) <= '0';
+                                cur_time_0(I) <= cur_time_0(I) + '1';
+                            end if;
+                        elsif ( fifo_q_0(I + generate_fifos(0)/2)(31 downto 28) <= cur_time_0(I) ) then
+                            fifo_data_1(I)(31 downto 0) <= fifo_q_0(I + generate_fifos(0)/2)(31 downto 0);
+                            if ( fifo_q_0(I + generate_fifos(0)/2)(63 downto 60) <= cur_time_0(I) ) then
+                                fifo_data_1(I)(63 downto 32) <= fifo_q_0(I + generate_fifos(0)/2)(63 downto 32);
+                                fifo_wen_1(I) <= '1';
+                                fifo_64_written_1(I) <= '1';
+                                fifo_ren_0(I + generate_fifos(0)/2) <= '1';
+                            else
+                                fifo_64_written_1(I) <= '0';
+                                cur_time_0(I) <= cur_time_0(I) + '1';
+                            end if;
+                        elsif ( fifo_q_0(I)(63 downto 60) <= cur_time_0(I) ) then
+                            fifo_ren_0(I) <= '1';
+                            if ( fifo_64_written_1(I) = '1' ) then
+                                fifo_data_1(I)(31 downto 0) <= fifo_q_0(I)(63 downto 60);
+                                fifo_64_written_1(I) <= '0';
+                            else
+                                fifo_data_1(I)(63 downto 32) <= fifo_q_0(I)(63 downto 60);
+                                fifo_64_written_1(I) <= '1';
+                                fifo_wen_1(I) <= '1';
+                            end if;
+                        elsif ( fifo_q_0(I + generate_fifos(0)/2)(63 downto 60) <= cur_time_0(I) ) then
+                            fifo_ren_0(I + generate_fifos(0)/2) <= '1';
+                            if ( fifo_64_written_1(I) = '1' ) then
+                                fifo_data_1(I)(31 downto 0) <= fifo_q_0(I + generate_fifos(0)/2)(63 downto 60);
+                                fifo_64_written_1(I) <= '0';
+                            else
+                                fifo_data_1(I)(63 downto 32) <= fifo_q_0(I + generate_fifos(0)/2)(63 downto 60);
+                                fifo_64_written_1(I) <= '1';
+                                fifo_wen_1(I) <= '1';
+                            end if;
+                        else
+                            cur_time_0(I) <= cur_time_0(I) + '1';
+                        end if;
+                    end if;
+                    
+                    --if ( fifo_empty_0(I) = '0' and fifo_empty_0(I + generate_fifos(0)/2) = '0' and fifo_ren_0(I) = '0' and fifo_ren_0(I + generate_fifos(0)/2) = '0' ) then
+                        --compare which FIFO to read
+                        --if ( fifo_q_0(I)(31 downto 28) <= fifo_q_0(I + generate_fifos(0)/2)(31 downto 28) and check_fifo_0(I)(0) = '0' ) then
+                            
+                            --check_fifo_0(I)(0) <= '1';
+                            
+                            --if ( check_fifo_0(I)(1) = '1' ) then
+                                --fifo_data_1(I)(63 downto 32) <= fifo_q_0(I)(31 downto 0);
+                                --fifo_wen_1(I) <= '1';
+                            --else
+                                --fifo_data_1(I)(31 downto 0) <= fifo_q_0(I)(31 downto 0);
+                            --end if;
+                            
+                            --if ( fifo_q_0(I)(63 downto 60) <= fifo_q_0(I + generate_fifos(0)/2)(31 downto 28) and check_fifo_0(I)(1) = '0' ) then
+                                --fifo_data_1(I)(63 downto 32) <= fifo_q_0(I)(63 downto 32);
+                                --check_fifo_0(I) <= (others => '0');
+                                --fifo_ren_0(I) <= '1';
+                                --fifo_wen_1(I) <= '1';
+                            --elsif ( check_fifo_0(I)(1) = '0' ) then  
+                                --fifo_data_1(I)(63 downto 32) <= fifo_q_0(I + generate_fifos(0)/2)(31 downto 0);
+                                --check_fifo_0(I)(1) <= '1';
+                                --fifo_wen_1(I) <= '1';
+                            --end if;
+                            
+                        --elsif ( check_fifo_0(I)(1) = '0' ) then
+                        
+                            --check_fifo_0(I)(1) <= '1';
+                            
+                            --if ( check_fifo_0(I)(0) = '1' ) then
+                                --fifo_data_1(I)(63 downto 32) <= fifo_q_0(I + generate_fifos(0)/2)(31 downto 0);
+                                --fifo_wen_1(I) <= '1';
+                            --else
+                                --fifo_data_1(I)(31 downto 0) <= fifo_q_0(I + generate_fifos(0)/2)(31 downto 0);
+                            --end if;
+                            
+                            --if ( fifo_q_0(I + generate_fifos(0)/2)(63 downto 60) < fifo_q_0(I)(31 downto 28) and check_fifo_0(I)(0) = '0' ) then
+                                --fifo_data_1(I)(63 downto 32) <= fifo_q_0(I + generate_fifos(0)/2)(63 downto 32);
+                                --check_fifo_0(I) <= (others => '0');
+                                --fifo_ren_0(I + generate_fifos(0)/2) <= '1';
+                                --fifo_wen_1(I) <= '1';
+                            --elsif ( check_fifo_0(I)(0) = '0' ) then
+                                --fifo_data_1(I)(63 downto 32) <= fifo_q_0(I)(31 downto 0);
+                                --check_fifo_0(I)(0) <= '1';
+                                --fifo_wen_1(I) <= '1';
+                            --end if;
+                        --end if;
+                        
+                        --case where only first word of both FIFOs were read
+                        --if ( check_fifo_0(I)(0) = '1' and check_fifo_0(I)(1) = '1' ) then
+                            --if ( fifo_q_0(I)(63 downto 60) <= fifo_q_0(I + generate_fifos(0)/2)(63 downto 60) ) then
+                                --fifo_data_1(I)(31 downto 0) <= fifo_q_0(I)(63 downto 32);
+                                --check_fifo_0(I)(0) <= '0';
+                                --fifo_ren_0(I) <= '1';
+                            --else
+                                --fifo_data_1(I)(31 downto 0) <= fifo_q_0(I + generate_fifos(0)/2)(63 downto 60);
+                                --check_fifo_0(I)(1) <= '0';
+                                --fifo_ren_0(I + generate_fifos(0)/2) <= '1';
+                            --end if;
+                        --end if;
+                    --end if;
+                    
+                END LOOP;
             end if;
-        elsif ( merge_state = wait_for_sh ) then
-            cur_time <= 0;
-            cur_link <= (7,6,5,4,3,2,1,0);
-            check_time <= (others => '0');
-        end if;
     end if;
     end process;
+    
+    --merge hits per link
+    --process(i_clk, i_reset_n)
+    --begin
+    --if ( i_reset_n /= '1' ) then
+        --rack_hit <= (others => '0');
+        --hit_out <= (others => (others => '0'));
+        --hit_out_en <= (others => '0');
+        --check_time <= (others => '0');
+        --cur_time <= 0;
+        --cur_link <= (7,6,5,4,3,2,1,0);
+        
+    --elsif rising_edge(i_clk) then
+    
+        --rack_hit <= (others => '0');
+        --hit_out <= (others => (others => '0'));
+        --hit_out_en <= (others => '0');
+        
+        --merge hits
+        --if ( merge_state = merge_hits ) then
+            --if ( cur_time /= 16 ) then
+                --LOOP over output
+                --read out from link 0-7, 8-15, 16-23, 24-31, 32-33
+                --FOR I in 0 to 7 LOOP
+                    --if ( cur_link(I) >= N ) then
+                        
+                    --elsif ( link_good(cur_link(I)) = '1' and rack_hit(cur_link(I)) = '0' ) then
+                        --if ( i_rdata(cur_link(I))(35 downto 32) = cur_time ) then
+                            --hit_out(I) <= i_rdata(cur_link(I))(35 downto 4);
+                            --hit_out_en(I) <= '1';
+                            --rack_hit(cur_link(I)) <= '1';
+                        --else
+                            --cur_link(I) <= cur_link(I) + 8;
+                            --check_time(cur_link(I)) <= '1';
+                        --end if;
+                    --elsif ( i_rdata(cur_link(I))(37 downto 36) /= "00" or i_rdata(cur_link(I))(31 downto 26) = "111111" ) then
+                        --check_time(cur_link(I)) <= '1';
+                        --cur_link(I) <= cur_link(I) + 8;
+                    --end if;
+                --END LOOP;
+                
+                --if ( check_time = check_ones ) then
+                    --cur_link <= (7,6,5,4,3,2,1,0);
+                    --cur_time <= cur_time + 1;
+                    --check_time <= (others => '0');
+                --end if;
+            --end if;
+        --elsif ( merge_state = wait_for_sh ) then
+            --cur_time <= 0;
+            --cur_link <= (7,6,5,4,3,2,1,0);
+            --check_time <= (others => '0');
+        --end if;
+    --end if;
+    --end process;
    
     -- write data
     process(i_clk, i_reset_n)
