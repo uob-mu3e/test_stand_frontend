@@ -6,6 +6,7 @@ use ieee.std_logic_unsigned.all;
 LIBRARY altera_mf;
 USE altera_mf.all;
 
+use work.daq_constants.all;
 
 entity top is 
     port (
@@ -72,7 +73,11 @@ architecture arch of top is
     signal clk50                                : std_logic;
     signal pll_locked                           : std_logic;
 
-    signal flash_programming_ctrl                        : std_logic_vector(31 downto 0);
+    signal  version                             : std_logic_vector(31 downto 0);
+    signal  status                              : std_logic_vector(31 downto 0);
+    signal  programming_status                  : std_logic_vector(31 downto 0);
+
+    signal flash_programming_ctrl               : std_logic_vector(31 downto 0);
     signal flash_w_cnt                          : std_logic_vector(31 downto 0);
     signal reset_n                              : std_logic;
 
@@ -121,6 +126,16 @@ architecture arch of top is
     signal SPI_Max10_data                       : std_logic_vector(31 downto 0);
     signal SPI_addr_o                           : std_logic_vector(6 downto 0);
     signal SPI_rw                               : std_logic;
+
+    signal spi_arria_addr           : std_logic_vector(7 downto 0);
+    signal spi_arria_addr_offset    : std_logic_vector(7 downto 0);
+    signal spi_arria_rw             : std_logic;
+    signal spi_arria_data_to_arria  : std_logic_vector(31 downto 0);
+    signal spi_arria_next_data      : std_logic;
+    signal spi_arria_word_from_arria: std_logic_vector(31 downto 0);
+    signal spi_arria_word_en        : std_logic;
+    signal spi_arria_byte_from_arria: std_logic_vector(7 downto 0);
+    signal spi_arria_byte_en        : std_logic;
 
     -- spi arria ram
     signal ram_SPI_data                         : std_logic_vector(31 downto 0);
@@ -180,76 +195,61 @@ begin
         locked      => pll_locked--,
     );
 
+    e_vreg: entity work.version_reg
+    port map(
+        data_out => version(27 downto 0)
+    );
+    version(31 downto 28) <= (others => '0');
+
+    status(0)  <= pll_locked;
+    status(23 downto 1) <= (others => '0');
+    status(31 downto 24) <= spi_flash_status;
+
+    programming_status   <= (others => '0');
+
     -- SPI Arria10 to MAX10
     -----------------------
-    e_spi_secondary : entity work.spi_secondary
-    generic map (
-        SS      => '1', -- signal des ChipSelects 
-        R       => '1', -- Read Signal
-        lanes   => 4--,
-    )
-    port map(
-        -- Max Data/register interface 
-        o_Max_rw        => SPI_rw,
-        o_Max_data      => SPI_Aria_data,
-        o_Max_addr_o    => SPI_addr_o,
-        o_b_addr        => SPI_inst, -- command adrr.
-
-        -- spi interface
-        i_Max_data      => SPI_Max10_data,
-        i_SPI_cs        => fpga_spi_csn,
-        i_SPI_clk       => fpga_spi_D3, -- fpga_spi_clk, --max10_osc_clk, --
-        io_SPI_mosi     => fpga_spi_mosi,
-        io_SPI_D1       => fpga_spi_D1,
-        io_SPI_D2       => fpga_spi_D2,
-        io_SPI_miso     => fpga_spi_miso,
-        io_SPI_D3       => open--,
+    e_spi_arria: entity work.spi_arria
+        port map(
+            ------ SPI
+            i_SPI_cs        => fpga_spi_csn,
+            i_SPI_clk       => fpga_spi_D3, -- replacement for missing connection 
+            io_SPI_mosi     => fpga_spi_mosi,
+            io_SPI_miso     => open,
+            io_SPI_D1       => fpga_spi_D1,
+            io_SPI_D2       => fpga_spi_D2,
+            io_SPI_D3       => fpga_spi_miso, -- again, replacement
+    
+            clk100          => clk100,
+            reset_n         => reset_n,
+            addr            => spi_arria_addr,
+            addroffset      => spi_arria_addr_offset,
+            data_to_arria   => spi_arria_data_to_arria,
+            rw              => spi_arria_rw,
+            word_en         => spi_arria_word_en,
+            byte_from_arria => spi_arria_byte_from_arria,
+            byte_en         =>  spi_arria_byte_en
     );
-
-    e_spi_decoder : entity work.spi_decoder
-    port map(
-        -- SPI secondary
-        i_SPI_inst      => SPI_inst,
-        i_SPI_data      => SPI_Aria_data,
-        i_SPI_addr_o    => SPI_addr_o,
-        i_SPI_rw        => SPI_rw,
-        o_SPI_data      => SPI_Max10_data,
-
-        -- ram interface
-        i_ram_data      => ram_SPI_data,
-        o_ram_data      => SPI_ram_data,
-        o_ram_addr      => SPI_ram_addr,
-        o_ram_rw        => SPI_ram_rw,
-
-        -- ADC Nios PIOs
-        i_adc_data_0    => adc_data_0,
-        i_adc_data_1    => adc_data_1,
-        i_adc_data_2    => adc_data_2,
-        i_adc_data_3    => adc_data_3,
-        i_adc_data_4    => adc_data_4,
-
-        -- fifo interface
-        i_fifo_data     => X"00000010",--fifo_SPI_data,
-        o_fifo_data     => open,--SPI_fifo_data,
-        o_fifo_next     => open,--SPI_fifo_next,
-        o_fifo_rw       => open,--SPI_fifo_rw,
-        
-        -- command register --
-        i_comm_data     => X"00000030",
-        o_comm_data     => open,
-        o_comm_rw       => open,
-        
-        -- status register--
-        i_stat_data     => X"00000050",
-        o_stat_data     => open,
-        o_stat_rw       => open,
-
-        -- register
-        i_reg_data      => X"00000070",
-        o_reg_data      => open,
-        o_reg_addr      => open,
-        o_reg_rw        => open--,
-    );
+ 
+    -- Multiplexer for data to_arria
+    spi_arria_data_to_arria  
+              <=   version when spi_arria_addr = FEBSPI_ADDR_GITHASH
+                    else status when spi_arria_addr = FEBSPI_ADDR_STATUS
+                    else programming_status when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_STATUS
+                    else flash_w_cnt when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_COUNT
+                    else adc_data_0 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                                     and spi_arria_addr_offset = X"00"
+                    else adc_data_1 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                                     and spi_arria_addr_offset = X"01"
+                    else adc_data_2 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                                     and spi_arria_addr_offset = X"02"
+                    else adc_data_3 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                                     and spi_arria_addr_offset = X"03"
+                    else adc_data_4 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                                     and spi_arria_addr_offset = X"04";
+                                     
+    arria_to_fifo_we <= spi_arria_byte_en when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_WFIFO
+                else '0';                   
 
     -- NIOS
     -----------------------
@@ -306,6 +306,8 @@ begin
         out_flash_fifo_read         => spi_flash_readfifo,
         out_flash_fifo_waitrequest  => spi_flash_fifo_empty--,
     );
+
+ 
 
     process(reset_n, clk100)
     begin
@@ -443,7 +445,7 @@ begin
         PORT MAP (
                 aclr => '0',
                 clock => clk100,
-                data => arria_to_fifo_data,
+                data => spi_arria_byte_from_arria,
                 rdreq => read_arriafifo,
                 sclr => not reset_n,
                 wrreq => arria_to_fifo_we,
@@ -451,12 +453,5 @@ begin
                 full  => arriafifo_full,
                 q => arriafifo_data
         );
-
-        signal arria_to_fifo_data:  std_logic_vector(7 downto 0);
-        signal arria_to_fifo_we:    std_logic;  
-        signal read_arriafifo:      std_logic;
-        signal arriafifo_empty:     std_logic;
-        signal arriafifo_full:      std_logic;  
-        signal arriafifo_data:      std_logic_vector(7 downto 0);                          
 
 end architecture arch;
