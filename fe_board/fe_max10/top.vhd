@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 LIBRARY altera_mf;
-USE altera_mf.all;
+USE altera_mf.altera_mf_components.all;
 
 use work.daq_constants.all;
 
@@ -120,6 +120,13 @@ architecture arch of top is
     signal fifo_read_pulse                      : std_logic;
     signal wcounter                             : std_logic_vector(15 downto 0);
 
+    -- Fifo for programming data from Arria
+    signal arria_to_fifo_we                     : std_logic;
+    signal arriafifo_empty                      : std_logic;
+    signal arriafifo_full                       : std_logic;
+    signal arriafifo_data                       : std_logic_vector(7 downto 0);
+    signal read_arriafifo                       : std_logic;
+
     -- spi arria
     signal SPI_inst                         : std_logic_vector(7 downto 0);
     signal SPI_Aria_data                        : std_logic_vector(31 downto 0);
@@ -127,7 +134,7 @@ architecture arch of top is
     signal SPI_addr_o                           : std_logic_vector(6 downto 0);
     signal SPI_rw                               : std_logic;
 
-    signal spi_arria_addr           : std_logic_vector(7 downto 0);
+    signal spi_arria_addr           : std_logic_vector(6 downto 0);
     signal spi_arria_addr_offset    : std_logic_vector(7 downto 0);
     signal spi_arria_rw             : std_logic;
     signal spi_arria_data_to_arria  : std_logic_vector(31 downto 0);
@@ -150,10 +157,9 @@ architecture arch of top is
     signal adc_data_3                           : std_logic_vector(31 downto 0);
     signal adc_data_4                           : std_logic_vector(31 downto 0);
     
-    COMPONENT scfifo
+    COMPONENT sssscfifo
     GENERIC (
             add_ram_output_register         : STRING;
-            almost_full_value               : NATURAL;
             intended_device_family          : STRING;
             lpm_numwords            : NATURAL;
             lpm_showahead           : STRING;
@@ -173,6 +179,7 @@ architecture arch of top is
                     wrreq   : IN STD_LOGIC ;
                     almost_full     : OUT STD_LOGIC ;
                     empty   : OUT STD_LOGIC ;
+                    full    : OUT STD_LOGIC;
                     q       : OUT STD_LOGIC_VECTOR (253 DOWNTO 0)
     );
     END COMPONENT;
@@ -429,7 +436,7 @@ begin
         fpga_clk            => fpga_clk--,
     );
 
-    scfifo_component : scfifo
+    scfifo_component : altera_mf.altera_mf_components.scfifo
         GENERIC MAP (
                 add_ram_output_register => "ON",
                 intended_device_family => "Max 10",
