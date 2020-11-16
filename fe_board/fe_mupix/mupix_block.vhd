@@ -7,6 +7,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 use work.daq_constants.all;
 use work.mupix_constants.all;
+use work.mupix_registers.all;
 
 entity mupix_block is
 generic(
@@ -375,16 +376,6 @@ begin
                 end if;
             end if;
             
-            if ( i_reg_add = x"9B" and i_reg_re = '1' ) then
-                if(NLVDS > 32) then
-                    for I in 0 to NLVDS-33 loop
-                        o_reg_rdata(I)     <= lvds_data_valid(32 + I);
-                    end loop;
-                else
-                    o_reg_rdata            <= (others => '0');
-                end if;
-            end if;
-            
             if ( i_reg_add = x"98" and i_reg_we = '1' ) then
                 disable_conditions_for_run_ack  <= i_reg_wdata(0);
             end if;-- NO ELSIF HERE!!
@@ -401,7 +392,17 @@ begin
             if ( i_reg_add = x"9A" and i_reg_re = '1' ) then
                 o_reg_rdata <= reg_hits_ena_count;
             end if;
-
+            
+            if ( i_reg_add = x"9B" and i_reg_re = '1' ) then
+                if(NLVDS > 32) then
+                    for I in 0 to NLVDS-33 loop
+                        o_reg_rdata(I)     <= lvds_data_valid(32 + I);
+                    end loop;
+                else
+                    o_reg_rdata            <= (others => '0');
+                end if;
+            end if;
+            
         end if;
     end process board_dac_regs;
 

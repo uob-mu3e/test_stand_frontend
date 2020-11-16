@@ -8,7 +8,6 @@
 -- muellem@uni-mainz.de
 -- 
 -- derived from mupix8_daq data_unpacker
--- (mp10 only, single hit_out format without coarsecounters)
 -- Sebastian Dittmeier, September 2017
 -- Ann-Kathrin Perrevoort, April 2017
 --------------------------------------------------------------
@@ -20,22 +19,29 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use work.mupix_constants.all;
 use work.daq_constants.all;
+use work.mupix_registers.all;
 
 
 
 entity data_unpacker is 
     generic (
-        COARSECOUNTERSIZE   : integer   := 32
+        COARSECOUNTERSIZE   : integer   := 32;
+        LVDS_ID             : integer   := 0;
     );
     port (
         reset_n             : in  std_logic;
         clk                 : in  std_logic;
-        datain              : in  std_logic_vector (7 downto 0);
+        datain              : in  std_logic_vector(7 downto 0);
         kin                 : in  std_logic;
         readyin             : in  std_logic;
-        hit_out             : out std_logic_vector (31 downto 0); -- Link[7:0] & Row[7:0] & Col[7:0] & Charge[5:0] & TS[9:0]
-        hit_ena             : out std_logic;
-        coarsecounter       : out std_logic_vector (COARSECOUNTERSIZE-1 downto 0); -- Gray Counter[7:0] & Binary Counter [23:0]
+        i_mp_readout_mode   : in  std_logic_vector(31 downto 0);
+        o_ts                : out std_logic_vector(3 downto 0);
+        o_chip_ID           : out std_logic_vector(5 downto 0);
+        o_row               : out std_logic_vector(7 downto 0);
+        o_col               : out std_logic_vector(7 downto 0);
+        o_tot               : out std_logic_vector(5 downto 0);
+        o_hit_ena           : out std_logic;
+        coarsecounter       : out std_logic_vector(COARSECOUNTERSIZE-1 downto 0); -- Gray Counter[7:0] & Binary Counter [23:0]
         coarsecounter_ena   : out std_logic;
         link_flag           : out std_logic;
         errorcounter        : out std_logic_vector(31 downto 0)
@@ -63,7 +69,71 @@ architecture RTL of data_unpacker is
     signal hit_reg              : std_logic;
     signal link_flag_reg        : std_logic;
 
+    signal ts                   : std_logic_vector(3 downto 0);
+    signal row                  : std_logic_vector(7 downto 0);
+    signal col                  : std_logic_vector(7 downto 0);
+    signal tot                  : std_logic_vector(5 downto 0);
+    signal hit_ena              : std_logic;
+
+    signal chip_ID_mode         : std_logic_vector(1 downto 0);
+    signal tot_mode             : std_logic_vector(2 downto 0);
+    signal invert_TS            : std_logic;
+    signal invert_TS2           : std_logic;
+    signal gray_TS              : std_logic;
+    signal gray_TS2             : std_logic;
+
+    function convert_lvds_to_chip_id (
+        lvds_ID       : integer;
+        chip_ID_mode  : std_logic_vector(1 downto 0)--;
+    ) return std_logic_vector is 
+        variable chip_id : std_logic_vector(5 downto 0);
+    begin
+    
+        return chip_id;
+    end;
+
+    function convert_row (
+        i_col       : std_logic_vector(6 downto 0);
+        i_row       : std_logic_vector(8 downto 0)--;
+    ) return std_logic_vector is 
+        variable row : std_logic_vector(7 downto 0);
+    begin
+        -- TODO: correct row conversion
+        row := i_row(7 downto 0);
+        return row;
+    end;
+
+    function convert_col (
+        i_col       : std_logic_vector(6 downto 0);
+        i_row       : std_logic_vector(8 downto 0)--;
+    ) return std_logic_vector is 
+        variable col : std_logic_vector(7 downto 0);
+    begin
+        -- TODO: correct col. conversion
+        col := '0' & i_col;
+        return col;
+    end;
+
+    function calc_tot (
+        ts2       : std_logic_vector( 4 downto 0);
+        ts        : std_logic_vector(12 downto 0);
+        tot_mode  : std_logic_vector( 2 downto 0)--;
+    ) return std_logic_vector is 
+        variable tot : std_logic_vector(5 downto 0);
+    begin
+        -- TODO: calc. something here
+        tot := '0' & ts2;
+        return tot;
+    end;
+
 begin
+
+    chip_ID_mode    <= i_mp_readout_mode(CHIP_ID_MODE_RANGE);
+    tot_mode        <= i_mp_readout_mode(TOT_MODE_RANGE);
+    invert_TS       <= i_mp_readout_mode(INVERT_TS_BIT);
+    invert_TS2      <= i_mp_readout_mode(INVERT_TS2_BIT);
+    gray_TS         <= i_mp_readout_mode(GRAY_TS_BIT);
+    gray_TS2        <= i_mp_readout_mode(GRAY_TS2_BIT);
 
     errorcounter     <= errorcounter_reg;
 
@@ -73,7 +143,6 @@ begin
             NS <= IDLE;
 
             hit_ena             <= '0';
-            hit_out             <= (others => '0');
             coarsecounter       <= (others => '0');
             coarsecounter_ena   <= '0';
             link_flag           <= '0';
@@ -109,12 +178,11 @@ begin
                     -- Col = data_i(15 downto 9)
                     -- Row = data_i(8 downto 0)
                 -- We present to the outside:
-                    -- hit_out(31 downto 24): row
-                    -- hit_out(23 downto 16): col
-                    -- hit_out(15 downto 10): ts2
-                    -- hit_out(9 downto 0)    : ts1
-                hit_out         <= data_i(7 downto 0) & data_i(8) & data_i(15 downto 9) & -- Row(7:0) & Row(8) & Col(7b)
-                                    data_i(26) & data_i(31 downto 27) & data_i(25 downto 16);         -- TS1(10)  & TS2(5b)  & TS1(9:0)
+                ts              <= data_i(19 downto 16);
+                o_chip_ID       <= convert_lvds_to_chip_id(LVDS_ID,i_chip_ID_mode);
+                row             <= convert_row(data_i(15 downto 9),data_i(8 downto 0)); -- convert_row(col, row)
+                col             <= convert_col(data_i(15 downto 9),data_i(8 downto 0));
+                tot             <= calc_tot(data_i(31 downto 27), data_i(26 downto 16), i_tot_mode);
             end if;
 
             if(readyin = '0')then
@@ -210,5 +278,27 @@ begin
         end if;
 
     end process;
+
+    degray_single : work.hit_ts_conversion
+    port map(
+        reset_n     => reset_n,
+        clk         => clk,
+        invert_TS   => invert_TS,
+        invert_TS2  => invert_TS2,
+        gray_TS     => gray_TS,
+        gray_TS2    => gray_TS2,
+        
+        o_ts        => o_ts,
+        o_row       => o_row,
+        o_col       => o_col,
+        o_tot       => o_tot,
+        o_hit_ena   => o_hit_ena,
+        
+        i_ts        => ts,
+        i_row       => row,
+        i_col       => col,
+        i_tot       => tot,
+        i_hit_ena   => hit_ena,
+    );
 
 end RTL;

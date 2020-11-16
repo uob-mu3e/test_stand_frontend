@@ -8,6 +8,7 @@ use ieee.numeric_std.all;
 use work.daq_constants.all;
 use work.mupix_constants.all;
 use work.mupix_types.all;
+use work.mupix_registers.all;
 
 entity mupix_datapath is
 generic(
@@ -197,7 +198,8 @@ begin
  
     unpacker_single : work.data_unpacker
     generic map(
-        COARSECOUNTERSIZE   => COARSECOUNTERSIZE
+        COARSECOUNTERSIZE   => COARSECOUNTERSIZE;
+        LVDS_ID             => i
     )
     port map(
         reset_n             => reset_125_n,
@@ -213,19 +215,19 @@ begin
         errorcounter        => unpack_errorcounter(i) -- could be useful!
     );
 
-    degray_single : work.hit_ts_conversion 
-    port map(
-        reset_n     => reset_125_n,
-        clk         => i_clk125, 
-        invert_TS   => invert_TS,
-        invert_TS2  => invert_TS2,
-        gray_TS     => gray_TS,
-        gray_TS2    => gray_TS2,
-        hit_in      => hits(UNPACKER_HITSIZE*(i+1)-1 downto UNPACKER_HITSIZE*i),
-        hit_ena_in  => hits_ena(i),
-        hit_out     => binhits(i),--binhits(UNPACKER_HITSIZE*(i+1)-1 downto UNPACKER_HITSIZE*i),
-        hit_ena_out => binhits_ena(i)
-    );
+--    degray_single : work.hit_ts_conversion 
+--    port map(
+--        reset_n     => reset_125_n,
+--        clk         => i_clk125, 
+--        invert_TS   => invert_TS,
+--        invert_TS2  => invert_TS2,
+--        gray_TS     => gray_TS,
+--        gray_TS2    => gray_TS2,
+--        hit_in      => hits(UNPACKER_HITSIZE*(i+1)-1 downto UNPACKER_HITSIZE*i),
+--        hit_ena_in  => hits_ena(i),
+--        hit_out     => binhits(i),--binhits(UNPACKER_HITSIZE*(i+1)-1 downto UNPACKER_HITSIZE*i),
+--        hit_ena_out => binhits_ena(i)
+--    );
 
     END GENERATE genunpack;
 
