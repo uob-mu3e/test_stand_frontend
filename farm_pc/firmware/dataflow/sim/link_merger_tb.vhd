@@ -45,6 +45,9 @@ begin
     slow_down <= x"00000002";
 
     e_data_gen_mupix : entity work.data_generator_a10
+    generic map (
+      go_to_trailer => "0000111111"
+    )
     port map(
         clk => dataclk,
         reset => reset,
@@ -60,6 +63,9 @@ begin
     );
     
     e_data_gen_scifi : entity work.data_generator_a10
+    generic map (
+      go_to_trailer => "0000111111"
+    )
     port map(
         clk => dataclk,
         reset => reset,
@@ -75,6 +81,9 @@ begin
     );
     
     e_data_gen_tiles : entity work.data_generator_a10
+    generic map (
+      go_to_trailer => "0000111111"
+    )
     port map(
         clk => dataclk,
         reset => reset,

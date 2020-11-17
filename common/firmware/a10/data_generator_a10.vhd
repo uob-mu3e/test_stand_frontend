@@ -35,11 +35,13 @@ use work.protocol.all;
 
 entity data_generator_a10 is
     generic (
-        fpga_id: in std_logic_vector(15 downto 0) := x"FFFF";
+        fpga_id: std_logic_vector(15 downto 0) := x"FFFF";
         max_row: std_logic_vector (7 downto 0) := (others => '0');
         max_col: std_logic_vector (7 downto 0) := (others => '0');
         go_to_sh: std_logic_vector (3 downto 0) := "1111";
-        go_to_trailer: std_logic_vector (9 downto 0) := "1111111111"
+        go_to_trailer: std_logic_vector (9 downto 0) := "1111111111";
+        wtot: std_logic := '0';
+        wchip: std_logic := '0'
     );
     port(
 		clk:                 	in  std_logic;
@@ -67,8 +69,8 @@ architecture rtl of data_generator_a10 is
 	signal data_header_state:   data_header_states;
 
 	-- random signals
-	signal lsfr_chip_id:     	  std_logic_vector (5 downto 0);
-	signal lsfr_tot:     	  	  std_logic_vector (5 downto 0);
+	signal lsfr_chip_id, lsfr_chip_id_reg:     	  std_logic_vector (5 downto 0);
+	signal lsfr_tot, lsfr_tot_reg:     	  	  std_logic_vector (5 downto 0);
 	signal row:     	  	  std_logic_vector (7 downto 0);
 	signal col:     	     std_logic_vector (7 downto 0);
 	signal lsfr_overflow:        std_logic_vector (15 downto 0);
@@ -93,7 +95,7 @@ begin
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed(5 downto 0),
 		i_en 				=> enable_pix,    
-		o_lsfr 			=> lsfr_chip_id
+		o_lsfr 			=> lsfr_chip_id_reg
 	);
 	
 	pix_tot_shift : entity work.linear_shift
@@ -107,7 +109,7 @@ begin
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed(15 downto 10),
 		i_en 				=> enable_pix,    
-		o_lsfr 			=> lsfr_tot
+		o_lsfr 			=> lsfr_tot_reg
 	);
 	
 	overflow_shift : entity work.linear_shift
@@ -140,6 +142,9 @@ begin
 		end if;
 	end if;
 end process;
+
+lsfr_tot <= (others => '0') when wtot = '0' else lsfr_tot_reg;
+lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
 	
 	
 	
