@@ -75,7 +75,10 @@ architecture arch of top is
 
     signal  version                             : std_logic_vector(31 downto 0);
     signal  status                              : std_logic_vector(31 downto 0);
-    signal  programming_status                  : std_logic_vector(31 downto 0);
+    signal  control                             : std_logic_vector(31 downto 0);
+    signal  spi_arria_we                        : std_logic;
+    signal  rw_last                             : std_logic;
+    signal  new_transaction                     : std_logic;
 
     signal flash_programming_ctrl               : std_logic_vector(31 downto 0);
     signal flash_w_cnt                          : std_logic_vector(31 downto 0);
@@ -114,9 +117,10 @@ architecture arch of top is
     signal spi_flash_readfifo                   : std_logic;
     signal spi_flash_fifo_empty                 : std_logic;
 
-    type spiflashstate_type is (idle, fifowriting, programming);
+    type spiflashstate_type is (idle, fifowriting, arriafifowriting, programming);
     signal spiflashstate : spiflashstate_type;
     signal fifo_req_last                        : std_logic;
+    signal arria_fifo_req_last                  : std_logic;
     signal fifo_read_pulse                      : std_logic;
     signal wcounter                             : std_logic_vector(15 downto 0);
 
@@ -128,21 +132,21 @@ architecture arch of top is
     signal read_arriafifo                       : std_logic;
 
     -- spi arria
-    signal SPI_inst                         : std_logic_vector(7 downto 0);
+    signal SPI_inst                             : std_logic_vector(7 downto 0);
     signal SPI_Aria_data                        : std_logic_vector(31 downto 0);
     signal SPI_Max10_data                       : std_logic_vector(31 downto 0);
     signal SPI_addr_o                           : std_logic_vector(6 downto 0);
     signal SPI_rw                               : std_logic;
 
-    signal spi_arria_addr           : std_logic_vector(6 downto 0);
-    signal spi_arria_addr_offset    : std_logic_vector(7 downto 0);
-    signal spi_arria_rw             : std_logic;
-    signal spi_arria_data_to_arria  : std_logic_vector(31 downto 0);
-    signal spi_arria_next_data      : std_logic;
-    signal spi_arria_word_from_arria: std_logic_vector(31 downto 0);
-    signal spi_arria_word_en        : std_logic;
-    signal spi_arria_byte_from_arria: std_logic_vector(7 downto 0);
-    signal spi_arria_byte_en        : std_logic;
+    signal spi_arria_addr                       : std_logic_vector(6 downto 0);
+    signal spi_arria_addr_offset                : std_logic_vector(7 downto 0);
+    signal spi_arria_rw                         : std_logic;
+    signal spi_arria_data_to_arria              : std_logic_vector(31 downto 0);
+    signal spi_arria_next_data                  : std_logic;
+    signal spi_arria_word_from_arria            : std_logic_vector(31 downto 0);
+    signal spi_arria_word_en                    : std_logic;
+    signal spi_arria_byte_from_arria            : std_logic_vector(7 downto 0);
+    signal spi_arria_byte_en                    : std_logic;
 
     -- spi arria ram
     signal ram_SPI_data                         : std_logic_vector(31 downto 0);
@@ -157,33 +161,6 @@ architecture arch of top is
     signal adc_data_3                           : std_logic_vector(31 downto 0);
     signal adc_data_4                           : std_logic_vector(31 downto 0);
     
-    COMPONENT sssscfifo
-    GENERIC (
-            add_ram_output_register         : STRING;
-            intended_device_family          : STRING;
-            lpm_numwords            : NATURAL;
-            lpm_showahead           : STRING;
-            lpm_type                : STRING;
-            lpm_width               : NATURAL;
-            lpm_widthu              : NATURAL;
-            overflow_checking               : STRING;
-            underflow_checking              : STRING;
-            use_eab         : STRING
-    );
-    PORT (
-                    aclr    : IN STD_LOGIC ;
-                    clock   : IN STD_LOGIC ;
-                    data    : IN STD_LOGIC_VECTOR (253 DOWNTO 0);
-                    rdreq   : IN STD_LOGIC ;
-                    sclr    : IN STD_LOGIC ;
-                    wrreq   : IN STD_LOGIC ;
-                    almost_full     : OUT STD_LOGIC ;
-                    empty   : OUT STD_LOGIC ;
-                    full    : OUT STD_LOGIC;
-                    q       : OUT STD_LOGIC_VECTOR (253 DOWNTO 0)
-    );
-    END COMPONENT;
-
 begin
 
     -- signal defaults, clk & resets
@@ -209,6 +186,7 @@ begin
     version(31 downto 28) <= (others => '0');
 
     status(0)  <= pll_locked;
+    status(1)  <= spi_arria_we;
     status(23 downto 1) <= (others => '0');
     status(31 downto 24) <= spi_flash_status;
 
@@ -233,15 +211,41 @@ begin
             addroffset      => spi_arria_addr_offset,
             data_to_arria   => spi_arria_data_to_arria,
             rw              => spi_arria_rw,
+            word_from_arria => spi_arria_word_from_arria,
             word_en         => spi_arria_word_en,
             byte_from_arria => spi_arria_byte_from_arria,
             byte_en         =>  spi_arria_byte_en
     );
  
+    -- Write enable logic
+    process(clk100, reset_n)
+    begin
+    if (reset_n = '0') then
+        spi_arria_we <= '0';
+        rw_last     <= '0';
+        new_transaction <= '0';
+    elsif(clk100'event and clk100 = '1')then
+        rw_last     <= spi_arria_rw
+        if(spi_arria_addr = FEBSPI_ADDR_WRITENABLE
+            and spi_arria_byte_from_arria = FEBSPI_PATTERN_WRITENABLE
+            and spi_arria_byte_en = '1' and spi_arria_rw = '1') then
+                spi_arria_we <= '1';
+        end if;
+        if(spi_arria_we = '1' and rw_last <= '0' and spi_arria_rw = '1') then
+            new_transaction <= '1';
+        end if;
+        if(new_transaction = '1' and rw_last <= '1' and spi_arria_rw = '0') then
+            spi_arria_we <= '0';
+            new_transaction <= '0';
+        end if;
+    end if;
+    end process;
+
     -- Multiplexer for data to_arria
     spi_arria_data_to_arria  
               <=   version when spi_arria_addr = FEBSPI_ADDR_GITHASH
                     else status when spi_arria_addr = FEBSPI_ADDR_STATUS
+                    else control when  spi_arria_addr = FEBSPI_ADDR_CONTROL
                     else programming_status when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_STATUS
                     else flash_w_cnt when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_COUNT
                     else adc_data_0 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
@@ -257,6 +261,28 @@ begin
                                      
     arria_to_fifo_we <= spi_arria_byte_en when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_WFIFO
                 else '0';                   
+
+    -- Write multiplexer
+    process(clk100, reset_n)
+    begin
+    if (reset_n = '0') then
+        control <= (others => '0');           
+    elsif(clk100'event and clk100 = '1')then
+        -- Word-wise writing
+        if(spi_arria_rw = '1' and spi_arria_word_en = '1') then
+            if(spi_arria_addr = FEBSPI_ADDR_CONTROL) then
+                control <= spi_arria_word_from_arria;
+            end if;
+        end if;
+        -- Byte-wise writing
+        if(spi_arria_rw = '1' and spi_arria_byte_en = '1') then
+            --if(spi_arria_addr = FEBSPI_ADDR_CONTROL) then
+            --    control <= spi_arria_byte_from_arria;
+            --end if;
+        end if;
+        
+    end if;
+    end process;
 
     -- NIOS
     -----------------------
@@ -323,10 +349,12 @@ begin
         spi_flash_granted_programmer    <= '0';
         fifo_read_pulse                 <= '0';
         fifo_req_last                   <= '0';
+        arria_fifo_req_last             <= '0';
     elsif ( clk100'event and clk100 = '1' ) then
 
         fifo_read_pulse                 <= '0';
         fifo_req_last                   <= spi_flash_ctrl(7);
+        arria_fifo_req_last             <= control(0);
 
         case spiflashstate is
         when idle =>
@@ -339,11 +367,23 @@ begin
                 fifo_read_pulse <= '1';
                 wcounter        <= (others => '0');
             end if;
+
+            if(control(0) = '1' and arria_fifo_req_last = '0') then
+                spiflashstate   <= arriafifowriting;
+                fifo_read_pulse <= '1';
+                wcounter        <= (others => '0');
+            end if;
         when fifowriting =>
             wcounter                        <= wcounter + 1;
             if ( spi_flash_fifo_empty = '1' ) then
                 spiflashstate <= idle;
             end if;    
+        when arriafifowriting =>
+            wcounter                        <= wcounter + 1;
+            if ( arriafifo_empty = '1' ) then
+                spiflashstate <= idle;
+            end if;  
+
         when programming =>
             spi_flash_granted_programmer    <= '1';
             if(spi_flash_request_programmer = '0') then
@@ -368,6 +408,7 @@ begin
 
     spi_continue                <= spi_continue_programmer  when spiflashstate = programming
                                 else not spi_flash_fifo_empty when spiflashstate = fifowriting
+                                else not arriafifo_empty when spiflashstate = arriafifowriting
                                 else spi_flash_ctrl(1);
 
     spi_strobe                  <= spi_strobe_programmer when spiflashstate = programming
