@@ -80,6 +80,7 @@ architecture rtl of mupix_datapath is
 
 
     signal running                  : std_logic;
+    signal generator_enable         : std_logic := '0';
 
     -- flag to indicate link, after unpacker
     signal link_flag                : std_logic_vector(NCHIPS-1 downto 0);
@@ -126,6 +127,12 @@ architecture rtl of mupix_datapath is
 
     signal fifo_wdata               : std_logic_vector(35 downto 0);
     signal fifo_write               : std_logic;
+
+    signal fifo_wdata_hs            : std_logic_vector(35 downto 0);
+    signal fifo_write_hs            : std_logic;
+
+    signal fifo_wdata_gen           : std_logic_vector(35 downto 0);
+    signal fifo_write_gen           : std_logic;
 
 begin
 
@@ -319,13 +326,36 @@ begin
         hit_in          => hits_sorter_in,--(others => (others => '0')),
         hit_ena_in      => hits_sorter_in_ena,--(others => '0'),
         readclk         => i_clk125,
-        data_out        => fifo_wdata(31 downto 0),
-        out_ena         => fifo_write,
-        out_type        => fifo_wdata(35 downto 32),
+        data_out        => fifo_wdata_hs(31 downto 0),
+        out_ena         => fifo_write_hs,
+        out_type        => fifo_wdata_hs(35 downto 32),
         diagnostic_sel  => (others => '0'),
         diagnostic_out  => open--,
     );
 
+    output_select : process(i_clk125) -- hitsorter, generator, unsorted ...
+    begin
+        if(rising_edge(i_clk125))then
+            if(generator_enable='1') then
+                fifo_wdata  <= fifo_wdata_gen;
+                fifo_write  <= fifo_write_gen;
+            else
+                fifo_wdata  <= fifo_wdata_hs;
+                fifo_write  <= fifo_write_hs;
+            end if;
+        end if;
+    end process output_select;
+
+    datagen: work.mp_sorter_datagen
+    port map(
+        reset_n         => sorter_reset_n,
+        clk             => i_clk125,
+        running         => running,
+        enable          => generator_enable,
+        fifo_wdata      => fifo_wdata_gen,
+        fifo_write      => fifo_write_gen--,
+    );
+    
     -- sync some things ..
     sync_fifo_cnt : entity work.ip_dcfifo
     generic map(
