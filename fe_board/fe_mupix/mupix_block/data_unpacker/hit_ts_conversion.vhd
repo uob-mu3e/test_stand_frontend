@@ -75,11 +75,11 @@ begin
             ts2_temp    <= (others => '0');
 
         elsif(rising_edge(clk))then
-            TS_SIZE     <= TIMESTAMPSIZE_MP10;
+            TS_SIZE     <= TIMESTAMPSIZE;
             TS2_SIZE    <= CHARGESIZE_MP10;
             ts_temp     <= (others => '0');
             ts2_temp    <= (others => '0');
-            ts_temp(TIMESTAMPSIZE_MP10-1 downto 0)  <= i_ts;
+            ts_temp(TIMESTAMPSIZE-1 downto 0)  <= i_ts;
             ts2_temp(CHARGESIZE_MP10-1 downto 0)    <= i_ts2;
         end if;
     end process;
@@ -160,9 +160,9 @@ begin
             o_row           <= row_r2;
 
             if(gray_TS = '1')then
-                o_ts        <= hit_out_TS(TIMESTAMPSIZE_MP10-1 downto 0);
+                o_ts        <= hit_out_TS(TIMESTAMPSIZE-1 downto 0);
             else
-                o_ts        <= hit_in_TS_reg(TIMESTAMPSIZE_MP10-1 downto 0);
+                o_ts        <= hit_in_TS_reg(TIMESTAMPSIZE-1 downto 0);
             end if;
 
             if(gray_TS2 = '1')then

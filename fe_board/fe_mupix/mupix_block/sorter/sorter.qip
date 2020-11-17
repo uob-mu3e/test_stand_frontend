@@ -3,6 +3,7 @@
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "countermemory.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "hitsorter_wide.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "hitsortermem.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "hitsortermem_large.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "sequencer.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "sorter_diagnostic_mux.vhd"] 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mp_sorter_datagen.vhd"]

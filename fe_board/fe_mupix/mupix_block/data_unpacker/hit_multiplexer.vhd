@@ -40,13 +40,13 @@ end hit_multiplexer;
 
 architecture RTL of hit_multiplexer is
 
-    signal hit_in1          : STD_LOGIC_VECTOR (31 DOWNTO 0);
+    signal hit_in1          : STD_LOGIC_VECTOR (38 DOWNTO 0);
     signal hit_ena1         : STD_LOGIC;
-    signal hit_in2          : STD_LOGIC_VECTOR (31 DOWNTO 0);
+    signal hit_in2          : STD_LOGIC_VECTOR (38 DOWNTO 0);
     signal hit_ena2         : STD_LOGIC;
-    signal hit_in3          : STD_LOGIC_VECTOR (31 DOWNTO 0);
+    signal hit_in3          : STD_LOGIC_VECTOR (38 DOWNTO 0);
     signal hit_ena3         : STD_LOGIC;
-    signal hit_out          : STD_LOGIC_VECTOR (31 DOWNTO 0);
+    signal hit_out          : STD_LOGIC_VECTOR (38 DOWNTO 0);
     signal hit_ena          : STD_LOGIC;
 
     signal ena              : std_logic_vector(2 downto 0);
@@ -56,9 +56,9 @@ architecture RTL of hit_multiplexer is
     signal ena_del1_nors    : std_logic_vector(2 downto 0);
     signal ena_del2_nors    : std_logic_vector(2 downto 0);
 
-    signal hit1             : STD_LOGIC_VECTOR (31 DOWNTO 0);
-    signal hit2             : STD_LOGIC_VECTOR (31 DOWNTO 0);
-    signal hit3             : STD_LOGIC_VECTOR (31 DOWNTO 0);
+    signal hit1             : STD_LOGIC_VECTOR (38 DOWNTO 0);
+    signal hit2             : STD_LOGIC_VECTOR (38 DOWNTO 0);
+    signal hit3             : STD_LOGIC_VECTOR (38 DOWNTO 0);
 
 begin
 
@@ -73,7 +73,7 @@ begin
     o_col(0)    <= hit_out(13 downto 6);
     o_row(0)    <= hit_out(21 downto 14);
     o_chip_id(0)<= hit_out(27 downto 22);
-    o_ts(0)     <= hit_out(31 downto 28);
+    o_ts(0)     <= hit_out(38 downto 28);
     o_hit_ena   <= hit_ena;
 
 process(clk, reset_n)

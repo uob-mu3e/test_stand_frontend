@@ -280,7 +280,7 @@ end process;
 
 -- Memory for the actual sorting
 genmem: for i in NCHIPS-1 downto 0 generate
-	hsmem: entity work.hitsortermem
+	hsmem: entity work.hitsortermem_large
 	PORT MAP
 	(
 		data				=> tomem(i),
@@ -912,7 +912,7 @@ elsif(writeclk'event and writeclk = '1') then
 			terminate_output <= '1';
 		end if;	
 	when others =>
-		data_out		<= readcommand_last4(3 downto 0) & "000" & readcommand_last4(COMMANDBITS-6 downto TIMESTAMPSIZE) & memmultiplex & '0';
+		data_out		<= readcommand_last4(3 downto 0) & "00" & readcommand_last4(COMMANDBITS-2 downto TIMESTAMPSIZE+4) & memmultiplex & '0';
 		out_type		<= "0000";
 		if(readcommand_ena_last4 = '1') then
 			nout <= nout + '1';

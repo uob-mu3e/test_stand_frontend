@@ -304,7 +304,7 @@ begin
             o_tot(0)            => tot_hs(i),
             o_hit_ena           => hits_sorter_in_ena(i)--,
         );
-        hits_sorter_in(i)       <= ts_hs(i) & chip_ID_hs(i) & row_hs(i) & col_hs(i) & tot_hs(i);
+        hits_sorter_in(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
     END GENERATE;
 
     running         <= '1' when i_run_state_125 = RUN_STATE_RUNNING else '0';

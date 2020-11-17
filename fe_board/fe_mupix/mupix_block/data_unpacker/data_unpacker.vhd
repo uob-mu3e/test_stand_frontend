@@ -35,7 +35,7 @@ entity data_unpacker is
         kin                 : in  std_logic;
         readyin             : in  std_logic;
         i_mp_readout_mode   : in  std_logic_vector(31 downto 0);
-        o_ts                : out std_logic_vector(3 downto 0);
+        o_ts                : out std_logic_vector(10 downto 0);
         o_chip_ID           : out std_logic_vector(5 downto 0);
         o_row               : out std_logic_vector(7 downto 0);
         o_col               : out std_logic_vector(7 downto 0);
@@ -132,7 +132,7 @@ architecture RTL of data_unpacker is
 
 begin
 
-    o_ts    <= ts_buf(3 downto 0);  -- cut away upper bits
+    o_ts    <= ts_buf;
     o_tot   <= calc_tot(ts2_buf,ts_buf,tot_mode);
 
     chip_ID_mode    <= i_mp_readout_mode(CHIP_ID_MODE_RANGE);

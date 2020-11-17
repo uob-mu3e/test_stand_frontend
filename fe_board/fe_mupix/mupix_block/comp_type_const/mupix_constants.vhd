@@ -18,12 +18,9 @@ constant NCHIPS                 :  integer := 12;
 
 constant HITSIZE                :  integer := 32;
 
-constant TIMESTAMPSIZE_MP10     :  integer := 11;
 constant TIMESTAMPSIZE          :  integer := 11;
 
 subtype TSRANGE                 is integer range TIMESTAMPSIZE-1 downto 0;
-
-constant MHITSIZE               :  integer := HITSIZE+2;
 
 constant COARSECOUNTERSIZE      :  integer := 32;
 
@@ -36,13 +33,12 @@ constant CHIPRANGE              :  integer := 3;
 -----------------------------------------------------------
 
 constant BINCOUNTERSIZE         :  integer := 24;
-constant UNPACKER_HITSIZE       :  integer := 32;
 constant CHARGESIZE_MP10        :  integer := 5;
 constant SLOWTIMESTAMPSIZE      :  integer := 10;
 
-constant NOTSHITSIZE            :  integer := HITSIZE -TIMESTAMPSIZE-1;
+constant NOTSHITSIZE            :  integer := HITSIZE -TIMESTAMPSIZE;--HITSIZE -TIMESTAMPSIZE-1;
 subtype SLOWTSRANGE             is integer range TIMESTAMPSIZE-1 downto 1;
-subtype NOTSRANGE               is integer range HITSIZE-1 downto TIMESTAMPSIZE+1;
+subtype NOTSRANGE               is integer range HITSIZE-1 downto TIMESTAMPSIZE;--TIMESTAMPSIZE+1;
 
 constant HITSORTERBINBITS       :  integer := 4;
 constant H                      :  integer := HITSORTERBINBITS;
