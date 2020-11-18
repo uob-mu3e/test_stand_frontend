@@ -142,7 +142,14 @@ begin
     o_error_pre <= error_pre;
     o_error_sh <= error_sh;
     o_hit_out <= hit_out;
-
+    hit_out(0) <= fifo_q_1(0)(31 downto 0);
+    hit_out(1) <= fifo_q_1(0)(63 downto 32); 
+    hit_out(2) <= fifo_q_1(0)(95 downto 64);
+    hit_out(3) <= fifo_q_1(0)(127 downto 96);
+    hit_out(4) <= fifo_q_1(1)(31 downto 0);
+    hit_out(5) <= fifo_q_1(1)(63 downto 32); 
+    hit_out(6) <= fifo_q_1(1)(95 downto 64);
+    hit_out(7) <= fifo_q_1(1)(127 downto 96); 
     
     generate_rack : FOR I in N-1 downto 0 GENERATE
         o_rack(I) <= rack(I) or rack_hit(I) or rack_link(I);
@@ -497,13 +504,8 @@ begin
                             fifo_wen_1(i) <= '1';
                             fifo_ren_0(i + size1) <= '1';
                         end if;
-                    --elsif ( fifo_q_0(i + size1)(63 downto 32) /= x"FFFFFFFF" or fifo_q_0(i + size1)(63 downto 32) /= x"FFFFFFFF" ) then
-                        --write padding
-                        --fifo_data_1(i)(63 downto 32) <= x"FFFFFFFF";
-                        --fifo_wen_1(i) <= '1';
-                        --layer_1_state(i)(3) <= '1';
                     else
-                        -- TODO: wait for fifo i here --> error counter?
+                        -- TODO: wait for fifo_0 i here --> error counter?
                     end if;
                 when "0001" =>
                     -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
@@ -519,13 +521,8 @@ begin
                             layer_1_state(i)(2) <= '1';
                             fifo_wen_1(i) <= '1';
                         end if;
-                    --elsif ( fifo_q_0(i + size1)(63 downto 32) /= x"FFFFFFFF" or fifo_q_0(i + size1)(63 downto 32) /= x"FFFFFFFF" ) then
-                        --write padding
-                        --fifo_data_1(i)(63 downto 32) <= x"FFFFFFFF";
-                        --fifo_wen_1(i) <= '1';
-                        --layer_1_state(i)(3) <= '1';
                     else
-                        -- TODO: wait for fifo i+size1 here --> error counter?
+                        -- TODO: wait for fifo_0 i+size1 here --> error counter?
                     end if;
                 when others =>
                     layer_1_state(i) <= (others => '0');
