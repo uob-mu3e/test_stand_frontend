@@ -116,8 +116,16 @@ architecture arch of time_merger is
     signal fifo_wen_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
     signal fifo_full_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
     signal fifo_empty_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    
+    type layer_0_state_t is array(generate_fifos(0) - 1 downto 0) of std_logic_vector(3 downto 0);
+    signal layer_0_state : layer_0_state_t;
+    type layer_0_cnt_t is array (generate_fifos(0) - 1 downto 0) of std_logic_vector(31 downto 0);
+    signal layer_0_cnt : layer_0_cnt_t;
+    
     type layer_1_state_t is array(generate_fifos(1) - 1 downto 0) of std_logic_vector(3 downto 0);
     signal layer_1_state : layer_1_state_t;
+
+    
 
     signal alignment_done : std_logic := '0';
         
@@ -359,25 +367,56 @@ begin
         fifo_wen_0(i) <= '0';
         saw_header_0(i) <= '0';
         saw_trailer_0(i) <= '0';
+        layer_0_state(i) <= "0000";
+        layer_0_cnt(i) <= (others => '0');
         --
     elsif rising_edge(i_clk) then
         rack_hit(i) <= '0';
         fifo_wen_0(i) <= '0';
         if ( merge_state = merge_hits ) then
-            if ( fifo_full_0(i) = '0' and link_good(i) = '1' and rack_hit(i) = '0' and i_rdata(i)(31 downto 26) /= "111111" and i_rdata(i)(37 downto 36) = "00" ) then
-                fifo_data_0(i) <= i_rdata(i)(35 downto 4);
-                fifo_wen_0(i) <= '1';
-                rack_hit(i) <= '1';
-                saw_header_0(i) <= '0';
-                saw_trailer_0(i) <= '0';
-            elsif ( i_rdata(i)(31 downto 26) = "111111" ) then
-                saw_header_0(i) <= '1';
-            elsif ( i_rdata(I)(37 downto 36) /= "00" ) then
-                saw_trailer_0(i) <= '1';
-            end if;
+            case layer_0_state(i) is
+                
+                when "0000" =>
+                    if ( fifo_full_0(i) = '0' and link_good(i) = '1' and i_rempty(i) = '0' and rack_hit(i) = '0' and i_rdata(i)(31 downto 26) /= "111111" and i_rdata(i)(37 downto 36) = "00" ) then
+                        fifo_data_0(i) <= i_rdata(i)(35 downto 4);
+                        fifo_wen_0(i) <= '1';
+                        rack_hit(i) <= '1';
+                        layer_0_cnt(i) <= layer_0_cnt(i) + '1';
+                        saw_header_0(i) <= '0';
+                        saw_trailer_0(i) <= '0';
+                    -- TODO: is this fine to quite until one is written (cnt > 0)?
+                    elsif ( i_rdata(i)(31 downto 26) = "111111" and layer_0_cnt(i) > 0 ) then
+                        saw_header_0(i) <= '1';
+                        layer_0_state(i) <= "0001";
+                        fifo_data_0(i) <= x"FFFFFFFF";
+                        layer_0_cnt(i) <= layer_0_cnt(i) + '1';
+                        fifo_wen_0(i) <= '1';
+                    -- TODO: is this fine to quite until one is written (cnt > 0)?
+                    elsif ( i_rdata(I)(37 downto 36) /= "00" and layer_0_cnt(i) > 0 ) then
+                        saw_trailer_0(i) <= '1';
+                        layer_0_state(i) <= "0001";
+                        fifo_data_0(i) <= x"FFFFFFFF";
+                        layer_0_cnt(i) <= layer_0_cnt(i) + '1';
+                        fifo_wen_0(i) <= '1';
+                    end if;
+                when "0001" =>
+                    if ( layer_0_cnt(i)(5) = '1' ) then
+                        layer_0_state(i) <= "1111";
+                    else
+                        fifo_data_0(i) <= x"FFFFFFFF";
+                        layer_0_cnt(i) <= layer_0_cnt(i) + '1';
+                        fifo_wen_0(i) <= '1';
+                    end if;
+                when "1111" =>
+                    -- TODO: write out something?
+                when others =>
+                    layer_0_state(i) <= "0000";
+            end case;
         else
+            layer_0_state(i) <= "0000";
             saw_header_0(i) <= '0';
             saw_trailer_0(i) <= '0';
+            layer_0_cnt(i) <= (others => '0');
         end if;
     end if;
     end process;
@@ -393,6 +432,7 @@ begin
         fifo_wen_1(i) <= '0';
         fifo_data_1(i) <= (others => '0');
         layer_1_state(i) <= (others => '0');
+        --
     elsif rising_edge(i_clk) then
         fifo_ren_0(i) <= '0';
         fifo_ren_0(i + size1) <= '0';
@@ -457,6 +497,11 @@ begin
                             fifo_wen_1(i) <= '1';
                             fifo_ren_0(i + size1) <= '1';
                         end if;
+                    --elsif ( fifo_q_0(i + size1)(63 downto 32) /= x"FFFFFFFF" or fifo_q_0(i + size1)(63 downto 32) /= x"FFFFFFFF" ) then
+                        --write padding
+                        --fifo_data_1(i)(63 downto 32) <= x"FFFFFFFF";
+                        --fifo_wen_1(i) <= '1';
+                        --layer_1_state(i)(3) <= '1';
                     else
                         -- TODO: wait for fifo i here --> error counter?
                     end if;
@@ -474,6 +519,11 @@ begin
                             layer_1_state(i)(2) <= '1';
                             fifo_wen_1(i) <= '1';
                         end if;
+                    --elsif ( fifo_q_0(i + size1)(63 downto 32) /= x"FFFFFFFF" or fifo_q_0(i + size1)(63 downto 32) /= x"FFFFFFFF" ) then
+                        --write padding
+                        --fifo_data_1(i)(63 downto 32) <= x"FFFFFFFF";
+                        --fifo_wen_1(i) <= '1';
+                        --layer_1_state(i)(3) <= '1';
                     else
                         -- TODO: wait for fifo i+size1 here --> error counter?
                     end if;
