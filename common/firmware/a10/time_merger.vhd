@@ -148,14 +148,14 @@ begin
     o_error_pre <= error_pre;
     o_error_sh <= error_sh;
     o_hit_out <= hit_out;
-    hit_out(0) <= fifo_q_1(0)(31 downto 0);
-    hit_out(1) <= fifo_q_1(0)(63 downto 32); 
-    hit_out(2) <= fifo_q_1(0)(95 downto 64);
-    hit_out(3) <= fifo_q_1(0)(127 downto 96);
-    hit_out(4) <= fifo_q_1(1)(31 downto 0);
-    hit_out(5) <= fifo_q_1(1)(63 downto 32); 
-    hit_out(6) <= fifo_q_1(1)(95 downto 64);
-    hit_out(7) <= fifo_q_1(1)(127 downto 96); 
+    hit_out(0) <= fifo_q_1(0)(31 downto 16) & fifo_q_1(8)(31 downto 16);
+    hit_out(1) <= fifo_q_1(1)(31 downto 16) & fifo_q_1(9)(31 downto 16);
+    hit_out(2) <= fifo_q_1(2)(31 downto 16) & fifo_q_1(10)(31 downto 16);
+    hit_out(3) <= fifo_q_1(3)(31 downto 16) & fifo_q_1(11)(31 downto 16);
+    hit_out(4) <= fifo_q_1(4)(31 downto 16) & fifo_q_1(12)(31 downto 16);
+    hit_out(5) <= fifo_q_1(5)(31 downto 16) & fifo_q_1(13)(31 downto 16);
+    hit_out(6) <= fifo_q_1(6)(31 downto 16) & fifo_q_1(14)(31 downto 16);
+    hit_out(7) <= fifo_q_1(7)(31 downto 16) & fifo_q_1(15)(31 downto 16);
     
     generate_rack : FOR I in N-1 downto 0 GENERATE
         o_rack(I) <= rack(I) or rack_hit(I) or rack_link(I);
