@@ -17,7 +17,7 @@
 GenesysDriver::GenesysDriver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf)
 {
 	std::cout << " GenesysDriver instantiated " << std::endl;
-	
+
 	//device specific constants
 }
 
@@ -101,6 +101,7 @@ INT GenesysDriver::Init()
 	current.resize(nChannels);
 	currentlimit.resize(nChannels);
 	idCode.resize(nChannels);
+	interlock_enabled.resize(nChannels);
   
 	for(int i = 0; i<nChannels; i++ ) 
 	{
@@ -113,6 +114,9 @@ INT GenesysDriver::Init()
 
 		current[i]=ReadCurrent(supplyID[i],err);
 		currentlimit[i]=ReadCurrentLimit(supplyID[i],err);
+
+		interlock_enabled[i]=true;
+		SetInterlock(supplyID[i],interlock_enabled[i],err);
   	
 		if(err!=FE_SUCCESS) return err;  	
 	}
@@ -256,7 +260,24 @@ void GenesysDriver::BlinkChanged()
 
 // **************  Set Functions ************** //
 
+void GenesysDriver::SetInterlock(int channel,bool value, INT& error)
+{
+	std::string cmd;
+	bool success;
+	error = FE_SUCCESS;
 
+	if( SelectChannel(supplyID[channel]) )
+	{
+		//OUTPut:ILC[:STATe] <Bool>
+ 		if(value==true) { cmd="OUTP:ILC 1\n"; }
+		else { cmd = "OUTP:ILC 0\n"; }
+		client->Write(cmd);
+		std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
+  		success = OPC();
+  		if(!success) error=FE_ERR_DRIVER;
+		else cm_msg(MINFO, "Genesys supply ... ", "Interlock enabled[1]/disabled[0]: ",value );
+	}	
+}
 
 void GenesysDriver::SetCurrentLimit(int channel, float value,INT& error)
 {
