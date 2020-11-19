@@ -348,14 +348,19 @@ begin
 
     datagen: work.mp_sorter_datagen
     port map(
-        reset_n         => sorter_reset_n,
-        clk             => i_clk125,
-        running         => running,
-        enable          => generator_enable,
-        fifo_wdata      => fifo_wdata_gen,
-        fifo_write      => fifo_write_gen--,
+        i_reset_n           => sorter_reset_n,
+        i_clk               => i_clk125,
+        i_running           => running,
+        i_global_ts         => (others => '0'),
+        i_control_reg       => (others => '0'),
+        o_hit_counter       => open,
+        fifo_wdata          => fifo_wdata_gen,
+        fifo_write          => fifo_write_gen,
+        
+        i_evil_register     => (others => '0'),
+        o_mischief_managed  => open--,
     );
-    
+
     -- sync some things ..
     sync_fifo_cnt : entity work.ip_dcfifo
     generic map(
