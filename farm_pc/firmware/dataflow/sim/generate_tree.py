@@ -1,11 +1,13 @@
-
+ 
 class Node:
-    def __init__(self, val, val_l, function, ifelse, layer, left=None, right=None):
+    def __init__(self, val, val_l, function, ifelse, layer, cnt_if, cnt_else, left=None, right=None):
         self.val = val
         self.val_l = val_l
         self.function = function
         self.ifelse = ifelse
         self.layer = layer
+        self.cnt_if = cnt_if
+        self.cnt_else = cnt_else
         self.left = left
         self.right = right
     
@@ -52,7 +54,7 @@ def setTreeOutput(node, level=0):
         if node.function == 'if':
             row = 1
         if level > 0:
-            output.append([level, node.function, node.left, node.val_l, node.ifelse, node.layer])
+            output.append([level, node.function, node.left, node.val_l, node.ifelse, node.layer, node.cnt_if, node.cnt_else, node.val])
         setTreeOutput(node.left, level + 1)
         setTreeOutput(node.right, level + 1)
 
@@ -60,74 +62,68 @@ def printOutput():
     # val = [level, node.function, node.left, node.val_l, node.ifelse, node.layer]
     for val in output:
         t = ''.join(['\t' for i in range(val[0])])
-        if val[4] == 'if': state_val = (val[0] - 1)
-        if val[4] == 'else': state_val = (val[0] - 2) + 2 ** (val[5]+1)
-
-
+        if val[4] == 'if': 
+            if val[6] == 0: 
+                state_val = 0
+            else:
+                state_val = val[6]# - val[0] + 1 + val[5]
+        if val[4] == 'else': 
+            if val[7] == 0:
+                state_val = layer_dict[val[5]]//2
+            else:
+                state_val = layer_dict[val[5]]//2 + val[7]# - val[0] + 1 + val[5]
+        
+        if val[8] > 1 and state_val < val[8]-1 and val[7] == 0: state_val = val[6] + 1
+        #if val[8] > 1 and state_val == 0 and val[7] == 0: state_val = val[6] + 1
+        
         state = write_state(val[3][0], state_val)
+        state += str(val[6]) + str(val[7]) + str(val[0]) + str(layer_dict[val[5]]//2) + str(state_val) + val[4]
         if val[2] == None:
             print('{}{}\n{}  {}\n{}  last'.format(t, val[1], t, state, t))
+        elif val[2] == 'None':
+            continue
         else:
             print('{}{}\n{}  {}'.format(t, val[1], t, state))
 
-def generate(cnt, stop=3, direction=None, layer=0):
+def generate(cnt, stop=3, direction=None, last_direction=None, layer=0, cnt_if=0, cnt_else=0):
+    cur_last_direction = None
     if direction == 'Left':
         val = write_if(layer, 31 + (cnt-1)*32, 31)
-        root = Node(cnt, [layer, 31 + (cnt-1)*32, 31], val, 'if', layer, 'if', 'else')
+        root = Node(cnt, [layer, 31 + (cnt-1)*32, 31], val, 'if', layer, cnt_if, cnt_else, 'if', 'else')
+        cur_last_direction = 'Left'
+    elif direction == 'Right':
+        root = Node(cnt, [layer, 31 + (cnt-1)*32, 31], 'elif', 'else', layer, cnt_if, cnt_else, 'if', 'else')
+        cur_last_direction = 'Right'
     else:
-        root = Node(cnt, [layer, 31 + (cnt-1)*32, 31], 'elif', 'else', layer, 'if', 'else')
+        root = Node(0, 0, 'None', 'None', 0, 0, 0, 'None', 'None')
+    if last_direction == 'Left': cnt_if += 1
+    if last_direction == 'Right': cnt_else += 1
+        
     if cnt == stop:
         if direction == 'Left':
             val = write_if(layer, 31 + (cnt-1)*32, 31)
-            root = Node(cnt, [layer, 31 + (cnt-1)*32, 31], val, 'if', layer, None, None)
+            root = Node(cnt, [layer, 31 + (cnt-1)*32, 31], val, 'if', layer, cnt_if, cnt_else, None, None)
+            cnt_if += 1
         else:
-            root = Node(cnt, [layer, 31 + (cnt-1)*32, 31], 'elif', 'else', layer, None, None)
+            root = Node(cnt, [layer, 31 + (cnt-1)*32, 31], 'elif', 'else', layer, cnt_if, cnt_else,  None, None)
+            cnt_else += 1
         return root
     cnt += 1
-    root.left = generate(cnt, stop, 'Left', layer)
-    root.right = generate(cnt, stop, 'Right', layer)
+    root.left = generate(cnt, stop, 'Left', cur_last_direction, layer, cnt_if, cnt_else)
+    root.right = generate(cnt, stop, 'Right', cur_last_direction, layer, cnt_if, cnt_else)
 
     return root
 
+layer_dict = {0:4, 1:8, 2:16, 3:32}
 
-
-def first_leaf(out_string, layer, div, k, rounds, fifo_layer, invert=False):
-    
-    if invert:
-        loop = [i for i in reversed(range(int(layer/div)))]
-    else:
-        loop = [i for i in range(int(layer/div))]
-
-    for j in loop:
-        out_string += write_if(n_tabs=1+j+rounds*int(layer/2), fifo_layer=fifo_layer, range_0=31+32*(j+rounds*int(layer/4)), range_1=31, invert=invert)
-        out_string += "\n"
-        out_string += write_data(n_tabs=2+j+rounds*int(layer/2), fifo_layer=fifo_layer, range_0=31+32*(j+rounds*int(layer/4)), range_1=31+32*j)
-        out_string += "\n"
-        out_string += write_state(n_tabs=2+j+rounds*int(layer/2), fifo_layer=fifo_layer, state=j+rounds*int(layer/4))
-        out_string += "\n"
-        if j+1 == layer/2:
-            out_string += write_wen(n_tabs=2+int(layer/div) - 1, fifo_layer=i)
-            out_string += "\n"
-            if not invert:
-                out_string += write_ren(n_tabs=2+int(layer/div) - 1, fifo_layer=i, size=((k+1)%2==0))
-                out_string += "\n"
-    rounds += int(layer/div) - 1
-
-    if layer/div == layer/2:
-        return out_string
-    else:
-        return first_leaf(out_string, layer, div*2, k, rounds, fifo_layer, invert)
-
-
-
-
-for i, layer in enumerate([8]):
+for i, layer in enumerate([4, 8]):
+    #if i == 0: continue
     out_string = ""
     out_string += "when \"{}\" =>".format("".join(["0" for i in range(layer)]))
     out_string += "\n"
 
     output = []
-    root = generate(0, stop=layer/2, direction='Left', layer=i)
+    root = generate(0, stop=layer/2, layer=i)
 
     setTreeOutput(root)
     printOutput()
