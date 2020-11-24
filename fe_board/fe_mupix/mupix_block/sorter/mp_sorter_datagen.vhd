@@ -5,7 +5,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.std_logic_misc.all;
 use work.daq_constants.all;
+use work.lfsr_taps.all;
 
 entity mp_sorter_datagen is
 port (
@@ -25,11 +27,13 @@ end entity;
 
 architecture rtl of mp_sorter_datagen is
 
+    signal reset                : std_logic;
+
     signal fwdata               : std_logic_vector(35 downto 0);
     signal fwrite               : std_logic;
     signal enable               : std_logic;
     signal running_prev         : std_logic;
-    signal hit_counter          : std_logic_vector(63 downto 0);
+    signal hit_counter          : unsigned(63 downto 0);
     signal frame_ts_overflow    : std_logic;
     signal packet_ts_overflow   : std_logic;
     signal run_shutdown         : std_logic;
@@ -42,6 +46,8 @@ architecture rtl of mp_sorter_datagen is
     signal produce_next_packet  : std_logic;
     signal produce_next_frame   : std_logic;
     signal produce_next_hit     : std_logic;
+    
+    signal next_hit_p_range     : integer;
 
     -- control signals for evil actions against downstream components xD
     signal unsorted             : std_logic := '0'; -- send hits unsorted in time
@@ -56,24 +62,30 @@ architecture rtl of mp_sorter_datagen is
     
     signal n_evil               : std_logic_vector(7 downto 0);
     signal n_evil_remaining     : std_logic_vector(7 downto 0);
-    signal evil_probability     : std_logic_vector(7 downto 0);
+    signal evil_probability     : std_logic_vector(7 downto 0);--something like and_reduce(random1(setting downto 0))
     signal mischief_managed     : std_logic; -- a single one
 
     -- randoms:
     signal ts                   : std_logic_vector(3 downto 0);
-    signal chipID               : std_logic_vector(5 downto 0);
+    signal chipID_index         : std_logic_vector(5 downto 0);
     signal row                  : std_logic_vector(7 downto 0);
     signal col                  : std_logic_vector(7 downto 0);
     signal tot                  : std_logic_vector(5 downto 0);
 
-    signal random1              : std_logic_vector(63 downto 0);
+    -- 64 bit lfsr taps are not good for the rate distribution, using 65 bit instead
+    signal random0              : std_logic_vector(64 downto 0);
 
-begin
+    type valid_ID_t             is array (64 downto 0) of std_logic_vector(5 downto 0);
+    constant valid_chipIDs      : valid_ID_t :=("001000", "010001", "100010", "000011", others => "000000");
+
+    begin
     o_fifo_wdata <= fwdata;
     o_fifo_write <= fwrite;
     enable       <= i_control_reg(31);
-    o_hit_counter<= hit_counter;
+    o_hit_counter<= std_logic_vector(hit_counter);
+    reset        <= not i_reset_n;
 
+    next_hit_p_range <= to_integer(unsigned(i_control_reg(3 downto 0)));
 
     process(i_clk,i_reset_n)
     begin
@@ -102,16 +114,17 @@ begin
             -------REMOVE / generate -------------------
             produce_next_packet <= '1';
             produce_next_frame  <= '1';
-            produce_next_hit    <= '1';
             ts                  <= "1111";
-            chipID              <= "011011";
-            row                 <= "00110011";
-            col                 <= "01010101";
-            tot                 <= "000000";
             ---------------------------------
 
+            if(i_control_reg(4) = '0') then 
+                produce_next_hit    <= '1';
+            else
+                produce_next_hit    <= and_reduce(random0(next_hit_p_range downto 0));
+            end if;
+
             if(running_prev = '1' and i_running = '0') then 
-                run_shutdown    <= '0';
+                run_shutdown        <= '0';
             end if;
 
             if(i_global_ts(3 downto 0) = "1110") then
@@ -123,7 +136,7 @@ begin
             end if;
 
             if(complete_nonsense = '1') then
-                global_ts <= random1;
+                global_ts <= random0(63 downto 0);
                 mischief_managed <= '1';
             else
                 global_ts <= i_global_ts;
@@ -178,8 +191,9 @@ begin
                         mischief_managed    <= '1';
                     end if;
                     if(produce_next_hit = '1') then
-                        fwdata              <= "0000" & ts & chipID & row & col & tot;
+                        fwdata              <= "0000" & ts & valid_chipIDs(to_integer(unsigned(chipID_index))) & row & col & tot;
                         fwrite              <= '1';
+                        hit_counter         <= hit_counter + 1;
                     end if;
 
                 when trail =>
@@ -207,5 +221,24 @@ begin
 
         end if;
     end process;
+
+    shift0 : entity work.linear_shift
+    generic map(
+        g_m     => 65,
+        g_poly  => lfsr_taps65
+    )
+    port map(
+        i_clk               => i_clk,
+        reset_n             => '1',
+        i_sync_reset        => reset,
+        i_seed              => "11001111101100010101110100100010011010110001101011110100101010010",
+        i_en                => '1',
+        o_lfsr              => random0--,
+    );
+
+    tot         <= random0( 5 downto  0);
+    col         <= random0(13 downto  6);
+    row         <= random0(21 downto 14);
+    chipID_index<= random0(27 downto 22);
 
 end architecture;
