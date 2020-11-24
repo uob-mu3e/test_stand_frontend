@@ -19,6 +19,8 @@ generic(
     NINPUTS_BANK_B          : integer := 16--;
 );
 port (
+    i_fpga_id               : in  std_logic_vector(7 downto 0);
+
     -- chip dacs
     i_CTRL_SDO_A            : in  std_logic; --TODO !!
     o_CTRL_SDI              : out std_logic_vector(NPORTS-1 downto 0);
@@ -461,6 +463,7 @@ begin
         o_hits_ena_count    => reg_hits_ena_count,
 
         i_sync_reset_cnt    => i_sync_reset_cnt,
+        i_fpga_id           => i_fpga_id,
         i_run_state_125     => i_run_state_125,
         i_run_state_156     => i_run_state_156--,
     );

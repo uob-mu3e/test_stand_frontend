@@ -17,6 +17,7 @@ add wave -noupdate /mp_sorter_datagen_tb/e_mp_sorter_datagen/o_hit_counter
 add wave -noupdate /mp_sorter_datagen_tb/e_mp_sorter_datagen/produce_next_hit
 add wave -noupdate /mp_sorter_datagen_tb/e_mp_sorter_datagen/i_control_reg
 add wave -noupdate /mp_sorter_datagen_tb/e_mp_sorter_datagen/next_hit_p_range
+add wave -noupdate /mp_sorter_datagen_tb/e_mp_sorter_datagen/ts_pull_ahead
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {4127596 ps} 0}
 quietly wave cursor active 1

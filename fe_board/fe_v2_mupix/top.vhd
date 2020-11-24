@@ -197,6 +197,7 @@ begin
         NINPUTS_BANK_B  => 16--,
     )
     port map (
+        i_fpga_id               => ref_adr,
 
         -- chip dacs
         i_CTRL_SDO_A            => '0',

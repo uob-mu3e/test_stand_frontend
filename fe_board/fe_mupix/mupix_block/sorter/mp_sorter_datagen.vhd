@@ -8,6 +8,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
 use work.daq_constants.all;
 use work.lfsr_taps.all;
+use work.mupix_registers.all;
 
 entity mp_sorter_datagen is
 port (
@@ -16,6 +17,7 @@ port (
     i_running           : in  std_logic;
     i_global_ts         : in  std_logic_vector(63 downto 0);
     i_control_reg       : in  std_logic_vector(31 downto 0);
+    i_seed              : in  std_logic_vector(64 downto 0);
     o_hit_counter       : out std_logic_vector(63 downto 0);
     o_fifo_wdata        : out std_logic_vector(35 downto 0);
     o_fifo_write        : out std_logic;
@@ -28,6 +30,7 @@ end entity;
 architecture rtl of mp_sorter_datagen is
 
     signal reset                : std_logic;
+    signal lfsr_reset           : std_logic;
 
     signal fwdata               : std_logic_vector(35 downto 0);
     signal fwrite               : std_logic;
@@ -46,8 +49,9 @@ architecture rtl of mp_sorter_datagen is
     signal produce_next_packet  : std_logic;
     signal produce_next_frame   : std_logic;
     signal produce_next_hit     : std_logic;
-    
+
     signal next_hit_p_range     : integer;
+    signal ts_pull_ahead        : std_logic;
 
     -- control signals for evil actions against downstream components xD
     signal unsorted             : std_logic := '0'; -- send hits unsorted in time
@@ -75,18 +79,20 @@ architecture rtl of mp_sorter_datagen is
 
     -- 64 bit lfsr taps are not good for the rate distribution, using 65 bit instead
     signal random0              : std_logic_vector(64 downto 0);
+    signal random_seed          : std_logic_vector(64 downto 0);
 
     type valid_ID_t             is array (3 downto 0) of std_logic_vector(5 downto 0);
     constant valid_chipIDs      : valid_ID_t :=("001000", "010001", "100010", "000011"); --TODO: list all valid ID's depending on reg for layer
 
     begin
-    o_fifo_wdata <= fwdata;
-    o_fifo_write <= fwrite;
-    enable       <= i_control_reg(31);
-    o_hit_counter<= std_logic_vector(hit_counter);
-    reset        <= not i_reset_n;
-
-    next_hit_p_range <= to_integer(unsigned(i_control_reg(3 downto 0)));
+    o_fifo_wdata        <= fwdata;
+    o_fifo_write        <= fwrite;
+    enable              <= i_control_reg(31);
+    o_hit_counter       <= std_logic_vector(hit_counter);
+    reset               <= not i_reset_n;
+    next_hit_p_range    <= to_integer(unsigned(i_control_reg(MP_DATA_GEN_HIT_P_RANGE)));
+    random_seed         <= "11001111101100010101110100100010011010110001101011110100101000000" when i_control_reg(MP_DATA_GEN_SYNC_BIT) = '1' else i_seed;
+    lfsr_reset          <= '1' when (i_running = '0' or i_reset_n = '0') else '0';
 
     process(i_clk,i_reset_n)
     begin
@@ -103,6 +109,8 @@ architecture rtl of mp_sorter_datagen is
             packet_ts_overflow  <= '0';
             genstate            <= idle;
             global_ts           <= (others => '0');
+            ts                  <= (others => '0');
+            ts_pull_ahead       <= '0';
 
         elsif rising_edge(i_clk) then
             fwdata              <= (others => '0');
@@ -115,32 +123,45 @@ architecture rtl of mp_sorter_datagen is
             -------REMOVE / generate -------------------
             produce_next_packet <= '1';
             produce_next_frame  <= '1';
-            ts                  <= "1111";
             ---------------------------------
 
             if(i_control_reg(4) = '0') then 
-                produce_next_hit    <= '1';
+                produce_next_hit    <= '1'; -- full steam
             else
-                produce_next_hit    <= and_reduce(random0(next_hit_p_range downto 0));
+                produce_next_hit    <= and_reduce(random0(next_hit_p_range downto 0)); -- probability to actually send the hit
             end if;
 
-            if(running_prev = '1' and i_running = '0') then 
-                run_shutdown        <= '0';
+            if(running_prev = '1' and i_running = '0') then -- goto EoR marker
+                run_shutdown        <= '1';
             end if;
 
-            if(i_global_ts(3 downto 0) = "1110") then
+            if(i_global_ts(3 downto 0) = "1110") then -- send new subheader
                 frame_ts_overflow   <= '1';
             end if;
 
-            if(i_global_ts(9 downto 0) = "1111111110") then
+            if(i_global_ts(9 downto 0) = "1111111110") then -- send new preamble
                 packet_ts_overflow  <= '1';
             end if;
 
-            if(complete_nonsense = '1') then
-                global_ts <= random0(63 downto 0);
-                mischief_managed <= '1';
+            if(complete_nonsense = '1') then -- test-option
+                global_ts           <= random0(63 downto 0);
+                mischief_managed    <= '1';
             else
-                global_ts <= i_global_ts;
+                global_ts           <= i_global_ts;
+            end if;
+
+            if (unsorted = '1' or complete_nonsense = '1') then --test-option
+                ts                  <= random0(33 downto 30);
+            elsif(genstate = subhead) then
+                ts                  <= i_global_ts(3 downto 0);
+                ts_pull_ahead       <= '0';
+            elsif(random0(40) = '1' and ts_pull_ahead = '0') then 
+                ts                  <= i_global_ts(3 downto 0);
+            elsif(random0(54 downto 50) = "11111") then 
+                ts_pull_ahead       <= '1';
+                ts                  <= "1111";
+            else
+                ts                  <= ts;
             end if;
 
             case genstate is
@@ -231,8 +252,8 @@ architecture rtl of mp_sorter_datagen is
     port map(
         i_clk               => i_clk,
         reset_n             => '1',
-        i_sync_reset        => reset,
-        i_seed              => "11001111101100010101110100100010011010110001101011110100101010010",
+        i_sync_reset        => lfsr_reset, -- sync with run state --> all FEBs generate the same thing in sync--> can measure delays between them etc.
+        i_seed              => random_seed,
         i_en                => '1',
         o_lfsr              => random0--,
     );
@@ -241,6 +262,6 @@ architecture rtl of mp_sorter_datagen is
     col         <= random0(13 downto  6);
     row         <= random0(21 downto 14);
     chipID_index<= random0(27 downto 22);
-    chipID      <= valid_chipIDs(to_integer(unsigned(chipID_index)) mod valid_chipIDs'length);
+    chipID      <= valid_chipIDs(to_integer(unsigned(chipID_index)) mod valid_chipIDs'length); -- a random valid_chipID
 
 end architecture;

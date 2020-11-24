@@ -24,6 +24,12 @@ constant NREGISTERS_MUPIX_RD                : integer := 200; --TODO: do this in
         constant GRAY_TS2_BIT               :  integer := 3;
         subtype  CHIP_ID_MODE_RANGE         is integer range 5 downto 4;
         subtype  TOT_MODE_RANGE             is integer range 7 downto 5;
+    constant MP_DATA_GEN_CONTROL_REGISTER_W :  integer := 16#41#;
+        subtype  MP_DATA_GEN_HIT_P_RANGE    is integer range 3 downto 0;
+        constant MP_DATA_GEN_FULL_STEAM_BIT :  integer := 4;
+        constant MP_DATA_GEN_SYNC_BIT       :  integer := 5;
+        
+        constant MP_DATA_GEN_ENABLE_BIT     :  integer := 31;
 ------------------------------------------------------------------
 ---------------------- Read register Map -------------------------
 ------------------------------------------------------------------

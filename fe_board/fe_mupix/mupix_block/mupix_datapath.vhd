@@ -38,7 +38,7 @@ port (
     o_hits_ena_count    : out std_logic_vector(31 downto 0);
 
     i_sync_reset_cnt    : in  std_logic;
-    
+    i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
     i_run_state_156     : in  run_state_t--;
 );
@@ -106,6 +106,8 @@ architecture rtl of mupix_datapath is
     signal sync_fifo_empty          : std_logic;
 
     signal counter125               : std_logic_vector(63 downto 0);
+
+    signal gen_seed                 : std_logic_vector(64 downto 0);
 
     signal rx_state                 : std_logic_vector(NLVDS*4-1 downto 0);
 
@@ -353,13 +355,15 @@ begin
         i_running           => running,
         i_global_ts         => (others => '0'),
         i_control_reg       => (others => '0'),
+        i_seed              => gen_seed,
         o_hit_counter       => open,
-        fifo_wdata          => fifo_wdata_gen,
-        fifo_write          => fifo_write_gen,
+        o_fifo_wdata        => fifo_wdata_gen,
+        o_fifo_write        => fifo_write_gen,
         
         i_evil_register     => (others => '0'),
         o_mischief_managed  => open--,
     );
+    gen_seed <= i_fpga_id & not i_fpga_id & i_fpga_id & not i_fpga_id & not i_fpga_id & i_fpga_id & i_fpga_id & not i_fpga_id & '0';
 
     -- sync some things ..
     sync_fifo_cnt : entity work.ip_dcfifo

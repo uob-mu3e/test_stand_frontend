@@ -32,6 +32,7 @@ begin
         i_global_ts(31 downto 0)  => std_logic_vector(counter_int),--counter,
         i_global_ts(63 downto 32) => (others => '0'),
         i_control_reg             => (31 => '1', others => '0'),
+        i_seed                    => "11001111101100010101110100100010011010110001101011110100101000000",
         o_fifo_wdata              => fifo_wdata,
         o_fifo_write              => fifo_write--,
     );
