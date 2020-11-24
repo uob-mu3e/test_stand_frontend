@@ -68,6 +68,7 @@ architecture rtl of mp_sorter_datagen is
     -- randoms:
     signal ts                   : std_logic_vector(3 downto 0);
     signal chipID_index         : std_logic_vector(5 downto 0);
+    signal chipID               : std_logic_vector(5 downto 0);
     signal row                  : std_logic_vector(7 downto 0);
     signal col                  : std_logic_vector(7 downto 0);
     signal tot                  : std_logic_vector(5 downto 0);
@@ -75,8 +76,8 @@ architecture rtl of mp_sorter_datagen is
     -- 64 bit lfsr taps are not good for the rate distribution, using 65 bit instead
     signal random0              : std_logic_vector(64 downto 0);
 
-    type valid_ID_t             is array (64 downto 0) of std_logic_vector(5 downto 0);
-    constant valid_chipIDs      : valid_ID_t :=("001000", "010001", "100010", "000011", others => "000000");
+    type valid_ID_t             is array (3 downto 0) of std_logic_vector(5 downto 0);
+    constant valid_chipIDs      : valid_ID_t :=("001000", "010001", "100010", "000011"); --TODO: list all valid ID's depending on reg for layer
 
     begin
     o_fifo_wdata <= fwdata;
@@ -191,7 +192,7 @@ architecture rtl of mp_sorter_datagen is
                         mischief_managed    <= '1';
                     end if;
                     if(produce_next_hit = '1') then
-                        fwdata              <= "0000" & ts & valid_chipIDs(to_integer(unsigned(chipID_index))) & row & col & tot;
+                        fwdata              <= "0000" & ts & chipID & row & col & tot;
                         fwrite              <= '1';
                         hit_counter         <= hit_counter + 1;
                     end if;
@@ -240,5 +241,6 @@ architecture rtl of mp_sorter_datagen is
     col         <= random0(13 downto  6);
     row         <= random0(21 downto 14);
     chipID_index<= random0(27 downto 22);
+    chipID      <= valid_chipIDs(to_integer(unsigned(chipID_index)) mod valid_chipIDs'length);
 
 end architecture;
