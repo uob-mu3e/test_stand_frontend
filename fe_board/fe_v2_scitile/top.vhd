@@ -208,23 +208,11 @@ begin
         o_max10_spi_D3      => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_mupix_reg_addr    => open, -- TODO in "Not-Dummy": connect to detector-block
-        o_mupix_reg_re      => open,
-        i_mupix_reg_rdata   => X"CCCCCCCC",
-        o_mupix_reg_we      => open,
-        o_mupix_reg_wdata   => open,
-
-        o_malibu_reg_addr   => open, -- TODO in "Not-Dummy": connect to detector-block
-        o_malibu_reg_re     => open,
-        i_malibu_reg_rdata  => X"CCCCCCCC",
-        o_malibu_reg_we     => open,
-        o_malibu_reg_wdata  => open,
-
-        o_scifi_reg_addr    => open, -- TODO in "Not-Dummy": connect to detector-block
-        o_scifi_reg_re      => open,
-        i_scifi_reg_rdata   => X"CCCCCCCC",
-        o_scifi_reg_we      => open,
-        o_scifi_reg_wdata   => open,
+        o_subdet_reg_addr   => open, -- TODO in "Not-Dummy": connect to detector-block
+        o_subdet_reg_re     => open,
+        i_subdet_reg_rdata  => X"CCCCCCCC",
+        o_subdet_reg_we     => open,
+        o_subdet_reg_wdata  => open,
         
         -- reset system
         o_run_state_125     => open,      -- TODO in "Not-Dummy": connect to detector-block

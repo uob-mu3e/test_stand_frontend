@@ -85,24 +85,12 @@ port (
     o_max10_spi_csn     : out   std_logic := '1';
 
     -- slow control registers
-    -- malibu regs : 0x40-0x5F
-    o_malibu_reg_addr   : out   std_logic_vector(7 downto 0);
-    o_malibu_reg_re     : out   std_logic;
-    i_malibu_reg_rdata  : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
-    o_malibu_reg_we     : out   std_logic;
-    o_malibu_reg_wdata  : out   std_logic_vector(31 downto 0);
-    -- scifi regs : 0x60-0x7F
-    o_scifi_reg_addr    : out   std_logic_vector(7 downto 0);
-    o_scifi_reg_re      : out   std_logic;
-    i_scifi_reg_rdata   : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
-    o_scifi_reg_we      : out   std_logic;
-    o_scifi_reg_wdata   : out   std_logic_vector(31 downto 0);
-    -- mupix regs : 0x80-0x9F
-    o_mupix_reg_addr    : out   std_logic_vector(7 downto 0);
-    o_mupix_reg_re      : out   std_logic;
-    i_mupix_reg_rdata   : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
-    o_mupix_reg_we      : out   std_logic;
-    o_mupix_reg_wdata   : out   std_logic_vector(31 downto 0);
+    -- subdetector regs : 0x40-0xFF
+    o_subdet_reg_addr   : out   std_logic_vector(7 downto 0);
+    o_subdet_reg_re     : out   std_logic;
+    i_subdet_reg_rdata  : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
+    o_subdet_reg_we     : out   std_logic;
+    o_subdet_reg_wdata  : out   std_logic_vector(31 downto 0);
 
     -- reset system
     o_run_state_125 : out   run_state_t;
@@ -149,9 +137,7 @@ architecture arch of fe_block_v2 is
 
     signal sc_ram, sc_reg           : work.util.rw_t;
     signal fe_reg                   : work.util.rw_t;
-    signal malibu_reg               : work.util.rw_t;
-    signal scifi_reg                : work.util.rw_t;
-    signal mupix_reg                : work.util.rw_t;
+    signal subdet_reg               : work.util.rw_t;
 
     signal reg_cmdlen               : std_logic_vector(31 downto 0);
     signal reg_offset               : std_logic_vector(31 downto 0);
@@ -274,25 +260,11 @@ begin
     -- map slow control address space
 
     -- malibu regs : 0x40-0x5F
-    o_malibu_reg_addr <= sc_reg.addr(7 downto 0);
-    o_malibu_reg_re <= malibu_reg.re;
-      malibu_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 5) = "010" ) else '0';
-    o_malibu_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 5) = "010" ) else '0';
-    o_malibu_reg_wdata <= sc_reg.wdata;
-
-    -- scifi regs : 0x60-0x7F
-    o_scifi_reg_addr <= sc_reg.addr(7 downto 0);
-    o_scifi_reg_re <= scifi_reg.re;
-      scifi_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 5) = "011" ) else '0';
-    o_scifi_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 5) = "011" ) else '0';
-    o_scifi_reg_wdata <= sc_reg.wdata;
-
-    -- mupix regs : 0x80-0x9F
-    o_mupix_reg_addr <= sc_reg.addr(7 downto 0);
-    o_mupix_reg_re <= mupix_reg.re;
-      mupix_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 5) = "100" ) else '0';
-    o_mupix_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 5) = "100" ) else '0';
-    o_mupix_reg_wdata <= sc_reg.wdata;
+    o_subdet_reg_addr <= sc_reg.addr(7 downto 0);
+    o_subdet_reg_re <= subdet_reg.re;
+      subdet_reg.re <= sc_reg.re when ( sc_reg.addr(REG_AREA_RANGE) /= REG_AREA_GENERIC ) else '0';
+    o_subdet_reg_we <= sc_reg.we when ( sc_reg.addr(REG_AREA_RANGE) /= REG_AREA_GENERIC ) else '0';
+    o_subdet_reg_wdata <= sc_reg.wdata;
 
     -- local regs 
     fe_reg.addr <= sc_reg.addr;
@@ -302,9 +274,7 @@ begin
 
     -- select valid rdata
     sc_reg.rdata <=
-        i_malibu_reg_rdata when ( malibu_reg.rvalid = '1' ) else
-        i_scifi_reg_rdata when ( scifi_reg.rvalid = '1' ) else
-        i_mupix_reg_rdata when ( mupix_reg.rvalid = '1' ) else
+        i_subdet_reg_rdata when ( subdet_reg.rvalid = '1' ) else
         fe_reg.rdata when ( fe_reg.rvalid = '1' ) else
         X"CCCCCCCC";
 
@@ -314,12 +284,11 @@ begin
 	 
     begin
     if rising_edge(i_clk_156) then
-        malibu_reg.rvalid <= malibu_reg.re;
-        scifi_reg.rvalid <= scifi_reg.re;
-        mupix_reg.rvalid <= mupix_reg.re;
-        fe_reg.rvalid <= fe_reg.re;
+        subdet_reg.rvalid   <= subdet_reg.re;
+        fe_reg.rvalid       <= fe_reg.re;
 
-        fe_reg.rdata <= X"CCCCCCCC";
+        fe_reg.rdata        <= X"CCCCCCCC";
+        regaddr             := to_integer(unsigned(fe_reg.addr(7 downto 0)));
 
         -- cmdlen
         if ( regaddr = CMD_LEN_REGISTER_RW and fe_reg.re = '1' ) then
