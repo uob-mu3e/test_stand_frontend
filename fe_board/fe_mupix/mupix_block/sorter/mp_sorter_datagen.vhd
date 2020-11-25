@@ -51,6 +51,7 @@ architecture rtl of mp_sorter_datagen is
     signal produce_next_hit     : std_logic;
 
     signal next_hit_p_range     : integer;
+    signal next_hit_p           : std_logic_vector(15 downto 0) := x"FFFF";
     signal ts_pull_ahead        : std_logic;
 
     -- control signals for evil actions against downstream components xD
@@ -90,9 +91,17 @@ architecture rtl of mp_sorter_datagen is
     enable              <= i_control_reg(31);
     o_hit_counter       <= std_logic_vector(hit_counter);
     reset               <= not i_reset_n;
-    next_hit_p_range    <= to_integer(unsigned(i_control_reg(MP_DATA_GEN_HIT_P_RANGE)));
     random_seed         <= "11001111101100010101110100100010011010110001101011110100101000000" when i_control_reg(MP_DATA_GEN_SYNC_BIT) = '1' else i_seed;
     lfsr_reset          <= '1' when (i_running = '0' or i_reset_n = '0') else '0';
+
+    -- this only works in simulation -.-
+    -- next_hit_p_range <= to_integer(unsigned(i_control_reg(MP_DATA_GEN_HIT_P_RANGE)));
+    -- produce_next_hit <= and_reduce(random0(next_hit_p_range downto 0)); 
+    -- New way:
+    gen_next_hit_p: for i in 0 to 15 generate
+        next_hit_p(i)   <= random0(i) when unsigned(i_control_reg(MP_DATA_GEN_HIT_P_RANGE)) >= i else '1';
+    end generate gen_next_hit_p;
+    -- followed by produce_next_hit <= and_reduce(next_hit_p); in process below --> probability for a hit;
 
     process(i_clk,i_reset_n)
     begin
@@ -128,7 +137,7 @@ architecture rtl of mp_sorter_datagen is
             if(i_control_reg(4) = '0') then 
                 produce_next_hit    <= '1'; -- full steam
             else
-                produce_next_hit    <= and_reduce(random0(next_hit_p_range downto 0)); -- probability to actually send the hit
+                produce_next_hit    <= and_reduce(next_hit_p); -- probability to actually send the hit
             end if;
 
             if(running_prev = '1' and i_running = '0') then -- goto EoR marker
