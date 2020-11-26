@@ -608,6 +608,9 @@ begin
     -------- Event Builder --------
 
     e_data_gen : entity work.data_generator_a10
+    generic map(
+        go_to_trailer => "0000011111"
+    )
     port map (
         reset               => resets(RESET_BIT_DATAGEN),
         enable_pix          => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE),
