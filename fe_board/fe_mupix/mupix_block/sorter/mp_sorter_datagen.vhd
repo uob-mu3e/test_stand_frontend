@@ -134,7 +134,7 @@ architecture rtl of mp_sorter_datagen is
             produce_next_frame  <= '1';
             ---------------------------------
 
-            if(i_control_reg(4) = '0') then 
+            if(i_control_reg(4) = '1') then 
                 produce_next_hit    <= '1'; -- full steam
             else
                 produce_next_hit    <= and_reduce(next_hit_p); -- probability to actually send the hit

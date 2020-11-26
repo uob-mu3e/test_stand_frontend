@@ -2,6 +2,8 @@
 -- there are TWO instances of this entity: one in mp_block, one in mp_datapath
 -- TODO: check if things are compiled away correctly in 2nd instance_name .. if not --> new file mupix_reg_mapping_datapath.vhd
 
+-- At some point we might want to generate this file automatically from mupix_registers.vhd
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -31,14 +33,17 @@ port (
 end entity;
 
 architecture rtl of mupix_reg_mapping is
-
+    signal mp_datagen_control : std_logic_vector(31 downto 0);
 
 begin
+
+    o_mp_datagen_control <= mp_datagen_control;
+
     process (i_clk156, i_reset_n)
         variable regaddr : integer;
     begin 
         if (i_reset_n = '0') then 
-            o_mp_datagen_control        <= (others => '0');
+            mp_datagen_control        <= (others => '0');
             
         elsif(rising_edge(i_clk156)) then
             regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
@@ -54,7 +59,10 @@ begin
 
             -- WRITE regs
             if ( regaddr = MP_DATA_GEN_CONTROL_REGISTER_W and i_reg_we = '1' ) then
-                o_mp_datagen_control <= i_reg_wdata;
+                mp_datagen_control <= i_reg_wdata;
+            end if;
+            if ( regaddr = MP_DATA_GEN_CONTROL_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata <= mp_datagen_control;
             end if;
 
         end if;

@@ -74,7 +74,6 @@ architecture rtl of mupix_datapath is
 
 
     signal running                  : std_logic;
-    signal generator_enable         : std_logic := '0';
 
     -- flag to indicate link, after unpacker
     signal link_flag                : std_logic_vector(11 downto 0);
@@ -309,7 +308,7 @@ begin
     output_select : process(i_clk125) -- hitsorter, generator, unsorted ...
     begin
         if(rising_edge(i_clk125))then
-            if(generator_enable='1') then
+            if(mp_datagen_control_reg(MP_DATA_GEN_ENGAGE_BIT)='1') then
                 fifo_wdata  <= fifo_wdata_gen;
                 fifo_write  <= fifo_write_gen;
             else
@@ -339,7 +338,7 @@ begin
     -- sync some things ..
     sync_fifo_cnt : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH  => 2,
+        ADDR_WIDTH  => 4,
         DATA_WIDTH  => 1+36+32,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
