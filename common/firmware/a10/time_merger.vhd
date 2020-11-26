@@ -68,12 +68,76 @@ architecture arch of time_merger is
     signal sop_wait, shop_wait, time_wait, rack_link : std_logic_vector(N - 1 downto 0);
     signal link_good : std_logic_vector(63 downto 0);
     
+    -- merger tree (at the moment for 32 links)
+    type fifo_width_t is array (4 downto 0) of integer;
+    constant read_width : fifo_width_t := (1024, 512, 256, 128, 64);
+    constant write_width : fifo_width_t := (512, 256, 128, 64, 32);
+    constant generate_fifos : fifo_width_t := (2, 4, 8, 16, 32);
+    constant size1 : integer := generate_fifos(0)/2;
+    constant size2 : integer := generate_fifos(1)/2;
+    type fifo_data_0_t is array (generate_fifos(0) - 1 downto 0) of std_logic_vector(write_width(0) - 1 downto 0);
+    type fifo_data_1_t is array (generate_fifos(1) - 1 downto 0) of std_logic_vector(write_width(1) - 1 downto 0);
+    type fifo_data_2_t is array (generate_fifos(2) - 1 downto 0) of std_logic_vector(write_width(2) - 1 downto 0);
+    type fifo_data_3_t is array (generate_fifos(3) - 1 downto 0) of std_logic_vector(write_width(3) - 1 downto 0);
+    type fifo_data_4_t is array (generate_fifos(4) - 1 downto 0) of std_logic_vector(write_width(4) - 1 downto 0);
+    signal fifo_data_0 : fifo_data_0_t;
+    signal fifo_data_1 : fifo_data_1_t;
+    signal fifo_data_2 : fifo_data_2_t;
+    signal fifo_data_3 : fifo_data_3_t;
+    signal fifo_data_4 : fifo_data_4_t;
+    type fifo_q_0_t is array (generate_fifos(0) - 1 downto 0) of std_logic_vector(read_width(0) - 1 downto 0);
+    type fifo_q_1_t is array (generate_fifos(1) - 1 downto 0) of std_logic_vector(read_width(1) - 1 downto 0);
+    type fifo_q_2_t is array (generate_fifos(2) - 1 downto 0) of std_logic_vector(read_width(2) - 1 downto 0);
+    type fifo_q_3_t is array (generate_fifos(3) - 1 downto 0) of std_logic_vector(read_width(3) - 1 downto 0);
+    type fifo_q_4_t is array (generate_fifos(4) - 1 downto 0) of std_logic_vector(read_width(4) - 1 downto 0);
+    signal fifo_q_0 : fifo_q_0_t;
+    signal fifo_q_0_reg : fifo_q_0_t;
+    signal fifo_q_1 : fifo_q_1_t;
+    signal fifo_q_2 : fifo_q_2_t;
+    signal fifo_q_3 : fifo_q_3_t;
+    signal fifo_q_4 : fifo_q_4_t;
+    signal fifo_ren_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal fifo_ren_0_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal fifo_wen_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal fifo_full_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal fifo_empty_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal fifo_empty_0_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal saw_header_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal saw_trailer_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal fifo_ren_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+    signal fifo_wen_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+    signal fifo_full_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+    signal fifo_empty_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+    signal fifo_ren_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
+    signal fifo_wen_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
+    signal fifo_full_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
+    signal fifo_empty_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
+    signal fifo_ren_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
+    signal fifo_wen_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
+    signal fifo_full_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
+    signal fifo_empty_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
+    signal fifo_ren_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    signal fifo_wen_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    signal fifo_full_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    signal fifo_empty_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    
+    type layer_0_state_t is array(generate_fifos(0) - 1 downto 0) of std_logic_vector(3 downto 0);
+    signal layer_0_state : layer_0_state_t;
+    type layer_0_cnt_t is array (generate_fifos(0) - 1 downto 0) of std_logic_vector(31 downto 0);
+    signal layer_0_cnt : layer_0_cnt_t;
+    
+    type layer_1_state_t is array(generate_fifos(1) - 1 downto 0) of std_logic_vector(3 downto 0);
+    signal layer_1_state : layer_1_state_t;
+    
+    type layer_2_state_t is array(generate_fifos(2) - 1 downto 0) of std_logic_vector(7 downto 0);
+    signal layer_2_state : layer_2_state_t;
+    
+
+    signal alignment_done : std_logic := '0';
+        
     -- 8 links with 32 bit x 250 MHz 8b/10b
     signal hit_out : hit_array_t := (others => (others => '0'));
     signal hit_out_en, check_time : std_logic_vector(N - 1 downto 0);
-    signal cur_time : integer;
-    type cur_link_array_t is array (7 downto 0) of integer;
-    signal cur_link : cur_link_array_t;
     
 begin
 
@@ -84,12 +148,146 @@ begin
     o_error_pre <= error_pre;
     o_error_sh <= error_sh;
     o_hit_out <= hit_out;
-
+    hit_out(0) <= fifo_q_1(0)(31 downto 16) & fifo_q_1(8)(31 downto 16);
+    hit_out(1) <= fifo_q_1(1)(31 downto 16) & fifo_q_1(9)(31 downto 16);
+    hit_out(2) <= fifo_q_1(2)(31 downto 16) & fifo_q_1(10)(31 downto 16);
+    hit_out(3) <= fifo_q_1(3)(31 downto 16) & fifo_q_1(11)(31 downto 16);
+    hit_out(4) <= fifo_q_1(4)(31 downto 16) & fifo_q_1(12)(31 downto 16);
+    hit_out(5) <= fifo_q_1(5)(31 downto 16) & fifo_q_1(13)(31 downto 16);
+    hit_out(6) <= fifo_q_1(6)(31 downto 16) & fifo_q_1(14)(31 downto 16);
+    hit_out(7) <= fifo_q_1(7)(31 downto 16) & fifo_q_1(15)(31 downto 16);
     
     generate_rack : FOR I in N-1 downto 0 GENERATE
         o_rack(I) <= rack(I) or rack_hit(I) or rack_link(I);
 --         link_good(I) <= '1' when i_rempty(I) = '0' and i_mask_n(I) = '1' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" and rack_hit(I) = '0' else '0';
     END GENERATE;
+    
+     -- generate tree fifos
+    -- fix this now for 32 links
+    fifos_0:
+    FOR j in 0 to generate_fifos(0)-1 GENERATE
+        e_link_fifo : entity work.ip_dcfifo_mixed_widths
+        generic map(
+            ADDR_WIDTH_w => 5,
+            DATA_WIDTH_w => write_width(0),
+            ADDR_WIDTH_r => 5,
+            DATA_WIDTH_r => read_width(0),
+            DEVICE 		 => "Arria 10"--,
+        )
+        port map (
+            aclr 	=> not i_reset_n,
+            data 	=> fifo_data_0(j),
+            rdclk 	=> i_clk,
+            rdreq 	=> fifo_ren_0(j),
+            wrclk 	=> i_clk,
+            wrreq 	=> fifo_wen_0(j),
+            q 		=> fifo_q_0_reg(j),
+            rdempty => fifo_empty_0_reg(j),
+            rdusedw => open,
+            wrfull 	=> fifo_full_0(j),
+            wrusedw => open--,
+        );
+    END GENERATE fifos_0;
+    
+    fifos_1:
+    FOR j in 0 to generate_fifos(1)-1 GENERATE
+        e_link_fifo : entity work.ip_dcfifo_mixed_widths
+        generic map(
+            ADDR_WIDTH_w => 5,
+            DATA_WIDTH_w => write_width(1),
+            ADDR_WIDTH_r => 5,
+            DATA_WIDTH_r => read_width(1),
+            DEVICE 		 => "Arria 10"--,
+        )
+        port map (
+            aclr 	=> not i_reset_n,
+            data 	=> fifo_data_1(j),
+            rdclk 	=> i_clk,
+            rdreq 	=> fifo_ren_1(j),
+            wrclk 	=> i_clk,
+            wrreq 	=> fifo_wen_1(j),
+            q 		=> fifo_q_1(j),
+            rdempty => fifo_empty_1(j),
+            rdusedw => open,
+            wrfull 	=> fifo_full_1(j),
+            wrusedw => open--,
+        );
+    END GENERATE fifos_1;
+    
+    fifos_2:
+    FOR j in 0 to generate_fifos(2)-1 GENERATE
+        e_link_fifo : entity work.ip_dcfifo_mixed_widths
+        generic map(
+            ADDR_WIDTH_w => 5,
+            DATA_WIDTH_w => write_width(2),
+            ADDR_WIDTH_r => 5,
+            DATA_WIDTH_r => read_width(2),
+            DEVICE 		 => "Arria 10"--,
+        )
+        port map (
+            aclr 	=> not i_reset_n,
+            data 	=> fifo_data_2(j),
+            rdclk 	=> i_clk,
+            rdreq 	=> not fifo_empty_2(j), --fifo_ren_2(j),
+            wrclk 	=> i_clk,
+            wrreq 	=> fifo_wen_2(j),
+            q 		=> fifo_q_2(j),
+            rdempty => fifo_empty_2(j),
+            rdusedw => open,
+            wrfull 	=> fifo_full_2(j),
+            wrusedw => open--,
+        );
+    END GENERATE fifos_2;
+    
+    fifos_3:
+    FOR j in 0 to generate_fifos(3)-1 GENERATE
+        e_link_fifo : entity work.ip_dcfifo_mixed_widths
+        generic map(
+            ADDR_WIDTH_w => 5,
+            DATA_WIDTH_w => write_width(3),
+            ADDR_WIDTH_r => 5,
+            DATA_WIDTH_r => read_width(3),
+            DEVICE 		 => "Arria 10"--,
+        )
+        port map (
+            aclr 	=> not i_reset_n,
+            data 	=> fifo_data_3(j),
+            rdclk 	=> i_clk,
+            rdreq 	=> fifo_ren_3(j),
+            wrclk 	=> i_clk,
+            wrreq 	=> fifo_wen_3(j),
+            q 		=> fifo_q_3(j),
+            rdempty => fifo_empty_3(j),
+            rdusedw => open,
+            wrfull 	=> fifo_full_3(j),
+            wrusedw => open--,
+        );
+    END GENERATE fifos_3;
+    
+    fifos_4:
+    FOR j in 0 to generate_fifos(4)-1 GENERATE
+        e_link_fifo : entity work.ip_dcfifo_mixed_widths
+        generic map(
+            ADDR_WIDTH_w => 5,
+            DATA_WIDTH_w => write_width(4),
+            ADDR_WIDTH_r => 5,
+            DATA_WIDTH_r => read_width(4),
+            DEVICE 		 => "Arria 10"--,
+        )
+        port map (
+            aclr 	=> not i_reset_n,
+            data 	=> fifo_data_4(j),
+            rdclk 	=> i_clk,
+            rdreq 	=> fifo_ren_4(j),
+            wrclk 	=> i_clk,
+            wrreq 	=> fifo_wen_4(j),
+            q 		=> fifo_q_4(j),
+            rdempty => fifo_empty_4(j),
+            rdusedw => open,
+            wrfull 	=> fifo_full_4(j),
+            wrusedw => open--,
+        );
+    END GENERATE fifos_4;
     
     -- readout fifo
     process(i_clk, i_reset_n)
@@ -170,61 +368,201 @@ begin
         END LOOP;
     end if;
     end process;
-    
-    -- merge hits per link
+
+
+    tree_layer_0:
+    FOR i in 0 to generate_fifos(0) - 1 GENERATE
     process(i_clk, i_reset_n)
     begin
     if ( i_reset_n /= '1' ) then
-        rack_hit <= (others => '0');
-        hit_out <= (others => (others => '0'));
-        hit_out_en <= (others => '0');
-        check_time <= (others => '0');
-        cur_time <= 0;
-        cur_link <= (7,6,5,4,3,2,1,0);
+        rack_hit(i) <= '0';
+        fifo_data_0(i) <= (others => '0');
+        fifo_wen_0(i) <= '0';
+        saw_header_0(i) <= '0';
+        saw_trailer_0(i) <= '0';
+        layer_0_state(i) <= "0000";
+        layer_0_cnt(i) <= (others => '0');
         --
     elsif rising_edge(i_clk) then
-    
-        rack_hit <= (others => '0');
-        hit_out <= (others => (others => '0'));
-        hit_out_en <= (others => '0');
-        
-        -- merge hits
+        rack_hit(i) <= '0';
+        fifo_wen_0(i) <= '0';
         if ( merge_state = merge_hits ) then
-            if ( cur_time /= 16 ) then
-                -- LOOP over output
-                -- read out from link 0-7, 8-15, 16-23, 24-31, 32-33
-                FOR I in 0 to 7 LOOP
-                    if ( cur_link(I) >= N ) then
-                        --
-                    elsif ( link_good(cur_link(I)) = '1' and rack_hit(cur_link(I)) = '0' ) then
-                        if ( i_rdata(cur_link(I))(35 downto 32) = cur_time ) then
-                            hit_out(I) <= i_rdata(cur_link(I))(35 downto 4);
-                            hit_out_en(I) <= '1';
-                            rack_hit(cur_link(I)) <= '1';
-                        else
-                            cur_link(I) <= cur_link(I) + 8;
-                            check_time(cur_link(I)) <= '1';
-                        end if;
-                    elsif ( i_rdata(cur_link(I))(37 downto 36) /= "00" or i_rdata(cur_link(I))(31 downto 26) = "111111" ) then
-                        check_time(cur_link(I)) <= '1';
-                        cur_link(I) <= cur_link(I) + 8;
-                    end if;
-                END LOOP;
+            case layer_0_state(i) is
                 
-                if ( check_time = check_ones ) then
-                    cur_link <= (7,6,5,4,3,2,1,0);
-                    cur_time <= cur_time + 1;
-                    check_time <= (others => '0');
-                end if;
-            end if;
-        elsif ( merge_state = wait_for_sh ) then
-            cur_time <= 0;
-            cur_link <= (7,6,5,4,3,2,1,0);
-            check_time <= (others => '0');
+                when "0000" =>
+                    if ( fifo_full_0(i) = '0' and link_good(i) = '1' and i_rempty(i) = '0' and rack_hit(i) = '0' and i_rdata(i)(31 downto 26) /= "111111" and i_rdata(i)(37 downto 36) = "00" ) then
+                        fifo_data_0(i) <= i_rdata(i)(35 downto 4);
+                        fifo_wen_0(i) <= '1';
+                        rack_hit(i) <= '1';
+                        layer_0_cnt(i) <= layer_0_cnt(i) + '1';
+                        saw_header_0(i) <= '0';
+                        saw_trailer_0(i) <= '0';
+                    -- TODO: is this fine to quite until one is written (cnt > 0)?
+                    elsif ( i_rdata(i)(31 downto 26) = "111111" and layer_0_cnt(i) > 0 ) then
+                        saw_header_0(i) <= '1';
+                        layer_0_state(i) <= "0001";
+                        fifo_data_0(i) <= x"FFFFFFFF";
+                        layer_0_cnt(i) <= layer_0_cnt(i) + '1';
+                        fifo_wen_0(i) <= '1';
+                    -- TODO: is this fine to quite until one is written (cnt > 0)?
+                    elsif ( i_rdata(I)(37 downto 36) /= "00" and layer_0_cnt(i) > 0 ) then
+                        saw_trailer_0(i) <= '1';
+                        layer_0_state(i) <= "0001";
+                        fifo_data_0(i) <= x"FFFFFFFF";
+                        layer_0_cnt(i) <= layer_0_cnt(i) + '1';
+                        fifo_wen_0(i) <= '1';
+                    end if;
+                when "0001" =>
+                    if ( layer_0_cnt(i)(5) = '1' ) then
+                        layer_0_state(i) <= "1111";
+                    else
+                        fifo_data_0(i) <= x"FFFFFFFF";
+                        layer_0_cnt(i) <= layer_0_cnt(i) + '1';
+                        fifo_wen_0(i) <= '1';
+                    end if;
+                when "1111" =>
+                    -- TODO: write out something?
+                when others =>
+                    layer_0_state(i) <= "0000";
+            end case;
+        else
+            layer_0_state(i) <= "0000";
+            saw_header_0(i) <= '0';
+            saw_trailer_0(i) <= '0';
+            layer_0_cnt(i) <= (others => '0');
         end if;
     end if;
     end process;
-   
+    
+    process(i_clk, i_reset_n)
+    begin
+    if ( i_reset_n /= '1' ) then
+        fifo_q_0(i) <= (others => '0');
+        fifo_empty_0(i) <= '0';
+        --
+    elsif rising_edge(i_clk) then
+        fifo_q_0(i) <= fifo_q_0_reg(i);
+        fifo_empty_0(i) <= fifo_empty_0_reg(i);
+    end if;
+    end process;
+    END GENERATE tree_layer_0;
+
+    tree_layer_1:
+    FOR i in 0 to generate_fifos(1) - 1 GENERATE
+    process(i_clk, i_reset_n)
+    begin
+    if ( i_reset_n /= '1' ) then
+        fifo_ren_0(i) <= '0';
+        fifo_ren_0(i + size1) <= '0';
+        fifo_ren_0_reg(i) <= '0';
+        fifo_ren_0_reg(i + size1) <= '0';
+        fifo_wen_1(i) <= '0';
+        fifo_data_1(i) <= (others => '0');
+        layer_1_state(i) <= (others => '0');
+        --
+    elsif rising_edge(i_clk) then
+        fifo_ren_0(i) <= '0';
+        fifo_ren_0(i + size1) <= '0';
+        fifo_ren_0_reg(i) <= fifo_ren_0(i);
+        fifo_ren_0_reg(i + size1) <= fifo_ren_0(i + size1);
+        
+        fifo_wen_1(i) <= '0';
+        if ( merge_state = merge_hits ) then
+            case layer_1_state(i) is
+            
+                when "0000" =>
+                    -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
+                    if ( fifo_q_0(i)(31 downto 28) <= fifo_q_0(i + size1)(31 downto 28) and fifo_empty_0(i) = '0' and fifo_ren_0(i) = '0' and fifo_ren_0_reg(i) = '0' ) then
+                        fifo_data_1(i)(31 downto 0) <= fifo_q_0(i)(31 downto 0);
+                        layer_1_state(i)(0) <= '1';
+                        if ( fifo_q_0(i)(63 downto 60) <= fifo_q_0(i + size1)(31 downto 28) and fifo_q_0(i)(63 downto 32) /= x"00000000" ) then
+                            fifo_data_1(i)(63 downto 32) <= fifo_q_0(i)(63 downto 32);
+                            layer_1_state(i)(1) <= '1';
+                            fifo_wen_1(i) <= '1';
+                            fifo_ren_0(i) <= '1';
+                        elsif ( fifo_q_0(i + size1)(63 downto 32) /= x"00000000" and fifo_empty_0(i + size1) = '0' and fifo_ren_0(i + size1) = '0' and fifo_ren_0_reg(i + size1) = '0' ) then
+                            fifo_data_1(i)(63 downto 32) <= fifo_q_0(i + size1)(31 downto 0);
+                            layer_1_state(i)(2) <= '1';
+                            fifo_wen_1(i) <= '1';
+                        end if;
+                    elsif ( fifo_empty_0(i + size1) = '0' and fifo_ren_0(i + size1) = '0' and fifo_ren_0_reg(i + size1) = '0' ) then
+                        fifo_data_1(i)(31 downto 0) <= fifo_q_0(i + size1)(31 downto 0);
+                        layer_1_state(i)(2) <= '1';
+                        if ( fifo_q_0(i)(31 downto 28) <= fifo_q_0(i + size1)(63 downto 60) and fifo_empty_0(i) = '0' and fifo_ren_0(i) = '0' and fifo_ren_0_reg(i) = '0' ) then
+                            fifo_data_1(i)(63 downto 32) <= fifo_q_0(i)(31 downto 0);
+                            layer_1_state(i)(0) <= '1';
+                            fifo_wen_1(i) <= '1';
+                        elsif ( fifo_q_0(i + size1)(63 downto 32) /= x"00000000" ) then
+                            fifo_data_1(i)(63 downto 32) <= fifo_q_0(i + size1)(63 downto 32);
+                            layer_1_state(i)(3) <= '1';
+                            fifo_wen_1(i) <= '1';
+                            fifo_ren_0(i + size1) <= '1';
+                        end if;
+                    end if;
+                when "0011" =>
+                    layer_1_state(i) <= (others => '0');
+                    -- TODO: probably not needed
+                    fifo_ren_0_reg(i) <= '1';
+                    fifo_ren_0_reg(i + size1) <= '1';
+                when "1100" =>
+                    layer_1_state(i) <= (others => '0');
+                    -- TODO: probably not needed
+                    fifo_ren_0_reg(i) <= '1';
+                    fifo_ren_0_reg(i + size1) <= '1';
+                when "0101" =>
+                    if ( fifo_q_0(i)(63 downto 60) <= fifo_q_0(i + size1)(63 downto 60) and fifo_q_0(i)(63 downto 32) /= x"00000000" ) then
+                        fifo_data_1(i)(31 downto 0) <= fifo_q_0(i)(63 downto 32);
+                        layer_1_state(i)(0) <= '0';
+                        fifo_ren_0(i) <= '1';
+                    elsif ( fifo_q_0(i + size1)(63 downto 32) /= x"00000000" ) then
+                        fifo_data_1(i)(31 downto 0) <= fifo_q_0(i + size1)(63 downto 32);
+                        layer_1_state(i)(2) <= '0';
+                        fifo_ren_0(i + size1) <= '1';
+                    end if;
+                when "0100" =>
+                    -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
+                    if ( fifo_empty_0(i) = '0' and fifo_ren_0(i) = '0' and fifo_ren_0_reg(i) = '0' ) then
+                        -- TODO: what to do when fifo_q_0(i + size1)(63 downto 60) is zero? maybe error cnt?
+                        if ( fifo_q_0(i)(31 downto 28) <= fifo_q_0(i + size1)(63 downto 60) ) then
+                            fifo_data_1(i)(63 downto 32) <= fifo_q_0(i)(31 downto 0);
+                            layer_1_state(i)(0) <= '1';
+                            fifo_wen_1(i) <= '1';
+                        elsif ( fifo_q_0(i + size1)(63 downto 32) /= x"00000000" ) then
+                            fifo_data_1(i)(63 downto 32) <= fifo_q_0(i + size1)(63 downto 32);
+                            layer_1_state(i)(3) <= '1';
+                            fifo_wen_1(i) <= '1';
+                            fifo_ren_0(i + size1) <= '1';
+                        end if;
+                    else
+                        -- TODO: wait for fifo_0 i here --> error counter?
+                    end if;
+                when "0001" =>
+                    -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
+                    if ( fifo_empty_0(i + size1) = '0' and fifo_ren_0(i + size1) = '0' and fifo_ren_0_reg(i + size1) = '0' ) then       
+                        -- TODO: what to do when fifo_q_0(i)(63 downto 60) is zero? maybe error cnt?     
+                        if ( fifo_q_0(i)(63 downto 60) <= fifo_q_0(i + size1)(31 downto 28) and fifo_q_0(i)(63 downto 32) /= x"00000000" ) then
+                            fifo_data_1(i)(63 downto 32) <= fifo_q_0(i)(63 downto 32);
+                            layer_1_state(i)(1) <= '1';
+                            fifo_wen_1(i) <= '1';
+                            fifo_ren_0(i) <= '1';
+                        else
+                            fifo_data_1(i)(63 downto 32) <= fifo_q_0(i + size1)(31 downto 0);
+                            layer_1_state(i)(2) <= '1';
+                            fifo_wen_1(i) <= '1';
+                        end if;
+                    else
+                        -- TODO: wait for fifo_0 i+size1 here --> error counter?
+                    end if;
+                when others =>
+                    layer_1_state(i) <= (others => '0');
+
+            end case;
+        end if;
+
+    end if;
+    end process;
+    END GENERATE tree_layer_1;
+    
     -- write data
     process(i_clk, i_reset_n)
     begin
@@ -407,17 +745,17 @@ begin
                 
                 -- change state
                 -- TODO error if sh is not there
-                if ( sh_state = check_zeros and cur_time = 16 ) then
+                if ( sh_state = check_zeros and alignment_done = '1' ) then
                     merge_state <= wait_for_sh;
                 end if;
                 
                 -- TODO error if pre is not there
-                if ( pre_state = check_zeros and cur_time = 16 ) then
+                if ( pre_state = check_zeros and alignment_done = '1' ) then
                     merge_state <= wait_for_pre;
                 end if;
                 
                 -- TODO error if trailer is not there
-                if ( tr_state = check_zeros and cur_time = 16 ) then
+                if ( tr_state = check_zeros and alignment_done = '1' ) then
                     merge_state <= trailer;
                 end if;
                 
