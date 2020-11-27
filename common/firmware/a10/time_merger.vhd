@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 use work.dataflow_components.all;
+--use std.textio.all;
 
 -- merge packets delimited by SOP and EOP from N input streams
 entity time_merger is
@@ -152,9 +153,9 @@ begin
     FOR j in 0 to generate_fifos(0)-1 GENERATE
         e_link_fifo : entity work.ip_dcfifo_mixed_widths
         generic map(
-            ADDR_WIDTH_w => 5,
+            ADDR_WIDTH_w => 6,
             DATA_WIDTH_w => write_width(0),
-            ADDR_WIDTH_r => 5,
+            ADDR_WIDTH_r => 6,
             DATA_WIDTH_r => read_width(0),
             DEVICE 		 => "Arria 10"--,
         )
@@ -177,9 +178,9 @@ begin
     FOR j in 0 to generate_fifos(1)-1 GENERATE
         e_link_fifo : entity work.ip_dcfifo_mixed_widths
         generic map(
-            ADDR_WIDTH_w => 5,
+            ADDR_WIDTH_w => 6,
             DATA_WIDTH_w => write_width(1),
-            ADDR_WIDTH_r => 5,
+            ADDR_WIDTH_r => 6,
             DATA_WIDTH_r => read_width(1),
             DEVICE 		 => "Arria 10"--,
         )
@@ -326,7 +327,7 @@ begin
             case layer_0_state(i) is
                 
                 when "0000" =>
-                    if ( fifo_q_0(i)(0) = 'X' ) then
+                    if ( fifo_full_0(i) = '1' or reset_fifo_0(i) = '1' ) then
                         --
                     else
                         if ( fifo_full_0(i) = '0' and link_good(i) = '1' and i_rempty(i) = '0' and rack_hit(i) = '0' and i_rdata(i)(31 downto 26) /= "111111" and i_rdata(i)(37 downto 36) = "00" and reset_fifo_0(i) = '0' ) then
@@ -415,7 +416,7 @@ begin
             case layer_1_state(i) is
             
                 when "0000" =>
-                    if ( fifo_q_0(i)(0) = 'X' or fifo_q_0(i + size1)(0) = 'X' ) then
+                    if ( fifo_full_1(i) = '1' or reset_fifo_1(i) = '1' ) then
                         --
                     else
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
@@ -548,111 +549,114 @@ begin
         fifo_ren_1(i + size2) <= '0';
         fifo_ren_1_reg(i) <= fifo_ren_1(i);
         fifo_ren_1_reg(i + size2) <= fifo_ren_1(i + size2);
-        alignment_done(i) <= '0';
         fifo_data_2(i)(W-1 downto W-2) <= "00";
 
         fifo_wen_2(i) <= '0';
-        if ( merge_state = merge_hits ) then
-            case layer_2_state(i) is
-            
-                when "0000" =>
-                    if ( fifo_empty_1(i) = '1' and fifo_empty_1(i + size2) = '1' and fifo_data_2(i)(31 downto 0) = x"FFFFFFFF" ) then
-                        alignment_done(i) <= '1';
-                    end if;
-                
-                    -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                    if ( fifo_q_1(i)(31 downto 28) <= fifo_q_1(i + size2)(31 downto 28) and fifo_empty_1(i) = '0' and fifo_ren_1(i) = '0' and fifo_ren_1_reg(i) = '0' ) then
-                        fifo_data_2(i)(31 downto 0) <= fifo_q_1(i)(31 downto 0);
-                        layer_2_state(i)(0) <= '1';
-                        -- TODO: try to find out if x"00000000" is not a valid hit
-                        if ( fifo_q_1(i)(63 downto 60) <= fifo_q_1(i + size2)(31 downto 28) and fifo_q_1(i)(63 downto 32) /= x"00000000" ) then
-                            fifo_data_2(i)(63 downto 32) <= fifo_q_1(i)(63 downto 32);
-                            layer_2_state(i)(1) <= '1';
-                            fifo_wen_2(i) <= '1';
-                            fifo_ren_1(i) <= '1';
-                        elsif ( fifo_q_1(i + size2)(63 downto 32) /= x"00000000" and fifo_empty_1(i + size2) = '0' and fifo_ren_1(i + size2) = '0' and fifo_ren_1_reg(i + size2) = '0' ) then
-                            fifo_data_2(i)(63 downto 32) <= fifo_q_1(i + size2)(31 downto 0);
-                            layer_2_state(i)(2) <= '1';
-                            fifo_wen_2(i) <= '1';
-                        end if;
-                    elsif ( fifo_empty_1(i + size2) = '0' and fifo_ren_1(i + size2) = '0' and fifo_ren_1_reg(i + size2) = '0' ) then
-                        fifo_data_2(i)(31 downto 0) <= fifo_q_1(i + size2)(31 downto 0);
-                        layer_2_state(i)(2) <= '1';
-                        if ( fifo_q_1(i)(31 downto 28) <= fifo_q_1(i + size2)(63 downto 60) and fifo_empty_1(i) = '0' and fifo_ren_1(i) = '0' and fifo_ren_1_reg(i) = '0' ) then
-                            fifo_data_2(i)(63 downto 32) <= fifo_q_1(i)(31 downto 0);
-                            layer_2_state(i)(0) <= '1';
-                            fifo_wen_2(i) <= '1';
-                        elsif ( fifo_q_1(i + size2)(63 downto 32) /= x"00000000" ) then
-                            fifo_data_2(i)(63 downto 32) <= fifo_q_1(i + size2)(63 downto 32);
-                            layer_2_state(i)(3) <= '1';
-                            fifo_wen_2(i) <= '1';
-                            fifo_ren_1(i + size2) <= '1';
-                        end if;
-                    end if;
-                when "0011" =>
-                    layer_2_state(i) <= (others => '0');
-                    -- TODO: probably not needed
-                    fifo_ren_1_reg(i) <= '1';
-                    fifo_ren_1_reg(i + size2) <= '1';
-                when "1100" =>
-                    layer_2_state(i) <= (others => '0');
-                    -- TODO: probably not needed
-                    fifo_ren_1_reg(i) <= '1';
-                    fifo_ren_1_reg(i + size2) <= '1';
-                when "0101" =>
-                    if ( fifo_q_1(i)(63 downto 60) <= fifo_q_1(i + size2)(63 downto 60) and fifo_q_1(i)(63 downto 32) /= x"00000000" ) then
-                        fifo_data_2(i)(31 downto 0) <= fifo_q_1(i)(63 downto 32);
-                        layer_2_state(i)(0) <= '0';
-                        fifo_ren_1(i) <= '1';
-                    elsif ( fifo_q_1(i + size2)(63 downto 32) /= x"00000000" ) then
-                        fifo_data_2(i)(31 downto 0) <= fifo_q_1(i + size2)(63 downto 32);
-                        layer_2_state(i)(2) <= '0';
-                        fifo_ren_1(i + size2) <= '1';
-                    end if;
-                when "0100" =>
-                    -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                    if ( fifo_empty_1(i) = '0' and fifo_ren_1(i) = '0' and fifo_ren_1_reg(i) = '0' ) then
-                        -- TODO: what to do when fifo_q_1(i + size2)(63 downto 60) is zero? maybe error cnt?
-                        if ( fifo_q_1(i)(31 downto 28) <= fifo_q_1(i + size2)(63 downto 60) ) then
-                            fifo_data_2(i)(63 downto 32) <= fifo_q_1(i)(31 downto 0);
-                            layer_2_state(i)(0) <= '1';
-                            fifo_wen_2(i) <= '1';
-                        elsif ( fifo_q_1(i + size2)(63 downto 32) /= x"00000000" ) then
-                            fifo_data_2(i)(63 downto 32) <= fifo_q_1(i + size2)(63 downto 32);
-                            layer_2_state(i)(3) <= '1';
-                            fifo_wen_2(i) <= '1';
-                            fifo_ren_1(i + size2) <= '1';
-                        end if;
-                    else
-                        -- TODO: wait for fifo_0 i here --> error counter?
-                    end if;
-                when "0001" =>
-                    -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                    if ( fifo_empty_1(i + size2) = '0' and fifo_ren_1(i + size2) = '0' and fifo_ren_1_reg(i + size2) = '0' ) then       
-                        -- TODO: what to do when fifo_q_1(i)(63 downto 60) is zero? maybe error cnt?     
-                        if ( fifo_q_1(i)(63 downto 60) <= fifo_q_1(i + size2)(31 downto 28) and fifo_q_1(i)(63 downto 32) /= x"00000000" ) then
-                            fifo_data_2(i)(63 downto 32) <= fifo_q_1(i)(63 downto 32);
-                            layer_2_state(i)(1) <= '1';
-                            fifo_wen_2(i) <= '1';
-                            fifo_ren_1(i) <= '1';
+        if ( merge_state = merge_hits and fifo_empty_1(i) = '0' and fifo_empty_1(i + size2) = '0' ) then
+            if ( fifo_data_2(i)(31 downto 0) = x"FFFFFFFF" and fifo_data_2(i)(63 downto 32) = x"FFFFFFFF" ) then
+                alignment_done(i) <= '1';
+            end if;
+            if ( alignment_done(i) = '0' ) then
+                case layer_2_state(i) is
+                    when "0000" =>
+                        if ( fifo_full_2(i) = '1' ) then
+                            --
                         else
-                            fifo_data_2(i)(63 downto 32) <= fifo_q_1(i + size2)(31 downto 0);
-                            layer_2_state(i)(2) <= '1';
-                            fifo_wen_2(i) <= '1';
+                            -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
+                            if ( fifo_q_1(i)(31 downto 28) <= fifo_q_1(i + size2)(31 downto 28) and fifo_empty_1(i) = '0' and fifo_ren_1(i) = '0' and fifo_ren_1_reg(i) = '0' ) then
+                                fifo_data_2(i)(31 downto 0) <= fifo_q_1(i)(31 downto 0);
+                                layer_2_state(i)(0) <= '1';
+                                -- TODO: try to find out if x"00000000" is not a valid hit
+                                if ( fifo_q_1(i)(63 downto 60) <= fifo_q_1(i + size2)(31 downto 28) and fifo_q_1(i)(63 downto 32) /= x"00000000" ) then
+                                    fifo_data_2(i)(63 downto 32) <= fifo_q_1(i)(63 downto 32);
+                                    layer_2_state(i)(1) <= '1';
+                                    fifo_wen_2(i) <= '1';
+                                    fifo_ren_1(i) <= '1';
+                                elsif ( fifo_q_1(i + size2)(63 downto 32) /= x"00000000" and fifo_empty_1(i + size2) = '0' and fifo_ren_1(i + size2) = '0' and fifo_ren_1_reg(i + size2) = '0' ) then
+                                    fifo_data_2(i)(63 downto 32) <= fifo_q_1(i + size2)(31 downto 0);
+                                    layer_2_state(i)(2) <= '1';
+                                    fifo_wen_2(i) <= '1';
+                                end if;
+                            elsif ( fifo_empty_1(i + size2) = '0' and fifo_ren_1(i + size2) = '0' and fifo_ren_1_reg(i + size2) = '0' ) then
+                                fifo_data_2(i)(31 downto 0) <= fifo_q_1(i + size2)(31 downto 0);
+                                layer_2_state(i)(2) <= '1';
+                                if ( fifo_q_1(i)(31 downto 28) <= fifo_q_1(i + size2)(63 downto 60) and fifo_empty_1(i) = '0' and fifo_ren_1(i) = '0' and fifo_ren_1_reg(i) = '0' ) then
+                                    fifo_data_2(i)(63 downto 32) <= fifo_q_1(i)(31 downto 0);
+                                    layer_2_state(i)(0) <= '1';
+                                    fifo_wen_2(i) <= '1';
+                                elsif ( fifo_q_1(i + size2)(63 downto 32) /= x"00000000" ) then
+                                    fifo_data_2(i)(63 downto 32) <= fifo_q_1(i + size2)(63 downto 32);
+                                    layer_2_state(i)(3) <= '1';
+                                    fifo_wen_2(i) <= '1';
+                                    fifo_ren_1(i + size2) <= '1';
+                                end if;
+                            end if;
                         end if;
-                    else
-                        -- TODO: wait for fifo_0 i+size2 here --> error counter?
-                    end if;
-                when others =>
-                    layer_2_state(i) <= (others => '0');
-
-            end case;
+                    when "0011" =>
+                        layer_2_state(i) <= (others => '0');
+                        -- TODO: probably not needed
+                        fifo_ren_1_reg(i) <= '1';
+                        fifo_ren_1_reg(i + size2) <= '1';
+                    when "1100" =>
+                        layer_2_state(i) <= (others => '0');
+                        -- TODO: probably not needed
+                        fifo_ren_1_reg(i) <= '1';
+                        fifo_ren_1_reg(i + size2) <= '1';
+                    when "0101" =>
+                        if ( fifo_q_1(i)(63 downto 60) <= fifo_q_1(i + size2)(63 downto 60) and fifo_q_1(i)(63 downto 32) /= x"00000000" ) then
+                            fifo_data_2(i)(31 downto 0) <= fifo_q_1(i)(63 downto 32);
+                            layer_2_state(i)(0) <= '0';
+                            fifo_ren_1(i) <= '1';
+                        elsif ( fifo_q_1(i + size2)(63 downto 32) /= x"00000000" ) then
+                            fifo_data_2(i)(31 downto 0) <= fifo_q_1(i + size2)(63 downto 32);
+                            layer_2_state(i)(2) <= '0';
+                            fifo_ren_1(i + size2) <= '1';
+                        end if;
+                    when "0100" =>
+                        -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
+                        if ( fifo_empty_1(i) = '0' and fifo_ren_1(i) = '0' and fifo_ren_1_reg(i) = '0' ) then
+                            -- TODO: what to do when fifo_q_1(i + size2)(63 downto 60) is zero? maybe error cnt?
+                            if ( fifo_q_1(i)(31 downto 28) <= fifo_q_1(i + size2)(63 downto 60) ) then
+                                fifo_data_2(i)(63 downto 32) <= fifo_q_1(i)(31 downto 0);
+                                layer_2_state(i)(0) <= '1';
+                                fifo_wen_2(i) <= '1';
+                            elsif ( fifo_q_1(i + size2)(63 downto 32) /= x"00000000" ) then
+                                fifo_data_2(i)(63 downto 32) <= fifo_q_1(i + size2)(63 downto 32);
+                                layer_2_state(i)(3) <= '1';
+                                fifo_wen_2(i) <= '1';
+                                fifo_ren_1(i + size2) <= '1';
+                            end if;
+                        else
+                            -- TODO: wait for fifo_0 i here --> error counter?
+                        end if;
+                    when "0001" =>
+                        -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
+                        if ( fifo_empty_1(i + size2) = '0' and fifo_ren_1(i + size2) = '0' and fifo_ren_1_reg(i + size2) = '0' ) then       
+                            -- TODO: what to do when fifo_q_1(i)(63 downto 60) is zero? maybe error cnt?     
+                            if ( fifo_q_1(i)(63 downto 60) <= fifo_q_1(i + size2)(31 downto 28) and fifo_q_1(i)(63 downto 32) /= x"00000000" ) then
+                                fifo_data_2(i)(63 downto 32) <= fifo_q_1(i)(63 downto 32);
+                                layer_2_state(i)(1) <= '1';
+                                fifo_wen_2(i) <= '1';
+                                fifo_ren_1(i) <= '1';
+                            else
+                                fifo_data_2(i)(63 downto 32) <= fifo_q_1(i + size2)(31 downto 0);
+                                layer_2_state(i)(2) <= '1';
+                                fifo_wen_2(i) <= '1';
+                            end if;
+                        else
+                            -- TODO: wait for fifo_0 i+size2 here --> error counter?
+                        end if;
+                    when others =>
+                        layer_2_state(i) <= (others => '0');
+                end case;
+            end if;
         else
+            alignment_done(i) <= '0';
             -- TODO: not sure if this works always after a state transition maybe some delay here?
             if ( header_trailer_we = '1' ) then
                 fifo_data_2(i)(65 downto 32) <= header_trailer;
                 -- padding for now 
-                fifo_data_2(i)(31 downto 0) <= x"FFFFFFFF";
+                fifo_data_2(i)(31 downto 0) <= x"EEEEEEEE";
                 fifo_wen_2(i) <= '1';
             end if;
         end if;
@@ -688,6 +692,7 @@ begin
     elsif rising_edge(i_clk) then
         
         rack <= (others => '0');
+        header_trailer <= (others => '0');
         header_trailer_we <= '0';
     
         case merge_state is
