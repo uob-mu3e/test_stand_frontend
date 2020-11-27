@@ -609,7 +609,8 @@ begin
 
     e_data_gen : entity work.data_generator_a10
     generic map(
-        go_to_trailer => "0000011111"
+        go_to_trailer => 4,
+        go_to_sh => 3--,
     )
     port map (
         reset               => resets(RESET_BIT_DATAGEN),

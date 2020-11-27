@@ -1,5 +1,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
 
 package protocol is
 
@@ -38,8 +41,8 @@ entity data_generator_a10 is
         fpga_id: std_logic_vector(15 downto 0) := x"FFFF";
         max_row: std_logic_vector (7 downto 0) := (others => '0');
         max_col: std_logic_vector (7 downto 0) := (others => '0');
-        go_to_sh: std_logic_vector (3 downto 0) := "1111";
-        go_to_trailer: std_logic_vector (9 downto 0) := "1111111111";
+        go_to_sh: integer := 3;
+        go_to_trailer: integer := 4;
         wtot: std_logic := '0';
         wchip: std_logic := '0'
     );
@@ -62,6 +65,9 @@ architecture rtl of data_generator_a10 is
 
 ----------------signals---------------------
 	signal global_time:			  std_logic_vector(47 downto 0);
+	signal time_cnt_t:			  std_logic_vector(31 downto 0);
+	constant time_cnt_sh_one : std_logic_vector(go_to_sh downto 0) := (others => '1');
+	constant time_cnt_t_one : std_logic_vector(go_to_trailer downto 0) := (others => '1');
 	signal overflow_time:			  std_logic_vector(3 downto 0);
 	signal reset_n:				  std_logic;
 	-- state_types
@@ -158,6 +164,7 @@ begin
 		data_pix_ready          <= '0';
 		data_pix_generated      <= (others => '0');
 		global_time       		<= (others => '0');--start_global_time;
+		time_cnt_t       		<= (others => '0');
 		data_header_state			<= part1;
 		current_overflow 			:= "0000000000000000";
 		overflow_idx				:= 0;
@@ -203,6 +210,7 @@ begin
 					when part5 =>
 						state_out <= x"E";
 						global_time <= global_time + '1';
+						time_cnt_t <= time_cnt_t + '1';
 						
 						if (row = max_row) then
                             row <= (others => '0');
@@ -219,10 +227,11 @@ begin
 						data_pix_generated					<= global_time(3 downto 0) & lsfr_chip_id & row & col & lsfr_tot;
 						overflow_time <= global_time(3 downto 0);
 						datak_pix_generated              <= "0000";
-						if (global_time(3 downto 0) = go_to_sh) then
-							data_header_state					<= part4;
-						elsif (global_time(9 downto 0) = go_to_trailer) then
+						if (time_cnt_t(go_to_trailer downto 0) = time_cnt_t_one) then
 							data_header_state					<= trailer;
+							time_cnt_t       		<= (others => '0');
+						elsif (global_time(go_to_sh downto 0) = time_cnt_sh_one) then
+							data_header_state					<= part4;
 						elsif (current_overflow(overflow_idx) = '1') then
 							overflow_idx 						:= overflow_idx + 1;
 							data_header_state					<= overflow;
