@@ -184,8 +184,14 @@ begin
     o_Rst_n         <= (others => '1');--DO NOT DO THIS: (others => i_reset_n); !!! Phase will be not fixed
     o_clk_reco      <= lvds_rx_clk;
 
-    o_data_fast_parallel    <= av_rx_data_parallel;
-    o_datak                 <= av_rx_datak;
+    process (i_clk)
+    begin
+        if rising_edge(i_clk) then
+            -- spending a round of registers for timing improvement
+            o_data_fast_parallel    <= av_rx_data_parallel;
+            o_datak                 <= av_rx_datak;
+        end if;    
+    end process;
 
 --------------------------------------------------
 -- transceiver (2)

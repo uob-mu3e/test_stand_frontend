@@ -153,6 +153,8 @@ architecture arch of fe_block_v2 is
 
     signal run_state_125            : run_state_t;
     signal run_state_156            : run_state_t;
+    signal run_state_156_resetsys   : run_state_t;
+
     signal terminated               : std_logic;
     signal reset_phase              : std_logic_vector(PHASE_WIDTH_g - 1 downto 0);
 
@@ -205,10 +207,15 @@ begin
     --        data_out    => version_out(27 downto 0)
     --    );
 
+    process(i_clk_156)
+    begin
+    if rising_edge(i_clk_156) then
+        o_run_state_156 <= run_state_156_resetsys;
+        run_state_156   <= run_state_156_resetsys;
+    end if;
+    end process;
+
     -- generate resets
-
-    o_run_state_156 <= run_state_156;
-
     e_nios_reset_n : entity work.reset_sync
     port map ( o_reset_n => nios_reset_n, i_reset_n => i_areset_n, i_clk => i_nios_clk );
 
@@ -567,7 +574,7 @@ begin
         i_reset_125_n           => reset_125_n,
         i_clk_125               => i_clk_125,
 
-        o_state_156             => run_state_156,
+        o_state_156             => run_state_156_resetsys,
         i_reset_156_n           => reset_156_n,
         i_clk_156               => i_clk_156,
 
