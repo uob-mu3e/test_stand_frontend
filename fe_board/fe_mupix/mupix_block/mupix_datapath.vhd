@@ -240,7 +240,7 @@ begin
 
     process(i_clk125, reset_125_n)
     begin
-        if(reset_125_n = '0' or i_run_state_125 = RUN_STATE_SYNC)then
+        if(reset_125_n = '0')then
             counter125 <= (others => '0');
         elsif(rising_edge(i_clk125))then
             if(i_sync_reset_cnt = '1')then

@@ -17,3 +17,5 @@ set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "receiver_b
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "sorter/sorter.qip"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mupix_datapath.vhd"]
+
+set_global_assignment -name SDC_FILE [file join $::quartus(qip_path) "mupix.sdc"]
