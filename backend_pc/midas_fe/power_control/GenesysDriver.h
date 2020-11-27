@@ -39,15 +39,10 @@ class GenesysDriver : public PowerDriver
 	
 		//utility/communications functions
 		bool SetActiveChannel(int);
-		void SetState(int,bool,INT&);
-		void SetVoltage(int,float,INT&);
-		void SetCurrentLimit(int,float,INT&);
 		void SetBlink(int,bool,INT&);
 		void SetInterlock(int,bool,INT&);
 		bool AskPermissionToTurnOn(int);
-		void SetStateChanged();
-		void DemandVoltageChanged();
-		void CurrentLimitChanged();
+
 		void BlinkChanged();
 		void InitODBArray();
 
@@ -55,7 +50,7 @@ class GenesysDriver : public PowerDriver
 		int reply_time_out;
 
 		//local copy of hardware settings
-		std::vector<int> supplyID;
+		
 		std::vector<std::string> idCode;
 		std::vector<bool> interlock_enabled;
 		

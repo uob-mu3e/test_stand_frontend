@@ -20,14 +20,15 @@ class HMP4040Driver : public PowerDriver {
 		
 		INT ConnectODB();
 		INT Init();
+		INT ReadAll();
 	
 	private:
 	
 		void InitODBArray();
+		bool AskPermissionToTurnOn(int);
 		int nChannels;
 		std::string idCode;
 		std::string ip;
-		std::vector<int> channelID;
 	
 };
 

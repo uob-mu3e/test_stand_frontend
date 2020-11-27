@@ -83,18 +83,18 @@ INT GenesysDriver::Init()
 		else
 		{
 			cm_msg(MINFO,"power_fe","Supply nr %d seen",i); 
-			supplyID.push_back(i);
+			instrumentID.push_back(i);
 		}		
   }
  
-  cm_msg(MINFO,"power_fe"," %d supplies registered in daisy chain",int(supplyID.size()));
-  int nChannels = supplyID.size();
+  cm_msg(MINFO,"power_fe"," %d supplies registered in daisy chain",int(instrumentID.size()));
+  int nChannels = instrumentID.size();
   if(nChannels != settings["NChannels"]) cm_msg(MINFO,"power_fe"," Different as the set ODB value of %d, updating",int(settings["NChannels"]));
-  settings["NChannels"] = supplyID.size();
+  settings["NChannels"] = instrumentID.size();
 
 	// ***** channel by channel settings ***** //
   
-	settings["Address"] = supplyID;
+	settings["Address"] = instrumentID;
 	state.resize(nChannels);
 	voltage.resize(nChannels);
 	demandvoltage.resize(nChannels);
@@ -105,18 +105,18 @@ INT GenesysDriver::Init()
   
 	for(int i = 0; i<nChannels; i++ ) 
 	{
-		idCode[i]=ReadIDCode(supplyID[i],err);	
+		idCode[i]=ReadIDCode(instrumentID[i],err);	
   	
-		state[i]=ReadState(supplyID[i],err);
+		state[i]=ReadState(instrumentID[i],err);
  	
-		voltage[i]=ReadVoltage(supplyID[i],err);
-		demandvoltage[i]=ReadSetVoltage(supplyID[i],err);
+		voltage[i]=ReadVoltage(instrumentID[i],err);
+		demandvoltage[i]=ReadSetVoltage(instrumentID[i],err);
 
-		current[i]=ReadCurrent(supplyID[i],err);
-		currentlimit[i]=ReadCurrentLimit(supplyID[i],err);
+		current[i]=ReadCurrent(instrumentID[i],err);
+		currentlimit[i]=ReadCurrentLimit(instrumentID[i],err);
 
 		interlock_enabled[i]=true;
-		SetInterlock(supplyID[i],interlock_enabled[i],err);
+		SetInterlock(instrumentID[i],interlock_enabled[i],err);
   	
 		if(err!=FE_SUCCESS) return err;  	
 	}
@@ -163,90 +163,13 @@ bool GenesysDriver::AskPermissionToTurnOn(int channel) //extra check whether it 
 
 // ************ watch functions ************* //
 
-void GenesysDriver::SetStateChanged()
-{
-	INT err;
-	int nChannelsChanged = 0;
-	
-	for(unsigned int i=0; i<state.size(); i++)
-	{
-		bool value = variables["Set State"][i];
-		if(value!=state[i]) //compare to local book keeping
-		{
-			SetState(i,value,err);
-			if(err!=FE_SUCCESS ) cm_msg(MERROR, "Genesys supply ... ", "changing state of channel %d to %d failed, error %d", i,value,err);
-			else{ cm_msg(MINFO, "Genesys supply ... ", "changing state of channel %d to %d", i,value);	nChannelsChanged++;	}
-		}			
-	}
-	
-	if(nChannelsChanged < 1) cm_msg(MINFO, "Genesys supply ... ", "changing state request failed");
-	else // read changes back from device 
-	{	
-		int nChannels = supplyID.size();
-		for(int i = 0; i<nChannels; i++ ) 
-		{
-			bool value=ReadState(i,err);
-	    if(err==FE_SUCCESS) state[i]=value;
-	  }  
-	  variables["State"]=state; //push to odb
-	}
-}
-
-
-
-void GenesysDriver::DemandVoltageChanged()
-{
-	INT err;
-	int nChannelsChanged = 0;
-	for(unsigned int i=0; i<voltage.size(); i++)
-	{
-		float value = variables["Demand Voltage"][i];
-		if( fabs(value-voltage[i]) > fabs(relevantchange*voltage[i]) ) //compare to local book keeping, look for significant change
-		{
-			SetVoltage(i,value,err);
-			if(err!=FE_SUCCESS ) cm_msg(MERROR, "Genesys supply ... ", "changing voltage of channel %d to %f failed, error %d", i,value,err);
-			else
-			{
-				cm_msg(MINFO, "Genesys supply ... ", "changing voltage of channel %d to %f", i,value);
-				nChannelsChanged++;
-				demandvoltage[i]=value;
-			}
-		}			
-	}	
-	if(nChannelsChanged < 1) cm_msg(MINFO, "Genesys supply ... ", "changing voltage request rejected");
-}
-
-
-
-void GenesysDriver::CurrentLimitChanged()
-{
-	INT err;
-	int nChannelsChanged = 0;
-	for(unsigned int i=0; i<currentlimit.size(); i++)
-	{
-		float value = variables["Current Limit"][i];
-		if( fabs(value-currentlimit[i]) > fabs(relevantchange*currentlimit[i]) ) //compare to local book keeping, look for significant change
-		{
-			SetCurrentLimit(i,value,err);
-			if(err!=FE_SUCCESS ) cm_msg(MERROR, "Genesys supply ... ", "changing current limit of channel %d to %f failed, error %d", i,value,err);
-			else
-			{
-				cm_msg(MINFO, "Genesys supply ... ", "changing current limit of channel %d to %f", i,value);
-				nChannelsChanged++;
-				currentlimit[i]=value;
-			}
-		}			
-	}	
-	if(nChannelsChanged < 1) cm_msg(MINFO, "Genesys supply ... ", "changing current limit request rejected");
-}
-
 
 void GenesysDriver::BlinkChanged()
 {
 	INT err;
 	int nChannelsChanged = 0;
 	
-	for(unsigned int i=0; i< supplyID.size(); i++)
+	for(unsigned int i=0; i< instrumentID.size(); i++)
 	{
 		bool value = settings["Blink"][i];		
 		SetBlink(i,value,err);
@@ -266,7 +189,7 @@ void GenesysDriver::SetInterlock(int channel,bool value, INT& error)
 	bool success;
 	error = FE_SUCCESS;
 
-	if( SelectChannel(supplyID[channel]) )
+	if( SelectChannel(instrumentID[channel]) )
 	{
 		//OUTPut:ILC[:STATe] <Bool>
  		if(value==true) { cmd="OUTP:ILC 1\n"; }
@@ -279,59 +202,7 @@ void GenesysDriver::SetInterlock(int channel,bool value, INT& error)
 	}	
 }
 
-void GenesysDriver::SetCurrentLimit(int channel, float value,INT& error)
-{
-  error = FE_SUCCESS;
-  if(value<-0.1 || value > 90.0) //check valid range 
-  {
-  	cm_msg(MERROR, "Genesys supply ... ", "current limit of %f not allowed",value );
-  	variables["Current Limit"][channel]=currentlimit[channel]; //disable request
-  	error=FE_ERR_DRIVER;
-  	return;  	
-  }
-  
-  if( SelectChannel(supplyID[channel]) )
-  {
-	  bool success = Set("CURR "+std::to_string(value)+"\n",error);
-  	if(!success) error=FE_ERR_DRIVER;
-  	else // read changes
-  	{
-	  	voltage[channel]=ReadVoltage(channel,error);
-	  	variables["Voltage"][channel]=voltage[channel];
-  	}		
-  }
-  else error=FE_ERR_DRIVER;
-}
 
-
-void GenesysDriver::SetState(int channel, bool value,INT& error)
-{
-	std::string cmd;
-	bool success;
-  error = FE_SUCCESS;
-  std::cout << " **** Request to set channel " << channel << " to : " << value << std::endl;   
-  if(value==true)
-  {
-  	if(!AskPermissionToTurnOn(channel))
-  	{
-  		cm_msg(MERROR, "Genesys supply ... ", "changing of channel %d not allowed",channel );
-  		variables["Set State"][channel]=false; //disable request
-  		error=FE_ERR_DISABLED;
-  		return;
-  	}
-  }
-  
-  if( SelectChannel(supplyID[channel]) )
-  {
-		if(value==true) { cmd="OUTP:STAT 1\n"; }
-		else { cmd = "OUTP:STAT 0\n"; }
-  	client->Write(cmd);
-		std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
-  	success = OPC();
-  	if(!success) error=FE_ERR_DRIVER;  	  		
-  }
-  else error=FE_ERR_DRIVER;
-}
 
 void GenesysDriver::SetBlink(int channel, bool value,INT& error)
 {
@@ -339,7 +210,7 @@ void GenesysDriver::SetBlink(int channel, bool value,INT& error)
 	bool success;
   error = FE_SUCCESS;
   
-  if( SelectChannel(supplyID[channel]) )
+  if( SelectChannel(instrumentID[channel]) )
   {
  		if(value==true) { cmd="DISP:WIND:FLAS 1\n"; }
 		else { cmd = "DISP:WIND:FLAS 0\n"; }
@@ -358,31 +229,32 @@ void GenesysDriver::SetBlink(int channel, bool value,INT& error)
 
 INT GenesysDriver::ReadAll()
 {
-  int nChannels = supplyID.size();
-  INT err;
-  //update local book keeping
-	for(unsigned int i=0; i<nChannels; i++)
+	int nChannels = instrumentID.size();
+	INT err;
+	
+	//update local book keeping
+	for(int i=0; i<nChannels; i++)
 	{
-		bool bvalue = ReadState(i,err);
-	  if(state[i]!=bvalue) //only update odb if there is a change
-	  {
-	  	state[i]=bvalue;
-	   	variables["State"][i]=bvalue;
-	  }
+		bool bvalue = ReadState(instrumentID[i],err);
+		if(state[i]!=bvalue) //only update odb if there is a change
+		{
+			state[i]=bvalue;
+			variables["State"][i]=bvalue;
+		}
  	
- 		float fvalue = ReadVoltage(i,err);
-  	if( fabs(voltage[i]-fvalue) > fabs(relevantchange*voltage[i]) )
-  	{
-  		voltage[i]=fvalue;
-  		variables["Voltage"][i]=fvalue;	  	
-  	}
+ 		float fvalue = ReadVoltage(instrumentID[i],err);
+		if( fabs(voltage[i]-fvalue) > fabs(relevantchange*voltage[i]) )
+		{
+			voltage[i]=fvalue;
+			variables["Voltage"][i]=fvalue;	  	
+		}
   	
-  	fvalue = ReadCurrent(i,err);
-  	if( fabs(current[i]-fvalue) > fabs(relevantchange*current[i]) )
-  	{
-  		current[i]=fvalue;
-  		variables["Current"][i]=fvalue;	  	
-  	}
+		fvalue = ReadCurrent(instrumentID[i],err);
+		if( fabs(current[i]-fvalue) > fabs(relevantchange*current[i]) )
+		{
+			current[i]=fvalue;
+			variables["Current"][i]=fvalue;	  	
+		}
   	
 	 	if(err!=FE_SUCCESS) return err;		
 	}	
@@ -390,28 +262,3 @@ INT GenesysDriver::ReadAll()
 }
 
 
-void GenesysDriver::SetVoltage(int channel, float value,INT& error)
-{
-  error = FE_SUCCESS;
-  if(value<-0.1 || value > 25.) //check valid range 
-  {
-  	cm_msg(MERROR, "Genesys supply ... ", "voltage of %f not allowed",value );
-  	variables["Demand Voltage"][channel]=demandvoltage[channel]; //disable request
-  	error=FE_ERR_DRIVER;
-  	return;  	
-  }
-  
-  if( SelectChannel(supplyID[channel]) ) //use Gensysis module address in the daisy chain to select channel
-  {
-	  bool success = Set("VOLT "+std::to_string(value)+"\n",error);
-  	if(!success) error=FE_ERR_DRIVER;
-  	else // read changes
-  	{
-	  	voltage[channel]=ReadVoltage(channel,error);
-	  	variables["Voltage"][channel]=voltage[channel];
-	  	current[channel]=ReadCurrent(channel,error);
-	  	variables["Current"][channel]=current[channel];
-  	}		
-  }
-  else error=FE_ERR_DRIVER;
-}

@@ -57,9 +57,14 @@ INT HMP4040Driver::Init()
 	}
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
+	//beep
+	cmd="SYST:BEEP\n";
+	if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could not beep %s", ip.c_str());
+	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
+	
 	//clear error an status registers
 	cmd = "*CLS\n";
-	if( !client->Write(cmd) ) cm_msg(MERROR, "Init genesys supply ... ", "could perform global clear %s", ip.c_str());
+	if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could perform global clear %s", ip.c_str());
 	else cm_msg(MINFO,"power_fe","Global CLS of %s",ip.c_str());
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
@@ -71,7 +76,7 @@ INT HMP4040Driver::Init()
 	current.resize(nChannels);
 	currentlimit.resize(nChannels);
 	state.resize(nChannels);
-	channelID = {1,2,3,4}; // The HMP4040 supply has 4 channel numbered 1,2,3, and 4.
+	instrumentID = {1,2,3,4}; // The HMP4040 supply has 4 channel numbered 1,2,3, and 4.
 	
 	idCode=ReadIDCode(-1,err); 	//channel selection not relevant for HAMEG supply to read ID
 								// "-1" is a trick not to select a channel before the query
@@ -83,13 +88,13 @@ INT HMP4040Driver::Init()
 	//read channels
 	for(int i = 0; i<nChannels; i++ ) 
 	{ 	
-		state[i]=ReadState(channelID[i],err);
+		state[i]=ReadState(instrumentID[i],err);
 		
-		voltage[i]=ReadVoltage(channelID[i],err);
-		demandvoltage[i]=ReadSetVoltage(channelID[i],err);
+		voltage[i]=ReadVoltage(instrumentID[i],err);
+		demandvoltage[i]=ReadSetVoltage(instrumentID[i],err);
 
-		current[i]=ReadCurrent(channelID[i],err);
-		currentlimit[i]=ReadCurrentLimit(channelID[i],err);
+		current[i]=ReadCurrent(instrumentID[i],err);
+		currentlimit[i]=ReadCurrentLimit(instrumentID[i],err);
   	
 	 	if(err!=FE_SUCCESS) return err;  	
 	}
@@ -105,9 +110,55 @@ INT HMP4040Driver::Init()
  	variables["Current"]=current;
  	variables["Current Limit"]=currentlimit;
  	
+ 	//watch functions
+ 	variables["Current Limit"].watch(  [&](midas::odb &arg) { this->CurrentLimitChanged(); }  );
+ 	variables["Set State"].watch(  [&](midas::odb &arg) { this->SetStateChanged(); }  );
+	variables["Demand Voltage"].watch(  [&](midas::odb &arg) { this->DemandVoltageChanged(); }  );
+ 	
 	return FE_SUCCESS;
 }
 
+
+
+bool HMP4040Driver::AskPermissionToTurnOn(int channel) //extra check whether it is safe to tunr on supply;
+{
+	return true;
+}
+
+
+INT HMP4040Driver::ReadAll()
+{
+	int nChannels = instrumentID.size();
+	INT err;
+	
+	//update local book keeping
+	for(int i=0; i<nChannels; i++)
+	{
+		bool bvalue = ReadState(instrumentID[i],err);
+		if(state[i]!=bvalue) //only update odb if there is a change
+		{
+			state[i]=bvalue;
+			variables["State"][i]=bvalue;
+		}
+ 	
+ 		float fvalue = ReadVoltage(instrumentID[i],err);
+		if( fabs(voltage[i]-fvalue) > fabs(relevantchange*voltage[i]) )
+		{
+			voltage[i]=fvalue;
+			variables["Voltage"][i]=fvalue;	  	
+		}
+  	
+		fvalue = ReadCurrent(instrumentID[i],err);
+		if( fabs(current[i]-fvalue) > fabs(relevantchange*current[i]) )
+		{
+			current[i]=fvalue;
+			variables["Current"][i]=fvalue;	  	
+		}
+  	
+	 	if(err!=FE_SUCCESS) return err;		
+	}	
+	return FE_SUCCESS;
+}
 
 //************************************************************************************
 //** the STATE and SELECT OUTPUT on of is a bit confusion: from the manual

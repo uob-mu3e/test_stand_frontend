@@ -36,18 +36,35 @@ class PowerDriver{
 		void SetInitialized() { initialized = true; }
 		std::string ReadIDCode(int,INT&);
 		
+		virtual bool AskPermissionToTurnOn(int) { std::cout << "Ask permissions in derived class!" << std::endl; return false;};
+		
 		bool ReadState(int,INT&);
 		float ReadVoltage(int,INT&);
 		float ReadCurrent(int,INT&);
+		int ReadESR(int,INT&);
 		
+
+		
+
 	protected:
 	
-		bool SelectChannel(int);
-		bool OPC();
+		//read
 		float Read(std::string,INT&);
 		float ReadSetVoltage(int,INT&);
 		float ReadCurrentLimit(int,INT&);
+		
+		//set
+		bool SelectChannel(int);
+		bool OPC();
 		bool Set(std::string,INT&);
+		void SetCurrentLimit(int,float,INT&);
+		
+		//watch
+		void CurrentLimitChanged();
+		void SetStateChanged();
+		void SetState(int,bool,INT&);
+		void SetVoltage(int,float,INT&);
+		void DemandVoltageChanged();
 		
 		EQUIPMENT_INFO* info;
 		std::string name;
@@ -57,6 +74,7 @@ class PowerDriver{
 		TCPClient* client;
 		
 		float relevantchange;
+
 		
 		//local copies of hardware state
 		std::vector<bool> state;
@@ -65,11 +83,16 @@ class PowerDriver{
 		std::vector<float> current;
 		std::vector<float> currentlimit;
 		
+		std::vector<int> instrumentID;
+		
+		
 		
 		
 	private:
 		bool initialized;
 		int min_reply_length;
+		
+
 };
 
 #endif
