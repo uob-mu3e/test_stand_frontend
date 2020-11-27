@@ -93,7 +93,6 @@ architecture rtl of mupix_datapath is
     signal unpack_errorcounter      : reg32array_t(35 downto 0);
 
     --signal regwritten_reg         : std_logic_vector(NREGISTERS-1 downto 0); 
-    signal sync_fifo_empty          : std_logic;
 
     signal counter125               : std_logic_vector(63 downto 0);
 
@@ -120,6 +119,9 @@ architecture rtl of mupix_datapath is
 
     signal fifo_wdata               : std_logic_vector(35 downto 0);
     signal fifo_write               : std_logic;
+    signal sync_fifo_empty          : std_logic;
+    signal sync_fifo_wdata_out      : std_logic_vector(35 downto 0);
+    signal sync_fifo_write_out      : std_logic;
 
     signal fifo_wdata_hs            : std_logic_vector(35 downto 0);
     signal fifo_write_hs            : std_logic;
@@ -349,12 +351,25 @@ begin
         data            => fifo_write & fifo_wdata & hits_ena_count,
         rdclk           => i_clk156,
         rdreq           => '1',
+        rdempty         => sync_fifo_empty,
         wrclk           => i_clk125,
         wrreq           => '1',
         q(31 downto 0)  => open,--o_hits_ena_count,
-        q(67 downto 32) => o_fifo_wdata,
-        q(68)           => o_fifo_write--,
+        q(67 downto 32) => sync_fifo_wdata_out,
+        q(68)           => sync_fifo_write_out--,
     );
+    
+    process(i_clk156)
+    begin
+    if(rising_edge(i_clk156)) then
+        if(sync_fifo_empty='0') then 
+            o_fifo_wdata <= sync_fifo_wdata_out;
+            o_fifo_write <= sync_fifo_write_out;
+        else
+            o_fifo_write <= '0';
+        end if;
+    end if;
+    end process;
 
     sync_fifo_2 : entity work.ip_dcfifo
     generic map(
