@@ -671,23 +671,23 @@ entity midas_event_builder is
         process(i_clk_dma, i_reset_dma_n)
         begin
         if ( i_reset_dma_n = '0' ) then
-            o_event_wren				<= '0';
-            o_endofevent				<= '0';
-            o_state_out             <= x"0";
-            cnt_skip_event_dma      <= (others => '0');
-            o_done 						<= '0';
-            r_fifo_en					<= '0';
-            r_ram_add					<= (others => '1');
-            event_last_ram_add		<= (others => '0');
-            event_counter_state 		<= waiting;	
-        word_counter <= (others => '0');
+            o_event_wren        <= '0';
+            o_endofevent        <= '0';
+            o_state_out         <= x"0";
+            cnt_skip_event_dma  <= (others => '0');
+            o_done              <= '0';
+            r_fifo_en           <= '0';
+            r_ram_add           <= (others => '1');
+            event_last_ram_add  <= (others => '0');
+            event_counter_state <= waiting;	
+            word_counter        <= (others => '0');
             --
         elsif rising_edge(i_clk_dma) then
 
-            o_done 			<= '0';
-            r_fifo_en		<= '0';
-            o_event_wren	<= '0';
-            o_endofevent   <= '0';
+            o_done          <= '0';
+            r_fifo_en       <= '0';
+            o_event_wren    <= '0';
+            o_endofevent    <= '0';
             
             if ( i_wen_reg = '0' ) then
                 word_counter <= (others => '0');
@@ -699,31 +699,31 @@ entity midas_event_builder is
 
             case event_counter_state is
             when waiting =>
-                    o_state_out					<= x"A";
+                    o_state_out             <= x"A";
                     if (tag_fifo_empty = '0') then
-                        r_fifo_en    		  	<= '1';
-                        event_last_ram_add  	<= r_fifo_data(11 downto 3);
-                        r_ram_add			  	<= r_ram_add + '1';
-                        event_counter_state		<= get_data;
+                        r_fifo_en           <= '1';
+                        event_last_ram_add  <= r_fifo_data(11 downto 3);
+                        r_ram_add           <= r_ram_add + '1';
+                        event_counter_state <= get_data;
                     end if;
 
             when get_data =>
-                    o_state_out 		<= x"B";
+                    o_state_out             <= x"B";
                     if ( i_dmamemhalffull = '1' or ( i_get_n_words /= (i_get_n_words'range => '0') and word_counter >= i_get_n_words ) ) then
                         event_counter_state <= skip_event;
-                        cnt_skip_event_dma <= cnt_skip_event_dma + '1';
+                        cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
                     else
-                        o_event_wren <= i_wen_reg;
-                        o_endofevent <= '1'; -- begin of event
-                        word_counter <= word_counter + '1';
-                        event_counter_state	<= runing;
+                        o_event_wren        <= i_wen_reg;
+                        o_endofevent        <= '1'; -- begin of event
+                        word_counter        <= word_counter + '1';
+                        event_counter_state <= runing;
                     end if;
-                    r_ram_add			<= r_ram_add + '1';
+                    r_ram_add       <= r_ram_add + '1';
 
             when runing =>
-                    o_state_out 	<= x"C";
-                    o_event_wren <= i_wen_reg;
-                    word_counter <= word_counter + '1';
+                    o_state_out     <= x"C";
+                    o_event_wren    <= i_wen_reg;
+                    word_counter    <= word_counter + '1';
                     if(r_ram_add = event_last_ram_add - '1') then
                         event_counter_state	<= waiting;
                     else
@@ -731,7 +731,7 @@ entity midas_event_builder is
                     end if;
 
             when skip_event =>
-                    o_state_out 	<= x"E";
+                    o_state_out <= x"E";
                     if(r_ram_add = event_last_ram_add - '1') then
                         event_counter_state	<= waiting;
                     else
@@ -739,7 +739,7 @@ entity midas_event_builder is
                     end if;
 
             when others =>
-                    o_state_out 		<= x"D";
+                    o_state_out <= x"D";
                     event_counter_state	<= waiting;
                     
             end case;

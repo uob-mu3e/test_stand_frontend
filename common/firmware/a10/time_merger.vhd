@@ -876,8 +876,8 @@ begin
                 -- 13: error gtime2
                 -- 14: error shtime
                 -- N+14 downto 14: error wait for pre
-                header_trailer(3 downto 0) <= "0001";
-                header_trailer(11 downto 4) <= x"DC";
+                header_trailer(33 downto 32) <= "01";
+                header_trailer(7 downto 0) <= x"DC";
                 header_trailer(12) <= error_gtime1;
                 header_trailer(13) <= error_gtime2;
                 header_trailer(14) <= error_shtime;
