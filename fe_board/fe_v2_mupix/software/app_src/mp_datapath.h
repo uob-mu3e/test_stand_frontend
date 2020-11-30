@@ -11,20 +11,20 @@ struct mupix_datapath_t {
             printf("  [0] => write datagen control reg\n");
             printf("  [1] => read  datagen control reg\n");
             
-            if((sc->ram->data[0xFF41] >> 31) & 1U){
+            if((sc->ram->data[0xFF65] >> 31) & 1U){
                 printf("  [2] => disable data gen\n");
             }else{
                 printf("  [2] => enable data gen\n");
             }
-            if((sc->ram->data[0xFF41] >> 16) & 1U){
+            if((sc->ram->data[0xFF65] >> 16) & 1U){
                 printf("  [3] => disengage data gen\n");
             }else{
                 printf("  [3] => engage data gen\n");
             }
-            if((sc->ram->data[0xFF41] >> 4) & 1U){
+            if((sc->ram->data[0xFF65] >> 4) & 1U){
                 printf("\n RATE: Full Steam\n");
             }else{
-                printf("\n RATE:0x%01x\n", 0xF - (sc->ram->data[0xFF41] & 0xF) + 1);
+                printf("\n RATE:0x%01x\n", 0xF - (sc->ram->data[0xFF65] & 0xF) + 1);
             }
             printf("  [+]\n");
             printf("  [-]\n");
@@ -43,31 +43,31 @@ struct mupix_datapath_t {
                 }
 
                 printf("setting reg to 0x%08x\n", datagenreg);
-                sc->ram->data[0xFF41] = datagenreg;
+                sc->ram->data[0xFF65] = datagenreg;
                 break;
             case '1':
-                printf("0x%08x\n", sc->ram->data[0xFF41]);
+                printf("0x%08x\n", sc->ram->data[0xFF65]);
                 break;
             case '2':
-                sc->ram->data[0xFF41] ^= 1UL << 31;
+                sc->ram->data[0xFF65] ^= 1UL << 31;
                 break;
             case '3':
-                sc->ram->data[0xFF41] ^= 1UL << 16;
+                sc->ram->data[0xFF65] ^= 1UL << 16;
                 break;
             case '-':
-                if((sc->ram->data[0xFF41] >> 4) & 1U){
-                    sc->ram->data[0xFF41] ^= 1UL << 4;
-                }else if(sc->ram->data[0xFF41] & 1U and (sc->ram->data[0xFF41] >> 1) & 1U and (sc->ram->data[0xFF41] >> 2) & 1U and (sc->ram->data[0xFF41] >> 3) & 1U){
+                if((sc->ram->data[0xFF65] >> 4) & 1U){
+                    sc->ram->data[0xFF65] ^= 1UL << 4;
+                }else if(sc->ram->data[0xFF65] & 1U and (sc->ram->data[0xFF65] >> 1) & 1U and (sc->ram->data[0xFF65] >> 2) & 1U and (sc->ram->data[0xFF65] >> 3) & 1U){
 
                 }else{
-                    sc->ram->data[0xFF41] = sc->ram->data[0xFF41] + 1;
+                    sc->ram->data[0xFF65] = sc->ram->data[0xFF65] + 1;
                 }
                 break;
             case '+':
-                if(!((sc->ram->data[0xFF41]) & 1U) and !((sc->ram->data[0xFF41] >> 1) & 1U) and !((sc->ram->data[0xFF41] >> 2) & 1U) and !((sc->ram->data[0xFF41] >> 3) & 1U)){
-                    sc->ram->data[0xFF41] |= 1UL << 4;
+                if(!((sc->ram->data[0xFF65]) & 1U) and !((sc->ram->data[0xFF65] >> 1) & 1U) and !((sc->ram->data[0xFF65] >> 2) & 1U) and !((sc->ram->data[0xFF65] >> 3) & 1U)){
+                    sc->ram->data[0xFF65] |= 1UL << 4;
                 }else{
-                    sc->ram->data[0xFF41] = sc->ram->data[0xFF41] - 1;
+                    sc->ram->data[0xFF65] = sc->ram->data[0xFF65] - 1;
                 }
                 break;
             case 'q':
