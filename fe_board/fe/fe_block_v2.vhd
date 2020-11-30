@@ -148,7 +148,7 @@ architecture arch of fe_block_v2 is
 
     signal av_mscb                  : work.util.avalon_t;
 
-    signal reg_reset_bypass         : std_logic_vector(31 downto 0);
+    signal reg_reset_bypass         : std_logic_vector(15 downto 0);
     signal reg_reset_bypass_payload : std_logic_vector(31 downto 0);
 
     signal run_state_125            : run_state_t;
@@ -166,7 +166,7 @@ architecture arch of fe_block_v2 is
     signal ffly_rx_data             : std_logic_vector(127 downto 0);
     signal ffly_rx_datak            : std_logic_vector(15 downto 0);
 
-    signal i_fpga_id_reg            : std_logic_vector(N_LINKS*16-1 downto 0);
+    signal fpga_id_reg              : std_logic_vector(N_LINKS*16-1 downto 0);
 
     signal ffly_tx_data             : std_logic_vector(127 downto 0) :=
                                           X"000000" & work.util.D28_5
@@ -188,17 +188,16 @@ architecture arch of fe_block_v2 is
     
     signal clk_100                  : std_logic;
     -- Max 10 SPI 
-    type adc_reg_32 is Array (0 to 4) of std_logic_vector(31 downto 0);
-    signal adc_reg  : adc_reg_32;
-    signal i_adc_data_o : std_logic_vector(31 downto 0);
-    signal SPI_addr_o   : std_logic_vector(6 downto 0);
+    signal adc_reg                  : reg32array_t(4 downto 0);
+    signal i_adc_data_o             : std_logic_vector(31 downto 0);
+    signal SPI_addr_o               : std_logic_vector(6 downto 0);
     
-    signal SPI_command      : std_logic_vector (15 downto 0); -- [15-1] SPI inst [0] aktiv
-    signal SPI_aktiv        : std_logic := '0';
-    signal SPI_Adc_cnt      : unsigned(12 downto 0) := (others => '0');
-    signal SPI_inst         : std_logic_vector(14 downto 0) := X"00" & "000100" & '1'; --"[14-7] free [6-1] word cnt [0] R/W
-    signal SPI_done         : std_logic;
-    signal SPI_rw           : std_logic;
+    signal SPI_command              : std_logic_vector (15 downto 0); -- [15-1] SPI inst [0] aktiv
+    signal SPI_aktiv                : std_logic := '0';
+    signal SPI_Adc_cnt              : unsigned(12 downto 0) := (others => '0');
+    signal SPI_inst                 : std_logic_vector(14 downto 0) := X"00" & "000100" & '1'; --"[14-7] free [6-1] word cnt [0] R/W
+    signal SPI_done                 : std_logic;
+    signal SPI_rw                   : std_logic;
 
 begin
 
@@ -266,7 +265,7 @@ begin
 
     -- map slow control address space
 
-    -- malibu regs : 0x40-0x5F
+    -- subdetector regs : 0x40-0xFF
     o_subdet_reg_addr <= sc_reg.addr(7 downto 0);
     o_subdet_reg_re <= subdet_reg.re;
       subdet_reg.re <= sc_reg.re when ( sc_reg.addr(REG_AREA_RANGE) /= REG_AREA_GENERIC ) else '0';
@@ -286,110 +285,43 @@ begin
         X"CCCCCCCC";
 
     process(i_clk_156)
-	 
-	 variable regaddr : integer;
-	 
     begin
     if rising_edge(i_clk_156) then
         subdet_reg.rvalid   <= subdet_reg.re;
         fe_reg.rvalid       <= fe_reg.re;
-
-        fe_reg.rdata        <= X"CCCCCCCC";
-        regaddr             := to_integer(unsigned(fe_reg.addr(7 downto 0)));
-
-        -- cmdlen
-        if ( regaddr = CMD_LEN_REGISTER_RW and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_cmdlen;
-        end if;
-        if ( regaddr = CMD_LEN_REGISTER_RW and fe_reg.we = '1' ) then
-            reg_cmdlen <= fe_reg.wdata;
-        end if;
-
-        -- offset
-        if ( regaddr = CMD_OFFSET_REGISTER_RW and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_offset;
-        end if;
-        if ( regaddr = CMD_OFFSET_REGISTER_RW and fe_reg.we = '1' ) then
-            reg_offset <= fe_reg.wdata;
-        end if;
-
-        -- reset bypass
-        if ( regaddr = RUN_STATE_RESET_BYPASS_REGISTER_RW and fe_reg.re = '1' ) then
-            fe_reg.rdata(15 downto 0) <= reg_reset_bypass(15 downto 0);
-            fe_reg.rdata(16+9 downto 16) <= run_state_156;
-        end if;
-        if ( regaddr = RUN_STATE_RESET_BYPASS_REGISTER_RW and fe_reg.we = '1' ) then
-            reg_reset_bypass(15 downto 0) <= fe_reg.wdata(15 downto 0); -- upper bits are read-only status
-        end if;
-
-        -- reset payload
-        if ( regaddr = RESET_PAYLOAD_RGEISTER_RW and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_reset_bypass_payload;
-        end if;
-        if ( regaddr = RESET_PAYLOAD_RGEISTER_RW and fe_reg.we = '1' ) then
-            reg_reset_bypass_payload <= fe_reg.wdata;
-        end if;
-
-        -- rate measurement
-        if ( regaddr = MERGER_RATE_REGISTER_R and fe_reg.re = '1' ) then
-            fe_reg.rdata <= merger_rate_count;
-        end if;
-
-        -- reset phase
-        if ( regaddr = RESET_PHASE_REGISTER_R and fe_reg.re = '1' ) then
-            fe_reg.rdata(PHASE_WIDTH_g - 1 downto 0) <= reset_phase;
-        end if;
-
-        -- ArriaV temperature
-        if ( regaddr = ARRIA_TEMP_REGISTER_RW and fe_reg.re = '1' ) then
-            fe_reg.rdata <= x"000000" & arriaV_temperature;
-        end if;
-        if ( regaddr = ARRIA_TEMP_REGISTER_RW and fe_reg.we = '1' ) then
-            arriaV_temperature_clr  <= fe_reg.wdata(0);
-            arriaV_temperature_ce   <= fe_reg.wdata(1);
-        end if;
-
-        -- mscb
-
-        -- git head hash
-        if ( regaddr = GIT_HASH_REGISTER_R and fe_reg.re = '1' ) then
-            fe_reg.rdata <= (others => '0');
-            fe_reg.rdata <= work.cmp.GIT_HEAD(0 to 31);
-        end if;
-        -- fpga id
-        if ( regaddr = FPGA_ID_REGISTER_RW and fe_reg.re = '1' ) then
-            fe_reg.rdata <= (others => '0');
-            fe_reg.rdata(i_fpga_id_reg'range) <= i_fpga_id_reg;
-        end if;
-        if ( regaddr = FPGA_ID_REGISTER_RW and fe_reg.we = '1' ) then
-            fe_reg.rdata <= (others => '0');
-            i_fpga_id_reg(N_LINKS*16-1 downto 0) <= fe_reg.wdata(N_LINKS*16-1 downto 0);
-        end if;
-        -- fpga type
-        if ( regaddr = FPGA_TYPE_REGISTER_R and fe_reg.re = '1' ) then
-            fe_reg.rdata <= (others => '0');
-            fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
-        end if;
-        --max ADC data--
-        if ( fe_reg.addr(7 downto 0) = X"C0" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= adc_reg(0);
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"C1" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= adc_reg(1);
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"C2" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= adc_reg(2);
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"C3" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= adc_reg(3);
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"C4" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= adc_reg(4);
-        end if;
-        
-        
     end if;
     end process;
+
+    e_reg_mapping : entity work.feb_reg_mapping
+    port map (
+        i_clk_156                   => i_clk_156,
+        i_reset_n                   => reset_156_n,
+
+        i_reg_add                   => fe_reg.addr(7 downto 0),
+        i_reg_re                    => fe_reg.re,
+        o_reg_rdata                 => fe_reg.rdata,
+        i_reg_we                    => fe_reg.we,
+        i_reg_wdata                 => fe_reg.wdata,
+
+        -- inputs  156--------------------------------------------
+        -- ALL INPUTS DEFAULT TO (n*4-1 downto 0 => x"CCC..", others => '1')
+        i_run_state_156             => run_state_156,
+        i_merger_rate_count         => merger_rate_count,
+        i_reset_phase               => reset_phase,
+        i_arriaV_temperature        => arriaV_temperature,
+        i_fpga_type                 => i_fpga_type,
+        i_adc_reg                   => adc_reg,
+
+        -- outputs 156--------------------------------------------
+        o_reg_cmdlen                => reg_cmdlen,
+        o_reg_offset                => reg_offset,
+        o_reg_reset_bypass          => reg_reset_bypass,
+        o_reg_reset_bypass_payload  => reg_reset_bypass_payload,
+        o_arriaV_temperature_clr    => arriaV_temperature_clr,
+        o_arriaV_temperature_ce     => arriaV_temperature_ce,
+        o_fpga_id_reg               => fpga_id_reg--,
+    );
+
 
     -- nios system
     nios_irq(0) <= '1' when ( reg_cmdlen(31 downto 16) /= (31 downto 16 => '0') ) else '0';
@@ -512,7 +444,7 @@ begin
         feb_mapping                => feb_mapping--, 
     )
     port map (
-        fpga_ID_in                 => i_fpga_id_reg,
+        fpga_ID_in                 => fpga_id_reg,
         FEB_type_in                => i_fpga_type,
         run_state                  => run_state_156,
         run_number                 => run_number,
@@ -582,7 +514,7 @@ begin
         reset_bypass            => reg_reset_bypass(11 downto 0),
         reset_bypass_payload    => reg_reset_bypass_payload,
         run_number_out          => run_number,
-        fpga_id                 => i_fpga_id_reg(15 downto 0),
+        fpga_id                 => fpga_id_reg(15 downto 0),
         terminated              => terminated, --TODO: test with two datamergers
         testout                 => open,
 

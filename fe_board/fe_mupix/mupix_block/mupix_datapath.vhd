@@ -105,6 +105,7 @@ architecture rtl of mupix_datapath is
 
     signal link_enable              : std_logic_vector(35 downto 0);
     signal link_enable_125          : std_logic_vector(35 downto 0);
+    signal lvds_link_mask           : std_logic_vector(35 downto 0);
 
     -- count hits ena
     signal hits_ena_count           : std_logic_vector(31 downto 0);
@@ -112,10 +113,7 @@ architecture rtl of mupix_datapath is
     signal rate_counter             : unsigned(31 downto 0);
 
     --hit_ts conversion settings
-    signal invert_TS                : std_logic;
-    signal invert_TS2               : std_logic;
-    signal gray_TS                  : std_logic;
-    signal gray_TS2                 : std_logic;
+    signal mp_readout_mode          : std_logic_vector(31 downto 0);
 
     signal fifo_wdata               : std_logic_vector(35 downto 0);
     signal fifo_write               : std_logic;
@@ -147,9 +145,12 @@ begin
         i_reg_wdata                 => i_reg_wdata,
 
         -- inputs  156--------------------------------------------
+        i_lvds_data_valid           => lvds_data_valid,
 
         -- outputs 156--------------------------------------------
-        o_mp_datagen_control        => mp_datagen_control_reg--,
+        o_mp_datagen_control        => mp_datagen_control_reg,
+        o_mp_lvds_link_mask         => lvds_link_mask,
+        o_mp_readout_mode           => mp_readout_mode--,
     );
 
 
@@ -176,8 +177,7 @@ begin
     );
 
     -- use a link mask to disable channels from being used in the data processing
-    link_enable(31 downto 0)        <= lvds_data_valid(31 downto  0) ;--and (not writeregs_reg(LINK_MASK_REGISTER_W    )(   31 downto 0));
-    link_enable(35 downto 32)       <= lvds_data_valid(35 downto 32) ;--and (not writeregs_reg(LINK_MASK_REGISTER_W + 1)(36-33 downto 0));
+    link_enable <= lvds_data_valid and not lvds_link_mask;
 
 --------------------------------------------------------------------------------------
 --------------------- Unpack the data ------------------------------------------------
@@ -196,7 +196,7 @@ begin
         datain              => rx_data(i), 
         kin                 => rx_k(i), 
         readyin             => link_enable_125(i),
-        i_mp_readout_mode   => (others => '0'),
+        i_mp_readout_mode   => mp_readout_mode,
         o_ts                => ts(i),
         o_chip_ID           => chip_ID(i),
         o_row               => row(i),
@@ -373,29 +373,20 @@ begin
 
     sync_fifo_2 : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH  => 2,
-        DATA_WIDTH  => 4+36,
+        ADDR_WIDTH  => 4,
+        DATA_WIDTH  => 36,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
         DEVICE      => "Arria V"--,
     )
     port map(
         aclr    => '0',
-        data    =>  link_enable &
-                    '0'&--writeregs_reg(TIMESTAMP_GRAY_INVERT_REGISTER_W)(TS_INVERT_BIT) &
-                    '0'&--writeregs_reg(TIMESTAMP_GRAY_INVERT_REGISTER_W)(TS2_INVERT_BIT) &
-                    '0'&--writeregs_reg(TIMESTAMP_GRAY_INVERT_REGISTER_W)(TS_GRAY_BIT) &
-                    '0',--writeregs_reg(TIMESTAMP_GRAY_INVERT_REGISTER_W)(TS2_GRAY_BIT),
-                    
+        data    => link_enable,
         rdclk   => i_clk125,
         rdreq   => '1',
         wrclk   => i_clk156,
         wrreq   => '1',
-        q(3)    => invert_TS,
-        q(2)    => invert_TS2,
-        q(1)    => gray_TS,
-        q(0)    => gray_TS2,
-        q(36 + 3 downto 4) => link_enable_125--,
+        q(35 downto 0) => link_enable_125--,
     );
 
 end rtl;
