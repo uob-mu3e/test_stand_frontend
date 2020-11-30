@@ -66,7 +66,7 @@ INT read_power(char *pevent, INT off);
 EQUIPMENT equipment[] = {
 
    {"Genesys",                       /* equipment name */
-    {33, 0,                       /* event ID, trigger mask */
+    {121, 0,                       /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                   /* equipment type */
      0,                         /* event source */
@@ -83,7 +83,7 @@ EQUIPMENT equipment[] = {
     },
     
     {"HAMEG1",                       /* equipment name */
-    	{33, 0,                       /* event ID, trigger mask */
+    	{122, 0,                       /* event ID, trigger mask */
      	"SYSTEM",                  /* event buffer */
      	EQ_PERIODIC,                   /* equipment type */
      	0,                         /* event source */
@@ -112,77 +112,77 @@ INT frontend_init()
 	// Get N equipments
 	int nEq = sizeof(equipment)/sizeof(equipment[0]);
 	if(nEq<2) {cm_msg(MINFO,"power_fe","No Equipment defined"); return FE_ERR_DISABLED; }
-  for(unsigned int i = 0; i<nEq-1; i++) cm_msg(MINFO,"power_fe","Init 'Equipment' nr %d name = %s, event ID = %d",i,equipment[i].name,equipment[i].info.event_id);
+	for(unsigned int i = 0; i<nEq-1; i++) cm_msg(MINFO,"power_fe","Init 'Equipment' nr %d name = %s, event ID = %d",i,equipment[i].name,equipment[i].info.event_id);
   
-  //  allow equipment name starts to recognize supply type 
-  std::vector<std::string> genysis_names = {"Gen","gen","tdk","TDK"};
-  std::vector<std::string> hameg_names = {"HMP","hmp","ham","HAM","Lab","lab"};
+	//  allow equipment name starts to recognize supply type 
+	std::vector<std::string> genysis_names = {"Gen","gen","tdk","TDK"};
+	std::vector<std::string> hameg_names = {"HMP","hmp","ham","HAM","Lab","lab"};
   
-  for(unsigned int eqID = 0; eqID<nEq-1; eqID++)
-  {   
-  	std::cout << "start init Equipment id " << eqID << std::endl;
+	for(unsigned int eqID = 0; eqID<nEq-1; eqID++)
+	{   
+		std::cout << "start init Equipment id " << eqID << std::endl;
   	
-  	std::string name(equipment[eqID].name); 
-  	std::string shortname = name.substr(0, 3);
+  		std::string name(equipment[eqID].name); 
+  		std::string shortname = name.substr(0, 3);
   	
-  	//identify type and instatiate driver
-  	if( std::find( genysis_names.begin(), genysis_names.end(), shortname ) != genysis_names.end() )
-  	{
-		drivers.emplace_back(std::make_unique<GenesysDriver>(equipment[eqID].name,&equipment[eqID].info));
-  	}
-  	else if( std::find( hameg_names.begin(), hameg_names.end(), shortname ) != hameg_names.end() )
-  	{
-		drivers.emplace_back(std::make_unique<HMP4040Driver>(equipment[eqID].name,&equipment[eqID].info));
-	}
-  	else
-  	{
-  		cm_msg(MINFO,"power_fe","Init 'Equipment' nr %d name = %s not recognizd",eqID,equipment[eqID].name);
-  		continue;
-  	}
+  		//identify type and instatiate driver
+  		if( std::find( genysis_names.begin(), genysis_names.end(), shortname ) != genysis_names.end() )
+  		{
+			drivers.emplace_back(std::make_unique<GenesysDriver>(equipment[eqID].name,&equipment[eqID].info));
+  		}
+  		else if( std::find( hameg_names.begin(), hameg_names.end(), shortname ) != hameg_names.end() )
+  		{
+			drivers.emplace_back(std::make_unique<HMP4040Driver>(equipment[eqID].name,&equipment[eqID].info));
+		}
+  		else
+  		{
+  			cm_msg(MINFO,"power_fe","Init 'Equipment' nr %d name = %s not recognizd",eqID,equipment[eqID].name);
+  			continue;
+  		}
   	
-  	//initialize 
-	set_equipment_status(equipment[eqID].name, "Initializing...", "yellowLight");  		
+  		//initialize 
+		set_equipment_status(equipment[eqID].name, "Initializing...", "yellowLight");  		
   	
-  	equipment[eqID].status = drivers.at(eqID)->ConnectODB();
-  	if(equipment[eqID].status == FE_ERR_ODB) 	
-  	{
-		set_equipment_status(equipment[eqID].name, "ODB Error", "redLight");
-		cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "ODB ERROR");
-		continue;
-	}
-	if(!drivers.at(eqID)->Enabled()) //cross check before doing something
-  	{
-		set_equipment_status(equipment[eqID].name, "Disabled", "redLight");
-		continue;
-	}
+  		equipment[eqID].status = drivers.at(eqID)->ConnectODB();
+  		if(equipment[eqID].status == FE_ERR_ODB) 	
+  		{
+			set_equipment_status(equipment[eqID].name, "ODB Error", "redLight");
+			cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "ODB ERROR");
+			continue;
+		}
+		if(!drivers.at(eqID)->Enabled()) //cross check before doing something
+  		{
+			set_equipment_status(equipment[eqID].name, "Disabled", "redLight");
+			continue;
+		}
 		
-	equipment[eqID].status = drivers.at(eqID)->Connect();
-	if(equipment[eqID].status != FE_SUCCESS) 	
-  	{
-		set_equipment_status(equipment[eqID].name, "Connection Error", "redLight");
-		cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "CONNECTION ERROR");
-		continue;
-	}
+		equipment[eqID].status = drivers.at(eqID)->Connect();
+		if(equipment[eqID].status != FE_SUCCESS) 	
+  		{
+			set_equipment_status(equipment[eqID].name, "Connection Error", "redLight");
+			cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "CONNECTION ERROR");
+			continue;
+		}
 	
-	equipment[eqID].status = drivers.at(eqID)->Init();
-	if(equipment[eqID].status != FE_SUCCESS)
-	{
-		set_equipment_status(equipment[eqID].name, "DRIVER Error", "redLight");
-		cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "DRIVER ERROR");
-		continue;
-	}
-	else
-	{
-		drivers.at(eqID)->SetInitialized();
-		drivers.at(eqID)->Print();
-		set_equipment_status(equipment[eqID].name, "Ok", "greenLight");
-	}
+		equipment[eqID].status = drivers.at(eqID)->Init();
+		if(equipment[eqID].status != FE_SUCCESS)
+		{
+			set_equipment_status(equipment[eqID].name, "DRIVER Error", "redLight");
+			cm_msg(MERROR, "initialize_equipment", "Equipment %s disabled because of %s", equipment[eqID].name, "DRIVER ERROR");
+			continue;
+		}
+		else
+		{
+			drivers.at(eqID)->SetInitialized();
+			drivers.at(eqID)->Print();
+			set_equipment_status(equipment[eqID].name, "Ok", "greenLight");
+		}
 		
-  }
+  	}
   
-  ss_sleep(5000);
+	ss_sleep(5000);
   
-  //Equipment ready
+	//Equipment ready
 
   
 	return CM_SUCCESS;   
@@ -208,31 +208,97 @@ INT read_power(char *pevent, INT off)
 	
 	/* init bank structure */
   
-  bk_init32(pevent);
-  float *pdata;
+	bk_init32a(pevent);
+	float *pdata;
   
-  bk_create(pevent, "LV", TID_FLOAT, (void **)&pdata);
-  
-  for(const auto& d: drivers)
-  {
-	if( !d->Initialized() ) continue;
-	if(d->ReadAll() == FE_SUCCESS)
- 	{
-		std::vector<float> voltage = d->GetVoltage();
-		std::vector<float> current = d->GetCurrent();
-		for(auto const &v : voltage)	*pdata++ = v;
-		for(auto const &v : current)	*pdata++ = v; 
- 	}
- 	else 
- 	{
-		cm_msg(MERROR, "power read", "Error in read: %d",error);
-		return 0;
-  	}
-  }
+	int iTDK = 0;\
+	int iHAMEG = 0;
+
+	for(const auto& d: drivers)
+	{
+		if( !d->Initialized() ) continue;
+		if(d->ReadAll() == FE_SUCCESS)
+		{
+			char bk_name[10];
+			//std::cout<< " ---- " << std::endl;
+			//std::cout << "**** driver class : " << typeid(*d).name() << " ***** " << std::endl;
+			//std::cout<< " ---- " << std::endl;
+			//ss_sleep(1000);
+			if(typeid(*d)==typeid(GenesysDriver))
+			{
+				sprintf(bk_name,"LG%2d",iTDK);
+				iTDK++;
+			}
+			else if(typeid(*d)==typeid(HMP4040Driver))
+			{
+				sprintf(bk_name,"LH%2d",iHAMEG);
+				iHAMEG++;
+			}
+			else{
+				cm_msg(MERROR, "power write bank", "Error in writing bank, driver class %s not recognized",typeid(*d).name() );
+				continue;
+			} 
+		  	bk_create(pevent, "LVLV", TID_FLOAT, (void **)&pdata);
+			std::cout << " make bank " << bk_name << std::endl;
+			std::vector<float> voltage = d->GetVoltage();
+			std::vector<float> current = d->GetCurrent();
+			for(auto v : voltage)	*pdata++ = v;
+			for(auto v : current)	*pdata++ = v;
+  			bk_close(pevent, pdata);
+			std::cout << " close bank " << bk_name << std::endl; 
+		}
+ 		else 
+ 		{
+			cm_msg(MERROR, "power read", "Error in read: %d",error);
+			return 0;
+  		}
+	}
 	
-  bk_close(pevent, pdata);
+  	std::cout << "done read power " << std::endl;
+
+
+// 	bk_create(pevent, "LVLV", TID_FLOAT, (void **)&pdata);
+// 	int iTDK = 0;\
+// 	int iHAMEG = 0;
+
   
-  return bk_size(pevent);
+//   for(const auto& d: drivers)
+//   {
+// 	if( !d->Initialized() ) continue;
+// 	if(d->ReadAll() == FE_SUCCESS)
+//  	{
+// 		char bk_name[10];
+// 		if(typeid(*d)==typeid(GenesysDriver))
+// 		{
+// 			sprintf(bk_name,"LG%2d",iTDK);
+// 			iTDK++;
+// 		}
+// 		else if(typeid(*d)==typeid(HMP4040Driver))
+// 		{
+// 			sprintf(bk_name,"LH%2d",iTDK);
+// 			iTDK++;
+// 		}
+// 		else{
+// 			cm_msg(MERROR, "power write bank", "Error in writing bank, driver class %s not recognized",typeid(*d).name() );
+// 			continue;
+// 		} 
+		
+// 		std::cout << " make bank " << bk_name << std::endl;
+// 		std::vector<float> voltage = d->GetVoltage();
+// 		std::vector<float> current = d->GetCurrent();
+// 		for(auto const &v : voltage)	*pdata++ = v;
+// 		for(auto const &v : current)	*pdata++ = v; 
+//  	}
+//  	else 
+//  	{
+// 		cm_msg(MERROR, "power read", "Error in read: %d",error);
+// 		return 0;
+//   	}
+//   }
+	
+//   bk_close(pevent, pdata);
+  
+  	return bk_size(pevent);
 }
 
 INT frontend_loop()

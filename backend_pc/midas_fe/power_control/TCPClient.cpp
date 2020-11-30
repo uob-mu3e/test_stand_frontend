@@ -42,7 +42,8 @@ bool TCPClient::Write(std::string str)
   boost::asio::write( *socket, boost::asio::buffer(str), error );
   if( !error )
   {
-		std::cout << "Client sent message: " << str << std::endl;
+	  int dummy;
+		//std::cout << "Client sent message: " << str << std::endl;
 	}
 	else
 	{
