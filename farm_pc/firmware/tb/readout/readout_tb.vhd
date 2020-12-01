@@ -92,7 +92,8 @@ end process inita;
  
 e_data_gen_mupix : entity work.data_generator_a10
     generic map (
-      go_to_trailer => 4
+      go_to_trailer => 4,
+      go_to_sh => 3--,
     )
 	port map (
 		clk 				   => clk,

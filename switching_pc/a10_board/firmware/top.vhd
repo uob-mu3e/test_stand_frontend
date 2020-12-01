@@ -683,7 +683,6 @@ begin
         o_state_out         => state_out_eventcounter,
         -- error cnt signals
         o_fifo_almost_full          => open,--link_fifo_almost_full,
-        o_fifo_almost_full          => open,
         o_cnt_link_fifo_almost_full => readregs_slow(CNT_FIFO_ALMOST_FULL_R),
         o_cnt_tag_fifo_full         => readregs(CNT_TAG_FIFO_FULL_R),
         o_cnt_ram_full              => readregs(CNT_RAM_FULL_R),

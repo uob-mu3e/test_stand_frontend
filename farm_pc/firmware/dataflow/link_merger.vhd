@@ -43,6 +43,11 @@ entity link_merger is
         signal link_data, link_dataq : data_array(NLINKS_TOTL - 1 downto 0);
         signal link_empty, link_wren, link_full, link_afull, link_wrfull, sop, eop, shop, link_ren : std_logic_vector(NLINKS_TOTL - 1 downto 0);
         signal link_usedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS_TOTL - 1 downto 0);
+        signal sync_fifo_empty : std_logic_vector(NLINKS_TOTL - 1 downto 0);
+        signal sync_fifo_i_wrreq : std_logic_vector(NLINKS_TOTL - 1 downto 0);
+        type sync_fifo_t is array (NLINKS_TOTL - 1 downto 0) of std_logic_vector(35 downto 0);
+        signal sync_fifo_q : sync_fifo_t;
+        signal sync_fifo_data : sync_fifo_t;
         
         signal stream_wdata, stream_rdata : std_logic_vector(W-1 downto 0);
         signal we_counter : std_logic_vector(63 downto 0);
@@ -56,19 +61,52 @@ entity link_merger is
     
     buffer_link_fifos: FOR i in 0 to NLINKS_TOTL - 1 GENERATE
 
+    process(i_dataclk, i_reset_data_n)
+    begin
+        if ( i_reset_data_n = '0' ) then
+            sync_fifo_data(i) <= (others => '0');
+            sync_fifo_i_wrreq(i) <= '0';
+        elsif ( rising_edge(i_dataclk) ) then
+            sync_fifo_data(i) <= i_link_data(31 + i * 32 downto i * 32) & i_link_datak(3 + i * 4 downto i * 4);
+            if ( i_link_data(31 + i * 32 downto i * 32) = x"000000BC" and i_link_datak(3 + i * 4 downto i * 4) = "0001" ) then
+                sync_fifo_i_wrreq(i) <= '0';
+            else
+                sync_fifo_i_wrreq(i) <= '1';
+            end if;
+        end if;
+    end process;
+    
+    e_sync_fifo : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 6,
+        DATA_WIDTH  => 36,
+        DEVICE      => "Arria 10"--,
+    )
+    port map (
+        data        => sync_fifo_data(i),
+        wrreq       => sync_fifo_i_wrreq(i),
+        rdreq       => not sync_fifo_empty(i),
+        wrclk       => i_dataclk,
+        rdclk       => i_memclk,
+        q           => sync_fifo_q(i),
+        rdempty     => sync_fifo_empty(i),
+        aclr        => '0'--,
+    );
+    
     e_link_to_fifo : entity work.link_to_fifo
     generic map(
         W => 32--,
     )
     port map(
-        i_link_data         => i_link_data(31 + i * 32 downto i * 32),
-        i_link_datak        => i_link_datak(3 + i * 4 downto i * 4),
+        i_link_data         => sync_fifo_q(i)(35 downto 4),
+        i_link_datak        => sync_fifo_q(i)(3 downto 0),
         i_fifo_almost_full  => link_afull(i),
+        i_sync_fifo_empty   => sync_fifo_empty(i),
         o_fifo_data         => link_data(i)(35 downto 0),
         o_fifo_wr           => link_wren(i),
         o_cnt_skip_data     => open,
-        i_reset_n           => i_reset_data_n,
-        i_clk               => i_dataclk--,
+        i_reset_n           => i_reset_mem_n,
+        i_clk               => i_memclk--,
     );
     
     -- sop

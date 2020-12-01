@@ -11,6 +11,8 @@ entity time_merger is
 generic (
     W : positive := 34;
     TIMEOUT : std_logic_vector(31 downto 0) := x"FFFFFFFF";
+    TREE_DEPTH_w : positive := 8;
+    TREE_DEPTH_r : positive := 8;
     N : positive := 34--;
 );
 port (
@@ -96,6 +98,14 @@ architecture arch of time_merger is
     
     signal fifo_q_2 : fifo_q_2_t;
     signal fifo_q_2_reg : fifo_q_2_t;
+
+    type wait_cnt_fifo_0_t is array (generate_fifos(0) - 1 downto 0) of std_logic_vector(1 downto 0);
+    type wait_cnt_fifo_1_t is array (generate_fifos(1) - 1 downto 0) of std_logic_vector(1 downto 0);
+    type wait_cnt_fifo_2_t is array (generate_fifos(2) - 1 downto 0) of std_logic_vector(1 downto 0);
+
+    signal wait_cnt_fifo_0 : wait_cnt_fifo_0_t;
+    signal wait_cnt_fifo_1 : wait_cnt_fifo_1_t;
+    signal wait_cnt_fifo_2 : wait_cnt_fifo_2_t;
     
     signal fifo_ren_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
     signal fifo_ren_0_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
@@ -153,9 +163,9 @@ begin
     FOR j in 0 to generate_fifos(0)-1 GENERATE
         e_link_fifo : entity work.ip_dcfifo_mixed_widths
         generic map(
-            ADDR_WIDTH_w => 6,
+            ADDR_WIDTH_w => TREE_DEPTH_w,
             DATA_WIDTH_w => write_width(0),
-            ADDR_WIDTH_r => 6,
+            ADDR_WIDTH_r => TREE_DEPTH_r,
             DATA_WIDTH_r => read_width(0),
             DEVICE 		 => "Arria 10"--,
         )
@@ -178,9 +188,9 @@ begin
     FOR j in 0 to generate_fifos(1)-1 GENERATE
         e_link_fifo : entity work.ip_dcfifo_mixed_widths
         generic map(
-            ADDR_WIDTH_w => 6,
+            ADDR_WIDTH_w => TREE_DEPTH_w,
             DATA_WIDTH_w => write_width(1),
-            ADDR_WIDTH_r => 6,
+            ADDR_WIDTH_r => TREE_DEPTH_r,
             DATA_WIDTH_r => read_width(1),
             DEVICE 		 => "Arria 10"--,
         )
@@ -203,9 +213,9 @@ begin
     FOR j in 0 to generate_fifos(2)-1 GENERATE
         e_link_fifo : entity work.ip_dcfifo_mixed_widths
         generic map(
-            ADDR_WIDTH_w => 6,
+            ADDR_WIDTH_w => TREE_DEPTH_w,
             DATA_WIDTH_w => write_width(2),
-            ADDR_WIDTH_r => 6,
+            ADDR_WIDTH_r => TREE_DEPTH_r,
             DATA_WIDTH_r => read_width(2),
             DEVICE 		 => "Arria 10"--,
         )
@@ -318,16 +328,21 @@ begin
         layer_0_state(i) <= "0000";
         layer_0_cnt(i) <= (others => '0');
         reset_fifo_0(i) <= '0';
+        wait_cnt_fifo_0(i) <= (others => '0');
         --
     elsif rising_edge(i_clk) then
         rack_hit(i) <= '0';
         fifo_wen_0(i) <= '0';
         reset_fifo_0(i) <= '0';
+        if ( wait_cnt_fifo_0(i) /= "11" ) then
+            wait_cnt_fifo_0(i) <= wait_cnt_fifo_0(i) + '1';
+        end if;
+
         if ( merge_state = merge_hits ) then
             case layer_0_state(i) is
                 
                 when "0000" =>
-                    if ( fifo_full_0(i) = '1' or reset_fifo_0(i) = '1' ) then
+                    if ( fifo_full_0(i) = '1' or reset_fifo_0(i) = '1' or wait_cnt_fifo_0(i) /= "11" ) then
                         --
                     else
                         if ( fifo_full_0(i) = '0' and link_good(i) = '1' and i_rempty(i) = '0' and rack_hit(i) = '0' and i_rdata(i)(31 downto 26) /= "111111" and i_rdata(i)(37 downto 36) = "00" and reset_fifo_0(i) = '0' ) then
@@ -367,6 +382,7 @@ begin
                     layer_0_state(i) <= "0000";
             end case;
         else
+            wait_cnt_fifo_0(i) <= (others => '0');
             reset_fifo_0(i) <= '1';
             layer_0_state(i) <= "0000";
             saw_header_0(i) <= '0';
@@ -403,6 +419,7 @@ begin
         fifo_data_1(i) <= (others => '0');
         layer_1_state(i) <= (others => '0');
         reset_fifo_1(i) <= '0';
+        wait_cnt_fifo_1(i) <= (others => '0');
         --
     elsif rising_edge(i_clk) then
         fifo_ren_0(i) <= '0';
@@ -410,13 +427,16 @@ begin
         fifo_ren_0_reg(i) <= fifo_ren_0(i);
         fifo_ren_0_reg(i + size1) <= fifo_ren_0(i + size1);
         reset_fifo_1(i) <= '0';
+        if ( wait_cnt_fifo_1(i) /= "11" ) then
+            wait_cnt_fifo_1(i) <= wait_cnt_fifo_1(i) + '1';
+        end if;
         
         fifo_wen_1(i) <= '0';
         if ( merge_state = merge_hits ) then
             case layer_1_state(i) is
             
                 when "0000" =>
-                    if ( fifo_full_1(i) = '1' or reset_fifo_1(i) = '1' ) then
+                    if ( fifo_full_1(i) = '1' or reset_fifo_1(i) = '1' or wait_cnt_fifo_1(i) /= "11" ) then
                         --
                     else
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
@@ -509,6 +529,7 @@ begin
 
             end case;
         else
+            wait_cnt_fifo_1(i) <= (others => '0');
             reset_fifo_1(i) <= '1';
             layer_1_state(i) <= "0000";
             fifo_data_1(i) <= (others => '0');
