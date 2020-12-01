@@ -765,6 +765,8 @@ begin
                     header_trailer(33 downto 32) <= "00";
                     header_trailer(31 downto 0) <= gtime1(i_link)(35 downto 4);
                     header_trailer_we <= '1';
+                elsif ( error_gtime1 = '1' ) then 
+                    merge_state <= error_state;
                 end if;
                 
             when get_time2 =>
@@ -793,6 +795,8 @@ begin
                     header_trailer(33 downto 32) <= "00";
                     header_trailer(31 downto 0) <= gtime2(i_link)(35 downto 4);
                     header_trailer_we <= '1';
+                elsif ( error_gtime2 = '1' ) then
+                    merge_state <= error_state;
                 end if;
                 
             when wait_for_sh =>
@@ -890,6 +894,14 @@ begin
                     header_trailer(7 downto 0) <= x"9C";
                     header_trailer_we <= '1';
                 end if;
+                -- reset errors
+                error_shtime <= '0';
+                error_gtime1 <= '0';
+                error_gtime2 <= '0';
+                error_merger <= '0';
+                error_pre <= (others => '0');
+                error_sh <= (others => '0');
+                error_tr <= (others => '0');
                                 
             when error_state =>
                 -- send error message xxxxxxDC

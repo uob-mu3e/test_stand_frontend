@@ -163,7 +163,7 @@ begin
 	if (reset = '1') then
 		data_pix_ready          <= '0';
 		data_pix_generated      <= (others => '0');
-		global_time       		<= (others => '0');--start_global_time;
+		global_time       		<= start_global_time;
 		time_cnt_t       		<= (others => '0');
 		data_header_state			<= part1;
 		current_overflow 			:= "0000000000000000";

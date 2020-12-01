@@ -228,8 +228,8 @@ int main(int argc, char *argv[])
     }
     
     if ( atoi(argv[3]) != 1) {
-        for ( int i = 0; i < 10; i++ ) {
-            cout << "sleep " << i << "/10 s" << endl;
+        for ( int i = 0; i < 3; i++ ) {
+            cout << "sleep " << i << "/3 s" << endl;
             sleep(i);
         }
     }
