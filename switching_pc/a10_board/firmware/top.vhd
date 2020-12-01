@@ -662,7 +662,7 @@ begin
     generic map (
         NLINKS => NLINKS_ALIGNMENT,
         USE_ALIGNMENT => 1,
-        LINK_FIFO_ADDR_WIDTH => 8--,
+        LINK_FIFO_ADDR_WIDTH => 10--,
     )
     port map (
         i_clk_data          => clk_156,

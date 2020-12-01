@@ -30,13 +30,13 @@ using namespace std;
 
 void print_usage(){
     cout << "Usage: " << endl;
-    cout << "       dmatest <use_data_gen> <stop_dma>" << endl;
+    cout << "       dmatest <use_data_gen> <stop_dma> <use_loop>" << endl;
 }
 
 int main(int argc, char *argv[])
 {
 
-    if(argc < 3){
+    if(argc < 4){
         print_usage();
         return -1;
     }
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
     // Set up data generator
     if (atoi(argv[1]) == 1) {
         uint32_t datagen_setup = 0;
-        mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
+        mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0, 100);//3E8, 100);//3E8); // slow down to 64 MBit/s
         datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
         //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
         mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
@@ -170,7 +170,11 @@ int main(int argc, char *argv[])
         cout << hex << "0x" <<  dma_buf[i] << " ";
     cout << endl;
 
-    while(dma_buf[size/2/sizeof(uint32_t)-8] <= 0){
+    if (atoi(argv[3]) == 1) {
+        for(int i=0; i < 8; i++)
+            cout << hex << "0x" <<  dma_buf[i+8] << " ";
+        cout << endl;
+        while(dma_buf[size/2/sizeof(uint32_t)-8] <= 0){
 
 //         if (mu.last_written_addr() == 0) {
 //             cout << "last_written" << endl;
@@ -206,8 +210,14 @@ int main(int argc, char *argv[])
 //        sprintf(dma_buf_str, "%08X", dma_buf[endofevent+i-20]);
 //        myfile << endofevent + i - 20 << "\t" << dma_buf_str << endl;
 //        }
+        }
     }
-    
+   
+    for ( int i = 0; i < 10; i++ ) {
+        cout << "sleep 1/" << 10 << "sec" << endl;
+        sleep(i);
+    }
+
     cout << "start to write file" << endl;
 
 
