@@ -137,6 +137,7 @@ architecture rtl of mp_sorter_datagen is
             global_ts           <= (others => '0');
             ts                  <= (others => '0');
             ts_pull_ahead       <= '0';
+            ts_before_sorter    <= (others => '0');
 
         elsif rising_edge(i_clk) then
             fwdata              <= (others => '0');
