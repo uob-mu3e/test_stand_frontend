@@ -60,7 +60,7 @@ struct mupix_datapath_t {
                 sc->ram->data[0xFF65] ^= 1UL << 16;
                 break;
             case '4':
-                sc->ram->datap[0xFF65] ^= 1UL << 17;
+                sc->ram->data[0xFF65] ^= 1UL << 17;
             case '-':
                 if((sc->ram->data[0xFF65] >> 4) & 1U){
                     sc->ram->data[0xFF65] ^= 1UL << 4;
