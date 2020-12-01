@@ -126,6 +126,11 @@ int main(int argc, char *argv[])
         return ret_val;
     }
 
+    // request data to read dma_buffer_size/2 (count in blocks of 256 bits) 
+    uint32_t max_requested_words = dma_buf_nwords/64;
+    cout << "request " << max_requested_words << endl;
+    mu.write_register_wait(0xC, max_requested_words / (256/32), 100);
+
     // reset all
     uint32_t reset_reg = 0;
     reset_reg = SET_RESET_BIT_ALL(reset_reg);
@@ -174,7 +179,16 @@ int main(int argc, char *argv[])
         for(int i=0; i < 8; i++)
             cout << hex << "0x" <<  dma_buf[i+8] << " ";
         cout << endl;
-        while(dma_buf[size/2/sizeof(uint32_t)-8] <= 0){
+        int cnt_loop = 0;
+        // wait for requested data
+        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {
+            if ( cnt_loop == 1000 ) {
+                cnt_loop = 0;
+//                cout << mu.read_register_ro(0x1C) << endl;
+            }
+            cnt_loop = cnt_loop + 1;
+        }
+//        while(dma_buf[size/2/sizeof(uint32_t)-8] <= 0){
 
 //         if (mu.last_written_addr() == 0) {
 //             cout << "last_written" << endl;
@@ -210,12 +224,14 @@ int main(int argc, char *argv[])
 //        sprintf(dma_buf_str, "%08X", dma_buf[endofevent+i-20]);
 //        myfile << endofevent + i - 20 << "\t" << dma_buf_str << endl;
 //        }
-        }
+  //      }
     }
-   
-    for ( int i = 0; i < 10; i++ ) {
-        cout << "sleep 1/" << 10 << "sec" << endl;
-        sleep(i);
+    
+    if ( atoi(argv[3]) != 1) {
+        for ( int i = 0; i < 10; i++ ) {
+            cout << "sleep " << i << "/10 s" << endl;
+            sleep(i);
+        }
     }
 
     cout << "start to write file" << endl;

@@ -124,7 +124,7 @@ entity midas_event_builder is
     signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
     signal link_data : std_logic_vector(31 downto 0);
     signal link_datak : std_logic_vector(3 downto 0);
-    signal link_header, link_trailer : std_logic;
+    signal link_header, link_trailer, link_error : std_logic;
 
     -- error cnt
     constant all_zero : std_logic_vector(NLINKS - 1 downto 0) := (others => '0');
@@ -436,6 +436,8 @@ begin
         link_data <= stream_rdata(31 downto 0);
         link_header <= '1' when stream_rdata(33 downto 32) = "01" else '0';
         link_trailer <= '1' when stream_rdata(33 downto 32) = "10" else '0';
+        -- TODO: handle errors, at the moment they are sent out at the end of normal events
+        link_error <= '1' when stream_rdata(33 downto 32) = "11" and stream_rdata(7 downto 0) = x"DC" else '0';
         
     END GENERATE time_alignment;
 

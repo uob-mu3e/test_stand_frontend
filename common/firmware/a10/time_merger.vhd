@@ -897,7 +897,7 @@ begin
                 -- 13: error gtime2
                 -- 14: error shtime
                 -- N+14 downto 14: error wait for pre
-                header_trailer(33 downto 32) <= "01";
+                header_trailer(33 downto 32) <= "11";
                 header_trailer(7 downto 0) <= x"DC";
                 header_trailer(12) <= error_gtime1;
                 header_trailer(13) <= error_gtime2;
@@ -910,7 +910,8 @@ begin
                     header_trailer(17) <= '1';
                 end if;
                 header_trailer_we <= '1';
-                
+                merge_state <= trailer;
+                            
             when others =>
                 merge_state <= wait_for_pre;
                 
