@@ -62,6 +62,20 @@ architecture rtl of mupix_datapath is
     signal tot                      : tot_array_t(35 downto 0);
     signal chip_ID                  : ch_ID_array_t(35 downto 0);
 
+    signal hits_ena_unpacker        : std_logic_vector(35 downto 0);
+    signal ts_unpacker              : ts_array_t(35 downto 0);
+    signal row_unpacker             : row_array_t(35 downto 0);
+    signal col_unpacker             : col_array_t(35 downto 0);
+    signal tot_unpacker             : tot_array_t(35 downto 0);
+    signal chip_ID_unpacker         : ch_ID_array_t(35 downto 0);
+
+    signal hits_ena_gen             : std_logic_vector(35 downto 0);
+    signal ts_gen                   : ts_array_t(35 downto 0);
+    signal row_gen                  : row_array_t(35 downto 0);
+    signal col_gen                  : col_array_t(35 downto 0);
+    signal tot_gen                  : tot_array_t(35 downto 0);
+    signal chip_ID_gen              : ch_ID_array_t(35 downto 0);
+
     -- hits afer 3-1 multiplexing
     signal hits_ena_hs              : std_logic_vector(35 downto 0);
     signal ts_hs                    : ts_array_t(35 downto 0);
@@ -197,12 +211,12 @@ begin
         kin                 => rx_k(i), 
         readyin             => link_enable_125(i),
         i_mp_readout_mode   => mp_readout_mode,
-        o_ts                => ts(i),
-        o_chip_ID           => chip_ID(i),
-        o_row               => row(i),
-        o_col               => col(i),
-        o_tot               => tot(i),
-        o_hit_ena           => hits_ena(i),
+        o_ts                => ts_unpacker(i),
+        o_chip_ID           => chip_ID_unpacker(i),
+        o_row               => row_unpacker(i),
+        o_col               => col_unpacker(i),
+        o_tot               => tot_unpacker(i),
+        o_hit_ena           => hits_ena_unpacker(i),
         coarsecounter       => open,--coarsecounters((i+1)*COARSECOUNTERSIZE-1 downto i*COARSECOUNTERSIZE),
         coarsecounter_ena   => open,--coarsecounters_ena(i),
         link_flag           => open,--link_flag(i),
@@ -249,6 +263,22 @@ begin
                 counter125 <= (others => '0');
             else
                 counter125 <= counter125 + 1;
+            end if;
+            
+            if(mp_datagen_control_reg(MP_DATA_GEN_SORT_IN_BIT) = '1') then
+                ts      <= ts_gen;
+                chip_ID <= Chip_ID_gen;
+                row     <= row_gen;
+                col     <= col_gen;
+                tot     <= tot_gen;
+                hits_ena<= hits_ena_gen;
+            else
+                ts      <= ts_unpacker;
+                chip_ID <= Chip_ID_unpacker;
+                row     <= row_unpacker;
+                col     <= col_unpacker;
+                tot     <= tot_unpacker;
+                hits_ena<= hits_ena_unpacker;
             end if;
         end if;
     end process;
@@ -331,7 +361,14 @@ begin
         o_hit_counter       => open,
         o_fifo_wdata        => fifo_wdata_gen,
         o_fifo_write        => fifo_write_gen,
-        
+
+        o_ts                => ts_gen,
+        o_chip_ID           => chip_ID_gen,
+        o_row               => row_gen,
+        o_col               => col_gen,
+        o_tot               => tot_gen,
+        o_hit_ena           => hits_ena_gen,
+
         i_evil_register     => (others => '0'),
         o_mischief_managed  => open--,
     );
