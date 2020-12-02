@@ -39,6 +39,7 @@ struct adc_t {
             printf("\n");
             printf("  [1] => adc readout while\n");
             printf("  [2] => read one time adc data\n");
+            printf("  [q] => exit\n");
             
             printf("Select entry ...\n");
             char cmd = wait_key();

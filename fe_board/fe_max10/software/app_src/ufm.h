@@ -78,7 +78,7 @@ struct ufm_t {
             case 'e':
                 disable_wp(2);
                 wait_idle();
-                csr[1] = csr[1] & ~(0x7 << 20) | (0x2 << 20);
+                csr[1] = csr[1] & (~(0x7 << 20)) | (0x2 << 20);
                 wait_idle();
                 if(!(csr[0] & 0x10)) {
                     printf("fail\n");
