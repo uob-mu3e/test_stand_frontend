@@ -75,6 +75,7 @@ architecture arch of top is
 
     signal  version                             : std_logic_vector(31 downto 0);
     signal  status                              : std_logic_vector(31 downto 0);
+	 signal  programming_status                  : std_logic_vector(31 downto 0);
     signal  control                             : std_logic_vector(31 downto 0);
     signal  spi_arria_we                        : std_logic;
     signal  rw_last                             : std_logic;
@@ -187,7 +188,7 @@ begin
 
     status(0)  <= pll_locked;
     status(1)  <= spi_arria_we;
-    status(23 downto 1) <= (others => '0');
+    status(23 downto 2) <= (others => '0');
     status(31 downto 24) <= spi_flash_status;
 
     programming_status   <= (others => '0');
@@ -225,7 +226,7 @@ begin
         rw_last     <= '0';
         new_transaction <= '0';
     elsif(clk100'event and clk100 = '1')then
-        rw_last     <= spi_arria_rw
+        rw_last     <= spi_arria_rw;
         if(spi_arria_addr = FEBSPI_ADDR_WRITENABLE
             and spi_arria_byte_from_arria = FEBSPI_PATTERN_WRITENABLE
             and spi_arria_byte_en = '1' and spi_arria_rw = '1') then
@@ -257,7 +258,8 @@ begin
                     else adc_data_3 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
                                      and spi_arria_addr_offset = X"03"
                     else adc_data_4 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
-                                     and spi_arria_addr_offset = X"04";
+                                     and spi_arria_addr_offset = X"04"
+						  else (others => '0'); -- needed to avoid latch
                                      
     arria_to_fifo_we <= spi_arria_byte_en when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_WFIFO
                 else '0';                   
