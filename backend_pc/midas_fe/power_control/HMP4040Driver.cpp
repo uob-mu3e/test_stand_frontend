@@ -88,13 +88,13 @@ INT HMP4040Driver::Init()
 	//read channels
 	for(int i = 0; i<nChannels; i++ ) 
 	{ 	
-		state[i]=ReadState(instrumentID[i],err);
+		state[i]=ReadState(i,err);
 		
-		voltage[i]=ReadVoltage(instrumentID[i],err);
-		demandvoltage[i]=ReadSetVoltage(instrumentID[i],err);
+		voltage[i]=ReadVoltage(i,err);
+		demandvoltage[i]=ReadSetVoltage(i,err);
 
-		current[i]=ReadCurrent(instrumentID[i],err);
-		currentlimit[i]=ReadCurrentLimit(instrumentID[i],err);
+		current[i]=ReadCurrent(i,err);
+		currentlimit[i]=ReadCurrentLimit(i,err);
   	
 	 	if(err!=FE_SUCCESS) return err;  	
 	}
@@ -134,21 +134,21 @@ INT HMP4040Driver::ReadAll()
 	//update local book keeping
 	for(int i=0; i<nChannels; i++)
 	{
-		bool bvalue = ReadState(instrumentID[i],err);
+		bool bvalue = ReadState(i,err);
 		if(state[i]!=bvalue) //only update odb if there is a change
 		{
 			state[i]=bvalue;
 			variables["State"][i]=bvalue;
 		}
  	
- 		float fvalue = ReadVoltage(instrumentID[i],err);
+ 		float fvalue = ReadVoltage(i,err);
 		if( fabs(voltage[i]-fvalue) > fabs(relevantchange*voltage[i]) )
 		{
 			voltage[i]=fvalue;
 			variables["Voltage"][i]=fvalue;	  	
 		}
   	
-		fvalue = ReadCurrent(instrumentID[i],err);
+		fvalue = ReadCurrent(i,err);
 		if( fabs(current[i]-fvalue) > fabs(relevantchange*current[i]) )
 		{
 			current[i]=fvalue;

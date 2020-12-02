@@ -116,14 +116,14 @@ float PowerDriver::Read(std::string cmd, INT& error)
 
 
 
-std::string PowerDriver::ReadIDCode(int channel, INT& error)
+std::string PowerDriver::ReadIDCode(int index, INT& error)
 {
 	std::string cmd;
 	bool success;
 	std::string reply="";
 	error=FE_SUCCESS;
 
-	if(channel>=0) SelectChannel(channel);
+	if(index>=0) SelectChannel(instrumentID[index]);
 
 	cmd = "*IDN?\n";
 	client->Write(cmd);
@@ -131,7 +131,7 @@ std::string PowerDriver::ReadIDCode(int channel, INT& error)
 	success = client->ReadReply(&reply,min_reply_length);
 	if(!success)
 	{
-		cm_msg(MERROR, "Power supply read ... ", "could not read id supply with address %d", channel);
+		cm_msg(MERROR, "Power supply read ... ", "could not read id supply with address %d", instrumentID[index]);
 		error = FE_ERR_DRIVER;
 	}
 	
@@ -163,7 +163,7 @@ int PowerDriver::ReadESR(int channel, INT& error)
 }
 
 
-bool PowerDriver::ReadState(int channel,INT& error)
+bool PowerDriver::ReadState(int index,INT& error)
 {
 	std::string cmd;
 	bool success;
@@ -171,7 +171,7 @@ bool PowerDriver::ReadState(int channel,INT& error)
 	error=FE_SUCCESS;
 	bool value;
   
-	if(channel>=0) SelectChannel(channel);
+	if(index>=0) SelectChannel(instrumentID[index]);
   
 	cmd = "OUTP:STAT?\n";
 	client->Write(cmd);
@@ -181,7 +181,7 @@ bool PowerDriver::ReadState(int channel,INT& error)
 	
 	if(!success)
 	{
-		cm_msg(MERROR, "power supply read ... ", "could not read %s state supply/channel: %d of", name.c_str(),channel);
+		cm_msg(MERROR, "power supply read ... ", "could not read %s state supply/channel: %d of", name.c_str(),instrumentID[index]);
 		error = FE_ERR_DRIVER;
 	}
 
@@ -189,7 +189,7 @@ bool PowerDriver::ReadState(int channel,INT& error)
 	else if(reply=="1") value=true;
 	else
 	{ 
-		cm_msg(MERROR, "power supply read ... ", "could not read %s valid state of supply/channel: %d", name.c_str(),channel);
+		cm_msg(MERROR, "power supply read ... ", "could not read %s valid state of supply/channel: %d", name.c_str(),instrumentID[index]);
 		std::cout << "reply on state request = "<< reply << "." <<std::endl; 
 		error = FE_ERR_DRIVER;
 	}
@@ -198,41 +198,41 @@ bool PowerDriver::ReadState(int channel,INT& error)
 }
 
 
-float PowerDriver::ReadVoltage(int channel,INT& error)
+float PowerDriver::ReadVoltage(int index,INT& error)
 {
 	error = FE_SUCCESS;
 	float value = 0.0;
-	if( SelectChannel(channel) )  {	  value = Read("MEAS:VOLT?\n",error);	}
+	if( SelectChannel(instrumentID[index]) )  {	  value = Read("MEAS:VOLT?\n",error);	}
 		else error = FE_ERR_DRIVER;
 	return value; 
 }
 
 
-float PowerDriver::ReadSetVoltage(int channel,INT& error)
+float PowerDriver::ReadSetVoltage(int index,INT& error)
 {
   error = FE_SUCCESS;
 	float value = 0.0;
-  if(SelectChannel(channel))  {	  value = Read("VOLT?\n",error);	}
+  if(SelectChannel(instrumentID[index]))  {	  value = Read("VOLT?\n",error);	}
 	else error = FE_ERR_DRIVER;
   return value; 
 }
 
 
-float PowerDriver::ReadCurrent(int channel,INT& error)
+float PowerDriver::ReadCurrent(int index,INT& error)
 {
   error = FE_SUCCESS;
 	float value = 0.0;
-  if(SelectChannel(channel))  {	  value = Read("MEAS:CURR?\n",error);	}
+  if(SelectChannel(instrumentID[index]))  {	  value = Read("MEAS:CURR?\n",error);	}
 	else error = FE_ERR_DRIVER;
   return value; 
 }
 
 
-float PowerDriver::ReadCurrentLimit(int channel,INT& error)
+float PowerDriver::ReadCurrentLimit(int index,INT& error)
 {
   error = FE_SUCCESS;
 	float value = 0.0;
-  if(SelectChannel(channel))  {	  value = Read("CURR?\n",error);	}
+  if(SelectChannel(instrumentID[index]))  {	  value = Read("CURR?\n",error);	}
 	else error = FE_ERR_DRIVER;
   return value; 
 }
@@ -255,26 +255,26 @@ bool PowerDriver::Set(std::string cmd, INT& error)
 
 
 
-void PowerDriver::SetCurrentLimit(int channel, float value,INT& error)
+void PowerDriver::SetCurrentLimit(int index, float value,INT& error)
 {
   error = FE_SUCCESS;
   
   if(value<-0.1 || value > 90.0) //check valid range 
   {
   	cm_msg(MERROR, "Power supply ... ", "current limit of %f not allowed",value );
-  	variables["Current Limit"][channel]=currentlimit[channel]; //disable request
+  	variables["Current Limit"][index]=currentlimit[index]; //disable request
   	error=FE_ERR_DRIVER;
   	return;  	
   }
   
-  if( SelectChannel(channel) ) //'channel' is already instrument channel
+  if( SelectChannel(instrumentID[index]) ) //'channel' is already instrument channel
   {
 	bool success = Set("CURR "+std::to_string(value)+"\n",error);
   	if(!success) error=FE_ERR_DRIVER;
   	else // read changes
   	{
-	  	voltage[channel]=ReadVoltage(channel,error);
-	  	variables["Voltage"][channel]=voltage[channel];
+	  	voltage[index]=ReadVoltage(index,error);
+	  	variables["Voltage"][index]=voltage[index];
   	}		
   }
   else error=FE_ERR_DRIVER;
@@ -282,25 +282,25 @@ void PowerDriver::SetCurrentLimit(int channel, float value,INT& error)
 
 
 
-void PowerDriver::SetState(int channel, bool value,INT& error)
+void PowerDriver::SetState(int index, bool value,INT& error)
 {
 	std::string cmd;
 	bool success;
 	error = FE_SUCCESS;
-	std::cout << " **** Request to set channel " << channel << " to : " << value << std::endl;   
+	std::cout << " **** Request to set channel " << instrumentID[index] << " to : " << value << std::endl;   
 
 	if(value==true)
 	{
-		if(!AskPermissionToTurnOn(channel))
+		if(!AskPermissionToTurnOn(index))
 		{
-			cm_msg(MERROR, "Genesys supply ... ", "changing of channel %d not allowed",channel );
-			variables["Set State"][channel]=false; //disable request
+			cm_msg(MERROR, "Genesys supply ... ", "changing of channel %d not allowed",instrumentID[index] );
+			variables["Set State"][index]=false; //disable request
 			error=FE_ERR_DISABLED;
 			return;
 		}
 	}
 	  
-	if( SelectChannel(channel) )
+	if( SelectChannel(index) )
 	{
 		if(value==true) { cmd="OUTP:STAT 1\n"; }
 		else { cmd = "OUTP:STAT 0\n"; }
@@ -314,27 +314,27 @@ void PowerDriver::SetState(int channel, bool value,INT& error)
 
 
 
-void PowerDriver::SetVoltage(int channel, float value,INT& error)
+void PowerDriver::SetVoltage(int index, float value,INT& error)
 {
 	error = FE_SUCCESS;
 	if(value<-0.1 || value > 25.) //check valid range 
 	{
 		cm_msg(MERROR, "Power supply ... ", "voltage of %f not allowed",value );
-		variables["Demand Voltage"][channel]=demandvoltage[channel]; //disable request
+		variables["Demand Voltage"][index]=demandvoltage[index]; //disable request
 		error=FE_ERR_DRIVER;
 		return;  	
 	}
   
-	if( SelectChannel(channel) ) // module address in the daisy chain to select channel, or 1/2/3/4 for the HAMEG
+	if( SelectChannel(instrumentID[index]) ) // module address in the daisy chain to select channel, or 1/2/3/4 for the HAMEG
 	{
 		bool success = Set("VOLT "+std::to_string(value)+"\n",error);
 		if(!success) error=FE_ERR_DRIVER;
 		else // read changes
 		{
-			voltage[channel]=ReadVoltage(channel,error);
-			variables["Voltage"][channel]=voltage[channel];
-			current[channel]=ReadCurrent(channel,error);
-			variables["Current"][channel]=current[channel];
+			voltage[index]=ReadVoltage(index,error);
+			variables["Voltage"][index]=voltage[index];
+			current[index]=ReadCurrent(index,error);
+			variables["Current"][index]=current[index];
 		}		
 	}
 	else error=FE_ERR_DRIVER;
@@ -353,7 +353,7 @@ void PowerDriver::CurrentLimitChanged()
 		float value = variables["Current Limit"][i];
 		if( fabs(value-currentlimit[i]) > fabs(relevantchange*currentlimit[i]) ) //compare to local book keeping, look for significant change
 		{
-			SetCurrentLimit(instrumentID[i],value,err);   // 
+			SetCurrentLimit(i,value,err);   // 
 			if(err!=FE_SUCCESS ) cm_msg(MERROR, "Power ... ", "changing %s current limit of channel %d to %f failed, error %d",name.c_str(), instrumentID[i],value,err);
 			else
 			{
@@ -378,9 +378,9 @@ void PowerDriver::SetStateChanged()
 		bool value = variables["Set State"][i];
 		if(value!=state[i]) //compare to local book keeping
 		{
-			SetState(instrumentID[i],value,err);
-			if(err!=FE_SUCCESS ) cm_msg(MERROR, "Power ... ", "changing %s state of channel %d to %d failed, error %d", name.c_str(), i,value,err);
-			else{ cm_msg(MINFO, "Power ... ", "changing %s state of channel %d to %d", name.c_str(),i,value);	nChannelsChanged++;	}
+			SetState(i,value,err);
+			if(err!=FE_SUCCESS ) cm_msg(MERROR, "Power ... ", "changing %s state of channel %d to %d failed, error %d", name.c_str(), instrumentID[i],value,err);
+			else{ cm_msg(MINFO, "Power ... ", "changing %s state of channel %d to %d", name.c_str(),instrumentID[i],value);	nChannelsChanged++;	}
 		}			
 	}
 	
@@ -390,7 +390,7 @@ void PowerDriver::SetStateChanged()
 		int nChannels = instrumentID.size();
 		for(int i = 0; i<nChannels; i++ ) 
 		{
-			bool value=ReadState(instrumentID[i],err);
+			bool value=ReadState(i,err);
 			if(err==FE_SUCCESS) state[i]=value;
 		} 
 		variables["State"]=state; //push to odb
@@ -408,11 +408,11 @@ void PowerDriver::DemandVoltageChanged()
 		float value = variables["Demand Voltage"][i];
 		if( fabs(value-voltage[i]) > fabs(relevantchange*voltage[i]) ) //compare to local book keeping, look for significant change
 		{
-			SetVoltage(instrumentID[i],value,err);
-			if(err!=FE_SUCCESS ) cm_msg(MERROR, "Power ... ", "changing %s voltage of channel %d to %f failed, error %d", name.c_str(), i,value,err);
+			SetVoltage(i,value,err);
+			if(err!=FE_SUCCESS ) cm_msg(MERROR, "Power ... ", "changing %s voltage of channel %d to %f failed, error %d", name.c_str(), instrumentID[i],value,err);
 			else
 			{
-				cm_msg(MINFO, "Power ... ", "changing %s voltage of channel %d to %f", name.c_str(), i,value);
+				cm_msg(MINFO, "Power ... ", "changing %s voltage of channel %d to %f", name.c_str(), instrumentID[i],value);
 				nChannelsChanged++;
 				demandvoltage[i]=value;
 			}

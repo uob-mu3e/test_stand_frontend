@@ -105,18 +105,18 @@ INT GenesysDriver::Init()
   
 	for(int i = 0; i<nChannels; i++ ) 
 	{
-		idCode[i]=ReadIDCode(instrumentID[i],err);	
+		idCode[i]=ReadIDCode(i,err);	
   	
-		state[i]=ReadState(instrumentID[i],err);
+		state[i]=ReadState(i,err);
  	
-		voltage[i]=ReadVoltage(instrumentID[i],err);
-		demandvoltage[i]=ReadSetVoltage(instrumentID[i],err);
+		voltage[i]=ReadVoltage(i,err);
+		demandvoltage[i]=ReadSetVoltage(i,err);
 
-		current[i]=ReadCurrent(instrumentID[i],err);
-		currentlimit[i]=ReadCurrentLimit(instrumentID[i],err);
+		current[i]=ReadCurrent(i,err);
+		currentlimit[i]=ReadCurrentLimit(i,err);
 
 		interlock_enabled[i]=true;
-		SetInterlock(instrumentID[i],interlock_enabled[i],err);
+		SetInterlock(i,interlock_enabled[i],err);
   	
 		if(err!=FE_SUCCESS) return err;  	
 	}
@@ -173,7 +173,7 @@ void GenesysDriver::BlinkChanged()
 	{
 		bool value = settings["Blink"][i];		
 		SetBlink(i,value,err);
-		if(err!=FE_SUCCESS ) cm_msg(MERROR, "Genesys supply ... ", "changing flashing of channel %d to %d failed, error %d", i,value,err);
+		if(err!=FE_SUCCESS ) cm_msg(MERROR, "Genesys supply ... ", "changing flashing of channel %d to %d failed, error %d", instrumentID[i],value,err);
 	}
 	
 }
@@ -183,13 +183,13 @@ void GenesysDriver::BlinkChanged()
 
 // **************  Set Functions ************** //
 
-void GenesysDriver::SetInterlock(int channel,bool value, INT& error)
+void GenesysDriver::SetInterlock(int index,bool value, INT& error)
 {
 	std::string cmd;
 	bool success;
 	error = FE_SUCCESS;
 
-	if( SelectChannel(instrumentID[channel]) )
+	if( SelectChannel(instrumentID[index]) )
 	{
 		//OUTPut:ILC[:STATe] <Bool>
  		if(value==true) { cmd="OUTP:ILC 1\n"; }
@@ -198,19 +198,19 @@ void GenesysDriver::SetInterlock(int channel,bool value, INT& error)
 		std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
   		success = OPC();
   		if(!success) error=FE_ERR_DRIVER;
-		else cm_msg(MINFO, "Genesys supply ... ", "Interlock enabled[1]/disabled[0]: ",value );
+		else cm_msg(MINFO, "Genesys supply ... ", "Interlock enabled[1]/disabled[0]: %d",value );
 	}	
 }
 
 
 
-void GenesysDriver::SetBlink(int channel, bool value,INT& error)
+void GenesysDriver::SetBlink(int index, bool value,INT& error)
 {
 	std::string cmd;
 	bool success;
   error = FE_SUCCESS;
   
-  if( SelectChannel(instrumentID[channel]) )
+  if( SelectChannel(instrumentID[index]) )
   {
  		if(value==true) { cmd="DISP:WIND:FLAS 1\n"; }
 		else { cmd = "DISP:WIND:FLAS 0\n"; }
@@ -235,21 +235,21 @@ INT GenesysDriver::ReadAll()
 	//update local book keeping
 	for(int i=0; i<nChannels; i++)
 	{
-		bool bvalue = ReadState(instrumentID[i],err);
+		bool bvalue = ReadState(i,err);
 		if(state[i]!=bvalue) //only update odb if there is a change
 		{
 			state[i]=bvalue;
 			variables["State"][i]=bvalue;
 		}
  	
- 		float fvalue = ReadVoltage(instrumentID[i],err);
+ 		float fvalue = ReadVoltage(i,err);
 		if( fabs(voltage[i]-fvalue) > fabs(relevantchange*voltage[i]) )
 		{
 			voltage[i]=fvalue;
 			variables["Voltage"][i]=fvalue;	  	
 		}
   	
-		fvalue = ReadCurrent(instrumentID[i],err);
+		fvalue = ReadCurrent(i,err);
 		if( fabs(current[i]-fvalue) > fabs(relevantchange*current[i]) )
 		{
 			current[i]=fvalue;
