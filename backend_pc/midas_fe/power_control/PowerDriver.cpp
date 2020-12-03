@@ -20,6 +20,8 @@ INT PowerDriver::ConnectODB()
 	settings["IP"]("10.10.10.10");
 	settings["NChannels"](2);
 	settings["Global Reset On FE Start"](true);
+	settings["Read ESR"](false);
+	settings["ESR"](0);
   
 	//variables
 	variables.connect("/Equipment/"+name+"/Variables");
@@ -140,14 +142,14 @@ std::string PowerDriver::ReadIDCode(int index, INT& error)
 }
 
 
-int PowerDriver::ReadESR(int channel, INT& error)
+int PowerDriver::ReadESR(int index, INT& error)
 {
 	std::string cmd;
 	bool success;
 	std::string reply="";
 	error=FE_SUCCESS;
 
-	if(channel>=0) SelectChannel(channel);
+	if(index>=0) SelectChannel(instrumentID[index]);
 
 	cmd = "*ESR?\n";
 	client->Write(cmd);
@@ -155,7 +157,7 @@ int PowerDriver::ReadESR(int channel, INT& error)
 	success = client->ReadReply(&reply,min_reply_length);
 	if(!success)
 	{
-		cm_msg(MERROR, "Power supply read ... ", "could not read ESR supply with address %d", channel);
+		cm_msg(MERROR, "Power supply read ... ", "could not read ESR supply with address %d", instrumentID[index]);
 		error = FE_ERR_DRIVER;
 	}
 	int value = std::stoi(reply);
@@ -300,7 +302,7 @@ void PowerDriver::SetState(int index, bool value,INT& error)
 		}
 	}
 	  
-	if( SelectChannel(index) )
+	if( SelectChannel(instrumentID[index]) )
 	{
 		if(value==true) { cmd="OUTP:STAT 1\n"; }
 		else { cmd = "OUTP:STAT 0\n"; }
@@ -376,6 +378,7 @@ void PowerDriver::SetStateChanged()
 	for(unsigned int i=0; i<state.size(); i++)
 	{
 		bool value = variables["Set State"][i];
+		//cm_msg(MINFO, "Power ... ", "set state = %d, current state = %d of index = %d, channel = %d ", value,(int)state[i],i,instrumentID[i]);
 		if(value!=state[i]) //compare to local book keeping
 		{
 			SetState(i,value,err);

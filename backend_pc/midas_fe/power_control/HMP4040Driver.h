@@ -26,7 +26,6 @@ class HMP4040Driver : public PowerDriver {
 	
 		void InitODBArray();
 		bool AskPermissionToTurnOn(int);
-		int nChannels;
 		std::string idCode;
 		std::string ip;
 	

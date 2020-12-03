@@ -12,10 +12,8 @@ HMP4040Driver::~HMP4040Driver()
 
 HMP4040Driver::HMP4040Driver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf)
 {
-	std::cout << " HMP4040 HAMEG driver instantiated " << std::endl;
-	
-	//device specific constants
-	nChannels=4;
+	instrumentID = {1,2,3,4};
+	std::cout << " HMP4040 HAMEG driver with " << instrumentID.size() << " channels instantiated " << std::endl;
 }
 
 
@@ -69,6 +67,7 @@ INT HMP4040Driver::Init()
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
 	//HAMEG has fixed 4 channels
+	int nChannels = instrumentID.size();	
 	settings["NChannels"] = nChannels;
 	
 	voltage.resize(nChannels);
@@ -128,9 +127,8 @@ bool HMP4040Driver::AskPermissionToTurnOn(int channel) //extra check whether it 
 
 INT HMP4040Driver::ReadAll()
 {
-	int nChannels = instrumentID.size();
 	INT err;
-	
+	int nChannels = instrumentID.size();
 	//update local book keeping
 	for(int i=0; i<nChannels; i++)
 	{
