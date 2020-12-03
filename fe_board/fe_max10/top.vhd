@@ -114,9 +114,7 @@ architecture arch of top is
     signal spi_flash_data_to_flash              : std_logic_vector(7 downto 0);
     signal spi_flash_data_to_flash_nios         : std_logic_vector(7 downto 0);	
     signal spi_flash_cmdaddr_to_flash           : std_logic_vector(31 downto 0); 
-    signal spi_flash_fifodata_to_flash          : std_logic_vector(31 downto 0);
-    signal spi_flash_readfifo                   : std_logic;
-    signal spi_flash_fifo_empty                 : std_logic;
+	 signal spi_flash_fifo_data_nios					: std_logic_vector(8 downto 0);
 
     type spiflashstate_type is (idle, fifowriting, arriafifowriting, programming);
     signal spiflashstate : spiflashstate_type;
@@ -125,12 +123,14 @@ architecture arch of top is
     signal fifo_read_pulse                      : std_logic;
     signal wcounter                             : std_logic_vector(15 downto 0);
 
-    -- Fifo for programming data from Arria
-    signal arria_to_fifo_we                     : std_logic;
-    signal arriafifo_empty                      : std_logic;
-    signal arriafifo_full                       : std_logic;
-    signal arriafifo_data                       : std_logic_vector(7 downto 0);
-    signal read_arriafifo                       : std_logic;
+    -- Fifo for programming data to the SPIflash
+    signal spiflash_to_fifo_we                     : std_logic;
+    signal spiflashfifo_empty                      : std_logic;
+    signal spiflashfifo_full                       : std_logic;
+    signal spiflashfifo_data_in                    : std_logic_vector(7 downto 0);
+    signal spiflashfifo_data_out                   : std_logic_vector(7 downto 0);	 
+    signal read_spiflashfifo                       : std_logic;
+	 signal fifopiotoggle_last								: std_logic;
 
     -- spi arria
     signal SPI_inst                             : std_logic_vector(7 downto 0);
@@ -261,8 +261,7 @@ begin
                                      and spi_arria_addr_offset = X"04"
 						  else (others => '0'); -- needed to avoid latch
                                      
-    arria_to_fifo_we <= spi_arria_byte_en when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_WFIFO
-                else '0';                   
+                
 
     -- Write multiplexer
     process(clk100, reset_n)
@@ -293,10 +292,8 @@ begin
         -- clk & reset
         clk_clk                     => clk100,
         clk_spi_clk                 => clk100,
-        clk_flash_fifo_clk          => clk100,
         rst_reset_n                 => reset_n,
         rst_spi_reset_n             => reset_n,
-        reset_flash_fifo_reset_n    => reset_n,
 
         -- generic pio
         pio_export                  => open,
@@ -337,10 +334,10 @@ begin
         flash_i_data_export         => spi_flash_data_to_flash_nios,
         flash_o_data_export         => spi_flash_data_from_flash,
         flash_status_export         => spi_flash_status,
-        out_flash_fifo_readdata     => spi_flash_fifodata_to_flash,
-        out_flash_fifo_read         => spi_flash_readfifo,
-        out_flash_fifo_waitrequest  => spi_flash_fifo_empty--,
+		  flash_fifo_data_export		=> spi_flash_fifo_data_nios
     );
+
+ 
 
  
 
@@ -352,12 +349,15 @@ begin
         fifo_read_pulse                 <= '0';
         fifo_req_last                   <= '0';
         arria_fifo_req_last             <= '0';
+		  spiflash_to_fifo_we				 <= '0';
+		  fifopiotoggle_last					 <= '0';
     elsif ( clk100'event and clk100 = '1' ) then
-
+		  fifopiotoggle_last					 <= spi_flash_fifo_data_nios(8);
         fifo_read_pulse                 <= '0';
         fifo_req_last                   <= spi_flash_ctrl(7);
         arria_fifo_req_last             <= control(0);
-
+		  spiflash_to_fifo_we 				 <= '0';
+		  
         case spiflashstate is
         when idle =>
             if (spi_busy = '0' and spi_flash_request_programmer = '1' ) then
@@ -375,14 +375,23 @@ begin
                 fifo_read_pulse <= '1';
                 wcounter        <= (others => '0');
             end if;
+				
+				if(spi_arria_byte_en = '1' and spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_WFIFO) then
+					spiflash_to_fifo_we <= '1';
+					spiflashfifo_data_in <= spi_arria_byte_from_arria;
+				elsif(fifopiotoggle_last /= spi_flash_fifo_data_nios(8)) then
+					spiflash_to_fifo_we <= '1';
+					spiflashfifo_data_in <= spi_flash_fifo_data_nios(7 downto 0);
+				end if;
+				
         when fifowriting =>
             wcounter                        <= wcounter + 1;
-            if ( spi_flash_fifo_empty = '1' ) then
+            if ( spiflashfifo_empty = '1' ) then
                 spiflashstate <= idle;
             end if;    
         when arriafifowriting =>
             wcounter                        <= wcounter + 1;
-            if ( arriafifo_empty = '1' ) then
+            if ( spiflashfifo_empty = '1' ) then
                 spiflashstate <= idle;
             end if;  
 
@@ -403,14 +412,14 @@ begin
     spi_command_nios            <= spi_flash_cmdaddr_to_flash(31 downto 24);
     spi_addr_nios               <= spi_flash_cmdaddr_to_flash(23 downto 0);
     
-    spi_flash_readfifo          <= spi_next_byte or fifo_read_pulse;
+    read_spiflashfifo           <= spi_next_byte or fifo_read_pulse;
 
-    spi_flash_data_to_flash     <= spi_flash_fifodata_to_flash(7 downto 0) when spiflashstate = fifowriting
+    spi_flash_data_to_flash     <= spiflashfifo_data_out when spiflashstate = fifowriting
                                   else  spi_flash_data_to_flash_nios;
 
     spi_continue                <= spi_continue_programmer  when spiflashstate = programming
-                                else not spi_flash_fifo_empty when spiflashstate = fifowriting
-                                else not arriafifo_empty when spiflashstate = arriafifowriting
+                                else not spiflashfifo_empty when spiflashstate = fifowriting
+                                else not spiflashfifo_empty when spiflashstate = arriafifowriting
                                 else spi_flash_ctrl(1);
 
     spi_strobe                  <= spi_strobe_programmer when spiflashstate = programming
@@ -424,7 +433,8 @@ begin
     spi_flash_status(1)         <= spi_next_byte;
     spi_flash_status(2)         <= spi_byte_ready;
     spi_flash_status(3)         <= spi_busy;
-    spi_flash_status(6)         <= spi_flash_fifo_empty;
+	 spi_flash_status(5)			  <= spiflashfifo_full;
+    spi_flash_status(6)         <= spiflashfifo_empty;
     spi_flash_status(7)         <= '1' when spiflashstate = fifowriting
                                     else '0';
 
@@ -495,13 +505,13 @@ begin
         PORT MAP (
                 aclr => '0',
                 clock => clk100,
-                data => spi_arria_byte_from_arria,
-                rdreq => read_arriafifo,
+                data => spiflashfifo_data_in, 
+                rdreq => read_spiflashfifo,
                 sclr => not reset_n,
-                wrreq => arria_to_fifo_we,
-                empty => arriafifo_empty,
-                full  => arriafifo_full,
-                q => arriafifo_data
+                wrreq => spiflash_to_fifo_we,
+                empty => spiflashfifo_empty,
+                full  => spiflashfifo_full,
+                q => spiflashfifo_data_out
         );
 
 end architecture arch;

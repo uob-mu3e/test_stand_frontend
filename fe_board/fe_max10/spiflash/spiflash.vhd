@@ -222,7 +222,7 @@ elsif(clk'event and clk = '1') then
 
             elsif(spi_command = COMMAND_QUAD_OUTPUT_FAST_READ) then
                 
-                spi_state <= quad_read_fast;
+                spi_state <= quad_read;
                 count     <= 0;
                 toggle    <= '1';
                 spi_miso  <= 'Z';

@@ -1,7 +1,6 @@
 #include "system.h"
 #include "spiflash_commands.h"
 #include "altera_avalon_pio_regs.h"
-#include "altera_avalon_fifo_util.h"
 
 #ifndef SPIFLASH__H
 #define SPIFLASH__H
@@ -218,23 +217,16 @@ static void WriteTest(void)
         printf("\n");
     } 
 
-    printf("FIFO status %x\n", FLASH_FIFO_IN_CSR_BASE);
-
-    
-
-    altera_avalon_fifo_init(FLASH_FIFO_IN_CSR_BASE, 0, 0, 500);
-    
-    return;
 
     printf("Writing FIFO\n");
-    for(int i=0; i < 257; i++){
-        fifodata = 60+i;
-        fwrite = altera_avalon_fifo_write_fifo(FLASH_FIFO_IN_BASE, FLASH_FIFO_IN_CSR_BASE, fifodata);
-        if(fwrite)
-            printf("FIFO full at %i\n", i);
+    bool togglebit = true;
+
+    for(i =0; i < 256; i++){
+        IOWR_ALTERA_AVALON_PIO_DATA(FLASH_FIFO_DATA_BASE, (togglebit << 8) | 60+i);
+        togglebit = ! togglebit;
     }
     printf("FIFO filled\n");
-    return;
+
     printf("Writing FLASH\n");
     IOWR_ALTERA_AVALON_PIO_DATA(CMDADDRBASE, CMDADDR(COMMAND_WRITE_ENABLE,0));
     setstrobe();
@@ -450,9 +442,13 @@ static void flash_writeSector(alt_u32 addr, volatile alt_u8 * data){
     for(i =0; i < 257; i++){};
     IOWR_ALTERA_AVALON_PIO_DATA(CTRLBASE, 0);
     
-    for(i =0; i < 257; i++){
-       altera_avalon_fifo_write_fifo(FLASH_FIFO_IN_BASE, FLASH_FIFO_IN_CSR_BASE, data[i]); 
+    bool togglebit = true;
+
+    for(i =0; i < 256; i++){
+        IOWR_ALTERA_AVALON_PIO_DATA(FLASH_FIFO_DATA_BASE, (togglebit << 8) | data[i]);
+        togglebit = ! togglebit;
     }
+
     IOWR_ALTERA_AVALON_PIO_DATA(CMDADDRBASE, CMDADDR(COMMAND_WRITE_ENABLE,0));
     setstrobe();
     waitforbusy();
