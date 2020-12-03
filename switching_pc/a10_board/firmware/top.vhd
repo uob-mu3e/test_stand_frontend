@@ -125,7 +125,7 @@ architecture rtl of top is
     signal flash_ce_n_i : std_logic;
 
 
-
+        constant NLINKS_ALIGNMENT : integer := 4;
         constant NLINKS_DATA : integer := 3;
         constant NLINKS_TOTL : integer := 16;
 
@@ -608,6 +608,10 @@ begin
     -------- Event Builder --------
 
     e_data_gen : entity work.data_generator_a10
+    generic map(
+        go_to_trailer => 4,
+        go_to_sh => 3--,
+    )
     port map (
         reset               => resets(RESET_BIT_DATAGEN),
         enable_pix          => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE),
@@ -656,17 +660,19 @@ begin
     
     e_midas_event_builder : entity work.midas_event_builder
     generic map (
-        NLINKS => NLINKS_TOTL--;
+        NLINKS => NLINKS_ALIGNMENT,
+        USE_ALIGNMENT => 1,
+        LINK_FIFO_ADDR_WIDTH => 8--,
     )
     port map (
         i_clk_data          => clk_156,
         i_clk_dma           => pcie_fastclk_out,
         i_reset_data_n      => resets_n(RESET_BIT_EVENT_COUNTER),
         i_reset_dma_n       => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-        i_rx_data           => data_counter,
-        i_rx_datak          => datak_counter,
+        i_link_data         => data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0),
+        i_link_datak        => datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0),
         i_wen_reg           => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-        i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
+        i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_ALIGNMENT - 1 downto 0), -- if 1 the link is active
         i_get_n_words       => writeregs(GET_N_DMA_WORDS_REGISTER_W),
         i_dmamemhalffull    => dmamemhalffull,
         o_fifos_full        => open,--readregs(EVENT_BUILD_STATUS_REGISTER_R)(31 downto 31 - NLINKS_TOTL),
@@ -684,7 +690,7 @@ begin
         o_cnt_stream_fifo_full      => readregs(CNT_STREAM_FIFO_FULL_R),
         o_cnt_dma_halffull          => readregs(CNT_DMA_HALFFULL_R),
         o_cnt_dc_link_fifo_full     => readregs_slow(CNT_DC_LINK_FIFO_FULL_R),
-        o_cnt_skip_link_data        => readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R),
+        o_cnt_skip_link_data        => open, --readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R),
         o_cnt_skip_event_dma        => readregs(CNT_SKIP_EVENT_DMA_RAM_R),
         o_cnt_idle_not_header       => readregs(CNT_IDLE_NOT_HEADER_R)--,
     );
@@ -725,7 +731,7 @@ begin
         mem_addr_finished_out   => readmem_writeaddr_finished,
         mem_data_out            => mem_data_sc,
         mem_wren                => mem_wen_sc,
-        stateout                => LED_BRACKET,
+        stateout                => open,--LED_BRACKET,
         clk                     => clk_156--,
     );
     
@@ -806,6 +812,10 @@ begin
             readregs(RUN_NR_ACK_REGISTER_R)         <= readregs_slow(RUN_NR_ACK_REGISTER_R);
             readregs(RUN_STOP_ACK_REGISTER_R)       <= readregs_slow(RUN_STOP_ACK_REGISTER_R);
             readregs(CNT_FEB_MERGE_TIMEOUT_R)       <= readregs_slow(CNT_FEB_MERGE_TIMEOUT_R);
+            readregs(CNT_FIFO_ALMOST_FULL_R)        <= readregs_slow(CNT_FIFO_ALMOST_FULL_R);
+            readregs(CNT_DC_LINK_FIFO_FULL_R)       <= readregs_slow(CNT_DC_LINK_FIFO_FULL_R);
+            readregs(CNT_SKIP_EVENT_LINK_FIFO_R)    <= readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R);
+            readregs(SC_MAIN_STATUS_REGISTER_R)     <= readregs_slow(SC_MAIN_STATUS_REGISTER_R);
             readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= (others => '0');
             readregs(MEM_WRITEADDR_LOW_REGISTER_R)  <= (X"0000" & readmem_writeaddr_finished);
         end if;

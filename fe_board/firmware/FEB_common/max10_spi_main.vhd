@@ -42,7 +42,6 @@ architecture rtl of max10_spi_main is
     signal Ar_rw        : std_logic;
     signal Ar_data      : std_logic_vector(31 downto 0);
     signal Ar_addr_o    : std_logic_vector(6 downto 0);
-    signal Ar_done      : std_logic;
 
     type State_type is (Idle, Adrr , W_Data , Deley , R_Data );
     type s_regs is Array (0 to (lanes-1)) of std_logic_vector(((32/lanes)-1) downto 0);
@@ -92,8 +91,8 @@ architecture rtl of max10_spi_main is
 	--signal io_SPI_D3   : std_logic;
 
 begin
-	Ar_done <= o_Ar_done_s;
-    
+	o_Ar_done <= o_Ar_done_s;
+
 	-- 2/4 lane Imput
 	io_SPI_D(0) <= io_SPI_mosi;
 	io_SPI_D(1) <= io_SPI_D1;
@@ -260,7 +259,7 @@ end process;
     sync_fifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 2,
-        DATA_WIDTH  => 41,
+        DATA_WIDTH  => 40,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
         DEVICE      => "Arria V"--,
@@ -269,17 +268,15 @@ end process;
         aclr    => '0',
         data    => Ar_rw &
                     Ar_data &
-                    Ar_addr_o &
-                    Ar_done,
+                    Ar_addr_o,
                     
         rdclk   => i_clk_156,
         rdreq   => '1',
         wrclk   => i_clk_50,
         wrreq   => '1',
-        q(40)           => o_Ar_rw,
-        q(39 downto 8)  => o_Ar_data,
-        q( 7 downto 1)  => o_Ar_addr_o,
-        q(0)            => o_Ar_done--,
+        q(39)           => o_Ar_rw,
+        q(38 downto 7)  => o_Ar_data,
+        q( 6 downto 0)  => o_Ar_addr_o--,
     );
 
 ---- SPI TEST ----

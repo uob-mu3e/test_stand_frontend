@@ -184,8 +184,14 @@ begin
     o_Rst_n         <= (others => '1');--DO NOT DO THIS: (others => i_reset_n); !!! Phase will be not fixed
     o_clk_reco      <= lvds_rx_clk;
 
-    o_data_fast_parallel    <= av_rx_data_parallel;
-    o_datak                 <= av_rx_datak;
+    process (i_clk)
+    begin
+        if rising_edge(i_clk) then
+            -- spending a round of registers for timing improvement
+            o_data_fast_parallel    <= av_rx_data_parallel;
+            o_datak                 <= av_rx_datak;
+        end if;    
+    end process;
 
 --------------------------------------------------
 -- transceiver (2)
@@ -639,7 +645,7 @@ begin
 --------------------------------------------------
     sync_fifo1 : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH  => 2,
+        ADDR_WIDTH  => 4,
         DATA_WIDTH  => 8,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
@@ -657,14 +663,14 @@ begin
 
     sync_fifo2 : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH  => 2,
+        ADDR_WIDTH  => 4,
         DATA_WIDTH  => 220,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
         DEVICE      => "Arria V"--,
     )
     port map(
-        aclr            => '0',
+        aclr            => not i_lvds_align_reset_n,--'0',
         data            =>  disperr
                             & errdetect & syncstatus
                             & rx_is_lockedtodata & rx_is_lockedtoref 

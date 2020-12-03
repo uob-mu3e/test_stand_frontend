@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.dataflow_components.all;
 
 -- merge packets delimited by SOP and EOP from N input streams
 entity stream_merger is
@@ -10,7 +11,7 @@ generic (
 );
 port (
     -- input streams
-    i_rdata     : in    std_logic_vector(N*W-1 downto 0);
+    i_rdata     : in    data_array(N - 1 downto 0);
     i_rsop      : in    std_logic_vector(N-1 downto 0); -- start of packet (SOP)
     i_reop      : in    std_logic_vector(N-1 downto 0); -- end of packet (EOP)
     i_rempty    : in    std_logic_vector(N-1 downto 0);
@@ -44,9 +45,6 @@ architecture arch of stream_merger is
         return i;
     end function;
 
-    type data_array_t is array (natural range <>) of std_logic_vector(W-1 downto 0);
-    signal rdata : data_array_t(N-1 downto 0);
-
     -- current index
     signal index : integer range 0 to N-1 := 0;
 
@@ -54,10 +52,6 @@ architecture arch of stream_merger is
     signal busy : std_logic;
 
 begin
-
-    generate_rdata : for i in 0 to N-1 generate
-        rdata(i) <= i_rdata(W-1 + i*W downto i*W);
-    end generate;
 
     -- set rack for current not empty input (and not full and not reset)
     process(index, i_rempty, i_reset_n)
@@ -80,7 +74,7 @@ begin
         busy <= '0';
         --
     elsif rising_edge(i_clk) then
-        o_wdata <= rdata(index);
+        o_wdata <= i_rdata(index);
         o_wsop <= i_rsop(index);
         o_weop <= i_reop(index);
         o_we <= '0';

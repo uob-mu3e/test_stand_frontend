@@ -11,8 +11,10 @@ target_include_directories(switch_fe PRIVATE ${MIDAS_DIR}/include ${MXML_DIR} ${
 
 target_link_libraries(switch_fe mfe midas rt pthread util libmudaq_scifi libmutrig libmupix libmudaq_test dl)
 
-if(${DEBUG} EQUAL 1)
-    add_definitions(-DMY_DEBUG)
+if(DEFINED ${DEBUG})
+    if(${DEBUG} EQUAL 1)
+        add_definitions(-DMY_DEBUG)
+    endif()
 endif()
 
 install(TARGETS switch_fe DESTINATION bin)

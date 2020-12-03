@@ -83,7 +83,7 @@ begin
 		i_sync_reset		=> reset,--sync_reset,
 		i_seed   		=> random_seed(5 downto 0),
 		i_en 			=> enable_pix,    
-		o_lsfr 			=> lsfr_chip_id
+		o_lfsr 			=> lsfr_chip_id
 	);
 	
 	pix_tot_shift : entity work.linear_shift
@@ -97,7 +97,7 @@ begin
 		i_sync_reset		=> reset,--sync_reset,
 		i_seed   		=> random_seed(15 downto 10),
 		i_en 			=> enable_pix,    
-		o_lsfr 			=> lsfr_tot
+		o_lfsr 			=> lsfr_tot
 	);
 	
 	pix_row_shift : entity work.linear_shift
@@ -111,7 +111,7 @@ begin
 		i_sync_reset		=> reset,--sync_reset,
 		i_seed   		=> random_seed(7 downto 0),
 		i_en 			=> enable_pix,    
-		o_lsfr 			=> lsfr_row
+		o_lfsr 			=> lsfr_row
 	);
 	
 	pix_col_shift : entity work.linear_shift
@@ -125,7 +125,7 @@ begin
 		i_sync_reset		=> reset,--sync_reset,
 		i_seed   		=> random_seed(8 downto 1),
 		i_en 			=> enable_pix,    
-		o_lsfr 			=> lsfr_col
+		o_lfsr 			=> lsfr_col
 	);
 	
 	overflow_shift : entity work.linear_shift
@@ -139,7 +139,7 @@ begin
 		i_sync_reset		=> reset,--sync_reset,
 		i_seed   		=> random_seed,
 		i_en 			=> enable_pix,    
-		o_lsfr 			=> lsfr_overflow
+		o_lfsr 			=> lsfr_overflow
 	);
 
 process (clk,reset)

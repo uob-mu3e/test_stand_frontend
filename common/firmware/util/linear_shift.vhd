@@ -15,7 +15,7 @@ entity linear_shift is
 		i_sync_reset    : in  std_logic;
 		i_seed          : in  std_logic_vector (g_m-1 downto 0);
 		i_en            : in  std_logic;
-		o_lsfr          : out std_logic_vector (g_m-1 downto 0)
+		o_lfsr          : out std_logic_vector (g_m-1 downto 0)--;
 	);
 end linear_shift;
 
@@ -27,7 +27,7 @@ architecture rtl of linear_shift is
 
 begin
 
-	o_lsfr <= r_lfsr(g_m downto 1);
+	o_lfsr <= r_lfsr(g_m downto 1);
 	w_poly <= g_poly;
 	g_mask : for k in g_m downto 1 generate
 		w_mask(k) <= w_poly(k) and r_lfsr(1);
@@ -36,9 +36,9 @@ begin
 	p_lfsr : process (i_clk, reset_n)
 	begin 
 		if (reset_n = '0') then 
-			r_lfsr   <= (others => '1');
+			r_lfsr <= (others => '1');
 		elsif rising_edge(i_clk) then 
-			if (i_sync_reset='1') then
+			if (i_sync_reset = '1') then
 				r_lfsr	<= i_seed;
 			elsif (i_en = '1') then
 				r_lfsr	<= '0' & r_lfsr(g_m downto 2) xor w_mask;

@@ -72,14 +72,14 @@ begin
             end if;
         end if;
     end process;
-	
+
 	gen_output:
 	for I in 0 to NLINKS-1 generate
 		process(i_clk, i_reset_n)
 		begin
 			if(i_reset_n = '0')then
-				o_mem_data((I+1)*32-1 downto I*32) <= (others => '0');
-				o_mem_datak((I+1)*4-1 downto I*4) <= (others => '0');
+				o_mem_data((I+1)*32-1 downto I*32) <= x"000000BC";
+				o_mem_datak((I+1)*4-1 downto I*4) <= "0001";
 			elsif(rising_edge(i_clk))then
 				if (wren_reg(I) = '1') then
 					o_mem_data((I+1)*32-1 downto I*32) <= i_mem_data;

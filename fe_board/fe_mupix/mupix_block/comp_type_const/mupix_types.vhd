@@ -7,6 +7,12 @@ use work.daq_constants.all;
 
 package mupix_types is
 
+type ts_array_t                 is array (natural range <>) of std_logic_vector(10 downto 0);
+type row_array_t                is array (natural range <>) of std_logic_vector(7 downto 0);
+type col_array_t                is array (natural range <>) of std_logic_vector(7 downto 0);
+type ch_ID_array_t              is array (natural range <>) of std_logic_vector(5 downto 0);
+type tot_array_t                is array (natural range <>) of std_logic_vector(5 downto 0);
+
 subtype hit_t is                std_logic_vector(HITSIZE-1 downto 0);
 subtype cnt_t is                std_logic_vector(COARSECOUNTERSIZE-1  downto 0);
 subtype ts_t is                 std_logic_vector(TSRANGE);
