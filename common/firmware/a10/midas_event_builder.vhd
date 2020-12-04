@@ -409,6 +409,8 @@ begin
         e_time_merger : entity work.time_merger
             generic map (
             W => W,
+            TREE_DEPTH_w => 10,
+            TREE_DEPTH_r => 10,
             N => NLINKS--,
         )
         port map (

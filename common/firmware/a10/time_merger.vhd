@@ -353,14 +353,14 @@ begin
                             saw_header_0(i) <= '0';
                             saw_trailer_0(i) <= '0';
                         -- TODO: is this fine to quite until one is written (cnt > 0)?
-                        elsif ( i_rdata(i)(31 downto 26) = "111111" and layer_0_cnt(i) > 0  and reset_fifo_0(i) = '0' ) then
+                        elsif ( i_rdata(i)(31 downto 26) = "111111" and reset_fifo_0(i) = '0' ) then
                             saw_header_0(i) <= '1';
                             layer_0_state(i) <= "0001";
                             fifo_data_0(i) <= x"FFFFFFFF";
                             layer_0_cnt(i) <= layer_0_cnt(i) + '1';
                             fifo_wen_0(i) <= '1';
                         -- TODO: is this fine to quite until one is written (cnt > 0)?
-                        elsif ( i_rdata(I)(37 downto 36) /= "00" and layer_0_cnt(i) > 0  and reset_fifo_0(i) = '0' ) then
+                        elsif ( i_rdata(i)(37 downto 36) /= "00" and reset_fifo_0(i) = '0' ) then
                             saw_trailer_0(i) <= '1';
                             layer_0_state(i) <= "0001";
                             fifo_data_0(i) <= x"FFFFFFFF";
