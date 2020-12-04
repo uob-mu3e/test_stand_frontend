@@ -165,7 +165,7 @@ spi_strobe_nios             <= spi_flash_ctrl(0);
 spi_command_nios            <= spi_flash_cmdaddr_to_flash(31 downto 24);
 spi_addr_nios               <= spi_flash_cmdaddr_to_flash(23 downto 0);
 
-read_spiflashfifo           <= spi_next_byte or fifo_read_pulse;
+read_spiflashfifo           <= spi_next_byte;-- or fifo_read_pulse;
 
 spi_flash_data_to_flash     <= spiflashfifo_data_out when spiflashstate = fifowriting
                               else  spi_flash_data_to_flash_nios;
@@ -186,6 +186,7 @@ spi_flash_status(0)         <= spi_ack;
 spi_flash_status(1)         <= spi_next_byte;
 spi_flash_status(2)         <= spi_byte_ready;
 spi_flash_status(3)         <= spi_busy;
+
  spi_flash_status(5)			  <= spiflashfifo_full;
 spi_flash_status(6)         <= spiflashfifo_empty;
 spi_flash_status(7)         <= '1' when spiflashstate = fifowriting
@@ -246,11 +247,11 @@ scfifo_component : altera_mf.altera_mf_components.scfifo
     GENERIC MAP (
             add_ram_output_register => "ON",
             intended_device_family => "Max 10",
-            lpm_numwords => 256,
-            lpm_showahead => "OFF",
+            lpm_numwords => 512,
+            lpm_showahead => "ON",
             lpm_type => "scfifo",
             lpm_width => 8,
-            lpm_widthu => 8,
+            lpm_widthu => 9,
             overflow_checking => "ON",
             underflow_checking => "ON",
             use_eab => "ON"

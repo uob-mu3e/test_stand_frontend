@@ -100,7 +100,7 @@ struct flash_t {
             } printf("\n");
 
             printf("\n");
-            printf("  [i] => init\n");
+            printf("  [s] => status\n");
             printf("  [m] => manufacturer ID\n");
             printf("  [e] => erase test\n");
             printf("  [w] => write test\n");
@@ -110,8 +110,8 @@ struct flash_t {
             printf("Select entry ...\n");
             char cmd = wait_key();
             switch(cmd) {
-            case 'i':
-                // TODO: init
+            case 's':
+                ReadStatusRegister();
                 break;
             case 'm':
                 ReadID();
@@ -139,11 +139,14 @@ struct flash_t {
         }
     }
 
-static void ReadID(){
-    char ch =0;
+static void ReadStatusRegister(){
+    printf("Status: %x\n", (uint32_t)IORD_ALTERA_AVALON_PIO_DATA(FLASH_STATUS_BASE));
+}
 
+static void ReadID(){
     printf("ID: %x\n", (uint32_t)flash_getManufacturerID());
 }
+
 
 
 static void ReadTest(void)
@@ -222,7 +225,7 @@ static void WriteTest(void)
     bool togglebit = true;
 
     for(i =0; i < 256; i++){
-        IOWR_ALTERA_AVALON_PIO_DATA(FLASH_FIFO_DATA_BASE, (togglebit << 8) | 60+i);
+        IOWR_ALTERA_AVALON_PIO_DATA(FLASH_FIFO_DATA_BASE, (togglebit << 8) | ((60+i)&0xFF));
         togglebit = ! togglebit;
     }
     printf("FIFO filled\n");
@@ -240,7 +243,7 @@ static void WriteTest(void)
     printf("After write\n");
     for(i = 0; i < 16; i++){
         for(j = 0; j < 16; j++){
-            printf("%x \n", flash_readByte(offset + i*16+j));
+            printf("%x ", flash_readByte(offset + i*16+j));
         }
         printf("\n");
     } 
@@ -448,6 +451,7 @@ static void flash_writeSector(alt_u32 addr, volatile alt_u8 * data){
         IOWR_ALTERA_AVALON_PIO_DATA(FLASH_FIFO_DATA_BASE, (togglebit << 8) | data[i]);
         togglebit = ! togglebit;
     }
+
 
     IOWR_ALTERA_AVALON_PIO_DATA(CMDADDRBASE, CMDADDR(COMMAND_WRITE_ENABLE,0));
     setstrobe();
