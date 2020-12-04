@@ -90,7 +90,7 @@ architecture arch of top is
     signal spi_flash_ctrl                       : std_logic_vector(7 downto 0); 
     signal spi_flash_status                     : std_logic_vector(7 downto 0); 
     signal spi_flash_data_from_flash            : std_logic_vector(7 downto 0);
-    signal spi_flash_data_to_flash              : std_logic_vector(7 downto 0);
+    
     signal spi_flash_data_to_flash_nios         : std_logic_vector(7 downto 0);	
     signal spi_flash_cmdaddr_to_flash           : std_logic_vector(31 downto 0); 
 	 signal spi_flash_fifo_data_nios					: std_logic_vector(8 downto 0);
@@ -332,7 +332,6 @@ e_flashprogramming_block: entity work.flashprogramming_block
         fpga_nconfig            => fpga_nconfig, 
         fpga_data               => fpga_data,
         fpga_clk                => fpga_clk,
-        fpga_reset              => fpga_reset,
 
         -- NIOS interface
         flash_programming_ctrl  => flash_programming_ctrl,
@@ -342,7 +341,12 @@ e_flashprogramming_block: entity work.flashprogramming_block
         spi_flash_data_to_flash_nios => spi_flash_data_to_flash_nios,
         spi_flash_data_from_flash   => spi_flash_data_from_flash,
         spi_flash_status            => spi_flash_status,
-		 spi_flash_fifo_data_nios     => spi_flash_fifo_data_nios 
+		 spi_flash_fifo_data_nios     => spi_flash_fifo_data_nios, 
+		 
+		   -- Arria SPI interface
+        spi_arria_byte_from_arria            => spi_arria_byte_from_arria,
+        spi_arria_byte_en                    => spi_arria_byte_en,
+        spi_arria_addr                       => spi_arria_addr
     );
 
  

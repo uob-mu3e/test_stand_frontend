@@ -29,7 +29,6 @@ entity flashprogramming_block is
         fpga_nconfig            : out std_logic;
         fpga_data               : out std_logic_vector(7 downto 0);
         fpga_clk                : out std_logic;
-        fpga_reset              : out std_logic;
 
         -- NIOS interface
         flash_programming_ctrl  : in std_logic_vector(31 downto 0);
@@ -42,7 +41,9 @@ entity flashprogramming_block is
         spi_flash_fifo_data_nios    : in std_logic_vector(8 downto 0);
         
         -- Arria SPI interface
-        
+        spi_arria_byte_from_arria            : in std_logic_vector(7 downto 0);
+        spi_arria_byte_en                    : in std_logic;
+        spi_arria_addr                       : in std_logic_vector(6 downto 0)
     );
 end entity flashprogramming_block;
 
@@ -55,6 +56,9 @@ architecture RTL of flashprogramming_block is
         signal spi_flash_request_programmer         : std_logic;
         signal spi_flash_granted_programmer         : std_logic;
     
+        signal spi_flash_data_to_flash              : std_logic_vector(7 downto 0);
+        signal spi_flash_data_from_flash_int        : std_logic_vector(7 downto 0);
+
         signal spi_strobe_nios                      : std_logic;
         signal spi_command_nios                     : std_logic_vector(7 downto 0);
         signal spi_addr_nios                        : std_logic_vector(23 downto 0);
@@ -87,6 +91,9 @@ architecture RTL of flashprogramming_block is
 	    signal fifopiotoggle_last								: std_logic;
 
 begin
+
+    spi_flash_data_from_flash <= spi_flash_data_from_flash_int;
+
     process(reset_n, clk100)
 begin
 if ( reset_n = '0' ) then
@@ -199,7 +206,7 @@ port map(
     spi_data        => spi_flash_data_to_flash,
     spi_next_byte   => spi_next_byte,
     spi_continue    => spi_continue, 
-    spi_byte_out    => spi_flash_data_from_flash,
+    spi_byte_out    => spi_flash_data_from_flash_int,
     spi_byte_ready  => spi_byte_ready,
     -- spi to flash
     spi_sclk        => flash_sck,
@@ -223,7 +230,7 @@ port map(
     spi_command         => spi_command_programmer,
     spi_addr            => spi_addr_programmer,
     spi_continue        => spi_continue_programmer,
-    spi_byte_out        => spi_flash_data_from_flash,
+    spi_byte_out        => spi_flash_data_from_flash_int,
     spi_byte_ready      => spi_byte_ready,
     spi_flash_request   => spi_flash_request_programmer,
     spi_flash_granted   => spi_flash_granted_programmer,
