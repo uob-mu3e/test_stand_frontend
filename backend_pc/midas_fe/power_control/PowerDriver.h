@@ -26,9 +26,10 @@ class PowerDriver{
 		INT Connect();
 		virtual INT Init(){return FE_ERR_DRIVER;};
 		virtual INT ReadAll(){return FE_ERR_DRIVER;}
-		virtual std::vector<bool> GetState() { return {}; }
-		virtual std::vector<float> GetVoltage() { return {}; }
-		virtual std::vector<float> GetCurrent() { return {}; }
+		virtual void ReadESRChanged(){};
+		std::vector<bool> GetState() { return state; }
+		std::vector<float> GetVoltage() { return voltage; }
+		std::vector<float> GetCurrent() { return current; }
 		void Print();
 		
 		bool Initialized() { return initialized; }
@@ -89,7 +90,7 @@ class PowerDriver{
 		
 		
 	private:
-		bool initialized;
+		bool initialized = false;
 		int min_reply_length;
 		
 

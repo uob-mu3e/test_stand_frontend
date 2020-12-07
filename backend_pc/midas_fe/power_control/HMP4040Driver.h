@@ -28,6 +28,10 @@ class HMP4040Driver : public PowerDriver {
 		bool AskPermissionToTurnOn(int);
 		std::string idCode;
 		std::string ip;
+
+		//watch
+		void ReadESRChanged();
+
 	
 };
 

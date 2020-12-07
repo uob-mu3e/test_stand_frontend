@@ -10,9 +10,8 @@ HMP4040Driver::~HMP4040Driver()
 }
 
 
-HMP4040Driver::HMP4040Driver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf)
+HMP4040Driver::HMP4040Driver(std::string n, EQUIPMENT_INFO* inf) : PowerDriver(n,inf) 
 {
-	instrumentID = {1,2,3,4};
 	std::cout << " HMP4040 HAMEG driver with " << instrumentID.size() << " channels instantiated " << std::endl;
 }
 
@@ -24,6 +23,7 @@ INT HMP4040Driver::ConnectODB()
 	settings["port"](5025);
 	settings["reply timout"](300);
 	settings["min reply"](2); //minimum reply , 2 chars , not 3 (not fully figured out why)
+	settings["ESR"](0);
 	if(false) return FE_ERR_ODB;
 }
 
@@ -67,6 +67,7 @@ INT HMP4040Driver::Init()
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
 	//HAMEG has fixed 4 channels
+	instrumentID = {1,2,3,4};
 	int nChannels = instrumentID.size();	
 	settings["NChannels"] = nChannels;
 	
@@ -99,6 +100,8 @@ INT HMP4040Driver::Init()
 	}
 	
 	settings["Identification Code"]=idCode;
+	settings["ESR"]=ReadESR(-1,err);
+	settings["Read ESR"]=false;
 	
 	variables["State"]=state; //push to odb
 	variables["Set State"]=state; //the init function can not change the on/off state of the supply
@@ -113,6 +116,9 @@ INT HMP4040Driver::Init()
  	variables["Current Limit"].watch(  [&](midas::odb &arg) { this->CurrentLimitChanged(); }  );
  	variables["Set State"].watch(  [&](midas::odb &arg) { this->SetStateChanged(); }  );
 	variables["Demand Voltage"].watch(  [&](midas::odb &arg) { this->DemandVoltageChanged(); }  );
+
+
+	settings["Read ESR"].watch(  [&](midas::odb &arg) { this->ReadESRChanged(); }  );
  	
 	return FE_SUCCESS;
 }
@@ -157,6 +163,19 @@ INT HMP4040Driver::ReadAll()
 	}	
 	return FE_SUCCESS;
 }
+
+
+void HMP4040Driver::ReadESRChanged()
+{
+	INT err;
+	bool value = settings["Read ESR"];
+	if(value)
+	{
+		settings["ESR"] = ReadESR(-1,err);		
+		settings["Read ESR"]=false;
+	}
+}
+
 
 //************************************************************************************
 //** the STATE and SELECT OUTPUT on of is a bit confusion: from the manual

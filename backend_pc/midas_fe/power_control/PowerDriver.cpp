@@ -5,11 +5,8 @@ PowerDriver::PowerDriver()
 	std::cout << "Warning: empty base class instantiated" << std::endl;
 }
 
-PowerDriver::PowerDriver(std::string n, EQUIPMENT_INFO* inf)
+PowerDriver::PowerDriver(std::string n, EQUIPMENT_INFO* inf) : info{inf}, name{n}
 {
-	name=n;
-	info=inf;
-	initialized=false;
 }
 
 
@@ -21,8 +18,7 @@ INT PowerDriver::ConnectODB()
 	settings["NChannels"](2);
 	settings["Global Reset On FE Start"](true);
 	settings["Read ESR"](false);
-	settings["ESR"](0);
-  
+
 	//variables
 	variables.connect("/Equipment/"+name+"/Variables");
   

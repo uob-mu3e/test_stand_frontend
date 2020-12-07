@@ -43,7 +43,7 @@ INT GenesysDriver::ConnectODB()
 //didn't find a cleaner way to init the array entries, have a prior initialized 'variables', and not overwrite Set values
 void GenesysDriver::InitODBArray()
 {
-	midas::odb settings_array = { {"Names",std::array<std::string,16>()} , {"Blink",std::array<bool,16>()} };
+	midas::odb settings_array = { {"Names",std::array<std::string,16>()} , {"Blink",std::array<bool,16>()} , {"ESR",std::array<int,16>()} };
 	settings_array.connect("/Equipment/"+name+"/Settings");
 }
 
@@ -117,6 +117,8 @@ INT GenesysDriver::Init()
 
 		interlock_enabled[i]=true;
 		SetInterlock(i,interlock_enabled[i],err);
+		
+		settings["ESR"]=ReadESR(i,err);
   	
 		if(err!=FE_SUCCESS) return err;  	
 	}
@@ -135,6 +137,8 @@ INT GenesysDriver::Init()
  	// user arrays.
 	settings["Names"].resize(nChannels);
  	settings["Blink"].resize(nChannels);
+ 	settings["ESR"].resize(nChannels);
+ 	settings["Read ESR"]=false;
  	
   
 	// ***** set up watch ***** //
@@ -143,6 +147,8 @@ INT GenesysDriver::Init()
 	variables["Current Limit"].watch(  [&](midas::odb &arg) { this->CurrentLimitChanged(); }  );
 	
 	settings["Blink"].watch(  [&](midas::odb &arg) { this->BlinkChanged(); }  );
+	settings["Read ESR"].watch(  [&](midas::odb &arg) { this->ReadESRChanged(); }  );
+
  
 
 
@@ -178,7 +184,21 @@ void GenesysDriver::BlinkChanged()
 	
 }
 
+void GenesysDriver::ReadESRChanged()
+{
+	INT err;
+	bool value = settings["Read ESR"];
+	cm_msg(MINFO, "Genesys supply ... ", "ESR read request set to %d",value); 
+	if(value)
+	{
+		for(unsigned int i=0; i< instrumentID.size(); i++)
+		{
+			settings["ESR"][i] = ReadESR(i,err);		
+		}
+		settings["Read ESR"]=false;
+	}
 
+}
 
 
 // **************  Set Functions ************** //

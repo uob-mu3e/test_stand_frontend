@@ -29,11 +29,6 @@ class GenesysDriver : public PowerDriver
 		INT Init();
 		INT ReadAll();
 		
-		std::vector<bool> GetState() { return state; }
-		std::vector<float> GetVoltage() { return voltage; }
-		std::vector<float> GetCurrent() { return current; }
-
-
 	
 	private:
 	
@@ -42,6 +37,7 @@ class GenesysDriver : public PowerDriver
 		void SetBlink(int,bool,INT&);
 		void SetInterlock(int,bool,INT&);
 		bool AskPermissionToTurnOn(int);
+		void ReadESRChanged();
 
 		void BlinkChanged();
 		void InitODBArray();
