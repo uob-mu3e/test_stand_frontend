@@ -52,6 +52,7 @@ constant MUPIX_DATAPATH_ADDR_START          : integer := 96; --(x"60") --(start 
         constant MP_DATA_GEN_FULL_STEAM_BIT :  integer := 4; -- if set: hit output probability is 1
         constant MP_DATA_GEN_SYNC_BIT       :  integer := 5; -- if set: generator seed is the same on all boards else: generator seed depends on ref_addr from backplane
         constant MP_DATA_GEN_ENGAGE_BIT     :  integer := 16; -- if set: use hits from generator, datapath is not connected to link
+        constant MP_DATA_GEN_SORT_IN_BIT    :  integer := 17; -- if set: generated hits are inserted after the data_unpacker
         constant MP_DATA_GEN_ENABLE_BIT     :  integer := 31; -- if set: enable hit generation (set MP_DATA_GEN_ENGAGE_BIT to actually replace sorter output with these hits)
 
 end package mupix_registers;
