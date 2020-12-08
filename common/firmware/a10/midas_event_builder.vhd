@@ -121,7 +121,7 @@ entity midas_event_builder is
     signal shop : std_logic_vector(NLINKS-1 downto 0);
     signal stream_in_rempty : std_logic_vector(NLINKS-1 downto 0);
     signal stream_wdata, stream_rdata : std_logic_vector(35 downto 0);
-    signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
+    signal stream_rempty, time_rempty, stream_rack, stream_wfull, stream_we : std_logic;
     signal link_data : std_logic_vector(31 downto 0);
     signal link_datak : std_logic_vector(3 downto 0);
     signal link_header, link_trailer, link_error : std_logic;
@@ -425,14 +425,34 @@ begin
             o_rack                  => link_fifo_ren,
             
             -- output stream
-            o_rdata(65 downto 32)   => stream_rdata(33 downto 0),
-            i_ren                   => stream_rack,
-            o_empty                 => stream_rempty,
+            o_rdata(65 downto 32)   => stream_wdata(33 downto 0),
+            i_ren                   => not time_rempty and not stream_wfull,
+            o_empty                 => time_rempty,
             
             -- error outputs
             
             i_reset_n               => i_reset_dma_n,
             i_clk                   => i_clk_dma--,
+        );
+        
+        stream_wdata(35 downto 34) <= "00";
+        stream_rdata(35 downto 34) <= "00";
+        
+        e_stream_fifo : entity work.ip_scfifo
+        generic map (
+            ADDR_WIDTH => 8,
+            DATA_WIDTH => 34,
+            DEVICE => "Arria 10"--,
+        )
+        port map (
+            q               => stream_rdata(33 downto 0),
+            empty           => stream_rempty,
+            rdreq           => stream_rack,
+            data            => stream_wdata(33 downto 0),
+            full            => stream_wfull,
+            wrreq           => not time_rempty and not stream_wfull,
+            sclr            => reset_dma,
+            clock           => i_clk_dma--,
         );
         
         link_data <= stream_rdata(31 downto 0);

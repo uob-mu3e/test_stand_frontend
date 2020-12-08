@@ -27,7 +27,7 @@ struct mupix_datapath_t {
                 printf("  [4] => insert after sorter\n");
             }
             if((sc->ram->data[0xFF65] >> 4) & 1U){
-                printf("\n RATE: Full Steam\n");
+                printf("\n RATE: Full Stream\n");
             }else{
                 printf("\n RATE:0x%01x\n", 0xF - (sc->ram->data[0xFF65] & 0xF) + 1);
             }
