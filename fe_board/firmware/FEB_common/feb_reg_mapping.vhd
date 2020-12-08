@@ -42,11 +42,21 @@ port (
 end entity;
 
 architecture rtl of feb_reg_mapping is
+-- outputs
     signal reg_cmdlen               : std_logic_vector(31 downto 0);
     signal reg_offset               : std_logic_vector(31 downto 0);
     signal reg_reset_bypass         : std_logic_vector(15 downto 0);
     signal reg_reset_bypass_payload : std_logic_vector(31 downto 0);
     signal fpga_id_reg              : std_logic_vector(N_LINKS*16-1 downto 0);
+
+-- inputs
+    signal run_state_156            : run_state_t;
+    signal merger_rate_count        : std_logic_vector(31 downto 0);
+    signal reset_phase              : std_logic_vector(15 downto 0);
+    signal arriaV_temperature       : std_logic_vector( 7 downto 0);
+    signal fpga_type                : std_logic_vector( 5 downto 0);
+    signal adc_reg                  : reg32array_t    ( 4 downto 0);
+
 begin
 
     o_reg_cmdlen                <= reg_cmdlen;

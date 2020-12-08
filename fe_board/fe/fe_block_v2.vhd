@@ -634,9 +634,9 @@ begin
     );
    
    --max 10 adc data reg for testing in He--
-process(i_nios_clk) 
+process(i_clk_156) 
 begin
-    if rising_edge(i_nios_clk) then
+    if rising_edge(i_clk_156) then
         if(SPI_rw= '0') then
            adc_reg(to_integer(unsigned(SPI_addr_o))) <= i_adc_data_o;
         end if;
