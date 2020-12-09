@@ -27,12 +27,12 @@ class PowerDriver{
 		virtual INT Init(){return FE_ERR_DRIVER;};
 		virtual INT ReadAll(){return FE_ERR_DRIVER;}
 		virtual void ReadESRChanged(){};
-		std::vector<bool> GetState() { return state; }
-		std::vector<float> GetVoltage() { return voltage; }
-		std::vector<float> GetCurrent() { return current; }
-		void Print();
+		std::vector<bool> GetState() const { return state; }
+		std::vector<float> GetVoltage() const { return voltage; }
+		std::vector<float> GetCurrent() const { return current; }
+		void Print(); 
 		
-		bool Initialized() { return initialized; }
+		bool Initialized() const { return initialized; }
 		bool Enabled();
 		void SetInitialized() { initialized = true; }
 		std::string ReadIDCode(int,INT&);
@@ -44,7 +44,7 @@ class PowerDriver{
 		float ReadCurrent(int,INT&);
 		int ReadESR(int,INT&);
 		
-
+		EQUIPMENT_INFO GetInfo() { return *info; } //by value, so you cant modify the original
 		
 
 	protected:

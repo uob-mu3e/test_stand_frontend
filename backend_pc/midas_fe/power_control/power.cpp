@@ -64,6 +64,9 @@ INT read_power(char *pevent, INT off);
 /*-- Equipment list ------------------------------------------------*/
 
 EQUIPMENT equipment[] = {
+	
+	
+
 
    {"Genesys",                       /* equipment name */
     {121, 0,                       /* event ID, trigger mask */
@@ -72,14 +75,13 @@ EQUIPMENT equipment[] = {
      0,                         /* event source */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
-     RO_ALWAYS,        /* read when running and on transitions */
+     RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
      10000,                     /* read every 10 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
-     1,                         /* log history every event */
+     0,                         /* log history every event */
      "", "", ""} ,                  /* device driver list */
      read_power,
-    NULL,                       /* init string */
     },
     
     {"HAMEG1",                       /* equipment name */
@@ -89,14 +91,13 @@ EQUIPMENT equipment[] = {
      	0,                         /* event source */
      	"MIDAS",                   /* format */
      	TRUE,                      /* enabled */
-     	RO_ALWAYS,        /* read when running and on transitions */
+     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
      	10000,                     /* read every 10 sec */
      	0,                         /* stop run after this event limit */
     	0,                         /* number of sub events */
-     	1,                         /* log history every event */
+     	0,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
      	read_power,
-    	NULL,                       /* init string */
     },
     
     {""} //why is there actually this empty one here? FW
@@ -175,6 +176,7 @@ INT frontend_init()
 		{
 			drivers.at(eqID)->SetInitialized();
 			drivers.at(eqID)->Print();
+			std::cout << " read setting " << equipment[eqID].info.read_on <<std::endl;
 			set_equipment_status(equipment[eqID].name, "Ok", "greenLight");
 		}
 		
@@ -238,14 +240,21 @@ INT read_power(char *pevent, INT off)
 				cm_msg(MERROR, "power write bank", "Error in writing bank, driver class %s not recognized",typeid(*d).name() );
 				continue;
 			} 
-		  	bk_create(pevent, "LVLV", TID_FLOAT, (void **)&pdata);
-			std::cout << " make bank " << bk_name << std::endl;
+		  	bk_create(pevent,bk_name, TID_FLOAT, (void **)&pdata);
+			//std::cout << " make bank " << bk_name << " read setting " << d->GetInfo().read_on <<std::endl;
+			
 			std::vector<float> voltage = d->GetVoltage();
 			std::vector<float> current = d->GetCurrent();
-			for(auto v : voltage)	*pdata++ = v;
-			for(auto v : current)	*pdata++ = v;
+			if(voltage.size() == current.size())
+			{
+				for(unsigned int iChannel =0; iChannel < voltage.size(); iChannel++)
+				{
+					*pdata++ = voltage.at(iChannel);
+					*pdata++ = current.at(iChannel);
+				}
+			}
   			bk_close(pevent, pdata);
-			std::cout << " close bank " << bk_name << std::endl; 
+			//std::cout << " close bank " << bk_name << std::endl; 
 		}
  		else 
  		{
