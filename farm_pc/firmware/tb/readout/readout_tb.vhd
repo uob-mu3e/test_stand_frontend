@@ -13,7 +13,7 @@ end entity;
 
 architecture behav of readout_tb is
   --  Specifies which entity is bound with the component.
-      constant NLINKS : integer := 4;
+      constant NLINKS : integer := 64;
       signal clk : std_logic;
       signal clk_half : std_logic;
   	  signal reset_n : std_logic := '1';
@@ -52,6 +52,7 @@ architecture behav of readout_tb is
 
       signal rx_data : std_logic_vector(NLINKS * 32 - 1 downto 0);
       signal rx_datak : std_logic_vector(NLINKS * 4 - 1 downto 0);
+      signal mask_n : std_logic_vector(NLINKS - 1 downto 0);
   		  		
   		constant ckTime: 		time	:= 10 ns;
 		
@@ -188,13 +189,30 @@ e_data_gen_tiles : entity work.data_generator_a10
 
 
 
-rx_data <= data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2;-- & x"000000BC";--data_tile_generated3;
-rx_datak <= datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2;-- & "0001";--datak_tile_generated3;
+rx_data(36 * 32 - 1 downto 0) <= data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 & data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 &
+           data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 & data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 &
+           data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 & data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 &
+           data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 & data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 &
+           data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2;
+
+rx_datak(36 * 4 - 1 downto 0) <= datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 &
+            datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 &
+            datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 &
+            datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 &
+            datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2;
+
+rx_data(NLINKS * 32 - 1 downto 36 * 32) <= (others => '0');
+rx_datak(NLINKS * 4 - 1 downto 36 * 4) <= (others => '0');
+
+mask_n(3 downto 0) <= "1111";
+mask_n(NLINKS - 1 downto 4) <= (others => '0');
 
 e_midas_event_builder : entity work.midas_event_builder
   generic map (
     NLINKS => NLINKS,
     USE_ALIGNMENT => 1,
+    TREE_w => 4,
+    TREE_r => 4,
     LINK_FIFO_ADDR_WIDTH => 8--;
   )
   port map(
@@ -202,10 +220,10 @@ e_midas_event_builder : entity work.midas_event_builder
     i_clk_dma  => clk_half,
     i_reset_data_n  => reset_n,
     i_reset_dma_n => reset_n,
-    i_link_data  => rx_data,
+    i_link_data => rx_data,
     i_link_datak => rx_datak,
     i_wen_reg  => '1',
-    i_link_mask_n => "1111",--"01011",
+    i_link_mask_n => mask_n,--"01011",
     i_get_n_words  => x"00000100",
     i_dmamemhalffull => '0',
     o_fifos_full => open,

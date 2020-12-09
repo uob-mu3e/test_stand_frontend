@@ -14,5 +14,11 @@ package dataflow_components is
 	
 	type data_array is array (natural range <>) of std_logic_vector(37 downto 0);
 	type hit_array_t is array (7 downto 0) of std_logic_vector(31 downto 0);
+
+	type fifo_array_2 is array(natural range <>) of std_logic_vector(1 downto 0);
+	type fifo_array_4 is array(natural range <>) of std_logic_vector(3 downto 0);
+	type fifo_array_32 is array(natural range <>) of std_logic_vector(31 downto 0);
+    type fifo_array_64 is array(natural range <>) of std_logic_vector(63 downto 0);
+    type fifo_array_66 is array(natural range <>) of std_logic_vector(65 downto 0);
 	
 end package dataflow_components;

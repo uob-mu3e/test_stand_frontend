@@ -125,7 +125,7 @@ architecture rtl of top is
     signal flash_ce_n_i : std_logic;
 
 
-        constant NLINKS_ALIGNMENT : integer := 4;
+        constant NLINKS_ALIGNMENT : integer := 36;
         constant NLINKS_DATA : integer := 3;
         constant NLINKS_TOTL : integer := 16;
 
@@ -284,6 +284,8 @@ architecture rtl of top is
         signal dma_end_event_test : std_logic;
         signal data_counter : std_logic_vector(32*NLINKS_TOTL-1 downto 0);
         signal datak_counter : std_logic_vector(4*NLINKS_TOTL-1 downto 0);
+        signal data_bank : std_logic_vector(32*64-1 downto 0);
+        signal datak_bank : std_logic_vector(32*4-1 downto 0);
         signal feb_merger_timeouts : std_logic_vector(NLINKS_TOTL-1 downto 0);
 
 begin
@@ -657,10 +659,18 @@ begin
         end if;
     end if;
     end process;
+                                            
+    data_bank <= (others => '0');
+    datak_bank <= (others => '0');
     
+    gen_bank_data : FOR j in 0 to 33 GENERATE
+        data_bank(31 + 32*j downto 32*j) <=  data_counter(31 downto 0);
+        datak_bank(3 + 4*j downto 4*j) <=  datak_counter(3 downto 0);
+    END GENERATE;
+   
     e_midas_event_builder : entity work.midas_event_builder
     generic map (
-        NLINKS => NLINKS_ALIGNMENT,
+        NLINKS => 64,
         USE_ALIGNMENT => 1,
         LINK_FIFO_ADDR_WIDTH => 10--,
     )
@@ -669,10 +679,10 @@ begin
         i_clk_dma           => pcie_fastclk_out,
         i_reset_data_n      => resets_n(RESET_BIT_EVENT_COUNTER),
         i_reset_dma_n       => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-        i_link_data         => data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0),
-        i_link_datak        => datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0),
+        i_link_data         => data_bank,
+        i_link_datak        => datak_bank,
         i_wen_reg           => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-        i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_ALIGNMENT - 1 downto 0), -- if 1 the link is active
+        i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W) & writeregs(DATA_LINK_MASK_REGISTER_W), -- if 1 the link is active
         i_get_n_words       => writeregs(GET_N_DMA_WORDS_REGISTER_W),
         i_dmamemhalffull    => dmamemhalffull,
         o_fifos_full        => open,--readregs(EVENT_BUILD_STATUS_REGISTER_R)(31 downto 31 - NLINKS_TOTL),
@@ -918,3 +928,4 @@ begin
     );
 
 end architecture;
+

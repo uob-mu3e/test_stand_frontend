@@ -15,6 +15,8 @@ entity midas_event_builder is
             W : integer := 66;
             NLINKS : integer := 4;
             LINK_FIFO_ADDR_WIDTH : integer := 10;
+            TREE_w : integer := 10;
+            TREE_r : integer := 10;
             USE_ALIGNMENT : integer := 0--;
     );
     port(
@@ -409,8 +411,8 @@ begin
         e_time_merger : entity work.time_merger
             generic map (
             W => W,
-            TREE_DEPTH_w => 10,
-            TREE_DEPTH_r => 10,
+            TREE_DEPTH_w => TREE_w,
+            TREE_DEPTH_r => TREE_r,
             N => NLINKS--,
         )
         port map (
