@@ -110,6 +110,8 @@ begin
                         --
                     elsif ( i_mask_n(i) = '0' or i_mask_n(i + size) = '0' ) then
                         layer_state(i) <= "1111";
+                    elsif ( i_fifo_empty(i) = '1' or i_fifo_empty(i + size) = '1' ) then
+                        --
                     else
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
                         if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' and reset_fifo(i) = '0' ) then

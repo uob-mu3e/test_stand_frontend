@@ -197,7 +197,7 @@ rx_data <= x"00000000"        & x"00000000"          & x"00000000"          & x"
                  data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated &
                  data_pix_generated & data_pix_generated & data_pix_generated & data_scifi_generated ;
 
-rx_datak <= x"0"                & x"0"                  & x"0"                  & x"0"              & x"0"                  & x"0"                  &        
+rx_datak <=   x"0"                & x"0"                  & x"0"                  & x"0"              &        
               x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                & 
               x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                & 
               x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                &
@@ -205,15 +205,16 @@ rx_datak <= x"0"                & x"0"                  & x"0"                  
               datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & 
               datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & 
               datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated &
-              datak_pix_generated & datak_pix_generated ;
-mask_n <= x"000000000000000F";
+              datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated ;
+mask_n <= x"0000000FFFFFFFFF";
+--mask_n <= x"000000000000000F";
 
 e_midas_event_builder : entity work.midas_event_builder
   generic map (
     NLINKS => NLINKS,
     USE_ALIGNMENT => 1,
-    TREE_w => 5,
-    TREE_r => 5,
+    TREE_w => 7,
+    TREE_r => 7,
     LINK_FIFO_ADDR_WIDTH => 8--;
   )
   port map(

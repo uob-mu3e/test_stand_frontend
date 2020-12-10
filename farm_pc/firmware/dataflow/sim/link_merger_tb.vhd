@@ -113,7 +113,7 @@ begin
                  data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated & data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated &
                  data_pix_generated & data_scifi_generated & data_pix_generated & data_scifi_generated ;
 
-    link_datak <= x"0"                & x"0"                  & x"0"                  & x"0"              & x"0"                  & x"0"                  &        
+    link_datak <= x"0"                & x"0"                  & x"0"                  & x"0"              & 
                   x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                & 
                   x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                & 
                   x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                &
@@ -121,7 +121,7 @@ begin
                   datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & 
                   datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & 
                   datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated &
-                  datak_pix_generated & datak_scifi_generated ;
+                  datak_pix_generated & datak_scifi_generated & datak_pix_generated & datak_scifi_generated ;
                  
 --     link_mask_n <= "1101110111011101110111011101110111";
     --link_mask_n <= "11111111111111111111111111111111";
