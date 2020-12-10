@@ -95,6 +95,12 @@ architecture arch of time_merger is
     signal fifo_empty_4, fifo_ren_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
     signal fifo_empty_5, fifo_ren_5, fifo_ren_5_reg : std_logic_vector(generate_fifos(5) - 1 downto 0);
 
+    signal mask_n_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+    signal mask_n_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
+    signal mask_n_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
+    signal mask_n_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    signal mask_n_5 : std_logic_vector(generate_fifos(5) - 1 downto 0);
+
     constant size_last : integer := generate_fifos(5)/2;
     signal fifo_data_6              : fifo_array_66(generate_fifos(6) - 1 downto 0);
     signal fifo_q_6, fifo_q_6_reg   : fifo_array_66(generate_fifos(6) - 1 downto 0);
@@ -223,6 +229,8 @@ begin
             -- check for time wait
             if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and rack(I) = '0' and ( merge_state = get_time1 or merge_state = get_time2 ) ) then
                 time_wait(I) <= '0';
+            elsif ( i_mask_n(I) = '0' ) then
+                time_wait(I) <= '0';
             else
                 time_wait(I) <= '1';
             end if;
@@ -230,17 +238,23 @@ begin
             -- check for state change in merge_hits state
             if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state =  merge_hits ) then
                 sh_state(I) <= '0';
+            elsif ( i_mask_n(I) = '0' ) then
+                sh_state(I) <= '0';
             else
                 sh_state(I) <= '1';
             end if;
             
             if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state =  merge_hits ) then
                 pre_state(I) <= '0';
+            elsif ( i_mask_n(I) = '0' ) then
+                pre_state(I) <= '0';
             else
                 pre_state(I) <= '1';
             end if;
             
             if ( i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state =  merge_hits ) then
+                tr_state(I) <= '0';
+            elsif ( i_mask_n(I) = '0' ) then
                 tr_state(I) <= '0';
             else
                 tr_state(I) <= '1';
@@ -277,7 +291,7 @@ begin
             case layer_0_state(i) is
                 
                 when "0000" =>
-                    if ( i_mask_n(I) = '0' ) then
+                    if ( i_mask_n(i) = '0' ) then
                         saw_header_0(i) <= '1';
                         saw_trailer_0(i) <= '1';
                         layer_0_state(i) <= "0001";
@@ -361,10 +375,12 @@ begin
         i_fifo_empty    => fifo_empty_0,
         i_fifo_ren      => fifo_ren_1,
         i_merge_state   => merger_state_signal,
+        i_mask_n        => i_mask_n,
 
         o_fifo_q        => fifo_q_1,
         o_fifo_empty    => fifo_empty_1,
         o_fifo_ren      => fifo_ren_0,
+        o_mask_n        => mask_n_1,
 
         i_reset_n       => i_reset_n,
         i_clk           => i_clk--,
@@ -381,10 +397,12 @@ begin
         i_fifo_empty    => fifo_empty_1,
         i_fifo_ren      => fifo_ren_2,
         i_merge_state   => merger_state_signal,
+        i_mask_n        => mask_n_1,
 
         o_fifo_q        => fifo_q_2,
         o_fifo_empty    => fifo_empty_2,
         o_fifo_ren      => fifo_ren_1,
+        o_mask_n        => mask_n_2,
 
         i_reset_n       => i_reset_n,
         i_clk           => i_clk--,
@@ -401,10 +419,12 @@ begin
         i_fifo_empty    => fifo_empty_2,
         i_fifo_ren      => fifo_ren_3,
         i_merge_state   => merger_state_signal,
+        i_mask_n        => mask_n_2,
 
         o_fifo_q        => fifo_q_3,
         o_fifo_empty    => fifo_empty_3,
         o_fifo_ren      => fifo_ren_2,
+        o_mask_n        => mask_n_3,
 
         i_reset_n       => i_reset_n,
         i_clk           => i_clk--,
@@ -421,10 +441,12 @@ begin
         i_fifo_empty    => fifo_empty_3,
         i_fifo_ren      => fifo_ren_4,
         i_merge_state   => merger_state_signal,
+        i_mask_n        => mask_n_3,
 
         o_fifo_q        => fifo_q_4,
         o_fifo_empty    => fifo_empty_4,
         o_fifo_ren      => fifo_ren_3,
+        o_mask_n        => mask_n_4,
 
         i_reset_n       => i_reset_n,
         i_clk           => i_clk--,
@@ -441,10 +463,12 @@ begin
         i_fifo_empty    => fifo_empty_4,
         i_fifo_ren      => fifo_ren_5,
         i_merge_state   => merger_state_signal,
+        i_mask_n        => mask_n_4,
 
         o_fifo_q        => fifo_q_5,
         o_fifo_empty    => fifo_empty_5,
         o_fifo_ren      => fifo_ren_4,
+        o_mask_n        => mask_n_5,
 
         i_reset_n       => i_reset_n,
         i_clk           => i_clk--,

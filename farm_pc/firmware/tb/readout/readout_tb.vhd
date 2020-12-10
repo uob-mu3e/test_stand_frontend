@@ -187,32 +187,33 @@ e_data_gen_tiles : entity work.data_generator_a10
          state_out             => open--,
  );
 
+rx_data <= x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        &
+                 x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        & x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        &
+                 x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        & x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        &
+                 x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        & x"00000000"        & x"00000000"          & x"00000000"          & x"00000000"        &
+                 data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & 
+                 data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated &
+                 data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated &
+                 data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated & data_pix_generated &
+                 data_pix_generated & data_pix_generated & data_pix_generated & data_scifi_generated ;
 
-
-rx_data(36 * 32 - 1 downto 0) <= data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 & data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 &
-           data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 & data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 &
-           data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 & data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 &
-           data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 & data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2 &
-           data_pix_generated & data_scifi_generated & data_tile_generated & data_tile_generated2;
-
-rx_datak(36 * 4 - 1 downto 0) <= datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 &
-            datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 &
-            datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 &
-            datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 & datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2 &
-            datak_pix_generated & datak_scifi_generated & datak_tile_generated & datak_tile_generated2;
-
-rx_data(NLINKS * 32 - 1 downto 36 * 32) <= (others => '0');
-rx_datak(NLINKS * 4 - 1 downto 36 * 4) <= (others => '0');
-
-mask_n(3 downto 0) <= "1111";
-mask_n(NLINKS - 1 downto 4) <= (others => '0');
+rx_datak <= x"0"                & x"0"                  & x"0"                  & x"0"              & x"0"                  & x"0"                  &        
+              x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                & 
+              x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                & 
+              x"0"                & x"0"                  &  x"0"                 & x"0"              & x"0"                  & x"0"                  & x"0"                  & x"0"                &
+              datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & 
+              datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & 
+              datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & 
+              datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated &
+              datak_pix_generated & datak_pix_generated ;
+mask_n <= x"000000000000000F";
 
 e_midas_event_builder : entity work.midas_event_builder
   generic map (
     NLINKS => NLINKS,
     USE_ALIGNMENT => 1,
-    TREE_w => 4,
-    TREE_r => 4,
+    TREE_w => 5,
+    TREE_r => 5,
     LINK_FIFO_ADDR_WIDTH => 8--;
   )
   port map(

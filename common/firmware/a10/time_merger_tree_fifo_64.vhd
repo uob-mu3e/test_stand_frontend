@@ -21,11 +21,13 @@ port (
     i_fifo_empty: in std_logic_vector(compare_fifos - 1 downto 0);
     i_fifo_ren  : in std_logic_vector(gen_fifos - 1 downto 0);
     i_merge_state : in std_logic;
+    i_mask_n    : in std_logic_vector(compare_fifos - 1 downto 0);
 
     -- output
     o_fifo_q    : out fifo_array_64(gen_fifos - 1 downto 0);
     o_fifo_empty: out std_logic_vector(gen_fifos - 1 downto 0);
     o_fifo_ren  : out std_logic_vector(compare_fifos - 1 downto 0);
+    o_mask_n    : out std_logic_vector(gen_fifos - 1 downto 0);
     
     i_reset_n   : in    std_logic;
     i_clk       : in    std_logic--;
@@ -37,27 +39,23 @@ architecture arch of time_merger_tree_fifo_64 is
     -- merger signals
     constant size : integer := compare_fifos/2;
     
-    signal fifo_data : fifo_array_64(gen_fifos - 1 downto 0);
-    signal fifo_q : fifo_array_64(gen_fifos - 1 downto 0);
-    signal fifo_q_reg : fifo_array_64(gen_fifos - 1 downto 0);
+    signal fifo_data, fifo_q, fifo_q_reg : fifo_array_64(gen_fifos - 1 downto 0);
     signal wait_cnt : fifo_array_2(gen_fifos - 1 downto 0);
-    signal fifo_ren_reg : std_logic_vector(compare_fifos - 1 downto 0);
-    signal fifo_ren : std_logic_vector(compare_fifos - 1 downto 0);
-    signal fifo_wen : std_logic_vector(gen_fifos - 1 downto 0);
-    signal fifo_full : std_logic_vector(gen_fifos - 1 downto 0);
-    signal fifo_empty : std_logic_vector(gen_fifos - 1 downto 0);
-    signal fifo_empty_reg : std_logic_vector(gen_fifos - 1 downto 0);
-    signal reset_fifo : std_logic_vector(gen_fifos - 1 downto 0);
     signal layer_state : fifo_array_4(gen_fifos - 1 downto 0);
+    signal fifo_ren_reg, fifo_ren : std_logic_vector(compare_fifos - 1 downto 0);
+    signal fifo_wen, fifo_full, fifo_empty, fifo_empty_reg, reset_fifo : std_logic_vector(gen_fifos - 1 downto 0);
     
 begin
 
-    o_fifo_ren <= fifo_ren_reg;
+    o_fifo_ren <= fifo_ren;
     o_fifo_q <= fifo_q;
     o_fifo_empty <= fifo_empty;
 
     tree_fifos:
     FOR i in 0 to gen_fifos - 1 GENERATE
+
+        o_mask_n(i) <= i_mask_n(i) or i_mask_n(i + size);
+
         e_link_fifo : entity work.ip_dcfifo_mixed_widths
         generic map(
             ADDR_WIDTH_w => TREE_w,
@@ -110,6 +108,8 @@ begin
                 when "0000" =>
                     if ( fifo_full(i) = '1' or reset_fifo(i) = '1' or wait_cnt(i) /= "11" ) then
                         --
+                    elsif ( i_mask_n(i) = '0' or i_mask_n(i + size) = '0' ) then
+                        layer_state(i) <= "1111";
                     else
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
                         if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' and reset_fifo(i) = '0' ) then
@@ -195,6 +195,20 @@ begin
                         end if;
                     else
                         -- TODO: wait for fifo_0 i+size here --> error counter?
+                    end if;
+                when "1111" =>
+                    if ( i_mask_n(i) = '0' and fifo_full(i) = '0' and reset_fifo(i) = '0' ) then
+                        if ( i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0'  and i_fifo_q(i + size)(63 downto 32) /= x"00000000" ) then 
+                            fifo_data(i) <= i_fifo_q(i + size);    
+                            fifo_wen(i) <= '1';
+                            fifo_ren(i + size) <= '1';
+                        end if;
+                    elsif ( i_mask_n(i + size ) = '0' and fifo_full(i) = '0' and reset_fifo(i) = '0' ) then
+                        if ( i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' and i_fifo_q(i)(63 downto 32) /= x"00000000" ) then 
+                            fifo_data(i) <= i_fifo_q(i);    
+                            fifo_wen(i) <= '1';
+                            fifo_ren(i) <= '1';
+                        end if;
                     end if;
                 when others =>
                     layer_state(i) <= (others => '0');

@@ -16,6 +16,8 @@ entity link_merger is
     generic(
         W : integer := 66;
         NLINKS_TOTL : integer := 3;
+        TREE_DEPTH_w : positive := 8;
+        TREE_DEPTH_r : positive := 8;
         LINK_FIFO_ADDR_WIDTH : integer := 10--;
     );
     port (
@@ -157,6 +159,8 @@ entity link_merger is
     e_time_merger : entity work.time_merger
         generic map (
         W => W,
+        TREE_DEPTH_w  => TREE_DEPTH_w,
+        TREE_DEPTH_r  => TREE_DEPTH_r,
         N => NLINKS_TOTL--,
     )
     port map (
