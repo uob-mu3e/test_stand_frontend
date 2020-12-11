@@ -17,14 +17,14 @@ generic (
 );
 port (
     -- input 
-    i_fifo_q    : in fifo_array_64(compare_fifos - 1 downto 0);
+    i_fifo_q    : in fifo_array_76(compare_fifos - 1 downto 0);
     i_fifo_empty: in std_logic_vector(compare_fifos - 1 downto 0);
     i_fifo_ren  : in std_logic_vector(gen_fifos - 1 downto 0);
     i_merge_state : in std_logic;
     i_mask_n    : in std_logic_vector(compare_fifos - 1 downto 0);
 
     -- output
-    o_fifo_q    : out fifo_array_64(gen_fifos - 1 downto 0);
+    o_fifo_q    : out fifo_array_76(gen_fifos - 1 downto 0);
     o_fifo_empty: out std_logic_vector(gen_fifos - 1 downto 0);
     o_fifo_ren  : out std_logic_vector(compare_fifos - 1 downto 0);
     o_mask_n    : out std_logic_vector(gen_fifos - 1 downto 0);
@@ -39,7 +39,7 @@ architecture arch of time_merger_tree_fifo_64 is
     -- merger signals
     constant size : integer := compare_fifos/2;
     
-    signal fifo_data, fifo_q, fifo_q_reg : fifo_array_64(gen_fifos - 1 downto 0);
+    signal fifo_data, fifo_q, fifo_q_reg : fifo_array_76(gen_fifos - 1 downto 0);
     signal wait_cnt : fifo_array_2(gen_fifos - 1 downto 0);
     signal layer_state : fifo_array_4(gen_fifos - 1 downto 0);
     signal fifo_ren_reg, fifo_ren : std_logic_vector(compare_fifos - 1 downto 0);
@@ -101,6 +101,12 @@ begin
             wait_cnt(i) <= wait_cnt(i) + '1';
         end if;
         
+        -- 31 downto 0  -> hit1
+        -- 31 downto 28 -> ts1
+        -- 37 downto 32 -> link number1
+        -- 69 downto 38 -> hit2
+        -- 69 downto 66 -> ts2
+        -- 75 downto 70 -> link number 2
         fifo_wen(i) <= '0';
         if ( i_merge_state = '1' ) then
             case layer_state(i) is
@@ -116,28 +122,28 @@ begin
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
                         if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' and reset_fifo(i) = '0' ) then
                             -- TODO: check if fifo_1 is full
-                            fifo_data(i)(31 downto 0) <= i_fifo_q(i)(31 downto 0);
+                            fifo_data(i)(37 downto 0) <= i_fifo_q(i)(37 downto 0);
                             layer_state(i)(0) <= '1';
-                            if ( i_fifo_q(i)(63 downto 60) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(63 downto 32) /= x"00000000" ) then
+                            if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
                                 -- TODO: check if fifo_1 is full
-                                fifo_data(i)(63 downto 32) <= i_fifo_q(i)(63 downto 32);
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i)(75 downto 38);
                                 layer_state(i)(1) <= '1';
                                 fifo_wen(i) <= '1';
                                 fifo_ren(i) <= '1';
-                            elsif ( i_fifo_q(i + size)(63 downto 32) /= x"00000000" and i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0' ) then
-                                fifo_data(i)(63 downto 32) <= i_fifo_q(i + size)(31 downto 0);
+                            elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero and i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0' ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(37 downto 0);
                                 layer_state(i)(2) <= '1';
                                 fifo_wen(i) <= '1';
                             end if;
                         elsif ( i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0' and reset_fifo(i) = '0' ) then
-                            fifo_data(i)(31 downto 0) <= i_fifo_q(i + size)(31 downto 0);
+                            fifo_data(i)(37 downto 0) <= i_fifo_q(i + size)(37 downto 0);
                             layer_state(i)(2) <= '1';
-                            if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(63 downto 60) and i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' ) then
-                                fifo_data(i)(63 downto 32) <= i_fifo_q(i)(31 downto 0);
+                            if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i)(37 downto 0);
                                 layer_state(i)(0) <= '1';
                                 fifo_wen(i) <= '1';
-                            elsif ( i_fifo_q(i + size)(63 downto 32) /= x"00000000" ) then
-                                fifo_data(i)(63 downto 32) <= i_fifo_q(i + size)(63 downto 32);
+                            elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(75 downto 38);
                                 layer_state(i)(3) <= '1';
                                 fifo_wen(i) <= '1';
                                 fifo_ren(i + size) <= '1';
@@ -155,25 +161,25 @@ begin
                     fifo_ren_reg(i) <= '1';
                     fifo_ren_reg(i + size) <= '1';
                 when "0101" =>
-                    if ( i_fifo_q(i)(63 downto 60) <= i_fifo_q(i + size)(63 downto 60) and i_fifo_q(i)(63 downto 32) /= x"00000000" ) then
-                        fifo_data(i)(31 downto 0) <= i_fifo_q(i)(63 downto 32);
+                    if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                        fifo_data(i)(37 downto 0) <= i_fifo_q(i)(75 downto 38);
                         layer_state(i)(0) <= '0';
                         fifo_ren(i) <= '1';
-                    elsif ( i_fifo_q(i + size)(63 downto 32) /= x"00000000" ) then
-                        fifo_data(i)(31 downto 0) <= i_fifo_q(i + size)(63 downto 32);
+                    elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                        fifo_data(i)(37 downto 0) <= i_fifo_q(i + size)(75 downto 38);
                         layer_state(i)(2) <= '0';
                         fifo_ren(i + size) <= '1';
                     end if;
                 when "0100" =>
                     -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
                     if ( i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' ) then
-                        -- TODO: what to do when i_fifo_q(i + size)(63 downto 60) is zero? maybe error cnt?
-                        if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(63 downto 60) ) then
-                            fifo_data(i)(63 downto 32) <= i_fifo_q(i)(31 downto 0);
+                        -- TODO: what to do when i_fifo_q(i + size)(69 downto 66) is zero? maybe error cnt?
+                        if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(69 downto 66) ) then
+                            fifo_data(i)(75 downto 38) <= i_fifo_q(i)(37 downto 0);
                             layer_state(i)(0) <= '1';
                             fifo_wen(i) <= '1';
-                        elsif ( i_fifo_q(i + size)(63 downto 32) /= x"00000000" ) then
-                            fifo_data(i)(63 downto 32) <= i_fifo_q(i + size)(63 downto 32);
+                        elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                            fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(75 downto 38);
                             layer_state(i)(3) <= '1';
                             fifo_wen(i) <= '1';
                             fifo_ren(i + size) <= '1';
@@ -184,14 +190,14 @@ begin
                 when "0001" =>
                     -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
                     if ( i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0' ) then       
-                        -- TODO: what to do when i_fifo_q(i)(63 downto 60) is zero? maybe error cnt?     
-                        if ( i_fifo_q(i)(63 downto 60) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(63 downto 32) /= x"00000000" ) then
-                            fifo_data(i)(63 downto 32) <= i_fifo_q(i)(63 downto 32);
+                        -- TODO: what to do when i_fifo_q(i)(69 downto 66) is zero? maybe error cnt?     
+                        if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                            fifo_data(i)(75 downto 38) <= i_fifo_q(i)(75 downto 38);
                             layer_state(i)(1) <= '1';
                             fifo_wen(i) <= '1';
                             fifo_ren(i) <= '1';
                         else
-                            fifo_data(i)(63 downto 32) <= i_fifo_q(i + size)(31 downto 0);
+                            fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(37 downto 0);
                             layer_state(i)(2) <= '1';
                             fifo_wen(i) <= '1';
                         end if;
@@ -200,13 +206,13 @@ begin
                     end if;
                 when "1111" =>
                     if ( i_mask_n(i) = '0' and fifo_full(i) = '0' and reset_fifo(i) = '0' ) then
-                        if ( i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0'  and i_fifo_q(i + size)(63 downto 32) /= x"00000000" ) then 
+                        if ( i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0'  and i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then 
                             fifo_data(i) <= i_fifo_q(i + size);    
                             fifo_wen(i) <= '1';
                             fifo_ren(i + size) <= '1';
                         end if;
                     elsif ( i_mask_n(i + size ) = '0' and fifo_full(i) = '0' and reset_fifo(i) = '0' ) then
-                        if ( i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' and i_fifo_q(i)(63 downto 32) /= x"00000000" ) then 
+                        if ( i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' and i_fifo_q(i)(75 downto 38) /= tree_zero ) then 
                             fifo_data(i) <= i_fifo_q(i);    
                             fifo_wen(i) <= '1';
                             fifo_ren(i) <= '1';
