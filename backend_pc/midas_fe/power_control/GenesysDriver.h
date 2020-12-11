@@ -41,6 +41,8 @@ class GenesysDriver : public PowerDriver
 
 		void BlinkChanged();
 		void InitODBArray();
+		
+		std::vector<bool> InterlockStatus(std::vector<WORD>);
 
 	
 		int reply_time_out;
@@ -49,6 +51,7 @@ class GenesysDriver : public PowerDriver
 		
 		std::vector<std::string> idCode;
 		std::vector<bool> interlock_enabled;
+		std::vector<WORD> QCGEreg;
 		
 
 };

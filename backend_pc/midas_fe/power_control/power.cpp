@@ -212,7 +212,7 @@ INT read_hameg_power(char *pevent, INT off)
 	bk_init32a(pevent);
 	float *pdata;
 	
-	bk_create(pevent,"LVHA", TID_FLOAT, (void **)&pdata);
+	bk_create(pevent,"LVH1", TID_FLOAT, (void **)&pdata);
   
 	error = read_power(pdata);
 	

@@ -44,6 +44,10 @@ class PowerDriver{
 		float ReadCurrent(int,INT&);
 		int ReadESR(int,INT&);
 		
+		WORD ReadQCGE(int,INT&);
+		std::vector<std::string> ReadErrorQueue(int,INT&);
+		
+		
 		EQUIPMENT_INFO GetInfo() { return *info; } //by value, so you cant modify the original
 		
 
@@ -53,6 +57,8 @@ class PowerDriver{
 		float Read(std::string,INT&);
 		float ReadSetVoltage(int,INT&);
 		float ReadCurrentLimit(int,INT&);
+		
+
 		
 		//set
 		bool SelectChannel(int);

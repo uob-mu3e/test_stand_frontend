@@ -43,7 +43,7 @@ INT GenesysDriver::ConnectODB()
 //didn't find a cleaner way to init the array entries, have a prior initialized 'variables', and not overwrite Set values
 void GenesysDriver::InitODBArray()
 {
-	midas::odb settings_array = { {"Channel Names",std::array<std::string,16>()} , {"Blink",std::array<bool,16>()} , {"ESR",std::array<int,16>()} };
+	midas::odb settings_array = { {"Channel Names",std::array<std::string,16>()} , {"Blink",std::array<bool,16>()} , {"ESR",std::array<int,16>()}  };
 	settings_array.connect("/Equipment/"+name+"/Settings");
 }
 
@@ -67,10 +67,10 @@ INT GenesysDriver::Init()
   std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
   
   //clear error an status registers
-  cmd = "GLOB:*CLS\n";
-  if( !client->Write(cmd) ) cm_msg(MERROR, "Init genesys supply ... ", "could perform global clear %s", ip.c_str());
-  else cm_msg(MINFO,"power_fe","Global CLS of %s",ip.c_str());
-  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  //cmd = "GLOB:*CLS\n";
+  //if( !client->Write(cmd) ) cm_msg(MERROR, "Init genesys supply ... ", "could perform global clear %s", ip.c_str());
+  //else cm_msg(MINFO,"power_fe","Global CLS of %s",ip.c_str());
+  //std::this_thread::sleep_for(std::chrono::milliseconds(20));
   
   //figure out the number of supplies connected
   for(int i = 0; i < 12; i++)
@@ -93,6 +93,16 @@ INT GenesysDriver::Init()
   settings["NChannels"] = instrumentID.size();
 
 	// ***** channel by channel settings ***** //
+	
+	//read system errors
+	for(int i = 0; i<nChannels; i++ ) 
+	{
+		std::vector<std::string> error_queue = ReadErrorQueue(i,err);
+		for(auto& s : error_queue)
+		{
+			if(s.substr(0,1) != "0")			{				cm_msg(MERROR,"power_fe"," Error from tdk %d supply : %s",instrumentID[i],s.c_str());			}			
+		}
+	}
   
 	settings["Address"] = instrumentID;
 	state.resize(nChannels);
@@ -102,6 +112,7 @@ INT GenesysDriver::Init()
 	currentlimit.resize(nChannels);
 	idCode.resize(nChannels);
 	interlock_enabled.resize(nChannels);
+	QCGEreg.resize(nChannels);
   
 	for(int i = 0; i<nChannels; i++ ) 
 	{
@@ -119,11 +130,14 @@ INT GenesysDriver::Init()
 		SetInterlock(i,interlock_enabled[i],err);
 		
 		settings["ESR"]=ReadESR(i,err);
+		
+		QCGEreg[i] =ReadQCGE(i,err);
   	
 		if(err!=FE_SUCCESS) return err;  	
 	}
   
 	settings["Identification Code"]=idCode;
+	settings["Questionable Condition Register"]=QCGEreg;
   
 	variables["State"]=state; //push to odb
 	variables["Set State"]=state; //the init function can not change the on/off state of the supply
@@ -133,6 +147,10 @@ INT GenesysDriver::Init()
  	
  	variables["Current"]=current;
  	variables["Current Limit"]=currentlimit;
+ 	
+ 	variables["Interlock"]= InterlockStatus(QCGEreg);
+
+ 	
  	
  	// user arrays.
 	settings["Channel Names"].resize(nChannels);
@@ -252,6 +270,8 @@ INT GenesysDriver::ReadAll()
 	int nChannels = instrumentID.size();
 	INT err;
 	
+	bool status_reg_update = false;
+	
 	//update local book keeping
 	for(int i=0; i<nChannels; i++)
 	{
@@ -275,10 +295,83 @@ INT GenesysDriver::ReadAll()
 			current[i]=fvalue;
 			variables["Current"][i]=fvalue;	  	
 		}
-  	
+		
+		std::vector<std::string> error_queue = ReadErrorQueue(i,err);
+		for(auto& s : error_queue)
+		{
+			if(s.substr(0,1) != "0")			{				cm_msg(MERROR,"power_fe"," Error from tdk %d supply : %s",instrumentID[i],s.c_str());			}			
+		}
+		
+		WORD reg = ReadQCGE(i,err); //Questionable Condition Group Event register
+		if(reg != QCGEreg[i]) {
+			variables["Questionable Condition Register"][i]= QCGEreg[i];
+			status_reg_update = true;
+		}
+		
 	 	if(err!=FE_SUCCESS) return err;		
-	}	
+	}
+	
+	if(status_reg_update)
+	{
+		variables["Interlock"]= InterlockStatus(QCGEreg);		
+	}
+	
 	return FE_SUCCESS;
 }
 
 
+std::vector<bool> GenesysDriver::InterlockStatus(std::vector<WORD> reg)
+{
+	std::vector<bool> vec;
+	std::transform( reg.begin(), reg.end(), std::back_inserter(vec) , [](DWORD word) { return (( word & 0x8 ) != 0) ? true : false ;} );
+	//std::transform( vec.begin(), vec.end(), interlock_enabled.begin(), vec.begin(), [](bool value, bool flag) { return flag ? value : false ;} ); //if the interlock is disabled, we can not 
+	return vec;
+}
+
+/*
+
+Bit configuration of the Questionable Condition Group Event register is as follows:
+
+Position 15 14 13 12 11 10 9 8
+Value - 16384 8192 4096 2048 1024 512 256
+Name - POFF PWS PERR GERR PACK UVP ENA
+
+Position 7 6 5 4 3 2 1 0
+Value 128 64 32 16 8 4 2 -
+Name ILC OFF SO OVP FLD OTP AC -
+
+POFF – Power OFF.
+
+ILC – Interlock.
+Set to “1” when the power supply Set to “1” when Interlock signal fault
+Power Switch is OFF. occurs.
+
+PWS – Parallel Wait Slave. OFF – DC Output OFF.
+Set to “1” when master power supply Set to “1” when the power supply DC
+is waiting for slaves to become ready. output is OFF.
+
+PERR – Parallel Error. SO – Shut OFF (Daisy In).
+Set to “1” when an error occurs in Set to “1” when Shut OFF signal is high.
+Advanced Parallel system. OVP – Over Voltage Protection.
+
+GERR – General Error. Set to “1” when Over Voltage Protection
+Unrecoverable system fault. Recycle fault occurs.
+
+AC input. 
+ 
+FLD – Foldback.
+
+PACK – Parallel Acknowledge. Set to “1” when Foldback fault occurs.
+Acknowledge new parallel system.
+ 
+OTP – Over Temperature Protection.
+Refer to section 5.9. Set to “1” when Over Temperature
+
+UVP – Under Voltage Protection. Protection fault occurs.
+Set to “1” when Under Voltage AC – AC.
+Protection fault occurs. Set to “1” when AC fault occurs.
+
+ENA – Enable.
+Set to “1” when Enable fault occurs.
+
+*/

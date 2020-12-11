@@ -61,10 +61,17 @@ INT HMP4040Driver::Init()
 	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
 	
 	//clear error an status registers
-	cmd = "*CLS\n";
-	if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could perform global clear %s", ip.c_str());
-	else cm_msg(MINFO,"power_fe","Global CLS of %s",ip.c_str());
-	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
+	//cmd = "*CLS\n";
+	//if( !client->Write(cmd) ) cm_msg(MERROR, "Init HAMEG supply ... ", "could perform global clear %s", ip.c_str());
+	//else cm_msg(MINFO,"power_fe","Global CLS of %s",ip.c_str());
+	//std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));
+	
+	std::vector<std::string> error_queue = ReadErrorQueue(-1,err);
+	for(auto& s : error_queue)
+	{
+		if(s.substr(0,1) != "0")		{	cm_msg(MERROR,"power_fe"," Error from hameg supply : %s",s.c_str());		}			
+	}
+	
 	
 	//HAMEG has fixed 4 channels
 	instrumentID = {1,2,3,4};
@@ -160,7 +167,14 @@ INT HMP4040Driver::ReadAll()
 		}
   	
 	 	if(err!=FE_SUCCESS) return err;		
-	}	
+	}
+	
+	std::vector<std::string> error_queue = ReadErrorQueue(-1,err);
+	for(auto& s : error_queue)
+	{
+		if(s.substr(0,1) != "0")		{	cm_msg(MERROR,"power_fe"," Error from hameg supply : %s",s.c_str());		}			
+	}
+	
 	return FE_SUCCESS;
 }
 
@@ -229,6 +243,29 @@ OUTP:GEN ON		 Channels will be activated simultaneously
 
 */
 
+/*
+STATus:QUEStionable Registe
 
 
+Bit No. Meaning
 
+0 Voltage
+This bit is set while the instrument is in constant current mode (CC). This means that the voltage will be regulated and the current is constant.
+
+1 Current
+This bit is set while the instrument is in constant voltage mode (CV). This means that the current is variable and the voltage is constant.
+
+2 Not used
+3 Not used
+
+4 Temperature overrange
+This bit is set if an over temperature occurs
+
+5-8Not used
+
+9 OVP
+TrippedThis bit is set if the over voltage protection has tripped.
+
+10 Fuse
+TrippedThis bit is set if the fuse protection has tripped.
+*/
