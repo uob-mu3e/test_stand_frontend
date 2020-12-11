@@ -56,7 +56,9 @@ INT end_of_run(INT run_number, char *error);
 INT pause_run(INT run_number, char *error);
 INT resume_run(INT run_number, char *error);
 INT frontend_loop();
-INT read_power(char *pevent, INT off);
+INT read_genesys_power(char *pevent, INT off);
+INT read_hameg_power(char *pevent, INT off);
+INT read_power(float* pdata);
 
 
 
@@ -64,9 +66,6 @@ INT read_power(char *pevent, INT off);
 /*-- Equipment list ------------------------------------------------*/
 
 EQUIPMENT equipment[] = {
-	
-	
-
 
    {"Genesys",                       /* equipment name */
     {121, 0,                       /* event ID, trigger mask */
@@ -79,9 +78,9 @@ EQUIPMENT equipment[] = {
      10000,                     /* read every 10 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
-     0,                         /* log history every event */
+     1,                         /* log history every event */
      "", "", ""} ,                  /* device driver list */
-     read_power,
+     read_genesys_power,
     },
     
     {"HAMEG1",                       /* equipment name */
@@ -97,7 +96,7 @@ EQUIPMENT equipment[] = {
     	0,                         /* number of sub events */
      	0,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
-     	read_power,
+     	read_hameg_power,
     },
     
     {""} //why is there actually this empty one here? FW
@@ -203,58 +202,60 @@ INT frontend_exit()
 	return CM_SUCCESS;
 }
 
-INT read_power(char *pevent, INT off)
+INT read_hameg_power(char *pevent, INT off)
 {
-	std::cout << " read power called" << std::endl;
+	std::cout << " read hameg power called" << std::endl;
 	INT error;
 	
 	/* init bank structure */
   
 	bk_init32a(pevent);
 	float *pdata;
+	
+	bk_create(pevent,"LVHA", TID_FLOAT, (void **)&pdata);
   
-	int iTDK = 0;\
-	int iHAMEG = 0;
+	error = read_power(pdata);
+	
+	bk_close(pevent, pdata);
+  	return bk_size(pevent);
+}
 
+INT read_genesys_power(char *pevent, INT off)
+{
+	std::cout << " read genesys power called" << std::endl;
+	INT error;
+	
+	/* init bank structure */
+  
+	bk_init32a(pevent);
+	float *pdata;
+	
+	bk_create(pevent,"LVGE", TID_FLOAT, (void **)&pdata);
+  
+	error = read_power(pdata);	
+	bk_close(pevent, pdata);
+  	return bk_size(pevent);
+}
+
+
+INT read_power(float* pdata)
+{
+	INT error;
 	for(const auto& d: drivers)
 	{
 		if( !d->Initialized() ) continue;
-		if(d->ReadAll() == FE_SUCCESS)
+		if(!(typeid(*d)==typeid(HMP4040Driver))) continue;
+		error = d->ReadAll();
+		if(error == FE_SUCCESS)
 		{
-			char bk_name[10];
-			//std::cout<< " ---- " << std::endl;
-			//std::cout << "**** driver class : " << typeid(*d).name() << " ***** " << std::endl;
-			//std::cout<< " ---- " << std::endl;
-			//ss_sleep(1000);
-			if(typeid(*d)==typeid(GenesysDriver))
-			{
-				sprintf(bk_name,"LG%2d",iTDK);
-				iTDK++;
-			}
-			else if(typeid(*d)==typeid(HMP4040Driver))
-			{
-				sprintf(bk_name,"LH%2d",iHAMEG);
-				iHAMEG++;
-			}
-			else{
-				cm_msg(MERROR, "power write bank", "Error in writing bank, driver class %s not recognized",typeid(*d).name() );
-				continue;
-			} 
-		  	bk_create(pevent,bk_name, TID_FLOAT, (void **)&pdata);
-			//std::cout << " make bank " << bk_name << " read setting " << d->GetInfo().read_on <<std::endl;
-			
 			std::vector<float> voltage = d->GetVoltage();
 			std::vector<float> current = d->GetCurrent();
-			if(voltage.size() == current.size())
+			if(voltage.size() != current.size()) { continue; cm_msg(MERROR, "read_power", "Number of channel reads not consistent"); }
+			for(unsigned int iChannel =0; iChannel < voltage.size(); iChannel++)
 			{
-				for(unsigned int iChannel =0; iChannel < voltage.size(); iChannel++)
-				{
-					*pdata++ = voltage.at(iChannel);
-					*pdata++ = current.at(iChannel);
-				}
-			}
-  			bk_close(pevent, pdata);
-			//std::cout << " close bank " << bk_name << std::endl; 
+				*pdata++ = voltage.at(iChannel);
+				*pdata++ = current.at(iChannel);
+			}	//std::cout << " close bank " << bk_name << std::endl; 
 		}
  		else 
  		{
@@ -262,52 +263,7 @@ INT read_power(char *pevent, INT off)
 			return 0;
   		}
 	}
-	
-  	std::cout << "done read power " << std::endl;
-
-
-// 	bk_create(pevent, "LVLV", TID_FLOAT, (void **)&pdata);
-// 	int iTDK = 0;\
-// 	int iHAMEG = 0;
-
-  
-//   for(const auto& d: drivers)
-//   {
-// 	if( !d->Initialized() ) continue;
-// 	if(d->ReadAll() == FE_SUCCESS)
-//  	{
-// 		char bk_name[10];
-// 		if(typeid(*d)==typeid(GenesysDriver))
-// 		{
-// 			sprintf(bk_name,"LG%2d",iTDK);
-// 			iTDK++;
-// 		}
-// 		else if(typeid(*d)==typeid(HMP4040Driver))
-// 		{
-// 			sprintf(bk_name,"LH%2d",iTDK);
-// 			iTDK++;
-// 		}
-// 		else{
-// 			cm_msg(MERROR, "power write bank", "Error in writing bank, driver class %s not recognized",typeid(*d).name() );
-// 			continue;
-// 		} 
-		
-// 		std::cout << " make bank " << bk_name << std::endl;
-// 		std::vector<float> voltage = d->GetVoltage();
-// 		std::vector<float> current = d->GetCurrent();
-// 		for(auto const &v : voltage)	*pdata++ = v;
-// 		for(auto const &v : current)	*pdata++ = v; 
-//  	}
-//  	else 
-//  	{
-// 		cm_msg(MERROR, "power read", "Error in read: %d",error);
-// 		return 0;
-//   	}
-//   }
-	
-//   bk_close(pevent, pdata);
-  
-  	return bk_size(pevent);
+	return error;
 }
 
 INT frontend_loop()

@@ -30,7 +30,7 @@ INT HMP4040Driver::ConnectODB()
 
 void HMP4040Driver::InitODBArray()
 {
-	midas::odb settings_array = { {"Names",std::array<std::string,4>()} };
+	midas::odb settings_array = { {"Channel Names",std::array<std::string,4>()} };
 	settings_array.connect("/Equipment/"+name+"/Settings");
 }
 

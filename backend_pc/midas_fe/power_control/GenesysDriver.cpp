@@ -43,7 +43,7 @@ INT GenesysDriver::ConnectODB()
 //didn't find a cleaner way to init the array entries, have a prior initialized 'variables', and not overwrite Set values
 void GenesysDriver::InitODBArray()
 {
-	midas::odb settings_array = { {"Names",std::array<std::string,16>()} , {"Blink",std::array<bool,16>()} , {"ESR",std::array<int,16>()} };
+	midas::odb settings_array = { {"Channel Names",std::array<std::string,16>()} , {"Blink",std::array<bool,16>()} , {"ESR",std::array<int,16>()} };
 	settings_array.connect("/Equipment/"+name+"/Settings");
 }
 
@@ -135,7 +135,7 @@ INT GenesysDriver::Init()
  	variables["Current Limit"]=currentlimit;
  	
  	// user arrays.
-	settings["Names"].resize(nChannels);
+	settings["Channel Names"].resize(nChannels);
  	settings["Blink"].resize(nChannels);
  	settings["ESR"].resize(nChannels);
  	settings["Read ESR"]=false;
