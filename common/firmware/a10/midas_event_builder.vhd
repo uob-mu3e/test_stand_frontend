@@ -20,39 +20,39 @@ entity midas_event_builder is
         USE_ALIGNMENT : integer := 0--;
     );
     port(
-        i_clk_data:         in  std_logic;
-        i_clk_dma:          in  std_logic;
+        i_clk_data:                 in  std_logic;
+        i_clk_dma:                  in  std_logic;
         
-        i_reset_data_n:     in  std_logic;
-        i_reset_dma_n:      in  std_logic;
+        i_reset_data_n:             in  std_logic;
+        i_reset_dma_n:              in  std_logic;
         
-        i_link_data:        in  std_logic_vector (NLINKS * 32 - 1 downto 0);
-        i_link_datak:       in  std_logic_vector (NLINKS * 4 - 1 downto 0);
-        i_link_mask_n:      in  std_logic_vector (NLINKS - 1 downto 0);
+        i_link_data:                in  std_logic_vector (NLINKS * 32 - 1 downto 0);
+        i_link_datak:               in  std_logic_vector (NLINKS * 4 - 1 downto 0);
+        i_link_mask_n:              in  std_logic_vector (NLINKS - 1 downto 0);
         
-        i_wen_reg:          in  std_logic;
-        i_get_n_words:      in std_logic_vector (31 downto 0);
-        i_dmamemhalffull:   in std_logic;
+        i_wen_reg:                  in  std_logic;
+        i_get_n_words:              in std_logic_vector (31 downto 0);
+        i_dmamemhalffull:           in std_logic;
         
-        o_event_wren:       out std_logic;
-        o_endofevent:       out std_logic; 
-        o_event_data:       out std_logic_vector (255 downto 0);
+        o_event_wren:               out std_logic;
+        o_endofevent:               out std_logic; 
+        o_event_data:               out std_logic_vector (255 downto 0);
         
         -- error / state signals
-        o_state_out:        out std_logic_vector(3 downto 0);
-        o_fifos_full:       out std_logic_vector (NLINKS downto 0); -- fifos and dmamemhalffull
-        o_all_done:         out std_logic_vector (NLINKS downto 0);
-        o_done:             out std_logic;
-        o_fifo_almost_full:     out std_logic_vector(NLINKS - 1 downto 0);
-        o_cnt_link_fifo_almost_full: out std_logic_vector(31 downto 0);
-        o_cnt_tag_fifo_full:    out std_logic_vector(31 downto 0);
-        o_cnt_ram_full:         out std_logic_vector(31 downto 0);
-        o_cnt_stream_fifo_full: out std_logic_vector(31 downto 0);
-        o_cnt_dma_halffull:     out std_logic_vector(31 downto 0);
-        o_cnt_dc_link_fifo_full:out std_logic_vector(31 downto 0);
-        o_cnt_skip_link_data:   out std_logic_vector(31 downto 0);
-        o_cnt_skip_event_dma:   out std_logic_vector(31 downto 0);
-        o_cnt_idle_not_header:  out std_logic_vector(31 downto 0)--;
+        o_state_out:                out std_logic_vector(3 downto 0);
+        o_fifos_full:               out std_logic_vector (NLINKS downto 0); -- fifos and dmamemhalffull
+        o_all_done:                 out std_logic_vector (NLINKS downto 0);
+        o_done:                     out std_logic;
+        o_fifo_almost_full:         out std_logic_vector(NLINKS - 1 downto 0);
+        o_cnt_link_fifo_almost_full:out std_logic_vector(31 downto 0);
+        o_cnt_tag_fifo_full:        out std_logic_vector(31 downto 0);
+        o_cnt_ram_full:             out std_logic_vector(31 downto 0);
+        o_cnt_stream_fifo_full:     out std_logic_vector(31 downto 0);
+        o_cnt_dma_halffull:         out std_logic_vector(31 downto 0);
+        o_cnt_dc_link_fifo_full:    out std_logic_vector(31 downto 0);
+        o_cnt_skip_link_data:       out std_logic_vector(31 downto 0);
+        o_cnt_skip_event_dma:       out std_logic_vector(31 downto 0);
+        o_cnt_idle_not_header:      out std_logic_vector(31 downto 0)--;
     );
     end entity;
 
@@ -67,8 +67,8 @@ entity midas_event_builder is
     signal link_mask_n : std_logic_vector (NLINKS - 1 downto 0);
 
     -- link fifos
-    signal link_fifo_wren, link_fifo_ren, link_fifo_empty, link_fifo_full, link_fifo_almost_full : std_logic_vector(NLINKS - 1 downto 0);
-    signal link_data_f, link_dataq_f : data_array(NLINKS - 1 downto 0);
+    signal link_fifo_wren, link_fifo_ren, link_fifo_ren_reg, link_fifo_empty, link_fifo_empty_reg, link_fifo_full, link_fifo_almost_full : std_logic_vector(NLINKS - 1 downto 0);
+    signal link_data_f, link_dataq_f, link_dataq_f_reg : data_array(NLINKS - 1 downto 0);
     signal link_fifo_usedw, link_fifo_usedw_reg : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS - 1 downto 0);
     signal sync_fifo_empty : std_logic_vector(NLINKS - 1 downto 0);
     signal sync_fifo_i_wrreq : std_logic_vector(NLINKS - 1 downto 0);
@@ -122,9 +122,7 @@ entity midas_event_builder is
     signal word_counter : std_logic_vector(31 downto 0);
 
     -- current link data/datak/empty
-    signal sop : std_logic_vector(NLINKS-1 downto 0);
-    signal eop : std_logic_vector(NLINKS-1 downto 0);
-    signal shop : std_logic_vector(NLINKS-1 downto 0);
+    signal sop, sop_reg, eop, eop_reg, shop, shop_reg : std_logic_vector(NLINKS-1 downto 0);
     signal stream_in_rempty : std_logic_vector(NLINKS-1 downto 0);
     signal stream_wdata, stream_rdata : std_logic_vector(35 downto 0);
     signal time_merger_hit : std_logic_vector(39 downto 0);
@@ -313,7 +311,7 @@ begin
         port map (
             data        => link_data_f(i),
             wrreq       => link_fifo_wren(i),
-            rdreq       => link_fifo_ren(i),
+            rdreq       => link_fifo_ren_reg(i),
             wrclk       => i_clk_dma,
             rdclk       => i_clk_dma,
             q           => link_dataq_f(i),
@@ -439,6 +437,29 @@ begin
         
     time_alignment : if USE_ALIGNMENT = 1 GENERATE
     
+        -- reg for link FIFO outputs (timing)
+        reg_link_fifos: FOR i in 0 to NLINKS - 1 GENERATE
+            process(i_clk_dma, i_reset_dma_n)
+            begin
+            if ( i_reset_dma_n /= '1' ) then
+                link_dataq_f_reg(i)    <= (others => '0');
+                link_fifo_empty_reg(i) <= '0';
+                sop_reg(i)             <= '0';
+                eop_reg(i)             <= '0';
+                shop_reg(i)            <= '0';
+                link_fifo_ren_reg(i)   <= '0';
+                --
+            elsif rising_edge(i_clk_dma) then
+                link_dataq_f_reg(i)    <= link_dataq_f(i);
+                link_fifo_ren_reg(i)   <= link_fifo_ren(i);
+                link_fifo_empty_reg(i) <= link_fifo_empty(i);
+                sop_reg(i)             <= sop(i);
+                eop_reg(i)             <= eop(i);
+                shop_reg(i)            <= shop(i);
+            end if;
+            end process;
+        END GENERATE reg_link_fifos;
+        
         e_time_merger : entity work.time_merger
             generic map (
             W => 66+12,
@@ -448,11 +469,11 @@ begin
         )
         port map (
             -- input streams
-            i_rdata                 => link_dataq_f,
-            i_rsop                  => sop,
-            i_reop                  => eop,
-            i_rshop                 => shop,
-            i_rempty                => link_fifo_empty,
+            i_rdata                 => link_dataq_f_reg,
+            i_rsop                  => sop_reg,
+            i_reop                  => eop_reg,
+            i_rshop                 => shop_reg,
+            i_rempty                => link_fifo_empty_reg,
             i_link                  => 1, -- which link should be taken to check ts etc.
             i_mask_n                => link_mask_n,
             o_rack                  => link_fifo_ren,

@@ -160,16 +160,16 @@ begin
             DEVICE 		 => "Arria 10"--,
         )
         port map (
-            aclr 	=> not i_reset_n,
-            data 	=> fifo_data_6(j),
-            rdclk 	=> i_clk,
-            rdreq 	=> i_ren, --fifo_ren_2(j),
-            wrclk 	=> i_clk,
-            wrreq 	=> fifo_wen_6(j),
-            q 		=> o_rdata,
+            aclr    => not i_reset_n,
+            data    => fifo_data_6(j),
+            rdclk   => i_clk,
+            rdreq   => i_ren, --fifo_ren_2(j),
+            wrclk   => i_clk,
+            wrreq   => fifo_wen_6(j),
+            q       => o_rdata,
             rdempty => o_empty,
             rdusedw => open,
-            wrfull 	=> fifo_full_6(j),
+            wrfull  => fifo_full_6(j),
             wrusedw => open--,
         );
     END GENERATE fifos_last;
@@ -300,7 +300,7 @@ begin
                     elsif ( fifo_full_0(i) = '1' or reset_fifo_0(i) = '1' or wait_cnt_fifo_0(i) /= "11" ) then
                         --
                     else
-                        if ( fifo_full_0(i) = '0' and link_good(i) = '1' and i_rempty(i) = '0' and rack_hit(i) = '0' and i_rdata(i)(31 downto 26) /= "111111" and i_rdata(i)(37 downto 36) = "00" and reset_fifo_0(i) = '0' ) then
+                        if ( fifo_full_0(i) = '0' and link_good(i) = '1' and i_rempty(i) = '0' and rack_hit(i) = '0' and i_rdata(i)(31 downto 26) /= "111111" and i_rdata(i)(37 downto 36) = "00" ) then
                             fifo_data_0(i) <= link_36_to_std(i) & i_rdata(i)(35 downto 4);
                             fifo_wen_0(i) <= '1';
                             rack_hit(i) <= '1';
@@ -308,14 +308,14 @@ begin
                             saw_header_0(i) <= '0';
                             saw_trailer_0(i) <= '0';
                         -- TODO: is this fine to quite until one is written (cnt > 0)?
-                        elsif ( i_rdata(i)(31 downto 26) = "111111" and reset_fifo_0(i) = '0' ) then
+                        elsif ( i_rdata(i)(31 downto 26) = "111111" ) then
                             saw_header_0(i) <= '1';
                             layer_0_state(i) <= "0001";
                             fifo_data_0(i) <= tree_padding;
                             layer_0_cnt(i) <= layer_0_cnt(i) + '1';
                             fifo_wen_0(i) <= '1';
                         -- TODO: is this fine to quite until one is written (cnt > 0)?
-                        elsif ( i_rdata(i)(37 downto 36) /= "00" and reset_fifo_0(i) = '0' ) then
+                        elsif ( i_rdata(i)(37 downto 36) /= "00" ) then
                             saw_trailer_0(i) <= '1';
                             layer_0_state(i) <= "0001";
                             fifo_data_0(i) <= tree_padding;
@@ -502,28 +502,27 @@ begin
             if ( alignment_done(i) = '0' ) then
                 case layer_6_state(i) is
                     when "0000" =>
-                        if ( fifo_full_6(i) = '1' ) then
+                        if ( fifo_full_6(i) = '1' or fifo_ren_5(i) = '1' or fifo_ren_5_reg(i) = '1' or fifo_ren_5(i + size_last) = '1' or fifo_ren_5_reg(i + size_last) = '1' ) then
                             --
                         else
                             -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                            if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(31 downto 28) and fifo_empty_5(i) = '0' and fifo_ren_5(i) = '0' and fifo_ren_5_reg(i) = '0' ) then
+                            if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(31 downto 28) and fifo_ren_5(i) = '0' ) then
                                 fifo_data_6(i)(37 downto 0) <= fifo_q_5(i)(37 downto 0);
                                 layer_6_state(i)(0) <= '1';
-                                -- TODO: try to find out if tree_zero is not a valid hit
                                 if ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(31 downto 28) and fifo_q_5(i)(75 downto 38) /= tree_zero ) then
                                     fifo_data_6(i)(75 downto 38) <= fifo_q_5(i)(75 downto 38);
                                     layer_6_state(i)(1) <= '1';
                                     fifo_wen_6(i) <= '1';
                                     fifo_ren_5(i) <= '1';
-                                elsif ( fifo_q_5(i + size_last)(75 downto 38) /= tree_zero and fifo_empty_5(i + size_last) = '0' and fifo_ren_5(i + size_last) = '0' and fifo_ren_5_reg(i + size_last) = '0' ) then
+                                elsif ( fifo_q_5(i + size_last)(75 downto 38) /= tree_zero ) then
                                     fifo_data_6(i)(75 downto 38) <= fifo_q_5(i + size_last)(37 downto 0);
                                     layer_6_state(i)(2) <= '1';
                                     fifo_wen_6(i) <= '1';
                                 end if;
-                            elsif ( fifo_empty_5(i + size_last) = '0' and fifo_ren_5(i + size_last) = '0' and fifo_ren_5_reg(i + size_last) = '0' ) then
+                            else
                                 fifo_data_6(i)(37 downto 0) <= fifo_q_5(i + size_last)(37 downto 0);
                                 layer_6_state(i)(2) <= '1';
-                                if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(69 downto 66) and fifo_empty_5(i) = '0' and fifo_ren_5(i) = '0' and fifo_ren_5_reg(i) = '0' ) then
+                                if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(69 downto 66) ) then
                                     fifo_data_6(i)(75 downto 38) <= fifo_q_5(i)(37 downto 0);
                                     layer_6_state(i)(0) <= '1';
                                     fifo_wen_6(i) <= '1';

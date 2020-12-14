@@ -42,7 +42,7 @@ architecture arch of time_merger_tree_fifo_64 is
     signal fifo_data, fifo_data_reg, fifo_q, fifo_q_reg : fifo_array_76(gen_fifos - 1 downto 0);
     signal layer_state : fifo_array_4(gen_fifos - 1 downto 0);
     signal fifo_ren_reg, fifo_ren : std_logic_vector(compare_fifos - 1 downto 0);
-    signal fifo_wen, fifo_wen_reg, fifo_full, fifo_full_reg, fifo_empty, fifo_empty_reg, reset_fifo, reset_fifo_reg : std_logic_vector(gen_fifos - 1 downto 0);
+    signal fifo_wen, fifo_wen_reg, fifo_full, fifo_full_reg, fifo_empty, fifo_empty_reg, reset_fifo, reset_fifo_reg0, reset_fifo_reg1, reset_fifo_reg2 : std_logic_vector(gen_fifos - 1 downto 0);
 
 
 begin
@@ -89,6 +89,9 @@ begin
         fifo_data(i) <= (others => '0');
         layer_state(i) <= (others => '0');
         reset_fifo(i) <= '0';
+        reset_fifo_reg0(i) <= '0';
+        reset_fifo_reg1(i) <= '0';
+        reset_fifo_reg2(i) <= '0';
         --
     elsif rising_edge(i_clk) then
         fifo_ren(i) <= '0';
@@ -96,7 +99,9 @@ begin
         fifo_ren_reg(i) <= fifo_ren(i);
         fifo_ren_reg(i + size) <= fifo_ren(i + size);
         reset_fifo(i) <= '0';
-        reset_fifo_reg(i) <= reset_fifo(i);
+        reset_fifo_reg0(i) <= reset_fifo(i);
+        reset_fifo_reg1(i) <= reset_fifo_reg0(i);
+        reset_fifo_reg2(i) <= reset_fifo_reg1(i);
         fifo_wen(i) <= '0';
         
         -- 31 downto 0  -> hit1
@@ -109,7 +114,7 @@ begin
             case layer_state(i) is
             
                 when "0000" =>
-                    if ( fifo_full(i) = '1' or reset_fifo(i) = '1' or reset_fifo_reg(i) = '1' ) then
+                    if ( fifo_full(i) = '1' or reset_fifo(i) = '1' ) then -- or reset_fifo_reg0(i) = '1' or reset_fifo_reg1(i) = '1' or reset_fifo_reg2(i) = '1' ) then
                         --
                     elsif ( i_mask_n(i) = '0' or i_mask_n(i + size) = '0' ) then
                         layer_state(i) <= "1111";
