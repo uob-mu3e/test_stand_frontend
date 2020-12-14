@@ -40,7 +40,7 @@ constant MUPIX_DATAPATH_ADDR_START          : integer := 96; --(x"60") --(start 
         subtype  CHIP_ID_MODE_RANGE         is integer range 5 downto 4;
         -- bits to select different TOT calculation modes
         -- Default is to send TS2 as TOT
-        subtype  TOT_MODE_RANGE             is integer range 7 downto 5;
+        subtype  TOT_MODE_RANGE             is integer range 8 downto 6;
     constant MP_LVDS_LINK_MASK_REGISTER_W   :  integer := 16#61#;
     constant MP_LVDS_LINK_MASK2_REGISTER_W  :  integer := 16#62#;
     constant MP_LVDS_DATA_VALID_REGISTER_R  :  integer := 16#63#;
