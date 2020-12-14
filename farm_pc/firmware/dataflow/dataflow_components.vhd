@@ -20,12 +20,14 @@ package dataflow_components is
 
 	type fifo_array_2 is array(natural range <>) of std_logic_vector(1 downto 0);
 	type fifo_array_4 is array(natural range <>) of std_logic_vector(3 downto 0);
+    type fifo_array_8 is array(natural range <>) of std_logic_vector(7 downto 0);
 	type fifo_array_32 is array(natural range <>) of std_logic_vector(31 downto 0);
 	type fifo_array_38 is array(natural range <>) of std_logic_vector(37 downto 0);
     type fifo_array_64 is array(natural range <>) of std_logic_vector(63 downto 0);
     type fifo_array_76 is array(natural range <>) of std_logic_vector(75 downto 0);
     type fifo_array_66 is array(natural range <>) of std_logic_vector(65 downto 0);
     type fifo_array_78 is array(natural range <>) of std_logic_vector(77 downto 0);
+    type fifo_array_152 is array(natural range <>) of std_logic_vector(151 downto 0);
     
     function link_36_to_std (
         i : in integer--;

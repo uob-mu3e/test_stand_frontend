@@ -12,47 +12,47 @@ use work.dataflow_components.all;
 
 entity midas_event_builder is
     generic (
-            W : integer := 66;
-            NLINKS : integer := 4;
-            LINK_FIFO_ADDR_WIDTH : integer := 10;
-            TREE_w : integer := 10;
-            TREE_r : integer := 10;
-            USE_ALIGNMENT : integer := 0--;
+        W : integer := 66;
+        NLINKS : integer := 4;
+        LINK_FIFO_ADDR_WIDTH : integer := 10;
+        TREE_w : integer := 10;
+        TREE_r : integer := 10;
+        USE_ALIGNMENT : integer := 0--;
     );
     port(
-            i_clk_data:         in  std_logic;
-            i_clk_dma:          in  std_logic;
-            
-            i_reset_data_n:     in  std_logic;
-            i_reset_dma_n:      in  std_logic;
-            
-            i_link_data:        in  std_logic_vector (NLINKS * 32 - 1 downto 0);
-            i_link_datak:       in  std_logic_vector (NLINKS * 4 - 1 downto 0);
-            i_link_mask_n:      in  std_logic_vector (NLINKS - 1 downto 0);
-            
-            i_wen_reg:          in  std_logic;
-            i_get_n_words:      in std_logic_vector (31 downto 0);
-            i_dmamemhalffull:   in std_logic;
-            
-            o_event_wren:       out std_logic;
-            o_endofevent:       out std_logic; 
-            o_event_data:       out std_logic_vector (255 downto 0);
-            
-            -- error / state signals
-            o_state_out:        out std_logic_vector(3 downto 0);
-            o_fifos_full:       out std_logic_vector (NLINKS downto 0); -- fifos and dmamemhalffull
-            o_all_done:         out std_logic_vector (NLINKS downto 0);
-            o_done:             out std_logic;
-            o_fifo_almost_full:     out std_logic_vector(NLINKS - 1 downto 0);
-            o_cnt_link_fifo_almost_full: out std_logic_vector(31 downto 0);
-            o_cnt_tag_fifo_full:    out std_logic_vector(31 downto 0);
-            o_cnt_ram_full:         out std_logic_vector(31 downto 0);
-            o_cnt_stream_fifo_full: out std_logic_vector(31 downto 0);
-            o_cnt_dma_halffull:     out std_logic_vector(31 downto 0);
-            o_cnt_dc_link_fifo_full:out std_logic_vector(31 downto 0);
-            o_cnt_skip_link_data:   out std_logic_vector(31 downto 0);
-            o_cnt_skip_event_dma:   out std_logic_vector(31 downto 0);
-            o_cnt_idle_not_header:  out std_logic_vector(31 downto 0)--;
+        i_clk_data:         in  std_logic;
+        i_clk_dma:          in  std_logic;
+        
+        i_reset_data_n:     in  std_logic;
+        i_reset_dma_n:      in  std_logic;
+        
+        i_link_data:        in  std_logic_vector (NLINKS * 32 - 1 downto 0);
+        i_link_datak:       in  std_logic_vector (NLINKS * 4 - 1 downto 0);
+        i_link_mask_n:      in  std_logic_vector (NLINKS - 1 downto 0);
+        
+        i_wen_reg:          in  std_logic;
+        i_get_n_words:      in std_logic_vector (31 downto 0);
+        i_dmamemhalffull:   in std_logic;
+        
+        o_event_wren:       out std_logic;
+        o_endofevent:       out std_logic; 
+        o_event_data:       out std_logic_vector (255 downto 0);
+        
+        -- error / state signals
+        o_state_out:        out std_logic_vector(3 downto 0);
+        o_fifos_full:       out std_logic_vector (NLINKS downto 0); -- fifos and dmamemhalffull
+        o_all_done:         out std_logic_vector (NLINKS downto 0);
+        o_done:             out std_logic;
+        o_fifo_almost_full:     out std_logic_vector(NLINKS - 1 downto 0);
+        o_cnt_link_fifo_almost_full: out std_logic_vector(31 downto 0);
+        o_cnt_tag_fifo_full:    out std_logic_vector(31 downto 0);
+        o_cnt_ram_full:         out std_logic_vector(31 downto 0);
+        o_cnt_stream_fifo_full: out std_logic_vector(31 downto 0);
+        o_cnt_dma_halffull:     out std_logic_vector(31 downto 0);
+        o_cnt_dc_link_fifo_full:out std_logic_vector(31 downto 0);
+        o_cnt_skip_link_data:   out std_logic_vector(31 downto 0);
+        o_cnt_skip_event_dma:   out std_logic_vector(31 downto 0);
+        o_cnt_idle_not_header:  out std_logic_vector(31 downto 0)--;
     );
     end entity;
 
@@ -60,12 +60,16 @@ entity midas_event_builder is
 
     ----------------signals---------------------
     signal reset_data, reset_dma : std_logic;
-
+    
+    -- writerregs
+    signal wen_reg : std_logic;
+    signal get_n_words : std_logic_vector (31 downto 0);
+    signal link_mask_n : std_logic_vector (NLINKS - 1 downto 0);
 
     -- link fifos
     signal link_fifo_wren, link_fifo_ren, link_fifo_empty, link_fifo_full, link_fifo_almost_full : std_logic_vector(NLINKS - 1 downto 0);
     signal link_data_f, link_dataq_f : data_array(NLINKS - 1 downto 0);
-    signal link_fifo_usedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS - 1 downto 0);
+    signal link_fifo_usedw, link_fifo_usedw_reg : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS - 1 downto 0);
     signal sync_fifo_empty : std_logic_vector(NLINKS - 1 downto 0);
     signal sync_fifo_i_wrreq : std_logic_vector(NLINKS - 1 downto 0);
     type sync_fifo_t is array (NLINKS - 1 downto 0) of std_logic_vector(35 downto 0);
@@ -131,7 +135,7 @@ entity midas_event_builder is
 
     -- error cnt
     constant all_zero : std_logic_vector(NLINKS - 1 downto 0) := (others => '0');
-    signal fifos_full : std_logic_vector(NLINKS - 1 downto 0);
+    signal fifos_full, fifos_full_reg : std_logic_vector(NLINKS - 1 downto 0);
     signal cnt_link_fifo_almost_full : std_logic_vector(31 downto 0);
     signal cnt_tag_fifo_full : std_logic_vector(31 downto 0);
     signal cnt_ram_full : std_logic_vector(31 downto 0);
@@ -149,7 +153,7 @@ begin
     o_event_data 					    <= r_ram_data;
     o_all_done(0) 					    <= tag_fifo_empty;
     o_all_done(NLINKS downto 1) 	    <= link_fifo_empty;
-    o_fifos_full(NLINKS - 1 downto 0)   <= fifos_full;
+    o_fifos_full(NLINKS - 1 downto 0)   <= fifos_full_reg;
     o_fifos_full(NLINKS)                <= i_dmamemhalffull;
     o_fifo_almost_full                  <= link_fifo_almost_full;
 
@@ -161,6 +165,20 @@ begin
     o_cnt_dc_link_fifo_full <= cnt_dc_link_fifo_full;
     o_cnt_skip_event_dma <= cnt_skip_event_dma;
     o_cnt_idle_not_header <= cnt_idle_not_header;
+    
+    -- delay writeregs
+    process(i_clk_dma, i_reset_dma_n)
+    begin
+        if( i_reset_dma_n = '0' ) then
+            wen_reg     <= '0';
+            get_n_words <= (others => '0');
+            link_mask_n <= (others => '0');
+        elsif(rising_edge(i_clk_dma)) then
+            wen_reg     <= i_wen_reg;
+            get_n_words <= i_get_n_words;
+            link_mask_n <= i_link_mask_n;
+        end if;
+    end process;
 
     -- count dma overflow signals
     process(i_clk_dma, i_reset_dma_n)
@@ -206,7 +224,7 @@ begin
             cnt_link_fifo_almost_full <= (others => '0');
         elsif(rising_edge(i_clk_dma)) then
     --        link_fifo_full : FOR i in 0 to NLINKS - 1 LOOP
-                if ( fifos_full(NLINKS - 1 downto 0) /= all_zero ) then
+                if ( fifos_full_reg(NLINKS - 1 downto 0) /= all_zero ) then
                     -- for now we only count if one is full
                     cnt_dc_link_fifo_full <= cnt_dc_link_fifo_full + '1';
                 end if;
@@ -233,6 +251,18 @@ begin
                 else
                     sync_fifo_i_wrreq(i) <= '1';
                 end if;
+            end if;
+        end process;
+        
+        -- delay signals from e_fifo (timing)
+        process(i_clk_dma, i_reset_dma_n)
+        begin
+            if( i_reset_dma_n = '0' ) then
+                fifos_full_reg(i)       <= '0';
+                link_fifo_usedw_reg(i)  <= '0';
+            elsif(rising_edge(i_clk_dma)) then
+                fifos_full_reg(i)       <= fifos_full(i);
+                link_fifo_usedw_reg(i)  <= link_fifo_usedw(i);
             end if;
         end process;
         
@@ -303,7 +333,7 @@ begin
             if(i_reset_dma_n = '0') then
                 link_fifo_almost_full(i)       <= '0';
             elsif(rising_edge(i_clk_dma)) then
-                if(link_fifo_usedw(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1) = '1') then
+                if(link_fifo_usedw_reg(i * LINK_FIFO_ADDR_WIDTH + LINK_FIFO_ADDR_WIDTH - 1) = '1') then
                     link_fifo_almost_full(i)   <= '1';
                 else 
                     link_fifo_almost_full(i)   <= '0';
@@ -354,7 +384,7 @@ begin
         sclr            => reset_dma--,
     );
 
-    stream_in_rempty <= link_fifo_empty or not i_link_mask_n;
+    stream_in_rempty <= link_fifo_empty or not link_mask_n;
         
     stream_merger : IF USE_ALIGNMENT = 0 GENERATE
     
@@ -424,7 +454,7 @@ begin
             i_rshop                 => shop,
             i_rempty                => link_fifo_empty,
             i_link                  => 1, -- which link should be taken to check ts etc.
-            i_mask_n                => i_link_mask_n,
+            i_mask_n                => link_mask_n,
             o_rack                  => link_fifo_ren,
             
             -- output stream
@@ -762,11 +792,11 @@ begin
         o_event_wren    <= '0';
         o_endofevent    <= '0';
         
-        if ( i_wen_reg = '0' ) then
+        if ( wen_reg = '0' ) then
             word_counter <= (others => '0');
         end if;
         
-        if ( i_wen_reg = '1' and word_counter >= i_get_n_words ) then
+        if ( wen_reg = '1' and word_counter >= i_get_n_words ) then
             o_done <= '1';
         end if;
 
@@ -786,7 +816,7 @@ begin
                     event_counter_state <= skip_event;
                     cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
                 else
-                    o_event_wren        <= i_wen_reg;
+                    o_event_wren        <= wen_reg;
                     o_endofevent        <= '1'; -- begin of event
                     word_counter        <= word_counter + '1';
                     event_counter_state <= runing;
@@ -795,7 +825,7 @@ begin
 
         when runing =>
                 o_state_out     <= x"C";
-                o_event_wren    <= i_wen_reg;
+                o_event_wren    <= wen_reg;
                 word_counter    <= word_counter + '1';
                 if(r_ram_add = event_last_ram_add - '1') then
                     event_counter_state	<= waiting;
