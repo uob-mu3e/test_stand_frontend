@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
         datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
         mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
         mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0, 100);
+        mu.write_register_wait(DATA_LINK_MASK_REGISTER_2_W, 0x0, 100);
         mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0x0, 100);
         mu.close();
         return 0;
@@ -145,7 +146,7 @@ int main(int argc, char *argv[])
     // Set up data generator
     if (atoi(argv[1]) == 1) {
         uint32_t datagen_setup = 0;
-        mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0, 100);//3E8, 100);//3E8); // slow down to 64 MBit/s
+        mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x2, 100);//3E8, 100);//3E8); // slow down to 64 MBit/s
         datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
         //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
         mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
@@ -154,6 +155,8 @@ int main(int argc, char *argv[])
     // Enable all links (SC)
     mu.write_register_wait(FEB_ENABLE_REGISTER_W, 0xF, 100);
     // Enable all links (DATA)
+    //mu.write_register_wait(DATA_LINK_MASK_REGISTER_2_W, 0xF, 100);
+    //mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0xFFFFFFFF, 100);
     mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0xF, 100);
     // Enable only one link
     //mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0x1, 100);

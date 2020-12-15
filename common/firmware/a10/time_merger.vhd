@@ -191,74 +191,76 @@ begin
     elsif rising_edge(i_clk) then
     
         rack_link <= (others => '0');
-    
-        FOR I in N - 1 downto 0 LOOP
-            -- link is good ('1') if link is not empty, wfull not full, not masked, w_ack is zero, i_rdata has hit data else '0'
-            if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" ) then
-                link_good(I) <= '1';
-            else
-                link_good(I) <= '0';
-            end if;
-            
-            -- read out fifo if not empty, not start of package and not masked
-            if ( merge_state /= wait_for_pre ) then
-                sop_wait(I) <= '1';
-            elsif ( i_mask_n(I) = '0' ) then
-                sop_wait(I) <= '0';
-            elsif ( i_rempty(I) = '0' and i_rsop(I) = '1' ) then
-                sop_wait(I) <= '0';
-                fpga_id(I) <= i_rdata(I)(27 downto 12);
-            elsif ( merge_state = wait_for_pre and rack_link(I) = '0' and i_rempty(I) = '0' ) then
-                sop_wait(I) <= '1';
-                rack_link(I) <= '1';
-            end if;
-            
-            -- read out fifo if not empty, not sub header of package and not masked
-            if ( merge_state /= wait_for_sh ) then
-                shop_wait(I) <= '1';
-            elsif ( i_mask_n(I) = '0' ) then
-                shop_wait(I) <= '0';
-            elsif ( i_rempty(I) = '0' and i_rshop(I) = '1' ) then
-                shop_wait(I) <= '0';
-            elsif ( merge_state = wait_for_sh and rack_link(I) = '0' and i_rempty(I) = '0' ) then
-                shop_wait(I) <= '1';
-                rack_link(I) <= '1';
-            end if;
+        
+        if ( or_reduce(i_mask_n) /= '0' ) then
+            FOR I in N - 1 downto 0 LOOP
+                -- link is good ('1') if link is not empty, wfull not full, not masked, w_ack is zero, i_rdata has hit data else '0'
+                if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and i_rdata(I)(37 downto 36) = "00" and i_rdata(I)(31 downto 26) /= "111111" ) then
+                    link_good(I) <= '1';
+                else
+                    link_good(I) <= '0';
+                end if;
+                
+                -- read out fifo if not empty, not start of package and not masked
+                if ( merge_state /= wait_for_pre ) then
+                    sop_wait(I) <= '1';
+                elsif ( i_mask_n(I) = '0' ) then
+                    sop_wait(I) <= '0';
+                elsif ( i_rempty(I) = '0' and i_rsop(I) = '1' ) then
+                    sop_wait(I) <= '0';
+                    fpga_id(I) <= i_rdata(I)(27 downto 12);
+                elsif ( merge_state = wait_for_pre and rack_link(I) = '0' and i_rempty(I) = '0' ) then
+                    sop_wait(I) <= '1';
+                    rack_link(I) <= '1';
+                end if;
+                
+                -- read out fifo if not empty, not sub header of package and not masked
+                if ( merge_state /= wait_for_sh ) then
+                    shop_wait(I) <= '1';
+                elsif ( i_mask_n(I) = '0' ) then
+                    shop_wait(I) <= '0';
+                elsif ( i_rempty(I) = '0' and i_rshop(I) = '1' ) then
+                    shop_wait(I) <= '0';
+                elsif ( merge_state = wait_for_sh and rack_link(I) = '0' and i_rempty(I) = '0' ) then
+                    shop_wait(I) <= '1';
+                    rack_link(I) <= '1';
+                end if;
 
-            -- check for time wait
-            if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and rack(I) = '0' and ( merge_state = get_time1 or merge_state = get_time2 ) ) then
-                time_wait(I) <= '0';
-            elsif ( i_mask_n(I) = '0' ) then
-                time_wait(I) <= '0';
-            else
-                time_wait(I) <= '1';
-            end if;
-            
-            -- check for state change in merge_hits state
-            if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
-                sh_state(I) <= '0';
-            elsif ( i_mask_n(I) = '0' ) then
-                sh_state(I) <= '0';
-            else
-                sh_state(I) <= '1';
-            end if;
-            
-            if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
-                pre_state(I) <= '0';
-            elsif ( i_mask_n(I) = '0' ) then
-                pre_state(I) <= '0';
-            else
-                pre_state(I) <= '1';
-            end if;
-            
-            if ( i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
-                tr_state(I) <= '0';
-            elsif ( i_mask_n(I) = '0' ) then
-                tr_state(I) <= '0';
-            else
-                tr_state(I) <= '1';
-            end if;
-        END LOOP;
+                -- check for time wait
+                if ( i_rempty(I) = '0' and i_mask_n(I) = '1' and rack(I) = '0' and ( merge_state = get_time1 or merge_state = get_time2 ) ) then
+                    time_wait(I) <= '0';
+                elsif ( i_mask_n(I) = '0' ) then
+                    time_wait(I) <= '0';
+                else
+                    time_wait(I) <= '1';
+                end if;
+                
+                -- check for state change in merge_hits state
+                if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
+                    sh_state(I) <= '0';
+                elsif ( i_mask_n(I) = '0' ) then
+                    sh_state(I) <= '0';
+                else
+                    sh_state(I) <= '1';
+                end if;
+                
+                if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
+                    pre_state(I) <= '0';
+                elsif ( i_mask_n(I) = '0' ) then
+                    pre_state(I) <= '0';
+                else
+                    pre_state(I) <= '1';
+                end if;
+                
+                if ( i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
+                    tr_state(I) <= '0';
+                elsif ( i_mask_n(I) = '0' ) then
+                    tr_state(I) <= '0';
+                else
+                    tr_state(I) <= '1';
+                end if;
+            END LOOP;
+        end if;
     end if;
     end process;
 
@@ -496,7 +498,7 @@ begin
 
         fifo_wen_6(i) <= '0';
         if ( merge_state = merge_hits and fifo_empty_5(i) = '0' and fifo_empty_5(i + size_last) = '0' ) then
-            if ( fifo_data_6(i)(37 downto 0) = tree_padding and fifo_data_6(i)(75 downto 38) = tree_padding ) then
+            if ( layer_6_state(i) = "1110" ) then
                 alignment_done(i) <= '1';
             end if;
             if ( alignment_done(i) = '0' ) then
@@ -526,11 +528,11 @@ begin
                             elsif ( fifo_q_5(i + size_last)(37 downto 0) /= tree_padding ) then
                                 fifo_data_6(i)(37 downto 0) <= fifo_q_5(i + size_last)(37 downto 0);
                                 layer_6_state(i)(2) <= '1';
-                                if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(69 downto 66) ) then
+                                if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(69 downto 66) and fifo_q_5(i)(37 downto 0) /= tree_padding ) then
                                     fifo_data_6(i)(75 downto 38) <= fifo_q_5(i)(37 downto 0);
                                     layer_6_state(i)(0) <= '1';
                                     fifo_wen_6(i) <= '1';
-                                elsif ( fifo_q_5(i + size_last)(75 downto 38) /= tree_zero ) then
+                                elsif ( fifo_q_5(i + size_last)(75 downto 38) /= tree_zero and fifo_q_5(i + size_last)(75 downto 38) /= tree_padding ) then
                                     fifo_data_6(i)(75 downto 38) <= fifo_q_5(i + size_last)(75 downto 38);
                                     layer_6_state(i)(3) <= '1';
                                     fifo_wen_6(i) <= '1';
@@ -540,10 +542,10 @@ begin
                                     fifo_wen_6(i) <= '1';
                                     layer_6_state(i) <= "1110";
                                 end if;
-                            elsif ( fifo_q_5(i)(37 downto 0) = tree_padding and fifo_q_5(i + size)(37 downto 0) = tree_padding ) then 
-                                fifo_data(i) <= tree_padding & tree_padding;
-                                fifo_wen(i) <= '1';
-                                layer_state(i) <= "1110";
+                            elsif ( fifo_q_5(i)(37 downto 0) = tree_padding and fifo_q_5(i + size_last)(37 downto 0) = tree_padding ) then 
+                                fifo_data_6(i)(75 downto 0) <= tree_padding & tree_padding;
+                                fifo_wen_6(i) <= '1';
+                                layer_6_state(i) <= "1110";
                             end if;
                         end if;
                     when "0011" =>
@@ -557,28 +559,36 @@ begin
                         fifo_ren_5_reg(i) <= '1';
                         fifo_ren_5_reg(i + size_last) <= '1';
                     when "0101" =>
-                        if ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(69 downto 66) and fifo_q_5(i)(75 downto 38) /= tree_zero ) then
+                        if ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(69 downto 66) and fifo_q_5(i)(75 downto 38) /= tree_zero and fifo_q_5(i)(75 downto 38) /= tree_padding ) then
                             fifo_data_6(i)(37 downto 0) <= fifo_q_5(i)(75 downto 38);
                             layer_6_state(i)(0) <= '0';
                             fifo_ren_5(i) <= '1';
-                        elsif ( fifo_q_5(i + size_last)(75 downto 38) /= tree_zero ) then
+                        elsif ( fifo_q_5(i + size_last)(75 downto 38) /= tree_zero and fifo_q_5(i + size_last)(75 downto 38) /= tree_padding ) then
                             fifo_data_6(i)(37 downto 0) <= fifo_q_5(i + size_last)(75 downto 38);
                             layer_6_state(i)(2) <= '0';
                             fifo_ren_5(i + size_last) <= '1';
+                        elsif ( fifo_q_5(i)(75 downto 38) = tree_padding and fifo_q_5(i + size_last)(75 downto 38) = tree_padding ) then
+                            fifo_data_6(i)(75 downto 0) <= tree_padding & tree_padding;
+                            fifo_wen_6(i) <= '1';
+                            layer_6_state(i) <= "1110";
                         end if;
                     when "0100" =>
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
                         if ( fifo_empty_5(i) = '0' and fifo_ren_5(i) = '0' and fifo_ren_5_reg(i) = '0' ) then
                             -- TODO: what to do when fifo_q_1(i + size_last)(69 downto 66) is zero? maybe error cnt?
-                            if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(69 downto 66) ) then
+                            if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(69 downto 66) and fifo_q_5(i)(37 downto 0) /= tree_padding ) then
                                 fifo_data_6(i)(75 downto 38) <= fifo_q_5(i)(37 downto 0);
                                 layer_6_state(i)(0) <= '1';
                                 fifo_wen_6(i) <= '1';
-                            elsif ( fifo_q_5(i + size_last)(75 downto 38) /= tree_zero ) then
+                            elsif ( fifo_q_5(i + size_last)(75 downto 38) /= tree_zero and fifo_q_5(i + size_last)(75 downto 38) /= tree_padding ) then
                                 fifo_data_6(i)(75 downto 38) <= fifo_q_5(i + size_last)(75 downto 38);
                                 layer_6_state(i)(3) <= '1';
                                 fifo_wen_6(i) <= '1';
                                 fifo_ren_5(i + size_last) <= '1';
+                            elsif ( fifo_q_5(i)(37 downto 0) = tree_padding and fifo_q_5(i + size_last)(75 downto 38) = tree_padding ) then
+                                fifo_data_6(i)(75 downto 38) <= tree_padding;
+                                fifo_wen_6(i) <= '1';
+                                layer_6_state(i) <= "1110";
                             end if;
                         else
                             -- TODO: wait for fifo_0 i here --> error counter?
@@ -587,15 +597,19 @@ begin
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
                         if ( fifo_empty_5(i + size_last) = '0' and fifo_ren_5(i + size_last) = '0' and fifo_ren_5_reg(i + size_last) = '0' ) then       
                             -- TODO: what to do when fifo_q_1(i)(69 downto 66) is zero? maybe error cnt?     
-                            if ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(31 downto 28) and fifo_q_5(i)(75 downto 38) /= tree_zero ) then
+                            if ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(31 downto 28) and fifo_q_5(i)(75 downto 38) /= tree_zero and fifo_q_5(i)(75 downto 38) /= tree_padding ) then
                                 fifo_data_6(i)(75 downto 38) <= fifo_q_5(i)(75 downto 38);
                                 layer_6_state(i)(1) <= '1';
                                 fifo_wen_6(i) <= '1';
                                 fifo_ren_5(i) <= '1';
-                            else
+                            elsif ( fifo_q_5(i + size_last)(37 downto 0) /= tree_padding ) then
                                 fifo_data_6(i)(75 downto 38) <= fifo_q_5(i + size_last)(37 downto 0);
                                 layer_6_state(i)(2) <= '1';
                                 fifo_wen_6(i) <= '1';
+                            elsif ( fifo_q_5(i + size_last)(37 downto 0) = tree_padding and fifo_q_5(i)(75 downto 38) = tree_padding ) then
+                                fifo_data_6(i)(75 downto 38) <= tree_padding;
+                                fifo_wen_6(i) <= '1';
+                                layer_6_state(i) <= "1110";
                             end if;
                         else
                             -- TODO: wait for fifo_0 i+size_last here --> error counter?
@@ -608,6 +622,7 @@ begin
             end if;
         else
             alignment_done(i) <= '0';
+            layer_6_state(i) <= (others => '0');
             -- TODO: not sure if this works always after a state transition maybe some delay here?
             if ( header_trailer_we = '1' ) then
                 -- 37 downto 0  -> hit1
