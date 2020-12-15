@@ -235,7 +235,7 @@ begin
             end if;
             
             -- check for state change in merge_hits state
-            if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state =  merge_hits ) then
+            if ( i_rempty(I) = '0' and i_rshop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
                 sh_state(I) <= '0';
             elsif ( i_mask_n(I) = '0' ) then
                 sh_state(I) <= '0';
@@ -243,7 +243,7 @@ begin
                 sh_state(I) <= '1';
             end if;
             
-            if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state =  merge_hits ) then
+            if ( i_rempty(I) = '0' and i_rsop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
                 pre_state(I) <= '0';
             elsif ( i_mask_n(I) = '0' ) then
                 pre_state(I) <= '0';
@@ -251,7 +251,7 @@ begin
                 pre_state(I) <= '1';
             end if;
             
-            if ( i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state =  merge_hits ) then
+            if ( i_rempty(I) = '0' and i_reop(I) = '1' and i_mask_n(I) = '1' and rack(I) = '0' and rack_hit(I) = '0' and merge_state = merge_hits ) then
                 tr_state(I) <= '0';
             elsif ( i_mask_n(I) = '0' ) then
                 tr_state(I) <= '0';
@@ -506,20 +506,24 @@ begin
                             --
                         else
                             -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                            if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(31 downto 28) and fifo_ren_5(i) = '0' ) then
+                            if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(31 downto 28) and fifo_q_5(i)(37 downto 0) /= tree_padding ) then
                                 fifo_data_6(i)(37 downto 0) <= fifo_q_5(i)(37 downto 0);
                                 layer_6_state(i)(0) <= '1';
-                                if ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(31 downto 28) and fifo_q_5(i)(75 downto 38) /= tree_zero ) then
+                                if ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(31 downto 28) and fifo_q_5(i)(75 downto 38) /= tree_zero and fifo_q_5(i)(75 downto 38) /= tree_padding ) then
                                     fifo_data_6(i)(75 downto 38) <= fifo_q_5(i)(75 downto 38);
                                     layer_6_state(i)(1) <= '1';
                                     fifo_wen_6(i) <= '1';
                                     fifo_ren_5(i) <= '1';
-                                elsif ( fifo_q_5(i + size_last)(75 downto 38) /= tree_zero ) then
+                                elsif ( fifo_q_5(i + size_last)(37 downto 0) /= tree_padding ) then
                                     fifo_data_6(i)(75 downto 38) <= fifo_q_5(i + size_last)(37 downto 0);
                                     layer_6_state(i)(2) <= '1';
                                     fifo_wen_6(i) <= '1';
+                                elsif ( fifo_q_5(i)(75 downto 38) = tree_padding and fifo_q_5(i + size_last)(37 downto 0) = tree_padding ) then
+                                    fifo_data_6(i)(75 downto 38) <= tree_padding;
+                                    fifo_wen_6(i) <= '1';
+                                    layer_6_state(i) <= "1110";
                                 end if;
-                            else
+                            elsif ( fifo_q_5(i + size_last)(37 downto 0) /= tree_padding ) then
                                 fifo_data_6(i)(37 downto 0) <= fifo_q_5(i + size_last)(37 downto 0);
                                 layer_6_state(i)(2) <= '1';
                                 if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(69 downto 66) ) then
@@ -531,7 +535,15 @@ begin
                                     layer_6_state(i)(3) <= '1';
                                     fifo_wen_6(i) <= '1';
                                     fifo_ren_5(i + size_last) <= '1';
+                                elsif ( fifo_q_5(i)(37 downto 0) = tree_padding and fifo_q_5(i + size_last)(75 downto 38) = tree_padding ) then
+                                    fifo_data_6(i)(75 downto 38) <= tree_padding;
+                                    fifo_wen_6(i) <= '1';
+                                    layer_6_state(i) <= "1110";
                                 end if;
+                            elsif ( fifo_q_5(i)(37 downto 0) = tree_padding and fifo_q_5(i + size)(37 downto 0) = tree_padding ) then 
+                                fifo_data(i) <= tree_padding & tree_padding;
+                                fifo_wen(i) <= '1';
+                                layer_state(i) <= "1110";
                             end if;
                         end if;
                     when "0011" =>
@@ -588,6 +600,8 @@ begin
                         else
                             -- TODO: wait for fifo_0 i+size_last here --> error counter?
                         end if;
+                    when "1110" =>
+                        -- TODO: write out something?
                     when others =>
                         layer_6_state(i) <= (others => '0');
                 end case;
@@ -651,7 +665,7 @@ begin
                     wait_cnt_pre <= wait_cnt_pre + '1';
                 elsif ( fifo_full_6(0) = '0' ) then
                     merge_state <= get_time1;
-                    rack <= (others => '1');
+                    rack <= i_mask_n;
                     -- reset signals
                     wait_cnt_pre <= (others => '0');
                     -- send merged data preamble
@@ -686,7 +700,7 @@ begin
                 -- check if fifo is not full and all links have same time              
                 if ( error_gtime1 = '0' and fifo_full_6(0) = '0' ) then
                     merge_state <= get_time2;
-                    rack <= (others => '1');
+                    rack <= i_mask_n;
                     -- reset signals
                     gtime1 <= (others => (others => '0'));
                     -- send gtime1
@@ -747,7 +761,7 @@ begin
 --                     END LOOP;
                 elsif ( fifo_full_6(0) = '0' ) then
                     merge_state <= wait_for_sh_written;
-                    rack <= (others => '1');
+                    rack <= i_mask_n;
                     -- reset signals
                     wait_cnt_sh <= (others => '0');
                     wait_cnt_merger <= (others => '0');

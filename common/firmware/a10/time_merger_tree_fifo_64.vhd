@@ -122,32 +122,44 @@ begin
                         --
                     else
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                        if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(31 downto 28) ) then
+                        if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(37 downto 0) /= tree_padding ) then
                             fifo_data(i)(37 downto 0) <= i_fifo_q(i)(37 downto 0);
                             layer_state(i)(0) <= '1';
-                            if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                            if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding ) then
                                 fifo_data(i)(75 downto 38) <= i_fifo_q(i)(75 downto 38);
                                 layer_state(i)(1) <= '1';
                                 fifo_wen(i) <= '1';
                                 fifo_ren(i) <= '1';
-                            else
+                            elsif ( i_fifo_q(i + size)(37 downto 0) /= tree_padding ) then
                                 fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(37 downto 0);
                                 layer_state(i)(2) <= '1';
                                 fifo_wen(i) <= '1';
+                            elsif ( i_fifo_q(i)(75 downto 38) = tree_padding and i_fifo_q(i + size)(37 downto 0) = tree_padding ) then
+                                fifo_data(i)(75 downto 38) <= tree_padding;
+                                fifo_wen(i) <= '1';
+                                layer_state(i) <= "1110";
                             end if;
-                        else
+                        elsif ( i_fifo_q(i + size)(37 downto 0) /= tree_padding ) then
                             fifo_data(i)(37 downto 0) <= i_fifo_q(i + size)(37 downto 0);
                             layer_state(i)(2) <= '1';
-                            if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(69 downto 66) ) then
+                            if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(37 downto 0) /= tree_padding ) then
                                 fifo_data(i)(75 downto 38) <= i_fifo_q(i)(37 downto 0);
                                 layer_state(i)(0) <= '1';
                                 fifo_wen(i) <= '1';
-                            elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                            elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero and i_fifo_q(i + size)(75 downto 38) /= tree_padding ) then
                                 fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(75 downto 38);
                                 layer_state(i)(3) <= '1';
                                 fifo_wen(i) <= '1';
                                 fifo_ren(i + size) <= '1';
+                            elsif ( i_fifo_q(i)(37 downto 0) = tree_padding and i_fifo_q(i + size)(75 downto 38) = tree_padding ) then
+                                fifo_data(i)(75 downto 38) <= tree_padding;
+                                fifo_wen(i) <= '1';
+                                layer_state(i) <= "1110";
                             end if;
+                        elsif ( i_fifo_q(i)(37 downto 0) = tree_padding and i_fifo_q(i + size)(37 downto 0) = tree_padding ) then 
+                            fifo_data(i) <= tree_padding & tree_padding;
+                            fifo_wen(i) <= '1';
+                            layer_state(i) <= "1110";
                         end if;
                     end if;
                 when "0011" =>
@@ -161,28 +173,36 @@ begin
                     fifo_ren_reg(i) <= '1';
                     fifo_ren_reg(i + size) <= '1';
                 when "0101" =>
-                    if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                    if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding ) then
                         fifo_data(i)(37 downto 0) <= i_fifo_q(i)(75 downto 38);
                         layer_state(i)(0) <= '0';
                         fifo_ren(i) <= '1';
-                    elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                    elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero and i_fifo_q(i + size)(75 downto 38) /= tree_padding ) then
                         fifo_data(i)(37 downto 0) <= i_fifo_q(i + size)(75 downto 38);
                         layer_state(i)(2) <= '0';
                         fifo_ren(i + size) <= '1';
+                    elsif ( i_fifo_q(i)(75 downto 38) = tree_padding and i_fifo_q(i + size)(75 downto 38) = tree_padding ) then
+                        fifo_data(i) <= tree_padding & tree_padding;
+                        fifo_wen(i) <= '1';
+                        layer_state(i) <= "1110";
                     end if;
                 when "0100" =>
                     -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
                     if ( i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' ) then
                         -- TODO: what to do when i_fifo_q(i + size)(69 downto 66) is zero? maybe error cnt?
-                        if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(69 downto 66) ) then
+                        if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(37 downto 0) /= tree_padding ) then
                             fifo_data(i)(75 downto 38) <= i_fifo_q(i)(37 downto 0);
                             layer_state(i)(0) <= '1';
                             fifo_wen(i) <= '1';
-                        elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                        elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero and i_fifo_q(i + size)(75 downto 38) /= tree_padding ) then
                             fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(75 downto 38);
                             layer_state(i)(3) <= '1';
                             fifo_wen(i) <= '1';
                             fifo_ren(i + size) <= '1';
+                        elsif ( i_fifo_q(i)(37 downto 0) = tree_padding and i_fifo_q(i + size)(75 downto 38) = tree_padding ) then
+                            fifo_data(i)(75 downto 38) <= tree_padding;
+                            fifo_wen(i) <= '1';
+                            layer_state(i) <= "1110";
                         end if;
                     else
                         -- TODO: wait for fifo_0 i here --> error counter?
@@ -191,33 +211,41 @@ begin
                     -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
                     if ( i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0' ) then       
                         -- TODO: what to do when i_fifo_q(i)(69 downto 66) is zero? maybe error cnt?     
-                        if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                        if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding ) then
                             fifo_data(i)(75 downto 38) <= i_fifo_q(i)(75 downto 38);
                             layer_state(i)(1) <= '1';
                             fifo_wen(i) <= '1';
                             fifo_ren(i) <= '1';
-                        else
+                        elsif ( i_fifo_q(i + size)(37 downto 0) /= tree_padding ) then
                             fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(37 downto 0);
                             layer_state(i)(2) <= '1';
                             fifo_wen(i) <= '1';
+                        elsif ( i_fifo_q(i + size)(37 downto 0) = tree_padding and i_fifo_q(i)(75 downto 38) = tree_padding ) then
+                            fifo_data(i)(75 downto 38) <= tree_padding;
+                            fifo_wen(i) <= '1';
+                            layer_state(i) <= "1110";
                         end if;
                     else
                         -- TODO: wait for fifo_0 i+size here --> error counter?
                     end if;
                 when "1111" =>
-                    if ( i_mask_n(i) = '0' and fifo_full(i) = '0' ) then
-                        if ( i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0'  and i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then 
-                            fifo_data(i) <= i_fifo_q(i + size);    
-                            fifo_wen(i) <= '1';
-                            fifo_ren(i + size) <= '1';
-                        end if;
-                    elsif ( i_mask_n(i + size ) = '0' and fifo_full(i) = '0' ) then
-                        if ( i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' and i_fifo_q(i)(75 downto 38) /= tree_zero ) then 
+                    if ( fifo_full(i) = '0' ) then
+                        if ( i_mask_n(i) = '1' and i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' and i_fifo_q(i)(75 downto 38) /= tree_zero ) then 
                             fifo_data(i) <= i_fifo_q(i);    
                             fifo_wen(i) <= '1';
                             fifo_ren(i) <= '1';
+                        elsif ( i_mask_n(i + size) = '1' and i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0' and i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                            fifo_data(i) <= i_fifo_q(i + size);    
+                            fifo_wen(i) <= '1';
+                            fifo_ren(i + size) <= '1';
+                        elsif ( i_mask_n(i) = '0' and i_mask_n(i + size) = '0' ) then
+                            fifo_data(i) <= tree_padding & tree_padding;
+                            layer_state(i) <= "1110";
+                            fifo_wen(i) <= '1';
                         end if;
                     end if;
+                when "1110" =>
+                    -- TODO: write out something?
                 when others =>
                     layer_state(i) <= (others => '0');
 

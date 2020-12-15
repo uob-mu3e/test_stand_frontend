@@ -206,8 +206,8 @@ rx_datak <=   x"0"                & x"0"                  & x"0"                
               datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & 
               datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated &
               datak_pix_generated & datak_pix_generated & datak_pix_generated & datak_pix_generated ;
-mask_n <= x"0000000FFFFFFFFF";
---mask_n <= x"000000000000000F";
+--mask_n <= x"0000000FFFFFFFFF";
+mask_n <= x"000000000000000F";
 
 e_midas_event_builder : entity work.midas_event_builder
   generic map (

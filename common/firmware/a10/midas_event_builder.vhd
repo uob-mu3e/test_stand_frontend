@@ -129,6 +129,7 @@ entity midas_event_builder is
     signal stream_rempty, time_rempty, stream_rack, stream_wfull, stream_we : std_logic;
     signal link_data : std_logic_vector(31 downto 0);
     signal link_datak : std_logic_vector(3 downto 0);
+    signal link_number : std_logic_vector(5 downto 0);
     signal link_header, link_trailer, link_error : std_logic;
 
     -- error cnt
@@ -311,7 +312,7 @@ begin
         port map (
             data        => link_data_f(i),
             wrreq       => link_fifo_wren(i),
-            rdreq       => link_fifo_ren_reg(i),
+            rdreq       => link_fifo_ren(i),--_reg(i),
             wrclk       => i_clk_dma,
             rdclk       => i_clk_dma,
             q           => link_dataq_f(i),
@@ -437,28 +438,28 @@ begin
         
     time_alignment : if USE_ALIGNMENT = 1 GENERATE
     
-        -- reg for link FIFO outputs (timing)
-        reg_link_fifos: FOR i in 0 to NLINKS - 1 GENERATE
-            process(i_clk_dma, i_reset_dma_n)
-            begin
-            if ( i_reset_dma_n /= '1' ) then
-                link_dataq_f_reg(i)    <= (others => '0');
-                link_fifo_empty_reg(i) <= '0';
-                sop_reg(i)             <= '0';
-                eop_reg(i)             <= '0';
-                shop_reg(i)            <= '0';
-                link_fifo_ren_reg(i)   <= '0';
-                --
-            elsif rising_edge(i_clk_dma) then
-                link_dataq_f_reg(i)    <= link_dataq_f(i);
-                link_fifo_ren_reg(i)   <= link_fifo_ren(i);
-                link_fifo_empty_reg(i) <= link_fifo_empty(i);
-                sop_reg(i)             <= sop(i);
-                eop_reg(i)             <= eop(i);
-                shop_reg(i)            <= shop(i);
-            end if;
-            end process;
-        END GENERATE reg_link_fifos;
+        ---- reg for link FIFO outputs (timing)
+        --reg_link_fifos: FOR i in 0 to NLINKS - 1 GENERATE
+        --    process(i_clk_dma, i_reset_dma_n)
+        --    begin
+        --    if ( i_reset_dma_n /= '1' ) then
+        --        link_dataq_f_reg(i)    <= (others => '0');
+        --        link_fifo_empty_reg(i) <= '0';
+        --        sop_reg(i)             <= '0';
+        --        eop_reg(i)             <= '0';
+        --        shop_reg(i)            <= '0';
+        --        link_fifo_ren_reg(i)   <= '0';
+        --        --
+        --    elsif rising_edge(i_clk_dma) then
+        --        link_dataq_f_reg(i)    <= link_dataq_f(i);
+        --        link_fifo_ren_reg(i)   <= link_fifo_ren(i);
+        --        link_fifo_empty_reg(i) <= link_fifo_empty(i);
+        --        sop_reg(i)             <= sop(i);
+        --        eop_reg(i)             <= eop(i);
+        --        shop_reg(i)            <= shop(i);
+        --    end if;
+        --    end process;
+        --END GENERATE reg_link_fifos;
         
         e_time_merger : entity work.time_merger
             generic map (
@@ -469,14 +470,14 @@ begin
         )
         port map (
             -- input streams
-            i_rdata                 => link_dataq_f_reg,
-            i_rsop                  => sop_reg,
-            i_reop                  => eop_reg,
-            i_rshop                 => shop_reg,
-            i_rempty                => link_fifo_empty_reg,
+            i_rdata                 => link_dataq_f,--link_dataq_f_reg,
+            i_rsop                  => sop,--sop_reg,
+            i_reop                  => eop,--eop_reg,
+            i_rshop                 => shop,--shop_reg,
+            i_rempty                => link_fifo_empty,--link_fifo_empty_reg,
             i_link                  => 1, -- which link should be taken to check ts etc.
             i_mask_n                => link_mask_n,
-            o_rack                  => link_fifo_ren,
+            o_rack                  => link_fifo_ren,--link_fifo_ren,
             
             -- output stream
             o_rdata(77 downto 38)   => time_merger_hit,
@@ -489,13 +490,15 @@ begin
             i_clk                   => i_clk_dma--,
         );
         
+        -- link number
+        link_number                 <= time_merger_hit(37 downto 32);
         -- hit
-        stream_wdata(31 downto 0) <= time_merger_hit(31 downto 0);
+        stream_wdata(31 downto 0)   <= time_merger_hit(31 downto 0);
         -- header into
-        stream_wdata(33 downto 32) <= time_merger_hit(39 downto 38);
+        stream_wdata(33 downto 32)  <= time_merger_hit(39 downto 38);
         
-        stream_wdata(35 downto 34) <= "00";
-        stream_rdata(35 downto 34) <= "00";
+        stream_wdata(35 downto 34)  <= "00";
+        stream_rdata(35 downto 34)  <= "00";
         
         e_stream_fifo : entity work.ip_scfifo
         generic map (
