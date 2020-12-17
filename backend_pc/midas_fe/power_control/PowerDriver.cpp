@@ -138,6 +138,36 @@ std::string PowerDriver::ReadIDCode(int index, INT& error)
 }
 
 
+std::vector<std::string> PowerDriver::ReadErrorQueue(int index, INT& error)
+{
+	std::string cmd;
+	bool success;
+	std::string reply="";
+	error=FE_SUCCESS;
+
+	if(index>=0) SelectChannel(instrumentID[index]);
+
+	std::vector<std::string> error_queue;
+	
+	while(1)
+	{
+		cmd = "SYST:ERR?\n";
+		client->Write(cmd);
+		std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));	
+		success = client->ReadReply(&reply,min_reply_length);
+		if(!success)
+		{
+			cm_msg(MERROR, "Power supply read ... ", "could not read error supply with address %d", instrumentID[index]);
+			error = FE_ERR_DRIVER;
+		}
+		//std::cout << " error queue " << reply << std::endl;
+		error_queue.push_back(reply);
+		if(reply.substr(0,1)=="0") break;
+	}
+	return error_queue;
+}
+
+
 int PowerDriver::ReadESR(int index, INT& error)
 {
 	std::string cmd;
@@ -158,6 +188,30 @@ int PowerDriver::ReadESR(int index, INT& error)
 	}
 	int value = std::stoi(reply);
 	return value;
+}
+
+
+WORD PowerDriver::ReadQCGE(int index, INT& error)
+{
+	std::string cmd;
+	bool success;
+	std::string reply="";
+	error=FE_SUCCESS;
+
+	if(index>=0) SelectChannel(instrumentID[index]);
+	
+	cmd = "STAT:QUES?\n";
+	client->Write(cmd);
+	std::this_thread::sleep_for(std::chrono::milliseconds(client->GetWaitTime()));	
+	success = client->ReadReply(&reply,min_reply_length);
+	if(!success)
+	{
+		cm_msg(MERROR, "Power supply read ... ", "could not read ESR supply with address %d", instrumentID[index]);
+		error = FE_ERR_DRIVER;
+	}
+	int value = std::stoi(reply);
+	
+	return WORD(value);
 }
 
 
@@ -419,4 +473,7 @@ void PowerDriver::DemandVoltageChanged()
 	}	
 	if(nChannelsChanged < 1) cm_msg(MINFO, "Genesys supply ... ", "changing voltage request rejected");
 }
+
+
+
 
