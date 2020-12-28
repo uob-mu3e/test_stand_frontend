@@ -40,7 +40,6 @@ architecture arch of time_merger_tree_fifo_64 is
     constant size : integer := compare_fifos/2;
     
     signal fifo_data, fifo_data_reg, fifo_q, fifo_q_reg : fifo_array_152(gen_fifos - 1 downto 0);
---    signal wait_cnt : fifo_array_2(gen_fifos - 1 downto 0);
     signal layer_state : fifo_array_8(gen_fifos - 1 downto 0);
     signal fifo_ren_reg, fifo_ren : std_logic_vector(compare_fifos - 1 downto 0);
     signal fifo_wen, fifo_wen_reg, fifo_full, fifo_full_reg, fifo_empty, fifo_empty_reg, reset_fifo : std_logic_vector(gen_fifos - 1 downto 0);
@@ -89,7 +88,6 @@ begin
         fifo_data(i) <= (others => '0');
         layer_state(i) <= (others => '0');
         reset_fifo(i) <= '0';
---        wait_cnt(i) <= (others => '0');
         --
     elsif rising_edge(i_clk) then
         fifo_ren(i) <= '0';
@@ -112,95 +110,244 @@ begin
         -- 151 downto 146 -> link number 4
         fifo_wen(i) <= '0';
         if ( i_merge_state = '1' ) then
---            if ( wait_cnt(i) /= "11" ) then
---                wait_cnt(i) <= wait_cnt(i) + '1';
---            end if;
             case layer_state(i) is
             
                 when "00000000" =>
-                    if ( fifo_full(i) = '1' or reset_fifo(i) = '1' ) then -- or wait_cnt(i) /= "11" ) then
+                    if ( fifo_full(i) = '1' or reset_fifo(i) = '1' ) then
                         --
                     elsif ( i_mask_n(i) = '0' or i_mask_n(i + size) = '0' ) then
-                        layer_state(i) <= "1111";
+                        layer_state(i) <= "11111111";
                     elsif ( i_fifo_empty(i) = '1' or i_fifo_empty(i + size) = '1' or fifo_ren(i) = '1' or fifo_ren(i + size) = '1' fifo_ren_reg(i) = '0' or fifo_ren_reg(i + size) = '0' ) then
                         --
                     else
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                        if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(31 downto 28) ) then
+                        if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(37 downto 0) /= tree_padding ) then
+                            -- state: 00000001
                             fifo_data(i)(37 downto 0) <= i_fifo_q(i)(37 downto 0);
                             layer_state(i)(0) <= '1';
-                            if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                            if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding) then
+                                -- state: 00000011
                                 fifo_data(i)(75 downto 38) <= i_fifo_q(i)(75 downto 38);
                                 layer_state(i)(1) <= '1';
-                                if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
+                                if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(113 downto 76) /= tree_zero and i_fifo_q(i)(113 downto 76) /= tree_padding ) then
+                                    -- state: 00000111
                                     fifo_data(i)(113 downto 76) <= i_fifo_q(i)(113 downto 76);
                                     layer_state(i)(2) <= '1';
-                                    if ( i_fifo_q(i)(145 downto 142) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(151 downto 114) /= tree_zero ) then
+                                    if ( i_fifo_q(i)(145 downto 142) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(151 downto 114) /= tree_zero and i_fifo_q(i)(151 downto 114) /= tree_padding ) then
+                                        -- state: 00001111
                                         fifo_data(i)(151 downto 114) <= i_fifo_q(i)(151 downto 114);
                                         layer_state(i)(3) <= '1';
                                         fifo_wen(i) <= '1';
                                         fifo_ren(i) <= '1';
-                                    else
+                                    elsif ( i_fifo_q(i + size)(37 downto 0) /= tree_padding ) then
+                                        -- state: 00010111
                                         fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(37 downto 0);
                                         layer_state(i)(4) <= '1';
                                         fifo_wen(i) <= '1';
                                     end if;
-                                else
+                                elsif ( i_fifo_q(i + size)(37 downto 0) /= tree_padding ) then
+                                    -- state: 00010011
                                     fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(37 downto 0);
                                     layer_state(i)(4) <= '1';
-                                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
+                                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(113 downto 76) /= tree_zero and i_fifo_q(i)(113 downto 76) /= tree_padding ) then
+                                        -- state: 00010111
                                         fifo_data(i)(151 downto 114) <= i_fifo_q(i)(113 downto 76);
                                         layer_state(i)(2) <= '1';
                                         fifo_wen(i) <= '1';
-                                    elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                                    elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero and i_fifo_q(i + size)(75 downto 38) /= tree_padding ) then
+                                        -- state: 00010111
                                         fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(75 downto 38);
                                         layer_state(i)(5) <= '1';
                                         fifo_wen(i) <= '1';
                                     end if;
                                 end if;
-                            else
+                            elsif ( i_fifo_q(i + size)(37 downto 0) /= tree_padding ) then
+                                -- state: 00010001
                                 fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(37 downto 0);
                                 layer_state(i)(4) <= '1';
-                                if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding ) then
+                                    -- state: 00010011
                                     fifo_data(i)(113 downto 76) <= i_fifo_q(i)(75 downto 38);
                                     layer_state(i)(1) <= '1';
-                                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
+                                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(113 downto 76) /= tree_zero and i_fifo_q(i)(113 downto 76) /= tree_padding ) then
+                                        -- state: 00010111
                                         fifo_data(i)(151 downto 114) <= i_fifo_q(i)(113 downto 76);
                                         layer_state(i)(2) <= '1';
                                         fifo_wen(i) <= '1';
-                                    elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                                    elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero and i_fifo_q(i + size)(75 downto 38) /= tree_padding ) then
+                                        -- state: 00110011
                                         fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(75 downto 38);
                                         layer_state(i)(5) <= '1';
                                         fifo_wen(i) <= '1';
                                     end if;
-                                elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                                elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero and i_fifo_q(i + size)(75 downto 38) /= tree_padding ) then
+                                    -- state: 00110001
                                     fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(75 downto 38);
                                     layer_state(i)(5) <= '1';
-                                    if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                    if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding ) then
+                                        -- state: 00110011
                                         fifo_data(i)(151 downto 114) <= i_fifo_q(i)(75 downto 38);
                                         layer_state(i)(1) <= '1';
                                         fifo_wen(i) <= '1';
-                                    elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero ) then
+                                    elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero and i_fifo_q(i + size)(113 downto 76) /= tree_padding ) then
+                                        -- state: 01110001
                                         fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(151 downto 114);
                                         layer_state(i)(6) <= '1';
                                         fifo_wen(i) <= '1';
                                     end if;
                                 end if;
                             end if;
-                        elsif ( i_fifo_q(i + size)(37 downto 0) /= tree_zero ) then
+                        elsif ( i_fifo_q(i + size)(37 downto 0) /= tree_zero and i_fifo_q(i + size)(37 downto 0) /= tree_padding ) then
+                            -- state: 00010000
                             fifo_data(i)(37 downto 0) <= i_fifo_q(i + size)(37 downto 0);
                             layer_state(i)(4) <= '1';
-                            if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(37 downto 0) /= tree_zero ) then
+                            if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(37 downto 0) /= tree_zero and i_fifo_q(i)(37 downto 0) /= tree_padding ) then
+                                -- state: 00010001
                                 fifo_data(i)(75 downto 38) <= i_fifo_q(i)fifo_data(i)(37 downto 0);
                                 layer_state(i)(0) <= '1';
-                                if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding ) then
+                                    -- state: 00010011
                                     fifo_data(i)(113 downto 76) <= i_fifo_q(i)(75 downto 38);
                                     layer_state(i)(1) <= '1';
-                                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(113 downto 76) /= tree_zero
+                                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(113 downto 76) /= tree_zero and i_fifo_q(i)(113 downto 76) /= tree_padding ) then
+                                        -- state: 00010111
                                         fifo_data(i)(151 downto 114) <= i_fifo_q(i)(113 downto 76);
                                         layer_state(i)(2) <= '1';
                                         fifo_wen(i) <= '1';
-                                    elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero' ) then
+                                    elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero and i_fifo_q(i + size)(75 downto 38) /= tree_padding ) then
+                                        -- state: 00110011
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(75 downto 38);
+                                        layer_state(i)(5) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    end if;
+                                elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero and i_fifo_q(i + size)(75 downto 38) /= tree_padding ) then
+                                    -- state: 00110001
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(75 downto 38);
+                                    layer_state(i)(5) <= '1';
+                                    if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding ) then
+                                        -- state: 00110011
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)fifo_data(i)(75 downto 38);
+                                        layer_state(i)(1) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero and i_fifo_q(i + size)(113 downto 76) /= tree_padding ) then
+                                        -- state: 01110001
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(113 downto 76);
+                                        layer_state(i)(6) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    end if;
+                                end if;
+                            elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero and i_fifo_q(i + size)(75 downto 38) /= tree_padding ) then
+                                -- state: 00110000
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(75 downto 38);
+                                layer_state(i)(5) <= '1';
+                                if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(37 downto 0) /= tree_zero and i_fifo_q(i)(37 downto 0) /= tree_padding ) then
+                                    -- state: 00110001
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i)fifo_data(i)(37 downto 0);
+                                    layer_state(i)(0) <= '1';
+                                    if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding ) then
+                                        -- state: 00110011
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(75 downto 38);
+                                        layer_state(i)(1) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero and i_fifo_q(i + size)(113 downto 76) /= tree_padding ) then
+                                        -- state: 01110001
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(113 downto 76);
+                                        layer_state(i)(6) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    end if;
+                                elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero and i_fifo_q(i + size)(113 downto 76) /= tree_padding ) then
+                                    -- state: 01110000
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(113 downto 76);
+                                    layer_state(i)(6) <= '1';
+                                    if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(37 downto 0) /= tree_zero and i_fifo_q(i)(37 downto 0) /= tree_padding ) then
+                                        -- state: 01110001
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(37 downto 0);
+                                        layer_state(i)(0) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero and i_fifo_q(i + size)(151 downto 114) /= tree_padding ) then
+                                        -- state: 11110000
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(151 downto 114);
+                                        layer_state(i)(7) <= '1';
+                                        fifo_wen(i) <= '1';
+                                        fifo_ren(i + size) <= '1';
+                                    end if;
+                                end if;
+                            end if;
+                        end if;
+                    end if;
+                when "00110011" =>
+                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(113 downto 76) /= tree_zero and i_fifo_q(i)(113 downto 76) /= tree_padding ) then
+                        -- state: 00110111
+                        fifo_data(i)(37 downto 0) <= i_fifo_q(i)(113 downto 76);
+                        layer_state(i)(2) <= '1';
+                        if ( i_fifo_q(i)(145 downto 142) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(151 downto 114) /= tree_zero and i_fifo_q(i)(151 downto 114) /= tree_padding ) then
+                            -- state: 00111111
+                            fifo_data(i)(75 downto 38) <= i_fifo_q(i)(151 downto 114);
+                            layer_state(i)(3) <= '1';
+                            fifo_ren(i) <= '1';
+                        elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero and i_fifo_q(i + size)(113 downto 76) /= tree_padding ) then
+                            -- state: 01110111
+                            fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(113 downto 76);
+                            layer_state(i)(6) <= '1';
+                            if ( i_fifo_q(i)(145 downto 142) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(151 downto 114) /= tree_zero and i_fifo_q(i)(151 downto 114) /= tree_padding ) then
+                                -- state: 01111111
+                                fifo_data(i)(113 downto 76) <= i_fifo_q(i)(151 downto 114);
+                                layer_state(i)(3) <= '1';
+                                fifo_ren(i) <= '1';
+                            elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero and i_fifo_q(i + size)(151 downto 114) /= tree_padding ) then
+                                -- state: 11110111
+                                fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(151 downto 114);
+                                layer_state(i)(7) <= '1';
+                                fifo_ren(i + size) <= '1';
+                            end if;
+                        end if;
+                    elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero and i_fifo_q(i + size)(113 downto 76) /= tree_padding ) then
+                        -- state: 01110011
+                        fifo_data(i)(37 downto 0) <= i_fifo_q(i + size)(113 downto 76);
+                        layer_state(i)(6) <= '1';
+                        if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(113 downto 76) /= tree_zero and i_fifo_q(i)(113 downto 76) /= tree_padding ) then
+                            -- state: 01110111
+                            fifo_data(i)(75 downto 38) <= i_fifo_q(i)(113 downto 76);
+                            layer_state(i)(2) <= '1';
+                            if ( i_fifo_q(i)(145 downto 142) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(151 downto 114) /= tree_zero and i_fifo_q(i)(151 downto 114) /= tree_padding ) then
+                                -- state: 01111111
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i)(151 downto 114);
+                                layer_state(i)(3) <= '1';
+                                fifo_ren(i) <= '1';
+                            elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero and i_fifo_q(i + size)(151 downto 114) /= tree_padding ) then
+                                -- state: 11110111
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(151 downto 114);
+                                layer_state(i)(7) <= '1';
+                                fifo_ren(i + size) <= '1';
+                            end if;
+                        elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero and i_fifo_q(i + size)(151 downto 114) /= tree_padding ) then
+                            -- state: 11110011
+                            fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(151 downto 114);
+                            layer_state(i)(7) <= '1';
+                            fifo_ren(i + size) <= '1';
+                        end if;
+                    end if;
+                when "00010000" =>
+                    if ( fifo_full(i) = '1' or reset_fifo(i) = '1' ) then
+                        --
+                    elsif ( i_fifo_empty(i) = '1' or i_fifo_empty(i + size) = '1' or fifo_ren(i) = '1' or fifo_ren(i + size) = '1' fifo_ren_reg(i) = '0' or fifo_ren_reg(i + size) = '0' ) then
+                        --
+                    else
+                        if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(69 downto 66) ) then
+                            fifo_data(i)(37 downto 0) <= i_fifo_q(i)(37 downto 0);
+                            layer_state(i)(0) <= '1';
+                            if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i)(75 downto 38);
+                                layer_state(i)(1) <= '1';
+                                if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i)(113 downto 76);
+                                    layer_state(i)(2) <= '1';
+                                    if ( i_fifo_q(i)(145 downto 142) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(151 downto 114) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(151 downto 114);
+                                        layer_state(i)(3) <= '1';
+                                        fifo_wen(i) <= '1';
+                                        fifo_ren(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
                                         fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(75 downto 38);
                                         layer_state(i)(5) <= '1';
                                         fifo_wen(i) <= '1';
@@ -208,16 +355,299 @@ begin
                                 elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
                                     fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(75 downto 38);
                                     layer_state(i)(5) <= '1';
-                                    if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
-                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)fifo_data(i)(75 downto 38);
-                                        layer_state(i)(1) <= '1';
+                                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(113 downto 76);
+                                        layer_state(i)(2) <= '1';
                                         fifo_wen(i) <= '1';
-                                    elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero  ) then
+                                    elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero ) then
                                         fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(113 downto 76);
                                         layer_state(i)(6) <= '1';
                                         fifo_wen(i) <= '1';
                                     end if;
                                 end if;
+                            elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(75 downto 38);
+                                layer_state(i)(5) <= '1';
+                                if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i)(75 downto 38);
+                                    layer_state(i)(1) <= '1';
+                                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(113 downto 76);
+                                        layer_state(i)(2) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(113 downto 76);
+                                        layer_state(i)(6) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    end if;
+                                elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(113 downto 76);
+                                    layer_state(i)(6) <= '1';
+                                    if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(75 downto 38);
+                                        layer_state(i)(1) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(151 downto 114);
+                                        layer_state(i)(7) <= '1';
+                                        fifo_wen(i) <= '1';
+                                        fifo_ren(i + size) <= '1';
+                                    end if;
+                                end if;
+                            end if;
+                        elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                            fifo_data(i)(37 downto 0) <= i_fifo_q(i + size)(75 downto 38);
+                            layer_state(i)(5) <= '1';
+                            if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(37 downto 0) /= tree_zero ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i)fifo_data(i)(37 downto 0);
+                                layer_state(i)(0) <= '1';
+                                if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i)(75 downto 38);
+                                    layer_state(i)(1) <= '1';
+                                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(113 downto 76) /= tree_zero
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(113 downto 76);
+                                        layer_state(i)(2) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero' ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(113 downto 76);
+                                        layer_state(i)(6) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    end if;
+                                elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(75 downto 38);
+                                    layer_state(i)(6) <= '1';
+                                    if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)fifo_data(i)(75 downto 38);
+                                        layer_state(i)(1) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero  ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(151 downto 114);
+                                        layer_state(i)(7) <= '1';
+                                        fifo_wen(i) <= '1';
+                                        fifo_ren(i + size) <= '1';
+                                    end if;
+                                end if;
+                            elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(113 downto 76);
+                                layer_state(i)(6) <= '1';
+                                if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(37 downto 0) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i)fifo_data(i)(37 downto 0);
+                                    layer_state(i)(0) <= '1';
+                                    if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(75 downto 38);
+                                        layer_state(i)(1) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(151 downto 114);
+                                        layer_state(i)(7) <= '1';
+                                        fifo_wen(i) <= '1';
+                                        fifo_ren(i + size) <= '1';
+                                    end if;
+                                elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(151 downto 114);
+                                    layer_state(i)(7) <= '1';
+                                    fifo_ren(i + size) <= '1';
+                                end if;
+                            end if;
+                        end if;
+                    end if;
+                when "00110000" =>
+                    if ( fifo_full(i) = '1' or reset_fifo(i) = '1' ) then
+                        --
+                    elsif ( i_fifo_empty(i) = '1' or i_fifo_empty(i + size) = '1' or fifo_ren(i) = '1' or fifo_ren(i + size) = '1' fifo_ren_reg(i) = '0' or fifo_ren_reg(i + size) = '0' ) then
+                        --
+                    else
+                        if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(107 downto 104) ) then
+                            fifo_data(i)(37 downto 0) <= i_fifo_q(i)(37 downto 0);
+                            layer_state(i)(0) <= '1';
+                            if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i)(75 downto 38);
+                                layer_state(i)(1) <= '1';
+                                if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i)(113 downto 76);
+                                    layer_state(i)(2) <= '1';
+                                    if ( i_fifo_q(i)(145 downto 142) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(151 downto 114) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(151 downto 114);
+                                        layer_state(i)(3) <= '1';
+                                        fifo_wen(i) <= '1';
+                                        fifo_ren(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(113 downto 76);
+                                        layer_state(i)(6) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    end if;
+                                elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(113 downto 76);
+                                    layer_state(i)(6) <= '1';
+                                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(113 downto 76);
+                                        layer_state(i)(2) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(151 downto 114);
+                                        layer_state(i)(7) <= '1';
+                                        fifo_wen(i) <= '1';
+                                        fifo_ren(i + size) <= '1';
+                                    end if;
+                                end if;
+                            elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(113 downto 76);
+                                layer_state(i)(6) <= '1';
+                                if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i)(75 downto 38);
+                                    layer_state(i)(1) <= '1';
+                                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(113 downto 76);
+                                        layer_state(i)(2) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(151 downto 114);
+                                        layer_state(i)(7) <= '1';
+                                        fifo_wen(i) <= '1';
+                                        fifo_ren(i + size) <= '1';
+                                    end if;
+                                elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(151 downto 114);
+                                    layer_state(i)(7) <= '1';
+                                    fifo_ren(i + size) <= '1';
+                                end if;
+                            end if;
+                        elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero ) then
+                            fifo_data(i)(37 downto 0) <= i_fifo_q(i + size)(113 downto 76);
+                            layer_state(i)(6) <= '1';
+                            if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(37 downto 0) /= tree_zero ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i)fifo_data(i)(37 downto 0);
+                                layer_state(i)(0) <= '1';
+                                if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i)(75 downto 38);
+                                    layer_state(i)(1) <= '1';
+                                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(113 downto 76) /= tree_zero
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(113 downto 76);
+                                        layer_state(i)(2) <= '1';
+                                        fifo_wen(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero' ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(151 downto 114);
+                                        layer_state(i)(7) <= '1';
+                                        fifo_wen(i) <= '1';
+                                        fifo_ren(i + size) <= '1';
+                                    end if;
+                                elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(151 downto 114);
+                                    layer_state(i)(7) <= '1';
+                                    fifo_ren(i + size) <= '1';
+                                end if;
+                            elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(113 downto 76);
+                                layer_state(i)(7) <= '1';
+                                fifo_ren(i + size) <= '1';
+                            end if;
+                        end if;
+                    end if;
+                when "01110000" =>
+                    if ( fifo_full(i) = '1' or reset_fifo(i) = '1' ) then
+                        --
+                    elsif ( i_fifo_empty(i) = '1' or i_fifo_empty(i + size) = '1' or fifo_ren(i) = '1' or fifo_ren(i + size) = '1' fifo_ren_reg(i) = '0' or fifo_ren_reg(i + size) = '0' ) then
+                        --
+                    else
+                        if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(145 downto 142) ) then
+                            fifo_data(i)(37 downto 0) <= i_fifo_q(i)(37 downto 0);
+                            layer_state(i)(0) <= '1';
+                            if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i)(75 downto 38);
+                                layer_state(i)(1) <= '1';
+                                if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i)(113 downto 76);
+                                    layer_state(i)(2) <= '1';
+                                    if ( i_fifo_q(i)(145 downto 142) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(151 downto 114) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i)(151 downto 114);
+                                        layer_state(i)(3) <= '1';
+                                        fifo_wen(i) <= '1';
+                                        fifo_ren(i) <= '1';
+                                    elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
+                                        fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(151 downto 114);
+                                        layer_state(i)(7) <= '1';
+                                        fifo_wen(i) <= '1';
+                                        fifo_ren(i + size) <= '1';
+                                    end if;
+                                elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
+                                    fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(151 downto 114);
+                                    layer_state(i)(7) <= '1';
+                                    fifo_ren(i + size) <= '1';
+                                end if;
+                            elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
+                                fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(151 downto 114);
+                                layer_state(i)(7) <= '1';
+                                fifo_ren(i + size) <= '1';
+                            end if;
+                        elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
+                            fifo_data(i)(37 downto 0) <= i_fifo_q(i + size)(151 downto 114);
+                            layer_state(i)(7) <= '1';
+                            fifo_ren(i + size) <= '1';
+                        end if;
+                    end if;
+                when "00000001" =>
+                    if ( fifo_full(i) = '1' or reset_fifo(i) = '1' ) then
+                        --
+                    elsif ( i_fifo_empty(i) = '1' or i_fifo_empty(i + size) = '1' or fifo_ren(i) = '1' or fifo_ren(i + size) = '1' fifo_ren_reg(i) = '0' or fifo_ren_reg(i + size) = '0' ) then
+                        --
+                    else
+                        if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                            fifo_data(i)(75 downto 38) <= i_fifo_q(i)(75 downto 38);
+                            layer_state(i)(1) <= '1';
+                            if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
+                                fifo_data(i)(113 downto 76) <= i_fifo_q(i)(113 downto 76);
+                                layer_state(i)(2) <= '1';
+                                if ( i_fifo_q(i)(145 downto 142) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(151 downto 114) /= tree_zero ) then
+                                    fifo_data(i)(151 downto 114) <= i_fifo_q(i)(151 downto 114);
+                                    layer_state(i)(3) <= '1';
+                                    fifo_wen(i) <= '1';
+                                    fifo_ren(i) <= '1';
+                                elsif ( i_fifo_q(i + size)(37 downto 0) /= tree_zero ) then
+                                    fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(37 downto 0);
+                                    layer_state(i)(4) <= '1';
+                                    fifo_wen(i) <= '1';
+                                end if;
+                            elsif ( i_fifo_q(i + size)(37 downto 0) /= tree_zero ) then
+                                fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(37 downto 0);
+                                layer_state(i)(4) <= '1';
+                                if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
+                                    fifo_data(i)(151 downto 114) <= i_fifo_q(i)(113 downto 76);
+                                    layer_state(i)(2) <= '1';
+                                    fifo_wen(i) <= '1';
+                                elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                                    fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(75 downto 38);
+                                    layer_state(i)(5) <= '1';
+                                    fifo_wen(i) <= '1';
+                                end if;
+                            end if;
+                        elsif ( i_fifo_q(i + size)(37 downto 0) /= tree_zero ) then
+                            fifo_data(i)(37 downto 0) <= i_fifo_q(i + size)(37 downto 0);
+                            layer_state(i)(4) <= '1';
+                            if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                fifo_data(i)(113 downto 76) <= i_fifo_q(i)(75 downto 38);
+                                layer_state(i)(1) <= '1';
+                                if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(113 downto 76) /= tree_zero
+                                    fifo_data(i)(151 downto 114) <= i_fifo_q(i)(113 downto 76);
+                                    layer_state(i)(2) <= '1';
+                                    fifo_wen(i) <= '1';
+                                elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero' ) then
+                                    fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(75 downto 38);
+                                    layer_state(i)(5) <= '1';
+                                    fifo_wen(i) <= '1';
+                                end if;
+                            elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
+                                fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(75 downto 38);
+                                layer_state(i)(5) <= '1';
+                                if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(75 downto 38) /= tree_zero ) then
+                                    fifo_data(i)(151 downto 114) <= i_fifo_q(i)fifo_data(i)(75 downto 38);
+                                    layer_state(i)(1) <= '1';
+                                    fifo_wen(i) <= '1';
+                                elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero  ) then
+                                    fifo_data(i)(151 downto 114) <= i_fifo_q(i + size)(113 downto 76);
+                                    layer_state(i)(6) <= '1';
+                                    fifo_wen(i) <= '1';
+                                end if;
+                            end if;
                             elsif ( i_fifo_q(i + size)(75 downto 38) /= tree_zero ) then
                                 fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(75 downto 38);
                                 layer_state(i)(5) <= '1';
@@ -250,8 +680,14 @@ begin
                             end if;
                         end if;
                     end if;
+
                 when "00001111" =>
                     layer_state(i) <= (others => '0');
+                    -- TODO: reg of ren probably not needed
+                    fifo_ren_reg(i) <= '1';
+                    fifo_ren_reg(i + size) <= '1';
+                when "00011111" =>
+                    layer_state(i)(3 downto 0) <= (others => '0');
                     -- TODO: reg of ren probably not needed
                     fifo_ren_reg(i) <= '1';
                     fifo_ren_reg(i + size) <= '1';
@@ -270,6 +706,11 @@ begin
                     -- TODO: reg of ren probably not needed
                     fifo_ren_reg(i) <= '1';
                     fifo_ren_reg(i + size) <= '1';
+                when "11110001" =>
+                    layer_state(i)(7 downto 4) <= (others => '0');
+                    -- TODO: reg of ren probably not needed
+                    fifo_ren_reg(i) <= '1';
+                    fifo_ren_reg(i + size) <= '1';
                 when "11110011" =>
                     layer_state(i)(7 downto 4) <= (others => '0');
                     -- TODO: reg of ren probably not needed
@@ -279,47 +720,12 @@ begin
                     layer_state(i)(7 downto 4) <= (others => '0');
                     -- TODO: reg of ren probably not needed
                     fifo_ren_reg(i) <= '1';
-                    fifo_ren_reg(i + size) <= '1';    
-                when "00110011" =>
-                    if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
-                        -- state: 00110111
-                        fifo_data(i)(37 downto 0) <= i_fifo_q(i)(113 downto 76);
-                        layer_state(i)(2) <= '1';
-                        if ( i_fifo_q(i)(145 downto 142) <= i_fifo_q(i + size)(107 downto 104) and i_fifo_q(i)(151 downto 114) /= tree_zero ) then
-                            -- state: 00111111
-                            fifo_data(i)(75 downto 38) <= i_fifo_q(i)(151 downto 114);
-                            layer_state(i)(3) <= '1';
-                            fifo_ren(i) <= '1';
-                        elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero ) then
-                            -- state: 01110111
-                            fifo_data(i)(75 downto 38) <= i_fifo_q(i + size)(113 downto 76);
-                            layer_state(i)(6) <= '1';
-                            if ( i_fifo_q(i)(145 downto 142) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(151 downto 114) /= tree_zero ) then
-                                -- state: 01111111
-                                fifo_data(i)(113 downto 76) <= i_fifo_q(i)(151 downto 114);
-                                layer_state(i)(3) <= '1';
-                                fifo_ren(i) <= '1';
-                            elsif ( i_fifo_q(i + size)(151 downto 114) /= tree_zero ) then
-                                -- state: 11110111
-                                fifo_data(i)(113 downto 76) <= i_fifo_q(i + size)(151 downto 114);
-                                layer_state(i)(7) <= '1';
-                                fifo_ren(i + size) <= '1';
-                            end if;
-                        end if;
-                    elsif ( i_fifo_q(i + size)(113 downto 76) /= tree_zero ) then
-                        -- state: 01110011
-                        fifo_data(i)(37 downto 0) <= i_fifo_q(i + size)(113 downto 76);
-                        layer_state(i)(6) <= '1';
-                        if ( i_fifo_q(i)(107 downto 104) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
-                            -- state: 01110111
-                            fifo_data(i)(75 downto 38) <= i_fifo_q(i)(113 downto 76);
-                            layer_state(i)(2) <= '1';
-                            if ( i_fifo_q(i)(145 downto 142) <= i_fifo_q(i + size)(145 downto 142) and i_fifo_q(i)(113 downto 76) /= tree_zero ) then
-                                -- state: 01111111
-                                fifo_data(i)(75 downto 38) <= i_fifo_q(i)(151 downto 114);
-                                layer_state(i)(3) <= '1';
-                                fifo_ren(i) <= '1';
-                            elsif 
+                    fifo_ren_reg(i + size) <= '1';
+
+
+                
+
+
 
 
 
@@ -378,7 +784,6 @@ begin
 
             end case;
         else
---            wait_cnt(i) <= (others => '0');
             reset_fifo(i) <= '1';
             layer_state(i) <= "0000";
             fifo_data(i) <= (others => '0');
