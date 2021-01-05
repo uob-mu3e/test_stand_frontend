@@ -11,7 +11,7 @@ Contents:       Definition of functions to talk to a mupix-based FEB.
 #define MUPIX_FEB_H
 #include <map>
 #include "midas.h"
-#include "mudaq_device_scifi.h"
+#include "mudaq_device.h"
 #include "mupix_config.h"
 #include "MuFEB.h"
 #include "odbxx.h"

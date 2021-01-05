@@ -7,26 +7,24 @@
  * @date        2013-11-14
  */
 
-#ifndef __MUDAQ_DEVICE_HPP_WKZIQD9F__
-#define __MUDAQ_DEVICE_HPP_WKZIQD9F__
+#ifndef MUDAQ_DEVICE_HPP
+#define MUDAQ_DEVICE_HPP
 
 #include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include <sys/ioctl.h>		/* ioctl */
+#include <sys/ioctl.h>
 
 #include <boost/dynamic_bitset.hpp>
 
 #include "mudaq_circular_buffer.hpp"
 #include "../include/mudaq_device_constants.h"
-#include "../include/switching_constants.h" //K.B. changed from "mudaq_registers.h"
+#include "../include/switching_constants.h"
 #include "utils.hpp"
-#include "time.h"
 #include <stdlib.h>
 #include <stdio.h>
-/*??????*/
 #include "../kerneldriver/mudaq.h"
 
 static size_t _pagesize(void) { return static_cast<size_t>(sysconf(_SC_PAGESIZE)); }
@@ -39,21 +37,6 @@ namespace mudaq {
   class MudaqDevice
   {
   public:
-    union TimingConfig
-    {
-      uint8_t values[8];
-      struct {
-    uint8_t data_sampling_point;
-    uint8_t priout_sampling_point;
-    uint8_t rdcol_width;
-    uint8_t rdcol_pulldown_delay;
-    uint8_t rdcol_rdcol_delay;
-    uint8_t ldcol_rdcol_delay;
-    uint8_t pulldown_ldcol_delay;
-    uint8_t ldpix_pulldown_delay;
-      };
-    };
-
     // a device can exist only once. forbid copying and assignment
     MudaqDevice() = delete;
     MudaqDevice(const MudaqDevice&) = delete;
@@ -62,22 +45,19 @@ namespace mudaq {
     MudaqDevice(const std::string& path);
     virtual ~MudaqDevice() { close(); }
 
-    bool is_ok() const;
+    virtual bool is_ok() const;
     virtual bool open();
     virtual void close();
     virtual bool operator!() const;
 
-    void write_register(unsigned idx, uint32_t value);
-    void write_register_wait(unsigned idx, uint32_t value, unsigned wait_ns);
-    void toggle_register(unsigned idx, uint32_t value, unsigned wait_ns);
-    uint32_t read_register_rw(unsigned idx) const;
-    uint32_t read_register_ro(unsigned idx) const;
-    uint32_t read_memory_ro(unsigned idx) const;
-    uint32_t read_memory_rw(unsigned idx) const;
-    void write_memory_rw(unsigned idx, uint32_t value); // added by DvB for rw mem
-
-    int FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
-    int FEB_read(uint32_t FPGA_ID, uint16_t length, uint32_t startaddr);
+    virtual void write_register(unsigned idx, uint32_t value);
+    virtual void write_register_wait(unsigned idx, uint32_t value, unsigned wait_ns);
+    virtual void toggle_register(unsigned idx, uint32_t value, unsigned wait_ns);
+    virtual uint32_t read_register_rw(unsigned idx) const;
+    virtual uint32_t read_register_ro(unsigned idx) const;
+    virtual uint32_t read_memory_ro(unsigned idx) const;
+    virtual uint32_t read_memory_rw(unsigned idx) const;
+    virtual void write_memory_rw(unsigned idx, uint32_t value);
 
     void enable_led(unsigned which);
     void enable_leds(uint8_t pattern);

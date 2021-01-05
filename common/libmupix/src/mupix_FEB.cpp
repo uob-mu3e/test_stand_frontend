@@ -17,7 +17,7 @@ Contents:       Definition of functions to talk to a mupix-based FEB. Designed t
 #include "../include/feb.h"
 using namespace mu3e::daq;
 
-#include "mudaq_device_scifi.h"
+#include "mudaq_device.h"
 #include "mupix_config.h"
 #include "mupix_midasodb.h"
 #include <thread>

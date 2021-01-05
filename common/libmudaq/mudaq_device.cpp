@@ -129,7 +129,7 @@ namespace mudaq {
     _regs_rw(nullptr),
     _regs_ro(nullptr),
     _mem_ro(nullptr),
-    _mem_rw(nullptr)  // added by DvB for rw mem
+    _mem_rw(nullptr)
   {
       _last_read_address = 0;
 }
@@ -140,7 +140,7 @@ namespace mudaq {
       (_regs_rw == nullptr) ||
       (_regs_ro == nullptr) ||
       (_mem_ro == nullptr)  ||
-      (_mem_rw == nullptr);   // added by DvB for rw mem
+      (_mem_rw == nullptr);
 
     return !error;
   }
@@ -156,9 +156,9 @@ namespace mudaq {
     }
     _regs_rw = mmap_rw(MUDAQ_REGS_RW_INDEX, MUDAQ_REGS_RW_LEN);
     _regs_ro = mmap_ro(MUDAQ_REGS_RO_INDEX, MUDAQ_REGS_RO_LEN);
-    _mem_rw =  mmap_rw(MUDAQ_MEM_RW_INDEX,  MUDAQ_MEM_RW_LEN);  // added by DvB for rw mem
+    _mem_rw =  mmap_rw(MUDAQ_MEM_RW_INDEX,  MUDAQ_MEM_RW_LEN);
     _mem_ro =  mmap_ro(MUDAQ_MEM_RO_INDEX,  MUDAQ_MEM_RO_LEN);
-    return (_regs_rw != nullptr) && (_regs_ro != nullptr) && (_mem_rw != nullptr) && (_mem_ro != nullptr);  // added by DvB for rw mem
+    return (_regs_rw != nullptr) && (_regs_ro != nullptr) && (_mem_rw != nullptr) && (_mem_ro != nullptr);
 }
 
 void MudaqDevice::close()
@@ -179,72 +179,36 @@ bool MudaqDevice::operator!() const
     return (_fd < 0) || (_regs_rw == nullptr)
                      || (_regs_ro == nullptr)
                      || (_mem_ro == nullptr)
-                     || (_mem_rw == nullptr);  // added by DvB for rw mem
+                     || (_mem_rw == nullptr);
 }
 
-void MudaqDevice::write_memory_rw(unsigned idx, uint32_t value)   // added by DvB for rw mem
+void MudaqDevice::write_memory_rw(unsigned idx, uint32_t value)
 {
     if(idx > 64*1024){
         cout << "Invalid memory address " << idx << endl;
+        exit (EXIT_FAILURE);
     }
     else {
-  _mem_rw[idx & MUDAQ_MEM_RW_MASK] = value;
+        _mem_rw[idx & MUDAQ_MEM_RW_MASK] = value;
     }
-  // add memory barrier and re-read value to ensure it gets written to the
-  // device before continuing
-  //atomic_thread_fence(memory_order_seq_cst);
-  //volatile uint32_t tmp = _mem_rw[idx & MUDAQ_MEM_RW_MASK];
-  //if (tmp != value) {
-  //  cout << "Read wrong value: " << tmp << " instead of " << value << endl;
-  //}
 }
 
 void MudaqDevice::write_register(unsigned idx, uint32_t value)
 {
     if(idx > 63){
         cout << "Invalid register address " << idx << endl;
+        exit (EXIT_FAILURE);
     }
     else {
     _regs_rw[idx] = value;
     }
-    // add memory barrier and re-read value to ensure it gets written to the
-    // device before continuing
-    //atomic_thread_fence(memory_order_seq_cst);
-    //volatile uint32_t tmp = _regs_rw[idx];
-
-    // msync only works w/ page aligned addresses
-    // i dont think this is required. no documentation relating to
-    // user-space device drivers ever mentions the need to use msync.
-//    if (msync((uint32_t *)_regs_rw, REGS_RW_LEN * sizeof(uint32_t), MS_INVALIDATE) < 0) {
-//        cerr << showbase << hex
-//             << "msync for read-write register "<< setw(4) << idx
-//             << " failed: " << strerror(errno)
-//             << noshowbase << dec << endl;
-//    }
-
-    // extra cross check. not sure if needed
-    //if (tmp != value) {
-     // cout << "Read wrong value: " << tmp << " instead of " << value << endl;
-      //ERROR("write to register %4h failed. %h != %h", idx, tmp, value);
-    //}
 }
 
 void MudaqDevice::write_register_wait(unsigned idx, uint32_t value,
                                       unsigned wait_ns)
 {
     write_register(idx, value);
-    // NOTE to future self
-    // c++11 sleep_for only works from gcc 4.8 onwards. not yet for gcc 4.7
-    // std::chrono::nanoseconds wait_time(wait_ns);
-    // std::this_thread::sleep_for(wait_time);
-    struct timespec wait_time;
-    struct timespec waited_time;
-
-    wait_time.tv_sec = 0;
-    wait_time.tv_nsec = wait_ns;
-    if (nanosleep(&wait_time, &waited_time) < 0) {
-        ERROR("nanosleep failed: %s", strerror(errno));
-    }
+    std::this_thread::sleep_for(std::chrono::nanoseconds(wait_ns));
 }
 
 void MudaqDevice::toggle_register(unsigned idx, uint32_t value, unsigned wait_ns)
@@ -277,7 +241,7 @@ uint32_t MudaqDevice::read_memory_ro(unsigned idx) const {
            exit (EXIT_FAILURE);
        }
        return _mem_ro[idx & MUDAQ_MEM_RO_MASK];
-}  // changed name by DvB for rw mem
+}
 
 uint32_t MudaqDevice::read_memory_rw(unsigned idx) const {
        if(idx > 64*1024-1){
@@ -285,7 +249,7 @@ uint32_t MudaqDevice::read_memory_rw(unsigned idx) const {
            exit (EXIT_FAILURE);
        }
        return _mem_rw[idx & MUDAQ_MEM_RW_MASK];
-}  // added by DvB for rw mem
+}
 
 void MudaqDevice::enable_led(unsigned which)
 {
@@ -321,7 +285,6 @@ void MudaqDevice::print_registers()
 volatile uint32_t * MudaqDevice::mmap_rw(unsigned idx, unsigned len)
 {
     off_t offset = idx * _pagesize();
-//    cout << _pagesize() << endl;
     size_t size = len * sizeof(uint32_t);
     // TODO what about | MAP_POPULATE
     volatile void * rv = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED , _fd, offset);
@@ -381,10 +344,23 @@ void MudaqDevice::munmap_wrapper(volatile uint32_t** addr, unsigned len,
  *      Write length from 0xBC -> 0x9c to SC_MAIN_LENGTH_REGISTER_W
  *      Write enable to SC_MAIN_ENABLE_REGISTER_W
  */
-int MudaqDevice::FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr) {
+/*int MudaqDevice::FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr) {
+
+    // TODO: Check length, startaddr and FPGA ID
+    // TODO: Instead of data, length, use a vector
+    // TODO: Think of using meaningful return codes specifying the error condition
+
 
     int count = 0;
     while(count < 1000){
+        // NB: TODO: Is this really necessary? Are there multiple threads talking to the same MuDaq Device?
+        // If yes, use a mutex
+        // If no, we know that this function (and the read) are blocking and will only return if the
+        // transaction is done or there was a timeout.
+
+        // Also: Refactor this ready-check into a separate function instead of repeating it
+        // Also: I guess that bit 0 is the busy bit - check for the busy bit only
+
         if ( read_register_ro(SC_MAIN_STATUS_REGISTER_R) == 0x00000001 ) break;
         count++;
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -409,7 +385,10 @@ int MudaqDevice::FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, ui
     
     // SC_MAIN_LENGTH_REGISTER_W starts from 1
     // length for SC Main does not include preamble and trailer, thats why it is 2+length
+    // TODO: Why wait?
     write_register_wait(SC_MAIN_LENGTH_REGISTER_W, 2 + length, 100);
+
+    // TODO: There is a toggle function for this...
     write_register_wait(SC_MAIN_ENABLE_REGISTER_W, 0x1, 100);
     // firmware regs SC_MAIN_ENABLE_REGISTER_W so that it only starts on a 0->1 transition
     write_register_wait(SC_MAIN_ENABLE_REGISTER_W, 0x0, 100);
@@ -430,6 +409,8 @@ int MudaqDevice::FEB_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, ui
 }
 
 int MudaqDevice::FEB_read(uint32_t FPGA_ID, uint16_t length, uint32_t startaddr) {
+
+    // TODO: See write
 
     int count = 0;
     while(count < 1000){
@@ -470,7 +451,7 @@ int MudaqDevice::FEB_read(uint32_t FPGA_ID, uint16_t length, uint32_t startaddr)
     }
     
     return 0;
-}
+}*/
 
 // ----------------------------------------------------------------------------
 // DmaMudaqDevice

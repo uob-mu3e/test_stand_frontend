@@ -1,4 +1,4 @@
-/********************************************************************\
+﻿/********************************************************************\
 
   Name:         MuFEB.h
   Created by:   Konrad Briggl
@@ -10,7 +10,7 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 #ifndef MUFEB_H
 #define MUFEB_H
 #include "midas.h"
-#include "mudaq_device_scifi.h"
+#include "mudaq_device.h"
 #include "mudaq_dummy.h"
 #include "link_constants.h"
 #include "feb_constants.h"

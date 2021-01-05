@@ -5,6 +5,9 @@ use ieee.std_logic_1164.all;
 
 package feb_sc_registers is
 
+    subtype FEB_SC_ADDR_RANGE       is integer range 255 downto 0;
+    subtype FEB_SC_DATA_SIZE_RANGE  is integer range 512 downto 1;
+
     -- The block 0x00 is common for all FEBs
     -- and contains control and  monitoring information
     -- as well as the control of the slow control entity itself

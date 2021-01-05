@@ -1,9 +1,8 @@
 #include <cstring>
 #include <iostream>
 #include <iomanip>
-//#include <mupix_config.h>
+
 #include "midas.h"
-//#include "experim.h"
 #include "mupix_MIDAS_config.h"
 #include "mupix_midasodb.h"
 #include "odbxx.h"

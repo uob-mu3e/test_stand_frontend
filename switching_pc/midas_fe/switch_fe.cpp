@@ -68,6 +68,8 @@
 #include "Tiles_FEB.h"
 #include "mupix_FEB.h"
 
+#include "missing_hardware.h"
+
 using namespace std;
 using midas::odb;
 
@@ -80,6 +82,9 @@ const char *frontend_file_name = __FILE__;
 
 /* frontend_loop is called periodically if this variable is TRUE    */
 BOOL frontend_call_loop = FALSE;
+
+/* Overwrite equipment struct in ODB from values in code*/
+BOOL equipment_common_overwrite = FALSE;
 
 /* a frontend status page is displayed with this frequency in ms    */
 //INT display_period = 1000;
@@ -99,8 +104,8 @@ int switch_id = 0; // TODO to be loaded from outside
 INT status;
 
 /* DMA Buffer and related */ 
-#ifdef MY_DEBUG
-    dummy_mudaq::DummyMudaqDevice * mup;
+#ifdef NO_SWITCHING_BOARD
+    mudaq::MudaqDevice * mup;
 #else
     mudaq::MudaqDevice * mup;
 #endif
@@ -228,8 +233,8 @@ INT frontend_init()
     setup_watches();
     
     // open mudaq
-    #ifdef MY_DEBUG
-        mup = new dummy_mudaq::DummyMudaqDevice("/dev/mudaq0");
+    #ifdef NO_SWITCHING_BOARD
+        mup = new dummy_mudaq::DummyDmaMudaqDevice("/dev/mudaq0");
     #else
         mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
     #endif       

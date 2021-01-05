@@ -56,6 +56,8 @@
 #include "reset_protocol.h"
 #include "link_constants.h"
 
+#include "missing_hardware.h"
+
 using std::cout;
 using std::endl;
 using std::hex;
@@ -75,6 +77,9 @@ const char *frontend_file_name = __FILE__;
 
 /* frontend_loop is called periodically if this variable is TRUE    */
 BOOL frontend_call_loop = FALSE;
+
+/* Overwrite equipment struct in ODB from values in code*/
+BOOL equipment_common_overwrite = FALSE;
 
 /* a frontend status page is displayed with this frequency in ms    */
 INT display_period = 0;
@@ -172,7 +177,7 @@ INT frontend_init()
     int port       = settings["Port"];
 
     cout << "IP: " << ip << " port: " << port << endl;
-    if(ip=="0.0.0.0"){
+    if(NO_CLOCK_BOX or ip=="0.0.0.0"){
        cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
        cb = new clockboard_bypass(ip, port);
     }else{
