@@ -60,6 +60,9 @@ int FEB_slowcontrol::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint
         return ERRCODES::SIZE_ZERO;
      }
 
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(sc_mutex);
+
     if(!(mdev.read_register_ro(SC_MAIN_STATUS_REGISTER_R)&0x1)){ // FPGA is busy, should not be here...
        cout << "FPGA busy" << endl;
        return ERRCODES::FPGA_BUSY;
@@ -91,7 +94,7 @@ int FEB_slowcontrol::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint
     while(count < 10){
         if ( mdev.read_register_ro(SC_MAIN_STATUS_REGISTER_R) & 0x1 ) break;
         count++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::microseconds(20));
     }
     if(count==10){
         cout << "MudaqDevice::FEB_write Timeout for done reg" << endl;
@@ -99,7 +102,31 @@ int FEB_slowcontrol::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint
     }
 
     // check for acknowledge packet
+    // TODO: Is there a case (broadcast?) when there will be no reply? More than one?
+    // This should be dealt with here
 
+    count = 0;
+    while(count<10){
+        if(FEBsc_read_packets() > 0 && sc_packet_deque.front().IsWR()) break;
+        count++;
+        std::this_thread::sleep_for(std::chrono::microseconds(20));
+    }
+    if(count==10){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Timeout occured waiting for reply");
+        cm_msg(MERROR, "MudaqDevice::FEBsc_write", "Wanted to read from FPGA %d, Addr %d, length %d", FPGA_ID, startaddr, data.size());
+        return ERRCODES::FPGA_TIMEOUT;
+    }
+    if(!sc_packet_deque.front().Good()){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received bad packet");
+        return ERRCODES::BAD_PACKET;
+    }
+    if(!sc_packet_deque.front().IsResponse()){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Received request packet, this should not happen...");
+        return ERRCODES::BAD_PACKET;
+    }
+
+    // Message was consumed, drop it
+    sc_packet_deque.pop_front();
 
     return OK;
 }
@@ -121,6 +148,9 @@ int FEB_slowcontrol::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint3
         return ERRCODES::SIZE_ZERO;
      }
 
+    // From here on we grab the mutex until the end of the function: One transaction at a time
+    const std::lock_guard<std::mutex> lock(sc_mutex);
+
     if(!(mdev.read_register_ro(SC_MAIN_STATUS_REGISTER_R)&0x1)){ // FPGA is busy, should not be here...
        cout << "FPGA busy" << endl;
        return ERRCODES::FPGA_BUSY;
@@ -141,7 +171,37 @@ int FEB_slowcontrol::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint3
     // firmware regs SC_MAIN_ENABLE_REGISTER_W so that it only starts on a 0->1 transition
     mdev.toggle_register(SC_MAIN_ENABLE_REGISTER_W, 0x1, 100);
 
+    int count = 0;
+    while(count<10){
+        if(FEBsc_read_packets() > 0 && sc_packet_deque.front().IsRD()) break;
+        count++;
+        std::this_thread::sleep_for(std::chrono::microseconds(20));
+    }
+    if(count==10){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Timeout occured waiting for reply");
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %d", FPGA_ID, startaddr, data.size());
+        return ERRCODES::FPGA_TIMEOUT;
+    }
+    if(!sc_packet_deque.front().Good()){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received bad packet");
+        return ERRCODES::BAD_PACKET;
+    }
+    if(!sc_packet_deque.front().IsResponse()){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received request packet, this should not happen...");
+        return ERRCODES::BAD_PACKET;
+    }
+    if(sc_packet_deque.front().GetLength()!=data.size()){
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %d", FPGA_ID, startaddr, data.size());
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error");
+        return ERRCODES::WRONG_SIZE;
+    }
 
+    for(uint32_t index =0; index < data.size(); index++){
+        data[index] = sc_packet_deque.front().data()[index+3];
+    }
+
+    // Message was consumed, drop it
+    sc_packet_deque.pop_front();
 
     return ERRCODES::OK;
 }
@@ -169,6 +229,8 @@ void FEB_slowcontrol::FEBsc_resetSecondary()
     mdev.toggle_register(RESET_REGISTER_W, SET_RESET_BIT_SC_SECONDARY(0), 1000);
     //wait until SECONDARY is reset, clearing the ram takes time
     uint16_t timeout_cnt=0;
+    // TODO: we clear a fixed size memory at a fixed frequency - we KNOW how long this takes
+    // TODO: do we need to clear the memory or is this just nice to have?
     //poll register until reset. Should be 0xff... during reset and zero after, but we might be bombarded with packets, so give some margin for data to enter.
     while((mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R) > 0xff) && timeout_cnt++ < 50){
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -179,6 +241,48 @@ void FEB_slowcontrol::FEBsc_resetSecondary()
     }else{
         cout << " DONE\n";
     };
+}
+
+int FEB_slowcontrol::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks)
+{
+    int status =0;
+    int index = 0;
+    for(auto chunk: payload_chunks){
+        status=FEB_write(FPGA_ID, (uint32_t) index+OFFSETS::FEBsc_RPC_DATAOFFSET, chunk);
+         if(status < 0)
+             return status;
+        index += chunk.size();
+    }
+    if(index >= 1<<16)
+        return ERRCODES::WRONG_SIZE;
+
+    // TODO: What is 0xfff1 here - put it in a define... Make sure write accepts it as a
+    // a valid address
+    status=FEB_write(FPGA_ID, 0xfff1, vector<uint32_t>(1,OFFSETS::FEBsc_RPC_DATAOFFSET));
+    if(status < 0)
+        return status;
+
+    // TODO: What is 0xfff0 here - put it in a define... Make sure write accepts it as a
+    // a valid address
+    status=FEB_write(FPGA_ID, 0xfff0,
+                     vector<uint32_t>(1,(((uint32_t)command) << 16) || index));
+    if(status < 0)
+        return status;
+
+    //Wait for remote command to finish, poll register
+    uint timeout_cnt = 0;
+    vector<uint32_t> readback(1,0);
+    while(1){
+        if(++timeout_cnt >= 500) return ERRCODES::NIOS_RPC_TIMEOUT;
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        status=FEB_read(FPGA_ID, 0xfff0, readback);
+        if(status < 0)
+            return status
+                    ;
+        if(timeout_cnt > 5) printf("MudaqDevice::FEBsc_NiosRPC(): Polling for command %x @%d: %x, %x\n",command,timeout_cnt,readback[0],readback[0]&0xffff0000);
+        if((readback[0]&0xffff0000) == 0) break;
+    }
+    return readback[0]&0xffff;
 }
 
 int FEB_slowcontrol::FEBsc_read_packets()
@@ -232,7 +336,7 @@ int FEB_slowcontrol::FEBsc_read_packets()
 
 
 
-}
+
 
 
 

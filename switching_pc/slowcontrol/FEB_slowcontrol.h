@@ -10,6 +10,7 @@
 #include "mudaq_device.h"
 #include <vector>
 #include <deque>
+#include <mutex>
 
 using std::vector;
 using std::deque;
@@ -18,6 +19,10 @@ class FEB_slowcontrol {
 public:
     FEB_slowcontrol(mudaq::MudaqDevice & mdev /*,Add midas connection here */);
     ~FEB_slowcontrol();
+    // There should only be one SC interface, forbid copy and assignment
+    FEB_slowcontrol() = delete;
+    FEB_slowcontrol(const FEB_slowcontrol &) = delete;
+    FEB_slowcontrol& operator=(const FEB_slowcontrol&) = delete;
 
     int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data);
     // expects data vector with read-length size
@@ -25,11 +30,15 @@ public:
 
     void FEBsc_resetMain();
     void FEBsc_resetSecondary();
+    int FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks);
 
-    enum ERRCODES {ADDR_INVALID= -10, SIZE_INVALID, SIZE_ZERO, FPGA_BUSY, FPGA_TIMEOUT, OK=0};
+    enum ERRCODES {ADDR_INVALID= -20, SIZE_INVALID, SIZE_ZERO, FPGA_BUSY, FPGA_TIMEOUT, BAD_PACKET, WRONG_SIZE, NIOS_RPC_TIMEOUT, OK=0};
+    enum OFFSETS {FEBsc_RPC_DATAOFFSET=0};
 
 protected:
     mudaq::MudaqDevice & mdev;
+
+    std::mutex sc_mutex;
 
     struct SC_reply_packet : public std::vector<uint32_t>{
     public:
