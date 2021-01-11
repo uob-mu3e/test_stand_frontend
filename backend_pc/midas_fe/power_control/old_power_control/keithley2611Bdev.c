@@ -27,10 +27,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "../../../modules/midas/include/midas.h"
-#include "../../../modules/midas/include/mfe.h"
+#include "../../../../modules/midas/include/midas.h"
+#include "../../../../modules/midas/include/mfe.h"
 #include <math.h>
-#include "../../../modules/midas/include/msystem.h"
+#include "../../../../modules/midas/include/msystem.h"
 #include  <signal.h>
 //#include "scpi.h"
 
