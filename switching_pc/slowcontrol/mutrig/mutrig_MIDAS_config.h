@@ -15,6 +15,7 @@
 using midas::odb;
 
 // From midas.h
+// TODO: Why not include midas.h
 typedef unsigned int DWORD;
 typedef DWORD BOOL;
 typedef int INT;

@@ -11,7 +11,7 @@ Contents:       Class to alter settings on a Tiles-FE-FPGA. Derives from MutrigF
 #define TILES_FEB_ACCESS_H
 
 #include "midas.h"
-#include "mudaq_device_scifi.h"
+#include "mudaq_device.h"
 #include "Mutrig_FEB.h"
 #include "odbxx.h"
 using midas::odb;

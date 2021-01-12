@@ -12,7 +12,7 @@ Contents:       Class to alter settings on a SciFi-FE-FPGA. Derives from MutrigF
 
 #include "midas.h"
 #include "odbxx.h"
-#include "mudaq_device_scifi.h"
+#include "mudaq_device.h"
 #include "Mutrig_FEB.h"
 
 using midas::odb;

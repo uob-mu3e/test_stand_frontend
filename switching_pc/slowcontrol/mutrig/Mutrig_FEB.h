@@ -13,7 +13,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 
 #include "midas.h"
 #include "odbxx.h"
-#include "mudaq_device_scifi.h"
+#include "mudaq_device.h"
 #include "MutrigConfig.h"
 #include "MuFEB.h"
 

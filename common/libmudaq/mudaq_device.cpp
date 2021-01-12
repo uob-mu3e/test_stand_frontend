@@ -46,7 +46,7 @@ int physical_address_check( uint32_t * base_address, size_t size ) {
   unsigned long offset = 0, page_frame_number = 0, distance_from_page_boundary = 0;
   uint64_t offset_mem;
 
-  for ( int i = 0; i < size / _pagesize(); i++ ) { // loop over all pages in allocated memory
+  for (uint i = 0; i < size / _pagesize(); i++ ) { // loop over all pages in allocated memory
     virtual_address = base_address + i * _pagesize() / 4; // uint32_t words
     /* go to entry for virtual_address  */
     offset = (unsigned long)virtual_address / _pagesize() * PAGEMAP_LENGTH;
@@ -575,6 +575,7 @@ ostream& operator<<(ostream& os, const MudaqDevice& dev)
 {
     os << "MudaqDevice '" << dev._path << "' "
        << "status: " << (!dev ? "ERROR" : "ok");
+    return os;
 }
 
 

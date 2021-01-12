@@ -101,10 +101,11 @@ int FEB_slowcontrol::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint
         return ERRCODES::FPGA_TIMEOUT;
     }
 
-    // check for acknowledge packet
-    // TODO: Is there a case (broadcast?) when there will be no reply? More than one?
-    // This should be dealt with here
+    // TODO: Are there other cases where we do not get a return packet?
+    if(FPGA_ID == ADDRS::BROADCAST_ADDR)
+        return OK;
 
+    // check for acknowledge packet
     count = 0;
     while(count<10){
         if(FEBsc_read_packets() > 0 && sc_packet_deque.front().IsWR()) break;
@@ -113,7 +114,7 @@ int FEB_slowcontrol::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint
     }
     if(count==10){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Timeout occured waiting for reply");
-        cm_msg(MERROR, "MudaqDevice::FEBsc_write", "Wanted to read from FPGA %d, Addr %d, length %d", FPGA_ID, startaddr, data.size());
+        cm_msg(MERROR, "MudaqDevice::FEBsc_write", "Wanted to read from FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
         return ERRCODES::FPGA_TIMEOUT;
     }
     if(!sc_packet_deque.front().Good()){
@@ -179,7 +180,7 @@ int FEB_slowcontrol::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint3
     }
     if(count==10){
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Timeout occured waiting for reply");
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %d", FPGA_ID, startaddr, data.size());
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
         return ERRCODES::FPGA_TIMEOUT;
     }
     if(!sc_packet_deque.front().Good()){
@@ -191,7 +192,7 @@ int FEB_slowcontrol::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint3
         return ERRCODES::BAD_PACKET;
     }
     if(sc_packet_deque.front().GetLength()!=data.size()){
-        cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %d", FPGA_ID, startaddr, data.size());
+        cm_msg(MERROR, "MudaqDevice::FEBsc_read", "Wanted to read from FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
         cm_msg(MERROR, "MudaqDevice::FEBsc_read" , "Received packet fails size check, communication error");
         return ERRCODES::WRONG_SIZE;
     }

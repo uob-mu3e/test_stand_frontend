@@ -23,7 +23,7 @@ add_library(libmudaq STATIC
     #mudaq_circular_buffer.hpp
     #asic_config_base.h
     asic_config_base.cpp
-    #${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h
     )
 target_include_directories(libmudaq PUBLIC .)
 target_link_libraries(libmudaq  midas ${Boost_LIBRARIES})

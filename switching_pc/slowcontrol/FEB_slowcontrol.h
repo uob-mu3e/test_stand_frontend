@@ -34,6 +34,8 @@ public:
 
     enum ERRCODES {ADDR_INVALID= -20, SIZE_INVALID, SIZE_ZERO, FPGA_BUSY, FPGA_TIMEOUT, BAD_PACKET, WRONG_SIZE, NIOS_RPC_TIMEOUT, OK=0};
     enum OFFSETS {FEBsc_RPC_DATAOFFSET=0};
+    // TODO: Check what the corect addr is
+    enum ADDRS {BROADCAST_ADDR = 0xFFFFFFFF};
 
 protected:
     mudaq::MudaqDevice & mdev;
@@ -49,6 +51,7 @@ protected:
             if(size()!=GetLength()+4) return false;
             return true;
         };
+        //TODO: Remove hardcoded numbers here
         bool IsOOB(){return (this->at(0)&0x1f0000bc) == 0x1c0000bc;};
         bool IsRD() {return (this->at(0)&0x1f0000bc) == 0x1e0000bc;};
         bool IsWR() {return (this->at(0)&0x1f0000bc) == 0x1f0000bc;};

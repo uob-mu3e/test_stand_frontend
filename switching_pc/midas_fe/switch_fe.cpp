@@ -57,8 +57,10 @@
 #include "odbxx.h"
 #include "mfe.h"
 #include "string.h"
-#include "mudaq_device_scifi.h"
+#include "mudaq_device.h"
 #include "mudaq_dummy.h"
+
+#include "FEB_slowcontrol.h"
 
 //Slow control for mutrig/scifi ; mupix
 #include "mutrig_midasodb.h"
@@ -103,12 +105,14 @@ int switch_id = 0; // TODO to be loaded from outside
 
 INT status;
 
-/* DMA Buffer and related */ 
-#ifdef NO_SWITCHING_BOARD
-    mudaq::MudaqDevice * mup;
-#else
-    mudaq::MudaqDevice * mup;
-#endif
+/* Inteface to the PCIe FPGA */
+mudaq::MudaqDevice * mup;
+
+/* Abstraction for talking to the FEBs via the PCIe FPGA or MSCB (to be implemented) */
+FEB_slowcontrol * feb_sc;
+
+
+
 
 
 /*-- Function declarations -----------------------------------------*/
@@ -131,10 +135,10 @@ void print_ack_state();
 void setup_odb();
 void setup_watches();
 
-INT init_mudaq(auto & mu);
-INT init_scifi(auto & mu);
-INT init_scitiles(auto & mu);
-INT init_mupix(auto & mu);
+INT init_mudaq(mudaq::MudaqDevice& mu);
+INT init_scifi(mudaq::MudaqDevice&  mu);
+INT init_scitiles(mudaq::MudaqDevice& mu);
+INT init_mupix(mudaq::MudaqDevice& mu);
 
 
 /*-- Equipment list ------------------------------------------------*/
@@ -226,15 +230,13 @@ INT frontend_init()
         odb::set_debug(true);
     #endif
 
-    HNDLE hKeySC;
-
     // create Settings structure in ODB
     setup_odb();
     setup_watches();
     
     // open mudaq
     #ifdef NO_SWITCHING_BOARD
-        mup = new dummy_mudaq::DummyDmaMudaqDevice("/dev/mudaq0");
+        mup = new mudaq::DummyDmaMudaqDevice("/dev/mudaq0");
     #else
         mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
     #endif       
@@ -358,14 +360,12 @@ void setup_watches(){
 void switching_board_mask_changed(odb o) {
 
     string name = o.get_name();
+    string val = o;
 
     cm_msg(MINFO, "switching_board_mask_changed", "Switching board masking changed");
-    cm_msg(MINFO, "switching_board_mask_changed", "With name %s and odb %s", name, o);
+    cm_msg(MINFO, "switching_board_mask_changed", "With name %s and odb %s", name.c_str(), val.c_str());
 
     INT switching_board_mask[MAX_N_SWITCHINGBOARDS];
-    int size = sizeof(INT)*MAX_N_FRONTENDBOARDS;
-
-    //db_get_data(hDB, hKey, &switching_board_mask, &size, TID_INT);
 
     BOOL value = switching_board_mask[switch_id] > 0 ? true : false;
 
@@ -383,6 +383,7 @@ void switching_board_mask_changed(odb o) {
 }
 
 void frontend_board_mask_changed(odb o) {
+    // TODO: What is the point of exceptions, if you do not handle them??
     try{
         set_feb_enable(get_link_active_from_odb(o));
         SciFiFEB::Instance()->RebuildFEBsMap();
@@ -390,7 +391,7 @@ void frontend_board_mask_changed(odb o) {
     }catch(...){}
 }
 
-INT init_mudaq(auto & mu) {
+INT init_mudaq(mudaq::MudaqDevice &mu) {
 
     
     if ( !mu.open() ) {
@@ -403,13 +404,12 @@ INT init_mudaq(auto & mu) {
         return FE_ERR_DRIVER;
     }
 
-    mu.FEBsc_resetMain();
-    mu.FEBsc_resetSecondary();
+    feb_sc = new FEB_slowcontrol(mu);
 
     return SUCCESS;
 }
 
-INT init_scifi(auto & mu) {
+INT init_scifi(mudaq::MudaqDevice & mu) {
 
     // SciFi setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
@@ -433,7 +433,7 @@ INT init_scifi(auto & mu) {
     return SUCCESS;
 }
 
-INT init_scitiles(auto & mu) {
+INT init_scitiles(mudaq::MudaqDevice & mu) {
     
     //SciTiles setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Initializing...", "var(--myellow)");
@@ -456,7 +456,7 @@ INT init_scitiles(auto & mu) {
     return SUCCESS;
 }
 
-INT init_mupix(auto & mu) {
+INT init_mupix(mudaq::MudaqDevice & mu) {
 
     //Mupix setup part
     set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");
@@ -475,7 +475,7 @@ INT init_mupix(auto & mu) {
     // setup odb rate counters for each feb
     char set_str[255];
     odb rate_counters("/Equipment/Mupix/Variables");
-    for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+    for(uint i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
         sprintf(set_str, "merger rate FEB%d", i);
         rate_counters[set_str] = 0;
         sprintf(set_str, "hit ena rate FEB%d", i);
@@ -488,7 +488,7 @@ INT init_mupix(auto & mu) {
     //end of Mupix setup part
     
     // Define history panels for each FEB Mupix
-    for(int i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+    for(uint i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
         sprintf(set_str, "FEB%d", i);
         hs_define_panel("Mupix", set_str, {"Mupix:merger rate " + string(set_str),
                                            "Mupix:hit ena rate " + string(set_str),
@@ -524,7 +524,7 @@ INT frontend_loop()
 INT begin_of_run(INT run_number, char *error)
 {
    int status;
-try{
+try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Starting Run", "var(--morange)");
    set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Starting Run", "var(--morange)");
 
@@ -566,36 +566,43 @@ try{
    //last preparations
    SciFiFEB::Instance()->ResetAllCounters();
 
+
+   // TODO: Switch to odbxx here
    HNDLE hKey;
    char ip[256];
    int size = 256;
    if(db_find_key(hDB, 0, "/Equipment/Clock Reset", &hKey) != DB_SUCCESS){
-       cm_msg(MERROR,"switch_fe","could not find CRFE, is CRFE running ?", run_number);
+       cm_msg(MERROR,"switch_fe","could not find CRFE, is CRFE running ?");
        return CM_TRANSITION_CANCELED;
    }else if(db_get_value(hDB, hKey, "Settings/IP", ip, &size, TID_STRING, false)!= DB_SUCCESS) {
-       cm_msg(MERROR,"switch_fe","could not find CRFE IP, is CRFE running ?", run_number);
+       cm_msg(MERROR,"switch_fe","could not find CRFE IP, is CRFE running ?");
        return CM_TRANSITION_CANCELED;
    }
 
    if(string(ip)=="0.0.0.0"){
        /* send run prepare signal from here */
        cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
+       // TODO: Get rid of hardcoded adresses here!
        DWORD valueRB = run_number;
-       mup->FEBsc_write(mup->FEBsc_broadcast_ID, &valueRB,1,0xfff5,true); //run number
+       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, vector<uint32_t>(1,valueRB)); //run number
        valueRB= (1<<8) | 0x10;
-       mup->FEBsc_write(mup->FEBsc_broadcast_ID, &valueRB,1,0xfff4,true); //run prep command
+       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, vector<uint32_t>(1,valueRB)); //run prep command
        valueRB= 0xbcbcbcbc;
-       mup->FEBsc_write(mup->FEBsc_broadcast_ID, &valueRB,1,0xfff5,true); //reset payload
+       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, vector<uint32_t>(1,valueRB)); //reset payload
        valueRB= 0;//(1<<8) | 0x00;
-       mup->FEBsc_write(mup->FEBsc_broadcast_ID, &valueRB,1,0xfff4,true); //reset command
+       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, vector<uint32_t>(1,valueRB)); //reset command
    }else{
        /* send run prepare signal via CR system */
+       // TODO: Move to odbxx
        INT value = 1;
        cm_msg(MINFO,"switch_fe","Using CRFE for run transition");
        db_set_value_index(hDB,0,"Equipment/Clock Reset/Run Transitions/Request Run Prepare",
                           &value, sizeof(value), switch_id, TID_INT, false);
    }
 
+   // TODO: Can we do better than than a hardcoded timeout count?
+   // Here we do need a timout, maybe set via ODB??
+   // Also, this should never take 30s!!!
    uint16_t timeout_cnt=300;
    uint64_t link_active_from_register;
    printf("Waiting for run prepare acknowledge from all FEBs\n");
@@ -693,6 +700,8 @@ INT resume_run(INT run_number, char *error)
 
 INT read_sc_event(char *pevent, INT off)
 {
+    // TODO: Do not just dump unformatted packets!!
+
     // get mudaq
     #ifdef MY_DEBUG
         dummy_mudaq::DummyMudaqDevice & mu = *mup;
@@ -717,9 +726,9 @@ INT read_sc_event(char *pevent, INT off)
     return bk_size(pevent);
 
     // TODO why do we do this?
-    while(mup->FEBsc_get_packet()){};
+    //while(mup->FEBsc_get_packet()){};
     //TODO: make this a switch
-    mup->FEBsc_dump_packets();
+    //mup->FEBsc_dump_packets();
     //return 0;
     //return mup->FEBsc_write_bank(pevent,off);
 }
@@ -852,12 +861,12 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
    }
 
    if (string(key.name) == "Reset SC Main" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-       mu.FEBsc_resetMain();
+       feb_sc->FEBsc_resetMain();
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
    if (string(key.name) == "Reset SC Secondary" && sc_settings_changed_hepler(key.name, hDB, hKey, TID_BOOL)) {
-       mu.FEBsc_resetSecondary();
+       feb_sc->FEBsc_resetSecondary();
        set_odb_flag_false(key.name,hDB,hKey,TID_BOOL);
    }
 
@@ -877,7 +886,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
        int count=0;
        while(count < 3){
-           if(mu.FEBsc_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD)!=-1) break;
+           if(feb_sc->FEB_write((uint32_t) FPGA_ID, data, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD)!=-1) break;
            count++;
       }
       if(count==3) 
