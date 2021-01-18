@@ -2,10 +2,8 @@
 
 package require qsys
 
-set dir0 [ file dirname [ info script ] ]
-
-source [ file join "./device.tcl" ]
-source [ file join "./util/altera_ip.tcl" ]
+source "device.tcl"
+source "util/altera_ip.tcl"
 
 set name [ file tail [ file rootname [ info script ] ] ]
 
