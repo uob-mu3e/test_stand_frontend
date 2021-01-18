@@ -44,6 +44,7 @@ ENTITY ip_dcfifo IS
         ADDR_WIDTH : positive := 8;
         DATA_WIDTH : positive := 8;
         SHOWAHEAD : string := "ON";
+        OVERFLOW : string := "ON";
         DEVICE : string := "Stratix IV"--;
     );
 	PORT
@@ -115,11 +116,11 @@ BEGIN
 	GENERIC MAP (
 		intended_device_family => DEVICE,
 		lpm_numwords => 2**ADDR_WIDTH,
-		lpm_showahead => "ON",
+		lpm_showahead => SHOWAHEAD,
 		lpm_type => "dcfifo",
 		lpm_width => DATA_WIDTH,
 		lpm_widthu => ADDR_WIDTH,
-		overflow_checking => SHOWAHEAD,
+		overflow_checking => OVERFLOW,
 		rdsync_delaypipe => 4,
 		read_aclr_synch => "ON",
 		underflow_checking => "ON",

@@ -1,6 +1,7 @@
 
 # cmake
 build/
+debugbuild/
 install/
 CMakeLists.txt.*
 
@@ -11,7 +12,8 @@ greybox_tmp/
 incremental_db/
 output_files/
 reconfig_mif/
-simulation/modelsim/
+simulation/
+**/simulation/modelsim/
 *.qdf
 *.qws
 *.bak
@@ -79,6 +81,7 @@ online/*
 include/mudaq_registers.h
 cmake-build-debug/
 cmp_pkg.vhd
+.cache/
 
 #
 *.npy

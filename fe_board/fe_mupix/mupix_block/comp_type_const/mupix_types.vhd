@@ -3,67 +3,68 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use work.mupix_constants.all;
+use work.daq_constants.all;
 
 package mupix_types is
 
-subtype reg32 		is std_logic_vector(31 downto 0);
-type reg32array	is array (NREGISTERS-1 downto 0) of reg32;
-type reg32array_128	is array (128-1 downto 0) of reg32;
+subtype hit_t is                std_logic_vector(HITSIZE-1 downto 0);
+subtype cnt_t is                std_logic_vector(COARSECOUNTERSIZE-1  downto 0);
+subtype ts_t is                 std_logic_vector(TSRANGE);
+subtype slowts_t                is std_logic_vector(SLOWTIMESTAMPSIZE-1 downto 0);
+subtype nots_t                  is std_logic_vector(NOTSHITSIZE-1 downto 0);
+subtype addr_t                  is std_logic_vector(HITSORTERADDRSIZE-1 downto 0);
+subtype counter_t               is std_logic_vector(HITSORTERBINBITS-1 downto 0);
 
-subtype reg64 		is std_logic_vector(63 downto 0);
-subtype REG64_TOP_RANGE is integer range 63 downto 32;
-subtype REG64_BOTTOM_RANGE is integer range 31 downto 0;
-subtype reg62 		is std_logic_vector(61 downto 0);
-subtype REG62_TOP_RANGE is integer range 61 downto 31;
-subtype REG62_BOTTOM_RANGE is integer range 30 downto 0;
+constant counter1               :  counter_t := (others => '1');
 
-type reg64array 	is array (NCHIPS-1 downto 0) of reg64;
-type reg48array 	is array (NCHIPS-1 downto 0) of std_logic_vector(47 downto 0);
+type wide_hit_array             is array (NINPUTS-1 downto 0) of hit_t;
+type hit_array                  is array (NCHIPS-1 downto 0) of hit_t;
 
--- reduced to help with timing hopefully
-type trigger_scaler_array	is array (NTRIGGERS downto 0) of std_logic_vector(15 downto 0);
+type wide_cnt_array             is array (NINPUTS-1 downto 0) of cnt_t;
+type cnt_array                  is array (NCHIPS-1 downto 0) of cnt_t;
 
-type injection_counter_array	is array (NINJECTIONS*NCHIPS-1 downto 0) of reg32;
+type ts_array                   is array (NCHIPS-1 downto 0) of ts_t;
+type slowts_array               is array (NCHIPS-1 downto 0) of slowts_t;
 
-type hitsorter_debug_array	is array (7 downto 0) of reg32;
+type nots_hit_array             is array (NCHIPS-1 downto 0) of nots_t;
+type addr_array                 is array (NCHIPS-1 downto 0) of addr_t;
 
-subtype readmemaddrtype 		is std_logic_vector(15 downto 0);
+type counter_chips              is array (NCHIPS-1 downto 0) of counter_t;
+subtype counter2_chips          is std_logic_vector(2*NCHIPS*HITSORTERBINBITS-1 downto 0);
 
-subtype chipmarkertype 			is std_logic_vector(7 downto 0);
+type hitcounter_sum3_type is array (NCHIPS/3-1 downto 0) of integer;
 
-subtype byte_t is std_logic_vector(7 downto 0);
-type inbyte_array is array (NLVDS-1 downto 0) of byte_t;
+subtype chip_bits_t             is std_logic_vector(NCHIPS-1 downto 0);
 
-type state_type is (INIT, START, PRECOUNT, COUNT);
+subtype muxhit_t                is std_logic_vector(HITSIZE+1 downto 0);
+type muxhit_array               is array ((NINPUTS/4) downto 0) of muxhit_t;
 
-type chips_reg32	is array (NCHIPS-1 downto 0) of reg32;
-type gxlinks_reg32 is array(NGX-1 downto 0) of reg32;
-type links_reg32 is array(NCHIPS*4-1 downto 0) of reg32;
-type links_bytearray is array(15 downto 0) of std_logic_vector(7 downto 0);
+subtype byte_t                  is std_logic_vector(7 downto 0);
+type inbyte_array               is array (NINPUTS-1 downto 0) of byte_t;
 
-type chips_histo_reg32 is array (0 to 7) of chips_reg32;
-type histo_col_array is array(0 to 7) of std_logic_vector(7 downto 0);
+type state_type                 is (INIT, START, PRECOUNT, COUNT);
 
-constant HISTO_ROW_START: histo_col_array := (x"00", x"04", x"08", x"0C", x"10", x"00", x"07", x"13");
-constant HISTO_ROW_END: histo_col_array 	:= (x"03", x"07", x"0B", x"0F", x"13", x"00", x"07", x"13");
-constant HISTO_COL_START: histo_col_array := (x"00", x"08", x"10", x"18", x"20", x"28", x"30", x"38");
-constant HISTO_COL_END: histo_col_array 	:= (x"07", x"0F", x"17", x"1F", x"27", x"2F", x"37", x"3F");
+subtype block_t                 is std_logic_vector(TSBLOCKRANGE);
 
-type chips_vec33	is array (NCHIPS-1 downto 0) of std_logic_vector(32 downto 0);
-type chips_vec8	is array (NCHIPS-1 downto 0) of std_logic_vector(7 downto 0);
-type links_vec33	is array (NCHIPS*4-1 downto 0) of std_logic_vector(32 downto 0);
-type links_vec8	is array (NCHIPS*4-1 downto 0) of std_logic_vector(7 downto 0);
-type links_vec10	is array (NCHIPS*4-1 downto 0) of std_logic_vector(9 downto 0);
-type links_vec9	is array (NCHIPS*4-1 downto 0) of std_logic_vector(8 downto 0);
+subtype command_t               is std_logic_vector(COMMANDBITS-1 downto 0);
+constant COMMAND_HEADER1        :  command_t := X"80000";
+constant COMMAND_HEADER2        :  command_t := X"90000";
+constant COMMAND_SUBHEADER      :  command_t := X"C0000";
+constant COMMAND_FOOTER         :  command_t := X"E0000";
 
-subtype vecdata is std_logic_vector(COARSECOUNTERSIZE+HITSIZE+2-1 downto 0);
-type chips_vecdata is array (NCHIPS-1 downto 0) of vecdata;
+subtype doublecounter_t         is std_logic_vector(COUNTERMEMDATASIZE-1 downto 0);
+type doublecounter_array        is array (NMEMS-1 downto 0) of doublecounter_t;
+type doublecounter_chiparray    is array (NCHIPS-1 downto 0) of doublecounter_t;
+type alldoublecounter_array     is array (NCHIPS-1 downto 0) of doublecounter_array;
 
-type fifo_init_array is array (NLVDS-1 downto 0) of std_logic_vector(1 downto 0);
-type fifo_usedw_array is array(NLVDS-1 downto 0) of std_logic_vector(3 downto 0);
+subtype counteraddr_t           is std_logic_vector(COUNTERMEMADDRSIZE-1 downto 0);
+type counteraddr_array          is array (NMEMS-1 downto 0) of counteraddr_t;
+type counteraddr_chiparray      is array (NCHIPS-1 downto 0) of counteraddr_t;
+type allcounteraddr_array       is array (NCHIPS-1 downto 0) of counteraddr_array;
 
--- for pseudo data generator
-type NumCOL_array is array (2 downto 0) of integer range 0 to 200;
-type MatrixSEL_array is array (2 downto 0) of std_logic_vector(1 downto 0);
+type counterwren_array          is array (NMEMS-1 downto 0) of std_logic;
+type allcounterwren_array       is array (NCHIPS-1 downto 0) of counterwren_array;
+subtype countermemsel_t         is std_logic_vector(COUNTERMEMADDRRANGE);
+type reg_array                  is array (NCHIPS-1 downto 0) of reg32;
 
 end package mupix_types;

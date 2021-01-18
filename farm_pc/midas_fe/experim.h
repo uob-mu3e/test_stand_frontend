@@ -86,13 +86,6 @@ typedef struct {
   } datagenerator;
 } STREAM_SETTINGS;
 
-#define STREAM_SETTINGS_STR(_name) const char *_name[] = {\
-"[Datagenerator]",\
-"Divider = INT : 1000",\
-"Enable = BOOL : n",\
-"",\
-NULL }
-
 #endif
 
 #ifndef EXCL_SCALER

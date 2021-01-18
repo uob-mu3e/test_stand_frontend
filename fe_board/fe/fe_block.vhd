@@ -3,6 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
 use work.daq_constants.all;
+use work.feb_sc_registers.all;
 
 entity fe_block is
 generic (
@@ -36,6 +37,8 @@ port (
     o_spi_sclk      : out   std_logic;
     o_spi_ss_n      : out   std_logic_vector(15 downto 0);
 
+
+
     -- QSFP links
     i_qsfp_rx       : in    std_logic_vector(3 downto 0);
     o_qsfp_tx       : out   std_logic_vector(3 downto 0);
@@ -44,11 +47,13 @@ port (
     i_pod_rx        : in    std_logic_vector(3 downto 0);
     o_pod_tx        : out   std_logic_vector(3 downto 0);
 
-    i_can_terminate           : in std_logic:='0';
-    i_ack_run_prep_permission : in std_logic:='1';
+
+
+    i_can_terminate           : in std_logic := '0';
+    i_ack_run_prep_permission : in std_logic := '1';
 
     --main fiber data fifo
-    i_fifo_write    : in    std_logic_vector(N_LINKS-1 downto 0);
+    i_fifo_we       : in    std_logic_vector(N_LINKS-1 downto 0);
     i_fifo_wdata    : in    std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
     o_fifos_almost_full         : out   std_logic_vector(N_LINKS-1 downto 0);
@@ -115,7 +120,7 @@ architecture arch of fe_block is
 
     signal av_sc : work.util.avalon_t;
 
-    signal sc_fifo_write : std_logic;
+    signal sc_fifo_we : std_logic;
     signal sc_fifo_wdata : std_logic_vector(35 downto 0);
 
     signal sc_ram, sc_reg : work.util.rw_t;
@@ -124,6 +129,10 @@ architecture arch of fe_block is
 
     signal reg_cmdlen : std_logic_vector(31 downto 0);
     signal reg_offset : std_logic_vector(31 downto 0);
+
+    signal av_nios : work.util.avalon_t;
+
+
 
     signal linktest_data    : std_logic_vector(31 downto 0);
     signal linktest_datak   : std_logic_vector(3 downto 0);
@@ -223,6 +232,8 @@ begin
 
 
     -- map slow control address space
+	 -- TODO: We only have one subdetector per FEB and the frimware is specific:
+	 -- All registers above 0x40 can be used for the specific subdetecto
 
     -- malibu regs : 0x40-0x5F
     o_malibu_reg_addr <= sc_reg.addr(7 downto 0);
@@ -247,8 +258,8 @@ begin
 
     -- local regs : 0xF0-0xFF
     fe_reg.addr <= sc_reg.addr;
-    fe_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
-    fe_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
+    fe_reg.re <= sc_reg.re when ( sc_reg.addr(REG_AREA_RANGE) = REG_AREA_GENERIC ) else '0';
+    fe_reg.we <= sc_reg.we when ( sc_reg.addr(REG_AREA_RANGE) = REG_AREA_GENERIC ) else '0';
     fe_reg.wdata <= sc_reg.wdata;
 
     -- select valid rdata
@@ -259,9 +270,24 @@ begin
         fe_reg.rdata when ( fe_reg.rvalid = '1' ) else
         X"CCCCCCCC";
 
-    process(i_clk_156)
+    process(i_clk_156, reset_156_n)
+	
+	 variable regaddr : integer;
+	 
     begin
-    if rising_edge(i_clk_156) then
+    if ( reset_156_n = '0' ) then
+        malibu_reg.rvalid <= '0';
+        scifi_reg.rvalid <= '0';
+        mupix_reg.rvalid <= '0';
+        fe_reg.rvalid <= '0';
+
+        fe_reg.rdata <= X"CCCCCCCC";
+
+        av_nios.address <= (others => '0');
+        av_nios.read <= '0';
+        av_nios.write <= '0';
+    elsif rising_edge(i_clk_156) then
+        regaddr := TO_INTEGER(UNSIGNED(fe_reg.addr(7 downto 0)));
         malibu_reg.rvalid <= malibu_reg.re;
         scifi_reg.rvalid <= scifi_reg.re;
         mupix_reg.rvalid <= mupix_reg.re;
@@ -274,76 +300,76 @@ begin
         --reset_pod <= '0';
 
         -- cmdlen
-        if ( fe_reg.addr(7 downto 0) = X"F0" and fe_reg.re = '1' ) then
+        if ( regaddr = CMD_LEN_REGISTER_RW and fe_reg.re = '1' ) then
             fe_reg.rdata <= reg_cmdlen;
         end if;
-        if ( fe_reg.addr(7 downto 0) = X"F0" and fe_reg.we = '1' ) then
+        if ( regaddr = CMD_LEN_REGISTER_RW and fe_reg.we = '1' ) then
             reg_cmdlen <= fe_reg.wdata;
         end if;
 
         -- offset
-        if ( fe_reg.addr(7 downto 0) = X"F1" and fe_reg.re = '1' ) then
+        if ( regaddr = CMD_OFFSET_REGISTER_RW and fe_reg.re = '1' ) then
             fe_reg.rdata <= reg_offset;
         end if;
-        if ( fe_reg.addr(7 downto 0) = X"F1" and fe_reg.we = '1' ) then
+        if ( regaddr = CMD_OFFSET_REGISTER_RW and fe_reg.we = '1' ) then
             reg_offset <= fe_reg.wdata;
         end if;
 
         -- reset bypass
-        if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.re = '1' ) then
+        if ( regaddr = RUN_STATE_RESET_BYPASS_REGISTER_RW and fe_reg.re = '1' ) then
             fe_reg.rdata(15 downto 0) <= reg_reset_bypass(15 downto 0);
             fe_reg.rdata(16+9 downto 16) <= run_state_156;
         end if;
-        if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.we = '1' ) then
+        if ( regaddr = RUN_STATE_RESET_BYPASS_REGISTER_RW and fe_reg.we = '1' ) then
             reg_reset_bypass(15 downto 0) <= fe_reg.wdata(15 downto 0); -- upper bits are read-only status
         end if;
-        
+
         -- reset payload
-        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.re = '1' ) then
+        if ( regaddr = RESET_PAYLOAD_RGEISTER_RW and fe_reg.re = '1' ) then
             fe_reg.rdata <= reg_reset_bypass_payload;
         end if;
-        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.we = '1' ) then
+        if ( regaddr = RESET_PAYLOAD_RGEISTER_RW and fe_reg.we = '1' ) then
             reg_reset_bypass_payload <= fe_reg.wdata;
         end if;
 
         -- rate measurement
-        if ( fe_reg.addr(7 downto 0) = X"F6" and fe_reg.re = '1' ) then
+        if ( regaddr = MERGER_RATE_REGISTER_R and fe_reg.re = '1' ) then
             fe_reg.rdata <= merger_rate_count;
         end if;
-        
+
         -- reset phase
-        if ( fe_reg.addr(7 downto 0) = X"F7" and fe_reg.re = '1' ) then
+        if ( regaddr = RESET_PHASE_REGISTER_R and fe_reg.re = '1' ) then
             fe_reg.rdata(PHASE_WIDTH_g - 1 downto 0) <= reset_phase;
         end if;
         
         -- reset qsfp / pod
-        if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.re = '1' ) then
+        if ( regaddr = RESET_OPTICAL_LINKS_REGISTER_RW and fe_reg.re = '1' ) then
             fe_reg.rdata(0) <= reset_pod;
             fe_reg.rdata(1) <= reset_qsfp;
         end if;
-        if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.we = '1' ) then
+        if ( regaddr = RESET_OPTICAL_LINKS_REGISTER_RW and fe_reg.we = '1' ) then
             reset_pod <= fe_reg.wdata(0);
             reset_qsfp <= fe_reg.wdata(1);
         end if;
-        
+
         -- mscb
 
         -- git head hash
-        if ( fe_reg.addr(7 downto 0) = X"FA" and fe_reg.re = '1' ) then
+        if ( regaddr = GIT_HASH_REGISTER_R and fe_reg.re = '1' ) then
             fe_reg.rdata <= (others => '0');
             fe_reg.rdata <= work.cmp.GIT_HEAD(0 to 31);
         end if;
         -- fpga id
-        if ( fe_reg.addr(7 downto 0) = X"FB" and fe_reg.re = '1' ) then
+        if ( regaddr = FPGA_ID_REGISTER_RW and fe_reg.re = '1' ) then
             fe_reg.rdata <= (others => '0');
             fe_reg.rdata(i_fpga_id_reg'range) <= i_fpga_id_reg;
         end if;
-        if ( fe_reg.addr(7 downto 0) = X"FB" and fe_reg.we = '1' ) then
+        if ( regaddr = FPGA_ID_REGISTER_RW and fe_reg.we = '1' ) then
             fe_reg.rdata <= (others => '0');
             i_fpga_id_reg(N_LINKS*16-1 downto 0) <= fe_reg.wdata(N_LINKS*16-1 downto 0);
         end if;
         -- fpga type
-        if ( fe_reg.addr(7 downto 0) = X"FC" and fe_reg.re = '1' ) then
+        if ( regaddr = FPGA_TYPE_REGISTER_R and fe_reg.re = '1' ) then
             fe_reg.rdata <= (others => '0');
             fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
         end if;
@@ -461,7 +487,7 @@ begin
         i_link_data     => qsfp_rx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
         i_link_datak    => qsfp_rx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
-        o_fifo_write    => sc_fifo_write,
+        o_fifo_we       => sc_fifo_we,
         o_fifo_wdata    => sc_fifo_wdata,
 
         o_ram_addr      => sc_ram.addr,
@@ -475,24 +501,27 @@ begin
         i_clk           => i_clk_156--,
     );
 
+
+
     e_merger : entity work.data_merger
     generic map(
         N_LINKS                    => N_LINKS,
-        feb_mapping                => feb_mapping--, 
+        feb_mapping                => feb_mapping--,
     )
     port map (
         fpga_ID_in                 => i_fpga_id_reg,
         FEB_type_in                => i_fpga_type,
+
         run_state                  => run_state_156,
         run_number                 => run_number,
 
         o_data_out                 => qsfp_tx_data,
         o_data_is_k                => qsfp_tx_datak,
 
-        slowcontrol_write_req      => sc_fifo_write,
+        slowcontrol_write_req      => sc_fifo_we,
         i_data_in_slowcontrol      => sc_fifo_wdata,
 
-        data_write_req             => i_fifo_write,
+        data_write_req             => i_fifo_we,
         i_data_in                  => i_fifo_wdata,
         o_fifos_almost_full        => o_fifos_almost_full,
 
@@ -519,7 +548,7 @@ begin
         g_poly => "10000000001000000000000000000110"--,
     )
     port map (
-        i_sync_reset    => not and_reduce(linktest_granted),
+        i_sync_reset    => not work.util.and_reduce(linktest_granted),
         i_seed          => (others => '1'),
         i_en            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),
         o_lsfr          => linktest_data,

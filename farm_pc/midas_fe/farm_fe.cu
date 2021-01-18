@@ -132,7 +132,7 @@ EQUIPMENT equipment[] = {
 INT frontend_init()
 {
     // TODO: for debuging
-//    odb::set_debug(true);
+    odb::set_debug(true);
 
     set_equipment_status(equipment[0].name, "Initializing...", "var(--myellow)");
 

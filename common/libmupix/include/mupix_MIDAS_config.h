@@ -12,6 +12,9 @@
 
 \********************************************************************/
 // From midas.h
+#include <odbxx.h>
+using midas::odb;
+
 typedef unsigned int DWORD;
 typedef DWORD BOOL;
 typedef int INT;
@@ -26,14 +29,16 @@ typedef int INT;
 typedef struct {
     INT       n_asics;
     INT       n_boards;
+    INT       n_rows;
+    INT       n_cols;
 } MUPIX_GLOBAL;
 
-#define MUPIX_GLOBAL_STR(_name) const char *_name[] = {\
-"[.]",\
-"Num asics = INT : 0",\
-"Num boards = INT : 0",\
-"",\
-NULL }
+static odb MUPIX_GLOBAL_SETTINGS = {
+        {"Num asics", 0},
+        {"Num boards", 0},
+        {"Num rows", 200},
+        {"Num cols", 128},
+};
 
 #endif
 
@@ -45,19 +50,21 @@ typedef struct {
   BOOL dummy_data;
 } MUPIX_DAQ;
 
-#define MUPIX_DAQ_STR(_name) const char *_name[] = {\
-"[.]",\
-"dummy_config = BOOL : n",\
-"dummy_data = BOOL : n",\
-"dummy_data_n = INT : 255",\
-"dummy_data_fast = BOOL : n",\
-"prbs_decode_bypass = BOOL : n",\
-"reset_datapath = BOOL : n",\
-"reset_asics = BOOL : n",\
-"reset_boards = BOOL : n",\
-"mask = BOOL[16] n",\
-"",\
-NULL }
+static odb MUPIX_DAQ_SETTINGS = {
+    {"dummy_config", false},
+    {"dummy_data", false},
+    {"dummy_data_n", 255},
+    {"dummy_data_fast", false},
+    {"prbs_decode_bypass", false},
+    {"reset_datapath", false},
+    {"reset_asics", false},
+    {"reset_boards", false},
+    {"mask", {  false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false
+    }},
+};
 
 #endif
 
@@ -127,80 +134,76 @@ typedef struct {
     int       unused_13;
 } MUPIX_CHIPDACS;
 
-#define MUPIX_CHIPDACS_STR(_name) const char *_name[] = {\
-"[.]",\
-"Bandgap1_on = INT : 0",\
-"Biasblock1_on = INT : 5",\
-"unused_1 = INT : 0",\
-"unused_2 = INT : 0",\
-"unused_3 = INT : 0",\
-"unused_4 = INT : 0",\
-"unused_5 = INT : 0",\
-"VNRegCasc = INT : 0",\
-"VDel = INT : 16",\
-"VPComp = INT : 5",\
-"VPDAC = INT : 0",\
-"unused_6 = INT : 0",\
-"BLResDig = INT : 5",\
-"unused_7 = INT : 0",\
-"unused_8 = INT : 0",\
-"unused_9 = INT : 0",\
-"VPVCO = INT : 12",\
-"VNVCO = INT : 13",\
-"VPDelDclMux = INT : 24",\
-"VNDelDclMux = INT : 24",\
-"VPDelDcl = INT : 40",\
-"VNDelDcl = INT : 40",\
-"VPDelPreEmp = INT : 24",\
-"VNDelPreEmp = INT : 24",\
-"VPDcl = INT : 24",\
-"VNDcl = INT : 16",\
-"VNLVDS = INT : 24",\
-"VNLVDSDel = INT : 0",\
-"VPPump = INT : 63",\
-"resetckdivend = INT : 15",\
-"maxcycend = INT : 63",\
-"slowdownend = INT : 0",\
-"timerend = INT : 1",\
-"tsphase = INT : 0",\
-"ckdivend2 = INT : 7",\
-"ckdivend = INT : 0",\
-"VPRegCasc = INT : 0",\
-"VPRamp = INT : 0",\
-"unused_10 = INT : 0",\
-"unused_11 = INT : 0",\
-"unused_12 = INT : 0",\
-"VPBiasReg = INT : 0",\
-"VNBiasReg = INT : 0",\
-"enable2threshold = INT : 0",\
-"enableADC = INT : 1",\
-"Invert = INT : 0",\
-"SelEx = INT : 0",\
-"SelSlow = INT : 0",\
-"EnablePLL = INT : 1",\
-"Readout_reset_n = INT : 1",\
-"Serializer_reset_n = INT : 1",\
-"Aurora_reset_n = INT : 1",\
-"sendcounter = INT : 0",\
-"Linkselect = INT : 1",\
-"Termination = INT : 0",\
-"AlwaysEnable = INT : 0",\
-"SelectTest = INT : 0",\
-"SelectTestOut = INT : 0",\
-"DisableHitbus = INT : 1",\
-"unused_13 = INT : 0",\
-"",\
-NULL }
+static odb MUPIX_CHIPDACS_SETTINGS = {
+    {"Bandgap1_on", 0},
+    {"Biasblock1_on", 5},
+    {"unused_1", 0},
+    {"unused_2", 0},
+    {"unused_3", 0},
+    {"unused_4", 0},
+    {"unused_5", 0},
+    {"VNRegCasc", 0},
+    {"VDel", 16},
+    {"VPComp", 5},
+    {"VPDAC", 0},
+    {"unused_6", 0},
+    {"BLResDig", 5},
+    {"unused_7", 0},
+    {"unused_8", 0},
+    {"unused_9", 0},
+    {"VPVCO", 12},
+    {"VNVCO", 13},
+    {"VPDelDclMux", 24},
+    {"VNDelDclMux", 24},
+    {"VPDelDcl", 40},
+    {"VNDelDcl", 40},
+    {"VPDelPreEmp", 24},
+    {"VNDelPreEmp", 24},
+    {"VPDcl", 24},
+    {"VNDcl", 16},
+    {"VNLVDS", 24},
+    {"VNLVDSDel", 0},
+    {"VPPump", 63},
+    {"resetckdivend", 15},
+    {"maxcycend", 63},
+    {"slowdownend", 0},
+    {"timerend", 1},
+    {"tsphase", 0},
+    {"ckdivend2", 7},
+    {"ckdivend", 0},
+    {"VPRegCasc", 0},
+    {"VPRamp", 0},
+    {"unused_10", 0},
+    {"unused_11", 0},
+    {"unused_12", 0},
+    {"VPBiasReg", 0},
+    {"VNBiasReg", 0},
+    {"enable2threshold", 0},
+    {"enableADC", 1},
+    {"Invert", 0},
+    {"SelEx", 0},
+    {"SelSlow", 0},
+    {"EnablePLL", 1},
+    {"Readout_reset_n", 1},
+    {"Serializer_reset_n", 1},
+    {"Aurora_reset_n", 1},
+    {"sendcounter", 0},
+    {"Linkselect", 1},
+    {"Termination", 0},
+    {"AlwaysEnable", 0},
+    {"SelectTest", 0},
+    {"SelectTestOut", 0},
+    {"DisableHitbus", 1},
+    {"unused_13", 0},
+};
 
 typedef  struct {
     int       digiWrite;
 } MUPIX_DIGIROWDACS;
 
-#define MUPIX_DIGIROWDACS_STR(_name) const char *_name[] = {\
-"[.]",\
-"digiWrite = INT : 0",\
-"",\
-NULL }
+static odb MUPIX_DIGIROWDACS_SETTINGS = {
+    {"digiWrite", 0}, 
+};
 
 typedef  struct {
     int       RAM;
@@ -208,13 +211,11 @@ typedef  struct {
     int       EnableInjection;
 } MUPIX_COLDACS;
 
-#define MUPIX_COLDACS_STR(_name) const char *_name[] = {\
-"[.]",\
-"RAM = INT : 0",\
-"EnableHitbus = INT : 0",\
-"EnableInjection = INT : 0",\
-"",\
-NULL }
+static odb MUPIX_COLDACS_SETTINGS = {
+    {"RAM", 0}, 
+    {"EnableHitbus", 0}, 
+    {"EnableInjection", 0},
+};
 
 typedef  struct {
     int       unused;
@@ -222,13 +223,11 @@ typedef  struct {
     int       EnableAnalogueBuffer;
 } MUPIX_ROWDACS;
 
-#define MUPIX_ROWDACS_STR(_name) const char *_name[] = {\
-"[.]",\
-"unused = INT : 0",\
-"EnableInjection = INT : 0",\
-"EnableAnalogueBuffer = INT : 0",\
-"",\
-NULL }
+static odb MUPIX_ROWDACS_SETTINGS = {
+    {"unused", 0}, 
+    {"EnableInjection", 0}, 
+    {"EnableAnalogueBuffer", 0},
+};
 
 typedef struct {
     int       Bandgap2_on;
@@ -293,69 +292,68 @@ typedef struct {
     int       unused_61;
 } MUPIX_CHIPDACS2;
 
-#define MUPIX_CHIPDACS2_STR(_name) const char *_name[] = {\
-"[.]",\
-"Bandgap2_on = INT : 0",\
-"Biasblock2_on = INT : 5",\
-"BLResPix = INT : 5",\
-"unused_14 = INT : 0",\
-"VNPix = INT : 20",\
-"VNFBPix = INT : 10",\
-"VNFollPix = INT : 10",\
-"unused_15 = INT : 0",\
-"unused_16 = INT : 0",\
-"unused_17 = INT : 0",\
-"unused_18 = INT : 0",\
-"VNPix2 = INT : 0",\
-"unused_19 = INT : 0",\
-"VNBiasPix = INT : 0",\
-"VPLoadPix = INT : 5",\
-"VNOutPix = INT : 10",\
-"unused_20 = INT : 0",\
-"unused_21 = INT : 0",\
-"unused_22 = INT : 0",\
-"unused_23 = INT : 0",\
-"unused_24 = INT : 0",\
-"unused_25 = INT : 0",\
-"unused_26 = INT : 0",\
-"unused_27 = INT : 0",\
-"unused_28 = INT : 0",\
-"unused_29 = INT : 0",\
-"unused_30 = INT : 0",\
-"unused_31 = INT : 0",\
-"unused_32 = INT : 0",\
-"unused_33 = INT : 0",\
-"unused_34 = INT : 0",\
-"unused_35 = INT : 0",\
-"unused_36 = INT : 0",\
-"unused_37 = INT : 0",\
-"unused_38 = INT : 0",\
-"unused_39 = INT : 0",\
-"unused_40 = INT : 0",\
-"unused_41 = INT : 0",\
-"unused_42 = INT : 0",\
-"VPFoll = INT : 10",\
-"VNDACPix = INT : 0",\
-"unused_43 = INT : 0",\
-"unused_44 = INT : 0",\
-"unused_45 = INT : 0",\
-"unused_46 = INT : 0",\
-"unused_47 = INT : 0",\
-"unused_48 = INT : 0",\
-"unused_49 = INT : 0",\
-"unused_50 = INT : 0",\
-"unused_51 = INT : 0",\
-"unused_52 = INT : 0",\
-"unused_53 = INT : 0",\
-"unused_54 = INT : 0",\
-"unused_55 = INT : 0",\
-"unused_56 = INT : 0",\
-"unused_57 = INT : 0",\
-"unused_58 = INT : 0",\
-"unused_59 = INT : 0",\
-"unused_60 = INT : 0",\
-"unused_61 = INT : 0",\
-NULL }
+static odb MUPIX_CHIPDACS2_SETTINGS = {
+    {"Bandgap2_on", 0},
+    {"Biasblock2_on", 5},
+    {"BLResPix", 5},
+    {"unused_14", 0},
+    {"VNPix", 20},
+    {"VNFBPix", 10},
+    {"VNFollPix", 10},
+    {"unused_15", 0},
+    {"unused_16", 0},
+    {"unused_17", 0},
+    {"unused_18", 0},
+    {"VNPix2", 0},
+    {"unused_19", 0},
+    {"VNBiasPix", 0},
+    {"VPLoadPix", 5},
+    {"VNOutPix", 10},
+    {"unused_20", 0},
+    {"unused_21", 0},
+    {"unused_22", 0},
+    {"unused_23", 0},
+    {"unused_24", 0},
+    {"unused_25", 0},
+    {"unused_26", 0},
+    {"unused_27", 0},
+    {"unused_28", 0},
+    {"unused_29", 0},
+    {"unused_30", 0},
+    {"unused_31", 0},
+    {"unused_32", 0},
+    {"unused_33", 0},
+    {"unused_34", 0},
+    {"unused_35", 0},
+    {"unused_36", 0},
+    {"unused_37", 0},
+    {"unused_38", 0},
+    {"unused_39", 0},
+    {"unused_40", 0},
+    {"unused_41", 0},
+    {"unused_42", 0},
+    {"VPFoll", 10},
+    {"VNDACPix", 0},
+    {"unused_43", 0},
+    {"unused_44", 0},
+    {"unused_45", 0},
+    {"unused_46", 0},
+    {"unused_47", 0},
+    {"unused_48", 0},
+    {"unused_49", 0},
+    {"unused_50", 0},
+    {"unused_51", 0},
+    {"unused_52", 0},
+    {"unused_53", 0},
+    {"unused_54", 0},
+    {"unused_55", 0},
+    {"unused_56", 0},
+    {"unused_57", 0},
+    {"unused_58", 0},
+    {"unused_59", 0},
+    {"unused_60", 0},
+    {"unused_61", 0},
+};
 
 typedef struct {
     int       ThLow;
@@ -365,15 +363,13 @@ typedef struct {
     int       ThHigh;
 } MUPIX_VOLTAGEDACS;
 
-#define MUPIX_VOLTAGEDACS_STR(_name) const char *_name[] = {\
-"[.]",\
-"ThLow = INT : 291",\
-"ThPix = INT : 538",\
-"BLPix = INT : 538",\
-"BLDig = INT : 248",\
-"ThHigh = INT : 297",\
-NULL }
-
+static odb MUPIX_VOLTAGEDACS_SETTINGS = {
+    {"ThLow", 291},
+    {"ThPix", 538},
+    {"BLPix", 538},
+    {"BLDig", 248},
+    {"ThHigh", 297},
+};
 
 typedef struct {
     INT RAM[128];
@@ -381,10 +377,12 @@ typedef struct {
     BOOL EnableInjection[128];
 } MUPIX_PIXELROWCONFIG;
 
-#define MUPIX_PIXELROWCONFIG_STR(_name) const char *_name[] = {\
-"[.]",\
-"",\
-NULL }
+
+static odb MUPIX_PIXELROWCONFIG_SETTINGS = {
+    {"RAM", std::array<int, 128>{}},
+    {"EnableHitbus", std::array<int, 128>{}},
+    {"EnableInjection", std::array<int, 128>{}},
+};
 
 #endif
 
@@ -400,15 +398,15 @@ typedef struct {
     INT      TDiode_ADC;
 } MUPIX_BOARDDACS;
 
-#define MUPIX_BOARDDACS_STR(_name) const char *_name[] = {\
-"[.]",\
-"Threshold_High = INT : 19312",\
-"Threshold_Low = INT : 19312",\
-"Threshold_Pix = INT : 48284",\
-"Injection = INT : 0",\
-"TDiode_Current = INT : 0",\
-"TDiode_ADC = INT : 0",\
-NULL }
+static odb MUPIX_BOARDDACS_SETTINGS = {
+    {"Threshold_High", 19312},
+    {"Threshold_Low", 19312},
+    {"Threshold_Pix", 48284},
+    {"Injection", 0},
+    {"TDiode_Current", 0},
+    {"TDiode_ADC", 0},
+};
+
 #endif
 
 

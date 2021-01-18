@@ -9,7 +9,10 @@ Contents:       Class to alter settings on a Tiles-FE-FPGA. Derives from MutrigF
 \********************************************************************/
 #include "Tiles_FEB.h"
 #include "midas.h"
+#include "odbxx.h"
 #include "mfe.h" //for set_equipment_status
+
+using midas::odb;
 
 TilesFEB* TilesFEB::m_instance=NULL;
 
@@ -20,12 +23,11 @@ uint16_t TilesFEB::ASICid_from_ID(int asic){return asic%4 + 0;} //only second tw
 
 
 //MIDAS callback function for FEB register Setter functions
-void TilesFEB::on_tiles_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
+void TilesFEB::on_tiles_settings_changed(odb o, void * userdata)
 {
    TilesFEB* _this=static_cast<TilesFEB*>(userdata);
-   KEY key;
-   db_get_key(hDB, hKey, &key);
-   printf("TilesFEB::on_settings_changed(%s)\n",key.name);
+   std::string name = o.get_name();
+   cm_msg(MINFO, "TilesFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
 }
 
 

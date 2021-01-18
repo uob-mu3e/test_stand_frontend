@@ -103,8 +103,8 @@ const char *sc_settings_str[] = {
 "Read = BOOL : 0",
 "Read WM = BOOL : 0",
 "Read RM = BOOL : 0",
-"Reset SC Master = BOOL : 0",
-"Reset SC Slave = BOOL : 0",
+"Reset SC Main = BOOL : 0",
+"Reset SC Secondary = BOOL : 0",
 "Clear WM = BOOL : 0",
 "Last RM ADD = BOOL : 0",
 "Read MALIBU File = BOOL : 0",
@@ -119,7 +119,7 @@ enum EQUIPMENT_ID {Switching=0,malibu};
 EQUIPMENT equipment[] = {
 
    {"Switching",                /* equipment name */
-    {2, 0,                      /* event ID, trigger mask */
+    {110, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,               /* equipment type */
      0,                         /* event source */
@@ -134,7 +134,7 @@ EQUIPMENT equipment[] = {
      read_sc_event,             /* readout routine */
    },
    {"malibu",                    /* equipment name */                                                                                                                               
-	   {2, 0,                      /* event ID, trigger mask */ //FIXME: the event ID should be different?
+       {112, 0,                      /* event ID, trigger mask */
 		   "SYSTEM",                  /* event buffer */
 		   EQ_PERIODIC,                 /* equipment type */
 		   0,                         /* event source crate 0, all stations */
@@ -419,18 +419,18 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       // TODO: propagate to hardware
    }
 
-   if (std::string(key.name) == "Reset SC Master") {
-       sc_settings_changed_hepler("Reset SC Master", hDB, hKey, TID_BOOL);
+   if (std::string(key.name) == "Reset SC Main") {
+       sc_settings_changed_hepler("Reset SC Main", hDB, hKey, TID_BOOL);
 
-       mu.write_register_wait(RESET_REGISTER_W, SET_RESET_BIT_SC_MASTER(0), 1000);
+       mu.write_register_wait(RESET_REGISTER_W, SET_RESET_BIT_SC_MAIN(0), 1000);
        mu.write_register_wait(RESET_REGISTER_W, 0x0, 1000);
 
        update_pcie_write_mem_pointer(0);
    }
 
-   if (std::string(key.name) == "Reset SC Slave") {
-       sc_settings_changed_hepler("Reset SC Slave", hDB, hKey, TID_BOOL);
-       mu.write_register_wait(RESET_REGISTER_W, SET_RESET_BIT_SC_SLAVE(0), 1000);
+   if (std::string(key.name) == "Reset SC Secondary") {
+       sc_settings_changed_hepler("Reset SC Secondary", hDB, hKey, TID_BOOL);
+       mu.write_register_wait(RESET_REGISTER_W, SET_RESET_BIT_SC_SECONDARY(0), 1000);
        mu.write_register_wait(RESET_REGISTER_W, 0x0, 1000);
    }
 
@@ -456,7 +456,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         INT START_ADD = get_odb_value_by_string("Equipment/Switching/Variables/START_ADD_WRITE");
         INT PCIE_MEM_START = get_odb_value_by_string("Equipment/Switching/Variables/PCIE_MEM_START");
 
-        mu.FEB_write((uint32_t) FPGA_ID, DATA_ARRAY, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+        mu.FEB_write((uint32_t) FPGA_ID, DATA_ARRAY, (uint16_t) DATA_WRITE_SIZE, (uint32_t) START_ADD);
 
         update_pcie_write_mem_pointer(PCIE_MEM_START + 5 + DATA_WRITE_SIZE);
 
@@ -502,7 +502,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 
          db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);
 
-         mu.FEB_read((uint32_t) FPGA_ID, (uint16_t) LENGTH, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+         mu.FEB_read((uint32_t) FPGA_ID, (uint16_t) LENGTH, (uint32_t) START_ADD);
 
          value = FALSE; // reset flag in ODB
          db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
@@ -551,7 +551,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
             data_arr[0] = (uint32_t) DATA;
             uint32_t *data = data_arr;
 
-            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) 1, (uint32_t) START_ADD);
 
             value = FALSE; // reset flag in ODB
             db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
@@ -711,22 +711,22 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
                     DATA_ARRAY[i/4] = w;
                 }
             }
-
+            // TODO: NEW_PCIE_MEM_START not needed anymore
             INT NEW_PCIE_MEM_START = PCIE_MEM_START + 5 + n;
 
             uint32_t *data = DATA_ARRAY;
 
-            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) n, (uint32_t) START_ADD, (uint32_t) PCIE_MEM_START);
+            mu.FEB_write((uint32_t) FPGA_ID, data, (uint16_t) n, (uint32_t) START_ADD);
 
-            uint32_t data_arr[1] = {START_ADD};
+            uint32_t data_arr[1] = {static_cast<uint32_t>(START_ADD)};
 
-            mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF1, (uint32_t) NEW_PCIE_MEM_START);
+            mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF1);
 
             data_arr[0] = {0x01100000 + (0xFFFF & n)};
 
             NEW_PCIE_MEM_START = NEW_PCIE_MEM_START + 6;
 
-            mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF0, (uint32_t) NEW_PCIE_MEM_START);
+            mu.FEB_write((uint32_t) FPGA_ID, data_arr, (uint16_t) 1, (uint32_t) 0xFFF0);
 
             NEW_PCIE_MEM_START = NEW_PCIE_MEM_START + 6;
             INT SIZE_NEW_PCIE_MEM_START;
@@ -753,7 +753,7 @@ void sc_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 			db_get_value(hDB, 0, STR_PCIE_MEM_START, &PCIE_MEM_START, &SIZE_PCIE_MEM_START, TID_INT, 0);
 			INT NEW_PCIE_MEM_START = PCIE_MEM_START + 6  ;
 			uint32_t data[1] = {0x01010000};
-            mu.FEB_write((uint32_t) 0, data, (uint16_t) 1, (uint32_t) 0xFFF0, (uint32_t) PCIE_MEM_START);
+            mu.FEB_write((uint32_t) 0, data, (uint16_t) 1, (uint32_t) 0xFFF0);
 			cm_msg(MINFO, "powerup MALIBU", "change power of malibu");
             INT SIZE_NEW_PCIE_MEM_START = sizeof(NEW_PCIE_MEM_START);
             db_set_value(hDB, 0, STR_PCIE_MEM_START, &NEW_PCIE_MEM_START, SIZE_NEW_PCIE_MEM_START, 1, TID_INT);

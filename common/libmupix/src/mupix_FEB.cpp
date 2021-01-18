@@ -10,14 +10,20 @@ Contents:       Definition of functions to talk to a mupix-based FEB. Designed t
 
 #include "mupix_FEB.h"
 #include "midas.h"
+#include "odbxx.h"
 #include "mfe.h" //for set_equipment_status
 #include "odbxx.h"
+
+#include "../include/feb.h"
+using namespace mu3e::daq;
 
 #include "mudaq_device_scifi.h"
 #include "mupix_config.h"
 #include "mupix_midasodb.h"
 #include <thread>
 #include <chrono>
+
+using midas::odb;
 
 #include "default_config_mupix.h" //TODO avoid this, reproduce configure routine from chip dacs
 
@@ -209,7 +215,7 @@ int MupixFEB::ConfigureASICs(){
              uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
              datastream[nbit] = tmp;
          }
-         rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
+         rpc_status = m_mu.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_CHIP_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
 
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -346,41 +352,45 @@ int MupixFEB::ConfigureASICs(){
 }
 
 //MIDAS callback function for FEB register Setter functions
-void MupixFEB::on_settings_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
+void MupixFEB::on_settings_changed(odb o, void * userdata)
 {
-   MupixFEB* _this=static_cast<MupixFEB*>(userdata);
-   KEY key;
-   db_get_key(hDB, hKey, &key);
-   printf("MupixFEB::on_settings_changed(%s)\n",key.name);
-   if (std::string(key.name) == "dummy_config") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      cm_msg(MINFO, "MupixFEB::on_settings_changed", "Set dummy_config to %d", value);
- //     _this->setDummyConfig(MupixFEB::FPGA_broadcast_ID,value);
+    std::string name = o.get_name();
+
+    cm_msg(MINFO, "MupixFEB::on_settings_changed", "Setting changed (%s)", name.c_str());
+
+    MupixFEB* _this=static_cast<MupixFEB*>(userdata);
+    
+    INT ival;
+    BOOL bval;
+
+    if (name == "dummy_config") {
+        bval = o;
+        
+        cm_msg(MINFO, "MupixFEB::on_settings_changed", "Set dummy_config %d", bval);
+        // TODO: do something here
+        //     _this->setDummyConfig(MupixFEB::FPGA_broadcast_ID,value);
    }
-   if (std::string(key.name) == "reset_asics") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if(value){
+
+   if (name == "reset_asics") {
+      bval = o;
+      if(bval){
          cm_msg(MINFO, "MupixFEB::on_settings_changed", "reset_asics");
+         // TODO: do something here
 //         _this->chipReset(MupixFEB::FPGA_broadcast_ID);
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+         o = FALSE; // reset flag in ODB
       }
    }
-   if (std::string(key.name) == "reset_boards") {
-      BOOL value;
-      int size = sizeof(value);
-      db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if(value){
+   
+   if (name == "reset_boards") {
+      bval = o;
+      if(bval){
          cm_msg(MINFO, "MupixFEB::on_settings_changed", "reset_boards");
+         // TODO: do something here
 //         _this->chipReset(MupixFEB::FPGA_broadcast_ID);
-         value = FALSE; // reset flag in ODB
-         db_set_data(hDB, hKey, &value, sizeof(value), 1, TID_BOOL);
+        o = FALSE; // reset flag in ODB
       }
    }
+
 }
 
 unsigned char reverse(unsigned char b) {
@@ -411,33 +421,36 @@ uint32_t MupixFEB::ReadBackHitsEnaRate(uint16_t FPGA_ID){
     return hitsEna;
 }
 
+// TODO: Move to Mu_FEB
 uint32_t MupixFEB::ReadBackMergerRate(uint16_t FPGA_ID){
     auto FEB = m_FPGAs[FPGA_ID];
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
     
     uint32_t mergerRate;
-    int status=m_mu.FEBsc_read(FEB.SB_Port(), &mergerRate, 1, 0xfff6);
+    int status=m_mu.FEBsc_read(FEB.SB_Port(), &mergerRate, 1, 0xFF00 | MERGER_RATE_REGISTER_R);
     return mergerRate;
 }
 
+// TODO: Move to Mu_FEB
 uint32_t MupixFEB::ReadBackResetPhase(uint16_t FPGA_ID){
     auto FEB = m_FPGAs[FPGA_ID];
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
     
     uint32_t resetPhase;
-    int status=m_mu.FEBsc_read(FEB.SB_Port(), &resetPhase, 1, 0xfff7);
+    int status=m_mu.FEBsc_read(FEB.SB_Port(), &resetPhase, 1, 0xFF00 | RESET_PHASE_REGISTER_R);
     return resetPhase & 0xFFFF;
 }
 
+// TODO: Move to Mu_FEB
 uint32_t MupixFEB::ReadBackTXReset(uint16_t FPGA_ID){
     auto FEB = m_FPGAs[FPGA_ID];
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
     
     uint32_t TXReset;
-    int status=m_mu.FEBsc_read(FEB.SB_Port(), &TXReset, 1, 0xfff8);
+    int status=m_mu.FEBsc_read(FEB.SB_Port(), &TXReset, 1, 0xFF00 | RESET_OPTICAL_LINKS_REGISTER_RW);
     return TXReset & 0xFFFFFFFC;
 }
 
@@ -475,7 +488,7 @@ int MupixFEB::ConfigureBoards(){
            datastream[nbit] = tmp;
        }
        try {
-           rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0120,{{reinterpret_cast<uint32_t*>(&board),1},{reinterpret_cast<uint32_t*> (datastream), config->length_32bits}});
+           rpc_status = m_mu.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_BOARD_CFG, {{reinterpret_cast<uint32_t*>(&board),1},{reinterpret_cast<uint32_t*> (datastream), config->length_32bits}});
 
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", board, e.what());
@@ -495,6 +508,7 @@ int MupixFEB::ConfigureBoards(){
 
 
 //Helper functions
+// TODO: These should not be copied betwen the FEBs
 uint32_t reg_setBit  (uint32_t reg_in, uint8_t bit, bool value=true){
 	if(value)
 		return (reg_in | 1<<bit);

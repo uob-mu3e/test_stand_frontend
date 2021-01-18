@@ -1,0 +1,21 @@
+#
+
+# 'factory' FE assignments
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE [file join $::quartus(qip_path) "assignments/FE_A5.tcl"]
+
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "util/include.qip"]
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "ip/include.qip"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "s4/ip_altlvds_rx.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "s4/ip_altpll.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "s4/ip_ram.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "s4/ip_dcfifo.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "s4/ip_scfifo.vhd"]
+
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "s4/xcvr.qip"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "sc_rx.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "sc_ram.vhd"]
+
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "fe_block_v2.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "tb/arria_reg_tb.vhd"]

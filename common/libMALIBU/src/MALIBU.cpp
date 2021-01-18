@@ -73,8 +73,7 @@ const uint8_t MALIBU::FPGA_broadcast_ID=0;
 /*bool MALIBU::WriteTo_MALIBU(uint32_t START_ADD, uint32_t PCIE_MEM_START, uint16_t cmd, i2c_reg_t* regs, int n){//TODO: FPGA_ID should save in the class?
 	//n:number of the partern; TODO:need the information from MIDAS //return 1:good; 0:bad
 	std::vector<uint32_t> data;
-	cmd = 0x0105;// this is the i2c_write_u32() in the FEB NIOS
-	uint32_t cmd_n = cmd<<16 + (0xFFFF&n);
+    uint32_t cmd_n = feb::make_cmd(CMD_TILE_I2C_WRITE, n);
 	uint32_t PCIE_MEM_START_CURR = PCIE_MEM_START;
 	if(n!= (sizeof(regs)/sizeof(regs[0]))){
 		printf("Error: Input size n= %d, size of regs: %d\n",n,sizeof(regs)/sizeof(regs[0]));

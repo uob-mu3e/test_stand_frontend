@@ -27,42 +27,45 @@ architecture behav of sc_tb is
   		signal mem_datak_out : std_logic_vector(NLINKS * 4 - 1 downto 0);
   		signal mem_data_out_slave : std_logic_vector(31 downto 0);
   		signal mem_datak_out_slave : std_logic_vector(3 downto 0);
-  		signal mem_addr_out_slave : std_logic_vector(15 downto 0);
+  		signal mem_addr_out_slave, length : std_logic_vector(15 downto 0);
   		signal mem_wren_slave : std_logic;
+  		signal link_enable : std_logic_vector(NLINKS - 1 downto 0) := (others => '1');
 
   		constant ckTime: 		time	:= 10 ns;
   		
-  		constant CODE_START : std_logic_vector(11 downto 0) := x"BAD";
-  		constant CODE_STOP : std_logic_vector(31 downto 0) 	:= x"0000009C";
-
-  		signal writememwren : std_logic;
+  		signal writememwren, length_we, done : std_logic;
+  		
+  		type state_type is (idle, write_sc, wait_state);
+        signal state : state_type;
 		
 begin
   --  Component instantiation.
-    sc_master_0 : entity work.sc_master 
+    sc_main : entity work.sc_main 
   	generic map (
 		NLINKS => NLINKS
 	)
 	port map(
-		clk					=> clk,
-		reset_n				=> reset_n,
-		enable				=> '1',
-		mem_data_in			=> writememdata_out,
-		mem_addr			=> memaddr,
-		mem_data_out		=> mem_data_out,
-		mem_data_out_k		=> mem_datak_out,
-		done				=> open,
-		stateout			=> open
+        i_clk				=> clk,
+		i_reset_n			=> reset_n,
+        i_length_we		    => length_we,
+		i_length		    => length,
+		i_mem_data		    => writememdata_out,
+		o_mem_addr			=> memaddr,
+		o_mem_data		    => mem_data_out,
+		o_mem_datak		    => mem_datak_out,
+		o_done				=> done,
+		o_state			    => open--,
   );
 
-  sc_slave_0 : entity work.sc_slave
+  sc_secondary : entity work.sc_secondary
     generic map (
-		NLINKS => NLINKS
+		NLINKS => NLINKS,
+		skip_init => '1'
 	)
 	port map(
 		clk					=> clk,
 		reset_n				=> reset_n,
-		enable				=> '1',
+		i_link_enable				=> link_enable,
 		link_data_in		=> mem_data_out,
 		link_data_in_k		=> mem_datak_out,
 		mem_data_out		=> mem_data_out_slave,
@@ -92,16 +95,6 @@ begin
         q_a => open,
         q_b => writememdata_out--,
   	);
-  	
---   	reg : process(reset_n, clk)
---   	begin
---   	if(reset_n = '0')then
---         memaddr_reg <= (others => '0');
---     elsif(rising_edge(clk))then
---         memaddr_reg <= memaddr;
---     end if;
---     end process;
-    
 
      rram : entity work.ip_ram
      generic map(
@@ -154,51 +147,60 @@ begin
 		writememdata <= (others => '0');
 		writememaddr <= x"FFFF";
 		writememwren <= '0';
-		
+		length_we    <= '0';
+		length       <= (others => '0');
+		state        <= idle;
 	elsif(rising_edge(clk))then
 		writememwren <= '0';
-		writememaddr <= writememaddr + 1;
-		if(((writememaddr > x"FFFE") or (writememaddr < x"000F")))then
-			if(writememaddr(3 downto 0) = x"F")then
-				writememdata(31 downto 20) <= CODE_START;
-				writememwren <= '1';
-			elsif(writememaddr(3 downto 0) = x"0")then
-				writememdata <= x"1fffffbc";
-				writememwren <= '1';
-			elsif(writememaddr(3 downto 0)  = x"1")then
-				writememdata <= x"0000000a";
-				writememwren <= '1';
-			elsif(writememaddr(3 downto 0)  = x"2")then
-				writememdata <= x"00000001";
-				writememwren <= '1';	
-            elsif(writememaddr(3 downto 0)  = x"3")then
-				writememdata <= x"0000000b";
-				writememwren <= '1';	
-			elsif(writememaddr(3 downto 0)  = x"4")then
-				writememdata <= CODE_STOP;
-				writememwren <= '1';
-			elsif(writememaddr(3 downto 0)  = x"5")then
-                writememdata(31 downto 20) <= CODE_START;
-				writememwren <= '1';
-            elsif(writememaddr(3 downto 0) = x"6")then
-				writememdata <= x"1ffff1bc";
-				writememwren <= '1';
-			elsif(writememaddr(3 downto 0)  = x"7")then
-				writememdata <= x"0000000a";
-				writememwren <= '1';
-			elsif(writememaddr(3 downto 0)  = x"8")then
-				writememdata <= x"00000001";
-				writememwren <= '1';	
-            elsif(writememaddr(3 downto 0)  = x"9")then
-				writememdata <= x"0000000b";
-				writememwren <= '1';	
-			elsif(writememaddr(3 downto 0)  = x"a")then
-				writememdata <= CODE_STOP;
-				writememwren <= '1';
-			end if;            
+       
+        case state is
             
-		end if;
-
+            when idle =>
+                if ( done = '1' ) then
+                    state <= write_sc;
+                end if;
+                
+            when write_sc =>
+                if(writememaddr(3 downto 0) = x"F")then
+                    writememdata <= x"1fffffbc";
+                    writememaddr <= writememaddr + 1;
+                    writememwren <= '1';
+                    length <= x"0001";
+                elsif(writememaddr(3 downto 0)  = x"0")then
+                    writememdata <= x"0000000a";
+                    writememaddr <= writememaddr + 1;
+                    writememwren <= '1';
+                    length <= length + '1';
+                elsif(writememaddr(3 downto 0)  = x"1")then
+                    writememdata <= x"00000001";
+                    writememaddr <= writememaddr + 1;
+                    writememwren <= '1';
+                    length_we <= '0';
+                    length <= length + '1';
+                elsif(writememaddr(3 downto 0)  = x"2")then
+                    writememdata <= x"0000000b";
+                    writememaddr <= writememaddr + 1;
+                    writememwren <= '1';
+                    length <= length + '1';
+                elsif(writememaddr(3 downto 0)  = x"3")then
+                    writememdata <= x"0000009c";
+                    writememaddr <= writememaddr + 1;
+                    writememwren <= '1';
+                    length <= length + '1';
+                elsif(writememaddr(3 downto 0)  = x"4" and done = '1')then
+                    length_we <= '1';
+                    writememaddr <= (others => '0');
+                    state <= wait_state;
+                end if;
+                                
+            when wait_state =>
+                state <= idle;
+            
+            when others =>
+                writememaddr <= (others => '0');
+                state <= idle;
+                
+        end case;
 	end if;
 	end process memory;
 

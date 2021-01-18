@@ -9,29 +9,28 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 
 #ifndef MUFEB_H
 #define MUFEB_H
-
 #include "midas.h"
 #include "mudaq_device_scifi.h"
+#include "mudaq_dummy.h"
 #include "link_constants.h"
+#include "feb_constants.h"
 //#include "asic_config_base.h"
 class MuFEB {
-   protected:
-      mudaq::MudaqDevice& m_mu;
+    protected:
+      mudaq::MudaqDevice & m_mu;
       bool m_ask_sc_reply;
       const char* m_odb_prefix;
       const char* m_equipment_name;
       uint8_t m_SB_number;
 
-      HNDLE m_hDB;
    public:
       MuFEB(const MuFEB&)=delete;
-      MuFEB(mudaq::MudaqDevice& mu, HNDLE hDB, const char* equipment_name, const char* odb_prefix):
+      MuFEB(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix):
 	      m_mu(mu),
 	      m_ask_sc_reply(true),
 	      m_odb_prefix(odb_prefix),
 	      m_equipment_name(equipment_name),
-	      m_SB_number(0xff),
-	      m_hDB(hDB)
+	      m_SB_number(0xff)
 	{};
       void SetSBnumber(uint8_t n){m_SB_number=n;}
       const char* GetName(){return m_equipment_name;}

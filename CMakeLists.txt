@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(mu3e_online VERSION 0.8 LANGUAGES CXX)
+project(mu3e_online VERSION 0.9 LANGUAGES CXX)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "" FORCE)
@@ -22,7 +22,7 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 #)
 #message(STATUS "MU3E_ONLINE_GIT_REF: ${MU3E_ONLINE_GIT_REF}")
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -34,13 +34,10 @@ add_compile_options(
 # required packages
 find_package(Boost 1.49 REQUIRED COMPONENTS thread system program_options)
 find_package(Git 1.8 REQUIRED)
-list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
-# check if we compile for raspberry pi
-if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
-    message("Compile for Raspberry Pi")
-else()
-    find_package(ROOT 5.34 REQUIRED COMPONENTS RIO Hist Tree Net)
-endif()
+find_package(ROOT REQUIRED COMPONENTS
+    RIO Hist Tree Net
+)
+
 # optional packages
 find_package(Doxygen 1.8)
 message("here we set GLVND to default (https://cmake.org/cmake/help/git-stage/policy/CMP0072.html)")
@@ -55,7 +52,8 @@ find_package(CUDA)
 
 if (CUDA_FOUND)
     message("-- CUDA ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} was found at ${CUDA_TOOLKIT_ROOT_DIR}")
-    list(APPEND CUDA_NVCC_FLAGS "-arch=compute_30;-DVERBOSE;-g")
+    list(APPEND CUDA_NVCC_FLAGS "-DVERBOSE;-g")
+    #list(APPEND CUDA_NVCC_FLAGS "-arch=compute_30;-DVERBOSE;-g")
     include_directories(${CUDA_TOOLKIT_ROOT_DIR}/include)
 else(CUDA_FOUND)
     message("* CUDA is not found")
@@ -63,24 +61,16 @@ else(CUDA_FOUND)
     message("Not all CUDA libraries are found")
 endif(CUDA_FOUND)
 
-set(MIDAS_DIR ${PROJECT_SOURCE_DIR}/modules/midas)
-set(MIDASLIB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/linux/lib)
-set(MIDASLIB ${MIDASLIB_DIR}/libmidas.a)
-set(MIDASDRIVERDIR ${PROJECT_SOURCE_DIR}/modules/midas/drivers/class)
-set(MIDASINCLUDE_DIR ${PROJECT_SOURCE_DIR}/modules/midas/include)
-set(ENV{MIDASSYS} ${PROJECT_SOURCE_DIR}/build/modules/midas)
-set(ENV{MIDASSRC} ${PROJECT_SOURCE_DIR}/modules/midas)
 set(LIBMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/libmudaq)
 set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmupix)
 set(LIBMUTRIG_DIR ${PROJECT_SOURCE_DIR}/common/libmutrig)
 set(LIBMALIBU_DIR ${PROJECT_SOURCE_DIR}/common/libMALIBU)
 set(INCMUDAQ_DIR ${PROJECT_SOURCE_DIR}/common/include)
-set(MXML_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mxml)
-set(MSCB_DIR ${PROJECT_SOURCE_DIR}/modules/midas/mscb)
 
 # on some older boxes, wpedantic and MIDAS do not mix
 add_subdirectory(modules)
 add_subdirectory(backend_pc)
+add_subdirectory(common/kerneldriver)
 add_subdirectory(common/libmudaq)
 add_subdirectory(common/libmupix)
 add_subdirectory(common/libmutrig)
@@ -89,7 +79,6 @@ add_subdirectory(switching_pc/midas_fe)
 add_subdirectory(switching_pc/midas_fe_scifi)
 add_subdirectory(switching_pc/midas_fe_Tile)
 add_subdirectory(switching_pc/midas_fe_pixels)
-add_subdirectory(common/tests)
 
 if(APPLE)
     message("Compile for Apple")
@@ -132,6 +121,12 @@ if (CUDA_FOUND)
     add_subdirectory(farm_pc/midas_fe)
     add_subdirectory(farm_pc/tools)
 endif(CUDA_FOUND)
+
+if(CMAKE_PROJECT_NAME STREQUAL mu3e_online)
+    enable_testing()
+    include(GoogleTest)
+    add_subdirectory(common/tests)
+endif()
 
 
 configure_file(set_env.sh.in set_env.sh @ONLY)

@@ -5,6 +5,9 @@
 
 #include "sc_mupix.h"
 
+#include "../../../../common/include/feb.h"
+using namespace mu3e::daq::feb;
+
 //declaration of interface to scifi module: hardware access, menu, slow control handler
 struct mupix_t {
     sc_t* sc;
@@ -91,7 +94,7 @@ struct mupix_t {
                 set_chip_dacs(3, default_mupix_dacs);
                 break;
             case '4':
-	        menu_lvds(sc->ram);		
+	            menu_lvds(sc->ram);
                 break;
             case '5':
                 printf("lvds mask: 0x%08x\n",sc->ram->data[0xFF96]);
@@ -138,25 +141,23 @@ struct mupix_t {
         case 0x0105: //read counters
             read_counters();
             break;
-        case 0xfffe:
+        case CMD_PING:
             printf("-ping-\n");
             break;
         case 0xffff:
             break;
-        case 0x0110:
+        case CMD_MUPIX_CHIP_CFG:
             status=set_chip_dacs(data[0], &(data[1]));
             return status;
-        case 0x0120:
+        case CMD_MUPIX_BOARD_CFG:
             status=set_board_dacs(data[0], &(data[1]));
 
-/*
-        if(sc->ram->regs.scifi.ctrl.dummy&1){
-              //when configured as dummy do the spi transaction,
-              //but always return success to switching board
-	      if(status!=FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
-              status=FEB_REPLY_SUCCESS;
-
-           }*/
+/*            if(sc->ram->regs.scifi.ctrl.dummy&1) {
+                // when configured as dummy do the spi transaction,
+                // but always return success to switching board
+                if(status != FEB_REPLY_SUCCESS) printf("[WARNING] Using configuration dummy\n");
+                status = FEB_REPLY_SUCCESS;
+            }*/
             return status;
         default:
             return FEB_REPLY_ERROR;

@@ -59,7 +59,7 @@ INT resume_run(INT run_number, char *error);
 /*-- Equipment list ------------------------------------------------*/
 EQUIPMENT equipment[] = {
    {"RaspberryPi",              /* equipment name */
-    {4, 0,                      /* event ID, trigger mask */
+    {201, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_SLOW,                   /* equipment type */
      0,                         /* event source */

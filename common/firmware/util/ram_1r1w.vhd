@@ -10,7 +10,8 @@ use ieee.numeric_std.all;
 entity ram_1r1w is
 generic (
     DATA_WIDTH_g : positive := 8;
-    ADDR_WIDTH_g : positive := 8--;
+    ADDR_WIDTH_g : positive := 8;
+    ALTERA_RAM_STYLE_g : string := "no_rw_check"--;
 );
 port (
     i_raddr     : in    std_logic_vector(ADDR_WIDTH_g-1 downto 0);
@@ -29,7 +30,7 @@ architecture arch of ram_1r1w is
     type ram_t is array (natural range <>) of std_logic_vector(DATA_WIDTH_g-1 downto 0);
     signal ram : ram_t(2**ADDR_WIDTH_g-1 downto 0);
     attribute ramstyle : string;
-    attribute ramstyle of ram : signal is "no_rw_check";
+    attribute ramstyle of ram : signal is ALTERA_RAM_STYLE_g;
 
 begin
 

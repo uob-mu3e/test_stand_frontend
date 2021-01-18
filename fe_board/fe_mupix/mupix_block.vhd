@@ -1,4 +1,4 @@
--- last change: S. Dittmeier, 22.11.2019 (dittmeier@physi.uni-heidelberg.de)
+-- last change: M.Mueller, Oktober 2020 (muellem@uni-mainz.de)
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -19,7 +19,7 @@ generic(
 );
 port (
     -- chip dacs
-    i_CTRL_SDO_A            : in std_logic; --TODO !!
+    i_CTRL_SDO_A            : in  std_logic; --TODO !!
     o_CTRL_SDI              : out std_logic_vector(NPORTS-1 downto 0);
     o_CTRL_SCK1             : out std_logic_vector(NPORTS-1 downto 0);
     o_CTRL_SCK2             : out std_logic_vector(NPORTS-1 downto 0);
@@ -27,7 +27,7 @@ port (
     o_CTRL_RB               : out std_logic_vector(NPORTS-1 downto 0);
 
     -- board dacs
-    i_SPI_DOUT_ADC_0_A      : in std_logic;
+    i_SPI_DOUT_ADC_0_A      : in  std_logic;
     o_SPI_DIN0_A            : out std_logic;
     o_SPI_CLK_A             : out std_logic;
     o_SPI_LD_ADC_A          : out std_logic;
@@ -35,33 +35,29 @@ port (
     o_SPI_LD_DAC_A          : out std_logic;  
 
     i_run_state_125           : in  run_state_t;
+    i_run_state_156           : in  run_state_t;
     o_ack_run_prep_permission : out std_logic;
 
     -- mupix dac regs
-    i_reg_add               : in std_logic_vector(7 downto 0);
-    i_reg_re                : in std_logic;
+    i_reg_add               : in  std_logic_vector(7 downto 0);
+    i_reg_re                : in  std_logic;
     o_reg_rdata             : out std_logic_vector(31 downto 0);
-    i_reg_we                : in std_logic;
-    i_reg_wdata             : in std_logic_vector(31 downto 0);
+    i_reg_we                : in  std_logic;
+    i_reg_wdata             : in  std_logic_vector(31 downto 0);
 
     -- data 
-    o_fifo_wdata     : out std_logic_vector(35 downto 0);
-    o_fifo_write     : out std_logic;
+    o_fifo_wdata            : out std_logic_vector(35 downto 0);
+    o_fifo_write            : out std_logic;
 
-    i_data_in_A_0    : in std_logic_vector(3 downto 0);
-    i_data_in_A_1    : in std_logic_vector(3 downto 0);
-    i_data_in_B_0    : in std_logic_vector(3 downto 0);
-    i_data_in_B_1    : in std_logic_vector(3 downto 0);
-    i_data_in_C_0    : in std_logic_vector(3 downto 0);
-    i_data_in_C_1    : in std_logic_vector(3 downto 0);
-    i_data_in_E_0    : in std_logic_vector(3 downto 0);
-    i_data_in_E_1    : in std_logic_vector(3 downto 0);
+    i_lvds_data_in          : in  std_logic_vector(NLVDS-1 downto 0);
 
-    i_reset         : in std_logic;
+    i_reset                 : in  std_logic;
     -- 156.25 MHz
-    i_clk           : in std_logic;
-    i_clk125        : in std_logic;
-    i_sync_reset_cnt: in std_logic--;
+    i_clk156                   : in  std_logic;
+    i_clk125                : in  std_logic;
+    i_lvds_rx_inclock_A     : in  std_logic;
+    i_lvds_rx_inclock_B     : in  std_logic;
+    i_sync_reset_cnt        : in  std_logic--;
 );
 end entity;
 
@@ -81,7 +77,6 @@ signal reset_n : std_logic;
     signal mp8_ctrl_clk2 : std_logic_vector(NCHIPS_SPI - 1 downto 0);
     signal mp8_ctrl_ld : std_logic_vector(NCHIPS_SPI - 1 downto 0);
     signal mp8_ctrl_rb : std_logic_vector(NCHIPS_SPI - 1 downto 0);
-    signal mp8_dataout : std_logic_vector(31 downto 0);
 
      -- board dacs
     type   state_spi is (waiting, starting, read_out_pix, write_pix, read_out_th, ending); -- to be used somewhere?
@@ -111,7 +106,7 @@ signal reset_n : std_logic;
     signal chip_dac_ren : std_logic;
     signal chip_dac_fifo_empty : std_logic;
     signal chip_dac_ready : std_logic;
-	 signal chip_dac_usedw : std_logic_vector(6 downto 0);
+    signal chip_dac_usedw : std_logic_vector(6 downto 0);
     signal reset_chip_dac_fifo : std_logic;
     signal ckdiv         : std_logic_vector(15 downto 0);
      
@@ -129,29 +124,29 @@ signal reset_n : std_logic;
     signal read_regs_mupix_mux : std_logic_vector(31 downto 0);
 
     signal lvds_data_valid : std_logic_vector(NLVDS-1 downto 0);
-    signal lvds_data_in : std_logic_vector(NLVDS-1 downto 0);
     signal disable_conditions_for_run_ack : std_logic;
-	 
-	 signal reg_hits_ena_count : std_logic_vector(31 downto 0);
+
+    signal reg_hits_ena_count : std_logic_vector(31 downto 0);
 
 begin
-    reset_n <= '0' when (i_reset='1' or i_run_state_125=RUN_STATE_SYNC) else '1';
-
+    
+    reset_n <= '0' when (i_reset='1' or i_run_state_156=RUN_STATE_SYNC) else '1';
+    --reset_n <= '0' when (i_reset='1' or i_run_state_125=RUN_STATE_SYNC) else '1';
 
     e_mupix_run_start_ack : work.mupix_run_start_ack
     generic map (
         NLVDS                       => NLVDS--,
     )
     port map (
-        i_clk                       => i_clk,
+        i_clk156                    => i_clk156,
         i_reset                     => i_reset,
         i_disable                   => disable_conditions_for_run_ack, -- TODO: connect to sc
         i_stable_required           => x"F000", -- TODO: connect to sc
         i_lvds_err_counter          => read_regs_mupix(LVDS_ERRCOUNTER_REGISTER_R + NLVDS - 1 downto LVDS_ERRCOUNTER_REGISTER_R),
         i_lvds_data_valid           => lvds_data_valid,
-        i_lvds_mask                 => write_regs_mupix(LINK_MASK_REGISTER_W)(NLVDS-1 downto 0),
+        i_lvds_mask                 => write_regs_mupix(LINK_MASK_REGISTER_W + 1 downto LINK_MASK_REGISTER_W),
         i_sc_busy                   => or_reduce(mp8_wren & (not chip_dac_fifo_empty)),
-        i_run_state_125             => i_run_state_125,
+        i_run_state_156             => i_run_state_156,
         o_ack_run_prep_permission   => o_ack_run_prep_permission--,
     );
 
@@ -174,16 +169,16 @@ begin
         data            => chip_dac_data_we,
 
         sclr            => reset_chip_dac_fifo,
-        clock           => i_clk--,
+        clock           => i_clk156--,
     );
- 
+
     -- chip dacs slow_controll
     -- MK: since we have only one chip to configure at the moment
     -- we hard code this 
     e_mp8_sc_master : work.mp8_sc_master
     generic map(NCHIPS => NCHIPS_SPI)
     port map (
-        clk             => i_clk,
+        clk             => i_clk156,
         reset_n         => reset_n,
         mem_data_in     => chip_dac_data,
         busy_n          => mp8_busy_n,--busy_n => mp8_busy_n,
@@ -201,9 +196,9 @@ begin
 
     gen_slowc:
     for i in 0 to NCHIPS_SPI-1 generate
-    e_mp8_slowcontrol : work.mp8_slowcontrol
+    e_mp10_slowcontrol : work.mp10_slowcontrol
     port map(
-        clk         => i_clk,
+        clk         => i_clk156,
         reset_n     => reset_n,
         ckdiv       => ckdiv, -- this need to be set to a register at the moment 0
         mem_data    => mp8_mem_data_out,
@@ -217,20 +212,20 @@ begin
         ctrl_ld     => mp8_ctrl_ld(i),
         ctrl_rb     => mp8_ctrl_rb(i),
         busy_n      => mp8_busy_n(i),
-        dataout     => mp8_dataout--,
+        dataout     => open--,
     );
     end generate gen_slowc;
 
-    process(i_clk)
+    process(i_clk156)
     begin
-        if(rising_edge(i_clk)) then	
+        if(rising_edge(i_clk156)) then	
             mp8_ctrl_dout(0)    <= i_CTRL_SDO_A;
         end if;
     end process;
-     
-    process(i_clk)
+
+    process(i_clk156)
     begin
-        if(rising_edge(i_clk)) then	
+        if(rising_edge(i_clk156)) then	
             o_CTRL_SDI      <= mp8_ctrl_din;
             o_CTRL_SCK1     <= mp8_ctrl_clk1;
             o_CTRL_SCK2     <= mp8_ctrl_clk2;
@@ -244,9 +239,9 @@ begin
     o_SPI_LD_ADC_A          <= A_spi_ldn_front(2);
     o_SPI_LD_TEMP_DAC_A     <= A_spi_ldn_front(1);
     o_SPI_LD_DAC_A          <= A_spi_ldn_front(0);
-    
+
    -- regs reading
-   board_dac_regs : process (i_clk, reset_n)
+   board_dac_regs : process (i_clk156, reset_n)
    begin 
        if (reset_n = '0') then 
             board_th_low        <= (others => '0');
@@ -266,7 +261,8 @@ begin
             chip_dac_ready      <= '0';
             reset_n_lvds        <= '0';
             mux_read_regs_nios  <= (others => '0');
-        elsif rising_edge(i_clk) then 
+            disable_conditions_for_run_ack <= '0';
+        elsif rising_edge(i_clk156) then 
             
             chip_dac_we         <= '0';
             chip_dac_ready      <= '0';
@@ -275,6 +271,11 @@ begin
             ckdiv               <= ckdiv;
             
             -- here we have to apply a register map with constants!
+            
+            -- DO NOT PUT ELSIF FOR R&W REGS HERE !! 
+            -- Quartus does not know that i_req_we and i_req_re cannot be 1 at the same time
+            -- Makes timing closure more difficult if elsif is used
+            
             if ( i_reg_add = x"83" and i_reg_we = '1' ) then
                 board_th_low    <= i_reg_wdata(15 downto 0);
                 board_th_high   <= i_reg_wdata(31 downto 16);
@@ -358,41 +359,55 @@ begin
                 reset_chip_dac_fifo    <= i_reg_wdata(0);
             end if;
             
-            if ( i_reg_add = x"96") then
-                if(i_reg_we = '1' ) then
-                    link_mask          <= i_reg_wdata;
-                elsif( i_reg_re = '1') then
-                    o_reg_rdata        <= link_mask;
-                end if;
+            if ( i_reg_add = x"96" and i_reg_we = '1') then
+                link_mask          <= i_reg_wdata;
+            end if;-- NO ELSIF HERE!!
+            
+            if ( i_reg_add = x"96" and i_reg_re = '1') then
+                o_reg_rdata        <= link_mask;
             end if;
             
             if ( i_reg_add = x"97" and i_reg_re = '1' ) then
-                o_reg_rdata            <= lvds_data_valid;
-            end if;
-            
-            if ( i_reg_add = x"98") then
-                if(i_reg_we = '1' ) then
-                    disable_conditions_for_run_ack  <= i_reg_wdata(0);
-                elsif( i_reg_re = '1') then
-                    o_reg_rdata(0)                  <= disable_conditions_for_run_ack;
-                    o_reg_rdata(31 downto 1)        <= (others => '0');
+                if(NLVDS > 31) then
+                    o_reg_rdata            <= lvds_data_valid(31 downto 0);
+                else
+                    o_reg_rdata            <= lvds_data_valid(NLVDS-1 downto 0);
                 end if;
             end if;
-				
-				if ( i_reg_add = x"99" and i_reg_re = '1' ) then
+            
+            if ( i_reg_add = x"9B" and i_reg_re = '1' ) then
+                if(NLVDS > 32) then
+                    for I in 0 to NLVDS-33 loop
+                        o_reg_rdata(I)     <= lvds_data_valid(32 + I);
+                    end loop;
+                else
+                    o_reg_rdata            <= (others => '0');
+                end if;
+            end if;
+            
+            if ( i_reg_add = x"98" and i_reg_we = '1' ) then
+                disable_conditions_for_run_ack  <= i_reg_wdata(0);
+            end if;-- NO ELSIF HERE!!
+            
+            if( i_reg_add = x"98" and i_reg_re = '1') then
+                o_reg_rdata(0)                  <= disable_conditions_for_run_ack;
+                o_reg_rdata(31 downto 1)        <= (others => '0');
+            end if;
+            
+            if ( i_reg_add = x"99" and i_reg_re = '1' ) then
                 o_reg_rdata <= std_logic_vector(to_unsigned(2**chip_dac_usedw'length - to_integer(unsigned(chip_dac_usedw)), 32));
             end if;
             
-				if ( i_reg_add = x"9A" and i_reg_re = '1' ) then
-					o_reg_rdata <= reg_hits_ena_count;
-				end if;
-				
+            if ( i_reg_add = x"9A" and i_reg_re = '1' ) then
+                o_reg_rdata <= reg_hits_ena_count;
+            end if;
+
         end if;
     end process board_dac_regs;
 
     e_spi_master : work.spi_master 
     port map(
-        clk                 => i_clk,
+        clk                 => i_clk156,
         reset_n             => reset_n,
         injection1_reg      => board_injection,
         threshold_pix_reg   => board_th_pix,
@@ -416,11 +431,6 @@ begin
         temp_adc_out        => board_temp_adc_out
     );
 
-    lvds_data_in    <= i_data_in_E_1 & i_data_in_E_0 &
-                       i_data_in_C_1 & i_data_in_C_0 &
-                       i_data_in_B_1 & i_data_in_B_0 &
-                       i_data_in_A_1 & i_data_in_A_0;
-
     e_mupix_datapath : work.mupix_datapath
     generic map (
         NCHIPS              => NCHIPS,
@@ -432,22 +442,26 @@ begin
     port map (
         i_reset_n           => reset_n,
         i_reset_n_lvds      => reset_n_lvds,
-        
-        i_clk               => i_clk,
+
+        i_clk156            => i_clk156,
         i_clk125            => i_clk125,
-        
-        lvds_data_in        => lvds_data_in,
-        
+
+        i_lvds_rx_inclock_A => i_lvds_rx_inclock_A,
+        i_lvds_rx_inclock_B => i_lvds_rx_inclock_B,
+
+        lvds_data_in        => i_lvds_data_in,
+
         write_sc_regs       => write_regs_mupix,
         read_sc_regs        => read_regs_mupix,
-        
+
         o_fifo_wdata        => o_fifo_wdata,
         o_fifo_write        => o_fifo_write,
         o_lvds_data_valid   => lvds_data_valid,
-		  o_hits_ena_count	 => reg_hits_ena_count,
-        
+        o_hits_ena_count    => reg_hits_ena_count,
+
         i_sync_reset_cnt    => i_sync_reset_cnt,
-        i_run_state_125     => i_run_state_125--,
+        i_run_state_125     => i_run_state_125,
+        i_run_state_156     => i_run_state_156--,
     );
 
     write_regs_mupix(RO_PRESCALER_REGISTER_W)               <= ro_prescaler;
@@ -455,11 +469,11 @@ begin
     write_regs_mupix(TIMESTAMP_GRAY_INVERT_REGISTER_W)      <= timestamp_gray_invert;
     write_regs_mupix(LINK_MASK_REGISTER_W)                  <= link_mask;
 
-    mux_read_regs : process (i_clk, reset_n)
+    mux_read_regs : process (i_clk156, reset_n)
     begin 
         if (reset_n = '0') then 
             read_regs_mupix_mux <= (others => '0');
-        elsif rising_edge(i_clk) then 
+        elsif rising_edge(i_clk156) then 
         -- make sure we cannot access signals that are not there
             if(mux_read_regs_nios < NREGISTERS_MUPIX_RD)then
                 read_regs_mupix_mux <= read_regs_mupix(conv_integer(mux_read_regs_nios));

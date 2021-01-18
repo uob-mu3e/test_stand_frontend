@@ -7,6 +7,23 @@ struct sc_ram_t {
     struct regs_t {
         union {
             alt_u32 block0[16];
+
+            struct {
+                alt_u32 status;
+                alt_u32 git_hash;
+
+                alt_u32 fpga_type;
+                alt_u32 fpga_id;
+
+                alt_u32 cmdlen;
+                alt_u32 offset;
+
+                alt_u32 reset_bypass; //11 downto 0: requested bypass (R/W) ; 9+16 downto 16: actual runstate (R)
+                alt_u32 reset_bypass_payload;
+                alt_u32 reset_optical_links;
+                alt_u32 reset_phase;
+                alt_u32 merger_rate_count;
+            } fe;
         };
 
         union {
@@ -114,21 +131,6 @@ struct sc_ram_t {
 
         union {
             alt_u32 block15[16];
-
-            struct {
-                alt_u32 cmdlen;
-                alt_u32 offset;
-
-                alt_u32 reserved[2];
-
-                alt_u32 reset_bypass; //11 downto 0: requested bypass (R/W) ; 9+16 downto 16: actual runstate (R)
-
-                alt_u32 reset_bypass_payload;
-                
-                alt_u32 merger_rate_count;
-
-                alt_u32 mscb;
-            } fe;
         };
 
     } regs;
@@ -138,9 +140,9 @@ static_assert(sizeof(sc_ram_t) == 65536 * 4, "");
 static_assert(sizeof(sc_ram_t::regs) == 256 * 4, "");
 
 static_assert(offsetof(sc_ram_t, regs) % 1024 == 0, "");
-static_assert(offsetof(sc_ram_t::regs_t, malibu) % 64 == 0, "");
-static_assert(offsetof(sc_ram_t::regs_t, mupix) % 64 == 0, "");
-static_assert(offsetof(sc_ram_t::regs_t, scifi) % 64 == 0, "");
 static_assert(offsetof(sc_ram_t::regs_t, fe) % 64 == 0, "");
+static_assert(offsetof(sc_ram_t::regs_t, malibu) % 64 == 0, "");
+static_assert(offsetof(sc_ram_t::regs_t, scifi) % 64 == 0, "");
+static_assert(offsetof(sc_ram_t::regs_t, mupix) % 64 == 0, "");
 
 #endif // __FE_SC_RAM_H__

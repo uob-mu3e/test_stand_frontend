@@ -21,7 +21,6 @@
 - online/modules/mutrigana-base/calibration/CMakeLists.txt -> replace CXX_STANDARD xx
 - online/modules/mutrigana-base/online/CMakeLists.txt -> replace CXX_STANDARD xx
 
-
 ## Raspberry Pi USB Server
 
 - Follow the setup in https://wiki.ubuntuusers.de/USBIP/

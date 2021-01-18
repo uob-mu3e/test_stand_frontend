@@ -32,12 +32,6 @@ int main ()
     };
     stream_settings.connect("/Equipment/Test/Settings", true);
 
-    midas::odb test_settings = {
-        {"Enable", false},
-    };
-    test_settings.connect("/Equipment/Test/Test", true);
-
-
     midas::odb datagen("/Equipment/Test/Settings/Test_odb_api");
     std::cout << "Datagenerator Enable is " << datagen["Enable"] << std::endl;
     cm_disconnect_experiment();
