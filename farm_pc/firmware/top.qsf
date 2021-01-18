@@ -10,7 +10,7 @@ set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 # COMPONENTS
 #============================================================
 
-set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
+set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/altera/pre_flow.tcl"
 
 set_global_assignment -name TOP_LEVEL_ENTITY top
 
@@ -32,7 +32,7 @@ set_global_assignment -name VHDL_FILE a10/link_observer.vhd
 set_global_assignment -name VHDL_FILE a10/dma_evaluation.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
 set_global_assignment -name VHDL_FILE assignments/mudaq_registers.vhd
-set_global_assignment -name QIP_FILE util/util.qip
+set_global_assignment -name QIP_FILE util/include.qip
 set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 set_global_assignment -name QIP_FILE a10/xcvr.qip
 set_global_assignment -name VHDL_FILE a10/data_demerge.vhd

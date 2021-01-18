@@ -10,4 +10,4 @@ IPs = \
     a10/ip_xcvr_phy.sopcinfo a10/ip_xcvr_fpll.sopcinfo a10/ip_xcvr_reset.sopcinfo \
     nios.sopcinfo
 
-include util/makefile.mk
+include util/altera/makefile.mk

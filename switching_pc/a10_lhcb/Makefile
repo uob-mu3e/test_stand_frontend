@@ -10,4 +10,4 @@ IPs := \
     $(patsubst %.tcl,%.sopcinfo,$(wildcard pcieapp/*.tcl)) \
     nios.sopcinfo
 
-include util/makefile.mk
+include util/altera/makefile.mk

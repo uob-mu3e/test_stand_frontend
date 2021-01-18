@@ -9,4 +9,4 @@ IPs = \
     $(patsubst %.tcl,%.sopcinfo,$(wildcard ../fe/ip/*.tcl)) \
     nios.sopcinfo
 
-include util/makefile.mk
+include util/altera/makefile.mk
