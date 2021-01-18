@@ -11,4 +11,3 @@ set name [ file tail [ file rootname [ info script ] ] ]
 
 create_system $name
 add_ram_2port 256 2048 -dc -regA
-save_system [ file join $dir0 "$name.qsys" ]

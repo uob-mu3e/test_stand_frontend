@@ -11,4 +11,3 @@ set name [ file tail [ file rootname [ info script ] ] ]
 
 create_system $name
 add_altclkctrl 2
-save_system [ file join $dir0 "$name.qsys" ]

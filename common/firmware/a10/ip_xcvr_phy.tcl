@@ -11,4 +11,3 @@ set name [ file tail [ file rootname [ info script ] ] ]
 
 create_system $name
 add_altera_xcvr_native_a10 4 32 ${refclk_freq_mhz} ${txrx_data_rate}
-save_system [ file join $dir0 "$name.qsys" ]

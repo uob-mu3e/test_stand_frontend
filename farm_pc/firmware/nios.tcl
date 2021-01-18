@@ -14,5 +14,3 @@ nios_base.export_avm avm_qsfpA 14 0x70010000 -clk avm_clk
 nios_base.export_avm avm_qsfpB 14 0x70020000 -clk avm_clk
 nios_base.export_avm avm_qsfpC 14 0x70030000 -clk avm_clk
 nios_base.export_avm avm_qsfpD 14 0x70040000 -clk avm_clk
-
-save_system {nios.qsys}

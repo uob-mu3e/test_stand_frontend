@@ -1034,5 +1034,3 @@ set_interconnect_requirement {$system} {qsys_mm.clockCrossingAdapter} {HANDSHAKE
 set_interconnect_requirement {$system} {qsys_mm.enableEccProtection} {FALSE}
 set_interconnect_requirement {$system} {qsys_mm.insertDefaultSlave} {FALSE}
 set_interconnect_requirement {$system} {qsys_mm.maxAdditionalLatency} {1}
-
-save_system [ file join $dir0 "$name.qsys" ]

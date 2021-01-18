@@ -6,6 +6,10 @@ ifndef QUARTUS_ROOTDIR
     $(error QUARTUS_ROOTDIR is undefined)
 endif
 
+ifeq ($(PREFIX),)
+    override PREFIX := .
+endif
+
 ifeq ($(NIOS_SOPCINFO),)
     NIOS_SOPCINFO := nios.sopcinfo
 endif
@@ -22,12 +26,12 @@ ip_%.qip : ip_%.v
 	touch ip_$*.qip
 
 .PRECIOUS : %.qsys
-%.qsys : %.tcl
-	qsys-script --cmd='source "$<"'
+$(PREFIX)/%.qsys : %.tcl
+	./util/altera/tcl2qsys.sh $< $@
 
 .PRECIOUS : %.sopcinfo
-%.sopcinfo : %.qsys
-	qsys-generate --synthesis=VHDL --output-directory='$(dir $<)' '$<'
+$(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys
+	./util/altera/qsys-generate.sh $<
 
 .PHONY : flow
 flow : $(IPs)
