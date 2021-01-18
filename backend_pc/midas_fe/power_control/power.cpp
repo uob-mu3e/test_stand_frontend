@@ -230,7 +230,7 @@ INT read_genesys_power(char *pevent, INT off)
 	bk_init32a(pevent);
 	float *pdata;
 	
-	bk_create(pevent,"LVGE", TID_FLOAT, (void **)&pdata);
+	bk_create(pevent,"LVG1", TID_FLOAT, (void **)&pdata);
   
 	error = read_power(pdata);	
 	bk_close(pevent, pdata);
