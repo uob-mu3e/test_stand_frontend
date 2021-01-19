@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include "../kerneldriver/mudaq.h"
 
-static size_t _pagesize(void) { return static_cast<size_t>(sysconf(_SC_PAGESIZE)); }
+[[maybe_unused]] static size_t _pagesize(void) { return static_cast<size_t>(sysconf(_SC_PAGESIZE)); }
 int physical_address_check( uint32_t * virtual_address, size_t size );
 int is_page_aligned( void * pointer );
 void * align_page( void * pointer );

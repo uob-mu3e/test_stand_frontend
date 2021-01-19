@@ -14,7 +14,7 @@ const int MAX_FEBS_PER_SWITCHINGBOARD = 34;
 const int MAX_N_FRONTENDBOARDS = MAX_N_SWITCHINGBOARDS*MAX_LINKS_PER_SWITCHINGBOARD;
 
 /* Number of FEBs in final system */
-const int N_FEBS[MAX_N_SWITCHINGBOARDS] = {34, 33, 33, 12};
+constexpr int N_FEBS[MAX_N_SWITCHINGBOARDS] = {34, 33, 33, 12};
 
 /* Identification of FEB by subsystem */
 enum FEBTYPE {Undefined, Pixel, Fibre, Tile, FibreSecondary};

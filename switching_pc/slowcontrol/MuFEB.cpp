@@ -12,7 +12,7 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 #include "odbxx.h"
 #include "mfe.h" //for set_equipment_status
 
-#include "mudaq_device_scifi.h"
+#include "mudaq_device.h"
 #include "asic_config_base.h"
 #include <thread>
 #include <chrono>
@@ -21,15 +21,12 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 #define FEB_REPLY_SUCCESS 0
 #define FEB_REPLY_ERROR   1
 
-using midas::odb;
+
 
 //handler function for update of switching board fiber mapping / status
-void MuFEB::on_mapping_changed(HNDLE hDB, HNDLE hKey, INT, void * userdata)
+void MuFEB::on_mapping_changed(odb o, void * userdata)
 {
    MuFEB* _this=static_cast<MuFEB*>(userdata);
-   KEY key;
-   db_get_key(hDB, hKey, &key);
-   printf("MuFEB::on_mapping_changed(%s)\n",key.name);
    _this->RebuildFEBsMap();
 }
 
@@ -37,18 +34,7 @@ void MuFEB::RebuildFEBsMap(){
 
     //clear map, we will rebuild it now
     m_FPGAs.clear();
-    /*
-        const char *link_settings_str[] = {
-            "SwitchingBoardMask = INT[4] :",
-            "SwitchingBoardNames = STRING[4] :",
-            "FrontEndBoardMask = INT[192] :",
-            "FrontEndBoardType = INT[192] :",
-            "FrontEndBoardNames = STRING[192] :",
-    */
-    //TODO: create struct and use db_get_record
 
-    //get FEB type -> find ours
-    
     // get odb instance for links settings
     odb links_settings("/Equipment/Links/Settings");
 
@@ -58,7 +44,8 @@ void MuFEB::RebuildFEBsMap(){
     auto sbnames = links_settings["SwitchingBoardNames"];
     auto febnames = links_settings["FrontEndBoardNames"];
     
-    //fill our list. Currently only mapping primaries; secondary fibers for SciFi are implicitely mapped to the preceeding primary
+    // fill our list. Currently only mapping primaries;
+    // secondary fibers for SciFi are implicitely mapped to the preceeding primary
     int lastPrimary=-1;
     int nSecondaries=0;
     char reportStr[255];
@@ -73,48 +60,32 @@ void MuFEB::RebuildFEBsMap(){
             lastPrimary=m_FPGAs.size();
             m_FPGAs.push_back({ID,linkmask[ID],name_link.c_str()});
             sprintf(reportStr,"TX Fiber %d is mapped to Link %u \"%s\"                            --> SB=%u.%u %s", ID,m_FPGAs[lastPrimary].GetLinkID(),m_FPGAs[lastPrimary].GetLinkName().c_str(),
-             m_FPGAs[lastPrimary].SB_Number(),m_FPGAs[lastPrimary].SB_Port(),
-             !m_FPGAs[lastPrimary].IsScEnabled()?"\t[SC disabled]":"");
-         cm_msg(MINFO,"MuFEB::RebuildFEBsMap",reportStr);
-      }else if(IsSecondary(febtype[ID])){
-     if(lastPrimary==-1){
-            cm_msg(MERROR,"MuFEB::RebuildFEBsMap","Fiber #%d is set to type secondary but without primary",ID);
-            return;
-         }
-         sprintf(reportStr,"TX Fiber %d is secondary, remap SC to primary ID %d, Link %u \"%s\" --> SB=%u.%u %s",
-             ID,lastPrimary,m_FPGAs[lastPrimary].GetLinkID(),m_FPGAs[lastPrimary].GetLinkName().c_str(),
-             m_FPGAs[lastPrimary].SB_Number(),m_FPGAs[lastPrimary].SB_Port(),
-             !m_FPGAs[lastPrimary].IsScEnabled()?"\t[SC disabled]":"");
-         cm_msg(MINFO,"MuFEB::RebuildFEBsMap",reportStr);
-         lastPrimary=-1;
-     nSecondaries++;
-      }
-   }
-   sprintf(reportStr,"Found %lu FEBs of type %s, remapping %d secondaries.",m_FPGAs.size(),FEBTYPE_STR[GetTypeID()].c_str(),nSecondaries);
-   cm_msg(MINFO,"MuFEB::RebuildFEBsMap",reportStr);
-
-   //get SB mask -> update enable, overriding all FEB enables on that SB
-   //TODO: is that actually needed? If SB is disabled, no SC for this one anyway!
-   /*
-   INT sbmask[MAX_N_SWITCHINGBOARDS];
-   size = sizeof(INT)*MAX_N_SWITCHINGBOARDS;
-   db_find_key(m_hDB, 0, "/Equipment/Links/Settings/SwitchingBoardMask", &hKey);
-   assert(hKey);
-   db_get_data(m_hDB, hKey, &sbmask, &size, TID_INT);
-   for(size_t n=0;n<m_FPGAs.size();n++){
-      assert(m_FPGAs[n].SB_Number()<MAX_N_SWITCHINGBOARDS);
-      if(sbmask[m_FPGAs[n].SB_Number()]==0){
-         m_FPGAs[n].mask=0;
-      }
-   }
-   */
+                    m_FPGAs[lastPrimary].SB_Number(),m_FPGAs[lastPrimary].SB_Port(),
+                    !m_FPGAs[lastPrimary].IsScEnabled()?"\t[SC disabled]":"");
+            cm_msg(MINFO,"MuFEB::RebuildFEBsMap","%s",reportStr);
+        } else if(IsSecondary(febtype[ID])){
+            if(lastPrimary==-1){
+                cm_msg(MERROR,"MuFEB::RebuildFEBsMap","Fiber #%d is set to type secondary but without primary",ID);
+                return;
+            }
+            sprintf(reportStr,"TX Fiber %d is secondary, remap SC to primary ID %d, Link %u \"%s\" --> SB=%u.%u %s",
+                    ID,lastPrimary,m_FPGAs[lastPrimary].GetLinkID(),m_FPGAs[lastPrimary].GetLinkName().c_str(),
+                    m_FPGAs[lastPrimary].SB_Number(),m_FPGAs[lastPrimary].SB_Port(),
+                    !m_FPGAs[lastPrimary].IsScEnabled()?"\t[SC disabled]":"");
+            cm_msg(MINFO,"MuFEB::RebuildFEBsMap","%s", reportStr);
+            lastPrimary=-1;
+            nSecondaries++;
+        }
+    }
+    sprintf(reportStr,"Found %lu FEBs of type %s, remapping %d secondaries.",m_FPGAs.size(),FEBTYPE_STR[GetTypeID()].c_str(),nSecondaries);
+    cm_msg(MINFO,"MuFEB::RebuildFEBsMap","%s", reportStr);
 }
 
 int MuFEB::WriteFEBID(){
     for(auto FEB: m_FPGAs){
        if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
        if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
-       uint32_t val=0xFEB1FEB0;
+       uint32_t val=0xFEB1FEB0; // TODO: Where does this hard-coded value come from?
        val+=(FEB.GetLinkID()<<16)+FEB.GetLinkID();
 
        char reportStr[255];
