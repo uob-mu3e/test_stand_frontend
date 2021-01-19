@@ -125,7 +125,11 @@ entity midas_event_builder is
     signal sop, sop_reg, eop, eop_reg, shop, shop_reg : std_logic_vector(NLINKS-1 downto 0);
     signal stream_in_rempty : std_logic_vector(NLINKS-1 downto 0);
     signal stream_wdata, stream_rdata : std_logic_vector(35 downto 0);
+    -- only for modelsim needed but will go away later
+    signal o_wdata : std_logic_vector(37 downto 0);
     signal time_merger_hit : std_logic_vector(39 downto 0);
+    -- only for modelsim needed but will go away later
+    signal o_rdata : std_logic_vector(77 downto 0);
     signal stream_rempty, time_rempty, stream_rack, stream_wfull, stream_we : std_logic;
     signal link_data : std_logic_vector(31 downto 0);
     signal link_datak : std_logic_vector(3 downto 0);
@@ -399,13 +403,15 @@ begin
             i_rempty                => stream_in_rempty,
             o_rack                  => link_fifo_ren,
 
-            o_wdata(35 downto 0)    => stream_wdata,
+            o_wdata    		    => o_wdata,
             i_wfull                 => stream_wfull,
             o_we                    => stream_we,
 
             i_reset_n               => i_reset_dma_n,
             i_clk                   => i_clk_dma--,
         );
+
+	stream_wdata <= o_wdata(35 downto 0);
         
         e_stream_fifo : entity work.ip_scfifo
         generic map (
@@ -480,7 +486,7 @@ begin
             o_rack                  => link_fifo_ren,--link_fifo_ren,
             
             -- output stream
-            o_rdata(77 downto 38)   => time_merger_hit,
+            o_rdata                 => o_rdata,
             i_ren                   => not time_rempty and not stream_wfull,
             o_empty                 => time_rempty,
             
@@ -489,6 +495,8 @@ begin
             i_reset_n               => i_reset_dma_n,
             i_clk                   => i_clk_dma--,
         );
+
+	time_merger_hit <= o_rdata(77 downto 38);
         
         -- link number
         link_number                 <= time_merger_hit(37 downto 32);
