@@ -43,6 +43,7 @@
 ## Links (docs, etc.)
 
 - [quartus project](docs/quartus.md)
+- [tests](docs/tests.md)
 - [nios software](docs/nios.md)
 - [compiling and starting midas](docs/midas.md)
 - [setup #1](docs/setup1.md)

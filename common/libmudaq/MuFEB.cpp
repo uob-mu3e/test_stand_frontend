@@ -144,6 +144,7 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
         return SUCCESS;
 
    uint32_t val[2];
+   char set_str[255];
    int status=m_mu.FEBsc_read(FEB.SB_Port(), val, 2,0xFF00 | RUN_STATE_RESET_BYPASS_REGISTER_RW);
    if(status!=2) return status;
    //printf("MuFEB::ReadBackRunState(): val[]={%8.8x,%8.8x} --> %x,%x\n",val[0],val[1],val[0]&0x1ff,(val[0]>>16)&0x3ff);
@@ -154,10 +155,12 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
    BOOL bypass_enabled=true;
    if(((val[0])&0x1ff)==0x000) bypass_enabled=false;
     // set odb value_index index = FPGA_ID, value = bypass_enabled
-    sprintf(path, "%s/Variables/FEB Run State", m_odb_prefix);
-    odb variables_feb_run_state(path);
+        
+    sprintf(path, "%s/Variables", m_odb_prefix);
+    odb variables_feb_run_state((std::string)path);
 
-    variables_feb_run_state["Bypass enabled&"][FPGA_ID] = bypass_enabled;
+    sprintf(set_str, "Bypass enabled %d", FPGA_ID);
+    variables_feb_run_state[set_str] = bypass_enabled;
 
 /*
 // string variables are not possible with mlogger, so use raw state
@@ -198,7 +201,8 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
 */
     // set odb value_index index = FPGA_ID, value = value
     DWORD value=(val[0]>>16) & 0x3ff;
-    variables_feb_run_state["Run state&"][FPGA_ID] = value;
+    sprintf(set_str, "Run state %d", FPGA_ID);
+    variables_feb_run_state[set_str] = value;
 
    return SUCCESS;
 }
