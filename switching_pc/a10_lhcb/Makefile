@@ -2,8 +2,8 @@
 CABLE=1
 
 IPs := \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard ip/*.tcl)) \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard pcieapp/*.tcl)) \
-    nios.sopcinfo
+    $(wildcard ip/*.tcl) \
+    $(wildcard pcieapp/*.tcl) \
+    nios.tcl
 
 include util/altera/makefile.mk

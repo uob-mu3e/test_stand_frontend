@@ -4,8 +4,8 @@
 CABLE=1
 
 IPs = \
-    adc_lab_proj/myadc.sopcinfo \
-    nios.sopcinfo
+    adc_lab_proj/myadc.tcl \
+    nios.tcl
 
 include util/altera/makefile.mk
 

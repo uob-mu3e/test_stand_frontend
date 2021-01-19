@@ -2,11 +2,11 @@
 CABLE=DE5
 
 IPs = \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard ip/*.tcl)) \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard pcieapp/*.tcl)) \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard ddr3/*.tcl)) \
-    a10/ip_xcvr_phy.sopcinfo a10/ip_xcvr_reset.sopcinfo a10/ip_xcvr_fpll.sopcinfo \
-    nios.sopcinfo
+    $(wildcard ip/*.tcl) \
+    $(wildcard pcieapp/*.tcl) \
+    $(wildcard ddr3/*.tcl) \
+    a10/ip_xcvr_phy.tcl a10/ip_xcvr_reset.tcl a10/ip_xcvr_fpll.tcl \
+    nios.tcl
 
 include util/altera/makefile.mk
 

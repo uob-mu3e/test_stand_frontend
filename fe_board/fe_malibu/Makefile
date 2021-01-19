@@ -2,7 +2,7 @@
 CABLE=1
 
 IPs := \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard ../fe/ip/*.tcl)) \
-    nios.sopcinfo
+    $(wildcard ../fe/ip/*.tcl) \
+    nios.tcl app
 
 include util/altera/makefile.mk

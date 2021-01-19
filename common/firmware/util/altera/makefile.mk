@@ -2,12 +2,14 @@
 # author : Alexandr Kozlinskiy
 #
 
+.DEFAULT_GOAL := all
+
 ifndef QUARTUS_ROOTDIR
     $(error QUARTUS_ROOTDIR is undefined)
 endif
 
 ifeq ($(PREFIX),)
-    override PREFIX := .
+    override PREFIX := .cache
 endif
 
 ifeq ($(SOF),)
@@ -29,9 +31,20 @@ ifeq ($(APP_DIR),)
     APP_DIR := $(PREFIX)/software/app
 endif
 
-.PRECIOUS : %.qip %.sip %.qsys %.sopcinfo $(BSP_DIR) $(APP_DIR)
+QSYS_FILES := $(patsubst %.tcl,$(PREFIX)/%.qsys,$(IPs))
+SOPC_FILES := $(patsubst %.qsys,%.sopcinfo,$(QSYS_FILES))
 
-all : $(IPs)
+all : $(PREFIX)/IPs.qip $(QSYS_FILES) $(SOPC_FILES)
+
+$(PREFIX) :
+	mkdir -pv $(PREFIX)
+	[ -e $(PREFIX)/util ] || ln -snv --relative -T util $(PREFIX)/util
+
+$(PREFIX)/IPs.qip : $(PREFIX)
+	echo "" > $@
+	for ip in $(QSYS_FILES) ; do \
+	    echo "set_global_assignment -name QSYS_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$ip)\" ]" >> $@ ; \
+	done
 
 .PRECIOUS : %.qip %.sip
 ip_%.qip : ip_%.v
@@ -40,16 +53,14 @@ ip_%.qip : ip_%.v
 #	sed -r 's/ +/ /g' -i ip_$*.v
 	touch ip_$*.qip
 
-.PRECIOUS : %.qsys
 $(PREFIX)/%.qsys : %.tcl
 	./util/altera/tcl2qsys.sh $< $@
 
-.PRECIOUS : %.sopcinfo
 $(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys
 	./util/altera/qsys-generate.sh $<
 
 .PHONY : flow
-flow : $(IPs)
+flow : all
 	quartus_sh -t util/altera/flow.tcl top
 
 .PHONY : sof2flash
