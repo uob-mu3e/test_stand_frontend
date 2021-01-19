@@ -20,7 +20,6 @@ set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_ram.vhd
 set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_dcfifo.vhd
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram_1_port.vhd
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_dcfifo_mixed_widths.vhd
-set_global_assignment -name VHDL_FILE a10/midas_event_builder.vhd
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
 set_global_assignment -name VHDL_FILE cmp_pkg.vhd
 set_global_assignment -name VHDL_FILE top.vhd
@@ -30,14 +29,12 @@ set_global_assignment -name QIP_FILE pcieapp/include.qip
 set_global_assignment -name VHDL_FILE ../../../fe_board/firmware/FEB_common/daq_constants.vhd
 set_global_assignment -name VHDL_FILE a10/link_observer.vhd
 set_global_assignment -name VHDL_FILE a10/dma_evaluation.vhd
-set_global_assignment -name VHDL_FILE a10/stream_merger.vhd
 set_global_assignment -name QSYS_FILE nios.qsys
 set_global_assignment -name VHDL_FILE assignments/mudaq_registers.vhd
 set_global_assignment -name QIP_FILE util/util.qip
 set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
 set_global_assignment -name QIP_FILE a10/xcvr.qip
 set_global_assignment -name VHDL_FILE a10/data_demerge.vhd
-set_global_assignment -name VHDL_FILE a10/time_merger.vhd
 set_global_assignment -name VHDL_FILE a10/sc_main.vhd
 set_global_assignment -name VHDL_FILE a10/sc_secondary.vhd
 set_global_assignment -name VHDL_FILE a10/linear_shift.vhd

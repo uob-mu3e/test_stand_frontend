@@ -675,7 +675,8 @@ begin
 
     e_data_gen : entity work.data_generator_a10
     generic map(
-        go_to_trailer => "0000011111"
+        go_to_trailer => 4,
+        go_to_sh => 3--,
     )
     port map (
         reset               => resets(RESET_BIT_DATAGEN),
@@ -723,28 +724,28 @@ begin
     end if;
     end process;
     
-    e_link_merger : entity work.link_merger
-    generic map(
-        NLINKS_TOTL             => 4,--NLINKS_TOTL,
-        LINK_FIFO_ADDR_WIDTH    => 8--,
-    )
-    port map(
-        i_reset_data_n      => resets_n(RESET_BIT_LINK_MERGER),
-        i_reset_mem_n       => resets_n_fast(RESET_BIT_LINK_MERGER),--resets_n_ddr3(RESET_BIT_LINK_MERGER),
-        i_dataclk           => clk_156,
-        i_memclk            => pcie_fastclk_out,--A_ddr3clk,--clk_156,
-
-        i_link_data         => data_counter(31 + 0 * 32 downto 0 * 32) & data_counter(31 + 1 * 32 downto 1 * 32) & data_counter(31 + 2 * 32 downto 2 * 32) & data_counter(31 + 3 * 32 downto 3 * 32), --& data_pix_generated & data_pix_generated,
-        i_link_datak        => datak_counter(3 + 0 * 4 downto 0 * 4) & datak_counter(3 + 1 * 4 downto 1 * 4) & datak_counter(3 + 2 * 4 downto 2 * 4) & datak_counter(3 + 3 * 4 downto 3 * 4), -- & datak_pix_generated & datak_pix_generated,
-        i_link_valid        => 1,
-        i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(3 downto 0),--(others => '1'),--writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
-        
-        o_stream_rdata(0)   => LED_BRACKET(0),
-        o_hit               => dma_data,
-        o_stream_rempty     => open,
-        i_stream_rack       => '1'--,
-    );
-    dma_data_wren <= '1';
+--    e_link_merger : entity work.link_merger
+--    generic map(
+--        NLINKS_TOTL             => 4,--NLINKS_TOTL,
+--        LINK_FIFO_ADDR_WIDTH    => 8--,
+--    )
+--    port map(
+--        i_reset_data_n      => resets_n(RESET_BIT_LINK_MERGER),
+--        i_reset_mem_n       => resets_n_fast(RESET_BIT_LINK_MERGER),--resets_n_ddr3(RESET_BIT_LINK_MERGER),
+--        i_dataclk           => clk_156,
+--        i_memclk            => pcie_fastclk_out,--A_ddr3clk,--clk_156,
+--
+--        i_link_data         => data_counter(31 + 0 * 32 downto 0 * 32) & data_counter(31 + 1 * 32 downto 1 * 32) & data_counter(31 + 2 * 32 downto 2 * 32) & data_counter(31 + 3 * 32 downto 3 * 32), --& data_pix_generated & data_pix_generated,
+--        i_link_datak        => datak_counter(3 + 0 * 4 downto 0 * 4) & datak_counter(3 + 1 * 4 downto 1 * 4) & datak_counter(3 + 2 * 4 downto 2 * 4) & datak_counter(3 + 3 * 4 downto 3 * 4), -- & datak_pix_generated & datak_pix_generated,
+--        i_link_valid        => 1,
+--        i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(3 downto 0),--(others => '1'),--writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
+--        
+--        o_stream_rdata(0)   => LED_BRACKET(0),
+--        o_hit               => dma_data,
+--        o_stream_rempty     => open,
+--        i_stream_rack       => '1'--,
+--    );
+--    dma_data_wren <= '1';
     
 --     e_midas_event_builder : entity work.midas_event_builder
 --     generic map (
