@@ -13,7 +13,7 @@ Contents:       Definition of functions to talk to a mutrig-based FEB. Designed 
 
 #include "midas.h"
 #include "odbxx.h"
-#include "mudaq_device.h"
+#include "FEB_slowcontrol.h"
 #include "MutrigConfig.h"
 #include "MuFEB.h"
 
@@ -25,8 +25,8 @@ class MutrigFEB : public MuFEB{
 
    public:
       MutrigFEB(const MutrigFEB&)=delete;
-      MutrigFEB(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix):
-        MuFEB(mu,equipment_name,odb_prefix)
+      MutrigFEB(FEB_slowcontrol & feb_sc_, const char* equipment_name, const char* odb_prefix):
+        MuFEB(feb_sc_,equipment_name,odb_prefix)
         {};
       void SetSBnumber(uint8_t n){m_SB_number=n;}
       const char* GetName(){return m_equipment_name;}

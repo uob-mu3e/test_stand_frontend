@@ -94,8 +94,7 @@ int MuFEB::WriteFEBID(){
              FEB.SB_Number(),FEB.SB_Port(),(val>>16)&0xffff,val&0xffff);
        cm_msg(MINFO,"MuFEB::WriteFEBID",reportStr);
        // ist the FF needed here? NB
-       m_mu.FEBsc_write(FEB.SB_Port(), &val, 1 , (uint32_t) 0xFF00 | FPGA_ID_REGISTER_RW, m_ask_sc_reply);
-
+       feb_sc.FEB_write(FEB.SB_Port(),  (uint32_t) 0xFF00 | FPGA_ID_REGISTER_RW, vector<uint32_t>(1,val));
     }
 
     return 0;
@@ -114,11 +113,11 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
     if(FEB.SB_Number()!=m_SB_number)
         return SUCCESS;
 
-   uint32_t val[2];
+   vector<uint32_t> val(2);
    char set_str[255];
-   int status=m_mu.FEBsc_read(FEB.SB_Port(), val, 2,0xFF00 | RUN_STATE_RESET_BYPASS_REGISTER_RW);
-   if(status!=2) return status;
-   //printf("MuFEB::ReadBackRunState(): val[]={%8.8x,%8.8x} --> %x,%x\n",val[0],val[1],val[0]&0x1ff,(val[0]>>16)&0x3ff);
+   int status = feb_sc.FEB_read(FEB.SB_Port(), 0xFF00 | RUN_STATE_RESET_BYPASS_REGISTER_RW , val);
+   if(status!=FEB_slowcontrol::ERRCODES::OK) return status;
+
    //val[0] is reset_bypass register
    //val[1] is reset_bypass payload
    char path[255];
@@ -133,43 +132,6 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
     sprintf(set_str, "Bypass enabled %d", FPGA_ID);
     variables_feb_run_state[set_str] = bypass_enabled;
 
-/*
-// string variables are not possible with mlogger, so use raw state
-   char state_str[32];
-   switch((val[0]>>16)&0x3ff){
-      case 1<<0:
-      snprintf(state_str,32,"RUN_STATE_IDLE");
-      break;
-      case 1<<1:
-      snprintf(state_str,32,"RUN_STATE_PREP");
-      break;
-      case 1<<2:
-      snprintf(state_str,32,"RUN_STATE_SYNC");
-      break;
-      case 1<<3:
-      snprintf(state_str,32,"RUN_STATE_RUNNING");
-      break;
-      case 1<<4:
-      snprintf(state_str,32,"RUN_STATE_TERMINATING");
-      break;
-      case 1<<5:
-      snprintf(state_str,32,"RUN_STATE_LINK_TEST");
-      break;
-      case 1<<6:
-      snprintf(state_str,32,"RUN_STATE_SYNC_TEST");
-      break;
-      case 1<<7:
-      snprintf(state_str,32,"RUN_STATE_RESET");
-      break;
-      case 1<<8:
-      snprintf(state_str,32,"RUN_STATE_OUT_OF_DAQ");
-      break;
-      default:
-      snprintf(state_str,32,"-broken-");
-   }
-   //printf("MuFEB::ReadBackRunState(): bypass=%s\n",bypass_enabled?"y":"n");
-   //printf("MuFEB::ReadBackRunState(): current_state=%s\n",state_str);
-*/
     // set odb value_index index = FPGA_ID, value = value
     DWORD value=(val[0]>>16) & 0x3ff;
     sprintf(set_str, "Run state %d", FPGA_ID);

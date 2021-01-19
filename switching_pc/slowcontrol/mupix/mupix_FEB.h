@@ -11,10 +11,11 @@ Contents:       Definition of functions to talk to a mupix-based FEB.
 #define MUPIX_FEB_H
 #include <map>
 #include "midas.h"
-#include "mudaq_device.h"
+#include "FEB_slowcontrol.h"
 #include "mupix_config.h"
 #include "MuFEB.h"
 #include "odbxx.h"
+
 using midas::odb;
 
 class MupixFEB  : public MuFEB{
@@ -22,14 +23,14 @@ class MupixFEB  : public MuFEB{
       std::map<uint8_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
       static MupixFEB* m_instance; //singleton instance pointer: only one instance of MupixFEB
       MupixFEB(const MupixFEB&)=delete;
-      MupixFEB(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix):
-        MuFEB(mu,equipment_name,odb_prefix)
+      MupixFEB(FEB_slowcontrol & feb_sc_, const char* equipment_name, const char* odb_prefix):
+        MuFEB(feb_sc_,equipment_name,odb_prefix)
         {
 		RebuildFEBsMap();
         };
 
    public:
-      static MupixFEB* Create(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix){printf("MupixFEB::Create(%s) as %s\n",odb_prefix,equipment_name);if(!m_instance) m_instance=new MupixFEB(mu,equipment_name,odb_prefix); return m_instance;};
+      static MupixFEB* Create(FEB_slowcontrol & feb_sc_, const char* equipment_name, const char* odb_prefix){printf("MupixFEB::Create(%s) as %s\n",odb_prefix,equipment_name);if(!m_instance) m_instance=new MupixFEB(feb_sc_,equipment_name,odb_prefix); return m_instance;};
       static MupixFEB* Instance(){return m_instance;}
 
 

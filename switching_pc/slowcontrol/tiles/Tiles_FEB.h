@@ -11,7 +11,7 @@ Contents:       Class to alter settings on a Tiles-FE-FPGA. Derives from MutrigF
 #define TILES_FEB_ACCESS_H
 
 #include "midas.h"
-#include "mudaq_device.h"
+#include "FEB_slowcontrol.h"
 #include "Mutrig_FEB.h"
 #include "odbxx.h"
 using midas::odb;
@@ -20,18 +20,18 @@ class TilesFEB : public MutrigFEB{
    private:
       static TilesFEB* m_instance; //signleton instance pointer: only one instance of TilesFEB
       TilesFEB(const TilesFEB&)=delete;
-      TilesFEB(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix)
+      TilesFEB(FEB_slowcontrol & feb_sc_, const char* equipment_name, const char* odb_prefix)
 	:
-	MutrigFEB(mu,equipment_name,odb_prefix)
+    MutrigFEB(feb_sc_,equipment_name,odb_prefix)
         {
 		RebuildFEBsMap();
         };
    public:
-      static TilesFEB* Create(mudaq::MudaqDevice& mu, const char* equipment_name, const char* odb_prefix)
+      static TilesFEB* Create(FEB_slowcontrol & feb_sc_, const char* equipment_name, const char* odb_prefix)
       {
           printf("TilesFEB::Create(%s) as %s\n",odb_prefix,equipment_name);
           if(!m_instance) 
-              m_instance=new TilesFEB(mu,equipment_name,odb_prefix); 
+              m_instance=new TilesFEB(feb_sc_,equipment_name,odb_prefix);
           return m_instance;
       };
       static TilesFEB* Instance(){return m_instance;};

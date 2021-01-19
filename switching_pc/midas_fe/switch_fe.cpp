@@ -513,7 +513,7 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
 
     // SciFi setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
-    SciFiFEB::Create(mu, equipment[EQUIPMENT_ID::SciFi].name, "/Equipment/SciFi"); //create FEB interface signleton for scifi
+    SciFiFEB::Create(*feb_sc, equipment[EQUIPMENT_ID::SciFi].name, "/Equipment/SciFi"); //create FEB interface signleton for scifi
     SciFiFEB::Instance()->SetSBnumber(switch_id);
     status=mutrig::midasODB::setup_db("/Equipment/SciFi",SciFiFEB::Instance());
     if(status != SUCCESS){
@@ -538,7 +538,7 @@ INT init_scitiles(mudaq::MudaqDevice & mu) {
     
     //SciTiles setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Initializing...", "var(--myellow)");
-    TilesFEB::Create(mu, equipment[EQUIPMENT_ID::SciTiles].name, "/Equipment/SciTiles"); //create FEB interface signleton for scitiles
+    TilesFEB::Create(*feb_sc, equipment[EQUIPMENT_ID::SciTiles].name, "/Equipment/SciTiles"); //create FEB interface signleton for scitiles
     status=mutrig::midasODB::setup_db("/Equipment/SciTiles", TilesFEB::Instance());
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Start up failed", "var(--mred)");
@@ -563,7 +563,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
 
     //Mupix setup part
     set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");
-    MupixFEB::Create(mu, equipment[EQUIPMENT_ID::Mupix].name, "/Equipment/Mupix"); //create FEB interface signleton for mupix
+    MupixFEB::Create(*feb_sc, equipment[EQUIPMENT_ID::Mupix].name, "/Equipment/Mupix"); //create FEB interface signleton for mupix
     MupixFEB::Instance()->SetSBnumber(switch_id);
     status=mupix::midasODB::setup_db("/Equipment/Mupix", MupixFEB::Instance(), true);
     if(status != SUCCESS){

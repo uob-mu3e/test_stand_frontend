@@ -94,6 +94,13 @@ namespace mudaq {
 
     }
 
+    void DummyMudaqDevice::toggle_register(unsigned idx, uint32_t value, unsigned wait_ns)
+    {
+        uint32_t old_value = read_register_rw(idx);
+        write_register_wait(idx, value, wait_ns);
+        write_register(idx, old_value);
+    }
+
 
     
     uint32_t DummyMudaqDevice::read_register_rw(unsigned idx) const {
@@ -125,7 +132,18 @@ namespace mudaq {
            cout << "Invalid memory address " << idx << endl;
            exit (EXIT_FAILURE);
        }
-       return _mem_rw[idx & MUDAQ_MEM_RO_MASK];
+        return _mem_rw[idx & MUDAQ_MEM_RO_MASK];
+    }
+
+    void DummyMudaqDevice::write_memory_rw(unsigned idx, uint32_t value)
+    {
+        if(idx > 64*1024){
+            cout << "Invalid memory address " << idx << endl;
+            exit (EXIT_FAILURE);
+        }
+        else {
+            _mem_rw[idx & MUDAQ_MEM_RW_MASK] = value;
+        }
     }
     
     // DMA dummy mudaq

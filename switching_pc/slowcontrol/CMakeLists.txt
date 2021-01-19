@@ -6,6 +6,8 @@ ADD_CUSTOM_COMMAND(
 
 add_library(libslowcontrol STATIC
     FEB_slowcontrol.cpp feb_constants.h MuFEB.cpp
+    mutrig/Mutrig_FEB.cpp
+
 )
 target_include_directories(libslowcontrol PUBLIC . ./mupix ./mutrig ./tiles ./scifi ../../common/include)
 target_link_libraries(libslowcontrol libmudaq midas ${Boost_LIBRARIES})
