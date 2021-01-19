@@ -20,7 +20,7 @@ def main(fname, outname):
 		if re.search(r'--', line) is not None:
 			continue
 		
-		match = re.search(r'PACKAGE (\w+) IS', line);
+		match = re.search(r'PACKAGE (\w+) IS', line)
 		if match is not None:
 			print(match.group(1))
 			pkgname = match.group(1)
@@ -58,13 +58,19 @@ def main(fname, outname):
 			continue
 			
 		# match stuff like "constant LED_REGISTER_W :  integer := 16#00#;"	
-		match = re.search(r'CONSTANT (\w+_REGISTER\w+) : INTEGER := 16#(\w+)#;', line);
+		match = re.search(r'CONSTANT (\w+_REGISTER\w+) : INTEGER := 16#(\w+)#;', line)
 		if match is not None:
 			file.write('#define ' + match.group(1) + '\t\t' + '0x' + match.group(2).lower() + '\n')
-			continue	
+			continue
+
+		# match stuff like "constant DDR3_CONTROL_W :  integer := 16#20#;"
+		if len(line.split()) > 1:
+			if line.split()[1].endswith("_W") or line.split()[1].endswith("_R"):
+				file.write('#define ' + line.split()[1] + '\t\t' + '0x' + line.split()[-1].split("#")[1].lower() + '\n')
+				continue
 			
 		# match stuff like "constant RESET_BIT_ALL :  integer := 0;"	
-		match = re.search(r'CONSTANT (\w+_BIT\w+) : INTEGER := (\w+);', line);
+		match = re.search(r'CONSTANT (\w+_BIT\w+) : INTEGER := (\w+);', line)
 		if match is not None:
 			file.write('#define ' + match.group(1) + '\t\t' + match.group(2) + '\n')
 			file.write('#define GET_' + match.group(1) + '(REG) ((REG>>' + match.group(2) + ')& 0x1) \n') 
@@ -73,14 +79,14 @@ def main(fname, outname):
 			continue
 			
 		# match stuff like "subtype DIPSWITCH_RANGE is integer range 7 downto 0;"
-		match = re.search(r'SUBTYPE (\w+_RANGE) IS INTEGER RANGE (\w+) DOWNTO (\w+);', line);
+		match = re.search(r'SUBTYPE (\w+_RANGE) IS INTEGER RANGE (\w+) DOWNTO (\w+);', line)
 		if match is not None:
 			file.write('#define ' + match.group(1) + '_HI\t\t' + match.group(2) + '\n')
 			file.write('#define ' + match.group(1) + '_LOW\t\t' + match.group(3) + '\n')
 			rsize = int(match.group(2)) - int(match.group(3)) + 1
 			file.write('#define GET_' + match.group(1) + '(REG) ((REG>>' + match.group(3) + r')&' + hex(2**rsize-1) + ') \n') 
 			file.write('#define SET_' + match.group(1) + '(REG, VAL) ((REG & (~(' + hex(2**rsize-1) + '<< ' + match.group(3) 
-			+ '))) | ((VAL & '+ hex(2**rsize-1) + ')<< ' +match.group(3) + '))  \n') 
+			+ '))) | ((VAL & '+ hex(2**rsize-1) + ')<< ' +match.group(3) + '))  \n')	
 			
 	file.write('\n')
 	file.write('\n')
