@@ -162,6 +162,9 @@ architecture rtl of top is
     -- PCIe clock
     signal pcie_clk : std_logic;
     signal pcie_reset_n : std_logic;
+    
+    -- DDR3 clock
+    signal A_ddr3clk_cnt : unsigned(31 downto 0);
 
     signal nios_clk : std_logic;
     signal nios_reset_n : std_logic;
@@ -180,8 +183,7 @@ architecture rtl of top is
     
     signal resets_fast : std_logic_vector(31 downto 0);
     signal resets_n_fast: std_logic_vector(31 downto 0);
-	 
-	 signal resets_ddr3 : std_logic_vector(31 downto 0);
+    signal resets_ddr3 : std_logic_vector(31 downto 0);
     signal resets_n_ddr3: std_logic_vector(31 downto 0);
 
     ------------------ Signal declaration ------------------------
@@ -189,15 +191,15 @@ architecture rtl of top is
     -- pcie read / write regs
     signal writeregs				: reg32array;
     signal writeregs_slow		: reg32array;
-	 signal writeregs_ddr3		: reg32array;
-	 signal regwritten				: std_logic_vector(63 downto 0);
-	 signal regwritten_B				: std_logic_vector(63 downto 0);
-	 signal regwritten_C				: std_logic_vector(63 downto 0);
-	 signal pb_in : std_logic_vector(2 downto 0);
+    signal writeregs_ddr3		: reg32array;
+    signal regwritten				: std_logic_vector(63 downto 0);
+    signal regwritten_B				: std_logic_vector(63 downto 0);
+    signal regwritten_C				: std_logic_vector(63 downto 0);
+    signal pb_in : std_logic_vector(2 downto 0);
     
     signal readregs				: reg32array;
     signal readregs_slow			: reg32array;
-	 signal readregs_ddr3			: reg32array;
+    signal readregs_ddr3			: reg32array;
     
     -- pcie read / write memory
     signal readmem_writedata 	: std_logic_vector(31 downto 0);
@@ -227,21 +229,20 @@ architecture rtl of top is
     signal dma2mem_endofevent 	: std_logic;
     signal dma2memhalffull 		: std_logic;
     
-    -- //pcie fast clock
+    -- pcie fast clock
     signal pcie_fastclk_out		: std_logic;
     
-    -- //pcie debug signals
+    -- pcie debug signals
     signal pcie_testout         : std_logic_vector(127 downto 0);
     signal counter_256          : std_logic_vector(31 downto 0);
-	 signal counter_ddr3          : std_logic_vector(31 downto 0);
+    signal counter_ddr3          : std_logic_vector(31 downto 0);
     
     -- Clocksync stuff
     signal clk_sync : std_logic;
     signal clk_last : std_logic;
-	 
-	 signal clk_sync_ddr3 : std_logic;
+    signal clk_sync_ddr3 : std_logic;
     signal clk_last_ddr3 : std_logic;
-	 
+
     -- debouncer
     signal push_button0_db : std_logic;
     signal push_button1_db : std_logic;
@@ -423,6 +424,20 @@ begin
         clk_125_cnt <= clk_125_cnt + 1;
     end if;
     end process;
+    
+    process(DDR3A_REFCLK_p)
+    begin
+    if rising_edge(DDR3A_REFCLK_p) then
+        A_ddr3clk_cnt <= A_ddr3clk_cnt + 1;
+    end if;
+    end process;
+    
+    -- monitor DDR3 A clock
+    LED_BRACKET(0) <= writeregs(DDR3_CONTROL_W)(0);
+    LED_BRACKET(1) <= writeregs_ddr3(DDR3_CONTROL_W)(0);
+    LED_BRACKET(2) <= writeregs_slow(DDR3_CONTROL_W)(0);
+    LED_BRACKET(3) <= A_ddr3clk_cnt(27);
+    readregs_ddr3(DDR3_CLK_CNT_R) <= std_logic_vector(A_ddr3clk_cnt);
 
     -- monitor 50 MHz clock
     e_hex2seg7_50 : entity work.hex2seg7
@@ -818,7 +833,7 @@ begin
         mem_addr_finished_out   => readmem_writeaddr_finished,
         mem_data_out            => mem_data_sc,
         mem_wren                => mem_wen_sc,
-        stateout(0)             => LED_BRACKET(1),
+        stateout(0)             => open,--LED_BRACKET(1),
         clk                     => clk_156--,
     );
     
@@ -901,7 +916,7 @@ begin
         clk_sync <= clk_156;
         clk_last <= clk_sync;
         
-        clk_sync_ddr3 <= A_ddr3clk;
+        clk_sync_ddr3 <= DDR3A_REFCLK_p;
         clk_last_ddr3 <= clk_sync_ddr3;
         
         if(clk_sync = '1' and clk_last = '0') then
@@ -918,6 +933,7 @@ begin
         if(clk_sync_ddr3 = '1' and clk_last_ddr3 = '0') then
             readregs(DDR3_STATUS_R) <= readregs_ddr3(DDR3_STATUS_R);
             readregs(DDR3_ERR_R) <= readregs_ddr3(DDR3_ERR_R);
+            readregs(DDR3_CLK_CNT_R) <= readregs_ddr3(DDR3_CLK_CNT_R);
         end if;
         
         readregs(DMA_STATUS_R)(DMA_DATA_WEN)        <= dma_data_wren;
@@ -1008,7 +1024,7 @@ begin
         o_regwritten_C          => regwritten_C,
         
         i_clk_B                 => clk_156,
-        i_clk_C                 => A_ddr3clk,
+        i_clk_C                 => DDR3A_REFCLK_p,--A_ddr3clk,
         readregs                => readregs,
 
         -- pcie writeable memory

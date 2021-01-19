@@ -148,6 +148,7 @@ package mudaq_registers is
 		constant DATA_TSBLOCKS_R								: integer := 16#29#;
         constant SC_MAIN_STATUS_REGISTER_R						: integer := 16#30#;
             constant SC_MAIN_DONE								: integer := 0;
+        constant DDR3_CLK_CNT_R                                 : integer := 16#31#;
 		
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						    : integer := 16#38#;
