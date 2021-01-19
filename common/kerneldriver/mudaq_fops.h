@@ -268,14 +268,20 @@ long mudaq_fops_ioctl(struct file *filp,
         DEBUG("Allocated memory\n");
 
         /* get pages in kernel space from user space address */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+        down_read(&current->mm->mmap_lock);
+#else
         down_read(&current->mm->mmap_sem); //lock the memory management structure for our process
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0) // add `get_user_pages_remote` function
         retval = get_user_pages_remote(
 #else
         retval = get_user_pages(
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0) // remove `task_struct` argument
             current,
+#endif
             current->mm,
             (unsigned long)msg.address,
             N_PAGES,
@@ -291,7 +297,11 @@ long mudaq_fops_ioctl(struct file *filp,
 #endif
         );
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+        up_read(&current->mm->mmap_lock);
+#else
         up_read(&current->mm->mmap_sem);  // unlock
+#endif
 
         if(retval < 0) {
             ERROR("Error %d while getting user pages \n", retval);
