@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use ieee.std_logic_misc.all;
+
 use work.daq_constants.all;
 
 entity fe_block_v2 is
@@ -210,6 +210,8 @@ begin
     e_reset_line_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_RRX_n, i_reset_n => i_areset_n, i_clk => reset_link_rx_clk);
 
+
+
     -- generate 1 Hz clock monitor clocks
 
     -- NIOS_CLK_MHZ_g -> 1 Hz
@@ -227,11 +229,15 @@ begin
     generic map ( P => 125000000 )
     port map ( o_clk => o_clk_125_mon, i_reset_n => reset_125_n, i_clk => i_clk_125 );
 
+
+
     -- SPI
     spi_si_miso <= '1' when ( (i_spi_si_miso or spi_si_ss_n) = (spi_si_ss_n'range => '1') ) else '0';
     o_spi_si_mosi <= (o_spi_si_mosi'range => spi_si_mosi);
     o_spi_si_sclk <= (o_spi_si_sclk'range => spi_si_sclk);
     o_spi_si_ss_n <= spi_si_ss_n;
+
+
 
     -- map slow control address space
 
@@ -344,11 +350,17 @@ begin
             fe_reg.rdata <= (others => '0');
             fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
         end if;
+
+        --
     end if;
     end process;
 
+
+
     -- nios system
     nios_irq(0) <= '1' when ( reg_cmdlen(31 downto 16) /= (31 downto 16 => '0') ) else '0';
+
+
 
     e_nios : component work.cmp.nios
     port map (
@@ -409,6 +421,8 @@ begin
         clk_clk => i_nios_clk--,
     );
 
+
+
     e_sc_ram : entity work.sc_ram
     generic map (
         RAM_ADDR_WIDTH_g => 14--,
@@ -443,7 +457,7 @@ begin
         i_link_data     => ffly_rx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
         i_link_datak    => ffly_rx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
-        o_fifo_write    => sc_fifo_write,
+        o_fifo_we       => sc_fifo_write,
         o_fifo_wdata    => sc_fifo_wdata,
 
         o_ram_addr      => sc_ram.addr,
@@ -457,14 +471,17 @@ begin
         i_clk           => i_clk_156--,
     );
 
+
+
     e_merger : entity work.data_merger
     generic map(
         N_LINKS                    => N_LINKS,
-        feb_mapping                => feb_mapping--, 
+        feb_mapping                => feb_mapping--,
     )
     port map (
         fpga_ID_in                 => i_fpga_id_reg,
         FEB_type_in                => i_fpga_type,
+
         run_state                  => run_state_156,
         run_number                 => run_number,
 
@@ -501,7 +518,7 @@ begin
         g_poly => "10000000001000000000000000000110"--,
     )
     port map (
-        i_sync_reset    => not and_reduce(linktest_granted),
+        i_sync_reset    => not work.util.and_reduce(linktest_granted),
         i_seed          => (others => '1'),
         i_en            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),
         o_lsfr          => linktest_data,
