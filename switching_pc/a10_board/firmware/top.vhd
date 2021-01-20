@@ -659,34 +659,34 @@ begin
         NLINKS => NLINKS_TOTL--;
     )
     port map (
-			i_clk_data          => clk_156,
-			i_clk_dma           => pcie_fastclk_out,
-			i_reset_data_n      => resets_n(RESET_BIT_EVENT_COUNTER),
-			i_reset_dma_n       => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-			i_rx_data           => data_counter,
-			i_rx_datak          => datak_counter,
-			i_wen_reg           => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-			i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
-			i_get_n_words       => writeregs(GET_N_DMA_WORDS_REGISTER_W),
-			i_dmamemhalffull    => dmamemhalffull,
-			o_fifos_full	    => open,--readregs(EVENT_BUILD_STATUS_REGISTER_R)(31 downto 31 - NLINKS_TOTL),
-			o_done              => readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
-			o_event_wren        => dma_wren_cnt,
-			o_endofevent        => dma_end_event_cnt,
-			o_event_data        => dma_event_data,
-			o_state_out         => state_out_eventcounter,
-            -- error cnt signals
-			o_fifo_almost_full  => open,--link_fifo_almost_full,
-            o_fifo_almost_full          => open,
-            o_cnt_link_fifo_almost_full => readregs_slow(CNT_FIFO_ALMOST_FULL_R),
-            o_cnt_tag_fifo_full         => readregs(CNT_TAG_FIFO_FULL_R),
-            o_cnt_ram_full              => readregs(CNT_RAM_FULL_R),
-            o_cnt_stream_fifo_full      => readregs(CNT_STREAM_FIFO_FULL_R),
-            o_cnt_dma_halffull          => readregs(CNT_DMA_HALFFULL_R),
-            o_cnt_dc_link_fifo_full     => readregs_slow(CNT_DC_LINK_FIFO_FULL_R),
-            o_cnt_skip_link_data        => readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R),
-            o_cnt_skip_event_dma        => readregs(CNT_SKIP_EVENT_DMA_RAM_R),
-            o_cnt_idle_not_header       => readregs(CNT_IDLE_NOT_HEADER_R)--,
+        i_clk_data          => clk_156,
+        i_clk_dma           => pcie_fastclk_out,
+        i_reset_data_n      => resets_n(RESET_BIT_EVENT_COUNTER),
+        i_reset_dma_n       => resets_n_fast(RESET_BIT_EVENT_COUNTER),
+        i_rx_data           => data_counter,
+        i_rx_datak          => datak_counter,
+        i_wen_reg           => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
+        i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
+        i_get_n_words       => writeregs(GET_N_DMA_WORDS_REGISTER_W),
+        i_dmamemhalffull    => dmamemhalffull,
+        o_fifos_full        => open,--readregs(EVENT_BUILD_STATUS_REGISTER_R)(31 downto 31 - NLINKS_TOTL),
+        o_done              => readregs(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
+        o_event_wren        => dma_wren_cnt,
+        o_endofevent        => dma_end_event_cnt,
+        o_event_data        => dma_event_data,
+        o_state_out         => state_out_eventcounter,
+        -- error cnt signals
+        o_fifo_almost_full          => open,--link_fifo_almost_full,
+        o_fifo_almost_full          => open,
+        o_cnt_link_fifo_almost_full => readregs_slow(CNT_FIFO_ALMOST_FULL_R),
+        o_cnt_tag_fifo_full         => readregs(CNT_TAG_FIFO_FULL_R),
+        o_cnt_ram_full              => readregs(CNT_RAM_FULL_R),
+        o_cnt_stream_fifo_full      => readregs(CNT_STREAM_FIFO_FULL_R),
+        o_cnt_dma_halffull          => readregs(CNT_DMA_HALFFULL_R),
+        o_cnt_dc_link_fifo_full     => readregs_slow(CNT_DC_LINK_FIFO_FULL_R),
+        o_cnt_skip_link_data        => open, --readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R),
+        o_cnt_skip_event_dma        => readregs(CNT_SKIP_EVENT_DMA_RAM_R),
+        o_cnt_idle_not_header       => readregs(CNT_IDLE_NOT_HEADER_R)--,
     );
     
     dma_data <= dma_event_data;
@@ -695,28 +695,29 @@ begin
     
     -------- Slow Control --------
     
-    e_master : work.sc_master
+    e_sc_main : work.sc_main
     generic map (
         NLINKS => NLINKS_TOTL
     )
     port map (
-        reset_n         => resets_n(RESET_BIT_SC_MASTER),
-        enable          => '1',
-        mem_data_in     => writememreaddata,
-        mem_addr        => writememreadaddr,
-        mem_data_out    => tx_data_v,
-        mem_data_out_k  => tx_datak_v,
-        done            => open,
-        stateout        => open,
-        clk             => clk_156--,
+        i_clk           => clk_156,
+        i_reset_n       => resets_n(RESET_BIT_SC_MAIN),
+        i_length_we     => writeregs_slow(SC_MAIN_ENABLE_REGISTER_W)(0),
+        i_length        => writeregs_slow(SC_MAIN_LENGTH_REGISTER_W)(15 downto 0),
+        i_mem_data      => writememreaddata,
+        o_mem_addr      => writememreadaddr,
+        o_mem_data      => tx_data_v,
+        o_mem_datak     => tx_datak_v,
+        o_done          => readregs_slow(SC_MAIN_STATUS_REGISTER_R)(SC_MAIN_DONE),
+        o_state         => open--,
     );
     
-    e_slave : work.sc_slave
+    e_sc_secondary : work.sc_secondary
     generic map (
         NLINKS => NLINKS_TOTL
     )
     port map (
-        reset_n                 => resets_n(RESET_BIT_SC_SLAVE),
+        reset_n                 => resets_n(RESET_BIT_SC_SECONDARY),
         i_link_enable           => writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_TOTL-1 downto 0),
         link_data_in            => rx_sc_v,
         link_data_in_k          => rx_sck_v,
@@ -724,7 +725,7 @@ begin
         mem_addr_finished_out   => readmem_writeaddr_finished,
         mem_data_out            => mem_data_sc,
         mem_wren                => mem_wen_sc,
-        stateout                => LED_BRACKET,
+        stateout                => open,--LED_BRACKET,
         clk                     => clk_156--,
     );
     
@@ -791,7 +792,7 @@ begin
         data_out  => readregs_slow(VERSION_REGISTER_R)(27 downto 0)
     );
 
-    --Sync read regs from slow (156.25 MHz) to fast (250 MHz) clock
+    -- sync read regs from slow (156.25 MHz) to fast (250 MHz) clock
     process(pcie_fastclk_out)
     begin
     if rising_edge(pcie_fastclk_out) then
@@ -805,6 +806,10 @@ begin
             readregs(RUN_NR_ACK_REGISTER_R)         <= readregs_slow(RUN_NR_ACK_REGISTER_R);
             readregs(RUN_STOP_ACK_REGISTER_R)       <= readregs_slow(RUN_STOP_ACK_REGISTER_R);
             readregs(CNT_FEB_MERGE_TIMEOUT_R)       <= readregs_slow(CNT_FEB_MERGE_TIMEOUT_R);
+            readregs(CNT_FIFO_ALMOST_FULL_R)        <= readregs_slow(CNT_FIFO_ALMOST_FULL_R);
+            readregs(CNT_DC_LINK_FIFO_FULL_R)       <= readregs_slow(CNT_DC_LINK_FIFO_FULL_R);
+            readregs(CNT_SKIP_EVENT_LINK_FIFO_R)    <= readregs_slow(CNT_SKIP_EVENT_LINK_FIFO_R);
+            readregs(SC_MAIN_STATUS_REGISTER_R)     <= readregs_slow(SC_MAIN_STATUS_REGISTER_R);
             readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= (others => '0');
             readregs(MEM_WRITEADDR_LOW_REGISTER_R)  <= (X"0000" & readmem_writeaddr_finished);
         end if;
@@ -820,13 +825,13 @@ begin
     -- DMA status stuff
     e_dma_evaluation : entity work.dma_evaluation
     port map (
-        reset_n						=> resets_n_fast(RESET_BIT_DMA_EVAL),
-        dmamemhalffull				=> dmamemhalffull,
-        dmamem_endofevent			=> dmamem_endofevent,
-        halffull_counter			=> dmamemhalffull_counter,
-        nothalffull_counter		=> dmamemnothalffull_counter,
-        endofevent_counter		=> endofevent_counter,
-        notendofevent_counter	=> notendofevent_counter,
+        reset_n                 => resets_n_fast(RESET_BIT_DMA_EVAL),
+        dmamemhalffull          => dmamemhalffull,
+        dmamem_endofevent       => dmamem_endofevent,
+        halffull_counter        => dmamemhalffull_counter,
+        nothalffull_counter     => dmamemnothalffull_counter,
+        endofevent_counter      => endofevent_counter,
+        notendofevent_counter   => notendofevent_counter,
         clk                     => pcie_fastclk_out--,
     );
 
@@ -842,8 +847,8 @@ begin
     port map (
         o_writeregs_B           => writeregs_slow,
         i_clk_B                 => clk_156,
-		  
-		  o_writeregs_C           => open,
+  
+        o_writeregs_C           => open,
         i_clk_C                 => clk_156,
 
         local_rstn              => '1',

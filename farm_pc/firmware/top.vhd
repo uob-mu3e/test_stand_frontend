@@ -722,24 +722,24 @@ begin
     
     e_link_merger : entity work.link_merger
     generic map(
-        NLINKS_TOTL => 34,--NLINKS_TOTL,
-        LINK_FIFO_ADDR_WIDTH => 8--,
+        NLINKS_TOTL             => 34,--NLINKS_TOTL,
+        LINK_FIFO_ADDR_WIDTH    => 8--,
     )
     port map(
-        i_reset_data_n => resets_n(RESET_BIT_LINK_MERGER),
-        i_reset_mem_n => resets_n_fast(RESET_BIT_LINK_MERGER),--resets_n_ddr3(RESET_BIT_LINK_MERGER),
-        i_dataclk => clk_156,
-        i_memclk => pcie_fastclk_out,--A_ddr3clk,--clk_156,
+        i_reset_data_n      => resets_n(RESET_BIT_LINK_MERGER),
+        i_reset_mem_n       => resets_n_fast(RESET_BIT_LINK_MERGER),--resets_n_ddr3(RESET_BIT_LINK_MERGER),
+        i_dataclk           => clk_156,
+        i_memclk            => pcie_fastclk_out,--A_ddr3clk,--clk_156,
 
-        i_link_data => data_counter & data_counter & data_pix_generated & data_pix_generated,
-        i_link_datak => datak_counter & datak_counter & datak_pix_generated & datak_pix_generated,
-		  i_link_valid => 1,
-        i_link_mask_n => (others => '1'),--writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
+        i_link_data         => data_counter & data_counter & data_pix_generated & data_pix_generated,
+        i_link_datak        => datak_counter & datak_counter & datak_pix_generated & datak_pix_generated,
+        i_link_valid        => 1,
+        i_link_mask_n       => (others => '1'),--writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
         
-		  o_stream_rdata(0) => LED_BRACKET(0),
-          o_hit => dma_data,
-		  o_stream_rempty => open,
-		  i_stream_rack => '1'--,
+        o_stream_rdata(0)   => LED_BRACKET(0),
+        o_hit               => dma_data,
+        o_stream_rempty     => open,
+        i_stream_rack       => '1'--,
     );
     dma_data_wren <= '1';
     
@@ -784,28 +784,29 @@ begin
     
     -------- Slow Control --------
     
-    e_master : work.sc_master
+    e_sc_main : work.sc_main
     generic map (
         NLINKS => NLINKS_TOTL
     )
     port map (
-        reset_n         => resets_n(RESET_BIT_SC_MASTER),
-        enable          => '1',
-        mem_data_in     => writememreaddata,
-        mem_addr        => writememreadaddr,
-        mem_data_out    => tx_data_v,
-        mem_data_out_k  => tx_datak_v,
-        done            => open,
-        stateout        => open,
-        clk             => clk_156--,
+        i_clk           => clk_156,
+        i_reset_n       => resets_n(RESET_BIT_SC_MAIN),
+        i_length_we     => writeregs_slow(SC_MAIN_ENABLE_REGISTER_W)(0),
+        i_length        => writeregs_slow(SC_MAIN_LENGTH_REGISTER_W)(15 downto 0),
+        i_mem_data      => writememreaddata,
+        o_mem_addr      => writememreadaddr,
+        o_mem_data      => tx_data_v,
+        o_mem_datak     => tx_datak_v,
+        o_done          => readregs_slow(SC_MAIN_STATUS_REGISTER_R)(SC_MAIN_DONE),
+        o_state         => open--,
     );
     
-    e_slave : work.sc_slave
+    e_sc_secondary : work.sc_secondary
     generic map (
         NLINKS => NLINKS_TOTL
     )
     port map (
-        reset_n                 => resets_n(RESET_BIT_SC_SLAVE),
+        reset_n                 => resets_n(RESET_BIT_SC_SECONDARY),
         i_link_enable           => writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_TOTL-1 downto 0),
         link_data_in            => rx_sc_v,
         link_data_in_k          => rx_sck_v,
@@ -813,7 +814,7 @@ begin
         mem_addr_finished_out   => readmem_writeaddr_finished,
         mem_data_out            => mem_data_sc,
         mem_wren                => mem_wen_sc,
-        stateout                => open,--LED_BRACKET,
+        stateout(0)             => LED_BRACKET(1),
         clk                     => clk_156--,
     );
     
@@ -895,9 +896,9 @@ begin
     if rising_edge(pcie_fastclk_out) then
         clk_sync <= clk_156;
         clk_last <= clk_sync;
-		  
-		  clk_sync_ddr3 <= A_ddr3clk;
-		  clk_last_ddr3 <= clk_sync_ddr3;
+        
+        clk_sync_ddr3 <= A_ddr3clk;
+        clk_last_ddr3 <= clk_sync_ddr3;
         
         if(clk_sync = '1' and clk_last = '0') then
             readregs(PLL_REGISTER_R)                <= readregs_slow(PLL_REGISTER_R);
@@ -909,11 +910,11 @@ begin
             readregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= (others => '0');
             readregs(MEM_WRITEADDR_LOW_REGISTER_R)  <= (X"0000" & readmem_writeaddr_finished);
         end if;
-		  
-		  if(clk_sync_ddr3 = '1' and clk_last_ddr3 = '0') then
-				readregs(DDR3_STATUS_R) <= readregs_ddr3(DDR3_STATUS_R);
-				readregs(DDR3_ERR_R) <= readregs_ddr3(DDR3_ERR_R);
-		  end if;
+        
+        if(clk_sync_ddr3 = '1' and clk_last_ddr3 = '0') then
+            readregs(DDR3_STATUS_R) <= readregs_ddr3(DDR3_STATUS_R);
+            readregs(DDR3_ERR_R) <= readregs_ddr3(DDR3_ERR_R);
+        end if;
         
         readregs(DMA_STATUS_R)(DMA_DATA_WEN)        <= dma_data_wren;
         readregs(DMA_HALFFUL_REGISTER_R)            <= dmamemhalffull_counter;
@@ -940,28 +941,28 @@ begin
     pb_in                       <= push_button0_db & push_button1_db & push_button2_db;
         
     counter256 : entity work.counter
-	 generic map (
-		W => 32--,
-	 )
+    generic map (
+        W => 32--,
+    )
     port map (
-		o_cnt			=> counter_256,
-		i_ena      	=> '1',
-		
-		i_clk       => pcie_fastclk_out,
-		i_reset_n   => resets_n(RESET_BIT_DATAGEN)--,
-	 );
-	 
-	 counterddr3 : entity work.counter
-	 generic map (
-		W => 32--,
-	 )
+        o_cnt       => counter_256,
+        i_ena       => '1',
+        
+        i_clk       => pcie_fastclk_out,
+        i_reset_n   => resets_n(RESET_BIT_DATAGEN)--,
+    );
+        
+    counterddr3 : entity work.counter
+    generic map (
+        W => 32--,
+    )
     port map (
-		o_cnt			=> counter_ddr3,
-		i_ena      	=> '1',
-		
-		i_clk       => A_ddr3clk,
-		i_reset_n   => resets_n_ddr3(RESET_BIT_DATAGEN)--,
-	 );
+        o_cnt       => counter_ddr3,
+        i_ena       => '1',
+        
+        i_clk       => A_ddr3clk,
+        i_reset_n   => resets_n_ddr3(RESET_BIT_DATAGEN)--,
+    );
 
     e_pcie_block : entity work.pcie_block
     generic map (
@@ -995,15 +996,15 @@ begin
         
         -- pcie registers (write / read register, readonly, read write, in tools/dmatest/rw) -Sync read regs
         writeregs               => writeregs,
-		  o_writeregs_B			  => writeregs_slow,
-		  o_writeregs_C			  => writeregs_ddr3,
-		  
-		  regwritten				  => regwritten,
-		  o_regwritten_B			  => regwritten_B,
-		  o_regwritten_C			  => regwritten_C,
-		  
-		  i_clk_B					  => clk_156,
-		  i_clk_C					  => A_ddr3clk,
+        o_writeregs_B           => writeregs_slow,
+        o_writeregs_C           => writeregs_ddr3,
+        
+        regwritten              => regwritten,
+        o_regwritten_B          => regwritten_B,
+        o_regwritten_C          => regwritten_C,
+        
+        i_clk_B                 => clk_156,
+        i_clk_C                 => A_ddr3clk,
         readregs                => readregs,
 
         -- pcie writeable memory
@@ -1041,76 +1042,76 @@ begin
     );
     
     
-     ddr3_b : entity work.ddr3_block 
-     port map(
-             reset_n             => resets_ddr3(RESET_BIT_DDR3),
-             
---             Control and status registers
-             ddr3control         => writeregs_ddr3(DDR3_CONTROL_W),
-             ddr3status          => readregs_ddr3(DDR3_STATUS_R),
- 
---             A interface
-             A_ddr3clk           => A_ddr3clk,
-             A_ddr3calibrated    => A_ddr3calibrated,
-             A_ddr3ready         => A_ddr3ready,
-             A_ddr3addr          => A_ddr3addr,
-             A_ddr3datain        => A_ddr3datain,
-             A_ddr3dataout       => A_ddr3dataout,
-             A_ddr3_write        => A_ddr3_write,
-             A_ddr3_read         => A_ddr3_read,
-             A_ddr3_read_valid   => A_ddr3_read_valid,
-             
---             B interface
-             B_ddr3clk           => B_ddr3clk,
-             B_ddr3calibrated    => B_ddr3calibrated,
-             B_ddr3ready         => B_ddr3ready,
-             B_ddr3addr          => B_ddr3addr,
-             B_ddr3datain        => B_ddr3datain,
-             B_ddr3dataout       => B_ddr3dataout,
-             B_ddr3_write        => B_ddr3_write,
-             B_ddr3_read         => B_ddr3_read,
-             B_ddr3_read_valid   => B_ddr3_read_valid,
-             
---             Error counters
-             errout              => readregs_ddr3(DDR3_ERR_R),
- 
---             Interface to memory bank A
-             A_mem_ck            => DDR3A_CK,
-             A_mem_ck_n          => DDR3A_CK_n,
-             A_mem_a             => DDR3A_A,
-             A_mem_ba            => DDR3A_BA,
-             A_mem_cke           => DDR3A_CKE,
-             A_mem_cs_n          => DDR3A_CS_n,
-             A_mem_odt           => DDR3A_ODT,
-             A_mem_reset_n(0)    => DDR3A_RESET_n,      
-             A_mem_we_n(0)       => DDR3A_WE_n,
-             A_mem_ras_n(0)      => DDR3A_RAS_n,
-             A_mem_cas_n(0)      => DDR3A_CAS_n,
-             A_mem_dqs           => DDR3A_DQS,
-             A_mem_dqs_n         => DDR3A_DQS_n,
-             A_mem_dq            => DDR3A_DQ,
-             A_mem_dm            => DDR3A_DM,
-             A_oct_rzqin         => RZQ_DDR3_A,
-             A_pll_ref_clk       => DDR3A_REFCLK_p,
-             
---             Interface to memory bank B
-             B_mem_ck            => DDR3B_CK,
-             B_mem_ck_n          => DDR3B_CK_n,
-             B_mem_a             => DDR3B_A,
-             B_mem_ba            => DDR3B_BA,
-             B_mem_cke           => DDR3B_CKE,
-             B_mem_cs_n          => DDR3B_CS_n,
-             B_mem_odt           => DDR3B_ODT,
-             B_mem_reset_n(0)    => DDR3B_RESET_n,      
-             B_mem_we_n(0)       => DDR3B_WE_n,
-             B_mem_ras_n(0)      => DDR3B_RAS_n,
-             B_mem_cas_n(0)      => DDR3B_CAS_n,
-             B_mem_dqs           => DDR3B_DQS,
-             B_mem_dqs_n         => DDR3B_DQS_n,
-             B_mem_dq            => DDR3B_DQ,
-             B_mem_dm            => DDR3B_DM,
-             B_oct_rzqin         => RZQ_DDR3_B,
-             B_pll_ref_clk       => DDR3B_REFCLK_p--,
+    ddr3_b : entity work.ddr3_block 
+    port map(
+        reset_n             => resets_ddr3(RESET_BIT_DDR3),
+        
+        -- Control and status registers
+        ddr3control         => writeregs_ddr3(DDR3_CONTROL_W),
+        ddr3status          => readregs_ddr3(DDR3_STATUS_R),
+
+        -- A interface
+        A_ddr3clk           => A_ddr3clk,
+        A_ddr3calibrated    => A_ddr3calibrated,
+        A_ddr3ready         => A_ddr3ready,
+        A_ddr3addr          => A_ddr3addr,
+        A_ddr3datain        => A_ddr3datain,
+        A_ddr3dataout       => A_ddr3dataout,
+        A_ddr3_write        => A_ddr3_write,
+        A_ddr3_read         => A_ddr3_read,
+        A_ddr3_read_valid   => A_ddr3_read_valid,
+        
+        -- B interface
+        B_ddr3clk           => B_ddr3clk,
+        B_ddr3calibrated    => B_ddr3calibrated,
+        B_ddr3ready         => B_ddr3ready,
+        B_ddr3addr          => B_ddr3addr,
+        B_ddr3datain        => B_ddr3datain,
+        B_ddr3dataout       => B_ddr3dataout,
+        B_ddr3_write        => B_ddr3_write,
+        B_ddr3_read         => B_ddr3_read,
+        B_ddr3_read_valid   => B_ddr3_read_valid,
+        
+        -- Error counters
+        errout              => readregs_ddr3(DDR3_ERR_R),
+
+        -- Interface to memory bank A
+        A_mem_ck            => DDR3A_CK,
+        A_mem_ck_n          => DDR3A_CK_n,
+        A_mem_a             => DDR3A_A,
+        A_mem_ba            => DDR3A_BA,
+        A_mem_cke           => DDR3A_CKE,
+        A_mem_cs_n          => DDR3A_CS_n,
+        A_mem_odt           => DDR3A_ODT,
+        A_mem_reset_n(0)    => DDR3A_RESET_n,      
+        A_mem_we_n(0)       => DDR3A_WE_n,
+        A_mem_ras_n(0)      => DDR3A_RAS_n,
+        A_mem_cas_n(0)      => DDR3A_CAS_n,
+        A_mem_dqs           => DDR3A_DQS,
+        A_mem_dqs_n         => DDR3A_DQS_n,
+        A_mem_dq            => DDR3A_DQ,
+        A_mem_dm            => DDR3A_DM,
+        A_oct_rzqin         => RZQ_DDR3_A,
+        A_pll_ref_clk       => DDR3A_REFCLK_p,
+        
+        -- Interface to memory bank B
+        B_mem_ck            => DDR3B_CK,
+        B_mem_ck_n          => DDR3B_CK_n,
+        B_mem_a             => DDR3B_A,
+        B_mem_ba            => DDR3B_BA,
+        B_mem_cke           => DDR3B_CKE,
+        B_mem_cs_n          => DDR3B_CS_n,
+        B_mem_odt           => DDR3B_ODT,
+        B_mem_reset_n(0)    => DDR3B_RESET_n,      
+        B_mem_we_n(0)       => DDR3B_WE_n,
+        B_mem_ras_n(0)      => DDR3B_RAS_n,
+        B_mem_cas_n(0)      => DDR3B_CAS_n,
+        B_mem_dqs           => DDR3B_DQS,
+        B_mem_dqs_n         => DDR3B_DQS_n,
+        B_mem_dq            => DDR3B_DQ,
+        B_mem_dm            => DDR3B_DM,
+        B_oct_rzqin         => RZQ_DDR3_B,
+        B_pll_ref_clk       => DDR3B_REFCLK_p--,
      );
  
      DDR3A_SDA   <= 'Z';

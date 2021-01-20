@@ -7,3 +7,6 @@
 [submodule "common/kerneldriver/dmabuf"]
     path = common/kerneldriver/dmabuf
     url = https://github.com/akozlins/dmabuf
+[submodule "modules/googletest"]
+	path = modules/googletest
+	url = https://github.com/google/googletest.git

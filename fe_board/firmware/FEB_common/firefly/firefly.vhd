@@ -27,7 +27,6 @@ library ieee;
 use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
-use work.transceiver_components.all;
 use work.daq_constants.all;
 
 entity firefly is
@@ -640,7 +639,7 @@ begin
 --------------------------------------------------
     sync_fifo1 : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH  => 2,
+        ADDR_WIDTH  => 4,
         DATA_WIDTH  => 8,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
@@ -658,14 +657,14 @@ begin
 
     sync_fifo2 : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH  => 2,
+        ADDR_WIDTH  => 4,
         DATA_WIDTH  => 220,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
         DEVICE      => "Arria V"--,
     )
     port map(
-        aclr            => '0',
+        aclr            => not i_lvds_align_reset_n,--'0',
         data            =>  disperr
                             & errdetect & syncstatus
                             & rx_is_lockedtodata & rx_is_lockedtoref 

@@ -1,8 +1,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-
+use ieee.std_logic_misc.all;
 use work.daq_constants.all;
+use work.feb_sc_registers.all;
 
 entity fe_block is
 generic (
@@ -86,12 +87,8 @@ port (
     o_mupix_reg_we      : out   std_logic;
     o_mupix_reg_wdata   : out   std_logic_vector(31 downto 0);
 
-
-
     -- reset system
     o_run_state_125 : out   run_state_t;
-
-
 
     -- nios clock (async)
     i_nios_clk      : in    std_logic;
@@ -142,8 +139,6 @@ architecture arch of fe_block is
     signal linktest_granted : std_logic_vector(N_LINKS-1 downto 0);
 
     signal av_mscb : work.util.avalon_t;
-
-
 
     signal reg_reset_bypass : std_logic_vector(31 downto 0);
     signal reg_reset_bypass_payload : std_logic_vector(31 downto 0);
@@ -237,6 +232,8 @@ begin
 
 
     -- map slow control address space
+	 -- TODO: We only have one subdetector per FEB and the frimware is specific:
+	 -- All registers above 0x40 can be used for the specific subdetecto
 
     -- malibu regs : 0x40-0x5F
     o_malibu_reg_addr <= sc_reg.addr(7 downto 0);
@@ -261,8 +258,8 @@ begin
 
     -- local regs : 0xF0-0xFF
     fe_reg.addr <= sc_reg.addr;
-    fe_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
-    fe_reg.we <= sc_reg.we when ( sc_reg.addr(7 downto 4) = X"F" ) else '0';
+    fe_reg.re <= sc_reg.re when ( sc_reg.addr(REG_AREA_RANGE) = REG_AREA_GENERIC ) else '0';
+    fe_reg.we <= sc_reg.we when ( sc_reg.addr(REG_AREA_RANGE) = REG_AREA_GENERIC ) else '0';
     fe_reg.wdata <= sc_reg.wdata;
 
     -- select valid rdata
@@ -274,6 +271,9 @@ begin
         X"CCCCCCCC";
 
     process(i_clk_156, reset_156_n)
+	
+	 variable regaddr : integer;
+	 
     begin
     if ( reset_156_n = '0' ) then
         malibu_reg.rvalid <= '0';
@@ -287,6 +287,7 @@ begin
         av_nios.read <= '0';
         av_nios.write <= '0';
     elsif rising_edge(i_clk_156) then
+        regaddr := TO_INTEGER(UNSIGNED(fe_reg.addr(7 downto 0)));
         malibu_reg.rvalid <= malibu_reg.re;
         scifi_reg.rvalid <= scifi_reg.re;
         mupix_reg.rvalid <= mupix_reg.re;
@@ -299,54 +300,54 @@ begin
         --reset_pod <= '0';
 
         -- cmdlen
-        if ( fe_reg.addr(7 downto 0) = X"F0" and fe_reg.re = '1' ) then
+        if ( regaddr = CMD_LEN_REGISTER_RW and fe_reg.re = '1' ) then
             fe_reg.rdata <= reg_cmdlen;
         end if;
-        if ( fe_reg.addr(7 downto 0) = X"F0" and fe_reg.we = '1' ) then
+        if ( regaddr = CMD_LEN_REGISTER_RW and fe_reg.we = '1' ) then
             reg_cmdlen <= fe_reg.wdata;
         end if;
 
         -- offset
-        if ( fe_reg.addr(7 downto 0) = X"F1" and fe_reg.re = '1' ) then
+        if ( regaddr = CMD_OFFSET_REGISTER_RW and fe_reg.re = '1' ) then
             fe_reg.rdata <= reg_offset;
         end if;
-        if ( fe_reg.addr(7 downto 0) = X"F1" and fe_reg.we = '1' ) then
+        if ( regaddr = CMD_OFFSET_REGISTER_RW and fe_reg.we = '1' ) then
             reg_offset <= fe_reg.wdata;
         end if;
 
         -- reset bypass
-        if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.re = '1' ) then
+        if ( regaddr = RUN_STATE_RESET_BYPASS_REGISTER_RW and fe_reg.re = '1' ) then
             fe_reg.rdata(15 downto 0) <= reg_reset_bypass(15 downto 0);
             fe_reg.rdata(16+9 downto 16) <= run_state_156;
         end if;
-        if ( fe_reg.addr(7 downto 0) = X"F4" and fe_reg.we = '1' ) then
+        if ( regaddr = RUN_STATE_RESET_BYPASS_REGISTER_RW and fe_reg.we = '1' ) then
             reg_reset_bypass(15 downto 0) <= fe_reg.wdata(15 downto 0); -- upper bits are read-only status
         end if;
 
         -- reset payload
-        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.re = '1' ) then
+        if ( regaddr = RESET_PAYLOAD_RGEISTER_RW and fe_reg.re = '1' ) then
             fe_reg.rdata <= reg_reset_bypass_payload;
         end if;
-        if ( fe_reg.addr(7 downto 0) = X"F5" and fe_reg.we = '1' ) then
+        if ( regaddr = RESET_PAYLOAD_RGEISTER_RW and fe_reg.we = '1' ) then
             reg_reset_bypass_payload <= fe_reg.wdata;
         end if;
 
         -- rate measurement
-        if ( fe_reg.addr(7 downto 0) = X"F6" and fe_reg.re = '1' ) then
+        if ( regaddr = MERGER_RATE_REGISTER_R and fe_reg.re = '1' ) then
             fe_reg.rdata <= merger_rate_count;
         end if;
 
         -- reset phase
-        if ( fe_reg.addr(7 downto 0) = X"F7" and fe_reg.re = '1' ) then
+        if ( regaddr = RESET_PHASE_REGISTER_R and fe_reg.re = '1' ) then
             fe_reg.rdata(PHASE_WIDTH_g - 1 downto 0) <= reset_phase;
         end if;
         
         -- reset qsfp / pod
-        if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.re = '1' ) then
+        if ( regaddr = RESET_OPTICAL_LINKS_REGISTER_RW and fe_reg.re = '1' ) then
             fe_reg.rdata(0) <= reset_pod;
             fe_reg.rdata(1) <= reset_qsfp;
         end if;
-        if ( fe_reg.addr(7 downto 0) = X"F8" and fe_reg.we = '1' ) then
+        if ( regaddr = RESET_OPTICAL_LINKS_REGISTER_RW and fe_reg.we = '1' ) then
             reset_pod <= fe_reg.wdata(0);
             reset_qsfp <= fe_reg.wdata(1);
         end if;
@@ -354,21 +355,21 @@ begin
         -- mscb
 
         -- git head hash
-        if ( fe_reg.addr(7 downto 0) = X"FA" and fe_reg.re = '1' ) then
+        if ( regaddr = GIT_HASH_REGISTER_R and fe_reg.re = '1' ) then
             fe_reg.rdata <= (others => '0');
             fe_reg.rdata <= work.cmp.GIT_HEAD(0 to 31);
         end if;
         -- fpga id
-        if ( fe_reg.addr(7 downto 0) = X"FB" and fe_reg.re = '1' ) then
+        if ( regaddr = FPGA_ID_REGISTER_RW and fe_reg.re = '1' ) then
             fe_reg.rdata <= (others => '0');
             fe_reg.rdata(i_fpga_id_reg'range) <= i_fpga_id_reg;
         end if;
-        if ( fe_reg.addr(7 downto 0) = X"FB" and fe_reg.we = '1' ) then
+        if ( regaddr = FPGA_ID_REGISTER_RW and fe_reg.we = '1' ) then
             fe_reg.rdata <= (others => '0');
             i_fpga_id_reg(N_LINKS*16-1 downto 0) <= fe_reg.wdata(N_LINKS*16-1 downto 0);
         end if;
         -- fpga type
-        if ( fe_reg.addr(7 downto 0) = X"FC" and fe_reg.re = '1' ) then
+        if ( regaddr = FPGA_TYPE_REGISTER_R and fe_reg.re = '1' ) then
             fe_reg.rdata <= (others => '0');
             fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
         end if;

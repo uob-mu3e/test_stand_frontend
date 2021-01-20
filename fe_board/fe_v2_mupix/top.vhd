@@ -1,6 +1,5 @@
 ----------------------------------------
--- Dummy version of the Frontend Board 
--- Common Firmware only, no detector-specific parts
+-- Mupix version of the Frontend Board
 -- Martin Mueller, September 2020
 ----------------------------------------
 
@@ -33,34 +32,43 @@ entity top is
         data_in_A                   : in    std_logic_vector(9 downto 1);
         fast_reset_A                : out   std_logic;
         SIN_A                       : out   std_logic;
+        mosi_A                      : out   std_logic;
+        csn_A                       : out   std_logic_vector(2 downto 0);
 
         -- Block B: Connections for three chips -- layer 0
         clock_B                     : out   std_logic;
         data_in_B                   : in    std_logic_vector(9 downto 1);
         fast_reset_B                : out   std_logic;
         SIN_B                       : out   std_logic;
+        mosi_B                      : out   std_logic;
+        csn_B                       : out   std_logic_vector(2 downto 0);
 
         -- Block C: Connections for three chips -- layer 1
         clock_C                     : out   std_logic;
         data_in_C                   : in    std_logic_vector(9 downto 1);
         fast_reset_C                : out   std_logic;
         SIN_C                       : out   std_logic;
+        mosi_C                      : out   std_logic;
+        csn_C                       : out   std_logic_vector(2 downto 0);
 
         -- Block D: Connections for three chips -- layer 1
         clock_D                     : out   std_logic;
         data_in_D                   : in    std_logic_vector(9 downto 1);
         fast_reset_D                : out   std_logic;
         SIN_D                       : out   std_logic;
+        mosi_D                      : out   std_logic;
+        csn_D                       : out   std_logic_vector(2 downto 0);
 
         -- Block E: Connections for three chips -- layer 1
-        clock_E                     : out   std_logic;
-        data_in_E                   : in    std_logic_vector(9 downto 1);
-        fast_reset_E                : out   std_logic;
-        SIN_E                       : out   std_logic;
+        -- clock_E                     : out   std_logic;
+        -- data_in_E                   : in    std_logic_vector(9 downto 1);
+        -- fast_reset_E                : out   std_logic;
+        -- SIN_E                       : out   std_logic;
 
         -- Extra signals
-        clock_aux                   : out   std_logic;
-        spare_out                   : out   std_logic_vector(3 downto 2);
+        
+        --clock_aux                   : out   std_logic; -- Pin in use for csn_A[2] M.Mueller
+        --spare_out                   : out   std_logic_vector(3 downto 2); -- Pins in use for csn_* M.Mueller
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -117,25 +125,145 @@ entity top is
 
         -- MAX10 IF
         max10_spi_sclk              : out   std_logic;
-        max10_spi_mosi              : out   std_logic;
-        max10_spi_miso              : in    std_logic;
+        max10_spi_mosi              : inout std_logic;
+        max10_spi_miso              : inout std_logic;
         max10_spi_D1                : inout std_logic;
         max10_spi_D2                : inout std_logic;
-        max10_spi_D3                : inout std_logic;
+        max10_spi_D3                : out   std_logic;
         max10_spi_csn               : out   std_logic
         );
 end top;
 
 architecture rtl of top is
- 
+
     -- Debouncers
-    signal pb_db                : std_logic_vector(1 downto 0);
+    signal pb_db                    : std_logic_vector(1 downto 0);
+
+    constant NPORTS                 : integer := 4;
+    constant N_LINKS                : integer := 1;
+
+    signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
+    signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
+
+    signal malibu_reg               : work.util.rw_t;
+    signal scifi_reg                : work.util.rw_t;
+    signal mupix_reg                : work.util.rw_t;
+
+    -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
+    signal ZERO                     : std_logic := '0';
+    attribute keep                  : boolean;
+    attribute keep of ZERO          : signal is true;
+
+    signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
+    signal spi_miso, spi_mosi, spi_sclk : std_logic;
+    signal spi_ss_n                 : std_logic_vector(15 downto 0);
+
+    signal run_state_125            : run_state_t;
+    signal run_state_156            : run_state_t;
+    signal ack_run_prep_permission  : std_logic;
+
+    signal sync_reset_cnt           : std_logic;
+    signal nios_clock               : std_logic;
+
+    -- board dacs
+    signal SPI_DIN                  : std_logic;
+    signal SPI_CLK                  : std_logic;
+    signal SPI_LD_ADC               : std_logic;
+    signal SPI_LD_TEMP_DAC          : std_logic;
+    signal SPI_LD_DAC               : std_logic;
+    
+    -- chip dacs
+    signal CTRL_SDI                 : std_logic_vector(NPORTS-1 downto 0);
+    signal CTRL_SCK1                : std_logic_vector(NPORTS-1 downto 0);
+    signal CTRL_SCK2                : std_logic_vector(NPORTS-1 downto 0);
+    signal CTRL_LOAD                : std_logic_vector(NPORTS-1 downto 0);
+    signal CTRL_RB                  : std_logic_vector(NPORTS-1 downto 0);
 
 begin
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------
-----INSERT SUB-DETECTOR FIRMWARE HERE ------------------------------
+----MUPIX SUB-DETECTOR FIRMWARE ------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+
+    e_mupix_block : entity work.mupix_block
+    generic map (
+        NCHIPS          => 12,
+        NCHIPS_SPI      => 4,
+        NPORTS          => NPORTS,
+        NLVDS           => 36,
+        NINPUTS_BANK_A  => 16,
+        NINPUTS_BANK_B  => 16--,
+    )
+    port map (
+
+        -- chip dacs
+        i_CTRL_SDO_A            => '0',
+        o_CTRL_SDI              => open,
+        o_CTRL_SCK1             => open,
+        o_CTRL_SCK2             => open,
+        o_CTRL_Load             => open,
+        o_CTRL_RB               => open,
+
+        -- board dacs
+        i_SPI_DOUT_ADC_0_A      => '0',
+        o_SPI_DIN0_A            => open,
+        o_SPI_CLK_A             => open,
+        o_SPI_LD_ADC_A          => open,
+        o_SPI_LD_TEMP_DAC_A     => open,
+        o_SPI_LD_DAC_A          => open,
+
+        -- mupix dac regs
+        i_reg_add               => mupix_reg.addr(7 downto 0),
+        i_reg_re                => mupix_reg.re,
+        o_reg_rdata             => mupix_reg.rdata,
+        i_reg_we                => mupix_reg.we,
+        i_reg_wdata             => mupix_reg.wdata,
+
+        -- data
+        o_fifo_wdata            => fifo_wdata,
+        o_fifo_write            => fifo_write(0),
+
+        i_run_state_125           => run_state_125,
+        i_run_state_156           => run_state_156,
+        o_ack_run_prep_permission => ack_run_prep_permission,
+
+        i_lvds_data_in          => data_in_D & data_in_C & data_in_B & data_in_A,
+
+        i_reset                 => '0',--not pb_db(0),
+        -- 156.25 MHz
+        i_clk156                => transceiver_pll_clock(0),
+        i_clk125                => lvds_firefly_clk,
+        i_lvds_rx_inclock_A     => LVDS_clk_si1_fpga_A,
+        i_lvds_rx_inclock_B     => LVDS_clk_si1_fpga_B,
+        i_sync_reset_cnt        => sync_reset_cnt--,
+    );
+
+    process(lvds_firefly_clk)
+    begin
+    if falling_edge(lvds_firefly_clk) then
+        if(run_state_125 = RUN_STATE_SYNC)then
+            fast_reset_A    <= '1';
+            fast_reset_B    <= '1';
+            fast_reset_C    <= '1';
+            fast_reset_D    <= '1';
+            --fast_reset_E    <= '1';
+            sync_reset_cnt  <= '1';
+        else
+            fast_reset_A    <= '0';
+            fast_reset_B    <= '0';
+            fast_reset_C    <= '0';
+            fast_reset_D    <= '0';
+            --fast_reset_E    <= '0';
+            sync_reset_cnt  <= '0';
+        end if;
+    end if;
+    end process;
+
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+---- COMMON FIRMWARE PART ------------------------------------------
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 
@@ -195,42 +323,31 @@ begin
         i_ffly1_lvds_rx     => firefly1_lvds_rx_in,
         i_ffly2_lvds_rx     => firefly2_lvds_rx_in,
 
-        i_fifo_write        => (others => '0'), -- TODO in "Not-Dummy": connect to detector-block
-        i_fifo_wdata        => (others => '0'), -- TODO in "Not-Dummy": connect to detector-block
+        i_fifo_write        => fifo_write,
+        i_fifo_wdata        => fifo_wdata,
 
         i_mscb_data         => mscb_fpga_in,
         o_mscb_data         => mscb_fpga_out,
         o_mscb_oe           => mscb_fpga_oe_n,
 
         o_max10_spi_sclk    => max10_spi_sclk,
-        o_max10_spi_mosi    => max10_spi_mosi,
-        i_max10_spi_miso    => max10_spi_miso,
+        io_max10_spi_mosi   => max10_spi_mosi,
+        io_max10_spi_miso   => max10_spi_miso,
         io_max10_spi_D1     => max10_spi_D1,
         io_max10_spi_D2     => max10_spi_D2,
-        io_max10_spi_D3     => max10_spi_D3,
+        o_max10_spi_D3      => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_mupix_reg_addr    => open, -- TODO in "Not-Dummy": connect to detector-block
-        o_mupix_reg_re      => open,
-        i_mupix_reg_rdata   => X"CCCCCCCC",
-        o_mupix_reg_we      => open,
-        o_mupix_reg_wdata   => open,
+        o_mupix_reg_addr    => mupix_reg.addr(7 downto 0),
+        o_mupix_reg_re      => mupix_reg.re,
+        i_mupix_reg_rdata   => mupix_reg.rdata,
+        o_mupix_reg_we      => mupix_reg.we,
+        o_mupix_reg_wdata   => mupix_reg.wdata,
 
-        o_malibu_reg_addr   => open, -- TODO in "Not-Dummy": connect to detector-block
-        o_malibu_reg_re     => open,
-        i_malibu_reg_rdata  => X"CCCCCCCC",
-        o_malibu_reg_we     => open,
-        o_malibu_reg_wdata  => open,
-
-        o_scifi_reg_addr    => open, -- TODO in "Not-Dummy": connect to detector-block
-        o_scifi_reg_re      => open,
-        i_scifi_reg_rdata   => X"CCCCCCCC",
-        o_scifi_reg_we      => open,
-        o_scifi_reg_wdata   => open,
-        
         -- reset system
-        o_run_state_125     => open,      -- TODO in "Not-Dummy": connect to detector-block
-        i_ack_run_prep_permission => '1', -- TODO in "Not-Dummy": connect to detector-block
+        o_run_state_125     => run_state_125,
+        o_run_state_156     => run_state_156,
+        i_ack_run_prep_permission => ack_run_prep_permission,
 
         -- clocks
         i_nios_clk          => spare_clk_osc,

@@ -15,8 +15,8 @@ package mudaq_registers is
 		constant RESET_BIT_RECEIVER							    :  integer := 4;
 		constant RESET_BIT_DATAFIFO							    :  integer := 5;
 		constant RESET_BIT_FIFOPLL								:  integer := 6;
-		constant RESET_BIT_SC_SLAVE							    :  integer := 7;
-		constant RESET_BIT_SC_MASTER							:  integer := 8;
+		constant RESET_BIT_SC_SECONDARY						    :  integer := 7;
+		constant RESET_BIT_SC_MAIN    							:  integer := 8;
 		constant RESET_BIT_PCIE_LOCAL							:  integer := 9;
 		constant RESET_BIT_TOP_PROC							    :  integer := 10;
 		constant RESET_BIT_PCIE_APPl							:  integer := 12;
@@ -69,6 +69,8 @@ package mudaq_registers is
 		constant FEB_ENABLE_REGISTER_W							: integer := 16#0A#;
 		constant DATA_LINK_MASK_REGISTER_W                      : integer := 16#0B#;
 		constant GET_N_DMA_WORDS_REGISTER_W                     : integer := 16#0C#;
+        constant SC_MAIN_ENABLE_REGISTER_W  				    : integer := 16#0D#;
+        constant SC_MAIN_LENGTH_REGISTER_W  				    : integer := 16#0E#;
 
 		-- Registers above 0x36 are in use for the PCIe controller/DMA
 		constant DMA2_CTRL_ADDR_LOW_REGISTER_W				    : integer := 16#36#;
@@ -143,6 +145,8 @@ package mudaq_registers is
 		constant DDR3_BIT_TEST_DONE							    : integer := 6;
 		constant DDR3_ERR_R										: integer := 16#28#;
 		constant DATA_TSBLOCKS_R								: integer := 16#29#;
+        constant SC_MAIN_STATUS_REGISTER_R						: integer := 16#30#;
+            constant SC_MAIN_DONE								: integer := 0;
 		
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						    : integer := 16#38#;

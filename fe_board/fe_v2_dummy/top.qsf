@@ -18,14 +18,6 @@ set_global_assignment -name QIP_FILE .cache/include.qip
 
 set_global_assignment -name QIP_FILE ../firmware/FEB_common/include_FEB_v2.qip
 
-#set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/include.qip
-#set_global_assignment -name QIP_FILE mupix_block/include.qip
-#set_global_assignment -name VHDL_FILE dac_fifo.vhd
-#set_global_assignment -name VHDL_FILE mupix_block.vhd
-#set_global_assignment -name VHDL_FILE two_clk_sync_fifo.vhd
-
-
-
 # tail
 
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top

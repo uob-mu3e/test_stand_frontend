@@ -7,6 +7,5 @@ target_include_directories(libmalibu
 PUBLIC 
 	"include"
 PRIVATE
-	${MIDASINCLUDE_DIR}
 	${LIBMUDAQ_DIR}
 )

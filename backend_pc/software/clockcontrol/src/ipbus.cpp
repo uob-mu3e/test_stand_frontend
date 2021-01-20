@@ -10,7 +10,7 @@ using std::cout;
 using std::endl;
 using std::hex;
 
-ipbus::ipbus(const char * _addr, unsigned short _port):
+ipbus::ipbus(std::string _addr, unsigned short _port):
     addr(_addr),port(_port), connected(false), ios(), socket(ios), packetnumber(0),ntimeouts(0)
 {
     connect();
@@ -26,7 +26,7 @@ int ipbus::disconnect()
 int ipbus::connect()
 {
     socket.open(ip::udp::v4());
-    remote_endpoint = ip::udp::endpoint(ip::address::from_string(addr),port);
+    remote_endpoint = ip::udp::endpoint(ip::make_address(addr),port);
 
     if(socket.is_open())
         connected = true;

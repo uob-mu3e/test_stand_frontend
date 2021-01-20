@@ -7,3 +7,6 @@
 *.xcix
 
 .cache/
+*.cache
+*.hw
+*.jou

@@ -118,8 +118,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
-Library UNISIM;
-use UNISIM.vcomponents.all;
+--Library UNISIM;
+--use UNISIM.vcomponents.all;
 
 
 entity i2c_master_bit_ctrl is

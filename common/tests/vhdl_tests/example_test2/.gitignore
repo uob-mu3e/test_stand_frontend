@@ -1,0 +1,4 @@
+.cache/
+vunit_out
+*.json
+*.html

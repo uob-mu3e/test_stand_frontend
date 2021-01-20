@@ -13,7 +13,6 @@ target_include_directories(libmupix
 PUBLIC 
 	"include"
 PRIVATE
-	${MIDASINCLUDE_DIR}
 	${LIBMUDAQ_DIR}
 	${INCMUDAQ_DIR}
 )

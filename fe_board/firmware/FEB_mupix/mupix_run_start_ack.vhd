@@ -10,15 +10,15 @@ generic(
     NLVDS                   : integer := 32--;
 );
 port (
-    i_clk                       : in  std_logic;
+    i_clk156                    : in  std_logic;
     i_reset                     : in  std_logic;
     i_disable                   : in  std_logic;
     i_stable_required           : in  unsigned(15 downto 0);
     i_lvds_err_counter          : in  reg32array_t(NLVDS-1 downto 0);
     i_lvds_data_valid           : in  std_logic_vector(NLVDS-1 downto 0);
-    i_lvds_mask                 : in  std_logic_vector(NLVDS-1 downto 0);
+    i_lvds_mask                 : in  reg32array_t(1 downto 0);
     i_sc_busy                   : in  std_logic;
-    i_run_state_125             : in  run_state_t;
+    i_run_state_156             : in  run_state_t;
     o_ack_run_prep_permission   : out std_logic--;
 );
 end entity;
@@ -33,25 +33,27 @@ architecture arch of mupix_run_start_ack is
 
 begin
 
-    process(i_clk)
+    process(i_clk156)
+        variable lvds_mask_slv  : std_logic_vector(63 downto 0) := (others => '0');
     begin
-        if(rising_edge(i_clk))then
-            lvds_mask       <= i_lvds_mask;
+        if(rising_edge(i_clk156))then
+            lvds_mask_slv       := i_lvds_mask(1) & i_lvds_mask(0);
+            lvds_mask           <= lvds_mask_slv(NLVDS-1 downto 0);
         end if;
     end process;
 
-    process (i_clk, i_reset)
+    process (i_clk156, i_reset)
     begin
         if(i_reset = '1') then
-            o_ack_run_prep_permission   <= '0';
+            o_ack_run_prep_permission     <= '0';
             stable_counter              <= (others => '0');
             lvds_stable                 <= (others => '0');
             prev_err_counter            <= (others => '0');
 
-        elsif (rising_edge(i_clk)) then
+        elsif (rising_edge(i_clk156)) then
             if(i_disable = '1') then
                 o_ack_run_prep_permission   <= '1';
-            elsif(i_run_state_125 = RUN_STATE_PREP and i_sc_busy='0' and stable_counter = i_stable_required and and_reduce(i_lvds_data_valid or lvds_mask)='1') then
+            elsif(i_run_state_156 = RUN_STATE_PREP and i_sc_busy='0' and stable_counter = i_stable_required and and_reduce(i_lvds_data_valid or lvds_mask)='1') then
                 o_ack_run_prep_permission   <= '1';
             else
                 o_ack_run_prep_permission   <= '0';

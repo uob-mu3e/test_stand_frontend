@@ -11,6 +11,9 @@
   Created on:   Mon Apr 29 2019
 
 \********************************************************************/
+#include <odbxx.h>
+using midas::odb;
+
 // From midas.h
 typedef unsigned int DWORD;
 typedef DWORD BOOL;
@@ -25,69 +28,41 @@ typedef int INT;
 
 #ifndef MUTRIG_DAQ_DEFINED
 #define MUTRIG_DAQ_DEFINED
-/*
-typedef struct {
-  BOOL dummy_config;
-  BOOL dummy_data;
-  INT  dummy_data_n;
-  BOOL dummy_data_fast;
-  BOOL prbs_decode_disable;
-  BOOL reset_datapath;
-  BOOL reset_asics;
-} MUTRIG_DAQ;
-*/
 
-#define MUTRIG_DAQ_STR(_name) const char *_name[] = {\
-"[.]",\
-"dummy_config = BOOL : n",\
-"dummy_data = BOOL : n",\
-"dummy_data_n = INT : 200",\
-"dummy_data_fast = BOOL : n",\
-"prbs_decode_disable = BOOL : n",\
-"reset_datapath = BOOL : n",\
-"reset_asics = BOOL : n",\
-"reset_lvds = BOOL : n",\
-"reset_counters = BOOL : n",\
-"LVDS_waitforall = BOOL : n",\
-"LVDS_waitforall_sticky = BOOL : y",\
-"num_asics = INT : 16",\
-"mask = BOOL[16] :",\
-"[0] n",\
-"[1] n",\
-"[2] n",\
-"[3] n",\
-"[4] n",\
-"[5] n",\
-"[6] n",\
-"[7] n",\
-"[8] n",\
-"[9] n",\
-"[10] n",\
-"[11] n",\
-"[12] n",\
-"[13] n",\
-"[14] n",\
-"[15] n",\
-"resetskew_cphase = BOOL[4] :",\
-"[0] n",\
-"[1] n",\
-"[2] n",\
-"[3] n",\
-"resetskew_cdelay = BOOL[4] :",\
-"[0] n",\
-"[1] n",\
-"[2] n",\
-"[3] n",\
-"resetskew_phases = INT[4] :",\
-"[0] 0",\
-"[1] 0",\
-"[2] 0",\
-"[3] 0",\
-"",\
-NULL }
+typedef struct {
+    BOOL dummy_config;
+    BOOL dummy_data;
+    INT  dummy_data_n;
+    BOOL dummy_data_fast;
+    BOOL prbs_decode_disable;
+    BOOL reset_datapath;
+    BOOL reset_asics;
+} MUTRIG_DAQ;
+
+static odb MUTRIG_DAQ_SETTINGS = {
+    {"dummy_config", false},
+    {"dummy_data", false},
+    {"dummy_data_n", 200},
+    {"dummy_data_fast", false},
+    {"prbs_decode_disable", false},
+    {"reset_datapath", false},
+    {"reset_asics", false},
+    {"reset_lvds", false},
+    {"reset_counters", false},
+    {"LVDS_waitforall", false},
+    {"LVDS_waitforall_sticky", false},
+    {"num_asics", 16},
+    {"mask", { false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false
+                }},
+    {"resetskew_cphase", {false, false, false, false}},
+    {"resetskew_cdelay", {false, false, false, false}},
+    {"resetskew_phases", {false, false, false, false}},
+};
 
 #endif
-
 
 #ifndef MUTRIG_TDC_DEFINED
 #define MUTRIG_TDC_DEFINED
@@ -130,45 +105,43 @@ typedef struct {
     INT       lvds_tx_bias;
 } MUTRIG_TDC;
 
-#define MUTRIG_TDC_STR(_name) const char *_name[] = {\
-"[.]",\
-"vnpfc = INT : 63",\
-"vnpfc_offset = INT : 3",\
-"vnpfc_scale = BOOL : n",\
-"vncnt = INT : 63",\
-"vncnt_offset = INT : 3",\
-"vncnt_scale = BOOL : n",\
-"vnvcobuffer = INT : 63",\
-"vnvcobuffer_offset = INT : 3",\
-"vnvcobuffer_scale = BOOL : n",\
-"vnd2c = INT : 63",\
-"vnd2c_offset = INT : 3",\
-"vnd2c_scale = BOOL : n",\
-"vnpcp = INT : 63",\
-"vnpcp_offset = INT : 3",\
-"vnpcp_scale = BOOL : n",\
-"vnhitlogic = INT : 63",\
-"vnhitlogic_offset = INT : 3",\
-"vnhitlogic_scale = BOOL : n",\
-"vncntbuffer = INT : 63",\
-"vncntbuffer_offset = INT : 3",\
-"vncntbuffer_scale = BOOL : n",\
-"vnvcodelay = INT : 63",\
-"vnvcodelay_offset = INT : 3",\
-"vnvcodelay_scale = BOOL : n",\
-"latchbias = INT : 0",\
-"ms_limits = INT : 0",\
-"ms_switch_sel = BOOL : n",\
-"amon_en = BOOL : n",\
-"amon_dac = INT : 0",\
-"dmon_1_en = BOOL : n",\
-"dmon_1_dac = INT : 0",\
-"dmon_2_en = BOOL : n",\
-"dmon_2_dac = INT : 0",\
-"lvds_tx_vcm = INT : 0",\
-"lvds_tx_bias = INT : 0",\
-"",\
-NULL }
+static odb MUTRIG_TDC_SETTINGS = {
+    {"vnpfc", 63},
+    {"vnpfc_offset", 3},
+    {"vnpfc_scale", false},
+    {"vncnt", 63},
+    {"vncnt_offset", 3},
+    {"vncnt_scale", false},
+    {"vnvcobuffer", 63},
+    {"vnvcobuffer_offset", 3},
+    {"vnvcobuffer_scale", false},
+    {"vnd2c", 3},
+    {"vnd2c_offset", 3},
+    {"vnd2c_scale", false},
+    {"vnpcp", 63},
+    {"vnpcp_offset", 3},
+    {"vnpcp_scale", false},
+    {"vnhitlogic", 63},
+    {"vnhitlogic_offset", 3},
+    {"vnhitlogic_scale", false},
+    {"vncntbuffer", 63}, 
+    {"vncntbuffer_offset", 3},
+    {"vncntbuffer_scale", false},
+    {"vnvcodelay", 63},
+    {"vnvcodelay_offset", 3},
+    {"vnvcodelay_scale", false},
+    {"latchbias", 0},
+    {"ms_limits", 0},
+    {"ms_switch_sel", false},
+    {"amon_en", false},
+    {"amon_dac", 0},
+    {"dmon_1_en", false},
+    {"dmon_1_dac", 0},
+    {"dmon_2_en", false},
+    {"dmon_2_dac", 0},
+    {"lvds_tx_vcm", 0},
+    {"lvds_tx_bias", 0},
+};
 
 #endif
 
@@ -192,23 +165,21 @@ typedef struct {
     BOOL      pll_envomonitor;
 } MUTRIG_GLOBAL;
 
-#define MUTRIG_GLOBAL_STR(_name) const char *_name[] = {\
-"[.]",\
-"ext_trig_mode = BOOL : n",\
-"ext_trig_endtime_sign = BOOL : n",\
-"ext_trig_offset = INT : 32",\
-"ext_trig_endtime = INT : 32",\
-"gen_idle = BOOL : n",\
-"ms_debug = BOOL : n",\
-"prbs_debug = BOOL : n",\
-"prbs_single = BOOL : n",\
-"recv_all = BOOL : n",\
-"disable_coarse = BOOL : n",\
-"pll_setcoarse = BOOL : n",\
-"short_event_mode = BOOL : n",\
-"pll_envomonitor = BOOL : n",\
-"",\
-NULL }
+static odb MUTRIG_GLOBAL_SETTINGS = {
+    {"ext_trig_mode", false},
+    {"ext_trig_endtime_sign", false},
+    {"ext_trig_offset", 32},
+    {"ext_trig_endtime", 32},
+    {"gen_idle", false},
+    {"ms_debug", false},
+    {"prbs_debug", false},
+    {"rbs_single", false},
+    {"recv_all", false},
+    {"disable_coarse", false},
+    {"pll_setcoarse", false},
+    {"short_event_mode", false},
+    {"pll_envomonitor", false},
+};
 
 #endif
 
@@ -246,39 +217,36 @@ typedef struct {
     BOOL dmon_sw;
 } MUTRIG_CH;
 
-#define MUTRIG_CH_STR(_name) const char *_name[] = {\
-"[.]",\
-"mask = BOOL : 0",\
-"tthresh = INT : 0",\
-"tthresh_sc = INT : 0",\
-"ethresh = INT : 0",\
-"sipm = INT : 0",\
-"sipm_sc = INT : 0",\
-"inputbias = INT : 0",\
-"inputbias_sc = INT : 0",\
-"pole = INT : 0",\
-"pole_sc = INT : 0",\
-"ampcom = INT : 0",\
-"ampcom_sc = INT : 0",\
-"cml = INT : 0",\
-"cml_sc = INT : 0",\
-"amonctrl = INT : 0",\
-"comp_spi = INT : 0",\
-"tdctest_n = BOOL : 0",\
-"sswitch = BOOL : 0",\
-"delay = BOOL : 0",\
-"pole_en_n = BOOL : 0",\
-"energy_c_en = BOOL : 0",\
-"energy_r_en = BOOL : 0",\
-"cm_sensing_high_r = BOOL : 0",\
-"amon_en_n = BOOL : 0",\
-"edge = BOOL : 0",\
-"edge_cml = BOOL : 0",\
-"dmon_en = BOOL : 0",\
-"dmon_sw = BOOL : 0",\
-"",\
-NULL }
-
+static odb MUTRIG_CH_SETTINGS = {
+    {"mask", false},
+    {"tthresh", 0},
+    {"tthresh_sc", 0},
+    {"ethresh", 0},
+    {"sipm", 0},
+    {"sipm_sc", 0},
+    {"inputbias", 0},
+    {"inputbias_sc", 0},
+    {"pole", 0},
+    {"pole_sc", 0},
+    {"ampcom", 0},
+    {"ampcom_sc", 0},
+    {"cml", 0},
+    {"cml_sc", 0},
+    {"amonctrl", 0},
+    {"comp_spi", 0},
+    {"tdctest_n", false},
+    {"sswitch", false},
+    {"delay", false},
+    {"pole_en_n", false},
+    {"energy_c_en", false},
+    {"energy_r_en", false},
+    {"cm_sensing_high_r", false},
+    {"amon_en_n", false},
+    {"edge", false},
+    {"edge_cml", false},
+    {"dmon_en", false},
+    {"dmon_sw", false},
+};
 #endif
 
 

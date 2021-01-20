@@ -41,10 +41,11 @@ USE altera_mf.all;
 
 ENTITY ip_scfifo IS
     generic (
-        ADDR_WIDTH : positive := 8;
-        DATA_WIDTH : positive := 8;
-        SHOWAHEAD : string := "ON";
-        DEVICE : string := "Stratix IV"--;
+        ADDR_WIDTH          : positive := 8;
+        DATA_WIDTH          : positive := 8;
+        SHOWAHEAD           : string   := "ON";
+        DEVICE              : string   := "Stratix IV";
+        ALMOST_FULL_LIMIT   : positive := 1--;
     );
 	PORT
 	(
@@ -72,6 +73,17 @@ ARCHITECTURE SYN OF ip_scfifo IS
 	SIGNAL sub_wire4	: STD_LOGIC_VECTOR (DATA_WIDTH-1 DOWNTO 0);
 	SIGNAL sub_wire5	: STD_LOGIC_VECTOR (ADDR_WIDTH-1 DOWNTO 0);
 
+    function setup_almost_full_value(s:positive; ADDR_W:positive) 
+        return positive is
+    begin
+        if s = 1 then
+            return 2**ADDR_WIDTH - 2**(ADDR_WIDTH/2);
+        else
+            return s;
+        end if;
+    end function;
+
+    constant almost_full_c : positive := setup_almost_full_value(ALMOST_FULL_LIMIT, ADDR_WIDTH);
 
 
 	COMPONENT scfifo
@@ -116,7 +128,7 @@ BEGIN
 	GENERIC MAP (
 		add_ram_output_register => "OFF",
 		almost_empty_value => 2**(ADDR_WIDTH/2),
-		almost_full_value => 2**ADDR_WIDTH - 2**(ADDR_WIDTH/2),
+		almost_full_value => almost_full_c,
 		intended_device_family => DEVICE,
 		lpm_numwords => 2**ADDR_WIDTH,
 		lpm_showahead => SHOWAHEAD,
