@@ -894,14 +894,14 @@ begin
         resets_n                => resets_n_fast,
         clk                     => pcie_fastclk_out--,
     );
-	 
+    
     e_reset_logic_ddr3 : entity work.reset_logic
     port map (
         rst_n                   => push_button0_db,
         reset_register          => writeregs_ddr3(RESET_REGISTER_W),
         resets                  => resets_ddr3,
         resets_n                => resets_n_ddr3,
-        clk                     => A_ddr3clk--,
+        clk                     => DDR3A_REFCLK_p--A_ddr3clk--,
     );
 
     e_version_reg : entity work.version_reg
@@ -1064,7 +1064,7 @@ begin
     
     ddr3_b : entity work.ddr3_block 
     port map(
-        reset_n             => resets_ddr3(RESET_BIT_DDR3),
+        reset_n             => resets_n_ddr3(RESET_BIT_DDR3),
         
         -- Control and status registers
         ddr3control         => writeregs_ddr3(DDR3_CONTROL_W),
