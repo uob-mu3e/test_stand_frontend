@@ -1,7 +1,7 @@
 post_message "git rev [exec git rev-parse HEAD]"
 
 # make 'cmp' package
-exec "util/altera/cmp_pkg.sh"
+exec "util/altera/components_pkg.sh"
 
 # do not track arriaV transceivers in git
 exec "a5/cpIPs.sh"

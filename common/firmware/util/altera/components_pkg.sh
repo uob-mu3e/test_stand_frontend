@@ -22,4 +22,4 @@ cat << EOF
 end package;
 EOF
 
-) > cmp_pkg.vhd
+) > .cache/components_pkg.vhd
