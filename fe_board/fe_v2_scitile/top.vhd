@@ -27,39 +27,18 @@ entity top is
         clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
         spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-        -- Block A: Connections for three chips -- layer 0
-        clock_A                     : out   std_logic;
-        data_in_A                   : in    std_logic_vector(9 downto 1);
-        fast_reset_A                : out   std_logic;
-        SIN_A                       : out   std_logic;
-
-        -- Block B: Connections for three chips -- layer 0
-        --clock_B                     : out   std_logic;
-        --data_in_B                   : in    std_logic_vector(9 downto 1);
-        --fast_reset_B                : out   std_logic;
-        --SIN_B                       : out   std_logic;
-
-        -- Block C: Connections for three chips -- layer 1
-        --clock_C                     : out   std_logic;
-        --data_in_C                   : in    std_logic_vector(9 downto 1);
-        --fast_reset_C                : out   std_logic;
-        --SIN_C                       : out   std_logic;
-
-        -- Block D: Connections for three chips -- layer 1
-        --clock_D                     : out   std_logic;
-        --data_in_D                   : in    std_logic_vector(9 downto 1);
-        --fast_reset_D                : out   std_logic;
-        --SIN_D                       : out   std_logic;
-
-        -- Block E: Connections for three chips -- layer 1
-        --clock_E                     : out   std_logic;
-        --data_in_E                   : in    std_logic_vector(9 downto 1);
-        --fast_reset_E                : out   std_logic;
-        --SIN_E                       : out   std_logic;
-
-        -- Extra signals
-        clock_aux                   : out   std_logic;
-        spare_out                   : out   std_logic_vector(3 downto 2);
+        -- tile DAB signals
+        tile_din                    : in    std_logic_vector(13 downto 1);
+        tile_pll_test               : out   std_logic;
+        tile_chip_reset             : out   std_logic;
+        tile_i2c_sda                : out   std_logic; -- inout single ended ??
+        tile_i2c_scl                : out   std_logic;
+        tile_cec                    : out   std_logic;
+        tile_spi_miso               : in    std_logic;
+        tile_i2c_int                : in    std_logic;
+        tile_pll_reset              : out   std_logic;
+        tile_spi_scl                : out   std_logic;
+        tile_spi_mosi               : out   std_logic;
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -141,9 +120,6 @@ architecture rtl of top is
     signal scifi_reg                : work.util.rw_t;
     signal mupix_reg                : work.util.rw_t;
 
-    signal s_fee_chip_rst           : std_logic_vector(N_MODULES-1 downto 0);
-    signal i_fee_rxd                : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
-
     signal run_state_125            : run_state_t;
     signal run_state_156            : run_state_t;
     signal ack_run_prep_permission  : std_logic;
@@ -175,9 +151,9 @@ begin
         i_reg_we                    => malibu_reg.we,
         i_reg_wdata                 => malibu_reg.wdata,
 
-        o_chip_reset                => s_fee_chip_rst,
-        o_pll_test                  => open,
-        i_data                      => i_fee_rxd,
+        o_chip_reset(0)             => tile_chip_reset,
+        o_pll_test                  => tile_pll_test,
+        i_data(0)                   => tile_din(1),
 
         o_fifo_write                => fifo_write,
         o_fifo_wdata                => fifo_wdata,
@@ -196,10 +172,6 @@ begin
 
         i_reset                     => not pb_db(0)--,
     );
-
-    -- TODO: we should do the pinout with vectors to make this dynamic
-    fast_reset_A <= s_fee_chip_rst(0);
-    i_fee_rxd(0) <= data_in_A(1);
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------
