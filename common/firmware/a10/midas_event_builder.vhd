@@ -125,7 +125,7 @@ entity midas_event_builder is
     signal sop, sop_reg, eop, eop_reg, shop, shop_reg : std_logic_vector(NLINKS-1 downto 0);
     signal stream_in_rempty : std_logic_vector(NLINKS-1 downto 0);
     signal stream_wdata, stream_rdata : std_logic_vector(35 downto 0);
-    signal time_merger_hit : std_logic_vector(39 downto 0);
+    signal time_merger_hit : std_logic_vector(37 downto 0);
     signal stream_rempty, time_rempty, stream_rack, stream_wfull, stream_we : std_logic;
     signal link_data : std_logic_vector(31 downto 0);
     signal link_datak : std_logic_vector(3 downto 0);
@@ -463,7 +463,7 @@ begin
         
         e_time_merger : entity work.time_merger
             generic map (
-            W => 66+12,
+            W => 64+12,
             TREE_DEPTH_w => TREE_w,
             TREE_DEPTH_r => TREE_r,
             N => NLINKS--,
@@ -480,7 +480,7 @@ begin
             o_rack                  => link_fifo_ren,--link_fifo_ren,
             
             -- output stream
-            o_rdata(77 downto 38)   => time_merger_hit,
+            o_rdata(37 downto 0)   => time_merger_hit,
             i_ren                   => not time_rempty and not stream_wfull,
             o_empty                 => time_rempty,
             
@@ -491,12 +491,14 @@ begin
         );
         
         -- link number
-        link_number                 <= time_merger_hit(37 downto 32);
+        link_number                <= time_merger_hit(37 downto 32);
         -- hit
-        stream_wdata(31 downto 0)   <= time_merger_hit(31 downto 0);
-        -- header into
-        stream_wdata(33 downto 32)  <= time_merger_hit(39 downto 38);
-        
+        stream_wdata(31 downto 0)  <= time_merger_hit(31 downto 0);
+        -- header info
+        stream_wdata(33 downto 32) <=   "01" when time_merger_hit(37 downto 32) = pre_marker else
+                                        "11" when time_merger_hit(37 downto 32) = err_marker else
+                                        "10" when time_merger_hit(37 downto 32) = tr_marker else
+                                        "00";
         stream_wdata(35 downto 34)  <= "00";
         stream_rdata(35 downto 34)  <= "00";
         

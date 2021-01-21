@@ -9,7 +9,7 @@ use work.dataflow_components.all;
 -- merge packets delimited by SOP and EOP from N input streams
 entity time_merger is
 generic (
-    W : positive := 66+12;
+    W : positive := 64+12;
     TIMEOUT : std_logic_vector(31 downto 0) := x"FFFFFFFF";
     TREE_DEPTH_w : positive := 8;
     TREE_DEPTH_r : positive := 8;
@@ -59,7 +59,7 @@ architecture arch of time_merger is
     signal merger_state_signal : std_logic;
     signal rack, rack_hit, error_pre, error_sh, error_tr, sh_state, pre_state, tr_state : std_logic_vector(N - 1 downto 0);
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
-    signal header_trailer : std_logic_vector(33 downto 0);
+    signal header_trailer : std_logic_vector(37 downto 0);
     signal gtime1, gtime2 : data_array(N - 1 downto 0);
     signal shtime : std_logic_vector(5 downto 0);
     signal overflow : std_logic_vector(15 downto 0);
@@ -74,7 +74,7 @@ architecture arch of time_merger is
     -- merger tree (at the moment for 32 links)
     type fifo_width_t is array (6 downto 0) of integer;
     constant read_width : fifo_width_t := (W, 64+12, 64+12, 64+12, 64+12, 64+12, 64+12);
-    constant write_width : fifo_width_t := (64+2+12, 64+12, 64+12, 64+12, 64+12, 64+12, 32+6);
+    constant write_width : fifo_width_t := (64+12, 64+12, 64+12, 64+12, 64+12, 64+12, 32+6);
     constant generate_fifos : fifo_width_t := (1, 2, 4, 8, 16, 32, 64);
         
     signal fifo_data_0              : fifo_array_38(generate_fifos(0) - 1 downto 0);
@@ -102,8 +102,8 @@ architecture arch of time_merger is
     signal mask_n_5 : std_logic_vector(generate_fifos(5) - 1 downto 0);
 
     constant size_last : integer := generate_fifos(5)/2;
-    signal fifo_data_6              : fifo_array_78(generate_fifos(6) - 1 downto 0);
-    signal fifo_q_6, fifo_q_6_reg   : fifo_array_78(generate_fifos(6) - 1 downto 0);
+    signal fifo_data_6              : fifo_array_76(generate_fifos(6) - 1 downto 0);
+    signal fifo_q_6, fifo_q_6_reg   : fifo_array_76(generate_fifos(6) - 1 downto 0);
     signal wait_cnt_fifo_6          : fifo_array_2(generate_fifos(6) - 1 downto 0);
     signal layer_6_state            : fifo_array_4(generate_fifos(6) - 1 downto 0);
     signal fifo_wen_6, fifo_full_6  : std_logic_vector(generate_fifos(6) - 1 downto 0);
@@ -494,7 +494,6 @@ begin
         fifo_ren_5(i + size_last) <= '0';
         fifo_ren_5_reg(i) <= fifo_ren_5(i);
         fifo_ren_5_reg(i + size_last) <= fifo_ren_5(i + size_last);
-        fifo_data_6(i)(W-1 downto W-2) <= "00";
 
         fifo_wen_6(i) <= '0';
         if ( merge_state = merge_hits and fifo_empty_5(i) = '0' and fifo_empty_5(i + size_last) = '0' ) then
@@ -630,11 +629,9 @@ begin
                 -- 69 downto 38 -> hit2
                 -- 75 downto 70 -> link number 2
                 -- 77 downto 76 -> header trailer marker
-                fifo_data_6(i)(77 downto 76) <= header_trailer(33 downto 32);
-                fifo_data_6(i)(75 downto 70) <= (others => '0');
-                fifo_data_6(i)(69 downto 38) <= header_trailer(31 downto 0);
+                fifo_data_6(i)(37 downto 0) <= header_trailer;
                 -- padding for now 
-                fifo_data_6(i)(37 downto 0) <= tree_paddingk;
+                fifo_data_6(i)(75 downto 38) <= tree_paddingk;
                 fifo_wen_6(i) <= '1';
             end if;
         end if;
@@ -685,7 +682,7 @@ begin
                     wait_cnt_pre <= (others => '0');
                     -- send merged data preamble
                     -- sop & preamble & zeros & datak
-                    header_trailer(33 downto 32) <= "01";
+                    header_trailer(37 downto 32) <= pre_marker;
                     header_trailer(31 downto 26) <= "111010";
                     header_trailer(7 downto 0) <= x"BC";
                     header_trailer_we <= '1';
@@ -719,7 +716,7 @@ begin
                     -- reset signals
                     gtime1 <= (others => (others => '0'));
                     -- send gtime1
-                    header_trailer(33 downto 32) <= "00";
+                    header_trailer(37 downto 32) <= ts1_marker;
                     header_trailer(31 downto 0) <= gtime1(i_link)(35 downto 4);
                     header_trailer_we <= '1';
                 elsif ( error_gtime1 = '1' ) then 
@@ -749,7 +746,7 @@ begin
                     -- reset signals
                     gtime2 <= (others => (others => '0'));
                     -- send gtime2
-                    header_trailer(33 downto 32) <= "00";
+                    header_trailer(37 downto 32) <= ts2_marker;
                     header_trailer(31 downto 0) <= gtime2(i_link)(35 downto 4);
                     header_trailer_we <= '1';
                 elsif ( error_gtime2 = '1' ) then
@@ -783,7 +780,7 @@ begin
                     overflow <= (others => '0');
                     -- send merged data sub header
                     -- zeros & sub header & zeros & datak
-                    header_trailer(33 downto 32) <= "11";
+                    header_trailer(37 downto 32) <= sh_marker;
                     header_trailer(31 downto 28) <= "0000";
                     header_trailer(27 downto 22) <= "111111";
                     -- send sub header time -- check later if equal
@@ -847,7 +844,7 @@ begin
                 if( fifo_full_6(0) = '0' ) then
                     merge_state <= wait_for_pre;
                     -- send trailer
-                    header_trailer(33 downto 32) <= "10";
+                    header_trailer(37 downto 32) <= tr_marker;
                     header_trailer(7 downto 0) <= x"9C";
                     header_trailer_we <= '1';
                 end if;
@@ -866,7 +863,7 @@ begin
                 -- 13: error gtime2
                 -- 14: error shtime
                 -- N+14 downto 14: error wait for pre
-                header_trailer(33 downto 32) <= "11";
+                header_trailer(37 downto 32) <= err_marker;
                 header_trailer(7 downto 0) <= x"DC";
                 header_trailer(12) <= error_gtime1;
                 header_trailer(13) <= error_gtime2;
