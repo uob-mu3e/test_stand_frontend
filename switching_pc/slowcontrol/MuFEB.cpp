@@ -94,7 +94,7 @@ int MuFEB::WriteFEBID(){
              FEB.SB_Number(),FEB.SB_Port(),(val>>16)&0xffff,val&0xffff);
        cm_msg(MINFO,"MuFEB::WriteFEBID",reportStr);
        // ist the FF needed here? NB
-       feb_sc.FEB_write(FEB.SB_Port(),  (uint32_t) 0xFF00 | FPGA_ID_REGISTER_RW, vector<uint32_t>(1,val));
+       feb_sc.FEB_write(FEB.SB_Port(),  (uint32_t) 0xFF00 | FPGA_ID_REGISTER_RW, val);
     }
 
     return 0;
@@ -138,6 +138,36 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
     variables_feb_run_state[set_str] = value;
 
    return SUCCESS;
+}
+
+uint32_t MuFEB::ReadBackMergerRate(uint16_t FPGA_ID){
+    auto FEB = m_FPGAs[FPGA_ID];
+    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+
+    vector<uint32_t> mergerRate(1);
+    feb_sc.FEB_read(FEB.SB_Port(), 0xFF00 | MERGER_RATE_REGISTER_R, mergerRate);
+    return mergerRate[0];
+}
+
+uint32_t MuFEB::ReadBackResetPhase(uint16_t FPGA_ID){
+    auto FEB = m_FPGAs[FPGA_ID];
+    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+
+    vector<uint32_t> resetPhase(1);
+    feb_sc.FEB_read(FEB.SB_Port(), 0xFF00 | RESET_PHASE_REGISTER_R, resetPhase);
+    return resetPhase[0] & 0xFFFF;
+}
+
+uint32_t MuFEB::ReadBackTXReset(uint16_t FPGA_ID){
+    auto FEB = m_FPGAs[FPGA_ID];
+    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
+    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+
+    vector<uint32_t> TXReset(1);
+    feb_sc.FEB_read(FEB.SB_Port(), 0xFF00 | RESET_OPTICAL_LINKS_REGISTER_RW, TXReset);
+    return TXReset[0] & 0xFFFFFFFC;
 }
 
 

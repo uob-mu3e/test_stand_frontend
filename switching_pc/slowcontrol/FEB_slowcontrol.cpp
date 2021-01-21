@@ -132,6 +132,11 @@ int FEB_slowcontrol::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint
     return OK;
 }
 
+int FEB_slowcontrol::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, uint32_t data)
+{
+    return FEB_write(FPGA_ID, startaddr, vector<uint32_t>(1, data) );
+}
+
 int FEB_slowcontrol::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> &data)
 {
     if(startaddr > FEB_SC_ADDR_RANGE_HI){
@@ -337,7 +342,27 @@ int FEB_slowcontrol::FEBsc_read_packets()
 
 
 
-
+void FEB_slowcontrol::SC_reply_packet::Print(){
+   printf("--- Packet dump ---\n");
+   printf("Type %x\n", this->at(0)&0x1f0000bc);
+   printf("FPGA ID %x\n", this->GetFPGA_ID());
+   printf("startaddr %x\n", this->GetStartAddr());
+   printf("length %ld\n", this->GetLength());
+   printf("packet: size=%lu length=%lu IsRD=%c IsWR=%c IsOOB=%c, IsResponse=%c, IsGood=%c\n",
+     this->size(),this->GetLength(),
+     this->IsRD()?'y':'n',
+     this->IsWR()?'y':'n',
+     this->IsOOB()?'y':'n',
+     this->IsResponse()?'y':'n',
+     this->Good()?'y':'n'
+   );
+   //report and check
+   for(size_t i=0 ;i<10;i++){
+      if(i>= this->size()) break;
+      printf("data: +%lu: %16.16x\n",i,this->at(i));
+   }
+   printf("--- *********** ---\n");
+}
 
 
 

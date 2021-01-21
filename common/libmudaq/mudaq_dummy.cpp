@@ -37,7 +37,7 @@ namespace mudaq {
         _last_read_address = 0;
     }
 
-    bool DummyMudaqDevice::is_ok() {
+    bool DummyMudaqDevice::is_ok() const {
         cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: is_ok()");
         return true;
     }

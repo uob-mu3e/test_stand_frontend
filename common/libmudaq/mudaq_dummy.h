@@ -39,7 +39,7 @@ namespace mudaq {
             DummyMudaqDevice(const std::string& path);
             virtual ~DummyMudaqDevice() { close(); }
 
-            virtual bool is_ok();
+            virtual bool is_ok() const;
             virtual bool open();
             virtual void close();
             virtual bool operator!() const;

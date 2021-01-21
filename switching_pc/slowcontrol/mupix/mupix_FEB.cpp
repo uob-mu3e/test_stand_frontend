@@ -202,6 +202,8 @@ int MupixFEB::ConfigureASICs(){
 
       cm_msg(MINFO, "MupixFEB" , "Configuring sensor %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d", m_odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
 
+    // TODO: There is a lot of copy/paste in the following - I guess we can condense this
+      // down a lot wit a well chosen function call
 
       try {
 
@@ -215,7 +217,10 @@ int MupixFEB::ConfigureASICs(){
              uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
              datastream[nbit] = tmp;
          }
-         rpc_status = m_mu.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_CHIP_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
+         vector<vector<uint32_t> > payload;
+         payload.push_back(vector<uint32_t>(1,asic));
+         payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(datastream),reinterpret_cast<uint32_t*>(datastream)+config->length_32bits));
+         rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_CHIP_CFG, payload);
 
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -269,8 +274,11 @@ int MupixFEB::ConfigureASICs(){
                            uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
                            datastream[nbit] = tmp;
                        }
-                       rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
-
+                       vector<vector<uint32_t> > payload;
+                       payload.push_back(vector<uint32_t>(1,asic));
+                       payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(datastream),reinterpret_cast<uint32_t*>(datastream)+config->length_32bits));
+                       // TODO: Get rid of hardcoded address!
+                       rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, 0x0110, payload);
 
                     } catch(std::exception& e) {
                         cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -305,8 +313,11 @@ int MupixFEB::ConfigureASICs(){
                      uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
                      datastream[nbit] = tmp;
                  }
-                 rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
-
+                 vector<vector<uint32_t> > payload;
+                 payload.push_back(vector<uint32_t>(1,asic));
+                 payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(datastream),reinterpret_cast<uint32_t*>(datastream)+config->length_32bits));
+                 // TODO: Get rid of hardcoded address!
+                 rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, 0x0110, payload);
 
               } catch(std::exception& e) {
                   cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -333,7 +344,11 @@ int MupixFEB::ConfigureASICs(){
              uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
              datastream[nbit] = tmp;
          }
-         rpc_status=m_mu.FEBsc_NiosRPC(SP_ID,0x0110,{{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(datastream), config->length_32bits}});
+         vector<vector<uint32_t> > payload;
+         payload.push_back(vector<uint32_t>(1,asic));
+         payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(datastream),reinterpret_cast<uint32_t*>(datastream)+config->length_32bits));
+         // TODO: Get rid of hardcoded address!
+         rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, 0x0110, payload);
 
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
@@ -400,14 +415,16 @@ unsigned char reverse(unsigned char b) {
    return b;
 }
 
+// TODO: The following two functions do the same???
 uint32_t MupixFEB::ReadBackCounters(uint16_t FPGA_ID){
    //map to SB fiber
    auto FEB = m_FPGAs[FPGA_ID];
    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
 
-   uint32_t hitsEna[0];
-   int status=m_mu.FEBsc_read(FEB.SB_Port(), hitsEna, 1, 0xff9a);
+   vector<uint32_t> hitsEna(1);
+   // TODO: Get rid of hardcoded address
+    feb_sc.FEB_read(FEB.SB_Port(), 0xff9a, hitsEna);
    return hitsEna[0];
 }
 
@@ -416,42 +433,10 @@ uint32_t MupixFEB::ReadBackHitsEnaRate(uint16_t FPGA_ID){
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
     if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
     
-    uint32_t hitsEna;
-    int status=m_mu.FEBsc_read(FEB.SB_Port(), &hitsEna, 1, 0xff9a);
-    return hitsEna;
-}
-
-// TODO: Move to Mu_FEB
-uint32_t MupixFEB::ReadBackMergerRate(uint16_t FPGA_ID){
-    auto FEB = m_FPGAs[FPGA_ID];
-    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
-    
-    uint32_t mergerRate;
-    int status=m_mu.FEBsc_read(FEB.SB_Port(), &mergerRate, 1, 0xFF00 | MERGER_RATE_REGISTER_R);
-    return mergerRate;
-}
-
-// TODO: Move to Mu_FEB
-uint32_t MupixFEB::ReadBackResetPhase(uint16_t FPGA_ID){
-    auto FEB = m_FPGAs[FPGA_ID];
-    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
-    
-    uint32_t resetPhase;
-    int status=m_mu.FEBsc_read(FEB.SB_Port(), &resetPhase, 1, 0xFF00 | RESET_PHASE_REGISTER_R);
-    return resetPhase & 0xFFFF;
-}
-
-// TODO: Move to Mu_FEB
-uint32_t MupixFEB::ReadBackTXReset(uint16_t FPGA_ID){
-    auto FEB = m_FPGAs[FPGA_ID];
-    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
-    
-    uint32_t TXReset;
-    int status=m_mu.FEBsc_read(FEB.SB_Port(), &TXReset, 1, 0xFF00 | RESET_OPTICAL_LINKS_REGISTER_RW);
-    return TXReset & 0xFFFFFFFC;
+    vector<uint32_t> hitsEna(1);
+    // TODO: Get rid of hardcoded address
+    feb_sc.FEB_read(FEB.SB_Port(), 0xff9a, hitsEna);
+    return hitsEna[0];
 }
 
 int MupixFEB::ConfigureBoards(){
@@ -488,8 +473,11 @@ int MupixFEB::ConfigureBoards(){
            datastream[nbit] = tmp;
        }
        try {
-           rpc_status = m_mu.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_BOARD_CFG, {{reinterpret_cast<uint32_t*>(&board),1},{reinterpret_cast<uint32_t*> (datastream), config->length_32bits}});
-
+           vector<vector<uint32_t> > payload;
+           payload.push_back(vector<uint32_t>(1,board));
+           payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(datastream),reinterpret_cast<uint32_t*>(datastream)+config->length_32bits));
+           // TODO: Get rid of hardcoded address!
+           rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_BOARD_CFG, payload);
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", board, e.what());
           set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
@@ -505,45 +493,3 @@ int MupixFEB::ConfigureBoards(){
    });//MapForEach
    return status; //status of foreach function, SUCCESS when no error.
 }
-
-
-//Helper functions
-// TODO: These should not be copied betwen the FEBs
-uint32_t reg_setBit  (uint32_t reg_in, uint8_t bit, bool value=true){
-	if(value)
-		return (reg_in | 1<<bit);
-	else
-		return (reg_in & (~(1<<bit)));
-}
-uint32_t reg_unsetBit(uint32_t reg_in, uint8_t bit){return reg_setBit(reg_in,bit,false);}
-
-bool reg_getBit(uint32_t reg_in, uint8_t bit){
-	return (reg_in & (1<<bit)) != 0;
-}
-
-uint32_t reg_getRange(uint32_t reg_in, uint8_t length, uint8_t offset){
-	return (reg_in>>offset) & ((1<<length)-1);
-}
-uint32_t reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t value){
-	return (reg_in & ~(((1<<length)-1)<<offset)) | ((value & ((1<<length)-1))<<offset);
-}
-
-
-//MupixFEB registers and functions
-/*
-void MupixFEB::setDummyConfig(int FPGA_ID, bool dummy){
-	printf("MupixFEB::setDummyConfig(%d)=%d\n",FPGA_ID,dummy);
-	uint32_t val;
-
-        //TODO: shadowing should know about broadcast FPGA ID
-	//TODO: implement pull from FPGA when shadow value is not stored
-	//m_mu.FEBsc_read(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG);
-        //printf("MupixFEB(%d)::FE_DUMMYCTRL_REG readback=%8.8x\n",FPGA_ID,val);
-        val=m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG];
-
-        val=reg_setBit(val,0,dummy);
-	printf("MupixFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-	m_mu.FEBsc_write(FPGA_ID, &val, 1 , (uint32_t) FE_DUMMYCTRL_REG,false);
-	m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
-}
-*/

@@ -53,7 +53,8 @@
 #include "midas.h"
 #include "mfe.h"
 
-#include "mudaq_device_scifi.h"
+#include "mudaq_device.h"
+#include "FEB_slowcontrol.h"
 
 //Slow control for mutrig/scifi
 #include "mutrig_midasodb.h"
@@ -90,8 +91,9 @@ int switch_id = 0; // TODO to be loaded from outside
 /* DMA Buffer and related */
 mudaq::DmaMudaqDevice * mup;
 
-/* Use CRFE bypass during run-start transitions, directly send command to FEB*/
-#define CRFE_BYPASS
+/* Abstraction for talking to the FEBs via the PCIe FPGA or MSCB (to be implemented) */
+FEB_slowcontrol * feb_sc;
+
 
 /*-- Function declarations -----------------------------------------*/
 

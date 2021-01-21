@@ -533,10 +533,10 @@ void prepare_run_on_request(odb o){
 
 // ODB Setup //////////////////////////////
 void setup_odb(){
-    //midas::odb::set_debug(true);
+
     odb settings = {
         {"Active" , true},
-        {"IP", "192.168.0.220"},
+        {"IP", "0.0.0.0"},//"192.168.0.220"},
         {"Port", 50001},
         {"N_READBACK", 4},
         {"TX_CLK_MASK", 0x0AA},

@@ -104,9 +104,6 @@ INT event_buffer_size = 10 * 10000;
 const int switch_id = 0; // TODO to be loaded from outside (on compilation?)
 const int per_fe_SSFE_size = 26;
 
-INT status;
-
-
 /* Inteface to the PCIe FPGA */
 mudaq::MudaqDevice * mup;
 
@@ -244,7 +241,7 @@ INT frontend_init()
         mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
     #endif       
         
-    status = init_mudaq(*mup);
+    INT status = init_mudaq(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
 
@@ -285,6 +282,18 @@ INT frontend_init()
 // ODB Setup //////////////////////////////
 void setup_odb(){
 
+   // midas::odb::set_debug(true);
+
+    string namestr;
+    if(switch_id == 0)
+        namestr = "Names SCFE";
+    if(switch_id == 1)
+        namestr = "Names SUFE";
+    if(switch_id == 2)
+        namestr = "Names SDFE";
+    if(switch_id == 3)
+        namestr = "Names SFFE";
+
     /* Default values for /Equipment/Switching/Settings */
     odb settings = {
             {"Active", true},
@@ -304,20 +313,16 @@ void setup_odb(){
             {"SciTilesConfig", false},
             {"Reset Bypass Payload", 0},
             {"Reset Bypass Command", 0},
+            // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
+            {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()}
     };
-    // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
-    string namestr;
-    if(switch_id == 0)
-        namestr = "Names SCFE";
-    if(switch_id == 1)
-        namestr = "Names SUFE";
-    if(switch_id == 2)
-        namestr = "Names SDFE";
-    if(switch_id == 3)
-        namestr = "Names SFFE";
 
-    settings[namestr] = std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>();
+
+
+    // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
+    //settings[namestr] = std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>();
     int bankindex = 0;
+
 
     for(int i=0; i < N_FEBS[switch_id]; i++){
         string feb = "FEB" + to_string(i);
@@ -397,6 +402,7 @@ void setup_odb(){
         (*s) += " Firefly2 Alarms";
         settings[namestr][bankindex++] = s;
     }
+    settings.print();
 
     settings.connect("/Equipment/Switching/Settings", true);
 
@@ -455,16 +461,10 @@ void setup_watches(){
 void switching_board_mask_changed(odb o) {
 
     string name = o.get_name();
-    int val   = o;
-
-    // TODO: Proper decoding of val
 
     cm_msg(MINFO, "switching_board_mask_changed", "Switching board masking changed");
-    cm_msg(MINFO, "switching_board_mask_changed", "With name %s and odb %x", name.c_str(), val);
 
-    INT switching_board_mask[MAX_N_SWITCHINGBOARDS];
-
-
+    vector<INT> switching_board_mask = o;
 
     BOOL value = switching_board_mask[switch_id] > 0 ? true : false;
 
@@ -515,7 +515,7 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
     SciFiFEB::Create(*feb_sc, equipment[EQUIPMENT_ID::SciFi].name, "/Equipment/SciFi"); //create FEB interface signleton for scifi
     SciFiFEB::Instance()->SetSBnumber(switch_id);
-    status=mutrig::midasODB::setup_db("/Equipment/SciFi",SciFiFEB::Instance());
+    int status=mutrig::midasODB::setup_db("/Equipment/SciFi",SciFiFEB::Instance());
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
         return status;
@@ -539,7 +539,7 @@ INT init_scitiles(mudaq::MudaqDevice & mu) {
     //SciTiles setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Initializing...", "var(--myellow)");
     TilesFEB::Create(*feb_sc, equipment[EQUIPMENT_ID::SciTiles].name, "/Equipment/SciTiles"); //create FEB interface signleton for scitiles
-    status=mutrig::midasODB::setup_db("/Equipment/SciTiles", TilesFEB::Instance());
+    int status=mutrig::midasODB::setup_db("/Equipment/SciTiles", TilesFEB::Instance());
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Start up failed", "var(--mred)");
         return status;
@@ -565,7 +565,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
     set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");
     MupixFEB::Create(*feb_sc, equipment[EQUIPMENT_ID::Mupix].name, "/Equipment/Mupix"); //create FEB interface signleton for mupix
     MupixFEB::Instance()->SetSBnumber(switch_id);
-    status=mupix::midasODB::setup_db("/Equipment/Mupix", MupixFEB::Instance(), true);
+    int status=mupix::midasODB::setup_db("/Equipment/Mupix", MupixFEB::Instance(), true);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Start up failed", "var(--mred)");
         return status;
@@ -687,13 +687,13 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
        cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
        // TODO: Get rid of hardcoded adresses here!
        DWORD valueRB = run_number;
-       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, vector<uint32_t>(1,valueRB)); //run number
+       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, valueRB); //run number
        valueRB= (1<<8) | 0x10;
-       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, vector<uint32_t>(1,valueRB)); //run prep command
+       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, valueRB); //run prep command
        valueRB= 0xbcbcbcbc;
-       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, vector<uint32_t>(1,valueRB)); //reset payload
+       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, valueRB); //reset payload
        valueRB= 0;//(1<<8) | 0x00;
-       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, vector<uint32_t>(1,valueRB)); //reset command
+       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, valueRB); //reset command
    }else{
        /* send run prepare signal via CR system */
        // TODO: Move to odbxx
@@ -978,7 +978,8 @@ void sc_settings_changed(odb o)
        odb startaddr("Equipment/Switching/Variables/START_ADD_WRITE");
        odb writesize("Equipment/Switching/Variables/DATA_WRITE_SIZE");
        odb dataarray("Equipment/Switching/Variables/DATA_WRITE");
-       feb_sc->FEB_write(fpgaid, startaddr, dataarray);
+       vector<uint32_t> dataarrayv = dataarray;
+       feb_sc->FEB_write(fpgaid, startaddr, dataarrayv);
         o = false;
    }
 
@@ -999,7 +1000,7 @@ void sc_settings_changed(odb o)
         odb startaddr("Equipment/Switching/Variables/START_ADD_WRITE");
 
         uint32_t data = datawrite;
-        feb_sc->FEB_write(fpgaid, startaddr, vector<uint32_t>(1, data));
+        feb_sc->FEB_write(fpgaid, startaddr, data);
         o = false;
     }
 
@@ -1040,8 +1041,7 @@ void sc_settings_changed(odb o)
     }
 
     if (name == "Last RM ADD" && o) {
-        INT LAST_RM_ADD; //SIZE_LAST_RM_ADD;
-        //SIZE_LAST_RM_ADD = sizeof(LAST_RM_ADD);
+
         char STR_LAST_RM_ADD[128];
         sprintf(STR_LAST_RM_ADD,"Equipment/Switching/Variables/LAST_RM_ADD");
         INT NEW_LAST_RM_ADD = mu.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R);
@@ -1088,13 +1088,14 @@ void sc_settings_changed(odb o)
 
 	  printf("Reset Bypass Command %8.8x, payload %8.8x\n",command,payload);
 
-        feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, vector<uint32_t>(1,payload));
-        feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, vector<uint32_t>(1,command));
+        // TODO: get rid of hardcoded addresses
+        feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, payload);
+        feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, command);
         // reset payload and command TODO: Is this needed?
         payload=0xbcbcbcbc;
         command=0;
-        feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, vector<uint32_t>(1,payload));
-        feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, vector<uint32_t>(1,command));
+        feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, payload);
+        feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, command);
         //reset odb flag
           command=command&(1<<8);
           o = command;

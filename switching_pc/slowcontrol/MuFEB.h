@@ -52,7 +52,11 @@ class MuFEB {
 
       int WriteFEBID();
 
-   protected:
+      uint32_t ReadBackMergerRate(uint16_t FPGA_ID);
+      uint32_t ReadBackResetPhase(uint16_t FPGA_ID);
+      uint32_t ReadBackTXReset(uint16_t FPGA_ID);
+
+protected:
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
       virtual uint16_t FPGAid_from_ID(int asic)=0; //global asic number to global FEB number
       virtual uint16_t ASICid_from_ID(int asic)=0; //global asic number to FEB-local asic number

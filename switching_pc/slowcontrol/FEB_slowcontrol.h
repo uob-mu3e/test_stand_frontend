@@ -25,6 +25,7 @@ public:
     FEB_slowcontrol& operator=(const FEB_slowcontrol&) = delete;
 
     int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data);
+    int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, uint32_t data);
     // expects data vector with read-length size
     int FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> & data);
 
