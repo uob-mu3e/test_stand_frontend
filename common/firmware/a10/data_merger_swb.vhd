@@ -37,7 +37,7 @@ end entity data_merger_swb;
 
 architecture RTL of data_merger_swb is
          
-    type merge_state_type is (wait_for_pre, get_ts_1, get_sh, hit_1, hit_2, hit_3, hit_4, hit_5, get_tr, error_state);
+    type merge_state_type is (wait_for_pre, get_ts_1, get_sh, hit_1, hit_2, hit_3, hit_4, hit_5, hit_6, hit_7, hit_8, hit_9, hit_10, hit_11, hit_12, hit_13, hit_14, hit_15, hit_16, get_tr, error_state);
     signal merge_state : merge_state_type;
 
     signal o_data_reg : std_logic_vector(71 downto 0);
@@ -102,7 +102,7 @@ begin
                         o_data(31 downto 0)      <= o_data_reg(23 downto 0) & x"7C";
                         o_datak(3 downto 0)      <= "0001";
                         -- 2. link
-                        o_data(63 downto 40)     <= o_data_reg(47 downto 24)
+                        o_data(63 downto 40)     <= o_data_reg(47 downto 24);
                         o_data(39 downto 32)     <= x"7C";
                         o_datak(7 downto 4)      <= "0001";
                         -- 3. link
@@ -358,7 +358,7 @@ begin
                             -- 6 hits from reg
                             o_data(227 downto 0)    <= hit_reg(227 downto 0);
                             -- mark rest of data
-                            o_data(253 downto 228)   <= (others => '1');;
+                            o_data(253 downto 228)   <= (others => '1');
                             -- marker "11" -> no half hits
                             o_data(255 downto 254)  <= "11";
                         elsif ( i_data(37 downto 32) = tr_marker ) then
