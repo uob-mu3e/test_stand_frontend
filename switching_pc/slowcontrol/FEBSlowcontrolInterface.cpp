@@ -1,4 +1,4 @@
-#include "FEB_slowcontrol.h"
+#include "FEBSlowcontrolInterface.h"
 
 #include <iostream>
 #include <thread>
@@ -11,7 +11,7 @@
 using std::cout;
 using std::endl;
 
-FEB_slowcontrol::FEB_slowcontrol(mudaq::MudaqDevice & _mdev):
+FEBSlowcontrolInterface::FEBSlowcontrolInterface(mudaq::MudaqDevice & _mdev):
     mdev(_mdev),
     last_fpga_rmem_addr(0),
     m_FEBsc_wmem_addr(0),
@@ -21,9 +21,9 @@ FEB_slowcontrol::FEB_slowcontrol(mudaq::MudaqDevice & _mdev):
     FEBsc_resetSecondary();
 }
 
-FEB_slowcontrol::~FEB_slowcontrol()
+FEBSlowcontrolInterface::~FEBSlowcontrolInterface()
 {
-    // We do not close the mudaq device here
+    // We do not close the mudaq device here on purpose
 }
 
 
@@ -42,7 +42,7 @@ FEB_slowcontrol::~FEB_slowcontrol()
  *      Write enable to SC_MAIN_ENABLE_REGISTER_W
  */
 
-int FEB_slowcontrol::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data)
+int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data)
 {
 
     if(startaddr > FEB_SC_ADDR_RANGE_HI){
@@ -132,12 +132,12 @@ int FEB_slowcontrol::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint
     return OK;
 }
 
-int FEB_slowcontrol::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, uint32_t data)
+int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, uint32_t data)
 {
     return FEB_write(FPGA_ID, startaddr, vector<uint32_t>(1, data) );
 }
 
-int FEB_slowcontrol::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> &data)
+int FEBSlowcontrolInterface::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> &data)
 {
     if(startaddr > FEB_SC_ADDR_RANGE_HI){
         cout << "Address out of range: " << std::hex << startaddr << endl;
@@ -212,7 +212,7 @@ int FEB_slowcontrol::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint3
     return ERRCODES::OK;
 }
 
-void FEB_slowcontrol::FEBsc_resetMain()
+void FEBSlowcontrolInterface::FEBsc_resetMain()
 {
     cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control main");
     //clear memory to avoid sending old packets again -- TODO: should not be necessary
@@ -225,7 +225,7 @@ void FEB_slowcontrol::FEBsc_resetMain()
     mdev.toggle_register(RESET_REGISTER_W, SET_RESET_BIT_SC_MAIN(0), 1000);
 }
 
-void FEB_slowcontrol::FEBsc_resetSecondary()
+void FEBSlowcontrolInterface::FEBsc_resetSecondary()
 {
     cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control secondary");
     cout << "FEB_slowcontrol::FEBsc_resetSecondary(): " << endl;
@@ -249,7 +249,7 @@ void FEB_slowcontrol::FEBsc_resetSecondary()
     };
 }
 
-int FEB_slowcontrol::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks)
+int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks)
 {
     int status =0;
     int index = 0;
@@ -291,7 +291,7 @@ int FEB_slowcontrol::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<ve
     return readback[0]&0xffff;
 }
 
-int FEB_slowcontrol::FEBsc_read_packets()
+int FEBSlowcontrolInterface::FEBsc_read_packets()
 {
     int packetcount = 0;
     uint32_t fpga_rmem_addr=(mdev.read_register_ro(MEM_WRITEADDR_LOW_REGISTER_R)+1) & 0xffff;
@@ -342,7 +342,7 @@ int FEB_slowcontrol::FEBsc_read_packets()
 
 
 
-void FEB_slowcontrol::SC_reply_packet::Print(){
+void FEBSlowcontrolInterface::SC_reply_packet::Print(){
    printf("--- Packet dump ---\n");
    printf("Type %x\n", this->at(0)&0x1f0000bc);
    printf("FPGA ID %x\n", this->GetFPGA_ID());

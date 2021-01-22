@@ -12,7 +12,7 @@ Contents:       Class to alter settings on a SciFi-FE-FPGA. Derives from MutrigF
 
 #include "midas.h"
 #include "odbxx.h"
-#include "FEB_slowcontrol.h"
+#include "FEBSlowcontrolInterface.h"
 #include "Mutrig_FEB.h"
 
 using midas::odb;
@@ -21,14 +21,14 @@ class SciFiFEB : public MutrigFEB{
    private:
       static SciFiFEB* m_instance; //signleton instance pointer: only one instance of SciFiFEB
       SciFiFEB(const SciFiFEB&)=delete;
-      SciFiFEB(FEB_slowcontrol & feb_sc_, const char* equipment_name, const char* odb_prefix)
+      SciFiFEB(FEBSlowcontrolInterface & feb_sc_, const char* equipment_name, const char* odb_prefix)
 	:
     MutrigFEB(feb_sc_, equipment_name, odb_prefix)
         {
 		RebuildFEBsMap();
         };
    public:
-      static SciFiFEB* Create(FEB_slowcontrol & feb_sc_, const char* equipment_name, const char* odb_prefix)
+      static SciFiFEB* Create(FEBSlowcontrolInterface & feb_sc_, const char* equipment_name, const char* odb_prefix)
       {
           
           cm_msg(MINFO, "SciFi_FEB", "SciFiFEB::Create(%s) as %s", odb_prefix, equipment_name);

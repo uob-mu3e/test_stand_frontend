@@ -60,7 +60,9 @@
 #include "mudaq_device.h"
 #include "mudaq_dummy.h"
 
-#include "FEB_slowcontrol.h"
+#include "FEBSlowcontrolInterface.h"
+#include "feblist.h"
+
 
 //Slow control for mutrig/scifi ; mupix
 #include "mutrig_midasodb.h"
@@ -108,8 +110,10 @@ const int per_fe_SSFE_size = 26;
 mudaq::MudaqDevice * mup;
 
 /* Abstraction for talking to the FEBs via the PCIe FPGA or MSCB (to be implemented) */
-FEB_slowcontrol * feb_sc;
+FEBSlowcontrolInterface * feb_sc;
 
+/* Lists of the active FEBs */
+FEBList * feblist;
 
 
 /*-- Function declarations -----------------------------------------*/
@@ -247,9 +251,13 @@ INT frontend_init()
 
     //set link enables so slow control can pass
     odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
-    try{ set_feb_enable(get_link_active_from_odb(cur_links_odb)); }
+    try{
+        set_feb_enable(get_link_active_from_odb(cur_links_odb)); }
     catch(...){ return FE_ERR_ODB;}
     
+    // Create the FEB List
+    feblist = new FEBList(switch_id);
+
     //init scifi
     status = init_scifi(*mup);
     if (status != SUCCESS)
@@ -265,8 +273,12 @@ INT frontend_init()
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
 
-    // TODO: Define history panels
-    // --- SciFi panels created in mutrig::midasODB::setup_db, below
+    // TODO: Define generic history panels
+
+    // Subdetector specific panels should be created created in subdet::midasODB::setup_db
+    // functions called from above
+
+    // TODO: Same for alarms
     
     // Set our transition sequence. The default is 500. Setting it
     // to 400 means we are called BEFORE most other clients.
@@ -317,12 +329,7 @@ void setup_odb(){
             {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()}
     };
 
-
-
-    // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
-    //settings[namestr] = std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>();
     int bankindex = 0;
-
 
     for(int i=0; i < N_FEBS[switch_id]; i++){
         string feb = "FEB" + to_string(i);
@@ -468,26 +475,20 @@ void switching_board_mask_changed(odb o) {
 
     BOOL value = switching_board_mask[switch_id] > 0 ? true : false;
 
-    for(int i = 0; i < 2; i++) {
+    for(int i = 0; i < 2; i++) {        
         char str[128];
         sprintf(str,"Equipment/%s/Common/Enabled", equipment[i].name);
-        db_set_value(hDB,0,str, &value, sizeof(value), 1, TID_BOOL);
-
+        odb enabled(str);
+        enabled = value;
+        //db_set_value(hDB,0,str, &value, sizeof(value), 1, TID_BOOL);
         cm_msg(MINFO, "switching_board_mask_changed", "Set Equipment %s enabled to %d", equipment[i].name, value);
     }
 
-    SciFiFEB::Instance()->RebuildFEBsMap();
-    MupixFEB::Instance()->RebuildFEBsMap();
-
+    feblist->RebuildFEBList();
 }
 
 void frontend_board_mask_changed(odb o) {
-    // TODO: What is the point of exceptions, if you do not handle them??
-    try{
-        set_feb_enable(get_link_active_from_odb(o));
-        SciFiFEB::Instance()->RebuildFEBsMap();
-        MupixFEB::Instance()->RebuildFEBsMap();
-    }catch(...){}
+    feblist->RebuildFEBList();
 }
 
 INT init_mudaq(mudaq::MudaqDevice &mu) {
@@ -503,7 +504,7 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
         return FE_ERR_DRIVER;
     }
 
-    feb_sc = new FEB_slowcontrol(mu);
+    feb_sc = new FEBSlowcontrolInterface(mu);
 
     return SUCCESS;
 }
@@ -576,6 +577,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
     set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
    
     // setup odb rate counters for each feb
+    // TODO: That should probably go into setup_db
     char set_str[255];
     odb rate_counters("/Equipment/Mupix/Variables");
     for(uint i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
@@ -595,7 +597,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
         sprintf(set_str, "FEB%d", i);
         hs_define_panel("Mupix", set_str, {"Mupix:merger rate " + string(set_str),
                                            "Mupix:hit ena rate " + string(set_str),
-                                           "Mupix:reset phase " + string(set_str),
+                                           "Mupix:reset phase " + string(set_str)
               //                             "Mupix:TX reset " + string(set_str),
                                            });
     }
@@ -687,13 +689,13 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
        cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
        // TODO: Get rid of hardcoded adresses here!
        DWORD valueRB = run_number;
-       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, valueRB); //run number
+       feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff5, valueRB); //run number
        valueRB= (1<<8) | 0x10;
-       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, valueRB); //run prep command
+       feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff4, valueRB); //run prep command
        valueRB= 0xbcbcbcbc;
-       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, valueRB); //reset payload
+       feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff5, valueRB); //reset payload
        valueRB= 0;//(1<<8) | 0x00;
-       feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, valueRB); //reset command
+       feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff4, valueRB); //reset command
    }else{
        /* send run prepare signal via CR system */
        // TODO: Move to odbxx
@@ -874,6 +876,7 @@ INT read_mupix_sc_event(char *pevent, INT off){
     char set_str[255];
     static int i = 0;
  
+    // TODO: sort generic ro and mupix specific ro
     bk_init(pevent);
     DWORD *pdata;
     bk_create(pevent, "FECN", TID_WORD, (void **) &pdata);
@@ -1089,13 +1092,13 @@ void sc_settings_changed(odb o)
 	  printf("Reset Bypass Command %8.8x, payload %8.8x\n",command,payload);
 
         // TODO: get rid of hardcoded addresses
-        feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, payload);
-        feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, command);
+        feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff5, payload);
+        feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff4, command);
         // reset payload and command TODO: Is this needed?
         payload=0xbcbcbcbc;
         command=0;
-        feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff5, payload);
-        feb_sc->FEB_write(FEB_slowcontrol::ADDRS::BROADCAST_ADDR, 0xfff4, command);
+        feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff5, payload);
+        feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff4, command);
         //reset odb flag
           command=command&(1<<8);
           o = command;

@@ -10,7 +10,7 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 #ifndef MUFEB_H
 #define MUFEB_H
 #include "odbxx.h"
-#include "FEB_slowcontrol.h"
+#include "FEBSlowcontrolInterface.h"
 #include "link_constants.h"
 #include "feb_constants.h"
 
@@ -18,7 +18,7 @@ using midas::odb;
 
 class MuFEB {
     protected:
-      FEB_slowcontrol & feb_sc;
+      FEBSlowcontrolInterface & feb_sc;
       bool m_ask_sc_reply;
       const char* m_odb_prefix;
       const char* m_equipment_name;
@@ -26,7 +26,7 @@ class MuFEB {
 
    public:
       MuFEB(const MuFEB&)=delete;
-      MuFEB(FEB_slowcontrol & feb_sc_, const char* equipment_name, const char* odb_prefix):
+      MuFEB(FEBSlowcontrolInterface & feb_sc_, const char* equipment_name, const char* odb_prefix):
               feb_sc(feb_sc_),
 	      m_ask_sc_reply(true),
 	      m_odb_prefix(odb_prefix),

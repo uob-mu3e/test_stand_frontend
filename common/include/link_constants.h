@@ -1,6 +1,8 @@
 #ifndef LINK_CONSTANTS_H
 #define LINK_CONSTANTS_H
 
+#include<string>
+
 /* Maximum number of  switching boards */
 const int MAX_N_SWITCHINGBOARDS = 4;
 

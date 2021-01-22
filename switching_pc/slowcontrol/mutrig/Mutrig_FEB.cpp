@@ -171,7 +171,7 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
 
    vector<uint32_t> val(rpc_ret*5*3);
 
-   feb_sc.FEB_read(FEB.SB_Port(), FEB_slowcontrol::OFFSETS::FEBsc_RPC_DATAOFFSET,
+   feb_sc.FEB_read(FEB.SB_Port(), FEBSlowcontrolInterface::OFFSETS::FEBsc_RPC_DATAOFFSET,
                    val);
 
    static std::array<std::array<uint32_t,9>,8> last_counters;

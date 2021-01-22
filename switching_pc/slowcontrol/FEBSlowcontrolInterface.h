@@ -15,14 +15,14 @@
 using std::vector;
 using std::deque;
 
-class FEB_slowcontrol {
+class FEBSlowcontrolInterface {
 public:
-    FEB_slowcontrol(mudaq::MudaqDevice & mdev /*,Add midas connection here */);
-    ~FEB_slowcontrol();
+    FEBSlowcontrolInterface(mudaq::MudaqDevice & mdev /*,Add midas connection here */);
+    ~FEBSlowcontrolInterface();
     // There should only be one SC interface, forbid copy and assignment
-    FEB_slowcontrol() = delete;
-    FEB_slowcontrol(const FEB_slowcontrol &) = delete;
-    FEB_slowcontrol& operator=(const FEB_slowcontrol&) = delete;
+    FEBSlowcontrolInterface() = delete;
+    FEBSlowcontrolInterface(const FEBSlowcontrolInterface &) = delete;
+    FEBSlowcontrolInterface& operator=(const FEBSlowcontrolInterface&) = delete;
 
     int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data);
     int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, uint32_t data);

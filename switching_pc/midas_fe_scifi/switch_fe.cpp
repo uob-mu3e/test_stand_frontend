@@ -54,7 +54,7 @@
 #include "mfe.h"
 
 #include "mudaq_device.h"
-#include "FEB_slowcontrol.h"
+#include "FEBSlowcontrolInterface.h"
 
 //Slow control for mutrig/scifi
 #include "mutrig_midasodb.h"
@@ -92,7 +92,7 @@ int switch_id = 0; // TODO to be loaded from outside
 mudaq::DmaMudaqDevice * mup;
 
 /* Abstraction for talking to the FEBs via the PCIe FPGA or MSCB (to be implemented) */
-FEB_slowcontrol * feb_sc;
+FEBSlowcontrolInterface * feb_sc;
 
 
 /*-- Function declarations -----------------------------------------*/

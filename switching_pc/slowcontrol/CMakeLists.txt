@@ -5,7 +5,7 @@ ADD_CUSTOM_COMMAND(
 )
 
 add_library(libslowcontrol STATIC
-    FEB_slowcontrol.cpp feb_constants.h MuFEB.cpp
+    FEBSlowcontrolInterface.cpp feb_constants.h MuFEB.cpp feblist.cpp mappedfeb.cpp
     mutrig/Mutrig_FEB.cpp mutrig/mutrig_midasodb.cpp mutrig/MutrigConfig.cpp mutrig/mutrig_MIDAS_config.cpp
     mupix/mupix_FEB.cpp mupix/mupix_midasodb.cpp mupix/mupix_config.cpp
     scifi/SciFi_FEB.cpp
