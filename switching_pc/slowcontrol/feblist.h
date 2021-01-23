@@ -12,7 +12,8 @@ namespace midas{
 }
 
 // TODO: Are we multithredaed enought that we need to block all read accesses
-// with a mutex during the rebuild??
+// with a mutex during the rebuild?? I guess not, as remapping will always be
+// user initated and should not happen during a run
 
 
 // NOTE: The mappedFEB is a lightweight, read-only object, so we produce copies

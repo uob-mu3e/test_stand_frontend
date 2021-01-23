@@ -41,10 +41,10 @@ using midas::odb;
 MupixFEB* MupixFEB::m_instance=NULL;
 
 //Mapping to physical ports of switching board.
-uint16_t MupixFEB::FPGAid_from_ID(int asic){return asic/2;}
-uint16_t MupixFEB::ASICid_from_ID(int asic){return asic%2;}
+uint16_t MupixFEB::FPGAid_from_ID(int asic) const {return asic/2;}
+uint16_t MupixFEB::ASICid_from_ID(int asic) const {return asic%2;}
 
-uint16_t MupixFEB::GetNumASICs(){return m_FPGAs.size()*2;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
+uint16_t MupixFEB::GetNumASICs() const {return febs.size()*2;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
 
 uint32_t default_mupix_dacs[94] =
 {
@@ -178,8 +178,8 @@ short transform_tdac(short tDAC){
 //Configure all asics under prefix (e.g. prefix="/Equipment/Mupix")
 int MupixFEB::ConfigureASICs(){
    printf("MupixFEB::ConfigureASICs()\n");
-   cm_msg(MINFO, "MupixFEB" , "Configuring sensors under prefix %s/Settings/ASICs/", m_odb_prefix);
-   int status = mupix::midasODB::MapForEachASIC(hDB,m_odb_prefix,[this](mupix::MupixConfig* config, int asic){
+   cm_msg(MINFO, "MupixFEB" , "Configuring sensors under prefix %s/Settings/ASICs/", odb_prefix);
+   int status = mupix::midasODB::MapForEachASIC(hDB,odb_prefix,[this](mupix::MupixConfig* config, int asic){
       uint32_t rpc_status;
       bool TDACsNotFound = false;
       int useTDACs = 0;
@@ -187,23 +187,25 @@ int MupixFEB::ConfigureASICs(){
       u_int32_t rowRAM_addr=0;
 
       //mapping
-      uint16_t SB_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Number();
-      uint16_t SP_ID=m_FPGAs[FPGAid_from_ID(asic)].SB_Port();
+      uint16_t SB_ID=febs[FPGAid_from_ID(asic)].SB_Number();
+      uint16_t SP_ID=febs[FPGAid_from_ID(asic)].SB_Port();
       uint16_t FA_ID=ASICid_from_ID(asic);
 
-      if(!m_FPGAs[FPGAid_from_ID(asic)].IsScEnabled()){
+      if(!febs[FPGAid_from_ID(asic)].IsScEnabled()){
           printf(" [skipped]\n");
           return FE_SUCCESS;
       }
-      if(SB_ID!=m_SB_number){
+      if(SB_ID!= SB_number){
           printf(" [skipped]\n");
           return FE_SUCCESS;
       } //TODO
 
-      cm_msg(MINFO, "MupixFEB" , "Configuring sensor %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d", m_odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
+      cm_msg(MINFO, "MupixFEB" ,
+             "Configuring sensor %s/Settings/ASICs/%i/: Mapped to FEB%u -> SB%u.%u  ASIC #%d",
+             odb_prefix,asic,FPGAid_from_ID(asic),SB_ID,SP_ID,FA_ID);
 
     // TODO: There is a lot of copy/paste in the following - I guess we can condense this
-      // down a lot wit a well chosen function call
+      // down a lot with a well chosen function call
 
       try {
 
@@ -224,12 +226,12 @@ int MupixFEB::ConfigureASICs(){
 
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-          set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
+          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
           return FE_ERR_HW; //note: return of lambda function
       }
       if(rpc_status!=FEB_REPLY_SUCCESS){
          //configuration mismatch, report and break foreach-loop
-         set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
+         set_equipment_status(equipment_name,  "MuPix config failed", "red");
          cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
          return FE_ERR_HW;//note: return of lambda function
       }
@@ -282,12 +284,12 @@ int MupixFEB::ConfigureASICs(){
 
                     } catch(std::exception& e) {
                         cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-                        set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
+                        set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
                         return FE_ERR_HW; //note: return of lambda function
                     }
                     if(rpc_status!=FEB_REPLY_SUCCESS){
                        //configuration mismatch, report and break foreach-loop
-                       set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
+                       set_equipment_status(equipment_name,  "MuPix config failed", "red");
                        cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
                        return FE_ERR_HW;//note: return of lambda function
                     }
@@ -321,12 +323,12 @@ int MupixFEB::ConfigureASICs(){
 
               } catch(std::exception& e) {
                   cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-                  set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
+                  set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
                   return FE_ERR_HW; //note: return of lambda function
               }
               if(rpc_status!=FEB_REPLY_SUCCESS){
                  //configuration mismatch, report and break foreach-loop
-                 set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
+                 set_equipment_status(equipment_name,  "MuPix config failed", "red");
                  cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
                  return FE_ERR_HW;//note: return of lambda function
               }
@@ -352,12 +354,12 @@ int MupixFEB::ConfigureASICs(){
 
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-          set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
+          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
           return FE_ERR_HW; //note: return of lambda function
       }
       if(rpc_status!=FEB_REPLY_SUCCESS){
          //configuration mismatch, report and break foreach-loop
-         set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
+         set_equipment_status(equipment_name,  "MuPix config failed", "red");
          cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
          return FE_ERR_HW;//note: return of lambda function
       }
@@ -375,7 +377,6 @@ void MupixFEB::on_settings_changed(odb o, void * userdata)
 
     MupixFEB* _this=static_cast<MupixFEB*>(userdata);
     
-    INT ival;
     BOOL bval;
 
     if (name == "dummy_config") {
@@ -418,9 +419,9 @@ unsigned char reverse(unsigned char b) {
 // TODO: The following two functions do the same???
 uint32_t MupixFEB::ReadBackCounters(uint16_t FPGA_ID){
    //map to SB fiber
-   auto FEB = m_FPGAs[FPGA_ID];
+   auto FEB = febs[FPGA_ID];
    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-   if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+   if(FEB.SB_Number()!= SB_number) return SUCCESS; //skip commands not for this SB
 
    vector<uint32_t> hitsEna(1);
    // TODO: Get rid of hardcoded address
@@ -429,9 +430,9 @@ uint32_t MupixFEB::ReadBackCounters(uint16_t FPGA_ID){
 }
 
 uint32_t MupixFEB::ReadBackHitsEnaRate(uint16_t FPGA_ID){
-    auto FEB = m_FPGAs[FPGA_ID];
+    auto FEB = febs[FPGA_ID];
     if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-    if(FEB.SB_Number()!=m_SB_number) return SUCCESS; //skip commands not for this SB
+    if(FEB.SB_Number()!= SB_number) return SUCCESS; //skip commands not for this SB
     
     vector<uint32_t> hitsEna(1);
     // TODO: Get rid of hardcoded address
@@ -440,26 +441,28 @@ uint32_t MupixFEB::ReadBackHitsEnaRate(uint16_t FPGA_ID){
 }
 
 int MupixFEB::ConfigureBoards(){
-   cm_msg(MINFO, "MupixFEB" , "Configuring boards under prefix %s/Settings/Boards/", m_odb_prefix);
-   int status = mupix::midasODB::MapForEachBOARD(hDB,m_odb_prefix,[this](mupix::MupixBoardConfig* config, int board){
+   cm_msg(MINFO, "MupixFEB" , "Configuring boards under prefix %s/Settings/Boards/", odb_prefix);
+   int status = mupix::midasODB::MapForEachBOARD(hDB,odb_prefix,[this](mupix::MupixBoardConfig* config, int board){
       uint32_t rpc_status;
       //mapping
-      uint16_t SB_ID=m_FPGAs[FPGAid_from_ID(board)].SB_Number();
-      uint16_t SP_ID=m_FPGAs[FPGAid_from_ID(board)].SB_Port();
+      uint16_t SB_ID=febs[FPGAid_from_ID(board)].SB_Number();
+      uint16_t SP_ID=febs[FPGAid_from_ID(board)].SB_Port();
 
       uint32_t board_ID=board;
 
-      if(!m_FPGAs[FPGAid_from_ID(board)].IsScEnabled()){
+      if(!febs[FPGAid_from_ID(board)].IsScEnabled()){
           printf(" [skipped]\n");
           return FE_SUCCESS;
       }
-      if(SB_ID!=m_SB_number){
+      if(SB_ID!= SB_number){
           printf(" [skipped]\n");
           return FE_SUCCESS;
       } //TODO
       //printf("\n");
 
-      cm_msg(MINFO, "MupixFEB" , "Configuring MuPIX board %s/Settings/Boards/%i/: Mapped to FEB%u -> SB%u.%u", m_odb_prefix,board,FPGAid_from_ID(board),SB_ID,SP_ID);
+      cm_msg(MINFO, "MupixFEB" ,
+             "Configuring MuPIX board %s/Settings/Boards/%i/: Mapped to FEB%u -> SB%u.%u",
+             odb_prefix,board,FPGAid_from_ID(board),SB_ID,SP_ID);
 
        uint8_t bitpattern[config->length +1];
        for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
@@ -480,12 +483,12 @@ int MupixFEB::ConfigureBoards(){
            rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_BOARD_CFG, payload);
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", board, e.what());
-          set_equipment_status(m_equipment_name, "SB-FEB Communication error", "red");
+          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
           return FE_ERR_HW; //note: return of lambda function
       }
       if(rpc_status!=FEB_REPLY_SUCCESS){
          //configuration mismatch, report and break foreach-loop
-         set_equipment_status(m_equipment_name,  "MuPix config failed", "red");
+         set_equipment_status(equipment_name,  "MuPix config failed", "red");
          cm_msg(MERROR, "setup_mupix", "MuPix configuration error for Board %i", board);
       }
 

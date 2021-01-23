@@ -25,17 +25,16 @@ class MutrigFEB : public MuFEB{
 
    public:
       MutrigFEB(const MutrigFEB&)=delete;
-      MutrigFEB(FEBSlowcontrolInterface & feb_sc_, const char* equipment_name, const char* odb_prefix):
-        MuFEB(feb_sc_,equipment_name,odb_prefix)
-        {};
-      void SetSBnumber(uint8_t n){m_SB_number=n;}
-      const char* GetName(){return m_equipment_name;}
-      const char* GetPrefix(){return m_odb_prefix;}
-      virtual uint16_t nModulesPerFEB()=0;
-      virtual uint16_t nAsicsPerModule()=0;
-      uint16_t GetNumASICs(){return m_FPGAs.size()*nModulesPerFEB()*nAsicsPerModule();}
-      uint16_t GetNumModules(){return m_FPGAs.size()*nModulesPerFEB();}
-
+      MutrigFEB(FEBSlowcontrolInterface & feb_sc_,
+            const vector<mappedFEB> & febs_,
+            const char* equipment_name_,
+            const char* odb_prefix_,
+            const uint8_t SB_number_):
+      MuFEB(feb_sc_, febs_, equipment_name_, odb_prefix_, SB_number_)
+      {}
+      virtual ~MutrigFEB(){}
+      uint16_t GetNumASICs() const {return febs.size()*GetModulesPerFEB()*GetASICSPerModule();}
+      uint16_t GetNumModules() const {return febs.size()*GetModulesPerFEB();}
 
       //MIDAS callback for all setters below (DAQ related, mapped to functions on FEB / settings from the DAQ subdirectory).
       //Made static and using the user data argument as "this" to ease binding to C-style midas-callbacks
@@ -51,15 +50,15 @@ class MutrigFEB : public MuFEB{
       //Read counter values from FEB, store in subtree $odb_prefix/Variables/Counters/
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
       int ReadBackCounters(uint16_t FPGA_ID);
-      void ReadBackAllCounters(){for(size_t i=0;i<m_FPGAs.size();i++) ReadBackCounters(i);};
+      void ReadBackAllCounters(){for(size_t i=0;i<febs.size();i++) ReadBackCounters(i);}
       int ResetCounters(uint16_t FPGA_ID);
-      void ResetAllCounters(){for(size_t i=0;i<m_FPGAs.size();i++) ResetCounters(i);};
+      void ResetAllCounters(){for(size_t i=0;i<febs.size();i++) ResetCounters(i);}
 
 
       //Read datapath status values from FEB, store in subtree $odb_prefix/Variables/FEB datapath status
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
       int ReadBackDatapathStatus(uint16_t FPGA_ID);
-      void ReadBackAllDatapathStatus(){for(size_t i=0;i<m_FPGAs.size();i++) ReadBackDatapathStatus(i);};
+      void ReadBackAllDatapathStatus(){for(size_t i=0;i<febs.size();i++) ReadBackDatapathStatus(i);}
 
 
    protected:
@@ -108,7 +107,7 @@ class MutrigFEB : public MuFEB{
 
 
 
-      void syncReset(uint16_t FPGA_ID){chipReset(FPGA_ID);}; //should be resetting the ASICs coarse counter only, missing pin on the asic. For future use
+      void syncReset(uint16_t FPGA_ID){chipReset(FPGA_ID);} //should be resetting the ASICs coarse counter only, missing pin on the asic. For future use
       void chipReset(uint16_t FPGA_ID); //reset all asics (digital part, CC, fsms, etc.)
       void DataPathReset(uint16_t FPGA_ID); //in FE-FPGA: everything upstream of merger (in the stream path)
       void LVDS_RX_Reset(uint16_t FPGA_ID); //in FE-FPGA: LVDS receiver blocks

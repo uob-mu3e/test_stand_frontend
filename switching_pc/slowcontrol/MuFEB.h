@@ -13,42 +13,36 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 #include "FEBSlowcontrolInterface.h"
 #include "link_constants.h"
 #include "feb_constants.h"
-
-using midas::odb;
+#include "feblist.h"
 
 class MuFEB {
-    protected:
-      FEBSlowcontrolInterface & feb_sc;
-      bool m_ask_sc_reply;
-      const char* m_odb_prefix;
-      const char* m_equipment_name;
-      uint8_t m_SB_number;
 
    public:
       MuFEB(const MuFEB&)=delete;
-      MuFEB(FEBSlowcontrolInterface & feb_sc_, const char* equipment_name, const char* odb_prefix):
+      MuFEB(FEBSlowcontrolInterface & feb_sc_,
+            const vector<mappedFEB> & febs_,
+            const char* equipment_name_,
+            const char* odb_prefix_,
+            const uint8_t SB_number_):
               feb_sc(feb_sc_),
-	      m_ask_sc_reply(true),
-	      m_odb_prefix(odb_prefix),
-	      m_equipment_name(equipment_name),
-	      m_SB_number(0xff)
+              febs(febs_),
+              equipment_name(equipment_name_),
+              odb_prefix(odb_prefix_),
+              SB_number(SB_number_)
 	{};
-      void SetSBnumber(uint8_t n){m_SB_number=n;}
-      const char* GetName(){return m_equipment_name;}
-      const char* GetPrefix(){return m_odb_prefix;}
+      virtual ~MuFEB(){};
 
-      virtual uint16_t GetNumASICs()=0;
-      virtual uint16_t GetNumFPGAs(){return m_FPGAs.size();}
+      const char* GetName(){return equipment_name;}
+      const char* GetPrefix(){return odb_prefix;}
 
-      void SetAskSCReply(bool ask){m_ask_sc_reply=ask;};
-
-      //MIDAS callback for changed mapping of FEB IDs. Will clear m_FPGAs and rebuild this vector.
-      static void on_mapping_changed(odb o, void * userdata);
-      void RebuildFEBsMap();
+      virtual uint16_t GetNumASICs() const =0;
+      virtual uint16_t GetNumFPGAs() const {return febs.size();}
+      virtual uint16_t GetModulesPerFEB() const =0;
+      virtual uint16_t GetASICSPerModule() const =0;
 
       //Parameter FPGA_ID refers to global numbering, i.e. before mapping
       int ReadBackRunState(uint16_t FPGA_ID);
-      void ReadBackAllRunState(){for(size_t i=0;i<m_FPGAs.size();i++) ReadBackRunState(i);};
+      void ReadBackAllRunState(){for(size_t i=0;i<febs.size();i++) ReadBackRunState(i);};
 
       int WriteFEBID();
 
@@ -57,35 +51,20 @@ class MuFEB {
       uint32_t ReadBackTXReset(uint16_t FPGA_ID);
 
 protected:
+
+      FEBSlowcontrolInterface & feb_sc;
+      const vector<mappedFEB> & febs;
+      const char* equipment_name;
+      const char* odb_prefix;
+      const uint8_t SB_number;
+
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
-      virtual uint16_t FPGAid_from_ID(int asic)=0; //global asic number to global FEB number
-      virtual uint16_t ASICid_from_ID(int asic)=0; //global asic number to FEB-local asic number
+      virtual uint16_t FPGAid_from_ID(int asic) const =0; //global asic number to global FEB number
+      virtual uint16_t ASICid_from_ID(int asic) const =0; //global asic number to FEB-local asic number
 
       //Return typeID for building FEB ID map
-      virtual FEBTYPE  GetTypeID()=0;
+      virtual FEBTYPE GetTypeID() const=0;
       virtual bool IsSecondary([[maybe_unused]] int t){return false;}
-
-
-      //list of all FPGAs mapped to this subdetector. Used for pushing common configurations to all FEBs
-      //TODO: extend to map<ID, FPGA_ID_TYPE> with more information (name, etc. for reporting).
-      //TODO: add possibility to have febs with different number of asics (relevant only for pixel)
-      struct mapped_FEB_t{
-	 private:
-	 uint16_t LinkID;	//global numbering. sb_id=LinkID/MAX_LINKS_PER_SWITCHINGBOARD, sb_port=LinkID%MAX_LINKS_PER_SWITCHINGBOARD
-	 INT mask; 
-	 std::string fullname_link;
-	 public:
-	 mapped_FEB_t(uint16_t ID, INT linkmask, std::string physName):LinkID(ID),mask(linkmask),fullname_link(physName){};
-	 bool IsScEnabled(){return mask&FEBLINKMASK::SCOn;}
-	 bool IsDataEnabled(){return mask&FEBLINKMASK::DataOn;}
-	 uint16_t GetLinkID(){return LinkID;}
-	 std::string GetLinkName(){return fullname_link;}
-	 //getters for FPGAPORT_ID and SB_ID (physical link address, independent on number of links per FEB)
-	 uint8_t SB_Number(){return LinkID/MAX_LINKS_PER_SWITCHINGBOARD;}
-	 uint8_t SB_Port()  {return LinkID%MAX_LINKS_PER_SWITCHINGBOARD;}
-      };
-      //map m_FPGAs[global_FEB_number] to a struct giving the physical link addres to a struct giving the physical link address
-      std::vector<mapped_FEB_t> m_FPGAs;
 
       //Helper functions
       uint32_t reg_setBit  (uint32_t reg_in, uint8_t bit, bool value=true);
