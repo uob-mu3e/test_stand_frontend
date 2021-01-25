@@ -42,7 +42,7 @@ $(PREFIX) :
 
 .PHONY : $(PREFIX)/componets_pkg.vhd
 $(PREFIX)/componets_pkg.vhd : $(SOPC_FILES)
-	./util/altera/components_pkg.sh
+	( cd $(PREFIX) ; ./util/altera/components_pkg.sh )
 
 $(PREFIX)/include.qip : $(PREFIX)
 	echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"components_pkg.vhd\" ]" > $@

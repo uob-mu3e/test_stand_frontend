@@ -15,11 +15,11 @@ package cmp is
 
 EOF
 
-find -L .cache -name "*.cmp" -exec cat {} \;
+find -L -name "*.cmp" -exec cat {} \;
 
 cat << EOF
 
 end package;
 EOF
 
-) > .cache/components_pkg.vhd
+) > components_pkg.vhd
