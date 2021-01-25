@@ -24,7 +24,7 @@ set_global_assignment -name QIP_FILE resetalign/realign_block.qip
 set_global_assignment -name VHDL_FILE resetalign/source/pll_ip.vhd
 set_global_assignment -name VHDL_FILE resetalign/source/clockalign_block.vhd
 set_global_assignment -name VHDL_FILE scifi_path.vhd
-set_global_assignment -name QIP_FILE .cache/include.qip
+set_global_assignment -name QIP_FILE generated/include.qip
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 

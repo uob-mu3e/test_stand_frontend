@@ -1,4 +1,7 @@
 
+.cache/
+generated/
+
 # cmake
 build/
 debugbuild/
@@ -80,7 +83,6 @@ online/*
 .SHM_TYPE.TXT
 include/mudaq_registers.h
 cmake-build-debug/
-.cache/
 
 #
 *.npy

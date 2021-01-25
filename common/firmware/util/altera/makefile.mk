@@ -9,7 +9,7 @@ ifndef QUARTUS_ROOTDIR
 endif
 
 ifeq ($(PREFIX),)
-    override PREFIX := .cache
+    override PREFIX := generated
 endif
 
 ifeq ($(SOF),)
