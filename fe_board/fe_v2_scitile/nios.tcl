@@ -1,8 +1,5 @@
 #
 
-package require qsys
-
-create_system {nios}
 source {../fe/device_FEB_v2.tcl}
 
 source {util/nios_base.tcl}

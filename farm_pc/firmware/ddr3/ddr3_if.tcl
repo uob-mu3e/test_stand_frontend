@@ -1,13 +1,8 @@
 #
 
-package require qsys
-
 source "device.tcl"
 source "util/altera_ip.tcl"
 
-set name [ file tail [ file rootname [ info script ] ] ]
-
-create_system $name
 add_instance emif_0 altera_emif
 set_instance_parameter_value emif_0 {BOARD_DDR3_AC_TO_CK_SKEW_NS} {0.0}
 set_instance_parameter_value emif_0 {BOARD_DDR3_BRD_SKEW_WITHIN_AC_NS} {0.02}

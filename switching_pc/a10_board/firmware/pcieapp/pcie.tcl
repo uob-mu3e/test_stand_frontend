@@ -1,13 +1,8 @@
 #
 
-package require qsys
-
 source "device.tcl"
 source "util/altera_ip.tcl"
 
-set name [ file tail [ file rootname [ info script ] ] ]
-
-create_system $name
 add_instance pcie_a10_hip_0 altera_pcie_a10_hip
 set_instance_parameter_value pcie_a10_hip_0 {bar0_address_width_hwtcl} {12}
 set_instance_parameter_value pcie_a10_hip_0 {bar0_type_hwtcl} {32-bit non-prefetchable memory}
