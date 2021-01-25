@@ -180,24 +180,24 @@ begin
     port map( i_reset_n => not s_lvds_rx_rst, o_reset_n => s_lvds_rx_rst_n_125, i_clk => i_clk_g125);
 
 
-    u_resetshift: entity work.clockalign_block
-    generic map ( CLKDIV => 2 )
-    port map (
-        i_clk_config    => i_clk_core,
-        i_rst           => i_reset,
-
-        i_pll_clk       => i_clk_g125,
-        i_pll_arst      => i_reset,
-
-        i_flag          => s_subdet_resetdly_reg_written,
-        i_data          => s_subdet_resetdly_reg,
-
-        i_sig           => s_chip_rst,
-        o_sig           => s_chip_rst_shifted,
-        o_pll_clk       => open
-    );
-    o_chip_reset <= s_chip_rst_shifted(N_MODULES-1 downto 0);
-
+--    u_resetshift: entity work.clockalign_block
+--    generic map ( CLKDIV => 2 )
+--    port map (
+--        i_clk_config    => i_clk_core,
+--        i_rst           => i_reset,
+--
+--        i_pll_clk       => i_clk_g125,
+--        i_pll_arst      => i_reset,
+--
+--        i_flag          => s_subdet_resetdly_reg_written,
+--        i_data          => s_subdet_resetdly_reg,
+--
+--        i_sig           => s_chip_rst,
+--        o_sig           => s_chip_rst_shifted,
+--        o_pll_clk       => open
+--    );
+    --o_chip_reset <= s_chip_rst_shifted(N_MODULES-1 downto 0);
+    o_chip_reset <= (others => i_reset);
 
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (

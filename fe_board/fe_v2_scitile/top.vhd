@@ -33,7 +33,7 @@ entity top is
         tile_chip_reset             : out   std_logic;
         tile_i2c_sda                : out   std_logic; -- inout single ended ??
         tile_i2c_scl                : out   std_logic;
-        tile_cec                    : out   std_logic;
+        tile_cec                    : in    std_logic;
         tile_spi_miso               : in    std_logic;
         tile_i2c_int                : in    std_logic;
         tile_pll_reset              : out   std_logic;
