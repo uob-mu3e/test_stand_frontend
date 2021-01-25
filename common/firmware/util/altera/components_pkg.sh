@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eu
+set -euf
 
 # find '*.cmp' files
 # and make 'cmp' package
@@ -15,7 +15,7 @@ package cmp is
 
 EOF
 
-find -L -name "*.cmp" -exec cat {} \;
+find -L .cache -name "*.cmp" -exec cat {} \;
 
 cat << EOF
 
