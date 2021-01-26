@@ -4,6 +4,8 @@
 
 .DEFAULT_GOAL := all
 
+.ONESHELL :
+
 ifndef QUARTUS_ROOTDIR
     $(error QUARTUS_ROOTDIR is undefined)
 endif
