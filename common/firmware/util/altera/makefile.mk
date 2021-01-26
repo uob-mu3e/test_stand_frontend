@@ -34,17 +34,17 @@ endif
 QSYS_FILES := $(patsubst %.tcl,$(PREFIX)/%.qsys,$(IPs))
 SOPC_FILES := $(patsubst %.qsys,%.sopcinfo,$(QSYS_FILES))
 
-all : $(PREFIX)/include.qip $(PREFIX)/componets_pkg.vhd $(QSYS_FILES) $(SOPC_FILES)
+all : $(PREFIX)/include.qip
 
 $(PREFIX) :
 	mkdir -pv $(PREFIX)
 	[ -e $(PREFIX)/util ] || ln -snv --relative -T util $(PREFIX)/util
 
 .PHONY : $(PREFIX)/componets_pkg.vhd
-$(PREFIX)/componets_pkg.vhd : $(SOPC_FILES)
+$(PREFIX)/componets_pkg.vhd : $(PREFIX) $(SOPC_FILES)
 	( cd $(PREFIX) ; ./util/altera/components_pkg.sh )
 
-$(PREFIX)/include.qip : $(PREFIX)
+$(PREFIX)/include.qip : $(PREFIX)/componets_pkg.vhd $(QSYS_FILES)
 	echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"components_pkg.vhd\" ]" > $@
 	for ip in $(QSYS_FILES) ; do \
 	    echo "set_global_assignment -name QSYS_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$ip)\" ]" >> $@ ; \
@@ -65,7 +65,7 @@ $(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys
 
 .PHONY : flow
 flow : all
-	quartus_sh -t util/altera/flow.tcl top
+	( cd $(PREFIX) && ./util/altera/flow.sh )
 
 .PHONY : sof2flash
 sof2flash :
