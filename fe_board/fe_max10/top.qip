@@ -11,7 +11,6 @@ set_global_assignment -name QIP_FILE "spiarria/include.qip"
 
 set_global_assignment -name VHDL_FILE "ip/ip_altpll.vhd"
 
-set_global_assignment -name QSYS_FILE "nios.qsys"
-set_global_assignment -name VHDL_FILE "cmp_pkg.vhd"
+set_global_assignment -name QIP_FILE "generated/include.qip"
 
 set_global_assignment -name QIP_FILE "mscb/include.qip"

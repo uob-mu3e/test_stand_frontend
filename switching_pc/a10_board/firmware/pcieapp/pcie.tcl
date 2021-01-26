@@ -1,15 +1,8 @@
 #
 
-package require qsys
+source "device.tcl"
+source "util/altera_ip.tcl"
 
-set dir0 [ file dirname [ info script ] ]
-
-source [ file join $dir0 "../device.tcl" ]
-source [ file join $dir0 "../util/altera_ip.tcl" ]
-
-set name [ file tail [ file rootname [ info script ] ] ]
-
-create_system $name
 add_instance pcie_a10_hip_0 altera_pcie_a10_hip
 set_instance_parameter_value pcie_a10_hip_0 {bar0_address_width_hwtcl} {12}
 set_instance_parameter_value pcie_a10_hip_0 {bar0_type_hwtcl} {32-bit non-prefetchable memory}
@@ -27,4 +20,3 @@ set_instance_parameter_value pcie_a10_hip_0 {subsystem_device_id_hwtcl} {4}
 set_instance_parameter_value pcie_a10_hip_0 {subsystem_vendor_id_hwtcl} {4466}
 set_instance_parameter_value pcie_a10_hip_0 {wrala_hwtcl} {0}
 set_instance_property pcie_a10_hip_0 AUTO_EXPORT {true}
-save_system [ file join $dir0 "$name.qsys" ]
