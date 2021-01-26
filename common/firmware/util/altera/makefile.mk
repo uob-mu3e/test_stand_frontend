@@ -65,7 +65,7 @@ $(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys
 
 .PHONY : flow
 flow : all
-	( cd $(PREFIX) && ./util/altera/flow.sh )
+	./util/altera/flow.sh
 
 .PHONY : sof2flash
 sof2flash :
