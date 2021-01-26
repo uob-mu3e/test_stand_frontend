@@ -85,12 +85,24 @@ port (
     o_max10_spi_csn     : out   std_logic := '1';
 
     -- slow control registers
-    -- subdetector regs : 0x40-0xFF
-    o_subdet_reg_addr   : out   std_logic_vector(7 downto 0);
-    o_subdet_reg_re     : out   std_logic;
-    i_subdet_reg_rdata  : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
-    o_subdet_reg_we     : out   std_logic;
-    o_subdet_reg_wdata  : out   std_logic_vector(31 downto 0);
+    -- malibu regs : 0x40-0x5F
+    o_malibu_reg_addr   : out   std_logic_vector(7 downto 0);
+    o_malibu_reg_re     : out   std_logic;
+    i_malibu_reg_rdata  : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
+    o_malibu_reg_we     : out   std_logic;
+    o_malibu_reg_wdata  : out   std_logic_vector(31 downto 0);
+    -- scifi regs : 0x60-0x7F
+    o_scifi_reg_addr    : out   std_logic_vector(7 downto 0);
+    o_scifi_reg_re      : out   std_logic;
+    i_scifi_reg_rdata   : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
+    o_scifi_reg_we      : out   std_logic;
+    o_scifi_reg_wdata   : out   std_logic_vector(31 downto 0);
+    -- mupix regs : 0x80-0x9F
+    o_mupix_reg_addr    : out   std_logic_vector(7 downto 0);
+    o_mupix_reg_re      : out   std_logic;
+    i_mupix_reg_rdata   : in    std_logic_vector(31 downto 0) := X"CCCCCCCC";
+    o_mupix_reg_we      : out   std_logic;
+    o_mupix_reg_wdata   : out   std_logic_vector(31 downto 0);
 
     -- reset system
     o_run_state_125 : out   run_state_t;
@@ -137,7 +149,9 @@ architecture arch of fe_block_v2 is
 
     signal sc_ram, sc_reg           : work.util.rw_t;
     signal fe_reg                   : work.util.rw_t;
-    signal subdet_reg               : work.util.rw_t;
+    signal malibu_reg               : work.util.rw_t;
+    signal scifi_reg                : work.util.rw_t;
+    signal mupix_reg                : work.util.rw_t;
 
     signal reg_cmdlen               : std_logic_vector(31 downto 0);
     signal reg_offset               : std_logic_vector(31 downto 0);
@@ -148,13 +162,11 @@ architecture arch of fe_block_v2 is
 
     signal av_mscb                  : work.util.avalon_t;
 
-    signal reg_reset_bypass         : std_logic_vector(15 downto 0);
+    signal reg_reset_bypass         : std_logic_vector(31 downto 0);
     signal reg_reset_bypass_payload : std_logic_vector(31 downto 0);
 
     signal run_state_125            : run_state_t;
     signal run_state_156            : run_state_t;
-    signal run_state_156_resetsys   : run_state_t;
-
     signal terminated               : std_logic;
     signal reset_phase              : std_logic_vector(PHASE_WIDTH_g - 1 downto 0);
 
@@ -166,7 +178,7 @@ architecture arch of fe_block_v2 is
     signal ffly_rx_data             : std_logic_vector(127 downto 0);
     signal ffly_rx_datak            : std_logic_vector(15 downto 0);
 
-    signal fpga_id_reg              : std_logic_vector(N_LINKS*16-1 downto 0);
+    signal i_fpga_id_reg            : std_logic_vector(N_LINKS*16-1 downto 0);
 
     signal ffly_tx_data             : std_logic_vector(127 downto 0) :=
                                           X"000000" & work.util.D28_5
@@ -188,16 +200,17 @@ architecture arch of fe_block_v2 is
     
     signal clk_100                  : std_logic;
     -- Max 10 SPI 
-    signal adc_reg                  : reg32array_t(4 downto 0);
-    signal i_adc_data_o             : std_logic_vector(31 downto 0);
-    signal SPI_addr_o               : std_logic_vector(6 downto 0);
+    type adc_reg_32 is Array (0 to 4) of std_logic_vector(31 downto 0);
+    signal adc_reg  : adc_reg_32;
+    signal i_adc_data_o : std_logic_vector(31 downto 0);
+    signal SPI_addr_o   : std_logic_vector(6 downto 0);
     
-    signal SPI_command              : std_logic_vector (15 downto 0); -- [15-1] SPI inst [0] aktiv
-    signal SPI_aktiv                : std_logic := '0';
-    signal SPI_Adc_cnt              : unsigned(12 downto 0) := (others => '0');
-    signal SPI_inst                 : std_logic_vector(14 downto 0) := X"00" & "000100" & '1'; --"[14-7] free [6-1] word cnt [0] R/W
-    signal SPI_done                 : std_logic;
-    signal SPI_rw                   : std_logic;
+    signal SPI_command      : std_logic_vector (15 downto 0); -- [15-1] SPI inst [0] aktiv
+    signal SPI_aktiv        : std_logic := '0';
+    signal SPI_Adc_cnt      : unsigned(12 downto 0) := (others => '0');
+    signal SPI_inst         : std_logic_vector(14 downto 0) := X"00" & "000100" & '1'; --"[14-7] free [6-1] word cnt [0] R/W
+    signal SPI_done         : std_logic;
+    signal SPI_rw           : std_logic;
 
 begin
 
@@ -206,15 +219,10 @@ begin
     --        data_out    => version_out(27 downto 0)
     --    );
 
-    process(i_clk_156)
-    begin
-    if rising_edge(i_clk_156) then
-        o_run_state_156 <= run_state_156_resetsys;
-        run_state_156   <= run_state_156_resetsys;
-    end if;
-    end process;
-
     -- generate resets
+
+    o_run_state_156 <= run_state_156;
+
     e_nios_reset_n : entity work.reset_sync
     port map ( o_reset_n => nios_reset_n, i_reset_n => i_areset_n, i_clk => i_nios_clk );
 
@@ -271,12 +279,26 @@ begin
 
     -- map slow control address space
 
-    -- subdetector regs : 0x40-0xFF
-    o_subdet_reg_addr <= sc_reg.addr(7 downto 0);
-    o_subdet_reg_re <= subdet_reg.re;
-      subdet_reg.re <= sc_reg.re when ( sc_reg.addr(REG_AREA_RANGE) /= REG_AREA_GENERIC ) else '0';
-    o_subdet_reg_we <= sc_reg.we when ( sc_reg.addr(REG_AREA_RANGE) /= REG_AREA_GENERIC ) else '0';
-    o_subdet_reg_wdata <= sc_reg.wdata;
+    -- malibu regs : 0x40-0x5F
+    o_malibu_reg_addr <= sc_reg.addr(7 downto 0);
+    o_malibu_reg_re <= malibu_reg.re;
+      malibu_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 5) = "010" ) else '0';
+    o_malibu_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 5) = "010" ) else '0';
+    o_malibu_reg_wdata <= sc_reg.wdata;
+
+    -- scifi regs : 0x60-0x7F
+    o_scifi_reg_addr <= sc_reg.addr(7 downto 0);
+    o_scifi_reg_re <= scifi_reg.re;
+      scifi_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 5) = "011" ) else '0';
+    o_scifi_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 5) = "011" ) else '0';
+    o_scifi_reg_wdata <= sc_reg.wdata;
+
+    -- mupix regs : 0x80-0x9F
+    o_mupix_reg_addr <= sc_reg.addr(7 downto 0);
+    o_mupix_reg_re <= mupix_reg.re;
+      mupix_reg.re <= sc_reg.re when ( sc_reg.addr(7 downto 5) = "100" ) else '0';
+    o_mupix_reg_we <= sc_reg.we when ( sc_reg.addr(7 downto 5) = "100" ) else '0';
+    o_mupix_reg_wdata <= sc_reg.wdata;
 
     -- local regs 
     fe_reg.addr <= sc_reg.addr;
@@ -286,49 +308,18 @@ begin
 
     -- select valid rdata
     sc_reg.rdata <=
-        i_subdet_reg_rdata when ( subdet_reg.rvalid = '1' ) else
+        i_malibu_reg_rdata when ( malibu_reg.rvalid = '1' ) else
+        i_scifi_reg_rdata when ( scifi_reg.rvalid = '1' ) else
+        i_mupix_reg_rdata when ( mupix_reg.rvalid = '1' ) else
         fe_reg.rdata when ( fe_reg.rvalid = '1' ) else
         X"CCCCCCCC";
 
     process(i_clk_156)
+	 
+	 variable regaddr : integer;
+	 
     begin
     if rising_edge(i_clk_156) then
-<<<<<<< HEAD
-        subdet_reg.rvalid   <= subdet_reg.re;
-        fe_reg.rvalid       <= fe_reg.re;
-    end if;
-    end process;
-
-    e_reg_mapping : entity work.feb_reg_mapping
-    port map (
-        i_clk_156                   => i_clk_156,
-        i_reset_n                   => reset_156_n,
-
-        i_reg_add                   => fe_reg.addr(7 downto 0),
-        i_reg_re                    => fe_reg.re,
-        o_reg_rdata                 => fe_reg.rdata,
-        i_reg_we                    => fe_reg.we,
-        i_reg_wdata                 => fe_reg.wdata,
-
-        -- inputs  156--------------------------------------------
-        -- ALL INPUTS DEFAULT TO (n*4-1 downto 0 => x"CCC..", others => '1')
-        i_run_state_156             => run_state_156,
-        i_merger_rate_count         => merger_rate_count,
-        i_reset_phase               => reset_phase,
-        i_arriaV_temperature        => arriaV_temperature,
-        i_fpga_type                 => i_fpga_type,
-        i_adc_reg                   => adc_reg,
-
-        -- outputs 156--------------------------------------------
-        o_reg_cmdlen                => reg_cmdlen,
-        o_reg_offset                => reg_offset,
-        o_reg_reset_bypass          => reg_reset_bypass,
-        o_reg_reset_bypass_payload  => reg_reset_bypass_payload,
-        o_arriaV_temperature_clr    => arriaV_temperature_clr,
-        o_arriaV_temperature_ce     => arriaV_temperature_ce,
-        o_fpga_id_reg               => fpga_id_reg--,
-    );
-=======
         malibu_reg.rvalid <= malibu_reg.re;
         scifi_reg.rvalid <= scifi_reg.re;
         mupix_reg.rvalid <= mupix_reg.re;
@@ -430,7 +421,6 @@ begin
     end if;
     end process;
 
->>>>>>> origin/build_system_update
 
 
     -- nios system
@@ -560,7 +550,7 @@ begin
         feb_mapping                => feb_mapping--,
     )
     port map (
-        fpga_ID_in                 => fpga_id_reg,
+        fpga_ID_in                 => i_fpga_id_reg,
         FEB_type_in                => i_fpga_type,
 
         run_state                  => run_state_156,
@@ -623,7 +613,7 @@ begin
         i_reset_125_n           => reset_125_n,
         i_clk_125               => i_clk_125,
 
-        o_state_156             => run_state_156_resetsys,
+        o_state_156             => run_state_156,
         i_reset_156_n           => reset_156_n,
         i_clk_156               => i_clk_156,
 
@@ -631,7 +621,7 @@ begin
         reset_bypass            => reg_reset_bypass(11 downto 0),
         reset_bypass_payload    => reg_reset_bypass_payload,
         run_number_out          => run_number,
-        fpga_id                 => fpga_id_reg(15 downto 0),
+        fpga_id                 => i_fpga_id_reg(15 downto 0),
         terminated              => terminated, --TODO: test with two datamergers
         testout                 => open,
 
@@ -751,9 +741,9 @@ begin
     );
    
    --max 10 adc data reg for testing in He--
-process(i_clk_156) 
+process(i_nios_clk) 
 begin
-    if rising_edge(i_clk_156) then
+    if rising_edge(i_nios_clk) then
         if(SPI_rw= '0') then
            adc_reg(to_integer(unsigned(SPI_addr_o))) <= i_adc_data_o;
         end if;
