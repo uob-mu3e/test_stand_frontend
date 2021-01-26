@@ -7,6 +7,12 @@
    <script src="midas.js"></script>
    <script src="mhttpd.js"></script>
    <title>Low Voltage</title>
+   <style>
+       table, th, td {
+           border: 1px solid black;
+           border-collapse: collapse;
+       }
+   </style>
 </head>
 
 <body class="mcss" onload="mhttpd_init('myPage');">
@@ -21,9 +27,24 @@
             <th colspan="2" class="mtableheader">HAMEG</th>
         </tr>
         <tr>
-            <td style="width: 200px;">
-            Channel 1
-            </td>
+            <th>Channel</th>
+            <th>State</th>
+            <th>Demand Voltage</th>
+            <th>Voltage</th>
+            <th>Current Limit</th>
+            <th>Current</th>
+        </tr>
+        <tr>
+            <th>0</th>
+        </tr>
+        <tr>
+            <th>1</th>
+        </tr>
+        <tr>
+            <th>2</th>
+        </tr>
+        <tr>
+            <th>3</th>
         </tr>
     </table>
 </div>
