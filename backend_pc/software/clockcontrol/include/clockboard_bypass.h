@@ -1,9 +1,14 @@
 #ifndef CLOCKBOARD_BYPASS_H
 #define CLOCKBOARD_BYPASS_H
 
+#include "odbxx.h"
 #include "ipbus.h"
 #include "reset_protocol.h"
 #include "clockboard.h"
+
+using midas::odb;
+
+
 class clockboard_bypass:public clockboard
 {
 public:
@@ -14,30 +19,33 @@ public:
     int map_daughter_fibre(uint8_t daughter_num, uint16_t fibre_num){return 1;}
     // Write "reset" commands
     int write_command(uint8_t command, uint32_t payload =0, bool has_payload = false){
+        odb o("/Equipment/Switching/Settings");
+
         //printf("write_command(%2.2x,%8.8x,%s)\n",command,payload,has_payload?"true":"false");
-	DWORD val=0xbcbcbcbc;
-	//write payload ODB - Switching frontend will send this to FEB
-	if(has_payload)
-		val=payload;
-        db_set_value(hDB,0,"/Equipment/Switching/Settings/Reset Bypass Payload", &val, sizeof(uint32_t), 1, TID_DWORD);
-	//write reset char ODB - Switching frontend will send this to FEB
-	val=(1<<8) | command;
-        db_set_value(hDB,0,"/Equipment/Switching/Settings/Reset Bypass Command", &val, sizeof(uint32_t), 1, TID_DWORD);
-	usleep(100000);
-	//wait for flag to be resetted
-	INT valsiz=sizeof(uint32_t);
-	int timeout_cnt=500;
-	do{
-		db_get_value(hDB,0,"/Equipment/Switching/Settings/Reset Bypass Command", &val, &valsiz, TID_DWORD,false);
-		printf("%d: %2.2x\n",timeout_cnt,val);
-		if((val&0xff) == 0) break;
-		usleep(100000);
-	}while(--timeout_cnt>0);
-	if(timeout_cnt==0){
-		cm_msg(MERROR, "clockboard_bypass::write_command", "timeout waiting for odb flag reset. Switching FE running?");
-		return -1;
-	}
-	return SUCCESS;
+        DWORD val=0xbcbcbcbc;
+        //write payload ODB - Switching frontend will send this to FEB
+        if(has_payload)
+            val=payload;
+        o["Reset Bypass Payload"] = val;
+
+        //write reset char ODB - Switching frontend will send this to FEB
+        val=(1<<8) | command;
+        o["Reset Bypass Command"] = val;
+        usleep(100000);
+
+        //wait for flag to be resetted
+        int timeout_cnt=500;
+        do{
+            val = o["Reset Bypass Command"];
+            printf("%d: %2.2x\n",timeout_cnt,val);
+            if((val&0xff) == 0) break;
+            usleep(100000);
+        }while(--timeout_cnt>0);
+        if(timeout_cnt==0){
+            cm_msg(MERROR, "clockboard_bypass::write_command", "timeout waiting for odb flag reset. Switching FE running?");
+            return -1;
+        }
+        return SUCCESS;
     }
 
     int write_command(const char * name, uint32_t payload =0, uint16_t address =0){
