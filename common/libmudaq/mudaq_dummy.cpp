@@ -55,25 +55,6 @@ namespace mudaq {
         cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: close()");
     }
 
-
-    int DummyMudaqDevice::FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr){
-        cm_msg(MINFO, "Dummy MudaqDevice", "Dummy mudaq: FEBsc_write()");
-        for(uint16_t i = 0; i < length; i++){
-            scmems[FPGA_ID][startaddr + i] = data[i];
-        }
-        return SUCCESS;
-    }
-
-
-
-    int DummyMudaqDevice::FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr){
-        cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: FEBsc_read()");
-        for(uint16_t i = 0; i < length; i++){
-           data[i] = scmems[FPGA_ID][startaddr + i] ;
-        }
-        return length;
-    }
-
     void DummyMudaqDevice::write_register(unsigned idx, uint32_t value){
         cm_msg(MINFO, "Dummy MudaqDevice" , "Dummy mudaq: write_register()");
         if(idx > 63){
