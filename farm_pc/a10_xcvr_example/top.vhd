@@ -48,10 +48,15 @@ architecture rtl of top is
     attribute keep : boolean;
     attribute keep of ZERO : signal is true;
 
-    signal i2c_scl_in   : std_logic;
-    signal i2c_scl_oe   : std_logic;
-    signal i2c_sda_in   : std_logic;
-    signal i2c_sda_oe   : std_logic;
+    signal i2c_scl          : std_logic_vector(31 downto 0) := (others => '1');
+    signal i2c_scl_oe       : std_logic_vector(31 downto 0);
+    signal i2c_sda          : std_logic_vector(31 downto 0) := (others => '1');
+    signal i2c_sda_oe       : std_logic_vector(31 downto 0);
+    signal nios_i2c_scl     : std_logic;
+    signal nios_i2c_scl_oe  : std_logic;
+    signal nios_i2c_sda     : std_logic;
+    signal nios_i2c_sda_oe  : std_logic;
+    signal nios_i2c_ss_n    : std_logic_vector(31 downto 0);
 
     signal nios_clk      : std_logic;
     signal nios_rst_n    : std_logic;
@@ -144,10 +149,11 @@ begin
         flash_tcm_write_n_out(0) => FLASH_WE_n,
         flash_tcm_chipselect_n_out(0) => flash_ce_n_i,
 
-        i2c_scl_in  => i2c_scl_in,
-        i2c_scl_oe  => i2c_scl_oe,
-        i2c_sda_in  => i2c_sda_in,
-        i2c_sda_oe  => i2c_sda_oe,
+        i2c_scl_in      => nios_i2c_scl,
+        i2c_scl_oe      => nios_i2c_scl_oe,
+        i2c_sda_in      => nios_i2c_sda,
+        i2c_sda_oe      => nios_i2c_sda_oe,
+        i2c_ss_n_export => nios_i2c_ss_n,
 
         spi_MISO    => '-',
         spi_MOSI    => open,
@@ -165,22 +171,26 @@ begin
     FLASH_CLK <= '0';
     FLASH_RESET_n <= flash_rst_n;
 
+    -- I2C
+    nios_i2c_scl <= work.util.and_reduce(i2c_scl); -- <= ZERO when nios_i2c_scl_oe = '1' else '1';
+    i2c_scl_oe <= (nios_i2c_ss_n'range => nios_i2c_scl_oe) and (not nios_i2c_ss_n);
+    nios_i2c_sda <= work.util.and_reduce(i2c_sda);
+    i2c_sda_oe <= (nios_i2c_ss_n'range => nios_i2c_sda_oe) and (not nios_i2c_ss_n);
 
+    FAN_I2C_SCL <= ZERO when i2c_scl_oe(0) = '1' else 'Z';
+--    i2c_scl(0) <= FAN_I2C_SCL;
+    FAN_I2C_SDA <= ZERO when i2c_sda_oe(0) = '1' else 'Z';
+    i2c_sda(0) <= FAN_I2C_SDA;
 
-    -- I2C clock
-    i2c_scl_in <= not i2c_scl_oe;
-    FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-    TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-    POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
+    TEMP_I2C_SCL <= ZERO when i2c_scl_oe(1) = '1' else 'Z';
+--    i2c_scl(1) <= TEMP_I2C_SCL;
+    TEMP_I2C_SDA <= ZERO when i2c_sda_oe(1) = '1' else 'Z';
+    i2c_sda(1) <= TEMP_I2C_SDA;
 
-    -- I2C data
-    i2c_sda_in <= FAN_I2C_SDA and
-                  TEMP_I2C_SDA and
-                  POWER_MONITOR_I2C_SDA and
-                  '1';
-    FAN_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-    TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-    POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
+    POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe(2) = '1' else 'Z';
+--    i2c_scl(2) <= POWER_MONITOR_I2C_SCL;
+    POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe(2) = '1' else 'Z';
+    i2c_sda(2) <= POWER_MONITOR_I2C_SDA;
 
 
 

@@ -66,6 +66,18 @@ struct i2c_t {
         alt_u8 w[2] = { addr, data };
         write(dev, slave, w, 2);
     }
+
+    void slave_select(alt_u32 slave) {
+#ifdef I2C_SS_N_BASE
+        if(0 <= slave && slave < 32) {
+            IOWR_ALTERA_AVALON_PIO_SET_BITS(I2C_SS_N_BASE, 0xFFFFFFFF);
+            IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(I2C_SS_N_BASE, 1 << slave);
+        }
+        else {
+            IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(I2C_SS_N_BASE, 0xFFFFFFFF);
+        }
+#endif
+    }
 };
 
 #endif /* SOFTWARE_APP_SRC_I2C_H_ */
