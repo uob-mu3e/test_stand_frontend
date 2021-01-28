@@ -50,6 +50,8 @@ class MuFEB {
       uint32_t ReadBackResetPhase(uint16_t FPGA_ID);
       uint32_t ReadBackTXReset(uint16_t FPGA_ID);
 
+      int fill_SSFE(DWORD * pdata);
+
 protected:
 
       FEBSlowcontrolInterface & feb_sc;

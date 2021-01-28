@@ -61,6 +61,7 @@
 #include "mudaq_dummy.h"
 
 #include "FEBSlowcontrolInterface.h"
+#include "DummyFEBSlowcontrolInterface.h"
 #include "feblist.h"
 
 
@@ -503,9 +504,11 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
         cm_msg(MERROR, "frontend_init", "Mudaq is not ok");
         return FE_ERR_DRIVER;
     }
-
+#ifdef NO_SWITCHING_BOARD
+    feb_sc = new DummyFEBSlowcontrolInterface(mu);
+#else
     feb_sc = new FEBSlowcontrolInterface(mu);
-
+#endif
     return SUCCESS;
 }
 
@@ -893,6 +896,10 @@ INT read_mupix_sc_event(char *pevent, INT off){
     DWORD *pdata;
     bk_create(pevent, "FECN", TID_WORD, (void **) &pdata);
     printf("Reading MuPix FEB status data from all FEBs %d\n", i++);
+    uint32_t d;
+    feb_sc->FEB_read(0,0,d);
+    printf("%i\n", d);
+
     MupixFEB::Instance()->ReadBackAllRunState();
     for(uint i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
         HitsEnaRate = MupixFEB::Instance()->ReadBackHitsEnaRate(i);

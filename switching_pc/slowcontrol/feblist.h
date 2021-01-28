@@ -39,10 +39,15 @@ public:
     const std::vector<mappedFEB> & getSciFiFEBs(){return mSciFiFEBs;}
     const std::vector<mappedFEB> & getTileFEBs(){return mTileFEBs;}
 
+    uint64_t getFEBMask(){return mFEBMask;}
+    uint64_t getLinkMask(){return mLinkMask;}
+
     void RebuildFEBList();
 
 protected:
     const uint16_t SB_index;
+    uint64_t mFEBMask;
+    uint64_t mLinkMask;
     std::vector<mappedFEB> mFEBs;
     std::vector<mappedFEB> mpFEBs;
     std::vector<mappedFEB> mPixelFEBs;

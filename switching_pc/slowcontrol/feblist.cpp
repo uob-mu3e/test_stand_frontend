@@ -13,6 +13,9 @@ void FEBList::RebuildFEBList()
     mSciFiFEBs.clear();
     mTileFEBs.clear();
 
+    mFEBMask =  0;
+    mLinkMask = 0;
+
     // get odb instance for links settings
     odb links_settings("/Equipment/Links/Settings");
 
@@ -35,6 +38,9 @@ void FEBList::RebuildFEBList()
         name_link+=":";
         name_link+= febnamesID;
         if((uint32_t) febtype[ID] != FEBTYPE::Undefined  && (uint32_t) febtype[ID] != FEBTYPE::FibreSecondary){
+            mFEBMask    |= 1ULL << ID;
+            mLinkMask   |= 1ULL << ID;
+
             lastPrimary=mFEBs.size();
             mFEBs.push_back({ID,linkmask[ID],name_link.c_str()});
             mpFEBs.push_back(mFEBs.back());
@@ -53,6 +59,7 @@ void FEBList::RebuildFEBList()
                 cm_msg(MERROR,"FEBList::RebuildFEBList","Invalid FEB Type");
             }
         } else if((uint32_t) febtype[ID] == FEBTYPE::FibreSecondary) {
+            mLinkMask   |= 1ULL << ID;
             if(lastPrimary==-1){
                 cm_msg(MERROR,"FEBList::RebuildFEBList","Fiber #%d is set to type secondary but without primary",ID);
                 return;
