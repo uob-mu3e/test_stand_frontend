@@ -57,6 +57,12 @@ architecture rtl of feb_reg_mapping is
     signal fpga_type                : std_logic_vector( 5 downto 0);
     signal adc_reg                  : reg32array_t    ( 4 downto 0);
 
+-- R/W test signals
+    signal test_read                : std_logic;
+    signal test_write               : std_logic;
+    signal test_read_data           : std_logic_vector(31 downto 0);
+    signal test_write_data          : std_logic_vector(31 downto 0);
+
 begin
 
     o_reg_cmdlen                <= reg_cmdlen;
@@ -74,6 +80,8 @@ begin
    
         o_reg_rdata         <= X"CCCCCCCC";
         regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
+        test_read           <= '0';
+        test_write          <= '0';
 
         -- cmdlen
         if ( regaddr = CMD_LEN_REGISTER_RW and i_reg_re = '1' ) then
@@ -164,8 +172,36 @@ begin
         if ( regaddr = MAX10_ADC_8_9_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= i_adc_reg(4);
         end if;
-        
-        
+        --TODO: Fireflies
+
+
+        -- NON-incrementing reads/writes TEST
+        if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_re = '1' ) then
+            o_reg_rdata <= test_read_data;
+            test_read   <= '1';
+        end if;
+        if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_we = '1' ) then
+            test_write_data <= i_reg_wdata;
+            test_write      <= '1';
+        end if;
+
     end if;
     end process;
+    
+    nonincrementing_rw_test_fifo: entity work.ip_scfifo
+    generic map(
+        ADDR_WIDTH      => 4,
+        DATA_WIDTH      => 32,
+        SHOWAHEAD       => "ON",
+        DEVICE          => "Arria V"--,
+    )
+    port map (
+        clock           => i_clk_156,
+        sclr            => '0',
+        data            => test_write_data,
+        wrreq           => test_write,
+        q               => test_read_data,
+        rdreq           => test_read--,
+    );
+    
 end architecture;
