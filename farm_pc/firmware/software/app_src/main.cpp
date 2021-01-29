@@ -53,7 +53,10 @@ int main() {
 
     while (1) {
         printf("  [1] => flash\n");
-        printf("  [2] => xcvr qsfp\n");
+        printf("  [2] => xcvr qsfp[A]\n");
+        printf("  [3] => xcvr qsfp[B]\n");
+        printf("  [4] => xcvr qsfp[C]\n");
+        printf("  [5] => xcvr qsfp[D]\n");
         printf("  [8] => fan\n");
         printf("  [0] => spi si chip\n");
         printf("  [r] => reconfig pll\n");
@@ -65,7 +68,17 @@ int main() {
             flash.menu();
             break;
         case '2':
-            menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+            menu_xcvr((alt_u32*)(AVM_QSFPA_BASE | ALT_CPU_DCACHE_BYPASS_MASK), 'A');
+            break;
+        case '3':
+            menu_xcvr((alt_u32*)(AVM_QSFPB_BASE | ALT_CPU_DCACHE_BYPASS_MASK), 'B');
+            break;
+        case '4':
+            menu_xcvr((alt_u32*)(AVM_QSFPC_BASE | ALT_CPU_DCACHE_BYPASS_MASK), 'C');
+            break;
+        case '5':
+            menu_xcvr((alt_u32*)(AVM_QSFPD_BASE | ALT_CPU_DCACHE_BYPASS_MASK), 'D');
+            break;
             break;
         case '8':
             fan.menu();
@@ -75,7 +88,10 @@ int main() {
             menu_spi_si5345();
             break;
         case 'r':
-            reconfig.pll();
+            reconfig.pll(AVM_QSFPA_BASE);
+            reconfig.pll(AVM_QSFPB_BASE);
+            reconfig.pll(AVM_QSFPC_BASE);
+            reconfig.pll(AVM_QSFPD_BASE);
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

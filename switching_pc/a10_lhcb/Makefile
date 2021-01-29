@@ -1,13 +1,9 @@
 
 CABLE=1
-SOF=output_files/top.sof
-
-BSP_DIR=software/hal_bsp
-APP_DIR=software/app
 
 IPs := \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard ip/*.tcl)) \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard pcieapp/*.tcl)) \
-    nios.sopcinfo
+    $(wildcard ip/*.tcl) \
+    $(wildcard pcieapp/*.tcl) \
+    nios.tcl
 
-include util/makefile.mk
+include util/altera/makefile.mk
