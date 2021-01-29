@@ -5,6 +5,8 @@ use ieee.std_logic_1164.all;
 
 package feb_sc_registers is
 
+    constant PACKET_TYPE_SC                        : std_logic_vector(2 downto 0) := "111";
+    
     constant PACKET_TYPE_SC_READ                   : std_logic_vector(1 downto 0) := "00";
     constant PACKET_TYPE_SC_WRITE                  : std_logic_vector(1 downto 0) := "01";
     constant PACKET_TYPE_SC_READ_NONINCREMENTING   : std_logic_vector(1 downto 0) := "10";
