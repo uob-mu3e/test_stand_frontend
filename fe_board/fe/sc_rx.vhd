@@ -94,16 +94,16 @@ begin
 
             ram_addr_end <= ram_addr + unsigned(i_link_data(15 downto 0));
 
-            if (sc_type = "10") then
+            if (sc_type = "00") then
                 state <= S_READ;
-                r_w_non_inc <= '0';
-            elsif (sc_type = "11") then
-                state <= S_WRITE;
                 r_w_non_inc <= '0';
             elsif (sc_type = "01") then
+                state <= S_WRITE;
+                r_w_non_inc <= '0';
+            elsif (sc_type = "10") then
                 state <= S_READ;
                 r_w_non_inc <= '1';
-            elsif (sc_type = "00") then
+            elsif (sc_type = "11") then
                 state <= S_WRITE;
                 r_w_non_inc <= '1';
             else

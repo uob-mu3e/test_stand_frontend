@@ -104,7 +104,7 @@ begin
 
         wait until rising_edge(clk);
         -- SC, write, ID = 0
-        link_data <= "000111" & "11" & X"0000" & X"BC";
+        link_data <= "000111" & "01" & X"0000" & X"BC";
         link_datak <= "0001";
 
         wait until rising_edge(clk);
@@ -162,7 +162,7 @@ begin
 
         wait until rising_edge(clk);
         -- SC, read, ID = 0
-        link_data <= "000111" & "10" & X"0000" & X"BC";
+        link_data <= "000111" & "00" & X"0000" & X"BC";
         link_datak <= "0001";
 
         wait until rising_edge(clk);
@@ -193,7 +193,7 @@ begin
 
          wait until rising_edge(clk);
         -- SC, write, ID = 0
-        link_data <= "000111" & "00" & X"0000" & X"BC";
+        link_data <= "000111" & "11" & X"0000" & X"BC";
         link_datak <= "0001";
 
         wait until rising_edge(clk);
@@ -253,7 +253,7 @@ begin
 
         wait until rising_edge(clk);
         -- SC, read, ID = 0
-        link_data <= "000111" & "01" & X"0000" & X"BC";
+        link_data <= "000111" & "10" & X"0000" & X"BC";
         link_datak <= "0001";
 
         wait until rising_edge(clk);
@@ -418,7 +418,7 @@ begin
 
         -- ack
         wait until rising_edge(clk) and fifo_rempty = '0';
-        assert ( fifo_rdata = "1110" & X"00000008" ) severity error;
+        assert ( fifo_rdata = "0110" & X"00000008" ) severity error;
 
         -- length
         wait until rising_edge(clk) and fifo_rempty = '0';
@@ -437,7 +437,7 @@ begin
 
         -- ack
         wait until rising_edge(clk) and fifo_rempty = '0';
-        assert ( fifo_rdata = "1010" & X"00000008" ) severity error;
+        assert ( fifo_rdata = "0010" & X"00000008" ) severity error;
 
         -- length
         wait until rising_edge(clk) and fifo_rempty = '0';
@@ -472,7 +472,7 @@ begin
 
         -- ack
         wait until rising_edge(clk) and fifo_rempty = '0';
-        assert ( fifo_rdata = "0010" & X"00000008" ) severity error;
+        assert ( fifo_rdata = "1110" & X"00000008" ) severity error;
 
         -- length
         wait until rising_edge(clk) and fifo_rempty = '0';
@@ -491,7 +491,7 @@ begin
 
         -- ack
         wait until rising_edge(clk) and fifo_rempty = '0';
-        assert ( fifo_rdata = "0110" & X"00000008" ) severity error;
+        assert ( fifo_rdata = "1010" & X"00000008" ) severity error;
 
         -- length
         wait until rising_edge(clk) and fifo_rempty = '0';
