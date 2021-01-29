@@ -10,8 +10,8 @@ USE altera_mf.altera_mf_components.all;
 
 entity max10_controller is
     generic(
-        adc_read_div : integer := 5000000; -- 10 Hz
-    )
+        adc_read_div : integer := 5000000--; -- 10 Hz
+    );
     port(
         -- Max10 SPI
         o_SPI_cs    : out std_logic;
@@ -30,11 +30,11 @@ entity max10_controller is
         o_adc       : reg32array_t( 4 downto 0);
 
         -- Programming the SPI flash on the MAX10
-        i_flash_start_addr  : reg32_t;
-        i_flash_fifo_data   : reg32_t;
-        i_flash_fifo_we     : reg32_t;
+        i_flash_start_addr  : reg32;
+        i_flash_fifo_data   : reg32;
+        i_flash_fifo_we     : reg32;
         i_flash_fifo_wclk   : std_logic;
-        o_flash_status      : reg32_t   
+        o_flash_status      : reg32
         );
 end max10_controller;      
     
