@@ -293,7 +293,6 @@ begin
     process(i_clk_156)
     begin
     if rising_edge(i_clk_156) then
-<<<<<<< HEAD
         subdet_reg.rvalid   <= subdet_reg.re;
         fe_reg.rvalid       <= fe_reg.re;
     end if;
@@ -328,109 +327,7 @@ begin
         o_arriaV_temperature_ce     => arriaV_temperature_ce,
         o_fpga_id_reg               => fpga_id_reg--,
     );
-=======
-        malibu_reg.rvalid <= malibu_reg.re;
-        scifi_reg.rvalid <= scifi_reg.re;
-        mupix_reg.rvalid <= mupix_reg.re;
-        fe_reg.rvalid <= fe_reg.re;
 
-        fe_reg.rdata <= X"CCCCCCCC";
-
-        -- cmdlen
-        if ( regaddr = CMD_LEN_REGISTER_RW and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_cmdlen;
-        end if;
-        if ( regaddr = CMD_LEN_REGISTER_RW and fe_reg.we = '1' ) then
-            reg_cmdlen <= fe_reg.wdata;
-        end if;
-
-        -- offset
-        if ( regaddr = CMD_OFFSET_REGISTER_RW and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_offset;
-        end if;
-        if ( regaddr = CMD_OFFSET_REGISTER_RW and fe_reg.we = '1' ) then
-            reg_offset <= fe_reg.wdata;
-        end if;
-
-        -- reset bypass
-        if ( regaddr = RUN_STATE_RESET_BYPASS_REGISTER_RW and fe_reg.re = '1' ) then
-            fe_reg.rdata(15 downto 0) <= reg_reset_bypass(15 downto 0);
-            fe_reg.rdata(16+9 downto 16) <= run_state_156;
-        end if;
-        if ( regaddr = RUN_STATE_RESET_BYPASS_REGISTER_RW and fe_reg.we = '1' ) then
-            reg_reset_bypass(15 downto 0) <= fe_reg.wdata(15 downto 0); -- upper bits are read-only status
-        end if;
-
-        -- reset payload
-        if ( regaddr = RESET_PAYLOAD_RGEISTER_RW and fe_reg.re = '1' ) then
-            fe_reg.rdata <= reg_reset_bypass_payload;
-        end if;
-        if ( regaddr = RESET_PAYLOAD_RGEISTER_RW and fe_reg.we = '1' ) then
-            reg_reset_bypass_payload <= fe_reg.wdata;
-        end if;
-
-        -- rate measurement
-        if ( regaddr = MERGER_RATE_REGISTER_R and fe_reg.re = '1' ) then
-            fe_reg.rdata <= merger_rate_count;
-        end if;
-
-        -- reset phase
-        if ( regaddr = RESET_PHASE_REGISTER_R and fe_reg.re = '1' ) then
-            fe_reg.rdata(PHASE_WIDTH_g - 1 downto 0) <= reset_phase;
-        end if;
-
-        -- ArriaV temperature
-        if ( regaddr = ARRIA_TEMP_REGISTER_RW and fe_reg.re = '1' ) then
-            fe_reg.rdata <= x"000000" & arriaV_temperature;
-        end if;
-        if ( regaddr = ARRIA_TEMP_REGISTER_RW and fe_reg.we = '1' ) then
-            arriaV_temperature_clr  <= fe_reg.wdata(0);
-            arriaV_temperature_ce   <= fe_reg.wdata(1);
-        end if;
-
-        -- mscb
-
-        -- git head hash
-        if ( regaddr = GIT_HASH_REGISTER_R and fe_reg.re = '1' ) then
-            fe_reg.rdata <= (others => '0');
-            fe_reg.rdata <= work.cmp.GIT_HEAD(0 to 31);
-        end if;
-        -- fpga id
-        if ( regaddr = FPGA_ID_REGISTER_RW and fe_reg.re = '1' ) then
-            fe_reg.rdata <= (others => '0');
-            fe_reg.rdata(i_fpga_id_reg'range) <= i_fpga_id_reg;
-        end if;
-        if ( regaddr = FPGA_ID_REGISTER_RW and fe_reg.we = '1' ) then
-            fe_reg.rdata <= (others => '0');
-            i_fpga_id_reg(N_LINKS*16-1 downto 0) <= fe_reg.wdata(N_LINKS*16-1 downto 0);
-        end if;
-        -- fpga type
-        if ( regaddr = FPGA_TYPE_REGISTER_R and fe_reg.re = '1' ) then
-            fe_reg.rdata <= (others => '0');
-            fe_reg.rdata(i_fpga_type'range) <= i_fpga_type;
-        end if;
-        --max ADC data--
-        if ( fe_reg.addr(7 downto 0) = X"C0" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= adc_reg(0);
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"C1" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= adc_reg(1);
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"C2" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= adc_reg(2);
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"C3" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= adc_reg(3);
-        end if;
-        if ( fe_reg.addr(7 downto 0) = X"C4" and fe_reg.re = '1' ) then
-            fe_reg.rdata <= adc_reg(4);
-        end if;
-
-        --
-    end if;
-    end process;
-
->>>>>>> origin/v0.10_dev
 
 
     -- nios system
