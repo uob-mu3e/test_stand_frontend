@@ -42,7 +42,7 @@ FEBSlowcontrolInterface::~FEBSlowcontrolInterface()
  *      Write enable to SC_MAIN_ENABLE_REGISTER_W
  */
 
-int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data)
+int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data, bool nonincrementing)
 {
 
     if(startaddr > FEB_SC_ADDR_RANGE_HI){
@@ -68,11 +68,12 @@ int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vec
        return ERRCODES::FPGA_BUSY;
     }
 
-    uint32_t FEB_PACKET_TYPE_SC = 0x7;
-    uint32_t FEB_PACKET_TYPE_SC_WRITE = 0x3; // this is 11 in binary
+    uint32_t packet_type = PACKET_TYPE_SC_WRITE;
+    if(nonincrementing)
+        packet_type = PACKET_TYPE_SC_WRITE_NONINCREMENTING;
 
     // two most significant bits are 0
-    mdev.write_memory_rw(0, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_WRITE << 24 | (uint16_t) FPGA_ID << 8 | 0xBC);
+    mdev.write_memory_rw(0, PACKET_TYPE_SC << 26 | packet_type << 24 | (uint16_t) FPGA_ID << 8 | 0xBC);
     mdev.write_memory_rw(1, startaddr);
     mdev.write_memory_rw(2, data.size());
 
@@ -137,7 +138,7 @@ int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, uin
     return FEB_write(FPGA_ID, startaddr, vector<uint32_t>(1, data) );
 }
 
-int FEBSlowcontrolInterface::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> &data)
+int FEBSlowcontrolInterface::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> &data, bool nonincrementing)
 {
     if(startaddr > FEB_SC_ADDR_RANGE_HI){
         cout << "Address out of range: " << std::hex << startaddr << endl;
@@ -162,10 +163,11 @@ int FEBSlowcontrolInterface::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vect
        return ERRCODES::FPGA_BUSY;
     }
 
-    uint32_t FEB_PACKET_TYPE_SC = 0x7;
-    uint32_t FEB_PACKET_TYPE_SC_READ = 0x2; // this is 10 in binary
+    uint32_t packet_type = PACKET_TYPE_SC_READ;
+    if(nonincrementing)
+        packet_type = PACKET_TYPE_SC_READ_NONINCREMENTING;
 
-    mdev.write_memory_rw(0, FEB_PACKET_TYPE_SC << 26 | FEB_PACKET_TYPE_SC_READ << 24 | (uint16_t) FPGA_ID << 8 | 0xBC);
+    mdev.write_memory_rw(0, PACKET_TYPE_SC << 26 | packet_type << 24 | (uint16_t) FPGA_ID << 8 | 0xBC);
     mdev.write_memory_rw(1, startaddr);
     mdev.write_memory_rw(2, data.size());
     mdev.write_memory_rw(3, 0x0000009c);

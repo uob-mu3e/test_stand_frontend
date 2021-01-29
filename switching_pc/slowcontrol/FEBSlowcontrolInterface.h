@@ -24,10 +24,10 @@ public:
     FEBSlowcontrolInterface(const FEBSlowcontrolInterface &) = delete;
     FEBSlowcontrolInterface& operator=(const FEBSlowcontrolInterface&) = delete;
 
-    int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data);
+    int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data, bool nonincrementing = false);
     int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, uint32_t data);
     // expects data vector with read-length size
-    int FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> & data);
+    int FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> & data, bool nonincrementing = false);
 
     void FEBsc_resetMain();
     void FEBsc_resetSecondary();
@@ -75,6 +75,9 @@ protected:
     uint32_t m_FEBsc_rmem_addr;
 
     void rmenaddrIncr(){m_FEBsc_rmem_addr = m_FEBsc_rmem_addr + 1 == MUDAQ_MEM_RO_LEN ? 0 : m_FEBsc_rmem_addr + 1;}
+
+
+
 };
 
 #endif
