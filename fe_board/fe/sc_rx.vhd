@@ -9,6 +9,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.feb_sc_registers.all;
 
 entity sc_rx is
 generic (
@@ -94,22 +95,22 @@ begin
 
             ram_addr_end <= ram_addr + unsigned(i_link_data(15 downto 0));
 
-            if (sc_type = "00") then
+            if (sc_type = PACKET_TYPE_SC_READ) then
                 state <= S_READ;
                 r_w_non_inc <= '0';
-            elsif (sc_type = "01") then
+            elsif (sc_type = PACKET_TYPE_SC_WRITE) then
                 state <= S_WRITE;
                 r_w_non_inc <= '0';
-            elsif (sc_type = "10") then
+            elsif (sc_type = PACKET_TYPE_SC_READ_NONINCREMENTING) then
                 state <= S_READ;
                 r_w_non_inc <= '1';
-            elsif (sc_type = "11") then
+            elsif (sc_type = PACKET_TYPE_SC_WRITE_NONINCREMENTING) then
                 state <= S_WRITE;
                 r_w_non_inc <= '1';
             else
                 state <= S_ERROR;
             end if;
-            --
+
         elsif ( state = S_WRITE and i_link_datak = "0000" ) then
             if ( ram_addr /= ram_addr_end ) then
                 -- write to ram
