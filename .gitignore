@@ -68,6 +68,7 @@ online/*.txt
 online/*.TXT
 online/*.log
 online/*.xml
+*.autosave
 
 # midas (?)
 *.mid
@@ -86,3 +87,6 @@ cmp_pkg.vhd
 #
 *.npy
 *.vcd
+
+# Generated header files
+switching_pc/slowcontrol/feb_constants.h
