@@ -186,6 +186,97 @@ begin
         link_datak <= "0001";
 
         wait for 100 ns;
+        
+    ----------------------------------------------------------------------------
+    -- non-incrementing write
+    ----------------------------------------------------------------------------
+
+         wait until rising_edge(clk);
+        -- SC, write, ID = 0
+        link_data <= "000111" & "00" & X"0000" & X"BC";
+        link_datak <= "0001";
+
+        wait until rising_edge(clk);
+        -- start address
+        link_data <= X"00000008";
+        link_datak <= "0000";
+
+        wait until rising_edge(clk);
+        -- length
+        link_data <= X"00000004";
+        link_datak <= "0000";
+
+        for i in 0 to 15 loop
+            wait until rising_edge(clk);
+            -- idle
+            link_data <= X"000000BC";
+            link_datak <= "0001";
+        end loop;
+
+        wait until rising_edge(clk);
+        -- data[0]
+        link_data <= X"00112233";
+        link_datak <= "0000";
+
+        wait until rising_edge(clk);
+        -- data[1]
+        link_data <= X"11223344";
+        link_datak <= "0000";
+
+        wait until rising_edge(clk);
+        -- data[2]
+        link_data <= X"22334455";
+        link_datak <= "0000";
+
+        wait until rising_edge(clk);
+        -- data[3]
+        link_data <= X"33445566";
+        link_datak <= "0000";
+
+        wait until rising_edge(clk);
+        -- stop
+        link_data <= X"0000009C";
+        link_datak <= "0001";
+
+        wait until rising_edge(clk);
+        -- idle
+        link_data <= X"000000BC";
+        link_datak <= "0001";
+
+        wait for 100 ns;
+
+    ----------------------------------------------------------------------------
+    
+    ----------------------------------------------------------------------------
+    -- non-incrementing read
+    ----------------------------------------------------------------------------
+
+        wait until rising_edge(clk);
+        -- SC, read, ID = 0
+        link_data <= "000111" & "01" & X"0000" & X"BC";
+        link_datak <= "0001";
+
+        wait until rising_edge(clk);
+        -- start address
+        link_data <= X"00000008";
+        link_datak <= "0000";
+
+        wait until rising_edge(clk);
+        -- length
+        link_data <= X"00000004";
+        link_datak <= "0000";
+
+        wait until rising_edge(clk);
+        -- stop
+        link_data <= X"0000009C";
+        link_datak <= "0001";
+
+        wait until rising_edge(clk);
+        -- idle
+        link_data <= X"000000BC";
+        link_datak <= "0001";
+
+        wait for 100 ns;
 
     ----------------------------------------------------------------------------
 
@@ -250,6 +341,60 @@ begin
         report "wait rdata[3]";
         wait until rising_edge(clk) and ram_re = '1';
         assert ( ram_addr = X"0000000B" ) severity error;
+
+        wait until rising_edge(clk);
+        assert ( ram_re = '0' );
+        
+    ----------------------------------------------------------------------------
+    -- non-incrementing write
+    ----------------------------------------------------------------------------
+
+        -- wdata[0]
+        report "wait non-inc wdata[0]";
+        wait until rising_edge(clk) and ram_we = '1';
+        assert ( ram_addr = X"00000008" ) severity error;
+        assert ( ram_wdata = X"00112233" ) severity error;
+
+        -- wdata[1]
+        report "wait non-inc wdata[1]";
+        wait until rising_edge(clk) and ram_we = '1';
+        assert ( ram_addr = X"00000008" ) severity error;
+        assert ( ram_wdata = X"11223344" ) severity error;
+
+        -- wdata[2]
+        report "wait non-inc wdata[2]";
+        wait until rising_edge(clk) and ram_we = '1';
+        assert ( ram_addr = X"00000008" ) severity error;
+        assert ( ram_wdata = X"22334455" ) severity error;
+
+        -- wdata[3]
+        report "wait non-inc wdata[3]";
+        wait until rising_edge(clk) and ram_we = '1';
+        assert ( ram_addr = X"00000008" ) severity error;
+        assert ( ram_wdata = X"33445566" ) severity error;
+
+        wait until rising_edge(clk);
+        assert ( ram_we = '0' );
+        
+    ----------------------------------------------------------------------------
+    -- non-incrementing read
+    ----------------------------------------------------------------------------
+
+        report "wait non-inc rdata[0]";
+        wait until rising_edge(clk) and ram_re = '1';
+        assert ( ram_addr = X"00000008" ) severity error;
+
+        report "wait non-inc rdata[1]";
+        wait until rising_edge(clk) and ram_re = '1';
+        assert ( ram_addr = X"00000008" ) severity error;
+
+        report "wait non-inc rdata[2]";
+        wait until rising_edge(clk) and ram_re = '1';
+        assert ( ram_addr = X"00000008" ) severity error;
+
+        report "wait non-inc rdata[3]";
+        wait until rising_edge(clk) and ram_re = '1';
+        assert ( ram_addr = X"00000008" ) severity error;
 
         wait until rising_edge(clk);
         assert ( ram_re = '0' );
@@ -320,6 +465,60 @@ begin
 
         wait until rising_edge(clk);
         assert ( fifo_rempty = '1' ) severity error;
+        
+    ----------------------------------------------------------------------------
+    -- non-incrementing write
+    ----------------------------------------------------------------------------
+
+        -- ack
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0010" & X"00000008" ) severity error;
+
+        -- length
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0000" & X"00010004" ) severity error;
+
+        -- stop
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0011" & X"00000000" ) severity error;
+
+        wait until rising_edge(clk);
+        assert ( fifo_rempty = '1' ) severity error;
+        
+    ----------------------------------------------------------------------------
+    -- non-incrementing read
+    ----------------------------------------------------------------------------
+
+        -- ack
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0110" & X"00000008" ) severity error;
+
+        -- length
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0000" & X"00010004" ) severity error;
+
+        -- data[0]
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0000" & X"33445566" ) severity error;
+
+        -- data[1]
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0000" & X"33445566" ) severity error;
+
+        -- data[2]
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0000" & X"33445566" ) severity error;
+
+        -- data[3]
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0000" & X"33445566" ) severity error;
+
+        -- stop
+        wait until rising_edge(clk) and fifo_rempty = '0';
+        assert ( fifo_rdata = "0011" & X"00000000" ) severity error;
+
+        wait until rising_edge(clk);
+        assert ( fifo_rempty = '1' ) severity error;
 
     ----------------------------------------------------------------------------
 
@@ -330,7 +529,7 @@ begin
 
     process
     begin
-        wait for 1000 ns;
+        wait for 2000 ns;
         assert ( DONE = (DONE'range => '1') )
             report "NOT DONE"
             severity error;
