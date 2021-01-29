@@ -56,9 +56,11 @@ package feb_sc_registers is
     constant FIREFLY2_RX2_POW_REGISTER_R        :   integer := 16#20#;
     constant FIREFLY2_RX3_POW_REGISTER_R        :   integer := 16#21#;
     constant FIREFLY2_RX4_POW_REGISTER_R        :   integer := 16#22#;
-    constant FIREFLY2_ALARM_REGISTER_R          :   integer := 16#23#;  
+    constant FIREFLY2_ALARM_REGISTER_R          :   integer := 16#23#;
 
-    -- Registers 0x24 to 0x3F are reserved for further generic use
+    constant NONINCREMENTING_TEST_REGISTER_RW   :   integer := 16#24#;
+
+    -- Registers 0x25 to 0x3F are reserved for further generic use
     -- Registers above 0x40 are for subdetector specific use
 
     subtype REG_AREA_RANGE is integer range 7 downto 6;
