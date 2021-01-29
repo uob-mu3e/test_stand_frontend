@@ -599,39 +599,39 @@ begin
         o_testout                       => open--,
     );
 
-    e_max10_spi_main : entity work.max10_spi_main
-    generic map (
-        SS  =>  '1',
-        R   =>  '1',
-        lanes => 4--,
-    )
-    port map(
-        -- clk & reset
-        i_clk_50        => i_nios_clk,
-        i_clk_100       => i_nios_clk,--clk_100,
-        i_clk_156       => i_clk_156, -- sc regs are running on 156 --> sync outputs
-        i_reset_n       => i_areset_n,
-        i_command	    => SPI_command,--[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
---        ------ Aria Data --register interface 
-        o_Ar_rw		    => SPI_rw, -- nios rw
-        o_Ar_data	    => i_adc_data_o,
-        o_Ar_addr_o	    => SPI_addr_o, -- nioas adc addr,
-        o_Ar_done	    => SPI_done,
---
-        i_Max_data	    =>   x"12345678",
-        i_Max_addr	    =>   X"55" & "0100010" & '1',--[15-9] empty ,[8-1] addr , [0] rw
-        -- SPI
-        o_SPI_cs        => o_max10_spi_csn,
-        -- max10_spi_sclk lane defect on the first boards
-        o_SPI_clk       => o_max10_spi_D3,
-        io_SPI_mosi     => io_max10_spi_mosi,
-        io_SPI_miso     => io_max10_spi_miso,
-        io_SPI_D1       => io_max10_spi_D1,
-        io_SPI_D2       => io_max10_spi_D2,
-        io_SPI_D3       => open,
-        -- debug
-        o_led => open--,
-    );
+--    e_max10_spi_main : entity work.max10_spi_main
+--    generic map (
+--        SS  =>  '1',
+--        R   =>  '1',
+--        lanes => 4--,
+--    )
+--    port map(
+--        -- clk & reset
+--        i_clk_50        => i_nios_clk,
+--        i_clk_100       => i_nios_clk,--clk_100,
+--        i_clk_156       => i_clk_156, -- sc regs are running on 156 --> sync outputs
+--        i_reset_n       => i_areset_n,
+--        i_command	    => SPI_command,--[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
+----        ------ Aria Data --register interface 
+--        o_Ar_rw		    => SPI_rw, -- nios rw
+--        o_Ar_data	    => i_adc_data_o,
+--        o_Ar_addr_o	    => SPI_addr_o, -- nioas adc addr,
+--        o_Ar_done	    => SPI_done,
+----
+--        i_Max_data	    =>   x"12345678",
+--        i_Max_addr	    =>   X"55" & "0100010" & '1',--[15-9] empty ,[8-1] addr , [0] rw
+--        -- SPI
+--        o_SPI_cs        => o_max10_spi_csn,
+--        -- max10_spi_sclk lane defect on the first boards
+--        o_SPI_clk       => o_max10_spi_D3,
+--        io_SPI_mosi     => io_max10_spi_mosi,
+--        io_SPI_miso     => io_max10_spi_miso,
+--        io_SPI_D1       => io_max10_spi_D1,
+--        io_SPI_D2       => io_max10_spi_D2,
+--        io_SPI_D3       => open,
+--        -- debug
+--        o_led => open--,
+--    );
    
    --max 10 adc data reg for testing in He--
 process(i_clk_156) 
