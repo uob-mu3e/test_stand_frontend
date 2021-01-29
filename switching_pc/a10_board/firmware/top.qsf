@@ -19,6 +19,7 @@ set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_scfifo.vhd
 set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_ram.vhd
 set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_dcfifo.vhd
 set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_dcfifo_mixed_widths.vhd
+set_global_assignment -name VHDL_FILE ../../../common/firmware/a10/stream_merger.vhd
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram_1_port.vhd
 set_global_assignment -name VHDL_FILE a10/midas_event_builder.vhd
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
@@ -50,6 +51,7 @@ set_global_assignment -name VHDL_FILE a10/run_control_link_listener.vhd
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
 
 
 
