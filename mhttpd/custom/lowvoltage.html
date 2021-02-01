@@ -123,6 +123,7 @@
             <th>Voltage</th>
             <th>Current Limit</th>
             <th>Current</th>
+            <th>Interlock</th>
         </tr>
         <tr>
             <th>0 <div class="modbbox" style="width: 10px; height: 10px;" data-odb-path="/Equipment/Genesys/Variables/State/[0]" data-color="lightgreen" data-background-color="red"></div>
@@ -142,6 +143,9 @@
             <td>
                 <div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Current/[0]"></div>
             </td>
+            <td>
+                <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/Genesys/Variables/Interlock/[0]"></input>
+            </td>
         </tr>
         <tr>
             <th>1 <div class="modbbox" style="width: 10px; height: 10px;" data-odb-path="/Equipment/Genesys/Variables/State/[1]" data-color="lightgreen" data-background-color="red"></div>
@@ -160,6 +164,9 @@
             </td>
             <td>
                 <div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Current/[1]"></div>
+            </td>
+            <td>
+                <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/Genesys/Variables/Interlock/[1]"></input>
             </td>
         </tr>
     </table>
