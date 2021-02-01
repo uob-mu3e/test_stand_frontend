@@ -300,8 +300,13 @@ begin
     e_reset_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_n, i_reset_n => CPU_RESET_n, i_clk => clk_125 );
 
-    -- 156.25 MHz data clock (from tx pll, reference is 125 MHz global clock)
-    clk_156 <= tx_clk(0);
+    -- 156.25 MHz data clock (reference is 125 MHz global clock)
+    e_clk_156 : component work.cmp.ip_pll_125to156
+    port map (
+        outclk_0 => clk_156,
+        refclk => clk_125,
+        rst => not reset_125_n--,
+    );
 
     e_reset_156_n : entity work.reset_sync
     port map ( o_reset_n => reset_156_n, i_reset_n => CPU_RESET_n, i_clk => clk_156 );
