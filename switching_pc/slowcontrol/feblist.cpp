@@ -16,6 +16,10 @@ void FEBList::RebuildFEBList()
     mFEBMask =  0;
     mLinkMask = 0;
 
+    mPixelFEBMask =0;
+    mSciFiFEBMask =0;
+    mTileFEBMask =0;
+
     // get odb instance for links settings
     odb links_settings("/Equipment/Links/Settings");
 
@@ -51,10 +55,13 @@ void FEBList::RebuildFEBList()
             cm_msg(MINFO,"FEBList::RebuildFEBList","%s",reportStr);
             if(((uint32_t) febtype[ID]) == FEBTYPE::Pixel){
                 mPixelFEBs.push_back(mFEBs.back());
+                mPixelFEBMask |= 1ULL << ID;
             } else if(((uint32_t) febtype[ID]) == FEBTYPE::Fibre)    {
                 mSciFiFEBs.push_back(mFEBs.back());
+                mSciFiFEBMask |= 1ULL << ID;
             } else if(((uint32_t) febtype[ID]) == FEBTYPE::Tile)    {
                 mTileFEBs.push_back(mFEBs.back());
+                mTileFEBMask |= 1ULL << ID;
             } else {
                 cm_msg(MERROR,"FEBList::RebuildFEBList","Invalid FEB Type");
             }
