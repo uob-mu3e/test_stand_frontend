@@ -199,7 +199,7 @@ architecture rtl of top is
         signal i2c_sda_oe   : std_logic;
         signal cpu_pio_i : std_logic_vector(31 downto 0);
 
-        signal av_qsfp : work.util.avalon_t;
+        signal av_xcvr : work.util.avalon_t;
 
         -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
         signal ZERO : std_logic := '0';
@@ -386,12 +386,12 @@ begin
         avm_reset_reset_n               => reset_125_n,
         avm_clock_clk                   => clk_125,
 
-        avm_qsfp_address                => av_qsfp.address(15 downto 0),
-        avm_qsfp_read                   => av_qsfp.read,
-        avm_qsfp_readdata               => av_qsfp.readdata,
-        avm_qsfp_write                  => av_qsfp.write,
-        avm_qsfp_writedata              => av_qsfp.writedata,
-        avm_qsfp_waitrequest            => av_qsfp.waitrequest,
+        avm_xcvr_address                => av_xcvr.address(15 downto 0),
+        avm_xcvr_read                   => av_xcvr.read,
+        avm_xcvr_readdata               => av_xcvr.readdata,
+        avm_xcvr_write                  => av_xcvr.write,
+        avm_xcvr_writedata              => av_xcvr.writedata,
+        avm_xcvr_waitrequest            => av_xcvr.waitrequest,
 
         flash_tcm_address_out(27 downto 2)  => FLASH_A,
         flash_tcm_data_out                  => FLASH_D,
@@ -496,12 +496,12 @@ begin
 
         i_refclk    => (others => clk_125),
 
-        i_avs_address       => av_qsfp.address(15 downto 0),
-        i_avs_read          => av_qsfp.read,
-        o_avs_readdata      => av_qsfp.readdata,
-        i_avs_write         => av_qsfp.write,
-        i_avs_writedata     => av_qsfp.writedata,
-        o_avs_waitrequest   => av_qsfp.waitrequest,
+        i_avs_address       => av_xcvr.address(15 downto 0),
+        i_avs_read          => av_xcvr.read,
+        o_avs_readdata      => av_xcvr.readdata,
+        i_avs_write         => av_xcvr.write,
+        i_avs_writedata     => av_xcvr.writedata,
+        o_avs_waitrequest   => av_xcvr.waitrequest,
 
         i_reset_n   => reset_125_n,
         i_clk       => clk_125--,
