@@ -199,7 +199,7 @@ architecture rtl of top is
         signal i2c_sda_oe   : std_logic;
         signal cpu_pio_i : std_logic_vector(31 downto 0);
 
-        signal av_qsfp : work.util.avalon_array_t(3 downto 0);
+        signal av_qsfp : work.util.avalon_t;
 
         -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
         signal ZERO : std_logic := '0';
@@ -211,28 +211,14 @@ architecture rtl of top is
         signal rx_clk : std_logic_vector(15 downto 0);
         type fifo_out_array_type is array (3 downto 0) of std_logic_vector(35 downto 0);
 
-        --all signals from QSFP plugs
-        signal QSFP_TX : std_logic_vector(15 downto 0);
-        signal QSFP_RX : std_logic_vector(15 downto 0);
-        --data behind QSFP tranceivers
-        type data_array_type is array (NLINKS_TOTL-1 downto 0) of std_logic_vector(31 downto 0);
-        type datak_array_type is array (NLINKS_TOTL-1 downto 0) of std_logic_vector(3 downto 0);
-        signal rx_data : data_array_type;
---        signal tx_data : data_array_type;
-        signal rx_datak : datak_array_type;
---        signal tx_datak : datak_array_type;
+    -- data behind QSFP tranceivers
+    signal rx_data_raw, rx_data, tx_data : work.util.slv32_array_t(NLINKS_TOTL-1 downto 0);
+    signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(NLINKS_TOTL-1 downto 0);
 
-    signal rx_data_v:       std_logic_vector(NLINKS_TOTL*32-1 downto 0);
-    signal rx_datak_v:      std_logic_vector(NLINKS_TOTL*4-1 downto 0);
-    signal rx_data_v_raw:   std_logic_vector(NLINKS_TOTL*32-1 downto 0);
-    signal rx_datak_v_raw:  std_logic_vector(NLINKS_TOTL*4-1 downto 0);
     signal rx_sc_v:         std_logic_vector(NLINKS_TOTL*32-1 downto 0);
     signal rx_sck_v:        std_logic_vector(NLINKS_TOTL*4-1 downto 0);
     signal rx_rc_v:         std_logic_vector(NLINKS_TOTL*32-1 downto 0);
     signal rx_rck_v:        std_logic_vector(NLINKS_TOTL*4-1 downto 0);
-    
-    signal tx_data_v:       std_logic_vector(NLINKS_TOTL*32-1 downto 0);
-    signal tx_datak_v:      std_logic_vector(NLINKS_TOTL*4-1 downto 0);
 
     type mapping_t is array(natural range <>) of integer;
     --mapping as follows: fiber link_mapping(0)=1 - Fiber QSFPA.1 is mapped to first(0) link
@@ -400,33 +386,12 @@ begin
         avm_reset_reset_n               => reset_125_n,
         avm_clock_clk                   => clk_125,
 
-        avm_qsfpA_address               => av_qsfp(0).address(13 downto 0),
-        avm_qsfpA_read                  => av_qsfp(0).read,
-        avm_qsfpA_readdata              => av_qsfp(0).readdata,
-        avm_qsfpA_write                 => av_qsfp(0).write,
-        avm_qsfpA_writedata             => av_qsfp(0).writedata,
-        avm_qsfpA_waitrequest           => av_qsfp(0).waitrequest,
-
-        avm_qsfpB_address               => av_qsfp(1).address(13 downto 0),
-        avm_qsfpB_read                  => av_qsfp(1).read,
-        avm_qsfpB_readdata              => av_qsfp(1).readdata,
-        avm_qsfpB_write                 => av_qsfp(1).write,
-        avm_qsfpB_writedata             => av_qsfp(1).writedata,
-        avm_qsfpB_waitrequest           => av_qsfp(1).waitrequest,
-
-        avm_qsfpC_address               => av_qsfp(2).address(13 downto 0),
-        avm_qsfpC_read                  => av_qsfp(2).read,
-        avm_qsfpC_readdata              => av_qsfp(2).readdata,
-        avm_qsfpC_write                 => av_qsfp(2).write,
-        avm_qsfpC_writedata             => av_qsfp(2).writedata,
-        avm_qsfpC_waitrequest           => av_qsfp(2).waitrequest,
-
-        avm_qsfpD_address               => av_qsfp(3).address(13 downto 0),
-        avm_qsfpD_read                  => av_qsfp(3).read,
-        avm_qsfpD_readdata              => av_qsfp(3).readdata,
-        avm_qsfpD_write                 => av_qsfp(3).write,
-        avm_qsfpD_writedata             => av_qsfp(3).writedata,
-        avm_qsfpD_waitrequest           => av_qsfp(3).waitrequest,
+        avm_qsfp_address                => av_qsfp.address(15 downto 0),
+        avm_qsfp_read                   => av_qsfp.read,
+        avm_qsfp_readdata               => av_qsfp.readdata,
+        avm_qsfp_write                  => av_qsfp.write,
+        avm_qsfp_writedata              => av_qsfp.writedata,
+        avm_qsfp_waitrequest            => av_qsfp.waitrequest,
 
         flash_tcm_address_out(27 downto 2)  => FLASH_A,
         flash_tcm_data_out                  => FLASH_D,
@@ -503,61 +468,49 @@ begin
     QSFPC_RST_n <= '1';
     QSFPD_RST_n <= '1';
 
-    --mapping of qsfp signals
-    QSFPA_TX_p <= QSFP_TX(3 downto 0);
-    QSFPB_TX_p <= QSFP_TX(7 downto 4);
-    QSFPC_TX_p <= QSFP_TX(11 downto 8);
-    QSFPD_TX_p <= QSFP_TX(15 downto 12);
-
-    QSFP_RX(3 downto 0)   <= QSFPA_RX_p;
-    QSFP_RX(7 downto 4)   <= QSFPB_RX_p;
-    QSFP_RX(11 downto 8)  <= QSFPC_RX_p;
-    QSFP_RX(15 downto 12) <= QSFPD_RX_p;
-
-    gen_qsfp : for i in 0 to 3 generate
-    e_qsfp : entity work.xcvr_a10
+    e_xcvr_block : entity work.xcvr_block
     generic map (
-        NUMBER_OF_CHANNELS_g => 4--,
+        N_XCVR_g => 4,
+        N_CHANNELS_g => 4--,
     )
     port map (
-        i_tx_data   => tx_data_v(4*32*(i+1)-1 downto 4*32*i),
-        i_tx_datak  => tx_datak_v(4*4*(i+1)-1 downto 4*4*i),
+        i_tx_data   => tx_data,
+        i_tx_datak  => tx_datak,
 
-        o_rx_data   => rx_data_v_raw(4*32*(i+1)-1 downto 4*32*i),
-        o_rx_datak  => rx_datak_v_raw(4*4*(i+1)-1 downto 4*4*i),
+        o_rx_data   => rx_data_raw,
+        o_rx_datak  => rx_datak_raw,
 
-        o_tx_clkout => tx_clk(4*(i+1)-1 downto 4*i),
-        i_tx_clkin  => (others => clk_156),
-        o_rx_clkout => open,--rx_clk,
-        i_rx_clkin  => (others => clk_156),
+        o_tx_clk    => tx_clk,
+        i_tx_clk    => (others => clk_156),
+        o_rx_clk    => rx_clk,
+        i_rx_clk    => (others => clk_156),
 
-        o_tx_serial => QSFP_TX(4*(i+1)-1 downto 4*i),
-        i_rx_serial => QSFP_RX(4*(i+1)-1 downto 4*i),
+        o_tx_serial( 3 downto  0)   => QSFPA_TX_p,
+        o_tx_serial( 7 downto  4)   => QSFPB_TX_p,
+        o_tx_serial(11 downto  8)   => QSFPC_TX_p,
+        o_tx_serial(15 downto 12)   => QSFPD_TX_p,
+        i_rx_serial( 3 downto  0)   => QSFPA_RX_p,
+        i_rx_serial( 7 downto  4)   => QSFPB_RX_p,
+        i_rx_serial(11 downto  8)   => QSFPC_RX_p,
+        i_rx_serial(15 downto 12)   => QSFPD_RX_p,
 
-        i_pll_clk   => clk_125,
-        i_cdr_clk   => clk_125,
+        i_refclk    => (others => clk_125),
 
-        i_avs_address       => av_qsfp(i).address(13 downto 0),
-        i_avs_read          => av_qsfp(i).read,
-        o_avs_readdata      => av_qsfp(i).readdata,
-        i_avs_write         => av_qsfp(i).write,
-        i_avs_writedata     => av_qsfp(i).writedata,
-        o_avs_waitrequest   => av_qsfp(i).waitrequest,
+        i_avs_address       => av_qsfp.address(15 downto 0),
+        i_avs_read          => av_qsfp.read,
+        o_avs_readdata      => av_qsfp.readdata,
+        i_avs_write         => av_qsfp.write,
+        i_avs_writedata     => av_qsfp.writedata,
+        o_avs_waitrequest   => av_qsfp.waitrequest,
 
-        i_reset     => not reset_125_n,
+        i_reset_n   => reset_125_n,
         i_clk       => clk_125--,
     );
-    end generate;
-    --assign vector types to array types for qsfp rx signals (used by link observer module)
-    gen_rx_data : for i in 0 to NLINKS_TOTL-1 generate
-        rx_data(i) <= rx_data_v(32*(i+1)-1 downto 32*i);
-        rx_datak(i) <= rx_datak_v(4*(i+1)-1 downto 4*i);
-    end generate;
 
     --assign long vectors for used fibers. Wired to run_control, sc, data receivers
     g_assign_usedlinks: for i in NLINKS_DATA-1 downto 0 generate
-       rx_mapped_data_v(32*(i+1)-1 downto 32*i) <= rx_data_v(32*(link_mapping(i)+1)-1 downto 32*link_mapping(i));
-       rx_mapped_datak_v(4*(i+1)-1 downto  4*i) <= rx_datak_v(4*(link_mapping(i)+1)-1 downto  4*link_mapping(i));
+       rx_mapped_data_v(32*(i+1)-1 downto 32*i) <= rx_data(link_mapping(i));
+       rx_mapped_datak_v(4*(i+1)-1 downto  4*i) <= rx_datak(link_mapping(i));
        rx_mapped_linkmask(i) <= writeregs_slow(FEB_ENABLE_REGISTER_W)(link_mapping(i));
     end generate;
 
@@ -568,11 +521,11 @@ begin
             i_clk               => clk_156,
             i_reset             => not resets_n(RESET_BIT_EVENT_COUNTER),
             i_aligned           => '1',
-            i_data              => rx_data_v_raw(31+i*32 downto i*32),
-            i_datak             => rx_datak_v_raw(3+i* 4 downto i* 4),
+            i_data              => rx_data_raw(i),
+            i_datak             => rx_datak_raw(i),
             i_fifo_almost_full  => '0',--link_fifo_almost_full(i),
-            o_data              => rx_data_v(31+i*32 downto i*32),
-            o_datak             => rx_datak_v(3+i* 4 downto i* 4),
+            o_data              => rx_data(i),
+            o_datak             => rx_datak(i),
             o_sc                => rx_sc_v(31+i*32 downto i*32),
             o_sck               => rx_sck_v(3+i* 4 downto i* 4),
             o_rc                => rx_rc_v(31+i*32 downto i*32),
@@ -706,8 +659,8 @@ begin
         i_length        => writeregs_slow(SC_MAIN_LENGTH_REGISTER_W)(15 downto 0),
         i_mem_data      => writememreaddata,
         o_mem_addr      => writememreadaddr,
-        o_mem_data      => tx_data_v,
-        o_mem_datak     => tx_datak_v,
+        o_mem_data      => tx_data,
+        o_mem_datak     => tx_datak,
         o_done          => readregs_slow(SC_MAIN_STATUS_REGISTER_R)(SC_MAIN_DONE),
         o_state         => open--,
     );

@@ -1,6 +1,5 @@
 #
 
-set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) xcvr_a10.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) link_observer.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) dma_evaluation.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) hex2seg7.vhd ]
@@ -11,3 +10,6 @@ set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) linear_sh
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) data_generator_a10.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) run_control.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) run_control_link_listener.vhd ]
+
+set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) xcvr_a10.vhd ]
+set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) xcvr_block.vhd ]
