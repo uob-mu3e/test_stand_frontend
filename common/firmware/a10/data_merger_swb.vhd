@@ -37,15 +37,15 @@ end entity data_merger_swb;
 
 architecture RTL of data_merger_swb is
          
-    type merge_state_type is (wait_for_pre, get_ts_1, get_sh, hit_1, hit_2, hit_3, hit_4, hit_5, hit_6, hit_7, hit_8, hit_9, hit_10, hit_11, hit_12, hit_13, hit_14, hit_15, hit_16, get_tr, error_state);
+    type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit_1, hit_2, hit_3, hit_4, hit_5, hit_6, hit_7, hit_8, hit_9, hit_10, hit_11, hit_12, hit_13, hit_14, hit_15, hit_16, get_tr, error_state);
     signal merge_state : merge_state_type;
 
     signal o_data_reg : std_logic_vector(71 downto 0);
-    signal hit_reg    : std_logic_vector(NLINKS * 32 - 1  downto 0);
+    signal hit_reg    : std_logic_vector(NLINKS * 38 - 1  downto 0);
     
 begin
 
-    process(i_reset_n, i_reset_n)
+    process(i_clk, i_reset_n)
     begin
         if ( i_reset_n = '0' ) then
             o_ren       <= '0';
@@ -65,7 +65,8 @@ begin
             case merge_state is
 
                 when wait_for_pre =>
-                    if ( i_data(37 downto 32) = pre_marker and i_data(7 downto 0) = x"BC" and i_empty = '0' ) then
+                    report("State: wait_for_pre");
+                    if ( i_data(37 downto 32) = pre_marker and i_data(7 downto 0) = x"BC" and i_empty = '0' and o_ren = '0' ) then
                         merge_state             <= get_ts_1;
                         o_ren                   <= '1';
                         -- reg data
@@ -79,7 +80,7 @@ begin
 
                 when get_ts_1 =>
                     if ( i_data(37 downto 32) = ts1_marker ) then
-                        merge_state              <= get_ts_2;
+                        merge_state             <= get_ts_2;
                         o_ren                   <= '1';
                         -- reg data
                         o_data_reg(39 downto 8) <= i_data(31 downto 0);
@@ -91,10 +92,11 @@ begin
                     END LOOP;
 
                 when get_ts_2 =>
+                    report("State: get_ts_2");
                     -- send out data if ts2 is there
                     -- every link is getting K.28.3 = 7C for pre
                     o_wen <= '1';
-                    if ( i_data(37 downto 32) = ts2_marker and i_empty = '0' ) then
+                    if ( i_data(37 downto 32) = ts2_marker and i_empty = '0' and o_ren = '0' ) then
                         merge_state              <= get_sh;
                         o_data_reg               <= (others => '0');
                         o_ren                    <= '1';
@@ -130,14 +132,16 @@ begin
                     end if;
 
                 when get_sh =>
+                    report("State: get_sh");
+                    report(to_hstring(o_data));
                     -- send out data if sh is there
                     -- every link is getting K.28.2 = 5C for sh
                     o_wen <= '1';
-                    if ( i_data(37 downto 32) = sh_marker and i_empty = '0' ) then
+                    if ( i_data(37 downto 32) = sh_marker and i_empty = '0' and o_ren = '0' ) then
                         merge_state             <= hit_1;
                         o_ren                   <= '1';
                         -- 1. link
-                        o_data(31 downto 16)    <= i_data(15 downto 0) & DT & x"5C";
+                        o_data(31 downto 0)     <= i_data(15 downto 0) & DT & x"5C";
                         -- 2. link
                         o_data(63 downto 32)    <= i_data(31 downto 16) & x"00" & x"5C";
                         -- 3. - 8. link
@@ -145,11 +149,12 @@ begin
                             o_data(I * 32 + 31 downto I * 32)   <= K282;
                             o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                         END LOOP;
+                    else
+                        FOR I in NLINKS - 1 downto 0 LOOP
+                            o_data(I * 32 + 31 downto I * 32)   <= K285;
+                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
+                        END LOOP;
                     end if;
-                    FOR I in NLINKS - 1 downto 0 LOOP
-                        o_data(I * 32 + 31 downto I * 32)   <= K285;
-                        o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                    END LOOP;
 
                 -- hits after alignment
                 -- 1. hit  =  37 downto   0
@@ -166,9 +171,11 @@ begin
                 --           00 -> error
                 --           11 -> no 1/2 hits
                 when hit_1 =>
+                    report("State: hit_1");
+                    report(to_hstring(o_data));
                     -- send out hits if fifo is not empty
                     o_wen <= '1';
-                    if ( i_empty = '0' ) then
+                    if ( i_empty = '0' and o_ren = '0' ) then
                         if ( i_data(37 downto 32) = sh_marker ) then
                             merge_state <= get_sh;
                         elsif ( i_data(37 downto 32) = tr_marker ) then
@@ -196,6 +203,8 @@ begin
                     end if;
 
                 when hit_2 =>
+                    report("State: hit_2");
+                    report(to_hstring(o_data(37 downto 32)));
                     -- send out hits if fifo is not empty
                     o_wen <= '1';
                     if ( i_empty = '0' ) then
@@ -252,6 +261,8 @@ begin
                     end if;
 
                 when hit_3 =>
+                    report("State: hit_3");
+                    report(to_hstring(o_data(37 downto 32)));
                     -- send out hits if fifo is not empty
                     o_wen <= '1';
                     if ( i_empty = '0' ) then
@@ -302,6 +313,8 @@ begin
                     end if;
 
                 when hit_4 =>
+                    report("State: hit_4");
+                    report(to_hstring(o_data(37 downto 32)));
                     -- send out hits if fifo is not empty
                     o_wen <= '1';               
                     if ( i_empty = '0' ) then
@@ -350,6 +363,8 @@ begin
                     end if;
 
                 when hit_5 =>
+                    report("State: hit_5");
+                    report(to_hstring(o_data(37 downto 32)));
                     -- send out hits if fifo is not empty             
                     o_wen <= '1';
                     if ( i_empty = '0' ) then
@@ -398,6 +413,8 @@ begin
                     end if;
 
                 when hit_6 =>
+                    report("State: hit_6");
+                    report(to_hstring(o_data(37 downto 32)));
                     -- send out hits from reg               
                     o_wen <= '1';
                     if ( i_data(37 downto 32) = sh_marker ) then
@@ -421,6 +438,8 @@ begin
                     end if;
 
                 when hit_7 =>
+                    report("State: hit_7");
+                    report(to_hstring(o_data(37 downto 32)));
                     -- send out hits if fifo is not empty 
                     o_wen <= '1';
                     if ( i_empty = '0' ) then
