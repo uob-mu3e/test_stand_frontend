@@ -82,9 +82,9 @@ end process;
 tsclockgen: process
 begin
 	tsclk	<= '0';
-	wait for WRITECLK_PERIOD/4;
+	wait for WRITECLK_PERIOD/2;
 	tsclk	<= '1';
-	wait for WRITECLK_PERIOD/4;
+	wait for WRITECLK_PERIOD/2;
 end process;
 
 rclockgen: process
@@ -103,7 +103,7 @@ begin
 	reset_n	<= '1';
 	wait for 100 ns;
 	running <= '1';
-	wait for 6100 ns;
+	wait for 20000 ns;
 	running <= '0';
 	wait;
 end process;
