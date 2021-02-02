@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <link rel="stylesheet" href="midas.css">
+   <script src="controls.js"></script>
+   <script src="midas.js"></script>
+   <script src="mhttpd.js"></script>
+   <title>Low Voltage</title>
+   <style>
+       table, th, td {
+           border: 1px solid black;
+           border-collapse: collapse;
+       }
+   </style>
+    <!-- Alternativ: midas style 
+    <style> 
+        .mtable td { padding: 10px; }
+    </style>
+    -->
+</head>
+
+<body class="mcss" onload="mhttpd_init('myPage');">
+
+<!-- header and side navigation will be filled in mhttpd_start -->
+<div id="mheader"></div>
+<div id="msidenav"></div>
+
+<div id="mmain">
+    <table class="mtable">
+        <tr>
+            <th colspan="6" class="mtableheader">HAMEG</th>
+        </tr>
+        <tr>
+            <th>Channel</th>
+            <th>State</th>
+            <th>Demand Voltage</th>
+            <th>Voltage</th>
+            <th>Current Limit</th>
+            <th>Current</th>
+        </tr>
+        <tr>
+            <th>0 <div class="modbbox" style="width: 10px; height: 10px;" data-odb-path="/Equipment/HAMEG1/Variables/State/[0]" data-color="lightgreen" data-background-color="red"></div>
+            </th>
+            <td>
+                <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG1/Variables/Set State/[0]"></input>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Demand Voltage/[0]" data-odb-editable="1"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Voltage/[0]"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current Limit/[0]" data-odb-editable="1"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current/[0]"></div>
+            </td>
+        </tr>
+        <tr>
+            <th>1 <div class="modbbox" style="width: 10px; height: 10px;" data-odb-path="/Equipment/HAMEG1/Variables/State/[1]" data-color="lightgreen" data-background-color="red"></div>
+            </th>
+            <td>
+                <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG1/Variables/Set State/[1]"></input>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Demand Voltag/[1]" data-odb-editable="1"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Voltage/[1]"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current Limit/[1]" data-odb-editable="1"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current/[1]"></div>
+            </td>
+        </tr>
+        <tr>
+            <th>2 <div class="modbbox" style="width: 10px; height: 10px;" data-odb-path="/Equipment/HAMEG1/Variables/State/[2]" data-color="lightgreen" data-background-color="red"></div>
+            </th>
+            <td>
+                <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG1/Variables/Set State/[2]"></input>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Demand Voltage/[2]" data-odb-editable="1"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Voltage/[2]"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current Limit/[2]" data-odb-editable="1"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current/[2]"></div>
+            </td>
+        </tr>
+        <tr>
+            <th>3 <div class="modbbox" style="width: 10px; height: 10px;" data-odb-path="/Equipment/HAMEG1/Variables/State/[3]" data-color="lightgreen" data-background-color="red"></div>
+            </th>
+            <td>
+                <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/HAMEG1/Variables/Set State/[3]"></input>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Demand Voltage/[3]" data-odb-editable="1"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Voltage/[3]"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current Limit/[3]" data-odb-editable="1"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current/[3]"></div>
+            </td>
+        </tr>
+    </table>
+
+    <table class="mtable">
+        <tr>
+            <th colspan="6" class="mtableheader">Genesys</th>
+        </tr>
+        <tr>
+            <th>Channel</th>
+            <th>State</th>
+            <th>Demand Voltage</th>
+            <th>Voltage</th>
+            <th>Current Limit</th>
+            <th>Current</th>
+            <th>Interlock</th>
+        </tr>
+        <tr>
+            <th>0 <div class="modbbox" style="width: 10px; height: 10px;" data-odb-path="/Equipment/Genesys/Variables/State/[0]" data-color="lightgreen" data-background-color="red"></div>
+            </th>
+            <td>
+                <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/Genesys/Variables/Set State/[0]"></input>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Demand Voltage/[0]" data-odb-editable="1"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Voltage/[0]"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Current Limit/[0]" data-odb-editable="1"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Current/[0]"></div>
+            </td>
+            <td>
+                <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/Genesys/Variables/Interlock/[0]"></input>
+            </td>
+        </tr>
+        <tr>
+            <th>1 <div class="modbbox" style="width: 10px; height: 10px;" data-odb-path="/Equipment/Genesys/Variables/State/[1]" data-color="lightgreen" data-background-color="red"></div>
+            </th>
+            <td>
+                <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/Genesys/Variables/Set State/[1]"></input>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Demand Voltag/[1]" data-odb-editable="1"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Voltage/[1]"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Current Limit/[1]" data-odb-editable="1"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/Genesys/Variables/Current/[1]"></div>
+            </td>
+            <td>
+                <input type="checkbox" class="modbcheckbox" data-odb-path="/Equipment/Genesys/Variables/Interlock/[1]"></input>
+            </td>
+        </tr>
+    </table>
+
+</div>
