@@ -297,7 +297,7 @@ begin
         reset_n         => sorter_reset_n,
         writeclk        => i_clk125,
         running         => running,
-        currentts       => counter125(SLOWTIMESTAMPSIZE-1 downto 0),
+        currentts       => counter125(TIMESTAMPSIZE-1 downto 0),
         hit_in          => hits_sorter_in,--(others => (others => '0')),
         hit_ena_in      => hits_sorter_in_ena,--(others => '0'),
         readclk         => i_clk125,
