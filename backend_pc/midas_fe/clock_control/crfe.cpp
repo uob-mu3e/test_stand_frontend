@@ -177,12 +177,18 @@ INT frontend_init()
     int port       = settings["Port"];
 
     cout << "IP: " << ip << " port: " << port << endl;
-    if(NO_CLOCK_BOX or ip=="0.0.0.0"){
-       cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
-       cb = new clockboard_bypass(ip, port);
-    }else{
-       cb = new clockboard(ip, port);
-    }
+
+    #ifdef NO_CLOCK_BOX
+        cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
+        cb = new clockboard_bypass(ip, port);
+    #else
+        if(ip=="0.0.0.0"){
+           cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
+           cb = new clockboard_bypass(ip, port);
+        }else{
+           cb = new clockboard(ip, port);
+        }
+    #endif
 
    if(!cb->isConnected())
         return CM_TIMEOUT;
