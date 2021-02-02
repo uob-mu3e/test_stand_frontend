@@ -4,7 +4,7 @@
 // Uncomment if you want to simulate the switching board and the attached FEBs
 #define NO_SWITCHING_BOARD 1
 
-// Uncomment if there is no clock/reset box
+// Uncomment if there is a clock/reset box
 #define NO_CLOCK_BOX 1
 
 #endif
