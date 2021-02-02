@@ -2,10 +2,6 @@
 
 Common (portable) vhdl components.
 
-## `makefile.mk`
-
-TODO
-
 ## Simulation
 
 ```
