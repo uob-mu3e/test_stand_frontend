@@ -45,8 +45,13 @@ FEBSlowcontrolInterface::~FEBSlowcontrolInterface()
 int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data, bool nonincrementing)
 {
 
-    if(startaddr > FEB_SC_ADDR_RANGE_HI){
+    if(startaddr > 65535){
         cout << "Address out of range: " << std::hex << startaddr << endl;
+        return ERRCODES::ADDR_INVALID;
+     }
+
+    if(FPGA_ID > 15){
+        cout << "FPGA ID out of range: " << FPGA_ID << endl;
         return ERRCODES::ADDR_INVALID;
      }
 
@@ -73,7 +78,7 @@ int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vec
         packet_type = PACKET_TYPE_SC_WRITE_NONINCREMENTING;
 
     // two most significant bits are 0
-    mdev.write_memory_rw(0, PACKET_TYPE_SC << 26 | packet_type << 24 | (uint16_t) FPGA_ID << 8 | 0xBC);
+    mdev.write_memory_rw(0, PACKET_TYPE_SC << 26 | packet_type << 24 | ((uint16_t)(1UL << FPGA_ID)) << 8 | 0xBC);
     mdev.write_memory_rw(1, startaddr);
     mdev.write_memory_rw(2, data.size());
 
@@ -140,8 +145,14 @@ int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, uin
 
 int FEBSlowcontrolInterface::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> &data, bool nonincrementing)
 {
-    if(startaddr > FEB_SC_ADDR_RANGE_HI){
+
+    if(startaddr > 65535){
         cout << "Address out of range: " << std::hex << startaddr << endl;
+        return ERRCODES::ADDR_INVALID;
+     }
+
+    if(FPGA_ID > 15){
+        cout << "FPGA ID out of range: " << FPGA_ID << endl;
         return ERRCODES::ADDR_INVALID;
      }
 
@@ -167,7 +178,7 @@ int FEBSlowcontrolInterface::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vect
     if(nonincrementing)
         packet_type = PACKET_TYPE_SC_READ_NONINCREMENTING;
 
-    mdev.write_memory_rw(0, PACKET_TYPE_SC << 26 | packet_type << 24 | (uint16_t) FPGA_ID << 8 | 0xBC);
+    mdev.write_memory_rw(0, PACKET_TYPE_SC << 26 | packet_type << 24 | ((uint16_t)(1UL << FPGA_ID)) << 8 | 0xBC);
     mdev.write_memory_rw(1, startaddr);
     mdev.write_memory_rw(2, data.size());
     mdev.write_memory_rw(3, 0x0000009c);

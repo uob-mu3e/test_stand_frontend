@@ -291,6 +291,8 @@ begin
     -- 50 MHz oscillator
     clk_50 <= CLK_50_B2J;
 
+    LED_BRACKET <= writeregs_slow(LED_REGISTER_W)(3 downto 0);
+
     -- generate reset
     e_reset_50_n : entity work.reset_sync
     port map ( o_reset_n => reset_50_n, i_reset_n => CPU_RESET_n, i_clk => clk_50 );
