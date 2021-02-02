@@ -10,7 +10,6 @@ package mupix_types is
 subtype hit_t is                std_logic_vector(HITSIZE-1 downto 0);
 subtype cnt_t is                std_logic_vector(COARSECOUNTERSIZE-1  downto 0);
 subtype ts_t is                 std_logic_vector(TSRANGE);
-subtype slowts_t                is std_logic_vector(SLOWTIMESTAMPSIZE-1 downto 0);
 subtype nots_t                  is std_logic_vector(NOTSHITSIZE-1 downto 0);
 subtype addr_t                  is std_logic_vector(HITSORTERADDRSIZE-1 downto 0);
 subtype counter_t               is std_logic_vector(HITSORTERBINBITS-1 downto 0);
@@ -24,7 +23,6 @@ type wide_cnt_array             is array (NINPUTS-1 downto 0) of cnt_t;
 type cnt_array                  is array (NCHIPS-1 downto 0) of cnt_t;
 
 type ts_array                   is array (NCHIPS-1 downto 0) of ts_t;
-type slowts_array               is array (NCHIPS-1 downto 0) of slowts_t;
 
 type nots_hit_array             is array (NCHIPS-1 downto 0) of nots_t;
 type addr_array                 is array (NCHIPS-1 downto 0) of addr_t;
@@ -33,6 +31,8 @@ type counter_chips              is array (NCHIPS-1 downto 0) of counter_t;
 subtype counter2_chips          is std_logic_vector(2*NCHIPS*HITSORTERBINBITS-1 downto 0);
 
 type hitcounter_sum3_type is array (NCHIPS/3-1 downto 0) of integer;
+
+subtype sorterfifodata_t        is std_logic_vector(SORTERFIFORANGE);
 
 subtype chip_bits_t             is std_logic_vector(NCHIPS-1 downto 0);
 

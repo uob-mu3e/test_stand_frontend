@@ -25,7 +25,7 @@ component hitsorter_wide is
 		reset_n							: in std_logic;										-- async reset
 		writeclk						: in std_logic;										-- clock for write/input side
 		running							: in std_logic;
-		currentts						: in slowts_t;										-- Upper 10 bits of the 11 bit ts
+		currentts						: in ts_t;										-- 11 bit ts
 		hit_in							: in hit_array;
 		hit_ena_in						: in std_logic_vector(NCHIPS-1 downto 0);			-- valid hit
 		readclk							: in std_logic;										-- clock for read/output side
@@ -60,7 +60,7 @@ dut:hitsorter_wide
 		reset_n							=> reset_n,
 		writeclk						=> writeclk,
 		running							=> running,
-		currentts						=> currentts(TIMESTAMPSIZE-1 downto 1),
+		currentts						=> currentts,
 		hit_in							=> hit_in,
 		hit_ena_in						=> hit_ena_in,
 		readclk							=> readclk,
