@@ -36,7 +36,8 @@ entity hitsorter_wide is
 		out_ena							: out STD_LOGIC;									-- valid output data
 		out_type						: out std_logic_vector(3 downto 0);				-- start/end of an output package, hits, end of run
 		diagnostic_sel					: in std_logic_vector(5 downto 0);					-- control the multiplexer for diagnostic signals
-		diagnostic_out					: out reg32											-- diganostic out (counters for hits at various stages)
+		diagnostic_out					: out reg32;
+		delay							: in ts_t											-- diganostic out (counters for hits at various stages)
 		);
 end hitsorter_wide;
 
@@ -175,7 +176,7 @@ signal nout		  : reg32;
 
 constant TSONE : ts_t := "00000000001";
 constant TSZERO : ts_t := "00000000000";
-constant DELAY : ts_t := "01100000000";
+--constant DELAY : ts_t := "01100000000";
 constant WINDOWSIZE : ts_t := "11000000000";
 
 

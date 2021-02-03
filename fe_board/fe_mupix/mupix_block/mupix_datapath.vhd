@@ -39,7 +39,8 @@ port (
     i_sync_reset_cnt    : in  std_logic;
     
     i_run_state_125     : in  run_state_t;
-    i_run_state_156     : in  run_state_t--;
+    i_run_state_156     : in  run_state_t;
+    i_sorter_delay      : in  ts_t--;
 );
 end mupix_datapath;
 
@@ -305,7 +306,8 @@ begin
         out_ena         => fifo_write,
         out_type        => fifo_wdata(35 downto 32),
         diagnostic_sel  => (others => '0'),
-        diagnostic_out  => open--,
+        diagnostic_out  => open,
+        delay           => i_sorter_delay--,
     );
 
     -- sync some things ..

@@ -7,6 +7,8 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 use work.daq_constants.all;
 use work.mupix_constants.all;
+use work.mupix_types.all;
+use work.feb_sc_registers.all;
 
 entity mupix_block is
 generic(
@@ -127,6 +129,8 @@ signal reset_n : std_logic;
     signal disable_conditions_for_run_ack : std_logic;
 
     signal reg_hits_ena_count : std_logic_vector(31 downto 0);
+
+    signal sorter_delay : ts_t;
 
 begin
     
@@ -276,98 +280,98 @@ begin
             -- Quartus does not know that i_req_we and i_req_re cannot be 1 at the same time
             -- Makes timing closure more difficult if elsif is used
             
-            if ( i_reg_add = x"83" and i_reg_we = '1' ) then
-                board_th_low    <= i_reg_wdata(15 downto 0);
-                board_th_high   <= i_reg_wdata(31 downto 16);
+            if ( i_reg_add = BOARD_TH_W and i_reg_we = '1' ) then
+                board_th_low    <= i_reg_wdata(BOARD_TH_LOW_RANGE);
+                board_th_high   <= i_reg_wdata(BOARD_TH_HIGH_RANGE);
             end if;
             
-            if ( i_reg_add = x"84" and i_reg_we = '1' ) then
-                board_injection <= i_reg_wdata(15 downto 0);
-                board_th_pix    <= i_reg_wdata(31 downto 16);
+            if ( i_reg_add = BOARD_INJECTION_W and i_reg_we = '1' ) then
+                board_injection <= i_reg_wdata(BOARD_INJECTION_RANGE);
+                board_th_pix    <= i_reg_wdata(BOARD_TH_PIX_RANGE);
             end if;
             
-            if ( i_reg_add = x"85" and i_reg_we = '1' ) then
-                board_temp_dac <= i_reg_wdata(15 downto 0);
-                board_temp_adc <= i_reg_wdata(31 downto 16);
+            if ( i_reg_add = BOARD_TEMP_W and i_reg_we = '1' ) then
+                board_temp_dac <= i_reg_wdata(BOARD_TEMP_DAC_RANGE);
+                board_temp_adc <= i_reg_wdata(BOARD_TEMP_ADC_RANGE);
             end if;
             
-            if ( i_reg_add = x"86" and i_reg_re = '1' ) then
+            if ( i_reg_add = INJECTION1_OUT_A_FRONT_R and i_reg_re = '1' ) then
                 o_reg_rdata(15 downto 0) <= injection1_out_A_front;
             end if;
             
-            if ( i_reg_add = x"87" and i_reg_re = '1' ) then
+            if ( i_reg_add = THRESHOLD_PIX_OUT_A_FRONT_R and i_reg_re = '1' ) then
                 o_reg_rdata(15 downto 0) <= threshold_pix_out_A_front;
             end if;
             
-            if ( i_reg_add = x"88" and i_reg_re = '1' ) then
+            if ( i_reg_add = THRESHOLD_LOW_OUT_A_FRONT_R and i_reg_re = '1' ) then
                 o_reg_rdata(15 downto 0) <= threshold_low_out_A_front;
             end if;
             
-            if ( i_reg_add = x"89" and i_reg_re = '1' ) then
+            if ( i_reg_add = THRESHOLD_HIGH_OUT_A_FRONT_R and i_reg_re = '1' ) then
                 o_reg_rdata(15 downto 0) <= threshold_high_out_A_front;
             end if;
             
-            if ( i_reg_add = x"8A" and i_reg_re = '1' ) then
+            if ( i_reg_add = BOARD_TEMP_DAC_OUT_R and i_reg_re = '1' ) then
                 o_reg_rdata(15 downto 0) <= board_temp_dac_out;
             end if;
             
-            if ( i_reg_add = x"8B" and i_reg_re = '1' ) then
+            if ( i_reg_add = BOARD_TEMP_ADC_OUT_R and i_reg_re = '1' ) then
                 o_reg_rdata <= board_temp_adc_out;
             end if;
             
-            if ( i_reg_add = x"8C" and i_reg_we = '1' ) then
+            if ( i_reg_add = A_SPI_WREN_FRONT_W and i_reg_we = '1' ) then
                 A_spi_wren_front <= i_reg_wdata(2 downto 0);
             end if;
             
-            if ( i_reg_add = x"8D" and i_reg_we = '1' ) then
+            if ( i_reg_add = CHIP_DAC_DATA_WE_W and i_reg_we = '1' ) then
                 chip_dac_data_we <= i_reg_wdata(31 downto 0);
                 chip_dac_we      <= '1';
             end if;
             
-            if ( i_reg_add = x"8E" and i_reg_we = '1' ) then
+            if ( i_reg_add = CHIP_DAC_READY_W and i_reg_we = '1' ) then
                 chip_dac_ready      <= i_reg_wdata(0);
                 ckdiv               <= i_reg_wdata(31 downto 16);
             end if;
             
-            if ( i_reg_add = x"8F" and i_reg_we = '1' ) then
+            if ( i_reg_add = RESET_N_LVDS_W and i_reg_we = '1' ) then
                 reset_n_lvds    <= i_reg_wdata(0);
             else
                 reset_n_lvds    <= '1';
             end if;
 
-            if ( i_reg_add = x"90" and i_reg_we = '1' ) then
+            if ( i_reg_add = RO_PRESCALER_W and i_reg_we = '1' ) then
                 ro_prescaler           <= i_reg_wdata;
             end if;
             
-            if ( i_reg_add = x"91" and i_reg_we = '1' ) then
+            if ( i_reg_add = DEBUG_CHIP_SELECT_REGISTER_W and i_reg_we = '1' ) then
                 debug_chip_select      <= i_reg_wdata;
             end if;
             
-            if ( i_reg_add = x"92" and i_reg_we = '1' ) then
+            if ( i_reg_add = TIMESTAMP_GRAY_INVERT_REGISTER_W and i_reg_we = '1' ) then
                 timestamp_gray_invert  <= i_reg_wdata;
             end if;
             
-            if ( i_reg_add = x"93" and i_reg_we = '1' ) then
+            if ( i_reg_add = MUX_READ_REGS_NIOS_W and i_reg_we = '1' ) then
                 mux_read_regs_nios     <= i_reg_wdata(6 downto 0);
             end if;
             
-            if ( i_reg_add = x"94" and i_reg_re = '1' ) then
+            if ( i_reg_add = READ_REGS_MUPIX_MUX_R and i_reg_re = '1' ) then
                 o_reg_rdata            <= read_regs_mupix_mux;
             end if;
             
-            if ( i_reg_add = x"95" and i_reg_we = '1' ) then
+            if ( i_reg_add = RESET_CHIP_DAC_FIFO_W and i_reg_we = '1' ) then
                 reset_chip_dac_fifo    <= i_reg_wdata(0);
             end if;
             
-            if ( i_reg_add = x"96" and i_reg_we = '1') then
+            if ( i_reg_add = LINK_MASK_REGISTER_RW and i_reg_we = '1') then
                 link_mask          <= i_reg_wdata;
             end if;-- NO ELSIF HERE!!
             
-            if ( i_reg_add = x"96" and i_reg_re = '1') then
+            if ( i_reg_add = LINK_MASK_REGISTER_RW and i_reg_re = '1') then
                 o_reg_rdata        <= link_mask;
             end if;
             
-            if ( i_reg_add = x"97" and i_reg_re = '1' ) then
+            if ( i_reg_add = LVDS_DATA_VALID_R and i_reg_re = '1' ) then
                 if(NLVDS > 31) then
                     o_reg_rdata            <= lvds_data_valid(31 downto 0);
                 else
@@ -375,7 +379,7 @@ begin
                 end if;
             end if;
             
-            if ( i_reg_add = x"9B" and i_reg_re = '1' ) then
+            if ( i_reg_add = LVDS_DATA_VALID_HI_R and i_reg_re = '1' ) then
                 if(NLVDS > 32) then
                     for I in 0 to NLVDS-33 loop
                         o_reg_rdata(I)     <= lvds_data_valid(32 + I);
@@ -385,21 +389,29 @@ begin
                 end if;
             end if;
             
-            if ( i_reg_add = x"98" and i_reg_we = '1' ) then
+            if ( i_reg_add = DISABLE_CONDITIONS_FOR_RUN_ACK_RW and i_reg_we = '1' ) then
                 disable_conditions_for_run_ack  <= i_reg_wdata(0);
             end if;-- NO ELSIF HERE!!
             
-            if( i_reg_add = x"98" and i_reg_re = '1') then
+            if( i_reg_add = DISABLE_CONDITIONS_FOR_RUN_ACK_RW and i_reg_re = '1') then
                 o_reg_rdata(0)                  <= disable_conditions_for_run_ack;
                 o_reg_rdata(31 downto 1)        <= (others => '0');
             end if;
             
-            if ( i_reg_add = x"99" and i_reg_re = '1' ) then
+            if ( i_reg_add = CHIP_DACS_USEDW_R and i_reg_re = '1' ) then
                 o_reg_rdata <= std_logic_vector(to_unsigned(2**chip_dac_usedw'length - to_integer(unsigned(chip_dac_usedw)), 32));
             end if;
             
-            if ( i_reg_add = x"9A" and i_reg_re = '1' ) then
+            if ( i_reg_add = REG_HITS_ENA_COUNT_R and i_reg_re = '1' ) then
                 o_reg_rdata <= reg_hits_ena_count;
+            end if;
+
+            if ( i_reg_add = SORTER_DELAY_RW and i_reg_re = '1' ) then
+                o_reg_rdata(TSRANGE) <= sorter_delay;
+            end if;
+
+            if ( i_reg_add = SORTER_DELAY_RW and i_reg_we = '1' ) then
+                sorter_delay    <= i_reg_wdata(TSRANGE);
             end if;
 
         end if;
@@ -461,7 +473,8 @@ begin
 
         i_sync_reset_cnt    => i_sync_reset_cnt,
         i_run_state_125     => i_run_state_125,
-        i_run_state_156     => i_run_state_156--,
+        i_run_state_156     => i_run_state_156,
+        i_sorter_delay      => sorter_delay--,
     );
 
     write_regs_mupix(RO_PRESCALER_REGISTER_W)               <= ro_prescaler;

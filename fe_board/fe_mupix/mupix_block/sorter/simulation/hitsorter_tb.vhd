@@ -33,7 +33,8 @@ component hitsorter_wide is
 		out_ena							: out STD_LOGIC;									-- valid output data
 		out_type						: out std_logic_vector(3 downto 0);				-- start/end of an output package, hits, end of run
 		diagnostic_sel					: in std_logic_vector(5 downto 0);					-- control the multiplexer for diagnostic signals
-		diagnostic_out					: out reg32											-- diganostic out (counters for hits at various stages)
+		diagnostic_out					: out reg32;
+		delay							: in ts_t
 		);
 end component;
 
@@ -68,7 +69,8 @@ dut:hitsorter_wide
 		out_ena							=> out_ena,
 		out_type						=> out_type,
 		diagnostic_sel					=> diagnostic_sel,
-		diagnostic_out					=> diagnostic_out
+		diagnostic_out					=> diagnostic_out,
+		delay							=> "01100000000"
 		);
 
 wclockgen: process
