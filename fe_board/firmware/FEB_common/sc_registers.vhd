@@ -54,41 +54,57 @@ package feb_sc_registers is
     constant REG_AREA_GENERIC : std_logic_vector(1 downto 0) := "00";
 
     -- MUPIX related registers
-    constant BOARD_TH_W                         :   integer := 16#83#;
+    constant LVDS_PLL_LOCKED_REGISTER_R         : integer := 16#40#;
+    constant LINK_MASK_REGISTER_W               : integer := 16#41#;
+    constant TIMESTAMP_GRAY_INVERT_REGISTER_W   : integer := 16#42#;
+    constant TS_INVERT_BIT                      : integer := 0;
+    constant TS2_INVERT_BIT                     : integer := 1;
+    constant TS_GRAY_BIT                        : integer := 2;
+    constant TS2_GRAY_BIT                       : integer := 3;
+    constant DEBUG_CHIP_SELECT_REGISTER_W       : integer := 16#43#;
+    constant RO_PRESCALER_REGISTER_W            : integer := 16#44#;
+    constant MULTICHIP_RO_OVERFLOW_REGISTER_R   : integer := 16#4F#;
+    constant LVDS_RUNCOUNTER_REGISTER_R         : integer := 16#50#; --Dec 80-115
+    constant LVDS_ERRCOUNTER_REGISTER_R         : integer := 16#74#; --Dec 116-151
+
+    constant BOARD_TH_W                         :   integer := 16#A3#;
     subtype BOARD_TH_LOW_RANGE              is integer range 15 downto 0;
     subtype BOARD_TH_HIGH_RANGE             is integer range 31 downto 16;
 
-    constant BOARD_INJECTION_W                  :   integer := 16#84#;
+    constant BOARD_INJECTION_W                  :   integer := 16#A4#;
     subtype BOARD_INJECTION_RANGE           is integer range 15 downto 0;
     subtype BOARD_TH_PIX_RANGE              is integer range 31 downto 16;
 
-    constant BOARD_TEMP_W                       :   integer := 16#85#;
+    constant BOARD_TEMP_W                       :   integer := 16#A5#;
     subtype BOARD_TEMP_DAC_RANGE            is integer range 15 downto 0;
     subtype BOARD_TEMP_ADC_RANGE            is integer range 31 downto 16;
 
-    constant INJECTION1_OUT_A_FRONT_R           :   integer := 16#86#;
-    constant THRESHOLD_PIX_OUT_A_FRONT_R        :   integer := 16#87#;
-    constant THRESHOLD_LOW_OUT_A_FRONT_R        :   integer := 16#88#;   
-    constant THRESHOLD_HIGH_OUT_A_FRONT_R       :   integer := 16#89#;
-    constant BOARD_TEMP_DAC_OUT_R               :   integer := 16#8A#;
-    constant BOARD_TEMP_ADC_OUT_R               :   integer := 16#8B#;
-    constant A_SPI_WREN_FRONT_W                 :   integer := 16#8C#;
-    constant CHIP_DAC_DATA_WE_W                 :   integer := 16#8D#;    
-    constant CHIP_DAC_READY_W                   :   integer := 16#8E#;
-    constant RESET_N_LVDS_W                     :   integer := 16#8F#;
-    constant RO_PRESCALER_W                     :   integer := 16#90#;
-    constant DEBUG_CHIP_SELECT_W                :   integer := 16#91#;
-    constant TIMESTAMP_GRAY_INVERT_W            :   integer := 16#92#;
-    constant MUX_READ_REGS_NIOS_W               :   integer := 16#93#;
-    constant READ_REGS_MUPIX_MUX_R              :   integer := 16#94#;
-    constant RESET_CHIP_DAC_FIFO_W              :   integer := 16#95#;
-    constant LINK_MASK_REGISTER_RW              :   integer := 16#96#;
-    constant LVDS_DATA_VALID_R                  :   integer := 16#97#; 
-    constant LVDS_DATA_VALID_HI_R               :   integer := 16#9B#; 
-    constant DISABLE_CONDITIONS_FOR_RUN_ACK_RW  :   integer := 16#98#;  
-    constant CHIP_DACS_USEDW_R                  :   integer := 16#99#;
-    constant REG_HITS_ENA_COUNT_R               :   integer := 16#9A#;
-    constant SORTER_DELAY_RW                    :   integer := 16#A0#;
+    constant NREGISTERS_MUPIX_WR                : integer := 256;
+    constant NREGISTERS_MUPIX_RD                : integer := 256;
+
+    constant INJECTION1_OUT_A_FRONT_R           :   integer := 16#A6#;
+    constant THRESHOLD_PIX_OUT_A_FRONT_R        :   integer := 16#A7#;
+    constant THRESHOLD_LOW_OUT_A_FRONT_R        :   integer := 16#A8#;   
+    constant THRESHOLD_HIGH_OUT_A_FRONT_R       :   integer := 16#A9#;
+    constant BOARD_TEMP_DAC_OUT_R               :   integer := 16#AA#;
+    constant BOARD_TEMP_ADC_OUT_R               :   integer := 16#AB#;
+    constant A_SPI_WREN_FRONT_W                 :   integer := 16#AC#;
+    constant CHIP_DAC_DATA_WE_W                 :   integer := 16#AD#;    
+    constant CHIP_DAC_READY_W                   :   integer := 16#AE#;
+    constant RESET_N_LVDS_W                     :   integer := 16#AF#;
+
+    constant MUX_READ_REGS_NIOS_W               :   integer := 16#B3#;
+    constant READ_REGS_MUPIX_MUX_R              :   integer := 16#B4#;
+    constant RESET_CHIP_DAC_FIFO_W              :   integer := 16#B5#;
+    constant LINK_MASK_REGISTER_RW              :   integer := 16#B6#;
+    constant LVDS_DATA_VALID_R                  :   integer := 16#B7#; 
+    constant LVDS_DATA_VALID_HI_R               :   integer := 16#BB#; 
+    constant DISABLE_CONDITIONS_FOR_RUN_ACK_RW  :   integer := 16#B8#;  
+    constant CHIP_DACS_USEDW_R                  :   integer := 16#B9#;
+    constant REG_HITS_ENA_COUNT_R               :   integer := 16#BA#;
+    constant SORTER_DELAY_RW                    :   integer := 16#BF#;
+    constant SORTER_COUNTER_R                   :   integer := 16#C0#; -- 40 counters
+    -- next free register at 16#E8#
 
 
 end package;

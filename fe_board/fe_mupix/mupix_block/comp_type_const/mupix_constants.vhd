@@ -11,25 +11,7 @@ package mupix_constants is
 constant NINPUTS                :  integer := 36;
 constant NSORTERINPUTS          :  integer :=  1;
 constant NCHIPS                 :  integer := 12;
------------------------------------------------------------------
--- Things to move to reg map / remove if unused
------------------------------------------------------------------
-constant LINK_MASK_REGISTER_W               : integer := 16#03#;
-constant NREGISTERS_MUPIX_WR                : integer := 5;
-constant RO_PRESCALER_REGISTER_W            : integer := 16#00#;    -- dec 0
-constant DEBUG_CHIP_SELECT_REGISTER_W       : integer := 16#01#;
-constant TIMESTAMP_GRAY_INVERT_REGISTER_W   : integer := 16#02#;
-constant TS_INVERT_BIT                      : integer := 0;
-constant TS2_INVERT_BIT                     : integer := 1;
-constant TS_GRAY_BIT                        : integer := 2;
-constant TS2_GRAY_BIT                       : integer := 3;
-constant NREGISTERS_MUPIX_RD                : integer := 94;
-constant RX_STATE_RECEIVER_0_REGISTER_R     : integer := 16#00#;    -- dec 0
-constant RX_STATE_RECEIVER_1_REGISTER_R     : integer := 16#01#;    -- dec 1
-constant LVDS_PLL_LOCKED_REGISTER_R         : integer := 16#02#;    -- dec 2
-constant MULTICHIP_RO_OVERFLOW_REGISTER_R   : integer := 16#03#;    -- dec 3
-constant LVDS_RUNCOUNTER_REGISTER_R         : integer := 16#04#;    -- dec 4 (to 48)
-constant LVDS_ERRCOUNTER_REGISTER_R         : integer := 16#30#;    -- dec 49 (to 93)
+
 -----------------------------------------------------------------
 -- conflicts between detectorfpga_constants and mupix_constants (to be checked & tested)
 -----------------------------------------------------------------
@@ -84,5 +66,7 @@ subtype TSINFIFORANGE           is integer range HASMEMBIT+TIMESTAMPSIZE downto 
 subtype TSBLOCKINFIFORANGE      is integer range TSINFIFORANGE'left downto TSINFIFORANGE'left-BITSPERTSBLOCK+1;
 subtype TSINBLOCKINFIFORANGE    is integer range TSINFIFORANGE'right+BITSPERTSBLOCK-2  downto TSINFIFORANGE'right;
 subtype SORTERFIFORANGE         is integer range TSINFIFORANGE'left downto 0;
+
+constant NSORTERCOUNTERS        : integer := 40;
 
 end package mupix_constants;

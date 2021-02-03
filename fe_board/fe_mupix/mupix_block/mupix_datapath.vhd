@@ -8,6 +8,7 @@ use ieee.numeric_std.all;
 use work.daq_constants.all;
 use work.mupix_constants.all;
 use work.mupix_types.all;
+use work.feb_sc_registers.all;
 
 entity mupix_datapath is
 generic(
@@ -118,6 +119,8 @@ architecture rtl of mupix_datapath is
 
     signal fifo_wdata               : std_logic_vector(35 downto 0);
     signal fifo_write               : std_logic;
+
+    signal sorter_counters          : sorter_reg_array;
 
 begin
 
@@ -305,10 +308,14 @@ begin
         data_out        => fifo_wdata(31 downto 0),
         out_ena         => fifo_write,
         out_type        => fifo_wdata(35 downto 32),
-        diagnostic_sel  => (others => '0'),
-        diagnostic_out  => open,
+        diagnostic_out  => sorter_counters,
         delay           => i_sorter_delay--,
     );
+
+    GEN_SORTER_REGS:
+    FOR I in 0 to NSORTERCOUNTERS - 1 GENERATE
+        read_regs(SORTER_COUNTER_R + I) <= sorter_counters(I);
+    END GENERATE GEN_SORTER_REGS;
 
     -- sync some things ..
     sync_fifo_cnt : entity work.ip_dcfifo

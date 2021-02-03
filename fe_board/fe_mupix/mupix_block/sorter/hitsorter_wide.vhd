@@ -34,9 +34,8 @@ entity hitsorter_wide is
 		readclk							: in std_logic;										-- clock for read/output side
 		data_out						: out reg32;										-- packaged data out
 		out_ena							: out STD_LOGIC;									-- valid output data
-		out_type						: out std_logic_vector(3 downto 0);				-- start/end of an output package, hits, end of run
-		diagnostic_sel					: in std_logic_vector(5 downto 0);					-- control the multiplexer for diagnostic signals
-		diagnostic_out					: out reg32;
+		out_type						: out std_logic_vector(3 downto 0);				-- start/end of an output package, hits, end of run		
+		diagnostic_out					: out sorter_reg_array;
 		delay							: in ts_t											-- diganostic out (counters for hits at various stages)
 		);
 end hitsorter_wide;
@@ -780,77 +779,47 @@ elsif(writeclk'event and writeclk = '1') then
 end if;
 end process;
 
-sdm: entity work.sorter_diagnostic_mux
-	PORT MAP
- 	(
-		aclr		=> reset,
-		clock		=> writeclk,
-		data0x		=> nintime(0),
-		data1x		=> nintime(1),
-		data2x		=> nintime(2),
-		data3x		=> nintime(3),
-		data4x		=> nintime(4),
-		data5x		=> nintime(5),
-		data6x		=> nintime(6),
-		data7x		=> nintime(7),
-		data8x		=> nintime(8),
-		data9x		=> nintime(9),
-		data10x		=> nintime(10),
-		data11x		=> nintime(11),
-		data12x		=> (others => '0'),--nintime(12),
-		data13x		=> (others => '0'),--nintime(13),
-		data14x		=> (others => '0'),--nintime(14),
-		data15x		=> noutoftime(0),
-		data16x		=> noutoftime(1),
-		data17x		=> noutoftime(2),
-		data18x		=> noutoftime(3),
-		data19x		=> noutoftime(4),
-		data20x		=> noutoftime(5),
-		data21x		=> noutoftime(6),
-		data22x		=> noutoftime(7),
-		data23x		=> noutoftime(8),
-		data24x		=> noutoftime(9),
-		data25x		=> noutoftime(10),
-		data26x		=> noutoftime(11),
-		data27x		=> (others => '0'),--noutoftime(12),
-		data28x		=> (others => '0'),--noutoftime(13),
-		data29x		=> (others => '0'),--noutoftime(14),
-		data30x		=> noverflow(0),
-		data31x		=> noverflow(1),
-		data32x		=> noverflow(2),
-		data33x		=> noverflow(3),
-		data34x		=> noverflow(4),
-		data35x		=> noverflow(5),
-		data36x		=> noverflow(6),
-		data37x		=> noverflow(7),
-		data38x		=> noverflow(8),
-		data39x		=> noverflow(9),
-		data40x		=> noverflow(10),
-		data41x		=> noverflow(11),
-		data42x		=> (others => '0'),--noverflow(12),
-		data43x		=> (others => '0'),--noverflow(13),
-		data44x		=> (others => '0'),--noverflow(14),
-		data45x		=> (others => '0'),
-		data46x		=> (others => '0'),
-		data47x		=> (others => '0'),
-		data48x		=> (others => '0'),
-		data49x		=> (others => '0'),
-		data50x		=> (others => '0'),
-		data51x		=> (others => '0'),
-		data52x		=> (others => '0'),
-		data53x		=> (others => '0'),
-		data54x		=> (others => '0'),
-		data55x		=> (others => '0'),
-		data56x		=> (others => '0'),
-		data57x		=> (others => '0'),
-		data58x		=> (others => '0'),
-		data59x		=> (others => '0'),
-		data60x		=> (others => '0'),
-		data61x		=> (others => '0'),
-		data62x		=> (others => '0'),
-		data63x		=> nout,
-		sel			=> diagnostic_sel,
-		result		=> diagnostic_out
-	);
+
+diagnostic_out(0) <= nintime(0);
+diagnostic_out(1) <= nintime(1);
+diagnostic_out(2) <= nintime(2);
+diagnostic_out(3) <= nintime(3);
+diagnostic_out(4) <= nintime(4);
+diagnostic_out(5) <= nintime(5);
+diagnostic_out(6) <= nintime(6);
+diagnostic_out(7) <= nintime(7);
+diagnostic_out(8) <= nintime(8);
+diagnostic_out(9) <= nintime(9);
+diagnostic_out(10) <= nintime(10);
+diagnostic_out(11) <= nintime(11);
+
+diagnostic_out(12) <= noutoftime(0);
+diagnostic_out(13) <= noutoftime(1);
+diagnostic_out(14) <= noutoftime(2);
+diagnostic_out(15) <= noutoftime(3);
+diagnostic_out(16) <= noutoftime(4);
+diagnostic_out(17) <= noutoftime(5);
+diagnostic_out(18) <= noutoftime(6);
+diagnostic_out(19) <= noutoftime(7);
+diagnostic_out(20) <= noutoftime(8);
+diagnostic_out(21) <= noutoftime(9);
+diagnostic_out(22) <= noutoftime(10);
+diagnostic_out(23) <= noutoftime(11);
+
+diagnostic_out(24) <= noverflow(0);
+diagnostic_out(25) <= noverflow(1);
+diagnostic_out(26) <= noverflow(2);
+diagnostic_out(27) <= noverflow(3);
+diagnostic_out(28) <= noverflow(4);
+diagnostic_out(29) <= noverflow(5);
+diagnostic_out(30) <= noverflow(6);
+diagnostic_out(31) <= noverflow(7);
+diagnostic_out(32) <= noverflow(8);
+diagnostic_out(33) <= noverflow(9);
+diagnostic_out(34) <= noverflow(10);
+diagnostic_out(35) <= noverflow(11);
+
+diagnostic_out(36) <= nout;
+diagnostic_out(37) <= conv_std_logic_vector(credits, 32);	
 
 end architecture RTL;

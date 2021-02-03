@@ -66,5 +66,6 @@ type counterwren_array          is array (NMEMS-1 downto 0) of std_logic;
 type allcounterwren_array       is array (NCHIPS-1 downto 0) of counterwren_array;
 subtype countermemsel_t         is std_logic_vector(COUNTERMEMADDRRANGE);
 type reg_array                  is array (NCHIPS-1 downto 0) of reg32;
+type sorter_reg_array           is array (NSORTERCOUNTERS-1 downto 0) of reg32;
 
 end package mupix_types;

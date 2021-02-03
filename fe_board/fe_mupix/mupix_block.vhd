@@ -339,7 +339,7 @@ begin
                 reset_n_lvds    <= '1';
             end if;
 
-            if ( i_reg_add = RO_PRESCALER_W and i_reg_we = '1' ) then
+            if ( i_reg_add = RO_PRESCALER_REGISTER_W and i_reg_we = '1' ) then
                 ro_prescaler           <= i_reg_wdata;
             end if;
             
