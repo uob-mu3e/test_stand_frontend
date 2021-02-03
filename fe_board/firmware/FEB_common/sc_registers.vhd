@@ -14,6 +14,7 @@ package feb_sc_registers is
 
     subtype FEB_SC_ADDR_RANGE       is integer range 255 downto 0;
     subtype FEB_SC_DATA_SIZE_RANGE  is integer range 512 downto 1;
+    constant FEB_SC_RAM_SIZE : std_logic_vector(3 downto 0) := "1110";
 
     -- The block 0x00 is common for all FEBs
     -- and contains control and  monitoring information

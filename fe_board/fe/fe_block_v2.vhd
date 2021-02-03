@@ -403,7 +403,7 @@ begin
 
     e_sc_ram : entity work.sc_ram
     generic map (
-        RAM_ADDR_WIDTH_g => 14--,
+        RAM_ADDR_WIDTH_g => to_integer(unsigned(FEB_SC_RAM_SIZE))--,--14--,
     )
     port map (
         i_ram_addr              => sc_ram.addr(15 downto 0),

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <math.h>
 
 #include "feb_constants.h"
 
@@ -45,7 +46,7 @@ FEBSlowcontrolInterface::~FEBSlowcontrolInterface()
 int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data, bool nonincrementing)
 {
 
-    if(startaddr > 65535){
+     if(!(startaddr < pow(2,FEB_SC_RAM_SIZE) || (startaddr < 65535 && startaddr > 65535-FEB_SC_ADDR_RANGE_HI))){
         cout << "Address out of range: " << std::hex << startaddr << endl;
         return ERRCODES::ADDR_INVALID;
      }
@@ -146,7 +147,7 @@ int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, uin
 int FEBSlowcontrolInterface::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> &data, bool nonincrementing)
 {
 
-    if(startaddr > 65535){
+     if(!(startaddr < pow(2,FEB_SC_RAM_SIZE) || (startaddr < 65535 && startaddr > 65535-FEB_SC_ADDR_RANGE_HI))){
         cout << "Address out of range: " << std::hex << startaddr << endl;
         return ERRCODES::ADDR_INVALID;
      }
