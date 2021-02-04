@@ -5,8 +5,16 @@ use ieee.std_logic_1164.all;
 
 package feb_sc_registers is
 
+    constant PACKET_TYPE_SC                        : std_logic_vector(2 downto 0) := "111";
+    
+    constant PACKET_TYPE_SC_READ                   : std_logic_vector(1 downto 0) := "00";
+    constant PACKET_TYPE_SC_WRITE                  : std_logic_vector(1 downto 0) := "01";
+    constant PACKET_TYPE_SC_READ_NONINCREMENTING   : std_logic_vector(1 downto 0) := "10";
+    constant PACKET_TYPE_SC_WRITE_NONINCREMENTING  : std_logic_vector(1 downto 0) := "11";
+
     subtype FEB_SC_ADDR_RANGE       is integer range 255 downto 0;
     subtype FEB_SC_DATA_SIZE_RANGE  is integer range 512 downto 1;
+    constant FEB_SC_RAM_SIZE : std_logic_vector(3 downto 0) := "1110";
 
     -- The block 0x00 is common for all FEBs
     -- and contains control and  monitoring information
@@ -49,8 +57,11 @@ package feb_sc_registers is
     constant FIREFLY2_RX2_POW_REGISTER_R        :   integer := 16#20#;
     constant FIREFLY2_RX3_POW_REGISTER_R        :   integer := 16#21#;
     constant FIREFLY2_RX4_POW_REGISTER_R        :   integer := 16#22#;
+    constant FIREFLY2_ALARM_REGISTER_R          :   integer := 16#23#;
 
-    -- Registers 0x23 to 0x3F are reserved for further generic use
+    constant NONINCREMENTING_TEST_REGISTER_RW   :   integer := 16#24#;
+
+    -- Registers 0x25 to 0x3F are reserved for further generic use
     -- Registers above 0x40 are for subdetector specific use
 
     subtype REG_AREA_RANGE is integer range 7 downto 6;

@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eu
+set -euf
 
 # find '*.cmp' files
 # and make 'cmp' package
@@ -22,4 +22,4 @@ cat << EOF
 end package;
 EOF
 
-) > cmp_pkg.vhd
+) > components_pkg.vhd

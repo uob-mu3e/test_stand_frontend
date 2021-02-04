@@ -8,6 +8,7 @@
 #define FEB_SLOWCONTROL_H
 
 #include "mudaq_device.h"
+#include "feb_constants.h"
 #include <vector>
 #include <deque>
 #include <mutex>
@@ -24,10 +25,10 @@ public:
     FEBSlowcontrolInterface(const FEBSlowcontrolInterface &) = delete;
     FEBSlowcontrolInterface& operator=(const FEBSlowcontrolInterface&) = delete;
 
-    int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data);
+    int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data, bool nonincrementing = false);
     int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, uint32_t data);
     // expects data vector with read-length size
-    int FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> & data);
+    int FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> & data, bool nonincrementing = false);
 
     void FEBsc_resetMain();
     void FEBsc_resetSecondary();
@@ -53,9 +54,8 @@ protected:
             return true;
         };
         //TODO: Remove hardcoded numbers here
-        bool IsOOB(){return (this->at(0)&0x1f0000bc) == 0x1c0000bc;};
-        bool IsRD() {return (this->at(0)&0x1f0000bc) == 0x1e0000bc;};
-        bool IsWR() {return (this->at(0)&0x1f0000bc) == 0x1f0000bc;};
+        bool IsRD() {return (this->at(0)&0x1f0000bc) == 0x1c0000bc + (PACKET_TYPE_SC_READ<<24) || (this->at(0)&0x1f0000bc) == 0x1c0000bc+(PACKET_TYPE_SC_READ_NONINCREMENTING<<24);};
+        bool IsWR() {return (this->at(0)&0x1f0000bc) == 0x1c0000bc + (PACKET_TYPE_SC_WRITE<<24) || (this->at(0)&0x1f0000bc) == 0x1c0000bc+(PACKET_TYPE_SC_WRITE_NONINCREMENTING<<24);};
         uint16_t IsResponse(){return (this->at(2)&0x10000)!=0;};
         uint16_t GetFPGA_ID(){return (this->at(0)>>8)&0xffff;};
         uint16_t GetStartAddr(){return this->at(1);};
@@ -75,6 +75,9 @@ protected:
     uint32_t m_FEBsc_rmem_addr;
 
     void rmenaddrIncr(){m_FEBsc_rmem_addr = m_FEBsc_rmem_addr + 1 == MUDAQ_MEM_RO_LEN ? 0 : m_FEBsc_rmem_addr + 1;}
+
+
+
 };
 
 #endif
