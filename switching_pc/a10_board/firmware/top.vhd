@@ -283,7 +283,7 @@ begin
 
     -- generate 125 MHz clock on SMA output
     -- (can be connected to SMA input as global clock)
-    e_pll_125 : component work.cmp.ip_pll_125
+    e_pll_50to125 : component work.cmp.ip_pll_50to125
     port map (
         outclk_0 => SMA_CLKOUT,
         refclk => clk_50,
