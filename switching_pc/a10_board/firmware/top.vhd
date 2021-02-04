@@ -206,9 +206,6 @@ architecture rtl of top is
         attribute keep : boolean;
         attribute keep of ZERO : signal is true;
 
-        -- tranciever ip signals
-        signal tx_clk : std_logic_vector(15 downto 0);
-        signal rx_clk : std_logic_vector(15 downto 0);
         type fifo_out_array_type is array (3 downto 0) of std_logic_vector(35 downto 0);
 
     -- data behind QSFP tranceivers
@@ -485,9 +482,7 @@ begin
         o_rx_data   => rx_data_raw,
         o_rx_datak  => rx_datak_raw,
 
-        o_tx_clk    => tx_clk,
         i_tx_clk    => (others => clk_156),
-        o_rx_clk    => rx_clk,
         i_rx_clk    => (others => clk_156),
 
         o_tx_serial( 3 downto  0)   => QSFPA_TX_p,
