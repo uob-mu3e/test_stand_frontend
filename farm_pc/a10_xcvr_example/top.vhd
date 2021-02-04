@@ -49,9 +49,9 @@ architecture rtl of top is
     signal nios_i2c_sda_oe  : std_logic;
     signal nios_i2c_mask    : std_logic_vector(31 downto 0);
 
-    signal nios_clk      : std_logic;
-    signal nios_rst_n    : std_logic;
-    signal flash_rst_n  : std_logic;
+    signal nios_clk         : std_logic;
+    signal nios_rst_n       : std_logic;
+    signal flash_rst_n      : std_logic;
 
     signal refclk_125   : std_logic;
 
@@ -59,7 +59,7 @@ architecture rtl of top is
 
     signal nios_pio_i : std_logic_vector(31 downto 0);
 
-    signal flash_ce_n_i : std_logic;
+    signal flash_cs_n : std_logic;
 
     signal av_qsfp : work.util.avalon_t;
 
@@ -138,7 +138,7 @@ begin
         flash_tcm_data_out => FLASH_D,
         flash_tcm_read_n_out(0) => FLASH_OE_n,
         flash_tcm_write_n_out(0) => FLASH_WE_n,
-        flash_tcm_chipselect_n_out(0) => flash_ce_n_i,
+        flash_tcm_chipselect_n_out(0) => flash_cs_n,
 
         i2c_scl_in      => nios_i2c_scl,
         i2c_scl_oe      => nios_i2c_scl_oe,
@@ -157,7 +157,7 @@ begin
         clk_clk     => nios_clk--,
     );
 
-    FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
+    FLASH_CE_n <= (flash_cs_n, flash_cs_n);
     FLASH_ADV_n <= '0';
     FLASH_CLK <= '0';
     FLASH_RESET_n <= flash_rst_n;
