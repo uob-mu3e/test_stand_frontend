@@ -362,11 +362,10 @@ void FEBSlowcontrolInterface::SC_reply_packet::Print(){
    printf("FPGA ID %x\n", this->GetFPGA_ID());
    printf("startaddr %x\n", this->GetStartAddr());
    printf("length %ld\n", this->GetLength());
-   printf("packet: size=%lu length=%lu IsRD=%c IsWR=%c IsOOB=%c, IsResponse=%c, IsGood=%c\n",
+   printf("packet: size=%lu length=%lu IsRD=%c IsWR=%c, IsResponse=%c, IsGood=%c\n",
      this->size(),this->GetLength(),
      this->IsRD()?'y':'n',
      this->IsWR()?'y':'n',
-     this->IsOOB()?'y':'n',
      this->IsResponse()?'y':'n',
      this->Good()?'y':'n'
    );
