@@ -15,11 +15,11 @@ port (
     FLASH_CLK       : out   std_logic;
     FLASH_RESET_n   : out   std_logic;
 
-    FAN_I2C_SCL             : out   std_logic;
+    FAN_I2C_SCL             : inout std_logic;
     FAN_I2C_SDA             : inout std_logic;
-    POWER_MONITOR_I2C_SCL   : out   std_logic;
+    POWER_MONITOR_I2C_SCL   : inout std_logic;
     POWER_MONITOR_I2C_SDA   : inout std_logic;
-    TEMP_I2C_SCL            : out   std_logic;
+    TEMP_I2C_SCL            : inout std_logic;
     TEMP_I2C_SDA            : inout std_logic;
 
 --    QSFPA_INTERRUPT_n   : in    std_logic;
@@ -43,15 +43,6 @@ end entity;
 
 architecture rtl of top is
 
-    -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
-    signal ZERO : std_logic := '0';
-    attribute keep : boolean;
-    attribute keep of ZERO : signal is true;
-
-    signal i2c_scl          : std_logic_vector(31 downto 0) := (others => '1');
-    signal i2c_scl_oe       : std_logic_vector(31 downto 0);
-    signal i2c_sda          : std_logic_vector(31 downto 0) := (others => '1');
-    signal i2c_sda_oe       : std_logic_vector(31 downto 0);
     signal nios_i2c_scl     : std_logic;
     signal nios_i2c_scl_oe  : std_logic;
     signal nios_i2c_sda     : std_logic;
@@ -171,26 +162,24 @@ begin
     FLASH_CLK <= '0';
     FLASH_RESET_n <= flash_rst_n;
 
-    -- I2C
-    nios_i2c_scl <= work.util.and_reduce(i2c_scl); -- <= ZERO when nios_i2c_scl_oe = '1' else '1';
-    i2c_scl_oe <= (nios_i2c_ss_n'range => nios_i2c_scl_oe) and (not nios_i2c_ss_n);
-    nios_i2c_sda <= work.util.and_reduce(i2c_sda);
-    i2c_sda_oe <= (nios_i2c_ss_n'range => nios_i2c_sda_oe) and (not nios_i2c_ss_n);
 
-    FAN_I2C_SCL <= ZERO when i2c_scl_oe(0) = '1' else 'Z';
---    i2c_scl(0) <= FAN_I2C_SCL;
-    FAN_I2C_SDA <= ZERO when i2c_sda_oe(0) = '1' else 'Z';
-    i2c_sda(0) <= FAN_I2C_SDA;
 
-    TEMP_I2C_SCL <= ZERO when i2c_scl_oe(1) = '1' else 'Z';
---    i2c_scl(1) <= TEMP_I2C_SCL;
-    TEMP_I2C_SDA <= ZERO when i2c_sda_oe(1) = '1' else 'Z';
-    i2c_sda(1) <= TEMP_I2C_SDA;
+    e_i2c_mux : entity work.i2c_mux
+    port map (
+        io_scl(0)   => FAN_I2C_SCL,
+        io_sda(0)   => FAN_I2C_SDA,
+        io_scl(1)   => TEMP_I2C_SCL,
+        io_sda(1)   => TEMP_I2C_SDA,
+        io_scl(2)   => POWER_MONITOR_I2C_SCL,
+        io_sda(2)   => POWER_MONITOR_I2C_SDA,
 
-    POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe(2) = '1' else 'Z';
---    i2c_scl(2) <= POWER_MONITOR_I2C_SCL;
-    POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe(2) = '1' else 'Z';
-    i2c_sda(2) <= POWER_MONITOR_I2C_SDA;
+        o_scl       => nios_i2c_scl,
+        i_scl_oe    => nios_i2c_scl_oe,
+        o_sda       => nios_i2c_sda,
+        i_sda_oe    => nios_i2c_sda_oe,
+
+        i_ss_n      => nios_i2c_ss_n--,
+    );
 
 
 
