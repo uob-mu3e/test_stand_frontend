@@ -31,7 +31,7 @@ port (
     RJ45_LED_R          : out   std_logic;
 
     -- //////// FAN ////////
-    FAN_I2C_SCL         : out   std_logic;
+    FAN_I2C_SCL         : inout std_logic;
     FAN_I2C_SDA         : inout std_logic;
 
     -- //////// FLASH ////////
@@ -45,11 +45,11 @@ port (
     FLASH_RESET_n       : out   std_logic;
 
     -- //////// POWER ////////
-    POWER_MONITOR_I2C_SCL   : out   std_logic;
+    POWER_MONITOR_I2C_SCL   : inout std_logic;
     POWER_MONITOR_I2C_SDA   : inout std_logic;
 
     -- //////// TEMP ////////
-    TEMP_I2C_SCL        : out   std_logic;
+    TEMP_I2C_SCL        : inout std_logic;
     TEMP_I2C_SDA        : inout std_logic;
 
     -- //////// Transiver ////////
