@@ -192,19 +192,16 @@ architecture rtl of top is
         signal push_button2_db : std_logic;
         signal push_button3_db : std_logic;
 
-        -- NIOS
-        signal i2c_scl_in   : std_logic;
-        signal i2c_scl_oe   : std_logic;
-        signal i2c_sda_in   : std_logic;
-        signal i2c_sda_oe   : std_logic;
+    -- NIOS
+    signal nios_i2c_scl     : std_logic;
+    signal nios_i2c_scl_oe  : std_logic;
+    signal nios_i2c_sda     : std_logic;
+    signal nios_i2c_sda_oe  : std_logic;
+    signal nios_i2c_mask    : std_logic_vector(31 downto 0);
+
         signal cpu_pio_i : std_logic_vector(31 downto 0);
 
         signal av_xcvr : work.util.avalon_t;
-
-        -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
-        signal ZERO : std_logic := '0';
-        attribute keep : boolean;
-        attribute keep of ZERO : signal is true;
 
         type fifo_out_array_type is array (3 downto 0) of std_logic_vector(35 downto 0);
 
@@ -401,10 +398,11 @@ begin
         flash_tcm_write_n_out(0)            => FLASH_WE_n,
         flash_tcm_chipselect_n_out(0)       => flash_ce_n_i,
 
-        i2c_sda_in                      => i2c_sda_in,
-        i2c_scl_in                      => i2c_scl_in,
-        i2c_sda_oe                      => i2c_sda_oe,
-        i2c_scl_oe                      => i2c_scl_oe,
+        i2c_scl_in                      => nios_i2c_scl,
+        i2c_scl_oe                      => nios_i2c_scl_oe,
+        i2c_sda_in                      => nios_i2c_sda,
+        i2c_sda_oe                      => nios_i2c_sda_oe,
+        i2c_mask_export                 => nios_i2c_mask,
 
         pio_export                      => cpu_pio_i,
 
@@ -437,19 +435,22 @@ begin
 
 
 
-    i2c_scl_in <= not i2c_scl_oe;
-    FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-    TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-    POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
+    e_i2c_mux : entity work.i2c_mux
+    port map (
+        io_scl(0)   => FAN_I2C_SCL,
+        io_sda(0)   => FAN_I2C_SDA,
+        io_scl(1)   => TEMP_I2C_SCL,
+        io_sda(1)   => TEMP_I2C_SDA,
+        io_scl(2)   => POWER_MONITOR_I2C_SCL,
+        io_sda(2)   => POWER_MONITOR_I2C_SDA,
 
-    i2c_sda_in <=
-        FAN_I2C_SDA and
-        TEMP_I2C_SDA and
-        POWER_MONITOR_I2C_SDA and
-        '1';
-    FAN_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-    TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-    POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
+        o_scl       => nios_i2c_scl,
+        i_scl_oe    => nios_i2c_scl_oe,
+        o_sda       => nios_i2c_sda,
+        i_sda_oe    => nios_i2c_sda_oe,
+
+        i_mask      => nios_i2c_mask--,
+    );
 
 
 

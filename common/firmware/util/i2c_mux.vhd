@@ -8,8 +8,8 @@ generic (
 );
 port (
     -- to i2c lines
-    io_scl      : inout std_logic_vector(g_N-1 downto 0) := (others => '1');
-    io_sda      : inout std_logic_vector(g_N-1 downto 0) := (others => '1');
+    io_scl      : inout std_logic_vector(g_N-1 downto 0);
+    io_sda      : inout std_logic_vector(g_N-1 downto 0);
 
     -- from i2c master
     o_scl       : out   std_logic;
