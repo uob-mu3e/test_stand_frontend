@@ -47,7 +47,7 @@ architecture rtl of top is
     signal nios_i2c_scl_oe  : std_logic;
     signal nios_i2c_sda     : std_logic;
     signal nios_i2c_sda_oe  : std_logic;
-    signal nios_i2c_ss_n    : std_logic_vector(31 downto 0);
+    signal nios_i2c_mask    : std_logic_vector(31 downto 0);
 
     signal nios_clk      : std_logic;
     signal nios_rst_n    : std_logic;
@@ -144,7 +144,7 @@ begin
         i2c_scl_oe      => nios_i2c_scl_oe,
         i2c_sda_in      => nios_i2c_sda,
         i2c_sda_oe      => nios_i2c_sda_oe,
-        i2c_ss_n_export => nios_i2c_ss_n,
+        i2c_mask_export => nios_i2c_mask,
 
         spi_MISO    => '-',
         spi_MOSI    => open,
@@ -178,7 +178,7 @@ begin
         o_sda       => nios_i2c_sda,
         i_sda_oe    => nios_i2c_sda_oe,
 
-        i_ss_n      => nios_i2c_ss_n--,
+        i_mask      => nios_i2c_mask--,
     );
 
 

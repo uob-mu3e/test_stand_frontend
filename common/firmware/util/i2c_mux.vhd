@@ -3,11 +3,11 @@ use ieee.std_logic_1164.all;
 
 entity i2c_mux is
 generic (
-    -- number of slaves
-    g_N : positive--;
+    -- number of lines
+    g_N : positive := 32--;
 );
 port (
-    -- to i2c slaves
+    -- to i2c lines
     io_scl      : inout std_logic_vector(g_N-1 downto 0) := (others => '1');
     io_sda      : inout std_logic_vector(g_N-1 downto 0) := (others => '1');
 
@@ -17,8 +17,8 @@ port (
     o_sda       : out   std_logic;
     i_sda_oe    : in    std_logic;
 
-    -- slave select
-    i_ss_n      : in    std_logic_vector(g_N-1 downto 0)--;
+    -- line select
+    i_mask      : in    std_logic_vector(g_N-1 downto 0)--;
 );
 end entity;
 
@@ -31,22 +31,20 @@ architecture arch of i2c_mux is
 
 begin
 
-    generate_i2c : for i in i_ss_n'range generate
+    generate_i2c : for i in i_mask'range generate
     begin
-        io_scl(i) <= ZERO when ( i_scl_oe = '1' and i_ss_n(i) = '0' ) else 'Z';
-        io_sda(i) <= ZERO when ( i_sda_oe = '1' and i_ss_n(i) = '0' ) else 'Z';
+        io_scl(i) <= ZERO when ( i_scl_oe = '1' and i_mask(i) = '1' ) else 'Z';
+        io_sda(i) <= ZERO when ( i_sda_oe = '1' and i_mask(i) = '1' ) else 'Z';
         --
     end generate;
 
-    process(i_ss_n, i_scl_oe, i_sda_oe, io_scl, io_sda)
+    process(i_mask, io_scl, io_sda)
     begin
         o_scl <= '1';
         o_sda <= '1';
-        for i in i_ss_n'range loop
-            if ( i_ss_n(i) = '0' ) then
-                if ( i_scl_oe = '1' or io_scl(i) = '0' ) then o_scl <= '0'; end if;
-                if ( i_sda_oe = '1' or io_sda(i) = '0' ) then o_sda <= '0'; end if;
-            end if;
+        for i in i_mask'range loop
+            if ( io_scl(i) = '0' and i_mask(i) = '1' ) then o_scl <= '0'; end if;
+            if ( io_sda(i) = '0' and i_mask(i) = '1' ) then o_sda <= '0'; end if;
         end loop;
     end process;
 

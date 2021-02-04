@@ -10,6 +10,7 @@
  */
 struct fan_t {
     i2c_t i2c;
+    uint32_t i2c_mask;
     alt_u8 i2c_slave;
 
     const alt_u32 fclk = 254000;
@@ -18,16 +19,19 @@ struct fan_t {
     alt_u8 scale = 4;
     alt_u8 rps = 50;
 
-    fan_t(alt_u8 i2c_slave = 0x48)
-        : i2c_slave(i2c_slave)
+    fan_t(uint32_t i2c_mask = 0xFFFFFFFF, alt_u8 i2c_slave = 0x48)
+        : i2c_mask(i2c_mask)
+        , i2c_slave(i2c_slave)
     {
     }
 
     alt_u8 get(alt_u8 addr) {
+        i2c.set_mask(i2c_mask);
         return i2c.get(i2c_slave, addr);
     }
 
     void set(alt_u8 addr, alt_u8 data) {
+        i2c.set_mask(i2c_mask);
         i2c.set(i2c_slave, addr, data);
     }
 

@@ -166,7 +166,7 @@ if 1 {
     nios_base.add_pio pio 32 Output 0x700F0280
 
     # i2c slave select port
-    nios_base.add_pio i2c_ss_n 32 Output 0x700F02A0
+    nios_base.add_pio i2c_mask 32 Output 0x700F02A0
 }
 
 #package require cmdline

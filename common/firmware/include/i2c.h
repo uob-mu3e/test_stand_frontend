@@ -67,16 +67,13 @@ struct i2c_t {
         write(dev, slave, w, 2);
     }
 
-    void slave_select(alt_u32 slave) {
-#ifdef I2C_SS_N_BASE
-        if(0 <= slave && slave < 32) {
-            IOWR_ALTERA_AVALON_PIO_SET_BITS(I2C_SS_N_BASE, 0xFFFFFFFF);
-            IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(I2C_SS_N_BASE, 1 << slave);
-        }
-        else {
-            IOWR_ALTERA_AVALON_PIO_CLEAR_BITS(I2C_SS_N_BASE, 0xFFFFFFFF);
-        }
-#endif
+    uint32_t set_mask(uint32_t mask) {
+#ifdef I2C_MASK_BASE
+        uint32_t old = IORD_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE);
+        IOWR_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE, mask);
+        return old;
+#endif // I2C_MASK_BASE
+        return 0xFFFFFFFF;
     }
 };
 
