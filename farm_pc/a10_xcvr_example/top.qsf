@@ -14,10 +14,9 @@ set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 
 set_global_assignment -name QIP_FILE util/include.qip
-
-set_global_assignment -name QIP_FILE a10/xcvr.qip
-
 set_global_assignment -name QIP_FILE generated/include.qip
+
+set_global_assignment -name VHDL_FILE a10/xcvr_a10.vhd
 
 
 
