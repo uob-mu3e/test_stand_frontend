@@ -22,6 +22,8 @@ set_global_assignment -name QIP_FILE pcieapp/include.qip
 
 
 
+set_global_assignment -name VHDL_FILE a10_block.vhd
+
 set_global_assignment -name VHDL_FILE run_control_link_listener.vhd
 set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_scfifo.vhd
 set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_ram.vhd
