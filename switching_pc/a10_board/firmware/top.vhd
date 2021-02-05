@@ -119,10 +119,7 @@ architecture rtl of top is
     signal pcie_clk : std_logic;
     signal pcie_reset_n : std_logic;
 
-    signal nios_clk : std_logic;
-    signal nios_reset_n : std_logic;
-    signal flash_rst_n : std_logic;
-    signal flash_ce_n_i : std_logic;
+    signal flash_cs_n : std_logic;
 
 
 
@@ -191,17 +188,6 @@ architecture rtl of top is
         signal push_button1_db : std_logic;
         signal push_button2_db : std_logic;
         signal push_button3_db : std_logic;
-
-    -- NIOS
-    signal nios_i2c_scl     : std_logic;
-    signal nios_i2c_scl_oe  : std_logic;
-    signal nios_i2c_sda     : std_logic;
-    signal nios_i2c_sda_oe  : std_logic;
-    signal nios_i2c_mask    : std_logic_vector(31 downto 0);
-
-        signal cpu_pio_i : std_logic_vector(31 downto 0);
-
-        signal av_xcvr : work.util.avalon_t;
 
         type fifo_out_array_type is array (3 downto 0) of std_logic_vector(35 downto 0);
 
@@ -359,98 +345,64 @@ begin
 
 
 
-    -------- NIOS --------
-
-    nios_clk <= clk_50;
-
-    -- generate reset sequence for flash and nios
-    e_nios_reset_n : entity work.debouncer
-    generic map (
-        W => 2,
-        N => integer(50e6 * 0.200) -- 200ms
-    )
+    a10_block : entity work.a10_block
     port map (
-        i_d(0) => '1',
-        o_q(0) => flash_rst_n,
+        o_flash_address(27 downto 2)    => FLASH_A,
+        io_flash_data                   => FLASH_D,
+        o_flash_read_n                  => FLASH_OE_n,
+        o_flash_write_n                 => FLASH_WE_n,
+        o_flash_cs_n                    => flash_cs_n,
+        o_flash_reset_n                 => FLASH_RESET_n,
 
-        i_d(1) => flash_rst_n,
-        o_q(1) => nios_reset_n,
+        io_i2c_scl(0)                   => FAN_I2C_SCL,
+        io_i2c_sda(0)                   => FAN_I2C_SDA,
+        io_i2c_scl(1)                   => TEMP_I2C_SCL,
+        io_i2c_sda(1)                   => TEMP_I2C_SDA,
+        io_i2c_scl(2)                   => POWER_MONITOR_I2C_SCL,
+        io_i2c_sda(2)                   => POWER_MONITOR_I2C_SDA,
 
-        i_reset_n => reset_50_n,
-        i_clk => clk_50--,
+        i_spi_miso(0)                   => RS422_DIN,
+        o_spi_mosi(0)                   => RS422_DOUT,
+        o_spi_sclk(0)                   => RJ45_LED_R,
+        o_spi_ss_n(0)                   => RS422_DE,
+
+        o_nios_hz                       => LED(0),
+
+        i_xcvr0_rx( 3 downto  0)        => QSFPA_RX_p,
+        i_xcvr0_rx( 7 downto  4)        => QSFPB_RX_p,
+        i_xcvr0_rx(11 downto  8)        => QSFPC_RX_p,
+        i_xcvr0_rx(15 downto 12)        => QSFPD_RX_p,
+        o_xcvr0_tx( 3 downto  0)        => QSFPA_TX_p,
+        o_xcvr0_tx( 7 downto  4)        => QSFPB_TX_p,
+        o_xcvr0_tx(11 downto  8)        => QSFPC_TX_p,
+        o_xcvr0_tx(15 downto 12)        => QSFPD_TX_p,
+
+        o_xcvr0_rx_data                 => rx_data_raw,
+        o_xcvr0_rx_datak                => rx_datak_raw,
+        i_xcvr0_tx_data                 => tx_data,
+        i_xcvr0_tx_datak                => tx_datak,
+
+        i_clk_156                       => clk_156,
+
+        i_clk_250                       => '0',
+
+        i_reset_125_n                   => reset_125_n,
+        i_clk_125                       => clk_125,
+
+        i_reset_50_n                    => reset_50_n,
+        i_clk_50                        => clk_50--,
     );
 
-    e_nios : work.cmp.nios
-    port map (
-        avm_reset_reset_n               => reset_125_n,
-        avm_clock_clk                   => clk_125,
-
-        avm_xcvr_address                => av_xcvr.address(15 downto 0),
-        avm_xcvr_read                   => av_xcvr.read,
-        avm_xcvr_readdata               => av_xcvr.readdata,
-        avm_xcvr_write                  => av_xcvr.write,
-        avm_xcvr_writedata              => av_xcvr.writedata,
-        avm_xcvr_waitrequest            => av_xcvr.waitrequest,
-
-        flash_tcm_address_out(27 downto 2)  => FLASH_A,
-        flash_tcm_data_out                  => FLASH_D,
-        flash_tcm_read_n_out(0)             => FLASH_OE_n,
-        flash_tcm_write_n_out(0)            => FLASH_WE_n,
-        flash_tcm_chipselect_n_out(0)       => flash_ce_n_i,
-
-        i2c_scl_in                      => nios_i2c_scl,
-        i2c_scl_oe                      => nios_i2c_scl_oe,
-        i2c_sda_in                      => nios_i2c_sda,
-        i2c_sda_oe                      => nios_i2c_sda_oe,
-        i2c_mask_export                 => nios_i2c_mask,
-
-        pio_export                      => cpu_pio_i,
-
-        spi_MISO                        => RS422_DIN,
-        spi_MOSI                        => RS422_DOUT,
-        spi_SCLK                        => RJ45_LED_R,
-        spi_SS_n                        => RS422_DE,
-
-        rst_reset_n                     => nios_reset_n,
-        clk_clk                         => nios_clk--,
-    );
-
-    FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
+    FLASH_CE_n <= (flash_cs_n, flash_cs_n);
     FLASH_ADV_n <= '0';
     FLASH_CLK <= '0';
-    FLASH_RESET_n <= flash_rst_n;
 
 
-
-    -- monitor nios
-    LED(0) <= not cpu_pio_i(7);
-
-    LED(1) <= not flash_rst_n;
-    LED(2) <= not nios_reset_n;
 
     -- 100 MHz
     e_pcie_clk_hz : entity work.clkdiv
     generic map ( P => 100000000 )
     port map ( o_clk => LED(3), i_reset_n => CPU_RESET_n, i_clk => PCIE_REFCLK_p );
-
-
-
-    e_i2c_mux : entity work.i2c_mux
-    port map (
-        io_scl(0)   => FAN_I2C_SCL,
-        io_sda(0)   => FAN_I2C_SDA,
-        io_scl(1)   => TEMP_I2C_SCL,
-        io_sda(1)   => TEMP_I2C_SDA,
-        io_scl(2)   => POWER_MONITOR_I2C_SCL,
-        io_sda(2)   => POWER_MONITOR_I2C_SDA,
-
-        o_scl       => nios_i2c_scl,
-        i_scl_oe    => nios_i2c_scl_oe,
-        o_sda       => nios_i2c_sda,
-        i_sda_oe    => nios_i2c_sda_oe,
-
-        i_mask      => nios_i2c_mask--,
-    );
 
 
 
@@ -471,42 +423,6 @@ begin
     QSFPC_RST_n <= '1';
     QSFPD_RST_n <= '1';
 
-    e_xcvr_block : entity work.xcvr_block
-    generic map (
-        N_XCVR_g => 4,
-        N_CHANNELS_g => 4--,
-    )
-    port map (
-        i_tx_data   => tx_data,
-        i_tx_datak  => tx_datak,
-
-        o_rx_data   => rx_data_raw,
-        o_rx_datak  => rx_datak_raw,
-
-        i_tx_clk    => (others => clk_156),
-        i_rx_clk    => (others => clk_156),
-
-        o_tx_serial( 3 downto  0)   => QSFPA_TX_p,
-        o_tx_serial( 7 downto  4)   => QSFPB_TX_p,
-        o_tx_serial(11 downto  8)   => QSFPC_TX_p,
-        o_tx_serial(15 downto 12)   => QSFPD_TX_p,
-        i_rx_serial( 3 downto  0)   => QSFPA_RX_p,
-        i_rx_serial( 7 downto  4)   => QSFPB_RX_p,
-        i_rx_serial(11 downto  8)   => QSFPC_RX_p,
-        i_rx_serial(15 downto 12)   => QSFPD_RX_p,
-
-        i_refclk    => (others => clk_125),
-
-        i_avs_address       => av_xcvr.address(15 downto 0),
-        i_avs_read          => av_xcvr.read,
-        o_avs_readdata      => av_xcvr.readdata,
-        i_avs_write         => av_xcvr.write,
-        i_avs_writedata     => av_xcvr.writedata,
-        o_avs_waitrequest   => av_xcvr.waitrequest,
-
-        i_reset_n   => reset_125_n,
-        i_clk       => clk_125--,
-    );
 
     --assign long vectors for used fibers. Wired to run_control, sc, data receivers
     g_assign_usedlinks: for i in NLINKS_DATA-1 downto 0 generate
