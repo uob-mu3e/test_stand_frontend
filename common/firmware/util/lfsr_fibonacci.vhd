@@ -1,23 +1,22 @@
 library ieee;
 use ieee.std_logic_1164.all;
---use ieee.numeric_std.all;
 
-entity lfsr_xor is
+-- https://en.wikipedia.org/wiki/Linear-feedback_shift_register
+entity lfsr_fibonacci is
 generic (
-    -- polynomial (e.g. x^8 + x^6 + x^5 + x^4 + 1 = "101110001")
-    -- NOTE: bit 0 is always '1'
-    g_POLY : std_logic_vector;
+    -- taps (e.g. poly 'x^8 + x^6 + x^5 + x^4 + 1' corresponds to "10111000")
+    g_TAPS : std_logic_vector;
     g_INIT : std_logic_vector := "1"--;
 );
 port (
-    o_lfsr      : out   std_logic_vector(g_POLY'length-2 downto 0);
+    o_lfsr      : out   std_logic_vector(g_TAPS'length-1 downto 0);
 
     i_reset_n   : in    std_logic;
     i_clk       : in    std_logic--;
 );
 end entity;
 
-architecture arch of lfsr_xor is
+architecture arch of lfsr_fibonacci is
 
     signal lfsr : std_logic_vector(o_lfsr'range);
 
@@ -34,9 +33,9 @@ begin
         --
     elsif rising_edge(i_clk) then
         feedback := '0';
-        -- handle taps (e.g. x^6 corresponds to bit 5)
+        -- handle taps
         for i in lfsr'range loop
-            if ( g_POLY(i+1) = '1' ) then
+            if ( g_TAPS(i) = '1' ) then
                 feedback := feedback xor lfsr(i);
             end if;
         end loop;

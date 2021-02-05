@@ -20,9 +20,9 @@ begin
     reset_n <= '0', '1' after (1.0 us / CLK_MHZ);
     reset <= not reset_n;
 
-    e_lfsr : entity work.lfsr_xor
+    e_lfsr : entity work.lfsr_fibonacci
     generic map (
-        g_POLY => "10111000" & "1"--,
+        g_TAPS => "10111000"--,
     )
     port map (
         o_lfsr      => lfsr,
