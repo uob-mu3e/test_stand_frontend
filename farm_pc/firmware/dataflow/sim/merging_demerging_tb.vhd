@@ -18,12 +18,16 @@ architecture TB of merging_demerging_tb is
 
     signal r_fifo_data, w_fifo_data  : std_logic_vector(NLINKS * 38 - 1 downto 0);
     signal w_fifo_en, r_fifo_en, fifo_empty, fifo_full : std_logic;
+    signal o_data : std_logic_vector(NLINKS * 32 - 1 downto 0);
 
     type sim_merger_state_type is (pre, t1, t2, sh, data, tr);
     signal event_counter_state : sim_merger_state_type;
 
     signal data_counter : std_logic_vector(31 downto 0);
 
+    type fifo_array_6 is array(natural range <>) of std_logic_vector(5 downto 0);
+    signal FEB_num : fifo_array_6(5 downto 0);
+    signal FEB_num_in : fifo_array_6(7 downto 0);
     -- clk period
     constant clk_period : time := 4 ns;
 
@@ -62,45 +66,50 @@ begin
         w_fifo_en   <= '0';
         w_fifo_data <= (others => '0');
 
-        case event_counter_state is
-            when pre =>
-                event_counter_state <= t1;
-                w_fifo_data(37 downto 32) <= pre_marker;
-                w_fifo_data(7 downto 0) <= x"BC";
-                w_fifo_en <= '1';
-            when t1 =>
-                event_counter_state <= t2;
-                w_fifo_data(37 downto 32) <= ts1_marker;
-                w_fifo_en <= '1';
-            when t2 =>
-                event_counter_state <= sh;
-                w_fifo_data(37 downto 32) <= ts2_marker;
-                w_fifo_en <= '1';
-            when sh =>
-                event_counter_state <= data;
-                w_fifo_data(37 downto 32) <= sh_marker;
-                w_fifo_en <= '1';
-            when data =>
-                if ( data_counter = x"000000FF" ) then
-                    event_counter_state <= tr;    
-                end if;
-                data_counter <= data_counter + '1';
-                w_fifo_data(37 downto 0)    <= "000000" & x"11111111";
-                w_fifo_data(75 downto 38)   <= "000001" & x"22222222";
-                w_fifo_data(113 downto 76)  <= "000010" & x"33333333";
-                w_fifo_data(151 downto 114) <= "000011" & x"44444444";
-                w_fifo_data(189 downto 152) <= "000100" & x"55555555";
-                w_fifo_data(227 downto 190) <= "000101" & x"66666666";
-                w_fifo_data(265 downto 228) <= "000110" & x"77777777";
-                w_fifo_data(303 downto 266) <= "000111" & x"88888888";
-                w_fifo_en <= '1';
-            when tr =>
-                event_counter_state <= pre;
-                w_fifo_data(37 downto 32) <= tr_marker;
-                w_fifo_en <= '1';
-            when others =>
-                event_counter_state <= pre;
-        end case;
+
+        if ( fifo_full = '0' ) then
+            case event_counter_state is
+                when pre =>
+                    event_counter_state <= t1;
+                    w_fifo_data(37 downto 32) <= pre_marker;
+                    w_fifo_data(7 downto 0) <= x"BC";
+                    w_fifo_en <= '1';
+                when t1 =>
+                    event_counter_state <= t2;
+                    w_fifo_data(37 downto 32) <= ts1_marker;
+                    w_fifo_en <= '1';
+                when t2 =>
+                    event_counter_state <= sh;
+                    w_fifo_data(37 downto 32) <= ts2_marker;
+                    w_fifo_en <= '1';
+                when sh =>
+                    event_counter_state <= data;
+                    w_fifo_data(37 downto 32) <= sh_marker;
+                    w_fifo_en <= '1';
+                when data =>
+                    if ( data_counter >= x"000000FF" ) then
+                        event_counter_state <= tr;
+                    end if;
+                    data_counter <= data_counter + "1000";
+                    w_fifo_data(37 downto 0)    <= data_counter(5 downto 0)         & x"11111111";
+                    w_fifo_data(75 downto 38)   <= data_counter(5 downto 0) + '1'   & x"22222222";
+                    w_fifo_data(113 downto 76)  <= data_counter(5 downto 0) + "10"  & x"33333333";
+                    w_fifo_data(151 downto 114) <= data_counter(5 downto 0) + "11"  & x"44444444";
+                    w_fifo_data(189 downto 152) <= data_counter(5 downto 0) + "100" & x"55555555";
+                    w_fifo_data(227 downto 190) <= data_counter(5 downto 0) + "101" & x"66666666";
+                    w_fifo_data(265 downto 228) <= data_counter(5 downto 0) + "110" & x"77777777";
+                    w_fifo_data(303 downto 266) <= data_counter(5 downto 0) + "111" & x"88888888";
+                    w_fifo_en <= '1';
+                when tr =>
+                    event_counter_state <= pre;
+                    data_counter <= (others => '0');
+                    w_fifo_data(37 downto 32) <= tr_marker;
+                    w_fifo_data(7 downto 0) <= x"9C";
+                    w_fifo_en <= '1';
+                when others =>
+                    event_counter_state <= pre;
+            end case;
+        end if;
     end if;
     end process;
 
@@ -109,6 +118,7 @@ begin
     generic map (
         ADDR_WIDTH      => 10,
         DATA_WIDTH      => NLINKS * 38,
+        --SHOWAHEAD       => "OFF",
         DEVICE          => "Arria 10"--,
     )
     port map (
@@ -142,10 +152,25 @@ begin
         
         o_ren       => r_fifo_en,
         o_wen       => open,
-        o_data      => open,
+        o_data      => o_data,
         o_datak     => open--,
     );
 
+    FEB_num(0) <= o_data(37 downto 32);
+    FEB_num(1) <= o_data(75 downto 70);
+    FEB_num(2) <= o_data(113 downto 108);
+    FEB_num(3) <= o_data(151 downto 146);
+    FEB_num(4) <= o_data(189 downto 184);
+    FEB_num(5) <= o_data(227 downto 222);
+
+    FEB_num_in(0) <= r_fifo_data(37 downto 32);
+    FEB_num_in(1) <= r_fifo_data(75 downto 70);
+    FEB_num_in(2) <= r_fifo_data(113 downto 108);
+    FEB_num_in(3) <= r_fifo_data(151 downto 146);
+    FEB_num_in(4) <= r_fifo_data(189 downto 184);
+    FEB_num_in(5) <= r_fifo_data(227 downto 222);
+    FEB_num_in(6) <= r_fifo_data(265 downto 260);
+    FEB_num_in(7) <= r_fifo_data(303 downto 298);
 
 end TB;
 

@@ -10,6 +10,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use work.dataflow_components.all;
+use ieee.std_logic_misc.all;
 
 
 entity data_merger_swb is
@@ -37,38 +38,47 @@ end entity data_merger_swb;
 
 architecture RTL of data_merger_swb is
          
-    type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit_1, hit_2, hit_3, hit_4, hit_5, hit_6, hit_7, hit_8, hit_9, hit_10, hit_11, hit_12, hit_13, hit_14, hit_15, hit_16, get_tr, error_state);
+    type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit, delay, get_tr, error_state);
     signal merge_state : merge_state_type;
 
     signal o_data_reg : std_logic_vector(71 downto 0);
     signal hit_reg    : std_logic_vector(NLINKS * 38 - 1  downto 0);
+    signal hit_reg_cnt : integer;
+    signal header_state : std_logic_vector(5 downto 0);
     
 begin
+
+    header_state(0) <= '1' when i_data(37 downto 32) = pre_marker and i_data(7 downto 0) = x"BC" else '0';
+    header_state(1) <= '1' when i_data(37 downto 32) = ts1_marker else '0';
+    header_state(2) <= '1' when i_data(37 downto 32) = ts2_marker else '0';
+    header_state(3) <= '1' when i_data(37 downto 32) = sh_marker else '0';
+    header_state(4) <= '1' when i_data(37 downto 32) = tr_marker and i_data(7 downto 0) = x"9C" else '0';
+    header_state(5) <= '1' when i_data(37 downto 32) = err_marker else '0';
+
+    o_ren <= '1' when or_reduce(header_state) = '1' and i_empty = '0' and merge_state /= hit else 
+             '1' when merge_state = hit and hit_reg_cnt /= 6 and or_reduce(header_state) = '0' and i_empty = '0' else '0';
 
     process(i_clk, i_reset_n)
     begin
         if ( i_reset_n = '0' ) then
-            o_ren       <= '0';
             o_wen       <= '0';
             o_data      <= (others => '0');
             o_data_reg  <= (others => '0');
             o_datak     <= (others => '0');
             hit_reg     <= (others => '0');
             merge_state <= wait_for_pre;
+            hit_reg_cnt <= 0;
             --
         elsif ( rising_edge(i_clk) ) then
 
-            o_ren       <= '0';
             o_wen       <= '0';
             o_data      <= (others => '0');
 
             case merge_state is
 
                 when wait_for_pre =>
-                    report("State: wait_for_pre");
-                    if ( i_data(37 downto 32) = pre_marker and i_data(7 downto 0) = x"BC" and i_empty = '0' and o_ren = '0' ) then
+                    if ( header_state(0) = '1' ) then
                         merge_state             <= get_ts_1;
-                        o_ren                   <= '1';
                         -- reg data
                         o_data_reg(7 downto 0)  <= i_swb_id;
                     end if;
@@ -79,9 +89,8 @@ begin
                     END LOOP;
 
                 when get_ts_1 =>
-                    if ( i_data(37 downto 32) = ts1_marker ) then
+                    if ( header_state(1) = '1' ) then
                         merge_state             <= get_ts_2;
-                        o_ren                   <= '1';
                         -- reg data
                         o_data_reg(39 downto 8) <= i_data(31 downto 0);
                     end if;
@@ -92,14 +101,12 @@ begin
                     END LOOP;
 
                 when get_ts_2 =>
-                    report("State: get_ts_2");
                     -- send out data if ts2 is there
                     -- every link is getting K.28.3 = 7C for pre
                     o_wen <= '1';
-                    if ( i_data(37 downto 32) = ts2_marker and i_empty = '0' and o_ren = '0' ) then
+                    if ( header_state(2) = '1' ) then
                         merge_state              <= get_sh;
                         o_data_reg               <= (others => '0');
-                        o_ren                    <= '1';
                         -- 1. link
                         o_data(31 downto 0)      <= o_data_reg(23 downto 0) & x"7C";
                         o_datak(3 downto 0)      <= "0001";
@@ -132,14 +139,11 @@ begin
                     end if;
 
                 when get_sh =>
-                    report("State: get_sh");
-                    report(to_hstring(o_data));
                     -- send out data if sh is there
                     -- every link is getting K.28.2 = 5C for sh
                     o_wen <= '1';
-                    if ( i_data(37 downto 32) = sh_marker and i_empty = '0' and o_ren = '0' ) then
-                        merge_state             <= hit_1;
-                        o_ren                   <= '1';
+                    if ( header_state(3) = '1' ) then
+                        merge_state             <= delay;
                         -- 1. link
                         o_data(31 downto 0)     <= i_data(15 downto 0) & DT & x"5C";
                         -- 2. link
@@ -156,6 +160,14 @@ begin
                         END LOOP;
                     end if;
 
+                when delay =>
+                    merge_state <= hit;
+                    o_wen       <= '1';
+                    FOR I in NLINKS - 1 downto 0 LOOP
+                        o_data(I * 32 + 31 downto I * 32)   <= K285;
+                        o_datak(I * 4 + 3 downto I * 4)     <= "0001";
+                    END LOOP;
+
                 -- hits after alignment
                 -- 1. hit  =  37 downto   0
                 -- 2. hit  =  75 downto  38
@@ -170,671 +182,78 @@ begin
                 --           01 -> 1/2 LSB
                 --           00 -> error
                 --           11 -> no 1/2 hits
-                when hit_1 =>
-                    report("State: hit_1");
-                    report(to_hstring(o_data));
-                    -- send out hits if fifo is not empty
-                    o_wen <= '1';
-                    if ( i_empty = '0' and o_ren = '0' ) then
-                        if ( i_data(37 downto 32) = sh_marker ) then
-                            merge_state <= get_sh;
-                        elsif ( i_data(37 downto 32) = tr_marker ) then
-                            merge_state <= get_tr;
-                        elsif ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                        else
-                            merge_state             <= hit_2;
-                            o_ren                   <= '1';
-                            hit_reg                 <= (others => '0');
-                            -- 6 hits
-                            o_data(227 downto 0)    <= i_data(227 downto 0);
-                            -- 1/2 hit
-                            o_data(246 downto 228)  <= i_data(246 downto 228);
-                            -- marker "10" -> half is MSB
-                            o_data(255 downto 254)  <= "10";
-                            -- save 1.5 hits
-                            hit_reg(56 downto 0)    <= i_data(303 downto 247);
-                        end if;
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when hit_2 =>
-                    report("State: hit_2");
-                    report(to_hstring(o_data(37 downto 32)));
+                when hit =>
                     -- send out hits if fifo is not empty
                     o_wen <= '1';
                     if ( i_empty = '0' ) then
-                        if ( i_data(37 downto 32) = sh_marker ) then
+                        hit_reg <= (others => '0');
+                        -- marker 
+                        o_data(255 downto 254)      <= "11";
+                        if ( header_state(3) = '1' ) then
                             merge_state <= get_sh;
-                            -- 1/2 hit from reg
-                            o_data(18 downto 0)     <= hit_reg(18 downto 0);
-                            -- 1 hit from reg
-                            o_data(56 downto 19)    <= hit_reg(56 downto 19);
-                            -- mark rest of data
-                            o_data(253 downto 57)   <= (others => '1');
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                        elsif ( i_data(37 downto 32) = tr_marker ) then
+                            hit_reg_cnt <= 0;
+                            -- writeout last reg data
+                            o_data(227 downto 0) <= hit_reg(227 downto 0);
+                        elsif ( header_state(4) = '1' ) then
                             merge_state <= get_tr;
-                            -- 1/2 hit from reg
-                            o_data(18 downto 0)     <= hit_reg(18 downto 0);
-                            -- 1 hit from reg
-                            o_data(56 downto 19)    <= hit_reg(56 downto 19);
-                            -- mark rest of data
-                            o_data(253 downto 57)   <= (others => '1');
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                        elsif ( i_data(37 downto 32) = err_marker ) then
+                            hit_reg_cnt <= 0;
+                            -- writeout last reg data
+                            o_data(227 downto 0) <= hit_reg(227 downto 0);
+                        elsif ( header_state(5) = '1' ) then
                             merge_state <= error_state;
-                            -- 1/2 hit from reg
-                            o_data(18 downto 0)     <= hit_reg(18 downto 0);
-                            -- 1 hit from reg
-                            o_data(56 downto 19)    <= hit_reg(56 downto 19);
-                            -- mark rest of data
-                            o_data(253 downto 57)   <= (others => '1');
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
+                            hit_reg_cnt <= 0;
+                            -- writeout last reg data
+                            o_data(227 downto 0) <= hit_reg(227 downto 0);
                         else
-                            merge_state <= hit_3;
-                            o_ren                   <= '1';
-                            hit_reg                 <= (others => '0');
-                            -- 1/2 hit from reg
-                            o_data(18 downto 0)     <= hit_reg(18 downto 0);
-                            -- 1 hit from reg
-                            o_data(56 downto 19)    <= hit_reg(56 downto 19);
-                            -- 5 hits
-                            o_data(246 downto 57)   <= i_data(189 downto 0);
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                            -- save 3 hits
-                            hit_reg(113 downto 0)   <= i_data(303 downto 190);
+                            FOR I in NLINKS - 1 downto 0 LOOP
+                                o_datak(I * 4 + 3 downto I * 4)     <= "0000";
+                            END LOOP;                         
+                            if ( hit_reg_cnt = 6 ) then
+                                -- 6 hits from reg
+                                o_data(227 downto 0)    <= hit_reg(227 downto 0);
+                                -- set cnt
+                                hit_reg_cnt <= 0;
+                            elsif ( hit_reg_cnt = 4 ) then
+                                -- 4 from reg
+                                o_data(151 downto 0)    <= hit_reg(151 downto 0);
+                                -- 2 hits from input
+                                o_data(227 downto 152)  <= i_data(75 downto 0);
+                                -- save 6 hits
+                                hit_reg(227 downto 0)   <= i_data(303 downto 76);
+                                -- set cnt
+                                hit_reg_cnt <= 6;
+                            elsif ( hit_reg_cnt = 2 ) then
+                                -- 2 from reg
+                                o_data(75 downto 0)     <= hit_reg(75 downto 0);
+                                -- 4 hits from input
+                                o_data(227 downto 76)   <= i_data(151 downto 0);
+                                -- save 4 hits
+                                hit_reg(151 downto 0)   <= i_data(303 downto 152);
+                                -- set cnt
+                                hit_reg_cnt <= 4;
+                            else
+                                -- 6 hits from input
+                                o_data(227 downto 0)    <= i_data(227 downto 0);
+                                -- save 2 hits
+                                hit_reg(75 downto 0)    <= i_data(303 downto 228);
+                                -- set cnt
+                                hit_reg_cnt <= 2;
+                            end if;
                         end if;
                     else
                         FOR I in NLINKS - 1 downto 0 LOOP
                             o_data(I * 32 + 31 downto I * 32)   <= K285;
                             o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                         END LOOP;
-                    end if;
-
-                when hit_3 =>
-                    report("State: hit_3");
-                    report(to_hstring(o_data(37 downto 32)));
-                    -- send out hits if fifo is not empty
-                    o_wen <= '1';
-                    if ( i_empty = '0' ) then
-                        if ( i_data(37 downto 32) = sh_marker ) then
-                            merge_state <= get_sh;
-                            -- 3 hits from reg
-                            o_data(113 downto 0)    <= hit_reg(113 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 57)   <= (others => '1');
-                            -- marker "11" -> no half hits
-                            o_data(255 downto 254)  <= "11";
-                        elsif ( i_data(37 downto 32) = tr_marker ) then
-                            merge_state <= get_tr;
-                            -- 3 hits from reg
-                            o_data(113 downto 0)    <= hit_reg(113 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 57)   <= (others => '1');
-                            -- marker "11" -> no half hits
-                            o_data(255 downto 254)  <= "11";
-                        elsif ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                            -- 3 hits from reg
-                            o_data(113 downto 0)    <= hit_reg(113 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 57)   <= (others => '1');
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
-                        else
-                            merge_state <= hit_4;
-                            o_ren                   <= '1';
-                            hit_reg                 <= (others => '0');
-                            -- 3 hits from reg
-                            o_data(113 downto 0)    <= hit_reg(113 downto 0);
-                            -- 3 hits from data
-                            o_data(227 downto 114)  <= i_data(113 downto 0);
-                            -- 1/2 hit from data
-                            o_data(246 downto 228)  <= i_data(132 downto 114);
-                            -- marker "10" -> half is MSB
-                            o_data(255 downto 254)  <= "10";
-                            -- save 4.5 of the hits from data
-                            hit_reg(170 downto 0)    <= i_data(303 downto 133);
-                        end if;
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when hit_4 =>
-                    report("State: hit_4");
-                    report(to_hstring(o_data(37 downto 32)));
-                    -- send out hits if fifo is not empty
-                    o_wen <= '1';               
-                    if ( i_empty = '0' ) then
-                        if ( i_data(37 downto 32) = sh_marker ) then
-                            merge_state <= get_sh;
-                            -- 4.5 hits from reg
-                            o_data(170 downto 0)    <= hit_reg(170 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 171)   <= (others => '1');
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                        elsif ( i_data(37 downto 32) = tr_marker ) then
-                            merge_state <= get_tr;
-                            -- 4.5 hits from reg
-                            o_data(170 downto 0)    <= hit_reg(170 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 171)   <= (others => '1');
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                        elsif ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                            -- 4.5 hits from reg
-                            o_data(170 downto 0)    <= hit_reg(170 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 171)   <= (others => '1');
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
-                        else
-                            merge_state <= hit_5;
-                            o_ren                   <= '1';
-                            hit_reg                 <= (others => '0');
-                            -- 4.5 hits from reg
-                            o_data(170 downto 0)    <= hit_reg(170 downto 0);
-                            -- 2 hits from data
-                            o_data(246 downto 171)  <= i_data(75 downto 0);
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                            -- save 6 of the hits from data
-                            hit_reg(227 downto 0)    <= i_data(303 downto 76);
-                        end if;
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when hit_5 =>
-                    report("State: hit_5");
-                    report(to_hstring(o_data(37 downto 32)));
-                    -- send out hits if fifo is not empty             
-                    o_wen <= '1';
-                    if ( i_empty = '0' ) then
-                        if ( i_data(37 downto 32) = sh_marker ) then
-                            merge_state <= get_sh;
-                            -- 6 hits from reg
-                            o_data(227 downto 0)    <= hit_reg(227 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 228)   <= (others => '1');
-                            -- marker "11" -> no half hits
-                            o_data(255 downto 254)  <= "11";
-                        elsif ( i_data(37 downto 32) = tr_marker ) then
-                            merge_state <= get_tr;
-                            -- 6 hits from reg
-                            o_data(227 downto 0)    <= hit_reg(227 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 228)   <= (others => '1');
-                            -- marker "11" -> no half hits
-                            o_data(255 downto 254)  <= "11";
-                        elsif ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                            -- 6 hits from reg
-                            o_data(227 downto 0)    <= hit_reg(227 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 228)   <= (others => '1');
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
-                        else
-                            merge_state <= hit_6;
-                            o_ren                   <= '1';
-                            hit_reg                 <= (others => '0');
-                            -- 6 hits from reg
-                            o_data(227 downto 0)    <= hit_reg(227 downto 0);
-                            -- 1/2 hits from data
-                            o_data(246 downto 228)  <= i_data(18 downto 0);
-                            -- marker "10" -> half is MSB
-                            o_data(255 downto 254)  <= "10";
-                            -- save 7.5 of the hits from data
-                            hit_reg(284 downto 0)    <= i_data(303 downto 19);
-                        end if;
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when hit_6 =>
-                    report("State: hit_6");
-                    report(to_hstring(o_data(37 downto 32)));
-                    -- send out hits from reg               
-                    o_wen <= '1';
-                    if ( i_data(37 downto 32) = sh_marker ) then
-                        merge_state <= get_sh;
-                    elsif ( i_data(37 downto 32) = tr_marker ) then
-                        merge_state <= get_tr;
-                    else
-                        if ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
-                        else
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                        end if;
-                        merge_state <= hit_7;
-                        -- 1/2 hits from reg
-                        o_data(18 downto 0)    <= hit_reg(18 downto 0);
-                        -- 6 hits from reg
-                        o_data(246 downto 19)  <= hit_reg(246 downto 19);
-                    end if;
-
-                when hit_7 =>
-                    report("State: hit_7");
-                    report(to_hstring(o_data(37 downto 32)));
-                    -- send out hits if fifo is not empty 
-                    o_wen <= '1';
-                    if ( i_empty = '0' ) then
-                        merge_state <= hit_8;
-                        o_ren                   <= '1';
-                        hit_reg                 <= (others => '0');
-                        -- 1 hit from reg
-                        o_data(37 downto 0)     <= hit_reg(284 downto 247);
-                        -- 5 hits from data
-                        o_data(227 downto 38)  <= i_data(189 downto 0);
-                        -- 1/2 hits form data
-                        o_data(246 downto 228)  <= i_data(208 downto 190);
-                        -- marker "10" -> half is MSB
-                        o_data(255 downto 254)  <= "10";
-                        -- save 2.5 of the hits from data
-                        hit_reg(94 downto 0)    <= i_data(303 downto 209);
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when hit_8 =>
-                    -- send out hits if fifo is not empty
-                    o_wen <= '1';            
-                    if ( i_empty = '0' ) then
-                        if ( i_data(37 downto 32) = sh_marker ) then
-                            merge_state <= get_sh;
-                            -- 2.5 hits from reg
-                            o_data(94 downto 0)    <= hit_reg(94 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 95)   <= (others => '1');
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                        elsif ( i_data(37 downto 32) = tr_marker ) then
-                            merge_state <= get_tr;
-                            -- 2.5 hits from reg
-                            o_data(94 downto 0)    <= hit_reg(94 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 95)   <= (others => '1');
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                        elsif ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                            -- 2.5 hits from reg
-                            o_data(94 downto 0)    <= hit_reg(94 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 95)   <= (others => '1');
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
-                        else
-                            merge_state <= hit_9;
-                            o_ren                   <= '1';
-                            hit_reg                 <= (others => '0');
-                            -- 2.5 hits from reg
-                            o_data(94 downto 0)    <= hit_reg(94 downto 0);
-                            -- 4 hits from data
-                            o_data(246 downto 95)  <= i_data(151 downto 0);
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                            -- save 4 of the hits from data
-                            hit_reg(151 downto 0)    <= i_data(303 downto 152);
-                        end if;
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when hit_9 =>
-                    -- send out hits if fifo is not empty
-                    o_wen <= '1';            
-                    if ( i_empty = '0' ) then
-                        if ( i_data(37 downto 32) = sh_marker ) then
-                            merge_state <= get_sh;
-                            -- 4 hits from reg
-                            o_data(151 downto 0)    <= hit_reg(151 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 152)  <= (others => '1');
-                            -- marker "11" -> no half hits
-                            o_data(255 downto 254)  <= "11";
-                        elsif ( i_data(37 downto 32) = tr_marker ) then
-                            merge_state <= get_tr;
-                            -- 4 hits from reg
-                            o_data(151 downto 0)    <= hit_reg(151 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 152)  <= (others => '1');
-                            -- marker "11" -> no half hits
-                            o_data(255 downto 254)  <= "11";
-                        elsif ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                            -- 4 hits from reg
-                            o_data(151 downto 0)    <= hit_reg(151 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 152)  <= (others => '1');
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
-                        else
-                            merge_state <= hit_10;
-                            o_ren                   <= '1';
-                            hit_reg                 <= (others => '0');
-                            -- 4 hits from reg
-                            o_data(151 downto 0)    <= hit_reg(151 downto 0);
-                            -- 2 hits from data
-                            o_data(227 downto 152)  <= i_data(75 downto 0);
-                            -- 1/2 hit from data
-                            o_data(246 downto 228)  <= i_data(94 downto 76);
-                            -- marker "10" -> half is MSB
-                            o_data(255 downto 254)  <= "10";
-                            -- save 5.5 of the hits from data
-                            hit_reg(208 downto 0)    <= i_data(303 downto 95);
-                        end if;
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when hit_10 =>
-                    -- send out hits if fifo is not empty
-                    o_wen <= '1';            
-                    if ( i_empty = '0' ) then
-                        if ( i_data(37 downto 32) = sh_marker ) then
-                            merge_state <= get_sh;
-                            -- 5.5 hits from reg
-                            o_data(208 downto 0)    <= hit_reg(208 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 209)  <= (others => '1');
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                        elsif ( i_data(37 downto 32) = tr_marker ) then
-                            merge_state <= get_tr;
-                            -- 5.5 hits from reg
-                            o_data(208 downto 0)    <= hit_reg(208 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 209)  <= (others => '1');
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                        elsif ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                             -- 5.5 hits from reg
-                            o_data(208 downto 0)    <= hit_reg(208 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 209)  <= (others => '1');
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
-                        else
-                            merge_state <= hit_11;
-                            o_ren                   <= '1';
-                            hit_reg                 <= (others => '0');
-                            -- 5.5 hits from reg
-                            o_data(208 downto 0)    <= hit_reg(208 downto 0);
-                            -- 1 hits from data
-                            o_data(246 downto 209)  <= i_data(37 downto 0);
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                            -- save 7 of the hits from data
-                            hit_reg(265 downto 0)    <= i_data(303 downto 38);
-                        end if;
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when hit_11 =>
-                    -- send out hits from reg               
-                    o_wen <= '1';
-                    if ( i_data(37 downto 32) = sh_marker ) then
-                        merge_state <= get_sh;
-                    elsif ( i_data(37 downto 32) = tr_marker ) then
-                        merge_state <= get_tr;
-                    else
-                        if ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
-                        else
-                            -- marker "10" -> half is MSB
-                            o_data(255 downto 254)  <= "10";
-                        end if;
-                        merge_state <= hit_12;
-                        -- 6.5 hits from reg
-                        o_data(246 downto 0)    <= hit_reg(246 downto 0);
-                    end if;
-
-                when hit_12 =>
-                    -- send out hits if fifo is not empty 
-                    o_wen <= '1';
-                    if ( i_empty = '0' ) then
-                        merge_state <= hit_13;
-                        o_ren                   <= '1';
-                        hit_reg                 <= (others => '0');
-                        -- 0.5 hit from reg
-                        o_data(18 downto 0)     <= hit_reg(265 downto 247);
-                        -- 6 hits from data
-                        o_data(246 downto 19)   <= i_data(227 downto 0);
-                        -- marker "01" -> half is LSB
-                        o_data(255 downto 254)  <= "01";
-                        -- save 2 of the hits from data
-                        hit_reg(75 downto 0)    <= i_data(303 downto 228);
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when hit_13 =>
-                    -- send out hits if fifo is not empty
-                    o_wen <= '1';            
-                    if ( i_empty = '0' ) then
-                        if ( i_data(37 downto 32) = sh_marker ) then
-                            merge_state <= get_sh;
-                            -- 2 hits from reg
-                            o_data(75 downto 0)    <= hit_reg(75 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 76)  <= (others => '1');
-                            -- marker "11" -> no half hits
-                            o_data(255 downto 254)  <= "11";
-                        elsif ( i_data(37 downto 32) = tr_marker ) then
-                            merge_state <= get_tr;
-                            -- 2 hits from reg
-                            o_data(75 downto 0)    <= hit_reg(75 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 76)  <= (others => '1');
-                            -- marker "11" -> no half hits
-                            o_data(255 downto 254)  <= "11";
-                        elsif ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                            -- 2 hits from reg
-                            o_data(75 downto 0)    <= hit_reg(75 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 76)  <= (others => '1');
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
-                        else
-                            merge_state <= hit_14;
-                            o_ren                   <= '1';
-                            hit_reg                 <= (others => '0');
-                            -- 2 hits from reg
-                            o_data(75 downto 0)    <= hit_reg(75 downto 0);
-                            -- 4 hits from data
-                            o_data(227 downto 76)  <= i_data(151 downto 0);
-                            -- 1/2 hit from data
-                            o_data(246 downto 228)  <= i_data(170 downto 152);
-                            -- marker "10" -> half is MSB
-                            o_data(255 downto 254)  <= "10";
-                            -- save 3.5 of the hits from data
-                            hit_reg(132 downto 0)    <= i_data(303 downto 171);
-                        end if;
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when hit_14 =>
-                    -- send out hits if fifo is not empty
-                    o_wen <= '1';            
-                    if ( i_empty = '0' ) then
-                        if ( i_data(37 downto 32) = sh_marker ) then
-                            merge_state <= get_sh;
-                            -- 3.5 hits from reg
-                            o_data(132 downto 0)    <= hit_reg(132 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 133)  <= (others => '1');
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                        elsif ( i_data(37 downto 32) = tr_marker ) then
-                            merge_state <= get_tr;
-                            -- 3.5 hits from reg
-                            o_data(132 downto 0)    <= hit_reg(132 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 133)  <= (others => '1');
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                        elsif ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                            -- 3.5 hits from reg
-                            o_data(132 downto 0)    <= hit_reg(132 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 133)  <= (others => '1');
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
-                        else
-                            merge_state <= hit_14;
-                            o_ren                   <= '1';
-                            hit_reg                 <= (others => '0');
-                            -- 3.5 hits from reg
-                            o_data(132 downto 0)    <= hit_reg(132 downto 0);
-                            -- 3 hits from data
-                            o_data(246 downto 133)  <= i_data(113 downto 0);
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                            -- save 5 of the hits from data
-                            hit_reg(189 downto 0)    <= i_data(303 downto 114);
-                        end if;
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when hit_15 =>
-                    -- send out hits if fifo is not empty
-                    o_wen <= '1';            
-                    if ( i_empty = '0' ) then
-                        if ( i_data(37 downto 32) = sh_marker ) then
-                            merge_state <= get_sh;
-                            -- 5 hits from reg
-                            o_data(189 downto 0)    <= hit_reg(189 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 190)  <= (others => '1');
-                            -- marker "11" -> no half hits
-                            o_data(255 downto 254)  <= "11";
-                        elsif ( i_data(37 downto 32) = tr_marker ) then
-                            merge_state <= get_tr;
-                            -- 5 hits from reg
-                            o_data(189 downto 0)    <= hit_reg(189 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 190)  <= (others => '1');
-                            -- marker "11" -> no half hits
-                            o_data(255 downto 254)  <= "11";
-                        elsif ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                            -- 5 hits from reg
-                            o_data(189 downto 0)    <= hit_reg(189 downto 0);
-                            -- mark rest of data
-                            o_data(253 downto 190)  <= (others => '1');
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
-                        else
-                            merge_state <= hit_16;
-                            o_ren                   <= '1';
-                            hit_reg                 <= (others => '0');
-                            -- 5 hits from reg
-                            o_data(189 downto 0)    <= hit_reg(189 downto 0);
-                            -- 1 hit from data
-                            o_data(227 downto 190)  <= i_data(37 downto 0);
-                            -- 1/2 hit from data
-                            o_data(246 downto 228)  <= i_data(56 downto 38);
-                            -- marker "10" -> half is MSB
-                            o_data(255 downto 254)  <= "10";
-                            -- save 6.5 of the hits from data
-                            hit_reg(246 downto 0)    <= i_data(303 downto 57);
-                        end if;
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when hit_16 =>
-                    -- send out hits from reg               
-                    o_wen <= '1';
-                    if ( i_data(37 downto 32) = sh_marker ) then
-                        merge_state <= get_sh;
-                    elsif ( i_data(37 downto 32) = tr_marker ) then
-                        merge_state <= get_tr;
-                    else
-                        if ( i_data(37 downto 32) = err_marker ) then
-                            merge_state <= error_state;
-                            -- marker "00" -> error
-                            o_data(255 downto 254)  <= "00";
-                        else
-                            -- marker "01" -> half is LSB
-                            o_data(255 downto 254)  <= "01";
-                        end if;
-                        merge_state <= hit_1;
-                        -- 6.5 hits from reg
-                        o_data(246 downto 0)  <= hit_reg(246 downto 0);
                     end if;
 
                 when get_tr =>
                     -- send out data if tr is there
                     -- every link is getting K.28.4 = 9C for tr
                     o_wen <= '1';
-                    if ( i_data(37 downto 32) = tr_marker and i_empty = '0' ) then
-                        merge_state             <= wait_for_pre;
-                        o_ren                   <= '1';
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K284;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
+                    merge_state             <= wait_for_pre;
                     FOR I in NLINKS - 1 downto 0 LOOP
-                        o_data(I * 32 + 31 downto I * 32)   <= K285;
+                        o_data(I * 32 + 31 downto I * 32)   <= K284;
                         o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                     END LOOP;
 
@@ -845,6 +264,7 @@ begin
                     merge_state <= wait_for_pre;
                     o_data_reg  <= (others => '0');
                     hit_reg     <= (others => '0');
+                    hit_reg_cnt <= 0;
 
             end case;
 
