@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use ieee.std_logic_misc.all;
+
 use work.daq_constants.all;
 use work.feb_sc_registers.all;
 
@@ -230,6 +230,8 @@ begin
     e_reset_line_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_RRX_n, i_reset_n => i_areset_n, i_clk => reset_link_rx_clk);
 
+
+
     -- generate 1 Hz clock monitor clocks
 
     -- NIOS_CLK_MHZ_g -> 1 Hz
@@ -257,11 +259,15 @@ begin
     generic map ( INCLK0_MHZ => 50.0, MUL => 2, DEVICE => "Arria V" )
     port map ( areset => not i_areset_n, inclk0 => i_nios_clk, c0 => clk_100, locked => open );
 
+
+
     -- SPI
     spi_si_miso <= '1' when ( (i_spi_si_miso or spi_si_ss_n) = (spi_si_ss_n'range => '1') ) else '0';
     o_spi_si_mosi <= (o_spi_si_mosi'range => spi_si_mosi);
     o_spi_si_sclk <= (o_spi_si_sclk'range => spi_si_sclk);
     o_spi_si_ss_n <= spi_si_ss_n;
+
+
 
     -- map slow control address space
 
@@ -323,8 +329,11 @@ begin
     );
 
 
+
     -- nios system
     nios_irq(0) <= '1' when ( reg_cmdlen(31 downto 16) /= (31 downto 16 => '0') ) else '0';
+
+
 
     e_nios : component work.cmp.nios
     port map (
@@ -380,7 +389,7 @@ begin
         spi_si_ss_n     => spi_si_ss_n,
 
         pio_export      => nios_pio,
-        
+
         temp_tsdcalo            => arriaV_temperature,
         temp_ce_ce              => arriaV_temperature_ce,
         temp_clr_reset          => arriaV_temperature_clr,
@@ -390,9 +399,11 @@ begin
         clk_clk         => i_nios_clk--,
     );
 
+
+
     e_sc_ram : entity work.sc_ram
     generic map (
-        RAM_ADDR_WIDTH_g => 14--,
+        RAM_ADDR_WIDTH_g => to_integer(unsigned(FEB_SC_RAM_SIZE))--,--14--,
     )
     port map (
         i_ram_addr              => sc_ram.addr(15 downto 0),
@@ -438,14 +449,17 @@ begin
         i_clk           => i_clk_156--,
     );
 
+
+
     e_merger : entity work.data_merger
     generic map(
         N_LINKS                    => N_LINKS,
-        feb_mapping                => feb_mapping--, 
+        feb_mapping                => feb_mapping--,
     )
     port map (
         fpga_ID_in                 => fpga_id_reg,
         FEB_type_in                => i_fpga_type,
+
         run_state                  => run_state_156,
         run_number                 => run_number,
 
@@ -482,7 +496,7 @@ begin
         g_poly => "10000000001000000000000000000110"--,
     )
     port map (
-        i_sync_reset    => not and_reduce(linktest_granted),
+        i_sync_reset    => not work.util.and_reduce(linktest_granted),
         i_seed          => (others => '1'),
         i_en            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),
         o_lsfr          => linktest_data,
@@ -599,39 +613,39 @@ begin
         o_testout                       => open--,
     );
 
-    e_max10_spi_main : entity work.max10_spi_main
-    generic map (
-        SS  =>  '1',
-        R   =>  '1',
-        lanes => 4--,
-    )
-    port map(
-        -- clk & reset
-        i_clk_50        => i_nios_clk,
-        i_clk_100       => i_nios_clk,--clk_100,
-        i_clk_156       => i_clk_156, -- sc regs are running on 156 --> sync outputs
-        i_reset_n       => i_areset_n,
-        i_command	    => SPI_command,--[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
---        ------ Aria Data --register interface 
-        o_Ar_rw		    => SPI_rw, -- nios rw
-        o_Ar_data	    => i_adc_data_o,
-        o_Ar_addr_o	    => SPI_addr_o, -- nioas adc addr,
-        o_Ar_done	    => SPI_done,
---
-        i_Max_data	    =>   x"12345678",
-        i_Max_addr	    =>   X"55" & "0100010" & '1',--[15-9] empty ,[8-1] addr , [0] rw
-        -- SPI
-        o_SPI_cs        => o_max10_spi_csn,
-        -- max10_spi_sclk lane defect on the first boards
-        o_SPI_clk       => o_max10_spi_D3,
-        io_SPI_mosi     => io_max10_spi_mosi,
-        io_SPI_miso     => io_max10_spi_miso,
-        io_SPI_D1       => io_max10_spi_D1,
-        io_SPI_D2       => io_max10_spi_D2,
-        io_SPI_D3       => open,
-        -- debug
-        o_led => open--,
-    );
+--    e_max10_spi_main : entity work.max10_spi_main
+--    generic map (
+--        SS  =>  '1',
+--        R   =>  '1',
+--        lanes => 4--,
+--    )
+--    port map(
+--        -- clk & reset
+--        i_clk_50        => i_nios_clk,
+--        i_clk_100       => i_nios_clk,--clk_100,
+--        i_clk_156       => i_clk_156, -- sc regs are running on 156 --> sync outputs
+--        i_reset_n       => i_areset_n,
+--        i_command	    => SPI_command,--[15-9] empty ,[8-2] cnt , [1] rw , [0] aktiv, 
+----        ------ Aria Data --register interface 
+--        o_Ar_rw		    => SPI_rw, -- nios rw
+--        o_Ar_data	    => i_adc_data_o,
+--        o_Ar_addr_o	    => SPI_addr_o, -- nioas adc addr,
+--        o_Ar_done	    => SPI_done,
+----
+--        i_Max_data	    =>   x"12345678",
+--        i_Max_addr	    =>   X"55" & "0100010" & '1',--[15-9] empty ,[8-1] addr , [0] rw
+--        -- SPI
+--        o_SPI_cs        => o_max10_spi_csn,
+--        -- max10_spi_sclk lane defect on the first boards
+--        o_SPI_clk       => o_max10_spi_D3,
+--        io_SPI_mosi     => io_max10_spi_mosi,
+--        io_SPI_miso     => io_max10_spi_miso,
+--        io_SPI_D1       => io_max10_spi_D1,
+--        io_SPI_D2       => io_max10_spi_D2,
+--        io_SPI_D3       => open,
+--        -- debug
+--        o_led => open--,
+--    );
    
    --max 10 adc data reg for testing in He--
 process(i_clk_156) 

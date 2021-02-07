@@ -1,8 +1,5 @@
 #
 
-package require qsys
-
-create_system {nios}
 source {device.tcl}
 
 source {util/nios_base.tcl}
@@ -18,5 +15,3 @@ nios_base.export_avm avm_pod 17 0x70100000 -clk clk_pod
 nios_base.add_pio i2c_cs 32 Output 0x700F0260
 
 
-
-save_system {nios.qsys}

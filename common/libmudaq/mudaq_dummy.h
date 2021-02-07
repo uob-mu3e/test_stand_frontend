@@ -9,32 +9,28 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <array>
+#include <map>
 
-#include <sys/ioctl.h>		/* ioctl */
+#include <sys/ioctl.h>
 
 #include <boost/dynamic_bitset.hpp>
 
 #include "mudaq_circular_buffer.hpp"
 #include "../include/mudaq_device_constants.h"
-#include "../include/switching_constants.h" //K.B. changed from "mudaq_registers.h"
+#include "../include/switching_constants.h"
 #include "utils.hpp"
 #include "time.h"
 #include <stdlib.h>
 #include <stdio.h>
-/*??????*/
 #include "../kerneldriver/mudaq.h"
 #include "mudaq_device.h"
 
 using namespace std;
-namespace dummy_mudaq {
+namespace mudaq {
 
     class DummyMudaqDevice : public mudaq::MudaqDevice {
         public:
-            virtual bool is_ok();
-            virtual bool open();
-            virtual void close();
-            virtual bool operator!() const;
-
             // a device can exist only once. forbid copying and assignment
             DummyMudaqDevice() = delete;
             DummyMudaqDevice(const DummyMudaqDevice &) = delete;
@@ -43,22 +39,24 @@ namespace dummy_mudaq {
             DummyMudaqDevice(const std::string& path);
             virtual ~DummyMudaqDevice() { close(); }
 
-            void FEBsc_resetMain();
-            void FEBsc_resetSecondary();
-            int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError);
-            int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply);
-            int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
-            int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr, bool request_reply, bool retryOnError);
-            int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
+            virtual bool is_ok() const;
+            virtual bool open();
+            virtual void close();
+            virtual bool operator!() const;
+
+            virtual void write_register(unsigned idx, uint32_t value);
+            virtual void write_register_wait(unsigned idx, uint32_t value, unsigned wait_ns);
+            virtual void toggle_register(unsigned idx, uint32_t value, unsigned wait_ns);
+            virtual uint32_t read_register_rw(unsigned idx) const;
+            virtual uint32_t read_register_ro(unsigned idx) const;
+            virtual uint32_t read_memory_ro(unsigned idx) const;
+            virtual uint32_t read_memory_rw(unsigned idx) const;
+            virtual void write_memory_rw(unsigned idx, uint32_t value);
+
+            virtual int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
+            virtual int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
             
-            void write_register(unsigned idx, uint32_t value);
             
-            uint32_t read_register_rw(unsigned idx) const;
-            uint32_t read_register_ro(unsigned idx) const;
-            uint32_t read_memory_ro(unsigned idx) const;
-            
-        protected:
-            int _fd;
             
         private:
             const std::string _path;
@@ -67,6 +65,7 @@ namespace dummy_mudaq {
             uint32_t _mem_ro[64*1024] = {};
             uint32_t _mem_rw[64*1024] = {};
 
+            map<uint32_t, array<uint32_t,256>> scmems;
 
             uint16_t  _last_read_address; // for reading command of slow control
             

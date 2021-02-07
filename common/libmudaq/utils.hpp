@@ -11,8 +11,8 @@
  *              in return. Moritz Kiehn
  */
 
-#ifndef __UTILITY_HPP__
-#define __UTILITY_HPP__
+#ifndef UTILITY_HPP_
+#define UTILITY_HPP_
 
 #include <iostream>
 #include <vector>
