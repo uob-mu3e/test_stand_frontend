@@ -53,6 +53,12 @@ architecture RTL of mupix_ctrl is
     type mp_ctrl_state_type         is (idle, load_config, set_clks, writing, ld_spi_reg);
     signal mp_ctrl_state            : mp_ctrl_state_type;
 
+    signal spi_dout                 : std_logic;
+    signal spi_clk                  : std_logic;
+    signal spi_bitpos               : integer range 28 downto 0;
+    signal chip_select_n            : std_logic_vector(11 downto 0);
+    signal chip_select_mask         : std_logic_vector(11 downto 0);
+
 begin
 
 
@@ -74,6 +80,7 @@ begin
         o_mp_fifo_write             => config_storage_write,
         o_mp_fifo_clear             => mp_fifo_clear,
         o_mp_ctrl_enable            => enable_shift_reg_6,
+        o_mp_ctrl_chip_config_mask  => chip_select_mask,
         o_mp_ctrl_slow_down(15 downto 0) => slow_down--,
     );
 
@@ -104,10 +111,17 @@ begin
             clk1                    <= (others => '0');
             clk2                    <= (others => '0');
             clk_step                <= (others => '0');
+            spi_dout                <= '0';
+            spi_clk                 <= '0';
+            -- o_csn                <= (others => '1'); -- do we want this ? (is a load signal)
 
         elsif(rising_edge(i_clk))then
-            rd_config <= '0';
-            wait_cnt  <= wait_cnt + 1;
+            rd_config   <= '0';
+            wait_cnt    <= wait_cnt + 1;
+            o_mosi      <= (others => spi_dout);
+            o_clock     <= (others => spi_clk);
+            o_csn       <= chip_select_n;
+
             ld_regs(WR_CONF_BIT) <= '1'; -- bug in mp10, load config stays at 1#
 
             case mp_ctrl_state is
@@ -121,6 +135,7 @@ begin
                     end if;
 
                 when load_config =>
+                    chip_select_n                   <= (others => '1');
                     config_data29                   <= (others => '0');
                     clk_step                        <= (others => '0');
                     extra_round                     := '0';
@@ -169,6 +184,7 @@ begin
 
                     if((extra_round = '1' or clk_step/=x"5") and (not clk_step=x"6")) then
                         mp_ctrl_state <= writing;
+                        wait_cnt      <= (others => '0');
                     elsif(or_reduce(is_writing)='0') then -- done
                         mp_ctrl_state <= idle;
                     else                                  -- load next
@@ -177,11 +193,37 @@ begin
                     end if;
 
                 when writing =>
-                 -- TODO: SPI write all bits in config_data29, then 
-                    mp_ctrl_state   <= ld_spi_reg;
-                    extra_round     := '0';
-                when ld_spi_reg => -- TODO: CS mask
-                    mp_ctrl_state   <= set_clks;
+                    spi_dout                <= config_data29(spi_bitpos);
+                    case spi_clk is
+                        when '0' =>
+                            if(wait_cnt=slow_down) then
+                                spi_clk     <= '1';
+                                wait_cnt    <= (others => '0');
+                            end if;
+                        when '1' =>
+                            if(wait_cnt=slow_down) then
+                                spi_clk     <= '0';
+                                if(spi_bitpos=28) then
+                                    mp_ctrl_state   <= ld_spi_reg;
+                                    spi_bitpos      <= 0;
+                                    wait_cnt        <= (others => '0');
+                                else
+                                    spi_bitpos  <= spi_bitpos + 1;
+                                    wait_cnt    <= (others => '0');
+                                end if;
+                            end if;
+                        when others => 
+                            spi_clk <= '0';
+                    end case;
+
+                when ld_spi_reg =>
+                    if(wait_cnt=slow_down) then
+                        chip_select_n   <= chip_select_mask;
+                    end if;
+                    if(wait_cnt = slow_down + slow_down) then 
+                        mp_ctrl_state   <= set_clks;
+                        chip_select_n   <= (others => '1');
+                    end if;
                 when others =>
                     mp_ctrl_state <= idle;
             end case;

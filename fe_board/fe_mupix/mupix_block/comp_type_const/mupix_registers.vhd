@@ -42,6 +42,7 @@ constant MUPIX_DATAPATH_ADDR_START          : integer := 96; --(x"60") --(start 
     constant MP_CTRL_TDAC_REGISTER_W        :  integer := 16#46#;
 
     constant MP_CTRL_SLOW_DOWN_REGISTER_W   :  integer := 16#47#;
+    constant MP_CTRL_CHIP_MASK_REGISTER_W   :  integer := 16#48#;
 
 -----------------------------------------------------------------
 ---- mupix datapath ---------------------------------------------
