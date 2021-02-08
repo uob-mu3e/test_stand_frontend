@@ -31,6 +31,7 @@
 
     type fifo_array_2 is array(natural range <>) of std_logic_vector(1 downto 0);
     type fifo_array_4 is array(natural range <>) of std_logic_vector(3 downto 0);
+    type fifo_array_6 is array(natural range <>) of std_logic_vector(5 downto 0);
     type fifo_array_8 is array(natural range <>) of std_logic_vector(7 downto 0);
     type fifo_array_32 is array(natural range <>) of std_logic_vector(31 downto 0);
     type fifo_array_38 is array(natural range <>) of std_logic_vector(37 downto 0);

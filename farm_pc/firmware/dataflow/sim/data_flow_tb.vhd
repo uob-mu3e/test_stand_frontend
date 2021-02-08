@@ -18,7 +18,7 @@ architecture TB of data_flow_tb is
     signal dataclk		: 		 std_logic;
     signal data_en		:		 std_logic;
     signal data_in		:		 std_logic_vector(255 downto 0) := (others => '0');
-    signal ts_in			:		 std_logic_vector(31 downto 0);
+    signal ts_in		:		 std_logic_vector(31 downto 0);
 
     -- Input from PCIe demanding events
     signal pcieclk		:		std_logic;
@@ -29,19 +29,19 @@ architecture TB of data_flow_tb is
     signal tsblock_done:		std_logic_vector(15 downto 0);
 
     -- Output to DMA
-    signal dma_data_out	:	std_logic_vector(255 downto 0);
+    signal dma_data_out	    :	std_logic_vector(255 downto 0);
     signal dma_data_en		:	std_logic;
-    signal dma_eoe			:  std_logic;
+    signal dma_eoe			:   std_logic;
 
     -- Output to links -- with dataclk
     signal link_data_out	:	std_logic_vector(255 downto 0);
     signal link_ts_out		:	std_logic_vector(31 downto 0);
-    signal link_data_en	:	std_logic;
+    signal link_data_en	    :	std_logic;
 
     -- Interface to memory bank A
     signal A_mem_clk		: std_logic;
     signal A_mem_ready		: std_logic;
-    signal A_mem_calibrated		: std_logic;
+    signal A_mem_calibrated	: std_logic;
     signal A_mem_addr		: std_logic_vector(25 downto 0);
     signal A_mem_data		: std_logic_vector(255 downto 0);
     signal A_mem_write		: std_logic;
@@ -52,7 +52,7 @@ architecture TB of data_flow_tb is
     -- Interface to memory bank B
     signal B_mem_clk		: std_logic;
     signal B_mem_ready		: std_logic;
-    signal B_mem_calibrated		: std_logic;
+    signal B_mem_calibrated	: std_logic;
     signal B_mem_addr		: std_logic_vector(25 downto 0);
     signal B_mem_data		: std_logic_vector(255 downto 0);
     signal B_mem_write		: std_logic;
@@ -61,21 +61,17 @@ architecture TB of data_flow_tb is
     signal B_mem_q_valid	: std_logic;
     
     -- links and datageneration
-    constant NLINKS_TOTL : integer := 3;
+    constant NLINKS     : positive := 8;
     constant LINK_FIFO_ADDR_WIDTH : integer := 10;
     
-    signal link_data : std_logic_vector(NLINKS_TOTL * 32 - 1 downto 0);
-    signal link_datak : std_logic_vector(NLINKS_TOTL * 4 - 1 downto 0);
-    signal counter_ddr3          : std_logic_vector(31 downto 0);
+    signal link_data        : std_logic_vector(NLINKS * 32 - 1 downto 0);
+    signal link_datak       : std_logic_vector(NLINKS * 4 - 1 downto 0);
+    signal counter_ddr3     : std_logic_vector(31 downto 0);
     
-    signal slow_down          : std_logic_vector(31 downto 0);
-    signal data_tiles_generated : std_logic_vector(31 downto 0);
-    signal data_scifi_generated : std_logic_vector(31 downto 0);
-    signal data_pix_generated : std_logic_vector(31 downto 0);
-    signal datak_tiles_generated : std_logic_vector(3 downto 0);
-    signal datak_scifi_generated : std_logic_vector(3 downto 0);
-    signal datak_pix_generated : std_logic_vector(3 downto 0);
-
+    signal w_fifo_data, r_fifo_data : std_logic_vector(NLINKS * 38 -1 downto 0);
+    signal w_fifo_en, r_fifo_en, fifo_full, fifo_empty : std_logic;
+    signal FEB_num : fifo_array_6(5 downto 0);
+    
     -- clk period
     constant dataclk_period : time := 4 ns;
     constant pcieclk_period : time := 4 ns;
@@ -110,66 +106,78 @@ architecture TB of data_flow_tb is
 
 begin
 
-    -- data generation and ts counter_ddr3
-    slow_down <= x"00000002";
+    e_data_gen : entity work.data_generator_merged_data
+    port map(
+        i_clk       => dataclk,
+        i_reset_n   => reset_n,
+        i_en        => not fifo_full,
+        i_sd        => x"00000002",
+        o_data      => w_fifo_data,
+        o_data_we   => w_fifo_en,
+        o_state     => open--,
+    );
     
-    process(A_mem_clk, reset_n)
+    e_merger_fifo : entity work.ip_scfifo
+    generic map (
+        ADDR_WIDTH      => 10,
+        DATA_WIDTH      => NLINKS * 38,
+        --SHOWAHEAD       => "OFF",
+        DEVICE          => "Arria 10"--,
+    )
+    port map (
+        data            => w_fifo_data,
+        wrreq           => w_fifo_en,
+        rdreq           => r_fifo_en,
+        clock           => dataclk,
+        q               => r_fifo_data,
+        full            => fifo_full,
+        empty           => fifo_empty,
+        almost_empty    => open,
+        almost_full     => open,
+        usedw           => open,
+        sclr            => reset--,
+    );
+    
+    -- data merger swb
+    e_data_merger_swb : entity work.data_merger_swb
+    generic map (
+        NLINKS  => NLINKS,
+        DT      => x"01"--,
+    )
+    port map (
+        i_reset_n   => reset_n,
+        i_clk       => dataclk,
+        
+        i_data      => r_fifo_data,
+        i_empty     => fifo_empty,
+
+        i_swb_id    => x"01",
+        
+        o_ren       => r_fifo_en,
+        o_wen       => open,
+        o_data      => link_data,
+        o_datak     => link_datak--,
+    );
+
+    FEB_num(0) <= link_data(37 downto 32);
+    FEB_num(1) <= link_data(75 downto 70);
+    FEB_num(2) <= link_data(113 downto 108);
+    FEB_num(3) <= link_data(151 downto 146);
+    FEB_num(4) <= link_data(189 downto 184);
+    FEB_num(5) <= link_data(227 downto 222);
+
+    data_in <= link_data;
+    data_en <= '0' when link_data(7 downto 0) = x"BC" and link_datak(3 downto 0) = "0001" else '1';
+
+    process(dataclk, reset_n)
     begin
-    if(reset_n <= '0') then
-        counter_ddr3 	<= (others => '0');
-    elsif(A_mem_clk'event and A_mem_clk = '1') then
-        counter_ddr3 <= counter_ddr3 + '1';
-    end if;
+        if( reset_n <= '0' ) then
+            counter_ddr3    <= (others => '0');
+        elsif ( dataclk'event and dataclk = '1' ) then
+            counter_ddr3 <= counter_ddr3 + '1';
+        end if;
     end process;
 
-    e_data_gen_mupix : entity work.data_generator_a10
-    port map(
-        clk => dataclk,
-        reset => reset,
-        enable_pix => '1',
-        i_dma_half_full => '0',
-        random_seed => (others => '1'),
-        start_global_time => (others => '0'),
-        data_pix_generated => data_pix_generated,
-        datak_pix_generated => datak_pix_generated,
-        data_pix_ready => open,
-        slow_down => slow_down,
-        state_out => open--,
-    );
-    
-    e_data_gen_scifi : entity work.data_generator_a10
-    port map(
-        clk => dataclk,
-        reset => reset,
-        enable_pix => '1',
-        i_dma_half_full => '0',
-        random_seed => (others => '1'),
-        start_global_time => (others => '0'),
-        data_pix_generated => data_scifi_generated,
-        datak_pix_generated => datak_scifi_generated,
-        data_pix_ready => open,
-        slow_down => slow_down,
-        state_out => open--,
-    );
-    
-    e_data_gen_tiles : entity work.data_generator_a10
-    port map(
-        clk => dataclk,
-        reset => reset,
-        enable_pix => '1',
-        i_dma_half_full => '0',
-        random_seed => (others => '1'),
-        start_global_time => (others => '0'),
-        data_pix_generated => data_tiles_generated,
-        datak_pix_generated => datak_tiles_generated,
-        data_pix_ready => open,
-        slow_down => slow_down,
-        state_out => open--,
-    );
-    
-    link_data <= data_pix_generated & data_scifi_generated & data_tiles_generated;
-    link_datak <= datak_pix_generated & datak_scifi_generated & datak_tiles_generated;
-    
     dut : entity work.data_flow 
     port map(
         reset_n         => reset_n,
@@ -177,7 +185,7 @@ begin
 
         -- Input from merging (first board) or links (subsequent boards)
         dataclk         => dataclk,
-        data_en         => link_fifo_ren,
+        data_en         => data_en,
         data_in         => data_in,
         ts_in           => counter_ddr3,
 

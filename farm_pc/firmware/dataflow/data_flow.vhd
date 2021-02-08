@@ -15,22 +15,22 @@ use work.dataflow_components.all;
 
 entity data_flow is
 	port (
-			reset_n		: 		in std_logic;
-			reset_n_ddr3: 		in std_logic;
+			reset_n			: 		in std_logic;
+			reset_n_ddr3	: 		in std_logic;
 			
 			-- Input from merging (first board) or links (subsequent boards)
-			dataclk		: 		in std_logic;
-			data_en		:		in std_logic;
-			data_in		:		in std_logic_vector(255 downto 0);
+			dataclk			: 		in std_logic;
+			data_en			:		in std_logic;
+			data_in			:		in std_logic_vector(255 downto 0);
 			ts_in			:		in	std_logic_vector(31 downto 0);
 			
 			-- Input from PCIe demanding events
-			pcieclk		:		in std_logic;
+			pcieclk			:		in std_logic;
 			ts_req_A		:		in std_logic_vector(31 downto 0);
 			req_en_A		:		in std_logic;
 			ts_req_B		:		in std_logic_vector(31 downto 0);
 			req_en_B		:		in std_logic;
-			tsblock_done:		in std_logic_vector(15 downto 0);
+			tsblock_done	:		in std_logic_vector(15 downto 0);
 			tsblocks		:		out std_logic_vector(31 downto 0);
 			
 			-- Output to DMA
@@ -45,7 +45,7 @@ entity data_flow is
 			
 			-- Interface to memory bank A
 			A_mem_clk		: in std_logic;
-			A_mem_calibrated	: in std_logic;
+			A_mem_calibrated: in std_logic;
 			A_mem_ready		: in std_logic;
 			A_mem_addr		: out std_logic_vector(25 downto 0);
 			A_mem_data		: out	std_logic_vector(255 downto 0);
@@ -56,7 +56,7 @@ entity data_flow is
 
 			-- Interface to memory bank B
 			B_mem_clk		: in std_logic;
-			B_mem_calibrated	: in std_logic;
+			B_mem_calibrated: in std_logic;
 			B_mem_ready		: in std_logic;
 			B_mem_addr		: out std_logic_vector(25 downto 0);
 			B_mem_data		: out	std_logic_vector(255 downto 0);

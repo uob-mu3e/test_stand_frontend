@@ -24,8 +24,7 @@ architecture TB of merging_demerging_tb is
     signal event_counter_state : sim_merger_state_type;
 
     signal data_counter : std_logic_vector(31 downto 0);
-
-    type fifo_array_6 is array(natural range <>) of std_logic_vector(5 downto 0);
+    
     signal FEB_num : fifo_array_6(5 downto 0);
     signal FEB_num_in : fifo_array_6(7 downto 0);
     -- clk period
