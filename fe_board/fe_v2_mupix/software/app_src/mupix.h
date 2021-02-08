@@ -17,6 +17,31 @@ struct mupix_t {
 
     const uint8_t  n_ASICS=1;
 
+    void test_mupix_write() {
+        printf("running mupix test write function ..\n");
+        
+        // example: writing to BIAS shift reg
+        
+        // set spi clk slow down (spi clk period will be something like 12.8ns * this value, not sure what we need/can do here)
+        sc->ram->data[0xFF47]=0x00000010;
+        
+        // to which mupix chips do you NOT want to write this (bit mask, 0 = write to all mupix)
+        sc->ram->data[0xFF48]=0;
+        
+        // write data for the  complete BIAS reg into FEB storage
+        sc->ram->data[0xFF41]=0x12345678;
+        sc->ram->data[0xFF41]=0x12345678;
+        sc->ram->data[0xFF41]=0x12345678;
+        // .. and so on ..
+        
+        // enable signal for BIAS reg
+        sc->ram->data[0xFF40]=1;
+        sc->ram->data[0xFF40]=0;
+        // now you should see stuff happening on the Pins
+        return;
+    }
+
+    
     //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
     alt_u16 set_chip_dacs(alt_u32 asic, volatile alt_u32* bitpattern) {
         printf("[mupix] configure asic(%u)\n", asic);
@@ -63,6 +88,8 @@ struct mupix_t {
         char str[2] = {0};
         
         while(1) {
+            printf("  [t] => test mupix DAB (All)\n");
+            /*
             printf("  [b] => set default board DACs (All)\n");
             printf("  [0] => set default chip A DACs\n");
             printf("  [1] => set default chip B DACs\n");
@@ -73,12 +100,16 @@ struct mupix_t {
             printf("  [6] => write lvds mask\n");
             printf("  [7] => print lvds dvalid\n");
             printf("  [8] => disable/enable run prep ack\n");
+            */
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
             char cmd = wait_key();
             switch(cmd) {
-            case '0':
+            case 't':
+                test_mupix_write();
+                break;
+            /*case '0':
                 set_chip_dacs(0, default_mupix_dacs);
                 break;
             case '1':
@@ -119,6 +150,7 @@ struct mupix_t {
             case 'b':
                 set_board_dacs(0, default_board_dacs);
                 break;
+            */
             case 'q':
                 return;
             default:
