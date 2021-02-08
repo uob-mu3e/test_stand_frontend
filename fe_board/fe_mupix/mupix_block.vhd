@@ -13,6 +13,12 @@ entity mupix_block is
 port (
     i_fpga_id               : in  std_logic_vector(7 downto 0);
 
+    -- config signals to mupix
+    o_clock                 : out std_logic_vector( 3 downto 0);
+    o_SIN                   : out std_logic_vector( 3 downto 0);
+    o_mosi                  : out std_logic_vector( 3 downto 0);
+    o_csn                   : out std_logic_vector(11 downto 0);
+
     i_run_state_125           : in  run_state_t;
     i_run_state_156           : in  run_state_t;
     o_ack_run_prep_permission : out std_logic;
@@ -62,21 +68,21 @@ begin
 
     o_reg_rdata <= reg_rdata_datapath when (unsigned(i_reg_add) >= MUPIX_DATAPATH_ADDR_START and reg_valid = '1') else reg_rdata;
 
-    e_mupix_reg_mapping : work.mupix_reg_mapping
+    e_mupix_ctrl : work.mupix_ctrl
     port map (
-        i_clk156                    => i_clk156,
+        i_clk                       => i_clk156,
         i_reset_n                   => not i_reset,
 
         i_reg_add                   => i_reg_add,
         i_reg_re                    => i_reg_re,
         o_reg_rdata                 => reg_rdata,
         i_reg_we                    => i_reg_we,
-        i_reg_wdata                 => i_reg_wdata--,
+        i_reg_wdata                 => i_reg_wdata,
 
-        -- inputs  156--------------------------------------------
-
-        -- outputs 156--------------------------------------------
-
+        o_clock                     => o_clock,
+        o_SIN                       => o_SIN,
+        o_mosi                      => o_mosi,
+        o_csn                       => o_csn--,
     );
 
     e_mupix_datapath : work.mupix_datapath

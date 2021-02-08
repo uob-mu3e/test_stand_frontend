@@ -15,19 +15,36 @@ use work.mupix_constants.all;
 
 package mupix_registers is
 
-constant MUPIX_DATAPATH_ADDR_START          : integer := 96; --(x"60") --(start of the mp_datapath addr-space, 0x40-MUPIX_DATAPATH_ADDR_START is mp_block )
+constant MUPIX_DATAPATH_ADDR_START          : integer := 96; --(x"60") --(start of the mp_datapath addr-space, 0x40-MUPIX_DATAPATH_ADDR_START is mp_ctrl )
 
 --////////////////////////////////////////////--
 --//////////////////REGISTER MAP//////////////--
 --////////////////////////////////////////////--
 
 -----------------------------------------------------------------
----- mupix_block ------------------------------------------------
+---- mupix ctrl -------------------------------------------------
 -----------------------------------------------------------------
 
+    constant MP_CTRL_ENABLE_REGISTER_W      :  integer := 16#40#;
+        constant WR_BIAS_BIT                :  integer := 0;
+        constant WR_CONF_BIT                :  integer := 1;
+        constant WR_VDAC_BIT                :  integer := 2;
+        constant WR_COL_BIT                 :  integer := 3;
+        constant WR_TEST_BIT                :  integer := 4;
+        constant WR_TDAC_BIT                :  integer := 5;
+        constant CLEAR_FIFOS_BIT            :  integer := 6; -- if set: all 6 CTRL FIFOs cleared
+
+    constant MP_CTRL_BIAS_REGISTER_W        :  integer := 16#41#;
+    constant MP_CTRL_CONF_REGISTER_W        :  integer := 16#42#;
+    constant MP_CTRL_VDAC_REGISTER_W        :  integer := 16#43#;
+    constant MP_CTRL_COL_REGISTER_W         :  integer := 16#44#;
+    constant MP_CTRL_TEST_REGISTER_W        :  integer := 16#45#;
+    constant MP_CTRL_TDAC_REGISTER_W        :  integer := 16#46#;
+
+    constant MP_CTRL_SLOW_DOWN_REGISTER_W   :  integer := 16#47#;
 
 -----------------------------------------------------------------
----- datapath ---------------------------------------------------
+---- mupix datapath ---------------------------------------------
 -----------------------------------------------------------------
 
     constant MP_READOUT_MODE_REGISTER_W     :  integer := 16#60#;

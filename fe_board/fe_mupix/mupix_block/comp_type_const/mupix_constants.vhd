@@ -69,4 +69,11 @@ subtype TSINFIFORANGE           is integer range 2*NCHIPS*HITSORTERBINBITS+HASEV
 subtype TSBLOCKINFIFORANGE      is integer range TSINFIFORANGE'left downto TSINFIFORANGE'left-BITSPERTSBLOCK+1;
 subtype TSINBLOCKINFIFORANGE    is integer range TSINFIFORANGE'right+BITSPERTSBLOCK-2  downto TSINFIFORANGE'right;
 
+-----------------------------------------------------------
+-- mupix ctrl constants
+-----------------------------------------------------------
+
+type mp_config_regs_length_t    is array (5 downto 0) of integer;
+constant MP_CONFIG_REGS_LENGTH  : mp_config_regs_length_t := (210, 90, 80, 889, 889, 508); -- TODO: check order, assuming bias conf vdac col test tdac here
+
 end package mupix_constants;

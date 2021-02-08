@@ -29,8 +29,13 @@ port (
     -- outputs 156--------------------------------------------
     o_mp_lvds_link_mask         : out std_logic_vector(35 downto 0); -- lvds link mask
     o_mp_datagen_control        : out std_logic_vector(31 downto 0); -- control register for the mupix data gen
-    o_mp_readout_mode           : out std_logic_vector(31 downto 0)--; -- Invert ts, degray, chip ID numbering, tot mode, ..
-    
+    o_mp_readout_mode           : out std_logic_vector(31 downto 0); -- Invert ts, degray, chip ID numbering, tot mode, ..
+
+    o_mp_ctrl_data              : out std_logic_vector(32*5 + 31 downto 0);
+    o_mp_fifo_write             : out std_logic_vector( 5 downto 0);
+    o_mp_fifo_clear             : out std_logic;
+    o_mp_ctrl_enable            : out std_logic_vector( 5 downto 0);
+    o_mp_ctrl_slow_down         : out std_logic_vector(31 downto 0)--;
 );
 end entity;
 
@@ -39,7 +44,7 @@ architecture rtl of mupix_reg_mapping is
     signal mp_readout_mode      : std_logic_vector(31 downto 0);
     signal mp_lvds_link_mask    : std_logic_vector(35 downto 0);
     signal mp_lvds_data_valid   : std_logic_vector(35 downto 0);
-
+    signal mp_ctrl_slow_down    : std_logic_vector(31 downto 0);
 begin
 
     process (i_clk156, i_reset_n)
@@ -55,15 +60,53 @@ begin
             o_mp_datagen_control    <= mp_datagen_control;
             o_mp_readout_mode       <= mp_readout_mode;
             mp_lvds_data_valid      <= i_lvds_data_valid;
+            o_mp_ctrl_slow_down     <= mp_ctrl_slow_down;
 
             regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
             o_reg_rdata         <= x"CCCCCCCC";
+            o_mp_fifo_write     <= (others => '0');
 
             -----------------------------------------------------------------
-            ---- mupix_block ------------------------------------------------
+            ---- mupix ctrl -------------------------------------------------
             -----------------------------------------------------------------
 
+            if ( regaddr = MP_CTRL_ENABLE_REGISTER_W and i_reg_we = '1' ) then
+                o_mp_fifo_clear <= i_reg_wdata(CLEAR_FIFOS_BIT);
+                o_mp_ctrl_enable <= i_reg_wdata(WR_TDAC_BIT downto WR_BIAS_BIT);
+            end if;
 
+            if ( regaddr = MP_CTRL_CONF_REGISTER_W and i_reg_we = '1' ) then
+                o_mp_ctrl_data(WR_CONF_BIT*32 + 31 downto WR_CONF_BIT*32) <= i_reg_wdata;
+                o_mp_fifo_write(WR_CONF_BIT) <= '1';
+            end if;
+            if ( regaddr = MP_CTRL_VDAC_REGISTER_W and i_reg_we = '1' ) then
+                o_mp_ctrl_data(WR_VDAC_BIT*32 + 31 downto WR_VDAC_BIT*32) <= i_reg_wdata;
+                o_mp_fifo_write(WR_VDAC_BIT) <= '1';
+            end if;
+            if ( regaddr = MP_CTRL_BIAS_REGISTER_W and i_reg_we = '1' ) then
+                o_mp_ctrl_data(WR_BIAS_BIT*32 + 31 downto WR_BIAS_BIT*32) <= i_reg_wdata;
+                o_mp_fifo_write(WR_BIAS_BIT) <= '1';
+            end if;
+            if ( regaddr = MP_CTRL_TDAC_REGISTER_W and i_reg_we = '1' ) then
+                o_mp_ctrl_data(WR_TDAC_BIT*32 + 31 downto WR_TDAC_BIT*32) <= i_reg_wdata;
+                o_mp_fifo_write(WR_TDAC_BIT) <= '1';
+            end if;
+            if ( regaddr = MP_CTRL_TEST_REGISTER_W and i_reg_we = '1' ) then
+                o_mp_ctrl_data(WR_test_BIT*32 + 31 downto WR_test_BIT*32) <= i_reg_wdata;
+                o_mp_fifo_write(WR_test_BIT) <= '1';
+            end if;
+            if ( regaddr = MP_CTRL_COL_REGISTER_W and i_reg_we = '1' ) then
+                o_mp_ctrl_data(WR_COL_BIT*32 + 31 downto WR_COL_BIT*32) <= i_reg_wdata;
+                o_mp_fifo_write(WR_COL_BIT)  <= '1';
+            end if;
+
+            if ( regaddr = MP_CTRL_SLOW_DOWN_REGISTER_W and i_reg_we = '1' ) then
+                mp_ctrl_slow_down <= i_reg_wdata;
+            end if;
+            if ( regaddr = MP_CTRL_SLOW_DOWN_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata <= mp_ctrl_slow_down;
+            end if;
+            
             -----------------------------------------------------------------
             ---- datapath ---------------------------------------------------
             -----------------------------------------------------------------
@@ -103,7 +146,7 @@ begin
             if ( regaddr = MP_DATA_GEN_CONTROL_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata <= mp_datagen_control;
             end if;
-
+            
         end if;
     end process;
 end architecture;
