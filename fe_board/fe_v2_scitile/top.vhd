@@ -33,28 +33,28 @@ entity top is
         SIN_A                       : out   std_logic;
 
         -- Block B: Connections for three chips -- layer 0
-        clock_B                     : out   std_logic;
-        data_in_B                   : in    std_logic_vector(9 downto 1);
-        fast_reset_B                : out   std_logic;
-        SIN_B                       : out   std_logic;
+        --clock_B                     : out   std_logic;
+        --data_in_B                   : in    std_logic_vector(9 downto 1);
+        --fast_reset_B                : out   std_logic;
+        --SIN_B                       : out   std_logic;
 
         -- Block C: Connections for three chips -- layer 1
-        clock_C                     : out   std_logic;
-        data_in_C                   : in    std_logic_vector(9 downto 1);
-        fast_reset_C                : out   std_logic;
-        SIN_C                       : out   std_logic;
+        --clock_C                     : out   std_logic;
+        --data_in_C                   : in    std_logic_vector(9 downto 1);
+        --fast_reset_C                : out   std_logic;
+        --SIN_C                       : out   std_logic;
 
         -- Block D: Connections for three chips -- layer 1
-        clock_D                     : out   std_logic;
-        data_in_D                   : in    std_logic_vector(9 downto 1);
-        fast_reset_D                : out   std_logic;
-        SIN_D                       : out   std_logic;
+        --clock_D                     : out   std_logic;
+        --data_in_D                   : in    std_logic_vector(9 downto 1);
+        --fast_reset_D                : out   std_logic;
+        --SIN_D                       : out   std_logic;
 
         -- Block E: Connections for three chips -- layer 1
-        clock_E                     : out   std_logic;
-        data_in_E                   : in    std_logic_vector(9 downto 1);
-        fast_reset_E                : out   std_logic;
-        SIN_E                       : out   std_logic;
+        --clock_E                     : out   std_logic;
+        --data_in_E                   : in    std_logic_vector(9 downto 1);
+        --fast_reset_E                : out   std_logic;
+        --SIN_E                       : out   std_logic;
 
         -- Extra signals
         clock_aux                   : out   std_logic;
@@ -127,13 +127,79 @@ end top;
 architecture rtl of top is
  
     -- Debouncers
-    signal pb_db                : std_logic_vector(1 downto 0);
+    signal pb_db                    : std_logic_vector(1 downto 0);
+
+    constant N_LINKS                : integer := 1;
+    constant N_ASICS                : integer := 1;
+    constant N_MODULES              : integer := 1;
+
+    signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
+    signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
+
+    signal malibu_reg               : work.util.rw_t;
+    signal scifi_reg                : work.util.rw_t;
+    signal mupix_reg                : work.util.rw_t;
+
+    signal s_fee_chip_rst           : std_logic_vector(N_MODULES-1 downto 0);
+    signal i_fee_rxd                : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
+
+    signal run_state_125            : run_state_t;
+    signal run_state_156            : run_state_t;
+    signal ack_run_prep_permission  : std_logic;
 
 begin
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------
-----INSERT SUB-DETECTOR FIRMWARE HERE ------------------------------
+----TILE SUB-DETECTOR FIRMWARE -------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+
+    e_tile_path : entity work.scifi_path
+    generic map (
+        N_MODULES       => N_MODULES,
+        N_ASICS         => N_ASICS,
+        N_LINKS         => N_LINKS,
+        INPUT_SIGNFLIP  => "11111111",
+        LVDS_PLL_FREQ   => 125.0,
+        LVDS_DATA_RATE  => 1250.0--,
+    )
+    port map (
+        i_reg_addr                  => malibu_reg.addr(7 downto 0),
+        i_reg_re                    => malibu_reg.re,
+        o_reg_rdata                 => malibu_reg.rdata,
+        i_reg_we                    => malibu_reg.we,
+        i_reg_wdata                 => malibu_reg.wdata,
+
+        o_chip_reset                => s_fee_chip_rst,
+        o_pll_test                  => open,
+        i_data                      => i_fee_rxd,
+
+        o_fifo_write                => fifo_write,
+        o_fifo_wdata                => fifo_wdata,
+
+        i_common_fifos_almost_full  => common_fifos_almost_full,
+
+        i_run_state                 => run_state_125,
+        o_run_state_all_done        => s_run_state_all_done,
+
+        o_MON_rxrdy                 => s_MON_rxrdy,
+
+        i_clk_core                  => qsfp_clk,
+        i_clk_g125                  => clk_125_bottom,
+        i_clk_ref_A                 => lvds_clk_A,
+        i_clk_ref_B                 => lvds_clk_B,
+
+        i_reset                     => not reset_n--,
+    );
+
+    -- TODO: we should do the pinout with vectors to make this dynamic
+    fast_reset_A <= s_fee_chip_rst(0);
+    i_fee_rxd    <= data_in_A(0);
+
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+---- COMMON FIRMWARE PART ------------------------------------------
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 
@@ -193,8 +259,8 @@ begin
         i_ffly1_lvds_rx     => firefly1_lvds_rx_in,
         i_ffly2_lvds_rx     => firefly2_lvds_rx_in,
 
-        i_fifo_write        => (others => '0'), -- TODO in "Not-Dummy": connect to detector-block
-        i_fifo_wdata        => (others => '0'), -- TODO in "Not-Dummy": connect to detector-block
+        i_fifo_write        => fifo_wdata,
+        i_fifo_wdata        => fifo_write(0),
 
         i_mscb_data         => mscb_fpga_in,
         o_mscb_data         => mscb_fpga_out,
@@ -208,27 +274,15 @@ begin
         o_max10_spi_D3      => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_mupix_reg_addr    => open, -- TODO in "Not-Dummy": connect to detector-block
-        o_mupix_reg_re      => open,
-        i_mupix_reg_rdata   => X"CCCCCCCC",
-        o_mupix_reg_we      => open,
-        o_mupix_reg_wdata   => open,
-
-        o_malibu_reg_addr   => open, -- TODO in "Not-Dummy": connect to detector-block
-        o_malibu_reg_re     => open,
-        i_malibu_reg_rdata  => X"CCCCCCCC",
-        o_malibu_reg_we     => open,
-        o_malibu_reg_wdata  => open,
-
-        o_scifi_reg_addr    => open, -- TODO in "Not-Dummy": connect to detector-block
-        o_scifi_reg_re      => open,
-        i_scifi_reg_rdata   => X"CCCCCCCC",
-        o_scifi_reg_we      => open,
-        o_scifi_reg_wdata   => open,
+        o_malibu_reg_addr   => malibu_reg.addr(7 downto 0),
+        o_malibu_reg_re     => malibu_reg.re,
+        i_malibu_reg_rdata  => malibu_reg.rdata,
+        o_malibu_reg_we     => malibu_reg.we,
+        o_malibu_reg_wdata  => malibu_reg.wdata,
         
         -- reset system
-        o_run_state_125     => open,      -- TODO in "Not-Dummy": connect to detector-block
-        i_ack_run_prep_permission => '1', -- TODO in "Not-Dummy": connect to detector-block
+        o_run_state_125             => run_state_125,
+        i_ack_run_prep_permission   => '1', -- TODO in "Not-Dummy": connect to detector-block
 
         -- clocks
         i_nios_clk          => spare_clk_osc,
