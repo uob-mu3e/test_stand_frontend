@@ -40,6 +40,7 @@
     type fifo_array_66 is array(natural range <>) of std_logic_vector(65 downto 0);
     type fifo_array_78 is array(natural range <>) of std_logic_vector(77 downto 0);
     type fifo_array_152 is array(natural range <>) of std_logic_vector(151 downto 0);
+    type fifo_array_256 is array(natural range <>) of std_logic_vector(255 downto 0);
 
     type offset is array(natural range <>) of integer range 64 downto 0;
     

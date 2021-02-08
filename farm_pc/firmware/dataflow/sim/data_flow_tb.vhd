@@ -16,8 +16,8 @@ architecture TB of data_flow_tb is
 
     -- Input from merging (first board) or links (subsequent boards)
     signal dataclk		: 		 std_logic;
-    signal data_en		:		 std_logic;
-    signal data_in		:		 std_logic_vector(255 downto 0) := (others => '0');
+    signal data_en		:		 std_logic_vector(2 downto 0);
+    signal data_in		:		 fifo_array_256(2 downto 0);
     signal ts_in		:		 std_logic_vector(31 downto 0);
 
     -- Input from PCIe demanding events
@@ -26,7 +26,7 @@ architecture TB of data_flow_tb is
     signal req_en_A		:		std_logic;
     signal ts_req_B		:		std_logic_vector(31 downto 0);
     signal req_en_B		:		std_logic;
-    signal tsblock_done:		std_logic_vector(15 downto 0);
+    signal tsblock_done :		std_logic_vector(15 downto 0);
 
     -- Output to DMA
     signal dma_data_out	    :	std_logic_vector(255 downto 0);
@@ -166,8 +166,12 @@ begin
     FEB_num(4) <= link_data(189 downto 184);
     FEB_num(5) <= link_data(227 downto 222);
 
-    data_in <= link_data;
-    data_en <= '0' when link_data(7 downto 0) = x"BC" and link_datak(3 downto 0) = "0001" else '1';
+    data_in(0) <= link_data;
+    data_in(1) <= link_data;
+    data_in(2) <= link_data;
+    data_en(0) <= '0' when link_data(7 downto 0) = x"BC" and link_datak(3 downto 0) = "0001" else '1';
+    data_en(1) <= '0' when link_data(7 downto 0) = x"BC" and link_datak(3 downto 0) = "0001" else '1';
+    data_en(2) <= '0' when link_data(7 downto 0) = x"BC" and link_datak(3 downto 0) = "0001" else '1';
 
     process(dataclk, reset_n)
     begin
@@ -185,8 +189,8 @@ begin
 
         -- Input from merging (first board) or links (subsequent boards)
         dataclk         => dataclk,
-        data_en         => data_en,
-        data_in         => data_in,
+        data_en         => data_en(0),
+        data_in         => data_in(0),
         ts_in           => counter_ddr3,
 
         -- Input from PCIe demanding events
