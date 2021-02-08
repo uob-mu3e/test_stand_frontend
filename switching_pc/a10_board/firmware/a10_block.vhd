@@ -16,11 +16,11 @@ port (
     o_flash_cs_n        : out   std_logic;
     o_flash_reset_n     : out   std_logic;
 
-    -- i2c
+    -- I2C
     io_i2c_scl          : inout std_logic_vector(31 downto 0);
     io_i2c_sda          : inout std_logic_vector(31 downto 0);
 
-    -- spi
+    -- SPI
     i_spi_miso          : in    std_logic_vector(31 downto 0) := (others => '0');
     o_spi_mosi          : out   std_logic_vector(31 downto 0);
     o_spi_sclk          : out   std_logic_vector(31 downto 0);
@@ -28,7 +28,9 @@ port (
 
     o_nios_hz           : out   std_logic;
 
-    -- xcvr 0 (6250 Mbps @ 156.25 MHz)
+
+
+    -- XCVR0 (6250 Mbps @ 156.25 MHz)
     i_xcvr0_rx          : in    std_logic_vector(g_XCVR0_CHANNELS-1 downto 0);
     o_xcvr0_tx          : out   std_logic_vector(g_XCVR0_CHANNELS-1 downto 0);
 
@@ -39,17 +41,53 @@ port (
 
     i_clk_156           : in    std_logic;
 
-    -- xcvr 1 (10000 Mbps @ 250 MHz)
+
+
+    -- XCVR1 (10000 Mbps @ 250 MHz)
     i_clk_250           : in    std_logic;
 
-    -- PCIe 0
+
+
+    -- PCIe0
     i_pcie0_rx          : in    std_logic_vector(7 downto 0) := (others => '0');
     o_pcie0_tx          : out   std_logic_vector(7 downto 0);
     i_pcie0_perst_n     : in    std_logic := '0';
     i_pcie0_refclk      : in    std_logic := '0'; -- ref 100 MHz clock
+    o_pcie0_clk         : out   std_logic;
 
-    -- PCIe 1
+    -- PCIe0 DMA0
+    i_pcie0_dma0_wdata  : in    std_logic_vector(255 downto 0) := (others => '0');
+    i_pcie0_dma0_we     : in    std_logic := '0'; -- write enable
+    i_pcie0_dma0_eoe    : in    std_logic := '0'; -- end of event
+    o_pcie0_dma0_hfull  : out   std_logic; -- half full
+    i_pcie0_dma0_clk    : in    std_logic := '0';
+
+    -- PCIe0 read interface to writable memory
+    i_pcie0_wmem_addr   : in    std_logic_vector(15 downto 0) := (others => '0');
+    o_pcie0_wmem_rdata  : out   std_logic_vector(31 downto 0);
+    i_pcie0_wmem_clk    : in    std_logic := '0';
+
+    -- PCIe0 write interface to readable memory
+    i_pcie0_rmem_addr   : in    std_logic_vector(15 downto 0) := (others => '0');
+    o_pcie0_rmem_wdata  : in    std_logic_vector(31 downto 0) := (others => '0');
+    i_pcie0_rmem_we     : in    std_logic := '0';
+    i_pcie0_rmem_clk    : in    std_logic := '0';
+
+    -- PCIe0 update interface for readable registers
+    i_pcie0_rregs       : in    reg32array := (others => (others => '0'));
+
+    -- PCIe0 read interface for writable registers
+    o_pcie0_wregs_A     : out   reg32array;
+    i_pcie0_wregs_A_clk : in    std_logic := '0';
+    o_pcie0_wregs_B     : out   reg32array;
+    i_pcie0_wregs_B_clk : in    std_logic := '0';
+
+
+
+    -- PCIe1
     i_pcie1_refclk      : in    std_logic := '0'; -- ref 100 MHz clock
+
+
 
     -- global 125 MHz clock
     i_clk_125           : in    std_logic;
@@ -140,6 +178,8 @@ begin
         clk_clk                         => i_clk_50--,
     );
 
+
+
     -- i2c mux
     e_i2c_mux : entity work.i2c_mux
     port map (
@@ -154,10 +194,14 @@ begin
         i_mask      => nios_i2c_mask--,
     );
 
+
+
     -- spi mux
     o_spi_mosi <= (others => nios_spi_mosi);
     o_spi_sclk <= (others => nios_spi_sclk);
     o_spi_ss_n <= nios_spi_ss_n;
+
+
 
     -- xcvr_block 6250 Mbps @ 156.25 MHz
     e_xcvr_block : entity work.xcvr_block
@@ -191,10 +235,16 @@ begin
         i_clk               => i_clk_125--, -- TODO: use clk_156
     );
 
+
+
     -- xcvr_block 10000 Mbps @ 250 MHz
 
-    -- pcie0
 
-    -- pcie1
+
+    -- PCIe0
+
+
+
+    -- PCIe1
 
 end architecture;
