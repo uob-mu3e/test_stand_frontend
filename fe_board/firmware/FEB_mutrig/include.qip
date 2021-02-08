@@ -1,10 +1,14 @@
 #
 
 #files to be included for mutrig based FEBs
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "scifi_path.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mutrig_constants.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds/datadecoder.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds/rx_errcounter.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds/lvds_receiver.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../../fe_mupix/mupix_block/receiver_block/lvds_receiver.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../../fe_mupix/mupix_block/receiver_block/lvdspll.vhd"]
+set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) "../../fe_mupix/mupix_block/receiver_block/lvdspll_0002.v"]
+#set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds/lvds_receiver.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds/receiver_block.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "frame_rcv/crc16_calc.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "dummys/stic_dummy_data.vhd"]

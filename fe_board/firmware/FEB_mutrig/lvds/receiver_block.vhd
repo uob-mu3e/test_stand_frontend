@@ -93,27 +93,80 @@ end component; --data_decoder;
 	signal rx_pll_locked		: STD_LOGIC;
 	signal rx_disperr		: std_logic_vector(NINPUT-1 downto 0);
 
+    signal rx_inclock_A_ctrl    : std_logic;
+    signal rx_inclock_A_pll     : std_logic;
+    signal rx_locked            : std_logic;
+    signal rx_dpaclock_A        : std_logic;
+    signal rx_syncclock_A       : std_logic;
+    signal rx_enable_A          : std_logic;
+
+    component clk_ctrl_single is
+        port (
+            inclk  : in  std_logic := 'X'; -- inclk
+            outclk : out std_logic         -- outclk
+        );
+    end component clk_ctrl_single;
+
 begin
 	rx_dpa_locked_out	<= rx_dpa_locked;
 	pll_locked 			<= rx_pll_locked;
 	rx_clkout 			<= rx_clk;
 
-	lvds_rx : entity work.ip_altlvds_rx
-	GENERIC MAP (
-		N => NINPUT,
-		PLL_FREQ => LVDS_PLL_FREQ,
-		DATA_RATE => LVDS_DATA_RATE--,
-	)
+    u0 : component clk_ctrl_single
+        port map (
+            inclk  => rx_inclock,
+            outclk => rx_inclock_A_ctrl--,
+    );
+
+--    lvds_clk_ctrl : component work.cmp.clk_ctrl_single
+--    port map (
+--        inclk  => rx_inclock,
+--        outclk => rx_inclock_A_ctrl
+--    );
+
+    lpll_A: entity work.lvdspll
+    PORT MAP
+    (
+        refclk   => rx_inclock_A_ctrl,
+        rst      => '0',
+        outclk_0 => rx_inclock_A_pll,
+        outclk_1 => rx_enable_A,
+        outclk_2 => rx_syncclock_A,
+        outclk_3 => rx_dpaclock_A,
+        outclk_4 => open,
+        locked   => rx_locked
+    );
+
+	lvds_rx : entity work.lvds_receiver
+--	GENERIC MAP (
+--		N => NINPUT,
+--		PLL_FREQ => LVDS_PLL_FREQ,
+--		DATA_RATE => LVDS_DATA_RATE--,
+--	)
 	PORT MAP (
-		rx_channel_data_align	=> rx_bitslip,
-		rx_fifo_reset		=> rx_fifo_reset,
-		rx_in			=> rx_in,
-		rx_inclock		=> rx_inclock,
-		rx_reset		=> rx_reset,
-		rx_dpa_locked		=> rx_dpa_locked,
-		rx_locked		=> rx_pll_locked,
-		rx_out			=> rx_out,
-		rx_outclock		=> rx_clk
+        pll_areset                              => not rx_locked,
+        rx_channel_data_align(NINPUT-1 downto 0)=> rx_bitslip,
+        rx_channel_data_align(26 downto NINPUT) => (others => '0'),
+        rx_dpaclock                             => rx_dpaclock_A,
+        rx_enable                               => rx_enable_A,
+        rx_fifo_reset(NINPUT-1 downto 0)        => rx_fifo_reset,
+        rx_in(NINPUT-1 downto 0)                => rx_in,
+        rx_in(26 downto NINPUT)                 => (others => '0'),
+        rx_inclock                              => rx_inclock_A_pll,
+        rx_reset(NINPUT-1 downto 0)             => rx_reset,
+        rx_syncclock                            => rx_syncclock_A,
+        rx_dpa_locked(NINPUT-1 downto 0)        => rx_dpa_locked,
+        rx_out(NINPUT*10-1 downto 0)            => rx_out--,
+        
+--		rx_channel_data_align	=> rx_bitslip,
+--		rx_fifo_reset		=> rx_fifo_reset,
+--		rx_in			=> rx_in,
+--		rx_inclock		=> rx_inclock_A_pll,--
+--		rx_reset		=> rx_reset,
+--		rx_dpa_locked		=> rx_dpa_locked,
+--		rx_locked		=> rx_locked,
+--		rx_out			=> rx_out,
+--		rx_outclock		=> rx_clk
 	);
 
 	rx_ready <= rx_ready_reg;
@@ -145,7 +198,7 @@ gen_channels: for i in NINPUT-1 downto 0 generate
 			rx_reset		=> rx_reset(i),
 			rx_fifo_reset		=> rx_fifo_reset(i),
 			rx_dpa_locked		=> rx_dpa_locked(i),
-			rx_locked		=> rx_pll_locked,
+			rx_locked		=> rx_locked,
 			rx_bitslip		=> rx_bitslip(i),
 		
 			ready			=> rx_ready_reg(i),

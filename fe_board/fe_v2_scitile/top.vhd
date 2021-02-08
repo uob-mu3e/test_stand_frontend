@@ -5,6 +5,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
 use ieee.numeric_std.all;
 use work.daq_constants.all;
 use work.cmp.all;
@@ -26,39 +27,18 @@ entity top is
         clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
         spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-        -- Block A: Connections for three chips -- layer 0
-        clock_A                     : out   std_logic;
-        data_in_A                   : in    std_logic_vector(9 downto 1);
-        fast_reset_A                : out   std_logic;
-        SIN_A                       : out   std_logic;
-
-        -- Block B: Connections for three chips -- layer 0
-        --clock_B                     : out   std_logic;
-        --data_in_B                   : in    std_logic_vector(9 downto 1);
-        --fast_reset_B                : out   std_logic;
-        --SIN_B                       : out   std_logic;
-
-        -- Block C: Connections for three chips -- layer 1
-        --clock_C                     : out   std_logic;
-        --data_in_C                   : in    std_logic_vector(9 downto 1);
-        --fast_reset_C                : out   std_logic;
-        --SIN_C                       : out   std_logic;
-
-        -- Block D: Connections for three chips -- layer 1
-        --clock_D                     : out   std_logic;
-        --data_in_D                   : in    std_logic_vector(9 downto 1);
-        --fast_reset_D                : out   std_logic;
-        --SIN_D                       : out   std_logic;
-
-        -- Block E: Connections for three chips -- layer 1
-        --clock_E                     : out   std_logic;
-        --data_in_E                   : in    std_logic_vector(9 downto 1);
-        --fast_reset_E                : out   std_logic;
-        --SIN_E                       : out   std_logic;
-
-        -- Extra signals
-        clock_aux                   : out   std_logic;
-        spare_out                   : out   std_logic_vector(3 downto 2);
+        -- tile DAB signals
+        tile_din                    : in    std_logic_vector(13 downto 1);
+        tile_pll_test               : out   std_logic;
+        tile_chip_reset             : out   std_logic;
+        tile_i2c_sda                : out   std_logic; -- inout single ended ??
+        tile_i2c_scl                : out   std_logic;
+        tile_cec                    : in    std_logic;
+        tile_spi_miso               : in    std_logic;
+        tile_i2c_int                : in    std_logic;
+        tile_pll_reset              : out   std_logic;
+        tile_spi_scl                : out   std_logic;
+        tile_spi_mosi               : out   std_logic;
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -140,12 +120,12 @@ architecture rtl of top is
     signal scifi_reg                : work.util.rw_t;
     signal mupix_reg                : work.util.rw_t;
 
-    signal s_fee_chip_rst           : std_logic_vector(N_MODULES-1 downto 0);
-    signal i_fee_rxd                : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
-
     signal run_state_125            : run_state_t;
     signal run_state_156            : run_state_t;
     signal ack_run_prep_permission  : std_logic;
+    signal common_fifos_almost_full : std_logic_vector(N_LINKS-1 downto 0);
+    signal s_run_state_all_done     : std_logic;
+    signal s_MON_rxrdy              : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
 begin
 
@@ -165,15 +145,15 @@ begin
         LVDS_DATA_RATE  => 1250.0--,
     )
     port map (
-        i_reg_addr                  => malibu_reg.addr(7 downto 0),
+        i_reg_addr                  => malibu_reg.addr(3 downto 0),
         i_reg_re                    => malibu_reg.re,
         o_reg_rdata                 => malibu_reg.rdata,
         i_reg_we                    => malibu_reg.we,
         i_reg_wdata                 => malibu_reg.wdata,
 
-        o_chip_reset                => s_fee_chip_rst,
-        o_pll_test                  => open,
-        i_data                      => i_fee_rxd,
+        o_chip_reset(0)             => tile_chip_reset,
+        o_pll_test                  => tile_pll_test,
+        i_data(0)                   => tile_din(1),
 
         o_fifo_write                => fifo_write,
         o_fifo_wdata                => fifo_wdata,
@@ -185,17 +165,13 @@ begin
 
         o_MON_rxrdy                 => s_MON_rxrdy,
 
-        i_clk_core                  => qsfp_clk,
-        i_clk_g125                  => clk_125_bottom,
-        i_clk_ref_A                 => lvds_clk_A,
-        i_clk_ref_B                 => lvds_clk_B,
+        i_clk_core                  => transceiver_pll_clock(0),
+        i_clk_g125                  => lvds_firefly_clk,
+        i_clk_ref_A                 => LVDS_clk_si1_fpga_A,
+        i_clk_ref_B                 => LVDS_clk_si1_fpga_B,
 
-        i_reset                     => not reset_n--,
+        i_reset                     => not pb_db(0)--,
     );
-
-    -- TODO: we should do the pinout with vectors to make this dynamic
-    fast_reset_A <= s_fee_chip_rst(0);
-    i_fee_rxd    <= data_in_A(0);
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------
@@ -259,8 +235,12 @@ begin
         i_ffly1_lvds_rx     => firefly1_lvds_rx_in,
         i_ffly2_lvds_rx     => firefly2_lvds_rx_in,
 
-        i_fifo_write        => fifo_wdata,
-        i_fifo_wdata        => fifo_write(0),
+        i_can_terminate     => s_run_state_all_done,
+
+        i_fifo_write        => fifo_write,
+        i_fifo_wdata        => fifo_wdata,
+
+        o_fifos_almost_full => common_fifos_almost_full,
 
         i_mscb_data         => mscb_fpga_in,
         o_mscb_data         => mscb_fpga_out,
@@ -282,7 +262,7 @@ begin
         
         -- reset system
         o_run_state_125             => run_state_125,
-        i_ack_run_prep_permission   => '1', -- TODO in "Not-Dummy": connect to detector-block
+        i_ack_run_prep_permission   => and_reduce(s_MON_rxrdy),
 
         -- clocks
         i_nios_clk          => spare_clk_osc,
