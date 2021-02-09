@@ -28,7 +28,7 @@ begin
         if ( reset_n = '0' ) then
             i_CC <= (others => '0');
         elsif ( rising_edge(clk) ) then
-            if ( i_CC = 32767 ) then
+            if ( i_CC = 32767 - 1 ) then
                 i_CC <= (others => '0');
             else
                 i_CC <= i_CC + 1;
