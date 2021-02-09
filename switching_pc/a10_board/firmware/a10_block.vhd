@@ -2,10 +2,14 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
+use work.pcie_components.all;
+
 entity a10_block is
 generic (
     g_XCVR0_CHANNELS    : positive := 16;
-    g_XCVR0_N           : positive := 4--;
+    g_XCVR0_N           : positive := 4;
+    g_PCIE0_X           : integer := 8;
+    g_PCIE1_X           : integer := 0--;
 );
 port (
     -- flash interface
@@ -69,7 +73,7 @@ port (
 
     -- PCIe0 write interface to readable memory
     i_pcie0_rmem_addr   : in    std_logic_vector(15 downto 0) := (others => '0');
-    o_pcie0_rmem_wdata  : in    std_logic_vector(31 downto 0) := (others => '0');
+    i_pcie0_rmem_wdata  : in    std_logic_vector(31 downto 0) := (others => '0');
     i_pcie0_rmem_we     : in    std_logic := '0';
     i_pcie0_rmem_clk    : in    std_logic := '0';
 
@@ -101,10 +105,11 @@ end entity;
 
 architecture arch of a10_block is
 
-    signal nios_reset_n     : std_logic;
     signal flash_reset_n    : std_logic;
 
-    signal av_xcvr          : work.util.avalon_t;
+    signal pcie0_clk        : std_logic;
+
+    signal nios_reset_n     : std_logic;
 
     signal nios_i2c_scl     : std_logic;
     signal nios_i2c_scl_oe  : std_logic;
@@ -119,11 +124,17 @@ architecture arch of a10_block is
 
     signal nios_pio         : std_logic_vector(31 downto 0);
 
+    signal av_xcvr          : work.util.avalon_t;
+
 begin
 
     o_flash_reset_n <= flash_reset_n;
 
     o_nios_hz <= nios_pio(7);
+
+    o_pcie0_clk <= pcie0_clk;
+
+
 
     -- nios reset sequence
     e_nios_reset_n : entity work.debouncer
@@ -200,6 +211,7 @@ begin
     o_spi_mosi <= (others => nios_spi_mosi);
     o_spi_sclk <= (others => nios_spi_sclk);
     o_spi_ss_n <= nios_spi_ss_n;
+    -- TODO: implement mux
 
 
 
@@ -242,9 +254,55 @@ begin
 
 
     -- PCIe0
+    generate_pcie0_x8 : if ( g_PCIE0_X = 8 ) generate
+    e_pcie0_block : entity work.pcie_block
+    generic map (
+        DMAMEMWRITEADDRSIZE     => 11,
+        DMAMEMREADADDRSIZE      => 11,
+        DMAMEMWRITEWIDTH        => 256,
+        PCIE_X_g => g_PCIE0_X--,
+    )
+    port map (
+        local_rstn              => '1',
+        appl_rstn               => '1',
+        refclk                  => i_pcie0_refclk,
+        pcie_fastclk_out        => pcie0_clk,
+
+        pcie_rx_p               => i_pcie0_rx,
+        pcie_tx_p               => o_pcie0_tx,
+        pcie_refclk_p           => i_pcie0_refclk,
+        pcie_perstn             => i_pcie0_perst_n,
+        pcie_smbclk             => '0',
+        pcie_smbdat             => '0',
+        pcie_waken              => open,
+
+        readregs                => i_pcie0_rregs,
+        writeregs               => o_pcie0_wregs_A,
+
+        writememreadaddr        => i_pcie0_wmem_addr,
+        writememreaddata        => o_pcie0_wmem_rdata,
+        writememclk             => i_pcie0_wmem_clk,
+
+        readmem_addr            => i_pcie0_rmem_addr,
+        readmem_data            => i_pcie0_rmem_wdata,
+        readmem_wren            => i_pcie0_rmem_we,
+        readmemclk              => i_pcie0_rmem_clk,
+        readmem_endofevent      => '0',
+
+        dma_data                => i_pcie0_dma0_wdata,
+        dmamem_wren             => i_pcie0_dma0_we,
+        dmamem_endofevent       => i_pcie0_dma0_eoe,
+        dmamemhalffull          => o_pcie0_dma0_hfull,
+        dmamemclk               => i_pcie0_dma0_clk,
+
+        dma2memclk              => i_pcie0_dma0_clk--,
+    );
+    end generate;
 
 
 
     -- PCIe1
+    generate_pcie1_x8 : if ( g_PCIE1_X = 8 ) generate
+    end generate;
 
 end architecture;

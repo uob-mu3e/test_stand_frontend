@@ -115,10 +115,6 @@ architecture rtl of top is
     signal clk_156 : std_logic;
     signal reset_156_n : std_logic;
 
-    -- PCIe clock
-    signal pcie_clk : std_logic;
-    signal pcie_reset_n : std_logic;
-
     signal flash_cs_n : std_logic;
 
 
@@ -151,7 +147,6 @@ architecture rtl of top is
         signal readmem_writeaddr_finished: std_logic_vector(15 downto 0);
         signal readmem_writeaddr_lowbits : std_logic_vector(15 downto 0);
         signal readmem_wren	 		: std_logic;
-        signal readmem_endofevent 	: std_logic;
         signal writememreadaddr 	: std_logic_vector(15 downto 0);
         signal writememreaddata 	: std_logic_vector (31 downto 0);
         
@@ -166,19 +161,10 @@ architecture rtl of top is
         signal notendofevent_counter : std_logic_vector(31 downto 0);
         signal dmamemhalffull_tx : std_logic;
         signal sync_chain_halffull : std_logic_vector(1 downto 0);
-        
-        -- pcie dma2
-        signal dma2mem_writedata 	: std_logic_vector(255 downto 0);
-        signal dma2mem_wren	 		: std_logic;
-        signal dma2mem_endofevent 	: std_logic;
-        signal dma2memhalffull 		: std_logic;
-        
+
         -- //pcie fast clock
         signal pcie_fastclk_out		: std_logic;
-        
-        -- //pcie debug signals
-        signal pcie_testout				: std_logic_vector(127 downto 0);
-        
+
         -- Clocksync stuff
         signal clk_sync : std_logic;
         signal clk_last : std_logic;
@@ -291,9 +277,6 @@ begin
     e_reset_156_n : entity work.reset_sync
     port map ( o_reset_n => reset_156_n, i_reset_n => CPU_RESET_n, i_clk => clk_156 );
 
---    e_pcie_reset_n : entity work.reset_sync
---    port map ( o_reset_n => pcie_reset_n, i_reset_n => CPU_RESET_n and BUTTON(0), i_clk => pcie_clk );
-
 
 
     -------- Debouncer/seg7 --------
@@ -347,6 +330,7 @@ begin
 
     a10_block : entity work.a10_block
     port map (
+        -- flash interface
         o_flash_address(27 downto 2)    => FLASH_A,
         io_flash_data                   => FLASH_D,
         o_flash_read_n                  => FLASH_OE_n,
@@ -354,6 +338,7 @@ begin
         o_flash_cs_n                    => flash_cs_n,
         o_flash_reset_n                 => FLASH_RESET_n,
 
+        -- I2C
         io_i2c_scl(0)                   => FAN_I2C_SCL,
         io_i2c_sda(0)                   => FAN_I2C_SDA,
         io_i2c_scl(1)                   => TEMP_I2C_SCL,
@@ -361,6 +346,7 @@ begin
         io_i2c_scl(2)                   => POWER_MONITOR_I2C_SCL,
         io_i2c_sda(2)                   => POWER_MONITOR_I2C_SDA,
 
+        -- SPI
         i_spi_miso(0)                   => RS422_DIN,
         o_spi_mosi(0)                   => RS422_DOUT,
         o_spi_sclk(0)                   => RJ45_LED_R,
@@ -368,6 +354,9 @@ begin
 
         o_nios_hz                       => LED(0),
 
+
+
+        -- XCVR0 (6250 Mbps @ 156.25 MHz)
         i_xcvr0_rx( 3 downto  0)        => QSFPA_RX_p,
         i_xcvr0_rx( 7 downto  4)        => QSFPB_RX_p,
         i_xcvr0_rx(11 downto  8)        => QSFPC_RX_p,
@@ -381,6 +370,44 @@ begin
         o_xcvr0_rx_datak                => rx_datak_raw,
         i_xcvr0_tx_data                 => tx_data,
         i_xcvr0_tx_datak                => tx_datak,
+
+
+
+        -- PCIe0
+        i_pcie0_rx                      => PCIE_RX_p,
+        o_pcie0_tx                      => PCIE_TX_p,
+        i_pcie0_perst_n                 => PCIE_PERST_n,
+        i_pcie0_refclk                  => PCIE_REFCLK_p,
+        o_pcie0_clk                     => pcie_fastclk_out,
+
+        -- PCIe0 DMA0
+        i_pcie0_dma0_wdata              => dma_data,
+        i_pcie0_dma0_we                 => dma_data_wren,
+        i_pcie0_dma0_eoe                => dmamem_endofevent,
+        o_pcie0_dma0_hfull              => dmamemhalffull,
+        i_pcie0_dma0_clk                => pcie_fastclk_out,
+
+        -- PCIe0 read interface to writable memory
+        i_pcie0_wmem_addr               => writememreadaddr,
+        o_pcie0_wmem_rdata              => writememreaddata,
+        i_pcie0_wmem_clk                => clk_156,
+
+        -- PCIe0 write interface to readable memory
+        i_pcie0_rmem_addr               => readmem_writeaddr_lowbits,
+        i_pcie0_rmem_wdata              => readmem_writedata,
+        i_pcie0_rmem_we                 => readmem_wren,
+        i_pcie0_rmem_clk                => clk_156,
+
+        -- PCIe0 update interface for readable registers
+        i_pcie0_rregs                   => readregs,
+
+        -- PCIe0 read interface for writable registers
+        o_pcie0_wregs_A                 => writeregs,
+        i_pcie0_wregs_A_clk             => pcie_fastclk_out,
+        o_pcie0_wregs_B                 => writeregs_slow,
+        i_pcie0_wregs_B_clk             => clk_156,
+
+
 
         i_clk_156                       => clk_156,
 
@@ -647,7 +674,7 @@ begin
         resets_n                => resets_n,
         clk                     => clk_156--,
     );
-    
+
     e_reset_logic_fast : entity work.reset_logic
     port map (
         rst_n                   => push_button0_db,
@@ -707,79 +734,5 @@ begin
 
     readmem_writeaddr_lowbits   <= readmem_writeaddr(15 downto 0);
     pb_in                       <= push_button0_db & push_button1_db & push_button2_db;
-
-    e_pcie_block : entity work.pcie_block
-    generic map (
-        DMAMEMWRITEADDRSIZE     => 11,
-        DMAMEMREADADDRSIZE      => 11,
-        DMAMEMWRITEWIDTH        => 256
-    )
-    port map (
-        o_writeregs_B           => writeregs_slow,
-        i_clk_B                 => clk_156,
-  
-        o_writeregs_C           => open,
-        i_clk_C                 => clk_156,
-
-        local_rstn              => '1',
-        appl_rstn               => '1',
-        refclk                  => PCIE_REFCLK_p,
-        pcie_fastclk_out        => pcie_fastclk_out,
-        
-        --//PCI-Express--------------------------//25 pins //--------------------------
-        pcie_rx_p               => PCIE_RX_p,
-        pcie_tx_p               => PCIE_TX_p,
-        pcie_refclk_p           => PCIE_REFCLK_p,
-        pcie_led_g2             => open,
-        pcie_led_x1             => open,
-        pcie_led_x4             => open,
-        pcie_led_x8             => open,
-        pcie_perstn             => PCIE_PERST_n,
-        pcie_smbclk             => PCIE_SMBCLK,
-        pcie_smbdat             => PCIE_SMBDAT,
-        pcie_waken              => PCIE_WAKE_n,
-        
-        -- LEDs
-        alive_led               => open,
-        comp_led                => open,
-        L0_led                  => open,
-        
-        -- pcie registers (write / read register, readonly, read write, in tools/dmatest/rw) -Sync read regs
-        writeregs               => writeregs,
-        readregs                => readregs,
-
-        -- pcie writeable memory
-        writememclk             => clk_156,
-        writememreadaddr        => writememreadaddr,
-        writememreaddata        => writememreaddata,
-
-        -- pcie readable memory
-        readmem_data            => readmem_writedata,
-        readmem_addr            => readmem_writeaddr_lowbits,
-        readmemclk              => clk_156,
-        readmem_wren            => readmem_wren,
-        readmem_endofevent      => readmem_endofevent,
-        
-        -- dma memory
-        dma_data                => dma_data,
-        dmamemclk               => pcie_fastclk_out,
-        dmamem_wren             => dma_data_wren,
-        dmamem_endofevent       => dmamem_endofevent,
-        dmamemhalffull          => dmamemhalffull,
-        
-        -- dma memory
-        dma2_data               => dma2mem_writedata,
-        dma2memclk              => pcie_fastclk_out,
-        dma2mem_wren            => dma2mem_wren,
-        dma2mem_endofevent      => dma2mem_endofevent,
-        dma2memhalffull         => dma2memhalffull,
-        
-        -- test ports
-        testout                 => pcie_testout,
-        testout_ena             => open,
-        pb_in                   => pb_in,
-        inaddr32_r              => readregs(inaddr32_r),
-        inaddr32_w              => readregs(inaddr32_w)--,
-    );
 
 end architecture;
