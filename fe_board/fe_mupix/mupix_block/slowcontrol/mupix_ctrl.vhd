@@ -113,6 +113,7 @@ begin
             clk_step                <= (others => '0');
             spi_dout                <= '0';
             spi_clk                 <= '0';
+            spi_bitpos              <= 0;
             -- o_csn                <= (others => '1'); -- do we want this ? (is a load signal)
 
         elsif(rising_edge(i_clk))then
@@ -182,14 +183,25 @@ begin
                         end if;
                     end loop;
 
-                    if((extra_round = '1' or clk_step/=x"5") and (not clk_step=x"6")) then
+                    --if((extra_round = '1' or clk_step/=x"5") and (not clk_step=x"6")) then
+                    if(clk_step=x"0" or clk_step=x"1" or clk_step=x"2" or clk_step=x"3" or clk_step=x"4") then
                         mp_ctrl_state <= writing;
                         wait_cnt      <= (others => '0');
-                    elsif(or_reduce(is_writing)='0') then -- done
-                        mp_ctrl_state <= idle;
-                    else                                  -- load next
+                    end if;
+                    
+                    if(extra_round = '0' and clk_step=x"5") then 
                         mp_ctrl_state <= load_config;
+                        rd_config     <= '1';
                         wait_cnt      <= (others => '0');
+                    end if;
+                    
+                    if(extra_round = '1' and clk_step=x"5") then 
+                        mp_ctrl_state <= writing;
+                        wait_cnt      <= (others => '0');
+                    end if;
+                    
+                    if(or_reduce(is_writing)='0') then -- done
+                        mp_ctrl_state <= idle;
                     end if;
 
                 when writing =>

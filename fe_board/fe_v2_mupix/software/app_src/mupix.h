@@ -23,16 +23,19 @@ struct mupix_t {
         // example: writing to BIAS shift reg
         
         // set spi clk slow down (spi clk period will be something like 12.8ns * this value, not sure what we need/can do here)
-        sc->ram->data[0xFF47]=0x00000010;
+        sc->ram->data[0xFF47]=0x0000002;
         
         // to which mupix chips do you NOT want to write this (bit mask, 0 = write to all mupix)
         sc->ram->data[0xFF48]=0;
         
         // write data for the  complete BIAS reg into FEB storage
+        sc->ram->data[0xFF41]=0xD1AFB54D;
+        sc->ram->data[0xFF41]=0xAB75183F;
         sc->ram->data[0xFF41]=0x12345678;
+        sc->ram->data[0xFF41]=0xD1AFB54D;
+        sc->ram->data[0xFF41]=0xAB75183F;
         sc->ram->data[0xFF41]=0x12345678;
-        sc->ram->data[0xFF41]=0x12345678;
-        // .. and so on ..
+        sc->ram->data[0xFF41]=0xD1AFB54D;
         
         // enable signal for BIAS reg
         sc->ram->data[0xFF40]=1;

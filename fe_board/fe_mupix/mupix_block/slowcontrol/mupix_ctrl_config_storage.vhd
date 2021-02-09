@@ -51,6 +51,7 @@ begin
             bitpos          <= (others => 0);
             bitpos_global   <= (others => 0);
             is_writing      <= (others => '0');
+            o_is_writing    <= (others => '0');
 
         elsif(rising_edge(i_clk))then
             enable_prev <= i_enable;
