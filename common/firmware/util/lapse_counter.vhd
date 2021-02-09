@@ -47,9 +47,9 @@ begin
     end if;
 end process;
 
-s_o_CC <= "0" & i_CC;
-s_o_CC_reg <= s_o_CC when nLapses = 0 else
-			s_o_CC - nLapses 	when i_CC <= CC_fpga else s_o_CC - (nLapses - 1);
+s_o_CC 		<= "0" & i_CC;
+s_o_CC_reg 	<= 	s_o_CC 				when nLapses = 0 else
+				s_o_CC - nLapses 	when i_CC <= CC_fpga else s_o_CC - (nLapses - 1);
 
 o_CC <= s_o_CC_reg when s_o_CC_reg <= N_TOT else s_o_CC_reg - N_TOT;
 
