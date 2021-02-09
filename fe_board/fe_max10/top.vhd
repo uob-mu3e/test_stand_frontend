@@ -171,7 +171,7 @@ begin
     e_spi_arria: entity work.spi_arria
         port map(
             ------ SPI
-            i_SPI_cs        => fpga_spi_csn,
+            i_SPI_csn       => fpga_spi_csn,
             i_SPI_clk       => fpga_spi_D3, -- replacement for missing connection 
             io_SPI_mosi     => fpga_spi_mosi,
             io_SPI_miso     => open,

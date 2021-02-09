@@ -6,7 +6,7 @@ use ieee.numeric_std.all;
 entity max10_spi is
     port(
     -- Max10 SPI
-    o_SPI_cs    : out std_logic;
+    o_SPI_csn    : out std_logic;
     o_SPI_clk   : out std_logic;
     io_SPI_mosi : inout std_logic;
     io_SPI_miso : inout std_logic;
@@ -49,7 +49,7 @@ architecture RTL of max10_spi is
     process(clk50, reset_n)
     begin
     if(reset_n = '0')then
-    o_SPI_cs        <= '0';
+    o_SPI_csn        <= '1';
     o_SPI_clk       <= '0';
     io_SPI_mosi     <= 'Z';
     io_SPI_miso     <= 'Z';
@@ -69,7 +69,7 @@ elsif(clk50'event and clk50 = '1')then
     strobe_last     <= strobe;
     case spistate is
     when idle =>
-        o_SPI_cs        <= '0';
+        o_SPI_csn        <= '1';
         o_SPI_clk       <= '0';
         io_SPI_mosi     <= 'Z';
         io_SPI_miso     <= 'Z';
@@ -80,7 +80,7 @@ elsif(clk50'event and clk50 = '1')then
         if(strobe = '1' and strobe_last = '0')then
             spistate    <= address;
             busy        <= '1';
-            o_SPI_cs    <= '1';
+            o_SPI_csn    <= '0';
             addrshiftregister <= rw & addr;
             toggle <= '0';
             nibblecount <= 0;
@@ -178,7 +178,7 @@ elsif(clk50'event and clk50 = '1')then
         end if;
 
     when others =>
-        o_SPI_cs        <= '0';
+        o_SPI_csn        <= '1';
         o_SPI_clk       <= '0';
         io_SPI_mosi     <= 'Z';
         io_SPI_miso     <= 'Z';

@@ -196,8 +196,6 @@ begin
         i_clk_156           => transceiver_pll_clock(0),
         o_clk_156_mon       => lcd_data(1),
         i_clk_125           => lvds_firefly_clk,
-        o_clk_125_mon       => lcd_data(2),
-        o_clk_100_mon       => lcd_data(3),
 
         i_areset_n          => pb_db(0),
         

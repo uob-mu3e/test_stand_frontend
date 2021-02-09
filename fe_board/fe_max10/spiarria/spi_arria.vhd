@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity spi_arria is
     port(
         ------ SPI
-        i_SPI_cs    : in    std_logic;
+        i_SPI_csn   : in    std_logic;
         i_SPI_clk   : in    std_logic;
         io_SPI_mosi : inout std_logic;
         io_SPI_miso : inout std_logic;
@@ -68,7 +68,7 @@ architecture RTL of spi_arria is
             io_SPI_D1       <= 'Z';
             io_SPI_D2       <= 'Z';
             io_SPI_D3       <= 'Z';
-            if(i_SPI_cs = '1') then
+            if(i_SPI_csn = '0') then
                 spistate    <= address;
                 nibblecount <= 0;
                 addroffset_int  <= 0;
@@ -116,7 +116,7 @@ architecture RTL of spi_arria is
                 word_en         <= '1';
             end if;
 
-            if(i_SPI_cs = '0') then
+            if(i_SPI_csn = '1') then
                 spistate <= idle;
             end if;
         when waiting =>
@@ -130,7 +130,7 @@ architecture RTL of spi_arria is
                 next_data         <= '1';
             end if;
             
-            if(i_SPI_cs = '0') then
+            if(i_SPI_csn = '1') then
                 spistate <= idle;
             end if;
         when reading =>
@@ -150,7 +150,7 @@ architecture RTL of spi_arria is
                 next_data         <= '1';
             end if;
 
-            if(i_SPI_cs = '0') then
+            if(i_SPI_csn = '1') then
                 spistate <= idle;
             end if;
 

@@ -60,6 +60,7 @@ package feb_sc_registers is
     constant FIREFLY2_ALARM_REGISTER_R          :   integer := 16#23#;
 
     constant NONINCREMENTING_TEST_REGISTER_RW   :   integer := 16#24#;
+    constant MAX10_VERSION_REGISTER_R           :   integer := 16#25#;
 
     -- Registers 0x25 to 0x3F are reserved for further generic use
     -- Registers above 0x40 are for subdetector specific use
