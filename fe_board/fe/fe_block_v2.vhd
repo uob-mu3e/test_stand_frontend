@@ -648,9 +648,6 @@ begin
         max_spi_counter  <= 1;
     elsif(i_nios_clk'event and i_nios_clk = '1')then
         max_spi_counter <= max_spi_counter + 1;
-        max_spi_addr <= (others => '0');
-        max_spi_numbytes <= (others => '0');
-        max_spi_rw   <= '0';
         max_spi_strobe <= '0';
         if(max_spi_counter > 5000000) then
             max_spi_counter <= 0;
@@ -660,6 +657,9 @@ begin
         end if;
         if(max_spi_word_en = '1') then
             max10_version   <= max_spi_word_from_max;
+				max_spi_addr <= (others => '0');
+				max_spi_numbytes <= (others => '0');
+				max_spi_rw   <= '0';
         end if;
     end if;
     end process;

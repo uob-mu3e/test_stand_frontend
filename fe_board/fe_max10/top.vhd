@@ -36,7 +36,7 @@ entity top is
         fpga_spi_miso           : inout std_logic;
         fpga_spi_D1             : inout std_logic;
         fpga_spi_D2             : inout std_logic;
-        fpga_spi_D3             : in std_logic;
+        fpga_spi_D3             : inout std_logic;
         fpga_spi_csn            : in std_logic;
 
         -- SPI Interface to backplane
@@ -172,12 +172,12 @@ begin
         port map(
             ------ SPI
             i_SPI_csn       => fpga_spi_csn,
-            i_SPI_clk       => fpga_spi_D3, -- replacement for missing connection 
+            i_SPI_clk       => fpga_spi_miso, -- replacement for missing connection 
             io_SPI_mosi     => fpga_spi_mosi,
             io_SPI_miso     => open,
             io_SPI_D1       => fpga_spi_D1,
             io_SPI_D2       => fpga_spi_D2,
-            io_SPI_D3       => fpga_spi_miso, -- again, replacement
+            io_SPI_D3       => fpga_spi_D3, -- again, replacement
     
             clk100          => clk100,
             reset_n         => reset_n,
