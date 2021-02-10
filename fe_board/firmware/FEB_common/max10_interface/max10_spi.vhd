@@ -142,7 +142,7 @@ elsif(clk50'event and clk50 = '1')then
             nibblecount     <= nibblecount + 1;
         else
             o_SPI_clk       <= '1';
-            if(nibblecount = 2) then
+            if(nibblecount = 3) then
                 spistate        <= reading;
                 nibblecount     <= 0;
             end if;

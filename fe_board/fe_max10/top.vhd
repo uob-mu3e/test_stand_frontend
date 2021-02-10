@@ -140,7 +140,7 @@ begin
     -- signal defaults, clk & resets
     -----------------------
     fpga_reset  <= '0';
-    reset_n     <= '1';
+    reset_n     <= pll_locked;
     mscb_ena    <= '0';
     attention_n <= "ZZ";
 

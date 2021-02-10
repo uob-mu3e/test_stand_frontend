@@ -68,6 +68,7 @@ architecture RTL of spi_arria is
             io_SPI_D1       <= 'Z';
             io_SPI_D2       <= 'Z';
             io_SPI_D3       <= 'Z';
+				nibblecount 	<=  0;
             if(i_SPI_csn = '0') then
                 spistate    <= address;
                 nibblecount <= 0;
@@ -82,7 +83,7 @@ architecture RTL of spi_arria is
                 addrshiftregister(3 downto 0) <= addrshiftregister(7 downto 4);
                 nibblecount     <= nibblecount +1;
             end if;  
-            if(nibblecount = 2) then
+            if(nibblecount > 1) then
                addr <=    addrshiftregister(6 downto 0);
                rw   <=    addrshiftregister(7);
                if(addrshiftregister(7) = '1') then
@@ -93,6 +94,11 @@ architecture RTL of spi_arria is
                     nibblecount <= 0;
                end if;
             end if;
+				
+				if(i_SPI_csn = '1') then
+                spistate <= idle;
+            end if;
+				
         when writing =>
             haveread <= '0';
             if(clklast = '0' and i_SPI_clk = '1') then
