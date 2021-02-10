@@ -409,6 +409,7 @@ begin
 
 
 
+        i_reset_156_n                   => reset_156_n,
         i_clk_156                       => clk_156,
 
         i_clk_250                       => '0',

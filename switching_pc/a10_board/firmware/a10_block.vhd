@@ -6,8 +6,10 @@ use work.pcie_components.all;
 
 entity a10_block is
 generic (
-    g_XCVR0_CHANNELS    : positive := 16;
-    g_XCVR0_N           : positive := 4;
+    g_XCVR0_CHANNELS    : integer := 16;
+    g_XCVR0_N           : integer := 4;
+    g_XCVR1_CHANNELS    : integer := 0;
+    g_XCVR1_N           : integer := 0;
     g_PCIE0_X           : integer := 8;
     g_PCIE1_X           : integer := 0--;
 );
@@ -35,26 +37,30 @@ port (
 
 
     -- XCVR0 (6250 Mbps @ 156.25 MHz)
-    i_xcvr0_rx          : in    std_logic_vector(g_XCVR0_CHANNELS-1 downto 0);
+    i_xcvr0_rx          : in    std_logic_vector(g_XCVR0_CHANNELS-1 downto 0) := (others => '0');
     o_xcvr0_tx          : out   std_logic_vector(g_XCVR0_CHANNELS-1 downto 0);
 
     o_xcvr0_rx_data     : out   work.util.slv32_array_t(g_XCVR0_CHANNELS-1 downto 0);
     o_xcvr0_rx_datak    : out   work.util.slv4_array_t(g_XCVR0_CHANNELS-1 downto 0);
-    i_xcvr0_tx_data     : in    work.util.slv32_array_t(g_XCVR0_CHANNELS-1 downto 0);
-    i_xcvr0_tx_datak    : in    work.util.slv4_array_t(g_XCVR0_CHANNELS-1 downto 0);
-
-    i_clk_156           : in    std_logic;
+    i_xcvr0_tx_data     : in    work.util.slv32_array_t(g_XCVR0_CHANNELS-1 downto 0) := (others => (others => '0'));
+    i_xcvr0_tx_datak    : in    work.util.slv4_array_t(g_XCVR0_CHANNELS-1 downto 0) := (others => (others => '0'));
 
 
 
     -- XCVR1 (10000 Mbps @ 250 MHz)
-    i_clk_250           : in    std_logic;
+    i_xcvr1_rx          : in    std_logic_vector(g_XCVR1_CHANNELS-1 downto 0) := (others => '0');
+    o_xcvr1_tx          : out   std_logic_vector(g_XCVR1_CHANNELS-1 downto 0);
+
+    o_xcvr1_rx_data     : out   work.util.slv32_array_t(g_XCVR1_CHANNELS-1 downto 0);
+    o_xcvr1_rx_datak    : out   work.util.slv4_array_t(g_XCVR1_CHANNELS-1 downto 0);
+    i_xcvr1_tx_data     : in    work.util.slv32_array_t(g_XCVR1_CHANNELS-1 downto 0) := (others => (others => '0'));
+    i_xcvr1_tx_datak    : in    work.util.slv4_array_t(g_XCVR1_CHANNELS-1 downto 0) := (others => (others => '0'));
 
 
 
     -- PCIe0
-    i_pcie0_rx          : in    std_logic_vector(7 downto 0) := (others => '0');
-    o_pcie0_tx          : out   std_logic_vector(7 downto 0);
+    i_pcie0_rx          : in    std_logic_vector(g_PCIE0_X-1 downto 0) := (others => '0');
+    o_pcie0_tx          : out   std_logic_vector(g_PCIE0_X-1 downto 0);
     i_pcie0_perst_n     : in    std_logic := '0';
     i_pcie0_refclk      : in    std_logic := '0'; -- ref 100 MHz clock
     o_pcie0_clk         : out   std_logic;
@@ -93,13 +99,18 @@ port (
 
 
 
+    i_reset_156_n       : in    std_logic;
+    i_clk_156           : in    std_logic;
+
+    i_clk_250           : in    std_logic;
+
     -- global 125 MHz clock
-    i_clk_125           : in    std_logic;
     i_reset_125_n       : in    std_logic;
+    i_clk_125           : in    std_logic;
 
     -- local 50 MHz clock
-    i_clk_50            : in    std_logic;
-    i_reset_50_n        : in    std_logic--;
+    i_reset_50_n        : in    std_logic;
+    i_clk_50            : in    std_logic--;
 );
 end entity;
 
@@ -124,7 +135,8 @@ architecture arch of a10_block is
 
     signal nios_pio         : std_logic_vector(31 downto 0);
 
-    signal av_xcvr          : work.util.avalon_t;
+    signal av_xcvr0         : work.util.avalon_t;
+    signal av_xcvr1         : work.util.avalon_t;
 
 begin
 
@@ -159,12 +171,12 @@ begin
         avm_reset_reset_n               => i_reset_125_n,
         avm_clock_clk                   => i_clk_125, -- TODO: use clk_156
 
-        avm_xcvr_address                => av_xcvr.address(15 downto 0),
-        avm_xcvr_read                   => av_xcvr.read,
-        avm_xcvr_readdata               => av_xcvr.readdata,
-        avm_xcvr_write                  => av_xcvr.write,
-        avm_xcvr_writedata              => av_xcvr.writedata,
-        avm_xcvr_waitrequest            => av_xcvr.waitrequest,
+        avm_xcvr_address                => av_xcvr0.address(15 downto 0),
+        avm_xcvr_read                   => av_xcvr0.read,
+        avm_xcvr_readdata               => av_xcvr0.readdata,
+        avm_xcvr_write                  => av_xcvr0.write,
+        avm_xcvr_writedata              => av_xcvr0.writedata,
+        avm_xcvr_waitrequest            => av_xcvr0.waitrequest,
 
         flash_tcm_address_out           => o_flash_address(27 downto 0),
         flash_tcm_data_out              => io_flash_data,
@@ -216,7 +228,8 @@ begin
 
 
     -- xcvr_block 6250 Mbps @ 156.25 MHz
-    e_xcvr_block : entity work.xcvr_block
+    generate_xcvr0_block : if ( g_XCVR0_CHANNELS > 0 ) generate
+    e_xcvr0_block : entity work.xcvr_block
     generic map (
         N_XCVR_g => g_XCVR0_N,
         N_CHANNELS_g => g_XCVR0_CHANNELS / g_XCVR0_N--,
@@ -236,20 +249,53 @@ begin
 
         i_refclk            => (others => i_clk_125),
 
-        i_avs_address       => av_xcvr.address(15 downto 0),
-        i_avs_read          => av_xcvr.read,
-        o_avs_readdata      => av_xcvr.readdata,
-        i_avs_write         => av_xcvr.write,
-        i_avs_writedata     => av_xcvr.writedata,
-        o_avs_waitrequest   => av_xcvr.waitrequest,
+        i_avs_address       => av_xcvr0.address(15 downto 0),
+        i_avs_read          => av_xcvr0.read,
+        o_avs_readdata      => av_xcvr0.readdata,
+        i_avs_write         => av_xcvr0.write,
+        i_avs_writedata     => av_xcvr0.writedata,
+        o_avs_waitrequest   => av_xcvr0.waitrequest,
 
         i_reset_n           => i_reset_125_n,
         i_clk               => i_clk_125--, -- TODO: use clk_156
     );
+    end generate;
 
 
 
     -- xcvr_block 10000 Mbps @ 250 MHz
+    generate_xcvr1_block : if ( g_XCVR1_CHANNELS > 0 ) generate
+    e_xcvr1_block : entity work.xcvr_block
+    generic map (
+        N_XCVR_g => g_XCVR1_N,
+        N_CHANNELS_g => g_XCVR1_CHANNELS / g_XCVR1_N--,
+    )
+    port map (
+        o_rx_data           => o_xcvr1_rx_data,
+        o_rx_datak          => o_xcvr1_rx_datak,
+
+        i_tx_data           => i_xcvr1_tx_data,
+        i_tx_datak          => i_xcvr1_tx_datak,
+
+        i_tx_clk            => (others => i_clk_156),
+        i_rx_clk            => (others => i_clk_156),
+
+        i_rx_serial         => i_xcvr1_rx,
+        o_tx_serial         => o_xcvr1_tx,
+
+        i_refclk            => (others => i_clk_125),
+
+        i_avs_address       => av_xcvr1.address(15 downto 0),
+        i_avs_read          => av_xcvr1.read,
+        o_avs_readdata      => av_xcvr1.readdata,
+        i_avs_write         => av_xcvr1.write,
+        i_avs_writedata     => av_xcvr1.writedata,
+        o_avs_waitrequest   => av_xcvr1.waitrequest,
+
+        i_reset_n           => i_reset_125_n,
+        i_clk               => i_clk_125--,
+    );
+    end generate;
 
 
 
