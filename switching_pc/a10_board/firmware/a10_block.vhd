@@ -99,10 +99,11 @@ port (
 
 
 
-    i_reset_156_n       : in    std_logic;
-    i_clk_156           : in    std_logic;
+    o_reset_156_n       : out   std_logic;
+    o_clk_156           : out   std_logic;
 
-    i_clk_250           : in    std_logic;
+    o_reset_250_n       : out   std_logic;
+    o_clk_250           : out   std_logic;
 
     -- global 125 MHz clock
     i_reset_125_n       : in    std_logic;
@@ -116,11 +117,13 @@ end entity;
 
 architecture arch of a10_block is
 
-    signal flash_reset_n    : std_logic;
+    signal flash_reset_50_n : std_logic;
+    signal nios_reset_50_n  : std_logic;
 
-    signal pcie0_clk        : std_logic;
-
-    signal nios_reset_n     : std_logic;
+    signal reset_156_n      : std_logic;
+    signal clk_156          : std_logic;
+    signal reset_250_n      : std_logic;
+    signal clk_250          : std_logic;
 
     signal nios_i2c_scl     : std_logic;
     signal nios_i2c_scl_oe  : std_logic;
@@ -138,11 +141,41 @@ architecture arch of a10_block is
     signal av_xcvr0         : work.util.avalon_t;
     signal av_xcvr1         : work.util.avalon_t;
 
+    signal pcie0_clk        : std_logic;
+
 begin
 
-    o_flash_reset_n <= flash_reset_n;
+    o_flash_reset_n <= flash_reset_50_n;
 
     o_nios_hz <= nios_pio(7);
+
+    o_reset_156_n <= reset_156_n;
+    o_clk_156 <= clk_156;
+
+    o_reset_250_n <= reset_250_n;
+    o_clk_250 <= clk_250;
+
+    -- 156.25 MHz data clock (reference is 125 MHz global clock)
+    e_clk_156 : component work.cmp.ip_pll_125to156
+    port map (
+        outclk_0 => clk_156,
+        refclk => i_clk_125,
+        rst => not i_reset_125_n--,
+    );
+
+    e_reset_156_n : entity work.reset_sync
+    port map ( o_reset_n => reset_156_n, i_reset_n => i_reset_125_n, i_clk => clk_156 );
+
+    -- 250 MHz data clock (reference is 125 MHz global clock)
+    e_clk_250 : component work.cmp.ip_pll_125to250
+    port map (
+        outclk_0 => clk_250,
+        refclk => i_clk_125,
+        rst => not i_reset_125_n--,
+    );
+
+    e_reset_250_n : entity work.reset_sync
+    port map ( o_reset_n => reset_250_n, i_reset_n => i_reset_125_n, i_clk => clk_250 );
 
     o_pcie0_clk <= pcie0_clk;
 
@@ -156,10 +189,10 @@ begin
     )
     port map (
         i_d(0) => '1',
-        o_q(0) => flash_reset_n,
+        o_q(0) => flash_reset_50_n,
 
-        i_d(1) => flash_reset_n,
-        o_q(1) => nios_reset_n,
+        i_d(1) => flash_reset_50_n,
+        o_q(1) => nios_reset_50_n,
 
         i_reset_n => i_reset_50_n,
         i_clk => i_clk_50--,
@@ -197,7 +230,7 @@ begin
 
         pio_export                      => nios_pio,
 
-        rst_reset_n                     => i_reset_50_n,
+        rst_reset_n                     => nios_reset_50_n,
         clk_clk                         => i_clk_50--,
     );
 
@@ -241,8 +274,8 @@ begin
         i_tx_data           => i_xcvr0_tx_data,
         i_tx_datak          => i_xcvr0_tx_datak,
 
-        i_tx_clk            => (others => i_clk_156),
-        i_rx_clk            => (others => i_clk_156),
+        i_tx_clk            => (others => clk_156),
+        i_rx_clk            => (others => clk_156),
 
         i_rx_serial         => i_xcvr0_rx,
         o_tx_serial         => o_xcvr0_tx,
@@ -277,8 +310,8 @@ begin
         i_tx_data           => i_xcvr1_tx_data,
         i_tx_datak          => i_xcvr1_tx_datak,
 
-        i_tx_clk            => (others => i_clk_156),
-        i_rx_clk            => (others => i_clk_156),
+        i_tx_clk            => (others => clk_156),
+        i_rx_clk            => (others => clk_156),
 
         i_rx_serial         => i_xcvr1_rx,
         o_tx_serial         => o_xcvr1_tx,
@@ -292,8 +325,8 @@ begin
         i_avs_writedata     => av_xcvr1.writedata,
         o_avs_waitrequest   => av_xcvr1.waitrequest,
 
-        i_reset_n           => i_reset_125_n,
-        i_clk               => i_clk_125--,
+        i_reset_n           => reset_156_n,
+        i_clk               => clk_156--,
     );
     end generate;
 

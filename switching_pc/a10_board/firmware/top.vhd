@@ -122,9 +122,6 @@ architecture rtl of top is
         constant NLINKS_DATA : integer := 3;
         constant NLINKS_TOTL : integer := 16;
 
-        signal reset : std_logic;
-        signal reset_n : std_logic;
-
         signal resets : std_logic_vector(31 downto 0);
         signal resets_n: std_logic_vector(31 downto 0);
         
@@ -149,7 +146,7 @@ architecture rtl of top is
         signal readmem_wren	 		: std_logic;
         signal writememreadaddr 	: std_logic_vector(15 downto 0);
         signal writememreaddata 	: std_logic_vector (31 downto 0);
-        
+
         -- pcie dma
         signal dmamem_writedata 	: std_logic_vector(255 downto 0);
         signal dmamem_wren	 		: std_logic;
@@ -265,17 +262,6 @@ begin
 
     e_reset_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_n, i_reset_n => CPU_RESET_n, i_clk => clk_125 );
-
-    -- 156.25 MHz data clock (reference is 125 MHz global clock)
-    e_clk_156 : component work.cmp.ip_pll_125to156
-    port map (
-        outclk_0 => clk_156,
-        refclk => clk_125,
-        rst => not reset_125_n--,
-    );
-
-    e_reset_156_n : entity work.reset_sync
-    port map ( o_reset_n => reset_156_n, i_reset_n => CPU_RESET_n, i_clk => clk_156 );
 
 
 
@@ -409,10 +395,11 @@ begin
 
 
 
-        i_reset_156_n                   => reset_156_n,
-        i_clk_156                       => clk_156,
+        o_reset_156_n                   => reset_156_n,
+        o_clk_156                       => clk_156,
 
-        i_clk_250                       => '0',
+--        o_reset_250_n                   => clk_250,
+--        o_clk_250                       => clk_250,
 
         i_reset_125_n                   => reset_125_n,
         i_clk_125                       => clk_125,
