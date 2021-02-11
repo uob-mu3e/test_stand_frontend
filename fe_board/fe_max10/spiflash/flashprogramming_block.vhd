@@ -187,7 +187,7 @@ spi_flash_status(1)         <= spi_next_byte;
 spi_flash_status(2)         <= spi_byte_ready;
 spi_flash_status(3)         <= spi_busy;
 
- spi_flash_status(5)			  <= spiflashfifo_full;
+ spi_flash_status(5)	    <= spiflashfifo_full;
 spi_flash_status(6)         <= spiflashfifo_empty;
 spi_flash_status(7)         <= '1' when spiflashstate = fifowriting
                                 else '0';
