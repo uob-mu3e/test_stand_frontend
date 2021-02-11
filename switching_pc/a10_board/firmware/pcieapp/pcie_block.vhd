@@ -21,7 +21,7 @@ generic (
     DMAMEMWRITEADDRSIZE : integer := 14;
     DMAMEMREADADDRSIZE  : integer := 12;
     DMAMEMWRITEWIDTH    : integer := 32;
-    PCIE_X_g : positive := 8--;
+    g_PCIE_X : positive := 8--;
 );
 port (
     o_writeregs_B               : out   reg32array;
@@ -38,8 +38,8 @@ port (
     pcie_fastclk_out    : out   std_logic; -- 250 MHz clock
 
     -- PCI-Express (25 pins)
-    pcie_rx_p           : in    std_logic_vector(PCIE_X_g-1 downto 0); --//PCIe Receive Data-req's OCT
-    pcie_tx_p           : out   std_logic_vector(PCIE_X_g-1 downto 0); --//PCIe Transmit Data
+    pcie_rx_p           : in    std_logic_vector(g_PCIE_X-1 downto 0); --//PCIe Receive Data-req's OCT
+    pcie_tx_p           : out   std_logic_vector(g_PCIE_X-1 downto 0); --//PCIe Transmit Data
     pcie_refclk_p       : in    std_logic; --//PCIe Clock- Terminate on MB
     pcie_led_g2         : out   std_logic; --//User LED - Labeled Gen2
     pcie_led_x1         : out   std_logic; --//User LED - Labeled x1
@@ -322,7 +322,8 @@ begin
   pcie_led_x8 	<= lane_act(3);
 
 
-    e_pcie : component work.cmp.pcie
+    generate_ip_pcie_x8_256 : if ( g_PCIE_X = 8 ) generate
+    e_pcie_x8_256 : component work.cmp.ip_pcie_x8_256
 	port map(
 		clr_st              => open,  
 		hpg_ctrler          => (others => '0'), -- only needed for root ports
@@ -622,13 +623,96 @@ begin
 		rate4               => open,
 		rate5               => open,
 		rate6               => open,
-		rate7               => open			
+		rate7               => open
 	);
+    end generate;
 
+    generate_ip_pcie_x4_256 : if ( g_PCIE_X = 4 ) generate
+    e_pcie_x4_256 : component work.cmp.ip_pcie_x4_256
+    port map (
+        clr_st              => open,
+        hpg_ctrler          => (others => '0'), -- only needed for root ports
+        tl_cfg_add          => tl_cfg_add,
+        tl_cfg_ctl          => tl_cfg_ctl,
+        tl_cfg_sts          => tl_cfg_sts,
+        cpl_err             => cpl_err_icm,
+        cpl_pending         => cpl_pending,
+        coreclkout_hip      => pld_clk,
+        currentspeed        => currentspeed,
+        pld_core_ready      => serdes_pll_locked,
+        pld_clk_inuse       => open,  -- maybe this should be fed into the app reset
+        serdes_pll_locked   => serdes_pll_locked,
+        reset_status        => open,
+        testin_zero         => open,
+        rx_in0              => pcie_rx_p(0),
+        rx_in1              => pcie_rx_p(1),
+        rx_in2              => pcie_rx_p(2),
+        rx_in3              => pcie_rx_p(3),
+        tx_out0             => pcie_tx_p(0),
+        tx_out1             => pcie_tx_p(1),
+        tx_out2             => pcie_tx_p(2),
+        tx_out3             => pcie_tx_p(3),
+        derr_cor_ext_rcv    => open,
+        derr_cor_ext_rpl    => open,
+        derr_rpl            => open,
+        dlup                => dlup,
+        dlup_exit           => dlup_exit,
+        ev128ns             => open,
+        ev1us               => open,
+        hotrst_exit         => hotrst_exit,
+        int_status          => open,
+        l2_exit             => l2_exit,
+        lane_act            => lane_act,
+        ltssmstate          => open,
+        rx_par_err          => open,
+        tx_par_err          => open,
+        cfg_par_err         => open,
+        ko_cpl_spc_header   => open,
+        ko_cpl_spc_data     => open,
+        app_int_sts         => app_int_sts,
+        app_int_ack         => app_int_ack,
+        app_msi_num         => app_msi_num,
+        app_msi_req         => app_msi_req,
+        app_msi_tc          => app_msi_tc,
+        app_msi_ack         => app_msi_ack,
+        npor                => pcie_perstn,
+        pin_perst           => pcie_perstn,
+        pld_clk             => pld_clk,
+        pm_auxpwr           => '0',
+        pm_data             => (others => '0'),
+        pme_to_cr           => pme_to_sr,
+        pm_event            => '0',
+        pme_to_sr           => pme_to_sr,
+        refclk              => refclk,
+        rx_st_bar           => rx_st_bardec0,
+        rx_st_mask          => rx_mask0,
+        rx_st_sop           => rx_st_sop0,
+        rx_st_eop           => rx_st_eop0,
+        rx_st_err           => open,
+        rx_st_valid         => rx_st_valid0,
+        rx_st_ready         => rx_st_ready0,
+        rx_st_data          => rx_st_data0,
+        rx_st_empty         => rx_st_empty0,
+        -- Credits, to be redone if needed
+        tx_cred_data_fc     => open,
+        tx_cred_fc_hip_cons => open,
+        tx_cred_fc_infinite => open,
+        tx_cred_hdr_fc      => open,
+        tx_cred_fc_sel      => (others => '0'),
+        tx_st_sop           => tx_st_sop0,
+        tx_st_eop           => tx_st_eop0,
+        tx_st_err           => open,
+        tx_st_valid         => tx_st_valid0,
+        tx_st_ready         => tx_st_ready0,
+        tx_st_data          => tx_st_data0,
+        tx_st_empty         => tx_st_empty0,
 
-  
+        -- Simulation only signals
+        test_in             => X"00000188", --see age 102 in manual
+        simu_mode_pipe      => '0'--,
+    );
+    end generate;
 
-  
 
 
 -- Configuration bus decode

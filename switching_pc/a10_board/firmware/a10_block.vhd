@@ -333,13 +333,13 @@ begin
 
 
     -- PCIe0
-    generate_pcie0_x8 : if ( g_PCIE0_X = 8 ) generate
+    generate_pcie0 : if ( g_PCIE0_X > 8 ) generate
     e_pcie0_block : entity work.pcie_block
     generic map (
         DMAMEMWRITEADDRSIZE     => 11,
         DMAMEMREADADDRSIZE      => 11,
         DMAMEMWRITEWIDTH        => 256,
-        PCIE_X_g => g_PCIE0_X--,
+        g_PCIE_X => g_PCIE0_X--,
     )
     port map (
         local_rstn              => '1',
@@ -381,7 +381,7 @@ begin
 
 
     -- PCIe1
-    generate_pcie1_x8 : if ( g_PCIE1_X = 8 ) generate
+    generate_pcie1 : if ( g_PCIE1_X > 0 ) generate
     end generate;
 
 end architecture;
