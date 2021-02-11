@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity spi_arria is
     port(
         ------ SPI
-        i_SPI_cs    : in    std_logic;
+        i_SPI_csn   : in    std_logic;
         i_SPI_clk   : in    std_logic;
         io_SPI_mosi : inout std_logic;
         io_SPI_miso : inout std_logic;
@@ -68,7 +68,8 @@ architecture RTL of spi_arria is
             io_SPI_D1       <= 'Z';
             io_SPI_D2       <= 'Z';
             io_SPI_D3       <= 'Z';
-            if(i_SPI_cs = '1') then
+				nibblecount 	<=  0;
+            if(i_SPI_csn = '0') then
                 spistate    <= address;
                 nibblecount <= 0;
                 addroffset_int  <= 0;
@@ -82,7 +83,7 @@ architecture RTL of spi_arria is
                 addrshiftregister(3 downto 0) <= addrshiftregister(7 downto 4);
                 nibblecount     <= nibblecount +1;
             end if;  
-            if(nibblecount = 2) then
+            if(nibblecount > 1) then
                addr <=    addrshiftregister(6 downto 0);
                rw   <=    addrshiftregister(7);
                if(addrshiftregister(7) = '1') then
@@ -93,6 +94,11 @@ architecture RTL of spi_arria is
                     nibblecount <= 0;
                end if;
             end if;
+				
+				if(i_SPI_csn = '1') then
+                spistate <= idle;
+            end if;
+				
         when writing =>
             haveread <= '0';
             if(clklast = '0' and i_SPI_clk = '1') then
@@ -116,7 +122,7 @@ architecture RTL of spi_arria is
                 word_en         <= '1';
             end if;
 
-            if(i_SPI_cs = '0') then
+            if(i_SPI_csn = '1') then
                 spistate <= idle;
             end if;
         when waiting =>
@@ -130,7 +136,7 @@ architecture RTL of spi_arria is
                 next_data         <= '1';
             end if;
             
-            if(i_SPI_cs = '0') then
+            if(i_SPI_csn = '1') then
                 spistate <= idle;
             end if;
         when reading =>
@@ -150,7 +156,7 @@ architecture RTL of spi_arria is
                 next_data         <= '1';
             end if;
 
-            if(i_SPI_cs = '0') then
+            if(i_SPI_csn = '1') then
                 spistate <= idle;
             end if;
 

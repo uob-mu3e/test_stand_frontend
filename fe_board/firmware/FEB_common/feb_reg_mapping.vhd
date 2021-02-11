@@ -28,6 +28,7 @@ port (
     i_arriaV_temperature        : in  std_logic_vector( 7 downto 0) := x"CC";
     i_fpga_type                 : in  std_logic_vector( 5 downto 0) := "111100";
     i_adc_reg                   : in  reg32array_t    ( 4 downto 0) := (others => x"CCCCCCCC");
+    i_max10_version             : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
 
     -- outputs 156--------------------------------------------
     o_reg_cmdlen                : out std_logic_vector(31 downto 0);
@@ -171,6 +172,9 @@ begin
         end if;
         if ( regaddr = MAX10_ADC_8_9_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= i_adc_reg(4);
+        end if;
+        if ( regaddr = MAX10_VERSION_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= i_max10_version;
         end if;
         --TODO: Fireflies
 
