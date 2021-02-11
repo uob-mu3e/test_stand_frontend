@@ -33,6 +33,7 @@ end entity mupix_ctrl_config_storage;
 architecture RTL of mupix_ctrl_config_storage is
 
     signal fifo_read                : std_logic_vector(5 downto 0);
+    signal fifo_clear               : std_logic;
     signal data_buffer              : std_logic_vector(32*6-1 downto 0);
     type bitpos_t                   is array (5 downto 0) of integer range 31 downto 0;
     type bitpos_global_t            is array (5 downto 0) of integer range 1000 downto 0; -- TODO: how to max(MP_CONFIG_REGS_LENGTH) in vhdl ?
@@ -42,7 +43,7 @@ architecture RTL of mupix_ctrl_config_storage is
     signal enable_prev              : std_logic_vector(5 downto 0);
 begin
 
-
+    fifo_clear <= i_clr_all or (not i_reset_n);
 
     process(i_clk, i_reset_n)
     begin
@@ -52,6 +53,7 @@ begin
             bitpos_global   <= (others => 0);
             is_writing      <= (others => '0');
             o_is_writing    <= (others => '0');
+            o_data          <= (others => '0');
 
         elsif(rising_edge(i_clk))then
             enable_prev <= i_enable;
@@ -94,7 +96,7 @@ begin
         )
         port map (
             clock           => i_clk,
-            sclr            => i_clr_all or (not i_reset_n),
+            sclr            => fifo_clear,
             data            => i_data(I*32 + 31 downto I*32),
             wrreq           => i_wrreq(I),
             q               => data_buffer(I*32 + 31 downto I*32),

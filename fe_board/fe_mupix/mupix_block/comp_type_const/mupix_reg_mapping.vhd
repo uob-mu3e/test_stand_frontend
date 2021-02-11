@@ -54,6 +54,7 @@ begin
     begin
         if (i_reset_n = '0') then 
             mp_datagen_control        <= (others => '0');
+            o_mp_ctrl_enable          <= (others => '0');
             
         elsif(rising_edge(i_clk156)) then
 

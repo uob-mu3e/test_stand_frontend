@@ -49,6 +49,7 @@ architecture RTL of mupix_ctrl is
     signal config_data29            : std_logic_vector(28 downto 0);
 
     signal slow_down                : std_logic_vector(15 downto 0);
+    signal slow_down_buf            : std_logic_vector(31 downto 0);
     signal wait_cnt                 : std_logic_vector(15 downto 0);
     type mp_ctrl_state_type         is (idle, load_config, set_clks, writing, ld_spi_reg);
     signal mp_ctrl_state            : mp_ctrl_state_type;
@@ -61,8 +62,9 @@ architecture RTL of mupix_ctrl is
 
 begin
 
+    slow_down <= slow_down_buf(15 downto 0);
 
-    e_mupix_reg_mapping : work.mupix_reg_mapping
+    e_mupix_reg_mapping : entity work.mupix_reg_mapping
     port map (
         i_clk156                    => i_clk,
         i_reset_n                   => i_reset_n,
@@ -81,10 +83,10 @@ begin
         o_mp_fifo_clear             => mp_fifo_clear,
         o_mp_ctrl_enable            => enable_shift_reg_6,
         o_mp_ctrl_chip_config_mask  => chip_select_mask,
-        o_mp_ctrl_slow_down(15 downto 0) => slow_down--,
+        o_mp_ctrl_slow_down         => slow_down_buf--,
     );
 
-    e_mupix_ctrl_config_storage : work.mupix_ctrl_config_storage
+    e_mupix_ctrl_config_storage : entity work.mupix_ctrl_config_storage
     port map(
         i_clk                       => i_clk,
         i_reset_n                   => i_reset_n,
