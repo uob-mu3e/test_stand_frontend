@@ -196,20 +196,34 @@ architecture arch of fe_block_v2 is
     signal SPI_rw                   : std_logic;
 
 
-        signal         max_spi_strobe      : std_logic;
-    signal         max_spi_addr        : std_logic_vector(6 downto 0);
-    signal         max_spi_rw          : std_logic;    
-    signal         max_spi_data_to_max : std_logic_vector(31 downto 0);
-    signal         max_spi_numbytes    : std_logic_vector(7 downto 0);
-    signal         max_spi_next_data   : std_logic;
-    signal         max_spi_word_from_max : std_logic_vector(31 downto 0);
-    signal         max_spi_word_en       : std_logic;
-    signal         max_spi_byte_from_max : std_logic_vector(7 downto 0);
-    signal         max_spi_byte_en       : std_logic;
-    signal         max_spi_busy          : std_logic;
+    signal max_spi_strobe           : std_logic;
+    signal max_spi_addr             : std_logic_vector(6 downto 0);
+    signal max_spi_rw               : std_logic;    
+    signal max_spi_data_to_max      : std_logic_vector(31 downto 0);
+    signal max_spi_numbytes         : std_logic_vector(7 downto 0);
+    signal max_spi_next_data        : std_logic;
+    signal max_spi_word_from_max    : std_logic_vector(31 downto 0);
+    signal max_spi_word_en          : std_logic;
+    signal max_spi_byte_from_max    : std_logic_vector(7 downto 0);
+    signal max_spi_byte_en          : std_logic;
+    signal max_spi_busy             : std_logic;
 
-    signal         max_spi_counter      : integer;
-    signal         max10_version        :  std_logic_vector(31 downto 0);
+    signal max_spi_counter          : integer;
+    signal max10_version            : reg32;
+    signal max10_status             : reg32;
+    signal max10adc01               : reg32;
+    signal max10adc23               : reg32;
+    signal max10adc45               : reg32;
+    signal max10adc67               : reg32;
+    signal max10_spiflash_cmdaddr   : reg32;
+
+    type max_spi_state_t is (idle, programming, maxversion, maxstatus, maxadc);
+    signal max_spi_state :   max_spi_state_t;  
+    signal program_req :   std_logic;
+
+
+
+    signal wordcounter : integer;
 
 begin
 
@@ -641,26 +655,71 @@ begin
         );
 
 
+
+    program_req <= '0';
+
     process(i_nios_clk, nios_reset_n)
     begin
     if(nios_reset_n = '0')then
         max_spi_strobe <= '0';
-        max_spi_counter  <= 1;
+        max_spi_counter  <= 0;
+        max_spi_state    <= idle;
     elsif(i_nios_clk'event and i_nios_clk = '1')then
         max_spi_counter <= max_spi_counter + 1;
         max_spi_strobe <= '0';
-        if(max_spi_counter > 5000000) then
-            max_spi_counter <= 0;
+        case max_spi_state is
+        when idle =>
+            if(program_req = '1') then
+                max_spi_state <= programming;
+            elsif(max_spi_counter > 5000000) then
+                max_spi_state <= maxversion;
+                max_spi_counter <= 0;
+            end if;    
+        when programming =>
+            if(program_req = '0') then
+                max_spi_state <= idle;
+            end if;    
+        when maxversion => 
             max_spi_addr    <= FEBSPI_ADDR_GITHASH;
             max_spi_numbytes <= "00000100";
             max_spi_strobe   <= '1';
-        end if;
-        if(max_spi_word_en = '1') then
-            max10_version   <= max_spi_word_from_max;
-				max_spi_addr <= (others => '0');
-				max_spi_numbytes <= (others => '0');
-				max_spi_rw   <= '0';
-        end if;
+            if(max_spi_word_en = '1') then
+                max10_version   <= max_spi_word_from_max;
+                max_spi_strobe   <= '0';
+                max_spi_state    <= maxstatus;
+            end if;
+        when maxstatus => 
+            max_spi_addr    <= FEBSPI_ADDR_STATUS;
+            max_spi_numbytes <= "00000100";
+            max_spi_strobe   <= '1';
+            if(max_spi_word_en = '1') then
+                max10_status   <= max_spi_word_from_max;
+                max_spi_strobe   <= '0';
+                max_spi_state    <= maxstatus;
+                wordcounter      <= 0;
+            end if;   
+        when maxadc =>
+            max_spi_addr    <= FEBSPI_ADDR_ADCDATA;
+            max_spi_numbytes <= "00010000";
+            max_spi_strobe   <= '1';   
+            if(max_spi_word_en = '1') then
+                wordcounter <= wordcounter + 1;
+                if(wordcounter = 0) then
+                    max10adc01   <= max_spi_word_from_max;
+                elsif(wordcounter = 1) then
+                    max10adc23   <= max_spi_word_from_max;
+                elsif(wordcounter = 3) then
+                    max10adc45   <= max_spi_word_from_max; 
+                elsif(wordcounter > 3) then
+                    max10adc67   <= max_spi_word_from_max; 
+                    max_spi_strobe   <= '0';
+                    max_spi_state    <= idle;
+                end if;
+            end if;    
+        when others =>
+            max_spi_state <= idle;     
+            max_spi_strobe <= '0';
+        end case;
     end if;
     end process;
 

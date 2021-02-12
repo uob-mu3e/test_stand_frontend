@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 #include <array>
-#include <map>
 
 #include <sys/ioctl.h>
 
@@ -52,11 +51,6 @@ namespace mudaq {
             virtual uint32_t read_memory_ro(unsigned idx) const;
             virtual uint32_t read_memory_rw(unsigned idx) const;
             virtual void write_memory_rw(unsigned idx, uint32_t value);
-
-            virtual int FEBsc_write(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
-            virtual int FEBsc_read(uint32_t FPGA_ID, uint32_t* data, uint16_t length, uint32_t startaddr);
-            
-            
             
         private:
             const std::string _path;
@@ -64,8 +58,6 @@ namespace mudaq {
             uint32_t _regs_ro[64] = {};
             uint32_t _mem_ro[64*1024] = {};
             uint32_t _mem_rw[64*1024] = {};
-
-            map<uint32_t, array<uint32_t,256>> scmems;
 
             uint16_t  _last_read_address; // for reading command of slow control
             
