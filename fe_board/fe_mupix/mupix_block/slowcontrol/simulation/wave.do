@@ -33,6 +33,7 @@ add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/bitpos
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/bitpos_global
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/is_writing
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/enable_prev
+add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/data_buffer
 add wave -noupdate /mupix_ctrl_tb/clock
 add wave -noupdate /mupix_ctrl_tb/mosi
 add wave -noupdate /mupix_ctrl_tb/csn

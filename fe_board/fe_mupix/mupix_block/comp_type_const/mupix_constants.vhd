@@ -74,6 +74,6 @@ subtype TSINBLOCKINFIFORANGE    is integer range TSINFIFORANGE'right+BITSPERTSBL
 -----------------------------------------------------------
 
 type mp_config_regs_length_t    is array (5 downto 0) of integer;
-constant MP_CONFIG_REGS_LENGTH  : mp_config_regs_length_t := (210, 90, 80, 889, 889, 508); -- TODO: check order, assuming bias conf vdac col test tdac here
+constant MP_CONFIG_REGS_LENGTH  : mp_config_regs_length_t := (508, 889, 889, 80, 90, 210); -- TODO: check order, assuming bias conf vdac col test tdac here
 
 end package mupix_constants;

@@ -47,9 +47,12 @@ architecture RTL of mupix_ctrl is
     signal rd_config                : std_logic;
     signal config_data              : std_logic_vector(5 downto 0);
     signal config_data29            : std_logic_vector(28 downto 0);
+    signal config_data29_raw        : std_logic_vector(28 downto 0);
 
     signal slow_down                : std_logic_vector(15 downto 0);
     signal slow_down_buf            : std_logic_vector(31 downto 0);
+    signal invert_29_bitpos         : std_logic;
+    signal invert_csn               : std_logic;
     signal wait_cnt                 : std_logic_vector(15 downto 0);
     type mp_ctrl_state_type         is (idle, load_config, set_clks, writing, ld_spi_reg);
     signal mp_ctrl_state            : mp_ctrl_state_type;
@@ -83,6 +86,8 @@ begin
         o_mp_fifo_clear             => mp_fifo_clear,
         o_mp_ctrl_enable            => enable_shift_reg_6,
         o_mp_ctrl_chip_config_mask  => chip_select_mask,
+        o_mp_ctrl_invert_29         => invert_29_bitpos,
+        o_mp_ctrl_invert_csn        => invert_csn,
         o_mp_ctrl_slow_down         => slow_down_buf--,
     );
 
@@ -101,14 +106,16 @@ begin
         i_rdreq                     => rd_config--,
     );
 
+    gen: for I in 0 to 28 generate
+        config_data29(I) <= config_data29_raw(28-I) when invert_29_bitpos = '1' else config_data29_raw(I);
+    end generate;
 
     process(i_clk, i_reset_n)
-        variable extra_round           : std_logic := '0';
     begin
         if(i_reset_n = '0')then
             wait_cnt                <= (others => '0');
             mp_ctrl_state           <= idle;
-            config_data29           <= (others => '0');
+            config_data29_raw       <= (others => '0');
             is_writing_this_round   <= (others => '0');
             clk1                    <= (others => '0');
             clk2                    <= (others => '0');
@@ -123,13 +130,16 @@ begin
             wait_cnt    <= wait_cnt + 1;
             o_mosi      <= (others => spi_dout);
             o_clock     <= (others => spi_clk);
-            o_csn       <= chip_select_n;
+            if(invert_csn = '1') then 
+                o_csn       <= not chip_select_n;
+            else
+                o_csn       <= chip_select_n;
+            end if;
 
             ld_regs(WR_CONF_BIT) <= '1'; -- bug in mp10, load config stays at 1#
 
             case mp_ctrl_state is
                 when idle =>
-                    extra_round         := '0';
                     
                     if(or_reduce(is_writing) = '1') then
                         mp_ctrl_state   <= load_config;
@@ -139,17 +149,20 @@ begin
 
                 when load_config =>
                     chip_select_n                   <= (others => '1');
-                    config_data29                   <= (others => '0');
+                    config_data29_raw               <= (19 => '1', others => '0'); -- load conf bit bug in mupix10
                     clk_step                        <= (others => '0');
-                    extra_round                     := '0';
                     if(wait_cnt = x"0001") then
                         for I in 0 to 5 loop
-                            config_data29(I*3)      <= config_data(I); -- TODO: check order !!
+                            config_data29_raw(I*3)  <= config_data(I); -- TODO: check order !!
                         end loop;
                         is_writing_this_round       <= is_writing;
                         mp_ctrl_state               <= set_clks;
                     end if;
-
+                            if(invert_29_bitpos = '1') then 
+                                
+                            else
+                            
+                            end if;
                 when set_clks =>
                     clk_step    <= clk_step + 1;
                     for I in 0 to 5 loop
@@ -157,53 +170,51 @@ begin
                             -- clocks (1.step 0 0, 2.step 1 0, 3.step 0 0, 4.step 0 1, 5.step 0 0)
                             case clk_step is
                                 when x"0" => 
-                                    config_data29(I*3 + 1) <= '0';
-                                    config_data29(I*3 + 2) <= '0';
+                                    config_data29_raw(I*3 + 1) <= '0';
+                                    config_data29_raw(I*3 + 2) <= '0';
                                 when x"1" => 
-                                    config_data29(I*3 + 1) <= '1';
-                                    config_data29(I*3 + 2) <= '0';
+                                    config_data29_raw(I*3 + 1) <= '1';
+                                    config_data29_raw(I*3 + 2) <= '0';
                                 when x"2" => 
-                                    config_data29(I*3 + 1) <= '0';
-                                    config_data29(I*3 + 2) <= '0';
+                                    config_data29_raw(I*3 + 1) <= '0';
+                                    config_data29_raw(I*3 + 2) <= '0';
                                 when x"3" => 
-                                    config_data29(I*3 + 1) <= '0';
-                                    config_data29(I*3 + 2) <= '1';
+                                    config_data29_raw(I*3 + 1) <= '0';
+                                    config_data29_raw(I*3 + 2) <= '1';
                                 when x"4" => 
-                                    config_data29(I*3 + 1) <= '0';
-                                    config_data29(I*3 + 2) <= '0';
+                                    config_data29_raw(I*3 + 1) <= '0';
+                                    config_data29_raw(I*3 + 2) <= '0';
                                 when x"5" =>
                                     if(is_writing(I)='0') then -- finished writing the complete reg this round --> additional load round
-                                        config_data29(I + 18) <= '1'; -- set ld bit
-                                        extra_round           := '1';
+                                        config_data29_raw(18 + I) <= '1'; -- set ld bit
                                     end if;
                                 when others =>
                                     
                             end case;
                         else
-                            config_data29(I*3 + 1) <= '0';
-                            config_data29(I*3 + 2) <= '0';
+                            config_data29_raw(I*3 + 1) <= '0';
+                            config_data29_raw(I*3 + 2) <= '0';
                         end if;
                     end loop;
 
-                    --if((extra_round = '1' or clk_step/=x"5") and (not clk_step=x"6")) then
-                    if(clk_step=x"0" or clk_step=x"1" or clk_step=x"2" or clk_step=x"3" or clk_step=x"4") then
-                        mp_ctrl_state <= writing;
-                        wait_cnt      <= (others => '0');
-                    end if;
-                    
-                    if(extra_round = '0' and clk_step=x"5") then 
+                    if(or_reduce(is_writing)='1' and clk_step=x"5") then -- next bit
                         mp_ctrl_state <= load_config;
                         rd_config     <= '1';
                         wait_cnt      <= (others => '0');
                     end if;
-                    
-                    if(extra_round = '1' and clk_step=x"5") then 
+
+                    if(or_reduce(is_writing)='0') then -- done
+                        mp_ctrl_state <= idle;
+                    end if;
+ 
+                    if(or_reduce(is_writing)='0' and clk_step=x"5") then -- extra round for load
                         mp_ctrl_state <= writing;
                         wait_cnt      <= (others => '0');
                     end if;
-                    
-                    if(or_reduce(is_writing)='0') then -- done
-                        mp_ctrl_state <= idle;
+
+                    if(clk_step=x"0" or clk_step=x"1" or clk_step=x"2" or clk_step=x"3" or clk_step=x"4") then -- writing
+                        mp_ctrl_state <= writing;
+                        wait_cnt      <= (others => '0');
                     end if;
 
                 when writing =>

@@ -63,7 +63,7 @@ begin
             for I in 0 to 5 loop
                 if(i_rdreq='1') then
                     if(is_writing(I)='1') then
-                        o_data(I)           <= data_buffer(I*32+bitpos(I));
+                        o_data(I)           <= data_buffer((I+1)*32-1-bitpos(I)); -- TODO: leave this invert here ?, makes live easier in software at the moment M.Mueller FEB2021
                         bitpos_global(I)    <= bitpos_global(I)+1;
                         if(bitpos(I)=31) then
                             bitpos(I)       <= 0;

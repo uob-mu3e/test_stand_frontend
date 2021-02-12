@@ -36,6 +36,8 @@ port (
     o_mp_fifo_clear             : out std_logic;
     o_mp_ctrl_enable            : out std_logic_vector( 5 downto 0);
     o_mp_ctrl_chip_config_mask  : out std_logic_vector(11 downto 0);
+    o_mp_ctrl_invert_29         : out std_logic;
+    o_mp_ctrl_invert_csn        : out std_logic;
     o_mp_ctrl_slow_down         : out std_logic_vector(31 downto 0)--;
 );
 end entity;
@@ -47,6 +49,8 @@ architecture rtl of mupix_reg_mapping is
     signal mp_lvds_data_valid       : std_logic_vector(35 downto 0);
     signal mp_ctrl_slow_down        : std_logic_vector(31 downto 0);
     signal mp_ctrl_chip_config_mask : std_logic_vector(31 downto 0);
+    signal mp_ctrl_invert_29        : std_logic;
+    signal mp_ctrl_invert_csn       : std_logic;
 begin
 
     process (i_clk156, i_reset_n)
@@ -65,6 +69,8 @@ begin
             mp_lvds_data_valid          <= i_lvds_data_valid;
             o_mp_ctrl_slow_down         <= mp_ctrl_slow_down;
             o_mp_ctrl_chip_config_mask  <= mp_ctrl_chip_config_mask(11 downto 0);
+            o_mp_ctrl_invert_29         <= mp_ctrl_invert_29;
+            o_mp_ctrl_invert_csn        <= mp_ctrl_invert_csn;
 
             regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
             o_reg_rdata         <= x"CCCCCCCC";
@@ -116,6 +122,15 @@ begin
             end if;
             if ( regaddr = MP_CTRL_CHIP_MASK_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata <= mp_ctrl_chip_config_mask;
+            end if;
+
+            if ( regaddr = MP_CTRL_INVERT_REGISTER_W and i_reg_we = '1' ) then
+                mp_ctrl_invert_29   <= i_reg_wdata(MP_CTRL_INVERT_29_BIT);
+                mp_ctrl_invert_csn  <= i_reg_wdata(MP_CTRL_INVERT_CSN_BIT);
+            end if;
+            if ( regaddr = MP_CTRL_INVERT_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata(MP_CTRL_INVERT_29_BIT)  <= mp_ctrl_invert_29;
+                o_reg_rdata(MP_CTRL_INVERT_CSN_BIT) <= mp_ctrl_invert_csn;
             end if;
 
             -----------------------------------------------------------------
