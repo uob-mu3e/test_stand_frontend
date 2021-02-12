@@ -196,20 +196,34 @@ architecture arch of fe_block_v2 is
     signal SPI_rw                   : std_logic;
 
 
-        signal         max_spi_strobe      : std_logic;
-    signal         max_spi_addr        : std_logic_vector(6 downto 0);
-    signal         max_spi_rw          : std_logic;    
-    signal         max_spi_data_to_max : std_logic_vector(31 downto 0);
-    signal         max_spi_numbytes    : std_logic_vector(7 downto 0);
-    signal         max_spi_next_data   : std_logic;
-    signal         max_spi_word_from_max : std_logic_vector(31 downto 0);
-    signal         max_spi_word_en       : std_logic;
-    signal         max_spi_byte_from_max : std_logic_vector(7 downto 0);
-    signal         max_spi_byte_en       : std_logic;
-    signal         max_spi_busy          : std_logic;
+    signal max_spi_strobe           : std_logic;
+    signal max_spi_addr             : std_logic_vector(6 downto 0);
+    signal max_spi_rw               : std_logic;    
+    signal max_spi_data_to_max      : std_logic_vector(31 downto 0);
+    signal max_spi_numbytes         : std_logic_vector(7 downto 0);
+    signal max_spi_next_data        : std_logic;
+    signal max_spi_word_from_max    : std_logic_vector(31 downto 0);
+    signal max_spi_word_en          : std_logic;
+    signal max_spi_byte_from_max    : std_logic_vector(7 downto 0);
+    signal max_spi_byte_en          : std_logic;
+    signal max_spi_busy             : std_logic;
 
-    signal         max_spi_counter      : integer;
-    signal         max10_version        :  std_logic_vector(31 downto 0);
+    signal max_spi_counter          : integer;
+    signal max10_version            : reg32;
+    signal max10_status             : reg32;
+    signal max10adc01               : reg32;
+    signal max10adc23               : reg32;
+    signal max10adc45               : reg32;
+    signal max10adc67               : reg32;
+    signal max10_spiflash_cmdaddr   : reg32;
+
+    type max_spi_state_t is (idle, programming, maxversion, maxstatus, maxadc);
+    signal max_spi_state :   max_spi_state_t;  
+    signal program_req :   std_logic;
+
+
+
+    signal wordcounter : integer;
 
 begin
 
@@ -641,17 +655,8 @@ begin
         );
 
 
-    type max_spi_state_t is (idle, programming, maxversion, maxstatus, maxadc);
-    signal max_spi_state :   max_spi_state_t;  
-    signal programm_req :   std_logic;
 
-    signal max10_status : reg32;
-    signal max10adc01   : reg32;
-    signal max10adc23   : reg32;
-    signal max10adc45   : reg32;
-    signal max10adc67   : reg32;
-
-    signal wordcounter : integer;
+    program_req <= '0';
 
     process(i_nios_clk, nios_reset_n)
     begin
