@@ -176,6 +176,10 @@ architecture RTL of spi_arria is
                 datareadshiftregister <= data_to_arria;
                 next_data         <= '1';
             end if;
+				
+				if(haveread = '1' and nibblecount mod 2 = 1 and nibblecount > 1)then
+                addroffset_int          <= addroffset_int + 1;
+            end if;
 
             if(csn_reg = '1') then
                 spistate <= idle;

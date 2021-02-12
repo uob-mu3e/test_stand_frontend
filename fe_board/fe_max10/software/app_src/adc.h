@@ -107,14 +107,14 @@ struct adc_t {
         }
     }
 
-    
     void start_adc_sequencer() {
         adc_interrupt_disable(ADC_SAMPLE_STORE_CSR_BASE);
         adc_set_mode_run_continuously(ADC_SEQUENCER_CSR_BASE);
         adc_start(ADC_SEQUENCER_CSR_BASE);
     }
-    
 
 };
+
+
 
 #endif // __ADC_H__

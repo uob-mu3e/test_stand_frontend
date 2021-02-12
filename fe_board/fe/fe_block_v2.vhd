@@ -215,6 +215,7 @@ architecture arch of fe_block_v2 is
     signal max10adc23               : reg32;
     signal max10adc45               : reg32;
     signal max10adc67               : reg32;
+    signal max10adc89               : reg32;	 
     signal max10_spiflash_cmdaddr   : reg32;
 
     type max_spi_state_t is (idle, programming, maxversion, statuswait, maxstatus, adcwait, maxadc, endwait);
@@ -712,7 +713,7 @@ begin
 				end if;
         when maxadc =>
             max_spi_addr    <= FEBSPI_ADDR_ADCDATA;
-            max_spi_numbytes <= "00010000";
+            max_spi_numbytes <= "00010100";
             max_spi_strobe   <= '1';   
             if(max_spi_word_en = '1') then
                 wordcounter <= wordcounter + 1;
@@ -722,8 +723,10 @@ begin
                     max10adc23   <= max_spi_word_from_max;
                 elsif(wordcounter = 2) then
                     max10adc45   <= max_spi_word_from_max; 
-                elsif(wordcounter > 2) then
-                    max10adc67   <= max_spi_word_from_max; 
+					 elsif(wordcounter = 3) then
+                    max10adc67   <= max_spi_word_from_max; 						  	  
+                elsif(wordcounter > 3) then
+                    max10adc89   <= max_spi_word_from_max; 
                     max_spi_strobe   <= '0';
                     max_spi_state    <= endwait;
                 end if;
