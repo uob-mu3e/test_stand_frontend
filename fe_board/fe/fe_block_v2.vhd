@@ -217,7 +217,7 @@ architecture arch of fe_block_v2 is
     signal max10adc67               : reg32;
     signal max10_spiflash_cmdaddr   : reg32;
 
-    type max_spi_state_t is (idle, programming, maxversion, maxstatus, maxadc);
+    type max_spi_state_t is (idle, programming, maxversion, statuswait, maxstatus, adcwait, maxadc, endwait);
     signal max_spi_state :   max_spi_state_t;  
     signal program_req :   std_logic;
 
@@ -661,12 +661,16 @@ begin
     process(i_nios_clk, nios_reset_n)
     begin
     if(nios_reset_n = '0')then
-        max_spi_strobe <= '0';
+        max_spi_strobe 	 <= '0';
         max_spi_counter  <= 0;
         max_spi_state    <= idle;
+		  max_spi_numbytes <= "00000000";
+		  max_spi_rw		 <= '0';
     elsif(i_nios_clk'event and i_nios_clk = '1')then
         max_spi_counter <= max_spi_counter + 1;
         max_spi_strobe <= '0';
+		  max_spi_rw		 <= '0';
+		  
         case max_spi_state is
         when idle =>
             if(program_req = '1') then
@@ -686,8 +690,12 @@ begin
             if(max_spi_word_en = '1') then
                 max10_version   <= max_spi_word_from_max;
                 max_spi_strobe   <= '0';
-                max_spi_state    <= maxstatus;
+                max_spi_state    <= statuswait;
             end if;
+		  when statuswait =>
+				if(max_spi_busy = '0')then
+					max_spi_state    <= maxstatus;
+				end if;
         when maxstatus => 
             max_spi_addr    <= FEBSPI_ADDR_STATUS;
             max_spi_numbytes <= "00000100";
@@ -695,9 +703,13 @@ begin
             if(max_spi_word_en = '1') then
                 max10_status   <= max_spi_word_from_max;
                 max_spi_strobe   <= '0';
-                max_spi_state    <= maxstatus;
+                max_spi_state    <= adcwait;
                 wordcounter      <= 0;
-            end if;   
+            end if;  
+		  when adcwait =>
+				if(max_spi_busy = '0')then
+					max_spi_state    <= maxadc;
+				end if;
         when maxadc =>
             max_spi_addr    <= FEBSPI_ADDR_ADCDATA;
             max_spi_numbytes <= "00010000";
@@ -708,14 +720,18 @@ begin
                     max10adc01   <= max_spi_word_from_max;
                 elsif(wordcounter = 1) then
                     max10adc23   <= max_spi_word_from_max;
-                elsif(wordcounter = 3) then
+                elsif(wordcounter = 2) then
                     max10adc45   <= max_spi_word_from_max; 
-                elsif(wordcounter > 3) then
+                elsif(wordcounter > 2) then
                     max10adc67   <= max_spi_word_from_max; 
                     max_spi_strobe   <= '0';
-                    max_spi_state    <= idle;
+                    max_spi_state    <= endwait;
                 end if;
-            end if;    
+            end if;
+			when endwait =>
+				if(max_spi_busy = '0')then
+					max_spi_state    <= idle;
+				end if;	
         when others =>
             max_spi_state <= idle;     
             max_spi_strobe <= '0';
