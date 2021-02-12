@@ -29,22 +29,55 @@ struct mupix_t {
         sc->ram->data[0xFF48]=0;
         
         // invert csn ? --> set bit 0 to 1
-        // invert 29 bit shift reg order ? --> set bit 1 to 1
-        sc->ram->data[0xFF49]=0;
+        // invert 29 bit shift reg order ? (no sure if i took the correct one in firmware) --> set bit 1 to 1
+        sc->ram->data[0xFF49]=0x00000000;
         
         // write data for the  complete BIAS reg into FEB storage
-        sc->ram->data[0xFF41]=0xD1AFB54D;
-        sc->ram->data[0xFF41]=0xAB75183F;
-        sc->ram->data[0xFF41]=0x12345678;
-        sc->ram->data[0xFF41]=0xD1AFB54D;
-        sc->ram->data[0xFF41]=0xAB75183F;
-        sc->ram->data[0xFF41]=0x12345678;
-        sc->ram->data[0xFF41]=0xD1AFB54D;
+
+        sc->ram->data[0xFF41]=0x2A000A03;
+        sc->ram->data[0xFF41]=0xFA3F002F;
+        sc->ram->data[0xFF41]=0x1E041041;
+        sc->ram->data[0xFF41]=0x041E9A51;
+        sc->ram->data[0xFF41]=0x40280000;
+        sc->ram->data[0xFF41]=0x1400C20A;
+        sc->ram->data[0xFF41]=0x028A0000;
         
         // enable signal for BIAS reg
         sc->ram->data[0xFF40]=1;
         sc->ram->data[0xFF40]=0;
-        // now you should see stuff happening on the Pins
+        usleep(0.1); // dont need this, but i have not simulated simultanious write at the moment
+        
+        //write conf defaults
+        sc->ram->data[0xFF41]=0x001F0002;
+        sc->ram->data[0xFF41]=0x08380000;
+        sc->ram->data[0xFF41]=0xFC05F000;
+        sc->ram->data[0xFF40]=2;
+        sc->ram->data[0xFF40]=0;
+        usleep(0.1);
+        
+        // write vdac defaults
+        sc->ram->data[0xFF43]=0x00720000;
+        sc->ram->data[0xFF43]=0x4C000047;
+        sc->ram->data[0xFF43]=0x00000000;
+        sc->ram->data[0xFF40]=4;
+        sc->ram->data[0xFF40]=0;
+        usleep(0.1);
+        
+        // zero the rest
+        sc->ram->data[0xFF44]=0x00000000;
+        sc->ram->data[0xFF40]=8;
+        sc->ram->data[0xFF40]=0;
+        usleep(0.1);
+        sc->ram->data[0xFF44]=0x00000000;
+        sc->ram->data[0xFF40]=16;
+        sc->ram->data[0xFF40]=0;
+        usleep(0.1);
+        sc->ram->data[0xFF44]=0x00000000;
+        sc->ram->data[0xFF40]=32;
+        sc->ram->data[0xFF40]=0;
+        usleep(0.1);
+        
+        
         return;
     }
 
