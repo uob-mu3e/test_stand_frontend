@@ -20,7 +20,7 @@ architecture TB of link_merger_tb is
     
     -- links and datageneration
     -- use 38 links but mask last 2 since only 34 are in use
-    constant NLINKS_TOTL : integer := 34;
+    constant NLINKS_TOTL : integer := 4;
     constant LINK_FIFO_ADDR_WIDTH : integer := 10;
     
     signal link_data : std_logic_vector(NLINKS_TOTL * 32 - 1 downto 0);
@@ -35,6 +35,7 @@ architecture TB of link_merger_tb is
     signal datak_scifi_generated : std_logic_vector(3 downto 0);
     signal datak_pix_generated : std_logic_vector(3 downto 0);
     signal we_counter : std_logic_vector(31 downto 0);
+    signal stream_rempty : std_logic;
 
     -- clk period
     constant dataclk_period : time := 4 ns;
@@ -45,6 +46,10 @@ begin
     slow_down <= x"00000002";
 
     e_data_gen_mupix : entity work.data_generator_a10
+    generic map (
+        go_to_trailer => 4,
+        go_to_sh => 3--,
+    )
     port map(
         clk => dataclk,
         reset => reset,
@@ -60,6 +65,10 @@ begin
     );
     
     e_data_gen_scifi : entity work.data_generator_a10
+    generic map (
+        go_to_trailer => 4,
+        go_to_sh => 3--,
+    )
     port map(
         clk => dataclk,
         reset => reset,
@@ -75,6 +84,10 @@ begin
     );
     
     e_data_gen_tiles : entity work.data_generator_a10
+    generic map (
+        go_to_trailer => 4,
+        go_to_sh => 3--,
+    )
     port map(
         clk => dataclk,
         reset => reset,
@@ -100,7 +113,8 @@ begin
                  data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated & data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated when NLINKS_TOTL = 32 else 
                  data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated & data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated &
                  data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated & data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated when NLINKS_TOTL = 16 else 
-                 data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated & data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated;
+                 data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated & data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated when NLINKS_TOTL = 8 else 
+                 data_pix_generated & data_scifi_generated & data_tiles_generated & data_pix_generated;
     link_datak <= datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & 
                   datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & 
                   datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & 
@@ -112,14 +126,16 @@ begin
                   datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated when NLINKS_TOTL = 32 else
                   datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & 
                   datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated when NLINKS_TOTL = 16 else 
-                  datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated;
+                  datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated & datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated when NLINKS_TOTL = 8 else 
+                  datak_pix_generated & datak_scifi_generated & datak_tiles_generated & datak_pix_generated;
                   
 --     link_mask_n <= "1101110111011101110111011101110111";
---     link_mask_n <= "1111111111111111111111111111111111";
-        link_mask_n <= "1111111111111111111111111111111111";
+    --link_mask_n <= "11111111111111111111111111111111";
+        --link_mask_n <= "1111111111111111111111111111111111";
 --     link_mask_n <= "1111111111111111";
 --     link_mask_n <= "11011101";
 --     link_mask_n <= "11111111";
+    link_mask_n <= "1111";
     
     e_link_merger : entity work.link_merger
     generic map(
@@ -138,8 +154,8 @@ begin
 		i_link_mask_n => link_mask_n,
 		
 		o_stream_rdata => open,
-		o_stream_rempty => open,
-		i_stream_rack => '1'--,
+		o_stream_rempty => stream_rempty,
+		i_stream_rack => not stream_rempty--,
     );
 
 	--dataclk

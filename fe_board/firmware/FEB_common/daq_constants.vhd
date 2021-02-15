@@ -61,6 +61,7 @@ constant RUN_STATE_LINK_TEST   : run_state_t := (RUN_STATE_BITPOS_LINK_TEST    =
 constant RUN_STATE_SYNC_TEST   : run_state_t := (RUN_STATE_BITPOS_SYNC_TEST    => '1', others =>'0');
 constant RUN_STATE_RESET       : run_state_t := (RUN_STATE_BITPOS_RESET        => '1', others =>'0');
 constant RUN_STATE_OUT_OF_DAQ  : run_state_t := (RUN_STATE_BITPOS_OUT_OF_DAQ   => '1', others =>'0');
+constant RUN_STATE_UNDEFINED   : run_state_t := (others =>'0');
 
 type feb_run_state is (
     idle,
@@ -119,5 +120,21 @@ constant MERGER_TIMEOUT_DATAK           : std_logic_vector(3 downto 0)      := "
 constant MERGER_FIFO_RUN_END_MARKER     : std_logic_vector(3 downto 0)      := "0111";
 constant MERGER_FIFO_PAKET_END_MARKER   : std_logic_vector(3 downto 0)      := "0011";
 constant MERGER_FIFO_PAKET_START_MARKER : std_logic_vector(3 downto 0)      := "0010";
+
+-- FEB Arria-MAX SPI addresses
+constant FEBSPI_ADDR_GITHASH            : std_logic_vector(6 downto 0)      := "0000000";
+constant FEBSPI_ADDR_WRITENABLE         : std_logic_vector(6 downto 0)      := "0000001";
+constant FEBSPI_PATTERN_WRITENABLE      : std_logic_vector(7 downto 0)      := X"A3";
+constant FEBSPI_ADDR_STATUS             : std_logic_vector(6 downto 0)      := "0000010";
+constant FEBSPI_ADDR_CONTROL            : std_logic_vector(6 downto 0)      := "0000011";
+constant FEBSPI_ADDR_RESET              : std_logic_vector(6 downto 0)      := "0000100";
+constant FEBSPI_ADDR_PROGRAMMING_STATUS : std_logic_vector(6 downto 0)      := "0010000";
+constant FEBSPI_ADDR_PROGRAMMING_COUNT  : std_logic_vector(6 downto 0)      := "0010001";
+constant FEBSPI_ADDR_PROGRAMMING_CTRL   : std_logic_vector(6 downto 0)      := "0010010";
+constant FEBSPI_ADDR_PROGRAMMING_ADDR   : std_logic_vector(6 downto 0)      := "0010011";
+constant FEBSPI_ADDR_PROGRAMMING_WFIFO  : std_logic_vector(6 downto 0)      := "0010100";
+constant FEBSPI_ADDR_PROGRAMMING_RFIFO  : std_logic_vector(6 downto 0)      := "0010101";
+constant FEBSPI_ADDR_ADCCTRL            : std_logic_vector(6 downto 0)      := "0100000";
+constant FEBSPI_ADDR_ADCDATA            : std_logic_vector(6 downto 0)      := "0100001";
 
 end package;

@@ -14,6 +14,7 @@ use work.dataflow_components.all;
 
 entity link_merger is
     generic(
+        W : integer := 66;
         NLINKS_TOTL : integer := 3;
         LINK_FIFO_ADDR_WIDTH : integer := 10--;
     );
@@ -28,8 +29,7 @@ entity link_merger is
         i_link_valid : in integer;
         i_link_mask_n : in std_logic_vector(NLINKS_TOTL - 1 downto 0);
 
-        o_stream_rdata : out std_logic_vector(67 downto 0); -- "11" = shop, "10" = eop, "01" = sop, "00" = data
-        o_hit : out std_logic_vector(255 downto 0);
+        o_stream_rdata : out std_logic_vector(W - 1 downto 0); -- "11" = shop, "10" = eop, "01" = sop, "00" = data
         o_stream_rempty : out std_logic;
         i_stream_rack : in std_logic--;
 
@@ -44,7 +44,7 @@ entity link_merger is
         signal link_empty, link_wren, link_full, link_afull, link_wrfull, sop, eop, shop, link_ren : std_logic_vector(NLINKS_TOTL - 1 downto 0);
         signal link_usedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS_TOTL - 1 downto 0);
         
-        signal stream_wdata, stream_rdata : std_logic_vector(67 downto 0);
+        signal stream_wdata, stream_rdata : std_logic_vector(W-1 downto 0);
         signal we_counter : std_logic_vector(63 downto 0);
         signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
         signal hit_a : hit_array_t;
@@ -118,10 +118,11 @@ entity link_merger is
     
     e_time_merger : entity work.time_merger
         generic map (
-        W => 68,
+        W => W,
         N => NLINKS_TOTL--,
     )
     port map (
+        -- input streams
         i_rdata                 => link_dataq,
         i_rsop                  => sop,
         i_reop                  => eop,
@@ -130,21 +131,17 @@ entity link_merger is
         i_link                  => i_link_valid,
         i_mask_n                => i_link_mask_n,
         o_rack                  => link_ren,
-
-        o_wdata                 => stream_wdata,
-        o_hit_out               => hit_a,
-        o_wsop                  => open,
-        o_weop                  => open,
-        i_wfull                 => stream_wfull,
-        o_we                    => stream_we,
-
+        
+        -- output stream
+        o_rdata                 => stream_rdata,
+        i_ren                   => stream_rack,
+        o_empty                 => stream_rempty,
+        
+        -- error outputs
+        
         i_reset_n               => i_reset_mem_n,
         i_clk                   => i_memclk--,
     );
-    
-    gen_o_hit : FOR I in 7 downto 0 GENERATE
-        o_hit(I * 32 + 31 downto I * 32) <= hit_a(I);
-    END GENERATE;
     
     process(i_memclk, i_reset_mem_n)
     begin   
@@ -156,23 +153,6 @@ entity link_merger is
             end if;
         end if;
     end process;
-    
-    e_stream_fifo : entity work.ip_scfifo
-    generic map (
-        ADDR_WIDTH => 10,
-        DATA_WIDTH => 68,
-        DEVICE => "Arria 10"--,
-    )
-    port map (
-        q               => stream_rdata,
-        empty           => stream_rempty,
-        rdreq           => stream_rack,
-        data            => stream_wdata,
-        full            => stream_wfull,
-        wrreq           => stream_we,
-        sclr            => reset_mem,
-        clock           => i_memclk--,
-    );
         
     o_stream_rdata <= stream_rdata;
     o_stream_rempty <= stream_rempty;

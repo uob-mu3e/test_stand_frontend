@@ -2,6 +2,8 @@
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_constants.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_types.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_registers.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_reg_mapping.vhd"]
 
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "data_unpacker/data_unpacker.qip"]
 
@@ -15,3 +17,5 @@ set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "receiver_b
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "sorter/sorter.qip"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mupix_datapath.vhd"]
+
+set_global_assignment -name SDC_FILE [file join $::quartus(qip_path) "mupix.sdc"]
