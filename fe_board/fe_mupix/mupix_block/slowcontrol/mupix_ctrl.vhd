@@ -56,6 +56,8 @@ architecture RTL of mupix_ctrl is
     signal wait_cnt                 : std_logic_vector(15 downto 0);
     type mp_ctrl_state_type         is (idle, load_config, set_clks, writing, ld_spi_reg);
     signal mp_ctrl_state            : mp_ctrl_state_type;
+    type spi_bit_state_type         is (beforepulse, duringpulse, afterpulse);
+    signal spi_bit_state            : spi_bit_state_type;
 
     signal spi_dout                 : std_logic;
     signal spi_clk                  : std_logic;
@@ -209,36 +211,45 @@ begin
  
                     if(or_reduce(is_writing)='0' and clk_step=x"5") then -- extra round for load
                         mp_ctrl_state <= writing;
+                        spi_bit_state <= beforepulse;
                         wait_cnt      <= (others => '0');
                     end if;
 
                     if(clk_step=x"0" or clk_step=x"1" or clk_step=x"2" or clk_step=x"3" or clk_step=x"4") then -- writing
                         mp_ctrl_state <= writing;
+                        spi_bit_state <= beforepulse;
                         wait_cnt      <= (others => '0');
                     end if;
 
                 when writing =>
                     spi_dout                <= config_data29(spi_bitpos);
-                    case spi_clk is
-                        when '0' =>
-                            if(wait_cnt=slow_down) then
-                                spi_clk     <= '1';
-                                wait_cnt    <= (others => '0');
+                    case spi_bit_state is
+                        when beforepulse => 
+                            spi_clk <= '0';
+                            if(wait_cnt(14 downto 0) = slow_down(15 downto 1)) then -- wait_cnt = slow_down/2
+                                wait_cnt        <= (others => '0');
+                                spi_bit_state   <= duringpulse;
                             end if;
-                        when '1' =>
-                            if(wait_cnt=slow_down) then
-                                spi_clk     <= '0';
+                        when duringpulse =>
+                            spi_clk <= '1';
+                            if(wait_cnt = slow_down) then
+                                wait_cnt        <= (others => '0');
+                                spi_bit_state   <= afterpulse;
+                            end if;
+                        when afterpulse =>
+                            spi_clk <= '0';
+                            if(wait_cnt(14 downto 0) = slow_down(15 downto 1)) then -- wait_cnt = slow_down/2
+                                wait_cnt            <= (others => '0');
+                                spi_bit_state       <= beforepulse;
                                 if(spi_bitpos=28) then
                                     mp_ctrl_state   <= ld_spi_reg;
                                     spi_bitpos      <= 0;
-                                    wait_cnt        <= (others => '0');
                                 else
-                                    spi_bitpos  <= spi_bitpos + 1;
-                                    wait_cnt    <= (others => '0');
+                                    spi_bitpos      <= spi_bitpos + 1;
                                 end if;
                             end if;
-                        when others => 
-                            spi_clk <= '0';
+                        when others =>
+                            spi_bit_state <= beforepulse;
                     end case;
 
                 when ld_spi_reg =>
