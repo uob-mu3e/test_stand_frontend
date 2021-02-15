@@ -28,9 +28,9 @@ struct mupix_t {
         // to which mupix chips do you NOT want to write this (bit mask, 0 = write to all mupix)
         sc->ram->data[0xFF48]=0;
         
-        // invert csn ? --> set bit 0 to 1
-        // invert 29 bit shift reg order ? (no sure if i took the correct one in firmware) --> set bit 1 to 1
-        sc->ram->data[0xFF49]=0x00000000;
+        // invert 29 bit shift reg order ? (no sure if i took the correct one in firmware) --> set bit 0 to 1
+        // invert csn ? --> set bit 1 to 1
+        sc->ram->data[0xFF49]=0x00000002;
         
         // write data for the  complete BIAS reg into FEB storage
 
