@@ -48,9 +48,9 @@ struct mupix_t {
         usleep(0.1); // dont need this, but i have not simulated simultanious write at the moment
         
         //write conf defaults
-        sc->ram->data[0xFF41]=0x001F0002;
-        sc->ram->data[0xFF41]=0x08380000;
-        sc->ram->data[0xFF41]=0xFC05F000;
+        sc->ram->data[0xFF42]=0x001F0002;
+        sc->ram->data[0xFF42]=0x08380000;
+        sc->ram->data[0xFF42]=0xFC05F000;
         sc->ram->data[0xFF40]=2;
         sc->ram->data[0xFF40]=0;
         usleep(0.1);
