@@ -22,6 +22,7 @@ add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/wait_cnt
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/ld_regs
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/mp_ctrl_state
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/mp_fifo_clear
+add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/invert_csn
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/i_clr_all
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/i_data
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/i_wrreq
@@ -62,6 +63,10 @@ force -freeze mupix_ctrl_tb/reg_add x"47" -cancel 8ns
 force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
 force -freeze mupix_ctrl_tb/reg_wdata x"00000003" -cancel 8ns
 run 16ns
+force -freeze mupix_ctrl_tb/reg_add x"49" -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"00000002" -cancel 8ns
+run 16ns
 force -freeze mupix_ctrl_tb/reg_add x"48" -cancel 8ns
 force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
 force -freeze mupix_ctrl_tb/reg_wdata x"00000000" -cancel 8ns
@@ -89,5 +94,47 @@ run 40ns
 force -freeze mupix_ctrl_tb/reg_add x"40" -cancel 8ns
 force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
 force -freeze mupix_ctrl_tb/reg_wdata x"00000000" -cancel 8ns
-run 10ms
+run 5ms
+
+force -freeze mupix_ctrl_tb/reg_add x"42" -cancel 80ns
+force -freeze mupix_ctrl_tb/reg_we 1 -cancel 64ns
+force -freeze mupix_ctrl_tb/reg_wdata x"D1AFB54D"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"AB75183F"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"12345678"
+run 80ns
+force -freeze mupix_ctrl_tb/reg_add x"40" -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"00000002" -cancel 8ns
+run 40ns
+force -freeze mupix_ctrl_tb/reg_add x"40" -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"00000000" -cancel 8ns
+run 16ns
+run 100000ns
+force -freeze mupix_ctrl_tb/reg_add x"41" -cancel 80ns
+force -freeze mupix_ctrl_tb/reg_we 1 -cancel 64ns
+force -freeze mupix_ctrl_tb/reg_wdata x"D1AFB54D"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"AB75183F"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"12345678"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"FF10BACE"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"CAFECAFE"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"FEB0FEB1"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"ABCDEF12"
+run 8ns
+force -freeze mupix_ctrl_tb/reg_add x"40" -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"00000001" -cancel 8ns
+run 40ns
+force -freeze mupix_ctrl_tb/reg_add x"40" -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"00000000" -cancel 8ns
+run 4ms
 WaveRestoreZoom 0ns 1000000ns

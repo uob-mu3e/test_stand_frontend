@@ -76,6 +76,7 @@ begin
                 elsif(bitpos_global(I)=MP_CONFIG_REGS_LENGTH(I)) then
                     is_writing(I)           <= '0';
                     bitpos_global(I)        <= 0;
+                    bitpos(I)               <= 0;
                 end if;
 
                 if(enable_prev(I)='0' and i_enable(I)='1') then
