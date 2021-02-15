@@ -107,6 +107,37 @@ struct adc_t {
         }
     }
 
+    void init() {
+        adc_interrupt_disable(ADC_SAMPLE_STORE_CSR_BASE);
+        adc_set_mode_run_once(ADC_SEQUENCER_CSR_BASE);
+
+        if(int err = alt_ic_isr_register(0, 3, callback, this, nullptr)) {
+            printf("[adc] ERROR: alt_ic_isr_register => %d\n", err);
+            return;
+        }
+        adc_interrupt_enable(ADC_SAMPLE_STORE_CSR_BASE);
+
+
+    }
+
+    static void callback(void* context) {
+        alt_u32 adc_data[ADC_SAMPLE_STORE_CSR_CSD_LENGTH];
+        alt_u32	adc_comp_data[5] = {0};
+        alt_adc_word_read(ADC_SAMPLE_STORE_CSR_BASE, adc_data, 
+                ADC_SAMPLE_STORE_CSR_CSD_LENGTH);
+
+        for (int k = 0; k<(ADC_SAMPLE_STORE_CSR_CSD_LENGTH+1)/2; k++){
+            adc_comp_data[k] = (adc_data[2*k] << 16)+adc_data[2*k +1];      
+        }    
+
+        IOWR_ALTERA_AVALON_PIO_DATA(ADC_D0_BASE,(adc_comp_data[0]));
+        IOWR_ALTERA_AVALON_PIO_DATA(ADC_D1_BASE,(adc_comp_data[1]));
+        IOWR_ALTERA_AVALON_PIO_DATA(ADC_D2_BASE,(adc_comp_data[2]));
+        IOWR_ALTERA_AVALON_PIO_DATA(ADC_D3_BASE,(adc_comp_data[3]));
+        IOWR_ALTERA_AVALON_PIO_DATA(ADC_D4_BASE,(adc_comp_data[4]));    
+    }
+
+
     void start_adc_sequencer() {
         adc_interrupt_disable(ADC_SAMPLE_STORE_CSR_BASE);
         adc_set_mode_run_continuously(ADC_SEQUENCER_CSR_BASE);

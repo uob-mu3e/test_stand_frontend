@@ -5,6 +5,9 @@ use ieee.numeric_std.all;
 use work.daq_constants.all;
 use work.feb_sc_registers.all;
 
+LIBRARY altera_mf;
+USE altera_mf.altera_mf_components.all;
+
 entity fe_block_v2 is
 generic (
     feb_mapping : natural_array_t(3 downto 0) := 3&2&1&0;
@@ -210,18 +213,22 @@ architecture arch of fe_block_v2 is
 
     signal max_spi_counter          : integer;
     signal max10_version            : reg32;
-    signal max10_status             : reg32;
-    signal max10adc01               : reg32;
-    signal max10adc23               : reg32;
-    signal max10adc45               : reg32;
-    signal max10adc67               : reg32;
-    signal max10adc89               : reg32;	 
+    signal max10_status             : reg32;	 
     signal max10_spiflash_cmdaddr   : reg32;
 
     type max_spi_state_t is (idle, programming, maxversion, statuswait, maxstatus, adcwait, maxadc, endwait);
     signal max_spi_state :   max_spi_state_t;  
     signal program_req :   std_logic;
 
+    signal programming_status   : reg32;
+    signal programming_ctrl     : reg32;
+    signal programming_data     : reg32;
+    signal programming_data_ena : std_logic;
+    signal programming_addr     : reg32;
+    signal programming_addr_ena : std_logic;
+
+    signal read_programming_fifo : std_logic;
+    signal programming_data_from_fifo : reg32;
 
 
     signal wordcounter : integer;
@@ -311,6 +318,7 @@ begin
     end if;
     end process;
 
+
     e_reg_mapping : entity work.feb_reg_mapping
     port map (
         i_clk_156                   => i_clk_156,
@@ -331,6 +339,8 @@ begin
         i_fpga_type                 => i_fpga_type,
         i_adc_reg                   => adc_reg,
         i_max10_version             => max10_version,
+        i_max10_status              => max10_status,
+        i_programming_status        => programming_status,
 
         -- outputs 156--------------------------------------------
         o_reg_cmdlen                => reg_cmdlen,
@@ -339,7 +349,11 @@ begin
         o_reg_reset_bypass_payload  => reg_reset_bypass_payload,
         o_arriaV_temperature_clr    => arriaV_temperature_clr,
         o_arriaV_temperature_ce     => arriaV_temperature_ce,
-        o_fpga_id_reg               => fpga_id_reg--,
+        o_fpga_id_reg               => fpga_id_reg,
+        o_programming_ctrl          => programming_ctrl,
+        o_programming_data          => programming_data,
+        o_programming_data_ena      => programming_data_ena,
+        o_programming_addr          => programming_addr
     );
 
 
@@ -657,7 +671,7 @@ begin
 
 
 
-    program_req <= '0';
+    program_req <= programming_ctrl(0);
 
     process(i_nios_clk, nios_reset_n)
     begin
@@ -665,12 +679,15 @@ begin
         max_spi_strobe 	 <= '0';
         max_spi_counter  <= 0;
         max_spi_state    <= idle;
-		  max_spi_numbytes <= "00000000";
-		  max_spi_rw		 <= '0';
+		max_spi_numbytes <= "00000000";
+		max_spi_rw		 <= '0';
+        read_programming_fifo   <= '0';
     elsif(i_nios_clk'event and i_nios_clk = '1')then
         max_spi_counter <= max_spi_counter + 1;
         max_spi_strobe <= '0';
-		  max_spi_rw		 <= '0';
+		max_spi_rw		 <= '0';
+
+        programming_status(0) <= '0';
 		  
         case max_spi_state is
         when idle =>
@@ -681,6 +698,7 @@ begin
                 max_spi_counter <= 0;
             end if;    
         when programming =>
+            programming_status(0) <= '1';
             if(program_req = '0') then
                 max_spi_state <= idle;
             end if;    
@@ -718,15 +736,15 @@ begin
             if(max_spi_word_en = '1') then
                 wordcounter <= wordcounter + 1;
                 if(wordcounter = 0) then
-                    max10adc01   <= max_spi_word_from_max;
+                    adc_reg(0)   <= max_spi_word_from_max;
                 elsif(wordcounter = 1) then
-                    max10adc23   <= max_spi_word_from_max;
+                    adc_reg(1)   <= max_spi_word_from_max;
                 elsif(wordcounter = 2) then
-                    max10adc45   <= max_spi_word_from_max; 
-					 elsif(wordcounter = 3) then
-                    max10adc67   <= max_spi_word_from_max; 						  	  
+                    adc_reg(2)   <= max_spi_word_from_max; 
+				elsif(wordcounter = 3) then
+                    adc_reg(3)   <= max_spi_word_from_max; 						  	  
                 elsif(wordcounter > 3) then
-                    max10adc89   <= max_spi_word_from_max; 
+                    adc_reg(4)   <= max_spi_word_from_max; 
                     max_spi_strobe   <= '0';
                     max_spi_state    <= endwait;
                 end if;
@@ -741,5 +759,30 @@ begin
         end case;
     end if;
     end process;
+
+    scfifo_component : altera_mf.altera_mf_components.dcfifo
+    GENERIC MAP (
+            add_ram_output_register => "ON",
+            intended_device_family => "Arria V",
+            lpm_numwords => 128,
+            lpm_showahead => "ON",
+            lpm_type => "dcfifo",
+            lpm_width => 32,
+            lpm_widthu => 7,
+            overflow_checking => "ON",
+            underflow_checking => "ON",
+            use_eab => "ON"
+    )
+    PORT MAP (
+            wrclk => i_clk_156,
+            rdclk => i_nios_clk,
+            data => programming_data, 
+            rdreq => read_programming_fifo,
+            aclr => not nios_reset_n,
+            wrreq => programming_data_ena,
+            rdempty => programming_status(1),
+            rdfull  => programming_status(2),
+            q => programming_data_from_fifo
+    );
 
 end architecture;
