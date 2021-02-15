@@ -212,7 +212,7 @@ begin
         DMAMEMWRITEADDRSIZE     => 11,
         DMAMEMREADADDRSIZE      => 11,
         DMAMEMWRITEWIDTH        => 256,
-        PCIE_X_g => 4--,
+        g_PCIE_X => 4--,
     )
     port map (
         local_rstn              => '1',
@@ -243,7 +243,7 @@ begin
         DMAMEMWRITEADDRSIZE     => 11,
         DMAMEMREADADDRSIZE      => 11,
         DMAMEMWRITEWIDTH        => 256,
-        PCIE_X_g => 4--,
+        g_PCIE_X => 4--,
     )
     port map (
         local_rstn              => '1',
