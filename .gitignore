@@ -4,6 +4,7 @@ generated/
 
 # cmake
 build/
+cmake-build*/
 debugbuild/
 install/
 CMakeLists.txt.*
@@ -82,7 +83,6 @@ online/*
 .SHM_HOST.TXT
 .SHM_TYPE.TXT
 include/mudaq_registers.h
-cmake-build-debug/
 
 #
 *.npy

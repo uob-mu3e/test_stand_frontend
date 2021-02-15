@@ -15,7 +15,7 @@ set_global_assignment -name VHDL_FILE xcvr_block.vhd
 set_global_assignment -name VHDL_FILE pcie_block.vhd
 set_global_assignment -name VHDL_FILE pcie_pkg.vhd
 
-set_global_assignment -name QIP_FILE .cache/include.qip
+set_global_assignment -name QIP_FILE generated/include.qip
 
 
 

@@ -237,14 +237,14 @@ architecture rtl of top is
 
 begin
 
-    -- 50 MHz oscillator
+    -- local 50 MHz clock (oscillator)
     clk_50 <= CLK_50_B2J;
 
     -- generate reset
     e_reset_50_n : entity work.reset_sync
     port map ( o_reset_n => reset_50_n, i_reset_n => CPU_RESET_n, i_clk => clk_50 );
 
-    -- generate 125 MHz clock on SMA output
+    -- generate and route 125 MHz clock to SMA output
     -- (can be connected to SMA input as global clock)
     e_pll_50to125 : component work.cmp.ip_pll_50to125
     port map (
@@ -573,13 +573,13 @@ begin
         o_cnt_skip_event_dma        => readregs(CNT_SKIP_EVENT_DMA_RAM_R),
         o_cnt_idle_not_header       => readregs(CNT_IDLE_NOT_HEADER_R)--,
     );
-    
+
     dma_data <= dma_event_data;
     dma_data_wren <= dma_wren_cnt;
     dmamem_endofevent <= dma_end_event_cnt;
-    
+
     -------- Slow Control --------
-    
+
     e_sc_main : work.sc_main
     generic map (
         NLINKS => NLINKS_TOTL
@@ -613,9 +613,9 @@ begin
         stateout                => open,--LED_BRACKET,
         clk                     => clk_156--,
     );
-    
+
     -------- Link Test --------
-    
+
     e_link_observer : entity work.link_observer
     generic map (
         g_m     => 32,

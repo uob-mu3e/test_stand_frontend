@@ -4,9 +4,9 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 
-entity top is 
+entity top is
     port (
-        reset_max_bp_n          : in std_logic; -- Active low reset 
+        reset_max_bp_n          : in std_logic; -- Active low reset
         max10_si_clk            : in std_logic; -- 50 MHZ clock from SI chip			//	SI5345
         max10_osc_clk           : in std_logic; -- 50 MHZ clock from oscillator		//	SI5345
 
@@ -60,7 +60,6 @@ entity top is
         spare                   : in std_logic_vector(2 downto 0)--;
 );
 end entity top;
-
 
 architecture arch of top is
 

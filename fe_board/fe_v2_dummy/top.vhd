@@ -67,7 +67,7 @@ entity top is
         si45_lol_n                  : in    std_logic_vector(1 downto 0);-- fault monitor: loss of lock of DSPLL
 
         -- I2C sel is set to GND on PCB -> SPI interface
-        si45_rst_n                  : out   std_logic_vector(1 downto 0);--	reset
+        si45_rst_n                  : out   std_logic_vector(1 downto 0);-- reset
         si45_spi_cs_n               : out   std_logic_vector(1 downto 0);-- chip select
         si45_spi_in                 : out   std_logic_vector(1 downto 0);-- data in
         si45_spi_out                : in    std_logic_vector(1 downto 0);-- data out

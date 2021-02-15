@@ -1,7 +1,7 @@
 
 CABLE?=2
 
-IPs = \
+IPs := \
     nios.tcl
 
 include util/altera/makefile.mk
