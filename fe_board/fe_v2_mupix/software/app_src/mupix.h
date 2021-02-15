@@ -68,11 +68,11 @@ struct mupix_t {
         sc->ram->data[0xFF40]=8;
         sc->ram->data[0xFF40]=0;
         usleep(0.1);
-        sc->ram->data[0xFF44]=0x00000000;
+        sc->ram->data[0xFF45]=0x00000000;
         sc->ram->data[0xFF40]=16;
         sc->ram->data[0xFF40]=0;
         usleep(0.1);
-        sc->ram->data[0xFF44]=0x00000000;
+        sc->ram->data[0xFF46]=0x00000000;
         sc->ram->data[0xFF40]=32;
         sc->ram->data[0xFF40]=0;
         usleep(0.1);
