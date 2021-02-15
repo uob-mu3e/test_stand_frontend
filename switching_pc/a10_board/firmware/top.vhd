@@ -315,6 +315,15 @@ begin
 
 
     a10_block : entity work.a10_block
+    generic map (
+        g_XCVR0_CHANNELS => 16,
+        g_XCVR0_N => 4,
+        g_XCVR1_CHANNELS => 0,
+        g_XCVR1_N => 0,
+        g_PCIE0_X => 8,
+        g_PCIE1_X => 0,
+        g_CLK_MHZ => 50.0--,
+    )
     port map (
         -- flash interface
         o_flash_address(27 downto 2)    => FLASH_A,
@@ -351,6 +360,7 @@ begin
         o_xcvr0_tx( 7 downto  4)        => QSFPB_TX_p,
         o_xcvr0_tx(11 downto  8)        => QSFPC_TX_p,
         o_xcvr0_tx(15 downto 12)        => QSFPD_TX_p,
+        i_xcvr0_refclk                  => (others => clk_125),
 
         o_xcvr0_rx_data                 => rx_data_raw,
         o_xcvr0_rx_datak                => rx_datak_raw,
@@ -404,8 +414,8 @@ begin
         i_reset_125_n                   => reset_125_n,
         i_clk_125                       => clk_125,
 
-        i_reset_50_n                    => reset_50_n,
-        i_clk_50                        => clk_50--,
+        i_reset_n                       => reset_50_n,
+        i_clk                           => clk_50--,
     );
 
     FLASH_CE_n <= (flash_cs_n, flash_cs_n);

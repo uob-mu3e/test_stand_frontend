@@ -11,7 +11,8 @@ generic (
     g_XCVR1_CHANNELS    : integer := 0;
     g_XCVR1_N           : integer := 0;
     g_PCIE0_X           : integer := 8;
-    g_PCIE1_X           : integer := 0--;
+    g_PCIE1_X           : integer := 0;
+    g_CLK_MHZ           : real := 50.0--;
 );
 port (
     -- flash interface
@@ -39,6 +40,7 @@ port (
     -- XCVR0 (6250 Mbps @ 156.25 MHz)
     i_xcvr0_rx          : in    std_logic_vector(g_XCVR0_CHANNELS-1 downto 0) := (others => '0');
     o_xcvr0_tx          : out   std_logic_vector(g_XCVR0_CHANNELS-1 downto 0);
+    i_xcvr0_refclk      : in    std_logic_vector(g_XCVR0_N-1 downto 0) := (others => '0');
 
     o_xcvr0_rx_data     : out   work.util.slv32_array_t(g_XCVR0_CHANNELS-1 downto 0);
     o_xcvr0_rx_datak    : out   work.util.slv4_array_t(g_XCVR0_CHANNELS-1 downto 0);
@@ -50,6 +52,7 @@ port (
     -- XCVR1 (10000 Mbps @ 250 MHz)
     i_xcvr1_rx          : in    std_logic_vector(g_XCVR1_CHANNELS-1 downto 0) := (others => '0');
     o_xcvr1_tx          : out   std_logic_vector(g_XCVR1_CHANNELS-1 downto 0);
+    i_xcvr1_refclk      : in    std_logic_vector(g_XCVR1_N-1 downto 0) := (others => '0');
 
     o_xcvr1_rx_data     : out   work.util.slv32_array_t(g_XCVR1_CHANNELS-1 downto 0);
     o_xcvr1_rx_datak    : out   work.util.slv4_array_t(g_XCVR1_CHANNELS-1 downto 0);
@@ -95,7 +98,38 @@ port (
 
 
     -- PCIe1
+    i_pcie1_rx          : in    std_logic_vector(g_PCIE1_X-1 downto 0) := (others => '0');
+    o_pcie1_tx          : out   std_logic_vector(g_PCIE1_X-1 downto 0);
+    i_pcie1_perst_n     : in    std_logic := '0';
     i_pcie1_refclk      : in    std_logic := '0'; -- ref 100 MHz clock
+    o_pcie1_clk         : out   std_logic;
+
+    -- PCIe1 DMA0
+    i_pcie1_dma0_wdata  : in    std_logic_vector(255 downto 0) := (others => '0');
+    i_pcie1_dma0_we     : in    std_logic := '0'; -- write enable
+    i_pcie1_dma0_eoe    : in    std_logic := '0'; -- end of event
+    o_pcie1_dma0_hfull  : out   std_logic; -- half full
+    i_pcie1_dma0_clk    : in    std_logic := '0';
+
+    -- PCIe1 read interface to writable memory
+    i_pcie1_wmem_addr   : in    std_logic_vector(15 downto 0) := (others => '0');
+    o_pcie1_wmem_rdata  : out   std_logic_vector(31 downto 0);
+    i_pcie1_wmem_clk    : in    std_logic := '0';
+
+    -- PCIe1 write interface to readable memory
+    i_pcie1_rmem_addr   : in    std_logic_vector(15 downto 0) := (others => '0');
+    i_pcie1_rmem_wdata  : in    std_logic_vector(31 downto 0) := (others => '0');
+    i_pcie1_rmem_we     : in    std_logic := '0';
+    i_pcie1_rmem_clk    : in    std_logic := '0';
+
+    -- PCIe1 update interface for readable registers
+    i_pcie1_rregs       : in    reg32array := (others => (others => '0'));
+
+    -- PCIe1 read interface for writable registers
+    o_pcie1_wregs_A     : out   reg32array;
+    i_pcie1_wregs_A_clk : in    std_logic := '0';
+    o_pcie1_wregs_B     : out   reg32array;
+    i_pcie1_wregs_B_clk : in    std_logic := '0';
 
 
 
@@ -109,21 +143,23 @@ port (
     i_reset_125_n       : in    std_logic;
     i_clk_125           : in    std_logic;
 
-    -- local 50 MHz clock
-    i_reset_50_n        : in    std_logic;
-    i_clk_50            : in    std_logic--;
+    -- local clock
+    i_reset_n           : in    std_logic;
+    i_clk               : in    std_logic--;
 );
 end entity;
 
 architecture arch of a10_block is
 
-    signal flash_reset_50_n : std_logic;
-    signal nios_reset_50_n  : std_logic;
+    signal flash_reset_n    : std_logic;
+    signal nios_reset_n     : std_logic;
 
     signal reset_156_n      : std_logic;
     signal clk_156          : std_logic;
     signal reset_250_n      : std_logic;
     signal clk_250          : std_logic;
+
+    signal flash_address    : std_logic_vector(o_flash_address'range) := (others => '0');
 
     signal nios_i2c_scl     : std_logic;
     signal nios_i2c_scl_oe  : std_logic;
@@ -142,10 +178,13 @@ architecture arch of a10_block is
     signal av_xcvr1         : work.util.avalon_t;
 
     signal pcie0_clk        : std_logic;
+    signal pcie1_clk        : std_logic;
 
 begin
 
-    o_flash_reset_n <= flash_reset_50_n;
+    o_flash_reset_n <= flash_reset_n;
+
+    o_flash_address <= flash_address;
 
     o_nios_hz <= nios_pio(7);
 
@@ -185,33 +224,23 @@ begin
     e_nios_reset_n : entity work.debouncer
     generic map (
         W => 2,
-        N => integer(50e6 * 0.200) -- 200ms
+        N => integer(g_CLK_MHZ * 1000000.0 * 0.200) -- 200ms
     )
     port map (
         i_d(0) => '1',
-        o_q(0) => flash_reset_50_n,
+        o_q(0) => flash_reset_n,
 
-        i_d(1) => flash_reset_50_n,
-        o_q(1) => nios_reset_50_n,
+        i_d(1) => flash_reset_n,
+        o_q(1) => nios_reset_n,
 
-        i_reset_n => i_reset_50_n,
-        i_clk => i_clk_50--,
+        i_reset_n => i_reset_n,
+        i_clk => i_clk--,
     );
 
     -- nios
     e_nios : work.cmp.nios
     port map (
-        avm_reset_reset_n               => i_reset_125_n,
-        avm_clock_clk                   => i_clk_125, -- TODO: use clk_156
-
-        avm_xcvr_address                => av_xcvr0.address(15 downto 0),
-        avm_xcvr_read                   => av_xcvr0.read,
-        avm_xcvr_readdata               => av_xcvr0.readdata,
-        avm_xcvr_write                  => av_xcvr0.write,
-        avm_xcvr_writedata              => av_xcvr0.writedata,
-        avm_xcvr_waitrequest            => av_xcvr0.waitrequest,
-
-        flash_tcm_address_out           => o_flash_address(27 downto 0),
+        flash_tcm_address_out           => flash_address(27 downto 0),
         flash_tcm_data_out              => io_flash_data,
         flash_tcm_read_n_out(0)         => o_flash_read_n,
         flash_tcm_write_n_out(0)        => o_flash_write_n,
@@ -230,8 +259,17 @@ begin
 
         pio_export                      => nios_pio,
 
-        rst_reset_n                     => nios_reset_50_n,
-        clk_clk                         => i_clk_50--,
+        avm_xcvr_address                => av_xcvr0.address(17 downto 0),
+        avm_xcvr_read                   => av_xcvr0.read,
+        avm_xcvr_readdata               => av_xcvr0.readdata,
+        avm_xcvr_write                  => av_xcvr0.write,
+        avm_xcvr_writedata              => av_xcvr0.writedata,
+        avm_xcvr_waitrequest            => av_xcvr0.waitrequest,
+        avm_reset_reset_n               => reset_125_n,
+        avm_clock_clk                   => clk_125,
+
+        rst_reset_n                     => nios_reset_n,
+        clk_clk                         => i_clk--,
     );
 
 
@@ -280,9 +318,9 @@ begin
         i_rx_serial         => i_xcvr0_rx,
         o_tx_serial         => o_xcvr0_tx,
 
-        i_refclk            => (others => i_clk_125),
+        i_refclk            => i_xcvr0_refclk,
 
-        i_avs_address       => av_xcvr0.address(15 downto 0),
+        i_avs_address       => av_xcvr0.address(17 downto 0),
         i_avs_read          => av_xcvr0.read,
         o_avs_readdata      => av_xcvr0.readdata,
         i_avs_write         => av_xcvr0.write,
@@ -310,13 +348,13 @@ begin
         i_tx_data           => i_xcvr1_tx_data,
         i_tx_datak          => i_xcvr1_tx_datak,
 
-        i_tx_clk            => (others => clk_156),
         i_rx_clk            => (others => clk_156),
+        i_tx_clk            => (others => clk_156),
 
         i_rx_serial         => i_xcvr1_rx,
         o_tx_serial         => o_xcvr1_tx,
 
-        i_refclk            => (others => i_clk_125),
+        i_refclk            => i_xcvr1_refclk,
 
         i_avs_address       => av_xcvr1.address(15 downto 0),
         i_avs_read          => av_xcvr1.read,
@@ -333,7 +371,7 @@ begin
 
 
     -- PCIe0
-    generate_pcie0 : if ( g_PCIE0_X > 8 ) generate
+    generate_pcie0 : if ( g_PCIE0_X > 0 ) generate
     e_pcie0_block : entity work.pcie_block
     generic map (
         DMAMEMWRITEADDRSIZE     => 11,
@@ -382,6 +420,48 @@ begin
 
     -- PCIe1
     generate_pcie1 : if ( g_PCIE1_X > 0 ) generate
+    e_pcie1_block : entity work.pcie_block
+    generic map (
+        DMAMEMWRITEADDRSIZE     => 11,
+        DMAMEMREADADDRSIZE      => 11,
+        DMAMEMWRITEWIDTH        => 256,
+        g_PCIE_X => g_PCIE1_X--,
+    )
+    port map (
+        local_rstn              => '1',
+        appl_rstn               => '1',
+        refclk                  => i_pcie1_refclk,
+        pcie_fastclk_out        => pcie1_clk,
+
+        pcie_rx_p               => i_pcie1_rx,
+        pcie_tx_p               => o_pcie1_tx,
+        pcie_refclk_p           => i_pcie1_refclk,
+        pcie_perstn             => i_pcie1_perst_n,
+        pcie_smbclk             => '0',
+        pcie_smbdat             => '0',
+        pcie_waken              => open,
+
+        readregs                => i_pcie1_rregs,
+        writeregs               => o_pcie1_wregs_A,
+
+        writememreadaddr        => i_pcie1_wmem_addr,
+        writememreaddata        => o_pcie1_wmem_rdata,
+        writememclk             => i_pcie1_wmem_clk,
+
+        readmem_addr            => i_pcie1_rmem_addr,
+        readmem_data            => i_pcie1_rmem_wdata,
+        readmem_wren            => i_pcie1_rmem_we,
+        readmemclk              => i_pcie1_rmem_clk,
+        readmem_endofevent      => '0',
+
+        dma_data                => i_pcie1_dma0_wdata,
+        dmamem_wren             => i_pcie1_dma0_we,
+        dmamem_endofevent       => i_pcie1_dma0_eoe,
+        dmamemhalffull          => o_pcie1_dma0_hfull,
+        dmamemclk               => i_pcie1_dma0_clk,
+
+        dma2memclk              => i_pcie1_dma0_clk--,
+    );
     end generate;
 
 end architecture;
