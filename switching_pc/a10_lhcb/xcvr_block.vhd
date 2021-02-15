@@ -29,7 +29,7 @@ port (
     -- avalon slave interface
     -- # address units words
     -- # read latency 0
-    i_avs_address       : in    std_logic_vector(work.util.vector_width(N_XCVR_g) + 13 downto 0);
+    i_avs_address       : in    std_logic_vector(17 downto 0);
     i_avs_read          : in    std_logic;
     o_avs_readdata      : out   std_logic_vector(31 downto 0);
     i_avs_write         : in    std_logic;

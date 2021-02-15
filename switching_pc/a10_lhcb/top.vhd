@@ -67,28 +67,20 @@ end entity;
 
 architecture arch of top is
 
-    -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
-    signal ZERO : std_logic := '0';
-    attribute keep : boolean;
-    attribute keep of ZERO : signal is true;
-
     signal led : std_logic_vector(7 downto 0) := (others => '0');
 
 
 
-    signal nios_clk, nios_reset_n : std_logic;
-    signal i2c_scl_in, i2c_scl_oe, i2c_sda_in, i2c_sda_oe : std_logic;
-    signal i2c_cs : std_logic_vector(31 downto 0);
+    -- local 100 MHz clock
+    signal clk_100, reset_100_n : std_logic;
 
-    constant I2C_CS_SI5341_1_c : std_logic_vector(i2c_cs'range) := (1 => '1', others => '0');
-    constant I2C_CS_SI5341_2_c : std_logic_vector(i2c_cs'range) := (2 => '1', others => '0');
+    -- global 125 MHz clock
+    signal clk_125, reset_125_n : std_logic;
+
+    signal clk_156, reset_156_n, clk_250, reset_250_n : std_logic;
+    signal pcie0_clk, pcie1_clk : std_logic;
 
 
-
-    signal pod_clk, pod_reset_n : std_logic;
-    signal pod_tx_clkout : std_logic_vector(47 downto 0);
-
-    signal av_pod : work.util.avalon_t;
 
     signal pod_rx_data : work.util.slv32_array_t(47 downto 0);
     signal pod_tx_data : work.util.slv32_array_t(47 downto 0) := (
@@ -101,8 +93,6 @@ architecture arch of top is
 
 
 
-    signal pcie_rx, pcie_tx : std_logic_vector(7 downto 0);
-
     signal pcie_wregs, pcie_rregs : work.pcie_components.reg32array;
 
 begin
@@ -114,166 +104,88 @@ begin
 
 
 
-    nios_clk <= CLK_A10_100MHZ_P;
+    clk_100 <= CLK_A10_100MHZ_P;
 
-    e_nios_reset_n : entity work.reset_sync
-    port map ( o_reset_n => nios_reset_n, i_reset_n => A10_M5FL_CPU_RESET_N, i_clk => nios_clk );
+    e_reset_100_n : entity work.reset_sync
+    port map ( o_reset_n => reset_100_n, i_reset_n => A10_M5FL_CPU_RESET_N, i_clk => clk_100 );
 
-    e_nios_clk_hz : entity work.clkdiv
-    generic map ( P => 100 * 10**6 )
-    port map (
-        o_clk => led(0),
-        i_reset_n => nios_reset_n,
-        i_clk => nios_clk--,
-    );
+    clk_125 <= A10_REFCLK_GBT_P_0; -- TODO: use global 125 MHz clock
 
-    i_nios : component work.cmp.nios
-    port map (
-        avm_pod_reset_reset_n   => nios_reset_n,
-        avm_pod_clock_clk       => nios_clk,
-        avm_pod_address         => av_pod.address(16 downto 0),
-        avm_pod_read            => av_pod.read,
-        avm_pod_readdata        => av_pod.readdata,
-        avm_pod_write           => av_pod.write,
-        avm_pod_writedata       => av_pod.writedata,
-        avm_pod_waitrequest     => av_pod.waitrequest,
-
-        i2c_scl_in      => i2c_scl_in,
-        i2c_scl_oe      => i2c_scl_oe,
-        i2c_sda_in      => i2c_sda_in,
-        i2c_sda_oe      => i2c_sda_oe,
-        i2c_cs_export   => i2c_cs,
-
-        rst_reset_n => nios_reset_n,
-        clk_clk     => nios_clk--,
-    );
-
-    -- i2c SCL
-    i2c_scl_in <=
-        '0' when ( i2c_cs = I2C_CS_SI5341_1_c and A10_SI5345_1_SMB_SCL = '0' ) else
-        '0' when ( i2c_cs = I2C_CS_SI5341_2_c and A10_SI5345_2_SMB_SCL = '0' ) else
-        '1';
-    A10_SI5345_1_SMB_SCL <= ZERO when ( i2c_cs = I2C_CS_SI5341_1_c and i2c_scl_oe = '1' ) else 'Z';
-    A10_SI5345_2_SMB_SCL <= ZERO when ( i2c_cs = I2C_CS_SI5341_2_c and i2c_scl_oe = '1' ) else 'Z';
-    -- i2c SDA
-    i2c_sda_in <=
-        '0' when ( i2c_cs = I2C_CS_SI5341_1_c and A10_SI5345_1_SMB_SDA = '0' ) else
-        '0' when ( i2c_cs = I2C_CS_SI5341_2_c and A10_SI5345_2_SMB_SDA = '0' ) else
-        '1';
-    A10_SI5345_1_SMB_SDA <= ZERO when ( i2c_cs = I2C_CS_SI5341_1_c and i2c_sda_oe = '1' ) else 'Z';
-    A10_SI5345_2_SMB_SDA <= ZERO when ( i2c_cs = I2C_CS_SI5341_2_c and i2c_sda_oe = '1' ) else 'Z';
+    e_reset_125_n : entity work.reset_sync
+    port map ( o_reset_n => reset_125_n, i_reset_n => A10_M5FL_CPU_RESET_N, i_clk => clk_125 );
 
 
 
-    -- TODO: use global 125/250 MHz clock
-    pod_clk <= A10_REFCLK_GBT_P_0;
-
-    e_pod_reset_n : entity work.reset_sync
-    port map ( o_reset_n => pod_reset_n, i_reset_n => A10_M5FL_CPU_RESET_N, i_clk => pod_clk );
-
-    e_pod_clk_hz : entity work.clkdiv
-    generic map ( P => 125 * 10**6 )
-    port map (
-        o_clk => led(1),
-        i_reset_n => pod_reset_n,
-        i_clk => pod_clk--,
-    );
-
-    e_pods : entity work.xcvr_block
+    a10_block : entity work.a10_block
     generic map (
-        N_XCVR_g => 8--,
+        g_XCVR0_CHANNELS => 48,
+        g_XCVR0_N => 8,
+        g_XCVR1_CHANNELS => 0,
+        g_XCVR1_N => 0,
+        g_PCIE0_X => 4,
+        g_PCIE1_X => 4,
+        g_CLK_MHZ => 100.0--,
     )
     port map (
-        i_rx_serial => rx_gbt,
-        o_tx_serial => tx_gbt,
+        -- I2C
+        io_i2c_scl(1)                   => A10_SI5345_1_SMB_SCL,
+        io_i2c_sda(1)                   => A10_SI5345_1_SMB_SDA,
+        io_i2c_scl(2)                   => A10_SI5345_2_SMB_SCL,
+        io_i2c_sda(2)                   => A10_SI5345_2_SMB_SDA,
 
-        i_refclk    => A10_REFCLK_GBT_P_7 & A10_REFCLK_GBT_P_6 & A10_REFCLK_GBT_P_5 & A10_REFCLK_GBT_P_4 & A10_REFCLK_GBT_P_3 & A10_REFCLK_GBT_P_2 & A10_REFCLK_GBT_P_1 & A10_REFCLK_GBT_P_0,
 
-        o_rx_data   => pod_rx_data,
-        o_rx_datak  => pod_rx_datak,
-        i_tx_data   => pod_tx_data,
-        i_tx_datak  => pod_tx_datak,
 
-        i_avs_address     => av_pod.address(16 downto 0),
-        i_avs_read        => av_pod.read,
-        o_avs_readdata    => av_pod.readdata,
-        i_avs_write       => av_pod.write,
-        i_avs_writedata   => av_pod.writedata,
-        o_avs_waitrequest => av_pod.waitrequest,
+        -- XCVR0 (6250 Mbps @ 156.25 MHz)
+        i_xcvr0_rx                      => rx_gbt,
+        o_xcvr0_tx                      => tx_gbt,
+        i_xcvr0_refclk                  =>
+            A10_REFCLK_GBT_P_7 & A10_REFCLK_GBT_P_6 & A10_REFCLK_GBT_P_5 & A10_REFCLK_GBT_P_4 &
+            A10_REFCLK_GBT_P_3 & A10_REFCLK_GBT_P_2 & A10_REFCLK_GBT_P_1 & A10_REFCLK_GBT_P_0,
 
-        i_reset_n   => nios_reset_n,
-        i_clk       => nios_clk--,
+        o_xcvr0_rx_data                 => pod_rx_data,
+        o_xcvr0_rx_datak                => pod_rx_datak,
+        i_xcvr0_tx_data                 => pod_tx_data,
+        i_xcvr0_tx_datak                => pod_tx_datak,
+
+
+
+        -- PCIe0
+        i_pcie0_rx                      => i_pcie0_rx,
+        o_pcie0_tx                      => o_pcie0_tx,
+        i_pcie0_perst_n                 => i_pcie0_perst_n,
+        i_pcie0_refclk                  => i_pcie0_refclk,
+        o_pcie0_clk                     => pcie0_clk,
+
+        i_pcie0_dma0_clk                => pcie0_clk,
+        i_pcie0_wmem_clk                => pcie0_clk,
+        i_pcie0_rmem_clk                => pcie0_clk,
+
+
+
+        -- PCIe0
+        i_pcie1_rx                      => i_pcie1_rx,
+        o_pcie1_tx                      => o_pcie1_tx,
+        i_pcie1_perst_n                 => i_pcie1_perst_n,
+        i_pcie1_refclk                  => i_pcie1_refclk,
+        o_pcie1_clk                     => pcie1_clk,
+
+        i_pcie1_dma0_clk                => pcie0_clk,
+        i_pcie1_wmem_clk                => pcie0_clk,
+        i_pcie1_rmem_clk                => pcie0_clk,
+
+
+
+--        o_reset_156_n                   => reset_156_n,
+        o_clk_156                       => clk_156,
+
+--        o_reset_250_n                   => reset_250_n,
+        o_clk_250                       => clk_250,
+
+        i_reset_125_n                   => reset_125_n,
+        i_clk_125                       => clk_125,
+
+        i_reset_n                       => reset_100_n,
+        i_clk                           => clk_100--,
     );
-
-
-
-    e_pcie_block_0 : entity work.pcie_block
-    generic map (
-        DMAMEMWRITEADDRSIZE     => 11,
-        DMAMEMREADADDRSIZE      => 11,
-        DMAMEMWRITEWIDTH        => 256,
-        g_PCIE_X => 4--,
-    )
-    port map (
-        local_rstn              => '1',
-        appl_rstn               => '1',
-        refclk                  => i_pcie0_refclk,
-        pcie_fastclk_out        => open,
-
-        pcie_rx_p               => i_pcie0_rx,
-        pcie_tx_p               => o_pcie0_tx,
-        pcie_refclk_p           => i_pcie0_refclk,
-        pcie_perstn             => i_pcie0_perst_n,
-        pcie_smbclk             => '0',
-        pcie_smbdat             => '0',
-        pcie_waken              => open,
-
-        writeregs               => pcie_wregs,
-        regwritten              => open,
-        readregs                => pcie_rregs,
-
-        writememclk             => CLK_A10_100MHZ_P,
-        readmemclk              => CLK_A10_100MHZ_P,
-        dmamemclk               => CLK_A10_100MHZ_P,
-        dma2memclk              => CLK_A10_100MHZ_P
-    );
-
-    e_pcie_block_1 : entity work.pcie_block
-    generic map (
-        DMAMEMWRITEADDRSIZE     => 11,
-        DMAMEMREADADDRSIZE      => 11,
-        DMAMEMWRITEWIDTH        => 256,
-        g_PCIE_X => 4--,
-    )
-    port map (
-        local_rstn              => '1',
-        appl_rstn               => '1',
-        refclk                  => i_pcie1_refclk,
-        pcie_fastclk_out        => open,
-
-        pcie_rx_p               => i_pcie1_rx,
-        pcie_tx_p               => o_pcie1_tx,
-        pcie_refclk_p           => i_pcie1_refclk,
-        pcie_perstn             => i_pcie1_perst_n,
-        pcie_smbclk             => '0',
-        pcie_smbdat             => '0',
-        pcie_waken              => open,
-
-        writeregs               => pcie_wregs,
-        regwritten              => open,
-        readregs                => pcie_rregs,
-
-        writememclk             => CLK_A10_100MHZ_P,
-        readmemclk              => CLK_A10_100MHZ_P,
-        dmamemclk               => CLK_A10_100MHZ_P,
-        dma2memclk              => CLK_A10_100MHZ_P
-    );
-
-
-    process(nios_clk)
-    begin
-    if rising_edge(nios_clk) then
-    end if;
-    end process;
 
 end architecture;
