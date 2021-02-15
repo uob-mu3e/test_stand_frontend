@@ -32,7 +32,12 @@ constant MUPIX_DATAPATH_ADDR_START          : integer := 96; --(x"60") --(start 
         constant WR_COL_BIT                 :  integer := 3;
         constant WR_TEST_BIT                :  integer := 4;
         constant WR_TDAC_BIT                :  integer := 5;
-        constant CLEAR_FIFOS_BIT            :  integer := 6; -- if set: all 6 CTRL FIFOs cleared
+        constant CLEAR_BIAS_FIFO_BIT        :  integer := 6;
+        constant CLEAR_CONF_FIFO_BIT        :  integer := 7;
+        constant CLEAR_VDAC_FIFO_BIT        :  integer := 8;
+        constant CLEAR_COL_FIFO_BIT         :  integer := 9;
+        constant CLEAR_TEST_FIFO_BIT        :  integer := 10;
+        constant CLEAR_TDAC_FIFO_BIT        :  integer := 11;
 
     constant MP_CTRL_BIAS_REGISTER_W        :  integer := 16#41#;
     constant MP_CTRL_CONF_REGISTER_W        :  integer := 16#42#;

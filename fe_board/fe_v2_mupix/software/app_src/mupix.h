@@ -22,6 +22,10 @@ struct mupix_t {
         
         // example: writing to BIAS shift reg
         
+        // clear config fifos
+        sc->ram->data[0xFF40]=0x0000FC0;
+        sc->ram->data[0xFF40]=0x0000000;
+        
         // set spi clk slow down (spi clk period will be something like 12.8ns * this value, not sure what we need/can do here)
         sc->ram->data[0xFF47]=0x0000002;
         

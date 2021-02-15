@@ -33,7 +33,7 @@ port (
 
     o_mp_ctrl_data              : out std_logic_vector(32*5 + 31 downto 0);
     o_mp_fifo_write             : out std_logic_vector( 5 downto 0);
-    o_mp_fifo_clear             : out std_logic;
+    o_mp_fifo_clear             : out std_logic_vector( 5 downto 0);
     o_mp_ctrl_enable            : out std_logic_vector( 5 downto 0);
     o_mp_ctrl_chip_config_mask  : out std_logic_vector(11 downto 0);
     o_mp_ctrl_invert_29         : out std_logic;
@@ -82,7 +82,7 @@ begin
             -----------------------------------------------------------------
 
             if ( regaddr = MP_CTRL_ENABLE_REGISTER_W and i_reg_we = '1' ) then
-                o_mp_fifo_clear <= i_reg_wdata(CLEAR_FIFOS_BIT);
+                o_mp_fifo_clear  <= i_reg_wdata(CLEAR_TDAC_FIFO_BIT downto CLEAR_BIAS_FIFO_BIT);
                 o_mp_ctrl_enable <= i_reg_wdata(WR_TDAC_BIT downto WR_BIAS_BIT);
             end if;
 

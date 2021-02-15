@@ -16,7 +16,7 @@ entity mupix_ctrl_config_storage is
     port(
         i_clk               : in  std_logic;
         i_reset_n           : in  std_logic;
-        i_clr_all           : in  std_logic;
+        i_clr_fifo          : in  std_logic_vector(5 downto 0);
 
         -- data written from sc regs
         i_data              : in  std_logic_vector(32*6-1 downto 0);
@@ -33,7 +33,7 @@ end entity mupix_ctrl_config_storage;
 architecture RTL of mupix_ctrl_config_storage is
 
     signal fifo_read                : std_logic_vector(5 downto 0);
-    signal fifo_clear               : std_logic;
+    signal fifo_clear               : std_logic_vector(5 downto 0);
     signal data_buffer              : std_logic_vector(32*6-1 downto 0);
     type bitpos_t                   is array (5 downto 0) of integer range 31 downto 0;
     type bitpos_global_t            is array (5 downto 0) of integer range 1000 downto 0; -- TODO: how to max(MP_CONFIG_REGS_LENGTH) in vhdl ?
@@ -42,8 +42,6 @@ architecture RTL of mupix_ctrl_config_storage is
     signal is_writing               : std_logic_vector(5 downto 0);
     signal enable_prev              : std_logic_vector(5 downto 0);
 begin
-
-    fifo_clear <= i_clr_all or (not i_reset_n);
 
     process(i_clk, i_reset_n)
     begin
@@ -88,6 +86,8 @@ begin
 
 
     gen_config_storage: for I in 0 to 5 generate
+        fifo_clear(I) <= i_clr_fifo(I) or (not i_reset_n);
+        
         mp_ctrl_storage_fifo: entity work.ip_scfifo
         generic map(
             ADDR_WIDTH      => integer(ceil(log2(real(MP_CONFIG_REGS_LENGTH(I))))),
@@ -97,7 +97,7 @@ begin
         )
         port map (
             clock           => i_clk,
-            sclr            => fifo_clear,
+            sclr            => fifo_clear(I),
             data            => i_data(I*32 + 31 downto I*32),
             wrreq           => i_wrreq(I),
             q               => data_buffer(I*32 + 31 downto I*32),

@@ -33,7 +33,7 @@ end entity mupix_ctrl;
 
 architecture RTL of mupix_ctrl is
 
-    signal mp_fifo_clear            : std_logic;
+    signal mp_fifo_clear            : std_logic_vector(5 downto 0);
     signal config_storage_input_data: std_logic_vector(32*5 + 31 downto 0);
     signal is_writing               : std_logic_vector(5 downto 0);
     signal is_writing_this_round    : std_logic_vector(5 downto 0);
@@ -95,7 +95,7 @@ begin
     port map(
         i_clk                       => i_clk,
         i_reset_n                   => i_reset_n,
-        i_clr_all                   => mp_fifo_clear,
+        i_clr_fifo                  => mp_fifo_clear,
 
         i_data                      => config_storage_input_data,
         i_wrreq                     => config_storage_write,

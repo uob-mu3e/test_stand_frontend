@@ -95,6 +95,14 @@ force -freeze mupix_ctrl_tb/reg_add x"40" -cancel 8ns
 force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
 force -freeze mupix_ctrl_tb/reg_wdata x"00000000" -cancel 8ns
 run 5ms
+force -freeze mupix_ctrl_tb/reg_add x"40" -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"00000040" -cancel 8ns
+run 40ns
+force -freeze mupix_ctrl_tb/reg_add x"40" -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"00000000" -cancel 8ns
+run 16ns
 
 force -freeze mupix_ctrl_tb/reg_add x"42" -cancel 80ns
 force -freeze mupix_ctrl_tb/reg_we 1 -cancel 64ns
@@ -137,4 +145,13 @@ force -freeze mupix_ctrl_tb/reg_add x"40" -cancel 8ns
 force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
 force -freeze mupix_ctrl_tb/reg_wdata x"00000000" -cancel 8ns
 run 4ms
+force -freeze mupix_ctrl_tb/reg_add x"40" -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"000000C0" -cancel 8ns
+run 40ns
+force -freeze mupix_ctrl_tb/reg_add x"40" -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_we 1 -cancel 8ns
+force -freeze mupix_ctrl_tb/reg_wdata x"00000000" -cancel 8ns
+run 16ns
+
 WaveRestoreZoom 0ns 1000000ns
