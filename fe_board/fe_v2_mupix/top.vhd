@@ -129,7 +129,7 @@ entity top is
         max10_spi_miso              : inout std_logic;
         max10_spi_D1                : inout std_logic;
         max10_spi_D2                : inout std_logic;
-        max10_spi_D3                : out   std_logic;
+        max10_spi_D3                : inout std_logic;
         max10_spi_csn               : out   std_logic
         );
 end top;
@@ -145,8 +145,6 @@ architecture rtl of top is
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
     signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
 
-    signal malibu_reg               : work.util.rw_t;
-    signal scifi_reg                : work.util.rw_t;
     signal mupix_reg                : work.util.rw_t;
 
     -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
@@ -165,20 +163,6 @@ architecture rtl of top is
     signal sync_reset_cnt           : std_logic;
     signal nios_clock               : std_logic;
 
-    -- board dacs
-    signal SPI_DIN                  : std_logic;
-    signal SPI_CLK                  : std_logic;
-    signal SPI_LD_ADC               : std_logic;
-    signal SPI_LD_TEMP_DAC          : std_logic;
-    signal SPI_LD_DAC               : std_logic;
-    
-    -- chip dacs
-    signal CTRL_SDI                 : std_logic_vector(NPORTS-1 downto 0);
-    signal CTRL_SCK1                : std_logic_vector(NPORTS-1 downto 0);
-    signal CTRL_SCK2                : std_logic_vector(NPORTS-1 downto 0);
-    signal CTRL_LOAD                : std_logic_vector(NPORTS-1 downto 0);
-    signal CTRL_RB                  : std_logic_vector(NPORTS-1 downto 0);
-
 begin
 
 --------------------------------------------------------------------
@@ -188,31 +172,8 @@ begin
 --------------------------------------------------------------------
 
     e_mupix_block : entity work.mupix_block
-    generic map (
-        NCHIPS          => 12,
-        NCHIPS_SPI      => 4,
-        NPORTS          => NPORTS,
-        NLVDS           => 36,
-        NINPUTS_BANK_A  => 16,
-        NINPUTS_BANK_B  => 16--,
-    )
     port map (
-
-        -- chip dacs
-        i_CTRL_SDO_A            => '0',
-        o_CTRL_SDI              => open,
-        o_CTRL_SCK1             => open,
-        o_CTRL_SCK2             => open,
-        o_CTRL_Load             => open,
-        o_CTRL_RB               => open,
-
-        -- board dacs
-        i_SPI_DOUT_ADC_0_A      => '0',
-        o_SPI_DIN0_A            => open,
-        o_SPI_CLK_A             => open,
-        o_SPI_LD_ADC_A          => open,
-        o_SPI_LD_TEMP_DAC_A     => open,
-        o_SPI_LD_DAC_A          => open,
+        i_fpga_id               => ref_adr,
 
         -- mupix dac regs
         i_reg_add               => mupix_reg.addr(7 downto 0),
@@ -330,19 +291,19 @@ begin
         o_mscb_data         => mscb_fpga_out,
         o_mscb_oe           => mscb_fpga_oe_n,
 
-        o_max10_spi_sclk    => max10_spi_sclk,
+        o_max10_spi_sclk    => max10_spi_miso, --max10_spi_sclk, Replacement, due to broken line
         io_max10_spi_mosi   => max10_spi_mosi,
-        io_max10_spi_miso   => max10_spi_miso,
+        io_max10_spi_miso   => 'Z',
         io_max10_spi_D1     => max10_spi_D1,
         io_max10_spi_D2     => max10_spi_D2,
-        o_max10_spi_D3      => max10_spi_D3,
+        io_max10_spi_D3     => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_mupix_reg_addr    => mupix_reg.addr(7 downto 0),
-        o_mupix_reg_re      => mupix_reg.re,
-        i_mupix_reg_rdata   => mupix_reg.rdata,
-        o_mupix_reg_we      => mupix_reg.we,
-        o_mupix_reg_wdata   => mupix_reg.wdata,
+        o_subdet_reg_addr   => mupix_reg.addr(7 downto 0),
+        o_subdet_reg_re     => mupix_reg.re,
+        i_subdet_reg_rdata  => mupix_reg.rdata,
+        o_subdet_reg_we     => mupix_reg.we,
+        o_subdet_reg_wdata  => mupix_reg.wdata,
 
         -- reset system
         o_run_state_125     => run_state_125,
@@ -355,7 +316,6 @@ begin
         i_clk_156           => transceiver_pll_clock(0),
         o_clk_156_mon       => lcd_data(1),
         i_clk_125           => lvds_firefly_clk,
-        o_clk_125_mon       => lcd_data(2),
 
         i_areset_n          => pb_db(0),
         

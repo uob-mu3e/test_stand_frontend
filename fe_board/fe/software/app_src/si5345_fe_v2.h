@@ -3,9 +3,11 @@
 
 #include "../include/si534x.h"
 
-#include "Si5345-v5-Registers_si2.h"
-// replace the last line with this line for a free running FEB: (no external clock)
-//#include "Si5345-v5-Registers_si2_free.h" 
+// change the clock source here: 
+#include "Si5345-v5-Registers_si2.h"        // optical clk from firefly 
+//#include "Si5345-v5-Registers_si2_free.h" // free running FEB: (no external clock, control by nios only) 
+//#include "Si5345-v5-Registers_si2_lvds.h" // lvds clk from CON4/CON5
+
 #include "Si5345-v5-Registers_si1.h"
 
 
