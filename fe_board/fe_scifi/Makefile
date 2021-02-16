@@ -1,12 +1,8 @@
 
 CABLE=USB-Blaster
-SOF=output_files/top.sof
-
-BSP_DIR=software/hal_bsp
-APP_DIR=software/app
 
 IPs = \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard ../fe/ip/*.tcl)) \
-    nios.sopcinfo
+    $(wildcard ../fe/ip/*.tcl) \
+    nios.tcl
 
-include util/makefile.mk
+include util/altera/makefile.mk

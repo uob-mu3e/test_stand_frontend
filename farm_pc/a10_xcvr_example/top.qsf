@@ -7,19 +7,17 @@ set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
 
-set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/pre_flow.tcl"
-set_global_assignment -name VHDL_FILE cmp_pkg.vhd
+set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/altera/pre_flow.tcl"
 
 set_global_assignment -name TOP_LEVEL_ENTITY top
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 
 set_global_assignment -name QIP_FILE util/include.qip
-set_global_assignment -name QIP_FILE ip/include.qip
 
 set_global_assignment -name QIP_FILE a10/xcvr.qip
 
-set_global_assignment -name QSYS_FILE nios.qsys
+set_global_assignment -name QIP_FILE generated/include.qip
 
 
 

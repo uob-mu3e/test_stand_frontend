@@ -119,7 +119,7 @@ entity top is
         max10_spi_miso              : inout std_logic;
         max10_spi_D1                : inout std_logic;
         max10_spi_D2                : inout std_logic;
-        max10_spi_D3                : out   std_logic;
+        max10_spi_D3                : inout std_logic;
         max10_spi_csn               : out   std_logic
         );
 end top;
@@ -200,12 +200,12 @@ begin
         o_mscb_data         => mscb_fpga_out,
         o_mscb_oe           => mscb_fpga_oe_n,
 
-        o_max10_spi_sclk    => max10_spi_sclk,
+        o_max10_spi_sclk    => max10_spi_miso, --max10_spi_sclk, Replacement, due to broken line
         io_max10_spi_mosi   => max10_spi_mosi,
-        io_max10_spi_miso   => max10_spi_miso,
+        io_max10_spi_miso   =>'Z','
         io_max10_spi_D1     => max10_spi_D1,
         io_max10_spi_D2     => max10_spi_D2,
-        o_max10_spi_D3      => max10_spi_D3,
+        io_max10_spi_D3     => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
         o_subdet_reg_addr   => open, -- TODO in "Not-Dummy": connect to detector-block
@@ -224,7 +224,6 @@ begin
         i_clk_156           => transceiver_pll_clock(0),
         o_clk_156_mon       => lcd_data(1),
         i_clk_125           => lvds_firefly_clk,
-        o_clk_125_mon       => lcd_data(2),
 
         i_areset_n          => pb_db(0),
         

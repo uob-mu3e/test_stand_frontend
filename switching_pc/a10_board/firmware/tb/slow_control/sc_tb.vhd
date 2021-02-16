@@ -41,39 +41,60 @@ architecture behav of sc_tb is
 begin
   --  Component instantiation.
     sc_main : entity work.sc_main 
-  	generic map (
-		NLINKS => NLINKS
-	)
-	port map(
-        i_clk				=> clk,
-		i_reset_n			=> reset_n,
-        i_length_we		    => length_we,
-		i_length		    => length,
-		i_mem_data		    => writememdata_out,
-		o_mem_addr			=> memaddr,
-		o_mem_data		    => mem_data_out,
-		o_mem_datak		    => mem_datak_out,
-		o_done				=> done,
-		o_state			    => open--,
-  );
-
-  sc_secondary : entity work.sc_secondary
     generic map (
-		NLINKS => NLINKS,
-		skip_init => '1'
-	)
-	port map(
-		clk					=> clk,
-		reset_n				=> reset_n,
-		i_link_enable				=> link_enable,
-		link_data_in		=> mem_data_out,
-		link_data_in_k		=> mem_datak_out,
-		mem_data_out		=> mem_data_out_slave,
-		mem_addr_out		=> mem_addr_out_slave,
-		mem_wren 			=> mem_wren_slave,
-		mem_addr_finished_out				=> open,
-		stateout			=> open
-  );
+        NLINKS => NLINKS
+    )
+    port map(
+        i_clk				=> clk,
+        i_reset_n			=> reset_n,
+        i_length_we		    => length_we,
+        i_length		    => length,
+        i_mem_data		    => writememdata_out,
+        o_mem_addr			=> memaddr,
+        o_mem_data		    => mem_data_out,
+        o_mem_datak		    => mem_datak_out,
+        o_done				=> done,
+        o_state			    => open--,
+    );
+  
+    sc_rx : entity work.sc_rx 
+    port map(
+        i_link_data     => mem_data_out(31 downto 0),
+        i_link_datak    => mem_datak_out(3 downto 0),
+        
+        o_fifo_we       => open,
+        o_fifo_wdata    => open,
+        
+        o_ram_addr      => open,
+        o_ram_re        => open,
+        
+        i_ram_rvalid    => '1',
+        i_ram_rdata     => (others => '1'),
+        
+        o_ram_we        => open,
+        o_ram_wdata     => open,
+        
+        i_reset_n       => reset_n,
+        i_clk           => clk--,
+    );
+  
+    sc_secondary : entity work.sc_secondary
+    generic map (
+        NLINKS => NLINKS,
+        skip_init => '1'
+    )
+    port map(
+        clk					=> clk,
+        reset_n				=> reset_n,
+        i_link_enable				=> link_enable,
+        link_data_in		=> mem_data_out,
+        link_data_in_k		=> mem_datak_out,
+        mem_data_out		=> mem_data_out_slave,
+        mem_addr_out		=> mem_addr_out_slave,
+        mem_wren 			=> mem_wren_slave,
+        mem_addr_finished_out				=> open,
+        stateout			=> open
+    );
 
 	wram : entity work.ip_ram
     generic map(

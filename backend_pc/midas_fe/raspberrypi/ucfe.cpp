@@ -34,6 +34,9 @@ const char *frontend_file_name = __FILE__;
 /* frontend_loop is called periodically if this variable is TRUE    */
 BOOL frontend_call_loop = FALSE;
 
+/* Overwrite equipment struct in ODB from values in code*/
+BOOL equipment_common_overwrite = FALSE;
+
 /* a frontend status page is displayed with this frequency in ms    */
 INT display_period = 1000;
 

@@ -390,7 +390,7 @@ elsif(clk'event and clk = '1') then
             spi_sclk <= '0';
             count <= count + 1;
         else
-				quadreadbyteshiftreg(0) <= spi_mosi;
+			quadreadbyteshiftreg(0) <= spi_mosi;
             quadreadbyteshiftreg(1) <= spi_miso;
             quadreadbyteshiftreg(2) <= spi_D2;
             quadreadbyteshiftreg(3) <= spi_D3;

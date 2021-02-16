@@ -12,6 +12,18 @@
     constant tree_padding : std_logic_vector(37 downto 0) := "11" & x"FFFFFFFFF";
     constant tree_paddingk : std_logic_vector(37 downto 0) := "11" & x"EEEEEEEEE";
     constant tree_zero : std_logic_vector(37 downto 0) := "00" & x"000000000";
+    constant K282 : std_logic_vector(31 downto 0) := x"0000005C";
+    constant K283 : std_logic_vector(31 downto 0) := x"0000007C";
+    constant K284 : std_logic_vector(31 downto 0) := x"0000009C";
+    constant K285 : std_logic_vector(31 downto 0) := x"000000BC";
+    constant K286 : std_logic_vector(31 downto 0) := x"000000DC";
+    constant pre_marker : std_logic_vector(5 downto 0) := "110000";
+    constant sh_marker : std_logic_vector(5 downto 0)  := "110001";
+    constant tr_marker : std_logic_vector(5 downto 0)  := "110010";
+    constant ts1_marker : std_logic_vector(5 downto 0) := "110011";
+    constant ts2_marker : std_logic_vector(5 downto 0) := "110100";
+    constant err_marker : std_logic_vector(5 downto 0) := "110101";
+
 
     subtype dataplusts_type is std_logic_vector(271 downto 0);
 
@@ -20,6 +32,7 @@
 
     type fifo_array_2 is array(natural range <>) of std_logic_vector(1 downto 0);
     type fifo_array_4 is array(natural range <>) of std_logic_vector(3 downto 0);
+    type fifo_array_6 is array(natural range <>) of std_logic_vector(5 downto 0);
     type fifo_array_8 is array(natural range <>) of std_logic_vector(7 downto 0);
     type fifo_array_32 is array(natural range <>) of std_logic_vector(31 downto 0);
     type fifo_array_38 is array(natural range <>) of std_logic_vector(37 downto 0);
@@ -28,6 +41,7 @@
     type fifo_array_66 is array(natural range <>) of std_logic_vector(65 downto 0);
     type fifo_array_78 is array(natural range <>) of std_logic_vector(77 downto 0);
     type fifo_array_152 is array(natural range <>) of std_logic_vector(151 downto 0);
+    type fifo_array_256 is array(natural range <>) of std_logic_vector(255 downto 0);
 
     type offset is array(natural range <>) of integer range 64 downto 0;
     

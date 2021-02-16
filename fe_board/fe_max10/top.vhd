@@ -3,6 +3,10 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
+LIBRARY altera_mf;
+USE altera_mf.altera_mf_components.all;
+
+use work.daq_constants.all;
 
 entity top is 
     port (
@@ -32,7 +36,7 @@ entity top is
         fpga_spi_miso           : inout std_logic;
         fpga_spi_D1             : inout std_logic;
         fpga_spi_D2             : inout std_logic;
-        fpga_spi_D3             : in std_logic;
+        fpga_spi_D3             : inout std_logic;
         fpga_spi_csn            : in std_logic;
 
         -- SPI Interface to backplane
@@ -69,57 +73,54 @@ architecture arch of top is
     signal clk50                                : std_logic;
     signal pll_locked                           : std_logic;
 
-    signal flash_ps_ctrl                        : std_logic_vector(31 downto 0);
+    signal  version                             : std_logic_vector(31 downto 0);
+    signal  status                              : std_logic_vector(31 downto 0);
+	 signal  programming_status                  : std_logic_vector(31 downto 0);
+    signal  control                             : std_logic_vector(31 downto 0);
+    signal  spi_arria_we                        : std_logic;
+    signal  rw_last                             : std_logic;
+    signal  new_transaction                     : std_logic;
+
+    signal flash_programming_ctrl               : std_logic_vector(31 downto 0);
     signal flash_w_cnt                          : std_logic_vector(31 downto 0);
     signal reset_n                              : std_logic;
 
-    -- SPI Flash
-    signal spi_strobe_programmer                : std_logic;
-    signal spi_command_programmer               : std_logic_vector(7 downto 0);
-    signal spi_addr_programmer                  : std_logic_vector(23 downto 0);
-    signal spi_continue_programmer              : std_logic;
-    signal spi_flash_request_programmer         : std_logic;
-    signal spi_flash_granted_programmer         : std_logic;
 
-    signal spi_strobe_nios                      : std_logic;
-    signal spi_command_nios                     : std_logic_vector(7 downto 0);
-    signal spi_addr_nios                        : std_logic_vector(23 downto 0);
-    signal spi_continue_nios                    : std_logic;
-
-    signal spi_ack                              : std_logic;
-    signal spi_busy                             : std_logic;
-    signal spi_next_byte                        : std_logic;
-    signal spi_byte_ready                       : std_logic;
-
-    signal spi_strobe                           : std_logic;
-    signal spi_continue                         : std_logic;
-    signal spi_command                          : std_logic_vector(7 downto 0);
-    signal spi_addr                             : std_logic_vector(23 downto 0);
 
     signal spi_flash_ctrl                       : std_logic_vector(7 downto 0); 
     signal spi_flash_status                     : std_logic_vector(7 downto 0); 
     signal spi_flash_data_from_flash            : std_logic_vector(7 downto 0);
-    signal spi_flash_data_to_flash              : std_logic_vector(7 downto 0);
-    signal spi_flash_cmdaddr_to_flash           : std_logic_vector(31 downto 0); 
-    signal spi_flash_fifodata_to_flash          : std_logic_vector(31 downto 0);
-    signal spi_flash_readfifo                   : std_logic;
-    signal spi_flash_fifo_empty                 : std_logic;
-
+    
     signal spi_flash_data_to_flash_nios         : std_logic_vector(7 downto 0);	
-    signal writefromfifo                        : std_logic;
-    signal fifowrite_last                       : std_logic;
-    signal fiforead_last                        : std_logic;
-    signal fifowriting                          : std_logic;
-    signal fifo_read_pulse                      : std_logic;
-    signal programmer_active                    : std_logic;
-    signal wcounter                             : std_logic_vector(15 downto 0);
+    signal spi_flash_cmdaddr_to_flash           : std_logic_vector(31 downto 0); 
+	 signal spi_flash_fifo_data_nios					: std_logic_vector(8 downto 0);
+
+
+    -- Fifo for programming data to the SPIflash
+    signal spiflash_to_fifo_we                     : std_logic;
+    signal spiflashfifo_empty                      : std_logic;
+    signal spiflashfifo_full                       : std_logic;
+    signal spiflashfifo_data_in                    : std_logic_vector(7 downto 0);
+    signal spiflashfifo_data_out                   : std_logic_vector(7 downto 0);	 
+    signal read_spiflashfifo                       : std_logic;
+	 signal fifopiotoggle_last								: std_logic;
 
     -- spi arria
-    signal SPI_inst                         : std_logic_vector(7 downto 0);
+    signal SPI_inst                             : std_logic_vector(7 downto 0);
     signal SPI_Aria_data                        : std_logic_vector(31 downto 0);
     signal SPI_Max10_data                       : std_logic_vector(31 downto 0);
     signal SPI_addr_o                           : std_logic_vector(6 downto 0);
     signal SPI_rw                               : std_logic;
+
+    signal spi_arria_addr                       : std_logic_vector(6 downto 0);
+    signal spi_arria_addr_offset                : std_logic_vector(7 downto 0);
+    signal spi_arria_rw                         : std_logic;
+    signal spi_arria_data_to_arria              : std_logic_vector(31 downto 0);
+    signal spi_arria_next_data                  : std_logic;
+    signal spi_arria_word_from_arria            : std_logic_vector(31 downto 0);
+    signal spi_arria_word_en                    : std_logic;
+    signal spi_arria_byte_from_arria            : std_logic_vector(7 downto 0);
+    signal spi_arria_byte_en                    : std_logic;
 
     -- spi arria ram
     signal ram_SPI_data                         : std_logic_vector(31 downto 0);
@@ -134,14 +135,12 @@ architecture arch of top is
     signal adc_data_3                           : std_logic_vector(31 downto 0);
     signal adc_data_4                           : std_logic_vector(31 downto 0);
     
-    
-
 begin
 
     -- signal defaults, clk & resets
     -----------------------
     fpga_reset  <= '0';
-    reset_n     <= '1';
+    reset_n     <= pll_locked;
     mscb_ena    <= '0';
     attention_n <= "ZZ";
 
@@ -154,76 +153,110 @@ begin
         locked      => pll_locked--,
     );
 
+    e_vreg: entity work.version_reg
+    port map(
+        data_out => version(27 downto 0)
+    );
+    version(31 downto 28) <= (others => '0');
+
+    status(0)  <= pll_locked;
+    status(1)  <= spi_arria_we;
+    status(23 downto 2) <= (others => '0');
+    status(31 downto 24) <= spi_flash_status;
+
+    programming_status   <= (others => '0');
+
     -- SPI Arria10 to MAX10
     -----------------------
-    e_spi_secondary : entity work.spi_secondary
-    generic map (
-        SS      => '1', -- signal des ChipSelects 
-        R       => '1', -- Read Signal
-        lanes   => 4--,
-    )
-    port map(
-        -- Max Data/register interface 
-        o_Max_rw        => SPI_rw,
-        o_Max_data      => SPI_Aria_data,
-        o_Max_addr_o    => SPI_addr_o,
-        o_b_addr        => SPI_inst, -- command adrr.
-
-        -- spi interface
-        i_Max_data      => SPI_Max10_data,
-        i_SPI_cs        => fpga_spi_csn,
-        i_SPI_clk       => fpga_spi_D3, -- fpga_spi_clk, --max10_osc_clk, --
-        io_SPI_mosi     => fpga_spi_mosi,
-        io_SPI_D1       => fpga_spi_D1,
-        io_SPI_D2       => fpga_spi_D2,
-        io_SPI_miso     => fpga_spi_miso,
-        io_SPI_D3       => open--,
+    e_spi_arria: entity work.spi_arria
+        port map(
+            ------ SPI
+            i_SPI_csn       => fpga_spi_csn,
+            i_SPI_clk       => fpga_spi_miso, -- replacement for missing connection 
+            io_SPI_mosi     => fpga_spi_mosi,
+            io_SPI_miso     => open,
+            io_SPI_D1       => fpga_spi_D1,
+            io_SPI_D2       => fpga_spi_D2,
+            io_SPI_D3       => fpga_spi_D3, -- again, replacement
+    
+            clk100          => clk100,
+            reset_n         => reset_n,
+            addr            => spi_arria_addr,
+            addroffset      => spi_arria_addr_offset,
+            data_to_arria   => spi_arria_data_to_arria,
+            rw              => spi_arria_rw,
+            word_from_arria => spi_arria_word_from_arria,
+            word_en         => spi_arria_word_en,
+            byte_from_arria => spi_arria_byte_from_arria,
+            byte_en         =>  spi_arria_byte_en
     );
+ 
+    -- Write enable logic
+    process(clk100, reset_n)
+    begin
+    if (reset_n = '0') then
+        spi_arria_we <= '0';
+        rw_last     <= '0';
+        new_transaction <= '0';
+    elsif(clk100'event and clk100 = '1')then
+        rw_last     <= spi_arria_rw;
+        if(spi_arria_addr = FEBSPI_ADDR_WRITENABLE
+            and spi_arria_byte_from_arria = FEBSPI_PATTERN_WRITENABLE
+            and spi_arria_byte_en = '1' and spi_arria_rw = '1') then
+                spi_arria_we <= '1';
+        end if;
+        if(spi_arria_we = '1' and rw_last <= '0' and spi_arria_rw = '1') then
+            new_transaction <= '1';
+        end if;
+        if(new_transaction = '1' and rw_last <= '1' and spi_arria_rw = '0') then
+            spi_arria_we <= '0';
+            new_transaction <= '0';
+        end if;
+    end if;
+    end process;
 
-    e_spi_decoder : entity work.spi_decoder
-    port map(
-        -- SPI secondary
-        i_SPI_inst      => SPI_inst,
-        i_SPI_data      => SPI_Aria_data,
-        i_SPI_addr_o    => SPI_addr_o,
-        i_SPI_rw        => SPI_rw,
-        o_SPI_data      => SPI_Max10_data,
+    -- Multiplexer for data to_arria
+    spi_arria_data_to_arria  
+              <=   version when spi_arria_addr = FEBSPI_ADDR_GITHASH
+                    else status when spi_arria_addr = FEBSPI_ADDR_STATUS
+                    else control when  spi_arria_addr = FEBSPI_ADDR_CONTROL
+                    else programming_status when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_STATUS
+                    else flash_w_cnt when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_COUNT
+                    else adc_data_0 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                                     and spi_arria_addr_offset = X"00"
+                    else adc_data_1 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                                     and spi_arria_addr_offset = X"01"
+                    else adc_data_2 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                                     and spi_arria_addr_offset = X"02"
+                    else adc_data_3 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                                     and spi_arria_addr_offset = X"03"
+                    else adc_data_4 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                                     and spi_arria_addr_offset = X"04"
+						  else (others => '0'); -- needed to avoid latch
+                                     
+                
 
-        -- ram interface
-        i_ram_data      => ram_SPI_data,
-        o_ram_data      => SPI_ram_data,
-        o_ram_addr      => SPI_ram_addr,
-        o_ram_rw        => SPI_ram_rw,
-
-        -- ADC Nios PIOs
-        i_adc_data_0    => adc_data_0,
-        i_adc_data_1    => adc_data_1,
-        i_adc_data_2    => adc_data_2,
-        i_adc_data_3    => adc_data_3,
-        i_adc_data_4    => adc_data_4,
-
-        -- fifo interface
-        i_fifo_data     => X"00000010",--fifo_SPI_data,
-        o_fifo_data     => open,--SPI_fifo_data,
-        o_fifo_next     => open,--SPI_fifo_next,
-        o_fifo_rw       => open,--SPI_fifo_rw,
+    -- Write multiplexer
+    process(clk100, reset_n)
+    begin
+    if (reset_n = '0') then
+        control <= (others => '0');           
+    elsif(clk100'event and clk100 = '1')then
+        -- Word-wise writing
+        if(spi_arria_rw = '1' and spi_arria_word_en = '1') then
+            if(spi_arria_addr = FEBSPI_ADDR_CONTROL) then
+                control <= spi_arria_word_from_arria;
+            end if;
+        end if;
+        -- Byte-wise writing
+        if(spi_arria_rw = '1' and spi_arria_byte_en = '1') then
+            --if(spi_arria_addr = FEBSPI_ADDR_CONTROL) then
+            --    control <= spi_arria_byte_from_arria;
+            --end if;
+        end if;
         
-        -- command register --
-        i_comm_data     => X"00000030",
-        o_comm_data     => open,
-        o_comm_rw       => open,
-        
-        -- status register--
-        i_stat_data     => X"00000050",
-        o_stat_data     => open,
-        o_stat_rw       => open,
-
-        -- register
-        i_reg_data      => X"00000070",
-        o_reg_data      => open,
-        o_reg_addr      => open,
-        o_reg_rw        => open--,
-    );
+    end if;
+    end process;
 
     -- NIOS
     -----------------------
@@ -232,10 +265,8 @@ begin
         -- clk & reset
         clk_clk                     => clk100,
         clk_spi_clk                 => clk100,
-        clk_flash_fifo_clk          => clk100,
         rst_reset_n                 => reset_n,
         rst_spi_reset_n             => reset_n,
-        reset_flash_fifo_reset_n    => reset_n,
 
         -- generic pio
         pio_export                  => open,
@@ -269,141 +300,57 @@ begin
         i2c_scl_oe                  => open,
 
         -- flash spi
-        flash_ps_ctrl_export        => flash_ps_ctrl,
+        flash_ps_ctrl_export        => flash_programming_ctrl,
         flash_w_cnt_export          => flash_w_cnt,
         flash_cmd_addr_export       => spi_flash_cmdaddr_to_flash,
         flash_ctrl_export           => spi_flash_ctrl,
         flash_i_data_export         => spi_flash_data_to_flash_nios,
         flash_o_data_export         => spi_flash_data_from_flash,
         flash_status_export         => spi_flash_status,
-        out_flash_fifo_readdata     => spi_flash_fifodata_to_flash,
-        out_flash_fifo_read         => spi_flash_readfifo,
-        out_flash_fifo_waitrequest  => spi_flash_fifo_empty--,
+		  flash_fifo_data_export		=> spi_flash_fifo_data_nios
     );
 
-    -- SPI to flash and programmer
-    -----------------------
-    process(reset_n, clk100)
-    begin
-    if ( reset_n = '0' ) then
-        writefromfifo       <= '0';
-        fifowrite_last      <= '0';
-        fiforead_last       <= '0';
-        fifowriting         <= '0';
-        fifo_read_pulse     <= '0';
-        programmer_active   <= '0';
-    elsif ( clk100'event and clk100 = '1' ) then
-        fifowrite_last      <= spi_flash_ctrl(7);
-        fiforead_last       <= spi_flash_status(1);
-        fifo_read_pulse     <= '0';
-        if ( spi_flash_ctrl(7) = '1' and 
-             fifowrite_last = '0' and 
-             programmer_active = '0' 
-             ) then
-            fifowriting     <= '1';
-            fifo_read_pulse <= '1';
-            wcounter        <= (others => '0');
-        end if;
-        if ( fifowriting <= '1' ) then
-            if ( spi_flash_fifo_empty = '1' ) then
-                fifowriting <= '0';
-            end if;
-        end if;
-        if ( spi_flash_readfifo = '1' ) then
-            wcounter        <= wcounter + 1;
-        end if;
-        if ( programmer_active = '0' 
-             and fifowriting = '0' 
-             and spi_busy = '0' 
-             and spi_flash_request_programmer = '1' 
-             ) then
-            spi_flash_granted_programmer    <= '1';
-            programmer_active               <= '1';
-        end if;
-        if ( programmer_active = '1' and spi_flash_request_programmer = '0' ) then
-            spi_flash_granted_programmer    <= '0';
-            programmer_active               <= '0';
-        end if;
-    end if;
-    end process;
-
-    flash_w_cnt(31 downto 16)   <= std_logic_vector(wcounter);
-    spi_strobe_nios             <= spi_flash_ctrl(0);
-    spi_command_nios            <= spi_flash_cmdaddr_to_flash(31 downto 24);
-    spi_addr_nios               <= spi_flash_cmdaddr_to_flash(23 downto 0);
-    spi_flash_data_to_flash     <= spi_flash_data_to_flash_nios
-                                    when fifowriting = '0'
-                                    else spi_flash_fifodata_to_flash(7 downto 0);
-    spi_continue                <= spi_continue_programmer
-                                    when spi_flash_granted_programmer = '1'
-                                    else not spi_flash_fifo_empty 
-                                    when fifowriting = '1'
-                                    else spi_flash_ctrl(1);
-    spi_strobe                  <= spi_strobe_programmer
-                                    when spi_flash_granted_programmer = '1'
-                                    else spi_strobe_nios;
-    spi_command                 <= spi_command_programmer
-                                    when spi_flash_granted_programmer = '1'
-                                    else spi_command_nios;
-    spi_addr                    <= spi_addr_programmer
-                                    when spi_flash_granted_programmer = '1'
-                                    else spi_addr_nios;
-    spi_flash_readfifo          <= spi_flash_status(1) or fifo_read_pulse;
-    spi_flash_status(0)         <= spi_ack;
-    spi_flash_status(1)         <= spi_next_byte;
-    spi_flash_status(2)         <= spi_byte_ready;
-    spi_flash_status(3)         <= spi_busy;
-    spi_flash_status(6)         <= spi_flash_fifo_empty;
-    spi_flash_status(7)         <= fifowriting;
-
-    e_spiflash : entity work.spiflash
+ 
+e_flashprogramming_block: entity work.flashprogramming_block
     port map(
-        -- clk & reset
-        reset_n         => reset_n,
-        clk             => clk100,
-        -- spi ctrl
-        spi_strobe      => spi_strobe,
-        spi_ack         => spi_ack,
-        spi_busy        => spi_busy,
-        spi_command     => spi_command,
-        spi_addr        => spi_addr,
-        spi_data        => spi_flash_data_to_flash,
-        spi_next_byte   => spi_next_byte,
-        spi_continue    => spi_continue, 
-        spi_byte_out    => spi_flash_data_from_flash,
-        spi_byte_ready  => spi_byte_ready,
-        -- spi to flash
-        spi_sclk        => flash_sck,
-        spi_csn         => flash_csn,
-        spi_mosi        => flash_io0,
-        spi_miso        => flash_io1,
-        spi_D2          => flash_io2,
-        spi_D3          => flash_io3--,
+        clk100  	=> clk100,
+        reset_n 	=> reset_n,
+		  
+		  control 	=> control,
+
+        -- Flash SPI IF
+        flash_csn               => flash_csn,
+        flash_sck               => flash_sck,
+        flash_io0               => flash_io0,
+        flash_io1               => flash_io1,
+        flash_io2               => flash_io2,
+        flash_io3               => flash_io3,
+        
+        -- FPGA programming interface
+        fpga_conf_done          => fpga_conf_done,
+        fpga_nstatus            => fpga_nstatus,
+        fpga_nconfig            => fpga_nconfig, 
+        fpga_data               => fpga_data,
+        fpga_clk                => fpga_clk,
+
+        -- NIOS interface
+        flash_programming_ctrl  => flash_programming_ctrl,
+        flash_w_cnt             => flash_w_cnt,
+        spi_flash_cmdaddr_to_flash  => spi_flash_cmdaddr_to_flash,
+        spi_flash_ctrl          => spi_flash_ctrl,
+        spi_flash_data_to_flash_nios => spi_flash_data_to_flash_nios,
+        spi_flash_data_from_flash   => spi_flash_data_from_flash,
+        spi_flash_status            => spi_flash_status,
+		 spi_flash_fifo_data_nios     => spi_flash_fifo_data_nios, 
+		 
+		   -- Arria SPI interface
+        spi_arria_byte_from_arria            => spi_arria_byte_from_arria,
+        spi_arria_byte_en                    => spi_arria_byte_en,
+        spi_arria_addr                       => spi_arria_addr
     );
 
-    programming_if : entity work.ps_programmer
-    port map(
-        -- clk & reset
-        reset_n             => reset_n,
-        clk                 => clk100,
-        -- spi addr
-        start               => flash_ps_ctrl(31),
-        start_address       => flash_ps_ctrl(23 downto 0),
-        --Interface to SPI flash
-        spi_strobe          => spi_strobe_programmer,
-        spi_command         => spi_command_programmer,
-        spi_addr            => spi_addr_programmer,
-        spi_continue        => spi_continue_programmer,
-        spi_byte_out        => spi_flash_data_from_flash,
-        spi_byte_ready      => spi_byte_ready,
-        spi_flash_request   => spi_flash_request_programmer,
-        spi_flash_granted   => spi_flash_granted_programmer,
-        --Interface to FPGA
-        fpga_conf_done      => fpga_conf_done,
-        fpga_nstatus        => fpga_nstatus,
-        fpga_nconfig        => fpga_nconfig,
-        fpga_data           => fpga_data,
-        fpga_clk            => fpga_clk--,
-    );
+ 
+
+
 
 end architecture arch;
