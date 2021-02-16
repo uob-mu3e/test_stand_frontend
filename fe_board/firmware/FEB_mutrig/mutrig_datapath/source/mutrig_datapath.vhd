@@ -248,8 +248,10 @@ signal s_B_buf_predec_full 	: std_logic :='0';
 signal s_B_buf_predec_wr		: std_logic;
 -- prbs decoder - mu3edataformat-writer - common fifo
 signal s_A_buf_data		: std_logic_vector(33 downto 0);
+signal s_A_buf_data_reg		: std_logic_vector(33 downto 0);
 signal s_A_buf_wr		: std_logic;
 signal s_B_buf_data		: std_logic_vector(33 downto 0);
+signal s_B_buf_data_reg		: std_logic_vector(33 downto 0);
 signal s_B_buf_wr		: std_logic;
 
 -- monitoring signals TODO: connect as needed
@@ -265,9 +267,24 @@ signal s_receivers_errorcounter : t_array_32b;
 signal s_receivers_synclosscounter : t_array_32b;
 signal s_SC_reset_counters_125_n : std_logic;
 
+-- lapse counter signals
+signal clk_625 : std_logic;
+signal rst_625_n : std_logic;
+signal CC_corrected_A : std_logic_vector(15 downto 0);
+signal CC_corrected_B : std_logic_vector(15 downto 0);
+
 begin
 rst_sync_counter : entity work.reset_sync
-	port map( i_reset_n => not i_SC_reset_counters, o_reset_n => s_SC_reset_counters_125_n, i_clk => s_receivers_usrclk);
+port map( i_reset_n => not i_SC_reset_counters, o_reset_n => s_SC_reset_counters_125_n, i_clk => s_receivers_usrclk);
+
+-- generate 625 MHz
+e_pll_625_mhz : entity work.ip_altpll
+generic map ( INCLK0_MHZ => 125.0, MUL => 5 )
+port map ( areset => i_rst_rx, inclk0 => i_ts_clk, c0 => clk_625, locked => open );
+
+-- generate reset for 625 MHz
+rst_sync_625_mhz : entity work.reset_sync
+port map( i_reset_n => not i_ts_rst, o_reset_n => rst_625_n, i_clk => clk_625);
 
 u_rxdeser: entity work.receiver_block
 generic map(
@@ -569,15 +586,27 @@ u_decoder: prbs_decoder
     		o_B_valid	=> s_B_buf_wr,
 		i_SC_disable_dec=> i_SC_disable_dec
 	);
+    
+-- generate lapse A counter for 625 MHz
+e_lapse_counter_A : entity work.lapse_counter
+generic map (N_TOT => 32767, N_CC => 15)
+port map ( i_clk => clk_625, i_reset_n => rst_625_n, i_CC => s_A_buf_data(20 downto 6), o_CC => CC_corrected_A );
+
+-- generate lapse B counter for 625 MHz
+e_lapse_counter_B : entity work.lapse_counter
+generic map (N_TOT => 32767, N_CC => 15)
+port map ( i_clk => clk_625, i_reset_n => rst_625_n, i_CC => s_B_buf_data(20 downto 6), o_CC => CC_corrected_B );
 
 --to common fifo buffer:
 o_fifo_wr(0)                    <= s_A_buf_wr;
-o_fifo_data(35 downto 0)        <= "00" & s_A_buf_data;
+o_fifo_data(35 downto 0)        <=  "00" & s_A_buf_data when s_A_buf_data(33 downto 32) = "10" else
+                                    "00" & s_A_buf_data(33 downto 21) & CC_corrected_A(14 downto 0) & s_A_buf_data(5 downto 0);
 s_A_buf_predec_full             <= i_common_fifos_almost_full(0);
 
 gen_dual_cfifo: if(N_LINKS>1) generate
     o_fifo_wr(1)                <= s_B_buf_wr;
-    o_fifo_data(71 downto 36)   <= "00" & s_B_buf_data;
+    o_fifo_data(71 downto 36)   <=  "00" & s_B_buf_data when s_B_buf_data(33 downto 32) = "10" else
+                                    "00" & s_B_buf_data(33 downto 21) & CC_corrected_B(14 downto 0) & s_B_buf_data(5 downto 0);
     s_B_buf_predec_full         <= i_common_fifos_almost_full(1);
 end generate;
 

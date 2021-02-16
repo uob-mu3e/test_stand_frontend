@@ -37,7 +37,7 @@ begin
     end process;
 
     e_lapse_counter : entity work.lapse_counter
-    generic map (N_TOT => 32767, N_TIME => 48, N_CC => N_CC) 
+    generic map (N_TOT => 32767, N_CC => N_CC) 
     port map ( i_clk => clk, i_reset_n => reset_n, i_CC => i_CC, o_CC => o_CC );
 
 end architecture;

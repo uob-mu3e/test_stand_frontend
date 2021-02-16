@@ -9,8 +9,7 @@ use ieee.math_real.all;
 entity lapse_counter is
 generic (
 	N_TOT : positive := 32767;
-	N_CC : positive := 32;
-	N_TIME : positive := 48--;
+	N_CC : positive := 32--;
 );
 port (
 	i_reset_n   : in  std_logic;

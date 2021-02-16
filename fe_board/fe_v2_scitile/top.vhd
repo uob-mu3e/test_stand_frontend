@@ -110,7 +110,7 @@ architecture rtl of top is
     signal pb_db                    : std_logic_vector(1 downto 0);
 
     constant N_LINKS                : integer := 1;
-    constant N_ASICS                : integer := 1;
+    constant N_ASICS                : integer := 13;
     constant N_MODULES              : integer := 1;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
@@ -140,7 +140,7 @@ begin
         N_MODULES       => N_MODULES,
         N_ASICS         => N_ASICS,
         N_LINKS         => N_LINKS,
-        INPUT_SIGNFLIP  => "11111111",
+        INPUT_SIGNFLIP  => "1111111111111",
         LVDS_PLL_FREQ   => 125.0,
         LVDS_DATA_RATE  => 1250.0--,
     )
