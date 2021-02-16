@@ -14,7 +14,7 @@ int main() {
     base_init();
     
     printf("Init ADC");
-
+    adc.init();
 
     while (1) {
         printf("\n");
