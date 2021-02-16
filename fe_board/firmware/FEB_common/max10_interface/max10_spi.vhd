@@ -21,7 +21,7 @@ entity max10_spi is
     addr        : in std_logic_vector(6 downto 0);
     rw          : in std_logic;    
     data_to_max : in std_logic_vector(31 downto 0);
-    numbytes    : in std_logic_vector(7 downto 0);
+    numbytes    : in std_logic_vector(8 downto 0);
     next_data   : out std_logic;
     word_from_max : out std_logic_vector(31 downto 0);
     word_en       : out std_logic;
