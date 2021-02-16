@@ -71,6 +71,7 @@ online/*.txt
 online/*.TXT
 online/*.log
 online/*.xml
+*.autosave
 
 # midas (?)
 *.mid
@@ -87,3 +88,6 @@ cmake-build-debug/
 #
 *.npy
 *.vcd
+
+# Generated header files
+switching_pc/slowcontrol/feb_constants.h

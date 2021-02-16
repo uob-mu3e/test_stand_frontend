@@ -1,19 +1,18 @@
 [*]
-[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Tue Nov  3 14:43:38 2020
+[*] GTKWave Analyzer v3.3.108 (w)1999-2020 BSI
+[*] Fri Jan 29 09:42:51 2021
 [*]
 [dumpfile] "/home/makoeppe/mu3e/online/switching_pc/a10_board/firmware/tb/slow_control/.cache/sc_tb.ghw"
-[dumpfile_mtime] "Tue Nov  3 14:43:07 2020"
-[dumpfile_size] 139052
+[dumpfile_mtime] "Fri Jan 29 09:38:09 2021"
+[dumpfile_size] 142722
 [savefile] "/home/makoeppe/mu3e/online/switching_pc/a10_board/firmware/tb/slow_control/signals.gtkw"
-[timestart] 0
+[timestart] 115030000
 [size] 2560 1440
-[pos] -641 -47
-*-26.000000 88500000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -959
+*-24.000000 196670000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.sc_tb.
-[treeopen] top.sc_tb.sc_main.
-[treeopen] top.sc_tb.sc_secondary.
+[treeopen] top.sc_tb.sc_rx.
 [sst_width] 314
 [signals_width] 239
 [sst_expanded] 1
@@ -29,7 +28,6 @@ top.sc_tb.clk
 @28
 top.sc_tb.sc_main.i_length_we
 top.sc_tb.sc_main.length_we_reg
-@29
 top.sc_tb.sc_main.length_we
 @22
 #{top.sc_tb.sc_main.i_length[15:0]} top.sc_tb.sc_main.i_length[15] top.sc_tb.sc_main.i_length[14] top.sc_tb.sc_main.i_length[13] top.sc_tb.sc_main.i_length[12] top.sc_tb.sc_main.i_length[11] top.sc_tb.sc_main.i_length[10] top.sc_tb.sc_main.i_length[9] top.sc_tb.sc_main.i_length[8] top.sc_tb.sc_main.i_length[7] top.sc_tb.sc_main.i_length[6] top.sc_tb.sc_main.i_length[5] top.sc_tb.sc_main.i_length[4] top.sc_tb.sc_main.i_length[3] top.sc_tb.sc_main.i_length[2] top.sc_tb.sc_main.i_length[1] top.sc_tb.sc_main.i_length[0]
@@ -68,5 +66,27 @@ top.sc_tb.state
 #{top.sc_tb.sc_secondary.mem_data_o[31:0]} top.sc_tb.sc_secondary.mem_data_o[31] top.sc_tb.sc_secondary.mem_data_o[30] top.sc_tb.sc_secondary.mem_data_o[29] top.sc_tb.sc_secondary.mem_data_o[28] top.sc_tb.sc_secondary.mem_data_o[27] top.sc_tb.sc_secondary.mem_data_o[26] top.sc_tb.sc_secondary.mem_data_o[25] top.sc_tb.sc_secondary.mem_data_o[24] top.sc_tb.sc_secondary.mem_data_o[23] top.sc_tb.sc_secondary.mem_data_o[22] top.sc_tb.sc_secondary.mem_data_o[21] top.sc_tb.sc_secondary.mem_data_o[20] top.sc_tb.sc_secondary.mem_data_o[19] top.sc_tb.sc_secondary.mem_data_o[18] top.sc_tb.sc_secondary.mem_data_o[17] top.sc_tb.sc_secondary.mem_data_o[16] top.sc_tb.sc_secondary.mem_data_o[15] top.sc_tb.sc_secondary.mem_data_o[14] top.sc_tb.sc_secondary.mem_data_o[13] top.sc_tb.sc_secondary.mem_data_o[12] top.sc_tb.sc_secondary.mem_data_o[11] top.sc_tb.sc_secondary.mem_data_o[10] top.sc_tb.sc_secondary.mem_data_o[9] top.sc_tb.sc_secondary.mem_data_o[8] top.sc_tb.sc_secondary.mem_data_o[7] top.sc_tb.sc_secondary.mem_data_o[6] top.sc_tb.sc_secondary.mem_data_o[5] top.sc_tb.sc_secondary.mem_data_o[4] top.sc_tb.sc_secondary.mem_data_o[3] top.sc_tb.sc_secondary.mem_data_o[2] top.sc_tb.sc_secondary.mem_data_o[1] top.sc_tb.sc_secondary.mem_data_o[0]
 [color] 5
 #{top.sc_tb.sc_secondary.mem_addr_o[15:0]} top.sc_tb.sc_secondary.mem_addr_o[15] top.sc_tb.sc_secondary.mem_addr_o[14] top.sc_tb.sc_secondary.mem_addr_o[13] top.sc_tb.sc_secondary.mem_addr_o[12] top.sc_tb.sc_secondary.mem_addr_o[11] top.sc_tb.sc_secondary.mem_addr_o[10] top.sc_tb.sc_secondary.mem_addr_o[9] top.sc_tb.sc_secondary.mem_addr_o[8] top.sc_tb.sc_secondary.mem_addr_o[7] top.sc_tb.sc_secondary.mem_addr_o[6] top.sc_tb.sc_secondary.mem_addr_o[5] top.sc_tb.sc_secondary.mem_addr_o[4] top.sc_tb.sc_secondary.mem_addr_o[3] top.sc_tb.sc_secondary.mem_addr_o[2] top.sc_tb.sc_secondary.mem_addr_o[1] top.sc_tb.sc_secondary.mem_addr_o[0]
+@28
+[color] 3
+#{top.sc_tb.sc_rx.sc_type[1:0]} top.sc_tb.sc_rx.sc_type[1] top.sc_tb.sc_rx.sc_type[0]
+@420
+[color] 3
+top.sc_tb.sc_rx.state
+@22
+[color] 3
+#{top.sc_tb.sc_rx.i_link_data[31:0]} top.sc_tb.sc_rx.i_link_data[31] top.sc_tb.sc_rx.i_link_data[30] top.sc_tb.sc_rx.i_link_data[29] top.sc_tb.sc_rx.i_link_data[28] top.sc_tb.sc_rx.i_link_data[27] top.sc_tb.sc_rx.i_link_data[26] top.sc_tb.sc_rx.i_link_data[25] top.sc_tb.sc_rx.i_link_data[24] top.sc_tb.sc_rx.i_link_data[23] top.sc_tb.sc_rx.i_link_data[22] top.sc_tb.sc_rx.i_link_data[21] top.sc_tb.sc_rx.i_link_data[20] top.sc_tb.sc_rx.i_link_data[19] top.sc_tb.sc_rx.i_link_data[18] top.sc_tb.sc_rx.i_link_data[17] top.sc_tb.sc_rx.i_link_data[16] top.sc_tb.sc_rx.i_link_data[15] top.sc_tb.sc_rx.i_link_data[14] top.sc_tb.sc_rx.i_link_data[13] top.sc_tb.sc_rx.i_link_data[12] top.sc_tb.sc_rx.i_link_data[11] top.sc_tb.sc_rx.i_link_data[10] top.sc_tb.sc_rx.i_link_data[9] top.sc_tb.sc_rx.i_link_data[8] top.sc_tb.sc_rx.i_link_data[7] top.sc_tb.sc_rx.i_link_data[6] top.sc_tb.sc_rx.i_link_data[5] top.sc_tb.sc_rx.i_link_data[4] top.sc_tb.sc_rx.i_link_data[3] top.sc_tb.sc_rx.i_link_data[2] top.sc_tb.sc_rx.i_link_data[1] top.sc_tb.sc_rx.i_link_data[0]
+[color] 3
+#{top.sc_tb.sc_rx.o_fifo_wdata[35:0]} top.sc_tb.sc_rx.o_fifo_wdata[35] top.sc_tb.sc_rx.o_fifo_wdata[34] top.sc_tb.sc_rx.o_fifo_wdata[33] top.sc_tb.sc_rx.o_fifo_wdata[32] top.sc_tb.sc_rx.o_fifo_wdata[31] top.sc_tb.sc_rx.o_fifo_wdata[30] top.sc_tb.sc_rx.o_fifo_wdata[29] top.sc_tb.sc_rx.o_fifo_wdata[28] top.sc_tb.sc_rx.o_fifo_wdata[27] top.sc_tb.sc_rx.o_fifo_wdata[26] top.sc_tb.sc_rx.o_fifo_wdata[25] top.sc_tb.sc_rx.o_fifo_wdata[24] top.sc_tb.sc_rx.o_fifo_wdata[23] top.sc_tb.sc_rx.o_fifo_wdata[22] top.sc_tb.sc_rx.o_fifo_wdata[21] top.sc_tb.sc_rx.o_fifo_wdata[20] top.sc_tb.sc_rx.o_fifo_wdata[19] top.sc_tb.sc_rx.o_fifo_wdata[18] top.sc_tb.sc_rx.o_fifo_wdata[17] top.sc_tb.sc_rx.o_fifo_wdata[16] top.sc_tb.sc_rx.o_fifo_wdata[15] top.sc_tb.sc_rx.o_fifo_wdata[14] top.sc_tb.sc_rx.o_fifo_wdata[13] top.sc_tb.sc_rx.o_fifo_wdata[12] top.sc_tb.sc_rx.o_fifo_wdata[11] top.sc_tb.sc_rx.o_fifo_wdata[10] top.sc_tb.sc_rx.o_fifo_wdata[9] top.sc_tb.sc_rx.o_fifo_wdata[8] top.sc_tb.sc_rx.o_fifo_wdata[7] top.sc_tb.sc_rx.o_fifo_wdata[6] top.sc_tb.sc_rx.o_fifo_wdata[5] top.sc_tb.sc_rx.o_fifo_wdata[4] top.sc_tb.sc_rx.o_fifo_wdata[3] top.sc_tb.sc_rx.o_fifo_wdata[2] top.sc_tb.sc_rx.o_fifo_wdata[1] top.sc_tb.sc_rx.o_fifo_wdata[0]
+@28
+[color] 3
+top.sc_tb.sc_rx.o_fifo_we
+@22
+[color] 3
+#{top.sc_tb.sc_rx.o_ram_wdata[31:0]} top.sc_tb.sc_rx.o_ram_wdata[31] top.sc_tb.sc_rx.o_ram_wdata[30] top.sc_tb.sc_rx.o_ram_wdata[29] top.sc_tb.sc_rx.o_ram_wdata[28] top.sc_tb.sc_rx.o_ram_wdata[27] top.sc_tb.sc_rx.o_ram_wdata[26] top.sc_tb.sc_rx.o_ram_wdata[25] top.sc_tb.sc_rx.o_ram_wdata[24] top.sc_tb.sc_rx.o_ram_wdata[23] top.sc_tb.sc_rx.o_ram_wdata[22] top.sc_tb.sc_rx.o_ram_wdata[21] top.sc_tb.sc_rx.o_ram_wdata[20] top.sc_tb.sc_rx.o_ram_wdata[19] top.sc_tb.sc_rx.o_ram_wdata[18] top.sc_tb.sc_rx.o_ram_wdata[17] top.sc_tb.sc_rx.o_ram_wdata[16] top.sc_tb.sc_rx.o_ram_wdata[15] top.sc_tb.sc_rx.o_ram_wdata[14] top.sc_tb.sc_rx.o_ram_wdata[13] top.sc_tb.sc_rx.o_ram_wdata[12] top.sc_tb.sc_rx.o_ram_wdata[11] top.sc_tb.sc_rx.o_ram_wdata[10] top.sc_tb.sc_rx.o_ram_wdata[9] top.sc_tb.sc_rx.o_ram_wdata[8] top.sc_tb.sc_rx.o_ram_wdata[7] top.sc_tb.sc_rx.o_ram_wdata[6] top.sc_tb.sc_rx.o_ram_wdata[5] top.sc_tb.sc_rx.o_ram_wdata[4] top.sc_tb.sc_rx.o_ram_wdata[3] top.sc_tb.sc_rx.o_ram_wdata[2] top.sc_tb.sc_rx.o_ram_wdata[1] top.sc_tb.sc_rx.o_ram_wdata[0]
+[color] 3
+#{top.sc_tb.sc_rx.o_ram_addr[31:0]} top.sc_tb.sc_rx.o_ram_addr[31] top.sc_tb.sc_rx.o_ram_addr[30] top.sc_tb.sc_rx.o_ram_addr[29] top.sc_tb.sc_rx.o_ram_addr[28] top.sc_tb.sc_rx.o_ram_addr[27] top.sc_tb.sc_rx.o_ram_addr[26] top.sc_tb.sc_rx.o_ram_addr[25] top.sc_tb.sc_rx.o_ram_addr[24] top.sc_tb.sc_rx.o_ram_addr[23] top.sc_tb.sc_rx.o_ram_addr[22] top.sc_tb.sc_rx.o_ram_addr[21] top.sc_tb.sc_rx.o_ram_addr[20] top.sc_tb.sc_rx.o_ram_addr[19] top.sc_tb.sc_rx.o_ram_addr[18] top.sc_tb.sc_rx.o_ram_addr[17] top.sc_tb.sc_rx.o_ram_addr[16] top.sc_tb.sc_rx.o_ram_addr[15] top.sc_tb.sc_rx.o_ram_addr[14] top.sc_tb.sc_rx.o_ram_addr[13] top.sc_tb.sc_rx.o_ram_addr[12] top.sc_tb.sc_rx.o_ram_addr[11] top.sc_tb.sc_rx.o_ram_addr[10] top.sc_tb.sc_rx.o_ram_addr[9] top.sc_tb.sc_rx.o_ram_addr[8] top.sc_tb.sc_rx.o_ram_addr[7] top.sc_tb.sc_rx.o_ram_addr[6] top.sc_tb.sc_rx.o_ram_addr[5] top.sc_tb.sc_rx.o_ram_addr[4] top.sc_tb.sc_rx.o_ram_addr[3] top.sc_tb.sc_rx.o_ram_addr[2] top.sc_tb.sc_rx.o_ram_addr[1] top.sc_tb.sc_rx.o_ram_addr[0]
+@29
+[color] 3
+top.sc_tb.sc_rx.o_ram_we
 [pattern_trace] 1
 [pattern_trace] 0

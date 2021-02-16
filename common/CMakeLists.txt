@@ -1,0 +1,5 @@
+add_subdirectory(kerneldriver)
+add_subdirectory(libmudaq)
+#add_subdirectory(common/libmupix)
+#add_subdirectory(common/libmutrig)
+#add_subdirectory(common/libMALIBU)

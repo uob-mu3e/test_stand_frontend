@@ -39,6 +39,7 @@ struct adc_t {
             printf("\n");
             printf("  [1] => adc readout while\n");
             printf("  [2] => read one time adc data\n");
+            printf("  [q] => exit\n");
             
             printf("Select entry ...\n");
             char cmd = wait_key();
@@ -106,14 +107,14 @@ struct adc_t {
         }
     }
 
-    
     void start_adc_sequencer() {
         adc_interrupt_disable(ADC_SAMPLE_STORE_CSR_BASE);
         adc_set_mode_run_continuously(ADC_SEQUENCER_CSR_BASE);
         adc_start(ADC_SEQUENCER_CSR_BASE);
     }
-    
 
 };
+
+
 
 #endif // __ADC_H__
