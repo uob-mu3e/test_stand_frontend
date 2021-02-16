@@ -16,6 +16,7 @@
     constant K283 : std_logic_vector(31 downto 0) := x"0000007C";
     constant K284 : std_logic_vector(31 downto 0) := x"0000009C";
     constant K285 : std_logic_vector(31 downto 0) := x"000000BC";
+    constant K286 : std_logic_vector(31 downto 0) := x"000000DC";
     constant pre_marker : std_logic_vector(5 downto 0) := "110000";
     constant sh_marker : std_logic_vector(5 downto 0)  := "110001";
     constant tr_marker : std_logic_vector(5 downto 0)  := "110010";

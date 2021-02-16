@@ -204,6 +204,7 @@ begin
                             hit_reg_cnt <= 0;
                             -- writeout last reg data
                             o_data(227 downto 0) <= hit_reg(227 downto 0);
+                            hit_reg <= i_data;
                         else
                             FOR I in NLINKS - 1 downto 0 LOOP
                                 o_datak(I * 4 + 3 downto I * 4)     <= "0000";
@@ -258,6 +259,18 @@ begin
                     END LOOP;
 
                 when error_state =>
+                    o_wen               <= '1';
+                    o_data(7 downto 0)  <= x"7C";
+                    o_data(8)           <= hit_reg(12); -- error_gtime1
+                    o_data(9)           <= hit_reg(13); -- error_gtime2
+                    o_data(10)          <= hit_reg(14); -- error_shtime
+                    o_data(11)          <= hit_reg(15); -- error_merger
+                    o_data(31 downto 12)<= x"0000" & "0000"; -- free bits
+                    o_datak(3 downto 0) <= "0001";
+                    FOR I in NLINKS - 2 downto 0 LOOP
+                        o_data(I * 32 + 31 downto I * 32)   <= K286;
+                        o_datak(I * 4 + 3 downto I * 4)     <= "0001";
+                    END LOOP;
                     merge_state <= get_tr;
 
                 when others =>
