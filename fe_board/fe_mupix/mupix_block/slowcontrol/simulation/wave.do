@@ -13,7 +13,6 @@ add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/is_writing
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/is_writing_this_round
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/config_storage_write
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/config_storage_input_data
-add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/enable_shift_reg6
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/clk_step
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/rd_config
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/config_data
@@ -23,7 +22,7 @@ add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/ld_regs
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/mp_ctrl_state
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/mp_fifo_clear
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/invert_csn
-add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/i_clr_all
+add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/i_clr_fifo
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/i_data
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/i_wrreq
 add wave -noupdate /mupix_ctrl_tb/e_mp_ctrl/e_mupix_ctrl_config_storage/o_data

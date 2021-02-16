@@ -42,7 +42,6 @@ architecture RTL of mupix_ctrl is
     signal clk1                     : std_logic_vector(5 downto 0);
     signal clk2                     : std_logic_vector(5 downto 0);
     signal clk_step                 : std_logic_vector(3 downto 0);
-    signal ld_regs                  : std_logic_vector(5 downto 0);
 
     signal rd_config                : std_logic;
     signal config_data              : std_logic_vector(5 downto 0);
@@ -138,8 +137,6 @@ begin
                 o_csn       <= chip_select_n;
             end if;
 
-            ld_regs(WR_CONF_BIT) <= '1'; -- bug in mp10, load config stays at 1#
-
             case mp_ctrl_state is
                 when idle =>
                     
@@ -160,11 +157,7 @@ begin
                         is_writing_this_round       <= is_writing;
                         mp_ctrl_state               <= set_clks;
                     end if;
-                            if(invert_29_bitpos = '1') then 
-                                
-                            else
-                            
-                            end if;
+
                 when set_clks =>
                     clk_step    <= clk_step + 1;
                     for I in 0 to 5 loop
