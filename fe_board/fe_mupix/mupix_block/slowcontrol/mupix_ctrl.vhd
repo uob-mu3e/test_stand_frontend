@@ -47,6 +47,7 @@ architecture RTL of mupix_ctrl is
     signal config_data              : std_logic_vector(5 downto 0);
     signal config_data29            : std_logic_vector(28 downto 0);
     signal config_data29_raw        : std_logic_vector(28 downto 0);
+    signal waiting_for_load_round   : std_logic_vector(5 downto 0);
 
     signal slow_down                : std_logic_vector(15 downto 0);
     signal slow_down_buf            : std_logic_vector(31 downto 0);
@@ -118,6 +119,7 @@ begin
             mp_ctrl_state           <= idle;
             config_data29_raw       <= (others => '0');
             is_writing_this_round   <= (others => '0');
+            waiting_for_load_round  <= (others => '0');
             clk1                    <= (others => '0');
             clk2                    <= (others => '0');
             clk_step                <= (others => '0');
@@ -139,7 +141,8 @@ begin
 
             case mp_ctrl_state is
                 when idle =>
-                    
+                    waiting_for_load_round  <= (others => '0');
+
                     if(or_reduce(is_writing) = '1') then
                         mp_ctrl_state   <= load_config;
                         rd_config       <= '1';
@@ -162,6 +165,7 @@ begin
                     clk_step    <= clk_step + 1;
                     for I in 0 to 5 loop
                         if(is_writing_this_round(I)='1') then
+                            waiting_for_load_round(I)   <= '1';
                             -- clocks (1.step 0 0, 2.step 1 0, 3.step 0 0, 4.step 0 1, 5.step 0 0)
                             case clk_step is
                                 when x"0" => 
@@ -179,10 +183,6 @@ begin
                                 when x"4" => 
                                     config_data29_raw(I*3 + 1) <= '0';
                                     config_data29_raw(I*3 + 2) <= '0';
-                                when x"5" =>
-                                    if(is_writing(I)='0') then -- finished writing the complete reg this round --> additional load round
-                                        config_data29_raw(18 + I) <= '1'; -- set ld bit
-                                    end if;
                                 when others =>
                                     
                             end case;
@@ -206,6 +206,19 @@ begin
                         mp_ctrl_state <= writing;
                         spi_bit_state <= beforepulse;
                         wait_cnt      <= (others => '0');
+
+                        for I in 0 to 5 loop
+                             -- set ld bits that have written something since last idle
+                            config_data29_raw(18 + I) <= waiting_for_load_round(I);
+                        end loop;
+                        config_data29_raw(19) <= '1';
+                    end if;
+
+                    if(clk_step=x"6") then -- extra round for load remove
+                        mp_ctrl_state <= writing;
+                        spi_bit_state <= beforepulse;
+                        wait_cnt      <= (others => '0');
+                        config_data29_raw <= (19 => '1', others => '0');
                     end if;
 
                     if(clk_step=x"0" or clk_step=x"1" or clk_step=x"2" or clk_step=x"3" or clk_step=x"4") then -- writing

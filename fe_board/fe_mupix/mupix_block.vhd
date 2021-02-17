@@ -53,6 +53,10 @@ architecture arch of mupix_block is
     signal reg_rdata                    : std_logic_vector(31 downto 0);
     signal reg_rdata_datapath           : std_logic_vector(31 downto 0);
 
+    signal spi_clock        : std_logic;
+    signal spi_mosi         : std_logic;
+    signal spi_csn          : std_logic;
+
 begin
 
     datapath_reset_n <= '0' when (i_reset='1' or i_run_state_156=RUN_STATE_SYNC) else '1';
@@ -68,22 +72,37 @@ begin
 
     o_reg_rdata <= reg_rdata_datapath when (unsigned(i_reg_add) >= MUPIX_DATAPATH_ADDR_START and reg_valid = '1') else reg_rdata;
 
-    e_mupix_ctrl : work.mupix_ctrl
-    port map (
+--    e_mupix_ctrl : work.mupix_ctrl
+--    port map (
+--        i_clk                       => i_clk156,
+--        i_reset_n                   => not i_reset,
+--
+--        i_reg_add                   => i_reg_add,
+--        i_reg_re                    => i_reg_re,
+--        o_reg_rdata                 => reg_rdata,
+--        i_reg_we                    => i_reg_we,
+--        i_reg_wdata                 => i_reg_wdata,
+--
+--        o_clock                     => o_clock,
+--        o_SIN                       => o_SIN,
+--        o_mosi                      => o_mosi,
+--        o_csn                       => o_csn--,
+--    );
+
+    o_csn   <= (others => spi_csn);
+    o_mosi  <= (others => spi_mosi);
+    o_clock <= (others => spi_clock);
+    e_mupix_ctrl : work.mupix_ctrl_dummy
+    port map(
         i_clk                       => i_clk156,
-        i_reset_n                   => not i_reset,
+        i_start                     => i_reset,
 
-        i_reg_add                   => i_reg_add,
-        i_reg_re                    => i_reg_re,
-        o_reg_rdata                 => reg_rdata,
-        i_reg_we                    => i_reg_we,
-        i_reg_wdata                 => i_reg_wdata,
-
-        o_clock                     => o_clock,
-        o_SIN                       => o_SIN,
-        o_mosi                      => o_mosi,
-        o_csn                       => o_csn--,
+        o_spi_clock                 => spi_clock,
+        o_spi_mosi                  => spi_mosi,
+        o_spi_csn                   => spi_csn--,
     );
+
+
 
     e_mupix_datapath : work.mupix_datapath
     port map (

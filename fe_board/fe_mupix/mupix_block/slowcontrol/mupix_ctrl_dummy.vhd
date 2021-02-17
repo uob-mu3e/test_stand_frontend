@@ -38,6 +38,7 @@ architecture RTL of mupix_ctrl_dummy is
     signal reset_n      : std_logic;
 
     signal step         : integer;
+    signal start_prev   : std_logic;
 
     type default_config_type    is array (6 downto 0) of std_logic_vector(31 downto 0);
     constant MP_BIAS_DEFAULT  : default_config_type := (x"028A0000",x"1400C20A", x"40280000", x"041E9A51", x"1E041041", x"FA3F002F", x"2A000A03");
@@ -46,6 +47,9 @@ architecture RTL of mupix_ctrl_dummy is
 
 begin
 
+    o_spi_clock <= clock(0);
+    o_spi_mosi  <= mosi(0);
+    o_spi_csn   <= csn(0);
     e_mupix_ctrl: entity work.mupix_ctrl
     port map(
         i_clk                       => i_clk,
@@ -68,30 +72,44 @@ begin
     process(i_clk, i_start)
     begin
     if(rising_edge(i_clk))then
-        step        <= step + 1;
-        if(i_start = '1') then 
+        reset_n     <= '1';
+        start_prev  <= i_start;
+        if(step /= 0) then
+            step        <= step + 1;
+        end if;
+
+        if(i_start = '1' and start_prev = '0') then 
             step    <= 1;
         end if;
+
         sc_we       <= '0';
         sc_add      <= (others => '0');
+
         case step is
             when 0 => 
-                
+                reset_n     <= '0';
             when 1 to 50  => 
                 sc_add      <= (others => '0');
                 sc_wdata    <= (others => '0');
                 sc_re       <= '0';
                 sc_we       <= '0';
-                reset_n     <= '0';
             when 51 => 
                 sc_add      <= x"40";
                 sc_wdata    <= x"00000FC0";
                 sc_we       <= '1';
-            when 52 to 60 =>
-                
+            when 52 to 58 =>
+
+            when 59 =>
+                sc_add      <= x"48";
+                sc_wdata    <= x"00000000";
+                sc_we       <= '1';
+            when 60 =>
+                sc_add      <= x"47";
+                sc_wdata    <= x"00000008";
+                sc_we       <= '1';
             when 61 =>
                 sc_add      <= x"49";
-                sc_wdata    <= x"00000008";
+                sc_wdata    <= x"00000002";
                 sc_we       <= '1';
             when 62 => 
                 sc_add      <= x"40";
@@ -111,19 +129,31 @@ begin
                 sc_add      <= x"41";
                 sc_wdata    <= MP_BIAS_DEFAULT(step-72);
                 sc_we       <= '1';
-            when 79 =>
+            when 79 to 108 => 
+                sc_add      <= x"44";
+                sc_wdata    <= x"00000000";
+                sc_we       <= '1';
+            when 109 to 138 => 
+                sc_add      <= x"45";
+                sc_wdata    <= x"00000000";
+                sc_we       <= '1';
+            when 139 to 168 => 
+                sc_add      <= x"46";
+                sc_wdata    <= x"00000000";
+                sc_we       <= '1';
+            when 169 =>
                 sc_add      <= x"40";
                 sc_wdata    <= x"0000003F";
                 sc_we       <= '1';
-            when 80 to 90 =>
+            when 170 to 180 =>
                 
-            when 91 => 
+            when 181 => 
                 sc_add      <= x"40";
                 sc_wdata    <= x"00000000";
                 sc_we       <= '1';
-            when 91 to 1000000000 =>
+            when 182 to 1000000000 =>
             when others =>
-                step <= (others => '0');
+                step <= 0;
         end case;
     end if;
     end process;
