@@ -521,10 +521,12 @@ void switching_board_mask_changed(odb o) {
     }
 
     feblist->RebuildFEBList();
+    mufeb->ReadFirmwareVersionsToODB();
 }
 
 void frontend_board_mask_changed(odb o) {
     feblist->RebuildFEBList();
+    mufeb->ReadFirmwareVersionsToODB();
 }
 
 INT init_mudaq(mudaq::MudaqDevice &mu) {
@@ -560,6 +562,9 @@ INT init_febs(mudaq::MudaqDevice & mu) {
 
     //init all values on FEB
     mufeb->WriteFEBID();
+
+    // Get all the relevant firmware versions
+    mufeb->ReadFirmwareVersionsToODB();
 
     set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Ok", "var(--mgreen)");
 
