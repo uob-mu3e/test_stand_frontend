@@ -38,8 +38,6 @@ using midas::odb;
 #define FEB_REPLY_SUCCESS 0
 #define FEB_REPLY_ERROR   1
 
-MupixFEB* MupixFEB::m_instance=NULL;
-
 //Mapping to physical ports of switching board.
 uint16_t MupixFEB::FPGAid_from_ID(int asic) const {return asic/2;}
 uint16_t MupixFEB::ASICid_from_ID(int asic) const {return asic%2;}

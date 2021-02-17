@@ -27,10 +27,11 @@ class MutrigFEB : public MuFEB{
       MutrigFEB(const MutrigFEB&)=delete;
       MutrigFEB(FEBSlowcontrolInterface & feb_sc_,
             const vector<mappedFEB> & febs_,
+            const uint64_t & febmask_,
             const char* equipment_name_,
             const char* odb_prefix_,
             const uint8_t SB_number_):
-      MuFEB(feb_sc_, febs_, equipment_name_, odb_prefix_, SB_number_)
+      MuFEB(feb_sc_, febs_, febmask_, equipment_name_, odb_prefix_, SB_number_)
       {}
       virtual ~MutrigFEB(){}
       uint16_t GetNumASICs() const {return febs.size()*GetModulesPerFEB()*GetASICSPerModule();}

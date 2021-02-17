@@ -61,6 +61,7 @@
 #include "mudaq_dummy.h"
 
 #include "FEBSlowcontrolInterface.h"
+#include "DummyFEBSlowcontrolInterface.h"
 #include "feblist.h"
 
 
@@ -115,6 +116,12 @@ FEBSlowcontrolInterface * feb_sc;
 /* Lists of the active FEBs */
 FEBList * feblist;
 
+/* FEB classes */
+MuFEB       * mufeb;
+MupixFEB    * mupixfeb;
+SciFiFEB    * scififeb;
+TilesFEB    * tilefeb;
+
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -138,7 +145,8 @@ void setup_watches();
 void setup_history();
 void setup_alarms();
 
-INT init_mudaq(mudaq::MudaqDevice& mu);
+INT init_mudaq(mudaq::MudaqDevice&  mu);
+INT init_febs(mudaq::MudaqDevice&  mu);
 INT init_scifi(mudaq::MudaqDevice&  mu);
 INT init_scitiles(mudaq::MudaqDevice& mu);
 INT init_mupix(mudaq::MudaqDevice& mu);
@@ -257,6 +265,11 @@ INT frontend_init()
     
     // Create the FEB List
     feblist = new FEBList(switch_id);
+
+    //init febs (general)
+    status = init_febs(*mup);
+    if (status != SUCCESS)
+        return FE_ERR_DRIVER;
 
     //init scifi
     status = init_scifi(*mup);
@@ -526,8 +539,29 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
         cm_msg(MERROR, "frontend_init", "Mudaq is not ok");
         return FE_ERR_DRIVER;
     }
-
+#ifdef NO_SWITCHING_BOARD
+    feb_sc = new DummyFEBSlowcontrolInterface(mu);
+#else
     feb_sc = new FEBSlowcontrolInterface(mu);
+#endif
+    return SUCCESS;
+}
+
+INT init_febs(mudaq::MudaqDevice & mu) {
+
+    // SciFi setup part
+    set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Initializing...", "var(--myellow)");
+    mufeb = new  MuFEB(*feb_sc,
+                        feblist->getFEBs(),
+                        feblist->getSciFiFEBMask(),
+                        equipment[EQUIPMENT_ID::Switching].name,
+                        "/Equipment/SciFi",
+                        switch_id); //create FEB interface signleton for scifi
+
+    //init all values on FEB
+    mufeb->WriteFEBID();
+
+    set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Ok", "var(--mgreen)");
 
     return SUCCESS;
 }
@@ -537,20 +571,21 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
 
     // SciFi setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
-    SciFiFEB::Create(*feb_sc,
+    scififeb = new SciFiFEB(*feb_sc,
                      feblist->getSciFiFEBs(),
+                     feblist->getSciFiFEBMask(),
                      equipment[EQUIPMENT_ID::SciFi].name,
                      "/Equipment/SciFi",
                       switch_id); //create FEB interface signleton for scifi
 
-    int status=mutrig::midasODB::setup_db("/Equipment/SciFi",SciFiFEB::Instance());
+    int status=mutrig::midasODB::setup_db("/Equipment/SciFi",scififeb);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
         return status;
     }
     //init all values on FEB
-    SciFiFEB::Instance()->WriteAll();
-    SciFiFEB::Instance()->WriteFEBID();
+    scififeb->WriteAll();
+    scififeb->WriteFEBID();
 
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
     
@@ -566,19 +601,20 @@ INT init_scitiles(mudaq::MudaqDevice & mu) {
     
     //SciTiles setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Initializing...", "var(--myellow)");
-    TilesFEB::Create(*feb_sc,
+    tilefeb = new TilesFEB(*feb_sc,
                      feblist->getTileFEBs(),
+                     feblist->getTileFEBMask(),
                      equipment[EQUIPMENT_ID::SciTiles].name,
                      "/Equipment/SciTiles",
                       switch_id); //create FEB interface signleton for scitiles
-    int status=mutrig::midasODB::setup_db("/Equipment/SciTiles", TilesFEB::Instance());
+    int status=mutrig::midasODB::setup_db("/Equipment/SciTiles", tilefeb);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Start up failed", "var(--mred)");
         return status;
     }
     //init all values on FEB
-    TilesFEB::Instance()->WriteAll();
-    TilesFEB::Instance()->WriteFEBID();
+    tilefeb->WriteAll();
+    tilefeb->WriteFEBID();
 
     set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Ok", "var(--mgreen)");
 
@@ -595,19 +631,20 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
 
     //Mupix setup part
     set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");
-    MupixFEB::Create(*feb_sc,
+    mupixfeb = new MupixFEB(*feb_sc,
                      feblist->getPixelFEBs(),
+                     feblist->getPixelFEBMask(),
                      equipment[EQUIPMENT_ID::Mupix].name,
                      "/Equipment/Mupix",
                      switch_id); //create FEB interface signleton for mupix
 
-    int status=mupix::midasODB::setup_db("/Equipment/Mupix", MupixFEB::Instance(), true);
+    int status=mupix::midasODB::setup_db("/Equipment/Mupix", mupixfeb, true);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Start up failed", "var(--mred)");
         return status;
     }
     //init all values on FEB
-    MupixFEB::Instance()->WriteFEBID();
+    mupixfeb->WriteFEBID();
     
     set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
    
@@ -615,7 +652,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
     // TODO: That should probably go into setup_db
     char set_str[255];
     odb rate_counters("/Equipment/Mupix/Variables");
-    for(uint i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+    for(uint i = 0; i < mupixfeb->getNFPGAs(); i++){
         sprintf(set_str, "merger rate FEB%d", i);
         rate_counters[set_str] = 0;
         sprintf(set_str, "hit ena rate FEB%d", i);
@@ -628,7 +665,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
     //end of Mupix setup part
     
     // Define history panels for each FEB Mupix
-    for(uint i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+    for(uint i = 0; i < mupixfeb->getNFPGAs(); i++){
         sprintf(set_str, "FEB%d", i);
         hs_define_panel("Mupix", set_str, {"Mupix:merger rate " + string(set_str),
                                            "Mupix:hit ena rate " + string(set_str),
@@ -682,14 +719,14 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
     uint64_t link_active_from_odb = get_link_active_from_odb(cur_links_odb);
 
    //configure ASICs for SciFi
-   status=SciFiFEB::Instance()->ConfigureASICs();
+   status=scififeb->ConfigureASICs();
    if(status!=SUCCESS){
       cm_msg(MERROR,"switch_fe","ASIC configuration failed");
       return CM_TRANSITION_CANCELED;
    }
 
    //configure ASICs for Tiles
-   status=TilesFEB::Instance()->ConfigureASICs();
+   status=tilefeb->ConfigureASICs();
    if(status!=SUCCESS){
       cm_msg(MERROR,"switch_fe","ASIC configuration failed");
       return CM_TRANSITION_CANCELED;
@@ -704,7 +741,7 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
 
 
    //last preparations
-   SciFiFEB::Instance()->ResetAllCounters();
+   scififeb->ResetAllCounters();
 
 
    // TODO: Switch to odbxx here
@@ -880,9 +917,9 @@ INT read_scifi_sc_event(char *pevent, INT off){
     printf("Reading Scifi FEB status data from all FEBs %d\n",i++);
     //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
     //Add readout function for this one that gets data from class variables and writes midas banks
-    SciFiFEB::Instance()->ReadBackAllCounters();
-    SciFiFEB::Instance()->ReadBackAllRunState();
-    SciFiFEB::Instance()->ReadBackAllDatapathStatus();
+    scififeb->ReadBackAllCounters();
+    scififeb->ReadBackAllRunState();
+    scififeb->ReadBackAllDatapathStatus();
     return 0;
 }
 
@@ -893,9 +930,9 @@ INT read_scitiles_sc_event(char *pevent, INT off){
     printf("Reading SciTiles FEB status data from all FEBs %d\n",i++);
     //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
     //Add readout function for this one that gets data from class variables and writes midas banks
-    TilesFEB::Instance()->ReadBackAllCounters();
-    TilesFEB::Instance()->ReadBackAllRunState();
-    TilesFEB::Instance()->ReadBackAllDatapathStatus();
+    tilefeb->ReadBackAllCounters();
+    tilefeb->ReadBackAllRunState();
+    tilefeb->ReadBackAllDatapathStatus();
     return 0;
 }
 
@@ -916,12 +953,16 @@ INT read_mupix_sc_event(char *pevent, INT off){
     DWORD *pdata;
     bk_create(pevent, "FECN", TID_WORD, (void **) &pdata);
     printf("Reading MuPix FEB status data from all FEBs %d\n", i++);
-    MupixFEB::Instance()->ReadBackAllRunState();
-    for(uint i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
-        HitsEnaRate = MupixFEB::Instance()->ReadBackHitsEnaRate(i);
-        MergerRate = MupixFEB::Instance()->ReadBackMergerRate(i);
-        ResetPhase = MupixFEB::Instance()->ReadBackResetPhase(i);
-        TXReset = MupixFEB::Instance()->ReadBackTXReset(i);
+    uint32_t d;
+    feb_sc->FEB_read(0,0,d);
+    printf("%i\n", d);
+
+    mupixfeb->ReadBackAllRunState();
+    for(uint i = 0; i < mupixfeb->getNFPGAs(); i++){
+        HitsEnaRate =mupixfeb->ReadBackHitsEnaRate(i);
+        MergerRate = mupixfeb->ReadBackMergerRate(i);
+        ResetPhase = mupixfeb->ReadBackResetPhase(i);
+        TXReset = mupixfeb->ReadBackTXReset(i);
 
 
         sprintf(set_str, "hit ena rate FEB%d", i);
@@ -1091,28 +1132,28 @@ void sc_settings_changed(odb o)
     }
 
     if (name == "SciFiConfig" && o) {
-          int status=SciFiFEB::Instance()->ConfigureASICs();
+          int status=scififeb->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }
        o = false;
     }
     if (name == "SciTilesConfig" && o) {
-          int status=TilesFEB::Instance()->ConfigureASICs();
+          int status=tilefeb->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }
       o = false;
     }
     if (name == "MupixConfig" && o) {
-          int status=MupixFEB::Instance()->ConfigureASICs();
+          int status=mupixfeb->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }
       o = false;
     }
     if (name == "MupixBoard" && o) {
-          int status=MupixFEB::Instance()->ConfigureBoards();
+          int status=mupixfeb->ConfigureBoards();
           if(status!=SUCCESS){
             //TODO: what to do?
           }

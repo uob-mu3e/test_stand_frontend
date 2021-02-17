@@ -226,6 +226,14 @@ int FEBSlowcontrolInterface::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vect
     return ERRCODES::OK;
 }
 
+int FEBSlowcontrolInterface::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, uint32_t &data)
+{
+    vector<uint32_t> d(1,0);
+    int status = FEB_read(FPGA_ID, startaddr, d);
+    data = d[0];
+    return status;
+}
+
 void FEBSlowcontrolInterface::FEBsc_resetMain()
 {
     cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control main");

@@ -14,8 +14,6 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 
 #include "mudaq_device.h"
 #include "asic_config_base.h"
-#include <thread>
-#include <chrono>
 
 //status flags from FEB
 #define FEB_REPLY_SUCCESS 0
@@ -131,6 +129,43 @@ uint32_t MuFEB::ReadBackTXReset(uint16_t FPGA_ID){
     vector<uint32_t> TXReset(1);
     feb_sc.FEB_read(FEB.SB_Port(), 0xFF00 | RESET_OPTICAL_LINKS_REGISTER_RW, TXReset);
     return TXReset[0] & 0xFFFFFFFC;
+}
+
+int MuFEB::fill_SSFE(DWORD *pdata)
+{
+    uint32_t index = 0;
+
+    for(auto FEB: febs){
+       if(!FEB.IsScEnabled()) continue; //skip disabled fibers
+       if(FEB.SB_Number()!=SB_number) continue;
+
+       uint32_t port = FEB.SB_Port();
+       // Fill in zeroes for non-existing ports
+       while(index < port){
+            // 26 is per_fe_SSFE_size - need to find a header for that...
+            for(uint32_t j=0; j < 26; j++){
+                *pdata++ = 0;
+             }
+           index++;
+       }
+
+       // And here we would actually fill the bank
+       for(uint32_t j=0; j < 26; j++){
+           *pdata++ = 0;
+        }
+        index++;
+    }
+
+
+
+    // Fill in zeroes for non-existing ports
+    while(index < N_FEBS[SB_number]){
+        for(uint32_t j=0; j < 26; j++){
+            *pdata++ = 0;
+         }
+       index++;
+    }
+
 }
 
 
