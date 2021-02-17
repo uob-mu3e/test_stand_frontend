@@ -23,6 +23,30 @@ function write_temperature(name, temp, x, y){
     cc.textAlign = "left";
 }
 
+function tbar(temp, x, y, dy){
+    var tempcolour = "Blue";
+    if(temp >= 40)
+        tempcolour = "Green";
+    if(temp >= 55)
+        tempcolour = "Orange";
+    if(temp >= 65)
+        tempcolour = "Red";
+
+    var tempfrac = temp/100.0;
+    if(tempfrac < 0.1)
+        tempfrac = 0.1;
+    if(tempfrac > 1)
+        tempfrac = 1;
+
+    cc.beginPath();
+    cc.strokeStyle = tempcolour;
+    cc.moveTo(x,y+dy);
+    cc.lineTo(x,y+dy-dy*tempfrac);
+    cc.stroke();
+
+}
+
+
 function Feb(x,y,dx,dy, index){
     this.x = x;
     this.y = y;
@@ -75,6 +99,16 @@ function Feb(x,y,dx,dy, index){
         cc.font = "10px Arial";
         cc.fillText(this.shorttype, this.x+this.dx-10, this.y+10);
 
+        if(this.active > 0){
+            tbar(this.arria_temp,this.x+20, this.y+2, this.dy-4);
+            tbar(this.max_temp  ,this.x+24, this.y+2, this.dy-4);
+            tbar(this.si1_temp  ,this.x+28, this.y+2, this.dy-4);
+            tbar(this.si2_temp  ,this.x+32, this.y+2, this.dy-4);
+            tbar(this.arria_temp_ext,this.x+36, this.y+2, this.dy-4);
+            tbar(this.dcdc_temp     ,this.x+40, this.y+2, this.dy-4);
+            tbar(this.ff1_temp      ,this.x+44, this.y+2, this.dy-4);
+        }
+
     }
 
     this.drawbig = function(){
@@ -100,7 +134,9 @@ function Feb(x,y,dx,dy, index){
         write_temperature("Max",   this.max_temp,   xstart+100,ystart+55);
         write_temperature("Si1",   this.si1_temp,   xstart+100,ystart+70);
         write_temperature("Si2",   this.si2_temp,   xstart+100,ystart+85);
-
+        write_temperature("Arria ext",   this.arria_temp_ext,   xstart+100,ystart+100);
+        write_temperature("DCDC",   this.arria_temp_ext,   xstart+100,ystart+115);
+        write_temperature("Firefly 1",   this.ff1_temp,   xstart+100,ystart+130);
     }
 }
 
