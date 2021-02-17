@@ -268,23 +268,12 @@ signal s_receivers_synclosscounter : t_array_32b;
 signal s_SC_reset_counters_125_n : std_logic;
 
 -- lapse counter signals
-signal clk_625 : std_logic;
-signal rst_625_n : std_logic;
 signal CC_corrected_A : std_logic_vector(15 downto 0);
 signal CC_corrected_B : std_logic_vector(15 downto 0);
 
 begin
 rst_sync_counter : entity work.reset_sync
 port map( i_reset_n => not i_SC_reset_counters, o_reset_n => s_SC_reset_counters_125_n, i_clk => s_receivers_usrclk);
-
--- generate 625 MHz
-e_pll_625_mhz : entity work.ip_altpll
-generic map ( INCLK0_MHZ => 125.0, MUL => 5 )
-port map ( areset => i_rst_rx, inclk0 => i_ts_clk, c0 => clk_625, locked => open );
-
--- generate reset for 625 MHz
-rst_sync_625_mhz : entity work.reset_sync
-port map( i_reset_n => not i_ts_rst, o_reset_n => rst_625_n, i_clk => clk_625);
 
 u_rxdeser: entity work.receiver_block
 generic map(
@@ -587,15 +576,15 @@ u_decoder: prbs_decoder
 		i_SC_disable_dec=> i_SC_disable_dec
 	);
     
--- generate lapse A counter for 625 MHz
+-- generate lapse counter A
 e_lapse_counter_A : entity work.lapse_counter
-generic map (N_TOT => 32767, N_CC => 15)
-port map ( i_clk => clk_625, i_reset_n => rst_625_n, i_CC => s_A_buf_data(20 downto 6), o_CC => CC_corrected_A );
+generic map ( N_CC => 15 )
+port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_A_buf_data(20 downto 6), o_CC => CC_corrected_A );
 
--- generate lapse B counter for 625 MHz
+-- generate lapse counter B
 e_lapse_counter_B : entity work.lapse_counter
-generic map (N_TOT => 32767, N_CC => 15)
-port map ( i_clk => clk_625, i_reset_n => rst_625_n, i_CC => s_B_buf_data(20 downto 6), o_CC => CC_corrected_B );
+generic map ( N_CC => 15 )
+port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_B_buf_data(20 downto 6), o_CC => CC_corrected_B );
 
 --to common fifo buffer:
 o_fifo_wr(0)                    <= s_A_buf_wr;
