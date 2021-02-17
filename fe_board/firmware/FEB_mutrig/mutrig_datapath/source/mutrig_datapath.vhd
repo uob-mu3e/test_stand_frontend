@@ -466,14 +466,14 @@ port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_B_buf_data(20
 
 --to common fifo buffer:
 o_fifo_wr(0)                    <= s_A_buf_wr;
-o_fifo_data(35 downto 0)        <=  "00" & s_A_buf_data when s_A_buf_data(33 downto 32) = "10" else
-                                    "00" & s_A_buf_data(33 downto 21) & CC_corrected_A(14 downto 0) & s_A_buf_data(5 downto 0);
+o_fifo_data(35 downto 0)        <=  "00" & s_A_buf_data(33 downto 21) & CC_corrected_A(14 downto 0) & s_A_buf_data(5 downto 0) when s_A_buf_data(33 downto 32) = "00" else
+                                    "00" & s_A_buf_data;
 s_A_buf_predec_full             <= i_common_fifos_almost_full(0);
 
 gen_dual_cfifo: if( N_LINKS > 1 ) generate
     o_fifo_wr(1)                <= s_B_buf_wr;
-    o_fifo_data(71 downto 36)   <=  "00" & s_B_buf_data when s_B_buf_data(33 downto 32) = "10" else
-                                    "00" & s_B_buf_data(33 downto 21) & CC_corrected_B(14 downto 0) & s_B_buf_data(5 downto 0);
+    o_fifo_data(71 downto 36)   <=  "00" & s_B_buf_data(33 downto 21) & CC_corrected_B(14 downto 0) & s_B_buf_data(5 downto 0) when s_B_buf_data(33 downto 32) = "00" else
+                                    "00" & s_B_buf_data;
     s_B_buf_predec_full         <= i_common_fifos_almost_full(1);
 end generate;
 
