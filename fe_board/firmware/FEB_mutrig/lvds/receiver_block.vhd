@@ -17,68 +17,40 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
---use work.lvds_components.all;
---use work.mupix_types.all;
 use work.daq_constants.all;
 
 
 
 entity receiver_block is
 generic (
-	NINPUT : positive := 1;
-	LVDS_PLL_FREQ : real := 125.0;
-	LVDS_DATA_RATE : real := 1250.0;
-	INPUT_SIGNFLIP : std_logic_vector := x"0000"--;
+    NINPUT : positive := 1;
+    LVDS_PLL_FREQ : real := 125.0;
+    LVDS_DATA_RATE : real := 1250.0;
+    INPUT_SIGNFLIP : std_logic_vector := x"0000"--;
 );
 port (
-	reset_n             : in std_logic;
-	reset_n_errcnt      : in std_logic;
-	rx_in               : in std_logic_vector(NINPUT-1 downto 0);
-	rx_inclock          : in std_logic;
-	rx_state            : out std_logic_vector(2*NINPUT-1 downto 0);
-	rx_ready            : out std_logic_vector(NINPUT-1 downto 0);
-	rx_data             : out std_logic_vector(NINPUT*8-1 downto 0);
-	rx_k                : out std_logic_vector(NINPUT-1 downto 0);
-	rx_clkout           : out std_logic;
-	pll_locked          : out std_logic;
+    reset_n             : in std_logic;
+    reset_n_errcnt      : in std_logic;
+    rx_in               : in std_logic_vector(NINPUT-1 downto 0);
+    rx_inclock          : in std_logic;
+    rx_state            : out std_logic_vector(2*NINPUT-1 downto 0);
+    rx_ready            : out std_logic_vector(NINPUT-1 downto 0);
+    rx_data             : out std_logic_vector(NINPUT*8-1 downto 0);
+    rx_k                : out std_logic_vector(NINPUT-1 downto 0);
+    rx_clkout           : out std_logic;
+    pll_locked          : out std_logic;
 
-	rx_dpa_locked_out   : out std_logic_vector(NINPUT-1 downto 0);
+    rx_dpa_locked_out   : out std_logic_vector(NINPUT-1 downto 0);
 
-	rx_runcounter       : out reg32array_t(NINPUT-1 downto 0);
-	rx_errorcounter     : out reg32array_t(NINPUT-1 downto 0);
-	rx_synclosscounter  : out reg32array_t(NINPUT-1 downto 0)
+    rx_runcounter       : out reg32array_t(NINPUT-1 downto 0);
+    rx_errorcounter     : out reg32array_t(NINPUT-1 downto 0);
+    rx_synclosscounter  : out reg32array_t(NINPUT-1 downto 0)
 );
 end entity;
 
 
 
 architecture rtl of receiver_block is
-
-component data_decoder is 
-	generic (
-		EVAL_WINDOW_WORDCNT_BITS : natural := 8; -- number of bits of the counter used to check for the sync pattern
-		EVAL_WINDOW_PATTERN_BITS : natural := 1; -- number of bits of the counter of the sync patterns found in the window (realign if not overflow)
-		ALIGN_WORD	 : std_logic_vector(7 downto 0):=k28_5 -- pattern byte to search for
-	);
-	port (
-		reset_n				: in std_logic;
---		checker_rst_n		: in std_logic;
-		clk					: in std_logic;
-		rx_in					: IN STD_LOGIC_VECTOR (9 DOWNTO 0);
-		
-		rx_reset				: OUT STD_LOGIC;
-		rx_fifo_reset		: OUT STD_LOGIC;
-		rx_dpa_locked		: IN STD_LOGIC;
-		rx_locked			: IN STD_LOGIC;
-		rx_bitslip				: OUT STD_LOGIC;
-	
-		ready					: OUT STD_LOGIC;
-		data					: OUT STD_LOGIC_VECTOR(7 downto 0);
-		k						: OUT STD_LOGIC;
-		state_out			: out std_logic_vector(1 downto 0);		-- 4 possible states
-		disp_err				: out std_logic
-		);
-end component; --data_decoder;
 
 	signal rx_out : 		std_logic_vector(NINPUT*10-1 downto 0);
 	signal rx_out_order : 		std_logic_vector(NINPUT*10-1 downto 0);
@@ -169,8 +141,8 @@ for i in NINPUT-1 downto 0 loop
 end loop;
 end process flip_bits;
 
-gen_channels: for i in NINPUT-1 downto 0 generate
-	datadec: data_decoder 
+gen_channels : for i in NINPUT-1 downto 0 generate
+	datadec : entity work.data_decoder 
 		generic map(
 			EVAL_WINDOW_WORDCNT_BITS => 13,
 			EVAL_WINDOW_PATTERN_BITS => 2,
