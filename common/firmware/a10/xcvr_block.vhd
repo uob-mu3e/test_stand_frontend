@@ -65,7 +65,7 @@ begin
             tx_datak(i)(4*j+3 downto 0 + 4*j) <= i_tx_datak(i*N_CHANNELS_g+j);
         end generate;
 
-        e_xcvr : entity work.xcvr_enh
+        e_xcvr : entity work.xcvr_a10
         generic map (
             NUMBER_OF_CHANNELS_g => N_CHANNELS_g,
             INPUT_CLOCK_FREQUENCY_g => REFCLK_MHZ_g * 1000000,
