@@ -30,13 +30,13 @@ using namespace std;
 
 void print_usage(){
     cout << "Usage: " << endl;
-    cout << "       dmatest <use_data_gen> <stop_dma>" << endl;
+    cout << "       dmatest <use_data_gen> <stop_dma> <use_loop>" << endl;
 }
 
 int main(int argc, char *argv[])
 {
 
-    if(argc < 3){
+    if(argc < 4){
         print_usage();
         return -1;
     }
@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
         datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
         mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
         mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0, 100);
+        mu.write_register_wait(DATA_LINK_MASK_REGISTER_2_W, 0x0, 100);
         mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0x0, 100);
         mu.close();
         return 0;
@@ -126,6 +127,11 @@ int main(int argc, char *argv[])
         return ret_val;
     }
 
+    // request data to read dma_buffer_size/2 (count in blocks of 256 bits) 
+    uint32_t max_requested_words = dma_buf_nwords/64;
+    cout << "request " << max_requested_words << endl;
+    mu.write_register_wait(0xC, max_requested_words / (256/32), 100);
+
     // reset all
     uint32_t reset_reg = 0;
     reset_reg = SET_RESET_BIT_ALL(reset_reg);
@@ -140,7 +146,7 @@ int main(int argc, char *argv[])
     // Set up data generator
     if (atoi(argv[1]) == 1) {
         uint32_t datagen_setup = 0;
-        mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x3E8, 100);//3E8); // slow down to 64 MBit/s
+        mu.write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, 0x2, 100);//3E8, 100);//3E8); // slow down to 64 MBit/s
         datagen_setup = SET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
         //datagen_setup = SET_DATAGENERATOR_BIT_ENABLE_2(datagen_setup);
         mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
@@ -149,6 +155,8 @@ int main(int argc, char *argv[])
     // Enable all links (SC)
     mu.write_register_wait(FEB_ENABLE_REGISTER_W, 0xF, 100);
     // Enable all links (DATA)
+    //mu.write_register_wait(DATA_LINK_MASK_REGISTER_2_W, 0xF, 100);
+    //mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0xFFFFFFFF, 100);
     mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0xF, 100);
     // Enable only one link
     //mu.write_register_wait(DATA_LINK_MASK_REGISTER_W, 0x1, 100);
@@ -170,7 +178,20 @@ int main(int argc, char *argv[])
         cout << hex << "0x" <<  dma_buf[i] << " ";
     cout << endl;
 
-    while(dma_buf[size/2/sizeof(uint32_t)-8] <= 0){
+    if (atoi(argv[3]) == 1) {
+        for(int i=0; i < 8; i++)
+            cout << hex << "0x" <<  dma_buf[i+8] << " ";
+        cout << endl;
+        int cnt_loop = 0;
+        // wait for requested data
+        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {
+            if ( cnt_loop == 1000 ) {
+                cnt_loop = 0;
+//                cout << mu.read_register_ro(0x1C) << endl;
+            }
+            cnt_loop = cnt_loop + 1;
+        }
+//        while(dma_buf[size/2/sizeof(uint32_t)-8] <= 0){
 
 //         if (mu.last_written_addr() == 0) {
 //             cout << "last_written" << endl;
@@ -206,8 +227,16 @@ int main(int argc, char *argv[])
 //        sprintf(dma_buf_str, "%08X", dma_buf[endofevent+i-20]);
 //        myfile << endofevent + i - 20 << "\t" << dma_buf_str << endl;
 //        }
+  //      }
     }
     
+    if ( atoi(argv[3]) != 1) {
+        for ( int i = 0; i < 3; i++ ) {
+            cout << "sleep " << i << "/3 s" << endl;
+            sleep(i);
+        }
+    }
+
     cout << "start to write file" << endl;
 
 

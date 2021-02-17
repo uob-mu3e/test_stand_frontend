@@ -125,7 +125,7 @@ architecture rtl of top is
     signal flash_ce_n_i : std_logic;
 
 
-        constant NLINKS_ALIGNMENT : integer := 4;
+        constant NLINKS_ALIGNMENT : integer := 36;
         constant NLINKS_DATA : integer := 3;
         constant NLINKS_TOTL : integer := 16;
 
@@ -284,6 +284,8 @@ architecture rtl of top is
         signal dma_end_event_test : std_logic;
         signal data_counter : std_logic_vector(32*NLINKS_TOTL-1 downto 0);
         signal datak_counter : std_logic_vector(4*NLINKS_TOTL-1 downto 0);
+        signal data_bank : std_logic_vector(32*64-1 downto 0);
+        signal datak_bank : std_logic_vector(4*64-1 downto 0);
         signal feb_merger_timeouts : std_logic_vector(NLINKS_TOTL-1 downto 0);
 
 begin
@@ -660,21 +662,40 @@ begin
     end if;
     end process;
     
+    data_bank <=    x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"        &
+                    x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"        &
+                    x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"        &
+                    x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"        &
+                    data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & 
+                    data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) &
+                    data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) &
+                    data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) &
+                    data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0);
+   datak_bank <=    x"0"               & x"0"               & x"0"               & x"0"               &
+                    x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"        &
+                    x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"        &
+                    x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"        &
+                    datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & 
+                    datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) &
+                    datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) &
+                    datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) &
+                    datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) ;
+   
     e_midas_event_builder : entity work.midas_event_builder
     generic map (
-        NLINKS => NLINKS_ALIGNMENT,
+        NLINKS => 64,
         USE_ALIGNMENT => 1,
-        LINK_FIFO_ADDR_WIDTH => 8--,
+        LINK_FIFO_ADDR_WIDTH => 10--,
     )
     port map (
         i_clk_data          => clk_156,
         i_clk_dma           => pcie_fastclk_out,
         i_reset_data_n      => resets_n(RESET_BIT_EVENT_COUNTER),
         i_reset_dma_n       => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-        i_link_data         => data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0),
-        i_link_datak        => datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0),
+        i_link_data         => data_bank,
+        i_link_datak        => datak_bank,
         i_wen_reg           => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-        i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_ALIGNMENT - 1 downto 0), -- if 1 the link is active
+        i_link_mask_n       => x"0000000" & writeregs(DATA_LINK_MASK_REGISTER_2_W)(3 downto 0) & writeregs(DATA_LINK_MASK_REGISTER_W), -- if 1 the link is active
         i_get_n_words       => writeregs(GET_N_DMA_WORDS_REGISTER_W),
         i_dmamemhalffull    => dmamemhalffull,
         o_fifos_full        => open,--readregs(EVENT_BUILD_STATUS_REGISTER_R)(31 downto 31 - NLINKS_TOTL),
@@ -685,7 +706,6 @@ begin
         o_state_out         => state_out_eventcounter,
         -- error cnt signals
         o_fifo_almost_full          => open,--link_fifo_almost_full,
-        o_fifo_almost_full          => open,
         o_cnt_link_fifo_almost_full => readregs_slow(CNT_FIFO_ALMOST_FULL_R),
         o_cnt_tag_fifo_full         => readregs(CNT_TAG_FIFO_FULL_R),
         o_cnt_ram_full              => readregs(CNT_RAM_FULL_R),
@@ -921,3 +941,4 @@ begin
     );
 
 end architecture;
+
