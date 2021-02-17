@@ -297,14 +297,23 @@ void setup_odb(){
    // midas::odb::set_debug(true);
 
     string namestr;
-    if(switch_id == 0)
+    string bankname;
+    if(switch_id == 0){
         namestr = "Names SCFE";
-    if(switch_id == 1)
+        bankname = "SCFE";
+    }
+    if(switch_id == 1){
         namestr = "Names SUFE";
-    if(switch_id == 2)
+        bankname = "SUFE";
+    }
+    if(switch_id == 2){
         namestr = "Names SDFE";
-    if(switch_id == 3)
+        bankname = "SDFE";
+    }
+    if(switch_id == 3){
         namestr = "Names SFFE";
+        bankname = "SFFE";
+    }
 
     /* Default values for /Equipment/Switching/Settings */
     odb settings = {
@@ -334,6 +343,9 @@ void setup_odb(){
     for(int i=0; i < N_FEBS[switch_id]; i++){
         string feb = "FEB" + to_string(i);
         string * s = new string(feb);
+        (*s) += " Index";
+        settings[namestr][bankindex++] = s;
+        s = new string(feb);
         (*s) += " Arria Temperature";
         settings[namestr][bankindex++] = s;
         s = new string(feb);
@@ -433,17 +445,28 @@ void setup_odb(){
             {"WM_START_ADD", 0},
             {"WM_LENGTH", 0},
             {"WM_DATA", 0},
+
+            {"Merger Timeout All FEBs", 0},
+
+            {bankname.c_str(),std::array<float, per_fe_SSFE_size*N_FEBS[switch_id]>{}}
     };
 
     sc_variables.connect("/Equipment/Switching/Variables");
+
+    odb firmware_variables = {
+        {"Arria V Firmware Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{}},
+        {"Max 10 Firmware Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{}}
+    };
+
+    firmware_variables.connect("/Equipment/Switching/Variables/FEBFirmware");
 
     // add custom page to ODB
     odb custom("/Custom");
     custom["Switching&"] = "sc.html";
     
     // setup odb for switching board
-    odb swb_varibles("/Equipment/Switching/Variables");
-    swb_varibles["Merger Timeout All FEBs"] = 0;
+    //odb swb_varibles("/Equipment/Switching/Variables");
+    //swb_varibles["Merger Timeout All FEBs"] = 0;
 
     // TODO: not sure at the moment we have a midas frontend for three feb types but 
     // we need to have different swb at the final experiment so maybe one needs to take

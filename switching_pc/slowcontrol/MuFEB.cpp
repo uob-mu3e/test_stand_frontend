@@ -25,8 +25,8 @@ using midas::odb;
 
 int MuFEB::WriteFEBID(){
     for(auto FEB: febs){
-       if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-       if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB
+       if(!FEB.IsScEnabled()) continue; //skip disabled fibers
+       if(FEB.SB_Number()!=SB_number) continue; //skip commands not for this SB
        uint32_t val=0xFEB1FEB0; // TODO: Where does this hard-coded value come from?
        val+=(FEB.GetLinkID()<<16)+FEB.GetLinkID();
 
@@ -39,6 +39,29 @@ int MuFEB::WriteFEBID(){
        feb_sc.FEB_write(FEB.SB_Port(),  (uint32_t) 0xFF00 | FPGA_ID_REGISTER_RW, val);
     }
     return 0;
+}
+
+void MuFEB::ReadFirmwareVersionsToODB()
+{
+    vector<uint32_t> arria(1);
+    vector<uint32_t> max(1);
+
+    odb arriaversions("/Equipment/Switching/Variables/FEBFirmware/Arria V Firmware Version");
+    odb maxversions("/Equipment/Switching/Variables/FEBFirmware/Max 10 Firmware Version");
+
+    for(auto FEB: febs){
+        if(!FEB.IsScEnabled()) continue; //skip disabled fibers
+        if(FEB.SB_Number()!=SB_number) continue; //skip commands not for this SB
+
+         if(!feb_sc.FEB_read(FEB.SB_Port(), GIT_HASH_REGISTER_R, arria) != FEBSlowcontrolInterface::ERRCODES::OK)
+            cm_msg(MINFO,"MuFEB::ReadFirmwareVersionsToODB", "Failed to read Arria firmware version");
+         else
+            arriaversions[FEB.GetLinkID()] = arria[0];
+         if(!feb_sc.FEB_read(FEB.SB_Port(), MAX10_VERSION_REGISTER_R, max) != FEBSlowcontrolInterface::ERRCODES::OK)
+            cm_msg(MINFO,"MuFEB::ReadFirmwareVersionsToODB", "Failed to read Max firmware version");
+         else
+            maxversions[FEB.GetLinkID()] = max[0];
+    }
 }
 
 int MuFEB::ReadBackRunState(uint16_t FPGA_ID){

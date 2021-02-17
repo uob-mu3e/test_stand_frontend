@@ -45,6 +45,7 @@ class MuFEB {
       void ReadBackAllRunState(){for(size_t i=0;i<febs.size();i++) ReadBackRunState(i);};
 
       int WriteFEBID();
+      void ReadFirmwareVersionsToODB();
 
       uint32_t ReadBackMergerRate(uint16_t FPGA_ID);
       uint32_t ReadBackResetPhase(uint16_t FPGA_ID);
