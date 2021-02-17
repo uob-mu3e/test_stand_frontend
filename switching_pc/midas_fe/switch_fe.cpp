@@ -476,6 +476,7 @@ void setup_odb(){
     // add custom page to ODB
     odb custom("/Custom");
     custom["Switching&"] = "sc.html";
+    custom["Febs&"] = "febs.html";
     
     // setup odb for switching board
     //odb swb_varibles("/Equipment/Switching/Variables");
