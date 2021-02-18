@@ -202,7 +202,7 @@ begin
 
         o_max10_spi_sclk    => max10_spi_miso, --max10_spi_sclk, Replacement, due to broken line
         io_max10_spi_mosi   => max10_spi_mosi,
-        io_max10_spi_miso   =>'Z','
+        io_max10_spi_miso   =>'Z',
         io_max10_spi_D1     => max10_spi_D1,
         io_max10_spi_D2     => max10_spi_D2,
         io_max10_spi_D3     => max10_spi_D3,

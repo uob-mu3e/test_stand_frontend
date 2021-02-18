@@ -30,7 +30,7 @@
 --	needed under any third party's intellectual property, are provided herein.
 ---->
 -- Retrieval info: <instance entity-name="altera_xcvr_reset_control" version="18.0" >
--- Retrieval info: 	<generic name="device_family" value="Arria 10" />
+-- Retrieval info: 	<generic name="device_family" value="Arria V" />
 -- Retrieval info: 	<generic name="CHANNELS" value="4" />
 -- Retrieval info: 	<generic name="PLLS" value="4" />
 -- Retrieval info: 	<generic name="SYS_CLK_IN_MHZ" value="50" />

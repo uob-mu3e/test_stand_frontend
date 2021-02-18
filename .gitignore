@@ -25,12 +25,12 @@ simulation/
 *.srf
 *.stp
 a5_pin_model_dump.txt
+top_assignment_defaults.qdf
 
 # megawizard
 *.bsf
 *.cmp
 *.ppf
-*.qip
 *.sip
 *.spd
 *.f
@@ -49,10 +49,6 @@ nios/
 .cproject
 .settings
 
-# DVT
-**/.dvt/*
-dvt_build.log
-
 # idea
 .idea/
 
@@ -62,8 +58,6 @@ dvt_build.log
 *~
 *.bak
 *.swp
-build
-install
 online/exptab
 online/*.hst
 online/*.idx

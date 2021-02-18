@@ -387,7 +387,7 @@ begin
         
     stream_merger : IF USE_ALIGNMENT = 0 GENERATE
     
-        e_stream : entity work.stream_merger
+        e_stream : entity work.sw_stream_merger
         generic map (
             W => 38,
             N => NLINKS--,
