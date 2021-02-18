@@ -23,6 +23,22 @@ function write_temperature(name, temp, x, y){
     cc.textAlign = "left";
 }
 
+function write_voltage(name, volt, x, y){
+    cc.fillStyle = "Black";
+    cc.font = "12px Arial";
+    cc.textAlign = "right";
+    cc.fillText(name + " " + volt + " V", x, y);
+    cc.textAlign = "left";
+}
+
+function write_power(name, power, x, y){
+    cc.fillStyle = "Black";
+    cc.font = "12px Arial";
+    cc.textAlign = "right";
+    cc.fillText(name + " " + power + " muW", x, y);
+    cc.textAlign = "left";
+}
+
 function tbar(temp, x, y, dy){
     var tempcolour = "Blue";
     if(temp >= 40)
@@ -46,6 +62,19 @@ function tbar(temp, x, y, dy){
 
 }
 
+function rxdot(power,x,y){
+    var rxcol = "Red";
+    if(power > 100)
+        var rxcol = "Orange";
+    if(power > 200)
+        var rxcol = "Blue";
+
+    cc.fillStyle = rxcol;
+    cc.beginPath();
+    cc.arc(x, y, 2, 0, Math.PI*2, false);
+    cc.fill();
+}
+
 
 function Feb(x,y,dx,dy, index){
     this.x = x;
@@ -58,6 +87,10 @@ function Feb(x,y,dx,dy, index){
     this.name = "";
     this.type = "";
     this.shorttype = "";
+
+    //Firmware versions
+    this.arria_firmware =0;
+    this.max_firmware =0;
 
     //Here comes the content of the slow control bank
     this.arria_temp = 0;
@@ -107,6 +140,17 @@ function Feb(x,y,dx,dy, index){
             tbar(this.arria_temp_ext,this.x+36, this.y+2, this.dy-4);
             tbar(this.dcdc_temp     ,this.x+40, this.y+2, this.dy-4);
             tbar(this.ff1_temp      ,this.x+44, this.y+2, this.dy-4);
+
+            rxdot(this.ff1_rx1, this.x+50, this.y+6);
+            rxdot(this.ff1_rx2, this.x+56, this.y+6);
+            rxdot(this.ff1_rx3, this.x+50, this.y+12);
+            //rxdot(this.ff1_rx4, this.x+56, this.y+12); RX4 currently not used
+
+            cc.fillStyle = "Black";
+            cc.font = "10px Arial";
+            cc.fillText(this.arria_firmware.toString(16), this.x+this.dx-70, this.y+10);
+            cc.fillText(this.max_firmware.toString(16), this.x+this.dx-70, this.y+20);
+
         }
 
     }
@@ -130,6 +174,15 @@ function Feb(x,y,dx,dy, index){
         cc.font = "14px Arial";
         cc.fillText(this.name, xstart+20, ystart+20);
 
+        cc.fillStyle = "Black";
+        cc.font = "12px Arial";
+        cc.fillText("Arria firmware:    "+this.arria_firmware.toString(16),
+                    xstart+10, ystart+150);
+        cc.fillStyle = "Black";
+        cc.font = "12px Arial";
+        cc.fillText("Max10 firmware: "+this.max_firmware.toString(16),
+                    xstart+10, ystart+165);
+
         write_temperature("Arria", this.arria_temp, xstart+100,ystart+40);
         write_temperature("Max",   this.max_temp,   xstart+100,ystart+55);
         write_temperature("Si1",   this.si1_temp,   xstart+100,ystart+70);
@@ -137,6 +190,20 @@ function Feb(x,y,dx,dy, index){
         write_temperature("Arria ext",   this.arria_temp_ext,   xstart+100,ystart+100);
         write_temperature("DCDC",   this.arria_temp_ext,   xstart+100,ystart+115);
         write_temperature("Firefly 1",   this.ff1_temp,   xstart+100,ystart+130);
+
+        write_voltage("1.1V", this.v1_1, xstart+200, ystart+40);
+        write_voltage("1.8V", this.v1_8, xstart+200, ystart+55);
+        write_voltage("2.5V", this.v2_5, xstart+200, ystart+70);
+        write_voltage("3.3V", this.v3_3, xstart+200, ystart+85);
+        write_voltage("20V",  this.v20,  xstart+200, ystart+100);
+        write_voltage("FF",   this.ff1_volt,  xstart+200, ystart+115);
+
+        write_power("RX1", this.ff1_rx1, xstart+250, ystart+150);
+        write_power("RX2", this.ff1_rx2, xstart+250, ystart+165);
+        write_power("RX3", this.ff1_rx3, xstart+250, ystart+180);
+        write_power("RX4", this.ff1_rx4, xstart+250, ystart+195);
+
+
     }
 }
 
@@ -167,6 +234,35 @@ function init(){
     }).catch(function(error) {
        mjsonrpc_error_alert(error);
     });
+
+    mjsonrpc_db_get_values(["/Equipment/Switching/Variables/FEBFirmware"]).then(function(rpc) {
+        update_firmware(rpc.result.data[0]);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+
+
+    mjsonrpc_db_get_values(["/Equipment/Switching/Variables"]).then(function(rpc) {
+
+        var scvals = rpc.result.data[0]["SCFE"];
+        if(scvals)
+             update_sc(scvals, 0);
+        scvals = rpc.result.data[0]["SUFE"];
+        if(scvals)
+             update_sc(scvals, 1);
+        scvals = rpc.result.data[0]["SDFE"];
+        if(scvals)
+             update_sc(scvals, 1);
+        scvals = rpc.result.data[0]["SFFE"];
+        if(scvals)
+             update_sc(scvals, 1);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+
+
+
+
     draw(-1);
 }
 
@@ -266,31 +362,33 @@ function update_masks(valuex) {
     draw(boardselindex);
 }
 
-function update_sc(valuex) {
+function update_firmware(valuex) {
 
     var value = valuex;
     if(typeof valuex === 'string')
         value = JSON.parse(valuex);
 
+    var arria = value["arria v firmware version"];
+    var max = value["max 10 firmware version"];
 
-    var scvals = value["SCFE"];
-    var swindex = 0;
-    if(!scvals){
-        scvals = value["SUFE"];
-        swindex = 1;
+    for(var i=0; i < 4; i++){
+        for(var j=0; j < nfebs[i]; j++){
+            var index = 48*i+j;
+            febs[i][j].arria_firmware     = arria[index];
+            febs[i][j].max_firmware   = max[index];
+        }
     }
-    if(!scvals){
-        scvals = value["SDFE"];
-        swindex = 2;
-    }
-    if(!scvals){
-        scvals = value["SFFE"];
-        swindex = 3;
-    }
-    if(!scvals){
-        console.log("SC info not found");
-        return;
-    }
+    draw(boardselindex);
+}
+
+function update_sc(valuex, swindex) {
+
+    console.log(valuex);
+
+    var value = valuex;
+    if(typeof valuex === 'string')
+        value = JSON.parse(valuex);
+
 
     for(var j=0; j < nfebs[swindex]; j++){
         febs[swindex][j].arria_temp     = scvals[j*26+1];
