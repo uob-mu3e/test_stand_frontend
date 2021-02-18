@@ -24,6 +24,7 @@ simulation/
 *.rpt
 *.srf
 *.stp
+a5_pin_model_dump.txt
 
 # megawizard
 *.bsf
