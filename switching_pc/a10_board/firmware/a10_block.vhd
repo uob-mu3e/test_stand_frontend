@@ -135,9 +135,11 @@ port (
 
     o_reset_156_n       : out   std_logic;
     o_clk_156           : out   std_logic;
+    o_clk_156_hz        : out   std_logic;
 
     o_reset_250_n       : out   std_logic;
     o_clk_250           : out   std_logic;
+    o_clk_250_hz        : out   std_logic;
 
     -- global 125 MHz clock
     i_reset_125_n       : in    std_logic;
@@ -188,12 +190,6 @@ begin
 
     o_nios_hz <= nios_pio(7);
 
-    o_reset_156_n <= reset_156_n;
-    o_clk_156 <= clk_156;
-
-    o_reset_250_n <= reset_250_n;
-    o_clk_250 <= clk_250;
-
     -- 156.25 MHz data clock (reference is 125 MHz global clock)
     e_clk_156 : component work.cmp.ip_pll_125to156
     port map (
@@ -201,9 +197,15 @@ begin
         refclk => i_clk_125,
         rst => not i_reset_125_n--,
     );
+    o_clk_156 <= clk_156;
 
     e_reset_156_n : entity work.reset_sync
     port map ( o_reset_n => reset_156_n, i_reset_n => i_reset_125_n, i_clk => clk_156 );
+    o_reset_156_n <= reset_156_n;
+
+    e_clk_156_hz : entity work.clkdiv
+    generic map ( P => 156250000 )
+    port map ( o_clk => o_clk_156_hz, i_reset_n => reset_156_n, i_clk => clk_156 );
 
     -- 250 MHz data clock (reference is 125 MHz global clock)
     e_clk_250 : component work.cmp.ip_pll_125to250
@@ -212,9 +214,15 @@ begin
         refclk => i_clk_125,
         rst => not i_reset_125_n--,
     );
+    o_clk_250 <= clk_250;
 
     e_reset_250_n : entity work.reset_sync
     port map ( o_reset_n => reset_250_n, i_reset_n => i_reset_125_n, i_clk => clk_250 );
+    o_reset_250_n <= reset_250_n;
+
+    e_clk_250_hz : entity work.clkdiv
+    generic map ( P => 250000000 )
+    port map ( o_clk => o_clk_250_hz, i_reset_n => reset_250_n, i_clk => clk_250 );
 
     o_pcie0_clk <= pcie0_clk;
 
