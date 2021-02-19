@@ -321,8 +321,10 @@ begin
     generate_xcvr0_block : if ( g_XCVR0_CHANNELS > 0 ) generate
     e_xcvr0_block : entity work.xcvr_block
     generic map (
-        N_XCVR_g => g_XCVR0_N,
-        N_CHANNELS_g => g_XCVR0_CHANNELS / g_XCVR0_N--,
+        g_XCVR_N => g_XCVR0_N,
+        g_CHANNELS => g_XCVR0_CHANNELS / g_XCVR0_N,
+        g_REFCLK_MHZ => 125.0,
+        g_CLK_MHZ => 125.0--,
     )
     port map (
         o_rx_data           => o_xcvr0_rx_data,
@@ -357,8 +359,10 @@ begin
     generate_xcvr1_block : if ( g_XCVR1_CHANNELS > 0 ) generate
     e_xcvr1_block : entity work.xcvr_block
     generic map (
-        N_XCVR_g => g_XCVR1_N,
-        N_CHANNELS_g => g_XCVR1_CHANNELS / g_XCVR1_N--,
+        g_XCVR_N => g_XCVR1_N,
+        g_CHANNELS => g_XCVR1_CHANNELS / g_XCVR1_N,
+        g_REFCLK_MHZ => 125.0,
+        g_CLK_MHZ => 125.0--,
     )
     port map (
         o_rx_data           => o_xcvr1_rx_data,
