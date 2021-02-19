@@ -267,15 +267,25 @@ begin
 
         pio_export                      => nios_pio,
 
-        avm_xcvr_address                => av_xcvr0.address(17 downto 0),
-        avm_xcvr_read                   => av_xcvr0.read,
-        avm_xcvr_readdata               => av_xcvr0.readdata,
-        avm_xcvr_write                  => av_xcvr0.write,
-        avm_xcvr_writedata              => av_xcvr0.writedata,
-        avm_xcvr_waitrequest            => av_xcvr0.waitrequest,
+        avm_xcvr0_address               => av_xcvr0.address(17 downto 0),
+        avm_xcvr0_read                  => av_xcvr0.read,
+        avm_xcvr0_readdata              => av_xcvr0.readdata,
+        avm_xcvr0_write                 => av_xcvr0.write,
+        avm_xcvr0_writedata             => av_xcvr0.writedata,
+        avm_xcvr0_waitrequest           => av_xcvr0.waitrequest,
 
-        avm_reset_reset_n               => i_reset_125_n,
-        avm_clock_clk                   => i_clk_125,
+        avm_xcvr0_reset_reset_n         => i_reset_125_n,
+        avm_xcvr0_clock_clk             => i_clk_125,
+
+        avm_xcvr1_address               => av_xcvr1.address(17 downto 0),
+        avm_xcvr1_read                  => av_xcvr1.read,
+        avm_xcvr1_readdata              => av_xcvr1.readdata,
+        avm_xcvr1_write                 => av_xcvr1.write,
+        avm_xcvr1_writedata             => av_xcvr1.writedata,
+        avm_xcvr1_waitrequest           => av_xcvr1.waitrequest,
+
+        avm_xcvr1_reset_reset_n         => i_reset_125_n,
+        avm_xcvr1_clock_clk             => i_clk_125,
 
         rst_reset_n                     => nios_reset_n,
         clk_clk                         => i_clk--,
@@ -357,23 +367,23 @@ begin
         i_tx_data           => i_xcvr1_tx_data,
         i_tx_datak          => i_xcvr1_tx_datak,
 
-        i_rx_clk            => (others => clk_156),
-        i_tx_clk            => (others => clk_156),
+        i_rx_clk            => (others => clk_250),
+        i_tx_clk            => (others => clk_250),
 
         i_rx_serial         => i_xcvr1_rx,
         o_tx_serial         => o_xcvr1_tx,
 
         i_refclk            => i_xcvr1_refclk,
 
-        i_avs_address       => av_xcvr1.address(15 downto 0),
+        i_avs_address       => av_xcvr1.address(17 downto 0),
         i_avs_read          => av_xcvr1.read,
         o_avs_readdata      => av_xcvr1.readdata,
         i_avs_write         => av_xcvr1.write,
         i_avs_writedata     => av_xcvr1.writedata,
         o_avs_waitrequest   => av_xcvr1.waitrequest,
 
-        i_reset_n           => reset_156_n,
-        i_clk               => clk_156--,
+        i_reset_n           => i_reset_125_n,
+        i_clk               => i_clk_125--,
     );
     end generate;
 
