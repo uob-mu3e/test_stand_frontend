@@ -321,6 +321,7 @@ begin
     generate_xcvr0_block : if ( g_XCVR0_CHANNELS > 0 ) generate
     e_xcvr0_block : entity work.xcvr_block
     generic map (
+        g_XCVR_NAME => "xcvr_a10",
         g_XCVR_N => g_XCVR0_N,
         g_CHANNELS => g_XCVR0_CHANNELS / g_XCVR0_N,
         g_REFCLK_MHZ => 125.0,
@@ -359,6 +360,7 @@ begin
     generate_xcvr1_block : if ( g_XCVR1_CHANNELS > 0 ) generate
     e_xcvr1_block : entity work.xcvr_block
     generic map (
+        g_XCVR_NAME => "xcvr_enh",
         g_XCVR_N => g_XCVR1_N,
         g_CHANNELS => g_XCVR1_CHANNELS / g_XCVR1_N,
         g_REFCLK_MHZ => 125.0,

@@ -12,4 +12,5 @@ set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) run_contr
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) run_control_link_listener.vhd ]
 
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) xcvr_a10.vhd ]
+set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) xcvr_enh.vhd ]
 set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) xcvr_block.vhd ]
