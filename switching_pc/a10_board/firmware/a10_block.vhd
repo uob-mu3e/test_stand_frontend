@@ -161,7 +161,7 @@ architecture arch of a10_block is
     signal reset_250_n      : std_logic;
     signal clk_250          : std_logic;
 
-    signal flash_address    : std_logic_vector(o_flash_address'range) := (others => '0');
+    signal flash_address    : std_logic_vector(31 downto 0) := (others => '0');
 
     signal nios_i2c_scl     : std_logic;
     signal nios_i2c_scl_oe  : std_logic;

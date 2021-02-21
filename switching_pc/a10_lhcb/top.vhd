@@ -185,10 +185,10 @@ begin
 
 
 
---        o_reset_156_n                   => reset_156_n,
+        o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
 
---        o_reset_250_n                   => reset_250_n,
+        o_reset_250_n                   => reset_250_n,
         o_clk_250                       => clk_250,
 
         i_reset_125_n                   => reset_125_n,

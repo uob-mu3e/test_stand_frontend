@@ -104,12 +104,10 @@ architecture rtl of top is
     -- free running clock (used as nios clock)
     signal clk_50 : std_logic;
     signal reset_50_n : std_logic;
-    signal clk_50_cnt : unsigned(31 downto 0);
 
     -- global 125 MHz clock
     signal clk_125 : std_logic;
     signal reset_125_n : std_logic;
-    signal clk_125_cnt : unsigned(31 downto 0);
 
     -- 156.25 MHz data clock (derived from global 125 MHz clock)
     signal clk_156 : std_logic;
@@ -288,33 +286,20 @@ begin
 
 
 
-    process(clk_50)
-    begin
-    if rising_edge(clk_50) then
-        clk_50_cnt <= clk_50_cnt + 1;
-    end if;
-    end process;
-
-    process(clk_125)
-    begin
-    if rising_edge(clk_125) then
-        clk_125_cnt <= clk_125_cnt + 1;
-    end if;
-    end process;
-
     -- monitor 50 MHz clock
-    e_hex2seg7_50 : entity work.hex2seg7
-    port map (
-        i_hex => std_logic_vector(clk_50_cnt)(27 downto 24),
-        o_seg => HEX0_D--,
-    );
+    e_clk_50_hz : entity work.clkdiv
+    generic map ( P => 50000000 )
+    port map ( o_clk => LED(0), i_reset_n => reset_50_n, i_clk => clk_50 );
 
     -- monitor 125 MHz external clock
-    e_hex2seg7_125 : entity work.hex2seg7
-    port map (
-        i_hex => std_logic_vector(clk_125_cnt)(27 downto 24),
-        o_seg => HEX1_D--,
-    );
+    e_clk_125_hz : entity work.clkdiv
+    generic map ( P => 125000000 )
+    port map ( o_clk => LED(1), i_reset_n => reset_125_n, i_clk => clk_125 );
+
+    -- PCIe 100 MHz clock (from PC edge connector)
+    e_pcie_clk_hz : entity work.clkdiv
+    generic map ( P => 100000000 )
+    port map ( o_clk => LED(2), i_reset_n => CPU_RESET_n, i_clk => PCIE_REFCLK_p );
 
 
 
@@ -351,7 +336,7 @@ begin
         o_spi_sclk(0)                   => RJ45_LED_R,
         o_spi_ss_n(0)                   => RS422_DE,
 
-        o_nios_hz                       => LED(0),
+        o_nios_hz                       => LED(3),
 
 
 
@@ -425,13 +410,6 @@ begin
     FLASH_CE_n <= (flash_cs_n, flash_cs_n);
     FLASH_ADV_n <= '0';
     FLASH_CLK <= '0';
-
-
-
-    -- 100 MHz
-    e_pcie_clk_hz : entity work.clkdiv
-    generic map ( P => 100000000 )
-    port map ( o_clk => LED(3), i_reset_n => CPU_RESET_n, i_clk => PCIE_REFCLK_p );
 
 
 

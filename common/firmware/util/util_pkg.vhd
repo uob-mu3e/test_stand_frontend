@@ -20,6 +20,8 @@ package util is
     type slv16_array_t is array ( natural range <> ) of slv16_t;
     subtype slv32_t is std_logic_vector(31 downto 0);
     type slv32_array_t is array ( natural range <> ) of slv32_t;
+    subtype slv64_t is std_logic_vector(63 downto 0);
+    type slv64_array_t is array ( natural range <> ) of slv64_t;
 
     constant D16_2 : std_logic_vector(7 downto 0) := X"50";
     constant D21_4 : std_logic_vector(7 downto 0) := x"95";
