@@ -28,10 +28,13 @@ Write Reg3 0x00
 */
 
 #include "../../include/i2c.h"
+#include "tmb_monitor.h"
 
 struct malibu_t {
 
     i2c_t i2c;
+    
+    tmb_monitor_t tmb_monitor;
 
     alt_u8 I2C_read(alt_u8 slave, alt_u8 addr) {
         alt_u8 data = i2c.get(slave, addr);
@@ -217,13 +220,13 @@ int malibu_t::stic_configure(int asic, const alt_u8* bitpattern) {
     I2C_write(i2c_slave, 0x01, I2C_read(i2c_slave, 0x01) & ~CS_bit);
     ret = SPI_write_pattern(spi_slave, bitpattern);
     I2C_write(i2c_slave, 0x01, I2C_read(i2c_slave, 0x01) | CS_bit);
-
+/*
     if(ret != 0) {
         printf("Configuration error, powering off again\n");
         I2C_write(i2c_slave, 0x01, I2C_read(i2c_slave, 0x01) & ~D_bit);
         return -1;
     }
-
+*/
     I2C_write(i2c_slave, 0x01, I2C_read(i2c_slave, 0x01) | A_bit);
 
     printf("[malibu] stic_configure DONE\n");

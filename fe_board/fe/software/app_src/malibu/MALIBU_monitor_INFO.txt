@@ -1,0 +1,138 @@
+This is the MALIBU monitor related information
+Author: Tiancheng Zhong
+Time:   2021-02-17
+========================================================
+Monitor: current monitor and temperature readout
+I2C control lines from port of MALIBU
+-- U701 [LTC4306xUFD]   addr: 0x40 [sub-module 0-3]
+-- tmep sensor://TODO to be decided by TMB design 
+-- current VCC18D and A [PAC1720] addr: 0x4C
+-- U703 [LTC4306xUFD]   addr: 0x41 [sub-module 4-7]
+-- U704 [LTC4306xUFD]   addr: 0x42 [sub-module 8-11]
+-- U705 [LTC4306xUFD]   addr: 0x43 [sub-module 12,13; 14 and 15 is not used]
+-- U803 [PAC1720]       addr: 0x4D [VCCD33_AUX1] //TODO check with real resistor
+-- U806 [PAC1720]       addr: 0x18 [VCCD33_AUX2]
+
+========================================================
+1.LTC4306xUFD: I2C MUX
+--register 3 [0x03]
+-- d7:switch to BUS 1; [0:open; 1:close]
+-- d6:switch to BUS 2; [0:open; 1:close]
+-- d5:switch to BUS 3; [0:open; 1:close]
+-- d4:switch to BUS 4; [0:open; 1:close]
+-- d3-0: read only for state
+
+
+========================================================
+1.PAC1720: power monitor
+ 1.1. configuration: register [00H] form: 0abcdefg[bit] //TODO: check a b is not fully understand in I2C 
+ - a: alert for conversion cycle finished
+ - b: alert for out of range
+ - c: disable V_sense2
+ - d: disable V_source2
+ - e: enable timeout
+ - f: disable V_sense1
+ - g: disable V_source
+    
+ 1.2. conversion rate: register [01H] form: 000000ab[bit]
+ - ab:
+     00: 1 sample/Second
+     01: 2 sample/Second 
+     10: 4 sample/Second
+     11: Continuous (default)
+ 1.3. V_source the sample rate and averaging: register [0AH] form: abcdabcd
+    bit 7-4: ch2
+    bit 3-0: ch1
+    - ab:  sampling time and data bits
+        00: 2.5ms   [8 bits]
+        01: 5ms     [9 bits]
+        10: 10ms    [10 bits] (default)
+        11: 20ms    [11 bits]
+    - cd: averaging
+        00: Disabled (default)
+        01: 2
+        10: 4
+        11: 8 
+ 1.4. V_sense the sample rate and averaging: register [0BH] form: 0abcdefg [register 0CH is for ch2 v_sense]
+    - abc: ch1 V_sense sample time
+        101(default): 80ms [data = sign+11 bits]
+    - de: ch1 V_sense averaging
+        same as v_source averaging
+    - fg: full scale range 
+        11(default): -80mV to 80mV
+ 1.5. results: 
+    - V_sense:
+        register: ch1 [0DH and 0EH]; ch2 [0FH and 10H]
+        Form: [15:4]0000
+    - V_source:
+        register: ch1 [11H and 12H]; ch2 [13H and 14H]
+        Form: data = [15:5]00000
+        V_source = (data>>5)*19.531mV
+    - Power: 
+        register: ch1 [15H and 16H]; ch2 [17H and 18H]
+        Form: [15:0]
+ 1.6. High limit status 
+        register: [04H]
+        Form:       a000bcde
+            a: 1: conversion complete; 0: not complete
+            b: ch2 V_sense  high limit reached
+            c: ch2 V_suorce high limit reached
+            b: ch1 V_sense  high limit reached
+            c: ch1 V_suorce high limit reached
+ 1.7. Low limit status 
+        register: [05H]
+        Form:       0000bcde
+            b: ch2 V_sense  Low limit reached
+            c: ch2 V_suorce Low limit reached
+            b: ch1 V_sense  Low limit reached
+            c: ch1 V_suorce Low limit reached
+ 1.8. Limitation: 
+        register: Vsense[19H to 1CH]; V_source [1DH to 20H]
+        defalut high (low) limit are set to max (min) value, so just take the default value.
+ 1.9. example: measure V_source1
+    R/W     register   bits     function
+    W       00         1a       only enable V_source1
+    R       11                  high byte for V_source1
+    R       12                  low byte for V_source1
+
+
+
+
+
+
+
+========================================================
+TMP117: digital temperature sensor
+    register    comments
+    0x00        temp_results[signed 16 bits: 7.8125mC/bit]
+    0x01        configuration [16bits, default: 0x0220]  8 averaging; cycle time 1s; continuous conversion;  
+    0x0f        Device_ID [0x117] 
+ 
+========================================================
+data form:
+    1. data for both temperature and voltage are both alt_u16 => event; 
+        data_tmp:  event* 26 [13*2]
+        VCC18:
+            data_vsource:  *
+        data_vsense:
+    2. register for data of full module[82*2 bytes = 164 bytes]
+        event[0..25]:   data_tmp
+        event[26..77]:  data_VCC18
+             [26..27]:  data_VCC18D[0]
+                 [26]:  data_VCC18D[0]: V_source => expected 1.8V
+                 [27]:  data_VCC18D[0]: V_sense  => voltage drop on current monitor resistor
+             [28..29]:  data_VCC18A[0]
+                 [28]:  data_VCC18A[0]: V_source => expected 1.8V
+                 [29]:  data_VCC18A[0]: V_sense  => voltage drop on current monitor resistor
+             [30..31]:  data_VCC18D[1]
+             [32..33]:  data_VCC18A[1]
+             ......
+             [74..75]:  data_VCC18D[12]
+             [76..77]:  data_VCC18A[12]
+        event[78..81]:  data_VCC33D
+             [78..79]:  data_VCC33D[0]
+                 [78]:  data_VCC33D[0]: V_source => expected 3.3V
+                 [79]:  data_VCC33D[0]: V_sense  => voltage drop on current monitor resistor
+             [80..81]:  data_VCC33D[1]
+
+
