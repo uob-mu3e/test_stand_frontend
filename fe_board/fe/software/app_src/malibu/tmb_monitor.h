@@ -84,6 +84,10 @@ struct tmb_monitor_t {
     
     void    read_tmp_all();
     void    read_power_all();
+    void    print_tmp_all();
+    void    print_power_all();
+    void    read_all(){read_tmp_all(); read_power_all();};
+    void    print_all(){print_tmp_all(); print_power_all();};
     //for terminal
     void test_menu();
 };
@@ -195,14 +199,33 @@ void tmb_monitor_t::read_tmp(int id){
     }
 };
 
-void read_tmp_all(){
+void tmb_monitor_t::read_tmp_all(){
     for(int id = 0; id<N_CHIP; id++)read_tmp(id);
 }
 
-void read_power_all(){
+void tmb_monitor_t::read_power_all(){
     read_VCC33D(0);
     read_VCC33D(1);
     for(int id = 0; id<N_CHIP; id++)read_VCC18(id);
+}
+
+void tmb_monitor_t::print_tmp_all(){
+    for(int id = 0; id<N_CHIP; id++){
+        for(int i_side=0; i_side<2; i_side++){
+            printf("TMP[%d][%d]:\t 0x%04X\n",id,i_side,data_all[DATA_OFFSET_TMP+id*2+i_side]);
+        }
+    }
+}
+
+void tmb_monitor_t::print_power_all(){
+    printf("ID\t V\t V_drop\n");
+    for(int aux=0; aux<2; aux++)printf("VCC33D[%d]: 0x%04X\t 0x%04X\n",aux,data_all[DATA_OFFSET_VCC33+aux*2+DATA_OFFSET_SOURCE],data_all[DATA_OFFSET_VCC33+aux*2+DATA_OFFSET_SENSE]);
+    for(int id=0; id<N_CHIP; id++){
+        for(int ich=0; ich<2; ich++){
+            printf(ich==0 ? "VCC18D" : "VCC18A");
+            printf("[%d]:\t 0x%04X\t 0x%04X\n",id,data_all[DATA_OFFSET_VCC18+id*4+ich*2+DATA_OFFSET_SOURCE],data_all[DATA_OFFSET_VCC18+id*4+ich*2+DATA_OFFSET_SENSE]);
+        }
+    }
 }
 ///////======================interface to NIOS terminal============
 
