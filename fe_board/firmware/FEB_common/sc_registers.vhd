@@ -62,6 +62,8 @@ package feb_sc_registers is
     constant NONINCREMENTING_TEST_REGISTER_RW   :   integer := 16#24#;
     constant MAX10_VERSION_REGISTER_R           :   integer := 16#25#;
     constant MAX10_STATUS_REGISTER_R            :   integer := 16#26#;
+    constant MAX10_STATUS_BIT_PLL_LOCKED        :   integer := 0;
+    constant MAX10_STATUS_BIT_SPI_ARRIA_CLK     :   integer := 1;
     constant PROGRAMMING_CTRL_W                 :   integer := 16#27#;
     constant PROGRAMmING_STATUS_R               :   integer := 16#28#;
     constant PROGRAMMING_ADDR_W                 :   integer := 16#29#;  

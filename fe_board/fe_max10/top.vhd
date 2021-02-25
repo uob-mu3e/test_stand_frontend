@@ -7,6 +7,7 @@ LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
 use work.daq_constants.all;
+use work.feb_sc_registers.all;
 
 entity top is 
     port (
@@ -76,9 +77,6 @@ architecture arch of top is
     signal  version                             : std_logic_vector(31 downto 0);
     signal  status                              : std_logic_vector(31 downto 0);
     signal  control                             : std_logic_vector(31 downto 0);
-    signal  spi_arria_we                        : std_logic;
-    signal  rw_last                             : std_logic;
-    signal  new_transaction                     : std_logic;
 
     signal flash_programming_ctrl               : std_logic_vector(31 downto 0);
     signal flash_programming_status             : std_logic_vector(31 downto 0);
@@ -161,8 +159,8 @@ begin
     );
     version(31 downto 28) <= (others => '0');
 
-    status(0)  <= pll_locked;
-    status(1)  <= spi_arria_we;
+    status(0)  <= MAX10_STATUS_BIT_PLL_LOCKED;
+    status(1)  <= MAX10_STATUS_BIT_SPI_ARRIA_CLK;
     status(23 downto 2) <= (others => '0');
     status(31 downto 24) <= spi_flash_status;
 
@@ -191,30 +189,7 @@ begin
             byte_en         =>  spi_arria_byte_en
     );
  
-    -- Write enable logic
-    process(clk100, reset_n)
-    begin
-    if (reset_n = '0') then
-        spi_arria_we <= '0';
-        rw_last     <= '0';
-        new_transaction <= '0';
-    elsif(clk100'event and clk100 = '1')then
-        rw_last     <= spi_arria_rw;
-        if(spi_arria_addr = FEBSPI_ADDR_WRITENABLE
-            and spi_arria_byte_from_arria = FEBSPI_PATTERN_WRITENABLE
-            and spi_arria_byte_en = '1' and spi_arria_rw = '1') then
-                spi_arria_we <= '1';
-        end if;
-        if(spi_arria_we = '1' and rw_last <= '0' and spi_arria_rw = '1') then
-            new_transaction <= '1';
-        end if;
-        if(new_transaction = '1' and rw_last <= '1' and spi_arria_rw = '0') then
-            spi_arria_we <= '0';
-            new_transaction <= '0';
-        end if;
-    end if;
-    end process;
-
+ 
     -- Multiplexer for data to_arria
     spi_arria_data_to_arria  
               <=   version when spi_arria_addr = FEBSPI_ADDR_GITHASH

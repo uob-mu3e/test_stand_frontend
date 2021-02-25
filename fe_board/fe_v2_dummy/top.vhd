@@ -203,6 +203,9 @@ begin
         i_testin            => pb_db(1)--,
     );
 
+    max10_spi_sclk <= '1'; -- This is temporary until we only have v2.1 boards with the
+                            -- correct connection; for now we use it to know 2.1 from 2.0
+    
 
     FPGA_Test(0) <= transceiver_pll_clock(0);
     FPGA_Test(1) <= lvds_firefly_clk;
