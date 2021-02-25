@@ -75,6 +75,43 @@ void MuFEB::ReadFirmwareVersionsToODB()
     }
 }
 
+void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
+{
+
+    auto FEB = febs[FPGA_ID];
+
+    FILE * f = fopen(filename.c_str(), "rb");
+    if(!f){
+       cm_msg(MERROR,"MuFEB::LoadFirmware", "Failed to open %s", filename.c_str());
+       return;
+    }
+    // Get the file size
+    fseek (f , 0 , SEEK_END);
+    long fsize = ftell(f);
+    rewind (f);
+
+    cm_msg(MINFO,"MuFEB::LoadFirmware", "Programming %s of size %ld", filename.c_str(), fsize);
+
+    uint32_t buffer[256];
+    uint32_t addr=0;
+    fread(buffer,sizeof(uint32_t),256, f);
+    vector<uint32_t> data(buffer, buffer+256);
+    feb_sc.FEB_write(FEB.SB_Port(),PROGRAMMING_DATA_W,data,true);
+    feb_sc.FEB_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,1);
+    feb_sc.FEB_write(FEB.SB_Port(),PROGRAMMING_ADDR_W,addr);
+
+    uint32_t readback = 1;
+    while(readback & 0x1){
+        feb_sc.FEB_read(FEB.SB_Port(),PROGRAMMING_STATUS_R,readback);
+        printf(".");
+    }
+    printf("\n");
+
+    cm_msg(MINFO,"MuFEB::LoadFirmware", "Done programming");
+
+    fclose(f);
+}
+
 int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
     //map to SB fiber
     auto FEB = febs[FPGA_ID];

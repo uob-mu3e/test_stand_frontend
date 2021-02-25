@@ -49,6 +49,8 @@ class MuFEB {
       int WriteFEBID();
       void ReadFirmwareVersionsToODB();
 
+      void LoadFirmware(std::string filename, uint16_t FPGA_ID);
+
       uint32_t ReadBackMergerRate(uint16_t FPGA_ID);
       uint32_t ReadBackResetPhase(uint16_t FPGA_ID);
       uint32_t ReadBackTXReset(uint16_t FPGA_ID);
