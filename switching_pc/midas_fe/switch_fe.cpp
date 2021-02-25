@@ -468,7 +468,8 @@ void setup_odb(){
 
     odb firmware_variables = {
         {"Arria V Firmware Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{}},
-        {"Max 10 Firmware Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{}}
+        {"Max 10 Firmware Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{}},
+        {"FEB Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{20}}
     };
 
     firmware_variables.connect("/Equipment/Switching/Variables/FEBFirmware");

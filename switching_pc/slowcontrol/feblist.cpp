@@ -29,6 +29,8 @@ void FEBList::RebuildFEBList()
     auto sbnames = links_settings["SwitchingBoardNames"];
     auto febnames = links_settings["FrontEndBoardNames"];
 
+    odb febversion("/Equipment/Switching/Variables/FEB Version");
+
     // fill our list. Currently only mapping primaries;
     // secondary fibers for SciFi are implicitely mapped to the preceeding primary
     int lastPrimary=-1;
@@ -46,7 +48,7 @@ void FEBList::RebuildFEBList()
             mLinkMask   |= 1ULL << ID;
 
             lastPrimary=mFEBs.size();
-            mFEBs.push_back({ID,linkmask[ID],name_link.c_str()});
+            mFEBs.push_back({ID,linkmask[ID],name_link.c_str(),febversion[ID]});
             mpFEBs.push_back(mFEBs.back());
             printf(reportStr,"TX Fiber %d is mapped to Link %u \"%s\"                            --> SB=%u.%u %s",
                                 ID,mFEBs[lastPrimary].GetLinkID(),mFEBs[lastPrimary].GetLinkName().c_str(),

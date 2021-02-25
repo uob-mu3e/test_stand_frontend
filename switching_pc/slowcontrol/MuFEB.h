@@ -53,7 +53,9 @@ class MuFEB {
       uint32_t ReadBackResetPhase(uint16_t FPGA_ID);
       uint32_t ReadBackTXReset(uint16_t FPGA_ID);
 
-      int fill_SSFE(DWORD * pdata);
+      DWORD *fill_SSFE(DWORD * pdata);
+      DWORD *read_SSFE_OneFEB(DWORD * pdata, uint32_t index, uint32_t version);
+
 
 protected:
 
@@ -72,12 +74,24 @@ protected:
       virtual FEBTYPE GetTypeID() const {return FEBTYPE::Undefined;}
       virtual bool IsSecondary([[maybe_unused]] int t){return false;}
 
+      //Conversions for slow control values
+      float ArriaVTempConversion(uint32_t reg);
+      float Max10TempConversion(uint32_t reg);
+      float Max10VoltageConversion(uint16_t reg, float divider=1);
+      float Max10ExternalTemeperatureConversion(uint16_t reg);
+
+      static const vector<uint32_t> maxadcvals;
+      static const vector<float>    maxtempvals;
+
       //Helper functions
       uint32_t reg_setBit  (uint32_t reg_in, uint8_t bit, bool value=true);
       uint32_t reg_unsetBit(uint32_t reg_in, uint8_t bit);
       bool reg_getBit(uint32_t reg_in, uint8_t bit);
       uint32_t reg_getRange(uint32_t reg_in, uint8_t length, uint8_t offset);
       uint32_t reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, uint32_t value);
+
+
+
 
 };//class MuFEB
 
