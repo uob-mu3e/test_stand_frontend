@@ -374,7 +374,7 @@ function update_firmware(valuex) {
     for(var i=0; i < 4; i++){
         for(var j=0; j < nfebs[i]; j++){
             var index = 48*i+j;
-            febs[i][j].arria_firmware     = arria[index];
+            febs[i][j].arria_firmware = arria[index];
             febs[i][j].max_firmware   = max[index];
         }
     }
