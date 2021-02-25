@@ -703,7 +703,7 @@ begin
             end if;    
         when programming =>
             -- Idea for programming:
-            -- - go to programming state by setting proggraming_status(0) = 1
+            -- - go to programming state by setting programming_status(0) = 1
             -- - Fill at least 256 byte into the programming FIFO
             -- - Set the address - this will copy the FIFO to the MAX, then trigger
             --   flash programming
@@ -742,7 +742,7 @@ begin
             max_spi_strobe   <= '1';
             max_spi_rw       <= '1';
             max_spi_data_to_max     <= programming_addr;
-            max_spi_state    <= programmingaddrwait;
+            max_spi_state    <= flashwait;
             flash_busy       <= '1';
         when flashwait =>
             if(max_spi_busy = '0') then
@@ -759,7 +759,7 @@ begin
             max_spi_numbytes <= "000000100";
             max_spi_strobe   <= '1';
             if(max_spi_word_en = '1') then
-                flash_busy   <= max_spi_word_from_max(7); -- TODO: Use correct bit
+                flash_busy   <= max_spi_word_from_max(0);
                 max_spi_strobe   <= '0';
                 max_spi_state    <= flashwait;
             end if;
