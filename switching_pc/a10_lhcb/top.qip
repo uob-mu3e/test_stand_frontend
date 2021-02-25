@@ -8,9 +8,7 @@ set_global_assignment -name QIP_FILE generated/include.qip
 
 set_global_assignment -name QIP_FILE util/include.qip
 
-set_global_assignment -name VHDL_FILE ../../common/firmware/a10/xcvr_a10.vhd
-set_global_assignment -name VHDL_FILE ../../common/firmware/a10/xcvr_enh.vhd
-set_global_assignment -name VHDL_FILE ../../common/firmware/a10/xcvr_block.vhd
+set_global_assignment -name QIP_FILE ../../common/firmware/a10/xcvr.qip
 set_global_assignment -name VHDL_FILE ../a10_board/firmware/a10_block.vhd
 
 set_global_assignment -name QIP_FILE pcieapp/include.qip
