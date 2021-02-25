@@ -14,3 +14,5 @@ set_global_assignment -name VHDL_FILE "ip/ip_altpll.vhd"
 set_global_assignment -name QIP_FILE "generated/include.qip"
 
 set_global_assignment -name QIP_FILE "mscb/include.qip"
+
+set_global_assignment -name VHDL_FILE ../firmware/FEB_common/sc_registers.vhd

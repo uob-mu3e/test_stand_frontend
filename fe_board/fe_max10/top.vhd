@@ -159,8 +159,8 @@ begin
     );
     version(31 downto 28) <= (others => '0');
 
-    status(0)  <= MAX10_STATUS_BIT_PLL_LOCKED;
-    status(1)  <= MAX10_STATUS_BIT_SPI_ARRIA_CLK;
+    status(MAX10_STATUS_BIT_PLL_LOCKED)  <= pll_locked;
+    status(MAX10_STATUS_BIT_SPI_ARRIA_CLK)  <= fpga_spi_clk;
     status(23 downto 2) <= (others => '0');
     status(31 downto 24) <= spi_flash_status;
 
@@ -202,7 +202,7 @@ begin
                     else adc_data_1 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
                                      and spi_arria_addr_offset(7 downto 2) = "000001"
                     else adc_data_2 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
-                                     and spi_arria_addr_offset(7 downto 2) = "000010""
+                                     and spi_arria_addr_offset(7 downto 2) = "000010"
                     else adc_data_3 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
                                      and spi_arria_addr_offset(7 downto 2) = "000011"
                     else adc_data_4 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
