@@ -12,6 +12,7 @@ add_library(libslowcontrol STATIC
     mupix/mupix_FEB.cpp mupix/mupix_midasodb.cpp mupix/mupix_config.cpp
     scifi/SciFi_FEB.cpp
     tiles/Tiles_FEB.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/feb_constants.h #needs to be here explicitly for make rules to work!
 )
 
 target_include_directories(libslowcontrol PUBLIC . ./mupix ./mutrig ./tiles ./scifi ../../common/include)
