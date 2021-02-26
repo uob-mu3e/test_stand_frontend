@@ -21,10 +21,20 @@ port (
     i_reg_we        : in    std_logic;
     i_reg_wdata     : in    std_logic_vector(31 downto 0);
 
-    o_chip_reset    : out   std_logic_vector(N_MODULES-1 downto 0);
+    -- to detector module
+    o_chip_reset    : out   std_logic;
     o_pll_test      : out   std_logic;
     i_data          : in    std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
+    io_i2c_sda      : inout std_logic;
+    io_i2c_scl      : inout std_logic;
+    i_cec           : in    std_logic;
+    i_spi_miso      : in    std_logic;
+    i_i2c_int       : in    std_logic;
+    o_pll_reset     : out   std_logic;
+    o_spi_scl       : out   std_logic;
+    o_spi_mosi      : out   std_logic;
 
+    -- data out to common firmware
     o_fifo_wdata   : out   std_logic_vector(36*N_LINKS-1 downto 0);
     o_fifo_write   : out   std_logic_vector(N_LINKS-1 downto 0);
 
@@ -43,6 +53,7 @@ port (
     i_clk_ref_B     : in    std_logic; -- lvds reference only
     i_clk_g125      : in    std_logic; -- global 125 MHz clock, signals to ASIC from this
 
+    o_test_led      : out   std_logic;
     i_reset         : in    std_logic--;
 );
 end entity;
@@ -77,7 +88,82 @@ architecture arch of scifi_path is
     signal s_chip_rst : std_logic;
     signal s_chip_rst_shifted : std_logic_vector(3 downto 0);
 
+
+
+    -- TODO: remove 
+    signal a : std_logic;
+    signal b : std_logic;
+    signal sda_ena : std_logic;
+    signal sda_in  : std_logic;
+    signal sda_out : std_logic;
+    signal scl_ena : std_logic;
+    signal scl_in  : std_logic;
+    signal scl_out : std_logic;
+
 begin
+--------------------------------------------------------------------
+--- TODO: REMOVE THIS 
+--- do not compile away stuff for pinout test
+--------------------------------------------------------------------
+
+    dnca: entity work.doNotCompileAwayMux
+    generic map(
+        WIDTH_g   => 5--,
+    )
+    port map(
+        i_clk               => i_clk_core,
+        i_reset_n           => not i_reset,
+        i_doNotCompileAway  => i_cec & i_spi_miso & i_i2c_int & scl_in & sda_in,
+        o_led               => o_test_led--,
+    );
+
+    o_pll_reset <= i_reset;
+    o_spi_scl   <= i_reset;
+    o_spi_mosi  <= i_reset;
+
+    buf1: entity work.ip_iobuf
+    port map(
+        datain(0)   => sda_out,
+        oe(0)       => sda_ena,
+        dataout(0)  => sda_in,
+        dataio(0)   => io_i2c_sda--,
+    );
+
+    buf2: entity work.ip_iobuf
+    port map(
+        datain(0)   => scl_out,
+        oe(0)       => scl_ena,
+        dataout(0)  => scl_in,
+        dataio(0)   => io_i2c_scl--,
+    );
+
+    process (spare_clk_osc)
+    begin
+        if rising_edge(spare_clk_osc) then
+            sda_ena <= '0';
+            scl_ena <= '0';
+            if(a='0' and b='0') then
+                a<='1';
+                sda_out <= '0';
+                scl_out <= '0';
+                sda_ena <= '1';
+                scl_ena <= '1';
+            elsif(a='1' and b='0') then
+                b<= '1';
+                sda_out <= '1';
+                scl_out <= '1';
+                sda_ena <= '1';
+                scl_ena <= '1';
+            else
+                a<= '0';
+                b<= '0';
+            end if;
+        end if;
+    end process;
+
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+
 
     -- 100 kHz
     e_test_pulse : entity work.clkdiv
@@ -197,7 +283,7 @@ begin
 --        o_pll_clk       => open
 --    );
     --o_chip_reset <= s_chip_rst_shifted(N_MODULES-1 downto 0);
-    o_chip_reset <= (others => i_reset);
+    o_chip_reset <= i_reset;
 
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (

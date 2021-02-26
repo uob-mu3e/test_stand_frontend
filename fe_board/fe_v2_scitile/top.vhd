@@ -31,8 +31,8 @@ entity top is
         tile_din                    : in    std_logic_vector(13 downto 1);
         tile_pll_test               : out   std_logic;
         tile_chip_reset             : out   std_logic;
-        tile_i2c_sda                : out   std_logic; -- inout single ended ??
-        tile_i2c_scl                : out   std_logic;
+        tile_i2c_sda                : inout std_logic;
+        tile_i2c_scl                : inout std_logic;
         tile_cec                    : in    std_logic;
         tile_spi_miso               : in    std_logic;
         tile_i2c_int                : in    std_logic;
@@ -110,7 +110,7 @@ architecture rtl of top is
     signal pb_db                    : std_logic_vector(1 downto 0);
 
     constant N_LINKS                : integer := 1;
-    constant N_ASICS                : integer := 1;
+    constant N_ASICS                : integer := 13;
     constant N_MODULES              : integer := 1;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
@@ -151,9 +151,18 @@ begin
         i_reg_we                    => malibu_reg.we,
         i_reg_wdata                 => malibu_reg.wdata,
 
-        o_chip_reset(0)             => tile_chip_reset,
+        o_chip_reset                => tile_chip_reset,
         o_pll_test                  => tile_pll_test,
-        i_data(0)                   => tile_din(1),
+        i_data                      => tile_din,
+
+        io_i2c_sda                  => tile_i2c_sda,
+        io_i2c_scl                  => tile_i2c_scl,
+        i_cec                       => tile_cec,
+        i_spi_miso                  => tile_spi_miso,
+        i_i2c_int                   => tile_i2c_int,
+        o_pll_reset                 => tile_pll_reset,
+        o_spi_scl                   => tile_spi_scl,
+        o_spi_mosi                  => tile_spi_mosi,
 
         o_fifo_write                => fifo_write,
         o_fifo_wdata                => fifo_wdata,
@@ -170,6 +179,7 @@ begin
         i_clk_ref_A                 => LVDS_clk_si1_fpga_A,
         i_clk_ref_B                 => LVDS_clk_si1_fpga_B,
 
+        o_test_led                  => lcd_data(4),
         i_reset                     => not pb_db(0)--,
     );
 

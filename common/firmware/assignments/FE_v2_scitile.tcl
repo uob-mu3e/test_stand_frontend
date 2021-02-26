@@ -23,11 +23,10 @@ set_location_assignment PIN_AJ3  -to tile_din[7]
 set_location_assignment PIN_AJ1  -to tile_din[6]
 set_location_assignment PIN_AH1  -to tile_i2c_int
 
-
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 2.5-V SSTL CLASS II" -to tile_i2c_sda
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 2.5-V SSTL CLASS II" -to tile_i2c_scl
 set_instance_assignment -name IO_STANDARD LVDS -to tile_pll_test
 set_instance_assignment -name IO_STANDARD LVDS -to tile_chip_reset
-set_instance_assignment -name IO_STANDARD LVDS -to tile_i2c_sda
-set_instance_assignment -name IO_STANDARD LVDS -to tile_i2c_scl
 set_instance_assignment -name IO_STANDARD LVDS -to tile_cec
 set_instance_assignment -name IO_STANDARD LVDS -to tile_din[13]
 set_instance_assignment -name IO_STANDARD LVDS -to tile_spi_miso
