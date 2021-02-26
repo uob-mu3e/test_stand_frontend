@@ -29,7 +29,7 @@ void FEBList::RebuildFEBList()
     auto sbnames = links_settings["SwitchingBoardNames"];
     auto febnames = links_settings["FrontEndBoardNames"];
 
-    odb febversion("/Equipment/Switching/Variables/FEB Version");
+    odb febversion("/Equipment/Switching/Variables/FEBFirmware/FEB Version");
 
     // fill our list. Currently only mapping primaries;
     // secondary fibers for SciFi are implicitely mapped to the preceeding primary

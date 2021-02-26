@@ -22,9 +22,9 @@ public:
     // We use the () operator to simulate changing values in the SC registers using a separate thread
     void operator()() [[noreturn]];
 
-    virtual int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data, bool nonincrementing = false);
+    virtual int FEB_write(const uint32_t FPGA_ID, const uint32_t startaddr, const vector<uint32_t> &data, const bool nonincrementing = false);
     // expects data vector with read-length size
-    virtual int FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> & data, bool nonincrementing = false);
+    virtual int FEB_read(const uint32_t FPGA_ID, const uint32_t startaddr, vector<uint32_t> & data, const bool nonincrementing = false);
 
     virtual void FEBsc_resetMain(){}
     virtual void FEBsc_resetSecondary(){}

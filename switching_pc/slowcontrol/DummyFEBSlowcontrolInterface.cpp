@@ -44,7 +44,7 @@ void DummyFEBSlowcontrolInterface::operator()()
     }
 }
 
-int DummyFEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data, bool nonincrementing)
+int DummyFEBSlowcontrolInterface::FEB_write(const uint32_t FPGA_ID, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing)
 {
     if(startaddr > FEB_SC_ADDR_RANGE_HI){
         cout << "Address out of range: " << std::hex << startaddr << endl;
@@ -70,7 +70,7 @@ int DummyFEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr
      return ERRCODES::OK;
 }
 
-int DummyFEBSlowcontrolInterface::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> &data, bool nonincrementing)
+int DummyFEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t startaddr, vector<uint32_t> &data, const bool nonincrementing)
 {
     if(startaddr > FEB_SC_ADDR_RANGE_HI){
         cout << "Address out of range: " << std::hex << startaddr << endl;
