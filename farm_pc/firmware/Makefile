@@ -1,18 +1,14 @@
 
 CABLE=DE5
-SOF?=output_files/top.sof
-
-BSP_DIR=software/hal_bsp
-APP_DIR=software/app
 
 IPs = \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard ip/*.tcl)) \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard pcieapp/*.tcl)) \
-    $(patsubst %.tcl,%.sopcinfo,$(wildcard ddr3/*.tcl)) \
-    a10/ip_xcvr_phy.sopcinfo a10/ip_xcvr_reset.sopcinfo a10/ip_xcvr_fpll.sopcinfo \
-    nios.sopcinfo
+    $(wildcard ip/*.tcl) \
+    $(wildcard pcieapp/*.tcl) \
+    $(wildcard ddr3/*.tcl) \
+    a10/ip_xcvr_phy.tcl a10/ip_xcvr_reset.tcl a10/ip_xcvr_fpll.tcl \
+    nios.tcl
 
-include util/makefile.mk
+include util/altera/makefile.mk
 
 clean :
 	rm -rf *.rpt *.chg smart.log *.htm *.eqn *.pin *.sof *.pof db incremental_db *.sopcinfo *.bak *.qsys

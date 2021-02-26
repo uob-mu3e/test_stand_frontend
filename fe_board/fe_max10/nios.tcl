@@ -1,6 +1,5 @@
-package require qsys
+#
 
-create_system {nios}
 source {device.tcl}
 
 source "util/nios_base.tcl"
@@ -11,7 +10,3 @@ source "nios_adc.tcl"
 source "nios_ufm.tcl"
 
 source "nios_spiflash.tcl"
-
-
-
-save_system {nios.qsys}

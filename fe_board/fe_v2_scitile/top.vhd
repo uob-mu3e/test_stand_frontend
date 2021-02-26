@@ -99,7 +99,7 @@ entity top is
         max10_spi_miso              : inout std_logic;
         max10_spi_D1                : inout std_logic;
         max10_spi_D2                : inout std_logic;
-        max10_spi_D3                : out   std_logic;
+        max10_spi_D3                : inout std_logic;
         max10_spi_csn               : out   std_logic
         );
 end top;
@@ -117,8 +117,6 @@ architecture rtl of top is
     signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
 
     signal malibu_reg               : work.util.rw_t;
-    signal scifi_reg                : work.util.rw_t;
-    signal mupix_reg                : work.util.rw_t;
 
     signal run_state_125            : run_state_t;
     signal run_state_156            : run_state_t;
@@ -256,20 +254,20 @@ begin
         o_mscb_data         => mscb_fpga_out,
         o_mscb_oe           => mscb_fpga_oe_n,
 
-        o_max10_spi_sclk    => max10_spi_sclk,
+        o_max10_spi_sclk    => max10_spi_miso, --max10_spi_sclk, Replacement, due to broken line
         io_max10_spi_mosi   => max10_spi_mosi,
-        io_max10_spi_miso   => max10_spi_miso,
+        io_max10_spi_miso   => 'Z',
         io_max10_spi_D1     => max10_spi_D1,
         io_max10_spi_D2     => max10_spi_D2,
-        o_max10_spi_D3      => max10_spi_D3,
+        io_max10_spi_D3     => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_malibu_reg_addr   => malibu_reg.addr(7 downto 0),
-        o_malibu_reg_re     => malibu_reg.re,
-        i_malibu_reg_rdata  => malibu_reg.rdata,
-        o_malibu_reg_we     => malibu_reg.we,
-        o_malibu_reg_wdata  => malibu_reg.wdata,
-        
+        o_subdet_reg_addr   => malibu_reg.addr(3 downto 0),
+        o_subdet_reg_re     => malibu_reg.re,
+        i_subdet_reg_rdata  => malibu_reg.rdata,
+        o_subdet_reg_we     => malibu_reg.we,
+        o_subdet_reg_wdata  => malibu_reg.wdata,
+
         -- reset system
         o_run_state_125             => run_state_125,
         i_ack_run_prep_permission   => and_reduce(s_MON_rxrdy),
@@ -280,7 +278,6 @@ begin
         i_clk_156           => transceiver_pll_clock(0),
         o_clk_156_mon       => lcd_data(1),
         i_clk_125           => lvds_firefly_clk,
-        o_clk_125_mon       => lcd_data(2),
 
         i_areset_n          => pb_db(0),
         

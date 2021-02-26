@@ -45,13 +45,12 @@ begin
     
     if reset_n = '0' then
         inst <= '1';
-    
+
     elsif rising_edge(i_clk) then
-        
-        
+
         o_SPI_c <= reg(127)(15 downto 0);
         o_SPI_a <= reg(127)(31 downto 16);
-        
+
         if inst = '1' then
             reg(127) <= X"55" & "0101110" & '1' & X"00" & "000100" & '1' & '1';   
             for i in 0 to 62 loop
@@ -60,13 +59,13 @@ begin
                 reg((i*2)+1)   <= X"55555555" ;
             end loop;
             inst <= '0';
-        
+
         elsif i_R = not R then
             if i_adrr /= "1111111" then
                 reg(to_integer(unsigned(i_adrr))) <= i_data;
             end if;
         else
-				--o_data  <= reg(to_integer(unsigned(i_adrr)));
+--          o_data  <= reg(to_integer(unsigned(i_adrr)));
         end if;
         
         if i_SPI_c = '1' then
@@ -75,10 +74,6 @@ begin
         
     end if;
 
-
 end process;
-
-
-    
 
 end rtl;

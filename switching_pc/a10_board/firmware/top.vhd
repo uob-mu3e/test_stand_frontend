@@ -31,7 +31,7 @@ port (
     RJ45_LED_R          : out   std_logic;
 
     -- //////// FAN ////////
-    FAN_I2C_SCL         : out   std_logic;
+    FAN_I2C_SCL         : inout std_logic;
     FAN_I2C_SDA         : inout std_logic;
 
     -- //////// FLASH ////////
@@ -45,11 +45,11 @@ port (
     FLASH_RESET_n       : out   std_logic;
 
     -- //////// POWER ////////
-    POWER_MONITOR_I2C_SCL   : out   std_logic;
+    POWER_MONITOR_I2C_SCL   : inout std_logic;
     POWER_MONITOR_I2C_SDA   : inout std_logic;
 
     -- //////// TEMP ////////
-    TEMP_I2C_SCL        : out   std_logic;
+    TEMP_I2C_SCL        : inout std_logic;
     TEMP_I2C_SDA        : inout std_logic;
 
     -- //////// Transiver ////////
@@ -115,22 +115,12 @@ architecture rtl of top is
     signal clk_156 : std_logic;
     signal reset_156_n : std_logic;
 
-    -- PCIe clock
-    signal pcie_clk : std_logic;
-    signal pcie_reset_n : std_logic;
-
-    signal nios_clk : std_logic;
-    signal nios_reset_n : std_logic;
-    signal flash_rst_n : std_logic;
-    signal flash_ce_n_i : std_logic;
+    signal flash_cs_n : std_logic;
 
 
-
+        constant NLINKS_ALIGNMENT : integer := 36;
         constant NLINKS_DATA : integer := 3;
         constant NLINKS_TOTL : integer := 16;
-
-        signal reset : std_logic;
-        signal reset_n : std_logic;
 
         signal resets : std_logic_vector(31 downto 0);
         signal resets_n: std_logic_vector(31 downto 0);
@@ -154,10 +144,9 @@ architecture rtl of top is
         signal readmem_writeaddr_finished: std_logic_vector(15 downto 0);
         signal readmem_writeaddr_lowbits : std_logic_vector(15 downto 0);
         signal readmem_wren	 		: std_logic;
-        signal readmem_endofevent 	: std_logic;
         signal writememreadaddr 	: std_logic_vector(15 downto 0);
         signal writememreaddata 	: std_logic_vector (31 downto 0);
-        
+
         -- pcie dma
         signal dmamem_writedata 	: std_logic_vector(255 downto 0);
         signal dmamem_wren	 		: std_logic;
@@ -169,19 +158,10 @@ architecture rtl of top is
         signal notendofevent_counter : std_logic_vector(31 downto 0);
         signal dmamemhalffull_tx : std_logic;
         signal sync_chain_halffull : std_logic_vector(1 downto 0);
-        
-        -- pcie dma2
-        signal dma2mem_writedata 	: std_logic_vector(255 downto 0);
-        signal dma2mem_wren	 		: std_logic;
-        signal dma2mem_endofevent 	: std_logic;
-        signal dma2memhalffull 		: std_logic;
-        
+
         -- //pcie fast clock
         signal pcie_fastclk_out		: std_logic;
-        
-        -- //pcie debug signals
-        signal pcie_testout				: std_logic_vector(127 downto 0);
-        
+
         -- Clocksync stuff
         signal clk_sync : std_logic;
         signal clk_last : std_logic;
@@ -192,47 +172,16 @@ architecture rtl of top is
         signal push_button2_db : std_logic;
         signal push_button3_db : std_logic;
 
-        -- NIOS
-        signal i2c_scl_in   : std_logic;
-        signal i2c_scl_oe   : std_logic;
-        signal i2c_sda_in   : std_logic;
-        signal i2c_sda_oe   : std_logic;
-        signal cpu_pio_i : std_logic_vector(31 downto 0);
-
-        signal av_qsfp : work.util.avalon_array_t(3 downto 0);
-
-        -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
-        signal ZERO : std_logic := '0';
-        attribute keep : boolean;
-        attribute keep of ZERO : signal is true;
-
-        -- tranciever ip signals
-        signal tx_clk : std_logic_vector(15 downto 0);
-        signal rx_clk : std_logic_vector(15 downto 0);
         type fifo_out_array_type is array (3 downto 0) of std_logic_vector(35 downto 0);
 
-        --all signals from QSFP plugs
-        signal QSFP_TX : std_logic_vector(15 downto 0);
-        signal QSFP_RX : std_logic_vector(15 downto 0);
-        --data behind QSFP tranceivers
-        type data_array_type is array (NLINKS_TOTL-1 downto 0) of std_logic_vector(31 downto 0);
-        type datak_array_type is array (NLINKS_TOTL-1 downto 0) of std_logic_vector(3 downto 0);
-        signal rx_data : data_array_type;
---        signal tx_data : data_array_type;
-        signal rx_datak : datak_array_type;
---        signal tx_datak : datak_array_type;
+    -- data behind QSFP tranceivers
+    signal rx_data_raw, rx_data, tx_data : work.util.slv32_array_t(NLINKS_TOTL-1 downto 0);
+    signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(NLINKS_TOTL-1 downto 0);
 
-    signal rx_data_v:       std_logic_vector(NLINKS_TOTL*32-1 downto 0);
-    signal rx_datak_v:      std_logic_vector(NLINKS_TOTL*4-1 downto 0);
-    signal rx_data_v_raw:   std_logic_vector(NLINKS_TOTL*32-1 downto 0);
-    signal rx_datak_v_raw:  std_logic_vector(NLINKS_TOTL*4-1 downto 0);
     signal rx_sc_v:         std_logic_vector(NLINKS_TOTL*32-1 downto 0);
     signal rx_sck_v:        std_logic_vector(NLINKS_TOTL*4-1 downto 0);
     signal rx_rc_v:         std_logic_vector(NLINKS_TOTL*32-1 downto 0);
     signal rx_rck_v:        std_logic_vector(NLINKS_TOTL*4-1 downto 0);
-    
-    signal tx_data_v:       std_logic_vector(NLINKS_TOTL*32-1 downto 0);
-    signal tx_datak_v:      std_logic_vector(NLINKS_TOTL*4-1 downto 0);
 
     type mapping_t is array(natural range <>) of integer;
     --mapping as follows: fiber link_mapping(0)=1 - Fiber QSFPA.1 is mapped to first(0) link
@@ -284,20 +233,24 @@ architecture rtl of top is
         signal dma_end_event_test : std_logic;
         signal data_counter : std_logic_vector(32*NLINKS_TOTL-1 downto 0);
         signal datak_counter : std_logic_vector(4*NLINKS_TOTL-1 downto 0);
+        signal data_bank : std_logic_vector(32*64-1 downto 0);
+        signal datak_bank : std_logic_vector(4*64-1 downto 0);
         signal feb_merger_timeouts : std_logic_vector(NLINKS_TOTL-1 downto 0);
 
 begin
 
-    -- 50 MHz oscillator
+    -- local 50 MHz clock (oscillator)
     clk_50 <= CLK_50_B2J;
+
+    LED_BRACKET <= writeregs_slow(LED_REGISTER_W)(3 downto 0);
 
     -- generate reset
     e_reset_50_n : entity work.reset_sync
     port map ( o_reset_n => reset_50_n, i_reset_n => CPU_RESET_n, i_clk => clk_50 );
 
-    -- generate 125 MHz clock on SMA output
+    -- generate and route 125 MHz clock to SMA output
     -- (can be connected to SMA input as global clock)
-    e_pll_125 : component work.cmp.ip_pll_125
+    e_pll_50to125 : component work.cmp.ip_pll_50to125
     port map (
         outclk_0 => SMA_CLKOUT,
         refclk => clk_50,
@@ -313,15 +266,6 @@ begin
 
     e_reset_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_n, i_reset_n => CPU_RESET_n, i_clk => clk_125 );
-
-    -- 156.25 MHz data clock (from tx pll, reference is 125 MHz global clock)
-    clk_156 <= tx_clk(0);
-
-    e_reset_156_n : entity work.reset_sync
-    port map ( o_reset_n => reset_156_n, i_reset_n => CPU_RESET_n, i_clk => clk_156 );
-
---    e_pcie_reset_n : entity work.reset_sync
---    port map ( o_reset_n => pcie_reset_n, i_reset_n => CPU_RESET_n and BUTTON(0), i_clk => pcie_clk );
 
 
 
@@ -374,115 +318,120 @@ begin
 
 
 
-    -------- NIOS --------
-
-    nios_clk <= clk_50;
-
-    -- generate reset sequence for flash and nios
-    e_nios_reset_n : entity work.debouncer
+    a10_block : entity work.a10_block
     generic map (
-        W => 2,
-        N => integer(50e6 * 0.200) -- 200ms
+        g_XCVR0_CHANNELS => 16,
+        g_XCVR0_N => 4,
+        g_XCVR1_CHANNELS => 0,
+        g_XCVR1_N => 0,
+        g_PCIE0_X => 8,
+        g_PCIE1_X => 0,
+        g_CLK_MHZ => 50.0--,
     )
     port map (
-        i_d(0) => '1',
-        o_q(0) => flash_rst_n,
+        -- flash interface
+        o_flash_address(27 downto 2)    => FLASH_A,
+        io_flash_data                   => FLASH_D,
+        o_flash_read_n                  => FLASH_OE_n,
+        o_flash_write_n                 => FLASH_WE_n,
+        o_flash_cs_n                    => flash_cs_n,
+        o_flash_reset_n                 => FLASH_RESET_n,
 
-        i_d(1) => flash_rst_n,
-        o_q(1) => nios_reset_n,
+        -- I2C
+        io_i2c_scl(0)                   => FAN_I2C_SCL,
+        io_i2c_sda(0)                   => FAN_I2C_SDA,
+        io_i2c_scl(1)                   => TEMP_I2C_SCL,
+        io_i2c_sda(1)                   => TEMP_I2C_SDA,
+        io_i2c_scl(2)                   => POWER_MONITOR_I2C_SCL,
+        io_i2c_sda(2)                   => POWER_MONITOR_I2C_SDA,
 
-        i_reset_n => reset_50_n,
-        i_clk => clk_50--,
+        -- SPI
+        i_spi_miso(0)                   => RS422_DIN,
+        o_spi_mosi(0)                   => RS422_DOUT,
+        o_spi_sclk(0)                   => RJ45_LED_R,
+        o_spi_ss_n(0)                   => RS422_DE,
+
+        o_nios_hz                       => LED(0),
+
+
+
+        -- XCVR0 (6250 Mbps @ 156.25 MHz)
+        i_xcvr0_rx( 3 downto  0)        => QSFPA_RX_p,
+        i_xcvr0_rx( 7 downto  4)        => QSFPB_RX_p,
+        i_xcvr0_rx(11 downto  8)        => QSFPC_RX_p,
+        i_xcvr0_rx(15 downto 12)        => QSFPD_RX_p,
+        o_xcvr0_tx( 3 downto  0)        => QSFPA_TX_p,
+        o_xcvr0_tx( 7 downto  4)        => QSFPB_TX_p,
+        o_xcvr0_tx(11 downto  8)        => QSFPC_TX_p,
+        o_xcvr0_tx(15 downto 12)        => QSFPD_TX_p,
+        i_xcvr0_refclk                  => (others => clk_125),
+
+        o_xcvr0_rx_data                 => rx_data_raw,
+        o_xcvr0_rx_datak                => rx_datak_raw,
+        i_xcvr0_tx_data                 => tx_data,
+        i_xcvr0_tx_datak                => tx_datak,
+
+
+
+        -- PCIe0
+        i_pcie0_rx                      => PCIE_RX_p,
+        o_pcie0_tx                      => PCIE_TX_p,
+        i_pcie0_perst_n                 => PCIE_PERST_n,
+        i_pcie0_refclk                  => PCIE_REFCLK_p,
+        o_pcie0_clk                     => pcie_fastclk_out,
+
+        -- PCIe0 DMA0
+        i_pcie0_dma0_wdata              => dma_data,
+        i_pcie0_dma0_we                 => dma_data_wren,
+        i_pcie0_dma0_eoe                => dmamem_endofevent,
+        o_pcie0_dma0_hfull              => dmamemhalffull,
+        i_pcie0_dma0_clk                => pcie_fastclk_out,
+
+        -- PCIe0 read interface to writable memory
+        i_pcie0_wmem_addr               => writememreadaddr,
+        o_pcie0_wmem_rdata              => writememreaddata,
+        i_pcie0_wmem_clk                => clk_156,
+
+        -- PCIe0 write interface to readable memory
+        i_pcie0_rmem_addr               => readmem_writeaddr_lowbits,
+        i_pcie0_rmem_wdata              => readmem_writedata,
+        i_pcie0_rmem_we                 => readmem_wren,
+        i_pcie0_rmem_clk                => clk_156,
+
+        -- PCIe0 update interface for readable registers
+        i_pcie0_rregs                   => readregs,
+
+        -- PCIe0 read interface for writable registers
+        o_pcie0_wregs_A                 => writeregs,
+        i_pcie0_wregs_A_clk             => pcie_fastclk_out,
+        o_pcie0_wregs_B                 => writeregs_slow,
+        i_pcie0_wregs_B_clk             => clk_156,
+
+
+
+        o_reset_156_n                   => reset_156_n,
+        o_clk_156                       => clk_156,
+
+--        o_reset_250_n                   => clk_250,
+--        o_clk_250                       => clk_250,
+
+        i_reset_125_n                   => reset_125_n,
+        i_clk_125                       => clk_125,
+
+        i_reset_n                       => reset_50_n,
+        i_clk                           => clk_50--,
     );
 
-    e_nios : work.cmp.nios
-    port map (
-        avm_reset_reset_n               => reset_125_n,
-        avm_clock_clk                   => clk_125,
-
-        avm_qsfpA_address               => av_qsfp(0).address(13 downto 0),
-        avm_qsfpA_read                  => av_qsfp(0).read,
-        avm_qsfpA_readdata              => av_qsfp(0).readdata,
-        avm_qsfpA_write                 => av_qsfp(0).write,
-        avm_qsfpA_writedata             => av_qsfp(0).writedata,
-        avm_qsfpA_waitrequest           => av_qsfp(0).waitrequest,
-
-        avm_qsfpB_address               => av_qsfp(1).address(13 downto 0),
-        avm_qsfpB_read                  => av_qsfp(1).read,
-        avm_qsfpB_readdata              => av_qsfp(1).readdata,
-        avm_qsfpB_write                 => av_qsfp(1).write,
-        avm_qsfpB_writedata             => av_qsfp(1).writedata,
-        avm_qsfpB_waitrequest           => av_qsfp(1).waitrequest,
-
-        avm_qsfpC_address               => av_qsfp(2).address(13 downto 0),
-        avm_qsfpC_read                  => av_qsfp(2).read,
-        avm_qsfpC_readdata              => av_qsfp(2).readdata,
-        avm_qsfpC_write                 => av_qsfp(2).write,
-        avm_qsfpC_writedata             => av_qsfp(2).writedata,
-        avm_qsfpC_waitrequest           => av_qsfp(2).waitrequest,
-
-        avm_qsfpD_address               => av_qsfp(3).address(13 downto 0),
-        avm_qsfpD_read                  => av_qsfp(3).read,
-        avm_qsfpD_readdata              => av_qsfp(3).readdata,
-        avm_qsfpD_write                 => av_qsfp(3).write,
-        avm_qsfpD_writedata             => av_qsfp(3).writedata,
-        avm_qsfpD_waitrequest           => av_qsfp(3).waitrequest,
-
-        flash_tcm_address_out(27 downto 2)  => FLASH_A,
-        flash_tcm_data_out                  => FLASH_D,
-        flash_tcm_read_n_out(0)             => FLASH_OE_n,
-        flash_tcm_write_n_out(0)            => FLASH_WE_n,
-        flash_tcm_chipselect_n_out(0)       => flash_ce_n_i,
-
-        i2c_sda_in                      => i2c_sda_in,
-        i2c_scl_in                      => i2c_scl_in,
-        i2c_sda_oe                      => i2c_sda_oe,
-        i2c_scl_oe                      => i2c_scl_oe,
-
-        pio_export                      => cpu_pio_i,
-
-        spi_MISO                        => RS422_DIN,
-        spi_MOSI                        => RS422_DOUT,
-        spi_SCLK                        => RJ45_LED_R,
-        spi_SS_n                        => RS422_DE,
-
-        rst_reset_n                     => nios_reset_n,
-        clk_clk                         => nios_clk--,
-    );
-
-    FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
+    FLASH_CE_n <= (flash_cs_n, flash_cs_n);
     FLASH_ADV_n <= '0';
     FLASH_CLK <= '0';
-    FLASH_RESET_n <= flash_rst_n;
 
 
-
-    -- monitor nios
-    LED(0) <= not cpu_pio_i(7);
-
-    LED(1) <= not flash_rst_n;
-    LED(2) <= not nios_reset_n;
 
     -- 100 MHz
     e_pcie_clk_hz : entity work.clkdiv
     generic map ( P => 100000000 )
     port map ( o_clk => LED(3), i_reset_n => CPU_RESET_n, i_clk => PCIE_REFCLK_p );
-
-
-
-    i2c_scl_in <= not i2c_scl_oe;
-    FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-    TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-    POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-
-    i2c_sda_in <=
-        FAN_I2C_SDA and
-        TEMP_I2C_SDA and
-        POWER_MONITOR_I2C_SDA and
-        '1';
-    FAN_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-    TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-    POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
 
 
 
@@ -503,61 +452,11 @@ begin
     QSFPC_RST_n <= '1';
     QSFPD_RST_n <= '1';
 
-    --mapping of qsfp signals
-    QSFPA_TX_p <= QSFP_TX(3 downto 0);
-    QSFPB_TX_p <= QSFP_TX(7 downto 4);
-    QSFPC_TX_p <= QSFP_TX(11 downto 8);
-    QSFPD_TX_p <= QSFP_TX(15 downto 12);
-
-    QSFP_RX(3 downto 0)   <= QSFPA_RX_p;
-    QSFP_RX(7 downto 4)   <= QSFPB_RX_p;
-    QSFP_RX(11 downto 8)  <= QSFPC_RX_p;
-    QSFP_RX(15 downto 12) <= QSFPD_RX_p;
-
-    gen_qsfp : for i in 0 to 3 generate
-    e_qsfp : entity work.xcvr_a10
-    generic map (
-        NUMBER_OF_CHANNELS_g => 4--,
-    )
-    port map (
-        i_tx_data   => tx_data_v(4*32*(i+1)-1 downto 4*32*i),
-        i_tx_datak  => tx_datak_v(4*4*(i+1)-1 downto 4*4*i),
-
-        o_rx_data   => rx_data_v_raw(4*32*(i+1)-1 downto 4*32*i),
-        o_rx_datak  => rx_datak_v_raw(4*4*(i+1)-1 downto 4*4*i),
-
-        o_tx_clkout => tx_clk(4*(i+1)-1 downto 4*i),
-        i_tx_clkin  => (others => clk_156),
-        o_rx_clkout => open,--rx_clk,
-        i_rx_clkin  => (others => clk_156),
-
-        o_tx_serial => QSFP_TX(4*(i+1)-1 downto 4*i),
-        i_rx_serial => QSFP_RX(4*(i+1)-1 downto 4*i),
-
-        i_pll_clk   => clk_125,
-        i_cdr_clk   => clk_125,
-
-        i_avs_address       => av_qsfp(i).address(13 downto 0),
-        i_avs_read          => av_qsfp(i).read,
-        o_avs_readdata      => av_qsfp(i).readdata,
-        i_avs_write         => av_qsfp(i).write,
-        i_avs_writedata     => av_qsfp(i).writedata,
-        o_avs_waitrequest   => av_qsfp(i).waitrequest,
-
-        i_reset     => not reset_125_n,
-        i_clk       => clk_125--,
-    );
-    end generate;
-    --assign vector types to array types for qsfp rx signals (used by link observer module)
-    gen_rx_data : for i in 0 to NLINKS_TOTL-1 generate
-        rx_data(i) <= rx_data_v(32*(i+1)-1 downto 32*i);
-        rx_datak(i) <= rx_datak_v(4*(i+1)-1 downto 4*i);
-    end generate;
 
     --assign long vectors for used fibers. Wired to run_control, sc, data receivers
     g_assign_usedlinks: for i in NLINKS_DATA-1 downto 0 generate
-       rx_mapped_data_v(32*(i+1)-1 downto 32*i) <= rx_data_v(32*(link_mapping(i)+1)-1 downto 32*link_mapping(i));
-       rx_mapped_datak_v(4*(i+1)-1 downto  4*i) <= rx_datak_v(4*(link_mapping(i)+1)-1 downto  4*link_mapping(i));
+       rx_mapped_data_v(32*(i+1)-1 downto 32*i) <= rx_data(link_mapping(i));
+       rx_mapped_datak_v(4*(i+1)-1 downto  4*i) <= rx_datak(link_mapping(i));
        rx_mapped_linkmask(i) <= writeregs_slow(FEB_ENABLE_REGISTER_W)(link_mapping(i));
     end generate;
 
@@ -568,11 +467,11 @@ begin
             i_clk               => clk_156,
             i_reset             => not resets_n(RESET_BIT_EVENT_COUNTER),
             i_aligned           => '1',
-            i_data              => rx_data_v_raw(31+i*32 downto i*32),
-            i_datak             => rx_datak_v_raw(3+i* 4 downto i* 4),
+            i_data              => rx_data_raw(i),
+            i_datak             => rx_datak_raw(i),
             i_fifo_almost_full  => '0',--link_fifo_almost_full(i),
-            o_data              => rx_data_v(31+i*32 downto i*32),
-            o_datak             => rx_datak_v(3+i* 4 downto i* 4),
+            o_data              => rx_data(i),
+            o_datak             => rx_datak(i),
             o_sc                => rx_sc_v(31+i*32 downto i*32),
             o_sck               => rx_sck_v(3+i* 4 downto i* 4),
             o_rc                => rx_rc_v(31+i*32 downto i*32),
@@ -608,6 +507,10 @@ begin
     -------- Event Builder --------
 
     e_data_gen : entity work.data_generator_a10
+    generic map(
+        go_to_trailer => 4,
+        go_to_sh => 3--,
+    )
     port map (
         reset               => resets(RESET_BIT_DATAGEN),
         enable_pix          => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE),
@@ -654,19 +557,40 @@ begin
     end if;
     end process;
     
+    data_bank <=    x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"        &
+                    x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"        &
+                    x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"        &
+                    x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"               & x"00000000"        &
+                    data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & 
+                    data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) &
+                    data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) &
+                    data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) &
+                    data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0) & data_counter(31 downto 0);
+   datak_bank <=    x"0"               & x"0"               & x"0"               & x"0"               &
+                    x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"        &
+                    x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"        &
+                    x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"               & x"0"        &
+                    datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & 
+                    datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) &
+                    datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) &
+                    datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) &
+                    datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) & datak_counter(3 downto 0) ;
+   
     e_midas_event_builder : entity work.midas_event_builder
     generic map (
-        NLINKS => NLINKS_TOTL--;
+        NLINKS => 64,
+        USE_ALIGNMENT => 1,
+        LINK_FIFO_ADDR_WIDTH => 10--,
     )
     port map (
         i_clk_data          => clk_156,
         i_clk_dma           => pcie_fastclk_out,
         i_reset_data_n      => resets_n(RESET_BIT_EVENT_COUNTER),
         i_reset_dma_n       => resets_n_fast(RESET_BIT_EVENT_COUNTER),
-        i_rx_data           => data_counter,
-        i_rx_datak          => datak_counter,
+        i_link_data         => data_bank,
+        i_link_datak        => datak_bank,
         i_wen_reg           => writeregs(DMA_REGISTER_W)(DMA_BIT_ENABLE),
-        i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
+        i_link_mask_n       => x"0000000" & writeregs(DATA_LINK_MASK_REGISTER_2_W)(3 downto 0) & writeregs(DATA_LINK_MASK_REGISTER_W), -- if 1 the link is active
         i_get_n_words       => writeregs(GET_N_DMA_WORDS_REGISTER_W),
         i_dmamemhalffull    => dmamemhalffull,
         o_fifos_full        => open,--readregs(EVENT_BUILD_STATUS_REGISTER_R)(31 downto 31 - NLINKS_TOTL),
@@ -677,7 +601,6 @@ begin
         o_state_out         => state_out_eventcounter,
         -- error cnt signals
         o_fifo_almost_full          => open,--link_fifo_almost_full,
-        o_fifo_almost_full          => open,
         o_cnt_link_fifo_almost_full => readregs_slow(CNT_FIFO_ALMOST_FULL_R),
         o_cnt_tag_fifo_full         => readregs(CNT_TAG_FIFO_FULL_R),
         o_cnt_ram_full              => readregs(CNT_RAM_FULL_R),
@@ -688,13 +611,13 @@ begin
         o_cnt_skip_event_dma        => readregs(CNT_SKIP_EVENT_DMA_RAM_R),
         o_cnt_idle_not_header       => readregs(CNT_IDLE_NOT_HEADER_R)--,
     );
-    
+
     dma_data <= dma_event_data;
     dma_data_wren <= dma_wren_cnt;
     dmamem_endofevent <= dma_end_event_cnt;
-    
+
     -------- Slow Control --------
-    
+
     e_sc_main : work.sc_main
     generic map (
         NLINKS => NLINKS_TOTL
@@ -706,8 +629,8 @@ begin
         i_length        => writeregs_slow(SC_MAIN_LENGTH_REGISTER_W)(15 downto 0),
         i_mem_data      => writememreaddata,
         o_mem_addr      => writememreadaddr,
-        o_mem_data      => tx_data_v,
-        o_mem_datak     => tx_datak_v,
+        o_mem_data      => tx_data,
+        o_mem_datak     => tx_datak,
         o_done          => readregs_slow(SC_MAIN_STATUS_REGISTER_R)(SC_MAIN_DONE),
         o_state         => open--,
     );
@@ -728,9 +651,9 @@ begin
         stateout                => open,--LED_BRACKET,
         clk                     => clk_156--,
     );
-    
+
     -------- Link Test --------
-    
+
     e_link_observer : entity work.link_observer
     generic map (
         g_m     => 32,
@@ -777,7 +700,7 @@ begin
         resets_n                => resets_n,
         clk                     => clk_156--,
     );
-    
+
     e_reset_logic_fast : entity work.reset_logic
     port map (
         rst_n                   => push_button0_db,
@@ -838,78 +761,5 @@ begin
     readmem_writeaddr_lowbits   <= readmem_writeaddr(15 downto 0);
     pb_in                       <= push_button0_db & push_button1_db & push_button2_db;
 
-    e_pcie_block : entity work.pcie_block
-    generic map (
-        DMAMEMWRITEADDRSIZE     => 11,
-        DMAMEMREADADDRSIZE      => 11,
-        DMAMEMWRITEWIDTH        => 256
-    )
-    port map (
-        o_writeregs_B           => writeregs_slow,
-        i_clk_B                 => clk_156,
-  
-        o_writeregs_C           => open,
-        i_clk_C                 => clk_156,
-
-        local_rstn              => '1',
-        appl_rstn               => '1',
-        refclk                  => PCIE_REFCLK_p,
-        pcie_fastclk_out        => pcie_fastclk_out,
-        
-        --//PCI-Express--------------------------//25 pins //--------------------------
-        pcie_rx_p               => PCIE_RX_p,
-        pcie_tx_p               => PCIE_TX_p,
-        pcie_refclk_p           => PCIE_REFCLK_p,
-        pcie_led_g2             => open,
-        pcie_led_x1             => open,
-        pcie_led_x4             => open,
-        pcie_led_x8             => open,
-        pcie_perstn             => PCIE_PERST_n,
-        pcie_smbclk             => PCIE_SMBCLK,
-        pcie_smbdat             => PCIE_SMBDAT,
-        pcie_waken              => PCIE_WAKE_n,
-        
-        -- LEDs
-        alive_led               => open,
-        comp_led                => open,
-        L0_led                  => open,
-        
-        -- pcie registers (write / read register, readonly, read write, in tools/dmatest/rw) -Sync read regs
-        writeregs               => writeregs,
-        readregs                => readregs,
-
-        -- pcie writeable memory
-        writememclk             => clk_156,
-        writememreadaddr        => writememreadaddr,
-        writememreaddata        => writememreaddata,
-
-        -- pcie readable memory
-        readmem_data            => readmem_writedata,
-        readmem_addr            => readmem_writeaddr_lowbits,
-        readmemclk              => clk_156,
-        readmem_wren            => readmem_wren,
-        readmem_endofevent      => readmem_endofevent,
-        
-        -- dma memory
-        dma_data                => dma_data,
-        dmamemclk               => pcie_fastclk_out,
-        dmamem_wren             => dma_data_wren,
-        dmamem_endofevent       => dmamem_endofevent,
-        dmamemhalffull          => dmamemhalffull,
-        
-        -- dma memory
-        dma2_data               => dma2mem_writedata,
-        dma2memclk              => pcie_fastclk_out,
-        dma2mem_wren            => dma2mem_wren,
-        dma2mem_endofevent      => dma2mem_endofevent,
-        dma2memhalffull         => dma2memhalffull,
-        
-        -- test ports
-        testout                 => pcie_testout,
-        testout_ena             => open,
-        pb_in                   => pb_in,
-        inaddr32_r              => readregs(inaddr32_r),
-        inaddr32_w              => readregs(inaddr32_w)--,
-    );
-
 end architecture;
+

@@ -78,7 +78,7 @@ struct sc_t {
         while(1) {
             printf("\n");
             printf("[sc] -------- menu --------\n");
-            printf("ID: 0x%08x\n", ram->data[0xFFFB]);
+            printf("ID: 0x%08x\n", ram->data[0xFF03]);
             printf("\n");
             printf("  [r] => read data and regs\n");
             printf("  [w] => write [i] = i for i < 16\n");
@@ -104,7 +104,7 @@ struct sc_t {
                 }
                 break;
             case 't':
-                printf("FPGA ID: 0x%08X\n", ram->data[0xFFFB]);
+                printf("FPGA ID: 0x%08X\n", ram->data[0xFF03]);
                 break;
             case 'f':
                 feb_id = 0x0;
@@ -117,7 +117,7 @@ struct sc_t {
                 }
 
                 printf("setting feb_id to 0x%08x\n", feb_id);
-                ram->data[0xFFFB] = feb_id;
+                ram->data[0xFF03] = feb_id;
                 break;
             case 'i':
                 ram->regs.fe.cmdlen = 0xffff0000;

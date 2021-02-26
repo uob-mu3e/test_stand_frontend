@@ -21,10 +21,15 @@ port (
     i_tx_data           : in    work.util.slv32_array_t(N_XCVR_g*N_CHANNELS_g-1 downto 0);
     i_tx_datak          : in    work.util.slv4_array_t(N_XCVR_g*N_CHANNELS_g-1 downto 0);
 
+    o_rx_clk            : out   std_logic_vector(N_XCVR_g*N_CHANNELS_g-1 downto 0);
+    i_rx_clk            : in    std_logic_vector(N_XCVR_g*N_CHANNELS_g-1 downto 0);
+    o_tx_clk            : out   std_logic_vector(N_XCVR_g*N_CHANNELS_g-1 downto 0);
+    i_tx_clk            : in    std_logic_vector(N_XCVR_g*N_CHANNELS_g-1 downto 0);
+
     -- avalon slave interface
     -- # address units words
     -- # read latency 0
-    i_avs_address       : in    std_logic_vector(work.util.vector_width(N_XCVR_g) + 13 downto 0);
+    i_avs_address       : in    std_logic_vector(17 downto 0);
     i_avs_read          : in    std_logic;
     o_avs_readdata      : out   std_logic_vector(31 downto 0);
     i_avs_write         : in    std_logic;
@@ -38,8 +43,6 @@ end entity;
 
 architecture arch of xcvr_block is
 
-    signal rx_clkout, tx_clkout : std_logic_vector(N_XCVR_g*N_CHANNELS_g-1 downto 0);
-
     type data_array_t is array ( natural range <> ) of std_logic_vector(N_CHANNELS_g*32-1 downto 0);
     signal rx_data, tx_data : data_array_t(N_XCVR_g-1 downto 0);
 
@@ -48,6 +51,7 @@ architecture arch of xcvr_block is
 
     signal avs_waitrequest : std_logic;
     signal av : work.util.avmm_array_t(N_XCVR_g-1 downto 0);
+    signal av_i : integer;
 
 begin
 
@@ -80,16 +84,16 @@ begin
             i_tx_data   => tx_data(i),
             i_tx_datak  => tx_datak(i),
 
-            o_rx_clkout => rx_clkout(N_CHANNELS_g*i + N_CHANNELS_g-1 downto 0 + N_CHANNELS_g*i),
-            i_rx_clkin  => (others => tx_clkout(0)),
-            o_tx_clkout => tx_clkout(N_CHANNELS_g*i + N_CHANNELS_g-1 downto 0 + N_CHANNELS_g*i),
-            i_tx_clkin  => (others => tx_clkout(0)),
+            o_rx_clkout => o_rx_clk(N_CHANNELS_g*i + N_CHANNELS_g-1 downto 0 + N_CHANNELS_g*i),
+            i_rx_clkin  => i_rx_clk(N_CHANNELS_g*i + N_CHANNELS_g-1 downto 0 + N_CHANNELS_g*i),
+            o_tx_clkout => o_tx_clk(N_CHANNELS_g*i + N_CHANNELS_g-1 downto 0 + N_CHANNELS_g*i),
+            i_tx_clkin  => i_tx_clk(N_CHANNELS_g*i + N_CHANNELS_g-1 downto 0 + N_CHANNELS_g*i),
 
-            i_avs_address     => i_avs_address(13 downto 0),
+            i_avs_address     => av(i).address(13 downto 0),
             i_avs_read        => av(i).read,
             o_avs_readdata    => av(i).readdata,
             i_avs_write       => av(i).write,
-            i_avs_writedata   => i_avs_writedata,
+            i_avs_writedata   => av(i).writedata,
             o_avs_waitrequest => av(i).waitrequest,
 
             i_reset     => not i_reset_n,
@@ -99,11 +103,13 @@ begin
 
     o_avs_waitrequest <= avs_waitrequest;
 
+    av_i <= to_integer(unsigned(i_avs_address(i_avs_address'left downto 14)));
+
     -- avmm routing
     process(i_clk, i_reset_n)
-        variable i : integer;
     begin
     if ( i_reset_n = '0' ) then
+        o_avs_readdata <= X"CCCCCCCC";
         avs_waitrequest <= '1';
         for i in 0 to N_XCVR_g-1 loop
             av(i).read <= '0';
@@ -114,20 +120,24 @@ begin
         o_avs_readdata <= X"CCCCCCCC";
         avs_waitrequest <= '1';
 
-        i := to_integer(unsigned(i_avs_address(i_avs_address'left downto 14)));
-        if ( i_avs_read /= i_avs_write and avs_waitrequest = '1' ) then
-            if ( av(i).read = av(i).write ) then
+        for i in av'range loop
+            if ( i = av_i and av(i).read = '0' and av(i).write = '0' and avs_waitrequest = '1' ) then
                 -- start read/write request
+                av(i).address(i_avs_address'range) <= i_avs_address;
                 av(i).read <= i_avs_read;
                 av(i).write <= i_avs_write;
-            elsif ( av(i).waitrequest = '0' ) then
-                -- done
-                o_avs_readdata <= av(i).readdata;
-                avs_waitrequest <= '0';
-                av(i).read <= '0';
-                av(i).write <= '0';
+                av(i).writedata <= i_avs_writedata;
             end if;
-        end if;
+
+            if ( av(i).read /= av(i).write and av(i).waitrequest = '0' ) then
+                -- done
+                av(i).read <= '0';
+                o_avs_readdata <= av(i).readdata;
+                av(i).write <= '0';
+                avs_waitrequest <= '0';
+            end if;
+        end loop;
+
         --
     end if;
     end process;

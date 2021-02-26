@@ -1,6 +1,10 @@
 
+.cache/
+generated/
+
 # cmake
 build/
+cmake-build*/
 debugbuild/
 install/
 CMakeLists.txt.*
@@ -68,6 +72,7 @@ online/*.txt
 online/*.TXT
 online/*.log
 online/*.xml
+*.autosave
 
 # midas (?)
 *.mid
@@ -79,10 +84,10 @@ online/*
 .SHM_HOST.TXT
 .SHM_TYPE.TXT
 include/mudaq_registers.h
-cmake-build-debug/
-cmp_pkg.vhd
-.cache/
 
 #
 *.npy
 *.vcd
+
+# Generated header files
+switching_pc/slowcontrol/feb_constants.h
