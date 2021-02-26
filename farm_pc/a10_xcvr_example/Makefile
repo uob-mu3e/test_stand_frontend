@@ -1,9 +1,10 @@
 
-CABLE=1
+CABLE := DE5
 
-IPs = \
+SRC_DIR := software
+
+IPs := \
     $(wildcard ip/*.tcl) \
-    a10/ip_xcvr_phy.tcl a10/ip_xcvr_fpll.tcl a10/ip_xcvr_reset.tcl \
     nios.tcl
 
 include util/altera/makefile.mk
