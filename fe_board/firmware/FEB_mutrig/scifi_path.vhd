@@ -108,7 +108,7 @@ begin
 
     dnca: entity work.doNotCompileAwayMux
     generic map(
-        WIDTH_g   => 5--,
+        WIDTH_g   => 4--,
     )
     port map(
         i_clk               => i_clk_core,
@@ -137,9 +137,9 @@ begin
         dataio(0)   => io_i2c_scl--,
     );
 
-    process (spare_clk_osc)
+    process (i_clk_core)
     begin
-        if rising_edge(spare_clk_osc) then
+        if rising_edge(i_clk_core) then
             sda_ena <= '0';
             scl_ena <= '0';
             if(a='0' and b='0') then

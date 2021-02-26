@@ -100,19 +100,12 @@ end component; --data_decoder;
     signal rx_syncclock_A       : std_logic;
     signal rx_enable_A          : std_logic;
 
-    component clk_ctrl_single is
-        port (
-            inclk  : in  std_logic := 'X'; -- inclk
-            outclk : out std_logic         -- outclk
-        );
-    end component clk_ctrl_single;
-
 begin
 	rx_dpa_locked_out	<= rx_dpa_locked;
 	pll_locked 			<= rx_pll_locked;
 	rx_clkout 			<= rx_clk;
 
-    u0 : component clk_ctrl_single
+    u0 : component work.cmp.clk_ctrl_single
         port map (
             inclk  => rx_inclock,
             outclk => rx_inclock_A_ctrl--,

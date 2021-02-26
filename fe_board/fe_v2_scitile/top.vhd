@@ -110,7 +110,7 @@ architecture rtl of top is
     signal pb_db                    : std_logic_vector(1 downto 0);
 
     constant N_LINKS                : integer := 1;
-    constant N_ASICS                : integer := 13;
+    constant N_ASICS                : integer := 1;
     constant N_MODULES              : integer := 1;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
@@ -151,7 +151,7 @@ begin
 
         o_chip_reset                => tile_chip_reset,
         o_pll_test                  => tile_pll_test,
-        i_data                      => tile_din,
+        i_data(0)                   => tile_din(1),
 
         io_i2c_sda                  => tile_i2c_sda,
         io_i2c_scl                  => tile_i2c_scl,
@@ -262,7 +262,7 @@ begin
         io_max10_spi_D3     => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_subdet_reg_addr   => malibu_reg.addr(3 downto 0),
+        o_subdet_reg_addr   => malibu_reg.addr(7 downto 0),
         o_subdet_reg_re     => malibu_reg.re,
         i_subdet_reg_rdata  => malibu_reg.rdata,
         o_subdet_reg_we     => malibu_reg.we,
