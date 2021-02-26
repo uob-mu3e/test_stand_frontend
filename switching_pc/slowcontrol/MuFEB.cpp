@@ -17,6 +17,10 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 
 #include <algorithm>
 #include <iterator>
+#include <iostream>
+
+using std::cout;
+using std::endl;
 
 //status flags from FEB
 #define FEB_REPLY_SUCCESS 0
@@ -36,8 +40,7 @@ int MuFEB::WriteFEBID(){
              FEB.GetLinkName().c_str(),FEB.GetLinkID(),
              FEB.SB_Number(),FEB.SB_Port(),(val>>16)&0xffff,val&0xffff);
        cm_msg(MINFO,"MuFEB::WriteFEBID",reportStr);
-       // ist the FF needed here? NB
-       feb_sc.FEB_write(FEB.SB_Port(),  (uint32_t) 0xFF00 | FPGA_ID_REGISTER_RW, val);
+       feb_sc.FEB_register_write(FEB.SB_Port(),  FPGA_ID_REGISTER_RW, val);
     }
     return 0;
 }
@@ -54,17 +57,16 @@ void MuFEB::ReadFirmwareVersionsToODB()
     for(auto FEB: febs){
         if(!FEB.IsScEnabled()) continue; //skip disabled fibers
         if(FEB.SB_Number()!=SB_number) continue; //skip commands not for this SB
-
-         if(!feb_sc.FEB_read(FEB.SB_Port(), GIT_HASH_REGISTER_R, arria) != FEBSlowcontrolInterface::ERRCODES::OK)
+         if(feb_sc.FEB_register_read(FEB.SB_Port(), GIT_HASH_REGISTER_R, arria) != FEBSlowcontrolInterface::ERRCODES::OK)
             cm_msg(MINFO,"MuFEB::ReadFirmwareVersionsToODB", "Failed to read Arria firmware version");
          else
             arriaversions[FEB.GetLinkID()] = arria[0];
-         if(!feb_sc.FEB_read(FEB.SB_Port(), MAX10_VERSION_REGISTER_R, max) != FEBSlowcontrolInterface::ERRCODES::OK)
+         if(feb_sc.FEB_register_read(FEB.SB_Port(), MAX10_VERSION_REGISTER_R, max) != FEBSlowcontrolInterface::ERRCODES::OK)
             cm_msg(MINFO,"MuFEB::ReadFirmwareVersionsToODB", "Failed to read Max firmware version");
          else
             maxversions[FEB.GetLinkID()] = max[0];
 
-         if(!feb_sc.FEB_read(FEB.SB_Port(), MAX10_STATUS_REGISTER_R, max) != FEBSlowcontrolInterface::ERRCODES::OK)
+         if(feb_sc.FEB_register_read(FEB.SB_Port(), MAX10_STATUS_REGISTER_R, max) != FEBSlowcontrolInterface::ERRCODES::OK)
             cm_msg(MINFO,"MuFEB::ReadFirmwareVersionsToODB", "Failed to read Max status register");
          else{
              if(GET_MAX10_STATUS_BIT_SPI_ARRIA_CLK(max[0]))
@@ -96,13 +98,13 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
     uint32_t addr=0;
     fread(buffer,sizeof(uint32_t),256, f);
     vector<uint32_t> data(buffer, buffer+256);
-    feb_sc.FEB_write(FEB.SB_Port(),PROGRAMMING_DATA_W,data,true);
-    feb_sc.FEB_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,1);
-    feb_sc.FEB_write(FEB.SB_Port(),PROGRAMMING_ADDR_W,addr);
+    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_DATA_W,data,true);
+    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,1);
+    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_ADDR_W,addr);
 
     uint32_t readback = 1;
     while(readback & 0x1){
-        feb_sc.FEB_read(FEB.SB_Port(),PROGRAMMING_STATUS_R,readback);
+        feb_sc.FEB_register_read(FEB.SB_Port(),PROGRAMMING_STATUS_R,readback);
         printf(".");
     }
     printf("\n");
@@ -126,7 +128,7 @@ int MuFEB::ReadBackRunState(uint16_t FPGA_ID){
 
    vector<uint32_t> val(2);
    char set_str[255];
-   int status = feb_sc.FEB_read(FEB.SB_Port(), 0xFF00 | RUN_STATE_RESET_BYPASS_REGISTER_RW , val);
+   int status = feb_sc.FEB_register_read(FEB.SB_Port(), RUN_STATE_RESET_BYPASS_REGISTER_RW , val);
    if(status!=FEBSlowcontrolInterface::ERRCODES::OK) return status;
 
    //val[0] is reset_bypass register
@@ -157,7 +159,7 @@ uint32_t MuFEB::ReadBackMergerRate(uint16_t FPGA_ID){
     if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB
 
     vector<uint32_t> mergerRate(1);
-    feb_sc.FEB_read(FEB.SB_Port(), 0xFF00 | MERGER_RATE_REGISTER_R, mergerRate);
+    feb_sc.FEB_register_read(FEB.SB_Port(), MERGER_RATE_REGISTER_R, mergerRate);
     return mergerRate[0];
 }
 
@@ -167,7 +169,7 @@ uint32_t MuFEB::ReadBackResetPhase(uint16_t FPGA_ID){
     if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB
 
     vector<uint32_t> resetPhase(1);
-    feb_sc.FEB_read(FEB.SB_Port(), 0xFF00 | RESET_PHASE_REGISTER_R, resetPhase);
+    feb_sc.FEB_register_read(FEB.SB_Port(), RESET_PHASE_REGISTER_R, resetPhase);
     return resetPhase[0] & 0xFFFF;
 }
 
@@ -177,7 +179,7 @@ uint32_t MuFEB::ReadBackTXReset(uint16_t FPGA_ID){
     if(FEB.SB_Number()!=SB_number) return SUCCESS; //skip commands not for this SB
 
     vector<uint32_t> TXReset(1);
-    feb_sc.FEB_read(FEB.SB_Port(), 0xFF00 | RESET_OPTICAL_LINKS_REGISTER_RW, TXReset);
+    feb_sc.FEB_register_read(FEB.SB_Port(), RESET_OPTICAL_LINKS_REGISTER_RW, TXReset);
     return TXReset[0] & 0xFFFFFFFC;
 }
 
@@ -222,12 +224,12 @@ DWORD *MuFEB::read_SSFE_OneFEB(DWORD *pdata, uint32_t index, uint32_t version)
     // Start with FEB index
     *pdata++ = index;
     // Arria V temperature
-    feb_sc.FEB_read(index, ARRIA_TEMP_REGISTER_RW, data);
+    feb_sc.FEB_register_read(index, ARRIA_TEMP_REGISTER_RW, data);
     *(float*)pdata++ = ArriaVTempConversion(data);
 
     vector<uint32_t> adcdata(5);
     // Read the MAX10 ADC
-    feb_sc.FEB_read(index, MAX10_ADC_0_1_REGISTER_R, adcdata);
+    feb_sc.FEB_register_read(index, MAX10_ADC_0_1_REGISTER_R, adcdata);
     // What the data here mean depends on the FEB version
     if(version == 20){
         *(float*)pdata++ = Max10TempConversion(adcdata[4]>>16);  // Max temperature
@@ -254,7 +256,7 @@ DWORD *MuFEB::read_SSFE_OneFEB(DWORD *pdata, uint32_t index, uint32_t version)
     }
     // Conversion factors: See Firefly B04 datasheet, page 62
     vector<uint32_t> fireflydata(14);
-    feb_sc.FEB_read(index, FIREFLY1_TEMP_REGISTER_R, fireflydata);
+    feb_sc.FEB_register_read(index, FIREFLY1_TEMP_REGISTER_R, fireflydata);
     *(float*)pdata++ = (float)(int8_t)fireflydata[0]; // FF1 Temperature
     *(float*)pdata++ = ((float)fireflydata[1])/1E4f; // FF1 Voltage
     *(float*)pdata++ = ((float)fireflydata[2])/1E7f; // FF1 RX1 Power
@@ -270,6 +272,7 @@ DWORD *MuFEB::read_SSFE_OneFEB(DWORD *pdata, uint32_t index, uint32_t version)
     *(float*)pdata++ = ((float)fireflydata[11])/1E7f; // FF2 RX4 Power
     *pdata++ = fireflydata[12]; // FF2 Alarms
 
+    return pdata;
 }
 
 

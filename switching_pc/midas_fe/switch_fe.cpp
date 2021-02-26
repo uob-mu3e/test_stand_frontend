@@ -130,7 +130,7 @@ INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
 INT read_scitiles_sc_event(char *pevent, INT off);
 INT read_mupix_sc_event(char *pevent, INT off);
-void sc_settings_changed(HNDLE, HNDLE, int, void *);
+void sc_settings_changed(odb o);
 void switching_board_mask_changed(odb o);
 void frontend_board_mask_changed(odb o);
 
@@ -178,7 +178,7 @@ EQUIPMENT equipment[] = {
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
+     FALSE,                      /* enabled */
      RO_ALWAYS | RO_ODB,        /* read always and update ODB */
      10000,                      /* read every 10 sec */
      0,                         /* stop run after this event limit */
@@ -193,7 +193,7 @@ EQUIPMENT equipment[] = {
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
+     FALSE,                      /* enabled */
      RO_ALWAYS | RO_ODB,        /* read always and update ODB */
      10000,                      /* read every 10 sec */
      0,                         /* stop run after this event limit */
@@ -208,7 +208,7 @@ EQUIPMENT equipment[] = {
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
+     FALSE,                      /* enabled */
      RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
      1000,                      /* read every 1 sec */
      0,                         /* stop run after this event limit */
@@ -243,9 +243,11 @@ INT frontend_init()
     #endif
 
     // create Settings structure in ODB
+    cout << "Setting up ODB" << endl;
     setup_odb();
-    setup_watches();
-    
+
+
+    cout << "Opening Mudaq" << endl;
     // open mudaq
     #ifdef NO_SWITCHING_BOARD
         mup = new mudaq::DummyDmaMudaqDevice("/dev/mudaq0");
@@ -257,12 +259,15 @@ INT frontend_init()
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
 
+
+    cout << "Setting link enables" << endl;
     //set link enables so slow control can pass
     odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
     try{
         set_feb_enable(get_link_active_from_odb(cur_links_odb)); }
     catch(...){ return FE_ERR_ODB;}
     
+    cout << "Creating FEB List" << endl;
     // Create the FEB List
     feblist = new FEBList(switch_id);
 
@@ -271,6 +276,8 @@ INT frontend_init()
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
 
+
+    /*
     //init scifi
     status = init_scifi(*mup);
     if (status != SUCCESS)
@@ -285,7 +292,7 @@ INT frontend_init()
     status = init_mupix(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
-
+    */
     // TODO: Define generic history panels
 
     // Subdetector specific panels should be created created in subdet::midasODB::setup_db
@@ -300,6 +307,10 @@ INT frontend_init()
     // Set our transition sequence. The default is 500. Setting it
     // to 600 means we are called AFTER most other clients.
     cm_set_transition_sequence(TR_STOP, 600);
+
+
+    cout << "Setting up Watches" << endl;
+    setup_watches();
 
     return CM_SUCCESS;
 }
@@ -347,6 +358,7 @@ void setup_odb(){
             {"SciTilesConfig", false},
             {"Reset Bypass Payload", 0},
             {"Reset Bypass Command", 0},
+            {"Load Firmware", false},
             // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
             {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()}
     };
@@ -492,6 +504,9 @@ void setup_odb(){
 }
 
 void setup_watches(){
+    //UI watch
+    odb sc_variables("/Equipment/Switching/Variables");
+    sc_variables.watch(sc_settings_changed);
 
     // watch if this switching board is enabled
     odb switch_mask("/Equipment/Links/Settings/SwitchingBoardMask");
@@ -768,13 +783,13 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
        cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
        // TODO: Get rid of hardcoded adresses here!
        DWORD valueRB = run_number;
-       feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff5, valueRB); //run number
+       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf5, valueRB); //run number
        valueRB= (1<<8) | 0x10;
-       feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff4, valueRB); //run prep command
+       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf4, valueRB); //run prep command
        valueRB= 0xbcbcbcbc;
-       feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff5, valueRB); //reset payload
+       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf5, valueRB); //reset payload
        valueRB= 0;//(1<<8) | 0x00;
-       feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff4, valueRB); //reset command
+       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf4, valueRB); //reset command
    }else{
        /* send run prepare signal via CR system */
        // TODO: Move to odbxx
@@ -883,38 +898,32 @@ INT resume_run(INT run_number, char *error)
 /*--- Read Slow Control Event to be put into data stream --------*/
 
 INT read_sc_event(char *pevent, INT off)
-{
-    // TODO: Do not just dump unformatted packets!!
+{    
+    cout << "Reading FEB SC" << endl;
 
-    // get mudaq
-    #ifdef MY_DEBUG
-        dummy_mudaq::DummyMudaqDevice & mu = *mup;
-    #else
-        mudaq::MudaqDevice & mu = *mup;
-    #endif
-        
-    // get odb
-    // TODO: at the moment the timeout is a counter for all FEBs
-    odb merger_timeout_cnt("/Equipment/Switching/Variables");
-    auto merger_timeout_all = mu.read_register_ro(0x26);
-    merger_timeout_cnt["Merger Timeout All FEBs"] = merger_timeout_all;
-    
+    string bankname;
+    if(switch_id == 0){
+        bankname = "SCFE";
+    }
+    if(switch_id == 1){
+        bankname = "SUFE";
+    }
+    if(switch_id == 2){
+        bankname = "SDFE";
+    }
+    if(switch_id == 3){
+        bankname = "SFFE";
+    }
+
     // create bank, pdata
     bk_init(pevent);
     DWORD *pdata;
-    bk_create(pevent, "SWB0", TID_DWORD, (void **)&pdata);
-    
-    *pdata++ = merger_timeout_all;
-    
+    bk_create(pevent, bankname.c_str(), TID_DWORD, (void **)&pdata);
+    mufeb->fill_SSFE(pdata);
     bk_close(pevent,pdata);
     return bk_size(pevent);
 
-    // TODO why do we do this?
-    //while(mup->FEBsc_get_packet()){};
-    //TODO: make this a switch
-    //mup->FEBsc_dump_packets();
-    //return 0;
-    //return mup->FEBsc_write_bank(pevent,off);
+
 }
 
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
@@ -995,22 +1004,7 @@ INT read_mupix_sc_event(char *pevent, INT off){
     return bk_size(pevent);
 }
 
-/*--- helper functions ------------------------*/
-
-BOOL sc_settings_changed_hepler(const char *key_name, HNDLE hDB, HNDLE hKey, DWORD type){
-    BOOL value;
-    int size = sizeof(value);
-    db_get_data(hDB, hKey, &value, &size, type);
-    //if(value) cm_msg(MINFO, "sc_settings_changed", "trigger for key=\"%s\"", key_name);
-    return value;
-}
-
-void set_odb_flag_false(const char *key_name, HNDLE hDB, HNDLE hKey, DWORD type){
-    //cm_msg(MINFO, "sc_settings_changed", "reseting odb flag of key \"\"", key_name);
-    BOOL value = FALSE; // reset flag in ODB
-    db_set_data(hDB, hKey, &value, sizeof(value), 1, type);
-}
-
+//TODO: Get rid of this...
 INT get_odb_value_by_string(const char *key_name){
     INT ODB_DATA, SIZE_ODB_DATA;
     SIZE_ODB_DATA = sizeof(ODB_DATA);
@@ -1175,17 +1169,23 @@ void sc_settings_changed(odb o)
 	  printf("Reset Bypass Command %8.8x, payload %8.8x\n",command,payload);
 
         // TODO: get rid of hardcoded addresses
-        feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff5, payload);
-        feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff4, command);
+        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf5, payload);
+        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf4, command);
         // reset payload and command TODO: Is this needed?
         payload=0xbcbcbcbc;
         command=0;
-        feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff5, payload);
-        feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff4, command);
+        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf5, payload);
+        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf4, command);
         //reset odb flag
           command=command&(1<<8);
           o = command;
     }
+
+    if (name == "LoadFirmware" && o) {
+       mufeb->LoadFirmware("bintest.bin",0);
+       o = false;
+    }
+
 }
 
 //--------------- Link related settings

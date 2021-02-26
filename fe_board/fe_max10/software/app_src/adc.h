@@ -125,7 +125,7 @@ struct adc_t {
     static void callback(void* context) {
    //     adc_interrupt_disable(ADC_SAMPLE_STORE_CSR_BASE);
         alt_u32 adc_data[ADC_SAMPLE_STORE_CSR_CSD_LENGTH];
-        alt_u32	adc_comp_data[5] = {0};
+        alt_u32	adc_comp_data[5];
         alt_adc_word_read(ADC_SAMPLE_STORE_CSR_BASE, adc_data, 
                 ADC_SAMPLE_STORE_CSR_CSD_LENGTH);
 
@@ -138,6 +138,7 @@ struct adc_t {
         IOWR_ALTERA_AVALON_PIO_DATA(ADC_D2_BASE,(adc_comp_data[2]));
         IOWR_ALTERA_AVALON_PIO_DATA(ADC_D3_BASE,(adc_comp_data[3]));
         IOWR_ALTERA_AVALON_PIO_DATA(ADC_D4_BASE,(adc_comp_data[4]));   
+
  //       adc_interrupt_enable(ADC_SAMPLE_STORE_CSR_BASE);
         adc_start(ADC_SEQUENCER_CSR_BASE);
     }
