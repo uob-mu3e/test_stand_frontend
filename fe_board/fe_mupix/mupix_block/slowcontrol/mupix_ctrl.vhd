@@ -45,8 +45,8 @@ architecture RTL of mupix_ctrl is
 
     signal rd_config                : std_logic;
     signal config_data              : std_logic_vector(5 downto 0);
-    signal config_data29            : std_logic_vector(28 downto 0);
-    signal config_data29_raw        : std_logic_vector(28 downto 0);
+    signal config_data29            : std_logic_vector(31 downto 0);
+    signal config_data29_raw        : std_logic_vector(31 downto 0);
     signal waiting_for_load_round   : std_logic_vector(5 downto 0);
 
     signal slow_down                : std_logic_vector(15 downto 0);
@@ -61,7 +61,7 @@ architecture RTL of mupix_ctrl is
 
     signal spi_dout                 : std_logic;
     signal spi_clk                  : std_logic;
-    signal spi_bitpos               : integer range 28 downto 0;
+    signal spi_bitpos               : integer range 31 downto 0;
     signal chip_select_n            : std_logic_vector(11 downto 0);
     signal chip_select_mask         : std_logic_vector(11 downto 0);
 
@@ -108,8 +108,8 @@ begin
         i_rdreq                     => rd_config--,
     );
 
-    gen: for I in 0 to 28 generate
-        config_data29(I) <= config_data29_raw(28-I) when invert_29_bitpos = '1' else config_data29_raw(I);
+    gen: for I in 0 to 31 generate
+        config_data29(I) <= config_data29_raw(31-I) when invert_29_bitpos = '1' else config_data29_raw(I);
     end generate;
 
     process(i_clk, i_reset_n)
@@ -123,6 +123,7 @@ begin
             clk1                    <= (others => '0');
             clk2                    <= (others => '0');
             clk_step                <= (others => '0');
+            chip_select_n           <= (others => '1');
             spi_dout                <= '0';
             spi_clk                 <= '0';
             spi_bitpos              <= 0;
@@ -133,11 +134,11 @@ begin
             wait_cnt    <= wait_cnt + 1;
             o_mosi      <= (others => spi_dout);
             o_clock     <= (others => spi_clk);
-            if(invert_csn = '1') then 
+            --if(invert_csn = '1') then 
                 o_csn       <= not chip_select_n;
-            else
-                o_csn       <= chip_select_n;
-            end if;
+            --else
+            --    o_csn       <= chip_select_n;
+            --end if;
 
             case mp_ctrl_state is
                 when idle =>
@@ -151,7 +152,7 @@ begin
 
                 when load_config =>
                     chip_select_n                   <= (others => '1');
-                    config_data29_raw               <= (19 => '1', others => '0'); -- load conf bit bug in mupix10
+                    config_data29_raw               <= (others => '0');
                     clk_step                        <= (others => '0');
                     if(wait_cnt = x"0001") then
                         for I in 0 to 5 loop
@@ -202,11 +203,18 @@ begin
                         mp_ctrl_state <= idle;
                     end if;
  
-                    if(or_reduce(is_writing)='0' and clk_step=x"5") then -- extra round for load
+                    if(or_reduce(is_writing)='0' and clk_step=x"5") then -- extra round for load conf
                         mp_ctrl_state <= writing;
                         spi_bit_state <= beforepulse;
                         wait_cnt      <= (others => '0');
+                        config_data29_raw <= (19 => '1', others => '0');
+                    end if;
 
+                    if(clk_step=x"6") then -- extra round for load
+                        mp_ctrl_state <= writing;
+                        spi_bit_state <= beforepulse;
+                        wait_cnt      <= (others => '0');
+                        config_data29_raw <= (19 => '1', others => '0');
                         for I in 0 to 5 loop
                              -- set ld bits that have written something since last idle
                             config_data29_raw(18 + I) <= waiting_for_load_round(I);
@@ -214,7 +222,7 @@ begin
                         config_data29_raw(19) <= '1';
                     end if;
 
-                    if(clk_step=x"6") then -- extra round for load remove
+                    if(clk_step=x"7") then -- extra round for load remove
                         mp_ctrl_state <= writing;
                         spi_bit_state <= beforepulse;
                         wait_cnt      <= (others => '0');
@@ -247,7 +255,7 @@ begin
                             if(wait_cnt(14 downto 0) = slow_down(15 downto 1)) then -- wait_cnt = slow_down/2
                                 wait_cnt            <= (others => '0');
                                 spi_bit_state       <= beforepulse;
-                                if(spi_bitpos=28) then
+                                if(spi_bitpos=31) then
                                     mp_ctrl_state   <= ld_spi_reg;
                                     spi_bitpos      <= 0;
                                 else

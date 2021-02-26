@@ -30,10 +30,9 @@ struct mupix_t {
         
         // invert 29 bit shift reg order ? (no sure if i took the correct one in firmware) --> set bit 0 to 1
         // invert csn ? --> set bit 1 to 1
-        sc->ram->data[0xFF49]=0x00000002;
+        sc->ram->data[0xFF49]=0x00000003;
         
         // write data for the  complete BIAS reg into FEB storage
-
         sc->ram->data[0xFF41]=0x2A000A03;
         sc->ram->data[0xFF41]=0xFA3F002F;
         sc->ram->data[0xFF41]=0x1E041041;
@@ -42,43 +41,29 @@ struct mupix_t {
         sc->ram->data[0xFF41]=0x1400C20A;
         sc->ram->data[0xFF41]=0x028A0000;
         
-        // enable signal for BIAS reg
-        sc->ram->data[0xFF40]=1;
-        sc->ram->data[0xFF40]=0;
-        usleep(0.1); // dont need this, but i have not simulated simultanious write at the moment
-        
         //write conf defaults
         sc->ram->data[0xFF42]=0x001F0002;
         sc->ram->data[0xFF42]=0x08380000;
         sc->ram->data[0xFF42]=0xFC05F000;
-        sc->ram->data[0xFF40]=2;
-        sc->ram->data[0xFF40]=0;
-        usleep(0.1);
+
         
         // write vdac defaults
         sc->ram->data[0xFF43]=0x00720000;
         sc->ram->data[0xFF43]=0x4C000047;
         sc->ram->data[0xFF43]=0x00000000;
-        sc->ram->data[0xFF40]=4;
-        sc->ram->data[0xFF40]=0;
-        usleep(0.1);
         
         // zero the rest
-        sc->ram->data[0xFF44]=0x00000000;
-        sc->ram->data[0xFF40]=8;
-        sc->ram->data[0xFF40]=0;
-        usleep(0.1);
-        sc->ram->data[0xFF45]=0x00000000;
-        sc->ram->data[0xFF40]=16;
-        sc->ram->data[0xFF40]=0;
-        usleep(0.1);
-        sc->ram->data[0xFF46]=0x00000000;
-        sc->ram->data[0xFF40]=32;
-        sc->ram->data[0xFF40]=0;
-        usleep(0.1);
+        for(int i = 0; i<30; i++){
+        sc->ram->data[0xFF44]=0x00000000;}
         
-        //sc->ram->data[0xFF40]=63;
-        //sc->ram->data[0xFF40]=0;
+        for(int i = 0; i<30; i++){
+        sc->ram->data[0xFF45]=0x00000000;}
+        
+        for(int i = 0; i<30; i++){
+        sc->ram->data[0xFF46]=0x00000000;}
+
+        sc->ram->data[0xFF40]=63;
+        sc->ram->data[0xFF40]=0;
         return;
     }
 
