@@ -37,6 +37,7 @@ entity top is
         scifi_spi_miso              : in    std_logic;
         scifi_spi_mosi              : out   std_logic;
         scifi_din                   : in    std_logic_vector(4 downto 1);
+        scifi_bidir_test            : inout std_logic;
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -162,7 +163,7 @@ begin
         o_pll_test                  => open,
         i_data(0)                   => scifi_din(1),
 
-        io_i2c_sda                  => open,
+        io_i2c_sda                  => scifi_bidir_test,
         io_i2c_scl                  => open,
         i_cec                       => '0',
         i_spi_miso                  => '0',

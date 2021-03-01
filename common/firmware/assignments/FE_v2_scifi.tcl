@@ -18,6 +18,7 @@ set_location_assignment PIN_AB22 -to scifi_din[1]
 set_location_assignment PIN_AH23 -to scifi_din[2]
 set_location_assignment PIN_AG22 -to scifi_din[3]
 set_location_assignment PIN_AG21 -to scifi_din[4]
+set_location_assignment PIN_AH20 -to scifi_bidir_test
 
 set_instance_assignment -name IO_STANDARD LVDS -to scifi_csn[1]
 set_instance_assignment -name IO_STANDARD LVDS -to scifi_csn[2]
