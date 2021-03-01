@@ -14,6 +14,9 @@ port (
     i_reset_n   : in  std_logic;
     i_clk       : in  std_logic; -- 125 MHz
 
+    i_en        : in  std_logic;
+    i_latency   : in  std_logic_vector(N_CC - 1 downto 0);
+
     i_CC		: in  std_logic_vector(N_CC - 1 downto 0);
     o_CC		: out std_logic_vector(N_CC downto 0)--;
 );
@@ -64,15 +67,18 @@ end process;
 
 s_o_CC      <= "0" & i_CC;
 -- correct edge cases
-s_o_CC_reg  <=  s_o_CC - (nLapses + 1) when (CC_fpga = 32765 and i_CC = 0) else
-                s_o_CC - (nLapses - 1) when (CC_fpga = 1 and i_CC = 32766) else
-                s_o_CC - (nLapses + 1) when (CC_fpga = 32766 and i_CC = 0) else
-                s_o_CC - (nLapses + 1) when (CC_fpga = 32766 and i_CC = 1) else
-                s_o_CC - (nLapses + 1) when (CC_fpga = 32767 and i_CC = 0) else
-                s_o_CC - (nLapses + 1) when (CC_fpga = 32767 and i_CC = 1) else
-                s_o_CC - (nLapses + 1) when (CC_fpga = 32767 and i_CC = 2) else
+s_o_CC_reg  <=  s_o_CC - (nLapses + 1) when ((CC_fpga - i_latency) = 32765  and i_CC = 0) else
+                s_o_CC - (nLapses - 1) when ((CC_fpga - i_latency) = 1      and i_CC = 32766) else
+                s_o_CC - (nLapses + 1) when ((CC_fpga - i_latency) = 32766  and i_CC = 0) else
+                s_o_CC - (nLapses + 1) when ((CC_fpga - i_latency) = 32766  and i_CC = 1) else
+                s_o_CC - (nLapses + 1) when ((CC_fpga - i_latency) = 32767  and i_CC = 0) else
+                s_o_CC - (nLapses + 1) when ((CC_fpga - i_latency) = 32767  and i_CC = 1) else
+                s_o_CC - (nLapses + 1) when ((CC_fpga - i_latency) = 32767  and i_CC = 2) else
                 s_o_CC - nLapses;
-o_CC        <= s_o_CC_reg when s_o_CC_reg <= 32767 - 1 else s_o_CC_reg - 32767 - 1;
+                
+o_CC        <=  "0" & i_CC when i_en = '0' else
+                s_o_CC_reg when s_o_CC_reg <= 32767 - 1 else 
+                s_o_CC_reg - 32767 - 1;
 
 --FPGA 2^15-1 counter: 0 1 2 0 1 2 0 1 2
 --nLapse:              0 0 0 1 1 1 2 2 2

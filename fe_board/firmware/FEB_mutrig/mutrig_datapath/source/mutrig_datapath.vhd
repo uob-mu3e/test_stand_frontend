@@ -17,6 +17,7 @@ generic(
     N_MODULES           : integer range 1 to 2 := 1;
     N_ASICS             : positive := 1;
     N_LINKS             : positive := 1;
+    N_CC                : positive := 15; -- will be always 15
     LVDS_PLL_FREQ       : real := 125.0;
     LVDS_DATA_RATE      : real := 1250.0;
     GEN_DUMMIES         : boolean := TRUE;
@@ -49,9 +50,14 @@ port (
     i_SC_datagen_count          : in std_logic_vector(9 downto 0);
     i_SC_rx_wait_for_all        : in std_logic;
     i_SC_rx_wait_for_all_sticky : in std_logic;
+    
     --run control
     i_RC_may_generate           : in std_logic; --do not generate new frames for runstates that are not RUNNING, allows to let fifos run empty
     o_RC_all_done               : out std_logic; --all fifos empty, all data read
+
+    -- lapse lapse counter
+    i_en_lapse_counter          : in std_logic;
+    i_latency_lapse_counter     : in std_logic_vector(N_CC - 1 downto 0);
 
     --monitors
     o_receivers_usrclk          : out std_logic;    -- pll output clock
@@ -141,8 +147,8 @@ signal s_receivers_synclosscounter : t_array_32b;
 signal s_SC_reset_counters_125_n : std_logic;
 
 -- lapse counter signals
-signal CC_corrected_A : std_logic_vector(15 downto 0);
-signal CC_corrected_B : std_logic_vector(15 downto 0);
+signal CC_corrected_A : std_logic_vector(N_CC downto 0);
+signal CC_corrected_B : std_logic_vector(N_CC downto 0);
 
 begin
 
@@ -456,13 +462,15 @@ u_decoder : entity work.prbs_decoder
     
 -- generate lapse counter A
 e_lapse_counter_A : entity work.lapse_counter
-generic map ( N_CC => 15 )
-port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_A_buf_data(20 downto 6), o_CC => CC_corrected_A );
+generic map ( N_CC => N_CC )
+port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_A_buf_data(20 downto 6), 
+    i_en => i_en_lapse_counter, i_latency => i_latency_lapse_counter, o_CC => CC_corrected_A );
 
 -- generate lapse counter B
 e_lapse_counter_B : entity work.lapse_counter
-generic map ( N_CC => 15 )
-port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_B_buf_data(20 downto 6), o_CC => CC_corrected_B );
+generic map ( N_CC => N_CC )
+port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_B_buf_data(20 downto 6),
+    i_en => i_en_lapse_counter, i_latency => i_latency_lapse_counter, o_CC => CC_corrected_B );
 
 --to common fifo buffer:
 o_fifo_wr(0)                    <= s_A_buf_wr;
