@@ -216,11 +216,12 @@ architecture arch of fe_block_v2 is
     signal max10_status             : reg32;	 
     signal max10_spiflash_cmdaddr   : reg32;
 
-    type max_spi_state_t is (idle, programming, fifocopy, programmingaddrwait, programmingaddr,
-    flashwait, busyread, maxversion, statuswait, maxstatus, adcwait, maxadc, endwait);
+    type max_spi_state_t is (idle, programming, fifocopy, control, controlwait, programmingaddrwait, programmingaddr,
+    flashwait, busyread, programmingend, maxversion, statuswait, maxstatus, adcwait, maxadc, endwait);
     signal max_spi_state :   max_spi_state_t;  
     signal program_req :   std_logic;
     signal flash_busy :    std_logic;
+	 signal busy_last	: std_logic;
 
     signal programming_status   : reg32;
     signal programming_ctrl     : reg32;
@@ -684,26 +685,37 @@ begin
 		max_spi_numbytes <= "000000000";
 		max_spi_rw		 <= '0';
         read_programming_fifo   <= '0';
+		  busy_last	<= '0';
+		  programming_status(0) <= '0';
+		  programming_status(1) <= '0';
+		  flash_busy 				<= '0';
+		  
     elsif(i_nios_clk'event and i_nios_clk = '1')then
         max_spi_counter <= max_spi_counter + 1;
         max_spi_strobe <= '0';
-		max_spi_rw		 <= '0';
+		
 
         programming_status(0) <= '0';
 
         read_programming_fifo <= '0';
 		  
+		  busy_last		<= max_spi_busy;
+		  
         case max_spi_state is
         when idle =>
+				max_spi_rw		 <= '0';
             if(program_req = '1') then
                 max_spi_state <= programming;
             elsif(max_spi_counter > 5000000) then
                 max_spi_state <= maxversion;
                 max_spi_counter <= 0;
-            end if;    
+            end if;  
+				programming_status(0) <= '0';
+				programming_status(1) <= '0';
+		
         when programming =>
             -- Idea for programming:
-            -- - go to programming state by setting programming_status(0) = 1
+            -- - go to programming state by setting programming_ctrl(0) = 1
             -- - Fill at least 256 byte into the programming FIFO
             -- - Set the address - this will copy the FIFO to the MAX, then trigger
             --   flash programming
@@ -717,6 +729,7 @@ begin
 
             if(programming_addr_ena = '1') then
                 max_spi_state <= fifocopy;
+					 programming_status(1) <= '1';
             end if;    
 
         when fifocopy =>
@@ -726,32 +739,49 @@ begin
             max_spi_rw       <= '1';
             max_spi_data_to_max     <= programming_data_from_fifo;
             read_programming_fifo   <= max_spi_next_data;
-            max_spi_state    <= programmingaddrwait;
-            
-        when programmingaddrwait =>
-            max_spi_data_to_max     <= programming_data_from_fifo;
+            max_spi_state    			<= programmingaddrwait;
+							
+			when programmingaddrwait =>
+				max_spi_data_to_max     <= programming_data_from_fifo;
             read_programming_fifo   <= max_spi_next_data;
-            if(max_spi_busy = '0') then
+            if(max_spi_busy = '0' and busy_last = '1') then
                 max_spi_rw       <= '0';
                 max_spi_strobe   <= '0';
                 max_spi_state    <= programmingaddr;
-            end if;
+					 read_programming_fifo   <= '0';
+            end if;	
+				
         when programmingaddr =>
             max_spi_addr    <= FEBSPI_ADDR_PROGRAMMING_ADDR;
             max_spi_numbytes <= "000000100";
             max_spi_strobe   <= '1';
             max_spi_rw       <= '1';
             max_spi_data_to_max     <= programming_addr;
-            max_spi_state    <= flashwait;
-            flash_busy       <= '1';
+            max_spi_state    			<= controlwait;
+            				
+		 when controlwait =>
+            if(max_spi_busy = '0' and busy_last = '1') then
+                max_spi_rw       <= '0';
+                max_spi_strobe   <= '0';
+                max_spi_state    <= control;
+            end if;
+			when control =>
+				max_spi_addr    <= FEBSPI_ADDR_PROGRAMMING_CTRL;
+            max_spi_numbytes <= "000000100";
+            max_spi_strobe   <= '1';
+            max_spi_rw       <= '1';
+            max_spi_data_to_max     <= X"00000001";
+            max_spi_state    <= flashwait;		
+				flash_busy       <= '1';
+				
         when flashwait =>
-            if(max_spi_busy = '0') then
+            if(max_spi_busy = '0' and busy_last = '1') then
                 max_spi_rw       <= '0';
                 max_spi_strobe   <= '0';
                 if(flash_busy = '1') then
                     max_spi_state    <= busyread;
                 else
-                    max_spi_state    <= programming;
+                    max_spi_state    <= programmingend;
                 end if;
             end if;
         when busyread =>
@@ -763,7 +793,20 @@ begin
                 max_spi_strobe   <= '0';
                 max_spi_state    <= flashwait;
             end if;
-
+        when programmingend =>
+            max_spi_addr    <= FEBSPI_ADDR_PROGRAMMING_CTRL;
+            max_spi_numbytes <= "000000100";
+            max_spi_strobe   <= '1';
+            max_spi_rw       <= '1';
+            max_spi_data_to_max     <= (others => '0');
+				if(max_spi_busy = '0' and busy_last = '1') then
+                max_spi_rw       <= '0';
+                max_spi_strobe   <= '0';
+                max_spi_state    <= programming;
+					 programming_status(1) <= '0';
+            end if;	
+				
+				
         when maxversion => 
             max_spi_addr    <= FEBSPI_ADDR_GITHASH;
             max_spi_numbytes <= "000000100";
@@ -838,10 +881,10 @@ begin
             rdclk => i_nios_clk,
             data => programming_data, 
             rdreq => read_programming_fifo,
-            aclr => not nios_reset_n,
+            aclr => programming_ctrl(1),
             wrreq => programming_data_ena,
-            rdempty => programming_status(1),
-            rdfull  => programming_status(2),
+            rdempty => programming_status(2),
+            rdfull  => programming_status(3),
             q => programming_data_from_fifo
     );
 

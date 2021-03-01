@@ -198,15 +198,15 @@ begin
                     else flash_programming_status_arria when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_STATUS
                     else flash_w_cnt when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_COUNT
                     else adc_data_0 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
-                                     and spi_arria_addr_offset(7 downto 2) = "000000"
+                                     and spi_arria_addr_offset = "00000000"
                     else adc_data_1 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
-                                     and spi_arria_addr_offset(7 downto 2) = "000001"
+                                     and spi_arria_addr_offset = "00000001"
                     else adc_data_2 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
-                                     and spi_arria_addr_offset(7 downto 2) = "000010"
+                                     and spi_arria_addr_offset = "00000010"
                     else adc_data_3 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
-                                     and spi_arria_addr_offset(7 downto 2) = "000011"
+                                     and spi_arria_addr_offset = "00000011"
                     else adc_data_4 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
-                                     and spi_arria_addr_offset(7 downto 2) = "000100"
+                                     and spi_arria_addr_offset = "00000100"
 						  else (others => '0'); -- needed to avoid latch
                                      
                 

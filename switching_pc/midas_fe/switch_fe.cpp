@@ -505,7 +505,7 @@ void setup_odb(){
 
 void setup_watches(){
     //UI watch
-    odb sc_variables("/Equipment/Switching/Variables");
+    odb sc_variables("/Equipment/Switching/Settings");
     sc_variables.watch(sc_settings_changed);
 
     // watch if this switching board is enabled
@@ -955,7 +955,7 @@ INT read_scitiles_sc_event(char *pevent, INT off){
 /*--- Read Slow Control Event from Mupix to be put into data stream --------*/
 
 INT read_mupix_sc_event(char *pevent, INT off){
-    // get odb
+    // get odb11:29:52.162 2021/03/01 [SW Frontend,INFO] Setting FEBID of Central:Board1: Link0, SB0.0 to (feb1)-feb0
     odb rate_cnt("/Equipment/Mupix/Variables");
     uint32_t HitsEnaRate;
     uint32_t MergerRate;
@@ -1017,6 +1017,8 @@ INT get_odb_value_by_string(const char *key_name){
 void sc_settings_changed(odb o)
 {
     std::string name = o.get_name();
+
+    printf("%s\n",name.c_str());
 
 #ifdef MY_DEBUG
     dummy_mudaq::DummyMudaqDevice & mu = *mup;
@@ -1181,7 +1183,8 @@ void sc_settings_changed(odb o)
           o = command;
     }
 
-    if (name == "LoadFirmware" && o) {
+    if (name == "Load Firmware" && o) {
+        printf("Load firmware triggered");
        mufeb->LoadFirmware("bintest.bin",0);
        o = false;
     }
