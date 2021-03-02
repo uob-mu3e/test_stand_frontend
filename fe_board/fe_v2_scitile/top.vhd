@@ -110,7 +110,7 @@ architecture rtl of top is
     signal pb_db                    : std_logic_vector(1 downto 0);
 
     constant N_LINKS                : integer := 1;
-    constant N_ASICS                : integer := 1;
+    constant N_ASICS                : integer := 13;
     constant N_MODULES              : integer := 1;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
@@ -138,7 +138,7 @@ begin
         N_MODULES       => N_MODULES,
         N_ASICS         => N_ASICS,
         N_LINKS         => N_LINKS,
-        INPUT_SIGNFLIP  => "11111111",
+        INPUT_SIGNFLIP  => x"FFFFFFFF", -- TODO: i changed this from "11111111". Was "11111111" intended ? M.Mueller
         LVDS_PLL_FREQ   => 125.0,
         LVDS_DATA_RATE  => 1250.0--,
     )
@@ -151,7 +151,7 @@ begin
 
         o_chip_reset                => tile_chip_reset,
         o_pll_test                  => tile_pll_test,
-        i_data(0)                   => tile_din(1),
+        i_data                      => tile_din,
 
         io_i2c_sda                  => tile_i2c_sda,
         io_i2c_scl                  => tile_i2c_scl,

@@ -6,6 +6,7 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mutrig_co
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds/datadecoder.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds/rx_errcounter.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../../fe_mupix/mupix_block/receiver_block/lvds_receiver.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../../fe_mupix/mupix_block/receiver_block/lvds_receiver_small.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "../../fe_mupix/mupix_block/receiver_block/lvdspll.vhd"]
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) "../../fe_mupix/mupix_block/receiver_block/lvdspll_0002.v"]
 #set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "lvds/lvds_receiver.vhd"]
