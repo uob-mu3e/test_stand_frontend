@@ -6,6 +6,7 @@ use work.daq_constants.all;
 
 entity scifi_path is
 generic (
+    IS_SCITILE : std_logic := '1';
     N_MODULES : positive;
     N_ASICS : positive;
     N_LINKS : positive;
@@ -287,6 +288,7 @@ begin
 
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (
+        IS_SCITILE => IS_SCITILE,
         N_MODULES => N_MODULES,
         N_ASICS => N_ASICS,
         N_LINKS => N_LINKS,
