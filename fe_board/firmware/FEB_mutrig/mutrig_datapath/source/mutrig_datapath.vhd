@@ -20,7 +20,7 @@ generic(
 	LVDS_PLL_FREQ : real := 125.0;
 	LVDS_DATA_RATE : real := 1250.0;
 	GEN_DUMMIES : boolean := TRUE;
-	INPUT_SIGNFLIP : std_logic_vector:=x"0000";
+	INPUT_SIGNFLIP : std_logic_vector(31 downto 0):=x"00000000";
 	C_CHANNELNO_PREFIX_A : std_logic_vector:=""; --use prefix value as the first bits (MSBs) of the chip number field. Leave empty to append nothing and use all bits from Input # numbering
 	C_CHANNELNO_PREFIX_B : std_logic_vector:=""
 	--(e.g. Tiles,  one module with up to 16 ASICs, PREFIX="")
@@ -280,7 +280,8 @@ port map(
 	reset_n			=> not i_rst_rx,
 	reset_n_errcnt		=> s_SC_reset_counters_125_n,
 	rx_in			=> i_stic_txd,
-	rx_inclock		=> i_refclk_125_A,
+	rx_inclock_A	=> i_refclk_125_A,
+	rx_inclock_B	=> i_refclk_125_B,
 	rx_state		=> s_receivers_state,
 	rx_ready		=> s_receivers_ready,
 	rx_data			=> s_receivers_data,
