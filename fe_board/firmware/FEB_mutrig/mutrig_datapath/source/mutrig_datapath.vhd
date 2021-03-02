@@ -14,6 +14,7 @@ use work.mutrig_constants.all;
 
 entity mutrig_datapath is
 generic(
+	IS_SCITILE : std_logic := '1';
 	N_MODULES: integer range 1 to 2 := 1;
 	N_ASICS : positive := 1;
     N_LINKS : positive := 1;
@@ -271,6 +272,7 @@ rst_sync_counter : entity work.reset_sync
 
 u_rxdeser: entity work.receiver_block
 generic map(
+	IS_SCITILE => IS_SCITILE,
 	NINPUT => N_ASICS_TOTAL,
 	LVDS_PLL_FREQ => LVDS_PLL_FREQ,
 	LVDS_DATA_RATE => LVDS_DATA_RATE,

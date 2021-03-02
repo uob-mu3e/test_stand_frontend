@@ -109,7 +109,7 @@ architecture rtl of top is
     signal pb_db                : std_logic_vector(1 downto 0);
 
     constant N_LINKS                : integer := 1;
-    constant N_ASICS                : integer := 1;
+    constant N_ASICS                : integer := 4;
     constant N_MODULES              : integer := 1;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
@@ -145,10 +145,11 @@ begin
 
     e_tile_path : entity work.scifi_path
     generic map (
+        IS_SCITILE      => '0',
         N_MODULES       => N_MODULES,
         N_ASICS         => N_ASICS,
         N_LINKS         => N_LINKS,
-        INPUT_SIGNFLIP  => "11111111",
+        INPUT_SIGNFLIP  => x"FFFFFFFF", --changed this from "11111111" was this intended ? M.Mueller
         LVDS_PLL_FREQ   => 125.0,
         LVDS_DATA_RATE  => 1250.0--,
     )
@@ -161,7 +162,7 @@ begin
 
         o_chip_reset                => scifi_syncres,
         o_pll_test                  => open,
-        i_data(0)                   => scifi_din(1),
+        i_data                      => scifi_din,
 
         io_i2c_sda                  => scifi_bidir_test,
         io_i2c_scl                  => open,
