@@ -19,7 +19,7 @@ set_global_assignment -name QIP_FILE generated/include.qip
 
 set_global_assignment -name QIP_FILE ../firmware/FEB_common/include_FEB_v2.qip
 
-set_global_assignment -name VHDL_FILE "tile_path.vhd"
+set_global_assignment -name VHDL_FILE tile_path.vhd
 set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/include.qip
 
 set_global_assignment -name QIP_FILE ../fe_scifi/resetalign/realign_block.qip
@@ -35,6 +35,7 @@ set_global_assignment -name QIP_FILE ../fe_scifi/resetalign/realign_block.qip
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
 
 
 

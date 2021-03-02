@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 
 use work.daq_constants.all;
 
-entity scifi_path is
+entity tile_path is
 generic (
     N_MODULES : positive;
     N_ASICS : positive;
@@ -52,7 +52,7 @@ port (
 );
 end entity;
 
-architecture arch of scifi_path is
+architecture arch of tile_path is
 
     signal s_testpulse : std_logic;
 
