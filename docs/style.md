@@ -218,3 +218,23 @@ int bar2(int a, int b) {
 
 } } // namespace mu3e::online
 ```
+
+
+
+## Documentation
+
+Using <https://developer.lsst.io/cpp/api-docs.html> as a baseline.
+
+```
+/**
+ * Sum numbers in a vector.
+ *
+ * @param values Container whose values are summed.
+ * @return sum of `values`, or 0.0 if `values` is empty.
+ */
+double sum(std::vector<double> & const values) {
+    ...
+}
+```
+
+
