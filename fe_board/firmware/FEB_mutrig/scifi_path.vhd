@@ -81,7 +81,7 @@ architecture arch of scifi_path is
 
     -- lapse counter
     signal s_en_lapse_counter : std_logic;
-    signal s_latency_lapse_counter : std_logic_vector(N_CC - 1 downto 0);
+    signal s_upper_bnd, s_lower_bnd : std_logic_vector(N_CC - 1 downto 0);
 
 begin
 
@@ -175,11 +175,13 @@ begin
         -- lapse counter
         if ( i_reg_we = '1' and i_reg_addr = X"C" ) then
             s_en_lapse_counter <= i_reg_wdata(31);
-            s_latency_lapse_counter <= i_reg_wdata(N_CC - 1 downto 0);
+            s_lower_bnd <= i_reg_wdata(N_CC - 1 downto 0);
+            s_upper_bnd <= i_reg_wdata(2*N_CC - 1 downto N_CC);
         end if;
         if ( i_reg_re = '1' and i_reg_addr = X"C" ) then
             o_reg_rdata(31) <= s_en_lapse_counter;
-            o_reg_rdata(N_CC - 1 downto 0) <= s_latency_lapse_counter;
+            o_reg_rdata(N_CC - 1 downto 0) <= s_lower_bnd;
+            o_reg_rdata(2*N_CC - 1 downto N_CC) <= s_upper_bnd;
         end if;
 
         --
@@ -257,7 +259,8 @@ begin
 
         -- lapse lapse counter
         i_en_lapse_counter => s_en_lapse_counter,
-        i_latency_lapse_counter => s_latency_lapse_counter,
+        i_lower_bnd => s_lower_bnd,
+        i_upper_bnd => s_upper_bnd,
 
         -- monitors
         o_receivers_usrclk => open,

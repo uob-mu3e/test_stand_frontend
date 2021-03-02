@@ -1,9 +1,9 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use ieee.math_real.all;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
 
 
 entity lapse_counter is
@@ -15,7 +15,8 @@ port (
     i_clk       : in  std_logic; -- 125 MHz
 
     i_en        : in  std_logic;
-    i_latency   : in  std_logic_vector(N_CC - 1 downto 0);
+    i_upper_bnd : in  std_logic_vector(N_CC - 1 downto 0) := (others => '0');
+    i_lower_bnd : in  std_logic_vector(N_CC - 1 downto 0);
 
     i_CC		: in  std_logic_vector(N_CC - 1 downto 0);
     o_CC		: out std_logic_vector(N_CC downto 0)--;
@@ -24,10 +25,10 @@ end lapse_counter;
 
 architecture arch of lapse_counter is
 
-    signal CC_fpga	: std_logic_vector(N_CC - 1 downto 0);
-    signal s_o_CC	: std_logic_vector(N_CC downto 0);
-    signal s_o_CC_reg	: std_logic_vector(N_CC downto 0);
-    signal nLapses	: integer := 0;
+    signal CC_fpga : std_logic_vector(N_CC - 1 downto 0);
+    signal upper, lower : std_logic_vector(N_CC - 1 downto 0);
+    signal s_o_CC, s_o_CC_reg : std_logic_vector(N_CC downto 0);
+    signal nLapses : integer := 0;
 
 begin
 
@@ -65,17 +66,19 @@ begin
     end if;
 end process;
 
-s_o_CC      <= "0" & i_CC;
--- correct edge cases
-s_o_CC_reg  <=  s_o_CC - (nLapses + 1) when ((CC_fpga - i_latency) = 32765  and i_CC = 0) else
-                s_o_CC - (nLapses - 1) when ((CC_fpga - i_latency) = 1      and i_CC = 32766) else
-                s_o_CC - (nLapses + 1) when ((CC_fpga - i_latency) = 32766  and i_CC = 0) else
-                s_o_CC - (nLapses + 1) when ((CC_fpga - i_latency) = 32766  and i_CC = 1) else
-                s_o_CC - (nLapses + 1) when ((CC_fpga - i_latency) = 32767  and i_CC = 0) else
-                s_o_CC - (nLapses + 1) when ((CC_fpga - i_latency) = 32767  and i_CC = 1) else
-                s_o_CC - (nLapses + 1) when ((CC_fpga - i_latency) = 32767  and i_CC = 2) else
+s_o_CC  <= "0" & i_CC;
+
+-- assuming that the delay is in the range of 30000 to 32766
+upper <=    std_logic_vector(to_unsigned(32766, upper'length)) when and_reduce(i_upper_bnd) = '0' else
+            i_upper_bnd;
+
+lower <=    std_logic_vector(to_unsigned(2767, lower'length)) when and_reduce(i_lower_bnd) = '0' else
+            i_lower_bnd;
+
+s_o_CC_reg  <=  s_o_CC - (nLapses - 1) when (i_CC <= upper and i_CC >= 30000) and (CC_fpga >= 0 and CC_fpga <= lower) else
+                s_o_CC - (nLapses + 1) when (i_CC <= lower and i_CC >= 0) and (CC_fpga >= 30000 and CC_fpga <= upper) else
                 s_o_CC - nLapses;
-                
+
 o_CC        <=  "0" & i_CC when i_en = '0' else
                 s_o_CC_reg when s_o_CC_reg <= 32767 - 1 else 
                 s_o_CC_reg - 32767 - 1;

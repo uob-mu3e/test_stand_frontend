@@ -57,7 +57,8 @@ port (
 
     -- lapse lapse counter
     i_en_lapse_counter          : in std_logic;
-    i_latency_lapse_counter     : in std_logic_vector(N_CC - 1 downto 0);
+    i_lower_bnd                 : in std_logic_vector(N_CC - 1 downto 0);
+    i_upper_bnd                 : in std_logic_vector(N_CC - 1 downto 0);
 
     --monitors
     o_receivers_usrclk          : out std_logic;    -- pll output clock
@@ -464,13 +465,15 @@ u_decoder : entity work.prbs_decoder
 e_lapse_counter_A : entity work.lapse_counter
 generic map ( N_CC => N_CC )
 port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_A_buf_data(20 downto 6), 
-    i_en => i_en_lapse_counter, i_latency => i_latency_lapse_counter, o_CC => CC_corrected_A );
+    i_en => i_en_lapse_counter, i_upper_bnd => i_upper_bnd, i_lower_bnd => i_lower_bnd, 
+    o_CC => CC_corrected_A );
 
 -- generate lapse counter B
 e_lapse_counter_B : entity work.lapse_counter
 generic map ( N_CC => N_CC )
 port map ( i_clk => i_ts_clk, i_reset_n => not i_ts_rst, i_CC => s_B_buf_data(20 downto 6),
-    i_en => i_en_lapse_counter, i_latency => i_latency_lapse_counter, o_CC => CC_corrected_B );
+    i_en => i_en_lapse_counter, i_upper_bnd => i_upper_bnd, i_lower_bnd => i_lower_bnd,
+    o_CC => CC_corrected_B );
 
 --to common fifo buffer:
 o_fifo_wr(0)                    <= s_A_buf_wr;
