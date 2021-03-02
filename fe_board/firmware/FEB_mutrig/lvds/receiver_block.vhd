@@ -101,6 +101,7 @@ end component; --data_decoder;
     signal rx_syncclock_A       : std_logic;
     signal rx_enable_A          : std_logic;
 
+    signal rx_inclock_B_ctrl    : std_logic;
     signal rx_inclock_B_pll     : std_logic;
     signal rx_locked_B          : std_logic;
     signal rx_dpaclock_B        : std_logic;
@@ -112,7 +113,7 @@ begin
 	pll_locked 			<= rx_pll_locked;
 	rx_clkout 			<= rx_clk;
 
-    u0 : component work.cmp.clk_ctrl_single
+    clk_ctrl_A : component work.cmp.clk_ctrl_single
         port map (
             inclk  => rx_inclock_A,
             outclk => rx_inclock_A_ctrl--,
@@ -152,39 +153,42 @@ begin
         rx_out(19 downto  0)                    => rx_out(19 downto 0)--,
     );
 
---    lpll_B: entity work.lvdspll
---    PORT MAP
---    (
---        refclk   => rx_inclock_B,
---        rst      => '0',
---        outclk_0 => rx_inclock_B_pll,
---        outclk_1 => rx_enable_B,
---        outclk_2 => rx_syncclock_B,
---        outclk_3 => rx_dpaclock_B,
---        outclk_4 => open,
---        locked   => rx_locked_B
---    );
---
---    -- E1, C7, C8, C3, C6, C4, inclock_B
---    lvds_rx_B: entity work.lvds_receiver_small
---    PORT MAP
---    (
---        pll_areset                  => not rx_locked_B,
---        rx_channel_data_align       => "000" & rx_bitslip(8) & rx_bitslip(6 downto 2),
---        rx_dpaclock                 => rx_dpaclock_B,
---        rx_enable                   => rx_enable_B,
---        rx_fifo_reset(5 downto 0)   => rx_fifo_reset(8) & rx_fifo_reset(6 downto 2),
---        rx_in(5 downto 0)           => rx_in(8) & rx_in(6 downto 2),
---        rx_in(8 downto 6)           => (others => '0'),
---        rx_inclock                  => rx_inclock_B_pll,
---        rx_reset(5 downto 0)        => rx_reset(8) & rx_reset(6 downto 2),
---        rx_syncclock                => rx_syncclock_B,
---        rx_dpa_locked(4 downto 0)   => rx_dpa_locked(6 downto 2),
---        rx_dpa_locked(5)            => rx_dpa_locked(8),
---        rx_out(49 downto 0)         => rx_out(69 downto 20),
---        rx_out(59 downto 50)        => rx_out(89 downto 80)--,
---        
---    );
+    clk_ctrl_B : component work.cmp.clk_ctrl_single
+        port map (
+            inclk  => rx_inclock_B,
+            outclk => rx_inclock_B_ctrl--,
+    );
+
+    lpll_B: entity work.lvdspll
+    PORT MAP
+    (
+        refclk   => rx_inclock_B_ctrl,
+        rst      => '0',
+        outclk_0 => rx_inclock_B_pll,
+        outclk_1 => rx_enable_B,
+        outclk_2 => rx_syncclock_B,
+        outclk_3 => rx_dpaclock_B,
+        outclk_4 => open,
+        locked   => rx_locked_B
+    );
+
+    -- C7, C8, C3, C6, C4, inclock_B
+    lvds_rx_B: entity work.lvds_receiver_small
+    PORT MAP
+    (
+        pll_areset                  => not rx_locked_B,
+        rx_channel_data_align       => "0000" & rx_bitslip(6 downto 2),
+        rx_dpaclock                 => rx_dpaclock_B,
+        rx_enable                   => rx_enable_B,
+        rx_fifo_reset(4 downto 0)   => rx_fifo_reset(6 downto 2),
+        rx_in(4 downto 0)           => rx_in(6 downto 2),
+        rx_in(8 downto 5)           => (others => '0'),
+        rx_inclock                  => rx_inclock_B_pll,
+        rx_reset(4 downto 0)        => rx_reset(6 downto 2),
+        rx_syncclock                => rx_syncclock_B,
+        rx_dpa_locked(4 downto 0)   => rx_dpa_locked(6 downto 2),
+        rx_out(49 downto 0)         => rx_out(69 downto 20)--,
+    );
 
     rx_ready <= rx_ready_reg;
 
