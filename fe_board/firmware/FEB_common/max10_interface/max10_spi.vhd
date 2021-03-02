@@ -119,6 +119,9 @@ elsif(clk50'event and clk50 = '1')then
             io_SPI_D3       <= datashiftregister(3);
             datashiftregister(27 downto 0) <= datashiftregister(31 downto 4);
             nibblecount     <= nibblecount +1;
+				if(nibblecount/2 = to_integer(unsigned(numbytes)))then
+					spistate <= idle;
+				end if;
         else
             o_SPI_clk       <= '1';  
             if(nibblecount mod 8 = 0)then
