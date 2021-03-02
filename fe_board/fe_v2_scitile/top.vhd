@@ -125,6 +125,11 @@ architecture rtl of top is
     signal s_run_state_all_done     : std_logic;
     signal s_MON_rxrdy              : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
+    -- i2c interface (fe_block to io buffers)
+    signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
+    -- spi multiplexing
+    signal tmb_miso : std_logic;
+    signal tmb_ss_n : std_logic_vector(15 downto 0);
 begin
 
 --------------------------------------------------------------------
@@ -133,7 +138,30 @@ begin
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 
-    e_tile_path : entity work.scifi_path
+-- IO buffers for I2C
+    iobuf_sda: entity work.ip_iobuf
+    port map(
+        datain(0)   => '0',
+        oe(0)       => i2c_sda_oe,
+        dataout(0)  => i2c_sda,
+        dataio(0)   => tile_i2c_sda--,
+    );
+
+    iobuf_scl: entity work.ip_iobuf
+    port map(
+        datain(0)   => '0',
+        oe(0)       => i2c_sda_oe,
+        dataout(0)  => i2c_scl,
+        dataio(0)   => tile_i2c_scl--,
+    );
+-- SPI input multiplexing (CEC / configuration)
+    -- only input multiplexing is done here, the rest is done on the TMB
+    tmb_miso <=
+        tile_cec      when tmb_ss_n(1)='0' else
+        tile_spi_miso; --when tmb_ss_n(0)='0' else
+
+-- main datapath
+    e_tile_path : entity work.tile_path
     generic map (
         N_MODULES       => N_MODULES,
         N_ASICS         => N_ASICS,
@@ -153,14 +181,8 @@ begin
         o_pll_test                  => tile_pll_test,
         i_data                      => tile_din,
 
-        io_i2c_sda                  => tile_i2c_sda,
-        io_i2c_scl                  => tile_i2c_scl,
-        i_cec                       => tile_cec,
-        i_spi_miso                  => tile_spi_miso,
         i_i2c_int                   => tile_i2c_int,
         o_pll_reset                 => tile_pll_reset,
-        o_spi_scl                   => tile_spi_scl,
-        o_spi_mosi                  => tile_spi_mosi,
 
         o_fifo_write                => fifo_write,
         o_fifo_wdata                => fifo_wdata,
@@ -218,10 +240,15 @@ begin
         i_ffly_Int_n        => Firefly_Int_n,
         i_ffly_ModPrs_n     => Firefly_ModPrs_n,
 
-        i_spi_miso          => '1',
-        o_spi_mosi          => open,
-        o_spi_sclk          => open,
-        o_spi_ss_n          => open,
+        i_spi_miso          => tmb_miso,
+        o_spi_mosi          => tile_spi_mosi,
+        o_spi_sclk          => tile_spi_scl,
+        o_spi_ss_n          => tmb_ss_n,
+
+        i_i2c_scl           => i2c_scl,
+        o_i2c_scl_oe        => i2c_scl_oe,
+        i_i2c_sda           => i2c_sda,
+        o_i2c_sda_oe        => i2c_sda_oe,
 
         i_spi_si_miso       => si45_spi_out,
         o_spi_si_mosi       => si45_spi_in,
