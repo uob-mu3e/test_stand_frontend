@@ -136,20 +136,18 @@ begin
     lvds_rx_A: entity work.lvds_receiver_small
     PORT MAP (
         pll_areset                              => not rx_locked_A,
-        rx_channel_data_align                   => "00" & rx_bitslip(12 downto 9) & rx_bitslip(7) & rx_bitslip(1 downto 0),
+        rx_channel_data_align                   => '0' & rx_bitslip(12 downto 7) & rx_bitslip(1 downto 0),
         rx_dpaclock                             => rx_dpaclock_A,
         rx_enable                               => rx_enable_A,
-        rx_fifo_reset(6 downto 0)               => rx_fifo_reset(12 downto 9) & rx_fifo_reset(7) & rx_fifo_reset(1 downto 0),
-        rx_in(6 downto 0)                       => rx_in(12 downto 9) & rx_in(7) & rx_in(1 downto 0),
-        rx_in(8 downto 7)                       => (others => '0'),
+        rx_fifo_reset(7 downto 0)               => rx_fifo_reset(12 downto 7) & rx_fifo_reset(1 downto 0),
+        rx_in(7 downto 0)                       => rx_in(12 downto 7) & rx_in(1 downto 0),
+        rx_in(8 downto 8)                       => (others => '0'),
         rx_inclock                              => rx_inclock_A_pll,
-        rx_reset(6 downto 0)                    => rx_reset(12 downto 9) & rx_reset(7) & rx_reset(1 downto 0),
+        rx_reset(7 downto 0)                    => rx_reset(12 downto 7) & rx_reset(1 downto 0),
         rx_syncclock                            => rx_syncclock_A,
-        rx_dpa_locked(6 downto 3)               => rx_dpa_locked(12 downto 9),
-        rx_dpa_locked(2)                        => rx_dpa_locked(7),
+        rx_dpa_locked(7 downto 2)               => rx_dpa_locked(12 downto 7),
         rx_dpa_locked(1 downto 0)               => rx_dpa_locked(1 downto 0),
-        rx_out(69 downto 30)                    => rx_out(129 downto 90),
-        rx_out(29 downto 20)                    => rx_out(79 downto 70),
+        rx_out(79 downto 20)                    => rx_out(129 downto 70),
         rx_out(19 downto  0)                    => rx_out(19 downto 0)--,
     );
 
