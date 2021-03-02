@@ -68,15 +68,16 @@ end process;
 
 s_o_CC  <= "0" & i_CC;
 
--- assuming that the delay is in the range of 30000 to 32766
-upper <=    std_logic_vector(to_unsigned(32766, upper'length)) when and_reduce(i_upper_bnd) = '0' else
+-- assuming that the delay is in the range of 
+-- upper=30000 to 32766/7 and 0 to lower=2767
+upper <=    std_logic_vector(to_unsigned(30000, upper'length)) when and_reduce(i_upper_bnd) = '0' else
             i_upper_bnd;
 
 lower <=    std_logic_vector(to_unsigned(2767, lower'length)) when and_reduce(i_lower_bnd) = '0' else
             i_lower_bnd;
 
-s_o_CC_reg  <=  s_o_CC - (nLapses - 1) when (i_CC <= upper and i_CC >= 30000) and (CC_fpga >= 0 and CC_fpga <= lower) else
-                s_o_CC - (nLapses + 1) when (i_CC <= lower and i_CC >= 0) and (CC_fpga >= 30000 and CC_fpga <= upper) else
+s_o_CC_reg  <=  s_o_CC - (nLapses - 1) when (i_CC <= 32766 and i_CC >= upper) and (CC_fpga >= 0 and CC_fpga <= lower) else
+                s_o_CC - (nLapses + 1) when (i_CC <= lower and i_CC >= 0) and (CC_fpga >= upper and CC_fpga <= 32767) else
                 s_o_CC - nLapses;
 
 o_CC        <=  "0" & i_CC when i_en = '0' else
