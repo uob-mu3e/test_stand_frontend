@@ -35,6 +35,7 @@ port (
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
+    o_hotfix_reroute    : out reg32array_t(35 downto 0); -- TODO: fix problem and remove
     i_run_state_156     : in  run_state_t--;
 );
 end mupix_datapath;
@@ -157,14 +158,14 @@ begin
 
         -- inputs  156--------------------------------------------
         i_lvds_data_valid           => (others => '0'),
-        i_lvds_status               => lvds_status,
+        --i_lvds_status               => lvds_status,
 
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
         o_mp_lvds_link_mask         => lvds_link_mask,
         o_mp_readout_mode           => mp_readout_mode--,
     );
-
+    o_hotfix_reroute<= lvds_status; --TODO: fix this!!
 
 ------------------------------------------------------------------------------------
 ---------------------- LVDS Receiver part ------------------------------------------

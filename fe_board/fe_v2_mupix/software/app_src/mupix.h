@@ -68,6 +68,7 @@ struct mupix_t {
     }
 
     void menu_lvds() {
+        alt_u32 value = 0x0;
         while (1) {
             char cmd;
             if(read(uart, &cmd, 1) > 0) switch(cmd) {
@@ -80,8 +81,10 @@ struct mupix_t {
                 printf("invalid command: '%c'\n", cmd);
             }
             
-            for(int i=0; i<36; i++){
-                printf("%i: 0x%08X\n",i,sc->ram->data[0xFF66+i]);
+            printf("pll_lock should always be '1', rx_state 0: wait for dpa_lock 1: alignment 2:ok, disp_err is 0 until rx_state 2 ");
+            for(int i=0; i<13; i++){
+                value = sc->ram->data[0xFF66+i];
+                printf("%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
             }
             printf("----------------------------\n");
             usleep(200000);
@@ -155,7 +158,10 @@ struct mupix_t {
                 break;
             case '3':
                 menu_lvds();
-                return;
+                break;
+            case '4':
+                printf("value: 0x%08x\n", sc->ram->data[0xFF63]);
+                break;
             case 'q':
                 return;
             default:

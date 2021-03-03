@@ -50,22 +50,22 @@ begin
     o_spi_clock <= clock(0);
     o_spi_mosi  <= mosi(0);
     o_spi_csn   <= csn(0);
-    e_mupix_ctrl: entity work.mupix_ctrl
-    port map(
-        i_clk                       => i_clk,
-        i_reset_n                   => reset_n,
-
-        i_reg_add                   => sc_add,
-        i_reg_re                    => sc_re,
-        o_reg_rdata                 => open,
-        i_reg_we                    => sc_we,
-        i_reg_wdata                 => sc_wdata,
-    
-        o_clock                     => clock,
-        o_SIN                       => open,
-        o_mosi                      => mosi,
-        o_csn                       => csn--,
-    );
+--    e_mupix_ctrl: entity work.mupix_ctrl
+--    port map(
+--        i_clk                       => i_clk,
+--        i_reset_n                   => reset_n,
+--
+--        i_reg_add                   => sc_add,
+--        i_reg_re                    => sc_re,
+--        o_reg_rdata                 => open,
+--        i_reg_we                    => sc_we,
+--        i_reg_wdata                 => sc_wdata,
+--    
+--        o_clock                     => clock,
+--        o_SIN                       => open,
+--        o_mosi                      => mosi,
+--        o_csn                       => csn--,
+--    );
 
 
 

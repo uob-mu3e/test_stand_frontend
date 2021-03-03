@@ -56,6 +56,7 @@ architecture arch of mupix_block is
     signal spi_clock        : std_logic;
     signal spi_mosi         : std_logic;
     signal spi_csn          : std_logic;
+    signal hotfix :reg32array_t(35 downto 0);
 
 begin
 
@@ -70,7 +71,9 @@ begin
         end if;
     end process;
 
-    o_reg_rdata <= reg_rdata_datapath when (unsigned(i_reg_add) >= MUPIX_DATAPATH_ADDR_START and reg_valid = '1') else reg_rdata;
+    --o_reg_rdata <= reg_rdata_datapath when (unsigned(i_reg_add) >= MUPIX_DATAPATH_ADDR_START and reg_valid = '1') else reg_rdata;
+    o_reg_rdata <= reg_rdata;
+
 
     e_mupix_ctrl : work.mupix_ctrl
     port map (
@@ -83,6 +86,7 @@ begin
         i_reg_we                    => i_reg_we,
         i_reg_wdata                 => i_reg_wdata,
 
+        i_hotfix_reroute            => hotfix,
         o_clock                     => o_clock,
         o_SIN                       => o_SIN,
         o_mosi                      => o_mosi,
@@ -130,6 +134,7 @@ begin
         i_sync_reset_cnt    => i_sync_reset_cnt,
         i_fpga_id           => i_fpga_id,
         i_run_state_125     => i_run_state_125,
+        o_hotfix_reroute    => hotfix,
         i_run_state_156     => i_run_state_156--,
     );
 

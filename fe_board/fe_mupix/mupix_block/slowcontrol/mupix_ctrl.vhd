@@ -23,7 +23,7 @@ entity mupix_ctrl is
         o_reg_rdata         : out std_logic_vector(31 downto 0);
         i_reg_we            : in  std_logic;
         i_reg_wdata         : in  std_logic_vector(31 downto 0);
-    
+        i_hotfix_reroute    : in reg32array_t(35 downto 0);
         o_clock             : out std_logic_vector( 3 downto 0);
         o_SIN               : out std_logic_vector( 3 downto 0);
         o_mosi              : out std_logic_vector( 3 downto 0);
@@ -81,7 +81,7 @@ begin
         i_reg_wdata                 => i_reg_wdata,
 
         -- inputs  156--------------------------------------------
-
+        i_lvds_status => i_hotfix_reroute,
         -- outputs 156--------------------------------------------
         o_mp_ctrl_data              => config_storage_input_data,
         o_mp_fifo_write             => config_storage_write,
