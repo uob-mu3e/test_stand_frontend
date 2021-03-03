@@ -18,6 +18,8 @@ Contents:       Definition of common functions to talk to a FEB. In particular c
 #include <algorithm>
 #include <iterator>
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 using std::cout;
 using std::endl;
@@ -106,8 +108,12 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
     while(readback & 0x1){
         feb_sc.FEB_register_read(FEB.SB_Port(),PROGRAMMING_STATUS_R,readback);
         printf(".");
+        std::this_thread::sleep_for(std::chrono::microseconds(50));
     }
     printf("\n");
+
+
+    feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
 
     cm_msg(MINFO,"MuFEB::LoadFirmware", "Done programming");
 
