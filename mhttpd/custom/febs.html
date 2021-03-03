@@ -16,8 +16,8 @@
 
 <div id="mmain">
     <table class="mtable" cellpadding="6">
-        <tr>
-            <td rowspan=22 style="text-align: right; width: 820px">
+      <tr>
+        <td rowspan=22 style="text-align: right;">
                 <div name="modb" data-odb-path="/Equipment/Links/Settings" onchange="update_masks(this.value)">
                 <div name="modb" data-odb-path="/Equipment/Switching/Variables/FEBFirmware" onchange="update_firmware(this.value)">
                 <div name="modb" data-odb-path="/Equipment/Switching/Variables/SCFE" onchange="update_sc(this.value,0)">
@@ -25,8 +25,29 @@
                 <div name="modb" data-odb-path="/Equipment/Switching/Variables/SDFE" onchange="update_sc(this.value,2)">
                 <div name="modb" data-odb-path="/Equipment/Switching/Variables/SFFE" onchange="update_sc(this.value,3)">
                 <canvas width="1200px" height="900px"></canvas>
-            </td>
+        </td>
+        <td>
+        Firmware File:
+        </td>
         </tr>
+        <tr>
+        <td name="modbvalue" data-odb-path="/Equipment/Switching/Settings/Firmware File" data-odb-editable="1"></td>
+       </tr>
+       <tr>
+       <td>
+       FEB ID:
+       </td>
+       </tr>
+       <tr>
+        <td name="modbvalue" data-odb-path="/Equipment/Switching/Settings/Firmware FEB ID" data-odb-editable="1"></td>
+       </tr>
+       <tr>
+       <td ><button name="modbbutton" class="mbutton"
+                    data-odb-path="/Equipment/Switching/Settings/Load Firmware"
+                    data-odb-value="1">
+                    Load Firmware
+</button></td>
+       </tr>
    </table>
 </div>
 <script src="febs.js"></script>
