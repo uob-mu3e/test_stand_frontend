@@ -359,6 +359,8 @@ void setup_odb(){
             {"Reset Bypass Payload", 0},
             {"Reset Bypass Command", 0},
             {"Load Firmware", false},
+            {"Firmware File",""},
+            {"Firmware FEB ID",0},
             // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
             {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()}
     };
@@ -491,10 +493,6 @@ void setup_odb(){
     custom["Switching&"] = "sc.html";
     custom["Febs&"] = "febs.html";
     
-    // setup odb for switching board
-    //odb swb_varibles("/Equipment/Switching/Variables");
-    //swb_varibles["Merger Timeout All FEBs"] = 0;
-
     // TODO: not sure at the moment we have a midas frontend for three feb types but 
     // we need to have different swb at the final experiment so maybe one needs to take
     // things apart later. For now we put this "common" FEB variables into the generic
@@ -1185,7 +1183,9 @@ void sc_settings_changed(odb o)
 
     if (name == "Load Firmware" && o) {
         printf("Load firmware triggered");
-       mufeb->LoadFirmware("bintest.bin",0);
+        string fname = odb("/Equipment/Switching/Settings/Firmware File");
+        uint32_t id = odb("/Equipment/Switching/Settings/Firmware FEB ID");
+       mufeb->LoadFirmware(fname,id);
        o = false;
     }
 
