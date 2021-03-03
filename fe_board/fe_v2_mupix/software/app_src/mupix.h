@@ -67,6 +67,26 @@ struct mupix_t {
         return;
     }
 
+    void menu_lvds() {
+        while (1) {
+            char cmd;
+            if(read(uart, &cmd, 1) > 0) switch(cmd) {
+            case '?':
+                wait_key();
+                break;
+            case 'q':
+                return;
+            default:
+                printf("invalid command: '%c'\n", cmd);
+            }
+            
+            for(int i=0; i<36; i++){
+                printf("%i: 0x%08X\n",i,sc->ram->data[0xFF66+i]);
+            }
+            printf("----------------------------\n");
+            usleep(200000);
+        }
+    }    
     
     //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
     alt_u16 set_chip_dacs(alt_u32 asic, volatile alt_u32* bitpattern) {
@@ -95,15 +115,16 @@ struct mupix_t {
         char str[2] = {0};
         
         while(1) {
-            printf("  [t] => test mupix DAB (All)\n");
+            printf("  [0] => write mupix default conf (All)\n");
             printf("  [1] => set mupix config mask\n");
             printf("  [2] => set spi clk slow down reg\n");
+            printf("  [3] => print lvds status\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
             char cmd = wait_key();
             switch(cmd) {
-            case 't':
+            case '0':
                 test_mupix_write();
                 break;
             case '1':
@@ -132,6 +153,9 @@ struct mupix_t {
                 printf("setting spi slow down to 0x%08x\n",value);
                 sc->ram->data[0xFF47]=value;
                 break;
+            case '3':
+                menu_lvds();
+                return;
             case 'q':
                 return;
             default:

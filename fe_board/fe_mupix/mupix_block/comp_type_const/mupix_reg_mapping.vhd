@@ -25,6 +25,7 @@ port (
     -- inputs  156--------------------------------------------
     -- ALL INPUTS DEFAULT TO (n*4-1 downto 0 => x"CCC..", others => '1')
     i_lvds_data_valid           : in  std_logic_vector(35 downto 0) := x"CCCCCCCCC"; -- lvds alignment to mupix chips ok
+    i_lvds_status               : in  reg32array_t    (35 downto 0) := (others => x"CCCCCCCC");
 
     -- outputs 156--------------------------------------------
     o_mp_lvds_link_mask         : out std_logic_vector(35 downto 0); -- lvds link mask
@@ -59,6 +60,7 @@ begin
         if (i_reset_n = '0') then 
             mp_datagen_control        <= (others => '0');
             o_mp_ctrl_enable          <= (others => '0');
+            mp_lvds_link_mask         <= (others => '0');
             mp_ctrl_invert_csn        <= '0';
             
         elsif(rising_edge(i_clk156)) then
@@ -173,7 +175,10 @@ begin
             if ( regaddr = MP_DATA_GEN_CONTROL_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata <= mp_datagen_control;
             end if;
-            
+
+            if ( regaddr >= MP_LVDS_STATUS_START_REGISTER_W and regaddr < (MP_LVDS_STATUS_START_REGISTER_W + MUPIX_LVDS_STATUS_BLOCK_LENGTH) and i_reg_re = '1' ) then
+                o_reg_rdata <= i_lvds_status(regaddr-MP_LVDS_STATUS_START_REGISTER_W);
+            end if;
         end if;
     end process;
 end architecture;
