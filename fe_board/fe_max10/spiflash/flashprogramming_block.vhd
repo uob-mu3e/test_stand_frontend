@@ -143,9 +143,15 @@ elsif ( clk100'event and clk100 = '1' ) then
         end if;
 
         if(control(0) = '1' and arria_write_req_last = '0') then -- here we start the sequence for erasing 
-                                  -- and writing an spi flash block
-            spiflashstate  <= arriawriting1;
-            arriawriting   <= '1';
+                                                                 -- and writing an spi flash block
+                                                                 -- we only erase if we just passed a block boundary
+            if(addr_from_arria(11 downto 0) = "000000000000") then                                                    
+                spiflashstate  <= arriawriting1;
+                arriawriting   <= '1';
+            else 
+                spiflashstate  <= arriawriting5;
+                arriawriting   <= '1';
+            end if;    
         end if;    
 
             

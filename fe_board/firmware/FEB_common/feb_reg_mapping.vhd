@@ -69,6 +69,9 @@ architecture rtl of feb_reg_mapping is
     signal test_write               : std_logic;
     signal test_read_data           : std_logic_vector(31 downto 0);
     signal test_write_data          : std_logic_vector(31 downto 0);
+	 
+-- Prolong enable
+	signal addr_ena_del					: std_logic_vector(3 downto 0);
 
 begin
 
@@ -84,15 +87,23 @@ begin
 
     begin
     if i_reset_n = '0' then
-        o_programming_ctrl <= (others => '0');    
+        o_programming_ctrl <= (others => '0');   
+		  o_programming_data_ena  <= '0';
+        o_programming_addr_ena  <= '0';
     elsif rising_edge(i_clk_156) then
    
         o_reg_rdata         <= X"CCCCCCCC";
         regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
 
         o_programming_data_ena  <= '0';
-        o_programming_addr_ena  <= '0';
-
+		  if(addr_ena_del = "0000") then
+				o_programming_addr_ena  <= '0';
+			else 
+				o_programming_addr_ena  <= '1';
+			end if;
+			
+			addr_ena_del <= addr_ena_del(2 downto 0) & '0';
+				
         test_read           <= '0';
         test_write          <= '0';
 
@@ -203,6 +214,7 @@ begin
         if ( regaddr = PROGRAMMING_ADDR_W and i_reg_we = '1' ) then
             o_programming_addr  <= i_reg_wdata;
             o_programming_addr_ena  <= '1';
+				addr_ena_del <= "1111";
         end if;  
         if ( regaddr = PROGRAMMING_DATA_W and i_reg_we = '1' ) then
             o_programming_data  <= i_reg_wdata;

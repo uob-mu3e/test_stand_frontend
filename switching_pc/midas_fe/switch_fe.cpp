@@ -359,6 +359,8 @@ void setup_odb(){
             {"Reset Bypass Payload", 0},
             {"Reset Bypass Command", 0},
             {"Load Firmware", false},
+            {"Firmware File",""},
+            {"Firmware FEB ID",0},
             // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
             {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()}
     };
@@ -491,10 +493,6 @@ void setup_odb(){
     custom["Switching&"] = "sc.html";
     custom["Febs&"] = "febs.html";
     
-    // setup odb for switching board
-    //odb swb_varibles("/Equipment/Switching/Variables");
-    //swb_varibles["Merger Timeout All FEBs"] = 0;
-
     // TODO: not sure at the moment we have a midas frontend for three feb types but 
     // we need to have different swb at the final experiment so maybe one needs to take
     // things apart later. For now we put this "common" FEB variables into the generic
@@ -505,7 +503,7 @@ void setup_odb(){
 
 void setup_watches(){
     //UI watch
-    odb sc_variables("/Equipment/Switching/Variables");
+    odb sc_variables("/Equipment/Switching/Settings");
     sc_variables.watch(sc_settings_changed);
 
     // watch if this switching board is enabled
@@ -955,7 +953,7 @@ INT read_scitiles_sc_event(char *pevent, INT off){
 /*--- Read Slow Control Event from Mupix to be put into data stream --------*/
 
 INT read_mupix_sc_event(char *pevent, INT off){
-    // get odb
+    // get odb11:29:52.162 2021/03/01 [SW Frontend,INFO] Setting FEBID of Central:Board1: Link0, SB0.0 to (feb1)-feb0
     odb rate_cnt("/Equipment/Mupix/Variables");
     uint32_t HitsEnaRate;
     uint32_t MergerRate;
@@ -1017,6 +1015,8 @@ INT get_odb_value_by_string(const char *key_name){
 void sc_settings_changed(odb o)
 {
     std::string name = o.get_name();
+
+    printf("%s\n",name.c_str());
 
 #ifdef MY_DEBUG
     dummy_mudaq::DummyMudaqDevice & mu = *mup;
@@ -1181,8 +1181,11 @@ void sc_settings_changed(odb o)
           o = command;
     }
 
-    if (name == "LoadFirmware" && o) {
-       mufeb->LoadFirmware("bintest.bin",0);
+    if (name == "Load Firmware" && o) {
+        printf("Load firmware triggered");
+        string fname = odb("/Equipment/Switching/Settings/Firmware File");
+        uint32_t id = odb("/Equipment/Switching/Settings/Firmware FEB ID");
+       mufeb->LoadFirmware(fname,id);
        o = false;
     }
 
