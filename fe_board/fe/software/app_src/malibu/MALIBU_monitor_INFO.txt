@@ -87,8 +87,27 @@ I2C control lines from port of MALIBU
             b: ch1 V_sense  Low limit reached
             c: ch1 V_suorce Low limit reached
  1.8. Limitation: 
-        register: Vsense[19H to 1CH]; V_source [1DH to 20H]
-        defalut high (low) limit are set to max (min) value, so just take the default value.
+        register: Vsense[19H to 1CH]; 
+        Form:   abcdefgh
+        a: sign
+        b: power(2,10)
+        c: power(2,9)
+        d: power(2,8)
+        e: power(2,7)
+        f: power(2,6)
+        g: power(2,5)
+        h: power(2,4)
+        
+        register: V_source [1DH to 20H]
+        Formate: abcdefgh
+        a: 20V        
+        b: 10V        
+        c: 5V        
+        d: 2.5V        
+        e: 1.25V        
+        f: 0.625V        
+        g: 0.3125V        
+        h: 0.1563V        
  1.9. example: measure V_source1
     R/W     register   bits     function
     W       00         1a       only enable V_source1
