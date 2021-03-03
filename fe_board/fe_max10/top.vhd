@@ -161,8 +161,17 @@ begin
 
     status(MAX10_STATUS_BIT_PLL_LOCKED)  <= pll_locked;
     status(MAX10_STATUS_BIT_SPI_ARRIA_CLK)  <= fpga_spi_clk;
-    status(23 downto 2) <= (others => '0');
+    status(2)   <= board_select;
+    status(3)   <= reset_cpu_backplane_n;
+    status(4)   <= reset_fpga_bp_n;
+    status(5)   <= bp_reset_fpga;
+    status(7 downto 6)   <= bp_mode_select;
+    status(10 downto 8)  <= spi_adr;
+    status(12 downto 11) <= attention_n;
+    status(15 downto 13) <=  spare;  
+    status(23 downto 16) <= ref_addr;
     status(31 downto 24) <= spi_flash_status;
+
 
     -- SPI Arria10 to MAX10
     -----------------------
@@ -288,7 +297,9 @@ begin
         flash_i_data_export         => spi_flash_data_to_flash_nios,
         flash_o_data_export         => spi_flash_data_from_flash,
         flash_status_export         => spi_flash_status,
-		flash_fifo_data_export		=> spi_flash_fifo_data_nios
+		flash_fifo_data_export		=> spi_flash_fifo_data_nios,
+
+        status_export               => status
     );
 
  
