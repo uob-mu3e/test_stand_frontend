@@ -134,6 +134,8 @@ architecture arch of top is
     signal adc_data_2                           : std_logic_vector(31 downto 0);
     signal adc_data_3                           : std_logic_vector(31 downto 0);
     signal adc_data_4                           : std_logic_vector(31 downto 0);
+
+    signal startupcounter                       : integer;
     
 begin
 
@@ -290,7 +292,7 @@ begin
         i2c_scl_oe                  => open,
 
         -- flash spi
-        flash_ps_ctrl_export        => flash_programming_ctrl,
+        flash_ps_ctrl_export        => open,
         flash_w_cnt_export          => flash_w_cnt,
         flash_cmd_addr_export       => spi_flash_cmdaddr_to_flash,
         flash_ctrl_export           => spi_flash_ctrl,
@@ -301,6 +303,27 @@ begin
 
         status_export               => status
     );
+
+flash_programming_ctrl(31 downto 0) <= (others => '0');
+
+--process(reset_n, max10_osc_clk)
+--begin
+--if(reset_n = '0') then
+ --   flash_programming_ctrl(31) <= '0';
+--    startupcounter <= 0;
+--elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
+--    if(pll_locked = '1')then
+--        startupcounter <= startupcounter +1;
+--        if(startupcounter > 4095)then
+--            flash_programming_ctrl(31) <= '1';
+--        end if;
+--        if(startupcounter > 5000)then
+--            startupcounter <= 5001;
+--            flash_programming_ctrl(31) <= '0';
+--        end if;     
+--    end if;    
+--end if;    
+--end process;
 
  
 e_flashprogramming_block: entity work.flashprogramming_block
