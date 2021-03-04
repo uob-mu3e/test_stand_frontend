@@ -127,6 +127,8 @@ architecture rtl of top is
 
     -- i2c interface (fe_block to io buffers)
     signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
+    signal i2c_scl_n, i2c_sda_n, i2c_int_n : std_logic;
+
     -- spi multiplexing
     signal tmb_miso : std_logic;
     signal tmb_ss_n : std_logic_vector(15 downto 0);
@@ -139,26 +141,34 @@ begin
 --------------------------------------------------------------------
 
 -- IO buffers for I2C
+    i2c_int_n <= not tile_i2c_int;    -- inverted on DAB!
+    i2c_sda <= not i2c_sda_n;    -- inverted on DAB!
+    i2c_scl <= not i2c_scl_n;    -- inverted on DAB!
+
     iobuf_sda: entity work.ip_iobuf
     port map(
-        datain(0)   => '0',
+        datain(0)   => '1',    -- inverted on DAB!
         oe(0)       => i2c_sda_oe,
-        dataout(0)  => i2c_sda,
+        dataout(0)  => i2c_sda_n,    -- inverted on DAB!
         dataio(0)   => tile_i2c_sda--,
     );
 
     iobuf_scl: entity work.ip_iobuf
     port map(
-        datain(0)   => '0',
+        datain(0)   => '1',    -- inverted on DAB!
         oe(0)       => i2c_sda_oe,
-        dataout(0)  => i2c_scl,
+        dataout(0)  => i2c_scl_n,    -- inverted on DAB!
         dataio(0)   => tile_i2c_scl--,
     );
+
+
+
 -- SPI input multiplexing (CEC / configuration)
     -- only input multiplexing is done here, the rest is done on the TMB
+    -- "not" for polarity flip on DAB PCB
     tmb_miso <=
-        tile_cec      when tmb_ss_n(1)='0' else
-        tile_spi_miso; --when tmb_ss_n(0)='0' else
+        not tile_cec      when tmb_ss_n(1)='0' else
+        not tile_spi_miso; --when tmb_ss_n(0)='0' else
 
 -- main datapath
     e_tile_path : entity work.tile_path
@@ -166,7 +176,7 @@ begin
         N_MODULES       => N_MODULES,
         N_ASICS         => N_ASICS,
         N_LINKS         => N_LINKS,
-        INPUT_SIGNFLIP  => x"FFFFFFFF", -- TODO: i changed this from "11111111". Was "11111111" intended ? M.Mueller
+        INPUT_SIGNFLIP  => x"0000"&"0001111110000001",
         LVDS_PLL_FREQ   => 125.0,
         LVDS_DATA_RATE  => 1250.0--,
     )
@@ -181,7 +191,7 @@ begin
         o_pll_test                  => tile_pll_test,
         i_data                      => tile_din,
 
-        i_i2c_int                   => tile_i2c_int,
+        i_i2c_int                   => i2c_int_n,
         o_pll_reset                 => tile_pll_reset,
 
         o_fifo_write                => fifo_write,
