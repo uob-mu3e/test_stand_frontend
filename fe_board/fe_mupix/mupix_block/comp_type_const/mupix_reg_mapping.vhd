@@ -176,50 +176,11 @@ begin
                 o_reg_rdata <= mp_datagen_control;
             end if;
 
-            -- TODO: why does this not work ??
---            if ( regaddr >= MP_LVDS_STATUS_START_REGISTER_W and regaddr < (MP_LVDS_STATUS_START_REGISTER_W + MUPIX_LVDS_STATUS_BLOCK_LENGTH) and i_reg_re = '1' ) then
---                o_reg_rdata <= i_lvds_status(regaddr-MP_LVDS_STATUS_START_REGISTER_W);
---            end if;
-            if ( i_reg_add = x"66" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(0);
-            end if;
-            if ( i_reg_add = x"67" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(1);
-            end if;
-            if ( i_reg_add = x"68" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(2);
-            end if;
-            if ( i_reg_add = x"69" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(3);
-            end if;
-            if ( i_reg_add = x"6A" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(4);
-            end if;
-            if ( i_reg_add = x"6B" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(5);
-            end if;
-            if ( i_reg_add = x"6C" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(6);
-            end if;
-            if ( i_reg_add = x"6D" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(7);
-            end if;
-            if ( i_reg_add = x"6E" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(8);
-            end if;
-            if ( i_reg_add = x"6F" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(9);
-            end if;
-            if ( i_reg_add = x"70" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(10);
-            end if;
-            if ( i_reg_add = x"71" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(11);
-            end if;
-            if ( i_reg_add = x"72" and i_reg_re = '1' ) then
-                o_reg_rdata <= i_lvds_status(12);
-            end if;
-
+            for I in 0 to MUPIX_LVDS_STATUS_BLOCK_LENGTH-1 loop 
+                if ( regaddr = I + MP_LVDS_STATUS_START_REGISTER_W and i_reg_re = '1' ) then
+                    o_reg_rdata <= i_lvds_status(I);
+                end if;
+            end loop;
         end if;
     end process;
 end architecture;
