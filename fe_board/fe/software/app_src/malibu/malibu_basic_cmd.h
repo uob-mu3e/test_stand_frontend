@@ -92,7 +92,7 @@ struct malibu_t {
 
     //=========================
     //Menu function for test
-    void monitor_test_menu(){};//TODO
+    void monitor_test_menu();
 
 };
 
@@ -155,6 +155,7 @@ void malibu_t::power_TMB(bool enable) {
     printf("power %s TMB\n",(enable ? "up" : "down"));
     if(enable){
         i2c_write_regs(malibu_init_regs, sizeof(malibu_init_regs) / sizeof(malibu_init_regs[0]));
+        init_current_monitor();
     }else{
         i2c_write_regs(malibu_powerdown_regs, sizeof(malibu_powerdown_regs) / sizeof(malibu_powerdown_regs[0]));
     }
@@ -204,6 +205,7 @@ void malibu_t::SPI_sel(int asic, bool enable){
 void    malibu_t::init_current_monitor(){
     printf("======INIT CURRENT MONITOR====\n");
     for(int id=0; id<N_CHIP+2; id++){
+        printf("ID: %d\n",id);
         if(addr_pow_mon[id]==0xff)continue;
         if(id<N_CHIP)I2C_mux_sel(id);// this is not needed for TMBv1
         read_ProductID(addr_pow_mon[id]);
@@ -215,7 +217,7 @@ void    malibu_t::init_current_monitor(){
         I2C_write(addr_pow_mon[id],0x0a,0xee);//Vsource both//0b11101110 //20ms sampling and 11 bits data' averaging by 4 
         I2C_write(addr_pow_mon[id],0x0b,0x5b);//Vsense0 //0b01011011 //sampling: 80ms; averaging 4; sensor range: -80 to 80mV
         I2C_write(addr_pow_mon[id],0x0c,0x5b);//Vsense1 //0b01011011 //sampling: 80ms; averaging 4; sensor range: -80 to 80mV//TODO should change to different for later 5mOhm resistor
-
+/*
         //set sense limit [the absolute number of voltage drop is based on the configuration]//TODO change this based on later measurement 
         I2C_write(addr_pow_mon[id],0x19,0x7f);//Vsense0 High limit
         I2C_write(addr_pow_mon[id],0x1a,0x7f);//Vsense1 High limit
@@ -233,6 +235,8 @@ void    malibu_t::init_current_monitor(){
             I2C_write(addr_pow_mon[id],0x1f,0x14);//Vsource0 Low  limit 0x14:3.125V
             I2C_write(addr_pow_mon[id],0x20,0x14);//Vsource1 Low  limit 0x14:3.125V
         }
+*/    
+        printf("ID: %d done\n",id);
     }
     printf("======INIT CURRENT MONITOR DONE====\n");
 };
@@ -240,6 +244,7 @@ void    malibu_t::init_current_monitor(){
 void malibu_t::I2C_mux_sel(int id){
     int mux_id  = id/4;
     int bus     = id%4; 
+    printf("%d [%d,%d]\n",id,mux_id,bus);
     for(int i_mux=0; i_mux<4; i_mux++){
         I2C_write(addr_MUX[i_mux],0x03,(i_mux == mux_id ? 0x80>>I2C_mux_index[bus] : 0x00));
     }
@@ -252,6 +257,7 @@ alt_u16  malibu_t::read_vsense(int id, int ch){
     return data;
 };
 alt_u16 malibu_t::read_vsource(int id, int ch){
+    printf("0x%04X 0x%04X\n",addr_pow_mon[id],reg_vsource[ch]);
     if(addr_pow_mon[id]==0xff)return 0x0000;
     alt_u16 data = I2C_read_16(addr_pow_mon[id],reg_vsource[ch])>>5; 
     printf("V_source:0x%04X => %d [*0.019531V]\n",data,data);
@@ -262,10 +268,11 @@ void malibu_t::read_pow_limit(int id){
     data_all_powerStat[id] = ((I2C_read(addr_pow_mon[id],reg_HL))<<4)+((I2C_read(addr_pow_mon[id],reg_LL))&0x0f);
 };
 void malibu_t::read_tmp(int chip_id){
-    I2C_mux_sel(chip_id);
+    //I2C_mux_sel(chip_id); //TODO need this for multiple readout
     for(int i_side=0; i_side<2; i_side++){
         if(read_tmp_deviceID(chip_id,i_side)){ 
             data_all_tmp[chip_id*2+i_side] = I2C_read_16(addr_tmp[i_side],reg_temp_result);
+            printf("TMP %d [%d]: 0x%04X => %d [*7.8125C]!!\n",chip_id,i_side,data_all_tmp[chip_id*2+i_side],data_all_tmp[chip_id*2+i_side]);
         }else{
             printf("TMP %d [%d]: NOT good!!\n",chip_id,i_side);
         }
@@ -281,13 +288,15 @@ bool malibu_t::read_tmp_deviceID(int id, int i_side){
 };
 
 void malibu_t::read_tmp_all(){
-    for(int id = 0; id<N_CHIP; id++)read_tmp(id);
+    //for(int id = 0; id<N_CHIP; id++)read_tmp(id);
+    read_tmp(0);//MALIBU
 }
 
 void malibu_t::read_power_all(){
     for(int id = 0; id<N_CHIP+2; id++){
         for(int ch=0; ch<2; ch++){
             if(id>=N_CHIP and ch==1)continue;
+            printf("ID,side: [%d,%d]\n",id,ch);
             data_all_power[id*4+ch*2]=read_vsource(id, ch);
             data_all_power[id*4+ch*2+1]=read_vsense(id,ch);
         }
@@ -385,4 +394,27 @@ int malibu_t::chip_configure(int asic, const alt_u8* bitpattern) {
     return 0;
 }
 
+void malibu_t::monitor_test_menu() {
+
+    while(1) {
+        printf("  [0] => read power\n");
+        printf("  [1] => read temperature\n");
+        printf("  [q] => exit\n");
+
+        printf("Select entry ...\n");
+        char cmd = wait_key();
+        switch(cmd) {
+        case '0':
+            read_power_all();
+            break;
+        case '1':
+            read_tmp_all();
+            break;
+        case 'q':
+            return;
+        default:
+            printf("invalid command: '%c'\n", cmd);
+        }
+    }
+}
 #endif

@@ -9,7 +9,7 @@ void menu_malibu() {
         printf("  [0] => reset\n");
         printf("  [1] => powerup MALIBU\n");
         printf("  [2] => powerdown MALIBU\n");
-        printf("  [3] => powerup ASIC\n");
+        printf("  [3] => powerup ASIC 0\n");
         printf("  [4] => stic3_config_PLL_TEST_ch0to6_noGenIDLE\n");
         printf("  [5] => data\n");
         printf("  [6] => monitor test\n");
