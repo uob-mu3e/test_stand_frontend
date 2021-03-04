@@ -76,4 +76,7 @@ subtype TSINBLOCKINFIFORANGE    is integer range TSINFIFORANGE'right+BITSPERTSBL
 type mp_config_regs_length_t    is array (5 downto 0) of integer;
 constant MP_CONFIG_REGS_LENGTH  : mp_config_regs_length_t := (512, 896, 896, 80, 90, 210);
 
+type mp_link_order_t    is array (35 downto 0) of integer;
+constant MP_LINK_ORDER  : mp_link_order_t := (33,31,29,35,32,28,34,30,27,26,25,20,24,23,21,22,19,18,15,11,9,17,13,10,16,14,12,5,3,2,6,4,1,8,7,0);
+
 end package mupix_constants;

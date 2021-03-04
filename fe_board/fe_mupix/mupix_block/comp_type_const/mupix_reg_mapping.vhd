@@ -178,7 +178,7 @@ begin
 
             for I in 0 to MUPIX_LVDS_STATUS_BLOCK_LENGTH-1 loop 
                 if ( regaddr = I + MP_LVDS_STATUS_START_REGISTER_W and i_reg_re = '1' ) then
-                    o_reg_rdata <= i_lvds_status(I);
+                    o_reg_rdata <= i_lvds_status(MP_LINK_ORDER(I));
                 end if;
             end loop;
         end if;
