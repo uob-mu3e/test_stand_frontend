@@ -35,6 +35,7 @@ port (
     o_fifo_write            : out std_logic;
 
     i_lvds_data_in          : in  std_logic_vector(35 downto 0);
+    o_lvds_invert_mon       : out std_logic;
 
     i_reset                 : in  std_logic;
     -- 156.25 MHz
@@ -57,11 +58,13 @@ architecture arch of mupix_block is
     signal spi_mosi         : std_logic;
     signal spi_csn          : std_logic;
     signal hotfix :reg32array_t(35 downto 0);
+    signal hotfix_back      : std_logic;
 
 begin
 
     datapath_reset_n <= '0' when (i_reset='1' or i_run_state_156=RUN_STATE_SYNC) else '1';
-    
+    o_lvds_invert_mon <= hotfix_back;
+
     process(i_clk156,i_reset)
     begin
         if(i_reset = '1') then 
@@ -87,6 +90,7 @@ begin
         i_reg_wdata                 => i_reg_wdata,
 
         i_hotfix_reroute            => hotfix,
+        o_hotfix_backroute          => hotfix_back,
         o_clock                     => o_clock,
         o_SIN                       => o_SIN,
         o_mosi                      => o_mosi,
@@ -135,6 +139,7 @@ begin
         i_fpga_id           => i_fpga_id,
         i_run_state_125     => i_run_state_125,
         o_hotfix_reroute    => hotfix,
+        i_hotfix_backroute  => hotfix_back,
         i_run_state_156     => i_run_state_156--,
     );
 

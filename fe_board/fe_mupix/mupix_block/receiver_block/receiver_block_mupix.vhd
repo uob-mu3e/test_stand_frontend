@@ -30,6 +30,7 @@ entity receiver_block_mupix is
         rx_inclock_B    : in  std_logic;
         o_rx_status     : out reg32array_t(NINPUT-1 downto 0);
         o_rx_ready      : out std_logic_vector(NINPUT-1 downto 0);
+        i_rx_invert     : in  std_logic;
         rx_data         : out bytearray_t(NINPUT-1 downto 0);
         rx_k            : out std_logic_vector(NINPUT-1 downto 0);
         rx_clkout       : out std_logic_vector(2 downto 0);
@@ -131,7 +132,7 @@ begin
         rx_reset                => rx_reset(26 downto 0),
         rx_syncclock            => rx_synclock_A,
         rx_dpa_locked           => rx_dpa_locked(26 downto 0),
-        rx_out                  => rx_out(269 downto 0)
+        rx_out                  => rx_out_temp(269 downto 0)
     );
 
     lpll_B: entity work.lvdspll
@@ -164,8 +165,9 @@ begin
     );
 
     -- Input D9 is inverted...
-    rx_out(359 downto 350) <= not rx_out_temp(359 downto 350);
-    rx_out(349 downto 270) <= rx_out_temp(349 downto 270);
+    --rx_out(359 downto 350) <= not rx_out_temp(359 downto 350);
+    --rx_out(349 downto 270) <= rx_out_temp(349 downto 270);
+    rx_out <= not rx_out_temp when i_rx_invert='0' else rx_out_temp;
 
     gendec:
     FOR i in NINPUT-1 downto 0 generate	

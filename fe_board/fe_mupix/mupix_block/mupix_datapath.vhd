@@ -36,6 +36,7 @@ port (
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
     o_hotfix_reroute    : out reg32array_t(35 downto 0); -- TODO: fix problem and remove
+    i_hotfix_backroute  : in  std_logic;
     i_run_state_156     : in  run_state_t--;
 );
 end mupix_datapath;
@@ -180,6 +181,7 @@ begin
 
         o_rx_status         => lvds_status,
         o_rx_ready          => data_valid,
+        i_rx_invert         => i_hotfix_backroute,
         rx_data             => rx_data,
         rx_k                => rx_k--,
     );

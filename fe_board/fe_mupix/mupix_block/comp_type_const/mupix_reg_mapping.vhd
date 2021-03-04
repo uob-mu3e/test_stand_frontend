@@ -29,6 +29,7 @@ port (
 
     -- outputs 156--------------------------------------------
     o_mp_lvds_link_mask         : out std_logic_vector(35 downto 0); -- lvds link mask
+    o_mp_lvds_invert            : out std_logic;
     o_mp_datagen_control        : out std_logic_vector(31 downto 0); -- control register for the mupix data gen
     o_mp_readout_mode           : out std_logic_vector(31 downto 0); -- Invert ts, degray, chip ID numbering, tot mode, ..
 
@@ -52,6 +53,7 @@ architecture rtl of mupix_reg_mapping is
     signal mp_ctrl_chip_config_mask : std_logic_vector(31 downto 0);
     signal mp_ctrl_invert_29        : std_logic;
     signal mp_ctrl_invert_csn       : std_logic;
+    signal mp_lvds_invert           : std_logic;
 begin
 
     process (i_clk156, i_reset_n)
@@ -67,6 +69,7 @@ begin
 
             --regs for long paths
             o_mp_lvds_link_mask         <= mp_lvds_link_mask;
+            o_mp_lvds_invert            <= mp_lvds_invert;
             o_mp_datagen_control        <= mp_datagen_control;
             o_mp_readout_mode           <= mp_readout_mode;
             mp_lvds_data_valid          <= i_lvds_data_valid;
@@ -181,6 +184,14 @@ begin
                     o_reg_rdata <= i_lvds_status(MP_LINK_ORDER(I));
                 end if;
             end loop;
+
+            if ( regaddr = MP_LVDS_INVERT_REGISTER_W and i_reg_we = '1' ) then
+                mp_lvds_invert <= i_reg_wdata(0);
+            end if;
+            if ( regaddr = MP_LVDS_INVERT_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata <= (0 => mp_lvds_invert, others => '0');
+            end if;
+
         end if;
     end process;
 end architecture;

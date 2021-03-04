@@ -85,5 +85,6 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
         constant MP_LVDS_STATUS_PLL_LOCKED_BIT  :  integer := 28;
         subtype  MP_LVDS_STATUS_STATE_RANGE     is integer range 30 downto 29;
         constant MP_LVDS_STATUS_READY_BIT       :  integer := 31;
+    constant MP_LVDS_INVERT_REGISTER_W          :  integer := 16#90#;
 
 end package mupix_registers;

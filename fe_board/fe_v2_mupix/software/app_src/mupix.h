@@ -123,6 +123,11 @@ struct mupix_t {
             printf("  [1] => set mupix config mask\n");
             printf("  [2] => set spi clk slow down reg\n");
             printf("  [3] => print lvds status\n");
+            if((sc->ram->data[0xFF90]) & 1U){
+                printf("  [4] => do not invert lvds in\n");
+            }else{
+                printf("  [4] => invert lvds in\n");
+            }
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -161,7 +166,7 @@ struct mupix_t {
                 menu_lvds();
                 break;
             case '4':
-                printf("value: 0x%08x\n", sc->ram->data[0xFF63]);
+                sc->ram->data[0xFF90] ^= 1UL;
                 break;
             case 'q':
                 return;
