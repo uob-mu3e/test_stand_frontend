@@ -292,6 +292,7 @@ begin
         N_MODULES => N_MODULES,
         N_ASICS => N_ASICS,
         N_LINKS => N_LINKS,
+        N_CC => 15, --N_CC,
         LVDS_PLL_FREQ => LVDS_PLL_FREQ,
         LVDS_DATA_RATE => LVDS_DATA_RATE,
         INPUT_SIGNFLIP => INPUT_SIGNFLIP,
@@ -324,6 +325,9 @@ begin
         --run control
         i_RC_may_generate => i_run_state(RUN_STATE_BITPOS_RUNNING),
         o_RC_all_done => o_run_state_all_done,
+        i_en_lapse_counter => '0', --s_en_lapse_counter,
+        i_lower_bnd => (others => '0'), --s_lower_bnd,
+        i_upper_bnd => (others => '0'), --s_upper_bnd,
 
         -- monitors
         o_receivers_usrclk => open,
