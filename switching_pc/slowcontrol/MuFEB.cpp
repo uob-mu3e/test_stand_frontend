@@ -105,11 +105,11 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
 
 
     long pos =0;
+    uint32_t addr=0;
     while(pos*4 < fsize){
         uint32_t buffer[256];
-        uint32_t addr=0;
         fread(buffer,sizeof(uint32_t),256, f);
-        vector<uint32_t> data(buffer, buffer+256);
+        vector<uint32_t> data(buffer, buffer+255);
         feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_DATA_W,data,true);
 
         for(int i=0; i < 4; i++){
@@ -127,7 +127,6 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
                 count++;
                 usleep(100);
             }
-            //printf("\n");
             if(count == 1e7){
                 printf("Timeout\n");
                 feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
