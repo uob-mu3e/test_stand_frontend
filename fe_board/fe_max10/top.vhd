@@ -301,29 +301,30 @@ begin
         flash_status_export         => spi_flash_status,
 		flash_fifo_data_export		=> spi_flash_fifo_data_nios,
 
-        status_export               => status
+        status_export               => status,
+        programming_status_export   => flash_programming_status_arria
     );
 
-flash_programming_ctrl(31 downto 0) <= (others => '0');
+flash_programming_ctrl(30 downto 0) <= (others => '0');
 
---process(reset_n, max10_osc_clk)
---begin
---if(reset_n = '0') then
- --   flash_programming_ctrl(31) <= '0';
---    startupcounter <= 0;
---elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
---    if(pll_locked = '1')then
---        startupcounter <= startupcounter +1;
---        if(startupcounter > 4095)then
---            flash_programming_ctrl(31) <= '1';
---        end if;
---        if(startupcounter > 5000)then
---            startupcounter <= 5001;
---            flash_programming_ctrl(31) <= '0';
---        end if;     
---    end if;    
---end if;    
---end process;
+process(reset_n, max10_osc_clk)
+begin
+if(reset_n = '0') then
+   flash_programming_ctrl(31) <= '0';
+    startupcounter <= 0;
+elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
+    if(pll_locked = '1')then
+        startupcounter <= startupcounter +1;
+        if(startupcounter > 4095)then
+            flash_programming_ctrl(31) <= '1';
+        end if;
+        if(startupcounter > 5000)then
+            startupcounter <= 5001;
+            flash_programming_ctrl(31) <= '0';
+        end if;     
+    end if;    
+end if;    
+end process;
 
  
 e_flashprogramming_block: entity work.flashprogramming_block

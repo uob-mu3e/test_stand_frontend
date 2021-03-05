@@ -154,8 +154,10 @@ static void ReadTest(void)
     int i;
     int offset = 0x0;
 
-    for(i = 0; i < 4; i++)   
+    for(i = 0; i < 512; i++)   
         printf( "Normal read: Addr: %x: %x \n", i+offset, (int)flash_readByte(i+offset));
+        
+        
         printf( " Fast read: %x \n", (int)flash_readByteFast(i+offset));
         printf( " Dual read: %x \n", (int)flash_readByteDual(i+offset));
         printf( " Quad read: %x \n", (int)flash_readByteQuad(i+offset));

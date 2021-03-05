@@ -135,7 +135,7 @@ begin
         when nconfig =>
             fpga_nconfig <= '0';
             count <= count + 1;
-            if(count = nconfigdelay)then
+            if(count >= nconfigdelay)then
                 state   <= nstatuswait;
             end if;
 				debug <= X"04";
@@ -154,7 +154,7 @@ begin
             spi_addr        <= start_address;
             spi_continue    <= '1';
 
-            if(count = nstatusdelay)then
+            if(count >= nstatusdelay)then
                 state   <= startflash;
             end if;
 				debug <= X"06";
@@ -195,7 +195,7 @@ begin
                 if(toggle = "00") then
                     count <= count + 1;
                 end if;
-                if(count = 500)then
+                if(count >= 500)then
                     state <= ending;
                     fpga_clk   <= '0';
                 end if;

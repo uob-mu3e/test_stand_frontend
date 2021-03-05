@@ -18,6 +18,7 @@ struct status_t {
         while (1) {
             printf("\n");
             printf("[status] -------- menu --------\n");
+            ReadStatusRegister();
             printf("  [s] => status\n");
             printf("  [q] => exit\n");
 
@@ -37,6 +38,7 @@ struct status_t {
 
 static void ReadStatusRegister(){
     printf("Status: %x\n", (uint32_t)IORD_ALTERA_AVALON_PIO_DATA(STATUS_BASE));
+    printf("Programming Status: %x\n", (uint32_t)IORD_ALTERA_AVALON_PIO_DATA(PROGRAMMING_STATUS_BASE));
 }
 
 };
