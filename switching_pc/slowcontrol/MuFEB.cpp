@@ -95,7 +95,7 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
     rewind (f);
 
     cm_msg(MINFO,"MuFEB::LoadFirmware", "Programming %s of size %ld", filename.c_str(), fsize);
-
+    printf("Programming %s of size %ld\n",filename.c_str(), fsize);
 
     //clear the FIFO
     feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,2);
@@ -105,7 +105,7 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
 
 
     long pos =0;
-    while(pos < fsize){
+    while(pos*4 < fsize){
         uint32_t buffer[256];
         uint32_t addr=0;
         fread(buffer,sizeof(uint32_t),256, f);
@@ -137,7 +137,7 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
         }
         pos  += 256;
         if(pos%4096==0)
-            printf("Loaded %f of file\n", (double)pos/fsize);
+            printf("Loaded %f of file\n", (double)pos*4/fsize);
 
     }
 
