@@ -156,8 +156,8 @@ elsif ( clk100'event and clk100 = '1' ) then
 
         if(control(0) = '1' and arria_write_req_last = '0') then -- here we start the sequence for erasing 
                                                                  -- and writing an spi flash block
-                                                                 -- we only erase if we just passed a block boundary
-            if(addr_from_arria(11 downto 0) = "000000000000") then                                                    
+                                                                 -- we only erase if we just passed a 64K block boundary
+            if(addr_from_arria(15 downto 0) = X"0000") then                                                    
                 spiflashstate  <= arriawriting1;
                 arriawriting   <= '1';
             else 
@@ -187,7 +187,7 @@ elsif ( clk100'event and clk100 = '1' ) then
         end if;
     when arriawriting2 =>  -- send the erase command
         status(3)               <= '1';
-        spi_command_arria       <= COMMAND_SECTOR_ERASE;
+        spi_command_arria       <= COMMAND_BLOCK_ERASE_64;
         spi_addr_arria          <= addr_from_arria;
         spi_continue_arria      <= '0';
         spi_strobe_arria        <= '1';
