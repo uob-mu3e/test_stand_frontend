@@ -9,6 +9,7 @@ generic (
     N_MODULES : positive;
     N_ASICS : positive;
     N_LINKS : positive;
+    N_CC : positive := 15; -- will be always 15
     INPUT_SIGNFLIP : std_logic_vector := (31 downto 0 => '0');
     LVDS_PLL_FREQ : real;
     LVDS_DATA_RATE : real--;
@@ -74,6 +75,7 @@ architecture arch of tile_path is
     signal s_subdet_reset_reg : std_logic_vector(31 downto 0);
     signal s_subdet_resetdly_reg : std_logic_vector(31 downto 0);
     signal s_subdet_resetdly_reg_written : std_logic;
+
     -- reset synchronizers
     signal s_datapath_rst,s_datapath_rst_n_156 : std_logic;
     signal s_lvds_rx_rst, s_lvds_rx_rst_n_125 : std_logic;
@@ -82,22 +84,11 @@ architecture arch of tile_path is
     signal s_chip_rst : std_logic;
     signal s_chip_rst_shifted : std_logic_vector(3 downto 0);
 
-
-
-    -- TODO: remove 
-    signal a : std_logic;
-    signal b : std_logic;
+    -- lapse counter
+    signal s_en_lapse_counter : std_logic;
+    signal s_upper_bnd, s_lower_bnd : std_logic_vector(N_CC - 1 downto 0);
 
 begin
---------------------------------------------------------------------
---- TODO: REMOVE THIS 
---- do not compile away stuff for pinout test
---------------------------------------------------------------------
-
-
---------------------------------------------------------------------
---------------------------------------------------------------------
-
 
     -- 100 kHz
     e_test_pulse : entity work.clkdiv
@@ -186,6 +177,18 @@ begin
             o_reg_rdata <= s_subdet_resetdly_reg;
         end if;
 
+        -- lapse counter
+        if ( i_reg_we = '1' and i_reg_addr = X"C" ) then
+            s_en_lapse_counter <= i_reg_wdata(31);
+            s_lower_bnd <= i_reg_wdata(N_CC - 1 downto 0);
+            s_upper_bnd <= i_reg_wdata(2*N_CC - 1 downto N_CC);
+        end if;
+        if ( i_reg_re = '1' and i_reg_addr = X"C" ) then
+            o_reg_rdata(31) <= s_en_lapse_counter;
+            o_reg_rdata(N_CC - 1 downto 0) <= s_lower_bnd;
+            o_reg_rdata(2*N_CC - 1 downto N_CC) <= s_upper_bnd;
+        end if;
+
         --
     end if;
     end process;
@@ -225,6 +228,7 @@ begin
         N_MODULES => N_MODULES,
         N_ASICS => N_ASICS,
         N_LINKS => N_LINKS,
+        N_CC => N_CC,
         LVDS_PLL_FREQ => LVDS_PLL_FREQ,
         LVDS_DATA_RATE => LVDS_DATA_RATE,
         INPUT_SIGNFLIP => INPUT_SIGNFLIP,
@@ -254,9 +258,15 @@ begin
         i_SC_datagen_enable => s_dummyctrl_reg(1),
         i_SC_datagen_shortmode => s_dummyctrl_reg(2),
         i_SC_datagen_count => s_dummyctrl_reg(12 downto 3),
+        
         --run control
         i_RC_may_generate => i_run_state(RUN_STATE_BITPOS_RUNNING),
         o_RC_all_done => o_run_state_all_done,
+
+        -- lapse lapse counter
+        i_en_lapse_counter => s_en_lapse_counter,
+        i_lower_bnd => s_lower_bnd,
+        i_upper_bnd => s_upper_bnd,
 
         -- monitors
         o_receivers_usrclk => open,
