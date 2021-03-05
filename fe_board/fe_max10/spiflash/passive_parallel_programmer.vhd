@@ -174,6 +174,8 @@ begin
         -- latches on the rising edge
         -- When it has seen enough bits, the Arria pull conf_done high - we are encouraged
         -- to send two more falling edges of the clock in order to start FPGA initialization
+        -- but here the documentation seems to be wrong, we need to send quite a few 
+        -- additional bits - we do 500 here
         when writing =>
             toggle <= toggle + 1;
             if (toggle = "00") then

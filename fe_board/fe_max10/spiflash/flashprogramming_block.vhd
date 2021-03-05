@@ -102,6 +102,10 @@ architecture RTL of flashprogramming_block is
         signal spi_addr_arria                        : std_logic_vector(23 downto 0);
         signal spi_continue_arria                    : std_logic;
 
+        signal fpp_crcerror                         : std_logic;
+        signal fpp_timeout                          : std_logic;
+        signal fpp_debug                            : std_logic_vector(7 downto 0);
+
 begin
 
     spi_flash_data_from_flash <= spi_flash_data_from_flash_int;
@@ -129,7 +133,15 @@ elsif ( clk100'event and clk100 = '1' ) then
 
     status(0) <= arriawriting;
     status(1) <= spi_busy;
-    status(31 downto 2) <= (others => '0');
+
+    status(16)              <= fpga_conf_done;
+    status(17)              <= fpga_nstatus;
+    status(18)              <= fpp_timeout;
+    status(19)              <= fpp_crcerror;
+    status(23 downto 20)    <= (others => '0');    
+    status(31 downto 24)    <= fpp_debug;
+
+    status(15 downto 2) <= (others => '0');
 
     case spiflashstate is
     when idle =>
@@ -340,7 +352,10 @@ port map(
     fpga_nstatus        => fpga_nstatus,
     fpga_nconfig        => fpga_nconfig,
     fpga_data           => fpga_data,
-    fpga_clk            => fpga_clk--,
+    fpga_clk            => fpga_clk,
+    crcerror            => fpp_crcerror,
+    timeout             => fpp_timeout,
+    debug               => fpp_debug--,
 );
 
 scfifo_component : altera_mf.altera_mf_components.scfifo
