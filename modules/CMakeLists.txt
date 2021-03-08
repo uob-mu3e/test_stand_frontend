@@ -5,4 +5,4 @@ if(NOT MIDAS_FOUND)
     find_package(Midas REQUIRED)
 endif()
 
-#add_subdirectory(mutrigana-base)
+add_subdirectory(analyzer)
