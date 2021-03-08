@@ -21,8 +21,8 @@ export MIDAS_EXP_NAME="Mu3e"
 
 cd "$MIDAS_DIR"
 ln -sf "${SOURCE}/modules/midas/resources"
-ln -sf "${SOURCE}/modules/analyzer/mu3edisplay/config"
-ln -sf "${SOURCE}/modules/analyzer/mu3edisplay/dist"
+ln -sf "${SOURCE}/modules/analyzer/packages/mu3edisplay/config"
+ln -sf "${SOURCE}/modules/analyzer/packages/mu3edisplay/dist"
 ln -sf "${SOURCE}/modules/analyzer/packages/rootana/examples"
 
 ln -sf "${SOURCE}/mhttpd/custom/manalyzer/online_ana_setup.json"
