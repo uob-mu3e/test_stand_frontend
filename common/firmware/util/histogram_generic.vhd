@@ -9,6 +9,8 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+use ieee.numeric_std.all;
 
 entity histogram_generic is 
 generic(
@@ -40,14 +42,19 @@ signal raddr    : std_logic_vector(ADDR_WIDTH-1 downto 0);
 signal q        : std_logic_vector(DATA_WIDTH-1 downto 0);
 
 
-type   state_type is (zeroing, waiting, enabled, readwaiting, reading, writing);
+type   state_type is (zeroing, waiting, enabled, readwaiting, writing);
 signal state : state_type;
 
-constant addr_all_one : unsigned(waddr'range) := (others => '1');
-constant data_all_one : unsigned(q'range) := (others => '1');
+constant addr_all_one : std_logic_vector(waddr'range) := (others => '1');
+constant data_all_one : std_logic_vector(q'range) := (others => '1');
+
+signal n_raddr      : natural range 0 to 2**ADDR_WIDTH - 1;
+signal n_waddr      : natural range 0 to 2**ADDR_WIDTH - 1;
 
 begin
 
+n_raddr <= to_integer(unsigned(raddr_in));
+n_waddr <= to_integer(unsigned(waddr));
 
 i_ram: entity work.true_dual_port_ram_dual_clock
    generic map
@@ -59,8 +66,8 @@ i_ram: entity work.true_dual_port_ram_dual_clock
    (
         clk_a   => rclk,    -- towards the outside, here we only read, never write
         clk_b   => wclk,    -- within, we actually need to read and write!
-        addr_a  => raddr_in,
-        addr_b  => waddr,
+        addr_a  => n_raddr,
+        addr_b  => n_waddr,
         data_a  => (others => '0'),
         data_b  => wdata,
         we_a    => '0',
@@ -72,7 +79,7 @@ i_ram: entity work.true_dual_port_ram_dual_clock
     -- write state machine
     write_sm: process(wclk)
     begin
-    if(rising_edge(clk)) then
+    if(rising_edge(wclk)) then
         if(rst = '1')then
             busy_n  <= '0';     -- we are busy after a reset
             state   <= zeroing; -- and we first clear the RAM
@@ -100,7 +107,7 @@ i_ram: entity work.true_dual_port_ram_dual_clock
                     end if;
                     
                 when enabled =>
-                    wen     <= '0';
+                    we     <= '0';
                     if(valid_in = '1')then  -- we get some valid data
                         waddr    <= data_in; -- we set the address, we want to read data!
                         state    <= readwaiting;
@@ -110,16 +117,20 @@ i_ram: entity work.true_dual_port_ram_dual_clock
                     end if;
                 
                 when readwaiting =>
-                    state   <= reading;
+                    state   <= writing;
                 
-                when reading => 
-                    wen     <= '1';
+                when writing => 
+                    we     <= '1';
                     if(can_overflow = '0' and q = data_all_one)then
                         wdata   <= q;
                     else
                         wdata   <= q + '1'; 
                     end if;
                     state   <= enabled;
+                    
+                when others => 
+                    we      <= '0';
+                    state   <= waiting;
             end case;
         end if;
     end if;
