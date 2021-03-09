@@ -46,6 +46,11 @@ port (
     o_spi_mosi          : out   std_logic;
     o_spi_sclk          : out   std_logic;
     o_spi_ss_n          : out   std_logic_vector(15 downto 0);
+    -- i2c interface to detector modules
+    i_i2c_scl           : in    std_logic := '1';
+    o_i2c_scl_oe        : out   std_logic;
+    i_i2c_sda           : in    std_logic := '1';
+    o_i2c_sda_oe        : out   std_logic;
 
     -- Fireflies
     o_ffly1_tx          : out   std_logic_vector(3 downto 0);
@@ -387,10 +392,10 @@ begin
         -- nios base
         --
 
-        --i2c_scl_in => i_i2c_scl, -- not in use
-        --i2c_scl_oe => o_i2c_scl_oe,
-        --i2c_sda_in => i_i2c_sda,
-        --i2c_sda_oe => o_i2c_sda_oe,
+        i2c_scl_in => i_i2c_scl,
+        i2c_scl_oe => o_i2c_scl_oe,
+        i2c_sda_in => i_i2c_sda,
+        i2c_sda_oe => o_i2c_sda_oe,
 
         spi_miso        => i_spi_miso,
         spi_mosi        => o_spi_mosi,

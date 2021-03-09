@@ -25,16 +25,18 @@ use work.daq_constants.all;
 
 entity receiver_block is
 generic (
+	IS_SCITILE : std_logic := '1';
 	NINPUT : positive := 1;
 	LVDS_PLL_FREQ : real := 125.0;
 	LVDS_DATA_RATE : real := 1250.0;
-	INPUT_SIGNFLIP : std_logic_vector := x"0000"--;
+	INPUT_SIGNFLIP : std_logic_vector(31 downto 0) := x"00000000"--;
 );
 port (
 	reset_n             : in std_logic;
 	reset_n_errcnt      : in std_logic;
 	rx_in               : in std_logic_vector(NINPUT-1 downto 0);
-	rx_inclock          : in std_logic;
+	rx_inclock_A        : in std_logic;
+	rx_inclock_B        : in std_logic;
 	rx_state            : out std_logic_vector(2*NINPUT-1 downto 0);
 	rx_ready            : out std_logic_vector(NINPUT-1 downto 0);
 	rx_data             : out std_logic_vector(NINPUT*8-1 downto 0);
@@ -93,31 +95,150 @@ end component; --data_decoder;
 	signal rx_pll_locked		: STD_LOGIC;
 	signal rx_disperr		: std_logic_vector(NINPUT-1 downto 0);
 
+    signal rx_inclock_A_ctrl    : std_logic;
+    signal rx_inclock_A_pll     : std_logic;
+    signal rx_locked_A          : std_logic;
+    signal rx_dpaclock_A        : std_logic;
+    signal rx_syncclock_A       : std_logic;
+    signal rx_enable_A          : std_logic;
+
+    signal rx_inclock_B_ctrl    : std_logic;
+    signal rx_inclock_B_pll     : std_logic;
+    signal rx_locked_B          : std_logic;
+    signal rx_dpaclock_B        : std_logic;
+    signal rx_syncclock_B       : std_logic;
+    signal rx_enable_B          : std_logic;
+
 begin
 	rx_dpa_locked_out	<= rx_dpa_locked;
 	pll_locked 			<= rx_pll_locked;
 	rx_clkout 			<= rx_clk;
 
-	lvds_rx : entity work.ip_altlvds_rx
-	GENERIC MAP (
-		N => NINPUT,
-		PLL_FREQ => LVDS_PLL_FREQ,
-		DATA_RATE => LVDS_DATA_RATE--,
-	)
-	PORT MAP (
-		rx_channel_data_align	=> rx_bitslip,
-		rx_fifo_reset		=> rx_fifo_reset,
-		rx_in			=> rx_in,
-		rx_inclock		=> rx_inclock,
-		rx_reset		=> rx_reset,
-		rx_dpa_locked		=> rx_dpa_locked,
-		rx_locked		=> rx_pll_locked,
-		rx_out			=> rx_out,
-		rx_outclock		=> rx_clk
-	);
+-----------------------------------------------------------
+---------------SciTile lvds rx-----------------------------
+-----------------------------------------------------------
+    gen_scitile: if (IS_SCITILE='1') generate
 
-	rx_ready <= rx_ready_reg;
+        clk_ctrl_A : component work.cmp.clk_ctrl_single
+            port map (
+                inclk  => rx_inclock_A,
+                outclk => rx_inclock_A_ctrl--,
+        );
 
+        lpll_A: entity work.lvdspll
+        PORT MAP
+        (
+            refclk   => rx_inclock_A_ctrl,
+            rst      => '0',
+            outclk_0 => rx_inclock_A_pll,
+            outclk_1 => rx_enable_A,
+            outclk_2 => rx_syncclock_A,
+            outclk_3 => rx_dpaclock_A,
+            outclk_4 => open,
+            locked   => rx_locked_A
+        );
+
+        -- D4, D1, D2, D3, D7, D6, D9
+        lvds_rx_A: entity work.lvds_receiver_small
+        PORT MAP (
+            pll_areset                              => not rx_locked_A,
+            rx_channel_data_align                   => '0' & rx_bitslip(12 downto 7) & rx_bitslip(1 downto 0),
+            rx_dpaclock                             => rx_dpaclock_A,
+            rx_enable                               => rx_enable_A,
+            rx_fifo_reset(7 downto 0)               => rx_fifo_reset(12 downto 7) & rx_fifo_reset(1 downto 0),
+            rx_in(7 downto 0)                       => rx_in(12 downto 7) & rx_in(1 downto 0),
+            rx_in(8 downto 8)                       => (others => '0'),
+            rx_inclock                              => rx_inclock_A_pll,
+            rx_reset(7 downto 0)                    => rx_reset(12 downto 7) & rx_reset(1 downto 0),
+            rx_syncclock                            => rx_syncclock_A,
+            rx_dpa_locked(7 downto 2)               => rx_dpa_locked(12 downto 7),
+            rx_dpa_locked(1 downto 0)               => rx_dpa_locked(1 downto 0),
+            rx_out(79 downto 20)                    => rx_out(129 downto 70),
+            rx_out(19 downto  0)                    => rx_out(19 downto 0)--,
+        );
+
+        clk_ctrl_B : component work.cmp.clk_ctrl_single
+            port map (
+                inclk  => rx_inclock_B,
+                outclk => rx_inclock_B_ctrl--,
+        );
+
+        lpll_B: entity work.lvdspll
+        PORT MAP
+        (
+            refclk   => rx_inclock_B_ctrl,
+            rst      => '0',
+            outclk_0 => rx_inclock_B_pll,
+            outclk_1 => rx_enable_B,
+            outclk_2 => rx_syncclock_B,
+            outclk_3 => rx_dpaclock_B,
+            outclk_4 => open,
+            locked   => rx_locked_B
+        );
+
+        -- C7, C8, C3, C6, C4, inclock_B
+        lvds_rx_B: entity work.lvds_receiver_small
+        PORT MAP
+        (
+            pll_areset                  => not rx_locked_B,
+            rx_channel_data_align       => "0000" & rx_bitslip(6 downto 2),
+            rx_dpaclock                 => rx_dpaclock_B,
+            rx_enable                   => rx_enable_B,
+            rx_fifo_reset(4 downto 0)   => rx_fifo_reset(6 downto 2),
+            rx_in(4 downto 0)           => rx_in(6 downto 2),
+            rx_in(8 downto 5)           => (others => '0'),
+            rx_inclock                  => rx_inclock_B_pll,
+            rx_reset(4 downto 0)        => rx_reset(6 downto 2),
+            rx_syncclock                => rx_syncclock_B,
+            rx_dpa_locked(4 downto 0)   => rx_dpa_locked(6 downto 2),
+            rx_out(49 downto 0)         => rx_out(69 downto 20)--,
+        );
+    end generate;
+
+-----------------------------------------------------------
+---------------SciFi lvds rx-------------------------------
+-----------------------------------------------------------
+    gen_scifi: if (IS_SCITILE='0') generate
+
+        clk_ctrl_B : component work.cmp.clk_ctrl_single
+            port map (
+                inclk  => rx_inclock_B,
+                outclk => rx_inclock_B_ctrl--,
+        );
+
+        lpll_B: entity work.lvdspll
+        PORT MAP
+        (
+            refclk   => rx_inclock_B_ctrl,
+            rst      => '0',
+            outclk_0 => rx_inclock_B_pll,
+            outclk_1 => rx_enable_B,
+            outclk_2 => rx_syncclock_B,
+            outclk_3 => rx_dpaclock_B,
+            outclk_4 => open,
+            locked   => rx_locked_B
+        );
+
+        -- C7, C8, C3, C6, C4, inclock_B
+        lvds_rx_B: entity work.lvds_receiver_small
+        PORT MAP
+        (
+            pll_areset                  => not rx_locked_B,
+            rx_channel_data_align       => "00000" & rx_bitslip(3 downto 0),
+            rx_dpaclock                 => rx_dpaclock_B,
+            rx_enable                   => rx_enable_B,
+            rx_fifo_reset(3 downto 0)   => rx_fifo_reset(3 downto 0),
+            rx_in(3 downto 0)           => rx_in(3 downto 0),
+            rx_in(8 downto 4)           => (others => '0'),
+            rx_inclock                  => rx_inclock_B_pll,
+            rx_reset(3 downto 0)        => rx_reset(3 downto 0),
+            rx_syncclock                => rx_syncclock_B,
+            rx_dpa_locked(3 downto 0)   => rx_dpa_locked(3 downto 0),
+            rx_out(39 downto 0)         => rx_out(39 downto 0)--,
+        );
+    end generate;
+
+    rx_ready <= rx_ready_reg;
 
 -- flip bit order of received data (msb-lsb)
 flip_bits: process(rx_out)
@@ -145,7 +266,7 @@ gen_channels: for i in NINPUT-1 downto 0 generate
 			rx_reset		=> rx_reset(i),
 			rx_fifo_reset		=> rx_fifo_reset(i),
 			rx_dpa_locked		=> rx_dpa_locked(i),
-			rx_locked		=> rx_pll_locked,
+			rx_locked		=> rx_locked_A and rx_locked_B, --TODO: is this right ? M.Mueller
 			rx_bitslip		=> rx_bitslip(i),
 		
 			ready			=> rx_ready_reg(i),
