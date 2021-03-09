@@ -130,13 +130,12 @@ package mudaq_registers is
         constant CNT_TAG_FIFO_FULL_R                  : integer := 16#1E#;
         constant CNT_RAM_FULL_R                       : integer := 16#1F#;
         constant CNT_STREAM_FIFO_FULL_R               : integer := 16#20#;
-        constant CNT_DMA_HALFFULL_R                     : integer := 16#21#;
-        constant CNT_DC_LINK_FIFO_FULL_R                : integer := 16#22#;
-        constant CNT_SKIP_EVENT_LINK_FIFO_R             : integer := 16#23#;
-        constant CNT_SKIP_EVENT_DMA_RAM_R               : integer := 16#24#;
-        constant CNT_IDLE_NOT_HEADER_R                  : integer := 16#25#;
-        constant CNT_FEB_MERGE_TIMEOUT_R                : integer := 16#26#;
-		constant DDR3_STATUS_R									: integer := 16#27#;
+        constant CNT_DC_LINK_FIFO_FULL_R                : integer := 16#21#;
+        constant CNT_SKIP_EVENT_LINK_FIFO_R             : integer := 16#22#;
+        constant CNT_SKIP_EVENT_DMA_RAM_R               : integer := 16#23#;
+        constant CNT_IDLE_NOT_HEADER_R                  : integer := 16#24#;
+        constant CNT_FEB_MERGE_TIMEOUT_R                : integer := 16#25#;
+		constant DDR3_STATUS_R									: integer := 16#26#;
 		constant DDR3_BIT_CAL_SUCCESS							: integer := 0;
 		constant DDR3_BIT_CAL_FAIL								: integer := 1;
 		constant DDR3_BIT_RESET_N								: integer := 2;
@@ -144,11 +143,12 @@ package mudaq_registers is
 		constant DDR3_BIT_TEST_WRITING						    : integer := 4;
 		constant DDR3_BIT_TEST_READING						    : integer := 5;
 		constant DDR3_BIT_TEST_DONE							    : integer := 6;
-		constant DDR3_ERR_R										: integer := 16#28#;
-		constant DATA_TSBLOCKS_R								: integer := 16#29#;
-        constant SC_MAIN_STATUS_REGISTER_R						: integer := 16#30#;
+		constant DDR3_ERR_R										: integer := 16#27#;
+		constant DATA_TSBLOCKS_R								: integer := 16#28#;
+        constant SC_MAIN_STATUS_REGISTER_R						: integer := 16#29#;
             constant SC_MAIN_DONE								: integer := 0;
-        constant DDR3_CLK_CNT_R                                 : integer := 16#31#;
+        constant DDR3_CLK_CNT_R                                 : integer := 16#30#;
+        constant SC_STATE_REGISTER_R                            : integer := 16#31#;
 		
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						    : integer := 16#38#;

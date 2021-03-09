@@ -123,7 +123,8 @@ architecture rtl of top is
         constant NLINKS_TOTL : integer := 16;
 
         signal resets : std_logic_vector(31 downto 0);
-        signal resets_n: std_logic_vector(31 downto 0);
+        signal pcie0_resets_n_156: std_logic_vector(31 downto 0);
+        signal pcie0_resets_n_250: std_logic_vector(31 downto 0);
         
         signal resets_fast : std_logic_vector(31 downto 0);
         signal resets_n_fast: std_logic_vector(31 downto 0);
@@ -239,17 +240,19 @@ architecture rtl of top is
 
 begin
 
-    -- local 50 MHz clock (oscillator)
+    --! local 50 MHz clock (oscillator)
     clk_50 <= CLK_50_B2J;
 
-    LED_BRACKET <= writeregs_slow(LED_REGISTER_W)(3 downto 0);
-
-    -- generate reset
+    --! generate reset for 50 MHz
     e_reset_50_n : entity work.reset_sync
     port map ( o_reset_n => reset_50_n, i_reset_n => CPU_RESET_n, i_clk => clk_50 );
 
-    -- generate and route 125 MHz clock to SMA output
-    -- (can be connected to SMA input as global clock)
+    --! generate reset for 125 MHz
+    e_reset_125_n : entity work.reset_sync
+    port map ( o_reset_n => reset_125_n, i_reset_n => CPU_RESET_n, i_clk => clk_125 );
+
+    --! generate and route 125 MHz clock to SMA output
+    --! (can be connected to SMA input as global clock)
     e_pll_50to125 : component work.cmp.ip_pll_50to125
     port map (
         outclk_0 => SMA_CLKOUT,
@@ -257,66 +260,12 @@ begin
         rst => not reset_50_n
     );
 
-    -- 125 MHz global clock (from SMA input)
+    --! 125 MHz global clock (from SMA input)
     e_clk_125 : work.cmp.ip_clk_ctrl
     port map (
         inclk => SMA_CLKIN,
         outclk => clk_125--,
     );
-
-    e_reset_125_n : entity work.reset_sync
-    port map ( o_reset_n => reset_125_n, i_reset_n => CPU_RESET_n, i_clk => clk_125 );
-
-
-
-    -------- Debouncer/seg7 --------
-
-    e_debouncer : entity work.debouncer
-    generic map (
-        W => 4,
-        N => 125 * 10**3 -- 1ms
-    )
-    port map (
-        i_d => BUTTON,
-        o_q(0) => push_button0_db,
-        o_q(1) => push_button1_db,
-        o_q(2) => push_button2_db,
-        o_q(3) => push_button3_db,
-        i_reset_n => CPU_RESET_n,
-        i_clk => clk_50--,
-    );
-
-
-
-    process(clk_50)
-    begin
-    if rising_edge(clk_50) then
-        clk_50_cnt <= clk_50_cnt + 1;
-    end if;
-    end process;
-
-    process(clk_125)
-    begin
-    if rising_edge(clk_125) then
-        clk_125_cnt <= clk_125_cnt + 1;
-    end if;
-    end process;
-
-    -- monitor 50 MHz clock
-    e_hex2seg7_50 : entity work.hex2seg7
-    port map (
-        i_hex => std_logic_vector(clk_50_cnt)(27 downto 24),
-        o_seg => HEX0_D--,
-    );
-
-    -- monitor 125 MHz external clock
-    e_hex2seg7_125 : entity work.hex2seg7
-    port map (
-        i_hex => std_logic_vector(clk_125_cnt)(27 downto 24),
-        o_seg => HEX1_D--,
-    );
-
-
 
     a10_block : entity work.a10_block
     generic map (
@@ -351,9 +300,10 @@ begin
         o_spi_sclk(0)                   => RJ45_LED_R,
         o_spi_ss_n(0)                   => RS422_DE,
 
-        o_nios_hz                       => LED(0),
-
-
+        -- LED / BUTTONS
+        o_LED                           => LED,
+        o_LED_BRACKET                   => LED_BRACKET,
+        i_BUTTON                        => BUTTON,
 
         -- XCVR0 (6250 Mbps @ 156.25 MHz)
         i_xcvr0_rx( 3 downto  0)        => QSFPA_RX_p,
@@ -370,8 +320,6 @@ begin
         o_xcvr0_rx_datak                => rx_datak_raw,
         i_xcvr0_tx_data                 => tx_data,
         i_xcvr0_tx_datak                => tx_datak,
-
-
 
         -- PCIe0
         i_pcie0_rx                      => PCIE_RX_p,
@@ -406,14 +354,12 @@ begin
         i_pcie0_wregs_A_clk             => pcie_fastclk_out,
         o_pcie0_wregs_B                 => writeregs_slow,
         i_pcie0_wregs_B_clk             => clk_156,
+        o_pcie0_resets_n_156            => pcie0_resets_n_156,
+        o_pcie0_resets_n_250            => pcie0_resets_n_250,
 
-
-
+        -- resets clk
         o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
-
---        o_reset_250_n                   => clk_250,
---        o_clk_250                       => clk_250,
 
         i_reset_125_n                   => reset_125_n,
         i_clk_125                       => clk_125,
@@ -422,20 +368,11 @@ begin
         i_clk                           => clk_50--,
     );
 
+
+    --! A10 development board setups
     FLASH_CE_n <= (flash_cs_n, flash_cs_n);
     FLASH_ADV_n <= '0';
     FLASH_CLK <= '0';
-
-
-
-    -- 100 MHz
-    e_pcie_clk_hz : entity work.clkdiv
-    generic map ( P => 100000000 )
-    port map ( o_clk => LED(3), i_reset_n => CPU_RESET_n, i_clk => PCIE_REFCLK_p );
-
-
-
-    -------- Receiving Data and word aligning --------
 
     QSFPA_LP_MODE <= '0';
     QSFPB_LP_MODE <= '0';
@@ -453,77 +390,10 @@ begin
     QSFPD_RST_n <= '1';
 
 
-    --assign long vectors for used fibers. Wired to run_control, sc, data receivers
-    g_assign_usedlinks: for i in NLINKS_DATA-1 downto 0 generate
-       rx_mapped_data_v(32*(i+1)-1 downto 32*i) <= rx_data(link_mapping(i));
-       rx_mapped_datak_v(4*(i+1)-1 downto  4*i) <= rx_datak(link_mapping(i));
-       rx_mapped_linkmask(i) <= writeregs_slow(FEB_ENABLE_REGISTER_W)(link_mapping(i));
-    end generate;
+    -------- Receiving Data and word aligning --------
 
-    -------- Demerge Data --------
-    g_demerge: for i in NLINKS_TOTL-1 downto 0 generate
-        e_data_demerge : entity work.data_demerge
-        port map(
-            i_clk               => clk_156,
-            i_reset             => not resets_n(RESET_BIT_EVENT_COUNTER),
-            i_aligned           => '1',
-            i_data              => rx_data_raw(i),
-            i_datak             => rx_datak_raw(i),
-            i_fifo_almost_full  => '0',--link_fifo_almost_full(i),
-            o_data              => rx_data(i),
-            o_datak             => rx_datak(i),
-            o_sc                => rx_sc_v(31+i*32 downto i*32),
-            o_sck               => rx_sck_v(3+i* 4 downto i* 4),
-            o_rc                => rx_rc_v(31+i*32 downto i*32),
-            o_rck               => rx_rck_v(3+i* 4 downto i* 4),
-            o_fpga_id           => open--,
-        );
-    end generate;
+
     
-
-    -------- MIDAS RUN control --------
-
-    e_run_control : entity work.run_control
-    generic map (
-        N_LINKS_g                           => NLINKS_TOTL--,
-    )
-    port map (
-        i_reset_ack_seen_n                  => resets_n(RESET_BIT_RUN_START_ACK),
-        i_reset_run_end_n                   => resets_n(RESET_BIT_RUN_END_ACK),
-        i_buffers_empty                     => (others => '1'), -- TODO: connect buffers emtpy from dma here
-        o_feb_merger_timeout                => readregs_slow(CNT_FEB_MERGE_TIMEOUT_R),
-        i_aligned                           => (others => '1'),
-        i_data                              => rx_rc_v,
-        i_datak                             => rx_rck_v,
-        i_link_enable                       => writeregs_slow(FEB_ENABLE_REGISTER_W),
-        i_addr                              => writeregs_slow(RUN_NR_ADDR_REGISTER_W), -- ask for run number of FEB with this addr.
-        i_run_number                        => writeregs_slow(RUN_NR_REGISTER_W)(23 downto 0),
-        o_run_number                        => readregs_slow(RUN_NR_REGISTER_R), -- run number of i_addr
-        o_runNr_ack                         => readregs_slow(RUN_NR_ACK_REGISTER_R), -- which FEBs have responded with run number in i_run_number
-        o_run_stop_ack                      => readregs_slow(RUN_STOP_ACK_REGISTER_R),
-        i_clk                               => clk_156--,
-    );
-
-    -------- Event Builder --------
-
-    e_data_gen : entity work.data_generator_a10
-    generic map(
-        go_to_trailer => 4,
-        go_to_sh => 3--,
-    )
-    port map (
-        reset               => resets(RESET_BIT_DATAGEN),
-        enable_pix          => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE),
-        i_dma_half_full     => dmamemhalffull_tx,
-        random_seed         => (others => '1'),
-        data_pix_generated  => data_pix_generated,
-        datak_pix_generated => datak_pix_generated,
-        data_pix_ready      => data_pix_ready,
-        start_global_time   => (others => '0'),
-        slow_down           => writeregs_slow(DATAGENERATOR_DIVIDER_REGISTER_W),
-        state_out           => state_out_datagen,
-        clk                 => clk_156--,
-    );
     
     -- sync halffull 2 flip-flops
     sync_halffull : process(clk_156, reset_156_n)
@@ -618,39 +488,7 @@ begin
 
     -------- Slow Control --------
 
-    e_sc_main : work.sc_main
-    generic map (
-        NLINKS => NLINKS_TOTL
-    )
-    port map (
-        i_clk           => clk_156,
-        i_reset_n       => resets_n(RESET_BIT_SC_MAIN),
-        i_length_we     => writeregs_slow(SC_MAIN_ENABLE_REGISTER_W)(0),
-        i_length        => writeregs_slow(SC_MAIN_LENGTH_REGISTER_W)(15 downto 0),
-        i_mem_data      => writememreaddata,
-        o_mem_addr      => writememreadaddr,
-        o_mem_data      => tx_data,
-        o_mem_datak     => tx_datak,
-        o_done          => readregs_slow(SC_MAIN_STATUS_REGISTER_R)(SC_MAIN_DONE),
-        o_state         => open--,
-    );
-    
-    e_sc_secondary : work.sc_secondary
-    generic map (
-        NLINKS => NLINKS_TOTL
-    )
-    port map (
-        reset_n                 => resets_n(RESET_BIT_SC_SECONDARY),
-        i_link_enable           => writeregs_slow(FEB_ENABLE_REGISTER_W)(NLINKS_TOTL-1 downto 0),
-        link_data_in            => rx_sc_v,
-        link_data_in_k          => rx_sck_v,
-        mem_addr_out            => mem_add_sc,
-        mem_addr_finished_out   => readmem_writeaddr_finished,
-        mem_data_out            => mem_data_sc,
-        mem_wren                => mem_wen_sc,
-        stateout                => open,--LED_BRACKET,
-        clk                     => clk_156--,
-    );
+ 
 
     -------- Link Test --------
 
@@ -691,29 +529,7 @@ begin
 
     -------- PCIe --------
 
-    -- reset regs
-    e_reset_logic : entity work.reset_logic
-    port map (
-        rst_n                   => push_button0_db,
-        reset_register          => writeregs_slow(RESET_REGISTER_W),
-        resets                  => resets,
-        resets_n                => resets_n,
-        clk                     => clk_156--,
-    );
-
-    e_reset_logic_fast : entity work.reset_logic
-    port map (
-        rst_n                   => push_button0_db,
-        reset_register          => writeregs(RESET_REGISTER_W),
-        resets                  => resets_fast,
-        resets_n                => resets_n_fast,
-        clk                     => pcie_fastclk_out--,
-    );
-
-    e_version_reg : entity work.version_reg
-    port map (
-        data_out  => readregs_slow(VERSION_REGISTER_R)(27 downto 0)
-    );
+ 
 
     -- sync read regs from slow (156.25 MHz) to fast (250 MHz) clock
     process(pcie_fastclk_out)
@@ -745,18 +561,7 @@ begin
     end if;
     end process;
 
-    -- DMA status stuff
-    e_dma_evaluation : entity work.dma_evaluation
-    port map (
-        reset_n                 => resets_n_fast(RESET_BIT_DMA_EVAL),
-        dmamemhalffull          => dmamemhalffull,
-        dmamem_endofevent       => dmamem_endofevent,
-        halffull_counter        => dmamemhalffull_counter,
-        nothalffull_counter     => dmamemnothalffull_counter,
-        endofevent_counter      => endofevent_counter,
-        notendofevent_counter   => notendofevent_counter,
-        clk                     => pcie_fastclk_out--,
-    );
+
 
     readmem_writeaddr_lowbits   <= readmem_writeaddr(15 downto 0);
     pb_in                       <= push_button0_db & push_button1_db & push_button2_db;

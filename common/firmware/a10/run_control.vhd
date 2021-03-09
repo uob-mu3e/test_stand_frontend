@@ -18,8 +18,8 @@ port (
         i_reset_run_end_n:                  in  std_logic;
         i_buffers_empty:                    in  std_logic_vector(31 downto 0);
         i_aligned:                          in  std_logic_vector(31 downto 0); -- word alignment achieved
-        i_data:                             in  std_logic_vector(32*N_LINKS_g-1 downto 0); -- optical from frontend board
-        i_datak:                            in  std_logic_vector(4*N_LINKS_g-1 downto 0);
+        i_data:                             in  work.util.slv32_array_t(N_LINKS_g-1 downto 0); -- optical from frontend board
+        i_datak:                            in  work.util.slv4_array_t(N_LINKS_g-1 downto 0);
         i_link_enable:                      in  std_logic_vector(31 downto 0);
         i_addr:                             in  std_logic_vector(31 downto 0);
         i_run_number:                       in  std_logic_vector(23 downto 0);
@@ -48,8 +48,8 @@ BEGIN
                 i_reset_ack_seen_n      => i_reset_ack_seen_n,
                 i_reset_run_end_n       => i_reset_run_end_n,
                 i_aligned               => i_aligned(i),
-                i_data                  => i_data(31+32*i downto 32*i),
-                i_datak                 => i_datak(3+4*i downto 4*i),
+                i_data                  => i_data(i),
+                i_datak                 => i_datak(i),
                 o_merger_timeout        => feb_merger_timeouts(i),
                 o_FEB_status            => FEB_status(25+26*i downto 26*i)--,
             );
