@@ -66,6 +66,15 @@ struct i2c_t {
         alt_u8 w[2] = { addr, data };
         write(dev, slave, w, 2);
     }
+
+    uint32_t set_mask(uint32_t mask) {
+#ifdef I2C_MASK_BASE
+        uint32_t old = IORD_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE);
+        IOWR_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE, mask);
+        return old;
+#endif // I2C_MASK_BASE
+        return 0xFFFFFFFF;
+    }
 };
 
 #endif /* SOFTWARE_APP_SRC_I2C_H_ */

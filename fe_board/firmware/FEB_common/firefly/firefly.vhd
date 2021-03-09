@@ -198,7 +198,7 @@ begin
 --------------------------------------------------
 
 -- 4-channel RX/TX
-    xcvr: entity work.ip_altera_xcvr_native_av
+    xcvr: component work.cmp.ip_altera_xcvr_native_av
     port map(
         --clocks
         tx_pll_refclk(0)        => i_clk,
@@ -250,7 +250,7 @@ begin
     );
     
 -- 4-channel TX
-    xcvr2: entity work.fastlink_small
+    xcvr2: component work.cmp.fastlink_small
     port map(
         --clocks
         tx_pll_refclk(0)        => i_clk,
@@ -314,7 +314,7 @@ begin
 -- reset controller (2)
 --------------------------------------------------
 
-    reset_controller: entity work.ip_altera_xcvr_reset_control
+    reset_controller: component work.cmp.ip_altera_xcvr_reset_control
     port map(
         clock                   => i_sysclk,
         reset                   => not i_reset_n,
@@ -332,7 +332,7 @@ begin
         rx_cal_busy             => rx_cal_busy--,
     );
     
-    reset_controller2: entity work.native_reset_tx
+    reset_controller2: component work.cmp.native_reset_tx
     port map(
         clock                   => i_sysclk,
         reset                   => not i_reset_n,
@@ -349,7 +349,7 @@ begin
 -- reconfig controller (2)
 --------------------------------------------------
 
-    reconfig_controller: entity work.ip_alt_xcvr_reconfig
+    reconfig_controller: component work.cmp.ip_alt_xcvr_reconfig
     port map(
         reconfig_busy             => open,
         mgmt_clk_clk              => i_sysclk,

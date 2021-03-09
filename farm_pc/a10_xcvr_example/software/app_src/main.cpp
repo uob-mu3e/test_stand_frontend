@@ -5,7 +5,7 @@
 flash_t flash;
 
 #include "../include/a10/fan.h"
-fan_t fan;
+fan_t fan(0x01);
 
 #include "../include/xcvr.h"
 #include "../include/a10/reconfig.h"
