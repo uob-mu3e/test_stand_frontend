@@ -209,8 +209,6 @@ begin
 
     o_flash_address <= flash_address;
 
-    o_nios_hz <= nios_pio(7);
-
     o_reset_156_n <= reset_156_n;
     o_clk_156 <= clk_156;
 
@@ -291,6 +289,9 @@ begin
     --! blinky leds to check the wregs
     o_LED_BRACKET(1 downto 0) <= o_pcie0_wregs_A(LED_REGISTER_W)(1 downto 0);
     o_LED_BRACKET(3 downto 2) <= o_pcie0_wregs_B(LED_REGISTER_W)(3 downto 2);
+
+    --! blinky leds
+    o_LED(1) <= nios_pio(7);
 
     --! debouncer for push_button
     e_debouncer : entity work.debouncer
