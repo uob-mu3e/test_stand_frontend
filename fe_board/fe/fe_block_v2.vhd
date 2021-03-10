@@ -229,6 +229,7 @@ architecture arch of fe_block_v2 is
     signal programming_data_ena : std_logic;
     signal programming_addr     : reg32;
     signal programming_addr_ena : std_logic;
+	 signal programming_addr_ena_reg : std_logic;
     
     signal read_programming_fifo : std_logic;
     signal programming_data_from_fifo : reg32;
@@ -689,12 +690,17 @@ begin
 		  programming_status(0) <= '0';
 		  programming_status(1) <= '0';
 		  flash_busy 				<= '0';
+		  programming_addr_ena_reg <= '0';
 		  
     elsif(i_nios_clk'event and i_nios_clk = '1')then
         max_spi_counter <= max_spi_counter + 1;
         max_spi_strobe <= '0';
 		
-
+		  -- Note that this comes from a different clock domain, we register to avoid
+		  -- messing up the SM (as observed with signal tap)
+		  programming_addr_ena_reg <= programming_addr_ena;
+			
+			
         programming_status(0) <= '0';
 		  programming_status(31 downto 4) <= (others => '0');
 
@@ -731,7 +737,7 @@ begin
                 max_spi_state <= idle;
             end if;    
 
-            if(programming_addr_ena = '1') then
+            if(programming_addr_ena_reg = '1') then
                 max_spi_state <= fifocopy;
 					 programming_status(1) <= '1';
             end if;    
@@ -800,7 +806,7 @@ begin
             max_spi_numbytes <= "000000100";
             max_spi_strobe   <= '1';
             if(max_spi_word_en = '1') then
-                flash_busy   <= max_spi_word_from_max(0);
+                flash_busy   		<= max_spi_word_from_max(0);
                 max_spi_strobe   <= '0';
                 max_spi_state    <= flashwait;
             end if;

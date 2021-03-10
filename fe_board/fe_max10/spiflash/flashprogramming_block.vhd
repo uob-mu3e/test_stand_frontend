@@ -32,6 +32,8 @@ entity flashprogramming_block is
         fpga_data               : out std_logic_vector(7 downto 0);
         fpga_clk                : out std_logic;
 
+        fpp_crclocation         : out std_logic_vector(31 downto 0);
+
         -- NIOS interface
         flash_programming_ctrl  : in std_logic_vector(31 downto 0);
         flash_w_cnt             : out std_logic_vector(31 downto 0);
@@ -79,7 +81,7 @@ architecture RTL of flashprogramming_block is
 
         type spiflashstate_type is (idle, fifowriting, 
             arriawriting1, arriawriting2, arriawriting3, arriawriting4, arriawriting5,
-            arriawriting6, arriafifowriting, programming);
+            arriawriting6, arriawriting7, arriafifowriting, arriawriting8, programming);
         signal spiflashstate : spiflashstate_type;
         signal fifo_req_last                        : std_logic;
         signal arria_write_req_last                  : std_logic;
@@ -96,6 +98,7 @@ architecture RTL of flashprogramming_block is
 	    signal fifopiotoggle_last					   : std_logic;
 
         signal arriawriting                            : std_logic;
+        signal wipseen                                 : std_logic;
 
         signal spi_strobe_arria                      : std_logic;
         signal spi_command_arria                     : std_logic_vector(7 downto 0);
@@ -105,6 +108,8 @@ architecture RTL of flashprogramming_block is
         signal fpp_crcerror                         : std_logic;
         signal fpp_timeout                          : std_logic;
         signal fpp_debug                            : std_logic_vector(7 downto 0);
+
+        signal addrlast                             : std_logic_vector(23 downto 0);
 
 begin
 
@@ -123,6 +128,8 @@ if ( reset_n = '0' ) then
     spi_strobe_arria                <= '0';
     spi_continue_arria              <= '0';
     status                          <= (others => '0');
+    addrlast                        <= (others => '0');
+
 
 elsif ( clk100'event and clk100 = '1' ) then
     fifopiotoggle_last			    <= spi_flash_fifo_data_nios(8);
@@ -157,6 +164,8 @@ elsif ( clk100'event and clk100 = '1' ) then
         if(control(0) = '1' and arria_write_req_last = '0') then -- here we start the sequence for erasing 
                                                                  -- and writing an spi flash block
                                                                  -- we only erase if we just passed a 64K block boundary
+
+            addrlast <= addr_from_arria;                                                
             if(addr_from_arria(15 downto 0) = X"0000") then                                                    
                 spiflashstate  <= arriawriting1;
                 arriawriting   <= '1';
@@ -164,6 +173,11 @@ elsif ( clk100'event and clk100 = '1' ) then
                 spiflashstate  <= arriawriting5;
                 arriawriting   <= '1';
             end if;    
+
+            --if((unsigned(addr_from_arria) /= 0 and unsigned(addr_from_arria) - unsigned(addrlast) /= 256) or spiflashfifo_empty = '1')then
+            --    status(31 downto 20) <= addr_from_arria(23 downto 12);
+            --end if;    
+
         end if;    
 
             
@@ -194,6 +208,7 @@ elsif ( clk100'event and clk100 = '1' ) then
         if(spi_ack = '1')then
             spiflashstate <= arriawriting3;
             spi_strobe_arria        <= '0';
+            wipseen                 <= '0';
         end if;
     when arriawriting3 => -- wait for the WIP bit to go off 
         status(4)               <= '1';
@@ -201,7 +216,11 @@ elsif ( clk100'event and clk100 = '1' ) then
         spi_addr_arria          <= (others => '0');
         spi_continue_arria      <= '1';
         spi_strobe_arria        <= '1';
-        if(spi_byte_ready = '1' and spi_flash_data_from_flash_int(0) = '0') then
+        if(spi_byte_ready = '1' and spi_flash_data_from_flash_int(0) = '1') then
+            wipseen <= '1';
+        end if;
+
+        if(spi_byte_ready = '1' and spi_flash_data_from_flash_int(0) = '0' and wipseen = '1') then
             spiflashstate           <= arriawriting4;
             spi_continue_arria      <= '0';
             spi_strobe_arria        <= '0'; 
@@ -218,28 +237,51 @@ elsif ( clk100'event and clk100 = '1' ) then
         spi_continue_arria      <= '0';
         spi_strobe_arria        <= '1';
         if(spi_ack = '1')then
-            spiflashstate <= arriafifowriting;
+            spiflashstate <= arriawriting6;
             spi_strobe_arria        <= '0';
         end if;
-    when arriafifowriting => -- start writing
+    when arriawriting6 => -- check if we set the write enable successfully 
         status(7)               <= '1';
+        spi_command_arria       <= COMMAND_READ_STATUS_REGISTER1;
+        spi_addr_arria          <= (others => '0');
+        spi_continue_arria      <= '0';
+        spi_strobe_arria        <= '1';
+        if(spi_byte_ready = '1' and spi_flash_data_from_flash_int(1) = '1') then
+            spiflashstate <= arriawriting7;
+            spi_strobe_arria        <= '0';
+        elsif(spi_byte_ready = '1' and spi_flash_data_from_flash_int(1) = '0') then
+            spiflashstate <= arriawriting5;  -- try setting write enable again
+            spi_strobe_arria        <= '0';
+        end if;
+    when arriawriting7 => -- make sure spi is ready again
+        status(8)               <= '1';
+        if(spi_busy <= '0')then
+            spiflashstate           <= arriafifowriting;
+        end if;
+    when arriafifowriting => -- start writing
+        status(9)               <= '1';
         spi_command_arria       <= COMMAND_QUAD_PAGE_PROGRAM;
         spi_addr_arria          <= addr_from_arria;
         spi_continue_arria      <= '1';
         spi_strobe_arria        <= '1';
         wcounter                <= wcounter + 1;
         if ( spiflashfifo_empty = '1' and spi_busy = '0') then
-            spiflashstate <= arriawriting6;
+            spiflashstate <= arriawriting8;
             spi_continue_arria      <= '0';
             spi_strobe_arria        <= '0';
+            wipseen                 <= '0';
         end if;  
-    when arriawriting6 => -- wait for the WIP bit to go off 
-        status(8)               <= '1';
+    when arriawriting8 => -- wait for the WIP bit to go off 
+        status(10)               <= '1';
         spi_command_arria       <= COMMAND_READ_STATUS_REGISTER1;
         spi_addr_arria          <= (others => '0');
         spi_continue_arria      <= '1';
         spi_strobe_arria        <= '1';
-        if(spi_byte_ready = '1' and spi_flash_data_from_flash_int(0) = '0') then
+
+        if(spi_byte_ready = '1' and spi_flash_data_from_flash_int(0) = '1') then
+            wipseen <= '1';
+        end if;
+        if(spi_byte_ready = '1' and spi_flash_data_from_flash_int(0) = '0' and wipseen = '1') then
             spiflashstate           <= idle;
             arriawriting            <= '0';
             spi_continue_arria      <= '0';
@@ -247,15 +289,15 @@ elsif ( clk100'event and clk100 = '1' ) then
         end if;
             
     when fifowriting =>
-        status(9)               <= '1';
-        wcounter                        <= wcounter + 1;
+        status(11)               <= '1';
+        wcounter                 <= wcounter + 1;
         if ( spiflashfifo_empty = '1' ) then
             spiflashstate <= idle;
         end if;    
 
 
     when programming =>
-        status(10)               <= '1';
+        status(12)               <= '1';
         spi_flash_granted_programmer    <= '1';
         if(spi_flash_request_programmer = '0') then
             spiflashstate <= idle;
@@ -355,7 +397,8 @@ port map(
     fpga_clk            => fpga_clk,
     crcerror            => fpp_crcerror,
     timeout             => fpp_timeout,
-    debug               => fpp_debug--,
+    debug               => fpp_debug,
+    crclocation         => fpp_crclocation --,
 );
 
 scfifo_component : altera_mf.altera_mf_components.scfifo

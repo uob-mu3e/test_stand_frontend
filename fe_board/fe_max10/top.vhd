@@ -136,6 +136,9 @@ architecture arch of top is
     signal adc_data_4                           : std_logic_vector(31 downto 0);
 
     signal startupcounter                       : integer;
+
+    signal fpp_crclocation                      : std_logic_vector(31 downto 0);
+    signal programming_control_nios             : std_logic_vector(31 downto 0);
     
 begin
 
@@ -235,7 +238,7 @@ begin
             end if;
             if(spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_CTRL) then
                 flash_programming_ctrl_arria <= spi_arria_word_from_arria;
-            end if;    
+            end if;            
             if(spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_ADDR ) then
                 programming_addr_from_arria <= spi_arria_word_from_arria(23 downto 0);
             end if;    
@@ -302,29 +305,33 @@ begin
 		flash_fifo_data_export		=> spi_flash_fifo_data_nios,
 
         status_export               => status,
-        programming_status_export   => flash_programming_status_arria
+        programming_status_export   => flash_programming_status_arria,
+        crclocation_export          => fpp_crclocation,
+        programming_control_export  => programming_control_nios
     );
 
 flash_programming_ctrl(30 downto 0) <= (others => '0');
+flash_programming_ctrl(31)      <= programming_control_nios(0);
 
-process(reset_n, max10_osc_clk)
-begin
-if(reset_n = '0') then
-   flash_programming_ctrl(31) <= '0';
-    startupcounter <= 0;
-elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
-    if(pll_locked = '1')then
-        startupcounter <= startupcounter +1;
-        if(startupcounter > 4095)then
-            flash_programming_ctrl(31) <= '1';
-        end if;
-        if(startupcounter > 5000)then
-            startupcounter <= 5001;
-            flash_programming_ctrl(31) <= '0';
-        end if;     
-    end if;    
-end if;    
-end process;
+
+--process(reset_n, max10_osc_clk)
+--begin
+--if(reset_n = '0') then
+--   flash_programming_ctrl(31) <= '0';
+--    startupcounter <= 0;
+--elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
+--    if(pll_locked = '1')then
+--        startupcounter <= startupcounter +1;
+--        if(startupcounter > 4095000)then
+--            flash_programming_ctrl(31) <= '1';
+--        end if;
+--        if(startupcounter > 5000000)then
+--            startupcounter <= 5001000;
+--            flash_programming_ctrl(31) <= '0';
+--        end if;     
+--    end if;    
+--end if;    
+--end process;
 
  
 e_flashprogramming_block: entity work.flashprogramming_block
@@ -349,6 +356,8 @@ e_flashprogramming_block: entity work.flashprogramming_block
         fpga_nconfig            => fpga_nconfig, 
         fpga_data               => fpga_data,
         fpga_clk                => fpga_clk,
+
+        fpp_crclocation         => fpp_crclocation,
 
         -- NIOS interface
         flash_programming_ctrl          => flash_programming_ctrl,

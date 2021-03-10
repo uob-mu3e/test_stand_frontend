@@ -109,15 +109,17 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
     while(pos*4 < fsize){
         uint32_t buffer[256];
         fread(buffer,sizeof(uint32_t),256, f);
-        vector<uint32_t> data(buffer, buffer+255);
+        vector<uint32_t> data(buffer, buffer+256);
         feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_DATA_W,data,true);
 
         for(int i=0; i < 4; i++){
-            feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_ADDR_W,addr);
-
+            feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_ADDR_W,addr);            
             uint32_t readback = 2;
             uint32_t count = 0;
-            while(readback & 0x2 && count < 1e7){
+            uint32_t limit = 1e6;
+            if((addr & 0xFFFF) == 0)
+                limit = 1e5;
+            while(readback & 0x2 && count < limit){
                 int ec = feb_sc.FEB_register_read(FEB.SB_Port(),PROGRAMMING_STATUS_R,readback);
                 if(ec != FEBSlowcontrolInterface::ERRCODES::OK){
                     printf("Error reading back!\n");
@@ -127,15 +129,15 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
                 count++;
                 usleep(100);
             }
-            if(count == 1e7){
+            addr += 256;
+            if(count == limit){
                 printf("Timeout\n");
                 feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
                 return;
             }
-            addr += 256;
         }
         pos  += 256;
-        if(pos%4096==0)
+        if(pos%(4096)==0)
             printf("Loaded %f of file\n", (double)pos*4/fsize);
 
     }

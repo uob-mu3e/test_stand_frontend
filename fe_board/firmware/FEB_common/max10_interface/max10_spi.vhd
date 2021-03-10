@@ -126,7 +126,9 @@ elsif(clk50'event and clk50 = '1')then
             o_SPI_clk       <= '1';  
             if(nibblecount mod 8 = 0)then
                 datashiftregister   <= data_to_max;
-                next_data           <= '1';
+					 if(nibblecount/2 < to_integer(unsigned(numbytes)))then
+						next_data           <= '1';
+					end if;
             end if;          
         end if;    
    

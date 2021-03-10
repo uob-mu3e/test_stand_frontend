@@ -38,7 +38,8 @@ entity fpp_programmer is
 		-- Debug and status info
         crcerror				: out std_logic;
         timeout             : out std_logic;
-		debug					: out std_logic_vector(7 downto 0)
+		debug					: out std_logic_vector(7 downto 0);
+        crclocation             : out std_logic_vector(31 downto 0)
     );
 end fpp_programmer;
 
@@ -46,9 +47,10 @@ architecture rtl of fpp_programmer is
     type state_type is (idle, flashwait, porwait, nconfig, nstatuswait, progwait, 
             startflash, writing, ending);
     signal state : state_type;
-    signal count : natural range 0 to 255;
+    signal count : natural range 0 to 511;
 
     signal timeoutcounter : natural range 0 to 2**31;
+    signal crclocation_reg    : unsigned(31 downto 0);
 	 
 	 signal start_last : std_logic;
 
@@ -62,6 +64,9 @@ architecture rtl of fpp_programmer is
     constant timeouttime : natural := 10*10**8; -- 10 seconds
 
 begin
+
+crclocation     <= std_logic_vector(crclocation_reg);
+
 
 sm: process(clk, reset_n)
 begin
@@ -83,7 +88,8 @@ begin
         debug <= (others => '0');
                 
         timeoutcounter <= 0;  
-        timeout        <= '0';  
+        timeout        <= '0';
+        crclocation_reg     <= (others => '0');   
 
     elsif rising_edge(clk) then
 
@@ -113,6 +119,7 @@ begin
             if(start = '1' and start_last = '0')then
                 state <= flashwait;
                      crcerror <= '0';
+                     crclocation_reg <= (others => '0');
                      timeout  <= '0';          
             end if;
             timeoutcounter <= 0;
@@ -189,6 +196,7 @@ begin
 
             if(spi_byte_ready = '1')then
                 shiftregister <= spi_byte_out;
+                crclocation_reg  <=  crclocation_reg + 1;
             end if;
 
             if(fpga_conf_done = '1')then

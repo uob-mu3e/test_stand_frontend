@@ -20,6 +20,7 @@ struct status_t {
             printf("[status] -------- menu --------\n");
             ReadStatusRegister();
             printf("  [s] => status\n");
+            printf("  [p] => program Arria\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -27,6 +28,9 @@ struct status_t {
             switch(cmd) {
             case 's':
                 ReadStatusRegister();
+                break;
+            case 'p':
+                StartProgramming();
                 break;
             case 'q':
                 return;
@@ -39,7 +43,14 @@ struct status_t {
 static void ReadStatusRegister(){
     printf("Status: %x\n", (uint32_t)IORD_ALTERA_AVALON_PIO_DATA(STATUS_BASE));
     printf("Programming Status: %x\n", (uint32_t)IORD_ALTERA_AVALON_PIO_DATA(PROGRAMMING_STATUS_BASE));
+    printf("CRC location: %x\n", (uint32_t)IORD_ALTERA_AVALON_PIO_DATA(CRCLOCATION_BASE));
 }
+
+static void StartProgramming(){
+    IOWR_ALTERA_AVALON_PIO_DATA(PROGRAMMING_CONTROL_BASE,0x1);
+    IOWR_ALTERA_AVALON_PIO_DATA(PROGRAMMING_CONTROL_BASE,0x0);
+}
+
 
 };
 
