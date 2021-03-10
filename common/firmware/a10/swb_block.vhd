@@ -19,16 +19,15 @@ use work.mudaq_registers.all;
 
 entity swb_block is
 generic (
-    g_NLINKS_TOTL    : integer := 16;
-    g_NLINKS_DATA    : integer := 16--;
+    g_NLINKS    : integer := 16--;
 );
 port (
 
-    --! links from FEBs
-    i_rx                 : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
-    i_rx_k               : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
-    o_tx                 : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
-    o_tx_k               : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
+    --! links to/from FEBs
+    i_rx                 : work.util.slv32_array_t(g_NLINKS-1 downto 0);
+    i_rx_k               : work.util.slv4_array_t(g_NLINKS-1 downto 0);
+    o_tx                 : work.util.slv32_array_t(g_NLINKS-1 downto 0);
+    o_tx_k               : work.util.slv4_array_t(g_NLINKS-1 downto 0);
 
     --! PCIe registers / memory
     i_writeregs_250      : in reg32array;
@@ -47,8 +46,13 @@ port (
     o_rmem_addr          : out std_logic_vector(15 downto 0);
     o_rmem_we            : out std_logic;
 
-    --! pcie clk / reset_n
-    i_refclk_pcie0       : in std_logic; --PCIE_REFCLK_p
+    o_dma_wren           : out std_logic;
+    o_dma_done           : out std_logic;
+    o_endofevent         : out std_logic;
+    o_dma_data           : out std_logic_vector(255 downto 0);
+
+    o_farm_data          : out std_logic_vector(255 downto 0);
+    o_farm_datak         : out std_logic_vector(31 downto 0); 
 
     --! 250 MHz clock / reset_n
     i_reset_n_250        : in std_logic;
@@ -77,12 +81,12 @@ architecture arch of swb_block is
     constant link_mapping : mapping_t(NLINKS_DATA-1 downto 0) := (1,2,4);
 
     --! demerged FEB links
-    signal rx_data      : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_data_k    : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_sc        : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_sc_k      : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_rc        : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_rc_k      : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
+    signal rx_data      : work.util.slv32_array_t(g_NLINKS-1 downto 0);
+    signal rx_data_k    : work.util.slv4_array_t(g_NLINKS-1 downto 0);
+    signal rx_sc        : work.util.slv32_array_t(g_NLINKS-1 downto 0);
+    signal rx_sc_k      : work.util.slv4_array_t(g_NLINKS-1 downto 0);
+    signal rx_rc        : work.util.slv32_array_t(g_NLINKS-1 downto 0);
+    signal rx_rc_k      : work.util.slv32_array_t(g_NLINKS-1 downto 0);
 
 
 begin
@@ -102,7 +106,7 @@ begin
     --! data => detector data
     --! sc => slow control packages
     --! rc => runcontrol packages
-    g_demerge: for i in g_NLINKS_TOTL-1 downto 0 generate
+    g_demerge: for i in g_NLINKS-1 downto 0 generate
         e_data_demerge : entity work.data_demerge
         port map(
             i_clk               => i_clk_156,
@@ -121,10 +125,14 @@ begin
         );
     end generate;
 
+
     --! run control used by MIDAS
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
     e_run_control : entity work.run_control
     generic map (
-        N_LINKS_g              => g_NLINKS_TOTL--,
+        N_LINKS_g              => g_NLINKS--,
     )
     port map (
         i_reset_ack_seen_n     => i_resets_n_156(RESET_BIT_RUN_START_ACK),
@@ -143,10 +151,14 @@ begin
         i_clk                  => i_clk_156--,
     );
 
+
     --! SWB slow control
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
     e_sc_main : entity work.sc_main
     generic map (
-        NLINKS => g_NLINKS_TOTL
+        NLINKS => g_NLINKS
     )
     port map (
         i_clk           => i_clk_156,
@@ -163,7 +175,7 @@ begin
     
     e_sc_secondary : entity work.sc_secondary
     generic map (
-        NLINKS => g_NLINKS_TOTL
+        NLINKS => g_NLINKS
     )
     port map (
         reset_n                 => i_resets_n_156(RESET_BIT_SC_SECONDARY),
@@ -178,38 +190,148 @@ begin
         clk                     => i_clk_156--,
     );
 
-    --! assign long vectors for used fibers. 
-    --! wired to run_control, sc, data receivers
-    g_assign_usedlinks: for i in g_NLINKS_DATA-1 downto 0 generate
-       rx_mapped_data_v(32*(i+1)-1 downto 32*i) <= rx_data(link_mapping(i));
-       rx_mapped_datak_v(4*(i+1)-1 downto  4*i) <= rx_datak(link_mapping(i));
-       rx_mapped_linkmask(i) <= i_writeregs_156(FEB_ENABLE_REGISTER_W)(link_mapping(i));
-    end generate;
-
     
-
-    -------- Event Builder --------
-
-    e_data_gen : entity work.data_generator_a10
-    generic map(
-        go_to_trailer => 4,
-        go_to_sh => 3--,
+    --! SWB data path Pixel
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    e_swb_data_path : entity work.swb_data_path
+    generic map (
+        g_NLINKS_TOTL           => 64,
+        g_NLINKS_FARM           => 8,
+        g_NLINKS_DATA           => 12,
+        LINK_FIFO_ADDR_WIDTH    => 10,
+        TREE_w                  => 10,
+        TREE_r                  => 10;
+        SWB_ID                  => x"01";
+        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+        DATA_TYPE               => x"01"--;
     )
-    port map (
-        reset               => resets(RESET_BIT_DATAGEN),
-        enable_pix          => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE),
-        i_dma_half_full     => dmamemhalffull_tx,
-        random_seed         => (others => '1'),
-        data_pix_generated  => data_pix_generated,
-        datak_pix_generated => datak_pix_generated,
-        data_pix_ready      => data_pix_ready,
-        start_global_time   => (others => '0'),
-        slow_down           => writeregs_slow(DATAGENERATOR_DIVIDER_REGISTER_W),
-        state_out           => state_out_datagen,
-        clk                 => clk_156--,
+    port map(
+        i_clk_156        => i_clk_156,
+        i_clk_250        => i_clk_250,
+        
+        i_reset_n_156    => i_resets_n_156(DATA_PATH),
+        i_reset_n_250    => i_resets_n_250(DATA_PATH),
+
+        i_resets_n_156   => i_resets_n_156,
+        i_resets_n_250   => i_resets_n_250,
+        
+        i_rx             => i_rx(11 downto 0),
+        i_rx_k           => i_rx_k(11 downto 0),
+        i_rmask_n        => x"0000000000" & i_writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W),
+
+        i_writeregs_156  => i_writeregs_156,
+        i_writeregs_250  => i_writeregs_250,
+
+        o_counter        => counter_swb_data_pixel,
+
+        i_dmamemhalffull => i_dmamemhalffull,
+        
+        o_farm_data      => o_pixel_data,
+        o_farm_datak     => o_pixel_datak,
+        o_fram_wen       => o_pixel_wen,
+
+        o_dma_wren       => o_pixel_dma_wren,
+        o_dma_done       => o_pixel_dma_done,
+        o_endofevent     => o_pixel_dma_endofevent,
+        o_dma_data       => o_pixel_dma_data--;
     );
 
 
+    --! SWB data path Scifi
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    e_swb_data_path : entity work.swb_data_path
+    generic map (
+        g_NLINKS_TOTL           => 64,
+        g_NLINKS_FARM           => 4,
+        g_NLINKS_DATA           => 2,
+        LINK_FIFO_ADDR_WIDTH    => 10,
+        TREE_w                  => 10,
+        TREE_r                  => 10;
+        SWB_ID                  => x"01";
+        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+        DATA_TYPE               => x"02"--;
+    )
+    port map(
+        i_clk_156        => i_clk_156,
+        i_clk_250        => i_clk_250,
+        
+        i_reset_n_156    => i_resets_n_156(DATA_PATH),
+        i_reset_n_250    => i_resets_n_250(DATA_PATH),
 
+        i_resets_n_156   => i_resets_n_156,
+        i_resets_n_250   => i_resets_n_250,
+        
+        i_rx             => i_rx(13 downto 12),
+        i_rx_k           => i_rx_k(13 downto 12),
+        i_rmask_n        => x"0000000000" & i_writeregs_250(SWB_LINK_MASK_SCIFI_REGISTER_W),
+
+        i_writeregs_156  => i_writeregs_156,
+        i_writeregs_250  => i_writeregs_250,
+
+        o_counter        => counter_swb_data_scifi,
+
+        i_dmamemhalffull => i_dmamemhalffull,
+        
+        o_farm_data      => o_scifi_data,
+        o_farm_datak     => o_scifi_datak,
+        o_fram_wen       => o_scifi_wen,
+
+        o_dma_wren       => o_scifi_dma_wren,
+        o_dma_done       => o_scifi_dma_done,
+        o_endofevent     => o_scifi_dma_endofevent,
+        o_dma_data       => o_scifi_dma_data--;
+    );
+
+
+    --! SWB data path Tile
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    e_swb_data_path : entity work.swb_data_path
+    generic map (
+        g_NLINKS_TOTL           => 64,
+        g_NLINKS_FARM           => 4,
+        g_NLINKS_DATA           => 2,
+        LINK_FIFO_ADDR_WIDTH    => 10,
+        TREE_w                  => 10,
+        TREE_r                  => 10;
+        SWB_ID                  => x"01";
+        -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+        DATA_TYPE               => x"03"--;
+    )
+    port map(
+        i_clk_156        => i_clk_156,
+        i_clk_250        => i_clk_250,
+        
+        i_reset_n_156    => i_resets_n_156(DATA_PATH),
+        i_reset_n_250    => i_resets_n_250(DATA_PATH),
+
+        i_resets_n_156   => i_resets_n_156,
+        i_resets_n_250   => i_resets_n_250,
+        
+        i_rx             => i_rx(15 downto 14),
+        i_rx_k           => i_rx_k(15 downto 14),
+        i_rmask_n        => x"0000000000" & i_writeregs_250(SWB_LINK_MASK_TILE_REGISTER_W),
+
+        i_writeregs_156  => i_writeregs_156,
+        i_writeregs_250  => i_writeregs_250,
+
+        o_counter        => counter_swb_data_tile,
+
+        i_dmamemhalffull => i_dmamemhalffull,
+        
+        o_farm_data      => o_tile_data,
+        o_farm_datak     => o_tile_datak,
+        o_fram_wen       => o_tile_wen,
+
+        o_dma_wren       => o_tile_dma_wren,
+        o_dma_done       => o_tile_dma_done,
+        o_endofevent     => o_tile_dma_endofevent,
+        o_dma_data       => o_tile_dma_data--;
+    );
 
 end architecture;

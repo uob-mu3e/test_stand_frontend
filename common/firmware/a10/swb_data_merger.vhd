@@ -13,11 +13,12 @@ use work.dataflow_components.all;
 use ieee.std_logic_misc.all;
 
 
-entity data_merger_swb is
+entity swb_data_merger is
     generic (
-        NLINKS : positive := 8;
+        NLINKS      : positive := 8;
+        SWB_ID      : std_logic_vector(7 downto 0) := x"01";
         -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-        DT     : std_logic_vector(7 downto 0) := x"01"--;
+        DATA_TYPE   : std_logic_vector(7 downto 0) := x"01"--;
     );
     port (
         i_reset_n   : in std_logic;
@@ -26,17 +27,14 @@ entity data_merger_swb is
         i_data      : in std_logic_vector(NLINKS * 38 - 1 downto 0);
         i_empty     : in std_logic;
 
-        i_swb_id    : in std_logic_vector(7 downto 0) := x"01";
-
         o_ren       : out std_logic;
         o_wen       : out std_logic;
         o_data      : out std_logic_vector(NLINKS * 32 - 1  downto 0);
         o_datak     : out std_logic_vector(NLINKS * 4 - 1  downto 0)--;
-
 );
-end entity data_merger_swb;
+end entity;
 
-architecture RTL of data_merger_swb is
+architecture arch of swb_data_merger is
          
     type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit, delay, get_tr, error_state);
     signal merge_state : merge_state_type;
@@ -80,7 +78,7 @@ begin
                     if ( header_state(0) = '1' ) then
                         merge_state             <= get_ts_1;
                         -- reg data
-                        o_data_reg(7 downto 0)  <= i_swb_id;
+                        o_data_reg(7 downto 0)  <= SWB_ID;
                     end if;
                     FOR I in NLINKS - 1 downto 0 LOOP
                         o_data(I * 32 + 31 downto I * 32)   <= K285;
@@ -145,7 +143,7 @@ begin
                     if ( header_state(3) = '1' ) then
                         merge_state             <= delay;
                         -- 1. link
-                        o_data(31 downto 0)     <= i_data(15 downto 0) & DT & x"5C";
+                        o_data(31 downto 0)     <= i_data(15 downto 0) & DATA_TYPE & x"5C";
                         -- 2. link
                         o_data(63 downto 32)    <= i_data(31 downto 16) & x"00" & x"5C";
                         -- 3. - 8. link
@@ -284,5 +282,4 @@ begin
         end if;
     end process;
     
-
-    end architecture RTL;
+end architecture;
