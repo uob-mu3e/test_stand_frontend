@@ -38,10 +38,10 @@ int main() {
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
-        printf("  [2] => insert sub-detector menu here\n");
+        printf("  [2] => sub-detector menu\n");
         printf("  [3] => sc\n");
         printf("  [4] => si5345_1\n");
-        printf("  [5] => si5345_2\n");        
+        printf("  [5] => si5345_2\n");
         printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
 
@@ -52,7 +52,7 @@ int main() {
             menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '2':
-            //mupix.menu();
+            //TMB.menu();
             break;
         case '3':
             sc.menu();

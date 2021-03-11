@@ -1,6 +1,6 @@
 
-#include "malibu/malibu_basic_cmd.h"
-malibu_t malibu;
+#include "TMB.h"
+TMB_t tmb;
 
 void menu_malibu() {
     auto& regs = sc.ram->regs.malibu;
