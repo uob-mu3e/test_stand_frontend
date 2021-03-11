@@ -43,14 +43,14 @@ struct mupix_t {
         
         //write conf defaults
         sc->ram->data[0xFF42]=0x001F0002;
-        sc->ram->data[0xFF42]=0x08380000;
+        sc->ram->data[0xFF42]=0x00380000;
         sc->ram->data[0xFF42]=0xFC05F000;
 
         
         // write vdac defaults
         sc->ram->data[0xFF43]=0x00720000;
-        sc->ram->data[0xFF43]=0x4C000047;
-        sc->ram->data[0xFF43]=0x00000000;
+        sc->ram->data[0xFF43]=0xFF000047;
+        sc->ram->data[0xFF43]=0x00B80000;
         
         // zero the rest
         for(int i = 0; i<30; i++){

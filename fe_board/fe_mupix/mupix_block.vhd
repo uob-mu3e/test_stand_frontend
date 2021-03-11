@@ -116,7 +116,7 @@ begin
     port map (
         i_reset_n           => datapath_reset_n,
         i_reset_n_regs      => not i_reset,
-        i_reset_n_lvds      => '1',--reset_n_lvds,todo: reg
+        i_reset_n_lvds      => not i_reset,--'1',--reset_n_lvds,todo: reg
 
         i_clk156            => i_clk156,
         i_clk125            => i_clk125,

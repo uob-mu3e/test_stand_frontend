@@ -173,7 +173,7 @@ begin
     FOR i in NINPUT-1 downto 0 generate	
         datadec: entity work.data_decoder 
             port map(
-                reset_n         => reset_n(i),
+                reset_n         => i_reset_n,--(i),
                 checker_rst_n   => checker_rst_n(i),
                 clk             => rx_clk(i/27),
                 rx_in           => rx_out(i*10+9 downto i*10),
