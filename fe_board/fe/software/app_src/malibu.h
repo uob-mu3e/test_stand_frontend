@@ -9,29 +9,33 @@ void menu_malibu() {
         printf("  [0] => reset\n");
         printf("  [1] => powerup MALIBU\n");
         printf("  [2] => powerdown MALIBU\n");
-        printf("  [3] => powerup ASIC\n");
+        printf("  [3] => powerup ASIC 0\n");
         printf("  [4] => stic3_config_PLL_TEST_ch0to6_noGenIDLE\n");
         printf("  [5] => data\n");
+        printf("  [6] => monitor test\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
         case '1':
-            malibu.powerup();
+            malibu.power_TMB(true);
             break;
         case '2':
-            malibu.powerdown();
+            malibu.power_TMB(false);
             break;
         case '3':
-            malibu.stic_configure(0, stic3_config_ALL_OFF);
+            malibu.power_ASIC(0);
             break;
         case '4':
-            malibu.stic_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
+            malibu.chip_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
             break;
-        case 's':
+        case '5':
             printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X\n", regs.mon.status);
             printf("rx_dpa_lock / rx_ready : 0x%04X / 0x%04X\n", regs.mon.rx_dpa_lock, regs.mon.rx_ready);
+            break;
+        case '6':
+            malibu.monitor_test_menu();
             break;
         case 'q':
             return;

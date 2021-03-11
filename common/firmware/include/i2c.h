@@ -62,6 +62,11 @@ struct i2c_t {
         return r8(slave);
     }
 
+    alt_u16 get16(alt_u8 slave, alt_u8 addr) {
+        w8(slave, addr);
+        return r16(slave);
+    }
+
     void set(alt_u8 slave, alt_u8 addr, alt_u8 data) {
         alt_u8 w[2] = { addr, data };
         write(dev, slave, w, 2);
