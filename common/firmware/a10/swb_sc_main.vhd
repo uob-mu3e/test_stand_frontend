@@ -14,7 +14,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
-entity sc_main is
+entity swb_sc_main is
 generic (
     NLINKS : integer := 4
 );
@@ -32,7 +32,7 @@ port (
 );
 end entity;
 
-architecture rtl of sc_main is
+architecture arch of swb_sc_main is
 
     --integer to one hot encoding
     function to_onehot(a:integer ; n:integer) return std_logic_vector is
@@ -90,7 +90,7 @@ begin
 				end if;
 			end if;
 		end process;
-	end generate gen_output;
+	end generate;
 
 	process(i_clk, i_reset_n)
 	begin

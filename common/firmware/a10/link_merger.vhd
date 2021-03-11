@@ -38,7 +38,7 @@ entity link_merger is
     );
     end entity link_merger;
 
-    architecture RTL of link_merger is
+    architecture arch of link_merger is
              
         signal reset_data, reset_mem : std_logic;
         
@@ -54,7 +54,7 @@ entity link_merger is
         signal stream_wdata, stream_rdata : std_logic_vector(W-1 downto 0);
         signal we_counter : std_logic_vector(63 downto 0);
         signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
-        signal hit_a : hit_array_t;
+        signal hit_a : work.util.slv32_array_t(7 downto 0);
         
 	begin
 	

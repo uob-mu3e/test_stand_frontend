@@ -9,10 +9,11 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
+
 use work.dataflow_components.all;
 
 
-entity link_merger is
+entity farm_link_merger is
     generic(
         W : integer := 66;
         NLINKS_TOTL : integer := 3;
@@ -36,9 +37,9 @@ entity link_merger is
         i_stream_rack : in std_logic--;
 
     );
-    end entity link_merger;
+    end entity;
 
-    architecture RTL of link_merger is
+    architecture arch of farm_link_merger is
              
         signal reset_data, reset_mem : std_logic;
         
@@ -54,7 +55,7 @@ entity link_merger is
         signal stream_wdata, stream_rdata : std_logic_vector(W-1 downto 0);
         signal we_counter : std_logic_vector(63 downto 0);
         signal stream_rempty, stream_rack, stream_wfull, stream_we : std_logic;
-        signal hit_a : hit_array_t;
+        signal hit_a : work.util.slv32_array_t(7 downto 0);
         
 	begin
 	
@@ -200,4 +201,4 @@ entity link_merger is
     o_stream_rempty <= stream_rempty;
     stream_rack <= i_stream_rack;
 
-    end architecture RTL;
+    end architecture;

@@ -1,17 +1,16 @@
 ----------------------------------------------------------------------------
 -- Slow Control Secondary Unit for Switching Board
 -- Marius Koeppel, Mainz University
--- makoeppe@students.uni-mainz.de
+-- mkoeppel@uni-mainz.de
 --
 -----------------------------------------------------------------------------
 
 library ieee;
 use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
---use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-entity sc_secondary is
+entity swb_sc_secondary is
 generic (
 		NLINKS : integer := 4;
 		skip_init : std_logic := '0'
@@ -30,7 +29,7 @@ port (
 );
 end entity;
 
-architecture RTL of sc_secondary is
+architecture arch of swb_sc_secondary is
 
 	signal mem_data_o : std_logic_vector(31 downto 0);
 	signal mem_addr_o : std_logic_vector(15 downto 0);
@@ -97,7 +96,7 @@ begin
 							state <= starting;
 							current_link <= i;
 							end if;
-					END LOOP link_mux;
+					END LOOP;
 
 				when starting =>
 					stateout(3 downto 0) <= x"2";

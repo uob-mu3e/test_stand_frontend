@@ -6,7 +6,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.daq_constants.all;
 
-ENTITY data_demerge is
+ENTITY swb_data_demerger is
 port (
     i_clk:                      in  std_logic; -- receive clock (156.25 MHz)
     i_reset:                    in  std_logic;
@@ -24,15 +24,15 @@ port (
 );
 end entity;
 
-architecture rtl of data_demerge is	
+architecture arch of swb_data_demerger is	
 
 ----------------signals---------------------
-    type   data_demerge_state is (idle,receiving_data, receiving_slowcontrol);
+    type   data_demerge_state is (idle, receiving_data, receiving_slowcontrol);
     signal demerge_state :          data_demerge_state;
     signal slowcontrol_type :       std_logic_vector(1 downto 0);
 
 ----------------begin data_demerge------------------------
-BEGIN
+begin
 
     process (i_clk, i_reset, i_aligned)
     begin

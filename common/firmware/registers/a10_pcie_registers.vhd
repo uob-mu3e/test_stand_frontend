@@ -1,10 +1,9 @@
--- Register Map
+-- register map for a10
 
 library ieee;
 use ieee.std_logic_1164.all;
---use work.mudaq_constants.all;
 
-package mudaq_registers is
+package a10_pcie_registers is
 
 		constant LED_REGISTER_W									:  integer := 16#00#;
 		constant RESET_REGISTER_W								:  integer := 16#01#;
