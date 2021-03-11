@@ -202,8 +202,8 @@ begin
         g_NLINKS_DATA           => 12,
         LINK_FIFO_ADDR_WIDTH    => 10,
         TREE_w                  => 10,
-        TREE_r                  => 10;
-        SWB_ID                  => x"01";
+        TREE_r                  => 10,
+        SWB_ID                  => x"01",
         -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
         DATA_TYPE               => x"01"--;
     )
@@ -250,8 +250,8 @@ begin
         g_NLINKS_DATA           => 2,
         LINK_FIFO_ADDR_WIDTH    => 10,
         TREE_w                  => 10,
-        TREE_r                  => 10;
-        SWB_ID                  => x"01";
+        TREE_r                  => 10,
+        SWB_ID                  => x"01",
         -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
         DATA_TYPE               => x"02"--;
     )
@@ -298,8 +298,8 @@ begin
         g_NLINKS_DATA           => 2,
         LINK_FIFO_ADDR_WIDTH    => 10,
         TREE_w                  => 10,
-        TREE_r                  => 10;
-        SWB_ID                  => x"01";
+        TREE_r                  => 10,
+        SWB_ID                  => x"01",
         -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
         DATA_TYPE               => x"03"--;
     )

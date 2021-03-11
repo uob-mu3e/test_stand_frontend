@@ -45,7 +45,6 @@ set_global_assignment -name VHDL_FILE ../../../fe_board/fe_mupix/mupix_block/com
 
 # Farm firmware
 set_global_assignment -name QIP_FILE ddr3/include.qip
-set_global_assignment -name QIP_FILE dataflow/include.qip
 
 
 

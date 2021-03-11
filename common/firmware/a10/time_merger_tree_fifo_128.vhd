@@ -6,7 +6,7 @@ use ieee.std_logic_misc.all;
 use work.dataflow_components.all;
 
 
-entity time_merger_tree_fifo_64 is
+entity time_merger_tree_fifo_128 is
 generic (
     TREE_w : positive := 8;
     TREE_r : positive := 8;
@@ -34,7 +34,7 @@ port (
 );
 end entity;
 
-architecture arch of time_merger_tree_fifo_64 is
+architecture arch of time_merger_tree_fifo_128 is
 
     -- merger signals
     constant size : integer := compare_fifos/2;
