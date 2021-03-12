@@ -76,8 +76,8 @@ architecture arch of swb_data_path is
     --! stream merger
     signal stream_rdata : std_logic_vector(35 downto 0);
     signal stream_counters : work.util.slv32_array_t(0 downto 0);
-    signal stream_rempty, stream_rack, stream_ren, stream_header, stream_trailer : std_logic;
-
+    signal stream_rempty, stream_ren, stream_header, stream_trailer : std_logic;
+    signal stream_rack : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
 
     --! timer merger
     signal merger_header, merger_trailer, merger_error : std_logic;
@@ -174,9 +174,9 @@ begin
             i_ren           => rx_ren(i),
             o_rdempty       => rx_rdempty(i),
 
-            o_error_cnt(0)  => link_to_fifo_cnt(0+i*3),
-            o_error_cnt(1)  => link_to_fifo_cnt(1+i*3),
-            o_error_cnt(2)  => link_to_fifo_cnt(2+i*3),
+            o_counter(0)  => link_to_fifo_cnt(0+i*3),
+            o_counter(1)  => link_to_fifo_cnt(1+i*3),
+            o_counter(2)  => link_to_fifo_cnt(2+i*3),
 
             i_reset_n_156   => i_reset_n_156,
             i_clk_156       => i_clk_156,

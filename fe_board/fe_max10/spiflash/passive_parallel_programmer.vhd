@@ -6,7 +6,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.spiflash_commands.all;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
 
 
 entity fpp_programmer is
@@ -150,7 +151,7 @@ begin
         -- here we can already set the inputs to the flash
         when progwait =>
             count           <= count + 1;
-            spi_command     <= COMMAND_QUAD_OUTPUT_FAST_READ;
+            spi_command     <= work.util.COMMAND_QUAD_OUTPUT_FAST_READ;
             spi_addr        <= start_address;
             spi_continue    <= '1';
 
