@@ -44,7 +44,7 @@ end data_decoder;
 architecture RTL of data_decoder is
 
 type sync_state_type is (reset, waitforplllock, waitfordpalock, check_k28_5, align); --, rxready);
-signal sync_state		: sync_state_type;
+signal sync_state		: sync_state_type := reset;
 
 --signal kcounter 		: std_logic_vector(3 downto 0);
 signal acounter 		: std_logic_vector(3 downto 0);
@@ -54,6 +54,7 @@ signal rx_k				: std_logic;
 
 signal align_ctr		: std_logic_vector(8 downto 0);  -- Jens
 signal k_seen 			: std_logic_vector(8 downto 0); -- Jens
+signal rx_reversed      : std_logic_vector(9 downto 0);
 
 signal ready_buf		: std_logic;
 
@@ -76,6 +77,9 @@ if(reset_n = '0') then
 	k_seen			<= (others => '0'); -- Jens
 	acounter			<= (others => '0');
 elsif(clk'event and clk = '1') then
+    for I in 0 to 9 loop
+        rx_reversed(9-I) <= rx_in(I);
+    end loop;
 
 	-- to be adapted!
 	rx_reset			<= '0';
@@ -224,7 +228,7 @@ d_checker : work.disparity_checker
 	port map(
 		reset_n				=> reset_n,
 		clk					=> clk,
-		rx_in					=> rx_in,	
+		rx_in					=> rx_reversed,
 		ready					=> ready_buf,
 		disp_err				=> disp_err
 		);
@@ -234,7 +238,7 @@ dec8b10b : work.decode8b10b
 	port map(
 		reset_n				=> reset_n,
 		clk					=> clk,
-		input					=> rx_in,
+		input					=> rx_reversed,
 		output				=> rx_decoded,
 		k						=> rx_k
 		);

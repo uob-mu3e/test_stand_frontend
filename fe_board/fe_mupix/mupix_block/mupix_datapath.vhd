@@ -35,6 +35,8 @@ port (
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
+    o_hotfix_reroute    : out reg32array_t(35 downto 0); -- TODO: fix problem and remove
+    i_hotfix_backroute  : in  std_logic;
     i_run_state_156     : in  run_state_t--;
 );
 end mupix_datapath;
@@ -45,14 +47,11 @@ architecture rtl of mupix_datapath is
     signal reset_125_n              : std_logic;
     signal sorter_reset_n           : std_logic;
 
-    signal lvds_pll_locked          : std_logic_vector(1 downto 0);
-    signal lvds_runcounter          : reg32array_t(35 downto 0);
-    signal lvds_errcounter          : reg32array_t(35 downto 0);
-
     -- signals after mux
     signal rx_data                  : bytearray_t(35 downto 0);
     signal rx_k                     : std_logic_vector(35 downto 0);
-    signal lvds_data_valid          : std_logic_vector(35 downto 0);
+    signal lvds_status              : reg32array_t(35 downto 0);
+    signal data_valid               : std_logic_vector(35 downto 0);
 
     -- hits + flag to indicate a word as a hit, after unpacker
     signal hits_ena                 : std_logic_vector(35 downto 0);
@@ -159,14 +158,15 @@ begin
         i_reg_wdata                 => i_reg_wdata,
 
         -- inputs  156--------------------------------------------
-        i_lvds_data_valid           => lvds_data_valid,
+        i_lvds_data_valid           => (others => '0'),
+        --i_lvds_status               => lvds_status,
 
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
         o_mp_lvds_link_mask         => lvds_link_mask,
         o_mp_readout_mode           => mp_readout_mode--,
     );
-
+    o_hotfix_reroute<= lvds_status; --TODO: fix this!!
 
 ------------------------------------------------------------------------------------
 ---------------------- LVDS Receiver part ------------------------------------------
@@ -179,19 +179,15 @@ begin
         rx_inclock_A        => i_lvds_rx_inclock_A,
         rx_inclock_B        => i_lvds_rx_inclock_B,
 
-        rx_state            => open, --rx_state, --TODO
-        --o_rx_ready          => data_valid,
-        o_rx_ready_nios     => lvds_data_valid,
+        o_rx_status         => lvds_status,
+        o_rx_ready          => data_valid,
+        i_rx_invert         => i_hotfix_backroute,
         rx_data             => rx_data,
-        rx_k                => rx_k,
-        pll_locked          => lvds_pll_locked--, -- write to some register!
-
-        --rx_runcounter     => lvds_runcounter, -- read_sc_regs
-        --rx_errorcounter   => lvds_errcounter, -- would be nice to add some error counter
+        rx_k                => rx_k--,
     );
 
     -- use a link mask to disable channels from being used in the data processing
-    link_enable <= lvds_data_valid and not lvds_link_mask;
+    link_enable <= data_valid and not lvds_link_mask;
 
 --------------------------------------------------------------------------------------
 --------------------- Unpack the data ------------------------------------------------
