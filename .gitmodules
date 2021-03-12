@@ -1,9 +1,6 @@
 [submodule "modules/midas"]
     path = modules/midas
     url = https://bitbucket.org/tmidas/midas
-[submodule "modules/mutrigana-base"]
-    path = modules/mutrigana-base
-    url = git@bitbucket.org:mu3e/mutrigana-base
 [submodule "common/kerneldriver/dmabuf"]
     path = common/kerneldriver/dmabuf
     url = https://github.com/akozlins/dmabuf
@@ -13,3 +10,6 @@
 [submodule "modules/jsroot"]
 	path = modules/jsroot
 	url = https://github.com/root-project/jsroot
+[submodule "modules/analyzer"]
+	path = modules/analyzer
+	url = git@bitbucket.org:mu3e/analyzer.git

@@ -20,6 +20,13 @@ odbedit -c 'mkdir Custom'
 odbedit -d Custom -c 'create STRING Path'
 odbedit -c "set Custom/Path $SOURCE/mhttpd/custom"
 
+
+# create custom page for manalyzer
+odbedit -d Custom -c 'create STRING OnlineAna'
+odbedit -d Custom -c 'create STRING Mu3eDisplay'
+odbedit -c 'set Custom/OnlineAna manalyzer/OnlineAna.html'
+odbedit -c 'set Custom/Mu3eDisplay manalyzer/Mu3eDisplay.html'
+
 #create custom pages for DAQ slow control
 #odbedit -d Custom -c 'create STRING SC'
 #odbedit -c 'set Custom/SC sc.html'

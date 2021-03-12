@@ -21,6 +21,16 @@ export MIDAS_EXP_NAME="Mu3e"
 
 cd "$MIDAS_DIR"
 ln -sf "${SOURCE}/modules/midas/resources"
+ln -sf "${SOURCE}/modules/analyzer/packages/mu3edisplay/config"
+ln -sf "${SOURCE}/modules/analyzer/packages/mu3edisplay/dist"
+ln -sf "${SOURCE}/modules/analyzer/packages/rootana/examples"
+
+ln -sf "${SOURCE}/mhttpd/custom/manalyzer/online_ana_setup.json"
+ln -sf "${SOURCE}/mhttpd/custom/manalyzer/OnlineAna.js"
+ln -sf "${SOURCE}/mhttpd/custom/manalyzer/OnlineAna.css"
+ln -sf "${SOURCE}/mhttpd/custom/manalyzer/plotting_functions_jsroot.js"
+ln -sf "${SOURCE}/mhttpd/custom/manalyzer/plotting_functions_nonroot.js"
+ln -sf "${SOURCE}/mhttpd/custom/manalyzer/rootana_functions.js"
 
 # bash or zsh require a rehash to pick up new commands
 if test -n "${BASH}" -o -n "${ZSH_VERSION}"; then
