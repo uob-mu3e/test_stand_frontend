@@ -9,7 +9,7 @@ set_false_path -from {debouncer:db1|o_q[0]} -to {*}
 set_false_path -from {debouncer:db2|o_q[0]} -to {*}
 
 # Arria internal temperature
-set_false_path -from {fe_block_v2:e_fe_block|nios:e_nios|nios_temp:temp*} -to {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|o_reg_rdata*}
+set_false_path -from {fe_block_v2:e_fe_block|nios:e_nios|nios_temp:temp*} -to {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|arriaV_temperature*}
 set_false_path -from {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|o_arriaV_temperature_ce} -to {*}
 set_false_path -from {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|o_arriaV_temperature_clr} -to {*}
 

@@ -17,31 +17,87 @@ struct mupix_t {
 
     const uint8_t  n_ASICS=1;
 
+    void test_mupix_write() {
+        printf("running mupix test write function ..\n");
+        printf("Chip mask     was set to : 0x%08x\n", sc->ram->data[0xFF48]);
+        printf("SPI slow down was set to : 0x%08x  (do not use 0 !)\n", sc->ram->data[0xFF47]);
+        
+        // example: writing to BIAS shift reg
+        
+        // clear config fifos
+        sc->ram->data[0xFF40]=0x00000FC0;
+        sc->ram->data[0xFF40]=0x00000000;
+        
+        // invert 29 bit shift reg order ? (no sure if i took the correct one in firmware) --> set bit 0 to 1
+        // invert csn ? --> set bit 1 to 1
+        sc->ram->data[0xFF49]=0x00000003;
+        
+        // write data for the  complete BIAS reg into FEB storage
+        sc->ram->data[0xFF41]=0x2A000A03;
+        sc->ram->data[0xFF41]=0xFA3F002F;
+        sc->ram->data[0xFF41]=0x1E041041;
+        sc->ram->data[0xFF41]=0x041E9A51;
+        sc->ram->data[0xFF41]=0x40280000;
+        sc->ram->data[0xFF41]=0x1400C20A;
+        sc->ram->data[0xFF41]=0x028A0000;
+        
+        //write conf defaults
+        sc->ram->data[0xFF42]=0x001F0002;
+        sc->ram->data[0xFF42]=0x00380000;
+        sc->ram->data[0xFF42]=0xFC05F000;
+
+        
+        // write vdac defaults
+        sc->ram->data[0xFF43]=0x00720000;
+        sc->ram->data[0xFF43]=0xFF000047;
+        sc->ram->data[0xFF43]=0x00B80000;
+        
+        // zero the rest
+        for(int i = 0; i<30; i++){
+        sc->ram->data[0xFF44]=0x00000000;}
+        
+        for(int i = 0; i<30; i++){
+        sc->ram->data[0xFF45]=0x00000000;}
+        
+        for(int i = 0; i<30; i++){
+        sc->ram->data[0xFF46]=0x00000000;}
+
+        sc->ram->data[0xFF40]=63;
+        sc->ram->data[0xFF40]=0;
+        return;
+    }
+
+    void menu_lvds() {
+        alt_u32 value = 0x0;
+        while (1) {
+            char cmd;
+            if(read(uart, &cmd, 1) > 0) switch(cmd) {
+            case '?':
+                wait_key();
+                break;
+            case 'q':
+                return;
+            default:
+                printf("invalid command: '%c'\n", cmd);
+            }
+            
+            printf("pll_lock should always be '1', rx_state 0: wait for dpa_lock 1: alignment 2:ok, disp_err is only counting in rx_state 2\n");
+            printf("order is CON2 ModuleA chip1 ABC, chip2 ABC, .. ModuleB chip1 ABC .. CON3..\n");
+            for(int i=0; i<36; i++){
+                value = sc->ram->data[0xFF66+i];
+                printf("%i ready: %01x  rx_state: %01x  pll_lock: %01x  disp_err: %01x\n ",i,value>>31,(value>>29) & 0x3,(value>>28) & 0x1,value & 0x0FFFFFFF);
+            }
+            printf("----------------------------\n");
+            usleep(200000);
+        }
+    }    
+    
     //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
     alt_u16 set_chip_dacs(alt_u32 asic, volatile alt_u32* bitpattern) {
-        printf("[mupix] configure asic(%u)\n", asic);
-
-        sc->ram->data[0xFF8D] = 0x005e0000 + (17 << asic); // 4 Sensors
-        for(int i = 0; i < MUPIX8_LEN32; i++) {
-            sc->ram->data[0xFF8D] = bitpattern[i];
-            //printf("0x%08x\n",bitpattern[i]);
-        }
-        sc->ram->data[0xFF8E] = 0x00100001;
-        sc->ram->data[0xFF95] = 0; //TODO: check if we really want to do this here (reset of chip dac fifo, why do we need this, is the fifo content already written to the chip here ???)
-
         return FEB_REPLY_SUCCESS;
     }
 
     alt_u16 set_board_dacs(alt_u32 asic, volatile alt_u32* bitpattern) {
-        printf("[mupix] configure board(%u)\n", asic);
-
-        for(unsigned int i = 0; i < MUPIXBOARD_LEN32; i++) {
-            sc->ram->data[0xFF83+i] = bitpattern[i];
-            //printf("0x%08x\n",bitpattern[i]);
-        }
-        sc->ram->data[0xFF8C] = 0x1;
-        sc->ram->data[0xFF8C] = 0x0;
-
         return FEB_REPLY_SUCCESS;
     }
 
@@ -59,65 +115,58 @@ struct mupix_t {
 
     void menu() {
         auto& regs = sc->ram->regs.scifi;
-        alt_u32 lvdsMask = 0x0;
+        alt_u32 value = 0x0;
         char str[2] = {0};
         
         while(1) {
-            printf("  [b] => set default board DACs (All)\n");
-            printf("  [0] => set default chip A DACs\n");
-            printf("  [1] => set default chip B DACs\n");
-            printf("  [2] => set default chip C DACs\n");
-            printf("  [3] => set default chip E DACs\n");
-            printf("  [4] => lvds links\n");
-            printf("  [5] => print lvds mask\n");
-            printf("  [6] => write lvds mask\n");
-            printf("  [7] => print lvds dvalid\n");
-            printf("  [8] => disable/enable run prep ack\n");
+            printf("  [0] => write mupix default conf (All)\n");
+            printf("  [1] => set mupix config mask\n");
+            printf("  [2] => set spi clk slow down reg\n");
+            printf("  [3] => print lvds status\n");
+            if((sc->ram->data[0xFF90]) & 1U){
+                printf("  [4] => do not invert lvds in\n");
+            }else{
+                printf("  [4] => invert lvds in\n");
+            }
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
             char cmd = wait_key();
             switch(cmd) {
             case '0':
-                set_chip_dacs(0, default_mupix_dacs);
+                test_mupix_write();
                 break;
             case '1':
-                set_chip_dacs(1, default_mupix_dacs);
-                break;
-            case '2':
-                set_chip_dacs(2, default_mupix_dacs);
-                break;
-            case '3':
-                set_chip_dacs(3, default_mupix_dacs);
-                break;
-            case '4':
-	        menu_lvds(sc->ram);		
-                break;
-            case '5':
-                printf("lvds mask: 0x%08x\n",sc->ram->data[0xFF96]);
-                break;
-            case '6':
-                lvdsMask = 0x0;
-                printf("Enter lvdsMask in hex: ");
+                value = 0x0;
+                printf("Enter Chip Mask in hex: ");
 
                 for(int i = 0; i<8; i++){
-                    printf("mask: 0x%08x\n", lvdsMask);
+                    printf("mask: 0x%08x\n", value);
                     str[0] = wait_key();
-                    lvdsMask = lvdsMask*16+strtol(str,NULL,16);
+                    value = value*16+strtol(str,NULL,16);
                 }
 
-                printf("setting mask to 0x%08x\n", lvdsMask);
-                sc->ram->data[0xFF96] = lvdsMask;
+                printf("setting mask to 0x%08x\n",value);
+                sc->ram->data[0xFF48]=value;
                 break;
-            case '7':
-                printf("lvds dvalid: 0x%08x\n",sc->ram->data[0xFF97]);
+            case '2':
+                value = 0x0;
+                printf("Enter value in hex:(clk period will be something like 12.8ns * this value)");
+
+                for(int i = 0; i<8; i++){
+                    printf("value: 0x%08x\n", value);
+                    str[0] = wait_key();
+                    value = value*16+strtol(str,NULL,16);
+                }
+
+                printf("setting spi slow down to 0x%08x\n",value);
+                sc->ram->data[0xFF47]=value;
                 break;
-            case '8':
-                sc->ram->data[0xFF98]=(sc->ram->data[0xFF98]+1)%2;
-                printf("run prep ack (1=always ack): 0x%08x\n",sc->ram->data[0xFF98]);
+            case '3':
+                menu_lvds();
                 break;
-            case 'b':
-                set_board_dacs(0, default_board_dacs);
+            case '4':
+                sc->ram->data[0xFF90] ^= 1UL;
                 break;
             case 'q':
                 return;

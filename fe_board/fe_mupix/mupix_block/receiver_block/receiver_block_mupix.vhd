@@ -13,6 +13,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
+use work.mupix_registers.all;
 
 entity receiver_block_mupix is 
     generic(
