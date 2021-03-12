@@ -19,8 +19,8 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 use work.mupix_registers.all;
-
-
+use work.mupix.all;
+use work.mudaq.all;
 
 entity data_unpacker is 
     generic (
@@ -211,9 +211,9 @@ begin
                                     NS      <= COUNTER;
                                     cnt4    <= "01";
                                 end if;
-                            elsif kin = '1' and datain = work.util.K28_0 then -- data mode
+                            elsif kin = '1' and datain = K28_0 then -- data mode
                                 NS <= LINK;
-                            elsif kin = '1' and datain = work.util.K28_5 then
+                            elsif kin = '1' and datain = K28_5 then
                                 NS <= IDLE; 
                             else
                                 NS <= ERROR;
@@ -228,7 +228,7 @@ begin
                                     counter_seen    <= '1';
                                     NS              <= IDLE;
                                 end if;
-                            elsif kin = '1' and datain = work.util.K28_5 then    --and counter_int = 3 then
+                            elsif kin = '1' and datain = K28_5 then    --and counter_int = 3 then
                                 NS <= IDLE;
                             else
                                 NS <= ERROR;
@@ -248,7 +248,7 @@ begin
                                 else
                                     NS                <= ERROR;
                                 end if;
-                            elsif kin = '1' and datain = work.util.K28_0 then
+                            elsif kin = '1' and datain = K28_0 then
                                 link_toggle <= '1';
                             else
                                 NS <= ERROR;
@@ -262,7 +262,7 @@ begin
                                     hit_reg <= '1';
                                     NS      <= IDLE;
                                 end if;
-                            elsif kin = '1' and datain = work.util.K28_5 then
+                            elsif kin = '1' and datain = K28_5 then
                                 NS          <= IDLE;
                             else
                                 NS          <= ERROR;
@@ -270,7 +270,7 @@ begin
 
                         when ERROR =>
                             errorcounter_reg <= errorcounter_reg + '1';
-                            if ( kin = '1' and datain = work.util.K28_5 ) then
+                            if ( kin = '1' and datain = K28_5 ) then
                                 NS <= IDLE;
                             else
                                 NS <= ERROR;

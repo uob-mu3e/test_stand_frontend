@@ -3,6 +3,8 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
+use work.mudaq.all;
+
 LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
@@ -128,7 +130,7 @@ elsif ( clk100'event and clk100 = '1' ) then
             wcounter        <= (others => '0');
         end if;
             
-            if(spi_arria_byte_en = '1' and spi_arria_addr = work.util.FEBSPI_ADDR_PROGRAMMING_WFIFO) then
+            if(spi_arria_byte_en = '1' and spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_WFIFO) then
                 spiflash_to_fifo_we <= '1';
                 spiflashfifo_data_in <= spi_arria_byte_from_arria;
             elsif(fifopiotoggle_last /= spi_flash_fifo_data_nios(8)) then

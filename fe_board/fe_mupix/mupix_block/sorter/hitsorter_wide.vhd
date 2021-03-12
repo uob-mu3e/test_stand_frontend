@@ -19,6 +19,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
 
 use work.mupix.all;
+use work.mudaq.all;
 
 LIBRARY altera_mf;
 USE altera_mf.all;
@@ -33,11 +34,11 @@ entity hitsorter_wide is
 		hit_in							: in hit_array;
 		hit_ena_in						: in std_logic_vector(NCHIPS-1 downto 0);			-- valid hit
 		readclk							: in std_logic;										-- clock for read/output side
-		data_out						: out work.util.reg32;										-- packaged data out
+		data_out						: out reg32;										-- packaged data out
 		out_ena							: out STD_LOGIC;									-- valid output data
 		out_type						: out std_logic_vector(3 downto 0);				-- start/end of an output package, hits, end of run
 		diagnostic_sel					: in std_logic_vector(5 downto 0);					-- control the multiplexer for diagnostic signals
-		diagnostic_out					: out work.util.reg32											-- diganostic out (counters for hits at various stages)
+		diagnostic_out					: out reg32											-- diganostic out (counters for hits at various stages)
 		);
 end hitsorter_wide;
 
@@ -175,7 +176,7 @@ signal terminated_output : std_logic;
 signal noutoftime : reg_array;
 signal noverflow  : reg_array;
 signal nintime	  : reg_array;
-signal nout		  : work.util.reg32;
+signal nout		  : reg32;
 
 constant TSONE : slowts_t := "0000000001";
 constant TSZERO : slowts_t := "0000000000";
@@ -897,7 +898,7 @@ elsif(writeclk'event and writeclk = '1') then
 	case readcommand_last4(COMMANDBITS-1 downto COMMANDBITS-4) is
 	when COMMAND_HEADER1(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out		<= tscounter(46 downto 15);
-		out_type		<= work.util.MERGER_FIFO_PAKET_START_MARKER;
+		out_type		<= MERGER_FIFO_PAKET_START_MARKER;
 	when COMMAND_HEADER2(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out		<= tscounter(14 downto 0) & '0' & X"0000";
 		out_type		<= "0000";
@@ -906,7 +907,7 @@ elsif(writeclk'event and writeclk = '1') then
 		out_type		<= "0000";
 	when COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out 		<= (others => '0');
-		out_type		<= work.util.MERGER_FIFO_PAKET_END_MARKER;
+		out_type		<= MERGER_FIFO_PAKET_END_MARKER;
 		if(runshutdown = '1')then
 			terminate_output <= '1';
 		end if;	
@@ -919,7 +920,7 @@ elsif(writeclk'event and writeclk = '1') then
 	end case;
 	if(terminate_output = '1') then
 		data_out 		<= (others => '0');
-		out_type		<= work.util.MERGER_FIFO_RUN_END_MARKER;
+		out_type		<= MERGER_FIFO_RUN_END_MARKER;
 		out_ena			<= '1';
 		terminate_output    <= '0';
 		terminated_output	<= '1';

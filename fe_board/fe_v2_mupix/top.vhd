@@ -8,6 +8,8 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
+use work.mudaq.all;
+
 entity top is 
     port (
         fpga_reset                  : in    std_logic;
@@ -154,8 +156,8 @@ architecture rtl of top is
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n                 : std_logic_vector(15 downto 0);
 
-    signal run_state_125            : work.util.run_state_t;
-    signal run_state_156            : work.util.run_state_t;
+    signal run_state_125            : run_state_t;
+    signal run_state_156            : run_state_t;
     signal ack_run_prep_permission  : std_logic;
 
     signal sync_reset_cnt           : std_logic;
@@ -202,7 +204,7 @@ begin
     process(lvds_firefly_clk)
     begin
     if falling_edge(lvds_firefly_clk) then
-        if(run_state_125 = work.util.RUN_STATE_SYNC)then
+        if(run_state_125 = RUN_STATE_SYNC)then
             fast_reset_A    <= '1';
             fast_reset_B    <= '1';
             fast_reset_C    <= '1';

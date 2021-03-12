@@ -9,6 +9,8 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 
+use work.mudaq.all;
+
 
 entity fpp_programmer is
     port (
@@ -151,7 +153,7 @@ begin
         -- here we can already set the inputs to the flash
         when progwait =>
             count           <= count + 1;
-            spi_command     <= work.util.COMMAND_QUAD_OUTPUT_FAST_READ;
+            spi_command     <= COMMAND_QUAD_OUTPUT_FAST_READ;
             spi_addr        <= start_address;
             spi_continue    <= '1';
 

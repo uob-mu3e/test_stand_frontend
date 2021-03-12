@@ -6,6 +6,10 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
+
+use work.mudaq.all;
 
 
 entity ps_programmer is
@@ -109,7 +113,7 @@ begin
         -- here we can already set the inputs to the flash
         when progwait =>
             count           <= count + 1;
-            spi_command     <= work.util.COMMAND_READ_DATA;
+            spi_command     <= COMMAND_READ_DATA;
             spi_addr        <= start_address;
             spi_continue    <= '1';
 

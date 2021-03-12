@@ -8,6 +8,8 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
+use work.mudaq.all;
+
 
 entity rx_errcounter is
 port (
@@ -22,8 +24,8 @@ port (
 	rx_pll_locked:			in std_logic;
 	rx_patterndetect:		in std_logic;
 	
-	runcounter:				out work.util.reg32;
-	errcounter:				out work.util.reg32;
+	runcounter:				out reg32;
+	errcounter:				out reg32;
 	
 	rx_freqlocked_out:			out std_logic;
 	rx_sync_out:					out std_logic; 
@@ -38,11 +40,11 @@ end rx_errcounter;
 architecture rtl of rx_errcounter is
 
 signal timer:				std_logic_vector(27 downto 0);
-signal err:					work.util.reg32;
-signal run:					work.util.reg32;
+signal err:					reg32;
+signal run:					reg32;
 
-signal err_out:			work.util.reg32;
-signal run_out:			work.util.reg32;
+signal err_out:			reg32;
+signal run_out:			reg32;
 
 signal rx_status : std_logic_vector(5 downto 0);
 signal rx_status_out : std_logic_vector(5 downto 0);
@@ -100,7 +102,7 @@ begin
 	elsif(rising_edge(clk))then
 		if(rx_status(4) = '1') then
 			timer 		<= timer + '1';
-			if(timer = work.util.TIME_125MHz_1ms)then	-- use 1 ms instead of 1 second (but beware: runs actually with 156.25 MHz, not 125 MHz!)
+			if(timer = TIME_125MHz_1ms)then	-- use 1 ms instead of 1 second (but beware: runs actually with 156.25 MHz, not 125 MHz!)
 				timer 	<= (others => '0');
 				run		<= run + '1';
 			end if;

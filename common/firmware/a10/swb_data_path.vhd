@@ -74,7 +74,7 @@ architecture arch of swb_data_path is
     signal sop, eop, shop : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
 
     --! stream merger
-    signal stream_rdata : std_logic_vector(35 downto 0);
+    signal stream_rdata : std_logic_vector(31 downto 0);
     signal stream_counters : work.util.slv32_array_t(0 downto 0);
     signal stream_rempty, stream_ren, stream_header, stream_trailer : std_logic;
     signal stream_rack : std_logic_vector(g_NLINKS_TOTL-1 downto 0);

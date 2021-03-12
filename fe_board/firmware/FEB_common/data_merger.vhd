@@ -22,6 +22,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 
+use work.mudaq.all;
 
 ENTITY data_merger is
 GENERIC (
@@ -34,13 +35,13 @@ PORT (
     reset                       : in    std_logic;
     fpga_ID_in                  : in    std_logic_vector(N_LINKS*16-1 downto 0); -- will be set by 15 jumpers in the end, set this to something random for now
     FEB_type_in                 : in    std_logic_vector(5  downto 0); -- Type of the frontendboard (111010: mupix, 111000: mutrig, DO NOT USE 000111 or 000000 HERE !!!!)
-    run_state                   : in    work.util.run_state_t;
+    run_state                   : in    run_state_t;
     run_number                  : in    std_logic_vector(31 downto 0);
     o_data_out                  : out   std_logic_vector(127 downto 0):= -- to optical transm.
-                                          X"000000" & work.util.D28_5
-                                        & X"000000" & work.util.D28_5
-                                        & X"000000" & work.util.D28_5
-                                        & X"000000" & work.util.D28_5;
+                                          X"000000" & D28_5
+                                        & X"000000" & D28_5
+                                        & X"000000" & D28_5
+                                        & X"000000" & D28_5;
     o_data_is_k                 : out   std_logic_vector(15 downto 0):= "0001" & "0001" & "0001" & "0001";
     i_data_in                   : in    std_logic_vector(36*N_LINKS-1 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
     i_data_in_slowcontrol       : in    std_logic_vector(35 downto 0); -- data input slowcontrol from SCFIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 SCData))
@@ -223,8 +224,8 @@ begin
                 merger_state                    <= idle;
                 slowcontrol_read_req            <= '0';
                 data_read_req                   <= '0';
-                data_is_k(4*i+3 downto 4*i)     <= work.util.MERGER_TIMEOUT_DATAK;
-                data_out(32*i+31 downto 32*i)   <= work.util.MERGER_TIMEOUT;
+                data_is_k(4*i+3 downto 4*i)     <= MERGER_TIMEOUT_DATAK;
+                data_out(32*i+31 downto 32*i)   <= MERGER_TIMEOUT;
                 merger_timeout_counter          <= 0;
             else
                 merger_timeout_counter          <= merger_timeout_counter + 1;
@@ -237,7 +238,7 @@ begin
         -- use override data input
         -- wait for slowcontrol to finish before
 
-        if ( run_state = work.util.RUN_STATE_LINK_TEST or run_state = work.util.RUN_STATE_SYNC_TEST ) then
+        if ( run_state = RUN_STATE_LINK_TEST or run_state = RUN_STATE_SYNC_TEST ) then
             case merger_state is
             when idle =>
                 -- send override start (Problem: how to end this on switch side ??)
@@ -286,7 +287,7 @@ begin
         ------------------------------- feb state sync or reset ------------------------------
         -- send only komma words
         -- wait for slowcontrol to finish before
-        elsif ( run_state = work.util.RUN_STATE_SYNC or run_state = work.util.RUN_STATE_RESET ) then
+        elsif ( run_state = RUN_STATE_SYNC or run_state = RUN_STATE_RESET ) then
             case merger_state is
             when sending_slowcontrol =>
                 -- slowcontrol header is trasmitted, send slowcontrol data now
@@ -310,7 +311,7 @@ begin
         end case;
 
         ------------------------------- feb state idle or outOfDaq --------------------------
-        elsif ( run_state = work.util.RUN_STATE_IDLE or run_state = work.util.RUN_STATE_OUT_OF_DAQ ) then
+        elsif ( run_state = RUN_STATE_IDLE or run_state = RUN_STATE_OUT_OF_DAQ ) then
             terminated(i)                       <= '0';
             run_prep_acknowledge_send           <= '0';
             override_granted(i)                 <= '0';
@@ -360,14 +361,14 @@ begin
 
         ------------------------------- feb state run prep  ---------------------------------------------
 
-        elsif ( run_state = work.util.RUN_STATE_PREP ) then
+        elsif ( run_state = RUN_STATE_PREP ) then
             terminated(i) <= '0';
             case merger_state is
             when idle =>
                 if ( run_prep_acknowledge_send = '0' and i_ack_run_prep_permission='1') then -- send run_prep_acknowledge
                     run_prep_acknowledge_send       <='1';
-                    data_out(32*i+31 downto 32*i)   <= run_number(23 downto 0) & work.util.run_prep_acknowledge(7 downto 0);
-                    data_is_k(4*i+3 downto 4*i)     <= work.util.run_prep_acknowledge_datak;
+                    data_out(32*i+31 downto 32*i)   <= run_number(23 downto 0) & run_prep_acknowledge(7 downto 0);
+                    data_is_k(4*i+3 downto 4*i)     <= run_prep_acknowledge_datak;
                 elsif ( slowcontrol_fifo_empty = '1' ) then -- no Slowcontrol --> do nothing
                     slowcontrol_read_req            <= '0';
                     data_out(32*i+31 downto 32*i)   <= K285;
@@ -406,18 +407,18 @@ begin
 
         ------------------------------- feb state running or terminating  ---------------------------------------------
 
-        elsif ( run_state = work.util.RUN_STATE_RUNNING or run_state = work.util.RUN_STATE_TERMINATING ) then
+        elsif ( run_state = RUN_STATE_RUNNING or run_state = RUN_STATE_TERMINATING ) then
             run_prep_acknowledge_send <= '0';
             case merger_state is
             when idle =>
-                if ( last_merger_fifo_control_bits = work.util.MERGER_FIFO_RUN_END_MARKER or
-                    data_in(35 downto 32) = work.util.MERGER_FIFO_RUN_END_MARKER or
-                    (run_state=work.util.RUN_STATE_TERMINATING and can_terminate='1')
+                if ( last_merger_fifo_control_bits = MERGER_FIFO_RUN_END_MARKER or
+                    data_in(35 downto 32) = MERGER_FIFO_RUN_END_MARKER or
+                    (run_state=RUN_STATE_TERMINATING and can_terminate='1')
                     ) then
                     -- allows run end for idle and sending data, run end in state sending_data is always packet end
                     terminated(i)                           <= '1';
-                    data_out(32*i+31 downto 32*i)           <= work.util.RUN_END;
-                    data_is_k(4*i+3 downto 4*i)             <= work.util.RUN_END_DATAK;
+                    data_out(32*i+31 downto 32*i)           <= RUN_END;
+                    data_is_k(4*i+3 downto 4*i)             <= RUN_END_DATAK;
                     merger_state                            <= wait_for_terminate;
                 elsif ( slowcontrol_fifo_empty = '1' and data_fifo_empty = '1' ) then -- no data, state is idle --> do nothing
                     slowcontrol_read_req                    <= '0';

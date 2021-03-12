@@ -9,6 +9,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 
+use work.mutrig.all;
+
 
 entity mutrig_datapath is
 generic(
@@ -113,7 +115,7 @@ signal s_any_framegen_busy, s_any_framegen_busy_156 : std_logic;
 
 --fifo - frame collector mux
 signal s_fifos_empty 		: std_logic_vector(N_ASICS_TOTAL-1 downto 0):=(others =>'1');
-signal s_fifos_data		: work.util.mutrig_evtdata_array_t(N_ASICS_TOTAL-1 downto 0);
+signal s_fifos_data		: mutrig_evtdata_array_t(N_ASICS_TOTAL-1 downto 0);
 signal s_fifos_rd		: std_logic_vector(N_ASICS_TOTAL-1 downto 0);
 
 -- frame collector mux - prbs decoder 

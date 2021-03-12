@@ -8,6 +8,7 @@ use ieee.numeric_std.all;
 
 use work.mupix_registers.all;
 use work.mupix.all;
+use work.mudaq.all;
 
 entity mupix_datapath is
 port (
@@ -33,8 +34,8 @@ port (
 
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
-    i_run_state_125     : in  work.util.run_state_t;
-    i_run_state_156     : in  work.util.run_state_t--;
+    i_run_state_125     : in  run_state_t;
+    i_run_state_156     : in  run_state_t--;
 );
 end mupix_datapath;
 
@@ -142,8 +143,8 @@ architecture rtl of mupix_datapath is
 
 begin
 
-    reset_156_n <= '0' when (i_run_state_156=work.util.RUN_STATE_SYNC) else '1';
-    reset_125_n <= '0' when (i_run_state_125=work.util.RUN_STATE_SYNC) else '1';
+    reset_156_n <= '0' when (i_run_state_156=RUN_STATE_SYNC) else '1';
+    reset_125_n <= '0' when (i_run_state_125=RUN_STATE_SYNC) else '1';
 ------------------------------------------------------------------------------------
 ---------------------- registers ---------------------------------------------------
     e_mupix_reg_mapping : work.mupix_reg_mapping
@@ -317,8 +318,8 @@ begin
         hits_sorter_in(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
     END GENERATE;
 
-    running         <= '1' when i_run_state_125 = work.util.RUN_STATE_RUNNING else '0';
-    sorter_reset_n  <= '0' when i_run_state_125 = work.util.RUN_STATE_IDLE else '1';
+    running         <= '1' when i_run_state_125 = RUN_STATE_RUNNING else '0';
+    sorter_reset_n  <= '0' when i_run_state_125 = RUN_STATE_IDLE else '1';
 
     sorter: work.hitsorter_wide
     port map(

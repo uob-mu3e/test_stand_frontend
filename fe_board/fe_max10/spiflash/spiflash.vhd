@@ -7,6 +7,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.mudaq.all;
+
 
 entity spiflash is
     port (
@@ -102,29 +104,29 @@ elsif(clk'event and clk = '1') then
             count <= count + 1;
         end if;
         if(count = 8)then
-            if(spi_command = work.util.COMMAND_WRITE_ENABLE or 
-               spi_command = work.util.COMMAND_WRITE_DISABLE or
-               spi_command = work.util.COMMAND_WRITE_ENABLE_VSR or
-               spi_command = work.util.COMMAND_CHIP_ERASE or
-               spi_command = work.util.COMMAND_ENABLE_RESET or
-               spi_command = work.util.COMMAND_RESET or
-               spi_command = work.util.COMMAND_ERASE_SECURITY_REGISTERS)  then
+            if(spi_command = COMMAND_WRITE_ENABLE or 
+               spi_command = COMMAND_WRITE_DISABLE or
+               spi_command = COMMAND_WRITE_ENABLE_VSR or
+               spi_command = COMMAND_CHIP_ERASE or
+               spi_command = COMMAND_ENABLE_RESET or
+               spi_command = COMMAND_RESET or
+               spi_command = COMMAND_ERASE_SECURITY_REGISTERS)  then
 
                 spi_state <= stop;
                 toggle <= '0';
 
-            elsif(spi_command = work.util.COMMAND_READ_DATA or
-               spi_command = work.util.COMMAND_FAST_READ or
-               spi_command = work.util.COMMAND_DUAL_OUTPUT_FAST_READ or
-               spi_command = work.util.COMMAND_QUAD_OUTPUT_FAST_READ or
-               spi_command = work.util.COMMAND_PAGE_PROGRAM or
-               spi_command = work.util.COMMAND_QUAD_PAGE_PROGRAM or
-               spi_command = work.util.COMMAND_FAST_PAGE_PROGRAM or
-               spi_command = work.util.COMMAND_SECTOR_ERASE or
-               spi_command = work.util.COMMAND_BLOCK_ERASE_32 or
-               spi_command = work.util.COMMAND_BLOCK_ERASE_64 or
-               spi_command = work.util.COMMAND_PROG_SECURITY_REGISTERS or
-               spi_command = work.util.COMMAND_READ_SECURITY_REGISTERS) then
+            elsif(spi_command = COMMAND_READ_DATA or
+               spi_command = COMMAND_FAST_READ or
+               spi_command = COMMAND_DUAL_OUTPUT_FAST_READ or
+               spi_command = COMMAND_QUAD_OUTPUT_FAST_READ or
+               spi_command = COMMAND_PAGE_PROGRAM or
+               spi_command = COMMAND_QUAD_PAGE_PROGRAM or
+               spi_command = COMMAND_FAST_PAGE_PROGRAM or
+               spi_command = COMMAND_SECTOR_ERASE or
+               spi_command = COMMAND_BLOCK_ERASE_32 or
+               spi_command = COMMAND_BLOCK_ERASE_64 or
+               spi_command = COMMAND_PROG_SECURITY_REGISTERS or
+               spi_command = COMMAND_READ_SECURITY_REGISTERS) then
 
                 spi_state <= address;
                 count     <= 0;
@@ -132,7 +134,7 @@ elsif(clk'event and clk = '1') then
                 shiftreg  <= spi_addr;
                 spi_mosi  <= spi_addr(23);
 
-            elsif(spi_command = work.util.COMMAND_DUAL_IO_FAST_READ
+            elsif(spi_command = COMMAND_DUAL_IO_FAST_READ
                  ) then
 
                 spi_state <= dual_address;
@@ -143,8 +145,8 @@ elsif(clk'event and clk = '1') then
                 spi_mosi    <= spi_addr(22);
                 spi_miso    <= spi_addr(23);
 
-            elsif(spi_command = work.util.COMMAND_QUAD_IO_FAST_READ or
-                  spi_command = work.util.COMMAND_QUAD_IO_WORD_FAST_READ
+            elsif(spi_command = COMMAND_QUAD_IO_FAST_READ or
+                  spi_command = COMMAND_QUAD_IO_WORD_FAST_READ
             ) then
 
                 spi_state <= quad_address;
@@ -157,10 +159,10 @@ elsif(clk'event and clk = '1') then
                 spi_D2      <= spi_addr(22);
                 spi_D3      <= spi_addr(23);
 
-            elsif(spi_command = work.util.COMMAND_READ_STATUS_REGISTER1 or
-                  spi_command = work.util.COMMAND_READ_STATUS_REGISTER2 or
-                  spi_command = work.util.COMMAND_READ_STATUS_REGISTER3 or
-                  spi_command = work.util.COMMAND_JEDEC_ID) then
+            elsif(spi_command = COMMAND_READ_STATUS_REGISTER1 or
+                  spi_command = COMMAND_READ_STATUS_REGISTER2 or
+                  spi_command = COMMAND_READ_STATUS_REGISTER3 or
+                  spi_command = COMMAND_JEDEC_ID) then
 
                 spi_state <= read;
                 dummyread <= '0';
@@ -169,9 +171,9 @@ elsif(clk'event and clk = '1') then
                 spi_miso  <= 'Z';
 
 
-            elsif(spi_command = work.util.COMMAND_WRITE_STATUS_REGISTER1 or
-                  spi_command = work.util.COMMAND_WRITE_STATUS_REGISTER2 or
-                  spi_command = work.util.COMMAND_WRITE_STATUS_REGISTER3) then
+            elsif(spi_command = COMMAND_WRITE_STATUS_REGISTER1 or
+                  spi_command = COMMAND_WRITE_STATUS_REGISTER2 or
+                  spi_command = COMMAND_WRITE_STATUS_REGISTER3) then
 
                 spi_state <= write;
                 count     <= 0;
@@ -193,24 +195,24 @@ elsif(clk'event and clk = '1') then
             count <= count + 1;
         end if;
         if(count = 24)then
-            if(spi_command = work.util.COMMAND_READ_DATA or
-              spi_command = work.util.COMMAND_FAST_READ or
-              spi_command = work.util.COMMAND_READ_SECURITY_REGISTERS
+            if(spi_command = COMMAND_READ_DATA or
+              spi_command = COMMAND_FAST_READ or
+              spi_command = COMMAND_READ_SECURITY_REGISTERS
             ) then
 
                 spi_state <= read;
                 count     <= 0;
                 toggle    <= '1';
                 spi_miso  <= 'Z';
-                if(spi_command = work.util.COMMAND_FAST_READ or
-                   spi_command = work.util.COMMAND_READ_SECURITY_REGISTERS
+                if(spi_command = COMMAND_FAST_READ or
+                   spi_command = COMMAND_READ_SECURITY_REGISTERS
                 ) then
                     dummyread <= '1';
                 else 
                     dummyread <= '0';
                 end if;
 
-            elsif(spi_command = work.util.COMMAND_DUAL_OUTPUT_FAST_READ) then
+            elsif(spi_command = COMMAND_DUAL_OUTPUT_FAST_READ) then
                 
                 spi_state <= dual_read;
                 count     <= 0;
@@ -219,7 +221,7 @@ elsif(clk'event and clk = '1') then
                 spi_mosi  <= 'Z';
                 dummyread <= '1';
 
-            elsif(spi_command = work.util.COMMAND_QUAD_OUTPUT_FAST_READ) then
+            elsif(spi_command = COMMAND_QUAD_OUTPUT_FAST_READ) then
                 
                 spi_state <= quad_read_fast;
                 count     <= 0;
@@ -230,9 +232,9 @@ elsif(clk'event and clk = '1') then
                 spi_D3    <= 'Z';
                 dummyread <= '1';   
                 
-            elsif(spi_command = work.util.COMMAND_PAGE_PROGRAM or
-               spi_command = work.util.COMMAND_FAST_PAGE_PROGRAM or
-               spi_command = work.util.COMMAND_PROG_SECURITY_REGISTERS
+            elsif(spi_command = COMMAND_PAGE_PROGRAM or
+               spi_command = COMMAND_FAST_PAGE_PROGRAM or
+               spi_command = COMMAND_PROG_SECURITY_REGISTERS
             ) then
                 spi_state <= write;
                 count     <= 0;
@@ -241,7 +243,7 @@ elsif(clk'event and clk = '1') then
                 spi_next_byte      <= '1';
                 spi_mosi  <= spi_data(7);
 
-            elsif(spi_command = work.util.COMMAND_QUAD_PAGE_PROGRAM
+            elsif(spi_command = COMMAND_QUAD_PAGE_PROGRAM
             ) then    
                 spi_state <= quad_write;
                 count     <= 0;
@@ -253,9 +255,9 @@ elsif(clk'event and clk = '1') then
                 spi_D2      <= spi_data(6);
                 spi_D3      <= spi_data(7);
                 
-            elsif(spi_command = work.util.COMMAND_SECTOR_ERASE or
-                  spi_command = work.util.COMMAND_BLOCK_ERASE_32 or
-                  spi_command = work.util.COMMAND_BLOCK_ERASE_64
+            elsif(spi_command = COMMAND_SECTOR_ERASE or
+                  spi_command = COMMAND_BLOCK_ERASE_32 or
+                  spi_command = COMMAND_BLOCK_ERASE_64
                   ) then
                 
                 spi_state <= stop;

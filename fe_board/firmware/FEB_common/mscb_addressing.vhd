@@ -5,6 +5,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.mudaq.all;
+
 
 ENTITY mscb_addressing is
 port (
@@ -82,11 +84,11 @@ begin
 
             case proc_state is
             when idle =>
-                if((data(7 downto 0) = work.util.MSCB_CMD_ADDR_NODE16) or (data(7 downto 0) = work.util.MSCB_CMD_PING16)) then
+                if((data(7 downto 0) = MSCB_CMD_ADDR_NODE16) or (data(7 downto 0) = MSCB_CMD_PING16)) then
                     proc_state                  <= addressing1;
                     cmd_buffer(8 downto 0)      <= data(8 downto 0);
                     timeout                     <= (others => '0'); -- start timeout counting
-                elsif ((data(7 downto 0) = work.util.MSCB_CMD_ADDR_BC)) then -- Broadcast command
+                elsif ((data(7 downto 0) = MSCB_CMD_ADDR_BC)) then -- Broadcast command
                     proc_state                  <= addressed;
                     send_buffer                 <= "100";
                     o_wrreq                     <= '1';

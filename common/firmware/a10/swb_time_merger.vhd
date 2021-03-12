@@ -14,7 +14,7 @@ generic (
 );
 port (
     -- input streams
-    i_rx        : in    data_array(g_NLINKS - 1 downto 0);
+    i_rx        : in    work.util.slv38_array_t(g_NLINKS - 1 downto 0);
     i_rsop      : in    std_logic_vector(g_NLINKS-1 downto 0);
     i_reop      : in    std_logic_vector(g_NLINKS-1 downto 0);
     i_rshop     : in    std_logic_vector(g_NLINKS-1 downto 0);

@@ -10,6 +10,8 @@ use ieee.std_logic_misc.all;
 use work.lfsr_taps.all;
 use work.mupix_registers.all;
 use work.mupix.all;
+use work.mudaq.all;
+
 
 entity mp_sorter_datagen is
 port (
@@ -231,7 +233,7 @@ architecture rtl of mp_sorter_datagen is
                         genstate            <= subhead;
                         mischief_managed    <= '1';
                     end if;
-                    fwdata(35 downto 32)    <= work.util.MERGER_FIFO_PAKET_START_MARKER;
+                    fwdata(35 downto 32)    <= MERGER_FIFO_PAKET_START_MARKER;
                     fwdata(31 downto  0)    <= global_ts(47 downto 16);
                     fwrite                  <= '1';
 
@@ -268,7 +270,7 @@ architecture rtl of mp_sorter_datagen is
                 when trail =>
                     genstate                <= idle;
                     if(miss_trailer = '0') then 
-                        fwdata(35 downto 32)<= work.util.MERGER_FIFO_PAKET_END_MARKER;
+                        fwdata(35 downto 32)<= MERGER_FIFO_PAKET_END_MARKER;
                         fwrite              <= '1';
                     else
                         mischief_managed    <= '1';
@@ -276,7 +278,7 @@ architecture rtl of mp_sorter_datagen is
 
                 when EoR =>
                     if(miss_EOR = '0') then 
-                        fwdata(35 downto 32)<= work.util.MERGER_FIFO_RUN_END_MARKER;
+                        fwdata(35 downto 32)<= MERGER_FIFO_RUN_END_MARKER;
                         fwrite              <= '1';
                         run_shutdown        <= '0';
                     else
