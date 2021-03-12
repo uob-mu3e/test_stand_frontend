@@ -6,7 +6,6 @@ use ieee.std_logic_unsigned.all;
 LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
-use work.daq_constants.all;
 
 entity top is
     port (
@@ -199,8 +198,8 @@ begin
         new_transaction <= '0';
     elsif(clk100'event and clk100 = '1')then
         rw_last     <= spi_arria_rw;
-        if(spi_arria_addr = FEBSPI_ADDR_WRITENABLE
-            and spi_arria_byte_from_arria = FEBSPI_PATTERN_WRITENABLE
+        if(spi_arria_addr = work.util.FEBSPI_ADDR_WRITENABLE
+            and spi_arria_byte_from_arria = work.util.FEBSPI_PATTERN_WRITENABLE
             and spi_arria_byte_en = '1' and spi_arria_rw = '1') then
                 spi_arria_we <= '1';
         end if;
@@ -216,20 +215,20 @@ begin
 
     -- Multiplexer for data to_arria
     spi_arria_data_to_arria  
-              <=   version when spi_arria_addr = FEBSPI_ADDR_GITHASH
-                    else status when spi_arria_addr = FEBSPI_ADDR_STATUS
-                    else control when  spi_arria_addr = FEBSPI_ADDR_CONTROL
-                    else programming_status when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_STATUS
-                    else flash_w_cnt when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_COUNT
-                    else adc_data_0 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+              <=   version when spi_arria_addr = work.util.FEBSPI_ADDR_GITHASH
+                    else status when spi_arria_addr = work.util.FEBSPI_ADDR_STATUS
+                    else control when  spi_arria_addr = work.util.FEBSPI_ADDR_CONTROL
+                    else programming_status when spi_arria_addr = work.util.FEBSPI_ADDR_PROGRAMMING_STATUS
+                    else flash_w_cnt when spi_arria_addr = work.util.FEBSPI_ADDR_PROGRAMMING_COUNT
+                    else adc_data_0 when spi_arria_addr = work.util.FEBSPI_ADDR_ADCDATA
                                      and spi_arria_addr_offset = X"00"
-                    else adc_data_1 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                    else adc_data_1 when spi_arria_addr = work.util.FEBSPI_ADDR_ADCDATA
                                      and spi_arria_addr_offset = X"01"
-                    else adc_data_2 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                    else adc_data_2 when spi_arria_addr = work.util.FEBSPI_ADDR_ADCDATA
                                      and spi_arria_addr_offset = X"02"
-                    else adc_data_3 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                    else adc_data_3 when spi_arria_addr = work.util.FEBSPI_ADDR_ADCDATA
                                      and spi_arria_addr_offset = X"03"
-                    else adc_data_4 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
+                    else adc_data_4 when spi_arria_addr = work.util.FEBSPI_ADDR_ADCDATA
                                      and spi_arria_addr_offset = X"04"
 						  else (others => '0'); -- needed to avoid latch
                                      
@@ -243,7 +242,7 @@ begin
     elsif(clk100'event and clk100 = '1')then
         -- Word-wise writing
         if(spi_arria_rw = '1' and spi_arria_word_en = '1') then
-            if(spi_arria_addr = FEBSPI_ADDR_CONTROL) then
+            if(spi_arria_addr = work.util.FEBSPI_ADDR_CONTROL) then
                 control <= spi_arria_word_from_arria;
             end if;
         end if;

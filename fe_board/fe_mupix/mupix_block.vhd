@@ -5,16 +5,15 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
-use work.daq_constants.all;
-use work.mupix_constants.all;
+
 use work.mupix_registers.all;
 
 entity mupix_block is
 port (
     i_fpga_id               : in  std_logic_vector(7 downto 0);
 
-    i_run_state_125           : in  run_state_t;
-    i_run_state_156           : in  run_state_t;
+    i_run_state_125           : in  work.util.run_state_t;
+    i_run_state_156           : in  work.util.run_state_t;
     o_ack_run_prep_permission : out std_logic;
 
     -- mupix dac regs
@@ -49,7 +48,7 @@ architecture arch of mupix_block is
 
 begin
 
-    datapath_reset_n <= '0' when (i_reset='1' or i_run_state_156=RUN_STATE_SYNC) else '1';
+    datapath_reset_n <= '0' when (i_reset='1' or i_run_state_156=work.util.RUN_STATE_SYNC) else '1';
     
     process(i_clk156,i_reset)
     begin

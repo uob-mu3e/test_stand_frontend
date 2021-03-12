@@ -5,10 +5,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
-use work.mupix_constants.all;
-use work.mupix_types.all;
+
 use work.mupix_registers.all;
+use work.mupix.all;
 
 entity mupix_datapath is
 port (
@@ -34,8 +33,8 @@ port (
 
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
-    i_run_state_125     : in  run_state_t;
-    i_run_state_156     : in  run_state_t--;
+    i_run_state_125     : in  work.util.run_state_t;
+    i_run_state_156     : in  work.util.run_state_t--;
 );
 end mupix_datapath;
 
@@ -46,11 +45,11 @@ architecture rtl of mupix_datapath is
     signal sorter_reset_n           : std_logic;
 
     signal lvds_pll_locked          : std_logic_vector(1 downto 0);
-    signal lvds_runcounter          : reg32array_t(35 downto 0);
-    signal lvds_errcounter          : reg32array_t(35 downto 0);
+    signal lvds_runcounter          : work.util.slv32_array_t(35 downto 0);
+    signal lvds_errcounter          : work.util.slv32_array_t(35 downto 0);
 
     -- signals after mux
-    signal rx_data                  : bytearray_t(35 downto 0);
+    signal rx_data                  : work.util.slv8_array_t(35 downto 0);
     signal rx_k                     : std_logic_vector(35 downto 0);
     signal lvds_data_valid          : std_logic_vector(35 downto 0);
 
@@ -104,7 +103,7 @@ architecture rtl of mupix_datapath is
     signal coarsecounters_ena_del   : std_logic_vector(11 downto 0);
 
     -- error signal output from unpacker
-    signal unpack_errorcounter      : reg32array_t(35 downto 0);
+    signal unpack_errorcounter      : work.util.slv32_array_t(35 downto 0);
 
     --signal regwritten_reg         : std_logic_vector(NREGISTERS-1 downto 0); 
 
@@ -143,8 +142,8 @@ architecture rtl of mupix_datapath is
 
 begin
 
-    reset_156_n <= '0' when (i_run_state_156=RUN_STATE_SYNC) else '1';
-    reset_125_n <= '0' when (i_run_state_125=RUN_STATE_SYNC) else '1';
+    reset_156_n <= '0' when (i_run_state_156=work.util.RUN_STATE_SYNC) else '1';
+    reset_125_n <= '0' when (i_run_state_125=work.util.RUN_STATE_SYNC) else '1';
 ------------------------------------------------------------------------------------
 ---------------------- registers ---------------------------------------------------
     e_mupix_reg_mapping : work.mupix_reg_mapping
@@ -318,8 +317,8 @@ begin
         hits_sorter_in(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
     END GENERATE;
 
-    running         <= '1' when i_run_state_125 = RUN_STATE_RUNNING else '0';
-    sorter_reset_n  <= '0' when i_run_state_125 = RUN_STATE_IDLE else '1';
+    running         <= '1' when i_run_state_125 = work.util.RUN_STATE_RUNNING else '0';
+    sorter_reset_n  <= '0' when i_run_state_125 = work.util.RUN_STATE_IDLE else '1';
 
     sorter: work.hitsorter_wide
     port map(

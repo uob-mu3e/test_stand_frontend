@@ -24,13 +24,10 @@
 ----------------------------------------------------------------------------------
 
 
-Library IEEE;
-use IEEE.STD_LOGIC_1164.all;
-use IEEE.NUMERIC_STD.all;
+Library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
-
-use work.serial_comm_defs.all;
---use work.mutrig_constants.all;
 
 entity frame_rcv is
 	generic (
@@ -224,7 +221,7 @@ begin
 				n_new_frame      <= '0';
 
 				--State transition
-				if i_enable = '1' and i_byteisk = '1' and i_data = c_header then -- detect frame_header, go to FS_FRAME_COUNTER
+				if i_enable = '1' and i_byteisk = '1' and i_data = work.util.c_header then -- detect frame_header, go to FS_FRAME_COUNTER
 					n_new_frame		<= '1';
 					n_state			<= FS_FRAME_COUNTER;
 					n_state_wait_cnt	<= 2;

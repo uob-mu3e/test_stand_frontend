@@ -12,8 +12,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
-use work.dataflow_components.all;
-use work.mudaq_registers.all;
+use work.a10_pcie_registers.all;
 
 
 entity swb_data_path is
@@ -42,8 +41,8 @@ port(
     i_rx_k           : in  work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
     i_rmask_n        : in  std_logic_vector(g_NLINKS_TOTL-1 downto 0);
 
-    i_writeregs_156  : in  reg32array;
-    i_writeregs_250  : in  reg32array;
+    i_writeregs_156  : in  work.util.reg32array;
+    i_writeregs_250  : in  work.util.reg32array;
 
     o_counter        : out work.util.slv32_array_t(5+(g_NLINKS_TOTL*3)-1 downto 0);
 
@@ -70,15 +69,14 @@ architecture arch of swb_data_path is
     --! data link signals
     signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
     signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_mask_n, rx_rdempty : std_logic_vector (g_NLINKS_TOTL - 1 downto 0);
-    signal rx_q : data_array(NLINKS - 1 downto 0);
+    signal rx_mask_n, rx_rdempty, rx_ren : std_logic_vector (g_NLINKS_TOTL - 1 downto 0);
+    signal rx_q : work.util.slv38_array_t(g_NLINKS_TOTL - 1 downto 0);
     signal sop, eop, shop : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
 
     --! stream merger
     signal stream_rdata : std_logic_vector(35 downto 0);
     signal stream_counters : work.util.slv32_array_t(0 downto 0);
-    signal stream_rempty, stream_rack : std_logic;
-    signal stream_header, stream_trailer : std_logic;
+    signal stream_rempty, stream_rack, stream_ren, stream_header, stream_trailer : std_logic;
 
 
     --! timer merger
@@ -118,7 +116,7 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_data_gen : entity work.data_generator_a10
+    e_data_gen_link : entity work.data_generator_a10
     generic map (
         go_to_trailer => 4,
         go_to_sh => 3--,
@@ -330,7 +328,7 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_data_gen : entity work.data_generator_merged_data
+    e_data_gen_merged : entity work.data_generator_merged_data
     port map(
         i_clk       => i_clk_250,
         i_reset_n   => i_reset_n_250,

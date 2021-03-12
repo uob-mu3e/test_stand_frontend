@@ -13,7 +13,6 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
-use work.mutrig_constants.all;
 
 entity framebuilder_mux is
 generic(
@@ -28,7 +27,7 @@ port (
 	i_timestamp_clk  : in  std_logic;	--125M timestamp clock
 	i_timestamp_rst  : in  std_logic;	--timestamp reset, synced to i_timestamp_clk, high active
 --event data inputs interface
-	i_source_data	 : in mutrig_evtdata_array_t(N_INPUTS-1 downto 0);
+	i_source_data	 : in work.util.mutrig_evtdata_array_t(N_INPUTS-1 downto 0);
 	i_source_empty   : in std_logic_vector(N_INPUTS-1 downto 0);
 	o_source_rd   	 : out std_logic_vector(N_INPUTS-1 downto 0);
 

@@ -2,7 +2,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.daq_constants.all;
 
 entity tile_path is
 generic (
@@ -36,7 +35,7 @@ port (
     i_common_fifos_almost_full : in std_logic_vector(N_LINKS-1 downto 0); 
 
     -- reset system
-    i_run_state     : in    run_state_t; --run state sync to i_clk_g125
+    i_run_state     : in    work.util.run_state_t; --run state sync to i_clk_g125
     o_run_state_all_done : out std_logic; -- all fifos empty, all data read
 
     o_MON_rxrdy     : out   std_logic_vector(N_MODULES*N_ASICS-1 downto 0); -- receiver ready flags for monitoring, sync to lvds_userclocks(A/B depending on LVDS placement)
@@ -93,7 +92,7 @@ begin
     -- 100 kHz
     e_test_pulse : entity work.clkdiv
     generic map ( P => 1250 )
-    port map ( o_clk => s_testpulse, i_reset_n => not i_run_state(RUN_STATE_BITPOS_SYNC), i_clk => i_clk_g125 );
+    port map ( o_clk => s_testpulse, i_reset_n => not i_run_state(work.util.RUN_STATE_BITPOS_SYNC), i_clk => i_clk_g125 );
     o_pll_test <= s_testpulse;
 
     s_cntreg_denom_b <= work.util.gray2bin(s_cntreg_denom_g_156);
@@ -193,9 +192,9 @@ begin
     end if;
     end process;
 
-    s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC);
-    s_datapath_rst <= i_reset or s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_PREP);
-    s_lvds_rx_rst <= i_reset or s_subdet_reset_reg(2)  or i_run_state(RUN_STATE_BITPOS_RESET);
+    s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(work.util.RUN_STATE_BITPOS_SYNC);
+    s_datapath_rst <= i_reset or s_subdet_reset_reg(1) or i_run_state(work.util.RUN_STATE_BITPOS_PREP);
+    s_lvds_rx_rst <= i_reset or s_subdet_reset_reg(2)  or i_run_state(work.util.RUN_STATE_BITPOS_RESET);
 
     rst_sync_dprst : entity work.reset_sync
     port map( i_reset_n => not s_datapath_rst, o_reset_n => s_datapath_rst_n_156, i_clk => i_clk_core);
@@ -242,7 +241,7 @@ begin
         i_refclk_125_A => i_clk_ref_A,
         i_refclk_125_B => i_clk_ref_B,
         i_ts_clk => i_clk_g125,
-        i_ts_rst => i_run_state(RUN_STATE_BITPOS_SYNC),
+        i_ts_rst => i_run_state(work.util.RUN_STATE_BITPOS_SYNC),
 
         -- interface to asic fifos
         i_clk_core => i_clk_core,
@@ -260,7 +259,7 @@ begin
         i_SC_datagen_count => s_dummyctrl_reg(12 downto 3),
         
         --run control
-        i_RC_may_generate => i_run_state(RUN_STATE_BITPOS_RUNNING),
+        i_RC_may_generate => i_run_state(work.util.RUN_STATE_BITPOS_RUNNING),
         o_RC_all_done => o_run_state_all_done,
 
         -- lapse lapse counter

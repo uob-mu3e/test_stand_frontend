@@ -10,7 +10,6 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
-use work.mudaq_registers.all;
 
 entity link_to_fifo_32 is
 generic (
@@ -66,7 +65,7 @@ begin
         if ( i_reset_n_156 = '0' ) then
             rx_156_data  <= (others => '0');
             rx_156_wen    <= '0';
-        elsif ( rising_edge(i_clk_data) ) then
+        elsif ( rising_edge(i_clk_156) ) then
             rx_156_data <= i_rx & i_rx_k;
             if ( i_rx = x"000000BC" and i_rx_k = "0001" ) then
                 rx_156_wen <= '0';
@@ -123,7 +122,7 @@ begin
     port map (
         data        => rx_250_data,
         wrreq       => rx_250_wen,
-        rdreq       => o_ren,
+        rdreq       => i_ren,
         wrclk       => i_clk_250,
         rdclk       => i_clk_250,
         q           => o_q,
@@ -140,9 +139,9 @@ begin
             almost_full       <= '0';
         elsif(rising_edge(i_clk_250)) then
             if(wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1') then
-                almost_full(i) <= '1';
+                almost_full <= '1';
             else 
-                almost_full(i) <= '0';
+                almost_full <= '0';
             end if;
         end if;
     end process;

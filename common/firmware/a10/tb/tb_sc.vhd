@@ -1,8 +1,8 @@
 library ieee;
 use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
---use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+
 
 --  A testbench has no ports.
 entity sc_tb is

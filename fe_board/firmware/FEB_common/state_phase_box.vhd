@@ -5,7 +5,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.daq_constants.all;
 
 ENTITY state_phase_box is
 generic (
@@ -13,12 +12,12 @@ generic (
 );
 PORT (
     -- input state (rx recovered clock)
-    i_state_125_rx      : in    run_state_t;
+    i_state_125_rx      : in    work.util.run_state_t;
     -- _same_ frequence as global 125 clock
     i_clk_125_rx        : in    std_logic;
 
     -- output state (global 125 clock)
-    o_state_125         : out   run_state_t;
+    o_state_125         : out   work.util.run_state_t;
     i_reset_125_n       : in    std_logic;
     i_clk_125           : in    std_logic;
 
@@ -54,19 +53,19 @@ begin
     process(i_clk_125, i_reset_125_n)
     begin
     if ( i_reset_125_n = '0' ) then
-        o_state_125 <= RUN_STATE_IDLE;
+        o_state_125 <= work.util.RUN_STATE_IDLE;
         --
     elsif rising_edge(i_clk_125) then
-        if(i_state_125_rx = RUN_STATE_IDLE)        then o_state_125 <= RUN_STATE_IDLE; end if;
-        if(i_state_125_rx = RUN_STATE_PREP)        then o_state_125 <= RUN_STATE_PREP; end if;
-        if(i_state_125_rx = RUN_STATE_SYNC)        then o_state_125 <= RUN_STATE_SYNC; end if;
-        if(i_state_125_rx = RUN_STATE_RUNNING)     then o_state_125 <= RUN_STATE_RUNNING; end if;
-        if(i_state_125_rx = RUN_STATE_TERMINATING) then o_state_125 <= RUN_STATE_TERMINATING; end if;
-        if(i_state_125_rx = RUN_STATE_LINK_TEST)   then o_state_125 <= RUN_STATE_LINK_TEST; end if;
-        if(i_state_125_rx = RUN_STATE_SYNC_TEST)   then o_state_125 <= RUN_STATE_SYNC_TEST; end if;
-        if(i_state_125_rx = RUN_STATE_RESET)       then o_state_125 <= RUN_STATE_RESET; end if;
-        if(i_state_125_rx = RUN_STATE_OUT_OF_DAQ)  then o_state_125 <= RUN_STATE_OUT_OF_DAQ; end if;
-        if(i_state_125_rx = RUN_STATE_IDLE)        then o_state_125 <= RUN_STATE_IDLE; end if;
+        if(i_state_125_rx = work.util.RUN_STATE_IDLE)        then o_state_125 <= work.util.RUN_STATE_IDLE; end if;
+        if(i_state_125_rx = work.util.RUN_STATE_PREP)        then o_state_125 <= work.util.RUN_STATE_PREP; end if;
+        if(i_state_125_rx = work.util.RUN_STATE_SYNC)        then o_state_125 <= work.util.RUN_STATE_SYNC; end if;
+        if(i_state_125_rx = work.util.RUN_STATE_RUNNING)     then o_state_125 <= work.util.RUN_STATE_RUNNING; end if;
+        if(i_state_125_rx = work.util.RUN_STATE_TERMINATING) then o_state_125 <= work.util.RUN_STATE_TERMINATING; end if;
+        if(i_state_125_rx = work.util.RUN_STATE_LINK_TEST)   then o_state_125 <= work.util.RUN_STATE_LINK_TEST; end if;
+        if(i_state_125_rx = work.util.RUN_STATE_SYNC_TEST)   then o_state_125 <= work.util.RUN_STATE_SYNC_TEST; end if;
+        if(i_state_125_rx = work.util.RUN_STATE_RESET)       then o_state_125 <= work.util.RUN_STATE_RESET; end if;
+        if(i_state_125_rx = work.util.RUN_STATE_OUT_OF_DAQ)  then o_state_125 <= work.util.RUN_STATE_OUT_OF_DAQ; end if;
+        if(i_state_125_rx = work.util.RUN_STATE_IDLE)        then o_state_125 <= work.util.RUN_STATE_IDLE; end if;
     end if;
     end process;
 

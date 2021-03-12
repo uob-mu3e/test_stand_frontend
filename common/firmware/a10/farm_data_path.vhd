@@ -10,10 +10,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
-use work.dataflow_components.all;
 
 
-entity data_flow is
+entity farm_data_path is
 generic (
 	    NLINKS : positive := 3--;
 );
@@ -70,7 +69,7 @@ port (
 );
 end entity;
 
-architecture rtl of data_flow is
+architecture rtl of farm_data_path is
 
 	signal reset, reset_ddr3 : std_logic;
 

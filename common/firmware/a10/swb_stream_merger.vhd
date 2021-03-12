@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.dataflow_components.all;
+
 
 -- merge packets delimited by SOP and EOP from N input streams
 entity swb_stream_merger is
@@ -11,7 +11,7 @@ generic (
 );
 port (
     -- input streams
-    i_rx        : in    data_array(N - 1 downto 0);
+    i_rx        : in    work.util.slv38_array_t(N - 1 downto 0);
     i_rsop      : in    std_logic_vector(N-1 downto 0);
     i_reop      : in    std_logic_vector(N-1 downto 0);
     i_rempty    : in    std_logic_vector(N-1 downto 0);

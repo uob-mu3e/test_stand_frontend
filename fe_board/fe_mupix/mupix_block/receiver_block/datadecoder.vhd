@@ -15,9 +15,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
-
-
 
 
 entity data_decoder is 
@@ -116,7 +113,7 @@ elsif(clk'event and clk = '1') then
 		
 	when check_k28_5 =>
 -- -- -- -- -- -- THIS IS NIK's ALIGNMENT --> doesn't work for Jens
---		if(rx_k = '1' and rx_decoded = k28_5) then
+--		if(rx_k = '1' and rx_decoded = work.util.K28_5) then
 --			kcounter <= kcounter + '1';
 --			if(kcounter = "1111") then
 --				sync_state		<= rxready;
@@ -135,13 +132,13 @@ elsif(clk'event and clk = '1') then
 			ready_buf			<= '0';
 			
 		-- we assume the Mupix data format here to fulfill the following criteria:
-		-- reset mode: a lot of k28_5 in a row
+		-- reset mode: a lot of work.util.K28_5 in a row
 		-- regular data format:
-		-- maxcycend 6 bits: 64 hits in a row + counter +link identifier = 264 cycles without k28_5-word in data stream
-		-- so within 512 cycles we should definitely see a few k28_5 words
+		-- maxcycend 6 bits: 64 hits in a row + counter +link identifier = 264 cycles without work.util.K28_5-word in data stream
+		-- so within 512 cycles we should definitely see a few work.util.K28_5 words
 		-- in worst case we check for 36 us (9*512*8ns) until we find the right pattern
 			
-		elsif(rx_decoded = k28_5 and rx_k = '1') then -- correct k-word coming in
+		elsif(rx_decoded = work.util.K28_5 and rx_k = '1') then -- correct k-word coming in
 			if(k_seen < "111111111")then
 				k_seen <= k_seen + 1;
 			end if;

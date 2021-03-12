@@ -8,7 +8,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
 
 entity overflow_check is
 generic (
@@ -44,7 +43,7 @@ begin
             o_wdata         <= i_wdata;
             case state is
                 when forwarding =>
-                    if (i_write_req = '1' and i_wdata(33 downto 32) = MERGER_FIFO_PAKET_START_MARKER(1 downto 0) and unsigned(i_usedw) > (2**FIFO_ADDR_WIDTH)-MAX_PAKET_SIZE) then
+                    if (i_write_req = '1' and i_wdata(33 downto 32) = work.util.MERGER_FIFO_PAKET_START_MARKER(1 downto 0) and unsigned(i_usedw) > (2**FIFO_ADDR_WIDTH)-MAX_PAKET_SIZE) then
                         state           <= throwing;
                         o_write_req     <= '0';
                     else
@@ -52,7 +51,7 @@ begin
                     end if;
                     
                 when throwing =>
-                    if (i_write_req = '1' and i_wdata(33 downto 32) = MERGER_FIFO_PAKET_START_MARKER(1 downto 0) and unsigned(i_usedw) < (2**FIFO_ADDR_WIDTH)-MAX_PAKET_SIZE) then
+                    if (i_write_req = '1' and i_wdata(33 downto 32) = work.util.MERGER_FIFO_PAKET_START_MARKER(1 downto 0) and unsigned(i_usedw) < (2**FIFO_ADDR_WIDTH)-MAX_PAKET_SIZE) then
                         state           <= forwarding;
                         o_write_req     <= i_write_req;
                     else

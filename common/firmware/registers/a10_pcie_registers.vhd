@@ -44,18 +44,6 @@ package a10_pcie_registers is
 
 		constant DATAGENERATOR_DIVIDER_REGISTER_W			    : integer := 16#03#;
 		constant KWORD_W										: integer := 16#04#;
-		constant DDR3_CONTROL_W									: integer := 16#20#;
-		constant DDR3_BIT_ENABLE_A								: integer := 0;
-		constant DDR3_BIT_COUNTERTEST_A						    : integer := 1;
-		    subtype  DDR3_COUNTERSEL_RANGE_A						is integer range 15 downto 14;		
-		constant DDR3_BIT_ENABLE_B								: integer := 16;
-		constant DDR3_BIT_COUNTERTEST_B						    : integer := 17;
-		    subtype  DDR3_COUNTERSEL_RANGE_B						is integer range 31 downto 30;
-		
-		constant	DATA_REQ_A_W								: integer := 16#21#;
-		constant	DATA_REQ_B_W								: integer := 16#22#;
-		constant DATA_TSBLOCK_DONE_W							: integer := 16#23#;
-		
         constant DMA_CONTROL_W								    : integer := 16#05#;
 			subtype DMA_CONTROL_COUNTER_RANGE 				        is integer range 15 downto 0;
 		constant DMA_SLOW_DOWN_REGISTER_W					    : integer := 16#06#;
@@ -70,7 +58,28 @@ package a10_pcie_registers is
 		constant GET_N_DMA_WORDS_REGISTER_W                     : integer := 16#0C#;
         constant SC_MAIN_ENABLE_REGISTER_W  				    : integer := 16#0D#;
         constant SC_MAIN_LENGTH_REGISTER_W  				    : integer := 16#0E#;
-        constant DATA_LINK_MASK_REGISTER_2_W                      : integer := 16#0F#;
+        constant DATA_LINK_MASK_REGISTER_2_W                    : integer := 16#0F#;
+        constant SWB_LINK_MASK_PIXEL_REGISTER_W					: integer := 16#10#;
+        constant SWB_LINK_MASK_SCIFI_REGISTER_W					: integer := 16#11#;
+        constant SWB_LINK_MASK_TILES_REGISTER_W					: integer := 16#12#;
+        constant SWB_READOUT_STATE_REGISTER_W					: integer := 16#13#;
+        	constant USE_GEN_LINK							    : integer := 0;
+			constant USE_STREAM							        : integer := 1;
+			constant USE_MERGER							        : integer := 2;
+			constant USE_LINK 								    : integer := 3;
+			constant USE_GEN_MERGER 						    : integer := 4;
+
+        constant DDR3_CONTROL_W									: integer := 16#20#;
+		constant DDR3_BIT_ENABLE_A								: integer := 0;
+		constant DDR3_BIT_COUNTERTEST_A						    : integer := 1;
+		    subtype  DDR3_COUNTERSEL_RANGE_A						is integer range 15 downto 14;		
+		constant DDR3_BIT_ENABLE_B								: integer := 16;
+		constant DDR3_BIT_COUNTERTEST_B						    : integer := 17;
+		    subtype  DDR3_COUNTERSEL_RANGE_B						is integer range 31 downto 30;
+		
+		constant	DATA_REQ_A_W								: integer := 16#21#;
+		constant	DATA_REQ_B_W								: integer := 16#22#;
+		constant DATA_TSBLOCK_DONE_W							: integer := 16#23#;
 
 		-- Registers above 0x36 are in use for the PCIe controller/DMA
 		constant DMA2_CTRL_ADDR_LOW_REGISTER_W				    : integer := 16#36#;

@@ -10,12 +10,12 @@
 --! Author: mkoeppel@uni-mainz.de
 -------------------------------------------------------
 
-library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.numeric_std.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
-use work.pcie_components.all;
-use work.mudaq_registers.all;
+use work.a10_pcie_registers.all; 
+
 
 entity swb_block is
 generic (
@@ -30,11 +30,11 @@ port (
     o_tx_k               : work.util.slv4_array_t(g_NLINKS-1 downto 0);
 
     --! PCIe registers / memory
-    i_writeregs_250      : in reg32array;
-    i_writeregs_156      : in reg32array;
+    i_writeregs_250      : in work.util.reg32array;
+    i_writeregs_156      : in work.util.reg32array;
     
-    o_readregs_250       : out reg32array;
-    o_readregs_156       : out reg32array;
+    o_readregs_250       : out work.util.reg32array;
+    o_readregs_156       : out work.util.reg32array;
 
     i_resets_n_156       : in std_logic_vector(31 downto 0);
     i_resets_n_250       : in std_logic_vector(31 downto 0);

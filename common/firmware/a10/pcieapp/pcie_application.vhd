@@ -11,9 +11,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.pcie_components.all;
---use work.mupix_types.all;
-use work.mudaq_registers.all;
+
+use work.a10_pcie_registers.all;
 
 entity pcie_application is
 generic (
@@ -22,11 +21,11 @@ generic (
 			DMAMEMWRITEWIDTH	  : integer := 32
 );
 port (
-    o_writeregs_B               : out   reg32array;
+    o_writeregs_B               : out   work.util.reg32array;
 	 o_regwritten_B:			out   std_logic_vector(63 downto 0);
     i_clk_B                     : in    std_logic := '0';
 	 
-    o_writeregs_C               : out   reg32array;
+    o_writeregs_C               : out   work.util.reg32array;
 	 o_regwritten_C:			out   std_logic_vector(63 downto 0);
     i_clk_C                     : in    std_logic := '0';
 
@@ -59,9 +58,9 @@ port (
 		app_msi_ack:			in		std_logic;
 
 		-- registers
-		writeregs :				out	reg32array;
+		writeregs :				out	work.util.reg32array;
 		regwritten :			out   std_logic_vector(63 downto 0);
-		readregs :				in 	reg32array;
+		readregs :				in 	work.util.reg32array;
 
 		-- pcie writeable memory
 		writememclk		  :   in std_logic;
@@ -137,10 +136,10 @@ architecture RTL of pcie_application is
 		signal rx_st_ready_wmem : 		std_logic;
 		
 		-- registers
-		signal writeregs_s :				reg32array;
+		signal writeregs_s :				work.util.reg32array;
 		signal regwritten_s :			std_logic_vector(63 downto 0);
-		signal readregs_s :				reg32array;
-		signal readregs_int :			reg32array;
+		signal readregs_s :				work.util.reg32array;
+		signal readregs_int :			work.util.reg32array;
 		
 		signal writememaddr:				std_logic_vector(15 downto 0);
 		signal writememaddr_r:			std_logic_vector(15 downto 0);

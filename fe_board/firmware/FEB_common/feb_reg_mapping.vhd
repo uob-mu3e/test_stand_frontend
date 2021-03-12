@@ -3,7 +3,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
+
 use work.feb_sc_registers.all;
 
 entity feb_reg_mapping is
@@ -22,12 +22,12 @@ port (
 
     -- inputs  156--------------------------------------------
     -- ALL INPUTS DEFAULT TO (n*4-1 downto 0 => x"CCC..", others => '1')
-    i_run_state_156             : in  run_state_t                   := RUN_STATE_UNDEFINED;
+    i_run_state_156             : in  work.util.run_state_t                   := work.util.RUN_STATE_UNDEFINED;
     i_merger_rate_count         : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
     i_reset_phase               : in  std_logic_vector(15 downto 0) := x"CCCC";
     i_arriaV_temperature        : in  std_logic_vector( 7 downto 0) := x"CC";
     i_fpga_type                 : in  std_logic_vector( 5 downto 0) := "111100";
-    i_adc_reg                   : in  reg32array_t    ( 4 downto 0) := (others => x"CCCCCCCC");
+    i_adc_reg                   : in  work.util.slv32_array_t( 4 downto 0) := (others => x"CCCCCCCC");
     i_max10_version             : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
 
     -- outputs 156--------------------------------------------
@@ -51,12 +51,12 @@ architecture rtl of feb_reg_mapping is
     signal fpga_id_reg              : std_logic_vector(N_LINKS*16-1 downto 0);
 
 -- inputs
-    signal run_state_156            : run_state_t;
+    signal run_state_156            : work.util.run_state_t;
     signal merger_rate_count        : std_logic_vector(31 downto 0);
     signal reset_phase              : std_logic_vector(15 downto 0);
     signal arriaV_temperature       : std_logic_vector( 7 downto 0);
     signal fpga_type                : std_logic_vector( 5 downto 0);
-    signal adc_reg                  : reg32array_t    ( 4 downto 0);
+    signal adc_reg                  : work.util.slv32_array_t( 4 downto 0);
 
 -- R/W test signals
     signal test_read                : std_logic;

@@ -8,7 +8,8 @@ use ieee.numeric_std.all;
 use work.daq_constants.all;
 use ieee.std_logic_misc.all;
 
-ENTITY run_control is
+
+entity run_control is
 generic (
         N_LINKS_g : integer := 4--;
 );

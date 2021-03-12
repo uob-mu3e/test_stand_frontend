@@ -17,10 +17,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
---use work.lvds_components.all;
---use work.mupix_types.all;
-use work.daq_constants.all;
-
 
 
 entity receiver_block is
@@ -46,9 +42,9 @@ port (
 
 	rx_dpa_locked_out   : out std_logic_vector(NINPUT-1 downto 0);
 
-	rx_runcounter       : out reg32array_t(NINPUT-1 downto 0);
-	rx_errorcounter     : out reg32array_t(NINPUT-1 downto 0);
-	rx_synclosscounter  : out reg32array_t(NINPUT-1 downto 0)
+	rx_runcounter       : out work.util.slv32_array_t(NINPUT-1 downto 0);
+	rx_errorcounter     : out work.util.slv32_array_t(NINPUT-1 downto 0);
+	rx_synclosscounter  : out work.util.slv32_array_t(NINPUT-1 downto 0)
 );
 end entity;
 
@@ -60,7 +56,7 @@ component data_decoder is
 	generic (
 		EVAL_WINDOW_WORDCNT_BITS : natural := 8; -- number of bits of the counter used to check for the sync pattern
 		EVAL_WINDOW_PATTERN_BITS : natural := 1; -- number of bits of the counter of the sync patterns found in the window (realign if not overflow)
-		ALIGN_WORD	 : std_logic_vector(7 downto 0):=k28_5 -- pattern byte to search for
+		ALIGN_WORD	 : std_logic_vector(7 downto 0):=work.util.K28_5 -- pattern byte to search for
 	);
 	port (
 		reset_n				: in std_logic;
@@ -255,7 +251,7 @@ gen_channels: for i in NINPUT-1 downto 0 generate
 		generic map(
 			EVAL_WINDOW_WORDCNT_BITS => 13,
 			EVAL_WINDOW_PATTERN_BITS => 2,
-			ALIGN_WORD	 	 => k28_0
+			ALIGN_WORD	 	 => work.util.K28_0
 		)
 		port map(
 			reset_n			=> reset_n,

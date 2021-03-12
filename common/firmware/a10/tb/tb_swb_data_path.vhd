@@ -3,9 +3,8 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
-use work.dataflow_components.all;
-use work.pcie_components.all;
-use work.mudaq_registers.all;
+use work.a10_pcie_registers.all;
+
 
 entity tb_swb_data_path is
 end entity;
@@ -22,8 +21,10 @@ architecture arch of tb_swb_data_path is
     signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
     signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
 
-    signal i_writeregs_156  : reg32array;
-    signal i_writeregs_250  : reg32array;
+    signal writeregs_156  : work.util.reg32array;
+    signal writeregs_250  : work.util.reg32array;
+
+    signal resets_n_156, resets_n_250 : std_logic_vector(31 downto 0);
 
 
 begin
@@ -55,15 +56,15 @@ begin
         i_reset_n_156    => reset_n,
         i_reset_n_250    => reset_n,
 
-        i_resets_n_156   => i_resets_n_156,
-        i_resets_n_250   => i_resets_n_250,
+        i_resets_n_156   => resets_n_156,
+        i_resets_n_250   => resets_n_250,
         
-        i_rx             => i_rx,
-        i_rx_k           => i_rx_k,
-        i_rmask_n        => x"0000000000" & i_writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W),
+        i_rx             => rx,
+        i_rx_k           => rx_k,
+        i_rmask_n        => x"0000000000" & writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W),
 
-        i_writeregs_156  => i_writeregs_156,
-        i_writeregs_250  => i_writeregs_250,
+        i_writeregs_156  => writeregs_156,
+        i_writeregs_250  => writeregs_250,
 
         o_counter        => open,
 

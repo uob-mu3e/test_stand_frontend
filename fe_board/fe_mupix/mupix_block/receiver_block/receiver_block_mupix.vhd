@@ -12,8 +12,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.mupix_types.all;
-use work.daq_constants.all;
+
 
 entity receiver_block_mupix is 
     generic(
@@ -31,7 +30,7 @@ entity receiver_block_mupix is
         rx_state        : out std_logic_vector(NINPUT*4-1 downto 0);
         o_rx_ready      : out std_logic_vector(NINPUT-1 downto 0);
         o_rx_ready_nios : out std_logic_vector(NINPUT-1 downto 0);
-        rx_data         : out bytearray_t(NINPUT-1 downto 0);
+        rx_data         : out work.util.slv8_array_t(NINPUT-1 downto 0);
         rx_k            : out std_logic_vector(NINPUT-1 downto 0);
         rx_clkout       : out std_logic_vector(2 downto 0);
         rx_doubleclk    : out std_logic_vector(1 downto 0);

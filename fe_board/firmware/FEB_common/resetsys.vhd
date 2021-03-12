@@ -2,7 +2,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.daq_constants.all;
 
 ENTITY resetsys is
 generic (
@@ -13,11 +12,11 @@ PORT (
     i_reset_125_rx_n    : in    std_logic;
     i_clk_125_rx        : in    std_logic;
 
-    o_state_125         : out   run_state_t;
+    o_state_125         : out   work.util.run_state_t;
     i_reset_125_n       : in    std_logic;
     i_clk_125           : in    std_logic;
 
-    o_state_156         : out   run_state_t;
+    o_state_156         : out   work.util.run_state_t;
     i_reset_156_n       : in    std_logic;
     i_clk_156           : in    std_logic;
 
@@ -40,7 +39,7 @@ architecture rtl of resetsys is
     -- terminated signal in sync to clk_125_rx of state controller:
     signal terminated_125_rx            : std_logic;
     
-    signal state_125_rx                 : run_state_t;
+    signal state_125_rx                 : work.util.run_state_t;
     signal state_controller_in          : std_logic_vector(7 downto 0);
     signal reset_bypass_125_rx          : std_logic_vector(11 downto 0);
     signal reset_bypass_payload_125_rx  : std_logic_vector(31 downto 0);
@@ -150,7 +149,7 @@ BEGIN
 
     e_fifo_sync : entity work.fifo_sync
     generic map (
-        RDATA_RESET_g => RUN_STATE_IDLE--,
+        RDATA_RESET_g => work.util.RUN_STATE_IDLE--,
     )
     port map (
         o_rdata     => o_state_156,

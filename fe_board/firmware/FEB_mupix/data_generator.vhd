@@ -1,23 +1,3 @@
-library ieee;
-use ieee.std_logic_1164.all;
-
-package protocol is
-
-    type data_merger_state is (idle, sending_data, sending_slowcontrol);
-    --type feb_state is (idle, run_prep, sync, running, terminating, link_test, sync_test, reset_state, out_of_DAQ);
-
-    constant HEADER_K:    std_logic_vector(31 downto 0) := x"000000bc";
-    constant HEADER_K_DATAK:    std_logic_vector(3 downto 0) := "0001";
-    constant WORD_ALIGN:    std_logic_vector(31 downto 0) := x"beefcafe";
-    constant DATA_HEADER_ID:    std_logic_vector(5 downto 0) := "111010";
-    constant DATA_SUB_HEADER_ID:    std_logic_vector(5 downto 0) := "111111";
-    constant ACTIVE_SIGNAL_HEADER_ID:    std_logic_vector(5 downto 0) := "111101";
-    constant RUN_TAIL_HEADER_ID:    std_logic_vector(5 downto 0) := "111110";
-    constant TIMING_MEAS_HEADER_ID:    std_logic_vector(5 downto 0) := "111100";
-    constant SC_HEADER_ID:    std_logic_vector(5 downto 0) := "111011";
-
-end package protocol;
-
 -- simple data generator (for slowcontrol and pixel data)
 -- writes into pix_data_fifo and sc_data_fifo
 -- only Header(sc or pix) + data
@@ -30,7 +10,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
-use work.protocol.all;
 
 
 entity data_generator is
@@ -177,15 +156,15 @@ begin
 						data_pix_generated					<= "0000" & global_time(15 downto 0) & x"0000";
 						data_header_state 					<= part3;
 					when part3 =>
-						data_pix_generated 					<= "0000" & "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
+						data_pix_generated 					<= "0000" & "0000" & work.util.DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
 						global_time								<= global_time + '1';
 						overflow_idx 							:= 0;
 						current_overflow						:= lsfr_overflow;
 						data_header_state 					<= part4;
 					when part4 =>
-						if (lsfr_chip_id = DATA_SUB_HEADER_ID) then
+						if (lsfr_chip_id = work.util.DATA_SUB_HEADER_ID) then
 							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0);-- "101010" & lsfr_row & lsfr_col & lsfr_tot;
-						elsif (lsfr_chip_id = DATA_HEADER_ID) then
+						elsif (lsfr_chip_id = work.util.DATA_HEADER_ID) then
 							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0); -- "010101" & lsfr_row & lsfr_col & lsfr_tot;
 						else
 							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0); --lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;
@@ -205,9 +184,9 @@ begin
 							data_header_state 				<= part3;
 						end if;
 					when overflow =>
-						if (lsfr_chip_id = DATA_SUB_HEADER_ID) then
+						if (lsfr_chip_id = work.util.DATA_SUB_HEADER_ID) then
 							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0);-- "101010" & lsfr_row & lsfr_col & lsfr_tot;
-						elsif (lsfr_chip_id = DATA_HEADER_ID) then
+						elsif (lsfr_chip_id = work.util.DATA_HEADER_ID) then
 							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0); -- "010101" & lsfr_row & lsfr_col & lsfr_tot;
 						else
 							data_pix_generated				<= "0000" & global_time(3 downto 0) & "000000" & global_time(21 downto 0); --lsfr_chip_id & lsfr_row & lsfr_col & lsfr_tot;

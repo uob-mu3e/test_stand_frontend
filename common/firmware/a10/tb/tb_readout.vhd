@@ -1,10 +1,9 @@
 library ieee;
 use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
---use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use std.textio.all;
-use IEEE.std_logic_textio.all; 
+use ieee.std_logic_textio.all; 
 
 
 --  A testbench has no ports.

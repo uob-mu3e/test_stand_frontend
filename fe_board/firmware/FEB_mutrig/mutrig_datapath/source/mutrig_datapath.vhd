@@ -9,8 +9,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 
-use work.daq_constants.all;
-use work.mutrig_constants.all;
 
 entity mutrig_datapath is
 generic(
@@ -84,7 +82,7 @@ constant N_ASICS_TOTAL : natural :=N_MODULES*N_ASICS;
 subtype t_vector is std_logic_vector(N_ASICS_TOTAL-1 downto 0);
 type t_array_64b is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(64-1 downto 0);
 type t_array_48b is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(48-1 downto 0);
-subtype t_array_32b is reg32array_t(N_ASICS_TOTAL-1 downto 0);
+subtype t_array_32b is work.util.slv32_array_t(N_ASICS_TOTAL-1 downto 0);
 type t_array_16b is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(16-1 downto 0);
 type t_array_8b  is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(8-1 downto 0);
 type t_array_2b  is array (N_ASICS_TOTAL-1 downto 0) of std_logic_vector(2-1 downto 0);
@@ -115,7 +113,7 @@ signal s_any_framegen_busy, s_any_framegen_busy_156 : std_logic;
 
 --fifo - frame collector mux
 signal s_fifos_empty 		: std_logic_vector(N_ASICS_TOTAL-1 downto 0):=(others =>'1');
-signal s_fifos_data		: mutrig_evtdata_array_t(N_ASICS_TOTAL-1 downto 0);
+signal s_fifos_data		: work.util.mutrig_evtdata_array_t(N_ASICS_TOTAL-1 downto 0);
 signal s_fifos_rd		: std_logic_vector(N_ASICS_TOTAL-1 downto 0);
 
 -- frame collector mux - prbs decoder 

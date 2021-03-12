@@ -10,6 +10,149 @@ use ieee.math_real.all;
 use std.textio.all;
 use ieee.std_logic_textio.all;
 
+package mupix is
+    --! MuPix
+    -----------------------------------------------------------------
+    -- Things to clean up with the generics
+    -----------------------------------------------------------------
+    constant NINPUTS                :  integer := 36;
+    constant NSORTERINPUTS          :  integer :=  1;
+    constant NCHIPS                 :  integer := 12;
+
+    -----------------------------------------------------------------
+    -- conflicts between detectorfpga_constants and mupix_constants (to be checked & tested)
+    -----------------------------------------------------------------
+
+    constant HITSIZE                :  integer := 32;
+
+    constant TIMESTAMPSIZE          :  integer := 11;
+
+    subtype TSRANGE                 is integer range TIMESTAMPSIZE-1 downto 0;
+
+    constant COARSECOUNTERSIZE      :  integer := 32;
+
+    subtype  COLRANGE               is integer range 23 downto 16;
+    subtype  ROWRANGE               is integer range 15 downto 8;
+
+    constant CHIPRANGE              :  integer := 3;
+
+    -----------------------------------------------------------
+    -----------------------------------------------------------
+
+    constant BINCOUNTERSIZE         :  integer := 24;
+    constant CHARGESIZE_MP10        :  integer := 5;
+    constant SLOWTIMESTAMPSIZE      :  integer := 10;
+
+    constant NOTSHITSIZE            :  integer := HITSIZE -TIMESTAMPSIZE;--HITSIZE -TIMESTAMPSIZE-1;
+    subtype SLOWTSRANGE             is integer range TIMESTAMPSIZE-1 downto 1;
+    subtype NOTSRANGE               is integer range HITSIZE-1 downto TIMESTAMPSIZE;--TIMESTAMPSIZE+1;
+
+    constant HITSORTERBINBITS       :  integer := 4;
+    constant H                      :  integer := HITSORTERBINBITS;
+    constant HITSORTERADDRSIZE      :  integer := TIMESTAMPSIZE + HITSORTERBINBITS;
+
+    constant BITSPERTSBLOCK         :  integer := 4;
+    subtype TSBLOCKRANGE            is integer range TIMESTAMPSIZE-1 downto BITSPERTSBLOCK;
+    subtype SLOWTSNONBLOCKRANGE     is integer range BITSPERTSBLOCK-2 downto 0;
+
+    constant COMMANDBITS            :  integer := 20;
+
+    constant COUNTERMEMADDRSIZE     :  integer := 8;
+    constant NMEMS                  :  integer := 2**(TIMESTAMPSIZE-COUNTERMEMADDRSIZE-1); -- -1 due to even odd in single memory
+    constant COUNTERMEMDATASIZE     :  integer := 10;
+    subtype COUNTERMEMSELRANGE      is integer range TIMESTAMPSIZE-1 downto COUNTERMEMADDRSIZE+1;
+    subtype SLOWTSCOUNTERMEMSELRANGE is integer range TIMESTAMPSIZE-2 downto COUNTERMEMADDRSIZE;
+    subtype COUNTERMEMADDRRANGE     is integer range COUNTERMEMADDRSIZE downto 1;
+    subtype SLOWCOUNTERMEMADDRRANGE is integer range COUNTERMEMADDRSIZE-1 downto 0;
+
+    -- Bit positions in the counter fifo of the sorter
+    subtype EVENCOUNTERRANGE        is integer range 2*NCHIPS*HITSORTERBINBITS-1 downto 0;
+    constant EVENOVERFLOWBIT        :  integer := 2*NCHIPS*HITSORTERBINBITS;
+    constant HASEVENBIT             :  integer := 2*NCHIPS*HITSORTERBINBITS+1;
+    subtype ODDCOUNTERRANGE         is integer range 2*NCHIPS*HITSORTERBINBITS+HASEVENBIT downto HASEVENBIT+1;
+    constant ODDOVERFLOWBIT         :  integer := 2*NCHIPS*HITSORTERBINBITS+HASEVENBIT+1;
+    constant HASODDBIT              :  integer := 2*NCHIPS*HITSORTERBINBITS+HASEVENBIT+2;
+    subtype TSINFIFORANGE           is integer range 2*NCHIPS*HITSORTERBINBITS+HASEVENBIT+SLOWTIMESTAMPSIZE+2 downto 2*NCHIPS*HITSORTERBINBITS+HASEVENBIT+3;
+    subtype TSBLOCKINFIFORANGE      is integer range TSINFIFORANGE'left downto TSINFIFORANGE'left-BITSPERTSBLOCK+1;
+    subtype TSINBLOCKINFIFORANGE    is integer range TSINFIFORANGE'right+BITSPERTSBLOCK-2  downto TSINFIFORANGE'right;
+
+    type ts_array_t                 is array (natural range <>) of std_logic_vector(10 downto 0);
+    type row_array_t                is array (natural range <>) of std_logic_vector(7 downto 0);
+    type col_array_t                is array (natural range <>) of std_logic_vector(7 downto 0);
+    type ch_ID_array_t              is array (natural range <>) of std_logic_vector(5 downto 0);
+    type tot_array_t                is array (natural range <>) of std_logic_vector(5 downto 0);
+
+    subtype hit_t is                std_logic_vector(HITSIZE-1 downto 0);
+    subtype cnt_t is                std_logic_vector(COARSECOUNTERSIZE-1  downto 0);
+    subtype ts_t is                 std_logic_vector(TSRANGE);
+    subtype slowts_t                is std_logic_vector(SLOWTIMESTAMPSIZE-1 downto 0);
+    subtype nots_t                  is std_logic_vector(NOTSHITSIZE-1 downto 0);
+    subtype addr_t                  is std_logic_vector(HITSORTERADDRSIZE-1 downto 0);
+    subtype counter_t               is std_logic_vector(HITSORTERBINBITS-1 downto 0);
+
+    constant counter1               :  counter_t := (others => '1');
+
+    type wide_hit_array             is array (NINPUTS-1 downto 0) of hit_t;
+    type hit_array                  is array (NCHIPS-1 downto 0) of hit_t;
+
+    type wide_cnt_array             is array (NINPUTS-1 downto 0) of cnt_t;
+    type cnt_array                  is array (NCHIPS-1 downto 0) of cnt_t;
+
+    type ts_array                   is array (NCHIPS-1 downto 0) of ts_t;
+    type slowts_array               is array (NCHIPS-1 downto 0) of slowts_t;
+
+    type nots_hit_array             is array (NCHIPS-1 downto 0) of nots_t;
+    type addr_array                 is array (NCHIPS-1 downto 0) of addr_t;
+
+    type counter_chips              is array (NCHIPS-1 downto 0) of counter_t;
+    subtype counter2_chips          is std_logic_vector(2*NCHIPS*HITSORTERBINBITS-1 downto 0);
+
+    type hitcounter_sum3_type is array (NCHIPS/3-1 downto 0) of integer;
+
+    subtype chip_bits_t             is std_logic_vector(NCHIPS-1 downto 0);
+
+    subtype muxhit_t                is std_logic_vector(HITSIZE+1 downto 0);
+    type muxhit_array               is array ((NINPUTS/4) downto 0) of muxhit_t;
+
+    subtype byte_t                  is std_logic_vector(7 downto 0);
+    type inbyte_array               is array (NINPUTS-1 downto 0) of byte_t;
+
+    type state_type                 is (INIT, START, PRECOUNT, COUNT);
+
+    subtype block_t                 is std_logic_vector(TSBLOCKRANGE);
+
+    subtype command_t               is std_logic_vector(COMMANDBITS-1 downto 0);
+    constant COMMAND_HEADER1        :  command_t := X"80000";
+    constant COMMAND_HEADER2        :  command_t := X"90000";
+    constant COMMAND_SUBHEADER      :  command_t := X"C0000";
+    constant COMMAND_FOOTER         :  command_t := X"E0000";
+
+    subtype doublecounter_t         is std_logic_vector(COUNTERMEMDATASIZE-1 downto 0);
+    type doublecounter_array        is array (NMEMS-1 downto 0) of doublecounter_t;
+    type doublecounter_chiparray    is array (NCHIPS-1 downto 0) of doublecounter_t;
+    type alldoublecounter_array     is array (NCHIPS-1 downto 0) of doublecounter_array;
+
+    subtype counteraddr_t           is std_logic_vector(COUNTERMEMADDRSIZE-1 downto 0);
+    type counteraddr_array          is array (NMEMS-1 downto 0) of counteraddr_t;
+    type counteraddr_chiparray      is array (NCHIPS-1 downto 0) of counteraddr_t;
+    type allcounteraddr_array       is array (NCHIPS-1 downto 0) of counteraddr_array;
+
+    type counterwren_array          is array (NMEMS-1 downto 0) of std_logic;
+    type allcounterwren_array       is array (NCHIPS-1 downto 0) of counterwren_array;
+    subtype countermemsel_t         is std_logic_vector(COUNTERMEMADDRRANGE);
+    type reg_array                  is array (NCHIPS-1 downto 0) of work.util.reg32;
+end package;
+
+
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.math_real.all;
+
+use std.textio.all;
+use ieee.std_logic_textio.all;
+
 package util is
 
 
@@ -26,14 +169,14 @@ package util is
     type slv16_array_t is array ( natural range <> ) of slv16_t;
     subtype slv32_t is std_logic_vector(31 downto 0);
     type slv32_array_t is array ( natural range <> ) of slv32_t;
-    subtype slv37_t is std_logic_vector(31 downto 0);
+    subtype slv37_t is std_logic_vector(36 downto 0);
     type slv37_array_t is array ( natural range <> ) of slv37_t;
     subtype slv38_t is std_logic_vector(37 downto 0);
     type slv38_array_t is array ( natural range <> ) of slv38_t;
-    subtype slv64_t is std_logic_vector(65 downto 0);
+    subtype slv64_t is std_logic_vector(63 downto 0);
     type slv64_array_t is array ( natural range <> ) of slv64_t;
     subtype slv66_t is std_logic_vector(65 downto 0);
-    type slv6_array_t is array ( natural range <> ) of slv66_t;
+    type slv66_array_t is array ( natural range <> ) of slv66_t;
     subtype slv76_t is std_logic_vector(75 downto 0);
     type slv76_array_t is array ( natural range <> ) of slv76_t;
     subtype slv78_t is std_logic_vector(77 downto 0);
@@ -43,6 +186,7 @@ package util is
     subtype slv256_t is std_logic_vector(255 downto 0);
     type slv256_array_t is array ( natural range <> ) of slv256_t;
 
+    type natural_array_t is array(integer range<>) of natural;
 
     --! 8b/10b words
     constant D16_2 : std_logic_vector(7 downto 0) := X"50";
@@ -53,11 +197,18 @@ package util is
     constant D28_5 : std_logic_vector(7 downto 0) := X"BC";
     constant D28_7 : std_logic_vector(7 downto 0) := X"FC";
     constant D05_6 : std_logic_vector(7 downto 0) := X"C5";
-    constant K28_2 : std_logic_vector(7 downto 0) := x"5C";
-    constant K28_3 : std_logic_vector(7 downto 0) := x"7C";
-    constant K28_4 : std_logic_vector(7 downto 0) := x"9C";
-    constant K28_5 : std_logic_vector(7 downto 0) := x"BC";
-    constant K28_6 : std_logic_vector(7 downto 0) := x"DC";
+    constant K28_0 : std_logic_vector(7 downto 0) := X"1C"; -- still used in MuPix ??
+    constant K28_1 : std_logic_vector(7 downto 0) := X"3C"; -- still used in data alignment (transceiver) ??
+    constant K28_2 : std_logic_vector(7 downto 0) := X"5C";
+    constant K28_3 : std_logic_vector(7 downto 0) := X"7C";
+    constant K28_4 : std_logic_vector(7 downto 0) := X"9C"; -- used as end of packet marker between FEB <--> SW board
+    constant K28_5 : std_logic_vector(7 downto 0) := X"BC"; -- still used in MuPix ???
+    constant K28_6 : std_logic_vector(7 downto 0) := X"DC";
+    constant K28_7 : std_logic_vector(7 downto 0) := X"FC"; -- not used, comma symbol with harder constraints!
+    constant K23_7 : std_logic_vector(7 downto 0) := X"F7"; -- still used as "empty" data (transceiver) ??
+    constant K27_7 : std_logic_vector(7 downto 0) := X"FB";
+    constant K29_7 : std_logic_vector(7 downto 0) := X"FD";
+    constant K30_7 : std_logic_vector(7 downto 0) := X"FE";
     
 
     --! data path farm types
@@ -90,12 +241,162 @@ package util is
     constant RUN_TAIL_HEADER_ID:    std_logic_vector(5 downto 0) := "111110";
     constant TIMING_MEAS_HEADER_ID:    std_logic_vector(5 downto 0) := "111100";
     constant SC_HEADER_ID:    std_logic_vector(5 downto 0) := "111011";
+    constant PREAMBLE_TYPE_MUPIX_c  : std_logic_vector(5 downto 0) := "111010";
+    constant PREAMBLE_TYPE_MUTRIG_c : std_logic_vector(5 downto 0) := "111000";
+    constant PREAMBLE_TYPE_SC_c     : std_logic_vector(5 downto 0) := "000111";
+    constant PREAMBLE_TYPE_BERT_c   : std_logic_vector(5 downto 0) := "000010";
+    constant PREAMBLE_TYPE_IDLE_c   : std_logic_vector(5 downto 0) := "000000";
+
+    -- out of band
+    constant SC_OOB_c       : std_logic_vector(1 downto 0) := "00";
+    constant SC_READ_c      : std_logic_vector(1 downto 0) := "10";
+    constant SC_WRITE_c     : std_logic_vector(1 downto 0) := "11";
+
+    -- start of packet
+    constant FIFO_SOP_c     : std_logic_vector(3 downto 0) := "0010";
+    -- payload
+    constant FIFO_PAYLOAD_c : std_logic_vector(3 downto 0) := "0000";
+    -- end of packet
+    constant FIFO_EOP_c     : std_logic_vector(3 downto 0) := "0011";
+    -- end of run
+    constant FIFO_EOR_c     : std_logic_vector(3 downto 0) := "0111";
 
 
     --! PCIe types
     subtype reg32 is std_logic_vector(31 downto 0);
     constant NREGISTERS :  integer := 64;
     type reg32array is array (NREGISTERS-1 downto 0) of reg32;
+
+
+    --! type for run state
+    subtype run_state_t is std_logic_vector(9 downto 0);
+
+    constant RUN_STATE_BITPOS_IDLE        : natural := 0;
+    constant RUN_STATE_BITPOS_PREP        : natural := 1;
+    constant RUN_STATE_BITPOS_SYNC        : natural := 2;
+    constant RUN_STATE_BITPOS_RUNNING     : natural := 3;
+    constant RUN_STATE_BITPOS_TERMINATING : natural := 4;
+    constant RUN_STATE_BITPOS_LINK_TEST   : natural := 5;
+    constant RUN_STATE_BITPOS_SYNC_TEST   : natural := 6;
+    constant RUN_STATE_BITPOS_RESET       : natural := 7;
+    constant RUN_STATE_BITPOS_OUT_OF_DAQ  : natural := 8;
+
+    constant RUN_STATE_IDLE        : run_state_t := (RUN_STATE_BITPOS_IDLE         => '1', others =>'0');
+    constant RUN_STATE_PREP        : run_state_t := (RUN_STATE_BITPOS_PREP         => '1', others =>'0');
+    constant RUN_STATE_SYNC        : run_state_t := (RUN_STATE_BITPOS_SYNC         => '1', others =>'0');
+    constant RUN_STATE_RUNNING     : run_state_t := (RUN_STATE_BITPOS_RUNNING      => '1', others =>'0');
+    constant RUN_STATE_TERMINATING : run_state_t := (RUN_STATE_BITPOS_TERMINATING  => '1', others =>'0');
+    constant RUN_STATE_LINK_TEST   : run_state_t := (RUN_STATE_BITPOS_LINK_TEST    => '1', others =>'0');
+    constant RUN_STATE_SYNC_TEST   : run_state_t := (RUN_STATE_BITPOS_SYNC_TEST    => '1', others =>'0');
+    constant RUN_STATE_RESET       : run_state_t := (RUN_STATE_BITPOS_RESET        => '1', others =>'0');
+    constant RUN_STATE_OUT_OF_DAQ  : run_state_t := (RUN_STATE_BITPOS_OUT_OF_DAQ   => '1', others =>'0');
+    constant RUN_STATE_UNDEFINED   : run_state_t := (others =>'0');
+
+    type feb_run_state is (
+        idle,
+        run_prep,
+        sync,
+        running,
+        terminating,
+        link_test,
+        sync_test,
+        reset_state,
+        out_of_DAQ
+    );
+
+
+    -- time constants
+    constant TIME_125MHz_1s     : std_logic_vector(27 DOWNTO 0) := x"7735940";
+    constant TIME_125MHz_1ms    : std_logic_vector(27 DOWNTO 0) := x"001E848";
+    constant TIME_125MHz_2s     : std_logic_vector(27 DOWNTO 0) := x"EE6B280";
+    constant HUNDRED_MILLION    : std_logic_vector(27 downto 0) := x"5F5E100";
+    constant HUNDRED_MILLION32  : std_logic_vector(31 downto 0) := x"05F5E100";
+
+
+    -- mscb addressing (for networks with 8bit and 16bit addresses, we will use 16 ?)
+    constant MSCB_CMD_ADDR_NODE16           : std_logic_vector(7 downto 0)      := X"0A";
+    constant MSCB_CMD_ADDR_NODE8            : std_logic_vector(7 downto 0)      := X"09";
+    constant MSCB_CMD_ADDR_GRP8             : std_logic_vector(7 downto 0)      := X"11"; -- group addressing
+    constant MSCB_CMD_ADDR_GRP16            : std_logic_vector(7 downto 0)      := X"12";
+    constant MSCB_CMD_ADDR_BC               : std_logic_vector(7 downto 0)      := X"10"; --broadcast
+    constant MSCB_CMD_PING8                 : std_logic_vector(7 downto 0)      := X"19";
+    constant MSCB_CMD_PING16                : std_logic_vector(7 downto 0)      := X"1A";
+
+    constant run_prep_acknowledge           : std_logic_vector(31 downto 0)     := x"000000FE";
+    constant run_prep_acknowledge_datak     : std_logic_vector(3 downto 0)      := "0001";
+    constant RUN_END                        : std_logic_vector(31 downto 0)     := x"000000FD";
+    constant RUN_END_DATAK                  : std_logic_vector(3 downto 0)      := "0001";
+    constant MERGER_TIMEOUT                 : std_logic_vector(31 downto 0)     := x"000000FB";
+    constant MERGER_TIMEOUT_DATAK           : std_logic_vector(3 downto 0)      := "0001";
+
+    constant MERGER_FIFO_RUN_END_MARKER     : std_logic_vector(3 downto 0)      := "0111";
+    constant MERGER_FIFO_PAKET_END_MARKER   : std_logic_vector(3 downto 0)      := "0011";
+    constant MERGER_FIFO_PAKET_START_MARKER : std_logic_vector(3 downto 0)      := "0010";
+
+    -- FEB Arria-MAX SPI addresses
+    constant FEBSPI_ADDR_GITHASH            : std_logic_vector(6 downto 0)      := "0000000";
+    constant FEBSPI_ADDR_WRITENABLE         : std_logic_vector(6 downto 0)      := "0000001";
+    constant FEBSPI_PATTERN_WRITENABLE      : std_logic_vector(7 downto 0)      := X"A3";
+    constant FEBSPI_ADDR_STATUS             : std_logic_vector(6 downto 0)      := "0000010";
+    constant FEBSPI_ADDR_CONTROL            : std_logic_vector(6 downto 0)      := "0000011";
+    constant FEBSPI_ADDR_RESET              : std_logic_vector(6 downto 0)      := "0000100";
+    constant FEBSPI_ADDR_PROGRAMMING_STATUS : std_logic_vector(6 downto 0)      := "0010000";
+    constant FEBSPI_ADDR_PROGRAMMING_COUNT  : std_logic_vector(6 downto 0)      := "0010001";
+    constant FEBSPI_ADDR_PROGRAMMING_CTRL   : std_logic_vector(6 downto 0)      := "0010010";
+    constant FEBSPI_ADDR_PROGRAMMING_ADDR   : std_logic_vector(6 downto 0)      := "0010011";
+    constant FEBSPI_ADDR_PROGRAMMING_WFIFO  : std_logic_vector(6 downto 0)      := "0010100";
+    constant FEBSPI_ADDR_PROGRAMMING_RFIFO  : std_logic_vector(6 downto 0)      := "0010101";
+    constant FEBSPI_ADDR_ADCCTRL            : std_logic_vector(6 downto 0)      := "0100000";
+    constant FEBSPI_ADDR_ADCDATA            : std_logic_vector(6 downto 0)      := "0100001";
+
+
+    -- FEB-MAX SPI Flash
+    constant COMMAND_WRITE_ENABLE               : std_logic_vector(7 downto 0) := X"06";
+    constant COMMAND_WRITE_DISABLE              : std_logic_vector(7 downto 0) := X"04";
+    constant COMMAND_READ_STATUS_REGISTER1      : std_logic_vector(7 downto 0) := X"05";
+    constant COMMAND_READ_STATUS_REGISTER2      : std_logic_vector(7 downto 0) := X"35";   
+    constant COMMAND_READ_STATUS_REGISTER3      : std_logic_vector(7 downto 0) := X"15";
+    constant COMMAND_WRITE_ENABLE_VSR           : std_logic_vector(7 downto 0) := X"50";
+    constant COMMAND_WRITE_STATUS_REGISTER1     : std_logic_vector(7 downto 0) := X"01";
+    constant COMMAND_WRITE_STATUS_REGISTER2     : std_logic_vector(7 downto 0) := X"31";   
+    constant COMMAND_WRITE_STATUS_REGISTER3     : std_logic_vector(7 downto 0) := X"11";
+    constant COMMAND_READ_DATA                  : std_logic_vector(7 downto 0) := X"03";
+    constant COMMAND_FAST_READ                  : std_logic_vector(7 downto 0) := X"0B";
+    constant COMMAND_DUAL_OUTPUT_FAST_READ      : std_logic_vector(7 downto 0) := X"3B";
+    constant COMMAND_DUAL_IO_FAST_READ          : std_logic_vector(7 downto 0) := X"BB";
+    constant COMMAND_QUAD_OUTPUT_FAST_READ      : std_logic_vector(7 downto 0) := X"6B";
+    constant COMMAND_QUAD_IO_FAST_READ          : std_logic_vector(7 downto 0) := X"EB";
+    constant COMMAND_QUAD_IO_WORD_FAST_READ     : std_logic_vector(7 downto 0) := X"E7";
+    constant COMMAND_PAGE_PROGRAM               : std_logic_vector(7 downto 0) := X"02";
+    constant COMMAND_QUAD_PAGE_PROGRAM          : std_logic_vector(7 downto 0) := X"32";
+    constant COMMAND_FAST_PAGE_PROGRAM          : std_logic_vector(7 downto 0) := X"F2"; 
+    constant COMMAND_SECTOR_ERASE               : std_logic_vector(7 downto 0) := X"20";
+    constant COMMAND_BLOCK_ERASE_32             : std_logic_vector(7 downto 0) := X"52";
+    constant COMMAND_BLOCK_ERASE_64             : std_logic_vector(7 downto 0) := X"D8";
+    constant COMMAND_CHIP_ERASE                 : std_logic_vector(7 downto 0) := X"C7";
+    constant COMMAND_ENABLE_RESET               : std_logic_vector(7 downto 0) := X"66";
+    constant COMMAND_RESET                      : std_logic_vector(7 downto 0) := X"99";
+    constant COMMAND_JEDEC_ID                   : std_logic_vector(7 downto 0) := X"9F"; 
+    constant COMMAND_ERASE_SECURITY_REGISTERS   : std_logic_vector(7 downto 0) := X"44";
+    constant COMMAND_PROG_SECURITY_REGISTERS    : std_logic_vector(7 downto 0) := X"42";
+    constant COMMAND_READ_SECURITY_REGISTERS    : std_logic_vector(7 downto 0) := X"42";
+
+
+    --! MuTrig
+    CONSTANT C_HEAD_ID : std_logic_vector(7 downto 0) := "00011100";        --K28.0, 0x1C, 10 BIT: 1101000011
+    CONSTANT C_TRAIL_ID : std_logic_vector(7 downto 0) := "10011100";       --K28.4, 0x9C, 10 BIT: 1011000011
+    CONSTANT C_COMMA : std_logic_vector(7 downto 0) := "10111100";          --K28.5, 0xBC, 10 BIT: 1010000011, Sync character
+    CONSTANT C_CLOCK_CORR_ID : std_logic_vector(7 downto 0) := "01111100";      --K28.3, 0x7C, 10 BIT: 0011000011, Clock Correction
+
+    CONSTANT C_HEADER : std_logic_vector(7 downto 0) := C_HEAD_ID;
+    CONSTANT C_TRAILER : std_logic_vector(7 downto 0) := C_TRAIL_ID;
+
+    type mutrig_evtdata_array_t is array (natural range <>) of std_logic_vector(55 downto 0);   
+    --spi pattern
+    constant MUTRIG1_SPI_WORDS     : integer := 74;
+    constant MUTRIG1_SPI_FIRST_MSB : integer := 21;
+    constant STIC3_SPI_WORDS     : integer := 146;
+    constant STIC3_SPI_FIRST_MSB : integer := 16;
 
 
     type avalon_t is record

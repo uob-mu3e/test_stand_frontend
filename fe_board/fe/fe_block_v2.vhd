@@ -2,12 +2,11 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.daq_constants.all;
 use work.feb_sc_registers.all;
 
 entity fe_block_v2 is
 generic (
-    feb_mapping : natural_array_t(3 downto 0) := 3&2&1&0;
+    feb_mapping : work.util.natural_array_t(3 downto 0) := (3,2,1,0);
     PHASE_WIDTH_g : positive := 16;
     NIOS_CLK_MHZ_g : real;
     N_LINKS : positive := 1--;
@@ -98,8 +97,8 @@ port (
     o_subdet_reg_wdata  : out   std_logic_vector(31 downto 0);
 
     -- reset system
-    o_run_state_125 : out   run_state_t;
-    o_run_state_156 : out   run_state_t;
+    o_run_state_125 : out   work.util.run_state_t;
+    o_run_state_156 : out   work.util.run_state_t;
 
     -- nios clock (async)
     i_nios_clk      : in    std_logic;
@@ -153,9 +152,9 @@ architecture arch of fe_block_v2 is
     signal reg_reset_bypass         : std_logic_vector(15 downto 0);
     signal reg_reset_bypass_payload : std_logic_vector(31 downto 0);
 
-    signal run_state_125            : run_state_t;
-    signal run_state_156            : run_state_t;
-    signal run_state_156_resetsys   : run_state_t;
+    signal run_state_125            : work.util.run_state_t;
+    signal run_state_156            : work.util.run_state_t;
+    signal run_state_156_resetsys   : work.util.run_state_t;
 
     signal terminated               : std_logic;
     signal reset_phase              : std_logic_vector(PHASE_WIDTH_g - 1 downto 0);
@@ -189,7 +188,7 @@ architecture arch of fe_block_v2 is
     signal arriaV_temperature_ce    : std_logic;
     
     -- Max 10 SPI 
-    signal adc_reg                  : reg32array_t(4 downto 0);
+    signal adc_reg                  : work.util.slv32_array_t(4 downto 0);
     signal i_adc_data_o             : std_logic_vector(31 downto 0);
     signal SPI_addr_o               : std_logic_vector(6 downto 0);
     
@@ -214,14 +213,14 @@ architecture arch of fe_block_v2 is
     signal max_spi_busy             : std_logic;
 
     signal max_spi_counter          : integer;
-    signal max10_version            : reg32;
-    signal max10_status             : reg32;
-    signal max10adc01               : reg32;
-    signal max10adc23               : reg32;
-    signal max10adc45               : reg32;
-    signal max10adc67               : reg32;
-    signal max10adc89               : reg32;	 
-    signal max10_spiflash_cmdaddr   : reg32;
+    signal max10_version            : work.util.reg32;
+    signal max10_status             : work.util.reg32;
+    signal max10adc01               : work.util.reg32;
+    signal max10adc23               : work.util.reg32;
+    signal max10adc45               : work.util.reg32;
+    signal max10adc67               : work.util.reg32;
+    signal max10adc89               : work.util.reg32;	 
+    signal max10_spiflash_cmdaddr   : work.util.reg32;
 
     type max_spi_state_t is (idle, programming, maxversion, statuswait, maxstatus, adcwait, maxadc, endwait);
     signal max_spi_state :   max_spi_state_t;  
@@ -354,7 +353,7 @@ begin
 
 
 
-    e_nios : component work.cmp.nios
+    e_nios : work.cmp.nios
     port map (
         -- SC, QSFP and irq
         clk_156_reset_reset_n   => reset_156_n,
@@ -494,7 +493,7 @@ begin
 
         override_data_in           => linktest_data,
         override_data_is_k_in      => linktest_datak,
-        override_req               => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
+        override_req               => work.util.to_std_logic(run_state_156 = work.util.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
         override_granted           => linktest_granted,
 
         can_terminate              => i_can_terminate,
@@ -517,7 +516,7 @@ begin
     port map (
         i_sync_reset    => not work.util.and_reduce(linktest_granted),
         i_seed          => (others => '1'),
-        i_en            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),
+        i_en            => work.util.to_std_logic(run_state_156 = work.util.RUN_STATE_LINK_TEST),
         o_lsfr          => linktest_data,
         o_datak         => linktest_datak,
         reset_n         => reset_156_n,
@@ -670,13 +669,12 @@ begin
         max_spi_strobe 	 <= '0';
         max_spi_counter  <= 0;
         max_spi_state    <= idle;
-		  max_spi_numbytes <= "00000000";
-		  max_spi_rw		 <= '0';
+        max_spi_numbytes <= "00000000";
+        max_spi_rw		 <= '0';
     elsif(i_nios_clk'event and i_nios_clk = '1')then
         max_spi_counter <= max_spi_counter + 1;
         max_spi_strobe <= '0';
-		  max_spi_rw		 <= '0';
-		  
+        max_spi_rw		 <= '0';
         case max_spi_state is
         when idle =>
             if(program_req = '1') then
@@ -690,7 +688,7 @@ begin
                 max_spi_state <= idle;
             end if;    
         when maxversion => 
-            max_spi_addr    <= FEBSPI_ADDR_GITHASH;
+            max_spi_addr    <= work.util.FEBSPI_ADDR_GITHASH;
             max_spi_numbytes <= "00000100";
             max_spi_strobe   <= '1';
             if(max_spi_word_en = '1') then
@@ -698,12 +696,12 @@ begin
                 max_spi_strobe   <= '0';
                 max_spi_state    <= statuswait;
             end if;
-		  when statuswait =>
-				if(max_spi_busy = '0')then
-					max_spi_state    <= maxstatus;
-				end if;
+        when statuswait =>
+            if(max_spi_busy = '0')then
+                max_spi_state    <= maxstatus;
+            end if;
         when maxstatus => 
-            max_spi_addr    <= FEBSPI_ADDR_STATUS;
+            max_spi_addr    <= work.util.FEBSPI_ADDR_STATUS;
             max_spi_numbytes <= "00000100";
             max_spi_strobe   <= '1';
             if(max_spi_word_en = '1') then
@@ -712,12 +710,12 @@ begin
                 max_spi_state    <= adcwait;
                 wordcounter      <= 0;
             end if;  
-		  when adcwait =>
-				if(max_spi_busy = '0')then
-					max_spi_state    <= maxadc;
-				end if;
+        when adcwait =>
+            if(max_spi_busy = '0')then
+                max_spi_state    <= maxadc;
+            end if;
         when maxadc =>
-            max_spi_addr    <= FEBSPI_ADDR_ADCDATA;
+            max_spi_addr    <= work.util.FEBSPI_ADDR_ADCDATA;
             max_spi_numbytes <= "00010100";
             max_spi_strobe   <= '1';   
             if(max_spi_word_en = '1') then
@@ -727,21 +725,21 @@ begin
                 elsif(wordcounter = 1) then
                     max10adc23   <= max_spi_word_from_max;
                 elsif(wordcounter = 2) then
-                    max10adc45   <= max_spi_word_from_max; 
-					 elsif(wordcounter = 3) then
-                    max10adc67   <= max_spi_word_from_max; 						  	  
+                    max10adc45   <= max_spi_word_from_max;
+                elsif(wordcounter = 3) then
+                    max10adc67   <= max_spi_word_from_max;
                 elsif(wordcounter > 3) then
-                    max10adc89   <= max_spi_word_from_max; 
+                    max10adc89   <= max_spi_word_from_max;
                     max_spi_strobe   <= '0';
                     max_spi_state    <= endwait;
                 end if;
             end if;
-			when endwait =>
-				if(max_spi_busy = '0')then
-					max_spi_state    <= idle;
-				end if;	
+            when endwait =>
+                if(max_spi_busy = '0')then
+                    max_spi_state    <= idle;
+                end if;	
         when others =>
-            max_spi_state <= idle;     
+            max_spi_state <= idle;
             max_spi_strobe <= '0';
         end case;
     end if;
