@@ -185,6 +185,10 @@ architecture arch of fe_block_v2 is
     signal arriaV_temperature       : std_logic_vector(7 downto 0);
     signal arriaV_temperature_clr   : std_logic;
     signal arriaV_temperature_ce    : std_logic;
+	 signal arriaV_temperature_tsdcaldone : std_logic;
+	 signal arriaV_temperature_temp : std_logic_vector(7 downto 0);
+	 type temp_state_t is (convert, clear);
+	 signal temp_state :  temp_state_t;
     
     -- Max 10 SPI 
     signal adc_reg                  : reg32array_t(4 downto 0);
@@ -351,8 +355,8 @@ begin
         o_reg_offset                => reg_offset,
         o_reg_reset_bypass          => reg_reset_bypass,
         o_reg_reset_bypass_payload  => reg_reset_bypass_payload,
-        o_arriaV_temperature_clr    => arriaV_temperature_clr,
-        o_arriaV_temperature_ce     => arriaV_temperature_ce,
+        o_arriaV_temperature_clr    => open, --arriaV_temperature_clr,
+        o_arriaV_temperature_ce     => open, --arriaV_temperature_ce,
         o_fpga_id_reg               => fpga_id_reg,
         o_programming_ctrl          => programming_ctrl,
         o_programming_data          => programming_data,
@@ -423,15 +427,39 @@ begin
 
         pio_export      => nios_pio,
 
-        temp_tsdcalo            => arriaV_temperature,
+        temp_tsdcalo            => arriaV_temperature_temp,
         temp_ce_ce              => arriaV_temperature_ce,
         temp_clr_reset          => arriaV_temperature_clr,
-        temp_done_tsdcaldone    => open,
+        temp_done_tsdcaldone    => arriaV_temperature_tsdcaldone,
 
         rst_reset_n     => nios_reset_n,
         clk_clk         => i_nios_clk--,
     );
-
+	 
+	 -- start and reset the temp sensor
+	 process(i_nios_clk, nios_reset_n)
+	 begin
+	 if(nios_reset_n = '0')then
+		temp_state <= convert;
+		arriaV_temperature_clr <= '0';
+		arriaV_temperature_ce  <= '0';
+		arriaV_temperature	  <= (others => '0');	
+	 elsif(i_nios_clk'event and i_nios_clk = '1')then
+		arriaV_temperature_ce	<= '1';
+		case temp_state is
+		when convert =>
+			arriaV_temperature_clr <= '0';
+			if(arriaV_temperature_tsdcaldone = '1')then
+				arriaV_temperature <= arriaV_temperature_temp;
+				temp_state <= clear;
+				arriaV_temperature_clr <= '1';
+			end if;
+		when clear =>
+			arriaV_temperature_clr <= '1';
+			temp_state <= convert;
+		end case;		
+	 end if;
+	 end process;
 
 
     e_sc_ram : entity work.sc_ram
@@ -868,8 +896,10 @@ begin
                 elsif(wordcounter = 1) then
                     adc_reg(1)   <= max_spi_word_from_max;
                 elsif(wordcounter = 2) then
-                    adc_reg(2)   <= max_spi_word_from_max; 
-				elsif(wordcounter = 3) then
+                    adc_reg(2)   <= max_spi_word_from_max;
+					elsif(wordcounter = 3) then
+                    adc_reg(3)   <= max_spi_word_from_max;	  
+					elsif(wordcounter = 4) then
                     adc_reg(4)   <= max_spi_word_from_max; 
                     max_spi_strobe   <= '0';
                     max_spi_state    <= endwait;
