@@ -19,7 +19,7 @@ function write_temperature(name, temp, x, y){
     cc.fillStyle = tempcolour;
     cc.font = "12px Arial";
     cc.textAlign = "right";
-    cc.fillText(name + " " + temp + " C", x, y);
+    cc.fillText(name + " " + temp.toFixed(0)  + " C", x, y);
     cc.textAlign = "left";
 }
 
@@ -27,7 +27,7 @@ function write_voltage(name, volt, x, y){
     cc.fillStyle = "Black";
     cc.font = "12px Arial";
     cc.textAlign = "right";
-    cc.fillText(name + " " + volt + " V", x, y);
+    cc.fillText(name + " " + volt.toFixed(2)  + " V", x, y);
     cc.textAlign = "left";
 }
 
@@ -35,7 +35,7 @@ function write_power(name, power, x, y){
     cc.fillStyle = "Black";
     cc.font = "12px Arial";
     cc.textAlign = "right";
-    cc.fillText(name + " " + power + " muW", x, y);
+    cc.fillText(name + " " + power.toFixed(0)  + " muW", x, y);
     cc.textAlign = "left";
 }
 
@@ -391,24 +391,24 @@ function update_sc(valuex, swindex) {
 
 
     for(var j=0; j < nfebs[swindex]; j++){
-        febs[swindex][j].arria_temp     = scvals[j*26+1];
-        febs[swindex][j].max_temp       = scvals[j*26+2];
-        febs[swindex][j].si1_temp       = scvals[j*26+3];
-        febs[swindex][j].si2_temp       = scvals[j*26+4];
-        febs[swindex][j].arria_temp_ext = scvals[j*26+5];
-        febs[swindex][j].dcdc_temp      = scvals[j*26+6];
-        febs[swindex][j].v1_1           = scvals[j*26+7];
-        febs[swindex][j].v1_8           = scvals[j*26+8];
-        febs[swindex][j].v2_5           = scvals[j*26+9];
-        febs[swindex][j].v3_3           = scvals[j*26+10];
-        febs[swindex][j].v20            = scvals[j*26+11];
-        febs[swindex][j].ff1_temp       = scvals[j*26+12];
-        febs[swindex][j].ff1_volt       = scvals[j*26+13];
-        febs[swindex][j].ff1_rx1        = scvals[j*26+14];
-        febs[swindex][j].ff1_rx2        = scvals[j*26+15];
-        febs[swindex][j].ff1_rx3        = scvals[j*26+16];
-        febs[swindex][j].ff1_rx4        = scvals[j*26+17];
-        febs[swindex][j].ff1_alarms     = scvals[j*26+18];
+        febs[swindex][j].arria_temp     = value[j*26+1];
+        febs[swindex][j].max_temp       = value[j*26+2];
+        febs[swindex][j].si1_temp       = value[j*26+3];
+        febs[swindex][j].si2_temp       = value[j*26+4];
+        febs[swindex][j].arria_temp_ext = value[j*26+5];
+        febs[swindex][j].dcdc_temp      = value[j*26+6];
+        febs[swindex][j].v1_1           = value[j*26+7];
+        febs[swindex][j].v1_8           = value[j*26+8];
+        febs[swindex][j].v2_5           = value[j*26+9];
+        febs[swindex][j].v3_3           = value[j*26+10];
+        febs[swindex][j].v20            = value[j*26+11];
+        febs[swindex][j].ff1_temp       = value[j*26+12];
+        febs[swindex][j].ff1_volt       = value[j*26+13];
+        febs[swindex][j].ff1_rx1        = value[j*26+14];
+        febs[swindex][j].ff1_rx2        = value[j*26+15];
+        febs[swindex][j].ff1_rx3        = value[j*26+16];
+        febs[swindex][j].ff1_rx4        = value[j*26+17];
+        febs[swindex][j].ff1_alarms     = value[j*26+18];
     }
     draw(boardselindex);
 }
