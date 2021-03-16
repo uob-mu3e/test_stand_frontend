@@ -94,7 +94,7 @@ struct adc_t {
             printf("On-die temperature = %d\n", celsius_lookup(adc_data_avg[9] - 3417) - 40);
             
             for (int k = 0; k<(ADC_SAMPLE_STORE_CSR_CSD_LENGTH+1)/2; k++){
-                adc_comp_data[k] = (adc_data[2*k] << 16)+adc_data[2*k +1];
+                adc_comp_data[k] = (adc_data[2*k+1] << 16)+adc_data[2*k];
                 if (loop == false) printf("adc_comp_data%i: %x\n", k, adc_comp_data[k]);
             }
             
@@ -130,7 +130,7 @@ struct adc_t {
                 ADC_SAMPLE_STORE_CSR_CSD_LENGTH);
 
         for (int k = 0; k<(ADC_SAMPLE_STORE_CSR_CSD_LENGTH+1)/2; k++){
-            adc_comp_data[k] = (adc_data[2*k] << 16)+adc_data[2*k +1];      
+            adc_comp_data[k] = (adc_data[2*k+1] << 16)+adc_data[2*k];      
         }    
 
         IOWR_ALTERA_AVALON_PIO_DATA(ADC_D0_BASE,(adc_comp_data[0]));
