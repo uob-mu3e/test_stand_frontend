@@ -3,10 +3,11 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
+use work.mudaq.all;
+
 LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
-use work.daq_constants.all;
 
 entity top is
     port (

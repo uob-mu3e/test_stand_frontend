@@ -7,9 +7,10 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
-use work.mupix_constants.all;
+
 use work.mupix_registers.all;
+use work.mupix.all;
+
 
 entity mupix_reg_mapping is
 port (
@@ -25,7 +26,7 @@ port (
     -- inputs  156--------------------------------------------
     -- ALL INPUTS DEFAULT TO (n*4-1 downto 0 => x"CCC..", others => '1')
     i_lvds_data_valid           : in  std_logic_vector(35 downto 0) := x"CCCCCCCCC"; -- lvds alignment to mupix chips ok
-    i_lvds_status               : in  reg32array_t    (35 downto 0) := (others => x"CCCCCCCC");
+    i_lvds_status               : in  work.util.slv32_array_t    (35 downto 0) := (others => x"CCCCCCCC");
 
     -- outputs 156--------------------------------------------
     o_mp_lvds_link_mask         : out std_logic_vector(35 downto 0); -- lvds link mask

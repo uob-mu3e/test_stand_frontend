@@ -11,8 +11,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.mupix_constants.all;
-use work.mupix_types.all;
+
 
 entity hit_ts_conversion is 
     port (
@@ -75,12 +74,12 @@ begin
             ts2_temp    <= (others => '0');
 
         elsif(rising_edge(clk))then
-            TS_SIZE     <= TIMESTAMPSIZE;
-            TS2_SIZE    <= CHARGESIZE_MP10;
+            TS_SIZE     <= work.mupix.TIMESTAMPSIZE;
+            TS2_SIZE    <= work.mupix.CHARGESIZE_MP10;
             ts_temp     <= (others => '0');
             ts2_temp    <= (others => '0');
-            ts_temp(TIMESTAMPSIZE-1 downto 0)  <= i_ts;
-            ts2_temp(CHARGESIZE_MP10-1 downto 0)    <= i_ts2;
+            ts_temp(work.mupix.TIMESTAMPSIZE-1 downto 0)  <= i_ts;
+            ts2_temp(work.mupix.CHARGESIZE_MP10-1 downto 0)    <= i_ts2;
         end if;
     end process;
 
@@ -160,15 +159,15 @@ begin
             o_row           <= row_r2;
 
             if(gray_TS = '1')then
-                o_ts        <= hit_out_TS(TIMESTAMPSIZE-1 downto 0);
+                o_ts        <= hit_out_TS(work.mupix.TIMESTAMPSIZE-1 downto 0);
             else
-                o_ts        <= hit_in_TS_reg(TIMESTAMPSIZE-1 downto 0);
+                o_ts        <= hit_in_TS_reg(work.mupix.TIMESTAMPSIZE-1 downto 0);
             end if;
 
             if(gray_TS2 = '1')then
-                o_ts2       <= hit_out_TS2(CHARGESIZE_MP10-1 downto 0);
+                o_ts2       <= hit_out_TS2(work.mupix.CHARGESIZE_MP10-1 downto 0);
             else
-                o_ts2       <= hit_in_TS2_reg(CHARGESIZE_MP10-1 downto 0);
+                o_ts2       <= hit_in_TS2_reg(work.mupix.CHARGESIZE_MP10-1 downto 0);
             end if;
         end if;
     end process;

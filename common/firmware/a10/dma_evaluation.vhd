@@ -19,7 +19,7 @@ entity dma_evaluation is
 );
 end entity dma_evaluation;
 
-architecture rtl of dma_evaluation is
+architecture arch of dma_evaluation is
 
 ----------------signals---------------------
 signal reset : std_logic;
@@ -59,4 +59,4 @@ begin
 	end if;
 end process;
 
-end rtl;
+end architecture;

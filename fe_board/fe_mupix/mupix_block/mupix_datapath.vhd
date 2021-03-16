@@ -5,10 +5,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
-use work.mupix_constants.all;
-use work.mupix_types.all;
+
 use work.mupix_registers.all;
+use work.mupix.all;
+use work.mudaq.all;
 
 entity mupix_datapath is
 port (
@@ -35,7 +35,7 @@ port (
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
-    o_hotfix_reroute    : out reg32array_t(35 downto 0); -- TODO: fix problem and remove
+    o_hotfix_reroute    : out work.util.slv32_array_t(35 downto 0); -- TODO: fix problem and remove
     i_hotfix_backroute  : in  std_logic;
     i_run_state_156     : in  run_state_t--;
 );
@@ -48,9 +48,9 @@ architecture rtl of mupix_datapath is
     signal sorter_reset_n           : std_logic;
 
     -- signals after mux
-    signal rx_data                  : bytearray_t(35 downto 0);
+    signal rx_data                  : work.util.slv8_array_t(35 downto 0);
     signal rx_k                     : std_logic_vector(35 downto 0);
-    signal lvds_status              : reg32array_t(35 downto 0);
+    signal lvds_status              : work.util.slv32_array_t(35 downto 0);
     signal data_valid               : std_logic_vector(35 downto 0);
 
     -- hits + flag to indicate a word as a hit, after unpacker
@@ -103,7 +103,7 @@ architecture rtl of mupix_datapath is
     signal coarsecounters_ena_del   : std_logic_vector(11 downto 0);
 
     -- error signal output from unpacker
-    signal unpack_errorcounter      : reg32array_t(35 downto 0);
+    signal unpack_errorcounter      : work.util.slv32_array_t(35 downto 0);
 
     --signal regwritten_reg         : std_logic_vector(NREGISTERS-1 downto 0); 
 

@@ -2,12 +2,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
-use work.daq_constants.all;
+
 use work.feb_sc_registers.all;
 
 entity fe_block is
 generic (
-    feb_mapping : natural_array_t(3 downto 0) := 3&2&1&0;
+    feb_mapping : work.util.natural_array_t(3 downto 0) := 3&2&1&0;
     PHASE_WIDTH_g : positive := 16;
     NIOS_CLK_MHZ_g : real;
     N_LINKS : positive := 1--;
@@ -88,7 +88,7 @@ port (
     o_mupix_reg_wdata   : out   std_logic_vector(31 downto 0);
 
     -- reset system
-    o_run_state_125 : out   run_state_t;
+    o_run_state_125 : out   work.util.run_state_t;
 
     -- nios clock (async)
     i_nios_clk      : in    std_logic;
@@ -143,8 +143,8 @@ architecture arch of fe_block is
     signal reg_reset_bypass : std_logic_vector(31 downto 0);
     signal reg_reset_bypass_payload : std_logic_vector(31 downto 0);
 
-    signal run_state_125 : run_state_t;
-    signal run_state_156 : run_state_t;
+    signal run_state_125 : work.util.run_state_t;
+    signal run_state_156 : work.util.run_state_t;
     signal terminated : std_logic;
     signal reset_phase : std_logic_vector(PHASE_WIDTH_g - 1 downto 0);
 

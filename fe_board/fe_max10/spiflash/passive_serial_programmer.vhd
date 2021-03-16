@@ -6,7 +6,10 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.spiflash_commands.all;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
+
+use work.mudaq.all;
 
 
 entity ps_programmer is

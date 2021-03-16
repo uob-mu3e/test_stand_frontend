@@ -20,14 +20,15 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
-use work.daq_constants.all;
 use ieee.std_logic_misc.all;
+
+use work.mudaq.all;
 
 ENTITY data_merger is
 GENERIC (
     FIFO_ADDR_WIDTH             : positive := 10;
     N_LINKS                     : positive := 1;
-    feb_mapping                 : natural_array_t(3 downto 0)--;
+    feb_mapping                 : work.util.natural_array_t(3 downto 0)--;
 );
 PORT (
     clk                         : in    std_logic; -- 156.25 clk input
@@ -37,10 +38,10 @@ PORT (
     run_state                   : in    run_state_t;
     run_number                  : in    std_logic_vector(31 downto 0);
     o_data_out                  : out   std_logic_vector(127 downto 0):= -- to optical transm.
-                                          X"000000" & work.util.D28_5
-                                        & X"000000" & work.util.D28_5
-                                        & X"000000" & work.util.D28_5
-                                        & X"000000" & work.util.D28_5;
+                                          X"000000" & D28_5
+                                        & X"000000" & D28_5
+                                        & X"000000" & D28_5
+                                        & X"000000" & D28_5;
     o_data_is_k                 : out   std_logic_vector(15 downto 0):= "0001" & "0001" & "0001" & "0001";
     i_data_in                   : in    std_logic_vector(36*N_LINKS-1 downto 0); -- data input from FIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 Data))
     i_data_in_slowcontrol       : in    std_logic_vector(35 downto 0); -- data input slowcontrol from SCFIFO (32 bit data, 4 bit ID (0010 Header, 0011 Trail, 0000 SCData))

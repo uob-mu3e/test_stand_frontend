@@ -9,9 +9,11 @@ use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
-use work.mupix_constants.all;
+
 use work.mupix_registers.all;
-use work.daq_constants.all;
+use work.mupix.all;
+use work.mudaq.all;
+
 
 entity mupix_ctrl is
     port(
@@ -23,7 +25,7 @@ entity mupix_ctrl is
         o_reg_rdata         : out std_logic_vector(31 downto 0);
         i_reg_we            : in  std_logic;
         i_reg_wdata         : in  std_logic_vector(31 downto 0);
-        i_hotfix_reroute    : in reg32array_t(35 downto 0);
+        i_hotfix_reroute    : in work.util.slv32_array_t(35 downto 0);
         o_hotfix_backroute  : out std_logic;
         o_clock             : out std_logic_vector( 3 downto 0);
         o_SIN               : out std_logic_vector( 3 downto 0);
