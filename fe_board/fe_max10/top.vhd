@@ -147,7 +147,10 @@ begin
     fpga_reset  <= '0';
     reset_n     <= pll_locked;
     mscb_ena    <= '0';
-    attention_n <= "ZZ";
+
+	 
+	 bp_spi_miso <= 'Z';
+	 bp_spi_miso_en <= '0';
 
     e_pll : entity work.ip_altpll
     port map(
@@ -176,6 +179,23 @@ begin
     status(15 downto 13) <=  spare;  
     status(23 downto 16) <= ref_addr;
     status(31 downto 24) <= spi_flash_status;
+	 
+    attention_n <= "ZZ";
+	-- process(reset_n, max10_osc_clk)
+	-- begin
+	-- if(reset_n = '0') then
+    --		    attention_n <= "ZZ";
+	--elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
+    --    startupcounter <= startupcounter +1;
+    --    if(startupcounter > 5000)then
+	--			attention_n <= "0Z";
+    --			end if;
+	--		if(startupcounter > 10000)then
+	--			attention_n <= "Z0";
+	--			startupcounter <= 0;
+    --			end if;  
+	--end if;    	
+	--end process;
 
 
     -- SPI Arria10 to MAX10
