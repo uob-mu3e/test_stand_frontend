@@ -11,6 +11,8 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 
+use work.mudaq.all;
+
 
 entity swb_data_merger is
     generic (
@@ -80,7 +82,7 @@ begin
                         o_data_reg(7 downto 0)  <= SWB_ID;
                     end if;
                     FOR I in NLINKS - 1 downto 0 LOOP
-                        o_data(I * 32 + 31 downto I * 32)   <= K285;
+                        o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_5;
                         o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                         o_wen                               <= '1';
                     END LOOP;
@@ -92,7 +94,7 @@ begin
                         o_data_reg(39 downto 8) <= i_data(31 downto 0);
                     end if;
                     FOR I in NLINKS - 1 downto 0 LOOP
-                        o_data(I * 32 + 31 downto I * 32)   <= K285;
+                        o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_5;
                         o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                         o_wen                               <= '1';
                     END LOOP;
@@ -125,12 +127,12 @@ begin
                         o_datak(19 downto 16)    <= "0001";
                         -- 6. - 8. link
                         FOR I in NLINKS - 1 downto 5 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K283;
+                            o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_3;
                             o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                         END LOOP;
                     else
                         FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
+                            o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_5;
                             o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                         END LOOP;
                     end if;
@@ -147,12 +149,12 @@ begin
                         o_data(63 downto 32)    <= i_data(31 downto 16) & x"00" & x"5C";
                         -- 3. - 8. link
                         FOR I in NLINKS - 1 downto 2 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K282;
+                            o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_2;
                             o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                         END LOOP;
                     else
                         FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
+                            o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_5;
                             o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                         END LOOP;
                     end if;
@@ -161,7 +163,7 @@ begin
                     merge_state <= hit;
                     o_wen       <= '1';
                     FOR I in NLINKS - 1 downto 0 LOOP
-                        o_data(I * 32 + 31 downto I * 32)   <= K285;
+                        o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_5;
                         o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                     END LOOP;
 
@@ -240,7 +242,7 @@ begin
                         end if;
                     else
                         FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= K285;
+                            o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_5;
                             o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                         END LOOP;
                     end if;
@@ -251,7 +253,7 @@ begin
                     o_wen <= '1';
                     merge_state             <= wait_for_pre;
                     FOR I in NLINKS - 1 downto 0 LOOP
-                        o_data(I * 32 + 31 downto I * 32)   <= K284;
+                        o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_4;
                         o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                     END LOOP;
 
@@ -265,7 +267,7 @@ begin
                     o_data(31 downto 12)<= x"0000" & "0000"; -- free bits
                     o_datak(3 downto 0) <= "0001";
                     FOR I in NLINKS - 2 downto 0 LOOP
-                        o_data(I * 32 + 31 downto I * 32)   <= K286;
+                        o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_6;
                         o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                     END LOOP;
                     merge_state <= get_tr;

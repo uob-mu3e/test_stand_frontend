@@ -4,6 +4,8 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 
+use work.mudaq.all;
+
 
 entity time_merger_tree_fifo_64 is
 generic (
@@ -16,14 +18,14 @@ generic (
 );
 port (
     -- input 
-    i_fifo_q        : in fifo_array_76(compare_fifos - 1 downto 0);
+    i_fifo_q        : in work.util.slv76_array_t(compare_fifos - 1 downto 0);
     i_fifo_empty    : in std_logic_vector(compare_fifos - 1 downto 0);
     i_fifo_ren      : in std_logic_vector(gen_fifos - 1 downto 0);
     i_merge_state   : in std_logic;
     i_mask_n        : in std_logic_vector(compare_fifos - 1 downto 0);
 
     -- output
-    o_fifo_q        : out fifo_array_76(gen_fifos - 1 downto 0);
+    o_fifo_q        : out work.util.slv76_array_t(gen_fifos - 1 downto 0);
     o_fifo_empty    : out std_logic_vector(gen_fifos - 1 downto 0);
     o_fifo_ren      : out std_logic_vector(compare_fifos - 1 downto 0);
     o_mask_n        : out std_logic_vector(gen_fifos - 1 downto 0);
@@ -38,8 +40,8 @@ architecture arch of time_merger_tree_fifo_64 is
     -- merger signals
     constant size : integer := compare_fifos/2;
     
-    signal fifo_data, fifo_data_reg, fifo_q, fifo_q_reg : fifo_array_76(gen_fifos - 1 downto 0);
-    signal layer_state : fifo_array_4(gen_fifos - 1 downto 0);
+    signal fifo_data, fifo_data_reg, fifo_q, fifo_q_reg : work.util.slv76_array_t(gen_fifos - 1 downto 0);
+    signal layer_state : work.util.slv4_array_t(gen_fifos - 1 downto 0);
     signal fifo_ren_reg, fifo_ren : std_logic_vector(compare_fifos - 1 downto 0);
     signal fifo_wen, fifo_wen_reg, fifo_full, fifo_full_reg, fifo_empty, fifo_empty_reg, reset_fifo, reset_fifo_reg0, reset_fifo_reg1, reset_fifo_reg2 : std_logic_vector(gen_fifos - 1 downto 0);
 

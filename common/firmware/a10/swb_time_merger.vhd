@@ -2,6 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.mudaq.all;
+
 
 entity swb_time_merger is
 generic (
@@ -38,7 +40,7 @@ end entity;
 
 architecture arch of swb_time_merger is
 
-    signal rdata : std_logic_vector(W downto 0);
+    signal rdata : std_logic_vector(W-1 downto 0);
     signal rempty, wfull : std_logic;
     signal link_number : std_logic_vector(5 downto 0);
 
@@ -49,11 +51,11 @@ begin
         W => W,
         TREE_DEPTH_w => TREE_w,
         TREE_DEPTH_r => TREE_r,
-        N => NLINKS--,
+        N => g_NLINKS--,
     )
     port map (
         -- input streams
-        i_rdata                 => rx_q,
+        i_rdata                 => i_rx,
         i_rsop                  => i_rsop,
         i_reop                  => i_reop,
         i_rshop                 => i_rshop,
@@ -73,8 +75,8 @@ begin
         o_error_gtime           => open,
         o_error_shtime          => open,
         
-        i_reset_n               => i_reset_n_250,
-        i_clk                   => i_clk_250--,
+        i_reset_n               => i_reset_n,
+        i_clk                   => i_clk--,
     );
 
 
@@ -91,8 +93,8 @@ begin
         data            => rdata,
         full            => wfull,
         wrreq           => not rempty and not wfull,
-        sclr            => not i_reset_n_250,
-        clock           => i_clk_250--,
+        sclr            => not i_reset_n,
+        clock           => i_clk--,
     );
    
     -- link number

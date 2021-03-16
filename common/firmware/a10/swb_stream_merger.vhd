@@ -37,7 +37,8 @@ end entity;
 architecture arch of swb_stream_merger is
 
     signal rdata : std_logic_vector(N*W-1 downto 0);
-    signal wdata, rdata : std_logic_vector(35 downto 0);
+    signal rempty : std_logic_vector(N-1 downto 0);
+    signal wdata, q_stream : std_logic_vector(35 downto 0);
     signal datak : std_logic_vector(3 downto 0);
     signal wfull, we : std_logic;
 
@@ -50,9 +51,10 @@ begin
 
     --! map data for stream merger
     generate_rdata : for i in 0 to N-1 generate
-        rdata(W-1 + i*W downto i*W) <= i_rdata(i);
+        rdata(W-1 + i*W downto i*W) <= i_rx(i);
     end generate;
 
+    rempty <= i_rempty or not i_rmask_n;
     e_stream_merger : entity work.stream_merger
     generic map (
         W => W,
@@ -62,7 +64,7 @@ begin
         i_rdata     => rdata,
         i_rsop      => i_rsop,
         i_reop      => i_reop,
-        i_rempty    => i_rempty or not i_rmask_n,
+        i_rempty    => rempty,
         o_rack      => o_rack,
 
         -- output stream
@@ -83,7 +85,7 @@ begin
         DEVICE => "Arria 10"--,
     )
     port map (
-        q               => rdata,
+        q               => q_stream,
         empty           => o_rempty,
         rdreq           => i_ren,
         data            => wdata,
@@ -94,8 +96,8 @@ begin
     );
 
     --! only output data not datak
-    o_q <= rdata(35 downto 4);
-    datak <= rdata(3 downto 0);
+    o_q <= q_stream(35 downto 4);
+    datak <= q_stream(3 downto 0);
     
     o_header <=
         '1' when datak = "0001" and o_q(7 downto 0) = x"BC"

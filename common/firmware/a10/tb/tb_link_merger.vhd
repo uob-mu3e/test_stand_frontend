@@ -3,11 +3,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
 
-entity link_merger_tb is 
-end entity link_merger_tb;
+entity tb_link_merger is 
+end entity tb_link_merger;
 
 
-architecture TB of link_merger_tb is
+architecture TB of tb_link_merger is
 
     signal reset_n		: std_logic;
     signal reset		: std_logic;

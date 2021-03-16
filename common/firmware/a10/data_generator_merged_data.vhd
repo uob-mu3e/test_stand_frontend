@@ -8,6 +8,8 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
+use work.mudaq.all;
+
 
 entity data_generator_merged_data is
     generic (
