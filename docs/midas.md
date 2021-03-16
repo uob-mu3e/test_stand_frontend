@@ -28,6 +28,23 @@ $ cat ssl_cert.key >> ssl_cert.pem
 $ touch htpasswd.txt
 $ htdigest htpasswd.txt Default midas
 ```
+
+If you want to use the analyzer you also need to do the following:
+```console
+$ cd build 
+$ ./modules/analyzer/frontends/dummy_fe (optional - if you want a dummy)
+$ ./modules/analyzer/analyzer_mu3e -EDefault -Hlocalhost -R8088
+```
+
+If you want to use the Event Display you also need to do the following:
+```console
+$ cd modules/analyzer/packages/mu3edisplay 
+$ npm install
+$ ./node_modules/.bin/webpack
+$ cd modules/analyzer/analyzer
+$ python event_api.py (API at localhost:5000)
+```
+
 Now you need to load / make the switching board driver. You also need to remove and rescan your pci devices if you uploaded the firmware to the arria10 after starting up the pc. Be careful here that you make sure no program is using the arria10. This can lead to problems if you want to load the driver again. You also need to check which device number is the arria10. You can do this by calling sudo lspci.
 ```console
 $ cd ../common/kerneldriver
