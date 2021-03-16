@@ -71,8 +71,9 @@ void MuFEB::ReadFirmwareVersionsToODB()
          if(feb_sc.FEB_register_read(FEB.SB_Port(), MAX10_STATUS_REGISTER_R, max) != FEBSlowcontrolInterface::ERRCODES::OK)
             cm_msg(MINFO,"MuFEB::ReadFirmwareVersionsToODB", "Failed to read Max status register");
          else{
+             // TODO: Handle this properly
              if(GET_MAX10_STATUS_BIT_SPI_ARRIA_CLK(max[0]))
-                febversions[FEB.GetLinkID()] = 21;
+                febversions[FEB.GetLinkID()] = 20;
              else
                 febversions[FEB.GetLinkID()] = 20;
          }
@@ -253,6 +254,7 @@ DWORD* MuFEB::fill_SSFE(DWORD *pdata)
        index++;
     }
 
+    return pdata;
 }
 
 DWORD *MuFEB::read_SSFE_OneFEB(DWORD *pdata, uint32_t index, uint32_t version)
@@ -339,8 +341,10 @@ uint32_t MuFEB::reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, ui
 
 float MuFEB::ArriaVTempConversion(uint32_t reg)
 {
-    // The magic numbers here come from the Intel temperature sensor user guide UG-01074, page 10
-    return reg*693.0f/1024.0f-265.0f;
+    // The magic numbers here come from the Intel temperature sensor user guide UG-01074, page 11
+
+
+    return (reg-0x80); // more detailed conversion possible...
 }
 
 float MuFEB::Max10TempConversion(uint32_t reg)
@@ -357,16 +361,16 @@ float MuFEB::Max10TempConversion(uint32_t reg)
 float MuFEB::Max10VoltageConversion(uint16_t reg, float divider)
 {
     // We have a 12 bit ADC with 2.5 V refernce voltage:
-    return reg * (2.5/4096.0)/divider;
+    return (double)reg * (2.5/4096.0)*divider;
 }
 
 float MuFEB::Max10ExternalTemeperatureConversion(uint16_t reg)
 {
     // We have a 12 bit ADC with 2.5 V refernce voltage:
-    double vout = reg * (2.5/4096.0);
+    double vout = (double)reg * (2.5/4096.0);
     // For the conversion to temperature we assume, we are in -40 to +100,
     // See TI TMP235 data sheet, page 8: Voffs = 500 mV, Tc = 10 mV/C, Tinfl = 0 C
-    return (vout - 0.5)/10.0 + 0;
+    return (vout - 0.5)/0.01 + 0;
 }
 
 
