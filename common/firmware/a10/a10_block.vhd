@@ -90,7 +90,9 @@ port (
     i_pcie0_rmem_clk    : in    std_logic := '0';
 
     -- PCIe0 update interface for readable registers
-    i_pcie0_rregs       : in    reg32array := (others => (others => '0'));
+    i_pcie0_rregs_156   : in    reg32array := (others => (others => '0'));
+    i_pcie0_rregs_250   : in    reg32array := (others => (others => '0'));
+
 
     -- PCIe0 read interface for writable registers
     o_pcie0_wregs_A     : out   reg32array;
