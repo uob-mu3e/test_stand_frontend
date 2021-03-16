@@ -15,16 +15,14 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
 
-
-
+use work.mudaq.all;
 
 entity data_decoder is 
 	generic (
 		EVAL_WINDOW_WORDCNT_BITS : natural := 8; -- number of bits of the counter used to check for the sync pattern
 		EVAL_WINDOW_PATTERN_BITS : natural := 1; -- number of bits of the counter of the sync patterns found in the window (realign if not overflow)
-		ALIGN_WORD	 : std_logic_vector(7 downto 0):=k28_5 -- pattern byte to search for
+		ALIGN_WORD	 : std_logic_vector(7 downto 0):=K28_5 -- pattern byte to search for
 	);
 	port (
 		reset_n				: in std_logic;

@@ -14,40 +14,39 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.mupix_constants.all;
-use work.mupix_types.all;
+
 
 entity hit_multiplexer is 
     port (
         reset_n     : in  std_logic;
         clk         : in  std_logic;
 
-        i_ts        : in  ts_array_t(2 downto 0);
-        i_chip_id   : in  ch_id_array_t(2 downto 0);
-        i_row       : in  row_array_t(2 downto 0);
-        i_col       : in  col_array_t(2 downto 0);
-        i_tot       : in  tot_array_t(2 downto 0);
+        i_ts        : in  work.mupix.ts_array_t(2 downto 0);
+        i_chip_id   : in  work.mupix.ch_id_array_t(2 downto 0);
+        i_row       : in  work.mupix.row_array_t(2 downto 0);
+        i_col       : in  work.mupix.col_array_t(2 downto 0);
+        i_tot       : in  work.mupix.tot_array_t(2 downto 0);
         i_hit_ena   : in  std_logic_vector(2 downto 0);
 
-        o_ts        : out ts_array_t(0 downto 0);
-        o_chip_id   : out ch_id_array_t(0 downto 0);
-        o_row       : out row_array_t(0 downto 0);
-        o_col       : out col_array_t(0 downto 0);
-        o_tot       : out tot_array_t(0 downto 0);
+        o_ts        : out work.mupix.ts_array_t(0 downto 0);
+        o_chip_id   : out work.mupix.ch_id_array_t(0 downto 0);
+        o_row       : out work.mupix.row_array_t(0 downto 0);
+        o_col       : out work.mupix.col_array_t(0 downto 0);
+        o_tot       : out work.mupix.tot_array_t(0 downto 0);
         o_hit_ena   : out std_logic--;
     );
 end hit_multiplexer;
 
 architecture RTL of hit_multiplexer is
 
-    signal hit_in1          : STD_LOGIC_VECTOR (38 DOWNTO 0);
-    signal hit_ena1         : STD_LOGIC;
-    signal hit_in2          : STD_LOGIC_VECTOR (38 DOWNTO 0);
-    signal hit_ena2         : STD_LOGIC;
-    signal hit_in3          : STD_LOGIC_VECTOR (38 DOWNTO 0);
-    signal hit_ena3         : STD_LOGIC;
-    signal hit_out          : STD_LOGIC_VECTOR (38 DOWNTO 0);
-    signal hit_ena          : STD_LOGIC;
+    signal hit_in1          : std_logic_vector (38 downto 0);
+    signal hit_ena1         : std_logic;
+    signal hit_in2          : std_logic_vector (38 downto 0);
+    signal hit_ena2         : std_logic;
+    signal hit_in3          : std_logic_vector (38 downto 0);
+    signal hit_ena3         : std_logic;
+    signal hit_out          : std_logic_vector (38 downto 0);
+    signal hit_ena          : std_logic;
 
     signal ena              : std_logic_vector(2 downto 0);
     signal ena_del1         : std_logic_vector(2 downto 0);
@@ -56,9 +55,9 @@ architecture RTL of hit_multiplexer is
     signal ena_del1_nors    : std_logic_vector(2 downto 0);
     signal ena_del2_nors    : std_logic_vector(2 downto 0);
 
-    signal hit1             : STD_LOGIC_VECTOR (38 DOWNTO 0);
-    signal hit2             : STD_LOGIC_VECTOR (38 DOWNTO 0);
-    signal hit3             : STD_LOGIC_VECTOR (38 DOWNTO 0);
+    signal hit1             : std_logic_vector (38 downto 0);
+    signal hit2             : std_logic_vector (38 downto 0);
+    signal hit3             : std_logic_vector (38 downto 0);
 
 begin
 

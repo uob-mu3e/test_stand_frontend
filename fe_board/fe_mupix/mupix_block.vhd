@@ -5,9 +5,10 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
-use work.daq_constants.all;
-use work.mupix_constants.all;
+
 use work.mupix_registers.all;
+use work.mudaq.all;
+
 
 entity mupix_block is
 port (
@@ -57,7 +58,7 @@ architecture arch of mupix_block is
     signal spi_clock        : std_logic;
     signal spi_mosi         : std_logic;
     signal spi_csn          : std_logic;
-    signal hotfix :reg32array_t(35 downto 0);
+    signal hotfix : work.util.slv32_array_t(35 downto 0);
     signal hotfix_back      : std_logic;
 
 begin

@@ -12,9 +12,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.mupix_types.all;
+
 use work.mupix_registers.all;
-use work.daq_constants.all;
 
 entity receiver_block_mupix is 
     generic(
@@ -28,10 +27,10 @@ entity receiver_block_mupix is
         rx_in           : in  std_logic_vector(NINPUT-1 DOWNTO 0);
         rx_inclock_A    : in  std_logic;
         rx_inclock_B    : in  std_logic;
-        o_rx_status     : out reg32array_t(NINPUT-1 downto 0);
+        o_rx_status     : out work.util.slv32_array_t(NINPUT-1 downto 0);
         o_rx_ready      : out std_logic_vector(NINPUT-1 downto 0);
         i_rx_invert     : in  std_logic;
-        rx_data         : out bytearray_t(NINPUT-1 downto 0);
+        rx_data         : out work.util.slv8_array_t(NINPUT-1 downto 0);
         rx_k            : out std_logic_vector(NINPUT-1 downto 0);
         rx_clkout       : out std_logic_vector(2 downto 0);
         rx_doubleclk    : out std_logic_vector(1 downto 0)--;
@@ -85,7 +84,7 @@ architecture rtl of receiver_block_mupix is
     signal disp_err_counter     : disp_err_counter_t(NINPUT-1 downto 0);
     signal rx_state             : std_logic_vector(NINPUT*2-1 downto 0);
     signal lvds_status_empty    : std_logic_vector(NINPUT-1 downto 0);
-    signal lvds_status_buffer   : reg32array_t    (NINPUT-1 downto 0);
+    signal lvds_status_buffer   : work.util.slv32_array_t(NINPUT-1 downto 0);
     signal lvds_status_rdreq    : std_logic_vector(NINPUT-1 downto 0);
 
     signal decoder_ena          : std_logic_vector(NINPUT-1 downto 0);

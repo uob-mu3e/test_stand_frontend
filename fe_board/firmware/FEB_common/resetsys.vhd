@@ -2,7 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.daq_constants.all;
+use work.mudaq.all;
+
 
 ENTITY resetsys is
 generic (

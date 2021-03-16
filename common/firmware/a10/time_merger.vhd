@@ -3,8 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
-use work.dataflow_components.all;
---use std.textio.all;
+
 
 -- merge packets delimited by SOP and EOP from N input streams
 entity time_merger is
@@ -17,7 +16,7 @@ generic (
 );
 port (
     -- input streams
-    i_rdata     : in    data_array(N - 1 downto 0);
+    i_rdata     : in    work.util.slv38_array_t(N - 1 downto 0);
     i_rsop      : in    std_logic_vector(N-1 downto 0); -- start of packet (SOP)
     i_reop      : in    std_logic_vector(N-1 downto 0); -- end of packet (EOP)
     i_rshop     : in    std_logic_vector(N-1 downto 0); -- sub header of packet (SHOP)
@@ -60,7 +59,7 @@ architecture arch of time_merger is
     signal rack, rack_hit, error_pre, error_sh, error_tr, sh_state, pre_state, tr_state : std_logic_vector(N - 1 downto 0);
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
     signal header_trailer : std_logic_vector(37 downto 0);
-    signal gtime1, gtime2 : data_array(N - 1 downto 0);
+    signal gtime1, gtime2 : work.util.slv38_array_t(N - 1 downto 0);
     signal shtime : std_logic_vector(5 downto 0);
     signal overflow : std_logic_vector(15 downto 0);
     signal sheader_time : sheader_time_array_t;

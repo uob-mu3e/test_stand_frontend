@@ -1,25 +1,3 @@
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use ieee.std_logic_unsigned.all;
-use ieee.std_logic_misc.all;
-
-package protocol is
-
-    type data_merger_state is (idle, sending_data, sending_slowcontrol);
-
-    constant HEADER_K:    std_logic_vector(31 downto 0) := x"000000bc";
-    constant HEADER_K_DATAK:    std_logic_vector(3 downto 0) := "0001";
-    constant WORD_ALIGN:    std_logic_vector(31 downto 0) := x"beefcafe";
-    constant DATA_HEADER_ID:    std_logic_vector(5 downto 0) := "111010";
-    constant DATA_SUB_HEADER_ID:    std_logic_vector(5 downto 0) := "111111";
-    constant ACTIVE_SIGNAL_HEADER_ID:    std_logic_vector(5 downto 0) := "111101";
-    constant RUN_TAIL_HEADER_ID:    std_logic_vector(5 downto 0) := "111110";
-    constant TIMING_MEAS_HEADER_ID:    std_logic_vector(5 downto 0) := "111100";
-    constant SC_HEADER_ID:    std_logic_vector(5 downto 0) := "111011";
-
-end package protocol;
-
 -- simple data generator (for slowcontrol and pixel data)
 -- writes into pix_data_fifo and sc_data_fifo
 -- only Header(sc or pix) + data
@@ -33,7 +11,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
-use work.protocol.all;
 
 
 entity data_generator_a10 is

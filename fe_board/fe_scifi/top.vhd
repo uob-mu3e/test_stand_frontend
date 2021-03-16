@@ -2,7 +2,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.daq_constants.all;
 
 entity top is
 port (
@@ -136,7 +135,7 @@ architecture arch of top is
     signal s_MON_rxrdy : std_logic_vector (7 downto 0);
 
     -- reset system
-    signal run_state_125 : run_state_t;
+    signal run_state_125 : work.util.run_state_t;
     signal s_run_state_all_done : std_logic;
 
 begin

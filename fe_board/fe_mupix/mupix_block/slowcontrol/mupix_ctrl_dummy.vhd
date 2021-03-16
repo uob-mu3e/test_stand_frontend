@@ -9,9 +9,10 @@ use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
-use work.mupix_constants.all;
+
 use work.mupix_registers.all;
-use work.daq_constants.all;
+use work.mupix.all;
+use work.mudaq.all;
 
 entity mupix_ctrl_dummy is
     port(
