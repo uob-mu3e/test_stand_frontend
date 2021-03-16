@@ -16,6 +16,7 @@ port (
     i_reop      : in    std_logic_vector(N-1 downto 0);
     i_rempty    : in    std_logic_vector(N-1 downto 0);
     i_rmask_n   : in    std_logic_vector(N-1 downto 0);
+    i_en        : in    std_logic;
     o_rack      : out   std_logic_vector(N-1 downto 0);
 
     -- output stream
@@ -54,7 +55,8 @@ begin
         rdata(W-1 + i*W downto i*W) <= i_rx(i);
     end generate;
 
-    rempty <= i_rempty or not i_rmask_n;
+    rempty <=   i_rempty or not i_rmask_n when i_en = '1' else
+                (others => '1');
     e_stream_merger : entity work.stream_merger
     generic map (
         W => W,

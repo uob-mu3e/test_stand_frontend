@@ -148,7 +148,7 @@ begin
             wrfull 	=> fifo_full_0(j),
             wrusedw => open--,
         );
-    END GENERATE fifos_first;
+    END GENERATE;
     
     fifos_last:
     FOR j in 0 to generate_fifos(6)-1 GENERATE
@@ -173,7 +173,7 @@ begin
             wrfull  => fifo_full_6(j),
             wrusedw => open--,
         );
-    END GENERATE fifos_last;
+    END GENERATE;
     
     -- readout fifo
     process(i_clk, i_reset_n)
@@ -327,7 +327,9 @@ begin
                         end if;
                     end if;
                 when "0001" =>
-                    if ( layer_0_cnt(i)(5) = '1' ) then
+                    if ( fifo_full_0(i) = '1' ) then
+                        --
+                    elsif ( layer_0_cnt(i)(5) = '1' ) then
                         layer_0_state(i) <= "1111";
                     else
                         fifo_data_0(i) <= tree_padding;
@@ -559,7 +561,9 @@ begin
                         fifo_ren_5_reg(i) <= '1';
                         fifo_ren_5_reg(i + size_last) <= '1';
                     when "0101" =>
-                        if ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(69 downto 66) and fifo_q_5(i)(75 downto 38) /= tree_zero and fifo_q_5(i)(75 downto 38) /= tree_padding ) then
+                        if ( fifo_full_6(i) = '1' ) then
+                            --
+                        elsif ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(69 downto 66) and fifo_q_5(i)(75 downto 38) /= tree_zero and fifo_q_5(i)(75 downto 38) /= tree_padding ) then
                             fifo_data_6(i)(37 downto 0) <= fifo_q_5(i)(75 downto 38);
                             layer_6_state(i)(0) <= '0';
                             fifo_ren_5(i) <= '1';
@@ -574,7 +578,9 @@ begin
                         end if;
                     when "0100" =>
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                        if ( fifo_empty_5(i) = '0' and fifo_ren_5(i) = '0' and fifo_ren_5_reg(i) = '0' ) then
+                        if ( fifo_full_6(i) = '1' ) then
+                            --
+                        elsif ( fifo_empty_5(i) = '0' and fifo_ren_5(i) = '0' and fifo_ren_5_reg(i) = '0' ) then
                             -- TODO: what to do when fifo_q_1(i + size_last)(69 downto 66) is zero? maybe error cnt?
                             if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(69 downto 66) and fifo_q_5(i)(37 downto 0) /= tree_padding ) then
                                 fifo_data_6(i)(75 downto 38) <= fifo_q_5(i)(37 downto 0);
@@ -595,7 +601,9 @@ begin
                         end if;
                     when "0001" =>
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                        if ( fifo_empty_5(i + size_last) = '0' and fifo_ren_5(i + size_last) = '0' and fifo_ren_5_reg(i + size_last) = '0' ) then       
+                        if ( fifo_full_6(i) = '1' ) then
+                            --
+                        elsif ( fifo_empty_5(i + size_last) = '0' and fifo_ren_5(i + size_last) = '0' and fifo_ren_5_reg(i + size_last) = '0' ) then       
                             -- TODO: what to do when fifo_q_1(i)(69 downto 66) is zero? maybe error cnt?     
                             if ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(31 downto 28) and fifo_q_5(i)(75 downto 38) /= tree_zero and fifo_q_5(i)(75 downto 38) /= tree_padding ) then
                                 fifo_data_6(i)(75 downto 38) <= fifo_q_5(i)(75 downto 38);

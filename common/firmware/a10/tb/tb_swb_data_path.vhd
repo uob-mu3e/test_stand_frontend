@@ -51,18 +51,19 @@ begin
     --! ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     --! 1            | 0          | 0          | 1        | 0              | 0        | n                           | Generate data for all 64 links, readout link n via DAM                         | x
     --! 1            | 1          | 0          | 0        | 0              | 0        | -                           | Generate data for all 64 links, simple merging of links, readout via DAM       | x
+    --! 1            | 0          | 1          | 0        | 0              | 0        | -                           | Generate data for all 64 links, time merging of links, readout via DAM         | x
     resets_n_156(RESET_BIT_DATAGEN)                             <= '0', '1' after (1.0 us / CLK_MHZ);
     writeregs_156(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
     writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_LINK)   <= '1';
     -- USE_GEN_LINK, USE_STREAM, USE_MERGER, USE_LINK, USE_GEN_MERGER, USE_FARM
     -- writeregs_250(SWB_READOUT_STATE_REGISTER_W)(5 downto 0)     <= "0100";
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM)     <= '1';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER)     <= '0'; -- use time merger
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_LINK)       <= '0'; -- use link or gen link data for midas event builder dma
+    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM)     <= '0';
+    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER)     <= '1';
+    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_LINK)       <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_MERGER) <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_FARM)       <= '0';
         
-    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= (others => '1');
+    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"00000FFF";
     writeregs_250(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
     writeregs_250(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
     writeregs_250(DMA_REGISTER_W)(DMA_BIT_ENABLE)               <= '1';
@@ -78,9 +79,9 @@ begin
         g_NLINKS_TOTL           => g_NLINKS_TOTL,
         g_NLINKS_FARM           => g_NLINKS_FARM,
         g_NLINKS_DATA           => g_NLINKS_DATA,
-        LINK_FIFO_ADDR_WIDTH    => 10,
-        TREE_w                  => 5,
-        TREE_r                  => 5,
+        LINK_FIFO_ADDR_WIDTH    => 8,
+        TREE_w                  => 7,
+        TREE_r                  => 7,
         SWB_ID                  => x"01",
         -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
         DATA_TYPE               => x"01"--;

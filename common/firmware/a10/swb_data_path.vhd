@@ -225,6 +225,7 @@ begin
         i_reop      => eop,
         i_rempty    => rx_rdempty,
         i_rmask_n   => i_rmask_n,
+        i_en        => i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM),
         o_rack      => stream_rack,
 
         o_q         => stream_rdata,
