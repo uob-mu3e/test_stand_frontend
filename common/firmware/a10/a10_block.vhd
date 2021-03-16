@@ -38,8 +38,6 @@ port (
     o_LED               : out   std_logic_vector(3 downto 0);
     o_LED_BRACKET       : out   std_logic_vector(3 downto 0);
     i_BUTTON            : in    std_logic_vector(3 downto 0);
-    o_HEX0_D            : out   std_logic_vector(6 downto 0);
-    o_HEX1_D            : out   std_logic_vector(6 downto 0);
 
     -- XCVR0 (6250 Mbps @ 156.25 MHz)
     i_xcvr0_rx          : in    std_logic_vector(g_XCVR0_CHANNELS-1 downto 0) := (others => '0');
@@ -71,6 +69,7 @@ port (
     i_pcie0_perst_n     : in    std_logic := '0';
     i_pcie0_refclk      : in    std_logic := '0'; -- ref 100 MHz clock
     o_pcie0_clk         : out   std_logic;
+    o_pcie0_clk_hz      : out   std_logic;
 
     -- PCIe0 DMA0
     i_pcie0_dma0_wdata  : in    std_logic_vector(255 downto 0) := (others => '0');
@@ -102,12 +101,14 @@ port (
     o_pcie0_resets_n_250: out   std_logic_vector(31 downto 0);
 
 
+
     -- PCIe1
     i_pcie1_rx          : in    std_logic_vector(g_PCIE1_X-1 downto 0) := (others => '0');
     o_pcie1_tx          : out   std_logic_vector(g_PCIE1_X-1 downto 0);
     i_pcie1_perst_n     : in    std_logic := '0';
     i_pcie1_refclk      : in    std_logic := '0'; -- ref 100 MHz clock
     o_pcie1_clk         : out   std_logic;
+    o_pcie1_clk_hz      : out   std_logic;
 
     -- PCIe1 DMA0
     i_pcie1_dma0_wdata  : in    std_logic_vector(255 downto 0) := (others => '0');
@@ -140,6 +141,7 @@ port (
     o_pcie1_resets_n_250: out   std_logic_vector(31 downto 0);
 
 
+
     o_reset_156_n       : out   std_logic;
     o_clk_156           : out   std_logic;
     o_clk_156_hz        : out   std_logic;
@@ -151,6 +153,7 @@ port (
     -- global 125 MHz clock
     i_reset_125_n       : in    std_logic;
     i_clk_125           : in    std_logic;
+    o_clk_125_hz        : out   std_logic;
 
     -- local clock
     i_reset_n           : in    std_logic;
@@ -198,15 +201,13 @@ architecture arch of a10_block is
     signal push_button2_db : std_logic;
     signal push_button3_db : std_logic;
 
-    --! counter
-    signal clk_50_cnt   : unsigned(31 downto 0);
-    signal clk_125_cnt  : unsigned(31 downto 0);
-
 begin
 
     o_flash_reset_n <= flash_reset_n;
 
     o_flash_address <= flash_address;
+
+
 
     -- 156.25 MHz data clock (reference is 125 MHz global clock)
     e_clk_156 : component work.cmp.ip_pll_125to156
@@ -225,6 +226,8 @@ begin
     generic map ( P => 156250000 )
     port map ( o_clk => o_clk_156_hz, i_reset_n => reset_156_n, i_clk => clk_156 );
 
+
+
     -- 250 MHz data clock (reference is 125 MHz global clock)
     e_clk_250 : component work.cmp.ip_pll_125to250
     port map (
@@ -242,7 +245,16 @@ begin
     generic map ( P => 250000000 )
     port map ( o_clk => o_clk_250_hz, i_reset_n => reset_250_n, i_clk => clk_250 );
 
+
+    e_clk_125_hz : entity work.clkdiv
+    generic map ( P => 125000000 )
+    port map ( o_clk => o_clk_125_hz, i_reset_n => i_reset_125_n, i_clk => i_clk_125 );
+
+
+
     o_pcie0_clk <= pcie0_clk;
+
+
 
     --! save git version to version register
     e_version_reg : entity work.version_reg
@@ -281,15 +293,15 @@ begin
     --! ------------------------------------------------------------------------
 
 
-    --! 100 MHz blinky to check the pcie0 refclk
-    e_pcie_clk_hz : entity work.clkdiv
+    --! 100 MHz blinky to check the pcie0 clk
+    e_pcie0_clk_hz : entity work.clkdiv
     generic map ( P => 100000000 )
-    port map ( o_clk => o_LED(3), i_reset_n => i_reset_n, i_clk => pcie0_clk );
+    port map ( o_clk => o_pcie0_clk_hz, i_reset_n => i_reset_n, i_clk => pcie0_clk );
 
-    --! 100 MHz blinky to check the pcie1 refclk
-    e_pcie_clk_hz : entity work.clkdiv
+    --! 100 MHz blinky to check the pcie1 clk
+    e_pcie1_clk_hz : entity work.clkdiv
     generic map ( P => 100000000 )
-    port map ( o_clk => o_LED(2), i_reset_n => i_reset_n, i_clk => pcie1_clk );
+    port map ( o_clk => o_pcie1_clk_hz, i_reset_n => i_reset_n, i_clk => pcie1_clk );
 
     --! blinky leds to check the wregs
     o_LED_BRACKET(1 downto 0) <= o_pcie0_wregs_A(LED_REGISTER_W)(1 downto 0);
@@ -314,38 +326,6 @@ begin
         i_clk       => i_clk--,
     );
 
-    --! counters for 50 MHz clk
-    process(i_clk)
-    begin
-    if rising_edge(i_clk) then
-        clk_50_cnt <= clk_50_cnt + 1;
-    end if;
-    end process;
-
-    --! counters for 125 MHz clk
-    process(i_clk_125)
-    begin
-    if rising_edge(i_clk_125) then
-        clk_125_cnt <= clk_125_cnt + 1;
-    end if;
-    end process;
-
-    --! monitor 50 MHz clock with seg7 
-    --! this works not on the LHCb Board
-    e_hex2seg7_50 : entity work.hex2seg7
-    port map (
-        i_hex => std_logic_vector(clk_50_cnt)(27 downto 24),
-        o_seg => o_HEX0_D--,
-    );
-
-    --! monitor 125 MHz clock with seg7 
-    --! this works not on the LHCb Board
-    --! so it will be just be not used there
-    e_hex2seg7_125 : entity work.hex2seg7
-    port map (
-        i_hex => std_logic_vector(clk_125_cnt)(27 downto 24),
-        o_seg => o_HEX1_D--,
-    );
 
 
     -- nios reset sequence
