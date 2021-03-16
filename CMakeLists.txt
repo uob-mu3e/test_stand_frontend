@@ -38,10 +38,6 @@ find_package(ROOT REQUIRED COMPONENTS
     RIO Hist Tree Net
 )
 
-if (NOT ROOT_FOUND)
-    message("No ROOT found, analyzer will not be build")
-endif()
-
 # optional packages
 find_package(Doxygen 1.8)
 message("here we set GLVND to default (https://cmake.org/cmake/help/git-stage/policy/CMP0072.html)")
