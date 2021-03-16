@@ -5,10 +5,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
-use work.mupix_constants.all;
-use work.mupix_types.all;
+
 use work.mupix_registers.all;
+use work.mupix.all;
+use work.mudaq.all;
 
 entity mupix_datapath is
 port (
@@ -35,6 +35,8 @@ port (
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
+    o_hotfix_reroute    : out work.util.slv32_array_t(35 downto 0); -- TODO: fix problem and remove
+    i_hotfix_backroute  : in  std_logic;
     i_run_state_156     : in  run_state_t--;
 );
 end mupix_datapath;
@@ -45,14 +47,11 @@ architecture rtl of mupix_datapath is
     signal reset_125_n              : std_logic;
     signal sorter_reset_n           : std_logic;
 
-    signal lvds_pll_locked          : std_logic_vector(1 downto 0);
-    signal lvds_runcounter          : reg32array_t(35 downto 0);
-    signal lvds_errcounter          : reg32array_t(35 downto 0);
-
     -- signals after mux
-    signal rx_data                  : bytearray_t(35 downto 0);
+    signal rx_data                  : work.util.slv8_array_t(35 downto 0);
     signal rx_k                     : std_logic_vector(35 downto 0);
-    signal lvds_data_valid          : std_logic_vector(35 downto 0);
+    signal lvds_status              : work.util.slv32_array_t(35 downto 0);
+    signal data_valid               : std_logic_vector(35 downto 0);
 
     -- hits + flag to indicate a word as a hit, after unpacker
     signal hits_ena                 : std_logic_vector(35 downto 0);
@@ -61,6 +60,20 @@ architecture rtl of mupix_datapath is
     signal col                      : col_array_t(35 downto 0);
     signal tot                      : tot_array_t(35 downto 0);
     signal chip_ID                  : ch_ID_array_t(35 downto 0);
+
+    signal hits_ena_unpacker        : std_logic_vector(35 downto 0);
+    signal ts_unpacker              : ts_array_t(35 downto 0);
+    signal row_unpacker             : row_array_t(35 downto 0);
+    signal col_unpacker             : col_array_t(35 downto 0);
+    signal tot_unpacker             : tot_array_t(35 downto 0);
+    signal chip_ID_unpacker         : ch_ID_array_t(35 downto 0);
+
+    signal hits_ena_gen             : std_logic_vector(35 downto 0);
+    signal ts_gen                   : ts_array_t(35 downto 0);
+    signal row_gen                  : row_array_t(35 downto 0);
+    signal col_gen                  : col_array_t(35 downto 0);
+    signal tot_gen                  : tot_array_t(35 downto 0);
+    signal chip_ID_gen              : ch_ID_array_t(35 downto 0);
 
     -- hits afer 3-1 multiplexing
     signal hits_ena_hs              : std_logic_vector(35 downto 0);
@@ -90,7 +103,7 @@ architecture rtl of mupix_datapath is
     signal coarsecounters_ena_del   : std_logic_vector(11 downto 0);
 
     -- error signal output from unpacker
-    signal unpack_errorcounter      : reg32array_t(35 downto 0);
+    signal unpack_errorcounter      : work.util.slv32_array_t(35 downto 0);
 
     --signal regwritten_reg         : std_logic_vector(NREGISTERS-1 downto 0); 
 
@@ -145,14 +158,15 @@ begin
         i_reg_wdata                 => i_reg_wdata,
 
         -- inputs  156--------------------------------------------
-        i_lvds_data_valid           => lvds_data_valid,
+        i_lvds_data_valid           => (others => '0'),
+        --i_lvds_status               => lvds_status,
 
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
         o_mp_lvds_link_mask         => lvds_link_mask,
         o_mp_readout_mode           => mp_readout_mode--,
     );
-
+    o_hotfix_reroute<= lvds_status; --TODO: fix this!!
 
 ------------------------------------------------------------------------------------
 ---------------------- LVDS Receiver part ------------------------------------------
@@ -165,19 +179,15 @@ begin
         rx_inclock_A        => i_lvds_rx_inclock_A,
         rx_inclock_B        => i_lvds_rx_inclock_B,
 
-        rx_state            => open, --rx_state, --TODO
-        --o_rx_ready          => data_valid,
-        o_rx_ready_nios     => lvds_data_valid,
+        o_rx_status         => lvds_status,
+        o_rx_ready          => data_valid,
+        i_rx_invert         => i_hotfix_backroute,
         rx_data             => rx_data,
-        rx_k                => rx_k,
-        pll_locked          => lvds_pll_locked--, -- write to some register!
-
-        --rx_runcounter     => lvds_runcounter, -- read_sc_regs
-        --rx_errorcounter   => lvds_errcounter, -- would be nice to add some error counter
+        rx_k                => rx_k--,
     );
 
     -- use a link mask to disable channels from being used in the data processing
-    link_enable <= lvds_data_valid and not lvds_link_mask;
+    link_enable <= data_valid and not lvds_link_mask;
 
 --------------------------------------------------------------------------------------
 --------------------- Unpack the data ------------------------------------------------
@@ -197,12 +207,12 @@ begin
         kin                 => rx_k(i), 
         readyin             => link_enable_125(i),
         i_mp_readout_mode   => mp_readout_mode,
-        o_ts                => ts(i),
-        o_chip_ID           => chip_ID(i),
-        o_row               => row(i),
-        o_col               => col(i),
-        o_tot               => tot(i),
-        o_hit_ena           => hits_ena(i),
+        o_ts                => ts_unpacker(i),
+        o_chip_ID           => chip_ID_unpacker(i),
+        o_row               => row_unpacker(i),
+        o_col               => col_unpacker(i),
+        o_tot               => tot_unpacker(i),
+        o_hit_ena           => hits_ena_unpacker(i),
         coarsecounter       => open,--coarsecounters((i+1)*COARSECOUNTERSIZE-1 downto i*COARSECOUNTERSIZE),
         coarsecounter_ena   => open,--coarsecounters_ena(i),
         link_flag           => open,--link_flag(i),
@@ -249,6 +259,22 @@ begin
                 counter125 <= (others => '0');
             else
                 counter125 <= counter125 + 1;
+            end if;
+            
+            if(mp_datagen_control_reg(MP_DATA_GEN_SORT_IN_BIT) = '1') then
+                ts      <= ts_gen;
+                chip_ID <= Chip_ID_gen;
+                row     <= row_gen;
+                col     <= col_gen;
+                tot     <= tot_gen;
+                hits_ena<= hits_ena_gen;
+            else
+                ts      <= ts_unpacker;
+                chip_ID <= Chip_ID_unpacker;
+                row     <= row_unpacker;
+                col     <= col_unpacker;
+                tot     <= tot_unpacker;
+                hits_ena<= hits_ena_unpacker;
             end if;
         end if;
     end process;
@@ -331,7 +357,14 @@ begin
         o_hit_counter       => open,
         o_fifo_wdata        => fifo_wdata_gen,
         o_fifo_write        => fifo_write_gen,
-        
+
+        o_ts                => ts_gen,
+        o_chip_ID           => chip_ID_gen,
+        o_row               => row_gen,
+        o_col               => col_gen,
+        o_tot               => tot_gen,
+        o_hit_ena           => hits_ena_gen,
+
         i_evil_register     => (others => '0'),
         o_mischief_managed  => open--,
     );

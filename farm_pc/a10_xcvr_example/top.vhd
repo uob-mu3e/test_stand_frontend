@@ -15,11 +15,11 @@ port (
     FLASH_CLK       : out   std_logic;
     FLASH_RESET_n   : out   std_logic;
 
-    FAN_I2C_SCL             : out   std_logic;
+    FAN_I2C_SCL             : inout std_logic;
     FAN_I2C_SDA             : inout std_logic;
-    POWER_MONITOR_I2C_SCL   : out   std_logic;
+    POWER_MONITOR_I2C_SCL   : inout std_logic;
     POWER_MONITOR_I2C_SDA   : inout std_logic;
-    TEMP_I2C_SCL            : out   std_logic;
+    TEMP_I2C_SCL            : inout std_logic;
     TEMP_I2C_SDA            : inout std_logic;
 
 --    QSFPA_INTERRUPT_n   : in    std_logic;
@@ -43,19 +43,15 @@ end entity;
 
 architecture rtl of top is
 
-    -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
-    signal ZERO : std_logic := '0';
-    attribute keep : boolean;
-    attribute keep of ZERO : signal is true;
+    signal nios_i2c_scl     : std_logic;
+    signal nios_i2c_scl_oe  : std_logic;
+    signal nios_i2c_sda     : std_logic;
+    signal nios_i2c_sda_oe  : std_logic;
+    signal nios_i2c_mask    : std_logic_vector(31 downto 0);
 
-    signal i2c_scl_in   : std_logic;
-    signal i2c_scl_oe   : std_logic;
-    signal i2c_sda_in   : std_logic;
-    signal i2c_sda_oe   : std_logic;
-
-    signal nios_clk      : std_logic;
-    signal nios_rst_n    : std_logic;
-    signal flash_rst_n  : std_logic;
+    signal nios_clk         : std_logic;
+    signal nios_rst_n       : std_logic;
+    signal flash_rst_n      : std_logic;
 
     signal refclk_125   : std_logic;
 
@@ -63,7 +59,7 @@ architecture rtl of top is
 
     signal nios_pio_i : std_logic_vector(31 downto 0);
 
-    signal flash_ce_n_i : std_logic;
+    signal flash_cs_n : std_logic;
 
     signal av_qsfp : work.util.avalon_t;
 
@@ -142,12 +138,13 @@ begin
         flash_tcm_data_out => FLASH_D,
         flash_tcm_read_n_out(0) => FLASH_OE_n,
         flash_tcm_write_n_out(0) => FLASH_WE_n,
-        flash_tcm_chipselect_n_out(0) => flash_ce_n_i,
+        flash_tcm_chipselect_n_out(0) => flash_cs_n,
 
-        i2c_scl_in  => i2c_scl_in,
-        i2c_scl_oe  => i2c_scl_oe,
-        i2c_sda_in  => i2c_sda_in,
-        i2c_sda_oe  => i2c_sda_oe,
+        i2c_scl_in      => nios_i2c_scl,
+        i2c_scl_oe      => nios_i2c_scl_oe,
+        i2c_sda_in      => nios_i2c_sda,
+        i2c_sda_oe      => nios_i2c_sda_oe,
+        i2c_mask_export => nios_i2c_mask,
 
         spi_MISO    => '-',
         spi_MOSI    => open,
@@ -160,27 +157,29 @@ begin
         clk_clk     => nios_clk--,
     );
 
-    FLASH_CE_n <= (flash_ce_n_i, flash_ce_n_i);
+    FLASH_CE_n <= (flash_cs_n, flash_cs_n);
     FLASH_ADV_n <= '0';
     FLASH_CLK <= '0';
     FLASH_RESET_n <= flash_rst_n;
 
 
 
-    -- I2C clock
-    i2c_scl_in <= not i2c_scl_oe;
-    FAN_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-    TEMP_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
-    POWER_MONITOR_I2C_SCL <= ZERO when i2c_scl_oe = '1' else 'Z';
+    e_i2c_mux : entity work.i2c_mux
+    port map (
+        io_scl(0)   => FAN_I2C_SCL,
+        io_sda(0)   => FAN_I2C_SDA,
+        io_scl(1)   => TEMP_I2C_SCL,
+        io_sda(1)   => TEMP_I2C_SDA,
+        io_scl(2)   => POWER_MONITOR_I2C_SCL,
+        io_sda(2)   => POWER_MONITOR_I2C_SDA,
 
-    -- I2C data
-    i2c_sda_in <= FAN_I2C_SDA and
-                  TEMP_I2C_SDA and
-                  POWER_MONITOR_I2C_SDA and
-                  '1';
-    FAN_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-    TEMP_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
-    POWER_MONITOR_I2C_SDA <= ZERO when i2c_sda_oe = '1' else 'Z';
+        o_scl       => nios_i2c_scl,
+        i_scl_oe    => nios_i2c_scl_oe,
+        o_sda       => nios_i2c_sda,
+        i_sda_oe    => nios_i2c_sda_oe,
+
+        i_mask      => nios_i2c_mask--,
+    );
 
 
 

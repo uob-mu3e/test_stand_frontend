@@ -1,7 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
 
 entity top is
 port (
@@ -199,7 +198,7 @@ architecture arch of top is
     signal spi_miso, spi_mosi, spi_sclk : std_logic;
     signal spi_ss_n         : std_logic_vector(15 downto 0);
 
-    signal run_state_125           : run_state_t;
+    signal run_state_125           : work.util.run_state_t;
     signal ack_run_prep_permission : std_logic;
 
     signal sync_reset_cnt   : std_logic;

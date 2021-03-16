@@ -3,8 +3,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
+
 use work.feb_sc_registers.all;
+use work.mudaq.all;
 
 entity feb_reg_mapping is
 generic (
@@ -27,7 +28,7 @@ port (
     i_reset_phase               : in  std_logic_vector(15 downto 0) := x"CCCC";
     i_arriaV_temperature        : in  std_logic_vector( 7 downto 0) := x"CC";
     i_fpga_type                 : in  std_logic_vector( 5 downto 0) := "111100";
-    i_adc_reg                   : in  reg32array_t    ( 4 downto 0) := (others => x"CCCCCCCC");
+    i_adc_reg                   : in  work.util.slv32_array_t( 4 downto 0) := (others => x"CCCCCCCC");
     i_max10_version             : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
     i_max10_status              : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";  
     i_programming_status        : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
@@ -62,7 +63,7 @@ architecture rtl of feb_reg_mapping is
     signal reset_phase              : std_logic_vector(15 downto 0);
     signal arriaV_temperature       : std_logic_vector( 7 downto 0);
     signal fpga_type                : std_logic_vector( 5 downto 0);
-    signal adc_reg                  : reg32array_t    ( 4 downto 0);
+    signal adc_reg                  : work.util.slv32_array_t( 4 downto 0);
 
 -- R/W test signals
     signal test_read                : std_logic;
@@ -75,23 +76,18 @@ architecture rtl of feb_reg_mapping is
 
 begin
 
-    o_reg_cmdlen                <= reg_cmdlen;
-    o_reg_offset                <= reg_offset;
-    o_reg_reset_bypass          <= reg_reset_bypass;
-    o_reg_reset_bypass_payload  <= reg_reset_bypass_payload;
-    o_fpga_id_reg               <= fpga_id_reg;
-
     process(i_clk_156)
 
     variable regaddr : integer;
 
     begin
+
     if i_reset_n = '0' then
         o_programming_ctrl <= (others => '0');   
 		  o_programming_data_ena  <= '0';
         o_programming_addr_ena  <= '0';
+        
     elsif rising_edge(i_clk_156) then
-   
         o_reg_rdata         <= X"CCCCCCCC";
         regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
 
@@ -106,6 +102,19 @@ begin
 				
         test_read           <= '0';
         test_write          <= '0';
+
+        o_reg_cmdlen                <= reg_cmdlen;
+        o_reg_offset                <= reg_offset;
+        o_reg_reset_bypass          <= reg_reset_bypass;
+        o_reg_reset_bypass_payload  <= reg_reset_bypass_payload;
+        o_fpga_id_reg               <= fpga_id_reg;
+
+        run_state_156               <= i_run_state_156;
+        merger_rate_count           <= i_merger_rate_count;
+        reset_phase                 <= i_reset_phase;
+        arriaV_temperature          <= i_arriaV_temperature;
+        adc_reg                     <= i_adc_reg;
+
 
         -- cmdlen
         if ( regaddr = CMD_LEN_REGISTER_RW and i_reg_re = '1' ) then
@@ -126,7 +135,7 @@ begin
         -- reset bypass
         if ( regaddr = RUN_STATE_RESET_BYPASS_REGISTER_RW and i_reg_re = '1' ) then
             o_reg_rdata(15 downto 0) <= reg_reset_bypass(15 downto 0);
-            o_reg_rdata(16+9 downto 16) <= i_run_state_156;
+            o_reg_rdata(16+9 downto 16) <= run_state_156;
         end if;
         if ( regaddr = RUN_STATE_RESET_BYPASS_REGISTER_RW and i_reg_we = '1' ) then
             reg_reset_bypass(15 downto 0) <= i_reg_wdata(15 downto 0); -- upper bits are read-only status
@@ -142,17 +151,17 @@ begin
 
         -- rate measurement
         if ( regaddr = MERGER_RATE_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= i_merger_rate_count;
+            o_reg_rdata <= merger_rate_count;
         end if;
 
         -- reset phase
         if ( regaddr = RESET_PHASE_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= x"0000" & i_reset_phase;
+            o_reg_rdata <= x"0000" & reset_phase;
         end if;
 
         -- ArriaV temperature
         if ( regaddr = ARRIA_TEMP_REGISTER_RW and i_reg_re = '1' ) then
-            o_reg_rdata <= x"000000" & i_arriaV_temperature;
+            o_reg_rdata <= x"000000" & arriaV_temperature;
         end if;
         if ( regaddr = ARRIA_TEMP_REGISTER_RW and i_reg_we = '1' ) then
             o_arriaV_temperature_clr  <= i_reg_wdata(0);
@@ -182,19 +191,19 @@ begin
         end if;
         --max ADC data--
         if ( regaddr = MAX10_ADC_0_1_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= i_adc_reg(0);
+            o_reg_rdata <= adc_reg(0);
         end if;
         if ( regaddr = MAX10_ADC_2_3_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= i_adc_reg(1);
+            o_reg_rdata <= adc_reg(1);
         end if;
         if ( regaddr = MAX10_ADC_4_5_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= i_adc_reg(2);
+            o_reg_rdata <= adc_reg(2);
         end if;
         if ( regaddr = MAX10_ADC_6_7_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= i_adc_reg(3);
+            o_reg_rdata <= adc_reg(3);
         end if;
         if ( regaddr = MAX10_ADC_8_9_REGISTER_R and i_reg_re = '1' ) then
-            o_reg_rdata <= i_adc_reg(4);
+            o_reg_rdata <= adc_reg(4);
         end if;
         -- Max firmware version
         if ( regaddr = MAX10_VERSION_REGISTER_R and i_reg_re = '1' ) then

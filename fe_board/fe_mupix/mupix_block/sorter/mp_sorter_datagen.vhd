@@ -1,4 +1,4 @@
--- data generator to be insterted at the output of the Mupix hitsorter
+-- data generator for mupix datapath on FEB
 -- Martin Mueller (muellem@uni-mainz.de)
 -- November 2020
 
@@ -6,9 +6,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
-use work.daq_constants.all;
+
 use work.lfsr_taps.all;
 use work.mupix_registers.all;
+use work.mupix.all;
+use work.mudaq.all;
+
 
 entity mp_sorter_datagen is
 port (
@@ -19,8 +22,18 @@ port (
     i_control_reg       : in  std_logic_vector(31 downto 0);
     i_seed              : in  std_logic_vector(64 downto 0);
     o_hit_counter       : out std_logic_vector(63 downto 0);
+
+    -- signals to insert after sorter
     o_fifo_wdata        : out std_logic_vector(35 downto 0);
     o_fifo_write        : out std_logic;
+
+    -- signals to insert before sorter
+    o_ts                : out ts_array_t      (35 downto 0);
+    o_chip_ID           : out ch_ID_array_t   (35 downto 0);
+    o_row               : out row_array_t     (35 downto 0);
+    o_col               : out col_array_t     (35 downto 0);
+    o_tot               : out tot_array_t     (35 downto 0);
+    o_hit_ena           : out std_logic_vector(35 downto 0);
 
     i_evil_register     : in  std_logic_vector(31 downto 0) := (others => '0');
     o_mischief_managed  : out std_logic--;
@@ -49,9 +62,13 @@ architecture rtl of mp_sorter_datagen is
     signal produce_next_packet  : std_logic;
     signal produce_next_frame   : std_logic;
     signal produce_next_hit     : std_logic;
+    signal hit_ena_vec          : std_logic_vector(35 downto 0);
+    signal hit_ena_vec_prev     : std_logic_vector(35 downto 0);
+    signal hit_ena_vec_prev2    : std_logic_vector(35 downto 0);
 
     signal next_hit_p_range     : integer;
-    signal next_hit_p           : std_logic_vector(15 downto 0) := x"FFFF";
+    type   next_hit_p_t           is array(35 downto 0) of std_logic_vector(15 downto 0);
+    signal next_hit_p           : next_hit_p_t := (others => x"FFFF");
     signal ts_pull_ahead        : std_logic;
 
     -- control signals for evil actions against downstream components xD
@@ -77,6 +94,7 @@ architecture rtl of mp_sorter_datagen is
     signal row                  : std_logic_vector(7 downto 0);
     signal col                  : std_logic_vector(7 downto 0);
     signal tot                  : std_logic_vector(5 downto 0);
+    signal ts_before_sorter     : std_logic_vector(10 downto 0);
 
     -- 64 bit lfsr taps are not good for the rate distribution, using 65 bit instead
     signal random0              : std_logic_vector(64 downto 0);
@@ -98,10 +116,11 @@ architecture rtl of mp_sorter_datagen is
     -- next_hit_p_range <= to_integer(unsigned(i_control_reg(MP_DATA_GEN_HIT_P_RANGE)));
     -- produce_next_hit <= and_reduce(random0(next_hit_p_range downto 0)); 
     -- New way:
-    gen_next_hit_p: for i in 0 to 15 generate
-        next_hit_p(i)   <= random0(i) when unsigned(i_control_reg(MP_DATA_GEN_HIT_P_RANGE)) >= i else '1';
-    end generate gen_next_hit_p;
-    -- followed by produce_next_hit <= and_reduce(next_hit_p); in process below --> probability for a hit;
+    gen_next_hit_p2 : for j in 0 to 35 generate 
+        gen_next_hit_p: for i in 0 to 15 generate
+            next_hit_p(j)(i)   <= random0(i+J) when unsigned(i_control_reg(MP_DATA_GEN_HIT_P_RANGE)) >= i else '1';
+        end generate gen_next_hit_p;
+    end generate gen_next_hit_p2;
 
     process(i_clk,i_reset_n)
     begin
@@ -120,6 +139,7 @@ architecture rtl of mp_sorter_datagen is
             global_ts           <= (others => '0');
             ts                  <= (others => '0');
             ts_pull_ahead       <= '0';
+            ts_before_sorter    <= (others => '0');
 
         elsif rising_edge(i_clk) then
             fwdata              <= (others => '0');
@@ -128,16 +148,35 @@ architecture rtl of mp_sorter_datagen is
             frame_ts_overflow   <= '0';
             packet_ts_overflow  <= '0';
             mischief_managed    <= '0';
-            
+
             -------REMOVE / generate -------------------
             produce_next_packet <= '1';
             produce_next_frame  <= '1';
-            ---------------------------------
+            --------------------------------------------
+
+            ------- pre-sorter signals -----------------
+            o_ts                <= (others => ts_before_sorter);
+            o_chip_ID           <= (others => chipID);
+            o_row               <= (others => row);
+            o_col               <= (others => col);
+            o_tot               <= (others => tot);
+            o_hit_ena           <= hit_ena_vec and (not hit_ena_vec_prev) and (not hit_ena_vec_prev2); -- hit can only come every 3rd cycle
+            hit_ena_vec_prev    <= hit_ena_vec;
+            hit_ena_vec_prev2   <= hit_ena_vec_prev;
+            --------------------------------------------
+
+            if(i_control_reg(4) = '1') then 
+                hit_ena_vec         <= (others => '1'); -- full steam -- this is 36 * 125 Mhz here !!! will not work
+            else
+                for i in 0 to 35 loop
+                    hit_ena_vec(i)  <= and_reduce(next_hit_p(i));
+                end loop;
+            end if;
 
             if(i_control_reg(4) = '1') then 
                 produce_next_hit    <= '1'; -- full steam
             else
-                produce_next_hit    <= and_reduce(next_hit_p); -- probability to actually send the hit
+                produce_next_hit    <= and_reduce(next_hit_p(0)); -- probability to actually send the hit
             end if;
 
             if(running_prev = '1' and i_running = '0') then -- goto EoR marker
@@ -161,6 +200,7 @@ architecture rtl of mp_sorter_datagen is
 
             if (unsorted = '1' or complete_nonsense = '1') then --test-option
                 ts                  <= random0(33 downto 30);
+                ts_before_sorter    <= random0(40 downto 30); -- before sorter option
             elsif(genstate = subhead) then
                 ts                  <= i_global_ts(3 downto 0);
                 ts_pull_ahead       <= '0';

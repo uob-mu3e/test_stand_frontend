@@ -21,8 +21,13 @@ struct mupix_datapath_t {
             }else{
                 printf("  [3] => engage data gen\n");
             }
+            if((sc->ram->data[0xFF65] >> 17) & 1U){
+                printf("  [4] => insert before sorter\n");
+            }else{
+                printf("  [4] => insert after sorter\n");
+            }
             if((sc->ram->data[0xFF65] >> 4) & 1U){
-                printf("\n RATE: Full Steam\n");
+                printf("\n RATE: Full Stream\n");
             }else{
                 printf("\n RATE:0x%01x\n", 0xF - (sc->ram->data[0xFF65] & 0xF) + 1);
             }
@@ -54,6 +59,8 @@ struct mupix_datapath_t {
             case '3':
                 sc->ram->data[0xFF65] ^= 1UL << 16;
                 break;
+            case '4':
+                sc->ram->data[0xFF65] ^= 1UL << 17;
             case '-':
                 if((sc->ram->data[0xFF65] >> 4) & 1U){
                     sc->ram->data[0xFF65] ^= 1UL << 4;

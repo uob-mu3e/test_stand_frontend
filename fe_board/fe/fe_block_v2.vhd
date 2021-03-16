@@ -2,15 +2,15 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.daq_constants.all;
 use work.feb_sc_registers.all;
+use work.mudaq.all;
 
 LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
 entity fe_block_v2 is
 generic (
-    feb_mapping : natural_array_t(3 downto 0) := 3&2&1&0;
+    feb_mapping : work.util.natural_array_t(3 downto 0) := (3,2,1,0);
     PHASE_WIDTH_g : positive := 16;
     NIOS_CLK_MHZ_g : real;
     N_LINKS : positive := 1--;
@@ -49,6 +49,11 @@ port (
     o_spi_mosi          : out   std_logic;
     o_spi_sclk          : out   std_logic;
     o_spi_ss_n          : out   std_logic_vector(15 downto 0);
+    -- i2c interface to detector modules
+    i_i2c_scl           : in    std_logic := '1';
+    o_i2c_scl_oe        : out   std_logic;
+    i_i2c_sda           : in    std_logic := '1';
+    o_i2c_sda_oe        : out   std_logic;
 
     -- Fireflies
     o_ffly1_tx          : out   std_logic_vector(3 downto 0);
@@ -96,8 +101,8 @@ port (
     o_subdet_reg_wdata  : out   std_logic_vector(31 downto 0);
 
     -- reset system
-    o_run_state_125 : out   run_state_t;
-    o_run_state_156 : out   run_state_t;
+    o_run_state_125 : out   work.mudaq.run_state_t;
+    o_run_state_156 : out   work.mudaq.run_state_t;
 
     -- nios clock (async)
     i_nios_clk      : in    std_logic;
@@ -169,10 +174,10 @@ architecture arch of fe_block_v2 is
     signal fpga_id_reg              : std_logic_vector(N_LINKS*16-1 downto 0);
 
     signal ffly_tx_data             : std_logic_vector(127 downto 0) :=
-                                          X"000000" & work.util.D28_5
-                                        & X"000000" & work.util.D28_5
-                                        & X"000000" & work.util.D28_5
-                                        & X"000000" & work.util.D28_5;
+                                          X"000000" & work.mudaq.D28_5
+                                        & X"000000" & work.mudaq.D28_5
+                                        & X"000000" & work.mudaq.D28_5
+                                        & X"000000" & work.mudaq.D28_5;
     signal ffly_tx_datak            : std_logic_vector(15 downto 0) :=
                                           "0001"
                                         & "0001"
@@ -191,7 +196,7 @@ architecture arch of fe_block_v2 is
 	 signal temp_state :  temp_state_t;
     
     -- Max 10 SPI 
-    signal adc_reg                  : reg32array_t(4 downto 0);
+    signal adc_reg                  : work.util.slv32_array_t(4 downto 0);
     signal i_adc_data_o             : std_logic_vector(31 downto 0);
     signal SPI_addr_o               : std_logic_vector(6 downto 0);
     
@@ -372,7 +377,7 @@ begin
 
 
 
-    e_nios : component work.cmp.nios
+    e_nios : work.cmp.nios
     port map (
         -- SC, QSFP and irq
         clk_156_reset_reset_n   => reset_156_n,
@@ -410,10 +415,10 @@ begin
         -- nios base
         --
 
-        --i2c_scl_in => i_i2c_scl, -- not in use
-        --i2c_scl_oe => o_i2c_scl_oe,
-        --i2c_sda_in => i_i2c_sda,
-        --i2c_sda_oe => o_i2c_sda_oe,
+        i2c_scl_in => i_i2c_scl,
+        i2c_scl_oe => o_i2c_scl_oe,
+        i2c_sda_in => i_i2c_sda,
+        i2c_sda_oe => o_i2c_sda_oe,
 
         spi_miso        => i_spi_miso,
         spi_mosi        => o_spi_mosi,
@@ -536,7 +541,7 @@ begin
 
         override_data_in           => linktest_data,
         override_data_is_k_in      => linktest_datak,
-        override_req               => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
+        override_req               => work.util.to_std_logic(run_state_156 = RUN_STATE_LINK_TEST),   --TODO test and find better way to connect this
         override_granted           => linktest_granted,
 
         can_terminate              => i_can_terminate,
@@ -559,7 +564,7 @@ begin
     port map (
         i_sync_reset    => not work.util.and_reduce(linktest_granted),
         i_seed          => (others => '1'),
-        i_en            => work.util.to_std_logic(run_state_156 = work.daq_constants.RUN_STATE_LINK_TEST),
+        i_en            => work.util.to_std_logic(run_state_156 = RUN_STATE_LINK_TEST),
         o_lsfr          => linktest_data,
         o_datak         => linktest_datak,
         reset_n         => reset_156_n,
@@ -736,6 +741,7 @@ begin
 		  
 		  busy_last		<= max_spi_busy;
 		  
+
         case max_spi_state is
         when idle =>
 				programming_status(4) <= '1';

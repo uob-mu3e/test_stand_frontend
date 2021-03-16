@@ -15,10 +15,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
 
-
-
+use work.mudaq.all;
 
 entity data_decoder is 
 	port (
@@ -44,7 +42,7 @@ end data_decoder;
 architecture RTL of data_decoder is
 
 type sync_state_type is (reset, waitforplllock, waitfordpalock, check_k28_5, align); --, rxready);
-signal sync_state		: sync_state_type;
+signal sync_state		: sync_state_type := reset;
 
 --signal kcounter 		: std_logic_vector(3 downto 0);
 signal acounter 		: std_logic_vector(3 downto 0);
@@ -54,6 +52,7 @@ signal rx_k				: std_logic;
 
 signal align_ctr		: std_logic_vector(8 downto 0);  -- Jens
 signal k_seen 			: std_logic_vector(8 downto 0); -- Jens
+signal rx_reversed      : std_logic_vector(9 downto 0);
 
 signal ready_buf		: std_logic;
 
@@ -76,6 +75,9 @@ if(reset_n = '0') then
 	k_seen			<= (others => '0'); -- Jens
 	acounter			<= (others => '0');
 elsif(clk'event and clk = '1') then
+    for I in 0 to 9 loop
+        rx_reversed(9-I) <= rx_in(I);
+    end loop;
 
 	-- to be adapted!
 	rx_reset			<= '0';
@@ -116,7 +118,7 @@ elsif(clk'event and clk = '1') then
 		
 	when check_k28_5 =>
 -- -- -- -- -- -- THIS IS NIK's ALIGNMENT --> doesn't work for Jens
---		if(rx_k = '1' and rx_decoded = k28_5) then
+--		if(rx_k = '1' and rx_decoded = K28_5) then
 --			kcounter <= kcounter + '1';
 --			if(kcounter = "1111") then
 --				sync_state		<= rxready;
@@ -135,13 +137,13 @@ elsif(clk'event and clk = '1') then
 			ready_buf			<= '0';
 			
 		-- we assume the Mupix data format here to fulfill the following criteria:
-		-- reset mode: a lot of k28_5 in a row
+		-- reset mode: a lot of K28_5 in a row
 		-- regular data format:
-		-- maxcycend 6 bits: 64 hits in a row + counter +link identifier = 264 cycles without k28_5-word in data stream
-		-- so within 512 cycles we should definitely see a few k28_5 words
+		-- maxcycend 6 bits: 64 hits in a row + counter +link identifier = 264 cycles without K28_5-word in data stream
+		-- so within 512 cycles we should definitely see a few K28_5 words
 		-- in worst case we check for 36 us (9*512*8ns) until we find the right pattern
 			
-		elsif(rx_decoded = k28_5 and rx_k = '1') then -- correct k-word coming in
+		elsif(rx_decoded = K28_5 and rx_k = '1') then -- correct k-word coming in
 			if(k_seen < "111111111")then
 				k_seen <= k_seen + 1;
 			end if;
@@ -224,7 +226,7 @@ d_checker : work.disparity_checker
 	port map(
 		reset_n				=> reset_n,
 		clk					=> clk,
-		rx_in					=> rx_in,	
+		rx_in					=> rx_reversed,
 		ready					=> ready_buf,
 		disp_err				=> disp_err
 		);
@@ -234,7 +236,7 @@ dec8b10b : work.decode8b10b
 	port map(
 		reset_n				=> reset_n,
 		clk					=> clk,
-		input					=> rx_in,
+		input					=> rx_reversed,
 		output				=> rx_decoded,
 		k						=> rx_k
 		);

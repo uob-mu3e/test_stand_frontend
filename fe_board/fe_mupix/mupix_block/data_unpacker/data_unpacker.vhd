@@ -17,11 +17,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.mupix_constants.all;
-use work.daq_constants.all;
+
 use work.mupix_registers.all;
-
-
+use work.mupix.all;
+use work.mudaq.all;
 
 entity data_unpacker is 
     generic (
@@ -97,13 +96,40 @@ architecture RTL of data_unpacker is
     end;
 
     function convert_row (
-        i_col       : std_logic_vector(6 downto 0);
         i_row       : std_logic_vector(8 downto 0)--;
     ) return std_logic_vector is 
         variable row : std_logic_vector(7 downto 0);
+        variable tmp : std_logic_vector(8 downto 0);
     begin
-        -- TODO: correct row conversion
-        row := i_row(7 downto 0);
+        if (unsigned(i_row)>380) then
+            tmp     := std_logic_vector(499-unsigned(i_row));
+            if (i_row(0)='0') then
+                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 60);
+            else 
+                row := tmp(8 downto 1);
+            end if;
+        elsif (i_row(8)='1') then
+            tmp     := std_logic_vector(380-unsigned(i_row));
+            if (i_row(0)='1') then
+                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 63);
+            else 
+                row := tmp(8 downto 1);
+            end if;
+        elsif (unsigned(i_row)>124) then
+            tmp     := std_logic_vector(255-unsigned(i_row));
+            if (i_row(0)='0') then
+                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 119 + 66);
+            else 
+                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 119);
+            end if;
+        else
+            tmp     := std_logic_vector(124-unsigned(i_row));
+            if (i_row(0)='1') then
+                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 125 + 63);
+            else
+                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 125);
+            end if;
+        end if;
         return row;
     end;
 
@@ -113,8 +139,11 @@ architecture RTL of data_unpacker is
     ) return std_logic_vector is 
         variable col : std_logic_vector(7 downto 0);
     begin
-        -- TODO: correct col. conversion
-        col := '0' & i_col;
+        if (unsigned(i_row)> 380 or (i_row(8) = '0' and unsigned(i_row)>124)) then
+            col := i_col & '1';
+        else
+            col := i_col & '0';
+        end if;
         return col;
     end;
 
@@ -187,7 +216,7 @@ begin
                 -- We present to the outside:
                 ts              <= data_i(26 downto 16);
                 o_chip_ID       <= convert_lvds_to_chip_id(LVDS_ID,chip_ID_mode);
-                row             <= convert_row(data_i(15 downto 9),data_i(8 downto 0)); -- convert_row(col, row)
+                row             <= convert_row(data_i(8 downto 0));
                 col             <= convert_col(data_i(15 downto 9),data_i(8 downto 0));
                 ts2             <= data_i(31 downto 27);
             end if;
@@ -212,9 +241,9 @@ begin
                                     NS      <= COUNTER;
                                     cnt4    <= "01";
                                 end if;
-                            elsif kin = '1' and datain = k28_0 then -- data mode
+                            elsif kin = '1' and datain = K28_0 then -- data mode
                                 NS <= LINK;
-                            elsif kin = '1' and datain = k28_5 then
+                            elsif kin = '1' and datain = K28_5 then
                                 NS <= IDLE; 
                             else
                                 NS <= ERROR;
@@ -229,7 +258,7 @@ begin
                                     counter_seen    <= '1';
                                     NS              <= IDLE;
                                 end if;
-                            elsif kin = '1' and datain = k28_5 then    --and counter_int = 3 then
+                            elsif kin = '1' and datain = K28_5 then    --and counter_int = 3 then
                                 NS <= IDLE;
                             else
                                 NS <= ERROR;
@@ -249,7 +278,7 @@ begin
                                 else
                                     NS                <= ERROR;
                                 end if;
-                            elsif kin = '1' and datain = k28_0 then
+                            elsif kin = '1' and datain = K28_0 then
                                 link_toggle <= '1';
                             else
                                 NS <= ERROR;
@@ -263,7 +292,7 @@ begin
                                     hit_reg <= '1';
                                     NS      <= IDLE;
                                 end if;
-                            elsif kin = '1' and datain = k28_5 then
+                            elsif kin = '1' and datain = K28_5 then
                                 NS          <= IDLE;
                             else
                                 NS          <= ERROR;
@@ -271,7 +300,7 @@ begin
 
                         when ERROR =>
                             errorcounter_reg <= errorcounter_reg + '1';
-                            if ( kin = '1' and datain = k28_5 ) then
+                            if ( kin = '1' and datain = K28_5 ) then
                                 NS <= IDLE;
                             else
                                 NS <= ERROR;

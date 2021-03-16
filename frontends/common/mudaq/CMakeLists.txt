@@ -1,8 +1,3 @@
-#ADD_CUSTOM_COMMAND(
-  #OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../include/mudaq_registers.h
-  #COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../../firmware/pcie/source/mudaq_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../../include/mudaq_registers.h
-  #COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../include/mudaq_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../include/mudaq_registers.h
-  #DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../include/mudaq_registers.vhd)
 
 add_library(libmudaq STATIC
     mudaq_device.cpp mudaq_device.h utils.hpp     

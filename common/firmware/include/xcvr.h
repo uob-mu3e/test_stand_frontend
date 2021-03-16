@@ -44,8 +44,10 @@ void menu_xcvr(volatile alt_u32* xcvr, char ID = 'A') {
             xcvr[0x20], xcvr[0x21], xcvr[0x22]
         );
         printf("        :   LoL_cnt = %d, err_cnt = %d\n", xcvr[0x23], xcvr[0x24]);
-        printf("  mW/°C :   %i / %i\n", xcvr[0x25], xcvr[0x26]/10000);
         printf("  data  :   0x%08X / 0x%01X\n", xcvr[0x2A], xcvr[0x2B]);
+        if(xcvr[0x25] != 0xCCCCCCCC && xcvr[0x26] != 0xCCCCCCCC) {
+            printf("  mW/C :   %i / %i\n", xcvr[0x25], xcvr[0x26]/10000);
+        }
         printf("\n");
 
         usleep(200000);

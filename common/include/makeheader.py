@@ -104,5 +104,4 @@ def main(fname, outname):
     file.write('#endif  //#ifndef ' + pkgname + '__H \n')
     file.close()
 
-
 main(sys.argv[1], sys.argv[2]);
