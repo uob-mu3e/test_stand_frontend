@@ -916,8 +916,8 @@ INT read_sc_event(char *pevent, INT off)
     // create bank, pdata
     bk_init(pevent);
     DWORD *pdata;
-    bk_create(pevent, bankname.c_str(), TID_DWORD, (void **)&pdata);
-    mufeb->fill_SSFE(pdata);
+    bk_create(pevent, bankname.c_str(), TID_FLOAT, (void **)&pdata);
+    pdata = mufeb->fill_SSFE(pdata);
     bk_close(pevent,pdata);
     return bk_size(pevent);
 
