@@ -342,9 +342,20 @@ uint32_t MuFEB::reg_setRange(uint32_t reg_in, uint8_t length, uint8_t offset, ui
 float MuFEB::ArriaVTempConversion(uint32_t reg)
 {
     // The magic numbers here come from the Intel temperature sensor user guide UG-01074, page 11
+    vector<uint32_t> steps = {0x3A, 0x4E, 0x62, 0x6C, 0x76, 0x80, 0x8A, 0x9E, 0xB2, 0xD0, 0xD5, 0xE4, 0xFF};
+    vector<float> temps    = { -70,  -50,  -30,  -20,  -10,    0,   10,   30,   50,   80,   85,  100,  127};
 
+    if(reg < steps[0])
+        return temps[0];
+    if(reg > steps[steps.size()-1])
+        return temps[steps.size()-1];
 
-    return (reg-0x80); // more detailed conversion possible...
+    for(int i = 1; i < steps.size()-1; i++){
+        if(reg < steps[i])
+            return temps[i] + (temps[i+1]-temps[i]) * (reg -  steps[i])/(steps[i+1]-steps[i]);
+    }
+
+    return -666; // should not get here
 }
 
 float MuFEB::Max10TempConversion(uint32_t reg)
