@@ -17,9 +17,6 @@ set_false_path -to {sync_chain_halffull[*]}
 
 set_false_path -from {debouncer:e_debouncer|o_q[0]}
 
-set_min_delay -to {xcvr_a10:*|av_ctrl.readdata[*]} -100
-set_max_delay -to {xcvr_a10:*|av_ctrl.readdata[*]} 100
-
 set_min_delay -to {readregs[*]} -100
 set_max_delay -to {readregs[*]} 100
 

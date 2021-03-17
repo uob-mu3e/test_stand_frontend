@@ -118,10 +118,10 @@ begin
 
     a10_block : entity work.a10_block
     generic map (
-        g_XCVR0_CHANNELS => 48,
-        g_XCVR0_N => 8,
-        g_XCVR1_CHANNELS => 0,
-        g_XCVR1_N => 0,
+        g_XCVR0_CHANNELS => 24,
+        g_XCVR0_N => 4,
+        g_XCVR1_CHANNELS => 24,
+        g_XCVR1_N => 4,
         g_PCIE0_X => 4,
         g_PCIE1_X => 4,
         g_CLK_MHZ => 100.0--,
@@ -136,16 +136,26 @@ begin
 
 
         -- XCVR0 (6250 Mbps @ 156.25 MHz)
-        i_xcvr0_rx                      => rx_gbt,
-        o_xcvr0_tx                      => tx_gbt,
+        i_xcvr0_rx                      => rx_gbt(47 downto 24),
+        o_xcvr0_tx                      => tx_gbt(47 downto 24),
         i_xcvr0_refclk                  =>
-            A10_REFCLK_GBT_P_7 & A10_REFCLK_GBT_P_6 & A10_REFCLK_GBT_P_5 & A10_REFCLK_GBT_P_4 &
-            A10_REFCLK_GBT_P_3 & A10_REFCLK_GBT_P_2 & A10_REFCLK_GBT_P_1 & A10_REFCLK_GBT_P_0,
+            A10_REFCLK_GBT_P_7 & A10_REFCLK_GBT_P_6 & A10_REFCLK_GBT_P_5 & A10_REFCLK_GBT_P_4,
+        o_xcvr0_rx_data                 => pod_rx_data(47 downto 24),
+        o_xcvr0_rx_datak                => pod_rx_datak(47 downto 24),
+        i_xcvr0_tx_data                 => pod_tx_data(47 downto 24),
+        i_xcvr0_tx_datak                => pod_tx_datak(47 downto 24),
 
-        o_xcvr0_rx_data                 => pod_rx_data,
-        o_xcvr0_rx_datak                => pod_rx_datak,
-        i_xcvr0_tx_data                 => pod_tx_data,
-        i_xcvr0_tx_datak                => pod_tx_datak,
+
+
+        -- XCVR1 (10000 Mbps @ 250 MHz)
+        i_xcvr1_rx                      => rx_gbt(23 downto 0),
+        o_xcvr1_tx                      => tx_gbt(23 downto 0),
+        i_xcvr1_refclk                  =>
+            A10_REFCLK_GBT_P_3 & A10_REFCLK_GBT_P_2 & A10_REFCLK_GBT_P_1 & A10_REFCLK_GBT_P_0,
+        o_xcvr1_rx_data                 => pod_rx_data(23 downto 0),
+        o_xcvr1_rx_datak                => pod_rx_datak(23 downto 0),
+        i_xcvr1_tx_data                 => pod_tx_data(23 downto 0),
+        i_xcvr1_tx_datak                => pod_tx_datak(23 downto 0),
 
 
 
@@ -175,10 +185,10 @@ begin
 
 
 
---        o_reset_156_n                   => reset_156_n,
+        o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
 
---        o_reset_250_n                   => reset_250_n,
+        o_reset_250_n                   => reset_250_n,
         o_clk_250                       => clk_250,
 
         i_reset_125_n                   => reset_125_n,

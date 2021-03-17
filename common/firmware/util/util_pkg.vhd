@@ -12,8 +12,7 @@ use ieee.std_logic_textio.all;
 
 package util is
 
-
-    --! basic array types    
+    --! basic array types
     subtype slv2_t is std_logic_vector(1 downto 0);
     type slv2_array_t is array ( natural range <> ) of slv2_t;
     subtype slv4_t is std_logic_vector(3 downto 0);
@@ -45,7 +44,6 @@ package util is
 
     type natural_array_t is array(integer range<>) of natural;
 
-    
     type avalon_t is record
         address         :   std_logic_vector(31 downto 0);
         read            :   std_logic;

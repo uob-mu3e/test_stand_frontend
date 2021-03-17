@@ -179,7 +179,7 @@ begin
     QSFPA_MOD_SEL_n <= '1';
     QSFPA_RST_n <= '1';
 
-    e_xcvr : entity work.xcvr_a10
+    e_xcvr : entity work.xcvr_enh
     generic map (
         INPUT_CLOCK_FREQUENCY_g => 125000000,
         DATA_RATE_g => 5000,

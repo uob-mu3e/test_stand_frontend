@@ -229,6 +229,7 @@ begin
         i_pcie0_perst_n                 => PCIE_PERST_n,
         i_pcie0_refclk                  => PCIE_REFCLK_p,
         o_pcie0_clk                     => pcie_fastclk_out,
+        o_pcie0_clk_hz                  => LED(3),
 
         -- PCIe0 DMA0
         i_pcie0_dma0_wdata              => dma_data,
@@ -263,9 +264,11 @@ begin
         -- resets clk
         o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
+        o_clk_156_hz                    => LED(2)
 
         i_reset_125_n                   => reset_125_n,
         i_clk_125                       => clk_125,
+        o_clk_125_hz                    => LED(1)
 
         i_reset_n                       => reset_50_n,
         i_clk                           => clk_50--,
