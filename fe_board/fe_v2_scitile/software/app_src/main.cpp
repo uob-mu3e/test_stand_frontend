@@ -5,7 +5,6 @@
 #include "../../../fe/software/app_src/si5345_fe_v2.h"
 si5345_t si5345_1 { SPI_SI_BASE, 0 };
 si5345_t si5345_2 { SPI_SI_BASE, 1 };
-//si5345_t si5345 { SPI_SI_BASE, 0 };
 
 #include "../../../fe/software/app_src/sc.h"
 #include "../../../fe/software/app_src/sc_ram.h"
@@ -15,9 +14,16 @@ sc_t sc;
 mscb_t mscb;
 #include "../../../fe/software/app_src/reset.h"
 
+#include "../include/i2c.h"
+i2c_t i2c;
+
+#include "TMB_module.h"
+malibu_t TMB(sc,i2c);
+
+
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
-    return mupix.callback(cmd,data,n);
+    return TMB.callback(cmd,data,n);
 }
 
 
