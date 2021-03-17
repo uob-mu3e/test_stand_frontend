@@ -52,7 +52,7 @@ architecture rtl of fpp_programmer is
     signal state : state_type;
     signal count : natural range 0 to 511;
 
-    signal timeoutcounter : natural range 0 to 2**31;
+    signal timeoutcounter : natural range 0 to 2147483647 ;
     signal crclocation_reg    : unsigned(31 downto 0);
 	 
 	 signal start_last : std_logic;
