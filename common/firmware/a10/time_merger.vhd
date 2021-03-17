@@ -293,7 +293,7 @@ begin
             case layer_0_state(i) is
                 
                 when "0000" =>
-                    if ( i_mask_n(i) = '0' ) then
+                    if ( i_mask_n(i) = '0' and fifo_full_0(i) = '0' ) then
                         saw_header_0(i) <= '1';
                         saw_trailer_0(i) <= '1';
                         layer_0_state(i) <= "0001";
@@ -646,7 +646,7 @@ begin
         end if;
     end if;
     end process;
-    END GENERATE tree_layer_last;
+    END GENERATE;
     
     -- write data
     process(i_clk, i_reset_n)

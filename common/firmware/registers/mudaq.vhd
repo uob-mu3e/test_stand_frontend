@@ -44,15 +44,15 @@ package mudaq is
 
 
     --! data path swb types
-    constant tree_padding : std_logic_vector(37 downto 0) := "11" & x"FFFFFFFFF";
-    constant tree_paddingk : std_logic_vector(37 downto 0) := "11" & x"EEEEEEEEE";
-    constant tree_zero : std_logic_vector(37 downto 0) := "00" & x"000000000";
-    constant pre_marker : std_logic_vector(5 downto 0) := "110000";
-    constant sh_marker : std_logic_vector(5 downto 0)  := "110001";
-    constant tr_marker : std_logic_vector(5 downto 0)  := "110010";
-    constant ts1_marker : std_logic_vector(5 downto 0) := "110011";
-    constant ts2_marker : std_logic_vector(5 downto 0) := "110100";
-    constant err_marker : std_logic_vector(5 downto 0) := "110101";
+    constant tree_padding   : std_logic_vector(37 downto 0) := "11" & x"FFFFFFFFF";
+    constant tree_paddingk  : std_logic_vector(37 downto 0) := "11" & x"EEEEEEEEE";
+    constant tree_zero      : std_logic_vector(37 downto 0) := "00" & x"000000000";
+    constant pre_marker     : std_logic_vector(5 downto 0)  := "110000";
+    constant sh_marker      : std_logic_vector(5 downto 0)  := "110001";
+    constant tr_marker      : std_logic_vector(5 downto 0)  := "110010";
+    constant ts1_marker     : std_logic_vector(5 downto 0)  := "110011";
+    constant ts2_marker     : std_logic_vector(5 downto 0)  := "110100";
+    constant err_marker     : std_logic_vector(5 downto 0)  := "110101";
 
 
     --! FEB - SWB protocol

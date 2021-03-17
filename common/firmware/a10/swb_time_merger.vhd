@@ -12,6 +12,7 @@ generic (
     TREE_r : integer := 10;
     -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
     DATA_TYPE: std_logic_vector(7 downto 0) := x"01";
+    g_NLINKS_FARM : positive := 8;
     g_NLINKS : positive := 16--;
 );
 port (
@@ -23,6 +24,7 @@ port (
     i_rempty    : in    std_logic_vector(g_NLINKS-1 downto 0);
     i_rmask_n   : in    std_logic_vector(g_NLINKS-1 downto 0);
     o_rack      : out   std_logic_vector(g_NLINKS-1 downto 0);
+    o_counters   : out   work.util.slv32_array_t(0 downto 0);
 
     -- output strem
     o_q         : out   std_logic_vector(W-1 downto 0);
@@ -40,11 +42,27 @@ end entity;
 
 architecture arch of swb_time_merger is
 
-    signal rdata : std_logic_vector(W-1 downto 0);
-    signal rempty, wfull : std_logic;
+    signal rdata_s, wdata, wdata_reg : std_logic_vector(W-1 downto 0);
+    signal rdata : work.util.slv38_array_t(g_NLINKS_FARM-1 downto 0);
+    signal rempty, wfull, ren, wen, wen_reg : std_logic;
     signal link_number : std_logic_vector(5 downto 0);
 
+    type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit, get_tr);
+    signal merge_state : merge_state_type;
+
+    signal header_idx  : integer range 0 to 4 := 4;
+    signal trailer_idx : integer range 0 to 4 := 4;
+    signal ts1_idx     : integer range 0 to 4 := 4;
+    signal ts2_idx     : integer range 0 to 4 := 4;
+    signal sh_idx      : integer range 0 to 4 := 4;
+
 begin
+
+    --! counters
+    e_swb_time_fifo_full : entity work.counter
+    generic map ( WRAP => true, W => 32 )
+    port map ( o_cnt => o_counters(0), i_ena => wfull, i_reset_n => i_reset_n, i_clk => i_clk );
+
 
     e_time_merger : entity work.time_merger
         generic map (
@@ -65,8 +83,8 @@ begin
         o_rack                  => o_rack,
         
         -- output stream
-        o_rdata                 => rdata,
-        i_ren                   => not rempty and not wfull,
+        o_rdata                 => rdata_s,
+        i_ren                   => ren,--not rempty and not wfull,
         o_empty                 => rempty,
         
         -- error outputs
@@ -79,8 +97,135 @@ begin
         i_clk                   => i_clk--,
     );
 
+    --! map data for time_merger
+    generate_rdata : for i in 0 to g_NLINKS_FARM-1 generate
+        rdata(i) <= rdata_s(38 * i + 37 downto i * 38);
+    end generate;
 
-    e_merger_fifo_farm : entity work.ip_scfifo
+
+    --! check for error
+    --! TODO: handle errors, at the moment they are sent out at the end of normal events
+    o_error     <=  '1' when (rdata( 37 downto  32) = err_marker) else
+                    '1' when (rdata(113 downto 108) = err_marker) else
+                    '1' when (rdata(189 downto 184) = err_marker) else
+                    '1' when (rdata(265 downto 260) = err_marker)
+                    else '0';
+
+    -- search header in 256 bit
+    header_idx  <=  0 when (rdata( 37 downto  32) = pre_marker) else
+                    1 when (rdata(113 downto 108) = pre_marker) else
+                    2 when (rdata(189 downto 184) = pre_marker) else
+                    3 when (rdata(265 downto 260) = pre_marker)
+                    else 4;
+    ts1_idx     <=  0 when (rdata( 37 downto  32) = ts1_marker) else
+                    1 when (rdata(113 downto  76) = ts1_marker) else
+                    2 when (rdata(189 downto 152) = ts1_marker) else
+                    3 when (rdata(265 downto 260) = ts1_marker)
+                    else 4;
+    ts2_idx     <=  0 when (rdata( 37 downto  32) = ts2_marker) else
+                    1 when (rdata(113 downto  76) = ts2_marker) else
+                    2 when (rdata(189 downto 152) = ts2_marker) else
+                    3 when (rdata(265 downto 260) = ts2_marker)
+                    else 4;
+    sh_idx     <=   0 when (rdata( 37 downto  32) = sh_marker) else
+                    1 when (rdata(113 downto  76) = sh_marker) else
+                    2 when (rdata(189 downto 152) = sh_marker) else
+                    3 when (rdata(265 downto 260) = sh_marker)
+                    else 4;
+    trailer_idx <=  0 when (rdata( 37 downto  32) = tr_marker) else
+                    1 when (rdata(113 downto  76) = tr_marker) else
+                    2 when (rdata(189 downto 152) = tr_marker) else
+                    3 when (rdata(265 downto 260) = tr_marker)
+                    else 4;
+
+    ren   <= '1' when merge_state = wait_for_pre and header_idx = 4 and rempty = '0' and wfull = '0' else 
+             '1' when merge_state = get_ts_1 and ts1_idx = 4 and rempty = '0' and wfull = '0'  else 
+             '1' when merge_state = get_ts_2 and ts2_idx = 4 and rempty = '0' and wfull = '0'  else
+             '1' when merge_state = get_sh and sh_idx = 4 and rempty = '0' and wfull = '0'  else
+             '1' when merge_state = hit and header_idx = 4 and trailer_idx = 4 and ts1_idx = 4 and ts2_idx = 4 and sh_idx = 4 and rempty = '0' and wen_reg = '0' and wfull = '0'  else 
+             '0';
+
+    --! read/write data from time merger
+    mupix_time_merger : IF DATA_TYPE = x"01" GENERATE
+        process(i_clk, i_reset_n)
+        begin
+            if ( i_reset_n = '0' ) then
+                --
+                wen <= '0';
+                merge_state <= wait_for_pre;
+                wdata <= (others => '0');
+                wdata_reg <= (others => '0');
+                wen_reg <= '0';
+            elsif rising_edge(i_clk) then
+                wen         <= '0';
+                wen_reg     <= '0';
+                wdata_reg   <= (others => '0');
+                wdata       <= (others => '0');
+                if ( wfull = '0' and rempty = '0' ) then
+                    case merge_state is
+                        when wait_for_pre =>
+                            if ( header_idx /= 4 ) then
+                                merge_state <= get_ts_1;
+                                wdata(37 downto 0) <= rdata(76 * header_idx + 37 downto 76 * header_idx);
+                                wen <= '1';
+                            end if;
+
+                        when get_ts_1 =>
+                            if ( ts1_idx /= 4 ) then
+                                merge_state <= get_ts_2;
+                                wdata(37 downto 0) <= rdata(76 * ts1_idx + 37 downto 76 * ts1_idx);
+                                wen <= '1';
+                            end if;
+
+                        when get_ts_2 =>
+                            if ( ts2_idx /= 4 ) then
+                                merge_state <= get_sh;
+                                wdata(37 downto 0) <= rdata(76 * ts2_idx + 37 downto 76 * ts2_idx);
+                                wen <= '1';
+                            end if;
+
+                        when get_sh =>
+                            if ( sh_idx /= 4 ) then
+                                merge_state <= hit;
+                                wdata(37 downto 0) <= rdata(76 * sh_idx + 37 downto 76 * sh_idx);
+                                wen <= '1';
+                            end if;
+                            if ( sh_idx /= 3 and sh_idx /= 4 ) then
+                                wdata_reg(76 * (sh_idx+1) + 37 downto 0) <= rdata(76 * 3 + 37 downto 76 * (sh_idx+1));
+                                wen_reg <= '1';
+                            end if;
+
+                        when hit =>
+                            if ( wen_reg = '1' ) then
+                                wdata <= wdata_reg;
+                            elsif ( trailer_idx /= 4 ) then
+                                merge_state <= get_tr;
+                                wdata(76 * (trailer_idx-1) + 37 downto 0) <= rdata(76 * (trailer_idx-1) + 37 downto 0);
+                            elsif ( sh_idx /= 4 ) then
+                                merge_state <= get_sh;
+                                wdata(76 * (sh_idx-1) + 37 downto 0) <= rdata(76 * (sh_idx-1) + 37 downto 0);
+                            else
+                                wdata <= rdata;
+                            end if;
+                            wen <= '1';
+
+                        when get_tr =>
+                            if ( trailer_idx /= 4 ) then
+                                merge_state <= wait_for_pre;
+                                wdata(37 downto 0) <= rdata(76 * trailer_idx + 37 downto 76 * trailer_idx);
+                                wen <= '1';
+                            end if;
+
+                        when others =>
+                            merge_state <= wait_for_pre;
+                    end case;
+                end if;
+            end if;
+        end process;
+    END GENERATE;
+
+
+    e_swb_time_fifo : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH => 8,
         DATA_WIDTH => W,
@@ -90,21 +235,16 @@ begin
         q               => o_q,
         empty           => o_rempty,
         rdreq           => i_ren,
-        data            => rdata,
+        data            => wdata,
         full            => wfull,
-        wrreq           => not rempty and not wfull,
+        wrreq           => wen,--not rempty and not wfull,
         sclr            => not i_reset_n,
         clock           => i_clk--,
     );
-   
-    -- link number
-    link_number <= o_q(37 downto 32);
-    -- hit
-    o_q_debug <= o_q(31 downto 0);
-    -- header info
+    
     o_header    <= '1' when o_q(37 downto 32) = pre_marker else '0';
     o_trailer   <= '1' when o_q(37 downto 32) = tr_marker else '0';
-    -- TODO: handle errors, at the moment they are sent out at the end of normal events
-    o_error     <= '1' when o_q(37 downto 32) = err_marker and o_q(7 downto 0) = x"DC" else '0';
+    o_q_debug   <= o_q(31 downto 0);
+    link_number <= o_q(37 downto 32);
 
 end architecture;
