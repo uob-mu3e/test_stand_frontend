@@ -8,7 +8,6 @@ use work.mudaq.all;
 LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
-use work.daq_constants.all;
 use work.feb_sc_registers.all;
 
 entity top is
