@@ -4,6 +4,7 @@
 #include "sc_ram.h"
 
 #include <sys/alt_irq.h>
+#include <sys/alt_alarm.h>
 
 #define FEB_REPLY_SUCCESS 0
 #define FEB_REPLY_ERROR   1

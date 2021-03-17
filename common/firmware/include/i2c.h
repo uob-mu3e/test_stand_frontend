@@ -9,7 +9,8 @@
 #define SOFTWARE_APP_SRC_I2C_H_
 
 #include <system.h>
-
+#include "altera_avalon_pio_regs.h"
+#include <stdio.h>
 #include <altera_avalon_i2c.h>
 
 struct i2c_t {
@@ -72,9 +73,9 @@ struct i2c_t {
         write(dev, slave, w, 2);
     }
 
-    uint32_t set_mask(uint32_t mask) {
+    alt_u32 set_mask(alt_u32 mask) {
 #ifdef I2C_MASK_BASE
-        uint32_t old = IORD_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE);
+        alt_u32 old = IORD_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE);
         IOWR_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE, mask);
         return old;
 #endif // I2C_MASK_BASE
