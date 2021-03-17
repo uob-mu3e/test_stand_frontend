@@ -2,22 +2,23 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.mudaq.all;
 use work.a10_pcie_registers.all;
 
 
 entity pcie_register_mapping is
 port (
     --! register inputs for pcie0
-    i_pcie0_rregs_156   : in reg32array;
-    i_pcie0_rregs_250   : in reg32array;
+    i_pcie0_rregs_156   : in    work.util.slv32_array_t(63 downto 0);
+    i_pcie0_rregs_250   : in    work.util.slv32_array_t(63 downto 0);
 
     --! register inputs for pcie1
-    i_pcie1_rregs_156   : in reg32array;
-    i_pcie1_rregs_250   : in reg32array;
+    i_pcie1_rregs_156   : in    work.util.slv32_array_t(63 downto 0);
+    i_pcie1_rregs_250   : in    work.util.slv32_array_t(63 downto 0);
 
     --! register outputs for pcie0/1
-    o_pcie0_rregs       : out reg32array;
-    o_pcie1_rregs       : out reg32array;
+    o_pcie0_rregs       : out   work.util.slv32_array_t(63 downto 0);
+    o_pcie1_rregs       : out   work.util.slv32_array_t(63 downto 0);
 
     -- slow 156 MHz clock
     i_clk_156           : in    std_logic;

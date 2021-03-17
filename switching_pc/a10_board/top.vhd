@@ -4,8 +4,8 @@ use IEEE.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 
-use work.pcie_components.all;
-use work.mudaq_registers.all;
+use work.mudaq.all;
+use work.a10_pcie_registers.all;
 
 entity top is
 port (
@@ -117,23 +117,28 @@ architecture rtl of top is
     signal flash_cs_n : std_logic;
 
     -- pcie read / write registers
-    signal pcie0_resets_n_156  : std_logic_vector(31 downto 0);
-    signal pcie0_resets_n_250  : std_logic_vector(31 downto 0);
-    signal pcie0_writeregs_250 : reg32array;
-    signal pcie0_writeregs_156 : reg32array;
-    signal pcie0_readregs_156               : reg32array;
-    signal pcie0_readregs_250           : reg32array;
-               
+    signal pcie0_resets_n_156   : std_logic_vector(31 downto 0);
+    signal pcie0_resets_n_250   : std_logic_vector(31 downto 0);
+    signal pcie0_writeregs_250  : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_writeregs_156  : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_readregs_250   : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_readregs_156   : work.util.slv32_array_t(63 downto 0);
+
+    signal pcie_fastclk_out     : std_logic;
+
     -- pcie read / write memory
-    signal readmem_writedata 	: std_logic_vector(31 downto 0);
-    signal readmem_writeaddr 	: std_logic_vector(63 downto 0);
-    signal readmem_wren	 		: std_logic;
-    signal writememreadaddr 	: std_logic_vector(15 downto 0);
-    signal writememreaddata 	: std_logic_vector(31 downto 0);
+    signal readmem_writedata    : std_logic_vector(31 downto 0);
+    signal readmem_writeaddr    : std_logic_vector(63 downto 0);
+    signal readmem_wren         : std_logic;
+    signal writememreadaddr     : std_logic_vector(15 downto 0);
+    signal writememreaddata     : std_logic_vector(31 downto 0);
 
     -- pcie dma
     signal dma_data_wren, dmamem_endofevent : std_logic;
     signal dma_data : std_logic_vector(255 downto 0);
+
+    signal rx_data_raw, rx_data, tx_data : work.util.slv32_array_t(15 downto 0);
+    signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0);
 
 begin
 
@@ -235,7 +240,7 @@ begin
         i_pcie0_dma0_wdata              => dma_data,
         i_pcie0_dma0_we                 => dma_data_wren,
         i_pcie0_dma0_eoe                => dmamem_endofevent,
-        o_pcie0_dma0_hfull              => dmamemhalffull,
+        o_pcie0_dma0_hfull              => open,
         i_pcie0_dma0_clk                => pcie_fastclk_out,
 
         -- PCIe0 read interface to writable memory
@@ -264,11 +269,11 @@ begin
         -- resets clk
         o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
-        o_clk_156_hz                    => LED(2)
+        o_clk_156_hz                    => LED(2),
 
         i_reset_125_n                   => reset_125_n,
         i_clk_125                       => clk_125,
-        o_clk_125_hz                    => LED(1)
+        o_clk_125_hz                    => LED(1),
 
         i_reset_n                       => reset_50_n,
         i_clk                           => clk_50--,
@@ -303,11 +308,11 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    entity swb_block is
-    generic (
+    e_swb_block : entity work.swb_block
+    generic map (
         g_NLINKS => 16--;
     )
-    port (
+    port map (
         --! links to/from FEBs
         --! links should be in the order of pixel/scifi/tile
         i_rx                => rx_data_raw,
@@ -328,9 +333,9 @@ begin
         i_wmem_rdata        => writememreaddata,
         o_wmem_addr         => writememreadaddr,
 
-        o_rmem_wdata        => readmem_writedata
-        o_rmem_addr         => readmem_writeaddr
-        o_rmem_we           => readmem_wren
+        o_rmem_wdata        => readmem_writedata,
+        o_rmem_addr         => readmem_writeaddr,
+        o_rmem_we           => readmem_wren,
 
         o_dma_wren          => dma_data_wren,
         o_dma_done          => pcie0_readregs_250(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
@@ -341,11 +346,11 @@ begin
         o_farm_datak        => open,
 
         --! 250 MHz clock / reset_n
-        i_reset_n_250       => reset_156_n
+        i_reset_n_250       => reset_156_n,
         i_clk_250           => pcie_fastclk_out,
 
         --! 156 MHz clock / reset_n
-        i_reset_n_156       => reset_156_n
+        i_reset_n_156       => reset_156_n,
         i_clk_156           => clk_156--;
     );
 

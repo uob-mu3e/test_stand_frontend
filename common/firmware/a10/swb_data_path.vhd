@@ -41,8 +41,8 @@ port(
     i_rx_k           : in  work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
     i_rmask_n        : in  std_logic_vector(g_NLINKS_TOTL-1 downto 0);
 
-    i_writeregs_156  : in  work.util.reg32array;
-    i_writeregs_250  : in  work.util.reg32array;
+    i_writeregs_156     : in    work.util.slv32_array_t(63 downto 0);
+    i_writeregs_250     : in    work.util.slv32_array_t(63 downto 0);
 
     o_counter        : out work.util.slv32_array_t(5+(g_NLINKS_TOTL*3)-1 downto 0);
 

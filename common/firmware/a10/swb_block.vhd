@@ -14,8 +14,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.a10_pcie_registers.all; 
-
+use work.mudaq.all;
+use work.a10_pcie_registers.all;
 
 entity swb_block is
 generic (
@@ -24,17 +24,17 @@ generic (
 port (
 
     --! links to/from FEBs
-    i_rx                 : work.util.slv32_array_t(g_NLINKS-1 downto 0);
-    i_rx_k               : work.util.slv4_array_t(g_NLINKS-1 downto 0);
-    o_tx                 : work.util.slv32_array_t(g_NLINKS-1 downto 0);
-    o_tx_k               : work.util.slv4_array_t(g_NLINKS-1 downto 0);
+    i_rx                 : in   work.util.slv32_array_t(g_NLINKS-1 downto 0);
+    i_rx_k               : in   work.util.slv4_array_t(g_NLINKS-1 downto 0);
+    o_tx                 : out  work.util.slv32_array_t(g_NLINKS-1 downto 0);
+    o_tx_k               : out  work.util.slv4_array_t(g_NLINKS-1 downto 0);
 
     --! PCIe registers / memory
-    i_writeregs_250      : in work.util.reg32array;
-    i_writeregs_156      : in work.util.reg32array;
+    i_writeregs_250      : in   work.util.slv32_array_t(63 downto 0);
+    i_writeregs_156      : in   work.util.slv32_array_t(63 downto 0);
     
-    o_readregs_250       : out work.util.reg32array;
-    o_readregs_156       : out work.util.reg32array;
+    o_readregs_250       : out  work.util.slv32_array_t(63 downto 0);
+    o_readregs_156       : out  work.util.slv32_array_t(63 downto 0);
 
     i_resets_n_156       : in std_logic_vector(31 downto 0);
     i_resets_n_250       : in std_logic_vector(31 downto 0);
@@ -78,6 +78,7 @@ architecture arch of swb_block is
     --! fiber link_mapping(0)=1 
     --! Fiber QSFPA.1 is mapped to first(0) link
     type mapping_t is array(natural range <>) of integer;
+    constant NLINKS_DATA : integer := 3;
     constant link_mapping : mapping_t(NLINKS_DATA-1 downto 0) := (1,2,4);
 
     --! demerged FEB links
@@ -86,7 +87,7 @@ architecture arch of swb_block is
     signal rx_sc        : work.util.slv32_array_t(g_NLINKS-1 downto 0);
     signal rx_sc_k      : work.util.slv4_array_t(g_NLINKS-1 downto 0);
     signal rx_rc        : work.util.slv32_array_t(g_NLINKS-1 downto 0);
-    signal rx_rc_k      : work.util.slv32_array_t(g_NLINKS-1 downto 0);
+    signal rx_rc_k      : work.util.slv4_array_t(g_NLINKS-1 downto 0);
 
 
 begin
@@ -107,7 +108,7 @@ begin
     --! sc => slow control packages
     --! rc => runcontrol packages
     g_demerge: for i in g_NLINKS-1 downto 0 generate
-        e_data_demerge : entity work.data_demerge
+        e_data_demerge : entity work.swb_data_demerger
         port map(
             i_clk               => i_clk_156,
             i_reset             => not i_resets_n_156(RESET_BIT_EVENT_COUNTER),
@@ -156,7 +157,7 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_sc_main : entity work.sc_main
+    e_sc_main : entity work.swb_sc_main
     generic map (
         NLINKS => g_NLINKS
     )
@@ -173,13 +174,13 @@ begin
         o_state         => o_readregs_156(SC_STATE_REGISTER_R)(27 downto 0)--,
     );
     
-    e_sc_secondary : entity work.sc_secondary
+    e_sc_secondary : entity work.swb_sc_secondary
     generic map (
         NLINKS => g_NLINKS
     )
     port map (
         reset_n                 => i_resets_n_156(RESET_BIT_SC_SECONDARY),
-        i_link_enable           => i_writeregs_156(FEB_ENABLE_REGISTER_W)(NLINKS_TOTL-1 downto 0),
+        i_link_enable           => i_writeregs_156(FEB_ENABLE_REGISTER_W)(g_NLINKS-1 downto 0),
         link_data_in            => rx_sc,
         link_data_in_k          => rx_sc_k,
         mem_addr_out            => o_rmem_addr,

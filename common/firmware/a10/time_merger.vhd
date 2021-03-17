@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 
+use work.mudaq.all;
 
 -- merge packets delimited by SOP and EOP from N input streams
 entity time_merger is
@@ -76,18 +77,18 @@ architecture arch of time_merger is
     constant write_width : fifo_width_t := (64+12, 64+12, 64+12, 64+12, 64+12, 64+12, 32+6);
     constant generate_fifos : fifo_width_t := (1, 2, 4, 8, 16, 32, 64);
         
-    signal fifo_data_0              : fifo_array_38(generate_fifos(0) - 1 downto 0);
-    signal fifo_q_0, fifo_q_0_reg   : fifo_array_76(generate_fifos(0) - 1 downto 0);
-    signal wait_cnt_fifo_0          : fifo_array_2(generate_fifos(0) - 1 downto 0);
-    signal layer_0_state            : fifo_array_4(generate_fifos(0) - 1 downto 0);
-    signal layer_0_cnt              : fifo_array_32(generate_fifos(0) - 1 downto 0);
+    signal fifo_data_0              : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
+    signal fifo_q_0, fifo_q_0_reg   : work.util.slv76_array_t(generate_fifos(0) - 1 downto 0);
+    signal wait_cnt_fifo_0          : work.util.slv2_array_t(generate_fifos(0) - 1 downto 0);
+    signal layer_0_state            : work.util.slv4_array_t(generate_fifos(0) - 1 downto 0);
+    signal layer_0_cnt              : work.util.slv32_array_t(generate_fifos(0) - 1 downto 0);
     signal fifo_ren_0, fifo_ren_0_reg, fifo_wen_0, fifo_full_0, fifo_empty_0, fifo_empty_0_reg, saw_header_0, saw_trailer_0, reset_fifo_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
 
-    signal fifo_q_1 : fifo_array_76(generate_fifos(1) - 1 downto 0);
-    signal fifo_q_2 : fifo_array_76(generate_fifos(2) - 1 downto 0);
-    signal fifo_q_3 : fifo_array_76(generate_fifos(3) - 1 downto 0);
-    signal fifo_q_4 : fifo_array_76(generate_fifos(4) - 1 downto 0);
-    signal fifo_q_5 : fifo_array_76(generate_fifos(5) - 1 downto 0);
+    signal fifo_q_1 : work.util.slv76_array_t(generate_fifos(1) - 1 downto 0);
+    signal fifo_q_2 : work.util.slv76_array_t(generate_fifos(2) - 1 downto 0);
+    signal fifo_q_3 : work.util.slv76_array_t(generate_fifos(3) - 1 downto 0);
+    signal fifo_q_4 : work.util.slv76_array_t(generate_fifos(4) - 1 downto 0);
+    signal fifo_q_5 : work.util.slv76_array_t(generate_fifos(5) - 1 downto 0);
     signal fifo_empty_1, fifo_ren_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
     signal fifo_empty_2, fifo_ren_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
     signal fifo_empty_3, fifo_ren_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
@@ -101,10 +102,10 @@ architecture arch of time_merger is
     signal mask_n_5 : std_logic_vector(generate_fifos(5) - 1 downto 0);
 
     constant size_last : integer := generate_fifos(5)/2;
-    signal fifo_data_6              : fifo_array_76(generate_fifos(6) - 1 downto 0);
-    signal fifo_q_6, fifo_q_6_reg   : fifo_array_76(generate_fifos(6) - 1 downto 0);
-    signal wait_cnt_fifo_6          : fifo_array_2(generate_fifos(6) - 1 downto 0);
-    signal layer_6_state            : fifo_array_4(generate_fifos(6) - 1 downto 0);
+    signal fifo_data_6              : work.util.slv76_array_t(generate_fifos(6) - 1 downto 0);
+    signal fifo_q_6, fifo_q_6_reg   : work.util.slv76_array_t(generate_fifos(6) - 1 downto 0);
+    signal wait_cnt_fifo_6          : work.util.slv2_array_t(generate_fifos(6) - 1 downto 0);
+    signal layer_6_state            : work.util.slv4_array_t(generate_fifos(6) - 1 downto 0);
     signal fifo_wen_6, fifo_full_6  : std_logic_vector(generate_fifos(6) - 1 downto 0);
     signal alignment_done : std_logic_vector(generate_fifos(6) - 1 downto 0) := (others => '0');
     
@@ -302,7 +303,7 @@ begin
                         --
                     else
                         if ( fifo_full_0(i) = '0' and link_good(i) = '1' and i_rempty(i) = '0' and rack_hit(i) = '0' and i_rdata(i)(31 downto 26) /= "111111" and i_rdata(i)(37 downto 36) = "00" ) then
-                            fifo_data_0(i) <= link_36_to_std(i) & i_rdata(i)(35 downto 4);
+                            fifo_data_0(i) <= work.util.link_36_to_std(i) & i_rdata(i)(35 downto 4);
                             fifo_wen_0(i) <= '1';
                             rack_hit(i) <= '1';
                             layer_0_cnt(i) <= layer_0_cnt(i) + '1';
