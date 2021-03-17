@@ -383,8 +383,6 @@ function update_firmware(valuex) {
 
 function update_sc(valuex, swindex) {
 
-    console.log(valuex);
-
     var value = valuex;
     if(typeof valuex === 'string')
         value = JSON.parse(valuex);
