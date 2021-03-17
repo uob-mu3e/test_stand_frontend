@@ -17,7 +17,7 @@ generic (
     gen_fifos       : integer   := 16--;
 );
 port (
-    -- input 
+    -- input
     i_fifo_q        : in work.util.slv76_array_t(compare_fifos - 1 downto 0);
     i_fifo_empty    : in std_logic_vector(compare_fifos - 1 downto 0);
     i_fifo_ren      : in std_logic_vector(gen_fifos - 1 downto 0);

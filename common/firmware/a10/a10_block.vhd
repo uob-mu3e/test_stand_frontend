@@ -2,6 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.mudaq.all;
 use work.a10_pcie_registers.all;
 
 
@@ -38,8 +39,6 @@ port (
     o_LED               : out   std_logic_vector(3 downto 0);
     o_LED_BRACKET       : out   std_logic_vector(3 downto 0);
     i_BUTTON            : in    std_logic_vector(3 downto 0);
-    o_HEX0_D            : out   std_logic_vector(6 downto 0);
-    o_HEX1_D            : out   std_logic_vector(6 downto 0);
 
     -- XCVR0 (6250 Mbps @ 156.25 MHz)
     i_xcvr0_rx          : in    std_logic_vector(g_XCVR0_CHANNELS-1 downto 0) := (others => '0');
@@ -71,6 +70,7 @@ port (
     i_pcie0_perst_n     : in    std_logic := '0';
     i_pcie0_refclk      : in    std_logic := '0'; -- ref 100 MHz clock
     o_pcie0_clk         : out   std_logic;
+    o_pcie0_clk_hz      : out   std_logic;
 
     -- PCIe0 DMA0
     i_pcie0_dma0_wdata  : in    std_logic_vector(255 downto 0) := (others => '0');
@@ -91,16 +91,17 @@ port (
     i_pcie0_rmem_clk    : in    std_logic := '0';
 
     -- PCIe0 update interface for readable registers
-    i_pcie0_rregs_156   : in    reg32array := (others => (others => '0'));
-    i_pcie0_rregs_250   : in    reg32array := (others => (others => '0'));
+    i_pcie0_rregs_156   : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
+    i_pcie0_rregs_250   : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
 
     -- PCIe0 read interface for writable registers
-    o_pcie0_wregs_A     : out   reg32array;
+    o_pcie0_wregs_A     : out   work.util.slv32_array_t(63 downto 0);
     i_pcie0_wregs_A_clk : in    std_logic := '0';
-    o_pcie0_wregs_B     : out   reg32array;
+    o_pcie0_wregs_B     : out   work.util.slv32_array_t(63 downto 0);
     i_pcie0_wregs_B_clk : in    std_logic := '0';
-    o_pcie0_resets_n_156: out   std_logic_vector(31 downto 0) := (others => '0');
-    o_pcie0_resets_n_250: out   std_logic_vector(31 downto 0) := (others => '0');
+    o_pcie0_resets_n_156: out   std_logic_vector(31 downto 0);
+    o_pcie0_resets_n_250: out   std_logic_vector(31 downto 0);
+
 
 
     -- PCIe1
@@ -109,6 +110,7 @@ port (
     i_pcie1_perst_n     : in    std_logic := '0';
     i_pcie1_refclk      : in    std_logic := '0'; -- ref 100 MHz clock
     o_pcie1_clk         : out   std_logic;
+    o_pcie1_clk_hz      : out   std_logic;
 
     -- PCIe1 DMA0
     i_pcie1_dma0_wdata  : in    std_logic_vector(255 downto 0) := (others => '0');
@@ -129,29 +131,31 @@ port (
     i_pcie1_rmem_clk    : in    std_logic := '0';
 
     -- PCIe1 update interface for readable registers
-    i_pcie1_rregs_156   : in    reg32array := (others => (others => '0'));
-    i_pcie1_rregs_250   : in    reg32array := (others => (others => '0'));
+    i_pcie1_rregs_156   : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
+    i_pcie1_rregs_250   : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
 
     -- PCIe1 read interface for writable registers
-    o_pcie1_wregs_A     : out   reg32array;
+    o_pcie1_wregs_A     : out   work.util.slv32_array_t(63 downto 0);
     i_pcie1_wregs_A_clk : in    std_logic := '0';
-    o_pcie1_wregs_B     : out   reg32array;
+    o_pcie1_wregs_B     : out   work.util.slv32_array_t(63 downto 0);
     i_pcie1_wregs_B_clk : in    std_logic := '0';
-    o_pcie1_resets_n_156: out   std_logic_vector(31 downto 0) := (others => '0');
-    o_pcie1_resets_n_250: out   std_logic_vector(31 downto 0) := (others => '0');
-    o_pcie1_resets_n_156: out   std_logic_vector(31 downto 0) := (others => '0');
-    o_pcie1_resets_n_250: out   std_logic_vector(31 downto 0) := (others => '0');
+    o_pcie1_resets_n_156: out   std_logic_vector(31 downto 0);
+    o_pcie1_resets_n_250: out   std_logic_vector(31 downto 0);
+
 
 
     o_reset_156_n       : out   std_logic;
     o_clk_156           : out   std_logic;
+    o_clk_156_hz        : out   std_logic;
 
     o_reset_250_n       : out   std_logic;
     o_clk_250           : out   std_logic;
+    o_clk_250_hz        : out   std_logic;
 
     -- global 125 MHz clock
     i_reset_125_n       : in    std_logic;
     i_clk_125           : in    std_logic;
+    o_clk_125_hz        : out   std_logic;
 
     -- local clock
     i_reset_n           : in    std_logic;
@@ -169,7 +173,7 @@ architecture arch of a10_block is
     signal reset_250_n      : std_logic;
     signal clk_250          : std_logic;
 
-    signal flash_address    : std_logic_vector(o_flash_address'range) := (others => '0');
+    signal flash_address    : std_logic_vector(31 downto 0) := (others => '0');
 
     signal nios_i2c_scl     : std_logic;
     signal nios_i2c_scl_oe  : std_logic;
@@ -190,8 +194,13 @@ architecture arch of a10_block is
     signal pcie0_clk        : std_logic;
     signal pcie1_clk        : std_logic;
 
-    signal pcie0_rregs      : reg32array;
-    signal pcie1_rregs      : reg32array;
+    signal pcie0_rregs      : work.util.slv32_array_t(63 downto 0);
+    signal pcie1_rregs      : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_wregs_A    : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_wregs_B    : work.util.slv32_array_t(63 downto 0);
+
+    signal pcie0_resets_n_250 : std_logic_vector(31 downto 0);
+    signal pcie0_dma0_hfull : std_logic;
 
     --! debouncer signals
     signal push_button0_db : std_logic;
@@ -199,21 +208,13 @@ architecture arch of a10_block is
     signal push_button2_db : std_logic;
     signal push_button3_db : std_logic;
 
-    --! counter
-    signal clk_50_cnt   : unsigned(31 downto 0);
-    signal clk_125_cnt  : unsigned(31 downto 0);
-
 begin
 
     o_flash_reset_n <= flash_reset_n;
 
     o_flash_address <= flash_address;
 
-    o_reset_156_n <= reset_156_n;
-    o_clk_156 <= clk_156;
 
-    o_reset_250_n <= reset_250_n;
-    o_clk_250 <= clk_250;
 
     -- 156.25 MHz data clock (reference is 125 MHz global clock)
     e_clk_156 : component work.cmp.ip_pll_125to156
@@ -222,9 +223,17 @@ begin
         refclk => i_clk_125,
         rst => not i_reset_125_n--,
     );
+    o_clk_156 <= clk_156;
 
     e_reset_156_n : entity work.reset_sync
     port map ( o_reset_n => reset_156_n, i_reset_n => i_reset_125_n, i_clk => clk_156 );
+    o_reset_156_n <= reset_156_n;
+
+    e_clk_156_hz : entity work.clkdiv
+    generic map ( P => 156250000 )
+    port map ( o_clk => o_clk_156_hz, i_reset_n => reset_156_n, i_clk => clk_156 );
+
+
 
     -- 250 MHz data clock (reference is 125 MHz global clock)
     e_clk_250 : component work.cmp.ip_pll_125to250
@@ -233,11 +242,29 @@ begin
         refclk => i_clk_125,
         rst => not i_reset_125_n--,
     );
+    o_clk_250 <= clk_250;
 
     e_reset_250_n : entity work.reset_sync
     port map ( o_reset_n => reset_250_n, i_reset_n => i_reset_125_n, i_clk => clk_250 );
+    o_reset_250_n <= reset_250_n;
+
+    e_clk_250_hz : entity work.clkdiv
+    generic map ( P => 250000000 )
+    port map ( o_clk => o_clk_250_hz, i_reset_n => reset_250_n, i_clk => clk_250 );
+
+
+    e_clk_125_hz : entity work.clkdiv
+    generic map ( P => 125000000 )
+    port map ( o_clk => o_clk_125_hz, i_reset_n => i_reset_125_n, i_clk => i_clk_125 );
+
+
 
     o_pcie0_clk <= pcie0_clk;
+    o_pcie0_wregs_A <= pcie0_wregs_A;
+    o_pcie0_wregs_B <= pcie0_wregs_B;
+    o_pcie0_resets_n_250 <= pcie0_resets_n_250;
+    o_pcie0_dma0_hfull <= pcie0_dma0_hfull;
+
 
     --! save git version to version register
     e_version_reg : entity work.version_reg
@@ -249,7 +276,7 @@ begin
     e_reset_logic : entity work.reset_logic
     port map (
         rst_n          => reset_156_n,
-        reset_register => o_pcie0_wregs_B(RESET_REGISTER_W),
+        reset_register => pcie0_wregs_B(RESET_REGISTER_W),
         resets         => open,
         resets_n       => o_pcie0_resets_n_156,
         clk            => clk_156--,
@@ -259,10 +286,10 @@ begin
     e_reset_logic_fast : entity work.reset_logic
     port map (
         rst_n          => reset_250_n,
-        reset_register => o_pcie0_wregs_A(RESET_REGISTER_W),
+        reset_register => pcie0_wregs_A(RESET_REGISTER_W),
         resets         => open,
         resets_n       => o_pcie0_resets_n_250,
-        clk            => o_pcie0_clk--,
+        clk            => pcie0_clk--,
     );
 
     --! generate reset regs for 156 MHz clk for pcie1
@@ -276,19 +303,19 @@ begin
     --! ------------------------------------------------------------------------
 
 
-    --! 100 MHz blinky to check the pcie0 refclk
-    e_pcie_clk_hz : entity work.clkdiv
+    --! 100 MHz blinky to check the pcie0 clk
+    e_pcie0_clk_hz : entity work.clkdiv
     generic map ( P => 100000000 )
-    port map ( o_clk => o_LED(3), i_reset_n => i_reset_n, i_clk => pcie0_clk );
+    port map ( o_clk => o_pcie0_clk_hz, i_reset_n => i_reset_n, i_clk => pcie0_clk );
 
-    --! 100 MHz blinky to check the pcie1 refclk
-    e_pcie_clk_hz : entity work.clkdiv
+    --! 100 MHz blinky to check the pcie1 clk
+    e_pcie1_clk_hz : entity work.clkdiv
     generic map ( P => 100000000 )
-    port map ( o_clk => o_LED(2), i_reset_n => i_reset_n, i_clk => pcie1_clk );
+    port map ( o_clk => o_pcie1_clk_hz, i_reset_n => i_reset_n, i_clk => pcie1_clk );
 
     --! blinky leds to check the wregs
-    o_LED_BRACKET(1 downto 0) <= o_pcie0_wregs_A(LED_REGISTER_W)(1 downto 0);
-    o_LED_BRACKET(3 downto 2) <= o_pcie0_wregs_B(LED_REGISTER_W)(3 downto 2);
+    o_LED_BRACKET(1 downto 0) <= pcie0_wregs_A(LED_REGISTER_W)(1 downto 0);
+    o_LED_BRACKET(3 downto 2) <= pcie0_wregs_B(LED_REGISTER_W)(3 downto 2);
 
     --! blinky leds
     o_LED(1) <= nios_pio(7);
@@ -309,38 +336,6 @@ begin
         i_clk       => i_clk--,
     );
 
-    --! counters for 50 MHz clk
-    process(i_clk)
-    begin
-    if rising_edge(i_clk) then
-        clk_50_cnt <= clk_50_cnt + 1;
-    end if;
-    end process;
-
-    --! counters for 125 MHz clk
-    process(i_clk_125)
-    begin
-    if rising_edge(i_clk_125) then
-        clk_125_cnt <= clk_125_cnt + 1;
-    end if;
-    end process;
-
-    --! monitor 50 MHz clock with seg7 
-    --! this works not on the LHCb Board
-    e_hex2seg7_50 : entity work.hex2seg7
-    port map (
-        i_hex => std_logic_vector(clk_50_cnt)(27 downto 24),
-        o_seg => o_HEX0_D--,
-    );
-
-    --! monitor 125 MHz clock with seg7 
-    --! this works not on the LHCb Board
-    --! so it will be just be not used there
-    e_hex2seg7_125 : entity work.hex2seg7
-    port map (
-        i_hex => std_logic_vector(clk_125_cnt)(27 downto 24),
-        o_seg => o_HEX1_D--,
-    );
 
 
     -- nios reset sequence
@@ -382,15 +377,25 @@ begin
 
         pio_export                      => nios_pio,
 
-        avm_xcvr_address                => av_xcvr0.address(17 downto 0),
-        avm_xcvr_read                   => av_xcvr0.read,
-        avm_xcvr_readdata               => av_xcvr0.readdata,
-        avm_xcvr_write                  => av_xcvr0.write,
-        avm_xcvr_writedata              => av_xcvr0.writedata,
-        avm_xcvr_waitrequest            => av_xcvr0.waitrequest,
+        avm_xcvr0_address               => av_xcvr0.address(17 downto 0),
+        avm_xcvr0_read                  => av_xcvr0.read,
+        avm_xcvr0_readdata              => av_xcvr0.readdata,
+        avm_xcvr0_write                 => av_xcvr0.write,
+        avm_xcvr0_writedata             => av_xcvr0.writedata,
+        avm_xcvr0_waitrequest           => av_xcvr0.waitrequest,
 
-        avm_reset_reset_n               => i_reset_125_n,
-        avm_clock_clk                   => i_clk_125,
+        avm_xcvr0_reset_reset_n         => i_reset_125_n,
+        avm_xcvr0_clock_clk             => i_clk_125,
+
+        avm_xcvr1_address               => av_xcvr1.address(17 downto 0),
+        avm_xcvr1_read                  => av_xcvr1.read,
+        avm_xcvr1_readdata              => av_xcvr1.readdata,
+        avm_xcvr1_write                 => av_xcvr1.write,
+        avm_xcvr1_writedata             => av_xcvr1.writedata,
+        avm_xcvr1_waitrequest           => av_xcvr1.waitrequest,
+
+        avm_xcvr1_reset_reset_n         => i_reset_125_n,
+        avm_xcvr1_clock_clk             => i_clk_125,
 
         rst_reset_n                     => nios_reset_n,
         clk_clk                         => i_clk--,
@@ -426,8 +431,11 @@ begin
     generate_xcvr0_block : if ( g_XCVR0_CHANNELS > 0 ) generate
     e_xcvr0_block : entity work.xcvr_block
     generic map (
-        N_XCVR_g => g_XCVR0_N,
-        N_CHANNELS_g => g_XCVR0_CHANNELS / g_XCVR0_N--,
+        g_XCVR_NAME => "xcvr_a10",
+        g_XCVR_N => g_XCVR0_N,
+        g_CHANNELS => g_XCVR0_CHANNELS / g_XCVR0_N,
+        g_REFCLK_MHZ => 125.0,
+        g_CLK_MHZ => 125.0--,
     )
     port map (
         o_rx_data           => o_xcvr0_rx_data,
@@ -462,8 +470,11 @@ begin
     generate_xcvr1_block : if ( g_XCVR1_CHANNELS > 0 ) generate
     e_xcvr1_block : entity work.xcvr_block
     generic map (
-        N_XCVR_g => g_XCVR1_N,
-        N_CHANNELS_g => g_XCVR1_CHANNELS / g_XCVR1_N--,
+        g_XCVR_NAME => "xcvr_enh",
+        g_XCVR_N => g_XCVR1_N,
+        g_CHANNELS => g_XCVR1_CHANNELS / g_XCVR1_N,
+        g_REFCLK_MHZ => 125.0,
+        g_CLK_MHZ => 125.0--,
     )
     port map (
         o_rx_data           => o_xcvr1_rx_data,
@@ -472,23 +483,23 @@ begin
         i_tx_data           => i_xcvr1_tx_data,
         i_tx_datak          => i_xcvr1_tx_datak,
 
-        i_rx_clk            => (others => clk_156),
-        i_tx_clk            => (others => clk_156),
+        i_rx_clk            => (others => clk_250),
+        i_tx_clk            => (others => clk_250),
 
         i_rx_serial         => i_xcvr1_rx,
         o_tx_serial         => o_xcvr1_tx,
 
         i_refclk            => i_xcvr1_refclk,
 
-        i_avs_address       => av_xcvr1.address(15 downto 0),
+        i_avs_address       => av_xcvr1.address(17 downto 0),
         i_avs_read          => av_xcvr1.read,
         o_avs_readdata      => av_xcvr1.readdata,
         i_avs_write         => av_xcvr1.write,
         i_avs_writedata     => av_xcvr1.writedata,
         o_avs_waitrequest   => av_xcvr1.waitrequest,
 
-        i_reset_n           => reset_156_n,
-        i_clk               => clk_156--,
+        i_reset_n           => i_reset_125_n,
+        i_clk               => i_clk_125--,
     );
     end generate;
 
@@ -534,10 +545,10 @@ begin
         pcie_waken              => open,
 
         readregs                => pcie0_rregs,
-        writeregs               => o_pcie0_wregs_A,
+        writeregs               => pcie0_wregs_A,
 
         i_clk_B                 => i_pcie0_wregs_B_clk,
-        o_writeregs_B           => o_pcie0_wregs_B,
+        o_writeregs_B           => pcie0_wregs_B,
 
         writememreadaddr        => i_pcie0_wmem_addr,
         writememreaddata        => o_pcie0_wmem_rdata,
@@ -552,7 +563,7 @@ begin
         dma_data                => i_pcie0_dma0_wdata,
         dmamem_wren             => i_pcie0_dma0_we,
         dmamem_endofevent       => i_pcie0_dma0_eoe,
-        dmamemhalffull          => o_pcie0_dma0_hfull,
+        dmamemhalffull          => pcie0_dma0_hfull,
         dmamemclk               => i_pcie0_dma0_clk,
 
         dma2memclk              => i_pcie0_dma0_clk--,
@@ -562,8 +573,8 @@ begin
     --! DMA evaluationg / monitoring for PCIe 0
     e_dma_evaluation_pcie0 : entity work.dma_evaluation
     port map (
-        reset_n                 => o_pcie0_resets_n_250(RESET_BIT_DMA_EVAL),
-        dmamemhalffull          => o_pcie0_dma0_hfull,
+        reset_n                 => pcie0_resets_n_250(RESET_BIT_DMA_EVAL),
+        dmamemhalffull          => pcie0_dma0_hfull,
         dmamem_endofevent       => i_pcie0_dma0_eoe,
         halffull_counter        => pcie0_rregs(DMA_HALFFUL_REGISTER_R),
         nothalffull_counter     => pcie0_rregs(DMA_NOTHALFFUL_REGISTER_R),

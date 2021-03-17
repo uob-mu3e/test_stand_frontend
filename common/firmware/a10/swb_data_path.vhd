@@ -42,8 +42,8 @@ port(
     i_rx_k           : in  work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
     i_rmask_n        : in  std_logic_vector(g_NLINKS_TOTL-1 downto 0);
 
-    i_writeregs_156  : in  reg32array;
-    i_writeregs_250  : in  reg32array;
+    i_writeregs_156  : in  work.util.slv32_array_t(63 downto 0);
+    i_writeregs_250  : in  work.util.slv32_array_t(63 downto 0);
 
     o_counter        : out work.util.slv32_array_t(5+(g_NLINKS_TOTL*3)-1 downto 0);
 
@@ -220,7 +220,7 @@ begin
         N => g_NLINKS_TOTL--,
     )
     port map (
-        i_rx        => rx_q,
+        i_rdata     => rx_q,
         i_rsop      => sop,
         i_reop      => eop,
         i_rempty    => rx_rdempty,
@@ -228,11 +228,11 @@ begin
         i_en        => i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM),
         o_rack      => stream_rack,
 
-        o_q         => stream_rdata,
+        o_wdata     => stream_rdata,
         o_rempty    => stream_rempty,
         i_ren       => stream_ren,
-        o_header    => stream_header,
-        o_trailer   => stream_trailer,
+        o_wsop      => stream_header,
+        o_weop      => stream_trailer,
 
         o_counters  => stream_counters,
 

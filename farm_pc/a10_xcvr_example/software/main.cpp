@@ -1,14 +1,14 @@
 
-#include "../include/base.h"
+#include "include/base.h"
 
-#include "../include/a10/flash.h"
+#include "include/a10/flash.h"
 flash_t flash;
 
-#include "../include/a10/fan.h"
+#include "include/a10/fan.h"
 fan_t fan(0x01);
 
-#include "../include/xcvr.h"
-#include "../include/a10/reconfig.h"
+#include "include/xcvr.h"
+#include "include/a10/reconfig.h"
 reconfig_t reconfig;
 
 int main() {
@@ -30,7 +30,7 @@ int main() {
             flash.menu();
             break;
         case '2':
-            menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+            menu_xcvr((alt_u32*)(AVM_XCVR0_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '8':
             fan.menu();

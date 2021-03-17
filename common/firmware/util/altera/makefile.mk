@@ -61,10 +61,13 @@ $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	    echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file)\" ]" >> $@ ; \
 	done
 
+device.tcl :
+	touch $@
+
 $(PREFIX)/%.vhd : %.vhd.qmegawiz
 	./util/altera/qmegawiz.sh $< $@
 
-$(PREFIX)/%.qsys : %.tcl
+$(PREFIX)/%.qsys : %.tcl device.tcl
 	./util/altera/tcl2qsys.sh $< $@
 
 $(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys

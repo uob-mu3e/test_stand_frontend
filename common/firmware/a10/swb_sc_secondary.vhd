@@ -20,8 +20,8 @@ port (
 		clk:                in std_logic;
 		reset_n:            in std_logic;
 		i_link_enable:      in std_logic_vector(NLINKS-1 downto 0);
-		link_data_in:       in std_logic_vector(NLINKS * 32 - 1 downto 0);
-		link_data_in_k:     in std_logic_vector(NLINKS * 4 - 1 downto 0);
+    link_data_in                : in    work.util.slv32_array_t(NLINKS-1 downto 0);
+    link_data_in_k              : in    work.util.slv4_array_t(NLINKS-1 downto 0);
 		mem_data_out:       out std_logic_vector(31 downto 0);
 		mem_addr_out:       out std_logic_vector(15 downto 0);
 		mem_addr_finished_out:       out std_logic_vector(15 downto 0);
@@ -86,13 +86,13 @@ begin
 					link_mux:
 					FOR i in 0 to NLINKS - 1 LOOP
 						if (  i_link_enable(i)='1'
-							and link_data_in(7 + i * 32 downto i * 32) = x"BC" 
-							and link_data_in_k(3 + i * 4 downto i * 4) = "0001" 
-							and link_data_in((i + 1) * 32 - 1 downto 26 + i * 32) = "000111"
+							and link_data_in(i)(7 downto 0) = x"BC"
+							and link_data_in_k(i) = "0001"
+							and link_data_in(i)(31 downto 26) = "000111"
 						) then
 							stateout(3 downto 0) <= x"1";
 							mem_addr_o <= mem_addr_o + '1';
-							mem_data_o <= link_data_in((i + 1) * 32 - 1 downto i * 32);
+							mem_data_o <= link_data_in(i);
 							mem_wren_o <= '1';
 							state <= starting;
 							current_link <= i;
@@ -101,14 +101,14 @@ begin
 
 				when starting =>
 					stateout(3 downto 0) <= x"2";
-					if (link_data_in_k(3 + current_link * 4 downto current_link * 4) = "0000") then
+					if (link_data_in_k(current_link) = "0000") then
 						mem_addr_o <= mem_addr_o + '1';
-						mem_data_o <= link_data_in((current_link + 1) * 32 - 1 downto current_link * 32);
+						mem_data_o <= link_data_in(current_link);
 						mem_wren_o <= '1';
-					elsif (link_data_in(7 + current_link * 32 downto current_link * 32) = x"9C" and link_data_in_k(3 + current_link * 4 downto current_link * 4) = "0001") then
+					elsif (link_data_in(current_link)(7 downto 0) = x"9C" and link_data_in_k(current_link) = "0001") then
 						mem_addr_o <= mem_addr_o + '1';
 						mem_addr_finished_out <= mem_addr_o + '1';
-						mem_data_o <= link_data_in((current_link + 1) * 32 - 1 downto current_link * 32);
+						mem_data_o <= link_data_in(current_link);
 						mem_wren_o <= '1';
 						state <= waiting;
 					end if;

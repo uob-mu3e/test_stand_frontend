@@ -6,12 +6,12 @@ use ieee.numeric_std.all;
 -- merge packets delimited by SOP and EOP from N input streams
 entity swb_stream_merger is
 generic (
-    W : positive := 32;
+    W : positive := 38;
     N : positive--;
 );
 port (
     -- input streams
-    i_rx        : in    work.util.slv38_array_t(N - 1 downto 0);
+    i_rdata     : in    work.util.slv38_array_t(N - 1 downto 0);
     i_rsop      : in    std_logic_vector(N-1 downto 0);
     i_reop      : in    std_logic_vector(N-1 downto 0);
     i_rempty    : in    std_logic_vector(N-1 downto 0);
@@ -20,11 +20,11 @@ port (
     o_rack      : out   std_logic_vector(N-1 downto 0);
 
     -- output stream
-    o_q         : out   std_logic_vector(31 downto 0);
+    o_wdata     : out   std_logic_vector(31 downto 0);
     o_rempty    : out   std_logic;
     i_ren       : in    std_logic;
-    o_header    : out   std_logic;
-    o_trailer   : out   std_logic;
+    o_wsop      : out   std_logic;
+    o_weop      : out   std_logic;
 
     --! status counters 
     --! 0: e_stream_fifo full
@@ -52,7 +52,7 @@ begin
 
     --! map data for stream merger
     generate_rdata : for i in 0 to N-1 generate
-        rdata(W-1 + i*W downto i*W) <= i_rx(i);
+        rdata(W-1 + i*W downto i*W) <= i_rdata(i);
     end generate;
 
     rempty <=   i_rempty or not i_rmask_n when i_en = '1' else
@@ -98,14 +98,14 @@ begin
     );
 
     --! only output data not datak
-    o_q <= q_stream(35 downto 4);
-    datak <= q_stream(3 downto 0);
+    o_wdata <= q_stream(35 downto 4);
+    datak   <= q_stream(3 downto 0);
     
-    o_header <=
-        '1' when datak = "0001" and o_q(7 downto 0) = x"BC"
+    o_wsop <=
+        '1' when datak = "0001" and o_wdata(7 downto 0) = x"BC"
         else '0';
-    o_trailer <=
-        '1' when datak = "0001" and o_q(7 downto 0) = x"9C"
+    o_weop <=
+        '1' when datak = "0001" and o_wdata(7 downto 0) = x"9C"
         else '0';
 
 end architecture;
