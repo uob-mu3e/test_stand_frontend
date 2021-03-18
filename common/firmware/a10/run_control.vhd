@@ -59,7 +59,7 @@ BEGIN
     if ( i_reset_ack_seen_n = '0' ) then
         CNT_feb_merger_timeouts  <= (others => '0');
     elsif rising_edge(i_clk) then
-      if(or_reduce(feb_merger_timeouts)='1') then
+      if( work.util.or_reduce(feb_merger_timeouts)='1' ) then
          CNT_feb_merger_timeouts <= CNT_feb_merger_timeouts + 1;
       end if;
     end if;
@@ -68,23 +68,23 @@ BEGIN
     process (i_clk)
     begin
         if (rising_edge(i_clk)) then
-            if (i_reset_ack_seen_n = '0') then 
+            if ( i_reset_ack_seen_n = '0' ) then 
                 o_run_number                    <= (others => '0');
                 o_runNr_ack                     <= (others => '0');
             end if;
             
-            if (i_reset_run_end_n = '0') then
+            if ( i_reset_run_end_n = '0' ) then
                 o_run_stop_ack                  <= (others => '0');
             end if;
             
-                if (and_reduce(i_buffers_empty) = '1') then
+                if ( work.util.and_reduce(i_buffers_empty) = '1' ) then
                     o_buffers_empty         <= (0 => '1', others => '0');
                 else 
                     o_buffers_empty         <= (others => '0');
                 end if;
                 
                 for J in 0 to N_LINKS_g-1 loop
-                    if (FEB_status(25+26*J)='1' and (FEB_status(23+J*26 downto 0+J*26) = i_run_number)) then
+                    if ( FEB_status(25+26*J)='1' and (FEB_status(23+J*26 downto 0+J*26) = i_run_number) ) then
                         o_runNr_ack(J)      <= '1';
                     else
                         o_runNr_ack(J)      <= '0';

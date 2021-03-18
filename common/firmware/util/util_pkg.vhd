@@ -44,6 +44,28 @@ package util is
 
     type natural_array_t is array(integer range<>) of natural;
 
+    --! 8b/10b words
+    constant D16_2 : std_logic_vector(7 downto 0) := X"50";
+    constant D21_4 : std_logic_vector(7 downto 0) := x"95";
+    constant D02_5 : std_logic_vector(7 downto 0) := X"A2";
+    constant D21_5 : std_logic_vector(7 downto 0) := x"B5";
+    constant D28_4 : std_logic_vector(7 downto 0) := x"9C";
+    constant D28_5 : std_logic_vector(7 downto 0) := X"BC";
+    constant D28_7 : std_logic_vector(7 downto 0) := X"FC";
+    constant D05_6 : std_logic_vector(7 downto 0) := X"C5";
+    constant K28_0 : std_logic_vector(7 downto 0) := X"1C"; -- still used in MuPix ??
+    constant K28_1 : std_logic_vector(7 downto 0) := X"3C"; -- still used in data alignment (transceiver) ??
+    constant K28_2 : std_logic_vector(7 downto 0) := X"5C";
+    constant K28_3 : std_logic_vector(7 downto 0) := X"7C";
+    constant K28_4 : std_logic_vector(7 downto 0) := X"9C"; -- used as end of packet marker between FEB <--> SW board
+    constant K28_5 : std_logic_vector(7 downto 0) := X"BC"; -- still used in MuPix ???
+    constant K28_6 : std_logic_vector(7 downto 0) := X"DC";
+    constant K28_7 : std_logic_vector(7 downto 0) := X"FC"; -- not used, comma symbol with harder constraints!
+    constant K23_7 : std_logic_vector(7 downto 0) := X"F7"; -- still used as "empty" data (transceiver) ??
+    constant K27_7 : std_logic_vector(7 downto 0) := X"FB";
+    constant K29_7 : std_logic_vector(7 downto 0) := X"FD";
+    constant K30_7 : std_logic_vector(7 downto 0) := X"FE";
+
     type avalon_t is record
         address         :   std_logic_vector(31 downto 0);
         read            :   std_logic;

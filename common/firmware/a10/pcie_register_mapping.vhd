@@ -15,10 +15,14 @@ port (
     --! register inputs for pcie1
     i_pcie1_rregs_156   : in    work.util.slv32_array_t(63 downto 0);
     i_pcie1_rregs_250   : in    work.util.slv32_array_t(63 downto 0);
+    
+    --! register inputs for pcie0 from a10_block
+    i_local_pcie0_rregs_156 : in    work.util.slv32_array_t(63 downto 0);
+    i_local_pcie0_rregs_250 : in    work.util.slv32_array_t(63 downto 0);
 
     --! register outputs for pcie0/1
-    o_pcie0_rregs       : out   work.util.slv32_array_t(63 downto 0);
-    o_pcie1_rregs       : out   work.util.slv32_array_t(63 downto 0);
+    o_pcie0_rregs       : out   reg32array;
+    o_pcie1_rregs       : out   reg32array;
 
     -- slow 156 MHz clock
     i_clk_156           : in    std_logic;
@@ -49,8 +53,8 @@ begin
         clk_last_0 <= clk_sync_0;
         
         if(clk_sync_0 = '1' and clk_last_0 = '0') then
+            o_pcie0_rregs(VERSION_REGISTER_R)            <= i_local_pcie0_rregs_156(VERSION_REGISTER_R);
             o_pcie0_rregs(PLL_REGISTER_R)                <= i_pcie0_rregs_156(PLL_REGISTER_R);
-            o_pcie0_rregs(VERSION_REGISTER_R)            <= i_pcie0_rregs_156(VERSION_REGISTER_R);
             o_pcie0_rregs(RUN_NR_REGISTER_R)             <= i_pcie0_rregs_156(RUN_NR_REGISTER_R);
             o_pcie0_rregs(RUN_NR_ACK_REGISTER_R)         <= i_pcie0_rregs_156(RUN_NR_ACK_REGISTER_R);
             o_pcie0_rregs(RUN_STOP_ACK_REGISTER_R)       <= i_pcie0_rregs_156(RUN_STOP_ACK_REGISTER_R);
@@ -67,12 +71,11 @@ begin
     end process;
 
     --! map fast registers
-    o_pcie0_rregs(DMA_STATUS_R)(DMA_DATA_WEN)   <= i_pcie0_rregs_250(DMA_STATUS_R)(DMA_DATA_WEN);
-    o_pcie0_rregs(DMA_HALFFUL_REGISTER_R)       <= i_pcie0_rregs_250(DMA_HALFFUL_REGISTER_R);
-    o_pcie0_rregs(DMA_NOTHALFFUL_REGISTER_R)    <= i_pcie0_rregs_250(DMA_NOTHALFFUL_REGISTER_R);
-    o_pcie0_rregs(DMA_ENDEVENT_REGISTER_R)      <= i_pcie0_rregs_250(DMA_ENDEVENT_REGISTER_R);
-    o_pcie0_rregs(DMA_NOTENDEVENT_REGISTER_R)   <= i_pcie0_rregs_250(DMA_NOTENDEVENT_REGISTER_R);
-        
+    o_pcie0_rregs(DMA_STATUS_R)(DMA_DATA_WEN)   <= i_local_pcie0_rregs_250(DMA_STATUS_R)(DMA_DATA_WEN);
+    o_pcie0_rregs(DMA_HALFFUL_REGISTER_R)       <= i_local_pcie0_rregs_250(DMA_HALFFUL_REGISTER_R);
+    o_pcie0_rregs(DMA_NOTHALFFUL_REGISTER_R)    <= i_local_pcie0_rregs_250(DMA_NOTHALFFUL_REGISTER_R);
+    o_pcie0_rregs(DMA_ENDEVENT_REGISTER_R)      <= i_local_pcie0_rregs_250(DMA_ENDEVENT_REGISTER_R);
+    o_pcie0_rregs(DMA_NOTENDEVENT_REGISTER_R)   <= i_local_pcie0_rregs_250(DMA_NOTENDEVENT_REGISTER_R);
 
     --! sync read regs from slow (156.25 MHz) to fast (250 MHz) clock
     --! done for the second PCIe block

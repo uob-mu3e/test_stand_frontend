@@ -42,7 +42,7 @@ end entity;
 
 architecture arch of swb_time_merger is
 
-    signal rdata_s, wdata, wdata_reg : std_logic_vector(W-1 downto 0);
+    signal rdata_s, wdata, wdata_reg, fifo_q : std_logic_vector(W-1 downto 0);
     signal rdata : work.util.slv38_array_t(g_NLINKS_FARM-1 downto 0);
     signal rempty, wfull, ren, wen, wen_reg : std_logic;
     signal link_number : std_logic_vector(5 downto 0);
@@ -194,8 +194,10 @@ begin
                                 wen <= '1';
                             end if;
                             if ( sh_idx /= 6 and sh_idx /= 8 ) then
-                                for i in sh_idx + 1 to 7 loop
-                                    wdata_reg(38 * (i - sh_idx - 1) + 37 downto 38 * (i - sh_idx - 1)) <= rdata(i);
+                                for i in 0 to 7 loop
+                                    if ( i >= (sh_idx + 1) ) then 
+                                        wdata_reg(38 * (i - sh_idx - 1) + 37 downto 38 * (i - sh_idx - 1)) <= rdata(i);
+                                    end if;
                                 end loop;
                                 wen_reg <= '1';
                             end if;
@@ -210,13 +212,17 @@ begin
                         when hit =>
                             if ( trailer_idx /= 8 ) then
                                 merge_state <= get_tr;
-                                for i in 0 to trailer_idx - 1 loop
-                                    wdata(38 * i + 37 downto 38 * i) <= rdata(i);
+                                for i in 0 to 7 loop
+                                    if ( i <= trailer_idx - 1 ) then
+                                        wdata(38 * i + 37 downto 38 * i) <= rdata(i);
+                                    end if;
                                 end loop;
                             elsif ( sh_idx /= 8 ) then
                                 merge_state <= get_sh;
-                                for i in 0 to sh_idx - 1 loop
-                                    wdata(38 * i + 37 downto 38 * i) <= rdata(i);
+                                for i in 0 to 7 loop
+                                    if ( i <= sh_idx - 1 ) then 
+                                        wdata(38 * i + 37 downto 38 * i) <= rdata(i);
+                                    end if;
                                 end loop;
                             else
                                 for i in 0 to 7 loop
@@ -248,7 +254,7 @@ begin
         DEVICE => "Arria 10"--,
     )
     port map (
-        q               => o_q,
+        q               => fifo_q,
         empty           => o_rempty,
         rdreq           => i_ren,
         data            => wdata,
@@ -258,9 +264,10 @@ begin
         clock           => i_clk--,
     );
     
-    o_header    <= '1' when o_q(37 downto 32) = pre_marker else '0';
-    o_trailer   <= '1' when o_q(37 downto 32) = tr_marker else '0';
-    o_q_debug   <= o_q(31 downto 0);
-    link_number <= o_q(37 downto 32);
+    o_header    <= '1' when fifo_q(37 downto 32) = pre_marker else '0';
+    o_trailer   <= '1' when fifo_q(37 downto 32) = tr_marker else '0';
+    o_q         <= fifo_q;
+    o_q_debug   <= fifo_q(31 downto 0);
+    link_number <= fifo_q(37 downto 32);
 
 end architecture;

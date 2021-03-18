@@ -28,6 +28,7 @@ package a10_pcie_registers is
 		constant RESET_BIT_DDR3									:  integer := 19;
 		constant RESET_BIT_DATAFLOW							    :  integer := 20;
         constant RESET_BIT_LINK_MERGER							:  integer := 21;
+        constant RESET_BIT_DATA_PATH							:  integer := 22;
 		constant RESET_BIT_PCIE									:  integer := 31;
 
 		constant DATAGENERATOR_REGISTER_W					    : integer := 16#02#;

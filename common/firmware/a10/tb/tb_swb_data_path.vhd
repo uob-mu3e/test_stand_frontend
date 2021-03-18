@@ -28,8 +28,8 @@ architecture arch of tb_swb_data_path is
 
     signal counter : work.util.slv32_array_t(5+(g_NLINKS_TOTL*3)-1 downto 0);
     
-    signal farm_data : std_logic_vector (g_NLINKS_FARM * 32 - 1  downto 0);
-    signal farm_datak : std_logic_vector (g_NLINKS_FARM * 4 - 1  downto 0);
+    signal farm_data : work.util.slv32_array_t(g_NLINKS_FARM - 1  downto 0);
+    signal farm_datak : work.util.slv4_array_t(g_NLINKS_FARM - 1  downto 0);
     signal fram_wen, dma_wren, dma_done, endofevent : std_logic;
     signal dma_data : std_logic_vector (255 downto 0);
     signal mask_n : std_logic_vector(63 downto 0);
@@ -52,6 +52,7 @@ begin
     --! 1            | 0          | 0          | 1        | 0              | 0        | n                           | Generate data for all 64 links, readout link n via DAM                         | x
     --! 1            | 1          | 0          | 0        | 0              | 0        | -                           | Generate data for all 64 links, simple merging of links, readout via DAM       | x
     --! 1            | 0          | 1          | 0        | 0              | 0        | -                           | Generate data for all 64 links, time merging of links, readout via DAM         | x
+    --! 0            | 0          | 0          | 0        | 1              | 1        | -                           | Generate time merged data, send to farm                                        | x
     resets_n_156(RESET_BIT_DATAGEN)                             <= '0', '1' after (1.0 us / CLK_MHZ);
     writeregs_156(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
     writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_LINK)   <= '1';

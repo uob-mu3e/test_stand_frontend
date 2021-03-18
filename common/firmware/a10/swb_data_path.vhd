@@ -49,8 +49,8 @@ port(
 
     i_dmamemhalffull : in  std_logic;
     
-    o_farm_data      : out std_logic_vector (g_NLINKS_FARM * 32 - 1  downto 0);
-    o_farm_datak     : out std_logic_vector (g_NLINKS_FARM * 4 - 1  downto 0);
+    o_farm_data      : out work.util.slv32_array_t(g_NLINKS_FARM - 1  downto 0);
+    o_farm_datak     : out work.util.slv4_array_t(g_NLINKS_FARM - 1  downto 0);
     o_fram_wen       : out std_logic;
 
     o_dma_wren       : out std_logic;
@@ -75,10 +75,9 @@ architecture arch of swb_data_path is
     --! data link signals
     signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
     signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_mask_n, rx_rdempty : std_logic_vector (g_NLINKS_TOTL - 1 downto 0); 
-    signal rx_ren, rx_ren_link : std_logic_vector (g_NLINKS_TOTL - 1 downto 0) := (others => '0');
-    signal rx_q : work.util.slv38_array_t(g_NLINKS_TOTL - 1 downto 0);
-    signal sop, eop, shop : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
+    signal rx_ren, rx_ren_link, rx_mask_n, rx_rdempty : std_logic_vector (g_NLINKS_TOTL - 1 downto 0) := (others => '0');
+    signal rx_q : work.util.slv38_array_t(g_NLINKS_TOTL - 1 downto 0) := (others => (others => '0'));
+    signal sop, eop, shop : std_logic_vector(g_NLINKS_TOTL-1 downto 0) := (others => '0');
 
     --! stream merger
     signal stream_rdata : std_logic_vector(31 downto 0);
@@ -98,7 +97,9 @@ architecture arch of swb_data_path is
     signal builder_counters : work.util.slv32_array_t(3 downto 0);
     signal builder_rempty, builder_rack, builder_header, builder_trailer : std_logic;
 
-    --! links to farm 
+    --! links to farm
+    signal merged_farm_data : std_logic_vector (g_NLINKS_FARM * 32 - 1  downto 0);
+    signal merged_farm_datak : std_logic_vector (g_NLINKS_FARM * 4 - 1  downto 0);
     signal farm_data : std_logic_vector(W-1 downto 0);
     signal farm_rack, farm_rempty : std_logic;
 
@@ -141,8 +142,8 @@ begin
         enable_pix          => i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_LINK),
         i_dma_half_full     => i_dmamemhalffull,
         random_seed         => (others => '1'),
-        i_go_to_sh          => x"00000003",
-        i_go_to_trailer     => x"00000002",
+        i_go_to_sh          => x"00000006",
+        i_go_to_trailer     => x"00000008",
         data_pix_generated  => gen_link,
         datak_pix_generated => gen_link_k,
         data_pix_ready      => open,
@@ -397,8 +398,14 @@ begin
         o_ren       => farm_rack,
         o_wen       => o_fram_wen,
 
-        o_data      => o_farm_data,
-        o_datak     => o_farm_datak--,
+        o_data      => merged_farm_data,
+        o_datak     => merged_farm_datak--,
     );
+
+    gen_farm_out : FOR i in 0 to g_NLINKS_FARM - 1 GENERATE
+        o_farm_data(i)  <= merged_farm_data(32 * i + 31 downto 32 * i);
+        o_farm_datak(i) <= merged_farm_datak(4 * i + 3 downto 4 * i);
+    END GENERATE gen_farm_out;
+
 
 end architecture;

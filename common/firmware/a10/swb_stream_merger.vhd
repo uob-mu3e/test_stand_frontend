@@ -102,10 +102,10 @@ begin
     datak   <= q_stream(3 downto 0);
     
     o_wsop <=
-        '1' when datak = "0001" and o_wdata(7 downto 0) = x"BC"
+        '1' when datak = "0001" and q_stream(11 downto 4) = x"BC"
         else '0';
     o_weop <=
-        '1' when datak = "0001" and o_wdata(7 downto 0) = x"9C"
+        '1' when datak = "0001" and q_stream(11 downto 4) = x"9C"
         else '0';
 
 end architecture;
