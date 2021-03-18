@@ -137,13 +137,15 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     e_data_gen_link : entity work.data_generator_a10
+    generic map (
+            go_to_sh => 3,
+            go_to_trailer => 2--,
+        )
     port map (
         reset               => not i_resets_n_156(RESET_BIT_DATAGEN),
         enable_pix          => i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_LINK),
         i_dma_half_full     => i_dmamemhalffull,
         random_seed         => (others => '1'),
-        i_go_to_sh          => x"00000006",
-        i_go_to_trailer     => x"00000008",
         data_pix_generated  => gen_link,
         datak_pix_generated => gen_link_k,
         data_pix_ready      => open,
