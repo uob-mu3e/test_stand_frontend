@@ -294,6 +294,10 @@ var selindex = -1;
 
 function draw(selindex){
     //console.log("Drawing!");
+
+    canvas = document.querySelector('canvas');
+    c = canvas.getContext('2d');
+
 	c.fillStyle = "Silver";
 	c.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -356,7 +360,11 @@ window.addEventListener('click', function(event) {
 })
 
 
-function update_boarddrawing(value) {
+function update_boarddrawing(valuex) {
+
+    var value = valuex;
+    if(typeof valuex === 'string')
+        value = JSON.parse(valuex);
 
     //console.log("Update BD!");
 
