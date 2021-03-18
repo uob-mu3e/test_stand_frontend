@@ -41,8 +41,8 @@ port (
     o_readregs_250       : out work.util.slv32_array_t(63 downto 0);
     o_readregs_156       : out work.util.slv32_array_t(63 downto 0);
 
-    i_resets_n_156       : in  std_logic_vector(31 downto 0);
     i_resets_n_250       : in  std_logic_vector(31 downto 0);
+    i_resets_n_156       : in  std_logic_vector(31 downto 0);
 
     i_wmem_rdata         : in  std_logic_vector(31 downto 0);
     o_wmem_addr          : out std_logic_vector(15 downto 0);

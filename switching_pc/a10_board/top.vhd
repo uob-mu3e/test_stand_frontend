@@ -340,14 +340,14 @@ begin
         o_tx            => tx_data,
         o_tx_k          => tx_datak,
 
-        i_writeregs_250 => pcie0_writeregs_156,
-        i_writeregs_156 => pcie0_writeregs_250,
+        i_writeregs_250 => pcie0_writeregs_250,
+        i_writeregs_156 => pcie0_writeregs_156,
     
-        o_readregs_250  => pcie0_readregs_156,
-        o_readregs_156  => pcie0_readregs_250,
+        o_readregs_250  => pcie0_readregs_250,
+        o_readregs_156  => pcie0_readregs_156,
 
-        i_resets_n_156  => pcie0_resets_n_156,
         i_resets_n_250  => pcie0_resets_n_250,
+        i_resets_n_156  => pcie0_resets_n_156,
 
         i_wmem_rdata    => writememreaddata,
         o_wmem_addr     => writememreadaddr,
