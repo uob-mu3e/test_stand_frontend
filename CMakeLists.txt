@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(mu3e_online VERSION 0.10 LANGUAGES CXX)
+project(mu3e_online VERSION 0.11 LANGUAGES CXX)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "" FORCE)
@@ -76,15 +76,14 @@ set(ENV{MIDAS_EXP_NAME} "")
 # on some older boxes, wpedantic and MIDAS do not mix
 add_subdirectory(modules)
 add_subdirectory(backend_pc)
-add_subdirectory(common/kerneldriver)
-add_subdirectory(common/libmudaq)
-add_subdirectory(common/libmupix)
-add_subdirectory(common/libmutrig)
-add_subdirectory(common/libMALIBU)
-add_subdirectory(switching_pc/midas_fe)
-add_subdirectory(switching_pc/midas_fe_scifi)
-add_subdirectory(switching_pc/midas_fe_Tile)
-add_subdirectory(switching_pc/midas_fe_pixels)
+add_subdirectory(common)
+#add_subdirectory(common/kerneldriver)
+#add_subdirectory(common/libmudaq)
+#add_subdirectory(common/libmupix)
+#add_subdirectory(common/libmutrig)
+#add_subdirectory(common/libMALIBU)
+add_subdirectory(switching_pc)
+
 
 if(APPLE)
     message("Compile for Apple")

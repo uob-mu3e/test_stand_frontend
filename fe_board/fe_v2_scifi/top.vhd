@@ -5,9 +5,10 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
-use work.cmp.all;
+
+use work.mudaq.all;
 
 entity top is 
     port (
@@ -26,39 +27,17 @@ entity top is
         clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
         spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-        -- Block A: Connections for three chips -- layer 0
-        clock_A                     : out   std_logic;
-        data_in_A                   : in    std_logic_vector(9 downto 1);
-        fast_reset_A                : out   std_logic;
-        SIN_A                       : out   std_logic;
-
-        -- Block B: Connections for three chips -- layer 0
-        clock_B                     : out   std_logic;
-        data_in_B                   : in    std_logic_vector(9 downto 1);
-        fast_reset_B                : out   std_logic;
-        SIN_B                       : out   std_logic;
-
-        -- Block C: Connections for three chips -- layer 1
-        clock_C                     : out   std_logic;
-        data_in_C                   : in    std_logic_vector(9 downto 1);
-        fast_reset_C                : out   std_logic;
-        SIN_C                       : out   std_logic;
-
-        -- Block D: Connections for three chips -- layer 1
-        clock_D                     : out   std_logic;
-        data_in_D                   : in    std_logic_vector(9 downto 1);
-        fast_reset_D                : out   std_logic;
-        SIN_D                       : out   std_logic;
-
-        -- Block E: Connections for three chips -- layer 1
-        clock_E                     : out   std_logic;
-        data_in_E                   : in    std_logic_vector(9 downto 1);
-        fast_reset_E                : out   std_logic;
-        SIN_E                       : out   std_logic;
-
-        -- Extra signals
-        clock_aux                   : out   std_logic;
-        spare_out                   : out   std_logic_vector(3 downto 2);
+        scifi_csn                   : out   std_logic_vector(4 downto 1);
+        scifi_cec_cs                : out   std_logic_vector(4 downto 1);
+        scifi_cec_sdo               : out   std_logic;
+        scifi_fifo_ext              : out   std_logic;
+        scifi_inject                : out   std_logic;
+        scifi_syncres               : out   std_logic;
+        scifi_spi_sclk              : out   std_logic;
+        scifi_spi_miso              : in    std_logic;
+        scifi_spi_mosi              : out   std_logic;
+        scifi_din                   : in    std_logic_vector(4 downto 1);
+        scifi_bidir_test            : inout std_logic;
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -119,21 +98,103 @@ entity top is
         max10_spi_miso              : inout std_logic;
         max10_spi_D1                : inout std_logic;
         max10_spi_D2                : inout std_logic;
-        max10_spi_D3                : out   std_logic;
+        max10_spi_D3                : inout std_logic;
         max10_spi_csn               : out   std_logic
         );
 end top;
 
 architecture rtl of top is
- 
+
     -- Debouncers
     signal pb_db                : std_logic_vector(1 downto 0);
 
+    constant N_LINKS                : integer := 1;
+    constant N_ASICS                : integer := 4;
+    constant N_MODULES              : integer := 1;
+
+    signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
+    signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
+
+    signal malibu_reg               : work.util.rw_t;
+
+    signal run_state_125            : run_state_t;
+    signal run_state_156            : run_state_t;
+    signal ack_run_prep_permission  : std_logic;
+    signal common_fifos_almost_full : std_logic_vector(N_LINKS-1 downto 0);
+    signal s_run_state_all_done     : std_logic;
+    signal s_MON_rxrdy              : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
+
 begin
+-- TODO: this is a dummy-copy from tile firmware, changes for scifi ?? M. Mueller
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+---- SciFi SUB-DETECTOR FIRMWARE -----------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+
+    -- do not compile away 
+    scifi_csn                   <= (others => pb_db(0));
+    scifi_cec_cs                <= (others => pb_db(0));
+    scifi_cec_sdo               <= pb_db(0);
+    scifi_fifo_ext              <= pb_db(0);
+    scifi_inject                <= pb_db(0);
+    scifi_syncres               <= pb_db(0);
+    scifi_spi_sclk              <= pb_db(0);
+    lcd_data(5)                 <= scifi_spi_miso;
+    scifi_spi_mosi              <= pb_db(0);
+
+    e_tile_path : entity work.scifi_path
+    generic map (
+        IS_SCITILE      => '0',
+        N_MODULES       => N_MODULES,
+        N_ASICS         => N_ASICS,
+        N_LINKS         => N_LINKS,
+        INPUT_SIGNFLIP  => x"FFFFFFFF", --changed this from "11111111" was this intended ? M.Mueller
+        LVDS_PLL_FREQ   => 125.0,
+        LVDS_DATA_RATE  => 1250.0--,
+    )
+    port map (
+        i_reg_addr                  => malibu_reg.addr(3 downto 0),
+        i_reg_re                    => malibu_reg.re,
+        o_reg_rdata                 => malibu_reg.rdata,
+        i_reg_we                    => malibu_reg.we,
+        i_reg_wdata                 => malibu_reg.wdata,
+
+        o_chip_reset                => scifi_syncres,
+        o_pll_test                  => open,
+        i_data                      => scifi_din,
+
+        io_i2c_sda                  => scifi_bidir_test,
+        io_i2c_scl                  => open,
+        i_cec                       => '0',
+        i_spi_miso                  => '0',
+        i_i2c_int                   => '0',
+        o_pll_reset                 => open,
+        o_spi_scl                   => open,
+        o_spi_mosi                  => open,
+
+        o_fifo_write                => fifo_write,
+        o_fifo_wdata                => fifo_wdata,
+
+        i_common_fifos_almost_full  => common_fifos_almost_full,
+
+        i_run_state                 => run_state_125,
+        o_run_state_all_done        => s_run_state_all_done,
+
+        o_MON_rxrdy                 => s_MON_rxrdy,
+
+        i_clk_core                  => transceiver_pll_clock(0),
+        i_clk_g125                  => lvds_firefly_clk,
+        i_clk_ref_A                 => LVDS_clk_si1_fpga_A,
+        i_clk_ref_B                 => LVDS_clk_si1_fpga_B,
+
+        o_test_led                  => lcd_data(4),
+        i_reset                     => not pb_db(0)--,
+    );
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------
-----INSERT SUB-DETECTOR FIRMWARE HERE ------------------------------
+---- COMMON FIRMWARE PART ------------------------------------------
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 
@@ -193,38 +254,26 @@ begin
         i_ffly1_lvds_rx     => firefly1_lvds_rx_in,
         i_ffly2_lvds_rx     => firefly2_lvds_rx_in,
 
-        i_fifo_write        => (others => '0'), -- TODO in "Not-Dummy": connect to detector-block
-        i_fifo_wdata        => (others => '0'), -- TODO in "Not-Dummy": connect to detector-block
+        i_fifo_write        => fifo_write,
+        i_fifo_wdata        => fifo_wdata, -- TODO in "Not-Dummy": connect to detector-block
 
         i_mscb_data         => mscb_fpga_in,
         o_mscb_data         => mscb_fpga_out,
         o_mscb_oe           => mscb_fpga_oe_n,
 
-        o_max10_spi_sclk    => max10_spi_sclk,
+        o_max10_spi_sclk    => max10_spi_miso, --max10_spi_sclk, Replacement, due to broken line
         io_max10_spi_mosi   => max10_spi_mosi,
-        io_max10_spi_miso   => max10_spi_miso,
+        io_max10_spi_miso   =>'Z',
         io_max10_spi_D1     => max10_spi_D1,
         io_max10_spi_D2     => max10_spi_D2,
-        o_max10_spi_D3      => max10_spi_D3,
+        io_max10_spi_D3     => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_mupix_reg_addr    => open, -- TODO in "Not-Dummy": connect to detector-block
-        o_mupix_reg_re      => open,
-        i_mupix_reg_rdata   => X"CCCCCCCC",
-        o_mupix_reg_we      => open,
-        o_mupix_reg_wdata   => open,
-
-        o_malibu_reg_addr   => open, -- TODO in "Not-Dummy": connect to detector-block
-        o_malibu_reg_re     => open,
-        i_malibu_reg_rdata  => X"CCCCCCCC",
-        o_malibu_reg_we     => open,
-        o_malibu_reg_wdata  => open,
-
-        o_scifi_reg_addr    => open, -- TODO in "Not-Dummy": connect to detector-block
-        o_scifi_reg_re      => open,
-        i_scifi_reg_rdata   => X"CCCCCCCC",
-        o_scifi_reg_we      => open,
-        o_scifi_reg_wdata   => open,
+        o_subdet_reg_addr   => malibu_reg.addr(7 downto 0),
+        o_subdet_reg_re     => malibu_reg.re,
+        i_subdet_reg_rdata  => malibu_reg.rdata,
+        o_subdet_reg_we     => malibu_reg.we,
+        o_subdet_reg_wdata  => malibu_reg.wdata,
         
         -- reset system
         o_run_state_125     => open,      -- TODO in "Not-Dummy": connect to detector-block
@@ -236,7 +285,6 @@ begin
         i_clk_156           => transceiver_pll_clock(0),
         o_clk_156_mon       => lcd_data(1),
         i_clk_125           => lvds_firefly_clk,
-        o_clk_125_mon       => lcd_data(2),
 
         i_areset_n          => pb_db(0),
         

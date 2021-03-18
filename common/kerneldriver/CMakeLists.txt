@@ -2,12 +2,8 @@ cmake_minimum_required(VERSION 3.8)
 
 project(mudaq-driver LANGUAGES C CXX)
 
-file(GLOB MODULE_SOURCES
-    mudaq.c
-    *.h
-    dmabuf/*.h
-    ../include/*.h
-)
+set(MODULE_SOURCES mudaq.c mudaq.h mudaq_fops.h)
+
 
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dmabuf/cmake")
 find_package(kmodule REQUIRED)

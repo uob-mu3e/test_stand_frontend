@@ -13,7 +13,8 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
-use work.mutrig_constants.all;
+use work.mutrig.all;
+
 
 entity framebuilder_mux is
 generic(

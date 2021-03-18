@@ -7,6 +7,7 @@ use IEEE.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use IEEE.numeric_std.all;
 
+
 entity spi_config_dummy is
 generic (
 	N_BITS : integer:=2357; -- for MuTRiG1
@@ -23,7 +24,7 @@ port (
 end spi_config_dummy;
 
 
-architecture RTL of spi_config_dummy is
+architecture arch of spi_config_dummy is
 
 signal shiftregister : std_logic_vector(N_BITS downto 0);
 begin

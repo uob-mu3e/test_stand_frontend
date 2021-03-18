@@ -6,8 +6,6 @@ set_global_assignment -name PROJECT_IP_REGENERATION_POLICY SKIP_REGENERATING_IP_
 
 
 
-set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/altera/pre_flow_a5.tcl"
-
 set_global_assignment -name QIP_FILE ../fe/top_FEB_v2.qip
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../fe/assignments/FE_v2_mupix_2020.tcl
 
@@ -16,6 +14,7 @@ set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
 
 set_global_assignment -name QIP_FILE generated/include.qip
+set_global_assignment -name QIP_FILE registers/include.qip
 
 set_global_assignment -name QIP_FILE ../firmware/FEB_common/include_FEB_v2.qip
 set_global_assignment -name QIP_FILE ../firmware/FEB_mupix/include.qip
@@ -29,10 +28,3 @@ set_global_assignment -name VHDL_FILE ../fe_mupix/two_clk_sync_fifo.vhd
 
 # tail
 
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
-set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-
-
-
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

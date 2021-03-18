@@ -1,9 +1,1 @@
-ip_alt_xcvr_reconfig.vhd
-ip_altera_xcvr_reset_control.vhd
-ip_altera_xcvr_native_av.vhd
-ip_alt_xcvr_reconfig/
-ip_alt_xcvr_reconfig_sim/
-ip_altera_xcvr_native_av/
-ip_altera_xcvr_native_av_sim/
-ip_altera_xcvr_reset_control/
-ip_altera_xcvr_reset_control_sim/
+#

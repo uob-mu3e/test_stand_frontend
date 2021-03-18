@@ -8,7 +8,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
-use work.mudaq_registers.all;
+use work.feb_sc_registers.all;
 
 entity mutrig_reset is 
   port(

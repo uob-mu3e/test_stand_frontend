@@ -33,8 +33,11 @@ ifeq ($(APP_DIR),)
     APP_DIR := $(PREFIX)/software/app
 endif
 
-QSYS_FILES := $(patsubst %.tcl,$(PREFIX)/%.qsys,$(IPs))
+QSYS_TCL_FILES := $(filter %.tcl,$(IPs))
+QSYS_FILES := $(patsubst %.tcl,$(PREFIX)/%.qsys,$(QSYS_TCL_FILES))
 SOPC_FILES := $(patsubst %.qsys,%.sopcinfo,$(QSYS_FILES))
+QMEGAWIZ_XML_FILES := $(filter %.vhd.qmegawiz,$(IPs))
+QMEGAWIZ_VHD_FILES := $(patsubst %.vhd.qmegawiz,$(PREFIX)/%.vhd,$(QMEGAWIZ_XML_FILES))
 
 all : $(PREFIX)/include.qip
 
@@ -42,24 +45,29 @@ $(PREFIX) :
 	mkdir -pv $(PREFIX)
 	[ -e $(PREFIX)/util ] || ln -snv --relative -T util $(PREFIX)/util
 
-.PHONY : $(PREFIX)/componets_pkg.vhd
-$(PREFIX)/componets_pkg.vhd : $(PREFIX) $(SOPC_FILES)
+.PHONY : $(PREFIX)/components_pkg.vhd
+$(PREFIX)/components_pkg.vhd : $(PREFIX) $(SOPC_FILES) $(QMEGAWIZ_VHD_FILES)
 	( cd $(PREFIX) ; ./util/altera/components_pkg.sh )
 
-$(PREFIX)/include.qip : $(PREFIX)/componets_pkg.vhd $(QSYS_FILES)
+$(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
+	# components package
 	echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"components_pkg.vhd\" ]" > $@
-	for ip in $(QSYS_FILES) ; do \
-	    echo "set_global_assignment -name QSYS_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$ip)\" ]" >> $@ ; \
+	# add qsys *.qsys files
+	for file in $(QSYS_FILES) ; do \
+	    echo "set_global_assignment -name QSYS_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file)\" ]" >> $@ ; \
+	done
+	# add qmegawiz *.qip files
+	for file in $(patsubst %.vhd,%.qip,$(QMEGAWIZ_VHD_FILES)) ; do \
+	    echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file)\" ]" >> $@ ; \
 	done
 
-.PRECIOUS : %.qip %.sip
-ip_%.qip : ip_%.v
-#	qmegawiz -silent OPTIONAL_FILES=NONE ip_$*.v
-	qmegawiz -silent ip_$*.v
-#	sed -r 's/ +/ /g' -i ip_$*.v
-	touch ip_$*.qip
+device.tcl :
+	touch $@
 
-$(PREFIX)/%.qsys : %.tcl
+$(PREFIX)/%.vhd : %.vhd.qmegawiz
+	./util/altera/qmegawiz.sh $< $@
+
+$(PREFIX)/%.qsys : %.tcl device.tcl
 	./util/altera/tcl2qsys.sh $< $@
 
 $(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys

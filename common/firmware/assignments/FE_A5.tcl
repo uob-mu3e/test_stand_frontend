@@ -142,8 +142,6 @@ set_instance_assignment -name DQ_GROUP 4 -from "chipclocks:cc|clockshift:\\gensh
 set_instance_assignment -name DQ_GROUP 4 -from "chipclocks:cc|clockshift:\\genshifts:2:cs|clockoutbuf:cob|clockoutbuf_iobuf_out_e961:clockoutbuf_iobuf_out_e961_component|obufa" -to "chipclocks:cc|clockshift:\\genshifts:2:cs|clockoutbuf:cob|clockoutbuf_iobuf_out_e961:clockoutbuf_iobuf_out_e961_component|obufa" -disable
 set_instance_assignment -name DQ_GROUP 4 -from "chipclocks:cc|clockshift:\\genshifts:3:cs|clockoutbuf:cob|clockoutbuf_iobuf_out_e961:clockoutbuf_iobuf_out_e961_component|obufa" -to "chipclocks:cc|clockshift:\\genshifts:3:cs|clockoutbuf:cob|clockoutbuf_iobuf_out_e961:clockoutbuf_iobuf_out_e961_component|obufa" -disable
 set_instance_assignment -name DQ_GROUP 4 -from "chipclocks:cc|clockshift:\\genshifts:4:cs|clockoutbuf:cob|clockoutbuf_iobuf_out_e961:clockoutbuf_iobuf_out_e961_component|obufa" -to "chipclocks:cc|clockshift:\\genshifts:4:cs|clockoutbuf:cob|clockoutbuf_iobuf_out_e961:clockoutbuf_iobuf_out_e961_component|obufa" -disable
-set_instance_assignment -name IO_STANDARD LVDS -to spare_out[2]
-set_instance_assignment -name IO_STANDARD LVDS -to spare_out[3]
 set_location_assignment PIN_D25 -to si45_oe_n[0]
 set_location_assignment PIN_K24 -to si45_intr_n[0]
 set_location_assignment PIN_J23 -to si45_lol_n[0]

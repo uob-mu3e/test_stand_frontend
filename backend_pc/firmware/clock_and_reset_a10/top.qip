@@ -1,0 +1,10 @@
+#
+
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
+
+set_global_assignment -name VHDL_FILE top.vhd
+set_global_assignment -name SDC_FILE top.sdc
+
+set_global_assignment -name QIP_FILE util/include.qip
+
+set_global_assignment -name VHDL_FILE xcvr_enh.vhd

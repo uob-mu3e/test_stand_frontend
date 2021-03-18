@@ -14,28 +14,45 @@ derive_pll_clocks
 set_clock_groups -asynchronous -group [get_clocks {altera_reserved_tck}] 
 
 # SPI Input/Output delays flash spi
-set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[0] } 2 [get_ports {flash_io0}]
-set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[0] } 2 [get_ports {flash_io1}]
-set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[0] } 2 [get_ports {flash_io2}]
-set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[0] } 2 [get_ports {flash_io3}]
+set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {flash_io0}]
+set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {flash_io1}]
+set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {flash_io2}]
+set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {flash_io3}]
 
-set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[0] } 0.5 [get_ports {flash_sck}]
-set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[0] } 0.5 [get_ports {flash_csn}]
-set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[0] } 0.5 [get_ports {flash_io0}]
-set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[0] } 0.5 [get_ports {flash_io1}]
-set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[0] } 0.5 [get_ports {flash_io2}]
-set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[0] } 0.5 [get_ports {flash_io3}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -min 5 [get_ports {flash_sck}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -min 5 [get_ports {flash_csn}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -min 5 [get_ports {flash_io0}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -min 5 [get_ports {flash_io1}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -min 5 [get_ports {flash_io2}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -min 5 [get_ports {flash_io3}]
+
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -max 4 [get_ports {flash_sck}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -max 4 [get_ports {flash_csn}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -max 4 [get_ports {flash_io0}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -max 4 [get_ports {flash_io1}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -max 4 [get_ports {flash_io2}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -max 4 [get_ports {flash_io3}]
 
 # SPI Input/Output delays arria spi
 set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_clk}]
+set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_D1}]
+set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_D2}]
 set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_D3}]
 set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_csn}]
+set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_mosi}]
+set_input_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 2 [get_ports {fpga_spi_miso}]
 
-set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 0.5 [get_ports {fpga_spi_mosi}]
-set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 0.5 [get_ports {fpga_spi_miso}]
-set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 0.5 [get_ports {fpga_spi_D1}]
-set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } 0.5 [get_ports {fpga_spi_D2}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -min 5 [get_ports {fpga_spi_mosi}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -min 5 [get_ports {fpga_spi_miso}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -min 5 [get_ports {fpga_spi_D1}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -min 5 [get_ports {fpga_spi_D2}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -min 5 [get_ports {fpga_spi_D3}]
 
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -max 4 [get_ports {fpga_spi_mosi}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -max 4 [get_ports {fpga_spi_miso}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -max 4 [get_ports {fpga_spi_D1}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -max 4 [get_ports {fpga_spi_D2}]
+#set_output_delay -clock { e_pll|altpll_component|auto_generated|pll1|clk[1] } -max 4 [get_ports {fpga_spi_D3}]
 
 
 # Set False Path

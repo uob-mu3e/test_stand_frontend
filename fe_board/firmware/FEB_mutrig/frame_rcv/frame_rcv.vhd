@@ -24,13 +24,11 @@
 ----------------------------------------------------------------------------------
 
 
-Library IEEE;
-use IEEE.STD_LOGIC_1164.all;
-use IEEE.NUMERIC_STD.all;
+Library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
-
-use work.serial_comm_defs.all;
---use work.mutrig_constants.all;
+use work.mutrig.all;
 
 entity frame_rcv is
 	generic (
@@ -60,17 +58,6 @@ entity frame_rcv is
 end entity frame_rcv;
 
 architecture rtl of frame_rcv is
-component crc16_calc is
-	port (
-		i_clk : in std_logic;
-		i_rst : in std_logic;
-		i_d_valid: in std_logic;
-		i_din : in std_logic_vector(7 downto 0);
-		o_crc_reg : out std_logic_vector(15 downto 0);
-		o_crc_8 : out std_logic_vector(7 downto 0)
-	);
-end component; -- crc16_calc;
-
 
 	signal s_o_word				: std_logic_vector(EVENT_DATA_WIDTH-1 downto 0);
 	signal p_word, n_word			: std_logic_vector(N_BYTES_PER_WORD*8 -1 downto 0);
@@ -140,7 +127,7 @@ begin
 			s_o_word(EVENT_DATA_WIDTH-1 downto EVENT_DATA_WIDTH-26) & std_logic_vector(to_unsigned(0,21)) & s_o_word(EVENT_DATA_WIDTH-27);
 
 
-	u_crc16 : crc16_calc --{{{
+	u_crc16 : entity work.crc16_calc --{{{
 	port map(
 		i_clk		=> i_clk,
 		i_rst		=> n_crc_rst,

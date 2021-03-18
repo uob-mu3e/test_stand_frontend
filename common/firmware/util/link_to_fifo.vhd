@@ -3,6 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
+
 entity link_to_fifo is
 generic (
     W : positive := 32--;
@@ -11,7 +12,8 @@ port (
 
     i_link_data  : in std_logic_vector(W-1 downto 0);
     i_link_datak : in std_logic_vector(3 downto 0);
-    i_fifo_almost_full : in std_logic;    
+    i_fifo_almost_full : in std_logic;
+    i_sync_fifo_empty : in std_logic;
 
     o_fifo_data  : out std_logic_vector(W + 3 downto 0);
     o_fifo_wr    : out std_logic;
@@ -49,9 +51,9 @@ begin
         case link_to_fifo_state is 
 
         when idle =>
-            if ( i_link_data = x"000000BC" and i_link_datak = "0001" ) then
+            if ( (i_link_data = x"000000BC" and i_link_datak = "0001") or i_sync_fifo_empty = '1' ) then
                 --
-            elsif ( i_link_data(7 downto 0) = x"BC" and i_link_datak = "0001" ) then
+            elsif ( i_link_data(7 downto 0) = x"BC" and i_link_datak = "0001" and i_sync_fifo_empty = '0' ) then
                 if ( i_fifo_almost_full = '1' ) then
                     link_to_fifo_state <= skip_data;
                     cnt_skip_data <= cnt_skip_data + '1';
@@ -62,18 +64,18 @@ begin
             end if;
 
         when write_data =>
-            if ( i_link_data(7 downto 0) = x"9C" and i_link_datak = "0001" ) then
+            if ( i_link_data(7 downto 0) = x"9C" and i_link_datak = "0001" and i_sync_fifo_empty = '0' ) then
                 link_to_fifo_state <= idle;
             end if;
 
-            if ( i_link_data = x"000000BC" and i_link_datak = "0001" ) then
+            if ( (i_link_data = x"000000BC" and i_link_datak = "0001") or i_sync_fifo_empty = '1' ) then
                 --
             else
                 o_fifo_wr <= '1';
             end if;
 
         when skip_data =>
-            if ( i_link_data(7 downto 0) = x"9C" and i_link_datak = "0001" ) then
+            if ( i_link_data(7 downto 0) = x"9C" and i_link_datak = "0001" and i_sync_fifo_empty = '0' ) then
                 link_to_fifo_state <= idle;
             end if;
 

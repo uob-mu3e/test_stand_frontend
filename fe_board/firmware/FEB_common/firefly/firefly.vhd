@@ -27,7 +27,7 @@ library ieee;
 use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
-use work.daq_constants.all;
+
 
 entity firefly is
     generic(
@@ -184,15 +184,21 @@ begin
     o_Rst_n         <= (others => '1');--DO NOT DO THIS: (others => i_reset_n); !!! Phase will be not fixed
     o_clk_reco      <= lvds_rx_clk;
 
-    o_data_fast_parallel    <= av_rx_data_parallel;
-    o_datak                 <= av_rx_datak;
+    process (i_clk)
+    begin
+        if rising_edge(i_clk) then
+            -- spending a round of registers for timing improvement
+            o_data_fast_parallel    <= av_rx_data_parallel;
+            o_datak                 <= av_rx_datak;
+        end if;    
+    end process;
 
 --------------------------------------------------
 -- transceiver (2)
 --------------------------------------------------
 
 -- 4-channel RX/TX
-    xcvr: entity work.ip_altera_xcvr_native_av
+    xcvr: component work.cmp.ip_altera_xcvr_native_av
     port map(
         --clocks
         tx_pll_refclk(0)        => i_clk,
@@ -244,7 +250,7 @@ begin
     );
     
 -- 4-channel TX
-    xcvr2: entity work.fastlink_small
+    xcvr2: component work.cmp.fastlink_small
     port map(
         --clocks
         tx_pll_refclk(0)        => i_clk,
@@ -308,7 +314,7 @@ begin
 -- reset controller (2)
 --------------------------------------------------
 
-    reset_controller: entity work.ip_altera_xcvr_reset_control
+    reset_controller: component work.cmp.ip_altera_xcvr_reset_control
     port map(
         clock                   => i_sysclk,
         reset                   => not i_reset_n,
@@ -326,7 +332,7 @@ begin
         rx_cal_busy             => rx_cal_busy--,
     );
     
-    reset_controller2: entity work.native_reset_tx
+    reset_controller2: component work.cmp.native_reset_tx
     port map(
         clock                   => i_sysclk,
         reset                   => not i_reset_n,
@@ -343,7 +349,7 @@ begin
 -- reconfig controller (2)
 --------------------------------------------------
 
-    reconfig_controller: entity work.ip_alt_xcvr_reconfig
+    reconfig_controller: component work.cmp.ip_alt_xcvr_reconfig
     port map(
         reconfig_busy             => open,
         mgmt_clk_clk              => i_sysclk,

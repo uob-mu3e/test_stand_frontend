@@ -15,9 +15,9 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
-use work.mupix_constants.all;
-use work.mupix_types.all;
-use work.daq_constants.all;
+
+use work.mupix.all;
+use work.mudaq.all;
 
 LIBRARY altera_mf;
 USE altera_mf.all;
@@ -275,7 +275,7 @@ end process;
 
 -- Memory for the actual sorting
 genmem: for i in NCHIPS-1 downto 0 generate
-	hsmem: entity work.hitsortermem
+	hsmem: entity work.hitsortermem_large
 	PORT MAP
 	(
 		data				=> tomem(i),
