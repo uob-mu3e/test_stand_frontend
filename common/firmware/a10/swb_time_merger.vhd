@@ -195,8 +195,10 @@ begin
                             end if;
                             if ( sh_idx /= 6 and sh_idx /= 8 ) then
                                 for i in 0 to 7 loop
-                                    if ( i >= (sh_idx + 1) ) then 
-                                        wdata_reg(38 * (i - sh_idx - 1) + 37 downto 38 * (i - sh_idx - 1)) <= rdata(i);
+                                    if ( i >= (sh_idx + 1) ) then
+                                        wdata_reg(38 * i + 37 downto 38 * i) <= rdata(i);
+                                    else
+                                        wdata_reg(38 * i + 37 downto 38 * i) <= tree_padding;
                                     end if;
                                 end loop;
                                 wen_reg <= '1';
@@ -213,15 +215,19 @@ begin
                             if ( trailer_idx /= 8 ) then
                                 merge_state <= get_tr;
                                 for i in 0 to 7 loop
-                                    if ( i <= trailer_idx - 1 ) then
+                                    if ( i <= (trailer_idx - 1) ) then
                                         wdata(38 * i + 37 downto 38 * i) <= rdata(i);
+                                    else
+                                        wdata(38 * i + 37 downto 38 * i) <= tree_padding;
                                     end if;
                                 end loop;
                             elsif ( sh_idx /= 8 ) then
                                 merge_state <= get_sh;
                                 for i in 0 to 7 loop
-                                    if ( i <= sh_idx - 1 ) then 
+                                    if ( i <= (sh_idx - 1) ) then 
                                         wdata(38 * i + 37 downto 38 * i) <= rdata(i);
+                                    else
+                                        wdata(38 * i + 37 downto 38 * i) <= tree_padding;
                                     end if;
                                 end loop;
                             else

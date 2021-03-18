@@ -144,7 +144,7 @@ begin
     port map (
         reset               => not i_resets_n_156(RESET_BIT_DATAGEN),
         enable_pix          => i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_LINK),
-        i_dma_half_full     => i_dmamemhalffull,
+        i_dma_half_full     => '0',
         random_seed         => (others => '1'),
         data_pix_generated  => gen_link,
         datak_pix_generated => gen_link_k,
