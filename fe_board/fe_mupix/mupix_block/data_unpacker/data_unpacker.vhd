@@ -40,14 +40,15 @@ entity data_unpacker is
         o_col               : out std_logic_vector(7 downto 0);
         o_tot               : out std_logic_vector(5 downto 0);
         o_hit_ena           : out std_logic;
-        coarsecounter       : out std_logic_vector(COARSECOUNTERSIZE-1 downto 0); -- Gray Counter[7:0] & Binary Counter [23:0]
-        coarsecounter_ena   : out std_logic;
-        link_flag           : out std_logic;
         errorcounter        : out std_logic_vector(31 downto 0)
     );
 end data_unpacker;
 
 architecture RTL of data_unpacker is
+
+    signal coarsecounter        : std_logic_vector(COARSECOUNTERSIZE-1 downto 0); -- Gray Counter[7:0] & Binary Counter [23:0]
+    signal coarsecounter_ena    : std_logic;
+    signal link_flag            : std_logic;
 
     type state_type is (IDLE, ERROR, COUNTER, LINK, DATA);
     signal NS                   : state_type;
@@ -207,6 +208,7 @@ begin
             link_flag           <= link_flag_reg;
 
             coarsecounter       <= data_i(7 downto 0) & data_i(31 downto 8); -- gray counter & binary counter
+
             if(hit_reg = '1')then
                 -- The data arrives from MuPix10: TS2[4:0] TS1[10:0] Col[6:0] Row[8:0]
                     -- TS2 = data_i(31 downto 27)
@@ -314,6 +316,20 @@ begin
         end if;
 
     end process;
+
+    e_mp_sc_rm: mp_sc_removal
+    port map(
+        i_reset_n               => reset_n,
+        i_clk                   => clk, 
+        i_sc_active             => '1',
+        i_new_block             => link_flag,
+        i_hit                   => hit_out_i,
+        i_hit_ena               => hit_ena_i,
+        i_coarsecounters_ena    => coarsecounter_ena,
+        o_hit                   => hit_out_o,
+        o_hit_ena               => hit_ena_o--,
+    );
+
 
     degray_single : work.hit_ts_conversion
     port map(

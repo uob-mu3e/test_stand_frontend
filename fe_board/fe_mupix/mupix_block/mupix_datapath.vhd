@@ -85,22 +85,7 @@ architecture rtl of mupix_datapath is
     signal hits_sorter_in           : hit_array;
     signal hits_sorter_in_ena       : std_logic_vector(11 downto 0);
 
-
     signal running                  : std_logic;
-
-    -- flag to indicate link, after unpacker
-    signal link_flag                : std_logic_vector(11 downto 0);
-
-    -- link flag is pipelined once because hits are gray decoded
-    signal link_flag_del            : std_logic_vector(11 downto 0);
-
-    -- counter + flag to indicate word as a counter, after unpacker
-    signal coarsecounters           : std_logic_vector(12*COARSECOUNTERSIZE-1 downto 0);
-    signal coarsecounters_ena       : std_logic_vector(11 downto 0);
-
-    -- counter is pipelined once because hits are gray decoded
-    signal coarsecounters_del       : std_logic_vector(12*COARSECOUNTERSIZE-1 downto 0);
-    signal coarsecounters_ena_del   : std_logic_vector(11 downto 0);
 
     -- error signal output from unpacker
     signal unpack_errorcounter      : work.util.slv32_array_t(35 downto 0);
@@ -213,9 +198,6 @@ begin
         o_col               => col_unpacker(i),
         o_tot               => tot_unpacker(i),
         o_hit_ena           => hits_ena_unpacker(i),
-        coarsecounter       => open,--coarsecounters((i+1)*COARSECOUNTERSIZE-1 downto i*COARSECOUNTERSIZE),
-        coarsecounter_ena   => open,--coarsecounters_ena(i),
-        link_flag           => open,--link_flag(i),
         errorcounter        => unpack_errorcounter(i) -- could be useful!
     );
 
@@ -236,19 +218,6 @@ begin
          end if;
        end if;
     end process;
-
-    -- delay cc by one cycle to be in line with hit
-    -- Seb: new degray - back to one
-    
-    -- TODO: Should this be in use somewhere ?
-    --    process(i_clk125)
-    --    begin
-    --        if(i_clk125'event and i_clk125 = '1') then
-    --            coarsecounters_del      <= coarsecounters;
-    --            coarsecounters_ena_del  <= coarsecounters_ena;
-    --            link_flag_del           <= link_flag;
-    --        end if;
-    --    end process;
 
     process(i_clk125, reset_125_n)
     begin
