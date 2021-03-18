@@ -80,8 +80,8 @@ begin
         g_NLINKS_FARM           => g_NLINKS_FARM,
         g_NLINKS_DATA           => g_NLINKS_DATA,
         LINK_FIFO_ADDR_WIDTH    => 8,
-        TREE_w                  => 7,
-        TREE_r                  => 7,
+        TREE_w                  => 10,
+        TREE_r                  => 10,
         SWB_ID                  => x"01",
         -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
         DATA_TYPE               => x"01"--;

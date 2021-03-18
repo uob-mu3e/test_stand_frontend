@@ -364,7 +364,7 @@ begin
         fifo_empty_0(i) <= fifo_empty_0_reg(i);
     end if;
     end process;
-    END GENERATE tree_layer_first;
+    END GENERATE;
 
     merger_state_signal <= '1' when merge_state = merge_hits else '0';
     

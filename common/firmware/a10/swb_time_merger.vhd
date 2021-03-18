@@ -47,14 +47,14 @@ architecture arch of swb_time_merger is
     signal rempty, wfull, ren, wen, wen_reg : std_logic;
     signal link_number : std_logic_vector(5 downto 0);
 
-    type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit, get_tr);
+    type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit, delay, get_tr);
     signal merge_state : merge_state_type;
 
-    signal header_idx  : integer range 0 to 4 := 4;
-    signal trailer_idx : integer range 0 to 4 := 4;
-    signal ts1_idx     : integer range 0 to 4 := 4;
-    signal ts2_idx     : integer range 0 to 4 := 4;
-    signal sh_idx      : integer range 0 to 4 := 4;
+    signal header_idx  : integer range 0 to 8 := 8;
+    signal trailer_idx : integer range 0 to 8 := 8;
+    signal ts1_idx     : integer range 0 to 8 := 8;
+    signal ts2_idx     : integer range 0 to 8 := 8;
+    signal sh_idx      : integer range 0 to 8 := 8;
 
 begin
 
@@ -97,6 +97,7 @@ begin
         i_clk                   => i_clk--,
     );
 
+
     --! map data for time_merger
     generate_rdata : for i in 0 to g_NLINKS_FARM-1 generate
         rdata(i) <= rdata_s(38 * i + 37 downto i * 38);
@@ -105,45 +106,47 @@ begin
 
     --! check for error
     --! TODO: handle errors, at the moment they are sent out at the end of normal events
-    o_error     <=  '1' when (rdata( 37 downto  32) = err_marker) else
-                    '1' when (rdata(113 downto 108) = err_marker) else
-                    '1' when (rdata(189 downto 184) = err_marker) else
-                    '1' when (rdata(265 downto 260) = err_marker)
+    o_error     <=  '1' when (rdata(0)(37 downto 32) = err_marker) else
+                    '1' when (rdata(2)(37 downto 32) = err_marker) else
+                    '1' when (rdata(4)(37 downto 32) = err_marker) else
+                    '1' when (rdata(6)(37 downto 32) = err_marker)
                     else '0';
 
-    -- search header in 256 bit
-    header_idx  <=  0 when (rdata( 37 downto  32) = pre_marker) else
-                    1 when (rdata(113 downto 108) = pre_marker) else
-                    2 when (rdata(189 downto 184) = pre_marker) else
-                    3 when (rdata(265 downto 260) = pre_marker)
-                    else 4;
-    ts1_idx     <=  0 when (rdata( 37 downto  32) = ts1_marker) else
-                    1 when (rdata(113 downto  76) = ts1_marker) else
-                    2 when (rdata(189 downto 152) = ts1_marker) else
-                    3 when (rdata(265 downto 260) = ts1_marker)
-                    else 4;
-    ts2_idx     <=  0 when (rdata( 37 downto  32) = ts2_marker) else
-                    1 when (rdata(113 downto  76) = ts2_marker) else
-                    2 when (rdata(189 downto 152) = ts2_marker) else
-                    3 when (rdata(265 downto 260) = ts2_marker)
-                    else 4;
-    sh_idx     <=   0 when (rdata( 37 downto  32) = sh_marker) else
-                    1 when (rdata(113 downto  76) = sh_marker) else
-                    2 when (rdata(189 downto 152) = sh_marker) else
-                    3 when (rdata(265 downto 260) = sh_marker)
-                    else 4;
-    trailer_idx <=  0 when (rdata( 37 downto  32) = tr_marker) else
-                    1 when (rdata(113 downto  76) = tr_marker) else
-                    2 when (rdata(189 downto 152) = tr_marker) else
-                    3 when (rdata(265 downto 260) = tr_marker)
-                    else 4;
+    --! search headers in 256 bit
+    header_idx  <=  0 when (rdata(0)(37 downto 32) = pre_marker) else
+                    2 when (rdata(2)(37 downto 32) = pre_marker) else
+                    4 when (rdata(4)(37 downto 32) = pre_marker) else
+                    6 when (rdata(6)(37 downto 32) = pre_marker)
+                    else 8;
+    ts1_idx     <=  0 when (rdata(0)(37 downto 32) = ts1_marker) else
+                    2 when (rdata(2)(37 downto 32) = ts1_marker) else
+                    4 when (rdata(4)(37 downto 32) = ts1_marker) else
+                    6 when (rdata(6)(37 downto 32) = ts1_marker)
+                    else 8;
+    ts2_idx     <=  0 when (rdata(0)(37 downto 32) = ts2_marker) else
+                    2 when (rdata(2)(37 downto 32) = ts2_marker) else
+                    4 when (rdata(4)(37 downto 32) = ts2_marker) else
+                    6 when (rdata(6)(37 downto 32) = ts2_marker)
+                    else 8;
+    sh_idx     <=   0 when (rdata(0)(37 downto 32) = sh_marker) else
+                    2 when (rdata(2)(37 downto 32) = sh_marker) else
+                    4 when (rdata(4)(37 downto 32) = sh_marker) else
+                    6 when (rdata(6)(37 downto 32) = sh_marker)
+                    else 8;
+    trailer_idx <=  0 when (rdata(0)(37 downto 32) = tr_marker) else
+                    2 when (rdata(2)(37 downto 32) = tr_marker) else
+                    4 when (rdata(4)(37 downto 32) = tr_marker) else
+                    6 when (rdata(6)(37 downto 32) = tr_marker)
+                    else 8;
 
-    ren   <= '1' when merge_state = wait_for_pre and header_idx = 4 and rempty = '0' and wfull = '0' else 
-             '1' when merge_state = get_ts_1 and ts1_idx = 4 and rempty = '0' and wfull = '0'  else 
-             '1' when merge_state = get_ts_2 and ts2_idx = 4 and rempty = '0' and wfull = '0'  else
-             '1' when merge_state = get_sh and sh_idx = 4 and rempty = '0' and wfull = '0'  else
-             '1' when merge_state = hit and header_idx = 4 and trailer_idx = 4 and ts1_idx = 4 and ts2_idx = 4 and sh_idx = 4 and rempty = '0' and wen_reg = '0' and wfull = '0'  else 
+    ren   <= '1' when merge_state = wait_for_pre and header_idx = 8 and rempty = '0' and wfull = '0' else 
+             '1' when merge_state = get_ts_1 and ts1_idx = 8 and rempty = '0' and wfull = '0'  else 
+             '1' when merge_state = get_ts_2 and ts2_idx = 8 and rempty = '0' and wfull = '0'  else
+             '1' when merge_state = get_sh and sh_idx = 8 and rempty = '0' and wfull = '0'  else
+             '1' when merge_state = delay and trailer_idx = 8 else
+             '1' when merge_state = hit and header_idx = 8 and trailer_idx = 8 and ts1_idx = 8 and ts2_idx = 8 and sh_idx = 8 and rempty = '0' and wen_reg = '0' and wfull = '0'  else 
              '0';
+
 
     --! read/write data from time merger
     mupix_time_merger : IF DATA_TYPE = x"01" GENERATE
@@ -164,55 +167,68 @@ begin
                 if ( wfull = '0' and rempty = '0' ) then
                     case merge_state is
                         when wait_for_pre =>
-                            if ( header_idx /= 4 ) then
+                            if ( header_idx /= 8 ) then
                                 merge_state <= get_ts_1;
-                                wdata(37 downto 0) <= rdata(76 * header_idx + 37 downto 76 * header_idx);
+                                wdata(37 downto 0) <= rdata(header_idx);
                                 wen <= '1';
                             end if;
 
                         when get_ts_1 =>
-                            if ( ts1_idx /= 4 ) then
+                            if ( ts1_idx /= 8 ) then
                                 merge_state <= get_ts_2;
-                                wdata(37 downto 0) <= rdata(76 * ts1_idx + 37 downto 76 * ts1_idx);
+                                wdata(37 downto 0) <= rdata(ts1_idx);
                                 wen <= '1';
                             end if;
 
                         when get_ts_2 =>
-                            if ( ts2_idx /= 4 ) then
+                            if ( ts2_idx /= 8 ) then
                                 merge_state <= get_sh;
-                                wdata(37 downto 0) <= rdata(76 * ts2_idx + 37 downto 76 * ts2_idx);
+                                wdata(37 downto 0) <= rdata(ts2_idx);
                                 wen <= '1';
                             end if;
 
                         when get_sh =>
-                            if ( sh_idx /= 4 ) then
-                                merge_state <= hit;
-                                wdata(37 downto 0) <= rdata(76 * sh_idx + 37 downto 76 * sh_idx);
+                            if ( sh_idx /= 8 ) then
+                                merge_state <= delay;
+                                wdata(37 downto 0) <= rdata(sh_idx);
                                 wen <= '1';
                             end if;
-                            if ( sh_idx /= 3 and sh_idx /= 4 ) then
-                                wdata_reg(76 * (sh_idx+1) + 37 downto 0) <= rdata(76 * 3 + 37 downto 76 * (sh_idx+1));
+                            if ( sh_idx /= 6 and sh_idx /= 8 ) then
+                                for i in sh_idx + 1 to 7 loop
+                                    wdata_reg(38 * (i - sh_idx - 1) + 37 downto 38 * (i - sh_idx - 1)) <= rdata(i);
+                                end loop;
                                 wen_reg <= '1';
                             end if;
 
-                        when hit =>
+                        when delay =>
                             if ( wen_reg = '1' ) then
                                 wdata <= wdata_reg;
-                            elsif ( trailer_idx /= 4 ) then
+                                wen <= '1';
+                            end if;
+                            merge_state <= hit;
+
+                        when hit =>
+                            if ( trailer_idx /= 8 ) then
                                 merge_state <= get_tr;
-                                wdata(76 * (trailer_idx-1) + 37 downto 0) <= rdata(76 * (trailer_idx-1) + 37 downto 0);
-                            elsif ( sh_idx /= 4 ) then
+                                for i in 0 to trailer_idx - 1 loop
+                                    wdata(38 * i + 37 downto 38 * i) <= rdata(i);
+                                end loop;
+                            elsif ( sh_idx /= 8 ) then
                                 merge_state <= get_sh;
-                                wdata(76 * (sh_idx-1) + 37 downto 0) <= rdata(76 * (sh_idx-1) + 37 downto 0);
+                                for i in 0 to sh_idx - 1 loop
+                                    wdata(38 * i + 37 downto 38 * i) <= rdata(i);
+                                end loop;
                             else
-                                wdata <= rdata;
+                                for i in 0 to 7 loop
+                                    wdata(38 * i + 37 downto 38 * i) <= rdata(i);
+                                end loop;
                             end if;
                             wen <= '1';
 
                         when get_tr =>
-                            if ( trailer_idx /= 4 ) then
+                            if ( trailer_idx /= 8 ) then
                                 merge_state <= wait_for_pre;
-                                wdata(37 downto 0) <= rdata(76 * trailer_idx + 37 downto 76 * trailer_idx);
+                                wdata(37 downto 0) <= rdata(trailer_idx);
                                 wen <= '1';
                             end if;
 
