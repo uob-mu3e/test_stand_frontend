@@ -139,7 +139,7 @@ begin
     e_data_gen_link : entity work.data_generator_a10
     generic map (
             go_to_sh => 3,
-            go_to_trailer => 2--,
+            go_to_trailer => 4--,
         )
     port map (
         reset               => not i_resets_n_156(RESET_BIT_DATAGEN),
