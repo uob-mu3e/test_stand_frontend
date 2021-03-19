@@ -12,6 +12,9 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
+use work.mudaq.all;
+
+
 entity pcie_completer is 
 	port (
 		local_rstn:				in		std_logic;
@@ -30,8 +33,8 @@ entity pcie_completer is
 		
 		
 		-- registers
-		writeregs :				in	work.util.reg32array;
-		readregs :				in work.util.reg32array;
+    writeregs                   : in    reg32array;
+    readregs                    : in    reg32array;
 		
 		-- from register read part
 		rreg_readaddr :			in std_logic_vector(5 downto 0);
@@ -221,7 +224,7 @@ architecture RTL of pcie_completer is
 	--signal mem_done_next:			std_logic;
 	--signal mem_done_after_next:	std_logic;
 	
-	signal writeregs_r:		work.util.reg32array;
+    signal writeregs_r : reg32array;
 	
 	signal tx_st_ready0: 			std_logic;
 	signal readmemnext:				std_logic;

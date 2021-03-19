@@ -4,8 +4,8 @@ use IEEE.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 
-use work.pcie_components.all;
-use work.mudaq_registers.all;
+use work.mudaq.all;
+use work.a10_pcie_registers.all;
 
 entity top is
 port (
@@ -101,6 +101,17 @@ end entity;
 
 architecture rtl of top is
 
+    -- constants
+    constant SWB_ID : std_logic_vector(7 downto 0) := x"01";
+    constant g_NLINKS_FEB_TOTL   : integer := 16;
+    constant g_NLINKS_FARM_TOTL  : integer := 16;
+    constant g_NLINKS_FARM_PIXEL : integer := 8;
+    constant g_NLINKS_DATA_PIXEL : integer := 12;
+    constant g_NLINKS_FARM_SCIFI : integer := 8;
+    constant g_NLINKS_DATA_SCIFI : integer := 12;
+    constant g_NLINKS_FARM_TILE  : integer := 8;
+    constant g_NLINKS_DATA_TILE  : integer := 12;
+
     -- free running clock (used as nios clock)
     signal clk_50 : std_logic;
     signal reset_50_n : std_logic;
@@ -113,27 +124,35 @@ architecture rtl of top is
     signal clk_156 : std_logic;
     signal reset_156_n : std_logic;
 
+    -- 250 MHz pcie clock 
+    signal reset_pcie_n : std_logic;
+
     -- flash
     signal flash_cs_n : std_logic;
 
     -- pcie read / write registers
-    signal pcie0_resets_n_156  : std_logic_vector(31 downto 0);
-    signal pcie0_resets_n_250  : std_logic_vector(31 downto 0);
-    signal pcie0_writeregs_250 : reg32array;
-    signal pcie0_writeregs_156 : reg32array;
-    signal pcie0_readregs_156               : reg32array;
-    signal pcie0_readregs_250           : reg32array;
-               
+    signal pcie0_resets_n_156   : std_logic_vector(31 downto 0);
+    signal pcie0_resets_n_250   : std_logic_vector(31 downto 0);
+    signal pcie0_writeregs_250  : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_writeregs_156  : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_readregs_250   : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_readregs_156   : work.util.slv32_array_t(63 downto 0);
+
+    signal pcie_fastclk_out     : std_logic;
+
     -- pcie read / write memory
-    signal readmem_writedata 	: std_logic_vector(31 downto 0);
-    signal readmem_writeaddr 	: std_logic_vector(63 downto 0);
-    signal readmem_wren	 		: std_logic;
-    signal writememreadaddr 	: std_logic_vector(15 downto 0);
-    signal writememreaddata 	: std_logic_vector(31 downto 0);
+    signal readmem_writedata    : std_logic_vector(31 downto 0);
+    signal readmem_writeaddr    : std_logic_vector(15 downto 0);
+    signal readmem_wren         : std_logic;
+    signal writememreadaddr     : std_logic_vector(15 downto 0);
+    signal writememreaddata     : std_logic_vector(31 downto 0);
 
     -- pcie dma
-    signal dma_data_wren, dmamem_endofevent : std_logic;
+    signal dma_data_wren, dmamem_endofevent, pcie0_dma0_hfull : std_logic;
     signal dma_data : std_logic_vector(255 downto 0);
+
+    signal rx_data_raw, rx_data, tx_data : work.util.slv32_array_t(15 downto 0);
+    signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0);
 
 begin
 
@@ -147,6 +166,10 @@ begin
     --! generate reset for 125 MHz
     e_reset_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_n, i_reset_n => CPU_RESET_n, i_clk => clk_125 );
+    
+    --! generate reset for pcie_fastclk_out
+    e_reset_pcie_n : entity work.reset_sync
+    port map ( o_reset_n => reset_pcie_n, i_reset_n => CPU_RESET_n, i_clk => pcie_fastclk_out );
 
     --! generate and route 125 MHz clock to SMA output
     --! (can be connected to SMA input as global clock)
@@ -203,7 +226,7 @@ begin
         o_spi_ss_n(0)                   => RS422_DE,
 
         -- LED / BUTTONS
-        o_LED                           => LED,
+        o_LED(1)                        => LED(0),
         o_LED_BRACKET                   => LED_BRACKET,
         i_BUTTON                        => BUTTON,
 
@@ -235,7 +258,7 @@ begin
         i_pcie0_dma0_wdata              => dma_data,
         i_pcie0_dma0_we                 => dma_data_wren,
         i_pcie0_dma0_eoe                => dmamem_endofevent,
-        o_pcie0_dma0_hfull              => dmamemhalffull,
+        o_pcie0_dma0_hfull              => pcie0_dma0_hfull,
         i_pcie0_dma0_clk                => pcie_fastclk_out,
 
         -- PCIe0 read interface to writable memory
@@ -264,11 +287,11 @@ begin
         -- resets clk
         o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
-        o_clk_156_hz                    => LED(2)
+        o_clk_156_hz                    => LED(2),
 
         i_reset_125_n                   => reset_125_n,
         i_clk_125                       => clk_125,
-        o_clk_125_hz                    => LED(1)
+        o_clk_125_hz                    => LED(1),
 
         i_reset_n                       => reset_50_n,
         i_clk                           => clk_50--,
@@ -303,50 +326,52 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    entity swb_block is
-    generic (
-        g_NLINKS => 16--;
+    e_swb_block : entity work.swb_block
+    generic map (
+        g_NLINKS_FEB_TOTL       => g_NLINKS_FEB_TOTL,
+        g_NLINKS_FARM_TOTL      => g_NLINKS_FARM_TOTL,
+        g_NLINKS_FARM_PIXEL     => g_NLINKS_FARM_PIXEL,
+        g_NLINKS_DATA_PIXEL     => g_NLINKS_DATA_PIXEL,
+        SWB_ID                  => SWB_ID--,
     )
-    port (
-        --! links to/from FEBs
-        --! links should be in the order of pixel/scifi/tile
-        i_rx                => rx_data_raw,
-        i_rx_k              => rx_datak_raw,
-        o_tx                => tx_data,
-        o_tx_k              => tx_datak,
+    port map (
+        i_rx            => rx_data_raw,
+        i_rx_k          => rx_datak_raw,
+        o_tx            => tx_data,
+        o_tx_k          => tx_datak,
 
-        --! PCIe registers / memory
-        i_writeregs_250     => pcie0_writeregs_250,
-        i_writeregs_156     => pcie0_writeregs_156,
-        
-        o_readregs_250      => pcie0_readregs_250,
-        o_readregs_156      => pcie0_readregs_156,
+        i_writeregs_250 => pcie0_writeregs_250,
+        i_writeregs_156 => pcie0_writeregs_156,
+    
+        o_readregs_250  => pcie0_readregs_250,
+        o_readregs_156  => pcie0_readregs_156,
 
-        i_resets_n_156      => pcie0_resets_n_156,
-        i_resets_n_250      => pcie0_resets_n_250,
+        i_resets_n_250  => pcie0_resets_n_250,
+        i_resets_n_156  => pcie0_resets_n_156,
 
-        i_wmem_rdata        => writememreaddata,
-        o_wmem_addr         => writememreadaddr,
+        i_wmem_rdata    => writememreaddata,
+        o_wmem_addr     => writememreadaddr,
 
-        o_rmem_wdata        => readmem_writedata
-        o_rmem_addr         => readmem_writeaddr
-        o_rmem_we           => readmem_wren
+        o_rmem_wdata    => readmem_writedata,
+        o_rmem_addr     => readmem_writeaddr,
+        o_rmem_we       => readmem_wren,
 
-        o_dma_wren          => dma_data_wren,
-        o_dma_done          => pcie0_readregs_250(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
-        o_endofevent        => dmamem_endofevent,
-        o_dma_data          => dma_data,
+        i_dmamemhalffull=> pcie0_dma0_hfull,
+        o_dma_wren      => dma_data_wren,
+        o_dma_done      => pcie0_readregs_250(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
+        o_endofevent    => dmamem_endofevent,
+        o_dma_data      => dma_data,
 
-        o_farm_data         => open,
-        o_farm_datak        => open,
+        o_farm_data     => open,
+        o_farm_datak    => open,
 
         --! 250 MHz clock / reset_n
-        i_reset_n_250       => reset_156_n
-        i_clk_250           => pcie_fastclk_out,
+        i_reset_n_250   => reset_pcie_n,
+        i_clk_250       => pcie_fastclk_out,
 
         --! 156 MHz clock / reset_n
-        i_reset_n_156       => reset_156_n
-        i_clk_156           => clk_156--;
+        i_reset_n_156   => reset_156_n,
+        i_clk_156       => clk_156--,
     );
 
 end architecture;

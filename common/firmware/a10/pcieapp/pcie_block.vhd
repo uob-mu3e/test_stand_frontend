@@ -13,6 +13,7 @@ use ieee.std_logic_unsigned.all;
 library altera;
 use altera.altera_europa_support_lib.all;
 
+use work.mudaq.all;
 
 
 entity pcie_block is 
@@ -23,11 +24,11 @@ generic (
     g_PCIE_X : positive := 8--;
 );
 port (
-    o_writeregs_B       : out   work.util.reg32array;
+    o_writeregs_B       : out   reg32array;
     o_regwritten_B      : out   std_logic_vector(63 downto 0);
     i_clk_B             : in    std_logic := '0';
 
-    o_writeregs_C       : out   work.util.reg32array;
+    o_writeregs_C       : out   reg32array;
     o_regwritten_C      : out   std_logic_vector(63 downto 0);
     i_clk_C             : in    std_logic := '0';
 
@@ -55,9 +56,9 @@ port (
     L0_led              : out   std_logic;
 
     -- pcie registers
-    writeregs           : out   work.util.reg32array;
+    writeregs           : out   reg32array;
     regwritten          : out   std_logic_vector(63 downto 0);
-    readregs            : in    work.util.reg32array;
+    readregs            : in    reg32array;
 
     -- pcie writeable memory
     writememclk         : in    std_logic;
@@ -224,7 +225,7 @@ architecture RTL of pcie_block is
 	
 	-- Application
 	signal busy:				STD_LOGIC; 
-	signal regloopback :work.util.reg32array;
+	signal regloopback : reg32array;
 
 	signal application_reset_n: std_logic;
 	

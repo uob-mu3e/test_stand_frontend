@@ -4,6 +4,8 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 
+use work.mudaq.all;
+
 
 entity time_merger_tree_fifo_64 is
 generic (
@@ -15,15 +17,15 @@ generic (
     gen_fifos       : integer   := 16--;
 );
 port (
-    -- input 
-    i_fifo_q        : in fifo_array_76(compare_fifos - 1 downto 0);
+    -- input
+    i_fifo_q        : in work.util.slv76_array_t(compare_fifos - 1 downto 0);
     i_fifo_empty    : in std_logic_vector(compare_fifos - 1 downto 0);
     i_fifo_ren      : in std_logic_vector(gen_fifos - 1 downto 0);
     i_merge_state   : in std_logic;
     i_mask_n        : in std_logic_vector(compare_fifos - 1 downto 0);
 
     -- output
-    o_fifo_q        : out fifo_array_76(gen_fifos - 1 downto 0);
+    o_fifo_q        : out work.util.slv76_array_t(gen_fifos - 1 downto 0);
     o_fifo_empty    : out std_logic_vector(gen_fifos - 1 downto 0);
     o_fifo_ren      : out std_logic_vector(compare_fifos - 1 downto 0);
     o_mask_n        : out std_logic_vector(gen_fifos - 1 downto 0);
@@ -38,8 +40,8 @@ architecture arch of time_merger_tree_fifo_64 is
     -- merger signals
     constant size : integer := compare_fifos/2;
     
-    signal fifo_data, fifo_data_reg, fifo_q, fifo_q_reg : fifo_array_76(gen_fifos - 1 downto 0);
-    signal layer_state : fifo_array_4(gen_fifos - 1 downto 0);
+    signal fifo_data, fifo_data_reg, fifo_q, fifo_q_reg : work.util.slv76_array_t(gen_fifos - 1 downto 0);
+    signal layer_state : work.util.slv4_array_t(gen_fifos - 1 downto 0);
     signal fifo_ren_reg, fifo_ren : std_logic_vector(compare_fifos - 1 downto 0);
     signal fifo_wen, fifo_wen_reg, fifo_full, fifo_full_reg, fifo_empty, fifo_empty_reg, reset_fifo, reset_fifo_reg0, reset_fifo_reg1, reset_fifo_reg2 : std_logic_vector(gen_fifos - 1 downto 0);
 
@@ -172,7 +174,9 @@ begin
                     fifo_ren_reg(i) <= '1';
                     fifo_ren_reg(i + size) <= '1';
                 when "0101" =>
-                    if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding ) then
+                    if ( fifo_full(i) = '1' ) then
+                        --
+                    elsif ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding ) then
                         fifo_data(i)(37 downto 0) <= i_fifo_q(i)(75 downto 38);
                         layer_state(i)(0) <= '0';
                         fifo_ren(i) <= '1';
@@ -187,7 +191,9 @@ begin
                     end if;
                 when "0100" =>
                     -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                    if ( i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' ) then
+                    if ( fifo_full(i) = '1' ) then
+                        --
+                    elsif ( i_fifo_empty(i) = '0' and fifo_ren(i) = '0' and fifo_ren_reg(i) = '0' ) then
                         -- TODO: what to do when i_fifo_q(i + size)(69 downto 66) is zero? maybe error cnt?
                         if ( i_fifo_q(i)(31 downto 28) <= i_fifo_q(i + size)(69 downto 66) and i_fifo_q(i)(37 downto 0) /= tree_padding ) then
                             fifo_data(i)(75 downto 38) <= i_fifo_q(i)(37 downto 0);
@@ -208,7 +214,9 @@ begin
                     end if;
                 when "0001" =>
                     -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                    if ( i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0' ) then       
+                    if ( fifo_full(i) = '1' ) then
+                        --
+                    elsif ( i_fifo_empty(i + size) = '0' and fifo_ren(i + size) = '0' and fifo_ren_reg(i + size) = '0' ) then       
                         -- TODO: what to do when i_fifo_q(i)(69 downto 66) is zero? maybe error cnt?     
                         if ( i_fifo_q(i)(69 downto 66) <= i_fifo_q(i + size)(31 downto 28) and i_fifo_q(i)(75 downto 38) /= tree_zero and i_fifo_q(i)(75 downto 38) /= tree_padding ) then
                             fifo_data(i)(75 downto 38) <= i_fifo_q(i)(75 downto 38);

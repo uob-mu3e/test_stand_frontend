@@ -41,7 +41,7 @@ architecture arch of link_merger is
          
     signal reset_data, reset_mem : std_logic;
     
-    signal link_data, link_dataq : data_array(NLINKS_TOTL - 1 downto 0);
+    signal link_data, link_dataq : work.util.slv38_array_t(NLINKS_TOTL - 1 downto 0);
     signal link_empty, link_wren, link_full, link_afull, link_wrfull, sop, eop, shop, link_ren : std_logic_vector(NLINKS_TOTL - 1 downto 0);
     signal link_usedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS_TOTL - 1 downto 0);
     signal sync_fifo_empty : std_logic_vector(NLINKS_TOTL - 1 downto 0);
