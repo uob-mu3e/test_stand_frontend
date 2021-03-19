@@ -26,7 +26,7 @@ entity data_generator_a10 is
     );
     port(
 		clk 				: in  std_logic;
-		reset 				: in  std_logic;
+		i_reset_n    		: in  std_logic;
 		enable_pix			: in  std_logic;
         i_dma_half_full		: in  std_logic;
 		random_seed			: in  std_logic_vector (15 downto 0);
@@ -45,7 +45,7 @@ architecture rtl of data_generator_a10 is
 	signal global_time:			  std_logic_vector(47 downto 0);
 	signal time_cnt_t:			  std_logic_vector(31 downto 0);
 	signal overflow_time:			  std_logic_vector(3 downto 0);
-	signal reset_n:				  std_logic;
+	signal reset:				  std_logic;
 	-- state_types
 	type data_header_states is (part1, part2, part3, part4, part5, trailer, overflow);
 	signal data_header_state:   data_header_states;
@@ -64,7 +64,7 @@ architecture rtl of data_generator_a10 is
 ----------------begin data_generator------------------------
 begin
 
-	reset_n <= not reset;
+	reset <= not i_reset_n;
 
 	chip_id_shift : entity work.linear_shift
 	generic map(
@@ -73,7 +73,7 @@ begin
 	)
 	port map(
 		i_clk    		=> clk,
-		reset_n   		=> reset_n,
+		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed(5 downto 0),
 		i_en 				=> enable_pix,    
@@ -87,7 +87,7 @@ begin
 	)
 	port map(
 		i_clk    		=> clk,
-		reset_n   		=> reset_n,
+		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed(15 downto 10),
 		i_en 				=> enable_pix,    
@@ -101,7 +101,7 @@ begin
 	)
 	port map(
 		i_clk    		=> clk,
-		reset_n   		=> reset_n,
+		reset_n   		=> i_reset_n,
 		i_sync_reset	=> reset,--sync_reset,
 		i_seed   		=> random_seed,
 		i_en 				=> enable_pix,    
@@ -109,9 +109,9 @@ begin
 	);
 
 -- slow down process
-process(clk, reset)
+process(clk, i_reset_n)
 begin
-	if(reset = '1') then
+	if(i_reset_n = '0') then
 		waiting 			<= '0';
 		wait_counter	<= (others => '0');
 	elsif(rising_edge(clk)) then
@@ -130,13 +130,13 @@ lsfr_chip_id <= (others => '0') when wchip = '0' else lsfr_chip_id_reg;
 	
 	
 	
-process (clk, reset)
+process (clk, i_reset_n)
 
 variable current_overflow : std_logic_vector(15 downto 0) := "0000000000000000";
 variable overflow_idx	  : integer range 0 to 15 := 0;
 
 begin
-	if (reset = '1') then
+	if (i_reset_n = '0') then
 		data_pix_ready          <= '0';
 		data_pix_generated      <= (others => '0');
 		global_time       		<= start_global_time;

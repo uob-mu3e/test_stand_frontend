@@ -141,8 +141,8 @@ begin
             go_to_trailer => 4--,
         )
     port map (
-        reset               => not i_resets_n_156(RESET_BIT_DATAGEN),
-        enable_pix          => i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_LINK),
+        i_reset_n             => i_resets_n_156(RESET_BIT_DATAGEN),
+        enable_pix          => i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK),
         i_dma_half_full     => '0',
         random_seed         => (others => '1'),
         data_pix_generated  => gen_link,
@@ -161,7 +161,7 @@ begin
             rx(i)   <= (others => '0');
             rx_k(i) <= (others => '0');
         elsif rising_edge(i_clk_156) then
-            if (i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_LINK) = '1') then
+            if (i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1') then
                 rx(i)   <= gen_link;
                 rx_k(i) <= gen_link_k;
             else
@@ -224,7 +224,7 @@ begin
         i_reop      => eop,
         i_rempty    => rx_rdempty,
         i_rmask_n   => i_rmask_n,
-        i_en        => i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM),
+        i_en        => i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM),
         o_rack      => stream_rack,
 
         o_wdata     => stream_rdata,
@@ -280,39 +280,39 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     link_idx <= to_integer(unsigned(i_writeregs_250(SWB_READOUT_LINK_REGISTER_W)));
-    builder_data  <=  stream_rdata when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM) = '1' else
-                      merger_rdata_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER) = '1' else
-                      rx_q(link_idx)(35 downto 4) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_LINK) = '1' else
+    builder_data  <=  stream_rdata when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+                      merger_rdata_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
+                      rx_q(link_idx)(35 downto 4) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_LINK) = '1' else
                       (others => '0');
-    builder_rempty  <=  stream_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM) = '1' else
-                        merger_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER) = '1' else
-                        rx_rdempty(link_idx) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_LINK) = '1' else
+    builder_rempty  <=  stream_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+                        merger_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
+                        rx_rdempty(link_idx) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_LINK) = '1' else
                         '0';
-    builder_header  <=  stream_header when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM) = '1' else
-                        merger_header when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER) = '1' else
-                        sop(link_idx) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_LINK) = '1' else
+    builder_header  <=  stream_header when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+                        merger_header when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
+                        sop(link_idx) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_LINK) = '1' else
                         '0';
-    builder_trailer <=  stream_trailer when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM) = '1' else
-                        merger_trailer when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER) = '1' else
-                        eop(link_idx) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_LINK) = '1' else
+    builder_trailer <=  stream_trailer when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+                        merger_trailer when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
+                        eop(link_idx) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_LINK) = '1' else
                         '0';
-    stream_ren <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM) = '1' else '0';
-    merger_ren <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER) = '1' else 
-                  farm_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_FARM) = '1' else 
+    stream_ren <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else '0';
+    merger_ren <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else 
+                  farm_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM) = '1' else 
                   '0';
-    rx_ren_link(link_idx) <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_LINK) = '1' else
+    rx_ren_link(link_idx) <= builder_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_LINK) = '1' else
                         '0';
-    rx_ren <=   rx_ren_link when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_LINK) = '1' else
-                stream_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM) = '1' else
-                merger_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER) = '1' else
+    rx_ren <=   rx_ren_link when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_LINK) = '1' else
+                stream_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
+                merger_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                 (others => '0');
-    farm_data <=    merger_rdata when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER) = '1' else
-                    gen_q when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_MERGER) = '1' else
+    farm_data <=    merger_rdata when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
+                    gen_q when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGER) = '1' else
                     (others => '0');
-    farm_rempty <=  merger_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER) = '1' else
-                    gen_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_MERGER) = '1' else
+    farm_rempty <=  merger_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
+                    gen_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGER) = '1' else
                     '0';
-    gen_re <= farm_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_MERGER) = '1' else '0';
+    gen_re <= farm_rack when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGER) = '1' else '0';
 
 
     --! event builder
