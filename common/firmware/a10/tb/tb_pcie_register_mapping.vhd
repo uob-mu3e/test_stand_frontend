@@ -35,8 +35,8 @@ begin
 		wait for pcieclk_period/2;
 	end process;
 	
-	rregs_156(1) <= x"FFFFFFFF";
-	rregs_156(2) <= x"BBBBBBBB";
+	rregs_156(10) <= x"FFFFFFFF";
+	rregs_156(12) <= x"BBBBBBBB";
 
     e_mapping : entity work.pcie_register_mapping
         port map(

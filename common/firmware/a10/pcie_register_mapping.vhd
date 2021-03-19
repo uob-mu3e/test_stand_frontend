@@ -39,23 +39,25 @@ end entity;
 --! two registers which are used for the two PCIe blocks
 architecture arch of pcie_register_mapping is
 
-    signal rdempty : std_logic_vector(63 downto 0);
-    signal mapped_rregs : work.util.slv32_array_t(63 downto 0);
+    signal rdempty : std_logic;
+    signal data_rregs, q_rregs : std_logic_vector(64*32 - 1 downto 0);
 
 begin
 
     --! sync read regs from slow (156.25 MHz) to fast (250 MHz) clock
     --! done for the first PCIe block
     gen_sync : FOR i in 0 to 63 GENERATE
-        --! sync slow registers
-        e_sync_fifo : entity work.ip_dcfifo
-        generic map(
-            ADDR_WIDTH  => 2, DATA_WIDTH  => 32--,
-        ) port map ( data => i_pcie0_rregs_156(i), wrreq => '1',
-                 rdreq => not rdempty(i), wrclk => i_clk_156, rdclk => i_pcie0_clk,
-                 q => mapped_rregs(i), rdempty => rdempty(i), aclr => '0'--,
-        );
+        data_rregs(i * 32 + 31 downto i * 32) <= i_pcie0_rregs_156(i);
     END GENERATE gen_sync;
+
+    --! sync slow registers
+    e_sync_fifo : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 2, DATA_WIDTH  => 64*32--,
+    ) port map ( data => data_rregs, wrreq => '1',
+             rdreq => not rdempty, wrclk => i_clk_156, rdclk => i_pcie0_clk,
+             q => q_rregs, rdempty => rdempty, aclr => '0'--,
+    );
     
     --! map regs
     gen_map : FOR i in 0 to 63 GENERATE
@@ -65,7 +67,7 @@ begin
                             i_local_pcie0_rregs_250(DMA_NOTHALFFUL_REGISTER_R) when i = DMA_NOTHALFFUL_REGISTER_R else
                             i_local_pcie0_rregs_250(DMA_ENDEVENT_REGISTER_R) when i = DMA_ENDEVENT_REGISTER_R else
                             i_local_pcie0_rregs_250(DMA_NOTENDEVENT_REGISTER_R) when i = DMA_NOTENDEVENT_REGISTER_R else
-                            mapped_rregs(i);
+                            q_rregs(i * 32 + 31 downto i * 32);
     END GENERATE gen_map;
     
     --! sync read regs from slow (156.25 MHz) to fast (250 MHz) clock

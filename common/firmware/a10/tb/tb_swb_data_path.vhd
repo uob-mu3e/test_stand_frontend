@@ -18,15 +18,15 @@ architecture arch of tb_swb_data_path is
 
     signal clk, clk_fast, reset_n : std_logic := '0';
     --! data link signals
-    signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
-    signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
+    signal rx : work.util.slv32_array_t(g_NLINKS_DATA-1 downto 0) := (others => (others => '0'));
+    signal rx_k : work.util.slv4_array_t(g_NLINKS_DATA-1 downto 0) := (others => (others => '0'));
 
     signal writeregs_156 : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
     signal writeregs_250 : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
 
     signal resets_n_156, resets_n_250 : std_logic_vector(31 downto 0) := (others => '0');
 
-    signal counter : work.util.slv32_array_t(5+(g_NLINKS_TOTL*3)-1 downto 0);
+    signal counter : work.util.slv32_array_t(5+(g_NLINKS_DATA*3)-1 downto 0);
     
     signal farm_data : work.util.slv32_array_t(g_NLINKS_FARM - 1  downto 0);
     signal farm_datak : work.util.slv4_array_t(g_NLINKS_FARM - 1  downto 0);
