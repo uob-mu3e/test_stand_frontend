@@ -39,44 +39,35 @@ end entity;
 --! two registers which are used for the two PCIe blocks
 architecture arch of pcie_register_mapping is
 
-    signal clk_sync_0, clk_sync_1 : std_logic;
-    signal clk_last_0, clk_last_1 : std_logic;
+    signal rdempty : std_logic_vector(63 downto 0);
+    signal mapped_rregs : work.util.slv32_array_t(63 downto 0);
 
 begin
 
     --! sync read regs from slow (156.25 MHz) to fast (250 MHz) clock
     --! done for the first PCIe block
-    process(i_pcie0_clk)
-    begin
-    if rising_edge(i_pcie0_clk) then
-        clk_sync_0 <= i_clk_156;
-        clk_last_0 <= clk_sync_0;
-        
-        if(clk_sync_0 = '1' and clk_last_0 = '0') then
-            o_pcie0_rregs(VERSION_REGISTER_R)            <= i_local_pcie0_rregs_156(VERSION_REGISTER_R);
-            o_pcie0_rregs(PLL_REGISTER_R)                <= i_pcie0_rregs_156(PLL_REGISTER_R);
-            o_pcie0_rregs(RUN_NR_REGISTER_R)             <= i_pcie0_rregs_156(RUN_NR_REGISTER_R);
-            o_pcie0_rregs(RUN_NR_ACK_REGISTER_R)         <= i_pcie0_rregs_156(RUN_NR_ACK_REGISTER_R);
-            o_pcie0_rregs(RUN_STOP_ACK_REGISTER_R)       <= i_pcie0_rregs_156(RUN_STOP_ACK_REGISTER_R);
-            o_pcie0_rregs(CNT_FEB_MERGE_TIMEOUT_R)       <= i_pcie0_rregs_156(CNT_FEB_MERGE_TIMEOUT_R);
-            o_pcie0_rregs(CNT_FIFO_ALMOST_FULL_R)        <= i_pcie0_rregs_156(CNT_FIFO_ALMOST_FULL_R);
-            o_pcie0_rregs(CNT_DC_LINK_FIFO_FULL_R)       <= i_pcie0_rregs_156(CNT_DC_LINK_FIFO_FULL_R);
-            o_pcie0_rregs(CNT_SKIP_EVENT_LINK_FIFO_R)    <= i_pcie0_rregs_156(CNT_SKIP_EVENT_LINK_FIFO_R);
-            o_pcie0_rregs(SC_MAIN_STATUS_REGISTER_R)     <= i_pcie0_rregs_156(SC_MAIN_STATUS_REGISTER_R);
-            o_pcie0_rregs(MEM_WRITEADDR_HIGH_REGISTER_R) <= i_pcie0_rregs_156(MEM_WRITEADDR_HIGH_REGISTER_R);
-            o_pcie0_rregs(MEM_WRITEADDR_LOW_REGISTER_R)  <= i_pcie0_rregs_156(MEM_WRITEADDR_LOW_REGISTER_R);
-            o_pcie0_rregs(SC_STATE_REGISTER_R)           <= i_pcie0_rregs_156(SC_STATE_REGISTER_R);
-        end if;
-    end if;
-    end process;
-
-    --! map fast registers
-    o_pcie0_rregs(DMA_STATUS_R)(DMA_DATA_WEN)   <= i_local_pcie0_rregs_250(DMA_STATUS_R)(DMA_DATA_WEN);
-    o_pcie0_rregs(DMA_HALFFUL_REGISTER_R)       <= i_local_pcie0_rregs_250(DMA_HALFFUL_REGISTER_R);
-    o_pcie0_rregs(DMA_NOTHALFFUL_REGISTER_R)    <= i_local_pcie0_rregs_250(DMA_NOTHALFFUL_REGISTER_R);
-    o_pcie0_rregs(DMA_ENDEVENT_REGISTER_R)      <= i_local_pcie0_rregs_250(DMA_ENDEVENT_REGISTER_R);
-    o_pcie0_rregs(DMA_NOTENDEVENT_REGISTER_R)   <= i_local_pcie0_rregs_250(DMA_NOTENDEVENT_REGISTER_R);
-
+    gen_sync : FOR i in 0 to 63 GENERATE
+        --! sync slow registers
+        e_sync_fifo : entity work.ip_dcfifo
+        generic map(
+            ADDR_WIDTH  => 2, DATA_WIDTH  => 32--,
+        ) port map ( data => i_pcie0_rregs_156(i), wrreq => '1',
+                 rdreq => not rdempty(i), wrclk => i_clk_156, rdclk => i_pcie0_clk,
+                 q => mapped_rregs(i), rdempty => rdempty(i), aclr => '0'--,
+        );
+    END GENERATE gen_sync;
+    
+    --! map regs
+    gen_map : FOR i in 0 to 63 GENERATE
+        o_pcie0_rregs(i) <= i_local_pcie0_rregs_250(VERSION_REGISTER_R) when i = VERSION_REGISTER_R else
+                            i_local_pcie0_rregs_250(DMA_STATUS_R) when i = DMA_STATUS_R else
+                            i_local_pcie0_rregs_250(DMA_HALFFUL_REGISTER_R) when i = DMA_HALFFUL_REGISTER_R else
+                            i_local_pcie0_rregs_250(DMA_NOTHALFFUL_REGISTER_R) when i = DMA_NOTHALFFUL_REGISTER_R else
+                            i_local_pcie0_rregs_250(DMA_ENDEVENT_REGISTER_R) when i = DMA_ENDEVENT_REGISTER_R else
+                            i_local_pcie0_rregs_250(DMA_NOTENDEVENT_REGISTER_R) when i = DMA_NOTENDEVENT_REGISTER_R else
+                            mapped_rregs(i);
+    END GENERATE gen_map;
+    
     --! sync read regs from slow (156.25 MHz) to fast (250 MHz) clock
     --! done for the second PCIe block
     --! ------------------------------------------------------------------------

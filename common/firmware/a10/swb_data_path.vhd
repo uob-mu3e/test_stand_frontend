@@ -285,9 +285,9 @@ begin
     --! ------------------------------------------------------------------------
     link_idx <= to_integer(unsigned(i_writeregs_250(SWB_READOUT_LINK_REGISTER_W)));
     builder_data  <=  stream_rdata when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM) = '1' else
-                    merger_rdata_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER) = '1' else
-                    rx_q(link_idx)(35 downto 4) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_LINK) = '1' else
-                    (others => '0');
+                      merger_rdata_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER) = '1' else
+                      rx_q(link_idx)(35 downto 4) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_LINK) = '1' else
+                      (others => '0');
     builder_rempty  <=  stream_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM) = '1' else
                         merger_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER) = '1' else
                         rx_rdempty(link_idx) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_LINK) = '1' else

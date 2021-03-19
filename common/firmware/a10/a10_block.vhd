@@ -268,7 +268,7 @@ begin
     --! save git version to version register
     e_version_reg : entity work.version_reg
     port map (
-        data_out  => local_pcie0_rregs_156(VERSION_REGISTER_R)(27 downto 0)--,
+        data_out  => local_pcie0_rregs_250(VERSION_REGISTER_R)(27 downto 0)--,
     );
 
     --! generate reset regs for 156 MHz clk for pcie0
