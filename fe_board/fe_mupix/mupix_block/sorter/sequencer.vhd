@@ -23,7 +23,7 @@ entity sequencer is
 	port (
 		reset_n							: in std_logic;										-- async reset
 		clk								: in std_logic;										-- clock
-		from_fifo						: in std_logic_vector(253 downto 0);
+		from_fifo						: sorterfifodata_t;
 		fifo_empty						: in std_logic;
 		read_fifo						: out std_logic;
 		outcommand						: out command_t;
@@ -40,11 +40,9 @@ signal state: state_type;
 signal current_block:	block_t;
 constant block_max:		block_t := (others => '1');
 
-signal fifo_reg	: std_logic_vector(253 downto 0);
-signal even_counters_reg: std_logic_vector(EVENCOUNTERRANGE);
-signal odd_counters_reg	: std_logic_vector(EVENCOUNTERRANGE); -- even is correct here...
-signal doeven : std_logic;
-signal doodd  : std_logic;
+signal fifo_reg	: sorterfifodata_t;
+signal counters_reg: std_logic_vector(MEMCOUNTERRANGE);
+signal domem : std_logic;
 signal subaddr:			counter_t;
 signal overflowts : std_logic_vector(15 downto 0);
 
@@ -63,8 +61,7 @@ if(reset_n = '0') then
 	outoverflow		<= (others => '0');
 	current_block	<= (others => '0');
 	overflowts		<= (others => '0');
-	doeven			<= '0';
-	doodd			<= '0';
+	domem			<= '0';
 elsif(clk'event and clk = '1') then
 
 	read_fifo		<= '0';
@@ -74,7 +71,7 @@ elsif(clk'event and clk = '1') then
 	
 	-- State machine for creating commands: We want to send a HEADER once per TS overflow, a SUBHEADER for every block
 	-- and ordered read commands for the hits, where the read commands contain both the memory address (corresponding to the TS)
-	-- and the MUX setting (corresponding to the input channel). This is complicated by the separate meories for even and odd TS
+	-- and the MUX setting (corresponding to the input channel).
 	case state is
 	when idle =>
 		if(fifo_empty = '0') then -- We start when we have data in the FIFO...
@@ -100,7 +97,7 @@ elsif(clk'event and clk = '1') then
 		if(fifo_empty = '1') then
 			command_enable 	<= '0';
 			do_fifo_reading 	:= true;
-		elsif(from_fifo(HASEVENBIT)='0' and from_fifo(HASODDBIT)='0') then
+		elsif(from_fifo(HASMEMBIT)='0') then
 			do_fifo_reading 	:= true;
 			subaddr				<= (others => '0');
 			current_block		<= current_block + '1';	
@@ -119,50 +116,16 @@ elsif(clk'event and clk = '1') then
 		-- note here that fifo_reg contains the counters we are working on and (if ready) the fifo shows the next
 		-- active TS
 		outcommand(COMMANDBITS-1)	<= '0'; -- Hits, not a command
-		outcommand(SLOWTSRANGE)		<= fifo_reg(TSINFIFORANGE); 	-- The upper bits of the TS come directly from the fifo
-																	-- the even/odd bit needs a bit of work
-		if(doeven = '1') then
+		outcommand(TSRANGE)			<= fifo_reg(TSINFIFORANGE); 
+
+		if(domem = '1') then
 			outcommand(0)			<= '0';
-			outcommand(COMMANDBITS-2 downto TIMESTAMPSIZE+4) <= even_counters_reg(7 downto 4);
+			outcommand(COMMANDBITS-2 downto TIMESTAMPSIZE+4) <= counters_reg(7 downto 4);
 			outcommand(COMMANDBITS-6 downto TIMESTAMPSIZE)   <= subaddr;
 			command_enable 	<= '1';
 			
-			if(even_counters_reg(3 downto 0) = "0001" and even_counters_reg(11 downto 8) = "0000") then
-			-- this is the last even hit
-				if(doodd = '1') then -- we have odd ones, switch by setting doeven 0
-					doeven <= '0';
-					subaddr							    <= "0000";
-				elsif(fifo_empty = '1') then -- the fifo is empty, sit here and wait
-					command_enable <= '0';
-				elsif(newblocknext) then -- the next block is a new one
-					do_fifo_reading 	:= true;
-					current_block <= current_block + '1';
-					if(current_block = block_max) then
-						state			<= footer;
-					else
-						state 			<= subheader;
-					end if;
-				else -- we stay in block
-					do_fifo_reading 	:= true;
-					subaddr							    <= "0000";
-				end if;
-			elsif(even_counters_reg(3 downto 0) = "0001") then -- switch chip
-				even_counters_reg(even_counters_reg'left-8 downto 0)	 <= even_counters_reg(even_counters_reg'left downto 8);
-				even_counters_reg(even_counters_reg'left downto even_counters_reg'left-7)	 <= (others => '0');
-				subaddr							    <= "0000";
-			else -- more hits from same chip
-				even_counters_reg <= even_counters_reg;
-				even_counters_reg(3 downto 0) <= even_counters_reg(3 downto 0) -'1';
-				subaddr						  <= subaddr + "1";
-			end if;
-		elsif(doodd = '1') then
-			outcommand(0)			<= '1';
-			outcommand(COMMANDBITS-2 downto TIMESTAMPSIZE+4) <= odd_counters_reg(7 downto 4);
-			outcommand(COMMANDBITS-6 downto TIMESTAMPSIZE)   <= subaddr;
-			command_enable 	<= '1';
-			
-			if(odd_counters_reg(3 downto 0) = "0001" and odd_counters_reg(11 downto 8) = "0000") then
-			-- this is the last odd hit
+			if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000") then
+			-- this is the last hit
 				if(fifo_empty = '1') then -- the fifo is empty, sit here and wait
 					command_enable <= '0';
 				elsif(newblocknext) then -- the next block is a new one
@@ -177,20 +140,20 @@ elsif(clk'event and clk = '1') then
 					do_fifo_reading 	:= true;
 					subaddr							    <= "0000";
 				end if;
-			elsif(odd_counters_reg(3 downto 0) = "0001") then -- switch chip
-				odd_counters_reg(odd_counters_reg'left-8 downto 0)	 <= odd_counters_reg(odd_counters_reg'left downto 8);
-				odd_counters_reg(odd_counters_reg'left downto odd_counters_reg'left-7)	 <= (others => '0');
+			elsif(counters_reg(3 downto 0) = "0001") then -- switch chip
+				counters_reg(counters_reg'left-8 downto 0)	 <= counters_reg(counters_reg'left downto 8);
+				counters_reg(counters_reg'left downto counters_reg'left-7)	 <= (others => '0');
 				subaddr							    <= "0000";
 			else -- more hits from same chip
-				odd_counters_reg 			 <= odd_counters_reg;
-				odd_counters_reg(3 downto 0) <= odd_counters_reg(3 downto 0) -'1';
-				subaddr						 <= subaddr + "1";
+				counters_reg <= counters_reg;
+				counters_reg(3 downto 0) <= counters_reg(3 downto 0) -'1';
+				subaddr						  <= subaddr + "1";
 			end if;
-		else --odd and even zero indicate a block skippe due to overflow
+		else --domem zero indicate a block skipped due to overflow
 			command_enable <= '0';
 			-- if we have skipped a block, set all overflows to 1
 			-- following condition should always be true in this case
-			if(fifo_reg(EVENOVERFLOWBIT) = '1' and fifo_reg(ODDOVERFLOWBIT) = '1') then
+			if(fifo_reg(MEMOVERFLOWBIT) = '1') then
 				overflowts <= (others => '1');				
 			end if;
 			if(fifo_empty <= '0') then -- the fifo is empty, sit here and wait (unlikely as we are close to FIFO overflow)
@@ -209,9 +172,7 @@ elsif(clk'event and clk = '1') then
 		end if;
 		
 		-- And we should store the overflows
-		overflowts(conv_integer(fifo_reg(TSINBLOCKINFIFORANGE) & '0')) <= fifo_reg(EVENOVERFLOWBIT);
-		overflowts(conv_integer(fifo_reg(TSINBLOCKINFIFORANGE) & '1')) <= fifo_reg(ODDOVERFLOWBIT);
-
+		overflowts(conv_integer(fifo_reg(TSINBLOCKINFIFORANGE))) <= fifo_reg(MEMOVERFLOWBIT);
 	when footer =>	
 		outcommand		<= COMMAND_FOOTER;
 		command_enable 	<= '1';
@@ -222,10 +183,8 @@ elsif(clk'event and clk = '1') then
 	if(do_fifo_reading) then
 		read_fifo 	<= '1';
 		fifo_reg	<= from_fifo;
-		even_counters_reg	<= from_fifo(EVENCOUNTERRANGE);
-		odd_counters_reg	<= from_fifo(ODDCOUNTERRANGE);
-		doeven				<= from_fifo(HASEVENBIT);
-		doodd				<= from_fifo(HASODDBIT);
+		counters_reg	<= from_fifo(MEMCOUNTERRANGE);
+		domem			<= from_fifo(HASMEMBIT);
 	end if;
 end if; -- clk/reset
 end process;

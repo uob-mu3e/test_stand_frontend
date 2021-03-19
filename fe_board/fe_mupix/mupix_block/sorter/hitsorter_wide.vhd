@@ -1,15 +1,13 @@
 -- Sort hits by timestamp
--- New version for up to 45 input links and with memory for counter transmission
--- November 2019
+-- Version for spring 2021: Up to 36 input links, 125 MHz TS
+-- February 2021, Niklaus Berger
 -- niberger@uni-mainz.de
 
 
 -- General idea: Write hits to a memory location according to their timestamp; 
--- one memory per chip, 16 (maybe 8?) slots in meory per chip and timestamp
+-- one memory per chip, 16  slots in memory per chip and timestamp
 -- After a fixed delay, the counters of how many hits there are get collected and are transferred to the
 -- read side via another memory.
--- As the timestamps run at double the frequency of this entity, this part is duplicted for even and odd
--- timestamps, so they can be treated in parallel.
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -30,15 +28,15 @@ entity hitsorter_wide is
 		reset_n							: in std_logic;										-- async reset
 		writeclk						: in std_logic;										-- clock for write/input side
 		running							: in std_logic;
-		currentts						: in slowts_t;										-- Upper 10 bits of the 11 bit ts
+		currentts						: in ts_t;											-- 11 bit ts
 		hit_in							: in hit_array;
 		hit_ena_in						: in std_logic_vector(NCHIPS-1 downto 0);			-- valid hit
 		readclk							: in std_logic;										-- clock for read/output side
 		data_out						: out reg32;										-- packaged data out
 		out_ena							: out STD_LOGIC;									-- valid output data
-		out_type						: out std_logic_vector(3 downto 0);				-- start/end of an output package, hits, end of run
-		diagnostic_sel					: in std_logic_vector(5 downto 0);					-- control the multiplexer for diagnostic signals
-		diagnostic_out					: out reg32											-- diganostic out (counters for hits at various stages)
+		out_type						: out std_logic_vector(3 downto 0);				-- start/end of an output package, hits, end of run		
+		diagnostic_out					: out sorter_reg_array;
+		delay							: in ts_t											-- diganostic out (counters for hits at various stages)
 		);
 end hitsorter_wide;
 
@@ -49,9 +47,9 @@ signal running_last:   std_logic;
 signal running_read:   std_logic;
 signal running_seq:	   std_logic;
 
-signal tslow 	: slowts_t;
-signal tshi  	: slowts_t;
-signal tsread	: slowts_t;
+signal tslow 	: ts_t;
+signal tshi  	: ts_t;
+signal tsread	: ts_t;
 
 signal runstartup : std_logic;
 signal runshutdown: std_logic;
@@ -66,7 +64,6 @@ signal hit_ena_last2: std_logic_vector(NCHIPS-1 downto 0);
 signal hit_ena_last3: std_logic_vector(NCHIPS-1 downto 0);
 
 signal tshit : ts_array;
-signal slowtshit : slowts_array;
 
 signal sametsafternext: chip_bits_t;
 signal sametsnext: chip_bits_t;
@@ -96,8 +93,8 @@ signal cmemwren_hitwriter	: allcounterwren_array;
 
 -- Fifo for counters to sequencer
 signal reset : std_logic;
-signal tofifo_counters : std_logic_vector(253 downto 0);
-signal fromfifo_counters : std_logic_vector(253 downto 0);
+signal tofifo_counters : sorterfifodata_t;
+signal fromfifo_counters : sorterfifodata_t;
 signal read_counterfifo: std_logic;
 signal write_counterfifo: std_logic;
 signal counterfifo_almostfull: std_logic;
@@ -118,34 +115,32 @@ signal blockchange_del2 : std_logic;
 
 constant counter2chipszero : counter2_chips := (others => '0');
 
-signal even_nnonempty: std_logic_vector(3 downto 0);	
-signal even_nechips	 : chip_bits_t;
-signal even_nechips2 : chip_bits_t;
-signal even_countchips: counter_chips;
-signal even_countchips_m1: counter2_chips;
-signal even_countchips_m2: counter2_chips;
-signal haseven: std_logic;
-signal even_overflow: std_logic;
-signal even_overflow_del1: std_logic;
-signal even_overflow_del2: std_logic;
+signal mem_nnonempty: std_logic_vector(3 downto 0);	
+signal mem_nechips	 : chip_bits_t;
+signal mem_nechips2 : chip_bits_t;
+signal mem_countchips: counter_chips;
+signal mem_countchips_m1: counter2_chips;
+signal mem_countchips_m2: counter2_chips;
+signal hashits: std_logic;
+signal mem_overflow: std_logic;
+signal mem_overflow_del1: std_logic;
+signal mem_overflow_del2: std_logic;
 
-signal odd_nnonempty: std_logic_vector(3 downto 0);	
-signal odd_nechips	 : chip_bits_t;
-signal odd_nechips2 : chip_bits_t;
-signal odd_countchips: counter_chips;
-signal odd_countchips_m1: counter2_chips;
-signal odd_countchips_m2: counter2_chips;
-signal hasodd: std_logic;
-signal odd_overflow: std_logic;
-signal odd_overflow_del1: std_logic;
-signal odd_overflow_del2: std_logic;
+--signal odd_nnonempty: std_logic_vector(3 downto 0);	
+--signal odd_nechips	 : chip_bits_t;
+--signal odd_nechips2 : chip_bits_t;
+--signal odd_countchips: counter_chips;
+--signal odd_countchips_m1: counter2_chips;
+--signal odd_countchips_m2: counter2_chips;
+--signal hasodd: std_logic;
+--signal odd_overflow: std_logic;
+--signal odd_overflow_del1: std_logic;
+--signal odd_overflow_del2: std_logic;
 
 signal credits: integer range -128 to 127;
 signal credittemp : integer range -256 to 255;
-signal hitcounter_sum_m3_even : hitcounter_sum3_type;
-signal hitcounter_sum_m3_odd : hitcounter_sum3_type;
-signal hitcounter_sum_even : integer;
-signal hitcounter_sum_odd : integer;
+signal hitcounter_sum_m3_mem : hitcounter_sum3_type;
+signal hitcounter_sum_mem : integer;
 signal hitcounter_sum : integer;
 
 signal readcommand: 	command_t;
@@ -178,10 +173,10 @@ signal noverflow  : reg_array;
 signal nintime	  : reg_array;
 signal nout		  : reg32;
 
-constant TSONE : slowts_t := "0000000001";
-constant TSZERO : slowts_t := "0000000000";
-constant DELAY : slowts_t := "0110000000";
-constant WINDOWSIZE : slowts_t := "1100000000";
+constant TSONE : ts_t := "00000000001";
+constant TSZERO : ts_t := "00000000000";
+--constant DELAY : ts_t := "01100000000";
+constant WINDOWSIZE : ts_t := "11000000000";
 
 
         COMPONENT scfifo
@@ -201,13 +196,13 @@ constant WINDOWSIZE : slowts_t := "1100000000";
         PORT (
                         aclr    : IN STD_LOGIC ;
                         clock   : IN STD_LOGIC ;
-                        data    : IN STD_LOGIC_VECTOR (253 DOWNTO 0);
+                        data    : IN sorterfifodata_t;
                         rdreq   : IN STD_LOGIC ;
                         sclr    : IN STD_LOGIC ;
                         wrreq   : IN STD_LOGIC ;
                         almost_full     : OUT STD_LOGIC ;
                         empty   : OUT STD_LOGIC ;
-                        q       : OUT STD_LOGIC_VECTOR (253 DOWNTO 0)
+                        q       : OUT sorterfifodata_t
         );
         END COMPONENT;
 
@@ -293,7 +288,7 @@ genmem: for i in NCHIPS-1 downto 0 generate
 	);
 
 	-- In order to have enough ports also for clearing, we divide the memories for the counters
-	-- into NMEMS memories, one address holds an even and an odd TS 
+	-- into NMEMS memories, one address holds one TS 
 	gencmem: for k in NMEMS-1 downto 0 generate
 		cmem:entity work.countermemory
 			PORT MAP
@@ -306,17 +301,17 @@ genmem: for i in NCHIPS-1 downto 0 generate
 				q					=> fromcmem(i)(k)
 			);
 	
-		tocmem(i)(k)			<= (others => '0') when k = conv_integer(tsread(SLOWTSCOUNTERMEMSELRANGE))
+		tocmem(i)(k)			<= (others => '0') when k = conv_integer(tsread(COUNTERMEMSELRANGE))
 									else tocmem_hitwriter(i)(k);
-		cmemreadaddr(i)(k)		<= 	cmemreadaddr_hitreader when 	k = conv_integer(tsread(SLOWTSCOUNTERMEMSELRANGE))
+		cmemreadaddr(i)(k)		<= 	cmemreadaddr_hitreader when 	k = conv_integer(tsread(COUNTERMEMSELRANGE))
 									else cmemreadaddr_hitwriter(i)(k);
-		cmemwriteaddr(i)(k)		<= 	cmemreadaddr_hitreader when 	k = conv_integer(tsread(SLOWTSCOUNTERMEMSELRANGE))
+		cmemwriteaddr(i)(k)		<= 	cmemreadaddr_hitreader when 	k = conv_integer(tsread(COUNTERMEMSELRANGE))
 									else cmemwriteaddr_hitwriter(i)(k);
-		cmemwren(i)(k)			<= 	'1' when 	k = conv_integer(tsread(SLOWTSCOUNTERMEMSELRANGE))
+		cmemwren(i)(k)			<= 	'1' when 	k = conv_integer(tsread(COUNTERMEMSELRANGE))
 									else cmemwren_hitwriter(i)(k);
 	end generate gencmem;
 	
-	fromcmem_hitreader(i)	<= fromcmem(i)(conv_integer(tsread(SLOWTSCOUNTERMEMSELRANGE)));
+	fromcmem_hitreader(i)	<= fromcmem(i)(conv_integer(tsread(COUNTERMEMSELRANGE)));
 	
 	-- Write side: Put hits into memory at the right place and count them
 	process(reset_n, writeclk)
@@ -349,7 +344,6 @@ genmem: for i in NCHIPS-1 downto 0 generate
 		memwren(i) <= '0';
 		
 		tshit(i) 		<= hit_last1(i)(TSRANGE);
-		slowtshit(i) 	<= hit_last1(i)(SLOWTSRANGE);
 		
 		hit_last1(i) <= hit_in(i);
 		hit_last2(i) <= hit_last1(i);
@@ -375,10 +369,10 @@ genmem: for i in NCHIPS-1 downto 0 generate
 		-- Reading from the memory, incrementing the counter and storing it again takes three
 		-- cycles, so we cannot rely on what was written to the memory for incrementing and have to deal
 		-- with this out-of-memory
-		if(hit_ena_last2(i) = '1' and hit_last1(i)(SLOWTSRANGE) = hit_last2(i)(SLOWTSRANGE)) then
+		if(hit_ena_last2(i) = '1' and hit_last1(i)(TSRANGE) = hit_last2(i)(TSRANGE)) then
 			sametsnext(i)	<= '1';
 			sametsafternext(i)	<= '0';
-		elsif(hit_ena_last3(i) = '1' and hit_last1(i)(SLOWTSRANGE) = hit_last3(i)(SLOWTSRANGE)) then
+		elsif(hit_ena_last3(i) = '1' and hit_last1(i)(TSRANGE) = hit_last3(i)(TSRANGE)) then
 			sametsnext(i)	<= '0';
 			sametsafternext(i)	<= '1';
 		else
@@ -389,122 +383,64 @@ genmem: for i in NCHIPS-1 downto 0 generate
 		dcountertemp2(i) <= dcountertemp(i);
 	
 		if((running = '1' or runshutdown = '1') and hit_ena_last2(i) ='1') then -- Hit coming in during run
-			if(((tshi > tslow) and (slowtshit(i) > tslow and slowtshit(i) < tshi)) or
-				((tslow > tshi) and (slowtshit(i) > tslow or slowtshit(i) < tshi))) then
+			if(((tshi > tslow) and (tshit(i) > tslow and tshit(i) < tshi)) or
+				((tslow > tshi) and (tshit(i) > tslow or tshit(i) < tshi))) then
 				-- Hit TS in the range we can accept
-				if(hit_last2(i)(0) = '0') then -- even TS
-					if(sametsnext(i) = '0' and sametsafternext(i) = '0') then -- not the same memory location as the last hit
-						waddr(i) 	<= tshit(i) & counterfrommem(3 downto 0);
-						if(counterfrommem(3 downto 0) /= "1111") then -- no overflow yet
-							memwren(i)	<= '1';
-							nintime(i)	<= nintime(i) + '1';
-							for k in NMEMS-1 downto 0 loop
-								tocmem_hitwriter(i)(k)	<= counterfrommem(9 downto 5) & '0' & counterfrommem(3 downto 0) + '1';
-							end loop;
-							cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
-							dcountertemp(i)	<= counterfrommem(9 downto 5) & '0' & counterfrommem(3 downto 0) + '1';
-						else -- overflow, mark this
-							noverflow(i)	<= noverflow(i) + '1';
-							for k in NMEMS-1 downto 0 loop
-								tocmem_hitwriter(i)(k)	<= counterfrommem(9 downto 5) & '1' & "1111";
-							end loop;
-							cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
-							dcountertemp(i)	<= counterfrommem(9 downto 5) & '1' & "1111";
-						end if;
-					elsif(sametsnext(i) = '1') then -- same memory location in last cycle
-						waddr(i) 	<= tshit(i) & dcountertemp(i)(3 downto 0);
-						if(dcountertemp(i)(3 downto 0) /= "1111") then -- no overflow yet
-							nintime(i)	<= nintime(i) + '1';
-							memwren(i)	<= '1';
-							for k in NMEMS-1 downto 0 loop
-								tocmem_hitwriter(i)(k)	<= dcountertemp(i)(9 downto 5) & '0' & dcountertemp(i)(3 downto 0) + '1';
-							end loop;
-							cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
-							dcountertemp(i)	<= dcountertemp(i)(9 downto 5) & '0' & dcountertemp(i)(3 downto 0) + '1';
-						else -- overflow, mark this
-							noverflow(i)	<= noverflow(i) + '1';
-							for k in NMEMS-1 downto 0 loop
-								tocmem_hitwriter(i)(k)	<= dcountertemp(i)(9 downto 5) & '1' & "1111";
-							end loop;
-							cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
-							dcountertemp(i)	<= dcountertemp(i)(9 downto 5) & '1' & "1111";
-						end if;
-					else -- same memory location two cycles ago
-						waddr(i) 	<= tshit(i) & dcountertemp2(i)(3 downto 0);
-						if(dcountertemp2(i)(3 downto 0) /= "1111") then -- no overflow yet
-							nintime(i)	<= nintime(i) + '1';
-							memwren(i)	<= '1';
-							for k in NMEMS-1 downto 0 loop
-								tocmem_hitwriter(i)(k)	<= dcountertemp2(i)(9 downto 5) & '0' & dcountertemp2(i)(3 downto 0) + '1';
-							end loop;
-							cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
-							dcountertemp(i)	<= dcountertemp2(i)(9 downto 5) & '0' & dcountertemp2(i)(3 downto 0) + '1';
-						else -- overflow, mark this
-							noverflow(i)	<= noverflow(i) + '1';
-							for k in NMEMS-1 downto 0 loop
-								tocmem_hitwriter(i)(k)	<= dcountertemp2(i)(9 downto 5) & '1' & "1111";
-							end loop;
-							cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
-							dcountertemp(i)	<= dcountertemp2(i)(9 downto 5) & '1' & "1111";
-						end if;
-					end if; -- same/ not same memory location
-				else -- odd TS	
-					if(sametsnext(i) = '0' and sametsafternext(i) = '0') then -- not the same memory location as the last hit
-						waddr(i) 	<= tshit(i) & counterfrommem(8 downto 5);
-						if(counterfrommem(8 downto 5) /= "1111") then -- no overflow yet
-							memwren(i)	<= '1';
-							nintime(i)	<= nintime(i) + '1';
-							for k in NMEMS-1 downto 0 loop
-								tocmem_hitwriter(i)(k)	<= '0' & counterfrommem(8 downto 5) + '1' & counterfrommem(4 downto 0);
-							end loop;
-							cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
-							dcountertemp(i)	<= '0' & counterfrommem(8 downto 5) + '1' & counterfrommem(4 downto 0);
-						else -- overflow, mark this
-							noverflow(i)	<= noverflow(i) + '1';
-							for k in NMEMS-1 downto 0 loop
-								tocmem_hitwriter(i)(k)	<= '1' & "1111"  & counterfrommem(4 downto 0);
-							end loop;
-							cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
-							dcountertemp(i)	<= '1' & "1111"  & counterfrommem(4 downto 0);
-						end if;
-					elsif(sametsnext(i) = '1') then -- same memory location in last cycle 
-						waddr(i) 	<= tshit(i) & dcountertemp(i)(8 downto 5);
-						if(dcountertemp(i)(8 downto 5) /= "1111") then -- no overflow yet
-							memwren(i)	<= '1';
-							nintime(i)	<= nintime(i) + '1';
-							for k in NMEMS-1 downto 0 loop
-								tocmem_hitwriter(i)(k)	<= '0' & dcountertemp(i)(8 downto 5)  + '1' & dcountertemp(i)(4 downto 0);
-							end loop;
-							cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
-							dcountertemp(i)	<= '0' & dcountertemp(i)(8 downto 5)  + '1' & dcountertemp(i)(4 downto 0);
-						else -- overflow, mark this
-							noverflow(i)	<= noverflow(i) + '1';
-							for k in NMEMS-1 downto 0 loop
-								tocmem_hitwriter(i)(k)	<= '1' & "1111" & dcountertemp(i)(4 downto 0);
-							end loop;
-							cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
-							dcountertemp(i)	<=  '1' & "1111" & dcountertemp(i)(4 downto 0);
-						end if; -- overflow
-					else
-						waddr(i) 	<= tshit(i) & dcountertemp2(i)(8 downto 5);
-						if(dcountertemp2(i)(8 downto 5) /= "1111") then -- no overflow yet
-							memwren(i)	<= '1';
-							nintime(i)	<= nintime(i) + '1';
-							for k in NMEMS-1 downto 0 loop
-								tocmem_hitwriter(i)(k)	<= '0' & dcountertemp2(i)(8 downto 5)  + '1' & dcountertemp2(i)(4 downto 0);
-							end loop;
-							cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
-							dcountertemp(i)	<= '0' & dcountertemp2(i)(8 downto 5)  + '1' & dcountertemp2(i)(4 downto 0);
-						else -- overflow, mark this
-							noverflow(i)	<= noverflow(i) + '1';
-							for k in NMEMS-1 downto 0 loop
-								tocmem_hitwriter(i)(k)	<= '1' & "1111" & dcountertemp2(i)(4 downto 0);
-							end loop;
-							cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
-							dcountertemp(i)	<=  '1' & "1111" & dcountertemp2(i)(4 downto 0);
-						end if; -- overflow
-					end if; -- same/ not same memory location
-				end if; -- even odd TS
+				if(sametsnext(i) = '0' and sametsafternext(i) = '0') then -- not the same memory location as the last hit
+					waddr(i) 	<= tshit(i) & counterfrommem(3 downto 0);
+					if(counterfrommem(3 downto 0) /= "1111") then -- no overflow yet
+						memwren(i)	<= '1';
+						nintime(i)	<= nintime(i) + '1';
+						for k in NMEMS-1 downto 0 loop
+							tocmem_hitwriter(i)(k)	<=  '0' & counterfrommem(3 downto 0) + '1';
+						end loop;
+						cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
+						dcountertemp(i)	<= '0' & counterfrommem(3 downto 0) + '1';
+					else -- overflow, mark this
+						noverflow(i)	<= noverflow(i) + '1';
+						for k in NMEMS-1 downto 0 loop
+							tocmem_hitwriter(i)(k)	<= '1' & "1111";
+						end loop;
+						cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
+						dcountertemp(i)	<= '1' & "1111";
+					end if;
+				elsif(sametsnext(i) = '1') then -- same memory location in last cycle
+					waddr(i) 	<= tshit(i) & dcountertemp(i)(3 downto 0);
+					if(dcountertemp(i)(3 downto 0) /= "1111") then -- no overflow yet
+						nintime(i)	<= nintime(i) + '1';
+						memwren(i)	<= '1';
+						for k in NMEMS-1 downto 0 loop
+							tocmem_hitwriter(i)(k)	<= '0' & dcountertemp(i)(3 downto 0) + '1';
+						end loop;
+						cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
+						dcountertemp(i)	<= '0' & dcountertemp(i)(3 downto 0) + '1';
+					else -- overflow, mark this
+						noverflow(i)	<= noverflow(i) + '1';
+						for k in NMEMS-1 downto 0 loop
+							tocmem_hitwriter(i)(k)	<= '1' & "1111";
+						end loop;
+						cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
+						dcountertemp(i)	<= '1' & "1111";
+					end if;
+				else -- same memory location two cycles ago
+					waddr(i) 	<= tshit(i) & dcountertemp2(i)(3 downto 0);
+					if(dcountertemp2(i)(3 downto 0) /= "1111") then -- no overflow yet
+						nintime(i)	<= nintime(i) + '1';
+						memwren(i)	<= '1';
+						for k in NMEMS-1 downto 0 loop
+							tocmem_hitwriter(i)(k)	<= '0' & dcountertemp2(i)(3 downto 0) + '1';
+						end loop;
+						cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
+						dcountertemp(i)	<= '0' & dcountertemp2(i)(3 downto 0) + '1';
+					else -- overflow, mark this
+						noverflow(i)	<= noverflow(i) + '1';
+						for k in NMEMS-1 downto 0 loop
+							tocmem_hitwriter(i)(k)	<= '1' & "1111";
+						end loop;
+						cmemwren_hitwriter(i)(conv_integer(hit_last2(i)(COUNTERMEMSELRANGE))) <= '1';
+						dcountertemp(i)	<=  '1' & "1111";
+					end if;
+				end if; -- same/ not same memory location
 			else -- in/out of time
 				-- we have an out of time hit: some diagnosis
 				noutoftime(i) <= noutoftime(i) + '1';
@@ -526,7 +462,7 @@ scfifo_component : scfifo
                 lpm_numwords => 128,
                 lpm_showahead => "ON",
                 lpm_type => "scfifo",
-                lpm_width => 254,
+                lpm_width => SORTERFIFORANGE'left + 1,
                 lpm_widthu => 7,
                 overflow_checking => "ON",
                 underflow_checking => "ON",
@@ -549,18 +485,12 @@ scfifo_component : scfifo
 -- collect data for transmission to read side
 -- read one line in the countermemories per cycle, condense counters and push to fifo if nonempty
 process(reset_n, writeclk)
-	variable even_ne : std_logic;
-	variable even_ov : std_logic;
-	variable even_nonemptycount : std_logic_vector(3 downto 0);	
-	variable even_nfilled : integer;
+	variable mem_ne : std_logic;
+	variable mem_ov : std_logic;
+	variable mem_nonemptycount : std_logic_vector(3 downto 0);	
+	variable mem_nfilled : integer;
 	
-	variable odd_ne : std_logic;
-	variable odd_ov : std_logic;
-	variable odd_nonemptycount : std_logic_vector(3 downto 0);	
-	variable odd_nfilled : integer;
-	
-	variable countersum_even_temp : integer;
-	variable countersum_odd_temp : integer;
+	variable countersum_temp : integer;
 	
 	variable creditchange : integer;
 	
@@ -584,60 +514,46 @@ if (reset_n = '0') then
 	credits <= 127;
 	credittemp <= 127;
 	for i in NCHIPS/3-1 downto 0 loop
-		hitcounter_sum_m3_even(i) <= 0;
-		hitcounter_sum_m3_odd(i)  <= 0;
+		hitcounter_sum_m3_mem(i) <= 0;
 	end loop;
-	hitcounter_sum_even <= 0;
-	hitcounter_sum_odd  <= 0;
+	hitcounter_sum_mem <= 0;
 	hitcounter_sum 		<= 0;
 	
 elsif (writeclk'event and writeclk = '1') then
 	write_counterfifo <= '0';
 	
-	even_countchips_m1	<= (others => '0');
-	even_countchips_m2	<= (others => '0');
-	odd_countchips_m1	<= (others => '0');
-	odd_countchips_m2	<= (others => '0');
+	mem_countchips_m1	<= (others => '0');
+	mem_countchips_m2	<= (others => '0');
+
 
 	if(running_read = '1')then
-		cmemreadaddr_hitreader	<= tsread(SLOWCOUNTERMEMADDRRANGE)+'1';
+		cmemreadaddr_hitreader	<= tsread(COUNTERMEMADDRRANGE)+'1';
 		
 		-- or nonempty, read counters
-		even_ov	:= '0';
-		odd_ov	:= '0';
+		mem_ov	:= '0';
 		for i in NCHIPS-1 downto 0 loop
-			even_nechips(i) 	<= or_reduce(fromcmem_hitreader(i)(3 downto 0));
-			even_countchips(i)	<= fromcmem_hitreader(i)(3 downto 0);
-			even_ov				:= even_ov or fromcmem_hitreader(i)(4);
-			
-			odd_nechips(i) 		<= or_reduce(fromcmem_hitreader(i)(8 downto 5));
-			odd_countchips(i)	<= fromcmem_hitreader(i)(8 downto 5);
-			odd_ov				:= odd_ov or fromcmem_hitreader(i)(9);
+			mem_nechips(i) 		<= or_reduce(fromcmem_hitreader(i)(3 downto 0));
+			mem_countchips(i)	<= fromcmem_hitreader(i)(3 downto 0);
+			mem_ov				:= mem_ov or fromcmem_hitreader(i)(4);
 		end loop;
 		
-		even_overflow <= even_ov;
-		odd_overflow  <= odd_ov;
+		mem_overflow <= mem_ov;
 	
-		even_nonemptycount := (others => '0');
-		odd_nonemptycount := (others => '0');
-		even_ne := '0';
-		odd_ne	:= '0';
+		mem_nonemptycount := (others => '0');
+
+		mem_ne := '0';
+
 		for i in NCHIPS-1 downto 0 loop
-			even_ne := even_ne or even_nechips(i);
-			even_nonemptycount := even_nonemptycount + even_nechips(i);
-			
-			odd_ne := odd_ne or odd_nechips(i);
-			odd_nonemptycount := odd_nonemptycount + odd_nechips(i);
+			mem_ne := mem_ne or mem_nechips(i);
+			mem_nonemptycount := mem_nonemptycount + mem_nechips(i);
 		end loop;
-		even_nnonempty 	<= even_nonemptycount;
-		
-		odd_nnonempty 	<= odd_nonemptycount;
+		mem_nnonempty 	<= mem_nonemptycount;
 		
 		block_empty <= '0';
 		blockchange	<= '0';
-		if((or_reduce(tsread(SLOWTSNONBLOCKRANGE))) = '0') then
+		if((or_reduce(tsread(TSNONBLOCKRANGE))) = '0') then
 			blockchange <= '1';
-			block_nonempty_accumulate <= odd_ne or even_ne;
+			block_nonempty_accumulate <= mem_ne;
 			if(block_nonempty_accumulate = '0') then
 				block_empty <= '1';
 			end if;
@@ -647,174 +563,106 @@ elsif (writeclk'event and writeclk = '1') then
 				stopwrite <= '0';
 			end if;
 		else
-			block_nonempty_accumulate <= odd_ne or even_ne or block_nonempty_accumulate;
+			block_nonempty_accumulate <= mem_ne or block_nonempty_accumulate;
 		end if;
 		
 		
 		
 		-- multiplexing of counters -- here we pack groups of three towards the LSB
 		-- Even
-		even_nechips2	<= (others => '0');
+		mem_nechips2	<= (others => '0');
 		for i in NCHIPS/3-1 downto 0 loop
-			hitcounter_sum_m3_even(i) <= conv_integer(even_countchips(3*i))
-										+ conv_integer(even_countchips(3*i+1))
-										+ conv_integer(even_countchips(3*i+2));
-			if(even_nechips(i*3) = '1')then
-				even_countchips_m1(H*2*3*i + H-1 downto H*2*3*i) <= even_countchips(3*i);
-				even_countchips_m1(H*2*3*i + 2*H-1 downto H*2*3*i + H) <= conv_std_logic_vector(3*i+0, H);
-				even_nechips2(i*3) <= '1';
-				if(even_nechips(i*3+1) = '1')then
-					even_countchips_m1(H*2*3*i + 3*H-1 downto H*2*3*i + 2*H) <= even_countchips(3*i+1);
-					even_countchips_m1(H*2*3*i + 4*H-1 downto H*2*3*i + 3*H) <= conv_std_logic_vector(3*i+1, H);
-					even_nechips2(i*3+1) <= '1';
-					if(even_nechips(i*3+2) = '1')then
-						even_countchips_m1(H*2*3*i + 5*H-1 downto H*2*3*i + 4*H) <= even_countchips(3*i+2);
-						even_countchips_m1(H*2*3*i + 6*H-1 downto H*2*3*i + 5*H) <= conv_std_logic_vector(3*i+2, H);
-						even_nechips2(i*3+2) <= '1';
+			hitcounter_sum_m3_mem(i) <= conv_integer(mem_countchips(3*i))
+										+ conv_integer(mem_countchips(3*i+1))
+										+ conv_integer(mem_countchips(3*i+2));
+			if(mem_nechips(i*3) = '1')then
+				mem_countchips_m1(H*2*3*i + H-1 downto H*2*3*i) <= mem_countchips(3*i);
+				mem_countchips_m1(H*2*3*i + 2*H-1 downto H*2*3*i + H) <= conv_std_logic_vector(3*i+0, H);
+				mem_nechips2(i*3) <= '1';
+				if(mem_nechips(i*3+1) = '1')then
+					mem_countchips_m1(H*2*3*i + 3*H-1 downto H*2*3*i + 2*H) <= mem_countchips(3*i+1);
+					mem_countchips_m1(H*2*3*i + 4*H-1 downto H*2*3*i + 3*H) <= conv_std_logic_vector(3*i+1, H);
+					mem_nechips2(i*3+1) <= '1';
+					if(mem_nechips(i*3+2) = '1')then
+						mem_countchips_m1(H*2*3*i + 5*H-1 downto H*2*3*i + 4*H) <= mem_countchips(3*i+2);
+						mem_countchips_m1(H*2*3*i + 6*H-1 downto H*2*3*i + 5*H) <= conv_std_logic_vector(3*i+2, H);
+						mem_nechips2(i*3+2) <= '1';
 					end if;
-				elsif(even_nechips(i*3+2) = '1')then
-					even_countchips_m1(H*2*3*i + 3*H-1 downto H*2*3*i + 2*H) <= even_countchips(3*i+2);
-					even_countchips_m1(H*2*3*i + 4*H-1 downto H*2*3*i + 3*H) <= conv_std_logic_vector(3*i+2, H);
-					even_nechips2(i*3+1) <= '1';
+				elsif(mem_nechips(i*3+2) = '1')then
+					mem_countchips_m1(H*2*3*i + 3*H-1 downto H*2*3*i + 2*H) <= mem_countchips(3*i+2);
+					mem_countchips_m1(H*2*3*i + 4*H-1 downto H*2*3*i + 3*H) <= conv_std_logic_vector(3*i+2, H);
+					mem_nechips2(i*3+1) <= '1';
 				end if;
 				
-			elsif(even_nechips(i*3+1) = '1')then
-				even_countchips_m1(H*2*3*i + H-1 downto H*2*3*i) <= even_countchips(3*i+1);
-				even_countchips_m1(H*2*3*i + 2*H-1 downto H*2*3*i + H) <= conv_std_logic_vector(3*i+1, H);
-				even_nechips2(i*3) <= '1';
-				if(even_nechips(i*3+2) = '1')then
-					even_countchips_m1(H*2*3*i + 3*H-1 downto H*2*3*i + 2*H) <= even_countchips(3*i+2);
-					even_countchips_m1(H*2*3*i + 4*H-1 downto H*2*3*i + 3*H) <= conv_std_logic_vector(3*i+2, H);
-					even_nechips2(i*3+1) <= '1';
+			elsif(mem_nechips(i*3+1) = '1')then
+				mem_countchips_m1(H*2*3*i + H-1 downto H*2*3*i) <= mem_countchips(3*i+1);
+				mem_countchips_m1(H*2*3*i + 2*H-1 downto H*2*3*i + H) <= conv_std_logic_vector(3*i+1, H);
+				mem_nechips2(i*3) <= '1';
+				if(mem_nechips(i*3+2) = '1')then
+					mem_countchips_m1(H*2*3*i + 3*H-1 downto H*2*3*i + 2*H) <= mem_countchips(3*i+2);
+					mem_countchips_m1(H*2*3*i + 4*H-1 downto H*2*3*i + 3*H) <= conv_std_logic_vector(3*i+2, H);
+					mem_nechips2(i*3+1) <= '1';
 				end if;
-			elsif(even_nechips(i*3+2) = '1')then
-				even_countchips_m1(H*2*3*i + H-1 downto H*2*3*i) <= even_countchips(3*i+2);
-				even_countchips_m1(H*2*3*i + 2*H-1 downto H*2*3*i + H) <= conv_std_logic_vector(3*i+2, H);
-				even_nechips2(i*3) <= '1';
+			elsif(mem_nechips(i*3+2) = '1')then
+				mem_countchips_m1(H*2*3*i + H-1 downto H*2*3*i) <= mem_countchips(3*i+2);
+				mem_countchips_m1(H*2*3*i + 2*H-1 downto H*2*3*i + H) <= conv_std_logic_vector(3*i+2, H);
+				mem_nechips2(i*3) <= '1';
 			end if;
 		end loop;
 		
-		-- Odd
-		odd_nechips2	<= (others => '0');
-		for i in NCHIPS/3-1 downto 0 loop
-			hitcounter_sum_m3_odd(i) <= conv_integer(odd_countchips(3*i))
-										+ conv_integer(odd_countchips(3*i+1))
-										+ conv_integer(odd_countchips(3*i+2));
-
-			if(odd_nechips(i*3) = '1')then
-				odd_countchips_m1(H*2*3*i + H-1 downto H*2*3*i) <= odd_countchips(3*i);
-				odd_countchips_m1(H*2*3*i + 2*H-1 downto H*2*3*i + H) <= conv_std_logic_vector(3*i+0, H);
-				odd_nechips2(i*3) <= '1';
-				if(odd_nechips(i*3+1) = '1')then
-					odd_countchips_m1(H*2*3*i + 3*H-1 downto H*2*3*i + 2*H) <= odd_countchips(3*i+1);
-					odd_countchips_m1(H*2*3*i + 4*H-1 downto H*2*3*i + 3*H) <= conv_std_logic_vector(3*i+1, H);
-					odd_nechips2(i*3+1) <= '1';
-					if(odd_nechips(i*3+2) = '1')then
-						odd_countchips_m1(H*2*3*i + 5*H-1 downto H*2*3*i + 4*H) <= odd_countchips(3*i+2);
-						odd_countchips_m1(H*2*3*i + 6*H-1 downto H*2*3*i + 5*H) <= conv_std_logic_vector(3*i+2, H);
-						odd_nechips2(i*3+2) <= '1';
-					end if;
-				elsif(odd_nechips(i*3+2) = '1')then
-					odd_countchips_m1(H*2*3*i + 3*H-1 downto H*2*3*i + 2*H) <= odd_countchips(3*i+2);
-					odd_countchips_m1(H*2*3*i + 4*H-1 downto H*2*3*i + 3*H) <= conv_std_logic_vector(3*i+2, H);
-					odd_nechips2(i*3+1) <= '1';
-				end if;
-				
-			elsif(odd_nechips(i*3+1) = '1')then
-				odd_countchips_m1(H*2*3*i + H-1 downto H*2*3*i) <= odd_countchips(3*i+1);
-				odd_countchips_m1(H*2*3*i + 2*H-1 downto H*2*3*i + H) <= conv_std_logic_vector(3*i+1, H);
-				odd_nechips2(i*3) <= '1';
-				if(odd_nechips(i*3+2) = '1')then
-					odd_countchips_m1(H*2*3*i + 3*H-1 downto H*2*3*i + 2*H) <= odd_countchips(3*i+2);
-					odd_countchips_m1(H*2*3*i + 4*H-1 downto H*2*3*i + 3*H) <= conv_std_logic_vector(3*i+2, H);
-					odd_nechips2(i*3+1) <= '1';
-				end if;
-			elsif(odd_nechips(i*3+2) = '1')then
-				odd_countchips_m1(H*2*3*i + H-1 downto H*2*3*i) <= odd_countchips(3*i+2);
-				odd_countchips_m1(H*2*3*i + 2*H-1 downto H*2*3*i + H) <= conv_std_logic_vector(3*i+2, H);
-				odd_nechips2(i*3) <= '1';
-			end if;
-		end loop;
-		
-		even_overflow_del1 	<= even_overflow;
-		odd_overflow_del1 	<= odd_overflow;
+		mem_overflow_del1 	<= mem_overflow;
 		block_empty_del1	<= block_empty;
 		stopwrite_del1		<= stopwrite;
 		blockchange_del1	<= blockchange;
 		
 		-- multiplexing of counters, step 2
-		--Even
-		haseven <= or_reduce(even_nechips2);
-		even_nfilled := 0;
-		countersum_even_temp := 0;
+		hashits <= or_reduce(mem_nechips2);
+		mem_nfilled := 0;
+		countersum_temp := 0;
 		for i in  0 to NCHIPS/3-1 loop
-			countersum_even_temp := countersum_even_temp + hitcounter_sum_m3_even(i);
-			even_countchips_m2(2*H*even_nfilled + 2*3*H-1 downto 2*H*even_nfilled) 
-			<= even_countchips_m1(2*3*i*H + 2*3*H-1 downto 2*3*i*H);
-			if(even_nechips2(i*3+2 downto i*3) = "001") then
-				even_nfilled := even_nfilled + 1;
-			elsif(even_nechips2(i*3+2 downto i*3) = "011") then
-				even_nfilled := even_nfilled + 2;
-			elsif(even_nechips2(i*3+2 downto i*3) = "111") then
-				even_nfilled := even_nfilled + 3;
+			countersum_temp := countersum_temp + hitcounter_sum_m3_mem(i);
+			mem_countchips_m2(2*H*mem_nfilled + 2*3*H-1 downto 2*H*mem_nfilled) 
+			<= mem_countchips_m1(2*3*i*H + 2*3*H-1 downto 2*3*i*H);
+			if(mem_nechips2(i*3+2 downto i*3) = "001") then
+				mem_nfilled := mem_nfilled + 1;
+			elsif(mem_nechips2(i*3+2 downto i*3) = "011") then
+				mem_nfilled := mem_nfilled + 2;
+			elsif(mem_nechips2(i*3+2 downto i*3) = "111") then
+				mem_nfilled := mem_nfilled + 3;
 			end if; 
 		end loop;
-		hitcounter_sum_even <= countersum_even_temp;
+		hitcounter_sum_mem <= countersum_temp;
 		
-		-- Odd
-		hasodd <= or_reduce(odd_nechips2);
-		odd_nfilled := 0;
-		countersum_odd_temp := 0;
-		for i in  0 to NCHIPS/3-1 loop
-			countersum_odd_temp := countersum_even_temp + hitcounter_sum_m3_even(i);
-			odd_countchips_m2(2*H*odd_nfilled + 2*3*H-1 downto 2*H*odd_nfilled) 
-			<= odd_countchips_m1(2*3*i*H + 2*3*H-1 downto 2*3*i*H);
-			if(odd_nechips2(i*3+2 downto i*3) = "001") then
-				odd_nfilled := odd_nfilled + 1;
-			elsif(odd_nechips2(i*3+2 downto i*3) = "011") then
-				odd_nfilled := odd_nfilled + 2;
-			elsif(odd_nechips2(i*3+2 downto i*3) = "111") then
-				odd_nfilled := odd_nfilled + 3;
-			end if; 
-		end loop;
-		hitcounter_sum_odd <= countersum_odd_temp;
 		
-		even_overflow_del2 	<= even_overflow_del1;
-		odd_overflow_del2 	<= odd_overflow_del1;
+		mem_overflow_del2 	<= mem_overflow_del1;
 		block_empty_del2	<= block_empty_del1;
 		stopwrite_del2		<= stopwrite_del1;
 		blockchange_del2	<= blockchange_del1;
 		
-		tofifo_counters <= X"000000000000" & tsread - "100" & hasodd & odd_overflow_del2 & odd_countchips_m2 & haseven & even_overflow_del2 & even_countchips_m2;
+		tofifo_counters <=  tsread - "100" & hashits & mem_overflow_del2 & mem_countchips_m2;
+		--X"000000000000" &
 	
 		creditchange := 1;
-		if(stopwrite_del2 = '0' and (hasodd = '1' or haseven = '1' or block_empty_del2 = '1')) then
+		if(stopwrite_del2 = '0' and (hashits = '1' or block_empty_del2 = '1')) then
 			write_counterfifo <= '1';
-			if(hitcounter_sum_even < 48) then -- limit number of hits per ts
-				creditchange := creditchange - hitcounter_sum_even;
+			if(hitcounter_sum_mem < 48) then -- limit number of hits per ts
+				creditchange := creditchange - hitcounter_sum_mem;
 			else
-				tofifo_counters(HASEVENBIT) 		<= '0';
-				tofifo_counters(EVENOVERFLOWBIT)	<= '1';
-				tofifo_counters(EVENCOUNTERRANGE)	<= counter2chipszero;
+				tofifo_counters(HASMEMBIT) 		<= '0';
+				tofifo_counters(MEMOVERFLOWBIT)	<= '1';
+				tofifo_counters(MEMCOUNTERRANGE)	<= counter2chipszero;
 			end if;
-			
-			if(hitcounter_sum_odd < 48) then -- limit number of hits per ts
-				creditchange := creditchange - hitcounter_sum_odd;
-			else
-				tofifo_counters(HASODDBIT) 		<= '0';
-				tofifo_counters(ODDOVERFLOWBIT)	<= '1';
-				tofifo_counters(ODDCOUNTERRANGE)<= counter2chipszero;
-			end if;
-			
+						
 			if(blockchange_del2 = '1') then
 				creditchange := creditchange  -1;
 			end if;
+
 		elsif(stopwrite_del2 ='1' and block_empty_del2 = '1') then -- we were overfull but just got an empty block
 			write_counterfifo <= '1';
 			creditchange := creditchange  -1;
 		elsif(stopwrite_del2 ='1' and blockchange_del2 = '1') then -- we were overfull and have suppressed hits
 			write_counterfifo <= '1';
-			tofifo_counters <= X"000000000000" & tsread - "100" & "0" & "1" & odd_countchips_m2 & "0" & "1" & even_countchips_m2;
+			tofifo_counters <= tsread - "100" & "0" & "1" & mem_countchips_m2;
 			creditchange := creditchange  -1;
 		end if;
 		credittemp <= credittemp + creditchange;
@@ -912,7 +760,7 @@ elsif(writeclk'event and writeclk = '1') then
 			terminate_output <= '1';
 		end if;	
 	when others =>
-		data_out		<= readcommand_last4(3 downto 0) & "00" & readcommand_last4(COMMANDBITS-2 downto TIMESTAMPSIZE+4) & memmultiplex & '0';
+		data_out		<= readcommand_last4(3 downto 0) & "000" & readcommand_last4(COMMANDBITS-6 downto TIMESTAMPSIZE) & memmultiplex;
 		out_type		<= "0000";
 		if(readcommand_ena_last4 = '1') then
 			nout <= nout + '1';
@@ -931,77 +779,47 @@ elsif(writeclk'event and writeclk = '1') then
 end if;
 end process;
 
-sdm: entity work.sorter_diagnostic_mux
-	PORT MAP
- 	(
-		aclr		=> reset,
-		clock		=> writeclk,
-		data0x		=> nintime(0),
-		data1x		=> nintime(1),
-		data2x		=> nintime(2),
-		data3x		=> nintime(3),
-		data4x		=> nintime(4),
-		data5x		=> nintime(5),
-		data6x		=> nintime(6),
-		data7x		=> nintime(7),
-		data8x		=> nintime(8),
-		data9x		=> nintime(9),
-		data10x		=> nintime(10),
-		data11x		=> nintime(11),
-		data12x		=> (others => '0'),--nintime(12),
-		data13x		=> (others => '0'),--nintime(13),
-		data14x		=> (others => '0'),--nintime(14),
-		data15x		=> noutoftime(0),
-		data16x		=> noutoftime(1),
-		data17x		=> noutoftime(2),
-		data18x		=> noutoftime(3),
-		data19x		=> noutoftime(4),
-		data20x		=> noutoftime(5),
-		data21x		=> noutoftime(6),
-		data22x		=> noutoftime(7),
-		data23x		=> noutoftime(8),
-		data24x		=> noutoftime(9),
-		data25x		=> noutoftime(10),
-		data26x		=> noutoftime(11),
-		data27x		=> (others => '0'),--noutoftime(12),
-		data28x		=> (others => '0'),--noutoftime(13),
-		data29x		=> (others => '0'),--noutoftime(14),
-		data30x		=> noverflow(0),
-		data31x		=> noverflow(1),
-		data32x		=> noverflow(2),
-		data33x		=> noverflow(3),
-		data34x		=> noverflow(4),
-		data35x		=> noverflow(5),
-		data36x		=> noverflow(6),
-		data37x		=> noverflow(7),
-		data38x		=> noverflow(8),
-		data39x		=> noverflow(9),
-		data40x		=> noverflow(10),
-		data41x		=> noverflow(11),
-		data42x		=> (others => '0'),--noverflow(12),
-		data43x		=> (others => '0'),--noverflow(13),
-		data44x		=> (others => '0'),--noverflow(14),
-		data45x		=> (others => '0'),
-		data46x		=> (others => '0'),
-		data47x		=> (others => '0'),
-		data48x		=> (others => '0'),
-		data49x		=> (others => '0'),
-		data50x		=> (others => '0'),
-		data51x		=> (others => '0'),
-		data52x		=> (others => '0'),
-		data53x		=> (others => '0'),
-		data54x		=> (others => '0'),
-		data55x		=> (others => '0'),
-		data56x		=> (others => '0'),
-		data57x		=> (others => '0'),
-		data58x		=> (others => '0'),
-		data59x		=> (others => '0'),
-		data60x		=> (others => '0'),
-		data61x		=> (others => '0'),
-		data62x		=> (others => '0'),
-		data63x		=> nout,
-		sel			=> diagnostic_sel,
-		result		=> diagnostic_out
-	);
+
+diagnostic_out(0) <= nintime(0);
+diagnostic_out(1) <= nintime(1);
+diagnostic_out(2) <= nintime(2);
+diagnostic_out(3) <= nintime(3);
+diagnostic_out(4) <= nintime(4);
+diagnostic_out(5) <= nintime(5);
+diagnostic_out(6) <= nintime(6);
+diagnostic_out(7) <= nintime(7);
+diagnostic_out(8) <= nintime(8);
+diagnostic_out(9) <= nintime(9);
+diagnostic_out(10) <= nintime(10);
+diagnostic_out(11) <= nintime(11);
+
+diagnostic_out(12) <= noutoftime(0);
+diagnostic_out(13) <= noutoftime(1);
+diagnostic_out(14) <= noutoftime(2);
+diagnostic_out(15) <= noutoftime(3);
+diagnostic_out(16) <= noutoftime(4);
+diagnostic_out(17) <= noutoftime(5);
+diagnostic_out(18) <= noutoftime(6);
+diagnostic_out(19) <= noutoftime(7);
+diagnostic_out(20) <= noutoftime(8);
+diagnostic_out(21) <= noutoftime(9);
+diagnostic_out(22) <= noutoftime(10);
+diagnostic_out(23) <= noutoftime(11);
+
+diagnostic_out(24) <= noverflow(0);
+diagnostic_out(25) <= noverflow(1);
+diagnostic_out(26) <= noverflow(2);
+diagnostic_out(27) <= noverflow(3);
+diagnostic_out(28) <= noverflow(4);
+diagnostic_out(29) <= noverflow(5);
+diagnostic_out(30) <= noverflow(6);
+diagnostic_out(31) <= noverflow(7);
+diagnostic_out(32) <= noverflow(8);
+diagnostic_out(33) <= noverflow(9);
+diagnostic_out(34) <= noverflow(10);
+diagnostic_out(35) <= noverflow(11);
+
+diagnostic_out(36) <= nout;
+diagnostic_out(37) <= conv_std_logic_vector(credits, 32);	
 
 end architecture RTL;

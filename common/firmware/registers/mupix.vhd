@@ -25,6 +25,8 @@ package mupix is
 
     subtype TSRANGE                 is integer range TIMESTAMPSIZE-1 downto 0;
 
+    constant MHITSIZE               :  integer := HITSIZE+2;
+
     constant COARSECOUNTERSIZE      :  integer := 32;
 
     subtype  COLRANGE               is integer range 23 downto 16;
@@ -37,11 +39,9 @@ package mupix is
 
     constant BINCOUNTERSIZE         :  integer := 24;
     constant CHARGESIZE_MP10        :  integer := 5;
-    constant SLOWTIMESTAMPSIZE      :  integer := 10;
 
-    constant NOTSHITSIZE            :  integer := HITSIZE -TIMESTAMPSIZE;--HITSIZE -TIMESTAMPSIZE-1;
-    subtype SLOWTSRANGE             is integer range TIMESTAMPSIZE-1 downto 1;
-    subtype NOTSRANGE               is integer range HITSIZE-1 downto TIMESTAMPSIZE;--TIMESTAMPSIZE+1;
+    constant NOTSHITSIZE            :  integer := HITSIZE -TIMESTAMPSIZE;
+    subtype NOTSRANGE               is integer range HITSIZE-1 downto TIMESTAMPSIZE;
 
     constant HITSORTERBINBITS       :  integer := 4;
     constant H                      :  integer := HITSORTERBINBITS;
@@ -49,29 +49,26 @@ package mupix is
 
     constant BITSPERTSBLOCK         :  integer := 4;
     subtype TSBLOCKRANGE            is integer range TIMESTAMPSIZE-1 downto BITSPERTSBLOCK;
-    subtype SLOWTSNONBLOCKRANGE     is integer range BITSPERTSBLOCK-2 downto 0;
+    subtype TSNONBLOCKRANGE         is integer range BITSPERTSBLOCK-1 downto 0;
 
     constant COMMANDBITS            :  integer := 20;
 
     constant COUNTERMEMADDRSIZE     :  integer := 8;
-    constant NMEMS                  :  integer := 2**(TIMESTAMPSIZE-COUNTERMEMADDRSIZE-1); -- -1 due to even odd in single memory
-    constant COUNTERMEMDATASIZE     :  integer := 10;
-    subtype COUNTERMEMSELRANGE      is integer range TIMESTAMPSIZE-1 downto COUNTERMEMADDRSIZE+1;
-    subtype SLOWTSCOUNTERMEMSELRANGE is integer range TIMESTAMPSIZE-2 downto COUNTERMEMADDRSIZE;
-    subtype COUNTERMEMADDRRANGE     is integer range COUNTERMEMADDRSIZE downto 1;
-    subtype SLOWCOUNTERMEMADDRRANGE is integer range COUNTERMEMADDRSIZE-1 downto 0;
+    constant NMEMS                  :  integer := 2**(TIMESTAMPSIZE-COUNTERMEMADDRSIZE);
+    constant COUNTERMEMDATASIZE     :  integer := 5;
+    subtype COUNTERMEMSELRANGE      is integer range TIMESTAMPSIZE-1 downto COUNTERMEMADDRSIZE;
+    subtype COUNTERMEMADDRRANGE     is integer range COUNTERMEMADDRSIZE-1 downto 0;
 
     -- Bit positions in the counter fifo of the sorter
-    subtype EVENCOUNTERRANGE        is integer range 2*NCHIPS*HITSORTERBINBITS-1 downto 0;
-    constant EVENOVERFLOWBIT        :  integer := 2*NCHIPS*HITSORTERBINBITS;
-    constant HASEVENBIT             :  integer := 2*NCHIPS*HITSORTERBINBITS+1;
-    subtype ODDCOUNTERRANGE         is integer range 2*NCHIPS*HITSORTERBINBITS+HASEVENBIT downto HASEVENBIT+1;
-    constant ODDOVERFLOWBIT         :  integer := 2*NCHIPS*HITSORTERBINBITS+HASEVENBIT+1;
-    constant HASODDBIT              :  integer := 2*NCHIPS*HITSORTERBINBITS+HASEVENBIT+2;
-    subtype TSINFIFORANGE           is integer range 2*NCHIPS*HITSORTERBINBITS+HASEVENBIT+SLOWTIMESTAMPSIZE+2 downto 2*NCHIPS*HITSORTERBINBITS+HASEVENBIT+3;
+    subtype MEMCOUNTERRANGE        is integer range 2*NCHIPS*HITSORTERBINBITS-1 downto 0;
+    constant MEMOVERFLOWBIT        :  integer := 2*NCHIPS*HITSORTERBINBITS;
+    constant HASMEMBIT             :  integer := 2*NCHIPS*HITSORTERBINBITS+1;
+    subtype TSINFIFORANGE           is integer range HASMEMBIT+TIMESTAMPSIZE downto HASMEMBIT+1;
     subtype TSBLOCKINFIFORANGE      is integer range TSINFIFORANGE'left downto TSINFIFORANGE'left-BITSPERTSBLOCK+1;
     subtype TSINBLOCKINFIFORANGE    is integer range TSINFIFORANGE'right+BITSPERTSBLOCK-2  downto TSINFIFORANGE'right;
-
+    subtype SORTERFIFORANGE         is integer range TSINFIFORANGE'left downto 0;
+    
+    constant NSORTERCOUNTERS        : integer := 40;
 
     -----------------------------------------------------------
     -- mupix ctrl constants
@@ -94,7 +91,6 @@ package mupix is
     subtype hit_t is                std_logic_vector(HITSIZE-1 downto 0);
     subtype cnt_t is                std_logic_vector(COARSECOUNTERSIZE-1  downto 0);
     subtype ts_t is                 std_logic_vector(TSRANGE);
-    subtype slowts_t                is std_logic_vector(SLOWTIMESTAMPSIZE-1 downto 0);
     subtype nots_t                  is std_logic_vector(NOTSHITSIZE-1 downto 0);
     subtype addr_t                  is std_logic_vector(HITSORTERADDRSIZE-1 downto 0);
     subtype counter_t               is std_logic_vector(HITSORTERBINBITS-1 downto 0);
@@ -108,13 +104,14 @@ package mupix is
     type cnt_array                  is array (NCHIPS-1 downto 0) of cnt_t;
 
     type ts_array                   is array (NCHIPS-1 downto 0) of ts_t;
-    type slowts_array               is array (NCHIPS-1 downto 0) of slowts_t;
 
     type nots_hit_array             is array (NCHIPS-1 downto 0) of nots_t;
     type addr_array                 is array (NCHIPS-1 downto 0) of addr_t;
 
     type counter_chips              is array (NCHIPS-1 downto 0) of counter_t;
     subtype counter2_chips          is std_logic_vector(2*NCHIPS*HITSORTERBINBITS-1 downto 0);
+
+    subtype sorterfifodata_t        is std_logic_vector(SORTERFIFORANGE);
 
     type hitcounter_sum3_type is array (NCHIPS/3-1 downto 0) of integer;
 
@@ -150,5 +147,6 @@ package mupix is
     type allcounterwren_array       is array (NCHIPS-1 downto 0) of counterwren_array;
     subtype countermemsel_t         is std_logic_vector(COUNTERMEMADDRRANGE);
     type reg_array                  is array (NCHIPS-1 downto 0) of work.mudaq.reg32;
+    type sorter_reg_array           is array (NSORTERCOUNTERS-1 downto 0) of work.mudaq.reg32;
 
 end package;

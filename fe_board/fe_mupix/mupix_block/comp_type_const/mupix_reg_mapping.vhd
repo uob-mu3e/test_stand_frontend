@@ -28,6 +28,9 @@ port (
     i_lvds_data_valid           : in  std_logic_vector(35 downto 0) := x"CCCCCCCCC"; -- lvds alignment to mupix chips ok
     i_lvds_status               : in  work.util.slv32_array_t    (35 downto 0) := (others => x"CCCCCCCC");
 
+    -- inputs  125 (how to sync)------------------------------
+    i_sorter_counters           : in sorter_reg_array   := (others => x"CCCCCCCC");
+
     -- outputs 156--------------------------------------------
     o_mp_lvds_link_mask         : out std_logic_vector(35 downto 0); -- lvds link mask
     o_mp_lvds_invert            : out std_logic;
@@ -41,7 +44,10 @@ port (
     o_mp_ctrl_chip_config_mask  : out std_logic_vector(11 downto 0);
     o_mp_ctrl_invert_29         : out std_logic;
     o_mp_ctrl_invert_csn        : out std_logic;
-    o_mp_ctrl_slow_down         : out std_logic_vector(31 downto 0)--;
+    o_mp_ctrl_slow_down         : out std_logic_vector(31 downto 0);
+
+    -- outputs 125-------------------------------------------------
+    o_sorter_delay              : out ts_t--;
 );
 end entity;
 
@@ -192,6 +198,18 @@ begin
             if ( regaddr = MP_LVDS_INVERT_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata <= (0 => mp_lvds_invert, others => '0');
             end if;
+
+            if ( regaddr = MP_SORTER_DELAY_W and i_reg_we = '1' ) then
+                o_sorter_delay <= i_reg_wdata(TSRANGE);
+            end if;
+
+
+            for I in 0 to NSORTERCOUNTERS-1 loop 
+                if ( regaddr = I + MP_SORTER_COUNTER_R and i_reg_re = '1' ) then
+                    o_reg_rdata <= i_sorter_counters(I);
+                end if;
+            end loop;
+
 
         end if;
     end process;
