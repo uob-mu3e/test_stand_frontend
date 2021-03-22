@@ -657,7 +657,7 @@ elsif (writeclk'event and writeclk = '1') then
 				creditchange := creditchange  -1;
 			end if;
 
-		elsif(stopwrite_del2 ='1' and block_empty_del2 = '1') then -- we were overfull but just got an empty block
+		elsif(stopwrite_del2 ='1' and blockchange_del2 = '1' and block_empty_del2 = '1') then -- we were overfull but just got an empty block
 			write_counterfifo <= '1';
 			creditchange := creditchange  -1;
 		elsif(stopwrite_del2 ='1' and blockchange_del2 = '1') then -- we were overfull and have suppressed hits
@@ -745,10 +745,10 @@ elsif(writeclk'event and writeclk = '1') then
 
 	case readcommand_last4(COMMANDBITS-1 downto COMMANDBITS-4) is
 	when COMMAND_HEADER1(COMMANDBITS-1 downto COMMANDBITS-4) =>
-		data_out		<= tscounter(46 downto 15);
+		data_out		<= tscounter(47 downto 16);
 		out_type		<= MERGER_FIFO_PAKET_START_MARKER;
 	when COMMAND_HEADER2(COMMANDBITS-1 downto COMMANDBITS-4) =>
-		data_out		<= tscounter(14 downto 0) & '0' & X"0000";
+		data_out		<= tscounter(15 downto 0) & X"0000";
 		out_type		<= "0000";
 	when COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out		<= "000" & readcommand_last4(TIMESTAMPSIZE-1) & "111111" & readcommand_last4(TIMESTAMPSIZE-2 downto 4) & overflow_last4;
