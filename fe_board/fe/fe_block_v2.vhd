@@ -186,14 +186,15 @@ architecture arch of fe_block_v2 is
 
     signal reset_link_rx            : std_logic_vector(7 downto 0);
     signal reset_link_rx_clk        : std_logic;
+    signal reset_link_ready         : std_logic;
 
     signal arriaV_temperature       : std_logic_vector(7 downto 0);
     signal arriaV_temperature_clr   : std_logic;
     signal arriaV_temperature_ce    : std_logic;
-	 signal arriaV_temperature_tsdcaldone : std_logic;
-	 signal arriaV_temperature_temp : std_logic_vector(7 downto 0);
-	 type temp_state_t is (convert, clear);
-	 signal temp_state :  temp_state_t;
+    signal arriaV_temperature_tsdcaldone : std_logic;
+    signal arriaV_temperature_temp  : std_logic_vector(7 downto 0);
+    type temp_state_t               is (convert, clear);
+    signal temp_state               :  temp_state_t;
     
     -- Max 10 SPI 
     signal adc_reg                  : work.util.slv32_array_t(4 downto 0);
@@ -222,29 +223,28 @@ architecture arch of fe_block_v2 is
 
     signal max_spi_counter          : integer;
     signal max10_version            : reg32;
-    signal max10_status             : reg32;	 
+    signal max10_status             : reg32;
     signal max10_spiflash_cmdaddr   : reg32;
 
-    type max_spi_state_t is (idle, programming, fifocopy, control, controlwait, programmingaddrwait, programmingaddr,
-    flashwait, busyread, programmingend, maxversion, statuswait, maxstatus, adcwait, maxadc, endwait);
-    signal max_spi_state :   max_spi_state_t;  
-    signal program_req :   std_logic;
-    signal flash_busy :    std_logic;
-	 signal busy_last	: std_logic;
+    type max_spi_state_t            is (idle, programming, fifocopy, control, controlwait, programmingaddrwait, programmingaddr,
+                                    flashwait, busyread, programmingend, maxversion, statuswait, maxstatus, adcwait, maxadc, endwait);
+    signal max_spi_state            : max_spi_state_t;  
+    signal program_req              : std_logic;
+    signal flash_busy               : std_logic;
+    signal busy_last                : std_logic;
 
-    signal programming_status   : reg32;
-    signal programming_ctrl     : reg32;
-    signal programming_data     : reg32;
-    signal programming_data_ena : std_logic;
-    signal programming_addr     : reg32;
-    signal programming_addr_ena : std_logic;
-	 signal programming_addr_ena_reg : std_logic;
-    
-    signal read_programming_fifo : std_logic;
+    signal programming_status       : reg32;
+    signal programming_ctrl         : reg32;
+    signal programming_data         : reg32;
+    signal programming_data_ena     : std_logic;
+    signal programming_addr         : reg32;
+    signal programming_addr_ena     : std_logic;
+    signal programming_addr_ena_reg : std_logic;
+
+    signal read_programming_fifo    : std_logic;
     signal programming_data_from_fifo : reg32;
 
-
-    signal wordcounter : integer;
+    signal wordcounter              : integer;
 
 begin
 
@@ -579,6 +579,7 @@ begin
     )
     port map (
         i_data_125_rx           => reset_link_rx(7 downto 0),
+        i_data_ready            => reset_link_ready,
         i_reset_125_rx_n        => reset_125_RRX_n,
         i_clk_125_rx            => reset_link_rx_clk,
 
@@ -656,6 +657,7 @@ begin
         i_data_lvds_serial              => i_ffly2_lvds_rx & i_ffly1_lvds_rx,
         o_data_lvds_parallel(7 downto 0)=> reset_link_rx,
         o_data_lvds_parallel(15 downto 8)=>open,
+        o_lvds_ready                    => reset_link_ready,
 
         --I2C
         i_i2c_enable                    => '1',

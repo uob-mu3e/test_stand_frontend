@@ -671,7 +671,7 @@ elsif (writeclk'event and writeclk = '1') then
 			credittemp <= 127;
 		elsif(credittemp < -128) then
 			credits <= -128;
-			credittemp <= 128;
+			credittemp <= -128;
 		else
 			credits <= credittemp;
 		end if;
