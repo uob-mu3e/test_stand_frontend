@@ -167,7 +167,7 @@ elsif(clk'event and clk = '1') then
 					state 			<= subheader;
 				end if;
 			else
-				-- should never get here...
+				do_fifo_reading 	:= true;
 			end if;
 		end if;
 		
