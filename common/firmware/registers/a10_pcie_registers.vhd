@@ -28,6 +28,7 @@ package a10_pcie_registers is
 		constant RESET_BIT_DDR3									:  integer := 19;
 		constant RESET_BIT_DATAFLOW							    :  integer := 20;
         constant RESET_BIT_LINK_MERGER							:  integer := 21;
+        constant RESET_BIT_DATA_PATH							:  integer := 22;
 		constant RESET_BIT_PCIE									:  integer := 31;
 
 		constant DATAGENERATOR_REGISTER_W					    : integer := 16#02#;
@@ -63,11 +64,13 @@ package a10_pcie_registers is
         constant SWB_LINK_MASK_SCIFI_REGISTER_W					: integer := 16#11#;
         constant SWB_LINK_MASK_TILES_REGISTER_W					: integer := 16#12#;
         constant SWB_READOUT_STATE_REGISTER_W					: integer := 16#13#;
-        	constant USE_GEN_LINK							    : integer := 0;
-			constant USE_STREAM							        : integer := 1;
-			constant USE_MERGER							        : integer := 2;
-			constant USE_LINK 								    : integer := 3;
-			constant USE_GEN_MERGER 						    : integer := 4;
+        	constant USE_BIT_GEN_LINK							: integer := 0;
+			constant USE_BIT_STREAM							    : integer := 1;
+			constant USE_BIT_MERGER							    : integer := 2;
+			constant USE_BIT_LINK 								: integer := 3;
+			constant USE_BIT_GEN_MERGER 						: integer := 4;
+			constant USE_BIT_FARM	 						    : integer := 5;
+		constant SWB_READOUT_LINK_REGISTER_W					: integer := 16#14#;
 
         constant DDR3_CONTROL_W									: integer := 16#20#;
 		constant DDR3_BIT_ENABLE_A								: integer := 0;

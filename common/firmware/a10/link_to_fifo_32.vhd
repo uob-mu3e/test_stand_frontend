@@ -43,7 +43,7 @@ architecture arch of link_to_fifo_32 is
     signal link_to_fifo_state : link_to_fifo_type;
     signal cnt_skip_data : std_logic_vector(31 downto 0);
 
-    signal rx_156_data, rx_156_q : std_logic_vector(35 downto 0);
+    signal rx_156_data, rx_250_q : std_logic_vector(35 downto 0);
     signal rx_250_data : std_logic_vector(37 downto 0);
     signal rx_156_wen, rx_250_wen, sync_rdempty, almost_full, wrfull : std_logic;
     signal wrusedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH - 1 downto 0);
@@ -87,7 +87,7 @@ begin
         rdreq       => not sync_rdempty,
         wrclk       => i_clk_156,
         rdclk       => i_clk_250,
-        q           => rx_156_q,
+        q           => rx_250_q,
         rdempty     => sync_rdempty,
         aclr        => '0'--,
     );
@@ -97,8 +97,8 @@ begin
         W => 32--,
     )
     port map(
-        i_link_data         => rx_156_q(35 downto 4),
-        i_link_datak        => rx_156_q(3 downto 0),
+        i_link_data         => rx_250_q(35 downto 4),
+        i_link_datak        => rx_250_q(3 downto 0),
         i_fifo_almost_full  => almost_full,
         i_sync_fifo_empty   => sync_rdempty,
         o_fifo_data         => rx_250_data(35 downto 0),

@@ -24,6 +24,7 @@ port(
     o_ren               : out std_logic;
     o_endofevent        : out std_logic;
     o_done              : out std_logic;
+    o_state_out         : out std_logic_vector (3 downto 0);
     
     --! status counters 
     --! 0: bank_builder_idle_not_header
@@ -45,8 +46,14 @@ architecture arch of swb_midas_event_builder is
         EVENT_IDLE--,
     );
     signal event_tagging_state : event_tagging_state_type;
-    signal e_size_add, b_size_add, b_length_add, w_ram_add_reg, w_fifo_data, r_fifo_data, last_event_add, align_event_size : std_logic_vector(11 downto 0);
-    signal w_fifo_en, r_fifo_en, tag_fifo_empty, tag_fifo_full        : std_logic;
+    signal e_size_add, b_size_add, b_length_add, w_ram_add_reg, w_ram_add, w_fifo_data, r_fifo_data, last_event_add, align_event_size : std_logic_vector(11 downto 0);
+    signal w_fifo_en, r_fifo_en, tag_fifo_empty, tag_fifo_full : std_logic;
+
+    -- ram 
+    signal w_ram_en : std_logic;
+    signal r_ram_add : std_logic_vector(8 downto 0);
+    signal w_ram_data : std_logic_vector(31 downto 0);
+    signal r_ram_data : std_logic_vector(255 downto 0);
 
     -- midas event 
     signal event_id, trigger_mask : std_logic_vector(15 downto 0);
@@ -75,6 +82,10 @@ begin
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
 
+
+    --! data out
+    o_data <= r_ram_data;
+
     e_ram_32_256 : entity work.ip_ram
     generic map (
         ADDR_WIDTH_A    => 12,
@@ -86,8 +97,8 @@ begin
     port map (
         address_a       => w_ram_add,
         address_b       => r_ram_add,
-        clock_a         => i_clk_dma,
-        clock_b         => i_clk_dma,
+        clock_a         => i_clk_250,
+        clock_b         => i_clk_250,
         data_a          => w_ram_data,
         data_b          => (others => '0'),
         wren_a          => w_ram_en,
@@ -106,14 +117,14 @@ begin
         data            => w_fifo_data,
         wrreq           => w_fifo_en,
         rdreq           => r_fifo_en,
-        clock           => i_clk_dma,
+        clock           => i_clk_250,
         q               => r_fifo_data,
         full            => tag_fifo_full,
         empty           => tag_fifo_empty,
         almost_empty    => open,
         almost_full     => open,
         usedw           => open,
-        sclr            => reset_dma--,
+        sclr            => not i_reset_n_250--,
     );
 
     o_ren <=
@@ -268,7 +279,7 @@ begin
             if ( i_rempty = '0' ) then
                 w_ram_en            <= '1';
                 w_ram_add           <= w_ram_add + 1;
-                w_ram_data          <= link_data;
+                w_ram_data          <= i_rx;
                 event_size_cnt      <= event_size_cnt + 4;
                 bank_size_cnt       <= bank_size_cnt + 4;
                 if ( i_trailer = '1' ) then
@@ -379,9 +390,9 @@ begin
 
 
     -- dma end of events, count events and write control
-    process(i_clk_dma, i_reset_dma_n)
+    process(i_clk_250, i_reset_n_250)
     begin
-    if ( i_reset_dma_n = '0' ) then
+    if ( i_reset_n_250 = '0' ) then
         o_wen        <= '0';
         o_endofevent        <= '0';
         o_state_out         <= x"0";
@@ -393,7 +404,7 @@ begin
         event_counter_state <= waiting;	
         word_counter        <= (others => '0');
         --
-    elsif rising_edge(i_clk_dma) then
+    elsif rising_edge(i_clk_250) then
 
         o_done          <= '0';
         r_fifo_en       <= '0';
