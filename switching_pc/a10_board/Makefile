@@ -1,5 +1,6 @@
 
 CABLE=DE5
+SOF?=output_files/top.sof
 
 IPs = \
     $(wildcard ip/*.tcl) \

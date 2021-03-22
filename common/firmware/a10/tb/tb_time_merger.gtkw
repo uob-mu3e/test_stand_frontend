@@ -1,0 +1,24 @@
+[*]
+[*] GTKWave Analyzer v3.3.108 (w)1999-2020 BSI
+[*] Mon Mar 22 15:32:53 2021
+[*]
+[dumpfile] "/home/makoeppe/mu3e/online/common/firmware/a10/tb/.cache/tb_time_merger.ghw"
+[dumpfile_mtime] "Mon Mar 22 15:28:54 2021"
+[dumpfile_size] 51367696
+[savefile] "/home/makoeppe/mu3e/online/common/firmware/a10/tb/tb_time_merger.gtkw"
+[timestart] 0
+[size] 2560 1440
+[pos] -1708 -1
+*-15.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] top.
+[treeopen] top.tb_time_merger.
+[sst_width] 247
+[signals_width] 332
+[sst_expanded] 1
+[sst_vpaned_height] 430
+@22
+#{top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[31:0]} top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[31] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[30] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[29] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[28] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[27] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[26] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[25] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[24] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[23] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[22] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[21] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[20] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[19] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[18] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[17] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[16] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[15] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[14] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[13] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[12] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[11] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[10] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[9] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[8] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[7] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[6] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[5] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[4] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[3] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[2] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[1] top.tb_time_merger.gen_link_fifos[0].e_link_to_fifo_32.i_rx[0]
+@28
+top.tb_time_merger.e_time_merger.merger_state_signal
+[pattern_trace] 1
+[pattern_trace] 0
