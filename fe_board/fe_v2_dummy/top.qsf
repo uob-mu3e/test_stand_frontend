@@ -18,6 +18,3 @@ set_global_assignment -name QIP_FILE registers/include.qip
 set_global_assignment -name QIP_FILE ../firmware/FEB_common/include_FEB_v2.qip
 
 # tail
-
-
-

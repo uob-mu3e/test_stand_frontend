@@ -71,7 +71,7 @@ struct xcvr_block_t {
         printf("  data  :   0x%08X / 0x%01X\n", xcvr[0x2A], xcvr[0x2B]);
 
         if(xcvr[0x25] != 0xCCCCCCCC && xcvr[0x26] != 0xCCCCCCCC) {
-            printf("  mW/C :   %i / %i\n", xcvr[0x25], xcvr[0x26]/10000);
+            printf("  mW/C  :   %i / %i\n", xcvr[0x25], xcvr[0x26] / 10000);
         }
 
         printf("\n");

@@ -80,9 +80,9 @@ flow : all
 .PHONY : sof2flash
 sof2flash :
 	sof2flash --pfl --programmingmode=PS \
-        --optionbit=0x00030000 \
-        --input="$(SOF)" \
-        --output="$(SOF).flash" --offset=0x02B40000
+	    --optionbit=0x00030000 \
+	    --input="$(SOF)" \
+	    --output="$(SOF).flash" --offset=0x02B40000
 	objcopy -Isrec -Obinary $(SOF).flash $(SOF).bin
 
 .PHONY : pgm
