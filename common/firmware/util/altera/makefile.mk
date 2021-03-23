@@ -22,8 +22,15 @@ ifeq ($(NIOS_SOPCINFO),)
     NIOS_SOPCINFO := $(PREFIX)/nios.sopcinfo
 endif
 
-BSP_SCRIPT := software/hal_bsp.tcl
-SRC_DIR := software/app_src
+# tcl script to generate BSP
+ifeq ($(BSP_SCRIPT),)
+    BSP_SCRIPT := software/hal_bsp.tcl
+endif
+
+# location (directory) of main.cpp
+ifeq ($(SRC_DIR),)
+    SRC_DIR := software/app_src
+endif
 
 ifeq ($(BSP_DIR),)
     BSP_DIR := $(PREFIX)/software/hal_bsp
