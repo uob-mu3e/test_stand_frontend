@@ -60,7 +60,7 @@ architecture rtl of top is
 
     signal nios_pio             : std_logic_vector(31 downto 0);
 
-    signal av_xcvr              : work.util.avalon_t;
+    signal av_xcvr0             : work.util.avalon_t;
 
 begin
 
@@ -76,7 +76,7 @@ begin
 
 
 
-    e_iopll_50to125 : component work.cmp.ip_iopll_50to125
+    e_iopll_50to125 : component work.cmp.ip_pll_50to125
     port map (
         refclk => clk_50,
         outclk_0 => SMA_CLKOUT,
@@ -135,12 +135,12 @@ begin
 
         pio_export              => nios_pio,
 
-        avm_xcvr0_address       => av_xcvr.address(17 downto 0),
-        avm_xcvr0_read          => av_xcvr.read,
-        avm_xcvr0_readdata      => av_xcvr.readdata,
-        avm_xcvr0_write         => av_xcvr.write,
-        avm_xcvr0_writedata     => av_xcvr.writedata,
-        avm_xcvr0_waitrequest   => av_xcvr.waitrequest,
+        avm_xcvr0_address       => av_xcvr0.address(17 downto 0),
+        avm_xcvr0_read          => av_xcvr0.read,
+        avm_xcvr0_readdata      => av_xcvr0.readdata,
+        avm_xcvr0_write         => av_xcvr0.write,
+        avm_xcvr0_writedata     => av_xcvr0.writedata,
+        avm_xcvr0_waitrequest   => av_xcvr0.waitrequest,
 
         avm_xcvr0_reset_reset_n => reset_125_n,
         avm_xcvr0_clock_clk     => clk_125,
@@ -179,44 +179,43 @@ begin
     QSFPA_MOD_SEL_n <= '1';
     QSFPA_RST_n <= '1';
 
-    e_xcvr : entity work.xcvr_a10
+    e_xcvr0_block : entity work.xcvr_block
     generic map (
-        INPUT_CLOCK_FREQUENCY_g => 125000000,
-        DATA_RATE_g => 5000,
-        CLK_MHZ_g => 125--,
+        g_XCVR_NAME => "xcvr_a10",
+        g_XCVR_N => 1,
+        g_CHANNELS => 4,
+        g_REFCLK_MHZ => 125.0,
+        g_CLK_MHZ => 125.0--,
     )
     port map (
-        i_tx_data               => X"03CAFEBC"
-                                 & X"02BABEBC"
-                                 & X"01DEADBC"
-                                 & X"00BEEFBC",
-        i_tx_datak              => "0001"
-                                 & "0001"
-                                 & "0001"
-                                 & "0001",
-
         o_rx_data               => open,
         o_rx_datak              => open,
 
-        o_tx_clkout             => open,
-        i_tx_clkin              => (others => clk_125),
-        o_rx_clkout             => open,
-        i_rx_clkin              => (others => clk_125),
+        i_tx_data(3)            => X"03CAFEBC",
+        i_tx_data(2)            => X"02BABEBC",
+        i_tx_data(1)            => X"01DEADBC",
+        i_tx_data(0)            => X"00BEEFBC",
+        i_tx_datak(3)           => "0001",
+        i_tx_datak(2)           => "0001",
+        i_tx_datak(1)           => "0001",
+        i_tx_datak(0)           => "0001",
 
-        o_tx_serial             => QSFPA_TX_p,
+        i_tx_clk                => (others => clk_125),
+        i_rx_clk                => (others => clk_125),
+
         i_rx_serial             => QSFPA_RX_p,
+        o_tx_serial             => QSFPA_TX_p,
 
-        i_pll_clk               => clk_125,
-        i_cdr_clk               => clk_125,
+        i_refclk                => (others => clk_125),
 
-        i_avs_address           => av_xcvr.address(13 downto 0),
-        i_avs_read              => av_xcvr.read,
-        o_avs_readdata          => av_xcvr.readdata,
-        i_avs_write             => av_xcvr.write,
-        i_avs_writedata         => av_xcvr.writedata,
-        o_avs_waitrequest       => av_xcvr.waitrequest,
+        i_avs_address           => av_xcvr0.address(17 downto 0),
+        i_avs_read              => av_xcvr0.read,
+        o_avs_readdata          => av_xcvr0.readdata,
+        i_avs_write             => av_xcvr0.write,
+        i_avs_writedata         => av_xcvr0.writedata,
+        o_avs_waitrequest       => av_xcvr0.waitrequest,
 
-        i_reset                 => not reset_125_n,
+        i_reset_n               => reset_125_n,
         i_clk                   => clk_125--,
     );
 
