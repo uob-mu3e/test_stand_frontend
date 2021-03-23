@@ -38,7 +38,7 @@ architecture arch of stream_merger is
         variable i : std_logic_vector(N-1 downto 0);
     begin
         for j in 1 to N loop
-            i := index ror j;
+            i := work.util.rotate_right(index, j);
             exit when ( work.util.or_reduce(empty and index) = '1' );
         end loop;
         return i;
