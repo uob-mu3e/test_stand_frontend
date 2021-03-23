@@ -30,20 +30,6 @@ end entity;
 
 architecture arch of stream_merger is
 
-    -- get next (Round-Robin) index such that empty(index) = '0'
-    function next_index (
-        index : std_logic_vector(N-1 downto 0);
-        empty : std_logic_vector(N-1 downto 0)--;
-    ) return std_logic_vector is
-        variable i : std_logic_vector(N-1 downto 0);
-    begin
-        for j in 1 to N loop
-            i := work.util.rotate_right(index, j);
-            exit when ( work.util.or_reduce(empty and i) = '0' );
-        end loop;
-        return i;
-    end function;
-
     -- one hot signal indicating current active input stream
     signal index : std_logic_vector(N-1 downto 0) := (0 => '1', others => '0');
 
@@ -90,11 +76,11 @@ begin
                 -- reset SOP mark
                 busy <= '0';
                 -- go to next index
-                index <= next_index(index, i_rempty);
+                index <= work.util.round_robin_next(index, not i_rempty);
             end if;
         elsif ( busy = '0' ) then
             -- go to next index
-            index <= next_index(index, i_rempty);
+            index <= work.util.round_robin_next(index, not i_rempty);
         end if;
 
         --
