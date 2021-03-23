@@ -39,7 +39,7 @@ architecture arch of stream_merger is
     begin
         for j in 1 to N loop
             i := work.util.rotate_right(index, j);
-            exit when ( work.util.or_reduce(empty and index) = '1' );
+            exit when ( work.util.or_reduce(empty and i) = '0' );
         end loop;
         return i;
     end function;
