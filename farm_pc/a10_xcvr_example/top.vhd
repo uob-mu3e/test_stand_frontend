@@ -216,7 +216,7 @@ begin
         i_avs_writedata         => av_xcvr.writedata,
         o_avs_waitrequest       => av_xcvr.waitrequest,
 
-        i_reset                 => not clk_125,
+        i_reset                 => not reset_125_n,
         i_clk                   => clk_125--,
     );
 
