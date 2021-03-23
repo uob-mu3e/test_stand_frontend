@@ -15,8 +15,6 @@ package util is
     --! basic array types
     subtype slv2_t is std_logic_vector(1 downto 0);
     type slv2_array_t is array ( natural range <> ) of slv2_t;
-    subtype slv3_t is std_logic_vector(2 downto 0);
-    type slv3_array_t is array ( natural range <> ) of slv3_t;
     subtype slv4_t is std_logic_vector(3 downto 0);
     type slv4_array_t is array ( natural range <> ) of slv4_t;
     subtype slv6_t is std_logic_vector(5 downto 0);
@@ -135,6 +133,16 @@ package util is
     ) return std_logic_vector;
 
     function shift_left (
+        v : std_logic_vector;
+        n : natural--;
+    ) return std_logic_vector;
+
+    function rotate_right (
+        v : std_logic_vector;
+        n : natural--;
+    ) return std_logic_vector;
+
+    function rotate_left (
         v : std_logic_vector;
         n : natural--;
     ) return std_logic_vector;
@@ -340,6 +348,22 @@ package body util is
     ) return std_logic_vector is
     begin
         return std_logic_vector(shift_left(unsigned(v), n));
+    end function;
+
+    function rotate_right (
+        v : std_logic_vector;
+        n : natural--;
+    ) return std_logic_vector is
+    begin
+        return shift_right(v, n mod v'length) or shift_left(v, v'length - n mod v'length);
+    end function;
+
+    function rotate_left (
+        v : std_logic_vector;
+        n : natural--;
+    ) return std_logic_vector is
+    begin
+        return shift_left(v, n mod v'length) or shift_right(v, v'length - n mod v'length);
     end function;
 
     function resize (
