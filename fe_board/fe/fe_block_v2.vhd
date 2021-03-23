@@ -198,40 +198,8 @@ architecture arch of fe_block_v2 is
     
     -- Max 10 SPI 
     signal adc_reg                  : work.util.slv32_array_t(4 downto 0);
-    signal i_adc_data_o             : std_logic_vector(31 downto 0);
-    signal SPI_addr_o               : std_logic_vector(6 downto 0);
-    
-    signal SPI_command              : std_logic_vector (15 downto 0); -- [15-1] SPI inst [0] aktiv
-    signal SPI_aktiv                : std_logic := '0';
-    signal SPI_Adc_cnt              : unsigned(12 downto 0) := (others => '0');
-    signal SPI_inst                 : std_logic_vector(14 downto 0) := X"00" & "000100" & '1'; --"[14-7] free [6-1] word cnt [0] R/W
-    signal SPI_done                 : std_logic;
-    signal SPI_rw                   : std_logic;
-
-
-    signal max_spi_strobe           : std_logic;
-    signal max_spi_addr             : std_logic_vector(6 downto 0);
-    signal max_spi_rw               : std_logic;    
-    signal max_spi_data_to_max      : std_logic_vector(31 downto 0);
-    signal max_spi_numbytes         : std_logic_vector(8 downto 0);
-    signal max_spi_next_data        : std_logic;
-    signal max_spi_word_from_max    : std_logic_vector(31 downto 0);
-    signal max_spi_word_en          : std_logic;
-    signal max_spi_byte_from_max    : std_logic_vector(7 downto 0);
-    signal max_spi_byte_en          : std_logic;
-    signal max_spi_busy             : std_logic;
-
-    signal max_spi_counter          : integer;
     signal max10_version            : reg32;
     signal max10_status             : reg32;
-    signal max10_spiflash_cmdaddr   : reg32;
-
-    type max_spi_state_t            is (idle, programming, fifocopy, control, controlwait, programmingaddrwait, programmingaddr,
-                                    flashwait, busyread, programmingend, maxversion, statuswait, maxstatus, adcwait, maxadc, endwait);
-    signal max_spi_state            : max_spi_state_t;  
-    signal program_req              : std_logic;
-    signal flash_busy               : std_logic;
-    signal busy_last                : std_logic;
 
     signal programming_status       : reg32;
     signal programming_ctrl         : reg32;
@@ -240,11 +208,6 @@ architecture arch of fe_block_v2 is
     signal programming_addr         : reg32;
     signal programming_addr_ena     : std_logic;
     signal programming_addr_ena_reg : std_logic;
-
-    signal read_programming_fifo    : std_logic;
-    signal programming_data_from_fifo : reg32;
-
-    signal wordcounter              : integer;
 
 begin
 
@@ -440,31 +403,31 @@ begin
         rst_reset_n     => nios_reset_n,
         clk_clk         => i_nios_clk--,
     );
-	 
-	 -- start and reset the temp sensor
-	 process(i_nios_clk, nios_reset_n)
-	 begin
-	 if(nios_reset_n = '0')then
-		temp_state <= convert;
-		arriaV_temperature_clr <= '0';
-		arriaV_temperature_ce  <= '0';
-		arriaV_temperature	  <= (others => '0');	
-	 elsif(i_nios_clk'event and i_nios_clk = '1')then
-		arriaV_temperature_ce	<= '1';
-		case temp_state is
-		when convert =>
-			arriaV_temperature_clr <= '0';
-			if(arriaV_temperature_tsdcaldone = '1')then
-				arriaV_temperature <= arriaV_temperature_temp;
-				temp_state <= clear;
-				arriaV_temperature_clr <= '1';
-			end if;
-		when clear =>
-			arriaV_temperature_clr <= '1';
-			temp_state <= convert;
-		end case;		
-	 end if;
-	 end process;
+
+     -- start and reset the temp sensor
+    process(i_nios_clk, nios_reset_n)
+    begin
+    if(nios_reset_n = '0')then
+        temp_state <= convert;
+        arriaV_temperature_clr <= '0';
+        arriaV_temperature_ce <= '0';
+        arriaV_temperature <= (others => '0');
+    elsif(i_nios_clk'event and i_nios_clk = '1')then
+        arriaV_temperature_ce <= '1';
+        case temp_state is
+        when convert =>
+            arriaV_temperature_clr <= '0';
+            if(arriaV_temperature_tsdcaldone = '1')then
+                arriaV_temperature <= arriaV_temperature_temp;
+                temp_state <= clear;
+                arriaV_temperature_clr <= '1';
+            end if;
+        when clear =>
+            arriaV_temperature_clr <= '1';
+            temp_state <= convert;
+        end case;
+    end if;
+    end process;
 
 
     e_sc_ram : entity work.sc_ram
@@ -680,9 +643,12 @@ begin
         o_testout                       => open--,
     );
 
-
-    e_max10_spi : entity work.max10_spi
-        port map(
+    e_max10_interface : entity work.max10_interface
+    port map(
+        i_clk               => i_nios_clk,
+        i_reset_n           => nios_reset_n,
+        i_clk_156           => i_clk_156,
+        
         -- Max10 SPI
         o_SPI_csn           => o_max10_spi_csn,
         o_SPI_clk           => o_max10_spi_sclk,
@@ -692,263 +658,17 @@ begin
         io_SPI_D2           => io_max10_spi_D2,
         io_SPI_D3           => io_max10_spi_D3,
     
-        -- Interface to Arria
-        clk50               => i_nios_clk,
-        reset_n             => nios_reset_n,
-        strobe              => max_spi_strobe,
-        addr                => max_spi_addr,
-        rw                  => max_spi_rw, 
-        data_to_max         => max_spi_data_to_max, 
-        numbytes            => max_spi_numbytes,
-        next_data           => max_spi_next_data,
-        word_from_max       => max_spi_word_from_max,
-        word_en             => max_spi_word_en,
-        byte_from_max       => max_spi_byte_from_max,
-        byte_en             => max_spi_byte_en,
-        busy                => max_spi_busy
-        );
+        adc_reg             => adc_reg,
+        max10_version       => max10_version,
+        max10_status        => max10_status,
+        programming_status  => programming_status,
 
+        programming_ctrl    => programming_ctrl,
+        programming_data    => programming_data,
+        programming_data_ena=> programming_data_ena,
+        programming_addr    => programming_addr,
+        programming_addr_ena=> programming_addr_ena--,
 
-
-    program_req <= programming_ctrl(0);
-
-    process(i_nios_clk, nios_reset_n)
-    begin
-    if(nios_reset_n = '0')then
-        max_spi_strobe 	 <= '0';
-        max_spi_counter  <= 0;
-        max_spi_state    <= idle;
-		max_spi_numbytes <= "000000000";
-		max_spi_rw		 <= '0';
-        read_programming_fifo   <= '0';
-		  busy_last	<= '0';
-		  programming_status(0) <= '0';
-		  programming_status(1) <= '0';
-		  flash_busy 				<= '0';
-		  programming_addr_ena_reg <= '0';
-		  
-    elsif(i_nios_clk'event and i_nios_clk = '1')then
-        max_spi_counter <= max_spi_counter + 1;
-        max_spi_strobe <= '0';
-		
-		  -- Note that this comes from a different clock domain, we register to avoid
-		  -- messing up the SM (as observed with signal tap)
-		  programming_addr_ena_reg <= programming_addr_ena;
-			
-			
-        programming_status(0) <= '0';
-		  programming_status(31 downto 4) <= (others => '0');
-
-        read_programming_fifo <= '0';
-		  
-		  busy_last		<= max_spi_busy;
-		  
-
-        case max_spi_state is
-        when idle =>
-				programming_status(4) <= '1';
-				max_spi_rw		 <= '0';
-            if(program_req = '1') then
-                max_spi_state <= programming;
-            elsif(max_spi_counter > 5000000) then
-                max_spi_state <= maxversion;
-                max_spi_counter <= 0;
-            end if;  
-				programming_status(0) <= '0';
-				programming_status(1) <= '0';
-		
-        when programming =>
-				programming_status(5) <= '1';
-            -- Idea for programming:
-            -- - go to programming state by setting programming_ctrl(0) = 1
-            -- - Fill at least 256 byte into the programming FIFO
-            -- - Set the address - this will copy the FIFO to the MAX, then trigger
-            --   flash programming
-            -- - Status is polled and reflected in MAX10 status until busy goes low
-            -- - Rinse and repeat
-
-            programming_status(0) <= '1';
-				
-            if(program_req = '0') then
-                max_spi_state <= idle;
-            end if;    
-
-            if(programming_addr_ena_reg = '1') then
-                max_spi_state <= fifocopy;
-					 programming_status(1) <= '1';
-            end if;    
-
-        when fifocopy =>
-				programming_status(6) <= '1';
-            max_spi_addr    <= FEBSPI_ADDR_PROGRAMMING_WFIFO;
-            max_spi_numbytes <= "100000000";
-            max_spi_strobe   <= '1';
-            max_spi_rw       <= '1';
-            max_spi_data_to_max     <= programming_data_from_fifo;
-            read_programming_fifo   <= max_spi_next_data;
-            max_spi_state    			<= programmingaddrwait;
-							
-			when programmingaddrwait =>
-				programming_status(7) <= '1';
-				max_spi_data_to_max     <= programming_data_from_fifo;
-            read_programming_fifo   <= max_spi_next_data;
-            if(max_spi_busy = '0' and busy_last = '1') then
-                max_spi_rw       <= '0';
-                max_spi_strobe   <= '0';
-                max_spi_state    <= programmingaddr;
-					 read_programming_fifo   <= '0';
-            end if;	
-				
-        when programmingaddr =>
-				programming_status(8) <= '1';
-            max_spi_addr    <= FEBSPI_ADDR_PROGRAMMING_ADDR;
-            max_spi_numbytes <= "000000100";
-            max_spi_strobe   <= '1';
-            max_spi_rw       <= '1';
-            max_spi_data_to_max     <= programming_addr;
-            max_spi_state    			<= controlwait;
-            				
-		 when controlwait =>
-				programming_status(9) <= '1';
-            if(max_spi_busy = '0' and busy_last = '1') then
-                max_spi_rw       <= '0';
-                max_spi_strobe   <= '0';
-                max_spi_state    <= control;
-            end if;
-			when control =>
-				programming_status(10) <= '1';
-				max_spi_addr    <= FEBSPI_ADDR_PROGRAMMING_CTRL;
-            max_spi_numbytes <= "000000100";
-            max_spi_strobe   <= '1';
-            max_spi_rw       <= '1';
-            max_spi_data_to_max     <= X"00000001";
-            max_spi_state    <= flashwait;		
-				flash_busy       <= '1';
-				
-        when flashwait =>
-				programming_status(11) <= '1';
-            if(max_spi_busy = '0' and busy_last = '1') then
-                max_spi_rw       <= '0';
-                max_spi_strobe   <= '0';
-                if(flash_busy = '1') then
-                    max_spi_state    <= busyread;
-                else
-                    max_spi_state    <= programmingend;
-                end if;
-            end if;
-        when busyread =>
-				programming_status(12) <= '1';
-            max_spi_addr    <= FEBSPI_ADDR_PROGRAMMING_STATUS;
-            max_spi_numbytes <= "000000100";
-            max_spi_strobe   <= '1';
-            if(max_spi_word_en = '1') then
-                flash_busy   		<= max_spi_word_from_max(0);
-                max_spi_strobe   <= '0';
-                max_spi_state    <= flashwait;
-            end if;
-        when programmingend =>
-				programming_status(13) <= '1';
-            max_spi_addr    <= FEBSPI_ADDR_PROGRAMMING_CTRL;
-            max_spi_numbytes <= "000000100";
-            max_spi_strobe   <= '1';
-            max_spi_rw       <= '1';
-            max_spi_data_to_max     <= (others => '0');
-				if(max_spi_busy = '0' and busy_last = '1') then
-                max_spi_rw       <= '0';
-                max_spi_strobe   <= '0';
-                max_spi_state    <= programming;
-					 programming_status(1) <= '0';
-            end if;	
-				
-				
-        when maxversion =>
-				programming_status(14) <= '1';
-            max_spi_addr    <= FEBSPI_ADDR_GITHASH;
-            max_spi_numbytes <= "000000100";
-            max_spi_strobe   <= '1';
-            if(max_spi_word_en = '1') then
-                max10_version   <= max_spi_word_from_max;
-                max_spi_strobe   <= '0';
-                max_spi_state    <= statuswait;
-            end if;
-		  when statuswait =>
-				programming_status(15) <= '1';
-				if(max_spi_busy = '0')then
-					max_spi_state    <= maxstatus;
-				end if;
-        when maxstatus =>
-				programming_status(16) <= '1';
-            max_spi_addr    <= FEBSPI_ADDR_STATUS;
-            max_spi_numbytes <= "000000100";
-            max_spi_strobe   <= '1';
-            if(max_spi_word_en = '1') then
-                max10_status   <= max_spi_word_from_max;
-                max_spi_strobe   <= '0';
-                max_spi_state    <= adcwait;
-                wordcounter      <= 0;
-            end if;  
-		  when adcwait =>
-				programming_status(17) <= '1';
-				if(max_spi_busy = '0')then
-					max_spi_state    <= maxadc;
-				end if;
-        when maxadc =>
-				programming_status(18) <= '1';
-            max_spi_addr    <= FEBSPI_ADDR_ADCDATA;
-            max_spi_numbytes <= "000010100";
-            max_spi_strobe   <= '1';   
-            if(max_spi_word_en = '1') then
-                wordcounter <= wordcounter + 1;
-                if(wordcounter = 0) then
-                    adc_reg(0)   <= max_spi_word_from_max;
-                elsif(wordcounter = 1) then
-                    adc_reg(1)   <= max_spi_word_from_max;
-                elsif(wordcounter = 2) then
-                    adc_reg(2)   <= max_spi_word_from_max;
-					elsif(wordcounter = 3) then
-                    adc_reg(3)   <= max_spi_word_from_max;	  
-					elsif(wordcounter = 4) then
-                    adc_reg(4)   <= max_spi_word_from_max; 
-                    max_spi_strobe   <= '0';
-                    max_spi_state    <= endwait;
-                end if;
-            end if;
-			when endwait =>
-				programming_status(19) <= '1';
-				if(max_spi_busy = '0')then
-					max_spi_state    <= idle;
-				end if;	
-        when others =>
-				programming_status(20) <= '1';
-            max_spi_state <= idle;     
-            max_spi_strobe <= '0';
-        end case;
-    end if;
-    end process;
-
-    scfifo_component : altera_mf.altera_mf_components.dcfifo
-    GENERIC MAP (
-            add_ram_output_register => "ON",
-            intended_device_family => "Arria V",
-            lpm_numwords => 512,
-            lpm_showahead => "ON",
-            lpm_type => "dcfifo",
-            lpm_width => 32,
-            lpm_widthu => 9,
-            overflow_checking => "ON",
-            underflow_checking => "ON",
-            use_eab => "ON"
-    )
-    PORT MAP (
-            wrclk => i_clk_156,
-            rdclk => i_nios_clk,
-            data => programming_data, 
-            rdreq => read_programming_fifo,
-            aclr => programming_ctrl(1),
-            wrreq => programming_data_ena,
-            rdempty => programming_status(2),
-            rdfull  => programming_status(3),
-            q => programming_data_from_fifo
     );
 
 end architecture;
