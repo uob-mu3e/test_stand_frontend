@@ -64,8 +64,8 @@ package mupix is
     constant MEMOVERFLOWBIT        :  integer := 2*NCHIPS*HITSORTERBINBITS;
     constant HASMEMBIT             :  integer := 2*NCHIPS*HITSORTERBINBITS+1;
     subtype TSINFIFORANGE           is integer range HASMEMBIT+TIMESTAMPSIZE downto HASMEMBIT+1;
-    subtype TSBLOCKINFIFORANGE      is integer range TSINFIFORANGE'left downto TSINFIFORANGE'left-BITSPERTSBLOCK+1;
-    subtype TSINBLOCKINFIFORANGE    is integer range TSINFIFORANGE'right+BITSPERTSBLOCK-2  downto TSINFIFORANGE'right;
+    subtype TSBLOCKINFIFORANGE      is integer range TSINFIFORANGE'left downto TSINFIFORANGE'right+BITSPERTSBLOCK;
+    subtype TSINBLOCKINFIFORANGE    is integer range TSINFIFORANGE'right+BITSPERTSBLOCK-1  downto TSINFIFORANGE'right;
     subtype SORTERFIFORANGE         is integer range TSINFIFORANGE'left downto 0;
     
     constant NSORTERCOUNTERS        : integer := 40;
