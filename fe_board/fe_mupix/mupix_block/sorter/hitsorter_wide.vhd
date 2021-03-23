@@ -161,7 +161,7 @@ signal overflow_last3:	std_logic_vector(15 downto 0);
 signal overflow_last4:	std_logic_vector(15 downto 0);
 
 signal memmultiplex: nots_t;
-signal tscounter: std_logic_vector(46 downto 0); --47 bit, LSB would run at double frequency, but not needed
+signal tscounter: std_logic_vector(47 downto 0); --47 bit, LSB would run at double frequency, but not needed
 
 -- end of run sequence on output side
 signal terminate_output : std_logic;
