@@ -301,13 +301,13 @@ genmem: for i in NCHIPS-1 downto 0 generate
 				q					=> fromcmem(i)(k)
 			);
 	
-		tocmem(i)(k)			<= (others => '0') when k = conv_integer(tsread(COUNTERMEMSELRANGE))
+		tocmem(i)(k)			<= (others => '0') when k = conv_integer(tsread(COUNTERMEMSELRANGE)) or reset_n = '0'
 									else tocmem_hitwriter(i)(k);
 		cmemreadaddr(i)(k)		<= 	cmemreadaddr_hitreader when 	k = conv_integer(tsread(COUNTERMEMSELRANGE))
 									else cmemreadaddr_hitwriter(i)(k);
-		cmemwriteaddr(i)(k)		<= 	cmemreadaddr_hitreader when 	k = conv_integer(tsread(COUNTERMEMSELRANGE))
+		cmemwriteaddr(i)(k)		<= 	cmemreadaddr_hitreader when 	k = conv_integer(tsread(COUNTERMEMSELRANGE)) or reset_n = '0'
 									else cmemwriteaddr_hitwriter(i)(k);
-		cmemwren(i)(k)			<= 	'1' when 	k = conv_integer(tsread(COUNTERMEMSELRANGE))
+		cmemwren(i)(k)			<= 	'1' when 	k = conv_integer(tsread(COUNTERMEMSELRANGE)) or reset_n = '0'
 									else cmemwren_hitwriter(i)(k);
 	end generate gencmem;
 	
@@ -325,7 +325,7 @@ genmem: for i in NCHIPS-1 downto 0 generate
 		
 		for k in NMEMS-1 downto 0 loop
 			cmemwren_hitwriter(i)(k) <= '0'; 	
-			cmemreadaddr_hitwriter(i)(k)	<= (others => '0');
+			cmemreadaddr_hitwriter(i)(k)	<= cmemreadaddr_hitwriter(i)(k) + '1';
 			cmemwriteaddr_hitwriter(i)(k)	<= (others => '0');
 		end loop;
 		
