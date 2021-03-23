@@ -15,6 +15,8 @@ package util is
     --! basic array types
     subtype slv2_t is std_logic_vector(1 downto 0);
     type slv2_array_t is array ( natural range <> ) of slv2_t;
+    subtype slv3_t is std_logic_vector(2 downto 0);
+    type slv3_array_t is array ( natural range <> ) of slv3_t;
     subtype slv4_t is std_logic_vector(3 downto 0);
     type slv4_array_t is array ( natural range <> ) of slv4_t;
     subtype slv6_t is std_logic_vector(5 downto 0);

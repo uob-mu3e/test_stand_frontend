@@ -14,6 +14,7 @@ generic (
     r_width         : integer   := 64;
     w_width         : integer   := 64;
     compare_fifos   : integer   := 32;
+    last_layer      : std_logic := '0';
     gen_fifos       : integer   := 16--;
 );
 port (
@@ -23,12 +24,17 @@ port (
     i_rdreq         : in std_logic_vector(gen_fifos - 1 downto 0);
     i_merge_state   : in std_logic;
     i_mask_n        : in std_logic_vector(compare_fifos - 1 downto 0);
+    i_wen_h_t       : in std_logic;
+    i_data_h_t      : in std_logic_vector(37 downto 0);
 
     -- output
     o_q             : out work.util.slv76_array_t(gen_fifos - 1 downto 0);
+    o_last          : out std_logic_vector(r_width-1 downto 0);
     o_rdempty       : out std_logic_vector(gen_fifos - 1 downto 0);
     o_rdreq         : out std_logic_vector(compare_fifos - 1 downto 0);
     o_mask_n        : out std_logic_vector(gen_fifos - 1 downto 0);
+    o_layer_state   : out work.util.slv4_array_t(gen_fifos - 1 downto 0);
+    o_wrfull        : out std_logic_vector(gen_fifos - 1 downto 0);
     
     i_reset_n       : in    std_logic;
     i_clk           : in    std_logic--;
@@ -41,108 +47,165 @@ architecture arch of time_merger_tree_fifo_64_v2 is
     constant size : integer := compare_fifos/2;
     
     signal data, data_reg : work.util.slv76_array_t(gen_fifos - 1 downto 0);
-    signal layer_state : work.util.slv4_array_t(gen_fifos - 1 downto 0);
-    signal wrreq, wrfull, reset_fifo : std_logic_vector(gen_fifos - 1 downto 0);
+    signal layer_state, layer_state_reg : work.util.slv4_array_t(gen_fifos - 1 downto 0);
+    signal wrreq, wrfull, reset_fifo, wrreq_good, both_rdempty : std_logic_vector(gen_fifos - 1 downto 0);
+    signal a, b, c, d : work.util.slv4_array_t(gen_fifos - 1 downto 0);
+    signal a_h, b_h, c_h, d_h : work.util.slv38_array_t(gen_fifos - 1 downto 0);
+    
+    -- for debugging / simulation
+    signal t : work.util.slv8_array_t(gen_fifos - 1 downto 0);
+    signal l1 : work.util.slv6_array_t(gen_fifos - 1 downto 0);
+    signal l2 : work.util.slv6_array_t(gen_fifos - 1 downto 0);
 
 begin
+    
+    gen_hits:
+    FOR i in 0 to gen_fifos - 1 GENERATE
+        a(i) <= i_data(i)(31 downto 28);
+        b(i) <= i_data(i)(69 downto 66);
+        c(i) <= i_data(i+size)(31 downto 28);
+        d(i) <= i_data(i+size)(31 downto 28);
+        
+        a_h(i) <= i_data(i)(37 downto 0);
+        b_h(i) <= i_data(i)(75 downto 38);
+        c_h(i) <= i_data(i+size)(37 downto 0);
+        d_h(i) <= i_data(i+size)(75 downto 38);
+        
+        -- for debugging / simulation
+        t(i)(7 downto 4) <= o_q(i)(69 downto 66) when last_layer = '0' else o_last(69 downto 66);
+        t(i)(3 downto 0) <= o_q(i)(31 downto 28) when last_layer = '0' else o_last(31 downto 28);
+        l1(i) <= o_q(i)(75 downto 70) when last_layer = '0' else o_last(75 downto 70);
+        l2(i) <= o_q(i)(37 downto 32) when last_layer = '0' else o_last(37 downto 32);
+    END GENERATE;
+    
+    o_layer_state <= layer_state;
+    o_wrfull <= wrfull;
 
-    tree_fifos:
+    gen_tree:
     FOR i in 0 to gen_fifos - 1 GENERATE
 
         o_mask_n(i) <= i_mask_n(i) or i_mask_n(i + size);
-        reset_fifo(i) <= '0' when i_merge_state = '1' else '1';
-
-        e_link_fifo : entity work.ip_dcfifo_mixed_widths
-        generic map(
-            ADDR_WIDTH_w    => TREE_w,
-            DATA_WIDTH_w    => w_width,
-            ADDR_WIDTH_r    => TREE_r,
-            DATA_WIDTH_r    => r_width,
-            DEVICE          => "Arria 10"--,
-        )
-        port map (
-            aclr    => not i_reset_n or reset_fifo(i),
-            data    => data(i),
-            rdclk   => i_clk,
-            rdreq   => i_rdreq(i),
-            wrclk   => i_clk,
-            wrreq   => wrreq(i),
-            q       => o_q(i),
-            rdempty => o_rdempty(i),
-            wrfull  => wrfull(i)--,
-        );
-
-        wrreq(i) <= '1' when i_merge_state = '1' and wrfull(i) = '0' and i_rdempty(i) = '0' and i_rdempty(i + size) = '0' and and_reduce(layer_state(i)(1 downto 0)) = '0' else '0';
+        reset_fifo(i) <= '0' when i_merge_state = '1' or last_layer = '1' else '1';
         
-        data(i)(37 downto 0) <= i_data(i)(37 downto 0)      when i_mask_n(i) = '1' and i_mask_n(i+size) = '0' else
-                                i_data(i+size)(37 downto 0) when i_mask_n(i+size) = '1' and i_mask_n(i) = '0' else
-                                data_reg(i)(37 downto 0)    when layer_state(i)(2) = '1' or layer_state(i)(3) = '1' else
-                                i_data(i)(75 downto 38)     when layer_state(i)(0) = '1' and i_data(i)(69 downto 66) <= i_data(i+size)(69 downto 66) else
-                                i_data(i+size)(75 downto 38)when layer_state(i)(0) = '1' and i_data(i)(69 downto 66) >  i_data(i+size)(69 downto 66) else
-                                i_data(i)(75 downto 38)     when layer_state(i)(1) = '1' and i_data(i)(69 downto 66) <= i_data(i+size)(69 downto 66) else
-                                i_data(i+size)(75 downto 38)when layer_state(i)(1) = '1' and i_data(i)(69 downto 66) >  i_data(i+size)(69 downto 66) else
-                                i_data(i)(37 downto 0)      when i_data(i)(31 downto 28) <= i_data(i+size)(31 downto 28) and i_data(i)(69 downto 66)        <= i_data(i+size)(31 downto 28) else
-                                i_data(i+size)(37 downto 0) when i_data(i+size)(31 downto 28) <= i_data(i)(31 downto 28) and i_data(i+size)(69 downto 66)   <= i_data(i)(31 downto 28) else
-                                i_data(i)(37 downto 0)      when i_data(i)(31 downto 28) <= i_data(i+size)(31 downto 28) and i_data(i)(69 downto 66)        >  i_data(i+size)(31 downto 28) else
-                                i_data(i+size)(37 downto 0) when  i_data(i)(31 downto 28) > i_data(i+size)(31 downto 28) and i_data(i)(69 downto 66)        <= i_data(i+size)(31 downto 28) else
-                                (others => '0');
+        gen_last_layer : IF last_layer = '1' GENERATE
+            e_last_fifo : entity work.ip_dcfifo_mixed_widths
+            generic map(
+                ADDR_WIDTH_w    => TREE_w,
+                DATA_WIDTH_w    => w_width,
+                ADDR_WIDTH_r    => TREE_r,
+                DATA_WIDTH_r    => r_width,
+                DEVICE          => "Arria 10"--,
+            )
+            port map (
+                aclr    => not i_reset_n or reset_fifo(i),
+                data    => data(i),
+                rdclk   => i_clk,
+                rdreq   => i_rdreq(i),
+                wrclk   => i_clk,
+                wrreq   => wrreq(i),
+                q       => o_last,
+                rdempty => o_rdempty(i),
+                wrfull  => wrfull(i)--,
+            );
+        END GENERATE;
         
-        data(i)(75 downto 38)<= i_data(i)(75 downto 38)     when i_mask_n(i) = '1' and i_mask_n(i+size) = '0' else
-                                i_data(i+size)(75 downto 38)when i_mask_n(i+size) = '1' and i_mask_n(i) = '0' else
-                                i_data(i)(37 downto 0)      when layer_state(i)(2) = '1' and i_data(i)(31 downto 28) <= i_data(i+size)(69 downto 66) else
-                                i_data(i+size)(75 downto 38)when layer_state(i)(2) = '1' and i_data(i)(31 downto 28) >  i_data(i+size)(69 downto 66) else
-                                i_data(i)(75 downto 38)     when layer_state(i)(3) = '1' and i_data(i+size)(31 downto 28) >  i_data(i)(69 downto 66) else
-                                i_data(i+size)(37 downto 0) when layer_state(i)(3) = '1' and i_data(i+size)(31 downto 28) <= i_data(i)(69 downto 66) else
-                                (others => '0')             when layer_state(i)(0) = '1' and i_data(i)(69 downto 66) <= i_data(i+size)(69 downto 66) else
-                                (others => '0')             when layer_state(i)(0) = '1' and i_data(i)(69 downto 66) >  i_data(i+size)(69 downto 66) else
-                                (others => '0')             when layer_state(i)(1) = '1' and i_data(i)(69 downto 66) <= i_data(i+size)(69 downto 66) else
-                                (others => '0')             when layer_state(i)(1) = '1' and i_data(i)(69 downto 66) >  i_data(i+size)(69 downto 66) else
-                                i_data(i)(75 downto 38)     when i_data(i)(31 downto 28) <= i_data(i+size)(31 downto 28) and i_data(i)(69 downto 66)        <= i_data(i+size)(31 downto 28) else
-                                i_data(i+size)(75 downto 38)when i_data(i+size)(31 downto 28) <= i_data(i)(31 downto 28) and i_data(i+size)(69 downto 66)   <= i_data(i)(31 downto 28) else
-                                i_data(i+size)(37 downto 0) when i_data(i)(31 downto 28) <= i_data(i+size)(31 downto 28) and i_data(i)(69 downto 66)        >  i_data(i+size)(31 downto 28) else
-                                i_data(i)(37 downto 0)      when i_data(i)(31 downto 28) > i_data(i+size)(31 downto 28) and i_data(i)(69 downto 66)         <= i_data(i+size)(31 downto 28) else
-                                (others => '0');
-
-        o_rdreq(i) <= '1' when i_mask_n(i) = '1' and i_mask_n(i+size) = '0' else
-                      '1' when i_data(i)(31 downto 28) <= i_data(i+size)(31 downto 28) and i_data(i)(69 downto 66) <= i_data(i+size)(31 downto 28) else
+        gen_layer : IF last_layer = '0' GENERATE
+            e_link_fifo : entity work.ip_dcfifo_mixed_widths
+            generic map(
+                ADDR_WIDTH_w    => TREE_w,
+                DATA_WIDTH_w    => w_width,
+                ADDR_WIDTH_r    => TREE_r,
+                DATA_WIDTH_r    => r_width,
+                DEVICE          => "Arria 10"--,
+            )
+            port map (
+                aclr    => not i_reset_n or reset_fifo(i),
+                data    => data(i),
+                rdclk   => i_clk,
+                rdreq   => i_rdreq(i),
+                wrclk   => i_clk,
+                wrreq   => wrreq(i),
+                q       => o_q(i),
+                rdempty => o_rdempty(i),
+                wrfull  => wrfull(i)--,
+            );
+        END GENERATE;
+        
+        wrreq_good(i) <= '1' when i_merge_state = '1' and wrfull(i) = '0' else '0';
+        
+        both_rdempty(i) <= '0' when i_rdempty(i) = '0' and i_rdempty(i+size) = '0' else '1';
+        
+        layer_state(i) <= x"9" when i_merge_state = '0' and last_layer = '1' else
+                          x"8" when a_h(i) = tree_padding and d_h(i) = tree_padding else
+                          x"0" when wrreq_good(i) = '1' and i_rdempty(i) = '0'      and i_mask_n(i) = '1'      and i_mask_n(i+size) = '0' else
+                          x"1" when wrreq_good(i) = '1' and i_rdempty(i+size) = '0' and i_mask_n(i+size) = '1' and i_mask_n(i) = '0' else
+                          
+                          x"6" when (layer_state_reg(i) = x"4" or layer_state_reg(i) = x"5") and wrreq_good(i) = '1' and both_rdempty(i) = '0' and b(i) <= d(i) else
+                          x"7" when (layer_state_reg(i) = x"4" or layer_state_reg(i) = x"5") and wrreq_good(i) = '1' and both_rdempty(i) = '0' and b(i) >  d(i) else
+                          
+                          x"4" when layer_state_reg(i) = x"6" and wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) <= d(i) else
+                          x"F" when layer_state_reg(i) = x"6" and wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) >  d(i) else
+                          
+                          x"F" when layer_state_reg(i) = x"7" and wrreq_good(i) = '1' and both_rdempty(i) = '0' and b(i) <= c(i) else
+                          x"4" when layer_state_reg(i) = x"7" and wrreq_good(i) = '1' and both_rdempty(i) = '0' and b(i) >  c(i) else
+                          
+                          x"4" when layer_state_reg(i) = x"4" else
+                          x"5" when layer_state_reg(i) = x"5" else
+                          x"6" when layer_state_reg(i) = x"6" else
+                          x"7" when layer_state_reg(i) = x"7" else
+                          
+                          x"2" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) <= c(i) and b(i) <= c(i) else
+                          x"3" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and c(i) <= a(i) and d(i) <= a(i) else  
+                          x"4" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) <= c(i) and b(i) >  c(i) else
+                          x"5" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and c(i) <= a(i) and d(i) >  a(i) else
+                          
+                          x"F";
+                         
+        wrreq(i) <= '1' when layer_state(i) = x"9" and i_wen_h_t = '1' else
+                    '1' when layer_state(i) = x"0" or layer_state(i) = x"1" or layer_state(i) = x"2" or layer_state(i) = x"3" or layer_state(i) = x"4" or layer_state(i) = x"5" or layer_state(i) = x"8" else
+                    '1' when layer_state(i) = x"F" and (layer_state_reg(i) = x"6" or layer_state_reg(i) = x"7") else
+                    '0';
+                    
+        o_rdreq(i) <= '1' when layer_state(i) = x"0" or layer_state(i) = x"2" or layer_state(i) = x"6" else
+                      '1' when layer_state(i) = x"F" and layer_state_reg(i) = x"7" else
+                      '1' when layer_state(i) = x"6" and (layer_state_reg(i) = x"4" or layer_state_reg(i) = x"5") else
                       '0';
 
-        o_rdreq(i+size) <=  '1' when i_mask_n(i+size) = '1' and i_mask_n(i) = '0' else
-                            '1' when i_data(i+size)(31 downto 28) <= i_data(i)(31 downto 28) and i_data(i+size)(69 downto 66) <= i_data(i)(31 downto 28) else
+        o_rdreq(i+size) <=  '1' when layer_state(i) = x"1" or layer_state(i) = x"3" or layer_state(i) = x"7" else
+                            '1' when layer_state(i) = x"F" and layer_state_reg(i) = x"6" else
+                            '1' when layer_state(i) = x"7" and (layer_state_reg(i) = x"4" or layer_state_reg(i) = x"5") else
                             '0';
+        
+        data(i)(37 downto 0) <= i_data_h_t when layer_state(i) = x"9" else
+                                tree_padding when layer_state(i) = x"8" else
+                                data_reg(i)(37 downto 0) when (layer_state(i) = x"6" and layer_state_reg(i) = x"6") or (layer_state(i) = x"7" and layer_state_reg(i) = x"7") else
+                                data_reg(i)(37 downto 0) when layer_state(i) = x"F" and (layer_state_reg(i) = x"6" or layer_state_reg(i) = x"7") else
+                                a_h(i) when layer_state(i) = x"0" or layer_state(i) = x"2" else
+                                c_h(i) when layer_state(i) = x"1" or layer_state(i) = x"3" else
+                                a_h(i) when layer_state(i) = x"4" else
+                                c_h(i) when layer_state(i) = x"5" else
+                                b_h(i) when layer_state(i) = x"6" else
+                                d_h(i) when layer_state(i) = x"7" else
+                                (others => '0');
+
+        data(i)(75 downto 38)<= tree_paddingk when layer_state(i) = x"9" else
+                                tree_padding when layer_state(i) = x"8" else
+                                data_reg(i)(75 downto 38) when (layer_state(i) = x"6" and layer_state_reg(i) = x"6") or (layer_state(i) = x"7" and layer_state_reg(i) = x"7") else
+                                d_h(i) when layer_state(i) = x"F" and layer_state_reg(i) = x"6" else
+                                b_h(i) when layer_state(i) = x"F" and layer_state_reg(i) = x"7" else
+                                b_h(i) when layer_state(i) = x"0" or layer_state(i) = x"2" else
+                                d_h(i) when layer_state(i) = x"1" or layer_state(i) = x"3" else
+                                c_h(i) when layer_state(i) = x"4" else
+                                a_h(i) when layer_state(i) = x"5" else
+                                (others => '0');
         
         process(i_clk, i_reset_n)
         begin
         if ( i_reset_n /= '1' ) then
-            layer_state(i) <= (others => '0');
+            layer_state_reg(i) <= (others => '0');
         elsif ( rising_edge(i_clk) ) then
-            if ( layer_state(i)(0) = '1' or layer_state(i)(1) <= '1' ) then
-                data_reg(i) <= data(i);
-                if ( i_data(i)(69 downto 66) <= i_data(i+size)(69 downto 66) ) then
-                    layer_state(i)(2) <= '1';
-                else
-                    layer_state(i)(2) <= '0';
-                end if;
-                if ( i_data(i)(69 downto 66) > i_data(i+size)(69 downto 66) ) then
-                    layer_state(i)(3) <= '1';
-                else
-                    layer_state(i)(3) <= '0';
-                end if;
-                layer_state(i)(0) <= '0';
-                layer_state(i)(1) <= '0';
-            else
-                if ( i_data(i)(31 downto 28) <= i_data(i+size)(31 downto 28) and i_data(i)(69 downto 66) > i_data(i+size)(31 downto 28) ) then
-                    layer_state(i)(0) <= '1';
-                else
-                    layer_state(i)(0) <= '0';
-                end if;
-                
-                if ( i_data(i)(31 downto 28) > i_data(i+size)(31 downto 28) and i_data(i)(31 downto 28) <= i_data(i+size)(69 downto 66) ) then
-                    layer_state(i)(1) <= '1';
-                else
-                    layer_state(i)(1) <= '0';
-                end if;
-            end if;
+            layer_state_reg(i) <= layer_state(i);
+            data_reg(i) <= data(i);
         end if;
         end process;
 

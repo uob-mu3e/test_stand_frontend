@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
     
     // setup datagen
     mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x2);
-    // use on link to readout
+    // use one link to readout
     if ( atoi(argv[1]) == 1 ) mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x1);
     if ( atoi(argv[1]) == 1 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x9);
     // use stream merger for readout and enable links
@@ -136,6 +136,9 @@ int main(int argc, char *argv[])
     // use time merger for readout and enable links
     if ( atoi(argv[1]) == 3 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0xFFF);
     if ( atoi(argv[1]) == 3 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x5);
+    // use one link with data to readout
+    if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x1);
+    if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x8);
     
     // reset all
     mu.write_register(RESET_REGISTER_W, 0x1);
