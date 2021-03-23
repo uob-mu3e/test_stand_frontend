@@ -39,7 +39,10 @@ SOPC_FILES := $(patsubst %.qsys,%.sopcinfo,$(QSYS_FILES))
 QMEGAWIZ_XML_FILES := $(filter %.vhd.qmegawiz,$(IPs))
 QMEGAWIZ_VHD_FILES := $(patsubst %.vhd.qmegawiz,$(PREFIX)/%.vhd,$(QMEGAWIZ_XML_FILES))
 
-all : $(PREFIX)/include.qip
+top.qpf :
+	echo 'PROJECT_REVISION = "top"' > $@
+
+all : $(PREFIX)/include.qip top.qpf
 
 $(PREFIX) :
 	mkdir -pv $(PREFIX)
