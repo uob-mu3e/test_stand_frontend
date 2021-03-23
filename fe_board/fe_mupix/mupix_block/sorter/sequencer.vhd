@@ -155,7 +155,7 @@ elsif(clk'event and clk = '1') then
 			if(fifo_reg(MEMOVERFLOWBIT) = '1') then
 				overflowts <= (others => '1');				
 			end if;
-			if(fifo_empty = '0') then -- the fifo is empty, sit here and wait (unlikely as we are close to FIFO overflow)
+			if(fifo_empty = '1') then -- the fifo is empty, sit here and wait (unlikely as we are close to FIFO overflow)
 				command_enable <= '0';
 			elsif(newblocknext) then -- the next block is a new one
 				do_fifo_reading 	:= true;
