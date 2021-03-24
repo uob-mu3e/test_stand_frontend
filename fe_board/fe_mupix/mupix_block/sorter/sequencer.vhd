@@ -46,6 +46,9 @@ signal domem : std_logic;
 signal subaddr:			counter_t;
 signal overflowts : std_logic_vector(15 downto 0);
 
+signal fifo_empty_last : std_logic;
+signal newblocknext_reg : boolean;
+
 begin
 
 process(reset_n, clk)
@@ -62,13 +65,17 @@ if(reset_n = '0') then
 	current_block	<= (others => '0');
 	overflowts		<= (others => '0');
 	domem			<= '0';
+	fifo_empty_last	<= '1';
 elsif(clk'event and clk = '1') then
 
 	read_fifo		<= '0';
 
+	fifo_empty_last	<= fifo_empty;
+
 	do_fifo_reading := false;
-	newblocknext 	:= fifo_reg(TSBLOCKINFIFORANGE) /= current_block;
-	
+	newblocknext 	:= from_fifo(TSBLOCKINFIFORANGE) /= current_block;
+	newblocknext_reg <= newblocknext;
+
 	-- State machine for creating commands: We want to send a HEADER once per TS overflow, a SUBHEADER for every block
 	-- and ordered read commands for the hits, where the read commands contain both the memory address (corresponding to the TS)
 	-- and the MUX setting (corresponding to the input channel).
@@ -95,9 +102,9 @@ elsif(clk'event and clk = '1') then
 		-- Look at FIFO - either it is empty or it shows a word with hits - then process them
 		-- or it is one without, then we can output the next subheader, or in case of overflow, the next header
 		if(fifo_empty = '1') then
-			command_enable 	<= '0';
+			command_enable 		<= '0';
 			do_fifo_reading 	:= true;
-		elsif(from_fifo(HASMEMBIT)='0') then
+		elsif(from_fifo(HASMEMBIT) = '0') then
 			do_fifo_reading 	:= true;
 			subaddr				<= (others => '0');
 			current_block		<= current_block + '1';	
@@ -108,8 +115,8 @@ elsif(clk'event and clk = '1') then
 			end if;
 		else
 			do_fifo_reading 	:= true;
-			state			<= hits;
-			subaddr			<= "0000";
+			state				<= hits;
+			subaddr				<= "0000";
 		end if;
 		
 	when hits =>
@@ -117,18 +124,21 @@ elsif(clk'event and clk = '1') then
 		-- active TS
 		outcommand(COMMANDBITS-1)	<= '0'; -- Hits, not a command
 		outcommand(TSRANGE)			<= fifo_reg(TSINFIFORANGE); 
-
+		
 		if(domem = '1') then
 			outcommand(COMMANDBITS-2 downto TIMESTAMPSIZE+4) <= counters_reg(7 downto 4);
 			outcommand(COMMANDBITS-6 downto TIMESTAMPSIZE)   <= subaddr;
 			command_enable 	<= '1';
-			
+
+			if(counters_reg(3 downto 0) = "0010" and counters_reg(11 downto 8) = "0000") then
+				read_fifo <= '1';
+			end if;	
+
 			if(counters_reg(3 downto 0) = "0001" and counters_reg(11 downto 8) = "0000") then
 			-- this is the last hit
 				if(fifo_empty = '1') then -- the fifo is empty, sit here and wait
 					command_enable <= '0';
 				elsif(newblocknext) then -- the next block is a new one
-					do_fifo_reading 	:= true;
 					current_block <= current_block + '1';
 					if(current_block = block_max) then
 						state			<= footer;
@@ -137,7 +147,7 @@ elsif(clk'event and clk = '1') then
 					end if;
 				else -- we stay in block
 					do_fifo_reading 	:= true;
-					subaddr							    <= "0000";
+					subaddr				<= "0000";
 				end if;
 			elsif(counters_reg(3 downto 0) = "0001") then -- switch chip
 				counters_reg(counters_reg'left-8 downto 0)	 <= counters_reg(counters_reg'left downto 8);
@@ -146,7 +156,7 @@ elsif(clk'event and clk = '1') then
 			else -- more hits from same chip
 				counters_reg <= counters_reg;
 				counters_reg(3 downto 0) <= counters_reg(3 downto 0) -'1';
-				subaddr						  <= subaddr + "1";
+				subaddr				     <= subaddr + "1";
 			end if;
 		else --domem zero indicate a block skipped due to overflow
 			command_enable <= '0';
@@ -180,8 +190,8 @@ elsif(clk'event and clk = '1') then
 
 
 	if(do_fifo_reading) then
-		read_fifo 	<= '1';
-		fifo_reg	<= from_fifo;
+		read_fifo 		<= '1';
+		fifo_reg		<= from_fifo;
 		counters_reg	<= from_fifo(MEMCOUNTERRANGE);
 		domem			<= from_fifo(HASMEMBIT);
 	end if;

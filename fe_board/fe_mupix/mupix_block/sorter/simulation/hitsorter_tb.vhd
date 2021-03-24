@@ -95,7 +95,9 @@ begin
 if(reset_n = '0') then
 	currentts	<= (others => '0');
 elsif(tsclk'event and tsclk = '1') then
-	currentts 	<= currentts + '1';
+	if(running = '1') then
+		currentts 	<= currentts + '1';
+	end if;
 end if;
 end process;
 	
@@ -106,7 +108,7 @@ begin
 		hit_ena_in(i)	<= '0';
 	end loop;
 	wait for 30*WRITECLK_PERIOD;
-	hit_in(0)		<= X"AAAAA050";
+	hit_in(0)		<= X"AAAAA040";
 	hit_ena_in(0)		<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"00000000";
