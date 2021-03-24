@@ -61,6 +61,7 @@ INT resume_run(INT run_number, char *error);
 INT frontend_loop();
 INT read_genesys_power(char *pevent, INT off);
 INT read_hameg_power1(char *pevent, INT off);
+INT read_hameg_power2(char *pevent, INT off);
 INT read_power(float* pdata, const std::string& eqn);
 
 
@@ -100,6 +101,22 @@ EQUIPMENT equipment[] = {
      	0,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
      	read_hameg_power1,    
+    },
+    
+    {"HAMEG2",                       /* equipment name */
+    	{122, 0,                       /* event ID, trigger mask */
+     	"SYSTEM",                  /* event buffer */
+     	EQ_PERIODIC,                   /* equipment type */
+     	0,                         /* event source */
+     	"MIDAS",                   /* format */
+     	TRUE,                      /* enabled */
+     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	10000,                     /* read every 10 sec */
+     	0,                         /* stop run after this event limit */
+    	0,                         /* number of sub events */
+     	0,                         /* log history every event */
+     	"", "", ""} ,                  /* device driver list */
+     	read_hameg_power2,    
     },
     
     {""} //why is there actually this empty one here? FW
@@ -217,6 +234,24 @@ INT read_hameg_power1(char *pevent, INT off)
 	
 	bk_create(pevent,"LVH1", TID_FLOAT, (void **)&pdata);
 	std::string eq_name = "HAMEG1"; //not super elegant, but the 'read' function does not now which equipment it comes from
+	error = read_power(pdata,eq_name);
+	
+	bk_close(pevent, pdata);
+  	return bk_size(pevent);
+}
+
+INT read_hameg_power2(char *pevent, INT off)
+{
+	std::cout << " read hameg power called" << std::endl;
+	INT error;
+	
+	/* init bank structure */
+  
+	bk_init32a(pevent);
+	float *pdata;
+	
+	bk_create(pevent,"LVH2", TID_FLOAT, (void **)&pdata);
+	std::string eq_name = "HAMEG2"; //not super elegant, but the 'read' function does not now which equipment it comes from
 	error = read_power(pdata,eq_name);
 	
 	bk_close(pevent, pdata);

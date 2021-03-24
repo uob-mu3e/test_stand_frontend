@@ -86,3 +86,5 @@ cmp_pkg.vhd
 #
 *.npy
 *.vcd
+
+resources
