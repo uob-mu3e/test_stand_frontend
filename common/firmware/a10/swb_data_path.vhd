@@ -64,7 +64,6 @@ architecture arch of swb_data_path is
 
     --! constant
     constant W : positive := g_NLINKS_FARM*32+g_NLINKS_FARM*6;
-    constant DATA_WIDTH : positive := g_NLINKS_FARM * 38;
 
     --! data gen links
     signal gen_link : std_logic_vector(31 downto 0);
@@ -73,8 +72,8 @@ architecture arch of swb_data_path is
     signal gen_rempty, gen_re, gen_we, gen_full : std_logic;
 
     --! data link signals
-    signal rx : work.util.slv32_array_t(DATA_WIDTH-1 downto 0);
-    signal rx_k : work.util.slv4_array_t(DATA_WIDTH-1 downto 0);
+    signal rx : work.util.slv32_array_t(W-1 downto 0);
+    signal rx_k : work.util.slv4_array_t(W-1 downto 0);
     signal rx_ren, rx_ren_link, rx_mask_n, rx_rdempty : std_logic_vector (g_NLINKS_TOTL - 1 downto 0) := (others => '0');
     signal rx_q : work.util.slv38_array_t(g_NLINKS_TOTL - 1 downto 0) := (others => (others => '0'));
     signal sop, eop, shop : std_logic_vector(g_NLINKS_TOTL-1 downto 0) := (others => '0');
@@ -141,7 +140,7 @@ begin
             go_to_trailer => 4--,
         )
     port map (
-        i_reset_n             => i_resets_n_156(RESET_BIT_DATAGEN),
+        i_reset_n           => i_resets_n_156(RESET_BIT_DATAGEN),
         enable_pix          => i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK),
         i_dma_half_full     => '0',
         random_seed         => (others => '1'),
@@ -155,12 +154,13 @@ begin
     );
 
     gen_link_data : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
+    
         process(i_clk_156, i_reset_n_156)
         begin
         if ( i_reset_n_156 = '0' ) then
             rx(i)   <= (others => '0');
             rx_k(i) <= (others => '0');
-        elsif rising_edge(i_clk_156) then
+        elsif rising_edge( i_clk_156 ) then
             if (i_writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1') then
                 rx(i)   <= gen_link;
                 rx_k(i) <= gen_link_k;
@@ -170,6 +170,7 @@ begin
             end if;
         end if;
         end process;
+        
     END GENERATE gen_link_data;
 
 
@@ -361,7 +362,7 @@ begin
     e_merger_fifo : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 10,
-        DATA_WIDTH      => DATA_WIDTH,
+        DATA_WIDTH      => W,
         DEVICE          => "Arria 10"--,
     )
     port map (
