@@ -1,11 +1,7 @@
 #
 
-foreach { ip } {
-    ip_xcvr_fpll
-    ip_xcvr_reset
-    ip_xcvr_phy
-} {
-    set_global_assignment -name QSYS_FILE [file join $::quartus(qip_path) "$ip.qsys"]
-}
+set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) xcvr_a10.vhd ]
+set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) xcvr_enh.vhd ]
+set_global_assignment -name VHDL_FILE [ file join $::quartus(qip_path) xcvr_block.vhd ]
 
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "xcvr_a10.vhd"]
+set_global_assignment -name SDC_FILE [ file join $::quartus(qip_path) xcvr.sdc ]

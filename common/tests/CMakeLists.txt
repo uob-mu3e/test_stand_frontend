@@ -18,9 +18,11 @@ set_target_properties(gmock_main PROPERTIES FOLDER extern)
 macro(package_add_test TESTNAME)
     # create an exectuable in which the tests will be stored
     add_executable(${TESTNAME} ${ARGN} ${INC_ALL})
+    target_include_directories(${TESTNAME} PRIVATE ${LIBMUDAQ_DIR} ${INCMUDAQ_DIR} ${LIBMUDAQ_DIR} ${LIBMUPIX_DIR} ${INCMUTRIG_DIR} ${LIBMALIBU_DIR})
+    target_include_directories(${TESTNAME} PRIVATE ${MIDAS_DIR}/drivers ${MIDAS_DIR}/mxml ${MIDAS}/mjson ${MIDAS}/mvodb ${MIDAS}/mscb/include)
     # link the Google test infrastructure, mocking library, and a default main fuction to
     # the test executable.  Remove g_test_main if writing your own main function.
-    target_link_libraries(${TESTNAME} gtest gmock gtest_main mfe midas rt pthread util libmudaq_scifi libmutrig libmupix libmudaq_test dl)
+    target_link_libraries(${TESTNAME} gtest gmock gtest_main mfe midas rt pthread util libmudaq_scifi libmutrig libmupix libmudaq_test dl ${LIBS})
     # gtest_discover_tests replaces gtest_add_tests,
     # see https://cmake.org/cmake/help/v3.10/module/GoogleTest.html for more options to pass to it
     gtest_discover_tests(${TESTNAME}
@@ -30,6 +32,7 @@ macro(package_add_test TESTNAME)
     )
     target_include_directories(${TESTNAME} PRIVATE ${LIBMUDAQ_DIR} ${INCMUDAQ_DIR} ${INCMUTRIG_DIR})
     set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
+    add_dependencies(build_and_test ${TESTNAME})
 endmacro()
 
 macro(add_vhdl_test TESTNAME)
@@ -42,8 +45,6 @@ package_add_test(config_mutrig_test config_mutrig.cpp)
 package_add_test(config_mupix_test config_mupix.cpp)
 package_add_test(test_odb test_odb.cpp)
 package_add_test(test_mudaq_device test_mudaq_device.cpp)
-
-
 
 add_vhdl_test(example_test)
 

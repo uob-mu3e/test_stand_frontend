@@ -2,6 +2,8 @@
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_constants.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_types.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_registers.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "comp_type_const/mupix_reg_mapping.vhd"]
 
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "data_unpacker/data_unpacker.qip"]
 
@@ -9,9 +11,14 @@ set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontr
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/spi_if_write_bits.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mp10_slowcontrol.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mp8_sc_master.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mupix_ctrl.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mupix_ctrl_config_storage.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "slowcontrol/mupix_ctrl_dummy.vhd"]
 
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "receiver_block/receiver_block.qip"]
 
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "sorter/sorter.qip"]
 
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mupix_datapath.vhd"]
+
+set_global_assignment -name SDC_FILE [file join $::quartus(qip_path) "mupix.sdc"]

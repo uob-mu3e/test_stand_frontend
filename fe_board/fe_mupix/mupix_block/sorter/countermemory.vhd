@@ -43,21 +43,21 @@ ENTITY countermemory IS
 	PORT
 	(
 		clock		: IN STD_LOGIC  := '1';
-		data		: IN STD_LOGIC_VECTOR (9 DOWNTO 0);
+		data		: IN STD_LOGIC_VECTOR (4 DOWNTO 0);
 		rdaddress		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
 		wraddress		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
 		wren		: IN STD_LOGIC  := '0';
-		q		: OUT STD_LOGIC_VECTOR (9 DOWNTO 0)
+		q		: OUT STD_LOGIC_VECTOR (4 DOWNTO 0)
 	);
 END countermemory;
 
 
 ARCHITECTURE SYN OF countermemory IS
 
-	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (9 DOWNTO 0);
+	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (4 DOWNTO 0);
 
 BEGIN
-	q    <= sub_wire0(9 DOWNTO 0);
+	q    <= sub_wire0(4 DOWNTO 0);
 
 	altsyncram_component : altsyncram
 	GENERIC MAP (
@@ -77,8 +77,8 @@ BEGIN
 		read_during_write_mode_mixed_ports => "OLD_DATA",
 		widthad_a => 8,
 		widthad_b => 8,
-		width_a => 10,
-		width_b => 10,
+		width_a => 5,
+		width_b =>5,
 		width_byteena_a => 1
 	)
 	PORT MAP (
@@ -147,10 +147,10 @@ END SYN;
 -- Retrieval info: PRIVATE: USE_DIFF_CLKEN NUMERIC "0"
 -- Retrieval info: PRIVATE: UseDPRAM NUMERIC "1"
 -- Retrieval info: PRIVATE: VarWidth NUMERIC "0"
--- Retrieval info: PRIVATE: WIDTH_READ_A NUMERIC "10"
--- Retrieval info: PRIVATE: WIDTH_READ_B NUMERIC "10"
--- Retrieval info: PRIVATE: WIDTH_WRITE_A NUMERIC "10"
--- Retrieval info: PRIVATE: WIDTH_WRITE_B NUMERIC "10"
+-- Retrieval info: PRIVATE: WIDTH_READ_A NUMERIC "5"
+-- Retrieval info: PRIVATE: WIDTH_READ_B NUMERIC "5"
+-- Retrieval info: PRIVATE: WIDTH_WRITE_A NUMERIC "5"
+-- Retrieval info: PRIVATE: WIDTH_WRITE_B NUMERIC "5"
 -- Retrieval info: PRIVATE: WRADDR_ACLR_B NUMERIC "0"
 -- Retrieval info: PRIVATE: WRADDR_REG_B NUMERIC "0"
 -- Retrieval info: PRIVATE: WRCTRL_ACLR_B NUMERIC "0"
@@ -173,21 +173,21 @@ END SYN;
 -- Retrieval info: CONSTANT: READ_DURING_WRITE_MODE_MIXED_PORTS STRING "OLD_DATA"
 -- Retrieval info: CONSTANT: WIDTHAD_A NUMERIC "8"
 -- Retrieval info: CONSTANT: WIDTHAD_B NUMERIC "8"
--- Retrieval info: CONSTANT: WIDTH_A NUMERIC "10"
--- Retrieval info: CONSTANT: WIDTH_B NUMERIC "10"
+-- Retrieval info: CONSTANT: WIDTH_A NUMERIC "5"
+-- Retrieval info: CONSTANT: WIDTH_B NUMERIC "5"
 -- Retrieval info: CONSTANT: WIDTH_BYTEENA_A NUMERIC "1"
 -- Retrieval info: USED_PORT: clock 0 0 0 0 INPUT VCC "clock"
--- Retrieval info: USED_PORT: data 0 0 10 0 INPUT NODEFVAL "data[9..0]"
--- Retrieval info: USED_PORT: q 0 0 10 0 OUTPUT NODEFVAL "q[9..0]"
+-- Retrieval info: USED_PORT: data 0 0 5 0 INPUT NODEFVAL "data[4..0]"
+-- Retrieval info: USED_PORT: q 0 0 5 0 OUTPUT NODEFVAL "q[4..0]"
 -- Retrieval info: USED_PORT: rdaddress 0 0 8 0 INPUT NODEFVAL "rdaddress[7..0]"
 -- Retrieval info: USED_PORT: wraddress 0 0 8 0 INPUT NODEFVAL "wraddress[7..0]"
 -- Retrieval info: USED_PORT: wren 0 0 0 0 INPUT GND "wren"
 -- Retrieval info: CONNECT: @address_a 0 0 8 0 wraddress 0 0 8 0
 -- Retrieval info: CONNECT: @address_b 0 0 8 0 rdaddress 0 0 8 0
 -- Retrieval info: CONNECT: @clock0 0 0 0 0 clock 0 0 0 0
--- Retrieval info: CONNECT: @data_a 0 0 10 0 data 0 0 10 0
+-- Retrieval info: CONNECT: @data_a 0 0 5 0 data 0 0 5 0
 -- Retrieval info: CONNECT: @wren_a 0 0 0 0 wren 0 0 0 0
--- Retrieval info: CONNECT: q 0 0 10 0 @q_b 0 0 10 0
+-- Retrieval info: CONNECT: q 0 0 5 0 @q_b 0 0 5 0
 -- Retrieval info: GEN_FILE: TYPE_NORMAL countermemory.vhd TRUE
 -- Retrieval info: GEN_FILE: TYPE_NORMAL countermemory.inc FALSE
 -- Retrieval info: GEN_FILE: TYPE_NORMAL countermemory.cmp TRUE

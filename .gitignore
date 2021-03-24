@@ -1,6 +1,10 @@
 
+.cache/
+generated/
+
 # cmake
 build/
+cmake-build*/
 debugbuild/
 install/
 CMakeLists.txt.*
@@ -12,7 +16,6 @@ greybox_tmp/
 incremental_db/
 output_files/
 reconfig_mif/
-simulation/
 **/simulation/modelsim/
 *.qdf
 *.qws
@@ -20,12 +23,13 @@ simulation/
 *.rpt
 *.srf
 *.stp
+a5_pin_model_dump.txt
+top_assignment_defaults.qdf
 
 # megawizard
 *.bsf
 *.cmp
 *.ppf
-*.qip
 *.sip
 *.spd
 *.f
@@ -44,10 +48,6 @@ nios/
 .cproject
 .settings
 
-# DVT
-**/.dvt/*
-dvt_build.log
-
 # idea
 .idea/
 
@@ -57,8 +57,6 @@ dvt_build.log
 *~
 *.bak
 *.swp
-build
-install
 online/exptab
 online/*.hst
 online/*.idx
@@ -68,6 +66,7 @@ online/*.txt
 online/*.TXT
 online/*.log
 online/*.xml
+*.autosave
 
 # midas (?)
 *.mid
@@ -79,12 +78,13 @@ online/*
 .SHM_HOST.TXT
 .SHM_TYPE.TXT
 include/mudaq_registers.h
-cmake-build-debug/
-cmp_pkg.vhd
-.cache/
 
 #
 *.npy
 *.vcd
 
+# Generated header files
+switching_pc/slowcontrol/feb_constants.h
+
+#etc
 resources

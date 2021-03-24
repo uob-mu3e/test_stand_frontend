@@ -1,6 +1,5 @@
 var canvas = document.querySelector('canvas');
-
-var c = canvas.getContext('2d');
+var cc = canvas.getContext('2d');
 
 function DataLink(xmin,y,xmax, index, name){
     this.status =0;
@@ -38,43 +37,43 @@ function DataLink(xmin,y,xmax, index, name){
             this.col = "rgb(255,0,0)";
 
         if(this.selected == false){
-            c.beginPath();
-            c.moveTo(this.xmin, this.y);
-            c.lineTo(this.xmax, this.y);
-            c.lineWidth = 6;
-            c.strokeStyle = this.col;
-            c.stroke();
+            cc.beginPath();
+            cc.moveTo(this.xmin, this.y);
+            cc.lineTo(this.xmax, this.y);
+            cc.lineWidth = 6;
+            cc.strokeStyle = this.col;
+            cc.stroke();
 
-            c.fillStyle = "Black";
+            cc.fillStyle = "Black";
             if(this.shorttype == "P")
-               c.fillStyle = "Blue";
+               cc.fillStyle = "Blue";
             if(this.shorttype == "F")
-               c.fillStyle = "Magenta";
+               cc.fillStyle = "Magenta";
             if(this.shorttype == "T")
-               c.fillStyle = "Cyan";
+               cc.fillStyle = "Cyan";
             if(this.shorttype == "FS")
-               c.fillStyle = "Magenta";
-            c.font = "8px Arial";
-            c.fillText(this.shorttype, this.xmin-8, this.y+2);
+               cc.fillStyle = "Magenta";
+            cc.font = "8px Arial";
+            cc.fillText(this.shorttype, this.xmin-8, this.y+2);
         } else {
-            c.fillStyle = this.col;
-            c.fillRect(this.lxmin, this.lymin,this.lxmax-this.lxmin, this.lymax-this.lymin);
-            c.fillStyle = "Black";
-            c.font = "12px Arial";
-            c.fillText(this.name, this.lxmin+10, this.lymin+15);
-            c.fillStyle = "Black";
-            c.font = "12px Arial";
-            c.fillText(this.type, this.lxmin+10, this.lymin+30);
+            cc.fillStyle = this.col;
+            cc.fillRect(this.lxmin, this.lymin,this.lxmax-this.lxmin, this.lymax-this.lymin);
+            cc.fillStyle = "Black";
+            cc.font = "12px Arial";
+            cc.fillText(this.name, this.lxmin+10, this.lymin+15);
+            cc.fillStyle = "Black";
+            cc.font = "12px Arial";
+            cc.fillText(this.type, this.lxmin+10, this.lymin+30);
 
 
-            c.fillStyle = "rgb(50,50,50)";
-            c.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
-            c.fillStyle = "White";
-            c.font = "12px Arial";
+            cc.fillStyle = "rgb(50,50,50)";
+            cc.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
+            cc.fillStyle = "White";
+            cc.font = "12px Arial";
             if(this.status == 0){
-                c.fillText("Enable", this.bxmin+10, this.bymin+17);
+                cc.fillText("Enable", this.bxmin+10, this.bymin+17);
             } else {
-                c.fillText("Disable", this.bxmin+10, this.bymin+17);
+                cc.fillText("Disable", this.bxmin+10, this.bymin+17);
             }
 
         }
@@ -119,43 +118,43 @@ function SCLink(xmin,y,xmax, index, name){
             this.col = "rgb(255,0,0)";
 
         if(this.selected == false){
-            c.beginPath();
-            c.moveTo(this.xmin, this.y);
-            c.lineTo(this.xmax, this.y);
-            c.lineWidth = 6;
-            c.strokeStyle = this.col;
-            c.stroke();
+            cc.beginPath();
+            cc.moveTo(this.xmin, this.y);
+            cc.lineTo(this.xmax, this.y);
+            cc.lineWidth = 6;
+            cc.strokeStyle = this.col;
+            cc.stroke();
 
-            c.fillStyle = "Black";
+            cc.fillStyle = "Black";
             if(this.shorttype == "P")
-               c.fillStyle = "Blue";
+               cc.fillStyle = "Blue";
             if(this.shorttype == "F")
-               c.fillStyle = "Magenta";
+               cc.fillStyle = "Magenta";
             if(this.shorttype == "T")
-               c.fillStyle = "Cyan";
+               cc.fillStyle = "Cyan";
             if(this.shorttype == "FS")
-               c.fillStyle = "Magenta";
-            c.font = "8px Arial";
-            c.fillText(this.shorttype, this.xmax+8, this.y+2);
+               cc.fillStyle = "Magenta";
+            cc.font = "8px Arial";
+            cc.fillText(this.shorttype, this.xmax+8, this.y+2);
         } else {
-            c.fillStyle = this.col;
-            c.fillRect(this.lxmin, this.lymin,this.lxmax-this.lxmin, this.lymax-this.lymin);
-            c.fillStyle = "Black";
-            c.font = "12px Arial";
-            c.fillText(this.name, this.lxmin+10, this.lymin+15);
-            c.fillStyle = "Black";
-            c.font = "12px Arial";
-            c.fillText(this.type, this.lxmin+10, this.lymin+30);
+            cc.fillStyle = this.col;
+            cc.fillRect(this.lxmin, this.lymin,this.lxmax-this.lxmin, this.lymax-this.lymin);
+            cc.fillStyle = "Black";
+            cc.font = "12px Arial";
+            cc.fillText(this.name, this.lxmin+10, this.lymin+15);
+            cc.fillStyle = "Black";
+            cc.font = "12px Arial";
+            cc.fillText(this.type, this.lxmin+10, this.lymin+30);
 
             if(rxlinks[index].shorttype != "FS"){
-                c.fillStyle = "rgb(50,50,50)";
-                c.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
-                c.fillStyle = "White";
-                c.font = "12px Arial";
+                cc.fillStyle = "rgb(50,50,50)";
+                cc.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
+                cc.fillStyle = "White";
+                cc.font = "12px Arial";
                 if(this.status == 0){
-                    c.fillText("Enable", this.bxmin+10, this.bymin+17);
+                    cc.fillText("Enable", this.bxmin+10, this.bymin+17);
                 } else {
-                    c.fillText("Disable", this.bxmin+10, this.bymin+17);
+                    cc.fillText("Disable", this.bxmin+10, this.bymin+17);
                 }
             }
 
@@ -192,17 +191,17 @@ function Switchingboard(x,y,dx,dy, index){
 
 
 	this.draw = function(){
-        c.fillStyle = "rgba(0,0,0,0.5)";
-        c.fillRect(this.x+10, this.y+10,this.dx, this.dy);
+        cc.fillStyle = "rgba(0,0,0,0.5)";
+        cc.fillRect(this.x+10, this.y+10,this.dx, this.dy);
         if(this.active > 0)
-            c.fillStyle = "rgb(80,80,180)";
+            cc.fillStyle = "rgb(80,80,180)";
         else
-            c.fillStyle = "rgb(200,200,200)";
-		c.fillRect(this.x, this.y,this.dx, this.dy);
+            cc.fillStyle = "rgb(200,200,200)";
+        cc.fillRect(this.x, this.y,this.dx, this.dy);
 
-        c.fillStyle = "Black";
-        c.font = "20px Arial";
-        c.fillText(this.index, this.x+10, this.y+780);
+        cc.fillStyle = "Black";
+        cc.font = "20px Arial";
+        cc.fillText(this.index, this.x+10, this.y+780);
         if(this.active > 0){
             for(var i =0; i < 4; i++){
                 this.Data[i].draw();
@@ -211,26 +210,26 @@ function Switchingboard(x,y,dx,dy, index){
         }
 
 
-        c.fillStyle = "Black";
-        c.font = "16px Arial";
-        c.fillText("Data", this.x+20, this.y+700);
+        cc.fillStyle = "Black";
+        cc.font = "16px Arial";
+        cc.fillText("Data", this.x+20, this.y+700);
 
-        c.fillStyle = "Black";
-        c.font = "16px Arial";
-        c.fillText("SC", this.x+75, this.y+700);
+        cc.fillStyle = "Black";
+        cc.font = "16px Arial";
+        cc.fillText("SC", this.x+75, this.y+700);
 
-        c.fillStyle = "Black";
-        c.font = "12px Arial";
-        c.fillText(this.name, this.x+10, this.y+740);
+        cc.fillStyle = "Black";
+        cc.font = "12px Arial";
+        cc.fillText(this.name, this.x+10, this.y+740);
 
-        c.fillStyle = "rgb(50,50,50)";
-        c.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
-        c.fillStyle = "White";
-        c.font = "12px Arial";
+        cc.fillStyle = "rgb(50,50,50)";
+        cc.fillRect(this.bxmin, this.bymin,this.bxmax-this.bxmin, this.bymax-this.bymin);
+        cc.fillStyle = "White";
+        cc.font = "12px Arial";
         if(this.active == 0){
-            c.fillText("Enable", this.bxmin+12, this.bymin+19);
+            cc.fillText("Enable", this.bxmin+12, this.bymin+19);
         } else {
-            c.fillText("Disable", this.bxmin+12, this.bymin+19);
+            cc.fillText("Disable", this.bxmin+12, this.bymin+19);
         }
 
 	}
@@ -255,8 +254,8 @@ function DataPod(x,y,dx,dy, name, swboard){
 
 
     this.draw = function(){
-        c.fillStyle = "rgb(80,200,120)";
-        c.fillRect(this.x, this.y,this.dx, this.dy);
+        cc.fillStyle = "rgb(80,200,120)";
+        cc.fillRect(this.x, this.y,this.dx, this.dy);
 
         for(var i=0; i < 12; i ++){
            this.links[i].draw();
@@ -282,8 +281,8 @@ function SCPod(x,y,dx,dy, name, swboard){
 
 
     this.draw = function(){
-        c.fillStyle = "rgb(120,200,80)";
-        c.fillRect(this.x, this.y,this.dx, this.dy);
+        cc.fillStyle = "rgb(120,200,80)";
+        cc.fillRect(this.x, this.y,this.dx, this.dy);
 
         for(var i=0; i < 12; i ++){
            this.links[i].draw();
@@ -312,8 +311,11 @@ var rxselindex = -1;
 var txselindex = -1;
 
 function draw(rxselindex, txselindex){
-	c.fillStyle = "Silver";
-	c.fillRect(0, 0, canvas.width, canvas.height);
+    canvas = document.querySelector('canvas');
+    cc = canvas.getContext('2d');
+
+    cc.fillStyle = "Silver";
+    cc.fillRect(0, 0, canvas.width, canvas.height);
 
     for(var i=0; i < 4; i++){
         switchingboards[i].draw();
@@ -446,7 +448,12 @@ window.addEventListener('click', function(event) {
 })
 
 
-function update_boarddrawing(value) {
+function update_boarddrawing(valuex) {
+
+    var value = valuex;
+    if(typeof valuex === 'string')
+        value = JSON.parse(valuex);
+
     var swmask = value["switchingboardstatus"];
     for(var i=0; i < 4; i++){
         switchingboards[i].active = swmask[i];
@@ -462,7 +469,15 @@ function update_boarddrawing(value) {
     draw(rxselindex, txselindex);
 }
 
-function update_masks(value) {
+function update_masks(valuex) {
+
+
+
+    var value = valuex;
+    if(typeof valuex === 'string')
+        value = JSON.parse(valuex);
+
+
     var swmask = value["switchingboardmask"];
     var swnames = value["switchingboardnames"];
     for(var i=0; i < 4; i++){

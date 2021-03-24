@@ -25,7 +25,7 @@ component hitsorter_wide is
 		reset_n							: in std_logic;										-- async reset
 		writeclk						: in std_logic;										-- clock for write/input side
 		running							: in std_logic;
-		currentts						: in slowts_t;										-- Upper 10 bits of the 11 bit ts
+		currentts						: in ts_t;										-- 11 bit ts
 		hit_in							: in hit_array;
 		hit_ena_in						: in std_logic_vector(NCHIPS-1 downto 0);			-- valid hit
 		readclk							: in std_logic;										-- clock for read/output side
@@ -33,7 +33,8 @@ component hitsorter_wide is
 		out_ena							: out STD_LOGIC;									-- valid output data
 		out_type						: out std_logic_vector(3 downto 0);				-- start/end of an output package, hits, end of run
 		diagnostic_sel					: in std_logic_vector(5 downto 0);					-- control the multiplexer for diagnostic signals
-		diagnostic_out					: out reg32											-- diganostic out (counters for hits at various stages)
+		diagnostic_out					: out reg32;
+		delay							: in ts_t
 		);
 end component;
 
@@ -60,7 +61,7 @@ dut:hitsorter_wide
 		reset_n							=> reset_n,
 		writeclk						=> writeclk,
 		running							=> running,
-		currentts						=> currentts(TIMESTAMPSIZE-1 downto 1),
+		currentts						=> currentts,
 		hit_in							=> hit_in,
 		hit_ena_in						=> hit_ena_in,
 		readclk							=> readclk,
@@ -68,7 +69,8 @@ dut:hitsorter_wide
 		out_ena							=> out_ena,
 		out_type						=> out_type,
 		diagnostic_sel					=> diagnostic_sel,
-		diagnostic_out					=> diagnostic_out
+		diagnostic_out					=> diagnostic_out,
+		delay							=> "01100000000"
 		);
 
 wclockgen: process
@@ -82,9 +84,9 @@ end process;
 tsclockgen: process
 begin
 	tsclk	<= '0';
-	wait for WRITECLK_PERIOD/4;
+	wait for WRITECLK_PERIOD/2;
 	tsclk	<= '1';
-	wait for WRITECLK_PERIOD/4;
+	wait for WRITECLK_PERIOD/2;
 end process;
 
 rclockgen: process
@@ -103,7 +105,7 @@ begin
 	reset_n	<= '1';
 	wait for 100 ns;
 	running <= '1';
-	wait for 6100 ns;
+	wait for 20000 ns;
 	running <= '0';
 	wait;
 end process;

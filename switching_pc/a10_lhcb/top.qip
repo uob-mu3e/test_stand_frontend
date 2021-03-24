@@ -2,25 +2,14 @@
 
 set_global_assignment -name QIP_FILE assignments/a10_lhcb.qip
 
-set_global_assignment -name VHDL_FILE cmp_pkg.vhd
-
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
+set_global_assignment -name QIP_FILE generated/include.qip
 
 set_global_assignment -name QIP_FILE util/include.qip
-set_global_assignment -name QIP_FILE ip/include.qip
 
-set_global_assignment -name VHDL_FILE ../../common/firmware/a10/xcvr_a10.vhd
-set_global_assignment -name VHDL_FILE ../../common/firmware/a10/xcvr_enh.vhd
-
-set_global_assignment -name VHDL_FILE xcvr_block.vhd
-
-set_global_assignment -name VHDL_FILE pcie_block.vhd
-set_global_assignment -name VHDL_FILE pcie_pkg.vhd
-
-set_global_assignment -name QSYS_FILE nios.qsys
-
-
+set_global_assignment -name QIP_FILE ../../common/firmware/a10/xcvr.qip
+set_global_assignment -name VHDL_FILE ../a10_board/firmware/a10_block.vhd
 
 set_global_assignment -name QIP_FILE pcieapp/include.qip
 set_global_assignment -name VHDL_FILE assignments/mudaq_registers.vhd

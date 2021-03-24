@@ -2,8 +2,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
-use work.daq_constants.all;
-use work.mupix_constants.all;
+
+use work.mudaq.all;
+
 
 entity mupix_run_start_ack is
 generic(
@@ -14,9 +15,9 @@ port (
     i_reset                     : in  std_logic;
     i_disable                   : in  std_logic;
     i_stable_required           : in  unsigned(15 downto 0);
-    i_lvds_err_counter          : in  reg32array_t(NLVDS-1 downto 0);
+    i_lvds_err_counter          : in  work.util.slv32_array_t(NLVDS-1 downto 0);
     i_lvds_data_valid           : in  std_logic_vector(NLVDS-1 downto 0);
-    i_lvds_mask                 : in  reg32array_t(1 downto 0);
+    i_lvds_mask                 : in  work.util.slv32_array_t(1 downto 0);
     i_sc_busy                   : in  std_logic;
     i_run_state_156             : in  run_state_t;
     o_ack_run_prep_permission   : out std_logic--;

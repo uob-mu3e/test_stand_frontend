@@ -33,6 +33,7 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.all;
 USE ieee.std_logic_unsigned.all;
 
+
 ENTITY i2c_master IS
   GENERIC(
     input_clk : INTEGER := 50_000_000; --input clock speed from user logic in Hz

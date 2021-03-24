@@ -16,8 +16,9 @@ mscb_t mscb;
 #include "../../../fe/software/app_src/reset.h"
 
 #include "mupix.h"
+#include "mp_datapath.h"
 mupix_t mupix(&sc);
-
+mupix_datapath_t mupix_datapath(&sc);
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     return mupix.callback(cmd,data,n);
@@ -47,6 +48,7 @@ int main() {
         printf("  [5] => si5345_2\n");        
         printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
+        printf("  [8] => datapath\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -71,6 +73,9 @@ int main() {
             break;
         case '7':
             menu_reset();
+            break;
+        case '8':
+            mupix_datapath.menu();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

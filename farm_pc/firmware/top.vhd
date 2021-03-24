@@ -162,6 +162,9 @@ architecture rtl of top is
     -- PCIe clock
     signal pcie_clk : std_logic;
     signal pcie_reset_n : std_logic;
+    
+    -- DDR3 clock
+    signal A_ddr3clk_cnt : unsigned(31 downto 0);
 
     signal nios_clk : std_logic;
     signal nios_reset_n : std_logic;
@@ -180,8 +183,7 @@ architecture rtl of top is
     
     signal resets_fast : std_logic_vector(31 downto 0);
     signal resets_n_fast: std_logic_vector(31 downto 0);
-	 
-	 signal resets_ddr3 : std_logic_vector(31 downto 0);
+    signal resets_ddr3 : std_logic_vector(31 downto 0);
     signal resets_n_ddr3: std_logic_vector(31 downto 0);
 
     ------------------ Signal declaration ------------------------
@@ -189,15 +191,15 @@ architecture rtl of top is
     -- pcie read / write regs
     signal writeregs				: reg32array;
     signal writeregs_slow		: reg32array;
-	 signal writeregs_ddr3		: reg32array;
-	 signal regwritten				: std_logic_vector(63 downto 0);
-	 signal regwritten_B				: std_logic_vector(63 downto 0);
-	 signal regwritten_C				: std_logic_vector(63 downto 0);
-	 signal pb_in : std_logic_vector(2 downto 0);
+    signal writeregs_ddr3		: reg32array;
+    signal regwritten				: std_logic_vector(63 downto 0);
+    signal regwritten_B				: std_logic_vector(63 downto 0);
+    signal regwritten_C				: std_logic_vector(63 downto 0);
+    signal pb_in : std_logic_vector(2 downto 0);
     
     signal readregs				: reg32array;
     signal readregs_slow			: reg32array;
-	 signal readregs_ddr3			: reg32array;
+    signal readregs_ddr3			: reg32array;
     
     -- pcie read / write memory
     signal readmem_writedata 	: std_logic_vector(31 downto 0);
@@ -227,21 +229,20 @@ architecture rtl of top is
     signal dma2mem_endofevent 	: std_logic;
     signal dma2memhalffull 		: std_logic;
     
-    -- //pcie fast clock
+    -- pcie fast clock
     signal pcie_fastclk_out		: std_logic;
     
-    -- //pcie debug signals
+    -- pcie debug signals
     signal pcie_testout         : std_logic_vector(127 downto 0);
     signal counter_256          : std_logic_vector(31 downto 0);
-	 signal counter_ddr3          : std_logic_vector(31 downto 0);
+    signal counter_ddr3          : std_logic_vector(31 downto 0);
     
     -- Clocksync stuff
     signal clk_sync : std_logic;
     signal clk_last : std_logic;
-	 
-	 signal clk_sync_ddr3 : std_logic;
+    signal clk_sync_ddr3 : std_logic;
     signal clk_last_ddr3 : std_logic;
-	 
+
     -- debouncer
     signal push_button0_db : std_logic;
     signal push_button1_db : std_logic;
@@ -423,6 +424,20 @@ begin
         clk_125_cnt <= clk_125_cnt + 1;
     end if;
     end process;
+    
+    process(DDR3A_REFCLK_p)
+    begin
+    if rising_edge(DDR3A_REFCLK_p) then
+        A_ddr3clk_cnt <= A_ddr3clk_cnt + 1;
+    end if;
+    end process;
+    
+    -- monitor DDR3 A clock
+    LED_BRACKET(0) <= writeregs(DDR3_CONTROL_W)(0);
+    LED_BRACKET(1) <= writeregs_ddr3(DDR3_CONTROL_W)(0);
+    LED_BRACKET(2) <= writeregs_slow(DDR3_CONTROL_W)(0);
+    LED_BRACKET(3) <= A_ddr3clk_cnt(27);
+    readregs_ddr3(DDR3_CLK_CNT_R) <= std_logic_vector(A_ddr3clk_cnt);
 
     -- monitor 50 MHz clock
     e_hex2seg7_50 : entity work.hex2seg7
@@ -674,6 +689,10 @@ begin
     -------- Event Builder --------
 
     e_data_gen : entity work.data_generator_a10
+    generic map(
+        go_to_trailer => 4,
+        go_to_sh => 3--,
+    )
     port map (
         reset               => resets(RESET_BIT_DATAGEN),
         enable_pix          => writeregs_slow(DATAGENERATOR_REGISTER_W)(DATAGENERATOR_BIT_ENABLE),
@@ -720,28 +739,28 @@ begin
     end if;
     end process;
     
-    e_link_merger : entity work.link_merger
-    generic map(
-        NLINKS_TOTL             => 34,--NLINKS_TOTL,
-        LINK_FIFO_ADDR_WIDTH    => 8--,
-    )
-    port map(
-        i_reset_data_n      => resets_n(RESET_BIT_LINK_MERGER),
-        i_reset_mem_n       => resets_n_fast(RESET_BIT_LINK_MERGER),--resets_n_ddr3(RESET_BIT_LINK_MERGER),
-        i_dataclk           => clk_156,
-        i_memclk            => pcie_fastclk_out,--A_ddr3clk,--clk_156,
-
-        i_link_data         => data_counter & data_counter & data_pix_generated & data_pix_generated,
-        i_link_datak        => datak_counter & datak_counter & datak_pix_generated & datak_pix_generated,
-        i_link_valid        => 1,
-        i_link_mask_n       => (others => '1'),--writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
-        
-        o_stream_rdata(0)   => LED_BRACKET(0),
-        o_hit               => dma_data,
-        o_stream_rempty     => open,
-        i_stream_rack       => '1'--,
-    );
-    dma_data_wren <= '1';
+--    e_link_merger : entity work.link_merger
+--    generic map(
+--        NLINKS_TOTL             => 4,--NLINKS_TOTL,
+--        LINK_FIFO_ADDR_WIDTH    => 8--,
+--    )
+--    port map(
+--        i_reset_data_n      => resets_n(RESET_BIT_LINK_MERGER),
+--        i_reset_mem_n       => resets_n_fast(RESET_BIT_LINK_MERGER),--resets_n_ddr3(RESET_BIT_LINK_MERGER),
+--        i_dataclk           => clk_156,
+--        i_memclk            => pcie_fastclk_out,--A_ddr3clk,--clk_156,
+--
+--        i_link_data         => data_counter(31 + 0 * 32 downto 0 * 32) & data_counter(31 + 1 * 32 downto 1 * 32) & data_counter(31 + 2 * 32 downto 2 * 32) & data_counter(31 + 3 * 32 downto 3 * 32), --& data_pix_generated & data_pix_generated,
+--        i_link_datak        => datak_counter(3 + 0 * 4 downto 0 * 4) & datak_counter(3 + 1 * 4 downto 1 * 4) & datak_counter(3 + 2 * 4 downto 2 * 4) & datak_counter(3 + 3 * 4 downto 3 * 4), -- & datak_pix_generated & datak_pix_generated,
+--        i_link_valid        => 1,
+--        i_link_mask_n       => writeregs(DATA_LINK_MASK_REGISTER_W)(3 downto 0),--(others => '1'),--writeregs(DATA_LINK_MASK_REGISTER_W)(NLINKS_TOTL - 1 downto 0), -- if 1 the link is active
+--        
+--        o_stream_rdata(0)   => LED_BRACKET(0),
+--        o_hit               => dma_data,
+--        o_stream_rempty     => open,
+--        i_stream_rack       => '1'--,
+--    );
+--    dma_data_wren <= '1';
     
 --     e_midas_event_builder : entity work.midas_event_builder
 --     generic map (
@@ -814,7 +833,7 @@ begin
         mem_addr_finished_out   => readmem_writeaddr_finished,
         mem_data_out            => mem_data_sc,
         mem_wren                => mem_wen_sc,
-        stateout(0)             => LED_BRACKET(1),
+        stateout(0)             => open,--LED_BRACKET(1),
         clk                     => clk_156--,
     );
     
@@ -875,14 +894,14 @@ begin
         resets_n                => resets_n_fast,
         clk                     => pcie_fastclk_out--,
     );
-	 
+    
     e_reset_logic_ddr3 : entity work.reset_logic
     port map (
         rst_n                   => push_button0_db,
         reset_register          => writeregs_ddr3(RESET_REGISTER_W),
         resets                  => resets_ddr3,
         resets_n                => resets_n_ddr3,
-        clk                     => A_ddr3clk--,
+        clk                     => DDR3A_REFCLK_p--A_ddr3clk--,
     );
 
     e_version_reg : entity work.version_reg
@@ -897,7 +916,7 @@ begin
         clk_sync <= clk_156;
         clk_last <= clk_sync;
         
-        clk_sync_ddr3 <= A_ddr3clk;
+        clk_sync_ddr3 <= DDR3A_REFCLK_p;
         clk_last_ddr3 <= clk_sync_ddr3;
         
         if(clk_sync = '1' and clk_last = '0') then
@@ -914,6 +933,7 @@ begin
         if(clk_sync_ddr3 = '1' and clk_last_ddr3 = '0') then
             readregs(DDR3_STATUS_R) <= readregs_ddr3(DDR3_STATUS_R);
             readregs(DDR3_ERR_R) <= readregs_ddr3(DDR3_ERR_R);
+            readregs(DDR3_CLK_CNT_R) <= readregs_ddr3(DDR3_CLK_CNT_R);
         end if;
         
         readregs(DMA_STATUS_R)(DMA_DATA_WEN)        <= dma_data_wren;
@@ -1004,7 +1024,7 @@ begin
         o_regwritten_C          => regwritten_C,
         
         i_clk_B                 => clk_156,
-        i_clk_C                 => A_ddr3clk,
+        i_clk_C                 => DDR3A_REFCLK_p,--A_ddr3clk,
         readregs                => readregs,
 
         -- pcie writeable memory
@@ -1044,7 +1064,7 @@ begin
     
     ddr3_b : entity work.ddr3_block 
     port map(
-        reset_n             => resets_ddr3(RESET_BIT_DDR3),
+        reset_n             => resets_n_ddr3(RESET_BIT_DDR3),
         
         -- Control and status registers
         ddr3control         => writeregs_ddr3(DDR3_CONTROL_W),

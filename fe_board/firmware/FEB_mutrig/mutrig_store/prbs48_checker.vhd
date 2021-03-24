@@ -8,10 +8,10 @@
 -- the check is reset at every frame and the output is error count for each frame
 
 
-Library IEEE;
-use IEEE.STD_LOGIC_1164.all;
-use IEEE.NUMERIC_STD.all;
-use work.util.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
 
 entity prbs48_checker is
 	port(
@@ -57,12 +57,12 @@ begin
 					if(s_first_prbs = '1' ) then -- if it's the first prbs word in the frame, reset the flag
 						s_first_prbs <= '0';
 					else
-						if(s_err_cnt /= bin2gray(X"ffffffff")) then
-							s_wrd_cnt <= gray_inc(s_wrd_cnt);
+						if(s_err_cnt /= work.util.bin2gray(X"ffffffff")) then
+							s_wrd_cnt <= work.util.gray_inc(s_wrd_cnt);
 						end if;
 						-- if it's not the first prbs in the frame, check the prbs word
-						if ((i_prbs_word /= s_exp_prbs) and (s_err_cnt /= bin2gray(X"ffffffff"))) then
-							s_err_cnt <= gray_inc(s_err_cnt);
+						if ((i_prbs_word /= s_exp_prbs) and (s_err_cnt /= work.util.bin2gray(X"ffffffff"))) then
+							s_err_cnt <= work.util.gray_inc(s_err_cnt);
 						end if;
 					end if;
 

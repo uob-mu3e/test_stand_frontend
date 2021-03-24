@@ -56,6 +56,8 @@
 #include "reset_protocol.h"
 #include "link_constants.h"
 
+#include "missing_hardware.h"
+
 using std::cout;
 using std::endl;
 using std::hex;
@@ -75,6 +77,9 @@ const char *frontend_file_name = __FILE__;
 
 /* frontend_loop is called periodically if this variable is TRUE    */
 BOOL frontend_call_loop = FALSE;
+
+/* Overwrite equipment struct in ODB from values in code*/
+BOOL equipment_common_overwrite = FALSE;
 
 /* a frontend status page is displayed with this frequency in ms    */
 INT display_period = 0;
@@ -172,12 +177,18 @@ INT frontend_init()
     int port       = settings["Port"];
 
     cout << "IP: " << ip << " port: " << port << endl;
-    if(ip=="0.0.0.0"){
-       cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
-       cb = new clockboard_bypass(ip, port);
-    }else{
-       cb = new clockboard(ip, port);
-    }
+
+    #ifdef NO_CLOCK_BOX
+        cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
+        cb = new clockboard_bypass(ip, port);
+    #else
+        if(ip=="0.0.0.0"){
+           cm_msg(MINFO, "frontend_init", "Using clock board bypass for reset commands to FEB");
+           cb = new clockboard_bypass(ip, port);
+        }else{
+           cb = new clockboard(ip, port);
+        }
+    #endif
 
    if(!cb->isConnected())
         return CM_TIMEOUT;
@@ -467,8 +478,9 @@ void link_settings_changed(odb o)
    std::string name = o.get_name();
 
    if (name == "SwitchingBoardMask") {
-      INT value = o;
-      cm_msg(MINFO, "link_settings_changed", "Set Switching Board Mask to %d", value);
+      vector<INT> value = o;
+      cm_msg(MINFO, "link_settings_changed", "Set Switching Board Mask to %d %d %d %d",
+             value[0], value[1], value[2], value[3]);
    }
 
     if (name == "LinkMask") {
@@ -528,10 +540,10 @@ void prepare_run_on_request(odb o){
 
 // ODB Setup //////////////////////////////
 void setup_odb(){
-    //midas::odb::set_debug(true);
+
     odb settings = {
         {"Active" , true},
-        {"IP", "192.168.0.220"},
+        {"IP", "0.0.0.0"},//"192.168.0.220"},
         {"Port", 50001},
         {"N_READBACK", 4},
         {"TX_CLK_MASK", 0x0AA},

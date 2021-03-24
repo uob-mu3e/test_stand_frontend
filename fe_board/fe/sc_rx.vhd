@@ -10,6 +10,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.feb_sc_registers.all;
+
 entity sc_rx is
 generic (
     FIFO_ADDR_WIDTH_g : positive := 10--;
@@ -41,8 +43,10 @@ architecture arch of sc_rx is
     );
     signal state : state_t;
 
-    signal ram_addr, ram_addr_end : unsigned(31 downto 0);
+    signal ram_addr, ram_addr_reg, ram_addr_end : unsigned(31 downto 0);
     signal ram_read_nreq : unsigned(7 downto 0);
+    
+    signal r_w_non_inc : std_logic;
 
     signal idle_counter : unsigned(15 downto 0);
     signal sc_type : std_logic_vector(1 downto 0);
@@ -57,6 +61,7 @@ begin
         o_fifo_we <= '0';
         o_ram_re <= '0';
         o_ram_we <= '0';
+        r_w_non_inc <= '0';
 
         ram_read_nreq <= (others => '0');
         idle_counter <= (others => '0');
@@ -80,6 +85,7 @@ begin
             o_fifo_wdata <= sc_type & "10" & i_link_data;
 
             ram_addr <= unsigned(i_link_data);
+            ram_addr_reg <= unsigned(i_link_data);
 
             state <= S_LENGTH;
             --
@@ -90,18 +96,30 @@ begin
 
             ram_addr_end <= ram_addr + unsigned(i_link_data(15 downto 0));
 
-            if (sc_type = "10") then
+            if (sc_type = PACKET_TYPE_SC_READ) then
                 state <= S_READ;
-            elsif (sc_type = "11") then
+                r_w_non_inc <= '0';
+            elsif (sc_type = PACKET_TYPE_SC_WRITE) then
                 state <= S_WRITE;
+                r_w_non_inc <= '0';
+            elsif (sc_type = PACKET_TYPE_SC_READ_NONINCREMENTING) then
+                state <= S_READ;
+                r_w_non_inc <= '1';
+            elsif (sc_type = PACKET_TYPE_SC_WRITE_NONINCREMENTING) then
+                state <= S_WRITE;
+                r_w_non_inc <= '1';
             else
                 state <= S_ERROR;
             end if;
-            --
+
         elsif ( state = S_WRITE and i_link_datak = "0000" ) then
             if ( ram_addr /= ram_addr_end ) then
                 -- write to ram
-                o_ram_addr <= std_logic_vector(ram_addr);
+                if ( r_w_non_inc = '0' ) then
+                    o_ram_addr <= std_logic_vector(ram_addr);
+                else
+                    o_ram_addr <= std_logic_vector(ram_addr_reg);
+                end if;
                 o_ram_we <= '1';
                 o_ram_wdata <= i_link_data;
                 ram_addr <= ram_addr + 1;
@@ -117,7 +135,11 @@ begin
         elsif ( state = S_READ ) then
             if ( ram_addr /= ram_addr_end and ram_read_nreq /= (ram_read_nreq'range => '1') ) then
                 -- read from ram
-                o_ram_addr <= std_logic_vector(ram_addr);
+                if ( r_w_non_inc = '0' ) then
+                    o_ram_addr <= std_logic_vector(ram_addr);
+                else
+                    o_ram_addr <= std_logic_vector(ram_addr_reg);
+                end if;
                 o_ram_re <= '1';
                 ram_addr <= ram_addr + 1;
                 ram_read_nreq <= ram_read_nreq + 1;

@@ -60,7 +60,7 @@ begin
     end generate;
 
     -- set rack for current not empty input (and not full and not reset)
-    process(index, i_rempty, i_reset_n)
+    process(index, i_rempty, i_reset_n, i_wfull)
     begin
         o_rack <= (others => '0');
         if ( i_rempty(index) = '0' and i_wfull = '0' and i_reset_n = '1' ) then

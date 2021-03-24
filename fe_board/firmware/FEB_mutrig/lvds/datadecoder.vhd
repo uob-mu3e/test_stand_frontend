@@ -15,16 +15,14 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
 
-
-
+use work.mudaq.all;
 
 entity data_decoder is 
 	generic (
 		EVAL_WINDOW_WORDCNT_BITS : natural := 8; -- number of bits of the counter used to check for the sync pattern
 		EVAL_WINDOW_PATTERN_BITS : natural := 1; -- number of bits of the counter of the sync patterns found in the window (realign if not overflow)
-		ALIGN_WORD	 : std_logic_vector(7 downto 0):=k28_5 -- pattern byte to search for
+		ALIGN_WORD	 : std_logic_vector(7 downto 0):=K28_5 -- pattern byte to search for
 	);
 	port (
 		reset_n				: in std_logic;
@@ -47,26 +45,6 @@ entity data_decoder is
 end data_decoder;
 
 architecture RTL of data_decoder is
-component decode8b10b is 
-	port (
-		reset_n				: in std_logic;
-		clk					: in std_logic;
-		input					: IN STD_LOGIC_VECTOR (9 DOWNTO 0);
-		output				: OUT STD_LOGIC_VECTOR (7 DOWNTO 0);
-		k						: OUT std_logic
-		);
-end component; --decode8b10b;
-component disparity_checker is 
-	port (
-		reset_n				: in std_logic;
-		clk					: in std_logic;
-		rx_in					: in std_logic_vector (9 DOWNTO 0);	
-		ready					: in std_logic;
-		disp_err				: out std_logic
-		);
-end component; --disparity_checker;
-
-
 
 type sync_state_type is (reset, waitforplllock, waitfordpalock, count_ALIGNWORD, eval_alignment); --, rxready);
 signal sync_state		: sync_state_type;
@@ -84,8 +62,6 @@ signal eval_alignment_ctr	: std_logic_vector(EVAL_WINDOW_WORDCNT_BITS-1 downto 0
 signal k_seen 			: std_logic_vector(EVAL_WINDOW_PATTERN_BITS-1 downto 0);
 
 signal ready_buf		: std_logic;
-
-
 
 begin
 
@@ -183,7 +159,7 @@ end if;
 
 end process;
 
-d_checker : disparity_checker
+d_checker : entity work.disparity_checker
 	port map(
 		reset_n				=> reset_n,
 		clk					=> clk,
@@ -193,7 +169,7 @@ d_checker : disparity_checker
 		);
 
 
-dec8b10b: decode8b10b 
+dec8b10b: entity work.decode8b10b 
 	port map(
 		reset_n				=> reset_n,
 		clk					=> clk,

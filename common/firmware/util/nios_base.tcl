@@ -30,7 +30,10 @@ proc nios_base.add_clock_source { name clockFrequency args } {
     set_interface_property ${reset_export} EXPORT_OF ${name}.clk_in_reset
 }
 
-nios_base.add_clock_source clk $nios_freq -reset_export rst
+if { ! [ info exists nios_clk_mhz ] } {
+    set nios_clk_mhz [ expr $nios_freq / 1e6 ]
+}
+nios_base.add_clock_source clk [ expr int($nios_clk_mhz * 1e6) ] -reset_export rst
 
 # cpu
 add_instance cpu altera_nios2_gen2
@@ -164,6 +167,9 @@ if 1 {
     set_interface_property spi EXPORTOF spi.external
 
     nios_base.add_pio pio 32 Output 0x700F0280
+
+    # i2c slave select port
+    nios_base.add_pio i2c_mask 32 Output 0x700F02A0
 }
 
 #package require cmdline
