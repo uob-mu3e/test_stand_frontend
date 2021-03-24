@@ -45,72 +45,53 @@ end entity;
 
 architecture arch of time_merger_v2 is
  
-    type fpga_id_array_t is array (N - 1 downto 0) of std_logic_vector(15 downto 0);
-    type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(5 downto 0);
-    subtype index_int is natural range 0 to 36; -- since we have a maximum number of 36 links, default is 36
-    
+    -- constants
     constant check_zeros : std_logic_vector(N - 1 downto 0) := (others => '0');
-    constant check_ones : std_logic_vector(N - 1 downto 0) := (others => '1');
-    constant check_zeros_t_3 : std_logic_vector(4 downto 0) := (others => '0');
-    constant check_ones_t_3 : std_logic_vector(4 downto 0) := (others => '1');
 
-    signal error_gtime1, error_gtime2, error_shtime, error_merger, check_overflow, header_trailer_we : std_logic;
+    -- state machine
     type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer, read_hits, wait_for_sh_written);
     signal merge_state : merge_state_type;
+    type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(5 downto 0);
+    signal sheader_time : sheader_time_array_t;
     signal merger_state_signal : std_logic;
-    signal rack, rack_hit, error_pre, error_sh, error_tr, sh_state, pre_state, tr_state : std_logic_vector(N - 1 downto 0);
-    signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
-    signal header_trailer : std_logic_vector(37 downto 0);
-    signal gtime1, gtime2 : work.util.slv38_array_t(N - 1 downto 0);
     signal shtime : std_logic_vector(5 downto 0);
     signal overflow : std_logic_vector(15 downto 0);
-    signal sheader_time : sheader_time_array_t;
-    signal fpga_id : fpga_id_array_t;
+    signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
+    signal header_trailer : std_logic_vector(37 downto 0);
+    signal sop_wait, shop_wait, eop_wait, time_wait : std_logic_vector(N - 1 downto 0);
+    signal gtime1, gtime2 : work.util.slv38_array_t(N - 1 downto 0);
+
+    -- error signals
+    signal error_gtime1, error_gtime2, error_shtime, error_merger, header_trailer_we : std_logic;
+    signal error_pre, error_sh : std_logic_vector(N - 1 downto 0);   
     
-    -- merge signals
-    signal min_fpga_id : std_logic_vector(15 downto 0);
-    signal sop_wait, shop_wait, eop_wait, time_wait, rack_link : std_logic_vector(N - 1 downto 0);
-    signal link_good : std_logic_vector(63 downto 0);
-    
-    -- merger tree (at the moment for 32 links)
+    -- merger tree
     type fifo_width_t is array (6 downto 0) of integer;
     constant read_width : fifo_width_t := (W, 64+12, 64+12, 64+12, 64+12, 64+12, 64+12);
     constant write_width : fifo_width_t := (64+12, 64+12, 64+12, 64+12, 64+12, 64+12, 32+6);
     constant generate_fifos : fifo_width_t := (1, 2, 4, 8, 16, 32, 64);
-        
-    signal fifo_data_0              : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
-    signal q_0, fifo_q_0_reg   : work.util.slv76_array_t(generate_fifos(0) - 1 downto 0);
-    signal wait_cnt_fifo_0          : work.util.slv2_array_t(generate_fifos(0) - 1 downto 0);
-    signal layer_0_state            : work.util.slv4_array_t(generate_fifos(0) - 1 downto 0);
-    signal layer_0_cnt              : work.util.slv32_array_t(generate_fifos(0) - 1 downto 0);
-    signal rdreq_0, wrreq_0, rdempty_0, wrfull_0, reset_fifo_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
 
-    signal fifo_q_1 : work.util.slv76_array_t(generate_fifos(1) - 1 downto 0);
-    signal fifo_q_2 : work.util.slv76_array_t(generate_fifos(2) - 1 downto 0);
-    signal fifo_q_3 : work.util.slv76_array_t(generate_fifos(3) - 1 downto 0);
-    signal fifo_q_4 : work.util.slv76_array_t(generate_fifos(4) - 1 downto 0);
-    signal fifo_q_5 : work.util.slv76_array_t(generate_fifos(5) - 1 downto 0);
-    signal fifo_empty_1, fifo_ren_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
-    signal fifo_empty_2, fifo_ren_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
-    signal fifo_empty_3, fifo_ren_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
-    signal fifo_empty_4, fifo_ren_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
-    signal fifo_empty_5, fifo_ren_5, fifo_ren_5_reg : std_logic_vector(generate_fifos(5) - 1 downto 0);
-
-    signal mask_n_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
-    signal mask_n_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
-    signal mask_n_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
-    signal mask_n_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
-    signal mask_n_5 : std_logic_vector(generate_fifos(5) - 1 downto 0);
-
-    constant size_last : integer := generate_fifos(5)/2;
-    signal fifo_data_6              : work.util.slv76_array_t(generate_fifos(6) - 1 downto 0);
-    signal fifo_q_6, fifo_q_6_reg   : work.util.slv76_array_t(generate_fifos(6) - 1 downto 0);
-    signal wait_cnt_fifo_6          : work.util.slv2_array_t(generate_fifos(6) - 1 downto 0);
-    signal layer_6_state            : work.util.slv4_array_t(generate_fifos(6) - 1 downto 0);
-    signal fifo_wen_6, fifo_full_6  : std_logic_vector(generate_fifos(6) - 1 downto 0);
+    signal data_0 : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
+    signal q_0 : work.util.slv76_array_t(generate_fifos(0) - 1 downto 0);
+    signal rdreq_0, wrreq_0, rdempty_0, wrfull_0, reset_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal q_1 : work.util.slv76_array_t(generate_fifos(1) - 1 downto 0);
+    signal q_2 : work.util.slv76_array_t(generate_fifos(2) - 1 downto 0);
+    signal q_3 : work.util.slv76_array_t(generate_fifos(3) - 1 downto 0);
+    signal q_4 : work.util.slv76_array_t(generate_fifos(4) - 1 downto 0);
+    signal q_5 : work.util.slv76_array_t(generate_fifos(5) - 1 downto 0);
+    signal rdempty_1, rdreq_1, mask_n_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
+    signal rdempty_2, rdreq_2, mask_n_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
+    signal rdempty_3, rdreq_3, mask_n_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
+    signal rdempty_4, rdreq_4, mask_n_4 : std_logic_vector(generate_fifos(4) - 1 downto 0);
+    signal rdempty_5, rdreq_5, mask_n_5 : std_logic_vector(generate_fifos(5) - 1 downto 0);
+    signal full_6  : std_logic_vector(generate_fifos(6) - 1 downto 0);
     signal alignment_done : std_logic := '0';
     signal last_layer_state : std_logic_vector(3 downto 0);
     signal merger_finish : std_logic_vector(N - 1 downto 0) := (others => '0');
+
+    -- debug signals
+    signal rdata_last_layer : std_logic_vector(W - 1 downto 0);
+    signal rdata_hit_time : std_logic_vector(4 * 8 - 1 downto 0);
     
 begin
 
@@ -120,6 +101,12 @@ begin
     o_error_shtime <= error_shtime;
     o_error_pre <= error_pre;
     o_error_sh <= error_sh;
+    o_rdata <= rdata_last_layer;
+
+    -- debug signals
+    gen_hit_data : FOR i in 0 to 7 GENERATE
+        rdata_hit_time(i*4 + 3 downto i*4) <= rdata_last_layer(i*38 + 31 downto i*38 + 28);
+    END GENERATE;
 
     gen_header_state : FOR i in 0 to N-1 GENERATE
         sop_wait(i) <=  '1' when i_mask_n(i) = '0' else
@@ -132,11 +119,11 @@ begin
                         '1' when ( merge_state = get_time1 or merge_state = get_time2 ) and i_rempty(I) = '0' else
                         '0';
         o_rack(i)   <=  '0' when i_mask_n(i) = '0' else
-                        '1' when merge_state = wait_for_pre and and_reduce(sop_wait) = '1' and fifo_full_6(0) = '0' else
+                        '1' when merge_state = wait_for_pre and and_reduce(sop_wait) = '1' and full_6(0) = '0' else
                         '1' when merge_state = get_time1 and and_reduce(time_wait) = '1' else
                         '1' when merge_state = get_time2 and and_reduce(time_wait) = '1' else
-                        '1' when merge_state = wait_for_sh and and_reduce(shop_wait) = '1' and fifo_full_6(0) = '0' else
-                        '1' when merge_state = trailer and fifo_full_6(0) = '0' else  
+                        '1' when merge_state = wait_for_sh and and_reduce(shop_wait) = '1' and full_6(0) = '0' else
+                        '1' when merge_state = trailer and full_6(0) = '0' else  
                         '1' when merge_state = merge_hits and sop_wait(i) = '0' and shop_wait(i) = '0' and eop_wait(i) = '0' and i_rempty(i) = '0' and wrfull_0(i) = '0' else
                         '0';
         merger_finish(i) <= '0' when sop_wait(i) = '0' and shop_wait(i) = '0' and eop_wait(i) = '0' else '1';
@@ -155,8 +142,8 @@ begin
             DEVICE       => "Arria 10"--,
         )
         port map (
-            aclr    => not i_reset_n or reset_fifo_0(i),
-            data    => fifo_data_0(i),
+            aclr    => not i_reset_n or reset_0(i),
+            data    => data_0(i),
             rdclk   => i_clk,
             rdreq   => rdreq_0(i),
             wrclk   => i_clk,
@@ -165,11 +152,11 @@ begin
             rdempty => rdempty_0(i),
             wrfull  => wrfull_0(i)--,
         );
-        fifo_data_0(i)  <= work.util.link_36_to_std(i) & i_rdata(i)(35 downto 4) when merger_finish(i) = '0' and merge_state = merge_hits else
+        data_0(i)  <= work.util.link_36_to_std(i) & i_rdata(i)(35 downto 4) when merger_finish(i) = '0' and merge_state = merge_hits else
                                                                     tree_padding when merger_finish(i) = '1' and merge_state = merge_hits else 
                                                                     (others => '0');
         wrreq_0(i)      <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
-        reset_fifo_0(i) <= '0' when merge_state = merge_hits else '1';
+        reset_0(i) <= '0' when merge_state = merge_hits else '1';
         
     END GENERATE;
     
@@ -182,14 +169,14 @@ begin
     port map (
         i_data          => q_0,
         i_rdempty       => rdempty_0,
-        i_rdreq         => fifo_ren_1,
+        i_rdreq         => rdreq_1,
         i_merge_state   => merger_state_signal,
         i_mask_n        => i_mask_n,
         i_wen_h_t       => '0',
         i_data_h_t      => (others => '0'),
 
-        o_q             => fifo_q_1,
-        o_rdempty       => fifo_empty_1,
+        o_q             => q_1,
+        o_rdempty       => rdempty_1,
         o_rdreq         => rdreq_0,
         o_mask_n        => mask_n_1,
         o_layer_state   => open,
@@ -206,17 +193,17 @@ begin
         compare_fifos => generate_fifos(1), gen_fifos => generate_fifos(2)--,
     )
     port map (
-        i_data          => fifo_q_1,
-        i_rdempty       => fifo_empty_1,
-        i_rdreq         => fifo_ren_2,
+        i_data          => q_1,
+        i_rdempty       => rdempty_1,
+        i_rdreq         => rdreq_2,
         i_merge_state   => merger_state_signal,
         i_mask_n        => mask_n_1,
         i_wen_h_t       => '0',
         i_data_h_t      => (others => '0'),
 
-        o_q             => fifo_q_2,
-        o_rdempty       => fifo_empty_2,
-        o_rdreq         => fifo_ren_1,
+        o_q             => q_2,
+        o_rdempty       => rdempty_2,
+        o_rdreq         => rdreq_1,
         o_mask_n        => mask_n_2,
         o_layer_state   => open,
         o_wrfull        => open,
@@ -232,17 +219,17 @@ begin
         compare_fifos => generate_fifos(2), gen_fifos => generate_fifos(3)--,
     )
     port map (
-        i_data          => fifo_q_2,
-        i_rdempty       => fifo_empty_2,
-        i_rdreq         => fifo_ren_3,
+        i_data          => q_2,
+        i_rdempty       => rdempty_2,
+        i_rdreq         => rdreq_3,
         i_merge_state   => merger_state_signal,
         i_mask_n        => mask_n_2,
         i_wen_h_t       => '0',
         i_data_h_t      => (others => '0'),
 
-        o_q             => fifo_q_3,
-        o_rdempty       => fifo_empty_3,
-        o_rdreq         => fifo_ren_2,
+        o_q             => q_3,
+        o_rdempty       => rdempty_3,
+        o_rdreq         => rdreq_2,
         o_mask_n        => mask_n_3,
         o_layer_state   => open,
         o_wrfull        => open,
@@ -258,17 +245,17 @@ begin
         compare_fifos => generate_fifos(3), gen_fifos => generate_fifos(4)--,
     )
     port map (
-        i_data          => fifo_q_3,
-        i_rdempty       => fifo_empty_3,
-        i_rdreq         => fifo_ren_4,
+        i_data          => q_3,
+        i_rdempty       => rdempty_3,
+        i_rdreq         => rdreq_4,
         i_merge_state   => merger_state_signal,
         i_mask_n        => mask_n_3,
         i_wen_h_t       => '0',
         i_data_h_t      => (others => '0'),
 
-        o_q             => fifo_q_4,
-        o_rdempty       => fifo_empty_4,
-        o_rdreq         => fifo_ren_3,
+        o_q             => q_4,
+        o_rdempty       => rdempty_4,
+        o_rdreq         => rdreq_3,
         o_mask_n        => mask_n_4,
         o_layer_state   => open,
         o_wrfull        => open,
@@ -284,17 +271,17 @@ begin
         compare_fifos => generate_fifos(4), gen_fifos => generate_fifos(5)--,
     )
     port map (
-        i_data          => fifo_q_4,
-        i_rdempty       => fifo_empty_4,
-        i_rdreq         => fifo_ren_5,
+        i_data          => q_4,
+        i_rdempty       => rdempty_4,
+        i_rdreq         => rdreq_5,
         i_merge_state   => merger_state_signal,
         i_mask_n        => mask_n_4,
         i_wen_h_t       => '0',
         i_data_h_t      => (others => '0'),
 
-        o_q             => fifo_q_5,
-        o_rdempty       => fifo_empty_5,
-        o_rdreq         => fifo_ren_4,
+        o_q             => q_5,
+        o_rdempty       => rdempty_5,
+        o_rdreq         => rdreq_4,
         o_mask_n        => mask_n_5,
         o_layer_state   => open,
         o_wrfull        => open,
@@ -310,25 +297,26 @@ begin
         compare_fifos => generate_fifos(5), gen_fifos => generate_fifos(6)--,
     )
     port map (
-        i_data          => fifo_q_5,
-        i_rdempty       => fifo_empty_5,
+        i_data          => q_5,
+        i_rdempty       => rdempty_5,
         i_rdreq(0)      => i_ren,
         i_merge_state   => merger_state_signal,
         i_mask_n        => mask_n_5,
         i_wen_h_t       => header_trailer_we,
         i_data_h_t      => header_trailer,
 
-        o_last          => o_rdata,
+        o_last          => rdata_last_layer,
         o_rdempty(0)    => o_empty,
-        o_rdreq         => fifo_ren_5,
+        o_rdreq         => rdreq_5,
         o_mask_n        => open,
         o_layer_state(0)=> last_layer_state,
-        o_wrfull        => fifo_full_6,
+        o_wrfull        => full_6,
 
         i_reset_n       => i_reset_n,
         i_clk           => i_clk--,
     );
     
+
     alignment_done <= '1' when last_layer_state = x"8" else '0';
     
     -- write data
@@ -338,7 +326,6 @@ begin
         merge_state <= wait_for_pre;
         error_pre <= (others => '0');
         error_sh <= (others => '0');
-        error_tr <= (others => '0');
         wait_cnt_pre <= (others => '0');
         wait_cnt_sh <= (others => '0');
         wait_cnt_merger <= (others => '0');
@@ -352,13 +339,11 @@ begin
         error_merger <= '0';
         header_trailer <= (others => '0');
         overflow <= (others => '0');
-        rack <= (others => '0');
+
         header_trailer_we <= '0';
-        check_overflow <= '0';
         --
     elsif rising_edge(i_clk) then
         
-        rack <= (others => '0');
         header_trailer <= (others => '0');
         header_trailer_we <= '0';
     
@@ -367,9 +352,8 @@ begin
                 -- readout until all fifos have preamble
                 if ( and_reduce(sop_wait) = '0' ) then
                     wait_cnt_pre <= wait_cnt_pre + '1';
-                elsif ( fifo_full_6(0) = '0' ) then
+                elsif ( full_6(0) = '0' ) then
                     merge_state <= get_time1;
-                    rack <= i_mask_n;
                     -- reset signals
                     wait_cnt_pre <= (others => '0');
                     -- send merged data preamble
@@ -402,9 +386,8 @@ begin
                 END LOOP;
                 
                 -- check if fifo is not full and all links have same time              
-                if ( error_gtime1 = '0' and fifo_full_6(0) = '0' ) then
+                if ( error_gtime1 = '0' and full_6(0) = '0' ) then
                     merge_state <= get_time2;
-                    rack <= i_mask_n;
                     -- reset signals
                     gtime1 <= (others => (others => '0'));
                     -- send gtime1
@@ -433,7 +416,7 @@ begin
                 END LOOP;
                 
                 -- check if fifo is not full and all links have same time
-                if ( error_gtime2 = '0' and fifo_full_6(0) = '0' ) then
+                if ( error_gtime2 = '0' and full_6(0) = '0' ) then
                     merge_state <= wait_for_sh;
                     -- reset signals
                     gtime2 <= (others => (others => '0'));
@@ -463,9 +446,8 @@ begin
 --                             overflow(I) <= '1';
 --                         end if;
 --                     END LOOP;
-                elsif ( fifo_full_6(0) = '0' ) then
+                elsif ( full_6(0) = '0' ) then
                     merge_state <= wait_for_sh_written;
-                    rack <= i_mask_n;
                     -- reset signals
                     wait_cnt_sh <= (others => '0');
                     wait_cnt_merger <= (others => '0');
@@ -534,7 +516,7 @@ begin
                 
             when trailer =>
                 -- send trailer
-                if( fifo_full_6(0) = '0' ) then
+                if( full_6(0) = '0' ) then
                     merge_state <= wait_for_pre;
                     -- send trailer
                     header_trailer(37 downto 32) <= tr_marker;
@@ -548,7 +530,6 @@ begin
                 error_merger <= '0';
                 error_pre <= (others => '0');
                 error_sh <= (others => '0');
-                error_tr <= (others => '0');
                                 
             when error_state =>
                 -- send error message xxxxxxDC

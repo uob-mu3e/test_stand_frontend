@@ -136,9 +136,13 @@ int main(int argc, char *argv[])
     // use time merger for readout and enable links
     if ( atoi(argv[1]) == 3 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0xFFF);
     if ( atoi(argv[1]) == 3 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x5);
-    // use one link with data to readout
-    if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x1);
-    if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x8);
+    // use stream merger with data to readout
+    if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x1);
+    if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
+    // use time merger with data to readout
+    if ( atoi(argv[1]) == 4 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x3);
+    if ( atoi(argv[1]) == 4 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x44);
+
     
     // reset all
     mu.write_register(RESET_REGISTER_W, 0x1);

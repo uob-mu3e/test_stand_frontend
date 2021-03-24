@@ -17,6 +17,7 @@ architecture TB of tb_time_merger is
     constant ckTime_fast: 		time	:= 8 ns;
     constant g_NLINKS_TOTL : integer := 64;
     constant g_NLINKS_DATA : integer := 12;
+    constant W : integer := 8*32 + 8*6;
     signal slow_down : std_logic_vector(31 downto 0);
     signal gen_link, gen_link_reg : std_logic_vector(31 downto 0);
     signal gen_link_k : std_logic_vector(3 downto 0);
@@ -119,7 +120,7 @@ begin
 
     e_time_merger : entity work.time_merger_v2
         generic map (
-        W => 8*32 + 8*6,
+        W => W,
         TREE_DEPTH_w => 10,
         TREE_DEPTH_r => 10,
         N => 64--,

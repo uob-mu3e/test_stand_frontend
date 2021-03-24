@@ -46,11 +46,12 @@ architecture arch of time_merger_tree_fifo_64_v2 is
     -- merger signals
     constant size : integer := compare_fifos/2;
     
-    signal data, data_reg : work.util.slv76_array_t(gen_fifos - 1 downto 0);
+    signal data, data_reg, q : work.util.slv76_array_t(gen_fifos - 1 downto 0);
     signal layer_state, layer_state_reg : work.util.slv4_array_t(gen_fifos - 1 downto 0);
     signal wrreq, wrfull, reset_fifo, wrreq_good, both_rdempty : std_logic_vector(gen_fifos - 1 downto 0);
     signal a, b, c, d : work.util.slv4_array_t(gen_fifos - 1 downto 0);
     signal a_h, b_h, c_h, d_h : work.util.slv38_array_t(gen_fifos - 1 downto 0);
+    signal last :  std_logic_vector(r_width-1 downto 0);
     
     -- for debugging / simulation
     signal t : work.util.slv8_array_t(gen_fifos - 1 downto 0);
@@ -72,14 +73,16 @@ begin
         d_h(i) <= i_data(i+size)(75 downto 38);
         
         -- for debugging / simulation
-        t(i)(7 downto 4) <= o_q(i)(69 downto 66) when last_layer = '0' else o_last(69 downto 66);
-        t(i)(3 downto 0) <= o_q(i)(31 downto 28) when last_layer = '0' else o_last(31 downto 28);
-        l1(i) <= o_q(i)(75 downto 70) when last_layer = '0' else o_last(75 downto 70);
-        l2(i) <= o_q(i)(37 downto 32) when last_layer = '0' else o_last(37 downto 32);
+        t(i)(7 downto 4) <= q(i)(69 downto 66) when last_layer = '0' else last(69 downto 66);
+        t(i)(3 downto 0) <= q(i)(31 downto 28) when last_layer = '0' else last(31 downto 28);
+        l1(i) <= q(i)(75 downto 70) when last_layer = '0' else last(75 downto 70);
+        l2(i) <= q(i)(37 downto 32) when last_layer = '0' else last(37 downto 32);
     END GENERATE;
     
     o_layer_state <= layer_state;
     o_wrfull <= wrfull;
+    o_q <= q;
+    o_last <= last; 
 
     gen_tree:
     FOR i in 0 to gen_fifos - 1 GENERATE
@@ -103,7 +106,7 @@ begin
                 rdreq   => i_rdreq(i),
                 wrclk   => i_clk,
                 wrreq   => wrreq(i),
-                q       => o_last,
+                q       => last,
                 rdempty => o_rdempty(i),
                 wrfull  => wrfull(i)--,
             );
@@ -125,7 +128,7 @@ begin
                 rdreq   => i_rdreq(i),
                 wrclk   => i_clk,
                 wrreq   => wrreq(i),
-                q       => o_q(i),
+                q       => q(i),
                 rdempty => o_rdempty(i),
                 wrfull  => wrfull(i)--,
             );
