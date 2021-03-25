@@ -1,3 +1,5 @@
+#ifndef __UTIL_A10_SENSORS_H__
+#define __UTIL_A10_SENSORS_H__
 
 struct temp_t {
     void print() {
@@ -17,3 +19,5 @@ struct pwr_t {
         printf("pwr_shunt: %u uV\n", 81918 * i2c.r16(0x40) / 0x7FFF); // 0x7FFFF = 81.9175 mV
     }
 };
+
+#endif // __UTIL_A10_SENSORS_H__

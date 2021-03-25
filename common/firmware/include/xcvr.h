@@ -3,6 +3,9 @@
  * date : 2019
  */
 
+#ifndef __UTIL_XCVR_H__
+#define __UTIL_XCVR_H__
+
 struct xcvr_block_t {
     volatile alt_u32* base;
 
@@ -82,3 +85,5 @@ void menu_xcvr(volatile alt_u32* base, char ID = 'A') {
     xcvr_block_t xcvr_block(base, ID);
     xcvr_block.menu();
 }
+
+#endif // __UTIL_XCVR_H__

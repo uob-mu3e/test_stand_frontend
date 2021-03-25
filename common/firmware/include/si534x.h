@@ -1,5 +1,5 @@
-#ifndef __MU3E_UTIL_SI534X_H__
-#define __MU3E_UTIL_SI534X_H__
+#ifndef __UTIL_SI534X_H__
+#define __UTIL_SI534X_H__
 
 #include "si.h"
 
@@ -134,4 +134,4 @@ struct si534x_t : si_t {
 
 };
 
-#endif // __MU3E_UTIL_SI534X_H__
+#endif // __UTIL_SI534X_H__
