@@ -19,11 +19,11 @@ use work.a10_pcie_registers.all;
 
 entity swb_block is
 generic (
-    g_NLINKS_TOTL       : integer := 64;
-    g_NLINKS_FEB_TOTL   : integer := 16;
-    g_NLINKS_FARM_TOTL  : integer := 16;
-    g_NLINKS_FARM_PIXEL : integer := 8;
-    g_NLINKS_DATA_PIXEL : integer := 12;
+    g_NLINKS_TOTL       : positive := 64;
+    g_NLINKS_FEB_TOTL   : positive := 16;
+    g_NLINKS_FARM_TOTL  : positive := 16;
+    g_NLINKS_FARM_PIXEL : positive := 8;
+    g_NLINKS_DATA_PIXEL : positive := 12;
     SWB_ID              : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (

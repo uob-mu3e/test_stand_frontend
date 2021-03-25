@@ -18,12 +18,12 @@ use work.mudaq.all;
 
 entity swb_data_path is
 generic (
-    g_NLINKS_TOTL : integer := 64;
-    g_NLINKS_FARM : integer := 8;
-    g_NLINKS_DATA : integer := 8;
-    LINK_FIFO_ADDR_WIDTH : integer := 10;
-    TREE_w : integer := 10;
-    TREE_r : integer := 10;
+    g_NLINKS_TOTL : positive := 64;
+    g_NLINKS_FARM : positive := 8;
+    g_NLINKS_DATA : positive := 8;
+    LINK_FIFO_ADDR_WIDTH : positive := 10;
+    TREE_w : positive := 10;
+    TREE_r : positive := 10;
     SWB_ID : std_logic_vector(7 downto 0) := x"01";
     -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
     DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
@@ -72,10 +72,10 @@ architecture arch of swb_data_path is
     signal gen_rempty, gen_re, gen_we, gen_full : std_logic;
 
     --! data link signals
-    signal rx : work.util.slv32_array_t(W-1 downto 0);
-    signal rx_k : work.util.slv4_array_t(W-1 downto 0);
-    signal rx_ren, rx_ren_link, rx_mask_n, rx_rdempty : std_logic_vector (g_NLINKS_TOTL - 1 downto 0) := (others => '0');
-    signal rx_q : work.util.slv38_array_t(g_NLINKS_TOTL - 1 downto 0) := (others => (others => '0'));
+    signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
+    signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
+    signal rx_ren, rx_ren_link, rx_mask_n, rx_rdempty : std_logic_vector(g_NLINKS_TOTL-1 downto 0) := (others => '0');
+    signal rx_q : work.util.slv38_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
     signal sop, eop, shop : std_logic_vector(g_NLINKS_TOTL-1 downto 0) := (others => '0');
 
     --! stream merger
@@ -88,7 +88,7 @@ architecture arch of swb_data_path is
     signal merger_rdata : std_logic_vector(W-1 downto 0);
     signal merger_rdata_debug : std_logic_vector(31 downto 0);
     signal merger_rempty, merger_ren, merger_header, merger_trailer, merger_error : std_logic;
-    signal merger_rack : std_logic_vector (g_NLINKS_TOTL - 1 downto 0);
+    signal merger_rack : std_logic_vector (g_NLINKS_TOTL-1 downto 0);
     
     --! event builder
     signal builder_data : std_logic_vector(31 downto 0);

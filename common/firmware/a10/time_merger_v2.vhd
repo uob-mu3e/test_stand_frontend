@@ -86,7 +86,7 @@ architecture arch of time_merger_v2 is
     signal rdempty_5, rdreq_5, mask_n_5 : std_logic_vector(generate_fifos(5) - 1 downto 0);
     signal full_6  : std_logic_vector(generate_fifos(6) - 1 downto 0);
     signal alignment_done : std_logic := '0';
-    signal last_layer_state : std_logic_vector(3 downto 0);
+    signal last_layer_state : std_logic_vector(7 downto 0);
     signal merger_finish : std_logic_vector(N - 1 downto 0) := (others => '0');
 
     -- debug signals
@@ -316,7 +316,6 @@ begin
         i_clk           => i_clk--,
     );
     
-
     alignment_done <= '1' when last_layer_state = x"8" else '0';
     
     -- write data

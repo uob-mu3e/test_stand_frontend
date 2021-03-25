@@ -103,14 +103,14 @@ architecture rtl of top is
 
     -- constants
     constant SWB_ID : std_logic_vector(7 downto 0) := x"01";
-    constant g_NLINKS_FEB_TOTL   : integer := 16;
-    constant g_NLINKS_FARM_TOTL  : integer := 16;
-    constant g_NLINKS_FARM_PIXEL : integer := 8;
-    constant g_NLINKS_DATA_PIXEL : integer := 12;
-    constant g_NLINKS_FARM_SCIFI : integer := 8;
-    constant g_NLINKS_DATA_SCIFI : integer := 12;
-    constant g_NLINKS_FARM_TILE  : integer := 8;
-    constant g_NLINKS_DATA_TILE  : integer := 12;
+    constant g_NLINKS_FEB_TOTL   : positive := 16;
+    constant g_NLINKS_FARM_TOTL  : positive := 16;
+    constant g_NLINKS_FARM_PIXEL : positive := 8;
+    constant g_NLINKS_DATA_PIXEL : positive := 12;
+    constant g_NLINKS_FARM_SCIFI : positive := 8;
+    constant g_NLINKS_DATA_SCIFI : positive := 12;
+    constant g_NLINKS_FARM_TILE  : positive := 8;
+    constant g_NLINKS_DATA_TILE  : positive := 12;
 
     -- free running clock (used as nios clock)
     signal clk_50 : std_logic;

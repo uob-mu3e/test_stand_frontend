@@ -20,8 +20,8 @@ entity data_generator_a10 is
         max_row: std_logic_vector (7 downto 0) := (others => '0');
         max_col: std_logic_vector (7 downto 0) := (others => '0');
         wtot: std_logic := '0';
-        go_to_sh : integer := 2;
-        go_to_trailer : integer := 3;
+        go_to_sh : positive := 2;
+        go_to_trailer : positive := 3;
         wchip: std_logic := '0'
     );
     port(
