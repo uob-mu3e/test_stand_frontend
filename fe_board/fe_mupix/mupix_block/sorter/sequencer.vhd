@@ -130,7 +130,7 @@ elsif(clk'event and clk = '1') then
 			outcommand(COMMANDBITS-6 downto TIMESTAMPSIZE)   <= subaddr;
 			command_enable 	<= '1';
 
-			if(counters_reg(3 downto 0) = "0010" and counters_reg(11 downto 8) = "0000") then
+			if(counters_reg(3 downto 0) = "0010" and counters_reg(11 downto 8) = "0000" and fifo_empty = '0') then
 				read_fifo <= '1';
 			end if;	
 
