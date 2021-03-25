@@ -14,10 +14,12 @@ ifeq ($(PREFIX),)
     override PREFIX := generated
 endif
 
+# location of compiled firmware (SOF file)
 ifeq ($(SOF),)
     SOF := output_files/top.sof
 endif
 
+# location of generated nios.sopcinfo
 ifeq ($(NIOS_SOPCINFO),)
     NIOS_SOPCINFO := $(PREFIX)/nios.sopcinfo
 endif
@@ -32,10 +34,12 @@ ifeq ($(SRC_DIR),)
     SRC_DIR := software/app_src
 endif
 
+# destination for generated BSP
 ifeq ($(BSP_DIR),)
     BSP_DIR := $(PREFIX)/software/hal_bsp
 endif
 
+# destination for compiled software (nios)
 ifeq ($(APP_DIR),)
     APP_DIR := $(PREFIX)/software/app
 endif
@@ -67,8 +71,10 @@ $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	    echo "set_global_assignment -name QSYS_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file)\" ]" >> $@ ; \
 	done
 	# add qmegawiz *.qip files
-	for file in $(patsubst %.vhd,%.qip,$(QMEGAWIZ_VHD_FILES)) ; do \
-	    echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file)\" ]" >> $@ ; \
+	for file in $(patsubst %.vhd,%,$(QMEGAWIZ_VHD_FILES)) ; do \
+	    [ -e $$file.qip ] && echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.qip)\" ]" >> $@ ; \
+	    [ -e $$file.qip ] || echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.vhd)\" ]" >> $@ ; \
+	    >> $@ ; \
 	done
 
 device.tcl :
