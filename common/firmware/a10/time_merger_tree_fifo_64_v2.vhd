@@ -148,8 +148,8 @@ begin
                           x"0C" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) = tree_padding and c_h(i) = tree_padding and d_h(i) = tree_padding else
                           x"0D" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) = tree_padding and b_h(i) = tree_padding and c_h(i) /= tree_padding and d_h(i) = tree_padding else
                           
-                          x"0E"  when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) = tree_padding and b_h(i) /= tree_padding and c_h(i) = tree_padding and d_h(i) /= tree_padding and a(i) <= c(i) else
-                          x"10" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) = tree_padding and b_h(i) /= tree_padding and c_h(i) = tree_padding and d_h(i) /= tree_padding and a(i) > c(i) else
+                          x"0E" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) = tree_padding and c_h(i) /= tree_padding and d_h(i) = tree_padding and a(i) <= c(i) else
+                          x"10" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) = tree_padding and c_h(i) /= tree_padding and d_h(i) = tree_padding and a(i) > c(i) else
                                                    
                           x"08" when wrreq_good(i) = '1' and a_h(i) = tree_padding and c_h(i) = tree_padding else -- end state
                          
