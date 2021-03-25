@@ -189,7 +189,7 @@ elsif(clk'event and clk = '1') then
 	end case;
 
 
-	if(do_fifo_reading) then
+	if(do_fifo_reading and fifo_empty='0') then
 		read_fifo 		<= '1';
 		fifo_reg		<= from_fifo;
 		counters_reg	<= from_fifo(MEMCOUNTERRANGE);
