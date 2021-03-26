@@ -151,7 +151,7 @@ begin
                           x"0E" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) = tree_padding and c_h(i) /= tree_padding and d_h(i) = tree_padding and a(i) <= c(i) else
                           x"10" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) = tree_padding and c_h(i) /= tree_padding and d_h(i) = tree_padding and a(i) > c(i) else
                                                    
-                          x"08" when wrreq_good(i) = '1' and a_h(i) = tree_padding and c_h(i) = tree_padding else -- end state
+                          x"08" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) = tree_padding and c_h(i) = tree_padding else -- end state
                          
                           x"00" when wrreq_good(i) = '1' and i_rdempty(i) = '0'      and i_mask_n(i) = '1'      and i_mask_n(i+size) = '0' else
                           x"01" when wrreq_good(i) = '1' and i_rdempty(i+size) = '0' and i_mask_n(i+size) = '1' and i_mask_n(i) = '0' else

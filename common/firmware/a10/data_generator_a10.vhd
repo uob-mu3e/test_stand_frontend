@@ -47,7 +47,7 @@ architecture rtl of data_generator_a10 is
 	signal overflow_time:			  std_logic_vector(3 downto 0);
 	signal reset:				  std_logic;
 	-- state_types
-	type data_header_states is (part1, part2, part3, part4, part5, trailer, overflow);
+	type data_header_states is (part1, part2, part3, part4, part5, part6, trailer, overflow);
 	signal data_header_state:   data_header_states;
 
 	-- random signals
@@ -182,8 +182,16 @@ begin
 						overflow_idx 							:= 0;
 						current_overflow						:= lsfr_overflow;
 						data_header_state 					<= part5;
+						
+                    when part5 =>
+                        global_time <= global_time + '1';
+						data_pix_generated 					<= "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
+						datak_pix_generated              <= "0000";
+						overflow_idx 							:= 0;
+						current_overflow						:= lsfr_overflow;
+						data_header_state 					<= part6;
 					
-					when part5 =>
+					when part6 =>
 						state_out <= x"E";
 						global_time <= global_time + '1';
 						time_cnt_t <= time_cnt_t + '1';
@@ -219,7 +227,7 @@ begin
 						state_out <= x"9";
 						data_pix_generated					<= overflow_time & lsfr_chip_id & row & col & lsfr_tot;
 						datak_pix_generated              <= "0000";
-						data_header_state						<= part5;
+						data_header_state						<= part6;
 					
 					when trailer =>
 						state_out <= x"8";
