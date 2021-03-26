@@ -49,7 +49,7 @@ architecture arch of time_merger_tree_fifo_64_v2 is
     
     signal data, data_reg, f_data, q : work.util.slv76_array_t(gen_fifos - 1 downto 0);
     signal layer_state, layer_state_reg : work.util.slv8_array_t(gen_fifos - 1 downto 0);
-    signal wrreq, f_wrreq, wrfull, f_wrfull, reset_fifo, wrreq_good, both_rdempty : std_logic_vector(gen_fifos - 1 downto 0);
+    signal wrreq, f_wrreq, wrfull, reset_fifo, wrreq_good, both_rdempty : std_logic_vector(gen_fifos - 1 downto 0);
     signal a, b, c, d : work.util.slv4_array_t(gen_fifos - 1 downto 0);
     signal a_h, b_h, c_h, d_h : work.util.slv38_array_t(gen_fifos - 1 downto 0);
     signal last :  std_logic_vector(r_width-1 downto 0);
@@ -111,7 +111,7 @@ begin
                 wrreq   => f_wrreq(i),
                 q       => last,
                 rdempty => o_rdempty(i),
-                wrfull  => f_wrfull(i)--,
+                wrfull  => wrfull(i)--,
             );
         END GENERATE;
         
@@ -133,7 +133,7 @@ begin
                 wrreq   => f_wrreq(i),
                 q       => q(i),
                 rdempty => o_rdempty(i),
-                wrfull  => f_wrfull(i)--,
+                wrfull  => wrfull(i)--,
             );
         END GENERATE;
         
@@ -234,11 +234,9 @@ begin
         if ( i_reset_n /= '1' ) then
             f_data(i)   <= (others => '0');
             f_wrreq(i)  <= '0';
-            wrfull(i)   <= '1';
         elsif ( rising_edge(i_clk) ) then
             f_data(i)   <= data(i);
             f_wrreq(i)  <= wrreq(i);
-            wrfull(i)   <= f_wrfull(i);
         end if;
         end process;
 
