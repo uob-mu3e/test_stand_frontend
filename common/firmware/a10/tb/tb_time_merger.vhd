@@ -123,6 +123,7 @@ begin
         W => W,
         TREE_DEPTH_w => 10,
         TREE_DEPTH_r => 10,
+        g_NLINKS_DATA => 12,
         N => 64--,
     )
     port map (

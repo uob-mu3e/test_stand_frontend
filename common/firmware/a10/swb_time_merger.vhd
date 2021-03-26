@@ -12,6 +12,7 @@ generic (
     TREE_r : positive := 10;
     -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
     DATA_TYPE: std_logic_vector(7 downto 0) := x"01";
+    g_NLINKS_DATA : positive := 12;
     g_NLINKS_FARM : positive := 8;
     g_NLINKS : positive := 16--;
 );
@@ -69,6 +70,7 @@ begin
         W => W,
         TREE_DEPTH_w => TREE_w,
         TREE_DEPTH_r => TREE_r,
+        g_NLINKS_DATA => g_NLINKS_DATA,
         N => g_NLINKS--,
     )
     port map (

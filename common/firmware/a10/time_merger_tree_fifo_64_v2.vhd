@@ -11,11 +11,12 @@ entity time_merger_tree_fifo_64_v2 is
 generic (
     TREE_w          : positive  := 8;
     TREE_r          : positive  := 8;
-    r_width         : positive   := 64;
-    w_width         : positive   := 64;
-    compare_fifos   : positive   := 32;
+    r_width         : positive  := 64;
+    w_width         : positive  := 64;
+    compare_fifos   : positive  := 32;
     last_layer      : std_logic := '0';
-    gen_fifos       : positive   := 16--;
+    g_NLINKS_DATA   : positive  := 12;
+    gen_fifos       : positive  := 16--;
 );
 port (
     -- input
@@ -92,7 +93,7 @@ begin
         o_mask_n(i) <= i_mask_n(i) or i_mask_n(i + size);
         reset_fifo(i) <= '0' when i_merge_state = '1' or last_layer = '1' else '1';
         
-        gen_last_layer : IF last_layer = '1' GENERATE
+        gen_last_layer : IF last_layer = '1' and i < g_NLINKS_DATA GENERATE
             e_last_fifo : entity work.ip_dcfifo_mixed_widths
             generic map(
                 ADDR_WIDTH_w    => TREE_w,
@@ -114,7 +115,7 @@ begin
             );
         END GENERATE;
         
-        gen_layer : IF last_layer = '0' GENERATE
+        gen_layer : IF last_layer = '0' and i < g_NLINKS_DATA GENERATE
             e_link_fifo : entity work.ip_dcfifo_mixed_widths
             generic map(
                 ADDR_WIDTH_w    => TREE_w,

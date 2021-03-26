@@ -14,6 +14,7 @@ generic (
     TIMEOUT : std_logic_vector(31 downto 0) := x"FFFFFFFF";
     TREE_DEPTH_w : positive := 8;
     TREE_DEPTH_r : positive := 8;
+    g_NLINKS_DATA : positive := 12;
     N : positive := 34--;
 );
 port (

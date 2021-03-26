@@ -247,11 +247,13 @@ begin
     --! ------------------------------------------------------------------------
     e_time_merger : entity work.swb_time_merger
     generic map (
-        W           => W,
-        TREE_w      => TREE_w,
-        TREE_r      => TREE_r,
-        DATA_TYPE   => DATA_TYPE,
-        g_NLINKS    => g_NLINKS_TOTL--,
+        W               => W,
+        TREE_w          => TREE_w,
+        TREE_r          => TREE_r,
+        DATA_TYPE       => DATA_TYPE,
+        g_NLINKS_DATA   => g_NLINKS_DATA,
+        g_NLINKS_FARM   => g_NLINKS_FARM,
+        g_NLINKS        => g_NLINKS_TOTL--,
     )
     port map (
         i_rx        => rx_q,

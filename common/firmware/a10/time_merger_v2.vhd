@@ -14,6 +14,7 @@ generic (
     TIMEOUT : std_logic_vector(31 downto 0) := x"FFFFFFFF";
     TREE_DEPTH_w : positive := 8;
     TREE_DEPTH_r : positive := 8;
+    g_NLINKS_DATA : positive := 12;
     N : positive := 34--;
 );
 port (
@@ -132,37 +133,39 @@ begin
     merger_state_signal <= '1' when merge_state = merge_hits else '0';
 
     gen_write_0 : FOR i in 0 to generate_fifos(0)-1 GENERATE
-
-        e_link_fifo : entity work.ip_dcfifo_mixed_widths
-        generic map(
-            ADDR_WIDTH_w => TREE_DEPTH_w,
-            DATA_WIDTH_w => write_width(0),
-            ADDR_WIDTH_r => TREE_DEPTH_r,
-            DATA_WIDTH_r => read_width(0),
-            DEVICE       => "Arria 10"--,
-        )
-        port map (
-            aclr    => not i_reset_n or reset_0(i),
-            data    => data_0(i),
-            rdclk   => i_clk,
-            rdreq   => rdreq_0(i),
-            wrclk   => i_clk,
-            wrreq   => wrreq_0(i),
-            q       => q_0(i),
-            rdempty => rdempty_0(i),
-            wrfull  => wrfull_0(i)--,
-        );
-        data_0(i)  <= work.util.link_36_to_std(i) & i_rdata(i)(35 downto 4) when merger_finish(i) = '0' and merge_state = merge_hits else
-                                                                    tree_padding when merger_finish(i) = '1' and merge_state = merge_hits else 
-                                                                    (others => '0');
-        wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
-        reset_0(i) <= '0' when merge_state = merge_hits else '1';
+        
+        gen_last_layer : IF i < g_NLINKS_DATA GENERATE
+            e_link_fifo : entity work.ip_dcfifo_mixed_widths
+            generic map(
+                ADDR_WIDTH_w => TREE_DEPTH_w,
+                DATA_WIDTH_w => write_width(0),
+                ADDR_WIDTH_r => TREE_DEPTH_r,
+                DATA_WIDTH_r => read_width(0),
+                DEVICE       => "Arria 10"--,
+            )
+            port map (
+                aclr    => not i_reset_n or reset_0(i),
+                data    => data_0(i),
+                rdclk   => i_clk,
+                rdreq   => rdreq_0(i),
+                wrclk   => i_clk,
+                wrreq   => wrreq_0(i),
+                q       => q_0(i),
+                rdempty => rdempty_0(i),
+                wrfull  => wrfull_0(i)--,
+            );
+            data_0(i)  <= work.util.link_36_to_std(i) & i_rdata(i)(35 downto 4) when merger_finish(i) = '0' and merge_state = merge_hits else
+                                                                        tree_padding when merger_finish(i) = '1' and merge_state = merge_hits else 
+                                                                        (others => '0');
+            wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
+            reset_0(i) <= '0' when merge_state = merge_hits else '1';
+        END GENERATE;
         
     END GENERATE;
     
     layer_1 : entity work.time_merger_tree_fifo_64_v2
     generic map (  
-        TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r,
+        TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(0), w_width => write_width(1), last_layer => '0',
         compare_fifos => generate_fifos(0), gen_fifos => generate_fifos(1)--,
     )
@@ -188,7 +191,7 @@ begin
 
     layer_2 : entity work.time_merger_tree_fifo_64_v2
     generic map (  
-        TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r,
+        TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(1), w_width => write_width(2), last_layer => '0',
         compare_fifos => generate_fifos(1), gen_fifos => generate_fifos(2)--,
     )
@@ -214,7 +217,7 @@ begin
 
     layer_3 : entity work.time_merger_tree_fifo_64_v2
     generic map (  
-        TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r,
+        TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(2), w_width => write_width(3), last_layer => '0',
         compare_fifos => generate_fifos(2), gen_fifos => generate_fifos(3)--,
     )
@@ -240,7 +243,7 @@ begin
 
     layer_4 : entity work.time_merger_tree_fifo_64_v2
     generic map (  
-        TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r,
+        TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(3), w_width => write_width(4), last_layer => '0',
         compare_fifos => generate_fifos(3), gen_fifos => generate_fifos(4)--,
     )
@@ -266,7 +269,7 @@ begin
 
     layer_5 : entity work.time_merger_tree_fifo_64_v2
     generic map (  
-        TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r,
+        TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(4), w_width => write_width(5), last_layer => '0',
         compare_fifos => generate_fifos(4), gen_fifos => generate_fifos(5)--,
     )
@@ -292,7 +295,7 @@ begin
     
     layer_6 : entity work.time_merger_tree_fifo_64_v2
     generic map (  
-        TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r,
+        TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(6), w_width => write_width(6), last_layer => '1',
         compare_fifos => generate_fifos(5), gen_fifos => generate_fifos(6)--,
     )
