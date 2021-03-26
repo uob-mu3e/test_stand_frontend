@@ -161,7 +161,7 @@ signal overflow_last3:	std_logic_vector(15 downto 0);
 signal overflow_last4:	std_logic_vector(15 downto 0);
 
 signal memmultiplex: nots_t;
-signal tscounter: std_logic_vector(46 downto 0); --47 bit, LSB would run at double frequency, but not needed
+signal tscounter: std_logic_vector(47 downto 0); --47 bit, LSB would run at double frequency, but not needed
 
 -- end of run sequence on output side
 signal terminate_output : std_logic;
@@ -301,13 +301,13 @@ genmem: for i in NCHIPS-1 downto 0 generate
 				q					=> fromcmem(i)(k)
 			);
 	
-		tocmem(i)(k)			<= (others => '0') when k = conv_integer(tsread(COUNTERMEMSELRANGE))
+		tocmem(i)(k)			<= (others => '0') when k = conv_integer(tsread(COUNTERMEMSELRANGE)) or reset_n = '0'
 									else tocmem_hitwriter(i)(k);
 		cmemreadaddr(i)(k)		<= 	cmemreadaddr_hitreader when 	k = conv_integer(tsread(COUNTERMEMSELRANGE))
 									else cmemreadaddr_hitwriter(i)(k);
-		cmemwriteaddr(i)(k)		<= 	cmemreadaddr_hitreader when 	k = conv_integer(tsread(COUNTERMEMSELRANGE))
+		cmemwriteaddr(i)(k)		<= 	cmemreadaddr_hitreader when 	k = conv_integer(tsread(COUNTERMEMSELRANGE)) or reset_n = '0'
 									else cmemwriteaddr_hitwriter(i)(k);
-		cmemwren(i)(k)			<= 	'1' when 	k = conv_integer(tsread(COUNTERMEMSELRANGE))
+		cmemwren(i)(k)			<= 	'1' when 	k = conv_integer(tsread(COUNTERMEMSELRANGE)) or reset_n = '0'
 									else cmemwren_hitwriter(i)(k);
 	end generate gencmem;
 	
@@ -325,7 +325,7 @@ genmem: for i in NCHIPS-1 downto 0 generate
 		
 		for k in NMEMS-1 downto 0 loop
 			cmemwren_hitwriter(i)(k) <= '0'; 	
-			cmemreadaddr_hitwriter(i)(k)	<= (others => '0');
+			cmemreadaddr_hitwriter(i)(k)	<= cmemreadaddr_hitwriter(i)(k) + '1';
 			cmemwriteaddr_hitwriter(i)(k)	<= (others => '0');
 		end loop;
 		
@@ -657,7 +657,7 @@ elsif (writeclk'event and writeclk = '1') then
 				creditchange := creditchange  -1;
 			end if;
 
-		elsif(stopwrite_del2 ='1' and block_empty_del2 = '1') then -- we were overfull but just got an empty block
+		elsif(stopwrite_del2 ='1' and blockchange_del2 = '1' and block_empty_del2 = '1') then -- we were overfull but just got an empty block
 			write_counterfifo <= '1';
 			creditchange := creditchange  -1;
 		elsif(stopwrite_del2 ='1' and blockchange_del2 = '1') then -- we were overfull and have suppressed hits
@@ -671,7 +671,7 @@ elsif (writeclk'event and writeclk = '1') then
 			credittemp <= 127;
 		elsif(credittemp < -128) then
 			credits <= -128;
-			credittemp <= 128;
+			credittemp <= -128;
 		else
 			credits <= credittemp;
 		end if;
@@ -745,10 +745,10 @@ elsif(writeclk'event and writeclk = '1') then
 
 	case readcommand_last4(COMMANDBITS-1 downto COMMANDBITS-4) is
 	when COMMAND_HEADER1(COMMANDBITS-1 downto COMMANDBITS-4) =>
-		data_out		<= tscounter(46 downto 15);
+		data_out		<= tscounter(47 downto 16);
 		out_type		<= MERGER_FIFO_PAKET_START_MARKER;
 	when COMMAND_HEADER2(COMMANDBITS-1 downto COMMANDBITS-4) =>
-		data_out		<= tscounter(14 downto 0) & '0' & X"0000";
+		data_out		<= tscounter(15 downto 0) & X"0000";
 		out_type		<= "0000";
 	when COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out		<= "000" & readcommand_last4(TIMESTAMPSIZE-1) & "111111" & readcommand_last4(TIMESTAMPSIZE-2 downto 4) & overflow_last4;
