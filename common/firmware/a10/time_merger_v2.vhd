@@ -388,7 +388,8 @@ begin
                 END LOOP;
                 
                 -- check if fifo is not full and all links have same time              
-                if ( error_gtime1 = '0' and full_6(0) = '0' ) then
+					 -- dont check at the moment error_gtime1 = '0' and 
+                if ( full_6(0) = '0' ) then
                     merge_state <= get_time2;
                     -- reset signals
                     gtime1 <= (others => (others => '0'));
@@ -396,9 +397,11 @@ begin
                     header_trailer(37 downto 32) <= ts1_marker;
                     header_trailer(31 downto 0) <= gtime1(i_link)(35 downto 4);
                     header_trailer_we <= '1';
-                elsif ( error_gtime1 = '1' ) then 
-                    merge_state <= error_state;
-                end if;
+					 end if;
+                -- dont check at the moment 
+					 -- elsif ( error_gtime1 = '1' ) then 
+                --     merge_state <= error_state;
+                -- end if;
                 
             when get_time2 =>
                 -- get LSB from FPGA time
@@ -418,7 +421,8 @@ begin
                 END LOOP;
                 
                 -- check if fifo is not full and all links have same time
-                if ( error_gtime2 = '0' and full_6(0) = '0' ) then
+					 -- error_gtime2 = '0'
+                if ( full_6(0) = '0' ) then
                     merge_state <= wait_for_sh;
                     -- reset signals
                     gtime2 <= (others => (others => '0'));
@@ -426,9 +430,11 @@ begin
                     header_trailer(37 downto 32) <= ts2_marker;
                     header_trailer(31 downto 0) <= gtime2(i_link)(35 downto 4);
                     header_trailer_we <= '1';
-                elsif ( error_gtime2 = '1' ) then
-                    merge_state <= error_state;
                 end if;
+                -- dont check at the moment 
+					 --elsif ( error_gtime2 = '1' ) then
+                --   merge_state <= error_state;
+                --end if;
                 
             when wait_for_sh =>
                 if ( error_gtime2 = '1' ) then

@@ -65,7 +65,7 @@ begin
     port map ( o_cnt => o_counters(0), i_ena => wfull, i_reset_n => i_reset_n, i_clk => i_clk );
 
 
-    e_time_merger : entity work.time_merger
+    e_time_merger : entity work.time_merger_v2
         generic map (
         W => W,
         TREE_DEPTH_w => TREE_w,
