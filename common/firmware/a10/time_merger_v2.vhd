@@ -48,9 +48,10 @@ architecture arch of time_merger_v2 is
  
     -- constants
     constant check_zeros : std_logic_vector(N - 1 downto 0) := (others => '0');
+    constant check_ones  : std_logic_vector(N - 1 downto 0) := (others => '1');
 
     -- state machine
-    type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer, read_hits, wait_for_sh_written);
+    type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer, wait_for_sh_written);
     signal merge_state : merge_state_type;
     type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(5 downto 0);
     signal sheader_time : sheader_time_array_t;
@@ -120,11 +121,13 @@ begin
                         '1' when ( merge_state = get_time1 or merge_state = get_time2 ) and i_rempty(I) = '0' else
                         '0';
         o_rack(i)   <=  '0' when i_mask_n(i) = '0' else
-                        '1' when merge_state = wait_for_pre and and_reduce(sop_wait) = '1' and full_6(0) = '0' else
-                        '1' when merge_state = get_time1 and and_reduce(time_wait) = '1' else
-                        '1' when merge_state = get_time2 and and_reduce(time_wait) = '1' else
-                        '1' when merge_state = wait_for_sh and and_reduce(shop_wait) = '1' and full_6(0) = '0' else
-                        '1' when merge_state = trailer and full_6(0) = '0' else  
+                        '1' when merge_state = wait_for_pre and sop_wait = check_ones and full_6(0) = '0' else
+                        '1' when merge_state = wait_for_pre and i_rsop(i) = '0' and i_rempty(i) = '0' else
+                        '1' when merge_state = get_time1 and time_wait = check_ones else
+                        '1' when merge_state = get_time2 and time_wait = check_ones else
+                        '1' when merge_state = wait_for_sh and shop_wait = check_ones and full_6(0) = '0' else
+                        '1' when merge_state = wait_for_sh and i_rshop(i) = '0' and i_rempty(i) = '0' else
+                        '1' when merge_state = trailer and full_6(0) = '0' else
                         '1' when merge_state = merge_hits and sop_wait(i) = '0' and shop_wait(i) = '0' and eop_wait(i) = '0' and i_rempty(i) = '0' and wrfull_0(i) = '0' else
                         '0';
         merger_finish(i) <= '0' when sop_wait(i) = '0' and shop_wait(i) = '0' and eop_wait(i) = '0' else '1';
@@ -134,7 +137,7 @@ begin
 
     gen_write_0 : FOR i in 0 to generate_fifos(0)-1 GENERATE
         
-        gen_last_layer : IF i < g_NLINKS_DATA GENERATE
+        gen_zero_layer : IF i < g_NLINKS_DATA GENERATE
             e_link_fifo : entity work.ip_dcfifo_mixed_widths
             generic map(
                 ADDR_WIDTH_w => TREE_DEPTH_w,
@@ -154,9 +157,9 @@ begin
                 rdempty => rdempty_0(i),
                 wrfull  => wrfull_0(i)--,
             );
-            data_0(i)  <= work.util.link_36_to_std(i) & i_rdata(i)(35 downto 4) when merger_finish(i) = '0' and merge_state = merge_hits else
-                                                                        tree_padding when merger_finish(i) = '1' and merge_state = merge_hits else 
-                                                                        (others => '0');
+            data_0(i)  <=   work.util.link_36_to_std(i) & i_rdata(i)(35 downto 4)   when merger_finish(i) = '0' and merge_state = merge_hits else
+                            tree_padding                                            when merger_finish(i) = '1' and merge_state = merge_hits else 
+                            (others => '0');
             wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
             reset_0(i) <= '0' when merge_state = merge_hits else '1';
         END GENERATE;
@@ -352,9 +355,7 @@ begin
         case merge_state is
             when wait_for_pre =>
                 -- readout until all fifos have preamble
-                if ( and_reduce(sop_wait) = '0' ) then
-                    wait_cnt_pre <= wait_cnt_pre + '1';
-                elsif ( full_6(0) = '0' ) then
+                if ( sop_wait = check_ones and full_6(0) = '0' ) then
                     merge_state <= get_time1;
                     -- reset signals
                     wait_cnt_pre <= (others => '0');
@@ -364,6 +365,8 @@ begin
                     header_trailer(31 downto 26) <= "111010";
                     header_trailer(7 downto 0) <= x"BC";
                     header_trailer_we <= '1';
+                else
+                    wait_cnt_pre <= wait_cnt_pre + '1';
                 end if;
                 
                 -- if wait for pre gets timeout
@@ -374,7 +377,7 @@ begin
                 
             when get_time1 =>
                 -- get MSB from FPGA time
-                if ( and_reduce(time_wait) = '1' ) then
+                if ( time_wait = check_ones ) then
                     merge_state <= compare_time1;
                     gtime1 <= i_rdata;
                 end if;
@@ -407,7 +410,7 @@ begin
                 -- get LSB from FPGA time
                 if ( error_gtime1 = '1' ) then
                     merge_state <= error_state;
-                elsif ( and_reduce(time_wait) = '1' ) then
+                elsif ( time_wait = check_ones ) then
                     merge_state <= compare_time2;
                     gtime2 <= i_rdata;
                 end if;
@@ -442,19 +445,7 @@ begin
                 end if;
             
                 -- readout until all fifos have sub header
-                if ( and_reduce(shop_wait) = '0' ) then
-                    wait_cnt_sh <= wait_cnt_sh + '1';
-                -- TODO handle overflow
---                 elsif ( check_overflow = '1' ) then    
---                     check_overflow <= '0';
---                     FOR I in 15 downto 0 LOOP
---                         if ( i_rdata(N-1 downto 0)(I + 4) = 0 ) then
---                             overflow(I) <= '0';
---                         else
---                             overflow(I) <= '1';
---                         end if;
---                     END LOOP;
-                elsif ( full_6(0) = '0' ) then
+                if ( shop_wait = check_ones and full_6(0) = '0' ) then
                     merge_state <= wait_for_sh_written;
                     -- reset signals
                     wait_cnt_sh <= (others => '0');
@@ -475,6 +466,18 @@ begin
                     END LOOP;
                     header_trailer(15 downto 0) <= overflow;
                     header_trailer_we <= '1';
+                else
+                    wait_cnt_sh <= wait_cnt_sh + '1';
+                -- TODO handle overflow
+--                 elsif ( check_overflow = '1' ) then    
+--                     check_overflow <= '0';
+--                     FOR I in 15 downto 0 LOOP
+--                         if ( i_rdata(N-1 downto 0)(I + 4) = 0 ) then
+--                             overflow(I) <= '0';
+--                         else
+--                             overflow(I) <= '1';
+--                         end if;
+--                     END LOOP;
                 end if;
                 
                 -- if wait for pre gets timeout
@@ -507,18 +510,18 @@ begin
                 
                 -- change state
                 -- TODO error if sh is not there
-                if ( and_reduce(shop_wait) = '1' and alignment_done = '1' ) then
+                if ( shop_wait = check_ones and alignment_done = '1' ) then
                     merge_state <= wait_for_sh;
                 end if;
                 
                 -- TODO error if pre is not there
                 -- TODO this should not happen -- error
-                if ( and_reduce(sop_wait) = '1' and alignment_done = '1' ) then
+                if ( sop_wait = check_ones and alignment_done = '1' ) then
                     merge_state <= wait_for_pre;
                 end if;
                 
                 -- TODO error if trailer is not there
-                if ( and_reduce(eop_wait) = '1' and alignment_done = '1' ) then
+                if ( eop_wait = check_ones and alignment_done = '1' ) then
                     merge_state <= trailer;
                 end if;
                 

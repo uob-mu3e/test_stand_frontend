@@ -148,6 +148,7 @@ begin
         datak_pix_generated => gen_link_k,
         data_pix_ready      => open,
         start_global_time   => (others => '0'),
+        delay               => (others => '0'),
         slow_down           => i_writeregs_156(DATAGENERATOR_DIVIDER_REGISTER_W),
         state_out           => open,
         clk                 => i_clk_156--,

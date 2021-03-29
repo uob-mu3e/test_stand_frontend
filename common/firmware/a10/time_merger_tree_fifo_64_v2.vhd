@@ -50,8 +50,9 @@ architecture arch of time_merger_tree_fifo_64_v2 is
     signal data, data_reg, f_data, q : work.util.slv76_array_t(gen_fifos - 1 downto 0);
     signal layer_state, layer_state_reg : work.util.slv8_array_t(gen_fifos - 1 downto 0);
     signal wrreq, f_wrreq, wrfull, reset_fifo, wrreq_good, both_rdempty : std_logic_vector(gen_fifos - 1 downto 0);
-    signal a, b, c, d : work.util.slv4_array_t(gen_fifos - 1 downto 0);
-    signal a_h, b_h, c_h, d_h : work.util.slv38_array_t(gen_fifos - 1 downto 0);
+    signal a, b, c, d : work.util.slv4_array_t(gen_fifos - 1 downto 0) := (others => (others => '0'));
+    signal a_h, b_h, c_h, d_h : work.util.slv38_array_t(gen_fifos - 1 downto 0) := (others => (others => '0'));
+    signal a_z, b_z, c_z, d_z : std_logic_vector(gen_fifos - 1 downto 0) := (others => '0');
     signal last :  std_logic_vector(r_width-1 downto 0);
     
     -- for debugging / simulation
@@ -72,6 +73,11 @@ begin
         b_h(i) <= i_data(i)(75 downto 38);
         c_h(i) <= i_data(i+size)(37 downto 0);
         d_h(i) <= i_data(i+size)(75 downto 38);
+
+        a_z(i) <= '1' when a_h(i) = tree_zero else '0';
+        b_z(i) <= '1' when b_h(i) = tree_zero else '0';
+        c_z(i) <= '1' when c_h(i) = tree_zero else '0';
+        d_z(i) <= '1' when d_h(i) = tree_zero else '0';
         
         -- for debugging / simulation
         t_q(i)(7 downto 4) <= q(i)(69 downto 66) when last_layer = '0' else last(69 downto 66);
@@ -142,80 +148,113 @@ begin
         both_rdempty(i) <= '0' when i_rdempty(i) = '0' and i_rdempty(i+size) = '0' else '1';
         
         layer_state(i) <= x"09" when i_merge_state = '0' and last_layer = '1' else
-                          
-                          x"0A" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) /= tree_padding and c_h(i) = tree_padding and d_h(i) = tree_padding else
-                          x"0B" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and c_h(i) /= tree_padding and d_h(i) /= tree_padding and a_h(i) = tree_padding and b_h(i) = tree_padding else
-                          
-                          x"0C" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) = tree_padding and c_h(i) = tree_padding and d_h(i) = tree_padding else
-                          x"0D" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) = tree_padding and b_h(i) = tree_padding and c_h(i) /= tree_padding and d_h(i) = tree_padding else
-                          
-                          x"0E" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) = tree_padding and c_h(i) /= tree_padding and d_h(i) = tree_padding and a(i) <= c(i) else
-                          x"10" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) = tree_padding and c_h(i) /= tree_padding and d_h(i) = tree_padding and a(i) > c(i) else
-                                                   
+
                           x"08" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) = tree_padding and c_h(i) = tree_padding else -- end state
-                         
+                          x"08" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) = tree_padding and c_z(i) = '1' else -- end state
+                          x"08" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_z(i) = '1'          and c_h(i) = tree_padding else -- end state
+
                           x"00" when wrreq_good(i) = '1' and i_rdempty(i) = '0'      and i_mask_n(i) = '1'      and i_mask_n(i+size) = '0' else
                           x"01" when wrreq_good(i) = '1' and i_rdempty(i+size) = '0' and i_mask_n(i+size) = '1' and i_mask_n(i) = '0' else
                           
-                          x"06" when (layer_state_reg(i) = x"4" or layer_state_reg(i) = x"5") and wrreq_good(i) = '1' and both_rdempty(i) = '0' and b(i) <= d(i) else
-                          x"07" when (layer_state_reg(i) = x"4" or layer_state_reg(i) = x"5") and wrreq_good(i) = '1' and both_rdempty(i) = '0' and b(i) >  d(i) else
+                          x"0A" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) /= tree_padding and c_h(i) = tree_padding and d_h(i) = tree_padding and a_z(i) = '0' and b_z(i) = '0' else
+                          x"0B" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and c_h(i) /= tree_padding and d_h(i) /= tree_padding and a_h(i) = tree_padding and b_h(i) = tree_padding and c_z(i) = '0' and d_z(i) = '0' else
                           
-                          x"04" when layer_state_reg(i) = x"6" and wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) <= d(i) else
-                          x"0F" when layer_state_reg(i) = x"6" and wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) >  d(i) else
+                          x"0C" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) = tree_padding and c_h(i)  = tree_padding and d_h(i) = tree_padding and a_z(i) = '0' else
+                          x"0D" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i)  = tree_padding and b_h(i) = tree_padding and c_h(i) /= tree_padding and d_h(i) = tree_padding and c_z(i) = '0' else
                           
-                          x"0F" when layer_state_reg(i) = x"7" and wrreq_good(i) = '1' and both_rdempty(i) = '0' and b(i) <= c(i) else
-                          x"04" when layer_state_reg(i) = x"7" and wrreq_good(i) = '1' and both_rdempty(i) = '0' and b(i) >  c(i) else
+                          x"0E" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) = tree_padding and c_h(i) /= tree_padding and d_h(i) = tree_padding and a(i) <= c(i) and a_z(i) = '0' and c_z(i) = '0' else
+                          x"10" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) = tree_padding and c_h(i) /= tree_padding and d_h(i) = tree_padding and a(i) >  c(i) and a_z(i) = '0' and c_z(i) = '0' else
+
+                          x"11" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i)  = tree_padding and c_h(i) /= tree_padding and d_h(i) /= tree_padding and a(i) <= c(i) and a_z(i) = '0' and c_z(i) = '0' and d_z(i) = '0' else                          
+                          x"12" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) /= tree_padding and c_h(i) /= tree_padding and d_h(i)  = tree_padding and c(i) <= a(i) and a_z(i) = '0' and b_z(i) = '0' and c_z(i) = '0' else
+                          x"13" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i)  = tree_padding and c_h(i) /= tree_padding and d_h(i) /= tree_padding and c(i) <= a(i) and a(i) <= d(i) and a_z(i) = '0' and c_z(i) = '0' and d_z(i) = '0' else                          
+                          x"14" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) /= tree_padding and b_h(i) /= tree_padding and c_h(i) /= tree_padding and d_h(i)  = tree_padding and a(i) <= c(i) and c(i) <= b(i) and a_z(i) = '0' and b_z(i) = '0' and c_z(i) = '0' else
+                          x"15" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and layer_state_reg(i) /= x"06" and a_h(i) /= tree_padding and b_h(i)  = tree_padding and c_h(i) /= tree_padding and d_h(i) /= tree_padding and c(i) <= a(i) and d(i) <= a(i) and a_z(i) = '0' and c_z(i) = '0' and d_z(i) = '0' else
+                          x"16" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and layer_state_reg(i) /= x"07" and a_h(i) /= tree_padding and b_h(i) /= tree_padding and c_h(i) /= tree_padding and d_h(i)  = tree_padding and a(i) <= c(i) and b(i) <= c(i) and a_z(i) = '0' and b_z(i) = '0' and c_z(i) = '0' else
                           
-                          x"04" when layer_state_reg(i) = x"4" else
-                          x"05" when layer_state_reg(i) = x"5" else
-                          x"06" when layer_state_reg(i) = x"6" else
-                          x"07" when layer_state_reg(i) = x"7" else
+                          x"06" when (layer_state_reg(i) = x"04" or layer_state_reg(i) = x"05") and wrreq_good(i) = '1' and both_rdempty(i) = '0' and b(i) <= d(i) and b_z(i) = '0' and d_z(i) = '0' else
+                          x"07" when (layer_state_reg(i) = x"04" or layer_state_reg(i) = x"05") and wrreq_good(i) = '1' and both_rdempty(i) = '0' and b(i) >  d(i) and b_z(i) = '0' and d_z(i) = '0' else
                           
-                          x"02" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) <= c(i) and b(i) <= c(i) else
-                          x"03" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and c(i) <= a(i) and d(i) <= a(i) else  
-                          x"04" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) <= c(i) and b(i) >  c(i) else
-                          x"05" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and c(i) <= a(i) and d(i) >  a(i) else
+                          x"04" when layer_state_reg(i) = x"06" and wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) <= d(i) and a_z(i) = '0' and d_z(i) = '0' else
+                          x"0F" when layer_state_reg(i) = x"06" and wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) >  d(i) and a_z(i) = '0' and d_z(i) = '0' else
+                          
+                          x"0F" when layer_state_reg(i) = x"07" and wrreq_good(i) = '1' and both_rdempty(i) = '0' and b(i) <= c(i) and b_z(i) = '0' and c_z(i) = '0' else
+                          x"04" when layer_state_reg(i) = x"07" and wrreq_good(i) = '1' and both_rdempty(i) = '0' and b(i) >  c(i) and b_z(i) = '0' and c_z(i) = '0' else
+                          
+                          x"04" when layer_state_reg(i) = x"04" else
+                          x"05" when layer_state_reg(i) = x"05" else
+                          x"06" when layer_state_reg(i) = x"06" else
+                          x"07" when layer_state_reg(i) = x"07" else
+                          
+                          x"02" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) <= c(i) and b(i) <= c(i) and a_z(i) = '0' and b_z(i) = '0' else
+                          x"03" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and c(i) <= a(i) and d(i) <= a(i) and c_z(i) = '0' and d_z(i) = '0' else  
+                          x"04" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) <= c(i) and b(i) >  c(i) and a_z(i) = '0' and c_z(i) = '0' else
+                          x"05" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and c(i) <= a(i) and d(i) >  a(i) and c_z(i) = '0' and a_z(i) = '0' else
                           
                           x"0F";
                          
-        wrreq(i) <= '1' when layer_state(i) = x"9" and i_wen_h_t = '1' else
-                    '1' when layer_state(i) = x"0" or layer_state(i) = x"1" or layer_state(i) = x"2" or layer_state(i) = x"3" or layer_state(i) = x"4" or layer_state(i) = x"5" or layer_state(i) = x"8" or layer_state(i) = x"A" or layer_state(i) = x"B" or layer_state(i) = x"C" or layer_state(i) = x"D" or layer_state(i) = x"E" or layer_state(i) = x"10" else
-                    '1' when (layer_state(i) = x"F" or layer_state(i) = x"4") and (layer_state_reg(i) = x"6" or layer_state_reg(i) = x"7") else
+        wrreq(i) <= '1' when layer_state(i) = x"09" and i_wen_h_t = '1' else
+                    '1' when layer_state(i) = x"00" or layer_state(i) = x"01" or layer_state(i) = x"02" or layer_state(i) = x"03" or layer_state(i) = x"04" or layer_state(i) = x"05" or layer_state(i) = x"08" or layer_state(i) = x"0A" or layer_state(i) = x"0B" or layer_state(i) = x"0C" or layer_state(i) = x"0D" or layer_state(i) = x"0E" or layer_state(i) = x"10" or layer_state(i) = x"13" or layer_state(i) = x"14" or layer_state(i) = x"15" or layer_state(i) = x"16" else
+                    '1' when layer_state(i) = x"0F" and layer_state_reg(i) = x"06" else
+                    '1' when layer_state(i) = x"0F" and layer_state_reg(i) = x"07" else
+                    '1' when layer_state(i) = x"04" and layer_state_reg(i) = x"06" else
+                    '1' when layer_state(i) = x"04" and layer_state_reg(i) = x"07" else
+                    '1' when layer_state(i) = x"0C" and layer_state_reg(i) = x"11" else
+                    '1' when layer_state(i) = x"0C" and layer_state_reg(i) = x"12" else
+                    '1' when layer_state(i) = x"0D" and layer_state_reg(i) = x"11" else
+                    '1' when layer_state(i) = x"0D" and layer_state_reg(i) = x"11" else
                     '0';
                     
-        o_rdreq(i) <= '1' when layer_state(i) = x"0" or layer_state(i) = x"2" or layer_state(i) = x"6" or layer_state(i) = x"A" or layer_state(i) = x"C" or layer_state(i) = x"E" or layer_state(i) = x"10" else
-                      '1' when layer_state(i) = x"F" and layer_state_reg(i) = x"7" else
-                      '1' when layer_state(i) = x"6" and (layer_state_reg(i) = x"4" or layer_state_reg(i) = x"5") else
+        o_rdreq(i) <= '1' when layer_state(i) = x"00" or layer_state(i) = x"02" or layer_state(i) = x"06" or layer_state(i) = x"0A" or layer_state(i) = x"0C" or layer_state(i) = x"0E" or layer_state(i) = x"10" or layer_state(i) = x"11" or layer_state(i) = x"13" or layer_state(i) = x"16" else
+                      '1' when layer_state(i) = x"0F" and layer_state_reg(i) = x"07" else
+                      '1' when layer_state(i) = x"06" and layer_state_reg(i) = x"04" else
+                      '1' when layer_state(i) = x"06" and layer_state_reg(i) = x"05" else
                       '0';
 
-        o_rdreq(i+size) <=  '1' when layer_state(i) = x"1" or layer_state(i) = x"3" or layer_state(i) = x"7" or layer_state(i) = x"B" or layer_state(i) = x"D" or layer_state(i) = x"E" or layer_state(i) = x"10" else
-                            '1' when layer_state(i) = x"F" and layer_state_reg(i) = x"6" else
-                            '1' when layer_state(i) = x"7" and (layer_state_reg(i) = x"4" or layer_state_reg(i) = x"5") else
+        o_rdreq(i+size) <=  '1' when layer_state(i) = x"01" or layer_state(i) = x"03" or layer_state(i) = x"07" or layer_state(i) = x"0B" or layer_state(i) = x"0D" or layer_state(i) = x"0E" or layer_state(i) = x"10" or layer_state(i) = x"12" or layer_state(i) = x"14" or layer_state(i) = x"15" else
+                            '1' when layer_state(i) = x"0F" and layer_state_reg(i) = x"06" else
+                            '1' when layer_state(i) = x"07" and layer_state_reg(i) = x"04" else
+                            '1' when layer_state(i) = x"07" and layer_state_reg(i) = x"05" else
                             '0';
         
-        data(i)(37 downto 0) <= i_data_h_t when layer_state(i) = x"9" else
-                                tree_padding when layer_state(i) = x"8" else
-                                data_reg(i)(37 downto 0) when (layer_state(i) = x"6" and layer_state_reg(i) = x"6") or (layer_state(i) = x"7" and layer_state_reg(i) = x"7") else
-                                data_reg(i)(37 downto 0) when (layer_state(i) = x"F" or layer_state(i) = x"4") and (layer_state_reg(i) = x"6" or layer_state_reg(i) = x"7") else
-                                a_h(i) when layer_state(i) = x"0" or layer_state(i) = x"2" or layer_state(i) = x"A" or layer_state(i) = x"C" or layer_state(i) = x"E" else
-                                c_h(i) when layer_state(i) = x"1" or layer_state(i) = x"3" or layer_state(i) = x"B" or layer_state(i) = x"D" or layer_state(i) = x"10" else
-                                a_h(i) when layer_state(i) = x"4" else
-                                c_h(i) when layer_state(i) = x"5" else
-                                b_h(i) when layer_state(i) = x"6" else
-                                d_h(i) when layer_state(i) = x"7" else
+        data(i)(37 downto 0) <= i_data_h_t when layer_state(i) = x"09" else
+                                tree_padding when layer_state(i) = x"08" else
+                                b_h(i) when layer_state(i) = x"06" and layer_state_reg(i) = x"04" else
+                                b_h(i) when layer_state(i) = x"06" and layer_state_reg(i) = x"05" else
+                                d_h(i) when layer_state(i) = x"07" and layer_state_reg(i) = x"04" else
+                                d_h(i) when layer_state(i) = x"07" and layer_state_reg(i) = x"05" else
+                                data_reg(i)(37 downto 0) when layer_state(i) = x"06" and layer_state_reg(i) = x"06" else 
+                                data_reg(i)(37 downto 0) when layer_state(i) = x"07" and layer_state_reg(i) = x"07" else
+                                data_reg(i)(37 downto 0) when layer_state(i) = x"0F" and layer_state_reg(i) = x"06" else
+                                data_reg(i)(37 downto 0) when layer_state(i) = x"0F" and layer_state_reg(i) = x"07" else
+                                data_reg(i)(37 downto 0) when layer_state(i) = x"04" and layer_state_reg(i) = x"06" else
+                                data_reg(i)(37 downto 0) when layer_state(i) = x"04" and layer_state_reg(i) = x"07" else
+                                data_reg(i)(37 downto 0) when layer_state(i) = x"0C" and layer_state_reg(i) = x"11" else
+                                data_reg(i)(37 downto 0) when layer_state(i) = x"0C" and layer_state_reg(i) = x"12" else
+                                data_reg(i)(37 downto 0) when layer_state(i) = x"0D" and layer_state_reg(i) = x"11" else
+                                data_reg(i)(37 downto 0) when layer_state(i) = x"0D" and layer_state_reg(i) = x"12" else
+                                a_h(i) when layer_state(i) = x"00" or layer_state(i) = x"02" or layer_state(i) = x"04" or layer_state(i) = x"0A" or layer_state(i) = x"0C" or layer_state(i) = x"0E" or layer_state(i) = x"11" or layer_state(i) = x"14" or layer_state(i) = x"16" else
+                                c_h(i) when layer_state(i) = x"01" or layer_state(i) = x"03" or layer_state(i) = x"05" or layer_state(i) = x"0B" or layer_state(i) = x"0D" or layer_state(i) = x"10" or layer_state(i) = x"12" or layer_state(i) = x"13" or layer_state(i) = x"15" else
+                                b_h(i) when layer_state(i) = x"06" else
+                                d_h(i) when layer_state(i) = x"07" else
                                 (others => '0');
 
-        data(i)(75 downto 38)<= tree_paddingk when layer_state(i) = x"9" else
-                                tree_padding when layer_state(i) = x"8" or layer_state(i) = x"C" or layer_state(i) = x"D" else
-                                data_reg(i)(75 downto 38) when (layer_state(i) = x"6" and layer_state_reg(i) = x"6") or (layer_state(i) = x"7" and layer_state_reg(i) = x"7") else
-                                d_h(i) when layer_state(i) = x"F" and layer_state_reg(i) = x"6" else
-                                b_h(i) when layer_state(i) = x"F" and layer_state_reg(i) = x"7" else
-                                a_h(i) when (layer_state(i) = x"4" and layer_state_reg(i) = x"6") or layer_state(i) = x"10"  else
-                                c_h(i) when (layer_state(i) = x"4" and layer_state_reg(i) = x"7") or layer_state(i) = x"E" else
-                                b_h(i) when layer_state(i) = x"0" or layer_state(i) = x"2" or layer_state(i) = x"A" else
-                                d_h(i) when layer_state(i) = x"1" or layer_state(i) = x"3" or layer_state(i) = x"B" else
-                                c_h(i) when layer_state(i) = x"4" else
-                                a_h(i) when layer_state(i) = x"5" else
+        data(i)(75 downto 38)<= tree_paddingk when layer_state(i) = x"09" else
+                                tree_padding when layer_state(i) = x"08" or layer_state(i) = x"0C" or layer_state(i) = x"0D" else
+                                data_reg(i)(75 downto 38) when layer_state(i) = x"06" and layer_state_reg(i) = x"06" else
+                                data_reg(i)(75 downto 38) when layer_state(i) = x"07" and layer_state_reg(i) = x"07" else
+                                a_h(i) when layer_state(i) = x"0C" and layer_state_reg(i) = x"11" else
+                                a_h(i) when layer_state(i) = x"0C" and layer_state_reg(i) = x"12" else
+                                c_h(i) when layer_state(i) = x"0D" and layer_state_reg(i) = x"11" else
+                                c_h(i) when layer_state(i) = x"0D" and layer_state_reg(i) = x"12" else
+                                d_h(i) when layer_state(i) = x"0F" and layer_state_reg(i) = x"06" else 
+                                b_h(i) when layer_state(i) = x"0F" and layer_state_reg(i) = x"07" else 
+                                a_h(i) when layer_state(i) = x"04" and layer_state_reg(i) = x"06" else
+                                c_h(i) when layer_state(i) = x"04" and layer_state_reg(i) = x"07" else
+                                b_h(i) when layer_state(i) = x"00" or layer_state(i) = x"02" or layer_state(i) = x"0A" or layer_state(i) = x"16" else
+                                d_h(i) when layer_state(i) = x"15" or layer_state(i) = x"01" or layer_state(i) = x"03" or layer_state(i) = x"0B" else
+                                a_h(i) when layer_state(i) = x"05" or layer_state(i) = x"10" or layer_state(i) = x"13" else
+                                c_h(i) when layer_state(i) = x"04" or layer_state(i) = x"0E" or layer_state(i) = x"14" else
                                 (others => '0');
         
         process(i_clk, i_reset_n)

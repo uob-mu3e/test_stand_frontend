@@ -29,6 +29,7 @@ entity data_generator_a10 is
 		i_reset_n    		: in  std_logic;
 		enable_pix			: in  std_logic;
         i_dma_half_full		: in  std_logic;
+        delay               : in  std_logic_vector (15 downto 0);
 		random_seed			: in  std_logic_vector (15 downto 0);
 		start_global_time 	: in  std_logic_vector(47 downto 0);
 		data_pix_generated 	: out std_logic_vector(31 downto 0);
@@ -55,7 +56,7 @@ architecture rtl of data_generator_a10 is
 	signal lsfr_tot, lsfr_tot_reg:     	  	  std_logic_vector (5 downto 0);
 	signal row:     	  	  std_logic_vector (7 downto 0);
 	signal col:     	     std_logic_vector (7 downto 0);
-	signal lsfr_overflow:        std_logic_vector (15 downto 0);
+	signal lsfr_overflow, delay_cnt:        std_logic_vector (15 downto 0);
 	
 	-- slow down signals
 	signal waiting:				  std_logic;
@@ -145,6 +146,7 @@ begin
 		current_overflow 			:= "0000000000000000";
 		overflow_idx				:= 0;
 		state_out					<= (others => '0');
+		delay_cnt					<= (others => '0');
 		datak_pix_generated		<= (others => '1');
 		row <= (others => '0');
 		col <= (others => '0');
@@ -154,18 +156,27 @@ begin
 				case data_header_state is
 					when part1 =>
 						state_out <= x"A";
-						data_pix_generated(31 downto 26) <= DATA_HEADER_ID;
-						data_pix_generated(25 downto 24) <=  (others => '0');
-						data_pix_generated(23 downto 8) <= fpga_id;
-						data_pix_generated(7 downto 0) 	<= x"bc";
-						datak_pix_generated              <= "0001";
-						data_header_state 					<= part2;
+						if ( delay_cnt = delay ) then
+							data_header_state 					<= part2;
+							data_pix_generated(31 downto 26) 	<= DATA_HEADER_ID;
+							data_pix_generated(25 downto 24) 	<= (others => '0');
+							data_pix_generated(23 downto 8) 	<= fpga_id;
+							data_pix_generated(7 downto 0) 		<= x"bc";
+							datak_pix_generated              	<= "0001";
+						else
+							-- send not valid data out of the data package
+							delay_cnt 							<= delay_cnt + '1';
+							data_pix_generated					<= x"AFFEAFFE";
+							datak_pix_generated              	<= "0000";
+						end if;
+						
 				
 					when part2 =>
 						state_out <= x"B";
+						delay_cnt <= (others => '0');
 						data_pix_generated(31 downto 0) 	<= global_time(47 downto 16);
-						global_time <= global_time + '1';
-						datak_pix_generated              <= "0000";
+						global_time 						<= global_time + '1';
+						datak_pix_generated              	<= "0000";
 						data_header_state 					<= part3;
 					
 					when part3 =>

@@ -18,9 +18,9 @@ architecture TB of tb_time_merger is
     constant g_NLINKS_TOTL : integer := 64;
     constant g_NLINKS_DATA : integer := 12;
     constant W : integer := 8*32 + 8*6;
-    signal slow_down : std_logic_vector(31 downto 0);
-    signal gen_link, gen_link_reg : std_logic_vector(31 downto 0);
-    signal gen_link_k : std_logic_vector(3 downto 0);
+    signal slow_down_0, slow_down_1 : std_logic_vector(31 downto 0);
+    signal gen_link, gen_link_reg : work.util.slv32_array_t(1 downto 0);
+    signal gen_link_k : work.util.slv4_array_t(1 downto 0);
     
     -- signals
     signal rx_q : work.util.slv38_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
@@ -55,13 +55,17 @@ begin
     end process inita;
 
     -- data generation and ts counter_ddr3
-    slow_down <= x"00000002";
+    slow_down_0 <= x"00000002";
+    slow_down_1 <= x"00000003";
 
+    --! we generate different sequences for the hit time:
+    --! gen0: 3, 44, 55, 6, 77, 8, 9, AA, B, CC, DD, E, F
+    --! gen1-63: 3, 4, 55, 66, 77, 88, 9, A, BB, CC, D, E, F
         --! data_generator_a10
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_data_gen_link : entity work.data_generator_a10
+    e_data_gen_0 : entity work.data_generator_a10
     generic map (
             go_to_sh => 3,
             go_to_trailer => 4--,
@@ -71,31 +75,84 @@ begin
         enable_pix          => '1',
         i_dma_half_full     => '0',
         random_seed         => (others => '1'),
-        data_pix_generated  => gen_link,
-        datak_pix_generated => gen_link_k,
+        data_pix_generated  => gen_link(0),
+        datak_pix_generated => gen_link_k(0),
         data_pix_ready      => open,
         start_global_time   => (others => '0'),
-        slow_down           => slow_down,
+        delay               => (others => '0'),
+        slow_down           => slow_down_0,
         state_out           => open,
         clk                 => clk--,
     );
+
+    e_data_gen_1 : entity work.data_generator_a10
+    generic map (
+            go_to_sh => 3,
+            go_to_trailer => 4--,
+        )
+    port map (
+        i_reset_n           => reset_n,
+        enable_pix          => '1',
+        i_dma_half_full     => '0',
+        random_seed         => (others => '1'),
+        data_pix_generated  => gen_link(1),
+        datak_pix_generated => gen_link_k(1),
+        data_pix_ready      => open,
+        start_global_time   => (others => '0'),
+        delay               => x"0002",
+        slow_down           => slow_down_1,
+        state_out           => open,
+        clk                 => clk--,
+    );
+
     
-    gen_link_reg <= gen_link when gen_link_k = "0001" or gen_link(28 downto 23) = "111111" else
-                    gen_link(31 downto 4) & gen_link(31 downto 28);
+    gen_link_reg(0) <=  gen_link(0) when gen_link_k(0) = "0001" or gen_link(0)(28 downto 23) = "111111" else
+                        gen_link(0)(31 downto 4) & gen_link(0)(31 downto 28); -- set hit time to zero for simulation checks
+
+    gen_link_reg(1) <=  gen_link(1) when gen_link_k(1) = "0001" or gen_link(1)(28 downto 23) = "111111" else
+                        gen_link(1)(31 downto 4) & gen_link(1)(31 downto 28); -- set hit time to zero for simulation checks
+
+
 
     --! generate link_to_fifo_32
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    gen_link_fifos : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
+
+    e_link_to_fifo_32 : entity work.link_to_fifo_32
+    generic map (
+        LINK_FIFO_ADDR_WIDTH => 8--;
+    )
+    port map (
+        i_rx            => gen_link_reg(0),
+        i_rx_k          => gen_link_k(0),
+        
+        o_q             => rx_q(0),
+        i_ren           => rx_ren(0),
+        o_rdempty       => rx_rdempty(0),
+
+        o_counter       => open,
+        
+        i_reset_n_156   => reset_n,
+        i_clk_156       => clk,
+
+        i_reset_n_250   => reset_n,
+        i_clk_250       => clk_fast--;
+    );
+
+    sop(0) <= rx_q(0)(36);
+    shop(0) <= '1' when rx_q(0)(37 downto 36) = "00" and rx_q(0)(31 downto 26) = "111111" else '0';
+    eop(0) <= rx_q(0)(37);
+
+    gen_link_fifos : FOR i in 1 to g_NLINKS_DATA - 1 GENERATE
         
         e_link_to_fifo_32 : entity work.link_to_fifo_32
         generic map (
             LINK_FIFO_ADDR_WIDTH => 8--;
         )
         port map (
-            i_rx            => gen_link_reg,
-            i_rx_k          => gen_link_k,
+            i_rx            => gen_link_reg(1),
+            i_rx_k          => gen_link_k(1),
             
             o_q             => rx_q(i),
             i_ren           => rx_ren(i),

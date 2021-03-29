@@ -56,7 +56,7 @@ architecture arch of time_merger is
     constant check_ones_t_3 : std_logic_vector(4 downto 0) := (others => '1');
 
     signal error_gtime1, error_gtime2, error_shtime, error_merger, check_overflow, header_trailer_we : std_logic;
-    type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer, read_hits, wait_for_sh_written);
+    type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer, wait_for_sh_written);
     signal merge_state : merge_state_type;
     signal merger_state_signal : std_logic;
     signal rack, rack_hit, error_pre, error_sh, error_tr, sh_state, pre_state, tr_state : std_logic_vector(N - 1 downto 0);
