@@ -6,8 +6,6 @@ IPs = \
 
 include util/altera/makefile.mk
 
-nios.qsys : device.tcl
-
 .PHONY: maxpof
 maxpof : app $(SOF)
 	quartus_cpf -c pofconversion.cof

@@ -25,7 +25,7 @@ int main() {
         printf("  [b] => Status\n");
         printf("  [f] => User flash\n");
         printf("  [s] => SPI flash\n");
-        
+
         printf("Select entry ...\n");
         char cmd = wait_key();
 
