@@ -21,12 +21,10 @@ namespace mutrig { namespace midasODB {
 
 int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     /* Book Setting space */
-
     cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb");
     INT status = DB_SUCCESS;
 
     char set_str[255];
-
     /* Add [prefix]/ASICs/Global (structure defined in mutrig_MIDAS_config.h) */
     //TODO some globals should be per asic
     sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
@@ -45,9 +43,15 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     }
 
     // Add [prefix]/Daq (structure defined in mutrig_MIDAS_config.h) 
-    //TODO: if we have more than one FE-FPGA, there might be more than one DAQ class.
     auto settings_daq = MUTRIG_DAQ_SETTINGS; // gloabl setting for daq/fpga from mutrig_MIDAS_config.h
     settings_daq.connect(set_str, true);
+
+    //update length flags for DAQ section
+    settings_daq["mask"].resize(nasics);
+    settings_daq["resetskew_cphase"].resize(FEB_interface->GetNumModules());
+    settings_daq["resetskew_cdelay"].resize(FEB_interface->GetNumModules());
+    settings_daq["resetskew_phases"].resize(FEB_interface->GetNumModules());
+
 
     // use lambda function for passing FEB_interface
     auto on_settings_changed_partial =
@@ -57,15 +61,6 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
                 );
             };
     settings_daq.watch(on_settings_changed_partial);
-
-    //update length flags for DAQ section
-    odb settings_daq_nasicsn = {
-        {"mask", nasics},
-        {"resetskew_cphase", FEB_interface->GetNumModules()},
-        {"resetskew_cdelay", FEB_interface->GetNumModules()},
-        {"resetskew_phases", FEB_interface->GetNumModules()},
-    };
-    settings_daq_nasicsn.connect(set_str);
 
     /* Map Equipment/SciFi/ASICs/TDCs and /Equipment/Scifi/ASICs/Channels
      * (structure defined in mutrig_MIDAS_config.h) */
@@ -79,6 +74,7 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
             settings_ch.connect(set_str, true);
         }
     }
+    cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - ASICs done");
 
     //set up variables read from FEB: counters
     sprintf(set_str, "%s/Variables/Counters", prefix);
@@ -93,6 +89,8 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
         {"nWordsPRBS", nasics},
         {"nDatasyncloss", nasics},
     };
+    cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - counters done");
+
 
     //set up variables read from FEB: run state & reset system bypass
     sprintf(set_str, "%s/Variables/FEB Run State", prefix);
@@ -101,6 +99,7 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
             {"Run state", FEB_interface->GetNumFPGAs()}
     };
     bypass_setting.connect(set_str);
+    cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - feb state done");
 
     //set up variables read from FEB: run state & reset system bypass
     sprintf(set_str, "%s/Variables/FEB datapath status", prefix);
@@ -112,6 +111,7 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
             {"RX ready", FEB_interface->GetNumASICs()}
     };
     datapath_status.connect(set_str);
+    cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - datapath status done");
 
     // Define history panels
     for(std::string panel: {
@@ -133,6 +133,7 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
         }
         hs_define_panel(FEB_interface->GetName(),panel.c_str(),varlist);
     }
+    cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - history done");
 
     //hs_define_panel("SciFi","Times",{"SciFi:Counters_Time",
     //                                "SciFi:Counters_Time"});
