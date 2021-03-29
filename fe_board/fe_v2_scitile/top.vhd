@@ -119,7 +119,6 @@ architecture rtl of top is
     signal malibu_reg               : work.util.rw_t;
 
     signal run_state_125            : run_state_t;
-    signal run_state_156            : run_state_t;
     signal ack_run_prep_permission  : std_logic;
     signal common_fifos_almost_full : std_logic_vector(N_LINKS-1 downto 0);
     signal s_run_state_all_done     : std_logic;
