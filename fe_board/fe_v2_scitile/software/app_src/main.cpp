@@ -1,5 +1,6 @@
 
 #include "../include/base.h"
+
 #include "../include/xcvr.h"
 
 #include "../../../fe/software/app_src/si5345_fe_v2.h"
@@ -17,13 +18,14 @@ mscb_t mscb;
 #include "../include/i2c.h"
 i2c_t i2c;
 
+
 #include "TMB_module.h"
-malibu_t TMB(sc,i2c);
+TMB_t TMB(i2c,sc);
 
 
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
-    return TMB.callback(cmd,data,n);
+    return TMB.sc_callback(cmd,data,n);
 }
 
 
