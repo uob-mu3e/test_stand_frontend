@@ -181,12 +181,12 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
 
    static std::array<std::array<uint32_t,9>,8> last_counters;
    //store in midas
-   INT status;
-   int index=0;
+   //INT status;
+   //int index=0;
    char path[255];
    uint32_t value;
    uint32_t odbval;
-   for(uint nASIC=0;nASIC<rpc_ret;nASIC++){
+   for(auto nASIC=0;nASIC<rpc_ret;nASIC++){
 
        // get midas odb object
        sprintf(path,"%s/Variables/Counters", odb_prefix);
