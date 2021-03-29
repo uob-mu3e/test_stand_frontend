@@ -21,34 +21,16 @@ using midas::odb;
 class MupixFEB  : public MuFEB{
    private:
       std::map<uint8_t,std::map<uint32_t,uint32_t> > m_reg_shadow; /*[FPGA_ID][reg]*/
-      static MupixFEB* m_instance; //singleton instance pointer: only one instance of MupixFEB
       MupixFEB(const MupixFEB&)=delete;
+    public:
       MupixFEB(FEBSlowcontrolInterface & feb_sc_,
                const vector<mappedFEB> & febs_,
+               const uint64_t & febmask_,
                const char* equipment_name_,
                const char* odb_prefix_,
                const uint8_t SB_number_)
         :
-       MuFEB(feb_sc_, febs_, equipment_name_, odb_prefix_, SB_number_){}
-
-   public:
-      static MupixFEB* Create(FEBSlowcontrolInterface & feb_sc_,
-                                    const vector<mappedFEB> & febs_,
-                                    const char* equipment_name_,
-                                    const char* odb_prefix_,
-                                    const uint8_t SB_number_)
-            {
-
-                cm_msg(MINFO, "MupixFEB", "MupixFEB::Create(%s) as %s", odb_prefix_, equipment_name_);
-                if(!m_instance)
-                    m_instance=new MupixFEB(feb_sc_, febs_, equipment_name_, odb_prefix_, SB_number_);
-                return m_instance;
-            };
-
-
-
-      static MupixFEB* Instance(){return m_instance;}
-
+       MuFEB(feb_sc_, febs_, febmask_, equipment_name_, odb_prefix_, SB_number_){}
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
       virtual uint16_t FPGAid_from_ID(int asic) const;

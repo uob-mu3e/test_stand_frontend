@@ -1,21 +1,14 @@
 ADD_CUSTOM_COMMAND(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h
-  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../firmware/assignments/mudaq_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../firmware/assignments/mudaq_registers.vhd
+  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../firmware/registers/a10_pcie_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../firmware/registers/a10_pcie_registers.vhd
 )
 
 ADD_CUSTOM_COMMAND(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../include/farm_constants.h
-  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../firmware/assignments/mudaq_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../include/farm_constants.h
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../firmware/assignments/mudaq_registers.vhd
+  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../firmware/registers/a10_pcie_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../include/farm_constants.h
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../firmware/registers/a10_pcie_registers.vhd
 )
-
-#ADD_CUSTOM_COMMAND(
-#  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../include/feb_constants.h
-#  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../../fe_board/firmware/FEB_common/sc_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../include/feb_constants.h
-#  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../fe_board/firmware/FEB_common/sc_registers.vhd
-#)
-
 
 add_library(libmudaq STATIC
     mudaq_device.cpp

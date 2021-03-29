@@ -7,8 +7,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
-use work.cmp.all;
+
+use work.mudaq.all;
 
 entity top is 
     port (
@@ -163,6 +163,11 @@ architecture rtl of top is
     signal sync_reset_cnt           : std_logic;
     signal nios_clock               : std_logic;
 
+    signal mp_ctrl_clock            : std_logic_vector(3  downto 0);
+    signal mp_ctrl_SIN              : std_logic_vector(3  downto 0);
+    signal mp_ctrl_mosi             : std_logic_vector(3  downto 0);
+    signal mp_ctrl_csn              : std_logic_vector(11 downto 0);
+
 begin
 
 --------------------------------------------------------------------
@@ -171,9 +176,35 @@ begin
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 
+    clock_A <= mp_ctrl_clock(3);
+    clock_B <= mp_ctrl_clock(2);
+    clock_C <= mp_ctrl_clock(1);
+    clock_D <= mp_ctrl_clock(0);
+
+    SIN_A <= mp_ctrl_SIN(3);
+    SIN_B <= mp_ctrl_SIN(2);
+    SIN_C <= mp_ctrl_SIN(1);
+    SIN_D <= mp_ctrl_SIN(0);
+
+    mosi_A <= mp_ctrl_mosi(3);
+    mosi_B <= mp_ctrl_mosi(2);
+    mosi_C <= mp_ctrl_mosi(1);
+    mosi_D <= mp_ctrl_mosi(0);
+
+    csn_A <= mp_ctrl_csn(11 downto 9);
+    csn_B <= mp_ctrl_csn( 8 downto 6);
+    csn_C <= mp_ctrl_csn( 5 downto 3);
+    csn_D <= mp_ctrl_csn( 2 downto 0);
+
     e_mupix_block : entity work.mupix_block
     port map (
         i_fpga_id               => ref_adr,
+
+        -- config signals to mupix
+        o_clock                 => mp_ctrl_clock,
+        o_SIN                   => mp_ctrl_SIN,
+        o_mosi                  => mp_ctrl_mosi,
+        o_csn                   => mp_ctrl_csn,
 
         -- mupix dac regs
         i_reg_add               => mupix_reg.addr(7 downto 0),
@@ -191,8 +222,9 @@ begin
         o_ack_run_prep_permission => ack_run_prep_permission,
 
         i_lvds_data_in          => data_in_D & data_in_C & data_in_B & data_in_A,
+        o_lvds_invert_mon       => lcd_data(7),
 
-        i_reset                 => '0',--not pb_db(0),
+        i_reset                 => not pb_db(1),
         -- 156.25 MHz
         i_clk156                => transceiver_pll_clock(0),
         i_clk125                => lvds_firefly_clk,
@@ -321,6 +353,9 @@ begin
         
         i_testin            => pb_db(1)--,
     );
+
+    max10_spi_sclk <= '1'; -- This is temporary until we only have v2.1 boards with the
+    -- correct connection; for now we use it to know 2.1 from 2.0
 
 
     FPGA_Test(0) <= transceiver_pll_clock(0);

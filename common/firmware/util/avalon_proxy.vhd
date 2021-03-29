@@ -5,6 +5,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+
 entity avalon_proxy is
 generic (
     ADDRESS_WIDTH : positive := 16;

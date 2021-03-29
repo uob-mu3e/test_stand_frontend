@@ -6,10 +6,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
-use work.daq_constants.all;
+
 use work.lfsr_taps.all;
 use work.mupix_registers.all;
-use work.mupix_types.all;
+use work.mupix.all;
+use work.mudaq.all;
+
 
 entity mp_sorter_datagen is
 port (

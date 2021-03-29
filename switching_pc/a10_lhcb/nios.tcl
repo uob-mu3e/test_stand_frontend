@@ -13,5 +13,7 @@ set_interface_property flash EXPORT_OF flash.out
 
 
 
-nios_base.add_clock_source avm_clk 125000000 -clock_export avm_clock -reset_export avm_reset
-nios_base.export_avm avm_xcvr 18 0x70100000 -clk avm_clk
+nios_base.add_clock_source avm_xcvr0_clk 125000000 -clock_export avm_xcvr0_clock -reset_export avm_xcvr0_reset
+nios_base.export_avm avm_xcvr0 18 0x70100000 -clk avm_xcvr0_clk
+nios_base.add_clock_source avm_xcvr1_clk 125000000 -clock_export avm_xcvr1_clock -reset_export avm_xcvr1_reset
+nios_base.export_avm avm_xcvr1 18 0x70200000 -clk avm_xcvr1_clk

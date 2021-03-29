@@ -3,8 +3,9 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
-use work.dataflow_components.all;
---use std.textio.all;
+
+use work.mudaq.all;
+
 
 -- merge packets delimited by SOP and EOP from N input streams
 entity time_merger is
@@ -17,7 +18,7 @@ generic (
 );
 port (
     -- input streams
-    i_rdata     : in    data_array(N - 1 downto 0);
+    i_rdata     : in    work.util.slv38_array_t(N - 1 downto 0);
     i_rsop      : in    std_logic_vector(N-1 downto 0); -- start of packet (SOP)
     i_reop      : in    std_logic_vector(N-1 downto 0); -- end of packet (EOP)
     i_rshop     : in    std_logic_vector(N-1 downto 0); -- sub header of packet (SHOP)
@@ -60,7 +61,7 @@ architecture arch of time_merger is
     signal rack, rack_hit, error_pre, error_sh, error_tr, sh_state, pre_state, tr_state : std_logic_vector(N - 1 downto 0);
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
     signal header_trailer : std_logic_vector(37 downto 0);
-    signal gtime1, gtime2 : data_array(N - 1 downto 0);
+    signal gtime1, gtime2 : work.util.slv38_array_t(N - 1 downto 0);
     signal shtime : std_logic_vector(5 downto 0);
     signal overflow : std_logic_vector(15 downto 0);
     signal sheader_time : sheader_time_array_t;
@@ -77,18 +78,18 @@ architecture arch of time_merger is
     constant write_width : fifo_width_t := (64+12, 64+12, 64+12, 64+12, 64+12, 64+12, 32+6);
     constant generate_fifos : fifo_width_t := (1, 2, 4, 8, 16, 32, 64);
         
-    signal fifo_data_0              : fifo_array_38(generate_fifos(0) - 1 downto 0);
-    signal fifo_q_0, fifo_q_0_reg   : fifo_array_76(generate_fifos(0) - 1 downto 0);
-    signal wait_cnt_fifo_0          : fifo_array_2(generate_fifos(0) - 1 downto 0);
-    signal layer_0_state            : fifo_array_4(generate_fifos(0) - 1 downto 0);
-    signal layer_0_cnt              : fifo_array_32(generate_fifos(0) - 1 downto 0);
+    signal fifo_data_0              : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
+    signal fifo_q_0, fifo_q_0_reg   : work.util.slv76_array_t(generate_fifos(0) - 1 downto 0);
+    signal wait_cnt_fifo_0          : work.util.slv2_array_t(generate_fifos(0) - 1 downto 0);
+    signal layer_0_state            : work.util.slv4_array_t(generate_fifos(0) - 1 downto 0);
+    signal layer_0_cnt              : work.util.slv32_array_t(generate_fifos(0) - 1 downto 0);
     signal fifo_ren_0, fifo_ren_0_reg, fifo_wen_0, fifo_full_0, fifo_empty_0, fifo_empty_0_reg, saw_header_0, saw_trailer_0, reset_fifo_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
 
-    signal fifo_q_1 : fifo_array_76(generate_fifos(1) - 1 downto 0);
-    signal fifo_q_2 : fifo_array_76(generate_fifos(2) - 1 downto 0);
-    signal fifo_q_3 : fifo_array_76(generate_fifos(3) - 1 downto 0);
-    signal fifo_q_4 : fifo_array_76(generate_fifos(4) - 1 downto 0);
-    signal fifo_q_5 : fifo_array_76(generate_fifos(5) - 1 downto 0);
+    signal fifo_q_1 : work.util.slv76_array_t(generate_fifos(1) - 1 downto 0);
+    signal fifo_q_2 : work.util.slv76_array_t(generate_fifos(2) - 1 downto 0);
+    signal fifo_q_3 : work.util.slv76_array_t(generate_fifos(3) - 1 downto 0);
+    signal fifo_q_4 : work.util.slv76_array_t(generate_fifos(4) - 1 downto 0);
+    signal fifo_q_5 : work.util.slv76_array_t(generate_fifos(5) - 1 downto 0);
     signal fifo_empty_1, fifo_ren_1 : std_logic_vector(generate_fifos(1) - 1 downto 0);
     signal fifo_empty_2, fifo_ren_2 : std_logic_vector(generate_fifos(2) - 1 downto 0);
     signal fifo_empty_3, fifo_ren_3 : std_logic_vector(generate_fifos(3) - 1 downto 0);
@@ -102,10 +103,10 @@ architecture arch of time_merger is
     signal mask_n_5 : std_logic_vector(generate_fifos(5) - 1 downto 0);
 
     constant size_last : integer := generate_fifos(5)/2;
-    signal fifo_data_6              : fifo_array_76(generate_fifos(6) - 1 downto 0);
-    signal fifo_q_6, fifo_q_6_reg   : fifo_array_76(generate_fifos(6) - 1 downto 0);
-    signal wait_cnt_fifo_6          : fifo_array_2(generate_fifos(6) - 1 downto 0);
-    signal layer_6_state            : fifo_array_4(generate_fifos(6) - 1 downto 0);
+    signal fifo_data_6              : work.util.slv76_array_t(generate_fifos(6) - 1 downto 0);
+    signal fifo_q_6, fifo_q_6_reg   : work.util.slv76_array_t(generate_fifos(6) - 1 downto 0);
+    signal wait_cnt_fifo_6          : work.util.slv2_array_t(generate_fifos(6) - 1 downto 0);
+    signal layer_6_state            : work.util.slv4_array_t(generate_fifos(6) - 1 downto 0);
     signal fifo_wen_6, fifo_full_6  : std_logic_vector(generate_fifos(6) - 1 downto 0);
     signal alignment_done : std_logic_vector(generate_fifos(6) - 1 downto 0) := (others => '0');
     
@@ -147,7 +148,7 @@ begin
             wrfull 	=> fifo_full_0(j),
             wrusedw => open--,
         );
-    END GENERATE fifos_first;
+    END GENERATE;
     
     fifos_last:
     FOR j in 0 to generate_fifos(6)-1 GENERATE
@@ -172,7 +173,7 @@ begin
             wrfull  => fifo_full_6(j),
             wrusedw => open--,
         );
-    END GENERATE fifos_last;
+    END GENERATE;
     
     -- readout fifo
     process(i_clk, i_reset_n)
@@ -292,7 +293,7 @@ begin
             case layer_0_state(i) is
                 
                 when "0000" =>
-                    if ( i_mask_n(i) = '0' ) then
+                    if ( i_mask_n(i) = '0' and fifo_full_0(i) = '0' ) then
                         saw_header_0(i) <= '1';
                         saw_trailer_0(i) <= '1';
                         layer_0_state(i) <= "0001";
@@ -303,7 +304,7 @@ begin
                         --
                     else
                         if ( fifo_full_0(i) = '0' and link_good(i) = '1' and i_rempty(i) = '0' and rack_hit(i) = '0' and i_rdata(i)(31 downto 26) /= "111111" and i_rdata(i)(37 downto 36) = "00" ) then
-                            fifo_data_0(i) <= link_36_to_std(i) & i_rdata(i)(35 downto 4);
+                            fifo_data_0(i) <= work.util.link_36_to_std(i) & i_rdata(i)(35 downto 4);
                             fifo_wen_0(i) <= '1';
                             rack_hit(i) <= '1';
                             layer_0_cnt(i) <= layer_0_cnt(i) + '1';
@@ -326,7 +327,9 @@ begin
                         end if;
                     end if;
                 when "0001" =>
-                    if ( layer_0_cnt(i)(5) = '1' ) then
+                    if ( fifo_full_0(i) = '1' ) then
+                        --
+                    elsif ( layer_0_cnt(i)(5) = '1' ) then
                         layer_0_state(i) <= "1111";
                     else
                         fifo_data_0(i) <= tree_padding;
@@ -361,7 +364,7 @@ begin
         fifo_empty_0(i) <= fifo_empty_0_reg(i);
     end if;
     end process;
-    END GENERATE tree_layer_first;
+    END GENERATE;
 
     merger_state_signal <= '1' when merge_state = merge_hits else '0';
     
@@ -558,7 +561,9 @@ begin
                         fifo_ren_5_reg(i) <= '1';
                         fifo_ren_5_reg(i + size_last) <= '1';
                     when "0101" =>
-                        if ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(69 downto 66) and fifo_q_5(i)(75 downto 38) /= tree_zero and fifo_q_5(i)(75 downto 38) /= tree_padding ) then
+                        if ( fifo_full_6(i) = '1' ) then
+                            --
+                        elsif ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(69 downto 66) and fifo_q_5(i)(75 downto 38) /= tree_zero and fifo_q_5(i)(75 downto 38) /= tree_padding ) then
                             fifo_data_6(i)(37 downto 0) <= fifo_q_5(i)(75 downto 38);
                             layer_6_state(i)(0) <= '0';
                             fifo_ren_5(i) <= '1';
@@ -573,7 +578,9 @@ begin
                         end if;
                     when "0100" =>
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                        if ( fifo_empty_5(i) = '0' and fifo_ren_5(i) = '0' and fifo_ren_5_reg(i) = '0' ) then
+                        if ( fifo_full_6(i) = '1' ) then
+                            --
+                        elsif ( fifo_empty_5(i) = '0' and fifo_ren_5(i) = '0' and fifo_ren_5_reg(i) = '0' ) then
                             -- TODO: what to do when fifo_q_1(i + size_last)(69 downto 66) is zero? maybe error cnt?
                             if ( fifo_q_5(i)(31 downto 28) <= fifo_q_5(i + size_last)(69 downto 66) and fifo_q_5(i)(37 downto 0) /= tree_padding ) then
                                 fifo_data_6(i)(75 downto 38) <= fifo_q_5(i)(37 downto 0);
@@ -594,7 +601,9 @@ begin
                         end if;
                     when "0001" =>
                         -- TODO: define signal for empty since the fifo should be able to get empty if no hits are comming
-                        if ( fifo_empty_5(i + size_last) = '0' and fifo_ren_5(i + size_last) = '0' and fifo_ren_5_reg(i + size_last) = '0' ) then       
+                        if ( fifo_full_6(i) = '1' ) then
+                            --
+                        elsif ( fifo_empty_5(i + size_last) = '0' and fifo_ren_5(i + size_last) = '0' and fifo_ren_5_reg(i + size_last) = '0' ) then       
                             -- TODO: what to do when fifo_q_1(i)(69 downto 66) is zero? maybe error cnt?     
                             if ( fifo_q_5(i)(69 downto 66) <= fifo_q_5(i + size_last)(31 downto 28) and fifo_q_5(i)(75 downto 38) /= tree_zero and fifo_q_5(i)(75 downto 38) /= tree_padding ) then
                                 fifo_data_6(i)(75 downto 38) <= fifo_q_5(i)(75 downto 38);
@@ -637,7 +646,7 @@ begin
         end if;
     end if;
     end process;
-    END GENERATE tree_layer_last;
+    END GENERATE;
     
     -- write data
     process(i_clk, i_reset_n)

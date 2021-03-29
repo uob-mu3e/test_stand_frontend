@@ -1,6 +1,6 @@
 #
 
-# internal oscillator
+# oscillator
 create_clock -period "100.0 MHz" [get_ports CLK_A10_100MHZ_P]
 
 
@@ -18,6 +18,8 @@ create_clock -period "125.0 MHz" [get_ports A10_REFCLK_GBT_P_4]
 create_clock -period "125.0 MHz" [get_ports A10_REFCLK_GBT_P_5]
 create_clock -period "125.0 MHz" [get_ports A10_REFCLK_GBT_P_6]
 create_clock -period "125.0 MHz" [get_ports A10_REFCLK_GBT_P_7]
+
+
 
 # PCIe
 create_clock -period "100.0 MHz" [get_ports A10_CLK_PCIE_P_0]

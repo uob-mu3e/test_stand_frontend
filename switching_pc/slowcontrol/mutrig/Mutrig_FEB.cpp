@@ -251,7 +251,7 @@ int MutrigFEB::ReadBackDatapathStatus(uint16_t FPGA_ID){
 
    vector<uint32_t> val(3);
    BOOL value;
-   int status=feb_sc.FEB_read(FEB.SB_Port(), FE_DPMON_STATUS_REG, val);
+   int status=feb_sc.FEB_register_read(FEB.SB_Port(), FE_DPMON_STATUS_REG, val);
    if(status!=3) return status;
 
     // get odb object
@@ -461,7 +461,7 @@ void MutrigFEB::setDummyConfig(uint16_t FPGA_ID, bool dummy){
 
     val=reg_setBit(val,0,dummy);
     //printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-    feb_sc.FEB_write(FPGA_ID, FE_DUMMYCTRL_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_DUMMYCTRL_REG, val);
     m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
@@ -482,7 +482,7 @@ void MutrigFEB::setDummyData_Enable(uint16_t FPGA_ID, bool dummy)
 
     val=reg_setBit(val,1,dummy);
     //printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-    feb_sc.FEB_write(FPGA_ID, FE_DUMMYCTRL_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_DUMMYCTRL_REG, val);
     m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
@@ -496,7 +496,7 @@ void MutrigFEB::setDummyData_Fast(uint16_t FPGA_ID, bool fast)
 
     val=reg_setBit(val,2,fast);
     //printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-    feb_sc.FEB_write(FPGA_ID, FE_DUMMYCTRL_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_DUMMYCTRL_REG, val);
     m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
@@ -511,7 +511,7 @@ void MutrigFEB::setDummyData_Count(uint16_t FPGA_ID, int n)
     val=reg_setRange(val, 9, 3, n);
 
     //printf("MutrigFEB(%d)::FE_DUMMYCTRL_REG new=%8.8x\n",FPGA_ID,val);
-    feb_sc.FEB_write(FPGA_ID, FE_DUMMYCTRL_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_DUMMYCTRL_REG, val);
     m_reg_shadow[FPGA_ID][FE_DUMMYCTRL_REG]=val;
 }
 
@@ -538,7 +538,7 @@ void MutrigFEB::setMask(int asic, bool value){
     
     val=reg_setBit(val,FA_ID,value);
     //printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGAid_from_ID(asic),val);
-    feb_sc.FEB_write(SP_ID, FE_DPCTRL_REG, val);
+    feb_sc.FEB_register_write(SP_ID, FE_DPCTRL_REG, val);
     m_reg_shadow[FB_ID][FE_DPCTRL_REG]=val;
 }
 
@@ -556,7 +556,7 @@ void MutrigFEB::setPRBSDecoderDisable(uint32_t FPGA_ID, bool disable){
     
     val=reg_setBit(val,31,disable);
     //printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGA_ID,val);
-    feb_sc.FEB_write(FPGA_ID, FE_DPCTRL_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_DPCTRL_REG, val);
     m_reg_shadow[FPGA_ID][FE_DPCTRL_REG]=val;
 }
 
@@ -569,7 +569,7 @@ void MutrigFEB::setWaitForAll(uint32_t FPGA_ID, bool value){
     
     val=reg_setBit(val,30,value);
     //printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGAid_from_ID(asic),val);
-    feb_sc.FEB_write(FPGA_ID, FE_DPCTRL_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_DPCTRL_REG, val);
     m_reg_shadow[FPGA_ID][FE_DPCTRL_REG]=val;
 }
 
@@ -582,7 +582,7 @@ void MutrigFEB::setWaitForAllSticky(uint32_t FPGA_ID, bool value){
     
     val=reg_setBit(val,29,value);
     //printf("MutrigFEB(%d)::FE_DPCTRL_REG new=%8.8x\n",FPGAid_from_ID(asic),val);
-    feb_sc.FEB_write(FPGA_ID, FE_DPCTRL_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_DPCTRL_REG, val);
     m_reg_shadow[FPGA_ID][FE_DPCTRL_REG]=val;
 }
 
@@ -597,10 +597,10 @@ void MutrigFEB::chipReset(uint16_t FPGA_ID){
     //assert(!GET_FE_SUBDET_REST_BIT_CHIP(val));
     //set and clear reset
         val=reg_setBit(val,0,true);
-    feb_sc.FEB_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     val=reg_setBit(val,0,false);
-    feb_sc.FEB_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
 }
 
 //reset full datapath upstream from merger
@@ -612,10 +612,10 @@ void MutrigFEB::DataPathReset(uint16_t FPGA_ID){
     //set and clear reset
         val=reg_setBit(val,1,true);
     //do not expect a reply in write below, the data generator is in reset (not having sent a trailer) and this may block the data merger sending a slow control reply (TODO: this should be fixed in firmware!)
-   feb_sc.FEB_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+   feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
    std::this_thread::sleep_for(std::chrono::milliseconds(1));
    val=reg_setBit(val,1,false);
-   feb_sc.FEB_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+   feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
 }
 
 //reset lvds receivers
@@ -623,10 +623,10 @@ void MutrigFEB::LVDS_RX_Reset(uint16_t FPGA_ID){
     uint32_t val=0;
     //set and clear reset
     val=reg_setBit(val,2,true);
-    feb_sc.FEB_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     val=reg_setBit(val,2,false);
-    feb_sc.FEB_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_SUBDET_RESET_REG, val);
 }
 
 //set reset skew configuration
@@ -635,7 +635,7 @@ void MutrigFEB::setResetSkewCphase(uint16_t FPGA_ID, BOOL cphase[]){
     for(int i=0;i<GetModulesPerFEB();i++){
         val=reg_setBit(val,i+6,cphase[i]);
     }
-    feb_sc.FEB_write(FPGA_ID, FE_RESETSKEW_GLOBALS_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_RESETSKEW_GLOBALS_REG, val);
     m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG]=val;
 }
 
@@ -644,7 +644,7 @@ void MutrigFEB::setResetSkewCdelay(uint16_t FPGA_ID, BOOL cdelay[]){
     for(int i=0;i<GetModulesPerFEB();i++){
         val=reg_setBit(val,i+10,cdelay[i]);
     }
-    feb_sc.FEB_write(FPGA_ID, FE_RESETSKEW_GLOBALS_REG, val);
+    feb_sc.FEB_register_write(FPGA_ID, FE_RESETSKEW_GLOBALS_REG, val);
     m_reg_shadow[FPGA_ID][FE_RESETSKEW_GLOBALS_REG]=val;
 }
 

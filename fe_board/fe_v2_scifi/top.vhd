@@ -7,8 +7,8 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 use ieee.numeric_std.all;
-use work.daq_constants.all;
-use work.cmp.all;
+
+use work.mudaq.all;
 
 entity top is 
     port (
@@ -290,6 +290,9 @@ begin
         
         i_testin            => pb_db(1)--,
     );
+
+    max10_spi_sclk <= '1'; -- This is temporary until we only have v2.1 boards with the
+    -- correct connection; for now we use it to know 2.1 from 2.0
 
 
     FPGA_Test(0) <= transceiver_pll_clock(0);

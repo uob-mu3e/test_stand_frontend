@@ -1,11 +1,3 @@
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use ieee.std_logic_unsigned.all;
-use ieee.std_logic_misc.all;
-use work.dataflow_components.all;
-
-
 -- simple data generator merged data after 
 -- SWB alignment
 
@@ -15,7 +7,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
-use work.protocol.all;
+
+use work.mudaq.all;
 
 
 entity data_generator_merged_data is
