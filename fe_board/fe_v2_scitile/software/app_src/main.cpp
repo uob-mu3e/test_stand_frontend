@@ -19,7 +19,7 @@ mscb_t mscb;
 i2c_t i2c;
 
 
-#include "TMB_module.h"
+#include "tmb_module.h"
 TMB_t TMB(i2c,sc);
 
 

@@ -1,7 +1,7 @@
 
 
-#include "TMB_module.h"
-#include "TMB_constants.h"
+#include "tmb_module.h"
+#include "tmb_constants.h"
 #include "builtin_config/mutrig1_config.h"
 
 //from base.h
@@ -422,22 +422,25 @@ void TMB_t::menu_TMB_main() {
 void TMB_t::menu_TMB_debug() {
 
     while(1) {
-        printf("  [0] => check temperature sensors\n");
-        printf("  [1] => check power monitors\n");
-        printf("  [q] => exit\n");
+//        printf("  [0] => check power monitors\n");
+//        printf("  [1] => check temperature sensors\n");
+//        printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
         case '0':
             for(int i=0;i<13;i++){
-                check_power_monitor(i);
+                auto ret=check_power_monitor(i);
+//                printf("Power monitor #%d: %d\n",i,ret);
             }
             break;
         case '1':
             for(int i=0;i<13;i++){
-                check_temperature_sensor(i,0);
-                check_temperature_sensor(i,1);
+                for(int phi=0;phi<2;phi++){
+                    auto ret=check_temperature_sensor(i,0);
+//                    printf("Sensor %d.%c: %d\n",i,phi?'L':'R',ret);
+                }
             }
             break;
         case 'q':

@@ -12,7 +12,7 @@
 //forward declarations
 struct sc_t;
 
-#include "TMB_constants.h"
+#include "tmb_constants.h"
 
 struct TMB_t {
     i2c_t& i2c;
@@ -67,9 +67,9 @@ struct TMB_t {
     void        I2C_write(alt_u8 slave, alt_u8 addr, alt_u8 data);
     
 
-    alt_u16 data_all_tmp[32];//TODO this should be the point to register addr in sc_ram
-    alt_u16 data_all_power[64];//TODO this should be the point to register addr in sc_ram
-    alt_u8  data_all_powerStat[16];//TODO this should be the point to register addr in sc_ram
+    alt_u16* data_all_tmp;//[32];//TODO this should be the point to register addr in sc_ram
+    alt_u16* data_all_power;//[64];//TODO this should be the point to register addr in sc_ram
+    alt_u8*  data_all_powerStat;//[16];//TODO this should be the point to register addr in sc_ram
 
 
 
@@ -82,6 +82,7 @@ struct TMB_t {
     //=========================
     //Menu functions for command line use
     void menu_TMB_monitors();
+    void menu_TMB_debug();
     void menu_TMB_main();
     //Slow control callback
     alt_u16 sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
