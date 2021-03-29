@@ -239,7 +239,7 @@ begin
 
 
 
-    -- generate 1 Hz clock monitor clocks
+    -- generate 1 Hz clock monitor signals
 
     -- NIOS_CLK_MHZ_g -> 1 Hz
     e_nios_clk_hz : entity work.clkdiv
@@ -340,7 +340,7 @@ begin
 
 
 
-    e_nios : work.cmp.nios
+    e_nios : component work.cmp.nios
     port map (
         -- SC, QSFP and irq
         clk_156_reset_reset_n   => reset_156_n,
@@ -460,7 +460,7 @@ begin
     );
 
     e_sc_rx : entity work.sc_rx
-    port map (   
+    port map (
         i_link_data     => ffly_rx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
         i_link_datak    => ffly_rx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
@@ -610,6 +610,7 @@ begin
         i_data_fast_serial              => i_ffly2_rx & i_ffly1_rx,
         o_data_fast_parallel            => ffly_rx_data,
         o_datak                         => ffly_rx_datak,
+
         --tx
         o_data_fast_serial(3 downto 0)  => o_ffly1_tx,
         o_data_fast_serial(7 downto 4)  => o_ffly2_tx,

@@ -1,3 +1,5 @@
+#ifndef __UTIL_A10_SI5340_REGS_H__
+#define __UTIL_A10_SI5340_REGS_H__
 
 // { page, addr, mask, value }
 alt_u8 si5340_regs[][4] = {
@@ -114,3 +116,5 @@ alt_u8 si5340_regs[][4] = {
     { 0x0B, 0x24, 0xFF, 0xDB },
     { 0x0B, 0x25, 0xFF, 0x02 }
 };
+
+#endif // __UTIL_A10_SI5340_REGS_H__

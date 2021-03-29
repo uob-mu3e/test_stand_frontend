@@ -3,17 +3,11 @@
 set_global_assignment -name LAST_QUARTUS_VERSION "18.0.0 Standard Edition"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 
-
-
-
 #============================================================
 # COMPONENTS
 #============================================================
 
-set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/altera/pre_flow.tcl"
-
 set_global_assignment -name TOP_LEVEL_ENTITY top
-
 
 set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_scfifo.vhd
 set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_ram.vhd

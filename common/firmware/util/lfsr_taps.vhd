@@ -16,4 +16,3 @@ constant lfsr_taps64  : std_logic_vector(63 downto 0) := (63 => '1', 62 => '1', 
 constant lfsr_taps65  : std_logic_vector(64 downto 0) := (64 => '1', 46 => '1', others => '0');
 
 end package;
- 

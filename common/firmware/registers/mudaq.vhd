@@ -202,5 +202,3 @@ package mudaq is
     constant COMMAND_READ_SECURITY_REGISTERS    : std_logic_vector(7 downto 0) := X"42";
 
 end package;
-
-

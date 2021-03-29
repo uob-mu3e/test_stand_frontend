@@ -1,5 +1,6 @@
 --
 -- author : Alexandr Kozlinskiy
+-- date : 2018-03-30
 --
 
 library ieee;
@@ -137,6 +138,16 @@ package util is
         n : natural--;
     ) return std_logic_vector;
 
+    function rotate_right (
+        v : std_logic_vector;
+        n : natural--;
+    ) return std_logic_vector;
+
+    function rotate_left (
+        v : std_logic_vector;
+        n : natural--;
+    ) return std_logic_vector;
+
     function resize (
         v : std_logic_vector;
         n : positive--;
@@ -253,6 +264,11 @@ package util is
         n : natural--;
     ) return string;
 
+    function round_robin_next (
+        i : std_logic_vector;
+        req : std_logic_vector--;
+    ) return std_logic_vector;
+
 end package;
 
 package body util is
@@ -338,6 +354,22 @@ package body util is
     ) return std_logic_vector is
     begin
         return std_logic_vector(shift_left(unsigned(v), n));
+    end function;
+
+    function rotate_right (
+        v : std_logic_vector;
+        n : natural--;
+    ) return std_logic_vector is
+    begin
+        return shift_right(v, n mod v'length) or shift_left(v, v'length - n mod v'length);
+    end function;
+
+    function rotate_left (
+        v : std_logic_vector;
+        n : natural--;
+    ) return std_logic_vector is
+    begin
+        return shift_left(v, n mod v'length) or shift_right(v, v'length - n mod v'length);
     end function;
 
     function resize (
@@ -771,6 +803,28 @@ package body util is
     ) return string is
     begin
         return ESC & "[" & natural'image(n) & "m";
+    end function;
+
+    function round_robin_next (
+        -- one hot encoded active link
+        i : std_logic_vector;
+        -- bit encoded available links
+        req : std_logic_vector--;
+    ) return std_logic_vector is
+        variable mask, nxt : std_logic_vector(i'range);
+    begin
+        -- bits to the right of active link
+        mask := std_logic_vector(unsigned(i) - 1);
+        -- ... to the left ...
+        mask := not mask xor i;
+        -- selects availabe links to the left of active link
+        nxt := req and mask;
+        if ( nxt = (nxt'range => '0') ) then
+            -- select all available links
+            nxt := req or i;
+        end if;
+        -- return least significant set bit
+        return nxt and std_logic_vector(unsigned(not nxt) + 1);
     end function;
 
 end package body;
