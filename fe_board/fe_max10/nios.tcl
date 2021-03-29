@@ -10,3 +10,4 @@ source "nios_adc.tcl"
 source "nios_ufm.tcl"
 
 source "nios_spiflash.tcl"
+source "nios_statusreg.tcl"

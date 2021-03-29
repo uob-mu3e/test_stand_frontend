@@ -7,8 +7,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
-use work.dataflow_components.all;
 
+use work.mudaq.all;
 
 entity midas_event_builder is
     generic (
@@ -68,7 +68,7 @@ entity midas_event_builder is
 
     -- link fifos
     signal link_fifo_wren, link_fifo_ren, link_fifo_ren_reg, link_fifo_empty, link_fifo_empty_reg, link_fifo_full, link_fifo_almost_full : std_logic_vector(NLINKS - 1 downto 0);
-    signal link_data_f, link_dataq_f, link_dataq_f_reg : data_array(NLINKS - 1 downto 0);
+    signal link_data_f, link_dataq_f, link_dataq_f_reg : work.util.slv38_array_t(NLINKS - 1 downto 0);
     signal link_fifo_usedw, link_fifo_usedw_reg : std_logic_vector(LINK_FIFO_ADDR_WIDTH * NLINKS - 1 downto 0);
     signal sync_fifo_empty : std_logic_vector(NLINKS - 1 downto 0);
     signal sync_fifo_i_wrreq : std_logic_vector(NLINKS - 1 downto 0);
@@ -387,9 +387,8 @@ begin
         
     stream_merger : IF USE_ALIGNMENT = 0 GENERATE
     
-        e_stream : entity work.sw_stream_merger
+        e_stream : entity work.swb_stream_merger
         generic map (
-            W => 38,
             N => NLINKS--,
         )
         port map (

@@ -2,7 +2,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.daq_constants.all;
 
 ENTITY mscb is
 generic (

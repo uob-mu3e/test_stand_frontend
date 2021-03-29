@@ -14,3 +14,6 @@ foreach f [ lsort [ glob -directory $::quartus(qip_path) \
 ] ] {
     set_global_assignment -name VHDL_FILE $f
 }
+
+#histogram needs RAM- the path here is somewhat brittle
+set_global_assignment -name VHDL_FILE $::quartus(qip_path)/../../../common/firmware/s4/ip_ram.vhd

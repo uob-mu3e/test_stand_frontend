@@ -39,13 +39,11 @@ set_global_assignment -name VHDL_FILE a10/linear_shift.vhd
 set_global_assignment -name VHDL_FILE a10/data_generator_a10.vhd
 set_global_assignment -name VHDL_FILE a10/run_control.vhd
 set_global_assignment -name VHDL_FILE a10/run_control_link_listener.vhd
-set_global_assignment -name VHDL_FILE ../../../fe_board/fe_mupix/mupix_block/comp_type_const/mupix_constants.vhd
 
 
 
 # Farm firmware
 set_global_assignment -name QIP_FILE ddr3/include.qip
-set_global_assignment -name QIP_FILE dataflow/include.qip
 
 
 

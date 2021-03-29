@@ -9,7 +9,7 @@ generic (
     CHANNEL_WIDTH_g : positive := 32;
     INPUT_CLOCK_FREQUENCY_g : positive := 125000000;
     DATA_RATE_g : positive := 5000;
-    K_g : std_logic_vector(7 downto 0) := work.util.D28_5;
+    K_g : std_logic_vector(7 downto 0) := work.mudaq.D28_5;
     CLK_HZ_g : positive := 50000000--;
 );
 port (

@@ -26,10 +26,12 @@ struct mupix_datapath_t {
             }else{
                 printf("  [4] => insert after sorter\n");
             }
+            printf("  [5] => print sorter counters\n");
+            
             if((sc->ram->data[0xFF65] >> 4) & 1U){
-                printf("\n RATE: Full Stream\n");
+                printf("\n DataGen RATE: Full Stream\n");
             }else{
-                printf("\n RATE:0x%01x\n", 0xF - (sc->ram->data[0xFF65] & 0xF) + 1);
+                printf("\n DataGen RATE:0x%01x\n", 0xF - (sc->ram->data[0xFF65] & 0xF) + 1);
             }
             printf("  [+]\n");
             printf("  [-]\n");
@@ -75,6 +77,12 @@ struct mupix_datapath_t {
                     sc->ram->data[0xFF65] |= 1UL << 4;
                 }else{
                     sc->ram->data[0xFF65] = sc->ram->data[0xFF65] - 1;
+                }
+                break;
+            case '5':
+                printf("sorter counters:\n");
+                for(int i=0; i<41; i++){
+                    printf("%i: 0x%08x\n",i,sc->ram->data[0xFF92+i]);
                 }
                 break;
             case 'q':

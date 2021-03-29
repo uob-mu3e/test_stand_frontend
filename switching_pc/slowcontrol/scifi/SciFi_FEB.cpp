@@ -14,8 +14,6 @@ Contents:       Class to alter settings on a SciFi-FE-FPGA. Derives from MutrigF
 
 using midas::odb;
 
-SciFiFEB* SciFiFEB::m_instance=NULL;
-
 //Mapping to physical ports of switching board.
 uint16_t SciFiFEB::FPGAid_from_ID(int asic) const {return asic/8;}
 uint16_t SciFiFEB::ASICid_from_ID(int asic) const {return asic%8;}

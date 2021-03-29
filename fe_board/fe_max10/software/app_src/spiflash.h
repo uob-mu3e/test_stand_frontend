@@ -105,6 +105,7 @@ struct flash_t {
             printf("  [e] => erase test\n");
             printf("  [w] => write test\n");
             printf("  [r] => read test\n");
+            printf("  [u] => unwritten blocks\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -128,6 +129,11 @@ struct flash_t {
                 ReadTest();
                 break;
             }
+            case 'u': {
+                UnwrittenBlocks();
+                break;
+            }
+
             case '?':
                 wait_key();
                 break;
@@ -147,6 +153,25 @@ static void ReadID(){
     printf("ID: %x\n", (uint32_t)flash_getManufacturerID());
 }
 
+static void UnwrittenBlocks(){
+    int i;
+    int start = -1;
+for(i = 0; i < 0xc20cc0; i++){
+    
+    if(start == -1 && flash_readByte(i) == 0xFF)
+        start = i;
+
+    if(start != -1 && flash_readByte(i) != 0xFF){
+        if(i - start > 128)
+            printf("Block %x to %x\n", start, i-1);
+        start = -1;
+    }
+
+
+
+}   
+
+}
 
 
 static void ReadTest(void)
@@ -154,8 +179,10 @@ static void ReadTest(void)
     int i;
     int offset = 0x0;
 
-    for(i = 0; i < 4; i++)   
+    for(i = 0; i < 256; i++)   
         printf( "Normal read: Addr: %x: %x \n", i+offset, (int)flash_readByte(i+offset));
+        
+        
         printf( " Fast read: %x \n", (int)flash_readByteFast(i+offset));
         printf( " Dual read: %x \n", (int)flash_readByteDual(i+offset));
         printf( " Quad read: %x \n", (int)flash_readByteQuad(i+offset));
@@ -181,7 +208,7 @@ static void EraseTest(void)
         }
         printf("\n");
     }   
-    flash_eraseSector(offset);
+    flash_eraseChip();
     printf("After\n");
     for(i = 0; i < 16; i++){
         for(j = 0; j < 16; j++){

@@ -3,6 +3,7 @@ use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
+
 entity doNotCompileAwayMux is
     generic(
         WIDTH_g             : positive := 1--;

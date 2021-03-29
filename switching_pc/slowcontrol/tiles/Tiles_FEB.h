@@ -17,30 +17,17 @@ Contents:       Class to alter settings on a Tiles-FE-FPGA. Derives from MutrigF
 using midas::odb;
 
 class TilesFEB : public MutrigFEB{
-   private:
-      static TilesFEB* m_instance; //signleton instance pointer: only one instance of TilesFEB
+   public:
       TilesFEB(const TilesFEB&)=delete;
       TilesFEB(FEBSlowcontrolInterface & feb_sc_,
                const vector<mappedFEB> & febs_,
+               const uint64_t & febmask_,
                const char* equipment_name_,
                const char* odb_prefix_,
                const uint8_t SB_number_)
         :
-    MutrigFEB(feb_sc_, febs_, equipment_name_, odb_prefix_, SB_number_){}
-   public:
-      static TilesFEB* Create(FEBSlowcontrolInterface & feb_sc_,
-                              const vector<mappedFEB> & febs_,
-                              const char* equipment_name_,
-                              const char* odb_prefix_,
-                              const uint8_t SB_number_)
+    MutrigFEB(feb_sc_, febs_, febmask_, equipment_name_, odb_prefix_, SB_number_){}
 
-      {
-          cm_msg(MINFO, "SciFi_FEB", "SciFiFEB::Create(%s) as %s", odb_prefix_, equipment_name_);
-          if(!m_instance)
-              m_instance=new TilesFEB(feb_sc_, febs_, equipment_name_, odb_prefix_, SB_number_);
-          return m_instance;
-      };
-      static TilesFEB* Instance(){return m_instance;};
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
       virtual uint16_t FPGAid_from_ID(int asic) const;

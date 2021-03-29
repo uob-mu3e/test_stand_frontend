@@ -17,7 +17,8 @@ mscb_t mscb;
 
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
-    return mupix.callback(cmd,data,n);
+//    return mupix.callback(cmd,data,n);
+    return 0;
 }
 
 

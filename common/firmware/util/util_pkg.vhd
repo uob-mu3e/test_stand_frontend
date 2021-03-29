@@ -12,15 +12,39 @@ use ieee.std_logic_textio.all;
 
 package util is
 
+    --! basic array types
+    subtype slv2_t is std_logic_vector(1 downto 0);
+    type slv2_array_t is array ( natural range <> ) of slv2_t;
     subtype slv4_t is std_logic_vector(3 downto 0);
     type slv4_array_t is array ( natural range <> ) of slv4_t;
+    subtype slv6_t is std_logic_vector(5 downto 0);
+    type slv6_array_t is array ( natural range <> ) of slv6_t;
     subtype slv8_t is std_logic_vector(7 downto 0);
     type slv8_array_t is array ( natural range <> ) of slv8_t;
     subtype slv16_t is std_logic_vector(15 downto 0);
     type slv16_array_t is array ( natural range <> ) of slv16_t;
     subtype slv32_t is std_logic_vector(31 downto 0);
     type slv32_array_t is array ( natural range <> ) of slv32_t;
+    subtype slv37_t is std_logic_vector(36 downto 0);
+    type slv37_array_t is array ( natural range <> ) of slv37_t;
+    subtype slv38_t is std_logic_vector(37 downto 0);
+    type slv38_array_t is array ( natural range <> ) of slv38_t;
+    subtype slv64_t is std_logic_vector(63 downto 0);
+    type slv64_array_t is array ( natural range <> ) of slv64_t;
+    subtype slv66_t is std_logic_vector(65 downto 0);
+    type slv66_array_t is array ( natural range <> ) of slv66_t;
+    subtype slv76_t is std_logic_vector(75 downto 0);
+    type slv76_array_t is array ( natural range <> ) of slv76_t;
+    subtype slv78_t is std_logic_vector(77 downto 0);
+    type slv78_array_t is array ( natural range <> ) of slv78_t;
+    subtype slv152_t is std_logic_vector(151 downto 0);
+    type slv152_array_t is array ( natural range <> ) of slv152_t;
+    subtype slv256_t is std_logic_vector(255 downto 0);
+    type slv256_array_t is array ( natural range <> ) of slv256_t;
 
+    type natural_array_t is array(integer range<>) of natural;
+
+    --! 8b/10b words
     constant D16_2 : std_logic_vector(7 downto 0) := X"50";
     constant D21_4 : std_logic_vector(7 downto 0) := x"95";
     constant D02_5 : std_logic_vector(7 downto 0) := X"A2";
@@ -29,8 +53,18 @@ package util is
     constant D28_5 : std_logic_vector(7 downto 0) := X"BC";
     constant D28_7 : std_logic_vector(7 downto 0) := X"FC";
     constant D05_6 : std_logic_vector(7 downto 0) := X"C5";
-
-
+    constant K28_0 : std_logic_vector(7 downto 0) := X"1C"; -- still used in MuPix ??
+    constant K28_1 : std_logic_vector(7 downto 0) := X"3C"; -- still used in data alignment (transceiver) ??
+    constant K28_2 : std_logic_vector(7 downto 0) := X"5C";
+    constant K28_3 : std_logic_vector(7 downto 0) := X"7C";
+    constant K28_4 : std_logic_vector(7 downto 0) := X"9C"; -- used as end of packet marker between FEB <--> SW board
+    constant K28_5 : std_logic_vector(7 downto 0) := X"BC"; -- still used in MuPix ???
+    constant K28_6 : std_logic_vector(7 downto 0) := X"DC";
+    constant K28_7 : std_logic_vector(7 downto 0) := X"FC"; -- not used, comma symbol with harder constraints!
+    constant K23_7 : std_logic_vector(7 downto 0) := X"F7"; -- still used as "empty" data (transceiver) ??
+    constant K27_7 : std_logic_vector(7 downto 0) := X"FB";
+    constant K29_7 : std_logic_vector(7 downto 0) := X"FD";
+    constant K30_7 : std_logic_vector(7 downto 0) := X"FE";
 
     type avalon_t is record
         address         :   std_logic_vector(31 downto 0);
@@ -150,6 +184,9 @@ package util is
         h : in std_logic_vector--;
     ) return std_logic_vector;
 
+    function link_36_to_std (
+        i : in integer--;
+    ) return std_logic_vector;
 
 
     -- LFSR 32
@@ -439,6 +476,53 @@ package body util is
         end loop;
         good := good_i;
     end procedure;
+
+    function link_36_to_std (
+        i : in  integer--;
+    ) return std_logic_vector is
+    
+    begin
+        case i is
+        when  0 => return "000000";
+        when  1 => return "000001";
+        when  2 => return "000010";
+        when  3 => return "000011";
+        when  4 => return "000100";
+        when  5 => return "000101";
+        when  6 => return "000110";
+        when  7 => return "000111";
+        when  8 => return "001000";
+        when  9 => return "001001";
+        when 10 => return "001010";
+        when 11 => return "001011";
+        when 12 => return "001100";
+        when 13 => return "001101";
+        when 14 => return "001110";
+        when 15 => return "001111";
+        when 16 => return "010000";
+        when 17 => return "010001";
+        when 18 => return "010010";
+        when 19 => return "010011";
+        when 20 => return "010100";
+        when 21 => return "010101";
+        when 22 => return "010110";
+        when 23 => return "010111";
+        when 24 => return "011000";
+        when 25 => return "011001";
+        when 26 => return "011010";
+        when 27 => return "011011";
+        when 28 => return "011100";
+        when 29 => return "011101";
+        when 30 => return "011110";
+        when 31 => return "011111";
+        when 32 => return "100000";
+        when 33 => return "100001";
+        when 34 => return "100010";
+        when 35 => return "100011";
+        when others =>
+            return "111111";
+        end case;
+    end function;
 
     procedure read_hex (
         l : inout line;

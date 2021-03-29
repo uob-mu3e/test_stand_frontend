@@ -10,18 +10,19 @@ ufm_t ufm;
 #include "spiflash.h"
 flash_t spiflash;
 
+#include "status.h"
+status_t status;
+
 int main() {
     base_init();
     
     printf("Init ADC");
-    adc_interrupt_disable(ADC_SAMPLE_STORE_CSR_BASE);
-    adc_set_mode_run_continuously(ADC_SEQUENCER_CSR_BASE);
-    adc_start(ADC_SEQUENCER_CSR_BASE);
-
+    adc.init();
 
     while (1) {
         printf("\n");
         printf("  [a] => ADC\n");
+        printf("  [b] => Status\n");
         printf("  [f] => User flash\n");
         printf("  [s] => SPI flash\n");
         
@@ -32,6 +33,8 @@ int main() {
         case 'a':
             adc.menu();
             break;
+        case 'b':
+            status.menu();
         case 'f':
             ufm.menu();
             break;
