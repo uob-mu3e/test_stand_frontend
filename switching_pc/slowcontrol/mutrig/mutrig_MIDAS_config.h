@@ -214,6 +214,7 @@ typedef struct {
     INT tthresh;
     INT tthresh_sc;
     INT ethresh;
+    INT ebias;
     INT sipm;
     INT sipm_sc;
     INT inputbias;
@@ -247,6 +248,7 @@ static odb MUTRIG_CH_SETTINGS = {
     {"tthresh", 0},
     {"tthresh_sc", 0},
     {"ethresh", 0},
+    {"ebias", 0},
     {"sipm", 0},
     {"sipm_sc", 0},
     {"inputbias", 0},

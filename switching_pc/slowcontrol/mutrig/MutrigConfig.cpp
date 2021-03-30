@@ -60,6 +60,7 @@ MutrigConfig::paras_t MutrigConfig::parameters_ch = {
         make_param("inputbias_sc",      1, 1),
         make_param("inputbias",         6, 1),
         make_param("ethresh",           8, 1),
+        make_param("ebias",              3, 1),
         make_param("pole_sc",           1, 1),
         make_param("pole",              6, 1),
         make_param("cml",               4, 1),
@@ -254,6 +255,7 @@ void MutrigConfig::Parse_CH_from_struct(odb o, int channel){
     MutrigConfig::setParameterODBpp("tthresh_" + std::to_string(channel), o);
     MutrigConfig::setParameterODBpp("tthresh_sc_" + std::to_string(channel), o);
     MutrigConfig::setParameterODBpp("ethresh_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("ebias_" + std::to_string(channel), o);
     MutrigConfig::setParameterODBpp("sipm_" + std::to_string(channel), o);
     MutrigConfig::setParameterODBpp("sipm_sc_" + std::to_string(channel), o);
     MutrigConfig::setParameterODBpp("inputbias_" + std::to_string(channel), o);
