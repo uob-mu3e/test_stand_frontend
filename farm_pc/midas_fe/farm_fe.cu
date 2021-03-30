@@ -15,6 +15,9 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
+#include <fcntl.h>
+#include <sys/mman.h>
+
 #include <sstream>
 #include <fstream>
 
@@ -272,19 +275,29 @@ void link_active_settings_changed(odb &o){
 
 // INIT MUDAQ //////////////////////////////
 INT init_mudaq(){
-
-    // Allocate memory for the DMA buffer - this can fail!
-    if(cudaMallocHost( (void**)&dma_buf, dma_buf_size ) != cudaSuccess){
-        cout << "Allocation failed, aborting!" << endl;
+    
+    cudaError_t cuda_error = cudaMallocHost( (void**)&dma_buf, dma_buf_size );
+    if(cuda_error != cudaSuccess){
         cm_msg(MERROR, "frontend_init" , "Allocation failed, aborting!");
         return FE_ERR_DRIVER;
     }
-
+    
+    int fd = open("/dev/mudaq0_dmabuf", O_RDWR);
+    if(fd < 0) {
+        printf("fd = %d\n", fd);
+        return FE_ERR_DRIVER;
+    }
+    dma_buf = (uint32_t*)mmap(nullptr, MUDAQ_DMABUF_DATA_LEN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if(dma_buf == MAP_FAILED) {
+        cm_msg(MERROR, "frontend_init" , "mmap failed: dmabuf = %x\n", dma_buf);
+        return FE_ERR_DRIVER;
+    }
+    
     // initialize to zero
     for (int i = 0; i < dma_buf_nwords ; i++) {
         (dma_buf)[i] = 0;
     }
-
+    
     // open mudaq
     mup = new mudaq::DmaMudaqDevice("/dev/mudaq0");
     if ( !mup->open() ) {
@@ -299,27 +312,27 @@ INT init_mudaq(){
     else {
         cm_msg(MINFO, "frontend_init" , "Mudaq device is ok");
     }
-
+    
     // set fpga write pointers
     lastlastWritten = 0;
     lastRunWritten = mup->last_written_addr();
 
     // map memory to bus addresses for FPGA
-    struct mesg user_message;
-    user_message.address = dma_buf;
-    user_message.size = dma_buf_size;
-
-    int ret_val = mup->map_pinned_dma_mem( user_message );
-    
-    if (ret_val < 0) {
-        cout << "Mapping failed " << endl;
-        cm_msg(MERROR, "frontend_init" , "Mapping failed");
-        mup->disable();
-        mup->close();
-        free( (void *)dma_buf );
-        delete mup;
-        return FE_ERR_DRIVER;
-    }
+//     struct mesg user_message;
+//     user_message.address = dma_buf;
+//     user_message.size = dma_buf_size;
+// 
+//     int ret_val = mup->map_pinned_dma_mem( user_message );
+//     
+//     if (ret_val < 0) {
+//         cout << "Mapping failed " << endl;
+//         cm_msg(MERROR, "frontend_init" , "Mapping failed");
+//         mup->disable();
+//         mup->close();
+//         free( (void *)dma_buf );
+//         delete mup;
+//         return FE_ERR_DRIVER;
+//     }
 
     // switch off and reset DMA for now
     mup->disable();
@@ -629,7 +642,7 @@ INT read_stream_event(char *pevent, INT off)
 
 // check if the event is good
 template < typename T >
-INT check_event(T* buffer, uint32_t idx) {
+uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     EVENT_HEADER* eh = (EVENT_HEADER*)(buffer + idx);
     BANK_HEADER* bh = (BANK_HEADER*)(eh + 1);
 
@@ -647,16 +660,117 @@ INT check_event(T* buffer, uint32_t idx) {
     }
     
     uint32_t eventDataSize = eh->data_size; // bytes
-    //printf("eventDataSize = %u bytes\n", eventDataSize);
+    
+    if ( buffer[eventDataSize/4] != 0xAFFEAFFE ) {
+        eventDataSize += 4;
+    }
+    
+//     printf("0000\n");
+//     for ( int i = 0; i<=eventDataSize/4; i++ ) {
+//         printf("%8.8x\n", buffer[i]);
+//     }
+//     printf("AAAA\n");
+    printf("EventDataSize: %8.8x\n", eventDataSize);
+    printf("Data: %8.8x\n", buffer[idx+eventDataSize/4]);
+    uint32_t endFirstBank = 0;
+    for ( int i = idx; i<=idx+4+eventDataSize/4; i++ ) {
+        if ( buffer[i] == 0x0000009c ) {
+            endFirstBank = i;
+            break;
+        }
+    }
+    printf("endFirstBank: %8.8x\n", endFirstBank);
+    printf("idx: %8.8x\n", idx);
+    
+    if ( endFirstBank == 0 ) return -1;
+    
+//     for ( int i = idx+6; i<=endFirstBank; i++ ) {
+//         printf("%8.8x\n", buffer[i]);
+//     }
+//     printf("BBBB\n");
+    uint32_t dma_buf_dummy[endFirstBank+5];
+    uint32_t cnt_bank_words = 0;
+    uint32_t head_idx = 0;
+    for ( int i = idx; i<=endFirstBank+5; i++ ) {
+        if ( i == idx+3 ) {
+            // change event size
+            dma_buf_dummy[i-idx] = (endFirstBank+5)*4-4*4;
+        } else if ( i == idx+4 ) {
+            // change banks size
+            dma_buf_dummy[i-idx] = (endFirstBank+5)*4-6*4;
+        } else if ( i == idx+5 ) {
+            // change flags
+            dma_buf_dummy[i-idx] = 0x31;
+        } else if ( i == idx+6 ) {
+            // change bank name
+            dma_buf_dummy[i-idx] = 0x58495049;
+        } else if ( i == idx+7 ) {
+            // change bank type
+            dma_buf_dummy[i-idx] = 0x6;
+        } else if ( i == idx+8 ) {
+            // change bank size
+            dma_buf_dummy[i-idx] = 0x0;
+        } else if ( i == idx+9 ) {
+            // set reserved
+            dma_buf_dummy[i-idx] = 0x0;
+        } else if ( i == idx+10 ) {
+            // set overflow 0
+            cnt_bank_words += 1;
+            dma_buf_dummy[i-idx] = 0x0;
+        } else if ( i == idx+11 ) {
+            // set overflow 1
+            cnt_bank_words += 1;
+            dma_buf_dummy[i-idx] = 0x0;
+        } else if ( i == idx+12 ) {
+            // set reserved 0
+            cnt_bank_words += 1;
+            dma_buf_dummy[i-idx] = 0xAFFEAFFE;
+        } else if ( i == idx+13 ) {
+            // set reserved 1
+            cnt_bank_words += 1;
+            dma_buf_dummy[i-idx] = 0xAFFEAFFE;
+        } else if ( i > idx+13 ) {
+            cnt_bank_words += 1;
+//             printf("i>13: %8.8x\n",buffer[i-5]);
+            dma_buf_dummy[i-idx] = buffer[idx+i-5];
+        } else {
+            dma_buf_dummy[i-idx] = buffer[idx+i];
+        }
+    }
+    // set bank data size
+    dma_buf_dummy[8] = (cnt_bank_words-1)*4;
+    
+//     printf("CCCCC\n");
+//     for ( int i = idx; i<=endFirstBank+5; i++ ) {
+//         printf("%8.8x\n", dma_buf_dummy[i]);
+//     }
+    if ( dma_buf_dummy[endFirstBank+5] != 0x0000009c ) return -1;
+//     printf("CCCCC\n");
+    uint32_t * dma_buf_volatile;
+    dma_buf_volatile = dma_buf_dummy;
 
+    copy_n(&dma_buf_volatile[0], endFirstBank+5, pdata);
+    
+    return sizeof(dma_buf_dummy);
+    
+
+    
     // offset bank relative to event data
     uint32_t bankOffset = 8; // bytes
     // iterate through banks
     while(true) {
         BANK32* b = (BANK32*)(&buffer[idx + 4 + bankOffset / 4]);
-	//printf("bank: name = %4.4s, data_size = %u bytes, offset = %u bytes\n", b->name, b->data_size, bankOffset);
+        printf("bank: name = %4.4s, data_size = %u bytes, offset = %u bytes\n", b->name, b->data_size, bankOffset);
+        printf("bank: name = %8.8x, data_size = %8.8x bytes, offset = %8.8x bytes\n", b->name, b->data_size, bankOffset);
         bankOffset += sizeof(BANK32) + b->data_size; // bytes
-        if(bankOffset > eventDataSize) { sleep(10); return -1; }
+        printf("bankOffset = %u bytes\n", bankOffset);
+        printf("eventDataSize = %u bytes\n", eventDataSize);
+        
+        if(bankOffset > eventDataSize) { 
+            sleep(10);
+            printf("Error: bankOffset > eventDataSize\n");
+            return -1; 
+        }
         if(bankOffset == eventDataSize) break;
         // TODO: uncomment for new bank format from firmware
 //        bankOffset += b->data_size % 8;
@@ -746,22 +860,55 @@ INT read_stream_thread(void *param) {
         }
 
         set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
+        
+        // get midas buffer
+        uint32_t* pdata = nullptr;
+        int rb_status = rb_get_wp(rbh, (void**)&pdata, 0);
+        if ( rb_status != DB_SUCCESS ) {
+            printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
+            continue;
+        }
 
         // start dma
         mu.enable_continous_readout(0);
 
         // wait for requested data
-        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
+        //while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
+        
+        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x3e8);
+        // setup stream
+        mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x1);
+        // readout datagen
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
+        // readout link
+        //mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
+        
+        // reset all
+        mu.write_register(RESET_REGISTER_W, 0x1);
+        sleep(1);
+        mu.write_register(RESET_REGISTER_W, 0x0);
+        
+        for(int i=0; i < 12; i++)
+            cout << hex << "0x" <<  dma_buf[i] << " ";
+        cout << endl;
+        
+        sleep(1);
 
         // disable dma
         mu.disable();
-        
-        
+        // stop readout
+        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
+        mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
+        mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
+        mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
+        // reset all
+        mu.write_register(RESET_REGISTER_W, 0x1);
         
         // and get lastWritten
         lastlastWritten = 0;
         uint32_t lastWritten = mu.last_written_addr();
-//        printf("lastWritten = 0x%08X\n", lastWritten);
+//         printf("lastWritten = 0x%08X\n", lastWritten);
 
         // print dma_buf content
 //        for ( int i = lastWritten - 0x100; i < lastWritten + 0x100; i++) {
@@ -771,37 +918,48 @@ INT read_stream_thread(void *param) {
 //        } printf("\n");
 
         // walk events to find end of last event
-        if(lastWritten < lastlastWritten) lastWritten += dma_buf_nwords;
-        uint32_t offset = lastlastWritten;
+        uint32_t offset = 0;
         while(true) {
             // check enough space for header
             if(offset + 4 > lastWritten) break;
-//            printf("event: offset = 0x%08X, event_id = 0x%08X, data_size = 0x%08X\n", offset, dma_buf[offset % dma_buf_nwords], dma_buf[(offset + 3) % dma_buf_nwords]);
             uint32_t eventLength = 16 + dma_buf[(offset + 3) % dma_buf_nwords];
+            // check if length is to big (not needed at the moment but we still check it)
             if(eventLength > max_requested_words * 4) {
                 printf("ERROR: (eventLength = 0x%08X) > max_event_size\n", eventLength);
                 break;
             }
             // check enough space for data
             if(offset + eventLength / 4 > lastWritten) break;
-	    if(check_event(dma_buf, offset) < 0) {
-                printf("ERROR: bad event\n");
-                break;
-            }
+            uint32_t size_dma_buf = check_event(dma_buf, offset, pdata);
+            if ( size_dma_buf < 0 ) break;
+//             if (offset > 0 ){
+//                 printf("Break offset > 0\n");
+//                 break;
+//             }
+            
             offset += eventLength / 4;
+ 
+            printf("data2: %8.8x offset: %8.8x lastwritten: %8.8x\n", dma_buf[offset], offset, lastWritten);
+            
+            if ( offset > lastWritten/2 ) break;
+            if ( dma_buf[offset] != 0x00000001 ) break;
+            
+            pdata+=size_dma_buf;
+            rb_increment_wp(rbh, size_dma_buf); // in byte length
+            
+ 
+
+            
         }
-//        printf("lastlastWritten = 0x%08X, offset = 0x%08X, lastWritten = 0x%08X\n", lastlastWritten, offset, lastWritten);
+        continue;
+        
         if(offset > dma_buf_nwords) offset -= dma_buf_nwords;
         lastWritten = offset;
+        printf("Offset: %i\n", offset);
 
-        // get midas buffer
-        uint32_t* pdata = nullptr;
-        int rb_status = rb_get_wp(rbh, (void**)&pdata, 0);
-        if ( rb_status != DB_SUCCESS ) {
-            printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
-            lastlastWritten = lastWritten;
-            continue;
-        }
+
+        
+        printf("AAAAAAAAAAAAA\n");
 
         // number of words written to midas buffer
         uint32_t wlen = 0;
@@ -813,17 +971,23 @@ INT read_stream_thread(void *param) {
             dst_i += nwords;
             wlen = dst_i;
         }
-        lastlastWritten = lastWritten;
+        //lastlastWritten = lastWritten;
+        printf("WLEN: %i %8.8x %8.8x\n", wlen, dma_buf[0], dma_buf[wlen]);
+        
+        copy_n(&dma_buf[0], wlen, pdata);
+        
 
         // copy data to midas and increment wp of the midas buffer
         if(lastWritten < lastlastWritten) {
             // partial copy when wrap around
+            printf("CCCCCCCCCCC\n");
             copy_n(&dma_buf[lastlastWritten], dma_buf_nwords - lastlastWritten, pdata);
             wlen += dma_buf_nwords - lastlastWritten;
             lastlastWritten = 0;
         }
         if(lastWritten != lastlastWritten) {
             // complete copy
+            printf("DDDDDDDDDDD\n");
             copy_n(&dma_buf[lastlastWritten], lastWritten - lastlastWritten, pdata + wlen);
             wlen += lastWritten - lastlastWritten;
             lastlastWritten = lastWritten;
