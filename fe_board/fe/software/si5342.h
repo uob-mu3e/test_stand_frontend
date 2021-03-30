@@ -1,7 +1,7 @@
 #ifndef __FE_SI5342_H__
 #define __FE_SI5342_H__
 
-#include "../include/si534x.h"
+#include "include/si534x.h"
 
 #include "si5342_revb_registers.h"
 

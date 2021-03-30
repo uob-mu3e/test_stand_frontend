@@ -1,17 +1,17 @@
 
-#include "../include/base.h"
-#include "../include/xcvr.h"
+#include "include/base.h"
+#include "include/xcvr.h"
 
-#include "../../../fe/software/app_src/si5345.h"
+#include "../../fe/software/si5345.h"
 si5345_t si5345 { SPI_SI_BASE, 0 };
 
-#include "../../../fe/software/app_src/sc.h"
-#include "../../../fe/software/app_src/sc_ram.h"
+#include "../../fe/software/sc.h"
+#include "../../fe/software/sc_ram.h"
 sc_t sc;
 
-#include "../../../fe/software/app_src/mscb_user.h"
+#include "../../fe/software/mscb_user.h"
 mscb_t mscb;
-#include "../../../fe/software/app_src/reset.h"
+#include "../../fe/software/reset.h"
 
 #include "mupix.h"
 mupix_t mupix(&sc);

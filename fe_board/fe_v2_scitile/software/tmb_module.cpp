@@ -8,8 +8,8 @@
 char wait_key(useconds_t us = 100000);
 
 
-#include "../../../fe/software/app_src/sc.h"
-#include "../../../../common/include/feb.h"
+#include "../../fe/software/sc.h"
+#include "../../../common/include/feb.h"
 #include <altera_avalon_spi.h>
 
 

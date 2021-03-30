@@ -9,7 +9,7 @@
 
 #include "mscb.h"
 
-#include "../include/util.h"
+#include "include/util.h"
 
 #include <stdio.h>
 #include <string.h>

@@ -1,31 +1,27 @@
 
-#include "../include/base.h"
+#include "include/base.h"
+#include "include/xcvr.h"
 
-#include "../include/xcvr.h"
-
-#include "../../../fe/software/app_src/si5345_fe_v2.h"
+#include "../../fe/software/si5345_fe_v2.h"
 si5345_t si5345_1 { SPI_SI_BASE, 0 };
 si5345_t si5345_2 { SPI_SI_BASE, 1 };
+//si5345_t si5345 { SPI_SI_BASE, 0 };
 
-#include "../../../fe/software/app_src/sc.h"
-#include "../../../fe/software/app_src/sc_ram.h"
+#include "../../fe/software/sc.h"
+#include "../../fe/software/sc_ram.h"
 sc_t sc;
 
-#include "../../../fe/software/app_src/mscb_user.h"
+#include "../../fe/software/mscb_user.h"
 mscb_t mscb;
-#include "../../../fe/software/app_src/reset.h"
+#include "../../fe/software/reset.h"
 
-#include "../include/i2c.h"
-i2c_t i2c;
-
-
-#include "tmb_module.h"
-TMB_t TMB(i2c,sc);
-
-
+#include "mupix.h"
+#include "mp_datapath.h"
+mupix_t mupix(&sc);
+mupix_datapath_t mupix_datapath(&sc);
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
-    return TMB.sc_callback(cmd,data,n);
+    return mupix.callback(cmd,data,n);
 }
 
 
@@ -41,17 +37,18 @@ int main() {
 
     while (1) {
         printf("\n");
-        printf("[fe_dummy] -------- menu --------\n");
+        printf("[fe_mupix] -------- menu --------\n");
 	printf("ID: 0x%08x\n", ram->data[0xFFFB]);
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
-        printf("  [2] => sub-detector menu\n");
+        printf("  [2] => mupix\n");
         printf("  [3] => sc\n");
         printf("  [4] => si5345_1\n");
-        printf("  [5] => si5345_2\n");
+        printf("  [5] => si5345_2\n");        
         printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
+        printf("  [8] => datapath\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -60,7 +57,7 @@ int main() {
             menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '2':
-            //TMB.menu();
+            mupix.menu();
             break;
         case '3':
             sc.menu();
@@ -76,6 +73,9 @@ int main() {
             break;
         case '7':
             menu_reset();
+            break;
+        case '8':
+            mupix_datapath.menu();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

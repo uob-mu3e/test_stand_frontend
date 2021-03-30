@@ -5,7 +5,7 @@
 
 #include "sc_mupix.h"
 
-#include "../../../../common/include/feb.h"
+#include "../../../common/include/feb.h"
 using namespace mu3e::daq::feb;
 
 //declaration of interface to scifi module: hardware access, menu, slow control handler

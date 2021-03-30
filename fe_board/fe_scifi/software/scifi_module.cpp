@@ -3,7 +3,7 @@
 char wait_key(useconds_t us = 100000);
 
 
-#include "../../../fe/software/app_src/sc.h"
+#include "../../fe/software/sc.h"
 
 //Standard slow control patterns for mutrig1
 #include "builtin_config/No_TDC_Power.h"
@@ -14,7 +14,7 @@ char wait_key(useconds_t us = 100000);
 #include <ctype.h>
 extern sc_t sc;
 
-#include "../../../../common/include/feb.h"
+#include "../../../common/include/feb.h"
 using namespace mu3e::daq::feb;
 
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.

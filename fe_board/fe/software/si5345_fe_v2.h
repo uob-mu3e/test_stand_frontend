@@ -1,9 +1,15 @@
 #ifndef __FE_SI5345_H__
 #define __FE_SI5345_H__
 
-#include "../include/si534x.h"
+#include "include/si534x.h"
 
-#include "si5345_revb_registers.h"
+// change the clock source here: 
+#include "Si5345-v5-Registers_si2.h"        // optical clk from firefly 
+//#include "Si5345-v5-Registers_si2_free.h" // free running FEB: (no external clock, control by nios only) 
+//#include "Si5345-v5-Registers_si2_lvds.h" // lvds clk from CON4/CON5
+
+#include "Si5345-v5-Registers_si1.h"
+
 
 struct si5345_t : si534x_t {
 
@@ -20,10 +26,17 @@ struct si5345_t : si534x_t {
         for(int i = 0; i < 8; i++) id[i] = (char)read(0x026B + i);
         if(force == 0 && strcmp(id, DESIGN_ID) == 0) return;
 
-        si_t::init(si5345_revb_registers, sizeof(si5345_revb_registers) / sizeof(si5345_revb_registers[0]));
+        if(spi_slave==0)
+            si_t::init(si5345_revd_registers1, sizeof(si5345_revd_registers1) / sizeof(si5345_revd_registers1[0]));
+        if(spi_slave==1)
+        si_t::init(si5345_revd_registers2, sizeof(si5345_revd_registers2) / sizeof(si5345_revd_registers2[0]));
 //        for(int i = 0; i < 8; i++) write(0x026B + i, DESIGN_ID[i]);
 
         wait_sysincal();
+    }
+
+    void soft_reset() {
+        write(0x001C, read(0x001c) | (1 << 0));
     }
 
     void preamble() {

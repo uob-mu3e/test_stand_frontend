@@ -1,7 +1,7 @@
 #ifndef __MUPIX_SC_H__
 #define __MUPIX_SC_H__
 
-#include "../../../fe/software/app_src/sc_ram.h"
+#include "../../fe/software/sc_ram.h"
 
 #include <sys/alt_irq.h>
 //#include "default_mupix_dacs.h"

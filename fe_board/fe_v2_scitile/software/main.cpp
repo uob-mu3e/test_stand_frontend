@@ -1,27 +1,31 @@
 
-#include "../include/base.h"
-#include "../include/xcvr.h"
+#include "include/base.h"
 
-#include "../../../fe/software/app_src/si5345_fe_v2.h"
+#include "include/xcvr.h"
+
+#include "../../fe/software/si5345_fe_v2.h"
 si5345_t si5345_1 { SPI_SI_BASE, 0 };
 si5345_t si5345_2 { SPI_SI_BASE, 1 };
-//si5345_t si5345 { SPI_SI_BASE, 0 };
 
-#include "../../../fe/software/app_src/sc.h"
-#include "../../../fe/software/app_src/sc_ram.h"
+#include "../../fe/software/sc.h"
+#include "../../fe/software/sc_ram.h"
 sc_t sc;
 
-#include "../../../fe/software/app_src/max10_spi.h"
-max10_spi_t max10_spi;
-
-#include "../../../fe/software/app_src/mscb_user.h"
+#include "../../fe/software/mscb_user.h"
 mscb_t mscb;
-#include "../../../fe/software/app_src/reset.h"
-#include "../../../fe/software/app_src/tmpDisplay.h"
+#include "../../fe/software/reset.h"
+
+#include "include/i2c.h"
+i2c_t i2c;
+
+
+#include "tmb_module.h"
+TMB_t TMB(i2c,sc);
+
 
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
-    //return mupix.callback(cmd,data,n);
+    return TMB.sc_callback(cmd,data,n);
 }
 
 
@@ -42,14 +46,12 @@ int main() {
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
-        printf("  [2] => insert sub-detector menu here\n");
+        printf("  [2] => sub-detector menu\n");
         printf("  [3] => sc\n");
         printf("  [4] => si5345_1\n");
-        printf("  [5] => si5345_2\n");        
+        printf("  [5] => si5345_2\n");
         printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
-        printf("  [8] => temperature Display\n");
-        printf("  [9] => max10 spi\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -58,7 +60,7 @@ int main() {
             menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '2':
-            //mupix.menu();
+            //TMB.menu();
             break;
         case '3':
             sc.menu();
@@ -74,12 +76,6 @@ int main() {
             break;
         case '7':
             menu_reset();
-            break;
-        case '8':
-            menu_tmpDisplay((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
-            break;
-        case '9':
-            max10_spi.menu();
             break;
         default:
             printf("invalid command: '%c'\n", cmd);

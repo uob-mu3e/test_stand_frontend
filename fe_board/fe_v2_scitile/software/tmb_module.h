@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <stdint.h>
 
-#include "../include/i2c.h"
+#include "include/i2c.h"
 
 //forward declarations
 struct sc_t;

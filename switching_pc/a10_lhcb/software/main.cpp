@@ -1,10 +1,10 @@
 
-#include "../include/base.h"
+#include "include/base.h"
 
-#include "../include/xcvr.h"
+#include "include/xcvr.h"
 
-#include "../include/i2c.h"
-#include "../include/si534x.h"
+#include "include/i2c.h"
+#include "include/si534x.h"
 
 i2c_t i2c;
 

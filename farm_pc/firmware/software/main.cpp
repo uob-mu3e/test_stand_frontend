@@ -1,17 +1,17 @@
 
-#include "../include/base.h"
+#include "include/base.h"
 
-#include "../include/a10/flash.h"
+#include "include/a10/flash.h"
 flash_t flash;
 
-#include "../include/a10/fan.h"
+#include "include/a10/fan.h"
 fan_t fan;
 
-#include "../include/xcvr.h"
-#include "../include/a10/reconfig.h"
+#include "include/xcvr.h"
+#include "include/a10/reconfig.h"
 reconfig_t reconfig;
 
-#include "../include/si.h"
+#include "include/si.h"
 si_t si { SPI_BASE, 0 }; // spi_slave = 0
 
 #include "in0_125_in1_125_out0_125_out1_125_out2_125_out3_125.h"
