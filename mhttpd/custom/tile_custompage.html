@@ -23,7 +23,7 @@ var counter=0;
 var asicsettings_global_int      = ['ext_trig_offset', 'ext_trig_endtime']; 
 // special 'num asics' -> 'num_asics'
 var asicsettings_global_bool = ['ext_trig_mode', 'ext_trig_endtime_sign', 'gen_idle', 'ms_debug', 'prbs_debug', 'prbs_single', 
-	       'recv_all', 'disable_coarse', 'pll_setcoarse', 'short_event_mode', 'pll_envomonitor'];
+	       'sync_ch_rst', 'disable_coarse', 'pll_setcoarse', 'short_event_mode', 'pll_envomonitor'];
 var daqsettings_int     = ['dummy_data_n'];
 var daqsettings_bool= ['dummy_config', 'dummy_data', 'dummy_data_fast', 'prbs_decode_disable', 'lvds_waitforall', 'lvds_waitforall_sticky'];
 
@@ -36,7 +36,7 @@ var asicsettings_tdc_bool = ['vnpfc_scale', 'vncnt_scale', 'vnvcobuffer_scale', 
 var asicsettings_channel_int = ['tthresh', 'tthresh_sc', 'ethresh', 'sipm', 'sipm_sc', 'inputbias', 'inputbias_sc', 
                    'pole', 'pole_sc', 'ampcom', 'ampcom_sc', 'cml', 'cml_sc','amonctrl', 'comp_spi'];
 var asicsettings_channel_bool = ['mask', 'tdctest_n', 'sswitch', 'delay', 'pole_en_n', 'energy_r_en', 'energy_c_en',
-                        'cm_sensing_high_r', 'amon_en_n', 'edge', 'edge_cml', 'dmon_en', 'dmon_sw'];
+                        'cm_sensing_high_r', 'amon_en_n', 'edge', 'edge_cml', 'dmon_en', 'dmon_sw','recv_all'];
 
 function set_current(){
     document.getElementById('mutrigTdc').className = "current";
@@ -431,6 +431,26 @@ function configure() {
 //*********************************************************************************//
 
 
+function dmon_set() {
+	var settings = JSON.parse(localStorage.getItem('settings'));
+	var start = 0;
+	var end   = settings.daq['num_asics']*32-1;
+	var chS = [
+		parseInt(document.getElementById("dmon_select_m0").value),
+  		parseInt(document.getElementById("dmon_select_m1").value)
+	];
+	for(var ch = start; ch < end; ch++) {
+		settings.channel[ch]['dmon_en'] = false;
+		for(var m = 0; m < 2;m++){
+			if((chS[m]>=0) && (ch == m*4*32+chS[m])){
+				settings.channel[ch]['dmon_en'] = true;
+				console.log("Enabling dmon for channel "+ch);
+			}
+		}
+	}
+	localStorage.setItem('settings', JSON.stringify(settings));
+        copy2page_ch(settings.channel[getChannel()], false);
+}
 
 //mask all channels
 function mask(value=true) {
@@ -492,6 +512,46 @@ function copy() {
 
 	localStorage.setItem('settings', JSON.stringify(settings));
 }
+
+//copy configuration from ASIC (TDC) to others
+function copyTDC() {
+	var settings = JSON.parse(localStorage.getItem('settings'));
+	var rangestr = document.getElementById('copyrange_tdc').value;
+	var ASICs = [];
+	for(var i in rangestr.split(",")) {
+		var rangestrl = rangestr.split(",")[i];
+		if(rangestrl.search("-") > 0) {
+			// range a - b
+			var rangel = rangestrl.split("-");
+			for(var ch = parseInt(rangel[0]); ch <= parseInt(rangel[1]); ch++) {
+				if(ch < settings.daq['num_asics']*32) {
+					ASICs.push(ch);
+				}
+			}		
+		} else {
+			// single channel
+			var ch = parseInt(rangestrl);
+			if(ch < settings.daq['num_asics']*32) {
+					ASICs.push(ch);
+				}
+		}
+	}
+	for(var i in ASICs) {
+		for (j in asicsettings_tdc_int) {
+			dac = asicsettings_tdc_int[j];
+			settings.asic[ASICs[i].toString()][dac] = parseInt(document.getElementsByName(dac)[0].value);
+			console.log("Copy "+dac+" to ASIC "+ASICs[i]);
+		}
+		for (j in asicsettings_tdc_bool) { // exclude mask
+			dac = asicsettings_tdc_bool[j];
+			settings.asic[ASICs[i].toString()][dac] = document.getElementsByName(dac)[0].checked;
+			console.log("Copy "+dac+" to ASIC "+ASICs[i]);
+		}
+	}
+
+	localStorage.setItem('settings', JSON.stringify(settings));
+}
+
 
 function message(mes, red = false) {
     var status = document.getElementById('message').innerHTML = mes;;
@@ -643,8 +703,9 @@ function readback() {
 					<tr>
 						<td><label for="prbs_single">PRBS SINGLE</label></td>
 						<td><input type="checkbox" name="prbs_single"  class="store" /><input type="checkbox" name="prbs_single_rb" class="odb" disabled="disabled" /></td>
-						<td><label for="recv_all">RECV ALL</label></td>
-						<td><input type="checkbox" name="recv_all"  class="store" /><input type="checkbox" name="recv_all_rb" class="odb" disabled="disabled" /></td>
+                                               <td><label for="sync_ch_rst">SYNC_CH_RST</label></td>
+                                               <td><input type="checkbox" name="sync_ch_rst"  class="store" /><input type="checkbox" name="sync_ch_rst_rb" class="odb" disabled="disabled" /></td>
+
 					</tr>
 					<tr>
 						<td><label for="ext_trig_mode">EXT TRG</label></td>
@@ -1038,6 +1099,10 @@ title="1: disable TDC test input to this channel. (0 enables TDC input and short
                          <td><label for="dmon_sw">DMON SW</label></td>
                          <td><input type="checkbox" name="dmon_sw"  class="store" title="Digital monitor output mode. 0: Show Q and flag output (as it goes to the TDC), 1: show raw T & E flags"/><input type="checkbox" name="dmon_sw_rb" class="odb" disabled="disabled"/></td>
                     </tr>
+                    <tr>
+			<td><label for="recv_all">RECV ALL</label></td>
+			<td><input type="checkbox" name="recv_all"  class="store" /><input type="checkbox" name="recv_all_rb" class="odb" disabled="disabled" /></td>
+                    </tr>
                 </table>
 		</div>
 		</div>
@@ -1070,6 +1135,30 @@ title="1: disable TDC test input to this channel. (0 enables TDC input and short
                 <label for="file" class="button_2">Load config</label>
                </div>
                <div style="text-align:center;" id='message'>&nbsp;</div>
+		<h2 onclick="toggle(dmon_table)">Digital monitor control</h2>
+		<div class="details">	
+			<span class="toggle" onclick="toggle(dmon_table)">&#9776;</span>
+			<div id="dmon_table">
+			<table>
+				<thead>
+					<tr>
+						<th>Module</th>
+						<th>Selected channel</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><label for="dmon_select_m0">#0</label></td>
+						<td><input type="number"   name="dmon_select_m0" id="dmon_select_m0" min="-1" max="127" step="1" size="-1" value="-1" onchange="dmon_set()"  class="store" title="Selected digital monitor output on this module (-1 for none)" /></td>
+					</tr>
+					<tr>
+						<td><label for="dmon_select_m1">#1</label></td>
+						<td><input type="number"   name="dmon_select_m1" id="dmon_select_m1" min="-1" max="127" step="1" size="-1" value="-1" onchange="dmon_set()" class="store" title="Selected digital monitor output on this module (-1 for none)" /></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		</div>
             </section>
         </div>
 <div id="updateStatus" align="left">
