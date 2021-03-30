@@ -408,9 +408,9 @@ begin
                 
             when get_time2 =>
                 -- get LSB from FPGA time
-                if ( error_gtime1 = '1' ) then
-                    merge_state <= error_state;
-                elsif ( time_wait = check_ones ) then
+                --if ( error_gtime1 = '1' ) then
+                --    merge_state <= error_state;
+                if ( time_wait = check_ones ) then
                     merge_state <= compare_time2;
                     gtime2 <= i_rdata;
                 end if;
@@ -440,9 +440,10 @@ begin
                 --end if;
                 
             when wait_for_sh =>
-                if ( error_gtime2 = '1' ) then
-                    merge_state <= error_state;
-                end if;
+                -- dont check at the moment 
+                --if ( error_gtime2 = '1' ) then
+                --    merge_state <= error_state;
+                --end if;
             
                 -- readout until all fifos have sub header
                 if ( shop_wait = check_ones and full_6(0) = '0' ) then
