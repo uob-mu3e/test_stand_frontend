@@ -473,7 +473,7 @@ int mudaq_register(struct mudaq *mu) {
         goto err_out;
     }
 
-    mu->minor = ida_alloc_range(&mudaq_ida, 0, MAX_NUM_DEVICES - 1, GFP_KERNEL);
+    mu->minor = ida_simple_get(&mudaq_ida, 0, MAX_NUM_DEVICES - 1, GFP_KERNEL);
     if(mu->minor < 0) goto err_out;
 
     scnprintf(mu->misc_mudaq_name, sizeof(mu->misc_mudaq_name), "%s%d", THIS_MODULE->name, mu->minor);
