@@ -33,7 +33,7 @@ class TilesFEB : public MutrigFEB{
       virtual uint16_t FPGAid_from_ID(int asic) const;
       virtual uint16_t ASICid_from_ID(int asic) const;
       virtual uint16_t GetModulesPerFEB() const {return 1;}
-      virtual uint16_t GetASICSPerModule() const {return 4;}
+      virtual uint16_t GetASICSPerModule() const {return 2;}
       //Return typeID for building FEB ID map
       virtual FEBTYPE  GetTypeID() const {return FEBTYPE::Tile;}
 

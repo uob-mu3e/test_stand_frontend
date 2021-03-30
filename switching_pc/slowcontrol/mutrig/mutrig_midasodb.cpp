@@ -35,18 +35,17 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     //Set number of ASICs, derived from mapping
     unsigned int nasics = FEB_interface->GetNumASICs();
     sprintf(set_str, "%s/Settings/Daq", prefix);
-    odb settings_daq_nasics0 = {{"num_asics", nasics}}; // 
-    settings_daq_nasics0.connect(set_str, true);
     if(nasics == 0){
         cm_msg(MINFO, "mutrig_midasodb::setup_db", "Number of ASICs is 0, will not continue to build DB. Consider to delete ODB subtree %s", prefix);
         return DB_SUCCESS;
     }
+    cm_msg(MINFO, "mutrig_midasodb::setup_db", "For ODB subtree %s, number of ASICs is set to %u", prefix, nasics);
 
     // Add [prefix]/Daq (structure defined in mutrig_MIDAS_config.h) 
     auto settings_daq = MUTRIG_DAQ_SETTINGS; // gloabl setting for daq/fpga from mutrig_MIDAS_config.h
     settings_daq.connect(set_str, true);
-
     //update length flags for DAQ section
+    settings_daq["num_asics"]=nasics;
     settings_daq["mask"].resize(nasics);
     settings_daq["resetskew_cphase"].resize(FEB_interface->GetNumModules());
     settings_daq["resetskew_cdelay"].resize(FEB_interface->GetNumModules());
@@ -67,10 +66,10 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     auto settings_tdc = MUTRIG_TDC_SETTINGS;
     auto settings_ch = MUTRIG_CH_SETTINGS;
     for(unsigned int asic = 0; asic < nasics; ++asic) {
-        sprintf(set_str, "%s/Settings/ASICs/Global/TDCs/%i", prefix, asic);
+        sprintf(set_str, "%s/Settings/ASICs/TDCs/%i", prefix, asic);
         settings_tdc.connect(set_str, true);
         for(unsigned int ch = 0; ch < 32; ++ch) {
-            sprintf(set_str, "%s/Settings/ASICs/Global/Channels/%i", prefix, asic*32+ch);
+            sprintf(set_str, "%s/Settings/ASICs/Channels/%i", prefix, asic*32+ch);
             settings_ch.connect(set_str, true);
         }
     }

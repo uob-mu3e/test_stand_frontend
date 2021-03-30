@@ -38,6 +38,7 @@ typedef struct {
     BOOL prbs_decode_disable;
     BOOL reset_datapath;
     BOOL reset_asics;
+    INT  num_asics;
 } MUTRIG_DAQ;
 
 static odb MUTRIG_DAQ_SETTINGS = {
