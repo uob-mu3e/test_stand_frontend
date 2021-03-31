@@ -1,5 +1,6 @@
 -- megafunction wizard: %Arria V Transceiver Native PHY Intel FPGA IP v18.0%
 -- GENERATION: XML
+-- Retrieval info: <?xml version="1.0"?>
 -- Retrieval info: <instance entity-name="altera_xcvr_native_av" version="18.0" >
 -- Retrieval info: 	<generic name="device_family" value="Arria V" />
 -- Retrieval info: 	<generic name="show_advanced_features" value="0" />

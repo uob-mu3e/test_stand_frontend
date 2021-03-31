@@ -264,6 +264,7 @@ package util is
         n : natural--;
     ) return string;
 
+    -- get next Round-Robin index
     function round_robin_next (
         i : std_logic_vector;
         req : std_logic_vector--;

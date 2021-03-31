@@ -35,10 +35,6 @@ struct si5345_t : si534x_t {
         wait_sysincal();
     }
 
-    void soft_reset() {
-        write(0x001C, read(0x001c) | (1 << 0));
-    }
-
     void preamble() {
         write(0x0B24, 0xC0);
         write(0x0B25, 0x00);

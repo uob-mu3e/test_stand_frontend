@@ -20,7 +20,7 @@
 #ifndef SI5345_REVD_REG_CONFIG_HEADER
 #define SI5345_REVD_REG_CONFIG_HEADER
 
-#define SI5345_REVD_REG_CONFIG_NUM_REGS				526
+#define SI5345_REVD_REG_CONFIG_NUM_REGS 526
 
 typedef struct
 {
@@ -749,11 +749,11 @@ si_t::register_t const si5345_revd_registers2[] =
  * 
  * Revision: D
  * VDD:      1.8 V
- * Ta:       25 °C
- * Theta-JA: 18.3 °C/W
+ * Ta:       25 C
+ * Theta-JA: 18.3 C/W
  * Airflow:  2 m/s
  * 
- * Total Power: 988 mW, On Chip Power: 934 mW, Tj: 42 °C
+ * Total Power: 988 mW, On Chip Power: 934 mW, Tj: 42 C
  * 
  *          Frequency  Format   Voltage   Current     Power
  *         ----------  ------  --------  --------  --------
@@ -774,7 +774,7 @@ si_t::register_t const si5345_revd_registers2[] =
  * 
  * Note:
  * 
- * -Tj is junction temperature. Tj must be less than 125 °C (on Si5345 Revision D) for device to comply with datasheet specifications. Tj = Ta + Theta_JA*On_Chip_Power.
+ * -Tj is junction temperature. Tj must be less than 125 C (on Si5345 Revision D) for device to comply with datasheet specifications. Tj = Ta + Theta_JA*On_Chip_Power.
  * -Overall power includes on-chip power dissipation and adds differential load power dissipation to estimate total power requirements.
  * -Above are estimates only: power and temperature should be measured on your PCB.
  * -Selection of appropriate Theta-JA is required for most accurate estimate. Ideally, select 'User Specified Theta-JA' and enter a Theta-JA value based on the thermal properties of your PCB.
