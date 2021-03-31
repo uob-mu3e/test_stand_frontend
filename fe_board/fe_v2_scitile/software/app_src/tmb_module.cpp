@@ -346,32 +346,51 @@ using namespace mu3e::daq::feb;
 //TODO: update functions
 alt_u16 TMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     switch(cmd) {
+    case CMD_TILE_TMB_ON:
+        power_TMB(true);
+        break;
+    case CMD_TILE_TMB_OFF:
+        power_TMB(false);
+        break;
+
     case CMD_TILE_ON:
         power_TMB(true);
+	//TODO: automatic ASIC powering
         break;
     case CMD_TILE_OFF:
         power_TMB(false);
+	//TODO: automatic ASIC powering
+	//TODO: test if this kind of slow powering down scheme is needed
+        break;
+    case CMD_TILE_TEMPERATURES_READ:
+	data_all_tmp=(alt_u16*)data;
+	read_tmp_all();
+        break;
+    case CMD_TILE_POWERMONITORS_READ:
+	data_all_power=(alt_u16*)data;
+	read_power_all();
         break;
 /*
-    case CMD_TILE_STIC_OFF:
-        chip_configure(0, stic3_config_ALL_OFF);
-        break;
-    case CMD_TILE_STIC_PLL_TEST:
-        chip_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
-        break;
     case CMD_TILE_I2C_WRITE:
         //i2c_write_u32(data, n);
         break;
 */
     default:
-        if((cmd & 0xFFF0) == CMD_MUTRIG_ASIC_CFG) {
+        int asic = cmd & 0x000F;
+	switch(cmd & 0xFFF0){
+        case CMD_MUTRIG_ASIC_CFG:
             printf("configuring ASIC\n");
-            int asic = cmd & 0x000F;
             configure_asic(asic, (alt_u8*)data);
-        }
-        else {
+            break;
+        case CMD_TILE_ASIC_ON:
+            power_ASIC(asic,true);
+            break;
+        case CMD_TILE_ASIC_OFF:
+            power_ASIC(asic,false);
+            break;
+        default:
             printf("[sc_callback] unknown command\n");
-        }
+            break;
     }
 
     return 0;
@@ -422,9 +441,9 @@ void TMB_t::menu_TMB_main() {
 void TMB_t::menu_TMB_debug() {
 
     while(1) {
-//        printf("  [0] => check power monitors\n");
-//        printf("  [1] => check temperature sensors\n");
-//        printf("  [q] => exit\n");
+        printf("  [0] => check power monitors\n");
+        printf("  [1] => check temperature sensors\n");
+        printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -432,14 +451,14 @@ void TMB_t::menu_TMB_debug() {
         case '0':
             for(int i=0;i<13;i++){
                 auto ret=check_power_monitor(i);
-//                printf("Power monitor #%d: %d\n",i,ret);
+                printf("Power monitor #%d: %d\n",i,ret);
             }
             break;
         case '1':
             for(int i=0;i<13;i++){
                 for(int phi=0;phi<2;phi++){
                     auto ret=check_temperature_sensor(i,0);
-//                    printf("Sensor %d.%c: %d\n",i,phi?'L':'R',ret);
+                    printf("Sensor %d.%c: %d\n",i,phi?'L':'R',ret);
                 }
             }
             break;
@@ -462,9 +481,11 @@ void TMB_t::menu_TMB_monitors() {
         switch(cmd) {
         case '0':
             read_power_all();
+            print_power_all();
             break;
         case '1':
             read_tmp_all();
+            print_tmp_all();
             break;
         case 'q':
             return;
