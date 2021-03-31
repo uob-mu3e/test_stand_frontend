@@ -29,7 +29,7 @@ typedef struct
 
 } si5345_revd_register_t;
 
-si5345_revd_register_t const si5345_revd_registers2[SI5345_REVD_REG_CONFIG_NUM_REGS] =
+si_t::register_t const si5345_revd_registers2[] =
 {
 
 	/* Start configuration preamble */
@@ -42,6 +42,7 @@ si5345_revd_register_t const si5345_revd_registers2[SI5345_REVD_REG_CONFIG_NUM_R
 	/*    Delay is worst case time for device to complete any calibration */
 	/*    that is running due to device state change previous to this script */
 	/*    being processed. */
+	{ 0xFFFF, 300 },
 
 	/* Start configuration registers */
 	{ 0x0006, 0x00 },

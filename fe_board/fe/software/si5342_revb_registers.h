@@ -29,7 +29,7 @@ typedef struct
 
 } si5342_revb_register_t;
 
-si5342_revb_register_t const si5342_revb_registers[] =
+si_t::register_t const si5342_revb_registers[] =
 {
 
 	/* Start configuration preamble */

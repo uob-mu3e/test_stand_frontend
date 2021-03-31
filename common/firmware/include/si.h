@@ -13,6 +13,14 @@
  * SI (Silicon Labs) clock chip controller.
  */
 struct si_t {
+    /**
+     * SI register type.
+     */
+    struct register_t
+    {
+        uint16_t address;
+        uint16_t value;
+    };
 
     int log_level = 0;
 
