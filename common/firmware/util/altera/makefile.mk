@@ -83,7 +83,7 @@ device.tcl :
 $(PREFIX)/%.vhd : %.vhd.qmegawiz
 	./util/altera/qmegawiz.sh $< $@
 
-$(PREFIX)/%.qsys : %.tcl device.tcl
+$(PREFIX)/%.qsys : %.tcl device.tcl $(PREFIX)
 	./util/altera/tcl2qsys.sh $< $@
 
 $(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys
@@ -125,7 +125,7 @@ $(APP_DIR)/main.elf : $(SRC_DIR)/* $(BSP_DIR)
 	$(MAKE) -C $(APP_DIR)
 	nios2-elf-objcopy $(APP_DIR)/main.elf -O srec $(APP_DIR)/main.srec
 	# generate flash image (srec)
-	( cd $(APP_DIR) ; make mem_init_generate )
+	$(MAKE) -C $(APP_DIR) mem_init_generate
 
 .PHONY : app
 app : $(APP_DIR)/main.elf
