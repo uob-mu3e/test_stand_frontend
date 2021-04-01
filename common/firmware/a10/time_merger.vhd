@@ -7,6 +7,7 @@ use ieee.std_logic_misc.all;
 use work.mudaq.all;
 
 
+
 -- merge packets delimited by SOP and EOP from N input streams
 entity time_merger is
 generic (
