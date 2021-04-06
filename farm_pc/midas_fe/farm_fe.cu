@@ -660,91 +660,83 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     }
     
     uint32_t eventDataSize = eh->data_size; // bytes
-    
-    if ( buffer[eventDataSize/4] != 0xAFFEAFFE ) {
-        eventDataSize += 4;
-    }
-    
-//     printf("0000\n");
-//     for ( int i = 0; i<=eventDataSize/4; i++ ) {
-//         printf("%8.8x\n", buffer[i]);
-//     }
-//     printf("AAAA\n");
+
     printf("EventDataSize: %8.8x\n", eventDataSize);
     printf("Data: %8.8x\n", buffer[idx+eventDataSize/4]);
     uint32_t endFirstBank = 0;
     for ( int i = idx; i<=idx+4+eventDataSize/4; i++ ) {
-        if ( buffer[i] == 0x0000009c ) {
+        if ( buffer[i] == 0x0000009c and i > 5+idx ) {
             endFirstBank = i;
             break;
         }
     }
-    printf("endFirstBank: %8.8x\n", endFirstBank);
-    printf("idx: %8.8x\n", idx);
+    printf("endFirstBank: %8.8x %8.8x\n", endFirstBank, buffer[endFirstBank]);
+    printf("idx: %8.8x %8.8x\n", idx, buffer[idx]);
     
-    if ( endFirstBank == 0 ) return -1;
     
-//     for ( int i = idx+6; i<=endFirstBank; i++ ) {
-//         printf("%8.8x\n", buffer[i]);
-//     }
-//     printf("BBBB\n");
-    uint32_t dma_buf_dummy[endFirstBank+5];
+    if ( endFirstBank == 0 ) {
+        printf("Error: endFirstBank == 0\n");
+        return -1;
+    }
+        
+    uint32_t dma_buf_dummy[endFirstBank+5];//-idx+1];
     uint32_t cnt_bank_words = 0;
     uint32_t head_idx = 0;
-    for ( int i = idx; i<=endFirstBank+5; i++ ) {
-        if ( i == idx+3 ) {
+    for ( int i = 0; i<=endFirstBank+5-idx; i++ ) {
+        if ( i == 3 ) {
             // change event size
-            dma_buf_dummy[i-idx] = (endFirstBank+5)*4-4*4;
-        } else if ( i == idx+4 ) {
+            dma_buf_dummy[i] = (endFirstBank+5)*4-4*4;
+        } else if ( i == 4 ) {
             // change banks size
-            dma_buf_dummy[i-idx] = (endFirstBank+5)*4-6*4;
-        } else if ( i == idx+5 ) {
+            dma_buf_dummy[i] = (endFirstBank+5)*4-6*4;
+        } else if ( i == 5 ) {
             // change flags
-            dma_buf_dummy[i-idx] = 0x31;
-        } else if ( i == idx+6 ) {
+            dma_buf_dummy[i] = 0x31;
+        } else if ( i == 6 ) {
             // change bank name
-            dma_buf_dummy[i-idx] = 0x58495049;
-        } else if ( i == idx+7 ) {
+            dma_buf_dummy[i] = 0x58495049;
+        } else if ( i == 7 ) {
             // change bank type
-            dma_buf_dummy[i-idx] = 0x6;
-        } else if ( i == idx+8 ) {
+            dma_buf_dummy[i] = 0x6;
+        } else if ( i == 8 ) {
             // change bank size
-            dma_buf_dummy[i-idx] = 0x0;
-        } else if ( i == idx+9 ) {
+            dma_buf_dummy[i] = 0x0;
+        } else if ( i == 9 ) {
             // set reserved
-            dma_buf_dummy[i-idx] = 0x0;
-        } else if ( i == idx+10 ) {
+            dma_buf_dummy[i] = 0x0;
+        } else if ( i == 10 ) {
             // set overflow 0
             cnt_bank_words += 1;
-            dma_buf_dummy[i-idx] = 0x0;
-        } else if ( i == idx+11 ) {
+            dma_buf_dummy[i] = 0x0;
+        } else if ( i == 11 ) {
             // set overflow 1
             cnt_bank_words += 1;
-            dma_buf_dummy[i-idx] = 0x0;
-        } else if ( i == idx+12 ) {
+            dma_buf_dummy[i] = 0x0;
+        } else if ( i == 12 ) {
             // set reserved 0
             cnt_bank_words += 1;
-            dma_buf_dummy[i-idx] = 0xAFFEAFFE;
-        } else if ( i == idx+13 ) {
+            dma_buf_dummy[i] = 0xAFFEAFFE;
+        } else if ( i == 13 ) {
             // set reserved 1
             cnt_bank_words += 1;
-            dma_buf_dummy[i-idx] = 0xAFFEAFFE;
-        } else if ( i > idx+13 ) {
+            dma_buf_dummy[i] = 0xAFFEAFFE;
+        } else if ( i > 13 ) {
             cnt_bank_words += 1;
-//             printf("i>13: %8.8x\n",buffer[i-5]);
-            dma_buf_dummy[i-idx] = buffer[idx+i-5];
+            dma_buf_dummy[i] = buffer[idx+i-5];
         } else {
-            dma_buf_dummy[i-idx] = buffer[idx+i];
+            dma_buf_dummy[i] = buffer[idx+i];
         }
     }
     // set bank data size
     dma_buf_dummy[8] = (cnt_bank_words-1)*4;
     
-//     printf("CCCCC\n");
-//     for ( int i = idx; i<=endFirstBank+5; i++ ) {
-//         printf("%8.8x\n", dma_buf_dummy[i]);
-//     }
-    if ( dma_buf_dummy[endFirstBank+5] != 0x0000009c ) return -1;
+    if ( dma_buf_dummy[endFirstBank+5-idx] != 0x0000009c ) {
+        printf("Error: dma_buf_dummy[endFirstBank+5-idx] != 0x0000009c 0x%08X\n", dma_buf_dummy[endFirstBank+5-idx]);
+        for ( int i = 0; i<=endFirstBank+5-idx; i++ ) {
+            printf("%8.8x %8.8x\n", dma_buf_dummy[i], buffer[i+idx]);
+        }
+        return -1;
+    }
 //     printf("CCCCC\n");
     uint32_t * dma_buf_volatile;
     dma_buf_volatile = dma_buf_dummy;
@@ -847,9 +839,7 @@ INT read_stream_thread(void *param) {
     int rbh = get_event_rbh(0);
 
     uint32_t max_requested_words = dma_buf_nwords/2;
-    // request to read dma_buffer_size/2 (count in blocks of 256 bits)
-    mu.write_register_wait(0xC, max_requested_words / (256/32), 100);
-
+    
     while (is_readout_thread_enabled()) {
         // don't readout events if we are not running
         if (run_state != STATE_RUNNING) {
@@ -873,26 +863,23 @@ INT read_stream_thread(void *param) {
         mu.enable_continous_readout(0);
 
         // wait for requested data
-        //while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
         
-        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x3e8);
+        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x2);
         // setup stream
         mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x1);
         // readout datagen
         mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
         // readout link
         //mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
+        // request to read dma_buffer_size/2 (count in blocks of 256 bits)
+        mu.write_register(0xC, max_requested_words / (256/32));
         
         // reset all
-        mu.write_register(RESET_REGISTER_W, 0x1);
-        sleep(1);
-        mu.write_register(RESET_REGISTER_W, 0x0);
+        mu.write_register_wait(RESET_REGISTER_W, 0x1, 100);
+//         sleep(1);
+        mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
         
-        for(int i=0; i < 12; i++)
-            cout << hex << "0x" <<  dma_buf[i] << " ";
-        cout << endl;
-        
-        sleep(1);
+        //while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
 
         // disable dma
         mu.disable();
@@ -919,37 +906,55 @@ INT read_stream_thread(void *param) {
 
         // walk events to find end of last event
         uint32_t offset = 0;
+        uint32_t cnt = 0;
         while(true) {
+            int rb_status = rb_get_wp(rbh, (void**)&pdata, 10);
+            if ( rb_status != DB_SUCCESS ) {
+                printf("ERROR: rb_get_wp -> rb_status != DB_SUCCESS\n");
+                printf("Events written %d\n", cnt);
+                continue;
+            }
+                        
             // check enough space for header
             if(offset + 4 > lastWritten) break;
             uint32_t eventLength = 16 + dma_buf[(offset + 3) % dma_buf_nwords];
             // check if length is to big (not needed at the moment but we still check it)
             if(eventLength > max_requested_words * 4) {
                 printf("ERROR: (eventLength = 0x%08X) > max_event_size\n", eventLength);
+                printf("Events written %d\n", cnt);
                 break;
             }
+            
             // check enough space for data
             if(offset + eventLength / 4 > lastWritten) break;
             uint32_t size_dma_buf = check_event(dma_buf, offset, pdata);
-            if ( size_dma_buf < 0 ) break;
+            printf("data2: %8.8x offset: %8.8x lastwritten: %8.8x sizeEvent: %d\n", dma_buf[offset], offset, lastWritten, size_dma_buf);
+            if ( size_dma_buf == -1 ) {
+                printf("size_dma_buf == -1\n");
+                printf("Events written %d\n", cnt);
+                break;
+            }
 //             if (offset > 0 ){
 //                 printf("Break offset > 0\n");
 //                 break;
 //             }
             
             offset += eventLength / 4;
- 
-            printf("data2: %8.8x offset: %8.8x lastwritten: %8.8x\n", dma_buf[offset], offset, lastWritten);
             
-            if ( offset > lastWritten/2 ) break;
-            if ( dma_buf[offset] != 0x00000001 ) break;
+            if ( offset > lastWritten/2 ) {
+                printf("Offset to big\n");
+                printf("Events written %d\n", cnt);
+                break;
+            }
+            if ( dma_buf[offset] != 0x00000001 ) {
+                printf("dma_buf[offset] != 0x00000001\n");
+                printf("Events written %d\n", cnt);
+                break;
+            }
             
+            cnt++;
             pdata+=size_dma_buf;
             rb_increment_wp(rbh, size_dma_buf); // in byte length
-            
- 
-
-            
         }
         continue;
         

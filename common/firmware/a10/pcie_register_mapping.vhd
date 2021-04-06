@@ -67,6 +67,7 @@ begin
                             i_local_pcie0_rregs_250(DMA_NOTHALFFUL_REGISTER_R) when i = DMA_NOTHALFFUL_REGISTER_R else
                             i_local_pcie0_rregs_250(DMA_ENDEVENT_REGISTER_R) when i = DMA_ENDEVENT_REGISTER_R else
                             i_local_pcie0_rregs_250(DMA_NOTENDEVENT_REGISTER_R) when i = DMA_NOTENDEVENT_REGISTER_R else
+                            i_local_pcie0_rregs_250(EVENT_BUILD_STATUS_REGISTER_R) when i = EVENT_BUILD_STATUS_REGISTER_R else
                             q_rregs(i * 32 + 31 downto i * 32);
     END GENERATE gen_map;
     

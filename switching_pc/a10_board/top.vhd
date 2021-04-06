@@ -358,7 +358,6 @@ begin
 
         i_dmamemhalffull=> pcie0_dma0_hfull,
         o_dma_wren      => dma_data_wren,
-        o_dma_done      => pcie0_readregs_250(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE),
         o_endofevent    => dmamem_endofevent,
         o_dma_data      => dma_data,
 
