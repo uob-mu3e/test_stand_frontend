@@ -60,7 +60,7 @@ bool moreevents;
 bool firstevent;
 
 /* maximum event size produced by this frontend */
-INT max_event_size = dma_buf_size;
+INT max_event_size = dma_buf_size; //TODO: how to define this?
 
 /* maximum event size for fragmented events (EQ_FRAGMENTED) */
 INT max_event_size_frag = 5 * 1024 * 1024;
@@ -93,8 +93,8 @@ void setup_watches();
 
 INT init_mudaq();
 
-void link_active_settings_changed(odb &o);
-void datagen_settings_changed(odb &o);
+void link_active_settings_changed(odb);
+void stream_settings_changed(odb);
 /*-- Equipment list ------------------------------------------------*/
 
 EQUIPMENT equipment[] = {
@@ -106,7 +106,7 @@ EQUIPMENT equipment[] = {
      0,                      /* event source crate 0, all stations */
      "MIDAS",                /* format */
      TRUE,                   /* enabled */
-     RO_RUNNING  | RO_STOPPED | RO_ODB,             /* read only when running */
+     RO_RUNNING  | RO_STOPPED | RO_ODB,             /* read while running and stopped but not at transitions and update ODB */
      1000,                    /* poll for 1s */
      0,                      /* stop run after this event limit */
      0,                      /* number of sub events */
@@ -138,7 +138,7 @@ EQUIPMENT equipment[] = {
 INT frontend_init()
 {
     // TODO: for debuging
-    odb::set_debug(true);
+    //odb::set_debug(true);
 
     set_equipment_status(equipment[0].name, "Initializing...", "var(--myellow)");
 
@@ -161,32 +161,70 @@ INT frontend_init()
     set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
 
     //Set our transition sequence. The default is 500.
-    cm_set_transition_sequence(TR_START,300);
+    cm_set_transition_sequence(TR_START, 300);
 
     //Set our transition sequence. The default is 500. Setting it
     // to 700 means we are called AFTER most other clients.
-    cm_set_transition_sequence(TR_STOP,700);
+    cm_set_transition_sequence(TR_STOP, 700);
 
     return SUCCESS;
+}
+
+void stream_settings_changed(odb o)
+{
+    std::string name = o.get_name();
+
+    cm_msg(MINFO, "stream_settings_changed", "Stream stettings changed");
+
+    if (name == "Datagen Divider") {
+        int value = o;
+        cm_msg(MINFO, "stream_settings_changed", "Set Divider to %d", value);
+        mup->write_register(DATAGENERATOR_DIVIDER_REGISTER_W, o);
+        // TODO: test me
+    }
+
+    if (name == "Datagen Enable") {
+        bool value = o;
+        cm_msg(MINFO, "stream_settings_changed", "Set Disable to %d", value);
+        //this is set once we start the run
+    }
+
+}
+
+void link_active_settings_changed(odb o){
+
+    /* get link active from odb */
+    uint64_t link_active_from_odb = 0;
+    //printf("Data link active: 0x");
+    int idx=0;
+    for(int link : o) {
+        int offset = 0;//MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
+        if(link & FEBLINKMASK::DataOn)
+            //a standard FEB link (SC and data) is considered enabled if RX and TX are.
+            //a secondary FEB link (only data) is enabled if RX is.
+            //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
+            link_active_from_odb += (1 << idx);
+        //printf("%u",(frontend_board_active_odb[offset + link] & FEBLINKMASK::DataOn?1:0));
+        idx ++;
+    }
+    //printf("\n");
+    //mup->write_register(DATA_LINK_MASK_REGISTER_HIGH_W, enablebits >> 32); TODO make 64 bits
+    mup->write_register(DATA_LINK_MASK_REGISTER_W, link_active_from_odb & 0xFFFFFFFF);
+
 }
 
 // ODB Setup //////////////////////////////
 void setup_odb(){
 
     // Map /equipment/Stream/Settings
-    odb datagen_settings = {
-        {"Divider", 1000},     // int
-        {"Enable", false},     // bool
+    odb stream_settings = {
+        {"Datagen Divider", 1000},     // int
+        {"Datagen Enable", false},     // bool
+        {"dma_buf_nwords", int(dma_buf_nwords)},
+        {"dma_buf_size", int(dma_buf_size)},
     };
 
-    datagen_settings.connect("/Equipment/Stream/Settings/Datagenerator", true);
-
-    odb dma_settings = {
-            {"dma_buf_nwords", int(dma_buf_nwords)},
-            {"dma_buf_size", int(dma_buf_size)},
-    };
-
-    dma_settings.connect("/Equipment/Stream/Settings/DMA_Settings", true);
+    stream_settings.connect("/Equipment/Stream/Settings", true);
 
     // add custom page to ODB
     odb custom("/Custom");
@@ -221,55 +259,12 @@ void setup_odb(){
 void setup_watches(){
 
     // datagenerator changed settings
-    odb datagen("/Equipment/Stream/Settings/Datagenerator");
-    datagen.watch(datagen_settings_changed);
+    odb stream_settings("/Equipment/Stream/Settings");
+    stream_settings.watch(stream_settings_changed);
 
     // link mask changed settings
     odb links("/Equipment/Links/Settings/LinkMask");
     links.watch(link_active_settings_changed);
-
-}
-
-void datagen_settings_changed(odb &o)
-{
-    std::string name = o.get_name();
-
-    cm_msg(MINFO, "datagen_settings_changed", "Datagenerator stettings changed");
-
-    if (name == "Divider") {
-        bool value = o;
-        cm_msg(MINFO, "datagen_settings_changed", "Set Divider to %d", value);
-        mup->write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, o, 100);
-        // TODO: test me
-    }
-
-    if (name == "Enable") {
-        bool value = o;
-        cm_msg(MINFO, "datagen_settings_changed", "Set Disable to %d", value);
-        //this is set once we start the run
-    }
-
-}
-
-void link_active_settings_changed(odb &o){
-
-    /* get link active from odb */
-    uint64_t link_active_from_odb = 0;
-    //printf("Data link active: 0x");
-    int idx=0;
-    for(int link : o) {
-        int offset = 0;//MAX_LINKS_PER_SWITCHINGBOARD* switch_id;
-        if(link & FEBLINKMASK::DataOn)
-            //a standard FEB link (SC and data) is considered enabled if RX and TX are.
-            //a secondary FEB link (only data) is enabled if RX is.
-            //Here we are concerned only with run transitions and slow control, the farm frontend may define this differently.
-            link_active_from_odb += (1 << idx);
-        //printf("%u",(frontend_board_active_odb[offset + link] & FEBLINKMASK::DataOn?1:0));
-        idx ++;
-    }
-    //printf("\n");
-    //mup->write_register(DATA_LINK_MASK_REGISTER_HIGH_W, enablebits >> 32); TODO make 64 bits
-    mup->write_register(DATA_LINK_MASK_REGISTER_W, link_active_from_odb & 0xFFFFFFFF);
 
 }
 
@@ -317,23 +312,6 @@ INT init_mudaq(){
     lastlastWritten = 0;
     lastRunWritten = mup->last_written_addr();
 
-    // map memory to bus addresses for FPGA
-//     struct mesg user_message;
-//     user_message.address = dma_buf;
-//     user_message.size = dma_buf_size;
-// 
-//     int ret_val = mup->map_pinned_dma_mem( user_message );
-//     
-//     if (ret_val < 0) {
-//         cout << "Mapping failed " << endl;
-//         cm_msg(MERROR, "frontend_init" , "Mapping failed");
-//         mup->disable();
-//         mup->close();
-//         free( (void *)dma_buf );
-//         delete mup;
-//         return FE_ERR_DRIVER;
-//     }
-
     // switch off and reset DMA for now
     mup->disable();
     usleep(2000);
@@ -351,31 +329,6 @@ INT init_mudaq(){
     link_active_settings_changed(link);
 
     return SUCCESS;
-}
-
-
-INT db_watch_datagen_thread(void *param){
-
-    odb datagen("/Equipment/Stream/Settings/Datagenerator");
-    datagen.watch([](midas::odb &o) {
-        std::cout << "Value of key \"" + o.get_full_path() + "\" changed to " << o << std::endl;
-
-        if (o.get_full_path() == "Enable") {
-            //this is set once we start the run
-        }
-
-        if (o.get_full_path() == "Divider") {
-            mup->write_register_wait(DATAGENERATOR_DIVIDER_REGISTER_W, o, 100);
-        }
-    });
-
-    do {
-        int status = cm_yield(100);
-        if (status == SS_ABORT || status == RPC_SHUTDOWN)
-            break;
-    } while (!ss_kbhit());
-
-    return 1;
 }
 
 /*-- Frontend Exit -------------------------------------------------*/
@@ -429,11 +382,11 @@ INT begin_of_run(INT run_number, char *error)
 
    // Set up data generator: enable only if set in ODB
    uint32_t reg=mu.read_register_rw(DATAGENERATOR_REGISTER_W);
-   odb datagen_settings;
-   datagen_settings.connect("/Equipment/Stream/Settings/Datagenerator");
-   if(datagen_settings["Enable"]) {
+   odb stream_settings;
+   stream_settings.connect("/Equipment/Stream/Settings");
+   if(stream_settings["Datagen Enable"]) {
        // TODO: test me
-       mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, datagen_settings["Divider"], 100);
+       mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, stream_settings["Datagen Divider"], 100);
        reg = SET_DATAGENERATOR_BIT_ENABLE(reg);
    }
    mu.write_register(DATAGENERATOR_REGISTER_W,reg);
