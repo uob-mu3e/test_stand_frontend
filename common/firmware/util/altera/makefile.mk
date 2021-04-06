@@ -51,7 +51,9 @@ QMEGAWIZ_XML_FILES := $(filter %.vhd.qmegawiz,$(IPs))
 QMEGAWIZ_VHD_FILES := $(patsubst %.vhd.qmegawiz,$(PREFIX)/%.vhd,$(QMEGAWIZ_XML_FILES))
 
 top.qpf :
-	echo 'PROJECT_REVISION = "top"' > $@
+	cat << EOF > $@
+	PROJECT_REVISION = "top"
+	EOF
 
 all : $(PREFIX)/include.qip top.qpf
 
@@ -119,12 +121,12 @@ bsp : $(BSP_DIR)
 .PHONY : $(APP_DIR)/main.elf
 $(APP_DIR)/main.elf : $(SRC_DIR)/* $(BSP_DIR)
 	nios2-app-generate-makefile \
-	    --set ALT_CFLAGS "-Wextra -Wformat=0 -pedantic -std=c++14" \
+	    --set ALT_CFLAGS "-Wall -Wextra -Wformat=0 -pedantic -std=c++14" \
 	    --bsp-dir $(BSP_DIR) --app-dir $(APP_DIR) --src-dir $(SRC_DIR)
 	$(MAKE) -C $(APP_DIR) clean
 	$(MAKE) -C $(APP_DIR)
 	nios2-elf-objcopy $(APP_DIR)/main.elf -O srec $(APP_DIR)/main.srec
-	# generate flash image (srec)
+	# generate flash (srec) image (see AN730 / HEX File Generation)
 	$(MAKE) -C $(APP_DIR) mem_init_generate
 
 .PHONY : app

@@ -5,7 +5,6 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 
-
 entity lapse_counter is
 generic (
     N_CC : positive := 32--;
