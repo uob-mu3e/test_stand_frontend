@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
     }
 
     // request data to read dma_buffer_size/2 (count in blocks of 256 bits) 
-    uint32_t max_requested_words = dma_buf_nwords/64;
+    uint32_t max_requested_words = dma_buf_nwords/2;
     cout << "request " << max_requested_words << endl;
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, max_requested_words / (256/32));
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
         cout << endl;
         int cnt_loop = 0;
         // wait for requested data
-        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {
+        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) {
             if ( cnt_loop == 1000 ) {
                 cnt_loop = 0;
             }
