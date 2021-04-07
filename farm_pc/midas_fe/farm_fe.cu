@@ -634,24 +634,24 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     }
     
     int mod2 = 0;
-    if ( (endFirstBank-idx) % 2 == 0 ) {
+    if ( (endFirstBank-idx+1) % 2 == 0 ) {
         mod2 = 1;
     }
     
     printf("mod2: %8.8x\n", mod2);
     printf("endFirstBank-idx: %8.8x\n", endFirstBank-idx);
     
-    uint32_t dma_buf_dummy[endFirstBank+1+mod2-idx];
+    uint32_t dma_buf_dummy[endFirstBank+2+mod2-idx];
     
     uint32_t cnt_bank_words = 0;
     uint32_t head_idx = 0;
     for ( int i = 0; i<=endFirstBank+1+mod2-idx; i++ ) {
         if ( i == 3 ) {
             // change event size
-            dma_buf_dummy[i] = (endFirstBank+1+mod2-idx)*4-4*4;
+            dma_buf_dummy[i] = (endFirstBank+2+mod2-idx)*4-4*4;
         } else if ( i == 4 ) {
             // change banks size
-            dma_buf_dummy[i] = (endFirstBank+1+mod2-idx)*4-6*4;
+            dma_buf_dummy[i] = (endFirstBank+2+mod2-idx)*4-6*4;
         } else if ( i == 5 ) {
             // change flags
             dma_buf_dummy[i] = 0x31;
@@ -684,16 +684,21 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
         }
     }
     // set bank data size
-    dma_buf_dummy[8] = (cnt_bank_words-1)*4;
+    dma_buf_dummy[8] = (cnt_bank_words)*4;
     
     printf("Bank Size: %8.8x, %8.8x\n", dma_buf_dummy[8], dma_buf_dummy[endFirstBank+1+mod2-idx]);
+    
+//     for ( int i=0; i<=endFirstBank+1+mod2-idx; i++ ) {
+//         printf("%i %8.8x\n", i, dma_buf_dummy[i]);
+//     }
     
     // check data size
     printf("Data Size: %8.8x, %8.8x\n", dma_buf_dummy[3], dma_buf_dummy[4+dma_buf_dummy[3]/4]);
     printf("Buffer Size: %8.8x\n", (endFirstBank+1+mod2-idx)*4);
     
-    if ( !(dma_buf_dummy[4+dma_buf_dummy[3]/4] == 0x0000009c or dma_buf_dummy[4+dma_buf_dummy[3]/4] == 0xAfFEAFFE) ) {
-        printf("!(dma_buf_dummy[4+dma_buf_dummy[3]/4] == 0x0000009c or dma_buf_dummy[4+dma_buf_dummy[3]/4] == 0xAfFEAFFE)");
+    if ( !(dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0x0000009c or dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0xAfFEAFFE) ) {
+        printf("!(dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0x0000009c or dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0xAfFEAFFE)\n");
+        printf("%8.8x\n",dma_buf_dummy[3+dma_buf_dummy[3]/4]);
         return -1;
     }
     
@@ -708,11 +713,15 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
         }
         return -1;
     }
-//     printf("CCCCC\n");
-    uint32_t * dma_buf_volatile;
-    dma_buf_volatile = dma_buf_dummy;
+    
+//     for ( int i=0; i<=endFirstBank+1+mod2-idx; i++ ) {
+//         printf("%i %8.8x\n", i, dma_buf_dummy[i]);
+//     }
+    if ( (endFirstBank+2+mod2-idx)%2 != 0 ) {
+        printf("Not mod==0");
+    }
 
-    copy_n(&dma_buf_volatile[0], endFirstBank+1+mod2-idx, pdata);
+    copy_n(&dma_buf_dummy[0], sizeof(dma_buf_dummy)/4, pdata);
     
     return sizeof(dma_buf_dummy);
     
