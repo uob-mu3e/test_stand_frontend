@@ -324,6 +324,9 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     e_event_builder : entity work.swb_midas_event_builder
+    generic map(
+        DATA_TYPE           => DATA_TYPE--,
+    )
     port map (
         i_rx                => builder_data,
         i_rempty            => builder_rempty,
