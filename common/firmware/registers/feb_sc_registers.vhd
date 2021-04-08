@@ -30,8 +30,8 @@ package feb_sc_registers is
 
     subtype  RUN_STATE_RANGE                    is  integer range 31 downto 16;
     subtype  RESET_BYPASS_RANGE                 is  integer range 7 downto 0;
-    constant RESET_BYPASS_REQUEST_BIT           :   integer := 8;
-    constant RESET_BYPASS_ENABLE_BIT            :   integer := 9;
+    constant RESET_BYPASS_BIT_REQUEST           :   integer := 8;
+    constant RESET_BYPASS_BIT_ENABLE            :   integer := 9;
 
     constant RESET_PAYLOAD_REGISTER_RW          :   integer := 16#07#;
     constant RESET_OPTICAL_LINKS_REGISTER_RW    :   integer := 16#08#;

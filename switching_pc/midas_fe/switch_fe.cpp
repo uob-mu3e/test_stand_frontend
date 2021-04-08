@@ -782,11 +782,11 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
        // TODO: Get rid of hardcoded adresses here!
        DWORD valueRB = run_number;
        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, RESET_PAYLOAD_REGISTER_RW, valueRB); //run number
-       valueRB= (3<<8) | 0x10;
+       valueRB= ((1<<RESET_BYPASS_BIT_ENABLE) |(1<<RESET_BYPASS_BIT_REQUEST)) | 0x10;
        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, RUN_STATE_RESET_BYPASS_REGISTER_RW, valueRB); //run prep command
        valueRB= 0xbcbcbcbc;
        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, RESET_PAYLOAD_REGISTER_RW, valueRB); //reset payload
-       valueRB= (2<<8) | 0x00;
+       valueRB= (1<<RESET_BYPASS_BIT_ENABLE) | 0x00;
        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, RUN_STATE_RESET_BYPASS_REGISTER_RW, valueRB); //reset command
    }else{
        /* send run prepare signal via CR system */
