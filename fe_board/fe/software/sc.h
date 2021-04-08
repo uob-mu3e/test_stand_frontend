@@ -22,6 +22,14 @@ struct sc_t {
         if(int err = alt_ic_isr_register(0, 12, callback, this, nullptr)) {
             printf("[sc] ERROR: alt_ic_isr_register => %d\n", err);
         }
+        // move FEB into idle state on Nios boot, disable optical reset rx (TODO: (start or run-prep) of crfe with IP != 0.0.0.0 should broadcast enable of optical reset rx via SW board)
+        auto& reset_bypass = ram->regs.fe.reset_bypass;
+        reset_bypass = 0x0200;
+        reset_bypass = 0x0330;
+        reset_bypass = 0x0200;
+        reset_bypass = 0x0331;
+        reset_bypass = 0x0200;
+        
     }
 
     alt_u16 callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);

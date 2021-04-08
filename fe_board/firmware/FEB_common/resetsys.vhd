@@ -3,6 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.mudaq.all;
+use work.feb_sc_registers.all;
 
 
 ENTITY resetsys is
@@ -61,19 +62,17 @@ BEGIN
         case reset_bypass_state is
             when "000" =>
                 -- idle, use genesis
-                if(i_data_ready='1') then
+                if(i_data_ready='1' and reset_bypass_125_rx(RESET_BYPASS_ENABLE_BIT)='0') then
                     state_controller_in     <= i_data_125_rx;
                 else
                     state_controller_in     <= x"BC";
-                end if;
-
-                -- bypass request
-                if(reset_bypass_request = '1') then
-                    reset_bypass_state  <= "001";
+                    if(reset_bypass_request = '1') then -- bypass request
+                        reset_bypass_state  <= "001";
+                    end if;
                 end if;
 
             when "001" =>
-                state_controller_in     <= reset_bypass_125_rx(7 downto 0);
+                state_controller_in     <= reset_bypass_125_rx(RESET_BYPASS_RANGE);
                 reset_bypass_state      <= "010";
                 
             when "010" =>
@@ -96,7 +95,7 @@ BEGIN
     e_edge_detector : entity work.edge_detector
     PORT MAP(
         clk         => i_clk_125_rx,
-        signal_in   => reset_bypass_125_rx(8),
+        signal_in   => reset_bypass_125_rx(RESET_BYPASS_REQUEST_BIT),
         output      => reset_bypass_request--,
     );
 
