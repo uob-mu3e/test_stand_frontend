@@ -55,7 +55,15 @@ top.qpf :
 	PROJECT_REVISION = "top"
 	EOF
 
-all : $(PREFIX)/include.qip top.qpf
+top.qsf :
+	cat << EOF > $@
+	set_global_assignment -name QIP_FILE top.qip
+	set_global_assignment -name TOP_LEVEL_ENTITY top
+	set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+	set_global_assignment -name QIP_FILE $(PREFIX)/include.qip
+	EOF
+
+all : top.qpf top.qsf $(PREFIX)/include.qip
 
 $(PREFIX) :
 	mkdir -pv $(PREFIX)
