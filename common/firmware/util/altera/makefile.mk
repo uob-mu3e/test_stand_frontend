@@ -10,6 +10,8 @@ ifndef QUARTUS_ROOTDIR
     $(error QUARTUS_ROOTDIR is undefined)
 endif
 
+# directory for generated files (*.qsys, *.sopcinfo, etc.)
+# TODO: rename PREFIX -> QP_TMP_DIR
 ifeq ($(PREFIX),)
     override PREFIX := generated
 endif
@@ -25,36 +27,47 @@ ifeq ($(NIOS_SOPCINFO),)
 endif
 
 # tcl script to generate BSP
+# TODO: rename BSP_SCRIPT to NIOS_BSP_SCRIPT
 ifeq ($(BSP_SCRIPT),)
     BSP_SCRIPT := software/hal_bsp.tcl
 endif
 
 # location (directory) of main.cpp
+# TODO: rename SRC_DIR to NIOS_SRC_DIR
 ifeq ($(SRC_DIR),)
     SRC_DIR := software
 endif
 
 # destination for generated BSP
+# TODO: rename BSP_DIR to NIOS_BSP_DIR
 ifeq ($(BSP_DIR),)
     BSP_DIR := $(PREFIX)/software/hal_bsp
 endif
 
 # destination for compiled software (nios)
+# TODO: rename APP_DIR to NIOS_APP_DIR
 ifeq ($(APP_DIR),)
     APP_DIR := $(PREFIX)/software/app
 endif
 
+# list all .tcl files
 QSYS_TCL_FILES := $(filter %.tcl,$(IPs))
+# convert all .tcl files into .qsys files
 QSYS_FILES := $(patsubst %.tcl,$(PREFIX)/%.qsys,$(QSYS_TCL_FILES))
+# convert all .qsys files into .sopcinfo files
 SOPC_FILES := $(patsubst %.qsys,%.sopcinfo,$(QSYS_FILES))
+# list all .vhd.qmegawiz files
 QMEGAWIZ_XML_FILES := $(filter %.vhd.qmegawiz,$(IPs))
+# convert all .vhd.qmegawiz files into .vhd files
 QMEGAWIZ_VHD_FILES := $(patsubst %.vhd.qmegawiz,$(PREFIX)/%.vhd,$(QMEGAWIZ_XML_FILES))
 
+# default qpf file
 top.qpf :
 	cat << EOF > $@
 	PROJECT_REVISION = "top"
 	EOF
 
+# default qsf file - load top.qip, and generated include.qip
 top.qsf : $(MAKEFILE_LIST)
 	cat << EOF > $@
 	set_global_assignment -name QIP_FILE top.qip
@@ -67,12 +80,14 @@ all : top.qpf top.qsf $(PREFIX)/include.qip
 
 $(PREFIX) :
 	mkdir -pv $(PREFIX)
+	# util link is used by qsys to find _hw.tcl modules
 	[ -e $(PREFIX)/util ] || ln -snv --relative -T util $(PREFIX)/util
 
 .PHONY : $(PREFIX)/components_pkg.vhd
 $(PREFIX)/components_pkg.vhd : $(PREFIX) $(SOPC_FILES) $(QMEGAWIZ_VHD_FILES)
 	( cd $(PREFIX) ; $(lastword $(realpath $(addsuffix components_pkg.sh,$(dir $(MAKEFILE_LIST))))) )
 
+# include.qip - include all generated files
 $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	# components package
 	echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"components_pkg.vhd\" ]" > $@
@@ -87,6 +102,7 @@ $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	    >> $@ ; \
 	done
 
+# make sure that device.tcl file exists
 device.tcl :
 	touch $@
 
