@@ -199,9 +199,9 @@ begin
     port map(
         reset_n             => reset_125_n,
         clk                 => i_clk125,
-        datain              => rx_data(i), 
-        kin                 => rx_k(i), 
-        readyin             => link_enable_125(i),
+        datain              => rx_data(MP_LINK_ORDER(i)), 
+        kin                 => rx_k(MP_LINK_ORDER(i)), 
+        readyin             => link_enable_125(MP_LINK_ORDER(i)),
         i_mp_readout_mode   => mp_readout_mode,
         o_ts                => ts_unpacker(i),
         o_chip_ID           => chip_ID_unpacker(i),
