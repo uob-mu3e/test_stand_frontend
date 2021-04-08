@@ -55,7 +55,7 @@ top.qpf :
 	PROJECT_REVISION = "top"
 	EOF
 
-top.qsf :
+top.qsf : $(MAKEFILE_LIST)
 	cat << EOF > $@
 	set_global_assignment -name QIP_FILE top.qip
 	set_global_assignment -name TOP_LEVEL_ENTITY top
@@ -71,7 +71,7 @@ $(PREFIX) :
 
 .PHONY : $(PREFIX)/components_pkg.vhd
 $(PREFIX)/components_pkg.vhd : $(PREFIX) $(SOPC_FILES) $(QMEGAWIZ_VHD_FILES)
-	( cd $(PREFIX) ; ./util/altera/components_pkg.sh )
+	( cd $(PREFIX) ; $(lastword $(realpath $(addsuffix components_pkg.sh,$(dir $(MAKEFILE_LIST))))) )
 
 $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	# components package
@@ -91,17 +91,17 @@ device.tcl :
 	touch $@
 
 $(PREFIX)/%.vhd : %.vhd.qmegawiz
-	./util/altera/qmegawiz.sh $< $@
+	$(lastword $(realpath $(addsuffix qmegawiz.sh,$(dir $(MAKEFILE_LIST))))) $< $@
 
 $(PREFIX)/%.qsys : %.tcl device.tcl $(PREFIX)
-	./util/altera/tcl2qsys.sh $< $@
+	$(lastword $(realpath $(addsuffix tcl2qsys.sh,$(dir $(MAKEFILE_LIST))))) $< $@
 
 $(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys
-	./util/altera/qsys-generate.sh $<
+	$(lastword $(realpath $(addsuffix qsys-generate.sh,$(dir $(MAKEFILE_LIST))))) $<
 
 .PHONY : flow
 flow : all
-	./util/altera/flow.sh
+	$(lastword $(realpath $(addsuffix flow.sh,$(dir $(MAKEFILE_LIST)))))
 
 .PHONY : sof2flash
 sof2flash :
