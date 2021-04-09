@@ -85,7 +85,7 @@ $(PREFIX) :
 
 .PHONY : $(PREFIX)/components_pkg.vhd
 $(PREFIX)/components_pkg.vhd : $(PREFIX) $(SOPC_FILES) $(QMEGAWIZ_VHD_FILES)
-	( cd $(PREFIX) ; $(lastword $(realpath $(addsuffix components_pkg.sh,$(dir $(MAKEFILE_LIST))))) )
+	$(lastword $(realpath $(addsuffix components_pkg.sh,$(dir $(MAKEFILE_LIST))))) "$(PREFIX)" > "$@"
 
 # include.qip - include all generated files
 $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
