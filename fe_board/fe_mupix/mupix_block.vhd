@@ -35,6 +35,9 @@ port (
     o_fifo_wdata            : out std_logic_vector(35 downto 0);
     o_fifo_write            : out std_logic;
 
+    o_data_bypass           : out std_logic_vector(31 downto 0);
+    o_data_bypass_we        : out std_logic;
+
     i_lvds_data_in          : in  std_logic_vector(35 downto 0);
     o_lvds_invert_mon       : out std_logic;
 
@@ -120,6 +123,9 @@ begin
 
         o_fifo_wdata        => o_fifo_wdata,
         o_fifo_write        => o_fifo_write,
+
+        o_data_bypass       => o_data_bypass,
+        o_data_bypass_we    => o_data_bypass_we,
 
         i_sync_reset_cnt    => i_sync_reset_cnt,
         i_fpga_id           => i_fpga_id,

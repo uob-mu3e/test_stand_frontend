@@ -62,7 +62,7 @@ BEGIN
         case reset_bypass_state is
             when "000" =>
                 -- idle, use genesis
-                if(i_data_ready='1' and reset_bypass_125_rx(RESET_BYPASS_ENABLE_BIT)='0') then
+                if(i_data_ready='1' and reset_bypass_125_rx(RESET_BYPASS_BIT_ENABLE)='0') then
                     state_controller_in     <= i_data_125_rx;
                 else
                     state_controller_in     <= x"BC";
@@ -95,7 +95,7 @@ BEGIN
     e_edge_detector : entity work.edge_detector
     PORT MAP(
         clk         => i_clk_125_rx,
-        signal_in   => reset_bypass_125_rx(RESET_BYPASS_REQUEST_BIT),
+        signal_in   => reset_bypass_125_rx(RESET_BYPASS_BIT_REQUEST),
         output      => reset_bypass_request--,
     );
 

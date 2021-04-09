@@ -36,6 +36,7 @@ port (
     o_mp_lvds_invert            : out std_logic;
     o_mp_datagen_control        : out std_logic_vector(31 downto 0); -- control register for the mupix data gen
     o_mp_readout_mode           : out std_logic_vector(31 downto 0); -- Invert ts, degray, chip ID numbering, tot mode, ..
+    o_mp_data_bypass_select     : out std_logic_vector(31 downto 0);
 
     o_mp_ctrl_data              : out std_logic_vector(32*5 + 31 downto 0);
     o_mp_fifo_write             : out std_logic_vector( 5 downto 0);
@@ -61,6 +62,7 @@ architecture rtl of mupix_reg_mapping is
     signal mp_ctrl_invert_29        : std_logic;
     signal mp_ctrl_invert_csn       : std_logic;
     signal mp_lvds_invert           : std_logic;
+    signal mp_data_bypass_select    : std_logic_vector(31 downto 0);
 begin
 
     process (i_clk156, i_reset_n)
@@ -84,6 +86,7 @@ begin
             o_mp_ctrl_chip_config_mask  <= mp_ctrl_chip_config_mask(11 downto 0);
             o_mp_ctrl_invert_29         <= mp_ctrl_invert_29;
             o_mp_ctrl_invert_csn        <= mp_ctrl_invert_csn;
+            o_mp_data_bypass_select     <= mp_data_bypass_select;
 
             regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
             o_reg_rdata         <= x"CCCCCCCC";
@@ -203,13 +206,18 @@ begin
                 o_sorter_delay <= i_reg_wdata(TSRANGE);
             end if;
 
-
             for I in 0 to NSORTERCOUNTERS-1 loop 
                 if ( regaddr = I + MP_SORTER_COUNTER_R and i_reg_re = '1' ) then
                     o_reg_rdata <= i_sorter_counters(I);
                 end if;
             end loop;
 
+            if ( regaddr = MP_DATA_BYPASS_SELECT_W and i_reg_we = '1' ) then
+                mp_data_bypass_select <= i_reg_wdata;
+            end if;
+            if ( regaddr = MP_DATA_BYPASS_SELECT_W and i_reg_re = '1' ) then
+                o_reg_rdata <= mp_data_bypass_select;
+            end if;
 
         end if;
     end process;

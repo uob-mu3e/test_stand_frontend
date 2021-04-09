@@ -145,6 +145,9 @@ architecture rtl of top is
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
     signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
 
+    signal data_bypass              : std_logic_vector(31 downto 0);
+    signal data_bypass_we           : std_logic;
+
     signal mupix_reg                : work.util.rw_t;
 
     -- https://www.altera.com/support/support-resources/knowledge-base/solutions/rd01262015_264.html
@@ -216,6 +219,9 @@ begin
         -- data
         o_fifo_wdata            => fifo_wdata,
         o_fifo_write            => fifo_write(0),
+
+        o_data_bypass           => data_bypass,
+        o_data_bypass_we        => data_bypass_we,
 
         i_run_state_125           => run_state_125,
         i_run_state_156           => run_state_156,
@@ -318,6 +324,9 @@ begin
 
         i_fifo_write        => fifo_write,
         i_fifo_wdata        => fifo_wdata,
+
+        i_data_bypass       => open,
+        i_data_bypass_we    => open,
 
         i_mscb_data         => mscb_fpga_in,
         o_mscb_data         => mscb_fpga_out,

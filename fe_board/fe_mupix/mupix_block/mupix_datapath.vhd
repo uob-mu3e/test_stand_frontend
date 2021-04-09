@@ -33,6 +33,9 @@ port (
     o_fifo_wdata        : out std_logic_vector(35 downto 0);
     o_fifo_write        : out std_logic;
 
+    o_data_bypass       : out std_logic_vector(31 downto 0) := x"000000BC";
+    o_data_bypass_we    : out std_logic := '0';
+
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
@@ -85,6 +88,9 @@ architecture rtl of mupix_datapath is
     signal chip_ID_hs               : ch_ID_array_t(35 downto 0);
     signal hits_sorter_in           : hit_array;
     signal hits_sorter_in_ena       : std_logic_vector(11 downto 0);
+    signal data_bypass              : std_logic_vector(31 downto 0);
+    signal data_bypass_we           : std_logic;
+    signal data_bypass_select       : std_logic_vector(31 downto 0);
 
     signal running                  : std_logic;
 
@@ -158,6 +164,7 @@ begin
         o_mp_datagen_control        => mp_datagen_control_reg,
         o_mp_lvds_link_mask         => lvds_link_mask,
         o_mp_readout_mode           => mp_readout_mode,
+        o_mp_data_bypass_select     => data_bypass_select,
 
         -- outputs 125-------------------------------------------------
         o_sorter_delay              => sorter_delay--;
@@ -373,7 +380,7 @@ begin
         q(67 downto 32) => sync_fifo_wdata_out,
         q(68)           => sync_fifo_write_out--,
     );
-    
+
     process(i_clk156)
     begin
     if(rising_edge(i_clk156)) then
@@ -402,6 +409,40 @@ begin
         wrclk   => i_clk156,
         wrreq   => '1',
         q(35 downto 0) => link_enable_125--,
+    );
+
+
+    -- bypass hitsorter and put data of a single MP directly on a seperate optical link
+    process(i_clk125)
+    begin
+    if(rising_edge(i_clk125)) then
+        if(to_integer(unsigned(data_bypass_select)) <= NCHIPS) then 
+            data_bypass     <= hits_sorter_in(to_integer(unsigned(data_bypass_select)));
+            data_bypass_we  <= hits_sorter_in_ena(to_integer(unsigned(data_bypass_select)));
+        else
+            data_bypass     <= x"000000BC";
+            data_bypass_we  <= '0';
+        end if;
+    end if;
+    end process;
+
+    sync_fifo_bypass : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 4,
+        DATA_WIDTH  => 32,
+        SHOWAHEAD   => "OFF",
+        OVERFLOW    => "ON",
+        DEVICE      => "Arria V"--,
+    )
+    port map(
+        aclr            => '0',
+        data            => data_bypass,
+        rdclk           => i_clk156,
+        rdreq           => '1',
+        rdempty         => o_data_bypass_we,
+        wrclk           => i_clk125,
+        wrreq           => data_bypass_we,
+        q               => o_data_bypass--,
     );
 
 end rtl;
