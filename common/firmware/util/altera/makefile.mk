@@ -99,7 +99,6 @@ $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	for file in $(patsubst %.vhd,%,$(QMEGAWIZ_VHD_FILES)) ; do \
 	    [ -e $$file.qip ] && echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.qip)\" ]" >> $@ ; \
 	    [ -e $$file.qip ] || echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.vhd)\" ]" >> $@ ; \
-	    >> $@ ; \
 	done
 
 # make sure that device.tcl file exists
