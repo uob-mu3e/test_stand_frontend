@@ -14,21 +14,32 @@ ifeq ($(PREFIX),)
     override PREFIX := generated
 endif
 
+# location of compiled firmware (SOF file)
 ifeq ($(SOF),)
     SOF := output_files/top.sof
 endif
 
+# location of generated nios.sopcinfo
 ifeq ($(NIOS_SOPCINFO),)
     NIOS_SOPCINFO := $(PREFIX)/nios.sopcinfo
 endif
 
-BSP_SCRIPT := software/hal_bsp.tcl
-SRC_DIR := software/app_src
+# tcl script to generate BSP
+ifeq ($(BSP_SCRIPT),)
+    BSP_SCRIPT := software/hal_bsp.tcl
+endif
 
+# location (directory) of main.cpp
+ifeq ($(SRC_DIR),)
+    SRC_DIR := software
+endif
+
+# destination for generated BSP
 ifeq ($(BSP_DIR),)
     BSP_DIR := $(PREFIX)/software/hal_bsp
 endif
 
+# destination for compiled software (nios)
 ifeq ($(APP_DIR),)
     APP_DIR := $(PREFIX)/software/app
 endif
@@ -39,7 +50,10 @@ SOPC_FILES := $(patsubst %.qsys,%.sopcinfo,$(QSYS_FILES))
 QMEGAWIZ_XML_FILES := $(filter %.vhd.qmegawiz,$(IPs))
 QMEGAWIZ_VHD_FILES := $(patsubst %.vhd.qmegawiz,$(PREFIX)/%.vhd,$(QMEGAWIZ_XML_FILES))
 
-all : $(PREFIX)/include.qip
+top.qpf :
+	echo 'PROJECT_REVISION = "top"' > $@
+
+all : $(PREFIX)/include.qip top.qpf
 
 $(PREFIX) :
 	mkdir -pv $(PREFIX)
@@ -57,8 +71,10 @@ $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	    echo "set_global_assignment -name QSYS_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file)\" ]" >> $@ ; \
 	done
 	# add qmegawiz *.qip files
-	for file in $(patsubst %.vhd,%.qip,$(QMEGAWIZ_VHD_FILES)) ; do \
-	    echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file)\" ]" >> $@ ; \
+	for file in $(patsubst %.vhd,%,$(QMEGAWIZ_VHD_FILES)) ; do \
+	    [ -e $$file.qip ] && echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.qip)\" ]" >> $@ ; \
+	    [ -e $$file.qip ] || echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.vhd)\" ]" >> $@ ; \
+	    >> $@ ; \
 	done
 
 device.tcl :
@@ -67,7 +83,7 @@ device.tcl :
 $(PREFIX)/%.vhd : %.vhd.qmegawiz
 	./util/altera/qmegawiz.sh $< $@
 
-$(PREFIX)/%.qsys : %.tcl device.tcl
+$(PREFIX)/%.qsys : %.tcl device.tcl $(PREFIX)
 	./util/altera/tcl2qsys.sh $< $@
 
 $(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys
@@ -80,9 +96,9 @@ flow : all
 .PHONY : sof2flash
 sof2flash :
 	sof2flash --pfl --programmingmode=PS \
-        --optionbit=0x00030000 \
-        --input="$(SOF)" \
-        --output="$(SOF).flash" --offset=0x02B40000
+	    --optionbit=0x00030000 \
+	    --input="$(SOF)" \
+	    --output="$(SOF).flash" --offset=0x02B40000
 	objcopy -Isrec -Obinary $(SOF).flash $(SOF).bin
 
 .PHONY : pgm
@@ -109,7 +125,7 @@ $(APP_DIR)/main.elf : $(SRC_DIR)/* $(BSP_DIR)
 	$(MAKE) -C $(APP_DIR)
 	nios2-elf-objcopy $(APP_DIR)/main.elf -O srec $(APP_DIR)/main.srec
 	# generate flash image (srec)
-	( cd $(APP_DIR) ; make mem_init_generate )
+	$(MAKE) -C $(APP_DIR) mem_init_generate
 
 .PHONY : app
 app : $(APP_DIR)/main.elf

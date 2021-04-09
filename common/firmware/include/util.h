@@ -1,5 +1,5 @@
-#ifndef SOFTWARE_APP_SRC_UTIL_H_
-#define SOFTWARE_APP_SRC_UTIL_H_
+#ifndef __UTIL_UTIL_H__
+#define __UTIL_UTIL_H__
 
 namespace util {
 
@@ -54,4 +54,4 @@ uint8_t crc8_dow(const uint8_t* buffer, int len) {
 
 } // namespace util
 
-#endif // SOFTWARE_APP_SRC_UTIL_H_
+#endif // __UTIL_UTIL_H__

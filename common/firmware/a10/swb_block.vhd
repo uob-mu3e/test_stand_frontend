@@ -144,7 +144,7 @@ begin
             o_rck               => rx_rc_k(i),
             o_fpga_id           => open--,
         );
-    END GENERATE g_demerge;
+    end generate;
 
 
     --! run control used by MIDAS

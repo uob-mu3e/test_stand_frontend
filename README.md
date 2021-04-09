@@ -1,9 +1,7 @@
 # Mu3e online repository
 
 - current development branch is `v0.11_dev`
-
-- preliminary User Manual: https://www.overleaf.com/read/ctkmgfsjqchy (Read only link, no login required)
-- Edit User Manual here: https://www.overleaf.com/8596488843pnpknzfsvkfg (login with google account)
+- Documentation and manual are under construction in the wiki associated to this repo
 
 ## Current "fixes" with MIDAS tag ced039e, cuda 10 or cuda 8
 

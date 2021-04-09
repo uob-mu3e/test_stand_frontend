@@ -19,20 +19,27 @@ using std::deque;
 class FEBSlowcontrolInterface {
 public:
     FEBSlowcontrolInterface(mudaq::MudaqDevice & mdev /*,Add midas connection here */);
-    ~FEBSlowcontrolInterface();
+    virtual ~FEBSlowcontrolInterface();
     // There should only be one SC interface, forbid copy and assignment
     FEBSlowcontrolInterface() = delete;
     FEBSlowcontrolInterface(const FEBSlowcontrolInterface &) = delete;
     FEBSlowcontrolInterface& operator=(const FEBSlowcontrolInterface&) = delete;
 
-    int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data, bool nonincrementing = false);
-    int FEB_write(uint32_t FPGA_ID, uint32_t startaddr, uint32_t data);
+    virtual int FEB_write(const uint32_t FPGA_ID, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing = false);
+    virtual int FEB_write(const uint32_t FPGA_ID, const uint32_t startaddr, const uint32_t data);
     // expects data vector with read-length size
-    int FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> & data, bool nonincrementing = false);
+    virtual int FEB_read(const uint32_t FPGA_ID, const uint32_t startaddr, vector<uint32_t> & data, const bool nonincrementing = false);
+    virtual int FEB_read(const uint32_t FPGA_ID, const uint32_t startaddr, uint32_t & data);
 
-    void FEBsc_resetMain();
-    void FEBsc_resetSecondary();
-    int FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks);
+    virtual int FEB_register_write(const uint32_t FPGA_ID, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing = false);
+    virtual int FEB_register_write(const uint32_t FPGA_ID, const uint32_t startaddr, const uint32_t data);
+    // expects data vector with read-length size
+    virtual int FEB_register_read(const uint32_t FPGA_ID, const uint32_t startaddr, vector<uint32_t> & data, const bool nonincrementing = false);
+    virtual int FEB_register_read(const uint32_t FPGA_ID, const uint32_t startaddr, uint32_t & data);
+
+    virtual void FEBsc_resetMain();
+    virtual void FEBsc_resetSecondary();
+    virtual int FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks);
 
     enum ERRCODES {ADDR_INVALID= -20, SIZE_INVALID, SIZE_ZERO, FPGA_BUSY, FPGA_TIMEOUT, BAD_PACKET, WRONG_SIZE, NIOS_RPC_TIMEOUT, OK=0};
     enum OFFSETS {FEBsc_RPC_DATAOFFSET=0};

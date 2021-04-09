@@ -21,7 +21,7 @@ entity max10_spi is
     addr        : in std_logic_vector(6 downto 0);
     rw          : in std_logic;    
     data_to_max : in std_logic_vector(31 downto 0);
-    numbytes    : in std_logic_vector(7 downto 0);
+    numbytes    : in std_logic_vector(8 downto 0);
     next_data   : out std_logic;
     word_from_max : out std_logic_vector(31 downto 0);
     word_en       : out std_logic;
@@ -119,11 +119,16 @@ elsif(clk50'event and clk50 = '1')then
             io_SPI_D3       <= datashiftregister(3);
             datashiftregister(27 downto 0) <= datashiftregister(31 downto 4);
             nibblecount     <= nibblecount +1;
+				if(nibblecount/2 = to_integer(unsigned(numbytes)))then
+					spistate <= idle;
+				end if;
         else
             o_SPI_clk       <= '1';  
             if(nibblecount mod 8 = 0)then
                 datashiftregister   <= data_to_max;
-                next_data           <= '1';
+					 if(nibblecount/2 < to_integer(unsigned(numbytes)))then
+						next_data           <= '1';
+					end if;
             end if;          
         end if;    
    

@@ -95,8 +95,6 @@ BEGIN
                 
                 o_run_number                <= "000000" & FEB_status(25+to_integer(unsigned(i_addr))*26 downto to_integer(unsigned(i_addr))*26);
         end if;
-        
-        
     end process;
 
 end architecture;

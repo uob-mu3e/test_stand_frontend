@@ -43,7 +43,7 @@ FEBSlowcontrolInterface::~FEBSlowcontrolInterface()
  *      Write enable to SC_MAIN_ENABLE_REGISTER_W
  */
 
-int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> data, bool nonincrementing)
+int FEBSlowcontrolInterface::FEB_write(const uint32_t FPGA_ID, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing)
 {
 
      if(!(startaddr < pow(2,FEB_SC_RAM_SIZE) || (startaddr < 65535 && startaddr > 65535-FEB_SC_ADDR_RANGE_HI))){
@@ -121,7 +121,7 @@ int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vec
     }
     if(count==10){
         cm_msg(MERROR, "MudaqDevice::FEBsc_write" , "Timeout occured waiting for reply");
-        cm_msg(MERROR, "MudaqDevice::FEBsc_write", "Wanted to read from FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
+        cm_msg(MERROR, "MudaqDevice::FEBsc_write", "Wanted to write to FPGA %d, Addr %d, length %zu", FPGA_ID, startaddr, data.size());
         return ERRCODES::FPGA_TIMEOUT;
     }
     if(!sc_packet_deque.front().Good()){
@@ -139,12 +139,12 @@ int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, vec
     return OK;
 }
 
-int FEBSlowcontrolInterface::FEB_write(uint32_t FPGA_ID, uint32_t startaddr, uint32_t data)
+int FEBSlowcontrolInterface::FEB_write(const uint32_t FPGA_ID, const uint32_t startaddr, const uint32_t data)
 {
     return FEB_write(FPGA_ID, startaddr, vector<uint32_t>(1, data) );
 }
 
-int FEBSlowcontrolInterface::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vector<uint32_t> &data, bool nonincrementing)
+int FEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t startaddr, vector<uint32_t> &data, const bool nonincrementing)
 {
 
      if(!(startaddr < pow(2,FEB_SC_RAM_SIZE) || (startaddr < 65535 && startaddr > 65535-FEB_SC_ADDR_RANGE_HI))){
@@ -226,6 +226,34 @@ int FEBSlowcontrolInterface::FEB_read(uint32_t FPGA_ID, uint32_t startaddr, vect
     return ERRCODES::OK;
 }
 
+int FEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t startaddr, uint32_t &data)
+{
+    vector<uint32_t> d(1,0);
+    int status = FEB_read(FPGA_ID, startaddr, d);
+    data = d[0];
+    return status;
+}
+
+int FEBSlowcontrolInterface::FEB_register_write(const uint32_t FPGA_ID, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing)
+{
+    FEB_write(FPGA_ID,startaddr | 0xFF00, data, nonincrementing);
+}
+
+int FEBSlowcontrolInterface::FEB_register_write(const uint32_t FPGA_ID, const uint32_t startaddr, const uint32_t data)
+{
+    FEB_write(FPGA_ID,startaddr | 0xFF00, data);
+}
+
+int FEBSlowcontrolInterface::FEB_register_read(const uint32_t FPGA_ID, const uint32_t startaddr, vector<uint32_t> &data, const bool nonincrementing)
+{
+    FEB_read(FPGA_ID, startaddr | 0xFF00, data, nonincrementing);
+}
+
+int FEBSlowcontrolInterface::FEB_register_read(const uint32_t FPGA_ID, const uint32_t startaddr, uint32_t &data)
+{
+    FEB_read(FPGA_ID, startaddr | 0xFF00, data);
+}
+
 void FEBSlowcontrolInterface::FEBsc_resetMain()
 {
     cm_msg(MINFO, "FEB_slowcontrol" , "Resetting slow control main");
@@ -278,13 +306,13 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
 
     // TODO: What is 0xfff1 here - put it in a define... Make sure write accepts it as a
     // a valid address
-    status=FEB_write(FPGA_ID, 0xfff1, vector<uint32_t>(1,OFFSETS::FEBsc_RPC_DATAOFFSET));
+    status=FEB_register_write(FPGA_ID, 0xf1, vector<uint32_t>(1,OFFSETS::FEBsc_RPC_DATAOFFSET));
     if(status < 0)
         return status;
 
     // TODO: What is 0xfff0 here - put it in a define... Make sure write accepts it as a
     // a valid address
-    status=FEB_write(FPGA_ID, 0xfff0,
+    status=FEB_register_write(FPGA_ID, 0xf0,
                      vector<uint32_t>(1,(((uint32_t)command) << 16) || index));
     if(status < 0)
         return status;
@@ -295,7 +323,7 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
     while(1){
         if(++timeout_cnt >= 500) return ERRCODES::NIOS_RPC_TIMEOUT;
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
-        status=FEB_read(FPGA_ID, 0xfff0, readback);
+        status=FEB_register_read(FPGA_ID, 0xf0, readback);
         if(status < 0)
             return status
                     ;

@@ -5,6 +5,9 @@ use ieee.numeric_std.all;
 use work.feb_sc_registers.all;
 use work.mudaq.all;
 
+LIBRARY altera_mf;
+USE altera_mf.altera_mf_components.all;
+
 entity fe_block_v2 is
 generic (
     feb_mapping : work.util.natural_array_t(3 downto 0) := (3,2,1,0);
@@ -183,53 +186,28 @@ architecture arch of fe_block_v2 is
 
     signal reset_link_rx            : std_logic_vector(7 downto 0);
     signal reset_link_rx_clk        : std_logic;
+    signal reset_link_ready         : std_logic;
 
     signal arriaV_temperature       : std_logic_vector(7 downto 0);
     signal arriaV_temperature_clr   : std_logic;
     signal arriaV_temperature_ce    : std_logic;
+    signal arriaV_temperature_tsdcaldone : std_logic;
+    signal arriaV_temperature_temp  : std_logic_vector(7 downto 0);
+    type temp_state_t               is (convert, clear);
+    signal temp_state               :  temp_state_t;
     
     -- Max 10 SPI 
     signal adc_reg                  : work.util.slv32_array_t(4 downto 0);
-    signal i_adc_data_o             : std_logic_vector(31 downto 0);
-    signal SPI_addr_o               : std_logic_vector(6 downto 0);
-    
-    signal SPI_command              : std_logic_vector (15 downto 0); -- [15-1] SPI inst [0] aktiv
-    signal SPI_aktiv                : std_logic := '0';
-    signal SPI_Adc_cnt              : unsigned(12 downto 0) := (others => '0');
-    signal SPI_inst                 : std_logic_vector(14 downto 0) := X"00" & "000100" & '1'; --"[14-7] free [6-1] word cnt [0] R/W
-    signal SPI_done                 : std_logic;
-    signal SPI_rw                   : std_logic;
-
-
-    signal max_spi_strobe           : std_logic;
-    signal max_spi_addr             : std_logic_vector(6 downto 0);
-    signal max_spi_rw               : std_logic;    
-    signal max_spi_data_to_max      : std_logic_vector(31 downto 0);
-    signal max_spi_numbytes         : std_logic_vector(7 downto 0);
-    signal max_spi_next_data        : std_logic;
-    signal max_spi_word_from_max    : std_logic_vector(31 downto 0);
-    signal max_spi_word_en          : std_logic;
-    signal max_spi_byte_from_max    : std_logic_vector(7 downto 0);
-    signal max_spi_byte_en          : std_logic;
-    signal max_spi_busy             : std_logic;
-
-    signal max_spi_counter          : integer;
     signal max10_version            : reg32;
     signal max10_status             : reg32;
-    signal max10adc01               : reg32;
-    signal max10adc23               : reg32;
-    signal max10adc45               : reg32;
-    signal max10adc67               : reg32;
-    signal max10adc89               : reg32;	 
-    signal max10_spiflash_cmdaddr   : reg32;
 
-    type max_spi_state_t is (idle, programming, maxversion, statuswait, maxstatus, adcwait, maxadc, endwait);
-    signal max_spi_state :   max_spi_state_t;  
-    signal program_req :   std_logic;
-
-
-
-    signal wordcounter : integer;
+    signal programming_status       : reg32;
+    signal programming_ctrl         : reg32;
+    signal programming_data         : reg32;
+    signal programming_data_ena     : std_logic;
+    signal programming_addr         : reg32;
+    signal programming_addr_ena     : std_logic;
+    signal programming_addr_ena_reg : std_logic;
 
 begin
 
@@ -261,7 +239,7 @@ begin
 
 
 
-    -- generate 1 Hz clock monitor clocks
+    -- generate 1 Hz clock monitor signals
 
     -- NIOS_CLK_MHZ_g -> 1 Hz
     e_nios_clk_hz : entity work.clkdiv
@@ -316,6 +294,7 @@ begin
     end if;
     end process;
 
+
     e_reg_mapping : entity work.feb_reg_mapping
     port map (
         i_clk_156                   => i_clk_156,
@@ -336,15 +315,22 @@ begin
         i_fpga_type                 => i_fpga_type,
         i_adc_reg                   => adc_reg,
         i_max10_version             => max10_version,
+        i_max10_status              => max10_status,
+        i_programming_status        => programming_status,
 
         -- outputs 156--------------------------------------------
         o_reg_cmdlen                => reg_cmdlen,
         o_reg_offset                => reg_offset,
         o_reg_reset_bypass          => reg_reset_bypass,
         o_reg_reset_bypass_payload  => reg_reset_bypass_payload,
-        o_arriaV_temperature_clr    => arriaV_temperature_clr,
-        o_arriaV_temperature_ce     => arriaV_temperature_ce,
-        o_fpga_id_reg               => fpga_id_reg--,
+        o_arriaV_temperature_clr    => open, --arriaV_temperature_clr,
+        o_arriaV_temperature_ce     => open, --arriaV_temperature_ce,
+        o_fpga_id_reg               => fpga_id_reg,
+        o_programming_ctrl          => programming_ctrl,
+        o_programming_data          => programming_data,
+        o_programming_data_ena      => programming_data_ena,
+        o_programming_addr          => programming_addr,
+        o_programming_addr_ena      => programming_addr_ena--,
     );
 
 
@@ -354,7 +340,7 @@ begin
 
 
 
-    e_nios : work.cmp.nios
+    e_nios : component work.cmp.nios
     port map (
         -- SC, QSFP and irq
         clk_156_reset_reset_n   => reset_156_n,
@@ -409,15 +395,39 @@ begin
 
         pio_export      => nios_pio,
 
-        temp_tsdcalo            => arriaV_temperature,
+        temp_tsdcalo            => arriaV_temperature_temp,
         temp_ce_ce              => arriaV_temperature_ce,
         temp_clr_reset          => arriaV_temperature_clr,
-        temp_done_tsdcaldone    => open,
+        temp_done_tsdcaldone    => arriaV_temperature_tsdcaldone,
 
         rst_reset_n     => nios_reset_n,
         clk_clk         => i_nios_clk--,
     );
 
+     -- start and reset the temp sensor
+    process(i_nios_clk, nios_reset_n)
+    begin
+    if(nios_reset_n = '0')then
+        temp_state <= convert;
+        arriaV_temperature_clr <= '0';
+        arriaV_temperature_ce <= '0';
+        arriaV_temperature <= (others => '0');
+    elsif(i_nios_clk'event and i_nios_clk = '1')then
+        arriaV_temperature_ce <= '1';
+        case temp_state is
+        when convert =>
+            arriaV_temperature_clr <= '0';
+            if(arriaV_temperature_tsdcaldone = '1')then
+                arriaV_temperature <= arriaV_temperature_temp;
+                temp_state <= clear;
+                arriaV_temperature_clr <= '1';
+            end if;
+        when clear =>
+            arriaV_temperature_clr <= '1';
+            temp_state <= convert;
+        end case;
+    end if;
+    end process;
 
 
     e_sc_ram : entity work.sc_ram
@@ -450,7 +460,7 @@ begin
     );
 
     e_sc_rx : entity work.sc_rx
-    port map (   
+    port map (
         i_link_data     => ffly_rx_data(32*(feb_mapping(0)+1)-1 downto 32*feb_mapping(0)),
         i_link_datak    => ffly_rx_datak(4*(feb_mapping(0)+1)-1 downto 4*feb_mapping(0)),
 
@@ -532,6 +542,7 @@ begin
     )
     port map (
         i_data_125_rx           => reset_link_rx(7 downto 0),
+        i_data_ready            => reset_link_ready,
         i_reset_125_rx_n        => reset_125_RRX_n,
         i_clk_125_rx            => reset_link_rx_clk,
 
@@ -610,6 +621,7 @@ begin
         i_data_lvds_serial              => i_ffly2_lvds_rx & i_ffly1_lvds_rx,
         o_data_lvds_parallel(7 downto 0)=> reset_link_rx,
         o_data_lvds_parallel(15 downto 8)=>open,
+        o_lvds_ready                    => reset_link_ready,
 
         --I2C
         i_i2c_enable                    => '1',
@@ -632,9 +644,12 @@ begin
         o_testout                       => open--,
     );
 
-
-    e_max10_spi : entity work.max10_spi
-        port map(
+    e_max10_interface : entity work.max10_interface
+    port map(
+        i_clk               => i_nios_clk,
+        i_reset_n           => nios_reset_n,
+        i_clk_156           => i_clk_156,
+        
         -- Max10 SPI
         o_SPI_csn           => o_max10_spi_csn,
         o_SPI_clk           => o_max10_spi_sclk,
@@ -644,106 +659,17 @@ begin
         io_SPI_D2           => io_max10_spi_D2,
         io_SPI_D3           => io_max10_spi_D3,
     
-        -- Interface to Arria
-        clk50               => i_nios_clk,
-        reset_n             => nios_reset_n,
-        strobe              => max_spi_strobe,
-        addr                => max_spi_addr,
-        rw                  => max_spi_rw, 
-        data_to_max         => max_spi_data_to_max, 
-        numbytes            => max_spi_numbytes,
-        next_data           => max_spi_next_data,
-        word_from_max       => max_spi_word_from_max,
-        word_en             => max_spi_word_en,
-        byte_from_max       => max_spi_byte_from_max,
-        byte_en             => max_spi_byte_en,
-        busy                => max_spi_busy
-        );
+        adc_reg             => adc_reg,
+        max10_version       => max10_version,
+        max10_status        => max10_status,
+        programming_status  => programming_status,
 
+        programming_ctrl    => programming_ctrl,
+        programming_data    => programming_data,
+        programming_data_ena=> programming_data_ena,
+        programming_addr    => programming_addr,
+        programming_addr_ena=> programming_addr_ena--,
 
-
-    program_req <= '0';
-
-    process(i_nios_clk, nios_reset_n)
-    begin
-    if(nios_reset_n = '0')then
-        max_spi_strobe 	 <= '0';
-        max_spi_counter  <= 0;
-        max_spi_state    <= idle;
-        max_spi_numbytes <= "00000000";
-        max_spi_rw		 <= '0';
-    elsif(i_nios_clk'event and i_nios_clk = '1')then
-        max_spi_counter <= max_spi_counter + 1;
-        max_spi_strobe <= '0';
-        max_spi_rw		 <= '0';
-        case max_spi_state is
-        when idle =>
-            if(program_req = '1') then
-                max_spi_state <= programming;
-            elsif(max_spi_counter > 5000000) then
-                max_spi_state <= maxversion;
-                max_spi_counter <= 0;
-            end if;    
-        when programming =>
-            if(program_req = '0') then
-                max_spi_state <= idle;
-            end if;    
-        when maxversion => 
-            max_spi_addr    <= FEBSPI_ADDR_GITHASH;
-            max_spi_numbytes <= "00000100";
-            max_spi_strobe   <= '1';
-            if(max_spi_word_en = '1') then
-                max10_version   <= max_spi_word_from_max;
-                max_spi_strobe   <= '0';
-                max_spi_state    <= statuswait;
-            end if;
-        when statuswait =>
-            if(max_spi_busy = '0')then
-                max_spi_state    <= maxstatus;
-            end if;
-        when maxstatus => 
-            max_spi_addr    <= FEBSPI_ADDR_STATUS;
-            max_spi_numbytes <= "00000100";
-            max_spi_strobe   <= '1';
-            if(max_spi_word_en = '1') then
-                max10_status   <= max_spi_word_from_max;
-                max_spi_strobe   <= '0';
-                max_spi_state    <= adcwait;
-                wordcounter      <= 0;
-            end if;  
-        when adcwait =>
-            if(max_spi_busy = '0')then
-                max_spi_state    <= maxadc;
-            end if;
-        when maxadc =>
-            max_spi_addr    <= FEBSPI_ADDR_ADCDATA;
-            max_spi_numbytes <= "00010100";
-            max_spi_strobe   <= '1';   
-            if(max_spi_word_en = '1') then
-                wordcounter <= wordcounter + 1;
-                if(wordcounter = 0) then
-                    max10adc01   <= max_spi_word_from_max;
-                elsif(wordcounter = 1) then
-                    max10adc23   <= max_spi_word_from_max;
-                elsif(wordcounter = 2) then
-                    max10adc45   <= max_spi_word_from_max;
-                elsif(wordcounter = 3) then
-                    max10adc67   <= max_spi_word_from_max;
-                elsif(wordcounter > 3) then
-                    max10adc89   <= max_spi_word_from_max;
-                    max_spi_strobe   <= '0';
-                    max_spi_state    <= endwait;
-                end if;
-            end if;
-            when endwait =>
-                if(max_spi_busy = '0')then
-                    max_spi_state    <= idle;
-                end if;	
-        when others =>
-            max_spi_state <= idle;
-            max_spi_strobe <= '0';
-        end case;
-    end if;
-    end process;
+    );
 
 end architecture;

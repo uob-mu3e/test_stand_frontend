@@ -3,6 +3,9 @@
  * date : 2019
  */
 
+#ifndef __UTIL_A10_RECONFIG_H__
+#define __UTIL_A10_RECONFIG_H__
+
 struct reconfig_t {
     static const alt_u32 ONE = 1;
 
@@ -98,3 +101,5 @@ struct reconfig_t {
         wait(0x281, 1, 0); // PMA RX calibration is running
     }
 };
+
+#endif // __UTIL_A10_RECONFIG_H__
