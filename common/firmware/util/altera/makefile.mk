@@ -50,6 +50,8 @@ ifeq ($(APP_DIR),)
     APP_DIR := $(PREFIX)/software/app
 endif
 
+# TODO: use $(addprefix $(PREFIX),$(realpath $(...)))
+
 # list all .tcl files
 QSYS_TCL_FILES := $(filter %.tcl,$(IPs))
 # convert all .tcl files into .qsys files
@@ -80,6 +82,7 @@ all : top.qpf top.qsf $(PREFIX)/include.qip
 
 .PHONY : $(PREFIX)/components_pkg.vhd
 $(PREFIX)/components_pkg.vhd : $(SOPC_FILES) $(QMEGAWIZ_VHD_FILES)
+	# find and exec components_pkg.sh
 	$(lastword $(realpath $(addsuffix components_pkg.sh,$(dir $(MAKEFILE_LIST))))) "$(PREFIX)" > "$@"
 
 # include.qip - include all generated files
@@ -96,24 +99,28 @@ $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	    [ -e "$$file.qip" ] || echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.vhd)\" ]" >> "$@"
 	done
 
-# make sure that device.tcl file exists
+# default device.tcl file
 device.tcl :
 	touch -- "$@"
 
 $(PREFIX)/%.vhd : %.vhd.qmegawiz
+	# find and exec qmegawiz.sh
 	$(lastword $(realpath $(addsuffix qmegawiz.sh,$(dir $(MAKEFILE_LIST))))) "$<" "$@"
 
 $(PREFIX)/%.qsys : %.tcl device.tcl
 	mkdir -pv $(PREFIX)
 	# util link is used by qsys to find _hw.tcl modules
 	[ -e $(PREFIX)/util ] || ln -snv --relative -T util $(PREFIX)/util
+	# find and exec tcl2qsys.sh
 	$(lastword $(realpath $(addsuffix tcl2qsys.sh,$(dir $(MAKEFILE_LIST))))) "$<" "$@"
 
 $(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys
+	# find and exec qsys-generate.sh
 	$(lastword $(realpath $(addsuffix qsys-generate.sh,$(dir $(MAKEFILE_LIST))))) "$<"
 
 .PHONY : flow
 flow : all
+	# find and exec flow.sh
 	$(lastword $(realpath $(addsuffix flow.sh,$(dir $(MAKEFILE_LIST)))))
 
 .PHONY : sof2flash
