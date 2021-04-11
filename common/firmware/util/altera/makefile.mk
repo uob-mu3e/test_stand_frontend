@@ -78,13 +78,8 @@ top.qsf : $(MAKEFILE_LIST)
 
 all : top.qpf top.qsf $(PREFIX)/include.qip
 
-$(PREFIX) :
-	mkdir -pv $(PREFIX)
-	# util link is used by qsys to find _hw.tcl modules
-	[ -e $(PREFIX)/util ] || ln -snv --relative -T util $(PREFIX)/util
-
 .PHONY : $(PREFIX)/components_pkg.vhd
-$(PREFIX)/components_pkg.vhd : $(PREFIX) $(SOPC_FILES) $(QMEGAWIZ_VHD_FILES)
+$(PREFIX)/components_pkg.vhd : $(SOPC_FILES) $(QMEGAWIZ_VHD_FILES)
 	$(lastword $(realpath $(addsuffix components_pkg.sh,$(dir $(MAKEFILE_LIST))))) "$(PREFIX)" > "$@"
 
 # include.qip - include all generated files
@@ -108,7 +103,10 @@ device.tcl :
 $(PREFIX)/%.vhd : %.vhd.qmegawiz
 	$(lastword $(realpath $(addsuffix qmegawiz.sh,$(dir $(MAKEFILE_LIST))))) $< $@
 
-$(PREFIX)/%.qsys : %.tcl device.tcl $(PREFIX)
+$(PREFIX)/%.qsys : %.tcl device.tcl
+	mkdir -pv $(PREFIX)
+	# util link is used by qsys to find _hw.tcl modules
+	[ -e $(PREFIX)/util ] || ln -snv --relative -T util $(PREFIX)/util
 	$(lastword $(realpath $(addsuffix tcl2qsys.sh,$(dir $(MAKEFILE_LIST))))) $< $@
 
 $(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys
