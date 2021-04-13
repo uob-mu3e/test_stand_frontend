@@ -17,4 +17,4 @@ add_library(libmudaq STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/switching_constants.h
     )
 target_include_directories(libmudaq PUBLIC .)
-target_link_libraries(libmudaq  midas ${Boost_LIBRARIES})
+target_link_libraries(libmudaq midas ${Boost_LIBRARIES})

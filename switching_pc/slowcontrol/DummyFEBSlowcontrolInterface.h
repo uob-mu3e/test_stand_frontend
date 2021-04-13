@@ -20,8 +20,12 @@ public:
     DummyFEBSlowcontrolInterface& operator=(const FEBSlowcontrolInterface&) = delete;
 
     // We use the () operator to simulate changing values in the SC registers using a separate thread
-    void operator()() [[noreturn]];
-
+    #if __APPLE__
+        void operator()();
+    #else
+        void operator()() [[noreturn]];
+    #endif
+    
     virtual int FEB_write(const uint32_t FPGA_ID, const uint32_t startaddr, const vector<uint32_t> &data, const bool nonincrementing = false);
     // expects data vector with read-length size
     virtual int FEB_read(const uint32_t FPGA_ID, const uint32_t startaddr, vector<uint32_t> & data, const bool nonincrementing = false);
