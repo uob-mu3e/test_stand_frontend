@@ -56,6 +56,7 @@ architecture rtl of mupix_reg_mapping is
     signal mp_datagen_control       : std_logic_vector(31 downto 0);
     signal mp_readout_mode          : std_logic_vector(31 downto 0);
     signal mp_lvds_link_mask        : std_logic_vector(35 downto 0);
+    signal mp_lvds_link_mask_ordered: std_logic_vector(35 downto 0);
     signal mp_lvds_data_valid       : std_logic_vector(35 downto 0);
     signal mp_ctrl_slow_down        : std_logic_vector(31 downto 0);
     signal mp_ctrl_chip_config_mask : std_logic_vector(31 downto 0);
@@ -64,6 +65,10 @@ architecture rtl of mupix_reg_mapping is
     signal mp_lvds_invert           : std_logic;
     signal mp_data_bypass_select    : std_logic_vector(31 downto 0);
 begin
+
+    gen_mask_order: for i in 0 to 35 generate
+        mp_lvds_link_mask_ordered(i)         <= mp_lvds_link_mask(MP_LINK_ORDER(i));
+    end generate;
 
     process (i_clk156, i_reset_n)
         variable regaddr : integer;
@@ -77,7 +82,7 @@ begin
         elsif(rising_edge(i_clk156)) then
 
             --regs for long paths
-            o_mp_lvds_link_mask         <= mp_lvds_link_mask;
+            o_mp_lvds_link_mask         <= mp_lvds_link_mask_ordered;
             o_mp_lvds_invert            <= mp_lvds_invert;
             o_mp_datagen_control        <= mp_datagen_control;
             o_mp_readout_mode           <= mp_readout_mode;
@@ -164,13 +169,13 @@ begin
                 mp_lvds_link_mask(31 downto 0) <= i_reg_wdata;
             end if;
             if ( regaddr = MP_LVDS_LINK_MASK_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata <= mp_lvds_link_mask(31 downto 0);
+                o_reg_rdata <= mp_lvds_link_mask_ordered(31 downto 0);
             end if;
             if ( regaddr = MP_LVDS_LINK_MASK2_REGISTER_W and i_reg_we = '1' ) then
                 mp_lvds_link_mask(35 downto 32) <= i_reg_wdata(3 downto 0);
             end if;
             if ( regaddr = MP_LVDS_LINK_MASK2_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata(3 downto 0) <= mp_lvds_link_mask(35 downto 32);
+                o_reg_rdata(3 downto 0) <= mp_lvds_link_mask_ordered(35 downto 32);
                 o_reg_rdata(31 downto 4)<= (others => '0');
             end if;
 
