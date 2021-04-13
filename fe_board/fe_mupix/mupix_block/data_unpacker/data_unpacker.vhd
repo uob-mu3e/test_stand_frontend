@@ -103,34 +103,36 @@ architecture RTL of data_unpacker is
     function convert_row (
         i_row       : std_logic_vector(8 downto 0)--;
     ) return std_logic_vector is 
-        variable row : std_logic_vector(7 downto 0);
-        variable tmp : std_logic_vector(8 downto 0);
+        variable row            : std_logic_vector(7 downto 0);
+        variable tmp            : std_logic_vector(8 downto 0);
+        variable i_row_inverted : std_logic_vector(8 downto 0);
     begin
+        i_row_inverted := not i_row;
         if (unsigned(i_row)>380) then
-            tmp     := std_logic_vector(499-unsigned(i_row));
-            if (i_row(0)='0') then
+            tmp     := std_logic_vector(499-unsigned(i_row_inverted));
+            if (i_row_inverted(0)='0') then
                 row := std_logic_vector(unsigned(tmp(8 downto 1)) + 60);
             else 
                 row := tmp(8 downto 1);
             end if;
-        elsif (i_row(8)='1') then
-            tmp     := std_logic_vector(380-unsigned(i_row));
-            if (i_row(0)='1') then
-                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 63);
+        elsif (i_row_inverted(8)='1') then
+            tmp     := std_logic_vector(380-unsigned(i_row_inverted));
+            if (i_row_inverted(0)='0') then
+                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 62);
             else 
                 row := tmp(8 downto 1);
             end if;
-        elsif (unsigned(i_row)>124) then
-            tmp     := std_logic_vector(255-unsigned(i_row));
-            if (i_row(0)='0') then
+        elsif (unsigned(i_row_inverted)>124) then
+            tmp     := std_logic_vector(255-unsigned(i_row_inverted));
+            if (i_row_inverted(0)='0') then
                 row := std_logic_vector(unsigned(tmp(8 downto 1)) + 119 + 66);
             else 
                 row := std_logic_vector(unsigned(tmp(8 downto 1)) + 119);
             end if;
         else
-            tmp     := std_logic_vector(124-unsigned(i_row));
-            if (i_row(0)='1') then
-                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 125 + 63);
+            tmp     := std_logic_vector(124-unsigned(i_row_inverted));
+            if (i_row_inverted(0)='0') then
+                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 125 + 62);
             else
                 row := std_logic_vector(unsigned(tmp(8 downto 1)) + 125);
             end if;
