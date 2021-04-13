@@ -194,12 +194,12 @@ architecture arch of a10_block is
     signal pcie0_clk        : std_logic;
     signal pcie1_clk        : std_logic;
 
-    signal pcie0_rregs      : reg32array;
-    signal pcie1_rregs      : reg32array;
-    signal pcie0_wregs_A    : reg32array;
-    signal pcie0_wregs_B    : reg32array;
-    signal pcie1_wregs_A    : reg32array;
-    signal pcie1_wregs_B    : reg32array;
+    signal pcie0_rregs      : reg32array_pcie;
+    signal pcie1_rregs      : reg32array_pcie;
+    signal pcie0_wregs_A    : reg32array_pcie;
+    signal pcie0_wregs_B    : reg32array_pcie;
+    signal pcie1_wregs_A    : reg32array_pcie;
+    signal pcie1_wregs_B    : reg32array_pcie;
     signal local_pcie0_rregs_156 : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
     signal local_pcie0_rregs_250 : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
 
