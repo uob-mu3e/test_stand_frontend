@@ -15,6 +15,7 @@ use work.mupix.all;
 entity mupix_reg_mapping is
 port (
     i_clk156                    : in  std_logic;
+    i_clk125                    : in  std_logic;
     i_reset_n                   : in  std_logic;
 
     i_reg_add                   : in  std_logic_vector(7 downto 0);
@@ -30,6 +31,9 @@ port (
 
     -- inputs  125 (how to sync)------------------------------
     i_sorter_counters           : in sorter_reg_array   := (others => x"CCCCCCCC");
+    i_coarsecounter_ena         : in std_logic;
+    i_coarsecounter             : in std_logic_vector(23 downto 0);
+    i_ts_global                 : in std_logic_vector(23 downto 0);
 
     -- outputs 156--------------------------------------------
     o_mp_lvds_link_mask         : out std_logic_vector(35 downto 0); -- lvds link mask
@@ -37,6 +41,7 @@ port (
     o_mp_datagen_control        : out std_logic_vector(31 downto 0); -- control register for the mupix data gen
     o_mp_readout_mode           : out std_logic_vector(31 downto 0); -- Invert ts, degray, chip ID numbering, tot mode, ..
     o_mp_data_bypass_select     : out std_logic_vector(31 downto 0);
+    o_mp_delta_ts_link_select   : out std_logic_vector(5 downto 0);
 
     o_mp_ctrl_data              : out std_logic_vector(32*5 + 31 downto 0);
     o_mp_fifo_write             : out std_logic_vector( 5 downto 0);
@@ -226,4 +231,26 @@ begin
 
         end if;
     end process;
+
+
+    -- histogram of delta ts between mp timestamp and fpga timestamp
+    delta_ts_histo : work.histogram_generic
+    generic map(
+        DATA_WIDTH   => ,
+        ADDR_WIDTH   => 
+    )
+    port map(
+        rclk:         in std_logic;
+        wclk:         in std_logic;
+        rst_n:        in std_logic;
+        zeromem:      in std_logic;
+        ena:          in std_logic;
+        can_overflow: in std_logic;
+        data_in:      in std_logic_vector(ADDR_WIDTH-1 downto 0);
+        valid_in:     in std_logic;
+        busy_n:       out std_logic;
+
+        raddr_in:     in std_logic_vector(ADDR_WIDTH-1 downto 0);
+        q_out:        out std_logic_vector(DATA_WIDTH-1 downto 0)
+    );
 end architecture;

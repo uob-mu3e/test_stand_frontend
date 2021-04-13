@@ -88,5 +88,8 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
     constant MP_SORTER_DELAY_W                  :  integer := 16#91#;
     constant MP_SORTER_COUNTER_R                :  integer := 16#92#; -- 40 counters
     constant MP_DATA_BYPASS_SELECT_W            :  integer := 16#BB#;
+    constant MP_TS_HISTO_SELECT_W               :  integer := 16#BB#;
+        subtype  MP_TS_HISTO_LINK_SELECT_RANGE  is integer range 15 downto 0;
+        subtype  MP_TS_HISTO_N_SAMPLE_RANGE     is integer range 31 downto 16;
 
 end package mupix_registers;

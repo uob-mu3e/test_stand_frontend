@@ -40,6 +40,8 @@ entity data_unpacker is
         o_col               : out std_logic_vector(7 downto 0);
         o_tot               : out std_logic_vector(5 downto 0);
         o_hit_ena           : out std_logic;
+        o_coarsecounter     : out std_logic_vector(23 downto 0);
+        o_coarsecounter_ena : out std_logic;
         errorcounter        : out std_logic_vector(31 downto 0)
     );
 end data_unpacker;
@@ -170,6 +172,9 @@ begin
 
     o_ts    <= ts_buf;
     o_tot   <= calc_tot(ts2_buf,ts_buf,tot_mode);
+
+    o_coarsecounter     <= coarsecounter(23 downto 0);
+    o_coarsecounter_ena <= coarsecounter_ena;
 
     chip_ID_mode    <= i_mp_readout_mode(CHIP_ID_MODE_RANGE);
     tot_mode        <= i_mp_readout_mode(TOT_MODE_RANGE);

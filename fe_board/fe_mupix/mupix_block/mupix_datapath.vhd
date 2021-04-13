@@ -117,6 +117,10 @@ architecture rtl of mupix_datapath is
     signal time_counter             : unsigned(31 downto 0);
     signal rate_counter             : unsigned(31 downto 0);
 
+    signal coarsecounters           : reg24(35 downto 0);
+    signal coarsecounter_enas       : std_logic_vector(35 downto 0);
+    signal delta_ts_link_select     : std_logic_vector(5 downto 0);
+
     --hit_ts conversion settings
     signal mp_readout_mode          : std_logic_vector(31 downto 0);
 
@@ -140,11 +144,14 @@ begin
 
     reset_156_n <= '0' when (i_run_state_156=RUN_STATE_SYNC) else '1';
     reset_125_n <= '0' when (i_run_state_125=RUN_STATE_SYNC) else '1';
+
+    
 ------------------------------------------------------------------------------------
 ---------------------- registers ---------------------------------------------------
     e_mupix_reg_mapping : work.mupix_reg_mapping
     port map (
         i_clk156                    => i_clk156,
+        i_clk125                    => i_clk125,
         i_reset_n                   => i_reset_n_regs,
 
         i_reg_add                   => i_reg_add,
@@ -159,12 +166,16 @@ begin
 
         -- inputs  125 (how to sync)------------------------------
         i_sorter_counters           => sorter_counters,
+        i_coarsecounter_ena         => coarsecounter_enas(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
+        i_coarsecounter             => coarsecounters(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
+        i_ts_global                 => counter125,
 
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
         o_mp_lvds_link_mask         => lvds_link_mask,
         o_mp_readout_mode           => mp_readout_mode,
         o_mp_data_bypass_select     => data_bypass_select,
+        o_mp_delta_ts_link_select   => delta_ts_link_select,
 
         -- outputs 125-------------------------------------------------
         o_sorter_delay              => sorter_delay--;
@@ -216,6 +227,8 @@ begin
         o_col               => col_unpacker(i),
         o_tot               => tot_unpacker(i),
         o_hit_ena           => hits_ena_unpacker(i),
+        o_coarsecounter     => coarsecounters(i),
+        o_coarsecounter_ena => coarsecounter_enas(i),
         errorcounter        => unpack_errorcounter(i) -- could be useful!
     );
 
@@ -247,7 +260,7 @@ begin
             else
                 counter125 <= counter125 + 1;
             end if;
-            
+
             if(mp_datagen_control_reg(MP_DATA_GEN_SORT_IN_BIT) = '1') then
                 ts      <= ts_gen;
                 chip_ID <= Chip_ID_gen;
