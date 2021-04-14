@@ -156,7 +156,7 @@ elsif(clk'event and clk = '1') then
 			else -- more hits from same chip
 				counters_reg <= counters_reg;
 				counters_reg(3 downto 0) <= counters_reg(3 downto 0) -'1';
-				subaddr					 <= "0000";
+				subaddr					 <= subaddr;
 			end if;
 		else --domem zero indicate a block skipped due to overflow
 			command_enable <= '0';
