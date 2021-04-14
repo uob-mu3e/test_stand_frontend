@@ -761,7 +761,7 @@ elsif(writeclk'event and writeclk = '1') then
 		end if;	
 	when others =>
 						-- ts(3:0) & chipID(5:0, the upper 2 bits are 0 here since we have max. 12 links at the moment)& row(7:0) & col(7:0) & tot(4:0) & '0'
-		data_out		<= readcommand_last4(3 downto 0) & "00" & readcommand_last4(COMMANDBITS-6 downto TIMESTAMPSIZE) & memmultiplex & "0";
+		data_out		<= readcommand_last4(3 downto 0) & "00" & readcommand_last4(COMMANDBITS-2 downto TIMESTAMPSIZE+4) & memmultiplex & "0";
 		out_type		<= "0000";
 		if(readcommand_ena_last4 = '1') then
 			nout <= nout + '1';
