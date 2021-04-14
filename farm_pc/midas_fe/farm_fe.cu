@@ -385,12 +385,17 @@ INT begin_of_run(INT run_number, char *error)
    odb stream_settings;
    stream_settings.connect("/Equipment/Stream/Settings");
    if(stream_settings["Datagen Enable"]) {
-       // TODO: test me
-       mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, stream_settings["Datagen Divider"], 100);
-       reg = SET_DATAGENERATOR_BIT_ENABLE(reg);
+        // TODO: test me
+        int divider = stream_settings["Datagen Divider"];
+        cm_msg(MINFO,"farm_fe", "Use datagenerator with divider register %d", divider);
+        // readout datagen
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
+        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, divider);
+   } else {
+        cm_msg(MINFO,"farm_fe", "Use link data");
+        // readout link
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
    }
-   mu.write_register(DATAGENERATOR_REGISTER_W,reg);
-
    // reset lastlastwritten
    lastlastWritten = 0;
    lastRunWritten = mu.last_written_addr();//lastWritten;
@@ -408,53 +413,59 @@ INT end_of_run(INT run_number, char *error)
 {
 
    mudaq::DmaMudaqDevice & mu = *mup;
-   printf("farm_fe: Waiting for buffers to empty\n");
+   cm_msg(MINFO,"farm_fe","Waiting for buffers to empty");
    uint16_t timeout_cnt = 0;
    while(! mu.read_register_ro(BUFFER_STATUS_REGISTER_R) & 1<<0/* TODO right bit */ &&
          timeout_cnt++ < 50) {
-      printf("Waiting for buffers to empty %d/50\n", timeout_cnt);
+      //printf("Waiting for buffers to empty %d/50\n", timeout_cnt);
       timeout_cnt++;
       usleep(1000);
    };
 
    if(timeout_cnt>=50) {
-      cm_msg(MERROR,"farm_fe","Buffers on Switching Board not empty at end of run");
-      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
+      //cm_msg(MERROR,"farm_fe","Buffers on Switching Board not empty at end of run");
+      cm_msg(MINFO,"farm_fe","Buffers on Switching Board not empty at end of run");
+      set_equipment_status(equipment[0].name, "Buffers not empty", "var(--mred)");
+      // TODO: at the moment we dont care
       //return CM_TRANSITION_CANCELED;
    }else{
       printf("Buffers all empty\n");
    }
 
-   // Finish DMA while waiting for last requested data to be finished
+   //Finish DMA while waiting for last requested data to be finished
    cm_msg(MINFO, "farm_fe", "Waiting for DMA to finish");
    usleep(1000); // Wait for DMA to finish
    timeout_cnt = 0;
    
-   // wait for requested data
-   // TODO: in readout th poll on run end reg from febs
-   // write variable and check this one here and then disable readout th
-   // also check if readout th is disabled by midas at run end
+   //wait for requested data
+   //TODO: in readout th poll on run end reg from febs
+   //write variable and check this one here and then disable readout th
+   //also check if readout th is disabled by midas at run end
    while ( (mu.read_register_ro(0x1C) & 1) == 0 && timeout_cnt < 100 ) {
        timeout_cnt++;
        usleep(1000);
    };
         
    if(timeout_cnt>=100) {
-      cm_msg(MERROR, "farm_fe", "DMA did not finish");
-      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
-//      return CM_TRANSITION_CANCELED;
+        //cm_msg(MERROR, "farm_fe", "DMA did not finish");
+        cm_msg(MINFO, "farm_fe", "DMA did not finish");
+        set_equipment_status(equipment[0].name, "DMA did not finish", "var(--mred)");
+        // TODO: at the moment we dont care
+        //return CM_TRANSITION_CANCELED;
    }else{
       cm_msg(MINFO, "farm_fe", "DMA is finished\n");
    }
 
-    // stop generator
-   uint32_t datagen_setup = 0;
-   datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-   mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
-   mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x0, 100);
-
-   // disable DMA
-   mu.disable();
+    // disable dma
+    mu.disable();
+    // stop readout
+    mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
+    mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
+    mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
+    mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
+    mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
+    // reset all
+    mu.write_register(RESET_REGISTER_W, 0x1);
 
    set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
    
@@ -823,13 +834,9 @@ INT read_stream_thread(void *param) {
     while (is_readout_thread_enabled()) {
         // don't readout events if we are not running
         if (run_state != STATE_RUNNING) {
-            set_equipment_status(equipment[0].name, "Not running", "var(--myellow)");
-            //ss_sleep(100);
-            //TODO: signalling from main thread?
+            ss_sleep(100);
             continue;
         }
-
-        set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
         
         // get midas buffer
         uint32_t* pdata = nullptr;
@@ -843,14 +850,8 @@ INT read_stream_thread(void *param) {
         mu.enable_continous_readout(0);
 
         // wait for requested data
-        
-        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x2);
         // setup stream
         mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x1);
-        // readout datagen
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
-        // readout link
-        //mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
         // request to read dma_buffer_size/2 (count in blocks of 256 bits)
         mu.write_register(0xC, max_requested_words / (256/32));
         
@@ -864,8 +865,6 @@ INT read_stream_thread(void *param) {
         // disable dma
         mu.disable();
         // stop readout
-        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
         mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
         mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
