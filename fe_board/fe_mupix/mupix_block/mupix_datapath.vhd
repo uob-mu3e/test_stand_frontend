@@ -117,7 +117,7 @@ architecture rtl of mupix_datapath is
     signal time_counter             : unsigned(31 downto 0);
     signal rate_counter             : unsigned(31 downto 0);
 
-    signal coarsecounters           : reg24(35 downto 0);
+    signal coarsecounters           : reg24array(35 downto 0);
     signal coarsecounter_enas       : std_logic_vector(35 downto 0);
     signal delta_ts_link_select     : std_logic_vector(5 downto 0);
 
@@ -166,9 +166,9 @@ begin
 
         -- inputs  125 (how to sync)------------------------------
         i_sorter_counters           => sorter_counters,
-        i_coarsecounter_ena         => coarsecounter_enas(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
-        i_coarsecounter             => coarsecounters(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
-        i_ts_global                 => counter125,
+        --i_coarsecounter_ena         => coarsecounter_enas(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
+        --i_coarsecounter             => coarsecounters(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
+        i_ts_global                 => counter125(23 downto 0),
 
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
@@ -227,8 +227,8 @@ begin
         o_col               => col_unpacker(i),
         o_tot               => tot_unpacker(i),
         o_hit_ena           => hits_ena_unpacker(i),
-        o_coarsecounter     => coarsecounters(i),
-        o_coarsecounter_ena => coarsecounter_enas(i),
+        o_coarsecounter     => open,--coarsecounters(i),
+        o_coarsecounter_ena => open,--coarsecounter_enas(i),
         errorcounter        => unpack_errorcounter(i) -- could be useful!
     );
 
