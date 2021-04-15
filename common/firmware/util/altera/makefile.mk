@@ -51,18 +51,18 @@ ifeq ($(APP_DIR),)
     APP_DIR := $(PREFIX)/software/app
 endif
 
-# TODO: use $(addprefix $(PREFIX),$(realpath $(...)))
-
 # list all .tcl files
-QSYS_TCL_FILES := $(filter %.tcl,$(IPs))
+# (use absolute path for files outside project directory)
+QSYS_TCL_FILES := $(patsubst $(abspath .)/%,%,$(abspath $(filter %.tcl,$(IPs))))
 # convert all .tcl files into .qsys files
-QSYS_FILES := $(patsubst %.tcl,$(PREFIX)/%.qsys,$(QSYS_TCL_FILES))
+# (place generated files into $(PREFIX) directory)
+QSYS_FILES := $(addprefix $(PREFIX)/,$(patsubst %.tcl,%.qsys,$(QSYS_TCL_FILES)))
 # convert all .qsys files into .sopcinfo files
 SOPC_FILES := $(patsubst %.qsys,%.sopcinfo,$(QSYS_FILES))
 # list all .vhd.qmegawiz files
-QMEGAWIZ_XML_FILES := $(filter %.vhd.qmegawiz,$(IPs))
+QMEGAWIZ_XML_FILES := $(patsubst $(abspath .)/%,%,$(abspath $(filter %.vhd.qmegawiz,$(IPs))))
 # convert all .vhd.qmegawiz files into .vhd files
-QMEGAWIZ_VHD_FILES := $(patsubst %.vhd.qmegawiz,$(PREFIX)/%.vhd,$(QMEGAWIZ_XML_FILES))
+QMEGAWIZ_VHD_FILES := $(addprefix $(PREFIX),$(patsubst %.vhd.qmegawiz,%.vhd,$(QMEGAWIZ_XML_FILES)))
 
 # default qpf file
 top.qpf :
