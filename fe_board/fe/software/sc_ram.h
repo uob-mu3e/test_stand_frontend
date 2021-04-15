@@ -90,7 +90,7 @@ struct sc_ram_t {
                     alt_u32 reset;
                     alt_u32 resetdelay;
                 } ctrl;
-            } scifi;
+            } SMB;
         };
 
         union {
@@ -142,7 +142,7 @@ static_assert(sizeof(sc_ram_t::regs) == 256 * 4, "");
 static_assert(offsetof(sc_ram_t, regs) % 1024 == 0, "");
 static_assert(offsetof(sc_ram_t::regs_t, fe) % 64 == 0, "");
 static_assert(offsetof(sc_ram_t::regs_t, TMB) % 64 == 0, "");
-static_assert(offsetof(sc_ram_t::regs_t, scifi) % 64 == 0, "");
+static_assert(offsetof(sc_ram_t::regs_t, SMB) % 64 == 0, "");
 static_assert(offsetof(sc_ram_t::regs_t, mupix) % 64 == 0, "");
 
 #endif // __FE_SC_RAM_H__
