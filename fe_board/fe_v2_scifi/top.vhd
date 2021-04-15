@@ -27,16 +27,18 @@ entity top is
         clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
         spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-        scifi_csn                   : out   std_logic_vector(4 downto 1);
-        scifi_cec_cs                : out   std_logic_vector(4 downto 1);
-        scifi_cec_sdo               : out   std_logic;
-        scifi_fifo_ext              : out   std_logic;
-        scifi_inject                : out   std_logic;
+        -- scifi DAB signals
+        scifi_din                   : in    std_logic_vector(4 downto 1);
         scifi_syncres               : out   std_logic;
+        scifi_csn                   : out   std_logic_vector(4 downto 1);
         scifi_spi_sclk              : out   std_logic;
         scifi_spi_miso              : in    std_logic;
         scifi_spi_mosi              : out   std_logic;
-        scifi_din                   : in    std_logic_vector(4 downto 1);
+        -- not used at the current version of the DAB for sicif
+        --scifi_cec_cs                : out   std_logic_vector(4 downto 1);
+        --scifi_cec_sdo               : out   std_logic;
+        scifi_fifo_ext              : out   std_logic;
+        scifi_inject                : out   std_logic;
         scifi_bidir_test            : inout std_logic;
 
         -- Fireflies
@@ -115,7 +117,7 @@ architecture rtl of top is
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
     signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
 
-    signal malibu_reg               : work.util.rw_t;
+    signal scifi_reg               : work.util.rw_t;
 
     signal run_state_125            : run_state_t;
     signal run_state_156            : run_state_t;
@@ -133,15 +135,8 @@ begin
 --------------------------------------------------------------------
 
     -- do not compile away 
-    scifi_csn                   <= (others => pb_db(0));
-    scifi_cec_cs                <= (others => pb_db(0));
-    scifi_cec_sdo               <= pb_db(0);
     scifi_fifo_ext              <= pb_db(0);
     scifi_inject                <= pb_db(0);
-    scifi_syncres               <= pb_db(0);
-    scifi_spi_sclk              <= pb_db(0);
-    lcd_data(5)                 <= scifi_spi_miso;
-    scifi_spi_mosi              <= pb_db(0);
 
     e_tile_path : entity work.scifi_path
     generic map (
@@ -154,11 +149,11 @@ begin
         LVDS_DATA_RATE  => 1250.0--,
     )
     port map (
-        i_reg_addr                  => malibu_reg.addr(3 downto 0),
-        i_reg_re                    => malibu_reg.re,
-        o_reg_rdata                 => malibu_reg.rdata,
-        i_reg_we                    => malibu_reg.we,
-        i_reg_wdata                 => malibu_reg.wdata,
+        i_reg_addr                  => scifi_reg.addr(3 downto 0),
+        i_reg_re                    => scifi_reg.re,
+        o_reg_rdata                 => scifi_reg.rdata,
+        i_reg_we                    => scifi_reg.we,
+        i_reg_wdata                 => scifi_reg.wdata,
 
         o_chip_reset                => scifi_syncres,
         o_pll_test                  => open,
@@ -229,10 +224,10 @@ begin
         i_ffly_Int_n        => Firefly_Int_n,
         i_ffly_ModPrs_n     => Firefly_ModPrs_n,
 
-        i_spi_miso          => '1',
-        o_spi_mosi          => open,
-        o_spi_sclk          => open,
-        o_spi_ss_n          => open,
+        i_spi_miso              => scifi_spi_miso, --TODO: check if we have to flip this
+        o_spi_mosi              => scifi_spi_mosi,
+        o_spi_sclk              => scifi_spi_sclk,
+        o_spi_ss_n(3 downto 0)  => scifi_csn,
 
         i_spi_si_miso       => si45_spi_out,
         o_spi_si_mosi       => si45_spi_in,
@@ -254,8 +249,12 @@ begin
         i_ffly1_lvds_rx     => firefly1_lvds_rx_in,
         i_ffly2_lvds_rx     => firefly2_lvds_rx_in,
 
+        i_can_terminate     => s_run_state_all_done,
+
         i_fifo_write        => fifo_write,
-        i_fifo_wdata        => fifo_wdata, -- TODO in "Not-Dummy": connect to detector-block
+        i_fifo_wdata        => fifo_wdata,
+        
+        o_fifos_almost_full => common_fifos_almost_full,
 
         i_mscb_data         => mscb_fpga_in,
         o_mscb_data         => mscb_fpga_out,
@@ -263,21 +262,21 @@ begin
 
         o_max10_spi_sclk    => max10_spi_miso, --max10_spi_sclk, Replacement, due to broken line
         io_max10_spi_mosi   => max10_spi_mosi,
-        io_max10_spi_miso   =>'Z',
+        io_max10_spi_miso   => 'Z',
         io_max10_spi_D1     => max10_spi_D1,
         io_max10_spi_D2     => max10_spi_D2,
         io_max10_spi_D3     => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_subdet_reg_addr   => malibu_reg.addr(7 downto 0),
-        o_subdet_reg_re     => malibu_reg.re,
-        i_subdet_reg_rdata  => malibu_reg.rdata,
-        o_subdet_reg_we     => malibu_reg.we,
-        o_subdet_reg_wdata  => malibu_reg.wdata,
+        o_subdet_reg_addr   => scifi_reg.addr(7 downto 0),
+        o_subdet_reg_re     => scifi_reg.re,
+        i_subdet_reg_rdata  => scifi_reg.rdata,
+        o_subdet_reg_we     => scifi_reg.we,
+        o_subdet_reg_wdata  => scifi_reg.wdata,
         
         -- reset system
-        o_run_state_125     => open,      -- TODO in "Not-Dummy": connect to detector-block
-        i_ack_run_prep_permission => '1', -- TODO in "Not-Dummy": connect to detector-block
+        o_run_state_125             => run_state_125,
+        i_ack_run_prep_permission   => and_reduce(s_MON_rxrdy),
 
         -- clocks
         i_nios_clk          => spare_clk_osc,

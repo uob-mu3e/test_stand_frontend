@@ -162,7 +162,7 @@ begin
 
 
 
--- SPI input multiplexing (CEC / configuration)
+    -- SPI input multiplexing (CEC / configuration)
     -- only input multiplexing is done here, the rest is done on the TMB
     -- "not" for polarity flip on DAB PCB
     tmb_miso <=
