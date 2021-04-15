@@ -20,4 +20,5 @@ CMD=(
 
 exec \
 qsys-script \
+    --search-path='$,'"$(realpath -- .)" \
     --cmd="${CMD[*]}"

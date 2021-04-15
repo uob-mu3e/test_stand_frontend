@@ -82,6 +82,7 @@ all : top.qpf top.qsf $(PREFIX)/include.qip
 
 .PHONY : $(PREFIX)/components_pkg.vhd
 $(PREFIX)/components_pkg.vhd : $(SOPC_FILES) $(QMEGAWIZ_VHD_FILES)
+	mkdir -pv -- "$(PREFIX)"
 	# find and exec components_pkg.sh
 	$(lastword $(realpath $(addsuffix components_pkg.sh,$(dir $(MAKEFILE_LIST))))) "$(PREFIX)" > "$@"
 
@@ -108,9 +109,6 @@ $(PREFIX)/%.vhd : %.vhd.qmegawiz
 	$(lastword $(realpath $(addsuffix qmegawiz.sh,$(dir $(MAKEFILE_LIST))))) "$<" "$@"
 
 $(PREFIX)/%.qsys : %.tcl device.tcl
-	mkdir -pv $(PREFIX)
-	# util link is used by qsys to find _hw.tcl modules
-	[ -e $(PREFIX)/util ] || ln -snv --relative -T util $(PREFIX)/util
 	# find and exec tcl2qsys.sh
 	$(lastword $(realpath $(addsuffix tcl2qsys.sh,$(dir $(MAKEFILE_LIST))))) "$<" "$@"
 
