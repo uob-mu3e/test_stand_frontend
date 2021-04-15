@@ -43,7 +43,7 @@ int main() {
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
-        printf("  [2] => sub-detector menu\n");
+        printf("  [2] => SciFi menu\n");
         printf("  [3] => sc\n");
         printf("  [4] => si5345_1\n");
         printf("  [5] => si5345_2\n");

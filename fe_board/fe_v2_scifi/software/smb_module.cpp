@@ -133,11 +133,11 @@ void SMB_t::menu_SMB_main() {
         //        TODO: Define menu
 //        printf("  [0] => reset\n");
         printf("  [0] => Write ALL_OFF config ASIC\n");
-        printf("  [1] => powerup MALIBU\n");
-        printf("  [2] => powerdown MALIBU\n");
-        printf("  [3] => powerup ASIC 0\n");
+        //printf("  [1] => powerup MALIBU\n");
+        //printf("  [2] => powerdown MALIBU\n");
+        //printf("  [3] => powerup ASIC 0\n");
 //        printf("  [4] => stic3_config_PLL_TEST_ch0to6_noGenIDLE\n");
-//        printf("  [5] => data\n");
+        printf("  [5] => data\n");
         printf("  [6] => monitor test\n");
         printf("  [q] => exit\n");
 
@@ -145,10 +145,10 @@ void SMB_t::menu_SMB_main() {
         char cmd = wait_key();
         switch(cmd) {
         case '0':
-            sc_callback(0x0110, (alt_u32*) mutrig_config_ALL_OFF, 0);
-            sc_callback(0x0110, (alt_u32*) mutrig_config_ALL_OFF, 1);
-            sc_callback(0x0110, (alt_u32*) mutrig_config_ALL_OFF, 2);
-            sc_callback(0x0110, (alt_u32*) mutrig_config_ALL_OFF, 3);
+//            sc_callback(0x0110, (alt_u32*) mutrig_config_ALL_OFF, 0);
+//            sc_callback(0x0111, (alt_u32*) mutrig_config_ALL_OFF, 0);
+            sc_callback(0x0112, (alt_u32*) mutrig_config_ALL_OFF, 0);
+            //sc_callback(0x0113, (alt_u32*) mutrig_config_ALL_OFF, 0);
             break;
         case '1':
             break;

@@ -126,6 +126,9 @@ architecture rtl of top is
     signal s_run_state_all_done     : std_logic;
     signal s_MON_rxrdy              : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
+    -- SPI SMB
+    signal s_scifi_csn              : std_logic_vector(15 downto 0);
+
 begin
 -- TODO: this is a dummy-copy from tile firmware, changes for scifi ?? M. Mueller
 --------------------------------------------------------------------
@@ -137,6 +140,12 @@ begin
     -- do not compile away 
     scifi_fifo_ext              <= pb_db(0);
     scifi_inject                <= pb_db(0);
+
+    -- SPI connection to CON2
+    scifi_csn(1) <= s_scifi_csn(0);
+    scifi_csn(2) <= s_scifi_csn(1);
+    scifi_csn(3) <= s_scifi_csn(2);
+    scifi_csn(4) <= not s_scifi_csn(3);
 
     e_tile_path : entity work.scifi_path
     generic map (
@@ -224,10 +233,10 @@ begin
         i_ffly_Int_n        => Firefly_Int_n,
         i_ffly_ModPrs_n     => Firefly_ModPrs_n,
 
-        i_spi_miso              => scifi_spi_miso, --TODO: check if we have to flip this
-        o_spi_mosi              => scifi_spi_mosi,
-        o_spi_sclk              => scifi_spi_sclk,
-        o_spi_ss_n(3 downto 0)  => scifi_csn,
+        i_spi_miso          => scifi_spi_miso, --TODO: check if we have to flip this
+        o_spi_mosi          => scifi_spi_mosi,
+        o_spi_sclk          => scifi_spi_sclk,
+        o_spi_ss_n          => s_scifi_csn,
 
         i_spi_si_miso       => si45_spi_out,
         o_spi_si_mosi       => si45_spi_in,
