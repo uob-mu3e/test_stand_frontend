@@ -618,7 +618,7 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
         printf("Error: Wrong trigger_mask 0x%08X\n", eh->trigger_mask);
         return -1;
     }
-    if ( bh->flags != 0x11 ) {
+    if ( bh->flags != 0x31 ) {
         printf("Error: Wrong flags 0x%08X\n", bh->flags);
         return -1;
     }
@@ -860,7 +860,7 @@ INT read_stream_thread(void *param) {
 //         sleep(1);
         mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
         
-        //while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
+        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
 
         // disable dma
         mu.disable();
