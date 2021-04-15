@@ -4,6 +4,7 @@
 
 .DEFAULT_GOAL := all
 
+.DELETE_ON_ERROR :
 .ONESHELL :
 
 ifndef QUARTUS_ROOTDIR
