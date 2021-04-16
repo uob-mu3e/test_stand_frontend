@@ -15,7 +15,7 @@ generic(
     DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
 );
 port(
-    i_rx                : in  std_logic_vector(31 downto 0);
+    i_rx                : in  std_logic_vector (31 downto 0);
     i_rempty            : in  std_logic;
     i_header            : in  std_logic;
     i_trailer           : in  std_logic;
@@ -26,6 +26,7 @@ port(
     o_data              : out std_logic_vector (255 downto 0);
     o_wen               : out std_logic;
     o_ren               : out std_logic;
+    o_dma_cnt_words     : out std_logic_vector (31 downto 0);
     o_endofevent        : out std_logic;
     o_done              : out std_logic;
     o_state_out         : out std_logic_vector (3 downto 0);
@@ -66,7 +67,7 @@ architecture arch of swb_midas_event_builder is
     type event_counter_state_type is (waiting, get_data, runing, skip_event);
     signal event_counter_state : event_counter_state_type;
     signal event_last_ram_add : std_logic_vector(8 downto 0);
-    signal word_counter : std_logic_vector(31 downto 0);
+    signal word_counter, word_counter_endofevent : std_logic_vector(31 downto 0);
 
     -- error cnt
     signal cnt_tag_fifo_full : std_logic_vector(31 downto 0);
@@ -373,6 +374,8 @@ begin
         event_last_ram_add  <= (others => '0');
         event_counter_state <= waiting;	
         word_counter        <= (others => '0');
+        o_dma_cnt_words     <= (others => '0');
+        word_counter_endofevent <= (others => '0');
         --
     elsif rising_edge(i_clk_250) then
 
@@ -387,6 +390,7 @@ begin
         
         if ( i_wen = '1' and word_counter >= i_get_n_words ) then
             o_done <= '1';
+            o_dma_cnt_words <= word_counter_endofevent;
         end if;
 
         case event_counter_state is
@@ -405,19 +409,22 @@ begin
                     event_counter_state <= skip_event;
                     cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
                 else
-                    o_wen        <= i_wen;
-                    o_endofevent        <= '1'; -- begin of event
+                    o_wen               <= i_wen;
                     word_counter        <= word_counter + '1';
                     event_counter_state <= runing;
                 end if;
                 r_ram_add       <= r_ram_add + '1';
 
         when runing =>
-                o_state_out     <= x"C";
-                o_wen    <= i_wen;
-                word_counter    <= word_counter + '1';
+                o_state_out             <= x"C";
+                o_wen                   <= i_wen;
+                word_counter            <= word_counter + '1';
                 if(r_ram_add = event_last_ram_add - '1') then
-                    event_counter_state	<= waiting;
+                    o_endofevent        <= '1'; -- end of event
+                    event_counter_state <= waiting;
+                    if ( word_counter + '1' <= i_get_n_words ) then
+                        word_counter_endofevent <= word_counter + '1';
+                    end if;
                 else
                     r_ram_add <= r_ram_add + '1';
                 end if;

@@ -54,6 +54,7 @@ port(
     o_fram_wen       : out std_logic;
 
     o_dma_wren       : out std_logic;
+    o_dma_cnt_words  : out std_logic_vector (31 downto 0);
     o_dma_done       : out std_logic;
     o_endofevent     : out std_logic;
     o_dma_data       : out std_logic_vector (255 downto 0)--;
@@ -341,6 +342,7 @@ begin
         o_wen               => o_dma_wren,
         o_ren               => builder_rack,
         o_endofevent        => o_endofevent,
+        o_dma_cnt_words     => o_dma_cnt_words,
         o_done              => o_dma_done,
 
         o_counters          => builder_counters,
