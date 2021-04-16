@@ -2,7 +2,7 @@
 
 #include "smb_module.h"
 #include "smb_constants.h"
-#include "builtin_config/mutrig1_config.h"
+#include "builtin_config/mutrig2_config.h"
 
 //from base.h
 char wait_key(useconds_t us = 100000);
@@ -145,10 +145,10 @@ void SMB_t::menu_SMB_main() {
         char cmd = wait_key();
         switch(cmd) {
         case '0':
-//            sc_callback(0x0110, (alt_u32*) mutrig_config_ALL_OFF, 0);
-//            sc_callback(0x0111, (alt_u32*) mutrig_config_ALL_OFF, 0);
-            sc_callback(0x0112, (alt_u32*) mutrig_config_ALL_OFF, 0);
-            //sc_callback(0x0113, (alt_u32*) mutrig_config_ALL_OFF, 0);
+//            sc_callback(0x0110, (alt_u32*) config_ALL_OFF, 0);
+//            sc_callback(0x0111, (alt_u32*) config_ALL_OFF, 0);
+            sc_callback(0x0112, (alt_u32*) config_ALL_OFF, 0);
+            //sc_callback(0x0113, (alt_u32*) config_ALL_OFF, 0);
             break;
         case '1':
             break;
