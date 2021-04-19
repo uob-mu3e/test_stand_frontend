@@ -28,6 +28,7 @@ struct mupix_datapath_t {
             }
             printf("  [5] => print sorter counters\n");
             printf("  [6] => set data bypass select\n");
+            printf("  [7] => write sorter inject reg\n");
             
             if((sc->ram->data[0xFF65] >> 4) & 1U){
                 printf("\n DataGen RATE: Full Stream\n");
@@ -98,6 +99,19 @@ struct mupix_datapath_t {
 
                 printf("setting reg to 0x%08x\n", datagenreg);
                 sc->ram->data[0xFFBB] = datagenreg;
+                break;
+            case '7':
+                datagenreg = 0x0;
+                printf("enter sorter inject reg in hex: ");
+
+                for(int i = 0; i<8; i++){
+                    printf("mask: 0x%08x\n", datagenreg);
+                    str[0] = wait_key();
+                    datagenreg = datagenreg*16+strtol(str,NULL,16);
+                }
+
+                printf("setting reg to 0x%08x\n", datagenreg);
+                sc->ram->data[0xFFBE] = datagenreg;
                 break;
             case 'q':
                 return;

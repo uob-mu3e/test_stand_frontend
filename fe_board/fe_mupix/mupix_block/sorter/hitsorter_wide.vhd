@@ -34,7 +34,8 @@ entity hitsorter_wide is
 		readclk							: in std_logic;										-- clock for read/output side
 		data_out						: out reg32;										-- packaged data out
 		out_ena							: out STD_LOGIC;									-- valid output data
-		out_type						: out std_logic_vector(3 downto 0);				-- start/end of an output package, hits, end of run		
+		out_type						: out std_logic_vector(3 downto 0);					-- start/end of an output package, hits, end of run		
+		out_is_hit						: out std_logic;									-- same as out_ena, but only hits, no trailer header etc.
 		diagnostic_out					: out sorter_reg_array;
 		delay							: in ts_t											-- diganostic out (counters for hits at various stages)
 		);
@@ -713,6 +714,7 @@ if(reset_n = '0') then
 	terminated_output				<= '0';
 elsif(writeclk'event and writeclk = '1') then
 	out_ena							<= '0';
+	out_is_hit						<= '0';
 	for i in NCHIPS-1 downto 0 loop
 		raddr(i)							<= 	readcommand(TSRANGE) & --MSBs: Timestamp 
 												readcommand(COMMANDBITS-6 downto TIMESTAMPSIZE); -- LSBs: hit address in TS
@@ -763,6 +765,7 @@ elsif(writeclk'event and writeclk = '1') then
 						-- ts(3:0) & chipID(5:0, the upper 2 bits are 0 here since we have max. 12 links at the moment)& row(7:0) & col(7:0) & tot(4:0) & '0'
 		data_out		<= readcommand_last4(3 downto 0) & "00" & readcommand_last4(COMMANDBITS-2 downto TIMESTAMPSIZE+4) & memmultiplex & "0";
 		out_type		<= "0000";
+		out_is_hit		<= '1';
 		if(readcommand_ena_last4 = '1') then
 			nout <= nout + '1';
 		end if;

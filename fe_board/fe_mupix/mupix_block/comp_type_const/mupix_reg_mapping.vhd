@@ -34,6 +34,7 @@ port (
     i_coarsecounter_ena         : in std_logic := '0';
     i_coarsecounter             : in std_logic_vector(23 downto 0) := (others => '0');
     i_ts_global                 : in std_logic_vector(23 downto 0) := (others => '0');
+    i_last_sorter_hit           : in std_logic_vector(31 downto 0) := (others => '0');
 
     -- outputs 156--------------------------------------------
     o_mp_lvds_link_mask         : out std_logic_vector(35 downto 0); -- lvds link mask
@@ -53,7 +54,8 @@ port (
     o_mp_ctrl_slow_down         : out std_logic_vector(31 downto 0);
 
     -- outputs 125-------------------------------------------------
-    o_sorter_delay              : out ts_t--;
+    o_sorter_delay              : out ts_t;
+    o_sorter_inject             : out std_logic_vector(31 downto 0)--;
 );
 end entity;
 
@@ -69,7 +71,19 @@ architecture rtl of mupix_reg_mapping is
     signal mp_ctrl_invert_csn       : std_logic;
     signal mp_lvds_invert           : std_logic;
     signal mp_data_bypass_select    : std_logic_vector(31 downto 0);
+    signal mp_sorter_inject         : std_logic_vector(31 downto 0);
+
+    signal reg_delay                : std_logic;
 begin
+
+    process(i_clk125)
+    begin
+        if(rising_edge(i_clk125)) then
+            if(reg_delay = '1') then
+                o_sorter_inject <= mp_sorter_inject;
+            end if;
+        end if;
+    end process;
 
     gen_mask_order: for i in 0 to 35 generate
         mp_lvds_link_mask_ordered(i)         <= mp_lvds_link_mask(MP_LINK_ORDER(i));
@@ -101,6 +115,12 @@ begin
             regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
             o_reg_rdata         <= x"CCCCCCCC";
             o_mp_fifo_write     <= (others => '0');
+
+            if(i_reg_we = '1') then
+                reg_delay <= '0';
+            else
+                reg_delay <= '1';
+            end if;
 
             -----------------------------------------------------------------
             ---- mupix ctrl -------------------------------------------------
@@ -222,11 +242,22 @@ begin
                 end if;
             end loop;
 
-            if ( regaddr = MP_DATA_BYPASS_SELECT_W and i_reg_we = '1' ) then
+            if ( regaddr = MP_DATA_BYPASS_SELECT_REGISTER_W and i_reg_we = '1' ) then
                 mp_data_bypass_select <= i_reg_wdata;
             end if;
-            if ( regaddr = MP_DATA_BYPASS_SELECT_W and i_reg_re = '1' ) then
+            if ( regaddr = MP_DATA_BYPASS_SELECT_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata <= mp_data_bypass_select;
+            end if;
+
+            if ( regaddr = MP_LAST_SORTER_HIT_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata <= i_last_sorter_hit;
+            end if;
+
+            if ( regaddr = MP_SORTER_INJECT_REGISTER_W and i_reg_we = '1' ) then
+                mp_sorter_inject <= i_reg_wdata;
+            end if;
+            if ( regaddr = MP_SORTER_INJECT_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata <= mp_sorter_inject;
             end if;
 
         end if;
