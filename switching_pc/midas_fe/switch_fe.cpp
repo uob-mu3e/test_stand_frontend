@@ -106,6 +106,7 @@ INT event_buffer_size = 10 * 10000;
 
 const int switch_id = 0; // TODO to be loaded from outside (on compilation?)
 const int per_fe_SSFE_size = 26;
+const int per_crate_SCFC_size = 21;
 
 /* Inteface to the PCIe FPGA */
 mudaq::MudaqDevice * mup;
@@ -130,6 +131,8 @@ INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
 INT read_scitiles_sc_event(char *pevent, INT off);
 INT read_mupix_sc_event(char *pevent, INT off);
+INT read_febcrate_sc_event(char *pevent, INT off);
+
 void sc_settings_changed(odb o);
 void switching_board_mask_changed(odb o);
 void frontend_board_mask_changed(odb o);
@@ -146,6 +149,7 @@ void setup_history();
 void setup_alarms();
 
 INT init_mudaq(mudaq::MudaqDevice&  mu);
+INT init_crates();
 INT init_febs(mudaq::MudaqDevice&  mu);
 INT init_scifi(mudaq::MudaqDevice&  mu);
 INT init_scitiles(mudaq::MudaqDevice& mu);
@@ -217,6 +221,21 @@ EQUIPMENT equipment[] = {
      "", "", "",},
      read_mupix_sc_event,          /* readout routine */
     },
+    {"FEBCrates",                    /* equipment name */
+    {110, 0,                      /* event ID, trigger mask */
+     "SYSTEM",                  /* event buffer */
+     EQ_PERIODIC,                 /* equipment type */
+     0,                         /* event source crate 0, all stations */
+     "MIDAS",                   /* format */
+     TRUE,                      /* enabled */
+     RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
+     10000,                      /* read every 1 sec */
+     0,                         /* stop run after this event limit */
+     0,                         /* number of sub events */
+     1,                         /* log history every event */
+     "", "", "",},
+     read_febcrate_sc_event,          /* readout routine */
+    },
     {""}
 };
 
@@ -270,6 +289,11 @@ INT frontend_init()
     cout << "Creating FEB List" << endl;
     // Create the FEB List
     feblist = new FEBList(switch_id);
+
+    //init feb crates
+    status = init_crates();
+    if (status != SUCCESS)
+        return FE_ERR_DRIVER;
 
     //init febs (general)
     status = init_febs(*mup);
@@ -362,7 +386,8 @@ void setup_odb(){
             {"Firmware File",""},
             {"Firmware FEB ID",0},
             // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
-            {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()}
+            {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()},
+            {"Names SCFC", std::array<std::string, per_crate_SCFC_size*N_FEBCRATES>()}
     };
 
     int bankindex = 0;
@@ -448,6 +473,32 @@ void setup_odb(){
         (*s) += " Firefly2 Alarms";
         settings[namestr][bankindex++] = s;
     }
+
+    bankindex = 0;
+    for(int i=0; i < N_FEBCRATES; i++){
+        string feb = "Crate" + to_string(i);
+        string * s = new string(feb);
+        (*s) += " Index";
+        settings["SCFC"][bankindex++] = s;
+        s = new string(feb);
+        (*s) += " Voltage 20";
+        settings["SCFC"][bankindex++] = s;
+        s = new string(feb);
+        (*s) += " Voltage 3.3";
+        settings["SCFC"][bankindex++] = s;
+        s = new string(feb);
+        (*s) += " Voltage 5";
+        settings["SCFC"][bankindex++] = s;
+        s = new string(feb);
+        (*s) += " CC Temperature";
+        settings["SCFC"][bankindex++] = s;
+        for(int j=0; j < MAX_FEBS_PER_CRATE; j++){
+            s = new string(feb);
+            (*s) += "FEB" + to_string(j) + "Temperature";
+            settings["SCFC"][bankindex++] = s;
+        }
+    }
+
     settings.print();
 
     settings.connect("/Equipment/Switching/Settings", true);
@@ -562,6 +613,10 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
     feb_sc = new FEBSlowcontrolInterface(mu);
 #endif
     return SUCCESS;
+}
+
+INT init_crates() {
+
 }
 
 INT init_febs(mudaq::MudaqDevice & mu) {
