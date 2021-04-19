@@ -86,6 +86,7 @@ $(PREFIX)/components_pkg.vhd : $(SOPC_FILES) $(QMEGAWIZ_VHD_FILES)
 	mkdir -pv -- "$(PREFIX)"
 	# find and exec components_pkg.sh
 	$(lastword $(realpath $(addsuffix components_pkg.sh,$(dir $(MAKEFILE_LIST))))) "$(PREFIX)" > "$@"
+	if [ -x /bin/awk ] ; then awk -f $(lastword $(realpath $(addsuffix components_pkg.awk,$(dir $(MAKEFILE_LIST))))) "$@" ; fi
 
 # include.qip - include all generated files
 $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
