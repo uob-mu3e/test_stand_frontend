@@ -146,9 +146,11 @@ architecture RTL of data_unpacker is
         i_col       : std_logic_vector(6 downto 0);
         i_row       : std_logic_vector(8 downto 0)--;
     ) return std_logic_vector is 
-        variable col : std_logic_vector(7 downto 0);
+        variable col            : std_logic_vector(7 downto 0);
+        variable i_row_inverted : std_logic_vector(8 downto 0);
     begin
-        if (unsigned(i_row)> 380 or (i_row(8) = '0' and unsigned(i_row)>124)) then
+        i_row_inverted := not i_row;
+        if (unsigned(i_row_inverted)> 380 or (i_row_inverted(8) = '0' and unsigned(i_row)>124)) then
             col := i_col & '1';
         else
             col := i_col & '0';
