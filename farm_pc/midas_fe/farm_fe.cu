@@ -11,6 +11,7 @@
 #include "experim.h"
 #include "switching_constants.h"
 #include "link_constants.h"
+#include "util.h"
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -180,13 +181,20 @@ void stream_settings_changed(odb o)
         int value = o;
         cm_msg(MINFO, "stream_settings_changed", "Set Divider to %d", value);
         mup->write_register(DATAGENERATOR_DIVIDER_REGISTER_W, o);
-        // TODO: test me
     }
 
     if (name == "Datagen Enable") {
         bool value = o;
         cm_msg(MINFO, "stream_settings_changed", "Set Disable to %d", value);
         //this is set once we start the run
+    }
+
+    if (name == "Mask Links") {
+        int value = o;
+        char buffer [50];
+        sprintf(buffer, "Set Mask Links to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) value));
+        cm_msg(MINFO, "stream_settings_changed", buffer);
+        mup->write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, value);
     }
 
 }
@@ -220,6 +228,7 @@ void setup_odb(){
     odb stream_settings = {
         {"Datagen Divider", 1000},     // int
         {"Datagen Enable", false},     // bool
+        {"Mask Links", 0x0}, // int
         {"dma_buf_nwords", int(dma_buf_nwords)},
         {"dma_buf_size", int(dma_buf_size)},
     };
@@ -396,6 +405,7 @@ INT begin_of_run(INT run_number, char *error)
         // readout link
         mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
    }
+   mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, stream_settings["Mask Links"]);
    // reset lastlastwritten
    lastlastWritten = 0;
    lastRunWritten = mu.last_written_addr();//lastWritten;
@@ -850,8 +860,6 @@ INT read_stream_thread(void *param) {
         mu.enable_continous_readout(0);
 
         // wait for requested data
-        // setup stream
-        mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x1);
         // request to read dma_buffer_size/2 (count in blocks of 256 bits)
         mu.write_register(0xC, max_requested_words / (256/32));
         
@@ -862,19 +870,29 @@ INT read_stream_thread(void *param) {
         
         while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
 
+        uint32_t words_written = mu.read_register_ro(0x32);
+
         // disable dma
         mu.disable();
         // stop readout
-        mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
         mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
         // reset all
         mu.write_register(RESET_REGISTER_W, 0x1);
         
-        // and get lastWritten
+        // and get lastWritten/endofevent
         lastlastWritten = 0;
         uint32_t lastWritten = mu.last_written_addr();
-//         printf("lastWritten = 0x%08X\n", lastWritten);
+        uint32_t endofevent = mu.last_endofevent_addr();
+        
+        //printf("lastWritten = 0x%08X\n", lastWritten);
+        //printf("endofevent = 0x%08X\n", endofevent);
+        //printf("words_written = 0x%08X\n", words_written);
+        //printf("words_written = 0x%08X\n", words_written*8-1);
+        //for (int i = 0; i<50; i++) {
+        //printf("dma_buf[words_written-0] = 0x%08X\n", dma_buf[words_written*8]);
+        //}
+        //continue;
 
         // print dma_buf content
 //        for ( int i = lastWritten - 0x100; i < lastWritten + 0x100; i++) {
