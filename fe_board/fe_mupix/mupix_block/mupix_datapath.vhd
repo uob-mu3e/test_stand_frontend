@@ -276,7 +276,7 @@ begin
             end if;
 
             sorter_inject_prev <= sorter_inject(MP_SORTER_INJECT_ENABLE_BIT);
-            if(sorter_inject_prev = '0' and sorter_inject(MP_SORTER_INJECT_ENABLE_BIT) = '1' and to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE))) < 12) then
+            if(sorter_inject_prev = '0' and sorter_inject(MP_SORTER_INJECT_ENABLE_BIT) = '1' and (to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE))) < 12)) then
                 hits_sorter_in      <= (others => sorter_inject);
                 hits_sorter_in_ena  <= (others => '0');
                 hits_sorter_in_ena(to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE)))) <= '1';

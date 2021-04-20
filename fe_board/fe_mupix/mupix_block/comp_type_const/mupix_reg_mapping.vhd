@@ -55,7 +55,7 @@ port (
 
     -- outputs 125-------------------------------------------------
     o_sorter_delay              : out ts_t;
-    o_sorter_inject             : out std_logic_vector(31 downto 0)--;
+    o_sorter_inject             : out std_logic_vector(31 downto 0) := (others => '0')--;
 );
 end entity;
 
@@ -96,6 +96,7 @@ begin
             mp_datagen_control        <= (others => '0');
             o_mp_ctrl_enable          <= (others => '0');
             mp_lvds_link_mask         <= (others => '0');
+            mp_sorter_inject          <= (others => '0');
             mp_ctrl_invert_csn        <= '0';
             
         elsif(rising_edge(i_clk156)) then

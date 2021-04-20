@@ -102,6 +102,7 @@ struct mupix_datapath_t {
                 break;
             case '7':
                 datagenreg = 0x0;
+                sc->ram->data[0xFFBE] = datagenreg;
                 printf("enter sorter inject reg in hex: ");
 
                 for(int i = 0; i<8; i++){
@@ -111,6 +112,8 @@ struct mupix_datapath_t {
                 }
 
                 printf("setting reg to 0x%08x\n", datagenreg);
+                sc->ram->data[0xFFBE] = datagenreg;
+                datagenreg = 0x0;
                 sc->ram->data[0xFFBE] = datagenreg;
                 break;
             case 'q':

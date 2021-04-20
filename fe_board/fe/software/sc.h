@@ -25,6 +25,8 @@ struct sc_t {
         // move FEB into idle state on Nios boot, disable optical reset rx, run prep with IP != 0.0.0.0 will broadcast enable of optical reset rx via SW board)
         auto& reset_bypass = ram->regs.fe.reset_bypass;
         reset_bypass = 0x0200;
+        reset_bypass = 0x0332;
+        reset_bypass = 0x0200;
         reset_bypass = 0x0330;
         reset_bypass = 0x0200;
         reset_bypass = 0x0331;
