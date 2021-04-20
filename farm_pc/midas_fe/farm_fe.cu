@@ -636,7 +636,25 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     uint32_t eventDataSize = eh->data_size; // bytes
 
     printf("EventDataSize: %8.8x\n", eventDataSize);
-    printf("Data: %8.8x\n", buffer[idx+eventDataSize/4]);
+    printf("Header Buffer: %8.8x\n", buffer[idx]);
+    printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-1]);
+
+    if ( !(buffer[idx+4+eventDataSize/4-1] == 0xAFFEAFFE or buffer[idx+4+eventDataSize/4-1] == 0x0FC0009C) ) {
+      printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
+      return -1;
+    }
+
+    uint32_t dma_buf[4+eventDataSize/4];
+    for ( int i = 0; i<4+eventDataSize/4; i++ ) {
+      dma_buf[i] = buffer[idx + i];
+      //printf("%8.8x %8.8x\n", i, buffer[idx + i]);
+    }
+
+
+    copy_n(&dma_buf[0], sizeof(dma_buf)/4, pdata);
+    
+    return sizeof(dma_buf);
+    return -1;
     uint32_t endFirstBank = 0;
     for ( int i = idx; i<=idx+4+eventDataSize/4; i++ ) {
         // check if 9c is in data range
