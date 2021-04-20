@@ -640,7 +640,7 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     uint32_t endFirstBank = 0;
     for ( int i = idx; i<=idx+4+eventDataSize/4; i++ ) {
         // check if 9c is in data range
-        if ( buffer[i] == 0x0000009c and i > 10+idx ) {
+        if ( buffer[i] == 0x0FC0009c and i > 10+idx ) {
             endFirstBank = i;
             break;
         }
@@ -721,8 +721,8 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     printf("Data Size: %8.8x, %8.8x\n", dma_buf_dummy[3], dma_buf_dummy[4+dma_buf_dummy[3]/4]);
     printf("Buffer Size: %8.8x\n", (endFirstBank+1+mod2-idx)*4);
     
-    if ( !(dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0x0000009c or dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0xAfFEAFFE) ) {
-        printf("!(dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0x0000009c or dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0xAfFEAFFE)\n");
+    if ( !(dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0x0FC0009c or dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0xAfFEAFFE) ) {
+        printf("!(dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0x0FC0009c or dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0xAfFEAFFE)\n");
         printf("%8.8x\n",dma_buf_dummy[3+dma_buf_dummy[3]/4]);
         return -1;
     }
@@ -731,8 +731,8 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
 //         printf("%d %8.8x %8.8x\n", i, dma_buf_dummy[i], buffer[i+idx]);
 //     }
     
-    if ( !(dma_buf_dummy[endFirstBank+1+mod2-idx] == 0x0000009c or dma_buf_dummy[endFirstBank+1+mod2-idx] == 0xAFFEAFFE) ) {
-        printf("Error: dma_buf_dummy[endFirstBank+1-idx] != 0x0000009c 0x%08X\n", dma_buf_dummy[endFirstBank+1-idx]);
+    if ( !(dma_buf_dummy[endFirstBank+1+mod2-idx] == 0x0FC0009c or dma_buf_dummy[endFirstBank+1+mod2-idx] == 0xAFFEAFFE) ) {
+        printf("Error: dma_buf_dummy[endFirstBank+1-idx] != 0x0FC0009c 0x%08X\n", dma_buf_dummy[endFirstBank+1-idx]);
         for ( int i = 0; i<=endFirstBank+1+mod2-idx; i++ ) {
             printf("%8.8x %8.8x\n", dma_buf_dummy[i], buffer[i+idx]);
         }
