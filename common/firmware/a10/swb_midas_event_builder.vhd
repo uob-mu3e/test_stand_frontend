@@ -286,7 +286,11 @@ begin
             if ( i_rempty = '0' ) then
                 w_ram_en            <= '1';
                 w_ram_add           <= w_ram_add + 1;
-                w_ram_data          <= i_rx;
+                if ( i_trailer = '1' ) then
+                    w_ram_data      <= x"0FC0009C";
+                else
+                    w_ram_data      <= i_rx;
+                end if;
                 event_size_cnt      <= event_size_cnt + 4;
                 bank_size_cnt       <= bank_size_cnt + 4;
                 align_bank_size     <= align_bank_size + '1';

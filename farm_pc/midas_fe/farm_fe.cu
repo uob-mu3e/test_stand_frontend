@@ -677,8 +677,12 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
             // change flags
             dma_buf_dummy[i] = 0x31;
         } else if ( i == 6 ) {
-            // change bank name
-            dma_buf_dummy[i] = 0x58495049;
+            // MIDAS expects bank names in ascii:
+            // For the run 2021 
+            // PCD1 = PixelCentralDebug1
+            // SCD1 = ScifiCentralDebug1
+            // TCD1 = TileCentralDebug1
+            dma_buf_dummy[i] = 0x31444350;
         } else if ( i == 7 ) {
             // change bank type
             dma_buf_dummy[i] = 0x6;
