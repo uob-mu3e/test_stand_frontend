@@ -31,4 +31,4 @@ ghdl -m "${OPTS[@]}" "$TB"
 ghdl -e "${OPTS[@]}" "$TB"
 ghdl -r "${OPTS[@]}" "$TB" --stop-time="$STOPTIME" --vcd="$TB.vcd" --wave="$TB.ghw"
 
-gtkwave "$TB.ghw"
+gtkwave "$TB.vcd"
