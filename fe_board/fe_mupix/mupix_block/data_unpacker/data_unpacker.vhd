@@ -110,7 +110,7 @@ architecture RTL of data_unpacker is
         variable i_row_inverted : std_logic_vector(8 downto 0);
     begin
         i_row_inverted := not i_row;
-        if (unsigned(i_row)>380) then
+        if (unsigned(i_row_inverted)>380) then
             tmp     := std_logic_vector(499-unsigned(i_row_inverted));
             if (i_row_inverted(0)='0') then
                 row := std_logic_vector(unsigned(tmp(8 downto 1)) + 60);
