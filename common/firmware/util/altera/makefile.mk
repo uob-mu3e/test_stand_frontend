@@ -62,7 +62,7 @@ SOPC_FILES := $(patsubst %.qsys,%.sopcinfo,$(QSYS_FILES))
 # list all .vhd.qmegawiz files
 QMEGAWIZ_XML_FILES := $(patsubst $(abspath .)/%,%,$(abspath $(filter %.vhd.qmegawiz,$(IPs))))
 # convert all .vhd.qmegawiz files into .vhd files
-QMEGAWIZ_VHD_FILES := $(addprefix $(PREFIX),$(patsubst %.vhd.qmegawiz,%.vhd,$(QMEGAWIZ_XML_FILES)))
+QMEGAWIZ_VHD_FILES := $(addprefix $(PREFIX)/,$(patsubst %.vhd.qmegawiz,%.vhd,$(QMEGAWIZ_XML_FILES)))
 
 # default qpf file
 top.qpf :
