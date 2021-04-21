@@ -886,9 +886,9 @@ INT read_stream_thread(void *param) {
         mu.write_register(0xC, max_requested_words / (256/32));
         
         // reset all
-        mu.write_register_wait(RESET_REGISTER_W, 0x1, 100);
+        mu.write_register(RESET_REGISTER_W, 0x1);
 //         sleep(1);
-        mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
+        mu.write_register(RESET_REGISTER_W, 0x0);
         
         while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
 
@@ -907,14 +907,25 @@ INT read_stream_thread(void *param) {
         uint32_t lastWritten = mu.last_written_addr();
         uint32_t endofevent = mu.last_endofevent_addr();
         
-        //printf("lastWritten = 0x%08X\n", lastWritten);
-        //printf("endofevent = 0x%08X\n", endofevent);
-        //printf("words_written = 0x%08X\n", words_written);
-        //printf("words_written = 0x%08X\n", words_written*8-1);
-        //for (int i = 0; i<50; i++) {
-        //printf("dma_buf[words_written-0] = 0x%08X\n", dma_buf[words_written*8]);
-        //}
-        //continue;
+        // printf("lastWritten = 0x%08X\n", lastWritten);
+        // printf("endofevent = 0x%08X\n", endofevent);
+        // printf("words_written*8 = 0x%08X, data = 0x%08X, data-1 = 0x%08X\n", words_written*8, dma_buf[words_written*8], dma_buf[words_written*8-1]);
+        
+        // if ( !(dma_buf[words_written*8-1] == 0xAFFEAFFE or dma_buf[words_written*8-1] == 0x0FC0009C) ) continue;
+
+        // // //uint32_t dma_buf_save[4194296];//words_written*8];
+        // // uint32_t* dma_buf_save = new uint32_t[words_written*8];
+        // // for ( int i = 0; i<words_written*8; i++ ) {
+        // //   dma_buf_save[i] = dma_buf[i];
+        // // }
+        // copy_n(&dma_buf[0], words_written*8-1, pdata);
+        
+        // pdata+=(words_written*8-1)*4;
+        // rb_increment_wp(rbh, (words_written*8-1)*4); 
+        // // for (int i = 0; i<50; i++) {
+        // // printf("dma_buf[words_written-0] = 0x%08X\n", dma_buf[words_written*8]);
+        // // }
+        // continue;
 
         // print dma_buf content
 //        for ( int i = lastWritten - 0x100; i < lastWritten + 0x100; i++) {
