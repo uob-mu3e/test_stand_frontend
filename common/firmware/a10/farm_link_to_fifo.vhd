@@ -13,10 +13,10 @@ use ieee.std_logic_unsigned.all;
 
 entity farm_link_to_fifo is
 generic (
-    g_NLINKS_SWB_TOTL    : positive :=  16,
-    N_PIXEL              : positive :=  8,
-    N_SCIFI              : positive :=  4,
-    N_TILE               : positive :=  4--,
+    g_NLINKS_SWB_TOTL    : positive :=  16;
+    N_PIXEL              : positive :=  8;
+    N_SCIFI              : positive :=  4;
+    N_TILE               : positive :=  4;
     LINK_FIFO_ADDR_WIDTH : positive := 10--;
 );
 port (

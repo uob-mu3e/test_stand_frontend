@@ -124,7 +124,7 @@ begin
         N_PIXEL             => 8,
         N_SCIFI             => 4,
         N_TILE              => 4--,
-    );
+    )
     port map (
         i_rx                => i_rx,
         i_rx_k              => i_rx_k,

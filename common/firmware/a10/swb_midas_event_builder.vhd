@@ -50,7 +50,7 @@ architecture arch of swb_midas_event_builder is
         event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, event_set_size, bank_set_size, write_tagging_fifo, set_algin_word, bank_reserved, EVENT_IDLE--,
     );
     signal event_tagging_state : event_tagging_state_type;
-    signal e_size_add, b_size_add, b_length_add, w_ram_add_reg, w_ram_add, w_fifo_data, r_fifo_data, last_event_add, align_event_size, align_bank_size : std_logic_vector(11 downto 0);
+    signal e_size_add, b_size_add, b_length_add, w_ram_add_reg, w_ram_add, w_fifo_data, r_fifo_data, last_event_add, align_event_size : std_logic_vector(11 downto 0);
     signal w_fifo_en, r_fifo_en, tag_fifo_empty, tag_fifo_full : std_logic;
 
     -- ram 
@@ -145,7 +145,6 @@ begin
         w_ram_add_reg       <= (others => '0');
         last_event_add      <= (others => '0');
         align_event_size    <= (others => '0');
-        align_bank_size     <= (others => '0');
 
         -- ram and tagging fifo write signals
         w_ram_en            <= '0';
@@ -293,18 +292,9 @@ begin
                 end if;
                 event_size_cnt      <= event_size_cnt + 4;
                 bank_size_cnt       <= bank_size_cnt + 4;
-                align_bank_size     <= align_bank_size + '1';
                 if ( i_trailer = '1' ) then
-                    -- check if the size of the bank data 
-                    -- is in 64 bit and 256 bit
-                    -- if not add a dummy words
-                    if ( align_bank_size(2 downto 0) + '1' = "000" ) then
-                        event_tagging_state <= bank_set_length;
-                        w_ram_add_reg       <= w_ram_add + 1;
-                    else
-                        event_tagging_state <= set_algin_word;
-                        align_event_size    <= w_ram_add + 1 - last_event_add;
-                    end if;
+                    event_tagging_state <= set_algin_word;
+                    align_event_size    <= w_ram_add + 1 - last_event_add;
                 end if;
             end if;
 
@@ -314,7 +304,9 @@ begin
             w_ram_add_reg       <= w_ram_add + 1;
             w_ram_data          <= x"AFFEAFFE";
             align_event_size    <= align_event_size + 1;
-            -- align to DMA 256 bit word
+            -- check if the size of the bank data 
+            -- is in 64 bit and 256 bit
+            -- if not add a dummy words
             if ( align_event_size(2 downto 0) + '1' = "000" ) then
                 event_tagging_state <= bank_set_length;
             else
@@ -328,7 +320,6 @@ begin
             w_ram_add_reg       <= w_ram_add;
             w_ram_data          <= bank_size_cnt;
             bank_size_cnt       <= (others => '0');
-            align_bank_size     <= (others => '0');
             event_tagging_state <= event_set_size;
 
         when event_set_size =>
