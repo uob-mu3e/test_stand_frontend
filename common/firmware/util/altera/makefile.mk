@@ -17,6 +17,10 @@ ifeq ($(PREFIX),)
     override PREFIX := generated
 endif
 
+ifeq ($(CABLE),)
+    CABLE := 1
+endif
+
 # location of compiled firmware (SOF file)
 ifeq ($(SOF),)
     SOF := output_files/top.sof
