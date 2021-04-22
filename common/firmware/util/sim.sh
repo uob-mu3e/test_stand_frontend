@@ -29,6 +29,6 @@ OPTS=(
 ghdl -i "${OPTS[@]}" "${SRC[@]}"
 ghdl -m "${OPTS[@]}" "$TB"
 ghdl -e "${OPTS[@]}" "$TB"
-ghdl -r "${OPTS[@]}" "$TB" --stop-time="$STOPTIME" --vcd="$TB.vcd" --wave="$TB.ghw"
+ghdl -r "${OPTS[@]}" "$TB" --stop-time="$STOPTIME" --vcd="$TB.vcd" --wave="$TB.ghw" --fst="$TB.fst"
 
 gtkwave "$TB.ghw"
