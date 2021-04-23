@@ -23,7 +23,6 @@ add wave -noupdate -group {Hit writer} /hitsorter_tb/dut/hit_ena_last1
 add wave -noupdate -group {Hit writer} /hitsorter_tb/dut/hit_ena_last2
 add wave -noupdate -group {Hit writer} /hitsorter_tb/dut/hit_ena_last3
 add wave -noupdate -group {Hit writer} /hitsorter_tb/dut/tshit
-add wave -noupdate -group {Hit writer} /hitsorter_tb/dut/slowtshit
 add wave -noupdate -group {Hit writer} /hitsorter_tb/dut/sametsafternext
 add wave -noupdate -group {Hit writer} /hitsorter_tb/dut/sametsnext
 add wave -noupdate -group {Hit writer} /hitsorter_tb/dut/dcountertemp
@@ -47,38 +46,36 @@ add wave -noupdate -group {Counter fifo} /hitsorter_tb/dut/read_counterfifo
 add wave -noupdate -group {Counter fifo} /hitsorter_tb/dut/write_counterfifo
 add wave -noupdate -group {Counter fifo} /hitsorter_tb/dut/counterfifo_almostfull
 add wave -noupdate -group {Counter fifo} /hitsorter_tb/dut/counterfifo_empty
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/block_nonempty_accumulate
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/block_empty
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/block_empty_del1
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/block_empty_del2
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/stopwrite
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/stopwrite_del1
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/stopwrite_del2
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/blockchange
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/blockchange_del1
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/blockchange_del2
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/mem_nnonempty
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/mem_nechips
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/mem_nechips2
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/mem_countchips
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/mem_countchips_m1
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/mem_countchips_m2
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/hasmem
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/mem_overflow
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/mem_overflow_del1
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/mem_overflow_del2
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/credits
-add wave -noupdate -expand -group {Counter reader} /hitsorter_tb/dut/credittemp
-add wave -noupdate -group Sequencer /hitsorter_tb/dut/seq/state
-add wave -noupdate -group Sequencer /hitsorter_tb/dut/seq/current_block
-add wave -noupdate -group Sequencer /hitsorter_tb/dut/seq/fifo_reg
-add wave -noupdate -group Sequencer /hitsorter_tb/dut/seq/even_counters_reg
-add wave -noupdate -group Sequencer /hitsorter_tb/dut/seq/odd_counters_reg
-add wave -noupdate -group Sequencer /hitsorter_tb/dut/seq/doeven
-add wave -noupdate -group Sequencer /hitsorter_tb/dut/seq/doodd
-add wave -noupdate -group Sequencer /hitsorter_tb/dut/seq/subaddr
-add wave -noupdate -group Sequencer /hitsorter_tb/dut/seq/overflowts
-add wave -noupdate -group Sequencer /hitsorter_tb/dut/seq/block_max
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/block_nonempty_accumulate
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/block_empty
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/block_empty_del1
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/block_empty_del2
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/stopwrite
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/stopwrite_del1
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/stopwrite_del2
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/blockchange
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/blockchange_del1
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/blockchange_del2
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/mem_nnonempty
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/mem_nechips
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/mem_nechips2
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/mem_countchips
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/mem_countchips_m1
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/mem_countchips_m2
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/mem_overflow
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/mem_overflow_del1
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/mem_overflow_del2
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/credits
+add wave -noupdate -group {Counter reader} /hitsorter_tb/dut/credittemp
+add wave -noupdate -expand -group Sequencer /hitsorter_tb/dut/seq/state
+add wave -noupdate -expand -group Sequencer /hitsorter_tb/dut/seq/domem
+add wave -noupdate -expand -group Sequencer /hitsorter_tb/dut/seq/newblocknext_reg
+add wave -noupdate -expand -group Sequencer /hitsorter_tb/dut/seq/current_block
+add wave -noupdate -expand -group Sequencer /hitsorter_tb/dut/seq/fifo_reg
+add wave -noupdate -expand -group Sequencer /hitsorter_tb/dut/seq/subaddr
+add wave -noupdate -expand -group Sequencer /hitsorter_tb/dut/seq/overflowts
+add wave -noupdate -expand -group Sequencer /hitsorter_tb/dut/seq/outcommand
+add wave -noupdate -expand -group Sequencer /hitsorter_tb/dut/seq/command_enable
 add wave -noupdate -group {Output Generation} /hitsorter_tb/dut/raddr
 add wave -noupdate -group {Output Generation} /hitsorter_tb/dut/frommem
 add wave -noupdate -group {Output Generation} /hitsorter_tb/dut/cmemreadaddr_hitreader
@@ -106,7 +103,6 @@ add wave -noupdate -group Diagnostics /hitsorter_tb/dut/noutoftime
 add wave -noupdate -group Diagnostics /hitsorter_tb/dut/noverflow
 add wave -noupdate -group Diagnostics /hitsorter_tb/dut/nintime
 add wave -noupdate -group Diagnostics /hitsorter_tb/dut/nout
-add wave -noupdate -group Diagnostics /hitsorter_tb/dut/diagnostic_sel
 add wave -noupdate -group Diagnostics /hitsorter_tb/dut/diagnostic_out
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {4127596 ps} 0}

@@ -181,7 +181,7 @@ begin
     );
 
     --! 125 MHz global clock (from SMA input)
-    e_clk_125 : work.cmp.ip_clk_ctrl
+    e_clk_125 : work.cmp.ip_clkctrl
     port map (
         inclk => SMA_CLKIN,
         outclk => clk_125--,

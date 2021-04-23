@@ -57,6 +57,7 @@ entity firefly is
         --lvds rx
         i_data_lvds_serial      : in    std_logic_vector(1 downto 0);
         o_data_lvds_parallel    : out   std_logic_vector(15 downto 0);
+        o_lvds_ready            : out   std_logic;
         
         --I2C
         i_i2c_enable            : in    std_logic;
@@ -183,6 +184,7 @@ begin
 
     o_Rst_n         <= (others => '1');--DO NOT DO THIS: (others => i_reset_n); !!! Phase will be not fixed
     o_clk_reco      <= lvds_rx_clk;
+    o_lvds_ready    <= lvds_o_ready;
 
     process (i_clk)
     begin

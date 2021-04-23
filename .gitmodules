@@ -13,3 +13,7 @@
 [submodule "modules/analyzer"]
 	path = modules/analyzer
 	url = git@bitbucket.org:mu3e/analyzer.git
+[submodule "wiki"]
+	path = wiki
+	url = git@bitbucket.org:mu3e/online.git/wiki
+	branch = master

@@ -18,15 +18,15 @@ architecture arch of tb_swb_data_path is
 
     signal clk, clk_fast, reset_n : std_logic := '0';
     --! data link signals
-    signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
-    signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
+    signal rx : work.util.slv32_array_t(g_NLINKS_DATA-1 downto 0) := (others => (others => '0'));
+    signal rx_k : work.util.slv4_array_t(g_NLINKS_DATA-1 downto 0) := (others => (others => '0'));
 
     signal writeregs_156 : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
     signal writeregs_250 : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
 
     signal resets_n_156, resets_n_250 : std_logic_vector(31 downto 0) := (others => '0');
 
-    signal counter : work.util.slv32_array_t(5+(g_NLINKS_TOTL*3)-1 downto 0);
+    signal counter : work.util.slv32_array_t(5+(g_NLINKS_DATA*3)-1 downto 0);
     
     signal farm_data : work.util.slv32_array_t(g_NLINKS_FARM - 1  downto 0);
     signal farm_datak : work.util.slv4_array_t(g_NLINKS_FARM - 1  downto 0);
@@ -55,14 +55,14 @@ begin
     --! 0            | 0          | 0          | 0        | 1              | 1        | -                           | Generate time merged data, send to farm                                        | x
     resets_n_156(RESET_BIT_DATAGEN)                             <= '0', '1' after (1.0 us / CLK_MHZ);
     writeregs_156(DATAGENERATOR_DIVIDER_REGISTER_W)             <= x"00000002";
-    writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_LINK)   <= '1';
+    writeregs_156(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK)   <= '1';
     -- USE_GEN_LINK, USE_STREAM, USE_MERGER, USE_LINK, USE_GEN_MERGER, USE_FARM
     -- writeregs_250(SWB_READOUT_STATE_REGISTER_W)(5 downto 0)     <= "0100";
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_STREAM)     <= '0';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_MERGER)     <= '1';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_LINK)       <= '0';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_GEN_MERGER) <= '0';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_FARM)       <= '0';
+    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
+    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
+    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_LINK)       <= '0';
+    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGER) <= '0';
+    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM)       <= '0';
         
     writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"00000FFF";
     writeregs_250(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";

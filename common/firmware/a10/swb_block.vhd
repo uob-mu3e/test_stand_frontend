@@ -104,11 +104,11 @@ architecture arch of swb_block is
     signal rx_sc_k         : work.util.slv4_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
     signal rx_rc           : work.util.slv32_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
     signal rx_rc_k         : work.util.slv4_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
-    signal rx_data_pixel   : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
-    signal rx_data_k_pixel : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
+    signal rx_data_pixel   : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL-1 downto 0);
+    signal rx_data_k_pixel : work.util.slv4_array_t(g_NLINKS_DATA_PIXEL-1 downto 0);
     
     --! counters
-    signal counter_swb_data_pixel : work.util.slv32_array_t(5+(g_NLINKS_TOTL*3)-1 downto 0);
+    signal counter_swb_data_pixel : work.util.slv32_array_t(5+(g_NLINKS_DATA_PIXEL*3)-1 downto 0);
 
 
 begin
@@ -128,7 +128,7 @@ begin
     --! data => detector data
     --! sc => slow control packages
     --! rc => runcontrol packages
-    g_demerge: for i in g_NLINKS_FEB_TOTL-1 downto 0 generate
+    g_demerge: FOR i in g_NLINKS_FEB_TOTL-1 downto 0 GENERATE
         e_data_demerge : entity work.swb_data_demerger
         port map(
             i_clk               => i_clk_156,
@@ -224,9 +224,9 @@ begin
     o_dma_done      <= pixel_dma_done;
     o_endofevent    <= pixel_dma_endofevent;
     o_dma_data      <= pixel_dma_data;
-    gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_TOTL - 1 GENERATE
-        rx_data_pixel(i)   <= rx_data(i) when i <= g_NLINKS_DATA_PIXEL - 1 else (others => '0');
-        rx_data_k_pixel(i) <= rx_data_k(i) when i <= g_NLINKS_DATA_PIXEL - 1 else (others => '0');
+    gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_DATA_PIXEL - 1 GENERATE
+        rx_data_pixel(i)   <= rx_data(i);
+        rx_data_k_pixel(i) <= rx_data_k(i);
     END GENERATE gen_pixel_data_mapping;
 
 
@@ -234,7 +234,7 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    e_swb_data_path : entity work.swb_data_path
+    e_swb_data_path_pixel : entity work.swb_data_path
     generic map (
         g_NLINKS_TOTL           => 64,
         g_NLINKS_FARM           => g_NLINKS_FARM_PIXEL,

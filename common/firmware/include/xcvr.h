@@ -3,6 +3,9 @@
  * date : 2019
  */
 
+#ifndef __UTIL_XCVR_H__
+#define __UTIL_XCVR_H__
+
 struct xcvr_block_t {
     volatile alt_u32* base;
 
@@ -71,7 +74,7 @@ struct xcvr_block_t {
         printf("  data  :   0x%08X / 0x%01X\n", xcvr[0x2A], xcvr[0x2B]);
 
         if(xcvr[0x25] != 0xCCCCCCCC && xcvr[0x26] != 0xCCCCCCCC) {
-            printf("  mW/C :   %i / %i\n", xcvr[0x25], xcvr[0x26]/10000);
+            printf("  mW/C  :   %i / %i\n", xcvr[0x25], xcvr[0x26] / 10000);
         }
 
         printf("\n");
@@ -82,3 +85,5 @@ void menu_xcvr(volatile alt_u32* base, char ID = 'A') {
     xcvr_block_t xcvr_block(base, ID);
     xcvr_block.menu();
 }
+
+#endif // __UTIL_XCVR_H__

@@ -1,10 +1,8 @@
 
 CABLE := DE5
 
-SRC_DIR := software
-
 IPs := \
-    $(wildcard ip/*.tcl) \
+    $(wildcard a10/ip/*.tcl) \
     nios.tcl
 
 include util/altera/makefile.mk
