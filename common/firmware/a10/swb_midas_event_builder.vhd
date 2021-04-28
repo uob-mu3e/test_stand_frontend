@@ -10,8 +10,12 @@ use ieee.std_logic_unsigned.all;
 
 
 entity swb_midas_event_builder is
+generic(
+    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+    DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
+);
 port(
-    i_rx                : in  std_logic_vector(31 downto 0);
+    i_rx                : in  std_logic_vector (31 downto 0);
     i_rempty            : in  std_logic;
     i_header            : in  std_logic;
     i_trailer           : in  std_logic;
@@ -22,6 +26,7 @@ port(
     o_data              : out std_logic_vector (255 downto 0);
     o_wen               : out std_logic;
     o_ren               : out std_logic;
+    o_dma_cnt_words     : out std_logic_vector (31 downto 0);
     o_endofevent        : out std_logic;
     o_done              : out std_logic;
     o_state_out         : out std_logic_vector (3 downto 0);
@@ -42,8 +47,7 @@ architecture arch of swb_midas_event_builder is
 
     -- tagging fifo
     type event_tagging_state_type is (
-        event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, trailer_name, trailer_type, trailer_length, trailer_data, trailer_set_length, event_set_size, bank_set_size, write_tagging_fifo, set_algin_word,
-        EVENT_IDLE--,
+        event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, event_set_size, bank_set_size, write_tagging_fifo, set_algin_word, bank_reserved, EVENT_IDLE--,
     );
     signal event_tagging_state : event_tagging_state_type;
     signal e_size_add, b_size_add, b_length_add, w_ram_add_reg, w_ram_add, w_fifo_data, r_fifo_data, last_event_add, align_event_size : std_logic_vector(11 downto 0);
@@ -63,7 +67,7 @@ architecture arch of swb_midas_event_builder is
     type event_counter_state_type is (waiting, get_data, runing, skip_event);
     signal event_counter_state : event_counter_state_type;
     signal event_last_ram_add : std_logic_vector(8 downto 0);
-    signal word_counter : std_logic_vector(31 downto 0);
+    signal word_counter, word_counter_endofevent : std_logic_vector(31 downto 0);
 
     -- error cnt
     signal cnt_tag_fifo_full : std_logic_vector(31 downto 0);
@@ -81,7 +85,6 @@ begin
     e_cnt_tag_fifo : entity work.counter
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(3), i_ena => tag_fifo_full, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
-
 
     --! data out
     o_data <= r_ram_data;
@@ -136,9 +139,9 @@ begin
     process(i_clk_250, i_reset_n_250)
     begin
     if ( i_reset_n_250 = '0' ) then
-        e_size_add        <= (others => '0');
-        b_size_add   <= (others => '0');
-        b_length_add <= (others => '0');
+        e_size_add          <= (others => '0');
+        b_size_add          <= (others => '0');
+        b_length_add        <= (others => '0');
         w_ram_add_reg       <= (others => '0');
         last_event_add      <= (others => '0');
         align_event_size    <= (others => '0');
@@ -155,7 +158,7 @@ begin
         trigger_mask        <= (others => '0');
         serial_number       <= x"00000001";
         time_tmp            <= (others => '0');
-        flags               <= x"00000001";
+        flags               <= x"00000031";
         type_bank           <= x"00000006"; -- MIDAS Bank Type TID_DWORD
     
         -- for size counting in bytes
@@ -168,7 +171,7 @@ begin
 
     --
     elsif rising_edge(i_clk_250) then
-        flags           <= x"00000011";
+        flags           <= x"00000031";
         trigger_mask    <= (others => '0');
         event_id        <= x"0001";
         type_bank       <= x"00000006";
@@ -232,30 +235,26 @@ begin
             event_tagging_state <= bank_name;
 
         when bank_name =>
-
-            -- here we check if the link is masked and if the current fifo is empty
-            -- check for mupix or mutrig data header
+            -- here we check if the link is empty and if we saw a header
             if ( i_rempty = '0' and i_header = '1' ) then
                 w_ram_en    <= '1';
                 w_ram_add   <= w_ram_add_reg + 1;
                 -- MIDAS expects bank names in ascii:
-                --w_ram_data <=   work.util.hex_to_ascii(link_data(11 downto 8)) &
-                --                work.util.hex_to_ascii(link_data(15 downto 12)) &
-                --                work.util.hex_to_ascii(link_data(19 downto 16)) &
-                --                work.util.hex_to_ascii(link_data(23 downto 20));
-                if(i_rx(23 downto 8) = x"FEB0") then
-                    w_ram_data <= x"30424546";
-                elsif(i_rx(23 downto 8) = x"FEB1") then
-                    w_ram_data <= x"31424546";
-                elsif(i_rx(23 downto 8) = x"FEB2") then
-                    w_ram_data <= x"32424546";
-                elsif(i_rx(23 downto 8) = x"FEB3") then
-                    w_ram_data <= x"33424546";
+                -- For the run 2021 
+                -- PCD1 = PixelCentralDebug1
+                -- SCD1 = ScifiCentralDebug1
+                -- TCD1 = TileCentralDebug1
+                -- NONE else
+                if ( DATA_TYPE = x"01" ) then
+                    w_ram_data <= x"31444350";
+                elsif ( DATA_TYPE = x"02" ) then
+                    w_ram_data <= x"31444353";
+                elsif ( DATA_TYPE = x"03" ) then
+                    w_ram_data <= x"31444354";
                 else
-                    w_ram_data <= x"34424546";
+                    w_ram_data <= x"454E4F4E";
                 end if;
                 event_size_cnt      <= event_size_cnt + 4;
-
                 event_tagging_state <= bank_type;
             end if;
 
@@ -271,26 +270,31 @@ begin
             w_ram_add           <= w_ram_add + 1;
             w_ram_data          <= (others => '0');
             event_size_cnt      <= event_size_cnt + 4;
-            b_length_add <= w_ram_add + 1;
-            event_tagging_state <= bank_data;
+            b_length_add        <= w_ram_add + 1;
+            event_tagging_state <= bank_reserved;
+            
+        when bank_reserved =>
+            w_ram_en            <= '1';
+            w_ram_add           <= w_ram_add + 1;
+            w_ram_data          <= (others => '0');
+            event_size_cnt      <= event_size_cnt + 4;
+            event_tagging_state <= bank_data;            
 
         when bank_data =>
             -- check again if the fifo is empty
             if ( i_rempty = '0' ) then
                 w_ram_en            <= '1';
                 w_ram_add           <= w_ram_add + 1;
-                w_ram_data          <= i_rx;
+                if ( i_trailer = '1' ) then
+                    w_ram_data      <= x"0FC0009C";
+                else
+                    w_ram_data      <= i_rx;
+                end if;
                 event_size_cnt      <= event_size_cnt + 4;
                 bank_size_cnt       <= bank_size_cnt + 4;
                 if ( i_trailer = '1' ) then
-                    -- check if the size of the bank data is in 64 bit if not add a word
-                    -- this word is not counted to the bank size
-                    if ( bank_size_cnt(2 downto 0) = "000" ) then
-                        event_tagging_state <= set_algin_word;
-                    else
-                        event_tagging_state <= bank_set_length;
-                        w_ram_add_reg       <= w_ram_add + 1;
-                    end if;
+                    event_tagging_state <= set_algin_word;
+                    align_event_size    <= w_ram_add + 1 - last_event_add;
                 end if;
             end if;
 
@@ -299,59 +303,21 @@ begin
             w_ram_add           <= w_ram_add + 1;
             w_ram_add_reg       <= w_ram_add + 1;
             w_ram_data          <= x"AFFEAFFE";
-            event_size_cnt      <= event_size_cnt + 4;
-            event_tagging_state <= bank_set_length;
-
-        when bank_set_length =>
-            w_ram_en            <= '1';
-            w_ram_add           <= b_length_add;
-            w_ram_data          <= bank_size_cnt;
-            bank_size_cnt       <= (others => '0');
-            event_tagging_state <= trailer_name;
-
-        when trailer_name =>
-            w_ram_en            <= '1';
-            w_ram_add           <= w_ram_add_reg + 1;
-            w_ram_data          <= x"454b4146"; -- FAKE in ascii
-            event_size_cnt      <= event_size_cnt + 4;
-            event_tagging_state <= trailer_type;
-
-        when trailer_type =>
-            w_ram_en            <= '1';
-            w_ram_add           <= w_ram_add + 1;
-            w_ram_data          <= type_bank;
-            event_size_cnt      <= event_size_cnt + 4;
-            event_tagging_state <= trailer_length;
-
-        when trailer_length =>
-            w_ram_en            <= '1';
-            w_ram_add           <= w_ram_add + 1;
-            w_ram_add_reg       <= w_ram_add + 1;
-            w_ram_data          <= (others => '0');
-            -- reg trailer length add
-            event_size_cnt      <= event_size_cnt + 4;
-            -- write at least one AFFEAFFE
-            align_event_size    <= w_ram_add + 1 - last_event_add;
-            event_tagging_state <= trailer_data;
-
-        when trailer_data =>
-            w_ram_en            <= '1';
-            w_ram_add           <= w_ram_add + 1;
-            w_ram_data          <= x"AFFEAFFE";
             align_event_size    <= align_event_size + 1;
-            -- align to DMA word (32 bytes) boundary
+            -- check if the size of the bank data 
+            -- is in 64 bit and 256 bit
+            -- if not add a dummy words
             if ( align_event_size(2 downto 0) + '1' = "000" ) then
-                event_tagging_state <= trailer_set_length;
+                event_tagging_state <= bank_set_length;
             else
                 bank_size_cnt   <= bank_size_cnt + 4;
                 event_size_cnt  <= event_size_cnt + 4;
             end if;
 
-        when trailer_set_length =>
+        when bank_set_length =>
             w_ram_en            <= '1';
-            w_ram_add           <= w_ram_add_reg;
+            w_ram_add           <= b_length_add;
             w_ram_add_reg       <= w_ram_add;
-            -- bank length: size in bytes of the following data
             w_ram_data          <= bank_size_cnt;
             bank_size_cnt       <= (others => '0');
             event_tagging_state <= event_set_size;
@@ -377,7 +343,7 @@ begin
             last_event_add      <= w_ram_add_reg;
             w_ram_add           <= w_ram_add_reg - 1;
             event_tagging_state <= EVENT_IDLE;
-            b_length_add <= (others => '0');
+            b_length_add        <= (others => '0');
             serial_number       <= serial_number + '1';
 
         when others =>
@@ -403,6 +369,8 @@ begin
         event_last_ram_add  <= (others => '0');
         event_counter_state <= waiting;	
         word_counter        <= (others => '0');
+        o_dma_cnt_words     <= (others => '0');
+        word_counter_endofevent <= (others => '0');
         --
     elsif rising_edge(i_clk_250) then
 
@@ -417,6 +385,7 @@ begin
         
         if ( i_wen = '1' and word_counter >= i_get_n_words ) then
             o_done <= '1';
+            o_dma_cnt_words <= word_counter_endofevent;
         end if;
 
         case event_counter_state is
@@ -435,19 +404,22 @@ begin
                     event_counter_state <= skip_event;
                     cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
                 else
-                    o_wen        <= i_wen;
-                    o_endofevent        <= '1'; -- begin of event
+                    o_wen               <= i_wen;
                     word_counter        <= word_counter + '1';
                     event_counter_state <= runing;
                 end if;
                 r_ram_add       <= r_ram_add + '1';
 
         when runing =>
-                o_state_out     <= x"C";
-                o_wen    <= i_wen;
-                word_counter    <= word_counter + '1';
+                o_state_out             <= x"C";
+                o_wen                   <= i_wen;
+                word_counter            <= word_counter + '1';
                 if(r_ram_add = event_last_ram_add - '1') then
-                    event_counter_state	<= waiting;
+                    o_endofevent        <= '1'; -- end of event
+                    event_counter_state <= waiting;
+                    if ( word_counter + '1' <= i_get_n_words ) then
+                        word_counter_endofevent <= word_counter + '1';
+                    end if;
                 else
                     r_ram_add <= r_ram_add + '1';
                 end if;

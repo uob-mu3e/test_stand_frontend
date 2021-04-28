@@ -15,11 +15,11 @@ entity data_generator_merged_data is
     generic (
         max_row: std_logic_vector (7 downto 0) := (others => '0');
         max_col: std_logic_vector (7 downto 0) := (others => '0');
-        go_to_sh: integer := 3;
-        go_to_trailer: integer := 4;
+        go_to_sh: positive := 3;
+        go_to_trailer: positive := 4;
         wtot: std_logic := '0';
         wchip: std_logic := '0';
-        NLINKS: integer := 8--;
+        NLINKS: positive := 8--;
     );
     port(
 		i_clk 		: in  std_logic;

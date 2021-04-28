@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
     }
 
     // request data to read dma_buffer_size/2 (count in blocks of 256 bits) 
-    uint32_t max_requested_words = dma_buf_nwords/64;
+    uint32_t max_requested_words = dma_buf_nwords/2;
     cout << "request " << max_requested_words << endl;
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, max_requested_words / (256/32));
 
@@ -127,15 +127,22 @@ int main(int argc, char *argv[])
     
     // setup datagen
     mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x2);
-    // use on link to readout
+    // use one link to readout
     if ( atoi(argv[1]) == 1 ) mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x1);
     if ( atoi(argv[1]) == 1 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x9);
     // use stream merger for readout and enable links
     if ( atoi(argv[1]) == 2 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0xF);
     if ( atoi(argv[1]) == 2 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
     // use time merger for readout and enable links
-    if ( atoi(argv[1]) == 3 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0xFFF);
+    if ( atoi(argv[1]) == 3 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x3);
     if ( atoi(argv[1]) == 3 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x5);
+    // use stream merger with data to readout
+    if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x3);
+    if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
+    // use time merger with data to readout
+    if ( atoi(argv[1]) == 4 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x3);
+    if ( atoi(argv[1]) == 4 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x44);
+
     
     // reset all
     mu.write_register(RESET_REGISTER_W, 0x1);
@@ -152,7 +159,7 @@ int main(int argc, char *argv[])
         cout << endl;
         int cnt_loop = 0;
         // wait for requested data
-        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {
+        while ( (mu.read_register_ro(EVENT_BUILD_STATUS_REGISTER_R) & 1) == 0 ) {
             if ( cnt_loop == 1000 ) {
                 cnt_loop = 0;
             }
