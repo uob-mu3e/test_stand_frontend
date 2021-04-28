@@ -152,11 +152,11 @@ elsif(clk'event and clk = '1') then
 			elsif(counters_reg(3 downto 0) = "0001") then -- switch chip
 				counters_reg(counters_reg'left-8 downto 0)	 <= counters_reg(counters_reg'left downto 8);
 				counters_reg(counters_reg'left downto counters_reg'left-7)	 <= (others => '0');
-				subaddr							    <= "0000";
+				subaddr					<= "0000";
 			else -- more hits from same chip
 				counters_reg <= counters_reg;
 				counters_reg(3 downto 0) <= counters_reg(3 downto 0) -'1';
-				subaddr				     <= subaddr + "1";
+				subaddr					 <= subaddr + "1";
 			end if;
 		else --domem zero indicate a block skipped due to overflow
 			command_enable <= '0';

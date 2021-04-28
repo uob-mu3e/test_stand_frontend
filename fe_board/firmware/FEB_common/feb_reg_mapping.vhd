@@ -142,10 +142,10 @@ begin
         end if;
 
         -- reset payload
-        if ( regaddr = RESET_PAYLOAD_RGEISTER_RW and i_reg_re = '1' ) then
+        if ( regaddr = RESET_PAYLOAD_REGISTER_RW and i_reg_re = '1' ) then
             o_reg_rdata <= reg_reset_bypass_payload;
         end if;
-        if ( regaddr = RESET_PAYLOAD_RGEISTER_RW and i_reg_we = '1' ) then
+        if ( regaddr = RESET_PAYLOAD_REGISTER_RW and i_reg_we = '1' ) then
             reg_reset_bypass_payload <= i_reg_wdata;
         end if;
 

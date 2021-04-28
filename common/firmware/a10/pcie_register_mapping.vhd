@@ -21,8 +21,8 @@ port (
     i_local_pcie0_rregs_250 : in    work.util.slv32_array_t(63 downto 0);
 
     --! register outputs for pcie0/1
-    o_pcie0_rregs       : out   reg32array;
-    o_pcie1_rregs       : out   reg32array;
+    o_pcie0_rregs       : out   reg32array_pcie;
+    o_pcie1_rregs       : out   reg32array_pcie;
 
     -- slow 156 MHz clock
     i_clk_156           : in    std_logic;

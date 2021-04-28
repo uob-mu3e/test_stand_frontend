@@ -40,6 +40,8 @@ entity data_unpacker is
         o_col               : out std_logic_vector(7 downto 0);
         o_tot               : out std_logic_vector(5 downto 0);
         o_hit_ena           : out std_logic;
+        o_coarsecounter     : out std_logic_vector(23 downto 0);
+        o_coarsecounter_ena : out std_logic;
         errorcounter        : out std_logic_vector(31 downto 0)
     );
 end data_unpacker;
@@ -103,34 +105,36 @@ architecture RTL of data_unpacker is
     function convert_row (
         i_row       : std_logic_vector(8 downto 0)--;
     ) return std_logic_vector is 
-        variable row : std_logic_vector(7 downto 0);
-        variable tmp : std_logic_vector(8 downto 0);
+        variable row            : std_logic_vector(7 downto 0);
+        variable tmp            : std_logic_vector(8 downto 0);
+        variable i_row_inverted : std_logic_vector(8 downto 0);
     begin
-        if (unsigned(i_row)>380) then
-            tmp     := std_logic_vector(499-unsigned(i_row));
-            if (i_row(0)='0') then
+        i_row_inverted := not i_row;
+        if (unsigned(i_row_inverted)>380) then
+            tmp     := std_logic_vector(499-unsigned(i_row_inverted));
+            if (i_row_inverted(0)='0') then
                 row := std_logic_vector(unsigned(tmp(8 downto 1)) + 60);
             else 
                 row := tmp(8 downto 1);
             end if;
-        elsif (i_row(8)='1') then
-            tmp     := std_logic_vector(380-unsigned(i_row));
-            if (i_row(0)='1') then
-                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 63);
+        elsif (i_row_inverted(8)='1') then
+            tmp     := std_logic_vector(380-unsigned(i_row_inverted));
+            if (i_row_inverted(0)='0') then
+                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 62);
             else 
                 row := tmp(8 downto 1);
             end if;
-        elsif (unsigned(i_row)>124) then
-            tmp     := std_logic_vector(255-unsigned(i_row));
-            if (i_row(0)='0') then
+        elsif (unsigned(i_row_inverted)>124) then
+            tmp     := std_logic_vector(255-unsigned(i_row_inverted));
+            if (i_row_inverted(0)='0') then
                 row := std_logic_vector(unsigned(tmp(8 downto 1)) + 119 + 66);
             else 
                 row := std_logic_vector(unsigned(tmp(8 downto 1)) + 119);
             end if;
         else
-            tmp     := std_logic_vector(124-unsigned(i_row));
-            if (i_row(0)='1') then
-                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 125 + 63);
+            tmp     := std_logic_vector(124-unsigned(i_row_inverted));
+            if (i_row_inverted(0)='0') then
+                row := std_logic_vector(unsigned(tmp(8 downto 1)) + 125 + 62);
             else
                 row := std_logic_vector(unsigned(tmp(8 downto 1)) + 125);
             end if;
@@ -142,9 +146,11 @@ architecture RTL of data_unpacker is
         i_col       : std_logic_vector(6 downto 0);
         i_row       : std_logic_vector(8 downto 0)--;
     ) return std_logic_vector is 
-        variable col : std_logic_vector(7 downto 0);
+        variable col            : std_logic_vector(7 downto 0);
+        variable i_row_inverted : std_logic_vector(8 downto 0);
     begin
-        if (unsigned(i_row)> 380 or (i_row(8) = '0' and unsigned(i_row)>124)) then
+        i_row_inverted := not i_row;
+        if (unsigned(i_row_inverted)> 380 or (i_row_inverted(8) = '0' and unsigned(i_row_inverted)>124)) then
             col := i_col & '1';
         else
             col := i_col & '0';
@@ -168,6 +174,9 @@ begin
 
     o_ts    <= ts_buf;
     o_tot   <= calc_tot(ts2_buf,ts_buf,tot_mode);
+
+    o_coarsecounter     <= coarsecounter(23 downto 0);
+    o_coarsecounter_ena <= coarsecounter_ena;
 
     chip_ID_mode    <= i_mp_readout_mode(CHIP_ID_MODE_RANGE);
     tot_mode        <= i_mp_readout_mode(TOT_MODE_RANGE);

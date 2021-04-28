@@ -29,7 +29,7 @@ public:
         o["Reset Bypass Payload"] = val;
 
         //write reset char ODB - Switching frontend will send this to FEB
-        val=(1<<8) | command;
+        val=(3<<8) | command;
         o["Reset Bypass Command"] = val;
         usleep(100000);
 
