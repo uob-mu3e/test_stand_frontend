@@ -11,10 +11,10 @@ entity time_merger_tree_fifo_64 is
 generic (
     TREE_w          : positive  := 8;
     TREE_r          : positive  := 8;
-    r_width         : integer   := 64;
-    w_width         : integer   := 64;
-    compare_fifos   : integer   := 32;
-    gen_fifos       : integer   := 16--;
+    r_width         : positive   := 64;
+    w_width         : positive   := 64;
+    compare_fifos   : positive   := 32;
+    gen_fifos       : positive   := 16--;
 );
 port (
     -- input

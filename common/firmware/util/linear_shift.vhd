@@ -7,7 +7,7 @@ use ieee.std_logic_1164.all;
 
 entity linear_shift is 
 	generic (
-		g_m             : integer           := 7;
+		g_m             : positive           := 7;
 		g_poly          : std_logic_vector  := "1100000" -- x^7+x^6+1 
 	);
 	port (
