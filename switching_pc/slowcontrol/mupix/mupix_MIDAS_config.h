@@ -13,6 +13,7 @@
 \********************************************************************/
 // From midas.h
 #include <odbxx.h>
+#include <array>
 using midas::odb;
 
 typedef unsigned int DWORD;

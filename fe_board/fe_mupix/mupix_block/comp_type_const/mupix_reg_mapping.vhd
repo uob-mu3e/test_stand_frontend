@@ -15,6 +15,7 @@ use work.mupix.all;
 entity mupix_reg_mapping is
 port (
     i_clk156                    : in  std_logic;
+    i_clk125                    : in  std_logic := '0';
     i_reset_n                   : in  std_logic;
 
     i_reg_add                   : in  std_logic_vector(7 downto 0);
@@ -30,12 +31,18 @@ port (
 
     -- inputs  125 (how to sync)------------------------------
     i_sorter_counters           : in sorter_reg_array   := (others => x"CCCCCCCC");
+    i_coarsecounter_ena         : in std_logic := '0';
+    i_coarsecounter             : in std_logic_vector(23 downto 0) := (others => '0');
+    i_ts_global                 : in std_logic_vector(23 downto 0) := (others => '0');
+    i_last_sorter_hit           : in std_logic_vector(31 downto 0) := (others => '0');
 
     -- outputs 156--------------------------------------------
     o_mp_lvds_link_mask         : out std_logic_vector(35 downto 0); -- lvds link mask
     o_mp_lvds_invert            : out std_logic;
     o_mp_datagen_control        : out std_logic_vector(31 downto 0); -- control register for the mupix data gen
     o_mp_readout_mode           : out std_logic_vector(31 downto 0); -- Invert ts, degray, chip ID numbering, tot mode, ..
+    o_mp_data_bypass_select     : out std_logic_vector(31 downto 0);
+    o_mp_delta_ts_link_select   : out std_logic_vector(5 downto 0);
 
     o_mp_ctrl_data              : out std_logic_vector(32*5 + 31 downto 0);
     o_mp_fifo_write             : out std_logic_vector( 5 downto 0);
@@ -47,7 +54,8 @@ port (
     o_mp_ctrl_slow_down         : out std_logic_vector(31 downto 0);
 
     -- outputs 125-------------------------------------------------
-    o_sorter_delay              : out ts_t--;
+    o_sorter_delay              : out ts_t;
+    o_sorter_inject             : out std_logic_vector(31 downto 0) := (others => '0')--;
 );
 end entity;
 
@@ -55,13 +63,31 @@ architecture rtl of mupix_reg_mapping is
     signal mp_datagen_control       : std_logic_vector(31 downto 0);
     signal mp_readout_mode          : std_logic_vector(31 downto 0);
     signal mp_lvds_link_mask        : std_logic_vector(35 downto 0);
+    signal mp_lvds_link_mask_ordered: std_logic_vector(35 downto 0);
     signal mp_lvds_data_valid       : std_logic_vector(35 downto 0);
     signal mp_ctrl_slow_down        : std_logic_vector(31 downto 0);
     signal mp_ctrl_chip_config_mask : std_logic_vector(31 downto 0);
     signal mp_ctrl_invert_29        : std_logic;
     signal mp_ctrl_invert_csn       : std_logic;
     signal mp_lvds_invert           : std_logic;
+    signal mp_data_bypass_select    : std_logic_vector(31 downto 0);
+    signal mp_sorter_inject         : std_logic_vector(31 downto 0);
+
+    signal reg_delay                : std_logic;
 begin
+
+    process(i_clk125)
+    begin
+        if(rising_edge(i_clk125)) then
+            if(reg_delay = '1') then
+                o_sorter_inject <= mp_sorter_inject;
+            end if;
+        end if;
+    end process;
+
+    gen_mask_order: for i in 0 to 35 generate
+        mp_lvds_link_mask_ordered(i)         <= mp_lvds_link_mask(MP_LINK_ORDER(i));
+    end generate;
 
     process (i_clk156, i_reset_n)
         variable regaddr : integer;
@@ -70,12 +96,13 @@ begin
             mp_datagen_control        <= (others => '0');
             o_mp_ctrl_enable          <= (others => '0');
             mp_lvds_link_mask         <= (others => '0');
+            mp_sorter_inject          <= (others => '0');
             mp_ctrl_invert_csn        <= '0';
             
         elsif(rising_edge(i_clk156)) then
 
             --regs for long paths
-            o_mp_lvds_link_mask         <= mp_lvds_link_mask;
+            o_mp_lvds_link_mask         <= mp_lvds_link_mask_ordered;
             o_mp_lvds_invert            <= mp_lvds_invert;
             o_mp_datagen_control        <= mp_datagen_control;
             o_mp_readout_mode           <= mp_readout_mode;
@@ -84,10 +111,17 @@ begin
             o_mp_ctrl_chip_config_mask  <= mp_ctrl_chip_config_mask(11 downto 0);
             o_mp_ctrl_invert_29         <= mp_ctrl_invert_29;
             o_mp_ctrl_invert_csn        <= mp_ctrl_invert_csn;
+            o_mp_data_bypass_select     <= mp_data_bypass_select;
 
             regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
             o_reg_rdata         <= x"CCCCCCCC";
             o_mp_fifo_write     <= (others => '0');
+
+            if(i_reg_we = '1') then
+                reg_delay <= '0';
+            else
+                reg_delay <= '1';
+            end if;
 
             -----------------------------------------------------------------
             ---- mupix ctrl -------------------------------------------------
@@ -161,13 +195,13 @@ begin
                 mp_lvds_link_mask(31 downto 0) <= i_reg_wdata;
             end if;
             if ( regaddr = MP_LVDS_LINK_MASK_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata <= mp_lvds_link_mask(31 downto 0);
+                o_reg_rdata <= mp_lvds_link_mask_ordered(31 downto 0);
             end if;
             if ( regaddr = MP_LVDS_LINK_MASK2_REGISTER_W and i_reg_we = '1' ) then
                 mp_lvds_link_mask(35 downto 32) <= i_reg_wdata(3 downto 0);
             end if;
             if ( regaddr = MP_LVDS_LINK_MASK2_REGISTER_W and i_reg_re = '1' ) then
-                o_reg_rdata(3 downto 0) <= mp_lvds_link_mask(35 downto 32);
+                o_reg_rdata(3 downto 0) <= mp_lvds_link_mask_ordered(35 downto 32);
                 o_reg_rdata(31 downto 4)<= (others => '0');
             end if;
 
@@ -203,14 +237,52 @@ begin
                 o_sorter_delay <= i_reg_wdata(TSRANGE);
             end if;
 
-
             for I in 0 to NSORTERCOUNTERS-1 loop 
                 if ( regaddr = I + MP_SORTER_COUNTER_R and i_reg_re = '1' ) then
                     o_reg_rdata <= i_sorter_counters(I);
                 end if;
             end loop;
 
+            if ( regaddr = MP_DATA_BYPASS_SELECT_REGISTER_W and i_reg_we = '1' ) then
+                mp_data_bypass_select <= i_reg_wdata;
+            end if;
+            if ( regaddr = MP_DATA_BYPASS_SELECT_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata <= mp_data_bypass_select;
+            end if;
+
+            if ( regaddr = MP_LAST_SORTER_HIT_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata <= i_last_sorter_hit;
+            end if;
+
+            if ( regaddr = MP_SORTER_INJECT_REGISTER_W and i_reg_we = '1' ) then
+                mp_sorter_inject <= i_reg_wdata;
+            end if;
+            if ( regaddr = MP_SORTER_INJECT_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata <= mp_sorter_inject;
+            end if;
 
         end if;
     end process;
+
+
+    -- histogram of delta ts between mp timestamp and fpga timestamp
+--    delta_ts_histo : work.histogram_generic
+--    generic map(
+--        DATA_WIDTH   => ,
+--        ADDR_WIDTH   => 
+--    )
+--    port map(
+--        rclk:         in std_logic;
+--        wclk:         in std_logic;
+--        rst_n:        in std_logic;
+--        zeromem:      in std_logic;
+--        ena:          in std_logic;
+--        can_overflow: in std_logic;
+--        data_in:      in std_logic_vector(ADDR_WIDTH-1 downto 0);
+--        valid_in:     in std_logic;
+--        busy_n:       out std_logic;
+--
+--        raddr_in:     in std_logic_vector(ADDR_WIDTH-1 downto 0);
+--        q_out:        out std_logic_vector(DATA_WIDTH-1 downto 0)
+--    );
 end architecture;

@@ -33,6 +33,9 @@ port (
     o_fifo_wdata        : out std_logic_vector(35 downto 0);
     o_fifo_write        : out std_logic;
 
+    o_data_bypass       : out std_logic_vector(31 downto 0) := x"000000BC";
+    o_data_bypass_we    : out std_logic := '0';
+
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
@@ -85,6 +88,11 @@ architecture rtl of mupix_datapath is
     signal chip_ID_hs               : ch_ID_array_t(35 downto 0);
     signal hits_sorter_in           : hit_array;
     signal hits_sorter_in_ena       : std_logic_vector(11 downto 0);
+    signal hits_sorter_in_buf       : hit_array;
+    signal hits_sorter_in_ena_buf   : std_logic_vector(11 downto 0);
+    signal data_bypass              : std_logic_vector(31 downto 0);
+    signal data_bypass_we           : std_logic;
+    signal data_bypass_select       : std_logic_vector(31 downto 0);
 
     signal running                  : std_logic;
 
@@ -111,6 +119,10 @@ architecture rtl of mupix_datapath is
     signal time_counter             : unsigned(31 downto 0);
     signal rate_counter             : unsigned(31 downto 0);
 
+    signal coarsecounters           : reg24array(35 downto 0);
+    signal coarsecounter_enas       : std_logic_vector(35 downto 0);
+    signal delta_ts_link_select     : std_logic_vector(5 downto 0);
+
     --hit_ts conversion settings
     signal mp_readout_mode          : std_logic_vector(31 downto 0);
 
@@ -130,15 +142,23 @@ architecture rtl of mupix_datapath is
     signal sorter_counters          : sorter_reg_array;
     signal sorter_delay             : ts_t;
 
+    signal last_sorter_hit          : std_logic_vector(31 downto 0);
+    signal sorter_out_is_hit        : std_logic;
+    signal sorter_inject            : std_logic_vector(31 downto 0);
+    signal sorter_inject_prev       : std_logic;
+
 begin
 
     reset_156_n <= '0' when (i_run_state_156=RUN_STATE_SYNC) else '1';
     reset_125_n <= '0' when (i_run_state_125=RUN_STATE_SYNC) else '1';
+
+    
 ------------------------------------------------------------------------------------
 ---------------------- registers ---------------------------------------------------
     e_mupix_reg_mapping : work.mupix_reg_mapping
     port map (
         i_clk156                    => i_clk156,
+        i_clk125                    => i_clk125,
         i_reset_n                   => i_reset_n_regs,
 
         i_reg_add                   => i_reg_add,
@@ -153,14 +173,21 @@ begin
 
         -- inputs  125 (how to sync)------------------------------
         i_sorter_counters           => sorter_counters,
+        --i_coarsecounter_ena         => coarsecounter_enas(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
+        --i_coarsecounter             => coarsecounters(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
+        i_ts_global                 => counter125(23 downto 0),
+        i_last_sorter_hit           => last_sorter_hit,
 
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
         o_mp_lvds_link_mask         => lvds_link_mask,
         o_mp_readout_mode           => mp_readout_mode,
+        o_mp_data_bypass_select     => data_bypass_select,
+        o_mp_delta_ts_link_select   => delta_ts_link_select,
 
         -- outputs 125-------------------------------------------------
-        o_sorter_delay              => sorter_delay--;
+        o_sorter_delay              => sorter_delay,
+        o_sorter_inject             => sorter_inject--,
     );
     o_hotfix_reroute<= lvds_status; --TODO: fix this!!
 
@@ -199,9 +226,9 @@ begin
     port map(
         reset_n             => reset_125_n,
         clk                 => i_clk125,
-        datain              => rx_data(i), 
-        kin                 => rx_k(i), 
-        readyin             => link_enable_125(i),
+        datain              => rx_data(MP_LINK_ORDER(i)), 
+        kin                 => rx_k(MP_LINK_ORDER(i)), 
+        readyin             => link_enable_125(MP_LINK_ORDER(i)),
         i_mp_readout_mode   => mp_readout_mode,
         o_ts                => ts_unpacker(i),
         o_chip_ID           => chip_ID_unpacker(i),
@@ -209,6 +236,8 @@ begin
         o_col               => col_unpacker(i),
         o_tot               => tot_unpacker(i),
         o_hit_ena           => hits_ena_unpacker(i),
+        o_coarsecounter     => open,--coarsecounters(i),
+        o_coarsecounter_ena => open,--coarsecounter_enas(i),
         errorcounter        => unpack_errorcounter(i) -- could be useful!
     );
 
@@ -233,14 +262,29 @@ begin
     process(i_clk125, reset_125_n)
     begin
         if(reset_125_n = '0')then
-            counter125 <= (others => '0');
+            counter125      <= (others => '0');
+            last_sorter_hit <= (others => '0');
         elsif(rising_edge(i_clk125))then
             if(i_sync_reset_cnt = '1')then
                 counter125 <= (others => '0');
             else
                 counter125 <= counter125 + 1;
             end if;
-            
+
+            if(sorter_out_is_hit='1') then
+                last_sorter_hit <= fifo_wdata_hs(31 downto 0);
+            end if;
+
+            sorter_inject_prev <= sorter_inject(MP_SORTER_INJECT_ENABLE_BIT);
+            if(sorter_inject_prev = '0' and sorter_inject(MP_SORTER_INJECT_ENABLE_BIT) = '1' and (to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE))) < 12)) then
+                hits_sorter_in      <= (others => sorter_inject);
+                hits_sorter_in_ena  <= (others => '0');
+                hits_sorter_in_ena(to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE)))) <= '1';
+            else
+                hits_sorter_in      <= hits_sorter_in_buf;
+                hits_sorter_in_ena  <= hits_sorter_in_ena_buf;
+            end if;
+
             if(mp_datagen_control_reg(MP_DATA_GEN_SORT_IN_BIT) = '1') then
                 ts      <= ts_gen;
                 chip_ID <= Chip_ID_gen;
@@ -289,9 +333,9 @@ begin
             o_row(0)            => row_hs(i),
             o_col(0)            => col_hs(i),
             o_tot(0)            => tot_hs(i),
-            o_hit_ena           => hits_sorter_in_ena(i)--,
+            o_hit_ena           => hits_sorter_in_ena_buf(i)--,
         );
-        hits_sorter_in(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
+        hits_sorter_in_buf(i)       <= row_hs(i) & col_hs(i) & tot_hs(i)(4 downto 0) & ts_hs(i);
     END GENERATE;
 
     running         <= '1' when i_run_state_125 = RUN_STATE_RUNNING else '0';
@@ -309,6 +353,7 @@ begin
         data_out        => fifo_wdata_hs(31 downto 0),
         out_ena         => fifo_write_hs,
         out_type        => fifo_wdata_hs(35 downto 32),
+        out_is_hit      => sorter_out_is_hit,
         diagnostic_out  => sorter_counters,
         delay           => sorter_delay--,
     );
@@ -373,7 +418,7 @@ begin
         q(67 downto 32) => sync_fifo_wdata_out,
         q(68)           => sync_fifo_write_out--,
     );
-    
+
     process(i_clk156)
     begin
     if(rising_edge(i_clk156)) then
@@ -402,6 +447,40 @@ begin
         wrclk   => i_clk156,
         wrreq   => '1',
         q(35 downto 0) => link_enable_125--,
+    );
+
+
+    -- bypass hitsorter and put data of a single MP directly on a seperate optical link
+    process(i_clk125)
+    begin
+    if(rising_edge(i_clk125)) then
+        if(to_integer(unsigned(data_bypass_select)) <= NCHIPS) then 
+            data_bypass     <= hits_sorter_in(to_integer(unsigned(data_bypass_select)));
+            data_bypass_we  <= hits_sorter_in_ena(to_integer(unsigned(data_bypass_select)));
+        else
+            data_bypass     <= x"000000BC";
+            data_bypass_we  <= '0';
+        end if;
+    end if;
+    end process;
+
+    sync_fifo_bypass : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 4,
+        DATA_WIDTH  => 32,
+        SHOWAHEAD   => "OFF",
+        OVERFLOW    => "ON",
+        DEVICE      => "Arria V"--,
+    )
+    port map(
+        aclr            => '0',
+        data            => data_bypass,
+        rdclk           => i_clk156,
+        rdreq           => '1',
+        rdempty         => o_data_bypass_we,
+        wrclk           => i_clk125,
+        wrreq           => data_bypass_we,
+        q               => o_data_bypass--,
     );
 
 end rtl;

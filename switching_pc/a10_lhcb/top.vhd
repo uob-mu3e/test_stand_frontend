@@ -93,7 +93,7 @@ architecture arch of top is
 
 
 
-    signal pcie_wregs, pcie_rregs : work.pcie_components.reg32array;
+    signal pcie_wregs, pcie_rregs : work.pcie_components.reg32array_pcie;
 
 begin
 

@@ -189,17 +189,17 @@ architecture rtl of top is
     ------------------ Signal declaration ------------------------
     
     -- pcie read / write regs
-    signal writeregs				: reg32array;
-    signal writeregs_slow		: reg32array;
-    signal writeregs_ddr3		: reg32array;
+    signal writeregs				: reg32array_pcie;
+    signal writeregs_slow			: reg32array_pcie;
+    signal writeregs_ddr3			: reg32array_pcie;
     signal regwritten				: std_logic_vector(63 downto 0);
     signal regwritten_B				: std_logic_vector(63 downto 0);
     signal regwritten_C				: std_logic_vector(63 downto 0);
     signal pb_in : std_logic_vector(2 downto 0);
     
-    signal readregs				: reg32array;
-    signal readregs_slow			: reg32array;
-    signal readregs_ddr3			: reg32array;
+    signal readregs					: reg32array_pcie;
+    signal readregs_slow			: reg32array_pcie;
+    signal readregs_ddr3			: reg32array_pcie;
     
     -- pcie read / write memory
     signal readmem_writedata 	: std_logic_vector(31 downto 0);
