@@ -479,23 +479,23 @@ void setup_odb(){
         string feb = "Crate" + to_string(i);
         string * s = new string(feb);
         (*s) += " Index";
-        settings["SCFC"][bankindex++] = s;
+        settings["Names SCFC"][bankindex++] = s;
         s = new string(feb);
         (*s) += " Voltage 20";
-        settings["SCFC"][bankindex++] = s;
+        settings["Names SCFC"][bankindex++] = s;
         s = new string(feb);
         (*s) += " Voltage 3.3";
-        settings["SCFC"][bankindex++] = s;
+        settings["Names SCFC"][bankindex++] = s;
         s = new string(feb);
         (*s) += " Voltage 5";
-        settings["SCFC"][bankindex++] = s;
+        settings["Names SCFC"][bankindex++] = s;
         s = new string(feb);
         (*s) += " CC Temperature";
-        settings["SCFC"][bankindex++] = s;
+        settings["Names SCFC"][bankindex++] = s;
         for(int j=0; j < MAX_FEBS_PER_CRATE; j++){
             s = new string(feb);
             (*s) += "FEB" + to_string(j) + "Temperature";
-            settings["SCFC"][bankindex++] = s;
+            settings["Names SCFC"][bankindex++] = s;
         }
     }
 
@@ -570,7 +570,6 @@ void setup_watches(){
 void switching_board_mask_changed(odb o) {
 
     string name = o.get_name();
-
     cm_msg(MINFO, "switching_board_mask_changed", "Switching board masking changed");
 
     vector<INT> switching_board_mask = o;
@@ -616,7 +615,7 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
 }
 
 INT init_crates() {
-
+    return SUCCESS;
 }
 
 INT init_febs(mudaq::MudaqDevice & mu) {
@@ -948,8 +947,12 @@ INT resume_run(INT run_number, char *error)
    return CM_SUCCESS;
 }
 
-/*--- Read Slow Control Event to be put into data stream --------*/
+/*--- Read Slow Control Event from crate controllers to be put into data stream --------*/
+INT read_febcrate_sc_event(char *pevent, INT off){
+    return 0;
+}
 
+/*--- Read Slow Control Event from FEBsto be put into data stream --------*/
 INT read_sc_event(char *pevent, INT off)
 {    
     cout << "Reading FEB SC" << endl;
