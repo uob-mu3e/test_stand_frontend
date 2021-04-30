@@ -85,8 +85,8 @@ package mupix is
     -- more links are inverted on the FEB:
         -- 12,14,16,27,34,35
     -- additional inverts: (we dont know from where, list is incomplete):
-        -- 11,15,32,28 
-    constant MP_LINK_INVERT : std_logic_vector(35 downto 0) := "010101011000000010011101100000000001";
+        -- 11,15,32,28,  2,3,5,24,23,21,20,25,26,28,32,29,31,10,13,17
+    constant MP_LINK_INVERT : std_logic_vector(35 downto 0) := "010111111111101110111111110000101101";
 
 
     type ts_array_t                 is array (natural range <>) of std_logic_vector(10 downto 0);
