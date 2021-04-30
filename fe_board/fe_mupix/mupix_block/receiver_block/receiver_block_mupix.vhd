@@ -14,6 +14,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 use work.mupix_registers.all;
+use work.mupix.all;
 
 entity receiver_block_mupix is 
     generic(
@@ -165,8 +166,11 @@ begin
 
     -- Input D9 is inverted...
     --rx_out(359 downto 350) <= not rx_out_temp(359 downto 350);
-    --rx_out(349 downto 270) <= rx_out_temp(349 downto 270);
-    rx_out <= not rx_out_temp when i_rx_invert='0' else rx_out_temp;
+    --rx_out(349 downto 270) <= rx_out_temp(349 downto 270)
+
+    geninvert: FOR i in 0 to 35 GENERATE
+        rx_out(9+10*i downto 10*i) <= not rx_out_temp(9+10*i downto 10*i) when (MP_LINK_INVERT(i) xor i_rx_invert)='0' else rx_out_temp(9+10*i downto 10*i);
+    end generate geninvert;
 
     gendec:
     FOR i in NINPUT-1 downto 0 generate	
