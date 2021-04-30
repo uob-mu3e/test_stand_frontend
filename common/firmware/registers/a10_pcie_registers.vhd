@@ -70,6 +70,7 @@ package a10_pcie_registers is
 			constant USE_BIT_LINK 								: integer := 3;
 			constant USE_BIT_GEN_MERGER 						: integer := 4;
 			constant USE_BIT_FARM	 						    : integer := 5;
+            constant USE_BIT_TEST	 						    : integer := 6;
 		constant SWB_READOUT_LINK_REGISTER_W					: integer := 16#14#;
 
         constant DDR3_CONTROL_W									: integer := 16#20#;

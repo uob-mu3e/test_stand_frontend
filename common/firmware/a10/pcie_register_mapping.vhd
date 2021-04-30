@@ -21,8 +21,8 @@ port (
     i_local_pcie0_rregs_250 : in    work.util.slv32_array_t(63 downto 0);
 
     --! register outputs for pcie0/1
-    o_pcie0_rregs       : out   reg32array;
-    o_pcie1_rregs       : out   reg32array;
+    o_pcie0_rregs       : out   reg32array_pcie;
+    o_pcie1_rregs       : out   reg32array_pcie;
 
     -- slow 156 MHz clock
     i_clk_156           : in    std_logic;
@@ -67,6 +67,7 @@ begin
                             i_local_pcie0_rregs_250(DMA_NOTHALFFUL_REGISTER_R) when i = DMA_NOTHALFFUL_REGISTER_R else
                             i_local_pcie0_rregs_250(DMA_ENDEVENT_REGISTER_R) when i = DMA_ENDEVENT_REGISTER_R else
                             i_local_pcie0_rregs_250(DMA_NOTENDEVENT_REGISTER_R) when i = DMA_NOTENDEVENT_REGISTER_R else
+                            i_pcie0_rregs_250(EVENT_BUILD_STATUS_REGISTER_R) when i = EVENT_BUILD_STATUS_REGISTER_R else
                             q_rregs(i * 32 + 31 downto i * 32);
     END GENERATE gen_map;
     

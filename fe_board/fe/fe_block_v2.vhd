@@ -72,6 +72,9 @@ port (
     i_fifo_write        : in    std_logic_vector(N_LINKS-1 downto 0);
     i_fifo_wdata        : in    std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
+    i_data_bypass       : in    std_logic_vector(31 downto 0) := x"000000BC";
+    i_data_bypass_we    : in    std_logic := '0';
+
     o_fifos_almost_full : out   std_logic_vector(N_LINKS-1 downto 0);
 
     -- slow control fifo
@@ -492,8 +495,8 @@ begin
         run_state                  => run_state_156,
         run_number                 => run_number,
 
-        o_data_out                 => ffly_tx_data,
-        o_data_is_k                => ffly_tx_datak,
+        o_data_out(95 downto 0)    => ffly_tx_data(95 downto 0),
+        o_data_is_k(11 downto 0)   => ffly_tx_datak(11 downto 0),
 
         slowcontrol_write_req      => sc_fifo_write,
         i_data_in_slowcontrol      => sc_fifo_wdata,
@@ -516,6 +519,19 @@ begin
         reset                      => not reset_156_n,
         clk                        => i_clk_156--,
     );
+
+    process(i_clk_156)
+    begin
+        if(rising_edge(i_clk_156)) then
+            if(i_data_bypass_we = '1') then
+                ffly_rx_data(127 downto 96) <= i_data_bypass;
+                ffly_rx_datak(15 downto 12) <= "0000";
+            else 
+                ffly_rx_data(127 downto 96) <= x"000000BC";
+                ffly_rx_datak(15 downto 12) <= "0001";
+            end if;
+        end if;
+    end process;
 
 
     --TODO: do we need two independent link test modules for both fibers?

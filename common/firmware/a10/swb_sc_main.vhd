@@ -17,7 +17,7 @@ use ieee.std_logic_unsigned.all;
 
 entity swb_sc_main is
 generic (
-    NLINKS : integer := 4
+    NLINKS : positive := 4
 );
 port (
     i_clk           : in    std_logic;

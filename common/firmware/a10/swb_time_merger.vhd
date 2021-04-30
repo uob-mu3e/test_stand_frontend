@@ -8,10 +8,11 @@ use work.mudaq.all;
 entity swb_time_merger is
 generic (
     W : positive := 8*32+8*6;
-    TREE_w : integer := 10;
-    TREE_r : integer := 10;
+    TREE_w : positive := 10;
+    TREE_r : positive := 10;
     -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
     DATA_TYPE: std_logic_vector(7 downto 0) := x"01";
+    g_NLINKS_DATA : positive := 12;
     g_NLINKS_FARM : positive := 8;
     g_NLINKS : positive := 16--;
 );
@@ -64,11 +65,12 @@ begin
     port map ( o_cnt => o_counters(0), i_ena => wfull, i_reset_n => i_reset_n, i_clk => i_clk );
 
 
-    e_time_merger : entity work.time_merger
+    e_time_merger : entity work.time_merger_v2
         generic map (
         W => W,
         TREE_DEPTH_w => TREE_w,
         TREE_DEPTH_r => TREE_r,
+        g_NLINKS_DATA => g_NLINKS_DATA,
         N => g_NLINKS--,
     )
     port map (

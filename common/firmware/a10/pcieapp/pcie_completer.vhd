@@ -33,8 +33,8 @@ entity pcie_completer is
 		
 		
 		-- registers
-    writeregs                   : in    reg32array;
-    readregs                    : in    reg32array;
+    writeregs                   : in    reg32array_pcie;
+    readregs                    : in    reg32array_pcie;
 		
 		-- from register read part
 		rreg_readaddr :			in std_logic_vector(5 downto 0);
@@ -224,7 +224,7 @@ architecture RTL of pcie_completer is
 	--signal mem_done_next:			std_logic;
 	--signal mem_done_after_next:	std_logic;
 	
-    signal writeregs_r : reg32array;
+    signal writeregs_r : reg32array_pcie;
 	
 	signal tx_st_ready0: 			std_logic;
 	signal readmemnext:				std_logic;

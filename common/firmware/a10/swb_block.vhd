@@ -19,11 +19,11 @@ use work.a10_pcie_registers.all;
 
 entity swb_block is
 generic (
-    g_NLINKS_TOTL       : integer := 64;
-    g_NLINKS_FEB_TOTL   : integer := 16;
-    g_NLINKS_FARM_TOTL  : integer := 16;
-    g_NLINKS_FARM_PIXEL : integer := 8;
-    g_NLINKS_DATA_PIXEL : integer := 12;
+    g_NLINKS_TOTL       : positive := 64;
+    g_NLINKS_FEB_TOTL   : positive := 16;
+    g_NLINKS_FARM_TOTL  : positive := 16;
+    g_NLINKS_FARM_PIXEL : positive := 8;
+    g_NLINKS_DATA_PIXEL : positive := 12;
     SWB_ID              : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
@@ -53,7 +53,6 @@ port (
 
     i_dmamemhalffull     : in  std_logic;
     o_dma_wren           : out std_logic;
-    o_dma_done           : out std_logic;
     o_endofevent         : out std_logic;
     o_dma_data           : out std_logic_vector(255 downto 0);
 
@@ -221,7 +220,7 @@ begin
     o_farm_data(g_NLINKS_FARM_PIXEL - 1 downto 0)     <= pixel_farm_data;
     o_farm_datak(g_NLINKS_FARM_PIXEL - 1 downto 0)    <= pixel_farm_datak;
     o_dma_wren      <= pixel_dma_wren;
-    o_dma_done      <= pixel_dma_done;
+    o_readregs_250(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE)      <= pixel_dma_done;
     o_endofevent    <= pixel_dma_endofevent;
     o_dma_data      <= pixel_dma_data;
     gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_DATA_PIXEL - 1 GENERATE

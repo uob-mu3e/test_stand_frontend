@@ -116,6 +116,7 @@ struct mupix_t {
     void menu() {
         auto& regs = sc->ram->regs.scifi;
         alt_u32 value = 0x0;
+        alt_u32 value2 = 0x0;
         char str[2] = {0};
         
         while(1) {
@@ -128,6 +129,7 @@ struct mupix_t {
             }else{
                 printf("  [4] => invert lvds in\n");
             }
+            printf("  [5] => set lvds mask\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -167,6 +169,23 @@ struct mupix_t {
                 break;
             case '4':
                 sc->ram->data[0xFF90] ^= 1UL;
+                break;
+            case '5':
+                value = 0x0;
+                value2 = 0x0;
+                printf("Enter mask in hex: (36 bit number)\n");
+                printf("mask: 0x%01x%08x\n",value2, value);
+                str[0] = wait_key();
+                value2 = value2*16+strtol(str,NULL,16);
+                for(int i = 0; i<8; i++){
+                    printf("mask: 0x%01x%08x\n",value2, value);
+                    str[0] = wait_key();
+                    value = value*16+strtol(str,NULL,16);
+                }
+
+                printf("setting lvds mask to 0x%01x%08x\n",value2, value);
+                sc->ram->data[0xFF61]=value;
+                sc->ram->data[0xFF62]=value2;
                 break;
             case 'q':
                 return;

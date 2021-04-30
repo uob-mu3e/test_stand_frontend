@@ -194,12 +194,12 @@ architecture arch of a10_block is
     signal pcie0_clk        : std_logic;
     signal pcie1_clk        : std_logic;
 
-    signal pcie0_rregs      : reg32array;
-    signal pcie1_rregs      : reg32array;
-    signal pcie0_wregs_A    : reg32array;
-    signal pcie0_wregs_B    : reg32array;
-    signal pcie1_wregs_A    : reg32array;
-    signal pcie1_wregs_B    : reg32array;
+    signal pcie0_rregs      : reg32array_pcie;
+    signal pcie1_rregs      : reg32array_pcie;
+    signal pcie0_wregs_A    : reg32array_pcie;
+    signal pcie0_wregs_B    : reg32array_pcie;
+    signal pcie1_wregs_A    : reg32array_pcie;
+    signal pcie1_wregs_B    : reg32array_pcie;
     signal local_pcie0_rregs_156 : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
     signal local_pcie0_rregs_250 : work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
 
@@ -304,12 +304,12 @@ begin
 
     --! 100 MHz blinky to check the pcie0 clk
     e_pcie0_clk_hz : entity work.clkdiv
-    generic map ( P => 100000000 )
+    generic map ( P => 250000000 )
     port map ( o_clk => o_pcie0_clk_hz, i_reset_n => i_reset_n, i_clk => pcie0_clk );
 
     --! 100 MHz blinky to check the pcie1 clk
     e_pcie1_clk_hz : entity work.clkdiv
-    generic map ( P => 100000000 )
+    generic map ( P => 250000000 )
     port map ( o_clk => o_pcie1_clk_hz, i_reset_n => i_reset_n, i_clk => pcie1_clk );
 
     --! blinky leds to check the wregs

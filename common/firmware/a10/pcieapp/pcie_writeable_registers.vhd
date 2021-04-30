@@ -16,11 +16,11 @@ use work.mudaq.all;
 
 entity pcie_writeable_registers is
 port (
-    o_writeregs_B               : out   reg32array;
+    o_writeregs_B               : out   reg32array_pcie;
 	 o_regwritten_B :			out   std_logic_vector(63 downto 0);
     i_clk_B                     : in    std_logic := '0';
 	 
-	 o_writeregs_C               : out   reg32array;
+	 o_writeregs_C               : out   reg32array_pcie;
 	 o_regwritten_C :			out   std_logic_vector(63 downto 0);
     i_clk_C                     : in    std_logic := '0';
 
@@ -36,7 +36,7 @@ port (
 		rx_bar :					in 	STD_LOGIC;
 
 		-- registers
-		writeregs :				out	reg32array;
+		writeregs :				out	reg32array_pcie;
 		regwritten :			out   std_logic_vector(63 downto 0);
 
 		-- to response engine
@@ -88,18 +88,18 @@ architecture RTL of pcie_writeable_registers is
 
 	
 	-- registers
-	signal writeregs_r	: reg32array;
+	signal writeregs_r	: reg32array_pcie;
 	signal regwritten_r : std_logic_vector(63 downto 0);
 	
 	constant zero32	:  std_logic_vector(31 downto 0) := "00000000000000000000000000000000";
 
-    signal writeregs_B : reg32array;
+    signal writeregs_B : reg32array_pcie;
     signal regwritten_B : std_logic_vector(63 downto 0);
     signal writeregs_B_reset_n : std_logic;
     signal writeregs_B_fifo_wdata, writeregs_B_fifo_rdata : std_logic_vector(37 downto 0);
     signal writeregs_B_fifo_rempty : std_logic;
 
-    signal writeregs_C : reg32array;
+    signal writeregs_C : reg32array_pcie;
     signal regwritten_C : std_logic_vector(63 downto 0);
     signal writeregs_C_reset_n : std_logic;
     signal writeregs_C_fifo_wdata, writeregs_C_fifo_rdata : std_logic_vector(37 downto 0);

@@ -13,7 +13,7 @@ use ieee.std_logic_unsigned.all;
 
 entity swb_sc_secondary is
 generic (
-    NLINKS : integer := 4;
+		NLINKS : positive := 4;
 		skip_init : std_logic := '0'
 );
 port (

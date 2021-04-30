@@ -20,8 +20,8 @@ entity data_generator_a10 is
         max_row: std_logic_vector (7 downto 0) := (others => '0');
         max_col: std_logic_vector (7 downto 0) := (others => '0');
         wtot: std_logic := '0';
-        go_to_sh : integer := 2;
-        go_to_trailer : integer := 3;
+        go_to_sh : positive := 2;
+        go_to_trailer : positive := 3;
         wchip: std_logic := '0'
     );
     port(
@@ -29,6 +29,7 @@ entity data_generator_a10 is
 		i_reset_n    		: in  std_logic;
 		enable_pix			: in  std_logic;
         i_dma_half_full		: in  std_logic;
+        delay               : in  std_logic_vector (15 downto 0);
 		random_seed			: in  std_logic_vector (15 downto 0);
 		start_global_time 	: in  std_logic_vector(47 downto 0);
 		data_pix_generated 	: out std_logic_vector(31 downto 0);
@@ -47,7 +48,7 @@ architecture rtl of data_generator_a10 is
 	signal overflow_time:			  std_logic_vector(3 downto 0);
 	signal reset:				  std_logic;
 	-- state_types
-	type data_header_states is (part1, part2, part3, part4, part5, trailer, overflow);
+	type data_header_states is (part1, part2, part3, part4, part5, part6, trailer, overflow);
 	signal data_header_state:   data_header_states;
 
 	-- random signals
@@ -55,7 +56,7 @@ architecture rtl of data_generator_a10 is
 	signal lsfr_tot, lsfr_tot_reg:     	  	  std_logic_vector (5 downto 0);
 	signal row:     	  	  std_logic_vector (7 downto 0);
 	signal col:     	     std_logic_vector (7 downto 0);
-	signal lsfr_overflow:        std_logic_vector (15 downto 0);
+	signal lsfr_overflow, delay_cnt:        std_logic_vector (15 downto 0);
 	
 	-- slow down signals
 	signal waiting:				  std_logic;
@@ -145,6 +146,7 @@ begin
 		current_overflow 			:= "0000000000000000";
 		overflow_idx				:= 0;
 		state_out					<= (others => '0');
+		delay_cnt					<= (others => '0');
 		datak_pix_generated		<= (others => '1');
 		row <= (others => '0');
 		col <= (others => '0');
@@ -154,18 +156,27 @@ begin
 				case data_header_state is
 					when part1 =>
 						state_out <= x"A";
-						data_pix_generated(31 downto 26) <= DATA_HEADER_ID;
-						data_pix_generated(25 downto 24) <=  (others => '0');
-						data_pix_generated(23 downto 8) <= fpga_id;
-						data_pix_generated(7 downto 0) 	<= x"bc";
-						datak_pix_generated              <= "0001";
-						data_header_state 					<= part2;
+						if ( delay_cnt = delay ) then
+							data_header_state 					<= part2;
+							data_pix_generated(31 downto 26) 	<= DATA_HEADER_ID;
+							data_pix_generated(25 downto 24) 	<= (others => '0');
+							data_pix_generated(23 downto 8) 	<= fpga_id;
+							data_pix_generated(7 downto 0) 		<= x"bc";
+							datak_pix_generated              	<= "0001";
+						else
+							-- send not valid data out of the data package
+							delay_cnt 							<= delay_cnt + '1';
+							data_pix_generated					<= x"AFFEAFFE";
+							datak_pix_generated              	<= "0000";
+						end if;
+						
 				
 					when part2 =>
 						state_out <= x"B";
+						delay_cnt <= (others => '0');
 						data_pix_generated(31 downto 0) 	<= global_time(47 downto 16);
-						global_time <= global_time + '1';
-						datak_pix_generated              <= "0000";
+						global_time 						<= global_time + '1';
+						datak_pix_generated              	<= "0000";
 						data_header_state 					<= part3;
 					
 					when part3 =>
@@ -182,8 +193,16 @@ begin
 						overflow_idx 							:= 0;
 						current_overflow						:= lsfr_overflow;
 						data_header_state 					<= part5;
+						
+                    when part5 =>
+                        global_time <= global_time + '1';
+						data_pix_generated 					<= "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
+						datak_pix_generated              <= "0000";
+						overflow_idx 							:= 0;
+						current_overflow						:= lsfr_overflow;
+						data_header_state 					<= part6;
 					
-					when part5 =>
+					when part6 =>
 						state_out <= x"E";
 						global_time <= global_time + '1';
 						time_cnt_t <= time_cnt_t + '1';
@@ -219,7 +238,7 @@ begin
 						state_out <= x"9";
 						data_pix_generated					<= overflow_time & lsfr_chip_id & row & col & lsfr_tot;
 						datak_pix_generated              <= "0000";
-						data_header_state						<= part5;
+						data_header_state						<= part6;
 					
 					when trailer =>
 						state_out <= x"8";
