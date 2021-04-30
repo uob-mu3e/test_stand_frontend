@@ -110,11 +110,13 @@ struct mupix_datapath_t {
                     str[0] = wait_key();
                     datagenreg = datagenreg*16+strtol(str,NULL,16);
                 }
-
                 printf("setting reg to 0x%08x\n", datagenreg);
-                sc->ram->data[0xFFBE] = datagenreg;
-                datagenreg = 0x0;
-                sc->ram->data[0xFFBE] = datagenreg;
+                
+                for(int i=0; i<10000; i++){
+                    sc->ram->data[0xFFBE] = datagenreg;
+                    sc->ram->data[0xFFBE] = 0x0;
+                    usleep(50);
+                }
                 break;
             case 'q':
                 return;
