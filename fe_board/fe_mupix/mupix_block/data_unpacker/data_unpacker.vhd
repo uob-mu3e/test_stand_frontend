@@ -40,19 +40,24 @@ entity data_unpacker is
         o_col               : out std_logic_vector(7 downto 0);
         o_tot               : out std_logic_vector(5 downto 0);
         o_hit_ena           : out std_logic;
-        coarsecounter       : out std_logic_vector(COARSECOUNTERSIZE-1 downto 0); -- Gray Counter[7:0] & Binary Counter [23:0]
-        coarsecounter_ena   : out std_logic;
-        link_flag           : out std_logic;
         errorcounter        : out std_logic_vector(31 downto 0)
     );
 end data_unpacker;
 
 architecture RTL of data_unpacker is
 
+    signal coarsecounter        : std_logic_vector(COARSECOUNTERSIZE-1 downto 0); -- Gray Counter[7:0] & Binary Counter [23:0]
+    signal coarsecounter_ena    : std_logic;
+    signal link_flag            : std_logic;
+
     type state_type is (IDLE, ERROR, COUNTER, LINK, DATA);
     signal NS                   : state_type;
 
     signal data_i               : std_logic_vector(31 downto 0) := (others => '0');
+
+    signal input_buffer         : std_logic_vector(31 downto 0);
+    signal input_hit_ena_buffer : std_logic;
+    signal dataWithoutSC        : std_logic_vector(31 downto 0);
 
     signal errorcounter_reg     : std_logic_vector(31 downto 0);
 
@@ -178,7 +183,7 @@ begin
         if reset_n = '0' then
             NS <= IDLE;
 
-            hit_ena             <= '0';
+            input_hit_ena_buffer<= '0';
             coarsecounter       <= (others => '0');
             coarsecounter_ena   <= '0';
             link_flag           <= '0';
@@ -202,23 +207,14 @@ begin
             coarse_reg          <= '0';
             hit_reg             <= '0';
 
-            hit_ena             <= hit_reg;
+            input_hit_ena_buffer<= hit_reg;
             coarsecounter_ena   <= coarse_reg;
             link_flag           <= link_flag_reg;
 
             coarsecounter       <= data_i(7 downto 0) & data_i(31 downto 8); -- gray counter & binary counter
+
             if(hit_reg = '1')then
-                -- The data arrives from MuPix10: TS2[4:0] TS1[10:0] Col[6:0] Row[8:0]
-                    -- TS2 = data_i(31 downto 27)
-                    -- TS1 = data_i(26 downto 16)
-                    -- Col = data_i(15 downto 9)
-                    -- Row = data_i(8 downto 0)
-                -- We present to the outside:
-                ts              <= data_i(26 downto 16);
-                o_chip_ID       <= convert_lvds_to_chip_id(LVDS_ID,chip_ID_mode);
-                row             <= convert_row(data_i(8 downto 0));
-                col             <= convert_col(data_i(15 downto 9),data_i(8 downto 0));
-                ts2             <= data_i(31 downto 27);
+                input_buffer    <= data_i;
             end if;
 
             if(readyin = '0')then
@@ -314,6 +310,30 @@ begin
         end if;
 
     end process;
+
+    e_mp_sc_rm: work.mp_sc_removal
+    port map(
+        i_reset_n               => reset_n,
+        i_clk                   => clk, 
+        i_sc_active             => '1',
+        i_new_block             => link_flag,
+        i_hit                   => input_buffer,
+        i_hit_ena               => input_hit_ena_buffer,
+        i_coarsecounters_ena    => coarsecounter_ena,
+        o_hit                   => dataWithoutSC,
+        o_hit_ena               => hit_ena--,
+    );
+    -- The data arrives from MuPix10: TS2[4:0] TS1[10:0] Col[6:0] Row[8:0]
+                -- TS2 = data_i(31 downto 27)
+                -- TS1 = data_i(26 downto 16)
+                -- Col = data_i(15 downto 9)
+                -- Row = data_i(8 downto 0)
+            -- We remove sc and coarsecounters and present to the hitsorter:
+    ts              <= dataWithoutSC(26 downto 16);
+    o_chip_ID       <= convert_lvds_to_chip_id(LVDS_ID,chip_ID_mode);
+    row             <= convert_row(dataWithoutSC(8 downto 0));
+    col             <= convert_col(dataWithoutSC(15 downto 9),dataWithoutSC(8 downto 0));
+    ts2             <= dataWithoutSC(31 downto 27);
 
     degray_single : work.hit_ts_conversion
     port map(

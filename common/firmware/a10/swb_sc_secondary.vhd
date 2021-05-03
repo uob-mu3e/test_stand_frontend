@@ -19,7 +19,7 @@ generic (
 port (
 		clk:                in std_logic;
 		reset_n:            in std_logic;
-		i_link_enable:      in std_logic_vector(NLINKS-1 downto 0);
+    i_link_enable               : in    std_logic_vector(NLINKS-1 downto 0);
     link_data_in                : in    work.util.slv32_array_t(NLINKS-1 downto 0);
     link_data_in_k              : in    work.util.slv4_array_t(NLINKS-1 downto 0);
 		mem_data_out:       out std_logic_vector(31 downto 0);

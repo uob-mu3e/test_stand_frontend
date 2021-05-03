@@ -361,7 +361,7 @@ elsif(clk'event and clk = '1') then
     when quad_read =>
         if  (toggle = '0') then
             spi_sclk <= '0';
-				quadreadbyteshiftreg(0) <= spi_mosi;
+			quadreadbyteshiftreg(0) <= spi_mosi;
             quadreadbyteshiftreg(1) <= spi_miso;
             quadreadbyteshiftreg(2) <= spi_D2;
             quadreadbyteshiftreg(3) <= spi_D3;
@@ -388,14 +388,14 @@ elsif(clk'event and clk = '1') then
         end if;       
    when quad_read_fast =>
         if  (toggle = '0') then
-            spi_sclk <= '0';
-            count <= count + 1;
-        else
 			quadreadbyteshiftreg(0) <= spi_mosi;
             quadreadbyteshiftreg(1) <= spi_miso;
             quadreadbyteshiftreg(2) <= spi_D2;
             quadreadbyteshiftreg(3) <= spi_D3;
             quadreadbyteshiftreg(7 downto 4) <= quadreadbyteshiftreg(3 downto 0);
+            spi_sclk <= '0';
+            count <= count + 1;
+        else 
             spi_sclk <= '1';
         end if;
         if(count = 2 or count = 8) then

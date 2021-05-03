@@ -42,23 +42,23 @@ USE altera_mf.altera_mf_components.all;
 ENTITY hitsortermem IS
 	PORT
 	(
-		data		: IN STD_LOGIC_VECTOR (19 DOWNTO 0);
+		data		: IN STD_LOGIC_VECTOR (20 DOWNTO 0);
 		rdaddress		: IN STD_LOGIC_VECTOR (14 DOWNTO 0);
 		rdclock		: IN STD_LOGIC ;
 		wraddress		: IN STD_LOGIC_VECTOR (14 DOWNTO 0);
 		wrclock		: IN STD_LOGIC  := '1';
 		wren		: IN STD_LOGIC  := '0';
-		q		: OUT STD_LOGIC_VECTOR (19 DOWNTO 0)
+		q		: OUT STD_LOGIC_VECTOR (20 DOWNTO 0)
 	);
 END hitsortermem;
 
 
 ARCHITECTURE SYN OF hitsortermem IS
 
-	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (19 DOWNTO 0);
+	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (20 DOWNTO 0);
 
 BEGIN
-	q    <= sub_wire0(19 DOWNTO 0);
+	q    <= sub_wire0(20 DOWNTO 0);
 
 	altsyncram_component : altsyncram
 	GENERIC MAP (
@@ -77,8 +77,8 @@ BEGIN
 		power_up_uninitialized => "FALSE",
 		widthad_a => 15,
 		widthad_b => 15,
-		width_a => 20,
-		width_b => 20,
+		width_a => 21,
+		width_b => 21,
 		width_byteena_a => 1
 	)
 	PORT MAP (
@@ -148,10 +148,10 @@ END SYN;
 -- Retrieval info: PRIVATE: USE_DIFF_CLKEN NUMERIC "0"
 -- Retrieval info: PRIVATE: UseDPRAM NUMERIC "1"
 -- Retrieval info: PRIVATE: VarWidth NUMERIC "0"
--- Retrieval info: PRIVATE: WIDTH_READ_A NUMERIC "20"
--- Retrieval info: PRIVATE: WIDTH_READ_B NUMERIC "20"
--- Retrieval info: PRIVATE: WIDTH_WRITE_A NUMERIC "20"
--- Retrieval info: PRIVATE: WIDTH_WRITE_B NUMERIC "20"
+-- Retrieval info: PRIVATE: WIDTH_READ_A NUMERIC "21"
+-- Retrieval info: PRIVATE: WIDTH_READ_B NUMERIC "21"
+-- Retrieval info: PRIVATE: WIDTH_WRITE_A NUMERIC "21"
+-- Retrieval info: PRIVATE: WIDTH_WRITE_B NUMERIC "21"
 -- Retrieval info: PRIVATE: WRADDR_ACLR_B NUMERIC "0"
 -- Retrieval info: PRIVATE: WRADDR_REG_B NUMERIC "0"
 -- Retrieval info: PRIVATE: WRCTRL_ACLR_B NUMERIC "0"
@@ -173,11 +173,11 @@ END SYN;
 -- Retrieval info: CONSTANT: POWER_UP_UNINITIALIZED STRING "FALSE"
 -- Retrieval info: CONSTANT: WIDTHAD_A NUMERIC "15"
 -- Retrieval info: CONSTANT: WIDTHAD_B NUMERIC "15"
--- Retrieval info: CONSTANT: WIDTH_A NUMERIC "20"
--- Retrieval info: CONSTANT: WIDTH_B NUMERIC "20"
+-- Retrieval info: CONSTANT: WIDTH_A NUMERIC "21"
+-- Retrieval info: CONSTANT: WIDTH_B NUMERIC "21"
 -- Retrieval info: CONSTANT: WIDTH_BYTEENA_A NUMERIC "1"
--- Retrieval info: USED_PORT: data 0 0 20 0 INPUT NODEFVAL "data[19..0]"
--- Retrieval info: USED_PORT: q 0 0 20 0 OUTPUT NODEFVAL "q[19..0]"
+-- Retrieval info: USED_PORT: data 0 0 20 0 INPUT NODEFVAL "data[20..0]"
+-- Retrieval info: USED_PORT: q 0 0 20 0 OUTPUT NODEFVAL "q[20..0]"
 -- Retrieval info: USED_PORT: rdaddress 0 0 15 0 INPUT NODEFVAL "rdaddress[14..0]"
 -- Retrieval info: USED_PORT: rdclock 0 0 0 0 INPUT NODEFVAL "rdclock"
 -- Retrieval info: USED_PORT: wraddress 0 0 15 0 INPUT NODEFVAL "wraddress[14..0]"
@@ -187,9 +187,9 @@ END SYN;
 -- Retrieval info: CONNECT: @address_b 0 0 15 0 rdaddress 0 0 15 0
 -- Retrieval info: CONNECT: @clock0 0 0 0 0 wrclock 0 0 0 0
 -- Retrieval info: CONNECT: @clock1 0 0 0 0 rdclock 0 0 0 0
--- Retrieval info: CONNECT: @data_a 0 0 20 0 data 0 0 20 0
+-- Retrieval info: CONNECT: @data_a 0 0 21 0 data 0 0 21 0
 -- Retrieval info: CONNECT: @wren_a 0 0 0 0 wren 0 0 0 0
--- Retrieval info: CONNECT: q 0 0 20 0 @q_b 0 0 20 0
+-- Retrieval info: CONNECT: q 0 0 21 0 @q_b 0 0 21 0
 -- Retrieval info: GEN_FILE: TYPE_NORMAL hitsortermem.vhd TRUE
 -- Retrieval info: GEN_FILE: TYPE_NORMAL hitsortermem.inc FALSE
 -- Retrieval info: GEN_FILE: TYPE_NORMAL hitsortermem.cmp TRUE

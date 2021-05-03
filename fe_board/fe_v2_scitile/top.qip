@@ -1,0 +1,22 @@
+#
+
+set_global_assignment -name QIP_FILE top.qip
+
+set_global_assignment -name QIP_FILE ../fe/top_FEB_v2.qip
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../fe/assignments/FE_v2_scitile.tcl
+
+set_global_assignment -name VHDL_FILE top.vhd
+set_global_assignment -name SDC_FILE top.sdc
+
+set_global_assignment -name QIP_FILE registers/include.qip
+
+set_global_assignment -name QIP_FILE ../firmware/FEB_common/include_FEB_v2.qip
+
+set_global_assignment -name VHDL_FILE tile_path.vhd
+set_global_assignment -name QIP_FILE ../firmware/FEB_mutrig/include.qip
+
+set_global_assignment -name QIP_FILE ../fe_scifi/resetalign/realign_block.qip
+#set_global_assignment -name QIP_FILE mupix_block/include.qip
+#set_global_assignment -name VHDL_FILE dac_fifo.vhd
+#set_global_assignment -name VHDL_FILE mupix_block.vhd
+#set_global_assignment -name VHDL_FILE two_clk_sync_fifo.vhd

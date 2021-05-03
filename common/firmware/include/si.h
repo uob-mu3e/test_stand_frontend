@@ -3,8 +3,8 @@
  * date : 2019
  */
 
-#ifndef __MU3E_UTIL_SI_H__
-#define __MU3E_UTIL_SI_H__
+#ifndef __UTIL_SI_H__
+#define __UTIL_SI_H__
 
 #include <altera_avalon_i2c.h>
 #include <altera_avalon_spi.h>
@@ -13,6 +13,14 @@
  * SI (Silicon Labs) clock chip controller.
  */
 struct si_t {
+    /**
+     * SI register type.
+     */
+    struct register_t
+    {
+        uint16_t address;
+        uint16_t value;
+    };
 
     int log_level = 0;
 
@@ -168,4 +176,4 @@ struct si_t {
 
 };
 
-#endif // __MU3E_UTIL_SI_H__
+#endif // __UTIL_SI_H__

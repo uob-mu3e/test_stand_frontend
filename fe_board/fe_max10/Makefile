@@ -6,8 +6,6 @@ IPs = \
 
 include util/altera/makefile.mk
 
-nios.qsys : device.tcl
-
 .PHONY: maxpof
 maxpof : app $(SOF)
 	quartus_cpf -c pofconversion.cof
@@ -15,14 +13,3 @@ maxpof : app $(SOF)
 .PHONY: maxpgm
 maxpgm : maxpof
 	quartus_pgm -m jtag -c $(CABLE) --operation="p;output_files/max10_top.pof"
-
-top.qsf : top.qip
-	cat << EOF > $@
-	set_global_assignment -name QIP_FILE $<
-	set_global_assignment -name TOP_LEVEL_ENTITY top
-	set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:util/altera/pre_flow.tcl"
-	set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
-	set_global_assignment -name QIP_FILE registers/include.qip
-	EOF
-
-all : top.qsf

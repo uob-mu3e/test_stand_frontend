@@ -61,6 +61,7 @@
 #include "mudaq_dummy.h"
 
 #include "FEBSlowcontrolInterface.h"
+#include "DummyFEBSlowcontrolInterface.h"
 #include "feblist.h"
 
 
@@ -115,6 +116,12 @@ FEBSlowcontrolInterface * feb_sc;
 /* Lists of the active FEBs */
 FEBList * feblist;
 
+/* FEB classes */
+MuFEB       * mufeb;
+MupixFEB    * mupixfeb;
+SciFiFEB    * scififeb;
+TilesFEB    * tilefeb;
+
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -123,7 +130,7 @@ INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
 INT read_scitiles_sc_event(char *pevent, INT off);
 INT read_mupix_sc_event(char *pevent, INT off);
-void sc_settings_changed(HNDLE, HNDLE, int, void *);
+void sc_settings_changed(odb o);
 void switching_board_mask_changed(odb o);
 void frontend_board_mask_changed(odb o);
 
@@ -138,7 +145,8 @@ void setup_watches();
 void setup_history();
 void setup_alarms();
 
-INT init_mudaq(mudaq::MudaqDevice& mu);
+INT init_mudaq(mudaq::MudaqDevice&  mu);
+INT init_febs(mudaq::MudaqDevice&  mu);
 INT init_scifi(mudaq::MudaqDevice&  mu);
 INT init_scitiles(mudaq::MudaqDevice& mu);
 INT init_mupix(mudaq::MudaqDevice& mu);
@@ -170,7 +178,7 @@ EQUIPMENT equipment[] = {
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
+     FALSE,                      /* enabled */
      RO_ALWAYS | RO_ODB,        /* read always and update ODB */
      10000,                      /* read every 10 sec */
      0,                         /* stop run after this event limit */
@@ -185,7 +193,7 @@ EQUIPMENT equipment[] = {
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
+     FALSE,                      /* enabled */
      RO_ALWAYS | RO_ODB,        /* read always and update ODB */
      10000,                      /* read every 10 sec */
      0,                         /* stop run after this event limit */
@@ -200,7 +208,7 @@ EQUIPMENT equipment[] = {
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
+     FALSE,                      /* enabled */
      RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
      1000,                      /* read every 1 sec */
      0,                         /* stop run after this event limit */
@@ -235,9 +243,11 @@ INT frontend_init()
     #endif
 
     // create Settings structure in ODB
+    cout << "Setting up ODB" << endl;
     setup_odb();
-    setup_watches();
-    
+
+
+    cout << "Opening Mudaq" << endl;
     // open mudaq
     #ifdef NO_SWITCHING_BOARD
         mup = new mudaq::DummyDmaMudaqDevice("/dev/mudaq0");
@@ -249,15 +259,25 @@ INT frontend_init()
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
 
+
+    cout << "Setting link enables" << endl;
     //set link enables so slow control can pass
     odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
     try{
         set_feb_enable(get_link_active_from_odb(cur_links_odb)); }
     catch(...){ return FE_ERR_ODB;}
     
+    cout << "Creating FEB List" << endl;
     // Create the FEB List
     feblist = new FEBList(switch_id);
 
+    //init febs (general)
+    status = init_febs(*mup);
+    if (status != SUCCESS)
+        return FE_ERR_DRIVER;
+
+
+    /*
     //init scifi
     status = init_scifi(*mup);
     if (status != SUCCESS)
@@ -272,7 +292,7 @@ INT frontend_init()
     status = init_mupix(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
-
+    */
     // TODO: Define generic history panels
 
     // Subdetector specific panels should be created created in subdet::midasODB::setup_db
@@ -288,6 +308,10 @@ INT frontend_init()
     // to 600 means we are called AFTER most other clients.
     cm_set_transition_sequence(TR_STOP, 600);
 
+
+    cout << "Setting up Watches" << endl;
+    setup_watches();
+
     return CM_SUCCESS;
 }
 
@@ -297,14 +321,23 @@ void setup_odb(){
    // midas::odb::set_debug(true);
 
     string namestr;
-    if(switch_id == 0)
+    string bankname;
+    if(switch_id == 0){
         namestr = "Names SCFE";
-    if(switch_id == 1)
+        bankname = "SCFE";
+    }
+    if(switch_id == 1){
         namestr = "Names SUFE";
-    if(switch_id == 2)
+        bankname = "SUFE";
+    }
+    if(switch_id == 2){
         namestr = "Names SDFE";
-    if(switch_id == 3)
+        bankname = "SDFE";
+    }
+    if(switch_id == 3){
         namestr = "Names SFFE";
+        bankname = "SFFE";
+    }
 
     /* Default values for /Equipment/Switching/Settings */
     odb settings = {
@@ -325,6 +358,9 @@ void setup_odb(){
             {"SciTilesConfig", false},
             {"Reset Bypass Payload", 0},
             {"Reset Bypass Command", 0},
+            {"Load Firmware", false},
+            {"Firmware File",""},
+            {"Firmware FEB ID",0},
             // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
             {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()}
     };
@@ -334,6 +370,9 @@ void setup_odb(){
     for(int i=0; i < N_FEBS[switch_id]; i++){
         string feb = "FEB" + to_string(i);
         string * s = new string(feb);
+        (*s) += " Index";
+        settings[namestr][bankindex++] = s;
+        s = new string(feb);
         (*s) += " Arria Temperature";
         settings[namestr][bankindex++] = s;
         s = new string(feb);
@@ -433,18 +472,27 @@ void setup_odb(){
             {"WM_START_ADD", 0},
             {"WM_LENGTH", 0},
             {"WM_DATA", 0},
+
+            {"Merger Timeout All FEBs", 0},
+
+            {bankname.c_str(),std::array<float, per_fe_SSFE_size*N_FEBS[switch_id]>{}}
     };
 
     sc_variables.connect("/Equipment/Switching/Variables");
 
+    odb firmware_variables = {
+        {"Arria V Firmware Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{}},
+        {"Max 10 Firmware Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{}},
+        {"FEB Version", std::array<uint32_t, MAX_N_FRONTENDBOARDS>{20}}
+    };
+
+    firmware_variables.connect("/Equipment/Switching/Variables/FEBFirmware");
+
     // add custom page to ODB
     odb custom("/Custom");
     custom["Switching&"] = "sc.html";
+    custom["Febs&"] = "febs.html";
     
-    // setup odb for switching board
-    odb swb_varibles("/Equipment/Switching/Variables");
-    swb_varibles["Merger Timeout All FEBs"] = 0;
-
     // TODO: not sure at the moment we have a midas frontend for three feb types but 
     // we need to have different swb at the final experiment so maybe one needs to take
     // things apart later. For now we put this "common" FEB variables into the generic
@@ -454,6 +502,9 @@ void setup_odb(){
 }
 
 void setup_watches(){
+    //UI watch
+    odb sc_variables("/Equipment/Switching/Settings");
+    sc_variables.watch(sc_settings_changed);
 
     // watch if this switching board is enabled
     odb switch_mask("/Equipment/Links/Settings/SwitchingBoardMask");
@@ -485,10 +536,12 @@ void switching_board_mask_changed(odb o) {
     }
 
     feblist->RebuildFEBList();
+    mufeb->ReadFirmwareVersionsToODB();
 }
 
 void frontend_board_mask_changed(odb o) {
     feblist->RebuildFEBList();
+    mufeb->ReadFirmwareVersionsToODB();
 }
 
 INT init_mudaq(mudaq::MudaqDevice &mu) {
@@ -503,8 +556,32 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
         cm_msg(MERROR, "frontend_init", "Mudaq is not ok");
         return FE_ERR_DRIVER;
     }
-
+#ifdef NO_SWITCHING_BOARD
+    feb_sc = new DummyFEBSlowcontrolInterface(mu);
+#else
     feb_sc = new FEBSlowcontrolInterface(mu);
+#endif
+    return SUCCESS;
+}
+
+INT init_febs(mudaq::MudaqDevice & mu) {
+
+    // SciFi setup part
+    set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Initializing...", "var(--myellow)");
+    mufeb = new  MuFEB(*feb_sc,
+                        feblist->getFEBs(),
+                        feblist->getSciFiFEBMask(),
+                        equipment[EQUIPMENT_ID::Switching].name,
+                        "/Equipment/SciFi",
+                        switch_id); //create FEB interface signleton for scifi
+
+    //init all values on FEB
+    mufeb->WriteFEBID();
+
+    // Get all the relevant firmware versions
+    mufeb->ReadFirmwareVersionsToODB();
+
+    set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Ok", "var(--mgreen)");
 
     return SUCCESS;
 }
@@ -514,20 +591,21 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
 
     // SciFi setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Initializing...", "var(--myellow)");
-    SciFiFEB::Create(*feb_sc,
+    scififeb = new SciFiFEB(*feb_sc,
                      feblist->getSciFiFEBs(),
+                     feblist->getSciFiFEBMask(),
                      equipment[EQUIPMENT_ID::SciFi].name,
                      "/Equipment/SciFi",
                       switch_id); //create FEB interface signleton for scifi
 
-    int status=mutrig::midasODB::setup_db("/Equipment/SciFi",SciFiFEB::Instance());
+    int status=mutrig::midasODB::setup_db("/Equipment/SciFi",scififeb);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
         return status;
     }
     //init all values on FEB
-    SciFiFEB::Instance()->WriteAll();
-    SciFiFEB::Instance()->WriteFEBID();
+    scififeb->WriteAll();
+    scififeb->WriteFEBID();
 
     set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Ok", "var(--mgreen)");
     
@@ -543,19 +621,20 @@ INT init_scitiles(mudaq::MudaqDevice & mu) {
     
     //SciTiles setup part
     set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Initializing...", "var(--myellow)");
-    TilesFEB::Create(*feb_sc,
+    tilefeb = new TilesFEB(*feb_sc,
                      feblist->getTileFEBs(),
+                     feblist->getTileFEBMask(),
                      equipment[EQUIPMENT_ID::SciTiles].name,
                      "/Equipment/SciTiles",
                       switch_id); //create FEB interface signleton for scitiles
-    int status=mutrig::midasODB::setup_db("/Equipment/SciTiles", TilesFEB::Instance());
+    int status=mutrig::midasODB::setup_db("/Equipment/SciTiles", tilefeb);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Start up failed", "var(--mred)");
         return status;
     }
     //init all values on FEB
-    TilesFEB::Instance()->WriteAll();
-    TilesFEB::Instance()->WriteFEBID();
+    tilefeb->WriteAll();
+    tilefeb->WriteFEBID();
 
     set_equipment_status(equipment[EQUIPMENT_ID::SciTiles].name, "Ok", "var(--mgreen)");
 
@@ -572,19 +651,20 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
 
     //Mupix setup part
     set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Initializing...", "var(--myellow)");
-    MupixFEB::Create(*feb_sc,
+    mupixfeb = new MupixFEB(*feb_sc,
                      feblist->getPixelFEBs(),
+                     feblist->getPixelFEBMask(),
                      equipment[EQUIPMENT_ID::Mupix].name,
                      "/Equipment/Mupix",
                      switch_id); //create FEB interface signleton for mupix
 
-    int status=mupix::midasODB::setup_db("/Equipment/Mupix", MupixFEB::Instance(), true);
+    int status=mupix::midasODB::setup_db("/Equipment/Mupix", mupixfeb, true);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Start up failed", "var(--mred)");
         return status;
     }
     //init all values on FEB
-    MupixFEB::Instance()->WriteFEBID();
+    mupixfeb->WriteFEBID();
     
     set_equipment_status(equipment[EQUIPMENT_ID::Mupix].name, "Ok", "var(--mgreen)");
    
@@ -592,7 +672,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
     // TODO: That should probably go into setup_db
     char set_str[255];
     odb rate_counters("/Equipment/Mupix/Variables");
-    for(uint i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+    for(uint i = 0; i < mupixfeb->getNFPGAs(); i++){
         sprintf(set_str, "merger rate FEB%d", i);
         rate_counters[set_str] = 0;
         sprintf(set_str, "hit ena rate FEB%d", i);
@@ -605,7 +685,7 @@ INT init_mupix(mudaq::MudaqDevice & mu) {
     //end of Mupix setup part
     
     // Define history panels for each FEB Mupix
-    for(uint i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
+    for(uint i = 0; i < mupixfeb->getNFPGAs(); i++){
         sprintf(set_str, "FEB%d", i);
         hs_define_panel("Mupix", set_str, {"Mupix:merger rate " + string(set_str),
                                            "Mupix:hit ena rate " + string(set_str),
@@ -659,14 +739,14 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
     uint64_t link_active_from_odb = get_link_active_from_odb(cur_links_odb);
 
    //configure ASICs for SciFi
-   status=SciFiFEB::Instance()->ConfigureASICs();
+   status=scififeb->ConfigureASICs();
    if(status!=SUCCESS){
       cm_msg(MERROR,"switch_fe","ASIC configuration failed");
       return CM_TRANSITION_CANCELED;
    }
 
    //configure ASICs for Tiles
-   status=TilesFEB::Instance()->ConfigureASICs();
+   status=tilefeb->ConfigureASICs();
    if(status!=SUCCESS){
       cm_msg(MERROR,"switch_fe","ASIC configuration failed");
       return CM_TRANSITION_CANCELED;
@@ -681,7 +761,7 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
 
 
    //last preparations
-   SciFiFEB::Instance()->ResetAllCounters();
+   scififeb->ResetAllCounters();
 
 
    // TODO: Switch to odbxx here
@@ -701,13 +781,13 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
        cm_msg(MINFO,"switch_fe","Bypassing CRFE for run transition");
        // TODO: Get rid of hardcoded adresses here!
        DWORD valueRB = run_number;
-       feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff5, valueRB); //run number
+       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf5, valueRB); //run number
        valueRB= (1<<8) | 0x10;
-       feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff4, valueRB); //run prep command
+       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf4, valueRB); //run prep command
        valueRB= 0xbcbcbcbc;
-       feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff5, valueRB); //reset payload
+       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf5, valueRB); //reset payload
        valueRB= 0;//(1<<8) | 0x00;
-       feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff4, valueRB); //reset command
+       feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf4, valueRB); //reset command
    }else{
        /* send run prepare signal via CR system */
        // TODO: Move to odbxx
@@ -816,38 +896,32 @@ INT resume_run(INT run_number, char *error)
 /*--- Read Slow Control Event to be put into data stream --------*/
 
 INT read_sc_event(char *pevent, INT off)
-{
-    // TODO: Do not just dump unformatted packets!!
+{    
+    cout << "Reading FEB SC" << endl;
 
-    // get mudaq
-    #ifdef MY_DEBUG
-        dummy_mudaq::DummyMudaqDevice & mu = *mup;
-    #else
-        mudaq::MudaqDevice & mu = *mup;
-    #endif
-        
-    // get odb
-    // TODO: at the moment the timeout is a counter for all FEBs
-    odb merger_timeout_cnt("/Equipment/Switching/Variables");
-    auto merger_timeout_all = mu.read_register_ro(0x26);
-    merger_timeout_cnt["Merger Timeout All FEBs"] = merger_timeout_all;
-    
+    string bankname;
+    if(switch_id == 0){
+        bankname = "SCFE";
+    }
+    if(switch_id == 1){
+        bankname = "SUFE";
+    }
+    if(switch_id == 2){
+        bankname = "SDFE";
+    }
+    if(switch_id == 3){
+        bankname = "SFFE";
+    }
+
     // create bank, pdata
     bk_init(pevent);
     DWORD *pdata;
-    bk_create(pevent, "SWB0", TID_DWORD, (void **)&pdata);
-    
-    *pdata++ = merger_timeout_all;
-    
+    bk_create(pevent, bankname.c_str(), TID_FLOAT, (void **)&pdata);
+    pdata = mufeb->fill_SSFE(pdata);
     bk_close(pevent,pdata);
     return bk_size(pevent);
 
-    // TODO why do we do this?
-    //while(mup->FEBsc_get_packet()){};
-    //TODO: make this a switch
-    //mup->FEBsc_dump_packets();
-    //return 0;
-    //return mup->FEBsc_write_bank(pevent,off);
+
 }
 
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
@@ -857,9 +931,9 @@ INT read_scifi_sc_event(char *pevent, INT off){
     printf("Reading Scifi FEB status data from all FEBs %d\n",i++);
     //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
     //Add readout function for this one that gets data from class variables and writes midas banks
-    SciFiFEB::Instance()->ReadBackAllCounters();
-    SciFiFEB::Instance()->ReadBackAllRunState();
-    SciFiFEB::Instance()->ReadBackAllDatapathStatus();
+    scififeb->ReadBackAllCounters();
+    scififeb->ReadBackAllRunState();
+    scififeb->ReadBackAllDatapathStatus();
     return 0;
 }
 
@@ -870,16 +944,16 @@ INT read_scitiles_sc_event(char *pevent, INT off){
     printf("Reading SciTiles FEB status data from all FEBs %d\n",i++);
     //TODO: Make this more proper: move this to class driver routine and make functions not writing to ODB all the time (only on update).
     //Add readout function for this one that gets data from class variables and writes midas banks
-    TilesFEB::Instance()->ReadBackAllCounters();
-    TilesFEB::Instance()->ReadBackAllRunState();
-    TilesFEB::Instance()->ReadBackAllDatapathStatus();
+    tilefeb->ReadBackAllCounters();
+    tilefeb->ReadBackAllRunState();
+    tilefeb->ReadBackAllDatapathStatus();
     return 0;
 }
 
 /*--- Read Slow Control Event from Mupix to be put into data stream --------*/
 
 INT read_mupix_sc_event(char *pevent, INT off){
-    // get odb
+    // get odb11:29:52.162 2021/03/01 [SW Frontend,INFO] Setting FEBID of Central:Board1: Link0, SB0.0 to (feb1)-feb0
     odb rate_cnt("/Equipment/Mupix/Variables");
     uint32_t HitsEnaRate;
     uint32_t MergerRate;
@@ -893,12 +967,16 @@ INT read_mupix_sc_event(char *pevent, INT off){
     DWORD *pdata;
     bk_create(pevent, "FECN", TID_WORD, (void **) &pdata);
     printf("Reading MuPix FEB status data from all FEBs %d\n", i++);
-    MupixFEB::Instance()->ReadBackAllRunState();
-    for(uint i = 0; i < MupixFEB::Instance()->getNFPGAs(); i++){
-        HitsEnaRate = MupixFEB::Instance()->ReadBackHitsEnaRate(i);
-        MergerRate = MupixFEB::Instance()->ReadBackMergerRate(i);
-        ResetPhase = MupixFEB::Instance()->ReadBackResetPhase(i);
-        TXReset = MupixFEB::Instance()->ReadBackTXReset(i);
+    uint32_t d;
+    feb_sc->FEB_read(0,0,d);
+    printf("%i\n", d);
+
+    mupixfeb->ReadBackAllRunState();
+    for(uint i = 0; i < mupixfeb->getNFPGAs(); i++){
+        HitsEnaRate =mupixfeb->ReadBackHitsEnaRate(i);
+        MergerRate = mupixfeb->ReadBackMergerRate(i);
+        ResetPhase = mupixfeb->ReadBackResetPhase(i);
+        TXReset = mupixfeb->ReadBackTXReset(i);
 
 
         sprintf(set_str, "hit ena rate FEB%d", i);
@@ -924,22 +1002,7 @@ INT read_mupix_sc_event(char *pevent, INT off){
     return bk_size(pevent);
 }
 
-/*--- helper functions ------------------------*/
-
-BOOL sc_settings_changed_hepler(const char *key_name, HNDLE hDB, HNDLE hKey, DWORD type){
-    BOOL value;
-    int size = sizeof(value);
-    db_get_data(hDB, hKey, &value, &size, type);
-    //if(value) cm_msg(MINFO, "sc_settings_changed", "trigger for key=\"%s\"", key_name);
-    return value;
-}
-
-void set_odb_flag_false(const char *key_name, HNDLE hDB, HNDLE hKey, DWORD type){
-    //cm_msg(MINFO, "sc_settings_changed", "reseting odb flag of key \"\"", key_name);
-    BOOL value = FALSE; // reset flag in ODB
-    db_set_data(hDB, hKey, &value, sizeof(value), 1, type);
-}
-
+//TODO: Get rid of this...
 INT get_odb_value_by_string(const char *key_name){
     INT ODB_DATA, SIZE_ODB_DATA;
     SIZE_ODB_DATA = sizeof(ODB_DATA);
@@ -952,6 +1015,8 @@ INT get_odb_value_by_string(const char *key_name){
 void sc_settings_changed(odb o)
 {
     std::string name = o.get_name();
+
+    printf("%s\n",name.c_str());
 
 #ifdef MY_DEBUG
     dummy_mudaq::DummyMudaqDevice & mu = *mup;
@@ -1068,28 +1133,28 @@ void sc_settings_changed(odb o)
     }
 
     if (name == "SciFiConfig" && o) {
-          int status=SciFiFEB::Instance()->ConfigureASICs();
+          int status=scififeb->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }
        o = false;
     }
     if (name == "SciTilesConfig" && o) {
-          int status=TilesFEB::Instance()->ConfigureASICs();
+          int status=tilefeb->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }
       o = false;
     }
     if (name == "MupixConfig" && o) {
-          int status=MupixFEB::Instance()->ConfigureASICs();
+          int status=mupixfeb->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
           }
       o = false;
     }
     if (name == "MupixBoard" && o) {
-          int status=MupixFEB::Instance()->ConfigureBoards();
+          int status=mupixfeb->ConfigureBoards();
           if(status!=SUCCESS){
             //TODO: what to do?
           }
@@ -1104,17 +1169,26 @@ void sc_settings_changed(odb o)
 	  printf("Reset Bypass Command %8.8x, payload %8.8x\n",command,payload);
 
         // TODO: get rid of hardcoded addresses
-        feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff5, payload);
-        feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff4, command);
+        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf5, payload);
+        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf4, command);
         // reset payload and command TODO: Is this needed?
         payload=0xbcbcbcbc;
         command=0;
-        feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff5, payload);
-        feb_sc->FEB_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xfff4, command);
+        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf5, payload);
+        feb_sc->FEB_register_write(FEBSlowcontrolInterface::ADDRS::BROADCAST_ADDR, 0xf4, command);
         //reset odb flag
           command=command&(1<<8);
           o = command;
     }
+
+    if (name == "Load Firmware" && o) {
+        printf("Load firmware triggered");
+        string fname = odb("/Equipment/Switching/Settings/Firmware File");
+        uint32_t id = odb("/Equipment/Switching/Settings/Firmware FEB ID");
+       mufeb->LoadFirmware(fname,id);
+       o = false;
+    }
+
 }
 
 //--------------- Link related settings

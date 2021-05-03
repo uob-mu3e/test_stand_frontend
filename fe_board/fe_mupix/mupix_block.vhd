@@ -8,7 +8,7 @@ use ieee.std_logic_misc.all;
 
 use work.mupix_registers.all;
 use work.mudaq.all;
-
+use work.mupix.all;
 
 entity mupix_block is
 port (
@@ -98,21 +98,6 @@ begin
         o_csn                       => o_csn--,
     );
 
---    o_csn   <= (others => spi_csn);
---    o_mosi  <= (others => spi_mosi);
---    o_clock <= (others => spi_clock);
---    e_mupix_ctrl : work.mupix_ctrl_dummy
---    port map(
---        i_clk                       => i_clk156,
---        i_start                     => i_reset,
---
---        o_spi_clock                 => spi_clock,
---        o_spi_mosi                  => spi_mosi,
---        o_spi_csn                   => spi_csn--,
---    );
-
-
-
     e_mupix_datapath : work.mupix_datapath
     port map (
         i_reset_n           => datapath_reset_n,
@@ -139,9 +124,9 @@ begin
         i_sync_reset_cnt    => i_sync_reset_cnt,
         i_fpga_id           => i_fpga_id,
         i_run_state_125     => i_run_state_125,
+        i_run_state_156     => i_run_state_156,
         o_hotfix_reroute    => hotfix,
-        i_hotfix_backroute  => hotfix_back,
-        i_run_state_156     => i_run_state_156--,
+        i_hotfix_backroute  => hotfix_back--,
     );
 
 end architecture;
