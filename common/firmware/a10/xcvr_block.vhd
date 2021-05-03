@@ -180,6 +180,11 @@ begin
             end if;
         end loop;
 
+        if ( i_avs_read /= i_avs_write and av_i >= g_XCVR_N ) then
+            o_avs_readdata <= X"CCCCCCCC";
+            avs_waitrequest <= '0';
+        end if;
+
         --
     end if;
     end process;
