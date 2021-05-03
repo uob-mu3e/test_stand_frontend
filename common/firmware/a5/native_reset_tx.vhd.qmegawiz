@@ -1,5 +1,6 @@
 -- megafunction wizard: %Transceiver PHY Reset Controller v18.0%
 -- GENERATION: XML
+-- Retrieval info: <?xml version="1.0"?>
 -- Retrieval info: <instance entity-name="altera_xcvr_reset_control" version="18.0" >
 -- Retrieval info: 	<generic name="device_family" value="Arria V" />
 -- Retrieval info: 	<generic name="CHANNELS" value="4" />

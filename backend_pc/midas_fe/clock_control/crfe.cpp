@@ -478,8 +478,9 @@ void link_settings_changed(odb o)
    std::string name = o.get_name();
 
    if (name == "SwitchingBoardMask") {
-      INT value = o;
-      cm_msg(MINFO, "link_settings_changed", "Set Switching Board Mask to %d", value);
+      vector<INT> value = o;
+      cm_msg(MINFO, "link_settings_changed", "Set Switching Board Mask to %d %d %d %d",
+             value[0], value[1], value[2], value[3]);
    }
 
     if (name == "LinkMask") {

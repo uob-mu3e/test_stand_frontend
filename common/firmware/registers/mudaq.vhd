@@ -157,8 +157,6 @@ package mudaq is
 
     -- FEB Arria-MAX SPI addresses
     constant FEBSPI_ADDR_GITHASH            : std_logic_vector(6 downto 0)      := "0000000";
-    constant FEBSPI_ADDR_WRITENABLE         : std_logic_vector(6 downto 0)      := "0000001";
-    constant FEBSPI_PATTERN_WRITENABLE      : std_logic_vector(7 downto 0)      := X"A3";
     constant FEBSPI_ADDR_STATUS             : std_logic_vector(6 downto 0)      := "0000010";
     constant FEBSPI_ADDR_CONTROL            : std_logic_vector(6 downto 0)      := "0000011";
     constant FEBSPI_ADDR_RESET              : std_logic_vector(6 downto 0)      := "0000100";
@@ -167,7 +165,7 @@ package mudaq is
     constant FEBSPI_ADDR_PROGRAMMING_CTRL   : std_logic_vector(6 downto 0)      := "0010010";
     constant FEBSPI_ADDR_PROGRAMMING_ADDR   : std_logic_vector(6 downto 0)      := "0010011";
     constant FEBSPI_ADDR_PROGRAMMING_WFIFO  : std_logic_vector(6 downto 0)      := "0010100";
-    constant FEBSPI_ADDR_PROGRAMMING_RFIFO  : std_logic_vector(6 downto 0)      := "0010101";
+
     constant FEBSPI_ADDR_ADCCTRL            : std_logic_vector(6 downto 0)      := "0100000";
     constant FEBSPI_ADDR_ADCDATA            : std_logic_vector(6 downto 0)      := "0100001";
 
@@ -204,5 +202,3 @@ package mudaq is
     constant COMMAND_READ_SECURITY_REGISTERS    : std_logic_vector(7 downto 0) := X"42";
 
 end package;
-
-

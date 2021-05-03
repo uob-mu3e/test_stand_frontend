@@ -5,11 +5,12 @@
  * date : 2017-11-13
  */
 
-#ifndef SOFTWARE_APP_SRC_I2C_H_
-#define SOFTWARE_APP_SRC_I2C_H_
+#ifndef __UTIL_I2C_H__
+#define __UTIL_I2C_H__
 
 #include <system.h>
-
+#include "altera_avalon_pio_regs.h"
+#include <stdio.h>
 #include <altera_avalon_i2c.h>
 
 struct i2c_t {
@@ -62,14 +63,19 @@ struct i2c_t {
         return r8(slave);
     }
 
+    alt_u16 get16(alt_u8 slave, alt_u8 addr) {
+        w8(slave, addr);
+        return r16(slave);
+    }
+
     void set(alt_u8 slave, alt_u8 addr, alt_u8 data) {
         alt_u8 w[2] = { addr, data };
         write(dev, slave, w, 2);
     }
 
-    uint32_t set_mask(uint32_t mask) {
+    alt_u32 set_mask(alt_u32 mask) {
 #ifdef I2C_MASK_BASE
-        uint32_t old = IORD_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE);
+        alt_u32 old = IORD_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE);
         IOWR_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE, mask);
         return old;
 #endif // I2C_MASK_BASE
@@ -77,4 +83,4 @@ struct i2c_t {
     }
 };
 
-#endif /* SOFTWARE_APP_SRC_I2C_H_ */
+#endif // __UTIL_I2C_H__

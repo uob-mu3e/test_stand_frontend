@@ -384,9 +384,10 @@ begin
     );
 
     stream_in_rempty <= link_fifo_empty or not link_mask_n;
-        
-    stream_merger : IF USE_ALIGNMENT = 0 GENERATE
-    
+
+
+
+    generate_stream_merger : IF USE_ALIGNMENT = 0 GENERATE
         e_stream : entity work.swb_stream_merger
         generic map (
             N => NLINKS--,
@@ -432,9 +433,10 @@ begin
         link_trailer <=
             '1' when link_datak = "0001" and link_data(7 downto 0) = x"9C"
             else '0';
-            
-    END GENERATE stream_merger;
-        
+    end generate;
+
+
+
     time_alignment : if USE_ALIGNMENT = 1 GENERATE
     
         ---- reg for link FIFO outputs (timing)

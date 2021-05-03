@@ -5,7 +5,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-
 -- flip-flop synchronizer
 entity ff_sync is
 generic (

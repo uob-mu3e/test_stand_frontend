@@ -1,3 +1,0 @@
-#
-
-source "../fe/device.tcl"

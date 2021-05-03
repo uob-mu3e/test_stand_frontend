@@ -9,8 +9,8 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
-entity top is 
-    port (
+entity top is
+port (
         fpga_reset                  : in    std_logic;
 
         LVDS_clk_si1_fpga_A         : in    std_logic; -- 125 MHz base clock for LVDS PLLs - right // SI5345
@@ -91,13 +91,13 @@ entity top is
         max10_spi_D2                : inout std_logic;
         max10_spi_D3                : inout std_logic;
         max10_spi_csn               : out   std_logic
-        );
-end top;
+);
+end entity;
 
 architecture rtl of top is
- 
+
     -- Debouncers
-    signal pb_db                : std_logic_vector(1 downto 0);
+    signal pb_db                : std_logic_vector(PushButton'range);
 
 begin
 
@@ -108,19 +108,14 @@ begin
 --------------------------------------------------------------------
 
     db1: entity work.debouncer
-    port map(
+    generic map (
+        W => PushButton'length--;
+    )
+    port map (
+        i_d         => PushButton,
+        o_q         => pb_db,
         i_clk       => spare_clk_osc,
-        i_reset_n   => '1',
-        i_d(0)      => PushButton(0),
-        o_q(0)      => pb_db(0)--,
-    );
-
-    db2: entity work.debouncer
-    port map(
-        i_clk       => spare_clk_osc,
-        i_reset_n   => '1',
-        i_d(0)      => PushButton(1),
-        o_q(0)      => pb_db(1)--,
+        i_reset_n   => '1'--,
     );
 
     e_fe_block : entity work.fe_block_v2
@@ -201,8 +196,12 @@ begin
         i_testin            => pb_db(1)--,
     );
 
+    max10_spi_sclk <= '1'; -- This is temporary until we only have v2.1 boards with the
+                            -- correct connection; for now we use it to know 2.1 from 2.0
+    
 
     FPGA_Test(0) <= transceiver_pll_clock(0);
     FPGA_Test(1) <= lvds_firefly_clk;
     FPGA_Test(2) <= clk_125_top;
+
 end rtl;

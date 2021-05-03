@@ -8,6 +8,7 @@ use work.mudaq.all;
 LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
+use work.feb_sc_registers.all;
 
 entity top is
     port (
@@ -75,16 +76,15 @@ architecture arch of top is
 
     signal  version                             : std_logic_vector(31 downto 0);
     signal  status                              : std_logic_vector(31 downto 0);
-	 signal  programming_status                  : std_logic_vector(31 downto 0);
     signal  control                             : std_logic_vector(31 downto 0);
-    signal  spi_arria_we                        : std_logic;
-    signal  rw_last                             : std_logic;
-    signal  new_transaction                     : std_logic;
 
     signal flash_programming_ctrl               : std_logic_vector(31 downto 0);
+    signal flash_programming_status             : std_logic_vector(31 downto 0);
+    signal flash_programming_ctrl_arria         : std_logic_vector(31 downto 0);
+    signal flash_programming_status_arria       : std_logic_vector(31 downto 0);
     signal flash_w_cnt                          : std_logic_vector(31 downto 0);
     signal reset_n                              : std_logic;
-
+    signal programming_addr_from_arria          : std_logic_vector(23 downto 0);
 
 
     signal spi_flash_ctrl                       : std_logic_vector(7 downto 0); 
@@ -93,7 +93,7 @@ architecture arch of top is
     
     signal spi_flash_data_to_flash_nios         : std_logic_vector(7 downto 0);	
     signal spi_flash_cmdaddr_to_flash           : std_logic_vector(31 downto 0); 
-	 signal spi_flash_fifo_data_nios					: std_logic_vector(8 downto 0);
+	signal spi_flash_fifo_data_nios					: std_logic_vector(8 downto 0);
 
 
     -- Fifo for programming data to the SPIflash
@@ -103,7 +103,7 @@ architecture arch of top is
     signal spiflashfifo_data_in                    : std_logic_vector(7 downto 0);
     signal spiflashfifo_data_out                   : std_logic_vector(7 downto 0);	 
     signal read_spiflashfifo                       : std_logic;
-	 signal fifopiotoggle_last								: std_logic;
+	signal fifopiotoggle_last								: std_logic;
 
     -- spi arria
     signal SPI_inst                             : std_logic_vector(7 downto 0);
@@ -134,6 +134,11 @@ architecture arch of top is
     signal adc_data_2                           : std_logic_vector(31 downto 0);
     signal adc_data_3                           : std_logic_vector(31 downto 0);
     signal adc_data_4                           : std_logic_vector(31 downto 0);
+
+    signal startupcounter                       : integer;
+
+    signal fpp_crclocation                      : std_logic_vector(31 downto 0);
+    signal programming_control_nios             : std_logic_vector(31 downto 0);
     
 begin
 
@@ -142,7 +147,10 @@ begin
     fpga_reset  <= '0';
     reset_n     <= pll_locked;
     mscb_ena    <= '0';
-    attention_n <= "ZZ";
+
+	 
+	 bp_spi_miso <= 'Z';
+	 bp_spi_miso_en <= '0';
 
     e_pll : entity work.ip_altpll
     port map(
@@ -159,12 +167,36 @@ begin
     );
     version(31 downto 28) <= (others => '0');
 
-    status(0)  <= pll_locked;
-    status(1)  <= spi_arria_we;
-    status(23 downto 2) <= (others => '0');
+    status(MAX10_STATUS_BIT_PLL_LOCKED)  <= pll_locked;
+    status(MAX10_STATUS_BIT_SPI_ARRIA_CLK)  <= fpga_spi_clk;
+    status(2)   <= board_select;
+    status(3)   <= reset_cpu_backplane_n;
+    status(4)   <= reset_fpga_bp_n;
+    status(5)   <= bp_reset_fpga;
+    status(7 downto 6)   <= bp_mode_select;
+    status(10 downto 8)  <= spi_adr;
+    status(12 downto 11) <= attention_n;
+    status(15 downto 13) <=  spare;  
+    status(23 downto 16) <= ref_addr;
     status(31 downto 24) <= spi_flash_status;
+	 
+    attention_n <= "ZZ";
+	-- process(reset_n, max10_osc_clk)
+	-- begin
+	-- if(reset_n = '0') then
+    --		    attention_n <= "ZZ";
+	--elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
+    --    startupcounter <= startupcounter +1;
+    --    if(startupcounter > 5000)then
+	--			attention_n <= "0Z";
+    --			end if;
+	--		if(startupcounter > 10000)then
+	--			attention_n <= "Z0";
+	--			startupcounter <= 0;
+    --			end if;  
+	--end if;    	
+	--end process;
 
-    programming_status   <= (others => '0');
 
     -- SPI Arria10 to MAX10
     -----------------------
@@ -191,47 +223,24 @@ begin
             byte_en         =>  spi_arria_byte_en
     );
  
-    -- Write enable logic
-    process(clk100, reset_n)
-    begin
-    if (reset_n = '0') then
-        spi_arria_we <= '0';
-        rw_last     <= '0';
-        new_transaction <= '0';
-    elsif(clk100'event and clk100 = '1')then
-        rw_last     <= spi_arria_rw;
-        if(spi_arria_addr = FEBSPI_ADDR_WRITENABLE
-            and spi_arria_byte_from_arria = FEBSPI_PATTERN_WRITENABLE
-            and spi_arria_byte_en = '1' and spi_arria_rw = '1') then
-                spi_arria_we <= '1';
-        end if;
-        if(spi_arria_we = '1' and rw_last <= '0' and spi_arria_rw = '1') then
-            new_transaction <= '1';
-        end if;
-        if(new_transaction = '1' and rw_last <= '1' and spi_arria_rw = '0') then
-            spi_arria_we <= '0';
-            new_transaction <= '0';
-        end if;
-    end if;
-    end process;
-
+ 
     -- Multiplexer for data to_arria
     spi_arria_data_to_arria  
               <=   version when spi_arria_addr = FEBSPI_ADDR_GITHASH
                     else status when spi_arria_addr = FEBSPI_ADDR_STATUS
                     else control when  spi_arria_addr = FEBSPI_ADDR_CONTROL
-                    else programming_status when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_STATUS
+                    else flash_programming_status_arria when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_STATUS
                     else flash_w_cnt when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_COUNT
                     else adc_data_0 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
-                                     and spi_arria_addr_offset = X"00"
+                                     and spi_arria_addr_offset = "00000000"
                     else adc_data_1 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
-                                     and spi_arria_addr_offset = X"01"
+                                     and spi_arria_addr_offset = "00000001"
                     else adc_data_2 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
-                                     and spi_arria_addr_offset = X"02"
+                                     and spi_arria_addr_offset = "00000010"
                     else adc_data_3 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
-                                     and spi_arria_addr_offset = X"03"
+                                     and spi_arria_addr_offset = "00000011"
                     else adc_data_4 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
-                                     and spi_arria_addr_offset = X"04"
+                                     and spi_arria_addr_offset = "00000100"
 						  else (others => '0'); -- needed to avoid latch
                                      
                 
@@ -247,6 +256,12 @@ begin
             if(spi_arria_addr = FEBSPI_ADDR_CONTROL) then
                 control <= spi_arria_word_from_arria;
             end if;
+            if(spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_CTRL) then
+                flash_programming_ctrl_arria <= spi_arria_word_from_arria;
+            end if;            
+            if(spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_ADDR ) then
+                programming_addr_from_arria <= spi_arria_word_from_arria(23 downto 0);
+            end if;    
         end if;
         -- Byte-wise writing
         if(spi_arria_rw = '1' and spi_arria_byte_en = '1') then
@@ -300,15 +315,43 @@ begin
         i2c_scl_oe                  => open,
 
         -- flash spi
-        flash_ps_ctrl_export        => flash_programming_ctrl,
+        flash_ps_ctrl_export        => open,
         flash_w_cnt_export          => flash_w_cnt,
         flash_cmd_addr_export       => spi_flash_cmdaddr_to_flash,
         flash_ctrl_export           => spi_flash_ctrl,
         flash_i_data_export         => spi_flash_data_to_flash_nios,
         flash_o_data_export         => spi_flash_data_from_flash,
         flash_status_export         => spi_flash_status,
-		  flash_fifo_data_export		=> spi_flash_fifo_data_nios
+		flash_fifo_data_export		=> spi_flash_fifo_data_nios,
+
+        status_export               => status,
+        programming_status_export   => flash_programming_status_arria,
+        crclocation_export          => fpp_crclocation,
+        programming_control_export  => programming_control_nios
     );
+
+flash_programming_ctrl(30 downto 0) <= (others => '0');
+flash_programming_ctrl(31)      <= programming_control_nios(0);
+
+
+--process(reset_n, max10_osc_clk)
+--begin
+--if(reset_n = '0') then
+--   flash_programming_ctrl(31) <= '0';
+--    startupcounter <= 0;
+--elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
+--    if(pll_locked = '1')then
+--        startupcounter <= startupcounter +1;
+--        if(startupcounter > 4095000)then
+--            flash_programming_ctrl(31) <= '1';
+--        end if;
+--        if(startupcounter > 5000000)then
+--            startupcounter <= 5001000;
+--            flash_programming_ctrl(31) <= '0';
+--        end if;     
+--    end if;    
+--end if;    
+--end process;
 
  
 e_flashprogramming_block: entity work.flashprogramming_block
@@ -316,7 +359,8 @@ e_flashprogramming_block: entity work.flashprogramming_block
         clk100  	=> clk100,
         reset_n 	=> reset_n,
 		  
-		  control 	=> control,
+		control 	=> flash_programming_ctrl_arria,
+        status      => flash_programming_status_arria,
 
         -- Flash SPI IF
         flash_csn               => flash_csn,
@@ -333,20 +377,23 @@ e_flashprogramming_block: entity work.flashprogramming_block
         fpga_data               => fpga_data,
         fpga_clk                => fpga_clk,
 
+        fpp_crclocation         => fpp_crclocation,
+
         -- NIOS interface
-        flash_programming_ctrl  => flash_programming_ctrl,
-        flash_w_cnt             => flash_w_cnt,
-        spi_flash_cmdaddr_to_flash  => spi_flash_cmdaddr_to_flash,
-        spi_flash_ctrl          => spi_flash_ctrl,
-        spi_flash_data_to_flash_nios => spi_flash_data_to_flash_nios,
-        spi_flash_data_from_flash   => spi_flash_data_from_flash,
-        spi_flash_status            => spi_flash_status,
-		 spi_flash_fifo_data_nios     => spi_flash_fifo_data_nios, 
+        flash_programming_ctrl          => flash_programming_ctrl,
+        flash_w_cnt                     => flash_w_cnt,
+        spi_flash_cmdaddr_to_flash      => spi_flash_cmdaddr_to_flash,
+        spi_flash_ctrl                  => spi_flash_ctrl,
+        spi_flash_data_to_flash_nios    => spi_flash_data_to_flash_nios,
+        spi_flash_data_from_flash       => spi_flash_data_from_flash,
+        spi_flash_status                => spi_flash_status,
+		spi_flash_fifo_data_nios        => spi_flash_fifo_data_nios, 
 		 
 		   -- Arria SPI interface
         spi_arria_byte_from_arria            => spi_arria_byte_from_arria,
-        spi_arria_byte_en                    => spi_arria_byte_en,
-        spi_arria_addr                       => spi_arria_addr
+        spi_arria_byte_en                    => spi_arria_byte_en,        
+        spi_arria_addr                       => spi_arria_addr,
+        addr_from_arria                      => programming_addr_from_arria
     );
 
  

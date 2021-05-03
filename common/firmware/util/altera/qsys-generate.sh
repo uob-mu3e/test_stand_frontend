@@ -9,4 +9,5 @@ exec \
 qsys-generate \
     --synthesis=VHDL \
     --output-directory="$QSYS_DIR/" \
+    --search-path='$,'"$(realpath -- .)" \
     "$QSYS"

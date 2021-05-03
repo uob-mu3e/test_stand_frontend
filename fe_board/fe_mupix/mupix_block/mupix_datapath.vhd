@@ -10,6 +10,7 @@ use work.mupix_registers.all;
 use work.mupix.all;
 use work.mudaq.all;
 
+
 entity mupix_datapath is
 port (
     i_reset_n           : in  std_logic;
@@ -35,9 +36,9 @@ port (
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
+    i_run_state_156     : in  run_state_t;
     o_hotfix_reroute    : out work.util.slv32_array_t(35 downto 0); -- TODO: fix problem and remove
-    i_hotfix_backroute  : in  std_logic;
-    i_run_state_156     : in  run_state_t--;
+    i_hotfix_backroute  : in  std_logic--;
 );
 end mupix_datapath;
 
@@ -85,22 +86,7 @@ architecture rtl of mupix_datapath is
     signal hits_sorter_in           : hit_array;
     signal hits_sorter_in_ena       : std_logic_vector(11 downto 0);
 
-
     signal running                  : std_logic;
-
-    -- flag to indicate link, after unpacker
-    signal link_flag                : std_logic_vector(11 downto 0);
-
-    -- link flag is pipelined once because hits are gray decoded
-    signal link_flag_del            : std_logic_vector(11 downto 0);
-
-    -- counter + flag to indicate word as a counter, after unpacker
-    signal coarsecounters           : std_logic_vector(12*COARSECOUNTERSIZE-1 downto 0);
-    signal coarsecounters_ena       : std_logic_vector(11 downto 0);
-
-    -- counter is pipelined once because hits are gray decoded
-    signal coarsecounters_del       : std_logic_vector(12*COARSECOUNTERSIZE-1 downto 0);
-    signal coarsecounters_ena_del   : std_logic_vector(11 downto 0);
 
     -- error signal output from unpacker
     signal unpack_errorcounter      : work.util.slv32_array_t(35 downto 0);
@@ -140,6 +126,10 @@ architecture rtl of mupix_datapath is
     signal fifo_wdata_gen           : std_logic_vector(35 downto 0);
     signal fifo_write_gen           : std_logic;
 
+    -- Sorter config and diagnositc
+    signal sorter_counters          : sorter_reg_array;
+    signal sorter_delay             : ts_t;
+
 begin
 
     reset_156_n <= '0' when (i_run_state_156=RUN_STATE_SYNC) else '1';
@@ -161,10 +151,16 @@ begin
         i_lvds_data_valid           => (others => '0'),
         --i_lvds_status               => lvds_status,
 
+        -- inputs  125 (how to sync)------------------------------
+        i_sorter_counters           => sorter_counters,
+
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
         o_mp_lvds_link_mask         => lvds_link_mask,
-        o_mp_readout_mode           => mp_readout_mode--,
+        o_mp_readout_mode           => mp_readout_mode,
+
+        -- outputs 125-------------------------------------------------
+        o_sorter_delay              => sorter_delay--;
     );
     o_hotfix_reroute<= lvds_status; --TODO: fix this!!
 
@@ -213,9 +209,6 @@ begin
         o_col               => col_unpacker(i),
         o_tot               => tot_unpacker(i),
         o_hit_ena           => hits_ena_unpacker(i),
-        coarsecounter       => open,--coarsecounters((i+1)*COARSECOUNTERSIZE-1 downto i*COARSECOUNTERSIZE),
-        coarsecounter_ena   => open,--coarsecounters_ena(i),
-        link_flag           => open,--link_flag(i),
         errorcounter        => unpack_errorcounter(i) -- could be useful!
     );
 
@@ -236,19 +229,6 @@ begin
          end if;
        end if;
     end process;
-
-    -- delay cc by one cycle to be in line with hit
-    -- Seb: new degray - back to one
-    
-    -- TODO: Should this be in use somewhere ?
-    --    process(i_clk125)
-    --    begin
-    --        if(i_clk125'event and i_clk125 = '1') then
-    --            coarsecounters_del      <= coarsecounters;
-    --            coarsecounters_ena_del  <= coarsecounters_ena;
-    --            link_flag_del           <= link_flag;
-    --        end if;
-    --    end process;
 
     process(i_clk125, reset_125_n)
     begin
@@ -322,17 +302,18 @@ begin
         reset_n         => sorter_reset_n,
         writeclk        => i_clk125,
         running         => running,
-        currentts       => counter125(SLOWTIMESTAMPSIZE-1 downto 0),
+        currentts       => counter125(TIMESTAMPSIZE-1 downto 0),
         hit_in          => hits_sorter_in,--(others => (others => '0')),
         hit_ena_in      => hits_sorter_in_ena,--(others => '0'),
         readclk         => i_clk125,
         data_out        => fifo_wdata_hs(31 downto 0),
         out_ena         => fifo_write_hs,
         out_type        => fifo_wdata_hs(35 downto 32),
-        diagnostic_sel  => (others => '0'),
-        diagnostic_out  => open--,
+        diagnostic_out  => sorter_counters,
+        delay           => sorter_delay--,
     );
 
+    
     output_select : process(i_clk125) -- hitsorter, generator, unsorted ...
     begin
         if(rising_edge(i_clk125))then
@@ -369,6 +350,7 @@ begin
         o_mischief_managed  => open--,
     );
     gen_seed <= i_fpga_id & not i_fpga_id & i_fpga_id & not i_fpga_id & not i_fpga_id & i_fpga_id & i_fpga_id & not i_fpga_id & '0';
+
 
     -- sync some things ..
     sync_fifo_cnt : entity work.ip_dcfifo

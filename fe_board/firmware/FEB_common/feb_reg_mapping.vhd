@@ -30,6 +30,8 @@ port (
     i_fpga_type                 : in  std_logic_vector( 5 downto 0) := "111100";
     i_adc_reg                   : in  work.util.slv32_array_t( 4 downto 0) := (others => x"CCCCCCCC");
     i_max10_version             : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
+    i_max10_status              : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";  
+    i_programming_status        : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
 
     -- outputs 156--------------------------------------------
     o_reg_cmdlen                : out std_logic_vector(31 downto 0);
@@ -38,8 +40,12 @@ port (
     o_reg_reset_bypass_payload  : out std_logic_vector(31 downto 0);
     o_arriaV_temperature_clr    : out std_logic;
     o_arriaV_temperature_ce     : out std_logic;
-    o_fpga_id_reg               : out std_logic_vector(N_LINKS*16-1 downto 0)--;
-
+    o_fpga_id_reg               : out std_logic_vector(N_LINKS*16-1 downto 0);
+    o_programming_ctrl          : out std_logic_vector(31 downto 0);
+    o_programming_data          : out std_logic_vector(31 downto 0);
+    o_programming_data_ena      : out std_logic;
+    o_programming_addr          : out std_logic_vector(31 downto 0);
+    o_programming_addr_ena      : out std_logic--;
 );
 end entity;
 
@@ -64,6 +70,9 @@ architecture rtl of feb_reg_mapping is
     signal test_write               : std_logic;
     signal test_read_data           : std_logic_vector(31 downto 0);
     signal test_write_data          : std_logic_vector(31 downto 0);
+	 
+-- Prolong enable
+	signal addr_ena_del					: std_logic_vector(5 downto 0);
 
 begin
 
@@ -72,10 +81,25 @@ begin
     variable regaddr : integer;
 
     begin
-    if rising_edge(i_clk_156) then
 
+    if i_reset_n = '0' then
+        o_programming_ctrl <= (others => '0');   
+		  o_programming_data_ena  <= '0';
+        o_programming_addr_ena  <= '0';
+        
+    elsif rising_edge(i_clk_156) then
         o_reg_rdata         <= X"CCCCCCCC";
         regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
+
+        o_programming_data_ena  <= '0';
+		  if(addr_ena_del = "000000") then
+				o_programming_addr_ena  <= '0';
+			else 
+				o_programming_addr_ena  <= '1';
+			end if;
+			
+			addr_ena_del <= addr_ena_del(4 downto 0) & '0';
+				
         test_read           <= '0';
         test_write          <= '0';
 
@@ -181,9 +205,31 @@ begin
         if ( regaddr = MAX10_ADC_8_9_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= adc_reg(4);
         end if;
+        -- Max firmware version
         if ( regaddr = MAX10_VERSION_REGISTER_R and i_reg_re = '1' ) then
             o_reg_rdata <= i_max10_version;
         end if;
+        -- Max status
+        if ( regaddr = MAX10_STATUS_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= i_max10_status;
+        end if;
+        -- Programming
+        if ( regaddr = PROGRAMMING_STATUS_R and i_reg_re = '1' ) then
+            o_reg_rdata <= i_programming_status;
+        end if;  
+        if ( regaddr = PROGRAMMING_CTRL_W and i_reg_we = '1' ) then
+            o_programming_ctrl  <= i_reg_wdata;
+        end if;      
+        if ( regaddr = PROGRAMMING_ADDR_W and i_reg_we = '1' ) then
+            o_programming_addr  <= i_reg_wdata;
+            o_programming_addr_ena  <= '1';
+				addr_ena_del <= "111111";
+        end if;  
+        if ( regaddr = PROGRAMMING_DATA_W and i_reg_we = '1' ) then
+            o_programming_data  <= i_reg_wdata;
+            o_programming_data_ena  <= '1';
+        end if;  
+
         --TODO: Fireflies
 
 
