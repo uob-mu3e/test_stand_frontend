@@ -11,6 +11,7 @@
 #include "experim.h"
 #include "switching_constants.h"
 #include "link_constants.h"
+#include "util.h"
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -180,13 +181,20 @@ void stream_settings_changed(odb o)
         int value = o;
         cm_msg(MINFO, "stream_settings_changed", "Set Divider to %d", value);
         mup->write_register(DATAGENERATOR_DIVIDER_REGISTER_W, o);
-        // TODO: test me
     }
 
     if (name == "Datagen Enable") {
         bool value = o;
         cm_msg(MINFO, "stream_settings_changed", "Set Disable to %d", value);
         //this is set once we start the run
+    }
+
+    if (name == "Mask Links") {
+        int value = o;
+        char buffer [50];
+        sprintf(buffer, "Set Mask Links to " PRINTF_BINARY_PATTERN_INT32, PRINTF_BYTE_TO_BINARY_INT32((long long int) value));
+        cm_msg(MINFO, "stream_settings_changed", buffer);
+        mup->write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, value);
     }
 
 }
@@ -220,6 +228,7 @@ void setup_odb(){
     odb stream_settings = {
         {"Datagen Divider", 1000},     // int
         {"Datagen Enable", false},     // bool
+        {"Mask Links", 0x0}, // int
         {"dma_buf_nwords", int(dma_buf_nwords)},
         {"dma_buf_size", int(dma_buf_size)},
     };
@@ -385,12 +394,18 @@ INT begin_of_run(INT run_number, char *error)
    odb stream_settings;
    stream_settings.connect("/Equipment/Stream/Settings");
    if(stream_settings["Datagen Enable"]) {
-       // TODO: test me
-       mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, stream_settings["Datagen Divider"], 100);
-       reg = SET_DATAGENERATOR_BIT_ENABLE(reg);
+        // TODO: test me
+        int divider = stream_settings["Datagen Divider"];
+        cm_msg(MINFO,"farm_fe", "Use datagenerator with divider register %d", divider);
+        // readout datagen
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
+        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, divider);
+   } else {
+        cm_msg(MINFO,"farm_fe", "Use link data");
+        // readout link
+        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
    }
-   mu.write_register(DATAGENERATOR_REGISTER_W,reg);
-
+   mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, stream_settings["Mask Links"]);
    // reset lastlastwritten
    lastlastWritten = 0;
    lastRunWritten = mu.last_written_addr();//lastWritten;
@@ -408,53 +423,59 @@ INT end_of_run(INT run_number, char *error)
 {
 
    mudaq::DmaMudaqDevice & mu = *mup;
-   printf("farm_fe: Waiting for buffers to empty\n");
+   cm_msg(MINFO,"farm_fe","Waiting for buffers to empty");
    uint16_t timeout_cnt = 0;
    while(! mu.read_register_ro(BUFFER_STATUS_REGISTER_R) & 1<<0/* TODO right bit */ &&
          timeout_cnt++ < 50) {
-      printf("Waiting for buffers to empty %d/50\n", timeout_cnt);
+      //printf("Waiting for buffers to empty %d/50\n", timeout_cnt);
       timeout_cnt++;
       usleep(1000);
    };
 
    if(timeout_cnt>=50) {
-      cm_msg(MERROR,"farm_fe","Buffers on Switching Board not empty at end of run");
-      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
+      //cm_msg(MERROR,"farm_fe","Buffers on Switching Board not empty at end of run");
+      cm_msg(MINFO,"farm_fe","Buffers on Switching Board not empty at end of run");
+      set_equipment_status(equipment[0].name, "Buffers not empty", "var(--mred)");
+      // TODO: at the moment we dont care
       //return CM_TRANSITION_CANCELED;
    }else{
       printf("Buffers all empty\n");
    }
 
-   // Finish DMA while waiting for last requested data to be finished
+   //Finish DMA while waiting for last requested data to be finished
    cm_msg(MINFO, "farm_fe", "Waiting for DMA to finish");
    usleep(1000); // Wait for DMA to finish
    timeout_cnt = 0;
    
-   // wait for requested data
-   // TODO: in readout th poll on run end reg from febs
-   // write variable and check this one here and then disable readout th
-   // also check if readout th is disabled by midas at run end
+   //wait for requested data
+   //TODO: in readout th poll on run end reg from febs
+   //write variable and check this one here and then disable readout th
+   //also check if readout th is disabled by midas at run end
    while ( (mu.read_register_ro(0x1C) & 1) == 0 && timeout_cnt < 100 ) {
        timeout_cnt++;
        usleep(1000);
    };
         
    if(timeout_cnt>=100) {
-      cm_msg(MERROR, "farm_fe", "DMA did not finish");
-      set_equipment_status(equipment[0].name, "Not OK", "var(--mred)");
-//      return CM_TRANSITION_CANCELED;
+        //cm_msg(MERROR, "farm_fe", "DMA did not finish");
+        cm_msg(MINFO, "farm_fe", "DMA did not finish");
+        set_equipment_status(equipment[0].name, "DMA did not finish", "var(--mred)");
+        // TODO: at the moment we dont care
+        //return CM_TRANSITION_CANCELED;
    }else{
       cm_msg(MINFO, "farm_fe", "DMA is finished\n");
    }
 
-    // stop generator
-   uint32_t datagen_setup = 0;
-   datagen_setup = UNSET_DATAGENERATOR_BIT_ENABLE(datagen_setup);
-   mu.write_register_wait(DATAGENERATOR_REGISTER_W, datagen_setup, 100);
-   mu.write_register_wait(DMA_SLOW_DOWN_REGISTER_W, 0x0, 100);
-
-   // disable DMA
-   mu.disable();
+    // disable dma
+    mu.disable();
+    // stop readout
+    mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
+    mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
+    mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
+    mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
+    mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
+    // reset all
+    mu.write_register(RESET_REGISTER_W, 0x1);
 
    set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
    
@@ -607,7 +628,7 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
         printf("Error: Wrong trigger_mask 0x%08X\n", eh->trigger_mask);
         return -1;
     }
-    if ( bh->flags != 0x11 ) {
+    if ( bh->flags != 0x31 ) {
         printf("Error: Wrong flags 0x%08X\n", bh->flags);
         return -1;
     }
@@ -615,11 +636,29 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     uint32_t eventDataSize = eh->data_size; // bytes
 
     printf("EventDataSize: %8.8x\n", eventDataSize);
-    printf("Data: %8.8x\n", buffer[idx+eventDataSize/4]);
+    printf("Header Buffer: %8.8x\n", buffer[idx]);
+    printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-1]);
+
+    if ( !(buffer[idx+4+eventDataSize/4-1] == 0xAFFEAFFE or buffer[idx+4+eventDataSize/4-1] == 0x0FC0009C) ) {
+      printf("Data: %8.8x\n", buffer[idx+4+eventDataSize/4-2]);
+      return -1;
+    }
+
+    uint32_t dma_buf[4+eventDataSize/4];
+    for ( int i = 0; i<4+eventDataSize/4; i++ ) {
+      dma_buf[i] = buffer[idx + i];
+      //printf("%8.8x %8.8x\n", i, buffer[idx + i]);
+    }
+
+
+    copy_n(&dma_buf[0], sizeof(dma_buf)/4, pdata);
+    
+    return sizeof(dma_buf);
+    return -1;
     uint32_t endFirstBank = 0;
     for ( int i = idx; i<=idx+4+eventDataSize/4; i++ ) {
         // check if 9c is in data range
-        if ( buffer[i] == 0x0000009c and i > 10+idx ) {
+        if ( buffer[i] == 0x0FC0009c and i > 10+idx ) {
             endFirstBank = i;
             break;
         }
@@ -656,8 +695,12 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
             // change flags
             dma_buf_dummy[i] = 0x31;
         } else if ( i == 6 ) {
-            // change bank name
-            dma_buf_dummy[i] = 0x58495049;
+            // MIDAS expects bank names in ascii:
+            // For the run 2021 
+            // PCD1 = PixelCentralDebug1
+            // SCD1 = ScifiCentralDebug1
+            // TCD1 = TileCentralDebug1
+            dma_buf_dummy[i] = 0x31444350;
         } else if ( i == 7 ) {
             // change bank type
             dma_buf_dummy[i] = 0x6;
@@ -696,8 +739,8 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
     printf("Data Size: %8.8x, %8.8x\n", dma_buf_dummy[3], dma_buf_dummy[4+dma_buf_dummy[3]/4]);
     printf("Buffer Size: %8.8x\n", (endFirstBank+1+mod2-idx)*4);
     
-    if ( !(dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0x0000009c or dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0xAfFEAFFE) ) {
-        printf("!(dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0x0000009c or dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0xAfFEAFFE)\n");
+    if ( !(dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0x0FC0009c or dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0xAfFEAFFE) ) {
+        printf("!(dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0x0FC0009c or dma_buf_dummy[3+dma_buf_dummy[3]/4] == 0xAfFEAFFE)\n");
         printf("%8.8x\n",dma_buf_dummy[3+dma_buf_dummy[3]/4]);
         return -1;
     }
@@ -706,8 +749,8 @@ uint32_t check_event(T* buffer, uint32_t idx, uint32_t* pdata) {
 //         printf("%d %8.8x %8.8x\n", i, dma_buf_dummy[i], buffer[i+idx]);
 //     }
     
-    if ( !(dma_buf_dummy[endFirstBank+1+mod2-idx] == 0x0000009c or dma_buf_dummy[endFirstBank+1+mod2-idx] == 0xAFFEAFFE) ) {
-        printf("Error: dma_buf_dummy[endFirstBank+1-idx] != 0x0000009c 0x%08X\n", dma_buf_dummy[endFirstBank+1-idx]);
+    if ( !(dma_buf_dummy[endFirstBank+1+mod2-idx] == 0x0FC0009c or dma_buf_dummy[endFirstBank+1+mod2-idx] == 0xAFFEAFFE) ) {
+        printf("Error: dma_buf_dummy[endFirstBank+1-idx] != 0x0FC0009c 0x%08X\n", dma_buf_dummy[endFirstBank+1-idx]);
         for ( int i = 0; i<=endFirstBank+1+mod2-idx; i++ ) {
             printf("%8.8x %8.8x\n", dma_buf_dummy[i], buffer[i+idx]);
         }
@@ -823,13 +866,9 @@ INT read_stream_thread(void *param) {
     while (is_readout_thread_enabled()) {
         // don't readout events if we are not running
         if (run_state != STATE_RUNNING) {
-            set_equipment_status(equipment[0].name, "Not running", "var(--myellow)");
-            //ss_sleep(100);
-            //TODO: signalling from main thread?
+            ss_sleep(100);
             continue;
         }
-
-        set_equipment_status(equipment[0].name, "Running", "var(--mgreen)");
         
         // get midas buffer
         uint32_t* pdata = nullptr;
@@ -843,39 +882,50 @@ INT read_stream_thread(void *param) {
         mu.enable_continous_readout(0);
 
         // wait for requested data
-        
-        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x2);
-        // setup stream
-        mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x1);
-        // readout datagen
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
-        // readout link
-        //mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
         // request to read dma_buffer_size/2 (count in blocks of 256 bits)
         mu.write_register(0xC, max_requested_words / (256/32));
         
         // reset all
-        mu.write_register_wait(RESET_REGISTER_W, 0x1, 100);
+        mu.write_register(RESET_REGISTER_W, 0x1);
 //         sleep(1);
-        mu.write_register_wait(RESET_REGISTER_W, 0x0, 100);
+        mu.write_register(RESET_REGISTER_W, 0x0);
         
-        //while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
+        while ( (mu.read_register_ro(0x1C) & 1) == 0 ) {}
+
+        uint32_t words_written = mu.read_register_ro(0x32);
 
         // disable dma
         mu.disable();
         // stop readout
-        mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x0);
-        mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x0);
-        mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
         mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
         // reset all
         mu.write_register(RESET_REGISTER_W, 0x1);
         
-        // and get lastWritten
+        // and get lastWritten/endofevent
         lastlastWritten = 0;
         uint32_t lastWritten = mu.last_written_addr();
-//         printf("lastWritten = 0x%08X\n", lastWritten);
+        uint32_t endofevent = mu.last_endofevent_addr();
+        
+        // printf("lastWritten = 0x%08X\n", lastWritten);
+        // printf("endofevent = 0x%08X\n", endofevent);
+        // printf("words_written*8 = 0x%08X, data = 0x%08X, data-1 = 0x%08X\n", words_written*8, dma_buf[words_written*8], dma_buf[words_written*8-1]);
+        
+        // if ( !(dma_buf[words_written*8-1] == 0xAFFEAFFE or dma_buf[words_written*8-1] == 0x0FC0009C) ) continue;
+
+        // // //uint32_t dma_buf_save[4194296];//words_written*8];
+        // // uint32_t* dma_buf_save = new uint32_t[words_written*8];
+        // // for ( int i = 0; i<words_written*8; i++ ) {
+        // //   dma_buf_save[i] = dma_buf[i];
+        // // }
+        // copy_n(&dma_buf[0], words_written*8-1, pdata);
+        
+        // pdata+=(words_written*8-1)*4;
+        // rb_increment_wp(rbh, (words_written*8-1)*4); 
+        // // for (int i = 0; i<50; i++) {
+        // // printf("dma_buf[words_written-0] = 0x%08X\n", dma_buf[words_written*8]);
+        // // }
+        // continue;
 
         // print dma_buf content
 //        for ( int i = lastWritten - 0x100; i < lastWritten + 0x100; i++) {

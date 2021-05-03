@@ -161,6 +161,7 @@ package a10_pcie_registers is
             constant SC_MAIN_DONE								: integer := 0;
         constant DDR3_CLK_CNT_R                                 : integer := 16#30#;
         constant SC_STATE_REGISTER_R                            : integer := 16#31#;
+        constant DMA_CNT_WORDS_REGISTER_R                       : integer := 16#32#;
 		
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						    : integer := 16#38#;

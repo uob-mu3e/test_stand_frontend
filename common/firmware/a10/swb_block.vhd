@@ -93,7 +93,8 @@ architecture arch of swb_block is
     signal pixel_fram_wen : std_logic;
     
     --! DMA
-    signal pixel_dma_data : std_logic_vector (255  downto 0);
+    signal pixel_dma_data : std_logic_vector (255 downto 0);
+    signal pixel_dma_cnt_words : std_logic_vector (31 downto 0);
     signal pixel_dma_wren, pixel_dma_endofevent, pixel_dma_done : std_logic;
     
     --! demerged FEB links
@@ -221,6 +222,7 @@ begin
     o_farm_datak(g_NLINKS_FARM_PIXEL - 1 downto 0)    <= pixel_farm_datak;
     o_dma_wren      <= pixel_dma_wren;
     o_readregs_250(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE)      <= pixel_dma_done;
+    o_readregs_250(DMA_CNT_WORDS_REGISTER_R) <= pixel_dma_cnt_words;
     o_endofevent    <= pixel_dma_endofevent;
     o_dma_data      <= pixel_dma_data;
     gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_DATA_PIXEL - 1 GENERATE
@@ -272,6 +274,7 @@ begin
         o_fram_wen       => pixel_fram_wen,
 
         o_dma_wren       => pixel_dma_wren,
+        o_dma_cnt_words  => pixel_dma_cnt_words,
         o_dma_done       => pixel_dma_done,
         o_endofevent     => pixel_dma_endofevent,
         o_dma_data       => pixel_dma_data--;

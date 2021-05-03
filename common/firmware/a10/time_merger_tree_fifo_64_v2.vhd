@@ -46,15 +46,15 @@ architecture arch of time_merger_tree_fifo_64_v2 is
 
     -- merger signals
     constant size : integer := compare_fifos/2;
-    
-    signal data, data_reg, f_data, q : work.util.slv76_array_t(gen_fifos - 1 downto 0);
+
+    signal data, data_reg, f_data, f_data_reg, q, q_reg : work.util.slv76_array_t(gen_fifos - 1 downto 0);
     signal layer_state, layer_state_reg : work.util.slv8_array_t(gen_fifos - 1 downto 0);
-    signal wrreq, f_wrreq, wrfull, reset_fifo, wrreq_good, both_rdempty : std_logic_vector(gen_fifos - 1 downto 0);
+    signal wrreq, f_wrreq, f_wrreq_reg, wrfull, reset_fifo, wrreq_good, both_rdempty, rdempty, rdempty_reg, wrfull_reg, rdreq : std_logic_vector(gen_fifos - 1 downto 0);
     signal a, b, c, d : work.util.slv4_array_t(gen_fifos - 1 downto 0) := (others => (others => '0'));
     signal a_h, b_h, c_h, d_h : work.util.slv38_array_t(gen_fifos - 1 downto 0) := (others => (others => '0'));
     signal a_z, b_z, c_z, d_z : std_logic_vector(gen_fifos - 1 downto 0) := (others => '0');
-    signal last :  std_logic_vector(r_width-1 downto 0);
-    
+    signal last, last_reg : std_logic_vector(r_width-1 downto 0);
+
     -- for debugging / simulation
     signal t_q, t_data : work.util.slv8_array_t(gen_fifos - 1 downto 0);
     signal l1 : work.util.slv6_array_t(gen_fifos - 1 downto 0);
@@ -82,22 +82,36 @@ begin
         -- for debugging / simulation
         t_q(i)(7 downto 4) <= q(i)(69 downto 66) when last_layer = '0' else last(69 downto 66);
         t_q(i)(3 downto 0) <= q(i)(31 downto 28) when last_layer = '0' else last(31 downto 28);
-        t_data(i)(7 downto 4) <= f_data(i)(69 downto 66);
-        t_data(i)(3 downto 0) <= f_data(i)(31 downto 28);
+        t_data(i)(7 downto 4) <= data(i)(69 downto 66);
+        t_data(i)(3 downto 0) <= data(i)(31 downto 28);
         l1(i) <= q(i)(75 downto 70) when last_layer = '0' else last(75 downto 70);
         l2(i) <= q(i)(37 downto 32) when last_layer = '0' else last(37 downto 32);
     END GENERATE;
     
     o_layer_state <= layer_state;
     o_wrfull <= wrfull;
-    o_q <= q;
-    o_last <= last; 
+    o_q <= q_reg;
+    o_last <= last_reg;
+    o_rdempty <= rdempty_reg;
 
     gen_tree:
     FOR i in 0 to gen_fifos - 1 GENERATE
+    
+        reg_merge_state : process(i_clk, i_reset_n)
+        begin
+        if ( i_reset_n = '0' ) then
+            reset_fifo(i) <= '1';
+        elsif ( rising_edge(i_clk) ) then
+            if ( i_merge_state = '1' or last_layer = '1' ) then
+                reset_fifo(i) <= '0';
+            else
+                reset_fifo(i) <= '1';
+            end if;
+        end if;
+        end process;
 
         o_mask_n(i) <= i_mask_n(i) or i_mask_n(i + size);
-        reset_fifo(i) <= '0' when i_merge_state = '1' or last_layer = '1' else '1';
+--        reset_fifo(i) <= '0' when i_merge_state = '1' or last_layer = '1' else '1';
         
         gen_last_layer : IF last_layer = '1' and i < g_NLINKS_DATA GENERATE
             e_last_fifo : entity work.ip_dcfifo_mixed_widths
@@ -109,16 +123,47 @@ begin
                 DEVICE          => "Arria 10"--,
             )
             port map (
-                aclr    => not i_reset_n or reset_fifo(i),
-                data    => f_data(i),
+                aclr    => reset_fifo(i),
+                data    => data(i),
                 rdclk   => i_clk,
-                rdreq   => i_rdreq(i),
+                rdreq   => rdreq(i),
                 wrclk   => i_clk,
-                wrreq   => f_wrreq(i),
+                wrreq   => wrreq(i),
                 q       => last,
-                rdempty => o_rdempty(i),
+                rdempty => rdempty(i),
                 wrfull  => wrfull(i)--,
             );
+            
+            -- reg for last FIFO output (timing)
+            reg : process(i_clk, reset_fifo(i))
+            begin
+            if ( reset_fifo(i) = '1' ) then
+                last_reg       <= (others => '0');
+                rdreq(i)       <= '0';
+                wrfull_reg(i)  <= '0';
+                rdempty_reg(i) <= '1';
+            elsif ( rising_edge(i_clk) ) then
+                rdreq(i) <= '0';
+                if ( rdempty(i) = '0' and (wrfull_reg(i) = '0' or i_rdreq(i) = '1') ) then
+                    rdreq(i)       <= '1';
+                    last_reg    <= last;
+                    wrfull_reg(i)  <= '1';
+                end if;
+                
+                if ( i_rdreq(i) = '1' ) then
+                    wrfull_reg(i)  <= '0';
+                end if;
+                
+                if ( rdempty(i) = '0' and i_rdreq(i) = '1' ) then
+                    rdempty_reg(i) <= '0';
+                elsif ( rdempty(i) = '0' and wrfull_reg(i) = '0' ) then
+                    rdempty_reg(i) <= '0';
+                elsif ( i_rdreq(i) = '1' ) then
+                    rdempty_reg(i) <= '1';
+                end if;
+            end if;
+            end process;
+            
         END GENERATE;
         
         gen_layer : IF last_layer = '0' and i < g_NLINKS_DATA GENERATE
@@ -131,16 +176,47 @@ begin
                 DEVICE          => "Arria 10"--,
             )
             port map (
-                aclr    => not i_reset_n or reset_fifo(i),
-                data    => f_data(i),
+                aclr    => reset_fifo(i),
+                data    => data(i),
                 rdclk   => i_clk,
-                rdreq   => i_rdreq(i),
+                rdreq   => rdreq(i),
                 wrclk   => i_clk,
-                wrreq   => f_wrreq(i),
+                wrreq   => wrreq(i),
                 q       => q(i),
-                rdempty => o_rdempty(i),
+                rdempty => rdempty(i),
                 wrfull  => wrfull(i)--,
             );
+            
+            -- reg for FIFO outputs (timing)
+            reg : process(i_clk, reset_fifo(i))
+            begin
+            if ( reset_fifo(i) = '1' ) then
+                q_reg(i)       <= (others => '0');
+                rdreq(i)       <= '0';
+                wrfull_reg(i)  <= '0';
+                rdempty_reg(i) <= '1';
+            elsif ( rising_edge(i_clk) ) then
+                rdreq(i) <= '0';
+                if ( rdempty(i) = '0' and (wrfull_reg(i) = '0' or i_rdreq(i) = '1') ) then
+                    rdreq(i)       <= '1';
+                    q_reg(i)       <= q(i);
+                    wrfull_reg(i)  <= '1';
+                end if;
+                
+                if ( i_rdreq(i) = '1' ) then
+                    wrfull_reg(i)  <= '0';
+                end if;
+                
+                if ( rdempty(i) = '0' and i_rdreq(i) = '1' ) then
+                    rdempty_reg(i) <= '0';
+                elsif ( rdempty(i) = '0' and wrfull_reg(i) = '0' ) then
+                    rdempty_reg(i) <= '0';
+                elsif ( i_rdreq(i) = '1' ) then
+                    rdempty_reg(i) <= '1';
+                end if;
+            end if;
+            end process;
+            
         END GENERATE;
         
         wrreq_good(i) <= '1' when i_merge_state = '1' and wrfull(i) = '0' else '0';
@@ -260,25 +336,45 @@ begin
         process(i_clk, i_reset_n)
         begin
         if ( i_reset_n /= '1' ) then
-            layer_state_reg(i) <= (others => '0');
+            layer_state_reg(i)  <= (others => '0');
+            data_reg(i)         <= (others => '0');
+            --
         elsif ( rising_edge(i_clk) ) then
-            layer_state_reg(i) <= layer_state(i);
-            data_reg(i) <= data(i);
+            layer_state_reg(i)  <= layer_state(i);
+            data_reg(i)         <= data(i);
         end if;
         end process;
         
         -- reg for FIFO inputs (timing)
-        process(i_clk, i_reset_n)
-        begin
-        if ( i_reset_n /= '1' ) then
-            f_data(i)   <= (others => '0');
-            f_wrreq(i)  <= '0';
-        elsif ( rising_edge(i_clk) ) then
-            f_data(i)   <= data(i);
-            f_wrreq(i)  <= wrreq(i);
-        end if;
-        end process;
-
+--        process(i_clk, i_reset_n)
+--        begin
+--        if ( i_reset_n /= '1' ) then
+--            f_data(i)       <= (others => '0');
+--            f_wrreq(i)      <= '0';
+--            f_data_reg(i)   <= (others => '0');
+--            f_wrreq_reg(i)  <= '0';
+--            --
+--        elsif ( rising_edge(i_clk) ) then
+--            f_data_reg(i)   <= data(i);
+--            f_wrreq_reg(i)  <= wrreq(i);
+--            f_data(i)       <= f_data_reg(i);
+--            f_wrreq(i)      <= f_wrreq_reg(i);
+--        end if;
+--        end process;
+        
+        -- reg for FIFO outputs (timing)
+--        process(i_clk, i_reset_n)
+--        begin
+--        if ( i_reset_n /= '1' ) then
+--            q_reg(i)        <= (others => '0');
+--            rdempty_reg(i)  <= '1';
+--            --
+--        elsif ( rising_edge(i_clk) ) then
+--            q_reg(i)        <= q(i);
+--            rdempty_reg(i)  <= rdempty(i);
+--        end if;
+--        end process;        
+        
     END GENERATE;
 
 end architecture;
