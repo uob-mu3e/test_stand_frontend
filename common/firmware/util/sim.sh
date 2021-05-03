@@ -17,9 +17,6 @@ DIRS=(
     "/usr/local/lib/ghdl/vendors/altera"
     "$HOME/.local/share/ghdl/vendors/altera"
 )
-for arg in "${DIRS[@]}" ; do
-    [ -d "$arg" ] && OPTS+=(-P"$arg")
-done
 
 # elaboration options
 OPTS=(
@@ -37,6 +34,10 @@ OPTS=(
     -fpsl
 )
 
+for arg in "${DIRS[@]}" ; do
+    [ -d "$arg" ] && OPTS+=(-P"$arg")
+done
+
 # simulation options
 SIM_OPTS=(
     --stop-time="$STOPTIME"
@@ -52,7 +53,6 @@ SIM_OPTS=(
     --vcd="$TB.vcd" --wave="$TB.ghw" --fst="$TB.fst"
     # write PSL report at the end of simulation
     --psl-report="$TB.psl-report"
-
 )
 [ -f "$TB.wave-opt" ] && SIM_OPTS+=(--read-wave-opt="../$TB.wave-opt")
 
