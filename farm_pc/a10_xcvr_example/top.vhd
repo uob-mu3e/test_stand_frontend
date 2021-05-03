@@ -22,6 +22,17 @@ port (
     TEMP_I2C_SCL                : inout std_logic;
     TEMP_I2C_SDA                : inout std_logic;
 
+--    QSFPB_INTERRUPT_n           : in    std_logic;
+    QSFPB_LP_MODE               : out   std_logic;
+--    QSFPB_MOD_PRS_n             : in    std_logic;
+    QSFPB_MOD_SEL_n             : out   std_logic;
+    QSFPB_REFCLK_p              : in    std_logic;
+    QSFPB_RST_n                 : out   std_logic;
+--    QSFPB_SCL                   : out   std_logic;
+--    QSFPB_SDA                   : inout std_logic;
+    QSFPB_TX_p                  : out   std_logic_vector(3 downto 0);
+    QSFPB_RX_p                  : in    std_logic_vector(3 downto 0);
+
 --    QSFPA_INTERRUPT_n           : in    std_logic;
     QSFPA_LP_MODE               : out   std_logic;
 --    QSFPA_MOD_PRS_n             : in    std_logic;
@@ -175,6 +186,10 @@ begin
 
 
 
+    QSFPB_LP_MODE <= '0';
+    QSFPB_MOD_SEL_n <= '1';
+    QSFPB_RST_n <= '1';
+
     QSFPA_LP_MODE <= '0';
     QSFPA_MOD_SEL_n <= '1';
     QSFPA_RST_n <= '1';
@@ -182,7 +197,7 @@ begin
     e_xcvr0_block : entity work.xcvr_block
     generic map (
         g_XCVR_NAME => "xcvr_a10",
-        g_XCVR_N => 1,
+        g_XCVR_N => 2,
         g_CHANNELS => 4,
         g_REFCLK_MHZ => 125.0,
         g_CLK_MHZ => 125.0--,
@@ -191,10 +206,18 @@ begin
         o_rx_data               => open,
         o_rx_datak              => open,
 
+        i_tx_data(7)            => X"07CAFEBC",
+        i_tx_data(6)            => X"06BABEBC",
+        i_tx_data(5)            => X"05DEADBC",
+        i_tx_data(4)            => X"04BEEFBC",
         i_tx_data(3)            => X"03CAFEBC",
         i_tx_data(2)            => X"02BABEBC",
         i_tx_data(1)            => X"01DEADBC",
         i_tx_data(0)            => X"00BEEFBC",
+        i_tx_datak(7)           => "0001",
+        i_tx_datak(6)           => "0001",
+        i_tx_datak(5)           => "0001",
+        i_tx_datak(4)           => "0001",
         i_tx_datak(3)           => "0001",
         i_tx_datak(2)           => "0001",
         i_tx_datak(1)           => "0001",
@@ -203,8 +226,10 @@ begin
         i_tx_clk                => (others => clk_125),
         i_rx_clk                => (others => clk_125),
 
-        i_rx_serial             => QSFPA_RX_p,
-        o_tx_serial             => QSFPA_TX_p,
+        i_rx_serial(7 downto 4) => QSFPB_RX_p,
+        i_rx_serial(3 downto 0) => QSFPA_RX_p,
+        o_tx_serial(7 downto 4) => QSFPB_TX_p,
+        o_tx_serial(3 downto 0) => QSFPA_TX_p,
 
         i_refclk                => (others => clk_125),
 
