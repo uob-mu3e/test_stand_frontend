@@ -78,7 +78,14 @@ entity firefly is
         o_avs_waitrequest       : out   std_logic;
         
         o_testclkout            : out   std_logic;
-        o_testout               : out   std_logic--;
+        o_testout               : out   std_logic;
+		  
+		  -- outputs to slow control
+		  o_pwr                   : out   std_logic_vector(127 downto 0); -- RX optical power in mW
+        o_temp                  : out   std_logic_vector(15 downto 0);  -- temperature in °C
+		  o_alarm					  : out   std_logic_vector(63 downto 0);  -- latched alarm bits
+		  o_vcc						  : out   std_logic_vector(31 downto 0)--;  -- operating voltagein units of 100 uV
+		  
     );
 end entity firefly;
 
@@ -461,9 +468,14 @@ begin
         i_modPrs_n      => i_modPrs_n,
 
         o_pwr           => opt_rx_power,
-        o_temp          => temperature--,
+        o_temp          => temperature,
+		  o_alarm			=> o_alarm,
+		  o_vcc				=> o_vcc--,
     );
 
+	 o_pwr 	<= opt_rx_power;
+	 o_temp 	<= temperature;
+	 
 --    dnca: entity work.doNotCompileAwayMux
 --    generic map(
 --        WIDTH_g   => 31--,

@@ -198,6 +198,11 @@ architecture arch of fe_block_v2 is
     signal arriaV_temperature_temp  : std_logic_vector(7 downto 0);
     type temp_state_t               is (convert, clear);
     signal temp_state               :  temp_state_t;
+	 
+	 signal ffly_pwr                   : std_logic_vector(127 downto 0); -- RX optical power in mW
+    signal ffly_temp                  : std_logic_vector(15 downto 0);  -- temperature in °C
+	 signal ffly_alarm					  	 : std_logic_vector(63 downto 0);  -- latched alarm bits
+	 signal ffly_vcc						 : std_logic_vector(31 downto 0);  -- operating voltagein units of 100 uV 
     
     -- Max 10 SPI 
     signal adc_reg                  : work.util.slv32_array_t(4 downto 0);
@@ -320,6 +325,11 @@ begin
         i_max10_version             => max10_version,
         i_max10_status              => max10_status,
         i_programming_status        => programming_status,
+		  
+		  i_ffly_pwr							=> ffly_pwr,
+		  i_ffly_temp							=> ffly_temp,
+		  i_ffly_alarm						=> ffly_alarm,
+		  i_ffly_vcc							=> ffly_vcc,
 
         -- outputs 156--------------------------------------------
         o_reg_cmdlen                => reg_cmdlen,
@@ -533,7 +543,7 @@ begin
         end if;
     end process;
 
-
+		 
     --TODO: do we need two independent link test modules for both fibers?
     e_link_test : entity work.linear_shift_link
     generic map (
@@ -657,7 +667,12 @@ begin
         o_avs_waitrequest               => av_ffly.waitrequest,
 
         o_testclkout                    => open,
-        o_testout                       => open--,
+        o_testout                       => open,
+		  
+		  o_pwr									 => ffly_pwr,
+		  o_temp									 => ffly_temp,
+		  o_vcc									 => ffly_vcc,
+		  o_alarm								 => ffly_alarm
     );
 
     e_max10_interface : entity work.max10_interface

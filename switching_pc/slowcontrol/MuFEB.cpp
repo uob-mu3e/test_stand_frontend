@@ -297,10 +297,15 @@ DWORD *MuFEB::read_SSFE_OneFEB(DWORD *pdata, uint32_t index, uint32_t version)
     feb_sc.FEB_register_read(index, FIREFLY1_TEMP_REGISTER_R, fireflydata);
     *(float*)pdata++ = (float)(int8_t)fireflydata[0]; // FF1 Temperature
     *(float*)pdata++ = ((float)fireflydata[1])/1E4f; // FF1 Voltage
+    cout << std::hex << fireflydata[1] << endl;
     *(float*)pdata++ = ((float)fireflydata[2])/1E7f; // FF1 RX1 Power
+    cout << ((float)fireflydata[2])/1E7f << endl;
     *(float*)pdata++ = ((float)fireflydata[3])/1E7f; // FF1 RX2 Power
+    cout << ((float)fireflydata[3])/1E7f << endl;
     *(float*)pdata++ = ((float)fireflydata[4])/1E7f; // FF1 RX3 Power
+    cout << ((float)fireflydata[4])/1E7f << endl;
     *(float*)pdata++ = ((float)fireflydata[5])/1E7f; // FF1 RX4 Power
+    cout << ((float)fireflydata[5])/1E7f << endl;
     *pdata++ = fireflydata[6]; // FF1 Alarms
     *(float*)pdata++ = (float)(int8_t)fireflydata[6]; // FF2 Temperature
     *(float*)pdata++ = ((float)fireflydata[7])/1E4f; // FF2 Voltage
