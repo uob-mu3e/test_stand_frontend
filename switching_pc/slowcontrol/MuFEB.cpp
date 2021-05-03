@@ -239,7 +239,7 @@ DWORD* MuFEB::fill_SSFE(DWORD *pdata)
            index++;
        }
 
-       // And here we would actually fill the bank
+       // And here we actually fill the bank
         pdata = read_SSFE_OneFEB(pdata, index, FEB.GetVersion());
         index++;
     }
@@ -265,7 +265,6 @@ DWORD *MuFEB::read_SSFE_OneFEB(DWORD *pdata, uint32_t index, uint32_t version)
     // Arria V temperature
     feb_sc.FEB_register_read(index, ARRIA_TEMP_REGISTER_RW, data);
     *(float*)pdata++ = ArriaVTempConversion(data);
-
     vector<uint32_t> adcdata(5);
     // Read the MAX10 ADC
     feb_sc.FEB_register_read(index, MAX10_ADC_0_1_REGISTER_R, adcdata);
@@ -352,7 +351,7 @@ float MuFEB::ArriaVTempConversion(uint32_t reg)
 
     for(int i = 1; i < steps.size()-1; i++){
         if(reg < steps[i])
-            return temps[i] + (temps[i+1]-temps[i]) * (reg -  steps[i])/(steps[i+1]-steps[i]);
+            return temps[i] + (temps[i+1]-temps[i]) * ((int)reg -  (int)steps[i])/(steps[i+1]-steps[i]);
     }
 
     return -666; // should not get here
