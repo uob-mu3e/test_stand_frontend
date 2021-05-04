@@ -29,6 +29,7 @@ struct mupix_datapath_t {
             printf("  [5] => print sorter counters\n");
             printf("  [6] => set data bypass select\n");
             printf("  [7] => write sorter inject reg\n");
+            printf("  [8] => print hit ena counters\n");
             
             if((sc->ram->data[0xFF65] >> 4) & 1U){
                 printf("\n DataGen RATE: Full Stream\n");
@@ -116,6 +117,13 @@ struct mupix_datapath_t {
                     sc->ram->data[0xFFBE] = datagenreg;
                     sc->ram->data[0xFFBE] = 0x0;
                     usleep(50);
+                }
+                break;
+            case '8':
+                printf("hit ena counters:\n");
+                sc->ram->data[0xFFBF] = 0x0;
+                for(int i=0; i<40; i++){
+                    printf("%i: 0x%08x\n",i,sc->ram->data[0xFFC0]);
                 }
                 break;
             case 'q':

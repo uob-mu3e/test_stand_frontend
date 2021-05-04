@@ -35,6 +35,7 @@ port (
     i_coarsecounter             : in std_logic_vector(23 downto 0) := (others => '0');
     i_ts_global                 : in std_logic_vector(23 downto 0) := (others => '0');
     i_last_sorter_hit           : in std_logic_vector(31 downto 0) := (others => '0');
+    i_mp_hit_ena_cnt            : in std_logic_vector(31 downto 0) := (others => '0');
 
     -- outputs 156--------------------------------------------
     o_mp_lvds_link_mask         : out std_logic_vector(35 downto 0); -- lvds link mask
@@ -55,7 +56,8 @@ port (
 
     -- outputs 125-------------------------------------------------
     o_sorter_delay              : out ts_t;
-    o_sorter_inject             : out std_logic_vector(31 downto 0) := (others => '0')--;
+    o_sorter_inject             : out std_logic_vector(31 downto 0) := (others => '0');
+    o_mp_hit_ena_cnt_select     : out std_logic_vector( 7 downto 0) := (others => '0')--;
 );
 end entity;
 
@@ -72,6 +74,7 @@ architecture rtl of mupix_reg_mapping is
     signal mp_lvds_invert           : std_logic;
     signal mp_data_bypass_select    : std_logic_vector(31 downto 0);
     signal mp_sorter_inject         : std_logic_vector(31 downto 0);
+    signal mp_hit_ena_cnt_select    : std_logic_vector( 7 downto 0);
 
     signal reg_delay                : std_logic;
 begin
@@ -112,6 +115,7 @@ begin
             o_mp_ctrl_invert_29         <= mp_ctrl_invert_29;
             o_mp_ctrl_invert_csn        <= mp_ctrl_invert_csn;
             o_mp_data_bypass_select     <= mp_data_bypass_select;
+            o_mp_hit_ena_cnt_select     <= mp_hit_ena_cnt_select;
 
             regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
             o_reg_rdata         <= x"CCCCCCCC";
@@ -261,6 +265,18 @@ begin
                 o_reg_rdata <= mp_sorter_inject;
             end if;
 
+            if ( regaddr = MP_HIT_ENA_CNT_SELECT_REGISTER_W and i_reg_we = '1' ) then
+                mp_hit_ena_cnt_select <= i_reg_wdata(7 downto 0);
+            end if;
+            if ( regaddr = MP_HIT_ENA_CNT_SELECT_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata( 7 downto 0) <= mp_hit_ena_cnt_select;
+                o_reg_rdata(31 downto 8) <= (others => '0');
+            end if;
+
+            if ( regaddr = MP_HIT_ENA_CNT_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata             <= i_mp_hit_ena_cnt;
+                mp_hit_ena_cnt_select   <= std_logic_vector(to_unsigned(to_integer(unsigned(mp_hit_ena_cnt_select)) + 1,8));
+            end if;
         end if;
     end process;
 

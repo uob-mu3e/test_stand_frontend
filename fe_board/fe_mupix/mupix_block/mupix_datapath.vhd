@@ -114,11 +114,6 @@ architecture rtl of mupix_datapath is
     signal link_enable_125          : std_logic_vector(35 downto 0);
     signal lvds_link_mask           : std_logic_vector(35 downto 0);
 
-    -- count hits ena
-    signal hits_ena_count           : std_logic_vector(31 downto 0);
-    signal time_counter             : unsigned(31 downto 0);
-    signal rate_counter             : unsigned(31 downto 0);
-
     signal coarsecounters           : reg24array(35 downto 0);
     signal coarsecounter_enas       : std_logic_vector(35 downto 0);
     signal delta_ts_link_select     : std_logic_vector(5 downto 0);
@@ -146,6 +141,10 @@ architecture rtl of mupix_datapath is
     signal sorter_out_is_hit        : std_logic;
     signal sorter_inject            : std_logic_vector(31 downto 0);
     signal sorter_inject_prev       : std_logic;
+
+    signal hit_ena_cnt_select       : std_logic_vector( 7 downto 0);
+    signal hit_ena_cnt              : std_logic_vector(31 downto 0);
+    signal hit_ena_counters         : reg32array(35 downto 0);
 
 begin
 
@@ -177,6 +176,7 @@ begin
         --i_coarsecounter             => coarsecounters(MP_LINK_ORDER(to_integer(unsigned(delta_ts_link_select)))),
         i_ts_global                 => counter125(23 downto 0),
         i_last_sorter_hit           => last_sorter_hit,
+        i_mp_hit_ena_cnt            => hit_ena_cnt,
 
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
@@ -187,7 +187,8 @@ begin
 
         -- outputs 125-------------------------------------------------
         o_sorter_delay              => sorter_delay,
-        o_sorter_inject             => sorter_inject--,
+        o_sorter_inject             => sorter_inject,
+        o_mp_hit_ena_cnt_select     => hit_ena_cnt_select--,
     );
     o_hotfix_reroute<= lvds_status; --TODO: fix this!!
 
@@ -238,26 +239,11 @@ begin
         o_hit_ena           => hits_ena_unpacker(i),
         o_coarsecounter     => open,--coarsecounters(i),
         o_coarsecounter_ena => open,--coarsecounter_enas(i),
+        o_hit_ena_counter   => hit_ena_counters(i),
         errorcounter        => unpack_errorcounter(i) -- could be useful!
     );
 
     END GENERATE genunpack;
-
-    -- count hits_ena
-    process(i_clk125)
-    begin
-        if rising_edge(i_clk125) then
-            if (time_counter > x"7735940") then
-                hits_ena_count  <= std_logic_vector(rate_counter)(31 downto 0);
-            time_counter        <= (others => '0');
-            rate_counter        <= (others => '0');
-         else
-            -- overflow can not happen here
-            rate_counter        <= rate_counter + to_unsigned(work.util.count_bits(hits_ena), 32);
-            time_counter        <= time_counter + 1;
-         end if;
-       end if;
-    end process;
 
     process(i_clk125, reset_125_n)
     begin
@@ -269,6 +255,12 @@ begin
                 counter125 <= (others => '0');
             else
                 counter125 <= counter125 + 1;
+            end if;
+
+            if(to_integer(unsigned(hit_ena_cnt_select))<36) then
+                hit_ena_cnt <= hit_ena_counters(to_integer(unsigned(hit_ena_cnt_select)));
+            else
+                hit_ena_cnt <= (others => '0');
             end if;
 
             if(sorter_out_is_hit='1') then
@@ -401,22 +393,21 @@ begin
     sync_fifo_cnt : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 1+36+32,
+        DATA_WIDTH  => 1+36,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
         DEVICE      => "Arria V"--,
     )
     port map(
         aclr            => '0',
-        data            => fifo_write & fifo_wdata & hits_ena_count,
+        data            => fifo_write & fifo_wdata,
         rdclk           => i_clk156,
         rdreq           => '1',
         rdempty         => sync_fifo_empty,
         wrclk           => i_clk125,
         wrreq           => '1',
-        q(31 downto 0)  => open,--o_hits_ena_count,
-        q(67 downto 32) => sync_fifo_wdata_out,
-        q(68)           => sync_fifo_write_out--,
+        q(35 downto 0)  => sync_fifo_wdata_out,
+        q(36)           => sync_fifo_write_out--,
     );
 
     process(i_clk156)
