@@ -121,9 +121,9 @@ struct mupix_datapath_t {
                 break;
             case '8':
                 printf("hit ena counters:\n");
-                sc->ram->data[0xFFBF] = 0x0;
+                sc->ram->data[0xFFC0] = 0x0;
                 for(int i=0; i<40; i++){
-                    printf("%i: 0x%08x\n",i,sc->ram->data[0xFFC0]);
+                    printf("%i: 0x%08x\n",i,sc->ram->data[0xFFBF]);
                 }
                 break;
             case 'q':
