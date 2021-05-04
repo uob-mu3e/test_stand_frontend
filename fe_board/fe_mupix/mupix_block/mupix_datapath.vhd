@@ -39,9 +39,7 @@ port (
     i_sync_reset_cnt    : in  std_logic;
     i_fpga_id           : in  std_logic_vector(7 downto 0);
     i_run_state_125     : in  run_state_t;
-    i_run_state_156     : in  run_state_t;
-    o_hotfix_reroute    : out work.util.slv32_array_t(35 downto 0); -- TODO: fix problem and remove
-    i_hotfix_backroute  : in  std_logic--;
+    i_run_state_156     : in  run_state_t--;
 );
 end mupix_datapath;
 
@@ -55,6 +53,7 @@ architecture rtl of mupix_datapath is
     signal rx_data                  : work.util.slv8_array_t(35 downto 0);
     signal rx_k                     : std_logic_vector(35 downto 0);
     signal lvds_status              : work.util.slv32_array_t(35 downto 0);
+    signal lvds_invert              : std_logic;
     signal data_valid               : std_logic_vector(35 downto 0);
 
     -- hits + flag to indicate a word as a hit, after unpacker
@@ -154,7 +153,7 @@ begin
     
 ------------------------------------------------------------------------------------
 ---------------------- registers ---------------------------------------------------
-    e_mupix_reg_mapping : work.mupix_reg_mapping
+    e_mupix_datapath_reg_mapping : work.mupix_datapath_reg_mapping
     port map (
         i_clk156                    => i_clk156,
         i_clk125                    => i_clk125,
@@ -168,7 +167,7 @@ begin
 
         -- inputs  156--------------------------------------------
         i_lvds_data_valid           => (others => '0'),
-        --i_lvds_status               => lvds_status,
+        i_lvds_status               => lvds_status,
 
         -- inputs  125 (how to sync)------------------------------
         i_sorter_counters           => sorter_counters,
@@ -181,6 +180,7 @@ begin
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
         o_mp_lvds_link_mask         => lvds_link_mask,
+        o_mp_lvds_invert            => lvds_invert,
         o_mp_readout_mode           => mp_readout_mode,
         o_mp_data_bypass_select     => data_bypass_select,
         o_mp_delta_ts_link_select   => delta_ts_link_select,
@@ -190,7 +190,6 @@ begin
         o_sorter_inject             => sorter_inject,
         o_mp_hit_ena_cnt_select     => hit_ena_cnt_select--,
     );
-    o_hotfix_reroute<= lvds_status; --TODO: fix this!!
 
 ------------------------------------------------------------------------------------
 ---------------------- LVDS Receiver part ------------------------------------------
@@ -205,7 +204,7 @@ begin
 
         o_rx_status         => lvds_status,
         o_rx_ready          => data_valid,
-        i_rx_invert         => i_hotfix_backroute,
+        i_rx_invert         => lvds_invert,
         rx_data             => rx_data,
         rx_k                => rx_k--,
     );
@@ -245,6 +244,19 @@ begin
 
     END GENERATE genunpack;
 
+    process(i_clk156)
+    begin
+        if(rising_edge(i_clk156)) then
+            if(to_integer(unsigned(hit_ena_cnt_select))<36) then
+                hit_ena_cnt <= hit_ena_counters(to_integer(unsigned(hit_ena_cnt_select)));
+            else
+                hit_ena_cnt <= (others => '0');
+            end if;
+        end if;
+    end process;
+
+
+
     process(i_clk125, reset_125_n)
     begin
         if(reset_125_n = '0')then
@@ -255,12 +267,6 @@ begin
                 counter125 <= (others => '0');
             else
                 counter125 <= counter125 + 1;
-            end if;
-
-            if(to_integer(unsigned(hit_ena_cnt_select))<36) then
-                hit_ena_cnt <= hit_ena_counters(to_integer(unsigned(hit_ena_cnt_select)));
-            else
-                hit_ena_cnt <= (others => '0');
             end if;
 
             if(sorter_out_is_hit='1') then
