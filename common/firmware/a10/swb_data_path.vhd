@@ -182,6 +182,8 @@ begin
     --! ------------------------------------------------------------------------
     gen_link_fifos : FOR i in 0 to g_NLINKS_DATA - 1 GENERATE
         
+        -- TODO: If its halffull than write only header (no hits) and write overflow into subheader
+        --       If its full stop --> tell MIDAS --> stop run --> no event mixing
         e_link_to_fifo_32 : entity work.link_to_fifo_32
         generic map (
             LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--;
@@ -205,6 +207,8 @@ begin
             i_clk_250       => i_clk_250--;
         );
   
+        -- TODO: check subheader correct, remove datak from FIFO
+        -- TODO: add checks for sub-header, header etc. count sub-header
         sop(i) <= rx_q(i)(36);
         shop(i) <= '1' when rx_q(i)(37 downto 36) = "00" and rx_q(i)(31 downto 26) = "111111" else '0';
         eop(i) <= rx_q(i)(37);
@@ -397,7 +401,7 @@ begin
     )
     port map (
         i_reset_n   => i_reset_n_250,
-        i_clk       => i_clk_250,
+        i_clk       => i_clk_250, --TODO: run with 250 QSFP clk (FIFO)
 
         i_data      => farm_data,
         i_empty     => farm_rempty,

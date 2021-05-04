@@ -1,7 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-
 entity dec_8b10b_n is
 generic (
     N_BYTES_g : positive := 4--;

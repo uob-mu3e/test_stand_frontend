@@ -18,6 +18,8 @@ output_files/
 reconfig_mif/
 **/simulation/modelsim/
 *.qdf
+*.qpf
+*.qsf
 *.qws
 *.bak
 *.rpt

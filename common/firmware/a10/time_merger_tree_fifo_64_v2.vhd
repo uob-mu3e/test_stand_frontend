@@ -74,6 +74,7 @@ begin
         c_h(i) <= i_data(i+size)(37 downto 0);
         d_h(i) <= i_data(i+size)(75 downto 38);
 
+        -- TODO: set tree_padding == x"FFFFFFFF"
         a_z(i) <= '1' when a_h(i) = tree_zero else '0';
         b_z(i) <= '1' when b_h(i) = tree_zero else '0';
         c_z(i) <= '1' when c_h(i) = tree_zero else '0';
@@ -223,6 +224,8 @@ begin
         
         both_rdempty(i) <= '0' when i_rdempty(i) = '0' and i_rdempty(i+size) = '0' else '1';
         
+        -- TODO: name the different states, combine stuff
+        -- TODO: include sub-header, check backpres., counters etc.
         layer_state(i) <= x"09" when i_merge_state = '0' and last_layer = '1' else
 
                           x"08" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a_h(i) = tree_padding and c_h(i) = tree_padding else -- end state
@@ -262,6 +265,11 @@ begin
                           x"06" when layer_state_reg(i) = x"06" else
                           x"07" when layer_state_reg(i) = x"07" else
                           
+                          --[b,a]
+                          --[1,1]  -> [1,1] -> [x,2] -> [3,2] -> [2,2] -> [x,3] -> [3,3] -> ->  [3,2] -> [2,2] [4,2] -> [4,2]
+                          --[2,2]              [2,2]    [2,2]             [x,2]    [3,2]        [F,2]          [F,F]
+                          --[d,c]
+                          
                           x"02" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) <= c(i) and b(i) <= c(i) and a_z(i) = '0' and b_z(i) = '0' else
                           x"03" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and c(i) <= a(i) and d(i) <= a(i) and c_z(i) = '0' and d_z(i) = '0' else  
                           x"04" when wrreq_good(i) = '1' and both_rdempty(i) = '0' and a(i) <= c(i) and b(i) >  c(i) and a_z(i) = '0' and c_z(i) = '0' else
@@ -293,6 +301,7 @@ begin
                             '1' when layer_state(i) = x"07" and layer_state_reg(i) = x"05" else
                             '0';
         
+        -- TODO: combine logic of data_reg(i)(37 downto 0)
         data(i)(37 downto 0) <= i_data_h_t when layer_state(i) = x"09" else
                                 tree_padding when layer_state(i) = x"08" else
                                 b_h(i) when layer_state(i) = x"06" and layer_state_reg(i) = x"04" else

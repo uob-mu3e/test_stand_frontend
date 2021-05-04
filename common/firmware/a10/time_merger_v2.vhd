@@ -110,6 +110,7 @@ begin
         rdata_hit_time(i*4 + 3 downto i*4) <= rdata_last_layer(i*38 + 31 downto i*38 + 28);
     END GENERATE;
 
+    -- TODO: ask Alex
     gen_header_state : FOR i in 0 to N-1 GENERATE
         sop_wait(i) <=  '1' when i_mask_n(i) = '0' else
                         i_rsop(i) when i_rempty(i) = '0' else '0';
@@ -420,6 +421,7 @@ begin
                     merge_state <= error_state;
                 end if;
                 
+            -- TODO: change this to one cycle
             when get_time1 =>
                 -- get MSB from FPGA time
                 if ( time_wait = check_ones ) then
@@ -450,7 +452,8 @@ begin
                 -- elsif ( error_gtime1 = '1' ) then 
                 --     merge_state <= error_state;
                 -- end if;
-                
+            
+            -- TODO: change this to one cycle
             when get_time2 =>
                 -- get LSB from FPGA time
                 --if ( error_gtime1 = '1' ) then
@@ -514,16 +517,10 @@ begin
                     header_trailer_we <= '1';
                 else
                     wait_cnt_sh <= wait_cnt_sh + '1';
-                -- TODO handle overflow
---                 elsif ( check_overflow = '1' ) then    
---                     check_overflow <= '0';
---                     FOR I in 15 downto 0 LOOP
---                         if ( i_rdata(N-1 downto 0)(I + 4) = 0 ) then
---                             overflow(I) <= '0';
---                         else
---                             overflow(I) <= '1';
---                         end if;
---                     END LOOP;
+                -- TODO: handle overflow
+--                  FOR I in N - 1 downto 0 LOOP
+                    --    v_overflow := v_overflow or overflow;
+                    --END LOOP;
                 end if;
                 
                 -- if wait for pre gets timeout
@@ -531,7 +528,8 @@ begin
                     error_sh <= shop_wait;
                     merge_state <= error_state;
                 end if;
-                
+            
+            -- TODO: change this to one cycle
             when wait_for_sh_written =>
                 merge_state <= merge_hits;
                 

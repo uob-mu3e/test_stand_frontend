@@ -159,7 +159,10 @@ begin
     port map (
         i_reset_ack_seen_n     => i_resets_n_156(RESET_BIT_RUN_START_ACK),
         i_reset_run_end_n      => i_resets_n_156(RESET_BIT_RUN_END_ACK),
-        i_buffers_empty        => (others => '1'), -- TODO: connect buffers emtpy from dma here
+        -- TODO: Write out padding 4kB at MIDAS Bank Builder if run end is done
+        -- TODO: connect buffers emtpy from dma here
+        -- o_all_run_end_seen => MIDAS Builder => i_buffer_empty
+        i_buffers_empty        => (others => '1'),
         o_feb_merger_timeout   => o_readregs_156(CNT_FEB_MERGE_TIMEOUT_R),
         i_aligned              => (others => '1'),
         i_data                 => rx_rc,
