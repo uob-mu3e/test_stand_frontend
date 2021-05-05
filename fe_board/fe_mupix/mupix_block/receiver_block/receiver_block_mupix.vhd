@@ -33,7 +33,7 @@ entity receiver_block_mupix is
         i_rx_invert     : in  std_logic;
         rx_data         : out work.util.slv8_array_t(NINPUT-1 downto 0);
         rx_k            : out std_logic_vector(NINPUT-1 downto 0);
-        rx_clkout       : out std_logic_vector(2 downto 0);
+        rx_clkout       : out std_logic_vector(2 downto 0); --TODO: 2 clk
         rx_doubleclk    : out std_logic_vector(1 downto 0)--;
     );
 end receiver_block_mupix;
@@ -176,7 +176,7 @@ begin
     FOR i in NINPUT-1 downto 0 generate	
         datadec: entity work.data_decoder 
             port map(
-                reset_n         => i_reset_n,--(i),
+                reset_n         => i_reset_n,--(i),  -- TODO: register, no buttons at all
                 checker_rst_n   => checker_rst_n(i),
                 clk             => rx_clk(i/27),
                 rx_in           => rx_out(i*10+9 downto i*10),
@@ -184,7 +184,7 @@ begin
                 rx_reset        => rx_reset(i),
                 rx_fifo_reset   => rx_fifo_reset(i),
                 rx_dpa_locked   => rx_dpa_locked(i),
-                rx_locked       => rx_locked(i/26),
+                rx_locked       => rx_locked(i/27),
                 rx_align        => rx_align(i),
 
                 ready           => rx_ready(i),

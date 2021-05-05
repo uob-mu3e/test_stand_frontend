@@ -328,7 +328,8 @@ begin
 
     end process;
 
-    e_mp_sc_rm: work.mp_sc_removal
+    -- TODO: actually look at the SC , do not throw away
+    e_mp_sc_rm: work.mp_sc_removal -- TODO: do sc removal in data unpacker, understand protocol first
     port map(
         i_reset_n               => reset_n,
         i_clk                   => clk, 

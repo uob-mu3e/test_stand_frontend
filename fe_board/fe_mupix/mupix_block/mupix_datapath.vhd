@@ -205,7 +205,7 @@ begin
         o_rx_status         => lvds_status,
         o_rx_ready          => data_valid,
         i_rx_invert         => lvds_invert,
-        rx_data             => rx_data,
+        rx_data             => rx_data, -- TODO: FIFO rx clock sync to i_clk125
         rx_k                => rx_k--,
     );
 
