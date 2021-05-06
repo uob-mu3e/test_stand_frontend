@@ -42,6 +42,7 @@ entity data_unpacker is
         o_hit_ena           : out std_logic;
         o_coarsecounter     : out std_logic_vector(23 downto 0);
         o_coarsecounter_ena : out std_logic;
+        o_hit_ena_counter   : out std_logic_vector(31 downto 0);
         errorcounter        : out std_logic_vector(31 downto 0)
     );
 end data_unpacker;
@@ -90,6 +91,7 @@ architecture RTL of data_unpacker is
     signal invert_TS2           : std_logic;
     signal gray_TS              : std_logic;
     signal gray_TS2             : std_logic;
+    signal hit_ena_counter      : std_logic_vector(31 downto 0);
 
     function convert_lvds_to_chip_id (
         lvds_ID       : integer;
@@ -210,11 +212,17 @@ begin
             cnt4                <= "00";
             data_mode           <= '0'; -- indicates if all counter mode or actual hit data
             counter_seen        <= '0';
+            hit_ena_counter     <= (others => '0');
         elsif rising_edge(clk) then
 
             link_flag_reg       <= '0';
             coarse_reg          <= '0';
             hit_reg             <= '0';
+
+            o_hit_ena_counter   <= hit_ena_counter;
+            if(hit_ena = '1') then 
+                hit_ena_counter <= hit_ena_counter + '1';
+            end if;
 
             input_hit_ena_buffer<= hit_reg;
             coarsecounter_ena   <= coarse_reg;
@@ -320,7 +328,8 @@ begin
 
     end process;
 
-    e_mp_sc_rm: work.mp_sc_removal
+    -- TODO: actually look at the SC , do not throw away
+    e_mp_sc_rm: work.mp_sc_removal -- TODO: do sc removal in data unpacker, understand protocol first
     port map(
         i_reset_n               => reset_n,
         i_clk                   => clk, 
