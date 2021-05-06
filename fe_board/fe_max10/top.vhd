@@ -331,27 +331,27 @@ begin
     );
 
 flash_programming_ctrl(30 downto 0) <= (others => '0');
-flash_programming_ctrl(31)      <= programming_control_nios(0);
+--flash_programming_ctrl(31)      <= programming_control_nios(0);
 
 
---process(reset_n, max10_osc_clk)
---begin
---if(reset_n = '0') then
---   flash_programming_ctrl(31) <= '0';
---    startupcounter <= 0;
---elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
---    if(pll_locked = '1')then
---        startupcounter <= startupcounter +1;
---        if(startupcounter > 4095000)then
---            flash_programming_ctrl(31) <= '1';
---        end if;
---        if(startupcounter > 5000000)then
---            startupcounter <= 5001000;
---            flash_programming_ctrl(31) <= '0';
---        end if;     
---    end if;    
---end if;    
---end process;
+process(reset_n, max10_osc_clk)
+begin
+if(reset_n = '0') then
+   flash_programming_ctrl(31) <= '0';
+    startupcounter <= 0;
+elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
+    if(pll_locked = '1')then
+        startupcounter <= startupcounter +1;
+        if(startupcounter > 4095000)then
+            flash_programming_ctrl(31) <= '1';
+        end if;
+        if(startupcounter > 5000000)then
+            startupcounter <= 5001000;
+            flash_programming_ctrl(31) <= '0';
+        end if;     
+    end if;    
+end if;    
+end process;
 
  
 e_flashprogramming_block: entity work.flashprogramming_block
