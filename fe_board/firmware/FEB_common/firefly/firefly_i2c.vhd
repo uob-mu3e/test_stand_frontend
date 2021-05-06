@@ -139,7 +139,7 @@ begin
                             i2c_rw      <= '0';
                             i2c_data_wr <= ADDR_RX_PWR(1);
                             if(i2c_busy = '0') then
-                                o_pwr((i2c_modSel-1)*64+7 downto (i2c_modSel-1)*64) <= i2c_data_rd;	 
+                                o_pwr((i2c_modSel-1)*64+15 downto (i2c_modSel-1)*64+8) <= i2c_data_rd;	 
 									 end if;
                         when 5 =>
                             i2c_rw      <= '1';									 
@@ -147,7 +147,7 @@ begin
                             i2c_rw      <= '0';
                             i2c_data_wr <= ADDR_RX_PWR(2);
                             if(i2c_busy = '0') then
-                                o_pwr((i2c_modSel-1)*64+15 downto (i2c_modSel-1)*64+8) <= i2c_data_rd;	 
+                                o_pwr((i2c_modSel-1)*64+7 downto (i2c_modSel-1)*64) <= i2c_data_rd;	 
 									 end if;	 
                         when 7 =>
                             i2c_rw      <= '1';									 
@@ -155,7 +155,7 @@ begin
                             i2c_rw      <= '0';
                             i2c_data_wr <= ADDR_RX_PWR(3);
                             if(i2c_busy = '0') then
-                                o_pwr((i2c_modSel-1)*64+23 downto (i2c_modSel-1)*64+16) <= i2c_data_rd;	 
+                                o_pwr((i2c_modSel-1)*64+31 downto (i2c_modSel-1)*64+24) <= i2c_data_rd;	 
 									 end if;										 
 				            when 9 =>
                             i2c_rw      <= '1';									 
@@ -163,7 +163,7 @@ begin
                             i2c_rw      <= '0';
                             i2c_data_wr <= ADDR_RX_PWR(4);
                             if(i2c_busy = '0') then
-                                o_pwr((i2c_modSel-1)*64+31 downto (i2c_modSel-1)*64+24) <= i2c_data_rd;	 
+                                o_pwr((i2c_modSel-1)*64+23 downto (i2c_modSel-1)*64+16) <= i2c_data_rd;	 
 									 end if;	 
                         when 11 =>
                             i2c_rw      <= '1';									 
@@ -171,7 +171,7 @@ begin
                             i2c_rw      <= '0';
                             i2c_data_wr <= ADDR_RX_PWR(5);
                             if(i2c_busy = '0') then
-                                o_pwr((i2c_modSel-1)*64+39 downto (i2c_modSel-1)*64+32) <= i2c_data_rd;	 
+                                o_pwr((i2c_modSel-1)*64+47 downto (i2c_modSel-1)*64+40) <= i2c_data_rd;	 
 									 end if;		
 								when 13 =>
                             i2c_rw      <= '1';									 
@@ -179,7 +179,7 @@ begin
                             i2c_rw      <= '0';
                             i2c_data_wr <= ADDR_RX_PWR(6);
                             if(i2c_busy = '0') then
-                                o_pwr((i2c_modSel-1)*64+47 downto (i2c_modSel-1)*64+40) <= i2c_data_rd;	 
+                                o_pwr((i2c_modSel-1)*64+39 downto (i2c_modSel-1)*64+32) <= i2c_data_rd;	 
 									 end if;	 
                         when 15 =>
                             i2c_rw      <= '1';									 
@@ -187,7 +187,7 @@ begin
                             i2c_rw      <= '0';
                             i2c_data_wr <= ADDR_RX_PWR(7);
                             if(i2c_busy = '0') then
-                                o_pwr((i2c_modSel-1)*64+55 downto (i2c_modSel-1)*64+48) <= i2c_data_rd;	 
+                                o_pwr((i2c_modSel-1)*64+63 downto (i2c_modSel-1)*64+56) <= i2c_data_rd;	 
 									 end if;
 								when 17 =>
                             i2c_rw      <= '1';									 
@@ -195,7 +195,7 @@ begin
                             i2c_rw      <= '0';
                             i2c_data_wr <= ADDR_ALARM(0);
                             if(i2c_busy = '0') then
-                                o_pwr((i2c_modSel-1)*64+63 downto (i2c_modSel-1)*64+56) <= i2c_data_rd;	 
+                                o_pwr((i2c_modSel-1)*64+55 downto (i2c_modSel-1)*64+48) <= i2c_data_rd;	 
 									 end if;	 
 							   when 19 =>
 									i2c_rw      <= '1';
@@ -235,14 +235,14 @@ begin
 									i2c_rw     <= '0';
 									i2c_data_wr <= ADDR_VCC_2;
 									if(i2c_busy = '0') then
-                                o_vcc((i2c_modSel-1)*16+7 downto (i2c_modSel-1)*16)  <= i2c_data_rd;
+                                o_vcc((i2c_modSel-1)*16+15 downto (i2c_modSel-1)*16+8)  <= i2c_data_rd;
 									end if;
 								when 29 =>
 									i2c_rw      <= '1';
 								when 30 =>
 									i2c_ena     <= '0';
 									if(i2c_busy = '0') then
-                                o_vcc((i2c_modSel-1)*16+15 downto (i2c_modSel-1)*16+8)  <= i2c_data_rd;
+                                o_vcc((i2c_modSel-1)*16+7 downto (i2c_modSel-1)*16)  <= i2c_data_rd;
 										  busy_cnt                <= 0;
                                 i2c_state               <= idle;
                                 i2c_ch                  <= 0;

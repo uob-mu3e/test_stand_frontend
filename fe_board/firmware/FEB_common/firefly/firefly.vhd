@@ -174,6 +174,8 @@ signal av_rx_digitalreset   : std_logic_vector(3 downto 0);
 signal av_tx_ready          : std_logic_vector(7 downto 0);
 signal av_opt_rx_power      : std_logic_vector(127 downto 0);
 signal av_temperature       : std_logic_vector(15 downto 0);
+signal av_alarms				 : std_logic_vector(63 downto 0);
+signal av_vcc					 : std_logic_vector(31 downto 0);
 signal av_rx_ready          : std_logic_vector(7 downto 0);
 signal av_lvds_data         : std_logic_vector(7 downto 0);
 signal av_locked            : std_logic_vector(7 downto 0);
@@ -186,6 +188,8 @@ signal av_disperr           : std_logic_vector(15 downto 0);
 -- Firefly status
 signal temperature          : std_logic_vector(15 downto 0);
 signal opt_rx_power         : std_logic_vector(127 downto 0);
+signal alarms					 : std_logic_vector(63 downto 0);
+signal vcc						 : std_logic_vector(31 downto 0);
 
 begin
 
@@ -469,12 +473,12 @@ begin
 
         o_pwr           => opt_rx_power,
         o_temp          => temperature,
-		  o_alarm			=> o_alarm,
-		  o_vcc				=> o_vcc--,
+		  o_alarm			=> alarms,
+		  o_vcc				=> vcc--,
     );
 
-	 o_pwr 	<= opt_rx_power;
-	 o_temp 	<= temperature;
+	 --o_pwr 	<= opt_rx_power;
+	 --o_temp 	<= temperature;
 	 
 --    dnca: entity work.doNotCompileAwayMux
 --    generic map(
@@ -708,14 +712,15 @@ begin
     sync_fifo3 : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 2,
-        DATA_WIDTH  => 184,
+        DATA_WIDTH  => 280,
         SHOWAHEAD   => "OFF",
         OVERFLOW    => "ON",
         DEVICE      => "Arria V"--,
     )
     port map(
         aclr            => '0',
-        data            =>  tx_ready & rx_ready
+        data            =>  alarms & vcc
+									 & tx_ready & rx_ready
                             & opt_rx_power & temperature
                             & rx_analogreset & rx_digitalreset 
                             & tx_analogreset2 & tx_analogreset1 
@@ -731,8 +736,15 @@ begin
         q(39 downto 24)     => av_temperature,
         q(167 downto 40)    => av_opt_rx_power,
         q(175 downto 168)   => av_rx_ready,
-        q(183 downto 176)   => av_tx_ready--,
+        q(183 downto 176)   => av_tx_ready,
+		  q(215 downto 184)	 => av_vcc,
+		  q(279 downto 216)	 => av_alarms
     );
+	 
+	 o_pwr 	<= av_opt_rx_power;
+	 o_temp 	<= av_temperature;
+	 o_vcc	<= av_vcc;
+	 o_alarm <= av_alarms;
 
     sync_fifo4 : entity work.ip_dcfifo
     generic map(
