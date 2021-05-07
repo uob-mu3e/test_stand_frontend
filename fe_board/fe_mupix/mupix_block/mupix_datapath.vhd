@@ -197,6 +197,7 @@ begin
     port map(
         i_reset_n           => i_reset_n_lvds,
         i_nios_clk          => i_clk156,
+        i_clk_global        => i_clk125,
         checker_rst_n       => (others => '1'),--TODO: What is this ? M.Mueller
         rx_in               => lvds_data_in,
         rx_inclock_A        => i_lvds_rx_inclock_A,
@@ -205,8 +206,8 @@ begin
         o_rx_status         => lvds_status,
         o_rx_ready          => data_valid,
         i_rx_invert         => lvds_invert,
-        rx_data             => rx_data, -- TODO: FIFO rx clock sync to i_clk125
-        rx_k                => rx_k--,
+        o_rx_data           => rx_data,
+        o_rx_k              => rx_k--,
     );
 
     -- use a link mask to disable channels from being used in the data processing
