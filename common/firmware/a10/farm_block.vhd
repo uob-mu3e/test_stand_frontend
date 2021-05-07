@@ -51,10 +51,14 @@ port (
     o_dma_wren           : out std_logic;
     o_endofevent         : out std_logic;
     o_dma_data           : out std_logic_vector(255 downto 0);
-
-    --! 250 MHz clock / reset_n
+    
+    --! 250 MHz clock pice / reset_n
     i_reset_n_250        : in  std_logic;
-    i_clk_250            : in  std_logic;    
+    i_clk_250            : in  std_logic;   
+
+    --! 250 MHz clock link / reset_n
+    i_reset_n_250_link   : in  std_logic;
+    i_clk_250_link       : in  std_logic;    
 
     --! 156 MHz clock / reset_n
     i_reset_n_156        : in  std_logic;
@@ -113,8 +117,8 @@ begin
 
     --! Link Mapping
     --! align data according to detector data
-    --! three types of data will be extracted from the links
-    --! PIXEL, SCIFI, TILE
+    --! two types of data will be extracted from the links
+    --! PIXEL, SCIFI --> Int Run 2021
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
@@ -122,23 +126,36 @@ begin
     generic map (
         g_NLINKS_SWB_TOTL   => g_NLINKS_SWB_TOTL,
         N_PIXEL             => 8,
-        N_SCIFI             => 4,
-        N_TILE              => 4--,
+        N_SCIFI             => 8,
     )
     port map (
         i_rx                => i_rx,
         i_rx_k              => i_rx_k,
 
-        o_data_pixel        => open,
-        o_data_scifi        => open,
-        o_data_tile         => open,
-        i_ren               => '1',
-        o_rdempty           => open,
-
-        o_counter           => open,
-
-        i_clk               => i_clk_250,
-        i_reset             => not i_resets_n_250(RESET_BIT_FARM_DATA_PATH)--,
+        -- pixel data
+        o_pixel             => open,
+        o_empty_pixel       => open, 
+        i_ren_pixel         => '1',
+        o_error_pixel       => open,
+        
+        -- scifi data
+        o_scifi             => open,
+        o_empty_scifi       => open,
+        i_ren_scifi         => '1',
+        o_error_scifi       => open,
+    
+        --! error counters 
+        --! 0: fifo f_almost_full
+        --! 1: fifo f_wrfull
+        --! 2: # of skip event
+        --! 3: # of events
+        o_counter           => open, -- out work.util.slv32_array_t(4 * g_NLINKS_SWB_TOTL - 1 downto 0);
+        
+        i_clk_250_link      => i_clk_250_link,
+        i_reset_n_250_link  => i_reset_n_250_link,
+        
+        i_clk_250           => i_clk_250,
+        i_reset_n_250       => not i_resets_n_250(RESET_BIT_FARM_DATA_PATH)--,
     );
     
 
