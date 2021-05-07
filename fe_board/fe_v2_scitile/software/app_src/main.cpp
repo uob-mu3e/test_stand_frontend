@@ -33,7 +33,7 @@ int main() {
     base_init();
 
     si5345_2.init();
-    usleep(5000000);
+    usleep(500000);
     si5345_1.init();
     //mscb.init();
     sc.init();
@@ -60,7 +60,7 @@ int main() {
             menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '2':
-            //TMB.menu();
+            TMB.menu_TMB_main();
             break;
         case '3':
             sc.menu();

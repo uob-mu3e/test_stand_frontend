@@ -40,7 +40,7 @@ char wait_key(useconds_t us = 100000);
 
 alt_u8 TMB_t::I2C_read(alt_u8 slave, alt_u8 addr) {
     alt_u8 data = i2c.get(slave, addr);
-    printf("i2c_read: 0x%02X[0x%02X] is 0x%02X\n", slave, addr, data);
+    printf("i2c_read: slave=0x%02X[reg=0x%02X] data is 0x%02X\n", slave, addr, data);
     return data;
 }
 
@@ -181,7 +181,7 @@ void    TMB_t::init_current_monitor(){
 void TMB_t::I2C_mux_sel(int id){
     int mux_id  = id/4;
     int bus     = id%4; 
-    printf("mux: %d [%d,%d]\n",id,mux_id,bus);
+    printf("mux: id=%d ->[muxid=%d,bus=%d]\n",id,mux_id,bus);
     for(int i_mux=0; i_mux<4; i_mux++){
         I2C_write(addr_MUX[i_mux],0x03,(i_mux == mux_id ? 0x80>>I2C_mux_index[bus] : 0x00));
     }
@@ -377,23 +377,23 @@ alt_u16 TMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 */
     default:
         int asic = cmd & 0x000F;
-	switch(cmd & 0xFFF0){
-        case CMD_MUTRIG_ASIC_CFG:
-            printf("configuring ASIC\n");
-            configure_asic(asic, (alt_u8*)data);
-            break;
-        case CMD_TILE_ASIC_ON:
-            power_ASIC(asic,true);
-            break;
-        case CMD_TILE_ASIC_OFF:
-            power_ASIC(asic,false);
-            break;
-        default:
-            printf("[sc_callback] unknown command\n");
-            break;
+    	switch(cmd & 0xFFF0){
+            case CMD_MUTRIG_ASIC_CFG:
+                printf("configuring ASIC\n");
+                configure_asic(asic, (alt_u8*)data);
+                break;
+            case CMD_TILE_ASIC_ON:
+                power_ASIC(asic,true);
+                break;
+            case CMD_TILE_ASIC_OFF:
+                power_ASIC(asic,false);
+                break;
+            default:
+                printf("[sc_callback] unknown command\n");
+                break;
+            }
     }
-
-    return 0;
+        return 0;
 }
 
 void TMB_t::menu_TMB_main() {
@@ -404,8 +404,8 @@ void TMB_t::menu_TMB_main() {
         printf("  [1] => powerup MALIBU\n");
         printf("  [2] => powerdown MALIBU\n");
         printf("  [3] => powerup ASIC 0\n");
-//        printf("  [4] => stic3_config_PLL_TEST_ch0to6_noGenIDLE\n");
-//        printf("  [5] => data\n");
+        printf("  [4] => datapath status\n");
+        printf("  [5] => debug\n");
         printf("  [6] => monitor test\n");
         printf("  [q] => exit\n");
 
@@ -422,11 +422,11 @@ void TMB_t::menu_TMB_main() {
             power_ASIC(0);
             break;
         case '4':
-//            chip_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
-            break;
-        case '5':
             printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X\n", regs.mon.status);
             printf("rx_dpa_lock / rx_ready : 0x%04X / 0x%04X\n", regs.mon.rx_dpa_lock, regs.mon.rx_ready);
+            break;
+        case '5':
+            menu_TMB_debug();
             break;
         case '6':
             menu_TMB_monitors();
@@ -439,10 +439,14 @@ void TMB_t::menu_TMB_main() {
     }
 }
 void TMB_t::menu_TMB_debug() {
+    alt_u8 rx = 0xCC;
+    alt_u8 tx = 0xAA;
 
     while(1) {
         printf("  [0] => check power monitors\n");
         printf("  [1] => check temperature sensors\n");
+        printf("  [2] => try all I2C addresses\n");
+        printf("  [3] => try SPI 32b transaction\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -462,6 +466,15 @@ void TMB_t::menu_TMB_debug() {
                 }
             }
             break;
+        case '2':
+            for(int i=0x10;i<0x7f;i++){
+                    auto ret=I2C_read(i,0);
+                    printf("@%2.2x: %2.2x\n",i,ret);
+            }
+            break;
+        case '3':
+              alt_avalon_spi_command(SPI_BASE, 0, 1, &tx, 0, &rx, 0);
+            break;
         case 'q':
             return;
         default:
@@ -474,6 +487,7 @@ void TMB_t::menu_TMB_monitors() {
     while(1) {
         printf("  [0] => read power\n");
         printf("  [1] => read temperature\n");
+        printf("  [2] => debug\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
