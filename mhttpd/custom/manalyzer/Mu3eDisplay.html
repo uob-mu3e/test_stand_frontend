@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="UTF-8">
+
+  <script src="midas.js"></script>
+  <script src="mhttpd.js"></script>
+  
+  <script type="text/javascript" src="https://root.cern/js/latest/scripts/JSRootCore.js"></script>
+  
+  <script>
+  function load() {
+    mhttpd_init('Example');
+  }
+  </script>
+
+  <title>Mu3eDisplay</title>
+
+  <link rel="stylesheet" href="midas.css">
+
+</head>
+
+<body class="mcss" onload="load();">
+
+<div id="mheader"></div>
+<div id="msidenav"></div>
+
+<div id="mmain">
+  
+  <div class="w3-container">
+    <script type="text/javascript" src="./dist/webpackBundle.js"></script>
+    <script type="text/javascript">
+      var canvas = document.getElementById('Mu3eDisplayCanvas');
+      var msidenav = document.getElementById('msidenav');
+      var mheader  = document.getElementById('mheader');
+      canvas.style.paddingLeft=msidenav.style.width;
+      canvas.style.marginLeft="20px";
+      // canvas.style.paddingTop="10px";
+
+      var gui = document.getElementById('Mu3eDisplayGUI');
+      gui.style.paddingLeft="200px";
+      gui.style.paddingTop="100px";     
+
+      var text2 = document.getElementById('text2');
+      text2.style.paddingLeft="100px";
+      text2.style.paddingTop="50px"; 
+
+    </script>
+  </div>
+</div>
+   
+
+</body>
+
+</html>
