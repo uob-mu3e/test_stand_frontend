@@ -9,7 +9,7 @@
 #include "Si5345-v5-Registers_si2_lvds.h" // lvds clk from CON4/CON5
 
 //#include "Si5345-v5-Registers_si1.h"
-#include "si5345-v5-Registers_si1_625MHz.h"
+#include "Si5345-v5-Registers_si1_625MHz.h"
 
 struct si5345_t : si534x_t {
 
