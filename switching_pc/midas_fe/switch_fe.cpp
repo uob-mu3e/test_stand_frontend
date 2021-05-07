@@ -290,6 +290,8 @@ INT frontend_init()
     // Create the FEB List
     feblist = new FEBList(switch_id);
 
+    //init SC
+
     //init feb crates
     status = init_crates();
     if (status != SUCCESS)
