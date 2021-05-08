@@ -131,14 +131,6 @@ flow : all
 	# find and exec flow.sh
 	$(lastword $(realpath $(addsuffix flow.sh,$(dir $(MAKEFILE_LIST)))))
 
-.PHONY : sof2flash
-sof2flash :
-	sof2flash --pfl --programmingmode=PS \
-	    --optionbit=0x00030000 \
-	    --input="$(SOF)" \
-	    --output="$(SOF).flash" --offset=0x02B40000
-	objcopy -Isrec -Obinary "$(SOF).flash" "$(SOF).bin"
-
 .PHONY : pgm
 pgm : $(SOF)
 	quartus_pgm -m jtag -c "$(CABLE)" --operation="p;$(SOF)"
@@ -167,14 +159,6 @@ $(APP_DIR)/main.elf : $(SRC_DIR)/* $(BSP_DIR)
 
 .PHONY : app
 app : $(APP_DIR)/main.elf
-
-.PHONY : app_flash
-app_flash :
-	nios2-flash-programmer -c "$(CABLE)" --base=0x0 "$(APP_DIR)/main.flash"
-
-.PHONY : flash
-flash : app_flash
-	nios2-flash-programmer -c "$(CABLE)" --base=0x0 "$(SOF).flash"
 
 .PHONY : app_upload
 app_upload : app
