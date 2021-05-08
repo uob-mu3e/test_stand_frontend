@@ -106,6 +106,8 @@ $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	    [ -e "$$file.qip" ] && echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.qip)\" ]" >> "$@"
 	    [ -e "$$file.qip" ] || echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.vhd)\" ]" >> "$@"
 	done
+	# add $(APP_DIR)/mem_init/meminit.qip
+	echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $(APP_DIR)/mem_init/meminit.qip)\" ]" >> "$@"
 
 # default device.tcl file
 device.tcl :
@@ -131,6 +133,10 @@ flow : all
 	# find and exec flow.sh
 	$(lastword $(realpath $(addsuffix flow.sh,$(dir $(MAKEFILE_LIST)))))
 
+update_mif :
+	quartus_cdb top --update_mif
+	quartus_asm top
+
 .PHONY : pgm
 pgm : $(SOF)
 	quartus_pgm -m jtag -c "$(CABLE)" --operation="p;$(SOF)"
@@ -154,8 +160,9 @@ $(APP_DIR)/main.elf : $(SRC_DIR)/* $(BSP_DIR)
 	$(MAKE) -C "$(APP_DIR)" clean
 	$(MAKE) -C "$(APP_DIR)"
 	nios2-elf-objcopy "$(APP_DIR)/main.elf" -O srec "$(APP_DIR)/main.srec"
-	# generate flash (srec) image (see AN730 / HEX File Generation)
+	# generate mem_init/*.hex files (see AN730 / HEX File Generation)
 	$(MAKE) -C "$(APP_DIR)" mem_init_generate
+	cp -av -- "$(APP_DIR)/mem_init/nios_ram.hex" "output_files/"
 
 .PHONY : app
 app : $(APP_DIR)/main.elf
