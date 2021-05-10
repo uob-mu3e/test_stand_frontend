@@ -247,6 +247,7 @@ begin
         o_coarsecounter     => open,--coarsecounters(i),
         o_coarsecounter_ena => open,--coarsecounter_enas(i),
         o_hit_ena_counter   => hit_ena_counters(i),
+        i_run_state_125     => i_run_state_125,
         errorcounter        => unpack_errorcounter(i) -- could be useful!
     );
 
@@ -274,8 +275,11 @@ begin
     process(i_clk125, reset_125_n)
     begin
         if(reset_125_n = '0')then
-            counter125      <= (others => '0');
-            last_sorter_hit <= (others => '0');
+            counter125                  <= (others => '0');
+            last_sorter_hit             <= (others => '0');
+            hitsorter_out_ena_cnt       <= (others => '0');
+            hitsorter_in_ena_counters   <= (others => (others => '0'));
+
         elsif(rising_edge(i_clk125))then
             if(i_sync_reset_cnt = '1')then
                 counter125 <= (others => '0');
@@ -291,8 +295,6 @@ begin
                 if(sorter_out_is_hit='1') then 
                         hitsorter_out_ena_cnt <= hitsorter_out_ena_cnt + '1';
                 end if;
-            elsif(i_run_state_125 = RUN_STATE_SYNC) then
-                    hitsorter_out_ena_cnt <= (others => '0');
             end if;
 
             sorter_inject_prev <= sorter_inject(MP_SORTER_INJECT_ENABLE_BIT);
@@ -310,8 +312,6 @@ begin
                     if(hits_sorter_in_ena(i)='1') then 
                         hitsorter_in_ena_counters(i) <= hitsorter_in_ena_counters(i) + '1';
                     end if;
-                elsif(i_run_state_125 = RUN_STATE_SYNC) then
-                    hitsorter_in_ena_counters(i) <= (others => '0');
                 end if;
             end loop;
 
