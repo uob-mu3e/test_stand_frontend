@@ -100,6 +100,7 @@ begin
             o_mp_readout_mode           <= mp_readout_mode;
             mp_lvds_data_valid          <= i_lvds_data_valid;
             o_mp_data_bypass_select     <= mp_data_bypass_select;
+            o_mp_hit_ena_cnt_select     <= mp_hit_ena_cnt_select;
             o_mp_hit_ena_cnt_sorter_sel <= mp_hit_ena_cnt_sorter_sel;
 
             regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
