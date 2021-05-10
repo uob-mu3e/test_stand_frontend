@@ -144,6 +144,10 @@ architecture rtl of mupix_datapath is
     signal hit_ena_cnt_select       : std_logic_vector( 7 downto 0);
     signal hit_ena_cnt              : std_logic_vector(31 downto 0);
     signal hit_ena_counters         : reg32array(35 downto 0);
+    signal hitsorter_in_ena_counters: reg32array(11 downto 0);
+    signal hitsorter_in_ena_cnt     : std_logic_vector(31 downto 0);
+    signal hitsorter_in_ena_cnt_sel : std_logic_vector( 3 downto 0);
+    signal hitsorter_out_ena_cnt    : std_logic_vector(31 downto 0);
 
 begin
 
@@ -176,6 +180,8 @@ begin
         i_ts_global                 => counter125(23 downto 0),
         i_last_sorter_hit           => last_sorter_hit,
         i_mp_hit_ena_cnt            => hit_ena_cnt,
+        i_mp_sorter_in_hit_ena_cnt  => hitsorter_in_ena_cnt,
+        i_mp_sorter_out_hit_ena_cnt => hitsorter_out_ena_cnt,
 
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
@@ -188,7 +194,8 @@ begin
         -- outputs 125-------------------------------------------------
         o_sorter_delay              => sorter_delay,
         o_sorter_inject             => sorter_inject,
-        o_mp_hit_ena_cnt_select     => hit_ena_cnt_select--,
+        o_mp_hit_ena_cnt_select     => hit_ena_cnt_select,
+        o_mp_hit_ena_cnt_sorter_sel => hitsorter_in_ena_cnt_sel--,
     );
 
 ------------------------------------------------------------------------------------
@@ -253,6 +260,12 @@ begin
             else
                 hit_ena_cnt <= (others => '0');
             end if;
+
+            if(to_integer(unsigned(hitsorter_in_ena_cnt_sel))<12) then
+                hitsorter_in_ena_cnt <= hitsorter_in_ena_counters(to_integer(unsigned(hitsorter_in_ena_cnt_sel)));
+            else
+                hitsorter_in_ena_cnt <= (others => '0');
+            end if;
         end if;
     end process;
 
@@ -274,6 +287,14 @@ begin
                 last_sorter_hit <= fifo_wdata_hs(31 downto 0);
             end if;
 
+            if(i_run_state_125 = RUN_STATE_RUNNING) then
+                if(sorter_out_is_hit='1') then 
+                        hitsorter_out_ena_cnt <= hitsorter_out_ena_cnt + '1';
+                end if;
+            elsif(i_run_state_125 = RUN_STATE_SYNC) then
+                    hitsorter_out_ena_cnt <= (others => '0');
+            end if;
+
             sorter_inject_prev <= sorter_inject(MP_SORTER_INJECT_ENABLE_BIT);
             if(sorter_inject_prev = '0' and sorter_inject(MP_SORTER_INJECT_ENABLE_BIT) = '1' and (to_integer(unsigned(sorter_inject(MP_SORTER_INJECT_SELECT_RANGE))) < 12)) then
                 hits_sorter_in      <= (others => sorter_inject);
@@ -283,6 +304,16 @@ begin
                 hits_sorter_in      <= hits_sorter_in_buf;
                 hits_sorter_in_ena  <= hits_sorter_in_ena_buf;
             end if;
+
+            for i in 0 to 11 loop
+                if(i_run_state_125 = RUN_STATE_RUNNING) then
+                    if(hits_sorter_in_ena(i)='1') then 
+                        hitsorter_in_ena_counters(i) <= hitsorter_in_ena_counters(i) + '1';
+                    end if;
+                elsif(i_run_state_125 = RUN_STATE_SYNC) then
+                    hitsorter_in_ena_counters(i) <= (others => '0');
+                end if;
+            end loop;
 
             if(mp_datagen_control_reg(MP_DATA_GEN_SORT_IN_BIT) = '1') then
                 ts      <= ts_gen;

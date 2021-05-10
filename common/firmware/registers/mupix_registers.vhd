@@ -97,5 +97,7 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
         constant MP_SORTER_INJECT_ENABLE_BIT    :  integer := 8; -- rising edge on this bit will trigger a single inject of the word MP_SORTER_INJECT_REGISTER_W at sorter input MP_SORTER_INJECT_REGISTER_W(MP_SORTER_INJECT_SELECT_RANGE)
     constant MP_HIT_ENA_CNT_REGISTER_R          :  integer := 16#BF#;
     constant MP_HIT_ENA_CNT_SELECT_REGISTER_W   :  integer := 16#C0#;
-        
+    constant MP_HIT_ENA_CNT_SORTER_IN_REGISTER_R:  integer := 16#C1#;
+    constant MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W :  integer := 16#C2#;
+    constant MP_HIT_ENA_CNT_SORTER_OUT_REGISTER_R: integer := 16#C3#;
 end package mupix_registers;
