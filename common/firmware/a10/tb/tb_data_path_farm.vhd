@@ -3,11 +3,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
 
-entity data_flow_tb is 
-end entity data_flow_tb;
+entity tb_data_path_farm is 
+end entity tb_data_path_farm;
 
 
-architecture TB of data_flow_tb is
+architecture TB of tb_data_path_farm is
 
     signal reset_n		: std_logic;
     signal reset		: std_logic;
@@ -15,7 +15,7 @@ architecture TB of data_flow_tb is
     -- Input from merging (first board) or links (subsequent boards)
     signal dataclk		: 		 std_logic;
     signal data_en		:		 std_logic_vector(2 downto 0);
-    signal data_in		:		 fifo_array_256(2 downto 0);
+    signal data_in		:		 work.util.slv256_array_t(2 downto 0);
     signal ts_in		:		 std_logic_vector(31 downto 0);
 
     -- Input from PCIe demanding events
@@ -68,7 +68,7 @@ architecture TB of data_flow_tb is
     
     signal w_fifo_data, r_fifo_data : std_logic_vector(NLINKS * 38 -1 downto 0);
     signal w_fifo_en, r_fifo_en, fifo_full, fifo_empty : std_logic;
-    signal FEB_num : fifo_array_6(5 downto 0);
+    signal FEB_num : work.util.slv6_array_t(5 downto 0);
     
     -- clk period
     constant dataclk_period : time := 4 ns;
@@ -119,7 +119,6 @@ begin
     generic map (
         ADDR_WIDTH      => 10,
         DATA_WIDTH      => NLINKS * 38,
-        --SHOWAHEAD       => "OFF",
         DEVICE          => "Arria 10"--,
     )
     port map (
@@ -137,10 +136,10 @@ begin
     );
     
     -- data merger swb
-    e_data_merger_swb : entity work.data_merger_swb
+    e_swb_data_merger : entity work.swb_data_merger
     generic map (
         NLINKS  => NLINKS,
-        DT      => x"01"--,
+        DATA_TYPE      => x"01"--,
     )
     port map (
         i_reset_n   => reset_n,
@@ -148,8 +147,6 @@ begin
         
         i_data      => r_fifo_data,
         i_empty     => fifo_empty,
-
-        i_swb_id    => x"01",
         
         o_ren       => r_fifo_en,
         o_wen       => open,
@@ -180,7 +177,7 @@ begin
         end if;
     end process;
 
-    dut : entity work.data_flow 
+    dut : entity work.farm_data_path 
     port map(
         reset_n         => reset_n,
         reset_n_ddr3    => reset_n,

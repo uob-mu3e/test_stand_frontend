@@ -15,7 +15,7 @@ entity farm_aligne_link is
 generic (
     N : positive :=  8;
     LINK_FIFO_ADDR_WIDTH : positive := 10--;
-)
+);
 port (
     i_rx            : in  slv34_array_t(N - 1 downto 0);
     i_sop           : in std_logic_vector(N - 1 downto 0);

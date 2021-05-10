@@ -126,7 +126,7 @@ begin
     generic map (
         g_NLINKS_SWB_TOTL   => g_NLINKS_SWB_TOTL,
         N_PIXEL             => 8,
-        N_SCIFI             => 8,
+        N_SCIFI             => 8--,
     )
     port map (
         i_rx                => i_rx,
@@ -154,7 +154,7 @@ begin
         i_clk_250_link      => i_clk_250_link,
         i_reset_n_250_link  => i_reset_n_250_link,
         
-        i_clk_250           => i_clk_250,
+        i_clk_250           => i_clk_250,  -- should be DDR clk
         i_reset_n_250       => not i_resets_n_250(RESET_BIT_FARM_DATA_PATH)--,
     );
     
