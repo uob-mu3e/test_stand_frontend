@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
--- Handling of the DDR3 (eventually DDR4) buffer for the farm pCs
+-- Handling of the DDR3 (eventually DDR4) buffer for the farm pcs
 --
 -- Niklaus Berger, JGU Mainz
 -- niberger@uni-mainz.de

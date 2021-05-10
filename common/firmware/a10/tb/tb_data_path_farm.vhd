@@ -2,6 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
+use work.mudaq.all;
 
 entity tb_data_path_farm is 
 end entity tb_data_path_farm;
@@ -14,8 +15,8 @@ architecture TB of tb_data_path_farm is
 
     -- Input from merging (first board) or links (subsequent boards)
     signal dataclk		: 		 std_logic;
-    signal data_en		:		 std_logic_vector(2 downto 0);
-    signal data_in		:		 work.util.slv256_array_t(2 downto 0);
+    signal data_en		:		 std_logic;
+    signal data_in		:		 std_logic_vector(255 downto 0);
     signal ts_in		:		 std_logic_vector(31 downto 0);
 
     -- Input from PCIe demanding events
@@ -60,15 +61,20 @@ architecture TB of tb_data_path_farm is
     
     -- links and datageneration
     constant NLINKS     : positive := 8;
+    constant NLINKS_TOTL: positive := 16;
     constant LINK_FIFO_ADDR_WIDTH : integer := 10;
     
     signal link_data        : std_logic_vector(NLINKS * 32 - 1 downto 0);
     signal link_datak       : std_logic_vector(NLINKS * 4 - 1 downto 0);
     signal counter_ddr3     : std_logic_vector(31 downto 0);
     
-    signal w_fifo_data, r_fifo_data : std_logic_vector(NLINKS * 38 -1 downto 0);
-    signal w_fifo_en, r_fifo_en, fifo_full, fifo_empty : std_logic;
+    signal w_pixel, r_pixel, w_scifi, r_scifi : std_logic_vector(NLINKS * 38 -1 downto 0);
+    signal w_pixel_en, r_pixel_en, full_pixel, empty_pixel : std_logic;
+    signal w_scifi_en, r_scifi_en, full_scifi, empty_scifi : std_logic;
     signal FEB_num : work.util.slv6_array_t(5 downto 0);
+    
+    signal rx : work.util.slv32_array_t(NLINKS_TOTL-1 downto 0);
+    signal rx_k : work.util.slv4_array_t(NLINKS_TOTL-1 downto 0);
     
     -- clk period
     constant dataclk_period : time := 4 ns;
@@ -104,69 +110,191 @@ architecture TB of tb_data_path_farm is
 
 begin
 
-    e_data_gen : entity work.data_generator_merged_data
+    -- gen pixel data
+    e_data_gen_pixel : entity work.data_generator_merged_data
     port map(
         i_clk       => dataclk,
         i_reset_n   => reset_n,
-        i_en        => not fifo_full,
+        i_en        => not full_pixel,
         i_sd        => x"00000002",
-        o_data      => w_fifo_data,
-        o_data_we   => w_fifo_en,
+        o_data      => w_pixel,
+        o_data_we   => w_pixel_en,
         o_state     => open--,
     );
     
-    e_merger_fifo : entity work.ip_scfifo
+    e_merger_fifo_pixel : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 10,
         DATA_WIDTH      => NLINKS * 38,
         DEVICE          => "Arria 10"--,
     )
     port map (
-        data            => w_fifo_data,
-        wrreq           => w_fifo_en,
-        rdreq           => r_fifo_en,
+        data            => w_pixel,
+        wrreq           => w_pixel_en,
+        rdreq           => r_pixel_en,
         clock           => dataclk,
-        q               => r_fifo_data,
-        full            => fifo_full,
-        empty           => fifo_empty,
+        q               => r_pixel,
+        full            => full_pixel,
+        empty           => empty_pixel,
         almost_empty    => open,
         almost_full     => open,
         usedw           => open,
         sclr            => reset--,
     );
     
-    -- data merger swb
-    e_swb_data_merger : entity work.swb_data_merger
+    e_swb_data_merger_pixel : entity work.swb_data_merger
     generic map (
-        NLINKS  => NLINKS,
-        DATA_TYPE      => x"01"--,
+        NLINKS      => NLINKS,
+        DATA_TYPE   => x"01"--,
     )
     port map (
         i_reset_n   => reset_n,
         i_clk       => dataclk,
         
-        i_data      => r_fifo_data,
-        i_empty     => fifo_empty,
+        i_data      => r_pixel,
+        i_empty     => empty_pixel,
         
-        o_ren       => r_fifo_en,
+        o_ren       => r_pixel_en,
         o_wen       => open,
-        o_data      => link_data,
-        o_datak     => link_datak--,
+        o_data      => link_data_pixel,
+        o_datak     => link_datak_pixel--,
     );
+    
 
-    FEB_num(0) <= link_data(37 downto 32);
-    FEB_num(1) <= link_data(75 downto 70);
-    FEB_num(2) <= link_data(113 downto 108);
-    FEB_num(3) <= link_data(151 downto 146);
-    FEB_num(4) <= link_data(189 downto 184);
-    FEB_num(5) <= link_data(227 downto 222);
+    -- gen scifi data
+    e_data_gen_scifi : entity work.data_generator_merged_data
+    port map(
+        i_clk       => dataclk,
+        i_reset_n   => reset_n,
+        i_en        => not full_scifi,
+        i_sd        => x"00000002",
+        o_data      => w_scifi,
+        o_data_we   => w_scifi_en,
+        o_state     => open--,
+    );
+    
+    e_merger_fifo_pixel : entity work.ip_scfifo
+    generic map (
+        ADDR_WIDTH      => 10,
+        DATA_WIDTH      => NLINKS * 38,
+        DEVICE          => "Arria 10"--,
+    )
+    port map (
+        data            => w_scifi,
+        wrreq           => w_scifi_en,
+        rdreq           => r_scifi_en,
+        clock           => dataclk,
+        q               => r_scifi,
+        full            => full_scifi,
+        empty           => empty_scifi,
+        almost_empty    => open,
+        almost_full     => open,
+        usedw           => open,
+        sclr            => reset--,
+    );
+    
+    e_swb_data_merger_scifi : entity work.swb_data_merger
+    generic map (
+        NLINKS      => NLINKS,
+        DATA_TYPE   => x"02"--,
+    )
+    port map (
+        i_reset_n   => reset_n,
+        i_clk       => dataclk,
+        
+        i_data      => r_scifi,
+        i_empty     => empty_scifi,
+        
+        o_ren       => r_scifi_en,
+        o_wen       => open,
+        o_data      => link_data_scifi,
+        o_datak     => link_datak_scifi--,
+    );
+    
+    -- map links
+    FOR I in NLINKS-1 to 0 GENERATE
+        rx(I) <= link_data_pixel(I);
+        rx_k(I) <= link_datak_pixel(I);
+        rx(I+NLINKS) <= link_data_scifi(I);
+        rx_k(I+NLINKS) <= link_datak_scifi(I);
+    END GENERATE;
+    
+    e_data_demerge_pixel : entity work.farm_link_to_fifo
+    generic map (
+        g_NLINKS_SWB_TOTL   => NLINKS_TOTL,
+        N_PIXEL             => NLINKS,
+        N_SCIFI             => NLINKS--,
+    )
+    port map (
+        i_rx                => rx,
+        i_rx_k              => rx_k,
 
-    data_in(0) <= link_data;
-    data_in(1) <= link_data;
-    data_in(2) <= link_data;
-    data_en(0) <= '0' when link_data(7 downto 0) = x"BC" and link_datak(3 downto 0) = "0001" else '1';
-    data_en(1) <= '0' when link_data(7 downto 0) = x"BC" and link_datak(3 downto 0) = "0001" else '1';
-    data_en(2) <= '0' when link_data(7 downto 0) = x"BC" and link_datak(3 downto 0) = "0001" else '1';
+        -- pixel data
+        o_pixel             => pixel_data,
+        o_empty_pixel       => pixel_empty, 
+        i_ren_pixel         => pixel_ren,
+        o_error_pixel       => open,
+        
+        -- scifi data
+        o_scifi             => scifi_data,
+        o_empty_scifi       => scifi_empty,
+        i_ren_scifi         => scifi_ren,
+        o_error_scifi       => open,
+    
+        --! error counters 
+        --! 0: fifo f_almost_full
+        --! 1: fifo f_wrfull
+        --! 2: # of skip event
+        --! 3: # of events
+        o_counter           => open, -- out work.util.slv32_array_t(4 * g_NLINKS_SWB_TOTL - 1 downto 0);
+        
+        i_clk_250_link      => dataclk,
+        i_reset_n_250_link  => reset_n,
+        
+        i_clk_250           => dataclk,  -- should be DDR clk
+        i_reset_n_250       => reset_n--,
+    );
+    
+    
+    
+    
+    e_farm_midas_event_builder : entity work.farm_midas_event_builder
+    generic map (
+        g_NLINKS_SWB_TOTL => 16,
+        N_PIXEL           => 8,
+        N_SCIFI           => 8,
+        RAM_ADDR_W        => 12,
+        RAM_ADDR_R        =>  18--,
+    )
+    port map (
+        i_pixel         => pixel_data,
+        i_empty_pixel   => pixel_empty,
+        o_ren_pixel     => pixel_ren,
+    
+        i_scifi         => scifi_data,
+        i_empty_scifi   => scifi_empty,
+        o_ren_scifi     => pixel_ren,
+
+        -- DDR
+        o_data          => data_in,
+        i_r_ram_add     => data_in_add,
+        o_ts            => ts, -- TODO: store which TS is stored where in the DDR
+        o_tag_add       => data_tag_add,
+        o_tag_empty     => tag_empty,
+        i_tag_en        => tag_en,
+    
+        -- Link data
+        o_pixel         => open,
+        o_wen_pixel     => open,
+    
+        o_scifi         => open,
+        o_wen_scifi     => open,
+
+        o_counters      => open,
+
+        i_reset_n_250   => reset_n,
+        i_clk_250       => dataclk--,
+    );
 
     process(dataclk, reset_n)
     begin
@@ -177,16 +305,19 @@ begin
         end if;
     end process;
 
-    dut : entity work.farm_data_path 
+    e_farm_data_path : entity work.farm_data_path 
     port map(
         reset_n         => reset_n,
         reset_n_ddr3    => reset_n,
 
         -- Input from merging (first board) or links (subsequent boards)
         dataclk         => dataclk,
-        data_en         => data_en(0),
-        data_in         => data_in(0),
-        ts_in           => counter_ddr3,
+        i_data          => data_in,
+        o_r_ram_add     => data_in_add,
+        i_data_tag_add  => data_tag_add,
+        i_tag_empty     => tag_empty
+        o_tag_en        => tag_en,
+        ts_in           => ts,
 
         -- Input from PCIe demanding events
         pcieclk         => pcieclk,

@@ -16,8 +16,8 @@ generic(
     g_NLINKS_SWB_TOTL    : positive :=  16;
     N_PIXEL              : positive :=  8;
     N_SCIFI              : positive :=  8;
-    RAM_ADDR_W           : positive :=  12;
-    RAM_ADDR_R           : positive :=  18--;
+    RAM_ADDR_W           : positive :=  10;
+    RAM_ADDR_R           : positive :=  10--;
 );
 port(
     i_pixel             : in  std_logic_vector(N_PIXEL * 32 + 1 downto 0);
@@ -29,10 +29,12 @@ port(
     o_ren_scifi         : out std_logic;
 
     -- DDR
-    i_wen               : in  std_logic; -- and from ddr ready and some check that a view more events will fit
-    o_data              : out std_logic_vector (255 downto 0);
-    o_ts_adder          : out std_logic_vector (47 downto 0);
-    o_wen               : out std_logic;
+    o_data              : out std_logic_vector(511 downto 0);
+    i_r_ram_add         : in  std_logic_vector(RAM_ADDR_R - 1 downto 0);
+    o_ts                : out std_logic_vector(47 downto 0);
+    o_tag_add           : out std_logic_vector(RAM_ADDR_R - 1 downto 0); 
+    o_tag_empty         : out std_logic;
+    i_tag_en            : in  std_logic;
     
     -- Link data
     o_pixel             : out std_logic_vector(N_PIXEL * 32 + 1 downto 0);
@@ -126,19 +128,18 @@ begin
 
     --! data out
     o_data <= r_ram_data;
-    o_r_ram_add <= r_ram_add;
 
     e_ram_32_256 : entity work.ip_ram
     generic map (
         ADDR_WIDTH_A    => RAM_ADDR_W,
         ADDR_WIDTH_B    => RAM_ADDR_R,
         DATA_WIDTH_A    => 384,
-        DATA_WIDTH_B    => 256,
+        DATA_WIDTH_B    => 512,
         DEVICE          => "Arria 10"--,
     )
     port map (
         address_a       => w_ram_add,
-        address_b       => r_ram_add,
+        address_b       => i_r_ram_add,
         clock_a         => i_clk_250,
         clock_b         => i_clk_250,
         data_a          => w_ram_data,
@@ -158,11 +159,11 @@ begin
     port map (
         data            => w_fifo_data,
         wrreq           => w_fifo_en,
-        rdreq           => i_fifo_en,
+        rdreq           => i_tag_en,
         clock           => i_clk_250,
-        q               => o_fifo_data,
+        q               => o_tag_add,
         full            => tag_fifo_full,
-        empty           => o_fifo_empty,
+        empty           => o_tag_empty,
         almost_empty    => open,
         almost_full     => open,
         usedw           => open,
@@ -175,14 +176,12 @@ begin
     scifi_trailer<= '1' when i_scifi(N_SCIFI * 32 + 1 downto N_SCIFI * 32) = "10" else '0';
 
     o_ren_pixel <=
-        '0' when ram_halffull = '1' else
         '1' when ( (event_tagging_state = bank_data_pixel or event_tagging_state = bank_data_pixel_one) and i_empty_pixel = '0' and pixel_header = '0' ) else
         '1' when ( event_tagging_state = event_head and i_empty_pixel = '0' ) else
         '1' when ( event_tagging_state = EVENT_IDLE and i_empty_pixel = '0' and pixel_header = '0' and i_pixel(223 downto 200) = x"FFF" ) else
         '0';
         
     o_ren_scifi <=
-        '0' when ram_halffull = '1' else
         '1' when ( (event_tagging_state = bank_data_scifi or event_tagging_state = bank_data_scifi_one) and i_empty_scifi = '0' and scifi_header = '0' ) else
         '1' when ( event_tagging_state = event_head and i_empty_scifi = '0' ) else
         '1' when ( event_tagging_state = EVENT_IDLE and i_empty_scifi = '0' and scifi_header = '0' and i_scifi(223 downto 200) = x"FFF" ) else
@@ -190,14 +189,14 @@ begin
         
     -- mark if data is send to DDR3 for the next farm pc
     o_pixel(N_PIXEL * 32 + 1 downto 224) <= i_pixel(N_PIXEL * 32 + 1 downto 224);
-    o_pixel(223 downto 200) <= x"000" when ( event_tagging_state = EVENT_IDLE and (pixel_header = '0' or scifi_header = '0' or i_wen = '0') ) else x"FFF";
+    o_pixel(223 downto 200) <= x"000" when ( event_tagging_state = EVENT_IDLE and (pixel_header = '0' or scifi_header = '0' or ram_halffull = '0') ) else x"FFF";
     o_pixel(199 downto 0) <= i_pixel(199 downto 0);
-    o_wen_pixel <= not i_empty_pixel and not ram_halffull;
-    cnt_fff <= '0' when ( event_tagging_state = EVENT_IDLE and (pixel_header = '0' or scifi_header = '0' or i_wen = '0') ) else '1';
+    o_wen_pixel <= not i_empty_pixel;
+    cnt_fff <= '0' when ( event_tagging_state = EVENT_IDLE and (pixel_header = '0' or scifi_header = '0' or ram_halffull = '0') ) else '1';
     o_scifi(N_SCIFI * 32 + 1 downto 224) <= i_scifi(N_SCIFI * 32 + 1 downto 224);
-    o_scifi(223 downto 200) <= x"000" when ( event_tagging_state = EVENT_IDLE and (pixel_header = '0' or scifi_header = '0' or i_wen = '0') ) else x"FFF";
+    o_scifi(223 downto 200) <= x"000" when ( event_tagging_state = EVENT_IDLE and (pixel_header = '0' or scifi_header = '0' or ram_halffull = '0') ) else x"FFF";
     o_scifi(199 downto 0) <= i_scifi(199 downto 0);
-    o_wen_scifi <= not i_empty_scifi and not ram_halffull;
+    o_wen_scifi <= not i_empty_scifi;
 
     -- write link data to event ram
     process(i_clk_250, i_reset_n_250)
@@ -269,8 +268,8 @@ begin
                     cnt_idle_scifi_marked <= cnt_idle_scifi_marked + 1;
                 end if;
                 
-                -- start when both Scifi and Pixel are not empty, both have header and DDR (i_wen) is ready
-                if ( i_empty_pixel = '0' and i_empty_pixel = '0' and pixel_header = '1' and scifi_header = '1' and i_wen = '1' and i_pixel(223 downto 200) = x"000" and i_scifi(223 downto 200) = x"000" ) then
+                -- start when both Scifi and Pixel are not empty, both have header and ram_halffull = '0'
+                if ( i_empty_pixel = '0' and i_empty_pixel = '0' and pixel_header = '1' and scifi_header = '1' and ram_halffull = '0' and i_pixel(223 downto 200) = x"000" and i_scifi(223 downto 200) = x"000" ) then
                     event_tagging_state <= event_head;
                     header_pixel        <= i_pixel;
                     header_scifi        <= i_scifi;
@@ -283,7 +282,9 @@ begin
                 -- end if;
                 
                 -- TODO: store TS of headers for DDR address
-                o_ts_adder <= header_pixel(47 downto 0);
+                o_ts(15 downto  0) <= header_pixel(87 downto 72);
+                o_ts(31 downto 16) <= header_pixel(31 downto 16);
+                o_ts(47 downto 32) <= header_pixel(55 downto 40);
                 
                 -- event header
                 w_ram_pixel_header( 31 downto   0) <= trigger_mask & event_id;
