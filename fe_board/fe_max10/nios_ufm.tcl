@@ -1,7 +1,7 @@
 #
 
 add_instance flash altera_onchip_flash
-set_instance_parameter_value flash {CLOCK_FREQUENCY} [ expr $nios_freq / 1000000 ]
+set_instance_parameter_value flash {CLOCK_FREQUENCY} $nios_clk_mhz
 set_instance_parameter_value flash {DATA_INTERFACE} {Parallel}
 set_instance_parameter_value flash {SECTOR_ACCESS_MODE} {Read\ and\ write Read\ and\ write Read\ only Read\ only Read\ only}
 set_instance_parameter_value flash {CONFIGURATION_MODE} {Single Uncompressed Image with Memory Initialization}
