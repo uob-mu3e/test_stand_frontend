@@ -32,6 +32,11 @@ port (
     i_max10_version             : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
     i_max10_status              : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";  
     i_programming_status        : in  std_logic_vector(31 downto 0) := x"CCCCCCCC";
+	 
+	 i_ffly_pwr                   : in   std_logic_vector(127 downto 0); -- RX optical power in mW
+    i_ffly_temp                  : in   std_logic_vector(15 downto 0);  -- temperature in °C
+	 i_ffly_alarm					  	: in   std_logic_vector(63 downto 0);  -- latched alarm bits
+	 i_ffly_vcc						   : in   std_logic_vector(31 downto 0);  -- operating voltagein units of 100 uV 
 
     -- outputs 156--------------------------------------------
     o_reg_cmdlen                : out std_logic_vector(31 downto 0);
@@ -230,8 +235,49 @@ begin
             o_programming_data_ena  <= '1';
         end if;  
 
-        --TODO: Fireflies
-
+        -- Fireflies
+        if ( regaddr = FIREFLY1_TEMP_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"000000" & i_ffly_temp(7 downto 0);
+        end if;
+		  if ( regaddr = FIREFLY2_TEMP_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"000000" & i_ffly_temp(15 downto 8);
+        end if;
+			if ( regaddr = FIREFLY1_VOLT_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_vcc(15 downto 0);
+        end if;
+			if ( regaddr = FIREFLY2_VOLT_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_vcc(31 downto 16);
+        end if;
+		  if ( regaddr = FIREFLY1_RX1_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(15 downto 0);
+        end if;
+		  if ( regaddr = FIREFLY1_RX2_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(31 downto 16);
+        end if;
+		  if ( regaddr = FIREFLY1_RX3_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(47 downto 32);
+        end if;
+		  if ( regaddr = FIREFLY1_RX4_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(63 downto 48);
+        end if;
+		  if ( regaddr = FIREFLY2_RX1_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(79 downto 64);
+        end if;
+		  if ( regaddr = FIREFLY2_RX2_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(95 downto 80);
+        end if;
+		  if ( regaddr = FIREFLY2_RX3_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(111 downto 96);
+        end if;
+		  if ( regaddr = FIREFLY2_RX4_POW_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= x"0000" & i_ffly_pwr(127 downto 112);
+        end if;	
+		  if ( regaddr = FIREFLY1_ALARM_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= i_ffly_alarm(31 downto 0);
+        end if;
+		  if ( regaddr = FIREFLY2_ALARM_REGISTER_R and i_reg_re = '1' ) then
+            o_reg_rdata <= i_ffly_alarm(63 downto 32);
+        end if;
 
         -- NON-incrementing reads/writes TEST
         if ( regaddr = NONINCREMENTING_TEST_REGISTER_RW and i_reg_re = '1' ) then

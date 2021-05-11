@@ -17,3 +17,6 @@ target_link_libraries(ddr3_test libmudaq -lutil)
 target_link_libraries(dmatest -lcuda libmudaq -lutil)
 target_link_libraries(swb_dmatest -lcuda libmudaq -lutil)
 target_link_libraries(dma_speed_test -lcuda libmudaq -lutil)
+
+install(TARGETS rw ddr3_test dmatest swb_dmatest dma_speed_test
+        DESTINATION bin)

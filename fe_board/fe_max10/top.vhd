@@ -139,6 +139,9 @@ architecture arch of top is
 
     signal fpp_crclocation                      : std_logic_vector(31 downto 0);
     signal programming_control_nios             : std_logic_vector(31 downto 0);
+	 
+	 -- backplane stuff 
+	 signal bp_spi_reg			: std_logic;
     
 begin
 
@@ -181,21 +184,18 @@ begin
     status(31 downto 24) <= spi_flash_status;
 	 
     attention_n <= "ZZ";
-	-- process(reset_n, max10_osc_clk)
-	-- begin
-	-- if(reset_n = '0') then
-    --		    attention_n <= "ZZ";
-	--elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
-    --    startupcounter <= startupcounter +1;
-    --    if(startupcounter > 5000)then
-	--			attention_n <= "0Z";
-    --			end if;
-	--		if(startupcounter > 10000)then
-	--			attention_n <= "Z0";
-	--			startupcounter <= 0;
-    --			end if;  
-	--end if;    	
-	--end process;
+--	process(reset_n, max10_osc_clk)
+--   begin
+--	if(reset_n = '0') then
+--		bp_spi_miso <= 'Z';
+--		bp_spi_miso_en <= '0';
+--		bp_spi_reg  <= '0';
+--	elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
+--		bp_spi_miso <= bp_spi_reg;
+--		bp_spi_reg	<= not bp_spi_reg;
+--		bp_spi_miso_en <= '1';
+--	end if;    	
+--	end process;
 
 
     -- SPI Arria10 to MAX10
@@ -331,27 +331,27 @@ begin
     );
 
 flash_programming_ctrl(30 downto 0) <= (others => '0');
-flash_programming_ctrl(31)      <= programming_control_nios(0);
+--flash_programming_ctrl(31)      <= programming_control_nios(0);
 
 
---process(reset_n, max10_osc_clk)
---begin
---if(reset_n = '0') then
---   flash_programming_ctrl(31) <= '0';
---    startupcounter <= 0;
---elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
---    if(pll_locked = '1')then
---        startupcounter <= startupcounter +1;
---        if(startupcounter > 4095000)then
---            flash_programming_ctrl(31) <= '1';
---        end if;
---        if(startupcounter > 5000000)then
---            startupcounter <= 5001000;
---            flash_programming_ctrl(31) <= '0';
---        end if;     
---    end if;    
---end if;    
---end process;
+process(reset_n, max10_osc_clk)
+begin
+if(reset_n = '0') then
+   flash_programming_ctrl(31) <= '0';
+    startupcounter <= 0;
+elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
+    if(pll_locked = '1')then
+        startupcounter <= startupcounter +1;
+        if(startupcounter > 4095000)then
+            flash_programming_ctrl(31) <= '1';
+        end if;
+        if(startupcounter > 5000000)then
+            startupcounter <= 5001000;
+            flash_programming_ctrl(31) <= '0';
+        end if;     
+    end if;    
+end if;    
+end process;
 
  
 e_flashprogramming_block: entity work.flashprogramming_block
