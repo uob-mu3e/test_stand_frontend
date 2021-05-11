@@ -280,11 +280,6 @@ begin
         o_wen           => data_wen,
         o_endofevent    => endofevent,
         o_event_ts      => event_ts,
-        
-        i_r_ram_add     => data_in_add,
-        o_tag_q         => tag_q,
-        o_tag_empty     => tag_empty,
-        i_tag_en        => tag_en,
         i_ddr_ready     => ddr_ready,
     
         -- Link data

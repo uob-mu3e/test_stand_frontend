@@ -125,6 +125,7 @@ begin
     o_ddr_ready <= not A_almost_full when A_writestate = '1' else
                    not B_almost_full when B_writestate = '1' else 
                    '0' when A_disabled = '1' and B_disabled = '1' else 
+                   '0' when A_readstate = '1' and B_readstate = '1' else
                    '1';
 
     -- TODO: MK: make this dynamic (register?)
@@ -198,10 +199,10 @@ begin
                 end if;
                 
             when writing =>
-                A_writestate <= '1';
+                A_writestate    <= '1';
                 
                 writefifo_A     <= data_en;
-                if ( tsupperchange ) then
+                if ( tsupperchange or A_almost_full = '1' ) then
                     mem_mode_A  <= reading;
                     writefifo_A <= '0';
                 end if;
@@ -221,8 +222,7 @@ begin
                     B_disabled <= '0';
                 end if;
                 
-            when ready 	=>
-                -- TODO: MK: is it not A_done='1'?
+            when ready  =>
                 if ( tsupperchange and (mem_mode_A /= ready or (mem_mode_A = ready and A_done = '0')) and B_done ='1' ) then
                     mem_mode_B      <= writing;
                     B_tsrange       <= ts_in_upper;
@@ -233,7 +233,7 @@ begin
                 B_writestate <= '1';
             
                 writefifo_B     <= data_en;
-                if ( tsupperchange ) then
+                if ( tsupperchange or B_almost_full = '1' ) then
                     mem_mode_B  <= reading;
                     writefifo_B <= '0';
                 end if;
@@ -330,10 +330,9 @@ begin
             when ready =>
                 if ( A_writestate = '1' ) then
                     ddr3if_state_A      <= writing;
-                    A_mem_addr_reg      <= (others => '0');
+                    A_mem_addr          <= (others => '1');
                     A_tagram_address    <= (others => '0');
-                    A_wstarted          <= '1';
-                    A_numwords          <= "000001";
+                    A_tagts_last        <= (others => '1');
                     A_done              <= '0';
                 end if;
                 
@@ -343,38 +342,21 @@ begin
                     A_readsubstate  <= fifowait;
                 end if;
                 
-                if ( A_fifo_empty = '0' and A_fifo_empty_last = '0' and A_mem_ready = '1' ) then
-                    A_wstarted      <= '0';
-
+                if ( A_fifo_empty = '0' and A_mem_ready = '1' ) then
                     readfifo_A      <= '1';
                     
+                    -- write DDR memory
                     A_mem_write     <= '1';
-                    A_mem_addr      <= A_mem_addr_reg;
-                    A_mem_addr_tag  <= A_mem_addr_reg;
-                    A_mem_addr_reg  <= A_mem_addr_reg + '1';
-                    A_tagts_last    <= qfifo_A(527 downto 512);
-                                            
-                    if ( A_tagts_last /= qfifo_A(527 downto 512) or A_wstarted_last = '1' ) then
-                        if ( A_wstarted = '1' ) then
-                            A_tagram_write  <= '0';
-                        else
-                            A_tagram_write  <= '1';
-                        end if;
+                    A_mem_addr      <= A_mem_addr + '1';
+                    
+                    if ( A_tagts_last /= qfifo_A(527 downto 512) ) then
+                        A_tagts_last                <= qfifo_A(527 downto 512);
+                        A_tagram_write              <= '1';
+                        -- address of tag ram are (7 downto 0) from the higher 32b of the 48b TS
                         A_tagram_address            <= qfifo_A(527 downto 512);
-                        A_tagram_data(25 downto 0)  <= A_mem_addr_tag;
-
-                        A_tagram_data(31 downto 26) <= "000001";
-                        A_numwords                  <= "000010";
-                    else
-                        A_tagram_write  <= '1';
-
-                        A_tagram_data(31 downto 26) <= A_numwords;
-                        if(A_numwords /= "111111") then
-                            A_numwords <= A_numwords + '1';
-                        end if;
+                        -- data of tag is the last DDR RAM Address of this event
+                        A_tagram_data(25 downto 0)  <= A_mem_addr + '1';
                     end if;
-                elsif ( A_fifo_empty = '0' and A_mem_ready = '1' and A_wstarted = '0' ) then
-                    readfifo_A  <= '1';
                 end if;
                 
             when reading =>
@@ -389,7 +371,7 @@ begin
                             A_tagram_address    <= A_reqfifoq;
                             A_req_last          <= A_reqfifoq;
                             A_readreqfifo       <= '1';
-                            if(A_reqfifoq /= A_req_last) then
+                            if ( A_reqfifoq /= A_req_last ) then
                                 A_readsubstate  <= tagmemwait_1;
                             end if;
                         end if;
@@ -679,7 +661,7 @@ begin
     tagram_A : entity work.ip_ram_1_port
     generic map (
         ADDR_WIDTH    => 16,
-        DATA_WIDTH    => 32,
+        DATA_WIDTH    => 26,
         DEVICE        => "Arria 10"--,
     )
     port map (
@@ -693,7 +675,7 @@ begin
     tagram_B : entity work.ip_ram_1_port
     generic map (
         ADDR_WIDTH    => 16,
-        DATA_WIDTH    => 32,
+        DATA_WIDTH    => 26,
         DEVICE        => "Arria 10"--,
     )
     port map (

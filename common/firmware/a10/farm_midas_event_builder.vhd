@@ -35,11 +35,6 @@ port(
     o_event_ts          : out std_logic_vector(47 downto 0);
     i_ddr_ready         : in  std_logic;
     
-    i_r_ram_add         : in  std_logic_vector(RAM_ADDR_R - 1 downto 0);
-    o_tag_q             : out std_logic_vector(RAM_ADDR_R + 48 - 1 downto 0); 
-    o_tag_empty         : out std_logic;
-    i_tag_en            : in  std_logic;
-    
     -- Link data
     o_pixel             : out std_logic_vector(N_PIXEL * 32 + 1 downto 0);
     o_wen_pixel         : out std_logic;
@@ -143,7 +138,7 @@ begin
     )
     port map (
         address_a       => w_ram_add,
-        address_b       => i_r_ram_add,
+        address_b       => r_ram_add,
         clock_a         => i_clk_250,
         clock_b         => i_clk_250,
         data_a          => w_ram_data,
