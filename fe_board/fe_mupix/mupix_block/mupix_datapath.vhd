@@ -110,7 +110,6 @@ architecture rtl of mupix_datapath is
     signal multichip_ro_overflow    : std_logic_vector(31 downto 0);
 
     signal link_enable              : std_logic_vector(35 downto 0);
-    signal link_enable_125          : std_logic_vector(35 downto 0);
     signal lvds_link_mask           : std_logic_vector(35 downto 0);
 
     signal coarsecounters           : reg24array(35 downto 0);
@@ -173,7 +172,7 @@ begin
         i_reg_wdata                 => i_reg_wdata,
 
         -- inputs  156--------------------------------------------
-        i_lvds_data_valid           => (others => '0'),
+        i_lvds_data_valid           => (others => '0'), -- not in use, is contained in lvds_status, April 2021
         i_lvds_status               => lvds_status,
 
         -- inputs  125 (how to sync)------------------------------
@@ -221,7 +220,7 @@ begin
     );
 
     -- use a link mask to disable channels from being used in the data processing
-    link_enable <= data_valid and not lvds_link_mask;
+    link_enable <= data_valid and not lvds_link_mask_reg;
 
 --------------------------------------------------------------------------------------
 --------------------- Unpack the data ------------------------------------------------
@@ -239,7 +238,7 @@ begin
         clk                 => i_clk125,
         datain              => rx_data(MP_LINK_ORDER(i)), 
         kin                 => rx_k(MP_LINK_ORDER(i)), 
-        readyin             => link_enable_125(MP_LINK_ORDER(i)),
+        readyin             => link_enable(MP_LINK_ORDER(i)),
         i_mp_readout_mode   => mp_readout_mode,
         o_ts                => ts_unpacker(i),
         o_chip_ID           => chip_ID_unpacker(i),
@@ -288,6 +287,8 @@ begin
             hitsorter_in_ena_counters   <= (others => (others => '0'));
 
         elsif(rising_edge(i_clk125))then
+            lvds_link_mask_reg  <= lvds_link_mask;
+
             if(i_sync_reset_cnt = '1')then
                 counter125 <= (others => '0');
             else
@@ -466,25 +467,6 @@ begin
         end if;
     end if;
     end process;
-
-    sync_fifo_2 : entity work.ip_dcfifo
-    generic map(
-        ADDR_WIDTH  => 4,
-        DATA_WIDTH  => 36,
-        SHOWAHEAD   => "OFF",
-        OVERFLOW    => "ON",
-        DEVICE      => "Arria V"--,
-    )
-    port map(
-        aclr    => '0',
-        data    => link_enable,
-        rdclk   => i_clk125,
-        rdreq   => '1',
-        wrclk   => i_clk156,
-        wrreq   => '1',
-        q(35 downto 0) => link_enable_125--,
-    );
-
 
     -- bypass hitsorter and put data of a single MP directly on a seperate optical link
     process(i_clk125)

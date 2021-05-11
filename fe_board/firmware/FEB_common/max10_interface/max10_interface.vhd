@@ -23,7 +23,7 @@ entity max10_interface is
         adc_reg             : out   work.util.slv32_array_t( 4 downto 0);
         o_max10_version     : out   std_logic_vector(31 downto 0);
         o_max10_status      : out   std_logic_vector(31 downto 0);
-        programming_status  : out   std_logic_vector(31 downto 0);
+        o_programming_status: out   std_logic_vector(31 downto 0);
 
         programming_ctrl    : in    std_logic_vector(31 downto 0);
         programming_data    : in    std_logic_vector(31 downto 0);
@@ -52,6 +52,7 @@ architecture rtl of max10_interface is
     signal max10_spiflash_cmdaddr   : reg32;
     signal max10_status             : std_logic_vector(31 downto 0);
     signal max10_version            : std_logic_vector(31 downto 0);
+    signal programming_status       : std_logic_vector(31 downto 0);
 
     type max_spi_state_t            is (idle, programming, fifocopy, control, controlwait, programmingaddrwait, programmingaddr,
                                     flashwait, busyread, programmingend, maxversion, statuswait, maxstatus, adcwait, maxadc, endwait);
@@ -334,8 +335,10 @@ begin
     begin
         if(rising_edge(i_clk_156)) then
             -- register once in clk156 domain, set false path between max10_status and o_max10_status
-            o_max10_status  <= max10_status;
-            o_max10_version <= max10_version;
+            -- should be fine for these signals .. i think (M.Mueller)
+            o_max10_status          <= max10_status;
+            o_max10_version         <= max10_version;
+            o_programming_status    <= programming_status;
         end if;
     end process;
 

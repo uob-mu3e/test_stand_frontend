@@ -197,8 +197,6 @@ begin
                 disp_err        => disp_err(i)
             );
 
-        o_rx_ready <= rx_ready;
-
         process(rx_clk(i/27))
         begin
             if(rising_edge(rx_clk(i/27))) then
@@ -306,6 +304,7 @@ begin
     begin
         if(rising_edge(i_clk_global)) then
             rx_sync_fifo_rd     <= not rx_sync_fifo_empty;
+            o_rx_ready          <= rx_ready;
             for i in 0 to 35 loop
                 o_rx_data(i)    <= rx_data_out_buffer(i*8+7 downto i*8);
                 o_rx_k(i)       <= rx_k_out_buffer(i);
