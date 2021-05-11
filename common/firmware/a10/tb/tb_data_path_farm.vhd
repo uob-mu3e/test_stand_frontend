@@ -264,7 +264,7 @@ begin
         N_PIXEL           => 8,
         N_SCIFI           => 8,
         RAM_ADDR_W        => 12,
-        RAM_ADDR_R        =>  18--,
+        RAM_ADDR_R        => 18--,
     )
     port map (
         i_pixel         => pixel_data,
@@ -277,11 +277,15 @@ begin
 
         -- DDR
         o_data          => data_in,
+        o_wen           => data_wen,
+        o_endofevent    => endofevent,
+        o_event_ts      => event_ts,
+        
         i_r_ram_add     => data_in_add,
-        o_ts            => ts, -- TODO: store which TS is stored where in the DDR
-        o_tag_add       => data_tag_add,
+        o_tag_q         => tag_q,
         o_tag_empty     => tag_empty,
         i_tag_en        => tag_en,
+        i_ddr_ready     => ddr_ready,
     
         -- Link data
         o_pixel         => open,
@@ -312,12 +316,11 @@ begin
 
         -- Input from merging (first board) or links (subsequent boards)
         dataclk         => dataclk,
-        i_data          => data_in,
-        o_r_ram_add     => data_in_add,
-        i_data_tag_add  => data_tag_add,
-        i_tag_empty     => tag_empty
-        o_tag_en        => tag_en,
-        ts_in           => ts,
+        data_in         => data_in,
+        data_en         => data_wen,
+        i_endofevent    => endofevent,
+        ts_in           => event_ts(47 downto 16),
+        o_ddr_ready     => ddr_ready,
 
         -- Input from PCIe demanding events
         pcieclk         => pcieclk,
@@ -364,8 +367,8 @@ begin
     generic map (
         ADDR_WIDTH_A    => 9,
         ADDR_WIDTH_B    => 9,
-        DATA_WIDTH_A    => 256,
-        DATA_WIDTH_B    => 256,
+        DATA_WIDTH_A    => 512,
+        DATA_WIDTH_B    => 512,
         DEVICE          => "Arria 10"--,
     )
     port map (
@@ -385,8 +388,8 @@ begin
     generic map (
         ADDR_WIDTH_A    => 9,
         ADDR_WIDTH_B    => 9,
-        DATA_WIDTH_A    => 256,
-        DATA_WIDTH_B    => 256,
+        DATA_WIDTH_A    => 512,
+        DATA_WIDTH_B    => 512,
         DEVICE          => "Arria 10"--,
     )
     port map (

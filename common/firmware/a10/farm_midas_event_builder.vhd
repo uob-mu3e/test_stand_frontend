@@ -30,9 +30,13 @@ port(
 
     -- DDR
     o_data              : out std_logic_vector(511 downto 0);
+    o_wen               : out std_logic;
+    o_endofevent        : out std_logic;
+    o_event_ts          : out std_logic_vector(47 downto 0);
+    i_ddr_ready         : in  std_logic;
+    
     i_r_ram_add         : in  std_logic_vector(RAM_ADDR_R - 1 downto 0);
-    o_ts                : out std_logic_vector(47 downto 0);
-    o_tag_add           : out std_logic_vector(RAM_ADDR_R - 1 downto 0); 
+    o_tag_q             : out std_logic_vector(RAM_ADDR_R + 48 - 1 downto 0); 
     o_tag_empty         : out std_logic;
     i_tag_en            : in  std_logic;
     
@@ -86,7 +90,7 @@ architecture arch of farm_midas_event_builder is
     signal serial_number, time_tmp, type_bank, flags, event_size_cnt : std_logic_vector(31 downto 0);
     
     -- bank bank builder
-    
+    signal ts : std_logic_vector(47 downto 0);
 
     -- error cnt
     signal cnt_idle_not_header_pixel, cnt_idle_not_header_scifi, cnt_idle_pixel_marked, cnt_idle_scifi_marked : std_logic_vector(31 downto 0);
@@ -152,18 +156,18 @@ begin
 
     e_tagging_fifo_event : entity work.ip_scfifo
     generic map (
-        ADDR_WIDTH      => RAM_ADDR_R,
-        DATA_WIDTH      => RAM_ADDR_R,
+        ADDR_WIDTH      => RAM_ADDR_W,
+        DATA_WIDTH      => RAM_ADDR_R + 48,
         DEVICE          => "Arria 10"--,
     )
     port map (
         data            => w_fifo_data,
         wrreq           => w_fifo_en,
-        rdreq           => i_tag_en,
+        rdreq           => r_fifo_en,
         clock           => i_clk_250,
-        q               => o_tag_add,
+        q               => r_fifo_data,
         full            => tag_fifo_full,
-        empty           => o_tag_empty,
+        empty           => tag_fifo_empty,
         almost_empty    => open,
         almost_full     => open,
         usedw           => open,
@@ -234,7 +238,7 @@ begin
         event_tagging_state <= EVENT_IDLE;
 
     --
-    elsif rising_edge(i_clk_250) then
+    elsif ( rising_edge(i_clk_250) ) then
         flags           <= x"00000031";
         trigger_mask    <= (others => '0');
         event_id        <= x"0001";
@@ -282,9 +286,9 @@ begin
                 -- end if;
                 
                 -- TODO: store TS of headers for DDR address
-                o_ts(15 downto  0) <= header_pixel(87 downto 72);
-                o_ts(31 downto 16) <= header_pixel(31 downto 16);
-                o_ts(47 downto 32) <= header_pixel(55 downto 40);
+                ts(15 downto  0) <= header_pixel(87 downto 72);
+                ts(31 downto 16) <= header_pixel(31 downto 16);
+                ts(47 downto 32) <= header_pixel(55 downto 40);
                 
                 -- event header
                 w_ram_pixel_header( 31 downto   0) <= trigger_mask & event_id;
@@ -306,7 +310,6 @@ begin
                 header_add                 <= w_ram_add + 1;
                 w_ram_add                  <= w_ram_add + 1;
                 w_ram_en                   <= '1';
-                cnt_ram_word               <= cnt_ram_word + '1';
                 event_tagging_state        <= bank_data_pixel_header;
 
             when bank_data_pixel_header =>
@@ -323,7 +326,6 @@ begin
                     bank_size_pixel           <= bank_size_pixel + 14*4;
                     w_ram_add                 <= w_ram_add + 1;
                     w_ram_en                  <= '1';
-                    cnt_ram_word              <= cnt_ram_word + '1';
                     event_tagging_state       <= bank_data_pixel;
                 elsif ( pixel_header = '1' or pixel_trailer = '1' ) then
                     w_ram_data(383 downto 64) <= (others => '1');
@@ -331,7 +333,6 @@ begin
                     bank_size_pixel           <= bank_size_pixel + 14*4;
                     w_ram_add                 <= w_ram_add + 1;
                     w_ram_en                  <= '1';
-                    cnt_ram_word              <= cnt_ram_word + '1';
                     event_tagging_state       <= bank_data_scifi_header;
                 end if;
                 
@@ -345,7 +346,6 @@ begin
                     bank_size_pixel           <= bank_size_pixel + 12*4;
                     w_ram_add                 <= w_ram_add + 1;
                     w_ram_en                  <= '1';
-                    cnt_ram_word              <= cnt_ram_word + '1';
                 elsif ( pixel_header = '1' or pixel_trailer = '1' ) then
                     w_ram_data(63 downto 0)   <= i_pixel_reg;
                     w_ram_data(383 downto 64) <= (others => '1');
@@ -353,7 +353,6 @@ begin
                     bank_size_pixel           <= bank_size_pixel + 12*4;
                     w_ram_add                 <= w_ram_add + 1;
                     w_ram_en                  <= '1';
-                    cnt_ram_word              <= cnt_ram_word + '1';
                     event_tagging_state       <= bank_data_scifi_header;
                 end if;
 
@@ -380,7 +379,6 @@ begin
                     w_ram_add                 <= w_ram_add + 1;
                     scifi_header_add          <= w_ram_add + 1;
                     w_ram_en                  <= '1';
-                    cnt_ram_word              <= cnt_ram_word + '1';
                     event_tagging_state       <= bank_data_scifi;
                 elsif ( scifi_header = '1' or scifi_trailer = '1' ) then
                     w_ram_scifi_data(383 downto 256)<= (others => '1');
@@ -389,7 +387,6 @@ begin
                     w_ram_add                 <= w_ram_add + 1;
                     scifi_header_add          <= w_ram_add + 1;
                     w_ram_en                  <= '1';
-                    cnt_ram_word              <= cnt_ram_word + '1';
                     event_tagging_state       <= align_event_size;
                 end if;
                 
@@ -404,7 +401,6 @@ begin
                     bank_size_scifi           <= bank_size_scifi + 12*4;
                     w_ram_add                 <= w_ram_add + 1;
                     w_ram_en                  <= '1';
-                    cnt_ram_word              <= cnt_ram_word + '1';
                 elsif ( scifi_header = '1' or scifi_trailer = '1' ) then
                     w_ram_data(255 downto 0)  <= i_scifi_reg;
                     w_ram_data(383 downto 256)<= (others => '1');
@@ -412,7 +408,6 @@ begin
                     bank_size_scifi           <= bank_size_scifi + 12*4;
                     w_ram_add                 <= w_ram_add + 1;
                     w_ram_en                  <= '1';
-                    cnt_ram_word              <= cnt_ram_word + '1';
                     event_tagging_state       <= align_event_size;
                 end if;
                 
@@ -423,10 +418,9 @@ begin
                 w_ram_add                <= w_ram_add + 1;
                 w_ram_add_reg            <= w_ram_add + 1;
                 w_ram_en                 <= '1';
-                cnt_ram_word             <= cnt_ram_word + '1';
                 -- check if the size of the event data 
-                -- is in 256 bit if not add dummy words
-                if ( cnt_ram_word(0) + '1' = '0' ) then
+                -- is in 512 bit if not add dummy words
+                if ( w_ram_add(1 downto 0) + '1' = "00" ) then
                     event_tagging_state <= bank_set_length_pixel;
                 else
                     event_size_cnt <= event_size_cnt + 12*4;
@@ -438,8 +432,8 @@ begin
                 w_ram_add <= header_add;
                 -- write header values
                 w_ram_data( 63 downto   0) <= w_ram_pixel_header( 63 downto   0);
-                w_ram_data(127 downto  96) <= event_size_cnt; -- e_size
-                w_ram_data(159 downto 128) <= event_size_cnt - 8; -- b_size
+                w_ram_data(127 downto  96) <= event_size_cnt; -- event size
+                w_ram_data(159 downto 128) <= event_size_cnt - 8; -- all bank size
                 w_ram_data(255 downto 160) <= w_ram_pixel_header(255 downto 160);
                 w_ram_data(287 downto 256) <= bank_size_pixel; -- bank length pixel
                 w_ram_data(383 downto 288) <= w_ram_pixel_header(383 downto 288);
@@ -459,7 +453,7 @@ begin
 
             when write_tagging_fifo =>
                 w_fifo_en           <= '1';
-                w_fifo_data         <= w_ram_add_reg;
+                w_fifo_data         <= w_ram_add_reg & ts;
                 w_ram_add           <= w_ram_add_reg - 1;
                 serial_number       <= serial_number + '1';
                 event_tagging_state <= EVENT_IDLE;
@@ -469,6 +463,63 @@ begin
 
             end case;
         end if;
+    end if;
+    end process;
+    
+    -- readout MIDAS Bank Builder RAM
+    process(i_clk_250, i_reset_n_250)
+    begin
+    if ( i_reset_n_250 = '0' ) then
+        r_fifo_en               <= '0';
+        o_wen                   <= '0';
+        o_endofevent            <= '0';
+        o_event_ts              <= (others => '0');
+        event_last_ram_add      <= (others => '0');
+        r_ram_add               <= (others => '1');
+        event_counter_state     <= waiting;
+        --
+    elsif rising_edge(i_clk_250) then
+        
+        r_fifo_en    <= '0';
+        o_wen        <= '0';
+        o_endofevent <= '0';
+        
+        case event_counter_state is
+        when waiting =>
+            if ( tag_fifo_empty = '0' ) then
+                r_fifo_en           <= '1';
+                event_last_ram_add  <= r_fifo_data(RAM_ADDR_W + 48 - 1 downto 48 + 2);
+                o_event_ts          <= r_fifo_data(47 downto 0);
+                r_ram_add           <= r_ram_add + '1';
+                event_counter_state <= get_data;
+            end if;
+
+        when get_data =>
+            -- if i_ddr_ready = '1' we switch from
+            -- one DDR to the other we wait here until 
+            -- this happend so that we dont split events over
+            -- the two DDR memories
+            if ( i_ddr_ready /= '1' ) then
+                o_wen <= '1';
+                event_counter_state <= runing;
+                r_ram_add <= r_ram_add + '1';
+            end if;
+
+        when runing =>
+            o_wen <= '1';
+            if(r_ram_add = event_last_ram_add - '1') then
+                -- end of event
+                o_endofevent <= '1'; 
+                event_counter_state <= waiting;
+            else
+                r_ram_add <= r_ram_add + '1';
+            end if;
+
+        when others =>
+            event_counter_state	<= waiting;
+                
+        end case;
+
     end if;
     end process;
 
