@@ -35,8 +35,8 @@ entity top is
         scifi_spi_miso              : in    std_logic;
         scifi_spi_mosi              : out   std_logic;
         -- not used at the current version of the DAB for sicif
-        --scifi_cec_cs                : out   std_logic_vector(4 downto 1);
-        --scifi_cec_sdo               : out   std_logic;
+        scifi_cec_csn                : out   std_logic_vector(4 downto 1);
+        scifi_cec_miso              : in    std_logic;
         scifi_fifo_ext              : out   std_logic;
         scifi_inject                : out   std_logic;
         scifi_bidir_test            : inout std_logic;
@@ -127,26 +127,44 @@ architecture rtl of top is
     signal s_MON_rxrdy              : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
     -- SPI SMB
-    signal s_scifi_csn              : std_logic_vector(15 downto 0);
+    --internal I/O signals to DAB with correct polarity
+    signal scifi_int_din                   : std_logic_vector(4 downto 1);
+    signal scifi_int_syncres               : std_logic;
+    signal scifi_int_csn                   : std_logic_vector(15 downto 0);
+    signal scifi_int_spi_sclk              : std_logic;
+    signal scifi_int_spi_miso              : std_logic;
+    signal scifi_int_spi_mosi              : std_logic;
+    --signal scifi_int_cec_csn               : std_logic_vector(4 downto 1);
+    --signal scifi_int_cec_miso              : std_logic;
+    --signal scifi_int_fifo_ext              : std_logic;
+    --signal scifi_int_inject                : std_logic;
+    --signal scifi_int_bidir_test            : std_logic;
+
 
 begin
--- TODO: this is a dummy-copy from tile firmware, changes for scifi ?? M. Mueller
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 ---- SciFi SUB-DETECTOR FIRMWARE -----------------------------------
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 
-    -- do not compile away 
-    scifi_fifo_ext              <= pb_db(0);
-    scifi_inject                <= pb_db(0);
+-- assignments of DAB pins: special IOBUF, constant and polarity flips here
+    scifi_fifo_ext              <= '0';
+    scifi_inject                <= '0';
+    scifi_cec_csn               <= (others => '1');
 
-    -- SPI connection to CON2
-    scifi_csn(1) <= s_scifi_csn(0);
-    scifi_csn(2) <= s_scifi_csn(1);
-    scifi_csn(3) <= s_scifi_csn(2);
-    scifi_csn(4) <= not s_scifi_csn(3);
+    scifi_csn(1) <= not scifi_int_csn(0);
+    scifi_csn(2) <= not scifi_int_csn(1);
+    scifi_csn(3) <= not scifi_int_csn(2);
+    scifi_csn(4) <=     scifi_int_csn(3);
 
+    scifi_syncres <= not scifi_int_syncres;
+    scifi_spi_sclk <= not scifi_int_spi_sclk;
+    scifi_int_spi_miso <= not scifi_spi_miso;
+    scifi_spi_mosi <= not scifi_int_spi_mosi;
+    -- LVDS inputs signflip in receiver block generic
+     
+-- scifi detector firmware
     e_tile_path : entity work.scifi_path
     generic map (
         IS_SCITILE      => '0',
@@ -164,7 +182,7 @@ begin
         i_reg_we                    => scifi_reg.we,
         i_reg_wdata                 => scifi_reg.wdata,
 
-        o_chip_reset                => scifi_syncres,
+        o_chip_reset                => scifi_int_syncres,
         o_pll_test                  => open,
         i_data                      => scifi_din,
 
@@ -233,10 +251,10 @@ begin
         i_ffly_Int_n        => Firefly_Int_n,
         i_ffly_ModPrs_n     => Firefly_ModPrs_n,
 
-        i_spi_miso          => scifi_spi_miso, --TODO: check if we have to flip this
-        o_spi_mosi          => scifi_spi_mosi,
-        o_spi_sclk          => scifi_spi_sclk,
-        o_spi_ss_n          => s_scifi_csn,
+        i_spi_miso          => scifi_int_spi_miso,
+        o_spi_mosi          => scifi_int_spi_mosi,
+        o_spi_sclk          => scifi_int_spi_sclk,
+        o_spi_ss_n          => scifi_int_csn,
 
         i_spi_si_miso       => si45_spi_out,
         o_spi_si_mosi       => si45_spi_in,

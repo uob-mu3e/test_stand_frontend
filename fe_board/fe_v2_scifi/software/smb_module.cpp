@@ -57,8 +57,8 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
 
                 alt_avalon_spi_command(SPI_BASE, spi_slave, 1, &tx, 0, &rx, nb==0?0:ALT_AVALON_SPI_COMMAND_MERGE);
                 rx = IORD_8DIRECT(SPI_BASE, 0);
-                printf("%02X %02x\n",tx,rx);
-                printf("%02X ",tx);
+//                printf("%02X %02x\n",tx,rx);
+//                printf("%02X ",tx);
 
 		//pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
 		unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG_CONFIG_LEN_BITS%8);
@@ -67,12 +67,12 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
 		};
 
 		if(rx_check!=bitpattern[nb]){
-			printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
+//			printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
 			status=-1;
 		}
 		rx_pre=rx<<8;
 	}while(nb>0);
-                printf("\n");
+//                printf("\n");
 	return status;
 }
 
@@ -92,13 +92,9 @@ alt_u16 SMB_t::configure_asic(alt_u32 asic, const alt_u8* bitpattern) {
     printf("[SMB] chip_configure(%u)\n", asic);
 
     int ret;
-    SPI_sel(asic, true);
-    ret = spi_write_pattern(0, bitpattern);
-    SPI_sel(asic, false);
+    ret = spi_write_pattern(asic, bitpattern);
     usleep(0);
-    SPI_sel(asic, true);
-    ret = spi_write_pattern(0, bitpattern);
-    SPI_sel(asic, false);
+    ret = spi_write_pattern(asic, bitpattern);
 
     if(ret != 0) {
         printf("[scifi] Configuration error\n");
@@ -116,8 +112,8 @@ using namespace mu3e::daq::feb;
 //TODO: update functions
 alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     if((cmd & 0xFFF0) == CMD_MUTRIG_ASIC_CFG) {
-        printf("configuring ASIC\n");
         int asic = cmd & 0x000F;
+        printf("configuring ASIC %d\n",asic);
         configure_asic(asic, (alt_u8*)data);
     }
     else {
@@ -132,7 +128,7 @@ void SMB_t::menu_SMB_main() {
     while(1) {
         //        TODO: Define menu
 //        printf("  [0] => reset\n");
-        printf("  [0] => Write ALL_OFF config ASIC\n");
+        printf("  [0..3] => Write ALL_OFF config ASIC 0/1/2/3\n");
         //printf("  [1] => powerup MALIBU\n");
         //printf("  [2] => powerdown MALIBU\n");
         //printf("  [3] => powerup ASIC 0\n");
@@ -147,14 +143,17 @@ void SMB_t::menu_SMB_main() {
         case '0':
 //            sc_callback(0x0110, (alt_u32*) config_ALL_OFF, 0);
 //            sc_callback(0x0111, (alt_u32*) config_ALL_OFF, 0);
-            sc_callback(0x0112, (alt_u32*) config_ALL_OFF, 0);
+            sc_callback(0x0110, (alt_u32*) config_ALL_OFF, 0);
             //sc_callback(0x0113, (alt_u32*) config_ALL_OFF, 0);
             break;
         case '1':
+            sc_callback(0x0111, (alt_u32*) config_ALL_OFF, 0);
             break;
         case '2':
+            sc_callback(0x0112, (alt_u32*) config_ALL_OFF, 0);
             break;
         case '3':
+            sc_callback(0x0113, (alt_u32*) config_ALL_OFF, 0);
             break;
         case '4':
 //            chip_configure(0, stic3_config_PLL_TEST_ch0to6_noGenIDLE);
