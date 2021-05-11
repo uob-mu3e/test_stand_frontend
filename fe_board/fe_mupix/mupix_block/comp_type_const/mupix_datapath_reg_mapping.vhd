@@ -66,6 +66,7 @@ architecture rtl of mupix_datapath_reg_mapping is
     signal mp_sorter_inject         : std_logic_vector(31 downto 0);
     signal mp_hit_ena_cnt_select    : std_logic_vector( 7 downto 0);
     signal mp_hit_ena_cnt_sorter_sel: std_logic_vector( 3 downto 0);
+    signal mp_sorter_delay          : ts_t;
 
     signal reg_delay                : std_logic;
 begin
@@ -75,6 +76,7 @@ begin
         if(rising_edge(i_clk125)) then
             if(reg_delay = '1') then
                 o_sorter_inject <= mp_sorter_inject;
+                o_sorter_delay  <= mp_sorter_delay;
             end if;
         end if;
     end process;
@@ -165,12 +167,12 @@ begin
                 o_reg_rdata <= (0 => mp_lvds_invert, others => '0');
             end if;
 
-            if ( regaddr = MP_SORTER_DELAY_W and i_reg_we = '1' ) then
-                o_sorter_delay <= i_reg_wdata(TSRANGE);
+            if ( regaddr = MP_SORTER_DELAY_REGISTER_W and i_reg_we = '1' ) then
+                mp_sorter_delay <= i_reg_wdata(TSRANGE);
             end if;
 
             for I in 0 to NSORTERCOUNTERS-1 loop 
-                if ( regaddr = I + MP_SORTER_COUNTER_R and i_reg_re = '1' ) then
+                if ( regaddr = I + MP_SORTER_COUNTER_REGISTER_R and i_reg_re = '1' ) then
                     o_reg_rdata <= i_sorter_counters(I);
                 end if;
             end loop;

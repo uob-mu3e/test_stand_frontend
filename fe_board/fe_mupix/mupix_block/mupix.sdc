@@ -10,6 +10,7 @@ set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|
 set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|last_sorter_hit*} -to {*}
 set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|receiver_block_mupix|rx_ready*} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|receiver_block_mupix|o_rx_ready*}
 set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|lvds_link_mask*} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|lvds_link_mask_reg*}
+set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|mupix_datapath_reg_mapping:e_mupix_datapath_reg_mapping|mp_sorter_delay*} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|mupix_datapath_reg_mapping:e_mupix_datapath_reg_mapping|o_sorter_delay*}
 
 # hitsorter false paths (to be checked)
 set_false_path -from {fe_block_v2:e_fe_block|resetsys:e_reset_system|state_phase_box:i_state_phase_box|o_state_125*} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|hitsorter_wide:sorter|countermemory*}

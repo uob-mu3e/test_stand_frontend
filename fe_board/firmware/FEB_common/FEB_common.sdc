@@ -15,10 +15,13 @@ set_false_path -from {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|o_arr
 set_false_path -from {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|o_arriaV_temperature_clr} -to {*}
 
 # Max10 adc
-set_false_path -from {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|adc_reg*} -to {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|o_reg_rdata*}
+set_false_path -from {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|adc_reg*} -to {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|adc_reg*}
 
 # this one is tricky, it's not really a false path but i think we also cannot sync to clk_reco (we can, but might screw up reset alignment)
 set_false_path -from {fe_block_v2:e_fe_block|firefly:firefly|lvds_controller:e_lvds_controller|o_dpa_lock_reset} -to {fe_block_v2:e_fe_block|firefly:firefly|lvds_rx:lvds_rx_inst0*}
+
+# single bits only (program req and fifo aclr)
+set_false_path -from {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|o_programming_ctrl*} -to {*}
 
 # other stuff
 set_false_path -from {fe_block_v2:e_fe_block|firefly:firefly|lvds_controller:e_lvds_controller|o_ready} -to {*}

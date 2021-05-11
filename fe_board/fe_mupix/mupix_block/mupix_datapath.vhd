@@ -111,6 +111,7 @@ architecture rtl of mupix_datapath is
 
     signal link_enable              : std_logic_vector(35 downto 0);
     signal lvds_link_mask           : std_logic_vector(35 downto 0);
+    signal lvds_link_mask_reg       : std_logic_vector(35 downto 0);
 
     signal coarsecounters           : reg24array(35 downto 0);
     signal coarsecounter_enas       : std_logic_vector(35 downto 0);
