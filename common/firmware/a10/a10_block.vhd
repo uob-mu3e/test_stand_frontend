@@ -38,7 +38,7 @@ port (
     -- LED / BUTTONS
     o_LED               : out   std_logic_vector(3 downto 0);
     o_LED_BRACKET       : out   std_logic_vector(3 downto 0);
-    i_BUTTON            : in    std_logic_vector(3 downto 0);
+    i_BUTTON            : in    std_logic_vector(3 downto 0) := (others => '0');
 
     -- XCVR0 (6250 Mbps @ 156.25 MHz)
     i_xcvr0_rx          : in    std_logic_vector(g_XCVR0_CHANNELS-1 downto 0) := (others => '0');

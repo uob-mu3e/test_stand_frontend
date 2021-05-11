@@ -30,9 +30,6 @@ proc nios_base.add_clock_source { name clockFrequency args } {
     set_interface_property ${reset_export} EXPORT_OF ${name}.clk_in_reset
 }
 
-if { ! [ info exists nios_clk_mhz ] } {
-    set nios_clk_mhz [ expr $nios_freq / 1e6 ]
-}
 nios_base.add_clock_source clk [ expr int($nios_clk_mhz * 1e6) ] -reset_export rst
 
 # cpu
@@ -48,7 +45,9 @@ set_instance_parameter_value cpu {io_regionsize} {0x10000000}
 # ram
 add_instance ram altera_avalon_onchip_memory2
 set_instance_parameter_value ram {memorySize} {0x00010000}
-set_instance_parameter_value ram {initMemContent} {0}
+set_instance_parameter_value ram {initMemContent} {1}
+set_instance_parameter_value ram {useNonDefaultInitFile} {1}
+set_instance_parameter_value ram {initializationFileName} {output_files/nios_ram.hex}
 
 
 

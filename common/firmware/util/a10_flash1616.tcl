@@ -1,9 +1,6 @@
 #
 
 add_instance flash a10_flash1616
-if { ! [ info exists nios_clk_mhz ] } {
-    set nios_clk_mhz [ expr $nios_freq / 1e6 ]
-}
 set_instance_parameter_value flash {clockFrequency} [ expr int($nios_clk_mhz * 1e6) ]
 
 nios_base.connect flash clk reset "" ""

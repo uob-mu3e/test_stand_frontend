@@ -4,14 +4,21 @@
 
 .DEFAULT_GOAL := all
 
+.DELETE_ON_ERROR :
 .ONESHELL :
 
 ifndef QUARTUS_ROOTDIR
     $(error QUARTUS_ROOTDIR is undefined)
 endif
 
+# directory for generated files (*.qsys, *.sopcinfo, etc.)
+# TODO: rename PREFIX -> QP_TMP_DIR
 ifeq ($(PREFIX),)
     override PREFIX := generated
+endif
+
+ifeq ($(CABLE),)
+    CABLE := 1
 endif
 
 # location of compiled firmware (SOF file)
@@ -25,123 +32,146 @@ ifeq ($(NIOS_SOPCINFO),)
 endif
 
 # tcl script to generate BSP
+# TODO: rename BSP_SCRIPT to NIOS_BSP_SCRIPT
 ifeq ($(BSP_SCRIPT),)
     BSP_SCRIPT := software/hal_bsp.tcl
 endif
 
 # location (directory) of main.cpp
+# TODO: rename SRC_DIR to NIOS_SRC_DIR
 ifeq ($(SRC_DIR),)
     SRC_DIR := software
 endif
 
 # destination for generated BSP
+# TODO: rename BSP_DIR to NIOS_BSP_DIR
 ifeq ($(BSP_DIR),)
     BSP_DIR := $(PREFIX)/software/hal_bsp
 endif
 
 # destination for compiled software (nios)
+# TODO: rename APP_DIR to NIOS_APP_DIR
 ifeq ($(APP_DIR),)
     APP_DIR := $(PREFIX)/software/app
 endif
 
-QSYS_TCL_FILES := $(filter %.tcl,$(IPs))
-QSYS_FILES := $(patsubst %.tcl,$(PREFIX)/%.qsys,$(QSYS_TCL_FILES))
+# list all .tcl files
+# (use absolute path for files outside project directory)
+QSYS_TCL_FILES := $(patsubst $(abspath .)/%,%,$(abspath $(filter %.tcl,$(IPs))))
+# convert all .tcl files into .qsys files
+# (place generated files into $(PREFIX) directory)
+QSYS_FILES := $(addprefix $(PREFIX)/,$(patsubst %.tcl,%.qsys,$(QSYS_TCL_FILES)))
+# convert all .qsys files into .sopcinfo files
 SOPC_FILES := $(patsubst %.qsys,%.sopcinfo,$(QSYS_FILES))
-QMEGAWIZ_XML_FILES := $(filter %.vhd.qmegawiz,$(IPs))
-QMEGAWIZ_VHD_FILES := $(patsubst %.vhd.qmegawiz,$(PREFIX)/%.vhd,$(QMEGAWIZ_XML_FILES))
+# list all .vhd.qmegawiz files
+QMEGAWIZ_XML_FILES := $(patsubst $(abspath .)/%,%,$(abspath $(filter %.vhd.qmegawiz,$(IPs))))
+# convert all .vhd.qmegawiz files into .vhd files
+QMEGAWIZ_VHD_FILES := $(addprefix $(PREFIX)/,$(patsubst %.vhd.qmegawiz,%.vhd,$(QMEGAWIZ_XML_FILES)))
 
+# default qpf file
 top.qpf :
-	echo 'PROJECT_REVISION = "top"' > $@
+	cat << EOF > "$@"
+	PROJECT_REVISION = "top"
+	EOF
 
-all : $(PREFIX)/include.qip top.qpf
+# default qsf file - load top.qip, and generated include.qip
+top.qsf : $(MAKEFILE_LIST)
+	cat << EOF > "$@"
+	set_global_assignment -name QIP_FILE top.qip
+	set_global_assignment -name TOP_LEVEL_ENTITY top
+	set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+	set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "util/altera/settings.tcl"
+	set_global_assignment -name QIP_FILE "$(PREFIX)/include.qip"
+	EOF
 
-$(PREFIX) :
-	mkdir -pv $(PREFIX)
-	[ -e $(PREFIX)/util ] || ln -snv --relative -T util $(PREFIX)/util
+all : top.qpf top.qsf $(PREFIX)/include.qip
 
 .PHONY : $(PREFIX)/components_pkg.vhd
-$(PREFIX)/components_pkg.vhd : $(PREFIX) $(SOPC_FILES) $(QMEGAWIZ_VHD_FILES)
-	( cd $(PREFIX) ; ./util/altera/components_pkg.sh )
+$(PREFIX)/components_pkg.vhd : $(SOPC_FILES) $(QMEGAWIZ_VHD_FILES)
+	mkdir -pv -- "$(PREFIX)"
+	# find and exec components_pkg.sh
+	$(lastword $(realpath $(addsuffix components_pkg.sh,$(dir $(MAKEFILE_LIST))))) "$(PREFIX)" > "$@"
+	if [ -x /bin/awk ] ; then awk -f $(lastword $(realpath $(addsuffix components_pkg.awk,$(dir $(MAKEFILE_LIST))))) "$@" ; fi
 
+# include.qip - include all generated files
 $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	# components package
-	echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"components_pkg.vhd\" ]" > $@
+	echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"components_pkg.vhd\" ]" > "$@"
 	# add qsys *.qsys files
-	for file in $(QSYS_FILES) ; do \
-	    echo "set_global_assignment -name QSYS_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file)\" ]" >> $@ ; \
+	for file in $(QSYS_FILES) ; do
+	    echo "set_global_assignment -name QSYS_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file)\" ]" >> "$@"
 	done
 	# add qmegawiz *.qip files
-	for file in $(patsubst %.vhd,%,$(QMEGAWIZ_VHD_FILES)) ; do \
-	    [ -e $$file.qip ] && echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.qip)\" ]" >> $@ ; \
-	    [ -e $$file.qip ] || echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.vhd)\" ]" >> $@ ; \
-	    >> $@ ; \
+	for file in $(patsubst %.vhd,%,$(QMEGAWIZ_VHD_FILES)) ; do
+	    [ -e "$$file.qip" ] && echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.qip)\" ]" >> "$@"
+	    [ -e "$$file.qip" ] || echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.vhd)\" ]" >> "$@"
 	done
+	# add $(APP_DIR)/mem_init/meminit.qip
+	echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $(APP_DIR)/mem_init/meminit.qip)\" ]" >> "$@"
 
+# default device.tcl file
 device.tcl :
-	touch $@
+	touch -- "$@"
 
 $(PREFIX)/%.vhd : %.vhd.qmegawiz
-	./util/altera/qmegawiz.sh $< $@
+	# find and exec qmegawiz.sh
+	$(lastword $(realpath $(addsuffix qmegawiz.sh,$(dir $(MAKEFILE_LIST))))) "$<" "$@"
 
-$(PREFIX)/%.qsys : %.tcl device.tcl $(PREFIX)
-	./util/altera/tcl2qsys.sh $< $@
+$(PREFIX)/%.qsys : %.tcl device.tcl
+	mkdir -pv -- "$(PREFIX)"
+	# util link is used by qsys to find _hw.tcl modules
+	[ -e $(PREFIX)/util ] || ln -snv --relative -T util $(PREFIX)/util
+	# find and exec tcl2qsys.sh
+	$(lastword $(realpath $(addsuffix tcl2qsys.sh,$(dir $(MAKEFILE_LIST))))) "$<" "$@"
 
 $(PREFIX)/%.sopcinfo : $(PREFIX)/%.qsys
-	./util/altera/qsys-generate.sh $<
+	# find and exec qsys-generate.sh
+	$(lastword $(realpath $(addsuffix qsys-generate.sh,$(dir $(MAKEFILE_LIST))))) "$<"
 
 .PHONY : flow
 flow : all
-	./util/altera/flow.sh
+	# find and exec flow.sh
+	$(lastword $(realpath $(addsuffix flow.sh,$(dir $(MAKEFILE_LIST)))))
 
-.PHONY : sof2flash
-sof2flash :
-	sof2flash --pfl --programmingmode=PS \
-	    --optionbit=0x00030000 \
-	    --input="$(SOF)" \
-	    --output="$(SOF).flash" --offset=0x02B40000
-	objcopy -Isrec -Obinary $(SOF).flash $(SOF).bin
+update_mif :
+	quartus_cdb top --update_mif
+	quartus_asm top
 
 .PHONY : pgm
 pgm : $(SOF)
-	quartus_pgm -m jtag -c $(CABLE) --operation="p;$(SOF)"
+	quartus_pgm -m jtag -c "$(CABLE)" --operation="p;$(SOF)"
 
-.PRECIOUS : $(BSP_DIR)
-$(BSP_DIR) : $(BSP_SCRIPT) $(NIOS_SOPCINFO)
-	mkdir -p $(BSP_DIR)
+.PRECIOUS : $(BSP_DIR)/settings.bsp
+$(BSP_DIR)/settings.bsp : $(BSP_SCRIPT) $(NIOS_SOPCINFO)
+	mkdir -pv -- "$(BSP_DIR)"
 	nios2-bsp-create-settings \
-	    --type hal --script $(SOPC_KIT_NIOS2)/sdk2/bin/bsp-set-defaults.tcl \
+	    --type hal --script "$(SOPC_KIT_NIOS2)/sdk2/bin/bsp-set-defaults.tcl" \
 	    --sopc $(NIOS_SOPCINFO) --cpu-name cpu \
-	    --bsp-dir $(BSP_DIR) --settings $(BSP_DIR)/settings.bsp --script $(BSP_SCRIPT)
+	    --bsp-dir "$(BSP_DIR)" --settings "$(BSP_DIR)/settings.bsp" --script "$(BSP_SCRIPT)"
 
-bsp : $(BSP_DIR)
+bsp : $(BSP_DIR)/settings.bsp
 
 .PRECIOUS : $(APP_DIR)/main.elf
 .PHONY : $(APP_DIR)/main.elf
-$(APP_DIR)/main.elf : $(SRC_DIR)/* $(BSP_DIR)
+$(APP_DIR)/main.elf : $(SRC_DIR)/* $(BSP_DIR)/settings.bsp
 	nios2-app-generate-makefile \
-	    --set ALT_CFLAGS "-Wextra -Wformat=0 -pedantic -std=c++14" \
-	    --bsp-dir $(BSP_DIR) --app-dir $(APP_DIR) --src-dir $(SRC_DIR)
-	$(MAKE) -C $(APP_DIR) clean
-	$(MAKE) -C $(APP_DIR)
-	nios2-elf-objcopy $(APP_DIR)/main.elf -O srec $(APP_DIR)/main.srec
-	# generate flash image (srec)
-	$(MAKE) -C $(APP_DIR) mem_init_generate
+	    --set ALT_CFLAGS "-Wall -Wextra -Wformat=0 -pedantic -std=c++14" \
+	    --bsp-dir "$(BSP_DIR)" --app-dir "$(APP_DIR)" --src-dir "$(SRC_DIR)"
+	$(MAKE) -C "$(APP_DIR)" clean
+	$(MAKE) -C "$(APP_DIR)"
+	nios2-elf-objcopy "$(APP_DIR)/main.elf" -O srec "$(APP_DIR)/main.srec"
+	# generate mem_init/*.hex files (see AN730 / HEX File Generation)
+	$(MAKE) -C "$(APP_DIR)" mem_init_generate
+	mkdir -pv -- "output_files/"
+	cp -av -- "$(APP_DIR)/mem_init/nios_ram.hex" "output_files/"
 
 .PHONY : app
 app : $(APP_DIR)/main.elf
 
-.PHONY : app_flash
-app_flash :
-	nios2-flash-programmer -c $(CABLE) --base=0x0 $(APP_DIR)/main.flash
-
-.PHONY : flash
-flash : app_flash
-	nios2-flash-programmer -c $(CABLE) --base=0x0 $(SOF).flash
-
 .PHONY : app_upload
 app_upload : app
-	nios2-gdb-server -c $(CABLE) -r -w 1 -g $(APP_DIR)/main.srec
+	nios2-gdb-server -c "$(CABLE)" -r -w 1 -g "$(APP_DIR)/main.srec"
 
 .PHONY : terminal
 terminal :
-	nios2-terminal -c $(CABLE)
+	nios2-terminal -c "$(CABLE)"

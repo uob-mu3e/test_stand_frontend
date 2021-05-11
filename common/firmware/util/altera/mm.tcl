@@ -10,12 +10,13 @@ proc mm_claim { pattern } {
         return
     }
     if { [ info exists ::mm ] } {
+        puts "INFO: ::close_service master $::mm"
         ::close_service master $::mm
         unset ::mm
     }
     if { $index >= 0 } {
         set path [ lindex $::mm_paths $index ]
-        puts "INFO: claim master '$path'"
+        puts "INFO: ::claim_service master '$path'"
         set ::mm [ ::claim_service master $path "" ]
     }
     set ::mm_index $index

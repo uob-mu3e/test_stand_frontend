@@ -1,6 +1,7 @@
 #
 
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "assignments/fe_max10.tcl"
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE "assignments.tcl"
 
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc

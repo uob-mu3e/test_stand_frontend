@@ -4,6 +4,10 @@ set -euf
 TCL=$1
 QSYS=$2
 
+QSYS_DIR=$(dirname -- "$QSYS")
+mkdir -p -- "$QSYS_DIR"
+
+# use tcl file basename as system name
 NAME=$(basename -- "$TCL")
 NAME=${NAME%.*}
 
@@ -16,4 +20,5 @@ CMD=(
 
 exec \
 qsys-script \
+    --search-path='$,'"$(realpath -- .)" \
     --cmd="${CMD[*]}"

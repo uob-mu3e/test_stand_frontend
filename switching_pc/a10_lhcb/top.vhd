@@ -3,6 +3,10 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity top is
+generic (
+    g_PCIE0_X : positive := 8;
+    g_PCIE1_X : positive := 8--;
+);
 port (
     -- LEDs
     A10_LED                             : OUT   STD_LOGIC_VECTOR(7 DOWNTO 0);
@@ -32,14 +36,14 @@ port (
 
 
     -- PCIe 0
-    i_pcie0_rx                          : in    std_logic_vector(3 downto 0);
-    o_pcie0_tx                          : out   std_logic_vector(3 downto 0);
+    i_pcie0_rx                          : in    std_logic_vector(g_PCIE0_X-1 downto 0);
+    o_pcie0_tx                          : out   std_logic_vector(g_PCIE0_X-1 downto 0);
     i_pcie0_perst_n                     : in    std_logic;
     i_pcie0_refclk                      : in    std_logic;
 
     -- PCIe 1
-    i_pcie1_rx                          : in    std_logic_vector(3 downto 0);
-    o_pcie1_tx                          : out   std_logic_vector(3 downto 0);
+    i_pcie1_rx                          : in    std_logic_vector(g_PCIE1_X-1 downto 0);
+    o_pcie1_tx                          : out   std_logic_vector(g_PCIE1_X-1 downto 0);
     i_pcie1_perst_n                     : in    std_logic;
     i_pcie1_refclk                      : in    std_logic;
 
@@ -122,8 +126,8 @@ begin
         g_XCVR0_N => 4,
         g_XCVR1_CHANNELS => 24,
         g_XCVR1_N => 4,
-        g_PCIE0_X => 4,
-        g_PCIE1_X => 4,
+        g_PCIE0_X => g_PCIE0_X,
+        g_PCIE1_X => g_PCIE1_X,
         g_CLK_MHZ => 100.0--,
     )
     port map (

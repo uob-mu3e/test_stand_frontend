@@ -1,7 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.ALL;
 
-
 entity edge_detector is
 Port (
     clk         : in    STD_LOGIC;
