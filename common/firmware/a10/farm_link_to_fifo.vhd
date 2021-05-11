@@ -60,6 +60,9 @@ architecture arch of farm_link_to_fifo is
 
     signal rx_data, rx_q : work.util.slv34_array_t(g_NLINKS_SWB_TOTL - 1 downto 0);
     signal rx_wen, sync_rdempty, sync_ren, sop, eop : std_logic_vector(g_NLINKS_SWB_TOTL - 1 downto 0);
+    
+    signal rx_pixel : work.util.slv34_array_t(N_PIXEL - 1 downto 0);
+    signal rx_scifi : work.util.slv34_array_t(N_SCIFI - 1 downto 0);
 
     signal f_data, f_q : std_logic_vector(g_NLINKS_SWB_TOTL * 36 - 1 downto 0);
     signal f_almost_full, f_wrfull, f_wen : std_logic;
@@ -115,13 +118,22 @@ begin
 
     END GENERATE;
     
+    gen_map_pixel : FOR I in N_PIXEL - 1 to 0 GENERATE
+        rx_pixel(I) <= rx_q(I);
+    END GENERATE;
+    
+    gen_map_scifi : FOR I in N_PIXEL + N_PIXEL - 1 to N_PIXEL GENERATE
+        rx_scifi(I-N_PIXEL) <= rx_q(I);
+    END GENERATE;
+    
+    
     e_aligne_pixel : entity work.farm_aligne_link
     generic map (
     N => N_PIXEL,
     LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
     )
     port map (
-        i_rx    => rx_q(N_PIXEL - 1 downto 0),
+        i_rx    => rx_pixel,
         i_sop   => sop(N_PIXEL - 1 downto 0),
         i_eop   => eop(N_PIXEL - 1 downto 0),
 
@@ -150,7 +162,7 @@ begin
     LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
     )
     port map (
-        i_rx    => rx_q(N_SCIFI + N_PIXEL - 1 downto N_PIXEL),
+        i_rx    => rx_scifi,
         i_sop   => sop(N_SCIFI + N_PIXEL - 1 downto N_PIXEL),
         i_eop   => eop(N_SCIFI + N_PIXEL - 1 downto N_PIXEL),
 

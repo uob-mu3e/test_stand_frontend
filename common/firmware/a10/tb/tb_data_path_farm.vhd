@@ -16,7 +16,7 @@ architecture TB of tb_data_path_farm is
     -- Input from merging (first board) or links (subsequent boards)
     signal dataclk		: 		 std_logic;
     signal data_en		:		 std_logic;
-    signal data_in		:		 std_logic_vector(255 downto 0);
+    signal data_in		:		 std_logic_vector(511 downto 0);
     signal ts_in		:		 std_logic_vector(31 downto 0);
 
     -- Input from PCIe demanding events
@@ -32,20 +32,15 @@ architecture TB of tb_data_path_farm is
     signal dma_data_en		:	std_logic;
     signal dma_eoe			:   std_logic;
 
-    -- Output to links -- with dataclk
-    signal link_data_out	:	std_logic_vector(255 downto 0);
-    signal link_ts_out		:	std_logic_vector(31 downto 0);
-    signal link_data_en	    :	std_logic;
-
     -- Interface to memory bank A
     signal A_mem_clk		: std_logic;
     signal A_mem_ready		: std_logic;
     signal A_mem_calibrated	: std_logic;
     signal A_mem_addr		: std_logic_vector(25 downto 0);
-    signal A_mem_data		: std_logic_vector(255 downto 0);
+    signal A_mem_data		: std_logic_vector(511 downto 0);
     signal A_mem_write		: std_logic;
     signal A_mem_read		: std_logic;
-    signal A_mem_q			: std_logic_vector(255 downto 0);
+    signal A_mem_q			: std_logic_vector(511 downto 0);
     signal A_mem_q_valid	: std_logic;
 
     -- Interface to memory bank B
@@ -53,10 +48,10 @@ architecture TB of tb_data_path_farm is
     signal B_mem_ready		: std_logic;
     signal B_mem_calibrated	: std_logic;
     signal B_mem_addr		: std_logic_vector(25 downto 0);
-    signal B_mem_data		: std_logic_vector(255 downto 0);
+    signal B_mem_data		: std_logic_vector(511 downto 0);
     signal B_mem_write		: std_logic;
     signal B_mem_read		: std_logic;
-    signal B_mem_q			: std_logic_vector(255 downto 0);
+    signal B_mem_q			: std_logic_vector(511 downto 0);
     signal B_mem_q_valid	: std_logic;
     
     -- links and datageneration
@@ -75,6 +70,15 @@ architecture TB of tb_data_path_farm is
     
     signal rx : work.util.slv32_array_t(NLINKS_TOTL-1 downto 0);
     signal rx_k : work.util.slv4_array_t(NLINKS_TOTL-1 downto 0);
+    
+    signal link_data_pixel, link_data_scifi : std_logic_vector(NLINKS * 32 - 1  downto 0);
+    signal link_datak_pixel, link_datak_scifi : std_logic_vector(NLINKS * 4 - 1  downto 0);
+    
+    signal pixel_data, scifi_data : std_logic_vector(255 downto 0);
+    signal pixel_empty, pixel_ren, scifi_empty, scifi_ren : std_logic;
+    signal data_wen, endofevent, ddr_ready : std_logic;
+    signal event_ts : std_logic_vector(47 downto 0);
+    signal ts_req_num : std_logic_vector(31 downto 0);
     
     -- clk period
     constant dataclk_period : time := 4 ns;
@@ -173,7 +177,7 @@ begin
         o_state     => open--,
     );
     
-    e_merger_fifo_pixel : entity work.ip_scfifo
+    e_merger_fifo_scifi : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 10,
         DATA_WIDTH      => NLINKS * 38,
@@ -212,11 +216,11 @@ begin
     );
     
     -- map links
-    FOR I in NLINKS-1 to 0 GENERATE
-        rx(I) <= link_data_pixel(I);
-        rx_k(I) <= link_datak_pixel(I);
-        rx(I+NLINKS) <= link_data_scifi(I);
-        rx_k(I+NLINKS) <= link_datak_scifi(I);
+    gen_mapping : FOR I in NLINKS-1 to 0 GENERATE
+        rx(I) <= link_data_pixel(I*32 + 31 downto I*32);
+        rx_k(I) <= link_datak_pixel(I*4 + 3 downto I*4);
+        rx(I+NLINKS) <= link_data_scifi(I*32 + 31 downto I*32);
+        rx_k(I+NLINKS) <= link_datak_scifi(I*4 + 3 downto I*4);
     END GENERATE;
     
     e_data_demerge_pixel : entity work.farm_link_to_fifo
@@ -312,9 +316,8 @@ begin
         -- Input from merging (first board) or links (subsequent boards)
         dataclk         => dataclk,
         data_in         => data_in,
-        data_en         => data_wen,
-        i_endofevent    => endofevent,
-        ts_in           => event_ts(47 downto 16),
+        data_en         => data_wen, 
+        ts_in           => event_ts(35 downto 4), -- 3:0 -> hit, 9:0 -> sub header
         o_ddr_ready     => ddr_ready,
 
         -- Input from PCIe demanding events
@@ -329,11 +332,10 @@ begin
         dma_data_out    => dma_data_out,
         dma_data_en     => dma_data_en,
         dma_eoe         => dma_eoe,
-
-        -- Output to links -- with dataclk
-        link_data_out   => link_data_out,
-        link_ts_out     => link_ts_out,
-        link_data_en    => link_data_en,
+        i_dmamemhalffull=> '0',
+        i_num_req_events=> ts_req_num,
+        o_dma_done      => open,
+        i_dma_wen       => '1',
 
         -- Interface to memory bank A
         A_mem_clk       => A_mem_clk,
@@ -467,13 +469,11 @@ begin
 	req_en_A <= '0';	
 	wait for pcieclk_period;-- * 26500;
 	req_en_A <= '1';
-	ts_req_A <= x"00000001";--"00010000"; 	
+	ts_req_num <= x"00000008";
+	ts_req_A <= x"04030201";--"00010000"; 	
 	wait for pcieclk_period;
 	req_en_A <= '1';
-	ts_req_A <= x"00000002";--x"00030002"; 	
-	wait for pcieclk_period;
-	req_en_A <= '1';
-	ts_req_A <= x"00000003"; 	
+	ts_req_A <= x"0B0A0906";--x"00030002"; 	
 	wait for pcieclk_period;
 	req_en_A <= '0';
 	wait for pcieclk_period;

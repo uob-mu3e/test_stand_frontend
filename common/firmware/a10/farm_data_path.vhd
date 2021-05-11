@@ -25,16 +25,17 @@ port (
     dataclk         : in  std_logic;
     data_in         : in  std_logic_vector(511 downto 0);
     data_en         : in  std_logic;
-    i_endofevent    : in  std_logic;
     ts_in           : in  std_logic_vector(31 downto 0);
     o_ddr_ready     : out std_logic;
     
     -- Input from PCIe demanding events
     pcieclk         : in  std_logic;
+    -- request sub headers from DDR memory
     ts_req_A        : in  std_logic_vector(31 downto 0);
     req_en_A        : in  std_logic;
     ts_req_B        : in  std_logic_vector(31 downto 0);
     req_en_B        : in  std_logic;
+    -- dynamic limit when we change from writing to reading
     tsblock_done    : in  std_logic_vector(15 downto 0);
     tsblocks        : out std_logic_vector(31 downto 0);
 
@@ -42,6 +43,10 @@ port (
     dma_data_out    : out std_logic_vector(255 downto 0);
     dma_data_en     : out std_logic;
     dma_eoe         : out std_logic;
+    i_dmamemhalffull: in  std_logic;
+    i_num_req_events: in  std_logic_vector(31 downto 0);
+    o_dma_done      : out std_logic;
+    i_dma_wen       : in  std_logic;
 
     -- Interface to memory bank A
     A_mem_clk       : in  std_logic;
@@ -110,10 +115,10 @@ architecture rtl of farm_data_path is
 
     type output_write_type is (waiting, eventA, eventB);
     signal output_write_state : output_write_type;
-    signal nummemwords : std_logic_vector(5 downto 0);
+    signal nummemwords : std_logic_vector(7 downto 0);
     signal tagmemwait_3_state : std_logic_vector(3 downto 0);
 
-    signal ts_in_upper, ts_in_lower : std_logic_vector(15 downto 0);
+    signal ts_in_upper, ts_in_lower : tsrange_type;
     
 begin
 
@@ -128,9 +133,8 @@ begin
                    '0' when A_readstate = '1' and B_readstate = '1' else
                    '1';
 
-    -- TODO: MK: make this dynamic (register?)
-    ts_in_upper <= x"00" & ts_in(tsupper); -- 15 downto 8 from the higher 32b of the 48b TS
-    ts_in_lower <= x"00" & ts_in(tslower); --  7 downto 0 from the higher 32b of the 48b TS
+    ts_in_upper <= x"00" & ts_in(tsupper); -- 15 downto 8 from 35 downto 4 of the 48b TS
+    ts_in_lower <= x"00" & ts_in(tslower); --  7 downto 0 from 35 downto 4 of the 48b TS
 
     reset       <= not reset_n;
     reset_ddr3  <= not reset_n_ddr3;
@@ -312,8 +316,6 @@ begin
         A_mem_read          <= '0';
         A_readreqfifo       <= '0';
         A_memreadfifo_write <= '0';
-        A_wstarted_last     <= A_wstarted;
-        A_fifo_empty_last   <= A_fifo_empty;
         case ddr3if_state_A is
             when disabled =>
                 if ( A_mem_calibrated = '1' ) then
@@ -331,6 +333,7 @@ begin
                 if ( A_writestate = '1' ) then
                     ddr3if_state_A      <= writing;
                     A_mem_addr          <= (others => '1');
+                    A_mem_word_cnt      <= (others => '0');
                     A_tagram_address    <= (others => '0');
                     A_tagts_last        <= (others => '1');
                     A_done              <= '0';
@@ -348,14 +351,18 @@ begin
                     -- write DDR memory
                     A_mem_write     <= '1';
                     A_mem_addr      <= A_mem_addr + '1';
+                    A_mem_word_cnt  <= A_mem_word_cnt + '1';
                     
-                    if ( A_tagts_last /= qfifo_A(527 downto 512) ) then
-                        A_tagts_last                <= qfifo_A(527 downto 512);
+                    if ( A_tagts_last /= qfifo_A(519 downto 512) ) then
+                        A_tagts_last                <= qfifo_A(519 downto 512);
                         A_tagram_write              <= '1';
-                        -- address of tag ram are (7 downto 0) from the higher 32b of the 48b TS
-                        A_tagram_address            <= qfifo_A(527 downto 512);
-                        -- data of tag is the last DDR RAM Address of this event
+                        -- address of tag ram are x"00" & (7 downto 0) from 35 downto 4 of the 48b TS
+                        A_tagram_address            <= qfifo_A(519 downto 512);
+                        -- data of tag is the last DDR RAM Address of this event (25 downto 0)
+                        -- and the number of words (512b) (31 downto 26)
+                        A_tagram_data(31 downto 26) <= A_mem_word_cnt;
                         A_tagram_data(25 downto 0)  <= A_mem_addr + '1';
+                        A_mem_word_cnt              <= (others => '0');
                     end if;
                 end if;
                 
@@ -380,44 +387,23 @@ begin
                     when tagmemwait_2 =>
                         A_readsubstate <= tagmemwait_3;	
                     when tagmemwait_3 =>
-                        if ( A_tagram_q(31 downto 26) = "000000" ) then
-                            tagmemwait_3_state <= x"A";
-                            A_readsubstate <= fifowait;
-                            A_memreadfifo_data <= "000000" & A_tsrange & A_tagram_address;
+                        A_mem_addr  <= A_tagram_q(25 downto 0);
+                        A_readwords <= A_tagram_q(31 downto 26) - '1';
+                        if ( A_mem_ready = '1' ) then
+                            A_mem_read <= '1';
+                            A_readsubstate  <= reading;
+                            -- save number of 512b words, save x"00" & ts_in(tsupper), save tagram address
+                            A_memreadfifo_data  <= A_tagram_q(31 downto 26) & A_tsrange & A_tagram_address;
                             A_memreadfifo_write <= '1';
-                        -- synthesis translate_off
-                        elsif ( Is_X(A_tagram_q(31 downto 26)) ) then
-                            tagmemwait_3_state <= x"B";
-                            A_readsubstate <= fifowait;	
-                            A_memreadfifo_data <= "000000" & A_tsrange & A_tagram_address;
-                            A_memreadfifo_write <= '1';
-                        -- synthesis translate_on
-                        else
-                            tagmemwait_3_state <= x"C";
-                            A_mem_addr  <= A_tagram_q(25 downto 0);
-                            A_readwords <= A_tagram_q(31 downto 26) - '1';
-                            if ( A_mem_ready = '1' ) then
-                                A_mem_read		<= '1';
-                                if ( A_tagram_q(31 downto 26) > "00001" ) then
-                                    A_readsubstate  <= reading;
-                                    A_mem_addr_reg  <= A_tagram_q(25 downto 0) + '1';
-                                else
-                                    A_readsubstate  <= fifowait;
-                                end if;
-                                A_memreadfifo_data  <= A_tagram_q(31 downto 26) & A_tsrange & A_tagram_address;
-                                A_memreadfifo_write <= '1';
-                            end if;
                         end if;
                     when reading =>
-                        if(A_mem_ready = '1')then
+                        if ( A_mem_ready = '1' ) then
                             A_mem_addr      <= A_mem_addr_reg;
                             A_mem_addr_reg  <= A_mem_addr_reg + '1';
                             A_readwords     <= A_readwords - '1';
                             A_mem_read      <= '1';
                         end if;
-                        if(A_readwords > "00001") then
-                            A_readsubstate  <= reading;
-                        else
+                        if ( A_readwords = "00001" ) then
                             A_readsubstate  <= fifowait;
                         end if;
                 end case;
@@ -427,7 +413,7 @@ begin
                 A_tagram_address    <= A_tagram_address + '1';
                 A_tagram_write      <= '1';
                 A_tagram_data       <= (others => '0');
-                if(A_tagram_address = tsone and A_tagram_write = '1') then
+                if ( A_tagram_address = tsone and A_tagram_write = '1' ) then
                     ddr3if_state_A  <= ready;
                     A_done          <= '1';
                 end if;
@@ -438,100 +424,87 @@ begin
     -- Process for writing the B memory
     process(reset_n_ddr3, B_mem_clk)
     begin
-    if(reset_n_ddr3 = '0') then
-        ddr3if_state_B	<= disabled;
-        B_tagram_write	<= '0';
-        readfifo_B	<= '0';
+    if ( reset_n_ddr3 = '0' ) then
+        ddr3if_state_B  <= disabled;
+        B_tagram_write  <= '0';
+        readfifo_B      <= '0';
         B_readreqfifo   <= '0';
-        B_mem_write	<= '0';
-        B_mem_read	<= '0';
+        B_mem_write     <= '0';
+        B_mem_read      <= '0';
         B_memreadfifo_write <= '0';
-        B_done 		   <= '0';
-    elsif(B_mem_clk'event and B_mem_clk = '1') then
-        B_tagram_write	<= '0';
-        readfifo_B		<= '0';
-        B_mem_write		<= '0';
-        B_mem_read		<= '0';
-        B_readreqfifo		<= '0';
-        B_memreadfifo_write 	<= '0';
-        B_wstarted_last		<= B_wstarted;
-        B_fifo_empty_last	<= B_fifo_empty;
+        B_done          <= '0';
+        --
+    elsif ( B_mem_clk'event and B_mem_clk = '1' ) then
+        B_tagram_write      <= '0';
+        readfifo_B          <= '0';
+        B_mem_write         <= '0';
+        B_mem_read          <= '0';
+        B_readreqfifo       <= '0';
+        B_memreadfifo_write <= '0';
         case ddr3if_state_B is
             when disabled =>
-                if(B_mem_calibrated = '1')then
-                    B_tagram_address	<= (others => '1');
-                    ddr3if_state_B	<= overwriting;
+                if ( B_mem_calibrated = '1' ) then
+                    B_tagram_address    <= (others => '1');
+                    ddr3if_state_B      <= overwriting;
+                    -- TODO: MK: is overwriting needed?
                     -- Skip memory overwriting for simulation
                     -- synthesis translate_off
-                    ddr3if_state_B	<= ready;
-                    B_done		<= '1';
-                    -- synthesis translate on
+                    ddr3if_state_B      <= ready;
+                    B_done              <= '1';
+                    -- synthesis translate_on
                 end if;
+                
             when ready =>
-                if(B_writestate = '1')then
-                    ddr3if_state_B	<= writing;
-                    B_mem_addr_reg		<= (others => '0');
-                    B_tagram_address	<= (others => '0');
-                    B_wstarted			<= '1';
-                    B_numwords			<= "000001";
-                    B_done 				<= '0';
+                if ( B_writestate = '1' ) then
+                    ddr3if_state_B      <= writing;
+                    B_mem_addr          <= (others => '1');
+                    B_mem_word_cnt      <= (others => '0');
+                    B_tagram_address    <= (others => '0');
+                    B_tagts_last        <= (others => '1');
+                    B_done              <= '0';
                 end if;
+                
             when writing =>
-                
-                if(B_readstate = '1' and B_fifo_empty = '1') then
-                    ddr3if_state_B	<= reading;
-                    B_readsubstate <= fifowait;
+                if ( B_readstate = '1' and B_fifo_empty = '1' ) then
+                    ddr3if_state_B  <= reading;
+                    B_readsubstate  <= fifowait;
                 end if;
                 
-                if(B_fifo_empty = '0' and B_fifo_empty_last = '0' and B_mem_ready = '1') then
-                    B_wstarted <= '0';
-
-                    readfifo_B		<= '1';
+                if ( B_fifo_empty = '0' and B_mem_ready = '1' ) then
+                    readfifo_B      <= '1';
                     
-                    B_mem_write		<= '1';
-                    B_mem_addr  		<= B_mem_addr_reg;
-                    B_mem_addr_tag		<= B_mem_addr_reg;	
-                    B_mem_addr_reg		<= B_mem_addr_reg + '1';
-                    B_tagts_last		<= qfifo_B(271 downto 256);
-                                            
-                    if(B_tagts_last /= qfifo_B(271 downto 256)  or B_wstarted_last ='1') then
-                        if(B_wstarted = '1') then
-                            B_tagram_write		<= '0';
-                        else	
-                            B_tagram_write		<= '1';
-                        end if;							
-                        B_tagram_address	<= qfifo_B(271 downto 256);
-                        B_tagram_data(25 downto 0)		<= B_mem_addr_tag;
-
-                        B_tagram_data(31 downto 26)	<= "000001";
-                        B_numwords			<= "000010";
-                    else
-
-                        B_tagram_write	<= '1';
-
-                        B_tagram_data(31 downto 26)	<= B_numwords;
-                        if(B_numwords /= "111111") then
-                            B_numwords <= B_numwords + '1';
-                        end if;
+                    -- write DDR memory
+                    B_mem_write     <= '1';
+                    B_mem_addr      <= B_mem_addr + '1';
+                    B_mem_word_cnt  <= B_mem_word_cnt + '1';
+                    
+                    if ( B_tagts_last /= qfifo_B(519 downto 512) ) then
+                        B_tagts_last                <= qfifo_B(519 downto 512);
+                        B_tagram_write              <= '1';
+                        -- address of tag ram are x"00" & (7 downto 0) from 35 downto 4 of the 48b TS
+                        B_tagram_address            <= qfifo_B(519 downto 512);
+                        -- data of tag is the last DDR RAM Address of this event (25 downto 0)
+                        -- and the number of words (512b) (31 downto 26)
+                        B_tagram_data(31 downto 26) <= B_mem_word_cnt;
+                        B_tagram_data(25 downto 0)  <= B_mem_addr + '1';
+                        B_mem_word_cnt              <= (others => '0');
                     end if;
-                elsif(B_fifo_empty = '0' and B_mem_ready = '1' and B_wstarted = '0') then
-                    readfifo_B		<= '1';
-                end if;	
+                end if;
                 
             when reading =>
-                if(B_readstate = '0' and B_reqfifo_empty = '1' and B_readsubstate = fifowait)then
-                    ddr3if_state_B		<= overwriting;
-                    B_tagram_address	<= (others => '1');
+                if ( B_readstate = '0' and B_reqfifo_empty = '1' and B_readsubstate = fifowait ) then
+                    ddr3if_state_B      <= overwriting;
+                    B_tagram_address    <= (others => '1');
                 end if;
                 
                 case B_readsubstate is
                     when fifowait =>
-                        if(B_reqfifo_empty = '0') then
-                            B_tagram_address <= B_reqfifoq;
-                            B_req_last		  <= B_reqfifoq;
-                            B_readreqfifo	  <= '1';
-                            if(B_reqfifoq /= B_req_last) then
-                                B_readsubstate <= tagmemwait_1;
+                        if ( B_reqfifo_empty = '0' ) then
+                            B_tagram_address    <= B_reqfifoq;
+                            B_req_last          <= B_reqfifoq;
+                            B_readreqfifo       <= '1';
+                            if ( B_reqfifoq /= B_req_last ) then
+                                B_readsubstate  <= tagmemwait_1;
                             end if;
                         end if;
                     when tagmemwait_1 =>
@@ -539,53 +512,35 @@ begin
                     when tagmemwait_2 =>
                         B_readsubstate <= tagmemwait_3;	
                     when tagmemwait_3 =>
-                        if( B_tagram_q(31 downto 26) = "000000") then
-                            B_readsubstate <= fifowait;
-                            B_memreadfifo_data <= "000000" & B_tsrange & B_tagram_address;
+                        B_mem_addr  <= B_tagram_q(25 downto 0);
+                        B_readwords <= B_tagram_q(31 downto 26) - '1';
+                        if ( B_mem_ready = '1' ) then
+                            B_mem_read <= '1';
+                            B_readsubstate  <= reading;
+                            -- save number of 512b words, save x"00" & ts_in(tsupper), save tagram address
+                            B_memreadfifo_data  <= B_tagram_q(31 downto 26) & B_tsrange & B_tagram_address;
                             B_memreadfifo_write <= '1';
-                        -- synthesis translate_off
-                        elsif(Is_X(B_tagram_q(31 downto 26))) then
-                            B_readsubstate <= fifowait;	
-                            B_memreadfifo_data <= "000000" & B_tsrange & B_tagram_address;
-                            B_memreadfifo_write <= '1';
-                        -- synthesis translate on
-                        else
-                            B_mem_addr	<= B_tagram_q(25 downto 0);
-                            B_readwords	<= B_tagram_q(31 downto 26)-'1';
-                            if(B_mem_ready = '1') then
-                                B_mem_read		<= '1';
-                                if(B_tagram_q(31 downto 26) > "00001") then
-                                    B_readsubstate	<= reading;
-                                    B_mem_addr_reg  <= B_tagram_q(25 downto 0) + '1';
-                                else
-                                    B_readsubstate <= fifowait;
-                                end if;
-                                B_memreadfifo_data <= B_tagram_q(31 downto 26) & B_tsrange & B_tagram_address;
-                                B_memreadfifo_write <= '1';
-                            end if;
-                        end if;	
-                    when reading =>
-                        if(B_mem_ready = '1')then
-                            B_mem_addr	<= B_mem_addr_reg ;
-                            B_mem_addr_reg  <= B_mem_addr_reg + '1';
-                            B_readwords    <= B_readwords - '1';
-                            B_mem_read		<= '1';
                         end if;
-                        if(B_readwords > "00001") then
-                                B_readsubstate	<= reading;
-                        else
-                                B_readsubstate <= fifowait;
+                    when reading =>
+                        if ( B_mem_ready = '1' ) then
+                            B_mem_addr      <= B_mem_addr_reg;
+                            B_mem_addr_reg  <= B_mem_addr_reg + '1';
+                            B_readwords     <= B_readwords - '1';
+                            B_mem_read      <= '1';
+                        end if;
+                        if ( B_readwords = "00001" ) then
+                            B_readsubstate  <= fifowait;
                         end if;
                 end case;
                 
                                 
             when overwriting =>
-                B_tagram_address        <= B_tagram_address + '1';
-                B_tagram_write		<= '1';
-                B_tagram_data		<= (others => '0');
-                if(B_tagram_address = tsone and B_tagram_write = '1') then
-                    ddr3if_state_B	<= ready;
-                    B_done 		<= '1';
+                B_tagram_address    <= B_tagram_address + '1';
+                B_tagram_write      <= '1';
+                B_tagram_data       <= (others => '0');
+                if ( A_tagram_address = tsone and B_tagram_write = '1' ) then
+                    ddr3if_state_B  <= ready;
+                    B_done          <= '1';
                 end if;
         end case;
     end if;
@@ -595,49 +550,75 @@ begin
     A_memreadfifo_read <= '1' when output_write_state = waiting and A_memreadfifo_empty = '0' else '0';
     A_memdatafifo_read <= '1' when output_write_state = eventA and A_memdatafifo_empty = '0' else '0';
     B_memreadfifo_read <= '1' when output_write_state = waiting and B_memreadfifo_empty = '0' else '0';
-    B_memdatafifo_read <= '1' when output_write_state = eventA and B_memdatafifo_empty = '0' else '0';
+    B_memdatafifo_read <= '1' when output_write_state = eventB and B_memdatafifo_empty = '0' else '0';
 
     process(reset_n, pcieclk)
     begin
-    if(reset_n = '0') then
+    if ( reset_n = '0' ) then
         output_write_state  <= waiting;
         dma_data_en         <= '0';
         dma_eoe             <= '0';
-    elsif(pcieclk'event and pcieclk = '1') then
+        o_dma_done          <= '0';
+        cnt_4kb_done        <= '0';
+        cnt_skip_event_dma  <= (others => '0');
+        cnt_num_req_events  <= (others => '0');
+        --
+    elsif ( pcieclk'event and pcieclk = '1' ) then
         dma_data_en <= '0';
         dma_eoe     <= '0';
+        o_dma_done  <= '0';
+        
+        if ( i_dma_wen = '0' ) then
+            cnt_num_req_events <= (others => '0');
+            cnt_4kb_done <= '0';
+        end if;
+        
+        if ( i_dma_wen = '1' and cnt_num_req_events >= i_num_req_events and cnt_4kb_done = '1' ) then
+            o_dma_done <= '1';
+        end if;
+        
         case output_write_state is
         when waiting =>
-            if ( A_memreadfifo_empty = '0' ) then
-                nummemwords <= A_memreadfifo_q(37 downto 32);
-                if ( A_memreadfifo_q(37 downto 32) = "000000" ) then
-                    output_write_state <= waiting;
-                    dma_eoe <= '1';
+            if ( i_dma_wen = '1' and cnt_num_req_events >= i_num_req_events and cnt_4kb_done = '0' ) then
+                output_write_state  <= write_4kb_padding;
+            elsif ( A_memreadfifo_empty = '0' ) then
+                -- input is 512b from DDR output is 256b to PCIe
+                -- we cnt the 512b words before so multi by 2
+                nummemwords <= A_memreadfifo_q(37 downto 32) & '0';
+                if ( o_dma_done = '1' or i_dmamemhalffull = '1' or ( i_num_req_events /= (i_num_req_events'range => '0') and cnt_num_req_events >= i_num_req_events ) ) then
+                    output_write_state  <= skip_event_A;
+                    cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
+                    -- cnt req event even if we skip
+                    cnt_num_req_events <= cnt_num_req_events + '1';
                 else
                     output_write_state <= eventA;
+                    dma_data_en  <= i_dma_wen;
+                    dma_data_out <= A_memdatafifo_q;
+                    cnt_num_req_events <= cnt_num_req_events + '1';
                 end if;
-                dma_data_en  <= '1';
-                dma_data_out <= A_memdatafifo_q;
-            
             elsif ( B_memreadfifo_empty = '0' ) then
-            
-                nummemwords <= B_memreadfifo_q(37 downto 32);
-                if(B_memreadfifo_q(37 downto 32) = "000000")then
-                    output_write_state <= waiting;
-                    dma_eoe <= '1';	
+                -- input is 512b from DDR output is 256b to PCIe
+                -- we cnt the 512b words before so multi by 2
+                nummemwords <= B_memreadfifo_q(37 downto 32) & '0';
+                if ( o_dma_done = '1' or i_dmamemhalffull = '1' or ( i_num_req_events /= (i_num_req_events'range => '0') and cnt_num_req_events >= i_num_req_events ) ) then
+                    output_write_state  <= skip_event_B;
+                    cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
+                    -- cnt req event even if we skip
+                    cnt_num_req_events <= cnt_num_req_events + '1';
                 else
                     output_write_state <= eventB;
+                    dma_data_en  <= i_dma_wen;
+                    dma_data_out <= B_memdatafifo_q;
+                    cnt_num_req_events <= cnt_num_req_events + '1';
                 end if;
-                dma_data_en  <= '1';
-                dma_data_out <= B_memdatafifo_q
             end if;
 
         when eventA =>
             if ( A_memdatafifo_empty = '0' ) then
-                dma_data_en     <= '1';
+                dma_data_en     <= i_dma_wen;
                 dma_data_out    <= A_memdatafifo_q;
                 nummemwords     <= nummemwords - '1';
-                if ( nummemwords = "000001" ) then
+                if ( nummemwords = "0000001" ) then
                     output_write_state <= waiting;
                     dma_eoe     <= '1';	
                 end if;
@@ -645,13 +626,38 @@ begin
             
         when eventB =>
             if ( B_memdatafifo_empty = '0' ) then
-                dma_data_en     <= '1';
+                dma_data_en     <= i_dma_wen;
                 dma_data_out    <= B_memdatafifo_q;
                 nummemwords     <= nummemwords - '1';
-                if ( nummemwords = "000001" ) then
+                if ( nummemwords = "0000001" ) then
                     output_write_state <= waiting;
                     dma_eoe     <= '1';
                 end if;
+            end if;
+            
+        when skip_event_A =>
+            if ( A_memdatafifo_empty = '0' ) then
+                nummemwords     <= nummemwords - '1';
+                if ( nummemwords = "0000001" ) then
+                    output_write_state <= waiting;
+                end if;
+            end if;
+        
+        when skip_event_B =>
+            if ( B_memdatafifo_empty = '0' ) then
+                nummemwords     <= nummemwords - '1';
+                if ( nummemwords = "0000001" ) then
+                    output_write_state <= waiting;
+                end if;
+            end if;
+            
+        when write_4kb_padding =>
+            dma_data_out <= (others => '1');
+            dma_data_en <= '1';
+            cnt_4kb <= cnt_4kb + '1';
+            if ( cnt_4kb = "01111111" ) then
+                cnt_4kb_done <= '1';
+                output_write_state <= waiting;
             end if;
         
         end case;
@@ -661,7 +667,7 @@ begin
     tagram_A : entity work.ip_ram_1_port
     generic map (
         ADDR_WIDTH    => 16,
-        DATA_WIDTH    => 26,
+        DATA_WIDTH    => 32,
         DEVICE        => "Arria 10"--,
     )
     port map (
@@ -675,7 +681,7 @@ begin
     tagram_B : entity work.ip_ram_1_port
     generic map (
         ADDR_WIDTH    => 16,
-        DATA_WIDTH    => 26,
+        DATA_WIDTH    => 32,
         DEVICE        => "Arria 10"--,
     )
     port map (
@@ -690,8 +696,8 @@ begin
     generic map(
         ADDR_WIDTH_w    => 8,
         DATA_WIDTH_w    => 32,
-        ADDR_WIDTH_r    => 9,
-        DATA_WIDTH_r    => 16,
+        ADDR_WIDTH_r    => 10,
+        DATA_WIDTH_r    => 8,
         DEVICE          => "Arria 10"--,
     )
     port map (
@@ -712,8 +718,8 @@ begin
     generic map(
         ADDR_WIDTH_w    => 8,
         DATA_WIDTH_w    => 32,
-        ADDR_WIDTH_r    => 9,
-        DATA_WIDTH_r    => 16,
+        ADDR_WIDTH_r    => 10,
+        DATA_WIDTH_r    => 8,
         DEVICE          => "Arria 10"--,
     )
     port map (

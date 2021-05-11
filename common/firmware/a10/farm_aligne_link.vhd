@@ -17,7 +17,7 @@ generic (
     LINK_FIFO_ADDR_WIDTH : positive := 10--;
 );
 port (
-    i_rx            : in  slv34_array_t(N - 1 downto 0);
+    i_rx            : in work.util.slv34_array_t(N - 1 downto 0);
     i_sop           : in std_logic_vector(N - 1 downto 0);
     i_eop           : in std_logic_vector(N - 1 downto 0);
 

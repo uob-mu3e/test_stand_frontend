@@ -1032,7 +1032,7 @@ begin
          ts_req_A                => writeregs_ddr3(DATA_REQ_A_W),
          req_en_A                => regwritten_C(DATA_REQ_A_W),
          ts_req_B                => writeregs_ddr3(DATA_REQ_B_W),
-         req_en_B                => regwritten_C(DATA_REQ_A_W),
+         req_en_B                => regwritten_C(DATA_REQ_B_W),
          tsblock_done            => writeregs_ddr3(DATA_TSBLOCK_DONE_W)(15 downto 0),
          tsblocks                => readregs_ddr3(DATA_TSBLOCKS_R),
  

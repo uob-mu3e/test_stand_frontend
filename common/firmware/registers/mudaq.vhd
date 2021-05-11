@@ -36,7 +36,7 @@ package mudaq is
     --! data path farm types
     subtype dataplusts_type is std_logic_vector(527 downto 0);
     type offset is array(natural range <>) of integer range 64 downto 0;
-    subtype tsrange_type is std_logic_vector(15 downto 0);
+    subtype tsrange_type is std_logic_vector(7 downto 0);
     subtype tsupper is natural range 15 downto 8;
     subtype tslower is natural range 7 downto 0;
     constant tsone : tsrange_type := (others => '1');
