@@ -89,6 +89,7 @@ signal cmemwriteaddr : allcounteraddr_array;
 signal cmemreadaddr_hitwriter : allcounteraddr_array;
 signal cmemwriteaddr_hitwriter : allcounteraddr_array;
 signal cmemreadaddr_hitreader : counteraddr_t;
+signal addrcounterreset : counteraddr_t := (others => '0');
 signal cmemwren		: allcounterwren_array;
 signal cmemwren_hitwriter	: allcounterwren_array;
 
@@ -273,6 +274,14 @@ elsif (writeclk'event and writeclk = '1') then
 end if;
 end process;
 
+-- we need to run through addresses for resetteing the memory
+process(writeclk)
+begin
+if (writeclk'event and writeclk = '1') then
+	addrcounterreset <= addrcounterreset + '1';
+end if;
+end process;
+
 
 -- Memory for the actual sorting
 genmem: for i in NCHIPS-1 downto 0 generate
@@ -314,6 +323,7 @@ genmem: for i in NCHIPS-1 downto 0 generate
 	
 	fromcmem_hitreader(i)	<= fromcmem(i)(conv_integer(tsread(COUNTERMEMSELRANGE)));
 	
+	
 	-- Write side: Put hits into memory at the right place and count them
 	process(reset_n, writeclk)
 		variable counterfrommem : doublecounter_t;
@@ -325,8 +335,8 @@ genmem: for i in NCHIPS-1 downto 0 generate
 		noverflow(i)	<= (others => '0');
 		
 		for k in NMEMS-1 downto 0 loop
-			cmemwren_hitwriter(i)(k) <= '0'; 	
-			cmemreadaddr_hitwriter(i)(k)	<= cmemreadaddr_hitwriter(i)(k) + '1';
+			cmemwren_hitwriter(i)(k) 		<= '1'; 	
+			cmemreadaddr_hitwriter(i)(k)	<= addrcounterreset;
 			cmemwriteaddr_hitwriter(i)(k)	<= (others => '0');
 		end loop;
 		
