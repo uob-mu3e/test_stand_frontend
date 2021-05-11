@@ -145,10 +145,12 @@ architecture rtl of mupix_datapath is
     signal hit_ena_cnt              : std_logic_vector(31 downto 0);
     signal hit_ena_counters         : reg32array(35 downto 0);
     signal hit_ena_counters_reg     : reg32array(35 downto 0);
+    signal hitsorter_in_ena_counters_reg: reg32array(11 downto 0);
     signal hitsorter_in_ena_counters: reg32array(11 downto 0);
     signal hitsorter_in_ena_cnt     : std_logic_vector(31 downto 0);
     signal hitsorter_in_ena_cnt_sel : std_logic_vector( 3 downto 0);
     signal hitsorter_out_ena_cnt    : std_logic_vector(31 downto 0);
+    signal hitsorter_out_ena_cnt_reg: std_logic_vector(31 downto 0);
 
 begin
 
@@ -182,7 +184,7 @@ begin
         i_last_sorter_hit           => last_sorter_hit,
         i_mp_hit_ena_cnt            => hit_ena_cnt,
         i_mp_sorter_in_hit_ena_cnt  => hitsorter_in_ena_cnt,
-        i_mp_sorter_out_hit_ena_cnt => hitsorter_out_ena_cnt,
+        i_mp_sorter_out_hit_ena_cnt => hitsorter_out_ena_cnt_reg,
 
         -- outputs 156--------------------------------------------
         o_mp_datagen_control        => mp_datagen_control_reg,
@@ -257,7 +259,10 @@ begin
     process(i_clk156)
     begin
         if(rising_edge(i_clk156)) then
-            hit_ena_counters_reg <= hit_ena_counters;
+            hit_ena_counters_reg            <= hit_ena_counters;
+            hitsorter_in_ena_counters_reg   <= hitsorter_in_ena_counters;
+            hitsorter_out_ena_cnt_reg       <= hitsorter_out_ena_cnt;
+
             if(to_integer(unsigned(hit_ena_cnt_select))<36) then
                 hit_ena_cnt <= hit_ena_counters_reg(to_integer(unsigned(hit_ena_cnt_select)));
             else
@@ -265,7 +270,7 @@ begin
             end if;
 
             if(to_integer(unsigned(hitsorter_in_ena_cnt_sel))<12) then
-                hitsorter_in_ena_cnt <= hitsorter_in_ena_counters(to_integer(unsigned(hitsorter_in_ena_cnt_sel)));
+                hitsorter_in_ena_cnt <= hitsorter_in_ena_counters_reg(to_integer(unsigned(hitsorter_in_ena_cnt_sel)));
             else
                 hitsorter_in_ena_cnt <= (others => '0');
             end if;

@@ -325,11 +325,11 @@ begin
         i_max10_version             => max10_version,
         i_max10_status              => max10_status,
         i_programming_status        => programming_status,
-		  
-		  i_ffly_pwr							=> ffly_pwr,
-		  i_ffly_temp							=> ffly_temp,
-		  i_ffly_alarm						=> ffly_alarm,
-		  i_ffly_vcc							=> ffly_vcc,
+
+        i_ffly_pwr                  => ffly_pwr,
+        i_ffly_temp                 => ffly_temp,
+        i_ffly_alarm                => ffly_alarm,
+        i_ffly_vcc                  => ffly_vcc,
 
         -- outputs 156--------------------------------------------
         o_reg_cmdlen                => reg_cmdlen,
@@ -668,11 +668,11 @@ begin
 
         o_testclkout                    => open,
         o_testout                       => open,
-		  
-		  o_pwr									 => ffly_pwr,
-		  o_temp									 => ffly_temp,
-		  o_vcc									 => ffly_vcc,
-		  o_alarm								 => ffly_alarm
+
+        o_pwr                           => ffly_pwr,
+        o_temp                          => ffly_temp,
+        o_vcc                           => ffly_vcc,
+        o_alarm                         => ffly_alarm
     );
 
     e_max10_interface : entity work.max10_interface
@@ -691,8 +691,8 @@ begin
         io_SPI_D3           => io_max10_spi_D3,
     
         adc_reg             => adc_reg,
-        max10_version       => max10_version,
-        max10_status        => max10_status,
+        o_max10_version     => max10_version,
+        o_max10_status      => max10_status,
         programming_status  => programming_status,
 
         programming_ctrl    => programming_ctrl,

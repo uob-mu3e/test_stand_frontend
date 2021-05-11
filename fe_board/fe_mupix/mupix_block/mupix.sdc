@@ -2,13 +2,11 @@
 # M. Mueller, November 2020
 
 # these should be fine
-set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|mupix_reg_mapping:e_mupix_reg_mapping|o_mp_datagen_control*} -to {*}
-set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|mupix_reg_mapping:e_mupix_reg_mapping|o_mp_readout_mode*} -to {*}
-set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|mupix_reg_mapping:e_mupix_reg_mapping|o_mp_lvds_link_mask*} -to {*}
-set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|mupix_reg_mapping:e_mupix_reg_mapping|o_mp_readout_mode*} -to {*}
 set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|mupix_datapath_reg_mapping:e_mupix_datapath_reg_mapping|o_mp_lvds_invert} -to {*}
 set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|mupix_datapath_reg_mapping:e_mupix_datapath_reg_mapping|o_mp_datagen_control*} -to {*}
 set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|data_unpacker*:unpacker_single|o_hit_ena_counter*} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|hit_ena_counters_reg*}
+set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|hitsorter_in_ena_counters*} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|hitsorter_in_ena_counters_reg*}
+set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|hitsorter_out_ena_cnt*} -to {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|hitsorter_out_ena_cnt_reg*}
 set_false_path -from {mupix_block:e_mupix_block|mupix_datapath:e_mupix_datapath|last_sorter_hit*} -to {*}
 
 # hitsorter false paths (to be checked)
