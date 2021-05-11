@@ -27,4 +27,6 @@ set_false_path -from {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|o_pro
 set_false_path -from {fe_block_v2:e_fe_block|firefly:firefly|lvds_controller:e_lvds_controller|o_ready} -to {*}
 set_false_path -from {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|max10_status*} -to {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|o_max10_status*}
 set_false_path -from {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|max10_version*} -to {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|o_max10_version*}
-set_false_path -from {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|o_programming_status*} -to {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|o_programming_status*}
+set_false_path -from {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|programming_status*} -to {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|o_programming_status*}
+set_false_path -from {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|o_programming_addr_ena} -to {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|programming_addr_ena_reg}
+set_false_path -from {fe_block_v2:e_fe_block|feb_reg_mapping:e_reg_mapping|o_programming_addr*} -to {fe_block_v2:e_fe_block|max10_interface:e_max10_interface|max_spi_data_to_max*}
