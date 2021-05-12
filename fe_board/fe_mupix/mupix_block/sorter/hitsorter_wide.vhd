@@ -336,8 +336,8 @@ genmem: for i in NCHIPS-1 downto 0 generate
 		
 		for k in NMEMS-1 downto 0 loop
 			cmemwren_hitwriter(i)(k) 		<= '1'; 	
-			cmemreadaddr_hitwriter(i)(k)	<= addrcounterreset;
-			cmemwriteaddr_hitwriter(i)(k)	<= (others => '0');
+			cmemreadaddr_hitwriter(i)(k)	<= (others => '0');
+			cmemwriteaddr_hitwriter(i)(k)	<= addrcounterreset;
 		end loop;
 		
 		hit_ena_last1(i)	<= '0';
