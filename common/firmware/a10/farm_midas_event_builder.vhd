@@ -61,6 +61,31 @@ end entity;
 
 architecture arch of farm_midas_event_builder is
 
+    -- convert functions
+    function convert_to_64_pixel(
+        hit_38 : std_logic_vector; 
+        N : integer--;
+    ) return std_logic_vector is
+        variable hit_64 : std_logic_vector(N * 64 + 63 downto 0);
+    begin
+        for i in N to 0 loop
+            hit_64(I * 64 + 63 downto I * 64) := "00" & x"000" & hit_38(I * 38 + 37 downto I * 38);
+        end loop;
+        return hit_64;
+    end function;
+    
+    function convert_to_64_scifi(
+        hit_38 : std_logic_vector; 
+        N : integer--;
+    ) return std_logic_vector is
+        variable hit_64 : std_logic_vector(N * 64 + 63 downto 0);
+    begin
+        for i in N to 0 loop
+            hit_64(I * 64 + 63 downto I * 64) := "00" & x"000" & hit_38(I * 38 + 37 downto I * 38);
+        end loop;
+        return hit_64;
+    end function;
+    
     -- tagging fifo
     type event_tagging_state_type is ( 
         EVENT_IDLE, event_head, bank_data_pixel_header, bank_data_pixel_one, 
@@ -69,27 +94,35 @@ architecture arch of farm_midas_event_builder is
         bank_set_length_scifi, write_tagging_fifo--,
     );
     signal event_tagging_state : event_tagging_state_type;
-    signal w_ram_add_reg, w_ram_add, w_fifo_data, r_fifo_data : std_logic_vector(RAM_ADDR_W - 1 downto 0);
+    signal w_ram_add_reg, w_ram_add, scifi_header_add, header_add, w_fifo_data, r_fifo_data : std_logic_vector(RAM_ADDR_W - 1 downto 0);
     signal w_fifo_en, r_fifo_en, tag_fifo_empty, tag_fifo_full : std_logic;
 
+    -- event readout state machine
+    type event_counter_state_type is (waiting, get_data, runing, skip_event);
+    signal event_counter_state : event_counter_state_type;
+    signal event_last_ram_add : std_logic_vector(8 downto 0);
+    
     -- ram 
     signal w_ram_en : std_logic;
     signal r_ram_add : std_logic_vector(RAM_ADDR_R - 1 downto 0);
     signal header_pixel : std_logic_vector(N_PIXEL * 32 + 1 downto 0);
     signal header_scifi : std_logic_vector(N_SCIFI * 32 + 1 downto 0);
-    signal w_ram_data : std_logic_vector(383 downto 0);
+    signal w_ram_data, w_ram_pixel_header, w_ram_scifi_data : std_logic_vector(383 downto 0);
     signal r_ram_data : std_logic_vector(255 downto 0);
+    signal bank_size_pixel, bank_size_scifi : std_logic_vector(31 downto 0); 
+    signal i_scifi_reg, i_pixel_reg : std_logic_vector(255 downto 0);
 
     -- midas event 
     signal event_id, trigger_mask : std_logic_vector(15 downto 0);
     signal serial_number, time_tmp, type_bank, flags, event_size_cnt : std_logic_vector(31 downto 0);
     
     -- bank bank builder
+    signal pixel_header, pixel_trailer, scifi_header, scifi_trailer : std_logic;
     signal ts : std_logic_vector(47 downto 0);
 
     -- error cnt
     signal cnt_idle_not_header_pixel, cnt_idle_not_header_scifi, cnt_idle_pixel_marked, cnt_idle_scifi_marked : std_logic_vector(31 downto 0);
-    signal flip, ram_halffull : std_logic;
+    signal flip, ram_halffull, cnt_fff : std_logic;
     signal sub_add : std_logic_vector(31 downto 0);
 
 begin
@@ -177,23 +210,23 @@ begin
     o_ren_pixel <=
         '1' when ( (event_tagging_state = bank_data_pixel or event_tagging_state = bank_data_pixel_one) and i_empty_pixel = '0' and pixel_header = '0' ) else
         '1' when ( event_tagging_state = event_head and i_empty_pixel = '0' ) else
-        '1' when ( event_tagging_state = EVENT_IDLE and i_empty_pixel = '0' and pixel_header = '0' and i_pixel(223 downto 200) = x"FFF" ) else
+        '1' when ( event_tagging_state = EVENT_IDLE and i_empty_pixel = '0' and pixel_header = '0' and i_pixel(223 downto 200) = x"FFFFFF" ) else
         '0';
         
     o_ren_scifi <=
         '1' when ( (event_tagging_state = bank_data_scifi or event_tagging_state = bank_data_scifi_one) and i_empty_scifi = '0' and scifi_header = '0' ) else
         '1' when ( event_tagging_state = event_head and i_empty_scifi = '0' ) else
-        '1' when ( event_tagging_state = EVENT_IDLE and i_empty_scifi = '0' and scifi_header = '0' and i_scifi(223 downto 200) = x"FFF" ) else
+        '1' when ( event_tagging_state = EVENT_IDLE and i_empty_scifi = '0' and scifi_header = '0' and i_scifi(223 downto 200) = x"FFFFFF" ) else
         '0';
         
     -- mark if data is send to DDR3 for the next farm pc
     o_pixel(N_PIXEL * 32 + 1 downto 224) <= i_pixel(N_PIXEL * 32 + 1 downto 224);
-    o_pixel(223 downto 200) <= x"000" when ( event_tagging_state = EVENT_IDLE and (pixel_header = '0' or scifi_header = '0' or ram_halffull = '0') ) else x"FFF";
+    o_pixel(223 downto 200) <= x"000000" when ( event_tagging_state = EVENT_IDLE and (pixel_header = '0' or scifi_header = '0' or ram_halffull = '0') ) else x"FFFFFF";
     o_pixel(199 downto 0) <= i_pixel(199 downto 0);
     o_wen_pixel <= not i_empty_pixel;
     cnt_fff <= '0' when ( event_tagging_state = EVENT_IDLE and (pixel_header = '0' or scifi_header = '0' or ram_halffull = '0') ) else '1';
     o_scifi(N_SCIFI * 32 + 1 downto 224) <= i_scifi(N_SCIFI * 32 + 1 downto 224);
-    o_scifi(223 downto 200) <= x"000" when ( event_tagging_state = EVENT_IDLE and (pixel_header = '0' or scifi_header = '0' or ram_halffull = '0') ) else x"FFF";
+    o_scifi(223 downto 200) <= x"000000" when ( event_tagging_state = EVENT_IDLE and (pixel_header = '0' or scifi_header = '0' or ram_halffull = '0') ) else x"FFFFFF";
     o_scifi(199 downto 0) <= i_scifi(199 downto 0);
     o_wen_scifi <= not i_empty_scifi;
 
@@ -201,18 +234,17 @@ begin
     process(i_clk_250, i_reset_n_250)
     begin
     if ( i_reset_n_250 = '0' ) then
-        e_size_add          <= (others => '0');
-        b_size_add          <= (others => '0');
-        b_length_add        <= (others => '0');
-        w_ram_add_reg       <= (others => '0');
-        align_event_size    <= (others => '0');
-
         -- ram and tagging fifo write signals
         w_ram_en            <= '0';
         w_ram_data          <= (others => '0');
         w_ram_add           <= (others => '1');
         w_fifo_en           <= '0';
         w_fifo_data         <= (others => '0');
+        w_ram_add_reg       <= (others => '0');
+        w_ram_pixel_header  <= (others => '0');
+        w_ram_scifi_data    <= (others => '0');
+        i_scifi_reg         <= (others => '0');
+        i_pixel_reg         <= (others => '0');
 
         -- midas signals
         event_id            <= x"0001";
@@ -222,17 +254,19 @@ begin
         flags               <= x"00000031";
         type_bank           <= x"00000006"; -- MIDAS Bank Type TID_DWORD
     
-        -- for size counting in bytes
+        -- counters
         event_size_cnt      <= (others => '0');
         cnt_idle_not_header_pixel <= (others => '0');
         cnt_idle_not_header_scifi <= (others => '0');
         cnt_idle_pixel_marked <= (others => '0');
         cnt_idle_scifi_marked <= (others => '0');
+        bank_size_pixel <= (others => '0');
+        bank_size_scifi <= (others => '0');
 
         -- state machine singals
         event_tagging_state <= EVENT_IDLE;
-
-    --
+        
+        --
     elsif ( rising_edge(i_clk_250) ) then
         flags           <= x"00000031";
         trigger_mask    <= (others => '0');
@@ -259,16 +293,16 @@ begin
                     cnt_idle_not_header_scifi <= cnt_idle_not_header_scifi + 1;
                 end if;
                 
-                if ( i_empty_pixel = '0' and i_pixel(223 downto 200) = x"FFF" ) then
+                if ( i_empty_pixel = '0' and i_pixel(223 downto 200) = x"FFFFFF" ) then
                     cnt_idle_pixel_marked <= cnt_idle_pixel_marked + 1;
                 end if;
                 
-                if ( i_empty_scifi = '0' and i_scifi(223 downto 200) = x"FFF" ) then
+                if ( i_empty_scifi = '0' and i_scifi(223 downto 200) = x"FFFFFF" ) then
                     cnt_idle_scifi_marked <= cnt_idle_scifi_marked + 1;
                 end if;
                 
                 -- start when both Scifi and Pixel are not empty, both have header and ram_halffull = '0'
-                if ( i_empty_pixel = '0' and i_empty_pixel = '0' and pixel_header = '1' and scifi_header = '1' and ram_halffull = '0' and i_pixel(223 downto 200) = x"000" and i_scifi(223 downto 200) = x"000" ) then
+                if ( i_empty_pixel = '0' and i_empty_pixel = '0' and pixel_header = '1' and scifi_header = '1' and ram_halffull = '0' and i_pixel(223 downto 200) = x"000000" and i_scifi(223 downto 200) = x"000000" ) then
                     event_tagging_state <= event_head;
                     header_pixel        <= i_pixel;
                     header_scifi        <= i_scifi;

@@ -74,7 +74,7 @@ architecture TB of tb_data_path_farm is
     signal link_data_pixel, link_data_scifi : std_logic_vector(NLINKS * 32 - 1  downto 0);
     signal link_datak_pixel, link_datak_scifi : std_logic_vector(NLINKS * 4 - 1  downto 0);
     
-    signal pixel_data, scifi_data : std_logic_vector(255 downto 0);
+    signal pixel_data, scifi_data : std_logic_vector(257 downto 0);
     signal pixel_empty, pixel_ren, scifi_empty, scifi_ren : std_logic;
     signal data_wen, endofevent, ddr_ready : std_logic;
     signal event_ts : std_logic_vector(47 downto 0);

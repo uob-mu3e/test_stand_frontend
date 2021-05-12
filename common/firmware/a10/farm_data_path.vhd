@@ -47,6 +47,13 @@ port (
     i_num_req_events: in  std_logic_vector(31 downto 0);
     o_dma_done      : out std_logic;
     i_dma_wen       : in  std_logic;
+    
+    --! status counters 
+    --! 0: cnt_skip_event_dma
+    --! 1: A_almost_full
+    --! 2: B_almost_full
+    --! 3: i_dmamemhalffull
+    o_counters          : out work.util.slv32_array_t(3 downto 0);
 
     -- Interface to memory bank A
     A_mem_clk       : in  std_logic;
@@ -113,15 +120,35 @@ architecture rtl of farm_data_path is
     signal A_memdatafifo_empty, B_memdatafifo_empty, A_memdatafifo_read, B_memdatafifo_read: std_logic;
     signal A_memdatafifo_q, B_memdatafifo_q	 :  std_logic_vector(255 downto 0);	 
 
-    type output_write_type is (waiting, eventA, eventB);
+    type output_write_type is (waiting, eventA, eventB, skip_event_A, skip_event_B, write_4kb_padding);
     signal output_write_state : output_write_type;
     signal nummemwords : std_logic_vector(7 downto 0);
     signal tagmemwait_3_state : std_logic_vector(3 downto 0);
 
     signal ts_in_upper, ts_in_lower : tsrange_type;
     
+    signal A_almost_full, B_almost_full, A_disabled, B_disabled, cnt_4kb_done : std_logic;
+    signal A_mem_word_cnt, B_mem_word_cnt : std_logic_vector(5 downto 0);
+    signal cnt_skip_event_dma, cnt_num_req_events : std_logic_vector(31 downto 0);
+    signal cnt_4kb : std_logic_vector(7 downto 0);
+    
 begin
 
+    --! counters
+    o_counters(0) <= cnt_skip_event_dma;
+    
+    e_a_almost_full : entity work.counter
+    generic map ( WRAP => true, W => 32 )
+    port map ( o_cnt => o_counters(1), i_ena => A_almost_full, i_reset_n => reset_n_ddr3, i_clk => A_mem_clk );
+    
+    e_b_almost_full : entity work.counter
+    generic map ( WRAP => true, W => 32 )
+    port map ( o_cnt => o_counters(2), i_ena => B_almost_full, i_reset_n => reset_n_ddr3, i_clk => B_mem_clk );
+    
+    e_dmamemhalffull : entity work.counter
+    generic map ( WRAP => true, W => 32 )
+    port map ( o_cnt => o_counters(3), i_ena => i_dmamemhalffull, i_reset_n => reset_n, i_clk => pcieclk );
+    
     tsblocks <= B_tsrange & A_tsrange;
     
     -- backpressure to bank builder

@@ -67,6 +67,7 @@ architecture arch of farm_link_to_fifo is
     signal f_data, f_q : std_logic_vector(g_NLINKS_SWB_TOTL * 36 - 1 downto 0);
     signal f_almost_full, f_wrfull, f_wen : std_logic;
     signal f_wrusedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH - 1 downto 0);
+    signal counter_pixel, counter_scifi : work.util.slv32_array_t(3 downto 0);
 
 begin
 
@@ -120,10 +121,12 @@ begin
     
     gen_map_pixel : FOR I in N_PIXEL - 1 to 0 GENERATE
         rx_pixel(I) <= rx_q(I);
+        o_counter(I) <= counter_pixel(I);
     END GENERATE;
     
     gen_map_scifi : FOR I in N_PIXEL + N_PIXEL - 1 to N_PIXEL GENERATE
         rx_scifi(I-N_PIXEL) <= rx_q(I);
+        o_counter(I) <= counter_scifi(I-N_PIXEL);
     END GENERATE;
     
     
@@ -142,7 +145,7 @@ begin
         --! 1: fifo sync_wrfull
         --! 2: # of overflow event
         --! 3: cnt events
-        o_counter   => o_counter(4 * N_PIXEL - 1 downto 0),
+        o_counter   => counter_pixel,
         o_data      => o_pixel,
         o_empty     => o_empty_pixel,
         i_ren       => i_ren_pixel,
@@ -171,7 +174,7 @@ begin
         --! 1: fifo sync_wrfull
         --! 2: # of overflow event
         --! 3: cnt events
-        o_counter   => o_counter(4 * N_SCIFI + 4 * N_PIXEL - 1 downto 4 * N_PIXEL),
+        o_counter   => counter_scifi,
         o_data      => o_scifi,
         o_empty     => o_empty_scifi,
         i_ren       => i_ren_scifi,
