@@ -1,5 +1,5 @@
 ----------------------------------------
--- SciFi version of the Frontend Board 
+-- SciFi version of the Frontend Board
 ----------------------------------------
 
 library ieee;
@@ -10,7 +10,7 @@ use ieee.numeric_std.all;
 
 use work.mudaq.all;
 
-entity top is 
+entity top is
     port (
         fpga_reset                  : in    std_logic;
 
@@ -43,7 +43,7 @@ entity top is
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
-        firefly2_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver 
+        firefly2_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
         firefly1_rx_data            : in    std_logic;-- transceiver
         firefly2_rx_data            : in    std_logic_vector(2 downto 0);-- transceiver
 
@@ -72,7 +72,7 @@ entity top is
         -- SI4345(1): Clocks for the Fibres
         -- 1 reference and 2 inputs for synch
         si45_oe_n                   : out   std_logic_vector(1 downto 0);-- active low output enable -> should always be '0'
-        si45_intr_n                 : in    std_logic_vector(1 downto 0);-- fault monitor: interrupt pin: change in state of status indicators 
+        si45_intr_n                 : in    std_logic_vector(1 downto 0);-- fault monitor: interrupt pin: change in state of status indicators
         si45_lol_n                  : in    std_logic_vector(1 downto 0);-- fault monitor: loss of lock of DSPLL
 
         -- I2C sel is set to GND on PCB -> SPI interface
@@ -115,7 +115,7 @@ architecture rtl of top is
     constant N_MODULES              : integer := 1;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
-    signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
+    signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
     signal scifi_reg               : work.util.rw_t;
 
@@ -129,6 +129,10 @@ architecture rtl of top is
     -- SPI SMB
     signal s_scifi_csn              : std_logic_vector(15 downto 0);
 
+    -- DEBUGGING
+    signal invert_clk, invert_miso, invert_mosi, s_scifi_spi_miso, s_scifi_spi_mosi, s_scifi_spi_sclk, clk_156, reset_156_n : std_logic;
+    signal s_invert : std_logic_vector(31 downto 0);
+
 begin
 -- TODO: this is a dummy-copy from tile firmware, changes for scifi ?? M. Mueller
 --------------------------------------------------------------------
@@ -137,15 +141,74 @@ begin
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 
-    -- do not compile away 
+    -- do not compile away
     scifi_fifo_ext              <= pb_db(0);
     scifi_inject                <= pb_db(0);
 
     -- SPI connection to CON2
-    scifi_csn(1) <= s_scifi_csn(0);
-    scifi_csn(2) <= s_scifi_csn(1);
-    scifi_csn(3) <= s_scifi_csn(2);
-    scifi_csn(4) <= not s_scifi_csn(3);
+    scifi_csn(1) <= not s_scifi_csn(0);
+    scifi_csn(2) <= not s_scifi_csn(1);
+    scifi_csn(3) <= not s_scifi_csn(2);
+    scifi_csn(4) <= s_scifi_csn(3);
+
+
+    -- DEBUGGING
+   --  s_scifi_spi_miso <= scifi_spi_miso when invert_miso = '0' else
+   --                    not scifi_spi_miso;
+   --  scifi_spi_mosi <= s_scifi_spi_mosi when invert_mosi = '0' else
+   --                    not s_scifi_spi_mosi;
+   --  scifi_spi_sclk <= s_scifi_spi_sclk when invert_clk = '0' else
+   --                    not s_scifi_spi_sclk;
+    s_scifi_spi_miso <= scifi_spi_miso;
+    scifi_spi_mosi <= s_scifi_spi_mosi;
+    scifi_spi_sclk <= s_scifi_spi_sclk;
+
+    lcd_data(7) <= reset_156_n;
+    clk_156 <= transceiver_pll_clock(0);
+
+    e_reset_156_top_n : entity work.reset_sync
+    port map ( o_reset_n => reset_156_n, i_reset_n => pb_db(0), i_clk => clk_156 );
+
+    process (clk_156, reset_156_n)
+    begin
+        if ( reset_156_n = '0' ) then
+            invert_clk <= '0';
+            invert_miso <= '0';
+            invert_mosi <= '0';
+            lcd_data(4) <= '0';
+            lcd_data(5) <= '0';
+            lcd_data(6) <= '0';
+            s_invert <= (others => '0');
+        elsif ( rising_edge(clk_156) ) then
+            if ( scifi_reg.addr(3 downto 0) = x"C" and scifi_reg.we = '1' ) then
+                if ( scifi_reg.wdata(0) = '0' ) then
+                    invert_clk <= '0';
+                    lcd_data(4) <= '0';
+                end if;
+                if ( scifi_reg.wdata(0) = '1' ) then
+                   invert_clk <= '1';
+                   lcd_data(4) <= '1';
+                end if;
+                if ( scifi_reg.wdata(1) = '0' ) then
+                   invert_miso <= '0';
+                   lcd_data(5) <= '0';
+                end if;
+                if ( scifi_reg.wdata(1) = '1' ) then
+                   invert_miso <= '1';
+                   lcd_data(5) <= '1';
+                end if;
+                if ( scifi_reg.wdata(2) = '0' ) then
+                   invert_mosi <= '0';
+                   lcd_data(6) <= '0';
+                end if;
+                if ( scifi_reg.wdata(2) = '1' ) then
+                   invert_mosi <= '1';
+                   lcd_data(6) <= '1';
+                end if;
+                s_invert <= scifi_reg.wdata;
+            end if;
+        end if;
+    end process;
 
     e_tile_path : entity work.scifi_path
     generic map (
@@ -192,7 +255,7 @@ begin
         i_clk_ref_A                 => LVDS_clk_si1_fpga_A,
         i_clk_ref_B                 => LVDS_clk_si1_fpga_B,
 
-        o_test_led                  => lcd_data(4),
+        o_test_led                  => lcd_data(3),
         i_reset                     => not pb_db(0)--,
     );
 
@@ -233,9 +296,9 @@ begin
         i_ffly_Int_n        => Firefly_Int_n,
         i_ffly_ModPrs_n     => Firefly_ModPrs_n,
 
-        i_spi_miso          => scifi_spi_miso, --TODO: check if we have to flip this
-        o_spi_mosi          => scifi_spi_mosi,
-        o_spi_sclk          => scifi_spi_sclk,
+        i_spi_miso          => s_scifi_spi_miso, --TODO: check if we have to flip this
+        o_spi_mosi          => s_scifi_spi_mosi,
+        o_spi_sclk          => s_scifi_spi_sclk,
         o_spi_ss_n          => s_scifi_csn,
 
         i_spi_si_miso       => si45_spi_out,
@@ -262,7 +325,7 @@ begin
 
         i_fifo_write        => fifo_write,
         i_fifo_wdata        => fifo_wdata,
-        
+
         o_fifos_almost_full => common_fifos_almost_full,
 
         i_mscb_data         => mscb_fpga_in,
@@ -282,7 +345,7 @@ begin
         i_subdet_reg_rdata  => scifi_reg.rdata,
         o_subdet_reg_we     => scifi_reg.we,
         o_subdet_reg_wdata  => scifi_reg.wdata,
-        
+
         -- reset system
         o_run_state_125             => run_state_125,
         i_ack_run_prep_permission   => and_reduce(s_MON_rxrdy),
@@ -295,7 +358,7 @@ begin
         i_clk_125           => lvds_firefly_clk,
 
         i_areset_n          => pb_db(0),
-        
+
         i_testin            => pb_db(1)--,
     );
 
