@@ -14,6 +14,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 use work.mupix_registers.all;
+use work.mupix.all;
 
 entity receiver_block_mupix is 
     generic(
@@ -32,7 +33,7 @@ entity receiver_block_mupix is
         i_rx_invert     : in  std_logic;
         rx_data         : out work.util.slv8_array_t(NINPUT-1 downto 0);
         rx_k            : out std_logic_vector(NINPUT-1 downto 0);
-        rx_clkout       : out std_logic_vector(2 downto 0);
+        rx_clkout       : out std_logic_vector(2 downto 0); --TODO: 2 clk
         rx_doubleclk    : out std_logic_vector(1 downto 0)--;
     );
 end receiver_block_mupix;
@@ -165,14 +166,17 @@ begin
 
     -- Input D9 is inverted...
     --rx_out(359 downto 350) <= not rx_out_temp(359 downto 350);
-    --rx_out(349 downto 270) <= rx_out_temp(349 downto 270);
-    rx_out <= not rx_out_temp when i_rx_invert='0' else rx_out_temp;
+    --rx_out(349 downto 270) <= rx_out_temp(349 downto 270)
+
+    geninvert: FOR i in 0 to 35 GENERATE
+        rx_out(9+10*i downto 10*i) <= not rx_out_temp(9+10*i downto 10*i) when (MP_LINK_INVERT(i) xor i_rx_invert)='0' else rx_out_temp(9+10*i downto 10*i);
+    end generate geninvert;
 
     gendec:
     FOR i in NINPUT-1 downto 0 generate	
         datadec: entity work.data_decoder 
             port map(
-                reset_n         => i_reset_n,--(i),
+                reset_n         => i_reset_n,--(i),  -- TODO: register, no buttons at all
                 checker_rst_n   => checker_rst_n(i),
                 clk             => rx_clk(i/27),
                 rx_in           => rx_out(i*10+9 downto i*10),
@@ -180,7 +184,7 @@ begin
                 rx_reset        => rx_reset(i),
                 rx_fifo_reset   => rx_fifo_reset(i),
                 rx_dpa_locked   => rx_dpa_locked(i),
-                rx_locked       => rx_locked(i/26),
+                rx_locked       => rx_locked(i/27),
                 rx_align        => rx_align(i),
 
                 ready           => rx_ready(i),

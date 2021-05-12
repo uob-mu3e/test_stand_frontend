@@ -228,7 +228,6 @@ begin
         o_ack_run_prep_permission => ack_run_prep_permission,
 
         i_lvds_data_in          => data_in_D & data_in_C & data_in_B & data_in_A,
-        o_lvds_invert_mon       => lcd_data(7),
 
         i_reset                 => not pb_db(1),
         -- 156.25 MHz

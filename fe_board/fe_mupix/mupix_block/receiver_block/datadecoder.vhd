@@ -9,6 +9,7 @@
 --
 ----------------------------------
 
+-- TODO: rename entity, mupix data aligner etc. 
 
 
 library ieee;
@@ -152,7 +153,7 @@ elsif(clk'event and clk = '1') then
 			sync_state <= align;
 		end if;
 			
-	when align =>
+	when align =>  -- TODO: change stuff
 		align_ctr	 <= (others => '0');
 		if(k_seen = 0)then
 			if(acounter < x"A")then
@@ -222,7 +223,7 @@ end process;
 -- TBD: change disparity checker to simple addition of all bits in a line
 -- and use information to reject bad data, so add a pipeline for the data
 
-d_checker : work.disparity_checker
+d_checker : work.disparity_checker -- disparity checker in same entity ? (Alex entity)  -- do not only check disparity
 	port map(
 		reset_n				=> reset_n,
 		clk					=> clk,
@@ -232,7 +233,7 @@ d_checker : work.disparity_checker
 		);
 
 
-dec8b10b : work.decode8b10b 
+dec8b10b : work.decode8b10b -- also Alex ?
 	port map(
 		reset_n				=> reset_n,
 		clk					=> clk,
