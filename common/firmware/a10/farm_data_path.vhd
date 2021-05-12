@@ -149,7 +149,7 @@ begin
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(3), i_ena => i_dmamemhalffull, i_reset_n => reset_n, i_clk => pcieclk );
     
-    tsblocks <= B_tsrange & A_tsrange;
+    tsblocks <= x"0000" & B_tsrange & A_tsrange;
     
     -- backpressure to bank builder
     A_almost_full <= '1' when A_mem_addr(25 downto 10) = x"FFFF" else '0';
@@ -160,8 +160,8 @@ begin
                    '0' when A_readstate = '1' and B_readstate = '1' else
                    '1';
 
-    ts_in_upper <= x"00" & ts_in(tsupper); -- 15 downto 8 from 35 downto 4 of the 48b TS
-    ts_in_lower <= x"00" & ts_in(tslower); --  7 downto 0 from 35 downto 4 of the 48b TS
+    ts_in_upper <= ts_in(tsupper); -- 15 downto 8 from 35 downto 4 of the 48b TS
+    ts_in_lower <= ts_in(tslower); --  7 downto 0 from 35 downto 4 of the 48b TS
 
     reset       <= not reset_n;
     reset_ddr3  <= not reset_n_ddr3;
@@ -282,7 +282,7 @@ begin
     tomemfifo_A : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 8,
-        DATA_WIDTH  => 528,
+        DATA_WIDTH  => 520,
         DEVICE      => "Arria 10"--,
     )
     port map (
@@ -304,7 +304,7 @@ begin
     tomemfifo_B : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 8,
-        DATA_WIDTH  => 528,
+        DATA_WIDTH  => 520,
         DEVICE      => "Arria 10"--,
     )
     port map (
@@ -693,7 +693,7 @@ begin
 
     tagram_A : entity work.ip_ram_1_port
     generic map (
-        ADDR_WIDTH    => 16,
+        ADDR_WIDTH    => 8,
         DATA_WIDTH    => 32,
         DEVICE        => "Arria 10"--,
     )
@@ -707,7 +707,7 @@ begin
 
     tagram_B : entity work.ip_ram_1_port
     generic map (
-        ADDR_WIDTH    => 16,
+        ADDR_WIDTH    => 8,
         DATA_WIDTH    => 32,
         DEVICE        => "Arria 10"--,
     )

@@ -16,8 +16,7 @@ generic(
     g_NLINKS_SWB_TOTL    : positive :=  16;
     N_PIXEL              : positive :=  8;
     N_SCIFI              : positive :=  8;
-    RAM_ADDR_W           : positive :=  10;
-    RAM_ADDR_R           : positive :=  10--;
+    RAM_ADDR             : positive :=  12--;
 );
 port(
     i_pixel             : in  std_logic_vector(N_PIXEL * 32 + 1 downto 0);
@@ -31,7 +30,6 @@ port(
     -- DDR
     o_data              : out std_logic_vector(511 downto 0);
     o_wen               : out std_logic;
-    o_endofevent        : out std_logic;
     o_event_ts          : out std_logic_vector(47 downto 0);
     i_ddr_ready         : in  std_logic;
     
@@ -94,21 +92,26 @@ architecture arch of farm_midas_event_builder is
         bank_set_length_scifi, write_tagging_fifo--,
     );
     signal event_tagging_state : event_tagging_state_type;
-    signal w_ram_add_reg, w_ram_add, scifi_header_add, header_add, w_fifo_data, r_fifo_data : std_logic_vector(RAM_ADDR_W - 1 downto 0);
+    signal w_ram_add_reg, w_ram_add, scifi_header_add, header_add : std_logic_vector(RAM_ADDR - 1 downto 0);
+    signal w_fifo_data, r_fifo_data : std_logic_vector(RAM_ADDR + 47 downto 0);
     signal w_fifo_en, r_fifo_en, tag_fifo_empty, tag_fifo_full : std_logic;
 
     -- event readout state machine
     type event_counter_state_type is (waiting, get_data, runing, skip_event);
     signal event_counter_state : event_counter_state_type;
-    signal event_last_ram_add : std_logic_vector(8 downto 0);
+    signal event_last_ram_add : std_logic_vector(RAM_ADDR - 1 downto 0);
+    type convert_data_type is (idle, one, two, three);
+    signal convert_data : convert_data_type;
     
     -- ram 
-    signal w_ram_en : std_logic;
-    signal r_ram_add : std_logic_vector(RAM_ADDR_R - 1 downto 0);
+    signal w_ram_en, wen_convert_fifo, empty_convert_fifo, ren_convert_fifo : std_logic;
+    signal data_reg : std_logic_vector(511 downto 0);
+    signal q_convert_fifo : std_logic_vector(383 downto 0);
+    signal r_ram_add : std_logic_vector(RAM_ADDR - 1 downto 0);
     signal header_pixel : std_logic_vector(N_PIXEL * 32 + 1 downto 0);
     signal header_scifi : std_logic_vector(N_SCIFI * 32 + 1 downto 0);
     signal w_ram_data, w_ram_pixel_header, w_ram_scifi_data : std_logic_vector(383 downto 0);
-    signal r_ram_data : std_logic_vector(255 downto 0);
+    signal r_ram_data : std_logic_vector(383 downto 0);
     signal bank_size_pixel, bank_size_scifi : std_logic_vector(31 downto 0); 
     signal i_scifi_reg, i_pixel_reg : std_logic_vector(255 downto 0);
 
@@ -122,8 +125,8 @@ architecture arch of farm_midas_event_builder is
 
     -- error cnt
     signal cnt_idle_not_header_pixel, cnt_idle_not_header_scifi, cnt_idle_pixel_marked, cnt_idle_scifi_marked : std_logic_vector(31 downto 0);
-    signal flip, ram_halffull, cnt_fff : std_logic;
-    signal sub_add : std_logic_vector(31 downto 0);
+    signal ram_halffull, cnt_fff : std_logic;
+    signal sub_add : std_logic_vector(RAM_ADDR - 1 downto 0);
 
 begin
 
@@ -133,9 +136,8 @@ begin
     o_counters(1) <= cnt_idle_not_header_scifi;
     
     -- calculate ram halffull
-    flip <= '0' when w_ram_add >= r_ram_add else '1';
-    sub_add <= w_ram_add - r_ram_add when flip = '0' else r_ram_add - w_ram_add;
-    ram_halffull <= sub_add(RAM_ADDR_W-1);
+    sub_add <= w_ram_add - r_ram_add when w_ram_add >= r_ram_add else r_ram_add - w_ram_add;
+    ram_halffull <= sub_add(RAM_ADDR-1);
     e_cnt_ram_halffull : entity work.counter
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(2), i_ena => ram_halffull, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
@@ -158,15 +160,12 @@ begin
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(8), i_ena => not i_empty_scifi, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
 
-    --! data out
-    o_data <= r_ram_data;
-
     e_ram_32_256 : entity work.ip_ram
     generic map (
-        ADDR_WIDTH_A    => RAM_ADDR_W,
-        ADDR_WIDTH_B    => RAM_ADDR_R,
+        ADDR_WIDTH_A    => RAM_ADDR,
+        ADDR_WIDTH_B    => RAM_ADDR,
         DATA_WIDTH_A    => 384,
-        DATA_WIDTH_B    => 512,
+        DATA_WIDTH_B    => 384,
         DEVICE          => "Arria 10"--,
     )
     port map (
@@ -184,8 +183,8 @@ begin
 
     e_tagging_fifo_event : entity work.ip_scfifo
     generic map (
-        ADDR_WIDTH      => RAM_ADDR_W,
-        DATA_WIDTH      => RAM_ADDR_R + 48,
+        ADDR_WIDTH      => RAM_ADDR,
+        DATA_WIDTH      => RAM_ADDR + 48,
         DEVICE          => "Arria 10"--,
     )
     port map (
@@ -201,6 +200,76 @@ begin
         usedw           => open,
         sclr            => not i_reset_n_250--,
     );
+    
+    e_convert_hits : entity work.ip_scfifo
+    generic map(
+        ADDR_WIDTH => 6,
+        DATA_WIDTH => 384,
+        DEVICE       => "Arria 10"--,
+    )
+    port map (
+        sclr            => not i_reset_n_250,
+        data            => r_ram_data,
+        clock           => i_clk_250,
+        rdreq           => not empty_convert_fifo,
+        wrreq           => wen_convert_fifo,
+        q               => q_convert_fifo,
+        empty           => empty_convert_fifo,
+        full            => open,
+        almost_empty    => open,
+        almost_full     => open,
+        usedw           => open--,
+    );
+    
+    -- convert data width from 384 to 512
+    process(i_clk_250, i_reset_n_250)
+    begin
+    if ( i_reset_n_250 = '0' ) then
+        o_data <= (others => '0');
+        data_reg <= (others => '0');
+        o_wen <= '0';
+        convert_data <= idle;
+        --
+    elsif ( rising_edge(i_clk_250) ) then
+        o_wen <= '0';
+        case convert_data is
+        when idle =>
+            if ( empty_convert_fifo = '0' ) then
+                o_data(383 downto 0)    <= q_convert_fifo(383 downto 0);
+                convert_data            <= one;
+            end if;
+        
+        when one =>
+            if ( empty_convert_fifo = '0' ) then
+                o_wen <= '1';
+                data_reg(255 downto 0)  <= q_convert_fifo(383 downto 128);
+                o_data(511 downto 384)  <= q_convert_fifo(127 downto 0);
+                convert_data <= two;
+            end if;
+            
+        when two =>
+            if ( empty_convert_fifo = '0' ) then
+                o_wen <= '1';
+                data_reg(127 downto 0)  <= q_convert_fifo(383 downto 256);
+                o_data(255 downto 0)    <= data_reg;
+                o_data(511 downto 256)  <= q_convert_fifo(255 downto 0);
+                convert_data <= three;
+            end if;
+            
+        when three =>
+            if ( empty_convert_fifo = '0' ) then
+                o_wen <= '1';
+                o_data(127 downto 0)    <= data_reg;
+                o_data(511 downto 128)  <= q_convert_fifo(383 downto 0);
+                convert_data <= idle;
+            end if;
+            
+        when others =>
+            convert_data <= idle;
+        end case;
+    end if;
+    end process;
+    
     
     pixel_header <= '1' when i_pixel(N_PIXEL * 32 + 1 downto N_PIXEL * 32) = "01" else '0';
     pixel_trailer<= '1' when i_pixel(N_PIXEL * 32 + 1 downto N_PIXEL * 32) = "10" else '0';
@@ -500,8 +569,7 @@ begin
     begin
     if ( i_reset_n_250 = '0' ) then
         r_fifo_en               <= '0';
-        o_wen                   <= '0';
-        o_endofevent            <= '0';
+        wen_convert_fifo        <= '0';
         o_event_ts              <= (others => '0');
         event_last_ram_add      <= (others => '0');
         r_ram_add               <= (others => '1');
@@ -509,15 +577,14 @@ begin
         --
     elsif rising_edge(i_clk_250) then
         
-        r_fifo_en    <= '0';
-        o_wen        <= '0';
-        o_endofevent <= '0';
+        r_fifo_en        <= '0';
+        wen_convert_fifo <= '0';
         
         case event_counter_state is
         when waiting =>
             if ( tag_fifo_empty = '0' ) then
                 r_fifo_en           <= '1';
-                event_last_ram_add  <= r_fifo_data(RAM_ADDR_W + 48 - 1 downto 48 + 2);
+                event_last_ram_add  <= r_fifo_data(RAM_ADDR + 48 - 1 downto 48);
                 o_event_ts          <= r_fifo_data(47 downto 0);
                 r_ram_add           <= r_ram_add + '1';
                 event_counter_state <= get_data;
@@ -529,16 +596,14 @@ begin
             -- this happend so that we dont split events over
             -- the two DDR memories
             if ( i_ddr_ready /= '1' ) then
-                o_wen <= '1';
+                wen_convert_fifo <= '1';
                 event_counter_state <= runing;
                 r_ram_add <= r_ram_add + '1';
             end if;
 
         when runing =>
-            o_wen <= '1';
+            wen_convert_fifo <= '1';
             if(r_ram_add = event_last_ram_add - '1') then
-                -- end of event
-                o_endofevent <= '1'; 
                 event_counter_state <= waiting;
             else
                 r_ram_add <= r_ram_add + '1';

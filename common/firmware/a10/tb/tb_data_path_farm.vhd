@@ -66,7 +66,6 @@ architecture TB of tb_data_path_farm is
     signal w_pixel, r_pixel, w_scifi, r_scifi : std_logic_vector(NLINKS * 38 -1 downto 0);
     signal w_pixel_en, r_pixel_en, full_pixel, empty_pixel : std_logic;
     signal w_scifi_en, r_scifi_en, full_scifi, empty_scifi : std_logic;
-    signal FEB_num : work.util.slv6_array_t(5 downto 0);
     
     signal rx : work.util.slv32_array_t(NLINKS_TOTL-1 downto 0);
     signal rx_k : work.util.slv4_array_t(NLINKS_TOTL-1 downto 0);
@@ -76,7 +75,7 @@ architecture TB of tb_data_path_farm is
     
     signal pixel_data, scifi_data : std_logic_vector(257 downto 0);
     signal pixel_empty, pixel_ren, scifi_empty, scifi_ren : std_logic;
-    signal data_wen, endofevent, ddr_ready : std_logic;
+    signal data_wen, ddr_ready : std_logic;
     signal event_ts : std_logic_vector(47 downto 0);
     signal ts_req_num : std_logic_vector(31 downto 0);
     
@@ -215,13 +214,41 @@ begin
         o_datak     => link_datak_scifi--,
     );
     
-    -- map links
-    gen_mapping : FOR I in NLINKS-1 to 0 GENERATE
-        rx(I) <= link_data_pixel(I*32 + 31 downto I*32);
-        rx_k(I) <= link_datak_pixel(I*4 + 3 downto I*4);
-        rx(I+NLINKS) <= link_data_scifi(I*32 + 31 downto I*32);
-        rx_k(I+NLINKS) <= link_datak_scifi(I*4 + 3 downto I*4);
-    END GENERATE;
+    -- map links pixel
+    rx(0) <= link_data_pixel(0*32 + 31 downto 0*32);
+    rx(1) <= link_data_pixel(1*32 + 31 downto 1*32);
+    rx(2) <= link_data_pixel(2*32 + 31 downto 2*32);
+    rx(3) <= link_data_pixel(3*32 + 31 downto 3*32);
+    rx(4) <= link_data_pixel(4*32 + 31 downto 4*32);
+    rx(5) <= link_data_pixel(5*32 + 31 downto 5*32);
+    rx(6) <= link_data_pixel(6*32 + 31 downto 6*32);
+    rx(7) <= link_data_pixel(7*32 + 31 downto 7*32);
+    rx_k(0) <= link_datak_pixel(0*4 + 3 downto 0*4);
+    rx_k(1) <= link_datak_pixel(1*4 + 3 downto 1*4);
+    rx_k(2) <= link_datak_pixel(2*4 + 3 downto 2*4);
+    rx_k(3) <= link_datak_pixel(3*4 + 3 downto 3*4);
+    rx_k(4) <= link_datak_pixel(4*4 + 3 downto 4*4);
+    rx_k(5) <= link_datak_pixel(5*4 + 3 downto 5*4);
+    rx_k(6) <= link_datak_pixel(6*4 + 3 downto 6*4);
+    rx_k(7) <= link_datak_pixel(7*4 + 3 downto 7*4);
+    
+    -- map links scifi
+    rx(8) <= link_data_scifi(0*32 + 31 downto 0*32);
+    rx(9) <= link_data_scifi(1*32 + 31 downto 1*32);
+    rx(10) <= link_data_scifi(2*32 + 31 downto 2*32);
+    rx(11) <= link_data_scifi(3*32 + 31 downto 3*32);
+    rx(12) <= link_data_scifi(4*32 + 31 downto 4*32);
+    rx(13) <= link_data_scifi(5*32 + 31 downto 5*32);
+    rx(14) <= link_data_scifi(6*32 + 31 downto 6*32);
+    rx(15) <= link_data_scifi(7*32 + 31 downto 7*32);
+    rx_k(8) <= link_datak_scifi(0*4 + 3 downto 0*4);
+    rx_k(9) <= link_datak_scifi(1*4 + 3 downto 1*4);
+    rx_k(10) <= link_datak_scifi(2*4 + 3 downto 2*4);
+    rx_k(11) <= link_datak_scifi(3*4 + 3 downto 3*4);
+    rx_k(12) <= link_datak_scifi(4*4 + 3 downto 4*4);
+    rx_k(13) <= link_datak_scifi(5*4 + 3 downto 5*4);
+    rx_k(14) <= link_datak_scifi(6*4 + 3 downto 6*4);
+    rx_k(15) <= link_datak_scifi(7*4 + 3 downto 7*4);
     
     e_data_demerge_pixel : entity work.farm_link_to_fifo
     generic map (
@@ -267,8 +294,7 @@ begin
         g_NLINKS_SWB_TOTL => 16,
         N_PIXEL           => 8,
         N_SCIFI           => 8,
-        RAM_ADDR_W        => 12,
-        RAM_ADDR_R        => 18--,
+        RAM_ADDR          => 12--,
     )
     port map (
         i_pixel         => pixel_data,
@@ -277,12 +303,11 @@ begin
     
         i_scifi         => scifi_data,
         i_empty_scifi   => scifi_empty,
-        o_ren_scifi     => pixel_ren,
+        o_ren_scifi     => scifi_ren,
 
         -- DDR
         o_data          => data_in,
         o_wen           => data_wen,
-        o_endofevent    => endofevent,
         o_event_ts      => event_ts,
         i_ddr_ready     => ddr_ready,
     
@@ -424,6 +449,14 @@ begin
 		wait for A_mem_clk_period/2;
 		A_mem_clk <= '1';
 		wait for A_mem_clk_period/2;
+	end process;
+	
+    --B_mem_clk
+	process begin
+		B_mem_clk <= '0';
+		wait for B_mem_clk_period/2;
+		B_mem_clk <= '1';
+		wait for B_mem_clk_period/2;
 	end process;
 	
 	-- Reset_n

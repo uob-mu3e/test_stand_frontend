@@ -41,11 +41,11 @@ port (
     --! 3: # of events
     o_counter       : out work.util.slv32_array_t(4 * g_NLINKS_SWB_TOTL - 1 downto 0);
     
-    i_clk_250_link  : in std_logic;
+    i_clk_250_link      : in std_logic;
     i_reset_n_250_link  : in std_logic;
 
-    i_reset_n_250   : in std_logic;
-    i_clk_250       : in std_logic--;
+    i_clk_250       : in std_logic;
+    i_reset_n_250   : in std_logic--;
 );
 end entity;
 
@@ -114,26 +114,26 @@ begin
             aclr        => not i_reset_n_250--,
         );
 
-        sop(i)      <= '1' when rx_q(i)(33 downto 32) = "01" else '0';
-        eop(i)      <= '1' when rx_q(i)(33 downto 32) = "10" else '0';
+        sop(i) <= '1' when rx_q(i)(33 downto 32) = "01" else '0';
+        eop(i) <= '1' when rx_q(i)(33 downto 32) = "10" else '0';
 
     END GENERATE;
     
     gen_map_pixel : FOR I in N_PIXEL - 1 to 0 GENERATE
-        rx_pixel(I) <= rx_q(I);
-        o_counter(I) <= counter_pixel(I);
+        rx_pixel(I)     <= rx_q(I);
+        o_counter(I)    <= counter_pixel(I);
     END GENERATE;
     
     gen_map_scifi : FOR I in N_PIXEL + N_PIXEL - 1 to N_PIXEL GENERATE
         rx_scifi(I-N_PIXEL) <= rx_q(I);
-        o_counter(I) <= counter_scifi(I-N_PIXEL);
+        o_counter(I)        <= counter_scifi(I-N_PIXEL);
     END GENERATE;
     
     
     e_aligne_pixel : entity work.farm_aligne_link
     generic map (
-    N => N_PIXEL,
-    LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
+        N => N_PIXEL,
+        LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
     )
     port map (
         i_rx    => rx_pixel,
@@ -161,8 +161,8 @@ begin
     
     e_aligne_scifi : entity work.farm_aligne_link
     generic map (
-    N => N_SCIFI,
-    LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
+        N => N_SCIFI,
+        LINK_FIFO_ADDR_WIDTH => LINK_FIFO_ADDR_WIDTH--,
     )
     port map (
         i_rx    => rx_scifi,

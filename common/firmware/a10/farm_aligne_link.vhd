@@ -76,19 +76,28 @@ begin
     process(i_reset_n_250, i_reset_n_250)
     begin
     if ( i_reset_n_250 /= '1' ) then
-        f_data              <= (others => '0');
+        --f_data              <= (others => '0');
         f_wen               <= '0';
         o_error             <= '0';
-        cnt_skip_sub_header      <= (others => '0');
-        cnt_sub_header           <= (others => '0');
+        cnt_skip_sub_header <= (others => '0');
+        cnt_sub_header      <= (others => '0');
         link_to_fifo_state  <= idle;
         --
     elsif ( rising_edge(i_reset_n_250) ) then
     
         f_wen <= '0';
         for I in 0 to N - 1 loop
-            f_data(I * 32 + 31 downto I * 32) <= i_rx(I);
+            f_data(I * 32 + 31 downto I * 32) <= i_rx(I)(31 downto 0);
         end loop;
+        
+        --f_data(0 * 32 + 31 downto 0 * 32) <= i_rx(0)(31 downto 0);
+        --f_data(1 * 32 + 31 downto 1 * 32) <= i_rx(1)(31 downto 0);
+        --f_data(2 * 32 + 31 downto 2 * 32) <= i_rx(2)(31 downto 0);
+        --f_data(3 * 32 + 31 downto 3 * 32) <= i_rx(3)(31 downto 0);
+        --f_data(4 * 32 + 31 downto 4 * 32) <= i_rx(4)(31 downto 0);
+        --f_data(5 * 32 + 31 downto 5 * 32) <= i_rx(5)(31 downto 0);
+        --f_data(6 * 32 + 31 downto 6 * 32) <= i_rx(6)(31 downto 0);
+        --f_data(7 * 32 + 31 downto 7 * 32) <= i_rx(7)(31 downto 0);
 
         case link_to_fifo_state is 
 
@@ -125,10 +134,10 @@ begin
                 end if;
 
             when skip_hits_of_sub_header =>
-                -- skip the hits here and write overflow for the hits
+                -- skip the hits here and write overflow
                 if ( i_sop = check_ones and i_empty = check_zeros ) then
+                    f_data(3 * 32 + 31 downto 32 * 3 + 8) <= x"FFFFFF";
                     f_data(4 * 32 + 31 downto 32 * 4 + 8) <= x"FFFFFF";
-                    f_data(5 * 32 + 31 downto 32 * 5 + 8) <= x"FFFFFF";
                     f_data(N * 32 + 1 downto N * 32) <= "01"; -- header
                     link_to_fifo_state <= idle;
                 end if;
