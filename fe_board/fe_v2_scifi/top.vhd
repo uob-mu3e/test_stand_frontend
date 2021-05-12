@@ -152,64 +152,6 @@ begin
     scifi_csn(4) <= s_scifi_csn(3);
 
 
-    -- DEBUGGING
-   --  s_scifi_spi_miso <= scifi_spi_miso when invert_miso = '0' else
-   --                    not scifi_spi_miso;
-   --  scifi_spi_mosi <= s_scifi_spi_mosi when invert_mosi = '0' else
-   --                    not s_scifi_spi_mosi;
-   --  scifi_spi_sclk <= s_scifi_spi_sclk when invert_clk = '0' else
-   --                    not s_scifi_spi_sclk;
-    s_scifi_spi_miso <= scifi_spi_miso;
-    scifi_spi_mosi <= s_scifi_spi_mosi;
-    scifi_spi_sclk <= s_scifi_spi_sclk;
-
-    lcd_data(7) <= reset_156_n;
-    clk_156 <= transceiver_pll_clock(0);
-
-    e_reset_156_top_n : entity work.reset_sync
-    port map ( o_reset_n => reset_156_n, i_reset_n => pb_db(0), i_clk => clk_156 );
-
-    process (clk_156, reset_156_n)
-    begin
-        if ( reset_156_n = '0' ) then
-            invert_clk <= '0';
-            invert_miso <= '0';
-            invert_mosi <= '0';
-            lcd_data(4) <= '0';
-            lcd_data(5) <= '0';
-            lcd_data(6) <= '0';
-            s_invert <= (others => '0');
-        elsif ( rising_edge(clk_156) ) then
-            if ( scifi_reg.addr(3 downto 0) = x"C" and scifi_reg.we = '1' ) then
-                if ( scifi_reg.wdata(0) = '0' ) then
-                    invert_clk <= '0';
-                    lcd_data(4) <= '0';
-                end if;
-                if ( scifi_reg.wdata(0) = '1' ) then
-                   invert_clk <= '1';
-                   lcd_data(4) <= '1';
-                end if;
-                if ( scifi_reg.wdata(1) = '0' ) then
-                   invert_miso <= '0';
-                   lcd_data(5) <= '0';
-                end if;
-                if ( scifi_reg.wdata(1) = '1' ) then
-                   invert_miso <= '1';
-                   lcd_data(5) <= '1';
-                end if;
-                if ( scifi_reg.wdata(2) = '0' ) then
-                   invert_mosi <= '0';
-                   lcd_data(6) <= '0';
-                end if;
-                if ( scifi_reg.wdata(2) = '1' ) then
-                   invert_mosi <= '1';
-                   lcd_data(6) <= '1';
-                end if;
-                s_invert <= scifi_reg.wdata;
-            end if;
-        end if;
-    end process;
-
     e_tile_path : entity work.scifi_path
     generic map (
         IS_SCITILE      => '0',
