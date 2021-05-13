@@ -4,7 +4,8 @@ IFS="$(printf '\n\t')"
 unset CDPATH
 cd "$(dirname -- "$(readlink -e -- "$0")")" || exit 1
 
-export STOPTIME=2us
+export STOPTIME=500ns
+#2us
 
 entity=$(basename "$0" .sh)
 

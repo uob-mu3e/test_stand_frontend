@@ -64,10 +64,12 @@ architecture arch of farm_midas_event_builder is
         hit_38 : std_logic_vector; 
         N : integer--;
     ) return std_logic_vector is
-        variable hit_64 : std_logic_vector(N * 64 + 63 downto 0);
+        variable hit_38_v : std_logic_vector(hit_38'length-1 downto 0);
+        variable hit_64 : std_logic_vector(N * 64 - 1 downto 0);
     begin
-        for i in N to 0 loop
-            hit_64(I * 64 + 63 downto I * 64) := "00" & x"000" & hit_38(I * 38 + 37 downto I * 38);
+        hit_38_v := hit_38;
+        for i in 0 to N - 1 loop
+            hit_64(i * 64 + 63 downto i * 64) := "00" & x"000000" & hit_38_v(i * 38 + 37 downto i * 38);
         end loop;
         return hit_64;
     end function;
@@ -76,10 +78,12 @@ architecture arch of farm_midas_event_builder is
         hit_38 : std_logic_vector; 
         N : integer--;
     ) return std_logic_vector is
-        variable hit_64 : std_logic_vector(N * 64 + 63 downto 0);
+        variable hit_38_v : std_logic_vector(hit_38'length-1 downto 0);
+        variable hit_64 : std_logic_vector(N * 64 - 1 downto 0);
     begin
-        for i in N to 0 loop
-            hit_64(I * 64 + 63 downto I * 64) := "00" & x"000" & hit_38(I * 38 + 37 downto I * 38);
+        hit_38_v := hit_38;
+        for i in 0 to N - 1 loop
+            hit_64(i * 64 + 63 downto i * 64) := "00" & x"000000" & hit_38_v(i * 38 + 37 downto i * 38);
         end loop;
         return hit_64;
     end function;
@@ -137,7 +141,7 @@ begin
     
     -- calculate ram halffull
     sub_add <= w_ram_add - r_ram_add when w_ram_add >= r_ram_add else r_ram_add - w_ram_add;
-    ram_halffull <= sub_add(RAM_ADDR-1);
+    ram_halffull <= sub_add(RAM_ADDR-1) when tag_fifo_empty = '0' else '0';
     e_cnt_ram_halffull : entity work.counter
     generic map ( WRAP => true, W => 32 )
     port map ( o_cnt => o_counters(2), i_ena => ram_halffull, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
@@ -220,56 +224,6 @@ begin
         almost_full     => open,
         usedw           => open--,
     );
-    
-    -- convert data width from 384 to 512
-    process(i_clk_250, i_reset_n_250)
-    begin
-    if ( i_reset_n_250 = '0' ) then
-        o_data <= (others => '0');
-        data_reg <= (others => '0');
-        o_wen <= '0';
-        convert_data <= idle;
-        --
-    elsif ( rising_edge(i_clk_250) ) then
-        o_wen <= '0';
-        case convert_data is
-        when idle =>
-            if ( empty_convert_fifo = '0' ) then
-                o_data(383 downto 0)    <= q_convert_fifo(383 downto 0);
-                convert_data            <= one;
-            end if;
-        
-        when one =>
-            if ( empty_convert_fifo = '0' ) then
-                o_wen <= '1';
-                data_reg(255 downto 0)  <= q_convert_fifo(383 downto 128);
-                o_data(511 downto 384)  <= q_convert_fifo(127 downto 0);
-                convert_data <= two;
-            end if;
-            
-        when two =>
-            if ( empty_convert_fifo = '0' ) then
-                o_wen <= '1';
-                data_reg(127 downto 0)  <= q_convert_fifo(383 downto 256);
-                o_data(255 downto 0)    <= data_reg;
-                o_data(511 downto 256)  <= q_convert_fifo(255 downto 0);
-                convert_data <= three;
-            end if;
-            
-        when three =>
-            if ( empty_convert_fifo = '0' ) then
-                o_wen <= '1';
-                o_data(127 downto 0)    <= data_reg;
-                o_data(511 downto 128)  <= q_convert_fifo(383 downto 0);
-                convert_data <= idle;
-            end if;
-            
-        when others =>
-            convert_data <= idle;
-        end case;
-    end if;
-    end process;
-    
     
     pixel_header <= '1' when i_pixel(N_PIXEL * 32 + 1 downto N_PIXEL * 32) = "01" else '0';
     pixel_trailer<= '1' when i_pixel(N_PIXEL * 32 + 1 downto N_PIXEL * 32) = "10" else '0';
@@ -383,7 +337,7 @@ begin
                 --  error_ts_header <= '1';
                 -- end if;
                 
-                -- TODO: store TS of headers for DDR address
+                -- store TS of headers for DDR address
                 ts(15 downto  0) <= header_pixel(87 downto 72);
                 ts(31 downto 16) <= header_pixel(31 downto 16);
                 ts(47 downto 32) <= header_pixel(55 downto 40);
@@ -437,7 +391,7 @@ begin
             when bank_data_pixel =>
                 -- check again if the fifo is empty and no header/trailer
                 if ( i_empty_pixel = '0' and pixel_header = '0' and pixel_trailer = '0' ) then
-                    w_ram_data(63 downto 0)   <= i_pixel_reg;
+                    w_ram_data(63 downto 0)   <= i_pixel_reg(63 downto 0);
                     w_ram_data(383 downto 64) <= convert_to_64_pixel(i_pixel(189 downto 0), 5);
                     i_pixel_reg(63 downto 0)  <= convert_to_64_pixel(i_pixel(227 downto 190), 1);
                     event_size_cnt            <= event_size_cnt + 12*4;
@@ -445,7 +399,7 @@ begin
                     w_ram_add                 <= w_ram_add + 1;
                     w_ram_en                  <= '1';
                 elsif ( pixel_header = '1' or pixel_trailer = '1' ) then
-                    w_ram_data(63 downto 0)   <= i_pixel_reg;
+                    w_ram_data(63 downto 0)   <= i_pixel_reg(63 downto 0);
                     w_ram_data(383 downto 64) <= (others => '1');
                     event_size_cnt            <= event_size_cnt + 12*4;
                     bank_size_pixel           <= bank_size_pixel + 12*4;
@@ -492,7 +446,7 @@ begin
                 -- check again if the fifo is empty and no header/trailer
                 if ( i_empty_scifi = '0' and scifi_header = '0' and scifi_trailer = '0' ) then
                     -- convert 2 38 bit hits to 2 64 bit hits
-                    w_ram_data(255 downto 0)  <= i_scifi_reg;
+                    w_ram_data(255 downto 0)  <= i_scifi_reg(255 downto 0);
                     w_ram_data(383 downto 256)<= convert_to_64_scifi(i_scifi(75 downto 0), 2);
                     i_scifi_reg(255 downto 0) <= convert_to_64_scifi(i_scifi(227 downto 76), 4);
                     event_size_cnt            <= event_size_cnt + 12*4;
@@ -500,7 +454,7 @@ begin
                     w_ram_add                 <= w_ram_add + 1;
                     w_ram_en                  <= '1';
                 elsif ( scifi_header = '1' or scifi_trailer = '1' ) then
-                    w_ram_data(255 downto 0)  <= i_scifi_reg;
+                    w_ram_data(255 downto 0)  <= i_scifi_reg(255 downto 0);
                     w_ram_data(383 downto 256)<= (others => '1');
                     event_size_cnt            <= event_size_cnt + 12*4;
                     bank_size_scifi           <= bank_size_scifi + 12*4;
@@ -616,5 +570,54 @@ begin
 
     end if;
     end process;
-
+    
+    -- convert data width from 384 to 512
+    process(i_clk_250, i_reset_n_250)
+    begin
+    if ( i_reset_n_250 = '0' ) then
+        o_data <= (others => '0');
+        data_reg <= (others => '0');
+        o_wen <= '0';
+        convert_data <= idle;
+        --
+    elsif ( rising_edge(i_clk_250) ) then
+        o_wen <= '0';
+        case convert_data is
+        when idle =>
+            if ( empty_convert_fifo = '0' ) then
+                o_data(383 downto 0)    <= q_convert_fifo(383 downto 0);
+                convert_data            <= one;
+            end if;
+        
+        when one =>
+            if ( empty_convert_fifo = '0' ) then
+                o_wen <= '1';
+                data_reg(255 downto 0)  <= q_convert_fifo(383 downto 128);
+                o_data(511 downto 384)  <= q_convert_fifo(127 downto 0);
+                convert_data <= two;
+            end if;
+            
+        when two =>
+            if ( empty_convert_fifo = '0' ) then
+                o_wen <= '1';
+                data_reg(127 downto 0)  <= q_convert_fifo(383 downto 256);
+                o_data(255 downto 0)    <= data_reg;
+                o_data(511 downto 256)  <= q_convert_fifo(255 downto 0);
+                convert_data <= three;
+            end if;
+            
+        when three =>
+            if ( empty_convert_fifo = '0' ) then
+                o_wen <= '1';
+                o_data(127 downto 0)    <= data_reg;
+                o_data(511 downto 128)  <= q_convert_fifo(383 downto 0);
+                convert_data <= idle;
+            end if;
+            
+        when others =>
+            convert_data <= idle;
+        end case;
+    end if;
+    end process;
+    
 end architecture;

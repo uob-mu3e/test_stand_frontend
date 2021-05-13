@@ -115,6 +115,10 @@ begin
 
     -- gen pixel data
     e_data_gen_pixel : entity work.data_generator_merged_data
+    generic map(
+        go_to_sh => 2,
+        go_to_trailer => 3--,
+    )
     port map(
         i_clk       => dataclk,
         i_reset_n   => reset_n,
@@ -166,6 +170,10 @@ begin
 
     -- gen scifi data
     e_data_gen_scifi : entity work.data_generator_merged_data
+    generic map(
+        go_to_sh => 2,
+        go_to_trailer => 3--,
+    )
     port map(
         i_clk       => dataclk,
         i_reset_n   => reset_n,
@@ -215,42 +223,14 @@ begin
     );
     
     -- map links pixel
-    rx(0) <= link_data_pixel(0*32 + 31 downto 0*32);
-    rx(1) <= link_data_pixel(1*32 + 31 downto 1*32);
-    rx(2) <= link_data_pixel(2*32 + 31 downto 2*32);
-    rx(3) <= link_data_pixel(3*32 + 31 downto 3*32);
-    rx(4) <= link_data_pixel(4*32 + 31 downto 4*32);
-    rx(5) <= link_data_pixel(5*32 + 31 downto 5*32);
-    rx(6) <= link_data_pixel(6*32 + 31 downto 6*32);
-    rx(7) <= link_data_pixel(7*32 + 31 downto 7*32);
-    rx_k(0) <= link_datak_pixel(0*4 + 3 downto 0*4);
-    rx_k(1) <= link_datak_pixel(1*4 + 3 downto 1*4);
-    rx_k(2) <= link_datak_pixel(2*4 + 3 downto 2*4);
-    rx_k(3) <= link_datak_pixel(3*4 + 3 downto 3*4);
-    rx_k(4) <= link_datak_pixel(4*4 + 3 downto 4*4);
-    rx_k(5) <= link_datak_pixel(5*4 + 3 downto 5*4);
-    rx_k(6) <= link_datak_pixel(6*4 + 3 downto 6*4);
-    rx_k(7) <= link_datak_pixel(7*4 + 3 downto 7*4);
+    gen_map_links : FOR I in 0 to NLINKS - 1 GENERATE
+        rx(I) <= link_data_pixel(I*32 + 31 downto I*32);
+        rx_k(I) <= link_datak_pixel(I*4 + 3 downto I*4);
+        rx(I+NLINKS) <= link_data_scifi(I*32 + 31 downto I*32);
+        rx_k(I+NLINKS) <= link_datak_scifi(I*4 + 3 downto I*4);
+    END GENERATE;
     
-    -- map links scifi
-    rx(8) <= link_data_scifi(0*32 + 31 downto 0*32);
-    rx(9) <= link_data_scifi(1*32 + 31 downto 1*32);
-    rx(10) <= link_data_scifi(2*32 + 31 downto 2*32);
-    rx(11) <= link_data_scifi(3*32 + 31 downto 3*32);
-    rx(12) <= link_data_scifi(4*32 + 31 downto 4*32);
-    rx(13) <= link_data_scifi(5*32 + 31 downto 5*32);
-    rx(14) <= link_data_scifi(6*32 + 31 downto 6*32);
-    rx(15) <= link_data_scifi(7*32 + 31 downto 7*32);
-    rx_k(8) <= link_datak_scifi(0*4 + 3 downto 0*4);
-    rx_k(9) <= link_datak_scifi(1*4 + 3 downto 1*4);
-    rx_k(10) <= link_datak_scifi(2*4 + 3 downto 2*4);
-    rx_k(11) <= link_datak_scifi(3*4 + 3 downto 3*4);
-    rx_k(12) <= link_datak_scifi(4*4 + 3 downto 4*4);
-    rx_k(13) <= link_datak_scifi(5*4 + 3 downto 5*4);
-    rx_k(14) <= link_datak_scifi(6*4 + 3 downto 6*4);
-    rx_k(15) <= link_datak_scifi(7*4 + 3 downto 7*4);
-    
-    e_data_demerge_pixel : entity work.farm_link_to_fifo
+    e_farm_link_to_fifo : entity work.farm_link_to_fifo
     generic map (
         g_NLINKS_SWB_TOTL   => NLINKS_TOTL,
         N_PIXEL             => NLINKS,

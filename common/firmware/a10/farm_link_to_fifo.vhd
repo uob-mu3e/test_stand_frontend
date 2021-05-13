@@ -35,11 +35,15 @@ port (
     o_error_scifi   : out std_logic;
     
     --! error counters 
-    --! 0: fifo f_almost_full
-    --! 1: fifo f_wrfull
-    --! 2: # of skip event
-    --! 3: # of events
-    o_counter       : out work.util.slv32_array_t(4 * g_NLINKS_SWB_TOTL - 1 downto 0);
+    --! 0: fifo sync_almost_full (pixel)
+    --! 1: fifo sync_wrfull (pixel)
+    --! 2: # of overflow event (pixel)
+    --! 3: cnt events (pixel)
+    --! 4: fifo sync_almost_full (scifi)
+    --! 5: fifo sync_wrfull (scifi)
+    --! 6: # of overflow event (scifi)
+    --! 7: cnt events (scifi)
+    o_counter       : out work.util.slv32_array_t(7 downto 0);
     
     i_clk_250_link      : in std_logic;
     i_reset_n_250_link  : in std_logic;
@@ -90,9 +94,11 @@ begin
                 -- trailer
                 elsif ( i_rx(i)(7 downto 0) = x"9C" and i_rx_k(i) = "0001" ) then
                     rx_data(i) <= "10" & i_rx(i);
+                    rx_wen(i) <= '1';
                 -- hits
                 else
                     rx_data(i) <= "00" & i_rx(i);
+                    rx_wen(i) <= '1';
                 end if;
             end if;
         end process;
@@ -119,14 +125,17 @@ begin
 
     END GENERATE;
     
-    gen_map_pixel : FOR I in N_PIXEL - 1 to 0 GENERATE
-        rx_pixel(I)     <= rx_q(I);
-        o_counter(I)    <= counter_pixel(I);
+    gen_counter : FOR I in 0 to 3 GENERATE
+        o_counter(I) <= counter_pixel(I);
+        o_counter(I+4) <= counter_scifi(I);
     END GENERATE;
     
-    gen_map_scifi : FOR I in N_PIXEL + N_PIXEL - 1 to N_PIXEL GENERATE
-        rx_scifi(I-N_PIXEL) <= rx_q(I);
-        o_counter(I)        <= counter_scifi(I-N_PIXEL);
+    gen_map_pixel : FOR I in 0 to N_PIXEL - 1 GENERATE
+        rx_pixel(I) <= rx_q(I);
+    END GENERATE;
+    
+    gen_map_scifi : FOR I in 0 to N_SCIFI - 1 GENERATE
+        rx_scifi(I) <= rx_q(I+N_PIXEL);
     END GENERATE;
     
     
