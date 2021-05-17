@@ -18,8 +18,12 @@ struct si534x_t : si_t {
     void status() {
         printf("status:\n");
         printf("  SYSINCAL = %d\n", read(0x000C));
-        printf("  LOF/LOS = %d/%d\n", (read(0x000D) & 0x10) != 0, (read(0x000D) & 0x01) != 0);
-        printf("  HOLD/LOL = %d/%d\n", (read(0x000E) & 0x20) != 0, (read(0x000E) & 0x02) != 0);
+
+        alt_u8 los_oof = read(0x000D);
+        los_oof >>= get_in_sel(); // select input (in_sel)
+        printf("  LOS/OOF = %d/%d\n", (los_oof & 0x01) != 0, (los_oof & 0x10) != 0);
+        alt_u8 lol_hold = read(0x000E);
+        printf("  LOL/HOLD = %d/%d\n", (lol_hold & 0x02) != 0, (lol_hold & 0x20) != 0);
     }
 
     void read_design_id(char design_id[8]) {
@@ -42,6 +46,46 @@ struct si534x_t : si_t {
 
     void soft_reset() {
         write(0x001C, read(0x001c) | (1 << 0));
+    }
+
+    int get_in_sel() {
+        alt_u8 zdm = read(0x0487); // zero delay mode
+        int zdm_en = zdm & 0x01;
+        int zdm_in_sel = (zdm >> 1) & 0x03;
+        alt_u8 ics = read(0x052A); // input clock select
+
+        if(zdm_en == 1) {
+            return (zdm >> 1) & 0x3;
+        }
+        return (ics >> 1) & 0x3;
+    }
+
+    void set_in_sel(int in_sel) {
+        if(!(0 <= in_sel && in_sel <= 3)) {
+            printf("W [si534x.set_in_sel] invalid in_sel = %d\n", in_sel);
+            return;
+        }
+
+        alt_u8 zdm = read(0x0487);
+        int zdm_en = zdm & 0x01;
+        int zdm_in_sel = (zdm >> 1) & 0x03;
+        alt_u8 ics = read(0x052A);
+        int in_sel_regctrl = ics & 0x01;
+
+        if(in_sel_regctrl == 0) {
+            printf("W [si534x.set_in_sel] clock selection is pin controlled\n");
+            return;
+        }
+
+        if(zdm_en == 1) {
+            if(in_sel == 3) {
+                printf("W [si534x.set_in_sel] invalid ZDM in_sel = %d\n", in_sel);
+                return;
+            }
+            write(0x0487, (zdm & ~0x06) | (in_sel << 1));
+            return;
+        }
+        write(0x052A, (ics & ~0x06) | (in_sel << 1));
     }
 
     int nvm_write() {
