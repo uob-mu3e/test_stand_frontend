@@ -2,6 +2,14 @@
 #include "include/base.h"
 
 #include "include/xcvr.h"
+#include "include/a10/reconfig.h"
+
+struct my_xcvr_t : xcvr_block_t {
+    reconfig_t reconfig;
+    my_xcvr_t() : xcvr_block_t((alt_u32*)(AVM_XCVR1_BASE | ALT_CPU_DCACHE_BYPASS_MASK)) {
+    }
+};
+my_xcvr_t pod;
 
 #include "include/i2c.h"
 #include "include/si534x.h"
@@ -72,6 +80,8 @@ int main() {
             si5345.init(si5345_2_registers, sizeof(si5345_2_registers) / sizeof(si5345_2_registers[0]));
             si5345.write_design_id(ID);
         }
+
+        // TODO: reconfig
     }
 
     while (1) {
@@ -82,6 +92,7 @@ int main() {
         printf("  [1] => ...\n");
         printf("  [p] => PODs\n");
         printf("  [c] => clocks\n");
+        printf("  [R] => reconfig\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
@@ -89,10 +100,13 @@ int main() {
         case '1':
             break;
         case 'p':
-            menu_xcvr((alt_u32*)(AVM_XCVR1_BASE | ALT_CPU_DCACHE_BYPASS_MASK), 'A');
+            pod.menu();
             break;
         case 'c':
             clocks_menu();
+            break;
+        case 'R':
+            pod.reconfig.pll(AVM_XCVR1_BASE + 0x00000000);
             break;
         default:
             printf("invalid command: '%c'\n", cmd);
