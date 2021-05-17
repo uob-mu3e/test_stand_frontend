@@ -277,12 +277,12 @@ INT frontend_init()
         return FE_ERR_DRIVER;
 
 
-    /*
     //init scifi
     status = init_scifi(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
     
+    /*
     //init scitiles
     status = init_scitiles(*mup);
     if (status != SUCCESS)
