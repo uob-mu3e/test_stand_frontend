@@ -53,6 +53,27 @@ void clocks_menu() {
 int main() {
     base_init();
 
+    // write SI (clock chip) configuration
+    if(1) {
+        const char* ID = "TrqL7aPv";
+        char id[8];
+        printf("I [%s] check SI5345_1 config\n", __FUNCTION__);
+        IOWR_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE, 1 << 1);
+        si5345.read_design_id(id);
+        if(memcmp(id, ID, 8) != 0) {
+            printf("I [%s] configure SI5345_1 ...\n", __FUNCTION__);
+            si5345.init(si5345_1_registers, sizeof(si5345_1_registers) / sizeof(si5345_1_registers[0]));
+            si5345.write_design_id(ID);
+        }
+        printf("I [%s] check SI5345_2 config\n", __FUNCTION__);
+        IOWR_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE, 1 << 2);
+        if(memcmp(id, ID, 8) != 0) {
+            printf("I [%s] configure SI5345_2 ...\n", __FUNCTION__);
+            si5345.init(si5345_2_registers, sizeof(si5345_2_registers) / sizeof(si5345_2_registers[0]));
+            si5345.write_design_id(ID);
+        }
+    }
+
     while (1) {
         printf("\n");
         printf("[PCIe40] -------- menu --------\n");
