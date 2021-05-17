@@ -195,7 +195,7 @@ static odb MUTRIG_GLOBAL_SETTINGS = {
     {"gen_idle", false},
     {"ms_debug", false},
     {"prbs_debug", false},
-    {"rbs_single", false},
+    {"prbs_single", false},
     {"sync_ch_rst", false},
     {"disable_coarse", false},
     {"pll_setcoarse", false},

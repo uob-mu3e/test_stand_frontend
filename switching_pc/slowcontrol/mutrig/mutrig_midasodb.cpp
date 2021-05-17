@@ -148,18 +148,19 @@ mutrig::MutrigConfig MapConfigFromDB(const char* prefix, int asic) {
     char set_str[255];
 
     sprintf(set_str, "%s/Settings/ASICs", prefix);
-    odb settings_asics(set_str);
+    //TODO: Can we avoid this silly back and forth casting?
+    odb settings_asics(std::string(set_str).c_str());
 
     // get global asic settings from odb;
-    ret.Parse_GLOBAL_from_struct(settings_asics["Global&"]);
+    ret.Parse_GLOBAL_from_struct(settings_asics["Global"]);
 
     // get tdcs asic settings from odb
-    sprintf(set_str, "TDCs/%i&", asic);
+    sprintf(set_str, "TDCs/%i", asic);
     ret.Parse_TDC_from_struct(settings_asics[set_str]);
 
     // get channels asic settings from odb
     for(int ch = 0; ch < 32 ; ch++) {
-        sprintf(set_str, "Channels/%i&", asic*32+ch);
+        sprintf(set_str, "Channels/%i", asic*32+ch);
         ret.Parse_CH_from_struct(settings_asics[set_str], ch);
     }
 
