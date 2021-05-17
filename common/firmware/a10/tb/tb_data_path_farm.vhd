@@ -109,6 +109,8 @@ architecture TB of tb_data_path_farm is
     signal B_mem_addr_del2		: std_logic_vector(25 downto 0);
     signal B_mem_addr_del3		: std_logic_vector(25 downto 0);
     signal B_mem_addr_del4		: std_logic_vector(25 downto 0);	
+    
+    signal midas_data_511 : work.util.slv32_array_t(15 downto 0);
 
 
 begin
@@ -312,6 +314,10 @@ begin
             counter_ddr3 <= counter_ddr3 + '1';
         end if;
     end process;
+    
+    gen_midas_data : FOR I in 0 to 15 GENERATE
+        midas_data_511(I) <= data_in(I*32 + 31 downto I*32);
+    END GENERATE;
 
     e_farm_data_path : entity work.farm_data_path 
     port map(

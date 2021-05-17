@@ -113,7 +113,7 @@ architecture rtl of farm_data_path is
     signal A_readsubstate, B_readsubstate :	readsubstate_type;
     signal A_readwords, B_readwords	: std_logic_vector(5 downto 0);
 
-    signal A_memreadfifo_data, A_memreadfifo_q, B_memreadfifo_data, B_memreadfifo_q : std_logic_vector(37 downto 0);
+    signal A_memreadfifo_data, A_memreadfifo_q, B_memreadfifo_data, B_memreadfifo_q : std_logic_vector(21 downto 0);
     signal A_memreadfifo_write, A_memreadfifo_read, B_memreadfifo_write, B_memreadfifo_read: std_logic;
     signal A_memreadfifo_empty, B_memreadfifo_empty: std_logic;		 
 
@@ -122,7 +122,7 @@ architecture rtl of farm_data_path is
 
     type output_write_type is (waiting, eventA, eventB, skip_event_A, skip_event_B, write_4kb_padding);
     signal output_write_state : output_write_type;
-    signal nummemwords : std_logic_vector(7 downto 0);
+    signal nummemwords : std_logic_vector(6 downto 0);
     signal tagmemwait_3_state : std_logic_vector(3 downto 0);
 
     signal ts_in_upper, ts_in_lower : tsrange_type;
@@ -419,7 +419,7 @@ begin
                         if ( A_mem_ready = '1' ) then
                             A_mem_read <= '1';
                             A_readsubstate  <= reading;
-                            -- save number of 512b words, save x"00" & ts_in(tsupper), save tagram address
+                            -- save number of 512b words, ts_in(tsupper), tagram address
                             A_memreadfifo_data  <= A_tagram_q(31 downto 26) & A_tsrange & A_tagram_address;
                             A_memreadfifo_write <= '1';
                         end if;
@@ -544,7 +544,7 @@ begin
                         if ( B_mem_ready = '1' ) then
                             B_mem_read <= '1';
                             B_readsubstate  <= reading;
-                            -- save number of 512b words, save x"00" & ts_in(tsupper), save tagram address
+                            -- save number of 512b words, ts_in(tsupper), tagram address
                             B_memreadfifo_data  <= B_tagram_q(31 downto 26) & B_tsrange & B_tagram_address;
                             B_memreadfifo_write <= '1';
                         end if;
@@ -611,7 +611,7 @@ begin
             elsif ( A_memreadfifo_empty = '0' ) then
                 -- input is 512b from DDR output is 256b to PCIe
                 -- we cnt the 512b words before so multi by 2
-                nummemwords <= A_memreadfifo_q(37 downto 32) & '0';
+                nummemwords <= A_memreadfifo_q(21 downto 16) & '0';
                 if ( o_dma_done = '1' or i_dmamemhalffull = '1' or ( i_num_req_events /= (i_num_req_events'range => '0') and cnt_num_req_events >= i_num_req_events ) ) then
                     output_write_state  <= skip_event_A;
                     cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
@@ -626,7 +626,7 @@ begin
             elsif ( B_memreadfifo_empty = '0' ) then
                 -- input is 512b from DDR output is 256b to PCIe
                 -- we cnt the 512b words before so multi by 2
-                nummemwords <= B_memreadfifo_q(37 downto 32) & '0';
+                nummemwords <= B_memreadfifo_q(21 downto 16) & '0';
                 if ( o_dma_done = '1' or i_dmamemhalffull = '1' or ( i_num_req_events /= (i_num_req_events'range => '0') and cnt_num_req_events >= i_num_req_events ) ) then
                     output_write_state  <= skip_event_B;
                     cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
@@ -766,7 +766,7 @@ begin
     A_mreadfifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 3,
-        DATA_WIDTH  => 38,
+        DATA_WIDTH  => 22,
         DEVICE      => "Arria 10"--,
     )
     port map (
@@ -786,7 +786,7 @@ begin
     B_mreadfifo : entity work.ip_dcfifo
     generic map(
         ADDR_WIDTH  => 3,
-        DATA_WIDTH  => 38,
+        DATA_WIDTH  => 22,
         DEVICE      => "Arria 10"--,
     )
     port map (

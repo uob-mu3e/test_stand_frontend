@@ -483,7 +483,7 @@ begin
                 w_ram_en  <= '1';
                 w_ram_add <= header_add;
                 -- write header values
-                w_ram_data( 63 downto   0) <= w_ram_pixel_header( 63 downto   0);
+                w_ram_data( 95 downto   0) <= w_ram_pixel_header( 95 downto   0);
                 w_ram_data(127 downto  96) <= event_size_cnt; -- event size
                 w_ram_data(159 downto 128) <= event_size_cnt - 8; -- all bank size
                 w_ram_data(255 downto 160) <= w_ram_pixel_header(255 downto 160);
@@ -545,11 +545,11 @@ begin
             end if;
 
         when get_data =>
-            -- if i_ddr_ready = '1' we switch from
+            -- if i_ddr_ready = '0' we switch from
             -- one DDR to the other we wait here until 
             -- this happend so that we dont split events over
             -- the two DDR memories
-            if ( i_ddr_ready /= '1' ) then
+            if ( i_ddr_ready = '1' ) then
                 wen_convert_fifo <= '1';
                 event_counter_state <= runing;
                 r_ram_add <= r_ram_add + '1';
@@ -601,7 +601,7 @@ begin
             if ( empty_convert_fifo = '0' ) then
                 o_wen <= '1';
                 data_reg(127 downto 0)  <= q_convert_fifo(383 downto 256);
-                o_data(255 downto 0)    <= data_reg;
+                o_data(255 downto 0)    <= data_reg(255 downto 0);
                 o_data(511 downto 256)  <= q_convert_fifo(255 downto 0);
                 convert_data <= three;
             end if;
@@ -609,7 +609,7 @@ begin
         when three =>
             if ( empty_convert_fifo = '0' ) then
                 o_wen <= '1';
-                o_data(127 downto 0)    <= data_reg;
+                o_data(127 downto 0)    <= data_reg(127 downto 0);
                 o_data(511 downto 128)  <= q_convert_fifo(383 downto 0);
                 convert_data <= idle;
             end if;
