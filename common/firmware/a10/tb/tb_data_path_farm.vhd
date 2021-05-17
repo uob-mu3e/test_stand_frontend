@@ -286,6 +286,8 @@ begin
         i_scifi         => scifi_data,
         i_empty_scifi   => scifi_empty,
         o_ren_scifi     => scifi_ren,
+        
+        i_farm_id       => x"AFFEAFFE",
 
         -- DDR
         o_data          => data_in,

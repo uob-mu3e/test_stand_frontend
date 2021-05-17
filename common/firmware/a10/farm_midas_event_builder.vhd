@@ -26,6 +26,8 @@ port(
     i_scifi             : in  std_logic_vector(N_SCIFI * 32 + 1 downto 0);
     i_empty_scifi       : in  std_logic;
     o_ren_scifi         : out std_logic;
+    
+    i_farm_id           : in  std_logic_vector(31 downto 0);
 
     -- DDR
     o_data              : out std_logic_vector(511 downto 0);
@@ -61,8 +63,9 @@ architecture arch of farm_midas_event_builder is
 
     -- convert functions
     function convert_to_64_pixel(
-        hit_38 : std_logic_vector; 
-        N : integer--;
+        hit_38  : std_logic_vector; 
+        N       : integer;
+        TS      : std_logic_vector--;
     ) return std_logic_vector is
         variable hit_38_v : std_logic_vector(hit_38'length-1 downto 0);
         variable hit_64 : std_logic_vector(N * 64 - 1 downto 0);
@@ -75,8 +78,9 @@ architecture arch of farm_midas_event_builder is
     end function;
     
     function convert_to_64_scifi(
-        hit_38 : std_logic_vector; 
-        N : integer--;
+        hit_38  : std_logic_vector; 
+        N       : integer;
+        TS      : std_logic_vector--;
     ) return std_logic_vector is
         variable hit_38_v : std_logic_vector(hit_38'length-1 downto 0);
         variable hit_64 : std_logic_vector(N * 64 - 1 downto 0);
@@ -124,7 +128,7 @@ architecture arch of farm_midas_event_builder is
     signal serial_number, time_tmp, type_bank, flags, event_size_cnt : std_logic_vector(31 downto 0);
     
     -- bank bank builder
-    signal pixel_header, pixel_trailer, scifi_header, scifi_trailer : std_logic;
+    signal pixel_header, pixel_trailer, scifi_header, scifi_trailer, pixel_error, scifi_error : std_logic;
     signal ts : std_logic_vector(47 downto 0);
 
     -- error cnt
@@ -141,6 +145,7 @@ begin
     
     -- calculate ram halffull
     sub_add <= w_ram_add - r_ram_add when w_ram_add >= r_ram_add else r_ram_add - w_ram_add;
+    -- TODO: think about 3/4 5/6 etc. full
     ram_halffull <= sub_add(RAM_ADDR-1) when tag_fifo_empty = '0' else '0';
     e_cnt_ram_halffull : entity work.counter
     generic map ( WRAP => true, W => 32 )
@@ -227,8 +232,12 @@ begin
     
     pixel_header <= '1' when i_pixel(N_PIXEL * 32 + 1 downto N_PIXEL * 32) = "01" else '0';
     pixel_trailer<= '1' when i_pixel(N_PIXEL * 32 + 1 downto N_PIXEL * 32) = "10" else '0';
+    -- TODO: what to do with the error (run should be stopped)?
+    pixel_error  <= '1' when i_pixel(N_PIXEL * 32 + 1 downto N_PIXEL * 32) = "11" else '0';
     scifi_header <= '1' when i_scifi(N_SCIFI * 32 + 1 downto N_SCIFI * 32) = "01" else '0';
     scifi_trailer<= '1' when i_scifi(N_SCIFI * 32 + 1 downto N_SCIFI * 32) = "10" else '0';
+    -- TODO: what to do with the error (run should be stopped)?
+    scifi_error  <= '1' when i_pixel(N_PIXEL * 32 + 1 downto N_PIXEL * 32) = "11" else '0';
 
     o_ren_pixel <=
         '1' when ( (event_tagging_state = bank_data_pixel or event_tagging_state = bank_data_pixel_one) and i_empty_pixel = '0' and pixel_header = '0' ) else
@@ -243,6 +252,7 @@ begin
         '0';
         
     -- mark if data is send to DDR3 for the next farm pc
+    -- TODO: make marking with only 1 bit or max number of FARM PC
     o_pixel(N_PIXEL * 32 + 1 downto 224) <= i_pixel(N_PIXEL * 32 + 1 downto 224);
     o_pixel(223 downto 200) <= x"000000" when ( event_tagging_state = EVENT_IDLE and (pixel_header = '0' or scifi_header = '0' or ram_halffull = '0') ) else x"FFFFFF";
     o_pixel(199 downto 0) <= i_pixel(199 downto 0);
@@ -272,6 +282,7 @@ begin
         -- midas signals
         event_id            <= x"0001";
         trigger_mask        <= (others => '0');
+        -- TODO: ask stefan what to do with 2 farms
         serial_number       <= x"00000001";
         time_tmp            <= (others => '0');
         flags               <= x"00000031";
@@ -365,15 +376,16 @@ begin
                 event_tagging_state        <= bank_data_pixel_header;
 
             when bank_data_pixel_header =>
-                w_ram_data(63 downto 0) <= (others => '0'); -- reserved
+                w_ram_data(31 downto 0)  <= i_farm_id;       -- reserved
+                w_ram_data(63 downto 32) <= (others => '0'); -- reserved
                 event_tagging_state     <= bank_data_pixel_one;
                 
             when bank_data_pixel_one =>
                 -- check again if the fifo is empty and no header/trailer
                 if ( i_empty_pixel = '0' and pixel_header = '0' and pixel_trailer = '0' ) then
                     -- convert 5 38 bit hits to 5 64 bit hits
-                    w_ram_data(383 downto 64) <= convert_to_64_pixel(i_pixel(189 downto 0), 5);
-                    i_pixel_reg(63 downto 0)  <= convert_to_64_pixel(i_pixel(227 downto 190), 1);
+                    w_ram_data(383 downto 64) <= convert_to_64_pixel(i_pixel(189 downto 0), 5, ts);
+                    i_pixel_reg(63 downto 0)  <= convert_to_64_pixel(i_pixel(227 downto 190), 1, ts);
                     event_size_cnt            <= event_size_cnt + 12*4;
                     bank_size_pixel           <= bank_size_pixel + 14*4;
                     w_ram_add                 <= w_ram_add + 1;
@@ -392,8 +404,8 @@ begin
                 -- check again if the fifo is empty and no header/trailer
                 if ( i_empty_pixel = '0' and pixel_header = '0' and pixel_trailer = '0' ) then
                     w_ram_data(63 downto 0)   <= i_pixel_reg(63 downto 0);
-                    w_ram_data(383 downto 64) <= convert_to_64_pixel(i_pixel(189 downto 0), 5);
-                    i_pixel_reg(63 downto 0)  <= convert_to_64_pixel(i_pixel(227 downto 190), 1);
+                    w_ram_data(383 downto 64) <= convert_to_64_pixel(i_pixel(189 downto 0), 5, ts);
+                    i_pixel_reg(63 downto 0)  <= convert_to_64_pixel(i_pixel(227 downto 190), 1, ts);
                     event_size_cnt            <= event_size_cnt + 12*4;
                     bank_size_pixel           <= bank_size_pixel + 12*4;
                     w_ram_add                 <= w_ram_add + 1;
@@ -416,7 +428,7 @@ begin
                 w_ram_scifi_data(127 downto  96) <= (others => '0'); -- bank reserved
                 w_ram_scifi_data(159 downto 128) <= header_scifi(127 downto  96); -- overflow (24b) & 7C
                 w_ram_scifi_data(191 downto 160) <= header_scifi(159 downto 128); -- overflow (24b) & 7C
-                w_ram_scifi_data(223 downto 192) <= (others => '0'); -- reserved
+                w_ram_scifi_data(223 downto 192) <= i_farm_id; -- reserved
                 w_ram_scifi_data(255 downto 224) <= (others => '0'); -- reserved
                 event_tagging_state              <= bank_data_scifi_one;
                 
@@ -424,8 +436,8 @@ begin
                 -- check again if the fifo is empty and no header/trailer
                 if ( i_empty_scifi = '0' and scifi_header = '0' and scifi_trailer = '0' ) then
                     -- convert 2 38 bit hits to 2 64 bit hits
-                    w_ram_scifi_data(383 downto 256)<= convert_to_64_scifi(i_scifi(75 downto 0), 2);
-                    i_scifi_reg(255 downto 0) <= convert_to_64_scifi(i_scifi(227 downto 76), 4);
+                    w_ram_scifi_data(383 downto 256)<= convert_to_64_scifi(i_scifi(75 downto 0), 2, ts);
+                    i_scifi_reg(255 downto 0) <= convert_to_64_scifi(i_scifi(227 downto 76), 4, ts);
                     event_size_cnt            <= event_size_cnt + 12*4;
                     bank_size_scifi           <= bank_size_scifi + 16*4;
                     w_ram_add                 <= w_ram_add + 1;
@@ -447,8 +459,8 @@ begin
                 if ( i_empty_scifi = '0' and scifi_header = '0' and scifi_trailer = '0' ) then
                     -- convert 2 38 bit hits to 2 64 bit hits
                     w_ram_data(255 downto 0)  <= i_scifi_reg(255 downto 0);
-                    w_ram_data(383 downto 256)<= convert_to_64_scifi(i_scifi(75 downto 0), 2);
-                    i_scifi_reg(255 downto 0) <= convert_to_64_scifi(i_scifi(227 downto 76), 4);
+                    w_ram_data(383 downto 256)<= convert_to_64_scifi(i_scifi(75 downto 0), 2, ts);
+                    i_scifi_reg(255 downto 0) <= convert_to_64_scifi(i_scifi(227 downto 76), 4, ts);
                     event_size_cnt            <= event_size_cnt + 12*4;
                     bank_size_scifi           <= bank_size_scifi + 12*4;
                     w_ram_add                 <= w_ram_add + 1;

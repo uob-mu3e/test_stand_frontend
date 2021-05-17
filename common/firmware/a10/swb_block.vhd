@@ -108,6 +108,7 @@ architecture arch of swb_block is
     signal rx_data_k_pixel : work.util.slv4_array_t(g_NLINKS_DATA_PIXEL-1 downto 0);
     
     --! counters
+    -- TODO: write status readout entity with ADDR to PCIe REGS and mapping to one counter REG
     signal counter_swb_data_pixel : work.util.slv32_array_t(5+(g_NLINKS_DATA_PIXEL*3)-1 downto 0);
 
 
