@@ -431,7 +431,7 @@ begin
         i_empty_scifi   => scifi_empty,
         o_ren_scifi     => scifi_ren,
         
-        i_farm_id       => i_writeregs_pcie(FARM_ID_REGISTER_W)
+        i_farm_id       => i_writeregs_pcie(FARM_ID_REGISTER_W),
 
         -- DDR
         o_data          => data_in,
@@ -541,22 +541,22 @@ begin
             if ( tx_empty_pixel = '1' ) then
                 o_tx(I)   <= x"000000" & work.util.D28_5;
                 o_tx_k(I) <= "0001";
-            elsif ( tx_q_pixel(g_NLINKS_PIXEL * 32 + 1 downto g_NLINKS_PIXEL * 32) == "00" ) then
-                o_tx(I)   <= tx_q_pixel(I * 32 + 31 downto I * 32)
+            elsif ( tx_q_pixel(g_NLINKS_PIXEL * 32 + 1 downto g_NLINKS_PIXEL * 32) = "00" ) then
+                o_tx(I)   <= tx_q_pixel(I * 32 + 31 downto I * 32);
                 o_tx_k(I) <= "0000";
             else
-                o_tx(I)   <= tx_q_pixel(I * 32 + 31 downto I * 32)
+                o_tx(I)   <= tx_q_pixel(I * 32 + 31 downto I * 32);
                 o_tx_k(I) <= "0001";
             end if;
             
             if ( tx_empty_scifi = '1' ) then
                 o_tx(I+g_NLINKS_SCIFI)   <= x"000000" & work.util.D28_5;
                 o_tx_k(I+g_NLINKS_SCIFI) <= "0001";
-            elsif ( tx_q_scifi(g_NLINKS_PIXEL * 32 + 1 downto g_NLINKS_PIXEL * 32) == "00" ) then
-                o_tx(I+g_NLINKS_SCIFI)   <= tx_q_scifi(I * 32 + 31 downto I * 32)
+            elsif ( tx_q_scifi(g_NLINKS_PIXEL * 32 + 1 downto g_NLINKS_PIXEL * 32) = "00" ) then
+                o_tx(I+g_NLINKS_SCIFI)   <= tx_q_scifi(I * 32 + 31 downto I * 32);
                 o_tx_k(I+g_NLINKS_SCIFI) <= "0000";
             else
-                o_tx(I+g_NLINKS_SCIFI)   <= tx_q_scifi(I * 32 + 31 downto I * 32)
+                o_tx(I+g_NLINKS_SCIFI)   <= tx_q_scifi(I * 32 + 31 downto I * 32);
                 o_tx_k(I+g_NLINKS_SCIFI) <= "0001";
             end if;
         end if;
@@ -603,7 +603,7 @@ begin
         --! 1: A_almost_full
         --! 2: B_almost_full
         --! 3: i_dmamemhalffull
-        o_counters      => counter_ddr;
+        o_counters      => counter_ddr,
 
         -- Interface to memory bank A
         A_mem_clk       => A_mem_clk,

@@ -4,9 +4,8 @@ use IEEE.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 
-use work.pcie_components.all;
-use work.mudaq_registers.all;
-use work.dataflow_components.all;
+use work.mudaq.all;
+use work.a10_pcie_registers.all;
 
 entity top is
 port (
@@ -354,9 +353,9 @@ begin
     
     a10_block : entity work.farm_block
     generic map (
-        g_NLINKS_TOTL  => 16;
-        g_NLINKS_PIXEL => 8;
-        g_NLINKS_SCIFI => 8--;
+        g_NLINKS_TOTL  => 16,
+        g_NLINKS_PIXEL => 8,
+        g_NLINKS_SCIFI => 8--,
     )
     port map (
 

@@ -1,30 +1,28 @@
 #
 
-set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_scfifo.vhd
-set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_ram.vhd
-set_global_assignment -name VHDL_FILE ../../../common/firmware/s4/ip_dcfifo.vhd
-set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram_1_port.vhd
-set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_dcfifo_mixed_widths.vhd
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE assignments/DE5a_Net.tcl
+
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc
-set_global_assignment -name QIP_FILE pcieapp/include.qip
-set_global_assignment -name VHDL_FILE ../../../fe_board/firmware/FEB_common/daq_constants.vhd
-set_global_assignment -name VHDL_FILE a10/link_observer.vhd
-set_global_assignment -name VHDL_FILE a10/dma_evaluation.vhd
-set_global_assignment -name VHDL_FILE assignments/mudaq_registers.vhd
-set_global_assignment -name QIP_FILE util/include.qip
-set_global_assignment -name VHDL_FILE a10/hex2seg7.vhd
-set_global_assignment -name QIP_FILE a10/xcvr.qip
-set_global_assignment -name VHDL_FILE a10/data_demerge.vhd
-set_global_assignment -name VHDL_FILE a10/sc_main.vhd
-set_global_assignment -name VHDL_FILE a10/sc_secondary.vhd
-set_global_assignment -name VHDL_FILE a10/linear_shift.vhd
-set_global_assignment -name VHDL_FILE a10/data_generator_a10.vhd
-set_global_assignment -name VHDL_FILE a10/run_control.vhd
-set_global_assignment -name VHDL_FILE a10/run_control_link_listener.vhd
 
+set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_scfifo.vhd
+set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram.vhd
+set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_dcfifo.vhd
+set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_dcfifo_mixed_widths.vhd
+set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram_1_port.vhd
+set_global_assignment -name VHDL_FILE a10/a10_block.vhd
+set_global_assignment -name VHDL_FILE a10/data_generator_merged_data.vhd
+set_global_assignment -name VHDL_FILE a10/farm_aligne_link.vhd
+set_global_assignment -name VHDL_FILE a10/farm_block.vhd
+set_global_assignment -name VHDL_FILE a10/farm_data_path.vhd
+set_global_assignment -name VHDL_FILE a10/farm_link_merger.vhd
+set_global_assignment -name VHDL_FILE a10/farm_link_to_fifo.vhd
+set_global_assignment -name VHDL_FILE a10/farm_midas_event_builder.vhd
+set_global_assignment -name VHDL_FILE a10/pcie_register_mapping.vhd
+set_global_assignment -name VHDL_FILE a10/swb_data_merger.vhd
 
-
-# Farm firmware
 set_global_assignment -name QIP_FILE ddr3/include.qip
+set_global_assignment -name QIP_FILE ../../common/firmware/registers/include.qip
+set_global_assignment -name QIP_FILE a10/include.qip
+set_global_assignment -name QIP_FILE pcieapp/include.qip
+set_global_assignment -name QIP_FILE util/include.qip
