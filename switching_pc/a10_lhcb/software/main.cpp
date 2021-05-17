@@ -72,6 +72,7 @@ int main() {
             printf("I [%s] configure SI5345_1 ...\n", __FUNCTION__);
             si5345.init(si5345_1_registers, sizeof(si5345_1_registers) / sizeof(si5345_1_registers[0]));
             si5345.write_design_id(ID);
+            si5345.wait_sysincal();
         }
         printf("I [%s] check SI5345_2 config\n", __FUNCTION__);
         IOWR_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE, 1 << 2);
@@ -79,6 +80,7 @@ int main() {
             printf("I [%s] configure SI5345_2 ...\n", __FUNCTION__);
             si5345.init(si5345_2_registers, sizeof(si5345_2_registers) / sizeof(si5345_2_registers[0]));
             si5345.write_design_id(ID);
+            si5345.wait_sysincal();
         }
 
         // TODO: reconfig
