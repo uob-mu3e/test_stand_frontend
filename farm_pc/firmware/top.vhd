@@ -31,7 +31,7 @@ port (
     RJ45_LED_R          : out   std_logic;
 
     -- //////// FAN ////////
-    FAN_I2C_SCL         : out   std_logic;
+    FAN_I2C_SCL         : inout std_logic;
     FAN_I2C_SDA         : inout std_logic;
 
     -- //////// FLASH ////////
@@ -45,11 +45,11 @@ port (
     FLASH_RESET_n       : out   std_logic;
 
     -- //////// POWER ////////
-    POWER_MONITOR_I2C_SCL   : out   std_logic;
+    POWER_MONITOR_I2C_SCL   : inout std_logic;
     POWER_MONITOR_I2C_SDA   : inout std_logic;
 
     -- //////// TEMP ////////
-    TEMP_I2C_SCL        : out   std_logic;
+    TEMP_I2C_SCL        : inout std_logic;
     TEMP_I2C_SDA        : inout std_logic;
 
     -- //////// Transiver ////////
@@ -96,48 +96,48 @@ port (
     CLK_50_B2J          : in    std_logic;
     
     --//// DDR3 A /////////////
-    DDR3A_A             : out std_logic_vector(15 downto 0);
-    DDR3A_BA            : out std_logic_vector(2 downto 0);
-    DDR3A_CAS_n         : out std_logic;
-    DDR3A_CK            : out std_logic_vector(0 downto 0);
-    DDR3A_CKE           : out std_logic_vector(0 downto 0);
-    DDR3A_CK_n          : out std_logic_vector(0 downto 0);
-    DDR3A_CS_n          : out std_logic_vector(0 downto 0);
-    DDR3A_DM            : out std_logic_vector(7 downto 0);
+    DDR3A_A             : out   std_logic_vector(15 downto 0);
+    DDR3A_BA            : out   std_logic_vector(2 downto 0);
+    DDR3A_CAS_n         : out   std_logic;
+    DDR3A_CK            : out   std_logic_vector(0 downto 0);
+    DDR3A_CKE           : out   std_logic_vector(0 downto 0);
+    DDR3A_CK_n          : out   std_logic_vector(0 downto 0);
+    DDR3A_CS_n          : out   std_logic_vector(0 downto 0);
+    DDR3A_DM            : out   std_logic_vector(7 downto 0);
     DDR3A_DQ            : inout std_logic_vector(63 downto 0);
     DDR3A_DQS           : inout std_logic_vector(7 downto 0);
     DDR3A_DQS_n         : inout std_logic_vector(7 downto 0);
-    DDR3A_EVENT_n       : in std_logic;
-    DDR3A_ODT           : out std_logic_vector(0 downto 0);
-    DDR3A_RAS_n         : out std_logic;
-    DDR3A_REFCLK_p      : in std_logic;
-    DDR3A_RESET_n       : out std_logic;
-    DDR3A_SCL           : out std_logic;
+    DDR3A_EVENT_n       : in    std_logic;
+    DDR3A_ODT           : out   std_logic_vector(0 downto 0);
+    DDR3A_RAS_n         : out   std_logic;
+    DDR3A_REFCLK_p      : in    std_logic;
+    DDR3A_RESET_n       : out   std_logic;
+    DDR3A_SCL           : out   std_logic;
     DDR3A_SDA           : inout std_logic;
-    DDR3A_WE_n          : out std_logic;
-    RZQ_DDR3_A          : in std_logic;
+    DDR3A_WE_n          : out   std_logic;
+    RZQ_DDR3_A          : in    std_logic;
 
     --//// DDR3 B/////////////
-    DDR3B_A             : out std_logic_vector(15 downto 0);
-    DDR3B_BA            : out std_logic_vector(2 downto 0);
-    DDR3B_CAS_n         : out std_logic;
-    DDR3B_CK            : out std_logic_vector(0 downto 0);
-    DDR3B_CKE           : out std_logic_vector(0 downto 0);
-    DDR3B_CK_n          : out std_logic_vector(0 downto 0);
-    DDR3B_CS_n          : out std_logic_vector(0 downto 0);
-    DDR3B_DM            : out std_logic_vector(7 downto 0);
+    DDR3B_A             : out   std_logic_vector(15 downto 0);
+    DDR3B_BA            : out   std_logic_vector(2 downto 0);
+    DDR3B_CAS_n         : out   std_logic;
+    DDR3B_CK            : out   std_logic_vector(0 downto 0);
+    DDR3B_CKE           : out   std_logic_vector(0 downto 0);
+    DDR3B_CK_n          : out   std_logic_vector(0 downto 0);
+    DDR3B_CS_n          : out   std_logic_vector(0 downto 0);
+    DDR3B_DM            : out   std_logic_vector(7 downto 0);
     DDR3B_DQ            : inout std_logic_vector(63 downto 0);
     DDR3B_DQS           : inout std_logic_vector(7 downto 0);
     DDR3B_DQS_n         : inout std_logic_vector(7 downto 0);
-    DDR3B_EVENT_n       : in std_logic;
-    DDR3B_ODT           : out std_logic_vector(0 downto 0);
-    DDR3B_RAS_n         : out std_logic;
-    DDR3B_REFCLK_p      : in std_logic;
-    DDR3B_RESET_n       : out std_logic;
-    DDR3B_SCL           : out std_logic;
+    DDR3B_EVENT_n       : in    std_logic;
+    DDR3B_ODT           : out   std_logic_vector(0 downto 0);
+    DDR3B_RAS_n         : out   std_logic;
+    DDR3B_REFCLK_p      : in    std_logic;
+    DDR3B_RESET_n       : out   std_logic;
+    DDR3B_SCL           : out   std_logic;
     DDR3B_SDA           : inout std_logic;
-    DDR3B_WE_n          : out std_logic;
-    RZQ_DDR3_B          : in std_logic--;
+    DDR3B_WE_n          : out   std_logic;
+    RZQ_DDR3_B          : in    std_logic--;
     
 );
 end entity;
@@ -145,19 +145,23 @@ end entity;
 architecture rtl of top is
 
     -- free running clock (used as nios clock)
-    signal clk_50 : std_logic;
-    signal reset_50_n : std_logic;
+    signal clk_50       : std_logic;
+    signal reset_50_n   : std_logic;
 
     -- global 125 MHz clock
-    signal clk_125 : std_logic;
-    signal reset_125_n : std_logic;
+    signal clk_125      : std_logic;
+    signal reset_125_n  : std_logic;
 
     -- 156.25 MHz data clock (derived from global 125 MHz clock)
-    signal clk_250 : std_logic;
-    signal reset_250_n : std_logic;
+    signal clk_250      : std_logic;
+    signal reset_250_n  : std_logic;
 
     -- 250 MHz pcie clock 
-    signal reset_pcie0_n : std_logic;
+    signal reset_pcie0_n    : std_logic;
+    signal pcie_fastclk_out : std_logic;
+    
+    -- DDR clk
+    signal A_mem_clk, B_mem_clk : std_logic;
 
     -- flash
     signal flash_cs_n : std_logic;
@@ -165,13 +169,16 @@ architecture rtl of top is
     -- pcie read / write registers
     signal pcie0_resets_n_A   : std_logic_vector(31 downto 0);
     signal pcie0_resets_n_B   : std_logic_vector(31 downto 0);
+    signal pcie0_resets_n_C   : std_logic_vector(31 downto 0);
     signal pcie0_writeregs_A  : work.util.slv32_array_t(63 downto 0);
     signal pcie0_writeregs_B  : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_writeregs_C  : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_regwritten_A : std_logic_vector(63 downto 0);
+    signal pcie0_regwritten_B : std_logic_vector(63 downto 0);
+    signal pcie0_regwritten_C : std_logic_vector(63 downto 0);
     signal pcie0_readregs_A   : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_B   : work.util.slv32_array_t(63 downto 0);
-    
-
-    signal pcie_fastclk_out     : std_logic;
+    signal pcie0_readregs_C   : work.util.slv32_array_t(63 downto 0);
 
     -- pcie read / write memory
     signal readmem_writedata    : std_logic_vector(31 downto 0);
@@ -184,7 +191,7 @@ architecture rtl of top is
     signal dma_data_wren, dmamem_endofevent, pcie0_dma0_hfull : std_logic;
     signal dma_data : std_logic_vector(255 downto 0);
 
-    signal rx_data_raw, rx_data, tx_data : work.util.slv32_array_t(15 downto 0);
+    signal rx_data_raw, rx_data, tx_data    : work.util.slv32_array_t(15 downto 0);
     signal rx_datak_raw, rx_datak, tx_datak : work.util.slv4_array_t(15 downto 0);
 
 begin
@@ -215,7 +222,6 @@ begin
         inclk => SMA_CLKIN,
         outclk => clk_125--,
     );
-
 
     --! A10 block
     --! ------------------------------------------------------------------------
@@ -283,6 +289,17 @@ begin
         i_pcie0_refclk                  => PCIE_REFCLK_p,
         o_pcie0_clk                     => pcie_fastclk_out,
         o_pcie0_clk_hz                  => LED(3),
+        
+        -- PCIe0 read interface to writable memory
+        i_pcie0_wmem_addr               => writememreadaddr,
+        o_pcie0_wmem_rdata              => writememreaddata,
+        i_pcie0_wmem_clk                => clk_250,
+
+        -- PCIe0 write interface to readable memory
+        i_pcie0_rmem_addr               => readmem_writeaddr,
+        i_pcie0_rmem_wdata              => readmem_writedata,
+        i_pcie0_rmem_we                 => readmem_wren,
+        i_pcie0_rmem_clk                => clk_250,
 
         -- PCIe0 DMA0
         i_pcie0_dma0_wdata              => dma_data,
@@ -299,10 +316,13 @@ begin
         -- PCIe0 read interface for writable registers
         o_pcie0_wregs_A                 => pcie0_writeregs_A,
         i_pcie0_wregs_A_clk             => pcie_fastclk_out,
+        o_pcie0_regwritten_A            => pcie0_regwritten_A,
         o_pcie0_wregs_B                 => pcie0_writeregs_B,
         i_pcie0_wregs_B_clk             => clk_250,
+        o_pcie0_regwritten_B            => pcie0_regwritten_B,
         o_pcie0_wregs_C                 => pcie0_writeregs_C,
         i_pcie0_wregs_C_clk             => A_mem_clk,
+        o_pcie0_regwritten_C            => pcie0_regwritten_C,
         o_pcie0_resets_n_A              => pcie0_resets_n_A,
         o_pcie0_resets_n_B              => pcie0_resets_n_B,
         o_pcie0_resets_n_C              => pcie0_resets_n_C,
@@ -351,7 +371,7 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     
-    a10_block : entity work.farm_block
+    farm_block : entity work.farm_block
     generic map (
         g_NLINKS_TOTL  => 16,
         g_NLINKS_PIXEL => 8,
@@ -366,9 +386,12 @@ begin
         o_tx_k          => tx_datak,
 
         --! PCIe registers / memory
-        i_writeregs_pcie=> pcie0_writeregs_A,
-        i_writeregs_link=> pcie0_writeregs_B,
-        i_writeregs_ddr => pcie0_writeregs_C,
+        i_writeregs_pcie    => pcie0_writeregs_A,
+        i_regwritten_pcie   => pcie0_regwritten_A,
+        i_writeregs_link    => pcie0_writeregs_B,
+        i_regwritten_link   => pcie0_regwritten_B,
+        i_writeregs_ddr     => pcie0_writeregs_C,
+        i_regwritten_ddr    => pcie0_regwritten_C,
     
         o_readregs_pcie => pcie0_readregs_A,
         o_readregs_link => pcie0_readregs_B,

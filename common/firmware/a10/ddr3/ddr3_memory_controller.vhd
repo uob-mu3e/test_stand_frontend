@@ -9,8 +9,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
-use work.pcie_components.all;
-use work.mudaq_registers.all;
+
+use work.mudaq.all;
+use work.a10_pcie_registers.all;
 
 entity ddr3_memory_controller is 
 	port (

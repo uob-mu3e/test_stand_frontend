@@ -100,12 +100,15 @@ port (
     -- PCIe0 read interface for writable registers
     o_pcie0_wregs_A     : out   work.util.slv32_array_t(63 downto 0);
     i_pcie0_wregs_A_clk : in    std_logic := '0';
+    o_pcie0_regwritten_A: out   std_logic_vector(63 downto 0);
     o_pcie0_resets_n_A  : out   std_logic_vector(31 downto 0);
     o_pcie0_wregs_B     : out   work.util.slv32_array_t(63 downto 0);
     i_pcie0_wregs_B_clk : in    std_logic := '0';
+    o_pcie0_regwritten_B: out   std_logic_vector(63 downto 0);
     o_pcie0_resets_n_B  : out   std_logic_vector(31 downto 0);
     o_pcie0_wregs_C     : out   work.util.slv32_array_t(63 downto 0);
     i_pcie0_wregs_C_clk : in    std_logic := '0';
+    o_pcie0_regwritten_C: out   std_logic_vector(63 downto 0);
     o_pcie0_resets_n_C  : out   std_logic_vector(31 downto 0);
 
 
@@ -144,12 +147,15 @@ port (
     -- PCIe1 read interface for writable registers
     o_pcie1_wregs_A     : out   work.util.slv32_array_t(63 downto 0);
     i_pcie1_wregs_A_clk : in    std_logic := '0';
+    o_pcie1_regwritten_A: out   std_logic_vector(63 downto 0);
     o_pcie1_resets_n_A  : out   std_logic_vector(31 downto 0);
     o_pcie1_wregs_B     : out   work.util.slv32_array_t(63 downto 0);
     i_pcie1_wregs_B_clk : in    std_logic := '0';
+    o_pcie1_regwritten_B: out   std_logic_vector(63 downto 0);
     o_pcie1_resets_n_B  : out   std_logic_vector(31 downto 0);
     o_pcie1_wregs_C     : out   work.util.slv32_array_t(63 downto 0);
     i_pcie1_wregs_C_clk : in    std_logic := '0';
+    o_pcie1_regwritten_C: out   std_logic_vector(63 downto 0);
     o_pcie1_resets_n_C  : out   std_logic_vector(31 downto 0);
 
     o_reset_156_n       : out   std_logic;
@@ -560,7 +566,7 @@ begin
 
         o_pcie0_rregs       => pcie0_rregs,
     
-        i_clk_A             => pcie0_clk,
+        i_clk_A             => i_pcie0_wregs_A_clk,
         i_clk_B             => i_pcie0_wregs_B_clk,
         i_clk_C             => i_pcie0_wregs_C_clk--,
     );
@@ -590,12 +596,15 @@ begin
 
         readregs                => pcie0_rregs,
         writeregs               => pcie0_wregs_A,
+        regwritten              => o_pcie0_regwritten_A,
 
         i_clk_B                 => i_pcie0_wregs_B_clk,
         o_writeregs_B           => pcie0_wregs_B,
+        o_regwritten_B          => o_pcie0_regwritten_B,
         
         i_clk_C                 => i_pcie0_wregs_C_clk,
         o_writeregs_C           => pcie0_wregs_C,
+        o_regwritten_C          => o_pcie0_regwritten_C,
 
         writememreadaddr        => i_pcie0_wmem_addr,
         writememreaddata        => o_pcie0_wmem_rdata,
@@ -656,12 +665,15 @@ begin
 
         readregs                => pcie1_rregs,
         writeregs               => pcie1_wregs_A,
+        regwritten              => o_pcie1_regwritten_A,
 
         i_clk_B                 => i_pcie1_wregs_B_clk,
         o_writeregs_B           => pcie1_wregs_B,
+        o_regwritten_B          => o_pcie1_regwritten_B,
         
         i_clk_C                 => i_pcie1_wregs_C_clk,
         o_writeregs_C           => pcie1_wregs_C,
+        o_regwritten_C          => o_pcie1_regwritten_C,
 
         writememreadaddr        => i_pcie1_wmem_addr,
         writememreaddata        => o_pcie1_wmem_rdata,

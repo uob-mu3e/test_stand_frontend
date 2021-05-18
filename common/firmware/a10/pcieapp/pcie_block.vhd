@@ -99,14 +99,14 @@ end entity;
 
 architecture RTL of pcie_block is
 
-	-- reset and clock stuff
-	signal alive_cnt :  		STD_LOGIC_VECTOR (25 DOWNTO 0);
+    -- reset and clock stuff
+    signal alive_cnt :  		STD_LOGIC_VECTOR (25 DOWNTO 0);
     signal any_rstn :  			STD_LOGIC;
-	signal any_rstn_r :  		STD_LOGIC;
+    signal any_rstn_r :  		STD_LOGIC;
     signal any_rstn_rr :  		STD_LOGIC;
     signal pld_clk :			STD_LOGIC;
     signal rsnt_cntn : 			STD_LOGIC_VECTOR (10 DOWNTO 0);
-	signal exits_r	:			STD_LOGIC;
+    signal exits_r	:			STD_LOGIC;
     signal srst :				STD_LOGIC;
     signal app_rstn :			STD_LOGIC;
     signal srst0 :				STD_LOGIC;
@@ -130,7 +130,7 @@ architecture RTL of pcie_block is
     
     -- Transmitter IF
     
-	signal tx_fifo_empty0 :  	STD_LOGIC_vector(0 downto 0);
+    signal tx_fifo_empty0 :  	STD_LOGIC_vector(0 downto 0);
     signal tx_preemp_0t_out :  	STD_LOGIC_VECTOR (4 DOWNTO 0);
     signal tx_preemp_1t_out :  	STD_LOGIC_VECTOR (4 DOWNTO 0);
     signal tx_preemp_2t_out :  	STD_LOGIC_VECTOR (4 DOWNTO 0);
@@ -144,40 +144,40 @@ architecture RTL of pcie_block is
     signal tx_st_ready0 :  	STD_LOGIC;
     signal tx_st_valid0 :  	STD_LOGIC_vector(0 downto 0);
     signal tx_vodctrl_out :  	STD_LOGIC_VECTOR (2 DOWNTO 0);
-	 
-	 signal tx_cred_datafccp   : std_logic_vector(11 downto 0);   
-	 signal tx_cred_datafcnp   : std_logic_vector(11 downto 0); 
-	 signal tx_cred_datafcp    : std_logic_vector(11 downto 0); 
-	 signal tx_cred_fchipcons  : std_logic_vector(5 downto 0);  
-	 signal tx_cred_fcinfinite : std_logic_vector(5 downto 0); 
-	 signal tx_cred_hdrfccp    : std_logic_vector(7 downto 0);
-	 signal tx_cred_hdrfcnp    : std_logic_vector(7 downto 0); 
-	 signal tx_cred_hdrfcp     : std_logic_vector(7 downto 0);
-	 
+    
+    signal tx_cred_datafccp   : std_logic_vector(11 downto 0);   
+    signal tx_cred_datafcnp   : std_logic_vector(11 downto 0); 
+    signal tx_cred_datafcp    : std_logic_vector(11 downto 0); 
+    signal tx_cred_fchipcons  : std_logic_vector(5 downto 0);  
+    signal tx_cred_fcinfinite : std_logic_vector(5 downto 0); 
+    signal tx_cred_hdrfccp    : std_logic_vector(7 downto 0);
+    signal tx_cred_hdrfcnp    : std_logic_vector(7 downto 0); 
+    signal tx_cred_hdrfcp     : std_logic_vector(7 downto 0);
+    
     
     -- LEDs
     signal lane_active_led : 	STD_LOGIC_VECTOR (3 DOWNTO 0);
 
-	-- Test ports
-	signal test_in :  			STD_LOGIC_VECTOR (31 DOWNTO 0);
+    -- Test ports
+    signal test_in :  			STD_LOGIC_VECTOR (31 DOWNTO 0);
     signal test_out_icm :  		STD_LOGIC_VECTOR (8 DOWNTO 0);
 
-	-- Interrupt stuff
-	signal app_int_ack :  	STD_LOGIC;
+    -- Interrupt stuff
+    signal app_int_ack :  	STD_LOGIC;
     signal app_int_sts :  	STD_LOGIC;
     signal app_msi_ack :  		STD_LOGIC;
     signal app_msi_num :  		STD_LOGIC_VECTOR (4 DOWNTO 0);
     signal app_msi_req :  		STD_LOGIC;
     signal app_msi_tc :  		STD_LOGIC_VECTOR (2 DOWNTO 0);
-	signal pex_msi_num :  		STD_LOGIC_VECTOR (4 DOWNTO 0);
-	
-	-- Completion stuff
-	signal cpl_err_icm : 		STD_LOGIC_VECTOR (6 DOWNTO 0);
+    signal pex_msi_num :  		STD_LOGIC_VECTOR (4 DOWNTO 0);
+    
+    -- Completion stuff
+    signal cpl_err_icm : 		STD_LOGIC_VECTOR (6 DOWNTO 0);
     signal cpl_pending : 		STD_LOGIC;		
 
-	-- LMI (Local Managment Interface)
-	signal lmi_ack :  			STD_LOGIC;
-	signal lmi_addr :  			STD_LOGIC_VECTOR (11 DOWNTO 0);
+    -- LMI (Local Managment Interface)
+    signal lmi_ack :  			STD_LOGIC;
+    signal lmi_addr :  			STD_LOGIC_VECTOR (11 DOWNTO 0);
     signal lmi_din :  			STD_LOGIC_VECTOR (31 DOWNTO 0);
     signal lmi_dout :  			STD_LOGIC_VECTOR (31 DOWNTO 0);
     signal lmi_rden :  			STD_LOGIC;
@@ -187,18 +187,18 @@ architecture RTL of pcie_block is
     signal pme_to_sr : 			STD_LOGIC;
     
     -- Configuration space
-	signal tl_cfg_add :  		STD_LOGIC_VECTOR (3 DOWNTO 0);
+    signal tl_cfg_add :  		STD_LOGIC_VECTOR (3 DOWNTO 0);
     signal tl_cfg_ctl :  		STD_LOGIC_VECTOR (31 DOWNTO 0);
     signal tl_cfg_ctl_wr :  	STD_LOGIC;
     signal tl_cfg_sts :  		STD_LOGIC_VECTOR (52 DOWNTO 0);
     signal tl_cfg_sts_wr :  	STD_LOGIC;
     
     -- Link training
-	signal dl_ltssm :  			STD_LOGIC_VECTOR (4 DOWNTO 0);
+    signal dl_ltssm :  			STD_LOGIC_VECTOR (4 DOWNTO 0);
     signal dl_ltssm_r :  		STD_LOGIC_VECTOR (4 DOWNTO 0);
    
     -- Config registers decoded
-	signal cfg_busdev_icm :  	STD_LOGIC_VECTOR (12 DOWNTO 0);
+    signal cfg_busdev_icm :  	STD_LOGIC_VECTOR (12 DOWNTO 0);
     signal cfg_devcsr_icm :  	STD_LOGIC_VECTOR (31 DOWNTO 0);
     signal cfg_io_bas :  		STD_LOGIC_VECTOR (19 DOWNTO 0);
     signal cfg_linkcsr_icm :  	STD_LOGIC_VECTOR (31 DOWNTO 0);
@@ -207,30 +207,30 @@ architecture RTL of pcie_block is
     signal cfg_pr_bas :  		STD_LOGIC_VECTOR (43 DOWNTO 0);
     signal cfg_prmcsr_icm :  	STD_LOGIC_VECTOR (31 DOWNTO 0);
 
-	-- Completion stuff after handling
-	signal cpl_err_in : 		STD_LOGIC_VECTOR (6 DOWNTO 0);
-	signal err_desc :  			STD_LOGIC_VECTOR (127 DOWNTO 0);
-	
-	-- Reconfig stuff after handling
-	signal data_valid : 		STD_LOGIC;
-	
-	-- Reset and link status
-	signal dlup : 			std_logic;
-	signal dlup_exit: 	std_logic;
- 	signal hotrst_exit: 	std_logic;
-	signal l2_exit:		std_logic;
-	signal currentspeed: std_logic_vector(1 downto 0);
-	signal lane_act:		std_logic_vector(3 downto 0);
-	signal serdes_pll_locked : std_logic;
-	
-	-- Application
-	signal busy:				STD_LOGIC; 
-	signal regloopback : reg32array;
+    -- Completion stuff after handling
+    signal cpl_err_in : 		STD_LOGIC_VECTOR (6 DOWNTO 0);
+    signal err_desc :  			STD_LOGIC_VECTOR (127 DOWNTO 0);
+    
+    -- Reconfig stuff after handling
+    signal data_valid : 		STD_LOGIC;
+    
+    -- Reset and link status
+    signal dlup : 			std_logic;
+    signal dlup_exit: 	std_logic;
+    signal hotrst_exit: 	std_logic;
+    signal l2_exit:		std_logic;
+    signal currentspeed: std_logic_vector(1 downto 0);
+    signal lane_act:		std_logic_vector(3 downto 0);
+    signal serdes_pll_locked : std_logic;
+    
+    -- Application
+    signal busy:				STD_LOGIC; 
+    signal regloopback : reg32array;
 
-	signal application_reset_n: std_logic;
-	
-	signal testbus :  			STD_LOGIC_VECTOR (127 DOWNTO 0);
-	
+    signal application_reset_n: std_logic;
+    
+    signal testbus :  			STD_LOGIC_VECTOR (127 DOWNTO 0);
+    
 begin
 
   any_rstn <= pcie_perstn and local_rstn;

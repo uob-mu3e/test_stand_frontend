@@ -15,114 +15,113 @@ use work.a10_pcie_registers.all;
 
 entity ddr3_block is 
 port (
-	reset_n	: in std_logic;
-	
-	-- Control and status registers
-	ddr3control			: in reg32;
-	ddr3status			: out reg32;
-	
-	-- A interface
-	A_ddr3clk				: out std_logic;
-	A_ddr3calibrated		: out std_logic;
-	A_ddr3ready				: out std_logic;
-	A_ddr3addr				: in std_logic_vector(25 downto 0);
-	A_ddr3datain			: in std_logic_vector(511 downto 0);
-	A_ddr3dataout			: out std_logic_vector(511 downto 0);
-	A_ddr3_write			: in std_logic;
-	A_ddr3_read				: in std_logic;
-	A_ddr3_read_valid		: out std_logic;
-	
-	-- B interface
-	B_ddr3clk				: out std_logic;
-	B_ddr3calibrated		: out std_logic;
-	B_ddr3ready				: out std_logic;
-	B_ddr3addr				: in std_logic_vector(25 downto 0);
-	B_ddr3datain			: in std_logic_vector(511 downto 0);
-	B_ddr3dataout			: out std_logic_vector(511 downto 0);
-	B_ddr3_write			: in std_logic;
-	B_ddr3_read				: in std_logic;
-	B_ddr3_read_valid		: out std_logic;
+    reset_n	: in std_logic;
+    
+    -- Control and status registers
+    ddr3control			    : in  std_logic_vector(31 downto 0);
+    ddr3status			    : out std_logic_vector(31 downto 0);
+    
+    -- A interface
+    A_ddr3clk				: out std_logic;
+    A_ddr3calibrated		: out std_logic;
+    A_ddr3ready				: out std_logic;
+    A_ddr3addr				: in  std_logic_vector(25 downto 0);
+    A_ddr3datain			: in  std_logic_vector(511 downto 0);
+    A_ddr3dataout			: out std_logic_vector(511 downto 0);
+    A_ddr3_write			: in  std_logic;
+    A_ddr3_read				: in  std_logic;
+    A_ddr3_read_valid		: out std_logic;
+    
+    -- B interface
+    B_ddr3clk				: out std_logic;
+    B_ddr3calibrated		: out std_logic;
+    B_ddr3ready				: out std_logic;
+    B_ddr3addr				: in  std_logic_vector(25 downto 0);
+    B_ddr3datain			: in  std_logic_vector(511 downto 0);
+    B_ddr3dataout			: out std_logic_vector(511 downto 0);
+    B_ddr3_write			: in  std_logic;
+    B_ddr3_read             : in  std_logic;
+    B_ddr3_read_valid       : out std_logic;
 
-	-- Error counters
-	errout					: out reg32;	
+    -- Error counters
+    errout                  : out std_logic_vector(31 downto 0);
 
-	-- Interface to memory bank A
-	A_mem_ck              : out   std_logic_vector(0 downto 0);                      -- mem_ck
-	A_mem_ck_n            : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
-	A_mem_a               : out   std_logic_vector(15 downto 0);                     -- mem_a
-	A_mem_ba              : out   std_logic_vector(2 downto 0);                      -- mem_ba
-	A_mem_cke             : out   std_logic_vector(0 downto 0);                      -- mem_cke
-	A_mem_cs_n            : out   std_logic_vector(0 downto 0);                      -- mem_cs_n
-	A_mem_odt             : out   std_logic_vector(0 downto 0);                      -- mem_odt
-	A_mem_reset_n         : out   std_logic_vector(0 downto 0);                      -- mem_reset_n
-	A_mem_we_n            : out   std_logic_vector(0 downto 0);                      -- mem_we_n
-	A_mem_ras_n           : out   std_logic_vector(0 downto 0);                      -- mem_ras_n
-	A_mem_cas_n           : out   std_logic_vector(0 downto 0);                      -- mem_cas_n
-	A_mem_dqs             : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs
-	A_mem_dqs_n           : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs_n
-	A_mem_dq              : inout std_logic_vector(63 downto 0)  := (others => 'X'); -- mem_dq
-	A_mem_dm              : out   std_logic_vector(7 downto 0);                      -- mem_dm
-	A_oct_rzqin           : in    std_logic                      := 'X';             -- oct_rzqin
-	A_pll_ref_clk         : in    std_logic                      := 'X';             -- clk
+    -- Interface to memory bank A
+    A_mem_ck              : out   std_logic_vector(0 downto 0);                      -- mem_ck
+    A_mem_ck_n            : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
+    A_mem_a               : out   std_logic_vector(15 downto 0);                     -- mem_a
+    A_mem_ba              : out   std_logic_vector(2 downto 0);                      -- mem_ba
+    A_mem_cke             : out   std_logic_vector(0 downto 0);                      -- mem_cke
+    A_mem_cs_n            : out   std_logic_vector(0 downto 0);                      -- mem_cs_n
+    A_mem_odt             : out   std_logic_vector(0 downto 0);                      -- mem_odt
+    A_mem_reset_n         : out   std_logic_vector(0 downto 0);                      -- mem_reset_n
+    A_mem_we_n            : out   std_logic_vector(0 downto 0);                      -- mem_we_n
+    A_mem_ras_n           : out   std_logic_vector(0 downto 0);                      -- mem_ras_n
+    A_mem_cas_n           : out   std_logic_vector(0 downto 0);                      -- mem_cas_n
+    A_mem_dqs             : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs
+    A_mem_dqs_n           : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs_n
+    A_mem_dq              : inout std_logic_vector(63 downto 0)  := (others => 'X'); -- mem_dq
+    A_mem_dm              : out   std_logic_vector(7 downto 0);                      -- mem_dm
+    A_oct_rzqin           : in    std_logic                      := 'X';             -- oct_rzqin
+    A_pll_ref_clk         : in    std_logic                      := 'X';             -- clk
 
-	-- Interface to memory bank B
-	B_mem_ck              : out   std_logic_vector(0 downto 0);                      -- mem_ck
-	B_mem_ck_n            : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
-	B_mem_a               : out   std_logic_vector(15 downto 0);                     -- mem_a
-	B_mem_ba              : out   std_logic_vector(2 downto 0);                      -- mem_ba
-	B_mem_cke             : out   std_logic_vector(0 downto 0);                      -- mem_cke
-	B_mem_cs_n            : out   std_logic_vector(0 downto 0);                      -- mem_cs_n
-	B_mem_odt             : out   std_logic_vector(0 downto 0);                      -- mem_odt
-	B_mem_reset_n         : out   std_logic_vector(0 downto 0);                      -- mem_reset_n
-	B_mem_we_n            : out   std_logic_vector(0 downto 0);                      -- mem_we_n
-	B_mem_ras_n           : out   std_logic_vector(0 downto 0);                      -- mem_ras_n
-	B_mem_cas_n           : out   std_logic_vector(0 downto 0);                      -- mem_cas_n
-	B_mem_dqs             : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs
-	B_mem_dqs_n           : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs_n
-	B_mem_dq              : inout std_logic_vector(63 downto 0)  := (others => 'X'); -- mem_dq
-	B_mem_dm              : out   std_logic_vector(7 downto 0);                      -- mem_dm
-	B_oct_rzqin           : in    std_logic                      := 'X';             -- oct_rzqin
-	B_pll_ref_clk         : in    std_logic                      := 'X'             -- clk
-
+    -- Interface to memory bank B
+    B_mem_ck              : out   std_logic_vector(0 downto 0);                      -- mem_ck
+    B_mem_ck_n            : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
+    B_mem_a               : out   std_logic_vector(15 downto 0);                     -- mem_a
+    B_mem_ba              : out   std_logic_vector(2 downto 0);                      -- mem_ba
+    B_mem_cke             : out   std_logic_vector(0 downto 0);                      -- mem_cke
+    B_mem_cs_n            : out   std_logic_vector(0 downto 0);                      -- mem_cs_n
+    B_mem_odt             : out   std_logic_vector(0 downto 0);                      -- mem_odt
+    B_mem_reset_n         : out   std_logic_vector(0 downto 0);                      -- mem_reset_n
+    B_mem_we_n            : out   std_logic_vector(0 downto 0);                      -- mem_we_n
+    B_mem_ras_n           : out   std_logic_vector(0 downto 0);                      -- mem_ras_n
+    B_mem_cas_n           : out   std_logic_vector(0 downto 0);                      -- mem_cas_n
+    B_mem_dqs             : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs
+    B_mem_dqs_n           : inout std_logic_vector(7 downto 0)   := (others => 'X'); -- mem_dqs_n
+    B_mem_dq              : inout std_logic_vector(63 downto 0)  := (others => 'X'); -- mem_dq
+    B_mem_dm              : out   std_logic_vector(7 downto 0);                      -- mem_dm
+    B_oct_rzqin           : in    std_logic                      := 'X';             -- oct_rzqin
+    B_pll_ref_clk         : in    std_logic                      := 'X'              -- clk
 );
 end entity ddr3_block;
 
 architecture RTL of ddr3_block is
-	
-	signal A_cal_success:	std_logic;
-	signal A_cal_fail:		std_logic;
-	
-	signal A_clk:				std_logic;
-	signal A_reset_n:			std_logic;
-	
-	signal A_ready:			std_logic;
-	signal A_read:				std_logic;
-	signal A_write:			std_logic;
-	signal A_address:			std_logic_vector(25 downto 0);
-	signal A_readdata:		std_logic_vector(511 downto 0);
-	signal A_writedata:		std_logic_vector(511 downto 0);
-	signal A_burstcount:		std_logic_vector(6 downto 0);
-	signal A_readdatavalid: std_logic;
-	
-	
-	signal B_cal_success:	std_logic;
-	signal B_cal_fail:		std_logic;
-	
-	signal B_clk:				std_logic;
-	signal B_reset_n:			std_logic;
-	
-	signal B_ready:			std_logic;
-	signal B_read:				std_logic;
-	signal B_write:			std_logic;
-	signal B_address:			std_logic_vector(25 downto 0);
-	signal B_readdata:		std_logic_vector(511 downto 0);
-	signal B_writedata:		std_logic_vector(511 downto 0);
-	signal B_burstcount:		std_logic_vector(6 downto 0);
-	signal B_readdatavalid: std_logic;
-	
-	signal A_errout:			reg32;
-	signal B_errout:			reg32;
-	
+    
+    signal A_cal_success:	std_logic;
+    signal A_cal_fail:		std_logic;
+    
+    signal A_clk:				std_logic;
+    signal A_reset_n:			std_logic;
+    
+    signal A_ready:			std_logic;
+    signal A_read:				std_logic;
+    signal A_write:			std_logic;
+    signal A_address:			std_logic_vector(25 downto 0);
+    signal A_readdata:		std_logic_vector(511 downto 0);
+    signal A_writedata:		std_logic_vector(511 downto 0);
+    signal A_burstcount:		std_logic_vector(6 downto 0);
+    signal A_readdatavalid: std_logic;
+    
+    
+    signal B_cal_success:	std_logic;
+    signal B_cal_fail:		std_logic;
+    
+    signal B_clk:				std_logic;
+    signal B_reset_n:			std_logic;
+    
+    signal B_ready:			std_logic;
+    signal B_read:				std_logic;
+    signal B_write:			std_logic;
+    signal B_address:			std_logic_vector(25 downto 0);
+    signal B_readdata:		std_logic_vector(511 downto 0);
+    signal B_writedata:		std_logic_vector(511 downto 0);
+    signal B_burstcount:		std_logic_vector(6 downto 0);
+    signal B_readdatavalid: std_logic;
+    
+    signal A_errout : std_logic_vector(31 downto 0);
+    signal B_errout : std_logic_vector(31 downto 0);
+    
 begin
 
 	ddr3_A : component work.cmp.ddr3_if

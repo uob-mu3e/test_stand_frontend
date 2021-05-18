@@ -30,8 +30,11 @@ port (
 
     --! PCIe registers / memory
     i_writeregs_pcie    : in  work.util.slv32_array_t(63 downto 0);
+    i_regwritten_pcie   : in  std_logic_vector(63 downto 0);
     i_writeregs_link    : in  work.util.slv32_array_t(63 downto 0);
-    i_writeregs_ddr     : in  work.util.slv32_array_t(63 downto 0);   
+    i_regwritten_link   : in  std_logic_vector(63 downto 0);
+    i_writeregs_ddr     : in  work.util.slv32_array_t(63 downto 0);
+    i_regwritten_ddr    : in  std_logic_vector(63 downto 0);
     
     o_readregs_pcie     : out work.util.slv32_array_t(63 downto 0);
     o_readregs_link     : out work.util.slv32_array_t(63 downto 0);
@@ -59,7 +62,7 @@ port (
     i_clk_250_link      : in  std_logic;
     
     -- Interface to memory bank A
-    o_A_mem_clk           : out   std_logic;
+    o_A_mem_clk         : out   std_logic;
     A_mem_ck            : out   std_logic_vector(0 downto 0);                      -- mem_ck
     A_mem_ck_n          : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
     A_mem_a             : out   std_logic_vector(15 downto 0);                     -- mem_a
@@ -79,7 +82,7 @@ port (
     A_pll_ref_clk       : in    std_logic                      := 'X';             -- clk
 
     -- Interface to memory bank B
-    o_B_mem_clk           : out   std_logic;
+    o_B_mem_clk         : out   std_logic;
     B_mem_ck            : out   std_logic_vector(0 downto 0);                      -- mem_ck
     B_mem_ck_n          : out   std_logic_vector(0 downto 0);                      -- mem_ck_n
     B_mem_a             : out   std_logic_vector(15 downto 0);                     -- mem_a
@@ -210,7 +213,7 @@ begin
         o_counter(I) <= counter_midas_event_builder(I-8);
     END GENERATE;
     gen_ddr_cnt : FOR I in 16 to 19 GENERATE
-        o_counter <= counter_ddr(I-16);
+        o_counter(I) <= counter_ddr(I-16);
     END GENeRATE;
     
     o_status(0) <= pixel_error_link_to_fifo;
@@ -234,8 +237,8 @@ begin
     )
     port map(
         i_clk       => i_clk_250_link,
-        i_reset_n   => i_reset_n_250_link,
-        i_en        => not full_pixel,
+        i_reset_n   => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
+        i_en        => not full_pixel and i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGE),
         i_sd        => x"00000002",
         o_data      => w_pixel,
         o_data_we   => w_pixel_en,
@@ -268,7 +271,7 @@ begin
         DATA_TYPE   => x"01"--,
     )
     port map (
-        i_reset_n   => i_reset_n_250_link,
+        i_reset_n   => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
         i_clk       => i_clk_250_link,
         
         i_data      => r_pixel,
@@ -283,13 +286,14 @@ begin
     -- gen scifi data
     e_data_gen_scifi : entity work.data_generator_merged_data
     generic map(
+        NLINKS => g_NLINKS_SCIFI,
         go_to_sh => 2,
         go_to_trailer => 3--,
     )
     port map(
         i_clk       => i_clk_250_link,
-        i_reset_n   => i_reset_n_250_link,
-        i_en        => not full_scifi,
+        i_reset_n   => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
+        i_en        => not full_scifi and i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGE),
         i_sd        => x"00000002",
         o_data      => w_scifi,
         o_data_we   => w_scifi_en,
@@ -299,7 +303,7 @@ begin
     e_merger_fifo_scifi : entity work.ip_scfifo
     generic map (
         ADDR_WIDTH      => 10,
-        DATA_WIDTH      => NLINKS * 38,
+        DATA_WIDTH      => g_NLINKS_SCIFI * 38,
         DEVICE          => "Arria 10"--,
     )
     port map (
@@ -318,11 +322,11 @@ begin
     
     e_swb_data_merger_scifi : entity work.swb_data_merger
     generic map (
-        NLINKS      => NLINKS,
+        NLINKS      => g_NLINKS_SCIFI,
         DATA_TYPE   => x"02"--,
     )
     port map (
-        i_reset_n   => i_reset_n_250_link,
+        i_reset_n   => i_resets_n_link(RESET_BIT_FARM_DATA_PATH),
         i_clk       => i_clk_250_link,
         
         i_data      => r_scifi,
@@ -346,7 +350,7 @@ begin
             rx(I+g_NLINKS_SCIFI)   <= (others => '0');
             rx_k(I+g_NLINKS_SCIFI) <= (others => '0');
         elsif ( rising_edge( i_clk_250_link ) ) then
-            if ( i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_LINK) = '1' ) then
+            if ( i_writeregs_link(FARM_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGE) = '1' ) then
                 rx(I)   <= link_data_pixel(I*32 + 31 downto I*32);
                 rx_k(I) <= link_datak_pixel(I*4 + 3 downto I*4);
                 rx(I+g_NLINKS_SCIFI) <= link_data_scifi(I*32 + 31 downto I*32);
@@ -372,7 +376,7 @@ begin
     --! ------------------------------------------------------------------------
     e_farm_link_to_fifo : entity work.farm_link_to_fifo
     generic map (
-        g_NLINKS_SWB_TOTL   => g_NLINKS_SWB_TOTL,
+        g_NLINKS_SWB_TOTL   => g_NLINKS_TOTL,
         N_PIXEL             => g_NLINKS_PIXEL,
         N_SCIFI             => g_NLINKS_SCIFI--,
     )
@@ -417,7 +421,7 @@ begin
     --! ------------------------------------------------------------------------
     e_farm_midas_event_builder : entity work.farm_midas_event_builder
     generic map (
-        g_NLINKS_SWB_TOTL => g_NLINKS_SWB_TOTL,
+        g_NLINKS_SWB_TOTL => g_NLINKS_TOTL,
         N_PIXEL           => g_NLINKS_PIXEL,
         N_SCIFI           => g_NLINKS_SCIFI,
         RAM_ADDR          => 12--,
@@ -582,12 +586,12 @@ begin
 
         -- Input from PCIe demanding events
         pcieclk        => i_clk_250_pcie,
-        ts_req_A       => writeregs_ddr3(DATA_REQ_A_W),
-        req_en_A       => regwritten_C(DATA_REQ_A_W),
-        ts_req_B       => writeregs_ddr3(DATA_REQ_B_W),
-        req_en_B       => regwritten_C(DATA_REQ_B_W),
-        tsblock_done   => writeregs_ddr3(DATA_TSBLOCK_DONE_W)(15 downto 0),
-        tsblocks       => readregs_ddr3(DATA_TSBLOCKS_R),
+        ts_req_A       => i_writeregs_ddr(DATA_REQ_A_W),
+        req_en_A       => i_regwritten_ddr(DATA_REQ_A_W),
+        ts_req_B       => i_writeregs_ddr(DATA_REQ_B_W),
+        req_en_B       => i_regwritten_ddr(DATA_REQ_B_W),
+        tsblock_done   => i_writeregs_ddr(DATA_TSBLOCK_DONE_W)(15 downto 0),
+        tsblocks       => o_readregs_ddr(DATA_TSBLOCKS_R),
 
         -- Output to DMA
         dma_data_out    => o_dma_data,
@@ -620,12 +624,12 @@ begin
         B_mem_clk       => B_mem_clk,
         B_mem_ready     => B_mem_ready,
         B_mem_calibrated=> B_mem_calibrated,
-        B_mem_addr		=> B_mem_addr,
-        B_mem_data		=> B_mem_data,
-        B_mem_write		=> B_mem_write,
-        B_mem_read		=> B_mem_read,
-        B_mem_q			=> B_mem_q,
-        B_mem_q_valid	=> B_mem_q_valid
+        B_mem_addr      => B_mem_addr,
+        B_mem_data      => B_mem_data,
+        B_mem_write     => B_mem_write,
+        B_mem_read      => B_mem_read,
+        B_mem_q         => B_mem_q,
+        B_mem_q_valid   => B_mem_q_valid
     );
     
     
@@ -635,7 +639,7 @@ begin
     --! ------------------------------------------------------------------------
     e_ddr3_block : entity work.ddr3_block 
     port map(
-        reset_n             => resets_n_ddr3(RESET_BIT_DDR3),
+        reset_n             => i_resets_n_ddr(RESET_BIT_DDR3),
         
         -- Control and status registers
         ddr3control         => i_writeregs_ddr(DDR3_CONTROL_W),
@@ -664,7 +668,7 @@ begin
         B_ddr3_read_valid   => B_mem_q_valid,
         
         -- Error counters
-        errout              => readregs_ddr3(DDR3_ERR_R),
+        errout              => o_readregs_ddr(DDR3_ERR_R),
 
         -- Interface to memory bank A
         A_mem_ck            => A_mem_ck,

@@ -15,7 +15,6 @@ set_global_assignment -name VHDL_FILE a10/data_generator_merged_data.vhd
 set_global_assignment -name VHDL_FILE a10/farm_aligne_link.vhd
 set_global_assignment -name VHDL_FILE a10/farm_block.vhd
 set_global_assignment -name VHDL_FILE a10/farm_data_path.vhd
-set_global_assignment -name VHDL_FILE a10/farm_link_merger.vhd
 set_global_assignment -name VHDL_FILE a10/farm_link_to_fifo.vhd
 set_global_assignment -name VHDL_FILE a10/farm_midas_event_builder.vhd
 set_global_assignment -name VHDL_FILE a10/pcie_register_mapping.vhd
