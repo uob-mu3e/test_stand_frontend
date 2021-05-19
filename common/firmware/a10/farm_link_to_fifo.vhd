@@ -105,7 +105,7 @@ begin
             
         e_sync_fifo : entity work.ip_dcfifo
         generic map(
-            ADDR_WIDTH  => 6,
+            ADDR_WIDTH  => 4,
             DATA_WIDTH  => 34,
             DEVICE      => "Arria 10"--,
         )

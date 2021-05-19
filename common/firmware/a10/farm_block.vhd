@@ -498,7 +498,7 @@ begin
     
     e_sync_fifo_tx_pixel : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH  => 6,
+        ADDR_WIDTH  => 4,
         DATA_WIDTH  => 258,
         DEVICE      => "Arria 10"--,
     )
@@ -515,7 +515,7 @@ begin
     
     e_sync_fifo_tx_scifi : entity work.ip_dcfifo
     generic map(
-        ADDR_WIDTH  => 6,
+        ADDR_WIDTH  => 4,
         DATA_WIDTH  => 258,
         DEVICE      => "Arria 10"--,
     )
