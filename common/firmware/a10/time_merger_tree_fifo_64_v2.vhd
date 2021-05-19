@@ -50,12 +50,35 @@ architecture arch of time_merger_tree_fifo_64_v2 is
     -- layer states
     constant second_input_not_mask_n : std_logic_vector(7 downto 0) := x"00";
     constant first_input_not_mask_n : std_logic_vector(7 downto 0) := x"01";
+    constant a_b_smaller_c_d : std_logic_vector(7 downto 0) := x"02";
+    constant c_d_smaller_a_b : std_logic_vector(7 downto 0) := x"03";
+    constant a_smaller_c_c_smaller_b : std_logic_vector(7 downto 0) := x"04";
+    constant c_smaller_a_a_smaller_d : std_logic_vector(7 downto 0) := x"05";
+    constant b_smaller_d : std_logic_vector(7 downto 0) := x"06";
+    constant d_smaller_b : std_logic_vector(7 downto 0) := x"07";
     constant end_state : std_logic_vector(7 downto 0) := x"08";
     constant last_layer_state : std_logic_vector(7 downto 0) := x"09";
     constant read_out_first_second_padding : std_logic_vector(7 downto 0) := x"0A";
     constant read_out_second_first_padding : std_logic_vector(7 downto 0) := x"0B";
     constant read_out_a_rest_padding : std_logic_vector(7 downto 0) := x"0C";
     constant read_out_c_rest_padding : std_logic_vector(7 downto 0) := x"0D";
+    constant d_smaller_a : std_logic_vector(7 downto 0) := x"0E";
+    constant b_smaller_c : std_logic_vector(7 downto 0) := x"0F";
+    constant a_smaller_c_rest_padding : std_logic_vector(7 downto 0) := x"10";
+    constant c_smaller_a_rest_padding : std_logic_vector(7 downto 0) := x"11";
+    constant a_smaller_c_b_padding : std_logic_vector(7 downto 0) := x"12";
+    constant read_d_rest_padding : std_logic_vector(7 downto 0) := x"13";
+    constant write_d_set_padding : std_logic_vector(7 downto 0) := x"14";
+    constant write_d_c : std_logic_vector(7 downto 0) := x"15";
+    constant c_smaller_a_d_padding : std_logic_vector(7 downto 0) := x"16";
+    constant read_b_rest_padding : std_logic_vector(7 downto 0) := x"17";
+    constant write_b_set_padding : std_logic_vector(7 downto 0) := x"18";
+    constant write_b_a : std_logic_vector(7 downto 0) := x"19";
+    constant c_smaller_a_b_padding : std_logic_vector(7 downto 0) := x"1A";
+    constant a_smaller_c_d_padding : std_logic_vector(7 downto 0) := x"1B";
+    constant c_d_smaller_a_b_padding : std_logic_vector(7 downto 0) := x"1C";
+    constant a_b_smaller_c_d_padding : std_logic_vector(7 downto 0) := x"1D";
+    constant IDEL : std_logic_vector(7 downto 0) := x"FF";
 
     signal data, data_reg, f_data, f_data_reg, q, q_reg : work.util.slv76_array_t(gen_fifos - 1 downto 0);
     signal layer_state, layer_state_reg : work.util.slv8_array_t(gen_fifos - 1 downto 0);
@@ -149,33 +172,24 @@ begin
             );
             
             -- reg for last FIFO output (timing)
+            rdreq(i) <= '1' when rdempty(i) = '0' and wrfull_reg(i) = '0' else '0';
+            rdempty_reg(i) <= '1' when i_rdreq(i) = '1' else '0' when rdreq(i) = '1' else '1';
             reg : process(i_clk, reset_fifo(i))
             begin
-            if ( reset_fifo(i) = '1' ) then
-                last_reg       <= (others => '0');
-                rdreq(i)       <= '0';
-                wrfull_reg(i)  <= '0';
-                rdempty_reg(i) <= '1';
-            elsif ( rising_edge(i_clk) ) then
-                rdreq(i) <= '0';
-                if ( rdempty(i) = '0' and (wrfull_reg(i) = '0' or i_rdreq(i) = '1') ) then
-                    rdreq(i)       <= '1';
-                    last_reg    <= last;
-                    wrfull_reg(i)  <= '1';
-                end if;
-                
-                if ( i_rdreq(i) = '1' ) then
+                if ( reset_fifo(i) = '1' ) then
+                    last_reg       <= (others => '0');
                     wrfull_reg(i)  <= '0';
+                    --
+                elsif ( rising_edge(i_clk) ) then
+                    if ( rdreq(i) = '1' ) then
+                        last_reg       <= last;
+                        wrfull_reg(i)  <= '1';
+                    end if;
+                    
+                    if ( i_rdreq(i) = '1' ) then
+                        wrfull_reg(i)  <= '0';
+                    end if;
                 end if;
-                
-                if ( rdempty(i) = '0' and i_rdreq(i) = '1' ) then
-                    rdempty_reg(i) <= '0';
-                elsif ( rdempty(i) = '0' and wrfull_reg(i) = '0' ) then
-                    rdempty_reg(i) <= '0';
-                elsif ( i_rdreq(i) = '1' ) then
-                    rdempty_reg(i) <= '1';
-                end if;
-            end if;
             end process;
             
         END GENERATE;
@@ -201,34 +215,25 @@ begin
                 wrfull  => wrfull(i)--,
             );
             
-            -- reg for FIFO outputs (timing)
+            -- reg for last FIFO output (timing)
+            rdreq(i) <= '1' when rdempty(i) = '0' and wrfull_reg(i) = '0' else '0';
+            rdempty_reg(i) <= '1' when i_rdreq(i) = '1' else '0' when rdreq(i) = '1' else '1';
             reg : process(i_clk, reset_fifo(i))
             begin
-            if ( reset_fifo(i) = '1' ) then
-                q_reg(i)       <= (others => '0');
-                rdreq(i)       <= '0';
-                wrfull_reg(i)  <= '0';
-                rdempty_reg(i) <= '1';
-            elsif ( rising_edge(i_clk) ) then
-                rdreq(i) <= '0';
-                if ( rdempty(i) = '0' and (wrfull_reg(i) = '0' or i_rdreq(i) = '1') ) then
-                    rdreq(i)       <= '1';
-                    q_reg(i)       <= q(i);
-                    wrfull_reg(i)  <= '1';
-                end if;
-                
-                if ( i_rdreq(i) = '1' ) then
+                if ( reset_fifo(i) = '1' ) then
+                    q_reg(i)       <= (others => '0');
                     wrfull_reg(i)  <= '0';
+                    --
+                elsif ( rising_edge(i_clk) ) then
+                    if ( rdreq(i) = '1' ) then
+                        q_reg(i)       <= q(i);
+                        wrfull_reg(i)  <= '1';
+                    end if;
+                    
+                    if ( i_rdreq(i) = '1' ) then
+                        wrfull_reg(i)  <= '0';
+                    end if;
                 end if;
-                
-                if ( rdempty(i) = '0' and i_rdreq(i) = '1' ) then
-                    rdempty_reg(i) <= '0';
-                elsif ( rdempty(i) = '0' and wrfull_reg(i) = '0' ) then
-                    rdempty_reg(i) <= '0';
-                elsif ( i_rdreq(i) = '1' ) then
-                    rdempty_reg(i) <= '1';
-                end if;
-            end if;
             end process;
             
         END GENERATE;
@@ -263,11 +268,22 @@ begin
         -- TODO: name the different states, combine stuff
         -- TODO: include sub-header, check backpres., counters etc.
         layer_state(i) <= last_layer_state when i_merge_state = '0' and last_layer = '1' else
+        
+                          write_d_set_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = read_d_rest_padding and a_c_padding(i) = '1' else
+                          write_d_c when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = read_d_rest_padding else
+                          read_d_rest_padding when layer_state_reg(i) = read_d_rest_padding else
+                          
+                          write_b_set_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = read_b_rest_padding and a_c_padding(i) = '1' else
+                          write_b_a when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = read_b_rest_padding else
+                          read_b_rest_padding when layer_state_reg(i) = read_b_rest_padding else
 
                           end_state when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_c_padding(i) = '1' else
+                          end_state when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = write_d_c and d_padding(i) = '1' else
                           -- this should never be possible since checking empty is enough
                           --end_state when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_h(i) = tree_padding and c_z(i) = '1' else
                           --end_state when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_z(i) = '1'          and c_h(i) = tree_padding else
+                          read_d_rest_padding when layer_state_reg(i) = a_smaller_c_b_padding or layer_state_reg(i) = c_smaller_a_b_padding or (layer_state_reg(i) = write_d_c and d_padding(i) = '0') else
+                          read_b_rest_padding when layer_state_reg(i) = c_smaller_a_d_padding or (layer_state_reg(i) = write_b_a and b_padding(i) = '0') else
 
                           second_input_not_mask_n when wrfull_and_merge_state_and_first_input_not_rdempty(i) = '1' and first_input_mask_n_second_input_not_mask_n(i) = '1' else
                           first_input_not_mask_n when wrfull_and_merge_state_and_second_input_not_rdempty(i) = '1' and second_input_mask_n_first_input_not_mask_n(i) = '1' else
@@ -278,100 +294,98 @@ begin
                           read_out_a_rest_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_no_b_padding(i) = '1' and c_d_padding(i) = '1' else-- and a_z(i) = '0' else
                           read_out_c_rest_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and c_no_d_padding(i) = '1' and a_b_padding(i) = '1' else-- and c_z(i) = '0' else
                           
-                          x"0E" when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_no_b_padding(i) = '1' and c_no_d_padding(i) = '1' and a(i) <= c(i) else-- and a_z(i) = '0' and c_z(i) = '0' else
-                          x"10" when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_no_b_padding(i) = '1' and c_no_d_padding(i) = '1' and a(i) >  c(i) else-- and a_z(i) = '0' and c_z(i) = '0' else
+                          a_smaller_c_rest_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_no_b_padding(i) = '1' and c_no_d_padding(i) = '1' and a(i) <= c(i) else-- and a_z(i) = '0' and c_z(i) = '0' else
+                          c_smaller_a_rest_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_no_b_padding(i) = '1' and c_no_d_padding(i) = '1' and a(i) >  c(i) else-- and a_z(i) = '0' and c_z(i) = '0' else
 
-                          x"11" when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_no_b_padding(i) = '1' and c_d_no_padding(i) = '1' and a(i) <= c(i) else-- and a_z(i) = '0' and c_z(i) = '0' and d_z(i) = '0' else                          
-                          x"12" when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_b_no_padding(i) = '1' and c_no_d_padding(i) = '1' and c(i) <= a(i) else-- and a_z(i) = '0' and b_z(i) = '0' and c_z(i) = '0' else
-                          x"13" when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_no_b_padding(i) = '1' and c_d_no_padding(i) = '1' and c(i) <= a(i) and a(i) <= d(i) else-- and a_z(i) = '0' and c_z(i) = '0' and d_z(i) = '0' else                          
-                          x"14" when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_b_no_padding(i) = '1' and c_no_d_padding(i) = '1' and a(i) <= c(i) and c(i) <= b(i) else-- and a_z(i) = '0' and b_z(i) = '0' and c_z(i) = '0' else
-                          x"15" when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) /= x"06" and a_no_b_padding(i) = '1' and c_d_no_padding(i) = '1' and c(i) <= a(i) and d(i) <= a(i) else-- and a_z(i) = '0' and c_z(i) = '0' and d_z(i) = '0' else
-                          x"16" when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) /= x"07" and a_b_no_padding(i) = '1' and c_no_d_padding(i) = '1' and a(i) <= c(i) and b(i) <= c(i) else-- and a_z(i) = '0' and b_z(i) = '0' and c_z(i) = '0' else
+                          a_smaller_c_b_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_no_b_padding(i) = '1' and c_d_no_padding(i) = '1' and a(i) <= c(i) else-- and a_z(i) = '0' and c_z(i) = '0' and d_z(i) = '0' else                          
+                          c_smaller_a_d_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_b_no_padding(i) = '1' and c_no_d_padding(i) = '1' and c(i) <= a(i) else-- and a_z(i) = '0' and b_z(i) = '0' and c_z(i) = '0' else
+                          c_smaller_a_b_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_no_b_padding(i) = '1' and c_d_no_padding(i) = '1' and c(i) <= a(i) and a(i) <= d(i) else-- and a_z(i) = '0' and c_z(i) = '0' and d_z(i) = '0' else                          
+                          a_smaller_c_d_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_b_no_padding(i) = '1' and c_no_d_padding(i) = '1' and a(i) <= c(i) and c(i) <= b(i) else-- and a_z(i) = '0' and b_z(i) = '0' and c_z(i) = '0' else
+                          c_d_smaller_a_b_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) /= b_smaller_d and a_no_b_padding(i) = '1' and c_d_no_padding(i) = '1' and c(i) <= a(i) and d(i) <= a(i) else-- and a_z(i) = '0' and c_z(i) = '0' and d_z(i) = '0' else
+                          a_b_smaller_c_d_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) /= d_smaller_b and a_b_no_padding(i) = '1' and c_no_d_padding(i) = '1' and a(i) <= c(i) and b(i) <= c(i) else-- and a_z(i) = '0' and b_z(i) = '0' and c_z(i) = '0' else
                           
-                          x"06" when (layer_state_reg(i) = x"04" or layer_state_reg(i) = x"05") and wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and b(i) <= d(i) else-- and b_z(i) = '0' and d_z(i) = '0' else
-                          x"07" when (layer_state_reg(i) = x"04" or layer_state_reg(i) = x"05") and wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and b(i) >  d(i) else-- and b_z(i) = '0' and d_z(i) = '0' else
+                          b_smaller_d when (layer_state_reg(i) = a_smaller_c_c_smaller_b or layer_state_reg(i) = c_smaller_a_a_smaller_d) and wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and b(i) <= d(i) else-- and b_z(i) = '0' and d_z(i) = '0' else
+                          d_smaller_b when (layer_state_reg(i) = a_smaller_c_c_smaller_b or layer_state_reg(i) = c_smaller_a_a_smaller_d) and wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and b(i) >  d(i) else-- and b_z(i) = '0' and d_z(i) = '0' else
                           
-                          x"04" when layer_state_reg(i) = x"06" and wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a(i) <= d(i) else-- and a_z(i) = '0' and d_z(i) = '0' else
-                          x"0F" when layer_state_reg(i) = x"06" and wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a(i) >  d(i) else-- and a_z(i) = '0' and d_z(i) = '0' else
+                          a_smaller_c_c_smaller_b when layer_state_reg(i) = b_smaller_d and wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a(i) <= d(i) else-- and a_z(i) = '0' and d_z(i) = '0' else
+                          d_smaller_a when layer_state_reg(i) = b_smaller_d and wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a(i) >  d(i) else-- and a_z(i) = '0' and d_z(i) = '0' else
                           
-                          x"0F" when layer_state_reg(i) = x"07" and wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and b(i) <= c(i) else-- and b_z(i) = '0' and c_z(i) = '0' else
-                          x"04" when layer_state_reg(i) = x"07" and wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and b(i) >  c(i) else-- and b_z(i) = '0' and c_z(i) = '0' else
+                          a_smaller_c_c_smaller_b when layer_state_reg(i) = d_smaller_b and wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and b(i) >  c(i) else-- and b_z(i) = '0' and c_z(i) = '0' else
+                          b_smaller_c when layer_state_reg(i) = d_smaller_b and wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and b(i) <= c(i) else-- and b_z(i) = '0' and c_z(i) = '0' else
                           
-                          x"04" when layer_state_reg(i) = x"04" else
-                          x"05" when layer_state_reg(i) = x"05" else
-                          x"06" when layer_state_reg(i) = x"06" else
-                          x"07" when layer_state_reg(i) = x"07" else
+                          a_smaller_c_c_smaller_b when layer_state_reg(i) = a_smaller_c_c_smaller_b else
+                          c_smaller_a_a_smaller_d when layer_state_reg(i) = c_smaller_a_a_smaller_d else
+                          b_smaller_d when layer_state_reg(i) = b_smaller_d else
+                          d_smaller_b when layer_state_reg(i) = d_smaller_b else
                           
-                          x"02" when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a(i) <= c(i) and b(i) <= c(i) else-- and a_z(i) = '0' and b_z(i) = '0' else
-                          x"03" when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and c(i) <= a(i) and d(i) <= a(i) else-- and c_z(i) = '0' and d_z(i) = '0' else  
-                          x"04" when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a(i) <= c(i) and b(i) >  c(i) else-- and a_z(i) = '0' and c_z(i) = '0' else
-                          x"05" when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and c(i) <= a(i) and d(i) >  a(i) else-- and c_z(i) = '0' and a_z(i) = '0' else
+                          a_b_smaller_c_d when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a(i) <= c(i) and b(i) <= c(i) else-- and a_z(i) = '0' and b_z(i) = '0' else
+                          c_d_smaller_a_b when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and c(i) <= a(i) and d(i) <= a(i) else-- and c_z(i) = '0' and d_z(i) = '0' else  
+                          a_smaller_c_c_smaller_b when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a(i) <= c(i) and b(i) >  c(i) else-- and a_z(i) = '0' and c_z(i) = '0' else
+                          c_smaller_a_a_smaller_d when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and c(i) <= a(i) and d(i) >  a(i) else-- and c_z(i) = '0' and a_z(i) = '0' else
                           
-                          x"0F";
+                          IDEL;
                          
         wrreq(i) <= '1' when layer_state(i) = last_layer_state and i_wen_h_t = '1' else
-                    '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = first_input_not_mask_n or layer_state(i) = x"02" or layer_state(i) = x"03" or layer_state(i) = x"04" or layer_state(i) = x"05" or layer_state(i) = x"08" or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_second_first_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = x"0E" or layer_state(i) = x"10" or layer_state(i) = x"13" or layer_state(i) = x"14" or layer_state(i) = x"15" or layer_state(i) = x"16" else
-                    '1' when layer_state(i) = x"0F" and layer_state_reg(i) = x"06" else
-                    '1' when layer_state(i) = x"0F" and layer_state_reg(i) = x"07" else
-                    '1' when layer_state(i) = x"04" and layer_state_reg(i) = x"06" else
-                    '1' when layer_state(i) = x"04" and layer_state_reg(i) = x"07" else
-                    '1' when layer_state(i) = read_out_a_rest_padding and layer_state_reg(i) = x"11" else
-                    '1' when layer_state(i) = read_out_a_rest_padding and layer_state_reg(i) = x"12" else
-                    '1' when layer_state(i) = read_out_c_rest_padding and layer_state_reg(i) = x"11" else
-                    '1' when layer_state(i) = read_out_c_rest_padding and layer_state_reg(i) = x"11" else
+                    '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = first_input_not_mask_n or layer_state(i) = a_b_smaller_c_d or layer_state(i) = c_d_smaller_a_b or layer_state(i) = a_smaller_c_c_smaller_b or layer_state(i) = c_smaller_a_a_smaller_d or layer_state(i) = end_state or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_second_first_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = c_smaller_a_b_padding or layer_state(i) = a_smaller_c_d_padding or layer_state(i) = c_d_smaller_a_b_padding or layer_state(i) = a_b_smaller_c_d_padding or layer_state(i) = a_smaller_c_b_padding or layer_state(i) = write_d_set_padding or layer_state(i) = write_b_set_padding or layer_state(i) = write_d_c or layer_state(i) = c_smaller_a_d_padding or layer_state(i) = write_b_a else
+                    '1' when layer_state(i) = d_smaller_a else
+                    '1' when layer_state(i) = b_smaller_c else
+                    '1' when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = b_smaller_d else
+                    '1' when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = d_smaller_b else
                     '0';
                     
-        o_rdreq(i) <= '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = x"02" or layer_state(i) = x"06" or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = x"0E" or layer_state(i) = x"10" or layer_state(i) = x"11" or layer_state(i) = x"13" or layer_state(i) = x"16" else
-                      '1' when layer_state(i) = x"0F" and layer_state_reg(i) = x"07" else
-                      '1' when layer_state(i) = x"06" and layer_state_reg(i) = x"04" else
-                      '1' when layer_state(i) = x"06" and layer_state_reg(i) = x"05" else
+        o_rdreq(i) <= '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_b_smaller_c_d or layer_state(i) = b_smaller_d or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = c_smaller_a_b_padding or layer_state(i) = a_b_smaller_c_d_padding or layer_state(i) = a_smaller_c_b_padding or layer_state(i) = read_b_rest_padding else
+                      '1' when layer_state(i) = b_smaller_c else
+                      '1' when layer_state(i) = b_smaller_d and layer_state_reg(i) = a_smaller_c_c_smaller_b else
+                      '1' when layer_state(i) = b_smaller_d and layer_state_reg(i) = c_smaller_a_a_smaller_d else
                       '0';
 
-        o_rdreq(i+size) <=  '1' when layer_state(i) = first_input_not_mask_n or layer_state(i) = x"03" or layer_state(i) = x"07" or layer_state(i) = read_out_second_first_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = x"0E" or layer_state(i) = x"10" or layer_state(i) = x"12" or layer_state(i) = x"14" or layer_state(i) = x"15" else
-                            '1' when layer_state(i) = x"0F" and layer_state_reg(i) = x"06" else
-                            '1' when layer_state(i) = x"07" and layer_state_reg(i) = x"04" else
-                            '1' when layer_state(i) = x"07" and layer_state_reg(i) = x"05" else
+        o_rdreq(i+size) <=  '1' when layer_state(i) = first_input_not_mask_n or layer_state(i) = c_d_smaller_a_b or layer_state(i) = d_smaller_b or layer_state(i) = read_out_second_first_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = a_smaller_c_d_padding or layer_state(i) = c_d_smaller_a_b_padding or layer_state(i) = read_d_rest_padding or layer_state(i) = c_smaller_a_d_padding else
+                            '1' when layer_state(i) = d_smaller_a else
+                            '1' when layer_state(i) = d_smaller_b and layer_state_reg(i) = a_smaller_c_c_smaller_b else
+                            '1' when layer_state(i) = d_smaller_b and layer_state_reg(i) = c_smaller_a_a_smaller_d else
                             '0';
         
         -- TODO: combine logic of data_reg(i)(37 downto 0)
         data(i)(37 downto 0) <= i_data_h_t when layer_state(i) = last_layer_state else
                                 tree_padding when layer_state(i) = end_state else
-                                b_h(i) when layer_state(i) = x"06" and layer_state_reg(i) = x"04" else
-                                b_h(i) when layer_state(i) = x"06" and layer_state_reg(i) = x"05" else
-                                d_h(i) when layer_state(i) = x"07" and layer_state_reg(i) = x"04" else
-                                d_h(i) when layer_state(i) = x"07" and layer_state_reg(i) = x"05" else
-                                data_reg(i)(37 downto 0) when layer_state(i) = x"06" and layer_state_reg(i) = x"06" else 
-                                data_reg(i)(37 downto 0) when layer_state(i) = x"07" and layer_state_reg(i) = x"07" else
-                                data_reg(i)(37 downto 0) when layer_state(i) = x"0F" and layer_state_reg(i) = x"06" else
-                                data_reg(i)(37 downto 0) when layer_state(i) = x"0F" and layer_state_reg(i) = x"07" else
-                                data_reg(i)(37 downto 0) when layer_state(i) = x"04" and layer_state_reg(i) = x"06" else
-                                data_reg(i)(37 downto 0) when layer_state(i) = x"04" and layer_state_reg(i) = x"07" else
-                                data_reg(i)(37 downto 0) when layer_state(i) = read_out_a_rest_padding and layer_state_reg(i) = x"11" else
-                                data_reg(i)(37 downto 0) when layer_state(i) = read_out_a_rest_padding and layer_state_reg(i) = x"12" else
-                                data_reg(i)(37 downto 0) when layer_state(i) = read_out_c_rest_padding and layer_state_reg(i) = x"11" else
-                                data_reg(i)(37 downto 0) when layer_state(i) = read_out_c_rest_padding and layer_state_reg(i) = x"12" else
-                                a_h(i) when layer_state(i) = second_input_not_mask_n or layer_state(i) = x"02" or layer_state(i) = x"04" or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = x"0E" or layer_state(i) = x"11" or layer_state(i) = x"14" or layer_state(i) = x"16" else
-                                c_h(i) when layer_state(i) = first_input_not_mask_n or layer_state(i) = x"03" or layer_state(i) = x"05" or layer_state(i) = read_out_second_first_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = x"10" or layer_state(i) = x"12" or layer_state(i) = x"13" or layer_state(i) = x"15" else
-                                b_h(i) when layer_state(i) = x"06" else
-                                d_h(i) when layer_state(i) = x"07" else
+                                b_h(i) when layer_state(i) = b_smaller_d and layer_state_reg(i) = a_smaller_c_c_smaller_b else
+                                b_h(i) when layer_state(i) = b_smaller_d and layer_state_reg(i) = c_smaller_a_a_smaller_d else
+                                d_h(i) when layer_state(i) = d_smaller_b and layer_state_reg(i) = a_smaller_c_c_smaller_b else
+                                d_h(i) when layer_state(i) = d_smaller_b and layer_state_reg(i) = c_smaller_a_a_smaller_d else
+                                d_h(i) when layer_state(i) = read_d_rest_padding else
+                                b_h(i) when layer_state(i) = read_b_rest_padding else
+                                data_reg(i)(37 downto 0) when layer_state(i) = write_d_set_padding else
+                                data_reg(i)(37 downto 0) when layer_state(i) = write_b_set_padding else
+                                data_reg(i)(37 downto 0) when layer_state(i) = write_d_c else
+                                data_reg(i)(37 downto 0) when layer_state(i) = write_b_a else
+                                data_reg(i)(37 downto 0) when layer_state(i) = b_smaller_d and layer_state_reg(i) = b_smaller_d else 
+                                data_reg(i)(37 downto 0) when layer_state(i) = d_smaller_b and layer_state_reg(i) = d_smaller_b else
+                                data_reg(i)(37 downto 0) when layer_state(i) = d_smaller_a else
+                                data_reg(i)(37 downto 0) when layer_state(i) = b_smaller_c else
+                                data_reg(i)(37 downto 0) when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = b_smaller_d else
+                                data_reg(i)(37 downto 0) when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = d_smaller_b else
+                                a_h(i) when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_b_smaller_c_d or layer_state(i) = a_smaller_c_c_smaller_b or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = a_smaller_c_d_padding or layer_state(i) = a_b_smaller_c_d_padding or layer_state(i) = a_smaller_c_b_padding else
+                                c_h(i) when layer_state(i) = first_input_not_mask_n or layer_state(i) = c_d_smaller_a_b or layer_state(i) = c_smaller_a_a_smaller_d or layer_state(i) = read_out_second_first_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = c_smaller_a_b_padding or layer_state(i) = c_d_smaller_a_b_padding or layer_state(i) = c_smaller_a_d_padding else
+                                b_h(i) when layer_state(i) = b_smaller_d else --NOTE: maybe not needed
+                                d_h(i) when layer_state(i) = d_smaller_b else --NOTE: maybe not needed
                                 (others => '0');
 
         data(i)(75 downto 38)<= tree_paddingk when layer_state(i) = last_layer_state else
-                                tree_padding when layer_state(i) = end_state or layer_state(i) = read_out_a_rest_padding or layer_state(i) = read_out_c_rest_padding else
-                                data_reg(i)(75 downto 38) when layer_state(i) = x"06" and layer_state_reg(i) = x"06" else
-                                data_reg(i)(75 downto 38) when layer_state(i) = x"07" and layer_state_reg(i) = x"07" else
-                                a_h(i) when layer_state(i) = read_out_a_rest_padding and layer_state_reg(i) = x"11" else
-                                a_h(i) when layer_state(i) = read_out_a_rest_padding and layer_state_reg(i) = x"12" else
-                                c_h(i) when layer_state(i) = read_out_c_rest_padding and layer_state_reg(i) = x"11" else
-                                c_h(i) when layer_state(i) = read_out_c_rest_padding and layer_state_reg(i) = x"12" else
-                                d_h(i) when layer_state(i) = x"0F" and layer_state_reg(i) = x"06" else 
-                                b_h(i) when layer_state(i) = x"0F" and layer_state_reg(i) = x"07" else 
-                                a_h(i) when layer_state(i) = x"04" and layer_state_reg(i) = x"06" else
-                                c_h(i) when layer_state(i) = x"04" and layer_state_reg(i) = x"07" else
-                                b_h(i) when layer_state(i) = second_input_not_mask_n or layer_state(i) = x"02" or layer_state(i) = read_out_first_second_padding or layer_state(i) = x"16" else
-                                d_h(i) when layer_state(i) = x"15" or layer_state(i) = first_input_not_mask_n or layer_state(i) = x"03" or layer_state(i) = read_out_second_first_padding else
-                                a_h(i) when layer_state(i) = x"05" or layer_state(i) = x"10" or layer_state(i) = x"13" else
-                                c_h(i) when layer_state(i) = x"04" or layer_state(i) = x"0E" or layer_state(i) = x"14" else
+                                tree_padding when layer_state(i) = end_state or layer_state(i) = read_out_a_rest_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = write_d_set_padding or layer_state(i) = write_b_set_padding else
+                                data_reg(i)(75 downto 38) when layer_state(i) = b_smaller_d and layer_state_reg(i) = b_smaller_d else
+                                data_reg(i)(75 downto 38) when layer_state(i) = d_smaller_b and layer_state_reg(i) = d_smaller_b else
+                                c_h(i) when layer_state(i) = a_smaller_c_b_padding else
+                                a_h(i) when layer_state(i) = c_smaller_a_d_padding else
+                                c_h(i) when layer_state(i) = write_d_c else
+                                a_h(i) when layer_state(i) = write_b_a else
+                                d_h(i) when layer_state(i) = d_smaller_a else 
+                                b_h(i) when layer_state(i) = b_smaller_c else 
+                                a_h(i) when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = b_smaller_d else
+                                c_h(i) when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = d_smaller_b else
+                                b_h(i) when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_b_smaller_c_d or layer_state(i) = read_out_first_second_padding or layer_state(i) = a_b_smaller_c_d_padding else
+                                d_h(i) when layer_state(i) = c_d_smaller_a_b_padding or layer_state(i) = first_input_not_mask_n or layer_state(i) = c_d_smaller_a_b or layer_state(i) = read_out_second_first_padding else
+                                a_h(i) when layer_state(i) = c_smaller_a_a_smaller_d or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = c_smaller_a_b_padding else
+                                c_h(i) when layer_state(i) = a_smaller_c_c_smaller_b or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = a_smaller_c_d_padding else
                                 (others => '0');
         
         process(i_clk, i_reset_n)

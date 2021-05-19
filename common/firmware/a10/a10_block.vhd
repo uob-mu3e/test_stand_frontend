@@ -327,7 +327,7 @@ begin
             reset_register => pcie0_wregs_B(RESET_REGISTER_W),
             resets         => open,
             resets_n       => pcie0_resets_n_B,
-            clk            => clk_156--,
+            clk            => clk_250--,
         );
     END GENERATE gen_FARM;
     

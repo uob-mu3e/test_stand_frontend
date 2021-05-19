@@ -127,7 +127,9 @@ architecture rtl of farm_data_path is
     signal tagmemwait_3_state : std_logic_vector(3 downto 0);
     
     signal sync_A_empty, sync_B_empty : std_logic;
-
+    
+    signal ddr_ready_A, ddr_ready_B, sync_ddr_A_empty, sync_ddr_B_empty, sync_ddr_A_q, sync_ddr_B_q : std_logic;
+    
     signal ts_in_upper, ts_in_lower, ts_in_upper_A, ts_in_upper_B : tsrange_type;
     
     signal A_almost_full, B_almost_full, A_disabled, B_disabled, cnt_4kb_done : std_logic;
@@ -157,11 +159,52 @@ begin
     -- backpressure to bank builder
     A_almost_full <= '1' when A_mem_addr(25 downto 10) = x"FFFF" else '0';
     B_almost_full <= '1' when B_mem_addr(25 downto 10) = x"FFFF" else '0';
-    o_ddr_ready <= not A_almost_full when A_writestate = '1' else
-                   not B_almost_full when B_writestate = '1' else 
-                   '0' when A_disabled = '1' and B_disabled = '1' else 
-                   '0' when A_readstate = '1' and B_readstate = '1' else
-                   '1';
+    
+    ddr_ready_A <= not A_almost_full when A_writestate = '1' else
+                 '0' when A_disabled = '1' else 
+                 '0' when A_readstate = '1' else
+                 '1';
+                 
+    ddr_ready_B <= not B_almost_full when B_writestate = '1' else
+                 '0' when B_disabled = '1' else 
+                 '0' when B_readstate = '1' else
+                 '1';
+                 
+    sync_ddr_ready_A : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 4,
+        DATA_WIDTH  => 1,
+        DEVICE      => "Arria 10"--,
+    )
+    port map (
+        data(0)     => ddr_ready_A,
+        wrreq       => '1',
+        rdreq       => not sync_ddr_A_empty,
+        wrclk       => A_mem_clk,
+        rdclk       => dataclk,
+        q(0)        => sync_ddr_A_q,
+        rdempty     => sync_ddr_A_empty,
+        aclr        => reset--,
+    );
+    
+    sync_ddr_ready_B : entity work.ip_dcfifo
+    generic map(
+        ADDR_WIDTH  => 4,
+        DATA_WIDTH  => 1,
+        DEVICE      => "Arria 10"--,
+    )
+    port map (
+        data(0)     => ddr_ready_B,
+        wrreq       => '1',
+        rdreq       => not sync_ddr_B_empty,
+        wrclk       => B_mem_clk,
+        rdclk       => dataclk,
+        q(0)        => sync_ddr_B_q,
+        rdempty     => sync_ddr_B_empty,
+        aclr        => reset--,
+    );
+    
+    o_ddr_ready <= sync_ddr_A_q or sync_ddr_B_q;
 
     ts_in_upper <= ts_in(tsupper); -- 15 downto 8 from 35 downto 4 of the 48b TS
     ts_in_lower <= ts_in(tslower); --  7 downto 0 from 35 downto 4 of the 48b TS

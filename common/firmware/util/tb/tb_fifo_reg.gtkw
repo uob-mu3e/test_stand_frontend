@@ -1,22 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.108 (w)1999-2020 BSI
-[*] Wed Apr 14 10:53:46 2021
+[*] Wed May 19 15:11:30 2021
 [*]
 [dumpfile] "/home/makoeppe/mu3e/online/common/firmware/util/tb/.cache/tb_fifo_reg.ghw"
-[dumpfile_mtime] "Wed Apr 14 10:51:34 2021"
-[dumpfile_size] 1049873
+[dumpfile_mtime] "Wed May 19 15:11:08 2021"
+[dumpfile_size] 1045555
 [savefile] "/home/makoeppe/mu3e/online/common/firmware/util/tb/tb_fifo_reg.gtkw"
-[timestart] 246220000
+[timestart] 0
 [size] 2560 1440
 [pos] -1708 -1
-*-23.000000 264040000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-23.000000 10000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.tb_fifo_reg.
 [treeopen] top.tb_fifo_reg.e_link_fifo.
 [sst_width] 247
 [signals_width] 455
 [sst_expanded] 1
-[sst_vpaned_height] 440
+[sst_vpaned_height] 450
 @28
 top.tb_fifo_reg.clk
 @22
@@ -28,9 +28,7 @@ top.tb_fifo_reg.e_link_fifo.wrreq
 #{top.tb_fifo_reg.q_reg[63:0]} top.tb_fifo_reg.q_reg[63] top.tb_fifo_reg.q_reg[62] top.tb_fifo_reg.q_reg[61] top.tb_fifo_reg.q_reg[60] top.tb_fifo_reg.q_reg[59] top.tb_fifo_reg.q_reg[58] top.tb_fifo_reg.q_reg[57] top.tb_fifo_reg.q_reg[56] top.tb_fifo_reg.q_reg[55] top.tb_fifo_reg.q_reg[54] top.tb_fifo_reg.q_reg[53] top.tb_fifo_reg.q_reg[52] top.tb_fifo_reg.q_reg[51] top.tb_fifo_reg.q_reg[50] top.tb_fifo_reg.q_reg[49] top.tb_fifo_reg.q_reg[48] top.tb_fifo_reg.q_reg[47] top.tb_fifo_reg.q_reg[46] top.tb_fifo_reg.q_reg[45] top.tb_fifo_reg.q_reg[44] top.tb_fifo_reg.q_reg[43] top.tb_fifo_reg.q_reg[42] top.tb_fifo_reg.q_reg[41] top.tb_fifo_reg.q_reg[40] top.tb_fifo_reg.q_reg[39] top.tb_fifo_reg.q_reg[38] top.tb_fifo_reg.q_reg[37] top.tb_fifo_reg.q_reg[36] top.tb_fifo_reg.q_reg[35] top.tb_fifo_reg.q_reg[34] top.tb_fifo_reg.q_reg[33] top.tb_fifo_reg.q_reg[32] top.tb_fifo_reg.q_reg[31] top.tb_fifo_reg.q_reg[30] top.tb_fifo_reg.q_reg[29] top.tb_fifo_reg.q_reg[28] top.tb_fifo_reg.q_reg[27] top.tb_fifo_reg.q_reg[26] top.tb_fifo_reg.q_reg[25] top.tb_fifo_reg.q_reg[24] top.tb_fifo_reg.q_reg[23] top.tb_fifo_reg.q_reg[22] top.tb_fifo_reg.q_reg[21] top.tb_fifo_reg.q_reg[20] top.tb_fifo_reg.q_reg[19] top.tb_fifo_reg.q_reg[18] top.tb_fifo_reg.q_reg[17] top.tb_fifo_reg.q_reg[16] top.tb_fifo_reg.q_reg[15] top.tb_fifo_reg.q_reg[14] top.tb_fifo_reg.q_reg[13] top.tb_fifo_reg.q_reg[12] top.tb_fifo_reg.q_reg[11] top.tb_fifo_reg.q_reg[10] top.tb_fifo_reg.q_reg[9] top.tb_fifo_reg.q_reg[8] top.tb_fifo_reg.q_reg[7] top.tb_fifo_reg.q_reg[6] top.tb_fifo_reg.q_reg[5] top.tb_fifo_reg.q_reg[4] top.tb_fifo_reg.q_reg[3] top.tb_fifo_reg.q_reg[2] top.tb_fifo_reg.q_reg[1] top.tb_fifo_reg.q_reg[0]
 @28
 top.tb_fifo_reg.rdempty_reg
-@29
 top.tb_fifo_reg.e_link_fifo.rdreq
-@28
 top.tb_fifo_reg.e_link_fifo.rdempty
 top.tb_fifo_reg.e_link_fifo.wrfull
 top.tb_fifo_reg.wrfull_reg
@@ -39,5 +37,12 @@ top.tb_fifo_reg.e_link_fifo.wrfull
 @22
 #{top.tb_fifo_reg.e_link_fifo.wrusedw[7:0]} top.tb_fifo_reg.e_link_fifo.wrusedw[7] top.tb_fifo_reg.e_link_fifo.wrusedw[6] top.tb_fifo_reg.e_link_fifo.wrusedw[5] top.tb_fifo_reg.e_link_fifo.wrusedw[4] top.tb_fifo_reg.e_link_fifo.wrusedw[3] top.tb_fifo_reg.e_link_fifo.wrusedw[2] top.tb_fifo_reg.e_link_fifo.wrusedw[1] top.tb_fifo_reg.e_link_fifo.wrusedw[0]
 #{top.tb_fifo_reg.e_link_fifo.rdusedw[7:0]} top.tb_fifo_reg.e_link_fifo.rdusedw[7] top.tb_fifo_reg.e_link_fifo.rdusedw[6] top.tb_fifo_reg.e_link_fifo.rdusedw[5] top.tb_fifo_reg.e_link_fifo.rdusedw[4] top.tb_fifo_reg.e_link_fifo.rdusedw[3] top.tb_fifo_reg.e_link_fifo.rdusedw[2] top.tb_fifo_reg.e_link_fifo.rdusedw[1] top.tb_fifo_reg.e_link_fifo.rdusedw[0]
+#{top.tb_fifo_reg.a[7:0]} top.tb_fifo_reg.a[7] top.tb_fifo_reg.a[6] top.tb_fifo_reg.a[5] top.tb_fifo_reg.a[4] top.tb_fifo_reg.a[3] top.tb_fifo_reg.a[2] top.tb_fifo_reg.a[1] top.tb_fifo_reg.a[0]
+#{top.tb_fifo_reg.b[7:0]} top.tb_fifo_reg.b[7] top.tb_fifo_reg.b[6] top.tb_fifo_reg.b[5] top.tb_fifo_reg.b[4] top.tb_fifo_reg.b[3] top.tb_fifo_reg.b[2] top.tb_fifo_reg.b[1] top.tb_fifo_reg.b[0]
+@29
+top.tb_fifo_reg.rdreq_reg
+@28
+top.tb_fifo_reg.clk
+top.tb_fifo_reg.rdempty_reg
 [pattern_trace] 1
 [pattern_trace] 0
