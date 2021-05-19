@@ -1135,6 +1135,7 @@ void sc_settings_changed(odb o)
     if (name == "SciFiConfig" && o) {
           int status=scififeb->ConfigureASICs();
           if(status!=SUCCESS){ 
+              cm_msg(MERROR, "SciFiConfig" , "ASIC Configuration failed.");
          	//TODO: what to do? 
           }
        o = false;
