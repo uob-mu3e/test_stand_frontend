@@ -181,6 +181,10 @@ void MutrigConfig::setParameterODBpp(std::string paraName, odb o){
     setParameter(paraName, o[paraName]);
 }
 
+void MutrigConfig::setParameterODBpp(std::string paraName, odb o, int channel){
+    setParameter(paraName + "_" + std::to_string(channel) , o[paraName]);
+}
+
 void MutrigConfig::Parse_GLOBAL_from_struct(odb o){
     //hard coded in order to avoid macro magic
 //    setParameter("", mt_g.n_asics);
@@ -250,37 +254,37 @@ void MutrigConfig::Parse_TDC_from_struct(odb o){
 
 
 void MutrigConfig::Parse_CH_from_struct(odb o, int channel){
-    MutrigConfig::setParameterODBpp("mask", o);
-    MutrigConfig::setParameterODBpp("recv_all", o);
-    MutrigConfig::setParameterODBpp("tthresh", o);
-    MutrigConfig::setParameterODBpp("tthresh_sc", o);
-    MutrigConfig::setParameterODBpp("ethresh", o);
-    MutrigConfig::setParameterODBpp("ebias", o);
-    MutrigConfig::setParameterODBpp("sipm", o);
-    MutrigConfig::setParameterODBpp("sipm_sc", o);
-    MutrigConfig::setParameterODBpp("inputbias", o);
-    MutrigConfig::setParameterODBpp("inputbias_sc", o);
-    MutrigConfig::setParameterODBpp("pole", o);
-    MutrigConfig::setParameterODBpp("pole_sc", o);
-    MutrigConfig::setParameterODBpp("ampcom", o);
-    MutrigConfig::setParameterODBpp("ampcom_sc", o);
-    MutrigConfig::setParameterODBpp("cml", o);
-    MutrigConfig::setParameterODBpp("cml_sc", o);
-    MutrigConfig::setParameterODBpp("amonctrl", o);
-    MutrigConfig::setParameterODBpp("comp_spi", o);
-    MutrigConfig::setParameterODBpp("tdctest_n", o);
-    MutrigConfig::setParameterODBpp("sswitch", o);
-    MutrigConfig::setParameterODBpp("delay", o);
-    MutrigConfig::setParameterODBpp("pole_en_n", o);
-    MutrigConfig::setParameterODBpp("energy_c_en", o);
-    MutrigConfig::setParameterODBpp("energy_r_en", o);
-    MutrigConfig::setParameterODBpp("cm_sensing_high_r", o);
-    MutrigConfig::setParameterODBpp("amon_en_n", o);
-    MutrigConfig::setParameterODBpp("edge", o);
-    MutrigConfig::setParameterODBpp("edge_cml", o);
-    MutrigConfig::setParameterODBpp("dmon_en", o);
-    MutrigConfig::setParameterODBpp("dmon_sw", o);
-    MutrigConfig::setParameterODBpp("coin_mat", o);
+    MutrigConfig::setParameterODBpp("mask", o, channel);
+    MutrigConfig::setParameterODBpp("recv_all", o, channel);
+    MutrigConfig::setParameterODBpp("tthresh", o, channel);
+    MutrigConfig::setParameterODBpp("tthresh_sc", o, channel);
+    MutrigConfig::setParameterODBpp("ethresh", o, channel);
+    MutrigConfig::setParameterODBpp("ebias", o, channel);
+    MutrigConfig::setParameterODBpp("sipm", o, channel);
+    MutrigConfig::setParameterODBpp("sipm_sc", o, channel);
+    MutrigConfig::setParameterODBpp("inputbias", o, channel);
+    MutrigConfig::setParameterODBpp("inputbias_sc", o, channel);
+    MutrigConfig::setParameterODBpp("pole", o, channel);
+    MutrigConfig::setParameterODBpp("pole_sc", o, channel);
+    MutrigConfig::setParameterODBpp("ampcom", o, channel);
+    MutrigConfig::setParameterODBpp("ampcom_sc", o, channel);
+    MutrigConfig::setParameterODBpp("cml", o, channel);
+    MutrigConfig::setParameterODBpp("cml_sc", o, channel);
+    MutrigConfig::setParameterODBpp("amonctrl", o, channel);
+    MutrigConfig::setParameterODBpp("comp_spi", o, channel);
+    MutrigConfig::setParameterODBpp("tdctest_n", o, channel);
+    MutrigConfig::setParameterODBpp("sswitch", o, channel);
+    MutrigConfig::setParameterODBpp("delay", o, channel);
+    MutrigConfig::setParameterODBpp("pole_en_n", o, channel);
+    MutrigConfig::setParameterODBpp("energy_c_en", o, channel);
+    MutrigConfig::setParameterODBpp("energy_r_en", o, channel);
+    MutrigConfig::setParameterODBpp("cm_sensing_high_r", o, channel);
+    MutrigConfig::setParameterODBpp("amon_en_n", o, channel);
+    MutrigConfig::setParameterODBpp("edge", o, channel);
+    MutrigConfig::setParameterODBpp("edge_cml", o, channel);
+    MutrigConfig::setParameterODBpp("dmon_en", o, channel);
+    MutrigConfig::setParameterODBpp("dmon_sw", o, channel);
+    MutrigConfig::setParameterODBpp("coin_mat", o, channel);
 }
 
 
