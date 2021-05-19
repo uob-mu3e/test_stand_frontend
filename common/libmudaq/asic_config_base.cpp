@@ -98,7 +98,7 @@ int ASICConfigBase::setParameter(std::string name, uint32_t value, bool reverse)
     std::vector<uint8_t> bitorder;
     std::tie(offset, nbits, bitorder) = para->second;
     if( (value >> nbits) != 0 ) {
-        std::cerr << "Value '" << value << "' outside of range of " << nbits << " bits." << std::endl;
+        std::cerr << "Value '" << value << "' outside of range of " << nbits << " bits for '" << name << "'" << std::endl;
         return 2; // out of range
     }
     //printf("offset=%lu n=%lu\n",offset,nbits);
