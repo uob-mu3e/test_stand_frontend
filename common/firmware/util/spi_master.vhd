@@ -10,7 +10,7 @@ use ieee.numeric_std.all;
 -- SPI master
 --
 -- - ...
-entity spi_master is
+entity spi_master_WIP is
 generic (
     g_DATA_WIDTH : positive := 8;
     g_FIFO_ADDR_WIDTH : positive := 2;
@@ -45,7 +45,7 @@ port (
 );
 end entity;
 
-architecture arch of spi_master is
+architecture arch of spi_master_WIP is
 
     -- sck clock
     signal sck_cnt : unsigned(15 downto 0);
