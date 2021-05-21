@@ -34,6 +34,14 @@ struct si534x_t : si_t {
         write_n(0x026B, (alt_u8*)design_id, 8);
     }
 
+    int cmp_design_id(const char* id) {
+        int n = strlen(id);
+        if(n > 8) n = 8;
+        char design_id[8];
+        read_design_id(design_id);
+        return memcmp(design_id, id, 8);
+    }
+
     int wait_sysincal(int timeout = 8) {
         for(int i = 0; i < timeout; i++) {
             alt_u8 sysincal = read(0x000C);

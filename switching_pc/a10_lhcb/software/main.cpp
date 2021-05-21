@@ -63,23 +63,24 @@ int main() {
 
     // write SI (clock chip) configuration
     if(1) {
-        const char* ID = "TrqL7aPv";
-        char id[8];
+        const char* ID_SI5345_1 = "000efddf"; // `sha1sum Si5345-RevD-SI5345_1-Registers.h | cut -b 1-8`
+        const char* ID_SI5345_2 = "f174722f"; // `sha1sum Si5345-RevD-SI5345_2-Registers.h | cut -b 1-8`
+
         printf("I [%s] check SI5345_1 config\n", __FUNCTION__);
         IOWR_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE, 1 << 1);
-        si5345.read_design_id(id);
-        if(memcmp(id, ID, 8) != 0) {
+        if(si5345.cmp_design_id(ID_SI5345_1) != 0) {
             printf("I [%s] configure SI5345_1 ...\n", __FUNCTION__);
             si5345.init(si5345_1_registers, sizeof(si5345_1_registers) / sizeof(si5345_1_registers[0]));
-            si5345.write_design_id(ID);
+            si5345.write_design_id(ID_SI5345_1);
             si5345.wait_sysincal();
         }
+
         printf("I [%s] check SI5345_2 config\n", __FUNCTION__);
         IOWR_ALTERA_AVALON_PIO_DATA(I2C_MASK_BASE, 1 << 2);
-        if(memcmp(id, ID, 8) != 0) {
+        if(si5345.cmp_design_id(ID_SI5345_2) != 0) {
             printf("I [%s] configure SI5345_2 ...\n", __FUNCTION__);
             si5345.init(si5345_2_registers, sizeof(si5345_2_registers) / sizeof(si5345_2_registers[0]));
-            si5345.write_design_id(ID);
+            si5345.write_design_id(ID_SI5345_2);
             si5345.wait_sysincal();
         }
 
