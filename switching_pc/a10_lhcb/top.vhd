@@ -138,7 +138,12 @@ begin
     A10_SMA_CLK_OUT_P <= pll_125;
     A10_SI53344_FANOUT_CLK_P <= pll_125;
 
-    clk_125 <= A10_CUSTOM_CLK_P;
+    e_clk_125 : work.cmp.ip_clkctrl
+    port map (
+        inclk => A10_CUSTOM_CLK_P,
+        outclk => clk_125--,
+    );
+
     A10_SI5345_1_JITTER_CLOCK_P <= clk_125;
     A10_SI5345_2_JITTER_CLOCK_P <= clk_125;
 
