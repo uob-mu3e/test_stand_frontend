@@ -136,7 +136,7 @@ begin
     );
 
     A10_SMA_CLK_OUT_P <= pll_125;
-    A10_SI53344_FANOUT_CLK_P <= pll_125
+    A10_SI53344_FANOUT_CLK_P <= pll_125;
 
     clk_125 <= A10_CUSTOM_CLK_P;
     A10_SI5345_1_JITTER_CLOCK_P <= clk_125;
