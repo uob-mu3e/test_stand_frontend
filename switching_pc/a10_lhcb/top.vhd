@@ -47,6 +47,10 @@ port (
 
 
 
+    -- SMA
+--    A10_SMA_CLK_IN_P                    : in    std_logic;
+    A10_SMA_CLK_OUT_P                   : out   std_logic;
+
     -- SI53344
     A10_SI53344_FANOUT_CLK_P            : out   std_logic; -- -> SI53344[CLK0]
     -- - CLK_SEL = SWITCH_6[0]
@@ -69,7 +73,7 @@ port (
 
 
 
-    -- Reset from push button through Max5
+    -- reset from push button through Max V
     A10_M5FL_CPU_RESET_N                : IN    STD_LOGIC;
 
     -- general purpose internal clock
@@ -86,6 +90,8 @@ architecture arch of top is
 
     -- local 100 MHz clock
     signal clk_100, reset_100_n : std_logic;
+
+    signal pll_125 : std_logic;
 
     -- global 125 MHz clock
     signal clk_125, reset_125_n : std_logic;
@@ -120,15 +126,26 @@ begin
     e_reset_100_n : entity work.reset_sync
     port map ( o_reset_n => reset_100_n, i_reset_n => reset_n, i_clk => clk_100 );
 
-    clk_125 <= A10_REFCLK_GBT_P_0; -- TODO: use A10_CUSTOM_CLK_P (global 125 MHz clock);
+    --! generate and route 125 MHz clock to SMA output
+    --! (can be connected to SMA input as global clock)
+    e_pll_100to125 : component work.cmp.ip_pll_100to125
+    port map (
+        outclk_0 => pll_125,
+        refclk => clk_100,
+        rst => not reset_100_n--,
+    );
+
+    A10_SMA_CLK_OUT_P <= pll_125;
+    A10_SI53344_FANOUT_CLK_P <= pll_125
+
+    clk_125 <= A10_CUSTOM_CLK_P;
+    A10_SI5345_1_JITTER_CLOCK_P <= clk_125;
+    A10_SI5345_2_JITTER_CLOCK_P <= clk_125;
+
+
 
     e_reset_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_n, i_reset_n => reset_n, i_clk => clk_125 );
-
-
-
-    A10_SI5345_1_JITTER_CLOCK_P <= clk_100;
-    A10_SI5345_2_JITTER_CLOCK_P <= clk_100;
 
 
 
