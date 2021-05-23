@@ -47,7 +47,13 @@ entity flashprogramming_block is
         spi_arria_byte_from_arria            : in std_logic_vector(7 downto 0);
         spi_arria_byte_en                    : in std_logic;     
         spi_arria_addr                       : in std_logic_vector(6 downto 0);
-        addr_from_arria                      : in std_logic_vector(23 downto 0)
+        addr_from_arria                      : in std_logic_vector(23 downto 0);
+
+        -- Backplane SPI interface
+        spi_bp_byte_from_arria            : in std_logic_vector(7 downto 0);
+        spi_bp_byte_en                    : in std_logic;     
+        spi_bp_addr                       : in std_logic_vector(7 downto 0);
+        addr_from_bp                      : in std_logic_vector(23 downto 0);       
     );
 end entity flashprogramming_block;
 
@@ -83,7 +89,9 @@ architecture RTL of flashprogramming_block is
             arriawriting6, arriawriting7, arriafifowriting, arriawriting8, programming);
         signal spiflashstate : spiflashstate_type;
         signal fifo_req_last                        : std_logic;
-        signal arria_write_req_last                  : std_logic;
+        signal arria_write_req_last                 : std_logic;
+        signal bp_write_req_last                    : std_logic;
+        signal use_bp                               : std_logic;
         signal fifo_read_pulse                      : std_logic;
         signal wcounter                             : std_logic_vector(15 downto 0);
 
@@ -120,7 +128,8 @@ if ( reset_n = '0' ) then
     spiflashstate                   <= idle;
     spi_flash_granted_programmer    <= '0';
     fifo_req_last                   <= '0';
-    arria_write_req_last             <= '0';
+    arria_write_req_last            <= '0';
+    bp_write_req_last               <= '0';
     spiflash_to_fifo_we				<= '0';
     fifopiotoggle_last			    <= '0';
     arriawriting                    <= '0';
@@ -128,12 +137,14 @@ if ( reset_n = '0' ) then
     spi_continue_arria              <= '0';
     status                          <= (others => '0');
     addrlast                        <= (others => '0');
+    use_bp                          <= '1';
 
 
 elsif ( clk100'event and clk100 = '1' ) then
     fifopiotoggle_last			    <= spi_flash_fifo_data_nios(8);
     fifo_req_last                   <= spi_flash_ctrl(7);
-    arria_write_req_last             <= control(0);
+    arria_write_req_last            <= control(0);
+    bp_write_req_last               <= control(1);
     spiflash_to_fifo_we 	     	<= '0';
       
 
@@ -160,9 +171,21 @@ elsif ( clk100'event and clk100 = '1' ) then
             wcounter        <= (others => '0');
         end if;
 
-        if(control(0) = '1' and arria_write_req_last = '0') then -- here we start the sequence for erasing 
+        if(control(1) = '1' and bp_write_req_last = '0') then -- here we start the sequence for erasing 
                                                                  -- and writing an spi flash block
                                                                  -- we only erase if we just passed a 64K block boundary
+                                                                 -- Note that we differentiate between backplane and arria as source
+            addrlast <= addr_from_bp;
+            if(addr_from_bp(15 downto 0) = X"0000") then                                                    
+                spiflashstate  <= arriawriting1;
+                arriawriting   <= '1';
+            else 
+                spiflashstate  <= arriawriting5;
+                arriawriting   <= '1';
+            end if;    
+            use_bp <= '1';           
+
+        elsif(control(0) = '1' and arria_write_req_last = '0') then 
 
             addrlast <= addr_from_arria;                                                
             if(addr_from_arria(15 downto 0) = X"0000") then                                                    
@@ -172,19 +195,19 @@ elsif ( clk100'event and clk100 = '1' ) then
                 spiflashstate  <= arriawriting5;
                 arriawriting   <= '1';
             end if;    
-
-            --if((unsigned(addr_from_arria) /= 0 and unsigned(addr_from_arria) - unsigned(addrlast) /= 256) or spiflashfifo_empty = '1')then
-            --    status(31 downto 20) <= addr_from_arria(23 downto 12);
-            --end if;    
+            use_bp <= '0';
 
         end if;    
 
             
-        if(spi_arria_byte_en = '1' and spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_WFIFO) then
-            spiflash_to_fifo_we <= '1';
+        if(spi_bp_byte_en = '1' and spi_bp_addr = "0" & FEBSPI_ADDR_PROGRAMMING_WFIFO) then
+            spiflash_to_fifo_we  <= '1';
+            spiflashfifo_data_in <= spi_bp_byte_from_bp;
+        elsif (spi_arria_byte_en = '1' and spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_WFIFO) then
+            spiflash_to_fifo_we  <= '1';
             spiflashfifo_data_in <= spi_arria_byte_from_arria;
         elsif(fifopiotoggle_last /= spi_flash_fifo_data_nios(8)) then
-            spiflash_to_fifo_we <= '1';
+            spiflash_to_fifo_we  <= '1';
             spiflashfifo_data_in <= spi_flash_fifo_data_nios(7 downto 0);
         end if;
 
@@ -201,7 +224,11 @@ elsif ( clk100'event and clk100 = '1' ) then
     when arriawriting2 =>  -- send the erase command
         status(3)               <= '1';
         spi_command_arria       <= COMMAND_BLOCK_ERASE_64;
-        spi_addr_arria          <= addr_from_arria;
+        if(use_bp = '1') then
+            spi_addr_arria      <= addr_from_bp;
+        else
+            spi_addr_arria          <= addr_from_arria;
+        end if;
         spi_continue_arria      <= '0';
         spi_strobe_arria        <= '1';
         if(spi_ack = '1')then
@@ -260,7 +287,11 @@ elsif ( clk100'event and clk100 = '1' ) then
     when arriafifowriting => -- start writing
         status(9)               <= '1';
         spi_command_arria       <= COMMAND_QUAD_PAGE_PROGRAM;
-        spi_addr_arria          <= addr_from_arria;
+        if(use_bp = '1') then
+            spi_addr_arria      <= addr_from_bp;
+        else
+            spi_addr_arria          <= addr_from_arria;
+        end if;        
         spi_continue_arria      <= '1';
         spi_strobe_arria        <= '1';
         wcounter                <= wcounter + 1;
