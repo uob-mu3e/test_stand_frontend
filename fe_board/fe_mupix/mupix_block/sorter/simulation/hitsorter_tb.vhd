@@ -8,9 +8,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 use ieee.numeric_std.all;
-use work.mupix_constants.all;
-use work.mupix_types.all;
-use work.daq_constants.all;
+
+
+use work.mupix.all;
+use work.mudaq.all;
 
 entity hitsorter_tb is
 end hitsorter_tb;
@@ -19,24 +20,6 @@ architecture rtl of hitsorter_tb is
 
 constant WRITECLK_PERIOD : time := 10 ns;
 constant READCLK_PERIOD  : time := 8 ns;
-
-component hitsorter_wide is 
-	port (
-		reset_n							: in std_logic;										-- async reset
-		writeclk						: in std_logic;										-- clock for write/input side
-		running							: in std_logic;
-		currentts						: in ts_t;										-- 11 bit ts
-		hit_in							: in hit_array;
-		hit_ena_in						: in std_logic_vector(NCHIPS-1 downto 0);			-- valid hit
-		readclk							: in std_logic;										-- clock for read/output side
-		data_out						: out reg32;										-- packaged data out
-		out_ena							: out STD_LOGIC;									-- valid output data
-		out_type						: out std_logic_vector(3 downto 0);				-- start/end of an output package, hits, end of run
-		diagnostic_sel					: in std_logic_vector(5 downto 0);					-- control the multiplexer for diagnostic signals
-		diagnostic_out					: out reg32;
-		delay							: in ts_t
-		);
-end component;
 
 signal		reset_n							: std_logic;										-- async reset
 signal		writeclk						: std_logic;										-- clock for write/input side
@@ -49,14 +32,12 @@ signal		readclk							: std_logic;										-- clock for read/output side
 signal		data_out						: reg32;										-- packaged data out
 signal		out_ena							: STD_LOGIC;									-- valid output data
 signal		out_type						: std_logic_vector(3 downto 0);						
-signal		diagnostic_sel					: std_logic_vector(5 downto 0);	
-signal		diagnostic_out					: reg32;
-
+signal 		diagnostic_out					: sorter_reg_array;
 
 begin
 
 
-dut:hitsorter_wide 
+dut: entity work.hitsorter_wide 
 	port map(
 		reset_n							=> reset_n,
 		writeclk						=> writeclk,
@@ -68,7 +49,6 @@ dut:hitsorter_wide
 		data_out						=> data_out,
 		out_ena							=> out_ena,
 		out_type						=> out_type,
-		diagnostic_sel					=> diagnostic_sel,
 		diagnostic_out					=> diagnostic_out,
 		delay							=> "01100000000"
 		);
@@ -115,16 +95,9 @@ begin
 if(reset_n = '0') then
 	currentts	<= (others => '0');
 elsif(tsclk'event and tsclk = '1') then
-	currentts 	<= currentts + '1';
-end if;
-end process;
-
-diagnosticselgen: process(reset_n, tsclk)
-begin
-if(reset_n = '0') then
-	diagnostic_sel	<= (others => '0');
-elsif(tsclk'event and tsclk = '1') then
-	diagnostic_sel 	<= diagnostic_sel + '1';
+	if(running = '1') then
+		currentts 	<= currentts + '1';
+	end if;
 end if;
 end process;
 	
@@ -135,7 +108,7 @@ begin
 		hit_ena_in(i)	<= '0';
 	end loop;
 	wait for 30*WRITECLK_PERIOD;
-	hit_in(0)		<= X"AAAAA050";
+	hit_in(0)		<= X"AAAAA040";
 	hit_ena_in(0)		<= '1';
 	wait for WRITECLK_PERIOD;
 	hit_in(0)		<= X"00000000";

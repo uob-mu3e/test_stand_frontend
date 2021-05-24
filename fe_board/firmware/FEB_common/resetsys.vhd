@@ -11,6 +11,7 @@ generic (
 );
 PORT (
     i_data_125_rx       : in    std_logic_vector(7 downto 0);
+    i_data_ready        : in    std_logic;
     i_reset_125_rx_n    : in    std_logic;
     i_clk_125_rx        : in    std_logic;
 
@@ -60,13 +61,17 @@ BEGIN
         case reset_bypass_state is
             when "000" =>
                 -- idle, use genesis
-                state_controller_in     <= i_data_125_rx;
-                
+                if(i_data_ready='1') then
+                    state_controller_in     <= i_data_125_rx;
+                else
+                    state_controller_in     <= x"BC";
+                end if;
+
                 -- bypass request
                 if(reset_bypass_request = '1') then
                     reset_bypass_state  <= "001";
                 end if;
-                
+
             when "001" =>
                 state_controller_in     <= reset_bypass_125_rx(7 downto 0);
                 reset_bypass_state      <= "010";

@@ -74,21 +74,21 @@ INT read_power(float* pdata, const std::string& eqn);
 
 EQUIPMENT equipment[] = {
 
-   {"Genesys",                       /* equipment name */
-    {121, 0,                       /* event ID, trigger mask */
-     "SYSTEM",                  /* event buffer */
-     EQ_PERIODIC,                   /* equipment type */
-     0,                         /* event source */
-     "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
-     RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     10000,                     /* read every 10 sec */
-     0,                         /* stop run after this event limit */
-     0,                         /* number of sub events */
-     1,                         /* log history every event */
-     "", "", ""} ,                  /* device driver list */
-     read_genesys_power,
-    },
+   /*{"Genesys",                       /* equipment name */
+    /*{121, 0,                       /* event ID, trigger mask */
+     /*"SYSTEM",                  /* event buffer */
+     /*EQ_PERIODIC,                   /* equipment type */
+     /*0,                         /* event source */
+     /*"MIDAS",                   /* format */
+     /*TRUE,                      /* enabled */
+     /*RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     /*10000,                     /* read every 10 sec */
+     /*0,                         /* stop run after this event limit */
+     /*0,                         /* number of sub events */
+     /*1,                         /* log history every event */
+     /*"", "", ""} ,                  /* device driver list */
+     /*read_genesys_power,
+    },*/
     
     {"HAMEG1",                       /* equipment name */
     	{122, 0,                       /* event ID, trigger mask */
@@ -106,21 +106,21 @@ EQUIPMENT equipment[] = {
      	read_hameg_power1,    
     },
     
-    {"HAMEG2",                       /* equipment name */
-    	{122, 0,                       /* event ID, trigger mask */
-     	"SYSTEM",                  /* event buffer */
-     	EQ_PERIODIC,                   /* equipment type */
-     	0,                         /* event source */
-     	"MIDAS",                   /* format */
-     	TRUE,                      /* enabled */
-     	RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     	10000,                     /* read every 10 sec */
-     	0,                         /* stop run after this event limit */
-    	0,                         /* number of sub events */
-     	0,                         /* log history every event */
-     	"", "", ""} ,                  /* device driver list */
-     	read_hameg_power2,    
-    },
+    /*{"HAMEG2",                       /* equipment name */
+    	/*{122, 0,                       /* event ID, trigger mask */
+     	/*"SYSTEM",                  /* event buffer */
+     	/*EQ_PERIODIC,                   /* equipment type */
+     	/*0,                         /* event source */
+     	/*"MIDAS",                   /* format */
+     	/*TRUE,                      /* enabled */
+     	/*RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	/*10000,                     /* read every 10 sec */
+     	/*0,                         /* stop run after this event limit */
+    	/*0,                         /* number of sub events */
+     	/*0,                         /* log history every event */
+     	/*"", "", ""} ,                  /* device driver list */
+     	/*read_hameg_power2,    
+    },*/
     
     {""} //why is there actually this empty one here? FW
     
@@ -243,14 +243,14 @@ INT read_hameg_power1(char *pevent, INT off)
   	return bk_size(pevent);
 }
 
-INT read_hameg_power2(char *pevent, INT off)
+/*INT read_hameg_power2(char *pevent, INT off)
 {
 	std::cout << " read hameg power called" << std::endl;
 	INT error;
 	
 	/* init bank structure */
   
-	bk_init32a(pevent);
+	/*bk_init32a(pevent);
 	float *pdata;
 	
 	bk_create(pevent,"LVH2", TID_FLOAT, (void **)&pdata);
@@ -268,7 +268,7 @@ INT read_genesys_power(char *pevent, INT off)
 	
 	/* init bank structure */
   
-	bk_init32a(pevent);
+	/*bk_init32a(pevent);
 	float *pdata;
 	
 	bk_create(pevent,"LVG1", TID_FLOAT, (void **)&pdata);
@@ -276,7 +276,7 @@ INT read_genesys_power(char *pevent, INT off)
 	error = read_power(pdata,eq_name);	
 	bk_close(pevent, pdata);
   	return bk_size(pevent);
-}
+}*/
 
 
 INT read_power(float* pdata,const std::string& eq_name)

@@ -69,8 +69,8 @@ begin
     -- internal RAM
     e_iram : entity work.ram_1r1w
     generic map (
-        DATA_WIDTH_g => 32,
-        ADDR_WIDTH_g => RAM_ADDR_WIDTH_g--,
+        g_DATA_WIDTH => 32,
+        g_ADDR_WIDTH => RAM_ADDR_WIDTH_g--,
     )
     port map (
         i_raddr => iram_addr(RAM_ADDR_WIDTH_g-1 downto 0),

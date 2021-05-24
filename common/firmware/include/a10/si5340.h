@@ -3,6 +3,9 @@
  * date : 2019
  */
 
+#ifndef __UTIL_A10_SI5340_H__
+#define __UTIL_A10_SI5340_H__
+
 #include "si5340_regs.h"
 
 struct si5340_t {
@@ -99,3 +102,5 @@ struct si5340_t {
     }
 
 };
+
+#endif // __UTIL_A10_SI5340_H__
