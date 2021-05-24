@@ -10,7 +10,7 @@ entity spi_bp is
         i_SPI_clk   : in    std_logic;
         i_SPI_mosi  : in    std_logic;
         o_SPI_miso  : out std_logic;
-        o_SPI_miso_en : out std_logic;
+        o_SPI_miso_en : out std_logic; 
 
         clk100       : in std_logic;
         reset_n      : in std_logic;
@@ -82,7 +82,7 @@ architecture RTL of spi_bp is
         case spistate is
         when idle =>
             o_SPI_miso      <= '0';
-            if(csn_reg = '0' and boardselect_reg = '0') then
+            if(boardselect_reg = '0') then
                 spistate    <= command;
                 bitcount    <= 0;
                 addroffset_int  <= 0;
@@ -107,7 +107,7 @@ architecture RTL of spi_bp is
             end if;
             if(bitcount > 7)then
                 addr <=    addrshiftregister(7 downto 0);
-                rw   <= commandshiftregister(BP_CMD_RW_BIT);
+                rw   <= not commandshiftregister(BP_CMD_RW_BIT);
                 bitcount    <= 0;
                 if(commandshiftregister = BP_CMD_WRITE8) then
                     spistate <= writing;
@@ -142,15 +142,17 @@ architecture RTL of spi_bp is
             end if;   
             if(bitcount > 7) then
                 spistate    <= reading;
-                bitcount    <= 0;
+                bitcount    <= 1;
                 datareadshiftregister   <= data_to_bp;
+                o_SPI_miso              <= data_to_bp(31);
+                o_SPI_miso_en           <= '1';
                 next_data               <= '1';
             end if;
             
         when reading =>
             o_SPI_miso_en <= '1';
-            if(clklast = '0' and clk_reg = '1') then
-                o_SPI_miso <= datareadshiftregister(31);
+            if(clklast = '1' and clk_reg = '0') then
+                o_SPI_miso <= datareadshiftregister(30);
                 datareadshiftregister(31 downto 1) <= datareadshiftregister(30 downto 0);
                 bitcount     <= bitcount +1;
             end if;    
@@ -171,7 +173,7 @@ architecture RTL of spi_bp is
             spistate        <= idle;
     end case;    
 
-    if(csn_reg = '1' or boardselect_reg = '1') then
+    if(boardselect_reg = '1') then
         spistate    <= idle;
     end if;
 
