@@ -67,30 +67,10 @@ const char *cr_settings_str[] = {
 "DNS Active = BOOL : 1",
 "usercmdReserve = BOOL : 0",
 "usercmdRmReserve = BOOL : 0",
-"nUnknown = STRING[1]:",
-    "[32] 0",
-"nReserved = STRING[1]:",
-    "[32] 0",
-"nLeased = STRING[1]:",
-    "[32] 0",
-"nDNS = STRING[1]:",
-    "[32] 0",
-"usereditReserveIP = STRING[1]:"
-"[32] 000.000.000.000",
-"usereditReserveMAC = STRING[1]:"
-"[32] 00:00:00:00:00",
-"usereditReserveHost = STRING[1]:"
-"[32] hostname",
-"usereditRemReserveIP = STRING[1]:"
-"[32] 000.000.000.000",
-"leasedIPs = STRING[255] :",
-"[32] 0",
-"leasedHostnames = STRING[255] :",
-"[32] 0",
-"DNSips = STRING[255] :",
-"[32] 0",
-"DNSHostnames = STRING[255] :",
-"[32] 0",
+"usereditReserveIP = STRING : [32] 000.000.000.000",
+"usereditReserveMAC = STRING : [32] 00:00:00:00:00",
+"usereditReserveHost = STRING : [32] hostname",
+"usereditRemReserveIP = STRING : [32] 000.000.000.000",
 nullptr
 };
 
@@ -301,7 +281,7 @@ INT frontend_init()
    // add custom page to ODB
    db_create_key(hDB, 0, "Custom/DHCP DNS&", TID_STRING);
    const char * name = "net.html";
-   db_set_value(hDB,0,"Custom/DHCP DNS&",name, sizeof(name), 1,TID_STRING);
+   db_set_value(hDB,0,"Custom/DHCP DNS&",name, 9, 1,TID_STRING);
 
    return CM_SUCCESS;
 }
@@ -355,7 +335,6 @@ INT frontend_loop()
     if(prev_ips!=ips){
         cm_msg(MINFO, "netfe_settings_changed", "new dhcp lease, odb updated");
 
-        system("wall new dhcp lease, update and restart of dns server");
         write_dns_table(dns_zone_def_path,ips,requestedHostnames);
         system("rcnamed restart");
 
@@ -446,11 +425,14 @@ void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if(value==true)
+      if(value==true){
         cm_msg(MINFO, "netfe_settings_changed", "DHCPD activated by user");
-      else
+        system("wall DHCPD activated by user");
+      }
+      else{
         cm_msg(MINFO, "netfe_settings_changed", "DHCPD deactivated by user");
-      system("wall dhcpd changed");
+        system("wall DHCPD deactivated by user");
+      }
    }
 
     if (std::string(key.name) == "DNS Active") {
@@ -474,7 +456,6 @@ void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         int sizemac = sizeof(mac);
         int sizehostname = sizeof(hostname);
         db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-
         if(value){
             cm_msg(MINFO, "netfe_settings_changed", "Execute reserve IP");
             value = FALSE; // reset flag in ODB
