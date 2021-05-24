@@ -9,7 +9,7 @@ entity spi_bp is
         i_SPI_csn   : in    std_logic;
         i_SPI_clk   : in    std_logic;
         i_SPI_mosi  : in    std_logic;
-        io_SPI_miso : inout std_logic;
+        o_SPI_miso  : out std_logic;
         o_SPI_miso_en : out std_logic;
 
         clk100       : in std_logic;
@@ -35,7 +35,7 @@ architecture RTL of spi_bp is
     signal addrshiftregister : std_logic_vector(7 downto 0);
     signal datashiftregister : std_logic_vector(31 downto 0);
     signal datareadshiftregister : std_logic_vector(31 downto 0);
-    signal command : std_logic_vector(7 downto 0);
+    signal spicommand : std_logic_vector(7 downto 0);
     signal clklast: std_logic;
     signal bitcount : integer;
     signal addroffset_int : integer;
@@ -57,7 +57,7 @@ architecture RTL of spi_bp is
     process(clk100, reset_n)
     begin
     if(reset_n = '0')then    
-        io_SPI_miso     <= 'Z';
+        o_SPI_miso      <= '0';
         spistate        <= idle;
         word_en         <= '0';
         byte_en         <= '0';
@@ -81,30 +81,28 @@ architecture RTL of spi_bp is
 		  
         case spistate is
         when idle =>
-            io_SPI_miso     <= 'Z';
-            if(csn_reg = '0' and boardselect = '0') then
+            o_SPI_miso      <= '0';
+            if(csn_reg = '0' and boardselect_reg = '0') then
                 spistate    <= command;
                 bitcount    <= 0;
                 addroffset_int  <= 0;
             end if;
         when command =>
-            io_SPI_miso     <= 'Z';
             if(clklast = '0' and clk_reg = '1') then
                 commandshiftregister(0) <= mosi_reg;
-                commandshiftregsiter(7 downto 1)    <= commandshiftregister(6 downto 0);
+                commandshiftregister(7 downto 1)    <= commandshiftregister(6 downto 0);
                 bitcount <= bitcount + 1;
             end if;
             if(bitcount > 7)then
-                command     <= commandshiftregister;
-                spistate    <= addr;
+                spicommand  <= commandshiftregister;
+                spistate    <= address;
                 bitcount    <= 0;
             end if;
 
         when address =>
-            io_SPI_miso     <= 'Z';
             if(clklast = '0' and clk_reg = '1') then
                 addrshiftregister(0) <= mosi_reg;
-                addrshiftregsiter(7 downto 1)    <= addrshiftregister(6 downto 0);
+                addrshiftregister(7 downto 1)    <= addrshiftregister(6 downto 0);
                 bitcount <= bitcount + 1;
             end if;
             if(bitcount > 7)then
@@ -121,7 +119,6 @@ architecture RTL of spi_bp is
             end if;    
 				
         when writing =>
-            io_SPI_miso     <= 'Z';
             if(clklast = '0' and clk_reg = '1') then
                 datashiftregister(0)  <=  mosi_reg;
                 datashiftregister(31 downto 1) <= datashiftregister(30 downto 0);
@@ -140,7 +137,6 @@ architecture RTL of spi_bp is
             end if;
 
         when waiting =>
-            io_SPI_miso     <= 'Z';
             if(clklast = '0' and clk_reg = '1') then
                 bitcount     <= bitcount +1;
             end if;   
@@ -154,13 +150,13 @@ architecture RTL of spi_bp is
         when reading =>
             o_SPI_miso_en <= '1';
             if(clklast = '0' and clk_reg = '1') then
-                io_SPI_miso <= datareadshiftregister(31);
+                o_SPI_miso <= datareadshiftregister(31);
                 datareadshiftregister(31 downto 1) <= datareadshiftregister(30 downto 0);
                 bitcount     <= bitcount +1;
             end if;    
 
             if(bitcount mod 32 = 0 and bitcount > 0)then
-                datareadshiftregister <= data_to_arria;
+                datareadshiftregister <= data_to_bp;
                 next_data         <= '1';        
             end if;
 			if(bitcount mod 32 = 1 and bitcount > 32) then	
@@ -168,14 +164,14 @@ architecture RTL of spi_bp is
             end if;
 
         when unsupported =>    
-            io_SPI_miso     <= 'Z';
+
 
         when others =>
-            io_SPI_miso     <= 'Z';
+
             spistate        <= idle;
     end case;    
 
-    if(csn_reg = '1' or boardselect = '1') then
+    if(csn_reg = '1' or boardselect_reg = '1') then
         spistate    <= idle;
     end if;
 

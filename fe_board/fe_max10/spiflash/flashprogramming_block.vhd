@@ -50,10 +50,9 @@ entity flashprogramming_block is
         addr_from_arria                      : in std_logic_vector(23 downto 0);
 
         -- Backplane SPI interface
-        spi_bp_byte_from_arria            : in std_logic_vector(7 downto 0);
+        spi_bp_byte_from_bp               : in std_logic_vector(7 downto 0);
         spi_bp_byte_en                    : in std_logic;     
-        spi_bp_addr                       : in std_logic_vector(7 downto 0);
-        addr_from_bp                      : in std_logic_vector(23 downto 0);       
+        spi_bp_addr                       : in std_logic_vector(7 downto 0)    
     );
 end entity flashprogramming_block;
 
@@ -91,7 +90,6 @@ architecture RTL of flashprogramming_block is
         signal fifo_req_last                        : std_logic;
         signal arria_write_req_last                 : std_logic;
         signal bp_write_req_last                    : std_logic;
-        signal use_bp                               : std_logic;
         signal fifo_read_pulse                      : std_logic;
         signal wcounter                             : std_logic_vector(15 downto 0);
 
@@ -137,7 +135,6 @@ if ( reset_n = '0' ) then
     spi_continue_arria              <= '0';
     status                          <= (others => '0');
     addrlast                        <= (others => '0');
-    use_bp                          <= '1';
 
 
 elsif ( clk100'event and clk100 = '1' ) then
@@ -171,22 +168,9 @@ elsif ( clk100'event and clk100 = '1' ) then
             wcounter        <= (others => '0');
         end if;
 
-        if(control(1) = '1' and bp_write_req_last = '0') then -- here we start the sequence for erasing 
+        if(control(0) = '1' and arria_write_req_last = '0') then -- here we start the sequence for erasing 
                                                                  -- and writing an spi flash block
                                                                  -- we only erase if we just passed a 64K block boundary
-                                                                 -- Note that we differentiate between backplane and arria as source
-            addrlast <= addr_from_bp;
-            if(addr_from_bp(15 downto 0) = X"0000") then                                                    
-                spiflashstate  <= arriawriting1;
-                arriawriting   <= '1';
-            else 
-                spiflashstate  <= arriawriting5;
-                arriawriting   <= '1';
-            end if;    
-            use_bp <= '1';           
-
-        elsif(control(0) = '1' and arria_write_req_last = '0') then 
-
             addrlast <= addr_from_arria;                                                
             if(addr_from_arria(15 downto 0) = X"0000") then                                                    
                 spiflashstate  <= arriawriting1;
@@ -194,8 +178,7 @@ elsif ( clk100'event and clk100 = '1' ) then
             else 
                 spiflashstate  <= arriawriting5;
                 arriawriting   <= '1';
-            end if;    
-            use_bp <= '0';
+            end if;   
 
         end if;    
 
@@ -224,11 +207,7 @@ elsif ( clk100'event and clk100 = '1' ) then
     when arriawriting2 =>  -- send the erase command
         status(3)               <= '1';
         spi_command_arria       <= COMMAND_BLOCK_ERASE_64;
-        if(use_bp = '1') then
-            spi_addr_arria      <= addr_from_bp;
-        else
-            spi_addr_arria          <= addr_from_arria;
-        end if;
+        spi_addr_arria          <= addr_from_arria;
         spi_continue_arria      <= '0';
         spi_strobe_arria        <= '1';
         if(spi_ack = '1')then
@@ -287,11 +266,7 @@ elsif ( clk100'event and clk100 = '1' ) then
     when arriafifowriting => -- start writing
         status(9)               <= '1';
         spi_command_arria       <= COMMAND_QUAD_PAGE_PROGRAM;
-        if(use_bp = '1') then
-            spi_addr_arria      <= addr_from_bp;
-        else
-            spi_addr_arria          <= addr_from_arria;
-        end if;        
+        spi_addr_arria          <= addr_from_arria;       
         spi_continue_arria      <= '1';
         spi_strobe_arria        <= '1';
         wcounter                <= wcounter + 1;

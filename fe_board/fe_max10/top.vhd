@@ -122,6 +122,17 @@ architecture arch of top is
     signal spi_arria_byte_from_arria            : std_logic_vector(7 downto 0);
     signal spi_arria_byte_en                    : std_logic;
 
+    -- SPI Backplane
+    signal spi_bp_addr          : std_logic_vector(7 downto 0);
+    signal spi_bp_addr_offset   : std_logic_vector(7 downto 0);
+    signal spi_bp_rw            : std_logic;
+    signal spi_bp_data_to_bp    : std_logic_vector(31 downto 0);
+    signal spi_bp_word_from_bp  : std_logic_vector(31 downto 0);
+    signal spi_bp_word_en       : std_logic;
+    signal spi_bp_byte_from_bp  : std_logic_vector(7 downto 0);
+    signal spi_bp_byte_en       : std_logic;  
+
+
     -- spi arria ram
     signal ram_SPI_data                         : std_logic_vector(31 downto 0);
     signal SPI_ram_data                         : std_logic_vector(31 downto 0);
@@ -150,10 +161,6 @@ begin
     fpga_reset  <= '0';
     reset_n     <= pll_locked;
     mscb_ena    <= '0';
-
-	 
-	 bp_spi_miso <= 'Z';
-	 bp_spi_miso_en <= '0';
 
     e_pll : entity work.ip_altpll
     port map(
@@ -186,16 +193,6 @@ begin
     attention_n <= "ZZ";
 
 
-
-    signal spi_bp_addr          : std_logic_vector(7 downto 0);
-    signal spi_bp_addr_offset   : std_logic_vector(7 downto 0);
-    signal spi_bp_rw            : std_logic;
-    signal spi_bp_data_to_bp    : std_logic_vector(31 downto 0);
-    signal spi_bp_word_from_bp  : std_logic_vector(31 downto 0);
-    signal spi_bp_word_en       : std_logic;
-    signal spi_bp_byte_from_bp  : std_logic_vector(7 downto 0);
-    signal spi_bp_byte_en       : std_logic;   
-
     -- Backplane SPI
     ----------------
     e_spi_bp: entity work.spi_bp
@@ -203,8 +200,8 @@ begin
         i_boardselect => board_select,
         i_SPI_csn     => bp_spi_csn,
         i_SPI_clk     => bp_spi_clk,
-        io_SPI_mosi   => bp_spi_mosi,
-        io_SPI_miso   => bp_spi_miso,
+        i_SPI_mosi    => bp_spi_mosi,
+        o_SPI_miso    => bp_spi_miso,
         o_SPI_miso_en => bp_spi_miso_en,
 
         clk100        => clk100,
@@ -449,7 +446,12 @@ e_flashprogramming_block: entity work.flashprogramming_block
         spi_arria_byte_from_arria            => spi_arria_byte_from_arria,
         spi_arria_byte_en                    => spi_arria_byte_en,        
         spi_arria_addr                       => spi_arria_addr,
-        addr_from_arria                      => programming_addr_from_arria
+        addr_from_arria                      => programming_addr_from_arria,
+
+		-- Arria SPI interface
+        spi_bp_byte_from_bp                 => spi_bp_byte_from_bp,
+        spi_bp_byte_en                      => spi_bp_byte_en,        
+        spi_bp_addr                         => spi_bp_addr      
     );
 
  
