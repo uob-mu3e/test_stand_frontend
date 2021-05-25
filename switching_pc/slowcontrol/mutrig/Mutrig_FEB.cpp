@@ -134,10 +134,12 @@ int MutrigFEB::ConfigureASICs(){
 
       try {
          //Write ASIC number & Configuraton
-//        rpc_status = m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic), feb::CMD_MUTRIG_ASIC_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
+        //rpc_status = m_mu.FEBsc_NiosRPC(FPGAid_from_ID(asic), feb::CMD_MUTRIG_ASIC_CFG, {{reinterpret_cast<uint32_t*>(&asic),1},{reinterpret_cast<uint32_t*>(config->bitpattern_w), config->length_32bits}});
           vector<vector<uint32_t> > payload;
           payload.push_back(vector<uint32_t>(1,asic));
+          std::cout << "Pushing back (1, " << asic << ")" << std::endl;
           payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
+          std::cout << "Pushing back (" << reinterpret_cast<uint32_t*>(config->bitpattern_w) <<  ", " << reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits << std::endl;
           rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUTRIG_ASIC_CFG, payload);
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mutrig", "Communication error while configuring MuTRiG %d: %s", asic, e.what());
@@ -190,52 +192,54 @@ int MutrigFEB::ReadBackCounters(uint16_t FPGA_ID){
 
        // get midas odb object
        sprintf(path,"%s/Variables/Counters", odb_prefix);
-       odb variables_counters(path);
+       //odb variables_counters(path);
+       //TODO: Can we avoid this silly back and forth casting?
+       odb variables_counters(std::string(path).c_str());
 
        // db_set_value_index
        value=val[nASIC*15+0];
        odbval=value-last_counters[nASIC][0];
-       variables_counters["nHits&"][nASIC] = odbval;
+       variables_counters["nHits"][nASIC] = odbval;
        last_counters[nASIC][0]=value;
 
        value=val[nASIC*15+2];
        odbval=value-last_counters[nASIC][1];
-       variables_counters["Time&"][nASIC] = odbval;
+       variables_counters["Time"][nASIC] = odbval;
        last_counters[nASIC][1]=value;
 
        value=val[nASIC*15+3];
        odbval=value-last_counters[nASIC][2];
-       variables_counters["nBadFrames&"][nASIC] = odbval;
+       variables_counters["nBadFrames"][nASIC] = odbval;
        last_counters[nASIC][2]=value;
 
        value=val[nASIC*15+5];
        odbval=value-last_counters[nASIC][3];
-       variables_counters["nFrames&"][nASIC] = odbval;
+       variables_counters["nFrames"][nASIC] = odbval;
        last_counters[nASIC][3]=value;
 
        value=val[nASIC*15+6];
        odbval=value-last_counters[nASIC][4];
-       variables_counters["nErrorsPRBS&"][nASIC] = odbval;
+       variables_counters["nErrorsPRBS"][nASIC] = odbval;
        last_counters[nASIC][4]=value;
 
        value=val[nASIC*15+8];
        odbval=value-last_counters[nASIC][5];
-       variables_counters["nWordsPRBS&"][nASIC] = odbval;
+       variables_counters["nWordsPRBS"][nASIC] = odbval;
        last_counters[nASIC][5]=value;
 
        value=val[nASIC*15+9];
        odbval=value-last_counters[nASIC][6];
-       variables_counters["nErrorsLVDS&"][nASIC] = odbval;
+       variables_counters["nErrorsLVDS"][nASIC] = odbval;
        last_counters[nASIC][6]=value;
 
        value=val[nASIC*15+11];
        odbval=value-last_counters[nASIC][7];
-       variables_counters["nWordsLVDS&"][nASIC] = odbval;
+       variables_counters["nWordsLVDS"][nASIC] = odbval;
        last_counters[nASIC][7]=value;
 
        value=val[nASIC*15+12];
        odbval=value-last_counters[nASIC][8];
-       variables_counters["nDatasyncloss&"][nASIC] = odbval;
+       variables_counters["nDatasyncloss"][nASIC] = odbval;
        last_counters[nASIC][8]=value;
 
    }

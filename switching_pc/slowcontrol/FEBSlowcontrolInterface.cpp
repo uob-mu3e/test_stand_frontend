@@ -293,6 +293,9 @@ void FEBSlowcontrolInterface::FEBsc_resetSecondary()
 
 int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks)
 {
+    if(command == 272)
+        printf("CMD_MUTRIG_ASIC_CFG\n");
+
     int status =0;
     int index = 0;
     for(auto chunk: payload_chunks){
@@ -314,6 +317,7 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
     // a valid address
     status=FEB_register_write(FPGA_ID, 0xf0,
                      vector<uint32_t>(1,(((uint32_t)command) << 16) || index));
+    
     if(status < 0)
         return status;
 

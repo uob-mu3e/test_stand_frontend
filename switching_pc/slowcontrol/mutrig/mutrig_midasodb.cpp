@@ -88,6 +88,7 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
         {"nWordsPRBS", nasics},
         {"nDatasyncloss", nasics},
     };
+    variables_counters.connect(set_str);
     cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - counters done");
 
 
