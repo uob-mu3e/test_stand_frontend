@@ -180,44 +180,6 @@ architecture rtl of top is
     signal pcie0_readregs_B   : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_C   : work.util.slv32_array_t(63 downto 0);
 
-<<<<<<< HEAD
-=======
-    signal nios_clk : std_logic;
-    signal nios_reset_n : std_logic;
-    signal flash_rst_n : std_logic;
-    signal flash_ce_n_i : std_logic;
-
-    constant NLINKS_DATA : integer := 3;
-    constant NLINKS_TOTL : integer := 16;
-    constant LINK_FIFO_ADDR_WIDTH : integer := 10;
-
-    signal reset : std_logic;
-    signal reset_n : std_logic;
-
-    signal resets : std_logic_vector(31 downto 0);
-    signal resets_n: std_logic_vector(31 downto 0);
-    
-    signal resets_fast : std_logic_vector(31 downto 0);
-    signal resets_n_fast: std_logic_vector(31 downto 0);
-    signal resets_ddr3 : std_logic_vector(31 downto 0);
-    signal resets_n_ddr3: std_logic_vector(31 downto 0);
-
-    ------------------ Signal declaration ------------------------
-    
-    -- pcie read / write regs
-    signal writeregs				: reg32array_pcie;
-    signal writeregs_slow			: reg32array_pcie;
-    signal writeregs_ddr3			: reg32array_pcie;
-    signal regwritten				: std_logic_vector(63 downto 0);
-    signal regwritten_B				: std_logic_vector(63 downto 0);
-    signal regwritten_C				: std_logic_vector(63 downto 0);
-    signal pb_in : std_logic_vector(2 downto 0);
-    
-    signal readregs					: reg32array_pcie;
-    signal readregs_slow			: reg32array_pcie;
-    signal readregs_ddr3			: reg32array_pcie;
-    
->>>>>>> origin/v0.11_dev
     -- pcie read / write memory
     signal readmem_writedata    : std_logic_vector(31 downto 0);
     signal readmem_writeaddr    : std_logic_vector(15 downto 0);
