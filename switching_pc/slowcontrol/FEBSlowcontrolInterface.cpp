@@ -293,11 +293,10 @@ void FEBSlowcontrolInterface::FEBsc_resetSecondary()
 
 int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks)
 {
-    if(command == 272)
-        printf("CMD_MUTRIG_ASIC_CFG\n");
-
-    int status =0;
+    int status = 0;
     int index = 0;
+
+    // Write the payload
     for(auto chunk: payload_chunks){
         status=FEB_write(FPGA_ID, (uint32_t) index+OFFSETS::FEBsc_RPC_DATAOFFSET, chunk);
          if(status < 0)
@@ -307,16 +306,16 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
     if(index >= 1<<16)
         return ERRCODES::WRONG_SIZE;
 
-    // TODO: What is 0xfff1 here - put it in a define... Make sure write accepts it as a
-    // a valid address
-    status=FEB_register_write(FPGA_ID, 0xf1, vector<uint32_t>(1,OFFSETS::FEBsc_RPC_DATAOFFSET));
+    // Write the position of the payload in the offset register
+    status=FEB_register_write(FPGA_ID, CMD_OFFSET_REGISTER_RW, vector<uint32_t>(1,OFFSETS::FEBsc_RPC_DATAOFFSET));
     if(status < 0)
         return status;
 
-    // TODO: What is 0xfff0 here - put it in a define... Make sure write accepts it as a
-    // a valid address
-    status=FEB_register_write(FPGA_ID, 0xf0,
-                     vector<uint32_t>(1,(((uint32_t)command) << 16) || index));
+    // Write the command in the upper 16 bits of the length register and
+    // the size of the payload in the lower 16 bits
+    // This triggers the callback function on the frontend board
+    status=FEB_register_write(FPGA_ID, CMD_LEN_REGISTER_RW,
+                     vector<uint32_t>(1,(((uint32_t)command) << 16) | index));
     
     if(status < 0)
         return status;
