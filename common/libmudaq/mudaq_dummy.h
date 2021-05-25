@@ -22,7 +22,14 @@
 #include "time.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include "../kerneldriver/mudaq.h"
+#if __APPLE__
+    #define REQUEST_INTERRUPT_COUNTER     _IOR(MUDAQ_IOC_TYPE, 1, int)
+    #define MUDAQ_IOC_TYPE 102
+    #define MAP_DMA                       _IOW(MUDAQ_IOC_TYPE, 0, struct mesg)
+#else
+    #include "../kerneldriver/mudaq.h"
+#endif
+
 #include "mudaq_device.h"
 
 using namespace std;

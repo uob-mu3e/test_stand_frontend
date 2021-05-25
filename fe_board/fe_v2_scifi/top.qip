@@ -1,9 +1,7 @@
 #
 
-set_global_assignment -name QIP_FILE top.qip
-
-set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../fe/assignments/FE_v2_scifi.tcl
 set_global_assignment -name QIP_FILE ../fe/top_FEB_v2.qip
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../fe/assignments/FE_v2_scifi.tcl
 
 set_global_assignment -name VHDL_FILE top.vhd
 set_global_assignment -name SDC_FILE top.sdc

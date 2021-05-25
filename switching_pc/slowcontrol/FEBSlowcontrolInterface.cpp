@@ -51,7 +51,7 @@ int FEBSlowcontrolInterface::FEB_write(const uint32_t FPGA_ID, const uint32_t st
         return ERRCODES::ADDR_INVALID;
      }
 
-    if(FPGA_ID > 15){
+    if(FPGA_ID > 15 and FPGA_ID != ADDRS::BROADCAST_ADDR){
         cout << "FPGA ID out of range: " << FPGA_ID << endl;
         return ERRCODES::ADDR_INVALID;
      }

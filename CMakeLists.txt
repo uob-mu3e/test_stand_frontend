@@ -42,11 +42,7 @@ find_package(ROOT REQUIRED COMPONENTS
 find_package(Doxygen 1.8)
 message("here we set GLVND to default (https://cmake.org/cmake/help/git-stage/policy/CMP0072.html)")
 set(OpenGL_GL_PREFERENCE GLVND)
-if(APPLE)
-    find_package(OpenGl)
-else()
-    find_package(OpenGL)
-endif()
+find_package(OpenGL)
 
 find_package(CUDA)
 
@@ -87,39 +83,23 @@ add_subdirectory(switching_pc)
 
 if(APPLE)
     message("Compile for Apple")
+    add_compile_definitions(OS_DARWIN)
     # remove rt libary from crfe, netfe, copyHostnames, power_supply_fe, switch_fe, etc.
     # TODO: maybe this can be done more nicely
-    get_target_property(TARGET_LIBRARIES_CRFE crfe LINK_LIBRARIES)
-    LIST(REMOVE_ITEM TARGET_LIBRARIES_CRFE rt)
-    set_property(TARGET crfe PROPERTY LINK_LIBRARIES ${TARGET_LIBRARIES_CRFE})
+    macro(rm_rt TARGETNAME)
+        get_target_property(TARGET_LIBRARIES_RT ${TARGETNAME} LINK_LIBRARIES)
+        LIST(REMOVE_ITEM TARGET_LIBRARIES_RT rt)
+        set_property(TARGET ${TARGETNAME} PROPERTY LINK_LIBRARIES ${TARGET_LIBRARIES_RT})
+    endmacro()
 
-    get_target_property(TARGET_LIBRARIES_NETFE netfe LINK_LIBRARIES)
-    LIST(REMOVE_ITEM TARGET_LIBRARIES_NETFE rt)
-    set_property(TARGET netfe PROPERTY LINK_LIBRARIES ${TARGET_LIBRARIES_NETFE})
-
-    get_target_property(TARGET_LIBRARIES_CP copyHostnames LINK_LIBRARIES)
-    LIST(REMOVE_ITEM TARGET_LIBRARIES_CP rt)
-    set_property(TARGET copyHostnames PROPERTY LINK_LIBRARIES ${TARGET_LIBRARIES_CP})
-
-    get_target_property(TARGET_LIBRARIES_PFE power_supply_fe LINK_LIBRARIES)
-    LIST(REMOVE_ITEM TARGET_LIBRARIES_PFE rt)
-    set_property(TARGET power_supply_fe PROPERTY LINK_LIBRARIES ${TARGET_LIBRARIES_PFE})
-
-    get_target_property(TARGET_LIBRARIES_SWF switch_fe LINK_LIBRARIES)
-    LIST(REMOVE_ITEM TARGET_LIBRARIES_SWF rt)
-    set_property(TARGET switch_fe PROPERTY LINK_LIBRARIES ${TARGET_LIBRARIES_SWF})
-
-    get_target_property(TARGET_LIBRARIES_SWS switch_fe_scifi LINK_LIBRARIES)
-    LIST(REMOVE_ITEM TARGET_LIBRARIES_SWS rt)
-    set_property(TARGET switch_fe_scifi PROPERTY LINK_LIBRARIES ${TARGET_LIBRARIES_SWS})
-
-    get_target_property(TARGET_LIBRARIES_SWT malibu_fe LINK_LIBRARIES)
-    LIST(REMOVE_ITEM TARGET_LIBRARIES_SWT rt)
-    set_property(TARGET malibu_fe PROPERTY LINK_LIBRARIES ${TARGET_LIBRARIES_SWT})
-
-    get_target_property(TARGET_LIBRARIES_SWP switch_fe_mupix LINK_LIBRARIES)
-    LIST(REMOVE_ITEM TARGET_LIBRARIES_SWP rt)
-    set_property(TARGET switch_fe_mupix PROPERTY LINK_LIBRARIES ${TARGET_LIBRARIES_SWP})
+    rm_rt(crfe)
+    rm_rt(netfe)
+    rm_rt(copyHostnames)
+    rm_rt(power_supply_fe)
+    rm_rt(MpTuneDACsDB)
+    rm_rt(usb_clock_pi)
+    rm_rt(power)
+    rm_rt(switch_fe)
 endif(APPLE)
 
 if (CUDA_FOUND)

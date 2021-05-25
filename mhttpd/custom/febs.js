@@ -35,6 +35,7 @@ function write_power(name, power, x, y){
     cc.fillStyle = "Black";
     cc.font = "12px Arial";
     cc.textAlign = "right";
+    power = power * 1e6;
     cc.fillText(name + " " + power.toFixed(0)  + " muW", x, y);
     cc.textAlign = "left";
 }
@@ -64,6 +65,7 @@ function tbar(temp, x, y, dy){
 
 function rxdot(power,x,y){
     var rxcol = "Red";
+    power = power*1e6;
     if(power > 100)
         var rxcol = "Orange";
     if(power > 200)
@@ -198,10 +200,10 @@ function Feb(x,y,dx,dy, index){
         write_voltage("20V",  this.v20,  xstart+200, ystart+100);
         write_voltage("FF",   this.ff1_volt,  xstart+200, ystart+115);
 
-        write_power("RX1", this.ff1_rx1, xstart+250, ystart+150);
-        write_power("RX2", this.ff1_rx2, xstart+250, ystart+165);
-        write_power("RX3", this.ff1_rx3, xstart+250, ystart+180);
-        write_power("RX4", this.ff1_rx4, xstart+250, ystart+195);
+        write_power("RX1", this.ff1_rx1, xstart+260, ystart+150);
+        write_power("RX2", this.ff1_rx2, xstart+260, ystart+165);
+        write_power("RX3", this.ff1_rx3, xstart+260, ystart+180);
+        write_power("RX4", this.ff1_rx4, xstart+260, ystart+195);
 
 
     }

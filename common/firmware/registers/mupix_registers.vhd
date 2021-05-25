@@ -85,7 +85,17 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
         subtype  MP_LVDS_STATUS_STATE_RANGE     is integer range 30 downto 29;
         constant MP_LVDS_STATUS_READY_BIT       :  integer := 31;
     constant MP_LVDS_INVERT_REGISTER_W          :  integer := 16#90#;
-    constant MP_SORTER_DELAY_W                 :   integer := 16#91#;
-    constant MP_SORTER_COUNTER_R                :   integer := 16#92#; -- 40 counters
-
+    constant MP_SORTER_DELAY_W                  :  integer := 16#91#;
+    constant MP_SORTER_COUNTER_R                :  integer := 16#92#; -- 40 counters
+    constant MP_DATA_BYPASS_SELECT_REGISTER_W   :  integer := 16#BB#;
+    constant MP_TS_HISTO_SELECT_REGISTER_W      :  integer := 16#BC#;
+        subtype  MP_TS_HISTO_LINK_SELECT_RANGE  is integer range 15 downto 0;
+        subtype  MP_TS_HISTO_N_SAMPLE_RANGE     is integer range 31 downto 16;
+    constant MP_LAST_SORTER_HIT_REGISTER_R      :  integer := 16#BD#;
+    constant MP_SORTER_INJECT_REGISTER_W        :  integer := 16#BE#;
+        subtype MP_SORTER_INJECT_SELECT_RANGE   is integer range 7 downto 4; -- select the input of the sorter to inject to 
+        constant MP_SORTER_INJECT_ENABLE_BIT    :  integer := 8; -- rising edge on this bit will trigger a single inject of the word MP_SORTER_INJECT_REGISTER_W at sorter input MP_SORTER_INJECT_REGISTER_W(MP_SORTER_INJECT_SELECT_RANGE)
+    constant MP_HIT_ENA_CNT_REGISTER_R          :  integer := 16#BF#;
+    constant MP_HIT_ENA_CNT_SELECT_REGISTER_W   :  integer := 16#C0#;
+        
 end package mupix_registers;

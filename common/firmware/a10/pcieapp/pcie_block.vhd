@@ -24,11 +24,11 @@ generic (
     g_PCIE_X : positive := 8--;
 );
 port (
-    o_writeregs_B       : out   reg32array;
+    o_writeregs_B       : out   reg32array_pcie;
     o_regwritten_B      : out   std_logic_vector(63 downto 0);
     i_clk_B             : in    std_logic := '0';
 
-    o_writeregs_C       : out   reg32array;
+    o_writeregs_C       : out   reg32array_pcie;
     o_regwritten_C      : out   std_logic_vector(63 downto 0);
     i_clk_C             : in    std_logic := '0';
 
@@ -56,9 +56,9 @@ port (
     L0_led              : out   std_logic;
 
     -- pcie registers
-    writeregs           : out   reg32array;
+    writeregs           : out   reg32array_pcie;
     regwritten          : out   std_logic_vector(63 downto 0);
-    readregs            : in    reg32array;
+    readregs            : in    reg32array_pcie;
 
     -- pcie writeable memory
     writememclk         : in    std_logic;
@@ -207,25 +207,25 @@ architecture RTL of pcie_block is
     signal cfg_pr_bas :  		STD_LOGIC_VECTOR (43 DOWNTO 0);
     signal cfg_prmcsr_icm :  	STD_LOGIC_VECTOR (31 DOWNTO 0);
 
-    -- Completion stuff after handling
-    signal cpl_err_in : 		STD_LOGIC_VECTOR (6 DOWNTO 0);
-    signal err_desc :  			STD_LOGIC_VECTOR (127 DOWNTO 0);
-    
-    -- Reconfig stuff after handling
-    signal data_valid : 		STD_LOGIC;
-    
-    -- Reset and link status
-    signal dlup : 			std_logic;
-    signal dlup_exit: 	std_logic;
-    signal hotrst_exit: 	std_logic;
-    signal l2_exit:		std_logic;
-    signal currentspeed: std_logic_vector(1 downto 0);
-    signal lane_act:		std_logic_vector(3 downto 0);
-    signal serdes_pll_locked : std_logic;
-    
-    -- Application
-    signal busy:				STD_LOGIC; 
-    signal regloopback : reg32array;
+	-- Completion stuff after handling
+	signal cpl_err_in : 		STD_LOGIC_VECTOR (6 DOWNTO 0);
+	signal err_desc :  			STD_LOGIC_VECTOR (127 DOWNTO 0);
+	
+	-- Reconfig stuff after handling
+	signal data_valid : 		STD_LOGIC;
+	
+	-- Reset and link status
+	signal dlup : 			std_logic;
+	signal dlup_exit: 	std_logic;
+ 	signal hotrst_exit: 	std_logic;
+	signal l2_exit:		std_logic;
+	signal currentspeed: std_logic_vector(1 downto 0);
+	signal lane_act:		std_logic_vector(3 downto 0);
+	signal serdes_pll_locked : std_logic;
+	
+	-- Application
+	signal busy:				STD_LOGIC; 
+	signal regloopback : reg32array_pcie;
 
     signal application_reset_n: std_logic;
     
