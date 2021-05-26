@@ -7,4 +7,4 @@ add_executable(flashprog ../../../modules/midas/mscb/src/mscb.cxx ../../../modul
 
 target_include_directories(flashprog PRIVATE ../../../modules/midas/mscb/include)
 
-
+install(TARGETS flashprog DESTINATION bin)

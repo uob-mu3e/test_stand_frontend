@@ -3,6 +3,15 @@
 #include <mscb.h>
 #include <unistd.h>
 
+#define FEBSPI_ADDR_GITHASH     0x0
+#define FEBSPI_ADDR_STATUS      0x2
+#define FEBSPI_ADDR_CONTROL     0x3
+#define FEBSPI_ADDR_RESET       0x4
+#define FEBSPI_ADDR_PROGRAMMING_STATUS     0x10
+#define FEBSPI_ADDR_PROGRAMMING_COUNT      0x11
+#define FEBSPI_ADDR_PROGRAMMING_CTRL       0x12
+#define FEBSPI_ADDR_PROGRAMMING_ADDR       0x13
+#define FEBSPI_ADDR_PROGRAMMING_WFIFO      0x14
 
 uint32_t endian(uint32_t in){
         return ((in & 0xFF) << 24) | ((in & 0xFF00) << 8) | ((in & 0xFF0000) >> 8) | ((in & 0xFF000000) >> 24);  
@@ -32,7 +41,7 @@ int main(int argc, char ** argv) {
    // Try to read SPI
    int ret;
    unsigned int rbuffer;
-   ret = mscb_read_mem(fd, device, slot, 0, &rbuffer, 4);
+   ret = mscb_read_mem(fd, device, slot, FEBSPI_ADDR_GITHASH, &rbuffer, 4);
    std::cout << "MAX10 git hash:" << std::hex << rbuffer << " ret: " << ret << std::endl; 
       
    
@@ -50,18 +59,18 @@ int main(int argc, char ** argv) {
    std::cout << "Programming size " << fsize << std::endl;
    
    uint32_t status = 0;
-   mscb_read_mem(fd, device, slot, 0x10, &status, sizeof(status));
+   mscb_read_mem(fd, device, slot, FEBSPI_ADDR_PROGRAMMING_STATUS, &status, sizeof(status));
    status = endian(status);
    std::cout << "Status0: " << std::hex << status << std::endl;
    // Reset FIFO
    uint32_t cmdswapped = endian(0x2);
-   mscb_write_mem(fd, device, slot, 0x12, &cmdswapped, sizeof(cmdswapped));
-   mscb_read_mem(fd, device, slot, 0x10, &status, sizeof(status));
+   mscb_write_mem(fd, device, slot, FEBSPI_ADDR_PROGRAMMING_CTRL, &cmdswapped, sizeof(cmdswapped));
+   mscb_read_mem(fd, device, slot, FEBSPI_ADDR_PROGRAMMING_STATUS, &status, sizeof(status));
    status = endian(status);
    std::cout << "Status1: " << std::hex << status << std::endl;
    cmdswapped = endian(0x0);
-   mscb_write_mem(fd, device, slot, 0x12, &cmdswapped, sizeof(cmdswapped));
-   mscb_read_mem(fd, device, slot, 0x10, &status, sizeof(status));
+   mscb_write_mem(fd, device, slot, FEBSPI_ADDR_PROGRAMMING_CTRL, &cmdswapped, sizeof(cmdswapped));
+   mscb_read_mem(fd, device, slot, FEBSPI_ADDR_PROGRAMMING_STATUS, &status, sizeof(status));
    status = endian(status);
    std::cout << "Status2: " << std::hex << status << std::endl;
    
@@ -70,12 +79,12 @@ int main(int argc, char ** argv) {
         
                 // Write address
         uint32_t addrswapped = endian(addr);
-        mscb_write_mem(fd, device, slot, 0x13, &addrswapped, 4);
+        mscb_write_mem(fd, device, slot, FEBSPI_ADDR_PROGRAMMING_ADDR, &addrswapped, 4);
         
         char buffer[256];
         fread(buffer,sizeof(char),256, f);
         // Write 256 byte to fifo
-        mscb_write_mem(fd, device, slot, 0x14, buffer, 256);
+        mscb_write_mem(fd, device, slot, FEBSPI_ADDR_PROGRAMMING_WFIFO, buffer, 256);
 
         //mscb_read_mem(fd, 1, 0, 0x10, &status, sizeof(status));
         //status = endian(status);
@@ -83,12 +92,12 @@ int main(int argc, char ** argv) {
         
         // write start command
         cmdswapped = endian(0x1);
-        mscb_write_mem(fd, device, slot, 0x12, &cmdswapped, sizeof(cmdswapped));
+        mscb_write_mem(fd, device, slot, FEBSPI_ADDR_PROGRAMMING_CTRL, &cmdswapped, sizeof(cmdswapped));
        
         
         
         do{
-            mscb_read_mem(fd, device, slot, 0x10, &status, sizeof(status));
+            mscb_read_mem(fd, device, slot, FEBSPI_ADDR_PROGRAMMING_STATUS, &status, sizeof(status));
             status = endian(status);
           //  std::cout << std::hex << status << " ";
         }while(status & 0x1);
@@ -96,7 +105,7 @@ int main(int argc, char ** argv) {
         
          // and set 0 again
         cmdswapped = endian(0x0);
-        mscb_write_mem(fd, device, slot, 0x12, &cmdswapped, sizeof(cmdswapped));
+        mscb_write_mem(fd, device, slot, FEBSPI_ADDR_PROGRAMMING_CTRL, &cmdswapped, sizeof(cmdswapped));
             
         addr += 256;
         if(addr%(4096)==0)
@@ -107,20 +116,3 @@ int main(int argc, char ** argv) {
       fclose(f);
    return 0;
 }
-
-  
-  
-
-
-
-/*
-    constant FEBSPI_ADDR_GITHASH            : std_logic_vector(6 downto 0)      := "0000000";
-    constant FEBSPI_ADDR_STATUS             : std_logic_vector(6 downto 0)      := "0000010";
-    constant FEBSPI_ADDR_CONTROL            : std_logic_vector(6 downto 0)      := "0000011";
-    constant FEBSPI_ADDR_RESET              : std_logic_vector(6 downto 0)      := "0000100";
-    constant FEBSPI_ADDR_PROGRAMMING_STATUS : std_logic_vector(6 downto 0)      := "0010000";
-    constant FEBSPI_ADDR_PROGRAMMING_COUNT  : std_logic_vector(6 downto 0)      := "0010001";
-    constant FEBSPI_ADDR_PROGRAMMING_CTRL   : std_logic_vector(6 downto 0)      := "0010010";
-    constant FEBSPI_ADDR_PROGRAMMING_ADDR   : std_logic_vector(6 downto 0)      := "0010011";
-    constant FEBSPI_ADDR_PROGRAMMING_WFIFO  : std_logic_vector(6 downto 0)      := "0010100";
-    */
