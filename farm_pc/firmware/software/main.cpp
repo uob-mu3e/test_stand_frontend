@@ -87,10 +87,10 @@ int main() {
             menu_spi_si5345();
             break;
         case 'r':
-            reconfig.pll(AVM_XCVR0_BASE + 0x00000);
-            reconfig.pll(AVM_XCVR0_BASE + 0x10000);
-            reconfig.pll(AVM_XCVR0_BASE + 0x20000);
-            reconfig.pll(AVM_XCVR0_BASE + 0x30000);
+            reconfig.pll(AVM_XCVR1_BASE + 0x00000);
+            reconfig.pll(AVM_XCVR1_BASE + 0x10000);
+            reconfig.pll(AVM_XCVR1_BASE + 0x20000);
+            reconfig.pll(AVM_XCVR1_BASE + 0x30000);
             break;
         default:
             printf("invalid command: '%c'\n", cmd);
