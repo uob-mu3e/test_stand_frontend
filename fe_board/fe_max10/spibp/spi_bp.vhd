@@ -39,6 +39,7 @@ architecture RTL of spi_bp is
     signal clklast: std_logic;
     signal bitcount : integer;
     signal addroffset_int : integer;
+    signal haveread :std_logic;
 	
     signal boardselect_reg : std_logic;
 	signal csn_reg   : std_logic;
@@ -119,19 +120,21 @@ architecture RTL of spi_bp is
             end if;    
 				
         when writing =>
+            haveread <= '0';
             if(clklast = '0' and clk_reg = '1') then
                 datashiftregister(0)  <=  mosi_reg;
                 datashiftregister(31 downto 1) <= datashiftregister(30 downto 0);
                 bitcount     <= bitcount +1;
+                haveread     <= '1';
             end if;  
-            if(bitcount mod 8 = 0 and bitcount > 0)then
+            if(haveread = '1' and bitcount mod 8 = 0 and bitcount > 0)then
                 byte_from_bp        <= datashiftregister(7 downto 0);
                 byte_en             <= '1';
             end if;
-            if(bitcount mod 32 = 1 and bitcount > 1)then
+            if(haveread = '1' and bitcount mod 32 = 1 and bitcount > 1)then
                 addroffset_int          <= addroffset_int + 1;
             end if;
-            if(bitcount mod 32 = 0 and bitcount > 0)then
+            if(haveread = '1' and bitcount mod 32 = 0 and bitcount > 0)then
                 word_from_bp   <= datashiftregister;
                 word_en        <= '1';
             end if;
@@ -150,18 +153,20 @@ architecture RTL of spi_bp is
             end if;
             
         when reading =>
+            haveread <= '0';
             o_SPI_miso_en <= '1';
             if(clklast = '1' and clk_reg = '0') then
                 o_SPI_miso <= datareadshiftregister(30);
                 datareadshiftregister(31 downto 1) <= datareadshiftregister(30 downto 0);
                 bitcount     <= bitcount +1;
+                haveread        <= '1'; 
             end if;    
 
-            if(bitcount mod 32 = 0 and bitcount > 0)then
+            if(haveread = '1' and bitcount mod 32 = 0 and bitcount > 0)then
                 datareadshiftregister <= data_to_bp;
                 next_data         <= '1';        
             end if;
-			if(bitcount mod 32 = 1 and bitcount > 32) then	
+			if(haveread = '1' and bitcount mod 32 = 1 and bitcount > 32) then	
                 addroffset_int    <= addroffset_int + 1;
             end if;
 

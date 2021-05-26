@@ -123,7 +123,8 @@ architecture arch of top is
     signal spi_arria_byte_en                    : std_logic;
 
     -- SPI Backplane
-    signal spi_bp_addr          : std_logic_vector(7 downto 0);
+    signal spi_bp_addr_long     : std_logic_vector(7 downto 0);
+    signal spi_bp_addr          : std_logic_vector(6 downto 0);
     signal spi_bp_addr_offset   : std_logic_vector(7 downto 0);
     signal spi_bp_rw            : std_logic;
     signal spi_bp_data_to_bp    : std_logic_vector(31 downto 0);
@@ -206,7 +207,7 @@ begin
 
         clk100        => clk100,
         reset_n       => reset_n,
-        addr          => spi_bp_addr,
+        addr          => spi_bp_addr_long,
         addroffset    => spi_bp_addr_offset,
         rw            => spi_bp_rw,
         data_to_bp    => spi_bp_data_to_bp,
@@ -216,7 +217,7 @@ begin
         byte_from_bp  => spi_bp_byte_from_bp,
         byte_en       => spi_bp_byte_en
     );
-
+    spi_bp_addr  <= spi_bp_addr_long(6 downto 0);
 
     -- SPI Arria10 to MAX10
     -----------------------
@@ -250,6 +251,7 @@ begin
               <=   version when spi_arria_addr = FEBSPI_ADDR_GITHASH
                     else status when spi_arria_addr = FEBSPI_ADDR_STATUS
                     else control when  spi_arria_addr = FEBSPI_ADDR_CONTROL
+                    else X"00" & programming_addr_from_arria when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_ADDR
                     else flash_programming_status_arria when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_STATUS
                     else flash_w_cnt when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_COUNT
                     else adc_data_0 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
@@ -269,6 +271,7 @@ begin
             <=  version when spi_bp_addr = FEBSPI_ADDR_GITHASH
                 else status when spi_bp_addr = FEBSPI_ADDR_STATUS
                 else control when  spi_bp_addr = FEBSPI_ADDR_CONTROL
+                else X"00" & programming_addr_from_arria when spi_bp_addr =FEBSPI_ADDR_PROGRAMMING_ADDR    
                 else flash_programming_status_arria when spi_bp_addr = FEBSPI_ADDR_PROGRAMMING_STATUS
                 else flash_w_cnt when spi_bp_addr = FEBSPI_ADDR_PROGRAMMING_COUNT
                 else adc_data_0 when spi_bp_addr = FEBSPI_ADDR_ADCDATA
@@ -451,7 +454,7 @@ e_flashprogramming_block: entity work.flashprogramming_block
 		-- Arria SPI interface
         spi_bp_byte_from_bp                 => spi_bp_byte_from_bp,
         spi_bp_byte_en                      => spi_bp_byte_en,        
-        spi_bp_addr                         => spi_bp_addr      
+        spi_bp_addr                         => spi_bp_addr_long      
     );
 
  
