@@ -5,7 +5,7 @@
 flash_t flash;
 
 #include "include/a10/fan.h"
-fan_t fan;
+fan_t fan(0x01);
 
 #include "include/xcvr.h"
 #include "include/a10/reconfig.h"
@@ -68,17 +68,16 @@ int main() {
             flash.menu();
             break;
         case '2':
-            menu_xcvr((alt_u32*)(AVM_QSFPA_BASE | ALT_CPU_DCACHE_BYPASS_MASK), 'A');
+            menu_xcvr((alt_u32*)((AVM_XCVR0_BASE + 0x00000) | ALT_CPU_DCACHE_BYPASS_MASK), 'A');
             break;
         case '3':
-            menu_xcvr((alt_u32*)(AVM_QSFPB_BASE | ALT_CPU_DCACHE_BYPASS_MASK), 'B');
+            menu_xcvr((alt_u32*)((AVM_XCVR0_BASE + 0x10000) | ALT_CPU_DCACHE_BYPASS_MASK), 'B');
             break;
         case '4':
-            menu_xcvr((alt_u32*)(AVM_QSFPC_BASE | ALT_CPU_DCACHE_BYPASS_MASK), 'C');
+            menu_xcvr((alt_u32*)((AVM_XCVR0_BASE + 0x20000) | ALT_CPU_DCACHE_BYPASS_MASK), 'C');
             break;
         case '5':
-            menu_xcvr((alt_u32*)(AVM_QSFPD_BASE | ALT_CPU_DCACHE_BYPASS_MASK), 'D');
-            break;
+            menu_xcvr((alt_u32*)((AVM_XCVR0_BASE + 0x30000) | ALT_CPU_DCACHE_BYPASS_MASK), 'D');
             break;
         case '8':
             fan.menu();
@@ -88,10 +87,10 @@ int main() {
             menu_spi_si5345();
             break;
         case 'r':
-            reconfig.pll(AVM_QSFPA_BASE);
-            reconfig.pll(AVM_QSFPB_BASE);
-            reconfig.pll(AVM_QSFPC_BASE);
-            reconfig.pll(AVM_QSFPD_BASE);
+            reconfig.pll(AVM_XCVR0_BASE + 0x00000);
+            reconfig.pll(AVM_XCVR0_BASE + 0x10000);
+            reconfig.pll(AVM_XCVR0_BASE + 0x20000);
+            reconfig.pll(AVM_XCVR0_BASE + 0x30000);
             break;
         default:
             printf("invalid command: '%c'\n", cmd);
