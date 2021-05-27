@@ -9,6 +9,7 @@ set_global_assignment -name SDC_FILE top.sdc
 set_global_assignment -name QIP_FILE "util/include.qip"
 set_global_assignment -name QIP_FILE "spiflash/include.qip"
 set_global_assignment -name QIP_FILE "spiarria/include.qip"
+set_global_assignment -name QIP_FILE "spibp/include.qip"
 
 set_global_assignment -name VHDL_FILE "ip/ip_altpll.vhd"
 

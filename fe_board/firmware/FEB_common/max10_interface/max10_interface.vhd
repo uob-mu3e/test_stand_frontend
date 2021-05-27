@@ -168,7 +168,7 @@ begin
             when programmingaddrwait =>
                 programming_status(7) <= '1';
                 max_spi_data_to_max     <= programming_data_from_fifo;
-            read_programming_fifo   <= max_spi_next_data;
+                read_programming_fifo   <= max_spi_next_data;
             if(max_spi_busy = '0' and busy_last = '1') then
                 max_spi_rw       <= '0';
                 max_spi_strobe   <= '0';
