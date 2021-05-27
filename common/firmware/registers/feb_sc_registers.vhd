@@ -28,10 +28,12 @@ package feb_sc_registers is
     constant CMD_OFFSET_REGISTER_RW             :   integer := 16#05#;
     constant RUN_STATE_RESET_BYPASS_REGISTER_RW :   integer := 16#06#;
 
-    subtype RUN_STATE_RANGE                 is integer range 31 downto 16;
-    subtype RESET_BYPASS_RANGE              is integer range 15 downto 0;
+    subtype  RUN_STATE_RANGE                    is  integer range 31 downto 16;
+    subtype  RESET_BYPASS_RANGE                 is  integer range 7 downto 0;
+    constant RESET_BYPASS_BIT_REQUEST           :   integer := 8;
+    constant RESET_BYPASS_BIT_ENABLE            :   integer := 9;
 
-    constant RESET_PAYLOAD_RGEISTER_RW          :   integer := 16#07#;
+    constant RESET_PAYLOAD_REGISTER_RW          :   integer := 16#07#;
     constant RESET_OPTICAL_LINKS_REGISTER_RW    :   integer := 16#08#;
     constant RESET_PHASE_REGISTER_R             :   integer := 16#09#;
     constant MERGER_RATE_REGISTER_R             :   integer := 16#0A#;

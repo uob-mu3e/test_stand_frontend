@@ -335,6 +335,7 @@ int ipbus::ReadFromSocket(vector<uint32_t> & rbuffer)
     int nbyte =0;
     boost::system::error_code err;
     try{
+        usleep(1200); // depends on cable length, the value 1200 is for the setup in the integration run May 2021
         nbyte = socket.receive_from(buffer(rbuffer), remote_endpoint, 0, err);
         if(err == boost::asio::error::try_again){
             cout << "Trying again, nbyte " << nbyte << endl;

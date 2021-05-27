@@ -131,7 +131,7 @@ g_merger: for i in N_LINKS-1 downto 0 generate
 ----------------begin data merger------------------------
 begin 
 
-    e_data_overflow_check: entity work.overflow_check
+    e_data_overflow_check: entity work.overflow_check -- TODO: counter how often, stop run etc when overflow
     generic map(
         FIFO_ADDR_WIDTH => FIFO_ADDR_WIDTH--,
     )
@@ -221,7 +221,7 @@ begin
         -- if the merger stays in read slowcontrol or read data for 2^16 cycles --> trigger merger timeout
         if ( merger_state = prev_merger_state and merger_state /= idle ) then
             if ( merger_timeout_counter = 10000 ) then
-                merger_state                    <= idle;
+                merger_state                    <= idle; -- TODO: do i do when state Something merger_state <= something;
                 slowcontrol_read_req            <= '0';
                 data_read_req                   <= '0';
                 data_is_k(4*i+3 downto 4*i)     <= MERGER_TIMEOUT_DATAK;
@@ -345,7 +345,7 @@ begin
                 elsif ( data_in_slowcontrol(33 downto 32) = "11" ) then -- end of packet marker
                     merger_state                            <= idle;
                     slowcontrol_read_req                    <= '0';
-                    data_out(32*i+31 downto 32*i)           <= x"000000" & K284;
+                    data_out(32*i+31 downto 32*i)           <= x"000000" & K284; -- K285 is 000000BC, K284 is XX, cofusing -> change
                     data_is_k(4*i+3 downto 4*i)             <= K284_datak;
                 else
                     slowcontrol_read_req                    <= '1';

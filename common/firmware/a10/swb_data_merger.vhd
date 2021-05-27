@@ -40,7 +40,7 @@ architecture arch of swb_data_merger is
     type merge_state_type is (wait_for_pre, get_ts_1, get_ts_2, get_sh, hit, delay, get_tr, error_state);
     signal merge_state : merge_state_type;
 
-    signal o_data_reg : std_logic_vector(71 downto 0);
+    signal o_data_reg : std_logic_vector(127 downto 0);
     signal hit_reg    : std_logic_vector(NLINKS * 38 - 1  downto 0);
     signal hit_reg_cnt : integer;
     signal header_state : std_logic_vector(5 downto 0);
@@ -84,72 +84,80 @@ begin
                     FOR I in NLINKS - 1 downto 0 LOOP
                         o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_5;
                         o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        o_wen                               <= '1';
                     END LOOP;
+                    o_wen <= '1';
 
                 when get_ts_1 =>
                     if ( header_state(1) = '1' ) then
                         merge_state             <= get_ts_2;
                         -- reg data
+                        -- TS (47:16)
                         o_data_reg(39 downto 8) <= i_data(31 downto 0);
                     end if;
                     FOR I in NLINKS - 1 downto 0 LOOP
                         o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_5;
                         o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        o_wen                               <= '1';
                     END LOOP;
+                    o_wen <= '1';
 
                 when get_ts_2 =>
                     -- send out data if ts2 is there
                     -- every link is getting K.28.3 = 7C for pre
                     o_wen <= '1';
                     if ( header_state(2) = '1' ) then
-                        merge_state              <= get_sh;
-                        o_data_reg               <= (others => '0');
+                        merge_state <= get_sh;
+                        -- reg data
+                        -- TS (15:0)
+                        o_data_reg(55 downto 40) <= i_data(31 downto 16);
+                    end if;
+                    FOR I in NLINKS - 1 downto 0 LOOP
+                        o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_5;
+                        o_datak(I * 4 + 3 downto I * 4)     <= "0001";
+                    END LOOP;
+                    
+                when get_sh =>
+                    -- send out header if sh is there
+                    o_wen <= '1';
+                    if ( header_state(3) = '1' ) then
+                        merge_state              <= delay;
                         -- 1. link
-                        o_data(31 downto 0)      <= o_data_reg(23 downto 0) & x"7C";
+                        -- SWB ID
+                        o_data(15 downto 0)      <= o_data_reg(7 downto 0) & x"7C";
+                        -- TS(31:16)
+                        o_data(31 downto 16)     <= o_data_reg(23 downto 8);
                         o_datak(3 downto 0)      <= "0001";
                         -- 2. link
-                        o_data(63 downto 40)     <= o_data_reg(47 downto 24);
+                        -- TS(47:32)
+                        o_data(63 downto 56)     <= DATA_TYPE;
+                        o_data(55 downto 40)     <= o_data_reg(39 downto 24);
                         o_data(39 downto 32)     <= x"7C";
                         o_datak(7 downto 4)      <= "0001";
                         -- 3. link
-                        o_data(95 downto 72)     <= o_data_reg(71 downto 48);
+                        -- TS(15:0)
+                        o_data(95 downto 88)     <= (others => '0');
+                        -- get TS(15:10) from preamble TS
+                        o_data(87 downto 82)     <= o_data_reg(55 downto 50);
+                        -- get TS(9:4) from sub header
+                        o_data(81 downto 76)     <= i_data(21 downto 16);
+                        -- set TS(3:0) to zero
+                        o_data(75 downto 72)     <= "0000";
                         o_data(71 downto 64)     <= x"7C";
                         o_datak(11 downto 8)     <= "0001";
                         -- 4. link
-                        o_data(127 downto 104)   <= i_data(23 downto 0);
+                        -- set rest of the overflow to zero
+                        o_data(127 downto 120)   <= (others => '0');
+                        -- or'd overflow from all subheaders
+                        o_data(119 downto 104)   <= i_data(15 downto 0);
                         o_data(103 downto 96)    <= x"7C";
                         o_datak(15 downto 12)    <= "0001";
                         -- 5. link
-                        o_data(143 downto 136)   <= i_data(31 downto 24);
+                        -- set rest of the overflow to zero
+                        o_data(143 downto 136)   <= (others => '0');
                         o_data(135 downto 128)   <= x"7C";
                         o_datak(19 downto 16)    <= "0001";
                         -- 6. - 8. link
                         FOR I in NLINKS - 1 downto 5 LOOP
                             o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_3;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    else
-                        FOR I in NLINKS - 1 downto 0 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_5;
-                            o_datak(I * 4 + 3 downto I * 4)     <= "0001";
-                        END LOOP;
-                    end if;
-
-                when get_sh =>
-                    -- send out data if sh is there
-                    -- every link is getting K.28.2 = 5C for sh
-                    o_wen <= '1';
-                    if ( header_state(3) = '1' ) then
-                        merge_state             <= delay;
-                        -- 1. link
-                        o_data(31 downto 0)     <= i_data(15 downto 0) & DATA_TYPE & x"5C";
-                        -- 2. link
-                        o_data(63 downto 32)    <= i_data(31 downto 16) & x"00" & x"5C";
-                        -- 3. - 8. link
-                        FOR I in NLINKS - 1 downto 2 LOOP
-                            o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_2;
                             o_datak(I * 4 + 3 downto I * 4)     <= "0001";
                         END LOOP;
                     else
@@ -252,6 +260,8 @@ begin
                     -- every link is getting K.28.4 = 9C for tr
                     o_wen <= '1';
                     merge_state             <= wait_for_pre;
+                    -- reset reg data for next preamble
+                    o_data_reg               <= (others => '0');
                     FOR I in NLINKS - 1 downto 0 LOOP
                         o_data(I * 32 + 31 downto I * 32)   <= x"000000" & K28_4;
                         o_datak(I * 4 + 3 downto I * 4)     <= "0001";

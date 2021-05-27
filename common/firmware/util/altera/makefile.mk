@@ -106,6 +106,8 @@ $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	    [ -e "$$file.qip" ] && echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.qip)\" ]" >> "$@"
 	    [ -e "$$file.qip" ] || echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.vhd)\" ]" >> "$@"
 	done
+	# add $(APP_DIR)/mem_init/meminit.qip
+	echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $(APP_DIR)/mem_init/meminit.qip)\" ]" >> "$@"
 
 # default device.tcl file
 device.tcl :
@@ -131,50 +133,40 @@ flow : all
 	# find and exec flow.sh
 	$(lastword $(realpath $(addsuffix flow.sh,$(dir $(MAKEFILE_LIST)))))
 
-.PHONY : sof2flash
-sof2flash :
-	sof2flash --pfl --programmingmode=PS \
-	    --optionbit=0x00030000 \
-	    --input="$(SOF)" \
-	    --output="$(SOF).flash" --offset=0x02B40000
-	objcopy -Isrec -Obinary "$(SOF).flash" "$(SOF).bin"
+update_mif :
+	quartus_cdb top --update_mif
+	quartus_asm top
 
 .PHONY : pgm
 pgm : $(SOF)
 	quartus_pgm -m jtag -c "$(CABLE)" --operation="p;$(SOF)"
 
-.PRECIOUS : $(BSP_DIR)
-$(BSP_DIR) : $(BSP_SCRIPT) $(NIOS_SOPCINFO)
+.PRECIOUS : $(BSP_DIR)/settings.bsp
+$(BSP_DIR)/settings.bsp : $(BSP_SCRIPT) $(NIOS_SOPCINFO)
 	mkdir -pv -- "$(BSP_DIR)"
 	nios2-bsp-create-settings \
 	    --type hal --script "$(SOPC_KIT_NIOS2)/sdk2/bin/bsp-set-defaults.tcl" \
 	    --sopc $(NIOS_SOPCINFO) --cpu-name cpu \
 	    --bsp-dir "$(BSP_DIR)" --settings "$(BSP_DIR)/settings.bsp" --script "$(BSP_SCRIPT)"
 
-bsp : $(BSP_DIR)
+bsp : $(BSP_DIR)/settings.bsp
 
 .PRECIOUS : $(APP_DIR)/main.elf
 .PHONY : $(APP_DIR)/main.elf
-$(APP_DIR)/main.elf : $(SRC_DIR)/* $(BSP_DIR)
+$(APP_DIR)/main.elf : $(SRC_DIR)/* $(BSP_DIR)/settings.bsp
 	nios2-app-generate-makefile \
 	    --set ALT_CFLAGS "-Wall -Wextra -Wformat=0 -pedantic -std=c++14" \
 	    --bsp-dir "$(BSP_DIR)" --app-dir "$(APP_DIR)" --src-dir "$(SRC_DIR)"
 	$(MAKE) -C "$(APP_DIR)" clean
 	$(MAKE) -C "$(APP_DIR)"
 	nios2-elf-objcopy "$(APP_DIR)/main.elf" -O srec "$(APP_DIR)/main.srec"
-	# generate flash (srec) image (see AN730 / HEX File Generation)
+	# generate mem_init/*.hex files (see AN730 / HEX File Generation)
 	$(MAKE) -C "$(APP_DIR)" mem_init_generate
+	mkdir -pv -- "output_files/"
+	cp -av -- "$(APP_DIR)/mem_init/nios_ram.hex" "output_files/"
 
 .PHONY : app
 app : $(APP_DIR)/main.elf
-
-.PHONY : app_flash
-app_flash :
-	nios2-flash-programmer -c "$(CABLE)" --base=0x0 "$(APP_DIR)/main.flash"
-
-.PHONY : flash
-flash : app_flash
-	nios2-flash-programmer -c "$(CABLE)" --base=0x0 "$(SOF).flash"
 
 .PHONY : app_upload
 app_upload : app

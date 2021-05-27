@@ -72,6 +72,9 @@ port (
     i_fifo_write        : in    std_logic_vector(N_LINKS-1 downto 0);
     i_fifo_wdata        : in    std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
+    i_data_bypass       : in    std_logic_vector(31 downto 0) := x"000000BC";
+    i_data_bypass_we    : in    std_logic := '0';
+
     o_fifos_almost_full : out   std_logic_vector(N_LINKS-1 downto 0);
 
     -- slow control fifo
@@ -195,6 +198,11 @@ architecture arch of fe_block_v2 is
     signal arriaV_temperature_temp  : std_logic_vector(7 downto 0);
     type temp_state_t               is (convert, clear);
     signal temp_state               :  temp_state_t;
+	 
+	 signal ffly_pwr                   : std_logic_vector(127 downto 0); -- RX optical power in mW
+    signal ffly_temp                  : std_logic_vector(15 downto 0);  -- temperature in °C
+	 signal ffly_alarm					  	 : std_logic_vector(63 downto 0);  -- latched alarm bits
+	 signal ffly_vcc						 : std_logic_vector(31 downto 0);  -- operating voltagein units of 100 uV 
     
     -- Max 10 SPI 
     signal adc_reg                  : work.util.slv32_array_t(4 downto 0);
@@ -317,6 +325,11 @@ begin
         i_max10_version             => max10_version,
         i_max10_status              => max10_status,
         i_programming_status        => programming_status,
+		  
+		  i_ffly_pwr							=> ffly_pwr,
+		  i_ffly_temp							=> ffly_temp,
+		  i_ffly_alarm						=> ffly_alarm,
+		  i_ffly_vcc							=> ffly_vcc,
 
         -- outputs 156--------------------------------------------
         o_reg_cmdlen                => reg_cmdlen,
@@ -492,8 +505,8 @@ begin
         run_state                  => run_state_156,
         run_number                 => run_number,
 
-        o_data_out                 => ffly_tx_data,
-        o_data_is_k                => ffly_tx_datak,
+        o_data_out(95 downto 0)    => ffly_tx_data(95 downto 0),
+        o_data_is_k(11 downto 0)   => ffly_tx_datak(11 downto 0),
 
         slowcontrol_write_req      => sc_fifo_write,
         i_data_in_slowcontrol      => sc_fifo_wdata,
@@ -517,7 +530,20 @@ begin
         clk                        => i_clk_156--,
     );
 
+    process(i_clk_156)
+    begin
+        if(rising_edge(i_clk_156)) then
+            if(i_data_bypass_we = '1') then
+                ffly_rx_data(127 downto 96) <= i_data_bypass;
+                ffly_rx_datak(15 downto 12) <= "0000";
+            else 
+                ffly_rx_data(127 downto 96) <= x"000000BC";
+                ffly_rx_datak(15 downto 12) <= "0001";
+            end if;
+        end if;
+    end process;
 
+		 
     --TODO: do we need two independent link test modules for both fibers?
     e_link_test : entity work.linear_shift_link
     generic map (
@@ -641,7 +667,12 @@ begin
         o_avs_waitrequest               => av_ffly.waitrequest,
 
         o_testclkout                    => open,
-        o_testout                       => open--,
+        o_testout                       => open,
+		  
+		  o_pwr									 => ffly_pwr,
+		  o_temp									 => ffly_temp,
+		  o_vcc									 => ffly_vcc,
+		  o_alarm								 => ffly_alarm
     );
 
     e_max10_interface : entity work.max10_interface

@@ -67,30 +67,10 @@ const char *cr_settings_str[] = {
 "DNS Active = BOOL : 1",
 "usercmdReserve = BOOL : 0",
 "usercmdRmReserve = BOOL : 0",
-"nUnknown = STRING[1]:",
-    "[32] 0",
-"nReserved = STRING[1]:",
-    "[32] 0",
-"nLeased = STRING[1]:",
-    "[32] 0",
-"nDNS = STRING[1]:",
-    "[32] 0",
-"usereditReserveIP = STRING[1]:"
-"[32] 000.000.000.000",
-"usereditReserveMAC = STRING[1]:"
-"[32] 00:00:00:00:00",
-"usereditReserveHost = STRING[1]:"
-"[32] hostname",
-"usereditRemReserveIP = STRING[1]:"
-"[32] 000.000.000.000",
-"leasedIPs = STRING[255] :",
-"[32] 0",
-"leasedHostnames = STRING[255] :",
-"[32] 0",
-"DNSips = STRING[255] :",
-"[32] 0",
-"DNSHostnames = STRING[255] :",
-"[32] 0",
+"usereditReserveIP = STRING : [32] 000.000.000.000",
+"usereditReserveMAC = STRING : [32] 00:00:00:00:00",
+"usereditReserveHost = STRING : [32] hostname",
+"usereditRemReserveIP = STRING : [32] 000.000.000.000",
 nullptr
 };
 
@@ -252,9 +232,54 @@ void read_reserved(string path, vector <string> *ips, vector <string> *hostnames
         }
         reserved.close();
     }
-    else cout << "Unable to read dhcpd.conf" <<endl;
+    else cm_msg(MERROR, "read_reserved", "unable to read dhcp config");
 }
 
+void reserve_ip(){
+        char ip[100];
+        char mac[100];
+        char hostname[100];
+        int sizeip = sizeof(ip);
+        int sizemac = sizeof(mac);
+        int sizehostname = sizeof(hostname);
+
+        db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usereditReserveIP",ip, &sizeip, TID_STRING, TRUE);
+        db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usereditReserveMAC",mac, &sizemac, TID_STRING, TRUE);
+        db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usereditReserveHost",hostname, &sizehostname, TID_STRING, TRUE);
+
+
+        ofstream dhcpdconf ("/var/lib/dhcp/etc/dhcpd_reservations.conf", std::ios_base::app);
+        if (dhcpdconf.is_open())
+        {
+            dhcpdconf << "host "<<hostname<<" {\n  hardware ethernet "<<mac<<";\n  fixed-address "<<ip<<";\n  ddns-hostname \""<<hostname<<"\";\n  option host-name \""<<hostname<<"\";\n}\n\n";
+
+            dhcpdconf.close();
+        }
+        else cm_msg(MERROR, "reserve_ip", "unable to write dhcp config");
+
+        system("rcdhcpd restart");
+}
+
+void rm_reserve_ip(){
+    char removeip[100];
+    int sizeip = sizeof(removeip);
+    cm_msg(MINFO, "netfe_settings_changed", "Execute remove reserved IP");
+    db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usereditRemReserveIP",removeip, &sizeip, TID_STRING, TRUE);
+    ofstream dhcpdconf ("/var/lib/dhcp/etc/dhcpd_reservations.conf");
+    int n = reserved_ips.size();
+    if (dhcpdconf.is_open())
+    {
+        for(int i = 0; i<n; i++){
+            if(reserved_ips[i]!=removeip){
+                dhcpdconf << "host "<<reserved_hostnames[i]<<" {\n  hardware ethernet "<<reserved_mac_addr[i]<<";\n  fixed-address "<<reserved_ips[i]<<";\n  ddns-hostname \""<<reserved_hostnames[i]<<"\";\n  option host-name \""<<reserved_hostnames[i]<<"\";\n}\n\n";
+            }
+        }
+        dhcpdconf.close();
+    }
+    else cm_msg(MERROR, "rm_reserve_ip", "unable to write dhcp config");
+
+    system("rcdhcpd restart");
+}
 
 /*-- Dummy routines ------------------------------------------------*/
 
@@ -296,12 +321,12 @@ INT frontend_init()
    db_find_key(hDB, 0, "/Equipment/DHCP DNS", &hKey);
    assert(hKey);
 
-   db_watch(hDB, hKey, netfe_settings_changed, nullptr);
+  // db_watch(hDB, hKey, netfe_settings_changed, nullptr);
 
    // add custom page to ODB
    db_create_key(hDB, 0, "Custom/DHCP DNS&", TID_STRING);
    const char * name = "net.html";
-   db_set_value(hDB,0,"Custom/DHCP DNS&",name, sizeof(name), 1,TID_STRING);
+   db_set_value(hDB,0,"Custom/DHCP DNS&",name, 9*sizeof(char), 1,TID_STRING);
 
    return CM_SUCCESS;
 }
@@ -319,6 +344,21 @@ INT frontend_loop()
 {
     // slow down
     sleep(10);
+    bool cmdreserveip=false;
+    int cmdreserveipsize=sizeof(TID_BOOL);
+    
+    db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usercmdReserve",&cmdreserveip, &cmdreserveipsize, TID_BOOL, TRUE);
+    if(cmdreserveip==true){
+         cmdreserveip = false;
+         db_set_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usercmdReserve",&cmdreserveip, cmdreserveipsize, 1, TID_BOOL);
+         reserve_ip();
+    }
+    db_get_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usercmdRmReserve",&cmdreserveip, &cmdreserveipsize, TID_BOOL, TRUE);
+    if(cmdreserveip==true){
+         cmdreserveip = false;
+         db_set_value(hDB, 0, "/Equipment/DHCP DNS/Settings/usercmdRmReserve",&cmdreserveip, cmdreserveipsize, 1, TID_BOOL);
+         rm_reserve_ip();
+    }
 
     string subnet = "192.168.0.";  // only X.X.X. here !!!
     string dhcpd_lease_path = "/var/lib/dhcp/db/dhcpd.leases";
@@ -355,7 +395,6 @@ INT frontend_loop()
     if(prev_ips!=ips){
         cm_msg(MINFO, "netfe_settings_changed", "new dhcp lease, odb updated");
 
-        system("wall new dhcp lease, update and restart of dns server");
         write_dns_table(dns_zone_def_path,ips,requestedHostnames);
         system("rcnamed restart");
 
@@ -436,6 +475,7 @@ INT read_cr_event(char *pevent, INT off)
 
 /*--- Called whenever settings have changed ------------------------*/
 
+
 void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
 {
    KEY key;
@@ -446,11 +486,14 @@ void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
       BOOL value;
       int size = sizeof(value);
       db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-      if(value==true)
+      if(value==true){
         cm_msg(MINFO, "netfe_settings_changed", "DHCPD activated by user");
-      else
+        system("wall DHCPD activated by user");
+      }
+      else{
         cm_msg(MINFO, "netfe_settings_changed", "DHCPD deactivated by user");
-      system("wall dhcpd changed");
+        system("wall DHCPD deactivated by user");
+      }
    }
 
     if (std::string(key.name) == "DNS Active") {
@@ -474,7 +517,6 @@ void netfe_settings_changed(HNDLE hDB, HNDLE hKey, INT, void *)
         int sizemac = sizeof(mac);
         int sizehostname = sizeof(hostname);
         db_get_data(hDB, hKey, &value, &size, TID_BOOL);
-
         if(value){
             cm_msg(MINFO, "netfe_settings_changed", "Execute reserve IP");
             value = FALSE; // reset flag in ODB

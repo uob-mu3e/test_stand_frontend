@@ -34,9 +34,9 @@ package mudaq is
     
 
     --! data path farm types
-    subtype dataplusts_type is std_logic_vector(271 downto 0);
+    subtype dataplusts_type is std_logic_vector(519 downto 0);
     type offset is array(natural range <>) of integer range 64 downto 0;
-    subtype tsrange_type is std_logic_vector(15 downto 0);
+    subtype tsrange_type is std_logic_vector(7 downto 0);
     subtype tsupper is natural range 15 downto 8;
     subtype tslower is natural range 7 downto 0;
     constant tsone : tsrange_type := (others => '1');
@@ -84,11 +84,19 @@ package mudaq is
     constant FIFO_EOR_c     : std_logic_vector(3 downto 0) := "0111";
 
 
-    --! PCIe types
     subtype reg32 is std_logic_vector(31 downto 0);
-    constant NREGISTERS :  integer := 64;
-    type reg32array is array (NREGISTERS-1 downto 0) of reg32;
+    subtype reg24 is std_logic_vector(23 downto 0);
+    subtype reg16 is std_logic_vector(15 downto 0);
+    subtype reg8  is std_logic_vector( 7 downto 0);
 
+    -- TODO: REMOVE THIS NUMBER HERE
+    constant NREGISTERS :  integer := 64;
+    type reg32array_pcie is array (NREGISTERS-1 downto 0) of reg32;
+
+    type reg32array is array (natural range <>) of reg32;
+    type reg24array is array (natural range <>) of reg24;
+    type reg16array is array (natural range <>) of reg16;
+    type  reg8array is array (natural range <>) of  reg8;
 
     --! type for run state
     subtype run_state_t is std_logic_vector(9 downto 0);

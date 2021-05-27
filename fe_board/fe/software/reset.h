@@ -21,6 +21,7 @@ void menu_print_rate() {
 
 void menu_reset() {
     auto& reset_bypass = sc.ram->regs.fe.reset_bypass;
+    auto  reset_bypass_buffer = 0;
     auto& reset_bypass_payload = sc.ram->regs.fe.reset_bypass_payload;
     auto& reset_phase = sc.ram->data[0xFFF7];
 
@@ -66,7 +67,12 @@ void menu_reset() {
 
 
         printf("\n");
-        //printf("  [0] => use genesis\n");
+        printf("  value: 0x%08x\n", 0xFFFF&reset_bypass);
+        printf("  value: 0x%08x\n", reset_bypass);
+        if((0x0000FFFF&reset_bypass)==0x00000200)
+            printf("  [0] => use genesis\n");
+        else 
+            printf("  [0] => use bypass\n");
         printf("  [1] => run_prep\n");
         printf("  [2] => sync\n");
         printf("  [3] => start run\n");
@@ -82,38 +88,44 @@ void menu_reset() {
         printf("  [c] => reset TX data\n");
         printf("  [p] => set payload   payload: 0x%08x\n", payload);
         printf("Select entry ...\n");
-        reset_bypass = 0x0000;
+        reset_bypass_buffer = reset_bypass;
         char cmd = wait_key();
         switch(cmd) {
-        //case '0':
-        //    reset_bypass = 0x0000;
-        //    break;
+        case '0':
+            if((0x0000FFFF&reset_bypass)==0x00000200){
+                reset_bypass = 0x00000000;
+                reset_bypass_buffer = 0x00000000;
+            }else{
+                reset_bypass=0x00000200;
+                reset_bypass_buffer=0x00000200;
+            }
+            break;
         case '1':
-            reset_bypass = 0x0110;
+            reset_bypass = 0x0310;
             break;
         case '2':
-            reset_bypass = 0x0111;
+            reset_bypass = 0x0311;
             break;
         case '3':
-            reset_bypass = 0x0112;
+            reset_bypass = 0x0312;
             break;
         case '4':
-            reset_bypass = 0x0113;
+            reset_bypass = 0x0313;
             break;
         case '5':
-            reset_bypass = 0x0114;
+            reset_bypass = 0x0314;
             break;
         case '6':
-            reset_bypass = 0x0130;
+            reset_bypass = 0x0330;
             break;
         case '7':
-            reset_bypass = 0x0131;
+            reset_bypass = 0x0331;
             break;
         case '8':
-            reset_bypass = 0x0120;
+            reset_bypass = 0x0320;
             break;
         case '9':
-            reset_bypass = 0x0121;
+            reset_bypass = 0x0321;
             break;
         case 'a':
             printf("Reset phase: 0x%08x\n", reset_phase);
@@ -148,6 +160,6 @@ void menu_reset() {
         default:
             printf("invalid command: '%c'\n", cmd);
         }
-        reset_bypass = 0x0000;
+        reset_bypass = reset_bypass_buffer;
     }
 }

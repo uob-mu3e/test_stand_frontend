@@ -96,6 +96,7 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
     rewind (f);
 
     cm_msg(MINFO,"MuFEB::LoadFirmware", "Programming %s of size %ld", filename.c_str(), fsize);
+    cm_yield(1);
     printf("Programming %s of size %ld\n",filename.c_str(), fsize);
 
     //clear the FIFO
@@ -148,6 +149,7 @@ void MuFEB::LoadFirmware(std::string filename, uint16_t FPGA_ID)
     feb_sc.FEB_register_write(FEB.SB_Port(),PROGRAMMING_CTRL_W,0);
 
     cm_msg(MINFO,"MuFEB::LoadFirmware", "Done programming");
+    cm_yield(1);
 
     fclose(f);
 }
@@ -239,7 +241,7 @@ DWORD* MuFEB::fill_SSFE(DWORD *pdata)
            index++;
        }
 
-       // And here we would actually fill the bank
+       // And here we actually fill the bank
         pdata = read_SSFE_OneFEB(pdata, index, FEB.GetVersion());
         index++;
     }
@@ -265,7 +267,6 @@ DWORD *MuFEB::read_SSFE_OneFEB(DWORD *pdata, uint32_t index, uint32_t version)
     // Arria V temperature
     feb_sc.FEB_register_read(index, ARRIA_TEMP_REGISTER_RW, data);
     *(float*)pdata++ = ArriaVTempConversion(data);
-
     vector<uint32_t> adcdata(5);
     // Read the MAX10 ADC
     feb_sc.FEB_register_read(index, MAX10_ADC_0_1_REGISTER_R, adcdata);
@@ -352,7 +353,7 @@ float MuFEB::ArriaVTempConversion(uint32_t reg)
 
     for(int i = 1; i < steps.size()-1; i++){
         if(reg < steps[i])
-            return temps[i] + (temps[i+1]-temps[i]) * (reg -  steps[i])/(steps[i+1]-steps[i]);
+            return temps[i] + (temps[i+1]-temps[i]) * ((int)reg -  (int)steps[i])/(steps[i+1]-steps[i]);
     }
 
     return -666; // should not get here

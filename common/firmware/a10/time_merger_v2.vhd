@@ -179,33 +179,24 @@ begin
             );
             
             -- reg for FIFO outputs (timing)
+            rdreq_0(i) <= '1' when rdempty_0(i) = '0' and wrfull_0_reg(i) = '0' else '0';
+            rdempty_0_reg(i) <= '1' when rdreq_0_reg(i) = '1' else '0' when rdreq_0(i) = '1' else '1';
             reg : process(i_clk, reset_0(i))
             begin
-            if ( reset_0(i) = '1' ) then
-                q_0_reg(i)     <= (others => '0');
-                rdreq_0(i) <= '0';
-                wrfull_0_reg(i)  <= '0';
-                rdempty_0_reg(i) <= '1';
-            elsif ( rising_edge(i_clk) ) then
-                rdreq_0(i) <= '0';
-                if ( rdempty_0(i) = '0' and (wrfull_0_reg(i) = '0' or rdreq_0_reg(i) = '1') ) then
-                    rdreq_0(i) <= '1';
-                    q_0_reg(i)       <= q_0(i);
-                    wrfull_0_reg(i)  <= '1';
-                end if;
-                
-                if ( rdreq_0_reg(i) = '1' ) then
+                if ( reset_0(i) = '1' ) then
+                    q_0_reg(i)       <= (others => '0');
                     wrfull_0_reg(i)  <= '0';
+                    --
+                elsif ( rising_edge(i_clk) ) then
+                    if ( rdreq_0(i) = '1' ) then
+                        q_0_reg(i)       <= q_0(i);
+                        wrfull_0_reg(i)  <= '1';
+                    end if;
+                    
+                    if ( rdreq_0_reg(i) = '1' ) then
+                        wrfull_0_reg(i)  <= '0';
+                    end if;
                 end if;
-                
-                if ( rdempty_0(i) = '0' and rdreq_0_reg(i) = '1' ) then
-                    rdempty_0_reg(i) <= '0';
-                elsif ( rdempty_0(i) = '0' and wrfull_0_reg(i) = '0' ) then
-                    rdempty_0_reg(i) <= '0';
-                elsif ( rdreq_0_reg(i) = '1' ) then
-                    rdempty_0_reg(i) <= '1';
-                end if;
-            end if;
             end process;
             
         END GENERATE;

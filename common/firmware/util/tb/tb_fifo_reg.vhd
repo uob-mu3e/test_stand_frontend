@@ -13,7 +13,8 @@ architecture arch of tb_fifo_reg is
 
     signal data, cnt : std_logic_vector(31 downto 0);
     signal q, q_reg, o_data : std_logic_vector(63 downto 0);
-    signal rdreq, rdreq_reg, wrfull_reg, wrreq, rdempty, wrfull, rdempty_reg : std_logic;
+    signal a, b : std_logic_vector(7 downto 0);
+    signal rdreq, rdreq_reg, wrfull_reg, wrreq, rdempty, wrfull, rdempty_reg, last_rdreq_reg : std_logic;
 
 begin
 
@@ -54,17 +55,17 @@ begin
         wrfull  => wrfull--,
     );
     
+    rdreq <= '1' when rdempty = '0' and wrfull_reg = '0' else '0';
+    rdempty_reg <= '1' when rdreq_reg = '1' else '0' when rdreq = '1' else '1';
+    
     reg : process(clk, reset_n)
     begin
         if ( reset_n = '0' ) then
             q_reg       <= (others => '0');
             o_data      <= (others => '0');
-            rdreq       <= '0';
             wrfull_reg  <= '0';
         elsif ( rising_edge(clk) ) then
-            rdreq <= '0';
-            if ( rdempty = '0' and (wrfull_reg = '0' or rdreq_reg = '1') ) then
-                rdreq       <= '1';
+            if ( rdreq = '1' ) then
                 q_reg       <= q;
                 wrfull_reg  <= '1';
             end if;
@@ -73,17 +74,11 @@ begin
                 o_data <= q_reg;
                 wrfull_reg  <= '0';
             end if;
-            
-            if ( rdempty = '0' and rdreq_reg = '1' ) then
-                rdempty_reg <= '0';
-            elsif ( rdempty = '0' and wrfull_reg = '0' ) then
-                rdempty_reg <= '0';
-            elsif ( rdreq_reg = '1' ) then
-                rdempty_reg <= '1';
-            end if;
-            
         end if;
     end process;
+    
+    a <= q_reg(7 downto 0);
+    b <= q_reg(39 downto 32);
     
     read : process(clk, reset_n)
     begin
