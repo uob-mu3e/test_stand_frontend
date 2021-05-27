@@ -165,6 +165,10 @@ proc nios_base.init {} {
     add_interface spi conduit end
     set_interface_property spi EXPORTOF spi.external
 
+    set_instance_parameter_value spi {clockPhase} {0}
+    set_instance_parameter_value spi {clockPolarity} {1}
+    set_instance_parameter_value spi {targetClockRate} {128000}
+
     nios_base.add_pio pio 32 Output 0x700F0280
 
     # i2c slave select port

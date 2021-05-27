@@ -1,11 +1,11 @@
 
 #include "include/base.h"
+
 #include "include/xcvr.h"
 
 #include "../../fe/software/si5345_fe_v2.h"
 si5345_t si5345_1 { SPI_SI_BASE, 0 };
 si5345_t si5345_2 { SPI_SI_BASE, 1 };
-//si5345_t si5345 { SPI_SI_BASE, 0 };
 
 #include "../../fe/software/sc.h"
 #include "../../fe/software/sc_ram.h"
@@ -15,10 +15,15 @@ sc_t sc;
 mscb_t mscb;
 #include "../../fe/software/reset.h"
 
+
+#include "smb_module.h"
+SMB_t SMB(sc);
+
+
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
-//    return mupix.callback(cmd,data,n);
-    return 0;
+    printf("sc_t::callback\n");
+    return SMB.sc_callback(cmd,data,n);
 }
 
 
@@ -26,7 +31,7 @@ int main() {
     base_init();
 
     si5345_2.init();
-    usleep(5000000);
+    usleep(500000);
     si5345_1.init();
     //mscb.init();
     sc.init();
@@ -39,10 +44,10 @@ int main() {
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
-        printf("  [2] => insert sub-detector menu here\n");
+        printf("  [2] => SciFi menu\n");
         printf("  [3] => sc\n");
         printf("  [4] => si5345_1\n");
-        printf("  [5] => si5345_2\n");        
+        printf("  [5] => si5345_2\n");
         printf("  [6] => mscb\n");
         printf("  [7] => reset system\n");
 
@@ -53,7 +58,7 @@ int main() {
             menu_xcvr((alt_u32*)(AVM_QSFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '2':
-            //mupix.menu();
+            SMB.menu_SMB_main();
             break;
         case '3':
             sc.menu();

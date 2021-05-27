@@ -60,7 +60,11 @@ MutrigConfig::paras_t MutrigConfig::parameters_ch = {
         make_param("inputbias_sc",      1, 1),
         make_param("inputbias",         6, 1),
         make_param("ethresh",           8, 1),
+<<<<<<< HEAD
         make_param("ebias",             3, 1),
+=======
+        make_param("ebias",              3, 1),
+>>>>>>> origin/Scifi_FEB_v2
         make_param("pole_sc",           1, 1),
         make_param("pole",              6, 1),
         make_param("cml",               4, 1),
@@ -254,6 +258,7 @@ void MutrigConfig::Parse_TDC_from_struct(odb o){
 
 
 void MutrigConfig::Parse_CH_from_struct(odb o, int channel){
+<<<<<<< HEAD
     MutrigConfig::setParameterODBpp("mask", o, channel);
     MutrigConfig::setParameterODBpp("recv_all", o, channel);
     MutrigConfig::setParameterODBpp("tthresh", o, channel);
@@ -285,6 +290,39 @@ void MutrigConfig::Parse_CH_from_struct(odb o, int channel){
     MutrigConfig::setParameterODBpp("dmon_en", o, channel);
     MutrigConfig::setParameterODBpp("dmon_sw", o, channel);
     MutrigConfig::setParameterODBpp("coin_mat", o, channel);
+=======
+    MutrigConfig::setParameterODBpp("mask_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("recv_all_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("tthresh_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("tthresh_sc_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("ethresh_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("ebias_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("sipm_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("sipm_sc_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("inputbias_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("inputbias_sc_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("pole_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("pole_sc_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("ampcom_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("ampcom_sc_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("cml_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("cml_sc_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("amonctrl_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("comp_spi_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("tdctest_n_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("sswitch_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("delay_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("pole_en_n_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("energy_c_en_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("energy_r_en_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("cm_sensing_high_r_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("amon_en_n_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("edge_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("edge_cml_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("dmon_en_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("dmon_sw_" + std::to_string(channel), o);
+    MutrigConfig::setParameterODBpp("coin_mat_" + std::to_string(channel), o);
+>>>>>>> origin/Scifi_FEB_v2
 }
 
 

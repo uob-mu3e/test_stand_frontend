@@ -4,12 +4,12 @@
 #include "include/si534x.h"
 
 // change the clock source here: 
-#include "Si5345-v5-Registers_si2.h"        // optical clk from firefly 
+//#include "Si5345-v5-Registers_si2.h"        // optical clk from firefly 
 //#include "Si5345-v5-Registers_si2_free.h" // free running FEB: (no external clock, control by nios only) 
-//#include "Si5345-v5-Registers_si2_lvds.h" // lvds clk from CON4/CON5
+#include "Si5345-v5-Registers_si2_lvds.h" // lvds clk from CON4/CON5
 
-#include "Si5345-v5-Registers_si1.h"
-
+//#include "Si5345-v5-Registers_si1.h"
+#include "Si5345-v5-Registers_si1_625MHz.h"
 
 struct si5345_t : si534x_t {
 

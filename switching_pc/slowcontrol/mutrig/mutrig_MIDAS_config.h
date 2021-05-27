@@ -195,7 +195,11 @@ static odb MUTRIG_GLOBAL_SETTINGS = {
     {"gen_idle", false},
     {"ms_debug", false},
     {"prbs_debug", false},
+<<<<<<< HEAD
     {"prbs_single", false},
+=======
+    {"rbs_single", false},
+>>>>>>> origin/Scifi_FEB_v2
     {"sync_ch_rst", false},
     {"disable_coarse", false},
     {"pll_setcoarse", false},

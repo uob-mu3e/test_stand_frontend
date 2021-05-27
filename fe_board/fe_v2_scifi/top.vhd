@@ -1,5 +1,5 @@
 ----------------------------------------
--- SciFi version of the Frontend Board 
+-- SciFi version of the Frontend Board
 ----------------------------------------
 
 library ieee;
@@ -10,7 +10,7 @@ use ieee.numeric_std.all;
 
 use work.mudaq.all;
 
-entity top is 
+entity top is
     port (
         fpga_reset                  : in    std_logic;
 
@@ -27,21 +27,23 @@ entity top is
         clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
         spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-        scifi_csn                   : out   std_logic_vector(4 downto 1);
-        scifi_cec_cs                : out   std_logic_vector(4 downto 1);
-        scifi_cec_sdo               : out   std_logic;
-        scifi_fifo_ext              : out   std_logic;
-        scifi_inject                : out   std_logic;
+        -- scifi DAB signals
+        scifi_din                   : in    std_logic_vector(4 downto 1);
         scifi_syncres               : out   std_logic;
+        scifi_csn                   : out   std_logic_vector(4 downto 1);
         scifi_spi_sclk              : out   std_logic;
         scifi_spi_miso              : in    std_logic;
         scifi_spi_mosi              : out   std_logic;
-        scifi_din                   : in    std_logic_vector(4 downto 1);
+        -- not used at the current version of the DAB for sicif
+        scifi_cec_csn                : out   std_logic_vector(4 downto 1);
+        scifi_cec_miso              : in    std_logic;
+        scifi_fifo_ext              : out   std_logic;
+        scifi_inject                : out   std_logic;
         scifi_bidir_test            : inout std_logic;
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
-        firefly2_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver 
+        firefly2_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
         firefly1_rx_data            : in    std_logic;-- transceiver
         firefly2_rx_data            : in    std_logic_vector(2 downto 0);-- transceiver
 
@@ -70,7 +72,7 @@ entity top is
         -- SI4345(1): Clocks for the Fibres
         -- 1 reference and 2 inputs for synch
         si45_oe_n                   : out   std_logic_vector(1 downto 0);-- active low output enable -> should always be '0'
-        si45_intr_n                 : in    std_logic_vector(1 downto 0);-- fault monitor: interrupt pin: change in state of status indicators 
+        si45_intr_n                 : in    std_logic_vector(1 downto 0);-- fault monitor: interrupt pin: change in state of status indicators
         si45_lol_n                  : in    std_logic_vector(1 downto 0);-- fault monitor: loss of lock of DSPLL
 
         -- I2C sel is set to GND on PCB -> SPI interface
@@ -113,9 +115,9 @@ architecture rtl of top is
     constant N_MODULES              : integer := 1;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
-    signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0); 
+    signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
-    signal malibu_reg               : work.util.rw_t;
+    signal scifi_reg               : work.util.rw_t;
 
     signal run_state_125            : run_state_t;
     signal run_state_156            : run_state_t;
@@ -124,25 +126,55 @@ architecture rtl of top is
     signal s_run_state_all_done     : std_logic;
     signal s_MON_rxrdy              : std_logic_vector(N_MODULES*N_ASICS-1 downto 0);
 
+    -- SPI SMB
+    --internal I/O signals to DAB with correct polarity
+    signal scifi_int_din                   : std_logic_vector(4 downto 1);
+    signal scifi_int_syncres               : std_logic;
+    signal scifi_int_csn                   : std_logic_vector(15 downto 0);
+    signal scifi_int_spi_sclk              : std_logic;
+    signal scifi_int_spi_miso              : std_logic;
+    signal scifi_int_spi_mosi              : std_logic;
+    --signal scifi_int_cec_csn               : std_logic_vector(4 downto 1);
+    --signal scifi_int_cec_miso              : std_logic;
+    --signal scifi_int_fifo_ext              : std_logic;
+    --signal scifi_int_inject                : std_logic;
+    --signal scifi_int_bidir_test            : std_logic;
+
+
+    -- DEBUGGING
+    signal invert_clk, invert_miso, invert_mosi, s_scifi_spi_miso, s_scifi_spi_mosi, s_scifi_spi_sclk, clk_156, reset_156_n : std_logic;
+    signal s_invert : std_logic_vector(31 downto 0);
+
 begin
--- TODO: this is a dummy-copy from tile firmware, changes for scifi ?? M. Mueller
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 ---- SciFi SUB-DETECTOR FIRMWARE -----------------------------------
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 
-    -- do not compile away 
-    scifi_csn                   <= (others => pb_db(0));
-    scifi_cec_cs                <= (others => pb_db(0));
-    scifi_cec_sdo               <= pb_db(0);
-    scifi_fifo_ext              <= pb_db(0);
-    scifi_inject                <= pb_db(0);
-    scifi_syncres               <= pb_db(0);
-    scifi_spi_sclk              <= pb_db(0);
-    lcd_data(5)                 <= scifi_spi_miso;
-    scifi_spi_mosi              <= pb_db(0);
+-- assignments of DAB pins: special IOBUF, constant and polarity flips here
+    scifi_fifo_ext              <= '0';
+    scifi_inject                <= '0';
+    scifi_cec_csn               <= (others => '1');
 
+    scifi_csn(1) <= not scifi_int_csn(0);
+    scifi_csn(2) <= not scifi_int_csn(1);
+    scifi_csn(3) <= not scifi_int_csn(2);
+    scifi_csn(4) <=     scifi_int_csn(3);
+
+    -- Original
+    --scifi_syncres <= not scifi_int_syncres;
+    --scifi_spi_sclk <= not scifi_int_spi_sclk;
+    --scifi_int_spi_miso <= not scifi_spi_miso;
+    --scifi_spi_mosi <= not scifi_int_spi_mosi;
+    -- It works if we uninvert again, to be discussed
+    scifi_syncres <= scifi_int_syncres;
+    scifi_spi_sclk <= scifi_int_spi_sclk;
+    scifi_int_spi_miso <= scifi_spi_miso;
+    scifi_spi_mosi <= scifi_int_spi_mosi;
+    -- LVDS inputs signflip in receiver block generic
+     
+-- scifi detector firmware
     e_tile_path : entity work.scifi_path
     generic map (
         IS_SCITILE      => '0',
@@ -154,13 +186,13 @@ begin
         LVDS_DATA_RATE  => 1250.0--,
     )
     port map (
-        i_reg_addr                  => malibu_reg.addr(3 downto 0),
-        i_reg_re                    => malibu_reg.re,
-        o_reg_rdata                 => malibu_reg.rdata,
-        i_reg_we                    => malibu_reg.we,
-        i_reg_wdata                 => malibu_reg.wdata,
+        i_reg_addr                  => scifi_reg.addr(3 downto 0),
+        i_reg_re                    => scifi_reg.re,
+        o_reg_rdata                 => scifi_reg.rdata,
+        i_reg_we                    => scifi_reg.we,
+        i_reg_wdata                 => scifi_reg.wdata,
 
-        o_chip_reset                => scifi_syncres,
+        o_chip_reset                => scifi_int_syncres,
         o_pll_test                  => open,
         i_data                      => scifi_din,
 
@@ -188,7 +220,7 @@ begin
         i_clk_ref_A                 => LVDS_clk_si1_fpga_A,
         i_clk_ref_B                 => LVDS_clk_si1_fpga_B,
 
-        o_test_led                  => lcd_data(4),
+        o_test_led                  => lcd_data(3),
         i_reset                     => not pb_db(0)--,
     );
 
@@ -229,10 +261,10 @@ begin
         i_ffly_Int_n        => Firefly_Int_n,
         i_ffly_ModPrs_n     => Firefly_ModPrs_n,
 
-        i_spi_miso          => '1',
-        o_spi_mosi          => open,
-        o_spi_sclk          => open,
-        o_spi_ss_n          => open,
+        i_spi_miso          => scifi_int_spi_miso,
+        o_spi_mosi          => scifi_int_spi_mosi,
+        o_spi_sclk          => scifi_int_spi_sclk,
+        o_spi_ss_n          => scifi_int_csn,
 
         i_spi_si_miso       => si45_spi_out,
         o_spi_si_mosi       => si45_spi_in,
@@ -254,8 +286,12 @@ begin
         i_ffly1_lvds_rx     => firefly1_lvds_rx_in,
         i_ffly2_lvds_rx     => firefly2_lvds_rx_in,
 
+        i_can_terminate     => s_run_state_all_done,
+
         i_fifo_write        => fifo_write,
-        i_fifo_wdata        => fifo_wdata, -- TODO in "Not-Dummy": connect to detector-block
+        i_fifo_wdata        => fifo_wdata,
+
+        o_fifos_almost_full => common_fifos_almost_full,
 
         i_mscb_data         => mscb_fpga_in,
         o_mscb_data         => mscb_fpga_out,
@@ -263,21 +299,21 @@ begin
 
         o_max10_spi_sclk    => max10_spi_miso, --max10_spi_sclk, Replacement, due to broken line
         io_max10_spi_mosi   => max10_spi_mosi,
-        io_max10_spi_miso   =>'Z',
+        io_max10_spi_miso   => 'Z',
         io_max10_spi_D1     => max10_spi_D1,
         io_max10_spi_D2     => max10_spi_D2,
         io_max10_spi_D3     => max10_spi_D3,
         o_max10_spi_csn     => max10_spi_csn,
 
-        o_subdet_reg_addr   => malibu_reg.addr(7 downto 0),
-        o_subdet_reg_re     => malibu_reg.re,
-        i_subdet_reg_rdata  => malibu_reg.rdata,
-        o_subdet_reg_we     => malibu_reg.we,
-        o_subdet_reg_wdata  => malibu_reg.wdata,
-        
+        o_subdet_reg_addr   => scifi_reg.addr(7 downto 0),
+        o_subdet_reg_re     => scifi_reg.re,
+        i_subdet_reg_rdata  => scifi_reg.rdata,
+        o_subdet_reg_we     => scifi_reg.we,
+        o_subdet_reg_wdata  => scifi_reg.wdata,
+
         -- reset system
-        o_run_state_125     => open,      -- TODO in "Not-Dummy": connect to detector-block
-        i_ack_run_prep_permission => '1', -- TODO in "Not-Dummy": connect to detector-block
+        o_run_state_125             => run_state_125,
+        i_ack_run_prep_permission   => and_reduce(s_MON_rxrdy),
 
         -- clocks
         i_nios_clk          => spare_clk_osc,
@@ -287,7 +323,7 @@ begin
         i_clk_125           => lvds_firefly_clk,
 
         i_areset_n          => pb_db(0),
-        
+
         i_testin            => pb_db(1)--,
     );
 

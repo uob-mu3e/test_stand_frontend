@@ -3,11 +3,11 @@ set_location_assignment PIN_AG16 -to scifi_csn[1]
 set_location_assignment PIN_AG6  -to scifi_csn[2]
 set_location_assignment PIN_AE11 -to scifi_csn[3]
 set_location_assignment PIN_AA10 -to scifi_csn[4]
-set_location_assignment PIN_AD15 -to scifi_cec_cs[1]
-set_location_assignment PIN_AC15 -to scifi_cec_cs[2]
-set_location_assignment PIN_AB11 -to scifi_cec_cs[3]
-set_location_assignment PIN_AB12 -to scifi_cec_cs[4]
-set_location_assignment PIN_AA12 -to scifi_cec_sdo
+set_location_assignment PIN_AD15 -to scifi_cec_csn[1]
+set_location_assignment PIN_AC15 -to scifi_cec_csn[2]
+set_location_assignment PIN_AB11 -to scifi_cec_csn[3]
+set_location_assignment PIN_AB12 -to scifi_cec_csn[4]
+set_location_assignment PIN_AA12 -to scifi_cec_miso
 set_location_assignment PIN_AC12 -to scifi_fifo_ext
 set_location_assignment PIN_AB18 -to scifi_inject
 set_location_assignment PIN_AD22 -to scifi_syncres
