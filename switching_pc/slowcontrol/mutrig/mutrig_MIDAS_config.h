@@ -38,6 +38,7 @@ typedef struct {
     BOOL prbs_decode_disable;
     BOOL reset_datapath;
     BOOL reset_asics;
+    INT  num_asics;
 } MUTRIG_DAQ;
 
 static odb MUTRIG_DAQ_SETTINGS = {
@@ -104,6 +105,16 @@ typedef struct {
     INT       dmon_2_dac;
     INT       lvds_tx_vcm;
     INT       lvds_tx_bias;
+    BOOL      coin_xbar_lower_rx_ena;
+    BOOL      coin_xbar_lower_tx_ena;
+    INT       coin_xbar_lower_tx_vdac;
+    INT       coin_xbar_lower_tx_idac;
+    INT       coin_mat_xbl;
+    INT       coin_mat_xbu;
+    BOOL      coin_xbar_upper_rx_ena;
+    BOOL      coin_xbar_upper_tx_ena;
+    INT       coin_xbar_upper_tx_vdac;
+    INT       coin_xbar_upper_tx_idac;
 } MUTRIG_TDC;
 
 static odb MUTRIG_TDC_SETTINGS = {
@@ -142,6 +153,16 @@ static odb MUTRIG_TDC_SETTINGS = {
     {"dmon_2_dac", 0},
     {"lvds_tx_vcm", 0},
     {"lvds_tx_bias", 0},
+    {"coin_xbar_lower_rx_ena", false},
+    {"coin_xbar_lower_tx_ena", false},
+    {"coin_xbar_lower_tx_vdac", 0},
+    {"coin_xbar_lower_tx_idac", 0},
+    {"coin_mat_xbl", 0},
+    {"coin_mat_xbu", 0},
+    {"coin_xbar_upper_rx_ena", false},
+    {"coin_xbar_upper_tx_ena", false},
+    {"coin_xbar_upper_tx_vdac", 0},
+    {"coin_xbar_upper_tx_idac", 0},
 };
 
 #endif
@@ -159,7 +180,7 @@ typedef struct {
     BOOL      ms_debug;
     BOOL      prbs_debug;
     BOOL      prbs_single;
-    BOOL      recv_all;
+    BOOL      sync_ch_rst;
     BOOL      disable_coarse;
     BOOL      pll_setcoarse;
     BOOL      short_event_mode;
@@ -175,7 +196,7 @@ static odb MUTRIG_GLOBAL_SETTINGS = {
     {"ms_debug", false},
     {"prbs_debug", false},
     {"rbs_single", false},
-    {"recv_all", false},
+    {"sync_ch_rst", false},
     {"disable_coarse", false},
     {"pll_setcoarse", false},
     {"short_event_mode", false},
@@ -189,9 +210,11 @@ static odb MUTRIG_GLOBAL_SETTINGS = {
 
 typedef struct {
     BOOL mask;
+    BOOL recv_all;
     INT tthresh;
     INT tthresh_sc;
     INT ethresh;
+    INT ebias;
     INT sipm;
     INT sipm_sc;
     INT inputbias;
@@ -204,6 +227,7 @@ typedef struct {
     INT cml_sc;
     INT amonctrl;
     INT comp_spi;
+    INT coin_mat;
     BOOL tdctest_n;
     BOOL sswitch;
     BOOL delay;
@@ -220,9 +244,11 @@ typedef struct {
 
 static odb MUTRIG_CH_SETTINGS = {
     {"mask", false},
+    {"recv_all", false},
     {"tthresh", 0},
     {"tthresh_sc", 0},
     {"ethresh", 0},
+    {"ebias", 0},
     {"sipm", 0},
     {"sipm_sc", 0},
     {"inputbias", 0},
@@ -235,6 +261,7 @@ static odb MUTRIG_CH_SETTINGS = {
     {"cml_sc", 0},
     {"amonctrl", 0},
     {"comp_spi", 0},
+    {"coin_mat", 0},
     {"tdctest_n", false},
     {"sswitch", false},
     {"delay", false},
