@@ -22,7 +22,6 @@ SMB_t SMB(sc);
 
 //definition of callback function for slow control packets
 alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
-    printf("sc_t::callback\n");
     return SMB.sc_callback(cmd,data,n);
 }
 
