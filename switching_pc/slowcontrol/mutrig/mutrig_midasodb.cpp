@@ -88,10 +88,7 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
         {"nWordsPRBS", nasics},
         {"nDatasyncloss", nasics},
     };
-<<<<<<< HEAD
     variables_counters.connect(set_str);
-=======
->>>>>>> origin/Scifi_FEB_v2
     cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - counters done");
 
 

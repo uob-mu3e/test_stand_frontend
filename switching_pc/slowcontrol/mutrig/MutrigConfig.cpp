@@ -60,11 +60,7 @@ MutrigConfig::paras_t MutrigConfig::parameters_ch = {
         make_param("inputbias_sc",      1, 1),
         make_param("inputbias",         6, 1),
         make_param("ethresh",           8, 1),
-<<<<<<< HEAD
         make_param("ebias",             3, 1),
-=======
-        make_param("ebias",              3, 1),
->>>>>>> origin/Scifi_FEB_v2
         make_param("pole_sc",           1, 1),
         make_param("pole",              6, 1),
         make_param("cml",               4, 1),
