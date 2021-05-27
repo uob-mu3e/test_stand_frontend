@@ -162,10 +162,16 @@ begin
     scifi_csn(3) <= not scifi_int_csn(2);
     scifi_csn(4) <=     scifi_int_csn(3);
 
-    scifi_syncres <= not scifi_int_syncres;
-    scifi_spi_sclk <= not scifi_int_spi_sclk;
-    scifi_int_spi_miso <= not scifi_spi_miso;
-    scifi_spi_mosi <= not scifi_int_spi_mosi;
+    -- Original
+    --scifi_syncres <= not scifi_int_syncres;
+    --scifi_spi_sclk <= not scifi_int_spi_sclk;
+    --scifi_int_spi_miso <= not scifi_spi_miso;
+    --scifi_spi_mosi <= not scifi_int_spi_mosi;
+    -- It works if we uninvert again, to be discussed
+    scifi_syncres <= scifi_int_syncres;
+    scifi_spi_sclk <= scifi_int_spi_sclk;
+    scifi_int_spi_miso <= scifi_spi_miso;
+    scifi_spi_mosi <= scifi_int_spi_mosi;
     -- LVDS inputs signflip in receiver block generic
      
 -- scifi detector firmware
