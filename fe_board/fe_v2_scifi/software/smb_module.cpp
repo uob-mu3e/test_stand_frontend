@@ -64,16 +64,16 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
         rx = IORD_8DIRECT(SPI_BASE, 0);
 
         //printf("tx:%2.2X rx:%2.2x nb:%d\n",tx,rx,nb);
-        char result_hex[3];
-        char tx_hex[3];
-        sprintf(result_hex,"%2.2X",rx);
-        sprintf(tx_hex,"%2.2X",tx);
-        rx_string[result_i] = result_hex[0];
-        tx_string[result_i] = tx_hex[0];
-        result_i++;
-        rx_string[result_i] = result_hex[1];
-        tx_string[result_i] = tx_hex[1];
-        result_i++;
+        //Lchar result_hex[3];
+        //Lchar tx_hex[3];
+        //Lsprintf(result_hex,"%2.2X",rx);
+        //Lsprintf(tx_hex,"%2.2X",tx);
+        //Lrx_string[result_i] = result_hex[0];
+        //Ltx_string[result_i] = tx_hex[0];
+        //Lresult_i++;
+        //Lrx_string[result_i] = result_hex[1];
+        //Ltx_string[result_i] = tx_hex[1];
+        //Lresult_i++;
 
         //pattern is not in full units of bytes, so shift back while receiving to check the correct configuration state
         unsigned char rx_check= (rx_pre | rx ) >> (8-MUTRIG_CONFIG_LEN_BITS%8);
@@ -82,7 +82,7 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
         };
 
         if(rx_check!=bitpattern[nb]){
-            printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
+            //Lprintf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
             status=-1;
         }
         rx_pre=rx<<8;
@@ -90,8 +90,8 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
     printf("\n");
     rx_string[680]=0;
     tx_string[680]=0;
-    printf("TX = %s\n", tx_string);
-    printf("RX = %s\n", rx_string);
+    //Lprintf("TX = %s\n", tx_string);
+    //Lprintf("RX = %s\n", rx_string);
     return status;
 }
 
@@ -161,7 +161,7 @@ using namespace mu3e::daq::feb;
 alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     if((cmd & 0xFFF0) == CMD_MUTRIG_ASIC_CFG) {
         int asic = cmd & 0x000F;
-        printf("configuring ASIC %d\n",asic);
+        //Lprintf("configuring ASIC %d\n",asic);
         configure_asic(asic, (alt_u8*)data);
     }
     else {
@@ -180,15 +180,6 @@ void SMB_t::menu_SMB_main() {
         printf("  [0..3] => Write ALL_OFF config ASIC 0/1/2/3\n");
         printf("  [5] => data\n");
         printf("  [6] => monitor test\n");
-
-        printf("  [u] => invert clk\n");
-        printf("  [j] => uninvert clk\n");
-
-        printf("  [i] => invert miso\n");
-        printf("  [k] => uninvert miso\n");
-
-        printf("  [o] => invert mosi\n");
-        printf("  [l] => uninvert mosi\n");
 
         printf("  [c] => chip select\n");
         printf("  [s] => control reg SSO\n");

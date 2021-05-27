@@ -44,7 +44,7 @@ struct sc_t {
         alt_u32 cmd = cmdlen >> 16;
         alt_u32 n = cmdlen & 0xFFFF;
 
-        //printf("[sc::callback] cmd = 0x%04X, n = 0x%04X\n", cmd, n);
+        printf("[sc::callback] cmd = 0x%04X, n = 0x%04X\n", cmd, n);
 
         // data offset
         alt_u32 offset = ram->regs.fe.offset & 0xFFFF;
@@ -56,12 +56,14 @@ struct sc_t {
         else {
             auto data = n > 0 ? (ram->data + offset) : nullptr;
             status = callback(cmd, data, n);
-            //printf("[sc::callback] status = 0x%04X\n", status);
+            printf("[sc::callback] status = 0x%04X\n", status);
         }
 
         // zero upper 16 bits of command register
         // lower 16 bits are used as status
         ram->regs.fe.cmdlen = 0xFFFF & status;
+        // debug: set status to 7
+        ram->regs.fe.cmdlen = 0xFFFF & 0x7;
     }
 
     static
@@ -96,6 +98,7 @@ struct sc_t {
             printf("  [t] => read fpga id\n");
             printf("  [f] => write fpga id\n");
             printf("  [i] => test cmdlen irq\n");
+            printf("  [c] => trigger callback function\n");
             printf("  [q] => exit\n");
 
             printf("Select entry ...\n");
@@ -133,6 +136,8 @@ struct sc_t {
             case 'i':
                 ram->regs.fe.cmdlen = 0xffff0000;
                 break;
+            case 'c':
+                callback();
             case 'q':
                 return;
             default:
