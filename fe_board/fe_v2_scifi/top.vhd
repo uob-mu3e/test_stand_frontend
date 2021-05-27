@@ -141,10 +141,6 @@ architecture rtl of top is
     --signal scifi_int_bidir_test            : std_logic;
 
 
-    -- DEBUGGING
-    signal invert_clk, invert_miso, invert_mosi, s_scifi_spi_miso, s_scifi_spi_mosi, s_scifi_spi_sclk, clk_156, reset_156_n : std_logic;
-    signal s_invert : std_logic_vector(31 downto 0);
-
 begin
 --------------------------------------------------------------------
 --------------------------------------------------------------------
@@ -162,16 +158,10 @@ begin
     scifi_csn(3) <= not scifi_int_csn(2);
     scifi_csn(4) <=     scifi_int_csn(3);
 
-    -- Original
-    --scifi_syncres <= not scifi_int_syncres;
-    --scifi_spi_sclk <= not scifi_int_spi_sclk;
-    --scifi_int_spi_miso <= not scifi_spi_miso;
-    --scifi_spi_mosi <= not scifi_int_spi_mosi;
-    -- It works if we uninvert again, to be discussed
-    scifi_syncres <= scifi_int_syncres;
+    scifi_syncres <= not scifi_int_syncres;
     scifi_spi_sclk <= scifi_int_spi_sclk;
-    scifi_int_spi_miso <= scifi_spi_miso;
-    scifi_spi_mosi <= scifi_int_spi_mosi;
+    scifi_int_spi_miso <= not scifi_spi_miso;
+    scifi_spi_mosi <= not scifi_int_spi_mosi;
     -- LVDS inputs signflip in receiver block generic
      
 -- scifi detector firmware
