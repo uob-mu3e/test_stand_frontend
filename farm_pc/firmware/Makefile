@@ -5,7 +5,6 @@ IPs = \
     $(wildcard ip/*.tcl) \
     $(wildcard pcieapp/*.tcl) \
     $(wildcard ddr3/*.tcl) \
-    a10/ip_xcvr_phy.tcl a10/ip_xcvr_reset.tcl a10/ip_xcvr_fpll.tcl \
     nios.tcl
 
 include util/altera/makefile.mk

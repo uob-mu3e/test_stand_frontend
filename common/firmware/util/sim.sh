@@ -1,10 +1,5 @@
 #!/bin/bash
-set -euf
-
-if [ $# -eq 0 ] ; then
-    echo "Usage: $0 tb [entity.vhd]..."
-    exit
-fi
+set -eux
 
 TB="$1"
 shift
@@ -13,9 +8,15 @@ STOPTIME="${STOPTIME:-1us}"
 
 SRC=()
 for arg in "$@" ; do
-    arg=$(realpath -s --relative-to=.cache -- "$arg")
+    arg=$(readlink -f -- "$arg")
     SRC+=("$arg")
 done
+
+# directories to be searched for library files
+DIRS=(
+    "/usr/local/lib/ghdl/vendors/altera"
+    "$HOME/.local/share/ghdl/vendors/altera"
+)
 
 # elaboration options
 OPTS=(
@@ -33,11 +34,6 @@ OPTS=(
     -fpsl
 )
 
-# directories to be searched for library files
-DIRS=(
-    "/usr/local/lib/ghdl/vendors/altera"
-    "$HOME/.local/share/ghdl/vendors/altera"
-)
 for arg in "${DIRS[@]}" ; do
     [ -d "$arg" ] && OPTS+=(-P"$arg")
 done
@@ -57,7 +53,6 @@ SIM_OPTS=(
     --vcd="$TB.vcd" --wave="$TB.ghw" --fst="$TB.fst"
     # write PSL report at the end of simulation
     --psl-report="$TB.psl-report"
-
 )
 [ -f "$TB.wave-opt" ] && SIM_OPTS+=(--read-wave-opt="../$TB.wave-opt")
 

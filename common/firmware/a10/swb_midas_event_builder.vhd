@@ -15,7 +15,7 @@ generic(
     DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
 );
 port(
-    i_rx                : in  std_logic_vector(31 downto 0);
+    i_rx                : in  std_logic_vector (31 downto 0);
     i_rempty            : in  std_logic;
     i_header            : in  std_logic;
     i_trailer           : in  std_logic;
@@ -26,6 +26,7 @@ port(
     o_data              : out std_logic_vector (255 downto 0);
     o_wen               : out std_logic;
     o_ren               : out std_logic;
+    o_dma_cnt_words     : out std_logic_vector (31 downto 0);
     o_endofevent        : out std_logic;
     o_done              : out std_logic;
     o_state_out         : out std_logic_vector (3 downto 0);
@@ -49,7 +50,7 @@ architecture arch of swb_midas_event_builder is
         event_head, event_num, event_tmp, event_size, bank_size, bank_flags, bank_name, bank_type, bank_length, bank_data, bank_set_length, event_set_size, bank_set_size, write_tagging_fifo, set_algin_word, bank_reserved, EVENT_IDLE--,
     );
     signal event_tagging_state : event_tagging_state_type;
-    signal e_size_add, b_size_add, b_length_add, w_ram_add_reg, w_ram_add, w_fifo_data, r_fifo_data, last_event_add, align_event_size, align_bank_size : std_logic_vector(11 downto 0);
+    signal e_size_add, b_size_add, b_length_add, w_ram_add_reg, w_ram_add, w_fifo_data, r_fifo_data, last_event_add, align_event_size : std_logic_vector(11 downto 0);
     signal w_fifo_en, r_fifo_en, tag_fifo_empty, tag_fifo_full : std_logic;
 
     -- ram 
@@ -66,7 +67,7 @@ architecture arch of swb_midas_event_builder is
     type event_counter_state_type is (waiting, get_data, runing, skip_event);
     signal event_counter_state : event_counter_state_type;
     signal event_last_ram_add : std_logic_vector(8 downto 0);
-    signal word_counter : std_logic_vector(31 downto 0);
+    signal word_counter, word_counter_endofevent : std_logic_vector(31 downto 0);
 
     -- error cnt
     signal cnt_tag_fifo_full : std_logic_vector(31 downto 0);
@@ -144,7 +145,6 @@ begin
         w_ram_add_reg       <= (others => '0');
         last_event_add      <= (others => '0');
         align_event_size    <= (others => '0');
-        align_bank_size     <= (others => '0');
 
         -- ram and tagging fifo write signals
         w_ram_en            <= '0';
@@ -285,21 +285,16 @@ begin
             if ( i_rempty = '0' ) then
                 w_ram_en            <= '1';
                 w_ram_add           <= w_ram_add + 1;
-                w_ram_data          <= i_rx;
+                if ( i_trailer = '1' ) then
+                    w_ram_data      <= x"0FC0009C";
+                else
+                    w_ram_data      <= i_rx;
+                end if;
                 event_size_cnt      <= event_size_cnt + 4;
                 bank_size_cnt       <= bank_size_cnt + 4;
-                align_bank_size     <= align_bank_size + '1';
                 if ( i_trailer = '1' ) then
-                    -- check if the size of the bank data 
-                    -- is in 64 bit and 256 bit
-                    -- if not add a dummy words
-                    if ( align_bank_size(2 downto 0) + '1' = "000" ) then
-                        event_tagging_state <= bank_set_length;
-                        w_ram_add_reg       <= w_ram_add + 1;
-                    else
-                        event_tagging_state <= set_algin_word;
-                        align_event_size    <= w_ram_add + 1 - last_event_add;
-                    end if;
+                    event_tagging_state <= set_algin_word;
+                    align_event_size    <= w_ram_add + 1 - last_event_add;
                 end if;
             end if;
 
@@ -309,7 +304,9 @@ begin
             w_ram_add_reg       <= w_ram_add + 1;
             w_ram_data          <= x"AFFEAFFE";
             align_event_size    <= align_event_size + 1;
-            -- align to DMA 256 bit word
+            -- check if the size of the bank data 
+            -- is in 64 bit and 256 bit
+            -- if not add a dummy words
             if ( align_event_size(2 downto 0) + '1' = "000" ) then
                 event_tagging_state <= bank_set_length;
             else
@@ -323,7 +320,6 @@ begin
             w_ram_add_reg       <= w_ram_add;
             w_ram_data          <= bank_size_cnt;
             bank_size_cnt       <= (others => '0');
-            align_bank_size     <= (others => '0');
             event_tagging_state <= event_set_size;
 
         when event_set_size =>
@@ -373,6 +369,8 @@ begin
         event_last_ram_add  <= (others => '0');
         event_counter_state <= waiting;	
         word_counter        <= (others => '0');
+        o_dma_cnt_words     <= (others => '0');
+        word_counter_endofevent <= (others => '0');
         --
     elsif rising_edge(i_clk_250) then
 
@@ -387,6 +385,7 @@ begin
         
         if ( i_wen = '1' and word_counter >= i_get_n_words ) then
             o_done <= '1';
+            o_dma_cnt_words <= word_counter_endofevent;
         end if;
 
         case event_counter_state is
@@ -405,19 +404,22 @@ begin
                     event_counter_state <= skip_event;
                     cnt_skip_event_dma  <= cnt_skip_event_dma + '1';
                 else
-                    o_wen        <= i_wen;
-                    o_endofevent        <= '1'; -- begin of event
+                    o_wen               <= i_wen;
                     word_counter        <= word_counter + '1';
                     event_counter_state <= runing;
                 end if;
                 r_ram_add       <= r_ram_add + '1';
 
         when runing =>
-                o_state_out     <= x"C";
-                o_wen    <= i_wen;
-                word_counter    <= word_counter + '1';
+                o_state_out             <= x"C";
+                o_wen                   <= i_wen;
+                word_counter            <= word_counter + '1';
                 if(r_ram_add = event_last_ram_add - '1') then
-                    event_counter_state	<= waiting;
+                    o_endofevent        <= '1'; -- end of event
+                    event_counter_state <= waiting;
+                    if ( word_counter + '1' <= i_get_n_words ) then
+                        word_counter_endofevent <= word_counter + '1';
+                    end if;
                 else
                     r_ram_add <= r_ram_add + '1';
                 end if;

@@ -93,7 +93,8 @@ architecture arch of swb_block is
     signal pixel_fram_wen : std_logic;
     
     --! DMA
-    signal pixel_dma_data : std_logic_vector (255  downto 0);
+    signal pixel_dma_data : std_logic_vector (255 downto 0);
+    signal pixel_dma_cnt_words : std_logic_vector (31 downto 0);
     signal pixel_dma_wren, pixel_dma_endofevent, pixel_dma_done : std_logic;
     
     --! demerged FEB links
@@ -107,6 +108,7 @@ architecture arch of swb_block is
     signal rx_data_k_pixel : work.util.slv4_array_t(g_NLINKS_DATA_PIXEL-1 downto 0);
     
     --! counters
+    -- TODO: write status readout entity with ADDR to PCIe REGS and mapping to one counter REG
     signal counter_swb_data_pixel : work.util.slv32_array_t(5+(g_NLINKS_DATA_PIXEL*3)-1 downto 0);
 
 
@@ -158,7 +160,10 @@ begin
     port map (
         i_reset_ack_seen_n     => i_resets_n_156(RESET_BIT_RUN_START_ACK),
         i_reset_run_end_n      => i_resets_n_156(RESET_BIT_RUN_END_ACK),
-        i_buffers_empty        => (others => '1'), -- TODO: connect buffers emtpy from dma here
+        -- TODO: Write out padding 4kB at MIDAS Bank Builder if run end is done
+        -- TODO: connect buffers emtpy from dma here
+        -- o_all_run_end_seen => MIDAS Builder => i_buffer_empty
+        i_buffers_empty        => (others => '1'),
         o_feb_merger_timeout   => o_readregs_156(CNT_FEB_MERGE_TIMEOUT_R),
         i_aligned              => (others => '1'),
         i_data                 => rx_rc,
@@ -221,6 +226,7 @@ begin
     o_farm_datak(g_NLINKS_FARM_PIXEL - 1 downto 0)    <= pixel_farm_datak;
     o_dma_wren      <= pixel_dma_wren;
     o_readregs_250(EVENT_BUILD_STATUS_REGISTER_R)(EVENT_BUILD_DONE)      <= pixel_dma_done;
+    o_readregs_250(DMA_CNT_WORDS_REGISTER_R) <= pixel_dma_cnt_words;
     o_endofevent    <= pixel_dma_endofevent;
     o_dma_data      <= pixel_dma_data;
     gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_DATA_PIXEL - 1 GENERATE
@@ -272,6 +278,7 @@ begin
         o_fram_wen       => pixel_fram_wen,
 
         o_dma_wren       => pixel_dma_wren,
+        o_dma_cnt_words  => pixel_dma_cnt_words,
         o_dma_done       => pixel_dma_done,
         o_endofevent     => pixel_dma_endofevent,
         o_dma_data       => pixel_dma_data--;

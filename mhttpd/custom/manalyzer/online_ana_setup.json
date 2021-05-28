@@ -1,0 +1,13 @@
+{ 
+  "Bank Stats" : {
+    "WebserverName" : ["hPixelBankStats","hScifiBankStats","hScifiBankStats"]
+  },
+  "Pixel Data Quality" : { 
+    "MaxLayers" : 8,
+    "MaxPixels" : 8,
+    "WebserverName" : ["Pixel_DQ_histograms/PixelHitmap2D"]
+  },
+  "DisplaySettings" : {
+    "DisplayStyle" : "root"
+  }
+} 
