@@ -87,3 +87,6 @@ include/mudaq_registers.h
 
 # Generated header files
 switching_pc/slowcontrol/feb_constants.h
+
+#etc
+resources
