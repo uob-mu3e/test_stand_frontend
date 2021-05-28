@@ -60,6 +60,7 @@ struct xcvr_block_t {
     void status(volatile alt_u32* xcvr) {
         int ch = xcvr[0x00] & 0xFF;
 
+        printf("QSFP+-=][, selCH=0-7, reset=r, loopback=l\n");
         printf("xcvr[%c].ch[0x%02X], lpbk = %d\n", id, ch, xcvr[0x2F]);
         printf("                R_DA S_LS_R E__FDE\n");
         printf("  tx    :   %s  0x%02X 0x%04X 0x%04X\n",

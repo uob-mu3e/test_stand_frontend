@@ -52,45 +52,40 @@ int main() {
     flash.init();
 
     while (1) {
-        printf("  [1] => flash\n");
-        printf("  [2] => xcvr qsfp[A]\n");
-        printf("  [3] => xcvr qsfp[B]\n");
-        printf("  [4] => xcvr qsfp[C]\n");
-        printf("  [5] => xcvr qsfp[D]\n");
-        printf("  [8] => fan\n");
-        printf("  [0] => spi si chip\n");
+        printf("  [1] => xcvr0 - 6.25 GBit/s\n");
+        printf("  [2] => xcvr1 - 10 GBit/s\n");
+        printf("  [3] => flash\n");
+        printf("  [4] => fan\n");
+        printf("  [5] => spi si chip\n");
         printf("  [r] => reconfig pll\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
         case '1':
-            flash.menu();
+            menu_xcvr((alt_u32*)(AVM_XCVR0_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '2':
-            menu_xcvr((alt_u32*)((AVM_XCVR1_BASE + 0x00000) | ALT_CPU_DCACHE_BYPASS_MASK), 'A');
+            menu_xcvr((alt_u32*)(AVM_XCVR1_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
         case '3':
-            menu_xcvr((alt_u32*)((AVM_XCVR1_BASE + 0x10000) | ALT_CPU_DCACHE_BYPASS_MASK), 'B');
+            flash.menu();
             break;
         case '4':
-            menu_xcvr((alt_u32*)((AVM_XCVR1_BASE + 0x20000) | ALT_CPU_DCACHE_BYPASS_MASK), 'C');
-            break;
-        case '5':
-            menu_xcvr((alt_u32*)((AVM_XCVR1_BASE + 0x30000) | ALT_CPU_DCACHE_BYPASS_MASK), 'D');
-            break;
-        case '8':
             fan.menu();
             break;
-        case '0':
-            printf("spi:\n");
+        case '5':
             menu_spi_si5345();
             break;
         case 'r':
-            reconfig.pll(AVM_XCVR1_BASE + 0x00000);
-            reconfig.pll(AVM_XCVR1_BASE + 0x10000);
-            reconfig.pll(AVM_XCVR1_BASE + 0x20000);
-            reconfig.pll(AVM_XCVR1_BASE + 0x30000);
+//            for (alt_u32 base = AVM_XCVR0_BASE; base < AVM_XCVR0_BASE + AVM_XCVR0_SPAN; base += 0x10000) {
+//                if(*(alt_u32*)base == 0xCCCCCCCC) continue;
+//                reconfig.pll(base);                                                       
+//            }
+            for (alt_u32 base = AVM_XCVR1_BASE; base < AVM_XCVR1_BASE + AVM_XCVR1_SPAN; base += 0x10000) {
+                if(*(alt_u32*)base == 0xCCCCCCCC) continue;
+                reconfig.pll(base);
+            }          
             break;
         default:
             printf("invalid command: '%c'\n", cmd);
