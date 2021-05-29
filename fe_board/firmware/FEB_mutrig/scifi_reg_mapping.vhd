@@ -47,4 +47,5 @@ begin
         o_reg_rdata         <= X"CCCCCCCC";
         regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
     end if;
+    end process;
 end architecture;
