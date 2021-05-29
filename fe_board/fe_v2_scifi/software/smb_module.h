@@ -36,6 +36,14 @@ struct SMB_t {
     //monitoring 
     void        read_tmp_all();
     void        print_tmp_all();
+
+    //Copied from FEB1 including comment
+    //Reset skew configuration
+    //shadow storage of reset skew configuration,
+    //we do not have this in a register
+    uint8_t resetskew_count[4];
+    void RSTSKWctrl_Clear();
+    void RSTSKWctrl_Set(uint8_t channel, uint8_t value);
    
     //=========================
     //lower level functions
@@ -53,6 +61,7 @@ struct SMB_t {
     void menu_SMB_monitors();
     void menu_SMB_debug();
     void menu_SMB_main();
+    void menu_reset();
     void menu_counters();
     void menu_reg_dummyctrl();
     void menu_reg_datapathctrl();

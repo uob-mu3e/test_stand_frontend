@@ -1,8 +1,7 @@
-
-
 #include "smb_module.h"
 #include "smb_constants.h"
 #include "builtin_config/mutrig2_config.h"
+#include <ctype.h>
 
 //from base.h
 char wait_key(useconds_t us = 100000);
@@ -173,7 +172,7 @@ extern int uart;
 void SMB_t::menu_SMB_main() {
     auto& regs = sc.ram->regs.SMB;
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
-    ram->data[0xFF4C] = 0x00;
+    ram->data[0xFF4D] = 0x00;
 
     while(1) {
         //        TODO: Define menu
@@ -186,10 +185,9 @@ void SMB_t::menu_SMB_main() {
         printf("  [a] => counters\n");
         printf("  [s] => get slow control registers\n");
         printf("  [d] => get datapath status\n");
-        printf("\n");
-        printf("  [d] => dummy generator settings\n");
-        printf("  [7] => datapath settings\n");
-        printf("  [8] => reset skew settings\n");
+        printf("  [f] => dummy generator settings\n");
+        //printf("  [7] => datapath settings\n");
+        printf("  [r] => reset things\n");
 
         printf("  [q] => exit\n");
 
@@ -251,11 +249,13 @@ void SMB_t::menu_SMB_main() {
                 usleep(200000);
             };
             break;
-        //case 'f':
-        //    menu_reg_dummyctrl();
-        //    break;
+        case 'f':
+            menu_reg_dummyctrl();
+            break;
         //case 'p':
         //    break;
+        case 'r':
+            menu_reset();
         case 'q':
             return;
         default:
@@ -313,7 +313,131 @@ void SMB_t::menu_SMB_monitors() {
         }
     }
 }
+void SMB_t::menu_reset() {
 
+    auto& regs = sc.ram->regs.SMB;
+    while(1) {
+        printf("  [1] => reset asic\n");
+        printf("  [2] => reset datapath\n");
+        printf("  [3] => reset lvds_rx\n");
+        printf("  [4] => reset skew settings\n");
+
+
+        printf("Select entry ...\n");
+        char cmd = wait_key();
+        switch(cmd) {
+        case '1':
+            regs.ctrl.reset = 1;
+            usleep(100);
+            regs.ctrl.reset = 0;
+            break;
+        case '2':
+            regs.ctrl.reset = 2;
+            usleep(100);
+            regs.ctrl.reset = 0;
+            break;
+        case '3':
+            regs.ctrl.reset = 4;
+            usleep(100);
+            regs.ctrl.reset = 0;
+            break;
+        case '4':
+            menu_reg_resetskew();
+            break;
+        case 'q':
+            return;
+        default:
+            printf("invalid command: '%c'\n", cmd);
+        }
+    }
+}
+
+void SMB_t::RSTSKWctrl_Clear(){
+    auto& reg = sc.ram->regs.SMB.ctrl.resetdelay;
+    //reset pll to zero phase counters
+    reg = 0x8000;
+    for(int i=0; i<4;i++)
+       resetskew_count[i]=0;
+    reg = 0x0000;
+}
+
+void SMB_t::RSTSKWctrl_Set(uint8_t channel, uint8_t value){
+    if(channel>3) return;
+    if(value>7) return;
+    auto& regs = sc.ram->regs.SMB;
+    uint32_t val=regs.ctrl.resetdelay & 0xffc0;
+    //printf("PLL_phaseadjust #%u: ",channel);
+    while(value!=resetskew_count[channel]){
+        val |= (channel+2)<<2;
+        if(value>resetskew_count[channel]){ //increment counter
+            val |= 2;
+	    //printf("+");
+	    resetskew_count[channel]++;
+	}else{
+            val |= 1;
+	    //printf("-");
+	    resetskew_count[channel]--;
+	}
+        regs.ctrl.resetdelay = val;
+    }
+    //printf("\n");
+    regs.ctrl.resetdelay= val & 0xffc0;
+}
+void SMB_t::menu_reg_resetskew(){
+    auto& regs = sc.ram->regs.SMB;
+    int selected=0;
+    while(1) {
+        auto reg = regs.ctrl.resetdelay;
+	printf("Reset delay reg now: %16.16x\n",reg);
+        printf("  [0..3] => Select line N (currently %d)\n",selected);
+
+        printf("  [p] => swap phase bit (currently %d)\n",(reg>>(6 +selected)&0x1));
+        printf("  [d] => swap delay bit (currently %d)\n",(reg>>(10+selected)&0x1));
+        printf("  [+] => increase count (currently %d)\n",resetskew_count[selected]);
+        printf("  [-] => increase count (currently %d)\n",resetskew_count[selected]);
+        printf("  [r] => reset phase configuration\n");
+	
+        printf("  [q] => exit\n");
+
+        printf("Select entry ...\n");
+        char cmd = wait_key();
+        switch(cmd) {
+        case '0':
+            break;
+        case '1':
+            selected=1;
+            break;
+        case '2':
+            selected=2;
+            break;
+        case '3':
+            selected=3;
+            break;
+	case 'r':
+	    RSTSKWctrl_Clear();
+	    break;
+        case '+':
+	    RSTSKWctrl_Set(selected, resetskew_count[selected]+1);
+            break;
+        case '-':
+	    RSTSKWctrl_Set(selected, resetskew_count[selected]-1);
+            break;
+        case 'd':
+            regs.ctrl.resetdelay = regs.ctrl.resetdelay^(1<<(10+selected));
+            break;
+        case 'p':
+            regs.ctrl.resetdelay = regs.ctrl.resetdelay^(1<<( 6+selected));
+            break;
+        case 'q':
+            return;
+        default:
+	    if(isdigit(cmd) && (cmd - '0') < 4)
+		selected=(cmd-'0');
+	    else
+		printf("invalid command: '%c'\n", cmd);
+        }
+    }
+}
 
 void SMB_t::menu_counters(){
     auto& regs = sc.ram->regs.SMB;
