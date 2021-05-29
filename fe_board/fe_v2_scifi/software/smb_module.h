@@ -18,6 +18,7 @@ struct SMB_t {
     sc_t& sc;
     //TODO: add spi in parameters
     SMB_t(sc_t& _sc):sc(_sc){};
+    int n_MODULES=1; // TODO: Should this be a variable?
 
     //=========================
     //ASIC configuration
@@ -30,11 +31,9 @@ struct SMB_t {
     alt_u16     configure_asic_nb(alt_u32 asic, alt_u16 nBytes, alt_u8 byteValue);
     //print out a given pattern for debugging
     void        print_config(const alt_u8* bitpattern);
-
  
     void        read_CEC(int asic){asic++;};//TODO
     //monitoring 
-    void        init_tmp_monitor(){}; 
     void        read_tmp_all();
     void        print_tmp_all();
    
@@ -54,6 +53,12 @@ struct SMB_t {
     void menu_SMB_monitors();
     void menu_SMB_debug();
     void menu_SMB_main();
+    void menu_counters();
+    void menu_reg_dummyctrl();
+    void menu_reg_datapathctrl();
+    void menu_reg_resetskew();
+    alt_u16 reset_counters();
+    alt_u16 store_counters(volatile alt_u32* data);
     //Slow control callback
     alt_u16 sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n);
     alt_u16 sc_callback_nb(alt_u16 cmd,  alt_u16 nBytes, alt_u8 byteValue);

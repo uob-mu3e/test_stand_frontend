@@ -3,7 +3,6 @@
 #include "smb_module.h"
 #include "smb_constants.h"
 #include "builtin_config/mutrig2_config.h"
-#include "builtin_config/mutrig2/FF.h"
 
 //from base.h
 char wait_key(useconds_t us = 100000);
@@ -170,6 +169,7 @@ alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
     return 0;
 }
 
+extern int uart;
 void SMB_t::menu_SMB_main() {
     auto& regs = sc.ram->regs.SMB;
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
@@ -177,14 +177,19 @@ void SMB_t::menu_SMB_main() {
 
     while(1) {
         //        TODO: Define menu
-        printf("  [0..3] => Write ALL_OFF config ASIC 0/1/2/3\n");
-        printf("  [4..7] => Write PRBS_single config ASIC 0/1/2/3\n");
+        printf("  [0] => Write ALL_OFF config to all ASICs\n");
+        printf("  [1] => Write PRBS_single config to all ASICs\n");
+        printf("  [2] => Write PLL test config to all ASICs\n");
+        printf("  [3] => Write no TDC power config to all ASICs\n");
         printf("  [8] => data\n");
         printf("  [9] => monitor test\n");
-
-        printf("  [c] => chip select\n");
-        printf("  [s] => control reg SSO\n");
-        printf("  [h] => Write ALL_OFF_high_end config ASIC\n");
+        printf("  [a] => counters\n");
+        printf("  [s] => get slow control registers\n");
+        printf("  [d] => get datapath status\n");
+        printf("\n");
+        printf("  [d] => dummy generator settings\n");
+        printf("  [7] => datapath settings\n");
+        printf("  [8] => reset skew settings\n");
 
         printf("  [q] => exit\n");
 
@@ -193,29 +198,20 @@ void SMB_t::menu_SMB_main() {
         printf("%c\n", cmd);
         switch(cmd) {
         case '0':
-            sc_callback(0x0110, (alt_u32*) config_ALL_OFF, 0);
+            for(alt_u8 asic = 0; asic < 4; asic++)
+                sc_callback(0x0110 | asic, (alt_u32*) config_ALL_OFF, 0);
             break;
-
         case '1':
-            sc_callback(0x0111, (alt_u32*) config_ALL_OFF, 0);
+            for(alt_u8 asic = 0; asic < 4; asic++)
+                sc_callback(0x0110 | asic, (alt_u32*) config_PRBS_single, 0);
             break;
         case '2':
-            sc_callback(0x0112, (alt_u32*) config_ALL_OFF, 0);
+            for(alt_u8 asic = 0; asic < 4; asic++)
+                sc_callback(0x0110 | asic, (alt_u32*) config_plltest, 0);
             break;
         case '3':
-            sc_callback(0x0113, (alt_u32*) config_ALL_OFF, 0);
-            break;
-        case '4':
-            sc_callback(0x0110, (alt_u32*) config_PRBS_single, 0);
-            break;
-        case '5':
-            sc_callback(0x0111, (alt_u32*) config_PRBS_single, 0);
-            break;
-        case '6':
-            sc_callback(0x0112, (alt_u32*) config_PRBS_single, 0);
-            break;
-        case '7':
-            sc_callback(0x0113, (alt_u32*) config_PRBS_single, 0);
+            for(alt_u8 asic = 0; asic < 4; asic++)
+                sc_callback(0x0110 | asic, (alt_u32*) no_tdc_power, 0);
             break;
         case '8':
             printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X\n", regs.mon.status);
@@ -224,31 +220,42 @@ void SMB_t::menu_SMB_main() {
         case '9':
             menu_SMB_monitors();
             break;
-        case 'c':
-            {
-            char chipselect = wait_key();
-            IOWR(SPI_BASE, 5, chipselect - '0');
-            printf("chip select: %04x\n", chipselect - '0');
+        case 'a':
+            menu_counters();
             break;
-            }
-        case 's':
-            {
-                char sso_status = wait_key();
-                switch(sso_status) {
-                    case '0':
-                        IOWR(SPI_BASE, 3, IORD(SPI_BASE, 3) & 0xfbff);
-                        break;
-                    case '1':
-                        IOWR(SPI_BASE, 3, IORD(SPI_BASE, 3) | 0x400);
-                        break;
-                    default:
-                        printf("=> nothing done");
+        case 's': //get slowcontrol registers
+            printf("dummyctrl_reg:    0x%08X\n", regs.ctrl.dummy);
+            printf("    :cfgdummy_en  0x%X\n", (regs.ctrl.dummy>>0)&1);
+            printf("    :datagen_en   0x%X\n", (regs.ctrl.dummy>>1)&1);
+            printf("    :datagen_fast 0x%X\n", (regs.ctrl.dummy>>2)&1);
+            printf("    :datagen_cnt  0x%X\n", (regs.ctrl.dummy>>3)&0x3ff);
+
+            printf("dpctrl_reg:       0x%08X\n", regs.ctrl.dp);
+            printf("    :mask         0b");
+            for(int i=15;i>=0;i--) printf("%d", (regs.ctrl.dp>>i)&1);
+            printf("\n");
+
+            printf("    :dec_disable  0x%X\n", (regs.ctrl.dp>>31)&1);
+            printf("    :rx_wait_all  0x%X\n", (regs.ctrl.dp>>30)&1);
+            printf("subdet_reset_reg: 0x%08X\n", regs.ctrl.reset);
+            break;
+        case 'd': //get datapath status
+            printf("Datapath status registers: press 'q' to end\n");
+            while(1){
+                printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X ", regs.mon.status);
+                printf("rx_dpa_lock / rx_ready : 0x%04X / 0x%04X\r", regs.mon.rx_dpa_lock, regs.mon.rx_ready);
+                if (read(uart,&cmd, 1) > 0){
+                    printf("--\n");
+                    if(cmd=='q') break;
                 }
-                break;
-            }
-        case 'h':
-            //sc_callback(0x0111, (alt_u32*) config_ALL_OFF_high_end, 0);
+                usleep(200000);
+            };
             break;
+        //case 'f':
+        //    menu_reg_dummyctrl();
+        //    break;
+        //case 'p':
+        //    break;
         case 'q':
             return;
         default:
@@ -290,17 +297,14 @@ void SMB_t::menu_SMB_debug() {
 void SMB_t::menu_SMB_monitors() {
 
     while(1) {
-        printf("  [0] => read power\n");
-        printf("  [1] => read temperature\n");
+        printf("  [0] => read temperature\n");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
         case '0':
-            break;
-        case '1':
-            read_tmp_all();
+            printf("Nice try, but that does not work yet\n");
             break;
         case 'q':
             return;
@@ -308,4 +312,64 @@ void SMB_t::menu_SMB_monitors() {
             printf("invalid command: '%c'\n", cmd);
         }
     }
+}
+
+
+void SMB_t::menu_counters(){
+    auto& regs = sc.ram->regs.SMB;
+    char cmd;
+    printf("Counters: press 'q' to end / 'r' to reset\n");
+    while(1){
+	for(char selected=0;selected<5; selected++){
+		regs.counters.ctrl = selected&0x7;
+		switch(selected){
+			case 0: printf("Events/Time  [8ns] "); break;
+			case 1: printf("Errors/Frame       "); break;
+			case 2: printf("PRBS: Errors/Words "); break;
+			case 3: printf("LVDS: Errors/Words "); break;
+			case 4: printf("SYNCLOSS: Count/-- "); break;
+		}
+		for(int i=0;i<4;i++){
+			regs.counters.ctrl = (regs.counters.ctrl & 0x7) + (i<<3);
+			printf("| %10u / %18lu |", regs.counters.nom, regs.counters.denom);
+		}
+		printf("\n");
+	}
+	printf("\n");
+
+	if (read(uart,&cmd, 1) > 0){
+	   printf("--\n");
+	   if(cmd=='q') return;
+	   if(cmd=='r'){
+                reset_counters();
+	   	printf("-- reset\n");
+	   };
+	 }
+        usleep(200000);
+    };
+
+}
+
+alt_u16 SMB_t::reset_counters(){
+	sc.ram->regs.SMB.counters.ctrl = sc.ram->regs.SMB.counters.ctrl | 1<<15;
+	sc.ram->regs.SMB.counters.ctrl = sc.ram->regs.SMB.counters.ctrl ^ 1<<15;
+	return 0;
+}
+//write counter values of all channels to memory address *data and following. Return number of asic channels written.
+alt_u16 SMB_t::store_counters(volatile alt_u32* data){
+	for(uint8_t i=0;i<4*n_MODULES;i++){
+		for(uint8_t selected=0;selected<5; selected++){
+			sc.ram->regs.SMB.counters.ctrl = (selected&0x7) + (i<<3);
+			*data=sc.ram->regs.SMB.counters.nom;
+			printf("%u: %8.8x\n",sc.ram->regs.SMB.counters.ctrl,*data);
+			data++;
+			*data=(sc.ram->regs.SMB.counters.denom>>32)&0xffffffff;
+			printf("%u: %8.8x\n",sc.ram->regs.SMB.counters.ctrl,*data);
+			data++;
+			*data=(sc.ram->regs.SMB.counters.denom    )&0xffffffff;
+			printf("%u: %8.8x\n",sc.ram->regs.SMB.counters.ctrl,*data);
+			data++;
+		}
+	}
+	return 4*n_MODULES; //return number of asic channels written so we can parse correctly later
 }
