@@ -224,17 +224,17 @@ begin
         PORT MAP
         (
             pll_areset                  => not rx_locked_B,
-            rx_channel_data_align       => "00000" & rx_bitslip(3 downto 0),
+            rx_channel_data_align       => '0' & rx_bitslip(7 downto 0),
             rx_dpaclock                 => rx_dpaclock_B,
             rx_enable                   => rx_enable_B,
-            rx_fifo_reset(3 downto 0)   => rx_fifo_reset(3 downto 0),
-            rx_in(3 downto 0)           => rx_in(3 downto 0),
-            rx_in(8 downto 4)           => (others => '0'),
+            rx_fifo_reset(7 downto 0)   => rx_fifo_reset(7 downto 0),
+            rx_in(7 downto 0)           => rx_in(7 downto 0),
+            rx_in(8 downto 8)           => (others => '0'),
             rx_inclock                  => rx_inclock_B_pll,
-            rx_reset(3 downto 0)        => rx_reset(3 downto 0),
+            rx_reset(7 downto 0)        => rx_reset(7 downto 0),
             rx_syncclock                => rx_syncclock_B,
-            rx_dpa_locked(3 downto 0)   => rx_dpa_locked(3 downto 0),
-            rx_out(39 downto 0)         => rx_out(39 downto 0)--,
+            rx_dpa_locked(7 downto 0)   => rx_dpa_locked(7 downto 0),
+            rx_out(79 downto 0)         => rx_out(79 downto 0)--,
         );
     end generate;
 
