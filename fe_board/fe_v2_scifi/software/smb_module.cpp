@@ -3,7 +3,6 @@
 #include "smb_module.h"
 #include "smb_constants.h"
 #include "builtin_config/mutrig2_config.h"
-#include "builtin_config/mutrig2/FF.h"
 
 //from base.h
 char wait_key(useconds_t us = 100000);
@@ -178,8 +177,10 @@ void SMB_t::menu_SMB_main() {
 
     while(1) {
         //        TODO: Define menu
-        printf("  [0..3] => Write ALL_OFF config ASIC 0/1/2/3\n");
-        printf("  [4..7] => Write PRBS_single config ASIC 0/1/2/3\n");
+        printf("  [0] => Write ALL_OFF config to all ASICs\n");
+        printf("  [1] => Write PRBS_single config to all ASICs\n");
+        printf("  [2] => Write PLL test config to all ASICs\n");
+        printf("  [3] => Write no TDC power config to all ASICs\n");
         printf("  [8] => data\n");
         printf("  [9] => monitor test\n");
         printf("  [a] => counters\n");
@@ -197,28 +198,20 @@ void SMB_t::menu_SMB_main() {
         printf("%c\n", cmd);
         switch(cmd) {
         case '0':
-            sc_callback(0x0110, (alt_u32*) config_ALL_OFF, 0);
+            for(alt_u8 asic = 0; asic < 4; asic++)
+                sc_callback(0x0110 | asic, (alt_u32*) config_ALL_OFF, 0);
             break;
         case '1':
-            sc_callback(0x0111, (alt_u32*) config_ALL_OFF, 0);
+            for(alt_u8 asic = 0; asic < 4; asic++)
+                sc_callback(0x0110 | asic, (alt_u32*) config_PRBS_single, 0);
             break;
         case '2':
-            sc_callback(0x0112, (alt_u32*) config_ALL_OFF, 0);
+            for(alt_u8 asic = 0; asic < 4; asic++)
+                sc_callback(0x0110 | asic, (alt_u32*) config_plltest, 0);
             break;
         case '3':
-            sc_callback(0x0113, (alt_u32*) config_ALL_OFF, 0);
-            break;
-        case '4':
-            sc_callback(0x0110, (alt_u32*) config_PRBS_single, 0);
-            break;
-        case '5':
-            sc_callback(0x0111, (alt_u32*) config_PRBS_single, 0);
-            break;
-        case '6':
-            sc_callback(0x0112, (alt_u32*) config_PRBS_single, 0);
-            break;
-        case '7':
-            sc_callback(0x0113, (alt_u32*) config_PRBS_single, 0);
+            for(alt_u8 asic = 0; asic < 4; asic++)
+                sc_callback(0x0110 | asic, (alt_u32*) no_tdc_power, 0);
             break;
         case '8':
             printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X\n", regs.mon.status);
@@ -368,13 +361,13 @@ alt_u16 SMB_t::store_counters(volatile alt_u32* data){
 		for(uint8_t selected=0;selected<5; selected++){
 			sc.ram->regs.SMB.counters.ctrl = (selected&0x7) + (i<<3);
 			*data=sc.ram->regs.SMB.counters.nom;
-			//printf("%u: %8.8x\n",sc.ram->regs.SMB.counters.ctrl,*data);
+			printf("%u: %8.8x\n",sc.ram->regs.SMB.counters.ctrl,*data);
 			data++;
 			*data=(sc.ram->regs.SMB.counters.denom>>32)&0xffffffff;
-			//printf("%u: %8.8x\n",sc.ram->regs.SMB.counters.ctrl,*data);
+			printf("%u: %8.8x\n",sc.ram->regs.SMB.counters.ctrl,*data);
 			data++;
 			*data=(sc.ram->regs.SMB.counters.denom    )&0xffffffff;
-			//printf("%u: %8.8x\n",sc.ram->regs.SMB.counters.ctrl,*data);
+			printf("%u: %8.8x\n",sc.ram->regs.SMB.counters.ctrl,*data);
 			data++;
 		}
 	}
