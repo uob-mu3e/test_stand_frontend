@@ -313,6 +313,47 @@ void SMB_t::menu_SMB_monitors() {
         }
     }
 }
+void SMB_t::menu_reg_dummyctrl(){
+    auto& regs = sc.ram->regs.SMB;
+
+    while(1) {
+        auto reg = regs.ctrl.dummy;
+	//printf("Dummy reg now: %16.16x / %16.16x\n",regs.ctrl.dummy, reg);
+        printf("  [0] => %s config dummy\n",(reg&1) == 0?"enable":"disable");
+        printf("  [1] => %s data dummy\n",(reg&2) == 0?"enable":"disable");
+        printf("  [2] => %s fast hit mode\n",(reg&4) == 0?"enable":"disable");
+        printf("  [+] => increase count (currently %u)\n",(reg>>3&0x3fff));
+        printf("  [-] => decrease count\n");
+        printf("  [q] => exit\n");
+
+        printf("Select entry ...\n");
+	uint32_t val;
+        char cmd = wait_key();
+        switch(cmd) {
+        case '0':
+            regs.ctrl.dummy = regs.ctrl.dummy ^ (1<<0);
+            break;
+        case '1':
+            regs.ctrl.dummy = regs.ctrl.dummy ^ (1<<1);
+            break;
+        case '2':
+            regs.ctrl.dummy = regs.ctrl.dummy ^ (1<<2);
+            break;
+        case '+':
+	    val=(reg>>3&0x3fff)+1;
+	    regs.ctrl.dummy = (regs.ctrl.dummy & 0x07) | (0x3fff&(val <<3));
+            break;
+        case '-':
+	    val=(reg>>3&0x3fff)-1;
+	    regs.ctrl.dummy = (regs.ctrl.dummy & 0x07) | (0x3fff&(val <<3));
+            break;
+        case 'q':
+            return;
+        default:
+            printf("invalid command: '%c'\n", cmd);
+        }
+    }
+}
 void SMB_t::menu_reset() {
 
     auto& regs = sc.ram->regs.SMB;
