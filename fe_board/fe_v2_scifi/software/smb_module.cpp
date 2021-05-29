@@ -198,19 +198,19 @@ void SMB_t::menu_SMB_main() {
         printf("%c\n", cmd);
         switch(cmd) {
         case '0':
-            for(alt_u8 asic = 0; asic < 4; asic++)
+            for(alt_u8 asic = 0; asic < 8; asic++)
                 sc_callback(0x0110 | asic, (alt_u32*) config_ALL_OFF, 0);
             break;
         case '1':
-            for(alt_u8 asic = 0; asic < 4; asic++)
+            for(alt_u8 asic = 0; asic < 8; asic++)
                 sc_callback(0x0110 | asic, (alt_u32*) config_PRBS_single, 0);
             break;
         case '2':
-            for(alt_u8 asic = 0; asic < 4; asic++)
+            for(alt_u8 asic = 0; asic < 8; asic++)
                 sc_callback(0x0110 | asic, (alt_u32*) config_plltest, 0);
             break;
         case '3':
-            for(alt_u8 asic = 0; asic < 4; asic++)
+            for(alt_u8 asic = 0; asic < 8; asic++)
                 sc_callback(0x0110 | asic, (alt_u32*) no_tdc_power, 0);
             break;
         case '8':
