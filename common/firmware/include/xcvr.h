@@ -19,7 +19,7 @@ struct xcvr_block_t {
 
     void menu() {
         while (1) {
-            volatile alt_u32* xcvr = base + (id - 'A') * 0x00010000/4;
+            volatile alt_u32* xcvr = base + (id - 'A') * 0x10000 / sizeof(alt_u32);
             if(menu(xcvr) != 0) return;
             status(xcvr);
             usleep(200000);
