@@ -30,7 +30,7 @@ int main() {
     base_init();
 
     si5345_2.init();
-    usleep(500000);
+    usleep(5000000);
     si5345_1.init();
     //mscb.init();
     sc.init();

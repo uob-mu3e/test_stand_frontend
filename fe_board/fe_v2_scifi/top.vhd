@@ -171,7 +171,7 @@ begin
         N_MODULES       => N_MODULES,
         N_ASICS         => N_ASICS,
         N_LINKS         => N_LINKS,
-        INPUT_SIGNFLIP  => x"FFFFFFFF", --changed this from "11111111" was this intended ? M.Mueller
+        INPUT_SIGNFLIP  => x"FFFFFFFF",
         LVDS_PLL_FREQ   => 125.0,
         LVDS_DATA_RATE  => 1250.0--,
     )

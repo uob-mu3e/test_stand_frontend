@@ -296,6 +296,7 @@ begin
         LVDS_PLL_FREQ => LVDS_PLL_FREQ,
         LVDS_DATA_RATE => LVDS_DATA_RATE,
         INPUT_SIGNFLIP => INPUT_SIGNFLIP,
+        GEN_DUMMIES => FALSE,
         C_CHANNELNO_PREFIX_A => "00",
         C_CHANNELNO_PREFIX_B => "01"--,
     )
