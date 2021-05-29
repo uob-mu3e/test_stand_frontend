@@ -3,7 +3,7 @@
 
 #include "include/xcvr.h"
 
-#include "../../fe/software/si5345_fe_v2.h"
+#include "../../fe/software/si5345_fe_v2_mutrig.h"
 si5345_t si5345_1 { SPI_SI_BASE, 0 };
 si5345_t si5345_2 { SPI_SI_BASE, 1 };
 
@@ -29,9 +29,9 @@ alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 int main() {
     base_init();
 
-    si5345_2.init();
+    si5345_2.init(si5345_revd_registers1);
     usleep(5000000);
-    si5345_1.init();
+    si5345_1.init(si5345_revd_registers1);
     //mscb.init();
     sc.init();
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;

@@ -8,8 +8,7 @@
 //#include "Si5345-v5-Registers_si2_free.h" // free running FEB: (no external clock, control by nios only) 
 #include "Si5345-v5-Registers_si2_lvds.h" // lvds clk from CON4/CON5
 
-//#include "Si5345-v5-Registers_si1.h"
-#include "Si5345-v5-Registers_si1_625MHz.h"
+// mupix / mutrig si setup is in corresponding file
 
 struct si5345_t : si534x_t {
 
@@ -20,16 +19,16 @@ struct si5345_t : si534x_t {
     {
     }
 
-    void init(int force = 0) {
+    void init(const si_t::register_t* si_reg1, int force = 0) {
         char id[9];
         id[8] = '\0';
         for(int i = 0; i < 8; i++) id[i] = (char)read(0x026B + i);
         if(force == 0 && strcmp(id, DESIGN_ID) == 0) return;
 
         if(spi_slave==0)
-            si_t::init(si5345_revd_registers1, sizeof(si5345_revd_registers1) / sizeof(si5345_revd_registers1[0]));
+            si_t::init(si_reg1, sizeof(si_reg1) / sizeof(si_reg1[0]));
         if(spi_slave==1)
-        si_t::init(si5345_revd_registers2, sizeof(si5345_revd_registers2) / sizeof(si5345_revd_registers2[0]));
+            si_t::init(si5345_revd_registers2, sizeof(si5345_revd_registers2) / sizeof(si5345_revd_registers2[0]));
 //        for(int i = 0; i < 8; i++) write(0x026B + i, DESIGN_ID[i]);
 
         wait_sysincal();
@@ -94,7 +93,7 @@ struct si5345_t : si534x_t {
             char cmd = wait_key();
             switch(cmd) {
             case 'I':
-                init(1); // force init
+                init(si5345_revd_registers2, 1); // force init
                 break;
             case 'R':
                 soft_reset();

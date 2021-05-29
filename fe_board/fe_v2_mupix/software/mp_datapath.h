@@ -3,7 +3,7 @@ struct mupix_datapath_t {
     mupix_datapath_t(sc_t* sc_): sc(sc_){};
     
     void menu() {
-        auto& regs = sc->ram->regs.scifi;
+        //auto& regs = sc->ram->regs.scifi;
         alt_u32 datagenreg = 0x0;
         char str[2] = {0};
         
