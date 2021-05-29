@@ -182,7 +182,7 @@ begin
         i_reg_we                    => scifi_reg.we,
         i_reg_wdata                 => scifi_reg.wdata,
 
-        o_chip_reset                => scifi_int_syncres,
+        o_chip_reset                => open,
         o_pll_test                  => open,
         i_data                      => scifi_din,
 
@@ -213,6 +213,17 @@ begin
         o_test_led                  => lcd_data(3),
         i_reset                     => not pb_db(0)--,
     );
+
+    process(lvds_firefly_clk)
+    begin
+    if falling_edge(lvds_firefly_clk) then
+        if(run_state_125 = RUN_STATE_SYNC)then
+            scifi_int_syncres <= '1';
+        else
+            scifi_int_syncres <= '0';
+        end if;
+    end if;
+    end process;
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------
