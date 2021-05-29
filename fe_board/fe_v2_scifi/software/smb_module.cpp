@@ -178,8 +178,9 @@ void SMB_t::menu_SMB_main() {
     while(1) {
         //        TODO: Define menu
         printf("  [0..3] => Write ALL_OFF config ASIC 0/1/2/3\n");
-        printf("  [5] => data\n");
-        printf("  [6] => monitor test\n");
+        printf("  [4..7] => Write PRBS_single config ASIC 0/1/2/3\n");
+        printf("  [8] => data\n");
+        printf("  [9] => monitor test\n");
 
         printf("  [c] => chip select\n");
         printf("  [s] => control reg SSO\n");
@@ -205,13 +206,22 @@ void SMB_t::menu_SMB_main() {
             sc_callback(0x0113, (alt_u32*) config_ALL_OFF, 0);
             break;
         case '4':
-            //sc_callback(0x0111, (alt_u32*) test_config, 0);
+            sc_callback(0x0110, (alt_u32*) config_PRBS_single, 0);
             break;
         case '5':
+            sc_callback(0x0111, (alt_u32*) config_PRBS_single, 0);
+            break;
+        case '6':
+            sc_callback(0x0112, (alt_u32*) config_PRBS_single, 0);
+            break;
+        case '7':
+            sc_callback(0x0113, (alt_u32*) config_PRBS_single, 0);
+            break;
+        case '8':
             printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X\n", regs.mon.status);
             printf("rx_dpa_lock / rx_ready : 0x%04X / 0x%04X\n", regs.mon.rx_dpa_lock, regs.mon.rx_ready);
             break;
-        case '6':
+        case '9':
             menu_SMB_monitors();
             break;
         case 'c':
