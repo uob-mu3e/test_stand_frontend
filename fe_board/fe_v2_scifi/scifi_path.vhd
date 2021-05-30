@@ -174,7 +174,7 @@ begin
 
     s_cntreg_denom_b <= work.util.gray2bin(s_cntreg_denom_g_156);
 
-    o_test_led(2) <= s_cntreg_ctrl(0);
+    o_test_led(1) <= s_cntreg_ctrl(0);
 
     ---- REGISTER MAPPING ----
     e_scifi_reg_mapping : work.scifi_reg_mapping

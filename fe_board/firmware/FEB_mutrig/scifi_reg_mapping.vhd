@@ -101,7 +101,7 @@ begin
 
         if ( i_reg_re = '1' and regaddr = SCIFI_MON_RX_READY_REGISTER_R ) then
             o_reg_rdata <= (others => '0');
-            o_reg_rdata(rx_ready'range) <= i_rx_ready;
+            o_reg_rdata(i_rx_ready'range) <= i_rx_ready;
         end if;
 
 
