@@ -29,9 +29,9 @@ alt_u16 sc_t::callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
 int main() {
     base_init();
 
-    si5345_2.init(si5345_revd_registers1);
+    si5345_2.init();
     usleep(5000000);
-    si5345_1.init(si5345_revd_registers1);
+    si5345_1.init();
     //mscb.init();
     sc.init();
     volatile sc_ram_t* ram = (sc_ram_t*) AVM_SC_BASE;
