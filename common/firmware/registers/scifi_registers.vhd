@@ -23,8 +23,7 @@ package scifi_registers is
     constant SCIFI_CNT_CTRL_REGISTER_W          :   integer := 16#40#;
     constant SCIFI_CNT_NOM_REGISTER_REGISTER_R  :   integer := 16#41#;
     -- TODO swap upper/lower?
-    -- The idea was that NIOS is little endian, therefore
-    -- alt_u64 * SCIFI_CNT_DENOM_LOWER_REGISTER_R should work like this 
+
     constant SCIFI_CNT_DENOM_LOWER_REGISTER_R   :   integer := 16#42#;
     constant SCIFI_CNT_DENOM_UPPER_REGISTER_R   :   integer := 16#43#;
 
@@ -32,7 +31,7 @@ package scifi_registers is
     constant SCIFI_MON_STATUS_REGISTER_R        :   integer := 16#44#;
     constant SCIFI_MON_RX_DPA_LOCK_REGISTER_R   :   integer := 16#45#;
     constant SCIFI_MON_RX_READY_REGISTER_R      :   integer := 16#46#;
---    constant SCIFI_RESERVED_REGISTER_   -- needed? Just skip one address?
+
 
     -- ctrl
     constant SCIFI_CTRL_DUMMY_REGISTER_W         :   integer := 16#48#;
@@ -44,7 +43,7 @@ package scifi_registers is
     --        printf("    :datagen_cnt  0x%X\n", (regs.ctrl.dummy>>3)&0x3ff);
     constant SCIFI_CTRL_DP_REGISTER_W            :   integer := 16#49#;
     constant SCIFI_CTRL_RESET_REGISTER_W         :   integer := 16#4A#;
-    constant SCIFI_CTRL_RESETDELAY_REGISTER_W    :   integer := 16#4B# ;
+    constant SCIFI_CTRL_RESETDELAY_REGISTER_W    :   integer := 16#4B#;
     
 
 end package scifi_registers;
