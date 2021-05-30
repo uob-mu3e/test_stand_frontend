@@ -174,7 +174,7 @@ architecture arch of fe_block_v2 is
     signal ffly_rx_data             : std_logic_vector(127 downto 0);
     signal ffly_rx_datak            : std_logic_vector(15 downto 0);
 
-    signal fpga_id_reg              : std_logic_vector(N_LINKS*16-1 downto 0);
+    signal fpga_id_reg              : std_logic_vector(15 downto 0);
 
     signal ffly_tx_data             : std_logic_vector(127 downto 0) :=
                                           X"000000" & work.mudaq.D28_5

@@ -118,7 +118,7 @@ architecture rtl of top is
     -- Debouncers
     signal pb_db                : std_logic_vector(1 downto 0);
 
-    constant N_LINKS                : integer := 1;
+    constant N_LINKS                : integer := 2;
     constant N_ASICS                : integer := 4;
     constant N_MODULES              : integer := 2;
 
@@ -184,7 +184,7 @@ begin
     scifi_spi_sclk2     <= not scifi_int_spi_sclk;
     scifi_spi_mosi2     <= not scifi_int_spi_mosi;
 
-    scifi_int_spi_miso <= scifi_spi_miso2 when (scifi_csn_buf(8 downto 5) /= x"F") else scifi_spi_miso;
+    scifi_int_spi_miso <=  (not scifi_spi_miso2) when (scifi_csn_buf(8 downto 5) /= x"F") else (not scifi_spi_miso);
 
     -- LVDS inputs signflip in receiver block generic
      
@@ -275,7 +275,8 @@ begin
 
     e_fe_block : entity work.fe_block_v2
     generic map (
-        NIOS_CLK_MHZ_g  => 50.0--,
+        NIOS_CLK_MHZ_g  => 50.0,
+        N_LINKS => N_LINKS--,
     )
     port map (
         i_fpga_id           => ref_adr,
