@@ -29,22 +29,22 @@ package scifi_registers is
     constant SCIFI_CNT_DENOM_UPPER_REGISTER_R   :   integer := 16#43#;
 
     -- monitors
-    constant SCIFI_MON_STATUS_REGISTER_R        :   integer := 16:44;
-    constant SCIFI_MON_RX_DPA_LOCK_REGISTER_R   :   integer := 16:45;
-    constant SCIFI_MON_RX_READY_REGISTER_R      :   integer := 16:46;
+    constant SCIFI_MON_STATUS_REGISTER_R        :   integer := 16#44#;
+    constant SCIFI_MON_RX_DPA_LOCK_REGISTER_R   :   integer := 16#45#;
+    constant SCIFI_MON_RX_READY_REGISTER_R      :   integer := 16#46#;
 --    constant SCIFI_RESERVED_REGISTER_   -- needed? Just skip one address?
 
     -- ctrl
-    constant SCIFI_CTRL_DUMMY_REGISTER_W         :   integer := 16:48;
+    constant SCIFI_CTRL_DUMMY_REGISTER_W         :   integer := 16#48#;
     -- TODO: Name single bits according to this:
     --        printf("dummyctrl_reg:    0x%08X\n", regs.ctrl.dummy);
     --        printf("    :cfgdummy_en  0x%X\n", (regs.ctrl.dummy>>0)&1);
     --        printf("    :datagen_en   0x%X\n", (regs.ctrl.dummy>>1)&1);
     --        printf("    :datagen_fast 0x%X\n", (regs.ctrl.dummy>>2)&1);
     --        printf("    :datagen_cnt  0x%X\n", (regs.ctrl.dummy>>3)&0x3ff);
-    constant SCIFI_CTRL_DP_REGISTER_W            :   integer := 16:49;
-    constant SCIFI_CTRL_RESET_REGISTER_W         :   integer := 16:50;
-    constant SCIFI_CTRL_RESETDELAY_REGISTER_W    :   integer := 16:51;
+    constant SCIFI_CTRL_DP_REGISTER_W            :   integer := 16#49#;
+    constant SCIFI_CTRL_RESET_REGISTER_W         :   integer := 16#50#;
+    constant SCIFI_CTRL_RESETDELAY_REGISTER_W    :   integer := 16#51#;
     
 
 end package scifi_registers;
