@@ -12,8 +12,7 @@ char wait_key(useconds_t us = 100000);
 #include <altera_avalon_spi.h>
 #include "altera_avalon_spi_regs.h"
 #include "altera_avalon_spi.h"
-#include "include/registers_placeholder.h"
-
+#include "include/scifi_registers.h"
 
 //write slow control pattern over SPI, returns 0 if readback value matches written, otherwise -1. Does not include CSn line switching.
 int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
@@ -158,7 +157,8 @@ void SMB_t::menu_SMB_main() {
         printf("  [f] => dummy generator settings\n");
         //printf("  [7] => datapath settings\n");
         printf("  [r] => reset things\n");
-
+        //printf(" [b] test led off");
+        //printf("[n] test led on");
         printf("  [q] => exit\n");
 
         printf("Select entry ...\n");
@@ -192,6 +192,12 @@ void SMB_t::menu_SMB_main() {
         case 'a':
             menu_counters();
             break;
+        //case 'b':
+        //    sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W]=0xFFFFFFFF;
+        //    break;
+        //case 'n':
+        //    sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W]=0x00000000;
+        //    break;
         case 's': //get slowcontrol registers
             //printf("dummyctrl_reg:    0x%08X\n", regs.ctrl.dummy);
             printf("dummyctrl_reg:    0x%08X\n", sc.ram->data[0xFF00|SCIFI_CTRL_DUMMY_REGISTER_W]);
