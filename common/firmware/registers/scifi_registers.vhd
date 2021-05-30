@@ -43,8 +43,8 @@ package scifi_registers is
     --        printf("    :datagen_fast 0x%X\n", (regs.ctrl.dummy>>2)&1);
     --        printf("    :datagen_cnt  0x%X\n", (regs.ctrl.dummy>>3)&0x3ff);
     constant SCIFI_CTRL_DP_REGISTER_W            :   integer := 16#49#;
-    constant SCIFI_CTRL_RESET_REGISTER_W         :   integer := 16#50#;
-    constant SCIFI_CTRL_RESETDELAY_REGISTER_W    :   integer := 16#51#;
+    constant SCIFI_CTRL_RESET_REGISTER_W         :   integer := 16#4A#;
+    constant SCIFI_CTRL_RESETDELAY_REGISTER_W    :   integer := 16#4B# ;
     
 
 end package scifi_registers;

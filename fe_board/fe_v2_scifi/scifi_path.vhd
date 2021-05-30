@@ -16,7 +16,7 @@ generic (
 );
 port (
     -- read latency - 1
-    i_reg_addr      : in    std_logic_vector(3 downto 0);
+    i_reg_addr      : in    std_logic_vector(7 downto 0);
     i_reg_re        : in    std_logic;
     o_reg_rdata     : out   std_logic_vector(31 downto 0);
     i_reg_we        : in    std_logic;
@@ -54,7 +54,7 @@ port (
     i_clk_ref_B     : in    std_logic; -- lvds reference only
     i_clk_g125      : in    std_logic; -- global 125 MHz clock, signals to ASIC from this
 
-    o_test_led      : out   std_logic;
+    o_test_led      : out   std_logic_vector(1 downto 0);
     i_reset         : in    std_logic--;
 );
 end entity;
@@ -115,7 +115,7 @@ begin
         i_clk               => i_clk_core,
         i_reset_n           => not i_reset,
         i_doNotCompileAway  => i_cec & i_spi_miso & i_i2c_int & scl_in & sda_in,
-        o_led               => o_test_led--,
+        o_led               => o_test_led(0)--,
     );
 
     o_pll_reset <= i_reset;
@@ -174,86 +174,43 @@ begin
 
     s_cntreg_denom_b <= work.util.gray2bin(s_cntreg_denom_g_156);
 
-    ---- REGISTER MAPPING ----
-    process(i_clk_core, i_reset)
-    begin
-    if ( i_reset = '1' ) then
-        s_dummyctrl_reg <= (others=>'0');
-        s_dpctrl_reg <= (others=>'0');
-        s_subdet_reset_reg <= (others=>'0');
-        s_subdet_resetdly_reg <= (others=>'0');
-        --
-    elsif rising_edge(i_clk_core) then
-        o_reg_rdata <= X"CCCCCCCC";
+    o_test_led(2) <= s_cntreg_ctrl(0);
 
-        s_subdet_resetdly_reg_written <= '0';
-        -- synchronizers for monitoring flags / counters (false path at transition)
+    ---- REGISTER MAPPING ----
+    e_scifi_reg_mapping : work.scifi_reg_mapping
+    port map (
+        i_clk                       => i_clk_core,
+        i_reset_n                   => not i_reset,
+
+        i_reg_add                   => i_reg_addr,
+        i_reg_re                    => i_reg_re,
+        o_reg_rdata                 => o_reg_rdata,
+        i_reg_we                    => i_reg_we,
+        i_reg_wdata                 => i_reg_wdata,
+
+        -- inputs  156--------------------------------------------
+        i_cntreg_num                => work.util.gray2bin(s_cntreg_num),
+        i_cntreg_denom_b            => s_cntreg_denom_b,
+        i_rx_pll_lock               => rx_pll_lock,
+        i_frame_desync              => frame_desync,
+        i_rx_dpa_lock_reg           => rx_dpa_lock_reg,
+        i_rx_ready                  => rx_ready,
+
+        -- outputs  156-------------------------------------------
+        o_cntreg_ctrl               => s_cntreg_ctrl,
+        o_dummyctrl_reg             => s_dummyctrl_reg,
+        o_dpctrl_reg                => s_dpctrl_reg,
+        o_subdet_reset_reg          => s_subdet_reset_reg,
+        o_subdet_resetdly_reg_written => s_subdet_resetdly_reg_written,
+        o_subdet_resetdly_reg       => s_subdet_resetdly_reg--,
+    );
+
+    process(i_clk_core)
+    begin
+    if rising_edge(i_clk_core) then
         s_cntreg_denom_g_156 <= s_cntreg_denom_g;
         s_cntreg_num <= s_cntreg_num_g;
         rx_dpa_lock_reg <= rx_dpa_lock;
-
-        -- counters
-        if ( i_reg_re = '1' and i_reg_addr = X"0" ) then
-            o_reg_rdata <= s_cntreg_ctrl;
-        end if;
-        if ( i_reg_we = '1' and i_reg_addr = X"0" ) then
-            s_cntreg_ctrl <= i_reg_wdata;
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"1" ) then
-            o_reg_rdata <= work.util.gray2bin(s_cntreg_num);
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"2" ) then
-            o_reg_rdata <= s_cntreg_denom_b(31 downto 0);
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"3" ) then
-            o_reg_rdata <= s_cntreg_denom_b(63 downto 32);
-        end if;
-
-        -- monitors
-        if ( i_reg_re = '1' and i_reg_addr = X"4" ) then
-            o_reg_rdata <= (others => '0');
-            o_reg_rdata(0) <= rx_pll_lock;
-            o_reg_rdata(5 downto 4) <= frame_desync;
-            o_reg_rdata(9 downto 8) <= "00";
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"5" ) then
-            o_reg_rdata <= (others => '0');
-            o_reg_rdata(rx_dpa_lock'range) <= rx_dpa_lock_reg;
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"6" ) then
-            o_reg_rdata <= (others => '0');
-            o_reg_rdata(rx_ready'range) <= rx_ready;
-        end if;
-
-        -- output write
-        if ( i_reg_we = '1' and i_reg_addr = X"8" ) then
-            s_dummyctrl_reg <= i_reg_wdata;
-        end if;
-        if ( i_reg_we = '1' and i_reg_addr = X"9" ) then
-            s_dpctrl_reg <= i_reg_wdata;
-        end if;
-        if ( i_reg_we = '1' and i_reg_addr = X"A" ) then
-            s_subdet_reset_reg <= i_reg_wdata;
-        end if;
-        if ( i_reg_we = '1' and i_reg_addr = X"B" ) then
-            s_subdet_resetdly_reg <= i_reg_wdata;
-            s_subdet_resetdly_reg_written <= '1';
-        end if;
-        -- output read
-        if ( i_reg_re = '1' and i_reg_addr = X"8" ) then
-            o_reg_rdata <= s_dummyctrl_reg;
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"9" ) then
-            o_reg_rdata <= s_dpctrl_reg;
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"A" ) then
-            o_reg_rdata <= s_subdet_reset_reg;
-        end if;
-        if ( i_reg_re = '1' and i_reg_addr = X"B" ) then
-            o_reg_rdata <= s_subdet_resetdly_reg;
-        end if;
-
-        --
     end if;
     end process;
 

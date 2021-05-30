@@ -176,7 +176,7 @@ begin
         LVDS_DATA_RATE  => 1250.0--,
     )
     port map (
-        i_reg_addr                  => scifi_reg.addr(3 downto 0),
+        i_reg_addr                  => scifi_reg.addr(7 downto 0),
         i_reg_re                    => scifi_reg.re,
         o_reg_rdata                 => scifi_reg.rdata,
         i_reg_we                    => scifi_reg.we,
@@ -210,7 +210,7 @@ begin
         i_clk_ref_A                 => LVDS_clk_si1_fpga_A,
         i_clk_ref_B                 => LVDS_clk_si1_fpga_B,
 
-        o_test_led                  => lcd_data(3),
+        o_test_led                  => lcd_data(4 downto 3),
         i_reset                     => not pb_db(0)--,
     );
 
