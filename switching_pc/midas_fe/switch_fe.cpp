@@ -541,6 +541,17 @@ void setup_odb(){
 
     firmware_variables.connect("/Equipment/Switching/Variables/FEBFirmware");
 
+    odb crate_variables = {
+        {"CrateContoller", std::array<std::string, N_FEBCRATES>{}},
+        {"FEBCrate", std::array<uint16_t, MAX_N_FRONTENDBOARDS>{}},
+        {"FEBSlot", std::array<uint16_t, MAX_N_FRONTENDBOARDS>{}}
+    };
+
+    crate_variables.connect("/Equipment/Switching/Variables/FEBCrates");
+
+
+
+
     // add custom page to ODB
     odb custom("/Custom");
     custom["Switching&"] = "sc.html";
@@ -563,10 +574,13 @@ void setup_watches(){
     odb switch_mask("/Equipment/Links/Settings/SwitchingBoardMask");
     switch_mask.watch(frontend_board_mask_changed);
 
+    // watch if the mapping of FEBs to crates changed
+    odb crates("/Equipment/Switching/Variables/FEBCrates");
+    crates.watch(frontend_board_mask_changed);
+
     // watch if this links are enabled
     odb links_odb("/Equipment/Links/Settings/LinkMask");
     links_odb.watch(switching_board_mask_changed);
-
 }
 
 void switching_board_mask_changed(odb o) {
