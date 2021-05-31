@@ -123,6 +123,9 @@ MupixFEB    * mupixfeb;
 SciFiFEB    * scififeb;
 TilesFEB    * tilefeb;
 
+/* Local state of FEB power*/
+std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE> febpower{};
+
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -136,6 +139,7 @@ INT read_febcrate_sc_event(char *pevent, INT off);
 void sc_settings_changed(odb o);
 void switching_board_mask_changed(odb o);
 void frontend_board_mask_changed(odb o);
+void febpower_changed(odb o);
 
 uint64_t get_link_active_from_odb(odb o); //throws
 void set_feb_enable(uint64_t enablebits);
@@ -229,7 +233,7 @@ EQUIPMENT equipment[] = {
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
      RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
-     10000,                      /* read every 1 sec */
+     10000,                      /* read every 10 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
      1,                         /* log history every event */
@@ -394,7 +398,7 @@ void setup_odb(){
 
     int bankindex = 0;
 
-    for(int i=0; i < N_FEBS[switch_id]; i++){
+    for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
         string feb = "FEB" + to_string(i);
         string * s = new string(feb);
         (*s) += " Index";
@@ -477,7 +481,7 @@ void setup_odb(){
     }
 
     bankindex = 0;
-    for(int i=0; i < N_FEBCRATES; i++){
+    for(uint32_t i=0; i < N_FEBCRATES; i++){
         string feb = "Crate" + to_string(i);
         string * s = new string(feb);
         (*s) += " Index";
@@ -494,7 +498,7 @@ void setup_odb(){
         s = new string(feb);
         (*s) += " CC Temperature";
         settings["Names SCFC"][bankindex++] = s;
-        for(int j=0; j < MAX_FEBS_PER_CRATE; j++){
+        for(uint32_t j=0; j < MAX_FEBS_PER_CRATE; j++){
             s = new string(feb);
             (*s) += "FEB" + to_string(j) + "Temperature";
             settings["Names SCFC"][bankindex++] = s;
@@ -541,15 +545,26 @@ void setup_odb(){
 
     firmware_variables.connect("/Equipment/Switching/Variables/FEBFirmware");
 
-    odb crate_variables = {
-        {"CrateContoller", std::array<std::string, N_FEBCRATES>{}},
+    odb crate_settings = {
+        {"CrateContollerMSCB", std::array<std::string, N_FEBCRATES>{}},
+        {"CrateControllerNode", std::array<uint16_t, N_FEBCRATES>{}},
         {"FEBCrate", std::array<uint16_t, MAX_N_FRONTENDBOARDS>{}},
         {"FEBSlot", std::array<uint16_t, MAX_N_FRONTENDBOARDS>{}}
     };
 
+    crate_settings.connect("/Equipment/Switching/Settings/FEBCrates");
+
+
+    odb crate_variables = {
+        {"Status", std::array<uint8_t, N_FEBCRATES>{}},
+        {"U24", std::array<float, N_FEBCRATES>{}},
+        {"U3.3", std::array<float, N_FEBCRATES>{}},
+        {"U5.0", std::array<float, N_FEBCRATES>{}},
+        {"Temp", std::array<float, N_FEBCRATES>{}},
+        {"FEBPower", std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE>{}}
+    };
+
     crate_variables.connect("/Equipment/Switching/Variables/FEBCrates");
-
-
 
 
     // add custom page to ODB
@@ -581,6 +596,10 @@ void setup_watches(){
     // watch if this links are enabled
     odb links_odb("/Equipment/Links/Settings/LinkMask");
     links_odb.watch(switching_board_mask_changed);
+
+    // watch for changes in the FEB powering state
+    odb febpower_odb("/Equipment/Switching/Variables/FEBCrates/FEBPower");
+    febpower_odb.watch(febpower_changed);
 }
 
 void switching_board_mask_changed(odb o) {
@@ -1085,6 +1104,12 @@ INT get_odb_value_by_string(const char *key_name){
     return ODB_DATA;
 }
 
+void febpower_changed(odb o)
+{
+
+
+}
+
 /*--- Called whenever settings have changed ------------------------*/
 
 void sc_settings_changed(odb o)
@@ -1273,7 +1298,7 @@ uint64_t get_link_active_from_odb(odb o){
 
    /* get link active from odb */
    uint64_t link_active_from_odb = 0;
-   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
+   for(uint32_t link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
       int offset = MAX_LINKS_PER_SWITCHINGBOARD * switch_id;
       int cur_mask = o[offset + link];
       if((cur_mask == FEBLINKMASK::ON) || (cur_mask == FEBLINKMASK::DataOn)){
@@ -1304,7 +1329,7 @@ uint64_t get_runend_ack(){
 
 void print_ack_state(){
    //uint64_t link_active_from_register = get_runstart_ack();
-   for(int i = 0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++) {
+   for(uint32_t i = 0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++) {
       //if ((link_active_from_register >> i) & 0x1){
          mup->write_register_wait(RUN_NR_ADDR_REGISTER_W, uint32_t(i), 1000);
          uint32_t val=mup->read_register_ro(RUN_NR_REGISTER_R);

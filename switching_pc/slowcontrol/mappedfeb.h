@@ -25,9 +25,11 @@ protected:
     uint16_t LinkID;	//global numbering. sb_id=LinkID/MAX_LINKS_PER_SWITCHINGBOARD, sb_port=LinkID%MAX_LINKS_PER_SWITCHINGBOARD
     uint32_t mask;
     std::string fullname_link;
-    uint32_t version;
     uint16_t crate;
     uint16_t slot;
+    uint32_t version;
+
+
 };
 
 
