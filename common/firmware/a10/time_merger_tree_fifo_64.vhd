@@ -18,11 +18,11 @@ generic (
 );
 port (
     -- input
-    i_fifo_q        : in work.util.slv76_array_t(compare_fifos - 1 downto 0);
-    i_fifo_empty    : in std_logic_vector(compare_fifos - 1 downto 0);
-    i_fifo_ren      : in std_logic_vector(gen_fifos - 1 downto 0);
-    i_merge_state   : in std_logic;
-    i_mask_n        : in std_logic_vector(compare_fifos - 1 downto 0);
+    i_fifo_q        : in  work.util.slv76_array_t(compare_fifos - 1 downto 0);
+    i_fifo_empty    : in  std_logic_vector(compare_fifos - 1 downto 0);
+    i_fifo_ren      : in  std_logic_vector(gen_fifos - 1 downto 0);
+    i_merge_state   : in  std_logic;
+    i_mask_n        : in  std_logic_vector(compare_fifos - 1 downto 0);
 
     -- output
     o_fifo_q        : out work.util.slv76_array_t(gen_fifos - 1 downto 0);
@@ -30,8 +30,8 @@ port (
     o_fifo_ren      : out std_logic_vector(compare_fifos - 1 downto 0);
     o_mask_n        : out std_logic_vector(gen_fifos - 1 downto 0);
     
-    i_reset_n       : in    std_logic;
-    i_clk           : in    std_logic--;
+    i_reset_n       : in  std_logic;
+    i_clk           : in  std_logic--;
 );
 end entity;
 

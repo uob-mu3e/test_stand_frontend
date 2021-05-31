@@ -46,6 +46,7 @@ class PowerDriver{
 		
 		WORD ReadQCGE(int,INT&);
 		std::vector<std::string> ReadErrorQueue(int,INT&);
+		std::string GetName() { return name; }
 		
 		
 		EQUIPMENT_INFO GetInfo() { return *info; } //by value, so you cant modify the original

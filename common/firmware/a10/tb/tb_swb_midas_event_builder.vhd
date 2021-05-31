@@ -2,6 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
+use std.textio.all;
+use ieee.std_logic_textio.all;
 
 entity tb_swb_midas_event_builder is 
 end entity tb_swb_midas_event_builder;
@@ -15,7 +17,8 @@ architecture TB of tb_swb_midas_event_builder is
     -- links and datageneration
     constant ckTime: 		time	:= 10 ns;
     constant ckTime_fast: 		time	:= 8 ns;
-    constant g_NLINKS_TOTL : integer := 64;
+    file file_RESULTS : text;
+    constant g_NLINKS_TOTL : integer := 1;
     constant g_NLINKS_DATA : integer := 12;
     constant W : integer := 8*32 + 8*6;
     signal slow_down_0, slow_down_1 : std_logic_vector(31 downto 0);
@@ -25,7 +28,7 @@ architecture TB of tb_swb_midas_event_builder is
     -- signals
     signal rx_q : work.util.slv38_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
     signal rx_ren, rx_rdempty, sop, shop, eop, link_mask_n : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
-    signal rempty : std_logic;
+    signal rempty, dma_wen : std_logic;
     signal dma_data : std_logic_vector (255 downto 0);
     signal dma_data_array : work.util.slv32_array_t(7 downto 0);
 
@@ -51,6 +54,8 @@ begin
     inita : process
     begin
         reset_n	 <= '0';
+        file_open(file_RESULTS, "memory_content.txt", write_mode);
+        file_close(file_RESULTS);
         wait for 8 ns;
         reset_n	 <= '1';
         wait;
@@ -134,7 +139,7 @@ begin
         i_dmamemhalffull=> '0',
         i_wen           => '1',
         o_data          => dma_data,
-        o_wen           => open,
+        o_wen           => dma_wen,
         o_ren           => rx_ren(0),
         o_endofevent    => open,
         o_done          => open,
@@ -150,7 +155,7 @@ begin
         i_reset_n_250   => reset_n,
         i_clk_250       => clk_fast--,
     );
-    
+
     dma_data_array(0) <= dma_data(0*32 + 31 downto 0*32);
     dma_data_array(1) <= dma_data(1*32 + 31 downto 1*32);
     dma_data_array(2) <= dma_data(2*32 + 31 downto 2*32);
@@ -159,6 +164,20 @@ begin
     dma_data_array(5) <= dma_data(5*32 + 31 downto 5*32);
     dma_data_array(6) <= dma_data(6*32 + 31 downto 6*32);
     dma_data_array(7) <= dma_data(7*32 + 31 downto 7*32);
+
+    process
+        variable v_OLINE : line;
+    begin
+        wait until rising_edge(clk_fast);
+            if ( dma_wen = '1' ) then
+                file_open(file_RESULTS, "memory_content.txt", append_mode); 
+                for i in 0 to 7 loop
+                    write(v_OLINE, work.util.to_hstring(dma_data_array(i)));
+                    writeline(file_RESULTS, v_OLINE);
+                end loop;
+                file_close(file_RESULTS);
+            end if;
+    end process;
     
 end TB;
 

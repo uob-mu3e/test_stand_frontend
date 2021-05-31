@@ -1,0 +1,129 @@
+
+<!DOCTYPE HTML >
+<html>
+
+<!-- New version of page, with ROOT style plots directly embedded... -->
+  
+<head>
+  <!--  <meta charset="UTF-8"> -->
+
+  <meta charset="UTF-8" http-equiv="X-UA-Compatible" content="IE=Edge"/>
+  <title>Generic DAQ Web Display</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"> 
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="midas.css">
+  <link rel="stylesheet" href="OnlineAna.css">
+  
+  <script src="examples/html/plotly-latest.min.js"></script>
+  <script src="examples/html/dygraph-combined.js"></script>
+  <script src="examples/html/jquery.min.js"></script>
+  <script src="examples/html/jsroot/scripts/d3.v3.min.js"></script>
+  <script src="examples/html/jsroot/scripts/JSRootCore.js"></script>
+  <script src="examples/html/jsroot/scripts/JSRootPainter.js"></script>
+  <script src="examples/html/jsroot/scripts/JSRootPainter.more.js"></script>
+  <script src="rootana_functions.js"></script>
+  <script src="plotting_functions_jsroot.js"></script>
+  <script src="plotting_functions_nonroot.js"></script>
+  <script src="mhttpd.js"></script>
+  <script src="midas.js"></script>
+  <script src="controls.js"></script>
+  <script src="OnlineAna.js"></script>
+
+</head>
+
+<!-- the setRootanDirectory will call to find_active_root_directory will take a moment to do the first read of ROOT tree; so wait 2sec before doing first call to plot -->
+<body  class="mcss" onload="mhttpd_init('webdisplay');initialize();setRootanaDirectory('rootana');find_active_root_directory(false);selectHistogramsFromJSON(); midasStatus(); updatePlots(false);">
+
+  <div id="mheader"></div>
+  <div id="msidenav"></div>
+  <div id="mmain">
+    
+    <div class="container-fluid">
+      
+      <!--- Main display --> 
+      <div class="row">
+        
+        <!--- Control buttons --> 
+        <div class="col-md-3" >
+          <div style="height:400px">
+   
+            <b>Histogram Groups: </b><br>
+
+            <div id="displayControlButtons"></div> <br>
+            
+            <b>Display Control: </b><br>
+            <input type="button" id="pause_button" onclick="pause_resume();" value="Pause" ></input>
+            <input class="displayControlEl" type="button" id="reset_button" onclick="rootanaResetAllHistograms();" value="Reset All Histograms" ></input><br>
+
+            <button class="styleControlEl select_buttons selected" id="root_style" > ROOT style </button> 
+            <button class="styleControlEl select_buttons" id="plotly_style" > Plot-ly style </button> <br>
+
+            <p> Refresh period (ms):
+              <input  class="displayControlEl" type="number" id="updatePeriod" min="100" max="100000" value="5000" onchange="changeUpdateTime();"><p>
+
+
+                <div id="ModuleSelectionDiv" style="display:none"> 
+                  Module:
+                  <input  class="displayControlEl" type="number" id="module_number" min="0" max="31" value="0" onchange="updatePlots(true);">
+                </div>
+                <div id="ChannelSelectionDiv" style="display:none"> 
+                  Channel:
+                  <input  class="displayControlEl" type="number" id="channel_number" min="0" max="31" value="0" onchange="updatePlots(true);">
+                </div>
+                <div id="LayerSelectionDiv" style="display:none"> 
+                  Layer:
+                  <input  class="displayControlEl" type="number" id="layer_number" min="0" max="31" value="0" onchange="updatePlots(true);">
+                </div>
+                <div id="PixelSelectionDiv" style="display:none">
+                  Pixel:
+                  <input  class="displayControlEl" type="number" id="pixel_number" min="0" max="31" value="0" onchange="updatePlots(true);">
+                </div>
+                
+                <div id="DisplaySelectionDiv" style="display:none"> 
+                  Select Display Type
+                  <select  class="displayControlEl" id="HistoDisplay" onchange="cleanDivs();ShowParams()">
+                    <option value="Single">Single</option>
+                    <option value="Overlay">Overlay </option>
+                    <option value="Multiple">Multiple </option>
+                  </select><p>
+                    
+                    <div id="OverlayParams" style="display:none"> 
+                      Overlay N histos (2-8):
+                      <input  class="displayControlEl" type="number" id="overlay_number" min="2" max="8" value="2" onchange="updatePlots(true);"><p>
+                        <br>
+                    </div>
+                    <div id="MultipleParams" style="display:none"> 
+                    </div>
+                </div>
+
+                <div id="listedHistoDisplayDiv">
+                  Histogram List: <select  id="listedHistoMenu" onchange="updatePlots(true);">
+                  
+                  </select><p>
+                </div>
+
+          </div>
+          
+          
+          <a id="rootanaLink" href="http://localhost:8088/">JS-ROOT Online Browser</a> <br>
+          <br>
+          Last updated: <span id="datetime"></span>
+          <p>Read back status: <span id="readstatus"></span>       
+
+
+        </div>
+
+        <!--- Main graphs --> 
+        <div class="col-md-9" >
+          
+          <div id="graphdiv" style="position:absolute; left:1px; top:1px; bottom:1px; right:1px" ></div>
+          <div id="graphdiv21" style="position:absolute; left:1px; top:1px; bottom:1px; right:1px;display:none"></div>
+          <div id="graphdiv22" style="position:absolute; left:1px; top:250px; bottom:1px; right:1px;display:none"></div>
+          <div id="OverlayParams22" style="position:absolute; left:1px; top:1px; bottom:1px; right:1px;display:none"> </div>
+        </div>
+      </div>
+    </div>
+
+</body>
+
+</html>
