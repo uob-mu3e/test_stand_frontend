@@ -86,6 +86,8 @@ using midas::odb;
 
 /* Start address of power in the crate controller - TODO: Move to an appropriate header*/
 const uint8_t CC_POWER_OFFSET = 5;
+const uint8_t CC_VT_READOUT_START = 1;
+const uint8_t CC_VT_READOUT_END = 4;
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
 const char *frontend_name = "SW Frontend";
@@ -111,9 +113,9 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
 
-const int switch_id = 0; // TODO to be loaded from outside (on compilation?)
-const int per_fe_SSFE_size = 26;
-const int per_crate_SCFC_size = 21;
+constexpr int switch_id = 0; // TODO to be loaded from outside (on compilation?)
+constexpr int per_fe_SSFE_size = 26;
+constexpr int per_crate_SCFC_size = 21;
 
 /* Inteface to the PCIe FPGA */
 mudaq::MudaqDevice * mup;
@@ -233,7 +235,7 @@ EQUIPMENT equipment[] = {
      read_mupix_sc_event,          /* readout routine */
     },
     {"FEBCrates",                    /* equipment name */
-    {110, 0,                      /* event ID, trigger mask */
+    {114, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
@@ -402,8 +404,7 @@ void setup_odb(){
             {"Firmware File",""},
             {"Firmware FEB ID",0},
             // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
-            {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()},
-            {"Names SCFC", std::array<std::string, per_crate_SCFC_size*N_FEBCRATES>()}
+            {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()}
     };
 
     int bankindex = 0;
@@ -490,33 +491,6 @@ void setup_odb(){
         settings[namestr][bankindex++] = s;
     }
 
-    bankindex = 0;
-    for(uint32_t i=0; i < N_FEBCRATES; i++){
-        string feb = "Crate" + to_string(i);
-        string * s = new string(feb);
-        (*s) += " Index";
-        settings["Names SCFC"][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 20";
-        settings["Names SCFC"][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 3.3";
-        settings["Names SCFC"][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 5";
-        settings["Names SCFC"][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " CC Temperature";
-        settings["Names SCFC"][bankindex++] = s;
-        for(uint32_t j=0; j < MAX_FEBS_PER_CRATE; j++){
-            s = new string(feb);
-            (*s) += "FEB" + to_string(j) + "Temperature";
-            settings["Names SCFC"][bankindex++] = s;
-        }
-    }
-
-    settings.print();
-
     settings.connect("/Equipment/Switching/Settings", true);
 
     /* Default values for /Equipment/Switching/Variables */
@@ -559,20 +533,46 @@ void setup_odb(){
         {"CrateControllerMSCB", std::array<std::string, N_FEBCRATES>{}},
         {"CrateControllerNode", std::array<uint16_t, N_FEBCRATES>{}},
         {"FEBCrate", std::array<uint16_t, MAX_N_FRONTENDBOARDS>{}},
-        {"FEBSlot", std::array<uint16_t, MAX_N_FRONTENDBOARDS>{}}
+        {"FEBSlot", std::array<uint16_t, MAX_N_FRONTENDBOARDS>{}},
+        {"Names SCFC", std::array<std::string, per_crate_SCFC_size*N_FEBCRATES>()}
     };
+
+    crate_settings.connect("/Equipment/FEBCrates/Settings");
+    // Why is the line above needed? Not having it realiably crashes the program
+    // when writing the names below
+
+    bankindex = 0;
+    for(uint32_t i=0; i < N_FEBCRATES; i++){
+        string feb = "Crate " + to_string(i);
+        string * s = new string(feb);
+        (*s) += " Index";
+        crate_settings["Names SCFC"][bankindex++] = s;
+        s = new string(feb);
+        (*s) += " Voltage 20";
+        crate_settings["Names SCFC"][bankindex++] = s;
+        s = new string(feb);
+        (*s) += " Voltage 3.3";
+        crate_settings["Names SCFC"][bankindex++] = s;
+        s = new string(feb);
+        (*s) += " Voltage 5";
+        crate_settings["Names SCFC"][bankindex++] = s;
+        s = new string(feb);
+        (*s) += " CC Temperature";
+        crate_settings["Names SCFC"][bankindex++] = s;
+        for(uint32_t j=0; j < MAX_FEBS_PER_CRATE; j++){
+            s = new string(feb);
+            (*s) += " FEB " + to_string(j) + " Temperature";
+            crate_settings["Names SCFC"][bankindex++] = s;
+        }
+    }
 
     crate_settings.connect("/Equipment/FEBCrates/Settings");
 
     cout << "Setting crate variables" << endl;
 
     odb crate_variables = {
-        {"Status", std::array<uint8_t, N_FEBCRATES>{}},
-        {"U24", std::array<float, N_FEBCRATES>{}},
-        {"U3.3", std::array<float, N_FEBCRATES>{}},
-        {"U5.0", std::array<float, N_FEBCRATES>{}},
-        {"Temp", std::array<float, N_FEBCRATES>{}},
-        {"FEBPower", std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE>{}}
+        {"FEBPower", std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE>{}},
+        {"SCFC", std::array<float, per_crate_SCFC_size*N_FEBCRATES>()}
     };
 
     crate_variables.connect("/Equipment/FEBCrates/Variables");
@@ -998,6 +998,40 @@ INT resume_run(INT run_number, char *error)
 
 /*--- Read Slow Control Event from crate controllers to be put into data stream --------*/
 INT read_febcrate_sc_event(char *pevent, INT off){
+    bk_init(pevent);
+    float *pdata;
+    bk_create(pevent, "SCFC", TID_FLOAT, (void **)&pdata);
+    odb crates("/Equipment/FEBCrates/Settings");
+    for(uint32_t i = 0; i < N_FEBCRATES; i++){
+        *pdata++ = i;
+        std::string mscb = crates["CrateControllerMSCB"][i];
+        char cstr[256]; //not good...
+        strcpy(cstr, mscb.c_str());
+        if(mscb.empty()){
+            for(uint32_t j= 0; j < per_crate_SCFC_size-1; j++)// -1 as index is already written
+                *pdata++ = 0;
+        } else {
+            uint16_t node = crates["CrateControllerNode"][i];
+            int fd = mscb_init(cstr, sizeof(cstr), nullptr, 0);
+            if (fd < 0) {
+               std::cout << "Cannot connect to " << node << std::endl;
+               for(uint32_t j= 0; j < per_crate_SCFC_size-1; j++)// -1 as index is already written
+                   *pdata++ = 0;
+               continue;
+            }
+            float data;
+            int size = sizeof(float);
+            for(int k=0; k < 4; k++){
+                mscb_read(fd, node, CC_VT_READOUT_START+k, &data, &size);
+                *pdata++ = data;
+            }
+            for(uint32_t j= 0; j < MAX_FEBS_PER_CRATE; j++)
+                *pdata++ = 0;
+        }
+    }
+    bk_close(pevent,pdata);
+    return bk_size(pevent);
+
     return 0;
 }
 
