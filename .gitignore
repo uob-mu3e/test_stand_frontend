@@ -21,7 +21,6 @@ reconfig_mif/
 *.qpf
 *.qsf
 *.qws
-*.bak
 *.rpt
 *.srf
 *.stp
@@ -39,11 +38,6 @@ top_assignment_defaults.qdf
 # qsys
 *.qsys
 *.sopcinfo
-
-# nios
-nios/
-**/software/app/
-**/software/hal_bsp/
 
 # eclipse
 .project

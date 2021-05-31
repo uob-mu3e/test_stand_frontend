@@ -17,14 +17,12 @@ port (
     A10_LED_3C_3                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
     A10_LED_3C_4                        : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
 
-    
-
 
 
     -- POD
     rx_gbt                              : IN    STD_LOGIC_VECTOR(47 DOWNTO 0);
     tx_gbt                              : OUT   STD_LOGIC_VECTOR(47 DOWNTO 0);
-    A10_REFCLK_GBT_P_0                  : IN    STD_LOGIC;
+    A10_REFCLK_GBT_P_0                  : IN    STD_LOGIC; -- <- SI5345_1/2[IN2] <- SI53340_1[CLK1] <- SMA1
     A10_REFCLK_GBT_P_1                  : IN    STD_LOGIC;
     A10_REFCLK_GBT_P_2                  : IN    STD_LOGIC;
     A10_REFCLK_GBT_P_3                  : IN    STD_LOGIC;
@@ -49,19 +47,33 @@ port (
 
 
 
+    -- SMA
+--    A10_SMA_CLK_IN_P                    : in    std_logic;
+    A10_SMA_CLK_OUT_P                   : out   std_logic;
+
+    -- SI53344
+    A10_SI53344_FANOUT_CLK_P            : out   std_logic; -- -> SI53344[CLK0]
+    -- - CLK_SEL = SWITCH_6[0]
+    -- - SI53340_1[CLK1] <- SMA1
+    A10_CUSTOM_CLK_P                    : in    std_logic; -- <- SI53344 <- SI53340_1[CLK_SEL]
+
     -- SI5345_1
+    -- - IN_SEL = SWITCH_6[1-2]
+    -- - SI5345_1[IN2] <- SI53340_1
     A10_SI5345_1_SMB_SCL                : inout std_logic;
     A10_SI5345_1_SMB_SDA                : inout std_logic;
-    A10_SI5345_1_JITTER_CLOCK_P         : out   std_logic;
+    A10_SI5345_1_JITTER_CLOCK_P         : out   std_logic; -- -> SI5345_1[IN1]
 
     -- SI5345_2
+    -- - IN_SEL = SWITCH_6[3-4]
+    -- - SI5345_2[IN2] <- SI53340_1
     A10_SI5345_2_SMB_SCL                : inout std_logic;
     A10_SI5345_2_SMB_SDA                : inout std_logic;
-    A10_SI5345_2_JITTER_CLOCK_P         : out   std_logic;
+    A10_SI5345_2_JITTER_CLOCK_P         : out   std_logic; -- -> SI5345_2[IN1]
 
 
 
-    -- Reset from push button through Max5
+    -- reset from push button through Max V
     A10_M5FL_CPU_RESET_N                : IN    STD_LOGIC;
 
     -- general purpose internal clock
@@ -72,11 +84,14 @@ end entity;
 architecture arch of top is
 
     signal led : std_logic_vector(7 downto 0) := (others => '0');
+    signal reset_n : std_logic;
 
 
 
     -- local 100 MHz clock
     signal clk_100, reset_100_n : std_logic;
+
+    signal pll_125 : std_logic;
 
     -- global 125 MHz clock
     signal clk_125, reset_125_n : std_logic;
@@ -97,26 +112,45 @@ architecture arch of top is
 
 
 
-    signal pcie_wregs, pcie_rregs : work.pcie_components.reg32array_pcie;
+    signal pcie_wregs, pcie_rregs : work.mudaq.reg32array_pcie;
 
 begin
 
     A10_LED <= not led;
-
-    A10_SI5345_1_JITTER_CLOCK_P <= CLK_A10_100MHZ_P;
-    A10_SI5345_2_JITTER_CLOCK_P <= CLK_A10_100MHZ_P;
+    reset_n <= A10_M5FL_CPU_RESET_N;
 
 
 
     clk_100 <= CLK_A10_100MHZ_P;
 
     e_reset_100_n : entity work.reset_sync
-    port map ( o_reset_n => reset_100_n, i_reset_n => A10_M5FL_CPU_RESET_N, i_clk => clk_100 );
+    port map ( o_reset_n => reset_100_n, i_reset_n => reset_n, i_clk => clk_100 );
 
-    clk_125 <= A10_REFCLK_GBT_P_0; -- TODO: use global 125 MHz clock
+    --! generate and route 125 MHz clock to SMA output
+    --! (can be connected to SMA input as global clock)
+    e_pll_100to125 : component work.cmp.ip_pll_100to125
+    port map (
+        outclk_0 => pll_125,
+        refclk => clk_100,
+        rst => not reset_100_n--,
+    );
+
+    A10_SMA_CLK_OUT_P <= pll_125;
+    A10_SI53344_FANOUT_CLK_P <= pll_125;
+
+    e_clk_125 : work.cmp.ip_clkctrl
+    port map (
+        inclk => A10_CUSTOM_CLK_P,
+        outclk => clk_125--,
+    );
+
+    A10_SI5345_1_JITTER_CLOCK_P <= clk_125;
+    A10_SI5345_2_JITTER_CLOCK_P <= clk_125;
+
+
 
     e_reset_125_n : entity work.reset_sync
-    port map ( o_reset_n => reset_125_n, i_reset_n => A10_M5FL_CPU_RESET_N, i_clk => clk_125 );
+    port map ( o_reset_n => reset_125_n, i_reset_n => reset_n, i_clk => clk_125 );
 
 
 
@@ -191,12 +225,14 @@ begin
 
         o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
+        o_clk_156_hz                    => led(2),
 
         o_reset_250_n                   => reset_250_n,
         o_clk_250                       => clk_250,
 
         i_reset_125_n                   => reset_125_n,
         i_clk_125                       => clk_125,
+        o_clk_125_hz                    => led(1),
 
         i_reset_n                       => reset_100_n,
         i_clk                           => clk_100--,
