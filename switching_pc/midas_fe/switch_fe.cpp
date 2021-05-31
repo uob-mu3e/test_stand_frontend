@@ -51,6 +51,7 @@
 
 #include <stdio.h>
 #include <cassert>
+#include <cstring>
 #include <switching_constants.h>
 #include <history.h>
 #include "midas.h"
@@ -59,6 +60,7 @@
 #include "string.h"
 #include "mudaq_device.h"
 #include "mudaq_dummy.h"
+#include "mscb.h"
 
 #include "FEBSlowcontrolInterface.h"
 #include "DummyFEBSlowcontrolInterface.h"
@@ -75,10 +77,15 @@
 
 #include "missing_hardware.h"
 
+
+
 using namespace std;
 using midas::odb;
 
 /*-- Globals -------------------------------------------------------*/
+
+/* Start address of power in the crate controller - TODO: Move to an appropriate header*/
+const uint8_t CC_POWER_OFFSET = 5;
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
 const char *frontend_name = "SW Frontend";
@@ -260,6 +267,9 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 
 INT frontend_init()
 {
+    for(size_t i =0; i < febpower.size(); i++)
+        febpower[i] = 0;
+
 
     #ifdef MY_DEBUG
         odb::set_debug(true);
@@ -546,14 +556,15 @@ void setup_odb(){
     firmware_variables.connect("/Equipment/Switching/Variables/FEBFirmware");
 
     odb crate_settings = {
-        {"CrateContollerMSCB", std::array<std::string, N_FEBCRATES>{}},
+        {"CrateControllerMSCB", std::array<std::string, N_FEBCRATES>{}},
         {"CrateControllerNode", std::array<uint16_t, N_FEBCRATES>{}},
         {"FEBCrate", std::array<uint16_t, MAX_N_FRONTENDBOARDS>{}},
         {"FEBSlot", std::array<uint16_t, MAX_N_FRONTENDBOARDS>{}}
     };
 
-    crate_settings.connect("/Equipment/Switching/Settings/FEBCrates");
+    crate_settings.connect("/Equipment/FEBCrates/Settings");
 
+    cout << "Setting crate variables" << endl;
 
     odb crate_variables = {
         {"Status", std::array<uint8_t, N_FEBCRATES>{}},
@@ -564,7 +575,7 @@ void setup_odb(){
         {"FEBPower", std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE>{}}
     };
 
-    crate_variables.connect("/Equipment/Switching/Variables/FEBCrates");
+    crate_variables.connect("/Equipment/FEBCrates/Variables");
 
 
     // add custom page to ODB
@@ -590,7 +601,7 @@ void setup_watches(){
     switch_mask.watch(frontend_board_mask_changed);
 
     // watch if the mapping of FEBs to crates changed
-    odb crates("/Equipment/Switching/Variables/FEBCrates");
+    odb crates("/Equipment/FEBCrates/Settings");
     crates.watch(frontend_board_mask_changed);
 
     // watch if this links are enabled
@@ -598,7 +609,7 @@ void setup_watches(){
     links_odb.watch(switching_board_mask_changed);
 
     // watch for changes in the FEB powering state
-    odb febpower_odb("/Equipment/Switching/Variables/FEBCrates/FEBPower");
+    odb febpower_odb("/Equipment/FEBCrates/Variables/FEBPower");
     febpower_odb.watch(febpower_changed);
 }
 
@@ -650,6 +661,8 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
 }
 
 INT init_crates() {
+    odb febpower_odb("/Equipment/FEBCrates/Variables/FEBPower");
+    febpower_changed(febpower_odb);
     return SUCCESS;
 }
 
@@ -988,7 +1001,7 @@ INT read_febcrate_sc_event(char *pevent, INT off){
     return 0;
 }
 
-/*--- Read Slow Control Event from FEBsto be put into data stream --------*/
+/*--- Read Slow Control Event from FEBs to be put into data stream --------*/
 INT read_sc_event(char *pevent, INT off)
 {    
     cout << "Reading FEB SC" << endl;
@@ -1106,8 +1119,32 @@ INT get_odb_value_by_string(const char *key_name){
 
 void febpower_changed(odb o)
 {
+    cout << "Febpower!" << endl;
+    std::vector<uint8_t> power_odb = o;
+    odb crates("/Equipment/FEBCrates/Settings");
+    for(size_t i =0; i < febpower.size(); i++){
+        if(febpower[i] != power_odb[i]){
+            uint16_t crate = crates["FEBCrate"][i];
+            uint16_t slot = crates["FEBSlot"][i];
+            std::string mscb = crates["CrateControllerMSCB"][crate];
+            char cstr[256]; //not good...
+            strcpy(cstr, mscb.c_str());
+            uint16_t node = crates["CrateControllerNode"][crate];
+            int fd = mscb_init(cstr, sizeof(cstr), nullptr, 0);
+            if (fd < 0) {
+               std::cout << "Cannot connect to " << node << std::endl;
+               return;
+            }
+            uint8_t power = power_odb[i];
+           if(power)
+               cout << "Switching on FEB " << slot << " in crate " << crate << endl;
+           else
+               cout << "Switching off FEB " << slot << " in crate " << crate << endl;
 
-
+            mscb_write(fd, node, slot+CC_POWER_OFFSET,&power,sizeof(power));
+            febpower[i] = power;
+        }
+    }
 }
 
 /*--- Called whenever settings have changed ------------------------*/

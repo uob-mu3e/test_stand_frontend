@@ -31,8 +31,8 @@ void FEBList::RebuildFEBList()
 
     odb febversion("/Equipment/Switching/Variables/FEBFirmware/FEB Version");
 
-    odb febcrate("/Equipment/Switching/Variables/FEBCrates/FEBCrate");
-    odb febslot("/Equipment/Switching/Variables/FEBCrates/FEBSlot");
+    odb febcrate("/Equipment/FEBCrates/Settings/FEBCrate");
+    odb febslot("/Equipment/FEBCrates/Settings/FEBSlot");
 
     // fill our list. Currently only mapping primaries;
     // secondary fibers for SciFi are implicitely mapped to the preceeding primary

@@ -8,11 +8,11 @@ target_compile_options(switch_fe PRIVATE
 )
 
 target_include_directories(switch_fe
-        PRIVATE ${MIDAS_DIR}/include ${MXML_DIR} ${MIDASINCLUDE_DIR}
+        PRIVATE ${MIDAS_DIR}/include ${MXML_DIR} ../../modules/midas/mscb/include ${MIDASINCLUDE_DIR}
         ${LIBMUDAQ_DIR} ${INCMUDAQ_DIR} ${LIBSLOWCONTROL_DIR}
         )
 
-target_link_libraries(switch_fe mfe midas rt pthread util libslowcontrol libmudaq dl)
+target_link_libraries(switch_fe mfe midas mscb rt pthread util libslowcontrol libmudaq dl)
 
 if(DEBUG)
     add_definitions(-DMY_DEBUG)
