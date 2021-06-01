@@ -36,6 +36,8 @@ port (
     i_ts_global                 : in std_logic_vector(23 downto 0) := (others => '0');
     i_last_sorter_hit           : in std_logic_vector(31 downto 0) := (others => '0');
     i_mp_hit_ena_cnt            : in std_logic_vector(31 downto 0) := (others => '0');
+    i_mp_sorter_in_hit_ena_cnt  : in std_logic_vector(31 downto 0) := (others => '0');
+    i_mp_sorter_out_hit_ena_cnt : in std_logic_vector(31 downto 0) := (others => '0');
 
     -- outputs 156--------------------------------------------
     o_mp_lvds_link_mask         : out std_logic_vector(35 downto 0); -- lvds link mask
@@ -48,7 +50,8 @@ port (
     -- outputs 125-------------------------------------------------
     o_sorter_delay              : out ts_t;
     o_sorter_inject             : out std_logic_vector(31 downto 0) := (others => '0');
-    o_mp_hit_ena_cnt_select     : out std_logic_vector( 7 downto 0) := (others => '0')--;
+    o_mp_hit_ena_cnt_select     : out std_logic_vector( 7 downto 0) := (others => '0');
+    o_mp_hit_ena_cnt_sorter_sel : out std_logic_vector( 3 downto 0) := (others => '0')--;
 );
 end entity;
 
@@ -62,6 +65,8 @@ architecture rtl of mupix_datapath_reg_mapping is
     signal mp_data_bypass_select    : std_logic_vector(31 downto 0);
     signal mp_sorter_inject         : std_logic_vector(31 downto 0);
     signal mp_hit_ena_cnt_select    : std_logic_vector( 7 downto 0);
+    signal mp_hit_ena_cnt_sorter_sel: std_logic_vector( 3 downto 0);
+    signal mp_sorter_delay          : ts_t;
 
     signal reg_delay                : std_logic;
 begin
@@ -71,6 +76,7 @@ begin
         if(rising_edge(i_clk125)) then
             if(reg_delay = '1') then
                 o_sorter_inject <= mp_sorter_inject;
+                o_sorter_delay  <= mp_sorter_delay;
             end if;
         end if;
     end process;
@@ -97,6 +103,7 @@ begin
             mp_lvds_data_valid          <= i_lvds_data_valid;
             o_mp_data_bypass_select     <= mp_data_bypass_select;
             o_mp_hit_ena_cnt_select     <= mp_hit_ena_cnt_select;
+            o_mp_hit_ena_cnt_sorter_sel <= mp_hit_ena_cnt_sorter_sel;
 
             regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
             o_reg_rdata         <= x"CCCCCCCC";
@@ -160,12 +167,12 @@ begin
                 o_reg_rdata <= (0 => mp_lvds_invert, others => '0');
             end if;
 
-            if ( regaddr = MP_SORTER_DELAY_W and i_reg_we = '1' ) then
-                o_sorter_delay <= i_reg_wdata(TSRANGE);
+            if ( regaddr = MP_SORTER_DELAY_REGISTER_W and i_reg_we = '1' ) then
+                mp_sorter_delay <= i_reg_wdata(TSRANGE);
             end if;
 
             for I in 0 to NSORTERCOUNTERS-1 loop 
-                if ( regaddr = I + MP_SORTER_COUNTER_R and i_reg_re = '1' ) then
+                if ( regaddr = I + MP_SORTER_COUNTER_REGISTER_R and i_reg_re = '1' ) then
                     o_reg_rdata <= i_sorter_counters(I);
                 end if;
             end loop;
@@ -200,6 +207,24 @@ begin
                 o_reg_rdata             <= i_mp_hit_ena_cnt;
                 mp_hit_ena_cnt_select   <= std_logic_vector(to_unsigned(to_integer(unsigned(mp_hit_ena_cnt_select)) + 1,8));
             end if;
+
+            if ( regaddr = MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W and i_reg_we = '1' ) then
+                mp_hit_ena_cnt_sorter_sel <= i_reg_wdata(3 downto 0);
+            end if;
+            if ( regaddr = MP_HIT_ENA_CNT_SORTER_SELECT_REGISTER_W and i_reg_re = '1' ) then
+                o_reg_rdata( 3 downto 0) <= mp_hit_ena_cnt_sorter_sel;
+                o_reg_rdata(31 downto 4) <= (others => '0');
+            end if;
+
+            if ( regaddr = MP_HIT_ENA_CNT_SORTER_IN_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata                 <= i_mp_sorter_in_hit_ena_cnt;
+                mp_hit_ena_cnt_sorter_sel   <= std_logic_vector(to_unsigned(to_integer(unsigned(mp_hit_ena_cnt_sorter_sel)) + 1,4));
+            end if;
+
+            if ( regaddr = MP_HIT_ENA_CNT_SORTER_OUT_REGISTER_R and i_reg_re = '1' ) then
+                o_reg_rdata                 <= i_mp_sorter_out_hit_ena_cnt;
+            end if;
+
         end if;
     end process;
 
