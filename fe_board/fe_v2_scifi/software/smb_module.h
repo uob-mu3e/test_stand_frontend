@@ -18,7 +18,7 @@ struct SMB_t {
     sc_t& sc;
     //TODO: add spi in parameters
     SMB_t(sc_t& _sc):sc(_sc){};
-    int n_MODULES=1; // TODO: Should this be a variable?
+    int n_MODULES=2; // TODO: Should this be a variable?
 
     //=========================
     //ASIC configuration

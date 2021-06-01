@@ -27,19 +27,30 @@ entity top is
         clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
         spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-        -- scifi DAB signals
-        scifi_din                   : in    std_logic_vector(4 downto 1);
+        -- scifi DAB signals  (7 downto 4 and signalname2 is con3, the others are con2)
+        scifi_din                   : in    std_logic_vector(7 downto 0);
         scifi_syncres               : out   std_logic;
-        scifi_csn                   : out   std_logic_vector(4 downto 1);
+        scifi_syncres2              : out   std_logic;
+        scifi_csn                   : out   std_logic_vector(7 downto 0);
         scifi_spi_sclk              : out   std_logic;
         scifi_spi_miso              : in    std_logic;
         scifi_spi_mosi              : out   std_logic;
-        -- not used at the current version of the DAB for sicif
-        scifi_cec_csn                : out   std_logic_vector(4 downto 1);
+		  scifi_temp_mutrig				: in    std_logic;
+		  scifi_temp_sipm 				: in    std_logic;
+
+        scifi_spi_sclk2             : out   std_logic;
+        scifi_spi_miso2             : in    std_logic;
+        scifi_spi_mosi2             : out   std_logic;
+        -- not used at the current version of the DAB for sicfi
+        scifi_cec_csn               : out   std_logic_vector(7 downto 0);
         scifi_cec_miso              : in    std_logic;
         scifi_fifo_ext              : out   std_logic;
         scifi_inject                : out   std_logic;
-        scifi_bidir_test            : inout std_logic;
+        scifi_cec_miso2             : in    std_logic;
+        scifi_fifo_ext2             : out   std_logic;
+        scifi_inject2               : out   std_logic;
+		  scifi_temp_mutrig2 			: in    std_logic;
+		  scifi_temp_sipm2 				: in    std_logic;
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -110,9 +121,9 @@ architecture rtl of top is
     -- Debouncers
     signal pb_db                : std_logic_vector(1 downto 0);
 
-    constant N_LINKS                : integer := 1;
+    constant N_LINKS                : integer := 2;
     constant N_ASICS                : integer := 4;
-    constant N_MODULES              : integer := 1;
+    constant N_MODULES              : integer := 2;
 
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
     signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
@@ -130,10 +141,13 @@ architecture rtl of top is
     --internal I/O signals to DAB with correct polarity
     signal scifi_int_din                   : std_logic_vector(4 downto 1);
     signal scifi_int_syncres               : std_logic;
+    signal scifi_int_syncres2              : std_logic;
     signal scifi_int_csn                   : std_logic_vector(15 downto 0);
     signal scifi_int_spi_sclk              : std_logic;
     signal scifi_int_spi_miso              : std_logic;
     signal scifi_int_spi_mosi              : std_logic;
+    signal scifi_csn_buf                   : std_logic_vector(7 downto 0);
+
     --signal scifi_int_cec_csn               : std_logic_vector(4 downto 1);
     --signal scifi_int_cec_miso              : std_logic;
     --signal scifi_int_fifo_ext              : std_logic;
@@ -147,21 +161,37 @@ begin
 ---- SciFi SUB-DETECTOR FIRMWARE -----------------------------------
 --------------------------------------------------------------------
 --------------------------------------------------------------------
+    scifi_csn <= scifi_csn_buf;
+	 
+	 -- stuff which is not used at the moment but PINs need to be tested
+	 lcd_data(2) <= scifi_temp_mutrig or scifi_temp_mutrig2 or scifi_temp_sipm or scifi_temp_sipm2 or scifi_cec_miso or scifi_cec_miso2;
 
 -- assignments of DAB pins: special IOBUF, constant and polarity flips here
     scifi_fifo_ext              <= '0';
     scifi_inject                <= '0';
+    scifi_fifo_ext2             <= '0';
+    scifi_inject2               <= '0';
     scifi_cec_csn               <= (others => '1');
 
-    scifi_csn(1) <= not scifi_int_csn(0);
-    scifi_csn(2) <= not scifi_int_csn(1);
-    scifi_csn(3) <= not scifi_int_csn(2);
-    scifi_csn(4) <=     scifi_int_csn(3);
+    scifi_csn_buf(0) <= not scifi_int_csn(0);
+    scifi_csn_buf(1) <= not scifi_int_csn(1);
+    scifi_csn_buf(2) <= not scifi_int_csn(2);
+    scifi_csn_buf(3) <=     scifi_int_csn(3);
+    scifi_csn_buf(4) <=     scifi_int_csn(4);
+    scifi_csn_buf(5) <= not scifi_int_csn(5);
+    scifi_csn_buf(6) <= not scifi_int_csn(6);
+    scifi_csn_buf(7) <=     scifi_int_csn(7);
 
-    scifi_syncres <= not scifi_int_syncres;
-    scifi_spi_sclk <= not scifi_int_spi_sclk;
-    scifi_int_spi_miso <= not scifi_spi_miso;
-    scifi_spi_mosi <= not scifi_int_spi_mosi;
+    scifi_syncres   <= not scifi_int_syncres;
+    scifi_syncres2  <= not scifi_int_syncres2;
+    
+    scifi_spi_sclk      <= not scifi_int_spi_sclk;
+    scifi_spi_mosi      <= not scifi_int_spi_mosi;
+    scifi_spi_sclk2     <= not scifi_int_spi_sclk;
+    scifi_spi_mosi2     <= not scifi_int_spi_mosi;
+
+    scifi_int_spi_miso <=  (not scifi_spi_miso2) when (scifi_csn_buf(7 downto 4) /= x"F") else (not scifi_spi_miso);
+
     -- LVDS inputs signflip in receiver block generic
      
 -- scifi detector firmware
@@ -186,7 +216,7 @@ begin
         o_pll_test                  => open,
         i_data                      => scifi_din,
 
-        io_i2c_sda                  => scifi_bidir_test,
+        io_i2c_sda                  => open,
         io_i2c_scl                  => open,
         i_cec                       => '0',
         i_spi_miso                  => '0',
@@ -219,8 +249,10 @@ begin
     if falling_edge(lvds_firefly_clk) then
         if(run_state_125 = RUN_STATE_SYNC)then
             scifi_int_syncres <= '1';
+            scifi_int_syncres2 <= '1';
         else
             scifi_int_syncres <= '0';
+            scifi_int_syncres2 <= '0';
         end if;
     end if;
     end process;
@@ -249,7 +281,8 @@ begin
 
     e_fe_block : entity work.fe_block_v2
     generic map (
-        NIOS_CLK_MHZ_g  => 50.0--,
+        NIOS_CLK_MHZ_g  => 50.0,
+        N_LINKS => N_LINKS--,
     )
     port map (
         i_fpga_id           => ref_adr,
