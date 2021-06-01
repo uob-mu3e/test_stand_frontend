@@ -67,6 +67,30 @@ struct mupix_t {
         return;
     }
 
+    void test_write_all() {
+        
+        sc->ram->data[0xFF40]=0x00000FC0;
+        sc->ram->data[0xFF40]=0x00000000;
+        sc->ram->data[0xFF49]=0x00000003;
+        
+        sc->ram->data[0xFF4A]=2A000A03;
+        sc->ram->data[0xFF4A]=FA3F002F;
+        sc->ram->data[0xFF4A]=1E041041;
+        sc->ram->data[0xFF4A]=041E9A51;
+        sc->ram->data[0xFF4A]=40280000;
+        sc->ram->data[0xFF4A]=1400C20A;
+        sc->ram->data[0xFF4A]=028A001F;
+        sc->ram->data[0xFF4A]=00020038;
+        sc->ram->data[0xFF4A]=0000FC09;
+        sc->ram->data[0xFF4A]=F0001C80;
+        sc->ram->data[0xFF4A]=00148000;
+        sc->ram->data[0xFF4A]=11802E00;
+    
+        for(int i = 0; i<85; i++){
+        sc->ram->data[0xFF4A]=0x00000000;}
+
+    }
+
     void menu_lvds() {
         alt_u32 value = 0x0;
         while (1) {
@@ -186,6 +210,9 @@ struct mupix_t {
                 printf("setting lvds mask to 0x%01x%08x\n",value2, value);
                 sc->ram->data[0xFF61]=value;
                 sc->ram->data[0xFF62]=value2;
+                break;
+            case '6':
+                test_write_all();
                 break;
             case 'q':
                 return;
