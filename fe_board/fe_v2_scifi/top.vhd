@@ -27,27 +27,30 @@ entity top is
         clk_125_bottom              : in    std_logic; -- 125 Mhz clock spare // SI5345
         spare_clk_osc               : in    std_logic; -- Spare clock // 50 MHz oscillator
 
-        -- scifi DAB signals  (8 downto 5 and signalname2 is con3, the others are con2)
-        scifi_din                   : in    std_logic_vector(8 downto 1);
+        -- scifi DAB signals  (7 downto 4 and signalname2 is con3, the others are con2)
+        scifi_din                   : in    std_logic_vector(7 downto 0);
         scifi_syncres               : out   std_logic;
         scifi_syncres2              : out   std_logic;
-        scifi_csn                   : out   std_logic_vector(8 downto 1);
+        scifi_csn                   : out   std_logic_vector(7 downto 0);
         scifi_spi_sclk              : out   std_logic;
         scifi_spi_miso              : in    std_logic;
         scifi_spi_mosi              : out   std_logic;
+		  scifi_temp_mutrig				: in    std_logic;
+		  scifi_temp_sipm 				: in    std_logic;
 
         scifi_spi_sclk2             : out   std_logic;
         scifi_spi_miso2             : in    std_logic;
         scifi_spi_mosi2             : out   std_logic;
         -- not used at the current version of the DAB for sicfi
-        scifi_cec_csn               : out   std_logic_vector(8 downto 1);
+        scifi_cec_csn               : out   std_logic_vector(7 downto 0);
         scifi_cec_miso              : in    std_logic;
         scifi_fifo_ext              : out   std_logic;
         scifi_inject                : out   std_logic;
-        scifi_bidir_test            : inout std_logic;
         scifi_cec_miso2             : in    std_logic;
         scifi_fifo_ext2             : out   std_logic;
         scifi_inject2               : out   std_logic;
+		  scifi_temp_mutrig2 			: in    std_logic;
+		  scifi_temp_sipm2 				: in    std_logic;
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -143,7 +146,7 @@ architecture rtl of top is
     signal scifi_int_spi_sclk              : std_logic;
     signal scifi_int_spi_miso              : std_logic;
     signal scifi_int_spi_mosi              : std_logic;
-    signal scifi_csn_buf                   : std_logic_vector(8 downto 1);
+    signal scifi_csn_buf                   : std_logic_vector(7 downto 0);
 
     --signal scifi_int_cec_csn               : std_logic_vector(4 downto 1);
     --signal scifi_int_cec_miso              : std_logic;
@@ -159,6 +162,9 @@ begin
 --------------------------------------------------------------------
 --------------------------------------------------------------------
     scifi_csn <= scifi_csn_buf;
+	 
+	 -- stuff which is not used at the moment but PINs need to be tested
+	 lcd_data(2) <= scifi_temp_mutrig or scifi_temp_mutrig2 or scifi_temp_sipm or scifi_temp_sipm2 or scifi_cec_miso or scifi_cec_miso2;
 
 -- assignments of DAB pins: special IOBUF, constant and polarity flips here
     scifi_fifo_ext              <= '0';
@@ -167,14 +173,14 @@ begin
     scifi_inject2               <= '0';
     scifi_cec_csn               <= (others => '1');
 
-    scifi_csn_buf(1) <= not scifi_int_csn(0);
-    scifi_csn_buf(2) <= not scifi_int_csn(1);
-    scifi_csn_buf(3) <= not scifi_int_csn(2);
-    scifi_csn_buf(4) <=     scifi_int_csn(3);
-    scifi_csn_buf(5) <=     scifi_int_csn(4);
-    scifi_csn_buf(6) <= not scifi_int_csn(5);
-    scifi_csn_buf(7) <= not scifi_int_csn(6);
-    scifi_csn_buf(8) <=     scifi_int_csn(7);
+    scifi_csn_buf(0) <= not scifi_int_csn(0);
+    scifi_csn_buf(1) <= not scifi_int_csn(1);
+    scifi_csn_buf(2) <= not scifi_int_csn(2);
+    scifi_csn_buf(3) <=     scifi_int_csn(3);
+    scifi_csn_buf(4) <=     scifi_int_csn(4);
+    scifi_csn_buf(5) <= not scifi_int_csn(5);
+    scifi_csn_buf(6) <= not scifi_int_csn(6);
+    scifi_csn_buf(7) <=     scifi_int_csn(7);
 
     scifi_syncres   <= not scifi_int_syncres;
     scifi_syncres2  <= not scifi_int_syncres2;
@@ -184,7 +190,7 @@ begin
     scifi_spi_sclk2     <= not scifi_int_spi_sclk;
     scifi_spi_mosi2     <= not scifi_int_spi_mosi;
 
-    scifi_int_spi_miso <=  (not scifi_spi_miso2) when (scifi_csn_buf(8 downto 5) /= x"F") else (not scifi_spi_miso);
+    scifi_int_spi_miso <=  (not scifi_spi_miso2) when (scifi_csn_buf(7 downto 4) /= x"F") else (not scifi_spi_miso);
 
     -- LVDS inputs signflip in receiver block generic
      
@@ -210,7 +216,7 @@ begin
         o_pll_test                  => open,
         i_data                      => scifi_din,
 
-        io_i2c_sda                  => scifi_bidir_test,
+        io_i2c_sda                  => open,
         io_i2c_scl                  => open,
         i_cec                       => '0',
         i_spi_miso                  => '0',
