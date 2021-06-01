@@ -582,6 +582,7 @@ void setup_odb(){
     odb custom("/Custom");
     custom["Switching&"] = "sc.html";
     custom["Febs&"] = "febs.html";
+    custom["FEBcrates&"] = "crates.html";
     
     // TODO: not sure at the moment we have a midas frontend for three feb types but 
     // we need to have different swb at the final experiment so maybe one needs to take
