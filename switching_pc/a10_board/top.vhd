@@ -106,9 +106,9 @@ architecture rtl of top is
     constant g_NLINKS_FEB_TOTL   : positive := 16;
     constant g_NLINKS_FARM_TOTL  : positive := 16;
     constant g_NLINKS_FARM_PIXEL : positive := 8;
-    constant g_NLINKS_DATA_PIXEL : positive := 12;
+    constant g_NLINKS_DATA_PIXEL : positive := 10;
     constant g_NLINKS_FARM_SCIFI : positive := 8;
-    constant g_NLINKS_DATA_SCIFI : positive := 12;
+    constant g_NLINKS_DATA_SCIFI : positive := 4;
     constant g_NLINKS_FARM_TILE  : positive := 8;
     constant g_NLINKS_DATA_TILE  : positive := 12;
 

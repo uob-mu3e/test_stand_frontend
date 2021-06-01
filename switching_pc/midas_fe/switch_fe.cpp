@@ -303,12 +303,14 @@ INT frontend_init()
         return FE_ERR_DRIVER;
 
 
-    /*
     //init scifi
+    cm_msg(MINFO, "switch_fe", "Calling init_scifi");
+    cm_msg(MINFO, "switch_fe", "TEST");
     status = init_scifi(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
     
+    /*
     //init scitiles
     status = init_scitiles(*mup);
     if (status != SUCCESS)
@@ -654,6 +656,8 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
                      "/Equipment/SciFi",
                       switch_id); //create FEB interface signleton for scifi
 
+    
+    cm_msg(MINFO,"switch_fe","Setting up ODB for SciFi");
     int status=mutrig::midasODB::setup_db("/Equipment/SciFi",scififeb);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
@@ -1196,6 +1200,7 @@ void sc_settings_changed(odb o)
     if (name == "SciFiConfig" && o) {
           int status=scififeb->ConfigureASICs();
           if(status!=SUCCESS){ 
+              cm_msg(MERROR, "SciFiConfig" , "ASIC Configuration failed.");
          	//TODO: what to do? 
           }
        o = false;

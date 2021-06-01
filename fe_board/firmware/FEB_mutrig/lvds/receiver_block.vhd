@@ -80,42 +80,43 @@ component data_decoder is
 		);
 end component; --data_decoder;
 
-	signal rx_out : 		std_logic_vector(NINPUT*10-1 downto 0);
-	signal rx_out_order : 		std_logic_vector(NINPUT*10-1 downto 0);
-	signal rx_clk :			std_logic;
+    signal rx_out : 		std_logic_vector(NINPUT*10-1 downto 0);
+    signal rx_out_order : 		std_logic_vector(NINPUT*10-1 downto 0);
+    signal rx_clk :			std_logic;
 
-	signal rx_dpa_locked		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
-	signal rx_bitslip			: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
-	signal rx_fifo_reset		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
-	signal rx_reset			: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
+    signal rx_dpa_locked		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
+    signal rx_bitslip			: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
+    signal rx_fifo_reset		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
+    signal rx_reset			: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);
 
-	signal rx_ready_reg		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);	
-	signal rx_pll_locked		: STD_LOGIC;
-	signal rx_disperr		: std_logic_vector(NINPUT-1 downto 0);
+    signal rx_ready_reg		: STD_LOGIC_VECTOR (NINPUT-1 DOWNTO 0);	
+    signal rx_pll_locked		: STD_LOGIC;
+    signal rx_disperr		: std_logic_vector(NINPUT-1 downto 0);
 
     signal rx_inclock_A_ctrl    : std_logic;
     signal rx_inclock_A_pll     : std_logic;
-    signal rx_locked_A          : std_logic;
+    signal rx_locked_A          : std_logic := '1';
     signal rx_dpaclock_A        : std_logic;
     signal rx_syncclock_A       : std_logic;
     signal rx_enable_A          : std_logic;
 
     signal rx_inclock_B_ctrl    : std_logic;
     signal rx_inclock_B_pll     : std_logic;
-    signal rx_locked_B          : std_logic;
+    signal rx_locked_B          : std_logic := '1';
     signal rx_dpaclock_B        : std_logic;
     signal rx_syncclock_B       : std_logic;
     signal rx_enable_B          : std_logic;
 
 begin
-	rx_dpa_locked_out	<= rx_dpa_locked;
-	pll_locked 			<= rx_pll_locked;
-	rx_clkout 			<= rx_clk;
+    rx_dpa_locked_out   <= rx_dpa_locked;
+    pll_locked          <= rx_pll_locked;
+    rx_clkout           <= rx_clk;
 
 -----------------------------------------------------------
 ---------------SciTile lvds rx-----------------------------
 -----------------------------------------------------------
     gen_scitile: if (IS_SCITILE='1') generate
+        rx_clk <= rx_syncclock_A;
 
         clk_ctrl_A : component work.cmp.clk_ctrl_single
             port map (
@@ -197,6 +198,7 @@ begin
 ---------------SciFi lvds rx-------------------------------
 -----------------------------------------------------------
     gen_scifi: if (IS_SCITILE='0') generate
+        rx_clk <= rx_syncclock_B;
 
         clk_ctrl_B : component work.cmp.clk_ctrl_single
             port map (
@@ -222,17 +224,17 @@ begin
         PORT MAP
         (
             pll_areset                  => not rx_locked_B,
-            rx_channel_data_align       => "00000" & rx_bitslip(3 downto 0),
+            rx_channel_data_align       => '0' & rx_bitslip(7 downto 0),
             rx_dpaclock                 => rx_dpaclock_B,
             rx_enable                   => rx_enable_B,
-            rx_fifo_reset(3 downto 0)   => rx_fifo_reset(3 downto 0),
-            rx_in(3 downto 0)           => rx_in(3 downto 0),
-            rx_in(8 downto 4)           => (others => '0'),
+            rx_fifo_reset(7 downto 0)   => rx_fifo_reset(7 downto 0),
+            rx_in(7 downto 0)           => rx_in(7 downto 0),
+            rx_in(8 downto 8)           => (others => '0'),
             rx_inclock                  => rx_inclock_B_pll,
-            rx_reset(3 downto 0)        => rx_reset(3 downto 0),
+            rx_reset(7 downto 0)        => rx_reset(7 downto 0),
             rx_syncclock                => rx_syncclock_B,
-            rx_dpa_locked(3 downto 0)   => rx_dpa_locked(3 downto 0),
-            rx_out(39 downto 0)         => rx_out(39 downto 0)--,
+            rx_dpa_locked(7 downto 0)   => rx_dpa_locked(7 downto 0),
+            rx_out(79 downto 0)         => rx_out(79 downto 0)--,
         );
     end generate;
 
@@ -264,7 +266,7 @@ gen_channels: for i in NINPUT-1 downto 0 generate
 			rx_reset		=> rx_reset(i),
 			rx_fifo_reset		=> rx_fifo_reset(i),
 			rx_dpa_locked		=> rx_dpa_locked(i),
-			rx_locked		=> rx_locked_A and rx_locked_B, --TODO: is this right ? M.Mueller
+			rx_locked		=> rx_locked_A and rx_locked_B,
 			rx_bitslip		=> rx_bitslip(i),
 		
 			ready			=> rx_ready_reg(i),

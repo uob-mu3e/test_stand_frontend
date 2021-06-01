@@ -1,5 +1,5 @@
-#ifndef TMB_CONSTANT_H__
-#define TMB_CONSTANT_H__
+#ifndef SMB_CONSTANT_H__
+#define SMB_CONSTANT_H__
 
 #define  N_CHIP 13
     
@@ -9,7 +9,7 @@ struct i2c_reg_t {
     alt_u8 data;
 };
 
-const i2c_reg_t TMB_init_regs[18] = { //TODO add the monitor init
+const i2c_reg_t SMB_init_regs[18] = { //TODO add the monitor init
     {0x38,0x01,0x0C^0x20},
     {0x38,0x03,0x00},
     {0x38,0x01,0x0D^0x20},
@@ -35,7 +35,7 @@ const i2c_reg_t TMB_init_regs[18] = { //TODO add the monitor init
  * - Power down each ASIC (both 1.8V supplies at the same time)
  * - Power down 3.3V supplies
  */
-const i2c_reg_t TMB_powerdown_regs[17] = {
+const i2c_reg_t SMB_powerdown_regs[17] = {
     {0x3f,0x01,0x3C},
     {0xff,0x00,0x00},
     {0x3e,0x01,0x3C},
@@ -62,10 +62,9 @@ const int I2C_mux_index[4] = {3,0,1,2};         // this is the I2C mux fanout
 
 // address
 const alt_u8 addr_tmp[2] = {0x48,0x49};
-//7-bit I2C addr; addr==0xff: skip this mon\\TODO add the TMB I2C address //this is the address of all the power monitor 13(VCC18) + 2(VCC33)//
-const alt_u8 addr_pow_mon[15]={0x4e,0x4f,0x4d,0x4c,0x4a,0x4b,0x28,0x29,0x2a,0x2b,0x2c,0x2d,0x2e,0x18,0xff};//TMB - reordering needed
-//const alt_u8 addr_MUX[4]={0x40,0x41,0x42,0x43}; //TMB schematic
-const alt_u8 addr_MUX[4]={0x40,0x41,0x48,0x50}; //TMB #1 actual configuration + fix un U27
+//7-bit I2C addr; addr==0xff: skip this mon\\TODO add the SMB I2C address //this is the address of all the power monitor 13(VCC18) + 2(VCC33)//
+const alt_u8 addr_pow_mon[15]={0x4c,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x4d,0x18};//MALIBU
+const alt_u8 addr_MUX[4]={0x40,0x41,0x42,0x43};
 const alt_u8 addr_GPIO[7]={0x39,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f};
 
 

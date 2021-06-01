@@ -114,7 +114,7 @@ struct mupix_t {
     }
 
     void menu() {
-        auto& regs = sc->ram->regs.scifi;
+        //auto& regs = sc->ram->regs.scifi;
         alt_u32 value = 0x0;
         alt_u32 value2 = 0x0;
         char str[2] = {0};
