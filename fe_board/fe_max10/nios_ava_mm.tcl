@@ -1,6 +1,6 @@
 #
 
-nios_base.add_clock_source clk_spi $nios_freq -reset_export rst_spi
+nios_base.add_clock_source clk_spi [ expr int($nios_clk_mhz * 1e6) ] -reset_export rst_spi
 
 set_instance_parameter_value ram {dualPort} {1}
 

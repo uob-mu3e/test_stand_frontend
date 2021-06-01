@@ -9,7 +9,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-
 entity dec_8b10b_v2 is
 port (
     -- input 10-bit data (8b10b encoded)

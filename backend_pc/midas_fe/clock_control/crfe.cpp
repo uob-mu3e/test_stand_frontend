@@ -543,7 +543,7 @@ void setup_odb(){
 
     odb settings = {
         {"Active" , true},
-        {"IP", "0.0.0.0"},//"192.168.0.220"},
+        {"IP", "192.168.0.220"},
         {"Port", 50001},
         {"N_READBACK", 4},
         {"TX_CLK_MASK", 0x0AA},

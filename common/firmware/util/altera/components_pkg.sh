@@ -4,6 +4,10 @@ set -euf
 # find '*.cmp' files
 # and make 'cmp' package
 
+if [ $# -ge 1 ] ; then
+    cd -- "$1" || exit 1
+fi
+
 (
 
 cat << EOF
@@ -15,11 +19,11 @@ package cmp is
 
 EOF
 
-find -L -name "*.cmp" -exec cat {} \;
+find -L . -name '*.cmp' -exec echo "--" '{}' ';' -exec cat '{}' ';'
 
 cat << EOF
 
 end package;
 EOF
 
-) > components_pkg.vhd
+)

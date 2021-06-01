@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <link rel="stylesheet" href="midas.css">
+   <script src="controls.js"></script>
+   <script src="midas.js"></script>
+   <script src="mhttpd.js"></script>
+   <title>Low Voltage</title>
+   <style>
+       table, th, td {
+           border: 1px solid black;
+           border-collapse: collapse;
+       }
+       
+       th, td{
+						padding: 10px;
+						
+				}
+		
+       #mmain {
+        background-color: white;
+        width: 600px;
+        border: 15px solid lightskyblue;
+        padding: 50px;                                                 
+        margin: 20px;
+			}
+			h1 {
+  text-decoration: underline;
+}
+
+   </style>
+    <!-- Alternativ: midas style 
+    <style> 
+        .mtable td { padding: 10px; }
+    </style>
+    -->
+    
+</head>
+
+<body class="mcss" onload="mhttpd_init('myPage');">
+
+<!-- header and side navigation will be filled in mhttpd_start -->
+<div id="mheader"></div>
+<div id="msidenav"></div>
+
+<div id="mmain">
+    <h1 style="text-align: center">Group: Pixel Layer 1</h1>
+    <table class="mtable">
+        <tr>
+            <th colspan="7" class="mtableheader">Connected Channels</th>
+        </tr>
+        <tr>
+            <th>Channel</th>
+            <th>State</th>
+            <th>Voltage</th>
+            <th>Current</th>
+        </tr>
+        <tr>
+            <td style="text-align: center">
+                <div>HAMEG 1 Channel 1</div>
+            </td>
+            <td style="text-align: center">
+                <div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG1/Variables/State[0]" data-color="lightgreen" data-background-color="red"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Voltage[0]"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current[0]"></div>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: center">
+                <div>HAMEG 1 Channel 2</div>
+            </td>
+            <td style="text-align: center">
+                <div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG1/Variables/State[1]" data-color="lightgreen" data-background-color="red"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Voltage[1]"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current[1]"></div>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: center">
+                <div>HAMEG 1 Channel 3</div>
+            </td>
+            <td style="text-align: center">
+                <div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG1/Variables/State[2]" data-color="lightgreen" data-background-color="red"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Voltage[2]"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current[2]"></div>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: center">
+                <div>HAMEG 1 Channel 4</div>
+            </td>
+            <td style="text-align: center">
+                <div class="modbbox" style="width: 20px; height: 20px;" data-odb-path="/Equipment/HAMEG1/Variables/State[3]" data-color="lightgreen" data-background-color="red"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Voltage[3]"></div>
+            </td>
+            <td>
+                <div class="modbvalue" data-odb-path="/Equipment/HAMEG1/Variables/Current[3]"></div>
+            </td>
+        </tr>
+    </table>
+    <h2>Set the parameters of all channels:</h2>
+    <table class="mtable">
+        <tr>
+            <th>Set state</th>
+            <th>Set Voltage</th>
+            <th>Set Current</th>
+        </tr>
+        <tr>
+            <td style="text-align: center">
+                <input type="checkbox" id="Box1" onchange="checkBox1()"></input>
+            </td>
+            <td>
+                <input id="inputVolt1" onchange="setVolt1()"></input>
+            </td>
+            <td>
+                <input id="inputCur1" onchange="setCur1()"></input>
+            </td>
+        </tr>
+    </table>
+</div>
+<script src="lv.js"></script>
+</body>

@@ -42,6 +42,11 @@ struct reconfig_t {
 
 //        if(get(0x280, 0) == 1) return; // pll_locked
 
+        if(base[0x000] == 0xCCCCCCCC) {
+            printf("E [reconfig.pll] invalid address\n");
+            return;
+        }
+
         // 1. Request user access to the internal configuration bus by writing 0x2 to offset address 0x0[7:0].
         base[0x000] = 0x2;
         // 2. Wait for reconfig_waitrequest to be deasserted (logic low)

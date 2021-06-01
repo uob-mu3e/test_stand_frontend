@@ -40,5 +40,9 @@ Monitoring of DHCP requests can be done with:
 #  sudo tcpdump -i eth<insert number> port 67 or port 68 -e -n 
 ~~~~
 
-hostnames can be assigned by running a nameserver on the DHCP gateway 
-or adding ip and hostname to /etc/hosts on ALL machines
+hostnames will be assigned by a nameserver running on the mu3eGateway machine.
+To do Port forwarding to access midas behind the gateway server execute this command on the gateway machine: 
+(ToDo: proper solution with iptables port forwarding that does not interfer with dhcp configuration above)
+~~~~
+#  ssh -L \*:8081:localhost:8081 ip.of.midas.host
+~~~~

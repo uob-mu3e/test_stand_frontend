@@ -116,11 +116,23 @@ architecture arch of top is
     signal spi_arria_addr_offset                : std_logic_vector(7 downto 0);
     signal spi_arria_rw                         : std_logic;
     signal spi_arria_data_to_arria              : std_logic_vector(31 downto 0);
-    signal spi_arria_next_data                  : std_logic;
+    --signal spi_arria_next_data                  : std_logic;
     signal spi_arria_word_from_arria            : std_logic_vector(31 downto 0);
     signal spi_arria_word_en                    : std_logic;
     signal spi_arria_byte_from_arria            : std_logic_vector(7 downto 0);
     signal spi_arria_byte_en                    : std_logic;
+
+    -- SPI Backplane
+    signal spi_bp_addr_long     : std_logic_vector(7 downto 0);
+    signal spi_bp_addr          : std_logic_vector(6 downto 0);
+    signal spi_bp_addr_offset   : std_logic_vector(7 downto 0);
+    signal spi_bp_rw            : std_logic;
+    signal spi_bp_data_to_bp    : std_logic_vector(31 downto 0);
+    signal spi_bp_word_from_bp  : std_logic_vector(31 downto 0);
+    signal spi_bp_word_en       : std_logic;
+    signal spi_bp_byte_from_bp  : std_logic_vector(7 downto 0);
+    signal spi_bp_byte_en       : std_logic;  
+
 
     -- spi arria ram
     signal ram_SPI_data                         : std_logic_vector(31 downto 0);
@@ -151,10 +163,6 @@ begin
     reset_n     <= pll_locked;
     mscb_ena    <= '0';
 
-	 
-	 bp_spi_miso <= 'Z';
-	 bp_spi_miso_en <= '0';
-
     e_pll : entity work.ip_altpll
     port map(
         inclk0      => max10_osc_clk,
@@ -184,19 +192,32 @@ begin
     status(31 downto 24) <= spi_flash_status;
 	 
     attention_n <= "ZZ";
---	process(reset_n, max10_osc_clk)
---   begin
---	if(reset_n = '0') then
---		bp_spi_miso <= 'Z';
---		bp_spi_miso_en <= '0';
---		bp_spi_reg  <= '0';
---	elsif( max10_osc_clk'event and  max10_osc_clk = '1') then
---		bp_spi_miso <= bp_spi_reg;
---		bp_spi_reg	<= not bp_spi_reg;
---		bp_spi_miso_en <= '1';
---	end if;    	
---	end process;
 
+
+    -- Backplane SPI
+    ----------------
+    e_spi_bp: entity work.spi_bp
+    port map(
+        i_boardselect => board_select,
+        i_SPI_csn     => bp_spi_csn,
+        i_SPI_clk     => bp_spi_clk,
+        i_SPI_mosi    => bp_spi_mosi,
+        o_SPI_miso    => bp_spi_miso,
+        o_SPI_miso_en => bp_spi_miso_en,
+
+        clk100        => clk100,
+        reset_n       => reset_n,
+        addr          => spi_bp_addr_long,
+        addroffset    => spi_bp_addr_offset,
+        rw            => spi_bp_rw,
+        data_to_bp    => spi_bp_data_to_bp,
+        next_data     => open,
+        word_from_bp  => spi_bp_word_from_bp,
+        word_en       => spi_bp_word_en,
+        byte_from_bp  => spi_bp_byte_from_bp,
+        byte_en       => spi_bp_byte_en
+    );
+    spi_bp_addr  <= spi_bp_addr_long(6 downto 0);
 
     -- SPI Arria10 to MAX10
     -----------------------
@@ -216,6 +237,7 @@ begin
             addr            => spi_arria_addr,
             addroffset      => spi_arria_addr_offset,
             data_to_arria   => spi_arria_data_to_arria,
+            next_data       => open,
             rw              => spi_arria_rw,
             word_from_arria => spi_arria_word_from_arria,
             word_en         => spi_arria_word_en,
@@ -229,6 +251,7 @@ begin
               <=   version when spi_arria_addr = FEBSPI_ADDR_GITHASH
                     else status when spi_arria_addr = FEBSPI_ADDR_STATUS
                     else control when  spi_arria_addr = FEBSPI_ADDR_CONTROL
+                    else X"00" & programming_addr_from_arria when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_ADDR
                     else flash_programming_status_arria when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_STATUS
                     else flash_w_cnt when spi_arria_addr = FEBSPI_ADDR_PROGRAMMING_COUNT
                     else adc_data_0 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
@@ -242,6 +265,26 @@ begin
                     else adc_data_4 when spi_arria_addr = FEBSPI_ADDR_ADCDATA
                                      and spi_arria_addr_offset = "00000100"
 						  else (others => '0'); -- needed to avoid latch
+
+    -- Multiplexer for data to backplane
+    spi_bp_data_to_bp
+            <=  version when spi_bp_addr = FEBSPI_ADDR_GITHASH
+                else status when spi_bp_addr = FEBSPI_ADDR_STATUS
+                else control when  spi_bp_addr = FEBSPI_ADDR_CONTROL
+                else X"00" & programming_addr_from_arria when spi_bp_addr =FEBSPI_ADDR_PROGRAMMING_ADDR    
+                else flash_programming_status_arria when spi_bp_addr = FEBSPI_ADDR_PROGRAMMING_STATUS
+                else flash_w_cnt when spi_bp_addr = FEBSPI_ADDR_PROGRAMMING_COUNT
+                else adc_data_0 when spi_bp_addr = FEBSPI_ADDR_ADCDATA
+                                 and spi_bp_addr_offset = "00000000"
+                else adc_data_1 when spi_bp_addr = FEBSPI_ADDR_ADCDATA
+                                 and spi_bp_addr_offset = "00000001"
+                else adc_data_2 when spi_bp_addr = FEBSPI_ADDR_ADCDATA
+                                 and spi_bp_addr_offset = "00000010"
+                else adc_data_3 when spi_bp_addr = FEBSPI_ADDR_ADCDATA
+                                 and spi_bp_addr_offset = "00000011"
+                else adc_data_4 when spi_bp_addr = FEBSPI_ADDR_ADCDATA
+                                 and spi_bp_addr_offset = "00000100"
+                else (others => '0'); -- needed to avoid latch                              
                                      
                 
 
@@ -251,7 +294,7 @@ begin
     if (reset_n = '0') then
         control <= (others => '0');           
     elsif(clk100'event and clk100 = '1')then
-        -- Word-wise writing
+        -- Word-wise writing from Arria
         if(spi_arria_rw = '1' and spi_arria_word_en = '1') then
             if(spi_arria_addr = FEBSPI_ADDR_CONTROL) then
                 control <= spi_arria_word_from_arria;
@@ -263,6 +306,19 @@ begin
                 programming_addr_from_arria <= spi_arria_word_from_arria(23 downto 0);
             end if;    
         end if;
+        -- Word-wise writing from BP
+        if(spi_bp_rw = '1' and spi_bp_word_en = '1') then
+            if(spi_bp_addr = FEBSPI_ADDR_CONTROL) then
+                control <= spi_bp_word_from_bp;
+            end if;
+            if(spi_bp_addr = FEBSPI_ADDR_PROGRAMMING_CTRL) then
+                flash_programming_ctrl_arria <= spi_bp_word_from_bp;
+            end if;            
+            if(spi_bp_addr = FEBSPI_ADDR_PROGRAMMING_ADDR ) then
+                programming_addr_from_arria <= spi_bp_word_from_bp(23 downto 0);
+            end if;    
+        end if;        
+
         -- Byte-wise writing
         if(spi_arria_rw = '1' and spi_arria_byte_en = '1') then
             --if(spi_arria_addr = FEBSPI_ADDR_CONTROL) then
@@ -393,7 +449,12 @@ e_flashprogramming_block: entity work.flashprogramming_block
         spi_arria_byte_from_arria            => spi_arria_byte_from_arria,
         spi_arria_byte_en                    => spi_arria_byte_en,        
         spi_arria_addr                       => spi_arria_addr,
-        addr_from_arria                      => programming_addr_from_arria
+        addr_from_arria                      => programming_addr_from_arria,
+
+		-- Arria SPI interface
+        spi_bp_byte_from_bp                 => spi_bp_byte_from_bp,
+        spi_bp_byte_en                      => spi_bp_byte_en,        
+        spi_bp_addr                         => spi_bp_addr_long      
     );
 
  

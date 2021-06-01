@@ -20,6 +20,8 @@ create_clock -period "125.0 MHz" [get_ports A10_REFCLK_GBT_P_6]
 create_clock -period "125.0 MHz" [get_ports A10_REFCLK_GBT_P_7]
 
 
+# SI53344
+create_clock -period "125.0 MHz" [get_ports A10_CUSTOM_CLK_P]
 
 # PCIe
 create_clock -period "100.0 MHz" [get_ports A10_CLK_PCIE_P_0]

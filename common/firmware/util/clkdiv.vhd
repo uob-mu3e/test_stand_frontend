@@ -5,7 +5,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-
 -- clock divider
 -- period_{o_clk} = P * period_{i_clk}
 entity clkdiv is

@@ -18,8 +18,9 @@ output_files/
 reconfig_mif/
 **/simulation/modelsim/
 *.qdf
+*.qpf
+*.qsf
 *.qws
-*.bak
 *.rpt
 *.srf
 *.stp
@@ -37,11 +38,6 @@ top_assignment_defaults.qdf
 # qsys
 *.qsys
 *.sopcinfo
-
-# nios
-nios/
-**/software/app/
-**/software/hal_bsp/
 
 # eclipse
 .project
@@ -85,3 +81,6 @@ include/mudaq_registers.h
 
 # Generated header files
 switching_pc/slowcontrol/feb_constants.h
+
+#etc
+resources

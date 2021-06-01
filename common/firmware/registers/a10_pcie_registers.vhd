@@ -29,6 +29,7 @@ package a10_pcie_registers is
 		constant RESET_BIT_DATAFLOW							    :  integer := 20;
         constant RESET_BIT_LINK_MERGER							:  integer := 21;
         constant RESET_BIT_DATA_PATH							:  integer := 22;
+        constant RESET_BIT_FARM_DATA_PATH                       :  integer := 23;
 		constant RESET_BIT_PCIE									:  integer := 31;
 
 		constant DATAGENERATOR_REGISTER_W					    : integer := 16#02#;
@@ -84,19 +85,23 @@ package a10_pcie_registers is
 		constant	DATA_REQ_A_W								: integer := 16#21#;
 		constant	DATA_REQ_B_W								: integer := 16#22#;
 		constant DATA_TSBLOCK_DONE_W							: integer := 16#23#;
+        constant FARM_READOUT_STATE_REGISTER_W                  : integer := 16#24#;
+            constant USE_BIT_GEN_MERGE                          : integer := 0;
+        constant FARM_ID_REGISTER_W                             : integer := 16#25#;
+        constant FARM_REQ_EVENTS_W                              : integer := 16#26#;
 
-		-- Registers above 0x36 are in use for the PCIe controller/DMA
-		constant DMA2_CTRL_ADDR_LOW_REGISTER_W				    : integer := 16#36#;
-		constant DMA2_CTRL_ADDR_HI_REGISTER_W				    : integer := 16#37#;
-		constant DMA_REGISTER_W									: integer := 16#38#;
-		constant DMA_BIT_ENABLE                      	        : integer := 0;
-		constant DMA_BIT_NOW                         	        : integer := 1;
-		constant DMA_BIT_ADDR_WRITE_ENABLE					    : integer := 2;
-		constant DMA_BIT_ENABLE_INTERRUPTS					    : integer := 3;
-		constant DMA2_BIT_ENABLE                     	        : integer := 16;
-		constant DMA2_BIT_NOW                        	        : integer := 17;
-		constant DMA2_BIT_ADDR_WRITE_ENABLE					    : integer := 18;
-		constant DMA2_BIT_ENABLE_INTERRUPTS					    : integer := 19;
+        -- Registers above 0x36 are in use for the PCIe controller/DMA
+        constant DMA2_CTRL_ADDR_LOW_REGISTER_W                  : integer := 16#36#;
+        constant DMA2_CTRL_ADDR_HI_REGISTER_W                   : integer := 16#37#;
+        constant DMA_REGISTER_W                                 : integer := 16#38#;
+            constant DMA_BIT_ENABLE                             : integer := 0;
+            constant DMA_BIT_NOW                                : integer := 1;
+            constant DMA_BIT_ADDR_WRITE_ENABLE                  : integer := 2;
+            constant DMA_BIT_ENABLE_INTERRUPTS                  : integer := 3;
+            constant DMA2_BIT_ENABLE                            : integer := 16;
+            constant DMA2_BIT_NOW                               : integer := 17;
+            constant DMA2_BIT_ADDR_WRITE_ENABLE                 : integer := 18;
+            constant DMA2_BIT_ENABLE_INTERRUPTS                 : integer := 19;
 
 		constant DMA_CTRL_ADDR_LOW_REGISTER_W				    : integer := 16#39#;
 		constant DMA_CTRL_ADDR_HI_REGISTER_W				    : integer := 16#3A#;
@@ -161,6 +166,7 @@ package a10_pcie_registers is
             constant SC_MAIN_DONE								: integer := 0;
         constant DDR3_CLK_CNT_R                                 : integer := 16#30#;
         constant SC_STATE_REGISTER_R                            : integer := 16#31#;
+        constant DMA_CNT_WORDS_REGISTER_R                       : integer := 16#32#;
 		
 		-- Registers above 0x38 are in use for the PCIe controller/DMA
 		constant DMA_STATUS_REGISTER_R						    : integer := 16#38#;

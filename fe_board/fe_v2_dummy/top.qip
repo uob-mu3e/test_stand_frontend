@@ -1,0 +1,11 @@
+#
+
+set_global_assignment -name QIP_FILE ../fe/top_FEB_v2.qip
+
+set_global_assignment -name VHDL_FILE top.vhd
+set_global_assignment -name SDC_FILE top.sdc
+
+set_global_assignment -name QIP_FILE generated/include.qip
+set_global_assignment -name QIP_FILE registers/include.qip
+
+set_global_assignment -name QIP_FILE ../firmware/FEB_common/include_FEB_v2.qip
