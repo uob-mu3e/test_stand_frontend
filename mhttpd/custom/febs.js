@@ -368,7 +368,7 @@ function update_masks(valuex) {
                 febs[i][j].type = "Tiles";
                 febs[i][j].shorttype = "T";
             } else {
-                febs[i][j].type = "Undefined Type";
+                febs[i][j].type = "Undef.";
                 febs[i][j].shorttype = "U";
             }
         }

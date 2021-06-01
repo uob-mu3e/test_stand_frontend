@@ -529,11 +529,14 @@ void setup_odb(){
 
     firmware_variables.connect("/Equipment/Switching/Variables/FEBFirmware");
 
+    std::array<uint16_t, MAX_N_FRONTENDBOARDS> arr;
+    arr.fill(255);
+
     odb crate_settings = {
         {"CrateControllerMSCB", std::array<std::string, N_FEBCRATES>{}},
         {"CrateControllerNode", std::array<uint16_t, N_FEBCRATES>{}},
-        {"FEBCrate", std::array<uint16_t, MAX_N_FRONTENDBOARDS>{}},
-        {"FEBSlot", std::array<uint16_t, MAX_N_FRONTENDBOARDS>{}},
+        {"FEBCrate", arr},
+        {"FEBSlot", arr},
         {"Names SCFC", std::array<std::string, per_crate_SCFC_size*N_FEBCRATES>()}
     };
 

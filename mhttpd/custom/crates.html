@@ -6,7 +6,7 @@
     <script src="controls.js"></script>
     <script src="midas.js"></script>
     <script src="mhttpd.js"></script>
-    <title>Front-end Boards</title>
+    <title>Front-end Crates</title>
 </head>
 <body class="mcss" onload="mhttpd_init('myPage');">
 
@@ -19,13 +19,12 @@
       <tr>
         <td rowspan=22 style="text-align: right;">
              <div name="modb" data-odb-path="/Equipment/FEBCrates/Settings" onchange="update_slots(this.value)">
-             <div name="modb" data-odb-path="/Equipment/Links/Settings" onchange="update_masks(this.value)">
-             <div name="modb" data-odb-path="/Equipment/FEBCrates/Settings" onchange="update_sc(this.value)">
+             <div name="modb" data-odb-path="/Equipment/FEBCrates/Variables" onchange="update_sc(this.value)">
             <canvas width="1200px" height="900px"></canvas>
         </td>
         </tr>
    </table>
 </div>
-<script src="febs.js"></script>
+<script src="crates.js"></script>
 </body>
 </html>
