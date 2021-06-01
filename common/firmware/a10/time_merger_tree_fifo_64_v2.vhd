@@ -117,12 +117,12 @@ begin
         d_z(i) <= '1' when d_h(i) = tree_zero else '0';
         
         -- for debugging / simulation
-        t_q(i)(7 downto 4) <= q(i)(69 downto 66) when last_layer = '0' else last(69 downto 66);
-        t_q(i)(3 downto 0) <= q(i)(31 downto 28) when last_layer = '0' else last(31 downto 28);
+        t_q(i)(7 downto 4) <= q_reg(i)(69 downto 66) when last_layer = '0' else last_reg(69 downto 66);
+        t_q(i)(3 downto 0) <= q_reg(i)(31 downto 28) when last_layer = '0' else last_reg(31 downto 28);
         t_data(i)(7 downto 4) <= data(i)(69 downto 66);
         t_data(i)(3 downto 0) <= data(i)(31 downto 28);
-        l1(i) <= q(i)(75 downto 70) when last_layer = '0' else last(75 downto 70);
-        l2(i) <= q(i)(37 downto 32) when last_layer = '0' else last(37 downto 32);
+        l1(i) <= q_reg(i)(75 downto 70) when last_layer = '0' else last_reg(75 downto 70);
+        l2(i) <= q_reg(i)(37 downto 32) when last_layer = '0' else last_reg(37 downto 32);
     END GENERATE;
     
     o_layer_state <= layer_state;
@@ -173,24 +173,29 @@ begin
             
             -- reg for last FIFO output (timing)
             rdreq(i) <= '1' when rdempty(i) = '0' and wrfull_reg(i) = '0' else '0';
-            rdempty_reg(i) <= '1' when i_rdreq(i) = '1' else '0' when rdreq(i) = '1' else '1';
-            reg : process(i_clk, reset_fifo(i))
-            begin
-                if ( reset_fifo(i) = '1' ) then
-                    last_reg       <= (others => '0');
-                    wrfull_reg(i)  <= '0';
-                    --
-                elsif ( rising_edge(i_clk) ) then
-                    if ( rdreq(i) = '1' ) then
-                        last_reg       <= last;
-                        wrfull_reg(i)  <= '1';
-                    end if;
-                    
-                    if ( i_rdreq(i) = '1' ) then
-                        wrfull_reg(i)  <= '0';
-                    end if;
-                end if;
-            end process;
+            e_reg_fifo : entity work.reg_fifo
+            generic map (
+                g_WIDTH    => r_width,
+                g_DEPTH    => 10,
+                g_AF_LEVEL => 8,
+                g_AE_LEVEL => 4--,
+            )
+            port map (
+                i_rst_sync => reset_fifo(i),
+                i_clk      => i_clk,
+            
+                -- FIFO Write Interface
+                i_wr_en    => rdreq(i),
+                i_wr_data  => last,
+                o_af       => wrfull_reg(i),
+                o_full     => open,
+            
+                -- FIFO Read Interface
+                i_rd_en    => i_rdreq(i),
+                o_rd_data  => last_reg,
+                o_ae       => rdempty_reg(i),
+                o_empty    => open--,
+            );
             
         END GENERATE;
         
@@ -215,26 +220,31 @@ begin
                 wrfull  => wrfull(i)--,
             );
             
-            -- reg for last FIFO output (timing)
+            -- reg for FIFO output (timing)
             rdreq(i) <= '1' when rdempty(i) = '0' and wrfull_reg(i) = '0' else '0';
-            rdempty_reg(i) <= '1' when i_rdreq(i) = '1' else '0' when rdreq(i) = '1' else '1';
-            reg : process(i_clk, reset_fifo(i))
-            begin
-                if ( reset_fifo(i) = '1' ) then
-                    q_reg(i)       <= (others => '0');
-                    wrfull_reg(i)  <= '0';
-                    --
-                elsif ( rising_edge(i_clk) ) then
-                    if ( rdreq(i) = '1' ) then
-                        q_reg(i)       <= q(i);
-                        wrfull_reg(i)  <= '1';
-                    end if;
-                    
-                    if ( i_rdreq(i) = '1' ) then
-                        wrfull_reg(i)  <= '0';
-                    end if;
-                end if;
-            end process;
+            e_reg_fifo : entity work.reg_fifo
+            generic map (
+                g_WIDTH    => r_width,
+                g_DEPTH    => 10,
+                g_AF_LEVEL => 8,
+                g_AE_LEVEL => 4--,
+            )
+            port map (
+                i_rst_sync => reset_fifo(i),
+                i_clk      => i_clk,
+            
+                -- FIFO Write Interface
+                i_wr_en    => rdreq(i),
+                i_wr_data  => q(i),
+                o_af       => wrfull_reg(i),
+                o_full     => open,
+            
+                -- FIFO Read Interface
+                i_rd_en    => i_rdreq(i),
+                o_rd_data  => q_reg(i),
+                o_ae       => rdempty_reg(i),
+                o_empty    => open--,
+            );
             
         END GENERATE;
         
