@@ -114,7 +114,7 @@ begin
             fifo_wdata              <= (others => (others => '0'));
             internal_enable         <= '0';
 
-            --Bits: BIAS 210, CONF 90, VDAC 80, COL 896, TEST 896, TDAC 512
+            --Bits: BIAS 210, CONF 90, VDAC 80, COL 896, TDAC 512, TEST 896
 
             if(or_reduce(i_clr_fifo) = '1') then
                 data_in_all_position_32 <= 0;
@@ -168,12 +168,12 @@ begin
                         -- 864 COL Bits
                         fifo_write(WR_COL_BIT) <= '1';
                         fifo_wdata(WR_COL_BIT) <= i_data_all;
-                     when 40 to 67 =>
-                        -- 896 Test Bits
-                        fifo_write(WR_TEST_BIT) <= '1';
-                        fifo_wdata(WR_TEST_BIT) <= i_data_all;
-                     when 68 to 82 =>
+                     when 40 to 55 =>
                         -- 512 TDAC Bits
+                        fifo_write(WR_TDAC_BIT) <= '1';
+                        fifo_wdata(WR_TDAC_BIT) <= i_data_all;
+                     when 56 to 82 =>
+                        -- 896 Test Bits
                         fifo_write(WR_TEST_BIT) <= '1';
                         fifo_wdata(WR_TEST_BIT) <= i_data_all;
                      when 83 =>
