@@ -51,6 +51,7 @@
 
 #include <stdio.h>
 #include <cassert>
+#include <cstring>
 #include <switching_constants.h>
 #include <history.h>
 #include "midas.h"
@@ -59,6 +60,7 @@
 #include "string.h"
 #include "mudaq_device.h"
 #include "mudaq_dummy.h"
+#include "mscb.h"
 
 #include "FEBSlowcontrolInterface.h"
 #include "DummyFEBSlowcontrolInterface.h"
@@ -75,10 +77,17 @@
 
 #include "missing_hardware.h"
 
+
+
 using namespace std;
 using midas::odb;
 
 /*-- Globals -------------------------------------------------------*/
+
+/* Start address of power in the crate controller - TODO: Move to an appropriate header*/
+const uint8_t CC_POWER_OFFSET = 5;
+const uint8_t CC_VT_READOUT_START = 1;
+const uint8_t CC_VT_READOUT_END = 4;
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
 const char *frontend_name = "SW Frontend";
@@ -104,9 +113,9 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
 
-const int switch_id = 0; // TODO to be loaded from outside (on compilation?)
-const int per_fe_SSFE_size = 26;
-const int per_crate_SCFC_size = 21;
+constexpr int switch_id = 0; // TODO to be loaded from outside (on compilation?)
+constexpr int per_fe_SSFE_size = 26;
+constexpr int per_crate_SCFC_size = 21;
 
 /* Inteface to the PCIe FPGA */
 mudaq::MudaqDevice * mup;
@@ -123,6 +132,9 @@ MupixFEB    * mupixfeb;
 SciFiFEB    * scififeb;
 TilesFEB    * tilefeb;
 
+/* Local state of FEB power*/
+std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE> febpower{};
+
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -136,6 +148,7 @@ INT read_febcrate_sc_event(char *pevent, INT off);
 void sc_settings_changed(odb o);
 void switching_board_mask_changed(odb o);
 void frontend_board_mask_changed(odb o);
+void febpower_changed(odb o);
 
 uint64_t get_link_active_from_odb(odb o); //throws
 void set_feb_enable(uint64_t enablebits);
@@ -222,14 +235,14 @@ EQUIPMENT equipment[] = {
      read_mupix_sc_event,          /* readout routine */
     },
     {"FEBCrates",                    /* equipment name */
-    {110, 0,                      /* event ID, trigger mask */
+    {114, 0,                      /* event ID, trigger mask */
      "SYSTEM",                  /* event buffer */
      EQ_PERIODIC,                 /* equipment type */
      0,                         /* event source crate 0, all stations */
      "MIDAS",                   /* format */
      TRUE,                      /* enabled */
      RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
-     10000,                      /* read every 1 sec */
+     10000,                      /* read every 10 sec */
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
      1,                         /* log history every event */
@@ -256,6 +269,9 @@ INT interrupt_configure(INT cmd, INT source, POINTER_T adr)
 
 INT frontend_init()
 {
+    for(size_t i =0; i < febpower.size(); i++)
+        febpower[i] = 0;
+
 
     #ifdef MY_DEBUG
         odb::set_debug(true);
@@ -390,13 +406,12 @@ void setup_odb(){
             {"Firmware File",""},
             {"Firmware FEB ID",0},
             // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
-            {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()},
-            {"Names SCFC", std::array<std::string, per_crate_SCFC_size*N_FEBCRATES>()}
+            {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()}
     };
 
     int bankindex = 0;
 
-    for(int i=0; i < N_FEBS[switch_id]; i++){
+    for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
         string feb = "FEB" + to_string(i);
         string * s = new string(feb);
         (*s) += " Index";
@@ -478,33 +493,6 @@ void setup_odb(){
         settings[namestr][bankindex++] = s;
     }
 
-    bankindex = 0;
-    for(int i=0; i < N_FEBCRATES; i++){
-        string feb = "Crate" + to_string(i);
-        string * s = new string(feb);
-        (*s) += " Index";
-        settings["Names SCFC"][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 20";
-        settings["Names SCFC"][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 3.3";
-        settings["Names SCFC"][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 5";
-        settings["Names SCFC"][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " CC Temperature";
-        settings["Names SCFC"][bankindex++] = s;
-        for(int j=0; j < MAX_FEBS_PER_CRATE; j++){
-            s = new string(feb);
-            (*s) += "FEB" + to_string(j) + "Temperature";
-            settings["Names SCFC"][bankindex++] = s;
-        }
-    }
-
-    settings.print();
-
     settings.connect("/Equipment/Switching/Settings", true);
 
     /* Default values for /Equipment/Switching/Variables */
@@ -543,10 +531,63 @@ void setup_odb(){
 
     firmware_variables.connect("/Equipment/Switching/Variables/FEBFirmware");
 
+    std::array<uint16_t, MAX_N_FRONTENDBOARDS> arr;
+    arr.fill(255);
+
+    odb crate_settings = {
+        {"CrateControllerMSCB", std::array<std::string, N_FEBCRATES>{}},
+        {"CrateControllerNode", std::array<uint16_t, N_FEBCRATES>{}},
+        {"FEBCrate", arr},
+        {"FEBSlot", arr},
+        {"Names SCFC", std::array<std::string, per_crate_SCFC_size*N_FEBCRATES>()}
+    };
+
+    crate_settings.connect("/Equipment/FEBCrates/Settings");
+    // Why is the line above needed? Not having it realiably crashes the program
+    // when writing the names below
+
+    bankindex = 0;
+    for(uint32_t i=0; i < N_FEBCRATES; i++){
+        string feb = "Crate " + to_string(i);
+        string * s = new string(feb);
+        (*s) += " Index";
+        crate_settings["Names SCFC"][bankindex++] = s;
+        s = new string(feb);
+        (*s) += " Voltage 20";
+        crate_settings["Names SCFC"][bankindex++] = s;
+        s = new string(feb);
+        (*s) += " Voltage 3.3";
+        crate_settings["Names SCFC"][bankindex++] = s;
+        s = new string(feb);
+        (*s) += " Voltage 5";
+        crate_settings["Names SCFC"][bankindex++] = s;
+        s = new string(feb);
+        (*s) += " CC Temperature";
+        crate_settings["Names SCFC"][bankindex++] = s;
+        for(uint32_t j=0; j < MAX_FEBS_PER_CRATE; j++){
+            s = new string(feb);
+            (*s) += " FEB " + to_string(j) + " Temperature";
+            crate_settings["Names SCFC"][bankindex++] = s;
+        }
+    }
+
+    crate_settings.connect("/Equipment/FEBCrates/Settings");
+
+    cout << "Setting crate variables" << endl;
+
+    odb crate_variables = {
+        {"FEBPower", std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE>{}},
+        {"SCFC", std::array<float, per_crate_SCFC_size*N_FEBCRATES>()}
+    };
+
+    crate_variables.connect("/Equipment/FEBCrates/Variables");
+
+
     // add custom page to ODB
     odb custom("/Custom");
     custom["Switching&"] = "sc.html";
     custom["Febs&"] = "febs.html";
+    custom["FEBcrates&"] = "crates.html";
     
     // TODO: not sure at the moment we have a midas frontend for three feb types but 
     // we need to have different swb at the final experiment so maybe one needs to take
@@ -565,10 +606,17 @@ void setup_watches(){
     odb switch_mask("/Equipment/Links/Settings/SwitchingBoardMask");
     switch_mask.watch(frontend_board_mask_changed);
 
+    // watch if the mapping of FEBs to crates changed
+    odb crates("/Equipment/FEBCrates/Settings");
+    crates.watch(frontend_board_mask_changed);
+
     // watch if this links are enabled
     odb links_odb("/Equipment/Links/Settings/LinkMask");
     links_odb.watch(switching_board_mask_changed);
 
+    // watch for changes in the FEB powering state
+    odb febpower_odb("/Equipment/FEBCrates/Variables/FEBPower");
+    febpower_odb.watch(febpower_changed);
 }
 
 void switching_board_mask_changed(odb o) {
@@ -619,6 +667,8 @@ INT init_mudaq(mudaq::MudaqDevice &mu) {
 }
 
 INT init_crates() {
+    odb febpower_odb("/Equipment/FEBCrates/Variables/FEBPower");
+    febpower_changed(febpower_odb);
     return SUCCESS;
 }
 
@@ -956,10 +1006,44 @@ INT resume_run(INT run_number, char *error)
 
 /*--- Read Slow Control Event from crate controllers to be put into data stream --------*/
 INT read_febcrate_sc_event(char *pevent, INT off){
+    bk_init(pevent);
+    float *pdata;
+    bk_create(pevent, "SCFC", TID_FLOAT, (void **)&pdata);
+    odb crates("/Equipment/FEBCrates/Settings");
+    for(uint32_t i = 0; i < N_FEBCRATES; i++){
+        *pdata++ = i;
+        std::string mscb = crates["CrateControllerMSCB"][i];
+        char cstr[256]; //not good...
+        strcpy(cstr, mscb.c_str());
+        if(mscb.empty()){
+            for(uint32_t j= 0; j < per_crate_SCFC_size-1; j++)// -1 as index is already written
+                *pdata++ = 0;
+        } else {
+            uint16_t node = crates["CrateControllerNode"][i];
+            int fd = mscb_init(cstr, sizeof(cstr), nullptr, 0);
+            if (fd < 0) {
+               std::cout << "Cannot connect to " << node << std::endl;
+               for(uint32_t j= 0; j < per_crate_SCFC_size-1; j++)// -1 as index is already written
+                   *pdata++ = 0;
+               continue;
+            }
+            float data;
+            int size = sizeof(float);
+            for(int k=0; k < 4; k++){
+                mscb_read(fd, node, CC_VT_READOUT_START+k, &data, &size);
+                *pdata++ = data;
+            }
+            for(uint32_t j= 0; j < MAX_FEBS_PER_CRATE; j++)
+                *pdata++ = 0;
+        }
+    }
+    bk_close(pevent,pdata);
+    return bk_size(pevent);
+
     return 0;
 }
 
-/*--- Read Slow Control Event from FEBsto be put into data stream --------*/
+/*--- Read Slow Control Event from FEBs to be put into data stream --------*/
 INT read_sc_event(char *pevent, INT off)
 {    
     cout << "Reading FEB SC" << endl;
@@ -1073,6 +1157,36 @@ INT get_odb_value_by_string(const char *key_name){
     SIZE_ODB_DATA = sizeof(ODB_DATA);
     db_get_value(hDB, 0, key_name, &ODB_DATA, &SIZE_ODB_DATA, TID_INT, 0);
     return ODB_DATA;
+}
+
+void febpower_changed(odb o)
+{
+    cout << "Febpower!" << endl;
+    std::vector<uint8_t> power_odb = o;
+    odb crates("/Equipment/FEBCrates/Settings");
+    for(size_t i =0; i < febpower.size(); i++){
+        if(febpower[i] != power_odb[i]){
+            uint16_t crate = crates["FEBCrate"][i];
+            uint16_t slot = crates["FEBSlot"][i];
+            std::string mscb = crates["CrateControllerMSCB"][crate];
+            char cstr[256]; //not good...
+            strcpy(cstr, mscb.c_str());
+            uint16_t node = crates["CrateControllerNode"][crate];
+            int fd = mscb_init(cstr, sizeof(cstr), nullptr, 0);
+            if (fd < 0) {
+               std::cout << "Cannot connect to " << node << std::endl;
+               return;
+            }
+            uint8_t power = power_odb[i];
+           if(power)
+               cout << "Switching on FEB " << slot << " in crate " << crate << endl;
+           else
+               cout << "Switching off FEB " << slot << " in crate " << crate << endl;
+
+            mscb_write(fd, node, slot+CC_POWER_OFFSET,&power,sizeof(power));
+            febpower[i] = power;
+        }
+    }
 }
 
 /*--- Called whenever settings have changed ------------------------*/
@@ -1264,7 +1378,7 @@ uint64_t get_link_active_from_odb(odb o){
 
    /* get link active from odb */
    uint64_t link_active_from_odb = 0;
-   for(int link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
+   for(uint32_t link = 0; link < MAX_LINKS_PER_SWITCHINGBOARD; link++) {
       int offset = MAX_LINKS_PER_SWITCHINGBOARD * switch_id;
       int cur_mask = o[offset + link];
       if((cur_mask == FEBLINKMASK::ON) || (cur_mask == FEBLINKMASK::DataOn)){
@@ -1295,7 +1409,7 @@ uint64_t get_runend_ack(){
 
 void print_ack_state(){
    //uint64_t link_active_from_register = get_runstart_ack();
-   for(int i = 0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++) {
+   for(uint32_t i = 0; i < MAX_LINKS_PER_SWITCHINGBOARD; i++) {
       //if ((link_active_from_register >> i) & 0x1){
          mup->write_register_wait(RUN_NR_ADDR_REGISTER_W, uint32_t(i), 1000);
          uint32_t val=mup->read_register_ro(RUN_NR_REGISTER_R);
