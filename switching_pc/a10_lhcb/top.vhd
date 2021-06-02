@@ -83,10 +83,19 @@ end entity;
 
 architecture arch of top is
 
+    -- constants
+    constant SWB_ID : std_logic_vector(7 downto 0) := x"01";
+    constant g_NLINKS_FEB_TOTL   : positive := 16;
+    constant g_NLINKS_FARM_TOTL  : positive := 16;
+    constant g_NLINKS_FARM_PIXEL : positive := 8;
+    constant g_NLINKS_DATA_PIXEL : positive := 10;
+    constant g_NLINKS_FARM_SCIFI : positive := 8;
+    constant g_NLINKS_DATA_SCIFI : positive := 4;
+    constant g_NLINKS_FARM_TILE  : positive := 8;
+    constant g_NLINKS_DATA_TILE  : positive := 12;
+
     signal led : std_logic_vector(7 downto 0) := (others => '0');
     signal reset_n : std_logic;
-
-
 
     -- local 100 MHz clock
     signal clk_100, reset_100_n : std_logic;
@@ -110,9 +119,17 @@ architecture arch of top is
         others => "0001"--,
     );
 
-
-
-    signal pcie_wregs, pcie_rregs : work.mudaq.reg32array_pcie;
+    -- pcie read / write registers
+    signal pcie0_resets_n_A   : std_logic_vector(31 downto 0);
+    signal pcie0_resets_n_B   : std_logic_vector(31 downto 0);
+    signal pcie0_writeregs_A  : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_writeregs_B  : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_readregs_A   : work.util.slv32_array_t(63 downto 0);
+    signal pcie0_readregs_B   : work.util.slv32_array_t(63 downto 0);
+    
+    -- pcie dma
+    signal dma_data_wren, dmamem_endofevent, pcie0_dma0_hfull : std_logic;
+    signal dma_data : std_logic_vector(255 downto 0);
 
 begin
 
@@ -153,7 +170,10 @@ begin
     port map ( o_reset_n => reset_125_n, i_reset_n => reset_n, i_clk => clk_125 );
 
 
-
+    --! A10 block
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
     a10_block : entity work.a10_block
     generic map (
         g_XCVR0_CHANNELS => 24,
@@ -171,8 +191,6 @@ begin
         io_i2c_scl(2)                   => A10_SI5345_2_SMB_SCL,
         io_i2c_sda(2)                   => A10_SI5345_2_SMB_SDA,
 
-
-
         -- XCVR0 (6250 Mbps @ 156.25 MHz)
         i_xcvr0_rx                      => rx_gbt(47 downto 24),
         o_xcvr0_tx                      => tx_gbt(47 downto 24),
@@ -182,8 +200,6 @@ begin
         o_xcvr0_rx_datak                => pod_rx_datak(47 downto 24),
         i_xcvr0_tx_data                 => pod_tx_data(47 downto 24),
         i_xcvr0_tx_datak                => pod_tx_datak(47 downto 24),
-
-
 
         -- XCVR1 (10000 Mbps @ 250 MHz)
         i_xcvr1_rx                      => rx_gbt(23 downto 0),
@@ -195,8 +211,6 @@ begin
         i_xcvr1_tx_data                 => pod_tx_data(23 downto 0),
         i_xcvr1_tx_datak                => pod_tx_datak(23 downto 0),
 
-
-
         -- PCIe0
         i_pcie0_rx                      => i_pcie0_rx,
         o_pcie0_tx                      => o_pcie0_tx,
@@ -204,24 +218,37 @@ begin
         i_pcie0_refclk                  => i_pcie0_refclk,
         o_pcie0_clk                     => pcie0_clk,
 
+        -- PCIe0 DMA0
+        i_pcie0_dma0_wdata              => dma_data,
+        i_pcie0_dma0_we                 => dma_data_wren,
+        i_pcie0_dma0_eoe                => dmamem_endofevent,
+        o_pcie0_dma0_hfull              => pcie0_dma0_hfull,
         i_pcie0_dma0_clk                => pcie0_clk,
-        i_pcie0_wmem_clk                => pcie0_clk,
-        i_pcie0_rmem_clk                => pcie0_clk,
 
+        -- PCIe0 read interface to writable memory
+        i_pcie0_wmem_addr               => writememreadaddr,
+        o_pcie0_wmem_rdata              => writememreaddata,
+        i_pcie0_wmem_clk                => clk_156,
 
+        -- PCIe0 write interface to readable memory
+        i_pcie0_rmem_addr               => readmem_writeaddr,
+        i_pcie0_rmem_wdata              => readmem_writedata,
+        i_pcie0_rmem_we                 => readmem_wren,
+        i_pcie0_rmem_clk                => clk_156,
 
-        -- PCIe0
-        i_pcie1_rx                      => i_pcie1_rx,
-        o_pcie1_tx                      => o_pcie1_tx,
-        i_pcie1_perst_n                 => i_pcie1_perst_n,
-        i_pcie1_refclk                  => i_pcie1_refclk,
-        o_pcie1_clk                     => pcie1_clk,
+        -- PCIe0 update interface for readable registers
+        i_pcie0_rregs_A                 => pcie0_readregs_A,
+        i_pcie0_rregs_B                 => pcie0_readregs_B,
 
-        i_pcie1_dma0_clk                => pcie0_clk,
-        i_pcie1_wmem_clk                => pcie0_clk,
-        i_pcie1_rmem_clk                => pcie0_clk,
-
-
+        -- PCIe0 read interface for writable registers
+        o_pcie0_wregs_A                 => pcie0_writeregs_A,
+        i_pcie0_wregs_A_clk             => pcie0_clk,
+        o_pcie0_wregs_B                 => pcie0_writeregs_B,
+        i_pcie0_wregs_B_clk             => clk_156,
+        o_pcie0_wregs_C                 => open,
+        i_pcie0_wregs_C_clk             => clk_156,
+        o_pcie0_resets_n_A              => pcie0_resets_n_A,
+        o_pcie0_resets_n_B              => pcie0_resets_n_B,    
 
         o_reset_156_n                   => reset_156_n,
         o_clk_156                       => clk_156,
@@ -236,6 +263,58 @@ begin
 
         i_reset_n                       => reset_100_n,
         i_clk                           => clk_100--,
+    );
+
+
+    --! SWB Block
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    e_swb_block : entity work.swb_block
+    generic map (
+        g_NLINKS_FEB_TOTL       => g_NLINKS_FEB_TOTL,
+        g_NLINKS_FARM_TOTL      => g_NLINKS_FARM_TOTL,
+        g_NLINKS_FARM_PIXEL     => g_NLINKS_FARM_PIXEL,
+        g_NLINKS_DATA_PIXEL     => g_NLINKS_DATA_PIXEL,
+        SWB_ID                  => SWB_ID--,
+    )
+    port map (
+        i_rx            => rx_data_raw,
+        i_rx_k          => rx_datak_raw,
+        o_tx            => tx_data,
+        o_tx_k          => tx_datak,
+
+        i_writeregs_250 => pcie0_writeregs_A,
+        i_writeregs_156 => pcie0_writeregs_B,
+    
+        o_readregs_250  => pcie0_readregs_A,
+        o_readregs_156  => pcie0_readregs_B,
+
+        i_resets_n_250  => pcie0_resets_n_A,
+        i_resets_n_156  => pcie0_resets_n_B,
+
+        i_wmem_rdata    => writememreaddata,
+        o_wmem_addr     => writememreadaddr,
+
+        o_rmem_wdata    => readmem_writedata,
+        o_rmem_addr     => readmem_writeaddr,
+        o_rmem_we       => readmem_wren,
+
+        i_dmamemhalffull=> pcie0_dma0_hfull,
+        o_dma_wren      => dma_data_wren,
+        o_endofevent    => dmamem_endofevent,
+        o_dma_data      => dma_data,
+
+        o_farm_data     => open,
+        o_farm_datak    => open,
+
+        --! 250 MHz clock / reset_n
+        i_reset_n_250   => reset_pcie0_n,
+        i_clk_250       => pcie_fastclk_out,
+
+        --! 156 MHz clock / reset_n
+        i_reset_n_156   => reset_156_n,
+        i_clk_156       => clk_156--,
     );
 
 end architecture;
