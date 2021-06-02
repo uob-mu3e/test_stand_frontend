@@ -74,8 +74,10 @@ architecture arch of time_merger_v2 is
     constant generate_fifos : fifo_width_t := (1, 2, 4, 8, 16, 32, 64);
 
     signal data_0 : work.util.slv38_array_t(generate_fifos(0) - 1 downto 0);
-    signal q_0, q_0_reg : work.util.slv76_array_t(generate_fifos(0) - 1 downto 0);
-    signal rdreq_0_reg, rdreq_0, wrreq_0, rdempty_0, rdempty_0_reg, wrfull_0, wrfull_0_reg, reset_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal q_0, q_0_reg, q_0_reg_reg : work.util.slv76_array_t(generate_fifos(0) - 1 downto 0);
+    signal rdreq_0, wrreq_0, rdempty_0, wrfull_0, reset_0 : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal rdreq_0_reg, rdempty_0_reg, wrfull_0_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
+    signal rdreq_0_reg_reg, rdempty_0_reg_reg, wrfull_0_reg_reg : std_logic_vector(generate_fifos(0) - 1 downto 0);
     signal q_1 : work.util.slv76_array_t(generate_fifos(1) - 1 downto 0);
     signal q_2 : work.util.slv76_array_t(generate_fifos(2) - 1 downto 0);
     signal q_3 : work.util.slv76_array_t(generate_fifos(3) - 1 downto 0);
@@ -180,29 +182,41 @@ begin
             
             -- reg for FIFO outputs (timing)
             rdreq_0(i) <= '1' when rdempty_0(i) = '0' and wrfull_0_reg(i) = '0' else '0';
-            e_reg_fifo : entity work.reg_fifo
-            generic map (
-                g_WIDTH    => read_width(0),
-                g_DEPTH    => 10,
-                g_AF_LEVEL => 6,
-                g_AE_LEVEL => 4--,
-            )
-            port map (
-                i_rst_sync => reset_0(i),
-                i_clk      => i_clk,
-            
-                -- FIFO Write Interface
-                i_wr_en    => rdreq_0(i),
-                i_wr_data  => q_0(i),
-                o_af       => wrfull_0_reg(i),
-                o_full     => open,
-            
-                -- FIFO Read Interface
-                i_rd_en    => rdreq_0_reg(i),
-                o_rd_data  => q_0_reg(i),
-                o_ae       => rdempty_0_reg(i),
-                o_empty    => open--,
-            );
+            rdreq_0_reg(i) <= '1' when rdempty_0_reg(i) = '0' and wrfull_0_reg_reg(i) = '0' else '0';
+            process(i_clk, reset_0(i))
+            begin
+            if ( reset_0(i) = '1' ) then
+                rdempty_0_reg(i)    <= '1';
+                wrfull_0_reg(i)     <= '0';
+                q_0_reg(i)          <= (others => '0');
+                rdempty_0_reg_reg(i)<= '1';
+                wrfull_0_reg_reg(i) <= '0';
+                q_0_reg_reg(i)      <= (others => '0');
+                --
+            elsif ( rising_edge(i_clk) ) then
+
+                if ( rdreq_0(i) = '1' ) then
+                    q_0_reg(i)       <= q_0(i);
+                    wrfull_0_reg(i)  <= '1';
+                    rdempty_0_reg(i) <= '0';
+                end if;
+
+                if ( rdreq_0_reg(i) = '1' ) then
+                    q_0_reg_reg(i)   <= q_0_reg(i);
+                    wrfull_0_reg(i)  <= '0';
+                    rdempty_0_reg(i) <= '1';
+
+                    wrfull_0_reg_reg(i)  <= '1';
+                    rdempty_0_reg_reg(i) <= '0';
+                end if;
+
+                if ( rdreq_0_reg_reg(i) = '1' ) then
+                    wrfull_0_reg_reg(i)  <= '0';
+                    rdempty_0_reg_reg(i) <= '1';
+                end if;
+
+            end if;
+            end process;
             
         END GENERATE;
         
@@ -215,8 +229,8 @@ begin
         compare_fifos => generate_fifos(0), gen_fifos => generate_fifos(1)--,
     )
     port map (
-        i_data          => q_0_reg,
-        i_rdempty       => rdempty_0_reg,
+        i_data          => q_0_reg_reg,
+        i_rdempty       => rdempty_0_reg_reg,
         i_rdreq         => rdreq_1,
         i_merge_state   => merger_state_signal,
         i_mask_n        => i_mask_n,
@@ -225,7 +239,7 @@ begin
 
         o_q             => q_1,
         o_rdempty       => rdempty_1,
-        o_rdreq         => rdreq_0_reg,
+        o_rdreq         => rdreq_0_reg_reg,
         o_mask_n        => mask_n_1,
         o_layer_state   => open,
         o_wrfull        => open,

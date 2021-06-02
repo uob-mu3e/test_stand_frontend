@@ -31,7 +31,7 @@ port (
     -- output
     o_q             : out work.util.slv76_array_t(gen_fifos - 1 downto 0);
     o_last          : out std_logic_vector(r_width-1 downto 0);
-    o_rdempty       : out std_logic_vector(gen_fifos - 1 downto 0);
+    o_rdempty       : out std_logic_vector(gen_fifos - 1 downto 0) := (others => '1');
     o_rdreq         : out std_logic_vector(compare_fifos - 1 downto 0);
     o_mask_n        : out std_logic_vector(gen_fifos - 1 downto 0);
     o_layer_state   : out work.util.slv8_array_t(gen_fifos - 1 downto 0);
@@ -80,19 +80,21 @@ architecture arch of time_merger_tree_fifo_64_v2 is
     constant a_b_smaller_c_d_padding : std_logic_vector(7 downto 0) := x"1D";
     constant IDEL : std_logic_vector(7 downto 0) := x"FF";
 
-    signal data, data_reg, f_data, f_data_reg, q, q_reg : work.util.slv76_array_t(gen_fifos - 1 downto 0);
+    signal data, data_reg, f_data, f_data_reg, q, q_reg, q_reg_reg : work.util.slv76_array_t(gen_fifos - 1 downto 0);
     signal layer_state, layer_state_reg : work.util.slv8_array_t(gen_fifos - 1 downto 0);
     signal wrreq, f_wrreq, f_wrreq_reg, wrfull, reset_fifo, wrfull_and_merge_state, both_inputs_rdempty, rdempty, rdempty_reg, wrfull_reg, rdreq : std_logic_vector(gen_fifos - 1 downto 0);
+    signal rdempty_reg_reg, wrfull_reg_reg, rdreq_reg : std_logic_vector(gen_fifos - 1 downto 0);
     signal wrfull_and_merge_state_and_both_inputs_not_rdempty, wrfull_and_merge_state_and_first_input_not_rdempty, wrfull_and_merge_state_and_second_input_not_rdempty : std_logic_vector(gen_fifos - 1 downto 0);
     signal first_input_mask_n_second_input_not_mask_n, second_input_mask_n_first_input_not_mask_n, a_padding, b_padding, c_padding, d_padding : std_logic_vector(gen_fifos - 1 downto 0);
     signal a_b_padding, a_b_no_padding, a_no_b_padding, c_d_padding, c_d_no_padding, c_no_d_padding, a_c_padding : std_logic_vector(gen_fifos - 1 downto 0);
     signal a, b, c, d : work.util.slv4_array_t(gen_fifos - 1 downto 0) := (others => (others => '0'));
     signal a_h, b_h, c_h, d_h : work.util.slv38_array_t(gen_fifos - 1 downto 0) := (others => (others => '0'));
     signal a_z, b_z, c_z, d_z : std_logic_vector(gen_fifos - 1 downto 0) := (others => '0');
-    signal last, last_reg : std_logic_vector(r_width-1 downto 0);
+    signal last, last_reg, last_reg_reg : std_logic_vector(r_width-1 downto 0);
 
     -- for debugging / simulation
     signal t_q, t_data : work.util.slv8_array_t(gen_fifos - 1 downto 0);
+    signal t_q_last : std_logic_vector(31 downto 0);
     signal l1 : work.util.slv6_array_t(gen_fifos - 1 downto 0);
     signal l2 : work.util.slv6_array_t(gen_fifos - 1 downto 0);
 
@@ -117,19 +119,30 @@ begin
         d_z(i) <= '1' when d_h(i) = tree_zero else '0';
         
         -- for debugging / simulation
-        t_q(i)(7 downto 4) <= q_reg(i)(69 downto 66) when last_layer = '0' else last_reg(69 downto 66);
-        t_q(i)(3 downto 0) <= q_reg(i)(31 downto 28) when last_layer = '0' else last_reg(31 downto 28);
+        t_q(i)(7 downto 4) <= q_reg_reg(i)(69 downto 66);
+        t_q(i)(3 downto 0) <= q_reg_reg(i)(31 downto 28);
         t_data(i)(7 downto 4) <= data(i)(69 downto 66);
         t_data(i)(3 downto 0) <= data(i)(31 downto 28);
-        l1(i) <= q_reg(i)(75 downto 70) when last_layer = '0' else last_reg(75 downto 70);
-        l2(i) <= q_reg(i)(37 downto 32) when last_layer = '0' else last_reg(37 downto 32);
+        l1(i) <= q_reg_reg(i)(75 downto 70) when last_layer = '0' else last_reg_reg(75 downto 70);
+        l2(i) <= q_reg_reg(i)(37 downto 32) when last_layer = '0' else last_reg_reg(37 downto 32);
     END GENERATE;
+    
+    gen_last_layer : if last_layer = '1' generate
+        t_q_last(31 downto 28) <= last_reg_reg(297 downto 294);
+        t_q_last(27 downto 24) <= last_reg_reg(259 downto 256);
+        t_q_last(23 downto 20) <= last_reg_reg(221 downto 218);
+        t_q_last(19 downto 16) <= last_reg_reg(183 downto 180);
+        t_q_last(15 downto 12) <= last_reg_reg(145 downto 142);
+        t_q_last(11 downto  8) <= last_reg_reg(107 downto 104);
+        t_q_last( 7 downto  4) <= last_reg_reg(69 downto 66);
+        t_q_last( 3 downto  0) <= last_reg_reg(31 downto 28);
+    end generate gen_last_layer;
     
     o_layer_state <= layer_state;
     o_wrfull <= wrfull;
-    o_q <= q_reg;
-    o_last <= last_reg;
-    o_rdempty <= rdempty_reg;
+    o_q <= q_reg_reg;
+    o_last <= last_reg_reg;
+    o_rdempty <= rdempty_reg_reg;
 
     gen_tree:
     FOR i in 0 to gen_fifos - 1 GENERATE
@@ -173,29 +186,41 @@ begin
             
             -- reg for last FIFO output (timing)
             rdreq(i) <= '1' when rdempty(i) = '0' and wrfull_reg(i) = '0' else '0';
-            e_reg_fifo : entity work.reg_fifo
-            generic map (
-                g_WIDTH    => r_width,
-                g_DEPTH    => 10,
-                g_AF_LEVEL => 8,
-                g_AE_LEVEL => 4--,
-            )
-            port map (
-                i_rst_sync => reset_fifo(i),
-                i_clk      => i_clk,
-            
-                -- FIFO Write Interface
-                i_wr_en    => rdreq(i),
-                i_wr_data  => last,
-                o_af       => wrfull_reg(i),
-                o_full     => open,
-            
-                -- FIFO Read Interface
-                i_rd_en    => i_rdreq(i),
-                o_rd_data  => last_reg,
-                o_ae       => rdempty_reg(i),
-                o_empty    => open--,
-            );
+            rdreq_reg(i) <= '1' when rdempty_reg(i) = '0' and wrfull_reg_reg(i) = '0' else '0';
+            process(i_clk, reset_fifo(i))
+            begin
+            if ( reset_fifo(i) = '1' ) then
+                rdempty_reg(i)    <= '1';
+                wrfull_reg(i)     <= '0';
+                last_reg          <= (others => '0');
+                rdempty_reg_reg(i)<= '1';
+                wrfull_reg_reg(i) <= '0';
+                last_reg_reg      <= (others => '0');
+                --
+            elsif ( rising_edge(i_clk) ) then
+
+                if ( rdreq(i) = '1' ) then
+                    last_reg       <= last;
+                    wrfull_reg(i)  <= '1';
+                    rdempty_reg(i) <= '0';
+                end if;
+
+                if ( rdreq_reg(i) = '1' ) then
+                    last_reg_reg   <= last_reg;
+                    wrfull_reg(i)  <= '0';
+                    rdempty_reg(i) <= '1';
+
+                    wrfull_reg_reg(i)  <= '1';
+                    rdempty_reg_reg(i) <= '0';
+                end if;
+
+                if ( i_rdreq(i) = '1' ) then
+                    wrfull_reg_reg(i)  <= '0';
+                    rdempty_reg_reg(i) <= '1';
+                end if;
+
+            end if;
+            end process;
             
         END GENERATE;
         
@@ -222,29 +247,40 @@ begin
             
             -- reg for FIFO output (timing)
             rdreq(i) <= '1' when rdempty(i) = '0' and wrfull_reg(i) = '0' else '0';
-            e_reg_fifo : entity work.reg_fifo
-            generic map (
-                g_WIDTH    => r_width,
-                g_DEPTH    => 10,
-                g_AF_LEVEL => 8,
-                g_AE_LEVEL => 4--,
-            )
-            port map (
-                i_rst_sync => reset_fifo(i),
-                i_clk      => i_clk,
-            
-                -- FIFO Write Interface
-                i_wr_en    => rdreq(i),
-                i_wr_data  => q(i),
-                o_af       => wrfull_reg(i),
-                o_full     => open,
-            
-                -- FIFO Read Interface
-                i_rd_en    => i_rdreq(i),
-                o_rd_data  => q_reg(i),
-                o_ae       => rdempty_reg(i),
-                o_empty    => open--,
-            );
+            rdreq_reg(i) <= '1' when rdempty_reg(i) = '0' and wrfull_reg_reg(i) = '0' else '0';
+            process(i_clk, reset_fifo(i))
+            begin
+            if ( reset_fifo(i) = '1' ) then
+                rdempty_reg(i)    <= '1';
+                wrfull_reg(i)     <= '0';
+                q_reg(i)          <= (others => '0');
+                rdempty_reg_reg(i)<= '1';
+                wrfull_reg_reg(i) <= '0';
+                q_reg_reg(i)       <= (others => '0');
+            elsif ( rising_edge(i_clk) ) then
+
+                if ( rdreq(i) = '1' ) then
+                    q_reg(i)       <= q(i);
+                    wrfull_reg(i)  <= '1';
+                    rdempty_reg(i) <= '0';
+                end if;
+
+                if ( rdreq_reg(i) = '1' ) then
+                    q_reg_reg(i)   <= q_reg(i);
+                    wrfull_reg(i)  <= '0';
+                    rdempty_reg(i) <= '1';
+
+                    wrfull_reg_reg(i)  <= '1';
+                    rdempty_reg_reg(i) <= '0';
+                end if;
+
+                if ( i_rdreq(i) = '1' ) then
+                    wrfull_reg_reg(i)  <= '0';
+                    rdempty_reg_reg(i) <= '1';
+                end if;
+
+            end if;
+            end process;
             
         END GENERATE;
         
@@ -279,11 +315,11 @@ begin
         -- TODO: include sub-header, check backpres., counters etc.
         layer_state(i) <= last_layer_state when i_merge_state = '0' and last_layer = '1' else
         
-                          write_d_set_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = read_d_rest_padding and a_c_padding(i) = '1' else
+                          write_d_set_padding when wrfull_and_merge_state(i) = '1' and layer_state_reg(i) = read_d_rest_padding and a_c_padding(i) = '1' else
                           write_d_c when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = read_d_rest_padding else
                           read_d_rest_padding when layer_state_reg(i) = read_d_rest_padding else
                           
-                          write_b_set_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = read_b_rest_padding and a_c_padding(i) = '1' else
+                          write_b_set_padding when wrfull_and_merge_state(i) = '1' and layer_state_reg(i) = read_b_rest_padding and a_c_padding(i) = '1' else
                           write_b_a when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = read_b_rest_padding else
                           read_b_rest_padding when layer_state_reg(i) = read_b_rest_padding else
 
@@ -343,13 +379,13 @@ begin
                     '1' when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = d_smaller_b else
                     '0';
                     
-        o_rdreq(i) <= '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_b_smaller_c_d or layer_state(i) = b_smaller_d or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = c_smaller_a_b_padding or layer_state(i) = a_b_smaller_c_d_padding or layer_state(i) = a_smaller_c_b_padding or layer_state(i) = read_b_rest_padding else
+        o_rdreq(i) <= '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_b_smaller_c_d or (layer_state(i) = b_smaller_d and layer_state_reg(i) /= b_smaller_d) or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = c_smaller_a_b_padding or layer_state(i) = a_b_smaller_c_d_padding or layer_state(i) = a_smaller_c_b_padding or layer_state(i) = read_b_rest_padding else
                       '1' when layer_state(i) = b_smaller_c else
                       '1' when layer_state(i) = b_smaller_d and layer_state_reg(i) = a_smaller_c_c_smaller_b else
                       '1' when layer_state(i) = b_smaller_d and layer_state_reg(i) = c_smaller_a_a_smaller_d else
                       '0';
 
-        o_rdreq(i+size) <=  '1' when layer_state(i) = first_input_not_mask_n or layer_state(i) = c_d_smaller_a_b or layer_state(i) = d_smaller_b or layer_state(i) = read_out_second_first_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = a_smaller_c_d_padding or layer_state(i) = c_d_smaller_a_b_padding or layer_state(i) = read_d_rest_padding or layer_state(i) = c_smaller_a_d_padding else
+        o_rdreq(i+size) <=  '1' when layer_state(i) = first_input_not_mask_n or layer_state(i) = c_d_smaller_a_b or (layer_state(i) = d_smaller_b and layer_state(i) /= d_smaller_b) or layer_state(i) = read_out_second_first_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = a_smaller_c_d_padding or layer_state(i) = c_d_smaller_a_b_padding or layer_state(i) = read_d_rest_padding or layer_state(i) = c_smaller_a_d_padding else
                             '1' when layer_state(i) = d_smaller_a else
                             '1' when layer_state(i) = d_smaller_b and layer_state_reg(i) = a_smaller_c_c_smaller_b else
                             '1' when layer_state(i) = d_smaller_b and layer_state_reg(i) = c_smaller_a_a_smaller_d else
