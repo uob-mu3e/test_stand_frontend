@@ -351,7 +351,7 @@ float MuFEB::ArriaVTempConversion(uint32_t reg)
     if(reg > steps[steps.size()-1])
         return temps[steps.size()-1];
 
-    for(int i = 1; i < steps.size()-1; i++){
+    for(uint32_t i = 1; i < steps.size()-1; i++){
         if(reg < steps[i])
             return temps[i] + (temps[i+1]-temps[i]) * ((int)reg -  (int)steps[i])/(steps[i+1]-steps[i]);
     }
