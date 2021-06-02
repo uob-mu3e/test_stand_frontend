@@ -173,8 +173,6 @@ mm_claim /devices/10A*/phy*/master
 #?t ?c program_file $mm $elf_addr $elf
 #?t ?c program_file $mm $sof_addr $sof
 
-#mm_claim
-
 #puts "INFO: start processor"
 #processor_run $nios
 #close_service processor $nios

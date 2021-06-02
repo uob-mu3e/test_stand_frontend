@@ -126,6 +126,8 @@ begin
     e_reset_100_n : entity work.reset_sync
     port map ( o_reset_n => reset_100_n, i_reset_n => reset_n, i_clk => clk_100 );
 
+
+
     --! generate and route 125 MHz clock to SMA output
     --! (can be connected to SMA input as global clock)
     e_pll_100to125 : component work.cmp.ip_pll_100to125
@@ -144,13 +146,11 @@ begin
         outclk => clk_125--,
     );
 
-    A10_SI5345_1_JITTER_CLOCK_P <= clk_125;
-    A10_SI5345_2_JITTER_CLOCK_P <= clk_125;
-
-
-
     e_reset_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_n, i_reset_n => reset_n, i_clk => clk_125 );
+
+    A10_SI5345_1_JITTER_CLOCK_P <= clk_125;
+    A10_SI5345_2_JITTER_CLOCK_P <= clk_125;
 
 
 
