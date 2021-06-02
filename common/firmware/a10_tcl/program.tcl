@@ -168,7 +168,7 @@ proc program_test { addr } {
 #puts "INFO: stop processor"
 #processor_stop $nios
 
-mm_claim /devices/10A*/nios*
+mm_claim /devices/10A*/phy*/master
 
 #?t ?c program_file $mm $elf_addr $elf
 #?t ?c program_file $mm $sof_addr $sof
