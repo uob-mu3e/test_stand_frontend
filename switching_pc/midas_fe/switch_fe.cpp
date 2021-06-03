@@ -87,7 +87,6 @@ using midas::odb;
 /* Start address of power in the crate controller - TODO: Move to an appropriate header*/
 const uint8_t CC_POWER_OFFSET = 5;
 const uint8_t CC_VT_READOUT_START = 1;
-const uint8_t CC_VT_READOUT_END = 4;
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
 const char *frontend_name = "SW Frontend";
@@ -586,7 +585,10 @@ void setup_odb(){
     custom["Switching&"] = "sc.html";
     custom["Febs&"] = "febs.html";
     custom["FEBcrates&"] = "crates.html";
-    
+
+    // Inculde the line below to set up the FEBs and their mapping for the 2021 integration run
+#include "odb_feb_mapping_integration_run_2021.h"
+
     // TODO: not sure at the moment we have a midas frontend for three feb types but 
     // we need to have different swb at the final experiment so maybe one needs to take
     // things apart later. For now we put this "common" FEB variables into the generic
