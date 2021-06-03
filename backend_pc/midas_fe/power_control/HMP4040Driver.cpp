@@ -27,6 +27,7 @@ INT HMP4040Driver::ConnectODB()
 	settings["min reply"](2); //minimum reply , 2 chars , not 3 (not fully figured out why)
 	settings["ESR"](0);
 	if(false) return FE_ERR_ODB;
+    return FE_SUCCESS;
 }
 
 
