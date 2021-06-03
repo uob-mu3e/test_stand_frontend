@@ -17,8 +17,15 @@ const uint16_t CMD_MUTRIG_CNT_RESET          = 0x0106;
 const uint16_t CMD_MUTRIG_SKEW_RESET         = 0x0104;
 
 /* Tiles specific commands */
-const uint16_t CMD_TILE_ON                   = 0x0101;
-const uint16_t CMD_TILE_OFF                  = 0x0102;
+const uint16_t CMD_TILE_ON                   = 0x0101; // automatic powering routine of TMB (maskbit-defined)
+const uint16_t CMD_TILE_OFF                  = 0x0102; // automatic powering routine of TMB (maskbit-defined)
+const uint16_t CMD_TILE_TEMPERATURES_READ    = 0x0103;
+const uint16_t CMD_TILE_POWERMONITORS_READ   = 0x0104;
+const uint16_t CMD_TILE_TMB_ON               = 0x0105;
+const uint16_t CMD_TILE_TMB_OFF              = 0x0106;
+const uint16_t CMD_TILE_ASIC_ON              = 0x0120; // switch on  ASIC #. ASIC number is cmd&0x000F
+const uint16_t CMD_TILE_ASIC_OFF             = 0x0130; // switch off ASIC #. ASIC number is cmd&0x000F
+
 //const uint16_t CMD_TILE_I2C_WRITE            = 0x0105;
 
 /* SciFi specific commands */

@@ -33,7 +33,7 @@ class TilesFEB : public MutrigFEB{
       virtual uint16_t FPGAid_from_ID(int asic) const;
       virtual uint16_t ASICid_from_ID(int asic) const;
       virtual uint16_t GetModulesPerFEB() const {return 1;}
-      virtual uint16_t GetASICSPerModule() const {return 4;}
+      virtual uint16_t GetASICSPerModule() const {return 2;}
       //Return typeID for building FEB ID map
       virtual FEBTYPE  GetTypeID() const {return FEBTYPE::Tile;}
 
@@ -41,6 +41,18 @@ class TilesFEB : public MutrigFEB{
       // Made static and using the user data argument as "this" to ease binding
       // to C-style midas-callbacks
       static void on_tiles_settings_changed(odb o, void * userdata);
+
+      //Read all sipm matrix temperatures from FEB/TMB, store in subtree $odb_prefix/Variables/matrix_temperatures
+      //Parameter FPGA_ID refers to global numbering, i.e. before mapping
+      int ReadBackMatrixTemperatures(uint16_t FPGA_ID);
+      void ReadBackAllMatrixTemperatures(){for(size_t i=0;i<febs.size();i++) ReadBackMatrixTemperatures(i);}
+
+      //Read all power monitor readings from FEB/TMB, store in subtree $odb_prefix/Variables/tmb_current , tmb_voltage
+      //Parameter FPGA_ID refers to global numbering, i.e. before mapping
+      int ReadBackTMBPower(uint16_t FPGA_ID);
+      void ReadBackAllTMBPower(){for(size_t i=0;i<febs.size();i++) ReadBackTMBPower(i);}
+
+
 
 };//class TilesFEB
 

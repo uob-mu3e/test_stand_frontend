@@ -3,7 +3,7 @@ struct mupix_datapath_t {
     mupix_datapath_t(sc_t* sc_): sc(sc_){};
     
     void menu() {
-        auto& regs = sc->ram->regs.scifi;
+        //auto& regs = sc->ram->regs.scifi;
         alt_u32 datagenreg = 0x0;
         char str[2] = {0};
         
@@ -120,11 +120,18 @@ struct mupix_datapath_t {
                 }
                 break;
             case '8':
-                printf("hit ena counters:\n");
+                printf("link hit counters:\n");
                 sc->ram->data[0xFFC0] = 0x0;
-                for(int i=0; i<40; i++){
+                for(int i=0; i<36; i++){
                     printf("%i: 0x%08x\n",i,sc->ram->data[0xFFBF]);
                 }
+                printf("sorter input hit counters:\n");
+                sc->ram->data[0xFFC2] = 0x0;
+                for(int i=0; i<12; i++){
+                    printf("%i: 0x%08x\n",i,sc->ram->data[0xFFC1]);
+                }
+                printf("sorter output hit counter:\n");
+                printf("  0x%08x\n",sc->ram->data[0xFFC3]);
                 break;
             case 'q':
                 return;

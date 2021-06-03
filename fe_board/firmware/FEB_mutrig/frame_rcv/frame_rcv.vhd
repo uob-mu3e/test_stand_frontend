@@ -351,7 +351,7 @@ begin
 		--		n_state_wait_cnt	<= p_state_wait_cnt -1;
 		--		if p_state_wait_cnt = 1 then
 				if s_crc_result /= X"7FF2" then  -- CORRECT magic number
-					--if s_crc_result /= X"FFFF" then  -- WRONG result, to test if crc works
+				--if s_crc_result /= X"FFFF" then  -- WRONG result, to test if crc works
 				    n_crc_err_count <= std_logic_vector(unsigned(p_crc_err_count)+1);
 				    n_crc_error <= '1';
 				end if;

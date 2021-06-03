@@ -43,6 +43,7 @@ entity data_unpacker is
         o_coarsecounter     : out std_logic_vector(23 downto 0);
         o_coarsecounter_ena : out std_logic;
         o_hit_ena_counter   : out std_logic_vector(31 downto 0);
+        i_run_state_125     : in  run_state_t;
         errorcounter        : out std_logic_vector(31 downto 0)
     );
 end data_unpacker;
@@ -220,7 +221,7 @@ begin
             hit_reg             <= '0';
 
             o_hit_ena_counter   <= hit_ena_counter;
-            if(hit_ena = '1') then 
+            if(hit_ena = '1' and i_run_state_125=RUN_STATE_RUNNING) then 
                 hit_ena_counter <= hit_ena_counter + '1';
             end if;
 

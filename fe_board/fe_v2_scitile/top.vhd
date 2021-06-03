@@ -126,7 +126,6 @@ architecture rtl of top is
 
     -- i2c interface (fe_block to io buffers)
     signal i2c_scl, i2c_scl_oe, i2c_sda, i2c_sda_oe : std_logic;
-    signal i2c_scl_n, i2c_sda_n, i2c_int_n : std_logic;
 
     -- spi multiplexing
     signal tmb_miso : std_logic;
@@ -140,29 +139,25 @@ begin
 --------------------------------------------------------------------
 
 -- IO buffers for I2C
-    i2c_int_n <= not tile_i2c_int;    -- inverted on DAB!
-    i2c_sda <= not i2c_sda_n;    -- inverted on DAB!
-    i2c_scl <= not i2c_scl_n;    -- inverted on DAB!
-
     iobuf_sda: entity work.ip_iobuf
     port map(
-        datain(0)   => '1',    -- inverted on DAB!
+        datain(0)   => '0',
         oe(0)       => i2c_sda_oe,
-        dataout(0)  => i2c_sda_n,    -- inverted on DAB!
+        dataout(0)  => i2c_sda,
         dataio(0)   => tile_i2c_sda--,
     );
 
     iobuf_scl: entity work.ip_iobuf
     port map(
-        datain(0)   => '1',    -- inverted on DAB!
-        oe(0)       => i2c_sda_oe,
-        dataout(0)  => i2c_scl_n,    -- inverted on DAB!
+        datain(0)   => '0',
+        oe(0)       => i2c_scl_oe,
+        dataout(0)  => i2c_scl,
         dataio(0)   => tile_i2c_scl--,
     );
 
 
 
--- SPI input multiplexing (CEC / configuration)
+    -- SPI input multiplexing (CEC / configuration)
     -- only input multiplexing is done here, the rest is done on the TMB
     -- "not" for polarity flip on DAB PCB
     tmb_miso <=
@@ -190,7 +185,7 @@ begin
         o_pll_test                  => tile_pll_test,
         i_data                      => tile_din,
 
-        i_i2c_int                   => i2c_int_n,
+        i_i2c_int                   => tile_i2c_int,
         o_pll_reset                 => tile_pll_reset,
 
         o_fifo_write                => fifo_write,
@@ -315,7 +310,7 @@ begin
         o_clk_156_mon       => lcd_data(1),
         i_clk_125           => lvds_firefly_clk,
 
-        i_areset_n          => pb_db(0),
+        i_areset_n          => '1',--pb_db(0),
         
         i_testin            => pb_db(1)--,
     );

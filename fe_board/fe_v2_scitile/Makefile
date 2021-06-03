@@ -1,5 +1,5 @@
 
-CABLE?=2
+CABLE=1
 
 IPs = \
     ../fe/ip/clk_ctrl_single.tcl \

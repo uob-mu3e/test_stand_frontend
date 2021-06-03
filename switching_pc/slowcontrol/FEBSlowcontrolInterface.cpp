@@ -236,22 +236,22 @@ int FEBSlowcontrolInterface::FEB_read(const uint32_t FPGA_ID, const uint32_t sta
 
 int FEBSlowcontrolInterface::FEB_register_write(const uint32_t FPGA_ID, const uint32_t startaddr, const vector<uint32_t> & data, const bool nonincrementing)
 {
-    FEB_write(FPGA_ID,startaddr | 0xFF00, data, nonincrementing);
+    return FEB_write(FPGA_ID,startaddr | 0xFF00, data, nonincrementing);
 }
 
 int FEBSlowcontrolInterface::FEB_register_write(const uint32_t FPGA_ID, const uint32_t startaddr, const uint32_t data)
 {
-    FEB_write(FPGA_ID,startaddr | 0xFF00, data);
+    return FEB_write(FPGA_ID,startaddr | 0xFF00, data);
 }
 
 int FEBSlowcontrolInterface::FEB_register_read(const uint32_t FPGA_ID, const uint32_t startaddr, vector<uint32_t> &data, const bool nonincrementing)
 {
-    FEB_read(FPGA_ID, startaddr | 0xFF00, data, nonincrementing);
+    return FEB_read(FPGA_ID, startaddr | 0xFF00, data, nonincrementing);
 }
 
 int FEBSlowcontrolInterface::FEB_register_read(const uint32_t FPGA_ID, const uint32_t startaddr, uint32_t &data)
 {
-    FEB_read(FPGA_ID, startaddr | 0xFF00, data);
+    return FEB_read(FPGA_ID, startaddr | 0xFF00, data);
 }
 
 void FEBSlowcontrolInterface::FEBsc_resetMain()
@@ -293,8 +293,10 @@ void FEBSlowcontrolInterface::FEBsc_resetSecondary()
 
 int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, vector<vector<uint32_t> > payload_chunks)
 {
-    int status =0;
+    int status = 0;
     int index = 0;
+
+    // Write the payload
     for(auto chunk: payload_chunks){
         status=FEB_write(FPGA_ID, (uint32_t) index+OFFSETS::FEBsc_RPC_DATAOFFSET, chunk);
          if(status < 0)
@@ -304,16 +306,17 @@ int FEBSlowcontrolInterface::FEBsc_NiosRPC(uint32_t FPGA_ID, uint16_t command, v
     if(index >= 1<<16)
         return ERRCODES::WRONG_SIZE;
 
-    // TODO: What is 0xfff1 here - put it in a define... Make sure write accepts it as a
-    // a valid address
-    status=FEB_register_write(FPGA_ID, 0xf1, vector<uint32_t>(1,OFFSETS::FEBsc_RPC_DATAOFFSET));
+    // Write the position of the payload in the offset register
+    status=FEB_register_write(FPGA_ID, CMD_OFFSET_REGISTER_RW, vector<uint32_t>(1,OFFSETS::FEBsc_RPC_DATAOFFSET));
     if(status < 0)
         return status;
 
-    // TODO: What is 0xfff0 here - put it in a define... Make sure write accepts it as a
-    // a valid address
-    status=FEB_register_write(FPGA_ID, 0xf0,
-                     vector<uint32_t>(1,(((uint32_t)command) << 16) || index));
+    // Write the command in the upper 16 bits of the length register and
+    // the size of the payload in the lower 16 bits
+    // This triggers the callback function on the frontend board
+    status=FEB_register_write(FPGA_ID, CMD_LEN_REGISTER_RW,
+                     vector<uint32_t>(1,(((uint32_t)command) << 16) | index));
+    
     if(status < 0)
         return status;
 
