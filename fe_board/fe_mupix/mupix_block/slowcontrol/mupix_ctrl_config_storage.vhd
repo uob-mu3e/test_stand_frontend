@@ -43,6 +43,8 @@ architecture RTL of mupix_ctrl_config_storage is
     signal fifo_clear               : std_logic_vector(5 downto 0);
     signal fifo_write               : std_logic_vector(5 downto 0);
     signal fifo_wdata               : reg32array(5 downto 0);
+    signal fifo_wdata_final         : reg32array(5 downto 0);
+    signal fifo_write_final         : std_logic_vector(5 downto 0);
     signal data_buffer              : std_logic_vector(32*6-1 downto 0);
     type bitpos_t                   is array (5 downto 0) of integer range 31 downto 0;
     type bitpos_global_t            is array (5 downto 0) of integer range 1000 downto 0; -- TODO: how to max(MP_CONFIG_REGS_LENGTH) in vhdl ?
@@ -192,7 +194,9 @@ begin
     end process;
 
     gen_config_storage: for I in 0 to 5 generate
-        fifo_clear(I) <= i_clr_fifo(I) or (not i_reset_n);
+        fifo_clear(I)       <= i_clr_fifo(I) or (not i_reset_n);
+        fifo_wdata_final(I) <= i_data(I*32 + 31 downto I*32) when i_wrreq(I)='1' else fifo_wdata(I);
+        fifo_write_final(I) <= i_wrreq(I) or fifo_write(I);
         
         mp_ctrl_storage_fifo: entity work.ip_scfifo
         generic map(
@@ -204,8 +208,8 @@ begin
         port map (
             clock           => i_clk,
             sclr            => fifo_clear(I),
-            data            => fifo_wdata(I),--i_data(I*32 + 31 downto I*32),
-            wrreq           => fifo_write(I),--i_wrreq(I),
+            data            => fifo_wdata_final(I),
+            wrreq           => fifo_write_final(I),
             q               => data_buffer(I*32 + 31 downto I*32),
             rdreq           => fifo_read(I)--,
         );
