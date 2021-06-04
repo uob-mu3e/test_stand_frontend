@@ -100,6 +100,7 @@ void SMB_t::print_config(const alt_u8* bitpattern) {
 		nb--;
                 printf("%02X ",bitpattern[nb]);
 	}while(nb>0);
+    printf("\n");
 }
 
 
@@ -131,9 +132,10 @@ alt_u16 SMB_t::sc_callback(alt_u16 cmd, volatile alt_u32* data, alt_u16 n) {
         int asic = cmd & 0x000F;
         //Lprintf("configuring ASIC %d\n",asic);
         configure_asic(asic, (alt_u8*)data);
+        //print_config((alt_u8*)data);
     }
     else {
-        printf("[sc_callback] unknown command\n");
+        printf("[sc_callback] unknown command: %d\n", cmd);
     }
     return 0;
 }
