@@ -83,31 +83,23 @@ int MupixFEB::ConfigureASICs(){
 
       try {
 
-         uint8_t bitpatterna[config->length +1];
+         uint8_t bitpattern[config->length];
          std::cout<< "Printing config:"<<std::endl;
          for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
-             bitpatterna[nbit+1] = config->bitpattern_w[nbit];
-             std::cout<<(uint32_t*) bitpatterna[nbit+1]<<std::endl;
+             for(short i=0;i<8;i++){// reverse Bits (reverse config setting is something different !!)
+                  bitpattern[nbit] |= ((config->bitpattern_w[nbit]>>i) & 0b1)<<(7-i);
+             }
          }
-         uint32_t * datastream = (uint32_t*)(bitpatterna);
 
+         uint32_t * datastream = (uint32_t*)(bitpattern);
+
+         vector<uint32_t> payload;
          for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
-             uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
-             datastream[nbit] = tmp;
+             uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);
+             payload.push_back(tmp);
+             std::cout << std::hex << tmp << std::endl;
          }
-         vector<vector<uint32_t> > payload;
-         payload.push_back(vector<uint32_t>(1,asic));
-         payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(datastream),reinterpret_cast<uint32_t*>(datastream)+config->length_32bits));
 
-         std::cout << "-----------Payload:\n";
-
-        for (auto it1 : payload) {
-            std::cout << "--------\n";
-            for (auto it2 : it1) {
-                std::cout << std::hex << it2 << "-";
-            }
-            std::cout << std::dec << std::endl;
-        }
          //rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_CHIP_CFG, payload);
 
       } catch(std::exception& e) {

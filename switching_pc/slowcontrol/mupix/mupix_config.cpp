@@ -7,49 +7,7 @@
 
 namespace mupix {
 
-/// MUPIX board configuration
-
-MupixBoardConfig::paras_t MupixBoardConfig::parameters_boarddacs = {
-    make_param("Threshold_Low", 16, true),
-    make_param("Threshold_High", 16, true),
-    make_param("Injection", 16, true),
-    make_param("Threshold_Pix", 16, true),
-    make_param("TDiode_Current", 16, true),
-    make_param("TDiode_ADC", 16, true)
-};
-
-MupixBoardConfig::MupixBoardConfig() {
-    // populate name/offset map
-    length_bits = 0;
-    // header 
-    for(const auto& para : parameters_boarddacs)
-        addPara(para, "");
-
-    // allocate memory for bitpattern
-    length = length_bits/8;
-    if( length_bits%8 > 0 ) length++;
-    length_32bits = length/4;
-    if( length%4 > 0 ) length_32bits++;
-    bitpattern_r = new uint8_t[length_32bits*4]; 
-    bitpattern_w = new uint8_t[length_32bits*4]; 
-    reset();	
-}
-
-MupixBoardConfig::~MupixBoardConfig() {
-    delete[] bitpattern_r;
-    delete[] bitpattern_w;
-}
-
-void MupixBoardConfig::Parse_BoardDACs_from_struct(MUPIX_BOARDDACS mt_g){
-    setParameter("Threshold_High", mt_g.Threshold_High);
-    setParameter("Threshold_Low", mt_g.Threshold_Low);
-    setParameter("Threshold_Pix", mt_g.Threshold_Pix);
-    setParameter("Injection", mt_g.Injection);
-    setParameter("TDiode_ADC", mt_g.TDiode_ADC);
-}
-
 /// MUPIX configuration
-// Pattern is assembled based on the scheme described in the mupix8 documentation, section 10
 
 MupixConfig::paras_t MupixConfig::parameters_bias = {
     make_param("VNTimerDel", "5 4 3 2 1 0"),
@@ -164,91 +122,91 @@ MupixConfig::~MupixConfig() {
 }
 
 void MupixConfig::Parse_BiasDACs_from_struct(MUPIX_BIASDACS mt) {
-    setParameter("VNTimerDel", mt.VNTimerDel, true);
-    setParameter("VPTimerDel", mt.VPTimerDel, true);
-    setParameter("VNDAC", mt.VNDAC, true);
-    setParameter("VPFoll", mt.VPFoll, true);
-    setParameter("VNComp", mt.VNComp, true);
-    setParameter("VNHB", mt.VNHB, true);
-    setParameter("VPComp2", mt.VPComp2, true);
-    setParameter("VPPump", mt.VPPump, true);
-    setParameter("VNLVDSDel", mt.VNLVDSDel, true);
-    setParameter("VNLVDS", mt.VNLVDS, true);
-    setParameter("VNDcl", mt.VNDcl, true);
-    setParameter("VPDcl", mt.VPDcl, true);
-    setParameter("VNDelPreEmp", mt.VNDelPreEmp, true);
-    setParameter("VPDelPreEmp", mt.VPDelPreEmp, true);
-    setParameter("VNDelDcl", mt.VNDelDcl, true);
-    setParameter("VPDelDcl", mt.VPDelDcl, true);
-    setParameter("VNDelDclMux", mt.VNDelDclMux, true);
-    setParameter("VPDelDclMux", mt.VPDelDclMux, true);
-    setParameter("VNVCO", mt.VNVCO, true);
-    setParameter("VPVCO", mt.VPVCO, true);
-    setParameter("VNOutPix", mt.VNOutPix, true);
-    setParameter("VPLoadPix", mt.VPLoadPix, true);
-    setParameter("VNBiasPix", mt.VNBiasPix, true);
-    setParameter("BLResDig", mt.BLResDig, true);
-    setParameter("VNPix2", mt.VNPix2, true);
-    setParameter("VPDAC", mt.VPDAC, true);
-    setParameter("VPComp1", mt.VPComp1, true);
-    setParameter("VNDel", mt.VNDel, true);
-    setParameter("VNRegC", mt.VNRegC, true);
-    setParameter("VNFollPix", mt.VNFollPix, true);
-    setParameter("VNFBPix", mt.VNFBPix, true);
-    setParameter("VNPix", mt.VNPix, true);
-    setParameter("ThRes", mt.ThRes, true);
-    setParameter("BLResPix", mt.BLResPix, true);
-    setParameter("BiasBlock_on", mt.BiasBlock_on, true);
-    setParameter("Bandgap_on", mt.Bandgap_on, true);
+    setParameter("VNTimerDel", mt.VNTimerDel, false);
+    setParameter("VPTimerDel", mt.VPTimerDel, false);
+    setParameter("VNDAC", mt.VNDAC, false);
+    setParameter("VPFoll", mt.VPFoll, false);
+    setParameter("VNComp", mt.VNComp, false);
+    setParameter("VNHB", mt.VNHB, false);
+    setParameter("VPComp2", mt.VPComp2, false);
+    setParameter("VPPump", mt.VPPump, false);
+    setParameter("VNLVDSDel", mt.VNLVDSDel, false);
+    setParameter("VNLVDS", mt.VNLVDS, false);
+    setParameter("VNDcl", mt.VNDcl, false);
+    setParameter("VPDcl", mt.VPDcl, false);
+    setParameter("VNDelPreEmp", mt.VNDelPreEmp, false);
+    setParameter("VPDelPreEmp", mt.VPDelPreEmp, false);
+    setParameter("VNDelDcl", mt.VNDelDcl, false);
+    setParameter("VPDelDcl", mt.VPDelDcl, false);
+    setParameter("VNDelDclMux", mt.VNDelDclMux, false);
+    setParameter("VPDelDclMux", mt.VPDelDclMux, false);
+    setParameter("VNVCO", mt.VNVCO, false);
+    setParameter("VPVCO", mt.VPVCO, false);
+    setParameter("VNOutPix", mt.VNOutPix, false);
+    setParameter("VPLoadPix", mt.VPLoadPix, false);
+    setParameter("VNBiasPix", mt.VNBiasPix, false);
+    setParameter("BLResDig", mt.BLResDig, false);
+    setParameter("VNPix2", mt.VNPix2, false);
+    setParameter("VPDAC", mt.VPDAC, false);
+    setParameter("VPComp1", mt.VPComp1, false);
+    setParameter("VNDel", mt.VNDel, false);
+    setParameter("VNRegC", mt.VNRegC, false);
+    setParameter("VNFollPix", mt.VNFollPix, false);
+    setParameter("VNFBPix", mt.VNFBPix, false);
+    setParameter("VNPix", mt.VNPix, false);
+    setParameter("ThRes", mt.ThRes, false);
+    setParameter("BLResPix", mt.BLResPix, false);
+    setParameter("BiasBlock_on", mt.BiasBlock_on, false);
+    setParameter("Bandgap_on", mt.Bandgap_on, false);
 }
 
 void MupixConfig::Parse_ConfDACs_from_struct(MUPIX_CONFDACS mt) {
-    setParameter("SelFast", mt.SelFast, true);
-    setParameter("count_sheep", mt.count_sheep, true);
-    setParameter("TestOut", mt.TestOut, true);
-    setParameter("disable_HB", mt.disable_HB, true);
-    setParameter("conf_res_n", mt.conf_res_n, true);
-    setParameter("RO_res_n", mt.RO_res_n, true);
-    setParameter("Ser_res_n", mt.Ser_res_n, true);
-    setParameter("Aur_res_n", mt.Aur_res_n, true);
-    setParameter("Tune_Reg_L", mt.Tune_Reg_L, true);
-    setParameter("Tune_Reg_R", mt.Tune_Reg_R, true);
-    setParameter("AlwaysEnable", mt.AlwaysEnable, true);
-    setParameter("En2thre", mt.En2thre, true);
-    setParameter("EnPLL", mt.EnPLL, true);
-    setParameter("SelSlow", mt.SelSlow, true);
-    setParameter("SelEx", mt.SelEx, true);
-    setParameter("invert", mt.invert, true);
-    setParameter("slowdownlDColEnd", mt.slowdownlDColEnd, true);
-    setParameter("EnSync_SC", mt.EnSync_SC, true);
-    setParameter("linksel", mt.linksel, true);
-    setParameter("tsphase", mt.tsphase, true);
-    setParameter("sendcounter", mt.sendcounter, true);
-    setParameter("resetckdivend", mt.resetckdivend, true);
-    setParameter("maxcycend", mt.maxcycend, true);
-    setParameter("slowdownend", mt.slowdownend, true);
-    setParameter("timerend", mt.timerend, true);
-    setParameter("ckdivend2", mt.ckdivend2, true);
-    setParameter("ckdivend", mt.ckdivend, true);
-    setParameter("NC1", mt.NC1, true);
-    setParameter("NC2", mt.NC2, true);
-    setParameter("NC3", mt.NC3, true);
-    setParameter("NC4", mt.NC4, true);
-    setParameter("NC5", mt.NC5, true);
-    setParameter("NC6", mt.NC6, true);
+    setParameter("SelFast", mt.SelFast, false);
+    setParameter("count_sheep", mt.count_sheep, false);
+    setParameter("TestOut", mt.TestOut, false);
+    setParameter("disable_HB", mt.disable_HB, false);
+    setParameter("conf_res_n", mt.conf_res_n, false);
+    setParameter("RO_res_n", mt.RO_res_n, false);
+    setParameter("Ser_res_n", mt.Ser_res_n, false);
+    setParameter("Aur_res_n", mt.Aur_res_n, false);
+    setParameter("Tune_Reg_L", mt.Tune_Reg_L, false);
+    setParameter("Tune_Reg_R", mt.Tune_Reg_R, false);
+    setParameter("AlwaysEnable", mt.AlwaysEnable, false);
+    setParameter("En2thre", mt.En2thre, false);
+    setParameter("EnPLL", mt.EnPLL, false);
+    setParameter("SelSlow", mt.SelSlow, false);
+    setParameter("SelEx", mt.SelEx, false);
+    setParameter("invert", mt.invert, false);
+    setParameter("slowdownlDColEnd", mt.slowdownlDColEnd, false);
+    setParameter("EnSync_SC", mt.EnSync_SC, false);
+    setParameter("linksel", mt.linksel, false);
+    setParameter("tsphase", mt.tsphase, false);
+    setParameter("sendcounter", mt.sendcounter, false);
+    setParameter("resetckdivend", mt.resetckdivend, false);
+    setParameter("maxcycend", mt.maxcycend, false);
+    setParameter("slowdownend", mt.slowdownend, false);
+    setParameter("timerend", mt.timerend, false);
+    setParameter("ckdivend2", mt.ckdivend2, false);
+    setParameter("ckdivend", mt.ckdivend, false);
+    setParameter("NC1", mt.NC1, false);
+    setParameter("NC2", mt.NC2, false);
+    setParameter("NC3", mt.NC3, false);
+    setParameter("NC4", mt.NC4, false);
+    setParameter("NC5", mt.NC5, false);
+    setParameter("NC6", mt.NC6, false);
 }
 
 void MupixConfig::Parse_VDACs_from_struct(MUPIX_VDACS mt) {
-    setParameter("VCAL", mt.VCAL, true);
-    setParameter("BLPix", mt.BLPix, true);
-    setParameter("ThPix", mt.ThPix, true);
-    setParameter("ThHigh", mt.ThHigh, true);
-    setParameter("ThLow", mt.ThLow, true);
-    setParameter("ThHigh2", mt.ThHigh2, true);
-    setParameter("ThLow2", mt.ThLow2, true);
-    setParameter("Baseline", mt.Baseline, true);
-    setParameter("VDAC1", mt.VDAC1, true);
-    setParameter("ref_Vss", mt.ref_Vss, true);
+    setParameter("VCAL", mt.VCAL, false);
+    setParameter("BLPix", mt.BLPix, false);
+    setParameter("ThPix", mt.ThPix, false);
+    setParameter("ThHigh", mt.ThHigh, false);
+    setParameter("ThLow", mt.ThLow, false);
+    setParameter("ThHigh2", mt.ThHigh2, false);
+    setParameter("ThLow2", mt.ThLow2, false);
+    setParameter("Baseline", mt.Baseline, false);
+    setParameter("VDAC1", mt.VDAC1, false);
+    setParameter("ref_Vss", mt.ref_Vss, false);
 }
 
 } // namespace mutrig

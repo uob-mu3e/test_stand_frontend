@@ -314,13 +314,13 @@ INT frontend_init()
     //init scitiles
     status = init_scitiles(*mup);
     if (status != SUCCESS)
-        return FE_ERR_DRIVER;
+        return FE_ERR_DRIVER;*/
 
     //init mupix
     status = init_mupix(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
-    */
+
     // TODO: Define generic history panels
 
     // Subdetector specific panels should be created created in subdet::midasODB::setup_db
@@ -813,11 +813,11 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    }
 
    //configure Pixel sensors
-   //status=MupixFEB::Instance()->ConfigureASICs();
-   //if(status!=SUCCESS){
-   //   cm_msg(MERROR,"switch_fe","ASIC configuration failed");
-   //   return CM_TRANSITION_CANCELED;
-   //}
+   status=mupixfeb->ConfigureASICs();
+   if(status!=SUCCESS){
+      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
+      return CM_TRANSITION_CANCELED;
+   }
 
 
    //last preparations
@@ -1216,13 +1216,6 @@ void sc_settings_changed(odb o)
           int status=mupixfeb->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
-          }
-      o = false;
-    }
-    if (name == "MupixBoard" && o) {
-          int status=mupixfeb->ConfigureBoards();
-          if(status!=SUCCESS){
-            //TODO: what to do?
           }
       o = false;
     }
