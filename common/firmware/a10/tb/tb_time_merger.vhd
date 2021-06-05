@@ -174,38 +174,70 @@ begin
     
     link_mask_n <= x"0000000000000003";
 
-    e_time_merger : entity work.time_merger_v2
-        generic map (
-        W => W,
-        TREE_DEPTH_w => 10,
-        TREE_DEPTH_r => 10,
-        g_NLINKS_DATA => 12,
-        N => 64--,
+    --e_time_merger : entity work.time_merger_v2
+        --generic map (
+        --W => W,
+        --TREE_DEPTH_w => 10,
+        --TREE_DEPTH_r => 10,
+        --g_NLINKS_DATA => 12,
+        --N => 64--,
+    --)
+    --port map (
+        --input streams
+        --i_rdata                 => rx_q,
+        --i_rsop                  => sop,
+        --i_reop                  => eop,
+        --i_rshop                 => shop,
+        --i_rempty                => rx_rdempty,
+        --i_link                  => 1, -- which link should be taken to check ts etc.
+        --i_mask_n                => link_mask_n,
+        --o_rack                  => rx_ren,
+        
+        --output stream
+        --o_rdata                 => open,
+        --i_ren                   => not rempty,
+        --o_empty                 => rempty,
+        
+        --error outputs
+        --o_error_pre             => open,
+        --o_error_sh              => open,
+        --o_error_gtime           => open,
+        --o_error_shtime          => open,
+        
+        --i_reset_n               => reset_n,
+        --i_clk                   => clk_fast--,
+    --);
+
+
+    e_time_merger : entity work.swb_time_merger
+    generic map (
+        W               => W,
+        TREE_w          => 10,
+        TREE_r          => 10,
+        g_NLINKS        => g_NLINKS_TOTL,
+        g_NLINKS_DATA   => g_NLINKS_DATA--,
     )
     port map (
-        -- input streams
-        i_rdata                 => rx_q,
-        i_rsop                  => sop,
-        i_reop                  => eop,
-        i_rshop                 => shop,
-        i_rempty                => rx_rdempty,
-        i_link                  => 1, -- which link should be taken to check ts etc.
-        i_mask_n                => link_mask_n,
-        o_rack                  => rx_ren,
-        
-        -- output stream
-        o_rdata                 => open,
-        i_ren                   => not rempty,
-        o_empty                 => rempty,
-        
-        -- error outputs
-        o_error_pre             => open,
-        o_error_sh              => open,
-        o_error_gtime           => open,
-        o_error_shtime          => open,
-        
-        i_reset_n               => reset_n,
-        i_clk                   => clk_fast--,
+        i_rx        => rx_q,
+        i_rsop      => sop,
+        i_reop      => eop,
+        i_rshop     => shop,
+        i_rempty    => rx_rdempty,
+        i_rmask_n   => link_mask_n,
+        o_rack      => rx_ren,
+
+        -- output strem
+        o_q             => open,
+        o_q_debug       => open,
+        o_rempty        => open,
+        o_rempty_debug  => rempty,
+        i_ren           => not rempty,
+        o_header_debug  => open,
+        o_trailer_debug => open,
+        o_error         => open,
+
+        i_reset_n       => reset_n,
+        i_clk           => clk_fast--,
     );
     
 end TB;

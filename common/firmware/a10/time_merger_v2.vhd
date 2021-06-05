@@ -19,7 +19,7 @@ generic (
 );
 port (
     -- input streams
-    i_rdata         : in    work.util.slv38_array_t(N - 1 downto 0);
+    i_rdata         : in    work.util.slv34_array_t(N - 1 downto 0);
     i_rsop          : in    std_logic_vector(N-1 downto 0); -- start of packet (SOP)
     i_reop          : in    std_logic_vector(N-1 downto 0); -- end of packet (EOP)
     i_rshop         : in    std_logic_vector(N-1 downto 0); -- sub header of packet (SHOP)
@@ -61,7 +61,7 @@ architecture arch of time_merger_v2 is
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
     signal header_trailer : std_logic_vector(37 downto 0);
     signal sop_wait, shop_wait, eop_wait, time_wait : std_logic_vector(N - 1 downto 0);
-    signal gtime1, gtime2 : work.util.slv38_array_t(N - 1 downto 0);
+    signal gtime1, gtime2 : work.util.slv34_array_t(N - 1 downto 0);
 
     -- error signals
     signal error_gtime1, error_gtime2, error_shtime, error_merger, header_trailer_we : std_logic;
@@ -155,7 +155,7 @@ begin
             end if;
             end process;
             
-            data_0(i)  <=   work.util.link_36_to_std(i) & i_rdata(i)(35 downto 4)   when merger_finish(i) = '0' and merge_state = merge_hits else
+            data_0(i)  <=   work.util.link_36_to_std(i) & i_rdata(i)(31 downto 0)   when merger_finish(i) = '0' and merge_state = merge_hits else
                             tree_padding                                            when merger_finish(i) = '1' and merge_state = merge_hits else 
                             (others => '0');
             wrreq_0(i) <= '1' when merge_state = merge_hits and i_rempty(i) = '0' and wrfull_0(i) = '0' else '0';
@@ -455,7 +455,7 @@ begin
                     gtime1 <= (others => (others => '0'));
                     -- send gtime1
                     header_trailer(37 downto 32) <= ts1_marker;
-                    header_trailer(31 downto 0) <= gtime1(i_link)(35 downto 4);
+                    header_trailer(31 downto 0) <= gtime1(i_link)(31 downto 0);
                     header_trailer_we <= '1';
                 end if;
                 -- dont check at the moment 
@@ -489,7 +489,7 @@ begin
                     gtime2 <= (others => (others => '0'));
                     -- send gtime2
                     header_trailer(37 downto 32) <= ts2_marker;
-                    header_trailer(31 downto 0) <= gtime2(i_link)(35 downto 4);
+                    header_trailer(31 downto 0) <= gtime2(i_link)(31 downto 0);
                     header_trailer_we <= '1';
                 end if;
                 -- dont check at the moment 
@@ -516,11 +516,11 @@ begin
                     header_trailer(31 downto 28) <= "0000";
                     header_trailer(27 downto 22) <= "111111";
                     -- send sub header time -- check later if equal
-                    header_trailer(21 downto 16) <= i_rdata(i_link)(25 downto 20);
-                    shtime <= i_rdata(i_link)(25 downto 20);
+                    header_trailer(21 downto 16) <= i_rdata(i_link)(21 downto 16);
+                    shtime <= i_rdata(i_link)(21 downto 16);
                     FOR I in N - 1 downto 0 LOOP
                         if ( i_mask_n(I) = '1' ) then
-                            sheader_time(I) <= i_rdata(I)(25 downto 20);
+                            sheader_time(I) <= i_rdata(I)(21 downto 16);
                         end if;
                     END LOOP;
                     header_trailer(15 downto 0) <= overflow;

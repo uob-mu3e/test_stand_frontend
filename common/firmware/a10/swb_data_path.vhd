@@ -45,7 +45,7 @@ port(
     i_writeregs_156  : in  work.util.slv32_array_t(63 downto 0);
     i_writeregs_250  : in  work.util.slv32_array_t(63 downto 0);
 
-    o_counter        : out work.util.slv32_array_t(5+(g_NLINKS_DATA*3)-1 downto 0);
+    o_counter        : out work.util.slv32_array_t(5+(g_NLINKS_DATA*5)-1 downto 0);
 
     i_dmamemhalffull : in  std_logic;
     
@@ -76,7 +76,7 @@ architecture arch of swb_data_path is
     signal rx : work.util.slv32_array_t(g_NLINKS_TOTL-1 downto 0);
     signal rx_k : work.util.slv4_array_t(g_NLINKS_TOTL-1 downto 0);
     signal rx_ren, rx_ren_link, rx_mask_n, rx_rdempty : std_logic_vector(g_NLINKS_TOTL-1 downto 0) := (others => '0');
-    signal rx_q : work.util.slv38_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
+    signal rx_q : work.util.slv34_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
     signal sop, eop, shop : std_logic_vector(g_NLINKS_TOTL-1 downto 0) := (others => '0');
 
     --! stream merger
@@ -88,7 +88,7 @@ architecture arch of swb_data_path is
     --! timer merger
     signal merger_rdata : std_logic_vector(W-1 downto 0);
     signal merger_rdata_debug : std_logic_vector(31 downto 0);
-    signal merger_rempty, merger_ren, merger_header, merger_trailer, merger_error : std_logic;
+    signal merger_rempty, merger_rempty_debug, merger_ren, merger_header, merger_trailer, merger_error : std_logic;
     signal merger_rack : std_logic_vector (g_NLINKS_TOTL-1 downto 0);
     
     --! event builder
@@ -106,7 +106,7 @@ architecture arch of swb_data_path is
     signal link_idx : integer range 0 to g_NLINKS_TOTL;
 
     --! status counters
-    signal link_to_fifo_cnt : work.util.slv32_array_t((g_NLINKS_DATA*3)-1 downto 0);
+    signal link_to_fifo_cnt : work.util.slv32_array_t((g_NLINKS_DATA*5)-1 downto 0);
 
 begin
 
@@ -128,6 +128,8 @@ begin
         o_counter(5+i*3) <= link_to_fifo_cnt(0+i*3); --! fifo almost_full
         o_counter(6+i*3) <= link_to_fifo_cnt(1+i*3); --! fifo wrfull
         o_counter(7+i*3) <= link_to_fifo_cnt(2+i*3); --! # of skip event
+        o_counter(8+i*3) <= link_to_fifo_cnt(3+i*3); --! # of events
+        o_counter(9+i*3) <= link_to_fifo_cnt(4+i*3); --! # of sub header
     end generate;
 
 
@@ -199,6 +201,8 @@ begin
             o_counter(0)    => link_to_fifo_cnt(0+i*3),
             o_counter(1)    => link_to_fifo_cnt(1+i*3),
             o_counter(2)    => link_to_fifo_cnt(2+i*3),
+            o_counter(3)    => link_to_fifo_cnt(3+i*3),
+            o_counter(4)    => link_to_fifo_cnt(4+i*3),
 
             i_reset_n_156   => i_reset_n_156,
             i_clk_156       => i_clk_156,
@@ -207,11 +211,9 @@ begin
             i_clk_250       => i_clk_250--;
         );
   
-        -- TODO: check subheader correct, remove datak from FIFO
-        -- TODO: add checks for sub-header, header etc. count sub-header
-        sop(i) <= rx_q(i)(36);
-        shop(i) <= '1' when rx_q(i)(37 downto 36) = "00" and rx_q(i)(31 downto 26) = "111111" else '0';
-        eop(i) <= rx_q(i)(37);
+        sop(i)  <= '1' when rx_q(i)(33 downto 32) = "10" else '0';
+        shop(i) <= '1' when rx_q(i)(33 downto 32) = "11" else '0';
+        eop(i)  <= '1' when rx_q(i)(33 downto 32) = "01" else '0';
 
     END GENERATE gen_link_fifos;
 
@@ -222,7 +224,7 @@ begin
     --! ------------------------------------------------------------------------
     e_stream : entity work.swb_stream_merger
     generic map (
-        W => 38,
+        W => 34,
         N => g_NLINKS_TOTL--,
     )
     port map (
@@ -271,16 +273,17 @@ begin
         o_rack      => merger_rack,
 
         -- output strem
-        o_q         => merger_rdata,
-        o_q_debug   => merger_rdata_debug,
-        o_rempty    => merger_rempty,
-        i_ren       => merger_ren,
-        o_header    => merger_header,
-        o_trailer   => merger_trailer,
-        o_error     => open,
+        o_q             => merger_rdata,
+        o_q_debug       => merger_rdata_debug,
+        o_rempty        => merger_rempty,
+        o_rempty_debug  => merger_rempty_debug,
+        i_ren           => merger_ren,
+        o_header_debug  => merger_header,
+        o_trailer_debug => merger_trailer,
+        o_error         => open,
 
-        i_reset_n   => i_reset_n_250,
-        i_clk       => i_clk_250--,
+        i_reset_n       => i_reset_n_250,
+        i_clk           => i_clk_250--,
     );
 
 
@@ -291,10 +294,10 @@ begin
     link_idx <= to_integer(unsigned(i_writeregs_250(SWB_READOUT_LINK_REGISTER_W)));
     builder_data  <=  stream_rdata when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
                       merger_rdata_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
-                      rx_q(link_idx)(35 downto 4) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_LINK) = '1' else
+                      rx_q(link_idx)(31 downto 0) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_LINK) = '1' else
                       (others => '0');
     builder_rempty  <=  stream_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else
-                        merger_rempty when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
+                        merger_rempty_debug when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER) = '1' else
                         rx_rdempty(link_idx) when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_LINK) = '1' else
                         '0';
     builder_header  <=  stream_header when i_writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM) = '1' else

@@ -282,7 +282,7 @@ begin
 
         when bank_data =>
             -- check again if the fifo is empty
-            if ( i_rempty = '0' ) then
+            if ( i_rempty = '0' and i_rx /= x"FFFFFFFF" ) then
                 w_ram_en            <= '1';
                 w_ram_add           <= w_ram_add + 1;
                 if ( i_trailer = '1' ) then

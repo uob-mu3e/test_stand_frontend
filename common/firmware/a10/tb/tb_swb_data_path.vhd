@@ -26,7 +26,7 @@ architecture arch of tb_swb_data_path is
 
     signal resets_n_156, resets_n_250 : std_logic_vector(31 downto 0) := (others => '0');
 
-    signal counter : work.util.slv32_array_t(5+(g_NLINKS_DATA*3)-1 downto 0);
+    signal counter : work.util.slv32_array_t(5+(g_NLINKS_DATA*5)-1 downto 0);
     
     signal farm_data : work.util.slv32_array_t(g_NLINKS_FARM - 1  downto 0);
     signal farm_datak : work.util.slv4_array_t(g_NLINKS_FARM - 1  downto 0);

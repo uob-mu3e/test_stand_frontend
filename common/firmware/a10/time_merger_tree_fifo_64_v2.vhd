@@ -78,6 +78,8 @@ architecture arch of time_merger_tree_fifo_64_v2 is
     constant a_smaller_c_d_padding : std_logic_vector(7 downto 0) := x"1B";
     constant c_d_smaller_a_b_padding : std_logic_vector(7 downto 0) := x"1C";
     constant a_b_smaller_c_d_padding : std_logic_vector(7 downto 0) := x"1D";
+    constant read_out_b_and_c : std_logic_vector(7 downto 0) := x"1E";
+    constant read_out_d_and_a : std_logic_vector(7 downto 0) := x"1F";
     constant IDEL : std_logic_vector(7 downto 0) := x"FF";
 
     signal data, data_reg, f_data, f_data_reg, q, q_reg, q_reg_reg : work.util.slv76_array_t(gen_fifos - 1 downto 0);
@@ -317,11 +319,11 @@ begin
         
                           write_d_set_padding when wrfull_and_merge_state(i) = '1' and layer_state_reg(i) = read_d_rest_padding and a_c_padding(i) = '1' else
                           write_d_c when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = read_d_rest_padding else
-                          read_d_rest_padding when layer_state_reg(i) = read_d_rest_padding else
+                          read_d_rest_padding when layer_state_reg(i) = read_d_rest_padding or layer_state_reg(i) = read_out_b_and_c else
                           
                           write_b_set_padding when wrfull_and_merge_state(i) = '1' and layer_state_reg(i) = read_b_rest_padding and a_c_padding(i) = '1' else
                           write_b_a when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = read_b_rest_padding else
-                          read_b_rest_padding when layer_state_reg(i) = read_b_rest_padding else
+                          read_b_rest_padding when layer_state_reg(i) = read_b_rest_padding or layer_state_reg(i) = read_out_d_and_a else
 
                           end_state when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_c_padding(i) = '1' else
                           end_state when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = write_d_c and d_padding(i) = '1' else
@@ -329,10 +331,14 @@ begin
                           --end_state when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_h(i) = tree_padding and c_z(i) = '1' else
                           --end_state when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_z(i) = '1'          and c_h(i) = tree_padding else
                           read_d_rest_padding when layer_state_reg(i) = a_smaller_c_b_padding or layer_state_reg(i) = c_smaller_a_b_padding or (layer_state_reg(i) = write_d_c and d_padding(i) = '0') else
+                          -- TODO: check this a_smaller_c_d_padding
                           read_b_rest_padding when layer_state_reg(i) = c_smaller_a_d_padding or (layer_state_reg(i) = write_b_a and b_padding(i) = '0') else
 
                           second_input_not_mask_n when wrfull_and_merge_state_and_first_input_not_rdempty(i) = '1' and first_input_mask_n_second_input_not_mask_n(i) = '1' else
                           first_input_not_mask_n when wrfull_and_merge_state_and_second_input_not_rdempty(i) = '1' and second_input_mask_n_first_input_not_mask_n(i) = '1' else
+
+                          read_out_b_and_c when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = b_smaller_d and c_d_no_padding(i) = '1' and a_b_padding(i) = '1' else
+                          read_out_d_and_a when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and layer_state_reg(i) = d_smaller_b and a_b_no_padding(i) = '1' and c_d_padding(i) = '1' else
                           
                           read_out_first_second_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and a_b_no_padding(i) = '1' and c_d_padding(i) = '1' else-- and a_z(i) = '0' and b_z(i) = '0' else
                           read_out_second_first_padding when wrfull_and_merge_state_and_both_inputs_not_rdempty(i) = '1' and c_d_no_padding(i) = '1' and a_b_padding(i) = '1' else-- and c_z(i) = '0' and d_z(i) = '0' else
@@ -372,11 +378,11 @@ begin
                           IDEL;
                          
         wrreq(i) <= '1' when layer_state(i) = last_layer_state and i_wen_h_t = '1' else
-                    '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = first_input_not_mask_n or layer_state(i) = a_b_smaller_c_d or layer_state(i) = c_d_smaller_a_b or layer_state(i) = a_smaller_c_c_smaller_b or layer_state(i) = c_smaller_a_a_smaller_d or layer_state(i) = end_state or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_second_first_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = c_smaller_a_b_padding or layer_state(i) = a_smaller_c_d_padding or layer_state(i) = c_d_smaller_a_b_padding or layer_state(i) = a_b_smaller_c_d_padding or layer_state(i) = a_smaller_c_b_padding or layer_state(i) = write_d_set_padding or layer_state(i) = write_b_set_padding or layer_state(i) = write_d_c or layer_state(i) = c_smaller_a_d_padding or layer_state(i) = write_b_a else
+                    '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = first_input_not_mask_n or layer_state(i) = a_b_smaller_c_d or layer_state(i) = c_d_smaller_a_b or layer_state(i) = a_smaller_c_c_smaller_b or layer_state(i) = c_smaller_a_a_smaller_d or layer_state(i) = end_state or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_second_first_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = c_smaller_a_b_padding or layer_state(i) = a_smaller_c_d_padding or layer_state(i) = c_d_smaller_a_b_padding or layer_state(i) = a_b_smaller_c_d_padding or layer_state(i) = a_smaller_c_b_padding or layer_state(i) = write_d_set_padding or layer_state(i) = write_b_set_padding or layer_state(i) = write_d_c or layer_state(i) = c_smaller_a_d_padding or layer_state(i) = write_b_a or layer_state(i) = read_out_b_and_c or layer_state(i) = read_out_d_and_a else
                     '1' when layer_state(i) = d_smaller_a else
                     '1' when layer_state(i) = b_smaller_c else
-                    '1' when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = b_smaller_d else
-                    '1' when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = d_smaller_b else
+                    --'1' when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = b_smaller_d else --NOTE: maybe not needed
+                    --'1' when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = d_smaller_b else --NOTE: maybe not needed
                     '0';
                     
         o_rdreq(i) <= '1' when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_b_smaller_c_d or (layer_state(i) = b_smaller_d and layer_state_reg(i) /= b_smaller_d) or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = c_smaller_a_b_padding or layer_state(i) = a_b_smaller_c_d_padding or layer_state(i) = a_smaller_c_b_padding or layer_state(i) = read_b_rest_padding else
@@ -398,6 +404,8 @@ begin
                                 b_h(i) when layer_state(i) = b_smaller_d and layer_state_reg(i) = c_smaller_a_a_smaller_d else
                                 d_h(i) when layer_state(i) = d_smaller_b and layer_state_reg(i) = a_smaller_c_c_smaller_b else
                                 d_h(i) when layer_state(i) = d_smaller_b and layer_state_reg(i) = c_smaller_a_a_smaller_d else
+                                data_reg(i)(37 downto 0) when layer_state(i) = read_d_rest_padding and layer_state_reg(i) = read_d_rest_padding else
+                                data_reg(i)(37 downto 0) when layer_state(i) = read_b_rest_padding and layer_state_reg(i) = read_b_rest_padding else
                                 d_h(i) when layer_state(i) = read_d_rest_padding else
                                 b_h(i) when layer_state(i) = read_b_rest_padding else
                                 data_reg(i)(37 downto 0) when layer_state(i) = write_d_set_padding else
@@ -406,20 +414,24 @@ begin
                                 data_reg(i)(37 downto 0) when layer_state(i) = write_b_a else
                                 data_reg(i)(37 downto 0) when layer_state(i) = b_smaller_d and layer_state_reg(i) = b_smaller_d else 
                                 data_reg(i)(37 downto 0) when layer_state(i) = d_smaller_b and layer_state_reg(i) = d_smaller_b else
+                                data_reg(i)(37 downto 0) when layer_state(i) = read_out_b_and_c and layer_state_reg(i) = b_smaller_d else
+                                data_reg(i)(37 downto 0) when layer_state(i) = read_out_d_and_a and layer_state_reg(i) = d_smaller_b else
                                 data_reg(i)(37 downto 0) when layer_state(i) = d_smaller_a else
                                 data_reg(i)(37 downto 0) when layer_state(i) = b_smaller_c else
                                 data_reg(i)(37 downto 0) when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = b_smaller_d else
                                 data_reg(i)(37 downto 0) when layer_state(i) = a_smaller_c_c_smaller_b and layer_state_reg(i) = d_smaller_b else
                                 a_h(i) when layer_state(i) = second_input_not_mask_n or layer_state(i) = a_b_smaller_c_d or layer_state(i) = a_smaller_c_c_smaller_b or layer_state(i) = read_out_first_second_padding or layer_state(i) = read_out_a_rest_padding or layer_state(i) = a_smaller_c_rest_padding or layer_state(i) = a_smaller_c_d_padding or layer_state(i) = a_b_smaller_c_d_padding or layer_state(i) = a_smaller_c_b_padding else
                                 c_h(i) when layer_state(i) = first_input_not_mask_n or layer_state(i) = c_d_smaller_a_b or layer_state(i) = c_smaller_a_a_smaller_d or layer_state(i) = read_out_second_first_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = c_smaller_a_rest_padding or layer_state(i) = c_smaller_a_b_padding or layer_state(i) = c_d_smaller_a_b_padding or layer_state(i) = c_smaller_a_d_padding else
-                                b_h(i) when layer_state(i) = b_smaller_d else --NOTE: maybe not needed
-                                d_h(i) when layer_state(i) = d_smaller_b else --NOTE: maybe not needed
+                                --b_h(i) when layer_state(i) = b_smaller_d else --NOTE: maybe not needed
+                                --d_h(i) when layer_state(i) = d_smaller_b else --NOTE: maybe not needed
                                 (others => '0');
 
         data(i)(75 downto 38)<= tree_paddingk when layer_state(i) = last_layer_state else
                                 tree_padding when layer_state(i) = end_state or layer_state(i) = read_out_a_rest_padding or layer_state(i) = read_out_c_rest_padding or layer_state(i) = write_d_set_padding or layer_state(i) = write_b_set_padding else
-                                data_reg(i)(75 downto 38) when layer_state(i) = b_smaller_d and layer_state_reg(i) = b_smaller_d else
-                                data_reg(i)(75 downto 38) when layer_state(i) = d_smaller_b and layer_state_reg(i) = d_smaller_b else
+                                --data_reg(i)(75 downto 38) when layer_state(i) = b_smaller_d and layer_state_reg(i) = b_smaller_d else --NOTE: not needed
+                                --data_reg(i)(75 downto 38) when layer_state(i) = d_smaller_b and layer_state_reg(i) = d_smaller_b else --NOTE: not needed
+                                c_h(i) when layer_state(i) = read_out_b_and_c and layer_state_reg(i) = b_smaller_d else
+                                a_h(i) when layer_state(i) = read_out_d_and_a and layer_state_reg(i) = d_smaller_b else
                                 c_h(i) when layer_state(i) = a_smaller_c_b_padding else
                                 a_h(i) when layer_state(i) = c_smaller_a_d_padding else
                                 c_h(i) when layer_state(i) = write_d_c else
