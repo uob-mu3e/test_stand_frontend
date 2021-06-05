@@ -163,37 +163,37 @@ void MupixConfig::Parse_BiasDACs_from_struct(MUPIX_BIASDACS mt) {
 void MupixConfig::Parse_ConfDACs_from_struct(MUPIX_CONFDACS mt) {
     setParameter("SelFast", mt.SelFast, false);
     setParameter("count_sheep", mt.count_sheep, false);
+    setParameter("NC1", mt.NC1, false);
     setParameter("TestOut", mt.TestOut, false);
     setParameter("disable_HB", mt.disable_HB, false);
     setParameter("conf_res_n", mt.conf_res_n, false);
     setParameter("RO_res_n", mt.RO_res_n, false);
     setParameter("Ser_res_n", mt.Ser_res_n, false);
     setParameter("Aur_res_n", mt.Aur_res_n, false);
+    setParameter("NC2", mt.NC2, false);
     setParameter("Tune_Reg_L", mt.Tune_Reg_L, false);
+    setParameter("NC3", mt.NC3, false);
     setParameter("Tune_Reg_R", mt.Tune_Reg_R, false);
     setParameter("AlwaysEnable", mt.AlwaysEnable, false);
     setParameter("En2thre", mt.En2thre, false);
+    setParameter("NC4", mt.NC4, false);
     setParameter("EnPLL", mt.EnPLL, false);
     setParameter("SelSlow", mt.SelSlow, false);
     setParameter("SelEx", mt.SelEx, false);
     setParameter("invert", mt.invert, false);
     setParameter("slowdownlDColEnd", mt.slowdownlDColEnd, false);
     setParameter("EnSync_SC", mt.EnSync_SC, false);
+    setParameter("NC5", mt.NC5, false);
     setParameter("linksel", mt.linksel, false);
     setParameter("tsphase", mt.tsphase, false);
     setParameter("sendcounter", mt.sendcounter, false);
     setParameter("resetckdivend", mt.resetckdivend, false);
+    setParameter("NC6", mt.NC6, false);
     setParameter("maxcycend", mt.maxcycend, false);
     setParameter("slowdownend", mt.slowdownend, false);
     setParameter("timerend", mt.timerend, false);
     setParameter("ckdivend2", mt.ckdivend2, false);
     setParameter("ckdivend", mt.ckdivend, false);
-    setParameter("NC1", mt.NC1, false);
-    setParameter("NC2", mt.NC2, false);
-    setParameter("NC3", mt.NC3, false);
-    setParameter("NC4", mt.NC4, false);
-    setParameter("NC5", mt.NC5, false);
-    setParameter("NC6", mt.NC6, false);
 }
 
 void MupixConfig::Parse_VDACs_from_struct(MUPIX_VDACS mt) {

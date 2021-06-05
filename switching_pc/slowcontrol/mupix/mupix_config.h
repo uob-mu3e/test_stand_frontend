@@ -34,15 +34,5 @@ private:
     static paras_t parameters_vdacs;                             ///< parameters for vdac dacs
 };
 
-class MupixBoardConfig: public mudaq::ASICConfigBase{
-public:
-    MupixBoardConfig();
-    ~MupixBoardConfig();
-    
-    void Parse_BoardDACs_from_struct(MUPIX_BOARDDACS mt);
-private:
-    static paras_t parameters_boarddacs;                             ///< parameters for global dacs (name, nbits, endian) 
-};
-
 }
 #endif //MUPIX_CONFIG_H

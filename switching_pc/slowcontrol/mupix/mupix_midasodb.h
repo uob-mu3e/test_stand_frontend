@@ -33,8 +33,6 @@ int setup_db(const char* prefix,MupixFEB* FEB_inteface,bool init_FEB);
 //e.g. midasODB::MapForEach(hDB, "/Equipment/Mupix",[mudaqdev_ptr](Config c,int asic){mudaqdev_ptr->ConfigureAsic(c,asic);});
 //Function must return SUCCESS, otherwise loop is stopped.
 int MapForEachASIC(HNDLE& db_rootentry, const char* prefix, std::function<int(MupixConfig* /*mupix config*/,int /*ASIC #*/)> func);
-int MapForEachBOARD(HNDLE& db_rootentry, const char* prefix, std::function<int(MupixBoardConfig* /*mupix config*/,int /*ASIC #*/)> func);
-
 } } // namespace mupix::midasODB
 
 #endif // MUPIX_MIDASODB_H

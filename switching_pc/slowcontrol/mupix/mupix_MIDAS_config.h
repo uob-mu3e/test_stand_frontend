@@ -151,39 +151,39 @@ static odb MUPIX_BIASDACS_SETTINGS = {
 };
 
 typedef struct {
-    INT ckdivend;
-    INT ckdivend2;
-    INT timerend;
-    INT slowdownend;
-    INT maxcycend;
-    INT resetckdivend;
-    INT sendcounter;
-    INT tsphase;
-    INT linksel;
-    INT EnSync_SC;
-    INT slowdownlDColEnd;
-    INT invert;
-    INT SelEx;
-    INT SelSlow;
-    INT EnPLL;
-    INT En2thre;
-    INT AlwaysEnable;
-    INT Tune_Reg_R;
-    INT Tune_Reg_L;
-    INT Aur_res_n;
-    INT Ser_res_n;
-    INT RO_res_n;
-    INT conf_res_n;
-    INT disable_HB;
-    INT TestOut;
-    INT count_sheep;
     INT SelFast;
+    INT count_sheep;
     INT NC1;
+    INT TestOut;
+    INT disable_HB;
+    INT conf_res_n;
+    INT RO_res_n;
+    INT Ser_res_n;
+    INT Aur_res_n;
     INT NC2;
+    INT Tune_Reg_L;
     INT NC3;
+    INT Tune_Reg_R;
+    INT AlwaysEnable;
+    INT En2thre;
     INT NC4;
+    INT EnPLL;
+    INT SelSlow;
+    INT SelEx;
+    INT invert;
+    INT slowdownlDColEnd;
+    INT EnSync_SC;
     INT NC5;
+    INT linksel;
+    INT tsphase;
+    INT sendcounter;
+    INT resetckdivend;
     INT NC6;
+    INT maxcycend;
+    INT slowdownend;
+    INT timerend;
+    INT ckdivend2;
+    INT ckdivend;
 } MUPIX_CONFDACS;
 
 static odb MUPIX_CONFDACS_SETTINGS = {
@@ -223,16 +223,16 @@ static odb MUPIX_CONFDACS_SETTINGS = {
 };
 
 typedef struct {
-    INT ref_Vss;
-    INT VDAC1;
-    INT Baseline;
-    INT ThLow2;
-    INT ThHigh2;
-    INT ThLow;
-    INT ThHigh;
-    INT ThPix;
-    INT BLPix;
     INT VCAL;
+    INT BLPix;
+    INT ThPix;
+    INT ThHigh;
+    INT ThLow;
+    INT ThHigh2;
+    INT ThLow2;
+    INT Baseline;
+    INT VDAC1;
+    INT ref_Vss;
 } MUPIX_VDACS;
 
 static odb MUPIX_VDACS_SETTINGS = {
@@ -249,29 +249,5 @@ static odb MUPIX_VDACS_SETTINGS = {
 };
 
 #endif
-
-#ifndef MUPIX_BOARDDACS_DEFINED
-#define MUPIX_BOARDDACS_DEFINED
-
-typedef struct {
-    INT      Threshold_High;
-    INT      Threshold_Low;
-    INT      Threshold_Pix;
-    INT      Injection;
-    INT      TDiode_Current;
-    INT      TDiode_ADC;
-} MUPIX_BOARDDACS;
-
-static odb MUPIX_BOARDDACS_SETTINGS = {
-    {"Threshold_High", 19312},
-    {"Threshold_Low", 19312},
-    {"Threshold_Pix", 48284},
-    {"Injection", 0},
-    {"TDiode_Current", 0},
-    {"TDiode_ADC", 0},
-};
-
-#endif
-
 
 #endif //MU3EDAQ_MUPIX_MIDAS_CONFIG_H
