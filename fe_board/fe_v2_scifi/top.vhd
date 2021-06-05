@@ -249,7 +249,7 @@ begin
     process(lvds_firefly_clk)
     begin
     if ( falling_edge(lvds_firefly_clk) ) then
-        if ( run_state_125 = RUN_STATE_SYNC and sync_cnt <= 10 ) then
+        if ( run_state_125 = RUN_STATE_SYNC and sync_cnt = 0 ) then
             scifi_int_syncres <= '1';
             scifi_int_syncres2 <= '1';
             sync_cnt <= sync_cnt + 1;

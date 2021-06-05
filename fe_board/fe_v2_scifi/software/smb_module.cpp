@@ -316,17 +316,17 @@ void SMB_t::menu_reset() {
         switch(cmd) {
         case '1':
             sc.ram->data[0xFF00|SCIFI_CTRL_RESET_REGISTER_W] = 1;
-            usleep(100);
+            usleep(50000);
             sc.ram->data[0xFF00|SCIFI_CTRL_RESET_REGISTER_W] = 0;
             break;
         case '2':
             sc.ram->data[0xFF00|SCIFI_CTRL_RESET_REGISTER_W] = 2;
-            usleep(100);
+            usleep(50000);
             sc.ram->data[0xFF00|SCIFI_CTRL_RESET_REGISTER_W] = 0;
             break;
         case '3':
             sc.ram->data[0xFF00|SCIFI_CTRL_RESET_REGISTER_W] = 4;
-            usleep(100);
+            usleep(50000);
             sc.ram->data[0xFF00|SCIFI_CTRL_RESET_REGISTER_W] = 0;
             break;
         case '4':
