@@ -9,9 +9,11 @@
 #define __UTIL_I2C_H__
 
 #include <system.h>
-#include "altera_avalon_pio_regs.h"
-#include <stdio.h>
+
 #include <altera_avalon_i2c.h>
+#include <altera_avalon_pio_regs.h>
+
+#include <stdio.h>
 
 struct i2c_t {
     ALT_AVALON_I2C_DEV_t* dev = alt_avalon_i2c_open(I2C_NAME);

@@ -19,20 +19,27 @@ int main() {
     flash.init();
 
     while (1) {
-        printf("  [1] => flash\n");
-        printf("  [2] => xcvr qsfp\n");
-        printf("  [8] => fan\n");
+        printf("  [1] => xcvr\n");
+        printf("  [R] => reconfig");
+        printf("  [9] => flash\n");
+        printf("  [0] => fan\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
         case '1':
-            flash.menu();
-            break;
-        case '2':
             menu_xcvr((alt_u32*)(AVM_XCVR0_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
             break;
-        case '8':
+        case 'R':
+            for(alt_u32 base = AVM_XCVR0_BASE; base < AVM_XCVR0_BASE + AVM_XCVR0_SPAN; base += 0x10000) {
+                if(*(alt_u32*)base == 0xCCCCCCCC) continue;
+                reconfig.pll(base);
+            }
+            break;
+        case '9':
+            flash.menu();
+            break;
+        case '0':
             fan.menu();
             break;
         default:
