@@ -110,6 +110,7 @@ MupixConfig::MupixConfig() {
 
     // allocate memory for bitpattern
     length = length_bits/8;
+    length = 11*4+3;  // MM: TODO Why does this not work with the prev. line ?? fix this !!
     if( length_bits%8 > 0 ) length++;
     length_32bits = length/4;
     if( length%4 > 0 ) length_32bits++;
