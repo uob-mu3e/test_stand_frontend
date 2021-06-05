@@ -100,7 +100,19 @@ int MupixFEB::ConfigureASICs(){
              std::cout << std::hex << tmp << std::endl;
          }
 
-         //rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_CHIP_CFG, payload);
+         // ToDo: Col Test Tdac bits from file
+         for(int i=0; i<85;i++){
+             payload.push_back(0x00000000);
+         }
+         std::cout<<"length 32:"<<config->length_32bits<<std::endl;
+         std::cout<<"length byte:"<<config->length<<std::endl;
+
+         // TODO: include headers for addr.
+         feb_sc.FEB_write(SP_ID, 0xFF47, 0x0000000F); // SPI slow down reg
+         feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000FC0); // reset Mupix config fifos
+         feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000000);
+         feb_sc.FEB_write(SP_ID, 0xFF49, 0x00000003); // idk, have to look it up
+         rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
 
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
