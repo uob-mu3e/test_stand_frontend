@@ -254,6 +254,8 @@ begin
     o_flash_reset_n <= flash_reset_n;
     o_flash_address <= flash_address;
 
+    o_pcie1_clk <= pcie1_clk;
+
     -- 156.25 MHz data clock (reference is 125 MHz global clock)
     e_clk_156 : component work.cmp.ip_pll_125to156
     port map (

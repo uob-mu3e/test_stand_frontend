@@ -208,18 +208,26 @@ begin
         i_pcie0_wmem_clk                => pcie0_clk,
         i_pcie0_rmem_clk                => pcie0_clk,
 
+        i_pcie0_wregs_A_clk             => pcie0_clk,
+        i_pcie0_wregs_B_clk             => pcie0_clk,
+        i_pcie0_wregs_C_clk             => pcie0_clk,
 
 
-        -- PCIe0
+
+        -- PCIe1
         i_pcie1_rx                      => i_pcie1_rx,
         o_pcie1_tx                      => o_pcie1_tx,
         i_pcie1_perst_n                 => i_pcie1_perst_n,
         i_pcie1_refclk                  => i_pcie1_refclk,
         o_pcie1_clk                     => pcie1_clk,
 
-        i_pcie1_dma0_clk                => pcie0_clk,
-        i_pcie1_wmem_clk                => pcie0_clk,
-        i_pcie1_rmem_clk                => pcie0_clk,
+        i_pcie1_dma0_clk                => pcie1_clk,
+        i_pcie1_wmem_clk                => pcie1_clk,
+        i_pcie1_rmem_clk                => pcie1_clk,
+
+        i_pcie1_wregs_A_clk             => pcie1_clk,
+        i_pcie1_wregs_B_clk             => pcie1_clk,
+        i_pcie1_wregs_C_clk             => pcie1_clk,
 
 
 
