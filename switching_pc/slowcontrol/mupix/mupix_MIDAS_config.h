@@ -55,7 +55,7 @@ typedef struct {
   BOOL reset_datapath;
   BOOL reset_asics;
   BOOL reset_boards;
-  BOOL mask[16];
+  BOOL mask[128];
 } MUPIX_DAQ;
 
 static odb MUPIX_DAQ_SETTINGS = {
@@ -68,6 +68,34 @@ static odb MUPIX_DAQ_SETTINGS = {
     {"reset_asics", false},
     {"reset_boards", false},
     {"mask", {  false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
+                false, false, false, false,
                 false, false, false, false,
                 false, false, false, false,
                 false, false, false, false

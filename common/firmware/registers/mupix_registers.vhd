@@ -52,6 +52,7 @@ constant MUPIX_LVDS_STATUS_BLOCK_LENGTH     : integer := 36;
         constant MP_CTRL_INVERT_CSN_BIT         :  integer := 1;
 
     constant MP_CTRL_ALL_REGISTER_W             :  integer := 16#4A#;
+    constant MP_CTRL_SPI_BUSY_REGISTER_R        :  integer := 16#4B#;
 
 -----------------------------------------------------------------
 ---- mupix datapath ---------------------------------------------
