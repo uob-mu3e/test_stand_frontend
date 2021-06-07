@@ -87,7 +87,6 @@ using midas::odb;
 /* Start address of power in the crate controller - TODO: Move to an appropriate header*/
 const uint8_t CC_POWER_OFFSET = 5;
 const uint8_t CC_VT_READOUT_START = 1;
-const uint8_t CC_VT_READOUT_END = 4;
 
 /* The frontend name (client name) as seen by other MIDAS clients   */
 const char *frontend_name = "SW Frontend";
@@ -330,13 +329,13 @@ INT frontend_init()
     //init scitiles
     status = init_scitiles(*mup);
     if (status != SUCCESS)
-        return FE_ERR_DRIVER;
+        return FE_ERR_DRIVER;*/
 
     //init mupix
     status = init_mupix(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
-    */
+
     // TODO: Define generic history panels
 
     // Subdetector specific panels should be created created in subdet::midasODB::setup_db
@@ -588,7 +587,10 @@ void setup_odb(){
     custom["Switching&"] = "sc.html";
     custom["Febs&"] = "febs.html";
     custom["FEBcrates&"] = "crates.html";
-    
+
+    // Inculde the line below to set up the FEBs and their mapping for the 2021 integration run
+#include "odb_feb_mapping_integration_run_2021.h"
+
     // TODO: not sure at the moment we have a midas frontend for three feb types but 
     // we need to have different swb at the final experiment so maybe one needs to take
     // things apart later. For now we put this "common" FEB variables into the generic
@@ -863,11 +865,11 @@ try{ // TODO: What can throw here?? Why?? Is there another way to handle this??
    }
 
    //configure Pixel sensors
-   //status=MupixFEB::Instance()->ConfigureASICs();
-   //if(status!=SUCCESS){
-   //   cm_msg(MERROR,"switch_fe","ASIC configuration failed");
-   //   return CM_TRANSITION_CANCELED;
-   //}
+   status=mupixfeb->ConfigureASICs();
+   if(status!=SUCCESS){
+      cm_msg(MERROR,"switch_fe","ASIC configuration failed");
+      return CM_TRANSITION_CANCELED;
+   }
 
 
    //last preparations
@@ -1330,13 +1332,6 @@ void sc_settings_changed(odb o)
           int status=mupixfeb->ConfigureASICs();
           if(status!=SUCCESS){ 
          	//TODO: what to do? 
-          }
-      o = false;
-    }
-    if (name == "MupixBoard" && o) {
-          int status=mupixfeb->ConfigureBoards();
-          if(status!=SUCCESS){
-            //TODO: what to do?
           }
       o = false;
     }
