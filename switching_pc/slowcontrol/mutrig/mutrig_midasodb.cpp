@@ -30,7 +30,7 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     sprintf(set_str, "%s/Settings/ASICs/Global", prefix);
     auto settings_asics = MUTRIG_GLOBAL_SETTINGS;
      // global mutrig setting are from mutrig_MIDAS_config.h
-    settings_asics.connect(set_str, true);
+    settings_asics.connect(set_str);
  
     //Set number of ASICs, derived from mapping
     unsigned int nasics = FEB_interface->GetNumASICs();
@@ -43,7 +43,7 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
 
     // Add [prefix]/Daq (structure defined in mutrig_MIDAS_config.h) 
     auto settings_daq = MUTRIG_DAQ_SETTINGS; // gloabl setting for daq/fpga from mutrig_MIDAS_config.h
-    settings_daq.connect(set_str, true);
+    settings_daq.connect(set_str);
     //update length flags for DAQ section
     settings_daq["num_asics"]=nasics;
     settings_daq["mask"].resize(nasics);
@@ -67,10 +67,10 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     auto settings_ch = MUTRIG_CH_SETTINGS;
     for(unsigned int asic = 0; asic < nasics; ++asic) {
         sprintf(set_str, "%s/Settings/ASICs/TDCs/%i", prefix, asic);
-        settings_tdc.connect(set_str, true);
+        settings_tdc.connect(set_str);
         for(unsigned int ch = 0; ch < 32; ++ch) {
             sprintf(set_str, "%s/Settings/ASICs/Channels/%i", prefix, asic*32+ch);
-            settings_ch.connect(set_str, true);
+            settings_ch.connect(set_str);
         }
     }
     cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - ASICs done");
