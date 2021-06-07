@@ -35,8 +35,8 @@ entity top is
         scifi_spi_sclk              : out   std_logic;
         scifi_spi_miso              : in    std_logic;
         scifi_spi_mosi              : out   std_logic;
-		  scifi_temp_mutrig				: in    std_logic;
-		  scifi_temp_sipm 				: in    std_logic;
+        scifi_temp_mutrig         : in    std_logic;
+        scifi_temp_sipm           : in    std_logic;
 
         scifi_spi_sclk2             : out   std_logic;
         scifi_spi_miso2             : in    std_logic;
@@ -49,8 +49,8 @@ entity top is
         scifi_cec_miso2             : in    std_logic;
         scifi_fifo_ext2             : out   std_logic;
         scifi_inject2               : out   std_logic;
-		  scifi_temp_mutrig2 			: in    std_logic;
-		  scifi_temp_sipm2 				: in    std_logic;
+        scifi_temp_mutrig2        : in    std_logic;
+        scifi_temp_sipm2          : in    std_logic;
 
         -- Fireflies
         firefly1_tx_data            : out   std_logic_vector(3 downto 0); -- transceiver
@@ -119,7 +119,7 @@ end top;
 architecture rtl of top is
 
     -- Debouncers
-    signal pb_db                : std_logic_vector(1 downto 0);
+    signal pb_db                    : std_logic_vector(1 downto 0);
 
     constant N_LINKS                : integer := 2;
     constant N_ASICS                : integer := 4;
@@ -128,10 +128,11 @@ architecture rtl of top is
     signal fifo_write               : std_logic_vector(N_LINKS-1 downto 0);
     signal fifo_wdata               : std_logic_vector(36*(N_LINKS-1)+35 downto 0);
 
-    signal scifi_reg               : work.util.rw_t;
+    signal scifi_reg                : work.util.rw_t;
 
     signal run_state_125            : run_state_t;
     signal run_state_156            : run_state_t;
+    signal run_state_125_prev       : run_state_t;
     signal ack_run_prep_permission  : std_logic;
     signal common_fifos_almost_full : std_logic_vector(N_LINKS-1 downto 0);
     signal s_run_state_all_done     : std_logic;
@@ -155,7 +156,13 @@ architecture rtl of top is
     --signal scifi_int_bidir_test            : std_logic;
     
     signal sync_cnt : integer range 0 to 255 := 0;
+    signal chip_reset : std_logic := '0';
+    signal counter_vec : std_logic_vector(31 downto 0);
+    signal counter : integer;
+    
+    signal pll_test : std_logic;
 
+    signal fast_pll_clk : std_logic;
 
 begin
 --------------------------------------------------------------------
@@ -170,9 +177,9 @@ begin
 
 -- assignments of DAB pins: special IOBUF, constant and polarity flips here
     scifi_fifo_ext              <= '0';
-    scifi_inject                <= '0';
+    scifi_inject                <= pll_test;
     scifi_fifo_ext2             <= '0';
-    scifi_inject2               <= '0';
+    scifi_inject2               <= pll_test;
     scifi_cec_csn               <= (others => '1');
 
     scifi_csn_buf(0) <= not scifi_int_csn(0);
@@ -214,8 +221,10 @@ begin
         i_reg_we                    => scifi_reg.we,
         i_reg_wdata                 => scifi_reg.wdata,
 
-        o_chip_reset                => open,
-        o_pll_test                  => open,
+        o_chip_reset(0)             => open,
+        o_chip_reset(1)             => open,
+
+        o_pll_test                  => pll_test,
         i_data                      => scifi_din,
 
         io_i2c_sda                  => open,
@@ -242,6 +251,7 @@ begin
         i_clk_ref_A                 => LVDS_clk_si1_fpga_A,
         i_clk_ref_B                 => LVDS_clk_si1_fpga_B,
 
+        o_fast_pll_clk              => fast_pll_clk,
         o_test_led                  => lcd_data(4 downto 3),
         i_reset                     => not pb_db(0)--,
     );
@@ -249,7 +259,7 @@ begin
     process(lvds_firefly_clk)
     begin
     if ( falling_edge(lvds_firefly_clk) ) then
-        if ( run_state_125 = RUN_STATE_SYNC and sync_cnt = 0 ) then
+        if ( run_state_125 = RUN_STATE_SYNC and sync_cnt <= 10 ) then
             scifi_int_syncres <= '1';
             scifi_int_syncres2 <= '1';
             sync_cnt <= sync_cnt + 1;
