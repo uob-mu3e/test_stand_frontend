@@ -357,7 +357,7 @@ begin
         end process;
     end block;
 
-    e_phy : component work.cmp.ip_xcvr_phy
+    e_phy : component work.cmp.ip_xcvr_a10_phy
     port map (
         tx_serial_data  => o_tx_serial,
         rx_serial_data  => i_rx_serial,
@@ -413,7 +413,7 @@ begin
         reconfig_clk(0)         => i_clk--,
     );
 
-    e_fpll : component work.cmp.ip_xcvr_fpll
+    e_fpll : component work.cmp.ip_xcvr_a10_fpll
     port map (
         pll_refclk0     => i_pll_clk,
         pll_powerdown   => pll_powerdown(0),
@@ -434,7 +434,7 @@ begin
     --
     --
     --
-    e_reset : component work.cmp.ip_xcvr_reset
+    e_reset : component work.cmp.ip_xcvr_a10_reset
     port map (
         tx_analogreset => tx_analogreset,
         tx_digitalreset => tx_digitalreset,

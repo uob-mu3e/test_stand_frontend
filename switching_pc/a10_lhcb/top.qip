@@ -8,7 +8,7 @@ set_global_assignment -name SDC_FILE top.sdc
 set_global_assignment -name QIP_FILE util/include.qip
 
 set_global_assignment -name VHDL_FILE a10/a10_block.vhd
-set_global_assignment -name QIP_FILE a10/xcvr.qip
+set_global_assignment -name QIP_FILE a10/xcvr/include.qip
 
 set_global_assignment -name QIP_FILE a10/pcieapp/include.qip
 
