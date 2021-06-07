@@ -139,13 +139,13 @@ begin
                     7 when (rdata(7)(37 downto 32) = ts1_marker)
                     else 8;
     ts2_idx     <=  0 when (rdata(0)(37 downto 32) = ts2_marker) else
-                    2 when (rdata(1)(37 downto 32) = ts2_marker) else
+                    1 when (rdata(1)(37 downto 32) = ts2_marker) else
                     2 when (rdata(2)(37 downto 32) = ts2_marker) else
-                    2 when (rdata(3)(37 downto 32) = ts2_marker) else
-                    2 when (rdata(4)(37 downto 32) = ts2_marker) else
-                    2 when (rdata(5)(37 downto 32) = ts2_marker) else
-                    4 when (rdata(6)(37 downto 32) = ts2_marker) else
-                    6 when (rdata(7)(37 downto 32) = ts2_marker)
+                    3 when (rdata(3)(37 downto 32) = ts2_marker) else
+                    4 when (rdata(4)(37 downto 32) = ts2_marker) else
+                    5 when (rdata(5)(37 downto 32) = ts2_marker) else
+                    6 when (rdata(6)(37 downto 32) = ts2_marker) else
+                    7 when (rdata(7)(37 downto 32) = ts2_marker)
                     else 8;
     sh_idx     <=   0 when (rdata(0)(37 downto 32) = sh_marker) else
                     1 when (rdata(1)(37 downto 32) = sh_marker) else
