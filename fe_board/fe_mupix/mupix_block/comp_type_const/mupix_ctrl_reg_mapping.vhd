@@ -29,6 +29,8 @@ port (
 
     o_mp_ctrl_data              : out std_logic_vector(32*5 + 31 downto 0);
     o_mp_fifo_write             : out std_logic_vector( 5 downto 0);
+    o_mp_ctrl_data_all          : out std_logic_vector(31 downto 0);
+    o_mp_ctrl_data_all_we       : out std_logic;
     o_mp_fifo_clear             : out std_logic_vector( 5 downto 0);
     o_mp_ctrl_enable            : out std_logic_vector( 5 downto 0);
     o_mp_ctrl_chip_config_mask  : out std_logic_vector(11 downto 0);
@@ -52,6 +54,7 @@ architecture rtl of mupix_ctrl_reg_mapping is
         if (i_reset_n = '0') then 
             o_mp_ctrl_enable          <= (others => '0');
             mp_ctrl_invert_csn        <= '0';
+            o_mp_ctrl_data_all_we     <= '0';
             
         elsif(rising_edge(i_clk156)) then
 
@@ -60,9 +63,10 @@ architecture rtl of mupix_ctrl_reg_mapping is
             o_mp_ctrl_chip_config_mask  <= mp_ctrl_chip_config_mask(11 downto 0);
             o_mp_ctrl_invert_29         <= mp_ctrl_invert_29;
             o_mp_ctrl_invert_csn        <= mp_ctrl_invert_csn;
-            regaddr             := to_integer(unsigned(i_reg_add(7 downto 0)));
-            o_reg_rdata         <= x"CCCCCCCC";
-            o_mp_fifo_write     <= (others => '0');
+            regaddr                     := to_integer(unsigned(i_reg_add(7 downto 0)));
+            o_reg_rdata                 <= x"CCCCCCCC";
+            o_mp_fifo_write             <= (others => '0');
+            o_mp_ctrl_data_all_we       <= '0';
 
 
             -----------------------------------------------------------------
@@ -120,6 +124,11 @@ architecture rtl of mupix_ctrl_reg_mapping is
             if ( regaddr = MP_CTRL_INVERT_REGISTER_W and i_reg_re = '1' ) then
                 o_reg_rdata(MP_CTRL_INVERT_29_BIT)  <= mp_ctrl_invert_29;
                 o_reg_rdata(MP_CTRL_INVERT_CSN_BIT) <= mp_ctrl_invert_csn;
+            end if;
+
+            if ( regaddr = MP_CTRL_ALL_REGISTER_W and i_reg_we = '1' ) then
+                o_mp_ctrl_data_all      <= i_reg_wdata;
+                o_mp_ctrl_data_all_we   <= '1';
             end if;
 
         end if;

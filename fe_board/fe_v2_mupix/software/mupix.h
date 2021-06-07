@@ -44,12 +44,12 @@ struct mupix_t {
         //write conf defaults
         sc->ram->data[0xFF42]=0x001F0002;
         sc->ram->data[0xFF42]=0x00380000;
-        sc->ram->data[0xFF42]=0xFC05F000;
+        sc->ram->data[0xFF42]=0xFC09F000;
 
         
         // write vdac defaults
         sc->ram->data[0xFF43]=0x00720000;
-        sc->ram->data[0xFF43]=0xFF000047;
+        sc->ram->data[0xFF43]=0x52000046;
         sc->ram->data[0xFF43]=0x00B80000;
         
         // zero the rest
@@ -65,6 +65,30 @@ struct mupix_t {
         sc->ram->data[0xFF40]=63;
         sc->ram->data[0xFF40]=0;
         return;
+    }
+
+    void test_write_all() {
+        
+        sc->ram->data[0xFF40]=0x00000FC0;
+        sc->ram->data[0xFF40]=0x00000000;
+        sc->ram->data[0xFF49]=0x00000003;
+        
+        sc->ram->data[0xFF4A]=0x2A000A03;
+        sc->ram->data[0xFF4A]=0xFA3F002F;
+        sc->ram->data[0xFF4A]=0x1E041041;
+        sc->ram->data[0xFF4A]=0x041E9A51;
+        sc->ram->data[0xFF4A]=0x40280000;
+        sc->ram->data[0xFF4A]=0x1400C20A;
+        sc->ram->data[0xFF4A]=0x028A001F;
+        sc->ram->data[0xFF4A]=0x00020038;
+        sc->ram->data[0xFF4A]=0x0000FC09;
+        sc->ram->data[0xFF4A]=0xF0001C80;
+        sc->ram->data[0xFF4A]=0x00148000;
+        sc->ram->data[0xFF4A]=0x11802E00;
+    
+        for(int i = 0; i<85; i++){
+        sc->ram->data[0xFF4A]=0x00000000;}
+
     }
 
     void menu_lvds() {
@@ -186,6 +210,9 @@ struct mupix_t {
                 printf("setting lvds mask to 0x%01x%08x\n",value2, value);
                 sc->ram->data[0xFF61]=value;
                 sc->ram->data[0xFF62]=value2;
+                break;
+            case '6':
+                test_write_all();
                 break;
             case 'q':
                 return;
