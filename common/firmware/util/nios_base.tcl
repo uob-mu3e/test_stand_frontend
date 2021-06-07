@@ -217,6 +217,9 @@ proc nios_base.export_avm { name addressWidth baseAddress args } {
     add_connection ${clk}.clk       ${name}.clk
     add_connection ${clk}.clk_reset ${name}.reset
 
+    add_connection clk.clk_reset           ${name}.reset
+    add_connection cpu.debug_reset_request ${name}.reset
+
     add_connection                 ${cpu}.data_master ${name}.slave
     set_connection_parameter_value ${cpu}.data_master/${name}.slave baseAddress ${baseAddress}
 
