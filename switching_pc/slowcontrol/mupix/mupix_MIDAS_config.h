@@ -49,6 +49,13 @@ static odb MUPIX_GLOBAL_SETTINGS = {
 typedef struct {
   BOOL dummy_config;
   BOOL dummy_data;
+  INT dummy_data_n;
+  BOOL dummy_data_fast;
+  BOOL prbs_decode_bypass;
+  BOOL reset_datapath;
+  BOOL reset_asics;
+  BOOL reset_boards;
+  BOOL mask[16];
 } MUPIX_DAQ;
 
 static odb MUPIX_DAQ_SETTINGS = {
