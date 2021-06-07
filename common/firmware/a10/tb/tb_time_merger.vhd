@@ -27,7 +27,7 @@ architecture TB of tb_time_merger is
     signal gen_link_k, gen_link_k_reg : work.util.slv4_array_t(1 downto 0);
     
     -- signals
-    signal rx_q : work.util.slv38_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
+    signal rx_q : work.util.slv34_array_t(g_NLINKS_TOTL-1 downto 0) := (others => (others => '0'));
     signal rx_ren, rx_rdempty, sop, shop, eop, link_mask_n : std_logic_vector(g_NLINKS_TOTL-1 downto 0);
     signal rempty : std_logic;
     signal counter_int: unsigned(31 downto 0);
@@ -166,9 +166,9 @@ begin
             i_clk_250       => clk_fast--;
         );
   
-        sop(i) <= rx_q(i)(36);
-        shop(i) <= '1' when rx_q(i)(37 downto 36) = "00" and rx_q(i)(31 downto 26) = "111111" else '0';
-        eop(i) <= rx_q(i)(37);
+        sop(i)  <= '1' when rx_q(i)(33 downto 32) = "10" else '0';
+        shop(i) <= '1' when rx_q(i)(33 downto 32) = "11" else '0'; 
+        eop(i)  <= '1' when rx_q(i)(33 downto 32) = "10" else '0';
 
     END GENERATE gen_link_fifos;
     
