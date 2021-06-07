@@ -82,30 +82,27 @@ int MupixFEB::ConfigureASICs(){
       // down a lot with a well chosen function call
 
       try {
+          uint32_t bitpattern_m;
+          vector<vector<uint32_t> > payload_m;
+          vector<uint32_t> payload;
+          payload_m.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
 
-         uint8_t bitpattern[config->length];
-         std::cout<< "Printing config:"<<std::endl;
-         for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
-             for(short i=0;i<8;i++){// reverse Bits (reverse config setting is something different !!)
-                  bitpattern[nbit] |= ((config->bitpattern_w[nbit]>>i) & 0b1)<<(7-i);
-             }
-         }
+          for(uint32_t j = 0; j<payload_m.at(0).size();j++){
+              bitpattern_m=0;
+              for(short i=0; i<32; i++){
+                  bitpattern_m|= ((payload_m.at(0).at(j)>>i) & 0b1)<<(31-i);
+              }
+              payload.push_back(bitpattern_m);
+          }
 
-         uint32_t * datastream = (uint32_t*)(bitpattern);
-
-         vector<uint32_t> payload;
-         for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
-             uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);
-             payload.push_back(tmp);
-             std::cout << std::hex << tmp << std::endl;
-         }
+          for(uint32_t j = 0; j<payload.size();j++){
+              std::cout<<std::hex<<payload.at(j)<<std::endl;
+          }
 
          // ToDo: Col Test Tdac bits from file
          for(int i=0; i<85;i++){
              payload.push_back(0x00000000);
          }
-         std::cout<<"length 32:"<<config->length_32bits<<std::endl;
-         std::cout<<"length byte:"<<config->length<<std::endl;
 
          //Mask all chips but this one
          uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
