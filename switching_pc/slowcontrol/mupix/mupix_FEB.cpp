@@ -116,11 +116,13 @@ int MupixFEB::ConfigureASICs(){
          uint32_t limit = 5;
          rpc_status=FEB_REPLY_SUCCESS;
 
+         feb_sc.FEB_register_read(SP_ID,0x4B,spi_busy);
+
          while(spi_busy==1 && count < limit){
-             feb_sc.FEB_register_read(SP_ID,0x4B,spi_busy);
-             cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
-             count++;
              sleep(1);
+             feb_sc.FEB_register_read(SP_ID,0x4B,spi_busy);
+             count++;
+             cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
          }
          if(count == limit){
              std::cout<<"Timeout"<<std::endl;
