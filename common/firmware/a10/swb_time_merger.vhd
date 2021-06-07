@@ -70,7 +70,7 @@ begin
     port map ( o_cnt => o_counters(0), i_ena => wfull, i_reset_n => i_reset_n, i_clk => i_clk );
 
 
-    e_time_merger : entity work.time_merger_v2
+    e_time_merger : entity work.time_merger_v3
         generic map (
         W => W,
         TREE_DEPTH_w => TREE_w,
@@ -121,29 +121,49 @@ begin
 
     --! search headers in 256 bit
     header_idx  <=  0 when (rdata(0)(37 downto 32) = pre_marker) else
+                    1 when (rdata(1)(37 downto 32) = pre_marker) else
                     2 when (rdata(2)(37 downto 32) = pre_marker) else
+                    3 when (rdata(3)(37 downto 32) = pre_marker) else
                     4 when (rdata(4)(37 downto 32) = pre_marker) else
-                    6 when (rdata(6)(37 downto 32) = pre_marker)
+                    5 when (rdata(5)(37 downto 32) = pre_marker) else
+                    6 when (rdata(6)(37 downto 32) = pre_marker) else
+                    7 when (rdata(7)(37 downto 32) = pre_marker)
                     else 8;
     ts1_idx     <=  0 when (rdata(0)(37 downto 32) = ts1_marker) else
+                    1 when (rdata(1)(37 downto 32) = ts1_marker) else
                     2 when (rdata(2)(37 downto 32) = ts1_marker) else
+                    3 when (rdata(3)(37 downto 32) = ts1_marker) else
                     4 when (rdata(4)(37 downto 32) = ts1_marker) else
-                    6 when (rdata(6)(37 downto 32) = ts1_marker)
+                    5 when (rdata(5)(37 downto 32) = ts1_marker) else
+                    6 when (rdata(6)(37 downto 32) = ts1_marker) else
+                    7 when (rdata(7)(37 downto 32) = ts1_marker)
                     else 8;
     ts2_idx     <=  0 when (rdata(0)(37 downto 32) = ts2_marker) else
+                    2 when (rdata(1)(37 downto 32) = ts2_marker) else
                     2 when (rdata(2)(37 downto 32) = ts2_marker) else
-                    4 when (rdata(4)(37 downto 32) = ts2_marker) else
-                    6 when (rdata(6)(37 downto 32) = ts2_marker)
+                    2 when (rdata(3)(37 downto 32) = ts2_marker) else
+                    2 when (rdata(4)(37 downto 32) = ts2_marker) else
+                    2 when (rdata(5)(37 downto 32) = ts2_marker) else
+                    4 when (rdata(6)(37 downto 32) = ts2_marker) else
+                    6 when (rdata(7)(37 downto 32) = ts2_marker)
                     else 8;
     sh_idx     <=   0 when (rdata(0)(37 downto 32) = sh_marker) else
+                    1 when (rdata(1)(37 downto 32) = sh_marker) else
                     2 when (rdata(2)(37 downto 32) = sh_marker) else
+                    3 when (rdata(3)(37 downto 32) = sh_marker) else
                     4 when (rdata(4)(37 downto 32) = sh_marker) else
-                    6 when (rdata(6)(37 downto 32) = sh_marker)
+                    5 when (rdata(5)(37 downto 32) = sh_marker) else
+                    6 when (rdata(6)(37 downto 32) = sh_marker) else
+                    7 when (rdata(7)(37 downto 32) = sh_marker)
                     else 8;
     trailer_idx <=  0 when (rdata(0)(37 downto 32) = tr_marker) else
+                    1 when (rdata(1)(37 downto 32) = tr_marker) else
                     2 when (rdata(2)(37 downto 32) = tr_marker) else
+                    3 when (rdata(3)(37 downto 32) = tr_marker) else
                     4 when (rdata(4)(37 downto 32) = tr_marker) else
-                    6 when (rdata(6)(37 downto 32) = tr_marker)
+                    5 when (rdata(5)(37 downto 32) = tr_marker) else
+                    6 when (rdata(6)(37 downto 32) = tr_marker) else
+                    7 when (rdata(7)(37 downto 32) = tr_marker)
                     else 8;
 
     ren   <= '1' when merge_state = wait_for_pre and header_idx = 8 and rempty = '0' and wfull = '0' else 

@@ -45,25 +45,24 @@ architecture arch of link_to_fifo_32 is
     signal link_to_fifo_state : link_to_fifo_type;
     signal cnt_skip_data, cnt_sub, cnt_events : std_logic_vector(31 downto 0);
 
-    signal rx_156_data, rx_250_q : std_logic_vector(33 downto 0);
-    signal rx_156_wen, rx_250_wen, sync_rdempty, almost_full, wrfull : std_logic;
+    signal rx_156_data : std_logic_vector(33 downto 0);
+    signal rx_156_wen, almost_full, wrfull : std_logic;
     signal wrusedw : std_logic_vector(LINK_FIFO_ADDR_WIDTH - 1 downto 0);
 
 begin
 
     e_cnt_link_fifo_almost_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counter(0), i_ena => almost_full, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
+    port map ( o_cnt => o_counter(0), i_ena => almost_full, i_reset_n => i_reset_n_156, i_clk => i_clk_156 );
 
     e_cnt_dc_link_fifo_full : entity work.counter
     generic map ( WRAP => true, W => 32 )
-    port map ( o_cnt => o_counter(1), i_ena => wrfull, i_reset_n => i_reset_n_250, i_clk => i_clk_250 );
+    port map ( o_cnt => o_counter(1), i_ena => wrfull, i_reset_n => i_reset_n_156, i_clk => i_clk_156 );
 
     o_counter(2) <= cnt_skip_data;
     o_counter(3) <= cnt_events;
     o_counter(4) <= cnt_sub;
 
-    --! sync data from data clk to dma clk
     --! write only if not idle
     process(i_clk_156, i_reset_n_156)
     begin
@@ -157,9 +156,9 @@ begin
 
     process(i_clk_156, i_reset_n_156)
     begin
-        if(i_reset_n_156 = '0') then
+        if ( i_reset_n_156 = '0' ) then
             almost_full       <= '0';
-        elsif(rising_edge(i_clk_156)) then
+        elsif ( rising_edge(i_clk_156) ) then
             if(wrusedw(LINK_FIFO_ADDR_WIDTH - 1) = '1') then
                 almost_full <= '1';
             else 

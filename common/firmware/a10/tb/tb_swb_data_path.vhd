@@ -14,7 +14,7 @@ architecture arch of tb_swb_data_path is
     constant CLK_MHZ : real := 10000.0; -- MHz
     constant g_NLINKS_TOTL : integer := 64;
     constant g_NLINKS_FARM : integer := 8;
-    constant g_NLINKS_DATA : integer := 12;
+    constant g_NLINKS_DATA : integer := 10;
 
     signal clk, clk_fast, reset_n : std_logic := '0';
     --! data link signals
@@ -64,7 +64,7 @@ begin
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGER) <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM)       <= '0';
         
-    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"00000FFF";
+    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"000003FF";
     writeregs_250(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
     writeregs_250(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
     writeregs_250(DMA_REGISTER_W)(DMA_BIT_ENABLE)               <= '1';

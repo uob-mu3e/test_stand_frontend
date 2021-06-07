@@ -119,11 +119,15 @@ begin
     -- tag_fifo_empty;
     -- dma_write_state;
     -- rx_rdempty;
+    
+    -- 250 MHz counters
     o_counter(0) <= stream_counters(0);  --! e_stream_fifo full
     o_counter(1) <= builder_counters(0); --! bank_builder_idle_not_header
     o_counter(2) <= builder_counters(1); --! bank_builder_skip_event_dma
     o_counter(3) <= builder_counters(2); --! bank_builder_ram_full
     o_counter(4) <= builder_counters(3); --! bank_builder_tag_fifo_full
+    
+    -- 156 MHz counters
     generate_rdata : for i in 0 to g_NLINKS_DATA - 1 generate
         o_counter(5+i*3) <= link_to_fifo_cnt(0+i*3); --! fifo almost_full
         o_counter(6+i*3) <= link_to_fifo_cnt(1+i*3); --! fifo wrfull
