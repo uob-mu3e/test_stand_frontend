@@ -78,16 +78,26 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     //set up variables read from FEB: counters
     sprintf(set_str, "%s/Variables/Counters", prefix);
     odb variables_counters = {
-        {"nHits", nasics},
-        {"Time", nasics},
-        {"nBadFrames", nasics},
-        {"nFrames", nasics},
-        {"nErrorsLVDS", nasics},
-        {"nWordsLVDS", nasics},
-        {"nErrorsPRBS", nasics},
-        {"nWordsPRBS", nasics},
-        {"nDatasyncloss", nasics},
+        {"nHits", std::array<uint32_t, 255>()},
+        {"Time", std::array<uint32_t, 255>()},
+        {"nBadFrames", std::array<uint32_t, 255>()},
+        {"nFrames", std::array<uint32_t, 255>()},
+        {"nErrorsLVDS", std::array<uint32_t, 255>()},
+        {"nWordsLVDS", std::array<uint32_t, 255>()},
+        {"nErrorsPRBS", std::array<uint32_t, 255>()},
+        {"nWordsPRBS", std::array<uint32_t, 255>()},
+        {"nDatasyncloss", std::array<uint32_t, 255>()},
     };
+    variables_counters["nHits"].resize(nasics);
+    variables_counters["Time"].resize(nasics);
+    variables_counters["nBadFrames"].resize(nasics);
+    variables_counters["nFrames"].resize(nasics);
+    variables_counters["nErrorsLVDS"].resize(nasics);
+    variables_counters["nWordsLVDS"].resize(nasics);
+    variables_counters["nErrorsPRBS"].resize(nasics);
+    variables_counters["nWordsPRBS"].resize(nasics);
+    variables_counters["nDatasyncloss"].resize(nasics);
+
     variables_counters.connect(set_str);
     cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - counters done");
 
@@ -95,21 +105,28 @@ int setup_db(const char* prefix, MutrigFEB* FEB_interface){
     //set up variables read from FEB: run state & reset system bypass
     sprintf(set_str, "%s/Variables/FEB Run State", prefix);
     odb bypass_setting = {
-            {"Bypass enabled", FEB_interface->GetNumFPGAs()},
-            {"Run state", FEB_interface->GetNumFPGAs()}
+            {"Bypass enabled", std::array<uint32_t, 255>()},
+            {"Run state", std::array<uint32_t, 255>()}
     };
+    bypass_setting["Bypass enabled"].resize(FEB_interface->GetNumFPGAs());
+    bypass_setting["Run state"].resize(FEB_interface->GetNumFPGAs());
     bypass_setting.connect(set_str);
     cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - feb state done");
 
     //set up variables read from FEB: run state & reset system bypass
     sprintf(set_str, "%s/Variables/FEB datapath status", prefix);
     odb datapath_status = {
-            {"PLL locked", FEB_interface->GetNumFPGAs()},
-            {"Buffer full", FEB_interface->GetNumFPGAs()},
-            {"Frame desync", FEB_interface->GetNumFPGAs()},
-            {"DPA locked", FEB_interface->GetNumASICs()},
-            {"RX ready", FEB_interface->GetNumASICs()}
+            {"PLL locked", std::array<uint32_t, 255>()},
+            {"Buffer full", std::array<uint32_t, 255>()},
+            {"Frame desync", std::array<uint32_t, 255>()},
+            {"DPA locked", std::array<uint32_t, 255>()},
+            {"RX ready", std::array<uint32_t, 255>()}
     };
+    datapath_status["PLL locked"].resize(FEB_interface->GetNumFPGAs());
+    datapath_status["Buffer full"].resize(FEB_interface->GetNumFPGAs());
+    datapath_status["Frame desync"].resize(FEB_interface->GetNumFPGAs());
+    datapath_status["DPA locked"].resize(FEB_interface->GetNumASICs());
+    datapath_status["RX ready"].resize(FEB_interface->GetNumASICs());
     datapath_status.connect(set_str);
     cm_msg(MINFO, "mutrig_midasobb::setup_db", "Setting up odb - datapath status done");
 
