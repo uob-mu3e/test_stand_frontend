@@ -90,6 +90,10 @@ function Feb(x,y,dx,dy, index){
     this.type = "";
     this.shorttype = "";
 
+    //Crate and slot
+    this.crate = -1;
+    this.slot = -1;
+
     //Firmware versions
     this.arria_firmware =0;
     this.max_firmware =0;
@@ -132,6 +136,10 @@ function Feb(x,y,dx,dy, index){
 
         cc.fillStyle = "Black";
         cc.font = "10px Arial";
+        cc.fillText(this.crate + "/" + this.slot, this.x+2, this.y+20);
+
+        cc.fillStyle = "Black";
+        cc.font = "10px Arial";
         cc.fillText(this.shorttype, this.x+this.dx-10, this.y+10);
 
         if(this.active > 0){
@@ -167,6 +175,10 @@ function Feb(x,y,dx,dy, index){
         cc.fillStyle = "Black";
         cc.font = "12px Arial";
         cc.fillText(this.index, xstart+2, ystart+12);
+
+        cc.fillStyle = "Black";
+        cc.font = "12px Arial";
+        cc.fillText("Crate: " + this.crate + " - Slot: " + this.slot, xstart+xwidth/2-50, ystart+12);
 
         cc.fillStyle = "Black";
         cc.font = "12px Arial";
@@ -356,7 +368,7 @@ function update_masks(valuex) {
                 febs[i][j].type = "Tiles";
                 febs[i][j].shorttype = "T";
             } else {
-                febs[i][j].type = "Undefined Type";
+                febs[i][j].type = "Undef.";
                 febs[i][j].shorttype = "U";
             }
         }
@@ -411,4 +423,25 @@ function update_sc(valuex, swindex) {
         febs[swindex][j].ff1_alarms     = value[j*26+18];
     }
     draw(boardselindex);
+}
+
+function update_slots(valuex){
+    var value = valuex;
+    if(typeof valuex === 'string')
+        value = JSON.parse(valuex);
+
+    var crate = value["FEBCrate"];
+    var slot = value["FEBSlot"];
+
+    for(var i=0; i < 4; i++){
+        for(var j=0; j < nfebs[i]; j++){
+            var index = 48*i+j;
+            febs[i][j].crate = crate[index];
+            febs[i][j].slot   = slot[index];
+        }
+    }
+    draw(boardselindex);
+
+
+
 }

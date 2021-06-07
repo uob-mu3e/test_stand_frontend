@@ -16,6 +16,9 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <thread>
+#include <chrono>
+#include <future>
 #include "midas.h"
 #include "mfe.h"
 #include "GenesysDriver.h"
@@ -31,7 +34,7 @@ const char *frontend_name = "Power Frontend";
 const char *frontend_file_name = __FILE__;
 
 /* frontend_loop is called periodically if this variable is TRUE    */
-BOOL frontend_call_loop = FALSE;
+BOOL frontend_call_loop = TRUE;
 
 /* Overwrite equipment struct in ODB from values in code*/
 BOOL equipment_common_overwrite = FALSE;
@@ -48,7 +51,7 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 /* buffer size to hold events */
 INT event_buffer_size = 10 * 10000;
 
-std::vector<std::unique_ptr<PowerDriver>> drivers;
+std::vector<std::shared_ptr<PowerDriver>> drivers;
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -60,8 +63,9 @@ INT pause_run(INT run_number, char *error);
 INT resume_run(INT run_number, char *error);
 INT frontend_loop();
 INT read_genesys_power(char *pevent, INT off);
-INT read_hameg_power(char *pevent, INT off);
-INT read_power(float* pdata);
+INT read_hameg_power1(char *pevent, INT off);
+INT read_hameg_power2(char *pevent, INT off);
+INT read_power(float* pdata, const std::string& eqn);
 
 
 
@@ -70,21 +74,21 @@ INT read_power(float* pdata);
 
 EQUIPMENT equipment[] = {
 
-   {"Genesys",                       /* equipment name */
-    {121, 0,                       /* event ID, trigger mask */
-     "SYSTEM",                  /* event buffer */
-     EQ_PERIODIC,                   /* equipment type */
-     0,                         /* event source */
-     "MIDAS",                   /* format */
-     TRUE,                      /* enabled */
-     RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
-     10000,                     /* read every 10 sec */
-     0,                         /* stop run after this event limit */
-     0,                         /* number of sub events */
-     1,                         /* log history every event */
-     "", "", ""} ,                  /* device driver list */
-     read_genesys_power,
-    },
+   /*{"Genesys",                       /* equipment name */
+    /*{121, 0,                       /* event ID, trigger mask */
+     /*"SYSTEM",                  /* event buffer */
+     /*EQ_PERIODIC,                   /* equipment type */
+     /*0,                         /* event source */
+     /*"MIDAS",                   /* format */
+     /*TRUE,                      /* enabled */
+     /*RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     /*10000,                     /* read every 10 sec */
+     /*0,                         /* stop run after this event limit */
+     /*0,                         /* number of sub events */
+     /*1,                         /* log history every event */
+     /*"", "", ""} ,                  /* device driver list */
+     /*read_genesys_power,
+    },*/
     
     {"HAMEG1",                       /* equipment name */
     	{122, 0,                       /* event ID, trigger mask */
@@ -99,8 +103,24 @@ EQUIPMENT equipment[] = {
     	0,                         /* number of sub events */
      	0,                         /* log history every event */
      	"", "", ""} ,                  /* device driver list */
-     	read_hameg_power,
+     	read_hameg_power1,    
     },
+    
+    /*{"HAMEG2",                       /* equipment name */
+    	/*{122, 0,                       /* event ID, trigger mask */
+     	/*"SYSTEM",                  /* event buffer */
+     	/*EQ_PERIODIC,                   /* equipment type */
+     	/*0,                         /* event source */
+     	/*"MIDAS",                   /* format */
+     	/*TRUE,                      /* enabled */
+     	/*RO_STOPPED | RO_RUNNING | RO_PAUSE,        /* all, but not write to odb */
+     	/*10000,                     /* read every 10 sec */
+     	/*0,                         /* stop run after this event limit */
+    	/*0,                         /* number of sub events */
+     	/*0,                         /* log history every event */
+     	/*"", "", ""} ,                  /* device driver list */
+     	/*read_hameg_power2,    
+    },*/
     
     {""} //why is there actually this empty one here? FW
     
@@ -131,11 +151,11 @@ INT frontend_init()
   		//identify type and instatiate driver
   		if( std::find( genysis_names.begin(), genysis_names.end(), shortname ) != genysis_names.end() )
   		{
-			drivers.emplace_back(std::make_unique<GenesysDriver>(equipment[eqID].name,&equipment[eqID].info));
+			drivers.emplace_back(std::make_shared<GenesysDriver>(equipment[eqID].name,&equipment[eqID].info));
   		}
   		else if( std::find( hameg_names.begin(), hameg_names.end(), shortname ) != hameg_names.end() )
   		{
-			drivers.emplace_back(std::make_unique<HMP4040Driver>(equipment[eqID].name,&equipment[eqID].info));
+			drivers.emplace_back(std::make_shared<HMP4040Driver>(equipment[eqID].name,&equipment[eqID].info));
 		}
   		else
   		{
@@ -205,7 +225,7 @@ INT frontend_exit()
 	return CM_SUCCESS;
 }
 
-INT read_hameg_power(char *pevent, INT off)
+INT read_hameg_power1(char *pevent, INT off)
 {
 	std::cout << " read hameg power called" << std::endl;
 	INT error;
@@ -216,8 +236,26 @@ INT read_hameg_power(char *pevent, INT off)
 	float *pdata;
 	
 	bk_create(pevent,"LVH1", TID_FLOAT, (void **)&pdata);
+	std::string eq_name = "HAMEG1"; //not super elegant, but the 'read' function does not now which equipment it comes from
+	error = read_power(pdata,eq_name);
+	
+	bk_close(pevent, pdata);
+  	return bk_size(pevent);
+}
+
+/*INT read_hameg_power2(char *pevent, INT off)
+{
+	std::cout << " read hameg power called" << std::endl;
+	INT error;
+	
+	/* init bank structure */
   
-	error = read_power(pdata);
+	/*bk_init32a(pevent);
+	float *pdata;
+	
+	bk_create(pevent,"LVH2", TID_FLOAT, (void **)&pdata);
+	std::string eq_name = "HAMEG2"; //not super elegant, but the 'read' function does not now which equipment it comes from
+	error = read_power(pdata,eq_name);
 	
 	bk_close(pevent, pdata);
   	return bk_size(pevent);
@@ -230,24 +268,25 @@ INT read_genesys_power(char *pevent, INT off)
 	
 	/* init bank structure */
   
-	bk_init32a(pevent);
+	/*bk_init32a(pevent);
 	float *pdata;
 	
-	bk_create(pevent,"LVGE", TID_FLOAT, (void **)&pdata);
-  
-	error = read_power(pdata);	
+	bk_create(pevent,"LVG1", TID_FLOAT, (void **)&pdata);
+	std::string eq_name = "Genesys";
+	error = read_power(pdata,eq_name);	
 	bk_close(pevent, pdata);
   	return bk_size(pevent);
-}
+}*/
 
 
-INT read_power(float* pdata)
+INT read_power(float* pdata,const std::string& eq_name)
 {
 	INT error;
 	for(const auto& d: drivers)
 	{
 		if( !d->Initialized() ) continue;
-		if(!(typeid(*d)==typeid(HMP4040Driver))) continue;
+		//if(!(typeid(*d)==typeid(HMP4040Driver))) continue;
+		if(d->GetName()!=eq_name) continue;
 		error = d->ReadAll();
 		if(error == FE_SUCCESS)
 		{
@@ -271,9 +310,23 @@ INT read_power(float* pdata)
 
 INT frontend_loop()
 {
-	//std::cout << " frontend_loop() called in power.cpp " << std::endl;
-	ss_sleep(100);
-	return CM_SUCCESS;
+	std::this_thread::sleep_for (std::chrono::milliseconds(100));
+	std::cout << " fe loop called " << std::endl;
+	
+	std::vector<std::future<int>> futures;
+	for(auto& d: drivers)
+    {
+		if( !d->Initialized() ) continue;
+        futures.emplace_back( std::async(&PowerDriver::ReadAll,d) );
+    }
+    
+    for(auto& f : futures)
+    {
+        INT error = f.get();
+        if(error != FE_SUCCESS) cm_msg(MERROR, "frontend_loop power", "Read failed");
+    }	
+	
+	return SUCCESS;
 }
 
 

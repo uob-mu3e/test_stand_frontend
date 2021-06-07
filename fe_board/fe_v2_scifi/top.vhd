@@ -153,6 +153,8 @@ architecture rtl of top is
     --signal scifi_int_fifo_ext              : std_logic;
     --signal scifi_int_inject                : std_logic;
     --signal scifi_int_bidir_test            : std_logic;
+    
+    signal sync_cnt : integer range 0 to 255 := 0;
 
 
 begin
@@ -246,13 +248,15 @@ begin
 
     process(lvds_firefly_clk)
     begin
-    if falling_edge(lvds_firefly_clk) then
-        if(run_state_125 = RUN_STATE_SYNC)then
+    if ( falling_edge(lvds_firefly_clk) ) then
+        if ( run_state_125 = RUN_STATE_SYNC and sync_cnt = 0 ) then
             scifi_int_syncres <= '1';
             scifi_int_syncres2 <= '1';
+            sync_cnt <= sync_cnt + 1;
         else
             scifi_int_syncres <= '0';
             scifi_int_syncres2 <= '0';
+            sync_cnt <= 0;
         end if;
     end if;
     end process;

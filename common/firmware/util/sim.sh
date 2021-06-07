@@ -4,8 +4,6 @@ set -eux
 TB="$1"
 shift
 
-STOPTIME="${STOPTIME:-1us}"
-
 SRC=()
 for arg in "$@" ; do
     arg=$(readlink -f -- "$arg")
@@ -40,7 +38,6 @@ done
 
 # simulation options
 SIM_OPTS=(
-    --stop-time="$STOPTIME"
     # display the design hierarchy
     --disp-tree=inst
     # disable ieee asserts at the start of simulation
@@ -54,6 +51,17 @@ SIM_OPTS=(
     # write PSL report at the end of simulation
     --psl-report="$TB.psl-report"
 )
+if [ -n "${STOP_TIME_US:+x}" ] ; then
+    SIM_OPTS+=(
+        --stop-time="$STOP_TIME_US"us
+        -gg_STOP_TIME_US="$STOP_TIME_US"
+        -gg_SEED="$((0x$(cat /dev/random | tr -dc "0-9A-F" | head -c 8)-0x80000000))"
+    )
+else
+    SIM_OPTS+=(
+        --stop-time="${STOPTIME:-1us}"
+    )
+fi
 [ -f "$TB.wave-opt" ] && SIM_OPTS+=(--read-wave-opt="../$TB.wave-opt")
 
 mkdir -p -- .cache
@@ -66,4 +74,8 @@ ghdl -m "${OPTS[@]}" "$TB"
 # run: run/simulate the design
 ghdl -r "${OPTS[@]}" "$TB" "${SIM_OPTS[@]}"
 
-gtkwave "$TB.ghw"
+if [ -f "../$TB.gtkw" ] ; then
+    gtkwave "$TB.ghw" "../$TB.gtkw"
+else
+    gtkwave --autosavename "$TB.ghw"
+fi

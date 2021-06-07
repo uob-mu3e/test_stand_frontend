@@ -489,7 +489,7 @@ void link_settings_changed(odb o)
 
       //A FEB is only disabled if both SC and datataking are disabled. Typically these settings are linked,
       //here we do not enforce any kind of consistency.
-      for(int i = 0; i < MAX_N_FRONTENDBOARDS; i++){
+      for(uint32_t i = 0; i < MAX_N_FRONTENDBOARDS; i++){
           if(value[i] == FEBLINKMASK::OFF){
               cb->write_command("Disable",0,i);
           } else {
@@ -510,7 +510,7 @@ void prepare_run_on_request(odb o){
 
     bool allok = true;
     bool notalloff = false;
-    for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++){
+    for(uint32_t i=0; i < MAX_N_SWITCHINGBOARDS; i++){
         printf("%i : %i : %i\n", i, request[i], active[i]);
         allok = allok && ((request[i] > 0) || (active[i] == 0));
         notalloff = notalloff || active[i];
@@ -526,7 +526,7 @@ void prepare_run_on_request(odb o){
         cb->write_command("Run Prepare",run);
 
         // reset requests
-        for(int i=0; i < MAX_N_SWITCHINGBOARDS; i++){
+        for(uint32_t i=0; i < MAX_N_SWITCHINGBOARDS; i++){
             active[i] =0;
         }
 

@@ -69,8 +69,8 @@ protected:
       const uint8_t SB_number;
 
       //Mapping from ASIC number to FPGA_ID and ASIC_ID
-      virtual uint16_t FPGAid_from_ID(int asic) const {return 0;}; //global asic number to global FEB number
-      virtual uint16_t ASICid_from_ID(int asic) const {return 0;}; //global asic number to FEB-local asic number
+      virtual uint16_t FPGAid_from_ID(int asic [[maybe_unused]]) const {return 0;}; //global asic number to global FEB number
+      virtual uint16_t ASICid_from_ID(int asic [[maybe_unused]]) const {return 0;}; //global asic number to FEB-local asic number
 
       //Return typeID for building FEB ID map
       virtual FEBTYPE GetTypeID() const {return FEBTYPE::Undefined;}
