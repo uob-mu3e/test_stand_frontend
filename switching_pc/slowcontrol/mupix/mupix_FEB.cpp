@@ -39,10 +39,10 @@ using midas::odb;
 #define FEB_REPLY_ERROR   1
 
 //Mapping to physical ports of switching board.
-uint16_t MupixFEB::FPGAid_from_ID(int asic) const {return asic/2;}
-uint16_t MupixFEB::ASICid_from_ID(int asic) const {return asic%2;}
+uint16_t MupixFEB::FPGAid_from_ID(int asic) const {return asic/12;}
+uint16_t MupixFEB::ASICid_from_ID(int asic) const {return asic%12;}
 
-uint16_t MupixFEB::GetNumASICs() const {return febs.size()*1;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
+uint16_t MupixFEB::GetNumASICs() const {return febs.size()*12;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
 
 void invert_datastream(uint32_t * datastream) {
 
@@ -106,6 +106,16 @@ int MupixFEB::ConfigureASICs(){
          }
          std::cout<<"length 32:"<<config->length_32bits<<std::endl;
          std::cout<<"length byte:"<<config->length<<std::endl;
+
+         //Mask all chips but this one
+         uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
+         int pos = ASICid_from_ID(asic);
+         chip_select_mask &= ((~0x1) << pos);
+         for (int i = 0; i < pos; ++i)
+             chip_select_mask |= (0x1 << i);
+         std::cout << "Chip select mask = " << std::hex << chip_select_mask << std::endl;
+         feb_sc.FEB_write(SP_ID, 0xFF48, chip_select_mask);
+
 
          // TODO: include headers for addr.
          feb_sc.FEB_write(SP_ID, 0xFF47, 0x0000000F); // SPI slow down reg
