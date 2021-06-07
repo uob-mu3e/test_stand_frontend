@@ -113,17 +113,32 @@ int MupixFEB::ConfigureASICs(){
          chip_select_mask &= ((~0x1) << pos);
          for (int i = 0; i < pos; ++i)
              chip_select_mask |= (0x1 << i);
-         std::cout << "Chip select mask = " << std::hex << chip_select_mask << std::endl;
-         feb_sc.FEB_write(SP_ID, 0xFF48, chip_select_mask);
 
+         uint32_t spi_busy = 1;
+         uint32_t count = 0;
+         uint32_t limit = 5;
+         rpc_status=FEB_REPLY_SUCCESS;
 
-         // TODO: include headers for addr.
-         feb_sc.FEB_write(SP_ID, 0xFF47, 0x0000000F); // SPI slow down reg
-         feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000FC0); // reset Mupix config fifos
-         feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000000);
-         feb_sc.FEB_write(SP_ID, 0xFF49, 0x00000003); // idk, have to look it up
-         rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
+         while(spi_busy==1 && count < limit){
+             feb_sc.FEB_register_read(SP_ID,0x4B,spi_busy);
+             cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
+             count++;
+             sleep(1);
+         }
+         if(count == limit){
+             std::cout<<"Timeout"<<std::endl;
+             cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
+         }else{
+            std::cout << "Chip select mask = " << std::hex << chip_select_mask << std::endl;
+            feb_sc.FEB_write(SP_ID, 0xFF48, chip_select_mask);
 
+            // TODO: include headers for addr.
+            feb_sc.FEB_write(SP_ID, 0xFF47, 0x0000000F); // SPI slow down reg
+            feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000FC0); // reset Mupix config fifos
+            feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000000);
+            feb_sc.FEB_write(SP_ID, 0xFF49, 0x00000003); // idk, have to look it up
+            rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
+         }
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
           set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
