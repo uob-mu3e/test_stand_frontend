@@ -63,10 +63,12 @@ QSYS_TCL_FILES := $(patsubst $(abspath .)/%,%,$(abspath $(filter %.tcl,$(IPs))))
 QSYS_FILES := $(addprefix $(PREFIX)/,$(patsubst %.tcl,%.qsys,$(QSYS_TCL_FILES)))
 # convert all .qsys files into .sopcinfo files
 SOPC_FILES := $(patsubst %.qsys,%.sopcinfo,$(QSYS_FILES))
-# list all .vhd.qmegawiz files
-QMEGAWIZ_XML_FILES := $(patsubst $(abspath .)/%,%,$(abspath $(filter %.vhd.qmegawiz,$(IPs))))
-# convert all .vhd.qmegawiz files into .vhd files
-QMEGAWIZ_VHD_FILES := $(addprefix $(PREFIX)/,$(patsubst %.vhd.qmegawiz,%.vhd,$(QMEGAWIZ_XML_FILES)))
+# make list of .vhd.qmegawiz files
+VHD_QMEGAWIZ_FILES := $(patsubst $(abspath .)/%,%,$(abspath $(filter %.vhd.qmegawiz,$(IPs))))
+# generate list of .vhd files
+VHD_FILES := $(addprefix $(PREFIX)/, \
+    $(patsubst %.vhd.qmegawiz,%.vhd,$(VHD_QMEGAWIZ_FILES)) \
+)
 
 # default qpf file
 top.qpf :
@@ -87,7 +89,7 @@ top.qsf : $(MAKEFILE_LIST)
 all : top.qpf top.qsf $(PREFIX)/include.qip
 
 .PHONY : $(PREFIX)/components_pkg.vhd
-$(PREFIX)/components_pkg.vhd : $(SOPC_FILES) $(QMEGAWIZ_VHD_FILES)
+$(PREFIX)/components_pkg.vhd : $(SOPC_FILES) $(VHD_FILES)
 	mkdir -pv -- "$(PREFIX)"
 	# find and exec components_pkg.sh
 	$(lastword $(realpath $(addsuffix components_pkg.sh,$(dir $(MAKEFILE_LIST))))) "$(PREFIX)" > "$@"
@@ -101,8 +103,8 @@ $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 	for file in $(QSYS_FILES) ; do
 	    echo "set_global_assignment -name QSYS_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file)\" ]" >> "$@"
 	done
-	# add qmegawiz *.qip files
-	for file in $(patsubst %.vhd,%,$(QMEGAWIZ_VHD_FILES)) ; do
+	# add *.vhd (*.qip) files
+	for file in $(patsubst %.vhd,%,$(VHD_FILES)) ; do
 	    [ -e "$$file.qip" ] && echo "set_global_assignment -name QIP_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.qip)\" ]" >> "$@"
 	    [ -e "$$file.qip" ] || echo "set_global_assignment -name VHDL_FILE [ file join $$::quartus(qip_path) \"$$(realpath -m --relative-to=$(PREFIX) -- $$file.vhd)\" ]" >> "$@"
 	done
