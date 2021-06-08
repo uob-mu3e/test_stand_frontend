@@ -140,6 +140,7 @@ std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE> febpower{};
 /*-- Function declarations -----------------------------------------*/
 
 INT read_sc_event(char *pevent, INT off);
+INT read_swb_counters_event(char *pevent, INT off);
 INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
 INT read_scitiles_sc_event(char *pevent, INT off);
@@ -156,6 +157,7 @@ void set_feb_enable(uint64_t enablebits);
 uint64_t get_runstart_ack();
 uint64_t get_runend_ack();
 void print_ack_state();
+uint32_t read_counters(uint32_t write_value);
 
 void setup_odb();
 void setup_watches();
@@ -249,6 +251,21 @@ EQUIPMENT equipment[] = {
      1,                         /* log history every event */
      "", "", "",},
      read_febcrate_sc_event,          /* readout routine */
+    },
+    {"SWBControl",                    /* equipment name */
+    {115, 0,                      /* event ID, trigger mask */
+     "SYSTEM",                  /* event buffer */
+     EQ_PERIODIC,                 /* equipment type */
+     0,                         /* event source crate 0, all stations */
+     "MIDAS",                   /* format */
+     TRUE,                      /* enabled */
+     RO_ALWAYS | RO_ODB,   /* read during run transitions and update ODB */
+     10000,                      /* read every 10 sec */
+     0,                         /* stop run after this event limit */
+     0,                         /* number of sub events */
+     1,                         /* log history every event */
+     "", "", "",},
+     read_swb_counters_event,          /* readout routine */
     },
     {""}
 };
@@ -366,25 +383,31 @@ void setup_odb(){
    // midas::odb::set_debug(true);
 
     string namestr;
+    string cntnamestr;
+    string cntbankname;
     string bankname;
     if(switch_id == 0){
         namestr = "Names SCFE";
         cntnamestr = "Names Counters SCFE";
+        cntbankname = "SCCN";
         bankname = "SCFE";
     }
     if(switch_id == 1){
         namestr = "Names SUFE";
         cntnamestr = "Names Counters SUFE";
+        cntbankname = "SUCN";
         bankname = "SUFE";
     }
     if(switch_id == 2){
         namestr = "Names SDFE";
         cntnamestr = "Names Counters SDFE";
+        cntbankname = "SDCN";
         bankname = "SDFE";
     }
     if(switch_id == 3){
         namestr = "Names SFFE";
         cntnamestr = "Names Counters SFFE";
+        cntbankname = "SFCN";
         bankname = "SFFE";
     }
 
@@ -411,7 +434,8 @@ void setup_odb(){
             {"Firmware File",""},
             {"Firmware FEB ID",0},
             // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
-            {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()}
+            {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()},
+            {cntnamestr.c_str(), std::array<std::string, num_swb_counters_per_feb*N_FEBS[switch_id]>()}
     };
 
     int bankindex = 0;
@@ -498,6 +522,26 @@ void setup_odb(){
         settings[namestr][bankindex++] = s;
     }
 
+    bankindex = 0;
+    for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
+        string name = "FEB" + to_string(i);
+        string * s = new string(name);
+        (*s) += " LINK FIFO ALMOST FULL";
+        settings[cntnamestr][bankindex++] = s;
+        s = new string(name);
+        (*s) += " LINK FIFO FULL";
+        settings[cntnamestr][bankindex++] = s;
+        s = new string(name);
+        (*s) += " SKIP EVENTS";
+        settings[cntnamestr][bankindex++] = s;
+        s = new string(name);
+        (*s) += " NUM EVENTS";
+        settings[cntnamestr][bankindex++] = s;
+        s = new string(name);
+        (*s) += " NUM SUB HEADERS";
+        settings[cntnamestr][bankindex++] = s;
+    }
+
     settings.connect("/Equipment/Switching/Settings", true);
 
     /* Default values for /Equipment/Switching/Variables */
@@ -523,7 +567,7 @@ void setup_odb(){
 
             {"Merger Timeout All FEBs", 0},
 
-            {bankname.c_str(),std::array<float, per_fe_SSFE_size*N_FEBS[switch_id]>{}}
+            {bankname.c_str(), std::array<float, per_fe_SSFE_size*N_FEBS[switch_id]>{}}
     };
 
     sc_variables.connect("/Equipment/Switching/Variables");
@@ -540,33 +584,13 @@ void setup_odb(){
     arr.fill(255);
 
     odb swb_counter_variables = {
-        {"SWB_STREAM_FIFO_FULL_PIXEL_CNT", 0},
-        {"SWB_BANK_BUILDER_IDLE_NOT_HEADER_PIXEL_CNT", 0},
-        {"SWB_BANK_BUILDER_RAM_FULL_PIXEL_CNT", 0},
-        {"SWB_BANK_BUILDER_TAG_FIFO_FULL_PIXEL_CNT", 0},
+        {"STREAM_FIFO_FULL", 0},
+        {"BANK_BUILDER_IDLE_NOT_HEADER", 0},
+        {"BANK_BUILDER_RAM_FULL", 0},
+        {"BANK_BUILDER_TAG_FIFO_FULL", 0},
         // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
-        {cntnamestr.c_str(), std::array<std::string, num_swb_counters_per_feb*N_FEBS[switch_id]>()}
+        {cntbankname.c_str(), std::array<float, num_swb_counters_per_feb*N_FEBS[switch_id]>()}
     };
-
-    bankindex = 0;
-    for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
-        string name = "FEB" + to_string(i);
-        string * s = new string(name);
-        (*s) += " LINK FIFO ALMOST FULL";
-        settings[cntnamestr][bankindex++] = s;
-        s = new string(name);
-        (*s) += " LINK FIFO FULL";
-        settings[cntnamestr][bankindex++] = s;
-        s = new string(name);
-        (*s) += " SKIP EVENTS";
-        settings[cntnamestr][bankindex++] = s;
-        s = new string(name);
-        (*s) += " NUM EVENTS";
-        settings[cntnamestr][bankindex++] = s;
-        s = new string(name);
-        (*s) += " NUM SUB HEADERS";
-        settings[cntnamestr][bankindex++] = s;
-    }
 
     swb_counter_variables.connect("/Equipment/Switching/Variables/SWBCounters");
 
@@ -627,7 +651,7 @@ void setup_odb(){
     custom["SWBs&"] = "swb.html";
 
     // Inculde the line below to set up the FEBs and their mapping for the 2021 integration run
-#include "odb_feb_mapping_integration_run_2021.h"
+//#include "odb_feb_mapping_integration_run_2021.h"
 
     // TODO: not sure at the moment we have a midas frontend for three feb types but 
     // we need to have different swb at the final experiment so maybe one needs to take
@@ -1138,17 +1162,20 @@ INT read_swb_counters_event(char *pevent, INT off)
     bk_create(pevent, bankname.c_str(), TID_FLOAT, (void **)&pdata);
 
     // first read general counters
-    pdata++ = mup->read_counters(
+    *pdata++ = read_counters(SWB_STREAM_FIFO_FULL_PIXEL_CNT);
+    *pdata++ = read_counters(SWB_BANK_BUILDER_IDLE_NOT_HEADER_PIXEL_CNT);
+    *pdata++ = read_counters(SWB_BANK_BUILDER_RAM_FULL_PIXEL_CNT);
+    *pdata++ = read_counters(SWB_BANK_BUILDER_TAG_FIFO_FULL_PIXEL_CNT);
 
-    mup->write_register(SWB_STREAM_FIFO_FULL_PIXEL_CNT, 0x0);
-    pdata++ = mup->read_register_ro();
-
-
-    // int index = 0
-
-
-    pdata = mufeb->fill_SSFE(pdata);
-    bk_close(pevent,pdata);
+    for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
+        *pdata++ = i;
+        *pdata++ = read_counters(SWB_LINK_FIFO_ALMOST_FULL_PIXEL_CNT | (i << 8));
+        *pdata++ = read_counters(SWB_LINK_FIFO_FULL_PIXEL_CNT | (i << 8));
+        *pdata++ = read_counters(SWB_SKIP_EVENT_PIXEL_CNT | (i << 8));
+        *pdata++ = read_counters(SWB_EVENT_PIXEL_CNT | (i << 8));
+        *pdata++ = read_counters(SWB_SUB_HEADER_PIXEL_CNT | (i << 8));
+    }
+    bk_close(pevent, pdata);
     return bk_size(pevent);
 
 
@@ -1499,4 +1526,10 @@ void print_ack_state(){
    }
 }
 
+// -- Helper functions
+uint32_t read_counters(uint32_t write_value)
+{
+    mup->write_register(SWB_COUNTER_REGISTER_W, write_value);
+    return mup->read_register_ro(SWB_COUNTER_REGISTER_R);
+}
 
