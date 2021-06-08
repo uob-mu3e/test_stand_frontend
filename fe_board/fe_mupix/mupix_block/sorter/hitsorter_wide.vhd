@@ -763,7 +763,7 @@ elsif(writeclk'event and writeclk = '1') then
 		data_out		<= tscounter(15 downto 0) & X"0000";
 		out_type		<= "0000";
 	when COMMAND_SUBHEADER(COMMANDBITS-1 downto COMMANDBITS-4) =>
-		data_out		<= "000" & readcommand_last4(TIMESTAMPSIZE-1) & "111111" & readcommand_last4(TIMESTAMPSIZE-2 downto 4) & overflow_last4;
+		data_out		<= "111111" & "000" & readcommand_last4(TIMESTAMPSIZE-1 downto 4) & overflow_last4;
 		out_type		<= "0000";
 	when COMMAND_FOOTER(COMMANDBITS-1 downto COMMANDBITS-4) =>
 		data_out 		<= (others => '0');
