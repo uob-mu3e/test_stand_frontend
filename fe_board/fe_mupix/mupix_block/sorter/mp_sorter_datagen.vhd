@@ -187,7 +187,7 @@ architecture rtl of mp_sorter_datagen is
                 frame_ts_overflow   <= '1';
             end if;
 
-            if(i_global_ts(9 downto 0) = "1111111110") then -- send new preamble
+            if(i_global_ts(10 downto 0) = "11111111110") then -- send new preamble
                 packet_ts_overflow  <= '1';
             end if;
 
@@ -247,8 +247,9 @@ architecture rtl of mp_sorter_datagen is
                         genstate            <= trail;
                     elsif(produce_next_frame = '1') then 
                         genstate            <= hitgen;
-                        fwdata(27 downto 22)<= "111111";
-                        fwdata(21 downto 16)<= global_ts(9 downto 4);
+                        fwdata(31 downto 26)<= "111111";
+                        fwdata(25 downto 23)<= "000";
+                        fwdata(22 downto 16)<= global_ts(10 downto 4);
                         fwrite              <= '1';
                     end if;
 
