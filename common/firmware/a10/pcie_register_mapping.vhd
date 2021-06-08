@@ -73,6 +73,8 @@ begin
                             i_local_pcie0_rregs_A(DMA_NOTENDEVENT_REGISTER_R) when i = DMA_NOTENDEVENT_REGISTER_R else
                             i_pcie0_rregs_A(EVENT_BUILD_STATUS_REGISTER_R) when i = EVENT_BUILD_STATUS_REGISTER_R else
                             i_pcie0_rregs_A(DMA_CNT_WORDS_REGISTER_R) when i = DMA_CNT_WORDS_REGISTER_R else
+                            i_pcie0_rregs_A(SWB_COUNTER_REGISTER_R) when i = SWB_COUNTER_REGISTER_R else
+                            i_pcie0_rregs_A(SWB_COUNTER_REGISTER_ADDR_R) when i = SWB_COUNTER_REGISTER_ADDR_R else
                             q_rregs_C(i * 32 + 31 downto i * 32) when i = DDR3_STATUS_R else
                             q_rregs_C(i * 32 + 31 downto i * 32) when i = DDR3_ERR_R else
                             q_rregs_C(i * 32 + 31 downto i * 32) when i = DATA_TSBLOCKS_R else

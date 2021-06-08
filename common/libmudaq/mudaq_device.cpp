@@ -23,6 +23,7 @@
 #include <chrono>
 
 #include "mudaq_device.h"
+#include "switching_constants.h"
 #include "utils.hpp"
 
 
@@ -209,6 +210,12 @@ void MudaqDevice::write_register_wait(unsigned idx, uint32_t value,
 {
     write_register(idx, value);
     std::this_thread::sleep_for(std::chrono::nanoseconds(wait_ns));
+}
+
+uint32_t MudaqDevice::read_counters(uint32_t write_value) const
+{
+    write_register_wait(SWB_COUNTER_REGISTER_W, write_value, 100);
+    return read_register_ro(SWB_COUNTER_REGISTER_R);
 }
 
 void MudaqDevice::toggle_register(unsigned idx, uint32_t value, unsigned wait_ns)

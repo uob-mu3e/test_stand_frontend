@@ -65,6 +65,7 @@ namespace mudaq {
     virtual void toggle_register(unsigned idx, uint32_t value, unsigned wait_ns);
     virtual uint32_t read_register_rw(unsigned idx) const;
     virtual uint32_t read_register_ro(unsigned idx) const;
+    virtual uint32_t read_counters(uint32_t write_value, unsigned read_value) const;
     virtual uint32_t read_memory_ro(unsigned idx) const;
     virtual uint32_t read_memory_rw(unsigned idx) const;
     virtual void write_memory_rw(unsigned idx, uint32_t value);
