@@ -286,7 +286,7 @@ begin
                 w_ram_en            <= '1';
                 w_ram_add           <= w_ram_add + 1;
                 if ( i_trailer = '1' ) then
-                    w_ram_data(31 downto 12)    <= x"0FC00";
+                    w_ram_data(31 downto 12)    <= x"FC000";
                     w_ram_data(11 downto 8)     <= "00" & i_rx(9 downto 8);
                     w_ram_data(7 downto 0)      <= x"9C";
                 else

@@ -112,8 +112,7 @@ begin
                     rx_156_data(33 downto 32) <= "01"; -- trailer
                 end if;
 
-                -- TODO: change for scifi case
-                if ( i_rx(27 downto 22) = "111111" and i_rx_k = "0000" ) then
+                if ( i_rx(31 downto 26) = "111111" and i_rx_k = "0000" ) then
                     rx_156_data(33 downto 32) <= "11"; -- sub header
                     cnt_sub <= cnt_sub + '1';
                 end if;

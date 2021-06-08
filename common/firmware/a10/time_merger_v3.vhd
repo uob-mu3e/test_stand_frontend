@@ -53,10 +53,10 @@ architecture arch of time_merger_v3 is
     -- state machine
     type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer, wait_for_sh_written);
     signal merge_state : merge_state_type;
-    type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(5 downto 0);
+    type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(6 downto 0);
     signal sheader_time : sheader_time_array_t;
     signal merger_state_signal : std_logic;
-    signal shtime : std_logic_vector(5 downto 0);
+    signal shtime : std_logic_vector(6 downto 0);
     signal overflow : std_logic_vector(15 downto 0);
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
     signal header_trailer : std_logic_vector(37 downto 0);
@@ -513,14 +513,14 @@ begin
                     -- send merged data sub header
                     -- zeros & sub header & zeros & datak
                     header_trailer(37 downto 32) <= sh_marker;
-                    header_trailer(31 downto 28) <= "0000";
-                    header_trailer(27 downto 22) <= "111111";
+                    header_trailer(31 downto 26) <= "111111";
+                    header_trailer(25 downto 23) <= "000";
                     -- send sub header time -- check later if equal
-                    header_trailer(21 downto 16) <= i_rdata(i_link)(21 downto 16);
-                    shtime <= i_rdata(i_link)(21 downto 16);
+                    header_trailer(22 downto 16) <= i_rdata(i_link)(22 downto 16);
+                    shtime <= i_rdata(i_link)(22 downto 16);
                     FOR I in N - 1 downto 0 LOOP
                         if ( i_mask_n(I) = '1' ) then
-                            sheader_time(I) <= i_rdata(I)(21 downto 16);
+                            sheader_time(I) <= i_rdata(I)(22 downto 16);
                         end if;
                     END LOOP;
                     header_trailer(15 downto 0) <= overflow;

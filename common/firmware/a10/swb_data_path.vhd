@@ -45,7 +45,8 @@ port(
     i_writeregs_156  : in  work.util.slv32_array_t(63 downto 0);
     i_writeregs_250  : in  work.util.slv32_array_t(63 downto 0);
 
-    o_counter        : out work.util.slv32_array_t(5+(g_NLINKS_DATA*5)-1 downto 0);
+    o_counter_156    : out work.util.slv32_array_t(g_NLINKS_DATA*5-1 downto 0);
+    o_counter_250    : out work.util.slv32_array_t(4 downto 0);
 
     i_dmamemhalffull : in  std_logic;
     
@@ -121,19 +122,19 @@ begin
     -- rx_rdempty;
     
     -- 250 MHz counters
-    o_counter(0) <= stream_counters(0);  --! e_stream_fifo full
-    o_counter(1) <= builder_counters(0); --! bank_builder_idle_not_header
-    o_counter(2) <= builder_counters(1); --! bank_builder_skip_event_dma
-    o_counter(3) <= builder_counters(2); --! bank_builder_ram_full
-    o_counter(4) <= builder_counters(3); --! bank_builder_tag_fifo_full
+    o_counter_250(0) <= stream_counters(0);  --! e_stream_fifo full
+    o_counter_250(1) <= builder_counters(0); --! bank_builder_idle_not_header
+    o_counter_250(2) <= builder_counters(1); --! bank_builder_skip_event_dma
+    o_counter_250(3) <= builder_counters(2); --! bank_builder_ram_full
+    o_counter_250(4) <= builder_counters(3); --! bank_builder_tag_fifo_full
     
     -- 156 MHz counters
     generate_rdata : for i in 0 to g_NLINKS_DATA - 1 generate
-        o_counter(5+i*3) <= link_to_fifo_cnt(0+i*3); --! fifo almost_full
-        o_counter(6+i*3) <= link_to_fifo_cnt(1+i*3); --! fifo wrfull
-        o_counter(7+i*3) <= link_to_fifo_cnt(2+i*3); --! # of skip event
-        o_counter(8+i*3) <= link_to_fifo_cnt(3+i*3); --! # of events
-        o_counter(9+i*3) <= link_to_fifo_cnt(4+i*3); --! # of sub header
+        o_counter_156(0+i*5) <= link_to_fifo_cnt(0+i*5); --! fifo almost_full
+        o_counter_156(1+i*5) <= link_to_fifo_cnt(1+i*5); --! fifo wrfull
+        o_counter_156(2+i*5) <= link_to_fifo_cnt(2+i*5); --! # of skip event
+        o_counter_156(3+i*5) <= link_to_fifo_cnt(3+i*5); --! # of events
+        o_counter_156(4+i*5) <= link_to_fifo_cnt(4+i*5); --! # of sub header
     end generate;
 
 
@@ -202,11 +203,11 @@ begin
             i_ren           => rx_ren(i),
             o_rdempty       => rx_rdempty(i),
 
-            o_counter(0)    => link_to_fifo_cnt(0+i*3),
-            o_counter(1)    => link_to_fifo_cnt(1+i*3),
-            o_counter(2)    => link_to_fifo_cnt(2+i*3),
-            o_counter(3)    => link_to_fifo_cnt(3+i*3),
-            o_counter(4)    => link_to_fifo_cnt(4+i*3),
+            o_counter(0)    => link_to_fifo_cnt(0+i*5),
+            o_counter(1)    => link_to_fifo_cnt(1+i*5),
+            o_counter(2)    => link_to_fifo_cnt(2+i*5),
+            o_counter(3)    => link_to_fifo_cnt(3+i*5),
+            o_counter(4)    => link_to_fifo_cnt(4+i*5),
 
             i_reset_n_156   => i_reset_n_156,
             i_clk_156       => i_clk_156,

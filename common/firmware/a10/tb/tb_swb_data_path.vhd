@@ -104,7 +104,8 @@ begin
         i_writeregs_156  => writeregs_156,
         i_writeregs_250  => writeregs_250,
 
-        o_counter        => counter,
+        o_counter_156    => open,
+        o_counter_250    => open,
 
         i_dmamemhalffull => '0',
         
