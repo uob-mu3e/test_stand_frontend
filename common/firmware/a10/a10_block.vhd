@@ -140,9 +140,9 @@ port (
     i_pcie1_rmem_clk    : in    std_logic := '0';
 
     -- PCIe1 update interface for readable registers
-    i_pcie1_rregs_A   : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
-    i_pcie1_rregs_B   : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
-    i_pcie1_rregs_c   : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
+    i_pcie1_rregs_A     : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
+    i_pcie1_rregs_B     : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
+    i_pcie1_rregs_c     : in    work.util.slv32_array_t(63 downto 0) := (others => (others => '0'));
 
     -- PCIe1 read interface for writable registers
     o_pcie1_wregs_A     : out   work.util.slv32_array_t(63 downto 0);
@@ -230,10 +230,7 @@ architecture arch of a10_block is
     signal pcie0_dma0_hfull : std_logic;
 
     --! debouncer signals
-    signal push_button0_db : std_logic;
-    signal push_button1_db : std_logic;
-    signal push_button2_db : std_logic;
-    signal push_button3_db : std_logic;
+    signal button : std_logic_vector(i_button'range);
 
 begin
 
@@ -385,15 +382,12 @@ begin
     --! debouncer for push_button
     e_debouncer : entity work.debouncer
     generic map (
-        W => 4,
-        N => 125 * 10**3 -- 1ms
+        W => i_button'length,
+        N => integer(g_CLK_MHZ * 1000000.0 * 0.001) -- 1ms
     )
     port map (
-        i_d         => i_BUTTON,
-        o_q(0)      => push_button0_db,
-        o_q(1)      => push_button1_db,
-        o_q(2)      => push_button2_db,
-        o_q(3)      => push_button3_db,
+        i_d         => i_button,
+        o_q         => button,
         i_reset_n   => i_reset_n,
         i_clk       => i_clk--,
     );
@@ -558,16 +552,16 @@ begin
     --! PCIe register mapping
     e_register_mapping : entity work.pcie_register_mapping
     port map(
-        i_pcie0_rregs_A   => i_pcie0_rregs_A,
-        i_pcie0_rregs_B   => i_pcie0_rregs_B,
-        i_pcie0_rregs_C   => i_pcie0_rregs_C,
-        
+        i_pcie0_rregs_A     => i_pcie0_rregs_A,
+        i_pcie0_rregs_B     => i_pcie0_rregs_B,
+        i_pcie0_rregs_C     => i_pcie0_rregs_C,
+
         i_local_pcie0_rregs_A   => local_pcie0_rregs_A,
         i_local_pcie0_rregs_B   => local_pcie0_rregs_B,
         i_local_pcie0_rregs_C   => local_pcie0_rregs_C,
 
         o_pcie0_rregs       => pcie0_rregs,
-    
+
         i_clk_A             => i_pcie0_wregs_A_clk,
         i_clk_B             => i_pcie0_wregs_B_clk,
         i_clk_C             => i_pcie0_wregs_C_clk--,
@@ -603,7 +597,7 @@ begin
         i_clk_B                 => i_pcie0_wregs_B_clk,
         o_writeregs_B           => pcie0_wregs_B,
         o_regwritten_B          => o_pcie0_regwritten_B,
-        
+
         i_clk_C                 => i_pcie0_wregs_C_clk,
         o_writeregs_C           => pcie0_wregs_C,
         o_regwritten_C          => o_pcie0_regwritten_C,
@@ -672,7 +666,7 @@ begin
         i_clk_B                 => i_pcie1_wregs_B_clk,
         o_writeregs_B           => pcie1_wregs_B,
         o_regwritten_B          => o_pcie1_regwritten_B,
-        
+
         i_clk_C                 => i_pcie1_wregs_C_clk,
         o_writeregs_C           => pcie1_wregs_C,
         o_regwritten_C          => o_pcie1_regwritten_C,

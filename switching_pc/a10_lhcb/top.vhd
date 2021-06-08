@@ -19,7 +19,7 @@ port (
 
 
 
-    -- POD
+    -- POD 0-7
     rx_gbt                              : IN    STD_LOGIC_VECTOR(47 DOWNTO 0);
     tx_gbt                              : OUT   STD_LOGIC_VECTOR(47 DOWNTO 0);
     A10_REFCLK_GBT_P_0                  : IN    STD_LOGIC; -- <- SI5345_1/2[IN2] <- SI53340_1[CLK1] <- SMA1
@@ -76,8 +76,8 @@ port (
     -- reset from push button through Max V
     A10_M5FL_CPU_RESET_N                : IN    STD_LOGIC;
 
-    -- general purpose internal clock
-    CLK_A10_100MHZ_P                    : IN    STD_LOGIC--; -- from internal 100 MHz oscillator
+    -- general purpose internal clock (100 MHz oscillator)
+    CLK_A10_100MHZ_P                    : IN    STD_LOGIC--;
 );
 end entity;
 

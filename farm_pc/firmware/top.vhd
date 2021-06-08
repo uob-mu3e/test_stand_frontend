@@ -94,7 +94,7 @@ port (
 
     CPU_RESET_n         : in    std_logic;
     CLK_50_B2J          : in    std_logic;
-    
+
     --//// DDR3 A /////////////
     DDR3A_A             : out   std_logic_vector(15 downto 0);
     DDR3A_BA            : out   std_logic_vector(2 downto 0);
@@ -138,7 +138,6 @@ port (
     DDR3B_SDA           : inout std_logic;
     DDR3B_WE_n          : out   std_logic;
     RZQ_DDR3_B          : in    std_logic--;
-    
 );
 end entity;
 
@@ -289,7 +288,7 @@ begin
         i_pcie0_refclk                  => PCIE_REFCLK_p,
         o_pcie0_clk                     => pcie_fastclk_out,
         o_pcie0_clk_hz                  => LED(3),
-        
+
         -- PCIe0 read interface to writable memory
         i_pcie0_wmem_addr               => writememreadaddr,
         o_pcie0_wmem_rdata              => writememreaddata,
@@ -370,7 +369,7 @@ begin
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
     --! ------------------------------------------------------------------------
-    
+
     farm_block : entity work.farm_block
     generic map (
         g_NLINKS_TOTL  => 16,
@@ -392,7 +391,7 @@ begin
         i_regwritten_link   => pcie0_regwritten_B,
         i_writeregs_ddr     => pcie0_writeregs_C,
         i_regwritten_ddr    => pcie0_regwritten_C,
-    
+
         o_readregs_pcie => pcie0_readregs_A,
         o_readregs_link => pcie0_readregs_B,
         o_readregs_ddr  => pcie0_readregs_C,
@@ -400,7 +399,7 @@ begin
         i_resets_n_pcie => pcie0_resets_n_A,
         i_resets_n_link => pcie0_resets_n_B,
         i_resets_n_ddr  => pcie0_resets_n_C,
-    
+
         -- TODO: write status readout entity with ADDR to PCIe REGS and mapping to one counter REG
         o_counter       => open,
         o_status        => open,
@@ -409,7 +408,7 @@ begin
         o_dma_wren      => dma_data_wren,
         o_endofevent    => dmamem_endofevent,
         o_dma_data      => dma_data,
-    
+
         --! 250 MHz clock pice / reset_n
         i_reset_n_250_pcie => reset_pcie0_n,
         i_clk_250_pcie     => pcie_fastclk_out,
@@ -417,7 +416,7 @@ begin
         --! 250 MHz clock link / reset_n
         i_reset_n_250_link => reset_250_n,
         i_clk_250_link     => clk_250,
-        
+
         -- Interface to memory bank A
         o_A_mem_clk        => A_mem_clk,
         A_mem_ck           => DDR3A_CK,
@@ -427,7 +426,7 @@ begin
         A_mem_cke          => DDR3A_CKE,
         A_mem_cs_n         => DDR3A_CS_n,
         A_mem_odt          => DDR3A_ODT,
-        A_mem_reset_n(0)   => DDR3A_RESET_n,      
+        A_mem_reset_n(0)   => DDR3A_RESET_n,
         A_mem_we_n(0)      => DDR3A_WE_n,
         A_mem_ras_n(0)     => DDR3A_RAS_n,
         A_mem_cas_n(0)     => DDR3A_CAS_n,
@@ -447,7 +446,7 @@ begin
         B_mem_cke          => DDR3B_CKE,
         B_mem_cs_n         => DDR3B_CS_n,
         B_mem_odt          => DDR3B_ODT,
-        B_mem_reset_n(0)   => DDR3B_RESET_n,      
+        B_mem_reset_n(0)   => DDR3B_RESET_n,
         B_mem_we_n(0)      => DDR3B_WE_n,
         B_mem_ras_n(0)     => DDR3B_RAS_n,
         B_mem_cas_n(0)     => DDR3B_CAS_n,
@@ -458,8 +457,8 @@ begin
         B_oct_rzqin        => RZQ_DDR3_B,
         B_pll_ref_clk      => DDR3B_REFCLK_p--,
     );
-    
+
     DDR3A_SDA   <= 'Z';
     DDR3B_SDA   <= 'Z';
-   
+
 end architecture;

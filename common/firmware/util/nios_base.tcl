@@ -214,10 +214,12 @@ proc nios_base.export_avm { name addressWidth baseAddress args } {
         set_instance_parameter_value ${name} {USE_READ_DATA_VALID} true
     }
 
-    add_connection ${clk}.clk       ${name}.clk
-    add_connection ${clk}.clk_reset ${name}.reset
+    # clock
+    add_connection ${clk}.clk ${name}.clk
 
-    add_connection clk.clk_reset           ${name}.reset
+    # resets
+    add_connection ${clk}.clk_reset ${name}.reset
+    add_connection clk.clk_reset ${name}.reset
     add_connection cpu.debug_reset_request ${name}.reset
 
     add_connection                 ${cpu}.data_master ${name}.slave
