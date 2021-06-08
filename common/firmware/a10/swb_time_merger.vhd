@@ -170,7 +170,7 @@ begin
              '1' when merge_state = get_ts_1 and ts1_idx = 8 and rempty = '0' and wfull = '0'  else 
              '1' when merge_state = get_ts_2 and ts2_idx = 8 and rempty = '0' and wfull = '0'  else
              '1' when merge_state = get_sh and sh_idx = 8 and rempty = '0' and wfull = '0'  else
-             '1' when merge_state = delay and trailer_idx = 8 else
+             '1' when merge_state = delay and (trailer_idx = 8 or sh_idx = 7) else
              '1' when merge_state = hit and header_idx = 8 and trailer_idx = 8 and ts1_idx = 8 and ts2_idx = 8 and sh_idx = 8 and rempty = '0' and wen_reg = '0' and wfull = '0'  else 
              '0';
 
@@ -227,7 +227,7 @@ begin
                                 wdata_debug(31 downto 0) <= rdata(sh_idx)(31 downto 0);
                                 wen <= '1';
                             end if;
-                            if ( sh_idx /= 6 and sh_idx /= 8 ) then
+                            if ( sh_idx /= 7 and sh_idx /= 8 ) then
                                 for i in 0 to 7 loop
                                     if ( i >= (sh_idx + 1) and rdata(i) /= tree_paddingk ) then
                                         wdata_reg(38 * i + 37 downto 38 * i) <= rdata(i);
