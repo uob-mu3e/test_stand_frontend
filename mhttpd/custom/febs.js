@@ -186,36 +186,36 @@ function Feb(x,y,dx,dy, index){
 
         cc.fillStyle = "Black";
         cc.font = "14px Arial";
-        cc.fillText(this.name, xstart+20, ystart+20);
+        cc.fillText(this.name, xstart+20, ystart+40);
 
         cc.fillStyle = "Black";
         cc.font = "12px Arial";
         cc.fillText("Arria firmware:    "+this.arria_firmware.toString(16),
-                    xstart+10, ystart+150);
+                    xstart+10, ystart+170);
         cc.fillStyle = "Black";
         cc.font = "12px Arial";
         cc.fillText("Max10 firmware: "+this.max_firmware.toString(16),
-                    xstart+10, ystart+165);
+                    xstart+10, ystart+185);
 
-        write_temperature("Arria", this.arria_temp, xstart+100,ystart+40);
-        write_temperature("Max",   this.max_temp,   xstart+100,ystart+55);
-        write_temperature("Si1",   this.si1_temp,   xstart+100,ystart+70);
-        write_temperature("Si2",   this.si2_temp,   xstart+100,ystart+85);
-        write_temperature("Arria ext",   this.arria_temp_ext,   xstart+100,ystart+100);
-        write_temperature("DCDC",   this.arria_temp_ext,   xstart+100,ystart+115);
-        write_temperature("Firefly 1",   this.ff1_temp,   xstart+100,ystart+130);
+        write_temperature("Arria", this.arria_temp, xstart+100,ystart+60);
+        write_temperature("Max",   this.max_temp,   xstart+100,ystart+75);
+        write_temperature("Si1",   this.si1_temp,   xstart+100,ystart+90);
+        write_temperature("Si2",   this.si2_temp,   xstart+100,ystart+105);
+        write_temperature("Arria ext",   this.arria_temp_ext,   xstart+100,ystart+120);
+        write_temperature("DCDC",   this.arria_temp_ext,   xstart+100,ystart+135);
+        write_temperature("Firefly 1",   this.ff1_temp,   xstart+100,ystart+150);
 
-        write_voltage("1.1V", this.v1_1, xstart+200, ystart+40);
-        write_voltage("1.8V", this.v1_8, xstart+200, ystart+55);
-        write_voltage("2.5V", this.v2_5, xstart+200, ystart+70);
-        write_voltage("3.3V", this.v3_3, xstart+200, ystart+85);
-        write_voltage("20V",  this.v20,  xstart+200, ystart+100);
-        write_voltage("FF",   this.ff1_volt,  xstart+200, ystart+115);
+        write_voltage("1.1V", this.v1_1, xstart+200, ystart+60);
+        write_voltage("1.8V", this.v1_8, xstart+200, ystart+75);
+        write_voltage("2.5V", this.v2_5, xstart+200, ystart+90);
+        write_voltage("3.3V", this.v3_3, xstart+200, ystart+105);
+        write_voltage("20V",  this.v20,  xstart+200, ystart+120);
+        write_voltage("FF",   this.ff1_volt,  xstart+200, ystart+135);
 
-        write_power("RX1", this.ff1_rx1, xstart+260, ystart+150);
-        write_power("RX2", this.ff1_rx2, xstart+260, ystart+165);
-        write_power("RX3", this.ff1_rx3, xstart+260, ystart+180);
-        write_power("RX4", this.ff1_rx4, xstart+260, ystart+195);
+        write_power("RX1", this.ff1_rx1, xstart+260, ystart+170);
+        write_power("RX2", this.ff1_rx2, xstart+260, ystart+185);
+        write_power("RX3", this.ff1_rx3, xstart+260, ystart+200);
+        write_power("RX4", this.ff1_rx4, xstart+260, ystart+215);
 
 
     }
@@ -254,6 +254,13 @@ function init(){
      }).catch(function(error) {
         mjsonrpc_error_alert(error);
      });
+
+    mjsonrpc_db_get_values(["/Equipment/FEBCrates/Settings"]).then(function(rpc) {
+        update_slots(rpc.result.data[0]);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+
 
 
     mjsonrpc_db_get_values(["/Equipment/Switching/Variables"]).then(function(rpc) {
@@ -367,6 +374,10 @@ function update_masks(valuex) {
             } else if   (fetypes[index] == 3){
                 febs[i][j].type = "Tiles";
                 febs[i][j].shorttype = "T";
+            } else if   (fetypes[index] == 4){
+                febs[i][j].type = "FibreSecondary";
+                febs[i][j].shorttype = "FS";
+                febs[i][j].active   = 0;
             } else {
                 febs[i][j].type = "Undef.";
                 febs[i][j].shorttype = "U";
@@ -430,14 +441,14 @@ function update_slots(valuex){
     if(typeof valuex === 'string')
         value = JSON.parse(valuex);
 
-    var crate = value["FEBCrate"];
-    var slot = value["FEBSlot"];
+    var crate = value["febcrate"];
+    var slot = value["febslot"];
 
     for(var i=0; i < 4; i++){
         for(var j=0; j < nfebs[i]; j++){
             var index = 48*i+j;
-            febs[i][j].crate = crate[index];
-            febs[i][j].slot   = slot[index];
+            febs[i][j].crate = parseInt(crate[index],16);
+            febs[i][j].slot   = parseInt(slot[index],16);
         }
     }
     draw(boardselindex);
