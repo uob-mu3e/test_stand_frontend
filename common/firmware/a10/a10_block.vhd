@@ -438,18 +438,12 @@ begin
         avm_xcvr0_writedata             => av_xcvr0.writedata,
         avm_xcvr0_waitrequest           => av_xcvr0.waitrequest,
 
-        avm_xcvr0_reset_reset_n         => i_reset_125_n,
-        avm_xcvr0_clock_clk             => i_clk_125,
-
         avm_xcvr1_address               => av_xcvr1.address(17 downto 0),
         avm_xcvr1_read                  => av_xcvr1.read,
         avm_xcvr1_readdata              => av_xcvr1.readdata,
         avm_xcvr1_write                 => av_xcvr1.write,
         avm_xcvr1_writedata             => av_xcvr1.writedata,
         avm_xcvr1_waitrequest           => av_xcvr1.waitrequest,
-
-        avm_xcvr1_reset_reset_n         => i_reset_125_n,
-        avm_xcvr1_clock_clk             => i_clk_125,
 
         rst_reset_n                     => nios_reset_n,
         clk_clk                         => i_clk--,
@@ -483,7 +477,7 @@ begin
         g_XCVR_N => g_XCVR0_N,
         g_CHANNELS => g_XCVR0_CHANNELS / g_XCVR0_N,
         g_REFCLK_MHZ => 125.0,
-        g_CLK_MHZ => 125.0--,
+        g_CLK_MHZ => g_CLK_MHZ--,
     )
     port map (
         o_rx_data           => o_xcvr0_rx_data,
@@ -507,8 +501,8 @@ begin
         i_avs_writedata     => av_xcvr0.writedata,
         o_avs_waitrequest   => av_xcvr0.waitrequest,
 
-        i_reset_n           => i_reset_125_n,
-        i_clk               => i_clk_125--, -- TODO: use clk_156
+        i_reset_n           => i_reset_n,
+        i_clk               => i_clk--,
     );
     end generate;
 
@@ -520,7 +514,7 @@ begin
         g_XCVR_N => g_XCVR1_N,
         g_CHANNELS => g_XCVR1_CHANNELS / g_XCVR1_N,
         g_REFCLK_MHZ => 125.0,
-        g_CLK_MHZ => 125.0--,
+        g_CLK_MHZ => g_CLK_MHZ--,
     )
     port map (
         o_rx_data           => o_xcvr1_rx_data,
@@ -544,8 +538,8 @@ begin
         i_avs_writedata     => av_xcvr1.writedata,
         o_avs_waitrequest   => av_xcvr1.waitrequest,
 
-        i_reset_n           => i_reset_125_n,
-        i_clk               => i_clk_125--,
+        i_reset_n           => i_reset_n,
+        i_clk               => i_clk--,
     );
     end generate;
 

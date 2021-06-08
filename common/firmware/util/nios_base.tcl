@@ -218,7 +218,9 @@ proc nios_base.export_avm { name addressWidth baseAddress args } {
     add_connection ${clk}.clk ${name}.clk
 
     # resets
-    add_connection ${clk}.clk_reset ${name}.reset
+    if { [ string equal ${clk} clk ] == 0 } {
+        add_connection ${clk}.clk_reset ${name}.reset
+    }
     add_connection clk.clk_reset ${name}.reset
     add_connection cpu.debug_reset_request ${name}.reset
 
