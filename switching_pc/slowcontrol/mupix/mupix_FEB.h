@@ -49,15 +49,26 @@ class MupixFEB  : public MuFEB{
       int ConfigureBoards();
 
       //FEB registers and functions
-      uint32_t ReadBackCounters(uint16_t FPGA_ID);
-      uint32_t ReadBackHitsEnaRate(uint16_t FPGA_ID);
+      uint32_t ReadBackLVDSNumHits(uint16_t FPGA_ID, uint16_t LVDS_ID);
+      uint32_t ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t LVDS_ID);
+      uint32_t ReadLVDSCounters(DWORD** pdata, uint16_t FPGA_ID){
+        for(size_t i=0; i<GetASICSPerModule()*GetModulesPerFEB(); i++){ // TODO: set currect LVDS links number
+            // FPGA ID | Link ID
+            (*pdata)++;
+            **pdata = (FPGA_ID << 16) | i;
+            // number of hits from link
+            (*pdata)++;
+            **pdata = ReadBackLVDSNumHits(FPGA_ID, i);
+            // number of hits from link in mupix format
+            (*pdata)++;
+            **pdata = ReadBackLVDSNumHitsInMupixFormat(FPGA_ID, i);
+      };
       uint32_t getNFPGAs(){
           return febs.size();
       }
-      void ReadBackAllCounters(DWORD** pdata){
-          for(size_t i=0;i<febs.size();i++){
-              (*pdata)++;
-              **pdata = (DWORD)ReadBackCounters(i);
+      void ReadBackLVDSCounters(DWORD** pdata){
+          for(size_t i=0; i<febs.size(); i++){
+                ReadLVDSCounters(pdata, i);
           };
       }
 

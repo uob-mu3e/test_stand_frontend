@@ -414,28 +414,16 @@ unsigned char reverse(unsigned char b) {
    return b;
 }
 
-// TODO: The following two functions do the same???
-uint32_t MupixFEB::ReadBackCounters(uint16_t FPGA_ID){
-   //map to SB fiber
-   auto FEB = febs[FPGA_ID];
-   if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-   if(FEB.SB_Number()!= SB_number) return SUCCESS; //skip commands not for this SB
-
-   vector<uint32_t> hitsEna(1);
-   // TODO: Get rid of hardcoded address
-    feb_sc.FEB_register_read(FEB.SB_Port(), 0x9a, hitsEna);
-   return hitsEna[0];
+uint32_t MupixFEB::ReadBackLVDSNumHits(uint16_t FPGA_ID, uint16_t LVDS_ID)
+{
+    cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHits" , "Implement Me");
+    return 0;
 }
 
-uint32_t MupixFEB::ReadBackHitsEnaRate(uint16_t FPGA_ID){
-    auto FEB = febs[FPGA_ID];
-    if(!FEB.IsScEnabled()) return SUCCESS; //skip disabled fibers
-    if(FEB.SB_Number()!= SB_number) return SUCCESS; //skip commands not for this SB
-    
-    vector<uint32_t> hitsEna(1);
-    // TODO: Get rid of hardcoded address
-    feb_sc.FEB_register_read(FEB.SB_Port(), 0x9a, hitsEna);
-    return hitsEna[0];
+uint32_t MupixFEB::ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t LVDS_ID)
+{
+    cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHitsInMupixFormat" , "Implement Me");
+    return 0;
 }
 
 int MupixFEB::ConfigureBoards(){
