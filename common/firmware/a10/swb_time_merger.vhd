@@ -76,6 +76,7 @@ begin
         TREE_DEPTH_w => TREE_w,
         TREE_DEPTH_r => TREE_r,
         g_NLINKS_DATA => g_NLINKS_DATA,
+        DATA_TYPE => DATA_TYPE,
         N => g_NLINKS--,
     )
     port map (
@@ -176,7 +177,7 @@ begin
 
 
     --! read/write data from time merger
-    mupix_time_merger : IF DATA_TYPE = x"01" GENERATE
+    mupix_time_merger : IF DATA_TYPE = x"01" or DATA_TYPE = x"02" GENERATE
         process(i_clk, i_reset_n)
         begin
             if ( i_reset_n = '0' ) then

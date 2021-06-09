@@ -64,7 +64,7 @@ begin
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGER) <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM)       <= '0';
         
-    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"000003FF";
+    writeregs_250(SWB_LINK_MASK_PIXEL_REGISTER_W)               <= x"0000000F";
     writeregs_250(SWB_READOUT_LINK_REGISTER_W)                  <= x"00000001";
     writeregs_250(GET_N_DMA_WORDS_REGISTER_W)                   <= (others => '1');
     writeregs_250(DMA_REGISTER_W)(DMA_BIT_ENABLE)               <= '1';
@@ -85,7 +85,7 @@ begin
         TREE_r                  => 10,
         SWB_ID                  => x"01",
         -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-        DATA_TYPE               => x"01"--;
+        DATA_TYPE               => x"02"--;
     )
     port map(
         i_clk_156        => clk,
@@ -109,9 +109,8 @@ begin
 
         i_dmamemhalffull => '0',
         
-        o_farm_data      => farm_data,
-        o_farm_datak     => farm_datak,
-        o_fram_wen       => fram_wen,
+        o_farm_data      => open,
+        o_farm_data_valid=> open,
 
         o_dma_wren       => dma_wren,
         o_dma_done       => dma_done,

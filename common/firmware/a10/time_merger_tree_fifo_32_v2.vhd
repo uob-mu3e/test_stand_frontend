@@ -16,7 +16,9 @@ generic (
     compare_fifos   : positive  := 32;
     last_layer      : std_logic := '0';
     g_NLINKS_DATA   : positive  := 12;
-    gen_fifos       : positive  := 16--;
+    gen_fifos       : positive  := 16;
+    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+    DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
     -- input
@@ -78,8 +80,14 @@ begin
 
     gen_hits:
     FOR i in 0 to gen_fifos - 1 GENERATE
-        a(i) <= i_data(i)(31 downto 28);
-        b(i) <= i_data(i + size)(31 downto 28);
+        mupix_data : IF DATA_TYPE = x"01" GENERATE
+            a(i) <= i_data(i)(31 downto 28);
+            b(i) <= i_data(i + size)(31 downto 28);
+        END GENERATE;
+        scifi_data : IF DATA_TYPE = x"02" GENERATE
+            a(i) <= i_data(i)(9 downto 6);
+            b(i) <= i_data(i + size)(9 downto 6);
+        END GENERATE;
 
         a_h(i) <= i_data(i)(37 downto 0);
         b_h(i) <= i_data(i + size)(37 downto 0);

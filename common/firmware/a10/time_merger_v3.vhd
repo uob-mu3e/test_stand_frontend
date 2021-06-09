@@ -15,7 +15,9 @@ generic (
     TREE_DEPTH_w : positive := 8;
     TREE_DEPTH_r : positive := 8;
     g_NLINKS_DATA : positive := 12;
-    N : positive := 34--;
+    N : positive := 34;
+    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+    DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
     -- input streams
@@ -53,11 +55,10 @@ architecture arch of time_merger_v3 is
     -- state machine
     type merge_state_type is (wait_for_pre, compare_time1, compare_time2, wait_for_sh, error_state, merge_hits, get_time1, get_time2, trailer, wait_for_sh_written);
     signal merge_state : merge_state_type;
-    type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(6 downto 0);
+    type sheader_time_array_t is array (N - 1 downto 0) of std_logic_vector(9 downto 0);
     signal sheader_time : sheader_time_array_t;
     signal merger_state_signal : std_logic;
-    signal shtime : std_logic_vector(6 downto 0);
-    signal overflow : std_logic_vector(15 downto 0);
+    signal shtime : std_logic_vector(9 downto 0);
     signal wait_cnt_pre, wait_cnt_sh, wait_cnt_merger : std_logic_vector(31 downto 0);
     signal header_trailer : std_logic_vector(37 downto 0);
     signal sop_wait, shop_wait, eop_wait, time_wait : std_logic_vector(N - 1 downto 0);
@@ -226,7 +227,7 @@ begin
     generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(0), w_width => write_width(1), last_layer => '0',
-        compare_fifos => generate_fifos(0), gen_fifos => generate_fifos(1)--,
+        compare_fifos => generate_fifos(0), gen_fifos => generate_fifos(1), DATA_TYPE => DATA_TYPE--,
     )
     port map (
         i_data          => q_0_reg_reg,
@@ -252,7 +253,7 @@ begin
     generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(1), w_width => write_width(2), last_layer => '0',
-        compare_fifos => generate_fifos(1), gen_fifos => generate_fifos(2)--,
+        compare_fifos => generate_fifos(1), gen_fifos => generate_fifos(2), DATA_TYPE => DATA_TYPE--,
     )
     port map (
         i_data          => q_1,
@@ -278,7 +279,7 @@ begin
     generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(2), w_width => write_width(3), last_layer => '0',
-        compare_fifos => generate_fifos(2), gen_fifos => generate_fifos(3)--,
+        compare_fifos => generate_fifos(2), gen_fifos => generate_fifos(3), DATA_TYPE => DATA_TYPE--,
     )
     port map (
         i_data          => q_2,
@@ -304,7 +305,7 @@ begin
     generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(3), w_width => write_width(4), last_layer => '0',
-        compare_fifos => generate_fifos(3), gen_fifos => generate_fifos(4)--,
+        compare_fifos => generate_fifos(3), gen_fifos => generate_fifos(4), DATA_TYPE => DATA_TYPE--,
     )
     port map (
         i_data          => q_3,
@@ -330,7 +331,7 @@ begin
     generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(4), w_width => write_width(5), last_layer => '0',
-        compare_fifos => generate_fifos(4), gen_fifos => generate_fifos(5)--,
+        compare_fifos => generate_fifos(4), gen_fifos => generate_fifos(5), DATA_TYPE => DATA_TYPE--,
     )
     port map (
         i_data          => q_4,
@@ -356,7 +357,7 @@ begin
     generic map (
         TREE_w => TREE_DEPTH_w, TREE_r => TREE_DEPTH_r, g_NLINKS_DATA => g_NLINKS_DATA,
         r_width => read_width(6), w_width => write_width(6), last_layer => '1',
-        compare_fifos => generate_fifos(5), gen_fifos => generate_fifos(6)--,
+        compare_fifos => generate_fifos(5), gen_fifos => generate_fifos(6), DATA_TYPE => DATA_TYPE--,
     )
     port map (
         i_data          => q_5,
@@ -382,6 +383,8 @@ begin
 
     -- write data
     process(i_clk, i_reset_n)
+        variable v_overflow : std_logic_vector(15 downto 0);
+        variable TF : std_logic_vector(1 downto 0);
     begin
     if ( i_reset_n /= '1' ) then
         merge_state <= wait_for_pre;
@@ -399,14 +402,16 @@ begin
         error_shtime <= '0';
         error_merger <= '0';
         header_trailer <= (others => '0');
-        overflow <= (others => '0');
-
         header_trailer_we <= '0';
+        v_overflow := (others => '0');
+        TF := (others => '0');
         --
     elsif rising_edge(i_clk) then
 
-        header_trailer <= (others => '0');
-        header_trailer_we <= '0';
+        header_trailer      <= (others => '0');
+        header_trailer_we   <= '0';
+        v_overflow  := (others => '0');
+        TF          := (others => '0');
 
         case merge_state is
             when wait_for_pre =>
@@ -509,28 +514,30 @@ begin
                     -- reset signals
                     wait_cnt_sh <= (others => '0');
                     wait_cnt_merger <= (others => '0');
-                    overflow <= (others => '0');
                     -- send merged data sub header
                     -- zeros & sub header & zeros & datak
                     header_trailer(37 downto 32) <= sh_marker;
-                    header_trailer(31 downto 26) <= "111111";
-                    header_trailer(25 downto 23) <= "000";
                     -- send sub header time -- check later if equal
-                    header_trailer(22 downto 16) <= i_rdata(i_link)(22 downto 16);
-                    shtime <= i_rdata(i_link)(22 downto 16);
+                    header_trailer(31 downto 23) <= i_rdata(i_link)(31 downto 23);
+                    if ( DATA_TYPE = x"01" ) then
+                        shtime(6 downto 0) <= i_rdata(i_link)(22 downto 16);
+                    elsif ( DATA_TYPE = x"02" ) then
+                        shtime <= i_rdata(i_link)(25 downto 16);
+                    end if;
                     FOR I in N - 1 downto 0 LOOP
                         if ( i_mask_n(I) = '1' ) then
-                            sheader_time(I) <= i_rdata(I)(22 downto 16);
+                            if ( DATA_TYPE = x"01" ) then
+                                sheader_time(I)(6 downto 0) <= i_rdata(I)(22 downto 16);
+                            elsif ( DATA_TYPE = x"02" ) then
+                                sheader_time(I) <= i_rdata(I)(25 downto 16);
+                            end if;
                         end if;
+                        v_overflow := v_overflow or i_rdata(I)(15 downto 0);
                     END LOOP;
-                    header_trailer(15 downto 0) <= overflow;
+                    header_trailer(15 downto 0) <= v_overflow;
                     header_trailer_we <= '1';
                 else
                     wait_cnt_sh <= wait_cnt_sh + '1';
-                -- TODO: handle overflow
---                  FOR I in N - 1 downto 0 LOOP
-                    --    v_overflow := v_overflow or overflow;
-                    --END LOOP;
                 end if;
 
                 -- if wait for pre gets timeout
@@ -585,6 +592,12 @@ begin
                     merge_state <= wait_for_pre;
                     -- send trailer
                     header_trailer(37 downto 32) <= tr_marker;
+                    if ( DATA_TYPE = x"02" ) then
+                        FOR I in N - 1 downto 0 LOOP
+                            TF := i_rdata(I)(9 downto 8);
+                        END LOOP;
+                        header_trailer(9 downto 8) <= TF;
+                    end if;
                     header_trailer(7 downto 0) <= x"9C";
                     header_trailer_we <= '1';
                 end if;

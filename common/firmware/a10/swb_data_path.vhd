@@ -51,8 +51,7 @@ port(
     i_dmamemhalffull : in  std_logic;
     
     o_farm_data      : out work.util.slv32_array_t(g_NLINKS_FARM - 1  downto 0);
-    o_farm_datak     : out work.util.slv4_array_t(g_NLINKS_FARM - 1  downto 0);
-    o_fram_wen       : out std_logic;
+    o_farm_data_valid: out work.util.slv2_array_t(g_NLINKS_FARM - 1  downto 0);
 
     o_dma_wren       : out std_logic;
     o_dma_cnt_words  : out std_logic_vector (31 downto 0);
@@ -99,7 +98,7 @@ architecture arch of swb_data_path is
 
     --! links to farm
     signal merged_farm_data : std_logic_vector (g_NLINKS_FARM * 32 - 1  downto 0);
-    signal merged_farm_datak : std_logic_vector (g_NLINKS_FARM * 4 - 1  downto 0);
+    signal merged_farm_data_valid : std_logic_vector (g_NLINKS_FARM * 2 - 1  downto 0);
     signal farm_data : std_logic_vector(W-1 downto 0);
     signal farm_rack, farm_rempty : std_logic;
 
@@ -144,6 +143,7 @@ begin
     --! ------------------------------------------------------------------------
     e_data_gen_link : entity work.data_generator_a10
     generic map (
+        DATA_TYPE => DATA_TYPE,
         go_to_sh => 3,
         go_to_trailer => 4--,
     )
@@ -409,21 +409,20 @@ begin
     )
     port map (
         i_reset_n   => i_reset_n_250,
-        i_clk       => i_clk_250, --TODO: run with 250 QSFP clk (FIFO)
+        i_clk       => i_clk_250,
 
         i_data      => farm_data,
         i_empty     => farm_rempty,
 
         o_ren       => farm_rack,
-        o_wen       => o_fram_wen,
 
         o_data      => merged_farm_data,
-        o_datak     => merged_farm_datak--,
+        o_data_valid=> merged_farm_data_valid--,
     );
 
     gen_farm_out : FOR i in 0 to g_NLINKS_FARM - 1 GENERATE
-        o_farm_data(i)  <= merged_farm_data(32 * i + 31 downto 32 * i);
-        o_farm_datak(i) <= merged_farm_datak(4 * i + 3 downto 4 * i);
+        o_farm_data(i)          <= merged_farm_data(32 * i + 31 downto 32 * i);
+        o_farm_data_valid(i)    <= merged_farm_data_valid(2 * i + 1 downto 2 * i);
     END GENERATE gen_farm_out;
 
 

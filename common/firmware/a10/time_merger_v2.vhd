@@ -15,7 +15,9 @@ generic (
     TREE_DEPTH_w : positive := 8;
     TREE_DEPTH_r : positive := 8;
     g_NLINKS_DATA : positive := 12;
-    N : positive := 34--;
+    N : positive := 34;
+    -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
+    DATA_TYPE : std_logic_vector(7 downto 0) := x"01"--;
 );
 port (
     -- input streams

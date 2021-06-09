@@ -334,6 +334,8 @@ begin
         g_NLINKS_FARM_TOTL      => g_NLINKS_FARM_TOTL,
         g_NLINKS_FARM_PIXEL     => g_NLINKS_FARM_PIXEL,
         g_NLINKS_DATA_PIXEL     => g_NLINKS_DATA_PIXEL,
+        g_NLINKS_FARM_SCIFI     => g_NLINKS_FARM_SCIFI,
+        g_NLINKS_DATA_SCIFI     => g_NLINKS_DATA_SCIFI,
         SWB_ID                  => SWB_ID--,
     )
     port map (
@@ -363,8 +365,8 @@ begin
         o_endofevent    => dmamem_endofevent,
         o_dma_data      => dma_data,
 
-        o_farm_data     => open,
-        o_farm_datak    => open,
+        o_farm_data         => open,
+        o_farm_data_valid   => open,
 
         --! 250 MHz clock / reset_n
         i_reset_n_250   => reset_pcie0_n,
