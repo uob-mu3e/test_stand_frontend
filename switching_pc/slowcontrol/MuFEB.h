@@ -58,6 +58,8 @@ class MuFEB {
       DWORD *fill_SSFE(DWORD * pdata);
       DWORD *read_SSFE_OneFEB(DWORD * pdata, uint32_t index, uint32_t version);
 
+      DWORD *fill_SSSO(DWORD * pdata);
+      DWORD *read_SSSO_OneFEB(DWORD * pdata, uint32_t index);
 
 protected:
 

@@ -115,6 +115,9 @@ INT event_buffer_size = 10 * 10000;
 
 constexpr int switch_id = 0; // TODO to be loaded from outside (on compilation?)
 constexpr int num_swb_counters_per_feb = 9;
+constexpr int max_sorter_inputs_per_feb = 12;
+constexpr int num_sorter_counters_per_feb = 3*max_sorter_inputs_per_feb +2;
+constexpr int per_fe_SSSO_size = num_sorter_counters_per_feb + 1;
 constexpr int per_fe_SSFE_size = 26;
 constexpr int per_crate_SCFC_size = 21;
 
@@ -140,17 +143,19 @@ std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE> febpower{};
 /*-- Function declarations -----------------------------------------*/
 
 INT read_sc_event(char *pevent, INT off);
-INT read_swb_counters_event(char *pevent, INT off);
 INT read_WMEM_event(char *pevent, INT off);
 INT read_scifi_sc_event(char *pevent, INT off);
 INT read_scitiles_sc_event(char *pevent, INT off);
 INT read_mupix_sc_event(char *pevent, INT off);
 INT read_febcrate_sc_event(char *pevent, INT off);
 
+DWORD * fill_SSCN(DWORD *);
+
 void sc_settings_changed(odb o);
 void switching_board_mask_changed(odb o);
 void frontend_board_mask_changed(odb o);
 void febpower_changed(odb o);
+void sorterdelays_changed(odb o);
 
 uint64_t get_link_active_from_odb(odb o); //throws
 void set_feb_enable(uint64_t enablebits);
@@ -368,33 +373,48 @@ void setup_odb(){
    // midas::odb::set_debug(true);
 
     string namestr;
+    string bankname;
     string cntnamestr;
     string cntbankname;
-    string bankname;
+    string sorternamestr;
+    string sorterbankname;
     if(switch_id == 0){
         namestr = "Names SCFE";
-        cntnamestr = "Names Counters SCFE";
-        cntbankname = "SCCN";
         bankname = "SCFE";
+        cntnamestr = "Names SCCN";
+        cntbankname = "SCCN";
+        sorternamestr = "Names SCSO";
+        sorterbankname = "SCSO";
     }
     if(switch_id == 1){
         namestr = "Names SUFE";
-        cntnamestr = "Names Counters SUFE";
-        cntbankname = "SUCN";
         bankname = "SUFE";
+        cntnamestr = "Names SUCN";
+        cntbankname = "SUCN";
+        sorternamestr = "Names SUSO";
+        sorterbankname = "SUSO";
+
     }
     if(switch_id == 2){
         namestr = "Names SDFE";
-        cntnamestr = "Names Counters SDFE";
-        cntbankname = "SDCN";
         bankname = "SDFE";
+        cntnamestr = "Names SDCN";
+        cntbankname = "SDCN";
+        sorternamestr = "Names SDSO";
+        sorterbankname = "SDSO";
     }
     if(switch_id == 3){
         namestr = "Names SFFE";
-        cntnamestr = "Names Counters SFFE";
-        cntbankname = "SFCN";
         bankname = "SFFE";
+        cntnamestr = "Names SFCN";
+        cntbankname = "SFCN";
+        sorternamestr = "Names SFSO";
+        sorterbankname = "SFSO";
     }
+
+    // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
+    std::array<uint16_t, N_FEBS[switch_id]> zeroarr;
+    zeroarr.fill(0);
 
     /* Default values for /Equipment/Switching/Settings */
     odb settings = {
@@ -418,9 +438,11 @@ void setup_odb(){
             {"Load Firmware", false},
             {"Firmware File",""},
             {"Firmware FEB ID",0},
+            {"Sorter Delay", zeroarr},
             // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
             {namestr.c_str(), std::array<std::string, per_fe_SSFE_size*N_FEBS[switch_id]>()},
-            {cntnamestr.c_str(), std::array<std::string, num_swb_counters_per_feb*N_FEBS[switch_id]+4>()}
+            {cntnamestr.c_str(), std::array<std::string, num_swb_counters_per_feb*N_FEBS[switch_id]+4>()},
+            {sorternamestr.c_str(), std::array<std::string, per_fe_SSSO_size*N_FEBS[switch_id]>()}
     };
 
     int bankindex = 0;
@@ -543,6 +565,36 @@ void setup_odb(){
         settings[cntnamestr][bankindex++] = s;
     }
 
+    bankindex = 0;
+    for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
+        string feb = "FEB" + to_string(i);
+        string * s = new string(feb);
+        (*s) += " Index";
+        settings[namestr][bankindex++] = s;
+        for(uint32_t j=0; j < max_sorter_inputs_per_feb; j++){
+            s = new string(feb);
+            (*s) += " intime hits input " + to_string(j);
+            settings[sorternamestr][bankindex++] = s;
+        }
+        for(uint32_t j=0; j < max_sorter_inputs_per_feb; j++){
+            s = new string(feb);
+            (*s) += " out of time hits input " + to_string(j);
+            settings[sorternamestr][bankindex++] = s;
+        }
+        for(uint32_t j=0; j < max_sorter_inputs_per_feb; j++){
+            s = new string(feb);
+            (*s) += "  overflow hits input " + to_string(j);
+            settings[sorternamestr][bankindex++] = s;
+        }
+        s = new string(feb);
+        (*s) += "  output hits";
+        settings[sorternamestr][bankindex++] = s;
+        s = new string(feb);
+        (*s) += "  credits";
+        settings[sorternamestr][bankindex++] = s;
+    }
+
+
     settings.connect("/Equipment/Switching/Settings", true);
 
     /* Default values for /Equipment/Switching/Variables */
@@ -569,7 +621,8 @@ void setup_odb(){
             {"Merger Timeout All FEBs", 0},
 
             {bankname.c_str(), std::array<float, per_fe_SSFE_size*N_FEBS[switch_id]>{}},
-            {cntbankname.c_str(), std::array<int, num_swb_counters_per_feb*N_FEBS[switch_id]+4>()}
+            {cntbankname.c_str(), std::array<int, num_swb_counters_per_feb*N_FEBS[switch_id]+4>()},
+            {sorterbankname.c_str(), std::array<int, per_fe_SSSO_size*N_FEBS[switch_id]>{}}
     };
 
     sc_variables.connect("/Equipment/Switching/Variables");
@@ -671,6 +724,10 @@ void setup_watches(){
     // watch for changes in the FEB powering state
     odb febpower_odb("/Equipment/FEBCrates/Variables/FEBPower");
     febpower_odb.watch(febpower_changed);
+
+    // Watch for sorter delay changes
+    odb sorterdelay_settings("/Equipment/Switching/Settings/Sorter Delay");
+    sorterdelay_settings.watch(sorterdelays_changed);
 }
 
 void switching_board_mask_changed(odb o) {
@@ -746,6 +803,10 @@ INT init_febs(mudaq::MudaqDevice & mu) {
 
     // Get all the relevant firmware versions
     mufeb->ReadFirmwareVersionsToODB();
+
+    // Init sorter delays
+    odb sorterdelay_odb("/Equipment/Switching/Settings/Sorter Delay");
+    sorterdelays_changed(sorterdelay_odb);
 
     set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Ok", "var(--mgreen)");
 
@@ -1080,27 +1141,44 @@ INT read_sc_event(char *pevent, INT off)
     cm_msg(MINFO, "switch_fe::read_sc_event()" , "Reading FEB SC");
 
     string bankname;
+    string counterbankname;
+    string sorterbankname;
     if(switch_id == 0){
         bankname = "SCFE";
+        counterbankname = "SCCN";
+        sorterbankname = "SCSO";
     }
     if(switch_id == 1){
         bankname = "SUFE";
+        counterbankname = "SUCN";
+        sorterbankname = "SUSO";
     }
     if(switch_id == 2){
         bankname = "SDFE";
+        counterbankname = "SDCN";
+        sorterbankname = "SDSO";
     }
     if(switch_id == 3){
         bankname = "SFFE";
+        counterbankname = "SFCN";
+        sorterbankname = "SFSO";
     }
 
     // create bank, pdata
     bk_init(pevent);
     DWORD *pdata;
+
     bk_create(pevent, bankname.c_str(), TID_FLOAT, (void **)&pdata);
     pdata = mufeb->fill_SSFE(pdata);
     bk_close(pevent,pdata);
 
-    read_swb_counters_event(pevent, off);
+    bk_create(pevent, counterbankname.c_str(), TID_INT, (void **)&pdata);
+    pdata = fill_SSCN(pdata);
+    bk_close(pevent, pdata);
+
+    bk_create(pevent, sorterbankname.c_str(), TID_INT, (void **)&pdata);
+    pdata = mufeb->fill_SSSO(pdata);
+    bk_close(pevent, pdata);
 
     return bk_size(pevent);
 
@@ -1108,31 +1186,11 @@ INT read_sc_event(char *pevent, INT off)
 }
 
 /*--- Read Counters from SWBs to be put into data stream --------*/
-INT read_swb_counters_event(char *pevent, INT off)
+DWORD * fill_SSCN(DWORD * pdata)
 {
-    cm_msg(MINFO, "switch_fe::read_swb_counters_event()" , "Reading SWB Counters");
-
+    // TODO: Could we get this from the feblist?
     odb cur_links_odb("/Equipment/Links/Settings/LinkMask");
     std::bitset<64> cur_link_active_from_odb = get_link_active_from_odb(cur_links_odb);
-
-    string bankname;
-    if(switch_id == 0){
-        bankname = "SCCN";
-    }
-    if(switch_id == 1){
-        bankname = "SUCN";
-    }
-    if(switch_id == 2){
-        bankname = "SDCN";
-    }
-    if(switch_id == 3){
-        bankname = "SFCN";
-    }
-
-    // create bank, pdata
-    bk_init(pevent);
-    DWORD *pdata;
-    bk_create(pevent, bankname.c_str(), TID_INT, (void **)&pdata);
 
     // first read general counters
     *pdata++ = read_counters(SWB_STREAM_FIFO_FULL_PIXEL_CNT);
@@ -1148,14 +1206,12 @@ INT read_swb_counters_event(char *pevent, INT off)
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_SKIP_EVENT_PIXEL_CNT | (i << 8))) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_EVENT_PIXEL_CNT | (i << 8))) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (read_counters(SWB_SUB_HEADER_PIXEL_CNT | (i << 8))) : 0);
+        // TODO: What is the magic number here?
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? (0x7735940 - mufeb->ReadBackMergerRate(i)) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackResetPhase(i) : 0);
         *pdata++ = (cur_link_active_from_odb.test(i) == 1 ? mufeb->ReadBackTXReset(i) : 0);
     }
-    bk_close(pevent, pdata);
-    return bk_size(pevent);
-
-
+    return pdata;
 }
 
 /*--- Read Slow Control Event from SciFi to be put into data stream --------*/
@@ -1240,6 +1296,12 @@ void febpower_changed(odb o)
             febpower[i] = power;
         }
     }
+}
+
+void sorterdelays_changed(odb o)
+{
+    cm_msg(MINFO, "sorterdelays_changed()" , "Febpower!");
+    //TODO implement writing of delays
 }
 
 /*--- Called whenever settings have changed ------------------------*/
