@@ -61,6 +61,7 @@ architecture RTL of mupix_ctrl is
     signal mp_ctrl_state            : mp_ctrl_state_type;
     type spi_bit_state_type         is (beforepulse, duringpulse, afterpulse);
     signal spi_bit_state            : spi_bit_state_type;
+    signal spi_busy                 : std_logic;
 
     signal spi_dout                 : std_logic;
     signal spi_clk                  : std_logic;
@@ -84,6 +85,7 @@ begin
         i_reg_wdata                 => i_reg_wdata,
 
         -- inputs  156--------------------------------------------
+        i_mp_spi_busy               => spi_busy,
 
         -- outputs 156--------------------------------------------
         o_mp_ctrl_data              => config_storage_input_data,
@@ -142,6 +144,7 @@ begin
             wait_cnt    <= wait_cnt + 1;
             o_mosi      <= (others => spi_dout);
             o_clock     <= (others => spi_clk);
+            spi_busy    <= '1';
             --if(invert_csn = '1') then 
                 o_csn       <= not chip_select_n;
             --else
@@ -151,6 +154,7 @@ begin
             case mp_ctrl_state is
                 when idle =>
                     waiting_for_load_round  <= (others => '0');
+                    spi_busy                <= '0';
 
                     if(or_reduce(is_writing) = '1') then
                         mp_ctrl_state   <= load_config;

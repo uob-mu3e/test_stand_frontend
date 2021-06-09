@@ -106,8 +106,29 @@ int MapForEachASIC(HNDLE& db_rootentry, const char* prefix, std::function<int(Mu
 		cm_msg(MINFO,"mupix::midasODB::MapForEach", "Key %s not found", set_str);
 		return status;
 	}
+
+    //Retrieve daq settings for mask
+    HNDLE hDAQ;
+    MUPIX_DAQ mdaq;
+    sprintf(set_str, "%s/Settings/Daq", prefix);
+    printf("mupix_midasodb: Mapping ODB to Config for %s: Using key %s\n",prefix, set_str);
+    status = db_find_key(db_rootentry, 0, set_str, &hDAQ);
+    if(status != DB_SUCCESS) {
+        cm_msg(MERROR, "mupix::midasODB::MapMupixConfigFromDB", "Cannot find key %s", set_str);
+    }
+    size = sizeof(mdaq);
+    status = db_get_record(db_rootentry, hDAQ, &mdaq, &size, 0);
+    if(status != DB_SUCCESS) {
+        cm_msg(MERROR, "mupix::midasODB::MapMupixConfigFromDB", "Cannot retrieve settings");
+    }
+
+
 	//Iterate over ASICs
 	for(unsigned int asic = 0; asic < nasics; ++asic) {
+
+        if (mdaq.mask[asic])
+            continue;
+
 		MupixConfig config;
 		config.reset();
 		char set_str[255];
