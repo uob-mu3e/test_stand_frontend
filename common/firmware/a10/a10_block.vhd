@@ -559,11 +559,11 @@ begin
         g_CLK_MHZ => g_CLK_MHZ--,
     )
     port map (
-        o_rx_data           => o_xcvr1_rx_data,
-        o_rx_datak          => o_xcvr1_rx_datak,
+        o_rx_data           => xcvr1_rx_data,
+        o_rx_datak          => xcvr1_rx_datak,
 
-        i_tx_data           => i_xcvr1_tx_data,
-        i_tx_datak          => i_xcvr1_tx_datak,
+        i_tx_data           => xcvr1_tx_data,
+        i_tx_datak          => xcvr1_tx_datak,
 
         i_rx_clk            => (others => clk_250),
         i_tx_clk            => (others => clk_250),
