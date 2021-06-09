@@ -85,7 +85,7 @@ begin
         TREE_r                  => 10,
         SWB_ID                  => x"01",
         -- Data type: x"01" = pixel, x"02" = scifi, x"03" = tiles
-        DATA_TYPE               => x"02"--;
+        DATA_TYPE               => x"01"--;
     )
     port map(
         i_clk_156        => clk,

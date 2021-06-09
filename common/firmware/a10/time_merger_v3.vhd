@@ -395,7 +395,7 @@ begin
         wait_cnt_merger <= (others => '0');
         gtime1 <= (others => (others => '0'));
         gtime2 <= (others => (others => '0'));
-        shtime <= (others => '1');
+        shtime <= (others => '0');
         sheader_time <= (others => (others => '0'));
         error_gtime1 <= '0';
         error_gtime2 <= '0';
@@ -520,6 +520,7 @@ begin
                     -- send sub header time -- check later if equal
                     header_trailer(31 downto 23) <= i_rdata(i_link)(31 downto 23);
                     if ( DATA_TYPE = x"01" ) then
+                        shtime(9 downto 7) <= (others => '0');
                         shtime(6 downto 0) <= i_rdata(i_link)(22 downto 16);
                     elsif ( DATA_TYPE = x"02" ) then
                         shtime <= i_rdata(i_link)(25 downto 16);
@@ -527,6 +528,7 @@ begin
                     FOR I in N - 1 downto 0 LOOP
                         if ( i_mask_n(I) = '1' ) then
                             if ( DATA_TYPE = x"01" ) then
+                                sheader_time(I)(9 downto 7) <= (others => '0');
                                 sheader_time(I)(6 downto 0) <= i_rdata(I)(22 downto 16);
                             elsif ( DATA_TYPE = x"02" ) then
                                 sheader_time(I) <= i_rdata(I)(25 downto 16);
