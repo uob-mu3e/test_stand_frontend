@@ -103,7 +103,7 @@ architecture rtl of top is
 
     -- constants
     constant SWB_ID : std_logic_vector(7 downto 0) := x"01";
-    constant g_NLINKS_FEB_TOTL   : positive := 16;
+    constant g_NLINKS_FEB_TOTL   : positive := 14;
     constant g_NLINKS_FARM_TOTL  : positive := 16;
     constant g_NLINKS_FARM_PIXEL : positive := 8;
     constant g_NLINKS_DATA_PIXEL : positive := 10;
