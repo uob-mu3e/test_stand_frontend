@@ -63,11 +63,13 @@ QSYS_TCL_FILES := $(patsubst $(abspath .)/%,%,$(abspath $(filter %.tcl,$(IPs))))
 QSYS_FILES := $(addprefix $(PREFIX)/,$(patsubst %.tcl,%.qsys,$(QSYS_TCL_FILES)))
 # convert all .qsys files into .sopcinfo files
 SOPC_FILES := $(patsubst %.qsys,%.sopcinfo,$(QSYS_FILES))
-# make list of .vhd.qmegawiz files
+# make list of .vhd.qmegawiz and .vhd.envsubst files
 VHD_QMEGAWIZ_FILES := $(patsubst $(abspath .)/%,%,$(abspath $(filter %.vhd.qmegawiz,$(IPs))))
+VHD_ENVSUBST_FILES := $(patsubst $(abspath .)/%,%,$(abspath $(filter %.vhd.envsubst,$(IPs))))
 # generate list of .vhd files
 VHD_FILES := $(addprefix $(PREFIX)/, \
     $(patsubst %.vhd.qmegawiz,%.vhd,$(VHD_QMEGAWIZ_FILES)) \
+    $(patsubst %.vhd.envsubst,%.vhd,$(VHD_ENVSUBST_FILES)) \
 )
 
 # default qpf file
@@ -114,6 +116,9 @@ $(PREFIX)/include.qip : $(PREFIX)/components_pkg.vhd $(QSYS_FILES)
 # default device.tcl file
 device.tcl :
 	touch -- "$@"
+
+$(PREFIX)/%.vhd : %.vhd.envsubst
+	NAME="$(basename $(notdir $@))" envsubst '$$NAME' < "$<" > "$@"
 
 $(PREFIX)/%.vhd : %.vhd.qmegawiz
 	# find and exec qmegawiz.sh
