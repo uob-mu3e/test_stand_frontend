@@ -36,8 +36,8 @@ class MupixFEB  : public MuFEB{
       virtual uint16_t FPGAid_from_ID(int asic) const;
       virtual uint16_t ASICid_from_ID(int asic) const;
       // TODO: Do this right
-      virtual uint16_t GetModulesPerFEB() const {return 2;}
-      virtual uint16_t GetASICSPerModule() const {return 4;}
+      virtual uint16_t GetModulesPerFEB() const {return 4;}
+      virtual uint16_t GetASICSPerModule() const {return 3;}
 
       uint16_t GetNumASICs() const;
       virtual FEBTYPE  GetTypeID() const {return FEBTYPE::Pixel;}
