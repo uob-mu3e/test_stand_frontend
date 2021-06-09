@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 add_executable(switch_fe switch_fe.cpp)
+add_dependencies(switch_fe ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/a10_counters.h)
 #KB: disable most annoying compiler warnings that will not go away
 target_compile_options(switch_fe PRIVATE
 	-Wno-missing-field-initializers

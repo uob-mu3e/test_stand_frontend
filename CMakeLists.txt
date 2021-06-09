@@ -71,8 +71,8 @@ set(ENV{MIDAS_EXP_NAME} "")
 
 # on some older boxes, wpedantic and MIDAS do not mix
 add_subdirectory(modules)
-add_subdirectory(backend_pc)
 add_subdirectory(common)
+add_subdirectory(backend_pc)
 #add_subdirectory(common/kerneldriver)
 #add_subdirectory(common/libmudaq)
 #add_subdirectory(common/libmupix)

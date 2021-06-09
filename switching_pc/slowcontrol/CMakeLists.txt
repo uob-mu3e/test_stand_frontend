@@ -19,7 +19,7 @@ ADD_CUSTOM_COMMAND(
 ADD_CUSTOM_COMMAND(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/mupix_registers.h
     COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include/makeheader.py ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/mupix_registers.vhd ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/mupix_registers.h
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/mupix_registers.h
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/registers/mupix_registers.vhd
 )
 
 add_library(libslowcontrol STATIC
@@ -31,6 +31,9 @@ add_library(libslowcontrol STATIC
     scifi/SciFi_FEB.cpp
     tiles/Tiles_FEB.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/feb_constants.h #needs to be here explicitly for make rules to work!
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/scifi_registers.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/a10_counters.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/firmware/include/mupix_registers.h
 )
 
 target_include_directories(libslowcontrol PUBLIC . ./mupix ./mutrig ./tiles ./scifi ../../common/include)
