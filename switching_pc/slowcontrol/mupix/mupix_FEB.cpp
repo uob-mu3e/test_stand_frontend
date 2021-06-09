@@ -39,137 +39,13 @@ using midas::odb;
 #define FEB_REPLY_ERROR   1
 
 //Mapping to physical ports of switching board.
-uint16_t MupixFEB::FPGAid_from_ID(int asic) const {return asic/2;}
-uint16_t MupixFEB::ASICid_from_ID(int asic) const {return asic%2;}
+uint16_t MupixFEB::FPGAid_from_ID(int asic) const {return asic/12;}
+uint16_t MupixFEB::ASICid_from_ID(int asic) const {return asic%12;}
 
-uint16_t MupixFEB::GetNumASICs() const {return febs.size()*2;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
-
-uint32_t default_mupix_dacs[94] =
-{
-0x12d3e2,
-0x1abc52d0,
-0x0,
-0x30000000,
-0x0,
-0x0,
-0x0,
-0xcc000,
-0x0,
-0x30c880c2,
-0x80000000,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x0,
-0x9e100000,
-0xe,
-0x80ffff,
-0x608618,
-0x6145186d,
-0x24000030,
-0xc0200,
-0xa
-};
+uint16_t MupixFEB::GetNumASICs() const {return febs.size()*12;} //TODO: add parameter for number of asics per FEB, later more flexibility to have different number of sensors per FEB
 
 void invert_datastream(uint32_t * datastream) {
 
-}
-
-u_int32_t transform_row_dac(u_int32_t row)    //physical row to ram address (For dac WRITE ONLY, read transformation is different again !!)
-{
-    u_int32_t newrow;
-
-    if(row<85)
-        newrow = 199-row;
-    else if(row>99)
-        newrow = 215-row;
-    else
-        newrow = 99-row;
-
-    return newrow;
-}
-
-short transform_tdac(short tDAC){
-    // this is a mess ..
-    // bit(0)=1 is mask pixel
-    // bit(1::2): comparator 1, bit(3::5) comparator 2, 6 inject, 7 hitbus seems NOT to work !!! (to be tested again)
-    // TODO: figure out the correct bit order
-
-    // for now we just turn the pixel off if there is something
-    if(tDAC!=0)
-        return 1;
-    return 0;
 }
 
 //ASIC configuration:
@@ -206,150 +82,62 @@ int MupixFEB::ConfigureASICs(){
       // down a lot with a well chosen function call
 
       try {
+          uint32_t bitpattern_m;
+          vector<vector<uint32_t> > payload_m;
+          vector<uint32_t> payload;
+          payload_m.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(config->bitpattern_w),reinterpret_cast<uint32_t*>(config->bitpattern_w)+config->length_32bits));
 
-         uint8_t bitpatterna[config->length +1];
-         for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
-             bitpatterna[nbit+1] = config->bitpattern_w[nbit];
-         }
-         uint32_t * datastream = (uint32_t*)(bitpatterna);
-
-         for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
-             uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
-             datastream[nbit] = tmp;
-         }
-         vector<vector<uint32_t> > payload;
-         payload.push_back(vector<uint32_t>(1,asic));
-         payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(datastream),reinterpret_cast<uint32_t*>(datastream)+config->length_32bits));
-         rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_CHIP_CFG, payload);
-
-      } catch(std::exception& e) {
-          cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
-          return FE_ERR_HW; //note: return of lambda function
-      }
-      if(rpc_status!=FEB_REPLY_SUCCESS){
-         //configuration mismatch, report and break foreach-loop
-         set_equipment_status(equipment_name,  "MuPix config failed", "red");
-         cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
-         return FE_ERR_HW;//note: return of lambda function
-      }
-
-      midas::odb mpTDACs("/Equipment/MuPix/TDACs");
-      midas::odb mpColDACs("/Equipment/MuPix/Settings/Coldacs");
-      //midas::odb mpRowDACs("/Equipment/MuPix/Settings/DigitalRowdacs");
-      midas::odb mpRowDACs("/Equipment/MuPix/Settings/DigitalRowdacs");
-      useTDACs=mpTDACs["useTDACs"];
-
-      if(useTDACs==1){
-         // use TDAC config files
-         mpTDACs["chipIDreq"]=asic;  // request load of TDACs of this chip ID
-         for(int i=0; i<5;i++){
-            sleep(1);               // TODO: preload TDACs and save locally to avoid this (We are waiting for the TDAC loading from (remote) disk into odb here)
-            if(mpTDACs["chipIDactual"]==asic){
-                cm_msg(MINFO, "setup_mupix", "loading TDACs for ASIC %i", asic);
-
-                for (int rrow = 0; rrow < 200; rrow++) {
-                    // rrow: this is the real row of the mupix
-                    // rowRAM_addr : address of this row (For dac WRITE ONLY, read transformation is different again !!)
-                    rowRAM_addr=transform_row_dac((u_int32_t) rrow);
-
-                    try {
-                       mpRowDACs[(std::to_string(asic)+"/row_"+std::to_string(rowRAM_addr)+"/digiWrite").c_str()]=1;
-
-                       for(int col=0;col<127;col++){
-                           tDAC=mpTDACs[("col"+std::to_string(col)).c_str()][rrow];
-                           tDAC=transform_tdac(tDAC);
-                           mpColDACs[(std::to_string(asic)+"/col_"+std::to_string(col)+"/RAM").c_str()]=tDAC;
-                       }
-
-                       uint8_t bitpatterna[config->length +1];
-                       for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
-                           bitpatterna[nbit+1] = config->bitpattern_w[nbit];
-                       }
-                       uint32_t * datastream = (uint32_t*)(bitpatterna);
-
-                       mpRowDACs[(std::to_string(asic)+"/row_"+std::to_string(rowRAM_addr)+"/digiWrite").c_str()]=0;
-
-                       for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
-                           uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
-                           datastream[nbit] = tmp;
-                       }
-                       vector<vector<uint32_t> > payload;
-                       payload.push_back(vector<uint32_t>(1,asic));
-                       payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(datastream),reinterpret_cast<uint32_t*>(datastream)+config->length_32bits));
-                       // TODO: Get rid of hardcoded address!
-                       rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, 0x0110, payload);
-
-                    } catch(std::exception& e) {
-                        cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-                        set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
-                        return FE_ERR_HW; //note: return of lambda function
-                    }
-                    if(rpc_status!=FEB_REPLY_SUCCESS){
-                       //configuration mismatch, report and break foreach-loop
-                       set_equipment_status(equipment_name,  "MuPix config failed", "red");
-                       cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
-                       return FE_ERR_HW;//note: return of lambda function
-                    }
-                }
-
-                break;
-            }
-            if(i==4) {
-                TDACsNotFound=true;
-                cm_msg(MERROR, "setup_mupix", "failed to load TDACs for ASIC %i, continue with defaults ", asic);
-                printf("not using TDACS");
-            }
-         }
-      }
-
-      if(useTDACs==0 || TDACsNotFound){
-          // write 0's for all TDACs
-          for (int rrow = 0; rrow < 200; ++rrow) {
-              try {
-                 uint32_t * datastream = (uint32_t*)(default_config_mupix[rrow]);
-
-                 for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
-                     uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
-                     datastream[nbit] = tmp;
-                 }
-                 vector<vector<uint32_t> > payload;
-                 payload.push_back(vector<uint32_t>(1,asic));
-                 payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(datastream),reinterpret_cast<uint32_t*>(datastream)+config->length_32bits));
-                 // TODO: Get rid of hardcoded address!
-                 rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, 0x0110, payload);
-
-              } catch(std::exception& e) {
-                  cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
-                  set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
-                  return FE_ERR_HW; //note: return of lambda function
+          for(uint32_t j = 0; j<payload_m.at(0).size();j++){
+              bitpattern_m=0;
+              for(short i=0; i<32; i++){
+                  bitpattern_m|= ((payload_m.at(0).at(j)>>i) & 0b1)<<(31-i);
               }
-              if(rpc_status!=FEB_REPLY_SUCCESS){
-                 //configuration mismatch, report and break foreach-loop
-                 set_equipment_status(equipment_name,  "MuPix config failed", "red");
-                 cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
-                 return FE_ERR_HW;//note: return of lambda function
-              }
+              payload.push_back(bitpattern_m);
           }
-      }
 
-      try {
-         uint8_t bitpatterna[config->length +1];
-         for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
-             bitpatterna[nbit+1] = config->bitpattern_w[nbit];
+          for(uint32_t j = 0; j<payload.size();j++){
+              std::cout<<std::hex<<payload.at(j)<<std::endl;
+          }
+
+         // ToDo: Col Test Tdac bits from file
+         for(int i=0; i<85;i++){
+             payload.push_back(0x00000000);
          }
-         uint32_t * datastream = (uint32_t*)(bitpatterna);
 
-         for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
-             uint32_t tmp = ((datastream[nbit]>>24)&0x000000FF) | ((datastream[nbit]>>8)&0x0000FF00) | ((datastream[nbit]<<8)&0x00FF0000) | ((datastream[nbit]<<24)&0xFF000000);\
-             datastream[nbit] = tmp;
+         //Mask all chips but this one
+         uint32_t chip_select_mask = 0xfff; //all chips masked (12 times 1)
+         int pos = ASICid_from_ID(asic);
+         chip_select_mask &= ((~0x1) << pos);
+         for (int i = 0; i < pos; ++i)
+             chip_select_mask |= (0x1 << i);
+
+         uint32_t spi_busy = 1;
+         uint32_t count = 0;
+         uint32_t limit = 5;
+         rpc_status=FEB_REPLY_SUCCESS;
+
+         feb_sc.FEB_register_read(SP_ID,0x4B,spi_busy);
+
+         while(spi_busy==1 && count < limit){
+             sleep(1);
+             feb_sc.FEB_register_read(SP_ID,0x4B,spi_busy);
+             count++;
+             cm_msg(MINFO, "MupixFEB", "Mupix config spi busy .. waiting");
          }
-         vector<vector<uint32_t> > payload;
-         payload.push_back(vector<uint32_t>(1,asic));
-         payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(datastream),reinterpret_cast<uint32_t*>(datastream)+config->length_32bits));
-         // TODO: Get rid of hardcoded address!
-         rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, 0x0110, payload);
+         if(count == limit){
+             std::cout<<"Timeout"<<std::endl;
+             cm_msg(MERROR, "setup_mupix", "FEB Mupix SPI timeout");
+         }else{
+            std::cout << "Chip select mask = " << std::hex << chip_select_mask << std::endl;
+            feb_sc.FEB_write(SP_ID, 0xFF48, chip_select_mask);
 
+            // TODO: include headers for addr.
+            feb_sc.FEB_write(SP_ID, 0xFF47, 0x0000000F); // SPI slow down reg
+            feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000FC0); // reset Mupix config fifos
+            feb_sc.FEB_write(SP_ID, 0xFF40, 0x00000000);
+            feb_sc.FEB_write(SP_ID, 0xFF49, 0x00000003); // idk, have to look it up
+            rpc_status = feb_sc.FEB_write(SP_ID, 0xFF4A, payload,true);
+         }
       } catch(std::exception& e) {
           cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", asic, e.what());
           set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
@@ -361,6 +149,7 @@ int MupixFEB::ConfigureASICs(){
          cm_msg(MERROR, "setup_mupix", "MuPix configuration error for ASIC %i", asic);
          return FE_ERR_HW;//note: return of lambda function
       }
+
       return FE_SUCCESS;//note: return of lambda function
    });//MapForEach
    return status; //status of foreach function, SUCCESS when no error.
@@ -424,61 +213,4 @@ uint32_t MupixFEB::ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t L
 {
     cm_msg(MINFO, "MupixFEB::ReadBackLVDSNumHitsInMupixFormat" , "Implement Me");
     return 0;
-}
-
-int MupixFEB::ConfigureBoards(){
-   cm_msg(MINFO, "MupixFEB" , "Configuring boards under prefix %s/Settings/Boards/", odb_prefix);
-   int status = mupix::midasODB::MapForEachBOARD(hDB,odb_prefix,[this](mupix::MupixBoardConfig* config, int board){
-      uint32_t rpc_status;
-      //mapping
-      uint16_t SB_ID=febs[FPGAid_from_ID(board)].SB_Number();
-      uint16_t SP_ID=febs[FPGAid_from_ID(board)].SB_Port();
-
-      uint32_t board_ID=board;
-
-      if(!febs[FPGAid_from_ID(board)].IsScEnabled()){
-          printf(" [skipped]\n");
-          return FE_SUCCESS;
-      }
-      if(SB_ID!= SB_number){
-          printf(" [skipped]\n");
-          return FE_SUCCESS;
-      } //TODO
-      //printf("\n");
-
-      cm_msg(MINFO, "MupixFEB" ,
-             "Configuring MuPIX board %s/Settings/Boards/%i/: Mapped to FEB%u -> SB%u.%u",
-             odb_prefix,board,FPGAid_from_ID(board),SB_ID,SP_ID);
-
-       uint8_t bitpattern[config->length +1];
-       for (unsigned int nbit = 0; nbit < config->length; ++nbit) {
-           bitpattern[nbit] = (uint8_t) reverse((unsigned char) config->bitpattern_w[nbit]);
-       }
-
-       uint32_t * datastream = (uint32_t*)(bitpattern);
-
-       for (unsigned int nbit = 0; nbit < config->length_32bits; ++nbit) {
-           uint32_t tmp = ((datastream[nbit]>>8)&0x00FF0000) | ((datastream[nbit]<<8)&0xFF000000) | ((datastream[nbit]>>8)&0x000000FF) | ((datastream[nbit]<<8)&0x0000FF00);
-           datastream[nbit] = tmp;
-       }
-       try {
-           vector<vector<uint32_t> > payload;
-           payload.push_back(vector<uint32_t>(1,board));
-           payload.push_back(vector<uint32_t>(reinterpret_cast<uint32_t*>(datastream),reinterpret_cast<uint32_t*>(datastream)+config->length_32bits));
-           // TODO: Get rid of hardcoded address!
-           rpc_status = feb_sc.FEBsc_NiosRPC(SP_ID, feb::CMD_MUPIX_BOARD_CFG, payload);
-      } catch(std::exception& e) {
-          cm_msg(MERROR, "setup_mupix", "Communication error while configuring MuPix %d: %s", board, e.what());
-          set_equipment_status(equipment_name, "SB-FEB Communication error", "red");
-          return FE_ERR_HW; //note: return of lambda function
-      }
-      if(rpc_status!=FEB_REPLY_SUCCESS){
-         //configuration mismatch, report and break foreach-loop
-         set_equipment_status(equipment_name,  "MuPix config failed", "red");
-         cm_msg(MERROR, "setup_mupix", "MuPix configuration error for Board %i", board);
-      }
-
-      return FE_SUCCESS;//note: return of lambda function
-   });//MapForEach
-   return status; //status of foreach function, SUCCESS when no error.
 }
