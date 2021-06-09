@@ -185,7 +185,7 @@ EQUIPMENT equipment[] = {
      0,                         /* stop run after this event limit */
      0,                         /* number of sub events */
      1,                         /* log history every event */
-     "", "", ""} ,
+     "", "", ""},
      read_sc_event,             /* readout routine */
    },
    {"SciFi",                    /* equipment name */
