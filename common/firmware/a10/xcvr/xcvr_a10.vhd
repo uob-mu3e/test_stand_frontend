@@ -8,7 +8,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
-entity xcvr_a10 is
+entity ${NAME} is
 generic (
     NUMBER_OF_CHANNELS_g : positive := 4;
     CHANNEL_WIDTH_g : positive := 32;
@@ -50,7 +50,7 @@ port (
 );
 end entity;
 
-architecture arch of xcvr_a10 is
+architecture arch of ${NAME} is
 
     signal reset, reset_n : std_logic;
 
@@ -357,7 +357,7 @@ begin
         end process;
     end block;
 
-    e_phy : component work.cmp.ip_xcvr_a10_phy
+    e_phy : component work.cmp.ip_${NAME}_phy
     port map (
         tx_serial_data  => o_tx_serial,
         rx_serial_data  => i_rx_serial,
@@ -413,7 +413,7 @@ begin
         reconfig_clk(0)         => i_clk--,
     );
 
-    e_fpll : component work.cmp.ip_xcvr_a10_fpll
+    e_fpll : component work.cmp.ip_${NAME}_fpll
     port map (
         pll_refclk0     => i_pll_clk,
         pll_powerdown   => pll_powerdown(0),
@@ -434,7 +434,7 @@ begin
     --
     --
     --
-    e_reset : component work.cmp.ip_xcvr_a10_reset
+    e_reset : component work.cmp.ip_${NAME}_reset
     port map (
         tx_analogreset => tx_analogreset,
         tx_digitalreset => tx_digitalreset,
