@@ -86,7 +86,9 @@ struct mupix_t {
         sc->ram->data[0xFF4A]=0x0000FC09;
         sc->ram->data[0xFF4A]=0xF0001C80;
         sc->ram->data[0xFF4A]=0x00148000;
-        sc->ram->data[0xFF4A]=0x11802E00;        
+        sc->ram->data[0xFF4A]=0x11802E00;
+        for(int i = 0; i<85; i++){
+        sc->ram->data[0xFF4A]=0x00000000;}
     }
     
     void test_write_all() {
