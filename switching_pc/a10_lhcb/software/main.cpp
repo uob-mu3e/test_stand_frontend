@@ -94,6 +94,7 @@ int main() {
         printf("\n");
         printf("  [1] => ...\n");
         printf("  [p] => PODs\n");
+        printf("  [s] => SFP\n");
         printf("  [c] => clocks\n");
         printf("  [R] => reconfig\n");
 
@@ -105,6 +106,11 @@ int main() {
         case 'p':
             pod.menu();
             break;
+        case 's': {
+            xcvr_block_t sfp((alt_u32*)(AVM_SFP_BASE | ALT_CPU_DCACHE_BYPASS_MASK));
+            sfp.menu();
+            break;
+        }
         case 'c':
             clocks_menu();
             break;

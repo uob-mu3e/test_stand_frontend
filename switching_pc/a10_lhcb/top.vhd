@@ -31,6 +31,13 @@ port (
     A10_REFCLK_GBT_P_6                  : IN    STD_LOGIC;
     A10_REFCLK_GBT_P_7                  : IN    STD_LOGIC;
 
+    -- SFP
+    A10_SFP1_TFC_RX_P                   : in    std_logic;
+    A10_SFP1_TFC_TX_P                   : out   std_logic;
+    A10_SFP2_TFC_RX_P                   : in    std_logic;
+    A10_SFP2_TFC_TX_P                   : out   std_logic;
+    A10_REFCLK_TFC_CMU_P                : in    std_logic;
+
 
 
     -- PCIe 0
@@ -160,6 +167,7 @@ begin
         g_XCVR0_N => 4,
         g_XCVR1_CHANNELS => 24,
         g_XCVR1_N => 4,
+        g_SFP_CHANNELS => 2,
         g_PCIE0_X => g_PCIE0_X,
         g_PCIE1_X => g_PCIE1_X,
         g_CLK_MHZ => 100.0--,
@@ -194,6 +202,11 @@ begin
         o_xcvr1_rx_datak                => pod_rx_datak(23 downto 0),
         i_xcvr1_tx_data                 => pod_tx_data(23 downto 0),
         i_xcvr1_tx_datak                => pod_tx_datak(23 downto 0),
+
+        -- SFP
+        i_sfp_rx(1) => A10_SFP2_TFC_RX_P, i_sfp_rx(0) => A10_SFP1_TFC_RX_P,
+        o_sfp_tx(1) => A10_SFP2_TFC_TX_P, o_sfp_tx(0) => A10_SFP1_TFC_TX_P,
+        i_sfp_refclk => A10_REFCLK_TFC_CMU_P,
 
 
 

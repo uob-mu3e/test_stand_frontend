@@ -12,6 +12,7 @@ generic (
     g_XCVR0_N           : integer := 4;
     g_XCVR1_CHANNELS    : integer := 0;
     g_XCVR1_N           : integer := 0;
+    g_SFP_CHANNELS      : integer := 0;
     g_PCIE0_X           : integer := 8;
     g_PCIE1_X           : integer := 0;
     g_FARM              : integer := 0;
@@ -62,6 +63,11 @@ port (
     o_xcvr1_rx_datak    : out   work.util.slv4_array_t(g_XCVR1_CHANNELS-1 downto 0);
     i_xcvr1_tx_data     : in    work.util.slv32_array_t(g_XCVR1_CHANNELS-1 downto 0) := (others => (others => '0'));
     i_xcvr1_tx_datak    : in    work.util.slv4_array_t(g_XCVR1_CHANNELS-1 downto 0) := (others => (others => '0'));
+
+    -- SFP
+    i_sfp_rx            : in    std_logic_vector(g_SFP_CHANNELS-1 downto 0) := (others => '0');
+    o_sfp_tx            : out   std_logic_vector(g_SFP_CHANNELS-1 downto 0);
+    i_sfp_refclk        : in    std_logic := '0';
 
 
 
@@ -206,6 +212,7 @@ architecture arch of a10_block is
 
     signal av_xcvr0         : work.util.avalon_t;
     signal av_xcvr1         : work.util.avalon_t;
+    signal av_sfp           : work.util.avalon_t;
 
     signal pcie0_clk        : std_logic;
     signal reset_pcie0_n    : std_logic;
@@ -445,6 +452,13 @@ begin
         avm_xcvr1_writedata             => av_xcvr1.writedata,
         avm_xcvr1_waitrequest           => av_xcvr1.waitrequest,
 
+        avm_sfp_address                 => av_sfp.address(13 downto 0),
+        avm_sfp_read                    => av_sfp.read,
+        avm_sfp_readdata                => av_sfp.readdata,
+        avm_sfp_write                   => av_sfp.write,
+        avm_sfp_writedata               => av_sfp.writedata,
+        avm_sfp_waitrequest             => av_sfp.waitrequest,
+
         rst_reset_n                     => nios_reset_n,
         clk_clk                         => i_clk--,
     );
@@ -540,6 +554,40 @@ begin
 
         i_reset_n           => i_reset_n,
         i_clk               => i_clk--,
+    );
+    end generate;
+
+    generate_sfp_block : if ( g_SFP_CHANNELS > 0 ) generate
+    e_xcvr_sfp : entity work.xcvr_sfp
+    generic map (
+        NUMBER_OF_CHANNELS_g => g_SFP_CHANNELS,
+        CHANNEL_WIDTH_g => 8,
+        INPUT_CLOCK_FREQUENCY_g => 125000000,
+        DATA_RATE_g => 1250,
+        CLK_MHZ_g => integer(g_CLK_MHZ)--,
+    )
+    port map (
+        i_rx_serial => i_sfp_rx,
+        o_tx_serial => o_sfp_tx,
+
+        i_pll_clk => i_sfp_refclk,
+        i_cdr_clk => i_sfp_refclk,
+
+        i_tx_data => X"BC" & X"BC",
+        i_tx_datak => "1" & "1",
+
+        i_rx_clkin => (others => i_clk_125),
+        i_tx_clkin => (others => i_clk_125),
+
+        i_avs_address       => av_sfp.address(13 downto 0),
+        i_avs_read          => av_sfp.read,
+        o_avs_readdata      => av_sfp.readdata,
+        i_avs_write         => av_sfp.write,
+        i_avs_writedata     => av_sfp.writedata,
+        o_avs_waitrequest   => av_sfp.waitrequest,
+
+        i_reset => not i_reset_n,
+        i_clk => i_clk--,
     );
     end generate;
 
