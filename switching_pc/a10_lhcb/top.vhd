@@ -190,8 +190,7 @@ begin
         o_xcvr0_rx_datak                => pod_rx_datak(47 downto 24),
         i_xcvr0_tx_data                 => pod_tx_data(47 downto 24),
         i_xcvr0_tx_datak                => pod_tx_datak(47 downto 24),
-
-
+        i_xcvr0_clk                     => pcie0_clk,
 
         -- XCVR1 (10000 Mbps @ 250 MHz)
         i_xcvr1_rx                      => rx_gbt(23 downto 0),
@@ -202,6 +201,7 @@ begin
         o_xcvr1_rx_datak                => pod_rx_datak(23 downto 0),
         i_xcvr1_tx_data                 => pod_tx_data(23 downto 0),
         i_xcvr1_tx_datak                => pod_tx_datak(23 downto 0),
+        i_xcvr1_clk                     => pcie0_clk,
 
         -- SFP
         i_sfp_rx(1) => A10_SFP2_TFC_RX_P, i_sfp_rx(0) => A10_SFP1_TFC_RX_P,

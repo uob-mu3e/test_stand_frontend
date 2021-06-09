@@ -51,8 +51,7 @@ port (
     o_xcvr0_rx_datak    : out   work.util.slv4_array_t(g_XCVR0_CHANNELS-1 downto 0);
     i_xcvr0_tx_data     : in    work.util.slv32_array_t(g_XCVR0_CHANNELS-1 downto 0) := (others => (others => '0'));
     i_xcvr0_tx_datak    : in    work.util.slv4_array_t(g_XCVR0_CHANNELS-1 downto 0) := (others => (others => '0'));
-
-
+    i_xcvr0_clk         : in    std_logic := '0';
 
     -- XCVR1 (10000 Mbps @ 250 MHz)
     i_xcvr1_rx          : in    std_logic_vector(g_XCVR1_CHANNELS-1 downto 0) := (others => '0');
@@ -63,6 +62,7 @@ port (
     o_xcvr1_rx_datak    : out   work.util.slv4_array_t(g_XCVR1_CHANNELS-1 downto 0);
     i_xcvr1_tx_data     : in    work.util.slv32_array_t(g_XCVR1_CHANNELS-1 downto 0) := (others => (others => '0'));
     i_xcvr1_tx_datak    : in    work.util.slv4_array_t(g_XCVR1_CHANNELS-1 downto 0) := (others => (others => '0'));
+    i_xcvr1_clk         : in    std_logic := '0';
 
     -- SFP
     i_sfp_rx            : in    std_logic_vector(g_SFP_CHANNELS-1 downto 0) := (others => '0');
@@ -213,6 +213,15 @@ architecture arch of a10_block is
     signal av_xcvr0         : work.util.avalon_t;
     signal av_xcvr1         : work.util.avalon_t;
     signal av_sfp           : work.util.avalon_t;
+
+    signal xcvr0_rx_data    : work.util.slv32_array_t(o_xcvr0_rx_data'range);
+    signal xcvr0_rx_datak   : work.util.slv4_array_t(o_xcvr0_rx_datak'range);
+    signal xcvr0_tx_data    : work.util.slv32_array_t(i_xcvr0_tx_data'range);
+    signal xcvr0_tx_datak   : work.util.slv4_array_t(i_xcvr0_tx_datak'range);
+    signal xcvr1_rx_data    : work.util.slv32_array_t(o_xcvr1_rx_data'range);
+    signal xcvr1_rx_datak   : work.util.slv4_array_t(o_xcvr1_rx_datak'range);
+    signal xcvr1_tx_data    : work.util.slv32_array_t(i_xcvr1_tx_data'range);
+    signal xcvr1_tx_datak   : work.util.slv4_array_t(i_xcvr1_tx_datak'range);
 
     signal pcie0_clk        : std_logic;
     signal reset_pcie0_n    : std_logic;
@@ -494,11 +503,11 @@ begin
         g_CLK_MHZ => g_CLK_MHZ--,
     )
     port map (
-        o_rx_data           => o_xcvr0_rx_data,
-        o_rx_datak          => o_xcvr0_rx_datak,
+        o_rx_data           => xcvr0_rx_data,
+        o_rx_datak          => xcvr0_rx_datak,
 
-        i_tx_data           => i_xcvr0_tx_data,
-        i_tx_datak          => i_xcvr0_tx_datak,
+        i_tx_data           => xcvr0_tx_data,
+        i_tx_datak          => xcvr0_tx_datak,
 
         i_tx_clk            => (others => clk_156),
         i_rx_clk            => (others => clk_156),
@@ -517,6 +526,25 @@ begin
 
         i_reset_n           => i_reset_n,
         i_clk               => i_clk--,
+    );
+    end generate;
+
+    generate_xcvr0_fifo : for i in g_XCVR0_CHANNELS-1 downto 0 generate
+    e_xcvr0_fifo : entity work.xcvr_fifo
+    port map (
+        i_xcvr_rx_data      => xcvr0_rx_data(i),
+        i_xcvr_rx_datak     => xcvr0_rx_datak(i),
+        o_xcvr_tx_data      => xcvr0_tx_data(i),
+        o_xcvr_tx_datak     => xcvr0_tx_datak(i),
+        i_xcvr_clk          => clk_156,
+
+        o_rx_data           => o_xcvr0_rx_data(i),
+        o_rx_datak          => o_xcvr0_rx_datak(i),
+        i_tx_data           => i_xcvr0_tx_data(i),
+        i_tx_datak          => i_xcvr0_tx_datak(i),
+        i_clk               => i_xcvr0_clk,
+
+        i_reset_n           => i_reset_n--,
     );
     end generate;
 
@@ -554,6 +582,25 @@ begin
 
         i_reset_n           => i_reset_n,
         i_clk               => i_clk--,
+    );
+    end generate;
+
+    generate_xcvr1_fifo : for i in g_XCVR1_CHANNELS-1 downto 0 generate
+    e_xcvr1_fifo : entity work.xcvr_fifo
+    port map (
+        i_xcvr_rx_data      => xcvr1_rx_data(i),
+        i_xcvr_rx_datak     => xcvr1_rx_datak(i),
+        o_xcvr_tx_data      => xcvr1_tx_data(i),
+        o_xcvr_tx_datak     => xcvr1_tx_datak(i),
+        i_xcvr_clk          => clk_250,
+
+        o_rx_data           => o_xcvr1_rx_data(i),
+        o_rx_datak          => o_xcvr1_rx_datak(i),
+        i_tx_data           => i_xcvr1_tx_data(i),
+        i_tx_datak          => i_xcvr1_tx_datak(i),
+        i_clk               => i_xcvr1_clk,
+
+        i_reset_n           => i_reset_n--,
     );
     end generate;
 
