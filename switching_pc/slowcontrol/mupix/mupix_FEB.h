@@ -51,25 +51,33 @@ class MupixFEB  : public MuFEB{
       //FEB registers and functions
       uint32_t ReadBackLVDSNumHits(uint16_t FPGA_ID, uint16_t LVDS_ID);
       uint32_t ReadBackLVDSNumHitsInMupixFormat(uint16_t FPGA_ID, uint16_t LVDS_ID);
-      uint32_t ReadLVDSCounters(DWORD** pdata, uint16_t FPGA_ID){
-        for(size_t i=0; i<GetASICSPerModule()*GetModulesPerFEB(); i++){ // TODO: set currect LVDS links number
+      DWORD*  ReadLVDSCounters(DWORD* pdata, uint16_t FPGA_ID){
+        for(uint32_t i=0; i<GetASICSPerModule()*GetModulesPerFEB(); i++){ // TODO: set currect LVDS links number
             // FPGA ID | Link ID
-            (*pdata)++;
-            **pdata = (FPGA_ID << 16) | i;
+            *(DWORD*)pdata++ = (FPGA_ID << 16) | i;
             // number of hits from link
-            (*pdata)++;
-            **pdata = ReadBackLVDSNumHits(FPGA_ID, i);
+            *(DWORD*)pdata++ = ReadBackLVDSNumHits(FPGA_ID, i);
             // number of hits from link in mupix format
-            (*pdata)++;
-            **pdata = ReadBackLVDSNumHitsInMupixFormat(FPGA_ID, i);
+            *(DWORD*)pdata++ = ReadBackLVDSNumHitsInMupixFormat(FPGA_ID, i);
+        };
+        return pdata;
       };
       uint32_t getNFPGAs(){
           return febs.size();
       }
-      void ReadBackLVDSCounters(DWORD** pdata){
-          for(size_t i=0; i<febs.size(); i++){
-                ReadLVDSCounters(pdata, i);
+      // TODO: the febs.size() does not work, dont find out why thats why we pass the numFEBs
+      DWORD* fill_PSLL(DWORD* pdata, uint32_t numFEBs){
+          if ( numFEBs == 0 ) {
+            // if no febs than send 3 zeros
+            *(DWORD*)pdata++ = 0;
+            *(DWORD*)pdata++ = 0;
+            *(DWORD*)pdata++ = 0;
+            return pdata;
+          }
+          for(uint16_t i=0; i<numFEBs; i++){
+                pdata = ReadLVDSCounters(pdata, i);
           };
+          return pdata;
       }
 
 
