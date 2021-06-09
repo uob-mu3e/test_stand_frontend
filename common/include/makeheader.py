@@ -68,6 +68,12 @@ def main(fname, outname):
             if line.split()[1].endswith("_W") or line.split()[1].endswith("_R"):
                 file.write('#define ' + line.split()[1] + '\t\t' + '0x' + line.split()[-1].split("#")[1].lower() + '\n')
                 continue
+
+        # match stuff like "constant SWB_STREAM_FIFO_FULL_PIXEL_CNT :  integer := 16#20#;"
+        if len(line.split()) > 1:
+            if line.split()[1].endswith("_CNT"):
+                file.write('#define ' + line.split()[1] + '\t\t' + '0x' + line.split()[-1].split("#")[1].lower() + '\n')
+                continue
             
         # match stuff like "constant RESET_BIT_ALL :  integer := 0;"	
         match = re.search(r'CONSTANT (\w+_BIT\w+) : INTEGER := (\w+);', line)

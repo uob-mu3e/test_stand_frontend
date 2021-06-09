@@ -188,7 +188,7 @@ begin
 					when part4 =>
 						state_out <= x"D";
 						global_time <= global_time + '1';
-						data_pix_generated 					<= "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
+						data_pix_generated 					<= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
 						datak_pix_generated              <= "0000";
 						overflow_idx 							:= 0;
 						current_overflow						:= lsfr_overflow;
@@ -196,7 +196,7 @@ begin
 						
                     when part5 =>
                         global_time <= global_time + '1';
-						data_pix_generated 					<= "0000" & DATA_SUB_HEADER_ID & global_time(9 downto 4) & lsfr_overflow;
+						data_pix_generated 					<= DATA_SUB_HEADER_ID & "000" & global_time(10 downto 4) & lsfr_overflow;
 						datak_pix_generated              <= "0000";
 						overflow_idx 							:= 0;
 						current_overflow						:= lsfr_overflow;

@@ -108,8 +108,8 @@ architecture arch of swb_block is
     signal rx_data_k_pixel : work.util.slv4_array_t(g_NLINKS_DATA_PIXEL-1 downto 0);
     
     --! counters
-    -- TODO: write status readout entity with ADDR to PCIe REGS and mapping to one counter REG
-    signal counter_swb_data_pixel : work.util.slv32_array_t(5+(g_NLINKS_DATA_PIXEL*3)-1 downto 0);
+    signal counter_swb_data_pixel_156 : work.util.slv32_array_t(g_NLINKS_DATA_PIXEL*5-1 downto 0);
+    signal counter_swb_data_pixel_250 : work.util.slv32_array_t(4 downto 0);
 
 
 begin
@@ -123,6 +123,39 @@ begin
     --! data is saved in the PCIe memory and can be further used in the MIDAS 
     --! system. The run control packages are used to control the run and give 
     --! feedback to MIDAS if all FEBs started the run.
+
+    --! counter readout
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    --! ------------------------------------------------------------------------
+    e_counters : entity work.swb_readout_counters
+    generic map (
+        g_A_CNT             => 5,
+        g_B_CNT             => g_NLINKS_DATA_PIXEL * 5,
+        g_NLINKS_DATA_SCIFI => 1,
+        g_NLINKS_DATA_PIXEL => g_NLINKS_DATA_PIXEL--,
+    )
+    port map (
+        --! register inputs for pcie0
+        i_wregs_add_A       => i_writeregs_250(SWB_COUNTER_REGISTER_W),
+
+        --! counters
+        i_counter_A         => counter_swb_data_pixel_250, -- pcie clk 
+        i_counter_B         => counter_swb_data_pixel_156, -- link clk
+
+        --! register outputs for pcie0
+        o_pcie_data         => o_readregs_250(SWB_COUNTER_REGISTER_R),
+        o_pcie_addr         => o_readregs_250(SWB_COUNTER_REGISTER_ADDR_R),
+
+        --! i_reset
+        i_reset_n_A         => i_reset_n_250,
+
+        --! clocks
+        i_clk_A             => i_clk_250,
+        i_clk_B             => i_clk_156--,
+
+    );
+
 
     --! demerge data
     --! three types of data will be extracted from the links
@@ -269,7 +302,8 @@ begin
         i_writeregs_156  => i_writeregs_156,
         i_writeregs_250  => i_writeregs_250,
 
-        o_counter        => counter_swb_data_pixel,
+        o_counter_156    => counter_swb_data_pixel_156,
+        o_counter_250    => counter_swb_data_pixel_250,
 
         i_dmamemhalffull => i_dmamemhalffull,
         

@@ -87,7 +87,24 @@ architecture arch of farm_midas_event_builder is
     begin
         hit_38_v := hit_38;
         for i in 0 to N - 1 loop
-            hit_64(i * 64 + 63 downto i * 64) := "00" & x"000000" & hit_38_v(i * 38 + 37 downto i * 38);
+            -- ASIC #
+            hit_64(i * 64 + 63 downto i * 64 + 60) := hit_38_v(i * 38 + 31 downto i * 38 + 28);
+            -- Hit type
+            hit_64(i * 64 + 59) := hit_38_v(i * 38 + 27);
+            -- Channel #
+            hit_64(i * 64 + 58 downto i * 64 + 54) := hit_38_v(i * 38 + 26 downto i * 38 + 22);
+            -- Timestamp bad hit
+            hit_64(i * 64 + 53) := hit_38_v(i * 38 + 21);
+            -- Coarse counter value
+            hit_64(i * 64 + 52 downto i * 64 + 38) := hit_38_v(i * 38 + 20 downto i * 38 + 6);
+            -- Fine counter value
+            hit_64(i * 64 + 37 downto i * 64 + 33) := hit_38_v(i * 38 + 5 downto i * 38 + 1);
+            -- Energy flag
+            hit_64(i * 64 + 32) := hit_38_v(i * 38 + 0);
+            -- FPGA ID = LINK ID on the SWB
+            hit_64(i * 64 + 31 downto i * 64 + 28) := hit_38_v(i * 38 + 35 downto i * 38 + 32);
+            -- Timestamp
+            hit_64(i * 64 + 27 downto i * 64 + 0) := TS(27 downto 0);
         end loop;
         return hit_64;
     end function;
