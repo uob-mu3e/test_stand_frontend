@@ -8,7 +8,6 @@ set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "util/inclu
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "s4/ip_altlvds_rx.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "s4/ip_altpll.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "s4/ip_ram.vhd"]
-set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "s4/ip_dcfifo.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "s4/ip_scfifo.vhd"]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "s4/ip_iobuf.vhd"]
 

@@ -1,7 +1,7 @@
 vlib work
 vmap work work
 
-vcom -work work ../../s4/ip_ram.vhd
+vcom -work work ../altera/ip_ram.vhd
 vcom -work work ../histogram_generic_half_rate.vhd
 vcom -work work ../histogram_generic.vhd
 vcom -work work tb_histogram_generic.vhd
