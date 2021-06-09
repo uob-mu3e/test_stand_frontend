@@ -67,6 +67,28 @@ struct mupix_t {
         return;
     }
 
+    void mupix_write_all_off(){
+        
+        sc->ram->data[0xFF47]=0x0000000F; // set spi slow down
+        sc->ram->data[0xFF40]=0x00000FC0;// clear fifos
+        sc->ram->data[0xFF40]=0x00000000;
+        sc->ram->data[0xFF49]=0x00000003;
+        sc->ram->data[0xFF48]=0x00000000; // config mask write to all
+        
+        sc->ram->data[0xFF4A]=0x2A000A03;
+        sc->ram->data[0xFF4A]=0xFA3F002F;
+        sc->ram->data[0xFF4A]=0x1E041041;
+        sc->ram->data[0xFF4A]=0x041E9A51;
+        sc->ram->data[0xFF4A]=0x40280000;
+        sc->ram->data[0xFF4A]=0x1400C20A;
+        sc->ram->data[0xFF4A]=0x0280001F;
+        sc->ram->data[0xFF4A]=0x00020038;
+        sc->ram->data[0xFF4A]=0x0000FC09;
+        sc->ram->data[0xFF4A]=0xF0001C80;
+        sc->ram->data[0xFF4A]=0x00148000;
+        sc->ram->data[0xFF4A]=0x11802E00;        
+    }
+    
     void test_write_all() {
         
         sc->ram->data[0xFF40]=0x00000FC0;
@@ -144,6 +166,7 @@ struct mupix_t {
         char str[2] = {0};
         
         while(1) {
+            printf("  [a] => write all OFF\n");
             printf("  [0] => write mupix default conf (All)\n");
             printf("  [1] => set mupix config mask\n");
             printf("  [2] => set spi clk slow down reg\n");
@@ -159,6 +182,9 @@ struct mupix_t {
             printf("Select entry ...\n");
             char cmd = wait_key();
             switch(cmd) {
+            case 'a':
+                mupix_write_all_off();
+                break;
             case '0':
                 test_mupix_write();
                 break;
