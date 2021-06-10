@@ -19,7 +19,7 @@ port (
 
 
 
-    -- POD
+    -- POD 0-7
     rx_gbt                              : IN    STD_LOGIC_VECTOR(47 DOWNTO 0);
     tx_gbt                              : OUT   STD_LOGIC_VECTOR(47 DOWNTO 0);
     A10_REFCLK_GBT_P_0                  : IN    STD_LOGIC; -- <- SI5345_1/2[IN2] <- SI53340_1[CLK1] <- SMA1
@@ -30,6 +30,13 @@ port (
     A10_REFCLK_GBT_P_5                  : IN    STD_LOGIC;
     A10_REFCLK_GBT_P_6                  : IN    STD_LOGIC;
     A10_REFCLK_GBT_P_7                  : IN    STD_LOGIC;
+
+    -- SFP
+    A10_SFP1_TFC_RX_P                   : in    std_logic;
+    A10_SFP1_TFC_TX_P                   : out   std_logic;
+    A10_SFP2_TFC_RX_P                   : in    std_logic;
+    A10_SFP2_TFC_TX_P                   : out   std_logic;
+    A10_REFCLK_TFC_CMU_P                : in    std_logic;
 
 
 
@@ -76,8 +83,8 @@ port (
     -- reset from push button through Max V
     A10_M5FL_CPU_RESET_N                : IN    STD_LOGIC;
 
-    -- general purpose internal clock
-    CLK_A10_100MHZ_P                    : IN    STD_LOGIC--; -- from internal 100 MHz oscillator
+    -- general purpose internal clock (100 MHz oscillator)
+    CLK_A10_100MHZ_P                    : IN    STD_LOGIC--;
 );
 end entity;
 
@@ -96,6 +103,8 @@ architecture arch of top is
 
     signal led : std_logic_vector(7 downto 0) := (others => '0');
     signal reset_n : std_logic;
+
+
 
     -- local 100 MHz clock
     signal clk_100, reset_100_n : std_logic;
@@ -121,7 +130,6 @@ architecture arch of top is
     signal pcie0_readregs_A   : work.util.slv32_array_t(63 downto 0);
     signal pcie0_readregs_B   : work.util.slv32_array_t(63 downto 0);
     
-
     signal pcie_fastclk_out     : std_logic;
 
     -- pcie read / write memory
@@ -153,6 +161,8 @@ begin
     e_reset_100_n : entity work.reset_sync
     port map ( o_reset_n => reset_100_n, i_reset_n => reset_n, i_clk => clk_100 );
 
+
+
     --! generate and route 125 MHz clock to SMA output
     --! (can be connected to SMA input as global clock)
     e_pll_100to125 : component work.cmp.ip_pll_100to125
@@ -171,13 +181,11 @@ begin
         outclk => clk_125--,
     );
 
-    A10_SI5345_1_JITTER_CLOCK_P <= clk_125;
-    A10_SI5345_2_JITTER_CLOCK_P <= clk_125;
-
-
-
     e_reset_125_n : entity work.reset_sync
     port map ( o_reset_n => reset_125_n, i_reset_n => reset_n, i_clk => clk_125 );
+
+    A10_SI5345_1_JITTER_CLOCK_P <= clk_125;
+    A10_SI5345_2_JITTER_CLOCK_P <= clk_125;
 
 
 
@@ -191,6 +199,7 @@ begin
         g_XCVR0_N => 4,
         g_XCVR1_CHANNELS => 24,
         g_XCVR1_N => 4,
+        g_SFP_CHANNELS => 2,
         g_PCIE0_X => g_PCIE0_X,
         g_PCIE1_X => 0,
         g_FARM    => 0,
@@ -212,6 +221,7 @@ begin
         o_xcvr0_rx_datak                => rx_datak_raw,
         i_xcvr0_tx_data                 => tx_data,
         i_xcvr0_tx_datak                => tx_datak,
+        i_xcvr0_clk                     => clk_156,
 
         i_xcvr1_rx                      => rx_gbt(47 downto 24),
         o_xcvr1_tx                      => tx_gbt(47 downto 24),
@@ -221,6 +231,14 @@ begin
         o_xcvr1_rx_datak                => farm_rx_datak,
         i_xcvr1_tx_data                 => farm_tx_data,
         i_xcvr1_tx_datak                => farm_tx_datak,
+        i_xcvr1_clk                     => pcie_fastclk_out,
+
+        -- SFP
+        i_sfp_rx(1) => A10_SFP2_TFC_RX_P, i_sfp_rx(0) => A10_SFP1_TFC_RX_P,
+        o_sfp_tx(1) => A10_SFP2_TFC_TX_P, o_sfp_tx(0) => A10_SFP1_TFC_TX_P,
+        i_sfp_refclk => A10_REFCLK_TFC_CMU_P,
+
+
 
         -- PCIe0
         i_pcie0_rx                      => i_pcie0_rx,

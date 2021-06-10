@@ -44,7 +44,7 @@ ENTITY ip_scfifo IS
         ADDR_WIDTH          : positive := 8;
         DATA_WIDTH          : positive := 8;
         SHOWAHEAD           : string   := "ON";
-        REGOUT              : integer  := 0;
+        REGOUT              : integer  := 1;
         DEVICE              : string   := "Stratix IV";
         ALMOST_FULL_LIMIT   : positive := 1--;
     );
@@ -164,12 +164,12 @@ BEGIN
 
         rdreq0 <= rdreq or rdempty1;
 
-        process(rdclk,aclr)
+        process(clock,sclr)
         begin
-        if ( aclr = '1' ) then
+        if ( sclr = '1' ) then
             q1 <= (others => '0');
             rdempty1 <= '1';
-        elsif rising_edge(rdclk) then
+        elsif rising_edge(clock) then
             if ( rdreq0 = '1' ) then
                 q1 <= q0;
                 rdempty1 <= rdempty0;

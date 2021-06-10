@@ -8,16 +8,13 @@ set_global_assignment -name SDC_FILE top.sdc
 set_global_assignment -name QIP_FILE util/include.qip
 
 set_global_assignment -name VHDL_FILE a10/a10_block.vhd
-set_global_assignment -name QIP_FILE a10/xcvr.qip
+set_global_assignment -name QIP_FILE a10/xcvr/include.qip
 
 set_global_assignment -name QIP_FILE a10/pcieapp/include.qip
 
 set_global_assignment -name VHDL_FILE a10/pcie_register_mapping.vhd
 set_global_assignment -name VHDL_FILE a10/dma_evaluation.vhd
 
-set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_scfifo.vhd
-set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram.vhd
-set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_dcfifo.vhd
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_dcfifo_mixed_widths.vhd
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram_1_port.vhd
 set_global_assignment -name VHDL_FILE a10/time_merger.vhd

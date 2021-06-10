@@ -7,7 +7,6 @@ set_global_assignment -name SDC_FILE top.sdc
 
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_scfifo.vhd
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram.vhd
-set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_dcfifo.vhd
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_dcfifo_mixed_widths.vhd
 set_global_assignment -name VHDL_FILE ../../common/firmware/s4/ip_ram_1_port.vhd
 set_global_assignment -name VHDL_FILE a10/a10_block.vhd
@@ -25,3 +24,4 @@ set_global_assignment -name QIP_FILE ../../common/firmware/registers/include.qip
 set_global_assignment -name QIP_FILE a10/include.qip
 set_global_assignment -name QIP_FILE pcieapp/include.qip
 set_global_assignment -name QIP_FILE util/include.qip
+set_global_assignment -name QIP_FILE a10/xcvr/include.qip

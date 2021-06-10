@@ -10,8 +10,11 @@ set_connection_parameter_value cpu.data_master/flash.uas        baseAddress {0x0
 add_connection                 cpu.instruction_master flash.uas
 set_connection_parameter_value cpu.instruction_master/flash.uas baseAddress {0x00000000}
 
-set_instance_parameter_value cpu {resetSlave} {flash.uas}
-set_instance_parameter_value cpu {resetOffset} {0x05E40000}
+# reset vector
+if 0 {
+    set_instance_parameter_value cpu {resetSlave} {flash.uas}
+    set_instance_parameter_value cpu {resetOffset} {0x05E40000}
+}
 
 add_interface flash conduit end
 set_interface_property flash EXPORT_OF flash.out
