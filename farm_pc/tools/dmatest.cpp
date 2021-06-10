@@ -19,8 +19,6 @@
 #include <stdlib.h>
 #include <cassert>
 #include <string.h>
-#include <cuda.h>
-#include <cuda_runtime_api.h>
 
 #include <fcntl.h>
 

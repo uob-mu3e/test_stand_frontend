@@ -19,8 +19,6 @@
 #include <stdlib.h>
 #include <cassert>
 #include <string.h>
-#include <cuda.h>
-#include <cuda_runtime_api.h>
 
 #include <fcntl.h>
 
@@ -85,12 +83,12 @@ int main(int argc, char *argv[])
     size_t size = MUDAQ_DMABUF_DATA_LEN;
     uint32_t dma_buf_nwords = dma_buf_size/sizeof(uint32_t);
 
-    cudaError_t cuda_error = cudaMallocHost( (void**)&dma_buf, size );
+/*    cudaError_t cuda_error = cudaMallocHost( (void**)&dma_buf, size );
     if(cuda_error != cudaSuccess){
         cout << "Error: " << cudaGetErrorString(cuda_error) << endl;
         cout << "Allocation failed!" << endl;
         return -1;
-    }
+    }*/
 
     int fd = open("/dev/mudaq0_dmabuf", O_RDWR);
     if(fd < 0) {
