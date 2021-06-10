@@ -4,12 +4,19 @@
 #include "include/xcvr.h"
 #include "include/a10/reconfig.h"
 
-struct my_xcvr_t : xcvr_block_t {
+struct my_xcvr0_t : xcvr_block_t {
     reconfig_t reconfig;
-    my_xcvr_t() : xcvr_block_t((alt_u32*)(AVM_XCVR1_BASE | ALT_CPU_DCACHE_BYPASS_MASK)) {
+    my_xcvr0_t() : xcvr_block_t((alt_u32*)(AVM_XCVR0_BASE | ALT_CPU_DCACHE_BYPASS_MASK)) {
     }
 };
-my_xcvr_t pod;
+my_xcvr0_t xcvr0;
+
+struct my_xcvr1_t : xcvr_block_t {
+    reconfig_t reconfig;
+    my_xcvr1_t() : xcvr_block_t((alt_u32*)(AVM_XCVR1_BASE | ALT_CPU_DCACHE_BYPASS_MASK)) {
+    }
+};
+my_xcvr1_t xcvr1;
 
 #include "include/i2c.h"
 #include "include/si534x.h"
@@ -92,24 +99,29 @@ int main() {
         printf("[PCIe40] -------- menu --------\n");
 
         printf("\n");
-        printf("  [1] => ...\n");
-        printf("  [p] => PODs\n");
+        printf("  [0] => ...\n");
+        printf("  [1] => XCVR 156\n");
+        printf("  [2] => XCVR 250\n");
         printf("  [c] => clocks\n");
         printf("  [R] => reconfig\n");
 
         printf("Select entry ...\n");
         char cmd = wait_key();
         switch(cmd) {
-        case '1':
+        case '0':
             break;
-        case 'p':
-            pod.menu();
+        case '1':
+            xcvr0.menu();
+            break;
+        case '2':
+            xcvr1.menu();
             break;
         case 'c':
             clocks_menu();
             break;
         case 'R':
-            pod.reconfig.pll(AVM_XCVR1_BASE + 0x00000000);
+            xcvr0.reconfig.pll(AVM_XCVR1_BASE + 0x00000000);
+            xcvr1.reconfig.pll(AVM_XCVR1_BASE + 0x00000000);
             break;
         default:
             printf("invalid command: '%c'\n", cmd);
