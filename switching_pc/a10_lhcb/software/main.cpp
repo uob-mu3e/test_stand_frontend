@@ -29,7 +29,7 @@ int main() {
 
         printf("\n");
         printf("  [1] => ...\n");
-        printf("  [p] => PODs\n");
+        printf("  [p] => POD\n");
         printf("  [s] => SFP\n");
         printf("  [c] => clocks\n");
         printf("  [R] => reconfig\n");

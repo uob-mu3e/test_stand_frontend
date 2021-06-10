@@ -42,6 +42,8 @@ port (
     o_LED_BRACKET       : out   std_logic_vector(3 downto 0);
     i_BUTTON            : in    std_logic_vector(3 downto 0) := (others => '0');
 
+
+
     -- XCVR0 (6250 Mbps @ 156.25 MHz)
     i_xcvr0_rx          : in    std_logic_vector(g_XCVR0_CHANNELS-1 downto 0) := (others => '0');
     o_xcvr0_tx          : out   std_logic_vector(g_XCVR0_CHANNELS-1 downto 0);
@@ -118,6 +120,7 @@ port (
     o_pcie0_resets_n_C  : out   std_logic_vector(31 downto 0);
 
 
+
     -- PCIe1
     i_pcie1_rx          : in    std_logic_vector(g_PCIE1_X-1 downto 0) := (others => '0');
     o_pcie1_tx          : out   std_logic_vector(g_PCIE1_X-1 downto 0);
@@ -164,6 +167,8 @@ port (
     o_pcie1_regwritten_C: out   std_logic_vector(63 downto 0);
     o_pcie1_resets_n_C  : out   std_logic_vector(31 downto 0);
 
+
+
     o_reset_156_n       : out   std_logic;
     o_clk_156           : out   std_logic;
     o_clk_156_hz        : out   std_logic;
@@ -176,6 +181,8 @@ port (
     i_reset_125_n       : in    std_logic;
     i_clk_125           : in    std_logic;
     o_clk_125_hz        : out   std_logic;
+
+
 
     -- local clock
     i_reset_n           : in    std_logic;
@@ -491,6 +498,8 @@ begin
     o_spi_sclk <= (others => nios_spi_sclk);
     o_spi_ss_n <= nios_spi_ss_n;
     -- TODO: implement mux
+
+
 
     -- xcvr_block 6250 Mbps @ 156.25 MHz
     generate_xcvr0_block : if ( g_XCVR0_CHANNELS > 0 ) generate
