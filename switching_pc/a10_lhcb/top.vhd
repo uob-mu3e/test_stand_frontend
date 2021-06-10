@@ -201,7 +201,7 @@ begin
         g_XCVR1_N => 4,
         g_SFP_CHANNELS => 2,
         g_PCIE0_X => g_PCIE0_X,
-        g_PCIE1_X => 0,
+        g_PCIE1_X => 0,--g_PCIE1_X,
         g_FARM    => 0,
         g_CLK_MHZ => 100.0--,
     )
@@ -234,8 +234,10 @@ begin
         i_xcvr1_clk                     => pcie_fastclk_out,
 
         -- SFP
-        i_sfp_rx(1) => A10_SFP2_TFC_RX_P, i_sfp_rx(0) => A10_SFP1_TFC_RX_P,
-        o_sfp_tx(1) => A10_SFP2_TFC_TX_P, o_sfp_tx(0) => A10_SFP1_TFC_TX_P,
+        i_sfp_rx(0) => A10_SFP1_TFC_RX_P,
+        i_sfp_rx(1) => A10_SFP2_TFC_RX_P,
+        o_sfp_tx(0) => A10_SFP1_TFC_TX_P,
+        o_sfp_tx(1) => A10_SFP2_TFC_TX_P,
         i_sfp_refclk => A10_REFCLK_TFC_CMU_P,
 
 
@@ -338,8 +340,8 @@ begin
         o_endofevent    => dmamem_endofevent,
         o_dma_data      => dma_data,
 
---        o_farm_tx_data  => farm_tx_data(15 downto 0),
---        o_farm_tx_datak => farm_tx_datak(15 downto 0),
+        o_farm_tx_data  => farm_tx_data(15 downto 0),
+        o_farm_tx_datak => farm_tx_datak(15 downto 0),
 
         --! 250 MHz clock / reset_n
         i_reset_n_250   => reset_pcie0_n,

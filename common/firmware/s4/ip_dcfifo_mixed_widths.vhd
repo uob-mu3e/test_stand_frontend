@@ -48,6 +48,7 @@ ENTITY ip_dcfifo_mixed_widths IS
         DATA_WIDTH_r 	: positive := 8;
         SYNC_CLKS		: string := "TRUE";
         SHOWAHEAD 		: string := "ON";
+        REGOUT          : integer  := 1;
         DEVICE 			: string := "Stratix IV"--;
     );
 	PORT
@@ -154,23 +155,31 @@ BEGIN
 		wrusedw => sub_wire4
 	);
 
-    q <= q1;
-    rdempty <= rdempty1;
+    generate_regout : if ( REGOUT > 0 ) generate
+        q <= q1;
+        rdempty <= rdempty1;
 
-    rdreq0 <= rdreq or rdempty1;
+        rdreq0 <= rdreq or rdempty1;
 
-    process(rdclk,aclr)
-    begin
-    if ( aclr = '1' ) then
-        q1 <= (others => '0');
-        rdempty1 <= '1';
-    elsif rising_edge(rdclk) then
-        if ( rdreq0 = '1' ) then
-            q1 <= q0;
-            rdempty1 <= rdempty0;
+        process(rdclk,aclr)
+        begin
+        if ( aclr = '1' ) then
+            q1 <= (others => '0');
+            rdempty1 <= '1';
+        elsif rising_edge(rdclk) then
+            if ( rdreq0 = '1' ) then
+                q1 <= q0;
+                rdempty1 <= rdempty0;
+            end if;
         end if;
-    end if;
-    end process;
+        end process;
+    end generate;
+    
+    generate_regout_0 : if ( REGOUT = 0 ) generate
+        q <= q0;
+        rdempty <= rdempty0;
+        rdreq0 <= rdreq;
+    end generate;
 
 END SYN;
 

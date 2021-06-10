@@ -243,6 +243,7 @@ begin
         o_xcvr0_rx_datak                => rx_datak_raw,
         i_xcvr0_tx_data                 => tx_data,
         i_xcvr0_tx_datak                => tx_datak,
+        i_xcvr0_clk                     => clk_156,
 
         -- PCIe0
         i_pcie0_rx                      => PCIE_RX_p,
