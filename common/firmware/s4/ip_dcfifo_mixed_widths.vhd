@@ -111,9 +111,13 @@ ARCHITECTURE SYN OF ip_dcfifo_mixed_widths IS
 	);
 	END COMPONENT;
 
+    signal q0, q1 : std_logic_vector(q'range);
+    signal rdempty0, rdempty1 : std_logic;
+    signal rdreq0 : std_logic;
+
 BEGIN
-	q    	<= sub_wire0(DATA_WIDTH_r-1 DOWNTO 0);
-	rdempty <= sub_wire1;
+	q0    	<= sub_wire0(DATA_WIDTH_r-1 DOWNTO 0);
+	rdempty0 <= sub_wire1;
 	rdusedw <= sub_wire2(ADDR_WIDTH_r-1 DOWNTO 0);
 	wrfull  <= sub_wire3;
 	wrusedw <= sub_wire4(ADDR_WIDTH_w-1 DOWNTO 0);
@@ -140,7 +144,7 @@ BEGIN
 		aclr 	=> aclr,
 		data 	=> data,
 		rdclk 	=> rdclk,
-		rdreq 	=> rdreq,
+		rdreq 	=> rdreq0,
 		wrclk 	=> wrclk,
 		wrreq 	=> wrreq,
 		q 		=> sub_wire0,
@@ -149,6 +153,28 @@ BEGIN
 		wrfull 	=> sub_wire3,
 		wrusedw => sub_wire4
 	);
+
+    q <= q1;
+    rdempty <= rdempty1;
+
+    rdreq0 <= '1' when ( rdempty1 = '0' and rdreq = '1' and rdempty0 = '0' ) or ( rdempty1 = '1' and rdempty0 = '0' ) else '0';
+
+    process(rdclk,aclr)
+    begin
+    if ( aclr = '1' ) then
+        q1 <= (others => '0');
+        rdempty1 <= '1';
+    elsif rising_edge(rdclk) then
+        if ( rdempty1 = '0' and rdreq = '1' and rdempty0 = '0' ) or ( rdempty1 = '1' and rdempty0 = '0' ) then
+            q1 <= q0;
+            rdempty1 <= rdempty0;
+        end if;
+        if ( rdreq = '1' and rdempyt0 = '1' ) then
+            q1 <= (others => '0');
+            rdempty1 <= '1';
+        end if;
+    end if;
+    end process;
 
 END SYN;
 
