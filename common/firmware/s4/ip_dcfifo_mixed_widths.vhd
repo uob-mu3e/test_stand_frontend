@@ -165,11 +165,11 @@ BEGIN
         q1 <= (others => '0');
         rdempty1 <= '1';
     elsif rising_edge(rdclk) then
-        if ( rdempty1 = '0' and rdreq = '1' and rdempty0 = '0' ) or ( rdempty1 = '1' and rdempty0 = '0' ) then
+        if ( rdreq0 = '1' ) then
             q1 <= q0;
             rdempty1 <= rdempty0;
         end if;
-        if ( rdreq = '1' and rdempyt0 = '1' ) then
+        if ( rdreq = '1' and rdempty0 = '1' ) then
             q1 <= (others => '0');
             rdempty1 <= '1';
         end if;
