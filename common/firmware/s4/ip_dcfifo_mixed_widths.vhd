@@ -157,7 +157,7 @@ BEGIN
     q <= q1;
     rdempty <= rdempty1;
 
-    rdreq0 <= '1' when ( rdempty1 = '0' and rdreq = '1' and rdempty0 = '0' ) or ( rdempty1 = '1' and rdempty0 = '0' ) else '0';
+    rdreq0 <= rdreq or rdempty1;
 
     process(rdclk,aclr)
     begin
@@ -168,10 +168,6 @@ BEGIN
         if ( rdreq0 = '1' ) then
             q1 <= q0;
             rdempty1 <= rdempty0;
-        end if;
-        if ( rdreq = '1' and rdempty0 = '1' ) then
-            q1 <= (others => '0');
-            rdempty1 <= '1';
         end if;
     end if;
     end process;
