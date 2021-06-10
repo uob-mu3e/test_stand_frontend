@@ -31,6 +31,7 @@ generic (
 port (
 
     --! links to/from FEBs
+    -- TODO: rename to i_feb_data_rx, etc.
     i_rx                 : in  work.util.slv32_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
     i_rx_k               : in  work.util.slv4_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
     o_tx                 : out work.util.slv32_array_t(g_NLINKS_FEB_TOTL-1 downto 0);
@@ -58,8 +59,8 @@ port (
     o_endofevent         : out std_logic;
     o_dma_data           : out std_logic_vector(255 downto 0);
 
-    o_farm_data          : out work.util.slv32_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
-    o_farm_data_valid    : out work.util.slv2_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
+    o_farm_tx_data      : out   work.util.slv32_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
+    o_farm_tx_datak     : out   work.util.slv4_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
 
     --! 250 MHz clock / reset_n
     i_reset_n_250        : in  std_logic;
@@ -85,6 +86,8 @@ architecture arch of swb_block is
     signal pixel_mask_n, scifi_mask_n : std_logic_vector(63 downto 0);
     
     --! farm links
+    signal farm_data       : work.util.slv32_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
+    signal farm_data_valid : work.util.slv2_array_t(g_NLINKS_FARM_TOTL-1 downto 0);
     signal pixel_farm_data : work.util.slv32_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
     signal scifi_farm_data : work.util.slv32_array_t(g_NLINKS_FARM_SCIFI-1 downto 0);
     signal pixel_farm_data_valid : work.util.slv2_array_t(g_NLINKS_FARM_PIXEL-1 downto 0);
@@ -260,10 +263,28 @@ begin
     scifi_mask_n    <= x"00000000" & i_writeregs_250(SWB_LINK_MASK_SCIFI_REGISTER_W);
 
     -- farm data
-    o_farm_data(g_NLINKS_FARM_PIXEL - 1 downto 0)                                               <= pixel_farm_data;
-    o_farm_data_valid(g_NLINKS_FARM_PIXEL - 1 downto 0)                                         <= pixel_farm_data_valid;
-    o_farm_data(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL)       <= scifi_farm_data;
-    o_farm_data_valid(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL) <= scifi_farm_data_valid;
+    farm_data(g_NLINKS_FARM_PIXEL - 1 downto 0)                                               <= pixel_farm_data;
+    farm_data_valid(g_NLINKS_FARM_PIXEL - 1 downto 0)                                         <= pixel_farm_data_valid;
+    farm_data(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL)       <= scifi_farm_data;
+    farm_data_valid(g_NLINKS_FARM_PIXEL + g_NLINKS_FARM_SCIFI - 1 downto g_NLINKS_FARM_PIXEL) <= scifi_farm_data_valid;
+
+    process(i_clk_250)
+    begin
+    if rising_edge(i_clk_250) then
+        for i in farm_data'range loop
+            o_farm_tx_data(i) <= farm_data(i);
+            o_farm_tx_datak(i) <= "0000";
+            if ( farm_data_valid(i) = "00" ) then
+                o_farm_tx_data(i) <= X"000000BC";
+                o_farm_tx_datak(i) <= "0001";
+            elsif ( farm_data_valid(i) = "11" ) then
+                --
+            else
+                o_farm_tx_datak(i) <= "0001";
+            end if;
+        end loop;
+    end if;
+    end process;
 
     -- link mapping
     gen_pixel_data_mapping : FOR i in 0 to g_NLINKS_DATA_PIXEL - 1 GENERATE
