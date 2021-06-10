@@ -13,9 +13,6 @@
 #include "link_constants.h"
 #include "util.h"
 
-#include <cuda.h>
-#include <cuda_runtime_api.h>
-
 #include <fcntl.h>
 #include <sys/mman.h>
 
@@ -280,11 +277,11 @@ void setup_watches(){
 // INIT MUDAQ //////////////////////////////
 INT init_mudaq(){
     
-    cudaError_t cuda_error = cudaMallocHost( (void**)&dma_buf, dma_buf_size );
+/*    cudaError_t cuda_error = cudaMallocHost( (void**)&dma_buf, dma_buf_size );
     if(cuda_error != cudaSuccess){
         cm_msg(MERROR, "frontend_init" , "Allocation failed, aborting!");
         return FE_ERR_DRIVER;
-    }
+    }*/
     
     int fd = open("/dev/mudaq0_dmabuf", O_RDWR);
     if(fd < 0) {
@@ -352,7 +349,7 @@ INT frontend_exit()
 
    // following code crashes the frontend, please fix!
    // free( (void *)dma_buf );
-   cudaFreeHost((void *)dma_buf);
+//   cudaFreeHost((void *)dma_buf);
    
    return SUCCESS;
 }
