@@ -213,16 +213,16 @@ begin
         o_subdet_resetdly_reg       => s_subdet_resetdly_reg--,
     );
 
-    process(i_clk_core)
+    process(i_clk_ref_A)
     begin
-    if rising_edge(i_clk_core) then
-        s_cntreg_denom_g_156 <= s_cntreg_denom_g;
-        s_cntreg_num <= s_cntreg_num_g;
-        rx_dpa_lock_reg <= rx_dpa_lock;
+    if rising_edge(i_clk_ref_A) then
+        chip_rst_prev <= i_run_state(RUN_STATE_BITPOS_SYNC);
     end if;
     end process;
 
-    s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC); --TODO: remove register, replace by generic reset from resetsys
+    -- s_chip_rst <= s_subdet_reset_reg(0) or i_run_state(RUN_STATE_BITPOS_SYNC); --TODO: remove register, replace by generic reset from resetsys
+    s_chip_rst <= i_run_state(RUN_STATE_BITPOS_SYNC) and not chip_rst_prev; --TODO: remove register, replace by generic reset from resetsys
+
     s_datapath_rst <= i_reset or s_subdet_reset_reg(1) or i_run_state(RUN_STATE_BITPOS_PREP); --TODO: remove register, replace by generic reset from resetsys
     s_lvds_rx_rst <= i_reset or s_subdet_reset_reg(2)  or i_run_state(RUN_STATE_BITPOS_RESET);--TODO: remove register, replace by generic reset from resetsys
 
@@ -232,24 +232,24 @@ begin
     port map( i_reset_n => not s_lvds_rx_rst, o_reset_n => s_lvds_rx_rst_n_125, i_clk => i_clk_g125);
 
 
---    u_resetshift: entity work.clockalign_block
---    generic map ( CLKDIV => 2 )
---    port map (
---        i_clk_config    => i_clk_core,
---        i_rst           => i_reset,
---
---        i_pll_clk       => i_clk_g125,
---        i_pll_arst      => i_reset,
---
---        i_flag          => s_subdet_resetdly_reg_written,
---        i_data          => s_subdet_resetdly_reg,
---
---        i_sig           => s_chip_rst,
---        o_sig           => s_chip_rst_shifted,
---        o_pll_clk       => open
---    );
-    --o_chip_reset <= s_chip_rst_shifted(N_MODULES-1 downto 0);
-    o_chip_reset <= i_reset;
+    u_resetshift: entity work.clockalign_block
+    generic map ( CLKDIV => 2 )
+    port map (
+        i_clk_config    => i_clk_core,
+        i_rst           => i_reset,
+
+        i_pll_clk       => i_clk_g125,
+        i_pll_arst      => i_reset,
+
+        i_flag          => s_subdet_resetdly_reg_written,
+        i_data          => s_subdet_resetdly_reg,
+
+        i_sig           => s_chip_rst,
+        o_sig           => s_chip_rst_shifted,
+        o_pll_clk(0)    => o_fast_pll_clk
+    );
+    o_chip_reset <= (others =>s_chip_rst_shifted(0)); --s_chip_rst_shifted(N_MODULES-1 downto 0);TODO: fix this !!
+    --o_chip_reset <= i_reset;
 
     e_mutrig_datapath : entity work.mutrig_datapath
     generic map (

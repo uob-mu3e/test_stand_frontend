@@ -271,6 +271,50 @@ begin
     end if;
     end process;
 
+--    counter_vec <= std_logic_vector(to_unsigned(counter, counter_vec'length));
+--    process(LVDS_clk_si1_fpga_A)
+--    begin
+--    if ( rising_edge(LVDS_clk_si1_fpga_A) ) then
+--        if ( run_state_125 = RUN_STATE_SYNC ) then
+--            counter <= counter +1;
+--            if(counter_vec(6)='1') then
+--                scifi_int_syncres <= not scifi_int_syncres;
+--                scifi_int_syncres2 <= not scifi_int_syncres2;
+--                counter <= 0;
+--            end if;
+--        elsif (run_state_125 = RUN_STATE_RUNNING) then
+--            counter <= counter +1;
+--            if(counter_vec(6)='1') then
+--                if(scifi_int_syncres = '1') then 
+--                    scifi_int_syncres <= not scifi_int_syncres;
+--                    scifi_int_syncres2 <= not scifi_int_syncres2;
+--                end if;
+--                counter <= 0;
+--            end if;
+--        else
+--            scifi_int_syncres <= '0';
+--            scifi_int_syncres2 <= '0';
+--        end if;
+--    end if;
+--    end process;
+--
+--    process(fast_pll_clk)
+--    begin
+--    if ( rising_edge(fast_pll_clk) ) then
+--        run_state_125_prev <= run_state_125;
+--        if ( run_state_125 = RUN_STATE_SYNC and run_state_125_prev/=RUN_STATE_SYNC) then
+--            scifi_int_syncres <= '1';
+--            scifi_int_syncres2 <= '1';
+--        else
+--            scifi_int_syncres <= '0';
+--            scifi_int_syncres2 <= '0';
+--        end if;
+--    end if;
+--    end process;
+
+    --scifi_int_syncres <= chip_reset;
+    --scifi_int_syncres2 <= chip_reset;
+
 --------------------------------------------------------------------
 --------------------------------------------------------------------
 ---- COMMON FIRMWARE PART ------------------------------------------
