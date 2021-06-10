@@ -103,7 +103,7 @@ architecture rtl of top is
 
     -- constants
     constant SWB_ID : std_logic_vector(7 downto 0) := x"01";
-    constant g_NLINKS_FEB_TOTL   : positive := 14;
+    constant g_NLINKS_FEB_TOTL   : positive := 16;
     constant g_NLINKS_FARM_TOTL  : positive := 16;
     constant g_NLINKS_FARM_PIXEL : positive := 8;
     constant g_NLINKS_DATA_PIXEL : positive := 10;
@@ -366,8 +366,8 @@ begin
         o_endofevent    => dmamem_endofevent,
         o_dma_data      => dma_data,
 
-        o_farm_data         => open,
-        o_farm_data_valid   => open,
+        o_farm_tx_data  => open,
+        o_farm_tx_datak => open,
 
         --! 250 MHz clock / reset_n
         i_reset_n_250   => reset_pcie0_n,
