@@ -44,6 +44,7 @@ ENTITY ip_scfifo IS
         ADDR_WIDTH          : positive := 8;
         DATA_WIDTH          : positive := 8;
         SHOWAHEAD           : string   := "ON";
+        REGOUT              : integer  := 0;
         DEVICE              : string   := "Stratix IV";
         ALMOST_FULL_LIMIT   : positive := 1--;
     );
@@ -116,12 +117,16 @@ ARCHITECTURE SYN OF ip_scfifo IS
 	);
 	END COMPONENT;
 
+    signal q0, q1 : std_logic_vector(q'range);
+    signal rdempty0, rdempty1 : std_logic;
+    signal rdreq0 : std_logic;
+
 BEGIN
 	almost_empty    <= sub_wire0;
 	almost_full    <= sub_wire1;
-	empty    <= sub_wire2;
+	rdempty0    <= sub_wire2;
 	full    <= sub_wire3;
-	q    <= sub_wire4(DATA_WIDTH-1 DOWNTO 0);
+	q0    <= sub_wire4(DATA_WIDTH-1 DOWNTO 0);
 	usedw    <= sub_wire5(ADDR_WIDTH-1 DOWNTO 0);
 
 	scfifo_component : scfifo
@@ -142,7 +147,7 @@ BEGIN
 	PORT MAP (
 		clock => clock,
 		data => data,
-		rdreq => rdreq,
+		rdreq => rdreq0,
 		sclr => sclr,
 		wrreq => wrreq,
 		almost_empty => sub_wire0,
@@ -153,7 +158,31 @@ BEGIN
 		usedw => sub_wire5
 	);
 
+    generate_regout : if ( REGOUT > 0 ) generate
+        q <= q1;
+        empty <= rdempty1;
 
+        rdreq0 <= rdreq or rdempty1;
+
+        process(rdclk,aclr)
+        begin
+        if ( aclr = '1' ) then
+            q1 <= (others => '0');
+            rdempty1 <= '1';
+        elsif rising_edge(rdclk) then
+            if ( rdreq0 = '1' ) then
+                q1 <= q0;
+                rdempty1 <= rdempty0;
+            end if;
+        end if;
+        end process;
+    end generate;
+
+    generate_regout_0 : if ( REGOUT = 0 ) generate
+        q <= q0;
+        empty <= rdempty0;
+        rdreq0 <= rdreq;
+    end generate;
 
 END SYN;
 
