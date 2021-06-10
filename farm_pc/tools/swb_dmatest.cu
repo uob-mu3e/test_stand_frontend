@@ -30,13 +30,23 @@ using namespace std;
 
 void print_usage(){
     cout << "Usage: " << endl;
-    cout << "       dmatest <use_data_gen> <stop_dma> <use_loop>" << endl;
-}
+    cout << "       dmatest <readout mode> <stop dma> <readout words> <link mask> <use pixel>" << endl;
+    cout << " readout mode: 0 = use stream merger to readout links" << endl;
+    cout << " readout mode: 2 = use stream merger to readout datagen" << endl;
+    cout << " readout mode: 3 = use time merger to readout datagen" << endl;
+    cout << " readout mode: 4 = use time merger to readout links" << endl;
+    cout << " stop DMA: 0 = no effect" << endl;
+    cout << " stop DMA: 1 = reset FPGA and stop DMA" << endl;
+    cout << " readout words: 0 = readout half of DMA buffer" << endl;
+    cout << " readout words: 1 = dump DMA readout with time stop" << endl;
+    cout << " link mask: 0xFFFF mask links (one is use this link)" << endl;
+    cout << " use pixel: 0 if pixel data, 1 if scifi data" << endl;
+}   
 
 int main(int argc, char *argv[])
 {
 
-    if(argc < 4){
+    if(argc < 6){
         print_usage();
         return -1;
     }
@@ -127,22 +137,26 @@ int main(int argc, char *argv[])
     
     // setup datagen
     mu.write_register(DATAGENERATOR_DIVIDER_REGISTER_W, 0x2);
-    // use one link to readout
-    if ( atoi(argv[1]) == 1 ) mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x1);
-    if ( atoi(argv[1]) == 1 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x9);
-    // use stream merger for readout and enable links
-    if ( atoi(argv[1]) == 2 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0xF);
-    if ( atoi(argv[1]) == 2 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3);
-    // use time merger for readout and enable links
-    if ( atoi(argv[1]) == 3 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x3);
-    if ( atoi(argv[1]) == 3 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x5);
-    // use stream merger with data to readout
-    if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x3);
-    if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42);
-    // use time merger with data to readout
-    if ( atoi(argv[1]) == 4 ) mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x3);
-    if ( atoi(argv[1]) == 4 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x44);
+    
+    uint32_t mask_n_add;
+    if (atoi(argv[5]) == 1) mask_n_add = SWB_LINK_MASK_SCIFI_REGISTER_W;
+    if (atoi(argv[5]) == 0) mask_n_add = SWB_LINK_MASK_PIXEL_REGISTER_W;
+    uint32_t set_pixel;
+    if (atoi(argv[5]) == 1) set_pixel = 0;
+    if (atoi(argv[5]) == 0) set_pixel = 1;
 
+    // use stream merger to readout links
+    if ( atoi(argv[1]) == 0 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
+    if ( atoi(argv[1]) == 0 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x42 | (set_pixel << 7));
+    // use stream merger to readout datagen
+    if ( atoi(argv[1]) == 2 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
+    if ( atoi(argv[1]) == 2 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x3 | (set_pixel << 7));
+    // use time merger to readout datagen
+    if ( atoi(argv[1]) == 3 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
+    if ( atoi(argv[1]) == 3 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x5 | (set_pixel << 7));  
+    // use time merger to readout links
+    if ( atoi(argv[1]) == 4 ) mu.write_register(mask_n_add, strtol(argv[4], NULL, 16));
+    if ( atoi(argv[1]) == 4 ) mu.write_register(SWB_READOUT_STATE_REGISTER_W, 0x44| (set_pixel << 7));
     
     // reset all
     mu.write_register(RESET_REGISTER_W, 0x1);
