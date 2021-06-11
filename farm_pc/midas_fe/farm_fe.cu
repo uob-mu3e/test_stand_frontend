@@ -474,8 +474,8 @@ INT end_of_run(INT run_number, char *error)
     mu.write_register(SWB_LINK_MASK_PIXEL_REGISTER_W, 0x0);
     mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
     mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
-    // reset all
-    mu.write_register(RESET_REGISTER_W, 0x1);
+    // reset data path
+    mu.write_register(RESET_REGISTER_W, 0x0 | (1<<21));
 
    set_equipment_status(equipment[0].name, "Ready for running", "var(--mgreen)");
    
@@ -886,7 +886,7 @@ INT read_stream_thread(void *param) {
         mu.write_register(0xC, max_requested_words / (256/32));
         
         // reset all
-        mu.write_register(RESET_REGISTER_W, 0x1);
+        mu.write_register(RESET_REGISTER_W, 0x0 | (1<<21));
 //         sleep(1);
         mu.write_register(RESET_REGISTER_W, 0x0);
         
@@ -900,7 +900,7 @@ INT read_stream_thread(void *param) {
         mu.write_register(SWB_READOUT_LINK_REGISTER_W, 0x0);
         mu.write_register(GET_N_DMA_WORDS_REGISTER_W, 0x0);
         // reset all
-        mu.write_register(RESET_REGISTER_W, 0x1);
+        mu.write_register(RESET_REGISTER_W, 0x0 | (1<<21));
         
         // and get lastWritten/endofevent
         lastlastWritten = 0;

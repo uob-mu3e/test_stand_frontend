@@ -158,7 +158,7 @@ void create_ssso_names_in_odb(odb & settings, int switch_id){
     for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
         string feb = "FEB" + to_string(i);
         string * s = new string(feb);
-        (*s) += " Index";
+        (*s) += " Sorter Index";
         settings[sorternamestr][bankindex++] = s;
         for(uint32_t j=0; j < max_sorter_inputs_per_feb; j++){
             s = new string(feb);
@@ -203,7 +203,7 @@ void create_sscn_names_in_odb(odb & settings, int switch_id){
     for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
         string name = "FEB" + to_string(i);
         string * s = new string(name);
-        (*s) += " Index";
+        (*s) += " SWB CNT Index";
         settings[cntnamestr][bankindex++] = s;
         s = new string(name);
         (*s) += " LINK FIFO ALMOST FULL";
