@@ -61,45 +61,57 @@ function generateTable(table){
     }
 
     let row7 = table.insertRow();
-    let cell71 = row7.insertCell();
-    //cell71.setAttribute("colspan","3");
-    let text71 = document.createTextNode("Delay");
-    cell71.appendChild(text71);
+    let cell7 = row7.insertCell();
+    cell7.setAttribute("colspan","12");
+    cell7.setAttribute("style","text-align:center");
+    let text7 = document.createTextNode("Overflows");
+    cell7.appendChild(text7);
 
-    let cell72 = row7.insertCell();
-    //cell72.setAttribute("colspan","2");
-    cell72.setAttribute("name","modbvalue");
-    cell72.setAttribute("data-odb-path","/Equipment/Switching/Settings/Sorter Delay[0]");
-    cell72.setAttribute("data-odb-editable","1");
+    let row8 = table.insertRow();
+    for(i=1; i <= 12; i++){
+        let cell = row8.insertCell();
+        let text = document.createTextNode(456);
+        cell.appendChild(text);
+    }
 
-    let cell73 = row7.insertCell();
-    cell73.setAttribute("colspan","2");
-    let text73 = document.createTextNode("Hits out");
-    cell73.appendChild(text73);
+    let row9 = table.insertRow();
+    let cell91 = row9.insertCell();
+    let text91 = document.createTextNode("Delay");
+    cell91.appendChild(text91);
 
-    let cell74 = row7.insertCell();
-    cell74.setAttribute("colspan","2");
-    let text74 = document.createTextNode("123456");
-    cell74.appendChild(text74);
+    let cell92 = row9.insertCell();
+    cell92.setAttribute("name","modbvalue");
+    cell92.setAttribute("data-odb-path","/Equipment/Switching/Settings/Sorter Delay[0]");
+    cell92.setAttribute("data-odb-editable","1");
 
-    let cell75 = row7.insertCell();
-    cell75.setAttribute("colspan","2");
-    let text75 = document.createTextNode("Hits inside");
-    cell75.appendChild(text75);
+    let cell93 = row9.insertCell();
+    cell93.setAttribute("colspan","2");
+    let text93 = document.createTextNode("Hits out");
+    cell93.appendChild(text93);
 
-    let cell76 = row7.insertCell();
-    cell76.setAttribute("colspan","2");
-    let text76 = document.createTextNode("723456");
-    cell76.appendChild(text76);
+    let cell94 = row9.insertCell();
+    cell94.setAttribute("colspan","2");
+    let text94 = document.createTextNode("123456");
+    cell94.appendChild(text94);
 
-    let cell77 = row7.insertCell();
-    //cell77.setAttribute("colspan","2");
-    let text77 = document.createTextNode("Credits");
-    cell77.appendChild(text77);
+    let cell95 = row9.insertCell();
+    cell95.setAttribute("colspan","2");
+    let text95 = document.createTextNode("Hits inside");
+    cell95.appendChild(text95);
 
-    let cell78 = row7.insertCell();
-    let text78 = document.createTextNode("123");
-    cell78.appendChild(text78);
+    let cell96 = row9.insertCell();
+    cell96.setAttribute("colspan","2");
+    let text96 = document.createTextNode("723456");
+    cell96.appendChild(text96);
+
+    let cell97 = row9.insertCell();
+    //cell97.setAttribute("colspan","2");
+    let text97 = document.createTextNode("Credits");
+    cell97.appendChild(text97);
+
+    let cell98 = row9.insertCell();
+    let text98 = document.createTextNode("123");
+    cell98.appendChild(text98);
 
 
 }
