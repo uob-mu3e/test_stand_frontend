@@ -1,0 +1,66 @@
+.b-r{
+	border-right: thin black solid;
+	height: 100vh;
+	overflow: hidden;
+  }
+  .margin_top_600px{
+	margin-top:600px;
+  }
+  .scrll_hide {
+	float: right;
+	height: 100%;
+	width: calc(100% + 48px);
+	overflow-y: scroll;
+	margin: 0 -32px 0 0 !important;
+	box-sizing: border-box;
+  }
+.ladderDiv
+{
+    cursor: pointer;
+}
+.ladder_selected
+{
+    border:3px solid #00F
+}
+.ladder_unselected {
+    border:1px solid #000
+}
+.ladder_available
+{
+	background-color: aqua;
+	color:black;
+}
+.ladder_power_on
+{
+	background-color: chartreuse;
+	color:black;
+}
+.ladder_power_off
+{
+	background-color: gray;
+	color:black;
+}
+.chipDiv {
+    height: 50px;
+    width: 50px;
+    background-color: #555;
+    border:1px solid #000;
+    display: table-cell;
+    cursor: pointer;
+}
+.chip_LadderPortionUp {
+    height: 50px;
+    width: 30px;
+    background-color: #080;
+    border:1px solid #080;
+    display: table-cell;
+}
+.chip_LadderPortionDown {
+    height: 20px;
+    width: 180px;
+    background-color: #080;
+    border:1px solid #080;
+}
+.chip_selected {
+    border:3px solid #0F0
+}
