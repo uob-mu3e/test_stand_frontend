@@ -136,7 +136,8 @@ TilesFEB    * tilefeb;
 
 /* Local state of FEB power*/
 std::array<uint8_t, N_FEBCRATES*MAX_FEBS_PER_CRATE> febpower{};
-
+/* Local state of sorter delays */
+std::array<uint32_t, N_FEBS[switch_id]> sorterdelays{};
 
 /*-- Function declarations -----------------------------------------*/
 
@@ -584,6 +585,9 @@ INT init_crates() {
 }
 
 INT init_febs(mudaq::MudaqDevice & mu) {
+
+    odb sorterdelays_odb("/Equipment/Switching/Settings/Sorter Delay");
+    sorterdelays_changed(sorterdelays_odb);
 
     // switching setup part
     set_equipment_status(equipment[EQUIPMENT_ID::Switching].name, "Initializing...", "var(--myellow)");
@@ -1096,8 +1100,14 @@ void febpower_changed(odb o)
 
 void sorterdelays_changed(odb o)
 {
-    cm_msg(MINFO, "sorterdelays_changed()" , "Febpower!");
-    //TODO implement writing of delays
+    cm_msg(MINFO, "sorterdelays_changed()" , "Sorterdelays!");
+    std::vector<uint32_t> delays_odb = o;
+    for(size_t i =0; i < sorterdelays.size(); i++){
+        if(sorterdelays[i] != delays_odb[i]){
+            mufeb->WriteSorterDelay(switch_id*MAX_FEBS_PER_SWITCHINGBOARD+i, delays_odb[i]);
+            sorterdelays[i] = delays_odb[i];
+        }
+    }
 }
 
 /*--- Called whenever settings have changed ------------------------*/

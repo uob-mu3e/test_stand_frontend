@@ -47,6 +47,12 @@ int MuFEB::WriteFEBID(){
     return 0;
 }
 
+int MuFEB::WriteSorterDelay(uint16_t FPGA_ID, uint32_t delay)
+{
+    std::vector<uint32_t> data(1,delay);
+    feb_sc.FEB_register_write(FPGA_ID, SORTER_DELAY_RW, data);
+}
+
 void MuFEB::ReadFirmwareVersionsToODB()
 {
     vector<uint32_t> arria(1);

@@ -47,6 +47,7 @@ class MuFEB {
       void ReadBackAllRunState(){for(size_t i=0;i<febs.size();i++) ReadBackRunState(i);};
 
       int WriteFEBID();
+      int WriteSorterDelay(uint16_t FPGA_ID, uint32_t delay);
       void ReadFirmwareVersionsToODB();
 
       void LoadFirmware(std::string filename, uint16_t FPGA_ID);
