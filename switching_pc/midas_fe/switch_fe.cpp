@@ -105,7 +105,7 @@ BOOL equipment_common_overwrite = FALSE;
 INT display_period = 0;
 
 /* maximum event size produced by this frontend */
-INT max_event_size = 10000;
+INT max_event_size = 20000;
 
 /* maximum event size for fragmented events (EQ_FRAGMENTED) */
 INT max_event_size_frag = 5 * 1024 * 1024;
@@ -537,7 +537,7 @@ void setup_odb(){
     for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
         string name = "FEB" + to_string(i);
         string * s = new string(name);
-        (*s) += " Index";
+        (*s) += " SWB CNT Index";
         settings[cntnamestr][bankindex++] = s;
         s = new string(name);
         (*s) += " LINK FIFO ALMOST FULL";
@@ -569,8 +569,8 @@ void setup_odb(){
     for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
         string feb = "FEB" + to_string(i);
         string * s = new string(feb);
-        (*s) += " Index";
-        settings[namestr][bankindex++] = s;
+        (*s) += " SORTER Index";
+        settings[sorternamestr][bankindex++] = s;
         for(uint32_t j=0; j < max_sorter_inputs_per_feb; j++){
             s = new string(feb);
             (*s) += " intime hits input " + to_string(j);
