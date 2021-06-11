@@ -379,6 +379,7 @@ void setup_odb(){
     string sorterbankname   = ssso[switch_id];
 
     // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
+    // Also: How do we do this for four switching boards? Larger array or 4 equipments?
     std::array<uint16_t, N_FEBS[switch_id]> zeroarr;
     zeroarr.fill(0);
 
@@ -489,6 +490,7 @@ void setup_odb(){
     custom["Switching&"] = "sc.html";
     custom["Febs&"] = "febs.html";
     custom["FEBcrates&"] = "crates.html";
+    custom["DAQcounters&"] = "daqcounters.html";
 
     // Inculde the line below to set up the FEBs and their mapping for the 2021 integration run
 //#include "odb_feb_mapping_integration_run_2021.h"
