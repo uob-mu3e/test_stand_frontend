@@ -52,8 +52,11 @@
 #include <stdio.h>
 #include <cassert>
 #include <cstring>
+
 #include <switching_constants.h>
 #include <a10_counters.h>
+#include <mu3ebanks.h>
+
 #include <history.h>
 #include "midas.h"
 #include "odbxx.h"
@@ -114,12 +117,7 @@ INT max_event_size_frag = 5 * 1024 * 1024;
 INT event_buffer_size = 10 * 10000;
 
 constexpr int switch_id = 0; // TODO to be loaded from outside (on compilation?)
-constexpr int num_swb_counters_per_feb = 9;
-constexpr int max_sorter_inputs_per_feb = 12;
-constexpr int num_sorter_counters_per_feb = 3*max_sorter_inputs_per_feb +2;
-constexpr int per_fe_SSSO_size = num_sorter_counters_per_feb + 1;
-constexpr int per_fe_SSFE_size = 26;
-constexpr int per_crate_SCFC_size = 21;
+
 
 /* Inteface to the PCIe FPGA */
 mudaq::MudaqDevice * mup;
@@ -372,45 +370,12 @@ void setup_odb(){
 
    // midas::odb::set_debug(true);
 
-    string namestr;
-    string bankname;
-    string cntnamestr;
-    string cntbankname;
-    string sorternamestr;
-    string sorterbankname;
-    if(switch_id == 0){
-        namestr = "Names SCFE";
-        bankname = "SCFE";
-        cntnamestr = "Names SCCN";
-        cntbankname = "SCCN";
-        sorternamestr = "Names SCSO";
-        sorterbankname = "SCSO";
-    }
-    if(switch_id == 1){
-        namestr = "Names SUFE";
-        bankname = "SUFE";
-        cntnamestr = "Names SUCN";
-        cntbankname = "SUCN";
-        sorternamestr = "Names SUSO";
-        sorterbankname = "SUSO";
-
-    }
-    if(switch_id == 2){
-        namestr = "Names SDFE";
-        bankname = "SDFE";
-        cntnamestr = "Names SDCN";
-        cntbankname = "SDCN";
-        sorternamestr = "Names SDSO";
-        sorterbankname = "SDSO";
-    }
-    if(switch_id == 3){
-        namestr = "Names SFFE";
-        bankname = "SFFE";
-        cntnamestr = "Names SFCN";
-        cntbankname = "SFCN";
-        sorternamestr = "Names SFSO";
-        sorterbankname = "SFSO";
-    }
+    string namestr          = ssfenames[switch_id];
+    string bankname         = ssfe[switch_id];
+    string cntnamestr       = sscnnames[switch_id];
+    string cntbankname      = sscn[switch_id];
+    string sorternamestr    = sssonames[switch_id];
+    string sorterbankname   = ssso[switch_id];
 
     // For this, switch_id has to be known at compile time (calls for a preprocessor macro, I guess)
     std::array<uint16_t, N_FEBS[switch_id]> zeroarr;
@@ -445,154 +410,9 @@ void setup_odb(){
             {sorternamestr.c_str(), std::array<std::string, per_fe_SSSO_size*N_FEBS[switch_id]>()}
     };
 
-    int bankindex = 0;
-
-    for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
-        string feb = "FEB" + to_string(i);
-        string * s = new string(feb);
-        (*s) += " Index";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Arria Temperature";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " MAX Temperature";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " SI1 Temperature";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " SI2 Temperature";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " ext Arria Temperature";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " DCDC Temperature";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 1.1";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 1.8";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 2.5";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 3.3";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 20";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly1 Temperature";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly1 Voltage";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly1 RX1 Power";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly1 RX2 Power";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly1 RX3 Power";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly1 RX4 Power";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly1 Alarms";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly2 Temperature";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly2 Voltage";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly2 RX1 Power";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly2 RX2 Power";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly2 RX3 Power";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly2 RX4 Power";
-        settings[namestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Firefly2 Alarms";
-        settings[namestr][bankindex++] = s;
-    }
-
-    bankindex = 0;
-    settings[cntnamestr][bankindex++] = "STREAM_FIFO_FULL";
-    settings[cntnamestr][bankindex++] = "BANK_BUILDER_IDLE_NOT_HEADER";
-    settings[cntnamestr][bankindex++] = "BANK_BUILDER_RAM_FULL";
-    settings[cntnamestr][bankindex++] = "BANK_BUILDER_TAG_FIFO_FULL";
-    for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
-        string name = "FEB" + to_string(i);
-        string * s = new string(name);
-        (*s) += " Index";
-        settings[cntnamestr][bankindex++] = s;
-        s = new string(name);
-        (*s) += " LINK FIFO ALMOST FULL";
-        settings[cntnamestr][bankindex++] = s;
-        s = new string(name);
-        (*s) += " LINK FIFO FULL";
-        settings[cntnamestr][bankindex++] = s;
-        s = new string(name);
-        (*s) += " SKIP EVENTS";
-        settings[cntnamestr][bankindex++] = s;
-        s = new string(name);
-        (*s) += " NUM EVENTS";
-        settings[cntnamestr][bankindex++] = s;
-        s = new string(name);
-        (*s) += " NUM SUB HEADERS";
-        settings[cntnamestr][bankindex++] = s;
-        s = new string(name);
-        (*s) += " MERGER RATE";
-        settings[cntnamestr][bankindex++] = s;
-        s = new string(name);
-        (*s) += " RESET PHASE";
-        settings[cntnamestr][bankindex++] = s;
-        s = new string(name);
-        (*s) += " TX RESET";
-        settings[cntnamestr][bankindex++] = s;
-    }
-
-    bankindex = 0;
-    for(uint32_t i=0; i < N_FEBS[switch_id]; i++){
-        string feb = "FEB" + to_string(i);
-        string * s = new string(feb);
-        (*s) += " Index";
-        settings[namestr][bankindex++] = s;
-        for(uint32_t j=0; j < max_sorter_inputs_per_feb; j++){
-            s = new string(feb);
-            (*s) += " intime hits input " + to_string(j);
-            settings[sorternamestr][bankindex++] = s;
-        }
-        for(uint32_t j=0; j < max_sorter_inputs_per_feb; j++){
-            s = new string(feb);
-            (*s) += " out of time hits input " + to_string(j);
-            settings[sorternamestr][bankindex++] = s;
-        }
-        for(uint32_t j=0; j < max_sorter_inputs_per_feb; j++){
-            s = new string(feb);
-            (*s) += "  overflow hits input " + to_string(j);
-            settings[sorternamestr][bankindex++] = s;
-        }
-        s = new string(feb);
-        (*s) += "  output hits";
-        settings[sorternamestr][bankindex++] = s;
-        s = new string(feb);
-        (*s) += "  credits";
-        settings[sorternamestr][bankindex++] = s;
-    }
+    create_ssfe_names_in_odb(settings,switch_id);
+    create_ssso_names_in_odb(settings,switch_id);
+    create_sscn_names_in_odb(settings,switch_id);
 
 
     settings.connect("/Equipment/Switching/Settings", true);
@@ -649,31 +469,7 @@ void setup_odb(){
     crate_settings.connect("/Equipment/FEBCrates/Settings");
     // Why is the line above needed? Not having it realiably crashes the program
     // when writing the names below
-
-    bankindex = 0;
-    for(uint32_t i=0; i < N_FEBCRATES; i++){
-        string feb = "Crate " + to_string(i);
-        string * s = new string(feb);
-        (*s) += " Index";
-        crate_settings["Names SCFC"][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 20";
-        crate_settings["Names SCFC"][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 3.3";
-        crate_settings["Names SCFC"][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " Voltage 5";
-        crate_settings["Names SCFC"][bankindex++] = s;
-        s = new string(feb);
-        (*s) += " CC Temperature";
-        crate_settings["Names SCFC"][bankindex++] = s;
-        for(uint32_t j=0; j < MAX_FEBS_PER_CRATE; j++){
-            s = new string(feb);
-            (*s) += " FEB " + to_string(j) + " Temperature";
-            crate_settings["Names SCFC"][bankindex++] = s;
-        }
-    }
+     create_scfc_names_in_odb(crate_settings);
 
     crate_settings.connect("/Equipment/FEBCrates/Settings");
 
