@@ -319,8 +319,6 @@ INT frontend_init()
 
 
     //init scifi
-    cm_msg(MINFO, "switch_fe", "Calling init_scifi");
-    cm_msg(MINFO, "switch_fe", "TEST");
     status = init_scifi(*mup);
     if (status != SUCCESS)
         return FE_ERR_DRIVER;
@@ -709,7 +707,6 @@ INT init_scifi(mudaq::MudaqDevice & mu) {
                       switch_id); //create FEB interface signleton for scifi
 
     
-    cm_msg(MINFO,"switch_fe","Setting up ODB for SciFi");
     int status=mutrig::midasODB::setup_db("/Equipment/SciFi",scififeb);
     if(status != SUCCESS){
         set_equipment_status(equipment[EQUIPMENT_ID::SciFi].name, "Start up failed", "var(--mred)");
