@@ -2,22 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="mu3estyle.css">
+    <link rel="stylesheet" href="midas.css">
+    <!---link rel="stylesheet" href="mu3estyle.css"-->
     <link rel="stylesheet" href="pixel_tracker.css">
-    <!--script src="controls.js"></script>
+    <script src="controls.js"></script>
     <script src="midas.js"></script>
-    <script src="mhttpd.js"></script-->
+    <script src="mhttpd.js"></script>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <title>Tracker Configuration</title>
 </head>
-<!--body class="mcss" onload="mhttpd_init('myPage');"-->
-<body>
+<body class="mcss" onload="mhttpd_init('myPage');">
 
 <!-- header and side navigation will be filled in mhttpd_start -->
-<!--div id="mheader"></div>
-<div id="msidenav"></div-->
+<div id="mheader"></div>
+<div id="msidenav"></div>
 
-<div class="container-fluid" id="main">
+<div id="mmain">
+
+<div class="container-fluid normal_text" id="main">
     <div class="row" style="width: 700px">
         <div class="col-xs-6 b-r padding_bottom_70" >
             <div class="scrll_hide">
@@ -61,8 +63,12 @@
 
                     </table>
                     <div id="ladder_lv_settings" style="visibility: hidden;">
-
+                        <h3>Voltage reading : </h3>
+                        <div id = "ladder_lv_read_volt" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Voltage[0]" style="display: table-cell;"></div>
+                        <h3>Current reading : </h3>
+                        <div id = "ladder_lv_read_curr" class="modbvalue" data-odb-path="/Equipment/HAMEG0/Variables/Current[0]" style="display: table-cell;"></div>
                     </div>
+                </div>
                     <div id="ladder_hv_header" style="visibility: hidden;">
                         <h2>HV</h2>
                         <h3>Settings</h3>
@@ -97,20 +103,32 @@
                     </div>
                     <div id="Bias" class="tabcontent">
                         <h3>Bias</h3>
-                        <p>Boom</p>
-                    </div>                      
+                        <p id = "Bias_head">Boom</p>
+                        <table id="Bias_tab">
+
+                        </table>
+                    </div>
                       <div id="Conf" class="tabcontent">
                         <h3>Conf</h3>
-                        <p>Shaka</p> 
-                    </div>                      
-                    <div id="VDAC" class="tabcontent">
-                        <h3>VDAC</h3>
-                        <p>Lalala</p>
+                        <p id = "Conf_head">Shaka</p>
+                        <table id="Conf_tab">
+
+                        </table>
                     </div>
-                    <div id="configure_chip_div" style="visibility: hidden;">
+                    <div id="VDAC" class="tabcontent">
+                        <h3>VDACs</h3>
+                        <p id = "VDAC_head">Lalala</p>
+                        <table id="VDAC_tab">
+
+                        </table>
+                    </div>
+                    <div id="configure_chip_div" style="visibility: hidden;" class="button_configure">
                         <button onclick="configureChip(event)">Configure</button>
                     </div>
-                    
+                    <div id="pixel_configure_update" style="visibility: hidden;">
+
+                    </div>
+
                 </div>
                 <h1>Debug</h1>
                 <p id="debug">
@@ -125,7 +143,9 @@
 
 </iframe-->
 
+</div>
 <script src="mupix_configuration.json"></script>
+<script src="mupix_dacs.json"></script>
 <script src="pixel_tracker.js"></script>
 </body>
 </html>

@@ -2,18 +2,26 @@
 	border-right: thin black solid;
 	height: 100vh;
 	overflow: hidden;
+    color: #FFF;
   }
-  .margin_top_600px{
+.margin_top_600px{
 	margin-top:600px;
-  }
-  .scrll_hide {
+}
+.scrll_hide {
 	float: right;
 	height: 100%;
 	width: calc(100% + 48px);
 	overflow-y: scroll;
 	margin: 0 -32px 0 0 !important;
 	box-sizing: border-box;
-  }
+    color: #FFF;
+}
+.normal_text {
+    color: #FFF;
+}
+body {
+    color: #FFF;
+}
 .ladderDiv
 {
     cursor: pointer;
@@ -105,3 +113,11 @@
     font-size: 8px;
     color: #888;
   }
+.button_configure button {
+    box-shadow: 0 9px #999;
+    cursor: pointer;
+    background-color : aqua;
+}
+.button_configure button:hover {
+    background-color : #00F;
+}
