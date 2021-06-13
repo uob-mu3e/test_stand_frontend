@@ -39,7 +39,7 @@ int main() {
     while (1) {
         printf("\n");
         printf("[fe_dummy] -------- menu --------\n");
-	printf("ID: 0x%08x\n", ram->data[0xFFFB]);
+        printf("ID: 0x%08x\n", ram->data[0xFF03]);
 
         printf("\n");
         printf("  [1] => Firefly channels\n");
