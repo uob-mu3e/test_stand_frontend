@@ -167,6 +167,10 @@ var fill_table_by_json  = function (tablename, json_node, row_dict) {
 
 var chip_clicked = function (ladname, chip) {
     document.getElementById("chip_table_header").style["visibility"] = "visible"
+    document.getElementById("chip_dacs_header").style["visibility"] = "visible"
+    document.getElementById("chip_dacs").style["visibility"] = "visible"
+    document.getElementById("configure_chip_div").style["visibility"] = "visible"
+    
     var table = document.getElementById("pixel_parameters");
     table.style["visibility"] = "visible"
     document.getElementById("debug").textContent ="AAAA"+ chip + JSON.stringify(lads[ladname]["json_node"]["Chips"]) 
@@ -233,7 +237,32 @@ var ladder_clicked = function(ladname) {
     ladder_down = document.createElement("div")
     ladder_down.classList.add("chip_LadderPortionDown")
     document.getElementById("pixel_select").appendChild(ladder_down)
+    document.getElementById("chip_table_header").style["visibility"] = "hidden"
+    document.getElementById("chip_dacs_header").style["visibility"] = "hidden"
+    document.getElementById("chip_dacs").style["visibility"] = "hidden"
+    document.getElementById("configure_chip_div").style["visibility"] = "hidden"
     reset_table("pixel_parameters")
+}
+
+function openChipDacs(evt, dacName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    if (dacName == "Hide") {
+        return;
+    }
+    document.getElementById(dacName).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+
+function configureChip(evt) {
+
 }
 
 var create_octagon = function(ele, prefix, inversion) {

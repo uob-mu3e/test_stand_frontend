@@ -48,13 +48,14 @@
                 <div id="config_area">
                     <div id="ladder_header" style="visibility: hidden;">
                         <h1>Ladder Control</h1>
-                        <h2>Parameters</h2>
+                        <h3>Parameters</h3>
                     </div>
                     <table id="parameter_tab">
 
                     </table>
                     <div id="ladder_lv_header" style="visibility: hidden;">
-                        <h2>LV settings</h2>
+                        <h2>LV</h2>
+                        <h3>Settings</h3>
                     </div>
                     <table id="ladder_lv_tab">
 
@@ -63,7 +64,8 @@
 
                     </div>
                     <div id="ladder_hv_header" style="visibility: hidden;">
-                        <h2>HV settings</h2>
+                        <h2>HV</h2>
+                        <h3>Settings</h3>
                     </div>
                     <table id="ladder_hv_tab">
 
@@ -84,6 +86,31 @@
                     <table id="pixel_parameters">
 
                     </table>
+                    <div id="chip_dacs_header" style="visibility: hidden;">
+                        <h2>DACs</h2>
+                    </div>
+                    <div class="tab" id="chip_dacs" style="visibility: hidden;">
+                        <button class="tablinks" onclick="openChipDacs(event, 'Bias')">Bias</button>
+                        <button class="tablinks" onclick="openChipDacs(event, 'Conf')">Conf</button>
+                        <button class="tablinks" onclick="openChipDacs(event, 'VDAC')">VDAC</button>
+                        <button class="tablinks tablinks_service" onclick="openChipDacs(event, 'Hide')">Hide</button>
+                    </div>
+                    <div id="Bias" class="tabcontent">
+                        <h3>Bias</h3>
+                        <p>Boom</p>
+                    </div>                      
+                      <div id="Conf" class="tabcontent">
+                        <h3>Conf</h3>
+                        <p>Shaka</p> 
+                    </div>                      
+                    <div id="VDAC" class="tabcontent">
+                        <h3>VDAC</h3>
+                        <p>Lalala</p>
+                    </div>
+                    <div id="configure_chip_div" style="visibility: hidden;">
+                        <button onclick="configureChip(event)">Configure</button>
+                    </div>
+                    
                 </div>
                 <h1>Debug</h1>
                 <p id="debug">
@@ -94,9 +121,9 @@
     </div>
 </div>
 
-<iframe id="config" src="file:///C:/Users/Luigi/Programming/midas_pixel_page/mupix_configuration.json" style="width: 0; height: 0; border: 0; border: none; position: absolute;visibility: hidden;">
+<!--iframe id="config" src="file:///C:/Users/Luigi/Programming/midas_pixel_page/mupix_configuration.json" style="width: 0; height: 0; border: 0; border: none; position: absolute;visibility: hidden;">
 
-</iframe>
+</iframe-->
 
 <script src="mupix_configuration.json"></script>
 <script src="pixel_tracker.js"></script>
