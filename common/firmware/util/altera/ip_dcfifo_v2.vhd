@@ -41,6 +41,12 @@ use altera_mf.altera_mf_components.all;
 
 architecture arch of ip_dcfifo_v2 is
 
+    signal reset_n : std_logic;
+
+    signal rdata : std_logic_vector(o_rdata'range);
+    signal re : std_logic;
+    signal rempty : std_logic;
+
 begin
 
     assert ( g_ADDR_WIDTH >= 2 ) report "" severity failure;
@@ -87,15 +93,35 @@ begin
         wrusedw => o_wusedw,
         wrclk => i_wclk,
 
-        q => o_rdata,
-        rdreq => i_re,
-        rdempty => o_rempty,
+        q => rdata,
+        rdreq => re,
+        rdempty => rempty,
         rdusedw => o_rusedw,
         rdclk => i_rclk,
 
         -- Assert this signal to clear all the output status ports.
         -- There are no minimum number of clock cycles for aclr signals that must remain active.
         aclr => not i_reset_n--,
+    );
+
+    e_reset_n : entity work.reset_sync
+    port map ( o_reset_n => reset_n, i_reset_n => i_reset_n, i_clk => i_rclk );
+
+    e_fifo_rreg : entity work.fifo_rreg
+    generic map (
+        g_DATA_WIDTH => o_rdata'length--,
+    )
+    port map (
+        o_rdata => o_rdata,
+        i_re => i_re,
+        o_rempty => o_rempty,
+
+        i_rdata => rdata,
+        o_re => re,
+        i_rempty => rempty,
+
+        i_reset_n => reset_n,
+        i_clk => i_rclk--,
     );
 
 end architecture;

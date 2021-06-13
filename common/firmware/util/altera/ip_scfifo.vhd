@@ -117,14 +117,14 @@ ARCHITECTURE SYN OF ip_scfifo IS
 	);
 	END COMPONENT;
 
-    signal q0, q1 : std_logic_vector(q'range);
-    signal rdempty0, rdempty1 : std_logic;
+    signal q0 : std_logic_vector(q'range);
+    signal empty0 : std_logic;
     signal rdreq0 : std_logic;
 
 BEGIN
 	almost_empty    <= sub_wire0;
 	almost_full    <= sub_wire1;
-	rdempty0    <= sub_wire2;
+	empty0    <= sub_wire2;
 	full    <= sub_wire3;
 	q0    <= sub_wire4(DATA_WIDTH-1 DOWNTO 0);
 	usedw    <= sub_wire5(ADDR_WIDTH-1 DOWNTO 0);
@@ -158,31 +158,23 @@ BEGIN
 		usedw => sub_wire5
 	);
 
-    generate_regout : if ( REGOUT > 0 ) generate
-        q <= q1;
-        empty <= rdempty1;
+    e_fifo_rreg : entity work.fifo_rreg
+    generic map (
+        g_N => REGOUT,
+        g_DATA_WIDTH => q'length--,
+    )
+    port map (
+        o_rdata => q,
+        i_re => rdreq,
+        o_rempty => empty,
 
-        rdreq0 <= rdreq or rdempty1;
+        i_rdata => q0,
+        o_re => rdreq0,
+        i_rempty => empty0,
 
-        process(clock,sclr)
-        begin
-        if ( sclr = '1' ) then
-            q1 <= (others => '0');
-            rdempty1 <= '1';
-        elsif rising_edge(clock) then
-            if ( rdreq0 = '1' ) then
-                q1 <= q0;
-                rdempty1 <= rdempty0;
-            end if;
-        end if;
-        end process;
-    end generate;
-
-    generate_regout_0 : if ( REGOUT = 0 ) generate
-        q <= q0;
-        empty <= rdempty0;
-        rdreq0 <= rdreq;
-    end generate;
+        i_reset_n => not sclr,
+        i_clk => clock--,
+    );
 
 END SYN;
 
