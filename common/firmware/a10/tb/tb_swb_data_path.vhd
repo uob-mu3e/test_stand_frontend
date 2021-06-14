@@ -60,7 +60,6 @@ begin
     -- writeregs_250(SWB_READOUT_STATE_REGISTER_W)(5 downto 0)     <= "0100";
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_STREAM)     <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_MERGER)     <= '1';
-    writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_LINK)       <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_GEN_MERGER) <= '0';
     writeregs_250(SWB_READOUT_STATE_REGISTER_W)(USE_BIT_FARM)       <= '0';
         
