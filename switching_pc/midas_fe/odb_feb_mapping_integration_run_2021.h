@@ -42,10 +42,10 @@ links["FrontEndBoardNames"][6] = "Pixel DS L1 4-7";
 links["FrontEndBoardNames"][7] = "Pixel DS L2 0-3";
 links["FrontEndBoardNames"][8] = "Pixel DS L2 4-7";
 links["FrontEndBoardNames"][9] = "Pixel DS L2 8-9";
-links["FrontEndBoardNames"][11] = "Fibre US";
-links["FrontEndBoardNames"][12] = "Fibre DS";
-links["FrontEndBoardNames"][13] = "Fibre US secondray";
-links["FrontEndBoardNames"][14] = "Fibre DS secondary";
+links["FrontEndBoardNames"][10] = "Fibre US";
+links["FrontEndBoardNames"][11] = "Fibre DS";
+links["FrontEndBoardNames"][12] = "Fibre US secondray";
+links["FrontEndBoardNames"][13] = "Fibre DS secondary";
 
 odb crates("/Equipment/FEBCrates/Settings");
 // TODO: MSCB names here
