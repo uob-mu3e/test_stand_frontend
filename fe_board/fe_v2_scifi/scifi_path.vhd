@@ -174,7 +174,7 @@ begin
     e_test_pulse : entity work.clkdiv
     generic map ( P => 1250 )
     port map ( o_clk => s_testpulse, i_reset_n => not i_reset, i_clk => i_clk_g125 ); -- i_run_state(RUN_STATE_BITPOS_SYNC), i_clk => i_clk_g125 );
-    o_pll_test <= s_testpulse; --'0' when s_cntreg_ctrl(31) = '0' else s_testpulse;
+    o_pll_test <= '0' when s_cntreg_ctrl(31) = '0' else s_testpulse;
 
     o_test_led(1) <= s_cntreg_ctrl(0);
 

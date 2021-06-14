@@ -174,10 +174,15 @@ void SMB_t::menu_SMB_main() {
 //            sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
             break;
         case '1':
+            sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31); 
             for(alt_u8 asic = 0; asic < 8; asic++)
                 sc_callback(0x0110 | asic, (alt_u32*) config_PRBS_single, 0);
-            // disbale injext pin
-  //          sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
+            break;
+        case 't':
+            sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
+            break;
+        case 'y':                                                                                                      
+            sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31); 
             break;
         case '2':
             for(alt_u8 asic = 0; asic < 8; asic++)
@@ -186,10 +191,9 @@ void SMB_t::menu_SMB_main() {
             sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] | (1<<31);
             break;
         case '3':
+            sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
             for(alt_u8 asic = 0; asic < 8; asic++)
                 sc_callback(0x0110 | asic, (alt_u32*) no_tdc_power, 0);
-            // disbale injext pin
-    //        sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] = sc.ram->data[0xFF00|SCIFI_CNT_CTRL_REGISTER_W] & ~(1<<31);
             break;
         case '8':
             printf("buffer_full / frame_desync / rx_pll_lock : 0x%03X\n", sc.ram->data[0xFF00|SCIFI_MON_STATUS_REGISTER_R]);
