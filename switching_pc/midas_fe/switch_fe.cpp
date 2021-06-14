@@ -942,29 +942,9 @@ INT read_sc_event(char *pevent, INT off)
 {    
     cm_msg(MINFO, "switch_fe::read_sc_event()" , "Reading FEB SC");
 
-    string bankname;
-    string counterbankname;
-    string sorterbankname;
-    if(switch_id == 0){
-        bankname = "SCFE";
-        counterbankname = "SCCN";
-        sorterbankname = "SCSO";
-    }
-    if(switch_id == 1){
-        bankname = "SUFE";
-        counterbankname = "SUCN";
-        sorterbankname = "SUSO";
-    }
-    if(switch_id == 2){
-        bankname = "SDFE";
-        counterbankname = "SDCN";
-        sorterbankname = "SDSO";
-    }
-    if(switch_id == 3){
-        bankname = "SFFE";
-        counterbankname = "SFCN";
-        sorterbankname = "SFSO";
-    }
+    string bankname = ssfe[switch_id];
+    string counterbankname = sscn[switch_id];
+    string sorterbankname = ssso[switch_id];
 
     // create bank, pdata
     bk_init(pevent);
