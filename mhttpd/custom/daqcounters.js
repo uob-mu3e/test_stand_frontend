@@ -1,5 +1,115 @@
+function generateSwitchingTableHead(table){
+    let thead = table.createTHead();
+    let row1 = thead.insertRow();
+    let th = document.createElement("th");
+    th.setAttribute("colspan","12");
+    let text = document.createTextNode("Switching Board");
+    th.appendChild(text);
+    row1.appendChild(th);
+}
 
-function generateTableHead(table, febname){
+function generateSwitchingTable(table, counters){
+
+    let row1 = table.insertRow();
+
+    let cell11 = row1.insertCell();
+    cell11.setAttribute("colspan","2");
+    let text11 = document.createTextNode("Stream FIFO full");
+    cell11.appendChild(text11);
+
+    let cell12 = row1.insertCell();
+    let text12 = document.createTextNode(0);
+    cell12.appendChild(text12);
+    counters.push(text12);
+
+    let cell13 = row1.insertCell();
+    cell13.setAttribute("colspan","2");
+    let text13 = document.createTextNode("Bank builder idle not header");
+    cell13.appendChild(text13);
+
+    let cell14 = row1.insertCell();
+    let text14 = document.createTextNode(0);
+    cell14.appendChild(text14);
+    counters.push(text14);
+
+    let cell15 = row1.insertCell();
+    let text15 = document.createTextNode("Bank builder RAM full");
+    cell15.appendChild(text15);
+
+    let cell16 = row1.insertCell();
+    let text16 = document.createTextNode(0);
+    cell16.appendChild(text16);
+    counters.push(text16);
+
+    let cell17 = row1.insertCell();
+    let text17 = document.createTextNode("Bank builder tag FIFO full");
+    cell17.appendChild(text17);
+
+    let cell18 = row1.insertCell();
+    let text18 = document.createTextNode(0);
+    cell18.appendChild(text18);
+    counters.push(text18);
+
+    let row2 = table.insertRow();
+
+    let cell21 = row2.insertCell();
+    let text21 = document.createTextNode("FEB");
+    cell21.appendChild(text21);
+
+
+    let cell22 = row2.insertCell();
+    let text22 = document.createTextNode("FIFO");
+    cell22.appendChild(text22);
+    cell22.appendChild(document.createElement("br"));
+    let text22b = document.createTextNode("almost full");
+    cell22.appendChild(text22b);
+
+    let cell23 = row2.insertCell();
+    let text23 = document.createTextNode("FIFO");
+    cell23.appendChild(text23);
+    cell23.appendChild(document.createElement("br"));
+    let text23b = document.createTextNode("full");
+    cell23.appendChild(text23b);
+
+    cell22.appendChild(text22b);
+    let cell24 = row2.insertCell();
+    let text24 = document.createTextNode("Skip events");
+    cell24.appendChild(text24);
+
+    let cell25 = row2.insertCell();
+    let text25 = document.createTextNode("Events");
+    cell25.appendChild(text25);
+
+    let cell26 = row2.insertCell();
+    let text26 = document.createTextNode("Subheaders");
+    cell26.appendChild(text26);
+
+    let cell27 = row2.insertCell();
+    let text27 = document.createTextNode("Merger rate");
+    cell27.appendChild(text27);
+
+    let cell28 = row2.insertCell();
+    let text28 = document.createTextNode("Reset phase");
+    cell28.appendChild(text28);
+
+    let cell29 = row2.insertCell();
+    let text29 = document.createTextNode("TX Reset");
+    cell29.appendChild(text29);
+
+    for(var feb=0; feb < 12; feb++){
+        let row = table.insertRow();
+        for(var i=0; i < 10; i++){
+            let cell = row.insertCell();
+            let text = document.createTextNode(0);
+            cell.appendChild(text);
+            counters.push(text);
+        }
+    }
+}
+
+
+
+function generateSorterTableHead(table, febname){
     let thead = table.createTHead();
     let row1 = thead.insertRow();
     let th = document.createElement("th");
@@ -17,7 +127,7 @@ function generateTableHead(table, febname){
     }
 }
 
-function generateTable(table, counters, fractions, inside){
+function generateSorterTable(table, counters, fractions, inside){
 
     let row1 = table.insertRow();
     let cell1 = row1.insertCell();
@@ -127,8 +237,25 @@ var counters =[];
 var fractions =[];
 var inside=[];
 
+var switchingcounters = [];
+
 function init(){
    let main =  document.getElementById("mmain");
+
+    // Switching counter table
+    let swdiv =  document.createElement("div");
+    swdiv.setAttribute("style","float:left");
+    main.appendChild(swdiv);
+
+    let swtab = document.createElement("table");
+    swtab.setAttribute("class","mtable");
+    swtab.setAttribute("style","margin-left: 0.5em");
+    generateSwitchingTable(swtab, switchingcounters);
+    generateSwitchingTableHead(swtab);
+
+    swdiv.appendChild(swtab);
+
+
     // Loop over pixel FEBs
     for(var i=0; i < 10; i++){
         let div =  document.createElement("div");
@@ -142,8 +269,8 @@ function init(){
         let tab = document.createElement("table");
         tab.setAttribute("class","mtable");
         tab.setAttribute("style","margin-left: 0.5em");
-        generateTable(tab, counters[i], fractions[i], inside[i]);
-        generateTableHead(tab, "FEB "+i);
+        generateSorterTable(tab, counters[i], fractions[i], inside[i]);
+        generateSorterTableHead(tab, "FEB "+i);
 
         div.appendChild(tab);
     }
@@ -153,6 +280,13 @@ function init(){
      }).catch(function(error) {
         mjsonrpc_error_alert(error);
      });
+
+    mjsonrpc_db_get_values(["/Equipment/Switching/Variables/SCCN"]).then(function(rpc) {
+        update_sccn(rpc.result.data[0]);
+     }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
+
 }
 
 init();
@@ -188,3 +322,14 @@ function update_scso(valuex){
     }
 }
 
+function update_sccn(valuex){
+    var value = valuex;
+    if(typeof valuex === 'string')
+        value = JSON.parse(valuex);
+
+    console.log(value);
+
+    for(var input=0; input <112; input++){
+        switchingcounters[input].nodeValue = value[input];
+    }
+}
