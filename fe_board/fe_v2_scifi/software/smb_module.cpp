@@ -50,16 +50,15 @@ int SMB_t::spi_write_pattern(alt_u32 spi_slave, const alt_u8* bitpattern) {
         };
 
         if(rx_check!=bitpattern[nb]){
-            //Lprintf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
+            //printf("Error in byte %d: received %2.2x expected %2.2x\n",nb,rx_check,bitpattern[nb]);
             status=-1;
         }
         rx_pre=rx<<8;
     }while(nb>0);
-    printf("\n");
     rx_string[680]=0;
     tx_string[680]=0;
-    //Lprintf("TX = %s\n", tx_string);
-    //Lprintf("RX = %s\n", rx_string);
+    //printf("TX = %s\n", tx_string);
+    //printf("RX = %s\n", rx_string);
     return status;
 }
 
