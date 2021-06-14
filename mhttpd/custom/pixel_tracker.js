@@ -6,6 +6,7 @@ var states = [
 ]
 
 var current_selected = ""
+var current_chip_selected = ""
 
 var current_lad_chips = {}
 
@@ -80,9 +81,9 @@ var get_json_element = function (ladname) {
     var layer = ladname.substr(1,1)
     var phi = ladname.substr(7,1)
     document.getElementById("debug").textContent = "---" + direction + "-" + layer + "-" + phi + "--" + JSON.stringify(json_config["Stations"]["Tracker"])
-    if (direction == "US")
+    if (direction === "US")
         return json_config["Stations"]["Tracker"]["Direction"]["Upstream"]["Layers"][layer]["Ladders"][phi]
-    else if (direction == "DS")
+    else if (direction === "DS")
         return json_config["Stations"]["Tracker"]["Direction"]["Downstream"]["Layers"][layer]["Ladders"][phi]
     else {
         return {"Direction" : "NotFound"}
@@ -109,12 +110,12 @@ var create_chip_element = function (ladname, chip) {
 
 var change_state = function(ladder, state) {
     class_state = "ladder_" + state
-    if (state == "selected") {
+    if (state === "selected") {
         if ( ladder.classList.contains("ladder_unselected") )
             ladder.classList.remove("ladder_unselected")
         ladder.classList.add("ladder_selected")
     }
-    else if (state == "unselected") {
+    else if (state === "unselected") {
         if ( ladder.classList.contains("ladder_selected") )
             ladder.classList.remove("ladder_selected")
         ladder.classList.add("ladder_unselected")
@@ -170,7 +171,8 @@ var chip_clicked = function (ladname, chip) {
     document.getElementById("chip_dacs_header").style["visibility"] = "visible"
     document.getElementById("chip_dacs").style["visibility"] = "visible"
     document.getElementById("configure_chip_div").style["visibility"] = "visible"
-    
+    document.getElementById("pixel_configure_update").style["visibility"] = "hidden"
+
     var table = document.getElementById("pixel_parameters");
     table.style["visibility"] = "visible"
     document.getElementById("debug").textContent ="AAAA"+ chip + JSON.stringify(lads[ladname]["json_node"]["Chips"]) 
@@ -183,6 +185,19 @@ var chip_clicked = function (ladname, chip) {
     reset_table("pixel_parameters")
     tab_fill = {"SpecBook ID:" : "SpecBookId", "MIDAS ID:" : "MIDAS_ID", "Event Display ID:" : "EventDisplayID"}
     fill_table_by_json("pixel_parameters", current_lad_chips[chip]["json_node"], tab_fill)
+    current_chip_selected = chip
+    reset_table("Bias_tab")
+    reset_table("Conf_tab")
+    reset_table("VDAC_tab")
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
 }
 
 var ladder_clicked = function(ladname) {
@@ -204,7 +219,10 @@ var ladder_clicked = function(ladname) {
     fill_table_by_json("ladder_lv_tab", lads[ladname]["json_node"]["LV_parameters"], tab_fill)
 
     document.getElementById("ladder_lv_header").style["visibility"] = "visible"
-    document.getElementById("ladder_lv_settings").innerHTML = ""
+    document.getElementById("ladder_lv_settings").style["visibility"] = "visible"
+
+    document.getElementById("ladder_lv_read_volt").setAttribute("data-odb-path", "/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/Voltage[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]")
+    document.getElementById("ladder_lv_read_curr").setAttribute("data-odb-path", "/Equipment/HAMEG" + lads[ladname]["json_node"]["LV_parameters"]["Module"].toString()+ "/Variables/Current[" + lads[ladname]["json_node"]["LV_parameters"]["Channel"].toString()  + "]")
 
     reset_table("ladder_hv_tab")
     tab_fill = {"HV-box Module : " : "Module", "IP address : " : "IP", "HV-box Channel : " : "Channel"}
@@ -241,7 +259,20 @@ var ladder_clicked = function(ladname) {
     document.getElementById("chip_dacs_header").style["visibility"] = "hidden"
     document.getElementById("chip_dacs").style["visibility"] = "hidden"
     document.getElementById("configure_chip_div").style["visibility"] = "hidden"
+    document.getElementById("pixel_configure_update").style["visibility"] = "hidden"
     reset_table("pixel_parameters")
+    reset_table("Bias_tab")
+    reset_table("Conf_tab")
+    reset_table("VDAC_tab")
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
 }
 
 function openChipDacs(evt, dacName) {
@@ -258,11 +289,53 @@ function openChipDacs(evt, dacName) {
         return;
     }
     document.getElementById(dacName).style.display = "block";
+
+    var odb_dacName = ""
+    if (dacName === "Bias")
+        odb_dacName = "BIASDACS"
+    else if (dacName === "Conf")
+        odb_dacName = "CONFDACS"
+    else if (dacName === "VDAC")
+        odb_dacName = "VDACS"
+    document.getElementById(dacName + "_head").textContent = "Change values in " + "/Equipment/Mupix/Settings/" + odb_dacName + "/" + (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
+    reset_table(dacName + "_tab")
+    var table = document.getElementById(dacName + "_tab");
+    table.style["visibility"] = "visible"
+    dac_list = mupix_dacs[dacName]
+    document.getElementById("debug").textContent = JSON.stringify(dac_list)
+    var row_n = 0
+    for (dac in dac_list) {
+        var row1 = table.insertRow(row_n);
+        var cell1 = row1.insertCell(0);
+        var cell2 = row1.insertCell(1);
+        cell1.innerHTML = dac_list[dac];
+        cell2.classList.add("modbvalue")
+        var link = "/Equipment/Mupix/Settings/" + odb_dacName + "/" + (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"])) + "/" + dac_list[dac]
+        cell2.setAttribute("data-odb-path", link)
+        cell2.setAttribute("data-odb-editable", "1")
+        row_n++
+    }
     evt.currentTarget.className += " active";
 }
 
 function configureChip(evt) {
-
+    var mask_names = []
+    var px_mask = []
+    for (var i = 0; i < 128; ++i) {
+        num = (parseInt(lads[current_selected]["json_node"]["FEB_ID"])*12 + parseInt(current_lad_chips[current_chip_selected]["json_node"]["MIDAS_ID"]))
+        mask_names.push("/Equipment/Mupix/Settings/Daq/mask[" + i + "]")
+        if (i === num)
+            px_mask.push(false);
+        else
+            px_mask.push(true)
+    }
+    document.getElementById("pixel_configure_update").style["visibility"] = "visible"
+    document.getElementById("pixel_configure_update").textContent = "Configuring chip number " + num
+    mjsonrpc_db_paste(mask_names, px_mask).then(function () {
+        mjsonrpc_db_paste(["/Equipment/Switching/Settings/MupixConfig"], [true])
+    }).catch(function(error) {
+        mjsonrpc_error_alert(error);
+     });
 }
 
 var create_octagon = function(ele, prefix, inversion) {
